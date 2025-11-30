@@ -25,6 +25,22 @@ config GENERIC_PHY_MIPI_DPHY
 	  Provides a number of helpers a core functions for MIPI D-PHY
 	  drivers to us.
 
+config PHY_AR7100_USB
+	tristate "Atheros AR7100 USB PHY driver"
+	depends on ATH79 || COMPILE_TEST
+	default y if USB_EHCI_HCD_PLATFORM
+	select GENERIC_PHY
+	help
+	  Enable this to support the USB PHY on Atheros AR7100 SoCs.
+
+config PHY_AR7200_USB
+	tristate "Atheros AR7200 USB PHY driver"
+	depends on ATH79 || COMPILE_TEST
+	default y if USB_EHCI_HCD_PLATFORM
+	select GENERIC_PHY
+	help
+	  Enable this to support the USB PHY on Atheros AR7200 SoCs.
+
 config PHY_LPC18XX_USB_OTG
 	tristate "NXP LPC18xx/43xx SoC USB OTG PHY driver"
 	depends on OF && (ARCH_LPC18XX || COMPILE_TEST)

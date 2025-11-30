@@ -26,6 +26,8 @@ config AG71XX
 	  If you wish to compile a kernel for AR7XXX/91XXX and enable
 	  ethernet support, then you should always answer Y to this.
 
+source "drivers/net/ethernet/atheros/ag71xx/Kconfig"
+
 config ATL2
 	tristate "Atheros L2 Fast Ethernet support"
 	depends on PCI

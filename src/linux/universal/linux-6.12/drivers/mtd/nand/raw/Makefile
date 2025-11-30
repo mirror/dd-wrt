@@ -58,6 +58,9 @@ obj-$(CONFIG_MTD_NAND_INTEL_LGM)	+= intel-nand-controller.o
 obj-$(CONFIG_MTD_NAND_ROCKCHIP)		+= rockchip-nand-controller.o
 obj-$(CONFIG_MTD_NAND_PL35X)		+= pl35x-nand-controller.o
 obj-$(CONFIG_MTD_NAND_RENESAS)		+= renesas-nand-controller.o
+obj-$(CONFIG_MTD_NAND_AR934X)		+= ar934x_nand.o
+obj-$(CONFIG_MTD_NAND_RB4XX)		+= nand_rb4xx.o
+obj-$(CONFIG_MTD_NAND_RB91X)		+= rb91x_nand.o
 
 obj-y	+= al/
 

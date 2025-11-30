@@ -11,7 +11,8 @@
 #define ATH79_CLK_AHB		2
 #define ATH79_CLK_REF		3
 #define ATH79_CLK_MDIO		4
+#define ATH79_CLK_UART1		5
 
-#define ATH79_CLK_END		5
+#define ATH79_CLK_END		6
 
 #endif /* __DT_BINDINGS_ATH79_CLK_H */

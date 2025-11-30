@@ -107,6 +107,14 @@ config MTD_OF_PARTS_LINKSYS_NS
 	  two "firmware" partitions. Currently used firmware has to be detected
 	  using CFE environment variable.
 
+config MTD_PARSER_CYBERTAN
+	tristate "Parser for Cybertan format partitions"
+	depends on MTD && (ATH79 || COMPILE_TEST)
+	help
+	  Cybertan has a proprietory header than encompasses a Broadcom trx
+	  header. This driver will parse the header and take care of the
+	  special offsets that result in the extra headers.
+
 config MTD_PARSER_IMAGETAG
 	tristate "Parser for BCM963XX Image Tag format partitions"
 	depends on BCM63XX || BMIPS_GENERIC || COMPILE_TEST

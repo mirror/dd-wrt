@@ -3397,12 +3397,19 @@ static int spi_nor_set_mtd_info(struct spi_nor *nor)
 {
 	struct mtd_info *mtd = &nor->mtd;
 	struct device *dev = nor->dev;
+	struct device_node *np = spi_nor_get_flash_node(nor);
+	const char __maybe_unused *of_mtd_name = NULL;
 
 	spi_nor_set_mtd_locking_ops(nor);
 	spi_nor_set_mtd_otp_ops(nor);
 
 	mtd->dev.parent = dev;
-	if (!mtd->name)
+#ifdef CONFIG_MTD_OF_PARTS
+	of_property_read_string(np, "linux,mtd-name", &of_mtd_name);
+#endif
+	if (of_mtd_name)
+		mtd->name = of_mtd_name;
+	else if (!mtd->name)
 		mtd->name = dev_name(dev);
 	mtd->type = MTD_NORFLASH;
 	mtd->flags = MTD_CAP_NORFLASH;

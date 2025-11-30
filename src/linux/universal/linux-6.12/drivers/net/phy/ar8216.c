@@ -251,6 +251,7 @@ ar8xxx_mii_write32(struct ar8xxx_priv *priv, int phy_id, int regnum, u32 val)
 u32
 ar8xxx_read(struct ar8xxx_priv *priv, int reg)
 {
+	unsigned long flags;
 	struct mii_bus *bus = priv->mii_bus;
 	u16 r1, r2, page;
 	u32 val;
@@ -258,11 +259,13 @@ ar8xxx_read(struct ar8xxx_priv *priv, int reg)
 	split_addr((u32) reg, &r1, &r2, &page);
 
 	mutex_lock(&bus->mdio_lock);
+	local_irq_save(flags);
 
 	bus->write(bus, 0x18, 0, page);
 	wait_for_page_switch();
 	val = ar8xxx_mii_read32(priv, 0x10 | r2, r1);
 
+	local_irq_restore(flags);
 	mutex_unlock(&bus->mdio_lock);
 
 	return val;
@@ -271,17 +274,20 @@ ar8xxx_read(struct ar8xxx_priv *priv, int reg)
 void
 ar8xxx_write(struct ar8xxx_priv *priv, int reg, u32 val)
 {
+	unsigned long flags;
 	struct mii_bus *bus = priv->mii_bus;
 	u16 r1, r2, page;
 
 	split_addr((u32) reg, &r1, &r2, &page);
 
 	mutex_lock(&bus->mdio_lock);
+	local_irq_save(flags);
 
 	bus->write(bus, 0x18, 0, page);
 	wait_for_page_switch();
 	ar8xxx_mii_write32(priv, 0x10 | r2, r1, val);
 
+	local_irq_restore(flags);
 	mutex_unlock(&bus->mdio_lock);
 }
 

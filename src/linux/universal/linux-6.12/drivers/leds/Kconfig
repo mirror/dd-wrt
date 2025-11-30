@@ -1005,6 +1005,17 @@ config LEDS_SMARTRG_LED
 	  To compile this driver as a module, choose M here: the module
 	  will be called leds-smartrg-system.
 
+config LEDS_RESET
+	tristate "LED support for reset-controller API"
+	depends on LEDS_CLASS
+	depends on RESET_CONTROLLER
+	help
+	  This option enables support for LEDs connected to pins driven by reset
+	  controllers. Yes, DNI actual built HW like that.
+
+	  To compile this driver as a module, choose M here: the module
+	  will be called leds-reset.
+
 comment "LED Triggers"
 source "drivers/leds/trigger/Kconfig"
 

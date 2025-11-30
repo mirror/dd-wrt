@@ -149,6 +149,7 @@ void ath79_ddr_wb_flush(unsigned int reg);
 void ath79_ddr_set_pci_windows(void);
 
 extern void __iomem *ath79_pll_base;
+extern void __iomem *ath79_ddr_base;
 extern void __iomem *ath79_reset_base;
 
 static inline void ath79_pll_wr(unsigned reg, u32 val)

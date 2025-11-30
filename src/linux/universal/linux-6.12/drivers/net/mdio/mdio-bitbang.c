@@ -14,6 +14,7 @@
  * Vitaly Bordug <vbordug@ru.mvista.com>
  */
 
+#include <linux/irqflags.h>
 #include <linux/delay.h>
 #include <linux/mdio-bitbang.h>
 #include <linux/module.h>
@@ -148,23 +149,11 @@ static void mdiobb_cmd_addr(struct mdiobb_ctrl *ctrl, int phy, int dev_addr,
 static int mdiobb_read_common(struct mii_bus *bus, int phy)
 {
 	struct mdiobb_ctrl *ctrl = bus->priv;
-	int ret, i;
+	int ret;
 
 	ctrl->ops->set_mdio_dir(ctrl, 0);
 
-	/* check the turnaround bit: the PHY should be driving it to zero, if this
-	 * PHY is listed in phy_ignore_ta_mask as having broken TA, skip that
-	 */
-	if (mdiobb_get_bit(ctrl) != 0 &&
-	    !(bus->phy_ignore_ta_mask & (1 << phy))) {
-		/* PHY didn't drive TA low -- flush any bits it
-		 * may be trying to send.
-		 */
-		for (i = 0; i < 32; i++)
-			mdiobb_get_bit(ctrl);
-
-		return 0xffff;
-	}
+	mdiobb_get_bit(ctrl);
 
 	ret = mdiobb_get_num(ctrl, 16);
 	mdiobb_get_bit(ctrl);
@@ -173,22 +162,32 @@ static int mdiobb_read_common(struct mii_bus *bus, int phy)
 
 int mdiobb_read_c22(struct mii_bus *bus, int phy, int reg)
 {
+	int ret;
+	unsigned long flags;
 	struct mdiobb_ctrl *ctrl = bus->priv;
 
+	local_irq_save(flags);
 	mdiobb_cmd(ctrl, ctrl->op_c22_read, phy, reg);
 
-	return mdiobb_read_common(bus, phy);
+	ret = mdiobb_read_common(bus, phy);
+	local_irq_restore(flags);
+	return ret;
 }
 EXPORT_SYMBOL(mdiobb_read_c22);
 
 int mdiobb_read_c45(struct mii_bus *bus, int phy, int devad, int reg)
 {
+	int ret;
+	unsigned long flags;
 	struct mdiobb_ctrl *ctrl = bus->priv;
 
+	local_irq_save(flags);
 	mdiobb_cmd_addr(ctrl, phy, devad, reg);
 	mdiobb_cmd(ctrl, MDIO_C45_READ, phy, devad);
 
-	return mdiobb_read_common(bus, phy);
+	ret = mdiobb_read_common(bus, phy);
+	local_irq_restore(flags);
+	return ret;
 }
 EXPORT_SYMBOL(mdiobb_read_c45);
 
@@ -209,22 +208,32 @@ static int mdiobb_write_common(struct mii_bus *bus, u16 val)
 
 int mdiobb_write_c22(struct mii_bus *bus, int phy, int reg, u16 val)
 {
+	int ret;
+	unsigned long flags;
 	struct mdiobb_ctrl *ctrl = bus->priv;
 
+	local_irq_save(flags);
 	mdiobb_cmd(ctrl, ctrl->op_c22_write, phy, reg);
 
-	return mdiobb_write_common(bus, val);
+	ret = mdiobb_write_common(bus, val);
+	local_irq_restore(flags);
+	return ret;
 }
 EXPORT_SYMBOL(mdiobb_write_c22);
 
 int mdiobb_write_c45(struct mii_bus *bus, int phy, int devad, int reg, u16 val)
 {
+	int ret;
+	unsigned long flags;
 	struct mdiobb_ctrl *ctrl = bus->priv;
 
+	local_irq_save(flags);
 	mdiobb_cmd_addr(ctrl, phy, devad, reg);
 	mdiobb_cmd(ctrl, MDIO_C45_WRITE, phy, devad);
 
-	return mdiobb_write_common(bus, val);
+	ret = mdiobb_write_common(bus, val);
+	local_irq_restore(flags);
+	return ret;
 }
 EXPORT_SYMBOL(mdiobb_write_c45);
 

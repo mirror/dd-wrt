@@ -10,6 +10,7 @@
 
 #include <linux/device.h>
 #include <linux/gpio/driver.h>
+#include <linux/gpio/machine.h> /* For WLAN GPIOs */
 #include <linux/interrupt.h>
 #include <linux/irq.h>
 #include <linux/mod_devicetable.h>
@@ -222,6 +223,37 @@ static const struct of_device_id ath79_gpio_of_match[] = {
 };
 MODULE_DEVICE_TABLE(of, ath79_gpio_of_match);
 
+/*
+ * This registers all of the ath79k GPIOs as descriptors to be picked
+ * directly from the ATH79K wifi driver if the two are jitted together
+ * in the same SoC.
+ */
+#define ATH79K_WIFI_DESCS 32
+static int ath79_gpio_register_wifi_descriptors(struct device *dev,
+						const char *label)
+{
+	struct gpiod_lookup_table *lookup;
+	int i;
+
+	/* Create a gpiod lookup using gpiochip-local offsets + 1 for NULL */
+	lookup = devm_kzalloc(dev,
+			      struct_size(lookup, table, ATH79K_WIFI_DESCS + 1),
+			      GFP_KERNEL);
+
+	if (!lookup)
+		return -ENOMEM;
+
+	for (i = 0; i < ATH79K_WIFI_DESCS; i++) {
+		lookup->table[i] = (struct gpiod_lookup)
+			GPIO_LOOKUP_IDX(label, i, "ath9k", i,
+					GPIO_ACTIVE_HIGH);
+	}
+
+	gpiod_add_lookup_table(lookup);
+
+	return 0;
+}
+
 static int ath79_gpio_probe(struct platform_device *pdev)
 {
 	struct device *dev = &pdev->dev;
@@ -280,7 +312,11 @@ static int ath79_gpio_probe(struct platform_device *pdev)
 		girq->handler = handle_simple_irq;
 	}
 
-	return devm_gpiochip_add_data(dev, &ctrl->gc, ctrl);
+	err = devm_gpiochip_add_data(dev, &ctrl->gc, ctrl);
+	if (err)
+		return err;
+
+	return ath79_gpio_register_wifi_descriptors(dev, ctrl->gc.label);
 }
 
 static struct platform_driver ath79_gpio_driver = {
@@ -291,7 +327,11 @@ static struct platform_driver ath79_gpio_driver = {
 	.probe = ath79_gpio_probe,
 };
 
-module_platform_driver(ath79_gpio_driver);
+static int __init ath79_gpio_init(void)
+{
+	return platform_driver_register(&ath79_gpio_driver);
+}
+postcore_initcall(ath79_gpio_init);
 
 MODULE_DESCRIPTION("Atheros AR71XX/AR724X/AR913X GPIO API support");
 MODULE_LICENSE("GPL v2");

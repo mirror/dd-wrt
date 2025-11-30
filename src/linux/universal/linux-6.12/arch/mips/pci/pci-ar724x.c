@@ -8,11 +8,15 @@
 
 #include <linux/irq.h>
 #include <linux/pci.h>
+#include <linux/reset.h>
 #include <linux/init.h>
 #include <linux/delay.h>
 #include <linux/platform_device.h>
+#include <linux/irqchip/chained_irq.h>
 #include <asm/mach-ath79/ath79.h>
 #include <asm/mach-ath79/ar71xx_regs.h>
+#include <linux/of_irq.h>
+#include <linux/of_pci.h>
 
 #define AR724X_PCI_REG_APP		0x00
 #define AR724X_PCI_REG_RESET		0x18
@@ -21,6 +25,7 @@
 
 #define AR724X_PCI_APP_LTSSM_ENABLE	BIT(0)
 
+#define AR724X_PCI_RESET_EP_RESET_L	BIT(2)
 #define AR724X_PCI_RESET_LINK_UP	BIT(0)
 
 #define AR724X_PCI_INT_DEV0		BIT(14)
@@ -42,16 +47,22 @@ struct ar724x_pci_controller {
 	void __iomem *crp_base;
 
 	int irq;
-	int irq_base;
 
 	bool link_up;
 	bool bar0_is_cached;
 	u32  bar0_value;
 
+	struct device_node *np;
 	struct pci_controller pci_controller;
+	struct irq_domain *domain;
 	struct resource io_res;
 	struct resource mem_res;
+
+	struct reset_control *hc_reset;
+	struct reset_control *phy_reset;
 };
+
+static struct irq_chip ar724x_pci_irq_chip;
 
 static inline bool ar724x_pci_check_link(struct ar724x_pci_controller *apc)
 {
@@ -228,35 +239,31 @@ static struct pci_ops ar724x_pci_ops = {
 
 static void ar724x_pci_irq_handler(struct irq_desc *desc)
 {
-	struct ar724x_pci_controller *apc;
-	void __iomem *base;
+	struct irq_chip *chip = irq_desc_get_chip(desc);
+	struct ar724x_pci_controller *apc = irq_desc_get_handler_data(desc);
 	u32 pending;
 
-	apc = irq_desc_get_handler_data(desc);
-	base = apc->ctrl_base;
-
-	pending = __raw_readl(base + AR724X_PCI_REG_INT_STATUS) &
-		  __raw_readl(base + AR724X_PCI_REG_INT_MASK);
+	chained_irq_enter(chip, desc);
+	pending = __raw_readl(apc->ctrl_base + AR724X_PCI_REG_INT_STATUS) &
+		  __raw_readl(apc->ctrl_base + AR724X_PCI_REG_INT_MASK);
 
 	if (pending & AR724X_PCI_INT_DEV0)
-		generic_handle_irq(apc->irq_base + 0);
-
+		generic_handle_irq(irq_linear_revmap(apc->domain, 1));
 	else
 		spurious_interrupt();
+	chained_irq_exit(chip, desc);
 }
 
 static void ar724x_pci_irq_unmask(struct irq_data *d)
 {
 	struct ar724x_pci_controller *apc;
 	void __iomem *base;
-	int offset;
 	u32 t;
 
 	apc = irq_data_get_irq_chip_data(d);
 	base = apc->ctrl_base;
-	offset = apc->irq_base - d->irq;
 
-	switch (offset) {
+	switch (irq_linear_revmap(apc->domain, d->irq)) {
 	case 0:
 		t = __raw_readl(base + AR724X_PCI_REG_INT_MASK);
 		__raw_writel(t | AR724X_PCI_INT_DEV0,
@@ -270,14 +277,12 @@ static void ar724x_pci_irq_mask(struct irq_data *d)
 {
 	struct ar724x_pci_controller *apc;
 	void __iomem *base;
-	int offset;
 	u32 t;
 
 	apc = irq_data_get_irq_chip_data(d);
 	base = apc->ctrl_base;
-	offset = apc->irq_base - d->irq;
 
-	switch (offset) {
+	switch (irq_linear_revmap(apc->domain, d->irq)) {
 	case 0:
 		t = __raw_readl(base + AR724X_PCI_REG_INT_MASK);
 		__raw_writel(t & ~AR724X_PCI_INT_DEV0,
@@ -302,48 +307,74 @@ static struct irq_chip ar724x_pci_irq_chip = {
 	.irq_mask_ack	= ar724x_pci_irq_mask,
 };
 
+static int ar724x_pci_irq_map(struct irq_domain *d,
+			      unsigned int irq, irq_hw_number_t hw)
+{
+	struct ar724x_pci_controller *apc = d->host_data;
+
+	irq_set_chip_and_handler(irq, &ar724x_pci_irq_chip, handle_level_irq);
+	irq_set_chip_data(irq, apc);
+
+	return 0;
+}
+
+static const struct irq_domain_ops ar724x_pci_domain_ops = {
+	.xlate = irq_domain_xlate_onecell,
+	.map = ar724x_pci_irq_map,
+};
+
 static void ar724x_pci_irq_init(struct ar724x_pci_controller *apc,
 				int id)
 {
 	void __iomem *base;
-	int i;
 
 	base = apc->ctrl_base;
 
 	__raw_writel(0, base + AR724X_PCI_REG_INT_MASK);
 	__raw_writel(0, base + AR724X_PCI_REG_INT_STATUS);
 
-	apc->irq_base = ATH79_PCI_IRQ_BASE + (id * AR724X_PCI_IRQ_COUNT);
-
-	for (i = apc->irq_base;
-	     i < apc->irq_base + AR724X_PCI_IRQ_COUNT; i++) {
-		irq_set_chip_and_handler(i, &ar724x_pci_irq_chip,
-					 handle_level_irq);
-		irq_set_chip_data(i, apc);
-	}
-
+	apc->domain = irq_domain_add_linear(apc->np, 2,
+					    &ar724x_pci_domain_ops, apc);
 	irq_set_chained_handler_and_data(apc->irq, ar724x_pci_irq_handler,
 					 apc);
 }
 
 static void ar724x_pci_hw_init(struct ar724x_pci_controller *apc)
 {
-	u32 ppl, app;
+	u32 ppl, rst, app;
 	int wait = 0;
 
 	/* deassert PCIe host controller and PCIe PHY reset */
-	ath79_device_reset_clear(AR724X_RESET_PCIE);
-	ath79_device_reset_clear(AR724X_RESET_PCIE_PHY);
+	reset_control_deassert(apc->hc_reset);
+	reset_control_deassert(apc->phy_reset);
 
-	/* remove the reset of the PCIE PLL */
-	ppl = ath79_pll_rr(AR724X_PLL_REG_PCIE_CONFIG);
-	ppl &= ~AR724X_PLL_REG_PCIE_CONFIG_PPL_RESET;
-	ath79_pll_wr(AR724X_PLL_REG_PCIE_CONFIG, ppl);
+	if (of_device_is_compatible(apc->np, "qcom,qca9550-pci")) {
+		/* remove the reset of the PCIE PLL */
+		ppl = ath79_pll_rr(QCA955X_PLL_PCIE_CONFIG_REG);
+		ppl &= ~QCA955X_PLL_PCIE_CONFIG_PLL_PWD;
+		ath79_pll_wr(QCA955X_PLL_PCIE_CONFIG_REG, ppl);
 
-	/* deassert bypass for the PCIE PLL */
-	ppl = ath79_pll_rr(AR724X_PLL_REG_PCIE_CONFIG);
-	ppl &= ~AR724X_PLL_REG_PCIE_CONFIG_PPL_BYPASS;
-	ath79_pll_wr(AR724X_PLL_REG_PCIE_CONFIG, ppl);
+		/* deassert bypass for the PCIE PLL */
+		ppl = ath79_pll_rr(QCA955X_PLL_PCIE_CONFIG_REG);
+		ppl &= ~QCA955X_PLL_PCIE_CONFIG_PLL_BYPASS;
+		ath79_pll_wr(QCA955X_PLL_PCIE_CONFIG_REG, ppl);
+	} else {
+		/* remove the reset of the PCIE PLL */
+		ppl = ath79_pll_rr(AR724X_PLL_REG_PCIE_CONFIG);
+		ppl &= ~(AR934X_PLL_PCIE_CONFIG_PLL_PWD |
+			 AR724X_PLL_REG_PCIE_CONFIG_PPL_RESET);
+		ath79_pll_wr(AR724X_PLL_REG_PCIE_CONFIG, ppl);
+
+		/* deassert bypass for the PCIE PLL */
+		ppl = ath79_pll_rr(AR724X_PLL_REG_PCIE_CONFIG);
+		ppl &= ~AR724X_PLL_REG_PCIE_CONFIG_PPL_BYPASS;
+		ath79_pll_wr(AR724X_PLL_REG_PCIE_CONFIG, ppl);
+	}
+
+	/* deassert the reset state of the PCIE endpoint */
+	rst = __raw_readl(apc->ctrl_base + AR724X_PCI_REG_RESET);
+	rst |= AR724X_PCI_RESET_EP_RESET_L;
+	__raw_writel(rst, apc->ctrl_base + AR724X_PCI_REG_RESET);
 
 	/* set PCIE Application Control to ready */
 	app = __raw_readl(apc->ctrl_base + AR724X_PCI_REG_APP);
@@ -360,7 +391,6 @@ static void ar724x_pci_hw_init(struct ar724x_pci_controller *apc)
 static int ar724x_pci_probe(struct platform_device *pdev)
 {
 	struct ar724x_pci_controller *apc;
-	struct resource *res;
 	int id;
 
 	id = pdev->id;
@@ -388,35 +418,25 @@ static int ar724x_pci_probe(struct platform_device *pdev)
 	if (apc->irq < 0)
 		return -EINVAL;
 
-	res = platform_get_resource_byname(pdev, IORESOURCE_IO, "io_base");
-	if (!res)
-		return -EINVAL;
+	apc->hc_reset = devm_reset_control_get_exclusive(&pdev->dev, "hc");
+	if (IS_ERR(apc->hc_reset))
+		return PTR_ERR(apc->hc_reset);
 
-	apc->io_res.parent = res;
-	apc->io_res.name = "PCI IO space";
-	apc->io_res.start = res->start;
-	apc->io_res.end = res->end;
-	apc->io_res.flags = IORESOURCE_IO;
+	apc->phy_reset = devm_reset_control_get_exclusive(&pdev->dev, "phy");
+	if (IS_ERR(apc->phy_reset))
+		return PTR_ERR(apc->phy_reset);
 
-	res = platform_get_resource_byname(pdev, IORESOURCE_MEM, "mem_base");
-	if (!res)
-		return -EINVAL;
-
-	apc->mem_res.parent = res;
-	apc->mem_res.name = "PCI memory space";
-	apc->mem_res.start = res->start;
-	apc->mem_res.end = res->end;
-	apc->mem_res.flags = IORESOURCE_MEM;
-
+	apc->np = pdev->dev.of_node;
 	apc->pci_controller.pci_ops = &ar724x_pci_ops;
 	apc->pci_controller.io_resource = &apc->io_res;
 	apc->pci_controller.mem_resource = &apc->mem_res;
+	pci_load_of_ranges(&apc->pci_controller, pdev->dev.of_node);
 
 	/*
 	 * Do the full PCIE Root Complex Initialization Sequence if the PCIe
 	 * host controller is in reset.
 	 */
-	if (ath79_reset_rr(AR724X_RESET_REG_RESET_MODULE) & AR724X_RESET_PCIE)
+	if (reset_control_status(apc->hc_reset))
 		ar724x_pci_hw_init(apc);
 
 	apc->link_up = ar724x_pci_check_link(apc);
@@ -432,10 +452,17 @@ static int ar724x_pci_probe(struct platform_device *pdev)
 	return 0;
 }
 
+static const struct of_device_id ar724x_pci_ids[] = {
+	{ .compatible = "qcom,ar7240-pci" },
+	{ .compatible = "qcom,qca9550-pci" },
+	{},
+};
+
 static struct platform_driver ar724x_pci_driver = {
 	.probe = ar724x_pci_probe,
 	.driver = {
 		.name = "ar724x-pci",
+		.of_match_table = ar724x_pci_ids,
 	},
 };
 

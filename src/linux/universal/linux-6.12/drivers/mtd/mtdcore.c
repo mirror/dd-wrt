@@ -872,6 +872,17 @@ out_error:
  */
 static void mtd_set_dev_defaults(struct mtd_info *mtd)
 {
+#ifdef CONFIG_MTD_OF_PARTS
+	const char __maybe_unused *of_mtd_name = NULL;
+	struct device_node *np;
+
+	np = mtd_get_of_node(mtd);
+	if (np && !mtd->name) {
+		of_property_read_string(np, "linux,mtd-name", &of_mtd_name);
+		if (of_mtd_name)
+			mtd->name = of_mtd_name;
+	} else
+#endif
 	if (mtd->dev.parent) {
 		if (!mtd->owner && mtd->dev.parent->driver)
 			mtd->owner = mtd->dev.parent->driver->owner;

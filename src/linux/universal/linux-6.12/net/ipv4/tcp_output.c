@@ -668,8 +668,9 @@ static void tcp_options_write(struct tcphdr *th, struct tcp_sock *tp,
 	u16 options = opts->options;	/* mungable copy */
 
 	if (tcp_key_is_md5(key)) {
-		*ptr++ = htonl((TCPOPT_NOP << 24) | (TCPOPT_NOP << 16) |
-			       (TCPOPT_MD5SIG << 8) | TCPOLEN_MD5SIG);
+		net_hdr_word(ptr++) =
+			htonl((TCPOPT_NOP << 24) | (TCPOPT_NOP << 16) |
+			      (TCPOPT_MD5SIG << 8) | TCPOLEN_MD5SIG);
 		/* overload cookie hash location */
 		opts->hash_location = (__u8 *)ptr;
 		ptr += 4;
@@ -677,40 +678,44 @@ static void tcp_options_write(struct tcphdr *th, struct tcp_sock *tp,
 		ptr = process_tcp_ao_options(tp, tcprsk, opts, key, ptr);
 	}
 	if (unlikely(opts->mss)) {
-		*ptr++ = htonl((TCPOPT_MSS << 24) |
-			       (TCPOLEN_MSS << 16) |
-			       opts->mss);
+		net_hdr_word(ptr++) =
+			htonl((TCPOPT_MSS << 24) | (TCPOLEN_MSS << 16) |
+			      opts->mss);
 	}
 
 	if (likely(OPTION_TS & options)) {
 		if (unlikely(OPTION_SACK_ADVERTISE & options)) {
-			*ptr++ = htonl((TCPOPT_SACK_PERM << 24) |
-				       (TCPOLEN_SACK_PERM << 16) |
-				       (TCPOPT_TIMESTAMP << 8) |
-				       TCPOLEN_TIMESTAMP);
+			net_hdr_word(ptr++) =
+				htonl((TCPOPT_SACK_PERM << 24) |
+				      (TCPOLEN_SACK_PERM << 16) |
+				      (TCPOPT_TIMESTAMP << 8) |
+				      TCPOLEN_TIMESTAMP);
 			options &= ~OPTION_SACK_ADVERTISE;
 		} else {
-			*ptr++ = htonl((TCPOPT_NOP << 24) |
-				       (TCPOPT_NOP << 16) |
-				       (TCPOPT_TIMESTAMP << 8) |
-				       TCPOLEN_TIMESTAMP);
+			net_hdr_word(ptr++) =
+				htonl((TCPOPT_NOP << 24) |
+				      (TCPOPT_NOP << 16) |
+				      (TCPOPT_TIMESTAMP << 8) |
+				      TCPOLEN_TIMESTAMP);
 		}
-		*ptr++ = htonl(opts->tsval);
-		*ptr++ = htonl(opts->tsecr);
+		net_hdr_word(ptr++) = htonl(opts->tsval);
+		net_hdr_word(ptr++) = htonl(opts->tsecr);
 	}
 
 	if (unlikely(OPTION_SACK_ADVERTISE & options)) {
-		*ptr++ = htonl((TCPOPT_NOP << 24) |
-			       (TCPOPT_NOP << 16) |
-			       (TCPOPT_SACK_PERM << 8) |
-			       TCPOLEN_SACK_PERM);
+		net_hdr_word(ptr++) =
+			htonl((TCPOPT_NOP << 24) |
+			      (TCPOPT_NOP << 16) |
+			      (TCPOPT_SACK_PERM << 8) |
+			      TCPOLEN_SACK_PERM);
 	}
 
 	if (unlikely(OPTION_WSCALE & options)) {
-		*ptr++ = htonl((TCPOPT_NOP << 24) |
-			       (TCPOPT_WINDOW << 16) |
-			       (TCPOLEN_WINDOW << 8) |
-			       opts->ws);
+		net_hdr_word(ptr++) =
+			htonl((TCPOPT_NOP << 24) |
+			      (TCPOPT_WINDOW << 16) |
+			      (TCPOLEN_WINDOW << 8) |
+			      opts->ws);
 	}
 
 	if (unlikely(opts->num_sack_blocks)) {
@@ -718,16 +723,17 @@ static void tcp_options_write(struct tcphdr *th, struct tcp_sock *tp,
 			tp->duplicate_sack : tp->selective_acks;
 		int this_sack;
 
-		*ptr++ = htonl((TCPOPT_NOP  << 24) |
-			       (TCPOPT_NOP  << 16) |
-			       (TCPOPT_SACK <<  8) |
-			       (TCPOLEN_SACK_BASE + (opts->num_sack_blocks *
+		net_hdr_word(ptr++) =
+			htonl((TCPOPT_NOP << 24) |
+			      (TCPOPT_NOP << 16) |
+			      (TCPOPT_SACK << 8) |
+			      (TCPOLEN_SACK_BASE + (opts->num_sack_blocks *
 						     TCPOLEN_SACK_PERBLOCK)));
 
 		for (this_sack = 0; this_sack < opts->num_sack_blocks;
 		     ++this_sack) {
-			*ptr++ = htonl(sp[this_sack].start_seq);
-			*ptr++ = htonl(sp[this_sack].end_seq);
+			net_hdr_word(ptr++) = htonl(sp[this_sack].start_seq);
+			net_hdr_word(ptr++) = htonl(sp[this_sack].end_seq);
 		}
 
 		tp->rx_opt.dsack = 0;
@@ -740,13 +746,14 @@ static void tcp_options_write(struct tcphdr *th, struct tcp_sock *tp,
 
 		if (foc->exp) {
 			len = TCPOLEN_EXP_FASTOPEN_BASE + foc->len;
-			*ptr = htonl((TCPOPT_EXP << 24) | (len << 16) |
+			net_hdr_word(ptr) =
+				htonl((TCPOPT_EXP << 24) | (len << 16) |
 				     TCPOPT_FASTOPEN_MAGIC);
 			p += TCPOLEN_EXP_FASTOPEN_BASE;
 		} else {
 			len = TCPOLEN_FASTOPEN_BASE + foc->len;
-			*p++ = TCPOPT_FASTOPEN;
-			*p++ = len;
+			net_hdr_word(p++) = TCPOPT_FASTOPEN;
+			net_hdr_word(p++) = len;
 		}
 
 		memcpy(p, foc->val, foc->len);

@@ -274,6 +274,11 @@ static int ehci_platform_probe(struct platform_device *dev)
 	ehci = hcd_to_ehci(hcd);
 
 	if (pdata == &ehci_platform_defaults && dev->dev.of_node) {
+		of_property_read_u32(dev->dev.of_node, "caps-offset", &pdata->caps_offset);
+
+		if (of_property_read_bool(dev->dev.of_node, "has-synopsys-hc-bug"))
+			pdata->has_synopsys_hc_bug = 1;
+
 		if (of_property_read_bool(dev->dev.of_node, "big-endian-regs"))
 			ehci->big_endian_mmio = 1;
 

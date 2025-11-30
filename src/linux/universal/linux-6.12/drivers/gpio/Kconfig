@@ -398,6 +398,12 @@ config GPIO_IXP4XX
 
 	  If unsure, say N.
 
+config GPIO_LATCH_MIKROTIK
+	tristate "MikroTik RouterBOARD GPIO latch support"
+	depends on ATH79
+	help
+	  GPIO driver for latch on some MikroTik RouterBOARDs.
+
 config GPIO_LOGICVC
 	tristate "Xylon LogiCVC GPIO support"
 	depends on MFD_SYSCON && OF
@@ -554,6 +560,10 @@ config GPIO_PXA
 	depends on ARCH_PXA || ARCH_MMP || COMPILE_TEST
 	help
 	  Say yes here to support the PXA GPIO device.
+
+config GPIO_RB91X_KEY
+	tristate "MikroTik RB91x board series reset key support"
+	depends on ATH79
 
 config GPIO_RCAR
 	tristate "Renesas R-Car and RZ/G GPIO support"
@@ -1771,6 +1781,12 @@ config GPIO_SODAVILLE
 	select GENERIC_IRQ_CHIP
 	help
 	  Say Y here to support Intel Sodaville GPIO.
+
+config GPIO_RB4XX
+	tristate "GPIO expander for Mikrotik RB4xx series boards"
+	depends on MFD_RB4XX_CPLD
+	help
+	  GPIO driver for Mikrotik Routerboard RB4xx series.
 
 endmenu
 

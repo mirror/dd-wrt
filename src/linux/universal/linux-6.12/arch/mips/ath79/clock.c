@@ -40,6 +40,7 @@ static const char * const clk_names[ATH79_CLK_END] = {
 	[ATH79_CLK_AHB] = "ahb",
 	[ATH79_CLK_REF] = "ref",
 	[ATH79_CLK_MDIO] = "mdio",
+	[ATH79_CLK_UART1] = "uart1",
 };
 
 static const char * __init ath79_clk_name(int type)
@@ -343,6 +344,9 @@ static void __init ar934x_clocks_init(void __iomem *pll_base)
 	clk_ctrl = __raw_readl(pll_base + AR934X_PLL_SWITCH_CLOCK_CONTROL_REG);
 	if (clk_ctrl & AR934X_PLL_SWITCH_CLOCK_CONTROL_MDIO_CLK_SEL)
 		ath79_set_clk(ATH79_CLK_MDIO, 100 * 1000 * 1000);
+
+	if (clk_ctrl & AR934X_PLL_SWITCH_CLOCK_CONTROL_UART1_CLK_SEL)
+		ath79_set_clk(ATH79_CLK_UART1, 100 * 1000 * 1000);
 
 	iounmap(dpll_base);
 }
@@ -648,6 +652,9 @@ static void __init ath79_clocks_init_dt(struct device_node *np)
 
 	if (!clks[ATH79_CLK_MDIO])
 		clks[ATH79_CLK_MDIO] = clks[ATH79_CLK_REF];
+
+	if (!clks[ATH79_CLK_UART1])
+		clks[ATH79_CLK_UART1] = clks[ATH79_CLK_REF];
 
 	if (of_clk_add_provider(np, of_clk_src_onecell_get, &clk_data)) {
 		pr_err("%pOF: could not register clk provider\n", np);

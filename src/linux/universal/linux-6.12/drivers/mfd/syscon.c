@@ -53,7 +53,7 @@ static struct syscon *of_syscon_register(struct device_node *np, bool check_res)
 	int ret;
 	struct regmap_config syscon_config = syscon_regmap_config;
 	struct resource res;
-	struct reset_control *reset;
+	struct reset_control *reset = NULL;
 
 	WARN_ON(!mutex_is_locked(&syscon_list_lock));
 
@@ -133,7 +133,8 @@ static struct syscon *of_syscon_register(struct device_node *np, bool check_res)
 				goto err_attach_clk;
 		}
 
-		reset = of_reset_control_get_optional_exclusive(np, NULL);
+		if (!of_property_read_bool(np, "syscon-no-reset"))
+			reset = of_reset_control_get_optional_exclusive(np, NULL);
 		if (IS_ERR(reset)) {
 			ret = PTR_ERR(reset);
 			goto err_attach_clk;

@@ -99,6 +99,8 @@ EXPORT_SYMBOL_GPL(of_irq_find_parent);
  * drawing board.
  */
 static const char * const of_irq_imap_abusers[] = {
+	"qca,ar7100-pci",
+	"qcom,ar7240-pci",
 	"CBEA,platform-spider-pic",
 	"sti,platform-spider-pic",
 	"realtek,rtl-intc",

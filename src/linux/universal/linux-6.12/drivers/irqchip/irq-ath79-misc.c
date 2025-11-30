@@ -10,6 +10,7 @@
  *  Parts of this file are based on Atheros' 2.6.15/2.6.31 BSP
  */
 
+#include <asm/time.h>
 #include <linux/irqchip.h>
 #include <linux/irqchip/chained_irq.h>
 #include <linux/of_address.h>
@@ -177,21 +178,3 @@ static int __init ar7240_misc_intc_of_init(
 
 IRQCHIP_DECLARE(ar7240_misc_intc, "qca,ar7240-misc-intc",
 		ar7240_misc_intc_of_init);
-
-void __init ath79_misc_irq_init(void __iomem *regs, int irq,
-				int irq_base, bool is_ar71xx)
-{
-	struct irq_domain *domain;
-
-	if (is_ar71xx)
-		ath79_misc_irq_chip.irq_mask_ack = ar71xx_misc_irq_mask;
-	else
-		ath79_misc_irq_chip.irq_ack = ar724x_misc_irq_ack;
-
-	domain = irq_domain_add_legacy(NULL, ATH79_MISC_IRQ_COUNT,
-			irq_base, 0, &misc_irq_domain_ops, regs);
-	if (!domain)
-		panic("Failed to create MISC irqdomain");
-
-	ath79_misc_intc_domain_init(domain, irq);
-}

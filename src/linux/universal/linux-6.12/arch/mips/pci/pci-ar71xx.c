@@ -15,8 +15,11 @@
 #include <linux/pci.h>
 #include <linux/pci_regs.h>
 #include <linux/interrupt.h>
+#include <linux/irqchip/chained_irq.h>
 #include <linux/init.h>
 #include <linux/platform_device.h>
+#include <linux/of_irq.h>
+#include <linux/of_pci.h>
 
 #include <asm/mach-ath79/ar71xx_regs.h>
 #include <asm/mach-ath79/ath79.h>
@@ -46,9 +49,8 @@
 #define AR71XX_PCI_IRQ_COUNT		5
 
 struct ar71xx_pci_controller {
+	struct device_node *np;
 	void __iomem *cfg_base;
-	int irq;
-	int irq_base;
 	struct pci_controller pci_ctrl;
 	struct resource io_res;
 	struct resource mem_res;
@@ -65,6 +67,45 @@ static const u8 ar71xx_pci_ble_table[4][4] = {
 static const u32 ar71xx_pci_read_mask[8] = {
 	0, 0xff, 0xffff, 0, 0xffffffff, 0, 0, 0
 };
+
+static unsigned long (*__ath79_pci_swizzle_b)(unsigned long port);
+static unsigned long (*__ath79_pci_swizzle_w)(unsigned long port);
+
+static inline bool ar71xx_is_pci_addr(unsigned long port)
+{
+	unsigned long phys = CPHYSADDR(port);
+
+	return (phys >= AR71XX_PCI_MEM_BASE &&
+		phys < AR71XX_PCI_MEM_BASE + AR71XX_PCI_MEM_SIZE);
+}
+
+static unsigned long ar71xx_pci_swizzle_b(unsigned long port)
+{
+	return ar71xx_is_pci_addr(port) ? port ^ 3 : port;
+}
+
+static unsigned long ar71xx_pci_swizzle_w(unsigned long port)
+{
+	return ar71xx_is_pci_addr(port) ? port ^ 2 : port;
+}
+
+unsigned long ath79_pci_swizzle_b(unsigned long port)
+{
+	if (__ath79_pci_swizzle_b)
+		return __ath79_pci_swizzle_b(port);
+
+	return port;
+}
+EXPORT_SYMBOL(ath79_pci_swizzle_b);
+
+unsigned long ath79_pci_swizzle_w(unsigned long port)
+{
+	if (__ath79_pci_swizzle_w)
+		return __ath79_pci_swizzle_w(port);
+
+	return port;
+}
+EXPORT_SYMBOL(ath79_pci_swizzle_w);
 
 static inline u32 ar71xx_pci_get_ble(int where, int size, int local)
 {
@@ -223,96 +264,6 @@ static struct pci_ops ar71xx_pci_ops = {
 	.write	= ar71xx_pci_write_config,
 };
 
-static void ar71xx_pci_irq_handler(struct irq_desc *desc)
-{
-	struct ar71xx_pci_controller *apc;
-	void __iomem *base = ath79_reset_base;
-	u32 pending;
-
-	apc = irq_desc_get_handler_data(desc);
-
-	pending = __raw_readl(base + AR71XX_RESET_REG_PCI_INT_STATUS) &
-		  __raw_readl(base + AR71XX_RESET_REG_PCI_INT_ENABLE);
-
-	if (pending & AR71XX_PCI_INT_DEV0)
-		generic_handle_irq(apc->irq_base + 0);
-
-	else if (pending & AR71XX_PCI_INT_DEV1)
-		generic_handle_irq(apc->irq_base + 1);
-
-	else if (pending & AR71XX_PCI_INT_DEV2)
-		generic_handle_irq(apc->irq_base + 2);
-
-	else if (pending & AR71XX_PCI_INT_CORE)
-		generic_handle_irq(apc->irq_base + 4);
-
-	else
-		spurious_interrupt();
-}
-
-static void ar71xx_pci_irq_unmask(struct irq_data *d)
-{
-	struct ar71xx_pci_controller *apc;
-	unsigned int irq;
-	void __iomem *base = ath79_reset_base;
-	u32 t;
-
-	apc = irq_data_get_irq_chip_data(d);
-	irq = d->irq - apc->irq_base;
-
-	t = __raw_readl(base + AR71XX_RESET_REG_PCI_INT_ENABLE);
-	__raw_writel(t | (1 << irq), base + AR71XX_RESET_REG_PCI_INT_ENABLE);
-
-	/* flush write */
-	__raw_readl(base + AR71XX_RESET_REG_PCI_INT_ENABLE);
-}
-
-static void ar71xx_pci_irq_mask(struct irq_data *d)
-{
-	struct ar71xx_pci_controller *apc;
-	unsigned int irq;
-	void __iomem *base = ath79_reset_base;
-	u32 t;
-
-	apc = irq_data_get_irq_chip_data(d);
-	irq = d->irq - apc->irq_base;
-
-	t = __raw_readl(base + AR71XX_RESET_REG_PCI_INT_ENABLE);
-	__raw_writel(t & ~(1 << irq), base + AR71XX_RESET_REG_PCI_INT_ENABLE);
-
-	/* flush write */
-	__raw_readl(base + AR71XX_RESET_REG_PCI_INT_ENABLE);
-}
-
-static struct irq_chip ar71xx_pci_irq_chip = {
-	.name		= "AR71XX PCI",
-	.irq_mask	= ar71xx_pci_irq_mask,
-	.irq_unmask	= ar71xx_pci_irq_unmask,
-	.irq_mask_ack	= ar71xx_pci_irq_mask,
-};
-
-static void ar71xx_pci_irq_init(struct ar71xx_pci_controller *apc)
-{
-	void __iomem *base = ath79_reset_base;
-	int i;
-
-	__raw_writel(0, base + AR71XX_RESET_REG_PCI_INT_ENABLE);
-	__raw_writel(0, base + AR71XX_RESET_REG_PCI_INT_STATUS);
-
-	BUILD_BUG_ON(ATH79_PCI_IRQ_COUNT < AR71XX_PCI_IRQ_COUNT);
-
-	apc->irq_base = ATH79_PCI_IRQ_BASE;
-	for (i = apc->irq_base;
-	     i < apc->irq_base + AR71XX_PCI_IRQ_COUNT; i++) {
-		irq_set_chip_and_handler(i, &ar71xx_pci_irq_chip,
-					 handle_level_irq);
-		irq_set_chip_data(i, apc);
-	}
-
-	irq_set_chained_handler_and_data(apc->irq, ar71xx_pci_irq_handler,
-					 apc);
-}
-
 static void ar71xx_pci_reset(void)
 {
 	ath79_device_reset_set(AR71XX_RESET_PCI_BUS | AR71XX_RESET_PCI_CORE);
@@ -325,10 +276,14 @@ static void ar71xx_pci_reset(void)
 	mdelay(100);
 }
 
+static const struct of_device_id ar71xx_pci_ids[] = {
+	{ .compatible = "qca,ar7100-pci" },
+	{},
+};
+
 static int ar71xx_pci_probe(struct platform_device *pdev)
 {
 	struct ar71xx_pci_controller *apc;
-	struct resource *res;
 	u32 t;
 
 	apc = devm_kzalloc(&pdev->dev, sizeof(struct ar71xx_pci_controller),
@@ -341,30 +296,6 @@ static int ar71xx_pci_probe(struct platform_device *pdev)
 	if (IS_ERR(apc->cfg_base))
 		return PTR_ERR(apc->cfg_base);
 
-	apc->irq = platform_get_irq(pdev, 0);
-	if (apc->irq < 0)
-		return -EINVAL;
-
-	res = platform_get_resource_byname(pdev, IORESOURCE_IO, "io_base");
-	if (!res)
-		return -EINVAL;
-
-	apc->io_res.parent = res;
-	apc->io_res.name = "PCI IO space";
-	apc->io_res.start = res->start;
-	apc->io_res.end = res->end;
-	apc->io_res.flags = IORESOURCE_IO;
-
-	res = platform_get_resource_byname(pdev, IORESOURCE_MEM, "mem_base");
-	if (!res)
-		return -EINVAL;
-
-	apc->mem_res.parent = res;
-	apc->mem_res.name = "PCI memory space";
-	apc->mem_res.start = res->start;
-	apc->mem_res.end = res->end;
-	apc->mem_res.flags = IORESOURCE_MEM;
-
 	ar71xx_pci_reset();
 
 	/* setup COMMAND register */
@@ -375,13 +306,16 @@ static int ar71xx_pci_probe(struct platform_device *pdev)
 	/* clear bus errors */
 	ar71xx_pci_check_error(apc, 1);
 
-	ar71xx_pci_irq_init(apc);
-
+	apc->np = pdev->dev.of_node;
 	apc->pci_ctrl.pci_ops = &ar71xx_pci_ops;
 	apc->pci_ctrl.mem_resource = &apc->mem_res;
 	apc->pci_ctrl.io_resource = &apc->io_res;
+	pci_load_of_ranges(&apc->pci_ctrl, pdev->dev.of_node);
 
 	register_pci_controller(&apc->pci_ctrl);
+
+	__ath79_pci_swizzle_b = ar71xx_pci_swizzle_b;
+	__ath79_pci_swizzle_w = ar71xx_pci_swizzle_w;
 
 	return 0;
 }
@@ -390,6 +324,7 @@ static struct platform_driver ar71xx_pci_driver = {
 	.probe = ar71xx_pci_probe,
 	.driver = {
 		.name = "ar71xx-pci",
+		.of_match_table = ar71xx_pci_ids,
 	},
 };
 

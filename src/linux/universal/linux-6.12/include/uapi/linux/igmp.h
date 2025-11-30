@@ -33,7 +33,7 @@ struct igmphdr {
 	__u8 code;		/* For newer IGMP */
 	__sum16 csum;
 	__be32 group;
-};
+} MIPS_ENABLED(__attribute__((packed, aligned(2))));
 
 /* V3 group record types [grec_type] */
 #define IGMPV3_MODE_IS_INCLUDE		1
@@ -49,7 +49,7 @@ struct igmpv3_grec {
 	__be16	grec_nsrcs;
 	__be32	grec_mca;
 	__be32	grec_src[];
-};
+} MIPS_ENABLED(__attribute__((packed, aligned(2))));
 
 struct igmpv3_report {
 	__u8 type;
@@ -58,7 +58,7 @@ struct igmpv3_report {
 	__be16 resv2;
 	__be16 ngrec;
 	struct igmpv3_grec grec[];
-};
+} MIPS_ENABLED(__attribute__((packed, aligned(2))));
 
 struct igmpv3_query {
 	__u8 type;
@@ -79,7 +79,7 @@ struct igmpv3_query {
 	__u8 qqic;
 	__be16 nsrcs;
 	__be32 srcs[];
-};
+} MIPS_ENABLED(__attribute__((packed, aligned(2))));
 
 #define IGMP_HOST_MEMBERSHIP_QUERY	0x11	/* From RFC1112 */
 #define IGMP_HOST_MEMBERSHIP_REPORT	0x12	/* Ditto */
