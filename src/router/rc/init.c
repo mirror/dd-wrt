@@ -56,20 +56,14 @@ int isregistered_real(void);
 #define SHELL "/bin/login"
 #define _PATH_CONSOLE "/dev/console"
 
-#define start_service(a) system("/sbin/startservice " a)
-#define start_service_force(a) system("/sbin/startservice " a " -f")
-#define start_service_f(a) systen("/sbin/startservice_f " a)
-#define start_service_force_f(a) system("/sbin/startservice_f " a " -f")
+#define start_service(a) system("/sbin/service " a " start")
+#define start_service_force(a) system("/sbin/service " a " start -f")
 #define start_services() system("/sbin/startservices")
-#define stop_service(a) system("/sbin/stopservice " a)
-#define stop_service_force(a) system("/sbin/stopservice " a " -f")
+#define stop_service(a) system("/sbin/service " a "stop")
+#define stop_service_force(a) system("/sbin/service " a " stop -f")
 #define stop_running(a) system("/sbin/stop_running")
-#define stop_service_f(a) system("/sbin/stopservice_f " a)
-#define stop_service_force_f(a) system("/sbin/stopservice_f " a " -f")
 #define stop_services() system("/sbin/stopservices")
 #define service_shutdown() system("/sbin/service shutdown")
-#define restart(a) system("/sbin/restart" a)
-#define restart_f(a) system("/sbin/restart_f " a)
 #define start_single_service() system("/sbin/start_single_service")
 
 static void set_term(int fd)
