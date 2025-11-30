@@ -11,6 +11,7 @@
 #include <linux/ethtool_netlink.h>
 #include <linux/of.h>
 #include <linux/phy.h>
+#include <linux/pm_wakeirq.h>
 #include <linux/netdevice.h>
 #include <linux/module.h>
 #include <linux/delay.h>
@@ -32,6 +33,7 @@
 #define RTL821x_INER				0x12
 #define RTL8211B_INER_INIT			0x6400
 #define RTL8211E_INER_LINK_STATUS		BIT(10)
+#define RTL8211F_INER_PME			BIT(7)
 #define RTL8211F_INER_LINK_STATUS		BIT(4)
 
 #define RTL821x_INSR				0x13
@@ -88,6 +90,14 @@
 #define RTL8211F_LEDCR_MASK			GENMASK(4, 0)
 #define RTL8211F_LEDCR_SHIFT			5
 
+/* RTL8211F(D)(I)-VD-CG CLKOUT configuration is specified via magic values
+ * to undocumented register pages. The names here do not reflect the datasheet.
+ * Unlike other PHY models, CLKOUT configuration does not go through PHYCR2.
+ */
+#define RTL8211FVD_CLKOUT_PAGE			0xd05
+#define RTL8211FVD_CLKOUT_REG			0x11
+#define RTL8211FVD_CLKOUT_EN			BIT(8)
+
 /* RTL8211F RGMII configuration */
 #define RTL8211F_RGMII_PAGE			0xd08
 
@@ -97,17 +107,13 @@
 #define RTL8211F_RXCR				0x15
 #define RTL8211F_RX_DELAY			BIT(3)
 
-/* RTL8211F WOL interrupt configuration */
-#define RTL8211F_INTBCR_PAGE			0xd40
-#define RTL8211F_INTBCR				0x16
-#define RTL8211F_INTBCR_INTB_PMEB		BIT(5)
-
 /* RTL8211F WOL settings */
-#define RTL8211F_WOL_SETTINGS_PAGE		0xd8a
+#define RTL8211F_WOL_PAGE		0xd8a
 #define RTL8211F_WOL_SETTINGS_EVENTS		16
 #define RTL8211F_WOL_EVENT_MAGIC		BIT(12)
-#define RTL8211F_WOL_SETTINGS_STATUS		17
-#define RTL8211F_WOL_STATUS_RESET		(BIT(15) | 0x1fff)
+#define RTL8211F_WOL_RST_RMSQ		17
+#define RTL8211F_WOL_RG_RSTB			BIT(15)
+#define RTL8211F_WOL_RMSQ			0x1fff
 
 /* RTL8211F Unique phyiscal and multicast address (WOL) */
 #define RTL8211F_PHYSICAL_ADDR_PAGE		0xd8c
@@ -199,11 +205,11 @@ MODULE_AUTHOR("Johnson Leung");
 MODULE_LICENSE("GPL");
 
 struct rtl821x_priv {
-	u16 phycr1;
-	u16 phycr2;
-	bool has_phycr2;
+	bool enable_aldps;
+	bool disable_clk_out;
 	struct clk *clk;
-	u32 saved_wolopts;
+	/* rtl8211f */
+	u16 iner;
 };
 
 static int rtl821x_read_page(struct phy_device *phydev)
@@ -250,8 +256,6 @@ static int rtl821x_probe(struct phy_device *phydev)
 {
 	struct device *dev = &phydev->mdio.dev;
 	struct rtl821x_priv *priv;
-	u32 phy_id = phydev->drv->phy_id;
-	int ret;
 
 	priv = devm_kzalloc(dev, sizeof(*priv), GFP_KERNEL);
 	if (!priv)
@@ -262,28 +266,42 @@ static int rtl821x_probe(struct phy_device *phydev)
 		return dev_err_probe(dev, PTR_ERR(priv->clk),
 				     "failed to get phy clock\n");
 
-	ret = phy_read_paged(phydev, RTL8211F_PHYCR_PAGE, RTL8211F_PHYCR1);
-	if (ret < 0)
-		return ret;
-
-	priv->phycr1 = ret & (RTL8211F_ALDPS_PLL_OFF | RTL8211F_ALDPS_ENABLE | RTL8211F_ALDPS_XTAL_OFF);
-	if (of_property_read_bool(dev->of_node, "realtek,aldps-enable"))
-		priv->phycr1 |= RTL8211F_ALDPS_PLL_OFF | RTL8211F_ALDPS_ENABLE | RTL8211F_ALDPS_XTAL_OFF;
-
-	priv->has_phycr2 = !(phy_id == RTL_8211FVD_PHYID);
-	if (priv->has_phycr2) {
-		ret = phy_read_paged(phydev, RTL8211F_PHYCR_PAGE, RTL8211F_PHYCR2);
-		if (ret < 0)
-			return ret;
-
-		priv->phycr2 = ret & RTL8211F_CLKOUT_EN;
-		if (of_property_read_bool(dev->of_node, "realtek,clkout-disable"))
-			priv->phycr2 &= ~RTL8211F_CLKOUT_EN;
-	}
+	priv->enable_aldps = of_property_read_bool(dev->of_node,
+						   "realtek,aldps-enable");
+	priv->disable_clk_out = of_property_read_bool(dev->of_node,
+						      "realtek,clkout-disable");
 
 	phydev->priv = priv;
 
 	return 0;
+}
+
+static int rtl8211f_probe(struct phy_device *phydev)
+{
+	struct device *dev = &phydev->mdio.dev;
+	int ret;
+
+	ret = rtl821x_probe(phydev);
+	if (ret < 0)
+		return ret;
+
+	/* Disable all PME events */
+	ret = phy_write_paged(phydev, RTL8211F_WOL_PAGE,
+			      RTL8211F_WOL_SETTINGS_EVENTS, 0);
+	if (ret < 0)
+		return ret;
+
+	/* Mark this PHY as wakeup capable and register the interrupt as a
+	 * wakeup IRQ if the PHY is marked as a wakeup source in firmware,
+	 * and the interrupt is valid.
+	 */
+	if (device_property_read_bool(dev, "wakeup-source") &&
+	    phy_interrupt_is_valid(phydev)) {
+		device_set_wakeup_capable(dev, true);
+		devm_pm_set_wake_irq(dev, phydev->irq);
+	}
+
+	return ret;
 }
 
 static int rtl8201_ack_interrupt(struct phy_device *phydev)
@@ -383,6 +401,7 @@ static int rtl8211e_config_intr(struct phy_device *phydev)
 
 static int rtl8211f_config_intr(struct phy_device *phydev)
 {
+	struct rtl821x_priv *priv = phydev->priv;
 	u16 val;
 	int err;
 
@@ -393,8 +412,10 @@ static int rtl8211f_config_intr(struct phy_device *phydev)
 
 		val = RTL8211F_INER_LINK_STATUS;
 		err = phy_write_paged(phydev, 0xa42, RTL821x_INER, val);
+		if (err == 0)
+			priv->iner = val;
 	} else {
-		val = 0;
+		priv->iner = val = 0;
 		err = phy_write_paged(phydev, 0xa42, RTL821x_INER, val);
 		if (err)
 			return err;
@@ -457,21 +478,34 @@ static irqreturn_t rtl8211f_handle_interrupt(struct phy_device *phydev)
 		return IRQ_NONE;
 	}
 
-	if (!(irq_status & RTL8211F_INER_LINK_STATUS))
-		return IRQ_NONE;
+	if (irq_status & RTL8211F_INER_LINK_STATUS) {
+		phy_trigger_machine(phydev);
+		return IRQ_HANDLED;
+	}
 
-	phy_trigger_machine(phydev);
+	if (irq_status & RTL8211F_INER_PME) {
+		pm_wakeup_event(&phydev->mdio.dev, 0);
+		return IRQ_HANDLED;
+	}
 
-	return IRQ_HANDLED;
+	return IRQ_NONE;
 }
 
 static void rtl8211f_get_wol(struct phy_device *dev, struct ethtool_wolinfo *wol)
 {
 	int wol_events;
 
+	/* If the PHY is not capable of waking the system, then WoL can not
+	 * be supported.
+	 */
+	if (!device_can_wakeup(&dev->mdio.dev)) {
+		wol->supported = 0;
+		return;
+	}
+
 	wol->supported = WAKE_MAGIC;
 
-	wol_events = phy_read_paged(dev, RTL8211F_WOL_SETTINGS_PAGE, RTL8211F_WOL_SETTINGS_EVENTS);
+	wol_events = phy_read_paged(dev, RTL8211F_WOL_PAGE, RTL8211F_WOL_SETTINGS_EVENTS);
 	if (wol_events < 0)
 		return;
 
@@ -484,6 +518,9 @@ static int rtl8211f_set_wol(struct phy_device *dev, struct ethtool_wolinfo *wol)
 	const u8 *mac_addr = dev->attached_dev->dev_addr;
 	int oldpage;
 
+	if (!device_can_wakeup(&dev->mdio.dev))
+		return -EOPNOTSUPP;
+
 	oldpage = phy_save_page(dev);
 	if (oldpage < 0)
 		goto err;
@@ -495,24 +532,22 @@ static int rtl8211f_set_wol(struct phy_device *dev, struct ethtool_wolinfo *wol)
 		__phy_write(dev, RTL8211F_PHYSICAL_ADDR_WORD1, mac_addr[3] << 8 | (mac_addr[2]));
 		__phy_write(dev, RTL8211F_PHYSICAL_ADDR_WORD2, mac_addr[5] << 8 | (mac_addr[4]));
 
-		/* Enable magic packet matching and reset WOL status */
-		rtl821x_write_page(dev, RTL8211F_WOL_SETTINGS_PAGE);
+		/* Enable magic packet matching */
+		rtl821x_write_page(dev, RTL8211F_WOL_PAGE);
 		__phy_write(dev, RTL8211F_WOL_SETTINGS_EVENTS, RTL8211F_WOL_EVENT_MAGIC);
-		__phy_write(dev, RTL8211F_WOL_SETTINGS_STATUS, RTL8211F_WOL_STATUS_RESET);
-
-		/* Enable the WOL interrupt */
-		rtl821x_write_page(dev, RTL8211F_INTBCR_PAGE);
-		__phy_set_bits(dev, RTL8211F_INTBCR, RTL8211F_INTBCR_INTB_PMEB);
+		/* Set the maximum packet size, and assert WoL reset */
+		__phy_write(dev, RTL8211F_WOL_RST_RMSQ, RTL8211F_WOL_RMSQ);
 	} else {
-		/* Disable the WOL interrupt */
-		rtl821x_write_page(dev, RTL8211F_INTBCR_PAGE);
-		__phy_clear_bits(dev, RTL8211F_INTBCR, RTL8211F_INTBCR_INTB_PMEB);
-
-		/* Disable magic packet matching and reset WOL status */
-		rtl821x_write_page(dev, RTL8211F_WOL_SETTINGS_PAGE);
+		/* Disable magic packet matching */
+		rtl821x_write_page(dev, RTL8211F_WOL_PAGE);
 		__phy_write(dev, RTL8211F_WOL_SETTINGS_EVENTS, 0);
-		__phy_write(dev, RTL8211F_WOL_SETTINGS_STATUS, RTL8211F_WOL_STATUS_RESET);
+
+		/* Place WoL in reset */
+		__phy_clear_bits(dev, RTL8211F_WOL_RST_RMSQ,
+				 RTL8211F_WOL_RG_RSTB);
 	}
+
+	device_set_wakeup_enable(&dev->mdio.dev, !!(wol->wolopts & WAKE_MAGIC));
 
 err:
 	return phy_restore_page(dev, oldpage, 0);
@@ -547,21 +582,10 @@ static int rtl8211c_config_init(struct phy_device *phydev)
 			    CTL1000_ENABLE_MASTER | CTL1000_AS_MASTER);
 }
 
-static int rtl8211f_config_init(struct phy_device *phydev)
+static int rtl8211f_config_rgmii_delay(struct phy_device *phydev)
 {
-	struct rtl821x_priv *priv = phydev->priv;
-	struct device *dev = &phydev->mdio.dev;
 	u16 val_txdly, val_rxdly;
 	int ret;
-
-	ret = phy_modify_paged_changed(phydev, RTL8211F_PHYCR_PAGE, RTL8211F_PHYCR1,
-				       RTL8211F_ALDPS_PLL_OFF | RTL8211F_ALDPS_ENABLE | RTL8211F_ALDPS_XTAL_OFF,
-				       priv->phycr1);
-	if (ret < 0) {
-		dev_err(dev, "aldps mode  configuration failed: %pe\n",
-			ERR_PTR(ret));
-		return ret;
-	}
 
 	switch (phydev->interface) {
 	case PHY_INTERFACE_MODE_RGMII:
@@ -592,53 +616,118 @@ static int rtl8211f_config_init(struct phy_device *phydev)
 				       RTL8211F_TXCR, RTL8211F_TX_DELAY,
 				       val_txdly);
 	if (ret < 0) {
-		dev_err(dev, "Failed to update the TX delay register\n");
+		phydev_err(phydev, "Failed to update the TX delay register: %pe\n",
+			   ERR_PTR(ret));
 		return ret;
 	} else if (ret) {
-		dev_dbg(dev,
-			"%s 2ns TX delay (and changing the value from pin-strapping RXD1 or the bootloader)\n",
-			str_enable_disable(val_txdly));
+		phydev_dbg(phydev,
+			   "%s 2ns TX delay (and changing the value from pin-strapping RXD1 or the bootloader)\n",
+			   str_enable_disable(val_txdly));
 	} else {
-		dev_dbg(dev,
-			"2ns TX delay was already %s (by pin-strapping RXD1 or bootloader configuration)\n",
-			str_enabled_disabled(val_txdly));
+		phydev_dbg(phydev,
+			   "2ns TX delay was already %s (by pin-strapping RXD1 or bootloader configuration)\n",
+			   str_enabled_disabled(val_txdly));
 	}
 
 	ret = phy_modify_paged_changed(phydev, RTL8211F_RGMII_PAGE,
 				       RTL8211F_RXCR, RTL8211F_RX_DELAY,
 				       val_rxdly);
 	if (ret < 0) {
-		dev_err(dev, "Failed to update the RX delay register\n");
+		phydev_err(phydev, "Failed to update the RX delay register: %pe\n",
+			   ERR_PTR(ret));
 		return ret;
 	} else if (ret) {
-		dev_dbg(dev,
-			"%s 2ns RX delay (and changing the value from pin-strapping RXD0 or the bootloader)\n",
-			str_enable_disable(val_rxdly));
+		phydev_dbg(phydev,
+			   "%s 2ns RX delay (and changing the value from pin-strapping RXD0 or the bootloader)\n",
+			   str_enable_disable(val_rxdly));
 	} else {
-		dev_dbg(dev,
-			"2ns RX delay was already %s (by pin-strapping RXD0 or bootloader configuration)\n",
-			str_enabled_disabled(val_rxdly));
+		phydev_dbg(phydev,
+			   "2ns RX delay was already %s (by pin-strapping RXD0 or bootloader configuration)\n",
+			   str_enabled_disabled(val_rxdly));
 	}
 
-	if (!priv->has_phycr2)
+	return 0;
+}
+
+static int rtl8211f_config_clk_out(struct phy_device *phydev)
+{
+	struct rtl821x_priv *priv = phydev->priv;
+	int ret;
+
+	/* The value is preserved if the device tree property is absent */
+	if (!priv->disable_clk_out)
 		return 0;
 
-	/* Disable PHY-mode EEE so LPI is passed to the MAC */
-	ret = phy_modify_paged(phydev, RTL8211F_PHYCR_PAGE, RTL8211F_PHYCR2,
-			       RTL8211F_PHYCR2_PHY_EEE_ENABLE, 0);
+	if (phydev->drv->phy_id == RTL_8211FVD_PHYID)
+		ret = phy_modify_paged(phydev, RTL8211FVD_CLKOUT_PAGE,
+				       RTL8211FVD_CLKOUT_REG,
+				       RTL8211FVD_CLKOUT_EN, 0);
+	else
+		ret = phy_modify_paged(phydev, RTL8211F_PHYCR_PAGE,
+				       RTL8211F_PHYCR2, RTL8211F_CLKOUT_EN, 0);
 	if (ret)
 		return ret;
 
-	ret = phy_modify_paged(phydev, RTL8211F_PHYCR_PAGE,
-			       RTL8211F_PHYCR2, RTL8211F_CLKOUT_EN,
-			       priv->phycr2);
-	if (ret < 0) {
+	return genphy_soft_reset(phydev);
+}
+
+/* Advance Link Down Power Saving (ALDPS) mode changes crystal/clock behaviour,
+ * which causes the RXC clock signal to stop for tens to hundreds of
+ * milliseconds.
+ *
+ * Some MACs need the RXC clock to support their internal RX logic, so ALDPS is
+ * only enabled based on an opt-in device tree property.
+ */
+static int rtl8211f_config_aldps(struct phy_device *phydev)
+{
+	struct rtl821x_priv *priv = phydev->priv;
+	u16 mask = RTL8211F_ALDPS_PLL_OFF |
+		   RTL8211F_ALDPS_ENABLE |
+		   RTL8211F_ALDPS_XTAL_OFF;
+
+	/* The value is preserved if the device tree property is absent */
+	if (!priv->enable_aldps)
+		return 0;
+
+	return phy_modify_paged(phydev, RTL8211F_PHYCR_PAGE, RTL8211F_PHYCR1,
+				mask, mask);
+}
+
+static int rtl8211f_config_phy_eee(struct phy_device *phydev)
+{
+	/* RTL8211FVD has no PHYCR2 register */
+	if (phydev->drv->phy_id == RTL_8211FVD_PHYID)
+		return 0;
+
+	/* Disable PHY-mode EEE so LPI is passed to the MAC */
+	return phy_modify_paged(phydev, RTL8211F_PHYCR_PAGE, RTL8211F_PHYCR2,
+				RTL8211F_PHYCR2_PHY_EEE_ENABLE, 0);
+}
+
+static int rtl8211f_config_init(struct phy_device *phydev)
+{
+	struct device *dev = &phydev->mdio.dev;
+	int ret;
+
+	ret = rtl8211f_config_aldps(phydev);
+	if (ret) {
+		dev_err(dev, "aldps mode configuration failed: %pe\n",
+			ERR_PTR(ret));
+		return ret;
+	}
+
+	ret = rtl8211f_config_rgmii_delay(phydev);
+	if (ret)
+		return ret;
+
+	ret = rtl8211f_config_clk_out(phydev);
+	if (ret) {
 		dev_err(dev, "clkout configuration failed: %pe\n",
 			ERR_PTR(ret));
 		return ret;
 	}
 
-	return genphy_soft_reset(phydev);
+	return rtl8211f_config_phy_eee(phydev);
 }
 
 static int rtl821x_suspend(struct phy_device *phydev)
@@ -658,6 +747,52 @@ static int rtl821x_suspend(struct phy_device *phydev)
 	return ret;
 }
 
+static int rtl8211f_suspend(struct phy_device *phydev)
+{
+	u16 wol_rst;
+	int ret;
+
+	ret = rtl821x_suspend(phydev);
+	if (ret < 0)
+		return ret;
+
+	/* If a PME event is enabled, then configure the interrupt for
+	 * PME events only, disabling link interrupt. We avoid switching
+	 * to PMEB mode as we don't have a status bit for that.
+	 */
+	if (device_may_wakeup(&phydev->mdio.dev)) {
+		ret = phy_write_paged(phydev, 0xa42, RTL821x_INER,
+				      RTL8211F_INER_PME);
+		if (ret < 0)
+			goto err;
+
+		/* Read the INSR to clear any pending interrupt */
+		phy_read_paged(phydev, RTL8211F_INSR_PAGE, RTL8211F_INSR);
+
+		/* Reset the WoL to ensure that an event is picked up.
+		 * Unless we do this, even if we receive another packet,
+		 * we may not have a PME interrupt raised.
+		 */
+		ret = phy_read_paged(phydev, RTL8211F_WOL_PAGE,
+				     RTL8211F_WOL_RST_RMSQ);
+		if (ret < 0)
+			goto err;
+
+		wol_rst = ret & ~RTL8211F_WOL_RG_RSTB;
+		ret = phy_write_paged(phydev, RTL8211F_WOL_PAGE,
+				      RTL8211F_WOL_RST_RMSQ, wol_rst);
+		if (ret < 0)
+			goto err;
+
+		wol_rst |= RTL8211F_WOL_RG_RSTB;
+		ret = phy_write_paged(phydev, RTL8211F_WOL_PAGE,
+				      RTL8211F_WOL_RST_RMSQ, wol_rst);
+	}
+
+err:
+	return ret;
+}
+
 static int rtl821x_resume(struct phy_device *phydev)
 {
 	struct rtl821x_priv *priv = phydev->priv;
@@ -673,6 +808,24 @@ static int rtl821x_resume(struct phy_device *phydev)
 	msleep(20);
 
 	return 0;
+}
+
+static int rtl8211f_resume(struct phy_device *phydev)
+{
+	struct rtl821x_priv *priv = phydev->priv;
+	int ret;
+
+	ret = rtl821x_resume(phydev);
+	if (ret < 0)
+		return ret;
+
+	/* If the device was programmed for a PME event, restore the interrupt
+	 * enable so phylib can receive link state interrupts.
+	 */
+	if (device_may_wakeup(&phydev->mdio.dev))
+		ret = phy_write_paged(phydev, 0xa42, RTL821x_INER, priv->iner);
+
+	return ret;
 }
 
 static int rtl8211x_led_hw_is_supported(struct phy_device *phydev, u8 index,
@@ -1985,15 +2138,15 @@ static struct phy_driver realtek_drvs[] = {
 	}, {
 		PHY_ID_MATCH_EXACT(0x001cc916),
 		.name		= "RTL8211F Gigabit Ethernet",
-		.probe		= rtl821x_probe,
+		.probe		= rtl8211f_probe,
 		.config_init	= &rtl8211f_config_init,
 		.read_status	= rtlgen_read_status,
 		.config_intr	= &rtl8211f_config_intr,
 		.handle_interrupt = rtl8211f_handle_interrupt,
 		.set_wol	= rtl8211f_set_wol,
 		.get_wol	= rtl8211f_get_wol,
-		.suspend	= rtl821x_suspend,
-		.resume		= rtl821x_resume,
+		.suspend	= rtl8211f_suspend,
+		.resume		= rtl8211f_resume,
 		.read_page	= rtl821x_read_page,
 		.write_page	= rtl821x_write_page,
 		.flags		= PHY_ALWAYS_CALL_SUSPEND,
