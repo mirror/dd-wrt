@@ -98,7 +98,7 @@ static void sync_daemons(void)
 		service[i].restarted = 0;
 	}
 	for (i = 0; i < sizeof(service) / sizeof(struct syncservice); i++) {
-		if (!service[i].restarted && service[i].nvram == NULL || nvram_matchi(service[i].nvram, 1)) {
+		if (!service[i].restarted && (service[i].nvram == NULL || nvram_matchi(service[i].nvram, 1))) {
 			service[i].restarted = 1;
 			dd_logdebug("ntp", "Restarting %s (time sync change)\n", service[i].service);
 			eval("service", service[i].service, "restart", "cold");
