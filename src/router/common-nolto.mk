@@ -258,7 +258,7 @@ else
 	-cp /tmp/$(ARCHITECTURE)/lib/* $(TARGETDIR)/lib
 endif
 endif
-	../../tools/optimize_lib.sh libutils/ libqos.so libqos.a libqos_min.so $(TARGETDIR) $(TARGETDIR)/usr/lib/libqos.so  $(TOP)/libutils/libqos_ld
+#	../../tools/optimize_lib.sh libutils/ libqos.so libqos.a libqos_min.so $(TARGETDIR) $(TARGETDIR)/usr/lib/libqos.so  $(TOP)/libutils/libqos_ld
 	../../tools/optimize_lib.sh libutils/ libutils.so libutils.a libutils_min.so $(TARGETDIR) $(TARGETDIR)/usr/lib/libutils.so  $(TOP)/libutils/libutils_ld
 	../../tools/optimize_lib.sh libutils/ libwireless.so libwireless.a libwireless_min.so $(TARGETDIR) $(TARGETDIR)/usr/lib/libwireless.so $(TOP)/libutils/libwireless_ld
 	../../tools/optimize_lib.sh libutils/ libshutils.so libshutils.a libshutils_min.so $(TARGETDIR) $(TARGETDIR)/usr/lib/libshutils.so $(TOP)/libutils/libshutils_ld
