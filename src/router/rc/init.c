@@ -474,8 +474,10 @@ int main(int argc, char **argv)
 	writeproc("/proc/sys/kernel/sysrq", "1");
 	start_service("check_bootfails");
 	FILE *out = fopen("/tmp/.nvram_done", "wb");
-	putc(1, out);
-	fclose(out);
+	if (out) {
+		putc(1, out);
+		fclose(out);
+	}
 	dd_loginfo("init", "starting Architecture code for " ARCHITECTURE "");
 	start_service("sysinit");
 #ifndef HAVE_MICRO
