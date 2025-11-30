@@ -4923,6 +4923,7 @@ CONFIG_LEDS_GPIO=m
 # RGB LED drivers
 #
 # CONFIG_LEDS_SMARTRG_LED is not set
+# CONFIG_LEDS_RESET is not set
 
 #
 # LED Triggers

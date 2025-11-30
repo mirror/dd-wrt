@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/arm 6.12.59 Kernel Configuration
+# Linux/arm 6.12.60-rc2 Kernel Configuration
 #
 CONFIG_CC_VERSION_TEXT="arm-openwrt-linux-gcc (OpenWrt GCC 15.2.0 r31910-a2a78c04f8) 15.2.0"
 CONFIG_CC_IS_GCC=y
@@ -3604,6 +3604,7 @@ CONFIG_LEDS_GPIO=m
 # CONFIG_LEDS_KTD202X is not set
 # CONFIG_LEDS_NCP5623 is not set
 # CONFIG_LEDS_SMARTRG_LED is not set
+# CONFIG_LEDS_RESET is not set
 
 #
 # LED Triggers

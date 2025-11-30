@@ -2618,6 +2618,7 @@ CONFIG_LEDS_TLC591XX=y
 # CONFIG_LEDS_KTD202X is not set
 # CONFIG_LEDS_NCP5623 is not set
 # CONFIG_LEDS_SMARTRG_LED is not set
+# CONFIG_LEDS_RESET is not set
 
 #
 # LED Triggers
