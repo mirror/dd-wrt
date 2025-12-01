@@ -679,7 +679,7 @@ const struct iomap_ops ntfs_dio_iomap_ops = {
 	.iomap_end		= ntfs_write_iomap_end,
 };
 
-static ssize_t ntfs_map_blocks(struct iomap_writepage_ctx *wpc,
+static int ntfs_map_blocks(struct iomap_writepage_ctx *wpc,
 		struct inode *inode, loff_t offset, unsigned int len)
 {
 	if (offset < wpc->iomap.offset ||
