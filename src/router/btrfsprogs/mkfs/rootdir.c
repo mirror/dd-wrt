@@ -704,6 +704,7 @@ struct source_descriptor {
 	char *wrkmem;
 };
 
+#ifdef FICLONERANGE
 static int do_reflink_write(struct btrfs_fs_info *info,
 			    const struct source_descriptor *source, u64 addr,
 			    u64 file_pos, u64 bytes, const void *buf)
@@ -779,6 +780,7 @@ static int do_reflink_write(struct btrfs_fs_info *info,
 
 	return 0;
 }
+#endif
 
 static int add_file_item_extent(struct btrfs_trans_handle *trans,
 				struct btrfs_root *root,
@@ -930,10 +932,13 @@ static int add_file_item_extent(struct btrfs_trans_handle *trans,
 
 	first_block = key.objectid;
 
+#ifdef FICLONERANGE	
 	if (g_do_reflink) {
 		ret = do_reflink_write(root->fs_info, source, first_block, file_pos,
 				       to_read, write_buf);
-	} else {
+	} else
+#endif 
+	{
 		ret = write_data_to_disk(root->fs_info, write_buf, first_block, to_write);
 	}
 
