@@ -409,7 +409,7 @@ repeat:;
 
 	if (ret != 0) { //give it another try
 		first = 0;
-again:;
+again2:;
 #ifdef HAVE_NTFS3G
 		if (!strcmp(fs, "ntfs")) {
 #ifdef HAVE_LEGACY_KERNEL
@@ -426,7 +426,7 @@ again:;
 			if (!first && ret) {
 				first = 1;
 				eval("ntfsfix", "-d", path);
-				goto again;
+				goto again2;
 			}
 		} else
 #endif
