@@ -1,7 +1,7 @@
 btrfsprogs-configure: lzo zstd zlib
 	cd btrfsprogs && ./autogen.sh
 	cd btrfsprogs && ./configure --host=$(ARCH)-linux \
-		CFLAGS="$(COPTS) $(MIPS16_OPT) $(THUMB) $(LTO) -I$(TOP)/btrfsprogs -I$(TOP)/$(ARCH)-uclibc/install/util-linux/usr/include -I$(TOP)/e2fsprogs/lib -D_GNU_SOURCE -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64 -D_GNU_SOURCE -I$(TOP)/zlib -I$(TOP)/lzo/include -DNEED_PRINTF -Drpl_malloc=malloc -Drpl_realloc=realloc -I$(TOP)/zstd/lib -I$(TOP)/libudev/src/libudev" \
+		CFLAGS="$(COPTS) $(MIPS16_OPT) $(THUMB) $(LTO) -I$(TOP)/kernel_headers/$(KERNELRELEASE)/include -I$(TOP)/btrfsprogs -I$(TOP)/$(ARCH)-uclibc/install/util-linux/usr/include -I$(TOP)/e2fsprogs/lib -D_GNU_SOURCE -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64 -D_GNU_SOURCE -I$(TOP)/zlib -I$(TOP)/lzo/include -DNEED_PRINTF -Drpl_malloc=malloc -Drpl_realloc=realloc -I$(TOP)/zstd/lib -I$(TOP)/libudev/src/libudev" \
 		LDFLAGS="$(LTO) $(LDLTO) -L$(TOP)/zlib -L$(TOP)/$(ARCH)-uclibc/install/util-linux/usr/lib  -L$(TOP)/e2fsprogs/lib -L$(TOP)/lzo/src/.libs -lz -L$(TOP)/libudev/src/libudev/.libs" \
 		CC="$(CC) $(COPTS)" \
 		AR_FLAGS="cru $(LTOPLUGIN)" \
