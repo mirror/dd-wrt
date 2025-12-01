@@ -263,17 +263,6 @@ static int usb_process_path(char *path, char *fs, char *target)
 		sprintf(mount_point, "/mnt/%s", target);
 	else
 		sprintf(mount_point, "/%s", nvram_default_get("usb_mntpoint", "mnt"));
-#ifdef HAVE_NTFS3G
-	if (!strcmp(fs, "ntfs")) {
-#ifdef HAVE_LEGACY_KERNEL
-		insmod("fuse");
-#else
-		insmod("antfs");
-		insmod("ntfs3");
-		insmod("ntfsplus");
-#endif
-	}
-#endif
 	if (!strcmp(fs, "ext2")) {
 		insmod("mbcache ext2");
 	}
@@ -310,14 +299,26 @@ static int usb_process_path(char *path, char *fs, char *target)
 #ifdef HAVE_NTFS3G
 	if (!strcmp(fs, "ntfs")) {
 #ifdef HAVE_LEGACY_KERNEL
+		insmod("fuse");
 		ret = eval("ntfs-3g", "-o", "compression,direct_io,big_writes", path, mount_point);
+		if (ret)
+			rmmod("fuse");
 #else
 #ifdef HAVE_NTFS3
+		insmod("ntfsplus");
 		ret = eval("/bin/mount", "-t", "ntfsplus", "-o", "nls=utf8,noatime", path, mount_point);
-		if (ret)
+		if (ret) {
+			rmmod("ntfsplus");
+			insmod("ntfs3");
 			ret = eval("/bin/mount", "-t", "ntfs3", "-o", "nls=utf8,noatime", path, mount_point);
+			if (ret)
+				rmmod("ntfs3");
+		}
 #else
+		insmod("antfs");
 		ret = eval("/bin/mount", "-t", "antfs", "-o", "utf8", path, mount_point);
+		if (ret)
+			rmmod("antfs");
 #endif
 #endif
 	} else
@@ -331,18 +332,29 @@ static int usb_process_path(char *path, char *fs, char *target)
 #ifdef HAVE_NTFS3G
 		if (!strcmp(fs, "ntfs")) {
 #ifdef HAVE_LEGACY_KERNEL
-			ret = eval("ntfs-3g", "-o", "compression", path, mount_point);
+			insmod("fuse");
+			ret = eval("ntfs-3g", "-o", "compression,direct_io,big_writes", path, mount_point);
+			if (ret)
+				rmmod("fuse");
 #else
 #ifdef HAVE_NTFS3
+			insmod("ntfsplus");
 			ret = eval("/bin/mount", "-t", "ntfsplus", "-o", "nls=utf8,noatime", path, mount_point);
-			if (ret)
+			if (ret) {
+				rmmod("ntfsplus");
+				insmod("ntfs3");
 				ret = eval("/bin/mount", "-t", "ntfs3", "-o", "nls=utf8,noatime", path, mount_point);
+				if (ret)
+					rmmod("ntfs3");
+			}
 #else
+			insmod("antfs");
 			ret = eval("/bin/mount", "-t", "antfs", "-o", "utf8", path, mount_point);
+			if (ret)
+				rmmod("antfs");
 #endif
 #endif
 		} else
-#endif
 			ret = eval("/bin/mount", path, mount_point); //guess fs
 	}
 
