@@ -423,15 +423,18 @@ void create_openvpnserverrules(FILE *fp)
 			    "" EBTABLES " -t nat -I POSTROUTING -o $dev --pkttype-type multicast -j DROP\n");
 	if (nvram_matchi("openvpn_dhcpbl", 1) //block dhcp on bridged vpns
 	    && nvram_match("openvpn_tuntap", "tap") && nvram_matchi("openvpn_proxy", 0))
-		fprintf(fp,
-			"insmod ebtables\n"
-			"insmod ebt_ip\n"
-			"insmod ebtable_filter\n"
-			"insmod ebtable_nat\n"
-			"" EBTABLES " -t nat -D PREROUTING -i $dev -p ipv4 --ip-proto udp --ip-sport 67:68 --ip-dport 67:68 -j DROP\n"
-			"" EBTABLES " -t nat -D POSTROUTING -o $dev -p ipv4 --ip-proto udp --ip-sport 67:68 --ip-dport 67:68 -j DROP\n"
-			"" EBTABLES " -t nat -I PREROUTING -i $dev -p ipv4 --ip-proto udp --ip-sport 67:68 --ip-dport 67:68 -j DROP\n"
-			"" EBTABLES " -t nat -I POSTROUTING -o $dev -p ipv4 --ip-proto udp --ip-sport 67:68 --ip-dport 67:68 -j DROP\n");
+		fprintf(fp, "insmod ebtables\n"
+			    "insmod ebt_ip\n"
+			    "insmod ebtable_filter\n"
+			    "insmod ebtable_nat\n"
+			    "" EBTABLES
+			    " -t nat -D PREROUTING -i $dev -p ipv4 --ip-proto udp --ip-sport 67:68 --ip-dport 67:68 -j DROP\n"
+			    "" EBTABLES
+			    " -t nat -D POSTROUTING -o $dev -p ipv4 --ip-proto udp --ip-sport 67:68 --ip-dport 67:68 -j DROP\n"
+			    "" EBTABLES
+			    " -t nat -I PREROUTING -i $dev -p ipv4 --ip-proto udp --ip-sport 67:68 --ip-dport 67:68 -j DROP\n"
+			    "" EBTABLES
+			    " -t nat -I POSTROUTING -o $dev -p ipv4 --ip-proto udp --ip-sport 67:68 --ip-dport 67:68 -j DROP\n");
 	if (nvram_default_matchi("openvpn_fw", 1, 0)) {
 		fprintf(fp, "" IPTABLES " -I INPUT -i $dev -m state --state NEW -j DROP\n");
 		fprintf(fp, "" IPTABLES " -I FORWARD -i $dev -m state --state NEW -j DROP\n");
@@ -812,9 +815,10 @@ void start_openvpnserver(void)
 	if (nvram_matchi("openvpn_blockmulticast", 1) && nvram_match("openvpn_tuntap", "tap"))
 		fprintf(fp, "" EBTABLES " -t nat -D POSTROUTING -o $dev --pkttype-type multicast -j DROP\n");
 	if (nvram_matchi("openvpn_dhcpbl", 1) && nvram_match("openvpn_tuntap", "tap") && nvram_matchi("openvpn_proxy", 0))
-		fprintf(fp,
-			"" EBTABLES " -t nat -D PREROUTING -i $dev -p ipv4 --ip-proto udp --ip-sport 67:68 --ip-dport 67:68 -j DROP\n"
-			"" EBTABLES " -t nat -D POSTROUTING -o $dev -p ipv4 --ip-proto udp --ip-sport 67:68 --ip-dport 67:68 -j DROP\n");
+		fprintf(fp, "" EBTABLES
+			    " -t nat -D PREROUTING -i $dev -p ipv4 --ip-proto udp --ip-sport 67:68 --ip-dport 67:68 -j DROP\n"
+			    "" EBTABLES
+			    " -t nat -D POSTROUTING -o $dev -p ipv4 --ip-proto udp --ip-sport 67:68 --ip-dport 67:68 -j DROP\n");
 	if (nvram_default_matchi("openvpn_fw", 1, 0)) {
 		fprintf(fp, "" IPTABLES " -D INPUT -i $dev -m state --state NEW -j DROP\n");
 		fprintf(fp, "" IPTABLES " -D FORWARD -i $dev -m state --state NEW -j DROP\n");
@@ -885,8 +889,8 @@ void stop_openvpnserver(void)
 	if (stop_process("openvpnserver", "OpenVPN daemon (Server)")) {
 		//remove ebtables rules on shutdown done with route-down script
 		//system("/usr/sbin/ebtables -t nat -D POSTROUTING -o tap2 --pkttype-type multicast -j DROP");
-		eval("" EBTABLES "", "-t", "nat", "-D", "POSTROUTING", "-o", "tap2", "-p", "ipv4", "--ip-proto", "udp", "--ip-sport",
-		     "67:68", "--ip-dport", "67:68", "-j", "DROP");
+		eval("" EBTABLES "", "-t", "nat", "-D", "POSTROUTING", "-o", "tap2", "-p", "ipv4", "--ip-proto", "udp",
+		     "--ip-sport", "67:68", "--ip-dport", "67:68", "-j", "DROP");
 		eval("" EBTABLES "", "-t", "nat", "-D", "PREROUTING", "-i", "tap2", "-p", "ipv4", "--ip-proto", "udp", "--ip-sport",
 		     "67:68", "--ip-dport", "67:68", "-j", "DROP");
 		unlink("/tmp/openvpn/ccd/DEFAULT");

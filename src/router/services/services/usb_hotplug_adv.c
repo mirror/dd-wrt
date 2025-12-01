@@ -410,9 +410,9 @@ repeat:;
 
 	if (ret != 0) { //give it another try
 		first = 0;
+again2:;
 #ifdef HAVE_NTFS3G
 		if (!strcmp(fs, "ntfs")) {
-repeat2:;
 #ifdef HAVE_LEGACY_KERNEL
 			insmod("fuse");
 			ret = eval("ntfs-3g", "-o", "compression,direct_io,big_writes", path, mount_point);
@@ -439,301 +439,300 @@ repeat2:;
 			if (!first && ret) {
 				first = 1;
 				eval("ntfsfix", "-d", path);
-				goto repeat2;
+				goto again2;
 			}
-
 		} else
 #endif
-
-			if (!strcmp(fs, "swap")) {
-			sysprintf("echo \"<b>%s</b> mounted to <b>%s</b><hr>\"  >> /tmp/disk/%s", path, "swap", dev);
-		} else {
-			sysprintf("echo \"<b>%s</b> mounted to <b>%s</b><hr>\"  >> /tmp/disk/%s", path, mount_point, dev);
-			nvram_set("usb_reason", "blockdev_add");
-			nvram_set("usb_dev", mount_point);
-			eval("startservice", "run_rc_usb", "-f");
-		}
-		if (!ret)
-			run_on_mount(path);
+			ret = eval("/bin/mount", path, mount_point); //guess fs
 	}
 
-	void start_raid(void);
+	if (!strcmp(fs, "swap")) {
+		sysprintf("echo \"<b>%s</b> mounted to <b>%s</b><hr>\"  >> /tmp/disk/%s", path, "swap", dev);
+	} else {
+		sysprintf("echo \"<b>%s</b> mounted to <b>%s</b><hr>\"  >> /tmp/disk/%s", path, mount_point, dev);
+		nvram_set("usb_reason", "blockdev_add");
+		nvram_set("usb_dev", mount_point);
+		eval("startservice", "run_rc_usb", "-f");
+	}
+	if (!ret)
+		run_on_mount(path);
+}
+void start_raid(void);
 
-	/* 
+/* 
   *   Mount partition 
   */
-	static int usb_process_path(char *path, int host, char *part, char *devpath)
-	{
-		int ret = ENOENT;
-		FILE *fp = NULL;
-		char *fs;
-		char line[256];
-		char mount_point[32];
-		char uuid[48];
-		char dev_dir[128];
-		char sym_link[256];
-		char part_file[32];
-		int len = strlen(path);
-		int i;
-		int found = 0;
-		char *dev = &path[len - 4];
-		for (i = 0; i < len; i++) { // seek for last occurence
-			if (path[i] == '/')
-				dev = &path[i + 1];
-		}
+static int usb_process_path(char *path, int host, char *part, char *devpath)
+{
+	int ret = ENOENT;
+	FILE *fp = NULL;
+	char *fs;
+	char line[256];
+	char mount_point[32];
+	char uuid[48];
+	char dev_dir[128];
+	char sym_link[256];
+	char part_file[32];
+	int len = strlen(path);
+	int i;
+	int found = 0;
+	char *dev = &path[len - 4];
+	for (i = 0; i < len; i++) { // seek for last occurence
+		if (path[i] == '/')
+			dev = &path[i + 1];
+	}
 
-		if (host == -1) {
-			sprintf(part_file, "/tmp/disk/%s", dev);
-		} else {
-			sprintf(part_file, "/tmp/disk/disc%d-%s", host, part);
-		}
-		sysprintf("/usr/sbin/disktype %s > %s", path, &part_file);
+	if (host == -1) {
+		sprintf(part_file, "/tmp/disk/%s", dev);
+	} else {
+		sprintf(part_file, "/tmp/disk/disc%d-%s", host, part);
+	}
+	sysprintf("/usr/sbin/disktype %s > %s", path, &part_file);
 
-		/* determine fs */
-		fs = "";
-		if ((fp = fopen(part_file, "r"))) {
-			int linenr = 0;
-			while (fgets(line, sizeof(line), fp) != NULL) {
-				if (linenr++ == 5)
-					break;
-				if (strstr(line, "Linux swap")) {
-					fs = "swap";
-					ret = eval("/sbin/swapon", path);
-					sysprintf("echo \"<b>%s</b> mounted to <b>swap</b>\" >> %s", path, DUMPFILE);
+	/* determine fs */
+	fs = "";
+	if ((fp = fopen(part_file, "r"))) {
+		int linenr = 0;
+		while (fgets(line, sizeof(line), fp) != NULL) {
+			if (linenr++ == 5)
+				break;
+			if (strstr(line, "Linux swap")) {
+				fs = "swap";
+				ret = eval("/sbin/swapon", path);
+				sysprintf("echo \"<b>%s</b> mounted to <b>swap</b>\" >> %s", path, DUMPFILE);
+			}
+
+			if (strstr(line, "file system")) {
+				if (strstr(line, "FAT")) {
+					if (strstr(line, "exFAT")) {
+						fs = "exfat";
+						usb_load_modules(fs);
+					} else {
+						fs = "vfat";
+						usb_load_modules(fs);
+					}
+				} else if (strstr(line, "Ext2")) {
+					fs = "ext4";
+					usb_load_modules(fs);
+				} else if (strstr(line, "XFS")) {
+					fs = "xfs";
+					usb_load_modules(fs);
+				} else if (strstr(line, "APFS")) {
+					fs = "apfs";
+					usb_load_modules(fs);
+				} else if (strstr(line, "UDF")) {
+					fs = "udf";
+					usb_load_modules(fs);
+				} else if (strstr(line, "ISO9660")) {
+					fs = "iso9660";
+					usb_load_modules(fs);
+				} else if (strstr(line, "Ext3")) {
+					fs = "ext4";
+					usb_load_modules(fs);
+				} else if (strstr(line, "Ext4")) {
+					fs = "ext4";
+					usb_load_modules(fs);
+				} else if (strstr(line, "Btrfs")) {
+					fs = "btrfs";
+					usb_load_modules(fs);
+				} else if (strstr(line, "F2FS")) {
+					fs = "f2fs";
+					usb_load_modules(fs);
+				} else if (strstr(line, "HFS Plus")) {
+					fs = "hfsplus";
+					usb_load_modules(fs);
+				} else if (strstr(line, "HFS")) {
+					fs = "hfs";
+					usb_load_modules(fs);
 				}
-
-				if (strstr(line, "file system")) {
-					if (strstr(line, "FAT")) {
-						if (strstr(line, "exFAT")) {
-							fs = "exfat";
-							usb_load_modules(fs);
-						} else {
-							fs = "vfat";
-							usb_load_modules(fs);
-						}
-					} else if (strstr(line, "Ext2")) {
-						fs = "ext4";
-						usb_load_modules(fs);
-					} else if (strstr(line, "XFS")) {
-						fs = "xfs";
-						usb_load_modules(fs);
-					} else if (strstr(line, "APFS")) {
-						fs = "apfs";
-						usb_load_modules(fs);
-					} else if (strstr(line, "UDF")) {
-						fs = "udf";
-						usb_load_modules(fs);
-					} else if (strstr(line, "ISO9660")) {
-						fs = "iso9660";
-						usb_load_modules(fs);
-					} else if (strstr(line, "Ext3")) {
-						fs = "ext4";
-						usb_load_modules(fs);
-					} else if (strstr(line, "Ext4")) {
-						fs = "ext4";
-						usb_load_modules(fs);
-					} else if (strstr(line, "Btrfs")) {
-						fs = "btrfs";
-						usb_load_modules(fs);
-					} else if (strstr(line, "F2FS")) {
-						fs = "f2fs";
-						usb_load_modules(fs);
-					} else if (strstr(line, "HFS Plus")) {
-						fs = "hfsplus";
-						usb_load_modules(fs);
-					} else if (strstr(line, "HFS")) {
-						fs = "hfs";
-						usb_load_modules(fs);
-					}
 #ifdef HAVE_NTFS3G
-					else if (strstr(line, "NTFS")) {
-						fs = "ntfs";
-						usb_load_modules(fs);
-					}
+				else if (strstr(line, "NTFS")) {
+					fs = "ntfs";
+					usb_load_modules(fs);
+				}
 #endif
 #ifdef HAVE_RAID
-					else if (strstr(line, "ZFS")) {
-						start_raid();
-					} else if (strstr(line, "MD Raid")) {
-						start_raid();
-					}
+				else if (strstr(line, "ZFS")) {
+					start_raid();
+				} else if (strstr(line, "MD Raid")) {
+					start_raid();
+				}
 #endif
-				}
-			}
-			fclose(fp);
-		}
-
-		if (!strcmp(fs, "")) {
-			sysprintf("echo \"<b>%s</b> not mounted <b>%s</b><hr>\"  >> /tmp/disk/%s", path, "Unsupported Filesystem",
-				  dev);
-			return 1;
-		}
-
-		char *mntlabel = nvram_nget("%s_label", dev);
-		if (strlen(mntlabel)) {
-			sprintf(mount_point, "/tmp/mnt/%s", mntlabel);
-		} else {
-			/* strategy one: mount to default location */
-			if (host == -1) //K3
-			{
-				sprintf(mount_point, "/tmp/mnt/%s", dev);
-
-			} else { //K2.6
-				sprintf(mount_point, "/tmp/mnt/disc%d-%s", host, part);
 			}
 		}
-
-		/* strategy two: mount by partition label, overrides strategy one */
-		if ((fp = fopen(part_file, "r"))) {
-			while (fgets(line, sizeof(line), fp) != NULL) {
-				if (strstr(line, "Jffs") || strstr(line, "JFFS") || strstr(line, "\"jffs")) {
-					found = 1;
-					do_mount(fs, path, "/jffs", dev);
-				}
-				sprintf(uuid, "%s", nvram_safe_get("usb_mntjffs"));
-				if (strlen(uuid) > 15 && strstr(line, uuid)) {
-					found = 1;
-					do_mount(fs, path, "/jffs", dev);
-				}
-				if (strstr(line, "Opt") || strstr(line, "OPT") || strstr(line, "\"opt")) {
-					found = 1;
-					do_mount(fs, path, "/opt", dev);
-					run_opt();
-				}
-				sprintf(uuid, "%s", nvram_safe_get("usb_mntopt"));
-				if (strlen(uuid) > 15 && strstr(line, uuid)) {
-					found = 1;
-					do_mount(fs, path, "/opt", dev);
-					run_opt();
-				}
-			}
-			fclose(fp);
-		}
-
-		if (strcmp(fs,
-			   "swap")) //don't create dir as swap is not mounted to a dir
-			eval("mkdir", "-p", mount_point);
-
-		if (host != -1) {
-			/* at the time the kernel (2.6) notifies us, the part entries are gone thus we map devicepath to mounted partitions so we can umount them later on */
-			sprintf(dev_dir, "/tmp/%s", devpath);
-			eval("mkdir", "-p", dev_dir);
-			// e.g. /mnt /tmp/devices/pci0000:00/0000:00:04.1/usb1/1-1/1-1:1.0/part1
-			sprintf(sym_link, "%s/%s", dev_dir, part);
-			eval("ln", "-s", mount_point, sym_link);
-		}
-		if (found != 1)
-			do_mount(fs, path, mount_point, dev);
-
-		// now we will get a nice ordered dump of all partitions
-		sysprintf("cat /tmp/disk/sd* > %s", DUMPFILE);
-
-		/* avoid out of memory problems which could lead to broken wireless, so we limit the minimum free ram everything else can be used for fs cache */
-#ifdef HAVE_80211AC
-		writeprocsys("vm/min_free_kbytes", "20480");
-#elif HAVE_MVEBU
-		writeprocsys("vm/min_free_kbytes", "65536");
-#elif HAVE_IPQ6018
-		if (getmemtotal() > 512 * 1024 * 1024)
-			writeprocsys("vm/min_free_kbytes", "65536");
-		else
-			writeprocsys("vm/min_free_kbytes", "4096");
-#elif HAVE_IPQ806X
-		writeprocsys("vm/min_free_kbytes", "65536");
-#elif HAVE_X86
-		writeprocsys("vm/min_free_kbytes", "65536");
-#else
-		writeprocsys("vm/min_free_kbytes", "4096");
-#endif
-		writeprocsys("vm/vfs_cache_pressure", "10000");
-		writeprocsys("vm/dirty_expire_centisecs", "100");
-		writeprocsys("vm/dirty_writeback_centisecs", "100");
-		writeprocsys("vm/overcommit_memory", "2");
-		writeprocsys("vm/overcommit_ratio", "80");
-		//      writeprocsys("vm/pagecache_ratio","90");
-		//      writeprocsys("vm/swappiness","90");
-		//      writeprocsys("vm/overcommit_memory","2");
-		//      writeprocsys("vm/overcommit_ratio","145");
-		//prepare for optware
-		//sysprintf("mkdir -p /jffs/lib/opkg");
-
-		return ret;
+		fclose(fp);
 	}
 
-	/* 
+	if (!strcmp(fs, "")) {
+		sysprintf("echo \"<b>%s</b> not mounted <b>%s</b><hr>\"  >> /tmp/disk/%s", path, "Unsupported Filesystem", dev);
+		return 1;
+	}
+
+	char *mntlabel = nvram_nget("%s_label", dev);
+	if (strlen(mntlabel)) {
+		sprintf(mount_point, "/tmp/mnt/%s", mntlabel);
+	} else {
+		/* strategy one: mount to default location */
+		if (host == -1) //K3
+		{
+			sprintf(mount_point, "/tmp/mnt/%s", dev);
+
+		} else { //K2.6
+			sprintf(mount_point, "/tmp/mnt/disc%d-%s", host, part);
+		}
+	}
+
+	/* strategy two: mount by partition label, overrides strategy one */
+	if ((fp = fopen(part_file, "r"))) {
+		while (fgets(line, sizeof(line), fp) != NULL) {
+			if (strstr(line, "Jffs") || strstr(line, "JFFS") || strstr(line, "\"jffs")) {
+				found = 1;
+				do_mount(fs, path, "/jffs", dev);
+			}
+			sprintf(uuid, "%s", nvram_safe_get("usb_mntjffs"));
+			if (strlen(uuid) > 15 && strstr(line, uuid)) {
+				found = 1;
+				do_mount(fs, path, "/jffs", dev);
+			}
+			if (strstr(line, "Opt") || strstr(line, "OPT") || strstr(line, "\"opt")) {
+				found = 1;
+				do_mount(fs, path, "/opt", dev);
+				run_opt();
+			}
+			sprintf(uuid, "%s", nvram_safe_get("usb_mntopt"));
+			if (strlen(uuid) > 15 && strstr(line, uuid)) {
+				found = 1;
+				do_mount(fs, path, "/opt", dev);
+				run_opt();
+			}
+		}
+		fclose(fp);
+	}
+
+	if (strcmp(fs,
+		   "swap")) //don't create dir as swap is not mounted to a dir
+		eval("mkdir", "-p", mount_point);
+
+	if (host != -1) {
+		/* at the time the kernel (2.6) notifies us, the part entries are gone thus we map devicepath to mounted partitions so we can umount them later on */
+		sprintf(dev_dir, "/tmp/%s", devpath);
+		eval("mkdir", "-p", dev_dir);
+		// e.g. /mnt /tmp/devices/pci0000:00/0000:00:04.1/usb1/1-1/1-1:1.0/part1
+		sprintf(sym_link, "%s/%s", dev_dir, part);
+		eval("ln", "-s", mount_point, sym_link);
+	}
+	if (found != 1)
+		do_mount(fs, path, mount_point, dev);
+
+	// now we will get a nice ordered dump of all partitions
+	sysprintf("cat /tmp/disk/sd* > %s", DUMPFILE);
+
+	/* avoid out of memory problems which could lead to broken wireless, so we limit the minimum free ram everything else can be used for fs cache */
+#ifdef HAVE_80211AC
+	writeprocsys("vm/min_free_kbytes", "20480");
+#elif HAVE_MVEBU
+	writeprocsys("vm/min_free_kbytes", "65536");
+#elif HAVE_IPQ6018
+	if (getmemtotal() > 512 * 1024 * 1024)
+		writeprocsys("vm/min_free_kbytes", "65536");
+	else
+		writeprocsys("vm/min_free_kbytes", "4096");
+#elif HAVE_IPQ806X
+	writeprocsys("vm/min_free_kbytes", "65536");
+#elif HAVE_X86
+	writeprocsys("vm/min_free_kbytes", "65536");
+#else
+	writeprocsys("vm/min_free_kbytes", "4096");
+#endif
+	writeprocsys("vm/vfs_cache_pressure", "10000");
+	writeprocsys("vm/dirty_expire_centisecs", "100");
+	writeprocsys("vm/dirty_writeback_centisecs", "100");
+	writeprocsys("vm/overcommit_memory", "2");
+	writeprocsys("vm/overcommit_ratio", "80");
+	//      writeprocsys("vm/pagecache_ratio","90");
+	//      writeprocsys("vm/swappiness","90");
+	//      writeprocsys("vm/overcommit_memory","2");
+	//      writeprocsys("vm/overcommit_ratio","145");
+	//prepare for optware
+	//sysprintf("mkdir -p /jffs/lib/opkg");
+
+	return ret;
+}
+
+/* 
  * umount device if user removes the drive by pulling the cable this is no clean umount only removes stale mountpoints
  */
-	static void usb_unmount(char *devpath)
-	{
-		DIR *dir = NULL;
-		char dev_dir[256];
-		char sym_link[256];
-		struct dirent *entry;
+static void usb_unmount(char *devpath)
+{
+	DIR *dir = NULL;
+	char dev_dir[256];
+	char sym_link[256];
+	struct dirent *entry;
 
-		usb_stopservices();
+	usb_stopservices();
 
-		writeprocsys("vm/drop_caches", "3"); // flush fs cache
+	writeprocsys("vm/drop_caches", "3"); // flush fs cache
 
-		//K3 code
-		eval("umount", devpath);
+	//K3 code
+	eval("umount", devpath);
 
-		//K2.6 code
-		sprintf(dev_dir, "/tmp/%s", devpath);
-		// /tmp/devices/pci0000:00/0000:00:04.1/usb1/1-1/1-1:1.0/
-		dir = opendir(dev_dir);
-		if (dir != NULL) {
-			while ((entry = readdir(dir)) != NULL) {
-				if (strncmp(entry->d_name, ".", 1)) { //skip . and ..
-					/* use the symlinks we created under /tmp to umount the devices partitions */
-					sprintf(sym_link, "%s/%s", dev_dir, entry->d_name);
-					eval("umount", sym_link);
-				}
+	//K2.6 code
+	sprintf(dev_dir, "/tmp/%s", devpath);
+	// /tmp/devices/pci0000:00/0000:00:04.1/usb1/1-1/1-1:1.0/
+	dir = opendir(dev_dir);
+	if (dir != NULL) {
+		while ((entry = readdir(dir)) != NULL) {
+			if (strncmp(entry->d_name, ".", 1)) { //skip . and ..
+				/* use the symlinks we created under /tmp to umount the devices partitions */
+				sprintf(sym_link, "%s/%s", dev_dir, entry->d_name);
+				eval("umount", sym_link);
 			}
 		}
-
-		usb_startservices();
-
-		return;
 	}
 
-	/* 
+	usb_startservices();
+
+	return;
+}
+
+/* 
 * Handle hotplugging of UFD 
 */
-	static int usb_add_ufd(char *link, int host, char *devpath, int mode)
-	{
-		DIR *dir = NULL;
+static int usb_add_ufd(char *link, int host, char *devpath, int mode)
+{
+	DIR *dir = NULL;
 
-		char part_link[128];
+	char part_link[128];
 
-		struct dirent *entry;
+	struct dirent *entry;
 
-		sysprintf("mkdir -p /tmp/disk/");
+	sysprintf("mkdir -p /tmp/disk/");
 
-		//create directory to store disktype dumps
+	//create directory to store disktype dumps
 
-		if (mode == 1) { //K3
-			usb_process_path(devpath, -1, NULL, NULL); //use -1 to signal K3
-		} else { //K2.6
-			usb_stopservices(); //K3 will start/stop only for a drive not partition
-			dir = opendir(link);
-			if (dir != NULL) {
-				while ((entry = readdir(dir)) != NULL) {
-					sprintf(part_link, "%s/%s", link, entry->d_name);
-					if (!strncmp(entry->d_name, "disc", 4)) {
-						sysprintf("echo  \"<b>Disk %d:</b>\" >> %s", host, DUMPFILE);
-						sysprintf("/usr/sbin/disktype %s >> %s", part_link, DUMPFILE);
-						sysprintf("echo  \"<b>Mountpoints:</b>\" >> %s", DUMPFILE);
-					}
-
-					if (strncmp(entry->d_name, "disc", 4) && strncmp(entry->d_name, ".",
-											 1)) { //only get partitions
-						usb_process_path(part_link, host, entry->d_name, devpath);
-					}
+	if (mode == 1) { //K3
+		usb_process_path(devpath, -1, NULL, NULL); //use -1 to signal K3
+	} else { //K2.6
+		usb_stopservices(); //K3 will start/stop only for a drive not partition
+		dir = opendir(link);
+		if (dir != NULL) {
+			while ((entry = readdir(dir)) != NULL) {
+				sprintf(part_link, "%s/%s", link, entry->d_name);
+				if (!strncmp(entry->d_name, "disc", 4)) {
+					sysprintf("echo  \"<b>Disk %d:</b>\" >> %s", host, DUMPFILE);
+					sysprintf("/usr/sbin/disktype %s >> %s", part_link, DUMPFILE);
+					sysprintf("echo  \"<b>Mountpoints:</b>\" >> %s", DUMPFILE);
 				}
-				closedir(dir);
-			}
-			usb_startservices();
-		}
 
-		return 0;
+				if (strncmp(entry->d_name, "disc", 4) && strncmp(entry->d_name, ".",
+										 1)) { //only get partitions
+					usb_process_path(part_link, host, entry->d_name, devpath);
+				}
+			}
+			closedir(dir);
+		}
+		usb_startservices();
 	}
+
+	return 0;
+}
