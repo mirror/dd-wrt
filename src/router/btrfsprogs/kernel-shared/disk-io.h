@@ -24,11 +24,11 @@
 #include "kernel-lib/sizes.h"
 #include "kernel-shared/ctree.h"
 
-struct btrfs_tree_parent_check;
 struct btrfs_fs_devices;
 struct btrfs_key;
 struct btrfs_super_block;
 struct btrfs_trans_handle;
+struct btrfs_tree_parent_check;
 struct extent_buffer;
 struct rb_node;
 
@@ -223,8 +223,7 @@ void btrfs_mark_buffer_dirty(struct extent_buffer *buf);
 int btrfs_buffer_uptodate(struct extent_buffer *buf, u64 parent_transid,
 			  int atomic);
 int btrfs_set_buffer_uptodate(struct extent_buffer *buf);
-int btrfs_csum_data(struct btrfs_fs_info *fs_info, u16 csum_type, const u8 *data,
-		    u8 *out, size_t len);
+int btrfs_csum_data(u16 csum_type, const u8 *data, u8 *out, size_t len);
 
 int btrfs_open_device(struct btrfs_device *dev);
 int csum_tree_block_size(struct extent_buffer *buf, u16 csum_sectorsize,

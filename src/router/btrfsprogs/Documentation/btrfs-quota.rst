@@ -19,20 +19,15 @@ of a btrfs filesystem. The quota groups (qgroups) are managed by the subcommand
         :ref:`HIERARCHICAL QUOTA GROUP CONCEPTS<man-quota-hierarchical-quota-group-concepts>`
         for a detailed description.
 
-PERFORMANCE IMPLICATIONS
-^^^^^^^^^^^^^^^^^^^^^^^^
+STABILITY AND PERFORMANCE IMPLICATIONS
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The qgroup implementation is considered reasonably stable for daily use and has
+been enabled in various distributions.
 
 When quotas are activated, they affect all extent processing, which takes a
 performance hit. Activation of qgroups is not recommended unless the user
 intends to actually use them.
-
-STABILITY STATUS
-^^^^^^^^^^^^^^^^
-
-The qgroup implementation has turned out to be quite difficult as it affects
-the core of the filesystem operation. Qgroup users have hit various corner cases
-over time, such as incorrect accounting or system instability. The situation is
-gradually improving and issues found and fixed.
 
 .. _man-quota-hierarchical-quota-group-concepts:
 
@@ -69,6 +64,29 @@ rescan [options] <path>
                 start rescan and wait for it to finish (can be already in progress)
         -W|--wait-norescan
                 wait for rescan to finish without starting it
+
+status [options] <path>
+        Print status information about quotas if enabled on *path*. The information
+        is read from :file:`/sys/fs/btrfs/FSID/qgroups` and root privileges are
+        not needed.
+
+        Example output for quotas enabled by :command:`btrfs quota enable /mnt`:
+
+        .. code-block:: none
+
+		Quotas on /mnt:
+		  Enabled:                 yes
+		  Mode:                    qgroup (full accounting)
+		  Inconsistent:            no
+		  Override limits:         no
+		  Drop subtree threshold:  3
+		  Total count:             1
+		  Level 0:                 1
+
+        ``Options``
+
+        --is-enabled
+                only check if quotas are enabled, not not print anything
 
 EXIT STATUS
 -----------

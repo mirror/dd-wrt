@@ -42,6 +42,7 @@
 #include "kernel-shared/compression.h"
 #include "kernel-shared/volumes.h"
 #include "kernel-shared/disk-io.h"
+#include "kernel-shared/transaction.h"
 #include "common/defs.h"
 #include "common/internal.h"
 #include "common/messages.h"
@@ -227,7 +228,7 @@ static int match_search_item_kernel(u8 *fsid, char *mnt, char *label,
 
 	search_len = min(search_len, BTRFS_UUID_UNPARSED_SIZE);
 	uuid_unparse(fsid, uuidbuf);
-	if (!strncmp(uuidbuf, search, search_len))
+	if (strncmp(uuidbuf, search, search_len) == 0)
 		return 1;
 
 	if (*label && strcmp(label, search) == 0)
@@ -248,7 +249,7 @@ static int uuid_search(struct btrfs_fs_devices *fs_devices, const char *search)
 
 	search_len = min(search_len, BTRFS_UUID_UNPARSED_SIZE);
 	uuid_unparse(fs_devices->fsid, uuidbuf);
-	if (!strncmp(uuidbuf, search, search_len))
+	if (strncmp(uuidbuf, search, search_len) == 0)
 		return 1;
 
 	list_for_each_entry(device, &fs_devices->devices, dev_list) {
@@ -257,21 +258,6 @@ static int uuid_search(struct btrfs_fs_devices *fs_devices, const char *search)
 			return 1;
 	}
 	return 0;
-}
-
-/*
- * Sort devices by devid, ascending
- */
-static int cmp_device_id(void *priv, struct list_head *a,
-		struct list_head *b)
-{
-	const struct btrfs_device *da = list_entry(a, struct btrfs_device,
-			dev_list);
-	const struct btrfs_device *db = list_entry(b, struct btrfs_device,
-			dev_list);
-
-	return da->devid < db->devid ? -1 :
-		da->devid > db->devid ? 1 : 0;
 }
 
 static void splice_device_list(struct list_head *seed_devices,
@@ -595,7 +581,7 @@ static int find_and_copy_seed(struct btrfs_fs_devices *seed,
 	struct btrfs_fs_devices *cur_fs;
 
 	list_for_each_entry(cur_fs, fs_uuids, fs_list)
-		if (!memcmp(seed->fsid, cur_fs->fsid, BTRFS_FSID_SIZE))
+		if (memcmp(seed->fsid, cur_fs->fsid, BTRFS_FSID_SIZE) == 0)
 			return copy_fs_devices(copy, cur_fs);
 
 	return 1;
@@ -963,6 +949,7 @@ static const char * const cmd_filesystem_defrag_usage[] = {
 	OPTLINE("-r", "defragment files recursively"),
 	OPTLINE("-c[zlib,lzo,zstd]", "compress the file while defragmenting, optional parameter (no space in between)"),
 	OPTLINE("-L|--level level", "use given compression level if enabled (zlib: 1..9, zstd: -15..15, and 0 selects the default level)"),
+	OPTLINE("--nocomp", "don't compress while defragmenting (uncompress if needed)"),
 	OPTLINE("-f", "flush data to disk immediately after defragmenting"),
 	OPTLINE("-s start", "defragment only from byte onward"),
 	OPTLINE("-l len", "defragment only up to len bytes"),
@@ -1068,6 +1055,7 @@ static int cmd_filesystem_defrag(const struct cmd_struct *cmd,
 	int ret = 0;
 	int compress_type = BTRFS_COMPRESS_NONE;
 	int compress_level = 0;
+	bool opt_nocomp = false;
 
 	/*
 	 * Kernel 4.19+ supports defragmention of files open read-only,
@@ -1100,10 +1088,11 @@ static int cmd_filesystem_defrag(const struct cmd_struct *cmd,
 	defrag_global_errors = 0;
 	optind = 0;
 	while(1) {
-		enum { GETOPT_VAL_STEP = GETOPT_VAL_FIRST };
+		enum { GETOPT_VAL_STEP = GETOPT_VAL_FIRST, GETOPT_VAL_NOCOMP };
 		static const struct option long_options[] = {
 			{ "level", required_argument, NULL, 'L' },
 			{ "step", required_argument, NULL, GETOPT_VAL_STEP },
+			{ "nocomp", no_argument, NULL, GETOPT_VAL_NOCOMP },
 			{ NULL, 0, NULL, 0 }
 		};
 		int c;
@@ -1114,6 +1103,11 @@ static int cmd_filesystem_defrag(const struct cmd_struct *cmd,
 
 		switch(c) {
 		case 'c':
+			if (opt_nocomp) {
+				error("cannot use compression with --nocomp");
+				return 1;
+			}
+
 			compress_type = BTRFS_COMPRESS_ZLIB;
 			if (optarg)
 				compress_type = parse_compress_type_arg(optarg);
@@ -1157,6 +1151,13 @@ static int cmd_filesystem_defrag(const struct cmd_struct *cmd,
 		case 'r':
 			recursive = true;
 			break;
+		case GETOPT_VAL_NOCOMP:
+			if (compress_level != BTRFS_COMPRESS_NONE) {
+				error("cannot use --nocomp with compression set");
+				return 1;
+			}
+			opt_nocomp = true;
+			break;
 		case GETOPT_VAL_STEP:
 			defrag_global_step = arg_strtou64_with_suffix(optarg);
 			if (defrag_global_step < SZ_256K) {
@@ -1186,6 +1187,8 @@ static int cmd_filesystem_defrag(const struct cmd_struct *cmd,
 		} else
 			defrag_global_range.compress_type = compress_type;
 	}
+	if (opt_nocomp)
+		defrag_global_range.flags |= BTRFS_DEFRAG_RANGE_NOCOMPRESS;
 	if (flush)
 		defrag_global_range.flags |= BTRFS_DEFRAG_RANGE_START_IO;
 
@@ -1285,22 +1288,236 @@ static const char * const cmd_filesystem_resize_usage[] = {
 	"[kK] means KiB, which denotes 1KiB = 1024B, 1MiB = 1024KiB, etc.",
 	"",
 	OPTLINE("--enqueue", "wait if there's another exclusive operation running, otherwise continue"),
+	OPTLINE("--offline", "resize an offline/unmounted filesystem (limitations: shrinking and multi-device not supported)"),
 	NULL
 };
+
+struct resize_args {
+	bool is_cancel;
+	bool specified_dev_id;
+	bool is_max;
+	u64 devid;
+	int mod;
+	u64 size;
+};
+
+static bool parse_resize_args(const char *amount, struct resize_args *ret)
+{
+	char amount_dup[BTRFS_VOL_NAME_MAX];
+	char *devstr;
+	char *sizestr;
+
+	ret->is_cancel = false;
+	if (strcmp("cancel", amount) == 0) {
+		ret->is_cancel = true;
+		return true;
+	}
+
+	if (strlen(amount) >= BTRFS_VOL_NAME_MAX) {
+		error("newsize argument is too long %zu >= %d", strlen(amount),
+		      BTRFS_VOL_NAME_MAX);
+		return false;
+	}
+	strncpy(amount_dup, amount, BTRFS_VOL_NAME_MAX);
+
+	sizestr = amount_dup;
+	devstr = strchr(sizestr, ':');
+	ret->specified_dev_id = false;
+	if (devstr) {
+		sizestr = devstr + 1;
+		*devstr = 0;
+		devstr = amount_dup;
+
+		errno = 0;
+		ret->specified_dev_id = true;
+		ret->devid = strtoull(devstr, NULL, 10);
+
+		if (errno) {
+			error("failed to parse devid %s: %m", devstr);
+			return false;
+		}
+	}
+
+	if (strcmp(sizestr, "max") == 0) {
+		ret->is_max = true;
+	} else {
+		ret->is_max = false;
+
+		ret->mod = 0;
+		if (sizestr[0] == '-') {
+			ret->mod = -1;
+			sizestr++;
+		} else if (sizestr[0] == '+') {
+			ret->mod = 1;
+			sizestr++;
+		}
+		if (parse_u64_with_suffix(sizestr, &ret->size) < 0) {
+			error("failed to parse size %s", sizestr);
+			return false;
+		}
+	}
+
+	return true;
+}
+
+static bool check_offline_resize_args(const char *path, const char *amount,
+				      const struct btrfs_fs_info *fs_info,
+				      struct btrfs_device **device_ret,
+				      u64 *new_size_ret)
+{
+	struct btrfs_device *device = NULL;
+	struct resize_args args;
+	struct stat stat_buf;
+	u64 new_size = 0, old_size = 0, device_size = 0;
+
+	if (check_mounted(path)) {
+		error("%s must not be mounted to use --offline", path);
+		return false;
+	}
+
+	if (fs_info->fs_devices->num_devices > 1) {
+		error("multi-device not supported with --offline");
+		return false;
+	}
+	device = list_first_entry_or_null(&fs_info->fs_devices->devices,
+					  struct btrfs_device, dev_list);
+	if (!device) {
+		error("no device found");
+		return false;
+	}
+	*device_ret = device;
+	old_size = device->total_bytes;
+
+	fstat(device->fd, &stat_buf);
+	if (device_get_partition_size_fd_stat(device->fd, &stat_buf, &device_size))
+		device_size = 0;
+	if (!device_size) {
+		error("unable to get size at path %s", device->name);
+		return false;
+	}
+
+	if (!parse_resize_args(amount, &args))
+		return false;
+
+	if (args.is_cancel) {
+		error("can not cancel --offline resize");
+		return false;
+	}
+	if (args.specified_dev_id && args.devid != device->devid) {
+		error("invalid device id %llu", args.devid);
+		return false;
+	}
+	if (args.is_max) {
+		new_size = device_size;
+	} else {
+		if (args.mod == 0) {
+			new_size = args.size;
+		} else if (args.mod < 0) {
+			error("offline resize does not support shrinking");
+			return false;
+		} else {
+			if (args.size > ULLONG_MAX - old_size) {
+				error("increasing (%llu) %s is out of range",
+				      args.size, pretty_size_mode(args.size, UNITS_DEFAULT));
+				return false;
+			}
+			new_size = old_size + args.size;
+		}
+	}
+	new_size = round_down(new_size, fs_info->sectorsize);
+	if (new_size < old_size) {
+		error("offline resize does not support shrinking");
+		return false;
+	}
+	*new_size_ret = new_size;
+
+	if (path_is_block_device(device->name) && new_size > device_size) {
+		error("unable to resize '%s': not enough free space", device->name);
+		return false;
+	}
+
+	if (new_size < 256 * SZ_1M)
+		warning("the new size %lld (%s) is < 256MiB, this may be rejected by kernel",
+			new_size, pretty_size_mode(new_size, UNITS_DEFAULT));
+
+	pr_verbose(LOG_DEFAULT, "Resize from %s to %s\n",
+		   pretty_size_mode(old_size, UNITS_DEFAULT),
+		   pretty_size_mode(new_size, UNITS_DEFAULT));
+	return true;
+}
+
+static bool offline_resize(const char *path, const char *amount)
+{
+	int ret = false;
+	struct btrfs_root *root;
+	struct btrfs_fs_info *fs_info;
+	struct btrfs_device *device;
+	struct btrfs_super_block *super;
+	struct btrfs_trans_handle *trans;
+	u64 new_size;
+	u64 old_total;
+	u64 diff;
+
+	root = open_ctree(path, 0, OPEN_CTREE_WRITES | OPEN_CTREE_CHUNK_ROOT_ONLY);
+	if (!root)
+		return false;
+	fs_info = root->fs_info;
+	super = fs_info->super_copy;
+
+	if (!check_offline_resize_args(path, amount, fs_info, &device, &new_size)) {
+		ret = false;
+		goto close;
+	}
+
+	trans = btrfs_start_transaction(root, 1);
+	if (IS_ERR(trans)) {
+		errno = -PTR_ERR(trans);
+		error_msg(ERROR_MSG_START_TRANS, "%m");
+		ret = false;
+		goto close;
+	}
+
+	old_total = btrfs_super_total_bytes(super);
+	diff = round_down(new_size - device->total_bytes, fs_info->sectorsize);
+	btrfs_set_super_total_bytes(super, round_down(old_total + diff, fs_info->sectorsize));
+	device->total_bytes = new_size;
+	ret = btrfs_update_device(trans, device);
+	if (ret) {
+		btrfs_abort_transaction(trans, ret);
+		ret = false;
+		goto close;
+	}
+
+	if (path_is_reg_file(device->name)) {
+		if (truncate(device->name, new_size)) {
+			error("unable to truncate %s to new size %llu", device->name, new_size);
+			btrfs_abort_transaction(trans, ret);
+			ret = false;
+			goto close;
+		}
+	}
+
+	if (btrfs_commit_transaction(trans, root)) {
+		ret = false;
+		goto close;
+	}
+
+	ret = true;
+close:
+	close_ctree(root);
+	return ret;
+}
 
 static int check_resize_args(const char *amount, const char *path, u64 *devid_ret)
 {
 	struct btrfs_ioctl_fs_info_args fi_args;
 	struct btrfs_ioctl_dev_info_args *di_args = NULL;
+	struct resize_args args;
 	int ret, i, dev_idx = -1;
-	u64 devid = 1;
 	u64 mindev = (u64)-1;
 	int mindev_idx = 0;
 	const char *res_str = NULL;
-	char *devstr = NULL, *sizestr = NULL;
-	u64 new_size = 0, old_size = 0, diff = 0;
-	int mod = 0;
-	char amount_dup[BTRFS_VOL_NAME_MAX];
+	u64 new_size = 0, old_size = 0;
 
 	*devid_ret = (u64)-1;
 	ret = get_fs_info(path, &fi_args, &di_args);
@@ -1315,37 +1532,20 @@ static int check_resize_args(const char *amount, const char *path, u64 *devid_re
 		goto out;
 	}
 
-	ret = snprintf(amount_dup, BTRFS_VOL_NAME_MAX, "%s", amount);
-	if (strlen(amount) != ret) {
-		error("newsize argument is too long");
+	if (!parse_resize_args(amount, &args)) {
 		ret = 1;
 		goto out;
 	}
-	ret = 0;
 
 	/* Cancel does not need to determine the device number. */
-	if (strcmp(amount, "cancel") == 0) {
+	if (args.is_cancel) {
 		/* Different format, print and exit */
 		pr_verbose(LOG_DEFAULT, "Request to cancel resize\n");
 		goto out;
 	}
 
-	sizestr = amount_dup;
-	devstr = strchr(sizestr, ':');
-	if (devstr) {
-		sizestr = devstr + 1;
-		*devstr = 0;
-		devstr = amount_dup;
-
-		errno = 0;
-		devid = strtoull(devstr, NULL, 10);
-
-		if (errno) {
-			error("failed to parse devid %s: %m", devstr);
-			ret = 1;
-			goto out;
-		}
-	}
+	if (!args.specified_dev_id)
+		args.devid = 1;
 
 	dev_idx = -1;
 	for(i = 0; i < fi_args.num_devices; i++) {
@@ -1353,18 +1553,18 @@ static int check_resize_args(const char *amount, const char *path, u64 *devid_re
 			mindev = di_args[i].devid;
 			mindev_idx = i;
 		}
-		if (di_args[i].devid == devid) {
+		if (di_args[i].devid == args.devid) {
 			dev_idx = i;
 			break;
 		}
 	}
 
-	if (devstr && dev_idx < 0) {
+	if (args.specified_dev_id && dev_idx < 0) {
 		/* Devid specified but not found. */
-		error("cannot find devid: %lld", devid);
+		error("cannot find devid: %llu", args.devid);
 		ret = 1;
 		goto out;
-	} else if (!devstr && devid == 1 && dev_idx < 0) {
+	} else if (!args.specified_dev_id && dev_idx < 0) {
 		/*
 		 * No device specified, assuming implicit 1 but it does not
 		 * exist. Use minimum device as fallback.
@@ -1372,7 +1572,7 @@ static int check_resize_args(const char *amount, const char *path, u64 *devid_re
 		warning("no devid specified means devid 1 which does not exist, using\n"
 			"\t lowest devid %llu as a fallback", mindev);
 		*devid_ret = mindev;
-		devid = mindev;
+		args.devid = mindev;
 		dev_idx = mindev_idx;
 	} else {
 		/*
@@ -1381,44 +1581,31 @@ static int check_resize_args(const char *amount, const char *path, u64 *devid_re
 		 */
 	}
 
-	if (strcmp(sizestr, "max") == 0) {
+	if (args.is_max) {
 		res_str = "max";
 	} else {
-		if (sizestr[0] == '-') {
-			mod = -1;
-			sizestr++;
-		} else if (sizestr[0] == '+') {
-			mod = 1;
-			sizestr++;
-		}
-		ret = parse_u64_with_suffix(sizestr, &diff);
-		if (ret < 0) {
-			error("failed to parse size %s", sizestr);
-			ret = 1;
-			goto out;
-		}
 		old_size = di_args[dev_idx].total_bytes;
 
 		/* For target sizes without +/- sign prefix (e.g. 1:150g) */
-		if (mod == 0) {
-			new_size = diff;
-		} else if (mod < 0) {
-			if (diff > old_size) {
+		if (args.mod == 0) {
+			new_size = args.size;
+		} else if (args.mod < 0) {
+			if (args.size > old_size) {
 				error("current size is %s which is smaller than %s",
 				      pretty_size_mode(old_size, UNITS_DEFAULT),
-				      pretty_size_mode(diff, UNITS_DEFAULT));
+				      pretty_size_mode(args.size, UNITS_DEFAULT));
 				ret = 1;
 				goto out;
 			}
-			new_size = old_size - diff;
-		} else if (mod > 0) {
-			if (diff > ULLONG_MAX - old_size) {
+			new_size = old_size - args.size;
+		} else if (args.mod > 0) {
+			if (args.size > ULLONG_MAX - old_size) {
 				error("increasing %s is out of range",
-				      pretty_size_mode(diff, UNITS_DEFAULT));
+				      pretty_size_mode(args.size, UNITS_DEFAULT));
 				ret = 1;
 				goto out;
 			}
-			new_size = old_size + diff;
+			new_size = old_size + args.size;
 		}
 		new_size = round_down(new_size, fi_args.sectorsize);
 		res_str = pretty_size_mode(new_size, UNITS_DEFAULT);
@@ -1428,7 +1615,7 @@ static int check_resize_args(const char *amount, const char *path, u64 *devid_re
 			new_size, pretty_size_mode(new_size, UNITS_DEFAULT));
 	}
 
-	pr_verbose(LOG_DEFAULT, "Resize device id %lld (%s) from %s to %s\n", devid,
+	pr_verbose(LOG_DEFAULT, "Resize device id %llu (%s) from %s to %s\n", args.devid,
 		di_args[dev_idx].path,
 		pretty_size_mode(di_args[dev_idx].total_bytes, UNITS_DEFAULT),
 		res_str);
@@ -1447,6 +1634,7 @@ static int cmd_filesystem_resize(const struct cmd_struct *cmd,
 	u64 devid;
 	int ret;
 	bool enqueue = false;
+	bool offline = false;
 	bool cancel = false;
 
 	/*
@@ -1456,6 +1644,8 @@ static int cmd_filesystem_resize(const struct cmd_struct *cmd,
 	for (optind = 1; optind < argc; optind++) {
 		if (strcmp(argv[optind], "--enqueue") == 0) {
 			enqueue = true;
+		} else if (strcmp(argv[optind], "--offline") == 0) {
+			offline = true;
 		} else if (strcmp(argv[optind], "--") == 0) {
 			/* Separator: options -- non-options */
 		} else if (strncmp(argv[optind], "--", 2) == 0) {
@@ -1470,6 +1660,11 @@ static int cmd_filesystem_resize(const struct cmd_struct *cmd,
 	if (check_argc_exact(argc - optind, 2))
 		return 1;
 
+	if (offline && enqueue) {
+		error("--enqueue is not compatible with --offline");
+		return 1;
+	}
+
 	amount = argv[optind];
 	path = argv[optind + 1];
 
@@ -1479,17 +1674,16 @@ static int cmd_filesystem_resize(const struct cmd_struct *cmd,
 		return 1;
 	}
 
+	if (offline)
+		return !offline_resize(path, amount);
+
 	cancel = (strcmp("cancel", amount) == 0);
 
 	fd = btrfs_open_dir(path);
 	if (fd < 0) {
-		/* The path is a directory */
-		if (fd == -ENOTDIR) {
-			error(
-		"resize works on mounted filesystems and accepts only\n"
-		"directories as argument. Passing file containing a btrfs image\n"
-		"would resize the underlying filesystem instead of the image.\n");
-		}
+		/* The path is not a directory. */
+		if (fd == -ENOTDIR)
+			error("to resize a file containing a BTRFS image use the --offline flag");
 		return 1;
 	}
 
@@ -1776,6 +1970,125 @@ out:
 }
 static DEFINE_SIMPLE_COMMAND(filesystem_mkswapfile, "mkswapfile");
 
+static const char * const cmd_filesystem_commit_stats_usage[] = {
+	"btrfs filesystem commit-stats <file>",
+	"Print number of commits and time stats since mount",
+	"",
+	OPTLINE("-z|--reset", "print stats and reset 'max_commit_ms' (needs root)"),
+	NULL
+};
+
+static int cmd_filesystem_commit_stats(const struct cmd_struct *cmd, int argc, char **argv)
+{
+	int ret;
+	int fd = -1;
+	int sysfs_fd = -1;
+	char buf[64 * 1024];
+	char *tmp, *ptr, *savepos = NULL;
+	uuid_t fsid;
+	bool opt_reset = false;
+	static const struct {
+		const char *key;
+		const char *desc;
+		const char *units;
+	} str2str[] = {
+		{ "commits", "Total commits:", NULL },
+		{ "last_commit_ms", "Last commit duration:", "ms" },
+		{ "max_commit_ms", "Max commit duration:", "ms" },
+		{ "total_commit_ms", "Total time spent in commit:", "ms" },
+	};
+
+	optind = 0;
+	while (1) {
+		int c;
+		static const struct option long_options[] = {
+			{ "reset", no_argument, NULL, 'z' },
+			{ NULL, 0, NULL, 0 }
+		};
+
+		c = getopt_long(argc, argv, "c", long_options, NULL);
+		if (c < 0)
+			break;
+		switch (c) {
+		case 'z':
+			opt_reset = true;
+			break;
+		default:
+			usage_unknown_option(cmd, argv);
+		}
+	}
+
+	if (check_argc_min(argc - optind, 1))
+		return 1;
+
+	fd = btrfs_open_dir(argv[optind]);
+	if (fd < 0)
+		return 1;
+
+	sysfs_fd = sysfs_open_fsid_file(fd, "commit_stats");
+	if (sysfs_fd < 0) {
+		error("no commit_stats file in sysfs");
+		goto out;
+	}
+
+	ret = sysfs_read_file(sysfs_fd, buf, sizeof(buf));
+	if (ret < 0) {
+		error("cannot read commit_stats: %m");
+		goto out;
+	}
+
+	ret = get_fsid_fd(fd, fsid);
+	/* Don't fail, sysfs_open_fsid_file() calls that as well. */
+	if (ret == 0) {
+		char fsid_str[BTRFS_UUID_UNPARSED_SIZE];
+
+		uuid_unparse(fsid, fsid_str);
+		pr_verbose(LOG_DEFAULT, "UUID: %s\n", fsid_str);
+	}
+	ptr = buf;
+	pr_verbose(LOG_DEFAULT, "Commit stats since mount:\n");
+	while (1) {
+		const char *units = NULL;
+
+		tmp = strtok_r(ptr, " \n", &savepos);
+		ptr = NULL;
+		if (!tmp)
+			break;
+
+		for (int i = 0; i < ARRAY_SIZE(str2str); i++) {
+			if (strcmp(tmp, str2str[i].key) == 0) {
+				tmp = (char *)str2str[i].desc;
+				units = str2str[i].units;
+				break;
+			}
+		}
+		/* Print unknown as-is */
+		pr_verbose(LOG_DEFAULT, "  %-28s", tmp);
+
+		tmp = strtok_r(ptr, " \n", &savepos);
+		if (!tmp)
+			break;
+		pr_verbose(LOG_DEFAULT, "%8s%s", tmp, (units ?: ""));
+		putchar('\n');
+	}
+
+	if (opt_reset) {
+		close(sysfs_fd);
+		ret = sysfs_write_fsid_file_u64(fd, "commit_stats", 0);
+		if (ret < 0)
+			warning("cannot reset stats: %m");
+		else
+			pr_verbose(LOG_DEFAULT, "NOTE: Max commit duration has been reset\n");
+	}
+
+out:
+	close(sysfs_fd);
+	close(fd);
+
+	return 0;
+}
+static DEFINE_SIMPLE_COMMAND(filesystem_commit_stats, "commit-stats");
+
 static const char filesystem_cmd_group_info[] =
 "overall filesystem tasks and information";
 
@@ -1784,6 +2097,7 @@ static const struct cmd_group filesystem_cmd_group = {
 		&cmd_struct_filesystem_df,
 		&cmd_struct_filesystem_du,
 		&cmd_struct_filesystem_show,
+		&cmd_struct_filesystem_commit_stats,
 		&cmd_struct_filesystem_sync,
 		&cmd_struct_filesystem_defrag,
 		&cmd_struct_filesystem_balance,

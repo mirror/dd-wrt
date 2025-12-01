@@ -1,4 +1,88 @@
-btrfs-progs-6.13 (2025-03-26)
+btrfs-progs-6.17 (2025-09-29)
+-----------------------------
+   * inspect list-chunks: more sorting keys, descending order
+   * fi resize: add support for offline (unmounted) growing of single device
+   * device stats: add support for offline (unmounted) reads
+   * quota status: new command, overview what mode is enabled, tunables
+   * fi commit-stats: new command, print various commit stats from sysfs (since
+     kernel 6.1)
+   * balance start: print warning and delay start if there's a missing device
+     in the filesystem
+   * mkfs:
+      * print zoned mode (native, emulated)
+   * check:
+      * verify device bytes in super block item and in chunk tree
+   * other
+      * updated CI, new and updated tests
+      * cleanups, refactoring
+      * documentation updates
+
+btrfs-progs-6.17.1 (2025-11-07)
+"""""""""""""""""""""""""""""""
+   * dump-tree: print compat-ro bit for fs-verity
+   * check: add ability to repair orphan device extents so kernel does not
+     refuse to mount such filesystem due to strict checks
+   * convert:
+      * print label if it's being copied from the source filesystem
+      * drop alignment check of chunk length, kernel workaround is in place
+   * scrub and device replace: document behaviour in 6.19+ that
+     freezing/suspend will cancel the operation
+   * other:
+      * documentation fixes and updates
+      * updated tests
+
+btrfs-progs-6.16 (2025-08-13)
+-----------------------------
+   * mkfs:
+      * print label of existing filesystem if attempting to overwrite
+      * remove note about changed defaults in 6.15
+      * discard support detection uses the ioctl and not sysfs, this should
+        work for all types of block devices
+   * device usage: fix printing units of partition sizes, used to be in 512B
+     sectors
+   * defrag: new option --nocomp to request no compression (kernel 6.17)
+   * check: detect missing orphan items for deleted subvolumes
+   * subvol delete: don't print warning if filesystem is mounted with
+     user_subvol_rm_allowed
+   * build: add build support for Android
+   * other:
+      * cleanups and refactoring
+      * sync sources with kernel
+      * documentation updates
+      * CI and test updates
+
+btrfs-progs-6.16.1 (2025-09-10)
+"""""""""""""""""""""""""""""""
+   * mkfs:
+      * add option --reflink, when used with --rootdir clone file extents instead
+        of copying (requires source and target image on the same filesystem)
+      * improved tracking of inodes and subvolumes for option --inode-flags
+      * fix initializing raid-stripe-tree
+      * extend what is trimmed/discarded during initialization (temporary chunks,
+        free space)
+   * check: detect duplicate file names in directory items
+   * inspect tree-stats: accept string names for option -t
+   * receive: allow to dump stream from different user
+   * other:
+      * updated documentation
+      * new and updated tests
+
+btrfs-progs-6.15 (2025-06-23)
+-----------------------------
+   * mkfs: new option --inode-flags to specify flags/attributes for
+     inodes/directories/subvolumes
+   * check:
+     * fix false alert on missing checksum for hole
+     * in lowmem mode, fix false alerts when checking refs
+   * convert: check feature compatibility when enabling block-group-tree
+   * tune convert-bgt: fix resume of conversion
+   * rescue: add new command fix-data-checksum, selectively fix or find
+     mismatching checksums
+   * other:
+      * new and updated tests
+      * documentation updates
+
+btrfs-progs-6.14 (2025-03-26)
 -----------------------------
    * mkfs:
       * allow --sectorsize to be 2K for testing purposes of subpage mode (needs
@@ -561,8 +645,11 @@ btrfs-progs-6.0.2 (2022-11-24)
       * receive: fix silent data loss after fall back from encoded write
    * fi mkswapfile: new command to create a formatted swapfile in one go
 
+btrfs-progs-5.x (2022-09-12)
+----------------------------
+
 btrfs-progs-5.19 (2022-08-16)
------------------------------
+"""""""""""""""""""""""""""""
    * send: support protocol version 2
    * fi show: print all missing devices
    * device stats: add tabular output
@@ -582,7 +669,6 @@ btrfs-progs-5.19 (2022-08-16)
       * new tests
 
 btrfs-progs-5.19.1 (2022-09-12)
-"""""""""""""""""""""""""""""""
    * fix memory leaks (extent buffer, path)
    * check: verify block device size vs item
    * rescue fix-device-size: allow to shrink device item
@@ -593,7 +679,7 @@ btrfs-progs-5.19.1 (2022-09-12)
       * new tests
 
 btrfs-progs-5.18 (2022-05-25)
------------------------------
+"""""""""""""""""""""""""""""
    * fixes:
       * dump-tree: don't print trailing zeros in checksums
       * recognize paused balance as exclusive operation state, allow to start
@@ -610,7 +696,6 @@ btrfs-progs-5.18 (2022-05-25)
       * new tests
 
 btrfs-progs-5.18.1 (2022-06-06)
-"""""""""""""""""""""""""""""""
    * fixes:
       * convert: fix self reference of toplevel directory
       * build: make kernel lib headers compatible with C++
@@ -620,7 +705,7 @@ btrfs-progs-5.18.1 (2022-06-06)
    * other: documentation updates
 
 btrfs-progs-5.17 (2022-04-26)
------------------------------
+"""""""""""""""""""""""""""""
    * check:
       * repair wrong num_devices in superblock
       * recognize overly long xattr names
@@ -646,7 +731,7 @@ btrfs-progs-5.17 (2022-04-26)
        * add fsstress
 
 btrfs-progs-5.16 (2022-01-12)
------------------------------
+"""""""""""""""""""""""""""""
    * rescue: new subcommand clear-uuid-tree to fix failed mount due to bad uuid
      subvolume keys, caught by tree-checker
    * fi du: skip inaccessible files
@@ -662,7 +747,6 @@ btrfs-progs-5.16 (2022-01-12)
         https://btrfs.readthedocs.io
 
 btrfs-progs-5.16.1 (2022-02-04)
-"""""""""""""""""""""""""""""""
    * mkfs: support DUP on metadata on zoned devices
    * subvol delete: drop warning for root when search ioctl fails
    * check:
@@ -677,7 +761,6 @@ btrfs-progs-5.16.1 (2022-02-04)
       * CI targets updated
 
 btrfs-progs-5.16.2 (2022-02-16)
-"""""""""""""""""""""""""""""""
    * mkfs: fix detection of profile type for zoned mode when creating DUP
    * build:
       * add missing stub for zoned mode helper when zoned mode not enabled
@@ -689,7 +772,7 @@ btrfs-progs-5.16.2 (2022-02-16)
       * test updates
 
 btrfs-progs-5.15 (2021-11-05)
------------------------------
+"""""""""""""""""""""""""""""
    * mkfs: new defaults!
       * no-holes
       * free-space-tree
@@ -711,7 +794,6 @@ btrfs-progs-5.15 (2021-11-05)
       * new and updated tests
 
 btrfs-progs-5.15.1 (2021-11-22)
-"""""""""""""""""""""""""""""""
    * fixes:
       * fi usage: fix wrongly reported space of used or unallocated space
       * fix detection of block device discard capability
@@ -719,7 +801,7 @@ btrfs-progs-5.15.1 (2021-11-22)
    * build: make sphinx optional backend for documentation
 
 btrfs-progs-5.14 (2021-09-10)
------------------------------
+"""""""""""""""""""""""""""""
    * convert:
       * new option --uuid to copy, generate or set a given uuid
       * improve output
@@ -749,7 +831,6 @@ btrfs-progs-5.14 (2021-09-10)
       * new image dump format, with data
 
 btrfs-progs-5.14.1 (2021-09-20)
-"""""""""""""""""""""""""""""""
    * fixes:
       * defrag: fix parsing of compression (option -c)
       * add workaround for old kernels when reading zone sizes
@@ -758,7 +839,6 @@ btrfs-progs-5.14.1 (2021-09-20)
       * convert: --uuid copy does not fail on duplicate uuids
 
 btrfs-progs-5.14.2 (2021-10-08)
-"""""""""""""""""""""""""""""""
    * fixes
       * zoned mode
           * properly detect non-zoned devices in emulation mode
@@ -787,7 +867,7 @@ btrfs-progs-5.14.2 (2021-10-08)
       * new and updated tests
 
 btrfs-progs-5.13 (2021-07-13)
------------------------------
+"""""""""""""""""""""""""""""
    * restore: remove loop checks for extent count and directory scan
    * inspect dump-tree: new options to print node (--csum-headers) and data
      checksums (--csum-items)
@@ -812,7 +892,6 @@ btrfs-progs-5.13 (2021-07-13)
       * hash speedtest measure time, cycles using perf and print throughput
 
 btrfs-progs-5.13.1 (2021-07-30)
-"""""""""""""""""""""""""""""""
    * build: fix build on musl libc due to missing definition of NAME_MAX
    * check:
       * batch more work into one transaction when clearing v1 free space inodes
@@ -823,7 +902,7 @@ btrfs-progs-5.13.1 (2021-07-30)
       * documentation updates
 
 btrfs-progs-5.12 (2021-05-10)
------------------------------
+"""""""""""""""""""""""""""""
    * libbtrfsutil: relicensed to LGPL v2.1+
    * mkfs: zoned mode support (kernel 5.12+)
    * fi df: show zone_unusable per profile type in zoned mode
@@ -848,14 +927,13 @@ btrfs-progs-5.12 (2021-05-10)
       * update status of mount options since 5.9
 
 btrfs-progs-5.12.1 (2021-05-13)
-"""""""""""""""""""""""""""""""
    * build: fix missing symbols in libbtrfs
    * mkfs: check for minimal number of zones
    * check: fix warning about cache generation when free space tree is enabled
    * fix superblock write in zoned mode on 16K pages
 
 btrfs-progs-5.11 (2021-03-05)
------------------------------
+"""""""""""""""""""""""""""""
    * fix device path canonicalization for device mapper devices
    * receive: remove workaround for setting capabilities, all stable kernels
      have been patched
@@ -875,7 +953,6 @@ btrfs-progs-5.11 (2021-03-05)
          * docker images for various distros
 
 btrfs-progs-5.11.1 (2021-03-24)
-"""""""""""""""""""""""""""""""
    * properly format checksums when a mismatch is reported
    * check: fix false alert on tree block crossing 64K page boundary
    * convert:
@@ -889,7 +966,7 @@ btrfs-progs-5.11.1 (2021-03-24)
       * updated tests
 
 btrfs-progs-5.10 (2021-01-18)
------------------------------
+"""""""""""""""""""""""""""""
    * scrub status:
       * print percentage of progress
       * add size unit options
@@ -913,7 +990,6 @@ btrfs-progs-5.10 (2021-01-18)
       * debugging output enhancements
 
 btrfs-progs-5.10.1 (2021-02-05)
-"""""""""""""""""""""""""""""""
    * static build works again
    * other:
       * add a way to test static binaries with the testsuite
@@ -922,7 +998,7 @@ btrfs-progs-5.10.1 (2021-02-05)
         change in the future
 
 btrfs-progs-5.9 (2020-10-23)
-----------------------------
+""""""""""""""""""""""""""""
    * mkfs:
       * switch default to single profile for multi-device filesystem, up to
         now it was raid0 that may not be simple to convert to some other profile
@@ -960,10 +1036,10 @@ btrfs-progs-5.9 (2020-10-23)
          * print .so versions of libraries in configure summary
 
 btrfs-progs-5.8 (skipped)
--------------------------
+"""""""""""""""""""""""""
 
 btrfs-progs-5.7 (2020-07-02)
-----------------------------
+""""""""""""""""""""""""""""
    * mkfs:
       * new option to enable features otherwise enabled at runtime, now
         implemented for quotas, 'mkfs.btrfs -R quota'
@@ -987,7 +1063,7 @@ btrfs-progs-5.7 (2020-07-02)
       * new tests
 
 btrfs-progs-5.6 (2020-04-05)
-----------------------------
+""""""""""""""""""""""""""""
    * inspect logical-resolve: support LOGICAL_INO_V2 as new option '-o',
      helps advanced dedupe tools
    * inspect: user larger buffer (64K) for results
@@ -1016,7 +1092,6 @@ btrfs-progs-5.6 (2020-04-05)
       * many typos fixed
 
 btrfs-progs-5.6.1 (2020-05-07)
-""""""""""""""""""""""""""""""
    * print warning when multiple block group profiles exist, update 'fi usage'
      summary, add docs to manual page explaining the situation
    * build: optional support for libgcrypt or libsodium, providing hash
@@ -1027,10 +1102,10 @@ btrfs-progs-5.6.1 (2020-05-07)
       * updated docs
 
 btrfs-progs-5.5 (skipped)
--------------------------
+"""""""""""""""""""""""""
 
 btrfs-progs-5.4 (2019-12-03)
-----------------------------
+""""""""""""""""""""""""""""
    * support new hash algorithms (kernel 5.5):
       * mkfs.btrfs and btrfs-convert with --csum, crc32c, xxhash, sha256, blake2
    * mkfs: support new raid1c3 and raid1c4 block group profiles (kernel 5.5)
@@ -1052,14 +1127,13 @@ btrfs-progs-5.4 (2019-12-03)
       * cleanups and refactoring
 
 btrfs-progs-5.4.1 (2020-01-09)
-""""""""""""""""""""""""""""""
    * build: fix docbook5 build
    * check: do extra verification of extent items, inode items and chunks
    * qgroup: return ENOTCONN if quotas not running (needs updated kernel)
    * other: various test fixups
 
 btrfs-progs-5.3 (2019-10-21)
-----------------------------
+""""""""""""""""""""""""""""
    * mkfs:
       * new option to specify checksum algorithm (only crc32c)
       * fix xattr enumeration
@@ -1074,11 +1148,10 @@ btrfs-progs-5.3 (2019-10-21)
       * lots of printf format fixups
 
 btrfs-progs-5.3.1 (2019-10-25)
-""""""""""""""""""""""""""""""
    * libbtrfs: fix link breakage due to missing symbols
 
 btrfs-progs-5.2 (2019-07-05)
-----------------------------
+""""""""""""""""""""""""""""
    * subvol show: print qgroup information when available
    * scrub:
       * status: show ETA, revamp the whole output
@@ -1106,7 +1179,6 @@ btrfs-progs-5.2 (2019-07-05)
       * sb-mod can modify more superblock items
 
 btrfs-progs-5.2.1 (2019-07-26)
-""""""""""""""""""""""""""""""
    * scrub status: fix ETA calculation after resume
    * check: fix crash when using -Q
    * restore: fix symlink owner restoration
@@ -1117,7 +1189,6 @@ btrfs-progs-5.2.1 (2019-07-26)
       * test updates
 
 btrfs-progs-5.2.2 (2019-09-05)
-""""""""""""""""""""""""""""""
    * check:
       * fix false report of wrong byte count for orphan inodes
       * option -E was not handled correctly
@@ -1130,7 +1201,7 @@ btrfs-progs-5.2.2 (2019-09-05)
       * doc fixups and updates
 
 btrfs-progs-5.1 (2019-05-17)
-----------------------------
+""""""""""""""""""""""""""""
    * (version 5.0 skipped)
    * check:
       * repair: flush/FUA support to avoid breaking metadata COW
@@ -1161,7 +1232,6 @@ btrfs-progs-5.1 (2019-05-17)
       * new tests
 
 btrfs-progs-5.1.1 (2019-06-11)
-""""""""""""""""""""""""""""""
    * convert and mkfs will try to use optimized crc32c
    * fi show: accept a file-backed image
    * fi show: fix possible crash when device is deleted in parallel

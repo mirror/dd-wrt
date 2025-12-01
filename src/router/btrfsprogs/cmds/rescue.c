@@ -22,6 +22,7 @@
 #include <errno.h>
 #include <stdbool.h>
 #include <unistd.h>
+#include <getopt.h>
 #include "kernel-lib/list.h"
 #include "kernel-shared/ctree.h"
 #include "kernel-shared/volumes.h"
@@ -30,6 +31,7 @@
 #include "kernel-shared/extent_io.h"
 #include "kernel-shared/accessors.h"
 #include "kernel-shared/uapi/btrfs_tree.h"
+#include "common/string-utils.h"
 #include "common/messages.h"
 #include "common/utils.h"
 #include "common/help.h"
@@ -274,6 +276,71 @@ out:
 	return !!ret;
 }
 static DEFINE_SIMPLE_COMMAND(rescue_fix_device_size, "fix-device-size");
+
+static const char * const cmd_rescue_fix_data_checksum_usage[] = {
+	"btrfs rescue fix-data-checksum <device>",
+	"Fix data checksum mismatches.",
+	"",
+	OPTLINE("-r|--readonly", "readonly mode, only report errors without repair"),
+	OPTLINE("-i|--interactive", "interactive mode, ignore the error by default."),
+	OPTLINE("-m|--mirror <mirror>", "update csum item using specified mirror"),
+	HELPINFO_INSERT_GLOBALS,
+	HELPINFO_INSERT_VERBOSE,
+	NULL
+};
+
+static int cmd_rescue_fix_data_checksum(const struct cmd_struct *cmd,
+					int argc, char **argv)
+{
+	enum btrfs_fix_data_checksum_mode mode = BTRFS_FIX_DATA_CSUMS_READONLY;
+	unsigned int mirror = 0;
+	int ret;
+
+	optind = 0;
+	while (1) {
+		int c;
+		enum { GETOPT_VAL_DRYRUN = GETOPT_VAL_FIRST };
+		static const struct option long_options [] = {
+			{"readonly", no_argument, NULL, 'r'},
+			{"interactive", no_argument, NULL, 'i'},
+			{"mirror", required_argument, NULL, 'm'},
+			{"NULL", 0, NULL, 0},
+		};
+
+		c = getopt_long(argc, argv, "rim:", long_options, NULL);
+		if (c < 0)
+			break;
+		switch (c) {
+		case 'r':
+			mode = BTRFS_FIX_DATA_CSUMS_READONLY;
+			break;
+		case 'i':
+			mode = BTRFS_FIX_DATA_CSUMS_INTERACTIVE;
+			break;
+		case 'm':
+			mode = BTRFS_FIX_DATA_CSUMS_UPDATE_CSUM_ITEM;
+			mirror = arg_strtou64(optarg);
+			if (mirror == 0) {
+				error("invalid mirror number %u, must be >= 1", mirror);
+				return 1;
+			}
+			break;
+		default:
+			usage_unknown_option(cmd, argv);
+		}
+	}
+
+	if (check_argc_min(argc - optind, 1))
+		return 1;
+
+	ret = btrfs_recover_fix_data_checksum(argv[optind], mode, mirror);
+	if (ret < 0) {
+		errno = -ret;
+		error("failed to fix data checksums: %m");
+	}
+	return !!ret;
+}
+static DEFINE_SIMPLE_COMMAND(rescue_fix_data_checksum, "fix-data-checksum");
 
 static const char * const cmd_rescue_create_control_device_usage[] = {
 	"btrfs rescue create-control-device",
@@ -527,6 +594,7 @@ static const struct cmd_group rescue_cmd_group = {
 		&cmd_struct_rescue_super_recover,
 		&cmd_struct_rescue_zero_log,
 		&cmd_struct_rescue_fix_device_size,
+		&cmd_struct_rescue_fix_data_checksum,
 		&cmd_struct_rescue_create_control_device,
 		&cmd_struct_rescue_clear_ino_cache,
 		&cmd_struct_rescue_clear_space_cache,

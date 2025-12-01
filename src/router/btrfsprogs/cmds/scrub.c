@@ -45,6 +45,7 @@
 #include "kernel-lib/sizes.h"
 #include "kernel-shared/volumes.h"
 #include "common/defs.h"
+#include "common/compat.h"
 #include "common/messages.h"
 #include "common/utils.h"
 #include "common/open-utils.h"
@@ -662,7 +663,7 @@ again:
 			++state;
 			fallthrough;
 		case 2: /* start of line, skip space */
-			while (isspace(l[i]) && i < avail) {
+			while (i < avail && isspace(l[i])) {
 				if (l[i] == '\n')
 					++lineno;
 				++i;
@@ -1738,18 +1739,20 @@ out:
 }
 
 static const char * const cmd_scrub_start_usage[] = {
-	"btrfs scrub start [-BdqrRf] [-c ioprio_class -n ioprio_classdata] <path>|<device>",
-	"Start a new scrub. If a scrub is already running, the new one fails.",
+	"btrfs scrub start [options] <path>|<device>",
+	"Start a new scrub on the filesystem or a device (can be started only once)",
 	"",
 	OPTLINE("-B", "do not background"),
 	OPTLINE("-d", "stats per device (-B only)"),
-	OPTLINE("-r", "read only mode"),
+	OPTLINE("-r", "read only mode (no repairs done)"),
 	OPTLINE("-R", "raw print mode, print full data instead of summary"),
-	OPTLINE("-c", "set ioprio class (see ionice(1) manpage)"),
-	OPTLINE("-n", "set ioprio classdata (see ionice(1) manpage)"),
+	OPTLINE("--limit SIZE", "set the throughput limit for each device (0 for unlimited), restored afterwards"),
 	OPTLINE("-f", "force starting new scrub even if a scrub is already running this is useful when scrub stats record file is damaged"),
-	OPTLINE("--limit", "set the throughput limit for each device"),
 	OPTLINE("-q", "deprecated, alias for global -q option"),
+	"",
+	"Priority (requires IO scheduler support, not supported by mq-deadline):",
+	OPTLINE("-c CLASS ", "set ioprio class (see ionice(1) manpage), "),
+	OPTLINE("-n CDATA", "set ioprio classdata (see ionice(1) manpage)"),
 	HELPINFO_INSERT_GLOBALS,
 	HELPINFO_INSERT_QUIET,
 	NULL
@@ -1817,9 +1820,11 @@ static const char * const cmd_scrub_resume_usage[] = {
 	OPTLINE("-d", "stats per device (-B only)"),
 	OPTLINE("-r", "read only mode"),
 	OPTLINE("-R", "raw print mode, print full data instead of summary"),
-	OPTLINE("-c", "set ioprio class (see ionice(1) manpage)"),
-	OPTLINE("-n", "set ioprio classdata (see ionice(1) manpage)"),
 	OPTLINE("-q", "deprecated, alias for global -q option"),
+	"",
+	"Priority (requires IO scheduler support, not supported by mq-deadline):",
+	OPTLINE("-c CLASS", "set ioprio class (see ionice(1) manpage)"),
+	OPTLINE("-n CDATA", "set ioprio classdata (see ionice(1) manpage)"),
 	HELPINFO_INSERT_GLOBALS,
 	HELPINFO_INSERT_QUIET,
 	NULL
@@ -2079,7 +2084,7 @@ static int cmd_scrub_limit(const struct cmd_struct *cmd, int argc, char **argv)
 		return 1;
 	}
 	if (!all_set && !devid_set && limit_set) {
-		error("--limit must be used with either --all or --deivd");
+		error("--limit must be used with either --all or --devid");
 		return 1;
 	}
 
@@ -2163,7 +2168,7 @@ static int cmd_scrub_limit(const struct cmd_struct *cmd, int argc, char **argv)
 	cols = 3;
 	table = table_create(cols, 2 + fi_args.num_devices);
 	if (!table) {
-		error_msg(ERROR_MSG_MEMORY, NULL);
+		error_mem(NULL);
 		ret = 1;
 		goto out;
 	}

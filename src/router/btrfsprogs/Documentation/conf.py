@@ -17,7 +17,7 @@
 import pathlib
 from docutils import nodes
 from docutils.utils import unescape
-from docutils.parsers.rst import Directive, directives
+from docutils.parsers.rst import Directive
 from sphinx.util.nodes import split_explicit_title, set_source_info
 
 # -- Project information -----------------------------------------------------
@@ -159,7 +159,6 @@ class DupLabelDirective(Directive):
 # - format is strict
 # - html link target is not validated
 def role_manref(name, rawtext, text, lineno, inliner, options={}, content=[]):
-    env = inliner.document.settings.env
     name, number = text.split('(', 1)
     number = number.split(')')[0]
 

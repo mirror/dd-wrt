@@ -29,6 +29,7 @@
 #include <pthread.h>
 #include <uuid/uuid.h>
 #include <blkid/blkid.h>
+#include <linux/version.h>
 #include "kernel-lib/list.h"
 #include "kernel-lib/list_sort.h"
 #include "kernel-lib/rbtree.h"
@@ -337,6 +338,11 @@ static int recow_roots(struct btrfs_trans_handle *trans,
 		if (ret)
 			return ret;
         }
+	if (btrfs_fs_incompat(info, RAID_STRIPE_TREE)) {
+		ret = __recow_root(trans, info->stripe_root);
+		if (ret)
+			return ret;
+	}
 	ret = recow_global_roots(trans);
 	if (ret)
 		return ret;
@@ -463,6 +469,11 @@ static const char * const mkfs_usage[] = {
 	OPTLINE("", "- ro - create the subvolume as read-only"),
 	OPTLINE("", "- default - the SUBDIR will be a subvolume and also set as default (can be specified only once)"),
 	OPTLINE("", "- default-ro - like 'default' and is created as read-only subvolume (can be specified only once)"),
+	OPTLINE("--inode-flags FLAGS:PATH", "specify that path to have inode flags, can be specified multiple times"),
+	OPTLINE("", "FLAGS is one of:"),
+	OPTLINE("", "- nodatacow - disable data CoW, implies nodatasum for regular files"),
+	OPTLINE("", "- nodatasum - disable data checksum only"),
+	OPTLINE("--reflink", "(with --rootdir) write file data by cloning ranges"),
 	OPTLINE("--shrink", "(with --rootdir) shrink the filled filesystem to minimal size"),
 	OPTLINE("-K|--nodiscard", "do not perform whole device TRIM"),
 	OPTLINE("-f|--force", "force overwrite of existing filesystem"),
@@ -508,13 +519,6 @@ static int zero_output_file(int out_fd, u64 size)
 	return ret;
 }
 
-static int _cmp_device_by_id(void *priv, struct list_head *a,
-			     struct list_head *b)
-{
-	return list_entry(a, struct btrfs_device, dev_list)->devid -
-	       list_entry(b, struct btrfs_device, dev_list)->devid;
-}
-
 static void list_all_devices(struct btrfs_root *root, bool is_zoned)
 {
 	struct btrfs_fs_devices *fs_devices;
@@ -528,7 +532,7 @@ static void list_all_devices(struct btrfs_root *root, bool is_zoned)
 	list_for_each_entry(device, &fs_devices->devices, dev_list)
 		number_of_devices++;
 
-	list_sort(NULL, &fs_devices->devices, _cmp_device_by_id);
+	list_sort(NULL, &fs_devices->devices, cmp_device_id);
 
 	printf("Number of devices:  %d\n", number_of_devices);
 	printf("Devices:\n");
@@ -631,6 +635,64 @@ out:
 	return ret;
 }
 
+static int discard_logical_range_mirror(struct btrfs_fs_info *fs_info, int mirror,
+					u64 start, u64 len)
+{
+	struct btrfs_multi_bio *multi = NULL;
+	int ret;
+	u64 cur_offset = 0;
+	u64 cur_len;
+
+	while (cur_offset < len) {
+		struct btrfs_device *device;
+
+		cur_len = len - cur_offset;
+		ret = btrfs_map_block(fs_info, READ, start + cur_offset, &cur_len,
+				      &multi, mirror, NULL);
+		if (ret)
+			return ret;
+
+		cur_len = min(cur_len, len - cur_offset);
+
+		for (int i = 0; i < multi->num_stripes; i++) {
+			device = multi->stripes[i].dev;
+
+			ret = device_discard_blocks(device->fd,
+						    multi->stripes[i].physical,
+						    cur_len);
+
+			if (ret < 0) {
+				free(multi);
+
+				if (ret == -EOPNOTSUPP)
+					ret = 0;
+
+				return ret;
+			}
+		}
+		free(multi);
+		multi = NULL;
+		cur_offset += cur_len;
+	}
+
+	return 0;
+}
+
+static int discard_logical_range(struct btrfs_fs_info *fs_info, u64 start, u64 len)
+{
+	int ret, num_copies;
+
+	num_copies = btrfs_num_copies(fs_info, start, len);
+
+	for (int i = 0; i < num_copies; i++) {
+		ret = discard_logical_range_mirror(fs_info, i + 1, start, len);
+		if (ret < 0)
+			return ret;
+	}
+
+	return 0;
+}
+
 /* This function will cleanup  */
 static int cleanup_temp_chunks(struct btrfs_fs_info *fs_info,
 			       struct mkfs_allocation *alloc,
@@ -691,6 +753,14 @@ static int cleanup_temp_chunks(struct btrfs_fs_info *fs_info,
 					data_profile, meta_profile,
 					sys_profile)) {
 			u64 flags = btrfs_block_group_flags(path.nodes[0], bgi);
+
+			if (opt_discard) {
+				ret = discard_logical_range(fs_info,
+							    found_key.objectid,
+							    found_key.offset);
+				if (ret < 0)
+					goto out;
+			}
 
 			ret = btrfs_remove_block_group(trans,
 					found_key.objectid, found_key.offset);
@@ -1120,7 +1190,7 @@ static int parse_subvolume(const char *path, struct list_head *subvols,
 
 	subvol = calloc(1, sizeof(struct rootdir_subvol));
 	if (!subvol) {
-		error_msg(ERROR_MSG_MEMORY, NULL);
+		error_mem(NULL);
 		return 1;
 	}
 
@@ -1164,6 +1234,164 @@ static int parse_subvolume(const char *path, struct list_head *subvols,
 	return 0;
 }
 
+static int parse_inode_flags(const char *option, struct list_head *inode_flags_list)
+{
+	struct rootdir_inode_flags_entry *entry = NULL;
+	char *colon;
+	char *option_dup = NULL;
+	char *token;
+	int ret;
+
+	option_dup = strdup(option);
+	if (!option_dup) {
+		ret = -ENOMEM;
+		error_mem(NULL);
+		goto cleanup;
+	}
+	entry = calloc(1, sizeof(*entry));
+	if (!entry) {
+		ret = -ENOMEM;
+		error_mem(NULL);
+		goto cleanup;
+	}
+	colon = strstr(option_dup, ":");
+	if (!colon) {
+		error("invalid inode flags: %s", option);
+		ret = -EINVAL;
+		goto cleanup;
+	}
+	*colon = '\0';
+
+	token = strtok(option_dup, ",");
+	while (token) {
+		if (token == NULL)
+			break;
+		if (strcmp(token, "nodatacow") == 0) {
+			entry->nodatacow = true;
+		} else if (strcmp(token, "nodatasum") == 0) {
+			entry->nodatasum = true;
+		} else {
+			error("unknown flag: %s", token);
+			ret = -EINVAL;
+			goto cleanup;
+		}
+		token = strtok(NULL, ",");
+	}
+
+	if (arg_copy_path(entry->inode_path, colon + 1, sizeof(entry->inode_path))) {
+		error("--inode-flags path too long");
+		ret = -E2BIG;
+		goto cleanup;
+	}
+	list_add_tail(&entry->list, inode_flags_list);
+	free(option_dup);
+	return 0;
+cleanup:
+	free(option_dup);
+	free(entry);
+	return ret;
+}
+
+static int discard_free_space(struct btrfs_fs_info *fs_info, u64 metadata_profile)
+{
+	struct btrfs_root *free_space_root;
+	struct btrfs_path path = { 0 };
+	struct extent_buffer *leaf;
+	int ret;
+	struct btrfs_key key = {
+		.objectid = BTRFS_FREE_SPACE_TREE_OBJECTID,
+		.type = BTRFS_ROOT_ITEM_KEY,
+		.offset = 0,
+	};
+
+	if (!btrfs_fs_compat_ro(fs_info, FREE_SPACE_TREE))
+		return 0;
+
+	/*
+	 * Follow the kernel in not doing discard for RAID5 or 6.  We don't
+	 * have to worry about data here, as --rootdir only works with
+	 * single-device filesystems, and the data block groups are empty
+	 * otherwise.
+	 */
+
+	if (metadata_profile & BTRFS_BLOCK_GROUP_RAID56_MASK)
+		return 0;
+
+	free_space_root = btrfs_global_root(fs_info, &key);
+
+	key.objectid = 0;
+	key.type = 0;
+	key.offset = 0;
+
+	ret = btrfs_search_slot(NULL, free_space_root, &key, &path, 0, 0);
+	if (ret < 0)
+		return ret;
+
+	while (true) {
+		leaf = path.nodes[0];
+
+		if (path.slots[0] >= btrfs_header_nritems(leaf)) {
+			ret = btrfs_next_leaf(free_space_root, &path);
+			if (ret)
+				break;
+
+			leaf = path.nodes[0];
+		}
+
+		btrfs_item_key_to_cpu(leaf, &key, path.slots[0]);
+
+		if (key.type == BTRFS_FREE_SPACE_EXTENT_KEY) {
+			ret = discard_logical_range(fs_info, key.objectid, key.offset);
+			if (ret < 0)
+				goto out;
+		} else if (key.type == BTRFS_FREE_SPACE_BITMAP_KEY) {
+			int size, nrbits;
+			void *bitmap;
+			unsigned long start_bit, end_bit;
+
+			size = btrfs_item_size(leaf, path.slots[0]);
+			bitmap = malloc(size);
+			if (!bitmap) {
+				ret = -ENOMEM;
+				goto out;
+			}
+
+			read_extent_buffer(leaf, bitmap,
+					   btrfs_item_ptr_offset(leaf, path.slots[0]),
+					   size);
+
+			nrbits = div_u64(key.offset, fs_info->sectorsize);
+			start_bit = find_next_bit_le(bitmap, nrbits, 0);
+
+			while (start_bit < nrbits) {
+				u64 addr, length;
+
+				end_bit = find_next_zero_bit_le(bitmap, nrbits, start_bit);
+				addr = key.objectid + (start_bit * fs_info->sectorsize);
+				length = (end_bit - start_bit) * fs_info->sectorsize;
+
+				ret = discard_logical_range(fs_info, addr, length);
+				if (ret < 0) {
+					free(bitmap);
+					goto out;
+				}
+
+				start_bit = find_next_bit_le(bitmap, nrbits, end_bit);
+			}
+
+			free(bitmap);
+		}
+
+		path.slots[0]++;
+	}
+
+	ret = 0;
+
+out:
+	btrfs_release_path(&path);
+	return ret;
+}
+
 int BOX_MAIN(mkfs)(int argc, char **argv)
 {
 	char *file;
@@ -1175,7 +1403,7 @@ int BOX_MAIN(mkfs)(int argc, char **argv)
 	int close_ret;
 	int i;
 	bool ssd = false;
-	bool shrink_rootdir = false;
+	bool shrink_rootdir = false, do_reflink = false;
 	u64 source_dir_size = 0;
 	u64 min_dev_size;
 	u64 shrink_size;
@@ -1206,10 +1434,12 @@ int BOX_MAIN(mkfs)(int argc, char **argv)
 	int nr_global_roots = sysconf(_SC_NPROCESSORS_ONLN);
 	char *source_dir = NULL;
 	struct rootdir_subvol *rds;
+	struct rootdir_inode_flags_entry *rif;
 	bool has_default_subvol = false;
 	enum btrfs_compression_type compression = BTRFS_COMPRESS_NONE;
 	unsigned int compression_level = 0;
 	LIST_HEAD(subvols);
+	LIST_HEAD(inode_flags_list);
 
 	cpu_detect_flags();
 	hash_init_accel();
@@ -1223,7 +1453,9 @@ int BOX_MAIN(mkfs)(int argc, char **argv)
 			GETOPT_VAL_CHECKSUM,
 			GETOPT_VAL_GLOBAL_ROOTS,
 			GETOPT_VAL_DEVICE_UUID,
+			GETOPT_VAL_INODE_FLAGS,
 			GETOPT_VAL_COMPRESS,
+			GETOPT_VAL_REFLINK,
 		};
 		static const struct option long_options[] = {
 			{ "byte-count", required_argument, NULL, 'b' },
@@ -1241,6 +1473,7 @@ int BOX_MAIN(mkfs)(int argc, char **argv)
 			{ "version", no_argument, NULL, 'V' },
 			{ "rootdir", required_argument, NULL, 'r' },
 			{ "subvol", required_argument, NULL, 'u' },
+			{ "inode-flags", required_argument, NULL, GETOPT_VAL_INODE_FLAGS },
 			{ "nodiscard", no_argument, NULL, 'K' },
 			{ "features", required_argument, NULL, 'O' },
 			{ "runtime-features", required_argument, NULL, 'R' },
@@ -1252,6 +1485,7 @@ int BOX_MAIN(mkfs)(int argc, char **argv)
 			{ "shrink", no_argument, NULL, GETOPT_VAL_SHRINK },
 			{ "compress", required_argument, NULL,
 				GETOPT_VAL_COMPRESS },
+			{ "reflink", no_argument, NULL, GETOPT_VAL_REFLINK },
 #if EXPERIMENTAL
 			{ "param", required_argument, NULL, GETOPT_VAL_PARAM },
 			{ "num-global-roots", required_argument, NULL, GETOPT_VAL_GLOBAL_ROOTS },
@@ -1374,6 +1608,11 @@ int BOX_MAIN(mkfs)(int argc, char **argv)
 			case 'q':
 				bconf_be_quiet();
 				break;
+			case GETOPT_VAL_INODE_FLAGS:
+				ret = parse_inode_flags(optarg, &inode_flags_list);
+				if (ret)
+					goto error;
+				break;
 			case GETOPT_VAL_COMPRESS:
 				if (parse_compression(optarg, &compression, &compression_level)) {
 					ret = 1;
@@ -1395,6 +1634,9 @@ int BOX_MAIN(mkfs)(int argc, char **argv)
 				break;
 			case GETOPT_VAL_PARAM:
 				bconf_save_param(optarg);
+				break;
+			case GETOPT_VAL_REFLINK:
+				do_reflink = true;
 				break;
 			case GETOPT_VAL_HELP:
 			default:
@@ -1433,8 +1675,18 @@ int BOX_MAIN(mkfs)(int argc, char **argv)
 		ret = 1;
 		goto error;
 	}
+	if (do_reflink && source_dir == NULL) {
+		error("the option --reflink must be used with --rootdir");
+		ret = 1;
+		goto error;
+	}
 	if (!list_empty(&subvols) && source_dir == NULL) {
 		error("option --subvol must be used with --rootdir");
+		ret = 1;
+		goto error;
+	}
+	if (!list_empty(&inode_flags_list) && source_dir == NULL) {
+		error("option --inode-flags must be used with --rootdir");
 		ret = 1;
 		goto error;
 	}
@@ -1458,50 +1710,13 @@ int BOX_MAIN(mkfs)(int argc, char **argv)
 		}
 	}
 
-	list_for_each_entry(rds, &subvols, list) {
-		char path[PATH_MAX];
-		struct rootdir_subvol *rds2;
+	ret = btrfs_mkfs_validate_subvols(source_dir, &subvols);
+	if (ret < 0)
+		goto error;
 
-		if (path_cat_out(path, source_dir, rds->dir)) {
-			error("path invalid: %s", path);
-			ret = 1;
-			goto error;
-		}
-
-		if (!realpath(path, rds->full_path)) {
-			error("could not get canonical path: %s", rds->dir);
-			ret = 1;
-			goto error;
-		}
-
-		if (!path_exists(rds->full_path)) {
-			error("subvolume path does not exist: %s", rds->dir);
-			ret = 1;
-			goto error;
-		}
-
-		if (!path_is_dir(rds->full_path)) {
-			error("subvolume is not a directory: %s", rds->dir);
-			ret = 1;
-			goto error;
-		}
-
-		if (!path_is_in_dir(source_dir, rds->full_path)) {
-			error("subvolume %s is not a child of %s", rds->dir, source_dir);
-			ret = 1;
-			goto error;
-		}
-
-		for (rds2 = list_first_entry(&subvols, struct rootdir_subvol, list);
-		     rds2 != rds;
-		     rds2 = list_next_entry(rds2, list)) {
-			if (strcmp(rds2->full_path, rds->full_path) == 0) {
-				error("subvolume specified more than once: %s", rds->dir);
-				ret = 1;
-				goto error;
-			}
-		}
-	}
+	ret = btrfs_mkfs_validate_inode_flags(source_dir, &inode_flags_list);
+	if (ret < 0)
+		goto error;
 
 	if (*fs_uuid) {
 		uuid_t dummy_uuid;
@@ -1714,9 +1929,15 @@ int BOX_MAIN(mkfs)(int argc, char **argv)
 		 * Block_count not specified, use file/device size first.
 		 * Or we will always use source_dir_size calculated for mkfs.
 		 */
-		if (!byte_count)
-			byte_count = round_down(device_get_partition_size_fd_stat(fd, &statbuf),
-						sectorsize);
+		if (!byte_count) {
+			ret = device_get_partition_size_fd_stat(fd, &statbuf, &byte_count);
+			if (ret < 0) {
+				errno = -ret;
+				error("failed to get device size for %s: %m", file);
+				goto error;
+			}
+			byte_count = round_down(byte_count, sectorsize);
+		}
 		source_dir_size = btrfs_mkfs_size_dir(source_dir, sectorsize,
 				min_dev_size, metadata_profile, data_profile);
 		UASSERT(IS_ALIGNED(source_dir_size, sectorsize));
@@ -1808,7 +2029,7 @@ int BOX_MAIN(mkfs)(int argc, char **argv)
 	prepare_ctx = calloc(device_count, sizeof(*prepare_ctx));
 
 	if (!t_prepare || !prepare_ctx) {
-		error_msg(ERROR_MSG_MEMORY, "thread for preparing devices");
+		error_mem("thread for preparing devices");
 		ret = 1;
 		goto error;
 	}
@@ -1858,15 +2079,6 @@ int BOX_MAIN(mkfs)(int argc, char **argv)
 	if (btrfs_bg_type_to_tolerated_failures(metadata_profile) <
 	    btrfs_bg_type_to_tolerated_failures(data_profile))
 		warning("metadata has lower redundancy than data!\n");
-
-	if (bconf.verbose) {
-		printf("NOTE: several default settings have changed in version 5.15, please make sure\n");
-		printf("      this does not affect your deployments:\n");
-		printf("      - DUP for metadata (-m dup)\n");
-		printf("      - enabled no-holes (-O no-holes)\n");
-		printf("      - enabled free-space-tree (-R free-space-tree)\n");
-		printf("\n");
-	}
 
 	mkfs_cfg.label = label;
 	memcpy(mkfs_cfg.fs_uuid, fs_uuid, sizeof(mkfs_cfg.fs_uuid));
@@ -1931,6 +2143,15 @@ int BOX_MAIN(mkfs)(int argc, char **argv)
 		errno = -ret;
 		error("failed to create default data block groups: %m");
 		goto error;
+	}
+
+	if (features.incompat_flags & BTRFS_FEATURE_INCOMPAT_ZONED) {
+		ret = create_data_block_groups(trans, root, mixed, &allocation);
+		if (ret) {
+			errno = -ret;
+			error("failed to create data relocation block groups: %m");
+			goto error;
+		}
 	}
 
 	if (features.incompat_flags & BTRFS_FEATURE_INCOMPAT_EXTENT_TREE_V2) {
@@ -2084,10 +2305,16 @@ raid_groups:
 				   rds->is_default ? "" : " ",
 				   rds->dir);
 		}
+		list_for_each_entry(rif, &inode_flags_list, list) {
+			pr_verbose(LOG_DEFAULT, "  Inode flags (%s):  %s\n",
+				   rif->nodatacow ? "NODATACOW" : "",
+				   rif->inode_path);
+		}
 
 		ret = btrfs_mkfs_fill_dir(trans, source_dir, root,
-					  &subvols, compression,
-					  compression_level);
+					  &subvols, &inode_flags_list,
+					  compression, compression_level,
+					  do_reflink);
 		if (ret) {
 			errno = -ret;
 			error("error while filling filesystem: %m");
@@ -2168,9 +2395,14 @@ raid_groups:
 			pretty_size(allocation.system));
 		printf("SSD detected:       %s\n", ssd ? "yes" : "no");
 		printf("Zoned device:       %s\n", opt_zoned ? "yes" : "no");
-		if (opt_zoned)
+		if (opt_zoned) {
 			printf("  Zone size:        %s\n",
 			       pretty_size(fs_info->zone_size));
+			if (zoned_model(file) == ZONED_NONE)
+				printf("  Mode:             emulated\n");
+			else
+				printf("  Mode:             host managed\n");
+		}
 		btrfs_parse_fs_features_to_string(features_buf, &features);
 		printf("Features:           %s\n", features_buf);
 		printf("Checksum:           %s\n",
@@ -2179,10 +2411,23 @@ raid_groups:
 		list_all_devices(root, opt_zoned);
 
 		if (mkfs_cfg.csum_type == BTRFS_CSUM_TYPE_SHA256) {
-			printf(
-"NOTE: you may need to manually load kernel module implementing accelerated SHA256 in case\n"
+			u32 kernel_version = get_running_kernel_version();
+
+			if (kernel_version < KERNEL_VERSION(6,16,0)) {
+				printf(
+"NOTE: in kernels < v6.16 you may need to manually load kernel module implementing accelerated SHA256 in case\n"
 "      the generic implementation is built-in, before mount. Check lsmod or /proc/crypto\n\n"
-);
+				);
+			}
+		}
+	}
+
+	if (opt_discard) {
+		ret = discard_free_space(fs_info, metadata_profile);
+		if (ret < 0) {
+			errno = -ret;
+			error("failed to discard free space: %m");
+			goto out;
 		}
 	}
 
@@ -2228,6 +2473,12 @@ error:
 		head = list_entry(subvols.next, struct rootdir_subvol, list);
 		list_del(&head->list);
 		free(head);
+	}
+	while (!list_empty(&inode_flags_list)) {
+		rif = list_entry(inode_flags_list.next,
+				 struct rootdir_inode_flags_entry, list);
+		list_del(&rif->list);
+		free(rif);
 	}
 
 	return !!ret;

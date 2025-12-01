@@ -145,26 +145,15 @@ static int create_one_subvolume(const char *dst, struct btrfs_util_qgroup_inheri
 				bool create_parents)
 {
 	int ret;
-	char	*dupname = NULL;
-	char	*dupdir = NULL;
+	char dupname[PATH_MAX];
+	char dupdir[PATH_MAX];
 	const char *newname;
-	char	*dstdir;
+	char *dstdir;
 	enum btrfs_util_error err;
 
-	dupname = strdup(dst);
-	if (!dupname) {
-		error_msg(ERROR_MSG_MEMORY, "duplicating %s", dst);
-		ret = -ENOMEM;
-		goto out;
-	}
+	strncpy_null(dupname, dst, PATH_MAX);
 	newname = path_basename(dupname);
-
-	dupdir = strdup(dst);
-	if (!dupdir) {
-		error_msg(ERROR_MSG_MEMORY, "duplicating %s", dst);
-		ret = -ENOMEM;
-		goto out;
-	}
+	strncpy_null(dupdir, dst, PATH_MAX);
 	dstdir = path_dirname(dupdir);
 
 	if (create_parents) {
@@ -210,8 +199,6 @@ static int create_one_subvolume(const char *dst, struct btrfs_util_qgroup_inheri
 	ret = 0;
 
 out:
-	free(dupname);
-	free(dupdir);
 
 	return ret;
 }
@@ -483,7 +470,7 @@ again:
 	default_subvol_id = 0;
 	err = btrfs_util_subvolume_get_default_fd(fd, &default_subvol_id);
 	if (err == BTRFS_UTIL_ERROR_SEARCH_FAILED) {
-		if (geteuid() != 0)
+		if (geteuid() == 0)
 			warning("cannot read default subvolume id: %m");
 	}
 
@@ -562,7 +549,7 @@ again:
 
 		error_btrfs_util(err);
 		if (saved_errno == EPERM)
-			warning("deletion failed with EPERM, you don't have permissions or send may be in progress");
+			warning("deletion failed with EPERM, you don't have permissions or send may be in progress or the subvolume is set as default");
 		ret = 1;
 		goto out;
 	}
@@ -726,7 +713,7 @@ static int cmd_subvolume_snapshot(const struct cmd_struct *cmd, int argc, char *
 
 		dstdir = malloc(strlen(dst) + 1 + strlen(newname) + 1);
 		if (!dstdir) {
-			error_msg(ERROR_MSG_MEMORY, NULL);
+			error_mem(NULL);
 			free(dupname);
 			goto out;
 		}
@@ -1023,7 +1010,7 @@ static char *__ino_resolve(int fd, u64 dirid)
 		 */
 		full = strdup(args.name);
 		if (!full) {
-			error_msg(ERROR_MSG_MEMORY, NULL);
+			error_mem(NULL);
 			return ERR_PTR(-ENOMEM);
 		}
 	} else {
@@ -1108,7 +1095,7 @@ static char *ino_resolve(int fd, u64 ino, u64 *cache_dirid, char **cache_name)
 		name = (char *)(ref + 1);
 		name = strndup(name, namelen);
 		if (!name) {
-			error_msg(ERROR_MSG_MEMORY, NULL);
+			error_mem(NULL);
 			return NULL;
 		}
 
@@ -1787,7 +1774,7 @@ static int cmd_subvolume_sync(const struct cmd_struct *cmd, int argc, char **arg
 	} else {
 		ids = malloc(id_count * sizeof(uint64_t));
 		if (!ids) {
-			error_msg(ERROR_MSG_MEMORY, NULL);
+			error_mem(NULL);
 			ret = 1;
 			goto out;
 		}

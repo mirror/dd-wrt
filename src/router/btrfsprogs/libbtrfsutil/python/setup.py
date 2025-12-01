@@ -23,7 +23,6 @@ import os.path
 import sys
 from setuptools import setup, Extension
 from setuptools.command.build_ext import build_ext
-import subprocess
 
 
 def get_version():
@@ -31,7 +30,7 @@ def get_version():
     try:
         import version
         version = version.btrfs_util_py_version
-    except:
+    except Exception:
         # Don't fail if this is only the 'clean' target or no command
         if 'clean' in sys.argv or len(sys.argv) == 1:
             version = '0.0'

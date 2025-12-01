@@ -14,7 +14,7 @@ suitable for all use cases or workloads, for example performance.
 Combination of features can vary in performance, the table does not
 cover all possibilities.
 
-**The table is based on the latest released linux kernel: 6.13**
+**The table is based on the latest released linux kernel: 6.17**
 
 Since kernel version 6.12 there's a config option *CONFIG_BTRFS_EXPERIMENTAL*
 that enables features that are in development and do not have stabilized
@@ -34,6 +34,13 @@ in following ways:
    that do not affect majority of users
 -  **Unstable**: do not use for other then testing purposes, known
    severe problems, missing implementation of some core parts
+
+Please open a github issue if:
+
+-  there's a known missing entry
+-  a particular feature combination that has a different status and is
+   worth mentioning separately
+-  you know of a bug that lowers the feature status
 
 .. role:: statusok
 .. role:: statusmok
@@ -300,13 +307,6 @@ Integration with other Linux features or external systems.
      - OK
      - compression, server-side copies, snapshots
 
-Please open an issue if:
-
--  there's a known missing entry
--  a particular feature combination that has a different status and is
-   worth mentioning separately
--  you know of a bug that lowers the feature status
-
 .. _status-subpage-block-size:
 
 Subpage block size
@@ -481,8 +481,8 @@ Until kernel 6.12 the *CONFIG_OPTION_DEBUG* was used to hide features that
 still need some work and should not be exposed to users in general. With
 the increasing number of such features or functionality this started to conflict
 with regular debugging features. Currently the following is behind
-the experimental option. Use with caution and if you find problems or have
-feedback please report that to the mailing list.
+the experimental option *CONFIG_BTRFS_EXPERIMENTAL*. Use with caution and if
+you find problems or have feedback please report that to the mailing list.
 
 .. list-table::
    :header-rows: 1
@@ -511,3 +511,6 @@ feedback please report that to the mailing list.
    * - Extent tree v2
      - ...
      - Incomplete implementation.
+   * - Large folio support
+     - ...
+     -

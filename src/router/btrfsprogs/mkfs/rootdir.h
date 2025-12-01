@@ -39,16 +39,37 @@ struct btrfs_root;
 
 struct rootdir_subvol {
 	struct list_head list;
+	/* The path inside the source_dir. */
 	char dir[PATH_MAX];
-	char full_path[PATH_MAX];
+	/* st_dev and st_ino is going to uniquely determine an inode inside the host fs. */
+	dev_t st_dev;
+	ino_t st_ino;
 	bool is_default;
 	bool readonly;
 };
 
+/*
+ * Represent a flag for specified inode at "$source_dir/$inode_path".
+ */
+struct rootdir_inode_flags_entry {
+	struct list_head list;
+	/* Path inside the source directory. */
+	char inode_path[PATH_MAX];
+	/* st_dev and st_ino is going to uniquely determine an inode inside the host fs. */
+	dev_t st_dev;
+	ino_t st_ino;
+
+	bool nodatacow;
+	bool nodatasum;
+};
+
+int btrfs_mkfs_validate_subvols(const char *source_dir, struct list_head *subvols);
+int btrfs_mkfs_validate_inode_flags(const char *source_dir, struct list_head *inode_flags);
 int btrfs_mkfs_fill_dir(struct btrfs_trans_handle *trans, const char *source_dir,
 			struct btrfs_root *root, struct list_head *subvols,
+			struct list_head *inode_flags_list,
 			enum btrfs_compression_type compression,
-			unsigned int compression_level);
+			unsigned int compression_level, bool do_reflink);
 u64 btrfs_mkfs_size_dir(const char *dir_name, u32 sectorsize, u64 min_dev_size,
 			u64 meta_profile, u64 data_profile);
 int btrfs_mkfs_shrink_fs(struct btrfs_fs_info *fs_info, u64 *new_size_ret,

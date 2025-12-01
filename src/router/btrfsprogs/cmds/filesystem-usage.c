@@ -84,7 +84,7 @@ static int add_info_to_list(struct array *chunkinfos, struct btrfs_chunk *chunk)
 
 			p = calloc(1, sizeof(struct chunk_info));
 			if (!p) {
-				error_msg(ERROR_MSG_MEMORY, NULL);
+				error_mem(NULL);
 				return -ENOMEM;
 			}
 			p->devid = devid;
@@ -94,7 +94,7 @@ static int add_info_to_list(struct array *chunkinfos, struct btrfs_chunk *chunk)
 
 			ret = array_append(chunkinfos, p);
 			if (ret < 0) {
-				error_msg(ERROR_MSG_MEMORY, NULL);
+				error_mem(NULL);
 				return -ENOMEM;
 			}
 		}
@@ -243,7 +243,7 @@ static struct btrfs_ioctl_space_args *load_space_info(int fd, const char *path)
 
 	sargs_orig = sargs = calloc(1, sizeof(struct btrfs_ioctl_space_args));
 	if (!sargs) {
-		error_msg(ERROR_MSG_MEMORY, NULL);
+		error_mem(NULL);
 		return NULL;
 	}
 
@@ -268,7 +268,7 @@ static struct btrfs_ioctl_space_args *load_space_info(int fd, const char *path)
 			(count * sizeof(struct btrfs_ioctl_space_info)));
 	if (!sargs) {
 		free(sargs_orig);
-		error_msg(ERROR_MSG_MEMORY, NULL);
+		error_mem(NULL);
 		return NULL;
 	}
 
@@ -417,6 +417,8 @@ static u64 get_first_device_zone_size(int fd)
 	}
 	while (1) {
 		de = readdir(dir);
+		if (!de)
+			break;
 		if (strcmp(".", de->d_name) == 0 || strcmp("..", de->d_name) == 0)
 			continue;
 		strcpy(name, de->d_name);
@@ -622,7 +624,7 @@ static int print_filesystem_usage_overall(int fd, const struct array *chunkinfos
 	 */
 	unreliable_allocated = (raid56 && chunkinfos->length == 0);
 	if (unreliable_allocated) {
-		warning("radid56 found, we cannots compute some values, run as root if needed");
+		warning("raid56 found, we cannot compute some values, run as root if needed");
 		ret = 1;
 		goto exit;
 	}
@@ -673,8 +675,7 @@ static int print_filesystem_usage_overall(int fd, const struct array *chunkinfos
 
 exit:
 
-	if (sargs)
-		free(sargs);
+	free(sargs);
 
 	return ret;
 }
@@ -806,7 +807,7 @@ static int load_device_info(int fd, struct array *devinfos)
 
 		info = calloc(1, sizeof(struct device_info));
 		if (!info) {
-			error_msg(ERROR_MSG_MEMORY, NULL);
+			error_mem(NULL);
 			return 1;
 		}
 		ret = array_append(devinfos, info);
@@ -820,8 +821,14 @@ static int load_device_info(int fd, struct array *devinfos)
 			strcpy(info->path, "missing");
 		} else {
 			strcpy(info->path, (char *)dev_info.path);
-			info->device_size =
-				device_get_partition_size((const char *)dev_info.path);
+			ret = device_get_partition_size((const char *)dev_info.path,
+							&info->device_size);
+			if (ret < 0) {
+				errno = -ret;
+				warning("failed to get device size for %s: %m",
+					dev_info.path);
+				info->device_size = 0;
+			}
 		}
 		info->size = dev_info.total_bytes;
 		ndevs++;
@@ -922,7 +929,7 @@ static void _cmd_filesystem_usage_tabular(unsigned unit_mode,
 
 	matrix = table_create(ncols, nrows);
 	if (!matrix) {
-		error_msg(ERROR_MSG_MEMORY, NULL);
+		error_mem(NULL);
 		return;
 	}
 
@@ -959,7 +966,6 @@ static void _cmd_filesystem_usage_tabular(unsigned unit_mode,
 		int k;
 		const char *p;
 		const struct device_info *devinfo = devinfos->data[i];
-
 		u64  total_allocated = 0, unused;
 
 		p = strrchr(devinfo->path, '/');
@@ -1000,7 +1006,6 @@ static void _cmd_filesystem_usage_tabular(unsigned unit_mode,
 			col++;
 		}
 
-		unused = device_get_partition_size(devinfo->path) - total_allocated;
 		unused = devinfo->size - total_allocated;
 
 		table_printf(matrix, unallocated_col, vhdr_skip + i, ">%s",

@@ -166,7 +166,8 @@ static int emulate_report_zones(const char *file, int fd, u64 pos,
 {
 	const sector_t zone_sectors = emulated_zone_size >> SECTOR_SHIFT;
 	struct stat st;
-	sector_t bdev_size;
+	u64 bdev_size;
+	sector_t bdev_nr_sectors;
 	unsigned int i;
 	int ret;
 
@@ -176,7 +177,13 @@ static int emulate_report_zones(const char *file, int fd, u64 pos,
 		return -EIO;
 	}
 
-	bdev_size = device_get_partition_size_fd_stat(fd, &st) >> SECTOR_SHIFT;
+	ret = device_get_partition_size_fd_stat(fd, &st, &bdev_size);
+	if (ret < 0) {
+		errno = -ret;
+		error("failed to get device size for %s: %m", file);
+		return ret;
+	}
+	bdev_nr_sectors = bdev_size >> SECTOR_SHIFT;
 
 	pos >>= SECTOR_SHIFT;
 	for (i = 0; i < nr_zones; i++) {
@@ -187,7 +194,7 @@ static int emulate_report_zones(const char *file, int fd, u64 pos,
 		zones[i].type = BLK_ZONE_TYPE_CONVENTIONAL;
 		zones[i].cond = BLK_ZONE_COND_NOT_WP;
 
-		if (zones[i].wp >= bdev_size) {
+		if (zones[i].wp >= bdev_nr_sectors) {
 			i++;
 			break;
 		}
@@ -325,8 +332,9 @@ static int report_zones(int fd, const char *file,
 		return -EIO;
 	}
 
-	device_size = device_get_partition_size_fd_stat(fd, &st);
-	if (device_size == 0) {
+	ret = device_get_partition_size_fd_stat(fd, &st, &device_size);
+	if (ret < 0) {
+		errno = -ret;
 		error("zoned: failed to read size of %s: %m", file);
 		exit(1);
 	}
@@ -356,13 +364,13 @@ static int report_zones(int fd, const char *file,
 
 	zinfo->zones = calloc(zinfo->nr_zones, sizeof(struct blk_zone));
 	if (!zinfo->zones) {
-		error_msg(ERROR_MSG_MEMORY, "zone information");
+		error_mem("zone information");
 		exit(1);
 	}
 
 	zinfo->active_zones = bitmap_zalloc(zinfo->nr_zones);
 	if (!zinfo->active_zones) {
-		error_msg(ERROR_MSG_MEMORY, "active zone bitmap");
+		error_mem("active zone bitmap");
 		exit(1);
 	}
 
@@ -379,7 +387,7 @@ static int report_zones(int fd, const char *file,
 		   sizeof(struct blk_zone) * BTRFS_REPORT_NR_ZONES;
 	rep = kmalloc(rep_size, GFP_KERNEL);
 	if (!rep) {
-		error_msg(ERROR_MSG_MEMORY, "zone report");
+		error_mem("zone report");
 		exit(1);
 	}
 
@@ -643,7 +651,7 @@ size_t btrfs_sb_io(int fd, void *buf, off_t offset, int rw)
 	rep_size = sizeof(struct blk_zone_report) + sizeof(struct blk_zone) * 2;
 	rep = calloc(1, rep_size);
 	if (!rep) {
-		error_msg(ERROR_MSG_MEMORY, "zone report");
+		error_mem("zone report");
 		exit(1);
 	}
 
@@ -1203,14 +1211,14 @@ int btrfs_load_block_group_zone_info(struct btrfs_fs_info *fs_info,
 
 	zone_info = calloc(map->num_stripes, sizeof(*zone_info));
 	if (!zone_info) {
-		error_msg(ERROR_MSG_MEMORY, "zone info");
+		error_mem("zone info");
 		return -ENOMEM;
 	}
 
 	active = bitmap_zalloc(map->num_stripes);
 	if (!active) {
 		free(zone_info);
-		error_msg(ERROR_MSG_MEMORY, "active bitmap");
+		error_mem("active bitmap");
 		return -ENOMEM;
 	}
 
@@ -1438,7 +1446,7 @@ int btrfs_get_zone_info(int fd, const char *file,
 #ifdef BTRFS_ZONED
 	zinfo = calloc(1, sizeof(*zinfo));
 	if (!zinfo) {
-		error_msg(ERROR_MSG_MEMORY, "zone information");
+		error_mem("zone information");
 		exit(1);
 	}
 

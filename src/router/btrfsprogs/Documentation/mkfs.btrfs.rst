@@ -36,7 +36,7 @@ OPTIONS
 --csum <type>, --checksum <type>
         Specify the checksum algorithm. Default is *crc32c*. Valid values are *crc32c*,
         *xxhash*, *sha256* or *blake2*. To mount such filesystem kernel must support the
-        checksums as well. See section :ref:`CHECKSUM ALGORITHMS<man-mkfs-checksum-algorithms>`
+        checksums as well. See section :ref:`CHECKSUM ALGORITHMS<man-btrfs5-checksum-algorithms>`
         in :doc:`btrfs-man5`.
 
 -d|--data <profile>
@@ -212,6 +212,41 @@ OPTIONS
         In that case we cannot create :file:`hardlink3` as hardlinks of
         :file:`hardlink1` and :file:`hardlink2` because :file:`hardlink3` will
         be inside a new subvolume.
+
+--inode-flags <flags>:<path>
+	Specify that *path* to have inode *flags*, other than the default one (which
+	implies data COW and data checksum).  The option *--rootdir* must also be
+	specified.  This option can be specified multiple times.
+
+	The supported flag(s) are:
+
+	* *nodatacow*: disable data COW, implies *nodatasum* for regular files.
+	* *nodatasum*: disable data checksum only.
+
+	*flags* can be separated by comma (*,*).
+
+	Children inodes will inherit the flags from their parent inodes, like the
+	following case:
+
+        .. code-block:: none
+
+		rootdir/
+		|- file1
+		|- file2
+		|- dir/
+		   |- file3
+
+	In that case, if *--inode-flags nodatacow:dir* is specified, both
+	:file:`dir` and :file:`file3` will have the *nodatacow* flag.
+
+	And this option also works with *--subvol* option, but the inode flag of
+	each subvolume is independent and will not inherit from the parent directory.
+	(The same as the kernel behavior.)
+
+--reflink
+        When used with *--rootdir* try to clone file extents using FICLONERANGE
+        ioctl instead of copying the bytes. This requires the source files and
+        the final image to exist on the same filesystem.
 
 --shrink
         Shrink the filesystem to its minimal size, only works with *--rootdir* option.

@@ -37,11 +37,16 @@
 #include "kernel-shared/transaction.h"
 #include "kernel-shared/extent_io.h"
 #include "common/internal.h"
+#include "common/compat.h"
 #include "common/messages.h"
 #include "common/extent-cache.h"
 #include "common/utils.h"
 #include "cmds/rescue.h"
 #include "check/common.h"
+
+#ifdef __ANDROID__
+#include <stdatomic.h>
+#endif
 
 struct recover_control {
 	int verbose;
@@ -82,6 +87,9 @@ struct device_scan {
 	struct btrfs_device *dev;
 	int fd;
 	u64 bytenr;
+#ifdef __ANDROID__
+	atomic_flag thread_running;
+#endif
 };
 
 static struct extent_record *btrfs_new_extent_record(struct extent_buffer *eb)
@@ -90,7 +98,7 @@ static struct extent_record *btrfs_new_extent_record(struct extent_buffer *eb)
 
 	rec = calloc(1, sizeof(*rec));
 	if (!rec) {
-		error_msg(ERROR_MSG_MEMORY, "extent record");
+		error_mem("extent record");
 		exit(1);
 	}
 
@@ -761,8 +769,12 @@ static int scan_one_device(void *dev_scan_struct)
 		return 1;
 
 	buf = malloc(sizeof(*buf) + rc->nodesize);
-	if (!buf)
+	if (!buf) {
+#ifdef __ANDROID__
+		atomic_flag_clear(&dev_scan->thread_running);
+#endif
 		return -ENOMEM;
+	}
 	buf->len = rc->nodesize;
 
 	bytenr = 0;
@@ -823,6 +835,9 @@ next_node:
 out:
 	close(fd);
 	free(buf);
+#ifdef __ANDROID__
+	atomic_flag_clear(&dev_scan->thread_running);
+#endif
 	return ret;
 }
 
@@ -869,6 +884,9 @@ static int scan_devices(struct recover_control *rc)
 		dev_scans[devidx].dev = dev;
 		dev_scans[devidx].fd = fd;
 		dev_scans[devidx].bytenr = -1;
+#ifdef __ANDROID__
+		atomic_flag_test_and_set(&dev_scans[devidx].thread_running);
+#endif
 		devidx++;
 	}
 
@@ -887,8 +905,15 @@ static int scan_devices(struct recover_control *rc)
 		for (i = 0; i < devidx; i++) {
 			if (dev_scans[i].bytenr == -1)
 				continue;
+#ifdef __ANDROID__
+			if (atomic_flag_test_and_set(&dev_scans[i].thread_running))
+				ret = EBUSY;
+			else
+				ret = pthread_join(t_scans[i], (void **)&t_rets[i]);
+#else
 			ret = pthread_tryjoin_np(t_scans[i],
 						 (void **)&t_rets[i]);
+#endif
 			if (ret == EBUSY) {
 				all_done = false;
 				continue;
@@ -1451,7 +1476,7 @@ open_ctree_with_broken_chunk(struct recover_control *rc)
 
 	fs_info = btrfs_new_fs_info(1, BTRFS_SUPER_INFO_OFFSET);
 	if (!fs_info) {
-		error_msg(ERROR_MSG_MEMORY, "fs_info");
+		error_mem("fs_info");
 		return ERR_PTR(-ENOMEM);
 	}
 	fs_info->is_chunk_recover = 1;
@@ -1470,7 +1495,7 @@ open_ctree_with_broken_chunk(struct recover_control *rc)
 		goto out_devices;
 	}
 
-	UASSERT(!memcmp(disk_super->fsid, rc->fs_devices->fsid, BTRFS_FSID_SIZE));
+	UASSERT(memcmp(disk_super->fsid, rc->fs_devices->fsid, BTRFS_FSID_SIZE) == 0);
 	fs_info->sectorsize = btrfs_super_sectorsize(disk_super);
 	fs_info->nodesize = btrfs_super_nodesize(disk_super);
 	fs_info->stripesize = btrfs_super_stripesize(disk_super);
@@ -1482,9 +1507,9 @@ open_ctree_with_broken_chunk(struct recover_control *rc)
 	features = btrfs_super_incompat_flags(disk_super);
 
 	if (features & BTRFS_FEATURE_INCOMPAT_METADATA_UUID)
-		UASSERT(!memcmp(disk_super->metadata_uuid,
+		UASSERT(memcmp(disk_super->metadata_uuid,
 			       fs_info->fs_devices->metadata_uuid,
-			       BTRFS_FSID_SIZE));
+			       BTRFS_FSID_SIZE) == 0);
 
 	btrfs_setup_root(fs_info->chunk_root, fs_info,
 			 BTRFS_CHUNK_TREE_OBJECTID);
@@ -1896,7 +1921,7 @@ static int check_one_csum(int fd, u64 start, u32 len, u32 tree_csum,
 	}
 	ret = 0;
 	put_unaligned_le32(tree_csum, expected_csum);
-	btrfs_csum_data(NULL, csum_type, (u8 *)data, result, len);
+	btrfs_csum_data(csum_type, (u8 *)data, result, len);
 	if (memcmp(result, expected_csum, csum_size) != 0)
 		ret = 1;
 out:

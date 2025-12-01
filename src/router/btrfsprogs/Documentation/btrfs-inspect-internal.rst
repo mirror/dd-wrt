@@ -209,8 +209,9 @@ list-chunks [options] <path>
         * *Usage* -- chunk usage, percentage of used data/metadata of the chunk length
 
         The chunks in the output can be sorted by one or more sorting criteria, evaluated
-        as specified, in the ascending order.  By default the chunks are sorted
-        by *devid* and *pstart*, this is most convenient for single device filesystems.
+        as specified, in the ascending order (or descending when used like *-devid,-pstart*).
+        By default the chunks are sorted by *devid* and *pstart*, this is most
+        convenient for single device filesystems.
 
         On multi-device filesystems it's up to the user what is preferred as the layout
         of chunks on e.g. striped profiles (RAID0 etc) cannot be easily represented.
@@ -223,7 +224,7 @@ list-chunks [options] <path>
         ``Options``
 
         --sort MODE
-                sort by a column (ascending):
+                sort by a column (ascending, prepend '-' for descending):
 
                 MODE is a comma separated list of:
 
@@ -236,6 +237,10 @@ list-chunks [options] <path>
                         *usage* - by chunk usage (percentage)
 
                         *length* - by chunk length
+
+                        *type* - by chunk type (data, metadata, system)
+
+                        *profile* - by chunk profile (single, DUP, RAID0, RAID1, ...)
 
         --raw
                 raw numbers in bytes, without the *B* suffix
@@ -317,8 +322,17 @@ tree-stats [options] <device>
         -b|--raw
                 raw numbers in bytes, without the *B* suffix
 
-        -t <treeid>
-                Print stats only for the given treeid.
+        -t <tree_id>
+                print only the tree with the specified ID, where the ID can be numerical or
+                common name in a flexible human readable form
+
+                The tree id name recognition rules:
+
+                * case does not matter
+                * the C source definition, e.g. BTRFS_ROOT_TREE_OBJECTID
+                * short forms without BTRFS\_ prefix, without _TREE and _OBJECTID suffix, e.g. ROOT_TREE, ROOT
+                * convenience aliases, e.g. DEVICE for the DEV tree, CHECKSUM for CSUM
+                * unrecognized ID is an error
         --human-readable
                 print human friendly numbers, base 1024, this is the default
 

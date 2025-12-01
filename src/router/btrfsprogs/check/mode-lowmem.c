@@ -1661,6 +1661,47 @@ static void print_dir_item_err(struct btrfs_root *root, struct btrfs_key *key,
 
 }
 
+static bool check_for_dupe_filenames_lowmem(struct extent_buffer *eb, int slot,
+					    int nritems, struct btrfs_root *root,
+					    struct btrfs_key *di_key)
+{
+	struct btrfs_dir_item *di, *di2;
+	char namebuf[BTRFS_NAME_LEN], namebuf2[BTRFS_NAME_LEN];
+	u32 len, len2;
+
+	di = btrfs_item_ptr(eb, slot, struct btrfs_dir_item);
+
+	for (int i = 0; i < nritems - 1; i++) {
+		len = btrfs_dir_name_len(eb, di) + btrfs_dir_data_len(eb, di);
+
+		read_extent_buffer(eb, namebuf, (unsigned long)(di + 1), len);
+
+		di2 = di;
+		len2 = len;
+
+		for (int j = i + 1; j < nritems; j++) {
+			di2 = (struct btrfs_dir_item *)((char *)di2 + sizeof(*di2) + len2);
+			len2 = btrfs_dir_name_len(eb, di2) + btrfs_dir_data_len(eb, di2);
+
+			if (len != len2)
+				continue;
+
+			read_extent_buffer(eb, namebuf2, (unsigned long)(di2 + 1), len2);
+
+			if (memcmp(namebuf, namebuf2, len) == 0) {
+				error("root %llu inode %llu dup filename %.*s",
+				      root->objectid, di_key->objectid,
+				      len, namebuf);
+				return true;
+			}
+		}
+
+		di = (struct btrfs_dir_item *)((char *)di + sizeof(*di) + len);
+	}
+
+	return false;
+}
+
 /*
  * Traverse the given DIR_ITEM/DIR_INDEX and check related INODE_ITEM and
  * call find_inode_ref() to check related INODE_REF/INODE_EXTREF.
@@ -1695,6 +1736,7 @@ static int check_dir_item(struct btrfs_root *root, struct btrfs_key *di_key,
 	int err;
 	int tmp_err;
 	int need_research = 0;
+	int nritems = 1;
 
 begin:
 	err = 0;
@@ -1835,7 +1877,16 @@ next:
 			      di_key->offset);
 			break;
 		}
+
+		if (cur < total)
+			nritems++;
 	}
+
+	if (nritems > 1) {
+		if (check_for_dupe_filenames_lowmem(node, slot, nritems, root, di_key))
+			err |= DUP_FILENAME_ERROR;
+	}
+
 out:
 	/* research path */
 	btrfs_release_path(path);
@@ -3978,6 +4029,140 @@ out:
 }
 
 /*
+ * A read-only version of lookup_inline_extent_backref().
+ * We cannot reuse that function as it always assumes COW.
+ */
+static int has_inline_shared_backref(u64 data_bytenr, u64 data_len, u64 parent)
+{
+	struct btrfs_root *extent_root = btrfs_extent_root(gfs_info, data_bytenr);
+	struct btrfs_extent_inline_ref *iref;
+	struct btrfs_extent_item *ei;
+	struct btrfs_path path = { 0 };
+	struct extent_buffer *leaf;
+	struct btrfs_key key;
+	unsigned long ptr;
+	unsigned long end;
+	bool found = false;
+	u32 item_size;
+	u64 flags;
+	int ret;
+
+	key.objectid = data_bytenr;
+	key.type = BTRFS_EXTENT_ITEM_KEY;
+	key.offset = data_len;
+
+	ret = btrfs_search_slot(NULL, extent_root, &key, &path, 0, 0);
+	if (ret > 0)
+		ret = -ENOENT;
+	if (ret < 0)
+		goto out;
+
+	leaf = path.nodes[0];
+	item_size = btrfs_item_size(leaf, path.slots[0]);
+	if (item_size < sizeof(*ei)) {
+		error("extent item size %u < %zu, leaf %llu slot %u",
+		      item_size, sizeof(*ei), leaf->start, path.slots[0]);
+		ret = -EUCLEAN;
+		goto out;
+	}
+	ei = btrfs_item_ptr(leaf, path.slots[0], struct btrfs_extent_item);
+	flags = btrfs_extent_flags(leaf, ei);
+
+	if (!(flags & BTRFS_EXTENT_FLAG_DATA)) {
+		error("backref item flag for bytenr %llu is not data", data_bytenr);
+		ret = -EUCLEAN;
+		goto out;
+	}
+
+	ptr = (unsigned long)(ei + 1);
+	end = (unsigned long)ei + item_size;
+
+	while (true) {
+		u64 ref_parent;
+		u8 type;
+
+		if (ptr >= end) {
+			if (ptr > end) {
+				error("inline extent item for %llu is not properly ended",
+				      data_bytenr);
+				ret = -EUCLEAN;
+				goto out;
+			}
+			break;
+		}
+		iref = (struct btrfs_extent_inline_ref *)ptr;
+		type = btrfs_extent_inline_ref_type(leaf, iref);
+		if (type != BTRFS_SHARED_DATA_REF_KEY)
+			goto next;
+
+		ref_parent = btrfs_extent_inline_ref_offset(leaf, iref);
+		if (ref_parent == parent) {
+			found = true;
+			goto out;
+		}
+next:
+		ptr += btrfs_extent_inline_ref_size(type);
+	}
+
+out:
+	btrfs_release_path(&path);
+	if (ret < 0)
+		return ret;
+	return found;
+}
+
+static int has_keyed_shared_backref(u64 data_bytenr, u64 parent)
+{
+	struct btrfs_root *extent_root = btrfs_extent_root(gfs_info, data_bytenr);
+	struct btrfs_path path = { 0 };
+	struct btrfs_key key;
+	int ret;
+
+	key.objectid = data_bytenr;
+	key.type = BTRFS_SHARED_DATA_REF_KEY;
+	key.offset = parent;
+
+	ret = btrfs_search_slot(NULL, extent_root, &key, &path, 0, 0);
+	btrfs_release_path(&path);
+	if (ret < 0)
+		return ret;
+	/* No keyed ref found, return 0. */
+	if (ret > 0)
+		return 0;
+	return 1;
+}
+
+/*
+ * Determine if the @leaf already belongs to a shared data backref item.
+ * (With parent bytenr.)
+ *
+ * Return >0 if the @leaf belongs to a shared data backref.
+ * Return 0 if not.
+ * Return <0 for critical error.
+ */
+static int is_leaf_shared(struct extent_buffer *leaf, u64 data_bytenr, u64 data_len)
+{
+	int ret;
+
+	ret = has_inline_shared_backref(data_bytenr, data_len, leaf->start);
+	if (ret < 0) {
+		errno = -ret;
+		error("failed to search inlined shared backref for logical %llu len %llu, %m",
+			data_bytenr, data_len);
+		return ret;
+	}
+	if (ret > 0)
+		return ret;
+	ret = has_keyed_shared_backref(data_bytenr, leaf->start);
+	if (ret < 0) {
+		errno = -ret;
+		error("failed to search keyed shared backref for logical %llu len %llu, %m",
+			data_bytenr, data_len);
+	}
+	return ret;
+}
+
+/*
  * Check referencer for normal (inlined) data ref
  * If len == 0, it will be resolved by searching in extent tree
  */
@@ -4049,13 +4234,13 @@ static int check_extent_data_backref(u64 root_id, u64 objectid, u64 offset,
 		    btrfs_header_owner(leaf) != root_id)
 			goto next;
 		/*
-		 * For tree blocks have been relocated, data backref are
-		 * shared instead of keyed. Do not account it.
+		 * If the node belongs to a shared backref item, we should not
+		 * account the number.
 		 */
-		if (btrfs_header_flag(leaf, BTRFS_HEADER_FLAG_RELOC)) {
-			/*
-			 * skip the leaf to speed up.
-			 */
+		ret = is_leaf_shared(leaf, bytenr, len);
+		if (ret < 0)
+			break;
+		if (ret > 0) {
 			slot = btrfs_header_nritems(leaf);
 			goto next;
 		}
@@ -4564,7 +4749,12 @@ out:
 		error(
 		"device extent[%llu, %llu, %llu] did not find the related chunk",
 			devext_key.objectid, devext_key.offset, length);
-		return REFERENCER_MISSING;
+		ret = -ENOENT;
+		if (opt_check_repair)
+			ret = btrfs_remove_dev_extent(gfs_info, devext_key.objectid,
+						      devext_key.offset);
+		if (ret < 0)
+			return REFERENCER_MISSING;
 	}
 	return 0;
 }
@@ -4688,7 +4878,14 @@ next:
 			dev->devid);
 		return 0;
 	}
-	block_dev_size = device_get_partition_size_fd_stat(dev->fd, &st);
+	ret = device_get_partition_size_fd_stat(dev->fd, &st, &block_dev_size);
+	if (ret < 0) {
+		errno = -ret;
+		warning(
+	"failed to get device size for %s, skipping its block device size check: %m",
+			dev->name);
+		return 0;
+	}
 	if (block_dev_size < total_bytes) {
 		error(
 "block device size is smaller than total_bytes in device item, has %llu expect >= %llu",
@@ -5366,6 +5563,17 @@ static int check_btrfs_root(struct btrfs_root *root, int check_all)
 					root->root_key.objectid);
 				err &= ~INVALID_GENERATION;
 			}
+		}
+	}
+	/*
+	 * If this tree is a subvolume (not a reloc tree) and has no refs, there
+	 * should be an orphan item for it, or this subvolume will never be deleted.
+	 */
+	if (btrfs_root_refs(root_item) == 0 && is_fstree(btrfs_root_id(root))) {
+		if (!has_orphan_item(root->fs_info->tree_root,
+				     btrfs_root_id(root))) {
+			error("missing orphan item for root %lld", btrfs_root_id(root));
+			err |= REFERENCER_MISSING;
 		}
 	}
 	if (btrfs_root_refs(root_item) > 0 ||

@@ -218,7 +218,7 @@ static const struct btrfs_feature mkfs_features[] = {
 		.compat_ro_flag	= BTRFS_FEATURE_COMPAT_RO_BLOCK_GROUP_TREE,
 		.sysfs_name	= "block_group_tree",
 		VERSION_TO_STRING2(compat, 6,1),
-		VERSION_NULL(safe),
+		VERSION_TO_STRING2(safe, 6,6),
 		VERSION_NULL(default),
 		.desc		= "block group tree, more efficient block group tracking to reduce mount time"
 	},
@@ -361,12 +361,12 @@ static int parse_one_fs_feature(const char *name,
 	for (i = 0; i < array_size; i++) {
 		const struct btrfs_feature *feat = get_feature(i, source);
 
-		if (name[0] == '^' && !strcmp(feat->name, name + 1)) {
+		if (name[0] == '^' && strcmp(feat->name, name + 1) == 0) {
 			features->compat_ro_flags &= ~feat->compat_ro_flag;
 			features->incompat_flags &= ~feat->incompat_flag;
 			features->runtime_flags &= ~feat->runtime_flag;
 			found = 1;
-		} else if (!strcmp(feat->name, name)) {
+		} else if (strcmp(feat->name, name) == 0) {
 			features->compat_ro_flags |= feat->compat_ro_flag;
 			features->incompat_flags |= feat->incompat_flag;
 			features->runtime_flags |= feat->runtime_flag;
@@ -613,7 +613,7 @@ static bool check_supported_sectorsize(u32 sectorsize)
 		 * Also check the terminal '\0' to handle cases like
 		 * "4096" and "40960".
 		 */
-		if (!strncmp(this_char, sectorsize_buf, strlen(sectorsize_buf) + 1))
+		if (strncmp(this_char, sectorsize_buf, strlen(sectorsize_buf) + 1) == 0)
 			return true;
 	}
 	return false;

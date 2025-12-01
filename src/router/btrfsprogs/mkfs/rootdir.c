@@ -19,6 +19,7 @@
 #include "kerncompat.h"
 #include <sys/stat.h>
 #include <sys/xattr.h>
+#include <sys/ioctl.h>
 #include <dirent.h>
 #include <unistd.h>
 #include <fcntl.h>
@@ -153,10 +154,12 @@ static struct rootdir_path current_path = {
 
 static struct btrfs_trans_handle *g_trans = NULL;
 static struct list_head *g_subvols;
+static struct list_head *g_inode_flags_list;
 static u64 next_subvol_id = BTRFS_FIRST_FREE_OBJECTID;
 static u64 default_subvol_id;
 static enum btrfs_compression_type g_compression;
 static u64 g_compression_level;
+static bool g_do_reflink;
 
 static inline struct inode_entry *rootdir_path_last(struct rootdir_path *path)
 {
@@ -612,7 +615,7 @@ static ssize_t zstd_compress_extent(bool first_sector, u32 sectorsize,
 
 	zstd_ctx = ZSTD_createCCtx();
 	if (!zstd_ctx) {
-		error_msg(ERROR_MSG_MEMORY, NULL);
+		error_mem(NULL);
 		return -ENOMEM;
 	}
 
@@ -701,6 +704,82 @@ struct source_descriptor {
 	char *wrkmem;
 };
 
+static int do_reflink_write(struct btrfs_fs_info *info,
+			    const struct source_descriptor *source, u64 addr,
+			    u64 file_pos, u64 bytes, const void *buf)
+{
+	struct btrfs_multi_bio *multi = NULL;
+	struct btrfs_device *device;
+	u64 bytes_left;
+	u64 this_len;
+	u64 total_write = 0;
+	u64 dev_bytenr;
+	int dev_nr;
+	int ret = 0;
+	struct file_clone_range fcr;
+
+	fcr.src_fd = source->fd;
+	bytes_left = round_down(bytes, info->sectorsize);
+
+	while (bytes_left > 0) {
+		this_len = bytes_left;
+		dev_nr = 0;
+
+		ret = btrfs_map_block(info, WRITE, addr, &this_len, &multi, 0, NULL);
+		if (ret) {
+			error("cannot map the block %llu", addr);
+			return -EIO;
+		}
+
+		while (dev_nr < multi->num_stripes) {
+			device = multi->stripes[dev_nr].dev;
+			if (device->fd <= 0) {
+				kfree(multi);
+				return -EIO;
+			}
+
+			dev_bytenr = multi->stripes[dev_nr].physical;
+			this_len = min(this_len, bytes_left);
+			dev_nr++;
+			device->total_ios++;
+
+			fcr.src_offset = file_pos + total_write;
+			fcr.src_length = this_len;
+			fcr.dest_offset = dev_bytenr;
+
+			ret = ioctl(device->fd, FICLONERANGE, &fcr);
+			if (ret < 0) {
+				error("cannot clone range: %m");
+				ret = -errno;
+				kfree(multi);
+				return ret;
+			}
+		}
+
+		BUG_ON(bytes_left < this_len);
+
+		bytes_left -= this_len;
+		addr += this_len;
+		total_write += this_len;
+
+		kfree(multi);
+		multi = NULL;
+	}
+
+	/*
+	 * FICLONERANGE can only handle whole sectors. If the file is not a
+	 * multiple of the sector size, we need to write the last sector
+	 * manually.
+	 */
+	if (bytes % info->sectorsize) {
+		return write_data_to_disk(info,
+			(char *)buf + round_down(bytes, info->sectorsize),
+			addr, info->sectorsize);
+	}
+
+	return 0;
+}
+
 static int add_file_item_extent(struct btrfs_trans_handle *trans,
 				struct btrfs_root *root,
 				struct btrfs_inode_item *btrfs_inode,
@@ -716,11 +795,17 @@ static int add_file_item_extent(struct btrfs_trans_handle *trans,
 	u64 buf_size;
 	char *write_buf;
 	bool do_comp = g_compression != BTRFS_COMPRESS_NONE;
+	bool datasum = true;
 	ssize_t comp_ret;
 	u64 flags = btrfs_stack_inode_flags(btrfs_inode);
 
-	if (flags & BTRFS_INODE_NOCOMPRESS)
+	if (g_do_reflink || flags & BTRFS_INODE_NOCOMPRESS)
 		do_comp = false;
+
+	if ((flags & BTRFS_INODE_NODATACOW) || (flags & BTRFS_INODE_NODATASUM)) {
+		datasum = false;
+		do_comp = false;
+	}
 
 	buf_size = do_comp ? BTRFS_MAX_COMPRESSED : MAX_EXTENT_SIZE;
 	to_read = min(file_pos + buf_size, source->size) - file_pos;
@@ -845,20 +930,27 @@ static int add_file_item_extent(struct btrfs_trans_handle *trans,
 
 	first_block = key.objectid;
 
-	ret = write_data_to_disk(root->fs_info, write_buf, first_block,
-				 to_write);
+	if (g_do_reflink) {
+		ret = do_reflink_write(root->fs_info, source, first_block, file_pos,
+				       to_read, write_buf);
+	} else {
+		ret = write_data_to_disk(root->fs_info, write_buf, first_block, to_write);
+	}
+
 	if (ret) {
 		error("failed to write %s", source->path_name);
 		return ret;
 	}
 
-	for (unsigned int i = 0; i < to_write / sectorsize; i++) {
-		ret = btrfs_csum_file_block(trans, first_block + (i * sectorsize),
+	if (datasum) {
+		for (unsigned int i = 0; i < to_write / sectorsize; i++) {
+			ret = btrfs_csum_file_block(trans, first_block + (i * sectorsize),
 					BTRFS_EXTENT_CSUM_OBJECTID,
 					root->fs_info->csum_type,
 					write_buf + (i * sectorsize));
-		if (ret)
-			return ret;
+			if (ret)
+				return ret;
+		}
 	}
 
 	btrfs_set_stack_file_extent_type(&stack_fi, BTRFS_FILE_EXTENT_REG);
@@ -900,7 +992,7 @@ static ssize_t zlib_compress_inline_extent(char *buf, u64 size, char **comp_buf)
 
 	out = malloc(size);
 	if (!out) {
-		error_msg(ERROR_MSG_MEMORY, NULL);
+		error_mem(NULL);
 		ret = -ENOMEM;
 		goto out;
 	}
@@ -958,7 +1050,7 @@ static ssize_t lzo_compress_inline_extent(void *buf, u64 size, char **comp_buf,
 
 	out = malloc(out_size);
 	if (!out) {
-		error_msg(ERROR_MSG_MEMORY, NULL);
+		error_mem(NULL);
 		ret = -ENOMEM;
 		goto out;
 	}
@@ -1006,7 +1098,7 @@ static ssize_t zstd_compress_inline_extent(char *buf, u64 size, char **comp_buf)
 
 	zstd_ctx = ZSTD_createCCtx();
 	if (!zstd_ctx) {
-		error_msg(ERROR_MSG_MEMORY, NULL);
+		error_mem(NULL);
 		return -ENOMEM;
 	}
 
@@ -1029,7 +1121,7 @@ static ssize_t zstd_compress_inline_extent(char *buf, u64 size, char **comp_buf)
 
 	out = malloc(size);
 	if (!out) {
-		error_msg(ERROR_MSG_MEMORY, NULL);
+		error_mem(NULL);
 		ret = -ENOMEM;
 		goto out;
 	}
@@ -1067,6 +1159,110 @@ out:
 	return ret;
 }
 #endif
+
+int btrfs_mkfs_validate_subvols(const char *source_dir, struct list_head *subvols)
+{
+	struct rootdir_subvol *rds;
+
+	list_for_each_entry(rds, subvols, list) {
+		char path[PATH_MAX];
+		char full_path[PATH_MAX];
+		struct stat stbuf;
+		struct rootdir_subvol *rds2;
+		int ret;
+
+		ret = path_cat_out(path, source_dir, rds->dir);
+		if (ret < 0) {
+			errno = -ret;
+			error("path invalid '%s': %m", path);
+			return ret;
+		}
+		if (!realpath(path, full_path)) {
+			ret = -errno;
+			error("could not get canonical path of '%s': %m", rds->dir);
+			return ret;
+		}
+		ret = path_exists(full_path);
+		if (ret < 0) {
+			error("subvolume path does not exist: %s", rds->dir);
+			return ret;
+		}
+		ret = path_is_dir(full_path);
+		if (ret < 0) {
+			error("subvolume is not a directory: %s", rds->dir);
+			return ret;
+		}
+		ret = lstat(full_path, &stbuf);
+		if (ret < 0) {
+			ret = -errno;
+			error("failed to get stat of '%s': %m", full_path);
+			return ret;
+		}
+		rds->st_dev = stbuf.st_dev;
+		rds->st_ino = stbuf.st_ino;
+		list_for_each_entry(rds2, subvols, list) {
+			/*
+			 * Only compare entries before us, So we won't compare
+			 * the same pair twice.
+			 */
+			if (rds2 == rds)
+				break;
+			if (rds2->st_dev == rds->st_dev && rds2->st_ino == rds->st_ino) {
+				error("subvolume specified more than once: %s", rds->dir);
+				return -EINVAL;
+			}
+		}
+	}
+	return 0;
+}
+
+int btrfs_mkfs_validate_inode_flags(const char *source_dir, struct list_head *inode_flags)
+{
+	struct rootdir_inode_flags_entry *rif;
+
+	list_for_each_entry(rif, inode_flags, list) {
+		char path[PATH_MAX];
+		char full_path[PATH_MAX];
+		struct rootdir_inode_flags_entry *rif2;
+		struct stat stbuf;
+		int ret;
+
+		if (path_cat_out(path, source_dir, rif->inode_path)) {
+			error("path invalid: %s", path);
+			return -EINTR;
+		}
+		if (!realpath(path, full_path)) {
+			ret = -errno;
+			error("could not get canonical path: %s: %m", path);
+			return ret;
+		}
+		if (!path_exists(full_path)) {
+			error("inode path does not exist: %s", full_path);
+			return -ENOENT;
+		}
+		ret = lstat(full_path, &stbuf);
+		if (ret < 0) {
+			ret = -errno;
+			error("failed to get stat of '%s': %m", full_path);
+			return ret;
+		}
+		rif->st_dev = stbuf.st_dev;
+		rif->st_ino = stbuf.st_ino;
+		list_for_each_entry(rif2, inode_flags, list) {
+			/*
+			 * Only compare entries before us. So we won't compare
+			 * the same pair twice.
+			 */
+			if (rif2 == rif)
+				break;
+			if (rif2->st_dev == rif->st_dev && rif2->st_ino == rif->st_ino) {
+				error("duplicated inode flag entries for %s", full_path);
+				return -EEXIST;
+			}
+		}
+	}
+	return 0;
+}
 
 static int add_file_items(struct btrfs_trans_handle *trans,
 			  struct btrfs_root *root,
@@ -1287,6 +1483,40 @@ static u8 ftype_to_btrfs_type(mode_t ftype)
 	return BTRFS_FT_UNKNOWN;
 }
 
+static void update_inode_flags(const struct rootdir_inode_flags_entry *rif,
+			       struct btrfs_inode_item *stack_inode)
+{
+	u64 inode_flags;
+
+	inode_flags = btrfs_stack_inode_flags(stack_inode);
+	if (rif->nodatacow) {
+		inode_flags |= BTRFS_INODE_NODATACOW;
+
+		if (S_ISREG(btrfs_stack_inode_mode(stack_inode)))
+			inode_flags |= BTRFS_INODE_NODATASUM;
+	}
+	if (rif->nodatasum)
+		inode_flags |= BTRFS_INODE_NODATASUM;
+
+	btrfs_set_stack_inode_flags(stack_inode, inode_flags);
+}
+
+static void search_and_update_inode_flags(struct btrfs_inode_item *stack_inode,
+					  const struct stat *st)
+{
+	struct rootdir_inode_flags_entry *rif;
+
+	list_for_each_entry(rif, g_inode_flags_list, list) {
+		if (rif->st_dev == st->st_dev && rif->st_ino == st->st_ino) {
+			update_inode_flags(rif, stack_inode);
+
+			list_del(&rif->list);
+			free(rif);
+			return;
+		}
+	}
+}
+
 static int ftw_add_subvol(const char *full_path, const struct stat *st,
 			  int typeflag, struct FTW *ftwbuf,
 			  struct rootdir_subvol *subvol)
@@ -1296,15 +1526,26 @@ static int ftw_add_subvol(const char *full_path, const struct stat *st,
 	struct btrfs_root *new_root;
 	struct inode_entry *parent;
 	struct btrfs_inode_item inode_item = { 0 };
+	char *path_dump;
+	char *base_path;
 	u64 subvol_id, ino;
 
 	subvol_id = next_subvol_id++;
+	path_dump = strdup(full_path);
+	if (!path_dump)
+		return -ENOMEM;
+	base_path = path_basename(path_dump);
+	if (!base_path) {
+		ret = -errno;
+		error("failed to get basename of '%s': %m", path_dump);
+		goto out;
+	}
 
 	ret = btrfs_make_subvolume(g_trans, subvol_id, subvol->readonly);
 	if (ret < 0) {
 		errno = -ret;
 		error("failed to create subvolume: %m");
-		return ret;
+		goto out;
 	}
 
 	if (subvol->is_default)
@@ -1319,19 +1560,17 @@ static int ftw_add_subvol(const char *full_path, const struct stat *st,
 		ret = PTR_ERR(new_root);
 		errno = -ret;
 		error("unable to read fs root id %llu: %m", subvol_id);
-		return ret;
+		goto out;
 	}
 
 	parent = rootdir_path_last(&current_path);
 
 	ret = btrfs_link_subvolume(g_trans, parent->root, parent->ino,
-				   path_basename(subvol->full_path),
-				   strlen(path_basename(subvol->full_path)),
-				   new_root);
+				   base_path, strlen(base_path), new_root);
 	if (ret) {
 		errno = -ret;
-		error("unable to link subvolume %s: %m", path_basename(subvol->full_path));
-		return ret;
+		error("unable to link subvolume %s: %m", base_path);
+		goto out;
 	}
 
 	ino = btrfs_root_dirid(&new_root->root_item);
@@ -1341,16 +1580,17 @@ static int ftw_add_subvol(const char *full_path, const struct stat *st,
 		errno = -ret;
 		error("failed to add xattr item for the top level inode in subvol %llu: %m",
 		      subvol_id);
-		return ret;
+		goto out;
 	}
 	stat_to_inode_item(&inode_item, st);
 
+	search_and_update_inode_flags(&inode_item, st);
 	btrfs_set_stack_inode_nlink(&inode_item, 1);
 	ret = update_inode_item(g_trans, new_root, &inode_item, ino);
 	if (ret < 0) {
 		errno = -ret;
 		error("failed to update root dir for root %llu: %m", subvol_id);
-		return ret;
+		goto out;
 	}
 
 	ret = rootdir_path_push(&current_path, new_root, ino);
@@ -1358,10 +1598,37 @@ static int ftw_add_subvol(const char *full_path, const struct stat *st,
 		errno = -ret;
 		error("failed to allocate new entry for subvolume %llu ('%s'): %m",
 		      subvol_id, full_path);
-		return ret;
+		goto out;
 	}
 
-	return 0;
+out:
+	free(path_dump);
+	return ret;
+}
+
+static int read_inode_item(struct btrfs_root *root, struct btrfs_inode_item *inode_item,
+			   u64 ino)
+{
+	struct btrfs_path path = { 0 };
+	struct btrfs_key key;
+	int ret;
+
+	key.objectid = ino;
+	key.type = BTRFS_INODE_ITEM_KEY;
+	key.offset = 0;
+
+	ret = btrfs_search_slot(NULL, root, &key, &path, 0, 0);
+	if (ret > 0)
+		ret = -ENOENT;
+	if (ret < 0)
+		goto out;
+
+	read_extent_buffer(path.nodes[0], inode_item,
+			   btrfs_item_ptr_offset(path.nodes[0], path.slots[0]),
+			   sizeof(*inode_item));
+out:
+	btrfs_release_path(&path);
+	return ret;
 }
 
 static int ftw_add_inode(const char *full_path, const struct stat *st,
@@ -1410,7 +1677,7 @@ static int ftw_add_inode(const char *full_path, const struct stat *st,
 		ret = rootdir_path_push(&current_path, root, btrfs_root_dirid(&root->root_item));
 		if (ret < 0) {
 			errno = -ret;
-			error_msg(ERROR_MSG_MEMORY, "push path for rootdir: %m");
+			error_mem("push path for rootdir: %m");
 			return ret;
 		}
 		return ret;
@@ -1457,7 +1724,7 @@ static int ftw_add_inode(const char *full_path, const struct stat *st,
 
 	if (S_ISDIR(st->st_mode)) {
 		list_for_each_entry(rds, g_subvols, list) {
-			if (!strcmp(full_path, rds->full_path)) {
+			if (st->st_dev == rds->st_dev && st->st_ino == rds->st_ino) {
 				ret = ftw_add_subvol(full_path, st, typeflag,
 						     ftwbuf, rds);
 
@@ -1511,6 +1778,7 @@ static int ftw_add_inode(const char *full_path, const struct stat *st,
 		return ret;
 	}
 	stat_to_inode_item(&inode_item, st);
+	search_and_update_inode_flags(&inode_item, st);
 
 	ret = btrfs_insert_inode(g_trans, root, ino, &inode_item);
 	if (ret < 0) {
@@ -1543,11 +1811,17 @@ static int ftw_add_inode(const char *full_path, const struct stat *st,
 	}
 
 	/*
-	 * btrfs_add_link() has increased the nlink to 1 in the metadata.
-	 * Also update the value in case we need to update the inode item
-	 * later.
+	 * btrfs_add_link() has increased the nlink, and may even updated the
+	 * inode flags (inherited from the parent).
+	 * Read out the latest version of inode item.
 	 */
-	btrfs_set_stack_inode_nlink(&inode_item, 1);
+	ret = read_inode_item(root, &inode_item, ino);
+	if (ret < 0) {
+		errno = -ret;
+		error("failed to read inode item for subvol %llu inode %llu ('%s'): %m",
+			btrfs_root_id(root), ino, full_path);
+		return ret;
+	}
 
 	ret = add_xattr_item(g_trans, root, ino, full_path);
 	if (ret < 0) {
@@ -1640,8 +1914,9 @@ static int set_default_subvolume(struct btrfs_trans_handle *trans)
 
 int btrfs_mkfs_fill_dir(struct btrfs_trans_handle *trans, const char *source_dir,
 			struct btrfs_root *root, struct list_head *subvols,
+			struct list_head *inode_flags_list,
 			enum btrfs_compression_type compression,
-			unsigned int compression_level)
+			unsigned int compression_level, bool do_reflink)
 {
 	int ret;
 	struct stat root_st;
@@ -1686,8 +1961,10 @@ int btrfs_mkfs_fill_dir(struct btrfs_trans_handle *trans, const char *source_dir
 
 	g_trans = trans;
 	g_subvols = subvols;
+	g_inode_flags_list = inode_flags_list;
 	g_compression = compression;
 	g_compression_level = compression_level;
+	g_do_reflink = do_reflink;
 	INIT_LIST_HEAD(&current_path.inode_list);
 
 	ret = nftw(source_dir, ftw_add_inode, 32, FTW_PHYS);

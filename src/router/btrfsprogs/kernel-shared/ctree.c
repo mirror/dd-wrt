@@ -670,13 +670,7 @@ int btrfs_cow_block(struct btrfs_trans_handle *trans,
 {
 	u64 search_start;
 	int ret;
-	/*
-	if (trans->transaction != root->fs_info->running_transaction) {
-		printk(KERN_CRIT "trans %llu running %llu\n", trans->transid,
-		       root->fs_info->running_transaction->transid);
-		WARN_ON(1);
-	}
-	*/
+
 	if (trans->transid != root->fs_info->generation) {
 		printk(KERN_CRIT "trans %llu running %llu\n",
 			(unsigned long long)trans->transid,
@@ -1246,6 +1240,17 @@ static void reada_for_search(struct btrfs_fs_info *fs_info,
 	}
 }
 
+/*
+ * Find the first key in @fs_root that matches all the following conditions:
+ *
+ * - key.obojectid == @iobjectid
+ * - key.type == @key_type
+ * - key.offset >= ioff
+ *
+ * Return 0 if such key can be found, and @found_key is updated.
+ * Return >0 if no such key can be found.
+ * Return <0 for critical errors.
+ */
 int btrfs_find_item(struct btrfs_root *fs_root, struct btrfs_path *found_path,
 		u64 iobjectid, u64 ioff, u8 key_type,
 		struct btrfs_key *found_key)
@@ -1279,11 +1284,10 @@ int btrfs_find_item(struct btrfs_root *fs_root, struct btrfs_path *found_path,
 	}
 
 	btrfs_item_key_to_cpu(eb, found_key, path->slots[0]);
-	if (found_key->type != key.type ||
-			found_key->objectid != key.objectid) {
+	if (found_key->type != key.type || found_key->objectid != key.objectid)
 		ret = 1;
-		goto out;
-	}
+	else
+		ret = 0;
 
 out:
 	if (path != found_path)
@@ -1877,9 +1881,7 @@ int btrfs_leaf_free_space(const struct extent_buffer *leaf)
 	u32 leaf_data_size;
 	int ret;
 
-	BUG_ON(!leaf->fs_info);
-	BUG_ON(leaf->fs_info->nodesize != leaf->len);
-	leaf_data_size = BTRFS_LEAF_DATA_SIZE(leaf->fs_info);
+	leaf_data_size = __BTRFS_LEAF_DATA_SIZE(leaf->len);
 	ret = leaf_data_size - leaf_space_used(leaf, 0 ,nritems);
 	if (ret < 0) {
 		printk("leaf free space ret %d, leaf data size %u, used %d nritems %d\n",

@@ -653,6 +653,8 @@ static void print_inode_error(struct btrfs_root *root, struct inode_record *rec)
 			rec->nlink);
 	if (errors & I_ERR_INVALID_XATTR)
 		fprintf(stderr, ", invalid xattr");
+	if (errors & I_ERR_DUP_FILENAME)
+		fprintf(stderr, ", dup filename");
 	fprintf(stderr, "\n");
 
 	/* Print the holes if needed */
@@ -1167,7 +1169,7 @@ again:
 		} else {
 			ins = malloc(sizeof(*ins));
 			if (!ins) {
-				error_msg(ERROR_MSG_MEMORY, NULL);
+				error_mem(NULL);
 				return -ENOMEM;
 			}
 			ins->cache.start = node->cache.start;
@@ -1423,7 +1425,7 @@ static int add_mismatch_dir_hash(struct inode_record *dir_rec,
 
 	hash_record = malloc(sizeof(*hash_record) + namelen);
 	if (!hash_record) {
-		error_msg(ERROR_MSG_MEMORY, "mismatch dir hash record");
+		error_mem("mismatch dir hash record");
 		return -ENOMEM;
 	}
 	memcpy(&hash_record->key, key, sizeof(*key));
@@ -1432,6 +1434,40 @@ static int add_mismatch_dir_hash(struct inode_record *dir_rec,
 
 	list_add(&hash_record->list, &dir_rec->mismatch_dir_hash);
 	return 0;
+}
+
+static void check_for_dupe_filenames(struct extent_buffer *eb, int slot,
+				     int nritems, struct inode_record *rec)
+{
+	struct btrfs_dir_item *di, *di2;
+	char namebuf[BTRFS_NAME_LEN], namebuf2[BTRFS_NAME_LEN];
+	u32 len, len2;
+
+	di = btrfs_item_ptr(eb, slot, struct btrfs_dir_item);
+
+	for (int i = 0; i < nritems - 1; i++) {
+		len = btrfs_dir_name_len(eb, di) + btrfs_dir_data_len(eb, di);
+
+		read_extent_buffer(eb, namebuf, (unsigned long)(di + 1), len);
+
+		di2 = di;
+		len2 = len;
+
+		for (int j = i + 1; j < nritems; j++) {
+			di2 = (struct btrfs_dir_item *)((char *)di2 + sizeof(*di2) + len2);
+			len2 = btrfs_dir_name_len(eb, di2) + btrfs_dir_data_len(eb, di2);
+
+			if (len != len2)
+				continue;
+
+			read_extent_buffer(eb, namebuf2, (unsigned long)(di2 + 1), len2);
+
+			if (memcmp(namebuf, namebuf2, len) == 0)
+				rec->errors |= I_ERR_DUP_FILENAME;
+		}
+
+		di = (struct btrfs_dir_item *)((char *)di + sizeof(*di) + len);
+	}
 }
 
 static int process_dir_item(struct extent_buffer *eb,
@@ -1524,6 +1560,9 @@ next:
 	}
 	if (key->type == BTRFS_DIR_INDEX_KEY && nritems > 1)
 		rec->errors |= I_ERR_DUP_DIR_INDEX;
+
+	if (key->type == BTRFS_DIR_ITEM_KEY && nritems > 1)
+		check_for_dupe_filenames(eb, slot, nritems, rec);
 
 	return 0;
 }
@@ -3491,22 +3530,29 @@ static int check_root_refs(struct btrfs_root *root,
 		rec = container_of(cache, struct root_record, cache);
 		cache = next_cache_extent(cache);
 
-		if (rec->found_ref == 0 &&
-		    rec->objectid >= BTRFS_FIRST_FREE_OBJECTID &&
+		/* A subvolume tree, should check if its refs match. */
+		if (rec->objectid >= BTRFS_FIRST_CHUNK_TREE_OBJECTID &&
 		    rec->objectid <= BTRFS_LAST_FREE_OBJECTID) {
-			ret = check_orphan_item(gfs_info->tree_root, rec->objectid);
-			if (ret == 0)
+			if (rec->found_ref != rec->expected_ref) {
+				errors++;
+				fprintf(stderr, "fs tree %llu refs mismatch found %u expect %u\n",
+					rec->objectid, rec->found_ref, rec->expected_ref);
 				continue;
-
-			/*
-			 * If we don't have a root item then we likely just have
-			 * a dir item in a snapshot for this root but no actual
-			 * ref key or anything so it's meaningless.
-			 */
-			if (!rec->found_root_item)
-				continue;
-			errors++;
-			fprintf(stderr, "fs tree %llu not referenced\n", rec->objectid);
+			}
+			if (rec->expected_ref == 0) {
+				ret = check_orphan_item(gfs_info->tree_root, rec->objectid);
+				if (ret == 0)
+					continue;
+				/*
+				 * If we don't have a root item then we likely just have
+				 * a dir item in a snapshot for this root but no actual
+				 * ref key or anything so it's meaningless.
+				 */
+				if (!rec->found_root_item)
+					continue;
+				errors++;
+				fprintf(stderr, "fs tree %llu missing orphan item\n", rec->objectid);
+			}
 		}
 
 		error = 0;
@@ -3728,8 +3774,8 @@ static int check_fs_root(struct btrfs_root *root,
 	if (root->root_key.objectid != BTRFS_TREE_RELOC_OBJECTID) {
 		rec = get_root_rec(root_cache, root->root_key.objectid);
 		BUG_ON(IS_ERR(rec));
-		if (btrfs_root_refs(root_item) > 0)
-			rec->found_root_item = 1;
+		rec->found_root_item = 1;
+		rec->expected_ref = btrfs_root_refs(&root->root_item);
 	}
 
 	memset(&root_node, 0, sizeof(root_node));
@@ -5323,7 +5369,7 @@ struct chunk_record *btrfs_new_chunk_record(struct extent_buffer *leaf,
 
 	rec = calloc(1, btrfs_chunk_record_size(num_stripes));
 	if (!rec) {
-		error_msg(ERROR_MSG_MEMORY, NULL);
+		error_mem(NULL);
 		exit(-1);
 	}
 
@@ -5412,7 +5458,7 @@ static int process_device_item(struct rb_root *dev_cache,
 
 	rec = malloc(sizeof(*rec));
 	if (!rec) {
-		error_msg(ERROR_MSG_MEMORY, NULL);
+		error_mem(NULL);
 		return -ENOMEM;
 	}
 
@@ -5440,7 +5486,13 @@ static int process_device_item(struct rb_root *dev_cache,
 				device->devid);
 			goto skip;
 		}
-		block_dev_size = device_get_partition_size_fd_stat(device->fd, &st);
+		ret = device_get_partition_size_fd_stat(device->fd, &st, &block_dev_size);
+		if (ret < 0) {
+			errno = -ret;
+			warning("failed to get device size for %s, skipping size check: %m",
+				device->name);
+			goto skip;
+		}
 		if (block_dev_size < rec->total_byte) {
 			error(
 "block device size is smaller than total_bytes in device item, has %llu expect >= %llu",
@@ -5467,7 +5519,7 @@ btrfs_new_block_group_record(struct extent_buffer *leaf, struct btrfs_key *key,
 
 	rec = calloc(1, sizeof(*rec));
 	if (!rec) {
-		error_msg(ERROR_MSG_MEMORY, NULL);
+		error_mem(NULL);
 		exit(-1);
 	}
 
@@ -5532,7 +5584,7 @@ btrfs_new_device_extent_record(struct extent_buffer *leaf,
 
 	rec = calloc(1, sizeof(*rec));
 	if (!rec) {
-		error_msg(ERROR_MSG_MEMORY, NULL);
+		error_mem(NULL);
 		exit(-1);
 	}
 
@@ -5831,7 +5883,7 @@ static int check_extent_csums(struct btrfs_root *root, u64 bytenr,
 			while (data_checked < read_len) {
 				tmp = offset + data_checked;
 
-				btrfs_csum_data(gfs_info, csum_type, data + tmp,
+				btrfs_csum_data(csum_type, data + tmp,
 						result, gfs_info->sectorsize);
 
 				csum_offset = leaf_offset +
@@ -6079,7 +6131,7 @@ static int check_csum_root(struct btrfs_root *root)
 			errors++;
 		}
 		num_entries = btrfs_item_size(leaf, path.slots[0]) / csum_size;
-		data_len = num_entries * gfs_info->sectorsize;
+		data_len = (u64)num_entries * gfs_info->sectorsize;
 
 		if (num_entries > max_entries) {
 			error(
@@ -8549,7 +8601,11 @@ int check_chunks(struct cache_tree *chunk_cache,
 				dext_rec->objectid,
 				dext_rec->offset,
 				dext_rec->length);
-		if (!ret)
+		err = -ENOENT;
+		if (opt_check_repair)
+			err = btrfs_remove_dev_extent(gfs_info, dext_rec->objectid,
+						      dext_rec->offset);
+		if (err && !ret)
 			ret = 1;
 	}
 	return ret;
@@ -8593,6 +8649,7 @@ static int check_device_used(struct device_record *dev_rec,
 		if (opt_check_repair) {
 			ret = repair_dev_item_bytes_used(gfs_info,
 					dev_rec->devid, total_byte);
+			dev_rec->byte_used = total_byte;
 		}
 		return ret;
 	} else {
@@ -8650,6 +8707,28 @@ static bool is_super_size_valid(void)
 	return true;
 }
 
+static int check_super_dev_item(struct device_record *dev_rec)
+{
+	struct btrfs_dev_item *super_di = &gfs_info->super_copy->dev_item;
+	int ret = 0;
+
+	if (btrfs_stack_device_total_bytes(super_di) != dev_rec->total_byte) {
+		warning("device %llu's total_bytes was %llu in tree but %llu in superblock",
+			dev_rec->devid, dev_rec->total_byte,
+			btrfs_stack_device_total_bytes(super_di));
+		ret = 1;
+	}
+
+	if (btrfs_stack_device_bytes_used(super_di) != dev_rec->byte_used) {
+		warning("device %llu's bytes_used was %llu in tree but %llu in superblock",
+			dev_rec->devid, dev_rec->byte_used,
+			btrfs_stack_device_bytes_used(super_di));
+		ret = 1;
+	}
+
+	return ret;
+}
+
 /* check btrfs_dev_item -> btrfs_dev_extent */
 static int check_devices(struct rb_root *dev_cache,
 			 struct device_extent_tree *dev_extent_cache)
@@ -8671,6 +8750,18 @@ static int check_devices(struct rb_root *dev_cache,
 					 gfs_info->sectorsize);
 		if (dev_rec->bad_block_dev_size && !ret)
 			ret = 1;
+
+		if (dev_rec->devid == gfs_info->super_copy->dev_item.devid) {
+			/*
+			 * This dev item mismatch between super and chunk tree
+			 * is not a criticl problem, and CI kernels do not receive
+			 * needed backport so they will cause mismatch during RW mounts.
+			 *
+			 * SO here we didn't record the mismatch as an error.
+			 */
+			check_super_dev_item(dev_rec);
+		}
+
 		dev_node = rb_next(dev_node);
 	}
 	list_for_each_entry(dext_rec, &dev_extent_cache->no_device_orphans,
@@ -9073,7 +9164,7 @@ static int check_chunks_and_extents(void)
 	bits_nr = 1024;
 	bits = malloc(bits_nr * sizeof(struct block_info));
 	if (!bits) {
-		error_msg(ERROR_MSG_MEMORY, NULL);
+		error_mem(NULL);
 		exit(1);
 	}
 
@@ -9694,10 +9785,6 @@ static int check_range_csummed(struct btrfs_root *root, u64 addr, u64 length)
 	u64 data_len;
 	int ret;
 
-	/* Explicit holes don't get csummed */
-	if (addr == 0)
-		return 0;
-
 	ret = btrfs_search_slot(NULL, root, &key, &path, 0, 0);
 	if (ret < 0)
 		return ret;
@@ -9733,7 +9820,7 @@ static int check_range_csummed(struct btrfs_root *root, u64 addr, u64 length)
 			break;
 
 		num_entries = btrfs_item_size(leaf, path.slots[0]) / gfs_info->csum_size;
-		data_len = num_entries * gfs_info->sectorsize;
+		data_len = (u64)num_entries * gfs_info->sectorsize;
 
 		if (addr >= key.offset && addr <= key.offset + data_len) {
 			u64 end = min(addr + length, key.offset + data_len);
@@ -9807,12 +9894,15 @@ static int check_log_root(struct btrfs_root *root, struct cache_tree *root_cache
 			if (btrfs_file_extent_type(leaf, fi) != BTRFS_FILE_EXTENT_REG)
 				goto next;
 
+			addr = btrfs_file_extent_disk_bytenr(leaf, fi);
+			/* An explicit hole, skip as holes don't have csums. */
+			if (addr == 0)
+				goto next;
+
 			if (btrfs_file_extent_compression(leaf, fi)) {
-				addr = btrfs_file_extent_disk_bytenr(leaf, fi);
 				length = btrfs_file_extent_disk_num_bytes(leaf, fi);
 			} else {
-				addr = btrfs_file_extent_disk_bytenr(leaf, fi) +
-				       btrfs_file_extent_offset(leaf, fi);
+				addr += btrfs_file_extent_offset(leaf, fi);
 				length = btrfs_file_extent_num_bytes(leaf, fi);
 			}
 

@@ -112,7 +112,7 @@ fail:
 	return err;
 }
 
-static struct btrfs_csum_item *
+struct btrfs_csum_item *
 btrfs_lookup_csum(struct btrfs_trans_handle *trans,
 		  struct btrfs_root *root,
 		  struct btrfs_path *path,
@@ -203,7 +203,6 @@ int btrfs_csum_file_block(struct btrfs_trans_handle *trans, u64 logical,
 	if (ret == -EFBIG) {
 		u32 item_size;
 
-		/* printf("item not big enough for bytenr %llu\n", bytenr); */
 		/* we found one, but it isn't big enough yet */
 		leaf = path->nodes[0];
 		item_size = btrfs_item_size(leaf, path->slots[0]);
@@ -298,8 +297,7 @@ csum:
 	item = (struct btrfs_csum_item *)((unsigned char *)item +
 					  csum_offset * csum_size);
 found:
-	btrfs_csum_data(root->fs_info, csum_type, (u8 *)data, csum_result,
-			sectorsize);
+	btrfs_csum_data(csum_type, (u8 *)data, csum_result, sectorsize);
 	write_extent_buffer(leaf, csum_result, (unsigned long)item,
 			    csum_size);
 	btrfs_mark_buffer_dirty(path->nodes[0]);

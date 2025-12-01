@@ -224,27 +224,31 @@ attention to detail. Once written the code could stay unchanged for years but
 will be read many times. `Read more
 <https://simpleprogrammer.com/maintaining-code/>`__.
 
+General advice: *Try to keep the same style and formatting of the code that's
+already there.*
+
 Patches
 ^^^^^^^
 
--  for patch subject use "btrfs:" followed by a lowercase
+-  for patch subject use ``btrfs:`` followed by a lowercase
 -  read the patch again and fix all typos and grammar
 -  size units should use short form K/M/G/T or IEC form KiB/MiB/GiB
 -  don't write references to parameters to subject (like removing @pointer)
 -  do not end subject with a dot '.'
 -  parts of btrfs that could have a subject prefix to point to a specific subsystem
 
-    -  scrub, tests, integrity-checker, tree-checker, discard, locking, sysfs,
-       raid56, qgroup, compression, send, ioctl
+   -  scrub, tests, integrity-checker, tree-checker, discard, locking, sysfs,
+      raid56, qgroup, compression, send, ioctl
 
 -  additional information
 
-    -  if there's a stack trace relevant for the patch, add it there (lockdep,
-       crash, warning)
-    -  steps to reproduce a bug (that will also get turned to a proper fstests
-       case)
-    -  sample output before/after if it could have impact on userspace
-    -  `pahole <https://linux.die.net/man/1/pahole>`_ output if structure is being reorganized and optimized
+   -  if there's a stack trace relevant for the patch, add it there (lockdep,
+      crash, warning)
+   -  steps to reproduce a bug (that will also get turned to a proper fstests
+      case)
+   -  sample output before/after if it could have impact on userspace
+   -  `pahole <https://linux.die.net/man/1/pahole>`__ output if structure is
+      being reorganized and optimized
 
 Function declarations
 ^^^^^^^^^^^^^^^^^^^^^
@@ -254,14 +258,14 @@ Function declarations
 
    -  but don't move static functions just to get rid of the prototype
 
--  exported functions have btrfs\_ prefix
+-  exported functions have ``btrfs_`` prefix
 -  do not use functions with double underscore, there's only a few valid uses of
    that, namely when *\__function* is doing the core of the work with looser
    checks, no locks or more parameters than *function*
 -  function type and name are on the same line, if this is too long, the
    parameters continue on the next line (indented)
--  'static inline' functions should be small (measured by their resulting binary
-   size)
+-  ``static inline`` functions should be small (measured by their resulting binary
+   size) and not used in .c unless it's justified that inlining makes a difference
 -  conditional definitions should follow the style below, where the full
    function body is in .c
 
@@ -276,14 +280,18 @@ Function declarations
 Headers
 ^^^^^^^
 
--  leave one newline before #endif in headers
+-  leave one newline before ``#endif`` in headers
+-  include headers that add usage of a data structure or API, also remove such
+   header with last use of the API
+-  keep the includes in headers self-contained and compilable, add forward
+   declarations for types if possible
 
 Comments
 ^^^^^^^^
 
 -  function comment goes to the .c file, not the header
 
-   -  kdoc style is recommended but the exact syntax is not mandated and
+   -  ``kdoc style`` is recommended but the exact syntax is not mandated and
       we're using only subset of the formatting
    -  the first line (mandatory): contains a brief description of what
       the function does and should provide a summary information
@@ -316,9 +324,9 @@ Comments
     * Return value semantics if it's not obvious
     */
 
--  comment new enum/define values, brief description or pointers to the code
+-  comment new ``enum/define`` values, brief description or pointers to the code
    that uses them
--  comment new data structures, their purpose and context of use
+-  comment new ``data structures``, their purpose and context of use
 -  do not put struct member comments on the same line, put it on the line
    before and do not trim/abbreviate the text
 -  comment text that fits on one line can use the */\* text \*/* format, slight
@@ -330,6 +338,9 @@ Misc
 -  fix spelling, grammar and formatting of comments that get moved or changed
 -  fix coding style in code that's only moved
 -  one newline between functions
+-  80 chars per line are recommended but longer lines are OK (up to 90) if the
+   code "looks better" without the line break, e.g. if half of the word is beyond 80 chars
+   but it's clear what it is, or function prototypes do not need to wrap arguments
 
 Locking
 ^^^^^^^
@@ -337,17 +348,37 @@ Locking
 -  do not use ``spin_is_locked`` but ``lockdep_assert_held``
 -  do not use ``assert_spin_locked`` without reading it's semantics (it does
    not check if the caller hold the lock)
--  use ``lockdep_assert_held`` and its friends for lock assertions
+-  use ``lockdep_assert_held`` and its friends for lock assertions (``lockdep_assert_not_held``,
+   ``lockdep_assert_held_write``)
 -  add lock assertions to functions called deep in the call chain
+-  *(to be decided)* do not use ``scoped_guard()`` instead of explicit locking section
+-  *(to be decided)* using ``guard()`` is possible in justified cases where it improves
+   readability, i.e. short function (20 lines) with entire body under one lock
 
 Code
 ^^^^
 
--  default function return value is *int ret*, temporary return values should
-   be named like *ret2* etc
--  structure initializers should use *{ 0 }*
--  do not use *short* type if possible, if it fits to char/u8 use it instead,
-   or plain int
+-  default function return value is ``int ret``, temporary return values should
+   be named like ``ret2`` etc
+-  structure initializers should use ``{ 0 }``
+-  do not use ``short int`` type if possible, if it fits to char/u8 use it instead,
+   or plain int/u32
+-  memory barriers need to be always documented
+-  add ``const`` to parameters that are not modified
+-  use ``bool`` for indicators and bool status variables (not int)
+-  use matching int types (size, signedness), with exceptions
+-  use ``ENUM_BIT`` for enumerated bit values (that don't have assigned fixed numbers)
+-  add function annotations ``__cold``, ``__init``, ``__attribute_const__`` if applicable
+-  use automatic variable cleanup for:
+
+   -  *struct btrfs_path* with ``BTRFS_PATH_AUTO_FREE``
+   -  any variable allocated by *kmalloc/kfree* using ``AUTO_KFREE`` or ``AUTO_KVFREE``
+   -  for structures sparsely used do ``__free(...)`` when it does not make sense
+      to define the cleanup macro
+-  use of ``unlikely()`` annotation is OK and recommended for the following cases:
+
+   -  control flow of the function is changed due to error handling and it
+      leads to *never-happens* errors like ``EUCLEAN``, ``EIO``
 
 Output
 ^^^^^^
@@ -361,14 +392,15 @@ Output
 Expressions, operators
 ^^^^^^^^^^^^^^^^^^^^^^
 
--  spaces around binary operators, no spaces for unary operators
+-  spaces around ``binary operators``, no spaces for unary operators
 -  extra braces around expressions that might be harder to understand wrt
    precedence are fine (logical and/or, shifts with other operations)
 
    -  *a \* b + c*, *(a << b) + c*, *(a % b) + c*
 
--  64bit division is not allowed, either avoid it completely, or use bit
-   shifts or use div_u64 helpers
+-  ``64bit division`` is not allowed, either avoid it completely, or use bit
+   shifts or use div_u64 helpers; do not use *do_div* for division as it's a
+   macro and has side effects
 -  do not use chained assignments: no *a = b = c;*
 
 Variable declarations, parameters
@@ -377,9 +409,11 @@ Variable declarations, parameters
 -  declaration block in a function should do only simple initializations
    (pointers, constants); nothing that would require error handling or has
    non-trivial side effects
--  use *const* extensively
+-  use ``const`` extensively
 -  add temporary variable to store a value if it's used multiple times in the
    function, or if reading the value needs to chase a long pointer chain
+-  do not mix declarations and statements (although kernel uses C standard that
+   allows that)
 
 Kernel config options
 ---------------------
@@ -415,10 +449,6 @@ Please refer to the option documentation for further details.
    -  **CONFIG_BTRFS_ASSERT**
    -  **CONFIG_BTRFS_EXPERIMENTAL**
    -  **CONFIG_BTRFS_FS_RUN_SANITY_TESTS** -- basic tests on module load
-   -  **CONFIG_BTRFS_FS_CHECK_INTEGRITY** -- block integrity checker
-      enabled by mount options
-   -  **CONFIG_BTRFS_FS_REF_VERIFY** -- additional checks for block
-      references
 
 -  locking
 
@@ -449,9 +479,9 @@ Please refer to the option documentation for further details.
 BUG: MAX_LOCKDEP_CHAIN_HLOCKS too low!
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Not a bug. The lockdep structures can get in some cases full and cannot
-properly track locks anymore. There's only a workaround to increase the kernel
-config value of CONFIG_LOCKDEP_CHAINS_BITS, default is
+Not a bug and please don't report it. The lockdep structures can get in some
+cases full and cannot properly track locks anymore. There's only a workaround
+to increase the kernel config value of CONFIG_LOCKDEP_CHAINS_BITS, default is
 16, 18 tends to work, increase if needed.
 
 fstests setup
@@ -520,10 +550,11 @@ Note: This list may be incomplete.
 Storage environment
 ^^^^^^^^^^^^^^^^^^^
 
--  At least 4 identically sized partitions/disks/virtual disks, specified using
-   ``$SCRATCH_DEV_POOL``, some tests may require 8 such partitions
+-  at least 4 identically sized partitions/disks/virtual disks, specified using
+   ``$SCRATCH_DEV_POOL``
+-  some tests may require 8 equally sized ``SCRATCH_DEV_POOL`` partitions
 -  some tests need at least 10G of free space, as determined by ``df``, i.e.
-   the size of the device may need to be larger
+   the size of the device may need to be larger, 12G should work
 -  some tests require ``$LOGWRITES_DEV``, yet another separate block device,
    for power fail testing
 -  for testing trim and discard, the devices must be capable of that (physical

@@ -31,7 +31,7 @@ Release cycle
 -------------
 
 The major version releases are time-based and follow the cycle of the linux
-kernel releases. The cycle usually takes 2 months. A minor version releases may
+kernel releases. The cycle usually takes 2 months. A minor version release may
 happen in the meantime if there are bug fixes or minor useful improvements
 queued.
 
@@ -49,7 +49,7 @@ architecture (with maximum backward compatibility), inside the [Github Actions
 workflow](https://github.com/kdave/btrfs-progs/actions/workflows/artifacts-static-build.yml).
 The `btrfs.box` is an all-in-one tool in the [busybox](https://www.busybox.net)
 style, the functionality is determined by the binary names (either symlink,
-hradlink or a file copy).
+hardlink or a file copy).
 
 ### Feature compatibility
 
@@ -105,10 +105,11 @@ The development model of btrfs-progs shares a lot with the kernel model. The
   (typos, documentation) but is desired as this documents who authored the
   change, you can read more about the
   [The Developer's Certificate of Origin (chapter 11)](https://www.kernel.org/doc/html/latest/process/submitting-patches.html#sign-your-work-the-developer-s-certificate-of-origin)
-  * if you are not used to the signed-off style, your contributions won't be
-    rejected just because of it's missing, the _Author:_ tag will be added as a
-    substitute in order to allow contributions without much bothering with
-    formalities
+  * if you are not used to the signed-off-by style, your contributions won't be
+    rejected just because it's missing, some other way of attribution will be
+    used, like a link to issue or pull request to allow contributions without
+    much bothering with formalities
+  * project maintainers will add their Signed-off-by tag regardless
 
 ### Pull requests
 

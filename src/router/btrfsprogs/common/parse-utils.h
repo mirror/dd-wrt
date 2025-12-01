@@ -24,12 +24,13 @@ enum btrfs_csum_type parse_csum_type(const char *s);
 int parse_u64(const char *str, u64 *result);
 int parse_u64_with_suffix(const char *s, u64 *value_ret);
 int parse_range_u32(const char *range, u32 *start, u32 *end);
-int parse_range(const char *range, u64 *start, u64 *end);
+int parse_range_u64(const char *range, u64 *start, u64 *end);
 int parse_range_strict(const char *range, u64 *start, u64 *end);
 int parse_bg_profile(const char *profile, u64 *flags);
 int parse_compress_type(const char *type);
 int parse_qgroupid(const char *str, u64 *qgroupid);
 u64 parse_qgroupid_or_path(const char *p);
+int parse_tree_id(const char* str, u64 *tree_id);
 int fls64(u64 x);
 
 #endif

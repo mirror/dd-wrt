@@ -118,12 +118,14 @@ defragment [options] <file>|<dir> [<file>|<dir>...]
                 compression. See also section *EXAMPLES*.
 
         -L|--level <level>
-                Since kernel 6.14 the compresison can also take the level parameter which will be used
+                Since kernel 6.15 the compresison can also take the level parameter which will be used
                 only for the defragmentation and overrides the eventual mount option compression level.
                 Valid levels depend on the compression algorithms: *zlib*
                 1..9, *lzo* does not have any levels, *zstd* the standard levels 1..15 and also the
                 realtime -1..-15.
 
+        --nocomp
+                Do not compress while defragmenting, uncompress extents if needed.
         -r
                 defragment files recursively in given directories, does not descend to
                 subvolumes or mount points
@@ -238,10 +240,8 @@ resize [options] [<devid>:][+/-]<size>[kKmMgGtTpPeE]|[<devid>:]max <path>
         Resize a mounted filesystem identified by *path*. A particular device
         can be resized by specifying a *devid*.
 
-        .. warning::
-                If *path* is a file containing a BTRFS image then resize does not work
-                as expected and does not resize the image. This would resize the underlying
-                filesystem instead.
+        .. note::
+                To resize a file containing a BTRFS image, please use the --offline flag.
 
         The *devid* can be found in the output of :command:`btrfs filesystem show` and
         defaults to 1 if not specified.
@@ -288,6 +288,18 @@ resize [options] [<devid>:][+/-]<size>[kKmMgGtTpPeE]|[<devid>:]max <path>
 
         --enqueue
                 wait if there's another exclusive operation running, otherwise continue
+        --offline
+                resize an unmounted (offline) filesystem
+
+                .. warning:: The offline resize functionality currently
+                        supports **only increasing** the size of **single-device**
+                        filesystems.  IOW, shrinking and multi-device filesystems are
+                        **not supported** with this option.
+
+                For filesystems stored in regular files, the file will be
+                truncated to the new size as part of the resize operation.
+                This flag is cannot be used together with with --enqueue since
+                offline resizing is synchronous.
 
 show [options] [<path>|<uuid>|<device>|<label>]
         Show the btrfs filesystem with some additional info about devices and space
@@ -321,6 +333,26 @@ show [options] [<path>|<uuid>|<device>|<label>]
                 show sizes in GiB, or GB with --si
         --tbytes
                 show sizes in TiB, or TB with --si
+
+commit-stats
+        Print number of commits and time stats since mount. This is also available
+        in :file:`/sys/fs/btrfs/FSID/commit_stats`. The stats are not persistent
+        and are collected since mount of the filesystem, one of them can be reset
+        to zero (*Max commit duration*).
+
+        .. code-block:: none
+
+		UUID: bd18ebe1-7e1d-414f-a3d5-2644388b51cc
+		Commit stats since mount:
+		  Total commits:                  1133
+		  Last commit duration:              0ms
+		  Max commit duration:              10ms
+		  Total time spent in commit:     4543ms
+
+        ``Options``
+
+        -z|--reset
+                print stats and reset 'max_commit_ms' (needs root)
 
 sync <path>
         Force a sync of the filesystem at *path*, similar to the :manref:`sync(1)` command. In

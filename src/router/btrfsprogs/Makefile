@@ -216,6 +216,7 @@ objects = \
 	kernel-shared/volumes.o	\
 	kernel-shared/zoned.o	\
 	common/array.o		\
+	common/compat.o		\
 	common/cpu-utils.o	\
 	common/device-scan.o	\
 	common/device-utils.o	\
@@ -256,7 +257,7 @@ cmds_objects = cmds/subvolume.o cmds/subvolume-list.o \
 	       cmds/inspect.o cmds/balance.o cmds/send.o cmds/receive.o \
 	       cmds/quota.o cmds/qgroup.o cmds/replace.o check/main.o \
 	       cmds/restore.o cmds/rescue.o cmds/rescue-chunk-recover.o \
-	       cmds/rescue-super-recover.o \
+	       cmds/rescue-super-recover.o cmds/rescue-fix-data-checksum.o \
 	       cmds/property.o cmds/filesystem-usage.o cmds/inspect-dump-tree.o \
 	       cmds/inspect-dump-super.o cmds/inspect-tree-stats.o cmds/filesystem-du.o \
 	       cmds/reflink.o \
@@ -555,7 +556,7 @@ test-mkfs: btrfs mkfs.btrfs
 	@echo "  TEST     mkfs-tests.sh"
 	$(Q)bash tests/mkfs-tests.sh
 
-test-fuzz: btrfs btrfs-image
+test-fuzz: btrfs btrfs-image btrfs-sb-mod
 	@echo "  TEST     fuzz-tests.sh"
 	$(Q)bash tests/fuzz-tests.sh
 

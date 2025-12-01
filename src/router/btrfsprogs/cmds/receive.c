@@ -310,7 +310,7 @@ static int process_snapshot(const char *path, const u8 *uuid, u64 ctransid,
 		else
 			ret = PTR_ERR(parent_subvol);
 		uuid_unparse(parent_uuid, uuid_str);
-		error("snapshot: cannot find parent subvolume %s", uuid_str);
+		error("snapshot receive: cannot find parent subvolume %s", uuid_str);
 		goto out;
 	}
 
@@ -1023,7 +1023,7 @@ static int decompress_zlib(struct btrfs_receive *rctx, const char *encoded_data,
 		init = true;
 		rctx->zlib_stream = malloc(sizeof(z_stream));
 		if (!rctx->zlib_stream) {
-			error_msg(ERROR_MSG_MEMORY, "zlib stream: %m");
+			error_mem("zlib stream: %m");
 			return -ENOMEM;
 		}
 	}
@@ -1185,7 +1185,7 @@ static int decompress_and_write(struct btrfs_receive *rctx,
 
 	unencoded_data = calloc(unencoded_len, 1);
 	if (!unencoded_data) {
-		error_msg(ERROR_MSG_MEMORY, "unencoded data: %m");
+		error_mem("unencoded data: %m");
 		return -errno;
 	}
 
@@ -1344,6 +1344,7 @@ static int process_fallocate(const char *path, int mode, u64 offset, u64 len,
 
 static int process_fileattr(const char *path, u64 attr, void *user)
 {
+#if 0
 	/*
 	 * Not yet supported, ignored for now, just like in send stream v1.
 	 * The content of 'attr' matches the flags in the btrfs inode item,
@@ -1353,24 +1354,25 @@ static int process_fileattr(const char *path, u64 attr, void *user)
 	 * The commented code below therefore does not work.
 	 */
 
-	/* int ret; */
-	/* struct btrfs_receive *rctx = user; */
-	/* char full_path[PATH_MAX]; */
+	int ret;
+	struct btrfs_receive *rctx = user;
+	char full_path[PATH_MAX];
 
-	/* ret = path_cat_out(full_path, rctx->full_subvol_path, path); */
-	/* if (ret < 0) { */
-	/* 	error("fileattr: path invalid: %s", path); */
-	/* 	return ret; */
-	/* } */
-	/* ret = open_inode_for_write(rctx, full_path); */
-	/* if (ret < 0) */
-	/* 	return ret; */
-	/* ret = ioctl(rctx->write_fd, FS_IOC_SETFLAGS, &attr); */
-	/* if (ret < 0) { */
-	/* 	ret = -errno; */
-	/* 	error("fileattr: set file attributes on %s failed: %m", path); */
-	/* 	return ret; */
-	/* } */
+	ret = path_cat_out(full_path, rctx->full_subvol_path, path);
+	if (ret < 0) {
+		error("fileattr: path invalid: %s", path);
+		return ret;
+	}
+	ret = open_inode_for_write(rctx, full_path);
+	if (ret < 0)
+		return ret;
+	ret = ioctl(rctx->write_fd, FS_IOC_SETFLAGS, &attr);
+	if (ret < 0) {
+		ret = -errno;
+		error("fileattr: set file attributes on %s failed: %m", path);
+		return ret;
+	}
+#endif
 	return 0;
 }
 
@@ -1783,7 +1785,12 @@ static int cmd_receive(const struct cmd_struct *cmd, int argc, char **argv)
 	tomnt = argv[optind];
 
 	if (fromfile[0]) {
-		receive_fd = open(fromfile, O_RDONLY | O_NOATIME);
+		int flags = O_RDONLY;
+
+		if (!dump)
+			flags |= O_NOATIME;
+
+		receive_fd = open(fromfile, flags);
 		if (receive_fd < 0) {
 			error("cannot open %s: %m", fromfile);
 			goto out;

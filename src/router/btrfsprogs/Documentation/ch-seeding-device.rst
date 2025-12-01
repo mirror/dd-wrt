@@ -19,6 +19,16 @@ read-only, it can be used to seed multiple filesystems from one device at the
 same time. The UUID that is normally attached to a device is automatically
 changed to a random UUID on each mount.
 
+.. note::
+
+        Before v6.17 kernel, a seed device could have been mounted
+        independently along with sprouted filesystems.
+	But since 6.17 kernel, a seed device can only be mounted either through
+	a sprouted filesystem, or the seed device itself, not both at the same time.
+
+	This is to ensure a block device to have only a single filesystem bound
+	to it, so that runtime device missing events can be properly handled.
+
 Once the seeding device is mounted, it needs the writable device. After adding
 it, unmounting and mounting with :command:`umount /path; mount /dev/writable
 /path` or remounting read-write with :command:`remount -o remount,rw` makes the
@@ -26,10 +36,12 @@ filesystem at :file:`/path` ready for use.
 
 .. note::
 
-        There is a known bug with using remount to make the mount writeable:
+        There was a known bug with using remount to make the mount writeable:
         remount will leave the filesystem in a state where it is unable to
         clean deleted snapshots, so it will leak space until it is unmounted
         and mounted properly.
+
+	That bug has been fixed in 5.11 and newer kernels.
 
 Furthermore, deleting the seeding device from the filesystem can turn it into
 a normal filesystem, provided that the writable device can also contain all the

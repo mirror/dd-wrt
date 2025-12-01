@@ -646,8 +646,11 @@ _static_assert(sizeof(struct btrfs_ioctl_clone_range_args) == 32);
 #define BTRFS_DEFRAG_RANGE_COMPRESS 1
 #define BTRFS_DEFRAG_RANGE_START_IO 2
 #define BTRFS_DEFRAG_RANGE_COMPRESS_LEVEL 4
+/* Request no compression on the range (uncompress if necessary). */
+#define BTRFS_DEFRAG_RANGE_NOCOMPRESS	8
 #define BTRFS_DEFRAG_RANGE_FLAGS_SUPP	(BTRFS_DEFRAG_RANGE_COMPRESS |		\
 					 BTRFS_DEFRAG_RANGE_COMPRESS_LEVEL |	\
+					 BTRFS_DEFRAG_RANGE_NOCOMPRESS |	\
 					 BTRFS_DEFRAG_RANGE_START_IO)
 
 struct btrfs_ioctl_defrag_range_args {
@@ -671,11 +674,10 @@ struct btrfs_ioctl_defrag_range_args {
 	__u32 extent_thresh;
 
 	/*
-	 * Which compression method to use if turning on compression for
-	 * defragmentation operation.  If unspecified, zlib will be used.
-	 *
-	 * If compression level is also being specified, set the
-	 * BTRFS_DEFRAG_RANGE_COMPRESS_LEVEL flag and set the compress.type
+	 * which compression method to use if turning on compression
+	 * for this defrag operation. If unspecified, zlib will be
+	 * used. If compression level is also being specified, set the
+	 * BTRFS_DEFRAG_RANGE_COMPRESS_LEVEL flag and fill the compress
 	 * member structure instead of the compress_type field.
 	 */
 	union {

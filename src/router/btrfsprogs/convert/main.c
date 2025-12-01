@@ -948,8 +948,7 @@ static int make_convert_data_block_groups(struct btrfs_trans_handle *trans,
 			u64 cur_backup = cur;
 
 			len = min(max_chunk_size,
-				  round_up(cache->start + cache->size,
-					   BTRFS_STRIPE_LEN) - cur);
+				  cache->start + cache->size - cur);
 			ret = btrfs_alloc_data_chunk(trans, fs_info, &cur_backup, len);
 			if (ret < 0)
 				break;
@@ -1060,7 +1059,7 @@ static int migrate_super_block(int fd, u64 old_bytenr)
 	BUG_ON(btrfs_super_bytenr(&super) != old_bytenr);
 	btrfs_set_super_bytenr(&super, BTRFS_SUPER_INFO_OFFSET);
 
-	btrfs_csum_data(NULL, btrfs_super_csum_type(&super),
+	btrfs_csum_data(btrfs_super_csum_type(&super),
 			(u8 *)&super + BTRFS_CSUM_SIZE, result,
 			BTRFS_SUPER_INFO_SIZE - BTRFS_CSUM_SIZE);
 	memcpy(&super.csum[0], result, BTRFS_CSUM_SIZE);
@@ -1212,14 +1211,20 @@ static int do_convert(const char *devname, u32 convert_flags, u32 nodesize,
 
 	if (btrfs_check_nodesize(nodesize, blocksize, features))
 		goto fail;
+	if ((features->compat_ro_flags & BTRFS_FEATURE_COMPAT_RO_BLOCK_GROUP_TREE) &&
+	    (!(features->incompat_flags & BTRFS_FEATURE_INCOMPAT_NO_HOLES) ||
+	     !(features->compat_ro_flags & BTRFS_FEATURE_COMPAT_RO_FREE_SPACE_TREE))) {
+		error("block group tree requires no-holes and free-space-tree features");
+		goto fail;
+	}
 	fd = open(devname, O_RDWR);
 	if (fd < 0) {
 		error("unable to open %s: %m", devname);
 		goto fail;
 	}
 	btrfs_parse_fs_features_to_string(features_buf, features);
-	if (!memcmp(features, &btrfs_mkfs_default_features,
-		   sizeof(struct btrfs_mkfs_features)))
+	if (memcmp(features, &btrfs_mkfs_default_features,
+		   sizeof(struct btrfs_mkfs_features)) == 0)
 		strcat(features_buf, " (default)");
 
 	if (convert_flags & CONVERT_FLAG_COPY_FSID) {
@@ -1244,7 +1249,7 @@ static int do_convert(const char *devname, u32 convert_flags, u32 nodesize,
 	uuid_unparse(cctx.fs_uuid, fsid_str);
 	printf("  UUID:           %s\n", fsid_str);
 	printf("Target filesystem:\n");
-	printf("  Label:          %s\n", fslabel);
+	printf("  Label:          %s\n", (convert_flags & CONVERT_FLAG_COPY_LABEL) ? cctx.label : fslabel);
 	printf("  Blocksize:      %u\n", blocksize);
 	printf("  Nodesize:       %u\n", nodesize);
 	printf("  UUID:           %s\n", mkfs_cfg.fs_uuid);

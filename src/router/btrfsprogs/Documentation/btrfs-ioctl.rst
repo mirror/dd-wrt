@@ -17,229 +17,11 @@ over time and in some cases get promoted to a VFS-level ioctl once other
 filesystems adopt the functionality. Backward compatibility is maintained
 and a formerly private ioctl number could become available on the VFS level.
 
-
-DATA STRUCTURES AND DEFINITIONS
--------------------------------
-
-.. _struct_btrfs_ioctl_vol_args:
-
-.. code-block:: c
-
-        struct btrfs_ioctl_vol_args {
-                __s64 fd;
-                char name[BTRFS_PATH_NAME_MAX + 1];
-        };
-
-.. _struct_btrfs_ioctl_vol_args_v2:
-
-.. code-block:: c
-
-        #define BTRFS_SUBVOL_RDONLY                  (1ULL << 1)
-        #define BTRFS_SUBVOL_QGROUP_INHERIT          (1ULL << 2)
-        #define BTRFS_DEVICE_SPEC_BY_ID              (1ULL << 3)
-        #define BTRFS_SUBVOL_SPEC_BY_ID              (1ULL << 4)
-
-        struct btrfs_ioctl_vol_args_v2 {
-                __s64 fd;
-                __u64 transid;
-                __u64 flags;
-                union {
-                        struct {
-                                __u64 size;
-                                struct btrfs_qgroup_inherit __user *qgroup_inherit;
-                        };
-                        __u64 unused[4];
-                };
-                union {
-                        char name[BTRFS_SUBVOL_NAME_MAX + 1];
-                        __u64 devid;
-                        __u64 subvolid;
-                };
-        };
-
-.. _struct_btrfs_ioctl_get_subvol_info_args:
-
-.. code-block:: c
-
-        struct btrfs_ioctl_get_subvol_info_args {
-                /* Id of this subvolume */
-                __u64 treeid;
-
-                /* Name of this subvolume, used to get the real name at mount point */
-                char name[BTRFS_VOL_NAME_MAX + 1];
-
-                /*
-                 * Id of the subvolume which contains this subvolume.
-                 * Zero for top-level subvolume or a deleted subvolume.
-                 */
-                __u64 parent_id;
-
-                /*
-                 * Inode number of the directory which contains this subvolume.
-                 * Zero for top-level subvolume or a deleted subvolume
-                 */
-                __u64 dirid;
-
-                /* Latest transaction id of this subvolume */
-                __u64 generation;
-
-                /* Flags of this subvolume */
-                __u64 flags;
-
-                /* UUID of this subvolume */
-                __u8 uuid[BTRFS_UUID_SIZE];
-
-                /*
-                 * UUID of the subvolume of which this subvolume is a snapshot.
-                 * All zero for a non-snapshot subvolume.
-                 */
-                __u8 parent_uuid[BTRFS_UUID_SIZE];
-
-                /*
-                 * UUID of the subvolume from which this subvolume was received.
-                 * All zero for non-received subvolume.
-                 */
-                __u8 received_uuid[BTRFS_UUID_SIZE];
-
-                /* Transaction id indicating when change/create/send/receive happened */
-                __u64 ctransid;
-                __u64 otransid;
-                __u64 stransid;
-                __u64 rtransid;
-                /* Time corresponding to c/o/s/rtransid */
-                struct btrfs_ioctl_timespec ctime;
-                struct btrfs_ioctl_timespec otime;
-                struct btrfs_ioctl_timespec stime;
-                struct btrfs_ioctl_timespec rtime;
-
-                /* Must be zero */
-                __u64 reserved[8];
-        };
-
-.. _struct_btrfs_qgroup_inherit:
-
-.. code-block:: c
-
-        #define BTRFS_QGROUP_INHERIT_SET_LIMITS         (1ULL << 0)
-
-        struct btrfs_qgroup_inherit {
-                __u64 flags;
-                __u64 num_qgroups;
-                __u64 num_ref_copies;
-                __u64 num_excl_copies;
-                struct btrfs_qgroup_limit lim;
-                __u64 qgroups[];
-        };
-
-.. _struct_btrfs_qgroup_limit:
-
-.. code-block:: c
-
-	#define BTRFS_QGROUP_LIMIT_MAX_RFER             (1ULL << 0)
-	#define BTRFS_QGROUP_LIMIT_MAX_EXCL             (1ULL << 1)
-	#define BTRFS_QGROUP_LIMIT_RSV_RFER             (1ULL << 2)
-	#define BTRFS_QGROUP_LIMIT_RSV_EXCL             (1ULL << 3)
-	#define BTRFS_QGROUP_LIMIT_RFER_CMPR            (1ULL << 4)
-	#define BTRFS_QGROUP_LIMIT_EXCL_CMPR            (1ULL << 5)
-
-	struct btrfs_qgroup_limit {
-		__u64 flags;
-		__u64 max_rfer;
-		__u64 max_excl;
-		__u64 rsv_rfer;
-		__u64 rsv_excl;
-	};
-
-.. _struct_btrfs_ioctl_fs_info_args:
-
-.. code-block:: c
-
-        /* Request information about checksum type and size */
-        #define BTRFS_FS_INFO_FLAG_CSUM_INFO			(1U << 0)
-        /* Request information about filesystem generation */
-        #define BTRFS_FS_INFO_FLAG_GENERATION			(1U << 1)
-        /* Request information about filesystem metadata UUID */
-        #define BTRFS_FS_INFO_FLAG_METADATA_UUID		(1U << 2)
-
-        struct btrfs_ioctl_fs_info_args {
-                __u64 max_id;				/* out */
-                __u64 num_devices;			/* out */
-                __u8 fsid[BTRFS_FSID_SIZE];		/* out */
-                __u32 nodesize;				/* out */
-                __u32 sectorsize;			/* out */
-                __u32 clone_alignment;			/* out */
-                /* See BTRFS_FS_INFO_FLAG_* */
-                __u16 csum_type;			/* out */
-                __u16 csum_size;			/* out */
-                __u64 flags;				/* in/out */
-                __u64 generation;			/* out */
-                __u8 metadata_uuid[BTRFS_FSID_SIZE];	/* out */
-                __u8 reserved[944];			/* pad to 1k */
-        };
-
-.. _struct_btrfs_ioctl_ino_lookup_args:
-
-.. code-block:: c
-
-        #define BTRFS_INO_LOOKUP_PATH_MAX               4080
-
-        struct btrfs_ioctl_ino_lookup_args {
-                __u64 treeid;
-                __u64 objectid;
-                char name[BTRFS_INO_LOOKUP_PATH_MAX];
-        };
-
-.. _struct_btrfs_ioctl_subvol_wait:
-
-.. code-block:: c
-
-        /* Specify the subvolid. */
-        #define BTRFS_SUBVOL_SYNC_WAIT_FOR_ONE         (0)
-        /* Wait for all currently queued. */
-        #define BTRFS_SUBVOL_SYNC_WAIT_FOR_QUEUED      (1)
-        /* Count number of queued subvolumes. */
-        #define BTRFS_SUBVOL_SYNC_COUNT                (2)
-        /*
-         * Read which is the first in the queue (to be cleaned or being cleaned already),
-         * or 0 if the queue is empty.
-         */
-        #define BTRFS_SUBVOL_SYNC_PEEK_FIRST           (3)
-        /* Read the last subvolid in the queue, or 0 if the queue is empty. */
-        #define BTRFS_SUBVOL_SYNC_PEEK_LAST            (4)
-
-        struct btrfs_ioctl_subvol_wait {
-               __u64 subvolid;
-               __u32 mode;
-               __u32 count;
-        };
-
-.. _constants-table:
-
-.. list-table::
-   :header-rows: 1
-
-   * - Constant name
-     - Value
-   * - BTRFS_UUID_SIZE
-     - 16
-   * - BTRFS_FSID_SIZE
-     - 16
-   * - BTRFS_SUBVOL_NAME_MAX
-     - 4039
-   * - BTRFS_PATH_NAME_MAX
-     - 4087
-   * - BTRFS_VOL_NAME_MAX
-     - 255
-   * - BTRFS_LABEL_SIZE
-     - 256
-   * - BTRFS_FIRST_FREE_OBJECTID
-     - 256
-
 OVERVIEW
 --------
 
 The ioctls are defined by a number and associated with a data structure that
-contains further information. All ioctls use file descriptor (fd) as a reference
+contains further information. All ioctls use file descriptor (*fd*) as a reference
 point, it could be the filesystem or a directory inside the filesystem.
 
 An ioctl can be used in the following schematic way:
@@ -252,15 +34,16 @@ An ioctl can be used in the following schematic way:
    args.key = value;
    ret = ioctl(fd, BTRFS_IOC_NUMBER, &args);
 
-The 'fd' is the entry point to the filesystem and for most ioctls it does not
-matter which file or directory is that. Where it matters it's explicitly
-mentioned. The 'args' is the associated data structure for the request. It's
-strongly recommended to initialize the whole structure to zeros as this is
-future-proof when the ioctl gets further extensions. Not doing that could lead
-to mismatch of old userspace and new kernel versions, or vice versa.
-The 'BTRFS_IOC_NUMBER' is says which operation should be done on the given
-arguments. Some ioctls take a specific data structure, some of them share a
-common one, no argument structure ioctls exist too.
+The *fd* is the entry point to the filesystem and for most ioctls it does not
+matter which directory is that. A distinction between files and directories sometimes
+matter, when it matters it's explicitly mentioned. The *args* is the
+associated data structure for the request. It's strongly recommended to
+initialize the whole structure to zeros as this is future-proof when the ioctl
+gets further extensions. Not doing that could lead to mismatch of old userspace
+and new kernel versions, or vice versa.  The *BTRFS_IOC_NUMBER* is says which
+operation should be done on the given arguments. Some ioctls take a specific
+data structure, some of them share a common one, no argument structure ioctls
+exist too.  The data passed to an ioctl can be input, output or both.
 
 The library *libbtrfsutil* wraps a few ioctls for convenience. Using raw ioctls
 is not discouraged but may be cumbersome though it does not need additional
@@ -367,9 +150,9 @@ LIST OF IOCTLS
    * - BTRFS_IOC_SCRUB_PROGRESS
      -
      -
-   * - BTRFS_IOC_DEV_INFO
-     -
-     -
+   * - :ref:`BTRFS_IOC_DEV_INFO<BTRFS_IOC_DEV_INFO>`
+     - get information about a device (UUIDs, used size, total size)
+     - :ref:`struct btrfs_ioctl_dev_info_args<struct_btrfs_ioctl_dev_info_args>`
    * - :ref:`BTRFS_IOC_FS_INFO<BTRFS_IOC_FS_INFO>`
      - get information about filesystem (device count, fsid, ...)
      - :ref:`struct btrfs_ioctl_fs_info_args<struct_btrfs_ioctl_fs_info_args>`
@@ -433,15 +216,15 @@ LIST OF IOCTLS
    * - BTRFS_IOC_FILE_EXTENT_SAME
      -
      -
-   * - BTRFS_IOC_GET_FEATURES
-     -
-     -
-   * - BTRFS_IOC_SET_FEATURES
-     -
-     -
-   * - BTRFS_IOC_GET_SUPPORTED_FEATURES
-     -
-     -
+   * - :ref:`BTRFS_IOC_GET_FEATURES<BTRFS_IOC_GET_FEATURES>`
+     - get features set on the filesystem
+     - :ref:`struct btrfs_ioctl_feature_flags<struct_btrfs_ioctl_feature_flags>`
+   * - :ref:`BTRFS_IOC_SET_FEATURES<BTRFS_IOC_SET_FEATURES>`
+     - set features on the filesystem
+     - :ref:`struct btrfs_ioctl_feature_flags<struct_btrfs_ioctl_feature_flags>`
+   * - :ref:`BTRFS_IOC_GET_SUPPORTED_FEATURES<BTRFS_IOC_GET_SUPPORTED_FEATURES>`
+     - get available filesystem feature sets
+     - :ref:`struct btrfs_ioctl_feature_flags[3]<struct_btrfs_ioctl_feature_flags>`
    * - BTRFS_IOC_RM_DEV_V2
      -
      -
@@ -469,6 +252,288 @@ LIST OF IOCTLS
    * - :ref:`BTRFS_IOC_SUBVOL_SYNC_WAIT<BTRFS_IOC_SUBVOL_SYNC_WAIT>`
      - Wait until a deleted subvolume is cleaned or query the state.
      - :ref:`struct btrfs_ioctl_subvol_wait<struct_btrfs_ioctl_subvol_wait>`
+
+DATA STRUCTURES AND DEFINITIONS
+-------------------------------
+
+.. _struct_btrfs_ioctl_vol_args:
+
+.. code-block:: c
+
+        struct btrfs_ioctl_vol_args {
+                __s64 fd;
+                char name[BTRFS_PATH_NAME_MAX + 1];
+        };
+
+.. _struct_btrfs_ioctl_vol_args_v2:
+
+.. code-block:: c
+
+        #define BTRFS_SUBVOL_RDONLY                  (1ULL << 1)
+        #define BTRFS_SUBVOL_QGROUP_INHERIT          (1ULL << 2)
+        #define BTRFS_DEVICE_SPEC_BY_ID              (1ULL << 3)
+        #define BTRFS_SUBVOL_SPEC_BY_ID              (1ULL << 4)
+
+        struct btrfs_ioctl_vol_args_v2 {
+                __s64 fd;
+                __u64 transid;
+                __u64 flags;
+                union {
+                        struct {
+                                __u64 size;
+                                struct btrfs_qgroup_inherit __user *qgroup_inherit;
+                        };
+                        __u64 unused[4];
+                };
+                union {
+                        char name[BTRFS_SUBVOL_NAME_MAX + 1];
+                        __u64 devid;
+                        __u64 subvolid;
+                };
+        };
+
+
+.. _struct_btrfs_ioctl_feature_flags:
+
+.. code-block:: c
+
+	#define BTRFS_FEATURE_COMPAT_RO_FREE_SPACE_TREE         (1ULL << 0)
+	/*
+	 * Older kernels (< 4.9) on big-endian systems produced broken free space tree
+	 * bitmaps, and btrfs-progs also used to corrupt the free space tree (versions
+	 * < 4.7.3).  If this bit is clear, then the free space tree cannot be trusted.
+	 * btrfs-progs can also intentionally clear this bit to ask the kernel to
+	 * rebuild the free space tree, however this might not work on older kernels
+	 * that do not know about this bit. If not sure, clear the cache manually on
+	 * first mount when booting older kernel versions.
+	 */
+	#define BTRFS_FEATURE_COMPAT_RO_FREE_SPACE_TREE_VALID   (1ULL << 1)
+	#define BTRFS_FEATURE_COMPAT_RO_VERITY                  (1ULL << 2)
+	#define BTRFS_FEATURE_COMPAT_RO_BLOCK_GROUP_TREE        (1ULL << 3)
+
+	#define BTRFS_FEATURE_INCOMPAT_MIXED_BACKREF            (1ULL << 0)
+	#define BTRFS_FEATURE_INCOMPAT_DEFAULT_SUBVOL           (1ULL << 1)
+	#define BTRFS_FEATURE_INCOMPAT_MIXED_GROUPS             (1ULL << 2)
+	#define BTRFS_FEATURE_INCOMPAT_COMPRESS_LZO             (1ULL << 3)
+	#define BTRFS_FEATURE_INCOMPAT_COMPRESS_ZSTD            (1ULL << 4)
+	#define BTRFS_FEATURE_INCOMPAT_BIG_METADATA             (1ULL << 5)
+	#define BTRFS_FEATURE_INCOMPAT_EXTENDED_IREF            (1ULL << 6)
+	#define BTRFS_FEATURE_INCOMPAT_RAID56                   (1ULL << 7)
+	#define BTRFS_FEATURE_INCOMPAT_SKINNY_METADATA          (1ULL << 8)
+	#define BTRFS_FEATURE_INCOMPAT_NO_HOLES                 (1ULL << 9)
+	#define BTRFS_FEATURE_INCOMPAT_METADATA_UUID            (1ULL << 10)
+	#define BTRFS_FEATURE_INCOMPAT_RAID1C34                 (1ULL << 11)
+	#define BTRFS_FEATURE_INCOMPAT_ZONED                    (1ULL << 12)
+	#define BTRFS_FEATURE_INCOMPAT_EXTENT_TREE_V2           (1ULL << 13)
+	#define BTRFS_FEATURE_INCOMPAT_RAID_STRIPE_TREE         (1ULL << 14)
+	#define BTRFS_FEATURE_INCOMPAT_SIMPLE_QUOTA             (1ULL << 16)
+
+        struct btrfs_ioctl_feature_flags {
+                __u64 compat_flags;
+                __u64 compat_ro_flags;
+                __u64 incompat_flags;
+        };
+
+.. _struct_btrfs_ioctl_get_subvol_info_args:
+
+.. code-block:: c
+
+        struct btrfs_ioctl_get_subvol_info_args {
+                /* Id of this subvolume */
+                __u64 treeid;
+
+                /* Name of this subvolume, used to get the real name at mount point */
+                char name[BTRFS_VOL_NAME_MAX + 1];
+
+                /*
+                 * Id of the subvolume which contains this subvolume.
+                 * Zero for top-level subvolume or a deleted subvolume.
+                 */
+                __u64 parent_id;
+
+                /*
+                 * Inode number of the directory which contains this subvolume.
+                 * Zero for top-level subvolume or a deleted subvolume
+                 */
+                __u64 dirid;
+
+                /* Latest transaction id of this subvolume */
+                __u64 generation;
+
+                /* Flags of this subvolume */
+                __u64 flags;
+
+                /* UUID of this subvolume */
+                __u8 uuid[BTRFS_UUID_SIZE];
+
+                /*
+                 * UUID of the subvolume of which this subvolume is a snapshot.
+                 * All zero for a non-snapshot subvolume.
+                 */
+                __u8 parent_uuid[BTRFS_UUID_SIZE];
+
+                /*
+                 * UUID of the subvolume from which this subvolume was received.
+                 * All zero for non-received subvolume.
+                 */
+                __u8 received_uuid[BTRFS_UUID_SIZE];
+
+                /* Transaction id indicating when change/create/send/receive happened */
+                __u64 ctransid;
+                __u64 otransid;
+                __u64 stransid;
+                __u64 rtransid;
+                /* Time corresponding to c/o/s/rtransid */
+                struct btrfs_ioctl_timespec ctime;
+                struct btrfs_ioctl_timespec otime;
+                struct btrfs_ioctl_timespec stime;
+                struct btrfs_ioctl_timespec rtime;
+
+                /* Must be zero */
+                __u64 reserved[8];
+        };
+
+.. _struct_btrfs_qgroup_inherit:
+
+.. code-block:: c
+
+        #define BTRFS_QGROUP_INHERIT_SET_LIMITS         (1ULL << 0)
+
+        struct btrfs_qgroup_inherit {
+                __u64 flags;
+                __u64 num_qgroups;
+                __u64 num_ref_copies;
+                __u64 num_excl_copies;
+                struct btrfs_qgroup_limit lim;
+                __u64 qgroups[];
+        };
+
+.. _struct_btrfs_qgroup_limit:
+
+.. code-block:: c
+
+	#define BTRFS_QGROUP_LIMIT_MAX_RFER             (1ULL << 0)
+	#define BTRFS_QGROUP_LIMIT_MAX_EXCL             (1ULL << 1)
+	#define BTRFS_QGROUP_LIMIT_RSV_RFER             (1ULL << 2)
+	#define BTRFS_QGROUP_LIMIT_RSV_EXCL             (1ULL << 3)
+	#define BTRFS_QGROUP_LIMIT_RFER_CMPR            (1ULL << 4)
+	#define BTRFS_QGROUP_LIMIT_EXCL_CMPR            (1ULL << 5)
+
+	struct btrfs_qgroup_limit {
+		__u64 flags;
+		__u64 max_rfer;
+		__u64 max_excl;
+		__u64 rsv_rfer;
+		__u64 rsv_excl;
+	};
+
+.. _struct_btrfs_ioctl_dev_info_args:
+
+.. code-block:: c
+
+        struct btrfs_ioctl_dev_info_args {
+             __u64 devid;                            /* in/out */
+             __u8 uuid[BTRFS_UUID_SIZE];             /* in/out */
+             __u64 bytes_used;                       /* out */
+             __u64 total_bytes;                      /* out */
+             /*
+              * Optional, out.
+              *
+              * Showing the fsid of the device, allowing user space to check if this
+              * device is a seeding one.
+              *
+              * Introduced in v6.3, thus user space still needs to check if kernel
+              * changed this value.  Older kernel will not touch the values here.
+              */
+             __u8 fsid[BTRFS_UUID_SIZE];
+             __u64 unused[377];                      /* pad to 4k */
+             __u8 path[BTRFS_DEVICE_PATH_NAME_MAX];  /* out */
+        };
+
+.. _struct_btrfs_ioctl_fs_info_args:
+
+.. code-block:: c
+
+        /* Request information about checksum type and size */
+        #define BTRFS_FS_INFO_FLAG_CSUM_INFO			(1U << 0)
+        /* Request information about filesystem generation */
+        #define BTRFS_FS_INFO_FLAG_GENERATION			(1U << 1)
+        /* Request information about filesystem metadata UUID */
+        #define BTRFS_FS_INFO_FLAG_METADATA_UUID		(1U << 2)
+
+        struct btrfs_ioctl_fs_info_args {
+                __u64 max_id;				/* out */
+                __u64 num_devices;			/* out */
+                __u8 fsid[BTRFS_FSID_SIZE];		/* out */
+                __u32 nodesize;				/* out */
+                __u32 sectorsize;			/* out */
+                __u32 clone_alignment;			/* out */
+                /* See BTRFS_FS_INFO_FLAG_* */
+                __u16 csum_type;			/* out */
+                __u16 csum_size;			/* out */
+                __u64 flags;				/* in/out */
+                __u64 generation;			/* out */
+                __u8 metadata_uuid[BTRFS_FSID_SIZE];	/* out */
+                __u8 reserved[944];			/* pad to 1k */
+        };
+
+.. _struct_btrfs_ioctl_ino_lookup_args:
+
+.. code-block:: c
+
+        #define BTRFS_INO_LOOKUP_PATH_MAX               4080
+
+        struct btrfs_ioctl_ino_lookup_args {
+                __u64 treeid;
+                __u64 objectid;
+                char name[BTRFS_INO_LOOKUP_PATH_MAX];
+        };
+
+.. _struct_btrfs_ioctl_subvol_wait:
+
+.. code-block:: c
+
+        /* Specify the subvolid. */
+        #define BTRFS_SUBVOL_SYNC_WAIT_FOR_ONE         (0)
+        /* Wait for all currently queued. */
+        #define BTRFS_SUBVOL_SYNC_WAIT_FOR_QUEUED      (1)
+        /* Count number of queued subvolumes. */
+        #define BTRFS_SUBVOL_SYNC_COUNT                (2)
+        /*
+         * Read which is the first in the queue (to be cleaned or being cleaned already),
+         * or 0 if the queue is empty.
+         */
+        #define BTRFS_SUBVOL_SYNC_PEEK_FIRST           (3)
+        /* Read the last subvolid in the queue, or 0 if the queue is empty. */
+        #define BTRFS_SUBVOL_SYNC_PEEK_LAST            (4)
+
+        struct btrfs_ioctl_subvol_wait {
+               __u64 subvolid;
+               __u32 mode;
+               __u32 count;
+        };
+
+.. _constants-table:
+
+.. list-table::
+   :header-rows: 1
+
+   * - Constant name
+     - Value
+   * - BTRFS_UUID_SIZE
+     - 16
+   * - BTRFS_FSID_SIZE
+     - 16
+   * - BTRFS_SUBVOL_NAME_MAX
+     - 4039
+   * - BTRFS_PATH_NAME_MAX
+     - 4087
+   * - BTRFS_VOL_NAME_MAX
+     - 255
+   * - BTRFS_LABEL_SIZE
+     - 256
+   * - BTRFS_FIRST_FREE_OBJECTID
+     - 256
 
 DETAILED DESCRIPTION
 --------------------
@@ -850,6 +915,23 @@ Required permissions: CAP_SYS_ADMIN
    * - ioctl args
      - char buffer[:ref:`BTRFS_LABEL_SIZE<constants-table>`]
 
+.. _BTRFS_IOC_DEV_INFO:
+
+BTRFS_IOC_DEV_INFO
+~~~~~~~~~~~~~~~~~~
+
+Read some basic information about a device, requested by the *devid* or *device UUID*.
+
+.. list-table::
+   :header-rows: 1
+
+   * - Field
+     - Description
+   * - ioctl fd
+     - file descriptor of any file/directory in the filesystem
+   * - ioctl args
+     - :ref:`struct btrfs_ioctl_dev_info_args<struct_btrfs_ioctl_dev_info_args>`
+
 .. _BTRFS_IOC_FS_INFO:
 
 BTRFS_IOC_FS_INFO
@@ -869,6 +951,78 @@ depending on the flags set.
      - file descriptor of any file/directory in the filesystem
    * - ioctl args
      - :ref:`struct btrfs_ioctl_fs_info_args<struct_btrfs_ioctl_fs_info_args>`
+
+.. _BTRFS_IOC_GET_FEATURES:
+
+BTRFS_IOC_GET_FEATURES
+~~~~~~~~~~~~~~~~~~~~~~
+
+Get the actually set feature bits on the filesystem (the bits are stored in the
+super block).  There are three sets related to backward compatibility:
+
+- incompat: not backward compatible, mount on older kernel will fail.
+- compat_ro: backward compatible for read-only mount.
+- compat: backward compatible with read-write support, only marked as as individual feature.
+
+.. list-table::
+   :header-rows: 1
+
+   * - Field
+     - Description
+   * - ioctl fd
+     - file descriptor of the subvolume to examine
+   * - ioctl args
+     - :ref:`struct btrfs_ioctl_feature_flags<struct_btrfs_ioctl_feature_flags>`
+
+If a bit is set then there may be some data structures on the filesystem of the
+related feature, but not necessarily.
+
+Some of the features are turned on automatically when used,
+e.g. compression or when a balance filter converts to yet unused block group
+profile. In some cases the feature can be turned on or off by :doc:`btrfstune`.
+
+.. _BTRFS_IOC_SET_FEATURES:
+
+BTRFS_IOC_SET_FEATURES
+~~~~~~~~~~~~~~~~~~~~~~
+
+Set a feature bit on the filesystem if possible. Some features may require
+extensive changes, new data structures or conversion (like free-space-tree).
+Bits representing possible existence of data structures related to the feature
+can be set without actually creating anything, e.g. ZSTD compressed extents.
+
+.. list-table::
+   :header-rows: 1
+
+   * - Field
+     - Description
+   * - ioctl fd
+     - file descriptor of the subvolume to examine
+   * - ioctl args
+     - :ref:`struct btrfs_ioctl_feature_flags<struct_btrfs_ioctl_feature_flags>`
+
+.. _BTRFS_IOC_GET_SUPPORTED_FEATURES:
+
+BTRFS_IOC_GET_SUPPORTED_FEATURES
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Get feature sets supported by the kernel module, in three groups:
+
+- supported: (index 0) all supported compat/compat_ro/incompat features
+- safe to set: (index 1) features that can be enabled on a mounted filesystem
+- safe to clear: (index 2) features that can be disabled on a mounted filesystem
+
+The features are also listed in :file:`/sys/fs/btrfs/features`.
+
+.. list-table::
+   :header-rows: 1
+
+   * - Field
+     - Description
+   * - ioctl fd
+     - file descriptor of the subvolume to examine
+   * - ioctl args
+     - :ref:`struct btrfs_ioctl_feature_flags[3]<struct_btrfs_ioctl_feature_flags>`
 
 .. _BTRFS_IOC_GET_SUBVOL_INFO:
 

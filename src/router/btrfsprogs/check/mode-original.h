@@ -195,6 +195,7 @@ struct unaligned_extent_rec_t {
 #define I_ERR_INVALID_NLINK		(1U << 21)
 #define I_ERR_INVALID_XATTR		(1U << 22)
 #define I_ERR_DEPRECATED_FREE_INO	(1U << 23)
+#define I_ERR_DUP_FILENAME		(1U << 24)
 
 struct inode_record {
 	struct list_head backrefs;
@@ -263,7 +264,10 @@ struct root_record {
 	struct cache_extent cache;
 	unsigned int found_root_item:1;
 	u64 objectid;
+	/* The found number of refs in tree root. */
 	u32 found_ref;
+	/* The expected number of refs in root item. */
+	u32 expected_ref;
 };
 
 struct ptr_node {

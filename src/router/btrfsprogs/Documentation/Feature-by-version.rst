@@ -35,6 +35,9 @@ features see :doc:`Status<Status>` page.
         is logged. The information is also accessible in
         :file:`/sys/fs/btrfs/FSID/checksum`.
 
+6.1 (stable)
+------------
+
 6.1 - sysfs support to temporarily skip exact qgroup accounting
         Allow user override of qgroup accounting and make it temporarily out
         of date e.g. in case when there are several subvolumes deleted and the
@@ -92,6 +95,9 @@ features see :doc:`Status<Status>` page.
         Utimes for directories are emitted into the send stream only when
         finalizing the directory, the cache also gains significant speedups (up
         to 10x).
+
+6.6 (stable)
+------------
 
 6.7 - raid-stripe-tree
         New tree for logical mapping, allows some RAID modes for zoned mode.
@@ -168,6 +174,9 @@ features see :doc:`Status<Status>` page.
         reads. The direct io is still locked but this should not be mixed with
         buffered writes.
 
+6.12 (stable)
+-------------
+
 6.12 - cancellable discard/TRIM
         Add more points where the discard can be interrupted by signals before
         it finishes the whole operation.
@@ -193,7 +202,79 @@ features see :doc:`Status<Status>` page.
         not touch the superblock read-only status, preventing removal of
         accumulated deleted snapshots to be cleaned.
 
-6.13 - update tree-checker to detect more wrong inline extent references
+6.13 - tree-checker update for inline extent references
+        Update tree-checker to detect more wrong inline extent references.
+
+6.14 - support READ_VERITY_METADATA ioctl
+        Add support for FS_IOC_READ_VERITY_METADATA to directly query the
+        Merkle tree, descriptor and signature blocks for fs-verity enabled
+        files.
+
+6.14 - *experimental* read balancing policies
+        Add more read balancing policies, configurable in :file:`/sys/fs/btrfs/FSID/read_policy`
+        or as module parameter *read_policy*.  Newly added *round-robin*,
+        *devid:N* (select a specific mirror number *N*).
+
+6.14 - encoded write integration with io_uring
+        The io_uring subsystem understands a command that is directed to
+        Btrfs encoded write ioctl.
+
+6.15 - always do buffered IO for files with checksums
+        Direct IO may lead to data and their checksums mismatch. Use the direct
+        to buffered fallback in case the file has checksums. This has a negative
+        performance impact.
+
+6.15 - negative (fast) levels for zstd
+        Mount options for *zstd* compression accept negative values *-1..-15*
+        match the levels. They provide faster compression at the cost of worse
+        ratio.
+
+6.15 - *(debug builds)* accept 2K block size on x86_64
+        For testing the *subpage* block size feature, the size of 2K is accepted
+        on x86_64 which has 4K pages.
+
+6.15 - defrag ioctl accepts negative zstd levels
+        The defrag ioctl also accepts the negative zstd levels that can be set as
+        mount option.
+
+6.16 - *standalone mount option nologreplay removed*
+        Deprecated in 5.9 and replaced with *rescue=nologreplay*.
+
+6.17 (latest)
+-------------
+
+6.17 - track current commit duration in commit_stats
+        Add entry to :file:`commit_stats` to detect commit stalls, for
+        debugging or monitoring purposes.
+
+6.17 - *experimental* large folio support
+        Large folios abstract contiguous page ranges representing some filesystem
+        data or metadata as one structure instead of several ones. This simplifies
+        code and has a positive impact on performance. As it touches the core
+        data structure it is not enabled by default.
+
+6.17 - restrict writes to mounted devices
+        Any btrfs mounted device cannot be opened for writes.
+
+6.17 - defrag ioctl can force no compression
+        The defrag ioctl was not able to uncompress a given range, now it's
+        possible.
+
+6.17 - send (v2 protocol) uses fallocate for hole punching
+        File holes, ranges not representing data, were emulated by a zero
+        filled data. This is less efficient than puching holes.
+
+6.18 - *move rev-verify feature under CONFIG_BTRFS_DEBUG*
+        Config option CONFIG_BTRFS_FS_REF_VERIFY has been removed and the
+        debugging functionality of *ref-verify* moved under CONFIG_BTRFS_DEBUG.
+
+6.18 - *new mount option ref_tracker for reference tracking*
+        A debugging feature to track references (now implemented for delayed
+        refs) and report leaks eventually.
+
+6.18 - *experimental* enable block size > page size support
+        Initial support for *bs > ps* with limitations (no direct IO, raid56,
+        encoded read/write).
 
 5.x
 ---
@@ -221,6 +302,9 @@ features see :doc:`Status<Status>` page.
 5.2 - pre-write checks
         Verify metadata blocks before submitting them to the devices. This can
         catch consistency problems or bitflips.
+
+5.4 (stable)
+------------
 
 5.5 - more checksums
         New checksum algorithms: xxhash (64b), SHA256 (256b), BLAKE2b (256b).
@@ -258,6 +342,9 @@ features see :doc:`Status<Status>` page.
 5.9 - FS_INFO ioctl
         Export more information: checksum type, checksum size, generation, metadata_uuid
 
+5.10 (stable)
+-------------
+
 5.10 - exclusive ops in sysfs
         Export which filesystem exclusive operation is running (balance,
         resize, device add/delete/replace, ...)
@@ -294,6 +381,9 @@ features see :doc:`Status<Status>` page.
         value and reset it to default. This affects *btrfs.compression* where
         value *no* sets NOCOMPRESS bit while empty value resets all compression
         settings (either compression or NOCOMPRESS bit).
+
+5.15 (stable)
+-------------
 
 5.15 - fsverity
         The fs-verity is a support layer that filesystems can hook into to

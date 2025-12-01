@@ -754,12 +754,9 @@ int make_btrfs(int fd, struct btrfs_mkfs_config *cfg)
 	}
 
 	/* and write out the super block */
-	memset(buf->data, 0, BTRFS_SUPER_INFO_SIZE);
-	memcpy(buf->data, &super, sizeof(super));
-	buf->len = BTRFS_SUPER_INFO_SIZE;
-	csum_tree_block_size(buf, btrfs_csum_type_size(cfg->csum_type), 0,
-			     cfg->csum_type);
-	ret = sbwrite(fd, buf->data, BTRFS_SUPER_INFO_OFFSET);
+	btrfs_csum_data(cfg->csum_type, (u8 *)&super + BTRFS_CSUM_SIZE,
+			super.csum, sizeof(super) - BTRFS_CSUM_SIZE);
+	ret = sbwrite(fd, &super, BTRFS_SUPER_INFO_OFFSET);
 	if (ret != BTRFS_SUPER_INFO_SIZE) {
 		ret = (ret < 0 ? -errno : -EIO);
 		goto out;
@@ -1052,7 +1049,12 @@ static int check_overwrite(const char *device)
 	}
 
 	if (!blkid_probe_lookup_value(pr, "TYPE", &type, NULL)) {
-		error("%s appears to contain an existing filesystem (%s)", device, type);
+		const char *label = NULL;
+
+		blkid_probe_lookup_value(pr, "LABEL", &label, NULL);
+
+		error("%s appears to contain an existing filesystem (type=%s%s%s)",
+		      device, type, (label ? ", label=" : ""), (label ? label : ""));
 	} else if (!blkid_probe_lookup_value(pr, "PTTYPE", &type, NULL)) {
 		error("%s appears to contain a partition table (%s)", device, type);
 	} else {
@@ -1165,39 +1167,12 @@ bool test_status_for_mkfs(const char *file, bool force_overwrite)
 	return false;
 }
 
-int is_vol_small(const char *file)
-{
-	int fd = -1;
-	int e;
-	struct stat st;
-	u64 size;
-
-	fd = open(file, O_RDONLY);
-	if (fd < 0)
-		return -errno;
-	if (fstat(fd, &st) < 0) {
-		e = -errno;
-		close(fd);
-		return e;
-	}
-	size = device_get_partition_size_fd_stat(fd, &st);
-	if (size == 0) {
-		close(fd);
-		return -1;
-	}
-	if (size < BTRFS_MKFS_SMALL_VOLUME_SIZE) {
-		close(fd);
-		return 1;
-	} else {
-		close(fd);
-		return 0;
-	}
-}
-
 int test_minimum_size(const char *file, u64 min_dev_size)
 {
 	int fd;
+	int ret;
 	struct stat statbuf;
+	u64 size;
 
 	fd = open(file, O_RDONLY);
 	if (fd < 0)
@@ -1206,11 +1181,12 @@ int test_minimum_size(const char *file, u64 min_dev_size)
 		close(fd);
 		return -errno;
 	}
-	if (device_get_partition_size_fd_stat(fd, &statbuf) < min_dev_size) {
-		close(fd);
-		return 1;
-	}
+	ret = device_get_partition_size_fd_stat(fd, &statbuf, &size);
 	close(fd);
+	if (ret < 0)
+		return ret;
+	if (size < min_dev_size)
+		return 1;
 	return 0;
 }
 

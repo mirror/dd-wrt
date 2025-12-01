@@ -65,7 +65,8 @@ class BtrfsTestCase(unittest.TestCase):
         mountpoint = tempfile.mkdtemp()
         try:
             with tempfile.NamedTemporaryFile(delete=False) as f:
-                os.truncate(f.fileno(), 1024 * 1024 * 1024)
+                os.truncate(f.fileno(), 0)
+                os.truncate(f.fileno(), 4 * 1024 * 1024 * 1024)
                 image = f.name
         except Exception as e:
             os.rmdir(mountpoint)
@@ -76,7 +77,8 @@ class BtrfsTestCase(unittest.TestCase):
         else:
             mkfs = 'mkfs.btrfs'
         try:
-            subprocess.check_call([mkfs, '-q', image])
+            verbosity = '-q'
+            subprocess.check_call([mkfs, verbosity, image])
             subprocess.check_call(
                 [
                     'mount',

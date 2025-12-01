@@ -269,7 +269,12 @@ static int cmd_replace_start(const struct cmd_struct *cmd,
 		strncpy_null((char *)start_args.start.srcdev_name, srcdev,
 			     BTRFS_DEVICE_PATH_NAME_MAX + 1);
 		start_args.start.srcdevid = 0;
-		srcdev_size = device_get_partition_size(srcdev);
+		ret = device_get_partition_size(srcdev, &srcdev_size);
+		if (ret < 0) {
+			errno = -ret;
+			error("failed to get device size for %s: %m", srcdev);
+			goto leave_with_error;
+		}
 	} else {
 		error("source device must be a block device or a devid");
 		goto leave_with_error;
@@ -279,7 +284,12 @@ static int cmd_replace_start(const struct cmd_struct *cmd,
 	if (ret)
 		goto leave_with_error;
 
-	dstdev_size = device_get_partition_size(dstdev);
+	ret = device_get_partition_size(dstdev, &dstdev_size);
+	if (ret < 0) {
+		errno = -ret;
+		error("failed to get device size for %s: %m", dstdev);
+		goto leave_with_error;
+	}
 	if (srcdev_size > dstdev_size) {
 		error("target device smaller than source device (required %llu bytes)",
 			srcdev_size);
@@ -319,12 +329,11 @@ static int cmd_replace_start(const struct cmd_struct *cmd,
 	ret = ioctl(fdmnt, BTRFS_IOC_DEV_REPLACE, &start_args);
 	if (do_not_background) {
 		if (ret < 0) {
-			error("ioctl(DEV_REPLACE_START) failed on \"%s\": %m", path);
-			if (start_args.result != BTRFS_IOCTL_DEV_REPLACE_RESULT_NO_RESULT)
-				pr_stderr(LOG_DEFAULT, ", %s\n",
-					replace_dev_result2string(start_args.result));
+			if (start_args.result == BTRFS_IOCTL_DEV_REPLACE_RESULT_NO_RESULT)
+				error("ioctl(DEV_REPLACE_START) failed on \"%s\": %m", path);
 			else
-				pr_stderr(LOG_DEFAULT, "\n");
+				error("ioctl(DEV_REPLACE_START) failed on \"%s\": %m, %s",
+				      path, replace_dev_result2string(start_args.result));
 
 			if (errno == EOPNOTSUPP)
 				warning("device replace of RAID5/6 not supported with this kernel");
@@ -350,8 +359,7 @@ static int cmd_replace_start(const struct cmd_struct *cmd,
 	return 0;
 
 leave_with_error:
-	if (dstdev)
-		free(dstdev);
+	free(dstdev);
 	if (fdmnt != -1)
 		close(fdmnt);
 	if (fddstdev != -1)
