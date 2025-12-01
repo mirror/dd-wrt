@@ -254,7 +254,7 @@ struct net_hdr_word {
 
 #undef net_hdr_word
 #undef MIPS_ENABLED
-#if defined(CONFIG_ATH79)
+#if defined(CONFIG_ATH79) || defined(MACH_REALTEK_RTL)
 struct net_hdr_word {
        u32 words[1];
 } __attribute__((packed, aligned(2)));
