@@ -828,6 +828,10 @@ else ifdef CONFIG_CC_OPTIMIZE_FOR_SIZE
 KBUILD_CFLAGS	+= -Os
 KBUILD_CFLAGS	+= -fno-reorder-blocks -fno-tree-ch -fno-caller-saves
 KBUILD_RUSTFLAGS += -Copt-level=s
+else ifdef CONFIG_CC_OPTIMIZE_FOR_SIZE_AGGRESSIVE
+KBUILD_CFLAGS	+= -Oz
+KBUILD_CFLAGS	+= -fno-reorder-blocks -fno-tree-ch -fno-caller-saves
+KBUILD_RUSTFLAGS += -Copt-level=s
 endif
 
 # Always set `debug-assertions` and `overflow-checks` because their default

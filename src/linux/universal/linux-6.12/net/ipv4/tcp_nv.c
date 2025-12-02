@@ -167,7 +167,7 @@ static void tcpnv_init(struct sock *sk)
 /* If provided, apply upper (base_rtt) and lower (lower_bound_rtt)
  * bounds to RTT.
  */
-inline u32 nv_get_bounded_rtt(struct tcpnv *ca, u32 val)
+static inline u32 nv_get_bounded_rtt(struct tcpnv *ca, u32 val)
 {
 	if (ca->nv_lower_bound_rtt > 0 && val < ca->nv_lower_bound_rtt)
 		return ca->nv_lower_bound_rtt;

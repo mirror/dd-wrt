@@ -115,19 +115,19 @@ static enum template_field_id fixed_templates[N_FIXED_TEMPLATES][N_FIXED_FIELDS_
 	},
 };
 
-inline void rtl931x_exec_tbl0_cmd(u32 cmd)
+static inline void rtl931x_exec_tbl0_cmd(u32 cmd)
 {
 	sw_w32(cmd, RTL931X_TBL_ACCESS_CTRL_0);
 	do { } while (sw_r32(RTL931X_TBL_ACCESS_CTRL_0) & (1 << 20));
 }
 
-inline void rtl931x_exec_tbl1_cmd(u32 cmd)
+static inline void rtl931x_exec_tbl1_cmd(u32 cmd)
 {
 	sw_w32(cmd, RTL931X_TBL_ACCESS_CTRL_1);
 	do { } while (sw_r32(RTL931X_TBL_ACCESS_CTRL_1) & (1 << 17));
 }
 
-inline int rtl931x_tbl_access_data_0(int i)
+static inline int rtl931x_tbl_access_data_0(int i)
 {
 	return RTL931X_TBL_ACCESS_DATA_0(i);
 }

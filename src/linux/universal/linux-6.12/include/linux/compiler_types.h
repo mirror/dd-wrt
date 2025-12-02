@@ -238,7 +238,7 @@ struct ftrace_likely_data {
 #define inline inline __gnu_inline __inline_maybe_unused notrace
 #else
 /* A lot of inline functions can cause havoc with function tracing */
-#define inline inline		__attribute__((unused)) notrace __gnu_inline
+#define inline inline
 #endif
 
 /*

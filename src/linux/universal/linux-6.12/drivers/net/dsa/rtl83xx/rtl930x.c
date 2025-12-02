@@ -135,19 +135,19 @@ void rtl930x_print_matrix(void)
 	rtl_table_release(r);
 }
 
-inline void rtl930x_exec_tbl0_cmd(u32 cmd)
+static inline void rtl930x_exec_tbl0_cmd(u32 cmd)
 {
 	sw_w32(cmd, RTL930X_TBL_ACCESS_CTRL_0);
 	do { } while (sw_r32(RTL930X_TBL_ACCESS_CTRL_0) & (1 << 17));
 }
 
-inline void rtl930x_exec_tbl1_cmd(u32 cmd)
+static inline void rtl930x_exec_tbl1_cmd(u32 cmd)
 {
 	sw_w32(cmd, RTL930X_TBL_ACCESS_CTRL_1);
 	do { } while (sw_r32(RTL930X_TBL_ACCESS_CTRL_1) & (1 << 17));
 }
 
-inline int rtl930x_tbl_access_data_0(int i)
+static inline int rtl930x_tbl_access_data_0(int i)
 {
 	return RTL930X_TBL_ACCESS_DATA_0(i);
 }
