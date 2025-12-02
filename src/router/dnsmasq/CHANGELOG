@@ -70,6 +70,12 @@ version 2.92
 	is functional when client and server networks aren't mutually
 	route-able.
 
+	Fix failure to add client MAC address to queries in TCP mode.
+	The options which cause	dnsmasq	to decorate a DNS query	with the MAC
+	address	on the originating client can fail when the query is sent
+	using TCP. Thanks to Bruno Ravara for spotting and
+	characterising this bug.
+
 	
 version 2.91
 	Fix spurious "resource limit exceeded messages". Thanks to 
