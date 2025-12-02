@@ -2529,6 +2529,7 @@ Need parsing to get the file data out of the POST data
 		char allowedips[196] = { 0 };
 		char strcomma[4] = { 0 };
 		int line = 0;
+		char listenport[6] = "0"; //egc if there is no listen port defined set to 0=random listen port
 		/*debug
 		   dd_loginfo("WireGuard", "import_tunnel tun:%d; peer:%d", key, peer);
 		   char val[32];
@@ -2539,7 +2540,7 @@ Need parsing to get the file data out of the POST data
 			if (sscanf(buf, "PrivateKey = %s", output) == 1)
 				nvram_nset(output, "oet%d_private", key);
 			if (sscanf(buf, "ListenPort = %s", output) == 1)
-				nvram_nset(output, "oet%d_port", key);
+				strlcpy(listenport, output, sizeof(listenport));
 			if (sscanf(buf, "Address = %[^\n]", output) == 1)
 				nvram_nset(output, "oet%d_ipaddrmask", key);
 			if (sscanf(buf, "MTU = %s", output) == 1)
@@ -2580,6 +2581,7 @@ Need parsing to get the file data out of the POST data
 				strlcpy(ka, output, sizeof(ka));
 			}
 		}
+		nvram_nset(listenport, "oet%d_port", key);
 		upload_set("aip", allowedips);
 		upload_set("ka", ka);
 		peer++;

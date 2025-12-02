@@ -3184,6 +3184,7 @@ void start_nvram(void)
 
 	nvram_set("wan_get_dns", "");
 	nvram_set("openvpn_get_dns", "");
+	nvram_unset("wg_get_dns");
 	nvram_seti("filter_id", 1);
 	nvram_set("ddns_change", "");
 	nvram_unset("action_service");

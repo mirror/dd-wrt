@@ -2330,7 +2330,7 @@ eoip.wireguard_rtupscript="Route up Script";
 eoip.wireguard_rtdownscript="Route down Script";
 eoip.wireguard_fwmark="Firewall Mark";
 eoip.wireguard_route_allowedip="Route Allowed IPs via Tunnel";
-eoip.wireguard_localport="Listen Port";
+eoip.wireguard_localport="Listen Port (0 = random)";
 eoip.wireguard_ka="Persistent Keepalive";
 eoip.wireguard_endpoint="Endpoint";
 eoip.wireguard_peer="Endpoint Address";

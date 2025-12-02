@@ -155,11 +155,14 @@ skip:;
 	}
 	if (!nvram_match("wan_proto", "disabled")) {
 		const char *wanport = safe_get_wan_face(wan_if_buffer);
-		if (getSTA()) {
+		char *sta = getSTA();
+		if (sta) {
 			snprintf(name, sizeof(name), "%s WAN (%s)", tran_string(buf, sizeof(buf), "share.wireless"),
+				 getNetworkLabel(wp, sta));
+		}
+		else
+			snprintf(name, sizeof(name), "WAN (%s)",
 				 getNetworkLabel(wp, wanport));
-		} else
-			snprintf(name, sizeof(name), "WAN (%s)", getNetworkLabel(wp, wanport));
 
 		show_bwif(wp, &ctx, wanport, name);
 

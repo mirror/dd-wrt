@@ -16,7 +16,7 @@ if [ "$($nv get oet$1_endpoint$2)" = "1" ]
 then
 	LISTENPORT=$($nv get oet$1_peerport$2)
 else
-	LISTENPORT="51820"
+	LISTENPORT="0"
 fi
 if [ -z "$($nv get oet$1_ip$2)" ]
 then
@@ -48,7 +48,11 @@ fi
 echo "[Interface]" > /tmp/wireguard/oet$1_peer$2_conf
 echo "Address = $($nv get oet$1_clip$2)" >> /tmp/wireguard/oet$1_peer$2_conf
 echo "PrivateKey = $($nv get oet$1_peerpk$2)" >> /tmp/wireguard/oet$1_peer$2_conf
-echo "ListenPort = $LISTENPORT" >> /tmp/wireguard/oet$1_peer$2_conf
+if [[ "$LISTENPORT" = "0" ]]; then 
+	echo "# ListenPort is not set (=random)" >> /tmp/wireguard/oet$1_peer$2_conf
+else
+	echo "ListenPort = $LISTENPORT" >> /tmp/wireguard/oet$1_peer$2_conf
+fi
 if [ "$($nv get oet$1_cldns$2)" != "0.0.0.0" ]
 then
 echo "DNS = $($nv get oet$1_cldns$2)" >> /tmp/wireguard/oet$1_peer$2_conf

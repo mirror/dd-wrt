@@ -2038,7 +2038,7 @@ eoip.wireguard_route_allowedip="Route erlaubte IPs über Tunnel";
 eoip.wireguard_oet_spbr_ip="Quelle für PBR";
 eoip.wireguard_oet_dpbr_ip="Ziel für PBR";
 eoip.wireguard_oet_dns="DNS Server via Tunnel";
-eoip.wireguard_localport="Lokaler Port";
+eoip.wireguard_localport="Lokaler Port (0 = zufällig)";
 eoip.wireguard_ka="Persistent Keep-Alive";
 eoip.wireguard_endpoint="Endpunkt";
 eoip.wireguard_peer="Endpunkt Adresse";
