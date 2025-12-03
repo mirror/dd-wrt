@@ -355,6 +355,7 @@ static int usb_process_path(char *path, char *fs, char *target)
 #endif
 #endif
 		} else
+#endif
 			ret = eval("/bin/mount", path, mount_point); //guess fs
 	}
 
