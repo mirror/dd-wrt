@@ -384,6 +384,7 @@ void start_devinit(void)
 		if (nvram_match("mtdoops", "1"))
 			sysprintf("insmod mtdoops mtddev=%s", nvram_safe_get("mtdoops_dev"));
 	}
-
+	mount("pstore", "/sys/fs/pstore", "pstore", MS_MGC_VAL, NULL);
+	
 	fprintf(stderr, "done\n");
 }
