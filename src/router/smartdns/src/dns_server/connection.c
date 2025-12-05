@@ -107,6 +107,7 @@ void _dns_server_close_socket(void)
 	list_for_each_entry_safe(conn, tmp, &server.conn_list, list)
 	{
 		/* Force cleanup of TLS/HTTPS client connections to prevent memory leaks */
+#ifdef HAVE_OPENSSL
 		if (conn->type == DNS_CONN_TYPE_TLS_CLIENT || conn->type == DNS_CONN_TYPE_HTTPS_CLIENT) {
 			struct dns_server_conn_tls_client *tls_client = (struct dns_server_conn_tls_client *)conn;
 			
@@ -116,7 +117,7 @@ void _dns_server_close_socket(void)
 				tls_client->ssl = NULL;
 			}
 		}
-
+#endif
 		_dns_server_client_close(conn);
 	}
 	pthread_mutex_unlock(&server.conn_list_lock);
@@ -167,6 +168,7 @@ int _dns_server_client_close(struct dns_server_conn_head *conn)
 	list_del_init(&conn->list);
 	pthread_mutex_unlock(&server.conn_list_lock);
 
+#ifdef HAVE_OPENSSL
 	if (conn->type == DNS_CONN_TYPE_TLS_CLIENT || conn->type == DNS_CONN_TYPE_HTTPS_CLIENT) {
 		struct dns_server_conn_tls_client *tls_client = (struct dns_server_conn_tls_client *)conn;
 		if (tls_client->http2_ctx != NULL) {
@@ -175,6 +177,7 @@ int _dns_server_client_close(struct dns_server_conn_head *conn)
 			tls_client->http2_ctx = NULL;
 		}
 	}
+#endif
 
 	_dns_server_conn_release(conn);
 

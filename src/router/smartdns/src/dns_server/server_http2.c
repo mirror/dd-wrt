@@ -30,6 +30,8 @@
 #include <string.h>
 #include <unistd.h>
 
+#ifdef HAVE_OPENSSL
+
 #define DNS_SERVER_HTTP2_MAX_CONCURRENT_STREAMS 4096
 
 static int _http2_server_bio_read(void *private_data, uint8_t *buf, int len)
@@ -313,3 +315,4 @@ update_epoll:
 
 	return 0;
 }
+#endif

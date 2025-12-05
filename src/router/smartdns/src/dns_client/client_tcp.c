@@ -250,6 +250,7 @@ out:
 	return ret;
 }
 
+#ifdef HAVE_OPENSSL
 static int _dns_client_process_https_streams(struct dns_server_info *server_info)
 {
 	struct dns_conn_stream *stream, *tmp;
@@ -310,6 +311,7 @@ errout:
 	ret = -1;
 	goto out;
 }
+#endif
 int _dns_client_process_tcp(struct dns_server_info *server_info, struct epoll_event *event, unsigned long now)
 {
 	int len = 0;
@@ -400,12 +402,14 @@ int _dns_client_process_tcp(struct dns_server_info *server_info, struct epoll_ev
 			pthread_mutex_unlock(&client.server_list_lock);
 		}
 
+#ifdef HAVE_OPENSSL
 		/* Process HTTPS streams if any */
 		if (server_info->type == DNS_SERVER_HTTPS && server_info->send_buff.len == 0) {
 			if (_dns_client_process_https_streams(server_info) != 0) {
 				goto errout;
 			}
 		}
+#endif
 
 		/* still remain data, retry */
 		if (server_info->send_buff.len > 0) {

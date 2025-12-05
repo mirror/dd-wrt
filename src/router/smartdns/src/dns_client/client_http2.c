@@ -27,6 +27,7 @@
 #include "smartdns/http2.h"
 
 #include <string.h>
+#ifdef HAVE_OPENSSL
 
 /* BIO read callback for HTTP/2 */
 static int _http2_bio_read(void *private_data, uint8_t *buf, int len)
@@ -453,3 +454,4 @@ int _dns_client_process_http2(struct dns_server_info *server_info, struct epoll_
 errout:
 	return -1;
 }
+#endif
