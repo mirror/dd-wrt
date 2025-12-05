@@ -4644,6 +4644,7 @@ int dev_weight_rx_bias __read_mostly = 1;  /* bias for backlog weight */
 int dev_weight_tx_bias __read_mostly = 1;  /* bias for output_queue quota */
 int dev_rx_weight __read_mostly = 64;
 int dev_tx_weight __read_mostly = 64;
+EXPORT_SYMBOL(dev_tx_weight);
 
 /* Called with irq disabled */
 static inline void ____napi_schedule(struct softnet_data *sd,
