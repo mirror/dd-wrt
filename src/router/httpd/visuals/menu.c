@@ -354,7 +354,7 @@ EJ_VISIBLE void ej_do_menu(webs_t wp, int argc, char_t **argv)
 #endif
 
 #define MAXMENU 8
-#define MAXSUBMENU 13
+#define MAXSUBMENU 14
 
 	for (i = 0; i < MAXMENU; i++) {
 		if (m->menu[i][0] == NULL)
