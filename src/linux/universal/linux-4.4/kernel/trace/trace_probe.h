@@ -285,6 +285,29 @@ struct event_file_link {
 	struct list_head		list;
 };
 
+static inline unsigned int trace_probe_load_flag(struct trace_probe *tp)
+{
+	return smp_load_acquire(&tp->flags);
+}
+
+static inline bool trace_probe_test_flag(struct trace_probe *tp,
+					 unsigned int flag)
+{
+	return !!(trace_probe_load_flag(tp) & flag);
+}
+
+static inline void trace_probe_set_flag(struct trace_probe *tp,
+					unsigned int flag)
+{
+	smp_store_release(&tp->flags, tp->flags | flag);
+}
+
+static inline void trace_probe_clear_flag(struct trace_probe *tp,
+					  unsigned int flag)
+{
+	tp->flags &= ~flag;
+}
+
 static inline bool trace_probe_is_enabled(struct trace_probe *tp)
 {
 	return !!(tp->flags & (TP_FLAG_TRACE | TP_FLAG_PROFILE));

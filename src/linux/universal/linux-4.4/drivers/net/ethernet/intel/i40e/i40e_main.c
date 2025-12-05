@@ -3374,7 +3374,7 @@ free_queue_irqs:
 		irq_set_affinity_hint(pf->msix_entries[base + vector].vector,
 				      NULL);
 		free_irq(pf->msix_entries[base + vector].vector,
-			 &(vsi->q_vectors[vector]));
+			 vsi->q_vectors[vector]);
 	}
 	return err;
 }

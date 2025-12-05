@@ -535,10 +535,10 @@ static int hvc_write(struct tty_struct *tty, const unsigned char *buf, int count
 	spin_unlock_irqrestore(&hp->lock, flags);
 
 	/*
-	 * Racy, but harmless, kick thread if there is still pending data.
+	 * Kick thread to flush if there's still pending data
+	 * or to wakeup the write queue.
 	 */
-	if (hp->n_outbuf)
-		hvc_kick();
+	hvc_kick();
 
 	return written;
 }

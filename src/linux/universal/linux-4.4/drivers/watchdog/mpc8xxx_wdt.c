@@ -107,6 +107,8 @@ static int mpc8xxx_wdt_start(struct watchdog_device *w)
 
 	del_timer_sync(&ddata->timer);
 
+	mpc8xxx_wdt_keepalive(ddata);
+
 	return 0;
 }
 

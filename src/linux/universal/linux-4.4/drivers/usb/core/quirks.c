@@ -513,7 +513,7 @@ void usb_detect_quirks(struct usb_device *udev)
 				usb_amd_resume_quirk_list);
 
 	if (udev->quirks)
-		dev_dbg(&udev->dev, "USB quirks for this device: %x\n",
+		dev_dbg(&udev->dev, "USB quirks for this device: 0x%x\n",
 			udev->quirks);
 
 #ifdef CONFIG_USB_DEFAULT_PERSIST

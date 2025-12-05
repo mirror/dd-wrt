@@ -1335,7 +1335,7 @@ static int xc5000_release(struct dvb_frontend *fe)
 	mutex_lock(&xc5000_list_mutex);
 
 	if (priv) {
-		cancel_delayed_work(&priv->timer_sleep);
+		cancel_delayed_work_sync(&priv->timer_sleep);
 		if (priv->firmware) {
 			release_firmware(priv->firmware);
 			priv->firmware = NULL;

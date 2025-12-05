@@ -1321,6 +1321,7 @@ static void xgbe_phy_init(struct xgbe_prv_data *pdata)
 	pdata->phy.speed = SPEED_UNKNOWN;
 	pdata->phy.duplex = DUPLEX_UNKNOWN;
 
+	pdata->phy_link = 0;
 	pdata->phy.link = 0;
 
 	pdata->phy.pause_autoneg = pdata->pause_autoneg;

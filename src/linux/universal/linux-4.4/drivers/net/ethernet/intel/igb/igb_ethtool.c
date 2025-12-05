@@ -2050,11 +2050,8 @@ static void igb_diag_test(struct net_device *netdev,
 	} else {
 		dev_info(&adapter->pdev->dev, "online testing starting\n");
 
-		/* PHY is powered down when interface is down */
-		if (if_running && igb_link_test(adapter, &data[4]))
+		if (igb_link_test(adapter, &data[4]))
 			eth_test->flags |= ETH_TEST_FL_FAILED;
-		else
-			data[4] = 0;
 
 		/* Online tests aren't run; pass by default */
 		data[0] = 0;
