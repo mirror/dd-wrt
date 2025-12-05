@@ -2762,7 +2762,7 @@ static int do_crashlog(unsigned char method, struct mime_handler *handler, char 
 		char nums[64];
 		int i;
 		websWrite(stream, "<div style=\"height: 770px; overflow-y: auto; overflow-x: hidden;\"><table><tbody>");
-		for (i = 0; i < 255; i++) {
+		for (i = 1; i < 255; i++) {
 			sprintf(nums, "/sys/fs/pstore/dmesg-pstore_blk-%d", i);
 			fp = fopen(nums, "r");
 			if (fp != NULL) {
