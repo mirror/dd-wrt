@@ -17,6 +17,7 @@
  */
 
 #include "smartdns/dns_conf.h"
+#include "smartdns/lib/idna.h"
 #include "smartdns/tlog.h"
 #include "smartdns/util.h"
 
@@ -121,8 +122,20 @@ static int _dns_conf_setup_mdns(void)
 	return _conf_domain_rule_nameserver(DNS_SERVER_GROUP_LOCAL, DNS_SERVER_GROUP_MDNS);
 }
 
+static int _config_server_name(void *data, int argc, char *argv[])
+{
+	if (argc <= 1) {
+		tlog(TLOG_ERROR, "invalid parameter.");
+		return -1;
+	}
+
+	utf8_to_punycode(argv[1], strlen(argv[1]), dns_conf.server_name, DNS_MAX_SERVER_NAME_LEN);
+
+	return 0;
+}
+
 static struct config_item _config_item[] = {
-	CONF_STRING("server-name", (char *)dns_conf.server_name, DNS_MAX_SERVER_NAME_LEN),
+	CONF_CUSTOM("server-name", _config_server_name, NULL),
 	CONF_YESNO("resolv-hostname", &dns_conf.resolv_hostname),
 	CONF_CUSTOM("bind", _config_bind_ip_udp, NULL),
 	CONF_CUSTOM("bind-tcp", _config_bind_ip_tcp, NULL),
@@ -358,6 +371,12 @@ void dns_server_load_exit(void)
 
 static void _dns_conf_default_value_init(void)
 {
+	DOMAIN_CHECK_TYPE tcp_check_type = DOMAIN_CHECK_TCP;
+	if (dns_has_raw_cap) {
+		/* use tcp-syn as default if have raw socket capability */
+		tcp_check_type = DOMAIN_CHECK_TCP_SYN;
+	}
+
 	dns_conf.max_query_limit = DNS_MAX_QUERY_LIMIT;
 	dns_conf.tcp_idle_time = 120;
 	dns_conf.local_ptr_enable = 1;
@@ -374,11 +393,12 @@ static void _dns_conf_default_value_init(void)
 	dns_conf.resolv_hostname = 1;
 	dns_conf.cachesize = -1;
 	dns_conf.cache_max_memsize = -1;
+
 	dns_conf.default_check_orders.orders[0].type = DOMAIN_CHECK_ICMP;
 	dns_conf.default_check_orders.orders[0].tcp_port = 0;
-	dns_conf.default_check_orders.orders[1].type = DOMAIN_CHECK_TCP;
+	dns_conf.default_check_orders.orders[1].type = tcp_check_type;
 	dns_conf.default_check_orders.orders[1].tcp_port = 80;
-	dns_conf.default_check_orders.orders[2].type = DOMAIN_CHECK_TCP;
+	dns_conf.default_check_orders.orders[2].type = tcp_check_type;
 	dns_conf.default_check_orders.orders[2].tcp_port = 443;
 	dns_conf.default_response_mode = DNS_RESPONSE_MODE_FIRST_PING_IP;
 }
@@ -418,13 +438,13 @@ static void _dns_conf_auto_set_cache_size(void)
 		dns_conf.cachesize = 65536; /* 32MB memory*/
 	} else if (memsize <= 256 * 1024 * 1024) {
 		dns_conf.cachesize = 131072; /* 64MB memory*/
-	} else if (memsize <= 512L * 1024 * 1024) {
+	} else if (memsize <= 512LL * 1024 * 1024) {
 		dns_conf.cachesize = 196608; /* 96MB memory*/
-	} else if (memsize <= 1024L * 1024 * 1024) {
+	} else if (memsize <= 1024LL * 1024 * 1024) {
 		dns_conf.cachesize = 262144; /* 128MB memory*/
-	} else if (memsize <= 2048L * 1024 * 1024) {
+	} else if (memsize <= 2048LL * 1024 * 1024) {
 		dns_conf.cachesize = 393216; /* 192MB memory*/
-	} else if (memsize <= 4096L * 1024 * 1024) {
+	} else if (memsize <= 4096LL * 1024 * 1024) {
 		dns_conf.cachesize = 524288; /* 256MB memory*/
 	} else {
 		dns_conf.cachesize = 1048576; /* 512MB memory*/

@@ -34,12 +34,12 @@ int _dns_client_create_socket(struct dns_server_info *server_info)
 {
 	int ret = -1;
 	pthread_mutex_lock(&server_info->lock);
-	
+
 	if (server_info->fd > 0) {
 		pthread_mutex_unlock(&server_info->lock);
 		return -1;
 	}
-	
+
 	time(&server_info->last_send);
 	time(&server_info->last_recv);
 
@@ -64,8 +64,12 @@ int _dns_client_create_socket(struct dns_server_info *server_info)
 		ret = _dns_client_create_socket_quic(server_info, flag_tls->hostname, alpn);
 	} else if (server_info->type == DNS_SERVER_HTTPS) {
 		struct client_dns_server_flag_https *flag_https = NULL;
+		const char *alpn = "h2,http/1.1";
 		flag_https = &server_info->flags.https;
-		ret = _dns_client_create_socket_tls(server_info, flag_https->hostname, flag_https->alpn);
+		if (flag_https->alpn[0] != 0) {
+			alpn = flag_https->alpn;
+		}
+		ret = _dns_client_create_socket_tls(server_info, flag_https->hostname, alpn);
 	} else if (server_info->type == DNS_SERVER_HTTP3) {
 		struct client_dns_server_flag_https *flag_https = NULL;
 		const char *alpn = "h3";
@@ -115,11 +119,31 @@ void _dns_client_close_socket_ext(struct dns_server_info *server_info, int no_de
 			list_for_each_entry_safe(conn_stream, tmp, &server_info->conn_stream_list, server_list)
 			{
 				if (conn_stream->quic_stream) {
-#if defined(OSSL_QUIC1_VERSION) && !defined (OPENSSL_NO_QUIC)
+#if defined(OSSL_QUIC1_VERSION) && !defined(OPENSSL_NO_QUIC)
 					SSL_stream_reset(conn_stream->quic_stream, NULL, 0);
 #endif
 					SSL_free(conn_stream->quic_stream);
 					conn_stream->quic_stream = NULL;
+				}
+
+				if (no_del_conn_list == 1) {
+					continue;
+				}
+
+				conn_stream->server_info = NULL;
+				list_del_init(&conn_stream->server_list);
+				_dns_client_conn_stream_put(conn_stream);
+			}
+		} else if (server_info->type == DNS_SERVER_HTTPS) {
+			/* Clean up HTTP/2 streams for this server */
+			struct dns_conn_stream *conn_stream = NULL;
+			struct dns_conn_stream *tmp = NULL;
+
+			list_for_each_entry_safe(conn_stream, tmp, &server_info->conn_stream_list, server_list)
+			{
+				if (conn_stream->http2_stream) {
+					http2_stream_put(conn_stream->http2_stream);
+					conn_stream->http2_stream = NULL;
 				}
 
 				if (no_del_conn_list == 1) {
@@ -135,6 +159,12 @@ void _dns_client_close_socket_ext(struct dns_server_info *server_info, int no_de
 		SSL_free(server_info->ssl);
 		server_info->ssl = NULL;
 		server_info->ssl_write_len = -1;
+	}
+
+	/* Clean up HTTP/2 context (connection-level) */
+	if (server_info->http2_ctx) {
+		http2_ctx_free(server_info->http2_ctx);
+		server_info->http2_ctx = NULL;
 	}
 
 	if (server_info->bio_method) {

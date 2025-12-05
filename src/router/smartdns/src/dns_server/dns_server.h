@@ -26,6 +26,7 @@
 #include "smartdns/dns.h"
 #include "smartdns/dns_conf.h"
 #include "smartdns/dns_server.h"
+#include "smartdns/http2.h"
 #include "smartdns/tlog.h"
 #include "smartdns/util.h"
 #include <stdio.h>
@@ -47,7 +48,8 @@ extern "C" {
 #define DNS_CONN_BUFF_SIZE 4096
 #define DNS_REQUEST_MAX_TIMEOUT 950
 #define DNS_PING_TIMEOUT (DNS_REQUEST_MAX_TIMEOUT)
-#define DNS_PING_CHECK_INTERVAL (250)
+#define DNS_PING_CHECK_INTERVAL (100)
+#define DNS_PING_RTT_CHECK_THRESHOLD (100 * 10)
 #define DNS_PING_SECOND_TIMEOUT (DNS_REQUEST_MAX_TIMEOUT - DNS_PING_CHECK_INTERVAL)
 #define SOCKET_IP_TOS (IPTOS_LOWDELAY | IPTOS_RELIABILITY)
 #define SOCKET_PRIORITY (6)
@@ -77,6 +79,7 @@ typedef enum {
 	DNS_CONN_TYPE_TLS_CLIENT,
 	DNS_CONN_TYPE_HTTPS_SERVER,
 	DNS_CONN_TYPE_HTTPS_CLIENT,
+	DNS_CONN_TYPE_HTTP2_STREAM,
 } DNS_CONN_TYPE;
 
 typedef enum DNS_CHILD_POST_RESULT {
@@ -214,6 +217,8 @@ struct dns_server_conn_tls_client {
 	SSL *ssl;
 	int ssl_want_write;
 	pthread_mutex_t ssl_lock;
+	void *http2_ctx;
+	char alpn_selected[32];
 };
 #endif
 /* ip address lists of domain */
@@ -238,6 +243,7 @@ struct dns_request_pending_list {
 };
 
 struct dns_request_domain_rule {
+	uint32_t flags;
 	struct dns_rule *rules[DOMAIN_RULE_MAX];
 	int is_sub_rule[DOMAIN_RULE_MAX];
 };
@@ -275,6 +281,7 @@ struct dns_request {
 
 	/* dns query */
 	char domain[DNS_MAX_CNAME_LEN];
+	char *original_domain;
 	dns_type_t qtype;
 	int qclass;
 	unsigned long send_tick;

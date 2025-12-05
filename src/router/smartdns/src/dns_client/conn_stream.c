@@ -24,17 +24,16 @@ struct dns_conn_stream *_dns_client_conn_stream_new(void)
 {
 	struct dns_conn_stream *stream = NULL;
 
-	stream = malloc(sizeof(*stream));
+	stream = zalloc(1, sizeof(*stream));
 	if (stream == NULL) {
 		tlog(TLOG_ERROR, "malloc conn stream failed");
 		return NULL;
 	}
-
-	memset(stream, 0, sizeof(*stream));
 	INIT_LIST_HEAD(&stream->server_list);
 	INIT_LIST_HEAD(&stream->query_list);
 #ifdef HAVE_OPENSSL
 	stream->quic_stream = NULL;
+	stream->http2_stream = NULL;
 #endif
 	stream->server_info = NULL;
 	stream->query = NULL;
@@ -61,9 +60,17 @@ void _dns_client_conn_stream_put(struct dns_conn_stream *stream)
 	}
 
 #ifdef HAVE_OPENSSL
+	/* Clean up QUIC stream */
 	if (stream->quic_stream) {
 		SSL_free(stream->quic_stream);
 		stream->quic_stream = NULL;
+	}
+
+	/* Clean up HTTP/2 stream */
+	if (stream->http2_stream) {
+		struct http2_stream *http2_stream = stream->http2_stream;
+		stream->http2_stream = NULL;
+		http2_stream_put(http2_stream);
 	}
 #endif
 	if (stream->query) {
@@ -99,11 +106,17 @@ void _dns_client_conn_server_streams_free(struct dns_server_info *server_info, s
 		stream->server_info = NULL;
 #ifdef HAVE_OPENSSL
 		if (stream->quic_stream) {
-#if defined(OSSL_QUIC1_VERSION) && !defined (OPENSSL_NO_QUIC)
+#if defined(OSSL_QUIC1_VERSION) && !defined(OPENSSL_NO_QUIC)
 			SSL_stream_reset(stream->quic_stream, NULL, 0);
 #endif
 			SSL_free(stream->quic_stream);
 			stream->quic_stream = NULL;
+		}
+		/* Clean up HTTP/2 stream */
+		if (stream->http2_stream) {
+			struct http2_stream *http2_stream = stream->http2_stream;
+			stream->http2_stream = NULL;
+			http2_stream_put(http2_stream);
 		}
 #endif
 		_dns_client_conn_stream_put(stream);

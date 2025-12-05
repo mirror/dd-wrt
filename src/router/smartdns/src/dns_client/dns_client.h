@@ -22,6 +22,7 @@
 #include "smartdns/dns.h"
 #include "smartdns/dns_conf.h"
 #include "smartdns/dns_stats.h"
+#include "smartdns/http2.h"
 #include "smartdns/lib/atomic.h"
 #include "smartdns/lib/hashtable.h"
 #include "smartdns/lib/list.h"
@@ -136,6 +137,10 @@ struct dns_server_info {
 	struct dns_server_stats stats;
 	struct list_head conn_stream_list;
 
+	/* HTTP/2 context - connection level, shared across requests */
+	struct http2_ctx *http2_ctx;
+	char alpn_selected[32];
+
 	dns_server_security_status security_status;
 };
 
@@ -219,12 +224,7 @@ struct dns_client {
 /* dns replied server info */
 struct dns_query_replied {
 	struct hlist_node node;
-	socklen_t addr_len;
-	union {
-		struct sockaddr_in in;
-		struct sockaddr_in6 in6;
-		struct sockaddr addr;
-	};
+	struct dns_server_info *server;
 };
 
 struct dns_conn_stream {
@@ -240,6 +240,7 @@ struct dns_conn_stream {
 #ifdef HAVE_OPENSSL
 	union {
 		SSL *quic_stream;
+		struct http2_stream *http2_stream;
 	};
 #endif
 };

@@ -51,7 +51,7 @@ extern "C" {
 #define DNS_PROXY_MAX_LEN 128
 #define DNS_CONF_USERNAME_LEN 32
 #define DNS_MAX_SPKI_LEN 64
-#define DNS_MAX_URL_LEN 256
+#define DNS_MAX_URL_LEN 1024
 #define DNS_MAX_PATH 1024
 #define DEFAULT_DNS_PORT 53
 #define DEFAULT_DNS_TLS_PORT 853
@@ -76,22 +76,29 @@ extern "C" {
 
 #define DNS64_IPV4ONLY_APRA_DOMAIN "ipv4only.arpa"
 
+/* Domain rule types, ordered by usage frequency for memory optimization */
 enum domain_rule {
-	DOMAIN_RULE_FLAGS = 0,
-	DOMAIN_RULE_ADDRESS_IPV4,
-	DOMAIN_RULE_ADDRESS_IPV6,
-	DOMAIN_RULE_IPSET,
-	DOMAIN_RULE_IPSET_IPV4,
-	DOMAIN_RULE_IPSET_IPV6,
-	DOMAIN_RULE_NFTSET_IP,
-	DOMAIN_RULE_NFTSET_IP6,
-	DOMAIN_RULE_NAMESERVER,
-	DOMAIN_RULE_GROUP,
-	DOMAIN_RULE_CHECKSPEED,
-	DOMAIN_RULE_RESPONSE_MODE,
-	DOMAIN_RULE_CNAME,
-	DOMAIN_RULE_HTTPS,
-	DOMAIN_RULE_TTL,
+	DOMAIN_RULE_FLAGS = 0, /* Flags (block, ignore, cache, etc.) */
+
+	DOMAIN_RULE_ADDRESS_IPV4, /* IPv4 address rule (ad-block, custom DNS) */
+	DOMAIN_RULE_ADDRESS_IPV6, /* IPv6 address rule */
+	DOMAIN_RULE_NAMESERVER,   /* Nameserver group (domain routing) */
+
+	DOMAIN_RULE_CHECKSPEED, /* Speed check mode */
+	DOMAIN_RULE_IPSET,      /* IPSet rule for traffic routing */
+	DOMAIN_RULE_NFTSET_IP,  /* NFTSet IPv4 */
+	DOMAIN_RULE_IPSET_IPV4, /* IPv4 IPSet */
+
+	DOMAIN_RULE_GROUP, /* Group rule */
+
+	DOMAIN_RULE_NFTSET_IP6, /* NFTSet IPv6 */
+	DOMAIN_RULE_IPSET_IPV6, /* IPv6 IPSet */
+
+	DOMAIN_RULE_HTTPS,         /* HTTPS record */
+	DOMAIN_RULE_RESPONSE_MODE, /* Response mode */
+	DOMAIN_RULE_CNAME,         /* CNAME rule */
+	DOMAIN_RULE_TTL,           /* TTL control */
+
 	DOMAIN_RULE_MAX,
 };
 
@@ -118,7 +125,8 @@ typedef enum {
 	DOMAIN_CHECK_NONE = 0,
 	DOMAIN_CHECK_ICMP = 1,
 	DOMAIN_CHECK_TCP = 2,
-	DOMAIN_CHECK_NUM = 3,
+	DOMAIN_CHECK_TCP_SYN = 3,
+	DOMAIN_CHECK_NUM = 4,
 } DOMAIN_CHECK_TYPE;
 
 #define DOMAIN_FLAG_ADDR_SOA (1 << 0)
@@ -170,6 +178,7 @@ typedef enum {
 #define BIND_FLAG_NO_SERVE_EXPIRED (1 << 14)
 #define BIND_FLAG_NO_RULES (1 << 15)
 #define BIND_FLAG_ACL (1 << 16)
+#define BIND_FLAG_DDR (1 << 17)
 
 enum response_mode_type {
 	DNS_RESPONSE_MODE_FIRST_PING_IP = 0,
@@ -261,7 +270,8 @@ extern struct dns_nftset_names dns_conf_nftset;
 struct dns_domain_rule {
 	unsigned char sub_rule_only : 1;
 	unsigned char root_rule_only : 1;
-	struct dns_rule *rules[DOMAIN_RULE_MAX];
+	unsigned char capacity : 6; /* Current allocated capacity (max 63) */
+	struct dns_rule *rules[];   /* Flexible array member */
 };
 
 struct dns_nameserver_rule {
@@ -557,6 +567,7 @@ struct dns_bind_ip {
 	const char *ssl_cert_key_pass;
 	const char *group;
 	struct nftset_ipset_rules nftset_ipset_rule;
+	char alpn[DNS_MAX_ALPN_LEN];
 };
 
 struct dns_domain_set_rule {
@@ -688,7 +699,7 @@ struct dns_config {
 	char bind_ca_key_file[DNS_MAX_PATH];
 	char bind_root_ca_key_file[DNS_MAX_PATH];
 	char bind_ca_key_pass[DNS_MAX_PATH];
-	int  bind_ca_validity_days;
+	int bind_ca_validity_days;
 	char need_cert;
 	int tcp_idle_time;
 	ssize_t cachesize;
@@ -722,6 +733,7 @@ struct dns_config {
 	struct dns_domain_check_orders default_check_orders;
 	int has_icmp_check;
 	int has_tcp_check;
+	int has_tcp_syn_check;
 
 	struct dns_server_groups server_groups[DNS_NAX_GROUP_NUMBER];
 	int server_group_num;

@@ -20,6 +20,7 @@
 #include "address.h"
 #include "connection.h"
 #include "context.h"
+#include "ddr.h"
 #include "dns64.h"
 #include "dns_server.h"
 #include "dualstack.h"
@@ -47,7 +48,7 @@ static int _dns_server_request_complete_with_all_IPs(struct dns_request *request
 	int ttl = 0;
 	struct dns_server_post_context context;
 
-	if (request->rcode == DNS_RC_SERVFAIL || request->rcode == DNS_RC_NXDOMAIN) {
+	if (request->rcode == DNS_RC_SERVFAIL) {
 		ttl = DNS_SERVER_FAIL_TTL;
 	}
 
@@ -156,6 +157,11 @@ static void _dns_server_delete_request(struct dns_request *request)
 	if (request->https_svcb) {
 		free(request->https_svcb);
 	}
+
+	if (request->original_domain) {
+		free(request->original_domain);
+	}
+
 	memset(request, 0, sizeof(*request));
 	free(request);
 	atomic_dec(&server.request_num);
@@ -444,13 +450,11 @@ struct dns_request *_dns_server_new_request(void)
 {
 	struct dns_request *request = NULL;
 
-	request = malloc(sizeof(*request));
+	request = zalloc(1, sizeof(*request));
 	if (request == NULL) {
 		tlog(TLOG_ERROR, "malloc request failed.\n");
 		goto errout;
 	}
-
-	memset(request, 0, sizeof(*request));
 	pthread_mutex_init(&request->ip_map_lock, NULL);
 	atomic_set(&request->adblock, 0);
 	atomic_set(&request->soa_num, 0);
@@ -625,9 +629,31 @@ void _dns_server_set_request_mdns(struct dns_request *request)
 	request->is_mdns_lookup = 1;
 }
 
-int _dns_server_process_DDR(struct dns_request *request)
+static int _dns_server_process_local_SOA(struct dns_request *request)
 {
-	return _dns_server_reply_SOA(DNS_RC_NOERROR, request);
+	struct dns_soa *soa = NULL;
+	char *mname = "ns.local";
+	char *rname = "admin.local";
+
+	if (strncasecmp("local", request->domain, DNS_MAX_CNAME_LEN) != 0) {
+		mname = "ns.lan";
+		rname = "admin.lan";
+		if (strncasecmp("lan", request->domain, DNS_MAX_CNAME_LEN) != 0) {
+			return -1;
+		}
+	}
+
+	soa = &request->soa;
+
+	safe_strncpy(soa->mname, mname, DNS_MAX_CNAME_LEN);
+	safe_strncpy(soa->rname, rname, DNS_MAX_CNAME_LEN);
+	soa->serial = 1;
+	soa->refresh = 3600;
+	soa->retry = 900;
+	soa->expire = 604800;
+	soa->minimum = 86400;
+
+	return _dns_server_reply_SOA_ext(DNS_RC_NOERROR, request);
 }
 
 int _dns_server_process_srv(struct dns_request *request)
@@ -833,11 +859,10 @@ int _dns_server_process_https_svcb(struct dns_request *request)
 		return 0;
 	}
 
-	request->https_svcb = malloc(sizeof(*request->https_svcb));
+	request->https_svcb = zalloc(1, sizeof(*request->https_svcb));
 	if (request->https_svcb == NULL) {
 		return -1;
 	}
-	memset(request->https_svcb, 0, sizeof(*request->https_svcb));
 
 	if (https_record_rule == NULL) {
 		return 0;
@@ -927,20 +952,12 @@ void _dns_server_request_set_callback(struct dns_request *request, dns_result_ca
 
 int _dns_server_process_smartdns_domain(struct dns_request *request)
 {
-	struct dns_rule_flags *rule_flag = NULL;
-	unsigned int flags = 0;
-
-	/* get domain rule flag */
-	rule_flag = _dns_server_get_dns_rule(request, DOMAIN_RULE_FLAGS);
-	if (rule_flag == NULL) {
-		return -1;
-	}
+	uint32_t flags = _dns_server_get_rule_flags(request);
 
 	if (_dns_server_is_dns_rule_extract_match(request, DOMAIN_RULE_FLAGS) == 0) {
 		return -1;
 	}
 
-	flags = rule_flag->flags;
 	if (!(flags & DOMAIN_FLAG_SMARTDNS_DOMAIN)) {
 		return -1;
 	}
@@ -954,6 +971,15 @@ int _dns_server_process_special_query(struct dns_request *request)
 
 	switch (request->qtype) {
 	case DNS_T_PTR:
+		break;
+	case DNS_T_SOA:
+		ret = _dns_server_process_local_SOA(request);
+		if (ret == 0) {
+			goto clean_exit;
+		} else {
+			/* pass to upstream server */
+			request->passthrough = 1;
+		}
 		break;
 	case DNS_T_SRV:
 		ret = _dns_server_process_srv(request);
@@ -1123,6 +1149,7 @@ int _dns_server_setup_request_conf_pre(struct dns_request *request)
 	if (group_rule == NULL) {
 		return 0;
 	}
+
 	rule_group = dns_server_get_rule_group(group_rule->group_name);
 	if (rule_group == NULL) {
 		return 0;
@@ -1209,7 +1236,20 @@ int _dns_server_parser_request(struct dns_request *request, struct dns_packet *p
 		}
 
 		// Only support one question.
-		safe_strncpy(request->domain, domain, sizeof(request->domain));
+		int case_changed = 0;
+		safe_strncpy_lower(request->domain, domain, sizeof(request->domain), &case_changed);
+
+		/* support draft dns0x20 */
+		if (case_changed) {
+			request->original_domain = malloc(DNS_MAX_CNAME_LEN);
+			if (request->original_domain == NULL) {
+				tlog(TLOG_ERROR, "malloc failed.\n");
+				goto errout;
+			}
+
+			safe_strncpy(request->original_domain, domain, DNS_MAX_CNAME_LEN);
+			tlog(TLOG_DEBUG, "query %s by origin domain %s", request->domain, request->original_domain);
+		}
 		request->qtype = qtype;
 		break;
 	}

@@ -636,17 +636,17 @@ static int _dns_server_setup_ipset_nftset_packet(struct dns_server_post_context 
 			} break;
 			case DNS_T_HTTPS: {
 				char target[DNS_MAX_CNAME_LEN] = {0};
-				struct dns_https_param *p = NULL;
+				struct dns_svcparam *p = NULL;
 				int priority = 0;
 
-				int ret = dns_get_HTTPS_svcparm_start(rrs, &p, name, DNS_MAX_CNAME_LEN, &ttl, &priority, target,
+				int ret = dns_svcparm_start(rrs, &p, name, DNS_MAX_CNAME_LEN, &ttl, &priority, target,
 													  DNS_MAX_CNAME_LEN);
 				if (ret != 0) {
 					tlog(TLOG_WARN, "get HTTPS svcparm failed");
 					return -1;
 				}
 
-				for (; p; p = dns_get_HTTPS_svcparm_next(rrs, p)) {
+				for (; p; p = dns_svcparm_next(rrs, p)) {
 					switch (p->key) {
 					case DNS_HTTPS_T_IPV4HINT: {
 						unsigned char *addr;
@@ -728,7 +728,7 @@ static int _dns_result_child_post(struct dns_server_post_context *context)
 	return 0;
 }
 
-static int _dns_request_update_id_ttl(struct dns_server_post_context *context)
+static int _dns_request_update_id_ttl_domain(struct dns_server_post_context *context)
 {
 	int ttl = context->reply_ttl;
 	struct dns_request *request = context->request;
@@ -758,6 +758,7 @@ static int _dns_request_update_id_ttl(struct dns_server_post_context *context)
 	param.id = request->id;
 	param.cname_ttl = ttl;
 	param.ip_ttl = ttl;
+	param.query_domain = request->original_domain;
 	if (dns_packet_update(context->inpacket, context->inpacket_len, &param) != 0) {
 		tlog(TLOG_DEBUG, "update packet info failed.");
 	}
@@ -820,7 +821,7 @@ int _dns_request_post(struct dns_server_post_context *context)
 		return 0;
 	}
 
-	ret = _dns_request_update_id_ttl(context);
+	ret = _dns_request_update_id_ttl_domain(context);
 	if (ret != 0) {
 		tlog(TLOG_ERROR, "update packet ttl failed.");
 		return -1;
@@ -994,6 +995,10 @@ int _dns_cache_reply_packet(struct dns_server_post_context *context)
 			return 0;
 		}
 
+		if (context->packet->head.rcode == DNS_RC_NXDOMAIN) {
+			context->reply_ttl = 0;
+		}
+
 		return _dns_cache_packet(context);
 	}
 
@@ -1047,11 +1052,12 @@ int _dns_server_reply_passthrough(struct dns_server_post_context *context)
 		char clientip[DNS_MAX_CNAME_LEN] = {0};
 
 		/* When passthrough, modify the id to be the id of the client request. */
-		int ret = _dns_request_update_id_ttl(context);
+		int ret = _dns_request_update_id_ttl_domain(context);
 		if (ret != 0) {
 			tlog(TLOG_ERROR, "update packet ttl failed.");
 			return -1;
 		}
+
 		_dns_reply_inpacket(request, context->inpacket, context->inpacket_len);
 
 		tlog(TLOG_INFO, "result: %s, client: %s, qtype: %d, id: %d, group: %s, time: %lums", request->domain,

@@ -20,6 +20,7 @@
 
 #include "smartdns/util.h"
 
+#include "client_http2.h"
 #include "client_http3.h"
 #include "client_https.h"
 #include "client_mdns.h"
@@ -28,6 +29,7 @@
 #include "client_tcp.h"
 #include "client_tls.h"
 #include "client_udp.h"
+#include "conn_stream.h"
 #include "dns_client.h"
 #include "ecs.h"
 #include "group.h"
@@ -145,7 +147,7 @@ int _dns_client_recv(struct dns_server_info *server_info, unsigned char *inpacke
 	}
 
 	/* avoid multiple replies */
-	if (_dns_replied_check_add(query, from, from_len) != 0) {
+	if (_dns_replied_check_add(query, server_info) != 0) {
 		_dns_client_query_release(query);
 		return 0;
 	}
@@ -164,7 +166,7 @@ int _dns_client_recv(struct dns_server_info *server_info, unsigned char *inpacke
 
 		if (ret == DNS_CLIENT_ACTION_RETRY || ret == DNS_CLIENT_ACTION_DROP) {
 			/* remove this result */
-			_dns_replied_check_remove(query, from, from_len);
+			_dns_replied_check_remove(query, server_info);
 			atomic_inc(&query->dns_request_sent);
 			if (ret == DNS_CLIENT_ACTION_RETRY) {
 				/*
@@ -221,6 +223,18 @@ static int _dns_client_process(struct dns_server_info *server_info, struct epoll
 	}
 
 	return 0;
+}
+
+static int _dns_client_send_http(struct dns_server_info *server_info, struct dns_query_struct *query, void *packet_data,
+								 int packet_data_len)
+{
+	if (server_info->alpn_selected[0] == '\0' || strncmp(server_info->alpn_selected, "h2", 2) == 0) {
+		/* Send with HTTP2 by default */
+		return _dns_client_send_http2(server_info, query, packet_data, packet_data_len);
+	} else {
+		/* For HTTP/1.1 or other, buffer raw data to stream for later processing */
+		return _dns_client_send_http1(server_info, packet_data, packet_data_len); /* Assuming same buffering */
+	}
 }
 
 int _dns_client_send_packet(struct dns_query_struct *query, void *packet, int len)
@@ -330,8 +344,8 @@ int _dns_client_send_packet(struct dns_query_struct *query, void *packet, int le
 				send_err = errno;
 				break;
 			case DNS_SERVER_HTTPS:
-				/* https query */
-				ret = _dns_client_send_https(server_info, packet_data, packet_data_len);
+				/* https query - buffer raw data in stream, protocol determined later */
+				ret = _dns_client_send_http(server_info, query, packet_data, packet_data_len);
 				send_err = errno;
 				break;
 			case DNS_SERVER_QUIC:
@@ -433,11 +447,10 @@ int dns_client_query(const char *domain, int qtype, dns_client_callback callback
 		goto errout;
 	}
 
-	query = malloc(sizeof(*query));
+	query = zalloc(1, sizeof(*query));
 	if (query == NULL) {
 		goto errout;
 	}
-	memset(query, 0, sizeof(*query));
 
 	INIT_HLIST_NODE(&query->domain_node);
 	INIT_LIST_HEAD(&query->dns_request_list);
@@ -560,56 +573,46 @@ static void *_dns_client_work(void *arg)
 	int num = 0;
 	int i = 0;
 	unsigned long now = {0};
-	unsigned long last = {0};
 	unsigned int msec = 0;
 	unsigned int sleep = 100;
 	int sleep_time = 0;
 	unsigned long expect_time = 0;
-	int unused __attribute__((unused));
+	unsigned long start_time = 0;
 
-	sleep_time = sleep;
-	now = get_tick_count() - sleep;
-	last = now;
+	now = get_tick_count();
+	start_time = now;
 	expect_time = now + sleep;
+
 	while (atomic_read(&client.run)) {
 		now = get_tick_count();
-		if (sleep_time > 0) {
-			sleep_time -= now - last;
-			if (sleep_time <= 0) {
-				sleep_time = 0;
-			}
-
-			int cnt = sleep_time / sleep;
-			msec -= cnt;
-			expect_time -= cnt * sleep;
-			sleep_time -= cnt * sleep;
-		}
 
 		if (now >= expect_time) {
-			msec++;
-			if (last != now) {
-				_dns_client_period_run(msec);
+			unsigned long elapsed_from_start = now - start_time;
+			unsigned int current_period = (elapsed_from_start + sleep / 2) / sleep;
+
+			if (current_period > msec) {
+				msec = current_period;
 			}
 
-			sleep_time = sleep - (now - expect_time);
-			if (sleep_time < 0) {
-				sleep_time = 0;
-				expect_time = now;
-			}
+			expect_time = start_time + (msec + 1) * sleep;
+			_dns_client_period_run(msec);
+			msec++;
 
 			/* When client is idle, the sleep time is 1000ms, to reduce CPU usage */
 			pthread_mutex_lock(&client.domain_map_lock);
 			if (list_empty(&client.dns_request_list)) {
-				int cnt = 10 - (msec % 10) - 1;
-				sleep_time += sleep * cnt;
-				msec += cnt;
-				/* sleep to next second */
-				expect_time += sleep * cnt;
+				if (msec % 10 != 0) {
+					msec = ((msec / 10) + 1) * 10;
+					expect_time = start_time + msec * sleep;
+				}
 			}
 			pthread_mutex_unlock(&client.domain_map_lock);
-			expect_time += sleep;
 		}
-		last = now;
+
+		sleep_time = (int)(expect_time - now);
+		if (sleep_time < 0) {
+			sleep_time = 0;
+		}
 
 		num = epoll_wait(client.epoll_fd, events, DNS_MAX_EVENTS, sleep_time);
 		if (num < 0) {

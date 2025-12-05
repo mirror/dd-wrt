@@ -41,6 +41,8 @@ int _fast_ping_process_icmp(struct ping_host_struct *ping_host, struct timeval *
 
 int _fast_ping_get_addr_by_icmp(const char *ip_str, int port, struct addrinfo **out_gai, FAST_PING_TYPE *out_ping_type);
 
+void _fast_ping_close_icmp(void);
+
 #ifdef __cplusplus
 }
 #endif /*__cplusplus */

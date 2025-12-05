@@ -63,10 +63,11 @@ int _config_ip_rule_set_each(const char *ip_set, set_rule_add_func callback, voi
 
 static void _dns_iplist_ip_address_add(struct dns_iplist_ip_addresses *iplist, unsigned char addr[], int addr_len)
 {
-	iplist->ipaddr = realloc(iplist->ipaddr, (iplist->ipaddr_num + 1) * sizeof(struct dns_iplist_ip_address));
-	if (iplist->ipaddr == NULL) {
+	struct dns_iplist_ip_address *new_ipaddr = realloc(iplist->ipaddr, (iplist->ipaddr_num + 1) * sizeof(struct dns_iplist_ip_address));
+	if (new_ipaddr == NULL) {
 		return;
 	}
+	iplist->ipaddr = new_ipaddr;
 	memset(&iplist->ipaddr[iplist->ipaddr_num], 0, sizeof(struct dns_iplist_ip_address));
 	iplist->ipaddr[iplist->ipaddr_num].addr_len = addr_len;
 	memcpy(iplist->ipaddr[iplist->ipaddr_num].addr, addr, addr_len);
@@ -192,6 +193,8 @@ static radix_node_t *_create_addr_node(const char *addr)
 	case AF_INET6:
 		tree = _config_current_rule_group()->address_rule.ipv6;
 		break;
+	default:
+		return NULL;
 	}
 
 	node = radix_lookup(tree, &prefix);
@@ -227,11 +230,10 @@ int _config_ip_rule_flag_set(const char *ip_cidr, unsigned int flag, unsigned in
 
 	ip_rules = node->data;
 	if (ip_rules == NULL) {
-		add_ip_rules = malloc(sizeof(*add_ip_rules));
+		add_ip_rules = zalloc(1, sizeof(*add_ip_rules));
 		if (add_ip_rules == NULL) {
 			goto errout;
 		}
-		memset(add_ip_rules, 0, sizeof(*add_ip_rules));
 		ip_rules = add_ip_rules;
 		node->data = ip_rules;
 	}
@@ -298,11 +300,10 @@ int _config_ip_rule_add(const char *ip_cidr, enum ip_rule type, void *rule)
 
 	ip_rules = node->data;
 	if (ip_rules == NULL) {
-		add_ip_rules = malloc(sizeof(*add_ip_rules));
+		add_ip_rules = zalloc(1, sizeof(*add_ip_rules));
 		if (add_ip_rules == NULL) {
 			goto errout;
 		}
-		memset(add_ip_rules, 0, sizeof(*add_ip_rules));
 		ip_rules = add_ip_rules;
 		node->data = ip_rules;
 	}
@@ -347,11 +348,10 @@ static void *_new_dns_ip_rule_ext(enum ip_rule ip_rule, int ext_size)
 	}
 
 	size += ext_size;
-	rule = malloc(size);
+	rule = zalloc(1, size);
 	if (!rule) {
 		return NULL;
 	}
-	memset(rule, 0, size);
 	rule->rule = ip_rule;
 	atomic_set(&rule->refcnt, 1);
 	return rule;

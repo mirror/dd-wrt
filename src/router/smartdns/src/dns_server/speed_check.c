@@ -34,8 +34,8 @@ static void _dns_server_ping_result(struct ping_host_struct *ping_host, const ch
 	int may_complete = 0;
 	int threshold = 100;
 	struct dns_ip_address *addr_map = NULL;
-	int last_rtt = 0; 
-	
+	int last_rtt = 0;
+
 	if (request == NULL) {
 		return;
 	}
@@ -210,10 +210,26 @@ int _dns_server_check_speed(struct dns_request *request, char *ip)
 	}
 
 	ping_timeout = ping_timeout - (now - request->send_tick);
-	if (ping_timeout > DNS_PING_TIMEOUT) {
-		ping_timeout = DNS_PING_TIMEOUT;
-	} else if (ping_timeout < 200) {
-		ping_timeout = 200;
+	switch (request->response_mode) {
+	case DNS_RESPONSE_MODE_FIRST_PING_IP:
+		if (ping_timeout > 200) {
+			ping_timeout = 200;
+		}
+		break;
+	case DNS_RESPONSE_MODE_FASTEST_IP:
+		if (ping_timeout > DNS_PING_TIMEOUT) {
+			ping_timeout = DNS_PING_TIMEOUT;
+		} else if (ping_timeout < 200) {
+			ping_timeout = 200;
+		}
+		break;
+	case DNS_RESPONSE_MODE_FASTEST_RESPONSE:
+		if (ping_timeout < 200) {
+			ping_timeout = 200;
+		}
+		break;
+	default:
+		break;
 	}
 
 	port = request->check_order_list->orders[order].tcp_port;
@@ -227,6 +243,11 @@ int _dns_server_check_speed(struct dns_request *request, char *ip)
 		snprintf(tcp_ip, sizeof(tcp_ip), "%s:%d", ip, port);
 		tlog(TLOG_DEBUG, "ping %s with tcp, order: %d, timeout: %d", tcp_ip, order, ping_timeout);
 		return _dns_server_ping(request, PING_TYPE_TCP, tcp_ip, ping_timeout);
+		break;
+	case DOMAIN_CHECK_TCP_SYN:
+		snprintf(tcp_ip, sizeof(tcp_ip), "%s:%d", ip, port);
+		tlog(TLOG_DEBUG, "ping %s with tcp-syn, order: %d, timeout: %d", tcp_ip, order, ping_timeout);
+		return _dns_server_ping(request, PING_TYPE_TCP_SYN, tcp_ip, ping_timeout);
 		break;
 	default:
 		break;

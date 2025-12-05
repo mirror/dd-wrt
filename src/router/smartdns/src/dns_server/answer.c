@@ -238,7 +238,7 @@ static int _dns_server_process_answer_HTTPS(struct dns_rrs *rrs, struct dns_requ
 	int ret = -1;
 	char name[DNS_MAX_CNAME_LEN] = {0};
 	char target[DNS_MAX_CNAME_LEN] = {0};
-	struct dns_https_param *p = NULL;
+	struct dns_svcparam *p = NULL;
 	int priority = 0;
 	struct dns_request_https *https_svcb;
 	int no_ipv4 = 0;
@@ -252,7 +252,7 @@ static int _dns_server_process_answer_HTTPS(struct dns_rrs *rrs, struct dns_requ
 		no_ech = https_record_rule->filter.no_ech;
 	}
 
-	ret = dns_get_HTTPS_svcparm_start(rrs, &p, name, DNS_MAX_CNAME_LEN, &ttl, &priority, target, DNS_MAX_CNAME_LEN);
+	ret = dns_svcparm_start(rrs, &p, name, DNS_MAX_CNAME_LEN, &ttl, &priority, target, DNS_MAX_CNAME_LEN);
 	if (ret != 0) {
 		tlog(TLOG_WARN, "get HTTPS svcparm failed");
 		return -1;
@@ -273,7 +273,7 @@ static int _dns_server_process_answer_HTTPS(struct dns_rrs *rrs, struct dns_requ
 	request->ip_ttl = ttl;
 
 	_dns_server_request_get(request);
-	for (; p; p = dns_get_HTTPS_svcparm_next(rrs, p)) {
+	for (; p; p = dns_svcparm_next(rrs, p)) {
 		switch (p->key) {
 		case DNS_HTTPS_T_MANDATORY: {
 		} break;
@@ -344,6 +344,8 @@ static int _dns_server_process_answer_HTTPS(struct dns_rrs *rrs, struct dns_requ
 				_dns_server_process_answer_AAAA_IP(request, cname, p->value + k * 16, ttl, result_flag);
 			}
 		} break;
+		default:
+			break;
 		}
 	}
 
@@ -400,6 +402,8 @@ int _dns_server_process_answer(struct dns_request *request, const char *domain, 
 					*need_passthrouh = 1;
 					return DNS_CLIENT_ACTION_OK;
 				}
+				default:
+					break;
 				}
 			}
 		}

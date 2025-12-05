@@ -26,7 +26,10 @@ extern "C" {
 #endif /*__cplusplus */
 
 #ifdef HAVE_OPENSSL
-int _dns_client_send_https(struct dns_server_info *server_info, void *packet, unsigned short len);
+int _dns_client_send_http1(struct dns_server_info *server_info, void *packet, unsigned short len);
+
+int _dns_client_format_https_packet(struct dns_server_info *server_info, void *packet, unsigned short len,
+									unsigned char *outpacket, int outpacket_max);
 #endif
 
 #ifdef __cplusplus

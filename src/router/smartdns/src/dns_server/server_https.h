@@ -20,6 +20,7 @@
 #define _DNS_SERVER_HTTPS_
 
 #include "dns_server.h"
+#include <sys/epoll.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -30,6 +31,7 @@ int _dns_server_reply_http_error(struct dns_server_conn_tcp_client *tcpclient, i
 
 int _dns_server_reply_https(struct dns_request *request, struct dns_server_conn_tcp_client *tcpclient, void *packet,
 							unsigned short len);
+
 #ifdef __cplusplus
 }
 #endif /*__cplusplus */
