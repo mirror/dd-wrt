@@ -2684,7 +2684,8 @@ static int do_syslog(unsigned char method, struct mime_handler *handler, char *u
 							"<tr class=\"syslog_bg_green\"><td class=\"syslog_text_dark\">%s</td></tr>",
 							line);
 					} else if (strstr(line, "mounting unchecked fs") || strstr(line, "httpd login failure") ||
-						   strstr(line, "auth-failure") || strstr(line, ".err")) {
+						   strstr(line, "auth-failure") || strstr(line, ".err") || strstr(line, ".alert") ||
+						   strstr(line, ".crit") || strstr(line, ".emerg")) {
 						websWrite(stream,
 							  "<tr class=\"syslog_bg_red\"><td class=\"syslog_text_dark\">%s</td></tr>",
 							  line);
@@ -2770,7 +2771,7 @@ static int do_crashlog(unsigned char method, struct mime_handler *handler, char 
 				while (fgets(line, sizeof(line), fp) != NULL) {
 					count++;
 					if (offset <= count && ((offset + 50) > count)) { // show 100 lines
-						websWrite(stream, "<tr><td>%s</td></tr>", line);
+						websWrite(stream, "<tr><td>%s</td></tr>", &line[3]);
 					}
 				}
 
