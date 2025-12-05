@@ -814,10 +814,10 @@ xtables_find_match(const char *name, enum xtables_tryload tryload,
 		dptr = &((*dptr)->next);
 	}
 
-	if (seen && !found)
-		fprintf(stderr,
-			"Warning: Extension %s is not supported, missing kernel module?\n",
-			name);
+//	if (seen && !found)
+//		fprintf(stderr,
+//			"Warning: Extension %s is not supported, missing kernel module?\n",
+//			name);
 
 	for (ptr = xtables_matches; ptr; ptr = ptr->next) {
 		if (extension_cmp(name, ptr->name, ptr->family)) {
@@ -944,10 +944,10 @@ xtables_find_target(const char *name, enum xtables_tryload tryload)
 		dptr = &((*dptr)->next);
 	}
 
-	if (seen && !found)
-		fprintf(stderr,
-			"Warning: Extension %s is not supported, missing kernel module?\n",
-			name);
+//	if (seen && !found)
+//		fprintf(stderr,
+//			"Warning: Extension %s is not supported, missing kernel module?\n",
+//			name);
 
 	for (ptr = xtables_targets; ptr; ptr = ptr->next) {
 		if (extension_cmp(name, ptr->name, ptr->family)) {
