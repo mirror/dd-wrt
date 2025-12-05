@@ -2753,32 +2753,32 @@ static int do_crashlog(unsigned char method, struct mime_handler *handler, char 
 		  "<legend class=\"syslog_legend\">" //
 		  "%s" //
 		  "</legend>",
-		  _tran_string(buf, sizeof(buf), "share.sysloglegend"));
+		  _tran_string(buf, sizeof(buf), "share.crashloglegend"));
 
 	do_ddwrt_inspired_themes(stream);
-	FILE *fp = fopen("/sys/fs/pstore/dmesg-pstore_blk-1","rb");
+	FILE *fp = fopen("/sys/fs/pstore/dmesg-pstore_blk-1", "rb");
 	if (fp) {
 		fclose(fp);
-		char *nums[64];
+		char nums[64];
 		int i;
 		websWrite(stream, "<div style=\"height: 770px; overflow-y: auto; overflow-x: hidden;\"><table><tbody>");
-		for (i=0;i<255;i++) {
-		sprintf(nums, "/sys/fs/pstore/dmesg-pstore_blk-%d", i);
-		fp = fopen(nums, "r");
-		if (fp != NULL) {
-			char line[1024];
-			while (fgets(line, sizeof(line), fp) != NULL) {
-				count++;
-				if (offset <= count && ((offset + 50) > count)) { // show 100 lines
+		for (i = 0; i < 255; i++) {
+			sprintf(nums, "/sys/fs/pstore/dmesg-pstore_blk-%d", i);
+			fp = fopen(nums, "r");
+			if (fp != NULL) {
+				char line[1024];
+				while (fgets(line, sizeof(line), fp) != NULL) {
+					count++;
+					if (offset <= count && ((offset + 50) > count)) { // show 100 lines
 						websWrite(stream, "<tr><td>%s</td></tr>", line);
+					}
 				}
-			}
 
-			fclose(fp);
-		} else 
-			break;
+				fclose(fp);
+			} else
+				break;
 		}
-			websWrite(stream, "</tbody></table></div>");
+		websWrite(stream, "</tbody></table></div>");
 	}
 	websWrite(stream, "</fieldset></body>");
 	websWrite(stream, "</html>");
