@@ -2707,6 +2707,84 @@ static int do_syslog(unsigned char method, struct mime_handler *handler, char *u
 	websWrite(stream, "</html>");
 	return 0;
 }
+
+static int do_crashlog(unsigned char method, struct mime_handler *handler, char *url, webs_t stream)
+{
+	char *style_dark = nvram_safe_get("router_style_dark");
+	char buf[128];
+	char *charset = live_translate(stream, "lang_charset.set");
+	int offset = 0;
+	int count = 0;
+	char *query = strchr(url, '?');
+	if (!query || sscanf(query + 1, "%d", &offset) != 1)
+		return -1;
+
+	if (handler && !handler->send_headers)
+		send_headers(stream, 200, "OK", handler->extra_header, handler->mime_type, -1, NULL, 1);
+
+	websWrite(stream,
+		  "<!DOCTYPE html>\n" //
+		  "<html>\n"
+		  "<head>\n"
+		  "<meta http-equiv=\"Content-Type\" content=\"text/html; charset=%s\" />\n" //
+		  "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\" />\n" //
+		  "<script type=\"text/javascript\" src=\"common.js\"></script>\n" //
+		  "<script type=\"text/javascript\" src=\"lang_pack/english.js\"></script>\n",
+		  charset);
+#ifdef HAVE_LANGUAGE
+	if (!nvram_match("language", "english"))
+		websWrite(stream, "<script type=\"text/javascript\" src=\"lang_pack/language.js\"></script>\n");
+#endif
+	char *style = nvram_safe_get("router_style");
+	if (!style)
+		style = "elegant";
+	websWrite(stream, "<link type=\"text/css\" rel=\"stylesheet\" href=\"style/syslogd/syslogd.css\" />\n");
+	if (!strcmp(style, "blue") || !strcmp(style, "cyan") || !strcmp(style, "elegant") || !strcmp(style, "carlson") ||
+	    !strcmp(style, "green") || !strcmp(style, "orange") || !strcmp(style, "red") || !strcmp(style, "yellow")) {
+		websWrite(stream, "<link type=\"text/css\" rel=\"stylesheet\" href=\"style/%s/colorscheme.css\" />\n", style);
+		if (style_dark != NULL && !strcmp(style_dark, "1")) {
+			websWrite(stream,
+				  "<link type=\"text/css\" rel=\"stylesheet\" href=\"style/syslogd/syslogd_dark.css\" />\n");
+		}
+	}
+	websWrite(stream, //
+		  "</head>\n<body class=\"syslog_bd\">\n" //
+		  "<fieldset class=\"syslog_bg\">" //
+		  "<legend class=\"syslog_legend\">" //
+		  "%s" //
+		  "</legend>",
+		  _tran_string(buf, sizeof(buf), "share.sysloglegend"));
+
+	do_ddwrt_inspired_themes(stream);
+	FILE *fp = fopen("/sys/fs/pstore/dmesg-pstore_blk-1","rb");
+	if (fp) {
+		fclose(fp);
+		char *nums[64];
+		int i;
+		websWrite(stream, "<div style=\"height: 770px; overflow-y: auto; overflow-x: hidden;\"><table><tbody>");
+		for (i=0;i<255;i++) {
+		sprintf(nums, "/sys/fs/pstore/dmesg-pstore_blk-%d", i);
+		fp = fopen(nums, "r");
+		if (fp != NULL) {
+			char line[1024];
+			while (fgets(line, sizeof(line), fp) != NULL) {
+				count++;
+				if (offset <= count && ((offset + 50) > count)) { // show 100 lines
+						websWrite(stream, "<tr><td>%s</td></tr>", line);
+				}
+			}
+
+			fclose(fp);
+		} else 
+			break;
+		}
+			websWrite(stream, "</tbody></table></div>");
+	}
+	websWrite(stream, "</fieldset></body>");
+	websWrite(stream, "</html>");
+	return 0;
+}
+
 #endif
 
 static int do_ttgraph(unsigned char method, struct mime_handler *handler, char *url, webs_t stream)
@@ -3079,6 +3157,7 @@ static struct mime_handler mime_handlers[] = {
 #endif
 #ifdef HAVE_STATUS_SYSLOG
 	{ "syslog.cgi*", "text/html", no_cache, NULL, do_syslog, do_auth, NO_HEADER, IGNORE_OPTIONS },
+	{ "crashlog.cgi*", "text/html", no_cache, NULL, do_crashlog, do_auth, NO_HEADER, IGNORE_OPTIONS },
 #endif
 	{ "**.svg", "image/svg+xml", NULL, NULL, do_file, NULL, NO_HEADER, IGNORE_OPTIONS },
 	{ "**.avif", "image/avif", NULL, NULL, do_file, NULL, NO_HEADER, IGNORE_OPTIONS },
