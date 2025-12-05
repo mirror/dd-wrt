@@ -562,6 +562,7 @@ static int __imq_nf_queue(struct nf_queue_entry *entry, struct net_device *dev)
 	int retval = -EINVAL;
 	unsigned int orig_queue_index;
 	bool again = false;
+	int quota = READ_ONCE(net_hotdata.dev_tx_weight);
 
 	dev->last_rx = jiffies;
 
@@ -629,7 +630,7 @@ static int __imq_nf_queue(struct nf_queue_entry *entry, struct net_device *dev)
 
 		skb->destructor = &imq_skb_destructor;
 
-		skb_popd = qdisc_dequeue_skb(q, &validate);
+		skb_popd = qdisc_dequeue_skb(q, &validate, quota);
 
 		/* cloned? */
 		if (unlikely(skb_orig))
