@@ -282,7 +282,8 @@ share.threaten_fs=" Illegaler Dateiname. (Dateiname beeinflusst das lokale Datei
 share.cross_site=" Webseitenübergreifende Aktion erkannt!";
 share.cross_site_ref=" Webseitenübergreifende Aktion erkannt! (Verweis %s)";
 share.no_wifi_access=" Die drahtlose Schnittstelle kann nicht für den Zugriff auf die Oberfläche verwendet werden.";
-share.sysloglegend="System Log";
+share.sysloglegend="Systembericht";
+share.crashloglegend="Absturzbericht";
 share.syslogdisabled="Keine Nachrichten verfügbar! Syslogd ist nicht eingeschaltet!";
 share.actiontbl="Aktion";
 share.show="Zeige";
@@ -566,6 +567,7 @@ bmenu.statuActivate="Aktivieren";
 bmenu.statuMyPage="Meine Seite";
 bmenu.statuGpio="GPIO E/A";
 bmenu.statuSyslog="Syslog";
+bmenu.statuCrashlog="Crashlog";
 bmenu.setupnetw="Netzwerk";
 bmenu.adminman="Verwaltung";
 

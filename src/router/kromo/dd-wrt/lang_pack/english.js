@@ -285,6 +285,7 @@ share.cross_site=" Cross Site Action detected!";
 share.cross_site_ref=" Cross Site Action detected! (referer %s)";
 share.no_wifi_access=" Cannot use the wireless interface to access Web UI.";
 share.sysloglegend="System Log";
+share.crashloglegend="Crash Log";
 share.syslogdisabled="No messages available, syslogd is not enabled!";
 share.actiontbl="Action";
 share.show="Show";
@@ -571,6 +572,7 @@ bmenu.statuActivate="Activate";
 bmenu.statuMyPage="My Page";
 bmenu.statuGpio="GPIO I/O";
 bmenu.statuSyslog="Syslog";
+bmenu.statuCrashlog="Crashlog";
 bmenu.setupnetw="Network";
 bmenu.adminman="Management";
 
