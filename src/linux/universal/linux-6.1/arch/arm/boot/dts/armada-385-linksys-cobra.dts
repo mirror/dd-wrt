@@ -144,7 +144,7 @@
 				 * supplied bootargs
 				 */
 				partition@180000 {
-					label = "unused_area";
+					label = "oops";
 					reg = <0x280000 0x680000>;   /* 6.5MB */
 				};
 	};

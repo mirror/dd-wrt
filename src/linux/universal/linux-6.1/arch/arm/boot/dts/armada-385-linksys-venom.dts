@@ -144,7 +144,7 @@
 				};
 
 				partition@180000 {
-					label = "unused_area";
+					label = "oops";
 					reg = <0x260000 0x5c0000>;   /* 5.75MB */
 				};
 
