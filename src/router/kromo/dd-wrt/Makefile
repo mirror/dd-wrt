@@ -1001,6 +1001,7 @@ ifneq ($(CONFIG_L2TP),y)
 endif
 ifneq ($(CONFIG_SYSLOG),y)
 	rm -f $(INSTALLDIR)/www/Syslog.asp
+	rm -f $(INSTALLDIR)/www/Crashlog.asp
 endif
 ifneq ($(CONFIG_PPPOE),y)
 	rm -f $(INSTALLDIR)/www/index_pppoe_dual.asp
