@@ -509,7 +509,7 @@ static int vma_link(struct mm_struct *mm, struct vm_area_struct *vma)
  *
  * Returns: 0 on success
  */
-inline int vma_expand(struct ma_state *mas, struct vm_area_struct *vma,
+static inline int vma_expand(struct ma_state *mas, struct vm_area_struct *vma,
 		      unsigned long start, unsigned long end, pgoff_t pgoff,
 		      struct vm_area_struct *next)
 {
