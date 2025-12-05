@@ -110,9 +110,8 @@
 					read-only;
 				};
 				partition@820000 {
-					label = "sysdiag";
+					label = "oops";
 					reg = <0x820000 0x1e0000>;   /* blahMB */
-					read-only;
 				};
 				/* kernel1 overlaps with rootfs1 by design */
 				partition@a00000 {
