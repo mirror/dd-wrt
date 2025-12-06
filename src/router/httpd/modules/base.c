@@ -2771,7 +2771,26 @@ static int do_crashlog(unsigned char method, struct mime_handler *handler, char 
 				while (fgets(line, sizeof(line), fp) != NULL) {
 					count++;
 					if (offset <= count && ((offset + 50) > count)) { // show 100 lines
-						websWrite(stream, "<tr><td>%s</td></tr>", &line[3]);
+						int level = line[1] - '0';
+
+						if (level == 4) { // warn
+							websWrite(
+								stream,
+								"<tr class=\"syslog_bg_yellow\"><td class=\"syslog_text_dark\">%s</td></tr>",
+								&line[3]);
+						} else if (level == 5) { // notice
+							websWrite(
+								stream,
+								"<tr class=\"syslog_bg_green\"><td class=\"syslog_text_dark\">%s</td></tr>",
+								line);
+						} else if (level <= 3) { // emerg, alert, crit, err
+							websWrite(
+								&line[3],
+								"<tr class=\"syslog_bg_red\"><td class=\"syslog_text_dark\">%s</td></tr>",
+								&line[3]);
+						} else {
+							websWrite(stream, "<tr><td>%s</td></tr>", &line[3]);
+						}
 					}
 				}
 
