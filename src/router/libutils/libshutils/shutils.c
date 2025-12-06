@@ -1675,10 +1675,6 @@ void add_blocklist_sock(const char *service, int conn_fd)
 int check_blocklist(const char *service, char *ip)
 {
 	int ret = 0;
-	if (ip == NULL) {
-		dd_logdebug(service, "blocklist: ip is null\n");
-		return 0;
-	}
 	if (ip)
 		dd_logdebug(service, "blocklist: check for %s\n", ip);
 	pthread_mutex_lock(&mutex_block);
