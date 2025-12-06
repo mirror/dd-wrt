@@ -23,7 +23,7 @@ ifeq ($(ARCH),powerpc)
 #export LIBUNWIND_LIB = -lunwind-ppc32
 endif
 ifeq ($(ARCH),i386)
-#export LIBUNWIND_LIB = -lunwind -lunwind-x86
+export LIBUNWIND_LIB = -lunwind -lunwind-x86 
 endif
 ifeq ($(ARCH),x86_64)
 export LIBUNWIND_OPT = --with-libunwind
@@ -42,6 +42,7 @@ strace-configure:
 		--disable-gcc-Werror \
 		--libdir=/usr/lib \
 		--sysconfdir=/etc \
+		--enable-bundled=yes \
 		--enable-mpers=no \
 		--host=$(ARCH)-linux \
 		$(LIBUNWIND_OPT) \

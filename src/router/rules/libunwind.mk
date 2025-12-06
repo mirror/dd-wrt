@@ -16,21 +16,21 @@ libunwind-configure:
 
 libunwind: 
 ifneq ($(ARCH),powerpc)
-ifneq ($(ARCH),i386)
+#ifneq ($(ARCH),i386)
 	$(MAKE) -C libunwind
-endif
+#endif
 endif
 
 libunwind-clean: 
-ifneq ($(ARCH),i386)
+#ifneq ($(ARCH),i386)
 ifneq ($(ARCH),powerpc)
 	if test -e "libunwind/Makefile"; then $(MAKE) -C libunwind clean ; fi
 endif
-endif
+#endif
 
 libunwind-install: 
 ifneq ($(ARCH),powerpc)
-ifneq ($(ARCH),i386)
+#ifneq ($(ARCH),i386)
 	$(MAKE) -C libunwind install DESTDIR=$(INSTALLDIR)/libunwind
 	rm -rf $(INSTALLDIR)/libunwind/usr/man
 	rm -rf $(INSTALLDIR)/libunwind/usr/include
@@ -38,4 +38,4 @@ ifneq ($(ARCH),i386)
 	rm -f $(INSTALLDIR)/libunwind/usr/lib/*.la
 	rm -rf $(INSTALLDIR)/libunwind/usr/lib/pkgconfig
 endif
-endif
+#endif
