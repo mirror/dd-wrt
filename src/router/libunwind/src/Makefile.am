@@ -21,7 +21,7 @@
 #
 
 # Set the DSO versions
-SOVERSION=9:0:1		# See comments at end of file.
+SOVERSION=10:0:2		# See comments at end of file.
 SETJMP_SO_VERSION=0:0:0
 COREDUMP_SO_VERSION=0:0:0
 
@@ -109,7 +109,7 @@ endif
 # If local unwinding is being built, link in the local unwinding functions
 libunwind_libadd =
 if !REMOTE_ONLY
-  libunwind_libadd += libunwind.la -lc
+  libunwind_libadd += libunwind.la
 endif
 
 ### pkg-config:
@@ -196,7 +196,8 @@ libunwind_ptrace_la_SOURCES =                  \
 	ptrace/_UPT_get_elf_filename.c         \
 	ptrace/_UPT_put_unwind_info.c          \
 	ptrace/_UPT_reg_offset.c               \
-	ptrace/_UPT_resume.c
+	ptrace/_UPT_resume.c                   \
+	ptrace/_UPT_ptrauth_insn_mask.c
 libunwind_ptrace_la_LIBADD =                   \
 	libunwind-$(arch).la                   \
 	$(LIBLZMA) $(LIBZ)
@@ -239,6 +240,7 @@ libunwind_la_SOURCES_generic =                 \
 	mi/Gget_proc_info_by_ip.c              \
 	mi/Gget_proc_name.c                    \
 	mi/Gget_reg.c                          \
+	mi/Gis_plt_entry.c                     \
 	mi/Gput_dynamic_unwind_info.c          \
 	mi/Gset_cache_size.c                   \
 	mi/Gset_caching_policy.c               \
@@ -290,6 +292,7 @@ libunwind_la_SOURCES_local_nounwind =          \
 	mi/Lget_proc_info_by_ip.c              \
 	mi/Lget_proc_name.c                    \
 	mi/Lget_reg.c                          \
+	mi/Lis_plt_entry.c                     \
 	mi/Lput_dynamic_unwind_info.c          \
 	mi/Lset_cache_size.c                   \
 	mi/Lset_caching_policy.c               \
@@ -429,7 +432,8 @@ libunwind_la_SOURCES =                         \
 	aarch64/Lresume.c                      \
 	aarch64/Lstash_frame.c                 \
 	aarch64/Lstep.c                        \
-	aarch64/Ltrace.c
+	aarch64/Ltrace.c                       \
+	aarch64/Lstrip_ptrauth_insn_mask.c
 
 libunwind_setjmp_la_SOURCES +=                 \
 	aarch64/longjmp.S                      \
@@ -454,7 +458,8 @@ libunwind_aarch64_la_SOURCES =                 \
 	aarch64/Gresume.c                      \
 	aarch64/Gstash_frame.c                 \
 	aarch64/Gstep.c                        \
-	aarch64/Gtrace.c
+	aarch64/Gtrace.c                       \
+	aarch64/Gstrip_ptrauth_insn_mask.c
 libunwind_aarch64_la_LDFLAGS =                 \
 	$(COMMON_SO_LDFLAGS)                   \
 	-version-info $(SOVERSION)
@@ -1239,10 +1244,13 @@ endif
 # Don't link with standard libraries, because those may mention
 # libunwind already.
 #
-libunwind_la_LDFLAGS =	$(COMMON_SO_LDFLAGS) -XCClinker -nostdlib \
-			$(LDFLAGS_STATIC_LIBCXA) -version-info $(SOVERSION)
-libunwind_la_LIBADD  += -lc $(LIBCRTS)
-libunwind_la_LIBADD += $(LIBLZMA) $(LIBZ)
+libunwind_la_LDFLAGS = $(COMMON_SO_LDFLAGS) \
+                       $(UNW_CRT_LDFLAGS) \
+                       $(LDFLAGS_STATIC_LIBCXA) \
+                       -version-info $(SOVERSION)
+libunwind_la_LIBADD += $(UNW_CRT_LIBADD) \
+                       $(LIBLZMA) \
+                       $(LIBZ)
 
 AM_CPPFLAGS = -I$(top_srcdir)/include -I$(top_srcdir)/include/tdep-$(arch) -I.
 AM_CCASFLAGS = $(AM_CPPFLAGS)

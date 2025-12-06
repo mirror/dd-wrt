@@ -25,7 +25,9 @@ OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.  */
 
 #include "offsets.h"
+#ifdef __GLIBC__
 #include <endian.h>
+#endif
 	.text
 
 #define SREG(X) st.d $r##X, $r4, (LINUX_UC_MCONTEXT_GREGS + 8 * X)

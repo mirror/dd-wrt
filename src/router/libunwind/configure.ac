@@ -27,7 +27,7 @@ AC_COPYRIGHT([
 
 define(pkg_major, 1)
 define(pkg_minor, 8)
-define(pkg_extra, 1)
+define(pkg_extra, 3)
 define(pkg_maintainer, https://github.com/libunwind/libunwind)
 define(mkvers, $1.$2.$3)
 AC_INIT([libunwind],[mkvers(pkg_major, pkg_minor, pkg_extra)],[pkg_maintainer])
@@ -76,17 +76,6 @@ AC_CHECK_TYPES([struct elf_prstatus, struct prstatus, procfs_status, elf_fpregse
 
 dnl Checks for libraries.
 AC_MSG_NOTICE([--- Checking for libraries ---])
-save_LDFLAGS="$LDFLAGS"
-save_LIBS="$LIBS"
-LDFLAGS="${LDFLAGS} -nostdlib"
-AC_SEARCH_LIBS([_Unwind_Resume], [gcc_s gcc],
-               [AS_IF([test "$ac_cv_search__Unwind_Resume" != "none required"],
-                      [AC_SUBST([LIBCRTS], ["$ac_cv_search__Unwind_Resume"])])],
-               [],
-               [-lc]
-)
-LIBS="$save_LIBS"
-LDFLAGS="$save_LDFLAGS"
 AC_SEARCH_LIBS([__uc_get_grs], [uca])
 
 dnl Checks for library functions.
@@ -311,6 +300,16 @@ AS_IF([test $enable_cxx_exceptions = check],
 )
 AC_MSG_RESULT([$enable_cxx_exceptions])
 AM_CONDITIONAL([SUPPORT_CXX_EXCEPTIONS], [test x$enable_cxx_exceptions = xyes])
+AM_COND_IF([SUPPORT_CXX_EXCEPTIONS],
+           [save_LDFLAGS="$LDFLAGS"
+            LDFLAGS="${LDFLAGS} -nostdlib"
+            AC_SEARCH_LIBS([_Unwind_Resume], [gcc_s gcc],
+                           [AS_IF([test "$ac_cv_search__Unwind_Resume" != "none required"],
+                                  [AC_SUBST([UNW_CRT_LIBADD],  ["-lc $ac_cv_search__Unwind_Resume"])
+                                   AC_SUBST([UNW_CRT_LDFLAGS], ["-WCClinker -nostdlib"])])]
+                           [-lc])
+            LDFLAGS="$save_LDFLAGS"]
+)
 
 AC_MSG_CHECKING([if documentation should be built])
 AC_ARG_ENABLE([documentation],
