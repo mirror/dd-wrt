@@ -1679,7 +1679,8 @@ int check_blocklist(const char *service, char *ip)
 		dd_logdebug(service, "blocklist: ip is null\n");
 		return 0;
 	}
-	dd_logdebug(service, "blocklist: check for %s\n", ip);
+	if (ip)
+		dd_logdebug(service, "blocklist: check for %s\n", ip);
 	pthread_mutex_lock(&mutex_block);
 	init_blocklist();
 	int change = 0;
@@ -1687,9 +1688,9 @@ int check_blocklist(const char *service, char *ip)
 	struct blocklist *entry = blocklist_root.next;
 	struct blocklist *last = &blocklist_root;
 	while (entry) {
-		if (!strcmp(ip, &entry->ip[0])) {
+		if (ip && !strcmp(ip, &entry->ip[0])) {
 			if (entry->end > cur) {
-				// each try from a block client extends by another 5 minutes;
+				// each try from a blocked client is extended by another 5 minutes;
 				entry->attempts++;
 				entry->end = time(NULL) + (BLOCKTIME * entry->attempts) * 60;
 				dd_loginfo(service, "client %s is blocked, terminate connection, set new blocktime to %d minutes",
