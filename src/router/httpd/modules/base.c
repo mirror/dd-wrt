@@ -2785,7 +2785,7 @@ static int do_crashlog(unsigned char method, struct mime_handler *handler, char 
 								line);
 						} else if (level <= 3) { // emerg, alert, crit, err
 							websWrite(
-								&line[3],
+								stream,
 								"<tr class=\"syslog_bg_red\"><td class=\"syslog_text_dark\">%s</td></tr>",
 								&line[3]);
 						} else {
