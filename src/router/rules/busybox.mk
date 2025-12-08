@@ -2,6 +2,7 @@ busybox-config: -
 	cd busybox && rm -f Config.h && ln -sf configs/$(CONFIG_BUSYBOX_CONFIG).h Config.h
 
 busybox: busybox-config nvram
+	mv -f busybox/.config busybox/.config.temp
 ifeq ($(ARCH),mipsel)
 	cp busybox/.config_std busybox/.config
 ifeq ($(CONFIG_MMC),y)
@@ -770,8 +771,15 @@ endif
 ifeq ($(CONFIG_REALTEK),y)
 	sed -i 's/\# CONFIG_SWITCH_ROOT is not set/CONFIG_SWITCH_ROOT=y/g' busybox/.config
 endif
-	cd busybox && make oldconfig
+
 	
+	cd busybox && make oldconfig KCONFIG_NOTIMESTAMP=1
+
+	if cmp -s busybox/.config busybox/.config.temp ; then \
+		echo "config unchanged. restore" ; \
+		mv -f busybox/.config.temp busybox/.config ; \
+	fi ;
+
 #	-$(MAKE) -C busybox STRIPTOOL=$(STRIP) PREFIX=$(INSTALLDIR)/busybox
 	$(MAKE) -C busybox STRIPTOOL=$(STRIP) PREFIX=$(INSTALLDIR)/busybox
 
