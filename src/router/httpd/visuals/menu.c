@@ -90,26 +90,26 @@ static struct menucontext *init_menu(webs_t wp)
 #ifdef HAVE_ERC
 	static char *menu_s[8][13] = {
 		{ "index.asp", "DDNS.asp", "", "", "", "", "", "", "", "", "", "", "" }, //
-		{ "Wireless_Basic.asp", "WL_WPATable.asp", "", "", "", "", "", "", "", "", "", "", "", ""  }, //
-		{ "ForwardSpec.asp", "", "", "", "", "", "", "", "", "", "", "", "", ""  }, //
-		{ "Filters.asp", "", "", "", "", "", "", "", "", "", "", "", "", ""  }, //
-		{ "Management.asp", "", "", "", "", "", "", "", "", "", "", "", "", ""  }, //
-		{ "", "", "", "", "", "", "", "", "", "", "", "", "", ""  }, //
-		{ "", "", "", "", "", "", "", "", "", "", "", "", "", ""  }, //
-		{ "", "", "", "", "", "", "", "", "", "", "", "", "", ""  } //
+		{ "Wireless_Basic.asp", "WL_WPATable.asp", "", "", "", "", "", "", "", "", "", "", "", "" }, //
+		{ "ForwardSpec.asp", "", "", "", "", "", "", "", "", "", "", "", "", "" }, //
+		{ "Filters.asp", "", "", "", "", "", "", "", "", "", "", "", "", "" }, //
+		{ "Management.asp", "", "", "", "", "", "", "", "", "", "", "", "", "" }, //
+		{ "", "", "", "", "", "", "", "", "", "", "", "", "", "" }, //
+		{ "", "", "", "", "", "", "", "", "", "", "", "", "", "" }, //
+		{ "", "", "", "", "", "", "", "", "", "", "", "", "", "" } //
 	};
 	/*
 	 * real name is bmenu.menuname[i][j]
 	 */
 	static char *menuname_s[8][14] = {
-		{ "setup", "setupbasic", "setupddns", "", "", "", "", "", "", "", "", "", "", "", ""  }, //
-		{ "wireless", "wirelessBasic", "wirelessSecurity", "", "", "", "", "", "", "", "", "", "", "", ""  }, //
-		{ "applications", "applicationspforwarding", "", "", "", "", "", "", "", "", "", "", "", "", ""  }, //
-		{ "accrestriction", "webaccess", "", "", "", "", "", "", "", "", "", "", "", "", ""  }, //
-		{ "admin", "adminManagement", "", "", "", "", "", "", "", "", "", "", "", "", ""  }, //
-		{ "", "", "", "", "", "", "", "", "", "", "", "", "", "", ""  }, //
-		{ "", "", "", "", "", "", "", "", "", "", "", "", "", "", ""  }, //
-		{ "", "", "", "", "", "", "", "", "", "", "", "", "", "", ""  }, //
+		{ "setup", "setupbasic", "setupddns", "", "", "", "", "", "", "", "", "", "", "", "" }, //
+		{ "wireless", "wirelessBasic", "wirelessSecurity", "", "", "", "", "", "", "", "", "", "", "", "" }, //
+		{ "applications", "applicationspforwarding", "", "", "", "", "", "", "", "", "", "", "", "", "" }, //
+		{ "accrestriction", "webaccess", "", "", "", "", "", "", "", "", "", "", "", "", "" }, //
+		{ "admin", "adminManagement", "", "", "", "", "", "", "", "", "", "", "", "", "" }, //
+		{ "", "", "", "", "", "", "", "", "", "", "", "", "", "", "" }, //
+		{ "", "", "", "", "", "", "", "", "", "", "", "", "", "", "" }, //
+		{ "", "", "", "", "", "", "", "", "", "", "", "", "", "", "" }, //
 	};
 
 #elif HAVE_IPR
@@ -130,8 +130,8 @@ static struct menucontext *init_menu(webs_t wp)
 		{ "Management.asp", "Alive.asp", "Sysctl.asp", "Diagnostics.asp", "Wol.asp", "Factory_Defaults.asp", "Upgrade.asp",
 		  "config.asp", "", "", "", "", "", "" }, //
 		{ "Status_Router.asp", "Status_Internet.asp", "Status_Lan.asp", "Status_Wireless.asp", "Status_SputnikAPD.asp",
-		  "Status_OpenVPN.asp", "Status_Bandwidth.asp", "Syslog.asp", "Crashlog.asp", "Info.htm", "register.asp", "MyPage.asp", "Gpio.asp",
-		  "Status_CWMP.asp", "" } //
+		  "Status_OpenVPN.asp", "Status_Bandwidth.asp", "Syslog.asp", "Crashlog.asp", "Info.htm", "register.asp",
+		  "MyPage.asp", "Gpio.asp", "Status_CWMP.asp", "" } //
 	};
 	/*
 	 * real name is bmenu.menuname[i][j]
@@ -152,7 +152,7 @@ static struct menucontext *init_menu(webs_t wp)
 		{ "admin", "adminManagement", "adminAlive", "adminSysctl", "adminDiag", "adminWol", "adminFactory", "adminUpgrade",
 		  "adminBackup", "", "", "", "", "", "" }, //
 		{ "statu", "statuRouter", "statuInet", "statuLAN", "statuWLAN", "statuSputnik", "statuVPN", "statuBand",
-		  "statuSyslog", "statuCrashlog", "statuSysInfo","statuActivate", "statuMyPage", "statuGpio", "statuCWMP", "" } //
+		  "statuSyslog", "statuCrashlog", "statuSysInfo", "statuActivate", "statuMyPage", "statuGpio", "statuCWMP", "" } //
 	};
 	int x, y;
 	for (x = 0; x < 8; x++) {
@@ -631,10 +631,12 @@ EJ_VISIBLE void ej_do_menu(webs_t wp, int argc, char_t **argv)
 				if (!strcmp_pnt(m->menu[i][j], "Crashlog.asp"))
 					goto skip;
 #else
-				if (!strcmp_pnt(m->menu[i][j], "Syslog.asp") && !nvram_match("syslogd_enable","1"))
+				if (!strcmp_pnt(m->menu[i][j], "Syslog.asp") && !nvram_match("syslogd_enable", "1"))
 					goto skip;
 				if (!strcmp_pnt(m->menu[i][j], "Crashlog.asp")) {
-					FILE *fp = fopen("/sys/fs/pstore/dmesg-pstore_blk-1","rb");
+					FILE *fp = fopen("/sys/fs/pstore/dmesg-pstore_blk-1", "rb");
+					if (!fp)
+						fp = fopen("/sys/fs/pstore/dmesg-pstore_ramoops-0", "rb");
 					if (!fp)
 						goto skip;
 					fclose(fp);
