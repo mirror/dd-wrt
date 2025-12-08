@@ -3644,12 +3644,12 @@ void show_multicast_interfaces(struct pim_instance *pim, struct vty *vty,
 		memset(&vreq, 0, sizeof(vreq));
 #if PIM_IPV == 4
 		vreq.vifi = pim_ifp->mroute_vif_index;
-		if (ioctl(pim->mroute_socket, SIOCGETVIFCNT, &vreq)) {
-			zlog_warn(
-				"ioctl(SIOCGETVIFCNT=%lu) failure for interface %s vif_index=%d: errno=%d: %s",
-				(unsigned long)SIOCGETVIFCNT, ifp->name,
-				pim_ifp->mroute_vif_index, errno,
-				safe_strerror(errno));
+		frr_with_privs (&pimd_privs) {
+			if (ioctl(pim->mroute_socket, SIOCGETVIFCNT, &vreq)) {
+				zlog_warn("ioctl(SIOCGETVIFCNT=%lu) failure for interface %s vif_index=%d: errno=%d: %s",
+					  (unsigned long)SIOCGETVIFCNT, ifp->name,
+					  pim_ifp->mroute_vif_index, errno, safe_strerror(errno));
+			}
 		}
 #else
 		vreq.mifi = pim_ifp->mroute_vif_index;
@@ -4289,7 +4289,7 @@ void show_mroute_summary(struct pim_instance *pim, struct vty *vty,
 		json_object_int_add(json_starg, "installed",
 				    starg_hw_mroute_cnt);
 		json_object_int_add(json_starg, "total",
-				    starg_sw_mroute_cnt + starg_hw_mroute_cnt);
+				    (int64_t)starg_sw_mroute_cnt + starg_hw_mroute_cnt);
 
 		/* (S, G) route details */
 		json_sg = json_object_new_object();
@@ -4297,14 +4297,13 @@ void show_mroute_summary(struct pim_instance *pim, struct vty *vty,
 
 		json_object_int_add(json_sg, "installed", sg_hw_mroute_cnt);
 		json_object_int_add(json_sg, "total",
-				    sg_sw_mroute_cnt + sg_hw_mroute_cnt);
+				    (int64_t)sg_sw_mroute_cnt + sg_hw_mroute_cnt);
 
 		json_object_int_add(json, "totalNumOfInstalledMroutes",
-				    starg_hw_mroute_cnt + sg_hw_mroute_cnt);
+				    (int64_t)starg_hw_mroute_cnt + sg_hw_mroute_cnt);
 		json_object_int_add(json, "totalNumOfMroutes",
-				    starg_sw_mroute_cnt + starg_hw_mroute_cnt +
-					    sg_sw_mroute_cnt +
-					    sg_hw_mroute_cnt);
+				    (int64_t)starg_sw_mroute_cnt + starg_hw_mroute_cnt +
+					    sg_sw_mroute_cnt + sg_hw_mroute_cnt);
 	}
 }
 

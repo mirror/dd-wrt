@@ -2248,7 +2248,7 @@ class LinuxNamespace(Commander, InterfaceMixin):
                     f"mkdir {tmpmnt} && mount --rbind /sys/fs/cgroup {tmpmnt}"
                 )
                 rc = o = e = None
-                for i in range(0, 10):
+                for i in range(0, 30):
                     rc, o, e = self.cmd_status_nsonly(
                         "mount -t sysfs sysfs /sys", warn=False
                     )
@@ -2260,6 +2260,8 @@ class LinuxNamespace(Commander, InterfaceMixin):
                     )
                     time_mod.sleep(1)
                 else:
+                    rc1, o1, e1 = self.cmd_status_nsonly("dmesg", warn=False)
+                    self.logger.debug("DMESG: %s", o1)
                     raise Exception(cmd_error(rc, o, e))
 
                 self.cmd_status_nsonly(
@@ -2729,12 +2731,6 @@ class BaseMunet(LinuxNamespace):
         self.logger.debug("%s: add_host %s(%s)", self, cls.__name__, name)
 
         self.hosts[name] = cls(name, unet=self, **kwargs)
-
-        # Create a new mounted FS for tracking nested network namespaces creatd by the
-        # user with `ip netns add`
-
-        # XXX why is this failing with podman???
-        # self.hosts[name].tmpfs_mount("/run/netns")
 
         return self.hosts[name]
 

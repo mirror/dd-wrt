@@ -554,7 +554,7 @@ void evpn_overlay_free(struct bgp_route_evpn *bre)
 	XFREE(MTYPE_BGP_EVPN_OVERLAY, bre);
 }
 
-static struct bgp_route_evpn *evpn_overlay_intern(struct bgp_route_evpn *bre)
+struct bgp_route_evpn *evpn_overlay_intern(struct bgp_route_evpn *bre)
 {
 	struct bgp_route_evpn *find;
 
@@ -700,14 +700,19 @@ static uint32_t bgp_nhc_hash_key_make(const void *p)
 {
 	const struct bgp_nhc *nhc = p;
 	uint32_t key = 0;
+	struct bgp_nhc_tlv *tlv;
 
 	key = jhash_3words(nhc->afi, nhc->safi, nhc->nh_length, key);
 	key = jhash_1word(nhc->tlvs_length, key);
 	key = jhash(&nhc->nh_ipv4, IPV4_MAX_BYTELEN, key);
 	key = jhash(&nhc->nh_ipv6, IPV6_MAX_BYTELEN, key);
 
-	if (nhc->tlvs)
-		key = jhash(nhc->tlvs, nhc->tlvs_length, key);
+	if (nhc->tlvs) {
+		for (tlv = nhc->tlvs; tlv; tlv = tlv->next) {
+			key = jhash_2words(tlv->code, tlv->length, key);
+			key = jhash(tlv->value, tlv->length, key);
+		}
+	}
 
 	return key;
 }
@@ -1628,10 +1633,15 @@ bgp_attr_malformed(struct bgp_attr_parser_args *args, uint8_t subcode,
 		zlog_debug("%s: attributes: %s", __func__, str);
 	}
 
-	/* Only relax error handling for eBGP peers */
-	if (peer->sort != BGP_PEER_EBGP) {
-		bgp_notify_send_with_data(peer->connection,
-					  BGP_NOTIFY_UPDATE_ERR, subcode,
+	/* If the Length of Next Hop Network Address field of the MP_REACH
+	 * attribute is inconsistent with that which was expected, the attribute
+	 * is considered malformed.  Since the next hop precedes the NLRI field
+	 * in the attribute, in this case it will not be possible to reliably
+	 * locate the NLRI; thus, the "session reset" or "AFI/SAFI disable"
+	 * approach MUST be used.
+	 */
+	if (args->type == BGP_ATTR_MP_REACH_NLRI || args->type == BGP_ATTR_MP_UNREACH_NLRI) {
+		bgp_notify_send_with_data(peer->connection, BGP_NOTIFY_UPDATE_ERR, subcode,
 					  notify_datap, length);
 		return BGP_ATTR_PARSE_ERROR;
 	}
@@ -1686,10 +1696,8 @@ bgp_attr_malformed(struct bgp_attr_parser_args *args, uint8_t subcode,
 		return BGP_ATTR_PARSE_WITHDRAW;
 	case BGP_ATTR_MP_REACH_NLRI:
 	case BGP_ATTR_MP_UNREACH_NLRI:
-		bgp_notify_send_with_data(peer->connection,
-					  BGP_NOTIFY_UPDATE_ERR, subcode,
-					  notify_datap, length);
-		return BGP_ATTR_PARSE_ERROR;
+		/* This will never hit, because it's checked already above */
+		break;
 	default:
 		/* Unknown attributes, that are handled by this function
 		 * should be treated as withdraw, to prevent one more CVE
@@ -1924,6 +1932,9 @@ static int bgp_attr_aspath(struct bgp_attr_parser_args *args)
 		flog_err(EC_BGP_ATTR_MAL_AS_PATH,
 			 "AS_SET and AS_CONFED_SET are deprecated from %pBP",
 			 peer);
+		if (attr->aspath)
+			zlog_warn("`bgp reject-as-sets` is enabled, and AS-path (%s) contains AS_SET/AS_CONFED_SET",
+				  attr->aspath->str);
 		return bgp_attr_malformed(args, BGP_NOTIFY_UPDATE_MAL_AS_PATH,
 					  0);
 	}
@@ -2028,6 +2039,9 @@ static int bgp_attr_as4_path(struct bgp_attr_parser_args *args,
 		flog_err(EC_BGP_ATTR_MAL_AS_PATH,
 			 "AS_SET and AS_CONFED_SET are deprecated from %pBP",
 			 peer);
+		if (attr->aspath)
+			zlog_warn("`bgp reject-as-sets` is enabled, and AS-path (%s) contains AS_SET/AS_CONFED_SET",
+				  attr->aspath->str);
 		return bgp_attr_malformed(args, BGP_NOTIFY_UPDATE_MAL_AS_PATH,
 					  0);
 	}
@@ -3634,16 +3648,18 @@ static int bgp_attr_nhc(struct bgp_attr_parser_args *args)
 	iana_safi_t pkt_safi;
 	safi_t safi;
 	struct stream *s = BGP_INPUT(peer);
-	struct bgp_nhc *nhc;
+	struct bgp_nhc *nhc = bgp_attr_get_nhc(attr);
 	uint16_t tlv_code;
 	uint16_t tlv_length;
 	struct bgp_nhc_tlv *tlv;
+	uint8_t nh_length;
 
 	if (peer->discard_attrs[args->type] || peer->withdraw_attrs[args->type])
 		goto nhc_ignore;
 
 	if (length < BGP_NHC_MIN_LEN) {
-		zlog_err("%pBP rcvd BGP NHC attribute length is too short: %d", peer, length);
+		zlog_err("%pBP rcvd BGP NHC attribute length is too short: %d, expected minimum %d",
+			 peer, length, BGP_NHC_MIN_LEN);
 		return bgp_attr_malformed(args, BGP_NOTIFY_UPDATE_OPT_ATTR_ERR, args->total);
 	}
 
@@ -3661,34 +3677,38 @@ static int bgp_attr_nhc(struct bgp_attr_parser_args *args)
 		zlog_debug("%pBP rcvd BGP NHC attribute with length %d for afi %s, safi %s", peer,
 			   length, iana_afi2str(pkt_afi), iana_safi2str(pkt_safi));
 
-	nhc = XCALLOC(MTYPE_BGP_NHC, sizeof(struct bgp_nhc));
-	nhc->afi = afi;
-	nhc->safi = safi;
-	nhc->nh_length = stream_getc(s);
+	nh_length = stream_getc(s);
 
 	/* If Next-hop is IPv6, we should check if we are not out of bound too */
-	if (nhc->nh_length == BGP_ATTR_NHLEN_IPV6_GLOBAL) {
+	if (nh_length == BGP_ATTR_NHLEN_IPV6_GLOBAL) {
 		if (length < BGP_NHC_MIN_IPV6_LEN) {
-			zlog_err("%pBP rcvd BGP NHC attribute length is too short: %d", peer,
-				 length);
+			zlog_err("%pBP rcvd BGP NHC attribute length is too short: %d, expected minimum %d",
+				 peer, length, BGP_NHC_MIN_IPV6_LEN);
 			bgp_nhc_free(nhc);
 			return bgp_attr_malformed(args, BGP_NOTIFY_UPDATE_OPT_ATTR_ERR, args->total);
 		}
 	}
 
 	/* Next-hop length should be either 4 or 16 */
-	if (nhc->nh_length != BGP_ATTR_NHLEN_IPV4 && nhc->nh_length != BGP_ATTR_NHLEN_IPV6_GLOBAL) {
-		zlog_err("%pBP rcvd wrong next-hop length, %d, in NHC", peer, nhc->nh_length);
+	if (nh_length != BGP_ATTR_NHLEN_IPV4 && nh_length != BGP_ATTR_NHLEN_IPV6_GLOBAL) {
+		zlog_err("%pBP rcvd wrong next-hop length, %d, in NHC", peer, nh_length);
 		bgp_nhc_free(nhc);
 		return bgp_attr_malformed(args, BGP_NOTIFY_UPDATE_OPT_ATTR_ERR, args->total);
 	}
 
+	if (!nhc)
+		nhc = XCALLOC(MTYPE_BGP_NHC, sizeof(struct bgp_nhc));
+
+	nhc->afi = afi;
+	nhc->safi = safi;
+	nhc->nh_length = nh_length;
+
 	length -= 4; /* AFI(2) + SAFI(1) + Next-hop length(1) */
 
-	if (nhc->nh_length == BGP_ATTR_NHLEN_IPV4) {
+	if (nh_length == BGP_ATTR_NHLEN_IPV4) {
 		stream_get(&nhc->nh_ipv4, s, IPV4_MAX_BYTELEN);
 		length -= IPV4_MAX_BYTELEN;
-	} else if (nhc->nh_length == BGP_ATTR_NHLEN_IPV6_GLOBAL) {
+	} else if (nh_length == BGP_ATTR_NHLEN_IPV6_GLOBAL) {
 		stream_get(&nhc->nh_ipv6, s, IPV6_MAX_BYTELEN);
 		length -= IPV6_MAX_BYTELEN;
 		if (IN6_IS_ADDR_LINKLOCAL(&nhc->nh_ipv6)) {
@@ -3742,11 +3762,9 @@ static int bgp_attr_nhc(struct bgp_attr_parser_args *args)
 			zlog_debug("%pBP rcvd BGP NHC TLV code %d, length %d, value %p", peer,
 				   tlv->code, tlv->length, tlv->value);
 
-		/* draft-wang-idr-next-next-hop-nodes */
+		/* draft-ietf-idr-next-next-hop-nodes-00 */
 		if (tlv->code == BGP_ATTR_NHC_TLV_NNHN) {
-			uint16_t len = tlv->length;
-
-			if (len % IPV4_MAX_BYTELEN != 0) {
+			if (tlv->length % IPV4_MAX_BYTELEN != 0) {
 				zlog_err("%pBP rcvd BGP NHC (NNHN TLV) length %d not a multiple of %d",
 					 peer, tlv->length, IPV4_MAX_BYTELEN);
 				bgp_nhc_free(nhc);
@@ -3756,12 +3774,8 @@ static int bgp_attr_nhc(struct bgp_attr_parser_args *args)
 		}
 
 		found = bgp_nhc_tlv_find(nhc, tlv_code);
-		if (found) {
-			nhc->tlvs_length -= found->length + BGP_NHC_TLV_MIN_LEN;
-			bgp_nhc_tlv_free(found);
-		}
-
-		bgp_nhc_tlv_add(nhc, tlv);
+		if (!found)
+			bgp_nhc_tlv_add(nhc, tlv);
 
 		length -= tlv_length + BGP_NHC_TLV_MIN_LEN;
 	}
@@ -4259,11 +4273,12 @@ enum bgp_attr_parse_ret bgp_attr_parse(struct peer *peer, struct attr *attr,
 				  lookup_msg(attr_str, type, NULL));
 			goto done;
 		}
-		if (ret == BGP_ATTR_PARSE_WITHDRAW) {
-			flog_warn(
-				EC_BGP_ATTRIBUTE_PARSE_WITHDRAW,
-				"%s: Attribute %s, parse error - treating as withdrawal",
-				peer->host, lookup_msg(attr_str, type, NULL));
+		if (ret == BGP_ATTR_PARSE_WITHDRAW || ret == BGP_ATTR_PARSE_WITHDRAW_IGNORE) {
+			if (ret == BGP_ATTR_PARSE_WITHDRAW)
+				flog_warn(
+					EC_BGP_ATTRIBUTE_PARSE_WITHDRAW,
+					"%s: Attribute %s, parse error - treating as withdrawal",
+					peer->host, lookup_msg(attr_str, type, NULL));
 			stream_forward_getp(BGP_INPUT(peer), endp - BGP_INPUT_PNT(peer));
 			goto done;
 		}
@@ -4611,18 +4626,19 @@ static void bgp_packet_nhc(struct stream *s, struct peer *peer, afi_t afi, safi_
 	afi_t nh_afi;
 	struct bgp_path_info *exists;
 	uint16_t total;
+	struct bgp_nhc *nhc = bgp_attr_get_nhc(attr);
+	const struct prefix *prefix = NULL;
 
 	if (!bpi)
 		return;
 
-	total = bgp_path_info_mpath_count(bpi) * IPV4_MAX_BYTELEN;
-
-	/* NHC now supports only draft-wang-idr-next-next-hop-nodes, thus
-	 * do not sent NHC attribute if the path is not multipath or self
-	 * originated.
-	 */
-	if (bpi->peer == bpi->peer->bgp->peer_self || bgp_path_info_mpath_count(bpi) < 2)
+	if (bgp_path_info_mpath_count(bpi) < 2 && !nhc)
 		return;
+
+	prefix = bgp_dest_get_prefix(bpi->net);
+
+	total = bgp_path_info_mpath_count(bpi) * IPV4_MAX_BYTELEN;
+	total += IPV4_MAX_BYTELEN; /* Next-hop BGP ID */
 
 	stream_putc(s, BGP_ATTR_FLAG_OPTIONAL | BGP_ATTR_FLAG_TRANS);
 	stream_putc(s, BGP_ATTR_NHC);
@@ -4654,14 +4670,44 @@ static void bgp_packet_nhc(struct stream *s, struct peer *peer, afi_t afi, safi_
 	/* Put TLVs */
 
 	/* Begin NNHN TLV */
-	stream_putw(s, BGP_ATTR_NHC_TLV_NNHN);
-	stream_putw(s, total);
-	stream_put_ipv4(s, bpi->peer->remote_id.s_addr);
+	/*
+	 * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+	 * |    Characteristic Code = 2    |Characteristic Length(variable)|
+	 * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+	 * |                    Next-hop BGP ID                            |
+	 * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+	 * |               Next-next-hop BGP IDs (variable)                |
+	 * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+	 */
+	if (bgp_path_info_mpath_count(bpi) > 1) {
+		if (bgp_debug_update(peer, NULL, NULL, 1))
+			zlog_debug("%pBP: Sending NHC TLV (%d) for %pFX", peer,
+				   BGP_ATTR_NHC_TLV_NNHN, prefix);
+		stream_putw(s, BGP_ATTR_NHC_TLV_NNHN);
+		stream_putw(s, total);
+		stream_put_ipv4(s, bpi->peer->local_id.s_addr);
+		stream_put_ipv4(s, bpi->peer->remote_id.s_addr);
 
-	for (exists = bgp_path_info_mpath_first(bpi); exists;
-	     exists = bgp_path_info_mpath_next(exists))
-		stream_put_ipv4(s, exists->peer->remote_id.s_addr);
+		for (exists = bgp_path_info_mpath_first(bpi); exists;
+		     exists = bgp_path_info_mpath_next(exists))
+			stream_put_ipv4(s, exists->peer->remote_id.s_addr);
+	}
 	/* End NNHN TLV */
+
+	/* Other TLVs */
+	if (nhc) {
+		struct bgp_nhc_tlv *tlv = NULL;
+
+		for (tlv = nhc->tlvs; tlv; tlv = tlv->next) {
+			if (bgp_debug_update(peer, NULL, NULL, 1))
+				zlog_debug("%pBP: Sending NHC TLV (%u) for %pFX", peer, tlv->code,
+					   prefix);
+			stream_putw(s, tlv->code);
+			stream_putw(s, tlv->length);
+			stream_put(s, tlv->value, tlv->length);
+		}
+	}
+	/* Other TLVs */
 
 	stream_putc_at(s, sizep, (stream_get_endp(s) - sizep) - 1);
 }
@@ -5824,7 +5870,7 @@ enum bgp_attr_parse_ret bgp_attr_ignore(struct peer *peer, uint8_t type)
 	 * bgp_update_receive().
 	 */
 	if (withdraw)
-		return BGP_ATTR_PARSE_WITHDRAW;
+		return BGP_ATTR_PARSE_WITHDRAW_IGNORE;
 
 	peer->stat_pfx_discard++;
 	return BGP_ATTR_PARSE_PROCEED;

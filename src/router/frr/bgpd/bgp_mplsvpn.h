@@ -34,8 +34,6 @@
 extern void bgp_mplsvpn_init(void);
 extern void bgp_mplsvpn_path_nh_label_unlink(struct bgp_path_info *pi);
 extern int bgp_nlri_parse_vpn(struct peer *, struct attr *, struct bgp_nlri *);
-extern uint32_t decode_label(mpls_label_t *);
-extern void encode_label(mpls_label_t, mpls_label_t *);
 
 extern int argv_find_and_parse_vpnvx(struct cmd_token **argv, int argc,
 				     int *index, afi_t *afi);
@@ -188,6 +186,15 @@ static inline int vpn_leak_to_vpn_active(struct bgp *bgp_vrf, afi_t afi,
 			 BGP_VPN_POLICY_TOVPN_LABEL_MANUAL_REG);
 	}
 
+	/* Is there an export SID that isn't allocted yet? */
+	if ((CHECK_FLAG(bgp_vrf->vpn_policy[afi].flags, BGP_VPN_POLICY_TOVPN_SID_AUTO) ||
+	     CHECK_FLAG(bgp_vrf->vpn_policy[afi].flags, BGP_VPN_POLICY_TOVPN_SID_EXPLICIT) ||
+	     bgp_vrf->vpn_policy[afi].tovpn_sid_index) &&
+	    !bgp_vrf->vpn_policy[afi].tovpn_sid) {
+		if (pmsg)
+			*pmsg = "SID could not be allocated";
+		return 0;
+	}
 	return 1;
 }
 
@@ -279,13 +286,15 @@ static inline void vpn_leak_postchange(enum vpn_policy_direction direction,
 
 		if (bgp_vrf->vpn_policy[afi].tovpn_sid_index == 0 &&
 		    !CHECK_FLAG(bgp_vrf->vpn_policy[afi].flags, BGP_VPN_POLICY_TOVPN_SID_AUTO) &&
+		    !CHECK_FLAG(bgp_vrf->vpn_policy[afi].flags, BGP_VPN_POLICY_TOVPN_SID_EXPLICIT) &&
 		    bgp_vrf->tovpn_sid_index == 0 &&
 		    !CHECK_FLAG(bgp_vrf->vrf_flags, BGP_VRF_TOVPN_SID_AUTO) &&
 		    !CHECK_FLAG(bgp_vrf->vrf_flags, BGP_VRF_TOVPN_SID_EXPLICIT))
 			delete_vrf_tovpn_sid(bgp_vpn, bgp_vrf, afi);
 
 		if (CHECK_FLAG(bgp_vrf->vrf_flags, BGP_VRF_TOVPN_SID_EXPLICIT) ||
-		    (!bgp_vrf->vpn_policy[afi].tovpn_sid && !bgp_vrf->tovpn_sid))
+		    (!bgp_vrf->vpn_policy[afi].tovpn_sid && !bgp_vrf->tovpn_sid) ||
+		    CHECK_FLAG(bgp_vrf->vpn_policy[afi].flags, BGP_VPN_POLICY_TOVPN_SID_EXPLICIT))
 			ensure_vrf_tovpn_sid(bgp_vpn, bgp_vrf, afi);
 
 		if ((!bgp_vrf->vpn_policy[afi].tovpn_sid &&
@@ -354,7 +363,7 @@ static inline bool is_pi_srv6_valid(struct bgp_path_info *pi, struct bgp *bgp_ne
 				    safi_t safi)
 {
 	if (!pi->attr->srv6_l3vpn && !pi->attr->srv6_vpn)
-		return false;
+		return !bgp_nexthop->srv6_only;
 
 	/* imported paths from VPN: srv6 enabled and nht reachability
 	 * are enough to know if that path is valid
@@ -369,7 +378,8 @@ static inline bool is_pi_srv6_valid(struct bgp_path_info *pi, struct bgp *bgp_ne
 	    !CHECK_FLAG(bgp_nexthop->vrf_flags, BGP_VRF_TOVPN_SID_AUTO) &&
 	    !CHECK_FLAG(bgp_nexthop->vrf_flags, BGP_VRF_TOVPN_SID_EXPLICIT) &&
 	    bgp_nexthop->vpn_policy[afi].tovpn_sid_index == 0 &&
-	    !CHECK_FLAG(bgp_nexthop->vpn_policy[afi].flags, BGP_VPN_POLICY_TOVPN_SID_AUTO))
+	    !CHECK_FLAG(bgp_nexthop->vpn_policy[afi].flags, BGP_VPN_POLICY_TOVPN_SID_AUTO) &&
+	    !CHECK_FLAG(bgp_nexthop->vpn_policy[afi].flags, BGP_VPN_POLICY_TOVPN_SID_EXPLICIT))
 		return false;
 
 	return true;

@@ -28,7 +28,6 @@
 #include "zebra/zebra_router.h"
 #include "zebra/redistribute.h"
 #include "zebra/debug.h"
-#include "zebra/irdp.h"
 #include "zebra/zebra_ptm.h"
 #include "zebra/rt_netlink.h"
 #include "zebra/if_netlink.h"
@@ -467,9 +466,6 @@ void if_addr_wakeup(struct interface *ifp)
 					 * or during runtime when the interface
 					 * is added to the kernel)
 					 *
-					 * XXX: IRDP code is calling here via
-					 * if_add_update - this seems
-					 * somewhat weird.
 					 * XXX: RUNNING is not a settable flag
 					 * on any system
 					 * I (paulj) am aware of.
@@ -1469,14 +1465,14 @@ static void interface_vrf_change(enum dplane_op_e op, ifindex_t ifindex,
 				flog_err(EC_ZEBRA_VRF_NOT_FOUND,
 					 "VRF %s id %u does not exist", name,
 					 ifindex);
-				exit(-1);
+				frr_exit_with_buffer_flush(-1);
 			}
 
 			if (vrf && strcmp(name, vrf->name)) {
 				flog_err(EC_ZEBRA_VRF_MISCONFIGURED,
 					 "VRF %s id %u table id overlaps existing vrf %s(%d), misconfiguration exiting",
 					 name, ifindex, vrf->name, vrf->vrf_id);
-				exit(-1);
+				frr_exit_with_buffer_flush(-1);
 			}
 		}
 
@@ -2088,9 +2084,10 @@ static void zebra_if_dplane_ifp_handling(struct zebra_dplane_ctx *ctx)
 						       rc_bitfield);
 
 			if (if_is_no_ptm_operative(ifp)) {
-				bool is_up = if_is_operative(ifp);
 
 				ifp->flags = flags;
+				bool is_up = if_is_operative(ifp);
+
 				if (!if_is_no_ptm_operative(ifp) ||
 				    CHECK_FLAG(zif->flags,
 					       ZIF_FLAG_PROTODOWN)) {
@@ -2111,7 +2108,7 @@ static void zebra_if_dplane_ifp_handling(struct zebra_dplane_ctx *ctx)
 						zlog_debug(
 							"Intf %s(%u) PTM up, notifying clients",
 							name, ifp->ifindex);
-					if_up(ifp, !is_up);
+					if_up(ifp, is_up);
 
 					/*
 					 * Update EVPN VNI when SVI MAC change
@@ -2669,6 +2666,8 @@ static void if_dump_vty(struct vty *vty, struct interface *ifp)
 	vty_out(vty, "  Multicast config is %s\n", if_zebra_data_state(zebra_if->multicast));
 
 	vty_out(vty, "  Shutdown config is %s\n", if_zebra_data_state(zebra_if->shutdown));
+	if (CHECK_FLAG(zebra_if->rtadv.ra_configured, BGP_RA_CONFIGURED))
+		vty_out(vty, "  BGP has configured RA\n");
 
 	/* Hardware address. */
 	vty_out(vty, "  Type: %s\n", if_link_type_str(ifp->ll_type));
@@ -3020,6 +3019,8 @@ static void if_dump_vty_json(struct vty *vty, struct interface *ifp,
 	json_object_boolean_add(json_if, "linkDownV6", zebra_if->linkdownv6);
 	json_object_boolean_add(json_if, "mcForwardingV4", zebra_if->v4mcast_on);
 	json_object_boolean_add(json_if, "mcForwardingV6", zebra_if->v6mcast_on);
+	json_object_boolean_add(json_if, "bgpRAConfigured",
+				CHECK_FLAG(zebra_if->rtadv.ra_configured, BGP_RA_CONFIGURED));
 
 	json_object_string_add(json_if, "multicastConfig", if_zebra_data_state(zebra_if->multicast));
 

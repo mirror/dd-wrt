@@ -22,8 +22,8 @@
 #include "ospf6_route.h"
 #include "ospf6_lsa.h"
 #include "ospf6_lsdb.h"
+#include "ospf6_abr.h"
 #include "ospf6_asbr.h"
-#include "ospf6_nssa.h"
 #include "ospf6_zebra.h"
 #include "ospf6d.h"
 #include "ospf6_area.h"
@@ -163,7 +163,7 @@ static void ospf6_zebra_import_check_update(struct vrf *vrf,
 		return;
 
 	ospf6->nssa_default_import_check.status = !!nhr->nexthop_num;
-	ospf6_abr_nssa_type_7_defaults(ospf6);
+	ospf6_schedule_abr_task(ospf6);
 }
 
 static int ospf6_zebra_if_address_update_add(ZAPI_CALLBACK_ARGS)
@@ -451,7 +451,7 @@ static void ospf6_zebra_route_update(int type, struct ospf6_route *request,
 
 	dest = &request->prefix;
 
-	memset(&api, 0, sizeof(api));
+	zapi_route_init(&api);
 	api.vrf_id = ospf6->vrf_id;
 	api.type = ZEBRA_ROUTE_OSPF6;
 	api.safi = SAFI_UNICAST;
@@ -545,7 +545,7 @@ void ospf6_zebra_add_discard(struct ospf6_route *request, struct ospf6 *ospf6)
 	}
 
 	if (!CHECK_FLAG(request->flag, OSPF6_ROUTE_BLACKHOLE_ADDED)) {
-		memset(&api, 0, sizeof(api));
+		zapi_route_init(&api);
 		api.vrf_id = ospf6->vrf_id;
 		api.type = ZEBRA_ROUTE_OSPF6;
 		api.safi = SAFI_UNICAST;
@@ -582,7 +582,7 @@ void ospf6_zebra_delete_discard(struct ospf6_route *request,
 	}
 
 	if (CHECK_FLAG(request->flag, OSPF6_ROUTE_BLACKHOLE_ADDED)) {
-		memset(&api, 0, sizeof(api));
+		zapi_route_init(&api);
 		api.vrf_id = ospf6->vrf_id;
 		api.type = ZEBRA_ROUTE_OSPF6;
 		api.safi = SAFI_UNICAST;

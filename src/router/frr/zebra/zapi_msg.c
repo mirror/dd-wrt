@@ -517,8 +517,9 @@ int zsend_redistribute_route(int cmd, struct zserv *client, const struct route_n
 	uint16_t count = 0;
 	afi_t afi;
 
+	zapi_route_init(&api);
 	srcdest_rnode_prefixes(rn, &p, &src_p);
-	memset(&api, 0, sizeof(api));
+
 	api.vrf_id = re->vrf_id;
 	api.type = re->type;
 	api.safi = SAFI_UNICAST;
@@ -563,6 +564,8 @@ int zsend_redistribute_route(int cmd, struct zserv *client, const struct route_n
 			continue;
 
 		api_nh = &api.nexthops[count];
+		zapi_nexthop_init(api_nh);
+
 		api_nh->vrf_id = nexthop->vrf_id;
 		api_nh->type = nexthop->type;
 		api_nh->weight = nexthop->weight;
@@ -650,7 +653,7 @@ static int zsend_nexthop_lookup(struct zserv *client, struct ipaddr *addr, struc
 	struct nexthop *nexthop;
 
 	/* Get output stream. */
-	s = stream_new(ZEBRA_SMALL_PACKET_SIZE);
+	s = stream_new(ZEBRA_SMALL_PACKET_SIZE + ZAPI_MESSAGE_OPAQUE_LENGTH);
 	stream_reset(s);
 
 	/* Fill in result. */
@@ -663,6 +666,12 @@ static int zsend_nexthop_lookup(struct zserv *client, struct ipaddr *addr, struc
 		stream_putc(s, re->distance);
 		stream_putl(s, re->metric);
 		stream_putw(s, rn->p.prefixlen);
+		stream_putl(s, re->type);
+		if (re->opaque && re->opaque->length > 0) {
+			stream_putl(s, re->opaque->length);
+			stream_put(s, re->opaque->data, re->opaque->length);
+		} else
+			stream_putl(s, 0);
 
 		num = 0;
 		/* remember position for nexthop_num */
@@ -682,6 +691,8 @@ static int zsend_nexthop_lookup(struct zserv *client, struct ipaddr *addr, struc
 		stream_putl(s, 0); /* metric */
 		stream_putw(s, 0); /* prefix len */
 		stream_putw(s, 0); /* nexthop_num */
+		stream_putl(s, 0); /* route type */
+		stream_putl(s, 0); /* opaque data length */
 	}
 
 	stream_putw_at(s, 0, stream_get_endp(s));
@@ -1590,17 +1601,15 @@ stream_failure:
 bool zserv_nexthop_num_warn(const char *caller, const struct prefix *p,
 			    const unsigned int nexthop_num)
 {
-	if (nexthop_num > zrouter.multipath_num) {
+	if (nexthop_num > zrouter.zav.multipath_num) {
 		char buff[PREFIX2STR_BUFFER];
 
 		if (p)
 			prefix2str(p, buff, sizeof(buff));
 
-		flog_warn(
-			EC_ZEBRA_MORE_NH_THAN_MULTIPATH,
-			"%s: Prefix %s has %d nexthops, but we can only use the first %d",
-			caller, (p ? buff : "(NULL)"), nexthop_num,
-			zrouter.multipath_num);
+		flog_warn(EC_ZEBRA_MORE_NH_THAN_MULTIPATH,
+			  "%s: Prefix %s has %d nexthops, but we can only use the first %d",
+			  caller, (p ? buff : "(NULL)"), nexthop_num, zrouter.zav.multipath_num);
 		return true;
 	}
 
@@ -2420,9 +2429,9 @@ static void zsend_capabilities(struct zserv *client, struct zebra_vrf *zvrf)
 	zclient_create_header(s, ZEBRA_CAPABILITIES, zvrf->vrf->vrf_id);
 	stream_putl(s, vrf_get_backend());
 	stream_putc(s, mpls_enabled);
-	stream_putl(s, zrouter.multipath_num);
+	stream_putl(s, zrouter.zav.multipath_num);
 	stream_putc(s, zebra_mlag_get_role());
-	stream_putc(s, zrouter.v6_with_v4_nexthop);
+	stream_putc(s, zrouter.zav.v6_with_v4_nexthop);
 	stream_putc(s, zrouter.graceful_restart);
 	stream_putw_at(s, 0, stream_get_endp(s));
 	zserv_send_message(client, s);
@@ -3068,6 +3077,7 @@ static void zread_srv6_manager_get_srv6_sid(struct zserv *client,
 	uint16_t len;
 	struct zebra_srv6_sid *sid = NULL;
 	uint8_t flags;
+	bool is_localonly = false;
 
 	/* Get input stream */
 	s = msg;
@@ -3083,9 +3093,12 @@ static void zread_srv6_manager_get_srv6_sid(struct zserv *client,
 		STREAM_GETW(s, len);
 		STREAM_GET(locator, s, len);
 	}
+	if (CHECK_FLAG(flags, ZAPI_SRV6_MANAGER_SID_FLAG_IS_LOCALONLY))
+		is_localonly = true;
+
 
 	/* Call hook to get a SID using wrapper */
-	srv6_manager_get_sid_call(&sid, client, &ctx, sid_value_ptr, locator);
+	srv6_manager_get_sid_call(&sid, client, &ctx, sid_value_ptr, locator, is_localonly);
 
 stream_failure:
 	return;
@@ -3102,15 +3115,33 @@ static void zread_srv6_manager_release_srv6_sid(struct zserv *client,
 {
 	struct stream *s;
 	struct srv6_sid_ctx ctx = {};
+	char locator[SRV6_LOCNAME_SIZE] = { 0 };
+	uint16_t len;
+	uint8_t flags;
+	bool is_localonly = false;
 
 	/* Get input stream */
 	s = msg;
 
 	/* Get data */
 	STREAM_GET(&ctx, s, sizeof(struct srv6_sid_ctx));
+	STREAM_GETC(s, flags);
+	if (CHECK_FLAG(flags, ZAPI_SRV6_MANAGER_SID_FLAG_HAS_LOCATOR)) {
+		STREAM_GETW(s, len);
+
+		if (len > SRV6_LOCNAME_SIZE) {
+			zlog_warn("Received locator name length (%u) exceeds maximum length (%u)",
+				  len, SRV6_LOCNAME_SIZE);
+			goto stream_failure;
+		}
+
+		STREAM_GET(locator, s, len);
+	}
+	if (CHECK_FLAG(flags, ZAPI_SRV6_MANAGER_SID_FLAG_IS_LOCALONLY))
+		is_localonly = true;
 
 	/* Call hook to release a SID using wrapper */
-	srv6_manager_release_sid_call(client, &ctx);
+	srv6_manager_release_sid_call(client, &ctx, locator, is_localonly);
 
 stream_failure:
 	return;

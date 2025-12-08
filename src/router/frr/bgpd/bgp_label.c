@@ -407,7 +407,7 @@ void bgp_reg_dereg_for_label(struct bgp_dest *dest, struct bgp_path_info *pi,
 		}
 	} else {
 		UNSET_FLAG(dest->flags, BGP_NODE_LABEL_REQUESTED);
-		bgp_lp_release(LP_TYPE_BGP_LU, dest, label);
+		bgp_lu_lp_release(dest, label);
 	}
 
 	bgp_send_fec_register_label_msg(
@@ -596,6 +596,32 @@ int bgp_nlri_parse_label(struct peer *peer, struct attr *attr,
 	return BGP_NLRI_PARSE_OK;
 }
 
+uint32_t decode_label(mpls_label_t *label_pnt)
+{
+	uint32_t l;
+	uint8_t *pnt = (uint8_t *)label_pnt;
+
+	l = ((uint32_t)*pnt++ << 12);
+	l |= (uint32_t)*pnt++ << 4;
+	l |= (uint32_t)((*pnt & 0xf0) >> 4);
+	return l;
+}
+
+void encode_label(mpls_label_t label, mpls_label_t *label_pnt)
+{
+	uint8_t *pnt = (uint8_t *)label_pnt;
+
+	if (pnt == NULL)
+		return;
+	if (label == BGP_PREVENT_VRF_2_VRF_LEAK) {
+		*label_pnt = label;
+		return;
+	}
+	*pnt++ = (label >> 12) & 0xff;
+	*pnt++ = (label >> 4) & 0xff;
+	*pnt++ = ((label << 4) + 1) & 0xff; /* S=1 */
+}
+
 bool bgp_labels_same(const mpls_label_t *tbl_a, const uint8_t num_labels_a,
 		     const mpls_label_t *tbl_b, const uint8_t num_labels_b)
 {
@@ -611,4 +637,13 @@ bool bgp_labels_same(const mpls_label_t *tbl_a, const uint8_t num_labels_a,
 			return false;
 	}
 	return true;
+}
+
+bool bgp_labels_is_implicit_null(struct bgp_path_info *pi)
+{
+	if (BGP_PATH_INFO_NUM_LABELS(pi) != 1)
+		return false;
+	if (decode_label(&pi->extra->labels->label[0]) == MPLS_LABEL_IMPLICIT_NULL)
+		return true;
+	return false;
 }

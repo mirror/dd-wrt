@@ -4786,6 +4786,10 @@ void zebra_vxlan_remote_vtep_add(vrf_id_t vrf_id, vni_t vni,
 
 	zvtep = zebra_evpn_vtep_find(zevpn, &vtep_ip);
 	if (zvtep) {
+		if (IS_ZEBRA_DEBUG_KERNEL)
+			zlog_debug("%s: VTEP %pI4 already exists for VNI %u flood_control %d (received flood_control %d)",
+				   __func__, &vtep_ip, vni, zvtep->flood_control, flood_control);
+
 		/* If the remote VTEP already exists check if
 		 * the flood mode has changed
 		 */
@@ -4800,6 +4804,10 @@ void zebra_vxlan_remote_vtep_add(vrf_id_t vrf_id, vni_t vni,
 			zebra_evpn_vtep_install(zevpn, zvtep);
 		}
 	} else {
+		if (IS_ZEBRA_DEBUG_KERNEL)
+			zlog_debug("%s: VTEP %pI4 does not exist for VNI %u flood_control %d, adding it",
+				   __func__, &vtep_ip, vni, flood_control);
+
 		zvtep = zebra_evpn_vtep_add(zevpn, &vtep_ip, flood_control);
 		if (zvtep)
 			zebra_evpn_vtep_install(zevpn, zvtep);
@@ -5336,7 +5344,9 @@ int zebra_vxlan_vrf_delete(struct zebra_vrf *zvrf)
 void zebra_vxlan_flood_control(ZAPI_HANDLER_ARGS)
 {
 	struct stream *s;
+	vni_t vni = 0;
 	enum vxlan_flood_control flood_ctrl;
+	void *args[2];
 
 	if (!EVPN_ENABLED(zvrf)) {
 		zlog_err("EVPN flood control for non-EVPN VRF %u",
@@ -5346,21 +5356,28 @@ void zebra_vxlan_flood_control(ZAPI_HANDLER_ARGS)
 
 	s = msg;
 	STREAM_GETC(s, flood_ctrl);
+	STREAM_GETL(s, vni);
 
-	if (IS_ZEBRA_DEBUG_VXLAN)
-		zlog_debug("EVPN flood control %u, currently %u",
-			   flood_ctrl, zvrf->vxlan_flood_ctrl);
-
-	if (zvrf->vxlan_flood_ctrl == flood_ctrl)
-		return;
+	if (IS_ZEBRA_DEBUG_VXLAN) {
+		if (vni == VNI_MAX)
+			zlog_debug("EVPN flood control %u, currently %u", flood_ctrl,
+				   zvrf->vxlan_flood_ctrl);
+		else
+			zlog_debug("EVPN flood control %u for VNI %u, currently %u", flood_ctrl,
+				   vni, zvrf->vxlan_flood_ctrl);
+	}
 
 	zvrf->vxlan_flood_ctrl = flood_ctrl;
+
+	args[0] = &vni;
+	args[1] = zvrf;
 
 	/* Install or uninstall flood entries corresponding to
 	 * remote VTEPs.
 	 */
-	hash_iterate(zvrf->evpn_table, zebra_evpn_handle_flooding_remote_vteps,
-		     zvrf);
+	hash_iterate(zvrf->evpn_table,
+		     (void (*)(struct hash_bucket *, void *))zebra_evpn_handle_flooding_remote_vteps,
+		     args);
 
 stream_failure:
 	return;
@@ -5889,7 +5906,7 @@ static int zebra_vxlan_sg_send(struct zebra_vrf *zvrf,
 	 * There is currently no support for IPv6 VTEPs with PIM.
 	 */
 	stream_put(s, &sg->src.ipaddr_v4, IPV4_MAX_BYTELEN);
-	stream_put(s, &sg->grp.s_addr, IPV4_MAX_BYTELEN);
+	stream_put(s, &sg->grp.ipaddr_v4, IPV4_MAX_BYTELEN);
 
 	/* Write packet size. */
 	stream_putw_at(s, 0, stream_get_endp(s));
@@ -5915,9 +5932,9 @@ static unsigned int zebra_vxlan_sg_hash_key_make(const void *p)
 
 	if (IS_IPADDR_V4(&vxlan_sg->sg.src)) {
 		return (jhash_2words(vxlan_sg->sg.src.ipaddr_v4.s_addr,
-				     vxlan_sg->sg.grp.s_addr, 0));
+				     vxlan_sg->sg.grp.ipaddr_v4.s_addr, 0));
 	} else {
-		hash1 = jhash_1word(vxlan_sg->sg.grp.s_addr, 0);
+		hash1 = jhash_1word(vxlan_sg->sg.grp.ipaddr_v4.s_addr, 0);
 		return jhash2(vxlan_sg->sg.src.ipaddr_v6.s6_addr32,
 			      array_size(vxlan_sg->sg.src.ipaddr_v6.s6_addr32),
 			      hash1);
@@ -5930,7 +5947,7 @@ static bool zebra_vxlan_sg_hash_eq(const void *p1, const void *p2)
 	const struct zebra_vxlan_sg *sg2 = p2;
 
 	return (ipaddr_is_same(&sg1->sg.src, &sg2->sg.src) &&
-		(sg1->sg.grp.s_addr == sg2->sg.grp.s_addr));
+		(sg1->sg.grp.ipaddr_v4.s_addr == sg2->sg.grp.ipaddr_v4.s_addr));
 }
 
 static struct zebra_vxlan_sg *zebra_vxlan_sg_new(struct zebra_vrf *zvrf,
@@ -5979,7 +5996,7 @@ static struct zebra_vxlan_sg *zebra_vxlan_sg_add(struct zebra_vrf *zvrf,
 	 */
 	if (!ipaddr_is_zero(&sg->src)) {
 		memset(&sip, 0, sizeof(sip));
-		parent = zebra_vxlan_sg_do_ref(zvrf, &sip, sg->grp);
+		parent = zebra_vxlan_sg_do_ref(zvrf, &sip, sg->grp.ipaddr_v4);
 		if (!parent)
 			return NULL;
 	}
@@ -6004,7 +6021,7 @@ static void zebra_vxlan_sg_del(struct zebra_vxlan_sg *vxlan_sg)
 	 */
 	if (!ipaddr_is_zero(&vxlan_sg->sg.src)) {
 		memset(&sip, 0, sizeof(sip));
-		zebra_vxlan_sg_do_deref(zvrf, &sip, vxlan_sg->sg.grp);
+		zebra_vxlan_sg_do_deref(zvrf, &sip, vxlan_sg->sg.grp.ipaddr_v4);
 	}
 
 	zebra_vxlan_sg_send(zvrf, &vxlan_sg->sg, vxlan_sg->sg_str,
@@ -6023,12 +6040,12 @@ static void zebra_vxlan_sg_do_deref(struct zebra_vrf *zvrf,
 				    const struct in_addr mcast_grp)
 {
 	struct zebra_vxlan_sg *vxlan_sg;
-	struct prefix_sg sg;
+	struct prefix_sg sg = { 0 };
 
 	sg.family = AF_INET;
 	sg.prefixlen = IPV4_MAX_BYTELEN;
 	sg.src = *sip;
-	sg.grp = mcast_grp;
+	sg.grp.ipaddr_v4 = mcast_grp;
 	vxlan_sg = zebra_vxlan_sg_find(zvrf, &sg);
 	if (!vxlan_sg)
 		return;
@@ -6045,12 +6062,12 @@ zebra_vxlan_sg_do_ref(struct zebra_vrf *zvrf, const struct ipaddr *sip,
 		      const struct in_addr mcast_grp)
 {
 	struct zebra_vxlan_sg *vxlan_sg;
-	struct prefix_sg sg;
+	struct prefix_sg sg = { 0 };
 
 	sg.family = AF_INET;
 	sg.prefixlen = IPV4_MAX_BYTELEN;
 	sg.src = *sip;
-	sg.grp = mcast_grp;
+	sg.grp.ipaddr_v4 = mcast_grp;
 	vxlan_sg = zebra_vxlan_sg_add(zvrf, &sg);
 	if (vxlan_sg)
 		++vxlan_sg->ref_cnt;

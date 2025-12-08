@@ -757,8 +757,8 @@ struct event_loop *frr_init(void)
 	snprintf(pidfile_default, sizeof(pidfile_default), "%s/%s%s.pid",
 		 frr_runstatedir, di->name, p_instance);
 #ifdef HAVE_SQLITE3
-	snprintf(dbfile_default, sizeof(dbfile_default), "%s/%s%s%s.db",
-		 frr_libstatedir, p_pathspace, di->name, p_instance);
+	snprintf(dbfile_default, sizeof(dbfile_default), "%s/%s%s.db", frr_libstatedir, di->name,
+		 p_instance);
 #endif
 
 	zprivs_preinit(di->privs);
@@ -821,8 +821,10 @@ struct event_loop *frr_init(void)
 		cmd_init(-1);
 	else {
 		cmd_init(1);
-		if (!(di->flags & FRR_MGMTD_BACKEND))
+		if (!(di->flags & FRR_MGMTD_BACKEND)) {
 			host_cli_init();
+			log_cli_init();
+		}
 	}
 
 	vty_init(master, di->log_always);
@@ -1298,6 +1300,7 @@ void frr_fini(void)
 	frrmod_terminate();
 
 	log_memstats(di->name, debug_memstats_at_exit);
+	zlog_tmpdir_fini();
 }
 
 struct json_object *frr_daemon_state_load(void)
@@ -1496,3 +1499,10 @@ bool frr_is_daemon(void)
 
 	return false;
 }
+
+FRR_NORETURN void frr_exit_with_buffer_flush(int status)
+{
+	zlog_tls_buffer_flush();
+	exit(status);
+}
+

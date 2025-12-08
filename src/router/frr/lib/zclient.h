@@ -598,13 +598,6 @@ struct zapi_route {
 	struct prefix prefix;
 	struct prefix_ipv6 src_prefix;
 
-	uint16_t nexthop_num;
-	struct zapi_nexthop nexthops[MULTIPATH_NUM];
-
-	/* Support backup routes for IP FRR, TI-LFA, traffic engineering */
-	uint16_t backup_nexthop_num;
-	struct zapi_nexthop backup_nexthops[MULTIPATH_NUM];
-
 	uint32_t nhgid;
 
 	uint8_t distance;
@@ -621,6 +614,23 @@ struct zapi_route {
 
 	/* SR-TE color (used for nexthop updates only). */
 	uint32_t srte_color;
+
+	/*
+	 * Note well: this field marks the end of the part of the struct
+	 * that is memset to zero to initialize. We avoid memset of the entire
+	 * struct because that can be very expensive if we have a large ecmp
+	 * scale. We hand-init the counters associated with the large
+	 * embedded fields.
+	 * If you add an attribute before this one, it will be memset;
+	 * if you add a very large field, everyone will suffer.
+	 */
+
+	uint16_t nexthop_num;
+	struct zapi_nexthop nexthops[MULTIPATH_NUM];
+
+	/* Support backup routes for IP FRR, TI-LFA, traffic engineering */
+	uint16_t backup_nexthop_num;
+	struct zapi_nexthop backup_nexthops[MULTIPATH_NUM];
 
 #define ZAPI_MESSAGE_OPAQUE_LENGTH 1024
 	struct {
@@ -972,10 +982,11 @@ extern enum zclient_send_status
 zclient_send_vrf_label(struct zclient *zclient, vrf_id_t vrf_id, afi_t afi,
 		       mpls_label_t label, enum lsp_types_t ltype);
 
-extern enum zclient_send_status
-zclient_send_localsid(struct zclient *zclient, const struct in6_addr *sid,
-		      vrf_id_t vrf_id, enum seg6local_action_t action,
-		      const struct seg6local_context *context);
+extern enum zclient_send_status zclient_send_localsid(struct zclient *zclient, uint8_t cmd,
+						      const struct in6_addr *sid,
+						      uint16_t prefixlen, ifindex_t oif,
+						      enum seg6local_action_t action,
+						      const struct seg6local_context *context);
 
 extern void zclient_send_reg_requests(struct zclient *, vrf_id_t);
 extern void zclient_send_dereg_requests(struct zclient *, vrf_id_t);
@@ -1114,6 +1125,7 @@ extern int tm_release_table_chunk(struct zclient *zclient, uint32_t start,
 /* Zebra SRv6 Manager flags */
 #define ZAPI_SRV6_MANAGER_SID_FLAG_HAS_SID_VALUE 0x01
 #define ZAPI_SRV6_MANAGER_SID_FLAG_HAS_LOCATOR	 0x02
+#define ZAPI_SRV6_MANAGER_SID_FLAG_IS_LOCALONLY	 0x04
 
 extern int srv6_manager_get_locator_chunk(struct zclient *zclient,
 					  const char *locator_name);
@@ -1121,12 +1133,11 @@ extern int srv6_manager_release_locator_chunk(struct zclient *zclient,
 					      const char *locator_name);
 extern int srv6_manager_get_locator(struct zclient *zclient,
 				    const char *locator_name);
-extern int srv6_manager_get_sid(struct zclient *zclient,
-				const struct srv6_sid_ctx *ctx,
-				struct in6_addr *sid_value,
-				const char *locator_name, uint32_t *sid_func);
-extern int srv6_manager_release_sid(struct zclient *zclient,
-				    const struct srv6_sid_ctx *ctx);
+extern int srv6_manager_get_sid(struct zclient *zclient, const struct srv6_sid_ctx *ctx,
+				struct in6_addr *sid_value, const char *locator_name,
+				uint32_t *sid_func, bool is_localonly);
+extern int srv6_manager_release_sid(struct zclient *zclient, const struct srv6_sid_ctx *ctx,
+				    const char *locator_name, bool is_localonly);
 
 extern enum zclient_send_status zebra_send_sr_policy(struct zclient *zclient,
 						     int cmd,
@@ -1165,6 +1176,13 @@ zclient_send_rnh(struct zclient *zclient, int command, const struct prefix *p,
 		 vrf_id_t vrf_id);
 int zapi_nexthop_encode(struct stream *s, const struct zapi_nexthop *api_nh,
 			uint32_t api_flags, uint32_t api_message);
+
+/* Init apis for the route and nexthop: these are more efficient than
+ * blind memset, so ... use them.
+ */
+void zapi_route_init(struct zapi_route *zr);
+void zapi_nexthop_init(struct zapi_nexthop *znh);
+
 extern int zapi_route_encode(uint8_t, struct stream *, struct zapi_route *);
 extern int zapi_route_decode(struct stream *s, struct zapi_route *api);
 extern int zapi_nexthop_decode(struct stream *s, struct zapi_nexthop *api_nh,
@@ -1226,6 +1244,7 @@ static inline void zapi_route_set_blackhole(struct zapi_route *api,
 					    enum blackhole_type bh_type)
 {
 	api->nexthop_num = 1;
+	zapi_nexthop_init(&api->nexthops[0]);
 	api->nexthops[0].type = NEXTHOP_TYPE_BLACKHOLE;
 	api->nexthops[0].vrf_id = VRF_DEFAULT;
 	api->nexthops[0].bh_type = bh_type;

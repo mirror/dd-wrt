@@ -353,6 +353,13 @@ def __create_bgp_global(tgen, input_dict, router, build=False):
         elif bgp_always_compare_med == False:
             config_data.append("no bgp always-compare-med")
 
+    if "bgp_accept_as_sets" in bgp_data:
+        bgp_accept_as_sets = bgp_data["bgp_accept_as_sets"]
+        if bgp_accept_as_sets == True:
+            config_data.append("no bgp reject-as-sets")
+        elif bgp_accept_as_sets == False:
+            config_data.append("bgp reject-as-sets")
+
     logger.debug("Exiting lib API: {}".format(sys._getframe().f_code.co_name))
     return config_data
 
@@ -1254,7 +1261,7 @@ def modify_bgp_config_when_bgpd_down(tgen, topo, input_dict):
 #############################################
 # Verification APIs
 #############################################
-@retry(retry_timeout=8)
+@retry(retry_timeout=30)
 def verify_router_id(tgen, topo, input_dict, expected=True):
     """
     Running command "show ip bgp json" for DUT and reading router-id
@@ -1698,7 +1705,7 @@ def modify_as_number(tgen, topo, input_dict):
     return result
 
 
-@retry(retry_timeout=8)
+@retry(retry_timeout=30)
 def verify_as_numbers(tgen, topo, input_dict, expected=True):
     """
     This API is to verify AS numbers for given DUT by running
@@ -2509,7 +2516,7 @@ def verify_bgp_attributes(
     return True
 
 
-@retry(retry_timeout=8)
+@retry(retry_timeout=30)
 def verify_best_path_as_per_bgp_attribute(
     tgen, addr_type, router, input_dict, attribute, expected=True
 ):
@@ -2715,7 +2722,7 @@ def verify_best_path_as_per_bgp_attribute(
     return True
 
 
-@retry(retry_timeout=10)
+@retry(retry_timeout=30)
 def verify_best_path_as_per_admin_distance(
     tgen, addr_type, router, input_dict, attribute, expected=True, vrf=None
 ):
@@ -3148,7 +3155,7 @@ def verify_bgp_rib(
     return True
 
 
-@retry(retry_timeout=10)
+@retry(retry_timeout=30)
 def verify_graceful_restart(
     tgen, topo, addr_type, input_dict, dut, peer, expected=True
 ):
@@ -3403,42 +3410,65 @@ def verify_graceful_restart(
                         rmode = "Helper"
                 else:
                     rmode = "Helper"
-
-            if show_bgp_graceful_json_out["localGrMode"] == lmode:
+            if (
+                show_bgp_graceful_json_out["gracefulRestartInfo"]["localGrMode"]
+                == lmode
+            ):
                 logger.info(
                     "[DUT: {}]: localGrMode : {} ".format(
-                        dut, show_bgp_graceful_json_out["localGrMode"]
+                        dut,
+                        show_bgp_graceful_json_out["gracefulRestartInfo"][
+                            "localGrMode"
+                        ],
                     )
                 )
             else:
                 errormsg = (
                     "[DUT: {}]: localGrMode is not correct"
                     " Expected: {}, Found: {}".format(
-                        dut, lmode, show_bgp_graceful_json_out["localGrMode"]
+                        dut,
+                        lmode,
+                        show_bgp_graceful_json_out["gracefulRestartInfo"][
+                            "localGrMode"
+                        ],
                     )
                 )
                 return errormsg
 
-            if show_bgp_graceful_json_out["remoteGrMode"] == rmode:
+            if (
+                show_bgp_graceful_json_out["gracefulRestartInfo"]["remoteGrMode"]
+                == rmode
+            ):
                 logger.info(
                     "[DUT: {}]: remoteGrMode : {} ".format(
-                        dut, show_bgp_graceful_json_out["remoteGrMode"]
+                        dut,
+                        show_bgp_graceful_json_out["gracefulRestartInfo"][
+                            "remoteGrMode"
+                        ],
                     )
                 )
             elif (
-                show_bgp_graceful_json_out["remoteGrMode"] == "NotApplicable"
+                show_bgp_graceful_json_out["gracefulRestartInfo"]["remoteGrMode"]
+                == "NotApplicable"
                 and rmode == "Disable"
             ):
                 logger.info(
                     "[DUT: {}]: remoteGrMode : {} ".format(
-                        dut, show_bgp_graceful_json_out["remoteGrMode"]
+                        dut,
+                        show_bgp_graceful_json_out["gracefulRestartInfo"][
+                            "remoteGrMode"
+                        ],
                     )
                 )
             else:
                 errormsg = (
                     "[DUT: {}]: remoteGrMode is not correct"
                     " Expected: {}, Found: {}".format(
-                        dut, rmode, show_bgp_graceful_json_out["remoteGrMode"]
+                        dut,
+                        rmode,
+                        show_bgp_graceful_json_out["gracefulRestartInfo"][
+                            "remoteGrMode"
+                        ],
                     )
                 )
                 return errormsg
@@ -3447,7 +3477,7 @@ def verify_graceful_restart(
     return True
 
 
-@retry(retry_timeout=10)
+@retry(retry_timeout=30)
 def verify_r_bit(tgen, topo, addr_type, input_dict, dut, peer, expected=True):
     """
     This API is to verify r_bit in the BGP gr capability advertised
@@ -3556,8 +3586,8 @@ def verify_r_bit(tgen, topo, addr_type, input_dict, dut, peer, expected=True):
                 )
                 return errormsg
 
-            if "rBit" in show_bgp_graceful_json_out:
-                if show_bgp_graceful_json_out["rBit"]:
+            if "rBit" in show_bgp_graceful_json_out["gracefulRestartInfo"]:
+                if show_bgp_graceful_json_out["gracefulRestartInfo"]["rBit"]:
                     logger.info("[DUT: {}]: Rbit true {}".format(dut, neighbor_ip))
                 else:
                     errormsg = "[DUT: {}]: Rbit false {}".format(dut, neighbor_ip)
@@ -3567,7 +3597,7 @@ def verify_r_bit(tgen, topo, addr_type, input_dict, dut, peer, expected=True):
     return True
 
 
-@retry(retry_timeout=10)
+@retry(retry_timeout=30)
 def verify_eor(tgen, topo, addr_type, input_dict, dut, peer, expected=True):
     """
     This API is to verify EOR
@@ -3682,7 +3712,9 @@ def verify_eor(tgen, topo, addr_type, input_dict, dut, peer, expected=True):
                 errormsg = "Address type %s is not supported" % (addr_type)
                 return errormsg
 
-            eor_json = show_bgp_graceful_json_out[afi]["endOfRibStatus"]
+            eor_json = show_bgp_graceful_json_out["gracefulRestartInfo"][afi][
+                "endOfRibStatus"
+            ]
             if "endOfRibSend" in eor_json:
                 if eor_json["endOfRibSend"]:
                     logger.info(
@@ -3729,7 +3761,7 @@ def verify_eor(tgen, topo, addr_type, input_dict, dut, peer, expected=True):
     return True
 
 
-@retry(retry_timeout=8)
+@retry(retry_timeout=30)
 def verify_f_bit(tgen, topo, addr_type, input_dict, dut, peer, expected=True):
     """
     This API is to verify f_bit in the BGP gr capability advertised
@@ -3827,9 +3859,9 @@ def verify_f_bit(tgen, topo, addr_type, input_dict, dut, peer, expected=True):
                 isjson=True,
             )
 
-            show_bgp_graceful_json_out = show_bgp_graceful_json[neighbor_ip]
+            show_bgp_graceful_nbr_json_out = show_bgp_graceful_json[neighbor_ip]
 
-            if show_bgp_graceful_json_out["neighborAddr"] == neighbor_ip:
+            if show_bgp_graceful_nbr_json_out["neighborAddr"] == neighbor_ip:
                 logger.info(
                     "[DUT: {}]: Neighbor ip matched  {}".format(dut, neighbor_ip)
                 )
@@ -3838,6 +3870,10 @@ def verify_f_bit(tgen, topo, addr_type, input_dict, dut, peer, expected=True):
                     dut, neighbor_ip
                 )
                 return errormsg
+
+            show_bgp_graceful_json_out = show_bgp_graceful_nbr_json_out[
+                "gracefulRestartInfo"
+            ]
 
             if "ipv4Unicast" in show_bgp_graceful_json_out:
                 if show_bgp_graceful_json_out["ipv4Unicast"]["fBit"]:
@@ -3870,7 +3906,7 @@ def verify_f_bit(tgen, topo, addr_type, input_dict, dut, peer, expected=True):
     return True
 
 
-@retry(retry_timeout=10)
+@retry(retry_timeout=30)
 def verify_graceful_restart_timers(tgen, topo, addr_type, input_dict, dut, peer):
     """
     This API is to verify graceful restart timers, configured and received
@@ -3975,9 +4011,9 @@ def verify_graceful_restart_timers(tgen, topo, addr_type, input_dict, dut, peer)
                         if rs_timer == "restart-time":
                             receivedTimer = value
                             if (
-                                show_bgp_graceful_json_out["timers"][
-                                    "receivedRestartTimer"
-                                ]
+                                show_bgp_graceful_json_out["gracefulRestartInfo"][
+                                    "timers"
+                                ]["receivedRestartTimer"]
                                 == receivedTimer
                             ):
                                 logger.info(
@@ -3997,7 +4033,7 @@ def verify_graceful_restart_timers(tgen, topo, addr_type, input_dict, dut, peer)
     return True
 
 
-@retry(retry_timeout=8)
+@retry(retry_timeout=30)
 def verify_gr_address_family(
     tgen, topo, addr_type, addr_family, dut, peer, expected=True
 ):
@@ -4071,7 +4107,7 @@ def verify_gr_address_family(
         return errormsg
 
     if addr_family == "ipv4Unicast":
-        if "ipv4Unicast" in show_bgp_graceful_json_out:
+        if "ipv4Unicast" in show_bgp_graceful_json_out["gracefulRestartInfo"]:
             logger.info("ipv4Unicast present for {} ".format(neighbor_ip))
             return True
         else:
@@ -4079,7 +4115,7 @@ def verify_gr_address_family(
             return errormsg
 
     elif addr_family == "ipv6Unicast":
-        if "ipv6Unicast" in show_bgp_graceful_json_out:
+        if "ipv6Unicast" in show_bgp_graceful_json_out["gracefulRestartInfo"]:
             logger.info("ipv6Unicast present for {} ".format(neighbor_ip))
             return True
         else:
@@ -4494,7 +4530,7 @@ def verify_attributes_for_evpn_routes(
     return False
 
 
-@retry(retry_timeout=10)
+@retry(retry_timeout=30)
 def verify_evpn_routes(
     tgen, topo, dut, input_dict, routeType=5, EthTag=0, next_hop=None, expected=True
 ):
@@ -4641,7 +4677,7 @@ def verify_evpn_routes(
     return False
 
 
-@retry(retry_timeout=10)
+@retry(retry_timeout=30)
 def verify_bgp_bestpath(tgen, addr_type, input_dict):
     """
     Verifies bgp next hop values in best-path output
@@ -4896,7 +4932,7 @@ def get_prefix_count_route(
             logger.error("ERROR...! Unknown dut {} in topolgy".format(dut))
 
 
-@retry(retry_timeout=5)
+@retry(retry_timeout=30)
 def verify_rib_default_route(
     tgen,
     topo,
@@ -5248,7 +5284,7 @@ def verify_rib_default_route(
         return False
 
 
-@retry(retry_timeout=5)
+@retry(retry_timeout=30)
 def verify_fib_default_route(tgen, topo, dut, routes, expected_nexthop):
     """
     API to verify the the 'Default route" in FIB
@@ -5332,7 +5368,7 @@ def verify_fib_default_route(tgen, topo, dut, routes, expected_nexthop):
         return False
 
 
-@retry(retry_timeout=5)
+@retry(retry_timeout=30)
 def verify_bgp_advertised_routes_from_neighbor(tgen, topo, dut, peer, expected_routes):
     """
     APi is verifies the the routes that are advertised from dut to peer
@@ -5468,7 +5504,7 @@ def verify_bgp_advertised_routes_from_neighbor(tgen, topo, dut, peer, expected_r
         return False
 
 
-@retry(retry_timeout=5)
+@retry(retry_timeout=30)
 def verify_bgp_received_routes_from_neighbor(tgen, topo, dut, peer, expected_routes):
     """
     API to verify the bgp received routes

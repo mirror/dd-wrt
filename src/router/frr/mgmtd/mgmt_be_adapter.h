@@ -28,6 +28,7 @@
  */
 enum mgmt_be_client_id {
 	MGMTD_BE_CLIENT_ID_TESTC, /* always first */
+	MGMTD_BE_CLIENT_ID_MGMTD, /* loopback */
 	MGMTD_BE_CLIENT_ID_ZEBRA,
 #ifdef HAVE_RIPD
 	MGMTD_BE_CLIENT_ID_RIPD,
@@ -64,6 +65,7 @@ struct mgmt_be_client_adapter {
 	 * config items has been applied onto the backend.
 	 */
 	struct nb_config_cbs cfg_chgs;
+	struct mgmt_commit_stats cfg_stats;
 
 	struct mgmt_be_adapters_item list_linkage;
 };
@@ -233,5 +235,10 @@ extern void mgmt_fe_adapter_send_notify(struct mgmt_msg_notify_data *msg,
  * Dump backend client information for a given xpath to vty.
  */
 extern void mgmt_be_show_xpath_registries(struct vty *vty, const char *xpath);
+
+/*
+ * Specials for mgmtd internally handling BE like behaviors
+ */
+extern bool mgmt_is_mgmtd_interested(const char *xpath);
 
 #endif /* _FRR_MGMTD_BE_ADAPTER_H_ */

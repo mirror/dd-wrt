@@ -339,6 +339,8 @@ void ospf6_route_zebra_copy_nexthops(struct ospf6_route *route,
 			if (i >= entries)
 				return;
 
+			zapi_nexthop_init(&nexthops[i]);
+
 			nexthops[i].vrf_id = vrf_id;
 			nexthops[i].type = nh->type;
 
@@ -1100,6 +1102,7 @@ void ospf6_route_show(struct vty *vty, struct ospf6_route *route,
 	json_object *json_route = NULL;
 	json_object *json_array_next_hops = NULL;
 	json_object *json_next_hop;
+	json_object *json_routes_array = NULL;
 	vrf_id_t vrf_id = route->ospf6->vrf_id;
 
 	monotime(&now);
@@ -1167,7 +1170,17 @@ void ospf6_route_show(struct vty *vty, struct ospf6_route *route,
 	if (use_json) {
 		json_object_object_add(json_route, "nextHops",
 				       json_array_next_hops);
-		json_object_object_add(json_routes, destination, json_route);
+
+		/* Check if we already have an array for this destination */
+		json_object_object_get_ex(json_routes, destination, &json_routes_array);
+		if (json_routes_array == NULL) {
+			/* First route for this destination, create new array */
+			json_routes_array = json_object_new_array();
+			json_object_object_add(json_routes, destination, json_routes_array);
+		}
+
+		/* Add this route to the array */
+		json_object_array_add(json_routes_array, json_route);
 	}
 }
 
@@ -1185,6 +1198,7 @@ void ospf6_route_show_detail(struct vty *vty, struct ospf6_route *route,
 	json_object *json_route = NULL;
 	json_object *json_array_next_hops = NULL;
 	json_object *json_next_hop;
+	json_object *json_routes_array = NULL;
 	vrf_id_t vrf_id = route->ospf6->vrf_id;
 
 	monotime(&now);
@@ -1355,7 +1369,17 @@ void ospf6_route_show_detail(struct vty *vty, struct ospf6_route *route,
 	if (use_json) {
 		json_object_object_add(json_route, "nextHops",
 				       json_array_next_hops);
-		json_object_object_add(json_routes, destination, json_route);
+
+		/* Check if we already have an array for this destination */
+		json_object_object_get_ex(json_routes, destination, &json_routes_array);
+		if (json_routes_array == NULL) {
+			/* First route for this destination, create new array */
+			json_routes_array = json_object_new_array();
+			json_object_object_add(json_routes, destination, json_routes_array);
+		}
+
+		/* Add this route to the array */
+		json_object_array_add(json_routes_array, json_route);
 	} else
 		vty_out(vty, "\n");
 }

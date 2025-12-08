@@ -35,6 +35,7 @@
 #include "bgpd/bgp_updgrp.h"
 #include "bgpd/bgp_advertise.h"
 #include "bgpd/bgp_addpath.h"
+#include "bgpd/bgp_nhc.h"
 
 
 /********************
@@ -910,6 +911,9 @@ void subgroup_default_originate(struct update_subgroup *subgrp, bool withdraw)
 
 	bgp = peer->bgp;
 	from = bgp->peer_self;
+
+	if (bgp_update_delay_active(peer->bgp))
+		return;
 
 	bgp_attr_default_set(&attr, bgp, BGP_ORIGIN_IGP);
 

@@ -7,7 +7,7 @@
 ##
 AC_PREREQ([2.69])
 
-AC_INIT([frr], [10.4.1], [https://github.com/frrouting/frr/issues])
+AC_INIT([frr], [10.5.0], [https://github.com/frrouting/frr/issues])
 PACKAGE_URL="https://frrouting.org/"
 AC_SUBST([PACKAGE_URL])
 PACKAGE_FULLNAME="FRRouting"
@@ -202,6 +202,13 @@ AC_ARG_WITH([moduledir], [AS_HELP_STRING([--with-moduledir=DIR], [module directo
 	moduledir="\${libdir}/frr/modules"
 ])
 AC_SUBST([moduledir], [$moduledir])
+
+AC_ARG_WITH([pkgconfigdir], [AS_HELP_STRING([--with-pkgconfigdir=DIR], [pkg-config directory (${libdir}/pkgconfig)])], [
+	pkgconfigdir="$withval"
+], [
+	pkgconfigdir="\${libdir}/pkgconfig"
+])
+AC_SUBST([pkgconfigdir], [$pkgconfigdir])
 
 AC_ARG_WITH([scriptdir], [AS_HELP_STRING([--with-scriptdir=DIR], [script directory (${sysconfdir}/frr/scripts)])], [
 	scriptdir="$withval"
@@ -837,8 +844,6 @@ AC_ARG_ENABLE([logfile_mask],
   AS_HELP_STRING([--enable-logfile-mask=ARG], [set mask for log files]))
 AC_ARG_ENABLE([realms],
   AS_HELP_STRING([--enable-realms], [enable REALMS support under Linux]))
-AC_ARG_ENABLE([irdp],
-  AS_HELP_STRING([--enable-irdp], [enable IRDP server support in zebra]))
 AC_ARG_ENABLE([capabilities],
   AS_HELP_STRING([--disable-capabilities], [disable using POSIX capabilities]))
 AC_ARG_ENABLE([gcc_ultra_verbose],
@@ -1056,6 +1061,7 @@ case "${enable_multipath}" in
 esac
 
 AC_DEFINE_UNQUOTED([MULTIPATH_NUM], [$MPATH_NUM], [Maximum number of paths for a route])
+AC_SUBST([MULTIPATH_NUM], [$MPATH_NUM])
 
 case "${with_log_timestamp_precision}" in
 [[0-9]|1[012]])
@@ -1067,11 +1073,6 @@ AC_MSG_FAILURE([Please specify a number from 0-12 for log precision ARG])
 ;;
 esac
 with_log_timestamp_precision=${with_log_timestamp_precision:-0}
-if test "${with_log_timestamp_precision}" != 0; then
-AC_SUBST([LOG_TIMESTAMP_PRECISION_CLI], ["
-log timestamp precision ${with_log_timestamp_precision}"])
-AM_SUBST_NOTMAKE([LOG_TIMESTAMP_PRECISION_CLI])
-fi
 AC_DEFINE_UNQUOTED([LOG_TIMESTAMP_PRECISION], [${with_log_timestamp_precision}], [Startup zlog timestamp precision])
 
 AC_DEFINE_UNQUOTED([VTYSH_PAGER], ["$VTYSH_PAGER"], [What pager to use])
@@ -1368,6 +1369,7 @@ dnl ---------------
 AC_CHECK_FUNCS([ \
 	strlcat strlcpy \
 	getgrouplist \
+	getloadavg \
 	openat \
 	unlinkat \
 	posix_fallocate \
@@ -1815,13 +1817,7 @@ AS_IF([test "$enable_bgpd" != "no"], [
 ])
 
 AS_IF([test "$enable_mgmtd" != "no"], [
-
   AC_DEFINE([HAVE_MGMTD], [1], [mgmtd])
-
-  # Enable MGMTD local validations
-  AS_IF([test "$enable_mgmtd_local_validations" == "yes"], [
-    AC_DEFINE([MGMTD_LOCAL_VALIDATIONS_ENABLED], [1], [Enable mgmtd local validations.])
-  ])
 ])
 
 AS_IF([test "$enable_mgmtd_test_be_client" = "yes"], [
@@ -2087,7 +2083,6 @@ dnl gRPC
 dnl ---------------
 if test "$enable_grpc" = "yes"; then
   AC_LANG_PUSH([C++])
-  AX_CXX_COMPILE_STDCXX([11], [ext])
   PKG_CHECK_MODULES([GRPC], [grpc >= 6.0.0 grpc++ >= 1.16.1 protobuf >= 3.6.1 ], [
     AC_CHECK_PROGS([PROTOC], [protoc], [/bin/false])
     if test "$PROTOC" = "/bin/false"; then
@@ -2305,32 +2300,6 @@ AC_CHECK_MEMBERS([struct sockaddr.sa_len,
 	struct sockaddr_dl.sdl_len,
 	struct nd_opt_adv_interval.nd_opt_ai_type],
 	[], [], FRR_INCLUDES)
-
-dnl ---------------------------
-dnl IRDP/pktinfo/icmphdr checks
-dnl ---------------------------
-
-AC_CHECK_TYPE([struct in_pktinfo], [
-  AC_CHECK_TYPES([struct icmphdr], [
-    IRDP=true
-  ], [
-    IRDP=false
-  ], [FRR_INCLUDES])
-], [
-  IRDP=false
-], [FRR_INCLUDES])
-
-case "${enable_irdp}" in
-yes)
-  $IRDP || AC_MSG_ERROR(['IRDP requires in_pktinfo at the moment!'])
-  ;;
-no)
-  IRDP=false
-  ;;
-*)
-  IRDP=false
-  ;;
-esac
 
 
 dnl -----------------------
@@ -2724,6 +2693,7 @@ AX_SUBST_EXPANDED([frr_sysconfdir])
 AX_SUBST_EXPANDED([frr_runstatedir])
 AX_SUBST_EXPANDED([frr_libstatedir])
 AX_SUBST_EXPANDED([moduledir])
+AX_SUBST_EXPANDED([pkgconfigdir])
 AX_SUBST_EXPANDED([yangmodelsdir])
 AX_SUBST_EXPANDED([scriptdir])
 
@@ -2746,7 +2716,6 @@ AM_CONDITIONAL([ZEROMQ], [test "$ZEROMQ" = "true"])
 dnl plugins
 AM_CONDITIONAL([RPKI], [test "$RPKI" = "true"])
 AM_CONDITIONAL([SNMP], [$SNMP])
-AM_CONDITIONAL([IRDP], [$IRDP])
 AM_CONDITIONAL([FPM], [test "$enable_fpm" = "yes"])
 AM_CONDITIONAL([HAVE_PROTOBUF], [test "$enable_protobuf" != "no"])
 AM_CONDITIONAL([HAVE_PROTOBUF3], [$PROTO3])
@@ -2820,6 +2789,7 @@ AC_CONFIG_FILES([tools/frrinit.sh], [chmod +x tools/frrinit.sh])
 AC_CONFIG_FILES([tools/frrcommon.sh])
 AC_CONFIG_FILES([tools/frr.service])
 AC_CONFIG_FILES([tools/frr@.service])
+AC_CONFIG_FILES([tools/frr.pc])
 
 # dnl write out a ccls file with our compile configuration
 # dnl have to add -Wno-unused-function otherwise foobar_cmd_magic causes
@@ -2900,6 +2870,7 @@ local state file dir    : ${e_frr_libstatedir}
 run state file dir      : ${e_frr_runstatedir}
 config file directory   : ${e_frr_sysconfdir}
 module directory        : ${e_moduledir}
+pkgconfig directory     : ${e_pkgconfigdir}
 script directory        : ${e_scriptdir}
 user to run as          : ${enable_user}
 group to run as         : ${enable_group}

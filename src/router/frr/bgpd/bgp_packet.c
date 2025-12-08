@@ -171,6 +171,8 @@ static struct stream *bgp_update_packet_eor(struct peer *peer, afi_t afi,
 		zlog_debug("send End-of-RIB for %s to %s",
 			   get_afi_safi_str(afi, safi, false), peer->host);
 
+	frrtrace(4, frr_bgp, eor_send, peer->bgp->name_pretty, afi, safi, peer->host);
+
 	s = stream_new(peer->max_packet_size);
 
 	/* Make BGP update packet. */
@@ -207,12 +209,10 @@ void bgp_check_update_delay(struct bgp *bgp)
 	struct peer *peer = NULL;
 
 	if (bgp_debug_neighbor_events(peer))
-		zlog_debug("Checking update delay, T: %d R: %d I:%d E: %d",
-			   bgp->established, bgp->restarted_peers,
-			   bgp->implicit_eors, bgp->explicit_eors);
+		zlog_debug("Checking update delay, T: %d R: %d E: %d", bgp->established,
+			   bgp->restarted_peers, bgp->received_eors);
 
-	if (bgp->established
-	    <= bgp->restarted_peers + bgp->implicit_eors + bgp->explicit_eors) {
+	if (bgp->established <= bgp->restarted_peers + bgp->received_eors) {
 		/*
 		 * This is an extra sanity check to make sure we wait for all
 		 * the eligible configured peers. This check is performed if
@@ -237,10 +237,8 @@ void bgp_check_update_delay(struct bgp *bgp)
 				}
 			}
 
-		zlog_info(
-			"Update delay ended, restarted: %d, EORs implicit: %d, explicit: %d",
-			bgp->restarted_peers, bgp->implicit_eors,
-			bgp->explicit_eors);
+		zlog_info("Update delay ended, restarted: %d, EORs: %d", bgp->restarted_peers,
+			  bgp->received_eors);
 		bgp_update_delay_end(bgp);
 	}
 }
@@ -262,29 +260,6 @@ void bgp_update_restarted_peers(struct peer *peer)
 	if (peer_established(peer->connection)) {
 		peer->update_delay_over = 1;
 		peer->bgp->restarted_peers++;
-		bgp_check_update_delay(peer->bgp);
-	}
-}
-
-/*
- * Called as peer receives a keep-alive. Determines if this occurence can be
- * taken as an implicit EOR for this peer.
- * NOTE: The very first keep-alive after the Established state of a peer is
- * considered implicit EOR for the update-delay purposes
- */
-void bgp_update_implicit_eors(struct peer *peer)
-{
-	if (!bgp_update_delay_active(peer->bgp))
-		return; /* BGP update delay has ended */
-	if (peer->update_delay_over)
-		return; /* This peer has already been considered */
-
-	if (bgp_debug_neighbor_events(peer))
-		zlog_debug("Peer %s: Checking implicit EORs", peer->host);
-
-	if (peer_established(peer->connection)) {
-		peer->update_delay_over = 1;
-		peer->bgp->implicit_eors++;
 		bgp_check_update_delay(peer->bgp);
 	}
 }
@@ -319,7 +294,7 @@ static void bgp_update_explicit_eors(struct peer *peer)
 	}
 
 	peer->update_delay_over = 1;
-	peer->bgp->explicit_eors++;
+	peer->bgp->received_eors++;
 	bgp_check_update_delay(peer->bgp);
 }
 
@@ -498,6 +473,12 @@ void bgp_generate_updgrp_packets(struct event *thread)
 		return;
 	}
 
+	/* If a GR restarter, we have to wait till path-selection
+	 * is complete.
+	 */
+	if (bgp_in_graceful_restart())
+		return;
+
 	do {
 		s = NULL;
 		for (index = BGP_AF_START; index < BGP_AF_MAX; index++) {
@@ -580,11 +561,10 @@ void bgp_generate_updgrp_packets(struct event *thread)
 				 *   general, and thus the practice is
 				 *   recommended.
 				 */
-				if (!(PAF_SUBGRP(paf))->t_coalesce &&
-				    peer->afc_nego[afi][safi] &&
+				if (!(PAF_SUBGRP(paf))->t_coalesce && peer->afc_nego[afi][safi] &&
 				    peer->synctime &&
-				    !CHECK_FLAG(peer->af_sflags[afi][safi],
-						PEER_STATUS_EOR_SEND)) {
+				    !CHECK_FLAG(peer->af_sflags[afi][safi], PEER_STATUS_EOR_SEND) &&
+				    advertise_list_is_empty(PAF_SUBGRP(paf))) {
 					/* If EOR is disabled, the message is
 					 * not sent.
 					 */
@@ -901,6 +881,16 @@ bool bgp_notify_received_hard_reset(struct peer *peer, uint8_t code,
 	return false;
 }
 
+/* BGP cease subcode to peer down cause */
+static uint8_t bgp_cease_to_reset_cause[] = {
+	PEER_DOWN_CEASE_UNSPECIFIC,    PEER_DOWN_CEASE_PRX_COUNT,   PEER_DOWN_CEASE_ADMIN_SHUTDOWN,
+	PEER_DOWN_CEASE_PEER_UNCONFIG, PEER_DOWN_CEASE_ADMIN_RESET, PEER_DOWN_CEASE_CONNECT_REJECT,
+	PEER_DOWN_CEASE_CONFIG_CHANGE, PEER_DOWN_CEASE_COLLISION,   PEER_DOWN_CEASE_NO_RESOURCE,
+	PEER_DOWN_CEASE_HARD_RESET,    PEER_DOWN_CEASE_BFD_DOWN,
+};
+
+#define CEASE_CAUSES (sizeof(bgp_cease_to_reset_cause) / sizeof(bgp_cease_to_reset_cause[0]))
+
 /*
  * Creates a BGP Notify and appends it to the peer's output queue.
  *
@@ -1037,17 +1027,17 @@ static void bgp_notify_send_internal(struct peer_connection *connection,
 
 	/* peer reset cause */
 	if (code == BGP_NOTIFY_CEASE) {
-		if (sub_code == BGP_NOTIFY_CEASE_ADMIN_RESET)
-			peer->last_reset = PEER_DOWN_USER_RESET;
-		else if (sub_code == BGP_NOTIFY_CEASE_ADMIN_SHUTDOWN) {
-			if (CHECK_FLAG(peer->sflags, PEER_STATUS_RTT_SHUTDOWN))
-				peer->last_reset = PEER_DOWN_RTT_SHUTDOWN;
-			else
-				peer->last_reset = PEER_DOWN_USER_SHUTDOWN;
-		} else
-			peer->last_reset = PEER_DOWN_NOTIFY_SEND;
+		if (sub_code == BGP_NOTIFY_CEASE_ADMIN_SHUTDOWN)
+			peer_set_last_reset(peer,
+					    (CHECK_FLAG(peer->sflags, PEER_STATUS_RTT_SHUTDOWN)
+						     ? PEER_DOWN_RTT_SHUTDOWN
+						     : PEER_DOWN_USER_SHUTDOWN));
+		else if (sub_code < CEASE_CAUSES)
+			peer_set_last_reset(peer, bgp_cease_to_reset_cause[sub_code]);
+		else
+			peer_set_last_reset(peer, PEER_DOWN_CEASE_UNKNOWN);
 	} else
-		peer->last_reset = PEER_DOWN_NOTIFY_SEND;
+		peer_set_last_reset(peer, PEER_DOWN_NOTIFY_SEND);
 
 	/* Add packet to peer's output queue */
 	stream_fifo_push(connection->obuf, s);
@@ -1654,6 +1644,9 @@ static int bgp_collision_detect(struct peer_connection *connection,
 	 */
 	if (peer_established(other) ||
 	    other->status == Clearing) {
+		if (bgp_debug_neighbor_events(peer))
+			zlog_debug("New connection starting from %pI4 but a competing connection is already in established or clearing",
+				   &remote_id.s_addr);
 		bgp_notify_send(connection, BGP_NOTIFY_CEASE,
 				BGP_NOTIFY_CEASE_COLLISION_RESOLUTION);
 		return -1;
@@ -1691,6 +1684,9 @@ static int bgp_collision_detect(struct peer_connection *connection,
 					BGP_NOTIFY_CEASE_COLLISION_RESOLUTION);
 			return 1;
 		} else {
+			if (bgp_debug_neighbor_events(peer))
+				zlog_debug("New Connection received, but existing connection from %pI4 will win collision detection so dropping this new connection",
+					   &remote_id.s_addr);
 			bgp_notify_send(connection, BGP_NOTIFY_CEASE,
 					BGP_NOTIFY_CEASE_COLLISION_RESOLUTION);
 			return -1;
@@ -2188,8 +2184,6 @@ static int bgp_keepalive_receive(struct peer_connection *connection,
 	if (bgp_debug_keepalive(peer))
 		zlog_debug("%s KEEPALIVE rcvd", peer->host);
 
-	bgp_update_implicit_eors(peer);
-
 	peer->rtt = sockopt_tcp_rtt(connection->fd);
 
 	/* If the peer's RTT is higher than expected, shutdown
@@ -2246,6 +2240,43 @@ static void bgp_refresh_stalepath_timer_expire(struct event *thread)
 	bgp_timer_set(peer->connection);
 }
 
+static void bgp_update_receive_eor(struct bgp *bgp, struct peer *peer, afi_t afi, safi_t safi)
+{
+	struct vrf *vrf = vrf_lookup_by_id(bgp->vrf_id);
+
+	zlog_info("%s: rcvd End-of-RIB for %s from %s in vrf %s", __func__,
+		  get_afi_safi_str(afi, safi, false), peer->host,
+		  vrf ? vrf->name : VRF_DEFAULT_NAME);
+	frrtrace(4, frr_bgp, eor_received, bgp->name_pretty, afi, safi, peer->host);
+
+	/* End-of-RIB received */
+	if (!CHECK_FLAG(peer->af_sflags[afi][safi], PEER_STATUS_EOR_RECEIVED)) {
+		SET_FLAG(peer->af_sflags[afi][safi], PEER_STATUS_EOR_RECEIVED);
+
+		/* update-delay related processing */
+		bgp_update_explicit_eors(peer);
+
+		/* graceful-restart related processing */
+		UNSET_FLAG(peer->af_sflags[afi][safi], PEER_STATUS_GR_WAIT_EOR);
+		if ((bgp->t_startup || bgp_in_graceful_restart()) &&
+		    bgp_gr_supported_for_afi_safi(afi, safi)) {
+			struct graceful_restart_info *gr_info;
+
+			gr_info = &(bgp->gr_info[afi][safi]);
+			if (!gr_info->select_defer_over) {
+				if (BGP_DEBUG(graceful_restart, GRACEFUL_RESTART))
+					zlog_debug("%s: check for deferred path-selection",
+						   bgp->name_pretty);
+				bgp_gr_check_path_select(bgp, afi, safi);
+			}
+		}
+	}
+
+	/* NSF delete stale route */
+	if (peer->nsf[afi][safi])
+		bgp_clear_stale_route(peer, afi, safi);
+}
+
 /**
  * Process BGP UPDATE message for peer.
  *
@@ -2265,7 +2296,7 @@ static int bgp_update_receive(struct peer_connection *connection,
 	bgp_size_t attribute_len;
 	bgp_size_t update_len;
 	bgp_size_t withdraw_len;
-	bool restart = false;
+	struct bgp *bgp = peer->bgp;
 
 	enum NLRI_TYPES {
 		NLRI_UPDATE,
@@ -2370,7 +2401,11 @@ static int bgp_update_receive(struct peer_connection *connection,
 /* This define morphs the update case into a withdraw when lower levels
  * have signalled an error condition where this is best.
  */
-#define NLRI_ATTR_ARG (attr_parse_ret != BGP_ATTR_PARSE_WITHDRAW ? &attr : NULL)
+#define NLRI_ATTR_ARG                                                                             \
+	((attr_parse_ret != BGP_ATTR_PARSE_WITHDRAW &&                                            \
+	  attr_parse_ret != BGP_ATTR_PARSE_WITHDRAW_IGNORE)                                       \
+		 ? &attr                                                                          \
+		 : NULL)
 
 	/* Parse attribute when it exists. */
 	if (attribute_len) {
@@ -2384,18 +2419,19 @@ static int bgp_update_receive(struct peer_connection *connection,
 	}
 
 	/* Logging the attribute. */
-	if (attr_parse_ret == BGP_ATTR_PARSE_WITHDRAW
-	    || BGP_DEBUG(update, UPDATE_IN)
-	    || BGP_DEBUG(update, UPDATE_PREFIX)) {
+	if (attr_parse_ret == BGP_ATTR_PARSE_WITHDRAW ||
+	    attr_parse_ret == BGP_ATTR_PARSE_WITHDRAW_IGNORE || BGP_DEBUG(update, UPDATE_IN) ||
+	    BGP_DEBUG(update, UPDATE_PREFIX)) {
 		ret = bgp_dump_attr(&attr, peer->rcvd_attr_str,
 				    sizeof(peer->rcvd_attr_str));
 
-		if (attr_parse_ret == BGP_ATTR_PARSE_WITHDRAW) {
+		if (attr_parse_ret == BGP_ATTR_PARSE_WITHDRAW ||
+		    attr_parse_ret == BGP_ATTR_PARSE_WITHDRAW_IGNORE) {
 			peer->stat_pfx_withdraw++;
-			flog_err(
-				EC_BGP_UPDATE_RCV,
-				"%pBP rcvd UPDATE with errors in attr(s)!! Withdrawing route.",
-				peer);
+			if (attr_parse_ret == BGP_ATTR_PARSE_WITHDRAW)
+				flog_err(EC_BGP_UPDATE_RCV,
+					 "%pBP rcvd UPDATE with errors in attr(s)!! Withdrawing route.",
+					 peer);
 		}
 
 		if (ret && bgp_debug_update(peer, NULL, NULL, 1) &&
@@ -2494,13 +2530,6 @@ static int bgp_update_receive(struct peer_connection *connection,
 	if (!update_len && !withdraw_len && nlris[NLRI_MP_UPDATE].length == 0) {
 		afi_t afi = 0;
 		safi_t safi;
-		struct graceful_restart_info *gr_info;
-
-		/* Restarting router */
-		if (BGP_PEER_GRACEFUL_RESTART_CAPABLE(peer)
-		    && BGP_PEER_RESTARTING_MODE(peer))
-			restart = true;
-
 		/* Non-MP IPv4/Unicast is a completely emtpy UPDATE - already
 		 * checked
 		 * update and withdraw NLRI lengths are 0.
@@ -2514,55 +2543,8 @@ static int bgp_update_receive(struct peer_connection *connection,
 			safi = nlris[NLRI_MP_WITHDRAW].safi;
 		}
 
-		if (afi && peer->afc[afi][safi]) {
-			struct vrf *vrf = vrf_lookup_by_id(peer->bgp->vrf_id);
-
-			/* End-of-RIB received */
-			if (!CHECK_FLAG(peer->af_sflags[afi][safi],
-					PEER_STATUS_EOR_RECEIVED)) {
-				SET_FLAG(peer->af_sflags[afi][safi],
-					 PEER_STATUS_EOR_RECEIVED);
-				bgp_update_explicit_eors(peer);
-				/* Update graceful restart information */
-				gr_info = &(peer->bgp->gr_info[afi][safi]);
-				if (restart)
-					gr_info->eor_received++;
-				/* If EOR received from all peers and selection
-				 * deferral timer is running, cancel the timer
-				 * and invoke the best path calculation
-				 */
-				if (gr_info->eor_required
-				    == gr_info->eor_received) {
-					if (bgp_debug_neighbor_events(peer))
-						zlog_debug(
-							"%s %d, %s %d",
-							"EOR REQ",
-							gr_info->eor_required,
-							"EOR RCV",
-							gr_info->eor_received);
-					if (gr_info->t_select_deferral) {
-						void *info = EVENT_ARG(
-							gr_info->t_select_deferral);
-						XFREE(MTYPE_TMP, info);
-					}
-					event_cancel(&gr_info->t_select_deferral);
-					gr_info->eor_required = 0;
-					gr_info->eor_received = 0;
-					/* Best path selection */
-					bgp_best_path_select_defer(peer->bgp,
-								   afi, safi);
-				}
-			}
-
-			/* NSF delete stale route */
-			if (peer->nsf[afi][safi])
-				bgp_clear_stale_route(peer, afi, safi);
-
-			zlog_info(
-				"%s: rcvd End-of-RIB for %s from %s in vrf %s",
-				__func__, get_afi_safi_str(afi, safi, false),
-				peer->host, vrf ? vrf->name : VRF_DEFAULT_NAME);
-		}
+		if (afi && peer->afc[afi][safi])
+			bgp_update_receive_eor(bgp, peer, afi, safi);
 	}
 
 	/* Everything is done.  We unintern temporary structures which
@@ -2675,7 +2657,7 @@ static int bgp_notify_receive(struct peer_connection *connection,
 	/* peer count update */
 	atomic_fetch_add_explicit(&peer->notify_in, 1, memory_order_relaxed);
 
-	peer->last_reset = PEER_DOWN_NOTIFY_RECEIVED;
+	peer_set_last_reset(peer, PEER_DOWN_NOTIFY_RECEIVED);
 
 	/* We have to check for Notify with Unsupported Optional Parameter.
 	   in that case we fallback to open without the capability option.

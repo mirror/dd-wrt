@@ -480,6 +480,7 @@ int zebra_rib_queue_evpn_rem_vtep_del(vrf_id_t vrf_id, vni_t vni,
 
 extern void meta_queue_free(struct meta_queue *mq, struct zebra_vrf *zvrf);
 extern int zebra_rib_labeled_unicast(struct route_entry *re);
+extern void rib_meta_queue_early_route_cleanup(const struct prefix *p, int route_type);
 extern struct route_table *rib_table_ipv6;
 
 extern uint32_t zebra_rib_meta_queue_size(void);
@@ -640,11 +641,11 @@ static inline struct nexthop_group *rib_get_fib_backup_nhg(
 	return &(re->fib_backup_ng);
 }
 
-extern void zebra_gr_process_client(afi_t afi, vrf_id_t vrf_id, uint8_t proto,
-				    uint8_t instance, time_t restart_time);
+extern void zebra_gr_process_client(afi_t afi, vrf_id_t vrf_id, uint8_t proto, uint8_t instance,
+				    time_t restart_time, bool stale_client_cleanup);
 
-extern int rib_add_gr_run(afi_t afi, vrf_id_t vrf_id, uint8_t proto,
-			  uint8_t instance, time_t restart_time);
+extern int rib_add_gr_run(afi_t afi, vrf_id_t vrf_id, uint8_t proto, uint8_t instance,
+			  time_t restart_time, bool stale_client_cleanup);
 
 extern void zebra_vty_init(void);
 extern uint32_t zebra_rib_dplane_results_count(void);
@@ -659,6 +660,8 @@ void route_entry_dump_nh(const struct route_entry *re, const char *straddr,
 
 /* Name of hook calls */
 #define ZEBRA_ON_RIB_PROCESS_HOOK_CALL "on_rib_process_dplane_results"
+
+extern char *zebra_rib_dump_re_status(const struct route_entry *re, char *buf, size_t len);
 
 #ifdef __cplusplus
 }

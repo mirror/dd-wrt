@@ -492,6 +492,7 @@ static int mgmt_be_txn_cfg_prepare(struct mgmt_be_txn_ctx *txn, const char **con
 	error = false;
 	nb_ctx.client = NB_CLIENT_CLI;
 	nb_ctx.user = (void *)client_ctx->user_data;
+	err_buf[0] = 0;
 
 	/*
 	 * this is always true, right?!
@@ -529,22 +530,23 @@ static int mgmt_be_txn_cfg_prepare(struct mgmt_be_txn_ctx *txn, const char **con
 	gettimeofday(&prep_nb_cfg_start, NULL);
 	err = nb_candidate_commit_prepare(nb_ctx, client_ctx->candidate_config,
 					  "MGMTD Backend Txn", &txn->nb_txn,
-#ifdef MGMTD_LOCAL_VALIDATIONS_ENABLED
-					  true, true,
-#else
 					  false, true,
-#endif
 					  err_buf, sizeof(err_buf) - 1);
 	if (err != NB_OK) {
 		err_buf[sizeof(err_buf) - 1] = 0;
-		if (err == NB_ERR_VALIDATION)
+		if (err == NB_ERR_VALIDATION) {
 			log_err_be_client("Failed to validate configs txn-id: %" PRIu64
 					  " %zu batches, err: '%s'",
 					  txn->txn_id, num_processed, err_buf);
-		else
+			if (err_buf[0] == 0)
+				snprintf(err_buf, sizeof(err_buf), "config validation failed");
+		} else {
 			log_err_be_client("Failed to prepare configs for txn-id: %" PRIu64
 					  " %zu batches, err: '%s'",
 					  txn->txn_id, num_processed, err_buf);
+			if (err_buf[0] == 0)
+				snprintf(err_buf, sizeof(err_buf), "prepare config failed");
+		}
 		error = true;
 		SET_FLAG(txn->flags, MGMTD_BE_TXN_FLAGS_CFGPREP_FAILED);
 	} else
@@ -909,8 +911,9 @@ static void be_client_handle_notify(struct mgmt_be_client *client, void *msgbuf,
 				    size_t msg_len)
 {
 	struct mgmt_msg_notify_data *notif_msg = msgbuf;
-	struct nb_node *nb_node, *nb_parent;
 	struct lyd_node *dnode = NULL;
+	const struct lysc_node *snode;
+	struct nb_node *nb_node;
 	const char *data = NULL;
 	const char *notif;
 	bool is_yang_notify;
@@ -946,15 +949,16 @@ static void be_client_handle_notify(struct mgmt_be_client *client, void *msgbuf,
 		 * See if a parent has a callback, this is so backend's can
 		 * listen for changes on an entire datastore sub-tree.
 		 */
-		for (nb_parent = nb_node->parent; nb_parent; nb_parent = nb_node->parent)
-			if (nb_parent->cbs.notify)
+		snode = nb_node->snode;
+		for (snode = snode->parent; snode; snode = snode->parent)
+			if (((struct nb_node *)snode->priv)->cbs.notify)
 				break;
-		if (!nb_parent) {
+		if (!snode) {
 			debug_be_client("Including parents, no DS notification callback for: %s",
 					notif);
 			return;
 		}
-		nb_node = nb_parent;
+		nb_node = (struct nb_node *)snode->priv;
 	}
 
 	if (data && is_yang_notify) {

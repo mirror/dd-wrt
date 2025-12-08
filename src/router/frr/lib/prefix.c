@@ -1175,14 +1175,26 @@ void prefix_mcast_inet4_dump(const char *onfail, struct in_addr addr,
 
 const char *prefix_sg2str(const struct prefix_sg *sg, char *sg_str)
 {
-	char src_str[INET_ADDRSTRLEN];
-	char grp_str[INET_ADDRSTRLEN];
+	char src_str[INET6_ADDRSTRLEN];
+	char grp_str[INET6_ADDRSTRLEN];
 
 	prefix_mcast_ip_dump("<src?>", &sg->src, src_str, sizeof(src_str));
-	prefix_mcast_inet4_dump("<grp?>", sg->grp, grp_str, sizeof(grp_str));
+	prefix_mcast_ip_dump("<grp?>", &sg->grp, grp_str, sizeof(grp_str));
 	snprintf(sg_str, PREFIX_SG_STR_LEN, "(%s,%s)", src_str, grp_str);
 
 	return sg_str;
+}
+
+void prefix_flowspec_ptr_free(struct prefix *p)
+{
+	void *temp;
+
+	if (!p || p->family != AF_FLOWSPEC || !p->u.prefix_flowspec.ptr)
+		return;
+
+	temp = (void *)p->u.prefix_flowspec.ptr;
+	XFREE(MTYPE_PREFIX_FLOWSPEC, temp);
+	p->u.prefix_flowspec.ptr = (uintptr_t)NULL;
 }
 
 struct prefix *prefix_new(void)
@@ -1337,7 +1349,6 @@ unsigned prefix_hash_key(const void *pp)
 
 	if (((struct prefix *)pp)->family == AF_FLOWSPEC) {
 		uint32_t len;
-		void *temp;
 
 		/* make sure *all* unused bits are zero,
 		 * particularly including alignment /
@@ -1348,9 +1359,7 @@ unsigned prefix_hash_key(const void *pp)
 		len = jhash((void *)copy.u.prefix_flowspec.ptr,
 			    copy.u.prefix_flowspec.prefixlen,
 			    0x55aa5a5a);
-		temp = (void *)copy.u.prefix_flowspec.ptr;
-		XFREE(MTYPE_PREFIX_FLOWSPEC, temp);
-		copy.u.prefix_flowspec.ptr = (uintptr_t)NULL;
+		prefix_flowspec_ptr_free(&copy);
 		return len;
 	}
 	/* make sure *all* unused bits are zero, particularly including
@@ -1436,6 +1445,37 @@ char *evpn_es_df_alg2str(uint8_t df_alg, char *buf, int buf_len)
 	}
 
 	return buf;
+}
+
+bool ipv4_ietf_unicast_valid(const struct in_addr *addr)
+{
+	/* New reserved ranges:
+	 * draft-schoen-intarea-unicast-0
+	 * draft-schoen-intarea-unicast-127
+	 * draft-schoen-intarea-unicast-240
+	 */
+	in_addr_t ip = ntohl(addr->s_addr);
+
+	/* draft-schoen-intarea-unicast-0 */
+	if (ip == INADDR_ANY)
+		return false;
+
+	/* draft-schoen-intarea-unicast-240 */
+	if (IPV4_CLASS_E(ip))
+		return true;
+
+	/* draft-schoen-intarea-unicast-127 */
+	if (IPV4_NET127(ip)) {
+		if (!IPV4_NET127_16(ip) && ip != INADDR_LOOPBACK)
+			return true;
+		else
+			return false;
+	}
+
+	if (IPV4_CLASS_D(ip))
+		return false;
+
+	return true;
 }
 
 bool ipv4_unicast_valid(const struct in_addr *addr)
@@ -1642,7 +1682,7 @@ static ssize_t printfrr_pfx(struct fbuf *buf, struct printfrr_eargs *ea,
 	}
 }
 
-printfrr_ext_autoreg_p("PSG4", printfrr_psg);
+printfrr_ext_autoreg_p("PSG", printfrr_psg);
 static ssize_t printfrr_psg(struct fbuf *buf, struct printfrr_eargs *ea,
 			    const void *ptr)
 {
@@ -1657,10 +1697,10 @@ static ssize_t printfrr_psg(struct fbuf *buf, struct printfrr_eargs *ea,
 	else
 		ret += bprintfrr(buf, "(%pIA,", &sg->src);
 
-	if (sg->grp.s_addr == INADDR_ANY)
+	if (ipaddr_is_zero(&sg->grp))
 		ret += bputs(buf, "*)");
 	else
-		ret += bprintfrr(buf, "%pI4)", &sg->grp);
+		ret += bprintfrr(buf, "%pIA)", &sg->grp);
 
 	return ret;
 }

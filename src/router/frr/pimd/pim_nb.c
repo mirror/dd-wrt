@@ -9,6 +9,7 @@
 #include "northbound.h"
 #include "libfrr.h"
 #include "vrf.h"
+#include "routemap.h"
 #include "pimd/pim_nb.h"
 
 /* clang-format off */
@@ -230,6 +231,13 @@ const struct frr_yang_module_info frr_pim_info = {
 			}
 		},
 		{
+			.xpath = "/frr-routing:routing/control-plane-protocols/control-plane-protocol/frr-pim:pim/address-family/msdp-peer/as",
+			.cbs = {
+				.modify = pim_msdp_peer_as_modify,
+				.destroy = pim_msdp_peer_as_destroy,
+			}
+		},
+		{
 			.xpath = "/frr-routing:routing/control-plane-protocols/control-plane-protocol/frr-pim:pim/address-family/mlag",
 			.cbs = {
 				.create = routing_control_plane_protocols_control_plane_protocol_pim_address_family_mlag_create,
@@ -425,6 +433,59 @@ const struct frr_yang_module_info frr_pim_info = {
 		},
 	}
 };
+
+/* clang-format off */
+const struct frr_yang_module_info frr_pim_route_map_info = {
+	.name = "frr-pim-route-map",
+	.nodes = {
+		{
+			.xpath = "/frr-route-map:lib/route-map/entry/match-condition/rmap-match-condition/frr-pim-route-map:ipv4-multicast-source-address",
+			.cbs = {
+				.modify = pim_route_map_match_source_modify,
+				.destroy = lib_route_map_entry_match_destroy,
+			}
+		},
+		{
+			.xpath = "/frr-route-map:lib/route-map/entry/match-condition/rmap-match-condition/frr-pim-route-map:ipv6-multicast-source-address",
+			.cbs = {
+				.modify = pim_route_map_match_source_v6_modify,
+				.destroy = lib_route_map_entry_match_destroy,
+			}
+		},
+		{
+			.xpath = "/frr-route-map:lib/route-map/entry/match-condition/rmap-match-condition/frr-pim-route-map:ipv4-multicast-group-address",
+			.cbs = {
+				.modify = pim_route_map_match_group_modify,
+				.destroy = lib_route_map_entry_match_destroy,
+			}
+		},
+		{
+			.xpath = "/frr-route-map:lib/route-map/entry/match-condition/rmap-match-condition/frr-pim-route-map:ipv6-multicast-group-address",
+			.cbs = {
+				.modify = pim_route_map_match_group_v6_modify,
+				.destroy = lib_route_map_entry_match_destroy,
+			}
+		},
+		{
+			.xpath = "/frr-route-map:lib/route-map/entry/match-condition/rmap-match-condition/frr-pim-route-map:multicast-interface",
+			.cbs = {
+				.modify = pim_route_map_match_interface_modify,
+				.destroy = lib_route_map_entry_match_destroy,
+			}
+		},
+		{
+			.xpath = "/frr-route-map:lib/route-map/entry/match-condition/rmap-match-condition/frr-pim-route-map:list-name",
+			.cbs = {
+				.modify = pim_route_map_match_list_name_modify,
+				.destroy = lib_route_map_entry_match_destroy,
+			}
+		},
+		{
+			.xpath = NULL
+		}
+	}
+};
+/* clang-format on */
 
 /* clang-format off */
 const struct frr_yang_module_info frr_pim_rp_info = {
@@ -773,6 +834,13 @@ const struct frr_yang_module_info frr_gmp_info = {
 			.xpath = "/frr-interface:lib/interface/frr-gmp:gmp/address-family/require-router-alert",
 			.cbs = {
 				.modify = lib_interface_gmp_require_router_alert_modify,
+			}
+		},
+		{
+			.xpath = "/frr-interface:lib/interface/frr-gmp:gmp/address-family/route-map",
+			.cbs = {
+				.modify = lib_interface_gm_rmap_modify,
+				.destroy = lib_interface_gm_rmap_destroy,
 			}
 		},
 		{

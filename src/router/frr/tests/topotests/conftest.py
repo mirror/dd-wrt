@@ -20,7 +20,7 @@ import pytest
 from lib.common_config import generate_support_bundle
 from lib.topogen import diagnose_env, get_topogen
 from lib.topolog import get_test_logdir, logger
-from lib.topotest import json_cmp_result
+from lib.topotest import json_cmp_result, gdb_core
 from munet import cli
 from munet.base import BaseMunet, Commander, proc_error
 from munet.cleanup import cleanup_current, cleanup_previous
@@ -265,6 +265,12 @@ def pytest_addoption(parser):
         help="Spawn vtysh on all routers on test failure",
     )
 
+    parser.addoption(
+        "--ignore-backtraces",
+        action="store_true",
+        help="Ignore backtrace detection during test execution",
+    )
+
 
 def check_for_valgrind_memleaks():
     assert topotest.g_pytest_config.option.valgrind_memleaks
@@ -357,6 +363,31 @@ def check_for_core_dumps():
         existing |= latest
         tgen.existing_core_files = existing
 
+        # Call gdb_core for each new core dump to show backtrace
+        for core_file in latest:
+            # Extract router name and daemon from core file path
+            # Core files are typically named like: /path/to/logdir/router_name/daemon_core_*.dmp
+            core_path = Path(core_file)
+            router_name = core_path.parent.name
+            daemon_name = core_path.stem.split("_core")[
+                0
+            ]  # Remove '_core_*.dmp' suffix
+
+            # Get the actual router object from tgen
+            topo_router = tgen.gears.get(router_name)
+            if topo_router:
+                # Access the actual router instance through the net property
+                router = topo_router.net
+                try:
+                    backtrace = gdb_core(router, daemon_name, [core_file])
+                    logger.error(
+                        f"Core dump analysis for {router_name}:{daemon_name}:\n{backtrace}"
+                    )
+                except Exception as e:
+                    logger.error(f"Failed to analyze core dump {core_file}: {e}")
+            else:
+                logger.error(f"Could not find router {router_name} in topology")
+
         emsg = "New core[s] found: " + ", ".join(latest)
         logger.error(emsg)
         pytest.fail(emsg)
@@ -444,7 +475,8 @@ def pytest_runtest_call(item: pytest.Item) -> None:
     # Let the default pytest_runtest_call execute the test function
     yield
 
-    check_for_backtraces()
+    if not item.config.option.ignore_backtraces:
+        check_for_backtraces()
     check_for_core_dumps()
 
     # Check for leaks if requested

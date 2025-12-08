@@ -652,7 +652,7 @@ static int parse_nexthop_msg(struct nlmsghdr *hdr)
 	struct rtattr *tb[NHA_MAX + 1] = {};
 	int len;
 	uint32_t nhgid = 0;
-	uint8_t nhg_count = 0;
+	uint16_t nhg_count = 0;
 	const char *err_msg = NULL;
 	char protocol_str[32] = "Unknown";
 	char nexthop_buf[16192] = "";
@@ -694,12 +694,14 @@ static int parse_nexthop_msg(struct nlmsghdr *hdr)
 				if (i > 0)
 					nexthop_buf[buf_pos++] = ',';
 
-				if (nhg[i].weight > 1)
+				if (nhg[i].weight > 1) {
+					uint16_t weight;
+
+					weight = nhg[i].weight_high << 8 | nhg[i].weight;
 					len_written = snprintf(nexthop_buf + buf_pos,
 							       sizeof(nexthop_buf) - buf_pos,
-							       " %u(w:%u)", nhg[i].id,
-							       nhg[i].weight);
-				else
+							       " %u(w:%u)", nhg[i].id, weight + 1);
+				} else
 					len_written = snprintf(nexthop_buf + buf_pos,
 							       sizeof(nexthop_buf) - buf_pos, " %u",
 							       nhg[i].id);
@@ -926,7 +928,7 @@ static void handle_nexthop_update(struct nlmsghdr *hdr, struct nhmsg *nhmsg, str
 	struct fpm_nhg *existing;
 	struct fpm_nhg lookup = { 0 };
 	uint32_t nhgid = 0;
-	uint8_t nhg_count = 0;
+	uint16_t nhg_count = 0;
 
 	/* Get Nexthop Group ID */
 	if (tb[NHA_ID])
@@ -967,8 +969,11 @@ static void handle_nexthop_update(struct nlmsghdr *hdr, struct nhmsg *nhmsg, str
 				struct nexthop_grp *nhgrp =
 					(struct nexthop_grp *)RTA_DATA(tb[NHA_GROUP]);
 				for (size_t i = 0; i < nhg_count; i++) {
+					uint16_t weight;
+
 					existing->nexthops[i].id = nhgrp[i].id;
-					existing->nexthops[i].weight = nhgrp[i].weight;
+					weight = nhgrp[i].weight_high << 8 | nhgrp[i].weight;
+					existing->nexthops[i].weight = weight + 1;
 				}
 			}
 		} else {

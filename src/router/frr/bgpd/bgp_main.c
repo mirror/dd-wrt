@@ -216,7 +216,6 @@ static FRR_NORETURN void bgp_exit(int status)
 
 	zebra_announce_fini(&bm->zebra_announce_head);
 	zebra_l2_vni_fini(&bm->zebra_l2_vni_head);
-	zebra_l3_vni_fini(&bm->zebra_l3_vni_head);
 
 	/* reverse bgp_dump_init */
 	bgp_dump_finish();
@@ -295,6 +294,8 @@ static int bgp_vrf_enable(struct vrf *vrf)
 {
 	struct bgp *bgp;
 	vrf_id_t old_vrf_id;
+	int ret = BGP_GR_FAILURE;
+	(void)ret; /* for unused variable warning */
 
 	if (BGP_DEBUG(zebra, ZEBRA))
 		zlog_debug("VRF enable add %s id %u", vrf->name, vrf->vrf_id);
@@ -304,6 +305,8 @@ static int bgp_vrf_enable(struct vrf *vrf)
 		old_vrf_id = bgp->vrf_id;
 		/* We have instance configured, link to VRF and make it "up". */
 		bgp_vrf_link(bgp, vrf);
+
+		VTY_BGP_GR_ROUTER_DETECT_AND_SEND_CAPABILITY_TO_ZEBRA(bgp, bgp->peer, ret);
 
 		bgp_handle_socket(bgp, vrf, old_vrf_id, true);
 		bgp_instance_up(bgp);
@@ -520,6 +523,7 @@ int main(int argc, char **argv)
 
 	/* BGP master init. */
 	bgp_master_init(frr_init(), buffer_size, addresses);
+
 	bm->startup_time = monotime(NULL);
 	bm->port = bgp_port;
 	bm->v6_with_v4_nexthops = v6_with_v4_nexthops;

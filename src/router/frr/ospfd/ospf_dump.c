@@ -1627,6 +1627,7 @@ DEFUN (no_debug_ospf,
 		DEBUG_OFF(lsa, LSA_GENERATE);
 		DEBUG_OFF(lsa, LSA_INSTALL);
 		DEBUG_OFF(lsa, LSA_REFRESH);
+		DEBUG_OFF(lsa, EXTNL_LSA_AGGR);
 		DEBUG_OFF(nsm, NSM);
 		DEBUG_OFF(nsm, NSM_EVENTS);
 		DEBUG_OFF(nsm, NSM_STATUS);
@@ -1664,6 +1665,7 @@ DEFUN (no_debug_ospf,
 	TERM_DEBUG_OFF(lsa, LSA_GENERATE);
 	TERM_DEBUG_OFF(lsa, LSA_INSTALL);
 	TERM_DEBUG_OFF(lsa, LSA_REFRESH);
+	TERM_DEBUG_OFF(lsa, EXTNL_LSA_AGGR);
 	TERM_DEBUG_OFF(nsm, NSM);
 	TERM_DEBUG_OFF(nsm, NSM_EVENTS);
 	TERM_DEBUG_OFF(nsm, NSM_STATUS);
@@ -1760,6 +1762,8 @@ static int show_debugging_ospf_common(struct vty *vty)
 			vty_out(vty, "  OSPF LSA install debugging is on\n");
 		if (IS_DEBUG_OSPF(lsa, LSA_REFRESH))
 			vty_out(vty, "  OSPF LSA refresh debugging is on\n");
+		if (IS_DEBUG_OSPF(lsa, EXTNL_LSA_AGGR))
+			vty_out(vty, "  OSPF LSA aggregate debugging is on\n");
 	}
 
 	/* Show debug status for Zebra. */
@@ -1885,9 +1889,9 @@ static int config_write_debug(struct vty *vty)
 		if (IS_CONF_DEBUG_OSPF(ism, ISM_STATUS))
 			vty_out(vty, "debug ospf%s ism status\n", str);
 		if (IS_CONF_DEBUG_OSPF(ism, ISM_EVENTS))
-			vty_out(vty, "debug ospf%s ism event\n", str);
+			vty_out(vty, "debug ospf%s ism events\n", str);
 		if (IS_CONF_DEBUG_OSPF(ism, ISM_TIMERS))
-			vty_out(vty, "debug ospf%s ism timer\n", str);
+			vty_out(vty, "debug ospf%s ism timers\n", str);
 	}
 
 	/* debug ospf nsm (status|events|timers). */
@@ -1897,12 +1901,12 @@ static int config_write_debug(struct vty *vty)
 		if (IS_CONF_DEBUG_OSPF(nsm, NSM_STATUS))
 			vty_out(vty, "debug ospf%s nsm status\n", str);
 		if (IS_CONF_DEBUG_OSPF(nsm, NSM_EVENTS))
-			vty_out(vty, "debug ospf%s nsm event\n", str);
+			vty_out(vty, "debug ospf%s nsm events\n", str);
 		if (IS_CONF_DEBUG_OSPF(nsm, NSM_TIMERS))
-			vty_out(vty, "debug ospf%s nsm timer\n", str);
+			vty_out(vty, "debug ospf%s nsm timers\n", str);
 	}
 
-	/* debug ospf lsa (generate|flooding|install|refresh). */
+	/* debug ospf lsa (generate|flooding|install|refresh|aggregate). */
 	if (IS_CONF_DEBUG_OSPF(lsa, LSA) == OSPF_DEBUG_LSA)
 		vty_out(vty, "debug ospf%s lsa\n", str);
 	else {
@@ -1914,6 +1918,9 @@ static int config_write_debug(struct vty *vty)
 			vty_out(vty, "debug ospf%s lsa install\n", str);
 		if (IS_CONF_DEBUG_OSPF(lsa, LSA_REFRESH))
 			vty_out(vty, "debug ospf%s lsa refresh\n", str);
+		if (IS_CONF_DEBUG_OSPF(lsa, EXTNL_LSA_AGGR))
+			vty_out(vty, "debug ospf%s lsa aggregate\n", str);
+
 
 		write = 1;
 	}

@@ -592,6 +592,12 @@ void nexthop_add_labels(struct nexthop *nexthop, enum lsp_types_t ltype,
 	if (num_labels == 0)
 		return;
 
+	/* Free existing labels if present to prevent memory leak */
+	if (nexthop->nh_label != NULL) {
+		XFREE(MTYPE_NH_LABEL, nexthop->nh_label);
+		nexthop->nh_label = NULL;
+	}
+
 	/* Enforce limit on label stack size */
 	if (num_labels > MPLS_MAX_LABELS)
 		num_labels = MPLS_MAX_LABELS;
@@ -1473,6 +1479,9 @@ void nexthop_vty_helper(struct vty *vty, const struct nexthop *nexthop,
 
 	if (CHECK_FLAG(nexthop->flags, NEXTHOP_FLAG_RECURSIVE))
 		vty_out(vty, " (recursive)");
+
+	if (CHECK_FLAG(nexthop->flags, NEXTHOP_FLAG_DUPLICATE))
+		vty_out(vty, " (dup)");
 
 	switch (nexthop->type) {
 	case NEXTHOP_TYPE_IPV4:

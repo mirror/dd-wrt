@@ -532,26 +532,23 @@ void bgp_delete_connected_nexthop(afi_t afi, struct peer *peer)
 	if (!peer)
 		return;
 
-	/*
-	 * In case the below check evaluates true and if
-	 * the bnc has not been freed at this point, then
-	 * we might have to do something similar to what's
-	 * done in bgp_unlink_nexthop_by_peer(). Since
-	 * bgp_unlink_nexthop_by_peer() loops through the
-	 * nodes of V6 nexthop cache to find the bnc, it is
-	 * currently not being called here.
-	 */
-	if (!sockunion2hostprefix(&peer->connection->su, &p))
-		return;
-	/*
-	 * Gather the ifindex for if up/down events to be
-	 * tagged into this fun
-	 */
-	if (afi == AFI_IP6 &&
-	    IN6_IS_ADDR_LINKLOCAL(&peer->connection->su.sin6.sin6_addr))
-		ifindex = peer->connection->su.sin6.sin6_scope_id;
-	bnc = bnc_find(&peer->bgp->nexthop_cache_table[family2afi(p.family)],
-		       &p, 0, ifindex);
+	if (!sockunion2hostprefix(&peer->connection->su, &p)) {
+		/*
+		 * If peer->connection->su is cleared before peer deletion,
+		 * find the bnc whose nht_info matches the peer and free it.
+		 */
+		bnc = bgp_find_ipv6_nexthop_matching_peer(peer);
+	} else {
+		/*
+		 * Gather the ifindex for if up/down events to be
+		 * tagged into this fun
+		 */
+		if (afi == AFI_IP6 && IN6_IS_ADDR_LINKLOCAL(&peer->connection->su.sin6.sin6_addr))
+			ifindex = peer->connection->su.sin6.sin6_scope_id;
+		bnc = bnc_find(&peer->bgp->nexthop_cache_table[family2afi(p.family)], &p, 0,
+			       ifindex);
+	}
+
 	if (!bnc) {
 		if (BGP_DEBUG(nht, NHT))
 			zlog_debug(
@@ -581,6 +578,37 @@ void bgp_delete_connected_nexthop(afi_t afi, struct peer *peer)
 	}
 }
 
+static void bgp_bnc_mark_nht_important(struct bgp_nexthop_cache *bnc, struct zapi_route *nhr)
+{
+	struct bgp *bgp = bnc->bgp;
+	afi_t afi = family2afi(nhr->prefix.family);
+	struct bgp_table *table = bgp->rib[afi][nhr->safi];
+	struct bgp_dest *dest;
+
+	if (nhr->type != ZEBRA_ROUTE_BGP)
+		return;
+
+	if (!table)
+		return;
+
+	/*
+	 * If the old resolved prefix is the same as the new resolved prefix
+	 * nothing to mark here, move along
+	 */
+	if (prefix_same(&bnc->resolved_prefix, &nhr->prefix))
+		return;
+
+	dest = bgp_afi_node_get(table, afi, nhr->safi, &bnc->resolved_prefix, NULL);
+	if (dest)
+		UNSET_FLAG(dest->flags, BGP_NODE_NHT_RESOLVED_NODE);
+
+	dest = bgp_afi_node_get(table, afi, nhr->safi, &nhr->prefix, NULL);
+	if (!dest)
+		return;
+
+	SET_FLAG(dest->flags, BGP_NODE_NHT_RESOLVED_NODE);
+}
+
 static void bgp_process_nexthop_update(struct bgp_nexthop_cache *bnc,
 				       struct zapi_route *nhr,
 				       bool import_check)
@@ -599,14 +627,15 @@ static void bgp_process_nexthop_update(struct bgp_nexthop_cache *bnc,
 	if (BGP_DEBUG(nht, NHT)) {
 		char bnc_buf[BNC_FLAG_DUMP_SIZE];
 
-		zlog_debug(
-			"%s(%u): Rcvd NH update %pFX(%u)(%u) - metric %d/%d #nhops %d/%d flags %s",
-			bnc->bgp->name_pretty, bnc->bgp->vrf_id, &nhr->prefix,
-			bnc->ifindex_ipv6_ll, bnc->srte_color, nhr->metric,
-			bnc->metric, nhr->nexthop_num, bnc->nexthop_num,
-			bgp_nexthop_dump_bnc_flags(bnc, bnc_buf,
-						   sizeof(bnc_buf)));
+		zlog_debug("%s(%u): Rcvd NH update %pFX(%u)(%u) - metric %d/%d #nhops %d/%d flags %s redistributing protocol %s",
+			   bnc->bgp->name_pretty, bnc->bgp->vrf_id, &nhr->prefix,
+			   bnc->ifindex_ipv6_ll, bnc->srte_color, nhr->metric, bnc->metric,
+			   nhr->nexthop_num, bnc->nexthop_num,
+			   bgp_nexthop_dump_bnc_flags(bnc, bnc_buf, sizeof(bnc_buf)),
+			   zebra_route_string(nhr->type));
 	}
+
+	bgp_bnc_mark_nht_important(bnc, nhr);
 
 	if (nhr->metric != bnc->metric)
 		SET_FLAG(bnc->change_flags, BGP_NEXTHOP_METRIC_CHANGED);
@@ -1008,7 +1037,6 @@ static bool make_prefix(int afi, struct bgp_path_info *pi, struct prefix *p,
 	struct peer *peer;
 	struct attr *attr;
 	bool local_sid = false;
-	struct bgp *bgp = bgp_get_default();
 	struct prefix_ipv6 tmp_prefix;
 
 	if (source_pi) {
@@ -1047,7 +1075,7 @@ static bool make_prefix(int afi, struct bgp_path_info *pi, struct prefix *p,
 		break;
 	case AFI_IP6:
 		p->family = AF_INET6;
-		if (bgp && bgp->srv6_locator && bgp->srv6_enabled && pi->attr->srv6_l3vpn) {
+		if (pi->attr->srv6_l3vpn) {
 			tmp_prefix.family = AF_INET6;
 			tmp_prefix.prefixlen = IPV6_MAX_BITLEN;
 			tmp_prefix.prefix = pi->attr->srv6_l3vpn->sid;
@@ -1339,7 +1367,7 @@ void evaluate_paths(struct bgp_nexthop_cache *bnc)
 		 */
 
 		bool bnc_is_valid_nexthop = false;
-		bool path_valid = false;
+		bool old_path_valid = false;
 		struct bgp_route_evpn *bre =
 			bgp_attr_get_evpn_overlay(path->attr);
 
@@ -1409,7 +1437,7 @@ void evaluate_paths(struct bgp_nexthop_cache *bnc)
 		    bgp_attr_get_color(path->attr))
 			SET_FLAG(path->flags, BGP_PATH_IGP_CHANGED);
 
-		path_valid = CHECK_FLAG(path->flags, BGP_PATH_VALID);
+		old_path_valid = CHECK_FLAG(path->flags, BGP_PATH_VALID);
 		if (path->type == ZEBRA_ROUTE_BGP &&
 		    path->sub_type == BGP_ROUTE_STATIC &&
 		    !CHECK_FLAG(bgp_path->flags, BGP_FLAG_IMPORT_CHECK))
@@ -1429,8 +1457,8 @@ void evaluate_paths(struct bgp_nexthop_cache *bnc)
 			 */
 			vpn_leak_from_vrf_update(bgp_get_default(), bgp_path,
 						 path);
-		else if (path_valid != bnc_is_valid_nexthop) {
-			if (path_valid) {
+		else if (old_path_valid != bnc_is_valid_nexthop) {
+			if (old_path_valid) {
 				/* No longer valid, clear flag; also for EVPN
 				 * routes, unimport from VRFs if needed.
 				 */
@@ -1469,7 +1497,7 @@ void evaluate_paths(struct bgp_nexthop_cache *bnc)
 			}
 		}
 
-		if (path_valid != bnc_is_valid_nexthop)
+		if (old_path_valid != bnc_is_valid_nexthop)
 			hook_call(bgp_nht_path_update, bgp_path, path, bnc_is_valid_nexthop);
 
 		bgp_process(bgp_path, dest, path, afi, safi);
@@ -1482,14 +1510,10 @@ void evaluate_paths(struct bgp_nexthop_cache *bnc)
 			/*
 			 * Peering cannot occur across a blackhole nexthop
 			 */
-			if (bnc->nexthop_num == 1 && bnc->nexthop
-			    && bnc->nexthop->type == NEXTHOP_TYPE_BLACKHOLE) {
-				peer->last_reset = PEER_DOWN_WAITING_NHT;
+			if (bnc->nexthop_num == 1 && bnc->nexthop &&
+			    bnc->nexthop->type == NEXTHOP_TYPE_BLACKHOLE)
 				valid_nexthops = 0;
-			} else
-				peer->last_reset = PEER_DOWN_WAITING_OPEN;
-		} else
-			peer->last_reset = PEER_DOWN_WAITING_NHT;
+		}
 
 		if (!CHECK_FLAG(bnc->flags, BGP_NEXTHOP_PEER_NOTIFIED)) {
 			if (BGP_DEBUG(nht, NHT))

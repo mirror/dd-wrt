@@ -238,9 +238,8 @@ int pim_global_config_write_worker(struct pim_instance *pim, struct vty *vty)
 		vty_out(vty, " keep-alive-timer %d\n", pim->keep_alive_time);
 		++writes;
 	}
-	if (pim->rp_keep_alive_time != (unsigned int)PIM_RP_KEEPALIVE_PERIOD) {
-		vty_out(vty, " rp keep-alive-timer %d\n",
-			pim->rp_keep_alive_time);
+	if (pim->rp_keep_alive_time != MIN(PIM_RP_KEEPALIVE_PERIOD, UINT16_MAX)) {
+		vty_out(vty, " rp keep-alive-timer %d\n", pim->rp_keep_alive_time);
 		++writes;
 	}
 	if (ssm->plist_name) {
@@ -477,6 +476,13 @@ int pim_config_write(struct vty *vty, int writes, struct interface *ifp,
 			vty_out(vty, " " PIM_AF_NAME " pim sm-dm\n");
 		else
 			vty_out(vty, " " PIM_AF_NAME " pim\n");
+		++writes;
+	}
+
+	/* IF igmp/mld routemap */
+	if (pim_ifp->gmp_filter.rmapname) {
+		vty_out(vty, " " PIM_AF_NAME " " GM_AF_DBG " route-map %s\n",
+			pim_ifp->gmp_filter.rmapname);
 		++writes;
 	}
 

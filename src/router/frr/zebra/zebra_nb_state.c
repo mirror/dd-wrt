@@ -189,6 +189,10 @@ lib_interface_zebra_state_mcast_group_get_elem(struct nb_cb_get_elem_args *args)
 		return NULL;
 
 	vni = zebra_vxlan_if_vni_find(zebra_if, 0);
+
+	if (vni->mcast_grp.s_addr == INADDR_ANY)
+		return NULL;
+
 	return yang_data_new_ipv4(args->xpath, &vni->mcast_grp);
 }
 
@@ -446,7 +450,7 @@ const void *lib_vrf_zebra_ribs_rib_route_route_entry_lookup_entry(
 {
 	struct route_node *rn = (struct route_node *)args->parent_list_entry;
 	struct route_entry *re = NULL;
-	int proto_type = 0;
+	uint8_t proto_type = 0;
 	afi_t afi;
 
 	afi = family2afi(rn->p.family);
@@ -1181,7 +1185,7 @@ lib_vrf_zebra_ribs_rib_route_route_entry_nexthop_group_nexthop_weight_get_elem(
  */
 struct yang_data *zebra_max_multipath_get_elem(struct nb_cb_get_elem_args *args)
 {
-	return yang_data_new_uint16(args->xpath, zrouter.multipath_num);
+	return yang_data_new_uint16(args->xpath, zrouter.zav.multipath_num);
 }
 
 /*

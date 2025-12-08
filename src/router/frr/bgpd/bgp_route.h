@@ -856,6 +856,11 @@ extern void bgp_withdraw(struct peer *peer, const struct prefix *p,
 			 uint32_t addpath_id, afi_t afi, safi_t safi, int type,
 			 int sub_type, struct prefix_rd *prd,
 			 mpls_label_t *label, uint8_t num_labels);
+extern void bgp_update_check_valid_flags(struct bgp *bgp, struct peer *peer, struct bgp_dest *dest,
+					 const struct prefix *p, afi_t afi, safi_t safi,
+					 struct bgp_path_info *pi, struct attr *attr_new,
+					 const struct prefix *bgp_nht_param_prefix,
+					 bool accept_own);
 
 /*
  * Add a route to be processed for bgp bestpath through the bgp
@@ -974,7 +979,10 @@ extern int bgp_show_table_rd(struct vty *vty, struct bgp *bgp, afi_t afi, safi_t
 			     struct bgp_table *table, struct prefix_rd *prd,
 			     enum bgp_show_type type, void *output_arg,
 			     uint16_t show_flags);
-extern void bgp_best_path_select_defer(struct bgp *bgp, afi_t afi, safi_t safi);
+extern void bgp_do_deferred_path_selection(struct bgp *bgp, afi_t afi, safi_t safi);
+extern void bgp_dest_increment_gr_fib_install_pending_count(struct bgp_dest *dest);
+extern void bgp_dest_decrement_gr_fib_install_pending_count(struct bgp_dest *dest);
+extern void bgp_process_gr_deferral_complete(struct bgp *bgp, afi_t afi, safi_t safi);
 extern bool bgp_update_martian_nexthop(struct bgp *bgp, afi_t afi, safi_t safi,
 				       uint8_t type, uint8_t stype,
 				       struct attr *attr, struct bgp_dest *dest);

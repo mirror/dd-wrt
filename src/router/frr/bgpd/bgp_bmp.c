@@ -164,8 +164,8 @@ DECLARE_LIST(bmp_session, struct bmp, bsi);
 
 DECLARE_DLIST(bmp_qlist, struct bmp_queue_entry, bli);
 
-static int bmp_qhash_cmp(const struct bmp_queue_entry *a,
-		const struct bmp_queue_entry *b)
+static int bmp_rbtree_cmp(const struct bmp_queue_entry *a,
+			  const struct bmp_queue_entry *b)
 {
 	int ret;
 	if (a->afi == AFI_L2VPN && a->safi == SAFI_EVPN && b->afi == AFI_L2VPN
@@ -197,28 +197,7 @@ static int bmp_qhash_cmp(const struct bmp_queue_entry *a,
 	return ret;
 }
 
-static uint32_t bmp_qhash_hkey(const struct bmp_queue_entry *e)
-{
-	uint32_t key;
-
-	key = prefix_hash_key((void *)&e->p);
-	key = jhash(&e->peerid,
-		    offsetof(struct bmp_queue_entry, refcount)
-			    - offsetof(struct bmp_queue_entry, peerid),
-		    key);
-	if ((e->afi == AFI_L2VPN && e->safi == SAFI_EVPN) ||
-	    (e->safi == SAFI_MPLS_VPN))
-		key = jhash(&e->rd,
-			    offsetof(struct bmp_queue_entry, rd)
-				    - offsetof(struct bmp_queue_entry, refcount)
-				    + PSIZE(e->rd.prefixlen),
-			    key);
-
-	return key;
-}
-
-DECLARE_HASH(bmp_qhash, struct bmp_queue_entry, bhi,
-		bmp_qhash_cmp, bmp_qhash_hkey);
+DECLARE_RBTREE_UNIQ(bmp_rbtree, struct bmp_queue_entry, bhi, bmp_rbtree_cmp);
 
 static int bmp_active_cmp(const struct bmp_active *a,
 		const struct bmp_active *b)
@@ -1318,9 +1297,12 @@ static void bmp_eor_afi_safi(struct bmp *bmp, afi_t afi, safi_t safi, uint8_t pe
 	zlog_info("bmp[%s] %s %s table completed (EoR) (BGP %s)", bmp->remote, afi2str(afi),
 		  safi2str(safi), bmp->sync_bgp->name_pretty);
 
-	bmp_eor(bmp, afi, safi, BMP_PEER_FLAG_L, peer_type_flag, bmp->sync_bgp);
-	bmp_eor(bmp, afi, safi, 0, peer_type_flag, bmp->sync_bgp);
-	bmp_eor(bmp, afi, safi, 0, BMP_PEER_TYPE_LOC_RIB_INSTANCE, bmp->sync_bgp);
+	if (CHECK_FLAG(bmp->targets->afimon[afi][safi], BMP_MON_PREPOLICY))
+		bmp_eor(bmp, afi, safi, 0, peer_type_flag, bmp->sync_bgp);
+	if (CHECK_FLAG(bmp->targets->afimon[afi][safi], BMP_MON_POSTPOLICY))
+		bmp_eor(bmp, afi, safi, BMP_PEER_FLAG_L, peer_type_flag, bmp->sync_bgp);
+	if (CHECK_FLAG(bmp->targets->afimon[afi][safi], BMP_MON_LOC_RIB))
+		bmp_eor(bmp, afi, safi, 0, BMP_PEER_TYPE_LOC_RIB_INSTANCE, bmp->sync_bgp);
 
 	sync_bgp = bmp_get_next_bgp(bmp->targets, bmp->sync_bgp, afi, safi);
 	if (sync_bgp) {
@@ -1542,7 +1524,7 @@ afibreak:
 }
 
 static struct bmp_queue_entry *
-bmp_pull_from_queue(struct bmp_qlist_head *list, struct bmp_qhash_head *hash,
+bmp_pull_from_queue(struct bmp_qlist_head *list, struct bmp_rbtree_head *hash,
 		    struct bmp_queue_entry **queuepos_ptr)
 {
 	struct bmp_queue_entry *bqe;
@@ -1555,7 +1537,7 @@ bmp_pull_from_queue(struct bmp_qlist_head *list, struct bmp_qhash_head *hash,
 
 	bqe->refcount--;
 	if (!bqe->refcount) {
-		bmp_qhash_del(hash, bqe);
+		bmp_rbtree_del(hash, bqe);
 		bmp_qlist_del(list, bqe);
 	}
 	return bqe;
@@ -1796,7 +1778,7 @@ static void bmp_wrerr(struct bmp *bmp, struct pullwr *pullwr, bool eof)
 }
 
 static struct bmp_queue_entry *
-bmp_process_one(struct bmp_targets *bt, struct bmp_qhash_head *updhash,
+bmp_process_one(struct bmp_targets *bt, struct bmp_rbtree_head *updhash,
 		struct bmp_qlist_head *updlist, struct bgp *bgp, afi_t afi,
 		safi_t safi, struct bgp_dest *bn, struct peer *peer)
 {
@@ -1818,7 +1800,7 @@ bmp_process_one(struct bmp_targets *bt, struct bmp_qhash_head *updhash,
 		prefix_copy(&bqeref.rd,
 			    (struct prefix_rd *)bgp_dest_get_prefix(bn->pdest));
 
-	bqe = bmp_qhash_find(updhash, &bqeref);
+	bqe = bmp_rbtree_find(updhash, &bqeref);
 	if (bqe) {
 		if (bqe->refcount >= refcount)
 			/* nothing to do here */
@@ -1829,7 +1811,7 @@ bmp_process_one(struct bmp_targets *bt, struct bmp_qhash_head *updhash,
 		bqe = XMALLOC(MTYPE_BMP_QUEUE, sizeof(*bqe));
 		memcpy(bqe, &bqeref, sizeof(*bqe));
 
-		bmp_qhash_add(updhash, bqe);
+		bmp_rbtree_add(updhash, bqe);
 	}
 
 	bqe->refcount = refcount;
@@ -1931,6 +1913,48 @@ static void bmp_stat_put_u64(struct stream *s, size_t *cnt, uint16_t type,
 	(*cnt)++;
 }
 
+static void bmp_stats_peer(struct peer *peer, struct bmp_targets *bt)
+{
+	size_t count = 0, count_pos, len;
+	uint64_t peer_distinguisher = 0;
+	uint8_t peer_type_flag;
+	struct stream *s;
+	struct timeval tv;
+
+	peer_type_flag = bmp_get_peer_type(peer);
+	if (bmp_get_peer_distinguisher(peer->bgp, AFI_UNSPEC, peer_type_flag, &peer_distinguisher)) {
+		zlog_warn("skipping bmp message for peer %s: can't get peer distinguisher",
+			  peer->host);
+		return;
+	}
+
+	s = stream_new(BGP_MAX_PACKET_SIZE);
+	bmp_common_hdr(s, BMP_VERSION_3, BMP_TYPE_STATISTICS_REPORT);
+	gettimeofday(&tv, NULL);
+	bmp_per_peer_hdr(s, bt->bgp, peer, 0, peer_type_flag, peer_distinguisher, &tv);
+
+	count_pos = stream_get_endp(s);
+	stream_putl(s, 0);
+
+	bmp_stat_put_u32(s, &count, BMP_STATS_PFX_REJECTED, peer->stat_pfx_filter);
+	bmp_stat_put_u32(s, &count, BMP_STATS_UPD_LOOP_ASPATH, peer->stat_pfx_aspath_loop);
+	bmp_stat_put_u32(s, &count, BMP_STATS_UPD_LOOP_ORIGINATOR, peer->stat_pfx_originator_loop);
+	bmp_stat_put_u32(s, &count, BMP_STATS_UPD_LOOP_CLUSTER, peer->stat_pfx_cluster_loop);
+	bmp_stat_put_u32(s, &count, BMP_STATS_PFX_DUP_WITHDRAW, peer->stat_pfx_dup_withdraw);
+	bmp_stat_put_u32(s, &count, BMP_STATS_UPD_7606_WITHDRAW, peer->stat_pfx_withdraw);
+	if (bt->stats_send_experimental)
+		bmp_stat_put_u32(s, &count, BMP_STATS_FRR_NH_INVALID, peer->stat_pfx_nh_invalid);
+	bmp_stat_put_u64(s, &count, BMP_STATS_SIZE_ADJ_RIB_IN, peer->stat_pfx_adj_rib_in);
+	bmp_stat_put_u64(s, &count, BMP_STATS_SIZE_LOC_RIB, peer->stat_pfx_loc_rib);
+
+	stream_putl_at(s, count_pos, count);
+
+	len = stream_get_endp(s);
+	stream_putl_at(s, BMP_LENGTH_POS, len);
+
+	bmp_send_all(bt->bmpbgp, s);
+}
+
 static void bmp_stats(struct event *thread)
 {
 	struct bmp_targets *bt = EVENT_ARG(thread);
@@ -1940,6 +1964,7 @@ static void bmp_stats(struct event *thread)
 	if (bt->stat_msec)
 		event_add_timer_msec(bm->master, bmp_stats, bt, bt->stat_msec, &bt->t_stats);
 
+	bmp_stats_peer(bt->bgp->peer_self, bt);
 	bmp_stats_per_instance(bt->bgp, bt);
 	frr_each (bmp_imported_bgps, &bt->imported_bgps, bib) {
 		bgp = bgp_lookup_by_name(bib->name);
@@ -1950,61 +1975,16 @@ static void bmp_stats(struct event *thread)
 
 static void bmp_stats_per_instance(struct bgp *bgp, struct bmp_targets *bt)
 {
-	struct stream *s;
 	struct peer *peer;
 	struct listnode *node;
-	struct timeval tv;
-	uint8_t peer_type_flag;
-	uint64_t peer_distinguisher = 0;
-
-	gettimeofday(&tv, NULL);
 
 	/* Walk down all peers */
 	for (ALL_LIST_ELEMENTS_RO(bgp->peer, node, peer)) {
-		size_t count = 0, count_pos, len;
 
 		if (!peer_established(peer->connection))
 			continue;
 
-		s = stream_new(BGP_MAX_PACKET_SIZE);
-		bmp_common_hdr(s, BMP_VERSION_3, BMP_TYPE_STATISTICS_REPORT);
-		peer_type_flag = bmp_get_peer_type(peer);
-		if (bmp_get_peer_distinguisher(peer->bgp, AFI_UNSPEC, peer_type_flag,
-					       &peer_distinguisher)) {
-			zlog_warn("skipping bmp message for peer %s: can't get peer distinguisher",
-				  peer->host);
-			continue;
-		}
-		bmp_per_peer_hdr(s, bt->bgp, peer, 0, peer_type_flag, peer_distinguisher, &tv);
-
-		count_pos = stream_get_endp(s);
-		stream_putl(s, 0);
-
-		bmp_stat_put_u32(s, &count, BMP_STATS_PFX_REJECTED,
-				peer->stat_pfx_filter);
-		bmp_stat_put_u32(s, &count, BMP_STATS_UPD_LOOP_ASPATH,
-				peer->stat_pfx_aspath_loop);
-		bmp_stat_put_u32(s, &count, BMP_STATS_UPD_LOOP_ORIGINATOR,
-				peer->stat_pfx_originator_loop);
-		bmp_stat_put_u32(s, &count, BMP_STATS_UPD_LOOP_CLUSTER,
-				peer->stat_pfx_cluster_loop);
-		bmp_stat_put_u32(s, &count, BMP_STATS_PFX_DUP_WITHDRAW,
-				peer->stat_pfx_dup_withdraw);
-		bmp_stat_put_u32(s, &count, BMP_STATS_UPD_7606_WITHDRAW, peer->stat_pfx_withdraw);
-		if (bt->stats_send_experimental)
-			bmp_stat_put_u32(s, &count, BMP_STATS_FRR_NH_INVALID,
-					 peer->stat_pfx_nh_invalid);
-		bmp_stat_put_u64(s, &count, BMP_STATS_SIZE_ADJ_RIB_IN,
-				 peer->stat_pfx_adj_rib_in);
-		bmp_stat_put_u64(s, &count, BMP_STATS_SIZE_LOC_RIB,
-				 peer->stat_pfx_loc_rib);
-
-		stream_putl_at(s, count_pos, count);
-
-		len = stream_get_endp(s);
-		stream_putl_at(s, BMP_LENGTH_POS, len);
-
-		bmp_send_all(bt->bmpbgp, s);
+		bmp_stats_peer(peer, bt);
 	}
 }
 
@@ -2288,7 +2268,6 @@ bool bmp_bgp_update_vrf_status(enum bmp_vrf_state *vrf_state, struct bgp *bgp,
 			if (bbpeer) {
 				XFREE(MTYPE_BMP_OPEN, bbpeer->open_tx);
 				XFREE(MTYPE_BMP_OPEN, bbpeer->open_rx);
-				XFREE(MTYPE_BMP_OPEN, bbpeer->open_tx);
 				bmp_peerh_del(&bmp_peerh, bbpeer);
 				XFREE(MTYPE_BMP_PEER, bbpeer);
 			}
@@ -2348,9 +2327,9 @@ static struct bmp_targets *bmp_targets_get(struct bgp *bgp, const char *name)
 	FOREACH_AFI_SAFI (afi, safi)
 		bt->bgp_request_sync[afi][safi] = false;
 	bmp_session_init(&bt->sessions);
-	bmp_qhash_init(&bt->updhash);
+	bmp_rbtree_init(&bt->updhash);
 	bmp_qlist_init(&bt->updlist);
-	bmp_qhash_init(&bt->locupdhash);
+	bmp_rbtree_init(&bt->locupdhash);
 	bmp_qlist_init(&bt->locupdlist);
 	bmp_actives_init(&bt->actives);
 	bmp_listeners_init(&bt->listeners);
@@ -2393,9 +2372,9 @@ static void bmp_targets_put(struct bmp_targets *bt)
 	bmp_imported_bgps_fini(&bt->imported_bgps);
 	bmp_listeners_fini(&bt->listeners);
 	bmp_actives_fini(&bt->actives);
-	bmp_qhash_fini(&bt->updhash);
+	bmp_rbtree_fini(&bt->updhash);
 	bmp_qlist_fini(&bt->updlist);
-	bmp_qhash_fini(&bt->locupdhash);
+	bmp_rbtree_fini(&bt->locupdhash);
 	bmp_qlist_fini(&bt->locupdlist);
 
 	XFREE(MTYPE_BMP_ACLNAME, bt->acl_name);
@@ -3544,11 +3523,16 @@ static int bmp_bgp_attribute_updated(struct bgp *bgp, bool withdraw)
 	struct bmp_targets *bt;
 	struct listnode *node;
 	struct bmp_imported_bgp *bib;
-	struct stream *s = bmp_peerstate(bgp->peer_self, withdraw);
+	struct stream *s;
 	struct bmp *bmp;
 	afi_t afi;
 	safi_t safi;
 
+	/* update peer_self->router_id */
+	if (withdraw == false)
+		bgp->peer_self->local_id = bgp->router_id;
+
+	s = bmp_peerstate(bgp->peer_self, withdraw);
 	if (!s)
 		return 0;
 
