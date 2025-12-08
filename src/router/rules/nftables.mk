@@ -42,9 +42,6 @@ nftables-configure: libmnl libnftnl
 		AR_FLAGS="'cru $(LTOPLUGIN)'" \
 		RANLIB="$(ARCH)-linux-ranlib $(LTOPLUGIN)"
 
-nftables-new-clean:
-	-make -C nftables clean
-
 nftables: libmnl libnftnl
 	-make -C nftables
 
