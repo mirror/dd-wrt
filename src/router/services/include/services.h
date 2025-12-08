@@ -290,6 +290,14 @@ void configure_single_ath9k(int count);
 void ath9k_start_supplicant(int count, char *prefix, char **configs, int *configidx);
 #endif
 
+#ifdef HAVE_BONDING
+int isBond(char *ifname)
+#else
+static inline int isBond(char *ifname) {
+	return 0;
+}
+#endif
+
 int wlconf_up(char *name);
 
 void runStartup(char *extension);

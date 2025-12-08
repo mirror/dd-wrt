@@ -565,7 +565,8 @@ static void create_spec_forward(char *wan_iface, char *proto, char *src, char *w
 		if (disabled == 0) {
 			save2file_A_prerouting("-p %s -m %s -s %s -d %s --dport %s -j DNAT --to-destination %s:%s", proto, proto,
 					       src, wanaddr, from, ip, to);
-			if (nvram_match("wan_proto", "pppoe_dual") || (nvram_match("wan_proto", "pptp") && nvram_matchi("wan_dualaccess", 1)) ||
+			if (nvram_match("wan_proto", "pppoe_dual") ||
+			    (nvram_match("wan_proto", "pptp") && nvram_matchi("wan_dualaccess", 1)) ||
 			    (nvram_match("wan_proto", "l2tp") && nvram_matchi("wan_dualaccess", 1)))
 				save2file_A_prerouting("-i %s -p %s -m %s --dport %s -j DNAT --to-destination %s:%s", wan_iface,
 						       proto, proto, from, ip, to);
@@ -583,7 +584,8 @@ static void create_spec_forward(char *wan_iface, char *proto, char *src, char *w
 		if (disabled == 0) {
 			save2file_A_prerouting("-p %s -m %s -d %s --dport %s -j DNAT --to-destination %s:%s", proto, proto, wanaddr,
 					       from, ip, to);
-			if (nvram_match("wan_proto", "pppoe_dual") || (nvram_match("wan_proto", "pptp") && nvram_matchi("wan_dualaccess", 1)) ||
+			if (nvram_match("wan_proto", "pppoe_dual") ||
+			    (nvram_match("wan_proto", "pptp") && nvram_matchi("wan_dualaccess", 1)) ||
 			    (nvram_match("wan_proto", "l2tp") && nvram_matchi("wan_dualaccess", 1)))
 				save2file_A_prerouting("-i %s -p %s -m %s --dport %s -j DNAT --to-destination %s:%s", wan_iface,
 						       proto, proto, from, ip, to);
@@ -717,6 +719,19 @@ static void destroy_ip_forward(char *wan_iface)
 		eval("ifconfig", buff, "0.0.0.0");
 	}
 }
+static void valid_interface(char *ifname)
+{
+	char *sta = NULL;
+	if (isClient())
+		sta = getSTA();
+
+	if (strncmp(var, "bond", 4) || isBond(var)) {
+		if (sta && !strncmp(ifname, sta, strlen(sta)))
+			return 0;
+		return 1;
+	}
+	return 0;
+}
 
 static void nat_prerouting_bridged(char *wanface, char *vifs)
 {
@@ -733,12 +748,15 @@ static void nat_prerouting_bridged(char *wanface, char *vifs)
 		char vif_ip[32];
 		foreach(var, vifs, next) {
 			if ((!wanface || strcmp(wanface, var)) && strcmp(nvram_safe_get("lan_ifname"), var)) {
-				if (nvram_nmatch("1", "%s_tor", var) && isstandalone(var)) {
-					save2file_A_prerouting("-i %s -p udp --dport 53 -j DNAT --to %s:5353", var,
-							       get_lan_ipaddr());
-					save2file_A_prerouting("-i %s -p udp --dport 5353 -j DNAT --to %s:5353", var,
-							       get_lan_ipaddr());
-					save2file_A_prerouting("-i %s -p tcp --syn -j DNAT --to %s:9040", var, get_lan_ipaddr());
+				if (valid_interface(ifname)) {
+					if (nvram_nmatch("1", "%s_tor", var) && isstandalone(var)) {
+						save2file_A_prerouting("-i %s -p udp --dport 53 -j DNAT --to %s:5353", var,
+								       get_lan_ipaddr());
+						save2file_A_prerouting("-i %s -p udp --dport 5353 -j DNAT --to %s:5353", var,
+								       get_lan_ipaddr());
+						save2file_A_prerouting("-i %s -p tcp --syn -j DNAT --to %s:9040", var,
+								       get_lan_ipaddr());
+					}
 				}
 			}
 		}
@@ -761,13 +779,17 @@ static void nat_prerouting_bridged(char *wanface, char *vifs)
 	foreach(var, vifs, next) {
 		if ((!wanface || strcmp(wanface, var)) && strcmp(nvram_safe_get("lan_ifname"), var)) {
 			if (nvram_nmatch("1", "%s_dns_redirect", var)) {
-				char *target = nvram_nget("%s_dns_ipaddr", var);
-				if (*target && sv_valid_ipaddr(target) && strcmp(target, "0.0.0.0")) {
-					save2file_A_prerouting("-i %s -p udp --dport 53 -j DNAT --to %s", var, target);
-					save2file_A_prerouting("-i %s -p tcp --dport 53 -j DNAT --to %s", var, target);
-				} else {
-					save2file_A_prerouting("-i %s -p udp --dport 53 -j DNAT --to %s", var, get_lan_ipaddr());
-					save2file_A_prerouting("-i %s -p tcp --dport 53 -j DNAT --to %s", var, get_lan_ipaddr());
+				if (valid_interface(var)) {
+					char *target = nvram_nget("%s_dns_ipaddr", var);
+					if (*target && sv_valid_ipaddr(target) && strcmp(target, "0.0.0.0")) {
+						save2file_A_prerouting("-i %s -p udp --dport 53 -j DNAT --to %s", var, target);
+						save2file_A_prerouting("-i %s -p tcp --dport 53 -j DNAT --to %s", var, target);
+					} else {
+						save2file_A_prerouting("-i %s -p udp --dport 53 -j DNAT --to %s", var,
+								       get_lan_ipaddr());
+						save2file_A_prerouting("-i %s -p tcp --dport 53 -j DNAT --to %s", var,
+								       get_lan_ipaddr());
+					}
 				}
 			}
 		}
@@ -799,9 +821,11 @@ static void nat_prerouting(char *wanface, char *wanaddr, char *lan_cclass, int d
 		foreach(var, vifs, next) {
 			if ((!wanface || strcmp(wanface, var)) && strcmp(nvram_safe_get("lan_ifname"), var)) {
 				if (nvram_nmatch("1", "%s_isolation", var)) {
-					save2file_A_prerouting("-i %s -d %s/%s -j RETURN", var, lan_ip, get_lan_netmask());
-					sprintf(vif_ip, "%s_ipaddr", var);
-					save2file_A_prerouting("-i %s -d %s -j RETURN", var, nvram_safe_get(vif_ip));
+					if (valid_interface(var)) {
+						save2file_A_prerouting("-i %s -d %s/%s -j RETURN", var, lan_ip, get_lan_netmask());
+						sprintf(vif_ip, "%s_ipaddr", var);
+						save2file_A_prerouting("-i %s -d %s -j RETURN", var, nvram_safe_get(vif_ip));
+					}
 				}
 			}
 		}
@@ -1004,8 +1028,9 @@ static void nat_postrouting(char *wanface, char *wanaddr, char *vifs)
 			wan_ifname_tun = getSTA();
 		}
 #if defined(HAVE_PPTP) || defined(HAVE_L2TP) || defined(HAVE_PPPOEDUAL)
-		if (nvram_match("wan_proto", "pppoe_dual") || (nvram_match("wan_proto", "pptp") && nvram_matchi("wan_dualaccess", 1)) ||
-		    (nvram_match("wan_proto","l2tp") && nvram_matchi("wan_dualaccess", 1))) {
+		if (nvram_match("wan_proto", "pppoe_dual") ||
+		    (nvram_match("wan_proto", "pptp") && nvram_matchi("wan_dualaccess", 1)) ||
+		    (nvram_match("wan_proto", "l2tp") && nvram_matchi("wan_dualaccess", 1))) {
 			struct in_addr ifaddr;
 			osl_ifaddr(wan_ifname_tun, &ifaddr);
 			save2file_A_postrouting("-o %s -j SNAT --to-source %s", wan_ifname_tun, inet_ntoa(ifaddr));
@@ -2627,14 +2652,16 @@ static void filter_input(char *wanface, char *lanface, char *wanaddr, int remote
 	// if (vifs != NULL)
 	foreach(var, vifs, next) {
 		if (strcmp(safe_get_wan_face(wan_if_buffer), var) && strcmp(nvram_safe_get("lan_ifname"), var)) {
-			if (nvram_nmatch("1", "%s_isolation", var)) {
-				save2file_A_input("-i %s -p udp --dport 67 -j %s", var, log_accept);
-				save2file_A_input("-i %s -p udp --dport 53 -j %s", var, log_accept);
-				save2file_A_input("-i %s -p tcp --dport 53 -j %s", var, log_accept);
-				save2file_A_input("-i %s -m state --state NEW -j %s", var, log_drop);
-			}
-			if (isstandalone(var)) {
-				save2file_A_input("-i %s -j %s", var, log_accept);
+			if (valid_interface(var)) {
+				if (nvram_nmatch("1", "%s_isolation", var)) {
+					save2file_A_input("-i %s -p udp --dport 67 -j %s", var, log_accept);
+					save2file_A_input("-i %s -p udp --dport 53 -j %s", var, log_accept);
+					save2file_A_input("-i %s -p tcp --dport 53 -j %s", var, log_accept);
+					save2file_A_input("-i %s -m state --state NEW -j %s", var, log_drop);
+				}
+				if (isstandalone(var)) {
+					save2file_A_input("-i %s -j %s", var, log_accept);
+				}
 			}
 		}
 	}
@@ -2729,9 +2756,11 @@ static void filter_forward(char *wanface, char *lanface, char *lan_cclass, int d
 
 	foreach(var, vifs, next) {
 		if (strcmp(safe_get_wan_face(wan_if_buffer), var) && strcmp(nvram_safe_get("lan_ifname"), var)) {
-			if (nvram_nmatch("1", "%s_isolation", var)) {
-				save2file_A_forward("-i %s -d %s/%s -m state --state NEW -j %s", var, get_lan_ipaddr(),
-						    get_lan_netmask(), log_drop);
+			if (valid_interface(var)) {
+				if (nvram_nmatch("1", "%s_isolation", var)) {
+					save2file_A_forward("-i %s -d %s/%s -m state --state NEW -j %s", var, get_lan_ipaddr(),
+							    get_lan_netmask(), log_drop);
+				}
 			}
 		}
 	}
@@ -2756,8 +2785,10 @@ static void filter_forward(char *wanface, char *lanface, char *lan_cclass, int d
 
 	foreach(var, vifs, next) {
 		if (strcmp(safe_get_wan_face(wan_if_buffer), var) && strcmp(nvram_safe_get("lan_ifname"), var)) {
-			if (isstandalone(var) && nvram_nmatch("1", "%s_nat", var)) {
-				save2file_A_forward("-i %s -j lan2wan", var);
+			if (valid_interface(var)) {
+				if (isstandalone(var) && nvram_nmatch("1", "%s_nat", var)) {
+					save2file_A_forward("-i %s -j lan2wan", var);
+				}
 			}
 		}
 	}
@@ -2921,17 +2952,19 @@ static void filter_forward(char *wanface, char *lanface, char *lan_cclass, int d
 		save2file_A_forward("-o %s -d %s%s -j %s", lanface, lan_cclass, nvram_safe_get("dmz_ipaddr"), log_accept);
 	foreach(var, vifs, next) {
 		if (strcmp(safe_get_wan_face(wan_if_buffer), var) && strcmp(nvram_safe_get("lan_ifname"), var)) {
-			if (nvram_nmatch("1", "%s_isolation", var)) {
-				save2file_A_forward("-i br0 -o %s -m state --state NEW -j %s", var, log_drop);
-				if (nvram_matchi("privoxy_transp_enable", 1)) {
-					save2file("-I INPUT -i %s -d %s/%s -p tcp --dport 8118 -j %s", var, get_lan_ipaddr(),
-						  get_lan_netmask(), log_accept);
+			if (valid_interface(var)) {
+				if (nvram_nmatch("1", "%s_isolation", var)) {
+					save2file_A_forward("-i br0 -o %s -m state --state NEW -j %s", var, log_drop);
+					if (nvram_matchi("privoxy_transp_enable", 1)) {
+						save2file("-I INPUT -i %s -d %s/%s -p tcp --dport 8118 -j %s", var,
+							  get_lan_ipaddr(), get_lan_netmask(), log_accept);
+					}
 				}
-			}
-			if (*wanface) {
-				save2file_A_forward("-i %s -o %s -j TRIGGER --trigger-type in", wanface, var);
-				save2file_A_forward("-i %s -j trigger_out", var);
-				save2file_A_forward("-i %s -m state --state NEW -j %s", var, log_accept);
+				if (*wanface) {
+					save2file_A_forward("-i %s -o %s -j TRIGGER --trigger-type in", wanface, var);
+					save2file_A_forward("-i %s -j trigger_out", var);
+					save2file_A_forward("-i %s -m state --state NEW -j %s", var, log_accept);
+				}
 			}
 		}
 	}
@@ -3189,14 +3222,16 @@ static void filter_table(char *wanface, char *lanface, char *wanaddr, char *lan_
 		save2file_A_input("-j SECURITY");
 		foreach(var, vifs, next) {
 			if (strcmp(safe_get_wan_face(wan_if_buffer), var) && strcmp(nvram_safe_get("lan_ifname"), var)) {
-				if (nvram_nmatch("1", "%s_isolation", var)) {
-					save2file_A_input("-i %s -p udp --dport 67 -j %s", var, log_accept);
-					save2file_A_input("-i %s -p udp --dport 53 -j %s", var, log_accept);
-					save2file_A_input("-i %s -p tcp --dport 53 -j %s", var, log_accept);
-					save2file_A_input("-i %s -m state --state NEW -j %s", var, log_drop);
-				}
-				if (isstandalone(var)) {
-					save2file_A_input("-i %s -j %s", var, log_accept);
+				if (valid_interface(var)) {
+					if (nvram_nmatch("1", "%s_isolation", var)) {
+						save2file_A_input("-i %s -p udp --dport 67 -j %s", var, log_accept);
+						save2file_A_input("-i %s -p udp --dport 53 -j %s", var, log_accept);
+						save2file_A_input("-i %s -p tcp --dport 53 -j %s", var, log_accept);
+						save2file_A_input("-i %s -m state --state NEW -j %s", var, log_drop);
+					}
+					if (isstandalone(var)) {
+						save2file_A_input("-i %s -j %s", var, log_accept);
+					}
 				}
 			}
 		}
@@ -3393,12 +3428,12 @@ static void run_firewall6(char *vifs)
 
 #ifdef HAVE_GEOIP
 	if (*nvram_safe_get("geoip_blacklist")) {
-		eval(IP6TABLES, "-A", "SECURITY", "-i", wanface, "-m", "geoip", "--src-cc", nvram_safe_get("geoip_blacklist"),
-		     "-j", "tarpit");
+		eval(IP6TABLES, "-A", "SECURITY", "-i", wanface, "-m", "geoip", "--src-cc", nvram_safe_get("geoip_blacklist"), "-j",
+		     "tarpit");
 	}
 	if (*nvram_safe_get("geoip_whitelist")) {
-		eval(IP6TABLES, "-A", "SECURITY", "-i", wanface, "-m", "geoip", "--src-cc", nvram_safe_get("geoip_whitelist"),
-		     "-j", "RETURN");
+		eval(IP6TABLES, "-A", "SECURITY", "-i", wanface, "-m", "geoip", "--src-cc", nvram_safe_get("geoip_whitelist"), "-j",
+		     "RETURN");
 		eval(IP6TABLES, "-A", "SECURITY", "-i", wanface, "-j", "tarpit");
 	}
 #endif
@@ -3430,13 +3465,13 @@ static void run_firewall6(char *vifs)
 		eval(IP6TABLES, "-i", wanface, "-A", "INPUT", "-m", "recent", "--name", "portscan", "--remove");
 		eval(IP6TABLES, "-i", wanface, "-A", "FORWARD", "-m", "recent", "--name", "portscan", "--remove");
 
-		eval(IP6TABLES, "-i", wanface, "-A", "INPUT", "-p", "tcp", "-m", "tcp", "--dport", "139", "-m", "recent",
-		     "--name", "portscan", "--set", "-j", "portscan");
+		eval(IP6TABLES, "-i", wanface, "-A", "INPUT", "-p", "tcp", "-m", "tcp", "--dport", "139", "-m", "recent", "--name",
+		     "portscan", "--set", "-j", "portscan");
 		eval(IP6TABLES, "-i", wanface, "-A", "FORWARD", "-p", "tcp", "-m", "tcp", "--dport", "139", "-m", "recent",
 		     "--name", "portscan", "--set", "-j", "portscan");
 #ifdef HAVE_PORTSCAN
-		eval(IP6TABLES, "-i", wanface, "-A", "INPUT", "-m", "psd", "--psd-weight-threshold", "15",
-		     "--psd-hi-ports-weight", "3", "-j", log_drop);
+		eval(IP6TABLES, "-i", wanface, "-A", "INPUT", "-m", "psd", "--psd-weight-threshold", "15", "--psd-hi-ports-weight",
+		     "3", "-j", log_drop);
 		eval(IP6TABLES, "-i", wanface, "-A", "FORWARD", "-m", "psd", "--psd-weight-threshold", "15",
 		     "--psd-hi-ports-weight", "3", "-j", log_drop);
 #endif
@@ -3487,8 +3522,8 @@ static void run_firewall6(char *vifs)
 
 	/* Accept DHCPv6 traffic */
 	//      eval(IP6TABLES, "-A", "INPUT", "-s", "fe80::/10", "-d", "fe80::/10", "-p", "udp", "--sport", "547", "--dport", "546", "-m", "conntrack", "--ctstate", "NEW", "-j", log_accept);
-	eval(IP6TABLES, "-A", "INPUT", "-p", "udp", "--sport", "547", "--dport", "546", "-m", "conntrack", "--ctstate", "NEW",
-	     "-j", log_accept);
+	eval(IP6TABLES, "-A", "INPUT", "-p", "udp", "--sport", "547", "--dport", "546", "-m", "conntrack", "--ctstate", "NEW", "-j",
+	     log_accept);
 	/* Allow the localnet access us */
 	eval(IP6TABLES, "-A", "INPUT", "-i", nvram_safe_get("lan_ifname"), "-j", log_accept);
 	/* Allow Link-Local addresses */
@@ -3502,19 +3537,21 @@ static void run_firewall6(char *vifs)
 	     log_accept);
 
 	foreach(var, vifs, next) {
-		if (strcmp(wanface, var) && strcmp(nvram_safe_get("lan_ifname"), var)) {
-			if (isstandalone(var)) {
-				eval(IP6TABLES, "-A", "FORWARD", "-m", "conntrack", "--ctstate", "NEW", "-i", var, "-j",
-				     log_accept);
-				eval(IP6TABLES, "-A", "INPUT", "-i", var, "-j", log_accept);
+		if (valid_interface(var)) {
+			if (strcmp(wanface, var) && strcmp(nvram_safe_get("lan_ifname"), var)) {
+				if (isstandalone(var)) {
+					eval(IP6TABLES, "-A", "FORWARD", "-m", "conntrack", "--ctstate", "NEW", "-i", var, "-j",
+					     log_accept);
+					eval(IP6TABLES, "-A", "INPUT", "-i", var, "-j", log_accept);
+				}
 			}
 		}
 	}
 	/* Use the technique of TCP MSS Clamping to correct weird browsers behaviour */
-	eval(IP6TABLES, "-t", "mangle", "-D", "FORWARD", "-p", "tcp", "-m", "tcp", "--tcp-flags", "SYN,RST", "SYN", "-j",
-	     "TCPMSS", "--clamp-mss-to-pmtu");
-	eval(IP6TABLES, "-t", "mangle", "-A", "FORWARD", "-p", "tcp", "-m", "tcp", "--tcp-flags", "SYN,RST", "SYN", "-j",
-	     "TCPMSS", "--clamp-mss-to-pmtu");
+	eval(IP6TABLES, "-t", "mangle", "-D", "FORWARD", "-p", "tcp", "-m", "tcp", "--tcp-flags", "SYN,RST", "SYN", "-j", "TCPMSS",
+	     "--clamp-mss-to-pmtu");
+	eval(IP6TABLES, "-t", "mangle", "-A", "FORWARD", "-p", "tcp", "-m", "tcp", "--tcp-flags", "SYN,RST", "SYN", "-j", "TCPMSS",
+	     "--clamp-mss-to-pmtu");
 
 	if (nvram_match("wan_proto", "iphone") || nvram_match("wan_proto", "android") || nvram_match("wan_proto", "3g")) {
 		insmod("xt_HL");
@@ -3533,18 +3570,18 @@ static void run_firewall6(char *vifs)
 	eval(IP6TABLES, "-A", "INPUT", "-p", "ipv6-icmp", "-m", "icmp6", "--icmpv6-type", "128", "-j", log_accept);
 
 	eval(IP6TABLES, "-A", "INPUT", "-p", "ipv6-icmp", "-m", "icmp6", "--icmpv6-type", "129", "-j", log_accept);
-	eval(IP6TABLES, "-A", "INPUT", "-p", "ipv6-icmp", "-m", "icmp6", "--icmpv6-type", "133", "-m", "hl", "--hl-eq", "255",
-	     "-j", log_accept);
-	eval(IP6TABLES, "-A", "INPUT", "-p", "ipv6-icmp", "-m", "icmp6", "--icmpv6-type", "134", "-m", "hl", "--hl-eq", "255",
-	     "-j", log_accept);
-	eval(IP6TABLES, "-A", "INPUT", "-p", "ipv6-icmp", "-m", "icmp6", "--icmpv6-type", "135", "-m", "hl", "--hl-eq", "255",
-	     "-j", log_accept);
-	eval(IP6TABLES, "-A", "INPUT", "-p", "ipv6-icmp", "-m", "icmp6", "--icmpv6-type", "136", "-m", "hl", "--hl-eq", "255",
-	     "-j", log_accept);
-	eval(IP6TABLES, "-A", "INPUT", "-p", "ipv6-icmp", "-m", "icmp6", "--icmpv6-type", "141", "-m", "hl", "--hl-eq", "255",
-	     "-j", log_accept);
-	eval(IP6TABLES, "-A", "INPUT", "-p", "ipv6-icmp", "-m", "icmp6", "--icmpv6-type", "142", "-m", "hl", "--hl-eq", "255",
-	     "-j", log_accept);
+	eval(IP6TABLES, "-A", "INPUT", "-p", "ipv6-icmp", "-m", "icmp6", "--icmpv6-type", "133", "-m", "hl", "--hl-eq", "255", "-j",
+	     log_accept);
+	eval(IP6TABLES, "-A", "INPUT", "-p", "ipv6-icmp", "-m", "icmp6", "--icmpv6-type", "134", "-m", "hl", "--hl-eq", "255", "-j",
+	     log_accept);
+	eval(IP6TABLES, "-A", "INPUT", "-p", "ipv6-icmp", "-m", "icmp6", "--icmpv6-type", "135", "-m", "hl", "--hl-eq", "255", "-j",
+	     log_accept);
+	eval(IP6TABLES, "-A", "INPUT", "-p", "ipv6-icmp", "-m", "icmp6", "--icmpv6-type", "136", "-m", "hl", "--hl-eq", "255", "-j",
+	     log_accept);
+	eval(IP6TABLES, "-A", "INPUT", "-p", "ipv6-icmp", "-m", "icmp6", "--icmpv6-type", "141", "-m", "hl", "--hl-eq", "255", "-j",
+	     log_accept);
+	eval(IP6TABLES, "-A", "INPUT", "-p", "ipv6-icmp", "-m", "icmp6", "--icmpv6-type", "142", "-m", "hl", "--hl-eq", "255", "-j",
+	     log_accept);
 	eval(IP6TABLES, "-A", "INPUT", "-s", "fe80::/10", "-p", "ipv6-icmp", "-m", "icmp6", "--icmpv6-type", "130", "-j",
 	     log_accept);
 	eval(IP6TABLES, "-A", "INPUT", "-s", "fe80::/10", "-p", "ipv6-icmp", "-m", "icmp6", "--icmpv6-type", "131", "-j",
@@ -3553,10 +3590,10 @@ static void run_firewall6(char *vifs)
 	     log_accept);
 	eval(IP6TABLES, "-A", "INPUT", "-s", "fe80::/10", "-p", "ipv6-icmp", "-m", "icmp6", "--icmpv6-type", "143", "-j",
 	     log_accept);
-	eval(IP6TABLES, "-A", "INPUT", "-p", "ipv6-icmp", "-m", "icmp6", "--icmpv6-type", "148", "-m", "hl", "--hl-eq", "255",
-	     "-j", log_accept);
-	eval(IP6TABLES, "-A", "INPUT", "-p", "ipv6-icmp", "-m", "icmp6", "--icmpv6-type", "149", "-m", "hl", "--hl-eq", "255",
-	     "-j", log_accept);
+	eval(IP6TABLES, "-A", "INPUT", "-p", "ipv6-icmp", "-m", "icmp6", "--icmpv6-type", "148", "-m", "hl", "--hl-eq", "255", "-j",
+	     log_accept);
+	eval(IP6TABLES, "-A", "INPUT", "-p", "ipv6-icmp", "-m", "icmp6", "--icmpv6-type", "149", "-m", "hl", "--hl-eq", "255", "-j",
+	     log_accept);
 	eval(IP6TABLES, "-A", "INPUT", "-s", "fe80::/10", "-p", "ipv6-icmp", "-m", "icmp6", "--icmpv6-type", "151", "-m", "hl",
 	     "--hl-eq", "1", "-j", log_accept);
 	eval(IP6TABLES, "-A", "INPUT", "-s", "fe80::/10", "-p", "ipv6-icmp", "-m", "icmp6", "--icmpv6-type", "152", "-m", "hl",
@@ -3636,15 +3673,15 @@ static void run_firewall6(char *vifs)
 	if (log_level > 0) {
 #ifdef FLOOD_PROTECT
 		if (nvram_matchi("log_accepted", 1))
-			eval(IP6TABLES, "-A", "logaccept", "-i", wanface, "-m", "state", "--state", "NEW", "-m", "limit",
-			     "--limit", FLOOD_RATE, "-j", "LOG", "--log-prefix", "FLOOD ", "--log-tcp-sequence",
-			     "--log-tcp-options", "--log-ip-options");
+			eval(IP6TABLES, "-A", "logaccept", "-i", wanface, "-m", "state", "--state", "NEW", "-m", "limit", "--limit",
+			     FLOOD_RATE, "-j", "LOG", "--log-prefix", "FLOOD ", "--log-tcp-sequence", "--log-tcp-options",
+			     "--log-ip-options");
 		eval(IP6TABLES, "-A", "logaccept", "-i", wanface, "-m", "state", "--state", "NEW", "-m", "limit", "--limit",
 		     FLOOD_RATE, "-j", "tarpit");
 #endif
 		if (nvram_matchi("log_accepted", 1))
-			eval(IP6TABLES, "-A", "logaccept", "-m", "state", "--state", "NEW", "-j", "LOG", "--log-prefix",
-			     "ACCEPT ", "--log-tcp-sequence", "--log-tcp-options", "--log-ip-options");
+			eval(IP6TABLES, "-A", "logaccept", "-m", "state", "--state", "NEW", "-j", "LOG", "--log-prefix", "ACCEPT ",
+			     "--log-tcp-sequence", "--log-tcp-options", "--log-ip-options");
 
 		eval(IP6TABLES, "-A", "logaccept", "-j", "ACCEPT");
 		/*
@@ -3674,9 +3711,9 @@ static void run_firewall6(char *vifs)
 		 * limaccept chain 
 		 */
 		if (nvram_matchi("log_accepted", 1))
-			eval(IP6TABLES, "-A", "limaccept", "-i", wanface, "-m", "state", "--state", "NEW", "-m", "limit",
-			     "--limit", FLOOD_RATE, "-j", "LOG", "--log-prefix", "FLOOD ", "--log-tcp-sequence",
-			     "--log-tcp-options", "--log-ip-options");
+			eval(IP6TABLES, "-A", "limaccept", "-i", wanface, "-m", "state", "--state", "NEW", "-m", "limit", "--limit",
+			     FLOOD_RATE, "-j", "LOG", "--log-prefix", "FLOOD ", "--log-tcp-sequence", "--log-tcp-options",
+			     "--log-ip-options");
 		eval(IP6TABLES, "-A", "limaccept", "-i", wanface, "-m", "state", "--state", "NEW", "-m", "limit", "--limit",
 		     FLOOD_RATE, "-j", "tarpit");
 		eval(IP6TABLES, "-A", "limaccept", "-j", "ACCEPT");
