@@ -162,10 +162,10 @@ freeradius3-configure: libtalloc openssl libpcap
 	--without-rlm_yubikey \
 	--without-rlm_json
 	sed -i 's/-isystem \/usr\/include/ /g' $(TOP)/freeradius3/Make.inc
+	cd freeradius3 && mkdir -p build/make; gcc scripts/jlibtool.c -o build/make/jlibtool
 
 
 freeradius3: libtalloc libpcap openssl-apps
-	cd freeradius3 && mkdir -p build/make; gcc scripts/jlibtool.c -o build/make/jlibtool
 	make -C freeradius3 R="$(INSTALLDIR)/freeradius3" INSTALLSTRIP="" all
 
 freeradius3-clean:
