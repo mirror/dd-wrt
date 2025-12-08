@@ -392,16 +392,16 @@ for i in $(seq 1 $tunnels); do
 			#New Inbound opening of firewall for site-to-site
 			if [[ $($nv get oet${i}_firewallin) -eq 0 ]]; then
 				echo "$ipt -D INPUT -i $WAN_IF -p udp --dport $($nv get oet${i}_port) -j $ACCEPT" >> $WGDELRT
-				echo "$ipt -D FORWARD -i oet${i} $FW_STATE -j $ACCEPT" >> $WGDELRT
-				echo "$ipt -D INPUT -i oet${i} $FW_STATE -j $ACCEPT" >> $WGDELRT
+#				echo "$ipt -D FORWARD -i oet${i} $FW_STATE -j $ACCEPT" >> $WGDELRT
+#				echo "$ipt -D INPUT -i oet${i} $FW_STATE -j $ACCEPT" >> $WGDELRT
 				$ipt -I INPUT -i $WAN_IF -p udp --dport $($nv get oet${i}_port) -j $ACCEPT >/dev/null 2>&1
 				$ipt -I FORWARD -i oet${i} $FW_STATE -j $ACCEPT >/dev/null 2>&1
 				$ipt -I INPUT -i oet${i} $FW_STATE -j $ACCEPT >/dev/null 2>&1
 				#For IPv6
 				if [[ $ipv6_en -eq 1 ]]; then
 					echo "$ip6t -D INPUT -i $WAN_IF -p udp --dport $($nv get oet${i}_port) -j $ACCEPT" >> $WGDELRT
-					echo "$ip6t -D FORWARD -i oet${i} $FW_STATE -j $ACCEPT" >> $WGDELRT
-					echo "$ip6t -D INPUT -i oet${i} $FW_STATE -j $ACCEPT" >> $WGDELRT
+#					echo "$ip6t -D FORWARD -i oet${i} $FW_STATE -j $ACCEPT" >> $WGDELRT
+#					echo "$ip6t -D INPUT -i oet${i} $FW_STATE -j $ACCEPT" >> $WGDELRT
 					$ip6t -I INPUT -i $WAN_IF -p udp --dport $($nv get oet${i}_port) -j $ACCEPT >/dev/null 2>&1
 					$ip6t -I FORWARD -i oet${i} $FW_STATE -j $ACCEPT >/dev/null 2>&1
 					$ip6t -I INPUT -i oet${i} $FW_STATE -j $ACCEPT >/dev/null 2>&1
