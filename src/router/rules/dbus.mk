@@ -24,10 +24,11 @@ dbus-configure:
 	RANLIB="$(ARCH)-linux-ranlib $(LTOPLUGIN)"
 	#cd dbus && ./configure --prefix=/usr --host=$(ARCH)-linux
 	# probabaly need --enable-systemd to add systemd support to start dbus, need: sudo apt install
+	$(MAKE) -C dbus
+	$(MAKE) -C dbus DESTDIR=$(TOP)/dbus/staged install
 
 dbus:
 	$(MAKE) -C dbus
-	$(MAKE) -C dbus DESTDIR=$(TOP)/dbus/staged install
 
 dbus-install:
 	install -D dbus/bus/.libs/dbus-daemon $(INSTALLDIR)/dbus/usr/sbin/dbus-daemon
