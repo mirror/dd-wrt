@@ -1713,7 +1713,8 @@ int check_blocklist(const char *service, char *ip)
 			}
 			goto end;
 		}
-		dd_logdebug(service, "blocklist: entry %s ends at %lld, current %lld\n", &entry->ip[0], entry->end, cur);
+		if (entry->end)
+			dd_logdebug(service, "blocklist: entry %s ends at %lld, current %lld\n", &entry->ip[0], entry->end, cur);
 		//time over, free entry
 		if (entry->end && entry->end < cur) {
 			char check[INET6_ADDRSTRLEN];

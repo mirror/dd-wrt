@@ -831,7 +831,7 @@ char *get_lan_dns(void)
 
 char *get_lan_gateway(void)
 {
-	char *lan_gw = nvram_safe_get("lan_dns");
+	char *lan_gw = nvram_safe_get("lan_gateway");
 	if (*nvram_safe_get("lan_dhcpgw") && strcmp(nvram_safe_get("lan_dhcpgw"), "0.0.0.0") && nvram_match("lan_dhcp", "1")) {
 		lan_gw = nvram_safe_get("lan_dhcpgw");
 	}
