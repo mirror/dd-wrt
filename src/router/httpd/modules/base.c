@@ -2757,49 +2757,56 @@ static int do_crashlog(unsigned char method, struct mime_handler *handler, char 
 		  _tran_string(buf, sizeof(buf), "share.crashloglegend"));
 
 	do_ddwrt_inspired_themes(stream);
-	FILE *fp = fopen("/sys/fs/pstore/dmesg-pstore_blk-1", "rb");
-	if (fp) {
-		fclose(fp);
-		char nums[64];
-		int i;
-		websWrite(stream, "<div style=\"height: 770px; overflow-y: auto; overflow-x: hidden;\"><table><tbody>");
-		for (i = 1; i < 255; i++) {
-			sprintf(nums, "/sys/fs/pstore/dmesg-pstore_blk-%d", i);
-			fp = fopen(nums, "r");
-			if (fp != NULL) {
-				char line[1024];
-				while (fgets(line, sizeof(line), fp) != NULL) {
-					count++;
-					if (offset <= count && ((offset + 50) > count)) { // show 100 lines
-						int level = line[1] - '0';
+	int c;
+	char *storage = "ramoops";
+	websWrite(stream, "<div style=\"height: 770px; overflow-y: auto; overflow-x: hidden;\"><table><tbody>");
+	for (c = 0; c < 2; c++) {
+		char type[128];
+		sprintf(type, "/sys/fs/pstore/dmesg-pstore_%s-%d", storage, c);
+		FILE *fp = fopen(type, "rb");
+		if (fp) {
+			fclose(fp);
+			char nums[64];
+			int i;
+			for (i = 0; i < 255; i++) {
+				sprintf(nums, "/sys/fs/pstore/dmesg-pstore_%s-%d", storage, i);
+				fp = fopen(nums, "r");
+				if (fp != NULL) {
+					char line[1024];
+					while (fgets(line, sizeof(line), fp) != NULL) {
+						count++;
+						if (offset <= count && ((offset + 50) > count)) { // show 100 lines
+							int level = line[1] - '0';
 
-						if (level == 4) { // warn
-							websWrite(
-								stream,
-								"<tr class=\"syslog_bg_yellow\"><td class=\"syslog_text_dark\">%s</td></tr>",
-								&line[3]);
-						} else if (level == 5) { // notice
-							websWrite(
-								stream,
-								"<tr class=\"syslog_bg_green\"><td class=\"syslog_text_dark\">%s</td></tr>",
-								&line[3]);
-						} else if (level <= 3) { // emerg, alert, crit, err
-							websWrite(
-								stream,
-								"<tr class=\"syslog_bg_red\"><td class=\"syslog_text_dark\">%s</td></tr>",
-								&line[3]);
-						} else {
-							websWrite(stream, "<tr><td>%s</td></tr>", &line[3]);
+							if (level == 4) { // warn
+								websWrite(
+									stream,
+									"<tr class=\"syslog_bg_yellow\"><td class=\"syslog_text_dark\">%s</td></tr>",
+									&line[3]);
+							} else if (level == 5) { // notice
+								websWrite(
+									stream,
+									"<tr class=\"syslog_bg_green\"><td class=\"syslog_text_dark\">%s</td></tr>",
+									&line[3]);
+							} else if (level <= 3) { // emerg, alert, crit, err
+								websWrite(
+									stream,
+									"<tr class=\"syslog_bg_red\"><td class=\"syslog_text_dark\">%s</td></tr>",
+									&line[3]);
+							} else {
+								websWrite(stream, "<tr><td>%s</td></tr>", &line[3]);
+							}
 						}
 					}
-				}
 
-				fclose(fp);
-			} else
-				break;
+					fclose(fp);
+				} else if (i > 1)
+					break;
+			}
 		}
-		websWrite(stream, "</tbody></table></div>");
+		storage = "blk";
 	}
+	websWrite(stream, "</tbody></table></div>");
 	websWrite(stream, "</fieldset></body>");
 	websWrite(stream, "</html>");
 	return 0;
