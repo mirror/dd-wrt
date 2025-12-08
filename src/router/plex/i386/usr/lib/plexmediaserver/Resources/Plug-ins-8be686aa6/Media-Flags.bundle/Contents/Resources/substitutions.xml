@@ -1,0 +1,632 @@
+<MediaFlagSubstitutions>
+	<Studio>
+		<match name="1492_pictures" expression="^1492" />
+		<match name="20th_century_fox_animation" expression="(20th|twentieth) century fox animation" />
+		<match name="20th_century_fox" expression="^(?!.*animation)((20th|twentieth) century fox|fox 2000|fox film corp)" />
+		<match name="21_laps_entertainment" expression="21 laps entertainment" />
+		<match name="2929" expression="^2929" />
+		<match name="360_pictures" expression="360 pictures" />
+		<match name="40_acres" expression="40 acres" />
+		<match name="57_irving" expression="57 irving" />
+		<match name="777_film_corp" expression="^777" />
+		<match name="a24" expression="^a24" />
+		<match name="aardman" expression="aardman" />
+		<match name="abandon" expression="abandon" />
+		<match name="abc_australia" expression="(abc1|australian broadcasting|abc \(au\))" />
+		<match name="abc" expression="abc \(us\)" />
+		<match name="abc_family" expression="^abc.*family" />
+		<match name="adult_swim" expression="adult.*swim" />
+		<match name="afi" expression="(^afi$|american film institute)" />
+		<match name="after_dark" expression="after dark" />
+		<match name="aic" expression="^aic *(digital|classic)?$" />
+		<match name="alcon_entertainment" expression="alcon" />
+		<match name="alfred_hitchcock_productions" expression="hitchcock" />
+		<match name="alliance" expression="^alliance" />
+		<match name="alloy" expression="alloy" />
+		<match name="alphaville" expression="alphaville" />
+		<match name="amazon_studios" expression="amazon" />
+		<match name="ambience" expression="ambience" />
+		<match name="amblin_entertainment" expression="amblin" />
+		<match name="amc" expression="american movie classics" />
+		<match name="american_international_pictures" expression="american international pictures" />
+		<match name="american_masters" expression="american masters" />
+		<match name="american_zoetrope" expression="zoetrope" />
+		<match name="anchor_bay_entertainment" expression="anchor bay" />
+		<match name="animal_planet" expression="animal.?planet" />
+		<match name="animax" expression="animax" />
+		<match name="anonymous_content" expression="anonymous content" />
+		<match name="antena_3" expression="antena.?3" />
+		<match name="apatow_productions" expression="apatow" />
+		<match name="apple" expression="apple" />
+		<match name="ard" expression="^ard$" />
+		<match name="ark" expression="^ark$" />
+		<match name="arte" expression="^arte$" />
+		<match name="artisan_entertainment" expression="artisan" />
+		<match name="aspen_film_society" expression="aspen film soc" />
+		<match name="atom_films" expression="atom" />
+		<match name="audience_network" expression="audience network" />
+		<match name="actf" expression="australian children.*s television foundation" />
+		<match name="australian_film_commission" expression="australian film commission" />
+		<match name="avalanche_studios" expression="avalanche" />
+		<match name="avnet_kerner" expression="avnet.?kerner" />
+		<match name="a_1_pictures" expression="a(\.|\-| )?1 pictures" />
+		<match name="a_and_e" expression="a&amp;e" />
+		<match name="a_and_m" expression="a&amp;m" />
+		<match name="babylonian" expression="babylonian" />
+		<match name="bad_boy_entertainment" expression="bad boy" />
+		<match name="bad_robot" expression="bad robot" />
+		<match name="baltimore_pictures" expression="baltimore" />
+		<match name="bandai_visual" expression="bandai visual" />
+		<match name="bandai" expression="bandai" />
+		<match name="bandapart" expression="band.?apart" />
+		<match name="batjac" expression="batjac productions" />
+		<match name="bazmark" expression="bazmark" />
+		<match name="bbc_america" expression="bbc.?america" />
+		<match name="bbc_films" expression="bbc.?films" />
+		<match name="bbc_four" expression="bbc.?(4|four)" />
+		<match name="bbc_one" expression="bbc.?(1|one)" />
+		<match name="bbc_prime" expression="bbc.?prime" />
+		<match name="bbc_three" expression="bbc.?(3|three)" />
+		<match name="bbc_two" expression="bbc.?(2|two)" />
+		<match name="bbc" expression="^bbc$" />
+		<match name="beacon" expression="beacon" />
+		<match name="becker_entertainment" expression="becker" />
+		<match name="belair_entertainment" expression="belair" />
+		<match name="bet" expression="^bet$" />
+		<match name="bigtalk" expression="big talk productions" />
+		<match name="biography_channel" expression="biography" />
+		<match name="black_bear_pictures" expression="black bear pictures" />
+		<match name="blackdog" expression="black.?dog" />
+		<match name="bleecker_street" expression="bleecker street" />
+		<match name="blind_ambition_entertainment" expression="blind ambition" />
+		<match name="blizzard_entertainment" expression="blizzard entertainment" />
+		<match name="blue_sky_studios" expression="blue sky studios" />
+		<match name="blue_sky" expression="blue sky" />
+		<match name="blue_underground" expression="blue underground" />
+		<match name="blumhouse_productions" expression="blumhouse productions" />
+		<match name="bnn" expression="bnn" />
+		<match name="bold_films" expression="bold films" />
+		<match name="boomerang" expression="boomerang" />
+		<match name="bravo" expression="bravo" />
+		<match name="brightlight" expression="bright.?light" />
+		<match name="bristol_bay" expression="bristol bay" />
+		<match name="broken_lizard" expression="broken lizard industries" />
+		<match name="brooklyn_films" expression="brooklyn" />
+		<match name="buena_vista" expression="buena vista" />
+		<match name="bulletproof" expression="bulletproof" />
+		<match name="c2_pictures" expression="c2" />
+		<match name="canalplus" expression="canal.?(\+|plus)" />
+		<match name="cannon_pictures" expression="cannon" />
+		<match name="capcom" expression="capcom" />
+		<match name="capitol_films" expression="capitol" />
+		<match name="caravan_pictures" expression="caravan" />
+		<match name="carnaby" expression="carnaby" />
+		<match name="carolco" expression="carolco" />
+		<match name="cartoonnetwork" expression="cartoon network" />
+		<match name="casablanca_filmes" expression="casablanca filmes" />
+		<match name="cascade_film" expression="cascade" />
+		<match name="casey_silver_productions" expression="casey silver productions" />
+		<match name="castle_rock_entertainment" expression="castle rock" />
+		<match name="cat_in_the_hat" expression="cat in the hat" />
+		<match name="cbbc" expression="cbbc" />
+		<match name="cbc" expression="^cbc" />
+		<match name="cbs" expression="^cbs" />
+		<match name="celador" expression="celador" />
+		<match name="centropolis_entertainment" expression="centropolis" />
+		<match name="ceska_televize" expression="ceska televize" />
+		<match name="channel_nine" expression="(channel nine|nine network)" />
+		<match name="channel_seven" expression="channel seven" />
+		<match name="channel_ten" expression="(channel ten|network ten)" />
+		<match name="channel4" expression="channel.?4" />
+		<match name="channel5" expression="channel.?5" />
+		<match name="cheyenne" expression="cheyenne" />
+		<match name="chiller" expression="chiller" />
+		<match name="cinemax" expression="cinemax" />
+		<match name="city" expression="^city$" />
+		<match name="cmt" expression="^cmt" />
+		<match name="cnc" expression="^cnc" />
+		<match name="columbia_pictures" expression="columbia" />
+		<match name="comedy_central" expression="comedy.?central" />
+		<match name="concorde" expression="concorde" />
+		<match name="condemned" expression="condemned" />
+		<match name="constantin_film" expression="constantin film" />
+		<match name="constellation" expression="constellation" />
+		<match name="cookie_jar" expression="cookie jar" />
+		<match name="cpfilms" expression="cpfilms" />
+		<match name="crackle" expression="crackle" />
+		<match name="criterion" expression="criterion" />
+		<match name="ctv" expression="^ctv" />
+		<match name="cw_seed" expression="cw seed" />
+		<match name="cw" expression="cw" />
+		<match name="czolowka" expression="czolowka" />
+		<match name="damselfly" expression="damselfly" />
+		<match name="danjaq" expression="danjaq" />
+		<match name="dark_castle_entertainment" expression="dark castle" />
+		<match name="dave" expression="dave" />
+		<match name="dark_horse" expression="dark horse" />
+		<match name="davis_entertainment" expression="davis entertainment" />
+		<match name="dc" expression="^dc (comics|entertainment)" />
+		<match name="destination_films" expression="destination" />
+		<match name="de_laurentiis" expression="de laurentiis" />
+		<match name="defa" expression="(deutsche film ag|defa-filmverleih|defa-studio.+)" />
+		<match name="dfi" expression="dfi" />
+		<match name="dickhouse_productions" expression="dickhouse" />
+		<match name="digital_playground" expression="digital playground" />
+		<match name="digital_factory" expression="digital factory" />
+		<match name="dimension_films" expression="dimension" />
+		<match name="discovery_channel" expression="discovery(.?channel)?" />
+		<match name="disney_channel" expression="disney.?channel" />
+		<match name="disney_xd" expression="disney.?xd" />
+		<match name="distant_horizon" expression="distant horizon" />
+		<match name="dmax" expression="dmax" />
+		<match name="dna" expression="dna films" />
+		<match name="dolores_pictures" expression="dolores pictures" />
+		<match name="donners" expression="donners" />
+		<match name="don_simpson_jerry_bruckheimer_films" expression="don simpson.?jerry bruckheimer films" />
+		<match name="dreamworks_animation" expression="dreamworks animation" />
+		<match name="dreamworks" expression="dreamworks" />
+		<match name="e4" expression="e4" />
+		<match name="ealing" expression="ealing" />
+		<match name="eclectic" expression="eclectic" />
+		<match name="edmonds_entertainment" expression="edmonds" />
+		<match name="el_rey_network" expression="el rey network" />
+		<match name="electric_enterteinment" expression="electric enterteinment" />
+		<match name="electric_pictures" expression="electric pictures" />
+		<match name="eleven" expression="^eleven$" />
+		<match name="emi" expression="^emi film" />
+		<match name="emmedia" expression="emmedia" />
+		<match name="encore" expression="encore" />
+		<match name="endgame_entertainment" expression="endgame" />
+		<match name="entara" expression="entara" />
+		<match name="entertainment_one" expression="^(entertainment one|eone|e1)" />
+		<match name="entertainment_television" expression="(e\!|entertainment television)" />
+		<match name="eon_productions" expression="eon productions" />
+		<match name="epix" expression="epix" />
+		<match name="escape_artists" expression="escape artists" />
+		<match name="espn" expression="espn" />
+		<match name="eurimages" expression="eurimages" />
+		<match name="europa_corp" expression="europa\s{0,1}corp" />
+		<match name="eurosport" expression="eurosport" />
+		<match name="excel" expression="excel" />
+		<match name="eyekiss_films" expression="eyekiss films" />
+		<match name="fact" expression="fact" />
+		<match name="figaro" expression="figaro" />
+		<match name="film_polski" expression="film polski" />
+		<match name="filmauro" expression="filmauro" />
+		<match name="filmax_animation" expression="filmax" />
+		<match name="filmforderung_hamburg" expression="filmforderung hamburg" />
+		<match name="filmnation_entertainment" expression="filmnation entertainment" />
+		<match name="filmoteka_narodowa" expression="filmoteka narodowa" />
+		<match name="filmstiftung_nordrhein-westfalen" expression="filmstiftung nordrhein-westfalen" />
+		<match name="film_colony" expression="film ?colony" />
+		<match name="film_four" expression="(channel four films|film.?(4|four))" />
+		<match name="film_institut" expression="film institut" />
+		<match name="film_media" expression="film media" />
+		<match name="film_tv" expression="film tv" />
+		<match name="finos_film" expression="finos film" />
+		<match name="fireworks_entertainment" expression="fireworks" />
+		<match name="first_look_pictures" expression="first look" />
+		<match name="five" expression="five" />
+		<match name="flower_films" expression="flower" />
+		<match name="focus_features" expression="focus" />
+		<match name="food_network" expression="food.?network" />
+		<match name="forte_cinema" expression="forte" />
+		<match name="fourhands_film" expression="fourhands" />
+		<match name="fox" expression="(fox network|fox \(us\))" />
+		<match name="fox_atomic" expression="fox atomic" />
+		<match name="fox_kids" expression="fox kids" />
+		<match name="fox_searchlight_pictures" expression="fox searchlight" />
+		<match name="france_2" expression="france 2" />
+		<match name="france_3" expression="france 3" />
+		<match name="france_4" expression="france 4" />
+		<match name="franchise_pictures" expression="franchise pictures" />
+		<match name="freeform" expression="freeform" />
+		<match name="fuji_tv" expression="fuji" />
+		<match name="future_flix" expression="future flix" />
+		<match name="fx" expression="^fx( \(us\))?$" />
+		<match name="fxx" expression="^fxx$" />
+		<match name="g4" expression="^g4" />
+		<match name="gaumont" expression="gaumont" />
+		<match name="gk_films" expression="gk films" />
+		<match name="geffen" expression="geffen" />
+		<match name="ghost_house" expression="ghost house" />
+		<match name="glass_eye_pix" expression="glass eye pix" />
+		<match name="global_tv" expression="global.?tv" />
+		<match name="glue_works_entertainment" expression="glue works entertainment" />
+		<match name="gofilms" expression="gofilms" />
+		<match name="goldwyn" expression="^((?!metro).)*goldwyn" />
+		<match name="gold_circle_films" expression="gold ?circle" />
+		<match name="gracie_films" expression="gracie" />
+		<match name="gramercy_pictures" expression="gramercy" />
+		<match name="grandhustle" expression="grandhustle" />
+		<match name="greentree_pictures" expression="greentree pictures" />
+		<match name="green_street" expression="green street" />
+		<match name="grub_street_productions" expression="grub street productions" />
+		<match name="guinea_pig_films" expression="guinea pig films" />
+		<match name="gutek" expression="gutek" />
+		<match name="halestorm" expression="halestorm" />
+		<match name="hallucination_on_film" expression="hallucination on film" />
+		<match name="hallmark_channel" expression="hallmark channel" />
+		<match name="hand_made_films" expression="hand.?made.?films" />
+		<match name="happy_madison" expression="happy madison productions" />
+		<match name="hasbro" expression="hasbro" />
+		<match name="hbo" expression="^(hbo|home box office)$" />
+		<match name="head_gear_films" expression="head gear films" />
+		<match name="hbo_films" expression="hbo films" />
+		<match name="hemus_film" expression="hemus" />
+		<match name="heyday_films" expression="heyday" />
+		<match name="hgtv" expression="hgtv" />
+		<match name="history_channel" expression="history.?(channel)?" />
+		<match name="hollywood_pictures" expression="hollywood pictures" />
+		<match name="hopscotch_films" expression="hopscotch films" />
+		<match name="hulu" expression="hulu" />
+		<match name="hustler_video" expression="hustler video" />
+		<match name="hyde_park_entertainment" expression="hyde park" />
+		<match name="icon_entertainment" expression="icon" />
+		<match name="ifc" expression="(ifc|independent film channel)" />
+		<match name="illumination_entertainment" expression="illumination( entertainment)?" />
+		<match name="image" expression="image" />
+		<match name="image_movers" expression="imagemovers" />
+		<match name="imaginary_forces" expression="imaginary forces" />
+		<match name="imagine" expression="imagine" />
+		<match name="imagi_studios" expression="imagi studios" />
+		<match name="imax" expression="imax" />
+		<match name="imperial_entertainment" expression="imperial ent" />
+		<match name="independent_pictures" expression="independent pictures" />
+		<match name="industrial_light_and_magic" expression="industrial light" />
+		<match name="infilm" expression="infilm" />
+		<match name="ingenious_film_partners" expression="ingenious" />
+		<match name="ingenius_entertainment" expression="ingenious entertainment" />
+		<match name="inside_track" expression="inside track" />
+		<match name="insurge_pictures" expression="insurge pictures" />
+		<match name="interactual" expression="interactual" />
+		<match name="intermedia" expression="intermedia" />
+		<match name="interscope_shady_aftermath" expression="interscope.?shady.?aftermath" />
+		<match name="intrepid_pictures" expression="intrepid" />
+		<match name="island_world" expression="island world" />
+		<match name="iti_film_studio" expression="iti film studio" />
+		<match name="itv" expression="^itv" />
+		<match name="janus" expression="janus" />
+		<match name="jarowskij" expression="jarowskij" />
+		<match name="jawa" expression="jawa" />
+		<match name="jerry_bruckheimer_films" expression="jerry bruckheimer" />
+		<match name="jersey_films" expression="jersey films" />
+		<match name="jim_henson" expression="jim henson" />
+		<match name="jj_splice" expression="jj splice" />
+		<match name="kaboom_entertainment" expression="kaboom\!? entertainment" />
+		<match name="kadokawa_pictures" expression="kadokawa" />
+		<match name="kadr" expression="kadr" />
+		<match name="kamera" expression="kamera" />
+		<match name="kanal_5" expression="kanal 5" />
+		<match name="kennedymarshall" expression="kennedy/marshall" />
+		<match name="kid_rhino" expression="kid rhino" />
+		<match name="killer_films" expression="killer films" />
+		<match name="kinepolis" expression="kinepolis" />
+		<match name="king_world" expression="king world" />
+		<match name="kinowelt" expression="kinowelt" />
+		<match name="konami" expression="^konami" />
+		<match name="kopelson" expression="kopelson" />
+		<match name="kyoto_animation" expression="kyoto animation" />
+		<match name="ladd" expression="ladd" />
+		<match name="lakeshore_entertainment" expression="lakeshore" />
+		<match name="latham" expression="latham" />
+		<match name="lawrence_bender_productions" expression="lawrence bender" />
+		<match name="league of noble peers" expression="league of noble peers" />
+		<match name="legendary_pictures" expression="legendary" />
+		<match name="lego" expression="^lego" />
+		<match name="liberty_films" expression="liberty" />
+		<match name="lifetime" expression="lifetime" />
+		<match name="lift" expression="lift" />
+		<match name="lightstorm_entertainment" expression="lightstorm" />
+		<match name="lionsgate" expression="lions.?gate" />
+		<match name="little_chicken" expression="little chicken" />
+		<match name="london_films" expression="london" />
+		<match name="lookout" expression="lookout" />
+		<match name="lucasfilm" expression="lucas(arts|film)" />
+		<match name="lucky_7" expression="lucky 7" />
+		<match name="m6" expression="^m6$" />
+		<match name="madhouse" expression="mad ?house" />
+		<match name="madman" expression="madman" />
+		<match name="magnolia_pictures" expression="magnolia" />
+		<match name="mandalay_pictures" expression="mandalay" />
+		<match name="mandate_pictures" expression="mandate" />
+		<match name="manga" expression="manga" />
+		<match name="marc_dorcel" expression="marc dorcel" />
+		<match name="marvel" expression="marvel" />
+		<match name="maverick" expression="maverick" />
+		<match name="maya_entertainment" expression="maya" />
+		<match name="mbs" expression="^mbs" />
+		<match name="media8" expression="media 8" />
+		<match name="mediapro" expression="media pro" />
+		<match name="meridian_films" expression="meridian" />
+		<match name="mgm" expression="(mgm|metro.?goldwyn.?mayer|loew.?s)" />
+		<match name="mibac" expression="mibac" />
+		<match name="midway_pictures" expression="midway" />
+		<match name="mike_zoss_productions" expression="mike zoss productions" />
+		<match name="milkshake" expression="milkshake" />
+		<match name="millennium_films" expression="millennium films" />
+		<match name="minds_eye_entertainment" expression="minds eye" />
+		<match name="mirage" expression="mirage" />
+		<match name="miramax" expression="miramax" />
+		<match name="momentum_pictures" expression="momentum pictures" />
+		<match name="monarch_pictures" expression="monarch" />
+		<match name="monolith" expression="monolith" />
+		<match name="montecito_picture_company" expression="montecito picture company" />
+		<match name="morgan_creek" expression="morgan creek" />
+		<match name="mosaic_media" expression="mosaic" />
+		<match name="mosfilm" expression="mosfilm" />
+		<match name="mpca" expression="mpca" />
+		<match name="msnbc" expression="msnbc" />
+		<match name="mtv" expression="^mtv( \(us\))?$" />
+		<match name="mtv3" expression="mtv3" />
+		<match name="musashi_films" expression="musashi" />
+		<match name="mutual_film_company" expression="mutual film company" />
+		<match name="myriad" expression="myriad" />
+		<match name="mytv" expression="mytv" />
+		<match name="nala" expression="nala" />
+		<match name="nat_geo_wild" expression="nat geo wild" />
+		<match name="national_general_pictures" expression="national general pictures" />
+		<match name="nbc_universal" expression="nbc universal" />
+		<match name="nbc" expression="^nbc$" />
+		<match name="nelvana" expression="nelvana" />
+		<match name="newmarket" expression="newmarket" />
+		<match name="new_deal_entertainment" expression="new deal" />
+		<match name="new_line_cinema" expression="new line cinema" />
+		<match name="new_world_pictures" expression="new world pictures" />
+		<match name="new_zealand_film_commission" expression="(nzfc|new zealand film commission)" />
+		<match name="national geographic" expression="(ngc|national geographic)" />
+		<match name="nick_jr" expression="nick jr" />
+		<match name="nick_at_nite" expression="nick at nite" />
+		<match name="nickelodeon" expression="nickelodeon" />
+		<match name="nicktoons" expression="nicktoons" />
+		<match name="nord_ouest" expression="nord.?ouest" />
+		<match name="nordisk_film" expression="nordisk.?film" />
+		<match name="northern_lights_entertainment" expression="northern lights entertainment" />
+		<match name="nothing" expression="nothing" />
+		<match name="nrk1" expression="^nrk1" />
+		<match name="nuimage" expression="nuimage" />
+		<match name="o2_filmes" expression="o2 filmes" />
+		<match name="oddlot" expression="oddlot" />
+		<match name="oko" expression="oko" />
+		<match name="only_vegas" expression="only vegas" />
+		<match name="openroad" expression="open road films" />
+		<match name="oprah_winfrey_network" expression="^(oprah winfrey network|own)$" />
+		<match name="orf" expression="orf" />
+		<match name="original_film" expression="original film" />
+		<match name="orion" expression="orion" />
+		<match name="overturefilms" expression="overturefilms" />
+		<match name="pa_works" expression="(progressive animation|p.a.) works" />
+		<match name="pan_vision" expression="pan vision" />
+		<match name="pandora_film" expression="pandora film" />
+		<match name="paramount_classics" expression="paramount class" />
+		<match name="paramount_pictures" expression="paramount( pictures)?" />
+		<match name="paramount_vantage" expression="paramount vantage" />
+		<match name="participant" expression="participant" />
+		<match name="pathe" expression="pathe" />
+		<match name="pbs" expression="pbs" />
+		<match name="peacearch" expression="peacearch" />
+		<match name="pecf" expression="pecf" />
+		<match name="peters_entertainment2" expression="peters entertainment" />
+		<match name="phase_4_films" expression="phase 4 films" />
+		<match name="pheonix" expression="pheonix" />
+		<match name="picturehouse" expression="picturehouse" />
+		<match name="pisf" expression="pisf" />
+		<match name="pixar" expression="pixar" />
+		<match name="plan_b" expression="plan b" />
+		<match name="platige" expression="platige" />
+		<match name="platinum_dunes" expression="platinumdunes" />
+		<match name="playstation_network" expression="playstation network" />
+		<match name="playtone" expression="playtone" />
+		<match name="play_uk" expression="play uk" />
+		<match name="play_uk" expression="uk play" />
+		<match name="polsat" expression="polsat" />
+		<match name="pop" expression="^pop$" />
+		<match name="polygram" expression="polygram" />
+		<match name="porchlight" expression="porchlight" />
+		<match name="portman_film" expression="portman film" />
+		<match name="premiere direkt" expression="premiere direkt" />
+		<match name="premiere" expression="premiere" />
+		<match name="private_pictures" expression="private pictures" />
+		<match name="production_i_g" expression="production i\.?g\.?" />
+		<match name="profilm_productions" expression="profilm" />
+		<match name="promotion_pictures" expression="promotion pictures" />
+		<match name="prosieben" expression="prosieben" />
+		<match name="radical_media" expression="radical media" />
+		<match name="rai_cinema" expression="rai cinema" />
+		<match name="rankin" expression="rankin" />
+		<match name="ratpac_dune_entertainment" expression="ratpac.dune entertainment" />
+		<match name="ratpac_entertainment" expression="ratpac entertainment" />
+		<match name="redrum" expression="redrum" />
+		<match name="red_hour" expression="red hour" />
+		<match name="red_wagon_entertainment" expression="red wagon entertainment" />
+		<match name="reel_dog_productions" expression="reel dog productions" />
+		<match name="regency" expression="regency" />
+		<match name="relativity_media" expression="relativity media" />
+		<match name="renaissance_films" expression="renaissancefilms" />
+		<match name="republic_pictures" expression="republic(pictures)?" />
+		<match name="resident_evil" expression="resident evil" />
+		<match name="revere_pictures" expression="revere pictures" />
+		<match name="revision3" expression="revision3" />
+		<match name="revolution_studios" expression="revolution" />
+		<match name="rhombus" expression="rhombus" />
+		<match name="rickety_shack_films" expression="rickety shack" />
+		<match name="rick_mill" expression="rick mill" />
+		<match name="river_road_entertainment" expression="river road" />
+		<match name="rko_radio_pictures" expression="rko radio pictures" />
+		<match name="roadside_attractions" expression="roadside attractions" />
+		<match name="rogue_pictures" expression="rogue pictures" />
+		<match name="romar" expression="romar" />
+		<match name="rte_one" expression="^rt. one" />
+		<match name="rtl_ii" expression="rtl ii" />
+		<match name="rtl" expression="rtl" />
+		<match name="rtl4" expression="rtl 4" />
+		<match name="rtl5" expression="rtl 5" />
+		<match name="rtl7" expression="rtl 7" />
+		<match name="rtl8" expression="rtl 8" />
+		<match name="rysher_entertainment" expression="rysher" />
+		<match name="saban" expression="saban" />
+		<match name="salter_street_films" expression="salter street" />
+		<match name="sandrew" expression="sandrew" />
+		<match name="sat1" expression="sat1" />
+		<match name="saturn_films" expression="saturn" />
+		<match name="saul_zaentz" expression="saul zaentz" />
+		<match name="sbs" expression="^(sbs( \(au\))?|special broadcasting)" />
+		<match name="scholastic" expression="^scholastic" />
+		<match name="scifi" expression="sci.?fi" />
+		<match name="scott_free" expression="scott free" />
+		<match name="screen_australia" expression="screen australia" />
+		<match name="screen_gems" expression="screen gems" />
+		<match name="seeso" expression="seeso" />
+		<match name="selznick_pictures" expression="selznick" />
+		<match name="semafor" expression="semafor" />
+		<match name="seven network" expression="seven network" />
+		<match name="seven network" expression="seven" />
+		<match name="sfi" expression="(^sfi$|swedish film institute)" />
+		<match name="shady_acres_entertainment" expression="shady acres" />
+		<match name="shaft" expression="(studio )?shaft" />
+		<match name="shangri-la_entertainment" expression="shangri-la" />
+		<match name="shout_factory" expression="shout factory" />
+		<match name="showcase" expression="^showcase( \(ca\))?$" />
+		<match name="showcase_au" expression="^showcase \(au\)$" />
+		<match name="showtime" expression="showtime" />
+		<match name="sidney_kimmel" expression="sidney kimmel" />
+		<match name="silver_pictures" expression="silver pictures" />
+		<match name="sky_1" expression="sky[ ]{0,1}1" />
+		<match name="sky_atlantic" expression="sky atlantic" />
+		<match name="sky" expression="^sky$" />
+		<match name="skydance_productions" expression="skydance productions" />
+		<match name="slim_films" expression="slim films" />
+		<match name="smc" expression="smc" />
+		<match name="snl_studios" expression="snl studios" />
+		<match name="sobini_films" expression="sobini films" />
+		<match name="sony_pictures_animation" expression="sony pictures animation" />
+		<match name="sony_pictures" expression="sony pictures( entertainment)?" />
+		<match name="space" expression="space" />
+		<match name="spelling_films" expression="spelling films" />
+		<match name="spike" expression="spike" />
+		<match name="spitfire_pictures" expression="spitfire" />
+		<match name="splendid" expression="splendid" />
+		<match name="spyglass_entertainment" expression="spyglass" />
+		<match name="squareenix" expression="squareenix" />
+		<match name="stage6" expression="stage6" />
+		<match name="stan" expression="^stan$" />
+		<match name="starbucks_entertainment" expression="starbucks" />
+		<match name="starz" expression="starz\!?" />
+		<match name="steele" expression="steele" />
+		<match name="storyline" expression="storyline" />
+		<match name="studio_canal" expression="studio ?canal" />
+		<match name="studio_ghibli" expression="studio ghibli" />
+		<match name="summit" expression="summit" />
+		<match name="sundancetv" expression="sundance.*tv" />
+		<match name="sunrise" expression="sunrise" />
+		<match name="super_channel" expression="super channel" />
+		<match name="svensk_filmindustri" expression="svensk" />
+		<match name="svt" expression="svt" />
+		<match name="svt1" expression="svt1" />
+		<match name="svt2" expression="svt2" />
+		<match name="syfy" expression="syfy" />
+		<match name="syncopy" expression="syncopy" />
+		<match name="syndicated" expression="syndicated" />
+		<match name="syrena" expression="syrena" />
+		<match name="tandem" expression="tandem" />
+		<match name="taurus_film" expression="taurus" />
+		<match name="tbs" expression="tbs( superstation)?" />
+		<match name="tcm" expression="tcm" />
+		<match name="telecinco" expression="telecinco" />
+		<match name="telemundo" expression="telemundo" />
+		<match name="teletoon" expression="teletoon" />
+		<match name="telos" expression="telos" />
+		<match name="tf1" expression="^tf1" />
+		<match name="the_cw" expression="the.?cw" />
+		<match name="the_wb" expression="the.?wb" />
+		<match name="the_entertainment_group" expression="the entertainment group" />
+		<match name="the_film_foundry" expression="film foundry" />
+		<match name="the_hub" expression="the hub" />
+		<match name="the_independent_film_channel" expression="the independent film channel" />
+		<match name="the_wb_television_network" expression="the wb television network" />
+		<match name="thierry_mugler" expression="thierry mugler" />
+		<match name="think_film" expression="think.?film" />
+		<match name="this_is_that" expression="this is that" />
+		<match name="tlc" expression="tlc" />
+		<match name="tnt" expression="tnt" />
+		<match name="toho" expression="toho" />
+		<match name="tor" expression="tor film" />
+		<match name="touchstone" expression="touchstone" />
+		<match name="tristar_pictures" expression="tristar" />
+		<match name="trutv" expression="trutv" />
+		<match name="turner" expression="turner" />
+		<match name="tv_2" expression="tv 2" />
+		<match name="tv_tokyo" expression="tv tokyo" />
+		<match name="tv2" expression="tv2" />
+		<match name="tv3" expression="tv3" />
+		<match name="tv4" expression="tv4" />
+		<match name="tvn" expression="^tvn$" />
+		<match name="tvnz" expression="^tvnz$" />
+		<match name="tvp" expression="tvp" />
+		<match name="tv_land" expression="tv land" />
+		<match name="twisted_pictures" expression="twisted" />
+		<match name="twit" expression="^twit( tv)?$" />
+		<match name="ugc" expression="ugc" />
+		<match name="uk_film_council" expression="uk film council" />
+		<match name="united_artists" expression="united artists" />
+		<match name="universal" expression="universal( pictures| studios)?" />
+		<match name="univision" expression="univision" />
+		<match name="up_tv" expression="^up tv" />
+		<match name="upn" expression="upn" />
+		<match name="usa_network" expression="usa.?network" />
+		<match name="vara" expression="vara" />
+		<match name="versus" expression="versus" />
+		<match name="vertigo" expression="vertigo" />
+		<match name="vh1" expression="vh1" />
+		<match name="viacom" expression="viacom" />
+		<match name="view_askew" expression="view askew" />
+		<match name="village_roadshow_pictures" expression="village roadshow" />
+		<match name="vimeo" expression="vimeo" />
+		<match name="virtual_studios" expression="virtual studios" />
+		<match name="vital_film_works" expression="vital" />
+		<match name="viz" expression="viz" />
+		<match name="vortex_entertainment" expression="vortex" />
+		<match name="vox" expression="vox" />
+		<match name="vpro" expression="vpro" />
+		<match name="vtm" expression="vtm" />
+		<match name="walden_media" expression="walden" />
+		<match name="walt_disney_pictures" expression="disney" />
+		<match name="warner_bros" expression="^(?!.*animation)(wb|warner bros\.?)" />
+		<match name="warner_bros_animation" expression="warner bros\.? animation" />
+		<match name="warner_independent_pictures" expression="warner independent pictures" />
+		<match name="water_walk_productions" expression="water walk productions" />
+		<match name="wdr" expression="wdr" />
+		<match name="we_tv" expression="we tv" />
+		<match name="weinstein_company" expression="weinstein" />
+		<match name="wfdif" expression="wfdif" />
+		<match name="wgn" expression="wgn" />
+		<match name="wild_bunch" expression="wild bunch" />
+		<match name="wild_side" expression="wild side" />
+		<match name="working_title_films" expression="working title" />
+		<match name="xfilme" expression="x-filme" />
+		<match name="xxx_productions" expression="xxx productions" />
+		<match name="yahoo_screen" expression="yahoo.*screen" />
+		<match name="yari_film_group" expression="yari" />
+		<match name="youtube" expression="youtube" />
+		<match name="ytv" expression="^ytv" />
+		<match name="zaloom_mayfield" expression="zaloom" />
+		<match name="zdf" expression="zdf" />
+		<match name="zebra" expression="zebra" />
+		<match name="zentropa" expression="zentropa" />
+		<match name="zomba" expression="zomba" />
+	</Studio>
+	<VideoCodec>
+		<match name="h264" expression="avc1" />
+		<match name="mpeg4" expression="mpeg4" />
+		<match name="wmv" expression="wmv(1|2)" />
+		<match name="wmvhd" expression="wmv3" />
+	</VideoCodec>
+	<AudioCodec>
+		<match name="dolby_digital" expression="ac.?3" />
+		<match name="dolby_truehd" expression="truehd" />
+		<match name="dts" expression="(dca|dta)" />
+		<match name="dca-ma" expression="dts(hd_|-hd|-)?ma" />
+		<match name="pcm" expression="pcm" />
+		<match name="ogg" expression="vorbis" />
+	</AudioCodec>
+</MediaFlagSubstitutions>
