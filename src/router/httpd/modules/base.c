@@ -2678,7 +2678,7 @@ static int do_syslog(unsigned char method, struct mime_handler *handler, char *u
 							stream,
 							"<tr class=\"syslog_bg_yellow\"><td class=\"syslog_text_dark\">%s</td></tr>",
 							line);
-					} else if (strstr(line, "authpriv.notice")) {
+					} else if (strstr(line, ".notice")) {
 						websWrite(
 							stream,
 							"<tr class=\"syslog_bg_green\"><td class=\"syslog_text_dark\">%s</td></tr>",
@@ -2782,7 +2782,7 @@ static int do_crashlog(unsigned char method, struct mime_handler *handler, char 
 							websWrite(
 								stream,
 								"<tr class=\"syslog_bg_green\"><td class=\"syslog_text_dark\">%s</td></tr>",
-								line);
+								&line[3]);
 						} else if (level <= 3) { // emerg, alert, crit, err
 							websWrite(
 								stream,
