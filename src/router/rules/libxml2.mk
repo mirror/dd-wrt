@@ -1,9 +1,5 @@
 
 libxml2: zlib
-	CC="ccache $(ARCH)-linux-uclibc-gcc" \
-	CFLAGS="$(COPTS) $(MIPS16_OPT) $(THUMB) -I$(TOP)/zlib -ffunction-sections -fdata-sections -Wl,--gc-sections" \
-	CPPFLAGS="$(COPTS) $(MIPS16_OPT) $(THUMB) -I$(TOP)/zlib -ffunction-sections -fdata-sections -Wl,--gc-sections" \
-	LDFLAGS="$(COPTS) $(MIPS16_OPT) $(THUMB) -L$(TOP)/zlib -lz -fPIC" \
 	$(MAKE) -C libxml2
 
 libxml2-install:

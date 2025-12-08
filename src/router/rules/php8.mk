@@ -98,13 +98,8 @@ icu-install:
 	-cp -fpR $(TOP)/icu/target_staging/lib/*.so* $(INSTALLDIR)/icu/usr/lib/
 
 
+#php8: libxml2 libmcrypt glib20 zlib libzip openssl sqlite libgd
 php8: libxml2 libmcrypt glib20 zlib libzip openssl sqlite libgd
-	CC="ccache $(ARCH)-linux-uclibc-gcc" \
-	PROF_FLAGS="$(COPTS) -DNEED_PRINTF -ffunction-sections -fdata-sections -Wl,--gc-sections" \
-	CFLAGS="$(COPTS) -I$(TOP)/kernel_headers/$(KERNELRELEASE)/include -I$(TOP)/libpng -fno-builtin -I$(TOP)/libxml2/include -I$(TOP)/curl/include -I$(TOP)/zlib/include -I$(SSLPATH)/include -I$(TOP)/libzip -I$(TOP)/libzip/lib -ffunction-sections -fdata-sections -Wl,--gc-sections" \
-	CPPFLAGS="$(COPTS) -I$(TOP)/kernel_headers/$(KERNELRELEASE)/include -I$(TOP)/libpng -fno-builtin -I$(TOP)/libxml2/include -I$(TOP)/curl/include -I$(TOP)/zlib/include -I$(SSLPATH)/include -I$(TOP)/libzip -I$(TOP)/libzip/lib -ffunction-sections -fdata-sections -Wl,--gc-sections" \
-	LDFLAGS="$(COPTS) -ffunction-sections -fdata-sections -Wl,--gc-sections -L$(TOP)/libpng/.libs -L$(TOP)/libxml2/.libs -L$(TOP)/zlib -L$(SSLPATH) -L$(TOP)/zlib -L$(TOP)/curl/build/lib/.libs -fPIC" \
-	LIBS="-lssl -lcrypto" \
 	$(MAKE) -C php8
 	
 	
