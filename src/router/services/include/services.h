@@ -291,7 +291,7 @@ void ath9k_start_supplicant(int count, char *prefix, char **configs, int *config
 #endif
 
 #ifdef HAVE_BONDING
-int isBond(char *ifname)
+int isBond(char *ifname);
 #else
 static inline int isBond(char *ifname) {
 	return 0;
