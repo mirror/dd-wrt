@@ -23,23 +23,23 @@ libyang-configure: zlib openssl pcre2
 libyang: zlib
 	$(MAKE) -C libyang/build
 	-mkdir -p $(TOP)/libyang/build/libyang
-	-cp $(TOP)/libyang/build/src/config.h $(TOP)/libyang/build/libyang
-	-cp $(TOP)/libyang/build/src/version.h $(TOP)/libyang/build/libyang
-	-cp $(TOP)/libyang/src/libyang.h $(TOP)/libyang/build/libyang
-	-cp $(TOP)/libyang/src/tree_schema.h $(TOP)/libyang/build/libyang
-	-cp $(TOP)/libyang/src/tree_data.h $(TOP)/libyang/build/libyang
-	-cp $(TOP)/libyang/src/tree.h $(TOP)/libyang/build/libyang
-	-cp $(TOP)/libyang/src/xml.h $(TOP)/libyang/build/libyang
-	-cp $(TOP)/libyang/src/dict.h $(TOP)/libyang/build/libyang
-	-cp $(TOP)/libyang/src/context.h $(TOP)/libyang/build/libyang
-	-cp $(TOP)/libyang/src/parser_schema.h $(TOP)/libyang/build/libyang
-	-cp $(TOP)/libyang/src/parser_data.h $(TOP)/libyang/build/libyang
-	-cp $(TOP)/libyang/src/printer_schema.h $(TOP)/libyang/build/libyang
-	-cp $(TOP)/libyang/src/printer_data.h $(TOP)/libyang/build/libyang
-	-cp $(TOP)/libyang/src/log.h $(TOP)/libyang/build/libyang
-	-cp $(TOP)/libyang/src/in.h $(TOP)/libyang/build/libyang
-	-cp $(TOP)/libyang/src/out.h $(TOP)/libyang/build/libyang
-	-cp $(TOP)/libyang/src/set.h $(TOP)/libyang/build/libyang
+	-cp -uv $(TOP)/libyang/build/src/config.h $(TOP)/libyang/build/libyang
+	-cp -uv $(TOP)/libyang/build/src/version.h $(TOP)/libyang/build/libyang
+	-cp -uv $(TOP)/libyang/src/libyang.h $(TOP)/libyang/build/libyang
+	-cp -uv $(TOP)/libyang/src/tree_schema.h $(TOP)/libyang/build/libyang
+	-cp -uv $(TOP)/libyang/src/tree_data.h $(TOP)/libyang/build/libyang
+	-cp -uv $(TOP)/libyang/src/tree.h $(TOP)/libyang/build/libyang
+	-cp -uv $(TOP)/libyang/src/xml.h $(TOP)/libyang/build/libyang
+	-cp -uv $(TOP)/libyang/src/dict.h $(TOP)/libyang/build/libyang
+	-cp -uv $(TOP)/libyang/src/context.h $(TOP)/libyang/build/libyang
+	-cp -uv $(TOP)/libyang/src/parser_schema.h $(TOP)/libyang/build/libyang
+	-cp -uv $(TOP)/libyang/src/parser_data.h $(TOP)/libyang/build/libyang
+	-cp -uv $(TOP)/libyang/src/printer_schema.h $(TOP)/libyang/build/libyang
+	-cp -uv $(TOP)/libyang/src/printer_data.h $(TOP)/libyang/build/libyang
+	-cp -uv $(TOP)/libyang/src/log.h $(TOP)/libyang/build/libyang
+	-cp -uv $(TOP)/libyang/src/in.h $(TOP)/libyang/build/libyang
+	-cp -uv $(TOP)/libyang/src/out.h $(TOP)/libyang/build/libyang
+	-cp -uv $(TOP)/libyang/src/set.h $(TOP)/libyang/build/libyang
 #	-cp $(TOP)/libyang/src/user_types.h $(TOP)/libyang/build/libyang
 
 libyang-install:
