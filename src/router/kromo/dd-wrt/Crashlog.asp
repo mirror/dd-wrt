@@ -48,7 +48,7 @@ addEvent(window, "unload", function() {
 			<div id="content">
 				<div id="header">
 					<div id="logo"><h1><% show_control(); %></h1></div>
-				<% do_menu("Status_Router.asp","CrashLog.asp"); %>
+				<% do_menu("Status_Router.asp","Crashlog.asp"); %>
 				</div>
 				<!-- add padding to #contents so that submitfooter has padding on sides/bottom -->
 				<div id="mainno" class="syslog-padding">
