@@ -65,7 +65,26 @@ dnsmasq-clean:
 
 dnsmasq: nettle gmp nftables
 	install -D udhcpd/config/dhcpd.webservices httpd/ej_temp/dhcpd.webservices
-	$(MAKE) -C $(DNSMASQ_PATH) clean
+ifeq ($(CONFIG_DNSMASQ_TFTP),y)
+	echo "1" > $(TOP)/dnsmasq/newvariant
+else
+ifeq ($(CONFIG_DIST),"micro")
+	echo "2" > $(TOP)/dnsmasq/newvariant
+else
+ifeq ($(CONFIG_DIST),"micro-special")
+	echo "3" > $(TOP)/dnsmasq/newvariant
+else
+	echo "4" > $(TOP)/dnsmasq/newvariant
+endif
+endif
+endif
+
+	if cmp -s $(TOP)/dnsmasq/newvariant $(TOP)/dnsmasq/oldvariant ; then \
+		echo "config unchanged. restore" ; \
+	else \
+		$(MAKE) -C $(DNSMASQ_PATH) clean ; \
+	fi ;
+
 ifeq ($(CONFIG_DNSMASQ_TFTP),y)
 	$(MAKE) -C $(DNSMASQ_PATH) CFLAGS="$(COPTS) $(DNSMASQ_COPTS) $(DNSSEC_MAKEFLAGS)  -DNO_LOG -ffunction-sections -fdata-sections -Wl,--gc-sections" LDFLAGS="$(COPTS) $(DNSMASQ_COPTS) $(DNSSEC_LINKFLAGS) -DNO_LOG -ffunction-sections -fdata-sections -Wl,--gc-sections  $(LDLTO)"
 else
@@ -80,6 +99,8 @@ endif
 endif
 endif
 	$(MAKE) -C $(DNSMASQ_PATH)/contrib/lease-tools CFLAGS="$(COPTS) $(DNSMASQ_COPTS) -ffunction-sections -fdata-sections -Wl,--gc-sections" LDFLAGS="$(COPTS) $(DNSMASQ_COPTS) -DNO_LOG -ffunction-sections -fdata-sections -Wl,--gc-sections $(LDLTO)"
+	cp -f dnsmasq/newvariant dnsmasq/oldvariant
+
 
 dnsmasq-install:
 	install -D $(DNSMASQ_PATH)/contrib/wrt/lease_update.sh $(INSTALLDIR)/dnsmasq/etc/lease_update.sh
