@@ -156,7 +156,7 @@ void erec_print(struct output_ctx *octx, const struct error_record *erec,
 	case INDESC_NETLINK:
 		break;
 	default:
-		BUG("invalid input descriptor type %u\n", indesc->type);
+		BUG("invalid input descriptor type %u", indesc->type);
 	}
 
 	f = octx->error_fp;

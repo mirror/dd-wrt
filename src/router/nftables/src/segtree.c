@@ -64,7 +64,7 @@ static void set_elem_add(const struct set *set, struct expr *init, mpz_t value,
 	expr = set_elem_expr_alloc(&internal_location, expr);
 	expr->flags = flags;
 
-	compound_expr_add(init, expr);
+	set_expr_add(init, expr);
 }
 
 struct expr *get_set_intervals(const struct set *set, const struct expr *init)
@@ -86,12 +86,12 @@ struct expr *get_set_intervals(const struct set *set, const struct expr *init)
 				     i->flags, byteorder);
 			break;
 		case EXPR_CONCAT:
-			compound_expr_add(new_init, expr_clone(i));
+			set_expr_add(new_init, expr_clone(i));
 			i->flags |= EXPR_F_INTERVAL_END;
-			compound_expr_add(new_init, expr_clone(i));
+			set_expr_add(new_init, expr_clone(i));
 			break;
 		case EXPR_SET_ELEM_CATCHALL:
-			compound_expr_add(new_init, expr_clone(i));
+			set_expr_add(new_init, expr_clone(i));
 			break;
 		default:
 			range_expr_value_low(low, i);
@@ -120,7 +120,7 @@ static struct expr *expr_value(struct expr *expr)
 	case EXPR_VALUE:
 		return expr;
 	default:
-		BUG("invalid expression type %s\n", expr_name(expr));
+		BUG("invalid expression type %s", expr_name(expr));
 	}
 }
 
@@ -207,23 +207,23 @@ static struct expr *expr_to_set_elem(struct expr *e)
 	return __expr_to_set_elem(e, expr);
 }
 
-static void set_compound_expr_add(struct expr *compound, struct expr *expr, struct expr *orig)
+static void set_expr_add_splice(struct expr *compound, struct expr *expr, struct expr *orig)
 {
 	struct expr *elem;
 
 	switch (expr->etype) {
 	case EXPR_SET_ELEM:
 		list_splice_init(&orig->stmt_list, &expr->stmt_list);
-		compound_expr_add(compound, expr);
+		set_expr_add(compound, expr);
 		break;
 	case EXPR_MAPPING:
 		list_splice_init(&orig->left->stmt_list, &expr->left->stmt_list);
-		compound_expr_add(compound, expr);
+		set_expr_add(compound, expr);
 		break;
 	default:
 		elem = set_elem_expr_alloc(&orig->location, expr);
 		list_splice_init(&orig->stmt_list, &elem->stmt_list);
-		compound_expr_add(compound, elem);
+		set_expr_add(compound, elem);
 		break;
 	}
 }
@@ -250,7 +250,7 @@ int get_set_decompose(struct set *cache_set, struct set *set)
 				return -1;
 			}
 
-			set_compound_expr_add(new_init, range, left);
+			set_expr_add_splice(new_init, range, left);
 
 			expr_free(left);
 			expr_free(i);
@@ -262,9 +262,9 @@ int get_set_decompose(struct set *cache_set, struct set *set)
 							      left, NULL);
 
 				if (range)
-					set_compound_expr_add(new_init, range, left);
+					set_expr_add_splice(new_init, range, left);
 				else
-					set_compound_expr_add(new_init,
+					set_expr_add_splice(new_init,
 							      expr_to_set_elem(left), left);
 			}
 			left = i;
@@ -273,9 +273,9 @@ int get_set_decompose(struct set *cache_set, struct set *set)
 	if (left) {
 		range = get_set_interval_find(cache_set, left, NULL);
 		if (range)
-			set_compound_expr_add(new_init, range, left);
+			set_expr_add_splice(new_init, range, left);
 		else
-			set_compound_expr_add(new_init, expr_to_set_elem(left), left);
+			set_expr_add_splice(new_init, expr_to_set_elem(left), left);
 	}
 
 	expr_free(set->init);
@@ -448,13 +448,13 @@ next:
 			mpz_clear(range);
 
 			r2 = list_entry(r2_next, typeof(*r2), list);
-			compound_expr_remove(expr_value(start), r1);
+			concat_expr_remove(expr_value(start), r1);
 
 			if (free_r1)
 				expr_free(r1);
 		}
 
-		compound_expr_remove(set, start);
+		set_expr_remove(set, start);
 		expr_free(start);
 		start = NULL;
 	}
@@ -551,7 +551,7 @@ add_interval(struct expr *set, struct expr *low, struct expr *i)
 	} else
 		expr = interval_to_range(low, i, range);
 
-	compound_expr_add(set, expr);
+	set_expr_add(set, expr);
 
 	mpz_clear(range);
 	mpz_clear(p);
@@ -579,12 +579,12 @@ void interval_map_decompose(struct expr *set)
 		else if (i->etype == EXPR_MAPPING)
 			key = i->left->key;
 
-		if (key && key->etype == EXPR_SET_ELEM_CATCHALL) {
+		if (key && expr_type_catchall(key)) {
 			list_del(&i->list);
 			catchall = i;
 			continue;
 		}
-		compound_expr_remove(set, i);
+		set_expr_remove(set, i);
 		elements[n++] = i;
 	}
 	qsort(elements, n, sizeof(elements[0]), expr_value_cmp);
@@ -645,7 +645,7 @@ void interval_map_decompose(struct expr *set)
 	mpz_bitmask(i->value, i->len);
 
 	if (!mpz_cmp(i->value, expr_value(low)->value)) {
-		compound_expr_add(set, low);
+		set_expr_add(set, low);
 	} else {
 		add_interval(set, low, i);
 		expr_free(low);
@@ -656,7 +656,7 @@ void interval_map_decompose(struct expr *set)
 out:
 	if (catchall) {
 		catchall->flags |= EXPR_F_KERNEL;
-		compound_expr_add(set, catchall);
+		set_expr_add(set, catchall);
 	}
 
 	free(ranges);

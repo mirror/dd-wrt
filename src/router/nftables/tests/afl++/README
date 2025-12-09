@@ -1,0 +1,120 @@
+First you need to install afl++.  If your distro doesn't package it, you can
+get it from https://github.com/AFLplusplus/AFLplusplus
+
+Next build and install afl++, this needs llvm/clang installed.
+
+Nftables configue + compile steps:
+
+To get the best results, build nftables with the following options:
+
+CC=afl-clang-lto LD=afl-clang-lto CFLAGS+=-fsanitize=address ./configure \
+   --disable-shared --with-json --without-xtables \
+   --with-cli=readline --enable-fuzzer --disable-man-doc
+
+[ you might want to enable xtables or use a different cli, your choice ].
+
+Important options are:
+--disable-shared, so that libnftables is instrumented too.
+--enable-fuzzer
+
+--enable-fuzzer provides tools/nft-afl that allows more fine-grained control
+nft-afl provides a few options to guide the fuzzing process, some are shared
+with nft binary:
+
+--check
+
+Prevents the fuzzer-generated rulesets from being committed to the kernel.
+
+--random-outflags
+
+Periodically alter output behaviour by enabling or disabling --terse,
+--numeric, --echo and so on.
+
+--json
+
+Format output in JSON
+
+--fuzzer <stage>
+
+Instruct nft-afl to stop fuzzing after reaching the given stage.  Stages are:
+
+1: 'parser':
+    Only run / exercise the flex/bison parser.
+
+2: 'eval': stop after the evaluation phase.
+    This attempts to build a complete ruleset in memory, does
+    symbol resolution, adds needed shift/masks to payload instructions
+    etc.
+
+3: 'netlink-ro':
+    Also build/serialize the ruleset into netlink-commands to send to the
+    kernel, but omit the final write so the kernel will not see the message.
+    This is the default mode.
+
+4: 'netlink-rw':
+    Same as 3 but the message will be sent to the kernel.
+    You can combine this option with the '--check' option to send data to the
+    kernel but without committing any changes.
+    Unlike 3), even when combined with '--check', this option can still trigger
+    a kernel crash if there are bugs in the kernel, e.g. during the
+    valiation / transaction / abort stages.
+    When using this without '--check', remember to lauch nft in its own network
+    namespace to prevent VM connectivity loss due to committed 'drop' rules.
+
+Use 'netlink-ro' if you want to prevent nft from ever submitting any
+changes to the kernel or if you are only interested in fuzzing nftables
+and its libraries.
+
+All --fuzzer modes EXCEPT 'netlink-rw' do imply --check as these modes never
+alter state in the kernel.
+
+Before each input, nft-afl checks the kernel "taint" status as provided
+by "/proc/sys/kernel/tainted".  If this is non-zero, fuzzing stops.
+
+To run libnftables under afl++, run nft-afl like this:
+
+unshare -n \
+  afl-fuzz -g 16 -G 2000 -t 5000 -i tests/afl++/in -o tests/afl++/out \
+  -- tools/nft-afl
+
+arg should be either "netlink-ro" (if you only want to exercise libnftables
+userspace) or "netlink-rw" (if you want to test kernel code paths too).
+
+Its also a good idea to do this from tmux/screen so you can disconnect/reattach
+later.  You can also spawn multiple instances.
+In that case, add the '-M' option to afl-fuzz for the first instance you start,
+and '-S' for subsequent secondary instances.
+
+This expects a unique directory name as argument, so interesting findings
+from the different instances are cleary separated.
+
+With above default options, outputs will be in 'tests/afl++/out/<variantname>'.
+Please see the afl++ docs for more information about this.
+
+You can use tests/afl++/run-afl.sh script to autogenerate an initial set of valid
+inputs that the fuzzer can start from.
+
+Use
+
+sysctl -f tests/afl++/afl-sysctl.conf
+
+to enable some fuzzer-beneficial sysctl options.
+
+Kernel config:
+When using the 'netlink-rw' option it is best to also use a debug kernel
+with at least:
+
+# CONFIG_NOTIFIER_ERROR_INJECTION is not set
+CONFIG_KASAN=y
+CONFIG_DEBUG_ATOMIC_SLEEP=y
+CONFIG_DEBUG_LOCKDEP=y
+CONFIG_FAULT_INJECTION=y
+CONFIG_FAILSLAB=y
+CONFIG_DEBUG_KMEMLEAK=y
+
+If you want to sample test coverage, then set
+CONFIG_GCOV_KERNEL=y
+
+echo GCOV_PROFILE := y > net/netfilter/Makefile
+
+or enable CONFIG_GCOV_PROFILE_ALL=y.

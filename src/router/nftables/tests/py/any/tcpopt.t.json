@@ -622,32 +622,8 @@
                     },
                     {
                         "concat": [
-                            "remove-addr",
-                            300
-                        ]
-                    },
-                    {
-                        "concat": [
-                            "mp-fastclose",
-                            600
-                        ]
-                    },
-                    {
-                        "concat": [
                             "mp-join",
                             100
-                        ]
-                    },
-                    {
-                        "concat": [
-                            "mp-prio",
-                            400
-                        ]
-                    },
-                    {
-                        "concat": [
-                            "mp-tcprst",
-                            700
                         ]
                     },
                     {
@@ -658,8 +634,32 @@
                     },
                     {
                         "concat": [
+                            "remove-addr",
+                            300
+                        ]
+                    },
+                    {
+                        "concat": [
+                            "mp-prio",
+                            400
+                        ]
+                    },
+                    {
+                        "concat": [
                             "mp-fail",
                             500
+                        ]
+                    },
+                    {
+                        "concat": [
+                            "mp-fastclose",
+                            600
+                        ]
+                    },
+                    {
+                        "concat": [
+                            "mp-tcprst",
+                            700
                         ]
                     }
                 ]

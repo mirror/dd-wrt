@@ -1534,13 +1534,13 @@ __payload_gen_icmp_echo_dependency(struct eval_ctx *ctx, const struct expr *expr
 				    BYTEORDER_BIG_ENDIAN, BITS_PER_BYTE,
 				    constant_data_ptr(echo, BITS_PER_BYTE));
 	right = set_elem_expr_alloc(&expr->location, right);
-	compound_expr_add(set, right);
+	set_expr_add(set, right);
 
 	right = constant_expr_alloc(&expr->location, icmp_type,
 				    BYTEORDER_BIG_ENDIAN, BITS_PER_BYTE,
 				    constant_data_ptr(reply, BITS_PER_BYTE));
 	right = set_elem_expr_alloc(&expr->location, right);
-	compound_expr_add(set, right);
+	set_expr_add(set, right);
 
 	dep = relational_expr_alloc(&expr->location, OP_IMPLICIT, left, set);
 	return expr_stmt_alloc(&dep->location, dep);
@@ -1571,7 +1571,7 @@ __payload_gen_icmp6_addr_dependency(struct eval_ctx *ctx, const struct expr *exp
 					    constant_data_ptr(icmp_addr_types[i],
 							      BITS_PER_BYTE));
 		right = set_elem_expr_alloc(&expr->location, right);
-		compound_expr_add(set, right);
+		set_expr_add(set, right);
 	}
 
 	dep = relational_expr_alloc(&expr->location, OP_IMPLICIT, left, set);

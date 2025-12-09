@@ -1,0 +1,18 @@
+#!/bin/bash
+
+. $NFT_TEST_BASEDIR/helpers/set_flush_add_atomic_helpers
+
+tmp=$(mktemp)
+
+cleanup()
+{
+	set_flush_add_atomic_cleanup "$tmp"
+}
+
+trap cleanup EXIT
+
+set_flush_add_create_topo "hash_fast"
+
+set_flush_add_atomic_run_test "$tmp" "ipv4_addr" "size 2" "$ip_c, $ip_s" "ip saddr" || exit 1
+
+exit 0

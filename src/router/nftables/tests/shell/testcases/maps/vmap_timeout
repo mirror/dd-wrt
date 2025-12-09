@@ -45,7 +45,7 @@ for i in $(seq 1 100) ; do
 		expire=$((RANDOM%utimeout))
 
 		expire_str=""
-		if [ "$expires" -gt 0 ]; then
+		if [ "$expire" -gt 0 ]; then
 			expire_str="expires ${expire}s"
 		fi
 

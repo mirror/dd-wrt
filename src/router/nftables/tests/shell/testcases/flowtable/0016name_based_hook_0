@@ -1,0 +1,45 @@
+#!/bin/bash
+
+# NFT_TEST_REQUIRES(NFT_TEST_HAVE_ifname_based_hooks)
+# NFT_TEST_REQUIRES(NFT_TEST_HAVE_list_hooks_flowtable_info)
+
+ftspec=' flowtable ip t ft'
+$NFT add table t
+$NFT add $ftspec '{ hook ingress priority 0; devices = { lo, foo* }; }'
+$NFT list hooks netdev device lo | grep -q "$ftspec" || {
+	echo "Existing device lo not hooked into flowtable as expected"
+	exit 1
+}
+
+[[ $($NFT list hooks | grep -c "$ftspec") -eq 1 ]] || {
+	echo "Flowtable hooks into more than just lo"
+	exit 2
+}
+
+ip link add foo1 type dummy
+$NFT list hooks netdev device foo1 | grep -q "$ftspec" || {
+	echo "Flowtable did not hook into new device foo1"
+	exit 3
+}
+[[ $($NFT list hooks | grep -c "$ftspec") -eq 2 ]] || {
+	echo "Flowtable expected to hook into exactly two devices"
+	exit 4
+}
+
+ip link del foo1
+$NFT list hooks netdev device foo1 | grep -q "$ftspec" && {
+	echo "Flowtable still hooks into removed device foo1"
+	exit 5
+}
+[[ $($NFT list hooks | grep -c "$ftspec") -eq 1 ]] || {
+	echo "Flowtable expected to hook into just lo"
+	exit 6
+}
+
+for ((i = 0; i < 100; i++)); do
+	ip link add foo$i type dummy
+done
+[[ $($NFT list hooks | grep -c "$ftspec") -eq 101 ]] || {
+	echo "Flowtable did not hook into all 100 new devices"
+	exit 7
+}

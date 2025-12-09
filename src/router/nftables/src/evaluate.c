@@ -172,7 +172,7 @@ static enum ops byteorder_conversion_op(struct expr *expr,
 	default:
 		break;
 	}
-	BUG("invalid byte order conversion %u => %u\n",
+	BUG("invalid byte order conversion %u => %u",
 	    expr->byteorder, byteorder);
 }
 
@@ -229,7 +229,7 @@ static int byteorder_conversion(struct eval_ctx *ctx, struct expr **expr,
 		return 0;
 	default:
 		return expr_error(ctx->msgs, *expr,
-				  "Byteorder mismatch: %s expected %s, %s got %s",
+				  "Byteorder mismatch: expected %s, %s got %s",
 				  byteorder_names[byteorder],
 				  expr_name(*expr),
 				  byteorder_names[(*expr)->byteorder]);
@@ -587,7 +587,7 @@ static int expr_evaluate_bits(struct eval_ctx *ctx, struct expr **exprp)
 					  &extra_len);
 		break;
 	default:
-		BUG("Unknown expression %s\n", expr_name(expr));
+		BUG("Unknown expression %s", expr_name(expr));
 	}
 
 	masklen = len + shift;
@@ -1273,6 +1273,16 @@ static int expr_evaluate_prefix(struct eval_ctx *ctx, struct expr **expr)
 	if (expr_evaluate(ctx, &prefix->prefix) < 0)
 		return -1;
 	base = prefix->prefix;
+
+	/* expr_evaluate may simplify EXPR_AND to another
+	 * prefix expression for inputs like "2.2.2.2.3*1"/80.
+	 *
+	 * Recurse until all the expressions have been simplified.
+	 * This also gets us the error checks for the expression
+	 * chain.
+	 */
+	if (base->etype == EXPR_PREFIX)
+		return expr_evaluate_prefix(ctx, &prefix->prefix);
 	assert(expr_is_constant(base));
 
 	prefix->dtype	  = datatype_get(base->dtype);
@@ -1365,7 +1375,7 @@ static int expr_evaluate_unary(struct eval_ctx *ctx, struct expr **expr)
 		byteorder = BYTEORDER_HOST_ENDIAN;
 		break;
 	default:
-		BUG("invalid unary operation %u\n", unary->op);
+		BUG("invalid unary operation %u", unary->op);
 	}
 
 	__datatype_set(unary, datatype_clone(arg->dtype));
@@ -1416,7 +1426,7 @@ static int constant_binop_simplify(struct eval_ctx *ctx, struct expr **expr)
 		mpz_rshift_ui(val, mpz_get_uint32(right->value));
 		break;
 	default:
-		BUG("invalid binary operation %u\n", op->op);
+		BUG("invalid binary operation %u", op->op);
 	}
 
 	new = constant_expr_alloc(&op->location, op->dtype, op->byteorder,
@@ -1605,7 +1615,7 @@ static int expr_evaluate_binop(struct eval_ctx *ctx, struct expr **expr)
 		ret = expr_evaluate_bitwise(ctx, expr);
 		break;
 	default:
-		BUG("invalid binary operation %u\n", op->op);
+		BUG("invalid binary operation %u", op->op);
 	}
 
 
@@ -1737,6 +1747,7 @@ static int expr_evaluate_concat(struct eval_ctx *ctx, struct expr **expr)
 		case EXPR_SOCKET:
 		case EXPR_OSF:
 		case EXPR_XFRM:
+		case EXPR_TUNNEL:
 			break;
 		case EXPR_RANGE:
 		case EXPR_PREFIX:
@@ -1810,7 +1821,7 @@ static int expr_evaluate_concat(struct eval_ctx *ctx, struct expr **expr)
 		ctx->inner_desc = NULL;
 
 		if (size > NFT_MAX_EXPR_LEN_BITS)
-			return expr_error(ctx->msgs, i, "Concatenation of size %u exceeds maximum size of %u",
+			return expr_error(ctx->msgs, i, "Concatenation of size %u exceeds maximum size of %lu",
 					  size, NFT_MAX_EXPR_LEN_BITS);
 	}
 
@@ -1928,7 +1939,7 @@ static bool elem_key_compatible(const struct expr *set_key,
 				const struct expr *elem_key)
 {
 	/* Catchall element is always compatible with the set key declaration */
-	if (elem_key->etype == EXPR_SET_ELEM_CATCHALL)
+	if (expr_type_catchall(elem_key))
 		return true;
 
 	return datatype_compatible(set_key->dtype, elem_key->dtype);
@@ -2042,7 +2053,7 @@ static int interval_set_eval(struct eval_ctx *ctx, struct set *set,
 	case CMD_RESET:
 		break;
 	default:
-		BUG("unhandled op %d\n", ctx->cmd->op);
+		BUG("unhandled op %d", ctx->cmd->op);
 		break;
 	}
 
@@ -2267,7 +2278,7 @@ static int expr_evaluate_map(struct eval_ctx *ctx, struct expr **expr)
 			return -1;
 
 		if (ectx.len && mappings->set->data->len != ectx.len)
-			BUG("%d vs %d\n", mappings->set->data->len, ectx.len);
+			BUG("%d vs %d", mappings->set->data->len, ectx.len);
 
 		map->mappings = mappings;
 
@@ -2632,7 +2643,7 @@ static int binop_transfer_one(struct eval_ctx *ctx,
 					    *right, expr_get(left->right));
 		break;
 	default:
-		BUG("invalid binary operation %u\n", left->op);
+		BUG("invalid binary operation %u", left->op);
 	}
 
 	return expr_evaluate(ctx, right);
@@ -2954,7 +2965,7 @@ static int expr_evaluate_relational(struct eval_ctx *ctx, struct expr **expr)
 						 "Use concatenations with sets and maps, not singleton values");
 			break;
 		default:
-			BUG("invalid expression type %s\n", expr_name(right));
+			BUG("invalid expression type %s", expr_name(right));
 		}
 		break;
 	case OP_LT:
@@ -2985,7 +2996,7 @@ static int expr_evaluate_relational(struct eval_ctx *ctx, struct expr **expr)
 			return -1;
 		break;
 	default:
-		BUG("invalid relational operation %u\n", rel->op);
+		BUG("invalid relational operation %u", rel->op);
 	}
 
 	if (binop_transfer(ctx, expr) < 0)
@@ -3001,6 +3012,7 @@ static int expr_evaluate_fib(struct eval_ctx *ctx, struct expr **exprp)
 	if (expr->flags & EXPR_F_BOOLEAN) {
 		expr->fib.flags |= NFTA_FIB_F_PRESENT;
 		datatype_set(expr, &boolean_type);
+		expr->len = BITS_PER_BYTE;
 	}
 	return expr_evaluate_primary(ctx, exprp);
 }
@@ -3051,6 +3063,11 @@ static int expr_evaluate_osf(struct eval_ctx *ctx, struct expr **expr)
 	nfnl_osf_load_fingerprints(&nl_ctx, 0);
 
 	return expr_evaluate_primary(ctx, expr);
+}
+
+static int expr_evaluate_tunnel(struct eval_ctx *ctx, struct expr **exprp)
+{
+	return expr_evaluate_primary(ctx, exprp);
 }
 
 static int expr_evaluate_variable(struct eval_ctx *ctx, struct expr **exprp)
@@ -3170,6 +3187,8 @@ static int expr_evaluate(struct eval_ctx *ctx, struct expr **expr)
 		return expr_evaluate_meta(ctx, expr);
 	case EXPR_SOCKET:
 		return expr_evaluate_socket(ctx, expr);
+	case EXPR_TUNNEL:
+		return expr_evaluate_tunnel(ctx, expr);
 	case EXPR_OSF:
 		return expr_evaluate_osf(ctx, expr);
 	case EXPR_FIB:
@@ -3213,7 +3232,7 @@ static int expr_evaluate(struct eval_ctx *ctx, struct expr **expr)
 	case EXPR_RANGE_SYMBOL:
 		return expr_evaluate_symbol_range(ctx, expr);
 	default:
-		BUG("unknown expression type %s\n", expr_name(*expr));
+		BUG("unknown expression type %s", expr_name(*expr));
 	}
 }
 
@@ -3374,7 +3393,7 @@ static int stmt_evaluate_verdict(struct eval_ctx *ctx, struct stmt *stmt)
 	case EXPR_MAP:
 		break;
 	default:
-		BUG("invalid verdict expression %s\n", expr_name(stmt->expr));
+		BUG("invalid verdict expression %s", expr_name(stmt->expr));
 	}
 	return 0;
 }
@@ -3498,7 +3517,7 @@ static int stmt_evaluate_payload(struct eval_ctx *ctx, struct stmt *stmt)
 
 	if (payload_byte_size > sizeof(data))
 		return expr_error(ctx->msgs, stmt->payload.expr,
-				  "uneven load cannot span more than %u bytes, got %u",
+				  "uneven load cannot span more than %zu bytes, got %u",
 				  sizeof(data), payload_byte_size);
 
 	if (aligned_fetch && payload_byte_size & 1) {
@@ -5075,7 +5094,7 @@ int stmt_evaluate(struct eval_ctx *ctx, struct stmt *stmt)
 	case STMT_OPTSTRIP:
 		return stmt_evaluate_optstrip(ctx, stmt);
 	default:
-		BUG("unknown statement type %d\n", stmt->type);
+		BUG("unknown statement type %d", stmt->type);
 	}
 }
 
@@ -5178,7 +5197,7 @@ static int set_expr_evaluate_concat(struct eval_ctx *ctx, struct expr **expr)
 		size += netlink_padded_len(i->len);
 
 		if (size > NFT_MAX_EXPR_LEN_BITS)
-			return expr_error(ctx->msgs, i, "Concatenation of size %u exceeds maximum size of %u",
+			return expr_error(ctx->msgs, i, "Concatenation of size %u exceeds maximum size of %lu",
 					  size, NFT_MAX_EXPR_LEN_BITS);
 	}
 
@@ -5460,27 +5479,13 @@ static struct expr *expr_set_to_list(struct eval_ctx *ctx, struct expr *dev_expr
 		list_del(&expr->list);
 
 		switch (expr->etype) {
-		case EXPR_VARIABLE:
-			expr_set_context(&ctx->ectx, &ifname_type,
-					 IFNAMSIZ * BITS_PER_BYTE);
-			if (!evaluate_expr_variable(ctx, &expr))
-				return false;
-
-			if (expr->etype == EXPR_SET) {
-				expr = expr_set_to_list(ctx, expr);
-				list_splice_init(&expr_list(expr)->expressions, &tmp);
-				expr_free(expr);
-				continue;
-			}
-			break;
 		case EXPR_SET_ELEM:
 			key = expr_clone(expr->key);
 			expr_free(expr);
 			expr = key;
 			break;
-		case EXPR_VALUE:
-			break;
 		default:
+			BUG("invalid expression type %s", expr_name(expr));
 			break;
 		}
 
@@ -5489,7 +5494,7 @@ static struct expr *expr_set_to_list(struct eval_ctx *ctx, struct expr *dev_expr
 
 	loc = dev_expr->location;
 	expr_free(dev_expr);
-	dev_expr = compound_expr_alloc(&loc, EXPR_LIST);
+	dev_expr = list_expr_alloc(&loc);
 	list_splice_init(&tmp, &expr_list(dev_expr)->expressions);
 
 	return dev_expr;
@@ -5532,7 +5537,7 @@ static bool evaluate_device_expr(struct eval_ctx *ctx, struct expr **dev_expr)
 		case EXPR_VALUE:
 			break;
 		default:
-			BUG("invalid expression type %s\n", expr_name(expr));
+			BUG("invalid expression type %s", expr_name(expr));
 			break;
 		}
 
@@ -5856,6 +5861,46 @@ static int ct_timeout_evaluate(struct eval_ctx *ctx, struct obj *obj)
 	return 0;
 }
 
+static int tunnel_evaluate_addr(struct eval_ctx *ctx, struct expr **exprp)
+{
+	struct expr *e;
+	int ret;
+
+	ret = expr_evaluate(ctx, exprp);
+	if (ret < 0)
+		return ret;
+
+	e = *exprp;
+	if (e->etype != EXPR_VALUE)
+		return expr_error(ctx->msgs, e, "must be a value, not %s", expr_name(e));
+
+	return 0;
+}
+
+static int tunnel_evaluate(struct eval_ctx *ctx, struct obj *obj)
+{
+	if (obj->tunnel.src) {
+		expr_set_context(&ctx->ectx, obj->tunnel.src->dtype,
+				 obj->tunnel.src->dtype->size);
+		if (tunnel_evaluate_addr(ctx, &obj->tunnel.src) < 0)
+			return -1;
+	}
+
+	if (obj->tunnel.dst) {
+		expr_set_context(&ctx->ectx, obj->tunnel.dst->dtype,
+				 obj->tunnel.dst->dtype->size);
+		if (tunnel_evaluate_addr(ctx, &obj->tunnel.dst) < 0)
+			return -1;
+
+		if (obj->tunnel.src &&
+		    obj->tunnel.src->dtype != obj->tunnel.dst->dtype)
+			return __stmt_binary_error(ctx, &obj->location, NULL,
+						  "specify either ip or ip6 for address");
+	}
+
+	return 0;
+}
+
 static int obj_evaluate(struct eval_ctx *ctx, struct obj *obj)
 {
 	struct table *table;
@@ -5874,6 +5919,8 @@ static int obj_evaluate(struct eval_ctx *ctx, struct obj *obj)
 		return ct_timeout_evaluate(ctx, obj);
 	case NFT_OBJECT_CT_EXPECT:
 		return ct_expect_evaluate(ctx, obj);
+	case NFT_OBJECT_TUNNEL:
+		return tunnel_evaluate(ctx, obj);
 	default:
 		break;
 	}
@@ -5926,10 +5973,11 @@ static int cmd_evaluate_add(struct eval_ctx *ctx, struct cmd *cmd)
 	case CMD_OBJ_SECMARK:
 	case CMD_OBJ_CT_EXPECT:
 	case CMD_OBJ_SYNPROXY:
+	case CMD_OBJ_TUNNEL:
 		handle_merge(&cmd->object->handle, &cmd->handle);
 		return obj_evaluate(ctx, cmd->object);
 	default:
-		BUG("invalid command object type %u\n", cmd->obj);
+		BUG("invalid command object type %u", cmd->obj);
 	}
 }
 
@@ -5970,6 +6018,22 @@ static void chain_del_cache(struct eval_ctx *ctx, struct cmd *cmd)
 
 	chain_cache_del(chain);
 	chain_free(chain);
+}
+
+static int chain_del_evaluate(struct eval_ctx *ctx, struct cmd *cmd)
+{
+	struct chain *chain = cmd->chain;
+
+	if (chain && chain->flags & CHAIN_F_BASECHAIN && chain->hook.name) {
+		chain->hook.num = str2hooknum(chain->handle.family,
+					      chain->hook.name);
+		if (chain->hook.num == NF_INET_NUMHOOKS)
+			return __stmt_binary_error(ctx, &chain->hook.loc, NULL,
+						   "The %s family does not support this hook",
+						   family2str(chain->handle.family));
+	}
+	chain_del_cache(ctx, cmd);
+	return 0;
 }
 
 static void set_del_cache(struct eval_ctx *ctx, struct cmd *cmd)
@@ -6049,8 +6113,7 @@ static int cmd_evaluate_delete(struct eval_ctx *ctx, struct cmd *cmd)
 	case CMD_OBJ_RULE:
 		return 0;
 	case CMD_OBJ_CHAIN:
-		chain_del_cache(ctx, cmd);
-		return 0;
+		return chain_del_evaluate(ctx, cmd);
 	case CMD_OBJ_TABLE:
 		table_del_cache(ctx, cmd);
 		return 0;
@@ -6081,8 +6144,11 @@ static int cmd_evaluate_delete(struct eval_ctx *ctx, struct cmd *cmd)
 	case CMD_OBJ_SYNPROXY:
 		obj_del_cache(ctx, cmd, NFT_OBJECT_SYNPROXY);
 		return 0;
+	case CMD_OBJ_TUNNEL:
+		obj_del_cache(ctx, cmd, NFT_OBJECT_TUNNEL);
+		return 0;
 	default:
-		BUG("invalid command object type %u\n", cmd->obj);
+		BUG("invalid command object type %u", cmd->obj);
 	}
 }
 
@@ -6092,7 +6158,7 @@ static int cmd_evaluate_get(struct eval_ctx *ctx, struct cmd *cmd)
 	case CMD_OBJ_ELEMENTS:
 		return setelem_evaluate(ctx, cmd);
 	default:
-		BUG("invalid command object type %u\n", cmd->obj);
+		BUG("invalid command object type %u", cmd->obj);
 	}
 }
 
@@ -6213,6 +6279,8 @@ static int cmd_evaluate_list(struct eval_ctx *ctx, struct cmd *cmd)
 		return cmd_evaluate_list_obj(ctx, cmd, NFT_OBJECT_CT_EXPECT);
 	case CMD_OBJ_SYNPROXY:
 		return cmd_evaluate_list_obj(ctx, cmd, NFT_OBJECT_SYNPROXY);
+	case CMD_OBJ_TUNNEL:
+		return cmd_evaluate_list_obj(ctx, cmd, NFT_OBJECT_TUNNEL);
 	case CMD_OBJ_COUNTERS:
 	case CMD_OBJ_QUOTAS:
 	case CMD_OBJ_CT_HELPERS:
@@ -6223,6 +6291,7 @@ static int cmd_evaluate_list(struct eval_ctx *ctx, struct cmd *cmd)
 	case CMD_OBJ_SYNPROXYS:
 	case CMD_OBJ_CT_TIMEOUTS:
 	case CMD_OBJ_CT_EXPECTATIONS:
+	case CMD_OBJ_TUNNELS:
 		if (cmd->handle.table.name == NULL)
 			return 0;
 		if (!table_cache_find(&ctx->nft->cache.table_cache,
@@ -6247,7 +6316,7 @@ static int cmd_evaluate_list(struct eval_ctx *ctx, struct cmd *cmd)
 		}
 		return 0;
 	default:
-		BUG("invalid command object type %u\n", cmd->obj);
+		BUG("invalid command object type %u", cmd->obj);
 	}
 }
 
@@ -6276,7 +6345,7 @@ static int cmd_evaluate_reset(struct eval_ctx *ctx, struct cmd *cmd)
 	case CMD_OBJ_MAP:
 		return cmd_evaluate_list(ctx, cmd);
 	default:
-		BUG("invalid command object type %u\n", cmd->obj);
+		BUG("invalid command object type %u", cmd->obj);
 	}
 }
 
@@ -6356,7 +6425,7 @@ static int cmd_evaluate_flush(struct eval_ctx *ctx, struct cmd *cmd)
 
 		return 0;
 	default:
-		BUG("invalid command object type %u\n", cmd->obj);
+		BUG("invalid command object type %u", cmd->obj);
 	}
 	return 0;
 }
@@ -6378,7 +6447,7 @@ static int cmd_evaluate_rename(struct eval_ctx *ctx, struct cmd *cmd)
 
 		break;
 	default:
-		BUG("invalid command object type %u\n", cmd->obj);
+		BUG("invalid command object type %u", cmd->obj);
 	}
 	return 0;
 }
@@ -6568,5 +6637,5 @@ int cmd_evaluate(struct eval_ctx *ctx, struct cmd *cmd)
 		break;
 	};
 
-	BUG("invalid command operation %u\n", cmd->op);
+	BUG("invalid command operation %u", cmd->op);
 }

@@ -23,6 +23,7 @@ libnftables_LIBVERSION = 2:0:1
 ###############################################################################
 
 ACLOCAL_AMFLAGS = -I m4
+AM_DISTCHECK_CONFIGURE_FLAGS = --enable-distcheck
 
 EXTRA_DIST =
 BUILT_SOURCES =
@@ -30,9 +31,11 @@ LDADD =
 lib_LTLIBRARIES =
 noinst_LTLIBRARIES =
 sbin_PROGRAMS =
+noinst_PROGRAMS =
 check_PROGRAMS =
 dist_man_MANS =
 CLEANFILES =
+DISTCLEANFILES =
 
 ###############################################################################
 
@@ -62,6 +65,7 @@ noinst_HEADERS = \
 	include/linux/netfilter_ipv6.h \
 	include/linux/netfilter_ipv6/ip6_tables.h \
 	\
+	include/afl++.h	\
 	include/cache.h \
 	include/cli.h \
 	include/cmd.h \
@@ -100,11 +104,14 @@ noinst_HEADERS = \
 	include/statement.h \
 	include/tcpopt.h \
 	include/trace.h \
+	include/tunnel.h \
 	include/utils.h \
 	include/xfrm.h \
 	include/xt.h \
 	\
 	$(NULL)
+
+DISTCLEANFILES += nftversion.h
 
 ###############################################################################
 
@@ -151,6 +158,8 @@ AM_CFLAGS = \
 	-Wwrite-strings \
 	\
 	$(GCC_FVISIBILITY_HIDDEN) \
+	\
+	-DMAKE_STAMP=$(MAKE_STAMP) \
 	\
 	$(NULL)
 
@@ -243,6 +252,7 @@ src_libnftables_la_SOURCES = \
 	src/socket.c \
 	src/statement.c \
 	src/tcpopt.c \
+	src/tunnel.c \
 	src/utils.c \
 	src/xfrm.c \
 	$(NULL)
@@ -302,6 +312,15 @@ check_PROGRAMS += examples/nft-json-file
 
 examples_nft_json_file_AM_CPPFLAGS = -I$(srcdir)/include
 examples_nft_json_file_LDADD = src/libnftables.la
+
+###############################################################################
+
+if BUILD_AFL
+noinst_PROGRAMS += tools/nft-afl
+
+tools_nft_afl_SOURCES = tools/nft-afl.c
+tools_nft_afl_LDADD = src/libnftables.la
+endif
 
 ###############################################################################
 
@@ -413,10 +432,14 @@ EXTRA_DIST += \
 	tools/nftables.service.in \
 	$(NULL)
 
+if BUILD_SERVICE
 CLEANFILES += tools/nftables.service
+endif
 
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = libnftables.pc
+
+if BUILD_SERVICE
 unit_DATA = tools/nftables.service
 man_MANS = tools/nftables.service.8
 doc_DATA = files/nftables/main.nft
@@ -424,3 +447,12 @@ doc_DATA = files/nftables/main.nft
 tools/nftables.service: tools/nftables.service.in ${top_builddir}/config.status
 	${AM_V_GEN}${MKDIR_P} tools
 	${AM_V_at}sed -e 's|@''sbindir''@|${sbindir}|g;s|@''pkgsysconfdir''@|${pkgsysconfdir}|g' <${srcdir}/tools/nftables.service.in >$@
+endif
+
+if !BUILD_DISTCHECK
+TESTS = tests/build/run-tests.sh \
+	tests/json_echo/run-test.py \
+	tests/monitor/run-tests.sh \
+	tests/py/nft-test.py \
+	tests/shell/run-tests.sh
+endif

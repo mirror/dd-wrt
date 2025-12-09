@@ -400,7 +400,7 @@ static bool netlink_event_range_cache(struct set *cached_set,
 
 	/* if cache exists, dummyset must contain the other end of the range */
 	if (cached_set->rg_cache) {
-		compound_expr_add(dummyset->init, cached_set->rg_cache);
+		set_expr_add(dummyset->init, cached_set->rg_cache);
 		cached_set->rg_cache = NULL;
 		goto out_decompose;
 	}
@@ -549,7 +549,7 @@ static int netlink_events_obj_cb(const struct nlmsghdr *nlh, int type,
 		nft_mon_print(monh, "\n");
 		break;
 	case NFTNL_OUTPUT_JSON:
-		monitor_print_obj_json(monh, cmd, obj);
+		monitor_print_obj_json(monh, cmd, obj, type == NFT_MSG_DELOBJ);
 		if (!nft_output_echo(&monh->ctx->nft->output))
 			nft_mon_print(monh, "\n");
 		break;

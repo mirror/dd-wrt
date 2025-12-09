@@ -70,7 +70,7 @@ static void setelem_expr_to_range(struct expr *expr)
 		expr->key = key;
 		break;
 	default:
-		BUG("unhandled key type %s\n", expr_name(expr->key));
+		BUG("unhandled key type %s", expr_name(expr->key));
 	}
 }
 
@@ -175,7 +175,7 @@ static void setelem_automerge(struct set_automerge_ctx *ctx)
 	mpz_init(rop);
 
 	list_for_each_entry_safe(i, next, &expr_set(ctx->init)->expressions, list) {
-		if (i->key->etype == EXPR_SET_ELEM_CATCHALL)
+		if (expr_type_catchall(i->key))
 			continue;
 
 		range_expr_value_low(range.low, i);
@@ -226,7 +226,7 @@ static struct expr *interval_expr_key(struct expr *i)
 		elem = i;
 		break;
 	default:
-		BUG("unhandled expression type %d\n", i->etype);
+		BUG("unhandled expression type %d", i->etype);
 		return NULL;
 	}
 
@@ -278,7 +278,7 @@ int set_automerge(struct list_head *msgs, struct cmd *cmd, struct set *set,
 			}
 			clone = expr_clone(i);
 			clone->flags |= EXPR_F_KERNEL;
-			list_add_tail(&clone->list, &expr_set(existing_set->init)->expressions);
+			__set_expr_add(existing_set->init, clone);
 		}
 	}
 
@@ -359,7 +359,7 @@ static void split_range(struct set *set, struct expr *prev, struct expr *i,
 	clone = expr_clone(prev);
 	mpz_set(clone->key->range.low, i->key->range.high);
 	mpz_add_ui(clone->key->range.low, i->key->range.high, 1);
-	list_add_tail(&clone->list, &expr_set(set->existing_set->init)->expressions);
+	__set_expr_add(set->existing_set->init, clone);
 
 	mpz_set(prev->key->range.high, i->key->range.low);
 	mpz_sub_ui(prev->key->range.high, i->key->range.low, 1);
@@ -410,7 +410,7 @@ static int setelem_delete(struct list_head *msgs, struct set *set,
 	list_for_each_entry_safe(elem, next, &expr_set(elems)->expressions, list) {
 		i = interval_expr_key(elem);
 
-		if (i->key->etype == EXPR_SET_ELEM_CATCHALL) {
+		if (expr_type_catchall(i->key)) {
 			/* Assume max value to simplify handling. */
 			mpz_bitmask(range.low, i->len);
 			mpz_bitmask(range.high, i->len);
@@ -527,7 +527,7 @@ int set_delete(struct list_head *msgs, struct cmd *cmd, struct set *set,
 	list_for_each_entry(i, &expr_set(existing_set->init)->expressions, list) {
 		if (!(i->flags & EXPR_F_KERNEL)) {
 			clone = expr_clone(i);
-			list_add_tail(&clone->list, &expr_set(add)->expressions);
+			__set_expr_add(add, clone);
 			i->flags |= EXPR_F_KERNEL;
 		}
 	}
@@ -574,7 +574,7 @@ static int setelem_overlap(struct list_head *msgs, struct set *set,
 	list_for_each_entry_safe(elem, next, &expr_set(init)->expressions, list) {
 		i = interval_expr_key(elem);
 
-		if (i->key->etype == EXPR_SET_ELEM_CATCHALL)
+		if (expr_type_catchall(i->key))
 			continue;
 
 		range_expr_value_low(range.low, i);
@@ -646,7 +646,7 @@ int set_overlap(struct list_head *msgs, struct set *set, struct expr *init)
 		else if (existing_set) {
 			clone = expr_clone(i);
 			clone->flags |= EXPR_F_KERNEL;
-			list_add_tail(&clone->list, &expr_set(existing_set->init)->expressions);
+			__set_expr_add(existing_set->init, clone);
 		}
 	}
 
@@ -686,7 +686,7 @@ int set_to_intervals(const struct set *set, struct expr *init, bool add)
 	list_for_each_entry_safe(i, n, &expr_set(init)->expressions, list) {
 		elem = interval_expr_key(i);
 
-		if (elem->key->etype == EXPR_SET_ELEM_CATCHALL)
+		if (expr_type_catchall(elem->key))
 			continue;
 
 		if (prev)
@@ -756,7 +756,7 @@ static struct expr *setelem_key(struct expr *expr)
 		key = expr->key;
 		break;
 	default:
-		BUG("unhandled expression type %d\n", expr->etype);
+		BUG("unhandled expression type %d", expr->etype);
 		return NULL;
 	}
 
@@ -770,17 +770,17 @@ int setelem_to_interval(const struct set *set, struct expr *elem,
 	bool adjacent = false;
 
 	key = setelem_key(elem);
-	if (key->etype == EXPR_SET_ELEM_CATCHALL)
+	if (expr_type_catchall(key))
 		return 0;
 
 	if (next_elem) {
 		next_key = setelem_key(next_elem);
-		if (next_key->etype == EXPR_SET_ELEM_CATCHALL)
+		if (expr_type_catchall(next_key))
 			next_key = NULL;
 	}
 
 	if (key->etype != EXPR_RANGE_VALUE)
-		BUG("key must be RANGE_VALUE, not %s\n", expr_name(key));
+		BUG("key must be RANGE_VALUE, not %s", expr_name(key));
 
 	assert(!next_key || next_key->etype == EXPR_RANGE_VALUE);
 

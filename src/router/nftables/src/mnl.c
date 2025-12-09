@@ -10,6 +10,7 @@
 
 #include <nft.h>
 #include <iface.h>
+#include <nftversion.h>
 
 #include <libmnl/libmnl.h>
 #include <libnftnl/common.h>
@@ -739,18 +740,18 @@ static void nft_dev_add(struct nft_dev *dev_array, const struct expr *expr, int 
 	char ifname[IFNAMSIZ];
 
 	if (expr->etype != EXPR_VALUE)
-		BUG("Must be a value, not %s\n", expr_name(expr));
+		BUG("Must be a value, not %s", expr_name(expr));
 
 	ifname_len = div_round_up(expr->len, BITS_PER_BYTE);
 	memset(ifname, 0, sizeof(ifname));
 
 	if (ifname_len > sizeof(ifname))
-		BUG("Interface length %u exceeds limit\n", ifname_len);
+		BUG("Interface length %u exceeds limit", ifname_len);
 
 	mpz_export_data(ifname, expr->value, BYTEORDER_HOST_ENDIAN, ifname_len);
 
 	if (strnlen(ifname, IFNAMSIZ) >= IFNAMSIZ)
-		BUG("Interface length %zu exceeds limit, no NUL byte\n", strnlen(ifname, IFNAMSIZ));
+		BUG("Interface length %zu exceeds limit, no NUL byte", strnlen(ifname, IFNAMSIZ));
 
 	dev_array[i].ifname = xstrdup(ifname);
 	dev_array[i].location = &expr->location;
@@ -800,6 +801,33 @@ static void nft_dev_array_free(const struct nft_dev *dev_array)
 	free_const(dev_array);
 }
 
+static bool is_wildcard_str(const char *str)
+{
+	size_t len = strlen(str);
+
+	if (len < 1 || str[len - 1] != '*')
+		return false;
+	if (len < 2 || str[len - 2] != '\\')
+		return true;
+	/* XXX: ignore backslash escaping for now */
+	return false;
+}
+
+static void mnl_nft_attr_put_ifname(struct nlmsghdr *nlh, const char *ifname)
+{
+	uint16_t attr = NFTA_DEVICE_NAME;
+	char pfx[IFNAMSIZ];
+
+	if (is_wildcard_str(ifname)) {
+		snprintf(pfx, IFNAMSIZ, "%s", ifname);
+		pfx[strlen(pfx) - 1] = '\0';
+
+		attr = NFTA_DEVICE_PREFIX;
+		ifname = pfx;
+	}
+	mnl_attr_put_strz(nlh, attr, ifname);
+}
+
 static void mnl_nft_chain_devs_build(struct nlmsghdr *nlh, struct cmd *cmd)
 {
 	const struct expr *dev_expr = cmd->chain->dev_expr;
@@ -808,14 +836,14 @@ static void mnl_nft_chain_devs_build(struct nlmsghdr *nlh, struct cmd *cmd)
 	int i, num_devs = 0;
 
 	dev_array = nft_dev_array(dev_expr, &num_devs);
-	if (num_devs == 1) {
+	if (num_devs == 1 && !is_wildcard_str(dev_array[0].ifname)) {
 		cmd_add_loc(cmd, nlh, dev_array[0].location);
 		mnl_attr_put_strz(nlh, NFTA_HOOK_DEV, dev_array[0].ifname);
 	} else {
 		nest_dev = mnl_attr_nest_start(nlh, NFTA_HOOK_DEVS);
 		for (i = 0; i < num_devs; i++) {
 			cmd_add_loc(cmd, nlh, dev_array[i].location);
-			mnl_attr_put_strz(nlh, NFTA_DEVICE_NAME, dev_array[i].ifname);
+			mnl_nft_attr_put_ifname(nlh, dev_array[i].ifname);
 		}
 		mnl_attr_nest_end(nlh, nest_dev);
 	}
@@ -993,6 +1021,8 @@ int mnl_nft_chain_del(struct netlink_ctx *ctx, struct cmd *cmd)
 		struct nlattr *nest;
 
 		nest = mnl_attr_nest_start(nlh, NFTA_CHAIN_HOOK);
+		mnl_attr_put_u32(nlh, NFTA_HOOK_HOOKNUM,
+				 htonl(cmd->chain->hook.num));
 		mnl_nft_chain_devs_build(nlh, cmd);
 		mnl_attr_nest_end(nlh, nest);
 	}
@@ -1082,23 +1112,31 @@ int mnl_nft_table_add(struct netlink_ctx *ctx, struct cmd *cmd,
 	if (nlt == NULL)
 		memory_allocation_error();
 
+	udbuf = nftnl_udata_buf_alloc(NFT_USERDATA_MAXLEN);
+	if (!udbuf)
+		memory_allocation_error();
+
 	nftnl_table_set_u32(nlt, NFTNL_TABLE_FAMILY, cmd->handle.family);
 	if (cmd->table) {
 		nftnl_table_set_u32(nlt, NFTNL_TABLE_FLAGS, cmd->table->flags);
 
 		if (cmd->table->comment) {
-			udbuf = nftnl_udata_buf_alloc(NFT_USERDATA_MAXLEN);
-			if (!udbuf)
-				memory_allocation_error();
 			if (!nftnl_udata_put_strz(udbuf, NFTNL_UDATA_TABLE_COMMENT, cmd->table->comment))
 				memory_allocation_error();
-			nftnl_table_set_data(nlt, NFTNL_TABLE_USERDATA, nftnl_udata_buf_data(udbuf),
-					     nftnl_udata_buf_len(udbuf));
-			nftnl_udata_buf_free(udbuf);
 		}
 	} else {
 		nftnl_table_set_u32(nlt, NFTNL_TABLE_FLAGS, 0);
 	}
+
+	if (!nftnl_udata_put(udbuf, NFTNL_UDATA_TABLE_NFTVER,
+			     sizeof(nftversion), nftversion) ||
+	    !nftnl_udata_put(udbuf, NFTNL_UDATA_TABLE_NFTBLD,
+	                     sizeof(nftbuildstamp), nftbuildstamp))
+		memory_allocation_error();
+	nftnl_table_set_data(nlt, NFTNL_TABLE_USERDATA,
+			     nftnl_udata_buf_data(udbuf),
+			     nftnl_udata_buf_len(udbuf));
+	nftnl_udata_buf_free(udbuf);
 
 	nlh = nftnl_nlmsg_build_hdr(nftnl_batch_buffer(ctx->batch),
 				    NFT_MSG_NEWTABLE,
@@ -1479,10 +1517,94 @@ err:
 	return NULL;
 }
 
+static void obj_tunnel_add_opts(struct nftnl_obj *nlo, struct tunnel *tunnel)
+{
+	struct nftnl_tunnel_opts *opts;
+	struct nftnl_tunnel_opt *opt;
+
+	switch (tunnel->type) {
+	case TUNNEL_ERSPAN:
+		opts = nftnl_tunnel_opts_alloc(NFTNL_TUNNEL_TYPE_ERSPAN);
+		if (!opts)
+			memory_allocation_error();
+
+		opt = nftnl_tunnel_opt_alloc(NFTNL_TUNNEL_TYPE_ERSPAN);
+		if (!opt)
+			memory_allocation_error();
+
+		nftnl_tunnel_opt_set(opt, NFTNL_TUNNEL_ERSPAN_VERSION,
+				     &tunnel->erspan.version,
+				     sizeof(tunnel->erspan.version));
+		switch (tunnel->erspan.version) {
+		case 1:
+			nftnl_tunnel_opt_set(opt, NFTNL_TUNNEL_ERSPAN_V1_INDEX,
+					     &tunnel->erspan.v1.index,
+					     sizeof(tunnel->erspan.v1.index));
+			break;
+		case 2:
+			nftnl_tunnel_opt_set(opt, NFTNL_TUNNEL_ERSPAN_V2_DIR,
+					     &tunnel->erspan.v2.direction,
+					     sizeof(tunnel->erspan.v2.direction));
+			nftnl_tunnel_opt_set(opt, NFTNL_TUNNEL_ERSPAN_V2_HWID,
+					     &tunnel->erspan.v2.hwid,
+					     sizeof(tunnel->erspan.v2.hwid));
+			break;
+		}
+
+		nftnl_tunnel_opts_add(opts, opt);
+		nftnl_obj_set_data(nlo, NFTNL_OBJ_TUNNEL_OPTS, &opts, sizeof(struct nftnl_tunnel_opts *));
+		break;
+	case TUNNEL_VXLAN:
+		opts = nftnl_tunnel_opts_alloc(NFTNL_TUNNEL_TYPE_VXLAN);
+		if (!opts)
+			memory_allocation_error();
+
+		opt = nftnl_tunnel_opt_alloc(NFTNL_TUNNEL_TYPE_VXLAN);
+		if (!opt)
+			memory_allocation_error();
+
+		nftnl_tunnel_opt_set(opt, NFTNL_TUNNEL_VXLAN_GBP,
+				     &tunnel->vxlan.gbp,
+				     sizeof(tunnel->vxlan.gbp));
+
+		nftnl_tunnel_opts_add(opts, opt);
+		nftnl_obj_set_data(nlo, NFTNL_OBJ_TUNNEL_OPTS, &opts, sizeof(struct nftnl_tunnel_opts *));
+		break;
+	case TUNNEL_GENEVE:
+		struct tunnel_geneve *geneve;
+
+		opts = nftnl_tunnel_opts_alloc(NFTNL_TUNNEL_TYPE_GENEVE);
+		if (!opts)
+			memory_allocation_error();
+
+		list_for_each_entry(geneve, &tunnel->geneve_opts, list) {
+			opt = nftnl_tunnel_opt_alloc(NFTNL_TUNNEL_TYPE_GENEVE);
+			if (!opt)
+				memory_allocation_error();
+
+			nftnl_tunnel_opt_set(opt,
+					     NFTNL_TUNNEL_GENEVE_TYPE,
+					     &geneve->type, sizeof(geneve->type));
+			nftnl_tunnel_opt_set(opt,
+					     NFTNL_TUNNEL_GENEVE_CLASS,
+					     &geneve->geneve_class, sizeof(geneve->geneve_class));
+			nftnl_tunnel_opt_set(opt,
+					     NFTNL_TUNNEL_GENEVE_DATA,
+					     &geneve->data, geneve->data_len);
+			nftnl_tunnel_opts_add(opts, opt);
+		}
+		nftnl_obj_set_data(nlo, NFTNL_OBJ_TUNNEL_OPTS, &opts, sizeof(struct nftnl_tunnel_opts *));
+		break;
+	case TUNNEL_UNSPEC:
+		break;
+	}
+}
+
 int mnl_nft_obj_add(struct netlink_ctx *ctx, struct cmd *cmd,
 		    unsigned int flags)
 {
 	struct obj *obj = cmd->object;
+	struct nft_data_linearize nld;
 	struct nftnl_udata_buf *udbuf;
 	struct nftnl_obj *nlo;
 	struct nlmsghdr *nlh;
@@ -1571,8 +1693,48 @@ int mnl_nft_obj_add(struct netlink_ctx *ctx, struct cmd *cmd,
 		nftnl_obj_set_u32(nlo, NFTNL_OBJ_SYNPROXY_FLAGS,
 				  obj->synproxy.flags);
 		break;
+	case NFT_OBJECT_TUNNEL:
+		nftnl_obj_set_u32(nlo, NFTNL_OBJ_TUNNEL_ID, obj->tunnel.id);
+		if (obj->tunnel.sport)
+			nftnl_obj_set_u16(nlo, NFTNL_OBJ_TUNNEL_SPORT,
+					  obj->tunnel.sport);
+		if (obj->tunnel.dport)
+			nftnl_obj_set_u16(nlo, NFTNL_OBJ_TUNNEL_DPORT,
+					  obj->tunnel.dport);
+		if (obj->tunnel.tos)
+			nftnl_obj_set_u8(nlo, NFTNL_OBJ_TUNNEL_TOS,
+					  obj->tunnel.tos);
+		if (obj->tunnel.ttl)
+			nftnl_obj_set_u8(nlo, NFTNL_OBJ_TUNNEL_TTL,
+					  obj->tunnel.ttl);
+		if (obj->tunnel.src) {
+			netlink_gen_data(obj->tunnel.src, &nld);
+			if (nld.len == sizeof(struct in_addr)) {
+				nftnl_obj_set_u32(nlo,
+						  NFTNL_OBJ_TUNNEL_IPV4_SRC,
+						  nld.value[0]);
+			} else {
+				nftnl_obj_set_data(nlo,
+						   NFTNL_OBJ_TUNNEL_IPV6_SRC,
+						   nld.value, nld.len);
+			}
+		}
+		if (obj->tunnel.dst) {
+			netlink_gen_data(obj->tunnel.dst, &nld);
+			if (nld.len == sizeof(struct in_addr)) {
+				nftnl_obj_set_u32(nlo,
+						  NFTNL_OBJ_TUNNEL_IPV4_DST,
+						  nld.value[0]);
+		        } else {
+				nftnl_obj_set_data(nlo,
+						   NFTNL_OBJ_TUNNEL_IPV6_DST,
+						   nld.value, nld.len);
+			}
+		}
+		obj_tunnel_add_opts(nlo, &obj->tunnel);
+		break;
 	default:
-		BUG("Unknown type %d\n", obj->type);
+		BUG("Unknown type %d", obj->type);
 		break;
 	}
 	netlink_dump_obj(nlo, ctx);
@@ -2099,7 +2261,7 @@ static void mnl_nft_ft_devs_build(struct nlmsghdr *nlh, struct cmd *cmd)
 	nest_dev = mnl_attr_nest_start(nlh, NFTA_FLOWTABLE_HOOK_DEVS);
 	for (i = 0; i < num_devs; i++) {
 		cmd_add_loc(cmd, nlh, dev_array[i].location);
-		mnl_attr_put_strz(nlh, NFTA_DEVICE_NAME, dev_array[i].ifname);
+		mnl_nft_attr_put_ifname(nlh, dev_array[i].ifname);
 	}
 
 	mnl_attr_nest_end(nlh, nest_dev);

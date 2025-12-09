@@ -1,0 +1,17 @@
+# v5.7-rc1~146^2~137^2~26
+# 925d844696d9 ("netfilter: nft_tunnel: add support for geneve opts")
+table netdev x {
+        tunnel y {
+                id 10
+                ip saddr 192.168.2.10
+                ip daddr 192.168.2.11
+                sport 10
+                dport 20
+                ttl 10
+                geneve {
+                        class 0x1010 opt-type 0x1 data "0x12345678"
+                        class 0x2010 opt-type 0x2 data "0x87654321"
+                        class 0x2020 opt-type 0x3 data "0x87654321abcdeffe"
+                }
+        }
+}

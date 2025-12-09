@@ -1,48 +1,60 @@
-VERDICT STATEMENT
-~~~~~~~~~~~~~~~~~
-The verdict statement alters control flow in the ruleset and issues policy decisions for packets.
+[[VERDICT_STATEMENTS]]
+VERDICT STATEMENTS
+~~~~~~~~~~~~~~~~~~
+The verdict statements alter control flow in the ruleset and issue policy decisions for packets.
 
 [verse]
 ____
-{*accept* | *drop* | *queue* | *continue* | *return*}
+{*accept* | *drop* | *continue* | *return*}
 {*jump* | *goto*} 'CHAIN'
 
 'CHAIN' := 'chain_name' | *{* 'statement' ... *}*
 ____
 
-*accept* and *drop* are absolute verdicts -- they terminate ruleset evaluation immediately.
+*accept* and *drop* are absolute verdicts -- they terminate chain evaluation,
+as if the packet would have reached the end of the base chain with the equivalent
+policy decision set.  See <<OVERALL_EVALUATION_OF_THE_RULESET>> for more details.
 
 [horizontal]
-*accept*:: Terminate ruleset evaluation and accept the packet.
-The packet can still be dropped later by another hook, for instance accept
-in the forward hook still allows one to drop the packet later in the postrouting hook,
-or another forward base chain that has a higher priority number and is evaluated
-afterwards in the processing pipeline.
-*drop*:: Terminate ruleset evaluation and drop the packet.
-The drop occurs instantly, no further chains or hooks are evaluated.
-It is not possible to accept the packet in a later chain again, as those
-are not evaluated anymore for the packet.
-*queue*:: Terminate ruleset evaluation and queue the packet to userspace.
-Userspace must provide a drop or accept verdict.  In case of accept, processing
-resumes with the next base chain hook, not the rule following the queue verdict.
-*continue*:: Continue ruleset evaluation with the next rule. This
+*accept*:: Terminate evaluation early.
+ Evaluation continues in the next base chain of higher or possibly equal
+ priority from the same hook or in the first base chain of a later hook, if any.
+ This means the packet can still be dropped in another base chain as well as
+ any chain called from it.
+ For example, an *accept* verdict in a chain of the *forward* hook still allows one to
+ *drop* the packet in another *forward* hook base chain (or a chain called from it)
+ that has a higher priority number or in a chain attached to the *postrouting* hook.
+*drop*:: Immediately drop the packet and terminate ruleset evaluation.
+ No further evaluation takes place.  It is not possible to override a *drop*
+ verdict.
+*jump* 'CHAIN':: Store the current position in the call stack of chains and
+ continue evaluation at the first rule of 'CHAIN'.
+ When the end of 'CHAIN' is reached, an implicit *return* verdict is issued.
+ When an absolute verdict is issued (respectively implied by a verdict-like
+ statement) in 'CHAIN', evaluation terminates as described above.
+*goto* 'CHAIN':: Equal to *jump* except that the current position is not stored
+ in the call stack of chains.
+*return*:: End evaluation of the current chain, pop the most recently added
+ position from the call stack of chains and continue evaluation after that
+ position.
+ When there’s no position to pop (which is the case when the current chain is
+ either the base chain or a regular chain that was reached solely via *goto*
+ verdicts) end evaluation of the current base chain (and any regular chains
+ called from it) using the base chain’s policy as implicit verdict.
+*continue*:: Continue evaluation with the next rule. This
  is the default behaviour in case a rule issues no verdict.
-*return*:: Return from the current chain and continue evaluation at the
- next rule in the last chain. If issued in a base chain, it is equivalent to the
- base chain policy.
-*jump* 'CHAIN':: Continue evaluation at the first rule in 'CHAIN'. The current
- position in the ruleset is pushed to a call stack and evaluation will continue
- there when the new chain is entirely evaluated or a *return* verdict is issued.
- In case an absolute verdict is issued by a rule in the chain, ruleset evaluation
- terminates immediately and the specific action is taken.
-*goto* 'CHAIN':: Similar to *jump*, but the current position is not pushed to the
- call stack, meaning that after the new chain evaluation will continue at the last
- chain instead of the one containing the goto statement.
 
 An alternative to specifying the name of an existing, regular chain in 'CHAIN'
 is to specify an anonymous chain ad-hoc. Like with anonymous sets, it can't be
 referenced from another rule and will be removed along with the rule containing
 it.
+
+All the above applies analogously to statements that imply a verdict:
+*redirect*, *dnat*, *snat* and *masquerade* internally issue an *accept*
+verdict at the end of their respective actions.
+*reject* and *synproxy* internally issue a *drop* verdict at the end of their
+respective actions.
+These statements thus behave like their implied verdicts, but with side effects.
 
 .Using verdict statements
 -------------------
@@ -190,11 +202,12 @@ ____
                  *tcp reset*
 ____
 
-A reject statement is used to send back an error packet in response to the
-matched packet otherwise it is equivalent to drop so it is a terminating
-statement, ending rule traversal. This statement is only valid in base chains
-using the *prerouting*, *input*,
-*forward* or *output* hooks, and user-defined chains which are only called from
+A reject statement tries to send back an error packet in response to the matched
+packet and then interally issues a *drop* verdict.
+It’s thus a terminating statement with all consequences of the latter (see
+<<OVERALL_EVALUATION_OF_THE_RULESET>> respectively <<VERDICT_STATEMENTS>>).
+This statement is only valid in base chains using the *prerouting*, *input*,
+*forward* or *output* hooks, and regular chains which are only called from
 those chains.
 
 .Keywords may be used to reject when specifying the ICMP code
@@ -456,7 +469,7 @@ Before kernel 4.18 nat statements require both prerouting and postrouting base c
 to be present since otherwise packets on the return path won't be seen by
 netfilter and therefore no reverse translation will take place.
 
-The optional *prefix* keyword allows to map *n* source addresses to *n*
+The optional *prefix* keyword allows one to map *n* source addresses to *n*
 destination addresses.  See 'Advanced NAT examples' below.
 
 If the 'address' for *dnat* is an IPv4 loopback address
@@ -691,8 +704,7 @@ needed for selective acknowledgement and window scaling).
 ---------------------------------------
 Determine tcp options used by backend, from an external system
 
-              tcpdump -pni eth0 -c 1 'tcp[tcpflags] == (tcp-syn|tcp-ack)'
-                  port 80 &
+              tcpdump -pni eth0 -c 1 'tcp[tcpflags] == (tcp-syn|tcp-ack) && port 80' &
               telnet 192.0.2.42 80
               18:57:24.693307 IP 192.0.2.42.80 > 192.0.2.43.48757:
                   Flags [S.], seq 360414582, ack 788841994, win 14480,
@@ -742,9 +754,10 @@ QUEUE STATEMENT
 ~~~~~~~~~~~~~~~
 This statement passes the packet to userspace using the nfnetlink_queue handler.
 The packet is put into the queue identified by its 16-bit queue number.
-Userspace can inspect and modify the packet if desired. Userspace must then drop
-or re-inject the packet into the kernel. See libnetfilter_queue documentation
-for details.
+Userspace can inspect and optionally modify the packet if desired.
+Userspace must provide a drop or accept verdict.  In case of accept, processing
+resumes with the next base chain hook, not the rule following the queue verdict.
+See libnetfilter_queue documentation for details.
 
 [verse]
 ____

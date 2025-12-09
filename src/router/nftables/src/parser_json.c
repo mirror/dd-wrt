@@ -128,7 +128,7 @@ static void json_lib_error(struct json_ctx *ctx, json_error_t *err)
 		.last_column = err->column,
 	};
 
-	erec_queue(error(&loc, err->text), ctx->msgs);
+	erec_queue(error(&loc, "%s", err->text), ctx->msgs);
 }
 
 __attribute__((format(printf, 2, 3)))
@@ -437,6 +437,23 @@ static struct expr *json_parse_meta_expr(struct json_ctx *ctx,
 		return NULL;
 	}
 	return meta_expr_alloc(int_loc, key);
+}
+
+static struct expr *json_parse_tunnel_expr(struct json_ctx *ctx,
+					   const char *type, json_t *root)
+{
+	struct error_record *erec;
+	unsigned int key;
+	const char *name;
+
+	if (json_unpack_err(ctx, root, "{s:s}", "key", &name))
+		return NULL;
+	erec = tunnel_key_parse(int_loc, name, &key);
+	if (erec) {
+		erec_queue(erec, ctx->msgs);
+		return NULL;
+	}
+	return tunnel_expr_alloc(int_loc, key);
 }
 
 static struct expr *json_parse_osf_expr(struct json_ctx *ctx,
@@ -1330,10 +1347,10 @@ static struct expr *json_parse_concat_expr(struct json_ctx *ctx,
 			struct expr *concat;
 
 			concat = concat_expr_alloc(int_loc);
-			compound_expr_add(concat, expr);
+			concat_expr_add(concat, expr);
 			expr = concat;
 		}
-		compound_expr_add(expr, tmp);
+		concat_expr_add(expr, tmp);
 	}
 	return expr ? json_check_concat_expr(ctx, expr) : NULL;
 }
@@ -1454,7 +1471,7 @@ static struct expr *json_parse_set_expr(struct json_ctx *ctx,
 
 		expr = set_elem_expr_alloc(int_loc, expr);
 		set_expr = set_expr_alloc(int_loc, NULL);
-		compound_expr_add(set_expr, expr);
+		set_expr_add(set_expr, expr);
 		return set_expr;
 	}
 
@@ -1498,7 +1515,7 @@ static struct expr *json_parse_set_expr(struct json_ctx *ctx,
 
 		if (!set_expr)
 			set_expr = set_expr_alloc(int_loc, NULL);
-		compound_expr_add(set_expr, expr);
+		set_expr_add(set_expr, expr);
 	}
 	return set_expr;
 }
@@ -1642,6 +1659,7 @@ static struct expr *json_parse_expr(struct json_ctx *ctx, json_t *root)
 		{ "rt", json_parse_rt_expr, CTX_F_STMT | CTX_F_PRIMARY | CTX_F_SET_RHS | CTX_F_SES | CTX_F_MAP | CTX_F_CONCAT },
 		{ "ct", json_parse_ct_expr, CTX_F_RHS | CTX_F_STMT | CTX_F_PRIMARY | CTX_F_SET_RHS | CTX_F_MANGLE | CTX_F_SES | CTX_F_MAP | CTX_F_CONCAT },
 		{ "numgen", json_parse_numgen_expr, CTX_F_STMT | CTX_F_PRIMARY | CTX_F_SET_RHS | CTX_F_SES | CTX_F_MAP | CTX_F_CONCAT },
+		{ "tunnel", json_parse_tunnel_expr, CTX_F_RHS | CTX_F_STMT | CTX_F_PRIMARY | CTX_F_SES | CTX_F_MAP },
 		/* below two are hash expr */
 		{ "jhash", json_parse_hash_expr, CTX_F_STMT | CTX_F_PRIMARY | CTX_F_SET_RHS | CTX_F_SES | CTX_F_MAP | CTX_F_CONCAT },
 		{ "symhash", json_parse_hash_expr, CTX_F_STMT | CTX_F_PRIMARY | CTX_F_SET_RHS | CTX_F_SES | CTX_F_MAP | CTX_F_CONCAT },
@@ -1686,7 +1704,7 @@ static struct expr *json_parse_expr(struct json_ctx *ctx, json_t *root)
 				expr_free(list);
 				return NULL;
 			}
-			compound_expr_add(list, expr);
+			list_expr_add(list, expr);
 		}
 		return list;
 	case JSON_TRUE:
@@ -1806,7 +1824,7 @@ static struct expr *json_parse_dtype_expr(struct json_ctx *ctx, json_t *root)
 				expr_free(expr);
 				return NULL;
 			}
-			compound_expr_add(expr, i);
+			concat_expr_add(expr, i);
 		}
 
 		return json_check_concat_expr(ctx, expr);
@@ -2195,6 +2213,23 @@ static struct stmt *json_parse_secmark_stmt(struct json_ctx *ctx,
 	stmt->objref.expr = json_parse_stmt_expr(ctx, value);
 	if (!stmt->objref.expr) {
 		json_error(ctx, "Invalid secmark reference.");
+		stmt_free(stmt);
+		return NULL;
+	}
+
+	return stmt;
+}
+
+static struct stmt *json_parse_tunnel_stmt(struct json_ctx *ctx,
+					   const char *key, json_t *value)
+{
+	struct stmt *stmt;
+
+	stmt = objref_stmt_alloc(int_loc);
+	stmt->objref.type = NFT_OBJECT_TUNNEL;
+	stmt->objref.expr = json_parse_stmt_expr(ctx, value);
+	if (!stmt->objref.expr) {
+		json_error(ctx, "Invalid tunnel reference.");
 		stmt_free(stmt);
 		return NULL;
 	}
@@ -2870,6 +2905,7 @@ static struct stmt *json_parse_stmt(struct json_ctx *ctx, json_t *root)
 		{ "synproxy", json_parse_synproxy_stmt },
 		{ "reset", json_parse_optstrip_stmt },
 		{ "secmark", json_parse_secmark_stmt },
+		{ "tunnel", json_parse_tunnel_stmt },
 	};
 	const char *type;
 	unsigned int i;
@@ -2990,7 +3026,7 @@ static struct expr *ifname_expr_alloc(struct json_ctx *ctx,
 
 static struct expr *json_parse_devs(struct json_ctx *ctx, json_t *root)
 {
-	struct expr *tmp, *expr = compound_expr_alloc(int_loc, EXPR_LIST);
+	struct expr *tmp, *expr = list_expr_alloc(int_loc);
 	const char *dev;
 	json_t *value;
 	size_t index;
@@ -3002,7 +3038,7 @@ static struct expr *json_parse_devs(struct json_ctx *ctx, json_t *root)
 			return NULL;
 		}
 
-		compound_expr_add(expr, tmp);
+		list_expr_add(expr, tmp);
 		return expr;
 	}
 	if (!json_is_array(root)) {
@@ -3023,7 +3059,7 @@ static struct expr *json_parse_devs(struct json_ctx *ctx, json_t *root)
 			expr_free(expr);
 			return NULL;
 		}
-		compound_expr_add(expr, tmp);
+		list_expr_add(expr, tmp);
 	}
 	return expr;
 }
@@ -3212,6 +3248,7 @@ static int string_to_nft_object(const char *str)
 		[NFT_OBJECT_SECMARK]	= "secmark",
 		[NFT_OBJECT_CT_EXPECT]	= "ct expectation",
 		[NFT_OBJECT_SYNPROXY]	= "synproxy",
+		[NFT_OBJECT_TUNNEL]	= "tunnel",
 	};
 	unsigned int i;
 
@@ -3517,14 +3554,139 @@ static int json_parse_ct_timeout_policy(struct json_ctx *ctx,
 	return 0;
 }
 
+static int json_parse_tunnel_erspan(struct json_ctx *ctx,
+				    json_t *root, struct obj *obj)
+{
+	const char *dir;
+	json_t *tmp;
+	int i;
+
+	if (json_unpack_err(ctx, root, "{s:o}", "tunnel", &tmp))
+		return 1;
+
+	if (json_unpack_err(ctx, tmp, "{s:i}", "version", &obj->tunnel.erspan.version))
+		return 1;
+
+	switch (obj->tunnel.erspan.version) {
+	case 1:
+		if (json_unpack_err(ctx, tmp, "{s:i}",
+				    "index", &obj->tunnel.erspan.v1.index))
+			return 1;
+		break;
+	case 2:
+		if (json_unpack_err(ctx, tmp, "{s:s, s:i}",
+				   "dir", &dir,
+				   "hwid", &i))
+			return 1;
+		obj->tunnel.erspan.v2.hwid = i;
+
+		if (!strcmp(dir, "ingress")) {
+			obj->tunnel.erspan.v2.direction = 0;
+		} else if (!strcmp(dir, "egress")) {
+			obj->tunnel.erspan.v2.direction = 1;
+		} else {
+			json_error(ctx, "Invalid direction '%s'.", dir);
+			return 1;
+		}
+		break;
+	default:
+		json_error(ctx, "Invalid erspan version %u" , obj->tunnel.erspan.version);
+		return 1;
+	}
+
+	return 0;
+}
+
+static enum tunnel_type json_parse_tunnel_type(struct json_ctx *ctx,
+					       const char *type)
+{
+	const struct {
+		const char *type;
+		int val;
+	} type_tbl[] = {
+		{ "erspan", TUNNEL_ERSPAN },
+		{ "vxlan", TUNNEL_VXLAN },
+		{ "geneve", TUNNEL_GENEVE },
+	};
+	unsigned int i;
+
+	if (!type)
+		return TUNNEL_UNSPEC;
+
+	for (i = 0; i < array_size(type_tbl); i++) {
+		if (!strcmp(type, type_tbl[i].type))
+			return type_tbl[i].val;
+	}
+
+	return TUNNEL_UNSPEC;
+}
+
+static int json_parse_tunnel_src_and_dst(struct json_ctx *ctx,
+					 json_t *root,
+					 struct obj *obj)
+{
+	bool is_ipv4 = false, src_set = false, dst_set = false;
+	struct expr *expr;
+	json_t *tmp;
+
+	if (!json_unpack(root, "{s:o}", "src-ipv4", &tmp)) {
+		is_ipv4 = true;
+		src_set = true;
+		expr = json_parse_expr(ctx, tmp);
+		if (!expr)
+			return -1;
+		datatype_set(expr, &ipaddr_type);
+		obj->tunnel.src = expr;
+	}
+
+	if (!json_unpack(root, "{s:o}", "src-ipv6", &tmp)) {
+		if (is_ipv4 || src_set)
+			return -1;
+		src_set = true;
+		expr = json_parse_expr(ctx, tmp);
+		if (!expr)
+			return -1;
+		datatype_set(expr, &ip6addr_type);
+		obj->tunnel.src = expr;
+	}
+
+	if (!json_unpack(root, "{s:o}", "dst-ipv4", &tmp)) {
+		dst_set = true;
+		if (!is_ipv4)
+			return -1;
+		expr = json_parse_expr(ctx, tmp);
+		if (!expr)
+			return -1;
+		datatype_set(expr, &ipaddr_type);
+		obj->tunnel.dst = expr;
+	}
+
+	if (!json_unpack(root, "{s:o}", "dst-ipv6", &tmp)) {
+		if (is_ipv4 || dst_set)
+			return -1;
+		dst_set = true;
+		expr = json_parse_expr(ctx, tmp);
+		if (!expr)
+			return -1;
+		datatype_set(expr, &ip6addr_type);
+		obj->tunnel.dst = expr;
+	}
+
+	if (!dst_set || !src_set)
+		return -1;
+
+	return 0;
+}
+
 static struct cmd *json_parse_cmd_add_object(struct json_ctx *ctx,
 					     json_t *root, enum cmd_ops op,
 					     enum cmd_obj cmd_obj)
 {
-	const char *family, *tmp, *rate_unit = "packets", *burst_unit = "bytes";
+	const char *family, *tmp = NULL, *rate_unit = "packets", *burst_unit = "bytes";
 	uint32_t l3proto = NFPROTO_UNSPEC;
 	int inv = 0, flags = 0, i, j;
 	struct handle h = { 0 };
+	json_t *tmp_json;
 	struct obj *obj;
 
 	if (json_unpack_err(ctx, root, "{s:s, s:s}",
@@ -3712,6 +3874,78 @@ static struct cmd *json_parse_cmd_add_object(struct json_ctx *ctx,
 
 		obj->synproxy.flags |= flags;
 		break;
+	case NFT_OBJECT_TUNNEL:
+		cmd_obj = CMD_OBJ_TUNNEL;
+		obj->type = NFT_OBJECT_TUNNEL;
+
+		if (json_parse_tunnel_src_and_dst(ctx, root, obj))
+			goto err_free_obj;
+
+		json_unpack(root, "{s:i}", "id", &obj->tunnel.id);
+		json_unpack(root, "{s:i}", "sport", &i);
+		obj->tunnel.sport = i;
+		json_unpack(root, "{s:i}", "dport", &i);
+		obj->tunnel.sport = i;
+		json_unpack(root, "{s:i}", "ttl", &i);
+		obj->tunnel.ttl = i;
+		json_unpack(root, "{s:i}", "tos", &i);
+		obj->tunnel.tos = i;
+		json_unpack(root, "{s:s}", "type", &tmp);
+
+		obj->tunnel.type = json_parse_tunnel_type(ctx, tmp);
+		switch (obj->tunnel.type) {
+		case TUNNEL_UNSPEC:
+			break;
+		case TUNNEL_ERSPAN:
+			if (json_parse_tunnel_erspan(ctx, root, obj))
+				goto err_free_obj;
+			break;
+		case TUNNEL_VXLAN:
+			if (json_unpack_err(ctx, root,
+					    "{s:o}", "tunnel", &tmp_json))
+				goto err_free_obj;
+
+			json_unpack(tmp_json, "{s:i}",
+				    "gbp", &obj->tunnel.vxlan.gbp);
+			break;
+		case TUNNEL_GENEVE:
+			json_t *value;
+			size_t index;
+
+			if (json_unpack_err(ctx, root,
+					    "{s:o}", "tunnel", &tmp_json))
+				goto err_free_obj;
+
+			json_array_foreach(tmp_json, index, value) {
+				struct tunnel_geneve *geneve = xmalloc(sizeof(struct tunnel_geneve));
+				if (!geneve)
+					memory_allocation_error();
+
+				if (json_unpack_err(ctx, value, "{s:i, s:i, s:s}",
+						    "class", &i,
+						    "opt-type", &j,
+						    "data", &tmp)) {
+					free(geneve);
+					goto err_free_obj;
+				}
+				geneve->geneve_class = i;
+				geneve->type = j;
+
+				if (tunnel_geneve_data_str2array(tmp,
+								 geneve->data,
+								 &geneve->data_len)) {
+					free(geneve);
+					goto err_free_obj;
+				}
+
+				if (index == 0)
+					init_list_head(&obj->tunnel.geneve_opts);
+
+				list_add_tail(&geneve->list, &obj->tunnel.geneve_opts);
+			}
+			break;
+		}
+		break;
 	default:
 		BUG("Invalid CMD '%d'", cmd_obj);
 	}
@@ -3748,6 +3982,7 @@ static struct cmd *json_parse_cmd_add(struct json_ctx *ctx,
 		{ "ct helper", NFT_OBJECT_CT_HELPER, json_parse_cmd_add_object },
 		{ "ct timeout", NFT_OBJECT_CT_TIMEOUT, json_parse_cmd_add_object },
 		{ "ct expectation", NFT_OBJECT_CT_EXPECT, json_parse_cmd_add_object },
+		{ "tunnel", NFT_OBJECT_TUNNEL, json_parse_cmd_add_object },
 		{ "limit", CMD_OBJ_LIMIT, json_parse_cmd_add_object },
 		{ "secmark", CMD_OBJ_SECMARK, json_parse_cmd_add_object },
 		{ "synproxy", CMD_OBJ_SYNPROXY, json_parse_cmd_add_object }
@@ -3883,6 +4118,7 @@ static struct cmd *json_parse_cmd_list_multiple(struct json_ctx *ctx,
 	case CMD_OBJ_SETS:
 	case CMD_OBJ_COUNTERS:
 	case CMD_OBJ_CT_HELPERS:
+	case CMD_OBJ_TUNNELS:
 		if (!json_unpack(root, "{s:s}", "table", &tmp))
 			h.table.name = xstrdup(tmp);
 		break;
@@ -3921,6 +4157,8 @@ static struct cmd *json_parse_cmd_list(struct json_ctx *ctx,
 		{ "ct helpers", CMD_OBJ_CT_HELPERS, json_parse_cmd_list_multiple },
 		{ "ct timeout", NFT_OBJECT_CT_TIMEOUT, json_parse_cmd_add_object },
 		{ "ct expectation", NFT_OBJECT_CT_EXPECT, json_parse_cmd_add_object },
+		{ "tunnel", NFT_OBJECT_TUNNEL, json_parse_cmd_add_object },
+		{ "tunnels", CMD_OBJ_TUNNELS, json_parse_cmd_list_multiple },
 		{ "limit", CMD_OBJ_LIMIT, json_parse_cmd_add_object },
 		{ "limits", CMD_OBJ_LIMIT, json_parse_cmd_list_multiple },
 		{ "ruleset", CMD_OBJ_RULESET, json_parse_cmd_list_multiple },
@@ -4320,6 +4558,7 @@ int nft_parse_json_filename(struct nft_ctx *nft, const char *filename,
 	return ret;
 }
 
+__attribute__((format(printf, 2, 3)))
 static int json_echo_error(struct netlink_mon_handler *monh,
 			   const char *fmt, ...)
 {
@@ -4392,7 +4631,7 @@ int json_events_cb(const struct nlmsghdr *nlh, struct netlink_mon_handler *monh)
 
 	json = seqnum_to_json(nlh->nlmsg_seq);
 	if (!json) {
-		json_echo_error(monh, "No JSON command found with seqnum %lu\n",
+		json_echo_error(monh, "No JSON command found with seqnum %u\n",
 				nlh->nlmsg_seq);
 		return MNL_CB_OK;
 	}

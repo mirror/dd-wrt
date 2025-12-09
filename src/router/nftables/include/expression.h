@@ -77,6 +77,7 @@ enum expr_types {
 	EXPR_NUMGEN,
 	EXPR_HASH,
 	EXPR_RT,
+	EXPR_TUNNEL,
 	EXPR_FIB,
 	EXPR_XFRM,
 	EXPR_SET_ELEM_CATCHALL,
@@ -229,6 +230,7 @@ enum expr_flags {
 #include <hash.h>
 #include <ct.h>
 #include <socket.h>
+#include <tunnel.h>
 #include <osf.h>
 #include <xfrm.h>
 
@@ -369,6 +371,10 @@ struct expr {
 			uint32_t		level;
 		} socket;
 		struct {
+			/* EXPR_TUNNEL */
+			enum nft_tunnel_keys	key;
+		} tunnel;
+		struct {
 			/* EXPR_RT */
 			enum nft_rt_keys	key;
 		} rt;
@@ -435,7 +441,7 @@ extern void expr_set_type(struct expr *expr, const struct datatype *dtype,
 struct eval_ctx;
 extern int expr_binary_error(struct list_head *msgs,
 			     const struct expr *e1, const struct expr *e2,
-			     const char *fmt, ...) __gmp_fmtstring(4, 5);
+			     const char *fmt, ...) __fmtstring(4, 5);
 
 #define expr_error(msgs, expr, fmt, args...) \
 	expr_binary_error(msgs, expr, NULL, fmt, ## args)
@@ -517,20 +523,24 @@ extern struct expr *range_expr_alloc(const struct location *loc,
 				     struct expr *low, struct expr *high);
 struct expr *range_expr_to_prefix(struct expr *range);
 
-extern struct expr *compound_expr_alloc(const struct location *loc,
-					enum expr_types etypes);
-extern void compound_expr_add(struct expr *compound, struct expr *expr);
-extern void compound_expr_remove(struct expr *compound, struct expr *expr);
 extern void list_expr_sort(struct list_head *head);
 extern void list_splice_sorted(struct list_head *list, struct list_head *head);
 
 extern struct expr *concat_expr_alloc(const struct location *loc);
+void concat_expr_add(struct expr *concat, struct expr *item);
+void concat_expr_remove(struct expr *concat, struct expr *expr);
 
 extern struct expr *list_expr_alloc(const struct location *loc);
+void list_expr_add(struct expr *expr, struct expr *item);
+void list_expr_remove(struct expr *expr, struct expr *item);
 struct expr *list_expr_to_binop(struct expr *expr);
 
 extern struct expr *set_expr_alloc(const struct location *loc,
 				   const struct set *set);
+void __set_expr_add(struct expr *set, struct expr *elem);
+void set_expr_add(struct expr *set, struct expr *elem);
+void set_expr_remove(struct expr *expr, struct expr *item);
+
 extern void concat_range_aggregate(struct expr *set);
 extern void interval_map_decompose(struct expr *set);
 
@@ -551,6 +561,9 @@ extern struct expr *set_elem_expr_alloc(const struct location *loc,
 					struct expr *key);
 
 struct expr *set_elem_catchall_expr_alloc(const struct location *loc);
+
+#define expr_type_catchall(__expr)			\
+	((__expr)->etype == EXPR_SET_ELEM_CATCHALL)
 
 extern void range_expr_value_low(mpz_t rop, const struct expr *expr);
 extern void range_expr_value_high(mpz_t rop, const struct expr *expr);

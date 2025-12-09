@@ -1,0 +1,10 @@
+table netdev x {
+	tunnel geneve-t {
+		vxlan {
+			gbp 200
+		}
+		geneve {
+			class 0x1 opt-type 0x1 data "0x12345678"
+		}
+	}
+

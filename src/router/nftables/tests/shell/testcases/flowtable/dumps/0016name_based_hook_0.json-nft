@@ -1,0 +1,32 @@
+{
+  "nftables": [
+    {
+      "metainfo": {
+        "version": "VERSION",
+        "release_name": "RELEASE_NAME",
+        "json_schema_version": 1
+      }
+    },
+    {
+      "table": {
+        "family": "ip",
+        "name": "t",
+        "handle": 0
+      }
+    },
+    {
+      "flowtable": {
+        "family": "ip",
+        "name": "ft",
+        "table": "t",
+        "handle": 0,
+        "hook": "ingress",
+        "prio": 0,
+        "dev": [
+          "foo*",
+          "lo"
+        ]
+      }
+    }
+  ]
+}

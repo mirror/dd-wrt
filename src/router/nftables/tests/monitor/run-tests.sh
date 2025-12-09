@@ -5,25 +5,22 @@ debug=false
 test_json=false
 
 mydiff() {
-	diff -w -I '^# ' "$@"
+	diff -w -I '^# ' --label "expected" --label "got" "$@"
 }
 
 err() {
 	echo "$*" >&2
 }
 
-die() {
-	err "$*"
-	exit 1
-}
-
 if [ "$(id -u)" != "0" ] ; then
-	die "this requires root!"
+	err "this requires root!"
+	exit 77
 fi
 
 testdir=$(mktemp -d)
 if [ ! -d $testdir ]; then
-	die "Failed to create test directory"
+	err "Failed to create test directory"
+	exit 99
 fi
 trap 'rm -rf $testdir; $nft flush ruleset' EXIT
 
@@ -52,7 +49,7 @@ echo_output_append() {
 		grep '^\(add\|replace\|insert\)' $command_file >>$output_file
 		return
 	}
-	[[ "$*" =~ ^add|replace|insert ]] && echo "$*" >>$output_file
+	[[ "$*" =~ ^(\{\")?(add|replace|insert) ]] && echo "$*" >>$output_file
 }
 json_output_filter() { # (filename)
 	# unify handle values
@@ -96,16 +93,42 @@ monitor_run_test() {
 
 echo_run_test() {
 	echo_output=$(mktemp -p $testdir)
+	echo_args="-nn -e"
+	$test_json && echo_args+=" -j"
 	local rc=0
 
 	$debug && {
-		echo "command file:"
+		echo ">>> command file"
 		cat $command_file
+		echo "<<< command file"
 	}
-	$nft -nn -e -f - <$command_file >$echo_output || {
+	$nft $echo_args -f - <$command_file >$echo_output || {
 		err "nft command failed!"
 		rc=1
 	}
+	if $test_json; then
+		# Extract commands from the surrounding JSON object
+		sed -i -e 's/^{"nftables": \[//' -e 's/\]}$//' $echo_output
+		json_output_filter $echo_output
+
+		# Replace newlines by ", " in output file
+		readarray -t output_file_lines <$output_file
+		sep=""
+		for ((i = 0; i < ${#output_file_lines[*]}; i++)); do
+			printf "${sep}${output_file_lines[$i]}"
+			sep=", "
+		done >$output_file
+		[ $i -gt 0 ] && echo "" >>$output_file
+	fi
+	$debug && {
+		echo ">>> output file"
+		cat $output_file
+		echo "<<< output file"
+		echo ">>> echo output"
+		cat $echo_output
+		echo "<<< echo output"
+	}
+
 	mydiff -q $echo_output $output_file >/dev/null 2>&1
 	if [[ $rc == 0 && $? != 0 ]]; then
 		err "echo output differs!"
@@ -128,14 +151,28 @@ if $netns; then
 fi
 
 testcases=""
+variants=""
+syntaxes=""
 while [ -n "$1" ]; do
 	case "$1" in
 	-d|--debug)
 		debug=true
 		shift
 		;;
+	-s|--standard)
+		syntaxes+=" standard"
+		shift
+		;;
 	-j|--json)
-		test_json=true
+		syntaxes+=" json"
+		shift
+		;;
+	-e|--echo)
+		variants+=" echo"
+		shift
+		;;
+	-m|--monitor)
+		variants+=" monitor"
 		shift
 		;;
 	--no-netns)
@@ -153,69 +190,74 @@ while [ -n "$1" ]; do
 		echo "unknown option '$1'"
 		;&
 	-h|--help)
-		echo "Usage: $(basename $0) [-j|--json] [-d|--debug] [testcase ...]"
+		echo "Usage: $(basename $0) [(-e|--echo)|(-m|--monitor)] [(-j|--json)|(-s|--standard)] [-d|--debug] [testcase ...]"
 		exit 1
 		;;
 	esac
 done
 
-if $test_json; then
-	variants="monitor"
-else
-	variants="monitor echo"
-fi
+# run the single test in $1
+# expect $variant and $test_json to be set appropriately
+run_testcase() {
+	testcase="$1"
+	filename=$(basename $testcase)
+	rc=0
+	$test_json && printf "json-"
+	echo "$variant: running tests from file $filename"
 
-rc=0
-for variant in $variants; do
-	run_test=${variant}_run_test
-	output_append=${variant}_output_append
+	# files are like this:
+	#
+	# I add table ip t
+	# O add table ip t
+	# I add chain ip t c
+	# O add chain ip t c
 
-	for testcase in ${testcases:-testcases/*.t}; do
-		filename=$(basename $testcase)
-		echo "$variant: running tests from file $filename"
-		rc_start=$rc
+	$nft flush ruleset
 
-		# files are like this:
-		#
-		# I add table ip t
-		# O add table ip t
-		# I add chain ip t c
-		# O add chain ip t c
+	input_complete=false
+	while read dir line; do
+		case $dir in
+		I)
+			$input_complete && {
+				${variant}_run_test
+				$run_test
+				let "rc += $?"
+			}
+			input_complete=false
+			cmd_append "$line"
+			;;
+		O)
+			input_complete=true
+			$test_json || ${variant}_output_append "$line"
+			;;
+		J)
+			input_complete=true
+			$test_json && ${variant}_output_append "$line"
+			;;
+		'#'|'')
+			# ignore comments and empty lines
+			;;
+		esac
+	done <$testcase
+	$input_complete && {
+		${variant}_run_test
+		let "rc += $?"
+	}
 
-		$nft flush ruleset
+	[[ $rc -ne 0 ]] && \
+		echo "$variant: $rc tests from file $filename failed"
+	return $rc
+}
 
-		input_complete=false
-		while read dir line; do
-			case $dir in
-			I)
-				$input_complete && {
-					$run_test
-					let "rc += $?"
-				}
-				input_complete=false
-				cmd_append "$line"
-				;;
-			O)
-				input_complete=true
-				$test_json || $output_append "$line"
-				;;
-			J)
-				input_complete=true
-				$test_json && $output_append "$line"
-				;;
-			'#'|'')
-				# ignore comments and empty lines
-				;;
-			esac
-		done <$testcase
-		$input_complete && {
-			$run_test
-			let "rc += $?"
-		}
-
-		let "rc_diff = rc - rc_start"
-		[[ $rc_diff -ne 0 ]] && \
-			echo "$variant: $rc_diff tests from file $filename failed"
+total_rc=0
+for syntax in ${syntaxes:-standard json}; do
+	[ $syntax == json ] && test_json=true || test_json=false
+	for variant in ${variants:-echo monitor}; do
+		for testcase in ${testcases:-testcases/*.t}; do
+			run_testcase "$testcase"
+			let "total_rc += $?"
+		done
 	done
 done
-exit $rc
+
+exit $total_rc

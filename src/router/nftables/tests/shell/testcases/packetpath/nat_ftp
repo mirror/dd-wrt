@@ -4,6 +4,9 @@
 # NFT_TEST_REQUIRES(NFT_TEST_HAVE_curl)
 # NFT_TEST_REQUIRES(NFT_TEST_HAVE_vsftpd)
 
+# modprobe does not work in fake root env
+[ "$NFT_TEST_HAS_REALROOT" != y ] && exit 77
+
 . $NFT_TEST_LIBRARY_FILE
 
 cleanup()

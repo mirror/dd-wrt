@@ -1,0 +1,79 @@
+#!/bin/bash
+
+# NFT_TEST_REQUIRES(NFT_TEST_HAVE_meta_time)
+
+. $NFT_TEST_LIBRARY_FILE
+
+gen_in_range_minute()
+{
+	echo $(date -d "-5 minutes" +%H:%M)-$(date -d "+5 minutes" +%H:%M)
+}
+
+gen_out_of_range_minute()
+{
+	echo $(date -d "+2 minutes" +%H:%M)-$(date -d "+5 minutes" +%H:%M)
+}
+
+gen_in_range_hour()
+{
+	echo $(date -d "-2 hours" +%H:%M)-$(date -d "+2 hours" +%H:%M)
+}
+
+gen_out_of_range_hour()
+{
+	echo $(date -d "+1 hours" +%H:%M)-$(date -d "+2 hours" +%H:%M)
+}
+gen_in_range_day()
+{
+	#meta day "Sunday"-"Tuesday"
+	echo \"$(date -d "-1 days" +%A)\"-\"$(date -d "+1 days" +%A)\"
+}
+gen_out_of_range_day()
+{
+	echo \"$(date -d "-2 days" +%A)\"-\"$(date -d "-1 days" +%A)\"
+}
+
+gen_in_range_time()
+{
+	echo \"$(date -d "-1 years +10 days" +%G-%m-%d" "%H:%M:%S)\"-\"$(date -d "+2 days" +%G-%m-%d" "%H:%M:%S)\"
+}
+
+gen_out_of_range_time()
+{
+	echo \"$(date -d "+10 seconds" +%G-%m-%d" "%H:%M:%S)\"-\"$(date -d "+20 seconds" +%G-%m-%d" "%H:%M:%S)\"
+}
+
+$NFT -f - <<-EOF
+table ip time_test {
+	counter matched {}
+	counter unmatch {}
+	chain input {
+		type filter hook input priority filter; policy accept;
+		iifname lo icmp type echo-request meta hour $(gen_in_range_hour)       counter name matched
+		iifname lo icmp type echo-request meta hour $(gen_out_of_range_hour)   counter name unmatch
+		iifname lo icmp type echo-request meta hour $(gen_in_range_minute)     counter name matched
+		iifname lo icmp type echo-request meta hour $(gen_out_of_range_minute) counter name unmatch
+		iifname lo icmp type echo-request meta day  $(gen_in_range_day)        counter name matched
+		iifname lo icmp type echo-request meta day  $(gen_out_of_range_day)    counter name unmatch
+		iifname lo icmp type echo-request meta time $(gen_in_range_time)       counter name matched
+		iifname lo icmp type echo-request meta time $(gen_out_of_range_time)   counter name unmatch
+	}
+}
+EOF
+assert_pass "restore meta time ruleset"
+
+nft add rule ip time_test input ip protocol icmp meta hour \"24:00\"-\"4:00\" 2>/dev/null
+assert_fail "Wrong time format input"
+nft add rule ip time_test input ip protocol icmp meta hour \"-2:00\"-\"4:00\" 2>/dev/null
+assert_fail "Wrong time format input"
+
+ip link set lo up
+ping -W 1 127.0.0.1 -c 1
+assert_pass "ping pass"
+
+$NFT list counter ip time_test matched | grep 'packets 4'
+assert_pass "matched check"
+$NFT list counter ip time_test unmatch | grep 'packets 0'
+assert_pass "unmatch check"
+$NFT delete table ip time_test
+assert_pass "delete table"

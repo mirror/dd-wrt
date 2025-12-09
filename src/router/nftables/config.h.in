@@ -1,36 +1,39 @@
 /* config.h.in.  Generated from configure.ac by autoheader.  */
 
-/* Define to 1 if you have the declaration of `getprotobyname_r', and to 0 if
+/* Define to 1 if you have the declaration of 'getprotobyname_r', and to 0 if
    you don't. */
 #undef HAVE_DECL_GETPROTOBYNAME_R
 
-/* Define to 1 if you have the declaration of `getprotobynumber_r', and to 0
+/* Define to 1 if you have the declaration of 'getprotobynumber_r', and to 0
    if you don't. */
 #undef HAVE_DECL_GETPROTOBYNUMBER_R
 
-/* Define to 1 if you have the declaration of `getservbyport_r', and to 0 if
+/* Define to 1 if you have the declaration of 'getservbyport_r', and to 0 if
    you don't. */
 #undef HAVE_DECL_GETSERVBYPORT_R
 
 /* Define to 1 if you have the <dlfcn.h> header file. */
 #undef HAVE_DLFCN_H
 
+/* Whether to build with fuzzer support */
+#undef HAVE_FUZZER_BUILD
+
 /* Define to 1 if you have the <inttypes.h> header file. */
 #undef HAVE_INTTYPES_H
 
-/* Define to 1 if you have the `edit' library (-ledit). */
+/* Define to 1 if you have the 'edit' library (-ledit). */
 #undef HAVE_LIBEDIT
 
-/* Define to 1 if you have the `gmp' library (-lgmp). */
+/* Define to 1 if you have the 'gmp' library (-lgmp). */
 #undef HAVE_LIBGMP
 
 /* Define if you have libjansson */
 #undef HAVE_LIBJANSSON
 
-/* Define to 1 if you have the `linenoise' library (-llinenoise). */
+/* Define to 1 if you have the 'linenoise' library (-llinenoise). */
 #undef HAVE_LIBLINENOISE
 
-/* Define to 1 if you have the `readline' library (-lreadline). */
+/* Define to 1 if you have the 'readline' library (-lreadline). */
 #undef HAVE_LIBREADLINE
 
 /* 0 */
@@ -96,12 +99,12 @@
 /* Release name */
 #undef RELEASE_NAME
 
-/* Define to 1 if all of the C90 standard headers exist (not just the ones
+/* Define to 1 if all of the C89 standard headers exist (not just the ones
    required in a freestanding environment). This macro is provided for
    backward compatibility; new code need not use it. */
 #undef STDC_HEADERS
 
-/* Enable extensions on AIX 3, Interix.  */
+/* Enable extensions on AIX, Interix, z/OS.  */
 #ifndef _ALL_SOURCE
 # undef _ALL_SOURCE
 #endif
@@ -162,11 +165,15 @@
 #ifndef __STDC_WANT_IEC_60559_DFP_EXT__
 # undef __STDC_WANT_IEC_60559_DFP_EXT__
 #endif
+/* Enable extensions specified by C23 Annex F.  */
+#ifndef __STDC_WANT_IEC_60559_EXT__
+# undef __STDC_WANT_IEC_60559_EXT__
+#endif
 /* Enable extensions specified by ISO/IEC TS 18661-4:2015.  */
 #ifndef __STDC_WANT_IEC_60559_FUNCS_EXT__
 # undef __STDC_WANT_IEC_60559_FUNCS_EXT__
 #endif
-/* Enable extensions specified by ISO/IEC TS 18661-3:2015.  */
+/* Enable extensions specified by C23 Annex H and ISO/IEC TS 18661-3:2015.  */
 #ifndef __STDC_WANT_IEC_60559_TYPES_EXT__
 # undef __STDC_WANT_IEC_60559_TYPES_EXT__
 #endif
@@ -192,6 +199,6 @@
 /* Version number of package */
 #undef VERSION
 
-/* Define to 1 if `lex' declares `yytext' as a `char *' by default, not a
-   `char[]'. */
+/* Define to 1 if 'lex' declares 'yytext' as a 'char *' by default, not a
+   'char[]'. */
 #undef YYTEXT_POINTER

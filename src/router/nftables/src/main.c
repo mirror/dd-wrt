@@ -55,6 +55,9 @@ enum opt_indices {
         IDX_ECHO,
 #define IDX_CMD_OUTPUT_START	IDX_ECHO
         IDX_JSON,
+#if HAVE_FUZZER_BUILD
+        IDX_FUZZER,
+#endif
         IDX_DEBUG,
 #define IDX_CMD_OUTPUT_END	IDX_DEBUG
 };
@@ -271,6 +274,7 @@ static void show_version(void)
 	       "  libxtables:	%s\n",
 	       PACKAGE_NAME, PACKAGE_VERSION, RELEASE_NAME,
 	       cli, json, minigmp, xt);
+
 }
 
 static const struct {

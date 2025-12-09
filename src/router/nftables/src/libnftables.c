@@ -9,6 +9,7 @@
 #include <nft.h>
 
 #include <nftables/libnftables.h>
+#include <afl++.h>
 #include <erec.h>
 #include <mnl.h>
 #include <parser.h>
@@ -18,6 +19,17 @@
 #include <errno.h>
 #include <sys/stat.h>
 #include <libgen.h>
+
+static int do_mnl_batch_talk(struct netlink_ctx *ctx, struct list_head *err_list,
+			     uint32_t num_cmds)
+{
+#if HAVE_FUZZER_BUILD
+	if (ctx->nft->afl_ctx_stage &&
+	    ctx->nft->afl_ctx_stage < NFT_AFL_FUZZER_NETLINK_RW)
+		return 0;
+#endif
+	return mnl_batch_talk(ctx, err_list, num_cmds);
+}
 
 static int nft_netlink(struct nft_ctx *nft,
 		       struct list_head *cmds, struct list_head *msgs)
@@ -37,7 +49,13 @@ static int nft_netlink(struct nft_ctx *nft,
 	if (list_empty(cmds))
 		goto out;
 
+#if HAVE_FUZZER_BUILD
+	if (nft->afl_ctx_stage &&
+	    nft->afl_ctx_stage <= NFT_AFL_FUZZER_EVALUATION)
+		goto out;
+#endif
 	batch_seqnum = mnl_batch_begin(ctx.batch, mnl_seqnum_inc(&seqnum));
+
 	list_for_each_entry(cmd, cmds, list) {
 		ctx.seqnum = cmd->seqnum_from = mnl_seqnum_inc(&seqnum);
 		ret = do_command(&ctx, cmd);
@@ -57,7 +75,7 @@ static int nft_netlink(struct nft_ctx *nft,
 	if (!mnl_batch_ready(ctx.batch))
 		goto out;
 
-	ret = mnl_batch_talk(&ctx, &err_list, num_cmds);
+	ret = do_mnl_batch_talk(&ctx, &err_list, num_cmds);
 	if (ret < 0) {
 		if (ctx.maybe_emsgsize && errno == EMSGSIZE) {
 			netlink_io_error(&ctx, NULL,
@@ -175,6 +193,9 @@ static bool nft_ctx_find_include_path(struct nft_ctx *ctx, const char *path)
 		if (!strcmp(ctx->include_paths[i], path))
 			return true;
 	}
+
+	if (!strcmp(path, DEFAULT_INCLUDE_PATH))
+		return true;
 
 	return false;
 }
@@ -602,6 +623,10 @@ int nft_run_cmd_from_buffer(struct nft_ctx *nft, const char *buf)
 		rc = nft_parse_bison_buffer(nft, nlbuf, &msgs, &cmds,
 					    &indesc_cmdline);
 
+#if HAVE_FUZZER_BUILD
+	if (nft->afl_ctx_stage == NFT_AFL_FUZZER_PARSER)
+		goto err;
+#endif
 	parser_rc = rc;
 
 	rc = nft_evaluate(nft, &msgs, &cmds);

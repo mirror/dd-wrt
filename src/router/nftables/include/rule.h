@@ -115,7 +115,7 @@ struct symbol {
 	struct list_head	list;
 	const char		*identifier;
 	struct expr		*expr;
-	int			refcnt;
+	unsigned int		refcnt;
 };
 
 extern void symbol_bind(struct scope *scope, const char *identifier,
@@ -170,6 +170,7 @@ struct table {
 	uint32_t		owner;
 	const char		*comment;
 	bool			has_xt_stmts;
+	bool			is_from_future;
 };
 
 extern struct table *table_alloc(void);
@@ -492,6 +493,52 @@ struct secmark {
 	char		ctx[NFT_SECMARK_CTX_MAXLEN];
 };
 
+enum tunnel_type {
+	TUNNEL_UNSPEC = 0,
+	TUNNEL_ERSPAN,
+	TUNNEL_VXLAN,
+	TUNNEL_GENEVE,
+};
+
+struct tunnel_geneve {
+	struct list_head	list;
+	uint16_t		geneve_class;
+	uint8_t			type;
+	uint8_t			data[NFTNL_TUNNEL_GENEVE_DATA_MAXLEN];
+	uint32_t		data_len;
+};
+
+struct tunnel {
+	uint32_t	id;
+	struct expr	*src;
+	struct expr	*dst;
+	uint16_t	sport;
+	uint16_t	dport;
+	uint8_t		tos;
+	uint8_t		ttl;
+	enum tunnel_type type;
+	union {
+		struct {
+			uint32_t	version;
+			struct {
+				uint32_t	index;
+			} v1;
+			struct {
+				uint8_t		direction;
+				uint8_t		hwid;
+			} v2;
+		} erspan;
+		struct {
+			uint32_t	gbp;
+		} vxlan;
+		struct list_head	geneve_opts;
+	};
+};
+
+int tunnel_geneve_data_str2array(const char *hexstr,
+				 uint8_t *out_data,
+				 uint32_t *out_len);
+
 /**
  * struct obj - nftables stateful object statement
  *
@@ -518,6 +565,7 @@ struct obj {
 		struct secmark		secmark;
 		struct ct_expect	ct_expect;
 		struct synproxy		synproxy;
+		struct tunnel		tunnel;
 	};
 };
 
@@ -626,6 +674,9 @@ enum cmd_ops {
  * @CMD_OBJ_SECMARKS:	multiple secmarks
  * @CMD_OBJ_SYNPROXY:	synproxy
  * @CMD_OBJ_SYNPROXYS:	multiple synproxys
+ * @CMD_OBJ_TUNNEL:	tunnel
+ * @CMD_OBJ_TUNNELS:	multiple tunnels
+ * @CMD_OBJ_HOOKS:	hooks, used only for dumping
  */
 enum cmd_obj {
 	CMD_OBJ_INVALID,
@@ -664,6 +715,8 @@ enum cmd_obj {
 	CMD_OBJ_CT_EXPECTATIONS,
 	CMD_OBJ_SYNPROXY,
 	CMD_OBJ_SYNPROXYS,
+	CMD_OBJ_TUNNEL,
+	CMD_OBJ_TUNNELS,
 	CMD_OBJ_HOOKS,
 };
 

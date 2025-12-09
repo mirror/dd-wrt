@@ -119,7 +119,7 @@ void datatype_print(const struct expr *expr, struct output_ctx *octx)
 						       false, octx);
 	} while ((dtype = dtype->basetype));
 
-	BUG("datatype %s has no print method or symbol table\n",
+	BUG("datatype %s has no print method or symbol table",
 	    expr->dtype->name);
 }
 
@@ -173,7 +173,7 @@ static struct error_record *__symbol_parse_fuzzy(const struct expr *sym,
 	if (st.obj) {
 		return error(&sym->location,
 			     "Could not parse %s expression; did you you mean `%s`?",
-			     sym->dtype->desc, st.obj);
+			     sym->dtype->desc, (const char *)st.obj);
 	}
 
 	return NULL;
@@ -254,15 +254,19 @@ void symbolic_constant_print(const struct symbol_table *tbl,
 	mpz_export_data(constant_data_ptr(val, expr->len), expr->value,
 			expr->byteorder, len);
 
+	if (nft_output_numeric_symbol(octx) || !tbl)
+		goto basetype_print;
+
 	for (s = tbl->symbols; s->identifier != NULL; s++) {
 		if (val == s->value)
 			break;
 	}
-
-	if (s->identifier == NULL || nft_output_numeric_symbol(octx))
-		return expr_basetype(expr)->print(expr, octx);
-
-	nft_print(octx, quotes ? "\"%s\"" : "%s", s->identifier);
+	if (s->identifier) {
+		nft_print(octx, quotes ? "\"%s\"" : "%s", s->identifier);
+		return;
+	}
+basetype_print:
+	expr_basetype(expr)->print(expr, octx);
 }
 
 static void switch_byteorder(void *data, unsigned int len)
@@ -403,7 +407,7 @@ static struct error_record *verdict_type_error(const struct expr *sym)
 
 	if (st.obj) {
 		return error(&sym->location, "Could not parse %s; did you mean `%s'?",
-			     sym->dtype->desc, st.obj);
+			     sym->dtype->desc, (const char *)st.obj);
 	}
 
 	/* assume user would like to jump to chain as a hint. */
@@ -1559,7 +1563,7 @@ static struct error_record *boolean_type_parse(struct parse_ctx *ctx,
 					       struct expr **res)
 {
 	struct error_record *erec;
-	int num;
+	uint8_t num;
 
 	erec = integer_type_parse(ctx, sym, res);
 	if (erec)

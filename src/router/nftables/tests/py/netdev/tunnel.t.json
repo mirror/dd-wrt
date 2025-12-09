@@ -1,0 +1,45 @@
+# tunnel path exists
+[
+    {
+        "match": {
+            "left": {
+                "tunnel": {
+                    "key": "path"
+                }
+            },
+            "op": "==",
+            "right": true
+        }
+    }
+]
+
+# tunnel path missing
+[
+    {
+        "match": {
+            "left": {
+                "tunnel": {
+                    "key": "path"
+                }
+            },
+            "op": "==",
+            "right": false
+        }
+    }
+]
+
+# tunnel id 10
+[
+    {
+        "match": {
+            "left": {
+                "tunnel": {
+                    "key": "id"
+                }
+            },
+            "op": "==",
+            "right": 10
+        }
+    }
+]
+

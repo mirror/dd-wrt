@@ -9,14 +9,20 @@ ft_deldev() {
 }
 
 iface_cleanup() {
+	ip link del dummy0 &>/dev/null || :
 	ip link del dummy1 &>/dev/null || :
 	if [ "$NFT_TEST_HAVE_ifname_based_hooks" = y ]; then
 		ft_deldev filter1 Main_ft1 dummy1
 		ft_deldev filter2 Main_ft2 dummy1
+		ft_deldev filter3 Main_ft3 dummy0
+		ft_deldev filter3 Main_ft3 dummy1
+		ft_deldev filter4 Main_ft4 dummy0
+		ft_deldev filter4 Main_ft4 dummy1
 	fi
 }
 trap 'iface_cleanup' EXIT
 
+ip link add name dummy0 type dummy
 ip link add name dummy1 type dummy
 
 EXPECTED="define if_main = { lo, dummy1 }
@@ -42,3 +48,31 @@ table filter2 {
 }"
 
 $NFT -f - <<< $EXPECTED
+
+RULESET="define var1 = \"dummy0\"
+define var2 = { dummy1 }
+define var3 = { lo, \$var1, \$var2 }
+
+table filter3 {
+	flowtable Main_ft3 {
+		hook ingress priority filter
+		counter
+		devices = { \$var3 }
+	}
+}"
+
+$NFT -f - <<< $RULESET
+
+RULESET="define var1 = \"dummy0\"
+define var2 = { dummy1 }
+define var3 = { lo, \$var1, \$var2 }
+
+table filter4 {
+	flowtable Main_ft4 {
+		hook ingress priority filter
+		counter
+		devices = \$var3
+	}
+}"
+
+$NFT -f - <<< $RULESET

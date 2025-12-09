@@ -296,6 +296,10 @@ static unsigned int evaluate_cache_list(struct nft_ctx *nft, struct cmd *cmd,
 	case CMD_OBJ_SYNPROXYS:
 		obj_filter_setup(cmd, &flags, filter, NFT_OBJECT_SYNPROXY);
 		break;
+	case CMD_OBJ_TUNNEL:
+	case CMD_OBJ_TUNNELS:
+		obj_filter_setup(cmd, &flags, filter, NFT_OBJECT_TUNNEL);
+		break;
 	case CMD_OBJ_RULESET:
 	default:
 		flags |= NFT_CACHE_FULL;
@@ -443,6 +447,8 @@ static int nft_handle_validate(const struct cmd *cmd, struct list_head *msgs)
 	case CMD_OBJ_CT_TIMEOUTS:
 	case CMD_OBJ_CT_EXPECT:
 	case CMD_OBJ_CT_EXPECTATIONS:
+	case CMD_OBJ_TUNNEL:
+	case CMD_OBJ_TUNNELS:
 		if (h->table.name &&
 		    strlen(h->table.name) > NFT_NAME_MAXLEN) {
 			loc = &h->table.location;

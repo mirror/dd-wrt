@@ -12,3 +12,17 @@ table ip filter2 {
 		counter
 	}
 }
+table ip filter3 {
+	flowtable Main_ft3 {
+		hook ingress priority filter
+		devices = { "lo" }
+		counter
+	}
+}
+table ip filter4 {
+	flowtable Main_ft4 {
+		hook ingress priority filter
+		devices = { "lo" }
+		counter
+	}
+}

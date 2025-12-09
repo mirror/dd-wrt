@@ -6,6 +6,8 @@
  * later) as published by the Free Software Foundation.
  */
 
+#include <nft.h>
+
 #include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>

@@ -1,0 +1,172 @@
+{
+  "nftables": [
+    {
+      "metainfo": {
+        "version": "VERSION",
+        "release_name": "RELEASE_NAME",
+        "json_schema_version": 1
+      }
+    },
+    {
+      "table": {
+        "family": "netdev",
+        "name": "x",
+        "handle": 0
+      }
+    },
+    {
+      "chain": {
+        "family": "netdev",
+        "table": "x",
+        "name": "x",
+        "handle": 0,
+        "dev": "lo",
+        "type": "filter",
+        "hook": "ingress",
+        "prio": 0,
+        "policy": "accept"
+      }
+    },
+    {
+      "tunnel": {
+        "family": "netdev",
+        "name": "geneve-t",
+        "table": "x",
+        "handle": 0,
+        "id": 10,
+        "src-ipv4": "192.168.2.10",
+        "dst-ipv4": "192.168.2.11",
+        "sport": 10,
+        "dport": 10,
+        "tos": 10,
+        "ttl": 10,
+        "type": "geneve",
+        "tunnel": [
+          {
+            "class": 1,
+            "opt-type": 1,
+            "data": "0x12345678"
+          },
+          {
+            "class": 4112,
+            "opt-type": 2,
+            "data": "0x87654321"
+          },
+          {
+            "class": 8224,
+            "opt-type": 3,
+            "data": "0x87654321abcdeffe"
+          }
+        ]
+      }
+    },
+    {
+      "tunnel": {
+        "family": "netdev",
+        "name": "vxlan-t",
+        "table": "x",
+        "handle": 0,
+        "id": 20,
+        "src-ipv4": "192.168.2.20",
+        "dst-ipv4": "192.168.2.21",
+        "sport": 20,
+        "dport": 20,
+        "tos": 10,
+        "ttl": 10,
+        "type": "vxlan",
+        "tunnel": {
+          "gbp": 200
+        }
+      }
+    },
+    {
+      "tunnel": {
+        "family": "netdev",
+        "name": "erspan-tv1",
+        "table": "x",
+        "handle": 0,
+        "id": 30,
+        "src-ipv4": "192.168.2.30",
+        "dst-ipv4": "192.168.2.31",
+        "sport": 30,
+        "dport": 30,
+        "tos": 10,
+        "ttl": 10,
+        "type": "erspan",
+        "tunnel": {
+          "version": 1,
+          "index": 5
+        }
+      }
+    },
+    {
+      "tunnel": {
+        "family": "netdev",
+        "name": "erspan-tv2",
+        "table": "x",
+        "handle": 0,
+        "id": 40,
+        "src-ipv4": "192.168.2.40",
+        "dst-ipv4": "192.168.2.41",
+        "sport": 40,
+        "dport": 40,
+        "tos": 10,
+        "ttl": 10,
+        "type": "erspan",
+        "tunnel": {
+          "version": 2,
+          "dir": "ingress",
+          "hwid": 10
+        }
+      }
+    },
+    {
+      "rule": {
+        "family": "netdev",
+        "table": "x",
+        "chain": "x",
+        "handle": 0,
+        "expr": [
+          {
+            "tunnel": {
+              "map": {
+                "key": {
+                  "payload": {
+                    "protocol": "ip",
+                    "field": "saddr"
+                  }
+                },
+                "data": {
+                  "set": [
+                    [
+                      "10.141.10.123",
+                      "geneve-t"
+                    ],
+                    [
+                      "10.141.10.124",
+                      "vxlan-t"
+                    ],
+                    [
+                      "10.141.10.125",
+                      "erspan-tv1"
+                    ],
+                    [
+                      "10.141.10.126",
+                      "erspan-tv2"
+                    ]
+                  ]
+                }
+              }
+            }
+          },
+          {
+            "counter": {
+              "packets": 0,
+              "bytes": 0
+            }
+          }
+        ]
+      }
+    }
+  ]
+}

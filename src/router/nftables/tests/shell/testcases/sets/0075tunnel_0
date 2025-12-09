@@ -1,0 +1,75 @@
+#!/bin/bash
+
+# NFT_TEST_REQUIRES(NFT_TEST_HAVE_tunnel)
+
+# * creating valid named objects
+# * referencing them from a valid rule
+
+RULESET="
+table netdev x {
+	tunnel geneve-t {
+		id 10
+		ip saddr 192.168.2.10
+		ip daddr 192.168.2.11
+		sport 10
+		dport 10
+		ttl 10
+		tos 10
+		geneve {
+			class 0x1 opt-type 0x1 data \"0x12345678\"
+			class 0x1010 opt-type 0x2 data \"0x87654321\"
+			class 0x2020 opt-type 0x3 data \"0x87654321abcdeffe\"
+		}
+	}
+
+	tunnel vxlan-t {
+		id 20
+		ip saddr 192.168.2.20
+		ip daddr 192.168.2.21
+		sport 20
+		dport 20
+		ttl 10
+		tos 10
+		vxlan {
+			gbp 200
+		}
+	}
+
+	tunnel erspan-tv1 {
+		id 30
+		ip saddr 192.168.2.30
+		ip daddr 192.168.2.31
+		sport 30
+		dport 30
+		ttl 10
+		tos 10
+		erspan {
+			version 1
+			index 5
+		}
+	}
+
+	tunnel erspan-tv2 {
+		id 40
+		ip saddr 192.168.2.40
+		ip daddr 192.168.2.41
+		sport 40
+		dport 40
+		ttl 10
+		tos 10
+		erspan {
+			version 2
+			direction ingress
+			id 10
+		}
+	}
+
+	chain x {
+		type filter hook ingress device lo priority 0; policy accept;
+		tunnel name ip saddr map { 10.141.10.123 : "geneve-t", 10.141.10.124 : "vxlan-t", 10.141.10.125 : "erspan-tv1", 10.141.10.126 : "erspan-tv2" } counter
+	}
+}
+"
+
+set -e
+$NFT -f - <<< "$RULESET"

@@ -1,0 +1,102 @@
+#!/bin/bash
+
+# NFT_TEST_REQUIRES(NFT_TEST_HAVE_meta_ibrhwaddr)
+
+rnd=$(mktemp -u XXXXXXXX)
+ns1="nft1ifname-$rnd"
+ns2="nft2ifname-$rnd"
+ns3="nft3ifname-$rnd"
+
+cleanup()
+{
+	ip netns del "$ns1"
+	ip netns del "$ns2"
+	ip netns del "$ns3"
+}
+
+trap cleanup EXIT
+
+set -e
+
+ip netns add "$ns1"
+ip netns add "$ns2"
+ip netns add "$ns3"
+
+ip link add veth0 netns $ns1 type veth peer name veth0 netns $ns2
+ip link add veth1 netns $ns3 type veth peer name veth1 netns $ns2
+ip link add br0 netns $ns2 type bridge
+
+ip -net "$ns1" link set veth0 addr da:d3:00:01:02:03
+ip -net "$ns3" link set veth1 addr de:ad:00:00:be:ef
+
+ip -net "$ns2" link set veth0 master br0
+ip -net "$ns2" link set veth1 master br0
+
+ip -net "$ns1" link set veth0 up
+ip -net "$ns2" link set veth0 up
+ip -net "$ns3" link set veth1 up
+ip -net "$ns2" link set veth1 up
+ip -net "$ns2" link set br0 up
+
+ip netns exec "$ns2" sysctl -q net.ipv4.ip_forward=1
+
+ip -net "$ns1" addr add 10.1.1.10/24 dev veth0
+ip -net "$ns3" addr add 10.1.1.20/24 dev veth1
+ip -net "$ns2" addr add 10.1.1.1/24 dev br0
+
+ip netns exec "$ns2" $NFT -f /dev/stdin <<"EOF"
+table bridge nat {
+	chain PREROUTING {
+		type filter hook prerouting priority 0; policy accept;
+		ether daddr de:ad:00:00:be:ef meta pkttype set host ether daddr set meta ibrhwaddr meta mark set 1
+	}
+}
+
+table bridge process {
+	chain INPUT {
+		type filter hook input priority 0; policy accept;
+		ip protocol icmp meta mark 1 counter
+	}
+}
+
+table bridge donotprocess {
+	chain FORWARD {
+		type filter hook forward priority 0; policy accept;
+		ip protocol icmp meta mark 1 counter
+	}
+}
+
+table ip process {
+	chain FORWARD {
+		type filter hook forward priority 0; policy accept;
+		ip protocol icmp meta mark 1 counter
+	}
+}
+EOF
+
+ip netns exec "$ns1" ping -c 1 10.1.1.20 || true
+
+set +e
+
+ip netns exec "$ns2" $NFT list table bridge process | grep 'counter packets 0'
+if [ $? -eq 0 ]
+then
+	echo "Failure: packets not seen at bridge input hook"
+	exit 1
+fi
+
+ip netns exec "$ns2" $NFT list table bridge donotprocess | grep 'counter packets 0'
+if [ $? -eq 1 ]
+then
+	echo "Failure: packets seen at bridge forward hook"
+	exit 1
+fi
+
+ip netns exec "$ns2" $NFT list table ip process | grep 'counter packets 0'
+if [ $? -eq 0 ]
+then
+	echo "Failure: packets not seen at ipv4 forward hook"
+	exit 1
+fi
+
+exit 0

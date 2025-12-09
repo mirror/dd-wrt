@@ -10,7 +10,7 @@ exec_pretty() {
 	fi
 
 	# Fallback to python.
-	exec python -c '
+	exec python3 -c '
 import json
 import sys
 

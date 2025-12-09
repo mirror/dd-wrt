@@ -1,0 +1,8 @@
+# cbd2257dc96e ("netfilter: nft_meta_bridge: introduce NFT_META_BRI_IIFHWADDR support")
+# v6.16-rc2-16052-gcbd2257dc96e
+table bridge nat {
+	chain PREROUTING {
+		type filter hook prerouting priority 0; policy accept;
+		ether daddr set meta ibrhwaddr
+	}
+}

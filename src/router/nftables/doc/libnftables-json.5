@@ -2,12 +2,12 @@
 .\"     Title: libnftables-json
 .\"    Author: Phil Sutter <phil@nwl.cc>
 .\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
-.\"      Date: 08/27/2025
+.\"      Date: 12/05/2025
 .\"    Manual: \ \&
 .\"    Source: \ \&
 .\"  Language: English
 .\"
-.TH "LIBNFTABLES\-JSON" "5" "08/27/2025" "\ \&" "\ \&"
+.TH "LIBNFTABLES\-JSON" "5" "12/05/2025" "\ \&" "\ \&"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -264,6 +264,21 @@ Empty contents in given object, e\&.g\&. remove all chains from given \fBtable\f
 .sp
 Rename a chain\&. The new name is expected in a dedicated property named \fBnewname\fR\&.
 .SH "RULESET ELEMENTS"
+.SS "RULESET"
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\fB{ "ruleset":\fR \fIRULSET_PROPERTIES\fR \fB}\fR
+
+\fIRULESET_PROPERTIES\fR := \fBnull\fR | \fB{ "family":\fR \fISTRING\fR \fB}\fR
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+This is a special object for use with \fBlist\fR and \fBflush\fR commands which will then operate on either the whole ruleset or the parts of it belonging to the given family\&.
 .SS "TABLE"
 .sp
 .if n \{\

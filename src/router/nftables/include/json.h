@@ -31,6 +31,7 @@ json_t *binop_expr_json(const struct expr *expr, struct output_ctx *octx);
 json_t *relational_expr_json(const struct expr *expr, struct output_ctx *octx);
 json_t *range_expr_json(const struct expr *expr, struct output_ctx *octx);
 json_t *meta_expr_json(const struct expr *expr, struct output_ctx *octx);
+json_t *tunnel_expr_json(const struct expr *expr, struct output_ctx *octx);
 json_t *payload_expr_json(const struct expr *expr, struct output_ctx *octx);
 json_t *ct_expr_json(const struct expr *expr, struct output_ctx *octx);
 json_t *concat_expr_json(const struct expr *expr, struct output_ctx *octx);
@@ -112,7 +113,7 @@ void monitor_print_set_json(struct netlink_mon_handler *monh,
 void monitor_print_element_json(struct netlink_mon_handler *monh,
 				const char *cmd, struct set *s);
 void monitor_print_obj_json(struct netlink_mon_handler *monh,
-			    const char *cmd, struct obj *o);
+			    const char *cmd, struct obj *o, bool delete);
 void monitor_print_flowtable_json(struct netlink_mon_handler *monh,
 				  const char *cmd, struct flowtable *ft);
 void monitor_print_rule_json(struct netlink_mon_handler *monh,
@@ -160,6 +161,7 @@ EXPR_PRINT_STUB(fib_expr)
 EXPR_PRINT_STUB(constant_expr)
 EXPR_PRINT_STUB(socket_expr)
 EXPR_PRINT_STUB(osf_expr)
+EXPR_PRINT_STUB(tunnel_expr)
 EXPR_PRINT_STUB(xfrm_expr)
 
 EXPR_PRINT_STUB(integer_type)
@@ -250,7 +252,8 @@ static inline void monitor_print_element_json(struct netlink_mon_handler *monh,
 }
 
 static inline void monitor_print_obj_json(struct netlink_mon_handler *monh,
-					  const char *cmd, struct obj *o)
+					  const char *cmd, struct obj *o,
+					  bool delete)
 {
 	/* empty */
 }

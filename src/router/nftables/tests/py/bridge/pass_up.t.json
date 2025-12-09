@@ -1,0 +1,19 @@
+# ether daddr set meta ibrhwaddr
+[
+    {
+        "mangle": {
+            "key": {
+                "payload": {
+                    "field": "daddr",
+                    "protocol": "ether"
+                }
+            },
+            "value": {
+                "meta": {
+                    "key": "ibrhwaddr"
+                }
+            }
+        }
+    }
+]
+

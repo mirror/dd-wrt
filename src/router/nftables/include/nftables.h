@@ -145,6 +145,9 @@ struct nft_ctx {
 	void			*json_root;
 	json_t			*json_echo;
 	const char		*stdin_buf;
+#if HAVE_FUZZER_BUILD
+	int			afl_ctx_stage;
+#endif
 };
 
 enum nftables_exit_codes {

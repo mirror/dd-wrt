@@ -1,5 +1,6 @@
 #!/bin/bash
 
+# NFT_TEST_REQUIRES(NFT_TEST_HAVE_bitwise_multireg)
 # NFT_TEST_REQUIRES(NFT_TEST_HAVE_bitshift)
 
 set -e

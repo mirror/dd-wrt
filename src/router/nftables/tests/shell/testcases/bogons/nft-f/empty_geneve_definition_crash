@@ -1,0 +1,4 @@
+table netdev x {
+	tunnel geneve-t {
+	}
+}

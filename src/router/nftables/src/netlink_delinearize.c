@@ -128,7 +128,7 @@ static struct expr *netlink_parse_concat_expr(struct netlink_parse_ctx *ctx,
 				      "Relational expression size mismatch");
 			goto err;
 		}
-		compound_expr_add(concat, expr);
+		concat_expr_add(concat, expr);
 
 		consumed = netlink_padded_len(expr->len);
 		assert(consumed > 0);
@@ -171,7 +171,7 @@ static struct expr *netlink_parse_concat_key(struct netlink_parse_ctx *ctx,
 			expr_set_type(expr, i, i->byteorder);
 		}
 
-		compound_expr_add(concat, expr);
+		concat_expr_add(concat, expr);
 
 		consumed = netlink_padded_len(expr->len);
 		assert(consumed > 0);
@@ -204,7 +204,7 @@ static struct expr *netlink_parse_concat_data(struct netlink_parse_ctx *ctx,
 		}
 		i = constant_expr_splice(data, expr->len);
 		data->len -= netlink_padding_len(expr->len);
-		compound_expr_add(concat, i);
+		concat_expr_add(concat, i);
 
 		len -= netlink_padded_len(expr->len);
 		reg += netlink_register_space(expr->len);
@@ -937,6 +937,21 @@ static void netlink_parse_osf(struct netlink_parse_ctx *ctx,
 	expr = osf_expr_alloc(loc, ttl, flags);
 
 	dreg = netlink_parse_register(nle, NFTNL_EXPR_OSF_DREG);
+	netlink_set_register(ctx, dreg, expr);
+}
+
+static void netlink_parse_tunnel(struct netlink_parse_ctx *ctx,
+				 const struct location *loc,
+				 const struct nftnl_expr *nle)
+{
+	enum nft_registers dreg;
+	struct expr * expr;
+	uint32_t key;
+
+	key = nftnl_expr_get_u32(nle, NFTNL_EXPR_TUNNEL_KEY);
+	expr = tunnel_expr_alloc(loc, key);
+
+	dreg = netlink_parse_register(nle, NFTNL_EXPR_TUNNEL_DREG);
 	netlink_set_register(ctx, dreg, expr);
 }
 
@@ -1922,6 +1937,7 @@ static const struct expr_handler netlink_parsers[] = {
 	{ .name = "exthdr",	.parse = netlink_parse_exthdr },
 	{ .name = "meta",	.parse = netlink_parse_meta },
 	{ .name = "socket",	.parse = netlink_parse_socket },
+	{ .name = "tunnel",	.parse = netlink_parse_tunnel },
 	{ .name = "osf",	.parse = netlink_parse_osf },
 	{ .name = "rt",		.parse = netlink_parse_rt },
 	{ .name = "ct",		.parse = netlink_parse_ct },
@@ -2438,7 +2454,7 @@ static struct expr *binop_tree_to_list(struct expr *list, struct expr *expr)
 	} else {
 		if (list == NULL)
 			return expr_get(expr);
-		compound_expr_add(list, expr_get(expr));
+		list_expr_add(list, expr_get(expr));
 	}
 
 	return list;
@@ -2458,7 +2474,7 @@ static void binop_adjust_one(const struct expr *binop, struct expr *value,
 		value->len = left->len;
 		break;
 	default:
-		BUG("unknown expression type %s\n", expr_name(left));
+		BUG("unknown expression type %s", expr_name(left));
 		break;
 	}
 }
@@ -2489,7 +2505,8 @@ static void binop_adjust(const struct expr *binop, struct expr *right,
 				binop_adjust(binop, i->key->key, shift);
 				break;
 			default:
-				BUG("unknown expression type %s\n", expr_name(i->key));
+				BUG("unknown expression type %s",
+				    expr_name(i->key));
 			}
 		}
 		break;
@@ -2498,7 +2515,7 @@ static void binop_adjust(const struct expr *binop, struct expr *right,
 		binop_adjust_one(binop, right->right, shift);
 		break;
 	default:
-		BUG("unknown expression type %s\n", expr_name(right));
+		BUG("unknown expression type %s", expr_name(right));
 		break;
 	}
 }
@@ -2629,7 +2646,7 @@ static void relational_binop_postprocess(struct rule_pp_ctx *ctx,
 			expr->op = OP_NEG;
 			break;
 		default:
-			BUG("unknown operation type %d\n", expr->op);
+			BUG("unknown operation type %d", expr->op);
 		}
 		expr_free(binop);
 	} else if (datatype_prefix_notation(binop->left->dtype) &&
@@ -3023,6 +3040,7 @@ static void expr_postprocess(struct rule_pp_ctx *ctx, struct expr **exprp)
 	case EXPR_NUMGEN:
 	case EXPR_FIB:
 	case EXPR_SOCKET:
+	case EXPR_TUNNEL:
 	case EXPR_OSF:
 	case EXPR_XFRM:
 		break;
@@ -3034,7 +3052,7 @@ static void expr_postprocess(struct rule_pp_ctx *ctx, struct expr **exprp)
 		ct_expr_update_type(&dl->pctx, expr);
 		break;
 	default:
-		BUG("unknown expression type %s\n", expr_name(expr));
+		BUG("unknown expression type %s", expr_name(expr));
 	}
 }
 

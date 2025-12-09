@@ -13,6 +13,7 @@ The integer type is used for numeric values. It may be specified as a decimal,
 hexadecimal or octal number. The integer type does not have a fixed size, its
 size is determined by the expression for which it is used.
 
+[[BITMASK_TYPE]]
 BITMASK TYPE
 ~~~~~~~~~~~~
 [options="header"]
@@ -25,6 +26,37 @@ integer
 |===================
 
 The bitmask type (*bitmask*) is used for bitmasks.
+
+In expressions the bits of a bitmask may be specified as *'bit'[,'bit']...* with
+'bit' being the value of the bit or a pre-defined symbolic constant, if any (for
+example *ct state*’s bit 0x1 has the symbolic constant `new`).
+
+Equality of a value with such bitmask is given, if the value has any of the
+bitmask’s bits set (and optionally others).
+
+The syntax *'expression' 'value' / 'mask'* is identical to
+*'expression' and 'mask' == 'value'*.
+For example `tcp flags syn,ack / syn,ack,fin,rst` is the same as
+`tcp flags and (syn|ack|fin|rst) == syn|ack`.
+
+Note that *'expression' 'bit'[,'bit']...* is not generally the same as
+*'expression' {'bit'[,'bit']...}* and analogously with a named set.
+The latter forms are lookups in a set and will match only if the set contains
+exactly one value that matches.
+They are however effectively the same (with matching bitmasks typically being
+faster) when all bits are semantically mutually exclusive.
+
+Examples:
+* *tcp flags syn,ack* matches packets that have the SYN, the ACK or both SYN and
+  ACK flags set. Other flags are ignored.
+  *tcp flags { syn, ack }* matches packets that have either only the SYN or only
+  the ACK flag set. All other flags must be unset.
+* *ct state established,related* and *ct state { established, related } * match
+  exactly the same packets, because the bits of *ct state* are all mutually
+  exclusive.
+
+As usual, the the *nft describe* command may be used to get details on a data
+type, which for bitmasks shows the symbolic names and values of the bits.
 
 STRING TYPE
 ~~~~~~~~~~~~

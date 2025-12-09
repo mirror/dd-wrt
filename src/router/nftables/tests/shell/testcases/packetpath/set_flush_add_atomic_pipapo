@@ -1,0 +1,20 @@
+#!/bin/bash
+
+# NFT_TEST_REQUIRES(NFT_TEST_HAVE_pipapo)
+
+. $NFT_TEST_BASEDIR/helpers/set_flush_add_atomic_helpers
+
+tmp=$(mktemp)
+
+cleanup()
+{
+	set_flush_add_atomic_cleanup "$tmp"
+}
+
+trap cleanup EXIT
+
+set_flush_add_create_topo "pipapo"
+
+set_flush_add_atomic_run_test "$tmp" "ipv4_addr . ipv4_addr" "flags interval" "$ip_c . $ip_s, $ip_s . $ip_c" "ip saddr . ip daddr" || exit 1
+
+exit 0

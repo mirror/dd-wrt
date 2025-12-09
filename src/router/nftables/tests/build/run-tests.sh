@@ -1,5 +1,7 @@
 #!/bin/bash
 
+cd $(dirname $0)
+
 log_file="$(pwd)/tests.log"
 dir=../..
 argument=( --without-cli --with-cli=linenoise --with-cli=editline --enable-debug --with-mini-gmp
@@ -17,6 +19,10 @@ fi
 
 git clone "$dir" "$tmpdir" &>>"$log_file"
 cd "$tmpdir" || exit
+
+# do not leak data from a calling 'make check' run into the new build otherwise
+# this will defeat the test suite invocation prevention for 'make distcheck'
+unset MAKEFLAGS
 
 if ! autoreconf -fi &>>"$log_file" ; then
 	echo "Something went wrong. Check the log '${log_file}' for details."

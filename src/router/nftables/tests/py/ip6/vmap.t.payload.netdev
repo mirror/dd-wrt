@@ -218,7 +218,7 @@ netdev test-netdev ingress
   [ payload load 16b @ network header + 8 => reg 1 ]
   [ lookup reg 1 set __map%d dreg 0 ]
 
-# ip6 saddr vmap { 1234:1234:1234:1234:1234::  : accept}
+# ip6 saddr vmap { 1234:1234:1234:1234:1234:: : accept}
 __map%d test-netdev b
 __map%d test-netdev 0
 	element 34123412 34123412 00003412 00000000  : accept 0 [end]

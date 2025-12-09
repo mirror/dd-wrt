@@ -2,12 +2,12 @@
 .\"     Title: nft
 .\"    Author: [see the "AUTHORS" section]
 .\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
-.\"      Date: 08/27/2025
+.\"      Date: 12/05/2025
 .\"    Manual: \ \&
 .\"    Source: \ \&
 .\"  Language: English
 .\"
-.TH "NFT" "8" "08/27/2025" "\ \&" "\ \&"
+.TH "NFT" "8" "12/05/2025" "\ \&" "\ \&"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -210,7 +210,7 @@ Other files can be included by using the \fBinclude\fR statement\&. The director
 .sp
 If \fB\-I\fR/\fB\-\-includepath\fR is not specified, then nft relies on the default directory that is specified at compile time\&. You can retrieve this default directory via the \fB\-h\fR/\fB\-\-help\fR option\&.
 .sp
-Include statements support the usual shell wildcard symbols (\fB,?,[])\&. Having no matches for an include statement is not an error, if wildcard symbols are used in the include statement\&. This allows having potentially empty include directories for statements like \fR\fB\fBinclude "/etc/firewall/rules/\fR\fR\fB"\fR\&. The wildcard matches are loaded in alphabetical order\&. Files beginning with dot (\&.) are not matched by include statements\&.
+Include statements support the usual shell wildcard symbols (\fB,?,[])\&. Having no matches for an include statement is not an error, if wildcard symbols are used in the include statement\&. This allows having potentially empty include directories for statements like \fR\fB\fBinclude "/etc/firewall/rules/\fR\fR\fB"\fR\&. The wildcard matches are loaded in the collation order of the C locale\&. Files beginning with dot (\&.) are not matched by include statements\&.
 .SS "SYMBOLIC VARIABLES"
 .sp
 .if n \{\
@@ -630,12 +630,16 @@ T}
 .RS 4
 .\}
 .nf
-{\fBadd\fR | \fBcreate\fR} \fBchain\fR [\fIfamily\fR] \fItable\fR \fIchain\fR [\fB{ type\fR \fItype\fR \fBhook\fR \fIhook\fR [\fBdevice\fR \fIdevice\fR] \fBpriority\fR \fIpriority\fR \fB;\fR [\fBpolicy\fR \fIpolicy\fR \fB;\fR] [\fBcomment\fR \fIcomment\fR \fB;\fR] \fB}\fR]
+{\fBadd\fR | \fBcreate\fR} \fBchain\fR [\fIfamily\fR] \fItable\fR \fIchain\fR [\fB{ type\fR \fItype\fR \fBhook\fR \fIhook\fR [\fIDEVICE\fR] \fBpriority\fR \fIpriority\fR \fB;\fR [\fBpolicy\fR \fIpolicy\fR \fB;\fR] [\fBcomment\fR \fIcomment\fR \fB;\fR] \fB}\fR]
 {\fBdelete\fR | \fBdestroy\fR | \fBlist\fR | \fBflush\fR} \fBchain\fR [\fIfamily\fR] \fItable\fR \fIchain\fR
 \fBlist chains\fR [\fIfamily\fR]
 \fBdelete chain\fR [\fIfamily\fR] \fItable\fR \fBhandle\fR \fIhandle\fR
 \fBdestroy chain\fR [\fIfamily\fR] \fItable\fR \fBhandle\fR \fIhandle\fR
 \fBrename chain\fR [\fIfamily\fR] \fItable\fR \fIchain\fR \fInewname\fR
+
+\fIDEVICE\fR := {\fBdevice\fR \fIDEVICE_NAME\fR | \fBdevices = {\fR \fIDEVICE_LIST\fR \fB}\fR}
+\fIDEVICE_LIST\fR := \fIDEVICE_NAME\fR [\fB,\fR \fIDEVICE_LIST\fR]
+\fIDEVICE_NAME\fR := \fIstring\fR | \fIstring\fR\fB*\fR
 .fi
 .if n \{\
 .RE
@@ -787,7 +791,7 @@ hook and
 type with
 \fBegress\fR
 hook\&. Base chains in this family also require the
-\fBdevice\fR
+\fIDEVICE\fR
 parameter to be present since they exist per interface only\&.
 .RE
 .sp
@@ -830,9 +834,11 @@ and this
 hook\&.
 .RE
 .sp
-The \fBdevice\fR parameter accepts a network interface name as a string, and is required when adding a base chain that filters traffic on the ingress or egress hooks\&. Any ingress or egress chains will only filter traffic from the interface specified in the \fBdevice\fR parameter\&.
+The \fBdevice\fR parameter accepts a network interface name as a string, and is required when adding a base chain that filters traffic on the ingress or egress hooks\&. Any ingress or egress chains will only filter traffic from the interface specified in the \fBdevice\fR parameter\&. The same base chain may be used for multiple devices by using the \fBdevices\fR parameter instead\&.
 .sp
-The \fBpriority\fR parameter accepts a signed integer value or a standard priority name which specifies the order in which chains with the same \fBhook\fR value are traversed\&. The ordering is ascending, i\&.e\&. lower priority values have precedence over higher ones\&.
+With newer kernels there is also basic support for wildcards in \fIDEVICE_NAME\fR by specifying an asterisk suffix\&. The chain will apply to all interfaces matching the given prefix\&. Use the \fBlist hooks\fR command to see the current status\&.
+.sp
+The \fBpriority\fR parameter accepts a signed integer value or a standard priority name which specifies the order in which chains with the same \fBhook\fR value are traversed (regardless of the table to which they belong)\&. The ordering is ascending: for each hook, chains with lower priority values are evaluated before those with higher ones\&. The ordering of chains with identical priority is undefined\&.
 .sp
 With \fBnat\fR type chains, there\(cqs a lower excluding limit of \-200 for \fBpriority\fR values, because conntrack hooks at this priority and NAT requires it\&.
 .sp
@@ -1123,6 +1129,323 @@ nft delete rule inet filter input handle 5
 .RE
 .\}
 .sp
+.SH "OVERALL EVALUATION OF THE RULESET"
+.sp
+This is a summary of how the ruleset is evaluated\&.
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+Even if a packet is accepted by the ruleset it may still get discarded by other means, for example Linux generally ignores various ICMP types and there are sysctl options like
+net\&.ipv{4,6}\&.conf\&.*\&.forwarding
+or
+net\&.ipv4\&.conf\&.*\&.rp_filter\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+Tables are merely a concept of nftables to structure the ruleset\&. They are not relevant to the evaluation of the ruleset\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+Packets traverse the network stack and at various hooks (see
+the section called \(lqADDRESS FAMILIES\(rq
+above for lists of hooks per address family) they\(cqre evaluated by any base chains attached to these hooks\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+Base chains may call regular chains (via
+\fBjump\fR
+and
+\fBgoto\fR)\&. Regular chains can call other regular chains\&. Evaluation continues in the called chain\&. Chains residing in a different table cannot be called\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+For each hook, the attached chains are evaluated in order of their priorities\&. Chains with lower priority values are evaluated before those with higher ones\&. The order of chains with the same priority value is undefined\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+An
+\fBaccept\fR
+verdict (including an implict one via the base chain\(cqs policy) ends the evaluation of the current base chain\&. It is not relevant if the
+\fBaccept\fR
+verdict is issued in the base chain itself or a regular chain called from the base chain\&. The packet advances to the next base chain\&. Thus a packet is ultimately accepted if and only if no (matching) rule or base chain policy issues a
+\fBdrop\fR
+verdict\&. All this applies to verdict\-like statements that imply
+\fBaccept\fR, for example the NAT statements\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+A
+\fBdrop\fR
+verdict (including an implict one via the base chain\(cqs policy) immediately ends the evaluation of the whole ruleset\&. No further chains of any hook are consulted\&. It is therefore not possible to have a
+\fBdrop\fR
+verdict changed to an
+\fBaccept\fR
+in a later chain\&. This also applies to other terminal statements that imply
+\fBdrop\fR, for example
+\fBreject\fR\&. Thus, if any base chain uses drop as its policy, the same base chain (or a regular chain directly or indirectly called by it) must contain at least one matching
+\fBaccept\fR
+rule or the packet will be dropped\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+Given the semantics of
+\fBaccept\fR/\fBdrop\fR
+and only with respect to the utlimate decision of whether a packet is accepted or dropped, the ordering of the various base chains per hook via their priorities matters only in so far, as any of them modifies the packet or its meta data and that has an influence on the verdicts issued by the chains \(en other than that, the ordering shouldn\(cqt matter (except for performance and other side effects)\&. It also means that short\-circuiting the ultimate decision is only possible via
+\fBdrop\fR
+verdicts (respectively verdict\-like statements that imply
+\fBdrop\fR, for example
+\fBreject\fR)\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+A
+\fBjump\fR
+verdict causes the current position to be stored in the call stack of chains and evaluation to continue at the beginning of the called regular chain\&. Called chains must be from the same table and cannot be base chains\&. When the end of the called chain is reached, an implicit
+\fBreturn\fR
+verdict is issued\&. Other verdicts (respectively verdict\-like statements) are processed as described above and below\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+A
+\fBgoto\fR
+verdict is equal to
+\fBjump\fR
+except that the current position is not stored in the call stack of chains\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+A
+\fBreturn\fR
+verdict ends the evaluation of the current chain, pops the most recently added position from the call stack of chains and causes evaluation to continue after that position\&. When there\(cqs no position to pop (which is the case when the current chain is either the base chain or a regular chain that was reached solely via
+\fBgoto\fR
+verdicts) it ends the evaluation of the current base chain (and any regular chains called from it) using the base chain\(cqs policy as implicit verdict\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+Examples for
+\fBjump\fR/\fBgoto\fR/\fBreturn\fR:
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fIbase\fR
+{\fBjump\fR}→
+\fIregular\-1\fR
+{\fBjump\fR}→
+\fIregular\-2\fR
+At the end of
+\fIregular\-2\fR
+or when a
+\fBreturn\fR
+is issued in that, evaluation continues after the
+\fBjump\fR
+position in
+\fIregular\-1\fR\&. At the end of
+\fIregular\-1\fR
+or when a
+\fBreturn\fR
+is issued in that, evaluation continues after the
+\fBjump\fR
+position in
+\fIbase\fR\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fIbase\fR
+{\fBjump\fR}→
+\fIregular\-1\fR
+{\fBgoto\fR}→
+\fIregular\-2\fR
+At the end of
+\fIregular\-2\fR
+or when a
+\fBreturn\fR
+is issued in that, evaluation continues after the
+\fBjump\fR
+position in
+\fIbase\fR\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fIbase\fR
+{\fBjump\fR}→
+\fIregular\-1\fR
+{\fBjump\fR}→
+\fIregular\-2\fR
+{\fBgoto\fR}→
+\fIregular\-3\fR
+At the end of
+\fIregular\-3\fR
+or when a
+\fBreturn\fR
+is issued in that, evaluation continues after the
+\fBjump\fR
+position in
+\fIregular\-1\fR\&. At the end of
+\fIregular\-1\fR
+or when a
+\fBreturn\fR
+is issued in that, evaluation continues after the
+\fBjump\fR
+position in
+\fIbase\fR\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fIbase\fR
+{\fBjump\fR}→
+\fIregular\-1\fR
+{\fBgoto\fR}→
+\fIregular\-2\fR
+{\fBgoto\fR}→
+\fIregular\-3\fR
+At the end of
+\fIregular\-3\fR
+or when a
+\fBreturn\fR
+is issued in that, evaluation continues after the
+\fBjump\fR
+position in
+\fIbase\fR\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+Verdicts (that is:
+\fBaccept\fR,
+\fBdrop\fR,
+\fBjump\fR,
+\fBgoto\fR,
+\fBreturn\fR
+and
+\fBcontinue\fR) as well as statements that imply a verdict (like
+\fBreject\fR
+or the NAT statements) also end the evaluation of any later statements in their respective rules (respectively cause an error when loading such rules)\&. For example in
+\&... counter accept
+the
+counter
+statement is processed, but in
+\&... accept counter
+it is not\&. This does not apply to the
+comment
+statement, which is always evaluated\&.
+.RE
 .SH "SETS"
 .sp
 nftables offers two kinds of set concepts\&. Anonymous sets are sets that have no specific name\&. The set members are enclosed in curly braces, with commas to separate elements when creating the rule the set is used in\&. Once that rule is removed, the set is removed as well\&. They cannot be updated, i\&.e\&. once an anonymous set is declared it cannot be changed anymore except by removing/altering the rule that uses the anonymous set\&.
@@ -1349,6 +1672,8 @@ The \fBsize\fR defines the upper limit of the amount of elements that the set ca
 The optional \fBpolicy\fR keyword can be used to request a more memory\-conserving set implementation\&.
 .sp
 \fBauto\-merge\fR instructs the nftables frontend to merge adjacent and overlapping ranges\&. Example: When the set contains range \fB1\&.2\&.3\&.1\-1\&.2\&.3\&.4\fR, then adding element \fB1\&.2\&.3\&.2\fR has no effect\&. Adding \fB1\&.2\&.3\&.5\fR changes the existing range to cover \fB1\&.2\&.3\&.1\-1\&.2\&.3\&.5\fR\&. Without this flag, \fB1\&.2\&.3\&.2\fR can not be added and \fB1\&.2\&.3\&.5\fR is inserted as a new entry\&.
+.sp
+Equality of a value with a set is given if the value matches exactly one value in the set (which for intervals means that it\(cqs contained in any of them)\&. See the section called \(lqBITMASK TYPE\(rq for the subtle differences between syntactically similarly looking equiality checks of sets and bitmasks\&.
 .SH "MAPS"
 .sp
 .if n \{\
@@ -1502,7 +1827,7 @@ T}
 .TE
 .sp 1
 .sp
-Users can specifiy the properties/features that the set/map must support\&. This allows the kernel to pick an optimal internal representation\&. If a required flag is missing, the ruleset might still work, as nftables will auto\-enable features if it can infer this from the ruleset\&. This may not work for all cases, however, so it is recommended to specify all required features in the set/map definition manually\&. Also, some features are mutually exclusive\&. For example, it is not possible for a set to support intervals and insertion from the packet path\&.
+Users can specify the properties/features that the set/map must support\&. This allows the kernel to pick an optimal internal representation\&. If a required flag is missing, the ruleset might still work, as nftables will auto\-enable features if it can infer this from the ruleset\&. This may not work for all cases, however, so it is recommended to specify all required features in the set/map definition manually\&. Also, some features are mutually exclusive\&. For example, it is not possible for a set to support intervals and insertion from the packet path\&.
 .sp
 .it 1 an-trap
 .nr an-no-space-flag 1
@@ -1622,10 +1947,13 @@ T}
 .RS 4
 .\}
 .nf
-{\fBadd\fR | \fBcreate\fR} \fBflowtable\fR [\fIfamily\fR] \fItable\fR \fIflowtable\fR \fB{ hook\fR \fIhook\fR \fBpriority\fR \fIpriority\fR \fB; devices = {\fR \fIdevice\fR[\fB,\fR \&...] \fB} ; }\fR
+{\fBadd\fR | \fBcreate\fR} \fBflowtable\fR [\fIfamily\fR] \fItable\fR \fIflowtable\fR \fB{ hook\fR \fIhook\fR \fBpriority\fR \fIpriority\fR \fB; devices = {\fR \fIDEVICE_LIST\fR \fB} ; }\fR
 \fBlist flowtables\fR [\fIfamily\fR] [\fItable\fR]
 {\fBdelete\fR | \fBdestroy\fR | \fBlist\fR} \fBflowtable\fR [\fIfamily\fR] \fItable\fR \fIflowtable\fR
 \fBdelete\fR \fBflowtable\fR [\fIfamily\fR] \fItable\fR \fBhandle\fR \fIhandle\fR
+
+\fIDEVICE_LIST\fR := \fIDEVICE_NAME\fR [\fB,\fR \fIDEVICE_LIST\fR]
+\fIDEVICE_NAME\fR := \fIstring\fR | \fIstring\fR\fB*\fR
 .fi
 .if n \{\
 .RE
@@ -1634,6 +1962,8 @@ T}
 Flowtables allow you to accelerate packet forwarding in software\&. Flowtables entries are represented through a tuple that is composed of the input interface, source and destination address, source and destination port; and layer 3/4 protocols\&. Each entry also caches the destination interface and the gateway address \- to update the destination link\-layer address \- to forward packets\&. The ttl and hoplimit fields are also decremented\&. Hence, flowtables provides an alternative path that allow packets to bypass the classic forwarding path\&. Flowtables reside in the ingress \fBhook\fR that is located before the prerouting \fBhook\fR\&. You can select which flows you want to offload through the flow expression from the forward chain\&. Flowtables are identified by their address family and their name\&. The address family must be one of ip, ip6, or inet\&. The inet address family is a dummy family which is used to create hybrid IPv4/IPv6 tables\&. When no address family is specified, ip is used by default\&.
 .sp
 The \fBpriority\fR can be a signed integer or \fBfilter\fR which stands for 0\&. Addition and subtraction can be used to set relative priority, e\&.g\&. filter + 5 equals to 5\&.
+.sp
+With newer kernels there is basic support for wildcards in \fIDEVICE_LIST\fR by specifying an asterisk suffix\&. The flowtable will apply to all interfaces matching the given prefix\&. Use the \fBlist hooks\fR command to see the current status\&.
 .TS
 tab(:);
 lt lt
@@ -2421,6 +2751,18 @@ T}
 .sp 1
 .sp
 The bitmask type (\fBbitmask\fR) is used for bitmasks\&.
+.sp
+In expressions the bits of a bitmask may be specified as \fB\fIbit\fR\fR\fB[,\fR\fB\fIbit\fR\fR\fB]\&...\fR with \fIbit\fR being the value of the bit or a pre\-defined symbolic constant, if any (for example \fBct state\fR\(cqs bit 0x1 has the symbolic constant new)\&.
+.sp
+Equality of a value with such bitmask is given, if the value has any of the bitmask\(cqs bits set (and optionally others)\&.
+.sp
+The syntax \fB\fIexpression\fR\fR\fB \fR\fB\fIvalue\fR\fR\fB / \fR\fB\fImask\fR\fR is identical to \fB\fIexpression\fR\fR\fB and \fR\fB\fImask\fR\fR\fB == \fR\fB\fIvalue\fR\fR\&. For example tcp flags syn,ack / syn,ack,fin,rst is the same as tcp flags and (syn|ack|fin|rst) == syn|ack\&.
+.sp
+Note that \fB\fIexpression\fR\fR\fB \fR\fB\fIbit\fR\fR\fB[,\fR\fB\fIbit\fR\fR\fB]\&...\fR is not generally the same as \fB\fIexpression\fR\fR\fB {\fR\fB\fIbit\fR\fR\fB[,\fR\fB\fIbit\fR\fR\fB]\&...}\fR and analogously with a named set\&. The latter forms are lookups in a set and will match only if the set contains exactly one value that matches\&. They are however effectively the same (with matching bitmasks typically being faster) when all bits are semantically mutually exclusive\&.
+.sp
+Examples: * \fBtcp flags syn,ack\fR matches packets that have the SYN, the ACK or both SYN and ACK flags set\&. Other flags are ignored\&. \fBtcp flags { syn, ack }\fR matches packets that have either only the SYN or only the ACK flag set\&. All other flags must be unset\&. * \fBct state established,related\fR and \fBct state { established, related } * match exactly the same packets, because the bits of *ct state\fR are all mutually exclusive\&.
+.sp
+As usual, the the \fBnft describe\fR command may be used to get details on a data type, which for bitmasks shows the symbolic names and values of the bits\&.
 .SS "STRING TYPE"
 .TS
 allbox tab(:);
@@ -5459,7 +5801,7 @@ T}
 .TE
 .sp 1
 .sp
-Careful with matching on \fBip length\fR: If GRO/GSO is enabled, then the Linux kernel might aggregate several packets into one big packet that is larger than MTU\&. Moreover, if GRO/GSO maximum size is larger than 65535 (see man ip\-link(8), specifically gro_ipv6_max_size and gso_ipv6_max_size), then \fBip length\fR might be 0 for such jumbo packets\&. \fBmeta length\fR allows you to match on the packet length including the IP header size\&. If you want to perform heuristics on the \fBip length\fR field, then disable GRO/GSO\&.
+Careful with matching on \fBip length\fR: The Linux kernel might aggregate several packets into one big packet that is larger than MTU\&. Moreover, if GRO/GSO maximum size is larger than 65535 (see man ip\-link(8), specifically gro_ipv4_max_size and gso_ipv4_max_size), then \fBip length\fR might be 0 for such jumbo packets\&. \fBmeta length\fR allows you to match on the packet length including the IP header size\&.
 .SS "ICMP HEADER EXPRESSION"
 .sp
 .if n \{\
@@ -5777,7 +6119,7 @@ T}
 .TE
 .sp 1
 .sp
-Careful with matching on \fBip6 length\fR: If GRO/GSO is enabled, then the Linux kernel might aggregate several packets into one big packet that is larger than MTU\&. Moreover, if GRO/GSO maximum size is larger than 65535 (see man ip\-link(8), specifically gro_ipv6_max_size and gso_ipv6_max_size), then \fBip6 length\fR might be 0 for such jumbo packets\&. \fBmeta length\fR allows you to match on the packet length including the IP header size\&. If you want to perform heuristics on the \fBip6 length\fR field, then disable GRO/GSO\&.
+Careful with matching on \fBip6 length\fR: The Linux kernel might aggregate several packets into one big packet that is larger than MTU\&. Moreover, if GRO/GSO maximum size is larger than 65535 (see man ip\-link(8), specifically gro_max_size and gso_max_size), then \fBip6 length\fR might be 0 for such jumbo packets\&. \fBmeta length\fR allows you to match on the packet length including the IPv6 header size\&.
 .PP
 \fBUsing ip6 header expressions\fR. 
 .sp
@@ -6862,7 +7204,7 @@ T}
 .RE
 .\}
 .sp
-The gre expression is used to match on the gre header fields\&. This expression also allows to match on the IPv4 or IPv6 packet within the gre header\&.
+The gre expression is used to match on the gre header fields\&. This expression also allows one to match on the IPv4 or IPv6 packet within the gre header\&.
 .sp
 .it 1 an-trap
 .nr an-no-space-flag 1
@@ -7874,16 +8216,16 @@ nft add rule filter input tcp dport 22 add @ssh_flood \*(Aq{ ip saddr ct count o
 .sp
 Statements represent actions to be performed\&. They can alter control flow (return, jump to a different chain, accept or drop the packet) or can perform actions, such as logging, rejecting a packet, etc\&.
 .sp
-Statements exist in two kinds\&. Terminal statements unconditionally terminate evaluation of the current rule, non\-terminal statements either only conditionally or never terminate evaluation of the current rule, in other words, they are passive from the ruleset evaluation perspective\&. There can be an arbitrary amount of non\-terminal statements in a rule, but only a single terminal statement as the final statement\&.
-.SS "VERDICT STATEMENT"
+Statements exist in two kinds\&. Terminal statements unconditionally terminate evaluation of the current rule, non\-terminal statements either only conditionally or never terminate evaluation of the current rule, in other words, they are passive from the rule evaluation perspective\&. There can be an arbitrary amount of non\-terminal statements in a rule, but only a single terminal statement as the final statement\&.
+.SS "VERDICT STATEMENTS"
 .sp
-The verdict statement alters control flow in the ruleset and issues policy decisions for packets\&.
+The verdict statements alter control flow in the ruleset and issue policy decisions for packets\&.
 .sp
 .if n \{\
 .RS 4
 .\}
 .nf
-{\fBaccept\fR | \fBdrop\fR | \fBqueue\fR | \fBcontinue\fR | \fBreturn\fR}
+{\fBaccept\fR | \fBdrop\fR | \fBcontinue\fR | \fBreturn\fR}
 {\fBjump\fR | \fBgoto\fR} \fICHAIN\fR
 
 \fICHAIN\fR := \fIchain_name\fR | \fB{\fR \fIstatement\fR \&... \fB}\fR
@@ -7892,10 +8234,9 @@ The verdict statement alters control flow in the ruleset and issues policy decis
 .RE
 .\}
 .sp
-\fBaccept\fR and \fBdrop\fR are absolute verdicts \(em they terminate ruleset evaluation immediately\&.
+\fBaccept\fR and \fBdrop\fR are absolute verdicts \(em they terminate chain evaluation, as if the packet would have reached the end of the base chain with the equivalent policy decision set\&. See the section called \(lqOVERALL EVALUATION OF THE RULESET\(rq for more details\&.
 .TS
 tab(:);
-lt lt
 lt lt
 lt lt
 lt lt
@@ -7907,54 +8248,49 @@ T{
 \fBaccept\fR
 T}:T{
 .sp
-Terminate ruleset evaluation and accept the packet\&. The packet can still be dropped later by another hook, for instance accept in the forward hook still allows one to drop the packet later in the postrouting hook, or another forward base chain that has a higher priority number and is evaluated afterwards in the processing pipeline\&.
+Terminate evaluation early\&. Evaluation continues in the next base chain of higher or possibly equal priority from the same hook or in the first base chain of a later hook, if any\&. This means the packet can still be dropped in another base chain as well as any chain called from it\&. For example, an \fBaccept\fR verdict in a chain of the \fBforward\fR hook still allows one to \fBdrop\fR the packet in another \fBforward\fR hook base chain (or a chain called from it) that has a higher priority number or in a chain attached to the \fBpostrouting\fR hook\&.
 T}
 T{
 .sp
 \fBdrop\fR
 T}:T{
 .sp
-Terminate ruleset evaluation and drop the packet\&. The drop occurs instantly, no further chains or hooks are evaluated\&. It is not possible to accept the packet in a later chain again, as those are not evaluated anymore for the packet\&.
-T}
-T{
-.sp
-\fBqueue\fR
-T}:T{
-.sp
-Terminate ruleset evaluation and queue the packet to userspace\&. Userspace must provide a drop or accept verdict\&. In case of accept, processing resumes with the next base chain hook, not the rule following the queue verdict\&.
-T}
-T{
-.sp
-\fBcontinue\fR
-T}:T{
-.sp
-Continue ruleset evaluation with the next rule\&. This is the default behaviour in case a rule issues no verdict\&.
-T}
-T{
-.sp
-\fBreturn\fR
-T}:T{
-.sp
-Return from the current chain and continue evaluation at the next rule in the last chain\&. If issued in a base chain, it is equivalent to the base chain policy\&.
+Immediately drop the packet and terminate ruleset evaluation\&. No further evaluation takes place\&. It is not possible to override a \fBdrop\fR verdict\&.
 T}
 T{
 .sp
 \fBjump\fR \fICHAIN\fR
 T}:T{
 .sp
-Continue evaluation at the first rule in \fICHAIN\fR\&. The current position in the ruleset is pushed to a call stack and evaluation will continue there when the new chain is entirely evaluated or a \fBreturn\fR verdict is issued\&. In case an absolute verdict is issued by a rule in the chain, ruleset evaluation terminates immediately and the specific action is taken\&.
+Store the current position in the call stack of chains and continue evaluation at the first rule of \fICHAIN\fR\&. When the end of \fICHAIN\fR is reached, an implicit \fBreturn\fR verdict is issued\&. When an absolute verdict is issued (respectively implied by a verdict\-like statement) in \fICHAIN\fR, evaluation terminates as described above\&.
 T}
 T{
 .sp
 \fBgoto\fR \fICHAIN\fR
 T}:T{
 .sp
-Similar to \fBjump\fR, but the current position is not pushed to the call stack, meaning that after the new chain evaluation will continue at the last chain instead of the one containing the goto statement\&.
+Equal to \fBjump\fR except that the current position is not stored in the call stack of chains\&.
+T}
+T{
+.sp
+\fBreturn\fR
+T}:T{
+.sp
+End evaluation of the current chain, pop the most recently added position from the call stack of chains and continue evaluation after that position\&. When there\(cqs no position to pop (which is the case when the current chain is either the base chain or a regular chain that was reached solely via \fBgoto\fR verdicts) end evaluation of the current base chain (and any regular chains called from it) using the base chain\(cqs policy as implicit verdict\&.
+T}
+T{
+.sp
+\fBcontinue\fR
+T}:T{
+.sp
+Continue evaluation with the next rule\&. This is the default behaviour in case a rule issues no verdict\&.
 T}
 .TE
 .sp 1
 .sp
 An alternative to specifying the name of an existing, regular chain in \fICHAIN\fR is to specify an anonymous chain ad\-hoc\&. Like with anonymous sets, it can\(cqt be referenced from another rule and will be removed along with the rule containing it\&.
+.sp
+All the above applies analogously to statements that imply a verdict: \fBredirect\fR, \fBdnat\fR, \fBsnat\fR and \fBmasquerade\fR internally issue an \fBaccept\fR verdict at the end of their respective actions\&. \fBreject\fR and \fBsynproxy\fR internally issue a \fBdrop\fR verdict at the end of their respective actions\&. These statements thus behave like their implied verdicts, but with side effects\&.
 .PP
 \fBUsing verdict statements\fR. 
 .sp
@@ -8254,7 +8590,7 @@ ip6 filter output log flags all
 .RE
 .\}
 .sp
-A reject statement is used to send back an error packet in response to the matched packet otherwise it is equivalent to drop so it is a terminating statement, ending rule traversal\&. This statement is only valid in base chains using the \fBprerouting\fR, \fBinput\fR, \fBforward\fR or \fBoutput\fR hooks, and user\-defined chains which are only called from those chains\&.
+A reject statement tries to send back an error packet in response to the matched packet and then interally issues a \fBdrop\fR verdict\&. It\(cqs thus a terminating statement with all consequences of the latter (see the section called \(lqOVERALL EVALUATION OF THE RULESET\(rq respectively the section called \(lqVERDICT STATEMENTS\(rq)\&. This statement is only valid in base chains using the \fBprerouting\fR, \fBinput\fR, \fBforward\fR or \fBoutput\fR hooks, and regular chains which are only called from those chains\&.
 .sp
 .it 1 an-trap
 .nr an-no-space-flag 1
@@ -8809,7 +9145,7 @@ When used in the inet family (available with kernel 5\&.2), the dnat and snat st
 .sp
 Before kernel 4\&.18 nat statements require both prerouting and postrouting base chains to be present since otherwise packets on the return path won\(cqt be seen by netfilter and therefore no reverse translation will take place\&.
 .sp
-The optional \fBprefix\fR keyword allows to map \fBn\fR source addresses to \fBn\fR destination addresses\&. See \fIAdvanced NAT examples\fR below\&.
+The optional \fBprefix\fR keyword allows one to map \fBn\fR source addresses to \fBn\fR destination addresses\&. See \fIAdvanced NAT examples\fR below\&.
 .sp
 If the \fIaddress\fR for \fBdnat\fR is an IPv4 loopback address (i\&.e\&. 127\&.0\&.0\&.0/8) the "net\&.ipv4\&.conf\&.*\&.route_localnet" sysctl for the input interface needs to be set to 1\&. Otherwise packets will be dropped by the routing code as "martians"\&.
 .sp
@@ -9204,8 +9540,7 @@ T}
 .nf
 Determine tcp options used by backend, from an external system
 
-              tcpdump \-pni eth0 \-c 1 \*(Aqtcp[tcpflags] == (tcp\-syn|tcp\-ack)\*(Aq
-                  port 80 &
+              tcpdump \-pni eth0 \-c 1 \*(Aqtcp[tcpflags] == (tcp\-syn|tcp\-ack) && port 80\*(Aq &
               telnet 192\&.0\&.2\&.42 80
               18:57:24\&.693307 IP 192\&.0\&.2\&.42\&.80 > 192\&.0\&.2\&.43\&.48757:
                   Flags [S\&.], seq 360414582, ack 788841994, win 14480,
@@ -9253,7 +9588,7 @@ A flow statement allows us to select what flows you want to accelerate forwardin
 \fBflow add @\fR\fIflowtable\fR
 .SS "QUEUE STATEMENT"
 .sp
-This statement passes the packet to userspace using the nfnetlink_queue handler\&. The packet is put into the queue identified by its 16\-bit queue number\&. Userspace can inspect and modify the packet if desired\&. Userspace must then drop or re\-inject the packet into the kernel\&. See libnetfilter_queue documentation for details\&.
+This statement passes the packet to userspace using the nfnetlink_queue handler\&. The packet is put into the queue identified by its 16\-bit queue number\&. Userspace can inspect and optionally modify the packet if desired\&. Userspace must provide a drop or accept verdict\&. In case of accept, processing resumes with the next base chain hook, not the rule following the queue verdict\&. See libnetfilter_queue documentation for details\&.
 .sp
 .if n \{\
 .RS 4

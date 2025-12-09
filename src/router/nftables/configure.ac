@@ -1,5 +1,5 @@
-AC_INIT([nftables], [1.1.5], [netfilter-devel@vger.kernel.org])
-AC_DEFINE([RELEASE_NAME], ["Commodore Bullmoose #6"], [Release name])
+AC_INIT([nftables], [1.1.6], [netfilter-devel@vger.kernel.org])
+AC_DEFINE([RELEASE_NAME], ["Commodore Bullmoose #7"], [Release name])
 
 AC_CONFIG_AUX_DIR([build-aux])
 AC_CONFIG_MACRO_DIR([m4])
@@ -57,7 +57,7 @@ AS_IF([test "x$enable_man_doc" = "xyes"], [
 ])
 
 PKG_CHECK_MODULES([LIBMNL], [libmnl >= 1.0.4])
-PKG_CHECK_MODULES([LIBNFTNL], [libnftnl >= 1.3.0])
+PKG_CHECK_MODULES([LIBNFTNL], [libnftnl >= 1.3.1])
 
 AC_ARG_WITH([mini-gmp], [AS_HELP_STRING([--with-mini-gmp],
             [Use builtin mini-gmp (for embedded builds)])],
@@ -90,6 +90,18 @@ AC_DEFINE([HAVE_LIBEDIT], [1], [])
 AC_MSG_ERROR([unexpected CLI value: $with_cli])
 ])
 AM_CONDITIONAL([BUILD_CLI], [test "x$with_cli" != xno])
+
+AC_ARG_ENABLE([fuzzer],
+	      AS_HELP_STRING([--enable-fuzzer], [Enable fuzzer support.  NEVER use this unless you work on nftables project]),
+	      [enable_fuzzer=yes], [enable_fuzzer=no])
+
+AM_CONDITIONAL([BUILD_AFL], [test "x$enable_fuzzer" = xyes])
+
+HAVE_FUZZER_BUILD=0
+AS_IF([test "x$enable_fuzzer" != xno], [
+	HAVE_FUZZER_BUILD=1
+])
+AC_DEFINE_UNQUOTED([HAVE_FUZZER_BUILD], [$HAVE_FUZZER_BUILD], [Whether to build with fuzzer support])
 
 AC_ARG_WITH([xtables], [AS_HELP_STRING([--with-xtables],
             [Use libxtables for iptables interaction])],
@@ -130,6 +142,35 @@ AC_ARG_WITH([unitdir],
 	[unitdir=""]
 )
 AC_SUBST([unitdir])
+AM_CONDITIONAL([BUILD_SERVICE], [test "x$unitdir" != x])
+
+AC_ARG_WITH([stable-release], [AS_HELP_STRING([--with-stable-release],
+            [Stable release number])],
+            [], [with_stable_release=0])
+AC_CONFIG_COMMANDS([stable_release],
+                   [STABLE_RELEASE=$stable_release],
+                   [stable_release=$with_stable_release])
+AC_CONFIG_COMMANDS([nftversion.h], [
+(
+	echo "static char nftversion[[]] = {"
+	echo "	${VERSION}," | tr '.' ','
+	echo "	${STABLE_RELEASE}"
+	echo "};"
+	echo "static char nftbuildstamp[[]] = {"
+	for ((i = 56; i >= 0; i-= 8)); do
+		echo "	((uint64_t)MAKE_STAMP >> $i) & 0xff,"
+	done
+	echo "};"
+) >nftversion.h
+])
+# Current date should be fetched exactly once per build,
+# so have 'make' call date and pass the value to every 'gcc' call
+AC_SUBST([MAKE_STAMP], ["\$(shell date +%s)"])
+
+AC_ARG_ENABLE([distcheck],
+	      AS_HELP_STRING([--enable-distcheck], [Build for distcheck]),
+	      [enable_distcheck=yes], [])
+AM_CONDITIONAL([BUILD_DISTCHECK], [test "x$enable_distcheck" = "xyes"])
 
 AC_CONFIG_FILES([					\
 		Makefile				\
@@ -152,3 +193,8 @@ echo "  systemd unit:                 ${unitdir}"
 else
 echo "  systemd unit:                 no"
 fi
+
+# Do not print "fuzzer support:		no", this is development-only.
+AS_IF([test "x$enable_fuzzer" = xyes ], [
+	echo "  fuzzer support:		yes"
+	], [ ])

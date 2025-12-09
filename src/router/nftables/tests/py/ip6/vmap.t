@@ -32,7 +32,7 @@ ip6 saddr vmap { 1234::1234:1234:1234:1234 : accept};ok
 ip6 saddr vmap { 1234:1234::1234:1234:1234 : accept};ok
 ip6 saddr vmap { 1234:1234:1234::1234:1234 : accept};ok
 ip6 saddr vmap { 1234:1234:1234:1234::1234 : accept};ok
-ip6 saddr vmap { 1234:1234:1234:1234:1234::  : accept};ok
+ip6 saddr vmap { 1234:1234:1234:1234:1234:: : accept};ok
 ip6 saddr vmap { ::1234:1234:1234:1234 : accept};ok
 ip6 saddr vmap { 1234::1234:1234:1234 : accept};ok
 ip6 saddr vmap { 1234:1234::1234:1234 : accept};ok

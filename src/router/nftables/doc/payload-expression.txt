@@ -134,13 +134,12 @@ Destination address |
 ipv4_addr
 |======================
 
-Careful with matching on *ip length*: If GRO/GSO is enabled, then the Linux
-kernel might aggregate several packets into one big packet that is larger than
-MTU. Moreover, if GRO/GSO maximum size is larger than 65535 (see man ip-link(8),
-specifically gro_ipv6_max_size and gso_ipv6_max_size), then *ip length* might
-be 0 for such jumbo packets. *meta length* allows you to match on the packet
-length including the IP header size.  If you want to perform heuristics on the
-*ip length* field, then disable GRO/GSO.
+Careful with matching on *ip length*: The Linux kernel might aggregate several
+packets into one big packet that is larger than MTU. Moreover, if GRO/GSO
+maximum size is larger than 65535 (see man ip-link(8), specifically
+gro_ipv4_max_size and gso_ipv4_max_size), then *ip length* might be 0 for such
+jumbo packets. *meta length* allows you to match on the packet length including
+the IP header size.
 
 ICMP HEADER EXPRESSION
 ~~~~~~~~~~~~~~~~~~~~~~
@@ -252,13 +251,12 @@ Destination address |
 ipv6_addr
 |=======================
 
-Careful with matching on *ip6 length*: If GRO/GSO is enabled, then the Linux
-kernel might aggregate several packets into one big packet that is larger than
-MTU. Moreover, if GRO/GSO maximum size is larger than 65535 (see man ip-link(8),
-specifically gro_ipv6_max_size and gso_ipv6_max_size), then *ip6 length* might
-be 0 for such jumbo packets. *meta length* allows you to match on the packet
-length including the IP header size.  If you want to perform heuristics on the
-*ip6 length* field, then disable GRO/GSO.
+Careful with matching on *ip6 length*: The Linux kernel might aggregate several
+packets into one big packet that is larger than MTU. Moreover, if GRO/GSO
+maximum size is larger than 65535 (see man ip-link(8), specifically
+gro_max_size and gso_max_size), then *ip6 length* might be 0 for such
+jumbo packets. *meta length* allows you to match on the packet length including
+the IPv6 header size.
 
 .Using ip6 header expressions
 -----------------------------
@@ -562,7 +560,7 @@ GRE HEADER EXPRESSION
 *gre* *ip6* {*version* | *dscp* | *ecn* | *flowlabel* | *length* | *nexthdr* | *hoplimit* | *saddr* | *daddr*}
 
 The gre expression is used to match on the gre header fields. This expression
-also allows to match on the IPv4 or IPv6 packet within the gre header.
+also allows one to match on the IPv4 or IPv6 packet within the gre header.
 
 .GRE header expression
 [options="header"]

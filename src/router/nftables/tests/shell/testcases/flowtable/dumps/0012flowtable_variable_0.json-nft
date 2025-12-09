@@ -42,6 +42,42 @@
         "prio": 0,
         "dev": "lo"
       }
+    },
+    {
+      "table": {
+        "family": "ip",
+        "name": "filter3",
+        "handle": 0
+      }
+    },
+    {
+      "flowtable": {
+        "family": "ip",
+        "name": "Main_ft3",
+        "table": "filter3",
+        "handle": 0,
+        "hook": "ingress",
+        "prio": 0,
+        "dev": "lo"
+      }
+    },
+    {
+      "table": {
+        "family": "ip",
+        "name": "filter4",
+        "handle": 0
+      }
+    },
+    {
+      "flowtable": {
+        "family": "ip",
+        "name": "Main_ft4",
+        "table": "filter4",
+        "handle": 0,
+        "hook": "ingress",
+        "prio": 0,
+        "dev": "lo"
+      }
     }
   ]
 }

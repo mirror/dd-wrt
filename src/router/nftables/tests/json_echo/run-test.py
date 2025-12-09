@@ -6,6 +6,10 @@ import os
 import json
 import argparse
 
+if os.getuid() != 0:
+    print("You need to be root to run this, sorry")
+    sys.exit(77)
+
 TESTS_PATH = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.join(TESTS_PATH, '../../py/'))
 

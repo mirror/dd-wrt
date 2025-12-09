@@ -1,6 +1,6 @@
-:output;type filter hook output priority 0
+:input;type filter hook input priority 0
 
-*ip;test-ip4;output
+*ip;test-ip4;input
 
 # counter
 %cnt1 type counter;ok

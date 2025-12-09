@@ -1,0 +1,223 @@
+# Test skeleton for kernel fixes:
+# b2f742c846ca netfilter: nf_tables: restart set lookup on base_seq change
+# a60f7bf4a152 netfilter: nft_set_rbtree: continue traversal if element is inactive
+# .. and related patches.
+#
+# Generate traffic and then flush the set contents and replace
+# them with the same matching entries.
+#
+# Fail when a packet gets through.
+
+# global variables:
+# R, S, C (network namespaces).
+# ip_s (server address)
+
+# helpers:
+# set_flush_add_atomic_cleanup
+# set_flush_add_create_topo
+# set_flush_add_atomic_run_test
+
+[ -z "$TIMEOUT" ] && TIMEOUT=30
+
+set_flush_add_atomic_cleanup()
+{
+	local tmp="$1"
+	local i
+
+	rm -f "$tmp"
+
+	ip netns exec $R $NFT --debug netlink list ruleset
+
+	for i in $C $S $R;do
+		kill $(ip netns pid $i) 2>/dev/null
+		ip netns del $i
+	done
+}
+
+check_counter()
+{
+	local tmp="$1"
+	local then="$2"
+
+	if ip netns exec $R $NFT list chain ip filter block-spoofed | grep -q 'counter packets 0 bytes 0'; then
+		return 0
+	fi
+
+	local now=$(date +%s)
+	echo "$0 failed counter check after $((now-then))s"
+
+	rm -f "$tmp"
+	kill $(ip netns pid $C) 2>/dev/null
+	return 1
+}
+
+load_ruleset()
+{
+	local type="$1"
+	local flags="$2"
+	local elements="$3"
+	local expr="$4"
+
+ip netns exec $R $NFT -f - <<EOF
+table ip filter {
+  set match {
+    type $type
+    $flags
+    elements = { $elements }
+  }
+
+  set bogon {
+     type ipv4_addr . ipv4_addr . icmp_type
+     flags dynamic
+     size 8
+     timeout 5m
+  }
+
+  chain block-spoofed {
+    type filter hook prerouting priority filter; policy accept;
+    $expr @match accept
+    counter add @bogon { ip saddr . ip daddr . icmp type } comment "must not match"
+  }
+}
+EOF
+}
+
+reload_set()
+{
+	local tmp="$1"
+	local elements="$2"
+
+	while [ -f "$tmp" ]; do
+ip netns exec $R $NFT -f - <<EOF
+flush set ip filter match
+create element ip filter match { $elements }
+EOF
+		if [ $? -ne 0 ];then
+			echo "reload of set failed unexpectedly"
+			rm -f "$tmp"
+			exit 1
+		fi
+
+	done
+}
+
+monitor_counter()
+{
+	local tmp="$1"
+	local then="$2"
+
+	while [ -f "$tmp" ]; do
+		sleep 1
+		check_counter "$tmp" "$then" || return 1
+	done
+
+	return 0
+}
+
+wait_for_timeout()
+{
+	local tmp="$1"
+	local rc=0
+
+	local then=$(date +%s)
+	local end=$((then+TIMEOUT))
+
+	while [ -f "$tmp" ];do
+		local now=$(date +%s)
+		[ "$now" -ge "$end" ] && break
+		sleep 1
+	done
+
+	test -f "$tmp" || rc=1
+	rm -f "$tmp"
+
+	return $rc
+}
+
+set_flush_add_create_topo()
+{
+	local test="$1"
+	local ip_r1=192.168.2.1
+	local ip_r2=192.168.3.1
+	# global
+	ip_c=192.168.2.30
+	ip_s=192.168.3.10
+
+	rnd=$(mktemp -u XXXXXXXX)
+	C="$test-client-$rnd"
+	R="$test-router-$rnd"
+	S="$test-server-$rnd"
+
+	ip netns add $S
+	ip netns add $R
+	ip netns add $C
+
+	ip link add veth0 netns $S type veth peer name rs netns $R
+	ip link add veth0 netns $C type veth peer name rc netns $R
+
+	ip -net $S link set veth0 up
+	ip -net $C link set veth0 up
+	ip -net $R link set rs up
+	ip -net $R link set rc up
+	ip -net $S link set lo up
+	ip -net $C link set lo up
+	ip -net $R link set lo up
+
+	for n in $S $R $C;do
+		ip netns exec $n sysctl -q net.ipv4.conf.all.rp_filter=0
+	done
+
+	ip netns exec $R sysctl -q net.ipv4.ip_forward=1
+
+	ip -net $S addr add ${ip_s}/24  dev veth0
+	ip -net $C addr add ${ip_c}/24  dev veth0
+	ip -net $R addr add ${ip_r1}/24 dev rc
+	ip -net $R addr add ${ip_r2}/24 dev rs
+
+	ip -net $C route add default via ${ip_r1} dev veth0
+	ip -net $S route add default via ${ip_r2} dev veth0
+
+	ip netns exec $S ping -q -c 1 -i 0.1 ${ip_c} || exit 1
+	ip netns exec $C ping -q -c 1 -i 0.1 ${ip_s} || exit 2
+}
+
+start_ping_flood()
+{
+	for i in $(seq 1 4);do
+		timeout $TIMEOUT ip netns exec $C ping -W 0.00001 -l 200 -q -f ${ip_s} &
+	done
+
+	wait
+}
+
+set_flush_add_atomic_run_test()
+{
+	local tmp="$1"
+	local type="$2"
+	local flags="$3"
+	local elements="$4"
+	local expr="$5"
+
+	local then=$(date +%s)
+	local now=$(date +%s)
+
+	load_ruleset "$type" "$flags" "$elements" "$expr"
+
+	# sanity check, counter must be 0, no parallel set flush/elem add yet.
+	check_counter "$tmp" "$then" || exit 3
+
+	start_ping_flood &
+
+	reload_set "$tmp" "$elements" &
+
+	monitor_counter "$tmp" "$then" &
+
+	wait_for_timeout "$tmp" || return 1
+	wait
+
+	check_counter "$tmp" "$then" || return 1
+
+	local now=$(date +%s)
+	echo "$0 test took $((now-then))s"
+	return 0
+}

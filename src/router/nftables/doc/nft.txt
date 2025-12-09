@@ -165,8 +165,8 @@ Include statements support the usual shell wildcard symbols (*,?,[]). Having no
 matches for an include statement is not an error, if wildcard symbols are used
 in the include statement. This allows having potentially empty include
 directories for statements like **include "/etc/firewall/rules/*"**. The wildcard
-matches are loaded in alphabetical order. Files beginning with dot (.) are not
-matched by include statements.
+matches are loaded in the collation order of the C locale. Files beginning with
+dot (.) are not matched by include statements.
 
 SYMBOLIC VARIABLES
 ~~~~~~~~~~~~~~~~~~
@@ -387,12 +387,18 @@ add table inet mytable
 CHAINS
 ------
 [verse]
-{*add* | *create*} *chain* ['family'] 'table' 'chain' [*{ type* 'type' *hook* 'hook' [*device* 'device'] *priority* 'priority' *;* [*policy* 'policy' *;*] [*comment* 'comment' *;*] *}*]
+____
+{*add* | *create*} *chain* ['family'] 'table' 'chain' [*{ type* 'type' *hook* 'hook' ['DEVICE'] *priority* 'priority' *;* [*policy* 'policy' *;*] [*comment* 'comment' *;*] *}*]
 {*delete* | *destroy* | *list* | *flush*} *chain* ['family'] 'table' 'chain'
 *list chains* ['family']
 *delete chain* ['family'] 'table' *handle* 'handle'
 *destroy chain* ['family'] 'table' *handle* 'handle'
 *rename chain* ['family'] 'table' 'chain' 'newname'
+
+'DEVICE' := {*device* 'DEVICE_NAME' | *devices = {* 'DEVICE_LIST' *}*}
+'DEVICE_LIST' := 'DEVICE_NAME' [*,* 'DEVICE_LIST']
+'DEVICE_NAME' := 'string' | 'string'***
+____
 
 Chains are containers for rules. They exist in two kinds, base chains and
 regular chains. A base chain is an entry point for packets from the networking
@@ -436,7 +442,7 @@ further quirks worth noticing:
 
 * The netdev family supports merely two combinations, namely *filter* type with
   *ingress* hook and *filter* type with *egress* hook. Base chains in this
-  family also require the *device* parameter to be present since they exist per
+  family also require the 'DEVICE' parameter to be present since they exist per
   interface only.
 * The arp family supports only the *input* and *output* hooks, both in chains of type
   *filter*.
@@ -449,12 +455,20 @@ further quirks worth noticing:
 The *device* parameter accepts a network interface name as a string, and is
 required when adding a base chain that filters traffic on the ingress or
 egress hooks. Any ingress or egress chains will only filter traffic from the
-interface specified in the *device* parameter.
+interface specified in the *device* parameter. The same base chain may be used
+for multiple devices by using the *devices* parameter instead.
+
+With newer kernels there is also basic support for wildcards in 'DEVICE_NAME'
+by specifying an asterisk suffix. The chain will apply to all interfaces
+matching the given prefix. Use the *list hooks* command to see the current
+status.
 
 The *priority* parameter accepts a signed integer value or a standard priority
 name which specifies the order in which chains with the same *hook* value are
-traversed. The ordering is ascending, i.e. lower priority values have precedence
-over higher ones.
+traversed (regardless of the table to which they belong). The ordering is
+ascending: for each hook, chains with lower priority values are evaluated
+before those with higher ones. The ordering of chains with identical priority
+is undefined.
 
 With *nat* type chains, there's a lower excluding limit of -200 for *priority*
 values, because conntrack hooks at this priority and NAT requires it.
@@ -558,6 +572,96 @@ table inet filter {
 nft delete rule inet filter input handle 5
 -------------------------
 
+[[OVERALL_EVALUATION_OF_THE_RULESET]]
+OVERALL EVALUATION OF THE RULESET
+---------------------------------
+This is a summary of how the ruleset is evaluated.
+
+* Even if a packet is accepted by the ruleset it may
+  still get discarded by other means, for example Linux generally ignores
+  various ICMP types and there are sysctl options like
+  `net.ipv{4,6}.conf.*.forwarding` or `net.ipv4.conf.*.rp_filter`.
+* Tables are merely a concept of nftables to structure the ruleset.
+  They are not relevant to the evaluation of the ruleset.
+* Packets traverse the network stack and at various hooks (see
+  <<ADDRESS_FAMILIES>> above for lists of hooks per address family) they’re
+  evaluated by any base chains attached to these hooks.
+* Base chains may call regular chains (via *jump* and *goto*).  Regular chains
+  can call other regular chains. Evaluation continues in the called chain.
+  Chains residing in a different table cannot be called.
+* For each hook, the attached chains are evaluated in order of their priorities.
+  Chains with lower priority values are evaluated before those with higher ones.
+  The order of chains with the same priority value is undefined.
+* An *accept* verdict (including an implict one via the base chain’s policy)
+  ends the evaluation of the current base chain.
+  It is not relevant if the *accept* verdict is issued in the base chain itself
+  or a regular chain called from the base chain.
+  The packet advances to the next base chain.
+  Thus a packet is ultimately accepted if and only if no (matching) rule or base
+  chain policy issues a *drop* verdict.
+  All this applies to verdict-like statements that imply *accept*,
+  for example the NAT statements.
+* A *drop* verdict (including an implict one via the base chain’s policy)
+  immediately ends the evaluation of the whole ruleset.
+  No further chains of any hook are consulted.
+  It is therefore not possible to have a *drop*
+  verdict changed to an *accept* in a later chain.
+  This also applies to other terminal statements that imply *drop*, for example
+  *reject*.
+  Thus, if any base chain uses drop as its policy, the same base chain (or a
+  regular chain directly or indirectly called by it) must contain at least one
+  matching *accept* rule or the packet will be dropped.
+* Given the semantics of *accept*/*drop* and only with respect to the utlimate
+  decision of whether a packet is accepted or dropped, the ordering of the
+  various base chains per hook via their priorities matters only in so far, as
+  any of them modifies the packet or its meta data and that has an influence on
+  the verdicts issued by the chains – other than that, the ordering shouldn’t
+  matter (except for performance and other side effects).
+  It also means that short-circuiting the ultimate decision is only possible via
+  *drop* verdicts (respectively verdict-like statements that imply *drop*, for
+  example *reject*).
+* A *jump* verdict causes the current position to be stored in the call stack of
+  chains and evaluation to continue at the beginning of the called regular
+  chain.
+  Called chains must be from the same table and cannot be base chains.
+  When the end of the called chain is reached, an implicit *return* verdict is
+  issued.
+  Other verdicts (respectively verdict-like statements) are processed as
+  described above and below.
+* A *goto* verdict is equal to *jump* except that the current position is not
+  stored in the call stack of chains.
+* A *return* verdict ends the evaluation of the current chain, pops the most
+  recently added position from the call stack of chains and causes evaluation to
+  continue after that position.
+  When there’s no position to pop (which is the case when the current chain is
+  either the base chain or a regular chain that was reached solely via *goto*
+  verdicts) it ends the evaluation of the current base chain (and any regular
+  chains called from it) using the base chain’s policy as implicit verdict.
+* Examples for *jump*/*goto*/*return*:
+  * 'base' {*jump*}→ 'regular-1' {*jump*}→ 'regular-2'
+    At the end of 'regular-2' or when a *return* is issued in that, evaluation
+    continues after the *jump* position in 'regular-1'.
+    At the end of 'regular-1' or when a *return* is issued in that, evaluation
+    continues after the *jump* position in 'base'.
+  * 'base' {*jump*}→ 'regular-1' {*goto*}→ 'regular-2'
+    At the end of 'regular-2' or when a *return* is issued in that, evaluation
+    continues after the *jump* position in 'base'.
+  * 'base' {*jump*}→ 'regular-1' {*jump*}→ 'regular-2' {*goto*}→ 'regular-3'
+    At the end of 'regular-3' or when a *return* is issued in that, evaluation
+    continues after the *jump* position in 'regular-1'.
+    At the end of 'regular-1' or when a *return* is issued in that, evaluation
+    continues after the *jump* position in 'base'.
+  * 'base' {*jump*}→ 'regular-1' {*goto*}→ 'regular-2' {*goto*}→ 'regular-3'
+    At the end of 'regular-3' or when a *return* is issued in that, evaluation
+    continues after the *jump* position in 'base'.
+* Verdicts (that is: *accept*, *drop*, *jump*, *goto*, *return* and *continue*)
+  as well as statements that imply a verdict (like *reject* or the NAT
+  statements) also end the evaluation of any later statements in their
+  respective rules (respectively cause an error when loading such rules).
+  For example in `… counter accept` the `counter` statement is processed, but in
+  `… accept counter` it is not.
+  This does not apply to the `comment` statement, which is always evaluated.
+
 SETS
 ----
 nftables offers two kinds of set concepts. Anonymous sets are sets that have no
@@ -660,6 +764,11 @@ Example: When the set contains range *1.2.3.1-1.2.3.4*, then adding element *1.2
 effect.  Adding *1.2.3.5* changes the existing range to cover *1.2.3.1-1.2.3.5*.
 Without this flag, *1.2.3.2* can not be added and *1.2.3.5* is inserted as a new entry.
 
+Equality of a value with a set is given if the value matches exactly one value
+in the set (which for intervals means that it’s contained in any of them).
+See <<BITMASK_TYPE>> for the subtle differences between syntactically similarly
+looking equiality checks of sets and bitmasks.
+
 MAPS
 -----
 [verse]
@@ -701,7 +810,7 @@ map policy |
 string: performance [default], memory
 |=================
 
-Users can specifiy the properties/features that the set/map must support.
+Users can specify the properties/features that the set/map must support.
 This allows the kernel to pick an optimal internal representation.
 If a required flag is missing, the ruleset might still work, as
 nftables will auto-enable features if it can infer this from the ruleset.
@@ -763,10 +872,15 @@ per element comment field
 FLOWTABLES
 -----------
 [verse]
-{*add* | *create*} *flowtable* ['family'] 'table' 'flowtable' *{ hook* 'hook' *priority* 'priority' *; devices = {* 'device'[*,* ...] *} ; }*
+____
+{*add* | *create*} *flowtable* ['family'] 'table' 'flowtable' *{ hook* 'hook' *priority* 'priority' *; devices = {* 'DEVICE_LIST' *} ; }*
 *list flowtables* ['family'] ['table']
 {*delete* | *destroy* | *list*} *flowtable* ['family'] 'table' 'flowtable'
 *delete* *flowtable* ['family'] 'table' *handle* 'handle'
+
+'DEVICE_LIST' := 'DEVICE_NAME' [*,* 'DEVICE_LIST']
+'DEVICE_NAME' := 'string' | 'string'***
+____
 
 Flowtables allow you to accelerate packet forwarding in software. Flowtables
 entries are represented through a tuple that is composed of the input interface,
@@ -785,6 +899,11 @@ tables. When no address family is specified, ip is used by default.
 The *priority* can be a signed integer or *filter* which stands for 0. Addition
 and subtraction can be used to set relative priority, e.g. filter + 5 equals to
 5.
+
+With newer kernels there is basic support for wildcards in 'DEVICE_LIST' by
+specifying an asterisk suffix. The flowtable will apply to all interfaces
+matching the given prefix. Use the *list hooks* command to see the current
+status.
 
 [horizontal]
 *add*:: Add a new flowtable for the given family with the given name.
@@ -908,7 +1027,7 @@ actions, such as logging, rejecting a packet, etc. +
 Statements exist in two kinds. Terminal statements unconditionally terminate
 evaluation of the current rule, non-terminal statements either only
 conditionally or never terminate evaluation of the current rule, in other words,
-they are passive from the ruleset evaluation perspective. There can be an
+they are passive from the rule evaluation perspective. There can be an
 arbitrary amount of non-terminal statements in a rule, but only a single
 terminal statement as the final statement.
 

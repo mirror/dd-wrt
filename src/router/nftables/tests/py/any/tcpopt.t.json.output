@@ -30,3 +30,79 @@
     }
 ]
 
+# tcp option mptcp subtype . tcp dport { mp-capable . 10, mp-join . 100, add-addr . 200, remove-addr . 300, mp-prio . 400, mp-fail . 500, mp-fastclose . 600, mp-tcprst . 700 }
+[
+    {
+        "match": {
+            "left": {
+                "concat": [
+                    {
+                        "tcp option": {
+                            "field": "subtype",
+                            "name": "mptcp"
+                        }
+                    },
+                    {
+                        "payload": {
+                            "field": "dport",
+                            "protocol": "tcp"
+                        }
+                    }
+                ]
+            },
+            "op": "==",
+            "right": {
+                "set": [
+                    {
+                        "concat": [
+                            "mp-capable",
+                            10
+                        ]
+                    },
+                    {
+                        "concat": [
+                            "remove-addr",
+                            300
+                        ]
+                    },
+                    {
+                        "concat": [
+                            "mp-fastclose",
+                            600
+                        ]
+                    },
+                    {
+                        "concat": [
+                            "mp-join",
+                            100
+                        ]
+                    },
+                    {
+                        "concat": [
+                            "mp-prio",
+                            400
+                        ]
+                    },
+                    {
+                        "concat": [
+                            "mp-tcprst",
+                            700
+                        ]
+                    },
+                    {
+                        "concat": [
+                            "add-addr",
+                            200
+                        ]
+                    },
+                    {
+                        "concat": [
+                            "mp-fail",
+                            500
+                        ]
+                    }
+                ]
+            }
+        }
+    }
+]

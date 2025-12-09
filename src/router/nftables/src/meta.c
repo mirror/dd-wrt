@@ -23,6 +23,7 @@
 #include <arpa/inet.h>
 #include <linux/netfilter.h>
 #include <linux/pkt_sched.h>
+#include <linux/if_ether.h>
 #include <linux/if_packet.h>
 #include <time.h>
 
@@ -704,6 +705,9 @@ const struct meta_template meta_templates[] = {
 						BYTEORDER_HOST_ENDIAN),
 	[NFT_META_BRI_BROUTE]	= META_TEMPLATE("broute",   &integer_type,
 						1    , BYTEORDER_HOST_ENDIAN),
+	[NFT_META_BRI_IIFHWADDR] = META_TEMPLATE("ibrhwaddr", &etheraddr_type,
+						 ETH_ALEN * BITS_PER_BYTE,
+						 BYTEORDER_BIG_ENDIAN),
 };
 
 static bool meta_key_is_unqualified(enum nft_meta_keys key)

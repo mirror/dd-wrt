@@ -195,11 +195,13 @@ struct expr *fib_expr_alloc(const struct location *loc,
 		type = &fib_addr_type;
 		break;
 	default:
-		BUG("Unknown result %d\n", result);
+		BUG("Unknown result %d", result);
 	}
 
-	if (flags & NFTA_FIB_F_PRESENT)
+	if (flags & NFTA_FIB_F_PRESENT) {
 		type = &boolean_type;
+		len = BITS_PER_BYTE;
+	}
 
 	expr = expr_alloc(loc, EXPR_FIB, type,
 			  BYTEORDER_HOST_ENDIAN, len);

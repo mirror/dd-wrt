@@ -68,6 +68,7 @@ struct expr *expr_clone(const struct expr *expr)
 
 struct expr *expr_get(struct expr *expr)
 {
+	assert_refcount_safe(expr->refcnt);
 	expr->refcnt++;
 	return expr;
 }
@@ -84,13 +85,15 @@ void expr_free(struct expr *expr)
 {
 	if (expr == NULL)
 		return;
+
+	assert_refcount_safe(expr->refcnt);
 	if (--expr->refcnt > 0)
 		return;
 
 	datatype_free(expr->dtype);
 
 	/* EXPR_INVALID expressions lack ->ops structure.
-	 * This happens for compound types.
+	 * This happens for set, list and concat types.
 	 */
 	if (expr->etype != EXPR_INVALID)
 		expr_destroy(expr);
@@ -343,11 +346,13 @@ static void variable_expr_clone(struct expr *new, const struct expr *expr)
 	new->scope      = expr->scope;
 	new->sym	= expr->sym;
 
+	assert_refcount_safe(expr->sym->refcnt);
 	expr->sym->refcnt++;
 }
 
 static void variable_expr_destroy(struct expr *expr)
 {
+	assert_refcount_safe(expr->sym->refcnt);
 	expr->sym->refcnt--;
 }
 
@@ -1016,67 +1021,33 @@ struct expr *range_expr_alloc(const struct location *loc,
 	return expr;
 }
 
-struct expr *compound_expr_alloc(const struct location *loc,
-				 enum expr_types etype)
-{
-	struct expr *expr;
-
-	expr = expr_alloc(loc, etype, &invalid_type, BYTEORDER_INVALID, 0);
-	/* same layout for EXPR_CONCAT, EXPR_SET and EXPR_LIST. */
-	init_list_head(&expr->expr_set.expressions);
-	return expr;
-}
-
-static void compound_expr_clone(struct expr *new, const struct expr *expr)
-{
-	struct expr *i;
-
-	init_list_head(&new->expr_set.expressions);
-	list_for_each_entry(i, &expr->expr_set.expressions, list)
-		compound_expr_add(new, expr_clone(i));
-}
-
-static void compound_expr_destroy(struct expr *expr)
+static void concat_expr_destroy(struct expr *expr)
 {
 	struct expr *i, *next;
 
-	list_for_each_entry_safe(i, next, &expr->expr_set.expressions, list)
+	list_for_each_entry_safe(i, next, &expr_concat(expr)->expressions, list)
 		expr_free(i);
-}
-
-static void compound_expr_print(const struct expr *expr, const char *delim,
-				 struct output_ctx *octx)
-{
-	const struct expr *i;
-	const char *d = "";
-
-	list_for_each_entry(i, &expr->expr_set.expressions, list) {
-		nft_print(octx, "%s", d);
-		expr_print(i, octx);
-		d = delim;
-	}
-}
-
-void compound_expr_add(struct expr *compound, struct expr *expr)
-{
-	list_add_tail(&expr->list, &compound->expr_set.expressions);
-	compound->expr_set.size++;
-}
-
-void compound_expr_remove(struct expr *compound, struct expr *expr)
-{
-	compound->expr_set.size--;
-	list_del(&expr->list);
-}
-
-static void concat_expr_destroy(struct expr *expr)
-{
-	compound_expr_destroy(expr);
 }
 
 static void concat_expr_print(const struct expr *expr, struct output_ctx *octx)
 {
-	compound_expr_print(expr, " . ", octx);
+	const struct expr *i;
+	const char *d = "";
+
+	list_for_each_entry(i, &expr_concat(expr)->expressions, list) {
+		nft_print(octx, "%s", d);
+		expr_print(i, octx);
+		d = " . ";
+	}
+}
+
+static void concat_expr_clone(struct expr *new, const struct expr *expr)
+{
+	struct expr *i;
+
+	init_list_head(&expr_concat(new)->expressions);
+	list_for_each_entry(i, &expr_concat(expr)->expressions, list)
+		concat_expr_add(new, expr_clone(i));
 }
 
 #define NFTNL_UDATA_SET_KEY_CONCAT_NEST 0
@@ -1211,7 +1182,7 @@ static struct expr *concat_expr_parse_udata(const struct nftnl_udata *attr)
 			goto err_free;
 
 		dt = concat_subtype_add(dt, expr->dtype->type);
-		compound_expr_add(concat_expr, expr);
+		concat_expr_add(concat_expr, expr);
 		len += netlink_padded_len(expr->len);
 	}
 
@@ -1234,7 +1205,7 @@ static const struct expr_ops concat_expr_ops = {
 	.name		= "concat",
 	.print		= concat_expr_print,
 	.json		= concat_expr_json,
-	.clone		= compound_expr_clone,
+	.clone		= concat_expr_clone,
 	.destroy	= concat_expr_destroy,
 	.build_udata	= concat_expr_build_udata,
 	.parse_udata	= concat_expr_parse_udata,
@@ -1242,12 +1213,55 @@ static const struct expr_ops concat_expr_ops = {
 
 struct expr *concat_expr_alloc(const struct location *loc)
 {
-	return compound_expr_alloc(loc, EXPR_CONCAT);
+	struct expr *expr;
+
+	expr = expr_alloc(loc, EXPR_CONCAT, &invalid_type, BYTEORDER_INVALID, 0);
+	init_list_head(&expr_concat(expr)->expressions);
+
+	return expr;
+}
+
+void concat_expr_add(struct expr *concat, struct expr *item)
+{
+	struct expr_concat *expr_concat = expr_concat(concat);
+
+	list_add_tail(&item->list, &expr_concat->expressions);
+	expr_concat->size++;
+}
+
+void concat_expr_remove(struct expr *concat, struct expr *expr)
+{
+	expr_concat(concat)->size--;
+	list_del(&expr->list);
 }
 
 static void list_expr_print(const struct expr *expr, struct output_ctx *octx)
 {
-	compound_expr_print(expr, ",", octx);
+	const struct expr *i;
+	const char *d = "";
+
+	list_for_each_entry(i, &expr_list(expr)->expressions, list) {
+		nft_print(octx, "%s", d);
+		expr_print(i, octx);
+		d = ",";
+	}
+}
+
+static void list_expr_clone(struct expr *new, const struct expr *expr)
+{
+	struct expr *i;
+
+	init_list_head(&expr_list(new)->expressions);
+	list_for_each_entry(i, &expr_list(expr)->expressions, list)
+		list_expr_add(new, expr_clone(i));
+}
+
+static void list_expr_destroy(struct expr *expr)
+{
+	struct expr *i, *next;
+
+	list_for_each_entry_safe(i, next, &expr_list(expr)->expressions, list)
+		expr_free(i);
 }
 
 static const struct expr_ops list_expr_ops = {
@@ -1255,13 +1269,32 @@ static const struct expr_ops list_expr_ops = {
 	.name		= "list",
 	.print		= list_expr_print,
 	.json		= list_expr_json,
-	.clone		= compound_expr_clone,
-	.destroy	= compound_expr_destroy,
+	.clone		= list_expr_clone,
+	.destroy	= list_expr_destroy,
 };
 
 struct expr *list_expr_alloc(const struct location *loc)
 {
-	return compound_expr_alloc(loc, EXPR_LIST);
+	struct expr *expr;
+
+	expr = expr_alloc(loc, EXPR_LIST, &invalid_type, BYTEORDER_INVALID, 0);
+	init_list_head(&expr_list(expr)->expressions);
+
+	return expr;
+}
+
+void list_expr_add(struct expr *expr, struct expr *item)
+{
+	struct expr_list *expr_list = expr_list(expr);
+
+	list_add_tail(&item->list, &expr_list->expressions);
+	expr_list->size++;
+}
+
+void list_expr_remove(struct expr *list, struct expr *expr)
+{
+	expr_list(list)->size--;
+	list_del(&expr->list);
 }
 
 /* list is assumed to have two items at least, otherwise extend this! */
@@ -1359,6 +1392,23 @@ static void set_expr_print(const struct expr *expr, struct output_ctx *octx)
 	nft_print(octx, " }");
 }
 
+static void set_expr_clone(struct expr *new, const struct expr *expr)
+{
+	struct expr *i;
+
+	init_list_head(&expr_set(new)->expressions);
+	list_for_each_entry(i, &expr_set(expr)->expressions, list)
+		set_expr_add(new, expr_clone(i));
+}
+
+static void set_expr_destroy(struct expr *expr)
+{
+	struct expr *i, *next;
+
+	list_for_each_entry_safe(i, next, &expr_set(expr)->expressions, list)
+		expr_free(i);
+}
+
 static void set_expr_set_type(const struct expr *expr,
 			      const struct datatype *dtype,
 			      enum byteorder byteorder)
@@ -1375,13 +1425,16 @@ static const struct expr_ops set_expr_ops = {
 	.print		= set_expr_print,
 	.json		= set_expr_json,
 	.set_type	= set_expr_set_type,
-	.clone		= compound_expr_clone,
-	.destroy	= compound_expr_destroy,
+	.clone		= set_expr_clone,
+	.destroy	= set_expr_destroy,
 };
 
 struct expr *set_expr_alloc(const struct location *loc, const struct set *set)
 {
-	struct expr *set_expr = compound_expr_alloc(loc, EXPR_SET);
+	struct expr *set_expr;
+
+	set_expr = expr_alloc(loc, EXPR_SET, &invalid_type, BYTEORDER_INVALID, 0);
+	init_list_head(&expr_set(set_expr)->expressions);
 
 	if (!set)
 		return set_expr;
@@ -1390,6 +1443,25 @@ struct expr *set_expr_alloc(const struct location *loc, const struct set *set)
 	datatype_set(set_expr, set->key->dtype);
 
 	return set_expr;
+}
+
+void __set_expr_add(struct expr *set, struct expr *elem)
+{
+	list_add_tail(&elem->list, &expr_set(set)->expressions);
+}
+
+void set_expr_add(struct expr *set, struct expr *elem)
+{
+	struct expr_set *expr_set = expr_set(set);
+
+	list_add_tail(&elem->list, &expr_set->expressions);
+	expr_set->size++;
+}
+
+void set_expr_remove(struct expr *set, struct expr *expr)
+{
+	expr_set(set)->size--;
+	list_del(&expr->list);
 }
 
 static void mapping_expr_print(const struct expr *expr, struct output_ctx *octx)
@@ -1702,7 +1774,7 @@ void range_expr_value_low(mpz_t rop, const struct expr *expr)
 	case EXPR_SET_ELEM:
 		return range_expr_value_low(rop, expr->key);
 	default:
-		BUG("invalid range expression type %s\n", expr_name(expr));
+		BUG("invalid range expression type %s", expr_name(expr));
 	}
 }
 
@@ -1729,7 +1801,7 @@ void range_expr_value_high(mpz_t rop, const struct expr *expr)
 	case EXPR_SET_ELEM:
 		return range_expr_value_high(rop, expr->key);
 	default:
-		BUG("invalid range expression type %s\n", expr_name(expr));
+		BUG("invalid range expression type %s", expr_name(expr));
 	}
 }
 
@@ -1762,6 +1834,7 @@ static const struct expr_ops *__expr_ops_by_type(enum expr_types etype)
 	case EXPR_NUMGEN: return &numgen_expr_ops;
 	case EXPR_HASH: return &hash_expr_ops;
 	case EXPR_RT: return &rt_expr_ops;
+	case EXPR_TUNNEL: return &tunnel_expr_ops;
 	case EXPR_FIB: return &fib_expr_ops;
 	case EXPR_XFRM: return &xfrm_expr_ops;
 	case EXPR_SET_ELEM_CATCHALL: return &set_elem_catchall_expr_ops;
@@ -1779,7 +1852,7 @@ const struct expr_ops *expr_ops(const struct expr *e)
 
 	ops = __expr_ops_by_type(e->etype);
 	if (!ops)
-		BUG("Unknown expression type %d\n", e->etype);
+		BUG("Unknown expression type %d", e->etype);
 
 	return ops;
 }

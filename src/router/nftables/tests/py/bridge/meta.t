@@ -11,3 +11,4 @@ meta protocol ip udp dport 67;ok
 meta protocol ip6 udp dport 67;ok
 
 meta broute set 1;fail
+meta ibrhwaddr;fail

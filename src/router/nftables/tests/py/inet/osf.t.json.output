@@ -1,0 +1,53 @@
+# osf name { "Windows", "MacOs" }
+[
+    {
+        "match": {
+            "left": {
+                "osf": {
+                    "key": "name"
+                }
+            },
+            "op": "==",
+            "right": {
+                "set": [
+                    "MacOs",
+                    "Windows"
+                ]
+            }
+        }
+    }
+]
+
+# ct mark set osf name map { "Windows" : 0x00000001, "MacOs" : 0x00000002 }
+[
+    {
+        "mangle": {
+            "key": {
+                "ct": {
+                    "key": "mark"
+                }
+            },
+            "value": {
+                "map": {
+                    "data": {
+                        "set": [
+                            [
+                                "MacOs",
+                                2
+                            ],
+                            [
+                                "Windows",
+                                1
+                            ]
+                        ]
+                    },
+                    "key": {
+                        "osf": {
+                            "key": "name"
+                        }
+                    }
+                }
+            }
+        }
+    }
+]

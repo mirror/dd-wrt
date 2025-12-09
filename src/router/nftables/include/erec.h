@@ -40,10 +40,10 @@ struct error_record {
 extern struct error_record *erec_vcreate(enum error_record_types type,
 					 const struct location *loc,
 					 const char *fmt, va_list ap)
-					 __gmp_fmtstring(3, 0);
+					 __fmtstring(3, 0);
 extern struct error_record *erec_create(enum error_record_types type,
 					const struct location *loc,
-					const char *fmt, ...) __gmp_fmtstring(3, 4);
+					const char *fmt, ...) __fmtstring(3, 4);
 extern void erec_add_location(struct error_record *erec,
 			      const struct location *loc);
 extern void erec_destroy(struct error_record *erec);

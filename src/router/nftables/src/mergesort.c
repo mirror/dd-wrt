@@ -48,7 +48,7 @@ static mpz_srcptr expr_msort_value(const struct expr *expr, mpz_t value)
 		mpz_bitmask(value, expr->len);
 		break;
 	default:
-		BUG("Unknown expression %s\n", expr_name(expr));
+		BUG("Unknown expression %s", expr_name(expr));
 	}
 	return value;
 }

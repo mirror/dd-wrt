@@ -268,11 +268,11 @@ static struct expr *trace_alloc_list(const struct datatype *dtype,
 		if (bitv == 0)
 			continue;
 
-		compound_expr_add(list_expr,
-				  constant_expr_alloc(&netlink_location,
-						      dtype, byteorder,
-						      len * BITS_PER_BYTE,
-						      &bitv));
+		list_expr_add(list_expr,
+			      constant_expr_alloc(&netlink_location,
+						  dtype, byteorder,
+						  len * BITS_PER_BYTE,
+						  &bitv));
 	}
 
 	mpz_clear(value);

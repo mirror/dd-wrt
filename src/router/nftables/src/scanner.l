@@ -223,6 +223,7 @@ addrstring	({macaddr}|{ip4addr}|{ip6addr})
 %s SCANSTATE_SECMARK
 %s SCANSTATE_TCP
 %s SCANSTATE_TYPE
+%s SCANSTATE_TUNNEL
 %s SCANSTATE_VLAN
 %s SCANSTATE_XT
 %s SCANSTATE_CMD_DESTROY
@@ -403,11 +404,12 @@ addrstring	({macaddr}|{ip4addr}|{ip6addr})
 	"maps"			{ return MAPS; }
 	"secmarks"		{ return SECMARKS; }
 	"synproxys"		{ return SYNPROXYS; }
+	"tunnels"		{ return TUNNELS; }
 	"hooks"			{ return HOOKS; }
 }
 
 "counter"		{ scanner_push_start_cond(yyscanner, SCANSTATE_COUNTER); return COUNTER; }
-<SCANSTATE_COUNTER,SCANSTATE_LIMIT,SCANSTATE_QUOTA,SCANSTATE_STMT_SYNPROXY,SCANSTATE_EXPR_OSF>"name"			{ return NAME; }
+<SCANSTATE_COUNTER,SCANSTATE_LIMIT,SCANSTATE_QUOTA,SCANSTATE_STMT_SYNPROXY,SCANSTATE_EXPR_OSF,SCANSTATE_TUNNEL>"name"			{ return NAME; }
 <SCANSTATE_COUNTER,SCANSTATE_CT,SCANSTATE_LIMIT>"packets"		{ return PACKETS; }
 <SCANSTATE_COUNTER,SCANSTATE_CT,SCANSTATE_LIMIT,SCANSTATE_QUOTA>"bytes"	{ return BYTES; }
 
@@ -809,6 +811,25 @@ addrstring	({macaddr}|{ip4addr}|{ip6addr})
 	"timestamp"		{ return TIMESTAMP; }
 	"sack-permitted"	{ return SACK_PERM; }
 	"sack-perm"		{ return SACK_PERM; }
+}
+
+"tunnel"		{ scanner_push_start_cond(yyscanner, SCANSTATE_TUNNEL); return TUNNEL; }
+<SCANSTATE_TUNNEL>{
+	"id"			{ return ID; }
+	"sport"			{ return SPORT; }
+	"dport"			{ return DPORT; }
+	"ttl"			{ return TTL; }
+	"tos"			{ return TOS; }
+	"version"		{ return HDRVERSION; }
+	"direction"		{ return DIRECTION; }
+	"erspan"		{ return ERSPAN; }
+	"egress"		{ return EGRESS; }
+	"ingress"		{ return INGRESS; }
+	"path"			{ return PATH; }
+	"gbp"			{ return GBP; }
+	"class"			{ return CLASS; }
+	"opt-type"		{ return OPTTYPE; }
+	"data"			{ return DATA; }
 }
 
 "notrack"		{ return NOTRACK; }

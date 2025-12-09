@@ -341,13 +341,18 @@ static bool __stmt_type_eq(const struct stmt *stmt_a, const struct stmt *stmt_b,
 
 static bool expr_verdict_eq(const struct expr *expr_a, const struct expr *expr_b)
 {
+	char chain_a[NFT_CHAIN_MAXNAMELEN];
+	char chain_b[NFT_CHAIN_MAXNAMELEN];
+
 	if (expr_a->verdict != expr_b->verdict)
 		return false;
 	if (expr_a->chain && expr_b->chain) {
-		if (expr_a->chain->etype != expr_b->chain->etype)
+		if (expr_a->chain->etype != EXPR_VALUE ||
+		    expr_a->chain->etype != expr_b->chain->etype)
 			return false;
-		if (expr_a->chain->etype == EXPR_VALUE &&
-		    strcmp(expr_a->chain->identifier, expr_b->chain->identifier))
+		expr_chain_export(expr_a->chain, chain_a);
+		expr_chain_export(expr_b->chain, chain_b);
+		if (strcmp(chain_a, chain_b))
 			return false;
 	} else if (expr_a->chain || expr_b->chain) {
 		return false;
@@ -569,13 +574,13 @@ static void merge_expr_stmts(const struct optimize_ctx *ctx,
 
 	expr_a = stmt_a->expr->right;
 	elem = set_elem_expr_alloc(&internal_location, expr_get(expr_a));
-	compound_expr_add(set, elem);
+	set_expr_add(set, elem);
 
 	for (i = from + 1; i <= to; i++) {
 		stmt_b = ctx->stmt_matrix[i][merge->stmt[0]];
 		expr_b = stmt_b->expr->right;
 		elem = set_elem_expr_alloc(&internal_location, expr_get(expr_b));
-		compound_expr_add(set, elem);
+		set_expr_add(set, elem);
 	}
 
 	expr_free(stmt_a->expr->right);
@@ -590,7 +595,7 @@ static void merge_vmap(const struct optimize_ctx *ctx,
 	mappings = stmt_b->expr->mappings;
 	list_for_each_entry(expr, &expr_set(mappings)->expressions, list) {
 		mapping = expr_clone(expr);
-		compound_expr_add(stmt_a->expr->mappings, mapping);
+		set_expr_add(stmt_a->expr->mappings, mapping);
 	}
 }
 
@@ -657,7 +662,7 @@ static void __merge_concat(const struct optimize_ctx *ctx, uint32_t i,
 				list_for_each_entry(expr, &expr_set(stmt_a->expr->right)->expressions, list) {
 					concat_clone = expr_clone(concat);
 					clone = expr_clone(expr->key);
-					compound_expr_add(concat_clone, clone);
+					concat_expr_add(concat_clone, clone);
 					list_add_tail(&concat_clone->list, &pending_list);
 				}
 				list_del(&concat->list);
@@ -670,13 +675,13 @@ static void __merge_concat(const struct optimize_ctx *ctx, uint32_t i,
 			case EXPR_RANGE:
 			case EXPR_RANGE_VALUE:
 				clone = expr_clone(stmt_a->expr->right);
-				compound_expr_add(concat, clone);
+				concat_expr_add(concat, clone);
 				break;
 			case EXPR_LIST:
 				list_for_each_entry(expr, &expr_list(stmt_a->expr->right)->expressions, list) {
 					concat_clone = expr_clone(concat);
 					clone = expr_clone(expr);
-					compound_expr_add(concat_clone, clone);
+					concat_expr_add(concat_clone, clone);
 					list_add_tail(&concat_clone->list, &pending_list);
 				}
 				list_del(&concat->list);
@@ -702,7 +707,7 @@ static void __merge_concat_stmts(const struct optimize_ctx *ctx, uint32_t i,
 	list_for_each_entry_safe(concat, next, &concat_list, list) {
 		list_del(&concat->list);
 		elem = set_elem_expr_alloc(&internal_location, concat);
-		compound_expr_add(set, elem);
+		set_expr_add(set, elem);
 	}
 }
 
@@ -720,7 +725,7 @@ static void merge_concat_stmts(const struct optimize_ctx *ctx,
 
 	for (k = 0; k < merge->num_stmts; k++) {
 		stmt_a = ctx->stmt_matrix[from][merge->stmt[k]];
-		compound_expr_add(concat, expr_get(stmt_a->expr->left));
+		concat_expr_add(concat, expr_get(stmt_a->expr->left));
 	}
 	expr_free(stmt->expr->left);
 	stmt->expr->left = concat;
@@ -759,7 +764,7 @@ static void build_verdict_map(struct expr *expr, struct stmt *verdict,
 
 			mapping = mapping_expr_alloc(&internal_location, elem,
 						     expr_get(verdict->expr));
-			compound_expr_add(set, mapping);
+			set_expr_add(set, mapping);
 		}
 		stmt_free(counter);
 		break;
@@ -773,7 +778,7 @@ static void build_verdict_map(struct expr *expr, struct stmt *verdict,
 
 			mapping = mapping_expr_alloc(&internal_location, elem,
 						     expr_get(verdict->expr));
-			compound_expr_add(set, mapping);
+			set_expr_add(set, mapping);
 		}
 		stmt_free(counter);
 		break;
@@ -790,7 +795,7 @@ static void build_verdict_map(struct expr *expr, struct stmt *verdict,
 
 		mapping = mapping_expr_alloc(&internal_location, elem,
 					     expr_get(verdict->expr));
-		compound_expr_add(set, mapping);
+		set_expr_add(set, mapping);
 		break;
 	default:
 		assert(0);
@@ -898,7 +903,7 @@ static void __merge_concat_stmts_vmap(const struct optimize_ctx *ctx,
 
 		mapping = mapping_expr_alloc(&internal_location, elem,
 					     expr_get(verdict->expr));
-		compound_expr_add(set, mapping);
+		set_expr_add(set, mapping);
 	}
 	stmt_free(counter);
 }
@@ -920,7 +925,7 @@ static void merge_concat_stmts_vmap(const struct optimize_ctx *ctx,
 	concat_a = concat_expr_alloc(&internal_location);
 	for (i = 0; i < merge->num_stmts; i++) {
 		stmt_a = ctx->stmt_matrix[from][merge->stmt[i]];
-		compound_expr_add(concat_a, expr_get(stmt_a->expr->left));
+		concat_expr_add(concat_a, expr_get(stmt_a->expr->left));
 	}
 
 	/* build set data contenation, eg. { eth0 . 1.1.1.1 . 22 : accept } */
@@ -1021,8 +1026,8 @@ static struct expr *stmt_nat_expr(struct stmt *nat_stmt)
 	if (nat_stmt->nat.proto) {
 		if (nat_stmt->nat.addr) {
 			nat_expr = concat_expr_alloc(&internal_location);
-			compound_expr_add(nat_expr, expr_get(nat_stmt->nat.addr));
-			compound_expr_add(nat_expr, expr_get(nat_stmt->nat.proto));
+			concat_expr_add(nat_expr, expr_get(nat_stmt->nat.addr));
+			concat_expr_add(nat_expr, expr_get(nat_stmt->nat.proto));
 		} else {
 			nat_expr = expr_get(nat_stmt->nat.proto);
 		}
@@ -1061,7 +1066,7 @@ static void merge_nat(const struct optimize_ctx *ctx,
 
 		elem = set_elem_expr_alloc(&internal_location, expr_get(expr));
 		mapping = mapping_expr_alloc(&internal_location, elem, nat_expr);
-		compound_expr_add(set, mapping);
+		set_expr_add(set, mapping);
 	}
 
 	stmt = ctx->stmt_matrix[from][merge->stmt[0]];
@@ -1110,7 +1115,7 @@ static void merge_concat_nat(const struct optimize_ctx *ctx,
 		for (j = 0; j < merge->num_stmts; j++) {
 			stmt = ctx->stmt_matrix[i][merge->stmt[j]];
 			expr = stmt->expr->right;
-			compound_expr_add(concat, expr_get(expr));
+			concat_expr_add(concat, expr_get(expr));
 		}
 
 		nat_stmt = ctx->stmt_matrix[i][k];
@@ -1118,7 +1123,7 @@ static void merge_concat_nat(const struct optimize_ctx *ctx,
 
 		elem = set_elem_expr_alloc(&internal_location, concat);
 		mapping = mapping_expr_alloc(&internal_location, elem, nat_expr);
-		compound_expr_add(set, mapping);
+		set_expr_add(set, mapping);
 	}
 
 	concat = concat_expr_alloc(&internal_location);
@@ -1131,7 +1136,7 @@ static void merge_concat_nat(const struct optimize_ctx *ctx,
 			else if (left->payload.desc == &proto_ip6)
 				family = NFPROTO_IPV6;
 		}
-		compound_expr_add(concat, expr_get(left));
+		concat_expr_add(concat, expr_get(left));
 	}
 	expr = map_expr_alloc(&internal_location, concat, set);
 
@@ -1176,7 +1181,7 @@ static void rule_optimize_print(struct output_ctx *octx,
 	case INDESC_NETLINK:
 		break;
 	default:
-		BUG("invalid input descriptor type %u\n", indesc->type);
+		BUG("invalid input descriptor type %u", indesc->type);
 	}
 
 	print_location(octx->error_fp, indesc, loc);

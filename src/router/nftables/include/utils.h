@@ -6,6 +6,7 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <assert.h>
+#include <limits.h>
 #include <list.h>
 #include <gmputil.h>
 
@@ -27,22 +28,24 @@
 #endif
 
 #define __fmtstring(x, y)	__attribute__((format(printf, x, y)))
-#if 0
-#define __gmp_fmtstring(x, y)	__fmtstring(x, y)
-#else
-#define __gmp_fmtstring(x, y)
-#endif
 
 #define __must_check		__attribute__((warn_unused_result))
 #define __noreturn		__attribute__((__noreturn__))
 
-#define BUG(fmt, arg...)	({ fprintf(stderr, "BUG: " fmt, ##arg); assert(0); abort(); })
+#define BUG(fmt, arg...)	({ fprintf(stderr, "BUG: " fmt "\n", ##arg); assert(0); abort(); })
 
 #define BUILD_BUG_ON(condition)	((void)sizeof(char[1 - 2*!!(condition)]))
 #define BUILD_BUG_ON_ZERO(e)	(sizeof(char[1 - 2 * !!(e)]) - 1)
 
 #define __must_be_array(a) \
 	BUILD_BUG_ON_ZERO(__builtin_types_compatible_p(typeof(a), typeof(&a[0])))
+
+#define assert_refcount_safe(refcnt) do {						\
+	if ((refcnt) == 0)								\
+		BUG("refcount was 0");							\
+	if ((refcnt) >= INT_MAX)							\
+		BUG("refcount saturated");						\
+} while (0)
 
 #define container_of(ptr, type, member) ({			\
 	typeof( ((type *)0)->member ) *__mptr = (ptr);		\

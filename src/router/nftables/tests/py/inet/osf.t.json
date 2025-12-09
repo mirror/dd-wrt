@@ -73,8 +73,8 @@
             "op": "==",
             "right": {
                 "set": [
-                    "MacOs",
-                    "Windows"
+                    "Windows",
+                    "MacOs"
                 ]
             }
         }
@@ -115,12 +115,12 @@
                     "data": {
                         "set": [
                             [
-                                "MacOs",
-                                2
-                            ],
-                            [
                                 "Windows",
                                 1
+                            ],
+                            [
+                                "MacOs",
+                                2
                             ]
                         ]
                     },

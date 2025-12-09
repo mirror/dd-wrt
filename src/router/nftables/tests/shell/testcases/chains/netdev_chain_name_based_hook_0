@@ -1,0 +1,44 @@
+#!/bin/bash
+
+# NFT_TEST_REQUIRES(NFT_TEST_HAVE_ifname_based_hooks)
+
+cspec=' chain netdev t c'
+$NFT add table netdev t
+$NFT add $cspec '{ type filter hook ingress priority 0; devices = { lo, foo* }; }'
+$NFT list hooks netdev device lo | grep -q "$cspec" || {
+	echo "Existing device lo not hooked into chain as expected"
+	exit 1
+}
+
+[[ $($NFT list hooks | grep -c "$cspec") -eq 1 ]] || {
+	echo "Chain hooks into more than just lo"
+	exit 2
+}
+
+ip link add foo1 type dummy
+$NFT list hooks netdev device foo1 | grep -q "$cspec" || {
+	echo "Chain did not hook into new device foo1"
+	exit 3
+}
+[[ $($NFT list hooks | grep -c "$cspec") -eq 2 ]] || {
+	echo "Chain expected to hook into exactly two devices"
+	exit 4
+}
+
+ip link del foo1
+$NFT list hooks netdev device foo1 | grep -q "$cspec" && {
+	echo "Chain still hooks into removed device foo1"
+	exit 5
+}
+[[ $($NFT list hooks | grep -c "$cspec") -eq 1 ]] || {
+	echo "Chain expected to hook into just lo"
+	exit 6
+}
+
+for ((i = 0; i < 100; i++)); do
+	ip link add foo$i type dummy
+done
+[[ $($NFT list hooks | grep -c "$cspec") -eq 101 ]] || {
+	echo "Chain did not hook into all 100 new devices"
+	exit 7
+}

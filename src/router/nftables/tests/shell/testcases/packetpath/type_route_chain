@@ -133,7 +133,7 @@ echo -e "\nTest ipv6 dscp reroute"
 ip -6 -n $C route add default via ${ip6_r2_br1} dev c_br1 table 100
 ip -6 -n $C rule add dsfield 0x08 pref 1010 table 100
 assert_pass "Add ipv6 dscp policy routing rule"
-ip netns exec $C nft -f - <<-EOF
+ip netns exec $C $NFT -f - <<-EOF
 table inet outgoing {
 	chain output_route {
 		type route hook output priority filter; policy accept;
@@ -151,7 +151,7 @@ echo -e "\nTest ipv4 dscp reroute"
 ip -n $C route add default via ${ip4_r2_br1} dev c_br1 table 100
 ip -n $C rule add dsfield 0x08 pref 1010 table 100
 assert_pass "Add ipv4 dscp policy routing rule"
-ip netns exec $C nft -f - <<-EOF
+ip netns exec $C $NFT -f - <<-EOF
 table inet outgoing {
 	chain output_route {
 		type route hook output priority filter; policy accept;
@@ -169,7 +169,7 @@ echo -e "\nTest ipv4 fwmark reroute"
 ip -n $C route add default via ${ip4_r2_br1} dev c_br1 table 100
 ip -n $C rule add fwmark 0x0100 lookup 100
 assert_pass "Add ipv4 fwmark policy routing rule"
-ip netns exec $C nft -f - <<-EOF
+ip netns exec $C $NFT -f - <<-EOF
 table inet outgoing {
 	chain output_route {
 		type route hook output priority filter; policy accept;
@@ -187,7 +187,7 @@ echo -e "\nTest ipv6 fwmark reroute"
 ip -6 -n $C route add default via ${ip6_r2_br1} dev c_br1 table 100
 ip -6 -n $C rule add fwmark 0x0100 lookup 100
 assert_pass "Add ipv6 fwmark policy routing rule"
-ip netns exec $C nft -f - <<-EOF
+ip netns exec $C $NFT -f - <<-EOF
 table inet outgoing {
 	chain output_route {
 		type route hook output priority filter; policy accept;

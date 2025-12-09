@@ -373,7 +373,32 @@ static json_t *timeout_policy_json(uint8_t l4, const uint32_t *timeout)
 	return root ? : json_null();
 }
 
-static json_t *obj_print_json(const struct obj *obj)
+static json_t *tunnel_erspan_print_json(const struct obj *obj)
+{
+	json_t *tunnel;
+
+	switch (obj->tunnel.erspan.version) {
+	case 1:
+		tunnel = json_pack("{s:i, s:i}",
+				   "version", obj->tunnel.erspan.version,
+				   "index", obj->tunnel.erspan.v1.index);
+		break;
+	case 2:
+		tunnel = json_pack("{s:i, s:s, s:i}",
+				   "version", obj->tunnel.erspan.version,
+				   "dir", obj->tunnel.erspan.v2.direction ?
+						"egress" : "ingress",
+				   "hwid", obj->tunnel.erspan.v2.hwid);
+		break;
+	default:
+		BUG("Unknown tunnel erspan version %d", obj->tunnel.erspan.version);
+	}
+
+	return tunnel;
+}
+
+static json_t *obj_print_json(struct output_ctx *octx, const struct obj *obj,
+			      bool delete)
 {
 	const char *rate_unit = NULL, *burst_unit = NULL;
 	const char *type = obj_type_name(obj->type);
@@ -385,6 +410,9 @@ static json_t *obj_print_json(const struct obj *obj)
 			"name", obj->handle.obj.name,
 			"table", obj->handle.table.name,
 			"handle", obj->handle.handle.id);
+
+	if (delete)
+		goto out;
 
 	if (obj->comment) {
 		tmp = nft_json_pack("{s:s}", "comment", obj->comment);
@@ -487,8 +515,66 @@ static json_t *obj_print_json(const struct obj *obj)
 		json_object_update(root, tmp);
 		json_decref(tmp);
 		break;
+	case NFT_OBJECT_TUNNEL:
+		tmp = json_pack("{s:i, s:o, s:o, s:i, s:i, s:i, s:i}",
+				"id", obj->tunnel.id,
+				obj->tunnel.src->dtype->type == TYPE_IPADDR ? "src-ipv4" : "src-ipv6",
+				expr_print_json(obj->tunnel.src, octx),
+				obj->tunnel.dst->dtype->type == TYPE_IPADDR ? "dst-ipv4" : "dst-ipv6",
+				expr_print_json(obj->tunnel.dst, octx),
+				"sport", obj->tunnel.sport,
+				"dport", obj->tunnel.dport,
+				"tos", obj->tunnel.tos,
+				"ttl", obj->tunnel.ttl);
+
+		switch (obj->tunnel.type) {
+		case TUNNEL_UNSPEC:
+			break;
+		case TUNNEL_ERSPAN:
+			json_object_set_new(tmp, "type", json_string("erspan"));
+			json_object_set_new(tmp, "tunnel",
+					    tunnel_erspan_print_json(obj));
+			break;
+		case TUNNEL_VXLAN:
+			json_object_set_new(tmp, "type", json_string("vxlan"));
+			json_object_set_new(tmp, "tunnel",
+					    json_pack("{s:i}",
+						      "gbp",
+						      obj->tunnel.vxlan.gbp));
+			break;
+		case TUNNEL_GENEVE:
+			struct tunnel_geneve *geneve;
+			json_t *opts = json_array();
+
+			list_for_each_entry(geneve, &obj->tunnel.geneve_opts, list) {
+				char data_str[256];
+				json_t *opt;
+				int offset;
+
+				data_str[0] = '0';
+				data_str[1] = 'x';
+				offset = 2;
+				for (uint32_t i = 0; i < geneve->data_len; i++)
+					offset += snprintf(data_str + offset,
+							   3, "%x", geneve->data[i]);
+
+				opt = json_pack("{s:i, s:i, s:s}",
+						"class", geneve->geneve_class,
+						"opt-type", geneve->type,
+						"data", data_str);
+				json_array_append_new(opts, opt);
+			}
+
+			json_object_set_new(tmp, "type", json_string("geneve"));
+			json_object_set_new(tmp, "tunnel", opts);
+			break;
+		}
+		json_object_update(root, tmp);
+		json_decref(tmp);
+		break;
 	}
 
+out:
 	return nft_json_pack("{s:o}", type, root);
 }
 
@@ -1031,7 +1117,7 @@ static json_t *datatype_json(const struct expr *expr, struct output_ctx *octx)
 		}
 	} while ((dtype = dtype->basetype));
 
-	BUG("datatype %s has no print method or symbol table\n",
+	BUG("datatype %s has no print method or symbol table",
 	    expr->dtype->name);
 }
 
@@ -1110,6 +1196,12 @@ json_t *xfrm_expr_json(const struct expr *expr, struct output_ctx *octx)
 	json_object_set_new(root, "spnum", json_integer(expr->xfrm.spnum));
 
 	return nft_json_pack("{s:o}", "ipsec", root);
+}
+
+json_t *tunnel_expr_json(const struct expr *expr, struct output_ctx *octx)
+{
+	return json_pack("{s:{s:s}}", "tunnel",
+			 "key", tunnel_templates[expr->tunnel.key].token);
 }
 
 json_t *integer_type_json(const struct expr *expr, struct output_ctx *octx)
@@ -1728,7 +1820,7 @@ static json_t *table_print_json_full(struct netlink_ctx *ctx,
 		json_array_append_new(root, tmp);
 	}
 	list_for_each_entry(obj, &table->obj_cache.list, cache.list) {
-		tmp = obj_print_json(obj);
+		tmp = obj_print_json(&ctx->nft->output, obj, false);
 		json_array_append_new(root, tmp);
 	}
 	list_for_each_entry(set, &table->set_cache.list, cache.list) {
@@ -1884,7 +1976,7 @@ static json_t *do_list_sets_json(struct netlink_ctx *ctx, struct cmd *cmd)
 static json_t *do_list_obj_json(struct netlink_ctx *ctx,
 				struct cmd *cmd, uint32_t type)
 {
-	json_t *root = json_array();
+	json_t *root = json_array(), *tmp;
 	struct table *table;
 	struct obj *obj;
 
@@ -1903,7 +1995,8 @@ static json_t *do_list_obj_json(struct netlink_ctx *ctx,
 			     strcmp(cmd->handle.obj.name, obj->handle.obj.name)))
 				continue;
 
-			json_array_append_new(root, obj_print_json(obj));
+			tmp = obj_print_json(&ctx->nft->output, obj, false);
+			json_array_append_new(root, tmp);
 		}
 	}
 
@@ -2035,6 +2128,10 @@ int do_command_list_json(struct netlink_ctx *ctx, struct cmd *cmd)
 	case CMD_OBJ_SYNPROXYS:
 		root = do_list_obj_json(ctx, cmd, NFT_OBJECT_SYNPROXY);
 		break;
+	case CMD_OBJ_TUNNEL:
+	case CMD_OBJ_TUNNELS:
+		root = do_list_obj_json(ctx, cmd, NFT_OBJECT_TUNNEL);
+		break;
 	case CMD_OBJ_FLOWTABLE:
 		root = do_list_flowtable_json(ctx, cmd, table);
 		break;
@@ -2052,7 +2149,7 @@ int do_command_list_json(struct netlink_ctx *ctx, struct cmd *cmd)
 		errno = EOPNOTSUPP;
 		return -1;
 	case CMD_OBJ_INVALID:
-		BUG("invalid command object type %u\n", cmd->obj);
+		BUG("invalid command object type %u", cmd->obj);
 		break;
 	}
 
@@ -2116,9 +2213,11 @@ void monitor_print_element_json(struct netlink_mon_handler *monh,
 }
 
 void monitor_print_obj_json(struct netlink_mon_handler *monh,
-			    const char *cmd, struct obj *o)
+			    const char *cmd, struct obj *o, bool delete)
 {
-	monitor_print_json(monh, cmd, obj_print_json(o));
+	struct output_ctx *octx = &monh->ctx->nft->output;
+
+	monitor_print_json(monh, cmd, obj_print_json(octx, o, delete));
 }
 
 void monitor_print_flowtable_json(struct netlink_mon_handler *monh,

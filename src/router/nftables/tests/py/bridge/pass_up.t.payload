@@ -1,0 +1,4 @@
+# ether daddr set meta ibrhwaddr
+bridge test-bridge prerouting
+  [ meta load ibrhwaddr => reg 1 ]
+  [ payload write reg 1 => 6b @ link header + 0 csum_type 0 csum_off 0 csum_flags 0x0 ]

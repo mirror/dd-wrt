@@ -200,6 +200,18 @@ Rename a chain. The new name is expected in a dedicated property named
 
 == RULESET ELEMENTS
 
+=== RULESET
+[verse]
+____
+*{ "ruleset":* 'RULSET_PROPERTIES' *}*
+
+'RULESET_PROPERTIES' := *null* | *{ "family":* 'STRING' *}*
+____
+
+This is a special object for use with *list* and *flush* commands which will
+then operate on either the whole ruleset or the parts of it belonging to the
+given family.
+
 === TABLE
 [verse]
 ____
