@@ -6,8 +6,8 @@ libpng: zlib
 	LDFLAGS="$(COPTS) $(MIPS16_OPT) $(THUMB)  -L$(TOP)/zlib -fPIC -v -Wl,--verbose"
 	$(MAKE) -C libpng
 	-mkdir -p $(TOP)/libpng/.libs/include
-	-cp $(TOP)/libpng/*.h $(TOP)/libpng/.libs/include
-	-cp $(TOP)/libpng/.libs/libpng16.a $(TOP)/libpng/.libs/libpng.a
+	-cp -uv $(TOP)/libpng/*.h $(TOP)/libpng/.libs/include
+	-cp -uv $(TOP)/libpng/.libs/libpng16.a $(TOP)/libpng/.libs/libpng.a
 
 libpng-clean:
 	make -C libpng clean

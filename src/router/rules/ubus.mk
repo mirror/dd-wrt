@@ -14,12 +14,13 @@ ubus-configure:
 	$(call CMakeClean,$(UBUS_PKG_BUILD_DIR))
 	$(call CMakeConfigure,$(UBUS_PKG_BUILD_DIR),$(UBUS_STAGING_DIR),$(UBUS_CMAKE_OPTIONS),$(UBUS_EXTRA_CFLAGS),$(UBUS_EXTRA_LDFLAGS),.) 
 
-ubus: json-c libubox ubus-configure
+ubus: json-c libubox
 	$(MAKE) -C ubus
-	-install -D ubus/libubus.so $(STAGING_DIR)/usr/lib/libubus.so
-	-cp ubus/ubusmsg.h $(STAGING_DIR)/usr/include/
-	-cp ubus/ubus_common.h $(STAGING_DIR)/usr/include/
-	-cp ubus/libubus.h $(STAGING_DIR)/usr/include/
+	mkdir -p $(STAGING_DIR)/usr/lib
+	-cp -uv ubus/libubus.so $(STAGING_DIR)/usr/lib/libubus.so
+	-cp -uv ubus/ubusmsg.h $(STAGING_DIR)/usr/include/
+	-cp -uv ubus/ubus_common.h $(STAGING_DIR)/usr/include/
+	-cp -uv ubus/libubus.h $(STAGING_DIR)/usr/include/
 
 ubus-install:
 	install -D ubus/libubus.so $(INSTALLDIR)/ubus/usr/lib/libubus.so

@@ -156,17 +156,20 @@ ATH9K_CFLAGS += $(THUMB) -I$(TOP)/kernel_headers/$(KERNELRELEASE)/include
 ATH9K_LDFLAGS +=  $(THUMB)
 
 hostapd2: $(TINY) nvram ubus
-#	$(MAKE) -C wolfssl/standard_static
-	cp shared/nl80211.h hostapd-$(HOSTAPDVERSION)/src/drivers/nl80211_copy.h
+	$(MAKE) -C wolfssl/standard_static
+	cp -uvf shared/nl80211.h hostapd-$(HOSTAPDVERSION)/src/drivers/nl80211_copy.h
 	$(MAKE) -C hostapd-$(HOSTAPDVERSION)/hostapd clean
 	$(MAKE) -C hostapd-$(HOSTAPDVERSION)/wpa_supplicant clean
 	echo ` \
 		$(MAKE) -s -C hostapd-$(HOSTAPDVERSION)/hostapd MULTICALL=1 dump_cflags; \
 		$(MAKE) -s -C hostapd-$(HOSTAPDVERSION)/wpa_supplicant MULTICALL=1 dump_cflags \
-	` > hostapd-$(HOSTAPDVERSION)/.cflags
-
+	` > hostapd-$(HOSTAPDVERSION)/.cflags.new
+	if cmp -s hostapd-$(HOSTAPDVERSION)/.cflags.new hostapd-$(HOSTAPDVERSION)/.cflags ; then \
+		echo "config unchanged" ; \
+	else \
+		mv -f hostapd-$(HOSTAPDVERSION)/.cflags.new hostapd-$(HOSTAPDVERSION)/.cflags ; \
+	fi ;
 	
-
 	$(MAKE) -C hostapd-$(HOSTAPDVERSION)/hostapd CFLAGS="$$(cat hostapd-$(HOSTAPDVERSION)/.cflags) $(LTO) $(ATH9K_CFLAGS)" CONFIG_ATH9K=$(CONFIG_ATH9K) MULTICALL=1 hostapd_cli hostapd_multi.a
 	$(MAKE) -C hostapd-$(HOSTAPDVERSION)/wpa_supplicant CFLAGS="$$(cat hostapd-$(HOSTAPDVERSION)/.cflags) $(LTO) $(ATH9K_CFLAGS)" CONFIG_ATH9K=$(CONFIG_ATH9K) MULTICALL=1 wpa_cli wpa_supplicant_multi.a
 	$(CC) $(COPTS) $(MIPS16_OPT) $(LDLTO) -L$(TOP)/nvram  -L$(TOP)/libutils -Wall -ffunction-sections -fdata-sections -Wl,--gc-sections -o hostapd-$(HOSTAPDVERSION)/wpad hostapd-$(HOSTAPDVERSION)/multicall/multicall.c \

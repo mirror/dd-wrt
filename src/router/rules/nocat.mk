@@ -22,9 +22,9 @@ endif
 
 
 	make  -C glib
-	cp $(TOP)/glib/.libs/*.a $(TOP)/glib-1.2.10-install/lib
-	cp $(TOP)/glib/gmodule/.libs/*.a $(TOP)/glib-1.2.10-install/lib
-	cp $(TOP)/glib/gthread/.libs/*.a $(TOP)/glib-1.2.10-install/lib
+	cp -uv $(TOP)/glib/.libs/*.a $(TOP)/glib-1.2.10-install/lib
+	cp -uv $(TOP)/glib/gmodule/.libs/*.a $(TOP)/glib-1.2.10-install/lib
+	cp -uv $(TOP)/glib/gthread/.libs/*.a $(TOP)/glib-1.2.10-install/lib
 	make  -C nocat
 
 nocat-clean:
