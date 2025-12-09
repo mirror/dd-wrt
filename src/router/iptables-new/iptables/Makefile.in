@@ -17,7 +17,6 @@
 # -*- Makefile -*-
 
 
-
 VPATH = @srcdir@
 am__is_gnu_make = { \
   if test -z '$(MAKELEVEL)'; then \
@@ -109,8 +108,8 @@ am__aclocal_m4_deps = $(top_srcdir)/m4/libtool.m4 \
 	$(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
-DIST_COMMON = $(srcdir)/Makefile.am $(dist_sbin_SCRIPTS) \
-	$(dist_pkgdata_DATA) $(am__DIST_COMMON)
+DIST_COMMON = $(srcdir)/Makefile.am $(dist_pkgdata_DATA) \
+	$(am__DIST_COMMON)
 mkinstalldirs = $(install_sh) -d
 CONFIG_HEADER = $(top_builddir)/config.h
 CONFIG_CLEAN_FILES = xtables.pc iptables.8 iptables-extensions.8.tmpl \
@@ -118,17 +117,16 @@ CONFIG_CLEAN_FILES = xtables.pc iptables.8 iptables-extensions.8.tmpl \
 	iptables-xml.1 xtables-monitor.8
 CONFIG_CLEAN_VPATH_FILES =
 @ENABLE_NFTABLES_TRUE@am__EXEEXT_1 = xtables-nft-multi$(EXEEXT)
-am__installdirs = "$(DESTDIR)$(sbindir)" "$(DESTDIR)$(sbindir)" \
-	"$(DESTDIR)$(man1dir)" "$(DESTDIR)$(man8dir)" \
-	"$(DESTDIR)$(pkgdatadir)" "$(DESTDIR)$(pkgconfigdir)"
+am__installdirs = "$(DESTDIR)$(sbindir)" "$(DESTDIR)$(man1dir)" \
+	"$(DESTDIR)$(man8dir)" "$(DESTDIR)$(pkgdatadir)" \
+	"$(DESTDIR)$(pkgconfigdir)"
 PROGRAMS = $(sbin_PROGRAMS)
-am__xtables_legacy_multi_SOURCES_DIST = iptables-xml.c xtables-multi.h \
-	xshared.c xshared.h xtables-legacy-multi.c iptables-restore.c \
+am__xtables_legacy_multi_SOURCES_DIST = xtables-multi.h xshared.c \
+	xshared.h xtables-legacy-multi.c iptables-restore.c \
 	iptables-save.c iptables-standalone.c iptables.c \
 	iptables-multi.h ip6tables-standalone.c ip6tables.c \
 	ip6tables-multi.h
-am__objects_1 = xtables_legacy_multi-iptables-xml.$(OBJEXT) \
-	xtables_legacy_multi-xshared.$(OBJEXT)
+am__objects_1 = xtables_legacy_multi-xshared.$(OBJEXT)
 @ENABLE_IPV4_TRUE@am__objects_2 = xtables_legacy_multi-iptables-standalone.$(OBJEXT) \
 @ENABLE_IPV4_TRUE@	xtables_legacy_multi-iptables.$(OBJEXT)
 @ENABLE_IPV6_TRUE@am__objects_3 = xtables_legacy_multi-ip6tables-standalone.$(OBJEXT) \
@@ -151,19 +149,17 @@ xtables_legacy_multi_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC \
 	$(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=link $(CCLD) \
 	$(xtables_legacy_multi_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) \
 	$(LDFLAGS) -o $@
-am__xtables_nft_multi_SOURCES_DIST = iptables-xml.c xtables-multi.h \
-	xshared.c xshared.h xtables-nft-multi.c nft.c nft.h nft-arp.c \
-	nft-ipv4.c nft-ipv6.c nft-bridge.c nft-bridge.h nft-cache.c \
-	nft-cache.h nft-chain.c nft-chain.h nft-cmd.c nft-cmd.h \
-	nft-ruleparse.c nft-ruleparse.h nft-ruleparse-arp.c \
-	nft-ruleparse-bridge.c nft-ruleparse-ipv4.c \
-	nft-ruleparse-ipv6.c nft-shared.c nft-shared.h \
-	xtables-monitor.c xtables.c xtables-arp.c xtables-eb.c \
-	xtables-standalone.c xtables-eb-standalone.c \
+am__xtables_nft_multi_SOURCES_DIST = xtables-multi.h xshared.c \
+	xshared.h xtables-nft-multi.c nft.c nft.h nft-arp.c nft-ipv4.c \
+	nft-ipv6.c nft-bridge.c nft-bridge.h nft-cache.c nft-cache.h \
+	nft-chain.c nft-chain.h nft-cmd.c nft-cmd.h nft-ruleparse.c \
+	nft-ruleparse.h nft-ruleparse-arp.c nft-ruleparse-bridge.c \
+	nft-ruleparse-ipv4.c nft-ruleparse-ipv6.c nft-shared.c \
+	nft-shared.h xtables-monitor.c xtables.c xtables-arp.c \
+	xtables-eb.c xtables-standalone.c xtables-eb-standalone.c \
 	xtables-translate.c xtables-eb-translate.c xtables-save.c \
 	xtables-restore.c
-am__objects_4 = xtables_nft_multi-iptables-xml.$(OBJEXT) \
-	xtables_nft_multi-xshared.$(OBJEXT)
+am__objects_4 = xtables_nft_multi-xshared.$(OBJEXT)
 @ENABLE_NFTABLES_TRUE@am_xtables_nft_multi_OBJECTS = $(am__objects_4) \
 @ENABLE_NFTABLES_TRUE@	xtables_nft_multi-xtables-nft-multi.$(OBJEXT) \
 @ENABLE_NFTABLES_TRUE@	xtables_nft_multi-nft.$(OBJEXT) \
@@ -205,34 +201,6 @@ xtables_nft_multi_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC \
 	$(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=link $(CCLD) \
 	$(xtables_nft_multi_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
 	-o $@
-am__vpath_adj_setup = srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`;
-am__vpath_adj = case $$p in \
-    $(srcdir)/*) f=`echo "$$p" | sed "s|^$$srcdirstrip/||"`;; \
-    *) f=$$p;; \
-  esac;
-am__strip_dir = f=`echo $$p | sed -e 's|^.*/||'`;
-am__install_max = 40
-am__nobase_strip_setup = \
-  srcdirstrip=`echo "$(srcdir)" | sed 's/[].[^$$\\*|]/\\\\&/g'`
-am__nobase_strip = \
-  for p in $$list; do echo "$$p"; done | sed -e "s|$$srcdirstrip/||"
-am__nobase_list = $(am__nobase_strip_setup); \
-  for p in $$list; do echo "$$p $$p"; done | \
-  sed "s| $$srcdirstrip/| |;"' / .*\//!s/ .*/ ./; s,\( .*\)/[^/]*$$,\1,' | \
-  $(AWK) 'BEGIN { files["."] = "" } { files[$$2] = files[$$2] " " $$1; \
-    if (++n[$$2] == $(am__install_max)) \
-      { print $$2, files[$$2]; n[$$2] = 0; files[$$2] = "" } } \
-    END { for (dir in files) print dir, files[dir] }'
-am__base_list = \
-  sed '$$!N;$$!N;$$!N;$$!N;$$!N;$$!N;$$!N;s/\n/ /g' | \
-  sed '$$!N;$$!N;$$!N;$$!N;s/\n/ /g'
-am__uninstall_files_from_dir = { \
-  test -z "$$files" \
-    || { test ! -d "$$dir" && test ! -f "$$dir" && test ! -r "$$dir"; } \
-    || { echo " ( cd '$$dir' && rm -f" $$files ")"; \
-         $(am__cd) "$$dir" && rm -f $$files; }; \
-  }
-SCRIPTS = $(dist_sbin_SCRIPTS)
 AM_V_P = $(am__v_P_@AM_V@)
 am__v_P_ = $(am__v_P_@AM_DEFAULT_V@)
 am__v_P_0 = false
@@ -275,6 +243,33 @@ am__can_run_installinfo = \
     n|no|NO) false;; \
     *) (install-info --version) >/dev/null 2>&1;; \
   esac
+am__vpath_adj_setup = srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`;
+am__vpath_adj = case $$p in \
+    $(srcdir)/*) f=`echo "$$p" | sed "s|^$$srcdirstrip/||"`;; \
+    *) f=$$p;; \
+  esac;
+am__strip_dir = f=`echo $$p | sed -e 's|^.*/||'`;
+am__install_max = 40
+am__nobase_strip_setup = \
+  srcdirstrip=`echo "$(srcdir)" | sed 's/[].[^$$\\*|]/\\\\&/g'`
+am__nobase_strip = \
+  for p in $$list; do echo "$$p"; done | sed -e "s|$$srcdirstrip/||"
+am__nobase_list = $(am__nobase_strip_setup); \
+  for p in $$list; do echo "$$p $$p"; done | \
+  sed "s| $$srcdirstrip/| |;"' / .*\//!s/ .*/ ./; s,\( .*\)/[^/]*$$,\1,' | \
+  $(AWK) 'BEGIN { files["."] = "" } { files[$$2] = files[$$2] " " $$1; \
+    if (++n[$$2] == $(am__install_max)) \
+      { print $$2, files[$$2]; n[$$2] = 0; files[$$2] = "" } } \
+    END { for (dir in files) print dir, files[dir] }'
+am__base_list = \
+  sed '$$!N;$$!N;$$!N;$$!N;$$!N;$$!N;$$!N;s/\n/ /g' | \
+  sed '$$!N;$$!N;$$!N;$$!N;s/\n/ /g'
+am__uninstall_files_from_dir = { \
+  test -z "$$files" \
+    || { test ! -d "$$dir" && test ! -f "$$dir" && test ! -r "$$dir"; } \
+    || { echo " ( cd '$$dir' && rm -f" $$files ")"; \
+         $(am__cd) "$$dir" && rm -f $$files; }; \
+  }
 man1dir = $(mandir)/man1
 man8dir = $(mandir)/man8
 NROFF = nroff
@@ -467,7 +462,7 @@ AM_CPPFLAGS = ${regular_CPPFLAGS} \
 
 AM_LDFLAGS = ${regular_LDFLAGS}
 BUILT_SOURCES = 
-common_sources = iptables-xml.c xtables-multi.h xshared.c xshared.h
+common_sources = xtables-multi.h xshared.c xshared.h
 common_ldadd = ../extensions/libext.a ../libxtables/libxtables.la -lm
 common_cflags = ${AM_CFLAGS} $(am__append_1)
 xtables_legacy_multi_SOURCES = ${common_sources} \
@@ -511,7 +506,8 @@ man_MANS = iptables.8 iptables-restore.8 iptables-save.8 \
 	iptables-xml.1 ip6tables.8 ip6tables-restore.8 \
 	ip6tables-save.8 iptables-extensions.8 iptables-apply.8 \
 	ip6tables-apply.8 $(am__append_9)
-dist_sbin_SCRIPTS = iptables-apply
+
+#dist_sbin_SCRIPTS = iptables-apply
 dist_pkgdata_DATA = iptables.xslt
 xlate_man_links = iptables-translate.8 ip6tables-translate.8 \
 		  iptables-restore-translate.8 ip6tables-restore-translate.8 \
@@ -522,25 +518,18 @@ xlate_man_links = iptables-translate.8 ip6tables-translate.8 \
 @ENABLE_NFTABLES_TRUE@		   ebtables-nft.8
 
 CLEANFILES = ${man_MANS} iptables-extensions.8.tmpl
-vx_bin_links = iptables-xml
-@ENABLE_IPV4_TRUE@v4_sbin_links = iptables-legacy iptables-legacy-restore iptables-legacy-save \
-@ENABLE_IPV4_TRUE@		 iptables iptables-restore iptables-save
 
-@ENABLE_IPV6_TRUE@v6_sbin_links = ip6tables-legacy ip6tables-legacy-restore ip6tables-legacy-save \
-@ENABLE_IPV6_TRUE@		 ip6tables ip6tables-restore ip6tables-save
+#vx_bin_links   = iptables-xml
+@ENABLE_IPV4_TRUE@v4_sbin_links = iptables-legacy iptables-legacy-restore \
+@ENABLE_IPV4_TRUE@		 iptables iptables-restore
+
+@ENABLE_IPV6_TRUE@v6_sbin_links = ip6tables-legacy ip6tables-legacy-restore \
+@ENABLE_IPV6_TRUE@		 ip6tables ip6tables-restore
 
 @ENABLE_NFTABLES_TRUE@x_sbin_links = iptables-nft iptables-nft-restore iptables-nft-save \
-@ENABLE_NFTABLES_TRUE@		ip6tables-nft ip6tables-nft-restore ip6tables-nft-save \
-@ENABLE_NFTABLES_TRUE@		iptables-translate ip6tables-translate ebtables-translate \
-@ENABLE_NFTABLES_TRUE@		iptables-restore-translate ip6tables-restore-translate \
-@ENABLE_NFTABLES_TRUE@		arptables-nft arptables \
-@ENABLE_NFTABLES_TRUE@		arptables-nft-restore arptables-restore \
-@ENABLE_NFTABLES_TRUE@		arptables-nft-save arptables-save \
-@ENABLE_NFTABLES_TRUE@		arptables-translate \
+@ENABLE_NFTABLES_TRUE@		ip6tables-nft ip6tables-nft-restore \
 @ENABLE_NFTABLES_TRUE@		ebtables-nft ebtables \
-@ENABLE_NFTABLES_TRUE@		ebtables-nft-restore ebtables-restore \
-@ENABLE_NFTABLES_TRUE@		ebtables-nft-save ebtables-save \
-@ENABLE_NFTABLES_TRUE@		xtables-monitor
+@ENABLE_NFTABLES_TRUE@		ebtables-nft-restore ebtables-restore
 
 pkgconfig_DATA = xtables.pc
 EXTRA_DIST = tests
@@ -651,41 +640,6 @@ xtables-legacy-multi$(EXEEXT): $(xtables_legacy_multi_OBJECTS) $(xtables_legacy_
 xtables-nft-multi$(EXEEXT): $(xtables_nft_multi_OBJECTS) $(xtables_nft_multi_DEPENDENCIES) $(EXTRA_xtables_nft_multi_DEPENDENCIES) 
 	@rm -f xtables-nft-multi$(EXEEXT)
 	$(AM_V_CCLD)$(xtables_nft_multi_LINK) $(xtables_nft_multi_OBJECTS) $(xtables_nft_multi_LDADD) $(LIBS)
-install-dist_sbinSCRIPTS: $(dist_sbin_SCRIPTS)
-	@$(NORMAL_INSTALL)
-	@list='$(dist_sbin_SCRIPTS)'; test -n "$(sbindir)" || list=; \
-	if test -n "$$list"; then \
-	  echo " $(MKDIR_P) '$(DESTDIR)$(sbindir)'"; \
-	  $(MKDIR_P) "$(DESTDIR)$(sbindir)" || exit 1; \
-	fi; \
-	for p in $$list; do \
-	  if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
-	  if test -f "$$d$$p"; then echo "$$d$$p"; echo "$$p"; else :; fi; \
-	done | \
-	sed -e 'p;s,.*/,,;n' \
-	    -e 'h;s|.*|.|' \
-	    -e 'p;x;s,.*/,,;$(transform)' | sed 'N;N;N;s,\n, ,g' | \
-	$(AWK) 'BEGIN { files["."] = ""; dirs["."] = 1; } \
-	  { d=$$3; if (dirs[d] != 1) { print "d", d; dirs[d] = 1 } \
-	    if ($$2 == $$4) { files[d] = files[d] " " $$1; \
-	      if (++n[d] == $(am__install_max)) { \
-		print "f", d, files[d]; n[d] = 0; files[d] = "" } } \
-	    else { print "f", d "/" $$4, $$1 } } \
-	  END { for (d in files) print "f", d, files[d] }' | \
-	while read type dir files; do \
-	     if test "$$dir" = .; then dir=; else dir=/$$dir; fi; \
-	     test -z "$$files" || { \
-	       echo " $(INSTALL_SCRIPT) $$files '$(DESTDIR)$(sbindir)$$dir'"; \
-	       $(INSTALL_SCRIPT) $$files "$(DESTDIR)$(sbindir)$$dir" || exit $$?; \
-	     } \
-	; done
-
-uninstall-dist_sbinSCRIPTS:
-	@$(NORMAL_UNINSTALL)
-	@list='$(dist_sbin_SCRIPTS)'; test -n "$(sbindir)" || exit 0; \
-	files=`for p in $$list; do echo "$$p"; done | \
-	       sed -e 's,.*/,,;$(transform)'`; \
-	dir='$(DESTDIR)$(sbindir)'; $(am__uninstall_files_from_dir)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -698,11 +652,9 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/xtables_legacy_multi-iptables-restore.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/xtables_legacy_multi-iptables-save.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/xtables_legacy_multi-iptables-standalone.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/xtables_legacy_multi-iptables-xml.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/xtables_legacy_multi-iptables.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/xtables_legacy_multi-xshared.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/xtables_legacy_multi-xtables-legacy-multi.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/xtables_nft_multi-iptables-xml.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/xtables_nft_multi-nft-arp.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/xtables_nft_multi-nft-bridge.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/xtables_nft_multi-nft-cache.Po@am__quote@
@@ -750,20 +702,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$<' object='$@' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LTCOMPILE) -c -o $@ $<
-
-xtables_legacy_multi-iptables-xml.o: iptables-xml.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(xtables_legacy_multi_CFLAGS) $(CFLAGS) -MT xtables_legacy_multi-iptables-xml.o -MD -MP -MF $(DEPDIR)/xtables_legacy_multi-iptables-xml.Tpo -c -o xtables_legacy_multi-iptables-xml.o `test -f 'iptables-xml.c' || echo '$(srcdir)/'`iptables-xml.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/xtables_legacy_multi-iptables-xml.Tpo $(DEPDIR)/xtables_legacy_multi-iptables-xml.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='iptables-xml.c' object='xtables_legacy_multi-iptables-xml.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(xtables_legacy_multi_CFLAGS) $(CFLAGS) -c -o xtables_legacy_multi-iptables-xml.o `test -f 'iptables-xml.c' || echo '$(srcdir)/'`iptables-xml.c
-
-xtables_legacy_multi-iptables-xml.obj: iptables-xml.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(xtables_legacy_multi_CFLAGS) $(CFLAGS) -MT xtables_legacy_multi-iptables-xml.obj -MD -MP -MF $(DEPDIR)/xtables_legacy_multi-iptables-xml.Tpo -c -o xtables_legacy_multi-iptables-xml.obj `if test -f 'iptables-xml.c'; then $(CYGPATH_W) 'iptables-xml.c'; else $(CYGPATH_W) '$(srcdir)/iptables-xml.c'; fi`
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/xtables_legacy_multi-iptables-xml.Tpo $(DEPDIR)/xtables_legacy_multi-iptables-xml.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='iptables-xml.c' object='xtables_legacy_multi-iptables-xml.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(xtables_legacy_multi_CFLAGS) $(CFLAGS) -c -o xtables_legacy_multi-iptables-xml.obj `if test -f 'iptables-xml.c'; then $(CYGPATH_W) 'iptables-xml.c'; else $(CYGPATH_W) '$(srcdir)/iptables-xml.c'; fi`
 
 xtables_legacy_multi-xshared.o: xshared.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(xtables_legacy_multi_CFLAGS) $(CFLAGS) -MT xtables_legacy_multi-xshared.o -MD -MP -MF $(DEPDIR)/xtables_legacy_multi-xshared.Tpo -c -o xtables_legacy_multi-xshared.o `test -f 'xshared.c' || echo '$(srcdir)/'`xshared.c
@@ -876,20 +814,6 @@ xtables_legacy_multi-ip6tables.obj: ip6tables.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='ip6tables.c' object='xtables_legacy_multi-ip6tables.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(xtables_legacy_multi_CFLAGS) $(CFLAGS) -c -o xtables_legacy_multi-ip6tables.obj `if test -f 'ip6tables.c'; then $(CYGPATH_W) 'ip6tables.c'; else $(CYGPATH_W) '$(srcdir)/ip6tables.c'; fi`
-
-xtables_nft_multi-iptables-xml.o: iptables-xml.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(xtables_nft_multi_CFLAGS) $(CFLAGS) -MT xtables_nft_multi-iptables-xml.o -MD -MP -MF $(DEPDIR)/xtables_nft_multi-iptables-xml.Tpo -c -o xtables_nft_multi-iptables-xml.o `test -f 'iptables-xml.c' || echo '$(srcdir)/'`iptables-xml.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/xtables_nft_multi-iptables-xml.Tpo $(DEPDIR)/xtables_nft_multi-iptables-xml.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='iptables-xml.c' object='xtables_nft_multi-iptables-xml.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(xtables_nft_multi_CFLAGS) $(CFLAGS) -c -o xtables_nft_multi-iptables-xml.o `test -f 'iptables-xml.c' || echo '$(srcdir)/'`iptables-xml.c
-
-xtables_nft_multi-iptables-xml.obj: iptables-xml.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(xtables_nft_multi_CFLAGS) $(CFLAGS) -MT xtables_nft_multi-iptables-xml.obj -MD -MP -MF $(DEPDIR)/xtables_nft_multi-iptables-xml.Tpo -c -o xtables_nft_multi-iptables-xml.obj `if test -f 'iptables-xml.c'; then $(CYGPATH_W) 'iptables-xml.c'; else $(CYGPATH_W) '$(srcdir)/iptables-xml.c'; fi`
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/xtables_nft_multi-iptables-xml.Tpo $(DEPDIR)/xtables_nft_multi-iptables-xml.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='iptables-xml.c' object='xtables_nft_multi-iptables-xml.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(xtables_nft_multi_CFLAGS) $(CFLAGS) -c -o xtables_nft_multi-iptables-xml.obj `if test -f 'iptables-xml.c'; then $(CYGPATH_W) 'iptables-xml.c'; else $(CYGPATH_W) '$(srcdir)/iptables-xml.c'; fi`
 
 xtables_nft_multi-xshared.o: xshared.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(xtables_nft_multi_CFLAGS) $(CFLAGS) -MT xtables_nft_multi-xshared.o -MD -MP -MF $(DEPDIR)/xtables_nft_multi-xshared.Tpo -c -o xtables_nft_multi-xshared.o `test -f 'xshared.c' || echo '$(srcdir)/'`xshared.c
@@ -1474,9 +1398,9 @@ distdir: $(DISTFILES)
 check-am: all-am
 check: $(BUILT_SOURCES)
 	$(MAKE) $(AM_MAKEFLAGS) check-am
-all-am: Makefile $(PROGRAMS) $(SCRIPTS) $(MANS) $(DATA)
+all-am: Makefile $(PROGRAMS) $(MANS) $(DATA)
 installdirs:
-	for dir in "$(DESTDIR)$(sbindir)" "$(DESTDIR)$(sbindir)" "$(DESTDIR)$(man1dir)" "$(DESTDIR)$(man8dir)" "$(DESTDIR)$(pkgdatadir)" "$(DESTDIR)$(pkgconfigdir)"; do \
+	for dir in "$(DESTDIR)$(sbindir)" "$(DESTDIR)$(man1dir)" "$(DESTDIR)$(man8dir)" "$(DESTDIR)$(pkgdatadir)" "$(DESTDIR)$(pkgconfigdir)"; do \
 	  test -z "$$dir" || $(MKDIR_P) "$$dir"; \
 	done
 install: $(BUILT_SOURCES)
@@ -1542,7 +1466,7 @@ install-dvi: install-dvi-am
 
 install-dvi-am:
 
-install-exec-am: install-dist_sbinSCRIPTS install-sbinPROGRAMS
+install-exec-am: install-sbinPROGRAMS
 	@$(NORMAL_INSTALL)
 	$(MAKE) $(AM_MAKEFLAGS) install-exec-hook
 install-html: install-html-am
@@ -1583,8 +1507,8 @@ ps: ps-am
 
 ps-am:
 
-uninstall-am: uninstall-dist_pkgdataDATA uninstall-dist_sbinSCRIPTS \
-	uninstall-man uninstall-pkgconfigDATA uninstall-sbinPROGRAMS
+uninstall-am: uninstall-dist_pkgdataDATA uninstall-man \
+	uninstall-pkgconfigDATA uninstall-sbinPROGRAMS
 	@$(NORMAL_INSTALL)
 	$(MAKE) $(AM_MAKEFLAGS) uninstall-hook
 uninstall-man: uninstall-man1 uninstall-man8
@@ -1597,20 +1521,18 @@ uninstall-man: uninstall-man1 uninstall-man8
 	distclean distclean-compile distclean-generic \
 	distclean-libtool distclean-tags distdir dvi dvi-am html \
 	html-am info info-am install install-am install-data \
-	install-data-am install-dist_pkgdataDATA \
-	install-dist_sbinSCRIPTS install-dvi install-dvi-am \
-	install-exec install-exec-am install-exec-hook install-html \
-	install-html-am install-info install-info-am install-man \
-	install-man1 install-man8 install-pdf install-pdf-am \
-	install-pkgconfigDATA install-ps install-ps-am \
+	install-data-am install-dist_pkgdataDATA install-dvi \
+	install-dvi-am install-exec install-exec-am install-exec-hook \
+	install-html install-html-am install-info install-info-am \
+	install-man install-man1 install-man8 install-pdf \
+	install-pdf-am install-pkgconfigDATA install-ps install-ps-am \
 	install-sbinPROGRAMS install-strip installcheck \
 	installcheck-am installdirs maintainer-clean \
 	maintainer-clean-generic mostlyclean mostlyclean-compile \
 	mostlyclean-generic mostlyclean-libtool pdf pdf-am ps ps-am \
 	tags tags-am uninstall uninstall-am uninstall-dist_pkgdataDATA \
-	uninstall-dist_sbinSCRIPTS uninstall-hook uninstall-man \
-	uninstall-man1 uninstall-man8 uninstall-pkgconfigDATA \
-	uninstall-sbinPROGRAMS
+	uninstall-hook uninstall-man uninstall-man1 uninstall-man8 \
+	uninstall-pkgconfigDATA uninstall-sbinPROGRAMS
 
 .PRECIOUS: Makefile
 
@@ -1634,7 +1556,7 @@ install-exec-hook:
 	for i in ${v4_sbin_links}; do ${LN_S} -f xtables-legacy-multi "${DESTDIR}${sbindir}/$$i"; done;
 	for i in ${v6_sbin_links}; do ${LN_S} -f xtables-legacy-multi "${DESTDIR}${sbindir}/$$i"; done;
 	for i in ${x_sbin_links}; do ${LN_S} -f xtables-nft-multi "${DESTDIR}${sbindir}/$$i"; done;
-	${LN_S} -f iptables-apply "${DESTDIR}${sbindir}/ip6tables-apply"
+#	${LN_S} -f iptables-apply "${DESTDIR}${sbindir}/ip6tables-apply"
 
 uninstall-hook:
 	dir=${DESTDIR}${bindir}; { \

@@ -73,7 +73,7 @@ man_MANS         = iptables.8 iptables-restore.8 iptables-save.8 \
                    ip6tables-save.8 iptables-extensions.8 \
                    iptables-apply.8 ip6tables-apply.8
 
-dist_sbin_SCRIPTS = iptables-apply
+#dist_sbin_SCRIPTS = iptables-apply
 dist_pkgdata_DATA = iptables.xslt
 
 xlate_man_links = iptables-translate.8 ip6tables-translate.8 \
@@ -91,26 +91,18 @@ CLEANFILES       = ${man_MANS} iptables-extensions.8.tmpl
 
 #vx_bin_links   = iptables-xml
 if ENABLE_IPV4
-v4_sbin_links  = iptables-legacy iptables-legacy-restore iptables-legacy-save \
-		 iptables iptables-restore iptables-save
+v4_sbin_links  = iptables-legacy iptables-legacy-restore \
+		 iptables iptables-restore
 endif
 if ENABLE_IPV6
-v6_sbin_links  = ip6tables-legacy ip6tables-legacy-restore ip6tables-legacy-save \
-		 ip6tables ip6tables-restore ip6tables-save
+v6_sbin_links  = ip6tables-legacy ip6tables-legacy-restore \
+		 ip6tables ip6tables-restore
 endif
 if ENABLE_NFTABLES
-x_sbin_links  = iptables-nft iptables-nft-restore iptables-nft-save \
-		ip6tables-nft ip6tables-nft-restore ip6tables-nft-save \
-		iptables-translate ip6tables-translate ebtables-translate \
-		iptables-restore-translate ip6tables-restore-translate \
-		arptables-nft arptables \
-		arptables-nft-restore arptables-restore \
-		arptables-nft-save arptables-save \
-		arptables-translate \
+x_sbin_links  = iptables-nft iptables-nft-restore \
+		ip6tables-nft ip6tables-nft-restore \
 		ebtables-nft ebtables \
-		ebtables-nft-restore ebtables-restore \
-		ebtables-nft-save ebtables-save \
-		xtables-monitor
+		ebtables-nft-restore ebtables-restore
 endif
 
 iptables-extensions.8: iptables-extensions.8.tmpl ../extensions/matches.man ../extensions/targets.man

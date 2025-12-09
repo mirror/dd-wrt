@@ -17,13 +17,13 @@
 static const struct subcommand multi_subcommands[] = {
 #ifdef ENABLE_IPV4
 	{"iptables",            iptables_main},
-	{"main4",               iptables_main},
-	{"iptables-save",       iptables_save_main},
-	{"save4",               iptables_save_main},
+//	{"main4",               iptables_main},
+//	{"iptables-save",       iptables_save_main},
+//	{"save4",               iptables_save_main},
 	{"iptables-restore",    iptables_restore_main},
-	{"restore4",            iptables_restore_main},
+//	{"restore4",            iptables_restore_main},
 	{"iptables-legacy",     iptables_main},
-	{"iptables-legacy-save",iptables_save_main},
+//	{"iptables-legacy-save",iptables_save_main},
 	{"iptables-legacy-restore",iptables_restore_main},
 
 
@@ -32,13 +32,13 @@ static const struct subcommand multi_subcommands[] = {
 //	{"xml",                 iptables_xml_main},
 #ifdef ENABLE_IPV6
 	{"ip6tables",           ip6tables_main},
-	{"main6",               ip6tables_main},
-	{"ip6tables-save",      ip6tables_save_main},
-	{"save6",               ip6tables_save_main},
+//	{"main6",               ip6tables_main},
+//	{"ip6tables-save",      ip6tables_save_main},
+//	{"save6",               ip6tables_save_main},
 	{"ip6tables-restore",   ip6tables_restore_main},
 	{"restore6",            ip6tables_restore_main},
 	{"ip6tables-legacy",    ip6tables_main},
-	{"ip6tables-legacy-save",ip6tables_save_main},
+//	{"ip6tables-legacy-save",ip6tables_save_main},
 	{"ip6tables-legacy-restore",ip6tables_restore_main},
 #endif
 	{NULL},
