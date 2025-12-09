@@ -464,7 +464,7 @@ void nftnl_chain_nlmsg_build_payload(struct nlmsghdr *nlh, const struct nftnl_ch
 
 		nest_dev = mnl_attr_nest_start(nlh, NFTA_HOOK_DEVS);
 		nftnl_str_array_foreach(dev, &c->dev_array, i)
-			mnl_attr_put_strz(nlh, NFTA_DEVICE_NAME, dev);
+			nftnl_attr_put_ifname(nlh, dev);
 		mnl_attr_nest_end(nlh, nest_dev);
 	}
 
@@ -648,6 +648,8 @@ static int nftnl_chain_parse_hook(struct nlattr *attr, struct nftnl_chain *c)
 		c->flags |= (1 << NFTNL_CHAIN_PRIO);
 	}
 	if (tb[NFTA_HOOK_DEV]) {
+		if (c->flags & (1 << NFTNL_CHAIN_DEV))
+			xfree(c->dev);
 		c->dev = strdup(mnl_attr_get_str(tb[NFTA_HOOK_DEV]));
 		if (!c->dev)
 			return -1;
@@ -673,22 +675,12 @@ int nftnl_chain_nlmsg_parse(const struct nlmsghdr *nlh, struct nftnl_chain *c)
 	if (mnl_attr_parse(nlh, sizeof(*nfg), nftnl_chain_parse_attr_cb, tb) < 0)
 		return -1;
 
-	if (tb[NFTA_CHAIN_NAME]) {
-		if (c->flags & (1 << NFTNL_CHAIN_NAME))
-			xfree(c->name);
-		c->name = strdup(mnl_attr_get_str(tb[NFTA_CHAIN_NAME]));
-		if (!c->name)
-			return -1;
-		c->flags |= (1 << NFTNL_CHAIN_NAME);
-	}
-	if (tb[NFTA_CHAIN_TABLE]) {
-		if (c->flags & (1 << NFTNL_CHAIN_TABLE))
-			xfree(c->table);
-		c->table = strdup(mnl_attr_get_str(tb[NFTA_CHAIN_TABLE]));
-		if (!c->table)
-			return -1;
-		c->flags |= (1 << NFTNL_CHAIN_TABLE);
-	}
+	if (nftnl_parse_str_attr(tb[NFTA_CHAIN_NAME], NFTNL_CHAIN_NAME,
+				 &c->name, &c->flags) < 0)
+		return -1;
+	if (nftnl_parse_str_attr(tb[NFTA_CHAIN_TABLE], NFTNL_CHAIN_TABLE,
+				 &c->table, &c->flags) < 0)
+		return -1;
 	if (tb[NFTA_CHAIN_HOOK]) {
 		ret = nftnl_chain_parse_hook(tb[NFTA_CHAIN_HOOK], c);
 		if (ret < 0)
@@ -711,14 +703,9 @@ int nftnl_chain_nlmsg_parse(const struct nlmsghdr *nlh, struct nftnl_chain *c)
 		c->handle = be64toh(mnl_attr_get_u64(tb[NFTA_CHAIN_HANDLE]));
 		c->flags |= (1 << NFTNL_CHAIN_HANDLE);
 	}
-	if (tb[NFTA_CHAIN_TYPE]) {
-		if (c->flags & (1 << NFTNL_CHAIN_TYPE))
-			xfree(c->type);
-		c->type = strdup(mnl_attr_get_str(tb[NFTA_CHAIN_TYPE]));
-		if (!c->type)
-			return -1;
-		c->flags |= (1 << NFTNL_CHAIN_TYPE);
-	}
+	if (nftnl_parse_str_attr(tb[NFTA_CHAIN_TYPE], NFTNL_CHAIN_TYPE,
+				 &c->type, &c->flags) < 0)
+		return -1;
 	if (tb[NFTA_CHAIN_FLAGS]) {
 		c->chain_flags = ntohl(mnl_attr_get_u32(tb[NFTA_CHAIN_FLAGS]));
 		c->flags |= (1 << NFTNL_CHAIN_FLAGS);

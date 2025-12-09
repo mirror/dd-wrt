@@ -78,21 +78,7 @@ struct nftnl_obj {
 			uint32_t	tun_flags;
 			uint8_t		tun_tos;
 			uint8_t		tun_ttl;
-			union {
-				struct {
-					uint32_t	gbp;
-				} tun_vxlan;
-				struct {
-					uint32_t	version;
-					union {
-						uint32_t	v1_index;
-						struct {
-							uint8_t	hwid;
-							uint8_t	dir;
-						} v2;
-					} u;
-				} tun_erspan;
-			} u;
+			struct nftnl_tunnel_opts *tun_opts;
 		} tunnel;
 		struct nftnl_obj_secmark {
 			char		ctx[NFT_SECMARK_CTX_MAXLEN];

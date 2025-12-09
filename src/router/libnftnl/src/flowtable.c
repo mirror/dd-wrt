@@ -299,7 +299,7 @@ void nftnl_flowtable_nlmsg_build_payload(struct nlmsghdr *nlh,
 
 		nest_dev = mnl_attr_nest_start(nlh, NFTA_FLOWTABLE_HOOK_DEVS);
 		nftnl_str_array_foreach(dev, &c->dev_array, i)
-			mnl_attr_put_strz(nlh, NFTA_DEVICE_NAME, dev);
+			nftnl_attr_put_ifname(nlh, dev);
 		mnl_attr_nest_end(nlh, nest_dev);
 	}
 
@@ -408,22 +408,14 @@ int nftnl_flowtable_nlmsg_parse(const struct nlmsghdr *nlh, struct nftnl_flowtab
 	if (mnl_attr_parse(nlh, sizeof(*nfg), nftnl_flowtable_parse_attr_cb, tb) < 0)
 		return -1;
 
-	if (tb[NFTA_FLOWTABLE_NAME]) {
-		if (c->flags & (1 << NFTNL_FLOWTABLE_NAME))
-			xfree(c->name);
-		c->name = strdup(mnl_attr_get_str(tb[NFTA_FLOWTABLE_NAME]));
-		if (!c->name)
-			return -1;
-		c->flags |= (1 << NFTNL_FLOWTABLE_NAME);
-	}
-	if (tb[NFTA_FLOWTABLE_TABLE]) {
-		if (c->flags & (1 << NFTNL_FLOWTABLE_TABLE))
-			xfree(c->table);
-		c->table = strdup(mnl_attr_get_str(tb[NFTA_FLOWTABLE_TABLE]));
-		if (!c->table)
-			return -1;
-		c->flags |= (1 << NFTNL_FLOWTABLE_TABLE);
-	}
+	if (nftnl_parse_str_attr(tb[NFTA_FLOWTABLE_NAME],
+				 NFTNL_FLOWTABLE_NAME,
+				 &c->name, &c->flags) < 0)
+		return -1;
+	if (nftnl_parse_str_attr(tb[NFTA_FLOWTABLE_TABLE],
+				 NFTNL_FLOWTABLE_TABLE,
+				 &c->table, &c->flags) < 0)
+		return -1;
 	if (tb[NFTA_FLOWTABLE_HOOK]) {
 		ret = nftnl_flowtable_parse_hook(tb[NFTA_FLOWTABLE_HOOK], c);
 		if (ret < 0)

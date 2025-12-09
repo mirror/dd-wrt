@@ -55,6 +55,10 @@ void nftnl_obj_free(const struct nftnl_obj *obj)
 		xfree(obj->name);
 	if (obj->flags & (1 << NFTNL_OBJ_USERDATA))
 		xfree(obj->user.data);
+	if (obj->flags & (1 << NFTNL_OBJ_TUNNEL_OPTS)) {
+		nftnl_tunnel_opts_free(obj->data.tunnel.tun_opts);
+		xfree(obj->data.tunnel.tun_opts);
+	}
 
 	xfree(obj);
 }
@@ -340,14 +344,12 @@ int nftnl_obj_nlmsg_parse(const struct nlmsghdr *nlh, struct nftnl_obj *obj)
 	if (mnl_attr_parse(nlh, sizeof(*nfg), nftnl_obj_parse_attr_cb, tb) < 0)
 		return -1;
 
-	if (tb[NFTA_OBJ_TABLE]) {
-		obj->table = strdup(mnl_attr_get_str(tb[NFTA_OBJ_TABLE]));
-		obj->flags |= (1 << NFTNL_OBJ_TABLE);
-	}
-	if (tb[NFTA_OBJ_NAME]) {
-		obj->name = strdup(mnl_attr_get_str(tb[NFTA_OBJ_NAME]));
-		obj->flags |= (1 << NFTNL_OBJ_NAME);
-	}
+	if (nftnl_parse_str_attr(tb[NFTA_OBJ_TABLE], NFTNL_OBJ_TABLE,
+				 &obj->table, &obj->flags) < 0)
+		return -1;
+	if (nftnl_parse_str_attr(tb[NFTA_OBJ_NAME], NFTNL_OBJ_NAME,
+				 &obj->name, &obj->flags) < 0)
+		return -1;
 	if (tb[NFTA_OBJ_TYPE]) {
 		uint32_t type = ntohl(mnl_attr_get_u32(tb[NFTA_OBJ_TYPE]));
 

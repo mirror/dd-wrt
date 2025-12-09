@@ -383,3 +383,19 @@ LIBNFTNL_16 {
 LIBNFTNL_17 {
   nftnl_set_elem_nlmsg_build;
 } LIBNFTNL_16;
+
+LIBNFTNL_18 {
+nftnl_tunnel_opt_get;
+nftnl_tunnel_opt_get_data;
+nftnl_tunnel_opt_get_u8;
+nftnl_tunnel_opt_get_u16;
+nftnl_tunnel_opt_get_u32;
+nftnl_tunnel_opt_set;
+nftnl_tunnel_opt_alloc;
+nftnl_tunnel_opt_get_type;
+nftnl_tunnel_opt_get_flags;
+nftnl_tunnel_opts_alloc;
+nftnl_obj_tunnel_opts_foreach;
+nftnl_tunnel_opts_add;
+nftnl_tunnel_opts_free;
+} LIBNFTNL_17;

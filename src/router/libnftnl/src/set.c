@@ -657,22 +657,12 @@ int nftnl_set_nlmsg_parse(const struct nlmsghdr *nlh, struct nftnl_set *s)
 	if (mnl_attr_parse(nlh, sizeof(*nfg), nftnl_set_parse_attr_cb, tb) < 0)
 		return -1;
 
-	if (tb[NFTA_SET_TABLE]) {
-		if (s->flags & (1 << NFTNL_SET_TABLE))
-			xfree(s->table);
-		s->table = strdup(mnl_attr_get_str(tb[NFTA_SET_TABLE]));
-		if (!s->table)
-			return -1;
-		s->flags |= (1 << NFTNL_SET_TABLE);
-	}
-	if (tb[NFTA_SET_NAME]) {
-		if (s->flags & (1 << NFTNL_SET_NAME))
-			xfree(s->name);
-		s->name = strdup(mnl_attr_get_str(tb[NFTA_SET_NAME]));
-		if (!s->name)
-			return -1;
-		s->flags |= (1 << NFTNL_SET_NAME);
-	}
+	if (nftnl_parse_str_attr(tb[NFTA_SET_TABLE], NFTNL_SET_TABLE,
+				 &s->table, &s->flags) < 0)
+		return -1;
+	if (nftnl_parse_str_attr(tb[NFTA_SET_NAME], NFTNL_SET_NAME,
+				 &s->name, &s->flags) < 0)
+		return -1;
 	if (tb[NFTA_SET_HANDLE]) {
 		s->handle = be64toh(mnl_attr_get_u64(tb[NFTA_SET_HANDLE]));
 		s->flags |= (1 << NFTNL_SET_HANDLE);

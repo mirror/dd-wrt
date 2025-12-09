@@ -45,9 +45,13 @@ int nftnl_parse_devs(struct nftnl_str_array *sa, const struct nlattr *nest)
 	int len = 0;
 
 	mnl_attr_for_each_nested(attr, nest) {
-		if (mnl_attr_get_type(attr) != NFTA_DEVICE_NAME)
+		switch(mnl_attr_get_type(attr)) {
+		default:
 			return -1;
-		len++;
+		case NFTA_DEVICE_NAME:
+		case NFTA_DEVICE_PREFIX:
+			len++;
+		}
 	}
 
 	nftnl_str_array_clear(sa);
@@ -56,7 +60,7 @@ int nftnl_parse_devs(struct nftnl_str_array *sa, const struct nlattr *nest)
 		return -1;
 
 	mnl_attr_for_each_nested(attr, nest) {
-		sa->array[sa->len] = strdup(mnl_attr_get_str(attr));
+		sa->array[sa->len] = nftnl_attr_get_ifname(attr);
 		if (!sa->array[sa->len]) {
 			nftnl_str_array_clear(sa);
 			return -1;

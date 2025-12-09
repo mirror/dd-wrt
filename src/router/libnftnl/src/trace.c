@@ -336,11 +336,11 @@ static int nftnl_trace_parse_verdict(const struct nlattr *attr,
 	case NFT_JUMP:
 		if (!tb[NFTA_VERDICT_CHAIN])
 			abi_breakage();
-		t->jump_target = strdup(mnl_attr_get_str(tb[NFTA_VERDICT_CHAIN]));
-		if (!t->jump_target)
+		if (nftnl_parse_str_attr(tb[NFTA_VERDICT_CHAIN],
+					 NFTNL_TRACE_JUMP_TARGET,
+					 (const char **)&t->jump_target,
+					 &t->flags) < 0)
 			return -1;
-
-		t->flags |= (1 << NFTNL_TRACE_JUMP_TARGET);
 		break;
 	}
 	return 0;
@@ -370,21 +370,13 @@ int nftnl_trace_nlmsg_parse(const struct nlmsghdr *nlh, struct nftnl_trace *t)
 	t->id = ntohl(mnl_attr_get_u32(tb[NFTA_TRACE_ID]));
 	t->flags |= (1 << NFTNL_TRACE_ID);
 
-	if (tb[NFTA_TRACE_TABLE]) {
-		t->table = strdup(mnl_attr_get_str(tb[NFTA_TRACE_TABLE]));
-		if (!t->table)
-			return -1;
+	if (nftnl_parse_str_attr(tb[NFTA_TRACE_TABLE], NFTNL_TRACE_TABLE,
+				 (const char **)&t->table, &t->flags) < 0)
+		return -1;
 
-		t->flags |= (1 << NFTNL_TRACE_TABLE);
-	}
-
-	if (tb[NFTA_TRACE_CHAIN]) {
-		t->chain = strdup(mnl_attr_get_str(tb[NFTA_TRACE_CHAIN]));
-		if (!t->chain)
-			return -1;
-
-		t->flags |= (1 << NFTNL_TRACE_CHAIN);
-	}
+	if (nftnl_parse_str_attr(tb[NFTA_TRACE_CHAIN], NFTNL_TRACE_CHAIN,
+				 (const char **)&t->chain, &t->flags) < 0)
+		return -1;
 
 	if (tb[NFTA_TRACE_IIFTYPE]) {
 		t->iiftype = ntohs(mnl_attr_get_u16(tb[NFTA_TRACE_IIFTYPE]));

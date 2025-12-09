@@ -57,20 +57,8 @@ nftnl_obj_tunnel_set(struct nftnl_obj *e, uint16_t type,
 	case NFTNL_OBJ_TUNNEL_TTL:
 		memcpy(&tun->tun_ttl, data, data_len);
 		break;
-	case NFTNL_OBJ_TUNNEL_VXLAN_GBP:
-		memcpy(&tun->u.tun_vxlan.gbp, data, data_len);
-		break;
-	case NFTNL_OBJ_TUNNEL_ERSPAN_VERSION:
-		memcpy(&tun->u.tun_erspan.version, data, data_len);
-		break;
-	case NFTNL_OBJ_TUNNEL_ERSPAN_V1_INDEX:
-		memcpy(&tun->u.tun_erspan.u.v1_index, data, data_len);
-		break;
-	case NFTNL_OBJ_TUNNEL_ERSPAN_V2_HWID:
-		memcpy(&tun->u.tun_erspan.u.v2.hwid, data, data_len);
-		break;
-	case NFTNL_OBJ_TUNNEL_ERSPAN_V2_DIR:
-		memcpy(&tun->u.tun_erspan.u.v2.dir, data, data_len);
+	case NFTNL_OBJ_TUNNEL_OPTS:
+		memcpy(&tun->tun_opts, data, data_len);
 		break;
 	}
 	return 0;
@@ -116,21 +104,9 @@ nftnl_obj_tunnel_get(const struct nftnl_obj *e, uint16_t type,
 	case NFTNL_OBJ_TUNNEL_TTL:
 		*data_len = sizeof(tun->tun_ttl);
 		return &tun->tun_ttl;
-	case NFTNL_OBJ_TUNNEL_VXLAN_GBP:
-		*data_len = sizeof(tun->u.tun_vxlan.gbp);
-		return &tun->u.tun_vxlan.gbp;
-	case NFTNL_OBJ_TUNNEL_ERSPAN_VERSION:
-		*data_len = sizeof(tun->u.tun_erspan.version);
-		return &tun->u.tun_erspan.version;
-	case NFTNL_OBJ_TUNNEL_ERSPAN_V1_INDEX:
-		*data_len = sizeof(tun->u.tun_erspan.u.v1_index);
-		return &tun->u.tun_erspan.u.v1_index;
-	case NFTNL_OBJ_TUNNEL_ERSPAN_V2_HWID:
-		*data_len = sizeof(tun->u.tun_erspan.u.v2.hwid);
-		return &tun->u.tun_erspan.u.v2.hwid;
-	case NFTNL_OBJ_TUNNEL_ERSPAN_V2_DIR:
-		*data_len = sizeof(tun->u.tun_erspan.u.v2.dir);
-		return &tun->u.tun_erspan.u.v2.dir;
+	case NFTNL_OBJ_TUNNEL_OPTS:
+		*data_len = sizeof(tun->tun_opts);
+		return &tun->tun_opts;
 	}
 	return NULL;
 }
@@ -171,11 +147,14 @@ static int nftnl_obj_tunnel_cb(const struct nlattr *attr, void *data)
 	return MNL_CB_OK;
 }
 
+static void nftnl_tunnel_opts_build(struct nlmsghdr *nlh,
+				    struct nftnl_tunnel_opts *opts);
+
 static void
 nftnl_obj_tunnel_build(struct nlmsghdr *nlh, const struct nftnl_obj *e)
 {
 	struct nftnl_obj_tunnel *tun = nftnl_obj_data(e);
-	struct nlattr *nest, *nest_inner;
+	struct nlattr *nest;
 
 	if (e->flags & (1 << NFTNL_OBJ_TUNNEL_ID))
 		mnl_attr_put_u32(nlh, NFTA_TUNNEL_KEY_ID, htonl(tun->id));
@@ -212,34 +191,8 @@ nftnl_obj_tunnel_build(struct nlmsghdr *nlh, const struct nftnl_obj *e)
 		mnl_attr_put_u8(nlh, NFTA_TUNNEL_KEY_TTL, tun->tun_ttl);
 	if (e->flags & (1 << NFTNL_OBJ_TUNNEL_FLAGS))
 		mnl_attr_put_u32(nlh, NFTA_TUNNEL_KEY_FLAGS, htonl(tun->tun_flags));
-	if (e->flags & (1 << NFTNL_OBJ_TUNNEL_VXLAN_GBP)) {
-		nest = mnl_attr_nest_start(nlh, NFTA_TUNNEL_KEY_OPTS);
-		nest_inner = mnl_attr_nest_start(nlh, NFTA_TUNNEL_KEY_OPTS_VXLAN);
-		mnl_attr_put_u32(nlh, NFTA_TUNNEL_KEY_VXLAN_GBP,
-				 htonl(tun->u.tun_vxlan.gbp));
-		mnl_attr_nest_end(nlh, nest_inner);
-		mnl_attr_nest_end(nlh, nest);
-	}
-	if (e->flags & (1 << NFTNL_OBJ_TUNNEL_ERSPAN_VERSION) &&
-	    (e->flags & (1 << NFTNL_OBJ_TUNNEL_ERSPAN_V1_INDEX) ||
-	     (e->flags & (1 << NFTNL_OBJ_TUNNEL_ERSPAN_V2_HWID) &&
-	      e->flags & (1u << NFTNL_OBJ_TUNNEL_ERSPAN_V2_DIR)))) {
-		nest = mnl_attr_nest_start(nlh, NFTA_TUNNEL_KEY_OPTS);
-		nest_inner = mnl_attr_nest_start(nlh, NFTA_TUNNEL_KEY_OPTS_ERSPAN);
-		mnl_attr_put_u32(nlh, NFTA_TUNNEL_KEY_ERSPAN_VERSION,
-				 htonl(tun->u.tun_erspan.version));
-		if (e->flags & (1 << NFTNL_OBJ_TUNNEL_ERSPAN_V1_INDEX))
-			mnl_attr_put_u32(nlh, NFTA_TUNNEL_KEY_ERSPAN_V1_INDEX,
-					 htonl(tun->u.tun_erspan.u.v1_index));
-		if (e->flags & (1 << NFTNL_OBJ_TUNNEL_ERSPAN_V2_HWID))
-			mnl_attr_put_u8(nlh, NFTA_TUNNEL_KEY_ERSPAN_V2_HWID,
-					tun->u.tun_erspan.u.v2.hwid);
-		if (e->flags & (1u << NFTNL_OBJ_TUNNEL_ERSPAN_V2_DIR))
-			mnl_attr_put_u8(nlh, NFTA_TUNNEL_KEY_ERSPAN_V2_DIR,
-					tun->u.tun_erspan.u.v2.dir);
-		mnl_attr_nest_end(nlh, nest_inner);
-		mnl_attr_nest_end(nlh, nest);
-	}
+	if (e->flags & (1 << NFTNL_OBJ_TUNNEL_OPTS))
+		nftnl_tunnel_opts_build(nlh, tun->tun_opts);
 }
 
 static int nftnl_obj_tunnel_ip_cb(const struct nlattr *attr, void *data)
@@ -335,6 +288,150 @@ static int nftnl_obj_tunnel_parse_ip6(struct nftnl_obj *e, struct nlattr *attr,
 	return 0;
 }
 
+struct nftnl_tunnel_opt {
+	struct list_head			list;
+
+	enum nftnl_tunnel_type			type;
+	uint32_t				flags;
+
+	union {
+		struct {
+			uint32_t		gbp;
+		} vxlan;
+		struct {
+			uint32_t		version;
+			struct {
+				uint32_t	index;
+			} v1;
+			struct {
+				uint8_t		hwid;
+				uint8_t		dir;
+			} v2;
+		} erspan;
+		struct {
+			uint16_t	geneve_class;
+			uint8_t		type;
+			uint8_t		data[NFTNL_TUNNEL_GENEVE_DATA_MAXLEN];
+			uint32_t	data_len;
+		} geneve;
+	};
+};
+
+struct nftnl_tunnel_opts {
+	enum nftnl_tunnel_type			type;
+	uint32_t				num;
+	struct list_head			opts_list;
+};
+
+EXPORT_SYMBOL(nftnl_tunnel_opt_get_data);
+const void *nftnl_tunnel_opt_get_data(const struct nftnl_tunnel_opt *ne,
+				      uint16_t attr, uint32_t *data_len)
+{
+	if (!(ne->flags & (1 << attr)))
+		return NULL;
+
+	switch (ne->type) {
+	case NFTNL_TUNNEL_TYPE_ERSPAN:
+		switch (attr) {
+		case NFTNL_TUNNEL_ERSPAN_VERSION:
+			*data_len = sizeof(uint32_t);
+			return &ne->erspan.version;
+		case NFTNL_TUNNEL_ERSPAN_V1_INDEX:
+			*data_len = sizeof(uint32_t);
+			return &ne->erspan.v1.index;
+		case NFTNL_TUNNEL_ERSPAN_V2_HWID:
+			*data_len = sizeof(uint8_t);
+			return &ne->erspan.v2.hwid;
+		case NFTNL_TUNNEL_ERSPAN_V2_DIR:
+			*data_len = sizeof(uint8_t);
+			return &ne->erspan.v2.dir;
+		}
+		break;
+	case NFTNL_TUNNEL_TYPE_VXLAN:
+		switch (attr) {
+		case NFTNL_TUNNEL_VXLAN_GBP:
+			*data_len = sizeof(uint32_t);
+			return &ne->vxlan.gbp;
+		}
+		break;
+	case NFTNL_TUNNEL_TYPE_GENEVE:
+		switch (attr) {
+		case NFTNL_TUNNEL_GENEVE_CLASS:
+			*data_len = sizeof(uint16_t);
+			return &ne->geneve.geneve_class;
+		case NFTNL_TUNNEL_GENEVE_TYPE:
+			*data_len = sizeof(uint8_t);
+			return &ne->geneve.type;
+		case NFTNL_TUNNEL_GENEVE_DATA:
+			*data_len = ne->geneve.data_len;
+			return &ne->geneve.data;
+		}
+		break;
+	}
+
+	errno = EOPNOTSUPP;
+	return NULL;
+}
+
+EXPORT_SYMBOL(nftnl_tunnel_opt_get);
+const void *
+nftnl_tunnel_opt_get(const struct nftnl_tunnel_opt *ne, uint16_t attr)
+{
+	uint32_t data_len;
+	return nftnl_tunnel_opt_get_data(ne, attr, &data_len);
+}
+
+EXPORT_SYMBOL(nftnl_tunnel_opt_get_u8);
+uint8_t nftnl_tunnel_opt_get_u8(const struct nftnl_tunnel_opt *ne, uint16_t attr)
+{
+	const void *ret = nftnl_tunnel_opt_get(ne, attr);
+	return ret == NULL ? 0 : *((uint8_t *)ret);
+}
+
+EXPORT_SYMBOL(nftnl_tunnel_opt_get_u16);
+uint16_t nftnl_tunnel_opt_get_u16(const struct nftnl_tunnel_opt *ne, uint16_t attr)
+{
+	const void *ret = nftnl_tunnel_opt_get(ne, attr);
+	return ret == NULL ? 0 : *((uint16_t *)ret);
+}
+
+EXPORT_SYMBOL(nftnl_tunnel_opt_get_u32);
+uint32_t nftnl_tunnel_opt_get_u32(const struct nftnl_tunnel_opt *ne, uint16_t attr)
+{
+	const void *ret = nftnl_tunnel_opt_get(ne, attr);
+	return ret == NULL ? 0 : *((uint32_t *)ret);
+}
+
+EXPORT_SYMBOL(nftnl_tunnel_opt_get_type);
+enum nftnl_tunnel_type nftnl_tunnel_opt_get_type(const struct nftnl_tunnel_opt *ne)
+{
+	return ne->type;
+}
+
+EXPORT_SYMBOL(nftnl_tunnel_opt_get_flags);
+uint32_t nftnl_tunnel_opt_get_flags(const struct nftnl_tunnel_opt *ne)
+{
+	return ne->flags;
+}
+
+EXPORT_SYMBOL(nftnl_obj_tunnel_opts_foreach);
+int nftnl_obj_tunnel_opts_foreach(const struct nftnl_obj *ne,
+                              int (*cb)(struct nftnl_tunnel_opt *opt, void *data),
+                              void *data)
+{
+	struct nftnl_obj_tunnel *tun = nftnl_obj_data(ne);
+        struct nftnl_tunnel_opt *cur, *tmp;
+        int ret;
+
+        list_for_each_entry_safe(cur, tmp, &tun->tun_opts->opts_list, list) {
+                ret = cb(cur, data);
+                if (ret < 0)
+                        return ret;
+        }
+
+        return 0;
+}
+
 static int nftnl_obj_tunnel_vxlan_cb(const struct nlattr *attr, void *data)
 {
 	const struct nlattr **tb = data;
@@ -354,20 +451,28 @@ static int nftnl_obj_tunnel_vxlan_cb(const struct nlattr *attr, void *data)
 	return MNL_CB_OK;
 }
 
+struct nftnl_tunnel_opt *nftnl_tunnel_opt_alloc(enum nftnl_tunnel_type type);
+
 static int
-nftnl_obj_tunnel_parse_vxlan(struct nftnl_obj *e, struct nlattr *attr,
-			     struct nftnl_obj_tunnel *tun)
+nftnl_obj_tunnel_parse_vxlan(struct nftnl_tunnel_opts *opts, struct nlattr *attr)
 {
 	struct nlattr *tb[NFTA_TUNNEL_KEY_VXLAN_MAX + 1] = {};
+	struct nftnl_tunnel_opt *opt;
 
 	if (mnl_attr_parse_nested(attr, nftnl_obj_tunnel_vxlan_cb, tb) < 0)
 		return -1;
 
+	opt = nftnl_tunnel_opt_alloc(NFTNL_TUNNEL_TYPE_VXLAN);
+	if (!opt)
+		return -1;
+
 	if (tb[NFTA_TUNNEL_KEY_VXLAN_GBP]) {
-		tun->u.tun_vxlan.gbp =
+		opt->vxlan.gbp =
 			ntohl(mnl_attr_get_u32(tb[NFTA_TUNNEL_KEY_VXLAN_GBP]));
-		e->flags |= (1 << NFTNL_OBJ_TUNNEL_VXLAN_GBP);
+		opt->flags |= (1 << NFTNL_TUNNEL_VXLAN_GBP);
 	}
+
+	list_add_tail(&opt->list, &opts->opts_list);
 
 	return 0;
 }
@@ -398,50 +503,63 @@ static int nftnl_obj_tunnel_erspan_cb(const struct nlattr *attr, void *data)
 }
 
 static int
-nftnl_obj_tunnel_parse_erspan(struct nftnl_obj *e, struct nlattr *attr,
-			      struct nftnl_obj_tunnel *tun)
+nftnl_obj_tunnel_parse_erspan(struct nftnl_tunnel_opts *opts, struct nlattr *attr)
 {
 	struct nlattr *tb[NFTA_TUNNEL_KEY_ERSPAN_MAX + 1] = {};
+	struct nftnl_tunnel_opt *opt;
 
 	if (mnl_attr_parse_nested(attr, nftnl_obj_tunnel_erspan_cb, tb) < 0)
 		return -1;
 
+	opt = nftnl_tunnel_opt_alloc(NFTNL_TUNNEL_TYPE_ERSPAN);
+	if (!opt)
+		return -1;
+
 	if (tb[NFTA_TUNNEL_KEY_ERSPAN_VERSION]) {
-		tun->u.tun_erspan.version =
+		opt->erspan.version =
 			ntohl(mnl_attr_get_u32(tb[NFTA_TUNNEL_KEY_ERSPAN_VERSION]));
-		e->flags |= (1 << NFTNL_OBJ_TUNNEL_ERSPAN_VERSION);
+		opt->flags |= (1 << NFTNL_TUNNEL_ERSPAN_VERSION);
 	}
 	if (tb[NFTA_TUNNEL_KEY_ERSPAN_V1_INDEX]) {
-		tun->u.tun_erspan.u.v1_index =
+		opt->erspan.v1.index =
 			ntohl(mnl_attr_get_u32(tb[NFTA_TUNNEL_KEY_ERSPAN_V1_INDEX]));
-		e->flags |= (1 << NFTNL_OBJ_TUNNEL_ERSPAN_V1_INDEX);
+		opt->flags |= (1 << NFTNL_TUNNEL_ERSPAN_V1_INDEX);
 	}
 	if (tb[NFTA_TUNNEL_KEY_ERSPAN_V2_HWID]) {
-		tun->u.tun_erspan.u.v2.hwid =
+		opt->erspan.v2.hwid =
 			mnl_attr_get_u8(tb[NFTA_TUNNEL_KEY_ERSPAN_V2_HWID]);
-		e->flags |= (1 << NFTNL_OBJ_TUNNEL_ERSPAN_V2_HWID);
+		opt->flags |= (1 << NFTNL_TUNNEL_ERSPAN_V2_HWID);
 	}
 	if (tb[NFTA_TUNNEL_KEY_ERSPAN_V2_DIR]) {
-		tun->u.tun_erspan.u.v2.dir =
+		opt->erspan.v2.dir =
 			mnl_attr_get_u8(tb[NFTA_TUNNEL_KEY_ERSPAN_V2_DIR]);
-		e->flags |= (1u << NFTNL_OBJ_TUNNEL_ERSPAN_V2_DIR);
+		opt->flags |= (1 << NFTNL_TUNNEL_ERSPAN_V2_DIR);
 	}
+
+	list_add_tail(&opt->list, &opts->opts_list);
 
 	return 0;
 }
 
-static int nftnl_obj_tunnel_opts_cb(const struct nlattr *attr, void *data)
+static int nftnl_obj_tunnel_geneve_cb(const struct nlattr *attr, void *data)
 {
 	const struct nlattr **tb = data;
 	int type = mnl_attr_get_type(attr);
 
-	if (mnl_attr_type_valid(attr, NFTA_TUNNEL_KEY_OPTS_MAX) < 0)
+	if (mnl_attr_type_valid(attr, NFTA_TUNNEL_KEY_GENEVE_MAX) < 0)
 		return MNL_CB_OK;
 
 	switch (type) {
-	case NFTA_TUNNEL_KEY_OPTS_VXLAN:
-	case NFTA_TUNNEL_KEY_OPTS_ERSPAN:
-		if (mnl_attr_validate(attr, MNL_TYPE_NESTED) < 0)
+	case NFTA_TUNNEL_KEY_GENEVE_CLASS:
+		if (mnl_attr_validate(attr, MNL_TYPE_U16) < 0)
+			abi_breakage();
+		break;
+	case NFTA_TUNNEL_KEY_GENEVE_TYPE:
+		if (mnl_attr_validate(attr, MNL_TYPE_U8) < 0)
+			abi_breakage();
+		break;
+	case NFTA_TUNNEL_KEY_GENEVE_DATA:
+		if (mnl_attr_validate(attr, MNL_TYPE_BINARY) < 0)
 			abi_breakage();
 		break;
 	}
@@ -451,21 +569,89 @@ static int nftnl_obj_tunnel_opts_cb(const struct nlattr *attr, void *data)
 }
 
 static int
-nftnl_obj_tunnel_parse_opts(struct nftnl_obj *e, struct nlattr *attr,
-			    struct nftnl_obj_tunnel *tun)
+nftnl_obj_tunnel_parse_geneve(struct nftnl_tunnel_opts *opts, struct nlattr *attr)
 {
-	struct nlattr *tb[NFTA_TUNNEL_KEY_OPTS_MAX + 1] = {};
-	int err = 0;
+	struct nlattr *tb[NFTA_TUNNEL_KEY_GENEVE_MAX + 1] = {};
+	struct nftnl_tunnel_opt *opt;
 
-	if (mnl_attr_parse_nested(attr, nftnl_obj_tunnel_opts_cb, tb) < 0)
+	if (mnl_attr_parse_nested(attr, nftnl_obj_tunnel_geneve_cb, tb) < 0)
 		return -1;
 
-	if (tb[NFTA_TUNNEL_KEY_OPTS_VXLAN]) {
-		err = nftnl_obj_tunnel_parse_vxlan(e, tb[NFTA_TUNNEL_KEY_OPTS_VXLAN],
-						   tun);
-	} else if (tb[NFTA_TUNNEL_KEY_OPTS_ERSPAN]) {
-		err = nftnl_obj_tunnel_parse_erspan(e, tb[NFTA_TUNNEL_KEY_OPTS_ERSPAN],
-						    tun);
+	opt = nftnl_tunnel_opt_alloc(NFTNL_TUNNEL_TYPE_GENEVE);
+	if (!opt)
+		return -1;
+
+	if (tb[NFTA_TUNNEL_KEY_GENEVE_CLASS]) {
+		opt->geneve.geneve_class =
+			ntohs(mnl_attr_get_u16(tb[NFTA_TUNNEL_KEY_GENEVE_CLASS]));
+		opt->flags |= (1 << NFTNL_TUNNEL_GENEVE_CLASS);
+	}
+
+	if (tb[NFTA_TUNNEL_KEY_GENEVE_TYPE]) {
+		opt->geneve.type =
+			mnl_attr_get_u8(tb[NFTA_TUNNEL_KEY_GENEVE_TYPE]);
+		opt->flags |= (1 << NFTNL_TUNNEL_GENEVE_TYPE);
+	}
+
+	if (tb[NFTA_TUNNEL_KEY_GENEVE_DATA]) {
+		uint32_t len = mnl_attr_get_payload_len(tb[NFTA_TUNNEL_KEY_GENEVE_DATA]);
+
+		memcpy(opt->geneve.data,
+		       mnl_attr_get_payload(tb[NFTA_TUNNEL_KEY_GENEVE_DATA]),
+		       len);
+		opt->geneve.data_len = len;
+		opt->flags |= (1 << NFTNL_TUNNEL_GENEVE_DATA);
+	}
+
+	list_add_tail(&opt->list, &opts->opts_list);
+
+	return 0;
+}
+
+struct nftnl_tunnel_opts *nftnl_tunnel_opts_alloc(enum nftnl_tunnel_type type);
+
+static int
+nftnl_obj_tunnel_parse_opts(struct nftnl_obj *e, struct nlattr *nest,
+			    struct nftnl_obj_tunnel *tun)
+{
+	struct nlattr *attr;
+	struct nftnl_tunnel_opts *opts = NULL;
+	int err = 0;
+
+	mnl_attr_for_each_nested(attr, nest) {
+		if (mnl_attr_validate(attr, MNL_TYPE_NESTED) < 0)
+			abi_breakage();
+
+		switch(mnl_attr_get_type(attr)) {
+			case NFTA_TUNNEL_KEY_OPTS_VXLAN:
+				opts = nftnl_tunnel_opts_alloc(NFTNL_TUNNEL_TYPE_VXLAN);
+				if (!opts)
+					return -1;
+
+				err = nftnl_obj_tunnel_parse_vxlan(opts, attr);
+			break;
+			case NFTA_TUNNEL_KEY_OPTS_ERSPAN:
+				opts = nftnl_tunnel_opts_alloc(NFTNL_TUNNEL_TYPE_ERSPAN);
+				if (!opts)
+					return -1;
+
+				err = nftnl_obj_tunnel_parse_erspan(opts, attr);
+			break;
+			case NFTA_TUNNEL_KEY_OPTS_GENEVE:
+				if (!opts)
+					opts = nftnl_tunnel_opts_alloc(NFTNL_TUNNEL_TYPE_GENEVE);
+
+				if (!opts)
+					return -1;
+
+				err = nftnl_obj_tunnel_parse_geneve(opts, attr);
+			break;
+		}
+	}
+
+	if (opts) {
+		tun->tun_opts = opts;
+		e->flags |= (1 << NFTNL_OBJ_TUNNEL_OPTS);
 	}
 
 	return err;
@@ -532,6 +718,273 @@ static int nftnl_obj_tunnel_snprintf(char *buf, size_t len,
 	return snprintf(buf, len, "id %u ", tun->id);
 }
 
+EXPORT_SYMBOL(nftnl_tunnel_opts_alloc);
+struct nftnl_tunnel_opts *nftnl_tunnel_opts_alloc(enum nftnl_tunnel_type type)
+{
+	struct nftnl_tunnel_opts *opts;
+
+	switch (type) {
+	case NFTNL_TUNNEL_TYPE_VXLAN:
+	case NFTNL_TUNNEL_TYPE_ERSPAN:
+	case NFTNL_TUNNEL_TYPE_GENEVE:
+		break;
+	default:
+		errno = EOPNOTSUPP;
+		return NULL;
+	}
+
+	opts = calloc(1, sizeof(struct nftnl_tunnel_opts));
+	if (!opts)
+		return NULL;
+
+	opts->type = type;
+	INIT_LIST_HEAD(&opts->opts_list);
+
+	return opts;
+}
+
+EXPORT_SYMBOL(nftnl_tunnel_opts_add);
+int nftnl_tunnel_opts_add(struct nftnl_tunnel_opts *opts,
+			  struct nftnl_tunnel_opt *opt)
+{
+	if (opt->type != opts->type) {
+		errno = EOPNOTSUPP;
+		return -1;
+	}
+
+	switch (opts->type) {
+	case NFTNL_TUNNEL_TYPE_VXLAN:
+	case NFTNL_TUNNEL_TYPE_ERSPAN:
+		if (opts->num > 0) {
+			errno = EEXIST;
+			return -1;
+		}
+		break;
+	case NFTNL_TUNNEL_TYPE_GENEVE:
+		break;
+	default:
+		errno = EOPNOTSUPP;
+		return -1;
+	}
+
+	list_add_tail(&opt->list, &opts->opts_list);
+
+	return 0;
+}
+
+EXPORT_SYMBOL(nftnl_tunnel_opts_free);
+void nftnl_tunnel_opts_free(struct nftnl_tunnel_opts *opts)
+{
+	struct nftnl_tunnel_opt *opt, *next;
+
+	list_for_each_entry_safe(opt, next, &opts->opts_list, list) {
+		switch(opts->type) {
+		case NFTNL_TUNNEL_TYPE_VXLAN:
+		case NFTNL_TUNNEL_TYPE_ERSPAN:
+		case NFTNL_TUNNEL_TYPE_GENEVE:
+			list_del(&opt->list);
+			xfree(opt);
+			break;
+		}
+	}
+}
+
+EXPORT_SYMBOL(nftnl_tunnel_opt_alloc);
+struct nftnl_tunnel_opt *nftnl_tunnel_opt_alloc(enum nftnl_tunnel_type type)
+{
+	struct nftnl_tunnel_opt *opt;
+
+	switch (type) {
+	case NFTNL_TUNNEL_TYPE_VXLAN:
+	case NFTNL_TUNNEL_TYPE_ERSPAN:
+	case NFTNL_TUNNEL_TYPE_GENEVE:
+		break;
+	default:
+		errno = EOPNOTSUPP;
+		return NULL;
+	}
+
+	opt = calloc(1, sizeof(struct nftnl_tunnel_opt));
+	if (!opt)
+		return NULL;
+
+	opt->type = type;
+
+	return opt;
+}
+
+static int nftnl_tunnel_opt_vxlan_set(struct nftnl_tunnel_opt *opt, uint16_t type,
+				      const void *data, uint32_t data_len)
+{
+	switch (type) {
+	case NFTNL_TUNNEL_VXLAN_GBP:
+		memcpy(&opt->vxlan.gbp, data, data_len);
+		break;
+	default:
+		errno = EOPNOTSUPP;
+		return -1;
+	}
+
+	opt->flags |= (1 << type);
+
+	return 0;
+}
+
+static int nftnl_tunnel_opt_erspan_set(struct nftnl_tunnel_opt *opt, uint16_t type,
+				       const void *data, uint32_t data_len)
+{
+	switch (type) {
+	case NFTNL_TUNNEL_ERSPAN_VERSION:
+		memcpy(&opt->erspan.version, data, data_len);
+		break;
+	case NFTNL_TUNNEL_ERSPAN_V1_INDEX:
+		memcpy(&opt->erspan.v1.index, data, data_len);
+		break;
+	case NFTNL_TUNNEL_ERSPAN_V2_HWID:
+		memcpy(&opt->erspan.v2.hwid, data, data_len);
+		break;
+	case NFTNL_TUNNEL_ERSPAN_V2_DIR:
+		memcpy(&opt->erspan.v2.dir, data, data_len);
+		break;
+	default:
+		errno = EOPNOTSUPP;
+		return -1;
+	}
+
+	opt->flags |= (1 << type);
+
+	return 0;
+}
+
+static int nftnl_tunnel_opt_geneve_set(struct nftnl_tunnel_opt *opt, uint16_t type,
+				       const void *data, uint32_t data_len)
+{
+	switch(type) {
+	case NFTNL_TUNNEL_GENEVE_CLASS:
+		memcpy(&opt->geneve.geneve_class, data, data_len);
+		break;
+	case NFTNL_TUNNEL_GENEVE_TYPE:
+		memcpy(&opt->geneve.type, data, data_len);
+		break;
+	case NFTNL_TUNNEL_GENEVE_DATA:
+		if (data_len > NFTNL_TUNNEL_GENEVE_DATA_MAXLEN) {
+			errno = EINVAL;
+			return -1;
+		}
+		memcpy(&opt->geneve.data, data, data_len);
+		opt->geneve.data_len = data_len;
+		break;
+	default:
+		errno = EOPNOTSUPP;
+		return -1;
+	}
+
+	opt->flags |= (1 << type);
+
+	return 0;
+}
+
+EXPORT_SYMBOL(nftnl_tunnel_opt_set);
+int nftnl_tunnel_opt_set(struct nftnl_tunnel_opt *opt, uint16_t type,
+			 const void *data, uint32_t data_len)
+{
+	switch (opt->type) {
+	case NFTNL_TUNNEL_TYPE_VXLAN:
+		return nftnl_tunnel_opt_vxlan_set(opt, type, data, data_len);
+	case NFTNL_TUNNEL_TYPE_ERSPAN:
+		return nftnl_tunnel_opt_erspan_set(opt, type, data, data_len);
+	case NFTNL_TUNNEL_TYPE_GENEVE:
+		return nftnl_tunnel_opt_geneve_set(opt, type, data, data_len);
+	default:
+		errno = EOPNOTSUPP;
+		return -1;
+	}
+
+	return 0;
+}
+
+static void nftnl_tunnel_opt_build_vxlan(struct nlmsghdr *nlh,
+					 const struct nftnl_tunnel_opt *opt)
+{
+	struct nlattr *nest_inner;
+
+	if (opt->flags & (1 << NFTNL_TUNNEL_VXLAN_GBP)) {
+		nest_inner = mnl_attr_nest_start(nlh, NFTA_TUNNEL_KEY_OPTS_VXLAN);
+		mnl_attr_put_u32(nlh, NFTA_TUNNEL_KEY_VXLAN_GBP,
+				 htonl(opt->vxlan.gbp));
+		mnl_attr_nest_end(nlh, nest_inner);
+	}
+}
+
+static void nftnl_tunnel_opt_build_erspan(struct nlmsghdr *nlh,
+					  const struct nftnl_tunnel_opt *opt)
+{
+	struct nlattr *nest_inner;
+
+	if (opt->flags & (1 << NFTNL_TUNNEL_ERSPAN_VERSION) &&
+	    (opt->flags & (1 << NFTNL_TUNNEL_ERSPAN_V1_INDEX) ||
+	     (opt->flags & (1 << NFTNL_TUNNEL_ERSPAN_V2_HWID) &&
+	      opt->flags & (1 << NFTNL_TUNNEL_ERSPAN_V2_DIR)))) {
+		nest_inner = mnl_attr_nest_start(nlh, NFTA_TUNNEL_KEY_OPTS_ERSPAN);
+		mnl_attr_put_u32(nlh, NFTA_TUNNEL_KEY_ERSPAN_VERSION,
+				 htonl(opt->erspan.version));
+		if (opt->flags & (1 << NFTNL_TUNNEL_ERSPAN_V1_INDEX))
+			mnl_attr_put_u32(nlh, NFTA_TUNNEL_KEY_ERSPAN_V1_INDEX,
+					 htonl(opt->erspan.v1.index));
+		if (opt->flags & (1 << NFTNL_TUNNEL_ERSPAN_V2_HWID))
+			mnl_attr_put_u8(nlh, NFTA_TUNNEL_KEY_ERSPAN_V2_HWID,
+					opt->erspan.v2.hwid);
+		if (opt->flags & (1 << NFTNL_TUNNEL_ERSPAN_V2_DIR))
+			mnl_attr_put_u8(nlh, NFTA_TUNNEL_KEY_ERSPAN_V2_DIR,
+					opt->erspan.v2.dir);
+		mnl_attr_nest_end(nlh, nest_inner);
+	}
+}
+
+static void nftnl_tunnel_opt_build_geneve(struct nlmsghdr *nlh,
+					  const struct nftnl_tunnel_opt *opt)
+{
+	struct nlattr *nest_inner;
+
+	if (opt->flags & (1 << NFTNL_TUNNEL_GENEVE_CLASS) &&
+	    opt->flags & (1 << NFTNL_TUNNEL_GENEVE_TYPE) &&
+	    opt->flags & (1 << NFTNL_TUNNEL_GENEVE_DATA)) {
+		nest_inner = mnl_attr_nest_start(nlh, NFTA_TUNNEL_KEY_OPTS_GENEVE);
+		mnl_attr_put_u16(nlh, NFTA_TUNNEL_KEY_GENEVE_CLASS,
+				 htons(opt->geneve.geneve_class));
+		mnl_attr_put_u8(nlh, NFTA_TUNNEL_KEY_GENEVE_TYPE,
+				opt->geneve.type);
+		mnl_attr_put(nlh, NFTA_TUNNEL_KEY_GENEVE_DATA,
+			     opt->geneve.data_len,
+			     opt->geneve.data);
+		mnl_attr_nest_end(nlh, nest_inner);
+	}
+}
+
+void nftnl_tunnel_opts_build(struct nlmsghdr *nlh,
+			     struct nftnl_tunnel_opts *opts)
+{
+	const struct nftnl_tunnel_opt *opt;
+	struct nlattr *nest;
+
+	nest = mnl_attr_nest_start(nlh, NFTA_TUNNEL_KEY_OPTS);
+
+	list_for_each_entry(opt, &opts->opts_list, list) {
+		switch (opts->type) {
+		case NFTNL_TUNNEL_TYPE_VXLAN:
+			nftnl_tunnel_opt_build_vxlan(nlh, opt);
+			break;
+		case NFTNL_TUNNEL_TYPE_ERSPAN:
+			nftnl_tunnel_opt_build_erspan(nlh, opt);
+			break;
+		case NFTNL_TUNNEL_TYPE_GENEVE:
+			nftnl_tunnel_opt_build_geneve(nlh, opt);
+			break;
+		}
+	}
+	mnl_attr_nest_end(nlh, nest);
+}
+
 static struct attr_policy obj_tunnel_attr_policy[__NFTNL_OBJ_TUNNEL_MAX] = {
 	[NFTNL_OBJ_TUNNEL_ID]		= { .maxlen = sizeof(uint32_t) },
 	[NFTNL_OBJ_TUNNEL_IPV4_SRC]	= { .maxlen = sizeof(uint32_t) },
@@ -544,11 +997,7 @@ static struct attr_policy obj_tunnel_attr_policy[__NFTNL_OBJ_TUNNEL_MAX] = {
 	[NFTNL_OBJ_TUNNEL_FLAGS]	= { .maxlen = sizeof(uint32_t) },
 	[NFTNL_OBJ_TUNNEL_TOS]		= { .maxlen = sizeof(uint8_t) },
 	[NFTNL_OBJ_TUNNEL_TTL]		= { .maxlen = sizeof(uint8_t) },
-	[NFTNL_OBJ_TUNNEL_VXLAN_GBP]	= { .maxlen = sizeof(uint32_t) },
-	[NFTNL_OBJ_TUNNEL_ERSPAN_VERSION] = { .maxlen = sizeof(uint32_t) },
-	[NFTNL_OBJ_TUNNEL_ERSPAN_V1_INDEX] = { .maxlen = sizeof(uint32_t) },
-	[NFTNL_OBJ_TUNNEL_ERSPAN_V2_HWID] = { .maxlen = sizeof(uint8_t) },
-	[NFTNL_OBJ_TUNNEL_ERSPAN_V2_DIR] = { .maxlen = sizeof(uint8_t) },
+	[NFTNL_OBJ_TUNNEL_OPTS]		= { .maxlen = sizeof(struct nftnl_tunnel_opts *) },
 };
 
 struct obj_ops obj_ops_tunnel = {

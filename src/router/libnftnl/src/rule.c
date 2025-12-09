@@ -431,22 +431,12 @@ int nftnl_rule_nlmsg_parse(const struct nlmsghdr *nlh, struct nftnl_rule *r)
 	if (mnl_attr_parse(nlh, sizeof(*nfg), nftnl_rule_parse_attr_cb, tb) < 0)
 		return -1;
 
-	if (tb[NFTA_RULE_TABLE]) {
-		if (r->flags & (1 << NFTNL_RULE_TABLE))
-			xfree(r->table);
-		r->table = strdup(mnl_attr_get_str(tb[NFTA_RULE_TABLE]));
-		if (!r->table)
-			return -1;
-		r->flags |= (1 << NFTNL_RULE_TABLE);
-	}
-	if (tb[NFTA_RULE_CHAIN]) {
-		if (r->flags & (1 << NFTNL_RULE_CHAIN))
-			xfree(r->chain);
-		r->chain = strdup(mnl_attr_get_str(tb[NFTA_RULE_CHAIN]));
-		if (!r->chain)
-			return -1;
-		r->flags |= (1 << NFTNL_RULE_CHAIN);
-	}
+	if (nftnl_parse_str_attr(tb[NFTA_RULE_TABLE], NFTNL_RULE_TABLE,
+				 &r->table, &r->flags) < 0)
+		return -1;
+	if (nftnl_parse_str_attr(tb[NFTA_RULE_CHAIN], NFTNL_RULE_CHAIN,
+				 &r->chain, &r->flags) < 0)
+		return -1;
 	if (tb[NFTA_RULE_HANDLE]) {
 		r->handle = be64toh(mnl_attr_get_u64(tb[NFTA_RULE_HANDLE]));
 		r->flags |= (1 << NFTNL_RULE_HANDLE);

@@ -79,13 +79,11 @@ static int nftnl_expr_flow_parse(struct nftnl_expr *e, struct nlattr *attr)
 	if (mnl_attr_parse_nested(attr, nftnl_expr_flow_cb, tb) < 0)
 		return -1;
 
-	if (tb[NFTA_FLOW_TABLE_NAME]) {
-		flow->table_name =
-			strdup(mnl_attr_get_str(tb[NFTA_FLOW_TABLE_NAME]));
-		if (!flow->table_name)
-			return -1;
-		e->flags |= (1 << NFTNL_EXPR_FLOW_TABLE_NAME);
-	}
+	if (nftnl_parse_str_attr(tb[NFTA_FLOW_TABLE_NAME],
+				 NFTNL_EXPR_FLOW_TABLE_NAME,
+				 (const char **)&flow->table_name,
+				 &e->flags) < 0)
+		return -1;
 
 	return ret;
 }

@@ -112,13 +112,60 @@ enum {
 	NFTNL_OBJ_TUNNEL_FLAGS,
 	NFTNL_OBJ_TUNNEL_TOS,
 	NFTNL_OBJ_TUNNEL_TTL,
-	NFTNL_OBJ_TUNNEL_VXLAN_GBP,
-	NFTNL_OBJ_TUNNEL_ERSPAN_VERSION,
-	NFTNL_OBJ_TUNNEL_ERSPAN_V1_INDEX,
-	NFTNL_OBJ_TUNNEL_ERSPAN_V2_HWID,
-	NFTNL_OBJ_TUNNEL_ERSPAN_V2_DIR,
+	NFTNL_OBJ_TUNNEL_OPTS,
 	__NFTNL_OBJ_TUNNEL_MAX,
 };
+
+#define NFTNL_TUNNEL_TYPE	0
+#define NFTNL_TUNNEL_BASE	4
+
+#define NFTNL_TUNNEL_GENEVE_DATA_MAXLEN		127
+
+enum nftnl_tunnel_type {
+	NFTNL_TUNNEL_TYPE_VXLAN,
+	NFTNL_TUNNEL_TYPE_ERSPAN,
+	NFTNL_TUNNEL_TYPE_GENEVE,
+};
+
+enum {
+	NFTNL_TUNNEL_VXLAN_GBP		= NFTNL_TUNNEL_BASE,
+	__NFTNL_TUNNEL_VXLAN_MAX,
+};
+
+enum {
+	NFTNL_TUNNEL_ERSPAN_VERSION	= NFTNL_TUNNEL_BASE,
+	NFTNL_TUNNEL_ERSPAN_V1_INDEX,
+	NFTNL_TUNNEL_ERSPAN_V2_HWID,
+	NFTNL_TUNNEL_ERSPAN_V2_DIR,
+	__NFTNL_TUNNEL_ERSPAN_MAX,
+};
+
+enum {
+	NFTNL_TUNNEL_GENEVE_CLASS	= NFTNL_TUNNEL_BASE,
+	NFTNL_TUNNEL_GENEVE_TYPE,
+	NFTNL_TUNNEL_GENEVE_DATA,
+};
+
+struct nftnl_tunnel_opt;
+struct nftnl_tunnel_opts;
+
+struct nftnl_tunnel_opts *nftnl_tunnel_opts_alloc(enum nftnl_tunnel_type type);
+int nftnl_tunnel_opts_add(struct nftnl_tunnel_opts *opts,
+			  struct nftnl_tunnel_opt *opt);
+void nftnl_tunnel_opts_free(struct nftnl_tunnel_opts *opts);
+
+struct nftnl_tunnel_opt *nftnl_tunnel_opt_alloc(enum nftnl_tunnel_type type);
+int nftnl_tunnel_opt_set(struct nftnl_tunnel_opt *opt, uint16_t type,
+			 const void *data, uint32_t data_len);
+const void *nftnl_tunnel_opt_get(const struct nftnl_tunnel_opt *ne, uint16_t attr);
+const void *nftnl_tunnel_opt_get_data(const struct nftnl_tunnel_opt *ne,
+				      uint16_t attr,
+				      uint32_t *data_len);
+uint8_t nftnl_tunnel_opt_get_u8(const struct nftnl_tunnel_opt *ne, uint16_t attr);
+uint16_t nftnl_tunnel_opt_get_u16(const struct nftnl_tunnel_opt *ne, uint16_t attr);
+uint32_t nftnl_tunnel_opt_get_u32(const struct nftnl_tunnel_opt *ne, uint16_t attr);
+enum nftnl_tunnel_type nftnl_tunnel_opt_get_type(const struct nftnl_tunnel_opt *ne);
+uint32_t nftnl_tunnel_opt_get_flags(const struct nftnl_tunnel_opt *ne);
 
 enum {
 	NFTNL_OBJ_SECMARK_CTX	= NFTNL_OBJ_BASE,
@@ -148,6 +195,9 @@ uint16_t nftnl_obj_get_u16(const struct nftnl_obj *obj, uint16_t attr);
 uint32_t nftnl_obj_get_u32(const struct nftnl_obj *ne, uint16_t attr);
 uint64_t nftnl_obj_get_u64(const struct nftnl_obj *obj, uint16_t attr);
 const char *nftnl_obj_get_str(const struct nftnl_obj *ne, uint16_t attr);
+int nftnl_obj_tunnel_opts_foreach(const struct nftnl_obj *ne,
+				  int (*cb)(struct nftnl_tunnel_opt *ne, void *data),
+				  void *data);
 
 void nftnl_obj_nlmsg_build_payload(struct nlmsghdr *nlh,
 				   const struct nftnl_obj *ne);

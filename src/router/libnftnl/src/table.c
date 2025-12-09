@@ -285,14 +285,9 @@ int nftnl_table_nlmsg_parse(const struct nlmsghdr *nlh, struct nftnl_table *t)
 	if (mnl_attr_parse(nlh, sizeof(*nfg), nftnl_table_parse_attr_cb, tb) < 0)
 		return -1;
 
-	if (tb[NFTA_TABLE_NAME]) {
-		if (t->flags & (1 << NFTNL_TABLE_NAME))
-			xfree(t->name);
-		t->name = strdup(mnl_attr_get_str(tb[NFTA_TABLE_NAME]));
-		if (!t->name)
-			return -1;
-		t->flags |= (1 << NFTNL_TABLE_NAME);
-	}
+	if (nftnl_parse_str_attr(tb[NFTA_TABLE_NAME], NFTNL_TABLE_NAME,
+				 &t->name, &t->flags) < 0)
+		return -1;
 	if (tb[NFTA_TABLE_FLAGS]) {
 		t->table_flags = ntohl(mnl_attr_get_u32(tb[NFTA_TABLE_FLAGS]));
 		t->flags |= (1 << NFTNL_TABLE_FLAGS);

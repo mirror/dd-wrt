@@ -141,13 +141,11 @@ nftnl_expr_lookup_parse(struct nftnl_expr *e, struct nlattr *attr)
 		lookup->dreg = ntohl(mnl_attr_get_u32(tb[NFTA_LOOKUP_DREG]));
 		e->flags |= (1 << NFTNL_EXPR_LOOKUP_DREG);
 	}
-	if (tb[NFTA_LOOKUP_SET]) {
-		lookup->set_name =
-			strdup(mnl_attr_get_str(tb[NFTA_LOOKUP_SET]));
-		if (!lookup->set_name)
-			return -1;
-		e->flags |= (1 << NFTNL_EXPR_LOOKUP_SET);
-	}
+	if (nftnl_parse_str_attr(tb[NFTA_LOOKUP_SET],
+				 NFTNL_EXPR_LOOKUP_SET,
+				 (const char **)&lookup->set_name,
+				 &e->flags) < 0)
+		return -1;
 	if (tb[NFTA_LOOKUP_SET_ID]) {
 		lookup->set_id =
 			ntohl(mnl_attr_get_u32(tb[NFTA_LOOKUP_SET_ID]));

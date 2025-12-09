@@ -18,7 +18,7 @@
 #include <libnftnl/rule.h>
 
 #ifndef NFT_META_MAX
-#define NFT_META_MAX (NFT_META_BRI_BROUTE + 1)
+#define NFT_META_MAX (NFT_META_BRI_IIFHWADDR + 1)
 #endif
 
 struct nftnl_expr_meta {
@@ -163,6 +163,7 @@ static const char *meta_key2str_array[NFT_META_MAX] = {
 	[NFT_META_SDIF]		= "sdif",
 	[NFT_META_SDIFNAME]	= "sdifname",
 	[NFT_META_BRI_BROUTE]	= "broute",
+	[NFT_META_BRI_IIFHWADDR] = "ibrhwaddr",
 };
 
 static const char *meta_key2str(uint8_t key)

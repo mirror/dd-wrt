@@ -576,13 +576,11 @@ static int nftnl_set_elems_parse2(struct nftnl_set *s, const struct nlattr *nest
 		memcpy(e->user.data, udata, e->user.len);
 		e->flags |= (1 << NFTNL_RULE_USERDATA);
 	}
-	if (tb[NFTA_SET_ELEM_OBJREF]) {
-		e->objref = strdup(mnl_attr_get_str(tb[NFTA_SET_ELEM_OBJREF]));
-		if (e->objref == NULL) {
-			ret = -1;
-			goto out_set_elem;
-		}
-		e->flags |= (1 << NFTNL_SET_ELEM_OBJREF);
+	if (nftnl_parse_str_attr(tb[NFTA_SET_ELEM_OBJREF],
+				 NFTNL_SET_ELEM_OBJREF,
+				 &e->objref, &e->flags) < 0) {
+		ret = -1;
+		goto out_set_elem;
 	}
 
 	/* Add this new element to this set */
@@ -646,24 +644,14 @@ int nftnl_set_elems_nlmsg_parse(const struct nlmsghdr *nlh, struct nftnl_set *s)
 			   nftnl_set_elem_list_parse_attr_cb, tb) < 0)
 		return -1;
 
-	if (tb[NFTA_SET_ELEM_LIST_TABLE]) {
-		if (s->flags & (1 << NFTNL_SET_TABLE))
-			xfree(s->table);
-		s->table =
-			strdup(mnl_attr_get_str(tb[NFTA_SET_ELEM_LIST_TABLE]));
-		if (!s->table)
-			return -1;
-		s->flags |= (1 << NFTNL_SET_TABLE);
-	}
-	if (tb[NFTA_SET_ELEM_LIST_SET]) {
-		if (s->flags & (1 << NFTNL_SET_NAME))
-			xfree(s->name);
-		s->name =
-			strdup(mnl_attr_get_str(tb[NFTA_SET_ELEM_LIST_SET]));
-		if (!s->name)
-			return -1;
-		s->flags |= (1 << NFTNL_SET_NAME);
-	}
+	if (nftnl_parse_str_attr(tb[NFTA_SET_ELEM_LIST_TABLE],
+				 NFTNL_SET_TABLE,
+				 &s->table, &s->flags) < 0)
+		return -1;
+	if (nftnl_parse_str_attr(tb[NFTA_SET_ELEM_LIST_SET],
+				 NFTNL_SET_NAME,
+				 &s->name, &s->flags) < 0)
+		return -1;
 	if (tb[NFTA_SET_ELEM_LIST_SET_ID]) {
 		s->id = ntohl(mnl_attr_get_u32(tb[NFTA_SET_ELEM_LIST_SET_ID]));
 		s->flags |= (1 << NFTNL_SET_ID);
