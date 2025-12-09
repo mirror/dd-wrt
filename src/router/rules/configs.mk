@@ -596,7 +596,9 @@ obj-$(CONFIG_SERVICEGATE) += servicegate
 obj-$(CONFIG_UNBOUND) += unbound
 obj-$(CONFIG_JAVA) += java
 obj-$(CONFIG_SOFTETHER) += libsodium readline softether
+ifeq ($(KERNELVERSION),4.9)
 obj-$(CONFIG_ALPINE) += qca-ssdk qca-ssdk-shell
+endif
 obj-$(CONFIG_ETHTOOL) += ethtool
 #obj-$(CONFIG_ANCHORFREE) += zlib jansson libevent-af hydra
 obj-$(CONFIG_F2FS) += util-linux f2fs-tools
