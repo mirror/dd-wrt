@@ -719,13 +719,13 @@ static void destroy_ip_forward(char *wan_iface)
 		eval("ifconfig", buff, "0.0.0.0");
 	}
 }
-static void valid_interface(char *ifname)
+static int valid_interface(char *ifname)
 {
 	char *sta = NULL;
 	if (isClient())
 		sta = getSTA();
 
-	if (strncmp(var, "bond", 4) || isBond(var)) {
+	if (strncmp(ifname, "bond", 4) || isBond(ifname)) {
 		if (sta && !strncmp(ifname, sta, strlen(sta)))
 			return 0;
 		return 1;
@@ -748,7 +748,7 @@ static void nat_prerouting_bridged(char *wanface, char *vifs)
 		char vif_ip[32];
 		foreach(var, vifs, next) {
 			if ((!wanface || strcmp(wanface, var)) && strcmp(nvram_safe_get("lan_ifname"), var)) {
-				if (valid_interface(ifname)) {
+				if (valid_interface(var)) {
 					if (nvram_nmatch("1", "%s_tor", var) && isstandalone(var)) {
 						save2file_A_prerouting("-i %s -p udp --dport 53 -j DNAT --to %s:5353", var,
 								       get_lan_ipaddr());
