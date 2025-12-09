@@ -88,6 +88,7 @@ static struct syncservice service[] = {
 #ifdef HAVE_IPTOOLS
 	{ NULL, "arpd", 0 },
 #endif
+	{ NULL, "radio_timer", 0 },
 	{ NULL, "process_monitor", 0 },
 };
 
