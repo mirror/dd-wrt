@@ -147,7 +147,6 @@ static inline void rtl_table_data_w(struct table_reg *r, u32 v, int i)
 	sw_w32(v, rtl_table_data(r, i));
 }
 
-
 void __init rtl83xx_setup_qos(struct rtl838x_switch_priv *priv);
 
 void rtl83xx_fast_age(struct dsa_switch *ds, int port);
