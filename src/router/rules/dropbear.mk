@@ -20,13 +20,30 @@ dropbear-configure: nvram libutils-configure libutils zlib-configure zlib
 				AR_FLAGS="cru $(LTOPLUGIN)" \
 				RANLIB="$(ARCH)-linux-ranlib $(LTOPLUGIN)"
 
-dropbear: dropbear-clean zlib
+dropbear: zlib
 	install -D dropbear/config/sshd.webservices httpd/ej_temp/sshd.webservices
+
+
+ifeq ($(CONFIG_OPENSSL),y)
+	echo "pqc" > $(TOP)/dropbear/newvariant
+	$(MAKE) -C dropbear PROGRAMS="dropbear dbclient dropbearkey dropbearconvert scp" SCPPROGRESS=1 MULTI=1 EXTRA_CFLAGS="-DPQC=1"
+else
+	echo "nopqc" > $(TOP)/dropbear/newvariant
+	$(MAKE) -C dropbear PROGRAMS="dropbear dbclient dropbearkey dropbearconvert scp" SCPPROGRESS=1 MULTI=1
+endif
+
+	if cmp -s $(TOP)/dropbear/newvariant $(TOP)/dropbear/oldvariant ; then \
+		echo "config unchanged. restore" ; \
+	else \
+		make -C dropbear clean ; \
+	fi ;
+
 ifeq ($(CONFIG_OPENSSL),y)
 	$(MAKE) -C dropbear PROGRAMS="dropbear dbclient dropbearkey dropbearconvert scp" SCPPROGRESS=1 MULTI=1 EXTRA_CFLAGS="-DPQC=1"
 else
 	$(MAKE) -C dropbear PROGRAMS="dropbear dbclient dropbearkey dropbearconvert scp" SCPPROGRESS=1 MULTI=1
 endif
+	cp -f $(TOP)/dropbear/newvariant $(TOP)/dropbear/oldvariant
 
 dropbear-install:
 	install -D dropbear/dropbearmulti $(INSTALLDIR)/dropbear/usr/sbin/dropbearmulti
