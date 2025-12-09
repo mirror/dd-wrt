@@ -988,13 +988,13 @@ void start_openvpn(void)
 			   "1")) { //if no VPN PBR and killswitch active, activate general killswitch
 		dd_loginfo("openvpn", "General Killswitch for OpenVPN enabled from OpenVPN");
 		//eval("restart" , "firewall");
-		//eval(" IPTABLES ", "-D", "FORWARD", "-i", "br+", "-o", safe_get_wan_face(wan_if_buffer), "-j", "DROP");
-		//eval(" IPTABLES ", "-I", "FORWARD", "-i", "br+", "-o", safe_get_wan_face(wan_if_buffer), "-j", "DROP");
-		//eval(" IPTABLES ", "-D", "FORWARD", "-i", "br+", "-o", safe_get_wan_face(wan_if_buffer), "-m", "state", "--state", "NEW", "-j", "DROP");
-		//eval(" IPTABLES ", "-I", "FORWARD", "-i", "br+", "-o", safe_get_wan_face(wan_if_buffer), "-m", "state", "--state", "NEW", "-j", "DROP");
+		//eval( IPTABLES, "-D", "FORWARD", "-i", "br+", "-o", safe_get_wan_face(wan_if_buffer), "-j", "DROP");
+		//eval( IPTABLES, "-I", "FORWARD", "-i", "br+", "-o", safe_get_wan_face(wan_if_buffer), "-j", "DROP");
+		//eval( IPTABLES, "-D", "FORWARD", "-i", "br+", "-o", safe_get_wan_face(wan_if_buffer), "-m", "state", "--state", "NEW", "-j", "DROP");
+		//eval( IPTABLES, "-I", "FORWARD", "-i", "br+", "-o", safe_get_wan_face(wan_if_buffer), "-m", "state", "--state", "NEW", "-j", "DROP");
 		//todo set IN_IF to deal with WAP
-		eval(" IPTABLES ", "-D", "FORWARD", "-o", safe_get_wan_face(wan_if_buffer), "-j", "DROP");
-		eval(" IPTABLES ", "-I", "FORWARD", "-o", safe_get_wan_face(wan_if_buffer), "-j", "DROP");
+		eval( IPTABLES, "-D", "FORWARD", "-o", safe_get_wan_face(wan_if_buffer), "-j", "DROP");
+		eval( IPTABLES, "-I", "FORWARD", "-o", safe_get_wan_face(wan_if_buffer), "-j", "DROP");
 #ifdef HAVE_IPV6
 		if (nvram_matchi("ipv6_enable", 1)) {
 			eval(IP6TABLES, "-D", "FORWARD", "-o", safe_get_wan_face(wan_if_buffer), "-j", "DROP");
@@ -1325,9 +1325,9 @@ void stop_openvpn(void)
 		// remove pbr table
 		cleanup_pbr("10");
 		//remove kill switch
-		//eval(" IPTABLES ", "-D", "FORWARD", "-i", "br+", "-o", safe_get_wan_face(wan_if_buffer), "-j", "DROP");
-		//eval(" IPTABLES ", "-D", "FORWARD", "-i", "br+", "-o", safe_get_wan_face(wan_if_buffer), "-m", "state", "--state", "NEW", "-j", "DROP");
-		eval(" IPTABLES ", "-D", "FORWARD", "-o", safe_get_wan_face(wan_if_buffer), "-j", "DROP");
+		//eval( IPTABLES, "-D", "FORWARD", "-i", "br+", "-o", safe_get_wan_face(wan_if_buffer), "-j", "DROP");
+		//eval( IPTABLES, "-D", "FORWARD", "-i", "br+", "-o", safe_get_wan_face(wan_if_buffer), "-m", "state", "--state", "NEW", "-j", "DROP");
+		eval( IPTABLES, "-D", "FORWARD", "-o", safe_get_wan_face(wan_if_buffer), "-j", "DROP");
 #ifdef HAVE_IPV6
 		eval(IP6TABLES, "-D", "FORWARD", "-o", safe_get_wan_face(wan_if_buffer), "-j", "DROP");
 #endif
@@ -1371,9 +1371,9 @@ void stop_openvpn_wandone(void)
 		// remove pbr table
 		cleanup_pbr("10");
 		//remove kill switch
-		//eval(" IPTABLES ", "-D", "FORWARD", "-i", "br+", "-o", safe_get_wan_face(wan_if_buffer), "-j", "DROP");
-		//eval(" IPTABLES ", "-D", "FORWARD", "-i", "br+", "-o", safe_get_wan_face(wan_if_buffer), "-m", "state", "--state", "NEW", "-j", "DROP");
-		eval(" IPTABLES ", "-D", "FORWARD", "-o", safe_get_wan_face(wan_if_buffer), "-j", "DROP");
+		//eval( IPTABLES, "-D", "FORWARD", "-i", "br+", "-o", safe_get_wan_face(wan_if_buffer), "-j", "DROP");
+		//eval( IPTABLES, "-D", "FORWARD", "-i", "br+", "-o", safe_get_wan_face(wan_if_buffer), "-m", "state", "--state", "NEW", "-j", "DROP");
+		eval( IPTABLES, "-D", "FORWARD", "-o", safe_get_wan_face(wan_if_buffer), "-j", "DROP");
 		//dd_loginfo("openvpn", "General Killswitch for OpenVPN removed in 3 using wanface %s", safe_get_wan_face(wan_if_buffer));
 		// to kill running watchdog
 		eval("/usr/bin/controlovpnwdog.sh", "0");
