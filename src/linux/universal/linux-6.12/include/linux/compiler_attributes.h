@@ -56,7 +56,7 @@
 #define __always_inline      inline __attribute__((__always_inline__))
 #else
 /* A lot of inline functions can cause havoc with function tracing */
-#define inline inline 		__gnu_inline __inline_maybe_unused notrace
+#define __always_inline inline 		__gnu_inline __inline_maybe_unused notrace
 #endif
 
 /*
