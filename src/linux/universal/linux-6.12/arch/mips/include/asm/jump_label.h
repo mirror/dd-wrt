@@ -37,7 +37,7 @@ extern void jump_label_apply_nops(struct module *mod);
 # define J_INSN "j"
 #endif
 
-static __always_inline bool arch_static_branch(struct static_key *key, bool branch)
+static inline __attribute__((__always_inline__)) bool arch_static_branch(struct static_key *key, bool branch)
 {
 	asm goto("1:\t" B_INSN " 2f\n\t"
 		"2:\t.insn\n\t"
@@ -51,7 +51,7 @@ l_yes:
 	return true;
 }
 
-static __always_inline bool arch_static_branch_jump(struct static_key *key, bool branch)
+static inline __attribute__((__always_inline__)) bool arch_static_branch_jump(struct static_key *key, bool branch)
 {
 	asm goto("1:\t" J_INSN " %l[l_yes]\n\t"
 		".pushsection __jump_table,  \"aw\"\n\t"

@@ -24,7 +24,7 @@
 	".popsection\n\t"				\
 	:  :  "i"(key) :  : label
 
-static __always_inline bool arch_static_branch(struct static_key * const key,
+static inline __attribute__((__always_inline__)) bool arch_static_branch(struct static_key * const key,
 					       const bool branch)
 {
 	char *k = &((char *)key)[branch];
@@ -39,7 +39,7 @@ l_yes:
 	return true;
 }
 
-static __always_inline bool arch_static_branch_jump(struct static_key * const key,
+static inline __attribute__((__always_inline__)) bool arch_static_branch_jump(struct static_key * const key,
 						    const bool branch)
 {
 	char *k = &((char *)key)[branch];

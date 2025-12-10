@@ -22,7 +22,7 @@
 
 #ifdef CONFIG_HAVE_JUMP_LABEL_HACK
 
-static __always_inline bool arch_static_branch(struct static_key *key, bool branch)
+static inline __attribute__((__always_inline__)) bool arch_static_branch(struct static_key *key, bool branch)
 {
 	asm goto("1:"
 		"jmp %l[l_yes] # objtool NOPs this \n\t"
@@ -36,7 +36,7 @@ l_yes:
 
 #else /* !CONFIG_HAVE_JUMP_LABEL_HACK */
 
-static __always_inline bool arch_static_branch(struct static_key * const key, const bool branch)
+static inline __attribute__((__always_inline__)) bool arch_static_branch(struct static_key * const key, const bool branch)
 {
 	asm goto("1:"
 		".byte " __stringify(BYTES_NOP5) "\n\t"
@@ -50,7 +50,7 @@ l_yes:
 
 #endif /* CONFIG_HAVE_JUMP_LABEL_HACK */
 
-static __always_inline bool arch_static_branch_jump(struct static_key * const key, const bool branch)
+static inline __attribute__((__always_inline__)) bool arch_static_branch_jump(struct static_key * const key, const bool branch)
 {
 	asm goto("1:"
 		"jmp %l[l_yes]\n\t"
