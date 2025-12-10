@@ -20,6 +20,12 @@ endif
 unbound-configure:
 	mkdir -p unbound/openssl
 	mkdir -p unbound/wolfssl
+	cd unbound && autoreconf -vfi
+#	cd unbound && libtoolize
+#	cd unbound && aclocal
+#	cd unbound && autoconf
+#	cd unbound && autoheader
+#	cd unbound && automake --add-missing
 	cd unbound/openssl && ../configure --disable-ecdsa \
 		--disable-gost \
 		--enable-allsymbols \
