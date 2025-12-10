@@ -202,12 +202,12 @@ struct module;
 #define JUMP_TYPE_LINKED	2UL
 #define JUMP_TYPE_MASK		3UL
 
-static __always_inline bool static_key_false(struct static_key *key)
+static inline __attribute__((__always_inline__)) bool static_key_false(struct static_key *key)
 {
 	return arch_static_branch(key, false);
 }
 
-static __always_inline bool static_key_true(struct static_key *key)
+static inline __attribute__((__always_inline__)) bool static_key_true(struct static_key *key)
 {
 	return !arch_static_branch(key, true);
 }
