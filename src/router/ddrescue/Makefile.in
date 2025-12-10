@@ -47,17 +47,17 @@ MAKEFLAGS += -r
 .SUFFIXES :
 
 $(objs)        : Makefile
-$(ddobjs)      : block.h mapbook.h
+$(ddobjs)      : mapfile.h mapbook.h
 arg_parser.o   : arg_parser.h
-block.o        : block.h
+block.o        : mapfile.h
 command_mode.o : rational.h rescuebook.h
-loggers.o      : block.h loggers.h
-mapfile.o      : block.h
+loggers.o      : mapfile.h loggers.h
+mapfile.o      : mapfile.h
 non_posix.o    : non_posix.h
 rational.o     : rational.h
-rescuebook.o   : rational.h loggers.h rescuebook.h
-main.o         : arg_parser.h rational.h loggers.h non_posix.h main_common.cc rescuebook.h
-ddrescuelog.o  : Makefile arg_parser.h block.h main_common.cc
+rescuebook.o   : loggers.h rational.h rescuebook.h
+main.o         : arg_parser.h loggers.h non_posix.h rational.h rescuebook.h main_common.cc
+ddrescuelog.o  : Makefile mapfile.h arg_parser.h main_common.cc
 
 doc : info man
 

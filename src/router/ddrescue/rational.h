@@ -91,10 +91,10 @@ public:
     { Rational tmp( *this ); return tmp /= n; }
 
   Rational & operator++() { return operator+=( 1 ); }		// prefix
-  Rational operator++( int )					// suffix
+  Rational operator++( int )					// postfix
     { Rational tmp( *this ); operator+=( 1 ); return tmp; }
   Rational & operator--() { return operator-=( 1 ); }		// prefix
-  Rational operator--( int )					// suffix
+  Rational operator--( int )					// postfix
     { Rational tmp( *this ); operator-=( 1 ); return tmp; }
 
   bool operator==( const Rational & r ) const

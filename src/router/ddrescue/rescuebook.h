@@ -137,7 +137,7 @@ class Rescuebook : public Mapbook, public Rb_options
   long long sparse_size;		// end position of pending writes
   long long non_tried_size, non_trimmed_size, non_scraped_size;
   long long bad_size, finished_size;
-  const Domain * const test_domain;	// good/bad map for test mode
+  const Domain * const test_domainp;	// good/bad map for test mode
   const char * const iname_, * const oname_;
   unsigned long bad_areas;		// bad areas found so far
   unsigned long read_errors, slow_reads;
@@ -149,6 +149,7 @@ class Rescuebook : public Mapbook, public Rb_options
   const bool synchronous_;
   long long coe_ipos;			// pos of last good sector read, or -1
   uint8_t * const coe_buf;		// copy of last good sector read
+  const uint8_t * bsd_buf;		// bad_sector_data buffer
 					// variables for update_rates
   long long a_rate, c_rate, first_size, last_size;
   long long iobuf_ipos;			// last pos read in iobuf, or -1
@@ -161,6 +162,13 @@ class Rescuebook : public Mapbook, public Rb_options
   bool first_post;			// first read in current pass
   bool first_read;			// first read overall
 
+  void adjust_copied_size( int & copied_size ) const
+    {
+    if( bsd_buf )
+      for( int i = 0; i + hardbs() <= copied_size; i += hardbs() )
+        if( std::memcmp( iobuf() + i, bsd_buf, hardbs() ) == 0 )
+          { copied_size = i; errno = EIO; break; }
+    }
   void change_chunk_status( const Block & b, const Sblock::Status st );
   void do_pause_on_error();
   bool extend_outfile_size();
@@ -200,12 +208,15 @@ public:
               const char * const iname, const char * const oname,
               const char * const mapname, const int cluster,
               const int hardbs, const bool synchronous );
-  ~Rescuebook() { delete[] coe_buf; }
+  ~Rescuebook() { delete[] coe_buf; if( bsd_buf ) delete[] bsd_buf; }
 
+  bool read_bad_sector_data( const int fd );
   int do_commands( const int ides, const int odes );
   int do_rescue( const int ides, const int odes );
   };
 
+
+const char * const disap_msg = "Input file disappeared";
 
 // defined in main.cc
 void show_final_msg( const char * const msg, const int errcode );

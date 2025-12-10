@@ -17,16 +17,12 @@
 
 #define _FILE_OFFSET_BITS 64
 
-#include <algorithm>
 #include <cerrno>
-#include <cstdio>
 #include <cstdlib>
 #include <cstring>
-#include <string>
-#include <vector>
 #include <sys/stat.h>
 
-#include "block.h"
+#include "mapfile.h"
 #include "loggers.h"
 
 

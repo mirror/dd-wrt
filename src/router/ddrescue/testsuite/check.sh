@@ -366,13 +366,27 @@ printf "c 0 72602\nf\n" | "${DDRESCUE}" --command-mode "${in5}" out mapfile \
 cmp "${in}" out || test_failed $LINENO
 "${DDRESCUELOG}" -d mapfile || test_failed $LINENO
 
-"${DDRESCUE}" -q "${in}" out --compare-before-write
+"${DDRESCUE}" -q "${in}" out --compare-before-write || test_failed $LINENO
 cmp "${in}" out || test_failed $LINENO
 cp "${in2}" out || framework_failure
-"${DDRESCUE}" -q "${in}" out --compare-before-write
+"${DDRESCUE}" -q "${in}" out --compare-before-write || test_failed $LINENO
 cmp "${in}" out || test_failed $LINENO
 rm -f out || framework_failure
-"${DDRESCUE}" -q "${in}" out --compare-before-write
+"${DDRESCUE}" -q "${in}" out --compare-before-write || test_failed $LINENO
+cmp "${in}" out || test_failed $LINENO
+
+rm -f out || framework_failure				# aligned read
+"${DDRESCUE}" -q -i4s -s1s -o0 "${in}" bsd || test_failed $LINENO
+"${DDRESCUE}" -q "${in}" out --bad-sector-data=bsd || test_failed $LINENO
+cmp -s "${in}" out && test_failed $LINENO
+"${DDRESCUE}" -q -i4s -s1s "${in}" out || test_failed $LINENO
+cmp "${in}" out || test_failed $LINENO
+rm -f out || framework_failure				# unaligned read
+"${DDRESCUE}" -q -s256 "${in}" out || test_failed $LINENO
+"${DDRESCUE}" -q -i256 "${in}" out --bad-sector-data=bsd || test_failed $LINENO
+rm -f bsd || framework_failure
+cmp -s "${in}" out && test_failed $LINENO
+"${DDRESCUE}" -q -i4s -s1s "${in}" out || test_failed $LINENO
 cmp "${in}" out || test_failed $LINENO
 
 printf "\ntesting ddrescuelog-%s..." "$2"

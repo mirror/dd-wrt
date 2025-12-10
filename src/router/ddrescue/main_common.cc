@@ -104,8 +104,8 @@ long long getnum( const char * const arg, const char * const option_name,
     {
     if( verbosity >= 0 )
       std::fprintf( stderr, "%s: '%s': Value out of limits [%s,%s] in "
-                    "option '%s'.\n", program_name, arg, format_num3( llimit ),
-                    format_num3( ulimit ), option_name );
+                    "option '%s'.\n", program_name, arg, format_num3p( llimit ),
+                    format_num3p( ulimit ), option_name );
     std::exit( 1 );
     }
   if( tailp ) *tailp = tail;
@@ -145,14 +145,11 @@ void set_mode( Mode & program_mode, const Mode new_mode )
 void set_name( const char ** name, const char * new_name,
                const char * const option_name )
   {
-  if( *name )
-    {
-    if( verbosity >= 0 )
-      std::fprintf( stderr, "%s: Option '%s' can be specified only once.\n",
-                    program_name, option_name );
-    std::exit( 1 );
-    }
-  *name = new_name;
+  if( !*name ) { *name = new_name; return; }
+  if( verbosity >= 0 )
+    std::fprintf( stderr, "%s: Option '%s' can be specified only once.\n",
+                  program_name, option_name );
+  std::exit( 1 );
   }
 
 
@@ -262,7 +259,7 @@ const char * format_num( long long num, int limit, const int set_prefix )
     { "k", "M", "G", "T", "P", "E", "Z", "Y", "R", "Q" };
   const char * const binary_prefix[n] =
     { "Ki", "Mi", "Gi", "Ti", "Pi", "Ei", "Zi", "Yi", "Ri", "Qi" };
-  static char buffer[buffers][bufsize];	// circle of static buffers for printf
+  static char buffer[buffers][bufsize];	// circle of buffers for printf
   static int current = 0;
   static bool si = true;
 
@@ -281,12 +278,12 @@ const char * format_num( long long num, int limit, const int set_prefix )
 
 
 // separate numbers of 5 or more digits in groups of 3 digits using '_'
-const char * format_num3( long long num, const bool space )
+const char * format_num3p( long long num, const bool space )
   {
   enum { buffers = 8, bufsize = 4 * sizeof num, n = 10 };
   const char * const si_prefix = "kMGTPEZYRQ";
   const char * const binary_prefix = "KMGTPEZYRQ";
-  static char buffer[buffers][bufsize];	// circle of static buffers for printf
+  static char buffer[buffers][bufsize];	// circle of buffers for printf
   static int current = 0;
 
   char * const buf = buffer[current++]; current %= buffers;
@@ -310,6 +307,28 @@ const char * format_num3( long long num, const bool space )
     {
     const long long onum = num; num /= 10;
     *(--p) = llabs( onum - ( 10 * num ) ) + '0'; if( num == 0 ) break;
+    if( split && ++i >= 3 ) { i = 0; *(--p) = '_'; }
+    }
+  if( negative ) *(--p) = '-';
+  return p;
+  }
+
+
+// separate numbers of 5 or more digits in groups of 3 digits using '_'
+const char * format_num3( unsigned long long num, const bool negative )
+  {
+  enum { buffers = 8, bufsize = 4 * sizeof num };
+  static char buffer[buffers][bufsize];	// circle of buffers for printf
+  static int current = 0;
+
+  char * const buf = buffer[current++]; current %= buffers;
+  char * p = buf + bufsize - 1;		// fill the buffer backwards
+  *p = 0;				// terminator
+  const bool split = num >= 10000;
+
+  for( int i = 0; ; )
+    {
+    *(--p) = num % 10 + '0'; num /= 10; if( num == 0 ) break;
     if( split && ++i >= 3 ) { i = 0; *(--p) = '_'; }
     }
   if( negative ) *(--p) = '-';

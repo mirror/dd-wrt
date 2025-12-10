@@ -6,8 +6,8 @@
 @finalout
 @c %**end of header
 
-@set UPDATED 5 January 2025
-@set VERSION 1.29
+@set UPDATED 21 March 2025
+@set VERSION 1.29.1
 
 @dircategory GNU Packages
 @direntry
@@ -384,7 +384,7 @@ Current status
 non-tried:   13603 MB,  bad-sector:        0 B,    error rate:       0 B/s
   rescued:    2401 MB,   bad areas:        0,        run time:         35s
 pct rescued:   15.00%, read errors:        0,  remaining time:         10m
- slow reads:        5,        time since last successful read:          0s
+slow reads:         5,        time since last successful read:          0s
 Copying non-tried blocks... Pass 1 (forwards)
 @end example
 
@@ -720,9 +720,16 @@ Restrict the rescue domain to the blocks marked as finished in the mapfile
 @var{file}. This is useful for merging partially recovered images of
 backups, or if the destination drive fails during the rescue. Use a hyphen
 @samp{-} as @var{file} to read the domain mapfile from standard input.
+
 Specialized tools like ddrutility or partclone can produce a domain mapfile
-listing all the used blocks in a partition, making the rescue more
-efficient.
+listing all the used blocks in a partition, making the rescue more efficient.
+Trailing empty space in the partition is not copied to @var{outfile}. If you
+need @var{outfile} to be the same size as the partition (to mount it, for
+example), you may use @option{--extend-outfile=<partition_size>} or
+@option{--preallocate}. @option{--extend-outfile} increases the size without
+writing data to @var{outfile}, and may therefore be more efficient than
+@option{--preallocate}. Partclone saves the size of the partition as the
+value of @samp{current_pos} in the domain mapfile.
 
 @anchor{--retrim}
 @item -M
@@ -913,6 +920,14 @@ If they can be obtained, ddrescue shows the model and serial number of the
 input and output devices. Ddrescue also shows the size in bytes of the
 corresponding file or device if it exists. The format used is
 @w{[@var{model}::@var{serial_number}] (@var{size})}
+
+@item --bad-sector-data=@var{file}
+Treat as a read error any sector containing the same data as @var{file}. If
+@var{file} is larger than the sector size, the rest of @var{file} is
+discarded. This option is useful when the drive, instead of signaling a
+read error, returns known garbage data (different for each drive model). If
+you need to use this option, it means that the failing drive lacks adequate
+integrity checking. Better avoid such drives.
 
 @item --command-mode
 Read commands from the standard input and execute them, copying parts of the

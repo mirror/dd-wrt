@@ -17,17 +17,12 @@
 
 #define _FILE_OFFSET_BITS 64
 
-#include <algorithm>
 #include <cerrno>
-#include <climits>
 #include <csignal>
-#include <cstdio>
-#include <string>
-#include <vector>
 #include <stdint.h>
 #include <unistd.h>
 
-#include "block.h"
+#include "mapfile.h"
 #include "mapbook.h"
 
 

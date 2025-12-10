@@ -17,20 +17,16 @@
 
 #define _FILE_OFFSET_BITS 64
 
-#include <algorithm>
 #include <cctype>
 #include <cerrno>
-#include <climits>
-#include <cstdio>
 #include <cstdlib>
+#include <cstring>
 #include <ctime>
-#include <string>
-#include <vector>
 #include <stdint.h>
 #include <termios.h>
 #include <unistd.h>
 
-#include "block.h"
+#include "mapfile.h"
 #include "mapbook.h"
 
 
@@ -38,11 +34,14 @@ namespace {
 
 void input_pos_error( const long long pos, const long long insize )
   {
-  char buf[128];
+  char buf[160];
+  const char * const p = format_num3( pos );
+  const int len = std::strlen( p );
+
   snprintf( buf, sizeof buf,
             "Can't start reading at pos %s.\n"
-            "          Input file is only %s bytes long.",
-            format_num3( pos ), format_num3( insize ) );
+            "          Size of input file is only %*s bytes.",
+            p, len, format_num3( insize ) );
   show_error( buf );
   }
 

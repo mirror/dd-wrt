@@ -17,21 +17,16 @@
 
 #define _FILE_OFFSET_BITS 64
 
-#include <algorithm>
 #include <cctype>
 #include <cerrno>
-#include <climits>
-#include <cstdio>
 #include <cstring>
-#include <string>
-#include <vector>
 #include <stdint.h>
 #include <unistd.h>
 #include <sys/stat.h>
 
-#include "rational.h"
-#include "block.h"
+#include "mapfile.h"
 #include "mapbook.h"
+#include "rational.h"
 #include "rescuebook.h"
 
 
@@ -65,7 +60,7 @@ int Rescuebook::copy_command( const char * const command )
                            Sblock::bad_sector );
       struct stat istat;
       if( stat( iname_, &istat ) != 0 )
-        { final_msg( iname_, "Input file disappeared", errno ); retval = 1; }
+        { final_msg( iname_, disap_msg, errno ); retval = 1; }
       }
     if( retval ) return retval;
     }

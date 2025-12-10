@@ -17,25 +17,20 @@
 
 #define _FILE_OFFSET_BITS 64
 
-#include <algorithm>
 #include <cerrno>
-#include <climits>
-#include <cstdio>
 #include <cstring>
 #include <ctime>
-#include <string>
-#include <vector>
 #include <stdint.h>
 #include <unistd.h>
 
-#include "block.h"
+#include "mapfile.h"
 #include "mapbook.h"
 
 
 const char * format_time( const long long t, const bool low_prec )
   {
   enum { buffers = 8, bufsize = 16 };
-  static char buffer[buffers][bufsize];	// circle of static buffers for printf
+  static char buffer[buffers][bufsize];	// circle of buffers for printf
   static int current = 0;
   if( t < 0 ) return "n/a";
   char * const buf = buffer[current++]; current %= buffers;
@@ -176,10 +171,10 @@ int Genbook::do_generate( const int odes )
   set_signals();
   if( verbosity >= 0 )
     {
-    std::fputs( "Press Ctrl-C to interrupt\n", stdout );
+    std::fputs( ctrlc_msg, stdout );
     if( mapfile_exists() )
       {
-      std::fputs( "Initial status (read from mapfile)\n", stdout );
+      std::fputs( initial_msg, stdout );
       std::printf( "rescued: %9sB,  generated: %9sB\n",
                    format_num( finished_size ), format_num( gensize ) );
       std::fputs( "Current status\n", stdout );

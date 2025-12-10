@@ -21,19 +21,14 @@
    error (e.g., bug) which caused ddrescuelog to panic.
 */
 
-#include <algorithm>
 #include <cerrno>
-#include <climits>
-#include <cstdio>
 #include <cstdlib>
 #include <cstring>
 #include <ctime>
-#include <string>
-#include <vector>
 #include <unistd.h>
 
+#include "mapfile.h"
 #include "arg_parser.h"
-#include "block.h"
 
 
 namespace {
@@ -690,29 +685,29 @@ int show_status( Domain & domain, const char * const mapname, const bool loose )
   std::printf( "\n   current pos: %9sB,  current status: %s\n",
                format_num( mapfile.current_pos() ),
                Mapfile::status_name( mapfile.current_status() ) );
-  std::printf( "mapfile extent: %9sB,  in %6ld area(s)\n",
-               format_num( extent.size() ), true_sblocks );
+  std::printf( "mapfile extent: %9sB,  in %7s area(s)\n",
+               format_num( extent.size() ), format_num3( true_sblocks ) );
   if( domain.pos() > 0 || domain.end() < extent.end() || domain.blocks() > 1 )
     {
     std::printf( "  domain begin: %9sB,  domain end: %9sB\n",
                  format_num( domain.pos() ), format_num( domain.end() ) );
-    std::printf( "   domain size: %9sB,  in %6ld area(s)\n",
-                 format_num( domain_size ), domain.blocks() );
+    std::printf( "   domain size: %9sB,  in %7s area(s)\n",
+                 format_num( domain_size ), format_num3( domain.blocks() ) );
     }
-  std::printf( "\n     non-tried: %9sB,  in %6lu area(s)  (%s)\n",
-               format_num( non_tried_size ), non_tried_areas,
+  std::printf( "\n     non-tried: %9sB,  in %7s area(s)  (%s)\n",
+               format_num( non_tried_size ), format_num3( non_tried_areas ),
                format_percentage( non_tried_size, domain_size ) );
-  std::printf( "       rescued: %9sB,  in %6lu area(s)  (%s)\n",
-               format_num( finished_size ), finished_areas,
+  std::printf( "       rescued: %9sB,  in %7s area(s)  (%s)\n",
+               format_num( finished_size ), format_num3( finished_areas ),
                format_percentage( finished_size, domain_size ) );
-  std::printf( "   non-trimmed: %9sB,  in %6lu area(s)  (%s)\n",
-               format_num( non_trimmed_size ), non_trimmed_areas,
+  std::printf( "   non-trimmed: %9sB,  in %7s area(s)  (%s)\n",
+               format_num( non_trimmed_size ), format_num3( non_trimmed_areas ),
                format_percentage( non_trimmed_size, domain_size ) );
-  std::printf( "   non-scraped: %9sB,  in %6lu area(s)  (%s)\n",
-               format_num( non_scraped_size ), non_scraped_areas,
+  std::printf( "   non-scraped: %9sB,  in %7s area(s)  (%s)\n",
+               format_num( non_scraped_size ), format_num3( non_scraped_areas ),
                format_percentage( non_scraped_size, domain_size ) );
-  std::printf( "    bad-sector: %9sB,  in %6lu area(s)  (%s)\n",
-               format_num( bad_size ), bad_areas,
+  std::printf( "    bad-sector: %9sB,  in %7s area(s)  (%s)\n",
+               format_num( bad_size ), format_num3( bad_areas ),
                format_percentage( bad_size, domain_size ) );
   return 0;
   }

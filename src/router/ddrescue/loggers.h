@@ -15,6 +15,8 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+// requires '#include <cstdio>' for 'FILE *'
+
 class Logger
   {
 protected:

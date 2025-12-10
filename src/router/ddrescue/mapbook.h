@@ -15,8 +15,6 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-// requires '#include <cstdio>' for 'FILE *'
-
 struct Mb_options
   {
   int mapfile_save_interval;			// default -1 = auto
@@ -173,7 +171,10 @@ inline bool block_is_zero( const uint8_t * const buf, const int size )
   }
 
 
+const char * const ctrlc_msg = "Press Ctrl-C to interrupt\n";
 const char * const early_eof_msg = "EOF found below the size calculated from mapfile.";
+const char * const initial_msg = "Initial status (read from mapfile)\n";
+const char * const wr_err_msg = "Write error";
 
 // Defined in genbook.cc
 const char * format_time( const long long t, const bool low_prec = false );
@@ -187,6 +188,3 @@ int writeblockp( const int fd, const uint8_t * const buf, const int size,
 bool interrupted();
 void set_signals();
 int signaled_exit();
-
-// Defined in mapbook.cc
-bool safe_fflush( FILE * const f );

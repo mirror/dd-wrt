@@ -17,14 +17,9 @@
 
 #define _FILE_OFFSET_BITS 64
 
-#include <algorithm>
-#include <climits>
-#include <cstdio>
 #include <cstdlib>
-#include <string>
-#include <vector>
 
-#include "block.h"
+#include "mapfile.h"
 
 
 // Align pos to next boundary if size is big enough.

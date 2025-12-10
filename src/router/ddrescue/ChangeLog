@@ -1,3 +1,13 @@
+2025-03-21  Antonio Diaz Diaz  <antonio@gnu.org>
+
+	* Version 1.29.1 released.
+	* New option '--bad-sector-data'. (Suggested by Eliyahu Saks).
+	* main_common.cc (format_num3): New function.
+	* mapbook.cc (input_pos_error): Print pos and size aligned.
+	* ddrescue.texi: Document use of -p and -x with --domain-mapfile.
+	  (Reported by Bret Quigley II).
+	* block.h: Rename to mapfile.h.
+
 2025-01-05  Antonio Diaz Diaz  <antonio@gnu.org>
 
 	* Version 1.29 released.

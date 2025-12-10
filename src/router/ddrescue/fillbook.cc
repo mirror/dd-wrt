@@ -17,18 +17,13 @@
 
 #define _FILE_OFFSET_BITS 64
 
-#include <algorithm>
 #include <cerrno>
-#include <climits>
-#include <cstdio>
 #include <cstring>
 #include <ctime>
-#include <string>
-#include <vector>
 #include <stdint.h>
 #include <unistd.h>
 
-#include "block.h"
+#include "mapfile.h"
 #include "mapbook.h"
 
 
@@ -53,7 +48,7 @@ int Fillbook::fill_block( const Sblock & sb )
   if( writeblockp( odes_, iobuf(), size, sb.pos() + offset() ) != size ||
       ( synchronous_ && fsync( odes_ ) != 0 && errno != EINVAL ) )
     {
-    if( !ignore_write_errors ) final_msg( oname_, "Write error", errno );
+    if( !ignore_write_errors ) final_msg( oname_, wr_err_msg, errno );
     return 1;
     }
   filled_size += size; remaining_size -= size;
@@ -131,13 +126,13 @@ void Fillbook::show_status( const long long ipos, const char * const msg,
       last_size = filled_size;
       }
     std::printf( "\r%s%s%s", up, up, up );
-    std::printf( "filled size: %9sB,  filled areas: %6lu,  current rate: %8sB/s\n",
-                 format_num( filled_size ), filled_areas,
+    std::printf( "filled size: %9sB,  filled areas: %7s,  current rate: %8sB/s\n",
+                 format_num( filled_size ), format_num3( filled_areas ),
                  format_num( c_rate, 99999 ) );
-    std::printf( "remain size: %9sB,  remain areas: %6lu,  average rate: %8sB/s\n",
-                 format_num( remaining_size ), remaining_areas,
+    std::printf( "remain size: %9sB,  remain areas: %7s,  average rate: %8sB/s\n",
+                 format_num( remaining_size ), format_num3( remaining_areas ),
                  format_num( a_rate, 99999 ) );
-    std::printf( "current pos: %9sB,  run time: %11s\n",
+    std::printf( "current pos: %9sB,  run time: %12s\n",
                  format_num( last_ipos + offset() ), format_time( t1 - t0 ) );
     if( msg && *msg )
       {
@@ -176,14 +171,14 @@ int Fillbook::do_fill( const int odes )
   set_signals();
   if( verbosity >= 0 )
     {
-    std::fputs( "Press Ctrl-C to interrupt\n", stdout );
+    std::fputs( ctrlc_msg, stdout );
     if( mapfile_exists() )
       {
-      std::fputs( "Initial status (read from mapfile)\n", stdout );
-      std::printf( "filled size:    %9sB,  filled areas:    %7lu\n",
-                   format_num( filled_size ), filled_areas );
-      std::printf( "remaining size: %9sB,  remaining areas: %7lu\n",
-                   format_num( remaining_size ), remaining_areas );
+      std::fputs( initial_msg, stdout );
+      std::printf( "filled size:    %9sB,  filled areas:    %7s\n",
+                   format_num( filled_size ), format_num3( filled_areas ) );
+      std::printf( "remaining size: %9sB,  remaining areas: %7s\n",
+                   format_num( remaining_size ), format_num3( remaining_areas ) );
       std::fputs( "Current status\n", stdout );
       }
     }

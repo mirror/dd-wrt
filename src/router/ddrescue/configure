@@ -6,7 +6,7 @@
 # to copy, distribute, and modify it.
 
 pkgname=ddrescue
-pkgversion=1.29
+pkgversion=1.29.1
 progname=ddrescue
 use_non_posix=
 srctrigger=doc/${pkgname}.texi

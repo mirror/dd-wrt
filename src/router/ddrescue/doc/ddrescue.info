@@ -12,7 +12,7 @@ File: ddrescue.info,  Node: Top,  Next: Introduction,  Up: (dir)
 GNU ddrescue Manual
 *******************
 
-This manual is for GNU ddrescue (version 1.29, 5 January 2025).
+This manual is for GNU ddrescue (version 1.29.1, 21 March 2025).
 
 * Menu:
 
@@ -338,7 +338,7 @@ File: ddrescue.info,  Node: Output,  Next: Invoking ddrescue,  Prev: Algorithm, 
 
 The output of ddrescue looks like this:
 
-     GNU ddrescue 1.29
+     GNU ddrescue 1.29.1
      Press Ctrl-C to interrupt
      Initial status (read from mapfile)
      rescued: 1665 MB, tried: 0 B, bad-sector: 0 B, bad areas: 0
@@ -349,7 +349,7 @@ The output of ddrescue looks like this:
      non-tried:   13603 MB,  bad-sector:        0 B,    error rate:       0 B/s
        rescued:    2401 MB,   bad areas:        0,        run time:         35s
      pct rescued:   15.00%, read errors:        0,  remaining time:         10m
-      slow reads:        5,        time since last successful read:          0s
+     slow reads:         5,        time since last successful read:          0s
      Copying non-tried blocks... Pass 1 (forwards)
 
    Ddrescue scrolls forward after each pass. This keeps on the screen the
@@ -675,9 +675,17 @@ ddrescue supports the following options: *Note Argument syntax::.
      mapfile FILE. This is useful for merging partially recovered images of
      backups, or if the destination drive fails during the rescue. Use a
      hyphen '-' as FILE to read the domain mapfile from standard input.
+
      Specialized tools like ddrutility or partclone can produce a domain
      mapfile listing all the used blocks in a partition, making the rescue
-     more efficient.
+     more efficient. Trailing empty space in the partition is not copied to
+     OUTFILE. If you need OUTFILE to be the same size as the partition (to
+     mount it, for example), you may use
+     '--extend-outfile=<partition_size>' or '--preallocate'.
+     '--extend-outfile' increases the size without writing data to OUTFILE,
+     and may therefore be more efficient than '--preallocate'. Partclone
+     saves the size of the partition as the value of 'current_pos' in the
+     domain mapfile.
 
 '-M'
 '--retrim'
@@ -867,6 +875,14 @@ ddrescue supports the following options: *Note Argument syntax::.
      the input and output devices. Ddrescue also shows the size in bytes of
      the corresponding file or device if it exists. The format used is
      [MODEL::SERIAL_NUMBER] (SIZE)
+
+'--bad-sector-data=FILE'
+     Treat as a read error any sector containing the same data as FILE. If
+     FILE is larger than the sector size, the rest of FILE is discarded.
+     This option is useful when the drive, instead of signaling a read
+     error, returns known garbage data (different for each drive model). If
+     you need to use this option, it means that the failing drive lacks
+     adequate integrity checking. Better avoid such drives.
 
 '--command-mode'
      Read commands from the standard input and execute them, copying parts
@@ -1130,7 +1146,7 @@ Character   Meaning
 
 And here is an example mapfile:
 
-     # Mapfile. Created by GNU ddrescue version 1.29
+     # Mapfile. Created by GNU ddrescue version 1.29.1
      # Command line: ddrescue -d -c18 /dev/fd0 fdimage mapfile
      # Start time:   2015-07-21 09:37:44
      # Current time: 2015-07-21 09:38:19
@@ -2048,42 +2064,42 @@ Concept index
 
 Tag Table:
 Node: Top201
-Node: Introduction1635
-Node: Basic concepts4631
-Node: Important advice6981
-Node: Algorithm9055
-Node: Output15628
-Node: Invoking ddrescue20069
-Ref: --min-read-rate21164
-Ref: --max-bad-areas24860
-Ref: --max-error-rate25146
-Ref: --test-mode26642
-Ref: --domain-mapfile30462
-Ref: --retrim30959
-Ref: --reopen-on-error31759
-Ref: --timeout35127
-Ref: --max-read-errors37314
-Ref: --continue-on-errno39575
-Ref: --mapfile-interval42614
-Ref: --max-slow-reads43662
-Ref: --pause-on-error43993
-Node: Argument syntax47294
-Node: Mapfile structure49205
-Node: Emergency save52468
-Node: Optical media53904
-Ref: lziprecover-example57114
-Node: Examples57816
-Ref: lziprecover-example263492
-Ref: lziprecover-example364094
-Node: Direct disc access65035
-Node: Command mode67255
-Node: Fill mode69661
-Node: Generate mode74885
-Node: Ddrescuelog76802
-Ref: double-b78305
-Node: Invoking ddrescuelog79173
-Node: Problems89449
-Node: Concept index90006
+Node: Introduction1636
+Node: Basic concepts4632
+Node: Important advice6982
+Node: Algorithm9056
+Node: Output15629
+Node: Invoking ddrescue20072
+Ref: --min-read-rate21167
+Ref: --max-bad-areas24863
+Ref: --max-error-rate25149
+Ref: --test-mode26645
+Ref: --domain-mapfile30465
+Ref: --retrim31439
+Ref: --reopen-on-error32239
+Ref: --timeout35607
+Ref: --max-read-errors37794
+Ref: --continue-on-errno40508
+Ref: --mapfile-interval43547
+Ref: --max-slow-reads44595
+Ref: --pause-on-error44926
+Node: Argument syntax48227
+Node: Mapfile structure50138
+Node: Emergency save53403
+Node: Optical media54839
+Ref: lziprecover-example58049
+Node: Examples58751
+Ref: lziprecover-example264427
+Ref: lziprecover-example365029
+Node: Direct disc access65970
+Node: Command mode68190
+Node: Fill mode70596
+Node: Generate mode75820
+Node: Ddrescuelog77737
+Ref: double-b79240
+Node: Invoking ddrescuelog80108
+Node: Problems90384
+Node: Concept index90941
 
 End Tag Table
 

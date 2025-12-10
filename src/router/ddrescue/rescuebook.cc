@@ -17,23 +17,18 @@
 
 #define _FILE_OFFSET_BITS 64
 
-#include <algorithm>
 #include <cctype>
 #include <cerrno>
-#include <climits>
-#include <cstdio>
 #include <cstring>
 #include <ctime>
-#include <string>
-#include <vector>
 #include <stdint.h>
 #include <unistd.h>
 #include <sys/stat.h>
 
-#include "rational.h"
-#include "block.h"
+#include "mapfile.h"
 #include "loggers.h"
 #include "mapbook.h"
+#include "rational.h"
 #include "rescuebook.h"
 
 
@@ -114,19 +109,20 @@ bool Rescuebook::extend_outfile_size()
 */
 int Rescuebook::copy_block( const Block & b, int & copied_size, int & error_size )
   {
-  if( b.size() <= 0 ) internal_error( "bad size copying a Block." );
+  if( b.size() <= 0 ) internal_error( "bad block size in copy_block." );
   int saved_errno;				// for read_logger
-  if( !test_domain || test_domain->includes( b ) )
+  if( !test_domainp || test_domainp->includes( b ) )
     {
-    if( o_direct_in )
+    if( o_direct_in || bsd_buf )  // read whole sectors, write requested part
       {
       const int pre = b.pos() % hardbs();
-      const int disp = b.end() % hardbs();
-      const int post = ( disp > 0 ) ? hardbs() - disp : 0;
+      const int rest = b.end() % hardbs();
+      const int post = ( rest > 0 ) ? hardbs() - rest : 0;
       const int size = pre + b.size() + post;
       if( size > iobuf_size() )
         internal_error( "(size > iobuf_size) copying a Block." );
       copied_size = readblockp( ides_, iobuf(), size, b.pos() - pre );
+      adjust_copied_size( copied_size );	// discard bad_sector_data
       copied_size -= std::min( pre, copied_size );
       if( copied_size > b.size() ) copied_size = b.size();
       if( pre > 0 && copied_size > 0 )
@@ -167,7 +163,7 @@ non_fatal: ;
           std::memcmp( iobuf(), iobuf2(), copied_size ) != 0 )
         if( writeblockp( odes_, iobuf(), copied_size, pos ) != copied_size ||
               ( synchronous_ && fsync( odes_ ) != 0 && errno != EINVAL ) )
-          { final_msg( oname_, "Write error", errno ); return 1; }
+          { final_msg( oname_, wr_err_msg, errno ); return 1; }
     }
   else iobuf_ipos = -1;
 
@@ -271,7 +267,7 @@ int Rescuebook::copy_and_update( const Block & b, int & copied_size,
       change_chunk_status( Block( b.pos() + copied_size, error_size ), st2 );
       struct stat istat;
       if( stat( iname_, &istat ) != 0 )
-        { final_msg( iname_, "Input file disappeared", errno ); retval = 1; }
+        { final_msg( iname_, disap_msg, errno ); retval = 1; }
       }
     }
   return retval;
@@ -797,8 +793,8 @@ void Rescuebook::show_status( const long long ipos, const char * const msg,
       std::printf( "non-tried: %9sB,  bad-sector: %9sB,     error rate: %8sB/s\n",
                    format_num( non_tried_size ), format_num( bad_size ),
                    format_num( error_rate, 99999 ) );
-      std::printf( "  rescued: %9sB,   bad areas:%11lu,       run time: %11s\n",
-                   format_num( finished_size ), bad_areas,
+      std::printf( "  rescued: %9sB,   bad areas:%11s,       run time: %11s\n",
+                   format_num( finished_size ), format_num3( bad_areas ),
                    format_time( t1 - t0 ) );
       if( first_post ) sliding_avg.reset();
       else sliding_avg.add_term( c_rate );
@@ -807,10 +803,11 @@ void Rescuebook::show_status( const long long ipos, const char * const msg,
         std::min( std::min( (long long)LONG_MAX, 315359999968464000LL ),
                   ( non_tried_size + non_trimmed_size + non_scraped_size +
                     ( max_retries ? bad_size : 0 ) + s_rate - 1 ) / s_rate );
-      std::printf( "pct rescued:  %s, read errors:%11lu, remaining time: %11s\n",
-                   percent_rescued(), read_errors,
+      std::printf( "pct rescued:  %s, read errors:%11s, remaining time: %11s\n",
+                   percent_rescued(), format_num3( read_errors ),
                    format_time( remaining_time, remaining_time >= 180 ) );
-      if( min_read_rate >= -1 ) std::printf( " slow reads:%9lu,", slow_reads );
+      if( min_read_rate >= -1 )
+        std::printf( "slow reads:%10s,", format_num3( slow_reads ) );
       else std::fputs( "                      ", stdout );
       std::printf( "         time since last successful read: %11s\n",
                    format_time( ( ts > t0 ) ? t1 - ts : -1 ) );
@@ -840,22 +837,13 @@ Rescuebook::Rescuebook( const long long offset, const long long insize,
                         const int hardbs, const bool synchronous )
   : Mapbook( offset, insize, dom, mb_opts, mapname, cluster, hardbs,
              rb_opts.complete_only, true ),
-    Rb_options( rb_opts ),
-    error_rate( 0 ),
-    error_sum( 0 ),
-    sparse_size( sparse ? 0 : -1 ),
-    non_tried_size( 0 ),
-    non_trimmed_size( 0 ),
-    non_scraped_size( 0 ),
-    bad_size( 0 ),
-    finished_size( 0 ),
-    test_domain( test_dom ),
-    iname_( iname ), oname_( oname ),
-    read_errors( 0 ),
-    slow_reads( 0 ),
-    e_code( 0 ),
+    Rb_options( rb_opts ), error_rate( 0 ), error_sum( 0 ),
+    sparse_size( sparse ? 0 : -1 ), non_tried_size( 0 ),
+    non_trimmed_size( 0 ), non_scraped_size( 0 ), bad_size( 0 ),
+    finished_size( 0 ), test_domainp( test_dom ), iname_( iname ),
+    oname_( oname ), read_errors( 0 ), slow_reads( 0 ), e_code( 0 ),
     synchronous_( synchronous ),
-    coe_ipos( -1 ), coe_buf( new uint8_t[hardbs] ),
+    coe_ipos( -1 ), coe_buf( new uint8_t[hardbs] ), bsd_buf( 0 ),
     a_rate( 0 ), c_rate( 0 ), first_size( 0 ), last_size( 0 ),
     iobuf_ipos( -1 ), last_ipos( 0 ), t0( 0 ), t1( 0 ), ts( 0 ), tp( 0 ),
     oldlen( 0 ), rates_updated( false ), current_slow( false ),
@@ -898,6 +886,16 @@ Rescuebook::Rescuebook( const long long offset, const long long insize,
   }
 
 
+bool Rescuebook::read_bad_sector_data( const int fd )
+  {
+  if( bsd_buf ) return false;
+  uint8_t * const p = new uint8_t[hardbs()];
+  bsd_buf = p;
+  const int rd = readblock( fd, p, hardbs() );
+  return rd == hardbs() && errno == 0;
+  }
+
+
 // Return values: 0 OK, != 0 error.
 //
 int Rescuebook::do_rescue( const int ides, const int odes )
@@ -906,27 +904,28 @@ int Rescuebook::do_rescue( const int ides, const int odes )
   set_signals();
   if( verbosity >= 0 )
     {
-    std::fputs( "Press Ctrl-C to interrupt\n", stdout );
+    std::fputs( ctrlc_msg, stdout );
     if( mapfile_exists() )
       {
-      std::fputs( "Initial status (read from mapfile)\n", stdout );
+      std::fputs( initial_msg, stdout );
       if( verbosity >= 3 )
         {
-        std::printf( "current position: %9sB,     current sector: %7lld\n",
-                     format_num( current_pos() ), current_pos() / hardbs() );
+        std::printf( "current position: %9sB,     current sector: %7s\n",
+                     format_num( current_pos() ),
+                     format_num3( current_pos() / hardbs() ) );
         if( sblocks() )
           std::printf( " last block size: %9sB\n",
                        format_num( sblock( sblocks() - 1 ).size() ) );
         }
       if( domain().pos() > 0 || domain().end() < mapfile_insize() )
         std::printf( "(sizes limited to domain from %sB to %sB of %sB)\n",
-                     format_num3( domain().pos(), true ),
-                     format_num3( domain().end(), true ),
-                     format_num3( mapfile_insize(), true ) );
-      std::printf( "rescued: %sB, tried: %sB, bad-sector: %sB, bad areas: %lu\n\n",
+                     format_num3p( domain().pos(), true ),
+                     format_num3p( domain().end(), true ),
+                     format_num3p( mapfile_insize(), true ) );
+      std::printf( "rescued: %sB, tried: %sB, bad-sector: %sB, bad areas: %s\n\n",
                    format_num( finished_size ),
                    format_num( non_trimmed_size + non_scraped_size + bad_size ),
-                   format_num( bad_size ), bad_areas );
+                   format_num( bad_size ), format_num3( bad_areas ) );
       std::fputs( "Current status\n", stdout );
       }
     }
