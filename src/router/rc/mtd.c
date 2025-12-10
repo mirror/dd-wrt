@@ -1034,7 +1034,6 @@ again:;
 #endif
 
 	ret = 0;
-fail:
 	nvram_seti("flash_active", 0);
 	if (buf) {
 		/* 
@@ -1070,10 +1069,8 @@ fail:
 #endif
 #ifdef HAVE_WZRHPAG300NH
 	// must delete checksum, otherwise device will not boot anymore. the checksum gets recreated by the bootloader
-	if (!ret)
-		sysprintf("ubootenv del buf_crc");
+	sysprintf("ubootenv del buf_crc");
 #endif
-	if (!ret) {
 		switch (brand) {
 		case ROUTER_BUFFALO_WXR1900DHP:
 			// now fuck myself up
@@ -1083,9 +1080,24 @@ fail:
 			sysprintf("write /dev/mtdblock3 linux2"); //fixup for wxr1900 cfe
 			break;
 		}
-	}
-	// eval("fischecksum");
 	return ret;
+
+fail:
+	nvram_seti("flash_active", 0);
+	if (buf) {
+		/* 
+		 * Dummy read to ensure chip(s) are out of lock/suspend state 
+		 */
+		if (mtd_fd >= 0)
+			(void)read(mtd_fd, buf, 2);
+		free(buf);
+	}
+
+	if (mtd_fd >= 0)
+		close(mtd_fd);
+	if (fp)
+		fclose(fp);
+	return -1;
 }
 
 /* 
