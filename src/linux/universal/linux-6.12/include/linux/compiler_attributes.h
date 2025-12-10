@@ -52,7 +52,12 @@
  *   gcc: https://gcc.gnu.org/onlinedocs/gcc/Common-Function-Attributes.html#index-always_005finline-function-attribute
  * clang: mentioned
  */
-#define __always_inline                 inline __attribute__((__always_inline__))
+#if !defined(CONFIG_OPTIMIZE_INLINING) || (__GNUC__ < 4)
+#define __always_inline      inline __attribute__((__always_inline__))
+#else
+/* A lot of inline functions can cause havoc with function tracing */
+#define inline inline 		__gnu_inline __inline_maybe_unused notrace
+#endif
 
 /*
  * The second argument is optional (default 0), so we use a variadic macro
