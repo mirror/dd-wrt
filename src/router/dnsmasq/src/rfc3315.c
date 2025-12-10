@@ -1596,9 +1596,14 @@ static void get_context_tag(struct state *state, struct dhcp_context *context)
 
 static int check_ia(struct state *state, void *opt, void **endp, void **ia_option)
 {
-  state->ia_type = opt6_type(opt);
   *ia_option = NULL;
 
+  /* must be a minimal option to check without stepping outside received packet. */
+  if (opt6_ptr(opt, 4) > state->end)
+    return 0;
+  
+  state->ia_type = opt6_type(opt);
+  
   if (state->ia_type != OPTION6_IA_NA && state->ia_type != OPTION6_IA_TA)
     return 0;
   
@@ -1608,7 +1613,10 @@ static int check_ia(struct state *state, void *opt, void **endp, void **ia_optio
   if (state->ia_type == OPTION6_IA_TA && opt6_len(opt) < 4)
     return 0;
   
-  *endp = opt6_ptr(opt, opt6_len(opt));
+  /* Check we don't overflow the received packet. */
+  if ((*endp = opt6_ptr(opt, opt6_len(opt))) > state->end)
+    return 0;
+  
   state->iaid = opt6_uint(opt, 0, 4);
   *ia_option = opt6_find(opt6_ptr(opt, state->ia_type == OPTION6_IA_NA ? 12 : 4), *endp, OPTION6_IAADDR, 24);
 

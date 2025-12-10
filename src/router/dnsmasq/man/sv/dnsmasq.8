@@ -4,7 +4,7 @@ dnsmasq \- En lättviktig DHCP- och caching-DNS-server.
 .SH SYNOPSIS
 .B dnsmasq
 .I [OPTION]...
-.SH ”BESKRIVNING”
+.SH BESKRIVNING
 .BR dnsmasq
 är en lättviktig DNS-, TFTP-, PXE-, routerannonserings- och DHCP-server. Den är avsedd att tillhandahålla 
 kopplade DNS- och DHCP-tjänster till ett LAN.
@@ -864,8 +864,8 @@ de tas emot från uppströms.
 Dnsmasq kan kryptera bokstäverna i DNS-frågor som skickas uppströms som en säkerhetsfunktion.
 Denna teknik kan interagera dåligt med sällsynta trasiga DNS-servrar som inte bevarar bokstäverna
 i frågan i sitt svar. Första gången ett svar returneras
-som matchar frågan i alla avseenden utom bokstäverna, loggas en varning
-. Om detta sammanfaller med att DNS inte fungerar, är det
+som matchar frågan i alla avseenden utom bokstäverna, loggas en varning.
+Om detta sammanfaller med att DNS inte fungerar, är det
 nödvändigt att inaktivera funktionen. I version 2.91 är 0x20-kodning
 inaktiverad som standard och måste aktiveras med --do-0x20-encode. Standardinställningen
 kan komma att ändras i framtiden, så för att vara säker på dess status efter en uppgradering, ställ in --do-0x20-encode
@@ -2843,7 +2843,7 @@ dnsmasq inte har något direkt sätt att bestämma vilken teckenuppsättning som
 anta att det är systemets standard.
  
 
-.SH-FILER
+.SH FILER
 .IR /etc/dnsmasq.conf 
 
 .IR /usr/local/etc/dnsmasq.conf

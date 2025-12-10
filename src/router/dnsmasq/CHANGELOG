@@ -24,7 +24,7 @@ version 2.92
 
 	Fix some edge-cases with domains and --address and --server. There
 	has been some regressions with this in previous releases. This change
-	fixes the priority order from loqwer to highest as:
+	fixes the priority order from lower to highest as:
 	--address with a IPv4 or IPv6 address (as long as the query matches the type)
         --address with # for all-zeros, as long as the query is A or AAAA)
         --address with no address, which returns NXDOMAIN or NOERROR for all types.
@@ -61,7 +61,7 @@ version 2.92
 
 	Add TFTP options windowsize (RFC 7440) and timeout (RFC 2349).
 	
-	Change the behaviour of the DHVPv6 server when a REBIND message
+	Change the behaviour of the DHCPv6 server when a REBIND message
 	is received but no lease exists. Under these circumstances a new
 	lease is created _only_ when the --dhcp-authoritative option is
 	set. This matches the behavior of the DHCPv4 server.

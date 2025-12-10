@@ -2,7 +2,7 @@
 #
 # This revised version is (C) Copyright by
 # Matthias Andree <matthias.andree@gmx.de>, 2010 - 2021.
-# Conrad Kostecki <conrad@kostecki.com>, 2014 - 2024.
+# Conrad Kostecki <conrad@kostecki.com>, 2014 - 2025.
 # It is subject to the GNU General Public License v2,
 # or at your option, any later version.
 #
@@ -10,10 +10,10 @@
 # Simon Kelley <simon@thekelleys.org.uk>, 2005.
 msgid ""
 msgstr ""
-"Project-Id-Version: dnsmasq 2.91\n"
+"Project-Id-Version: dnsmasq 2.92\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2021-03-20 00:00+0000\n"
-"PO-Revision-Date: 2024-12-23 22:36+0100\n"
+"PO-Revision-Date: 2025-12-06 16:24+0100\n"
 "Last-Translator: Conrad Kostecki <conrad@kostecki.com>\n"
 "Language-Team: German <de@li.org>\n"
 "Language: de\n"
@@ -21,7 +21,7 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
-"X-Generator: Poedit 3.5\n"
+"X-Generator: Poedit 3.8\n"
 
 #: cache.c:696
 msgid "Internal error in cache."
@@ -94,22 +94,22 @@ msgstr "Anfragen nach autoritativen Zonen %u"
 #: cache.c:2078
 #, c-format
 msgid "DNSSEC per-query subqueries HWM %u"
-msgstr ""
+msgstr "DNSSEC-Unterabfragen pro Anfrage HWM %u"
 
 #: cache.c:2079
 #, c-format
 msgid "DNSSEC per-query crypto work HWM %u"
-msgstr ""
+msgstr "DNSSEC-Kryptografie pro Anfrage HWM %u"
 
 #: cache.c:2080
 #, c-format
 msgid "DNSSEC per-RRSet signature fails HWM %u"
-msgstr ""
+msgstr "DNSSEC-Signatur pro RRSet fehlgeschlagen HWM %u"
 
 #: cache.c:2084
 #, c-format
 msgid "child processes for TCP requests: in use %zu, highest since last SIGUSR1 %zu, max allowed %zu."
-msgstr ""
+msgstr "Kindprozesse für TCP-Anfragen: aktuell in Gebrauch %zu, höchster Wert seit letztem SIGUSR1 %zu, maximal erlaubt %zu."
 
 #: cache.c:2113
 #, c-format
@@ -215,9 +215,8 @@ msgid "Don't include IPv6 addresses in DNS answers."
 msgstr "Keine IPv6-Adressen in DNS-Antworten inkludieren."
 
 #: option.c:430
-#, fuzzy
 msgid "Don't include resource records of the given type in DNS answers."
-msgstr "Keine IPv4-Adressen in DNS-Antworten inkludieren."
+msgstr "Resource Records des angegebenen Typs nicht in DNS-Antworten einfügen."
 
 #: option.c:431
 msgid "Enable DHCP in the range given with lease duration."
@@ -354,9 +353,8 @@ msgid "DHCP option sent even if the client does not request it."
 msgstr "DHCP-Option, die selbst ohne Klientenanfrage gesendet wird."
 
 #: option.c:463
-#, fuzzy
 msgid "DHCP option sent only to PXE clients."
-msgstr "Aufforderung, die an PXE-Klienten geschickt wird."
+msgstr "DHCP-Option wird nur an PXE-Clients gesendet."
 
 #: option.c:464
 msgid "Specify port to listen for DNS requests on (defaults to 53)."
@@ -509,14 +507,12 @@ msgid "Do not provide DHCP on this interface, only provide DNS."
 msgstr "Auf dieser Schnittstelle kein DHCP anbieten, sondern nur DNS."
 
 #: option.c:500
-#, fuzzy
 msgid "Do not provide DHCPv6 on this interface."
-msgstr "Auf dieser Schnittstelle kein DHCP anbieten, sondern nur DNS."
+msgstr "DHCPv6 auf dieser Schnittstelle nicht bereitstellen."
 
 #: option.c:501
-#, fuzzy
 msgid "Do not provide DHCPv4 on this interface."
-msgstr "Auf dieser Schnittstelle kein DHCP anbieten, sondern nur DNS."
+msgstr "DHCPv4 auf dieser Schnittstelle nicht bereitstellen."
 
 #: option.c:502
 msgid "Enable dynamic address allocation for bootp."
@@ -536,7 +532,7 @@ msgstr "Geben Sie zusätzliche Netzwerke an, die eine Broadcast-Domäne für DHC
 
 #: option.c:506
 msgid "Enable RFC 4388 leasequery functions for DHCPv4"
-msgstr ""
+msgstr "RFC-4388-Leasequery-Funktionen für DHCPv4 aktivieren"
 
 #: option.c:507
 msgid "Disable ICMP echo address checking in the DHCP server."
@@ -858,9 +854,8 @@ msgid "Timestamp file to verify system clock for DNSSEC"
 msgstr "Zeitstempel-Datei für die Verifizierung der Systemuhrzeit für DNSSEC"
 
 #: option.c:586
-#, fuzzy
 msgid "Set resource limits for DNSSEC validation"
-msgstr "Aktiviere DNSSEC-Validierung"
+msgstr "Ressourcenlimits für die DNSSEC-Validierung festlegen"
 
 #: option.c:587
 msgid "Set MTU, priority, resend-interval and router-lifetime"
@@ -907,14 +902,12 @@ msgid "Enables DHCPv4 Rapid Commit option."
 msgstr "Aktiviert die DHCPv4-\"Rapid Commit\"-Option."
 
 #: option.c:598
-#, fuzzy
 msgid "Path to debug packet dump file."
-msgstr "Pfad zur Paketablagedatei zur Fehlersuche"
+msgstr "Pfad zur Dump-Datei für das Debug-Paket."
 
 #: option.c:599
-#, fuzzy
 msgid "Mask which packets to dump."
-msgstr "Maskiere Pakete, welche abgelegt werden sollen"
+msgstr "Maskiere, welche Pakete protokolliert werden sollen."
 
 #: option.c:600
 msgid "Call dhcp-script when lease expiry changes."
@@ -934,26 +927,23 @@ msgstr "Unterdrückt die Round-Robin-Sortierung von DNS-Einträgen."
 
 #: option.c:604
 msgid "Suppress DNS bit 0x20 encoding."
-msgstr ""
+msgstr "DNS-Bit-0x20-Codierung unterdrücken."
 
 #: option.c:605
 msgid "Enable DNS bit 0x20 encoding."
-msgstr ""
+msgstr "DNS-Bit-0x20-Codierung aktivieren."
 
 #: option.c:606
-#, fuzzy
 msgid "Do not add CHAOS TXT records."
-msgstr "fehlerhafter TXT-Eintrag"
+msgstr "Keine CHAOS-TXT-Einträge hinzufügen."
 
 #: option.c:607
-#, fuzzy
 msgid "Cache this DNS resource record type."
-msgstr "Spezifiziere einen beliebiegen DNS Eintrag"
+msgstr "Diesen DNS-Resource-Record-Typ cachen."
 
 #: option.c:608
-#, fuzzy
 msgid "Maximum number of concurrent tcp connections."
-msgstr "Maximale Anzahl gleichzeitiger TFTP-Übertragungen (%s voreingestellt)."
+msgstr "Maximale Anzahl gleichzeitiger TCP-Verbindungen."
 
 #: option.c:838
 #, c-format
@@ -1056,7 +1046,7 @@ msgstr "DHCP-Option zu lang"
 
 #: option.c:1961
 msgid "No vendor-encap options allowed in dhcp-option-pxe"
-msgstr ""
+msgstr "Keine vendor-encap-Optionen in dhcp-option-pxe erlaubt"
 
 #: option.c:1968
 msgid "illegal dhcp-match"
@@ -1141,9 +1131,8 @@ msgid "recompile with HAVE_CONNTRACK defined to enable connmark-allowlist direct
 msgstr "Neukompilierung mit HAVE_CONNTRACK notwendig, um connmark-allowlist-Direktiven zu aktivieren"
 
 #: option.c:3585
-#, fuzzy
 msgid "bad RR type"
-msgstr "fehlerhafter RR-Eintrag"
+msgstr "Ungültiger RR-Typ"
 
 #: option.c:3644
 msgid "bad port range"
@@ -1203,9 +1192,8 @@ msgid "duplicate dhcp-host IP address %s"
 msgstr "doppelte dhcp-host IP-Adresse %s"
 
 #: option.c:4201
-#, fuzzy
 msgid "DHCP host has multiple names"
-msgstr "fehlerhafter DHCP-Hostname"
+msgstr "DHCP-Host hat mehrere Namen"
 
 #: option.c:4209
 msgid "bad DHCP host name"
@@ -1452,7 +1440,7 @@ msgstr "keine \"search\"-Anweisung in %s gefunden"
 #: option.c:6284
 #, c-format
 msgid "srv-host name %s too long after domain appended"
-msgstr ""
+msgstr "srv-Hostname %s nach Anfügen der Domain zu lang"
 
 #: option.c:6293
 msgid "there must be a default domain when --dhcp-fqdn is set"
@@ -1483,12 +1471,12 @@ msgstr "möglichen DNS-Rebind-Angriff entdeckt: %s"
 
 #: forward.c:1013 forward.c:2280
 msgid "limit exceeded: per-query subqueries"
-msgstr ""
+msgstr "Limit überschritten: Unterabfragen pro Anfrage"
 
 #: forward.c:1103 forward.c:2288
 #, c-format
 msgid "validation of %s failed: resource limit exceeded."
-msgstr ""
+msgstr "Validierung von %s fehlgeschlagen: Ressourcenlimit überschritten."
 
 #: forward.c:1697
 #, c-format
@@ -1496,9 +1484,9 @@ msgid "ignoring query from non-local network %s (logged only once)"
 msgstr "Ignoriere Abfrage von nicht-lokalen Netzwerk %s (Nur einmal protokolliert)"
 
 #: forward.c:2120
-#, fuzzy, c-format
+#, c-format
 msgid "TCP connection failed to %s#%d"
-msgstr "Einspeisen in ARP-Zwischenspeicher fehlgeschlagen: %s"
+msgstr "TCP-Verbindung zu %s#%d fehlgeschlagen"
 
 #: forward.c:2426
 #, c-format
@@ -1522,7 +1510,7 @@ msgstr "Maximale Anzahl gleichzeitiger DNS-Abfragen, die erreicht %s (max. %d)"
 
 #: forward.c:3243
 msgid "Case mismatch in DNS reply - check bit 0x20 encoding."
-msgstr ""
+msgstr "Groß-/Kleinschreibung stimmt in der DNS-Antwort nicht überein – Bit-0x20-Codierung überprüfen."
 
 #: network.c:705
 #, c-format
@@ -1797,9 +1785,8 @@ msgid "DNS service limited to local subnets"
 msgstr "DNS-Dienst auf Unternetze eingeschränkt"
 
 #: dnsmasq.c:882
-#, fuzzy
 msgid "DNS service limited to localhost"
-msgstr "DNS-Dienst auf Unternetze eingeschränkt"
+msgstr "DNS-Dienst auf localhost beschränkt"
 
 #: dnsmasq.c:885
 #, c-format
@@ -1839,9 +1826,9 @@ msgid "DNSSEC signature timestamps not checked until system time valid"
 msgstr "DNSSEC Signatur-Zeitstempel werden erst überprüft, sobald die Systemuhrzeit gültig ist"
 
 #: dnsmasq.c:946
-#, fuzzy, c-format
+#, c-format
 msgid "configured with negative trust anchor for %s"
-msgstr "konfiguriert mit Vertrauensanker für %s Schlüsselanhänger %u"
+msgstr "Mit negativem Vertrauensanker für %s konfiguriert"
 
 #: dnsmasq.c:946
 #, c-format
@@ -1867,9 +1854,8 @@ msgid "warning: ignoring resolv-file flag because no-resolv is set"
 msgstr "Warnung: Ignoriere \"resolv-file\", weil \"no-resolv\" aktiv ist"
 
 #: dnsmasq.c:981
-#, fuzzy
 msgid "no upstream servers configured - please set them from DBus"
-msgstr "Warnung: keine vorgeschalteten Server konfiguriert"
+msgstr "Keine Upstream-Server konfiguriert – bitte über DBus festlegen"
 
 #: dnsmasq.c:984
 msgid "warning: no upstream servers configured"
@@ -1987,7 +1973,7 @@ msgstr "Kann keine Zeitstempel-Datei %s erzeugen: %s"
 #: dnsmasq.c:1576
 #, c-format
 msgid "TCP helper process %u died unexpectedly"
-msgstr ""
+msgstr "TCP-Hilfsprozess %u ist unerwartet abgestürzt"
 
 #: dnsmasq.c:1592
 #, c-format
@@ -2085,7 +2071,7 @@ msgstr "DHCP-Bereich %s - %s passt nicht zur Netzmaske %s"
 #: dhcp.c:680 dhcp6.c:467
 #, c-format
 msgid "DHCP relay address %s appears on more than one interface"
-msgstr ""
+msgstr "DHCP-Relay-Adresse %s erscheint auf mehr als einer Schnittstelle"
 
 #: dhcp.c:978
 #, c-format
@@ -2117,9 +2103,8 @@ msgid "too many stored leases"
 msgstr "zu viele Leases gespeichert"
 
 #: lease.c:183
-#, fuzzy
 msgid "lease-change script name is too long"
-msgstr "Lease-Änderungs-Skript mit den Rechten dieses Nutzers ausführen."
+msgstr "Der Name des Lease-Change-Skripts ist zu lang"
 
 #: lease.c:203
 #, c-format
@@ -2232,7 +2217,7 @@ msgstr "PXE BIS nicht unterstützt"
 #: rfc2131.c:1088
 #, c-format
 msgid "leasequery from %s not permitted"
-msgstr ""
+msgstr "Leasequery von %s nicht erlaubt"
 
 #: rfc2131.c:1259 rfc3315.c:1248
 #, c-format
@@ -2338,14 +2323,14 @@ msgid "%u reply delay: %d"
 msgstr "%u Antwortverzögerung: %d"
 
 #: rfc2131.c:3118
-#, fuzzy, c-format
+#, c-format
 msgid "Cannot send to server via interface %s: %s"
-msgstr "DHCP-Relay kann nicht über die Schnittstelle %s gesendet werden"
+msgstr "Kann nicht über Schnittstelle %s an Server senden: %s"
 
 #: rfc2131.c:3189
-#, fuzzy, c-format
+#, c-format
 msgid "Cannot broadcast DHCP relay via interface %s: %s"
-msgstr "DHCP-Relay kann nicht über die Schnittstelle %s gesendet werden"
+msgstr "Kann DHCP-Relay nicht über Schnittstelle %s senden: %s"
 
 #: rfc2131.c:3213
 #, c-format
@@ -2413,14 +2398,14 @@ msgid "unable to get free port for TFTP"
 msgstr "konnte keinen freien Port für TFTP bekommen"
 
 #: tftp.c:367
-#, fuzzy, c-format
+#, c-format
 msgid "unsupported write request from %s"
-msgstr "nicht unterstützte Anfrage von %s"
+msgstr "Nicht unterstützte Schreibanfrage von %s"
 
 #: tftp.c:371
-#, fuzzy, c-format
+#, c-format
 msgid "empty filename in request from %s"
-msgstr "nicht unterstützte Anfrage von %s"
+msgstr "Leerer Dateiname in Anfrage von %s"
 
 #: tftp.c:373
 #, c-format
@@ -2438,9 +2423,9 @@ msgid "ignoring packet from %s (TID mismatch)"
 msgstr "Paket von %s wird ignoriert (TID-Nichtübereinstimmung)"
 
 #: tftp.c:730
-#, fuzzy, c-format
+#, c-format
 msgid "timeout sending %s to %s"
-msgstr "konnte %s nicht an %s senden"
+msgstr "Zeitüberschreitung beim Senden von %s an %s"
 
 #: tftp.c:732
 #, c-format
@@ -2494,7 +2479,7 @@ msgstr "Kann nicht an DHCPv6-Server-Socket binden: %s"
 #: dhcp6.c:152
 #, c-format
 msgid "Working around kernel bug: faulty source address scope for VRF slave %s"
-msgstr ""
+msgstr "Umgehung eines Kernel-Fehlers: fehlerhafter Quelladressbereich für VRF-Slave %s"
 
 #: rfc3315.c:174
 #, c-format
@@ -2522,9 +2507,9 @@ msgid "%u client MAC address: %s"
 msgstr "%u Klient MAC-Adresse: %s"
 
 #: rfc3315.c:487
-#, fuzzy, c-format
+#, c-format
 msgid "%u cannot determine client MAC address"
-msgstr "%u Klient MAC-Adresse: %s"
+msgstr "%u kann die MAC-Adresse des Clients nicht bestimmen"
 
 #: rfc3315.c:783 rfc3315.c:880
 msgid "address unavailable"
@@ -2651,9 +2636,9 @@ msgid "DHCP relay from %s via %s"
 msgstr "DHCP-Relay von %s über %s"
 
 #: dhcp-common.c:1071
-#, fuzzy, c-format
+#, c-format
 msgid "DHCP split-relay from %s to %s via %s"
-msgstr "DHCP Weiterleitung von %s nach %s über %s"
+msgstr "DHCP-Split-Relay von %s nach %s über %s"
 
 #: dhcp-common.c:1073
 #, c-format
@@ -2784,21 +2769,21 @@ msgstr "Systemzeit als gültig betrachtet, prüfe jetzt DNSSEC Signatur-Zeitstem
 
 #: dnssec.c:431
 msgid "per-query crypto work"
-msgstr ""
+msgstr "Kryptografische Arbeit pro Anfrage"
 
 #: dnssec.c:697
 msgid "per-RRSet signature fails"
-msgstr ""
+msgstr "Signatur pro RRSet fehlgeschlagen"
 
 #: dnssec.c:1027
 #, c-format
 msgid "Insecure reply received for DS %s, assuming that's OK for a RFC-1918 address."
-msgstr ""
+msgstr "Unsichere Antwort für DS %s empfangen, Annahme, dass dies für eine RFC-1918-Adresse in Ordnung ist."
 
 #: dnssec.c:1034
 #, c-format
 msgid "Insecure reply received for DS %s, assuming non-DNSSEC domain-specific server."
-msgstr ""
+msgstr "Unsichere Antwort für DS %s empfangen, Annahme eines nicht-DNSSEC-domänenspezifischen Servers."
 
 #: dnssec.c:1041
 #, c-format
@@ -2808,7 +2793,7 @@ msgstr "Unsichere DS-Antwort für %s, bitte Domainkonfiguration und Upstream DNS
 #: dnssec.c:1152
 #, c-format
 msgid "Negative DS reply without NS record received for %s, assuming non-DNSSEC domain-specific server."
-msgstr ""
+msgstr "Negative DS-Antwort ohne NS-Eintrag für %s empfangen, Annahme eines nicht-DNSSEC-domänenspezifischen Servers."
 
 #: blockdata.c:55
 #, c-format
@@ -2909,9 +2894,9 @@ msgid "cannot create %s: %s"
 msgstr "kann %s nicht erstellen: %s"
 
 #: dump.c:76
-#, fuzzy, c-format
+#, c-format
 msgid "cannot open pipe %s: %s"
-msgstr "Kann Logdatei %s nicht öffnen: %s"
+msgstr "Kann Pipe %s nicht öffnen: %s"
 
 #: dump.c:82
 #, c-format

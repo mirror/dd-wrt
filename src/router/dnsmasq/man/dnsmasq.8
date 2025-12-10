@@ -918,7 +918,7 @@ fast.
 
 Versions of dnsmasq prior to 2.80 defaulted to not checking unsigned replies, and used 
 .B --dnssec-check-unsigned
-to switch this on. Such configurations will continue to work as before, but those which used the default of no checking will need to be altered to explicitly select no checking. The new default is because switching off checking for unsigned replies is inherently dangerous. Not only does it open the possiblity of forged replies, but it allows everything to appear to be working even when the upstream namesevers do not support DNSSEC, and in this case no DNSSEC validation at all is occurring.
+to switch this on. Such configurations will continue to work as before, but those which used the default of no checking will need to be altered to explicitly select no checking. The new default is because switching off checking for unsigned replies is inherently dangerous. Not only does it open the possibility of forged replies, but it allows everything to appear to be working even when the upstream namesevers do not support DNSSEC, and in this case no DNSSEC validation at all is occurring.
 .TP
 .B --dnssec-no-timecheck
 DNSSEC signatures are only valid for specified time windows, and should be rejected outside those windows. This generates an
@@ -1197,7 +1197,7 @@ the appropriate network part inserted. For IPv6, an address may include a prefix
 which (in this case) specifies four addresses, 1234::50 to 1234::53. This (an the ability
 to specify multiple addresses) is useful
 when a host presents either a consistent name or hardware-ID, but varying DUIDs, since it allows
-dnsmasq to honour the static address allocation but assign a different adddress for each DUID. This
+dnsmasq to honour the static address allocation but assign a different address for each DUID. This
 typically occurs when chain netbooting, as each stage of the chain gets in turn allocates an address.
 
 Note that in IPv6 DHCP, the hardware address may not be
@@ -1347,7 +1347,7 @@ The special address 0.0.0.0 means "the address of the system running dnsmasq".
 
 An option without data is valid, and includes just the option without data.
 (There is only one option with a zero length data field currently defined for DHCPv4, 80:rapid commit, so this feature is not very useful in practice). Options for which dnsmasq normally
-provides default values can be ommitted by defining the option with no data. These are
+provides default values can be omitted by defining the option with no data. These are
 netmask, broadcast, router, DNS server, domainname and hostname. Thus, for DHCPv4
 .B --dhcp-option = option:router
 will result in no router option being sent, rather than the default of the host on which dnsmasq is running. For DHCPv6, the same is true of the options DNS server and refresh time.
@@ -1490,7 +1490,7 @@ prefix-delegation from relayed DHCP transactions. See
 for details.
 .TP
 .B --dhcp-split-relay=<local address>,[<server address>[#<server port>]],<server-facing-interface>|<server-facing-address>
-A usefully enchanced version of DHCPv4 relay. IPv4 DHCP normally uses a single address
+A usefully enhanced version of DHCPv4 relay. IPv4 DHCP normally uses a single address
 for two functions; it is used by the DHCP server to determine which network to allocate
 an address on, and it is used as the address of the relay to which the server sends packets.
 
@@ -1501,7 +1501,7 @@ local address is also used as server-ID override so that the client always sends
 via the relay. The effect of this is that server doesn't require
 a route to the client network and the clients don't require a route to the server.
 
-The third parameter is mandatory. If it is an interface name it cannot be a wildcard and the same filtering as descibed in
+The third parameter is mandatory. If it is an interface name it cannot be a wildcard and the same filtering as described in
 --dhcp-relay applies; answers from the server must arrve via the specified interface. If the third parameter
 is an IP address it must be an address of a local interface which is routable from the server; In this case no filtering
 is done, the reply packets can arrive via any route.
@@ -1672,7 +1672,7 @@ likely to move IP address; for this reason it should not be generally used.
 .TP
 .B --dhcp-ignore-clid
 Dnsmasq is reading 'client identifier' (RFC 2131) option sent by clients
-(if available) to identify clients. This allow to serve same IP address
+(if available) to identify clients. This allow one to serve same IP address
 for a host using several interfaces. Use this option to disable 'client identifier'
 reading, i.e. to always identify a host using the MAC address.
 .TP
@@ -1953,7 +1953,7 @@ was sent, and the complete pathname of the file.
 
 The "relay-snoop" action is invoked when dnsmasq is configured as a DHCP
 relay for DHCPv6 and it relays a prefx delegation to a client. The arguments
-are the name of the interface where the client is conected, its (link-local)
+are the name of the interface where the client is connected, its (link-local)
 address on that interface and the delegated prefix. This information is
 sufficient to install routes to the delegated prefix of a router. See
 .B --dhcp-relay
@@ -2304,7 +2304,7 @@ therein is updated when dnsmasq receives SIGHUP.
 .B \--conf-script=<file>[ <arg]
 Execute <file>, and treat what it emits to stdout as the contents of a configuration file.
 If the script exits with a non-zero exit code, dnsmasq treats this as a fatal error.
-The script can be passed arguments, space seperated from the filename and each other so, for instance
+The script can be passed arguments, space separated from the filename and each other so, for instance
 .B --conf-dir="/etc/dnsmasq-uncompress-ads /share/ads-domains.gz"
 
 with /etc/dnsmasq-uncompress-ads containing 
