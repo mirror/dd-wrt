@@ -406,7 +406,7 @@ int conf_write(const char *name)
 		char buf[sizeof("#define AUTOCONF_TIMESTAMP "
 				"\"YYYY-MM-DD HH:MM:SS some_timezone\"\n")];
 		buf[0] = '\0';
-		if (use_timestamp) {
+		if (1) {
 			size_t ret = \
 				strftime(buf, sizeof(buf), "#define AUTOCONF_TIMESTAMP "
 					"\"%Y-%m-%d %H:%M:%S %Z\"\n", build_time);
