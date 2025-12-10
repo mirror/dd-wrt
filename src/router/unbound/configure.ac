@@ -967,14 +967,14 @@ AC_ARG_WITH([nettle], AS_HELP_STRING([--with-nettle=path],[use libnettle as cryp
 if test $USE_NSS = "no" -a $USE_NETTLE = "no"; then
 ACX_WITH_SSL
 ACX_LIB_SSL
-SSLLIB=""
+SSLLIB="-lssl"
 
 PC_CRYPTO_DEPENDENCY=""
 AC_SUBST(PC_CRYPTO_DEPENDENCY)
 
 # check if -lcrypt32 is needed because CAPIENG needs that. (on windows)
 BAKLIBS="$LIBS"
-LIBS="$LIBS"
+LIBS="-lssl $LIBS"
 AC_MSG_CHECKING([if libssl needs -lcrypt32])
 AC_LINK_IFELSE([AC_LANG_PROGRAM([[]], [[
 	int EVP_sha256(void);
@@ -985,7 +985,7 @@ AC_LINK_IFELSE([AC_LANG_PROGRAM([[]], [[
 ], [
 	AC_MSG_RESULT([yes])
 	LIBS="$BAKLIBS"
-	LIBS="$LIBS"
+	LIBS="$LIBS -lcrypt32"
 ])
 
 AC_MSG_CHECKING([for LibreSSL])
@@ -1003,7 +1003,7 @@ AC_CHECK_FUNCS([OPENSSL_config EVP_sha1 EVP_sha256 EVP_sha512 FIPS_mode EVP_defa
 
 # these check_funcs need -lssl
 BAKLIBS="$LIBS"
-LIBS="$LIBS"
+LIBS="-lssl $LIBS"
 AC_CHECK_FUNCS([OPENSSL_init_ssl SSL_CTX_set_security_level SSL_set1_host SSL_get0_peername X509_VERIFY_PARAM_set1_host SSL_CTX_set_ciphersuites SSL_CTX_set_tlsext_ticket_key_evp_cb SSL_CTX_set_alpn_select_cb SSL_get0_alpn_selected SSL_CTX_set_alpn_protos SSL_get1_peer_certificate])
 LIBS="$BAKLIBS"
 
@@ -1721,7 +1721,7 @@ if test "$USE_WINSOCK" = 1; then
 	if echo "$LIBS" | grep crypt32 >/dev/null; then
 		LIBS="$LIBS -liphlpapi"
 	else
-		LIBS="$LIBS -liphlpapi"
+		LIBS="$LIBS -liphlpapi -lcrypt32"
 	fi
 	WINAPPS="unbound-service-install.exe unbound-service-remove.exe anchor-update.exe"
 	AC_SUBST(WINAPPS)

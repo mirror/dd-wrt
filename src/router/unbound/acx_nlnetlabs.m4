@@ -672,6 +672,11 @@ AC_DEFUN([ACX_SSL_CHECKS], [
 				: # found here
 			else
 				ssldir_lib=`echo $ssldir | sed -e 's/include/lib64/'`
+				if test -f "$ssldir_lib/libssl.a" -o -f "$ssldir_lib/libssl.so"; then
+					: # found here
+				else
+					AC_MSG_ERROR([Could not find openssl lib file, $ssldir_lib/libssl.[so,a], pass like "/usr/local" or "/usr/include/openssl11"])
+				fi
 			fi
 		fi
 	fi
@@ -707,8 +712,8 @@ AC_DEFUN([ACX_SSL_CHECKS], [
 	    fi
 
             AC_MSG_CHECKING([for EVP_sha256 in -lcrypto])
-            LIBS="$LIBS"
-            LIBSSL_LIBS="$LIBSSL_LIBS"
+            LIBS="$LIBS -lcrypto"
+            LIBSSL_LIBS="$LIBSSL_LIBS -lcrypto"
             AC_LINK_IFELSE([AC_LANG_PROGRAM([[]], [[
                 int EVP_sha256(void);
                 (void)EVP_sha256();
@@ -736,8 +741,8 @@ AC_DEFUN([ACX_SSL_CHECKS], [
                     LIBS="$BAKLIBS"
                     LIBSSL_LIBS="$BAKSSLLIBS"
 
-		    LIBS="$LIBS"
-		    LIBSSL_LIBS="$LIBSSL_LIBS"
+		    LIBS="$LIBS -lgdi32 -lws2_32 -lcrypt32"
+		    LIBSSL_LIBS="$LIBSSL_LIBS -lgdi32 -lws2_32 -lcrypt32"
                     AC_MSG_CHECKING([if -lcrypto needs -lgdi32 -lws2_32 -lcrypt32])
 		    AC_LINK_IFELSE([AC_LANG_PROGRAM([[]], [[
 			int EVP_sha256(void);
@@ -752,7 +757,7 @@ AC_DEFUN([ACX_SSL_CHECKS], [
 			LIBSSL_LIBS="$BAKSSLLIBS"
 
 			LIBS="$LIBS -lgdi32 -lws2_32 -lcrypt32 -l:libssp.a"
-			LIBSSL_LIBS="$LIBSSL_LIBS"
+			LIBSSL_LIBS="$LIBSSL_LIBS -lgdi32 -lws2_32 -lcrypt32 -l:libssp.a"
 			AC_MSG_CHECKING([if -lcrypto needs -lgdi32 -lws2_32 -lcrypt32 -l:libssp.a])
 			AC_LINK_IFELSE([AC_LANG_PROGRAM([[]], [[
 			    int EVP_sha256(void);
@@ -847,7 +852,7 @@ AC_DEFUN([ACX_LIB_SSL],
 [
 # check if libssl needs libdl
 BAKLIBS="$LIBS"
-LIBS="$LIBS"
+LIBS="-lssl $LIBS"
 AC_MSG_CHECKING([if libssl needs libdl])
 AC_TRY_LINK_FUNC([SSL_CTX_new], [
 	AC_MSG_RESULT([no])
