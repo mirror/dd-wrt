@@ -236,12 +236,7 @@ struct ftrace_likely_data {
  * A lot of inline functions can cause havoc with function tracing.
  */
 
-#if !defined(CONFIG_OPTIMIZE_INLINING) || (__GNUC__ < 4)
 #define inline inline __gnu_inline __inline_maybe_unused notrace
-#else
-/* A lot of inline functions can cause havoc with function tracing */
-#define inline inline
-#endif
 
 /*
  * gcc provides both __inline__ and __inline as alternate spellings of
