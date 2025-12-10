@@ -173,7 +173,7 @@ extern void clear_cpu_cap(struct cpuinfo_x86 *c, unsigned int bit);
  * it to manifest the address of boot_cpu_data in a register, fouling
  * the mainline (post-initialization) code.
  */
-static __always_inline bool _static_cpu_has(u16 bit)
+static inline __attribute__((__always_inline__)) bool _static_cpu_has(u16 bit)
 {
 	asm goto(ALTERNATIVE_TERNARY("jmp 6f", %c[feature], "", "jmp %l[t_no]")
 		".pushsection .altinstr_aux,\"ax\"\n"
