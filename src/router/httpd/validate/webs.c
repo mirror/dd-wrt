@@ -4119,6 +4119,7 @@ static char *vapsettings[] = {
 	"bss_partial",
 	"twt_required",
 	"ssid_protection",
+	"beacon_tx_mode",
 };
 
 static void movevap(const char *prefix, int source, int target, int bonly)
@@ -5764,6 +5765,7 @@ static void save_prefix(webs_t wp, char *prefix)
 	copytonv_prefix(wp, "txantenna", prefix);
 	copytonv_prefix(wp, "rxantenna", prefix);
 	copytonv_prefix(wp, "intmit", prefix);
+	copytonv_prefix(wp, "beacon_tx_mode", prefix);
 	copytonv_prefix(wp, "csma", prefix);
 	copytonv_prefix(wp, "noise_immunity", prefix);
 	copytonv_prefix(wp, "ofdm_weak_det", prefix);
