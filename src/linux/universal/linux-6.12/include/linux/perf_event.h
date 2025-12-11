@@ -1512,7 +1512,7 @@ static __always_inline void __perf_sw_event_sched(u32 event_id, u64 nr, u64 addr
 
 extern struct static_key_false perf_sched_events;
 
-static __always_inline bool __perf_sw_enabled(int swevt)
+static inline __attribute__((__always_inline__)) bool __perf_sw_enabled(int swevt)
 {
 	return static_key_false(&perf_swevent_enabled[swevt]);
 }
