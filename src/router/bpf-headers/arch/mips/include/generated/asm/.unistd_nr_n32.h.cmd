@@ -1,0 +1,1 @@
+savedcmd_arch/mips/include/generated/asm/unistd_nr_n32.h := bash 'arch/mips/kernel/syscalls/syscallnr.sh' 'arch/mips/kernel/syscalls/syscall_n32.tbl' 'arch/mips/include/generated/asm/unistd_nr_n32.h' '' 'N32'

@@ -1,0 +1,1 @@
+savedcmd_arch/mips/boot/tools/relocs := /home/xfs/openwrt/lede/openwrt/staging_dir/host/bin/gcc   -o arch/mips/boot/tools/relocs arch/mips/boot/tools/relocs_32.o arch/mips/boot/tools/relocs_64.o arch/mips/boot/tools/relocs_main.o -L/home/xfs/openwrt/lede/openwrt/staging_dir/host/lib 
