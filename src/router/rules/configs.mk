@@ -723,9 +723,10 @@ obj-$(CONFIG_PROCPS) += ncurses procps
 obj-$(CONFIG_BLUEZ) += json-c libffi expat glib20 readline dbus bluez bluez-tools pcre2
 obj-$(CONFIG_IPTOOLS) += libmnl iptools
 obj-$(CONFIG_REALTEK) += libubox json-c ubus realtek-poe
+obj-$(CONFIG_BRIDGER) += musl-fts argp-standalone elfutils libbpf libubox ubus libnl-tiny bridger
 
 ifneq ($(CONFIG_DIST),"micro")
-obj-y+=wrtbwmon
+obj-y+=wrtbwmon 
 endif
 
 

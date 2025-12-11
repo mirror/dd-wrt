@@ -780,7 +780,6 @@ endif
 		mv -f busybox/.config.temp busybox/.config ; \
 	fi ;
 
-#	-$(MAKE) -C busybox STRIPTOOL=$(STRIP) PREFIX=$(INSTALLDIR)/busybox
 	$(MAKE) -C busybox STRIPTOOL=$(STRIP) PREFIX=$(INSTALLDIR)/busybox
 
 

@@ -411,6 +411,10 @@ include rules/jemalloc.mk
 include rules/procps.mk
 include rules/nftables.mk
 include rules/sed.mk
+include rules/elfutils.mk
+include rules/libbpf.mk
+include rules/musl-fts.mk
+include rules/argp-standalone.mk
 
 #
 # Generic rules
