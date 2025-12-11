@@ -5,7 +5,7 @@
 
 #include <fnmatch.h>
 
-#include <libubox/kvlist.h>
+#include <kvlist.h>
 #include <libubus.h>
 
 #include "bridger.h"
@@ -13,7 +13,7 @@
 static struct ubus_auto_conn conn;
 static KVLIST(blacklist, kvlist_blob_len);
 static bool bridge_local_tx = true;
-static struct udebug_ubus udebug;
+//static struct udebug_ubus udebug;
 bool bridge_local_rx;
 
 bool bridger_ubus_dev_blacklisted(struct device *dev)
@@ -210,7 +210,7 @@ static void
 ubus_connect_handler(struct ubus_context *ctx)
 {
 	ubus_add_object(ctx, &bridger_object);
-	udebug_ubus_init(&udebug, &conn.ctx, "bridger", bridger_udebug_config);
+//	udebug_ubus_init(&udebug, &conn.ctx, "bridger", bridger_udebug_config);
 }
 
 int bridger_ubus_init(void)

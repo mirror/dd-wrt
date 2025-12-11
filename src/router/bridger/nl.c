@@ -966,12 +966,14 @@ static bool bridger_has_flow_offload(void)
 	return true;
 }
 
+#ifdef NL_UDEBUG
 static void bridger_nl_udebug_cb(void *priv, struct nl_msg *msg)
 {
     struct nlmsghdr *nlh = nlmsg_hdr(msg);
 
     udebug_netlink_msg(priv, nlmsg_get_proto(msg), nlh, nlh->nlmsg_len);
 }
+#endif
 
 static void bridger_nl_resync(struct uloop_timeout *t)
 {

@@ -10,13 +10,13 @@
 #include <stdio.h>
 #include <net/if.h>
 #include <netinet/if_ether.h>
-#include <libubox/uloop.h>
-#include <libubox/list.h>
-#include <libubox/avl.h>
-#include <libubox/utils.h>
+#include <uloop.h>
+#include <list.h>
+#include <avl.h>
+#include <utils.h>
 
-#include <bpf/bpf.h>
-#include <bpf/libbpf.h>
+#include <bpf.h>
+#include <libbpf.h>
 
 #include "bridger-bpf.h"
 #include "device.h"
@@ -31,7 +31,7 @@
 
 extern void bridger_dprintf(const char *format, ...);
 
-#ifdef UBUS_SUPPORT
+#if 0 //def UBUS_SUPPORT
 #include <udebug.h>
 extern struct udebug_buf udb_nl;
 void bridger_udebug_config(struct udebug_ubus *ctx, struct blob_attr *data,

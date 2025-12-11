@@ -7,8 +7,8 @@
 #include <fcntl.h>
 #include <errno.h>
 #include <glob.h>
-#include <libubox/utils.h>
-#include <libubox/uloop.h>
+#include <utils.h>
+#include <uloop.h>
 #include "bridger.h"
 
 static int device_avl_cmp(const void *k1, const void *k2, void *ptr)

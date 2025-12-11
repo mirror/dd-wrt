@@ -8,7 +8,7 @@
 
 static int debug_level = 0;
 
-#ifdef UBUS_SUPPORT
+#if 0 //def UBUS_SUPPORT
 static struct udebug ud;
 static struct udebug_buf udb_log;
 struct udebug_buf udb_nl;
@@ -48,7 +48,7 @@ void bridger_dprintf(const char *format, ...)
 {
 	va_list ap;
 
-#ifdef UBUS_SUPPORT
+#if 0 //def UBUS_SUPPORT
 	if (udebug_buf_valid(&udb_log)) {
 		va_start(ap, format);
 		udebug_entry_init(&udb_log);
@@ -92,7 +92,7 @@ int main(int argc, char **argv)
 
 	uloop_init();
 
-#ifdef UBUS_SUPPORT
+#if 0 //def UBUS_SUPPORT
 	udebug_init(&ud);
 	udebug_auto_connect(&ud, NULL);
 	for (size_t i = 0; i < ARRAY_SIZE(rings); i++)
