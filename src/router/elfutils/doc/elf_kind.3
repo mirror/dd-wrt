@@ -1,0 +1,73 @@
+.TH ELF_KIND 3 2025-03-31 "Libelf" "Libelf Programmer's Manual"
+
+.SH NAME
+elf_kind \- Determine the type of file represented by an ELF descriptor.
+
+.SH SYNOPSIS
+.nf
+#include <libelf.h>
+
+.BI "Elf_Kind elf_kind(Elf *" elf ");"
+
+.SH DESCRIPTION
+The
+.B elf_kind
+function determines the file type of the file represented by
+.IR elf .
+This type identifies whether the descriptor represents an
+ELF object, an archive member, or some other type of file.
+
+.SH PARAMETERS
+.TP
+.I elf
+The ELF descriptor.
+
+.SH RETURN VALUE
+The file type of the file represented by
+.IR elf .
+The possible return value are
+
+.RS
+.TP
+.PD 0
+.TP
+.TP
+.B ELF_K_NONE
+Unknown file type.
+
+.TP
+.B ELF_K_AR
+Archive member.
+
+.TP
+.B ELF_K_COFF
+COFF object file. COFF is not supported by elfutils libelf.
+
+.TP
+.B ELF_K_ELF
+ELF object file.
+
+
+.SH SEE ALSO
+.BR ar (1),
+.BR ranlib (1),
+.BR libelf (3),
+.BR elf (5)
+
+.SH ATTRIBUTES
+For an explanation of the terms used in this section, see
+.BR attributes (7).
+.TS
+allbox;
+lbx lb lb
+l l l.
+Interface	Attribute	Value
+T{
+.na
+.nh
+.BR elf_kind ()
+T}	Thread safety	MT-Safe
+.TE
+
+.SH REPORTING BUGS
+Report bugs to <elfutils-devel@sourceware.org> or https://sourceware.org/bugzilla/.

@@ -1,0 +1,120 @@
+.TH ELF_NEXT 3 2025-06-06 "Libelf" "Libelf Programmer's Manual"
+
+.SH NAME
+elf_next \- advance an ELF descriptor to the next archive member
+
+.SH SYNOPSIS
+.nf
+.B #include <libelf.h>
+
+.BI "Elf_Cmd elf_next(Elf *" elf ");"
+.fi
+.SH DESCRIPTION
+Advance an ELF descriptor associated with an archive file to the next available
+archive member.
+
+.P
+ELF descriptors initialized from an archive file can be used to retrieve ELF
+descriptors for archive members one at a time using
+.BR elf_begin (3).
+.BR elf_next (3)
+updates the archive descriptor so that
+.BR elf_begin (3)
+returns the ELF descriptor of the next member of the archive.  See the
+.B EXAMPLES
+section below.
+
+.SH RETURN VALUE
+If
+.I elf
+refers to an archive member, update the state of the parent archive
+ELF descriptor associated with
+.I elf
+so that the next archive member can be retrieved with
+.BR elf_begin (3).
+Return the
+.B Elf_Cmd
+that was used with
+.BR elf_begin (3)
+to initialize
+.IR elf .
+
+.P
+If
+.I elf
+was not initialized from an archive file or there are no more archive members,
+.BR elf_next (3)
+returns
+.B ELF_C_NULL.
+
+.SH EXAMPLES
+.nf
+  /* Open the archive.  */
+  fd = open (archive_name, O_RDONLY);
+  if (fd == -1)
+    {
+      printf ("cannot open archive file `%s'", fname);
+      exit (1);
+    }
+
+  /* Set the ELF version.  */
+  elf_version (EV_CURRENT);
+
+  /* Create an ELF descriptor for the archive.  */
+  cmd = ELF_C_READ;
+  elf = elf_begin (fd, cmd, NULL);
+  if (elf == NULL)
+    {
+      printf ("cannot create ELF descriptor: %s\\n", elf_errmsg (-1));
+      exit (1);
+    }
+
+  /* Verify this is a descriptor for an archive.  */
+  if (elf_kind (elf) != ELF_K_AR)
+    {
+      printf ("`%s' is not an archive\\n", fname);
+      exit (1);
+    }
+
+  /* Get the members of the archive one after the other.  */
+  while ((subelf = elf_begin (fd, cmd, elf)) != NULL)
+    {
+      /* Process subelf here */
+      [...]
+
+      /* elf_next updates elf, the parent archive, so that the next call
+         to elf_begin returns the next archive member.  */
+      cmd = elf_next (subelf);
+      if (elf_end (subelf) != 0)
+        {
+          printf ("error while freeing sub-ELF descriptor: %s\\n",
+                  elf_errmsg (-1));
+          exit (1);
+        }
+    }
+
+  elf_end (elf);
+  close (fd);
+.fi
+
+.SH SEE ALSO
+.BR elf_begin (3),
+.BR elf_rand (3),
+.BR libelf (3),
+.BR elf (5)
+
+.SH ATTRIBUTES
+.TS
+allbox;
+lbx lb lb
+l l l.
+Interface	Attribute	Value
+T{
+.na
+.nh
+.BR elf_next ()
+T}	Thread safety	MT-Safe
+.TE
+
+.SH REPORTING BUGS
+Report bugs to <elfutils-devel@sourceware.org> or https://sourceware.org/bugzilla/.

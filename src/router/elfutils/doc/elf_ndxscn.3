@@ -1,0 +1,54 @@
+.TH ELF_NDXSCN 3 2024-07-18 "Libelf" "Libelf Programmer's Manual"
+
+.SH NAME
+elf_ndxscn \- retrieve the index of a descriptor for an ELF file section
+
+.SH SYNOPSIS
+.B #include <libelf.h>
+
+.BI "size_t elf_ndxscn(Elf_Scn *" scn ");"
+
+.SH DESCRIPTION
+The
+.B elf_ndxscn
+function retrieves the index of the section descriptor referred to by
+.I scn.
+
+.SH PARAMETERS
+.TP
+.I scn
+An
+.I Elf_Scn
+pointer to the section descriptor whose index is to be retrieved.
+
+.SH RETURN VALUE
+The
+.B elf_ndxscn
+function returns the index of the section descriptor. If
+.I scn
+is NULL, it returns
+.B SHN_UNDEF.
+.B SHN_UNDEF
+is zero.
+
+.SH SEE ALSO
+.BR libelf (3),
+.BR elf (5)
+
+.SH ATTRIBUTES
+For an explanation of the terms used in this section, see
+.BR attributes (7).
+.TS
+allbox;
+lbx lb lb
+l l l.
+Interface	Attribute	Value
+T{
+.na
+.nh
+.BR elf_ndxscn ()
+T}	Thread safety	MT-Safe
+.TE
+
+.SH REPORTING BUGS
+Report bugs to <elfutils-devel@sourceware.org> or https://sourceware.org/bugzilla/.

@@ -1,0 +1,81 @@
+.TH ELF_GETPHDRNUM 3 2025-06-30 "Libelf" "Libelf Programmer's Manual"
+
+.SH NAME
+elf_getphdrnum \- retrieve the number of program headers in an ELF file
+.SH SYNOPSIS
+.nf
+#include <libelf.h>
+
+.B int elf_getphdrnum("Elf *elf", "size_t *dst");
+.fi
+.SH DESCRIPTION
+The
+.BR elf_getphdrnum ()
+function stores the number of program headers associated with the ELF descriptor
+.I elf
+into the variable pointed to by
+.IR dst .
+
+If the number of program headers exceeds the representable range of the
+.I e_phnum
+field in the ELF header, the ELF specification allows encoding the true count
+in section header 0’s
+.I sh_info
+field, and sets
+.I e_phnum
+to the reserved value
+.B PN_XNUM
+(always 0xFFFF). This function transparently handles that case.
+
+The function also ensures the returned count of program headers does not
+exceed the number that can actually be addressed in the program header table.
+This is important when indexing into the array returned by
+.BR elf32_getphdr ()
+or
+.BR elf64_getphdr ().
+
+.SH PARAMETERS
+.TP
+.I elf
+A pointer to an
+.B Elf
+descriptor.
+The descriptor must represent an ELF binary with
+.I Elf_Kind
+.B ELF_K_ELF .
+
+.TP
+.I dst
+On success, the number of program headers in
+.I elf
+is written here.  Must not be NULL.
+
+.SH RETURN VALUE
+Returns 0 on success and stores the result in
+.IR dst .
+Returns \-1 on failure and sets elf_errno.  Returns \-1 without setting
+errno if
+.B elf
+is NULL .
+
+.SH SEE ALSO
+.BR elf32_getphdr (3),
+.BR elf64_getphdr (3),
+.BR libelf (3),
+.BR elf (5)
+
+.SH ATTRIBUTES
+.TS
+allbox;
+lbx lb lb
+l l l.
+Interface	Attribute	Value
+T{
+.na
+.nh
+.BR elf_getphdrnum ()
+T}	Thread safety	MT-Safe
+.TE
+
+.SH REPORTING BUGS
+Report bugs to <elfutils-devel@sourceware.org> or https://sourceware.org/bugzilla/.

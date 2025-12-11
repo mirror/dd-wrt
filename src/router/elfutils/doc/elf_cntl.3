@@ -1,0 +1,70 @@
+.TH ELF_CNTL 3 2025-06-17 "Libelf" "Libelf Programmer's Manual"
+
+.SH NAME
+elf_cntl \- perform control operations on an ELF descriptor
+
+.SH SYNOPSIS
+.nf
+#include <libelf.h>
+
+int elf_cntl(Elf *elf, Elf_Cmd cmd);
+.fi
+.SH DESCRIPTION
+Perform control operations on the ELF descriptor
+.I elf
+according to the operation specified by
+.IR cmd .
+
+The following commands are supported:
+
+.TP
+.B ELF_C_FDDONE
+This command tells
+.B libelf
+that the application is done using the file descriptor associated with the
+.I elf
+object. The file descriptor may then be closed immediately without affecting the
+in-memory ELF data.  Unless all data has been read from the file descriptor (see
+.B ELF_C_FDREAD
+below) future operation on the Elf descriptor may fail.
+
+.TP
+.B ELF_C_FDREAD
+This command causes
+.B libelf
+to read the entire contents of the underlying file into memory immediately.
+.B libelf
+generally reads and parses elements of ELF files only when they are required.
+This command instead triggers
+.B libelf
+to read all elements immediately. Using this command ensures that
+.B ELF_C_FDDONE
+may be used without causing future operations on the Elf descriptor to fail.
+
+.SH RETURN VALUE
+On success, returns 0.
+
+On failure, it returns \-1 and sets an error that can be retrieved with
+.BR elf_errmsg (3).
+
+
+.SH SEE ALSO
+.BR libelf (3),
+.BR elf_errmsg (3),
+.BR elf (5)
+
+.SH ATTRIBUTES
+.TS
+allbox;
+lbx lb lb
+l l l.
+Interface       Attribute       Value
+T{
+.na
+.nh
+.BR elf_cntl ()
+T}      Thread safety   MT-Safe
+.TE
+
+.SH REPORTING BUGS
+Report bugs to <elfutils-devel@sourceware.org> or https://sourceware.org/bugzilla/.

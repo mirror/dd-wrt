@@ -1,0 +1,71 @@
+.TH ELF_RAWFILE 3 2025-06-30 "Libelf" "Libelf Programmer's Manual"
+
+.SH NAME
+elf_rawfile \- Retrieve a pointer to the entire raw ELF file image
+
+.SH SYNOPSIS
+.nf
+#include <libelf.h>
+
+.BI "char *elf_rawfile(Elf *" elf ", size_t *" ptr ");"
+.fi
+
+.SH DESCRIPTION
+The
+.BR elf_rawfile ()
+function returns a pointer to the entire contents of the ELF file represented by
+.IR elf .
+This data is unprocessed and includes everything from the ELF header to the
+final byte.
+
+If the ELF descriptor was opened from memory or the file has already been
+memory-mapped or fully read, this function returns a pointer to the internal buffer.
+
+If the ELF data has not yet been read or mapped, it is loaded on demand.
+
+If
+.I ptr
+is non-NULL, the total size in bytes of the raw file is stored in
+.IR *ptr .
+
+The returned buffer is read-only and managed internally by libelf.
+The application must not modify or free it.
+
+.SH PARAMETERS
+.TP
+.I elf
+A handle previously returned by
+.BR elf_begin (3) .
+
+.TP
+.I ptr
+If not
+.BR NULL ,
+receives the size in bytes of the ELF file.
+
+.SH RETURN VALUE
+Returns a pointer to the start of the ELF file data. On failure,
+.B NULL
+is returned and
+.I *ptr
+(if non-NULL) is set to 0.
+
+.SH SEE ALSO
+.BR libelf (3),
+.BR elf (5)
+
+.SH ATTRIBUTES
+.TS
+allbox;
+lbx lb lb
+l l l.
+Interface	Attribute	Value
+T{
+.na
+.nh
+.BR elf_rawfile ()
+T}	Thread safety	MT-Safe
+.TE
+
+.SH REPORTING BUGS
+Report bugs to <elfutils-devel@sourceware.org> or https://sourceware.org/bugzilla/.

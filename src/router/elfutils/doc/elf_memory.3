@@ -1,0 +1,85 @@
+.TH ELF_MEMORY 3 2025-06-23 "Libelf" "Libelf Programmer's Manual"
+
+.SH NAME
+elf_memory \- create an ELF descriptor from a memory buffer
+.SH SYNOPSIS
+.nf
+#include <libelf.h>
+
+.B Elf * elf_memory(char *" image ", size_t" size ");
+
+.fi
+.SH DESCRIPTION
+The
+.BR elf_memory ()
+function creates a new ELF descriptor from a memory region containing an ELF
+object.  This function is used when the ELF data is already present in memory
+rather than being read from a file descriptor.
+
+The memory pointed to by
+.I image
+must contain a complete ELF file or archive. The contents must remain valid
+and unmodified for the lifetime of the resulting ELF descriptor.
+
+The ELF descriptor returned by
+.BR elf_memory ()
+is opened in read-only mode using ELF_C_READ_MMAP_PRIVATE (see
+.BR elf_begin ).
+The underlying memory image should not be directly modified by the application 
+while its ELF descriptor is open.  Some libelf functions, such as
+.BR elf_compress ()
+and
+.BR gelf_update_* (),
+may internally modify the underlying image and therefore require that the
+underlying image be writable.  The use of a read-only image (e.g., memory
+mapped with
+.BR PROT_READ
+only) may result in failures or crashes. 
+
+.SH PARAMETERS
+.TP
+.I image
+A pointer to a memory buffer that contains the complete contents of an ELF file
+or archive. If NULL, this function fails and returns NULL.
+
+.TP
+.I size
+The size in bytes of the memory region pointed to by
+.IR image .
+Must be at least as much as a full ELF header and should cover the entire ELF
+object.
+
+.SH RETURN VALUE
+On success,
+.BR elf_memory ()
+returns a pointer to an
+.B Elf
+descriptor representing the archive or ELF file contained in
+.IR image .
+
+On failure, it returns NULL and sets an error code retrievable by
+.BR elf_errmsg (3).
+
+
+.SH SEE ALSO
+.BR elf_begin (3),
+.BR elf_errmsg (3),
+.BR libelf (3),
+.BR elf (5) 
+
+.SH ATTRIBUTES
+.TS
+allbox;
+lbx lb lb
+l l l.
+Interface       Attribute       Value
+T{
+.na
+.nh
+.BR elf_memory ()
+T}      Thread safety   MT-Safe
+.TE
+
+.SH REPORTING BUGS
+Report bugs to <elfutils-devel@sourceware.org> or https://sourceware.org/bugzilla/.
+

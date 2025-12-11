@@ -1,0 +1,65 @@
+.TH ELF_NEXTSCN 3 2025-06-30 "Libelf" "Libelf Programmer's Manual"
+
+.SH NAME
+elf_nextscn - Return the next section in an ELF descriptor.
+
+.SH SYNOPSIS
+.nf
+#include <libelf.h>
+
+.BI "Elf_Scn *elf_nextscn(Elf *" elf ", Elf_Scn *" scn ");"
+.fi
+
+.SH DESCRIPTION
+The
+.BR elf_nextscn ()
+function returns a handle to the next section in the ELF object descriptor
+.IR elf .
+If
+.I scn
+is NULL, the first section (with index 1) is returned. Section index 0 is
+reserved and skipped.
+
+If
+.I scn
+is not NULL, the section immediately following it is returned. If there are
+no further sections, NULL is returned.
+
+.SH PARAMETERS
+.TP
+.I elf
+A pointer to an ELF descriptor.
+.TP
+.I scn
+A section handle returned by
+.BR elf_getscn (3),
+or NULL to begin iteration.
+
+.SH RETURN VALUE
+Returns a pointer to the next
+.B Elf_Scn
+structure in the section list, or NULL if there are no more sections or if
+.I elf
+is NULL.
+
+.SH SEE ALSO
+.BR elf_getscn (3),
+.BR elf_newscn (3),
+.BR libelf (3),
+.BR elf (5)
+
+.SH ATTRIBUTES
+.TS
+allbox;
+lbx lb lb
+l l l.
+Interface	Attribute	Value
+T{
+.na
+.nh
+.BR elf_nextscn ()
+T}	Thread safety	MT-Safe
+.TE
+
+.SH REPORTING BUGS
+Report bugs to <elfutils-devel@sourceware.org> or https://sourceware.org/bugzilla/.

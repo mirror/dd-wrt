@@ -1,0 +1,89 @@
+.TH ELF_GETSHDRNUM 3 2025-06-30 "Libelf" "Libelf Programmer's Manual"
+
+.SH NAME
+elf_getshdrnum, elf_getshnum \- retrieve the number of section headers in an ELF file
+.SH SYNOPSIS
+.nf
+#include <libelf.h>
+
+.B int elf_getshdrnum("Elf *elf", "size_t *dst");
+.B int elf_getshnum("Elf *elf", "size_t *dst"); (deprecated)
+.fi
+
+.SH DESCRIPTION
+The
+.BR elf_getshdrnum ()
+function stores the number of section headers (sections) associated with the
+ELF descriptor
+.I elf
+into the variable pointed to by
+.IR dst .
+
+It transparently handles both standard and extended section header counts.
+If the number of section headers exceeds the representable range of the
+.I e_shnum
+field in the ELF header, the ELF specification allows encoding the true
+count in section header 0’s
+.I sh_size
+field, and sets
+.I e_shnum
+to 0. This function transparently handles that case.
+
+The function
+.BR elf_getshnum ()
+is a deprecated alias for
+.BR elf_getshdrnum ()
+and should not be used in new code (see HISTORY).
+
+.SH PARAMETERS
+.TP
+.I elf
+A pointer to an
+.B Elf
+descriptor opened with
+.BR elf_begin (3).
+The descriptor must represent a file of kind
+.B ELF_K_ELF .
+If NULL, the function returns \-1 without setting elf_errno.
+
+.TP
+.I dst
+Pointer to a
+.B size_t
+variable. On success, the number of section headers is written here.
+Must not be NULL.
+
+.SH RETURN VALUE
+Returns 0 on success and stores the result in
+.IR dst .
+Returns \-1 on failure.
+
+.SH SEE ALSO
+.BR elf32_getshdr (3),
+.BR elf64_getshdr (3),
+.BR libelf (3),
+.BR elf (5)
+
+.SH ATTRIBUTES
+.TS
+allbox;
+lbx lb lb
+l l l.
+Interface	Attribute	Value
+T{
+.na
+.nh
+.BR elf_getshdrnum (),\~elf_getshnum()
+T}	Thread safety	MT-Safe
+.TE
+
+.SH REPORTING BUGS
+Report bugs to <elfutils-devel@sourceware.org> or https://sourceware.org/bugzilla/.
+
+.SH HISTORY
+.B elf_getshdrnum
+first appeared in elfutils 0.142.  This function was added due to elf_getshnum
+return value inconsistencies between different libelf implementations.
+.B elf_getshdrnum
+was introduced to ensure that 0 is returned on success across all libelf
+implementations.

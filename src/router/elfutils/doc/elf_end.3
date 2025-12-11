@@ -1,0 +1,71 @@
+.TH ELF_END 3 2025-03-31 "Libelf" "Libelf Programmer's Manual"
+
+.SH NAME
+elf_end \- Release resources associated with an ELF descriptor.
+
+.SH SYNOPSIS
+.nf
+#include <libelf.h>
+
+.BI "int elf_end(Elf *" elf ");"
+
+.SH DESCRIPTION
+The
+.B elf_end
+function releases resources associated with an ELF descriptor previously
+returned by
+.BR elf_begin .
+It decrements the ELF descriptor’s internal reference count by one. When
+this count reaches zero, the resources associated with the descriptor are
+freed and the descriptor is invalidated.  If
+.I elf
+is not an archive member with ELF kind
+.BR ELF_K_AR ,
+the internal reference count is increased by one each time
+.I elf
+is passed to
+.B elf_begin
+as the
+.I ref
+argument.
+
+An ELF descriptor whose reference count reaches zero is invalidated.
+Further operations on the descriptor will result in undefined behavior.
+
+.SH PARAMETERS
+.TP
+.I elf
+The ELF descriptor (may be NULL).
+
+.SH RETURN VALUE
+Return the ELF descriptor's current internal reference count after
+decrementing. A return value of zero indicates the ELF descriptor is now
+invalidated.  If
+.I elf
+is NULL, then
+.B elf_end
+also returns 0.
+
+.SH SEE ALSO
+.BR elf_begin (3),
+.BR libelf (3),
+.BR elf (5)
+
+.SH ATTRIBUTES
+For an explanation of the terms used in this section, see
+.BR attributes (7).
+.TS
+allbox;
+lbx lb lb
+l l l.
+Interface	Attribute	Value
+T{
+.na
+.nh
+.BR elf_end ()
+T}	Thread safety	MT-Safe
+.TE
+
+.SH REPORTING BUGS
+Report bugs to <elfutils-devel@sourceware.org> or https://sourceware.org/bugzilla/.
+

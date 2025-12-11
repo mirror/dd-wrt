@@ -1,0 +1,88 @@
+.TH ELF_NEWSCN 3 2025-06-30 "Libelf" "Libelf Programmer's Manual"
+
+.SH NAME
+elf_newscn \- create a new section for an ELF descriptor
+
+.SH SYNOPSIS
+.nf
+#include <libelf.h>
+
+.BI "Elf_Scn *elf_newscn(Elf * "elf");"
+
+.SH DESCRIPTION
+The
+.BR elf_newscn ()
+function creates a new section descriptor for the ELF descriptor
+.I elf.
+
+Each call to
+.BR elf_newscn ()
+appends a new section to the internal list of sections for the
+ELF descriptor.  It also creates a corresponding empty section header,
+which is zero-initialized and marked dirty.  If
+.I elf
+does not have any sections yet then
+.B elf_newscn
+will also create the null section with
+.I sh_type
+.B SHT_NULL
+at section index 0.
+
+A newly created section has no name or type and must be properly initialized
+before calling
+.BR elf_update ().
+Use
+.BR elf32_getshdr ()
+or
+.BR elf64_getshdr ()
+to obtain the section header structure, then populate the required fields.
+Use
+.BR elf_newdata ()
+to associate one or more data buffers with the new section.
+
+The section with index 0 (the null section) is reserved and cannot have
+data added to it.
+.BR elf_newscn ()
+will never return this section.
+
+.SH PARAMETERS
+.TP
+.I elf
+An ELF descriptor that must at least have an
+.I Elf32_Ehdr
+or
+.I Elf64_Ehdr
+associated with it.
+
+.SH RETURN VALUE
+On success,
+.BR elf_newscn ()
+returns a pointer to a new section descriptor. On failure, it returns NULL
+and sets elf_errno.  If
+.I elf
+is NULL, then NULL is returned without setting elf_errno.
+
+.SH SEE ALSO
+.BR elf32_getshdr (3),
+.BR elf64_getshdr (3),
+.BR elf_getdata (3),
+.BR elf_newdata (3),
+.BR elf_update (3),
+.BR libelf (3),
+.BR elf (5)
+
+.SH ATTRIBUTES
+.TS
+allbox;
+lbx lb lb
+l l l.
+Interface	Attribute	Value
+T{
+.na
+.nh
+.BR elf_newscn ()
+T}	Thread safety	MT-Safe
+.TE
+
+.SH REPORTING BUGS
+Report bugs to <elfutils-devel@sourceware.org> or https://sourceware.org/bugzilla/.

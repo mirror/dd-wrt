@@ -1,0 +1,60 @@
+.TH ELF32_NEWEHDR 3 2024-08-14 "Libelf" "Libelf Programmer's Manual"
+
+.SH NAME
+elf32_newehdr, elf64_newehdr \- create a new ELF header for a 32-bit or
+64-bit ELF object file
+
+.SH SYNOPSIS
+.nf
+.B #include <libelf.h>
+
+.BI "Elf32_Ehdr *elf32_newehdr(Elf *" elf ");"
+.BI "Elf64_Ehdr *elf64_newehdr(Elf *" elf ");"
+
+.SH DESCRIPTION
+This function initializes a new ELF header and associates it with
+.IR elf .
+If
+.I elf
+already has an ELF header associated with it, no new header will be created
+and the existing header will be returned.  An ELF header must be present
+before calling
+.B elf_newscn
+or
+.BR elf_newphdr .
+
+.SH PARAMETERS
+.TP
+.I elf
+ELF descriptor for which a new ELF header is to be created.
+
+.SH RETURN VALUE
+On success, return a pointer to the newly created ELF header.  If
+.I elf
+already has an ELF header associated with it, this pre-existing header is
+returned and no new header is created. On failure, return NULL and set a
+libelf error code.
+
+.SH SEE ALSO
+.BR elf_errno (3),
+.BR libelf (3),
+.BR elf (5)
+
+.SH ATTRIBUTES
+For an explanation of the terms used in this section, see
+.BR attributes (7).
+.TS
+allbox;
+lbx lb lb
+l l l.
+Interface	Attribute	Value
+T{
+.na
+.nh
+.BR elf32_newehdr (),
+.BR elf64_newehdr ()
+T}	Thread safety	MT-Safe
+.TE
+
+.SH REPORTING BUGS
+Report bugs to <elfutils-devel@sourceware.org> or https://sourceware.org/bugzilla/.

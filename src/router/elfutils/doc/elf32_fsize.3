@@ -1,0 +1,78 @@
+.TH ELF32_FSIZE 3 2024-08-14 "Libelf" "Libelf Programmer's Manual"
+
+.SH NAME
+elf32_fsize, elf64_fsize \- calculate the file size of an ELF data structure
+
+.SH SYNOPSIS
+.nf
+.B #include <libelf.h>
+
+.BI "size_t elf32_fsize(Elf_Type " type ", size_t " count ", unsigned int " version ");"
+.BI "size_t elf64_fsize(Elf_Type " type ", size_t " count ", unsigned int " version ");"
+
+.SH DESCRIPTION
+Given an
+.B Elf_Type
+representation of a core ELF structure as well as the number of items, return
+the number of bytes needed for the on-disk representation in a 32-bit or 64-bit
+ELF file.  The on-disk and in-memory representations of
+.B Elf_Type
+are assumed to be the same. See
+.BR libelf (3)
+for more information regarding
+.BR Elf_Type .
+
+.SH PARAMETERS
+.TP
+.I type
+The ELF data structure type for which the file size is to be calculated.
+
+.TP
+.I count
+The number of elements of the specified type.
+
+.TP
+.I version
+The ELF version. This should be set to
+.BR EV_CURRENT ,
+which is the only valid value.
+
+.SH RETURN VALUE
+The size in bytes of the specified count and type of data structure.
+If version is not set to
+.B EV_CURRENT
+or
+.I type
+is not a valid
+.BR Elf_Type ,
+return 0 and set a libelf error code. Integer overflow can occur if
+the size of
+.I type
+multiplied by
+.I count
+is greater than
+.BR SIZE_MAX .
+
+.SH SEE ALSO
+.BR elf_errno (3),
+.BR libelf (3),
+.BR elf (5)
+
+.SH ATTRIBUTES
+For an explanation of the terms used in this section, see
+.BR attributes (7).
+.TS
+allbox;
+lbx lb lb
+l l l.
+Interface	Attribute	Value
+T{
+.na
+.nh
+.BR elf32_fsize (),
+.BR elf64_fsize ()
+T}	Thread safety	MT-Safe
+.TE
+
+.SH REPORTING BUGS
+Report bugs to <elfutils-devel@sourceware.org> or https://sourceware.org/bugzilla/.

@@ -1,0 +1,66 @@
+.TH ELF32_GETPHDR 3 2024-08-14 "Libelf" "Libelf Programmer's Manual"
+
+.SH NAME
+elf32_getphdr, elf64_getphdr \- retrieve the program header table for a
+32-bit or 64-bit ELF object file
+
+.SH SYNOPSIS
+.nf
+.B #include <libelf.h>
+
+.BI "Elf32_Phdr *elf32_getphdr(Elf *" elf ");"
+.BI "Elf64_Phdr *elf64_getphdr(Elf *" elf ");"
+
+.SH DESCRIPTION
+Retrieve the program header table for the given ELF descriptor
+.IR elf .
+The number of elements in the program header table can be retrieved with
+.B elf32_getphdrnum
+and
+.BR elf64_getphdrnum .
+.B elf32_newphdr
+and
+.B elf64_newphdr
+change the size of the program header table or to delete it.
+If changing an element of the program header table, you must
+call elf_flagphdr with
+.B ELF_C_SET
+and
+.B ELF_F_DIRTY
+in order to write the new data to disk.
+
+.SH PARAMETERS
+.TP
+.I elf
+ELF descriptor from which to retrieve the program header table.
+
+.SH RETURN VALUE
+On success, return a pointer to the program header table. Return NULL if
+there is no program header.  On failure, return NULL and set a libelf
+error code.
+
+.SH SEE ALSO
+.BR elf32_newphdr (3),
+.BR elf_errno (3),
+.BR elf_getphdrnum (3),
+.BR libelf (3),
+.BR elf (5)
+
+.SH ATTRIBUTES
+For an explanation of the terms used in this section, see
+.BR attributes (7).
+.TS
+allbox;
+lbx lb lb
+l l l.
+Interface	Attribute	Value
+T{
+.na
+.nh
+.BR elf32_getphdr (),
+.BR elf64_getphdr ()
+T}	Thread safety	MT-Safe
+.TE
+
+.SH REPORTING BUGS
+Report bugs to <elfutils-devel@sourceware.org> or https://sourceware.org/bugzilla/.

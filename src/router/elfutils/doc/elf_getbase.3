@@ -1,0 +1,59 @@
+.TH ELF_GETBASE 3 2025-03-31 "Libelf" "Libelf Programmer's Manual"
+
+.SH NAME
+elf_getbase \- Retrieve the base offset for an ELF object file.
+
+.SH SYNOPSIS
+.B #include <libelf.h>
+
+.BI "int64_t elf_getbase(Elf *" elf ");"
+
+.SH DESCRIPTION
+.B elf_getbase
+returns the file offset of the first byte of the ELF descriptor
+.IR elf .
+If
+.I elf
+is a member of an archive and has ELF kind
+.BR ELF_K_AR ,
+the base offset is the offset of the ELF object within the archive.
+For other ELF object types the base offset is 0.
+
+.SH PARAMETERS
+.TP
+.I elf
+The ELF descriptor.
+
+.SH RETURN VALUE
+Return the base offset of
+.IR elf
+if its ELF kind is
+.BR ELF_K_AR ,
+otherwise return 0.  If
+.I elf
+is NULL, return -1.
+
+.SH SEE ALSO
+.BR elf_getaroff (3),
+.BR elf_rawelf (3),
+.BR libelf (3),
+.BR elf (5)
+
+.SH ATTRIBUTES
+For an explanation of the terms used in this section, see
+.BR attributes (7).
+
+.TS
+allbox;
+lbx lb lb
+l l l.
+Interface	Attribute	Value
+T{
+.na
+.nh
+.BR elf_getbase ()
+T}	Thread safety	MT-Safe
+.TE
+
+.SH REPORTING BUGS
+Report bugs to <elfutils-devel@sourceware.org> or https://sourceware.org/bugzilla/.

@@ -1,0 +1,60 @@
+.TH ELF32_CHECKSUM 3 2024-08-14 "Libelf" "Libelf Programmer's Manual"
+
+.SH NAME
+elf32_checksum, elf64_checksum \- compute the checksum for a 32-bit or 64-bit
+ELF object file
+
+.SH SYNOPSIS
+.nf
+.B #include <libelf.h>
+
+.BI "long int elf32_checksum(Elf *" elf ");"
+.BI "long int elf64_checksum(Elf *" elf ");"
+
+.SH DESCRIPTION
+Compute a checksum for the ELF object file referred to by
+.IR elf .
+The checksum is computed from permanent parts of the ELF file and
+the result is repeatable.  To be repeatable, strippable sections are
+not included in computing the checksum.
+.B SHT_NOBITS
+sections are also not included when computing the checksum.  The checksum
+can be used as a value for
+.BR DT_CHECKSUM .
+
+.SH PARAMETERS
+.TP
+.I elf
+The ELF object file for which the checksum is to be computed.
+
+.SH RETURN VALUE
+On success, return the computed checksum. If an error occurs, return -1
+and set a libelf error code.  The checksum is always calculated as a 4-byte
+value. If
+.I long int
+is larger than 4 bytes, then the checksum will be extended by padding
+with zeros.
+
+.SH SEE ALSO
+.BR elf_errno (3),
+.BR libelf (3),
+.BR elf (5)
+
+.SH ATTRIBUTES
+For an explanation of the terms used in this section, see
+.BR attributes (7).
+.TS
+allbox;
+lbx lb lb
+l l l.
+Interface	Attribute	Value
+T{
+.na
+.nh
+.BR elf32_checksum (),
+.BR elf64_checksum ()
+T}	Thread safety	MT-Safe
+.TE
+
+.SH REPORTING BUGS
+Report bugs to <elfutils-devel@sourceware.org> or https://sourceware.org/bugzilla/.

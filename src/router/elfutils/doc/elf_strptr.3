@@ -1,0 +1,72 @@
+.TH ELF_STRPTR 3 2025-06-30 "Libelf" "Libelf Programmer's Manual"
+
+.SH NAME
+elf_strptr \- Return a pointer to a string in a string table section
+
+.SH SYNOPSIS
+.nf
+#include <libelf.h>
+
+.BI "char *elf_strptr(Elf *" elf ", size_t " section_index ", size_t " offset ");"
+.fi
+
+.SH DESCRIPTION
+The
+.BR elf_strptr ()
+function returns a pointer to a null-terminated string located at
+.I offset
+bytes from the beginning of the string table section identified by
+.IR section_index .
+The section must be of type
+.BR SHT_STRTAB .
+
+This function validates the provided offset against the size of the string
+table and ensures the string is null-terminated. It transparently handles
+both uncompressed and compressed sections.
+
+If the ELF descriptor is not backed by memory mapping, or the section has
+not been loaded yet, the function will read and initialize the necessary
+data from the file.
+
+.SH PARAMETERS
+.TP
+.I elf
+Pointer to an ELF descriptor.
+
+.TP
+.I section_index
+The index of the string table section (of type
+.BR SHT_STRTAB ).
+
+.TP
+.I offset
+The byte offset from the beginning of the string table section where
+the desired string is located.
+
+.SH RETURN VALUE
+Returns a pointer to the string within the string table if successful.
+Returns
+.B NULL
+on error.
+
+.SH SEE ALSO
+.BR elf (3),
+.BR elf_getscn (3),
+.BR libelf (3),
+.BR elf (5)
+
+.SH ATTRIBUTES
+.TS
+allbox;
+lbx lb lb
+l l l.
+Interface	Attribute	Value
+T{
+.na
+.nh
+.BR elf_strptr ()
+T}	Thread safety	MT-Safe
+.TE
+
+.SH REPORTING BUGS
+Report bugs to <elfutils-devel@sourceware.org> or https://sourceware.org/bugzilla/.

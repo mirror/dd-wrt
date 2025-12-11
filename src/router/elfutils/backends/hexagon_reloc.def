@@ -1,0 +1,130 @@
+/* List the relocation types for Hexagon.  -*- C -*-
+   Copyright (C) 2024 Qualcomm Innovation Center, Inc. All Rights Reserved.
+   This file is part of elfutils.
+
+   This file is free software; you can redistribute it and/or modify
+   it under the terms of either
+
+     * the GNU Lesser General Public License as published by the Free
+       Software Foundation; either version 3 of the License, or (at
+       your option) any later version
+
+   or
+
+     * the GNU General Public License as published by the Free
+       Software Foundation; either version 2 of the License, or (at
+       your option) any later version
+
+   or both in parallel, as here.
+
+   elfutils is distributed in the hope that it will be useful, but
+   WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+   General Public License for more details.
+
+   You should have received copies of the GNU General Public License and
+   the GNU Lesser General Public License along with this program.  If
+   not, see <http://www.gnu.org/licenses/>.  */
+
+/*          NAME,                     REL|EXEC|DYN */
+
+RELOC_TYPE (NONE,                     0)
+RELOC_TYPE (B22_PCREL,                REL)
+RELOC_TYPE (B15_PCREL,                REL)
+RELOC_TYPE (B7_PCREL,                 REL)
+RELOC_TYPE (LO16,                     REL)
+RELOC_TYPE (HI16,                     REL)
+RELOC_TYPE (32,                       REL)
+RELOC_TYPE (16,                       REL)
+RELOC_TYPE (8,                        REL)
+RELOC_TYPE (GPREL16_0,                REL)
+RELOC_TYPE (GPREL16_1,                REL)
+RELOC_TYPE (GPREL16_2,                REL)
+RELOC_TYPE (GPREL16_3,                REL)
+RELOC_TYPE (HL16,                     REL)
+RELOC_TYPE (B13_PCREL,                REL)
+RELOC_TYPE (B9_PCREL,                 REL)
+RELOC_TYPE (B32_PCREL_X,              REL)
+RELOC_TYPE (32_6_X,                   REL)
+RELOC_TYPE (B22_PCREL_X,              REL)
+RELOC_TYPE (B15_PCREL_X,              REL)
+RELOC_TYPE (B13_PCREL_X,              REL)
+RELOC_TYPE (B9_PCREL_X,               REL)
+RELOC_TYPE (B7_PCREL_X,               REL)
+RELOC_TYPE (16_X,                     REL)
+RELOC_TYPE (12_X,                     REL)
+RELOC_TYPE (11_X,                     REL)
+RELOC_TYPE (10_X,                     REL)
+RELOC_TYPE (9_X,                      REL)
+RELOC_TYPE (8_X,                      REL)
+RELOC_TYPE (7_X,                      REL)
+RELOC_TYPE (6_X,                      REL)
+RELOC_TYPE (32_PCREL,                 REL)
+RELOC_TYPE (COPY,                     REL)
+RELOC_TYPE (GLOB_DAT,                 REL)
+RELOC_TYPE (JMP_SLOT,                 REL)
+RELOC_TYPE (RELATIVE,                 REL)
+RELOC_TYPE (PLT_B22_PCREL,            REL)
+RELOC_TYPE (GOTREL_LO16,              REL)
+RELOC_TYPE (GOTREL_HI16,              REL)
+RELOC_TYPE (GOTREL_32,                REL)
+RELOC_TYPE (GOT_LO16,                 REL)
+RELOC_TYPE (GOT_HI16,                 REL)
+RELOC_TYPE (GOT_32,                   REL)
+RELOC_TYPE (GOT_16,                   REL)
+RELOC_TYPE (DTPMOD_32,                REL)
+RELOC_TYPE (DTPREL_LO16,              REL)
+RELOC_TYPE (DTPREL_HI16,              REL)
+RELOC_TYPE (DTPREL_32,                REL)
+RELOC_TYPE (DTPREL_16,                REL)
+RELOC_TYPE (GD_PLT_B22_PCREL,         REL)
+RELOC_TYPE (GD_GOT_LO16,              REL)
+RELOC_TYPE (GD_GOT_HI16,              REL)
+RELOC_TYPE (GD_GOT_32,                REL)
+RELOC_TYPE (GD_GOT_16,                REL)
+RELOC_TYPE (IE_LO16,                  REL)
+RELOC_TYPE (IE_HI16,                  REL)
+RELOC_TYPE (IE_32,                    REL)
+RELOC_TYPE (IE_GOT_LO16,              REL)
+RELOC_TYPE (IE_GOT_HI16,              REL)
+RELOC_TYPE (IE_GOT_32,                REL)
+RELOC_TYPE (IE_GOT_16,                REL)
+RELOC_TYPE (TPREL_LO16,               REL)
+RELOC_TYPE (TPREL_HI16,               REL)
+RELOC_TYPE (TPREL_32,                 REL)
+RELOC_TYPE (TPREL_16,                 REL)
+RELOC_TYPE (6_PCREL_X,                REL)
+RELOC_TYPE (GOTREL_32_6_X,            REL)
+RELOC_TYPE (GOTREL_16_X,              REL)
+RELOC_TYPE (GOTREL_11_X,              REL)
+RELOC_TYPE (GOT_32_6_X,               REL)
+RELOC_TYPE (GOT_16_X,                 REL)
+RELOC_TYPE (GOT_11_X,                 REL)
+RELOC_TYPE (DTPREL_32_6_X,            REL)
+RELOC_TYPE (DTPREL_16_X,              REL)
+RELOC_TYPE (DTPREL_11_X,              REL)
+RELOC_TYPE (GD_GOT_32_6_X,            REL)
+RELOC_TYPE (GD_GOT_16_X,              REL)
+RELOC_TYPE (GD_GOT_11_X,              REL)
+RELOC_TYPE (IE_32_6_X,                REL)
+RELOC_TYPE (IE_16_X,                  REL)
+RELOC_TYPE (IE_GOT_32_6_X,            REL)
+RELOC_TYPE (IE_GOT_16_X,              REL)
+RELOC_TYPE (IE_GOT_11_X,              REL)
+RELOC_TYPE (TPREL_32_6_X,             REL)
+RELOC_TYPE (TPREL_16_X,               REL)
+RELOC_TYPE (TPREL_11_X,               REL)
+RELOC_TYPE (LD_PLT_B22_PCREL,         REL)
+RELOC_TYPE (LD_GOT_LO16,              REL)
+RELOC_TYPE (LD_GOT_HI16,              REL)
+RELOC_TYPE (LD_GOT_32,                REL)
+RELOC_TYPE (LD_GOT_16,                REL)
+RELOC_TYPE (LD_GOT_32_6_X,            REL)
+RELOC_TYPE (LD_GOT_16_X,              REL)
+RELOC_TYPE (LD_GOT_11_X,              REL)
+RELOC_TYPE (23_REG,                   REL)
+RELOC_TYPE (GD_PLT_B22_PCREL_X,       REL)
+RELOC_TYPE (GD_PLT_B32_PCREL_X,       REL)
+RELOC_TYPE (LD_PLT_B22_PCREL_X,       REL)
+RELOC_TYPE (LD_PLT_B32_PCREL_X,       REL)
+RELOC_TYPE (27_REG,                   REL)

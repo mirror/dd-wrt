@@ -1,0 +1,92 @@
+.TH ELF_NEWDATA 3 2025-06-30 "Libelf" "Libelf Programmer's Manual"
+
+.SH NAME
+elf_newdata \- Add a new Elf_Data descriptor to a section
+
+.SH SYNOPSIS
+.nf
+#include <libelf.h>
+
+.BI "Elf_Data * elf_newdata(Elf_Scn *" scn ");"
+.fi
+
+.SH DESCRIPTION
+The
+.BR elf_newdata ()
+function creates a new
+.BR Elf_Data
+descriptor and associates it with the section referred to by
+.I scn .
+This descriptor can be used to describe new section contents for an ELF
+object being constructed or modified.
+
+The section must not be the null section (index 0).  If the section has
+no data associated with it yet, or was created using
+.BR elf_newscn (),
+this function creates the first
+.BR Elf_Data
+descriptor for the section.
+
+Subsequent calls to
+.BR elf_newdata ()
+will append new data descriptors to the section.
+
+The returned descriptor is marked dirty so that it will be included during
+.BR elf_update () .
+The returned descriptor is also initialized to represent no data with
+.I d_buf
+set to NULL,
+.I d_type
+set to
+.BR ELF_T_BYTE ,
+.I d_version
+set to
+.BR EV_CURRENT ,
+and
+.IR d_size ,
+.IR d_off ,
+and
+.IR d_align
+set to zero.
+
+.SH PARAMETERS
+.TP
+.I scn
+A section descriptor to which the new data descriptor should be attached.
+Must not be section zero, the null section.  If
+.I scn
+is NULL this function returns NULL.
+
+.SH RETURN VALUE
+On success, a pointer to a new, writable
+.BR Elf_Data
+descriptor is returned. On failure, NULL is returned an elf_errno is set.
+If
+.I scn
+is NULL, then NULL is returned and elf_errno is not set.
+
+The caller is responsible for configuring the return value (see DESCRIPTION
+for default field values).
+
+.SH SEE ALSO
+.BR elf_getdata (3),
+.BR elf_newscn (3),
+.BR elf_update (3),
+.BR libelf (3),
+.BR elf (5)
+
+.SH ATTRIBUTES
+.TS
+allbox;
+lbx lb lb
+l l l.
+Interface	Attribute	Value
+T{
+.na
+.nh
+.BR elf_newdata ()
+T}	Thread safety	MT-Safe
+.TE
+
+.SH REPORTING BUGS
+Report bugs to <elfutils-devel@sourceware.org> or https://sourceware.org/bugzilla/.

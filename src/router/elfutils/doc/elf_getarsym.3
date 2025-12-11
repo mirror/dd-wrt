@@ -1,0 +1,99 @@
+.TH ELF_GETARSYM 3 2025-06-06 "Libelf" "Libelf Programmer's Manual"
+
+.SH NAME
+elf_getarsym \- retrieve archive symbol table
+
+.SH SYNOPSIS
+.nf
+.B #include <libelf.h>
+
+.BI "Elf_Arsym *elf_getarsym(Elf *" elf ", size_t *" narsyms );"
+.fi
+
+.SH DESCRIPTION
+Retrieve the archive symbol table from the archive file associated with
+.IR elf .
+
+.P
+If the archive contains a symbol table,
+.B elf_getarsym()
+returns a pointer to an array of
+.B Elf_Arsym
+structures describing each symbol. Also store the number of symbols in this
+array in
+.I narsyms
+if not NULL.
+
+.B Elf_Arsym
+has the following layout:
+
+.P
+.nf
+typedef struct {
+  char   *as_name;   /* Symbol name (null-terminated). */
+  int64_t as_off;    /* File offset of defining archive member. */
+  uint64_t as_hash;  /* Hash value of symbol name. */
+} Elf_Arsym;
+.fi
+
+The last entry in the archive symbol table is the special entry
+{ NULL, 0, ~0L}.  This can be used to find the end of the table if
+.I narsyms
+is NULL.
+
+.SH PARAMETERS
+.TP
+.I elf
+An ELF descriptor referring to an archive file, obtained by calling
+.BR elf_begin (3)
+on an archive.
+
+.TP
+.I narsyms
+A pointer to a
+.B size_t
+in which the number of entries in the symbol table will be stored
+if this pointer is not NULL.
+
+.SH RETURN VALUE
+If the archive contains a symbol table, return a pointer to an array of
+.B Elf_Arsym
+structures, including the special NULL entry indicating the the end of the
+table. Sets
+.I *narsyms
+to the number of entries in the array (if
+.I narsyms
+is not NULL).  These pointers are managed by libelf and should not be freed
+by the caller of
+.BR elf_getarsym .
+
+.P
+If the archive does not contain a symbol table or
+.I elf
+is not a valid archive descriptor,
+.B elf_getarsym
+returns
+.B NULL.
+
+.SH SEE ALSO
+.BR elf_begin (3),
+.BR elf_getarhdr (3),
+.BR elf_next (3),
+.BR libelf (3),
+.BR elf (5)
+
+.SH ATTRIBUTES
+.TS
+allbox;
+lbx lb lb
+l l l.
+Interface	Attribute	Value
+T{
+.na
+.nh
+.BR elf_getarsym ()
+T}	Thread safety	MT-Safe
+.TE
+
+.SH REPORTING BUGS
+Report bugs to <elfutils-devel@sourceware.org> or https://sourceware.org/bugzilla/.

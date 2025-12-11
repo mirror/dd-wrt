@@ -1,0 +1,71 @@
+.TH ELF_RAND 3 2025-06-30 "Libelf" "Libelf Programmer's Manual"
+
+.SH NAME
+elf_rand - Set the offset for the next archive member in an ELF file.
+
+.SH SYNOPSIS
+.nf
+#include <libelf.h>
+
+.BI "size_t elf_rand(Elf *" elf ", size_t " offset ");"
+.fi
+
+.SH DESCRIPTION
+The
+.BR elf_rand ()
+function sets the current archive member offset for the ELF archive descriptor
+.I elf
+to
+.IR offset .
+
+This function is only valid when
+.I elf
+refers to an archive descriptor (i.e., its kind is
+.BR ELF_K_AR ).
+
+Archive member offsets can be acquired from the
+.I Elf_Arsym
+array returned by
+.BR elf_getarsym (3).
+
+If the archive header at the given offset cannot be parsed or validated,
+then 0 is returned.
+
+.SH PARAMETERS
+.TP
+.I elf
+A pointer to an ELF archive descriptor.
+
+.TP
+.I offset
+A byte offset to the archive header, indicating the desired member position.
+
+.SH RETURN VALUE
+Returns the input
+.I offset
+if successful. Returns 0 if
+.I elf
+is NULL, is not an archive descriptor, or if an error occurs while reading the member at
+.IR offset .
+
+.SH SEE ALSO
+.BR elf_getarsym (3),
+.BR elf_next (3),
+.BR libelf (3),
+.BR elf (5)
+
+.SH ATTRIBUTES
+.TS
+allbox;
+lbx lb lb
+l l l.
+Interface	Attribute	Value
+T{
+.na
+.nh
+.BR elf_rand ()
+T}	Thread safety	MT-Safe
+.TE
+
+.SH REPORTING BUGS
+Report bugs to <elfutils-devel@sourceware.org> or https://sourceware.org/bugzilla/.

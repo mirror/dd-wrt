@@ -1,0 +1,68 @@
+.TH ELF_SCNSHNDX 3 2025-06-30 "Libelf" "Libelf Programmer's Manual"
+
+.SH NAME
+elf_scnshndx \- Find the index of the SHT_SYMTAB_SHNDX section associated with a symbol table
+
+.SH SYNOPSIS
+.nf
+#include <libelf.h>
+
+.BI "int elf_scnshndx(Elf_Scn *" scn ");"
+.fi
+
+.SH DESCRIPTION
+The
+.BR elf_scnshndx ()
+function searches for the
+.BR SHT_SYMTAB_SHNDX
+section associated with a given symbol table section. It returns the section
+index of the corresponding
+.BR SHT_SYMTAB_SHNDX
+section, or zero if none is found.
+
+This function is used for retrieving extended section indices in ELF files
+with many sections, where standard symbol table entries cannot store all
+possible section references directly.
+
+The function only returns a valid result if
+.IR scn
+refers to a section of type
+.BR SHT_SYMTAB .
+Otherwise, the function returns 0.
+
+.SH PARAMETERS
+.TP
+.I scn
+An
+.B Elf_Scn
+pointer referencing a symbol table section.
+
+.SH RETURN VALUE
+Returns the section index of the
+.BR SHT_SYMTAB_SHNDX
+section if found. If no such section is found, returns 0. On error, returns \-1.
+
+.SH SEE ALSO
+.BR libelf (3),
+.BR elf (5)
+
+.SH ATTRIBUTES
+.TS
+allbox;
+lbx lb lb
+l l l.
+Interface	Attribute	Value
+T{
+.na
+.nh
+.BR elf_scnshndx ()
+T}	Thread safety	MT-Safe
+.TE
+
+.SH REPORTING BUGS
+Report bugs to <elfutils-devel@sourceware.org> or https://sourceware.org/bugzilla/.
+
+.SH HISTORY
+.B elf_scnshndx
+first appeared in elfutils 0.132.  This function is a elfutils libelf extension and
+may not be available in other libelf implementations.

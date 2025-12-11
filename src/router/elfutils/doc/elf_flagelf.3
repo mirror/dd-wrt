@@ -1,0 +1,187 @@
+.TH ELF_FLAGELF 3 2025-06-23 "Libelf" "Libelf Programmer's Manual"
+
+.SH NAME
+elf_flagelf, elf_flagdata, elf_flagehdr, elf_flagphdr, elf_flagscn, elf_flagshdr \- set or clear flags on ELF descriptors and components
+.SH SYNOPSIS
+.nf
+.B #include <libelf.h>
+
+.BI "unsigned int elf_flagelf(Elf * " elf ", Elf_Cmd " cmd ", unsigned int " flags ");"
+.BI "unsigned int elf_flagehdr(Elf * " elf ", Elf_Cmd " cmd ", unsigned int " flags ");"
+.BI "unsigned int elf_flagphdr(Elf * " elf ", Elf_Cmd " cmd ", unsigned int " flags ");"
+.BI "unsigned int elf_flagscn(Elf_Scn * " scn ", Elf_Cmd " cmd ", unsigned int " flags ");"
+.BI "unsigned int elf_flagshdr(Elf_Scn * " scn ", Elf_Cmd " cmd ", unsigned int " flags ");"
+.BI "unsigned int elf_flagdata(Elf_Data * " data ", Elf_Cmd " cmd ", unsigned int " flags ");"
+.fi
+
+.SH DESCRIPTION
+These functions allow the caller to set or clear flags on various ELF
+components managed by
+.B libelf .
+They are typically used to indicate that a component has been modified
+(dirty), or to control layout behavior during output.
+
+.BR elf_flagelf ()
+modifies flags on the top-level
+.B Elf
+descriptor.
+
+.BR elf_flagdata ()
+modifies flags on an
+.B Elf_Data
+descriptor, typically retrieved using
+.BR elf_getdata (3)
+or created with
+.BR elf_newdata (3).
+
+.BR elf_flagehdr ()
+modifies flags on the ELF header for a ELF descriptor (e.g., the result of
+.BR gelf_getehdr (3)).
+
+.BR elf_flagphdr ()
+modifies flags on the program header table of an ELF descriptor.
+
+.BR elf_flagscn ()
+modifies flags on an
+.B Elf_Scn
+(section) descriptor.
+
+.BR elf_flagshdr ()
+modifies flags on the section header of a given
+.B Elf_Scn .
+
+The
+.I cmd
+argument determines whether the given flags should be set (
+.B ELF_C_SET
+) or cleared (
+.B ELF_C_CLR
+).
+
+The following flag values may be passed via the
+.I flags
+parameter:
+
+.TP
+.B ELF_F_DIRTY
+Marks the object as modified. This ensures changes to the component is written
+out during
+.BR elf_update (3).
+
+.TP
+.B ELF_F_LAYOUT
+Indicates that the layout of the ELF component is managed manually. Offsets and
+sizes will be preserved as provided.  This flag is only used with
+.BR elf_flagelf ()
+and is ignored when used with other functions.
+If this flag is set the user must set Ehdr
+.IR e_phoff ,
+.IR e_shoff ,
+as well as
+.B Elf_Data
+.I d_off
+and Shdr
+.IR sh_offset .
+If not set, then these offsets will be recalculated when
+.B elf_update
+is called.
+If
+.B ELF_F_LAYOUT
+is set then changes to phdr offsets will prevent elf_update from automatically
+adjusting shdr offsets.
+
+.TP
+.B ELF_F_PERMISSIVE
+Enables relaxed validation of object structure. This flag permits nonstandard
+layouts without strict checks.  Specifically this removes a check in
+.BR elf_update ()
+that the section
+.I sh_size
+is a multiple of the section
+.I sh_entsize
+(if not zero).  This flag is only used with
+.BR elf_flagelf ()
+and is ignored when used with other functions.
+.B ELF_F_PERMISSIVE
+is an elfutils libelf extention and may not be available in other libelf
+implementations.
+
+.SH PARAMETERS
+.TP
+.I obj
+The object to be modified:
+For
+.BR elf_flagelf ,
+.BR elf_flagehdr ,
+.BR elf_flagphdr ,
+this is an
+.B Elf *
+descriptor.
+For
+.B elf_flagscn
+and
+.B elf_flagshdr ,
+this is an
+.B Elf_Scn *
+descriptor.
+For
+.B elf_flagdata ,
+an
+.B Elf_Data *
+buffer.
+
+.TP
+.I cmd
+Must be either:
+.B ELF_C_SET
+to set the given flags, or
+.B ELF_C_CLR
+to clear them.
+
+.TP
+.I flags
+Bitmask of flags to modify. May include any combination of
+.B ELF_F_DIRTY ,
+.B ELF_F_LAYOUT ,
+and
+.B ELF_F_PERMISSIVE .
+
+Note that
+.B ELF_F_LAYOUT
+and
+.B ELF_F_PERMISSIVE
+are only used with
+.BR elf_flagelf ()
+and are ignored for other functions.
+
+.SH RETURN VALUE
+Returns the new value of the flags after the set/clear operation.
+
+Returns 0 on error, and sets an error code retrievable via
+.BR elf_errmsg (3).
+If the first argument is NULL then 0 is return and no error code is set.
+
+If the last flag is cleared, 0 will be returned as the new flag value.
+In this case 0 is not an error indicator and no error code is set.
+
+.SH SEE ALSO
+.BR elf_errmsg (3),
+.BR elf_update (3),
+.BR libelf (3),
+.BR elf (5)
+
+.SH ATTRIBUTES
+.TS
+allbox;
+lbx lb lb
+l l l.
+Interface	Attribute	Value
+T{
+.na
+.nh
+.BR elf_flagelf (),\~elf_flagehdr(),\~elf_flagphdr(),\~elf_flagscn(),\~elf_flagshdr(),\~elf_flagdata()
+T}	Thread safety	MT-Unsafe race
+.TE
+
+.SH REPORTING BUGS
+Report bugs to <elfutils-devel@sourceware.org> or https://sourceware.org/bugzilla/.

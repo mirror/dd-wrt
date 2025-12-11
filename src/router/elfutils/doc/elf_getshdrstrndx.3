@@ -1,0 +1,102 @@
+.TH ELF_GETSHDRSTRNDX 3 2025-06-30 "Libelf" "Libelf Programmer's Manual"
+
+.SH NAME
+elf_getshdrstrndx, elf_getshstrndx \- retrieve the section header string table index
+.SH SYNOPSIS
+.nf
+#include <libelf.h>
+
+.B int elf_getshdrstrndx("Elf *elf", "size_t *dst");
+.B int elf_getshstrndx("Elf *elf", "size_t *dst"); (deprecated)
+.fi
+.SH DESCRIPTION
+The
+.BR elf_getshdrstrndx ()
+function retrieves the section header string table index from the ELF descriptor
+.IR elf ,
+and stores it in the location pointed to by
+.IR dst .
+
+A section's name can be aquired with
+.BR elf_strptr (3).
+This function takes the section header string table index from
+.BR elf_getshdrstrndx ()
+as well as the
+.I sh_name
+field from the section's
+.I Elf32_Shdr
+or
+.I Elf64_Shdr
+(see
+.B elf32_getshdr
+and
+.BR elf64_getshdr ).
+
+This function handles both standard ELF values and extended section indexing.
+In the latter case, if the section header string table index field of the ELF
+header contains
+.B SHN_XINDEX,
+then the true index is stored in the
+.B sh_link
+field of section 0.
+
+The function
+.BR elf_getshstrndx ()
+is a deprecated alias for
+.BR elf_getshdrstrndx ()
+and should not be used in new code (see HISTORY).
+
+.SH PARAMETERS
+.TP
+.I elf
+A pointer to an
+.B Elf
+descriptor.  The descriptor must have kind
+.B ELF_K_ELF .
+If
+.I elf
+is NULL, then this function returns \-1 without setting elf_errno
+
+.TP
+.I dst
+A pointer to a
+.B size_t
+location where the index of the section header string table will be stored.
+Must not be NULL.
+
+.SH RETURN VALUE
+Returns 0 on success and stores the section header string table index in
+.IR dst .
+Returns \-1 on failure and sets elf_errno (if
+.I elf
+is not NULL).
+
+.SH SEE ALSO
+.BR elf32_getshdr (3),
+.BR elf64_getshdr (3),
+.BR elf_strptr (3),
+.BR libelf (3),
+.BR elf (5)
+
+.SH ATTRIBUTES
+.TS
+allbox;
+lbx lb lb
+l l l.
+Interface	Attribute	Value
+T{
+.na
+.nh
+.BR elf_getshdrstrndx (),\~elf_getshstrndx ()
+T}	Thread safety	MT-Safe
+.TE
+
+.SH REPORTING BUGS
+Report bugs to <elfutils-devel@sourceware.org> or https://sourceware.org/bugzilla/.
+
+.SH HISTORY
+.B elf_getshdrstrndx
+first appeared in elfutils 0.142.  This function was added due to elf_getshstrndx
+return value inconsistencies between different libelf implementations.
+.B elf_getshdrstrndx
+was introduced to ensure that 0 is returned on success.

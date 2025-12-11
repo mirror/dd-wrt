@@ -1,0 +1,60 @@
+.TH ELF32_GETCHDR 3 2024-08-14 "Libelf" "Libelf Programmer's Manual"
+
+.SH NAME
+elf32_getchdr, elf64_getchdr \- retrieve the compression header for a
+section from a 32-bit or 64-bit ELF object file.
+
+.SH SYNOPSIS
+.nf
+.B #include <libelf.h>
+
+.BI "Elf32_Chdr *elf32_getchdr(Elf_Scn *" scn ");"
+.BI "Elf64_Chdr *elf64_getchdr(Elf_Scn *" scn ");"
+
+.SH DESCRIPTION
+Retrieve the compression header for a section with compressed data.
+Sections with compressed data are indicated with the
+.B SHF_COMPRESSED
+flag.  See
+.BR libelf (3)
+for more information regarding the compression header.
+
+.SH PARAMETERS
+.TP
+.I scn
+Section whose compression header will be retrieved. The section's
+.B SHF_COMPRESSED
+flag must be set.
+
+.SH RETURN VALUE
+On success, return a pointer to the compression header. On failure,
+return NULL and set a libelf error code.
+
+.SH SEE ALSO
+.BR elf_compress (3),
+.BR elf_errno (3),
+.BR libelf (3),
+.BR elf (5)
+
+.SH ATTRIBUTES
+For an explanation of the terms used in this section, see
+.BR attributes (7).
+.TS
+allbox;
+lbx lb lb
+l l l.
+Interface	Attribute	Value
+T{
+.na
+.nh
+.BR elf32_getchdr (),
+.BR elf64_getchdr ()
+T}	Thread safety	MT-Safe
+.TE
+
+.SH REPORTING BUGS
+Report bugs to <elfutils-devel@sourceware.org> or https://sourceware.org/bugzilla/.
+
+.SH HISTORY
+.B elf32_getchdr
+first appeared in elfutils 0.165.

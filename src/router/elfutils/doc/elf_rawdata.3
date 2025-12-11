@@ -1,0 +1,100 @@
+.TH ELF_RAWDATA 3 2025-06-30 "Libelf" "Libelf Programmer's Manual"
+
+.SH NAME
+elf_rawdata - Retrieve unprocessed section data from an ELF section.
+
+.SH SYNOPSIS
+.nf
+#include <libelf.h>
+
+.BI "Elf_Data *elf_rawdata(Elf_Scn *" scn ", Elf_Data *" data ");"
+.fi
+
+.SH DESCRIPTION
+The
+.BR elf_rawdata ()
+function returns a pointer to an
+.B Elf_Data
+structure containing the unprocessed (raw) contents of the section
+identified by
+.IR scn .
+This raw view reflects the exact on-disk binary layout of the ELF file
+with no modifications made for endianness or memory alignment.  Use
+.BR elf_getdata (3)
+to acquire a view of the data that has been translated to the in-memory
+format.
+
+If
+.I data
+is NULL,
+the raw data of the section is returned. If
+.I data
+is not NULL and raw data has not been initialized, the call fails.
+
+For compressed sections (i.e., with the
+.B SHF_COMPRESSED
+flag), the returned
+.B Elf_Data
+contains the compressed form, and its
+.B d_type
+is
+.BR ELF_T_CHDR .
+
+For sections of type
+.B SHT_NOBITS ,
+the
+.B d_buf
+pointer is NULL.
+
+The
+.I Elf_Data *
+returned by this function and it's
+.I d_buf
+are owned by libelf and should not be freed.  They are only valid until
+.BR elf_end (3)
+is called on the
+.I Elf
+descriptor associated with
+.IR scn .
+
+.SH PARAMETERS
+.TP
+.I scn
+A section descriptor returned from
+.BR elf_getscn (3)
+or
+.BR elf_nextscn (3) .
+If NULL, then this function returns NULL.
+
+.TP
+.I data
+Must be NULL on initial invocation. Any other use is not supported.
+
+.SH RETURN VALUE
+Returns a pointer to an
+.B Elf_Data
+descriptor describing the raw contents of the section. On failure, NULL
+is returned and elf_errno is set.
+
+.SH SEE ALSO
+.BR elf_getdata (3),
+.BR elf_getscn (3),
+.BR elf_compress (3),
+.BR libelf (3),
+.BR elf (5)
+
+.SH ATTRIBUTES
+.TS
+allbox;
+lbx lb lb
+l l l.
+Interface	Attribute	Value
+T{
+.na
+.nh
+.BR elf_rawdata ()
+T}	Thread safety	MT-Safe
+.TE
+
+.SH REPORTING BUGS
+Report bugs to <elfutils-devel@sourceware.org> or https://sourceware.org/bugzilla/.

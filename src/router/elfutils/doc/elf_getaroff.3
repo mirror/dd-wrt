@@ -1,0 +1,58 @@
+.TH ELF_GETAROFF 3 2025-06-06 "Libelf" "Libelf Programmer's Manual"
+
+.SH NAME
+elf_getaroff \- retrieve the offset of an archive member header
+
+.SH SYNOPSIS
+.nf
+.B #include <libelf.h>
+
+.BI "int64_t elf_getaroff(Elf *" elf ");"
+.fi
+.SH DESCRIPTION
+Return the file offset, in bytes, of the archive member header currently
+referred to by an ELF descriptor.  This is the offset of the member header
+in the parent archive file.  This offset can be used with
+.BR elf_rand .
+
+.SH PARAMETERS
+.TP
+.I elf
+Elf descriptor referring to a member of an archive file header.
+
+.SH RETURN VALUE
+Return the file offset, in bytes, of the archive member header referred
+to by
+.IR elf .
+If
+.I elf
+is NULL or is not a member of an archive,
+return -1.
+
+.SH SEE ALSO
+.BR elf_begin (3),
+.BR elf_next (3),
+.BR elf_rand (3),
+.BR libelf (3),
+.BR elf (5)
+
+.SH ATTRIBUTES
+.TS
+allbox;
+lbx lb lb
+l l l.
+Interface	Attribute	Value
+T{
+.na
+.nh
+.BR elf_getaroff ()
+T}	Thread safety	MT-Safe
+.TE
+
+.SH REPORTING BUGS
+Report bugs to <elfutils-devel@sourceware.org> or https://sourceware.org/bugzilla/.
+
+.SH HISTORY
+.B elf_getaroff
+first appeared in elfutils 0.114.  This elfutils libelf function may not be
+found in other libelf implementations.

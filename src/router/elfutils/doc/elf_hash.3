@@ -1,0 +1,64 @@
+.TH ELF_HASH 3 2025-03-31 "Libelf" "Libelf Programmer's Manual"
+
+.SH NAME
+elf_hash, elf_gnu_hash \- Compute the standard ELF hash or GNU hash of a string.
+
+.SH SYNOPSIS
+.nf
+#include <libelf.h>
+
+.BI "unsigned long int elf_hash(const char *" string ");"
+.BI "unsigned long int elf_gnu_hash(const char *" string ");"
+
+.SH DESCRIPTION
+The
+.B elf_hash
+function computes the standard ELF hash value for a null-terminated
+string.  The hash values are typically used in ELF object files for
+symbol table hashing.  The hash function is used in SHT_HASH sections as
+it avoids generating architecture-dependent values and is suitable for use
+across architectures.
+
+The
+.BR elf_gnu_hash
+function computes the GNU-style hash value of a null-terminated string,
+used in the
+.B SHT_GNU_HASH
+section.
+
+.SH PARAMETERS
+.TP
+.I string
+NULL-terminated string to be hashed.
+
+.SH RETURN VALUE
+These functions return a hash value for
+.IR string .
+Only the lower 32 bits of the return value are used.
+
+.SH SEE ALSO
+.BR libelf (3),
+.BR elf (5)
+
+.SH ATTRIBUTES
+For an explanation of the terms used in this section, see
+.BR attributes (7).
+.TS
+allbox;
+lbx lb lb
+l l l.
+Interface	Attribute	Value
+T{
+.na
+.nh
+.BR elf_hash (),\~elf_gnu_hash ()
+T}	Thread safety	MT-Safe
+.TE
+
+.SH REPORTING BUGS
+Report bugs to <elfutils-devel@sourceware.org> or https://sourceware.org/bugzilla/.
+
+.SH HISTORY
+.B elf_gnu_hash
+first appeared in elfutils 0.122.  This function is a elfutils libelf extension and
+may not be available in other libelf implementations.

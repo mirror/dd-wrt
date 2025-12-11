@@ -1,0 +1,24 @@
+.TH ELF_ERRNO 3 2024-06-24 "Libelf" "Libelf Programmer's Manual"
+
+.SH NAME
+elf_errno \- retrieve the error code of the last failing libelf function call.
+
+.SH SYNOPSIS
+.B #include <libelf.h>
+
+.BI "int elf_errno(void);"
+
+.SH DESCRIPTION
+The \fBelf_errno\fP function retrieves the error code of the last failing libelf library function. This error code indicates the type of error that occurred during the failing function call.  Each thread maintains its own separate error code.
+
+.SH PARAMETERS
+This function does not take any parameters.
+
+.SH RETURN VALUE
+The \fBelf_errno\fP function returns an integer representing the most recent error code for the current thread. If no error has occurred, it returns 0. If an error occurred, the function returns a non-zero error code that corresponds to the specific error.  Error codes can be passed to \fBelf_errmsg\fP in order to create a string describing the error.
+
+.SH SEE ALSO
+.BR elf_errmsg (3)
+
+.SH REPORTING BUGS
+Report bugs to <elfutils-devel@sourceware.org> or https://sourceware.org/bugzilla/.

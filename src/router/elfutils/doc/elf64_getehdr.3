@@ -1,0 +1,40 @@
+.TH ELF64_GETEHDR 3 2024-06-26 "Libelf" "Libelf Programmer's Manual"
+.SH NAME
+elf64_getehdr \- retrieve the ELF header for a 64-bit ELF descriptor
+
+.SH SYNOPSIS
+.nf
+#include <libelf.h>
+
+Elf64_Ehdr *elf64_getehdr(Elf *elf);
+.fi
+
+.SH DESCRIPTION
+.B elf64_getehdr
+retrieves the ELF header for the given 64-bit ELF descriptor
+.I elf.
+The ELF header contains crucial metadata about the ELF file, such as the type, machine, version, entry point, program header table offset, and section header table offset. See
+.BR elf (5)
+for more information regarding the ELF header.
+
+.SH PARAMETERS
+.TP
+.I elf
+Pointer to the ELF descriptor from which to retrieve the ELF header.
+
+.SH RETURN VALUE
+On success,
+.B elf64_getehdr
+returns a pointer to the
+.B Elf64_Ehdr
+structure. If the ELF descriptor is invalid or not a 64-bit ELF, it returns NULL and sets an error code retrievable by
+.BR elf_errno (3).
+
+.SH SEE ALSO
+.BR elf32_getehdr (3),
+.BR elf_begin (3),
+.BR elf_errno (3),
+.BR elf (5)
+
+.SH REPORTING BUGS
+Report bugs to <elfutils-devel@sourceware.org> or https://sourceware.org/bugzilla/.

@@ -1,0 +1,111 @@
+.TH ELF_BEGIN 3 2025-06-02 "Libelf" "Libelf Programmer's Manual"
+
+.SH NAME
+elf_begin \- initialize an ELF descriptor
+.SH SYNOPSIS
+.nf
+#include <libelf.h>
+
+Elf *elf_begin(int fildes, Elf_Cmd cmd, Elf *ref);
+.fi
+.SH DESCRIPTION
+Initialize and return a handle to an ELF file for use with the elfutils
+\fBlibelf\fP library and related elfutils libraries such as \fBlibdw\fP.
+
+The returned \fBElf\fP descriptor must be released using \fBelf_end(3)\fP.
+
+\fBelf_version(3)\fP must be called before using any \fBlibelf\fP library
+including \fBelf_begin(3)\fP.
+
+.SH PARAMETERS
+.TP
+\fIfildes\fP
+A file descriptor referring to an ELF object. The descriptor should be open
+for reading, and optionally for writing, depending on the intended operation.
+If \fIref\fP is non-NULL, then \fIfildes\fP must either be -1 or be set to the
+same file descriptor as the one associated with \fIref\fP.
+.TP
+\fIcmd\fP
+Specifies the action to perform. Common values include:
+.RS
+.TP
+\fBELF_C_NULL\fP
+Return a NULL pointer instead of initializing an ELF descriptor.  Ignores
+\fIref\fP.
+.TP
+\fBELF_C_READ\fP
+Open an ELF descriptor for reading.
+.TP
+\fBELF_C_WRITE\fP
+Open an ELF descriptor for writing.  The descriptor initially refers to an
+empty file.
+.TP
+\fBELF_C_RDWR\fP
+Open an ELF descriptor for reading and writing.
+.TP
+\fBELF_C_READ_MMAP\fP
+Open an ELF descriptor for reading using mmap, if available.  The
+\fBELF_C_*_MMAP\fP commands are an elfutils libelf extension and may not be
+available in other libelf implementations.  Once the mmap size is set attempts
+to extend the size may fail.  Therefore, \fBELF_C_*_MMAP\fP commands tend to be
+more useful for in-place modifications or removal of data from an ELF
+descriptor.
+.TP
+\fBELF_C_WRITE_MMAP\fP
+Open an ELF descriptor for writing using mmap, if available.  The descriptor
+initially refers to an empty file.
+.TP
+\fBELF_C_RDWR_MMAP\fP
+Open an ELF descriptor for reading and writing using mmap, if available.
+.TP
+\fBELF_C_READ_MMAP_PRIVATE\fP
+Open an ELF descriptor for reading using mmap, if available.  This command
+invokes mmap with MAP_PRIVATE whereas the other \fBELF_C_*_MMAP\fP commands
+invoke mmap with MAP_SHARED.  See \fBmmap(2)\fP for more information.
+.RE
+.TP
+\fIref\fP
+A reference to an existing Elf descriptor.  If \fIref\fP refers to regular
+ELF binary (not an AR file), then \fBelf_begin\fP will duplicate \fIref\fP.
+The reference count associated with \fIref\fP will be incremented and
+\fBelf_end(3)\fP will need to be called an additional time to deallocate
+\fIref\fP.  \fIref\fP must have been opened with read/write permissions
+consistent with \fIcmd\fP.
+
+If \fIref\fP refers to an AR file, then the ELF descriptor returned will be
+the first available object member of the archive (see \fBelf_next(3)\fP for
+more information).
+
+\fIref\fP may be NULL, in which case this argument is ignored.
+
+.SH RETURN VALUE
+On success, \fBelf_begin()\fP returns a pointer to a new Elf descriptor.
+If \fIcmd\fP is \fBELF_C_NULL\fP then NULL is returned.  If \fIref\fP is
+non-NULL and isn't an AR file, then a copy of \fIref\fP is returned.  On
+failure, \fBelf_begin()\fP returns NULL and sets an internal error
+state that can be retrieved with \fBelf_errmsg(3)\fP.
+
+.SH SEE ALSO
+.BR mmap (2),
+.BR elf_clone (3),
+.BR elf_end (3),
+.BR elf_next (3),
+.BR elf_rand (3),
+.BR libelf (3),
+.BR elf (5)
+
+.SH ATTRIBUTES
+.TS
+allbox;
+lbx lb lb
+l l l.
+Interface	Attribute	Value
+T{
+.na
+.nh
+.BR elf_begin ()
+T}	Thread safety	MT-Safe
+.TE
+
+.SH REPORTING BUGS
+Report bugs to <elfutils-devel@sourceware.org> or https://sourceware.org/bugzilla/.

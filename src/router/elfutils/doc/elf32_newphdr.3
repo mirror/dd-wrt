@@ -1,0 +1,72 @@
+.TH ELF32_NEWPHDR 3 2024-08-14 "Libelf" "Libelf Programmer's Manual"
+
+.SH NAME
+elf32_newphdr, elf64_newphdr \- create a new program header table for a
+32-bit or 64-bit ELF object file
+
+.SH SYNOPSIS
+.nf
+.B #include <libelf.h>
+
+.BI "Elf32_Phdr *elf32_newphdr(Elf *" elf ", size_t " count ");"
+.BI "Elf64_Phdr *elf64_newphdr(Elf *" elf ", size_t " count ");"
+
+.SH DESCRIPTION
+Create a new program header table for the ELF object file referred to by
+.IR elf .
+The number of entries in the new program header table is specified by
+.IR count .
+A
+.I count
+of zero removes the existing program header table.
+
+The function allocates a new array of
+.B Elf32_Phdr
+and makes it the program header table for
+.IR elf .
+The new program header contents are set to zero and any previous program
+header table is discarded.  An ELF header must exist before creating a
+program header table.
+
+.SH PARAMETERS
+.TP
+.I elf
+Pointer to the ELF object for which a new program header table is to be created.
+
+.TP
+.I count
+The number of entries in the new program header table. A count of zero removes
+the existing program header table.
+
+.SH RETURN VALUE
+On success, return a pointer to the first
+.B Elf32_Phdr
+in the newly created program header table.  If
+.I elf
+is NULL then return NULL.  If an error occurs, return NULL and set a libelf
+error code.
+
+.SH SEE ALSO
+.BR elf32_newehdr (3),
+.BR elf_errno (3),
+.BR libelf (3),
+.BR elf (5)
+
+.SH ATTRIBUTES
+For an explanation of the terms used in this section, see
+.BR attributes (7).
+.TS
+allbox;
+lbx lb lb
+l l l.
+Interface	Attribute	Value
+T{
+.na
+.nh
+.BR elf32_newphdr (),
+.BR elf64_newphdr ()
+T}	Thread safety	MT-Safe
+.TE
+
+.SH REPORTING BUGS
+Report bugs to <elfutils-devel@sourceware.org> or https://sourceware.org/bugzilla/.

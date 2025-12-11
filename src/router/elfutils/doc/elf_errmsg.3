@@ -1,0 +1,26 @@
+.TH ELF_ERRMSG 3 2024-06-24 "Libelf" "Libelf Programmer's Manual"
+
+.SH NAME
+elf_errmsg \- return the error message string for a given libelf error code.
+
+.SH SYNOPSIS
+.B #include <libelf.h>
+
+.BI "const char *elf_errmsg(int " err ");"
+
+.SH DESCRIPTION
+The \fBelf_errmsg\fP function retrieves a human-readable string corresponding to the most recent error code set by a libelf library function. If \fIerr\fP is 0, the function returns the error message for the most recent error code. If \fIerr\fP is non-zero, the function returns the error message for the specified error code.
+
+.SH PARAMETERS
+.TP
+.I err
+An \fIint\fP value specifying the error code. If this value is 0, the function returns the error message for the most recent error or NULL if none occurred. If this value is -1, the behaviour is similar to the previous case except that a legal string will be returned instead of NULL.
+
+.SH RETURN VALUE
+The \fBelf_errmsg\fP function returns a string containing the error message. If there is no corresponding error message, it returns NULL.
+
+.SH SEE ALSO
+.BR elf_errno (3)
+
+.SH REPORTING BUGS
+Report bugs to <elfutils-devel@sourceware.org> or https://sourceware.org/bugzilla/.

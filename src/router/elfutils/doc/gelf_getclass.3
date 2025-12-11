@@ -1,0 +1,63 @@
+.TH GELF_GETCLASS 3 2025-09-14 "Libelf" "Libelf Programmer's Manual"
+
+.SH NAME
+gelf_getclass \- return the ELF class (32\-bit or 64\-bit) for an object
+.SH SYNOPSIS
+.nf
+.B #include <gelf.h>
+
+.BI "int gelf_getclass(Elf *" elf ");"
+.fi
+
+.SH DESCRIPTION
+.BR gelf_getclass ()
+returns the class of the ELF object referenced by
+.IR elf .
+The class of a valid ELF file will be one of:
+.TP
+.B ELFCLASS32
+The object is a 32\-bit ELF class.
+.TP
+.B ELFCLASS64
+The object is a 64\-bit ELF class.
+.PP
+If
+.I elf
+does not denote a valid ELF object, or the class cannot be determined,
+.B ELFCLASSNONE
+is returned.
+
+.SH RETURN VALUE
+Returns
+.B ELFCLASS32
+or
+.B ELFCLASS64
+on success.
+If
+.I elf
+is NULL or does not refer to a valid ELF binary with kind
+.BR ELF_K_ELF ,
+then
+.B ELFCLASSNONE
+is returned.
+
+.SH SEE ALSO
+.BR elf_kind (3),
+.BR libelf (3),
+.BR elf (5)
+
+.SH ATTRIBUTES
+.TS
+allbox;
+lbx lb lb
+l l l.
+Interface	Attribute	Value
+T{
+.na
+.nh
+.BR gelf_getclass ()
+T}	Thread safety	MT-unsafe race
+.TE
+
+.SH REPORTING BUGS
+Report bugs to <elfutils-devel@sourceware.org> or https://sourceware.org/bugzilla/.

@@ -1,0 +1,23 @@
+.TH ELF_VERSION 3 2024-06-26 "Libelf" "Libelf Programmer's Manual"
+
+.SH NAME
+elf_version \- set the ELF version for libelf.
+
+.SH SYNOPSIS
+.B #include <libelf.h>
+
+.BI "unsigned int elf_version(unsigned int " version ");"
+
+.SH DESCRIPTION
+The \fBelf_version\fP function sets libelf's ELF version to the specified value. This function must be called before any other libelf functions are used.
+
+.SH PARAMETERS
+.TP
+.I version
+An \fIunsigned int\fP value specifying the desired ELF version for the library.  This is should be set to \fBEV_CURRENT\fP to indicate the current ELF version. At this time the only supported ELF version is \fBEV_CURRENT\fP.
+
+.SH RETURN VALUE
+The \fBelf_version\fP function returns \fBEV_CURRENT\fP if \fIversion\fP is supported and sets the library's ELF version to this value.  If the given \fIversion\fP is \fBEV_NONE\fP, then this function returns \fBEV_CURRENT\fP and does not set the library's ELF version.  If the specified version is not supported, this function returns \fBEV_NONE\fP.
+
+.SH REPORTING BUGS
+Report bugs to <elfutils-devel@sourceware.org> or https://sourceware.org/bugzilla/.

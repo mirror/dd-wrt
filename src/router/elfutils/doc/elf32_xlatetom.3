@@ -1,0 +1,130 @@
+.TH ELF32_XLATETOM 3 2024-08-14 "Libelf" "Libelf Programmer's Manual"
+
+.SH NAME
+.nf
+elf32_xlatetom, elf64_xlatetom \- translate 32-bit or 64-bit ELF data from file
+representation to memory representation
+
+elf32_xlatetof, elf64_xlatetof \- translate 32-bit or 64-bit ELF data from memory
+representation to file representation
+
+.SH SYNOPSIS
+.nf
+.B #include <libelf.h>
+
+.BI "int elf32_xlatetom(Elf_Data *" dst ", const Elf_Data *" src ", unsigned int " encoding ");"
+.BI "int elf64_xlatetom(Elf_Data *" dst ", const Elf_Data *" src ", unsigned int " encoding ");"
+
+.BI "int elf32_xlatetof(Elf_Data *" dst ", const Elf_Data *" src ", unsigned int " encoding ");"
+.BI "int elf64_xlatetof(Elf_Data *" dst ", const Elf_Data *" src ", unsigned int " encoding ");"
+
+.SH DESCRIPTION
+Translate ELF data from file representation to memory representation or
+vice versa.  File and memory representations of ELF data can differ in
+terms of endianness.  Data in file representation normally comes from
+.B elf_rawdata
+while data in memory representation normally comes from
+.BR elf_getdata .
+When there is no difference between file and memory representations,
+these functions simply copy the ELF data from
+.I src
+to
+.IR dst .
+Otherwise the encoding will swap between
+.B ELFDATA2LSB
+(two's complement little-endian) and
+.B ELFDATA2MSB
+(two's complement big-endian). The encoding of an ELF file is specified
+in the
+.B Elf32_Ehdr
+or
+.B Elf64_Ehdr e_ident[EI_DATA]
+member.  To know the memory encoding for a program you can
+.B #include <endian.h>
+and check BYTE_ORDER == LITTLE_ENDIAN (corresponding to
+.BR ELFDATA2LSB )
+or BYTE_ORDER == BIG_ENDIAN (corresponding to
+.BR ELFDATA2MSB ).
+
+.SH PARAMETERS
+.TP
+.I dst
+Destination where the translated data will be stored.
+The
+.B d_size
+of
+.I dst
+should be at least as big as the
+.B d_size
+of
+.IR src .
+
+.TP
+.I src
+Source data. For the
+.B xlatetom
+functions, the source data should be in file representation.
+For the
+.B xlatetof
+functions, the source data should be in memory representation.
+
+.TP
+.I encoding
+Specifies an encoding.  Can be either
+.B ELFDATA2LSB
+(two's complement little-endian) or
+.B ELFDATA2MSB
+(two's complement big-endian).  For the
+.B xlatetom
+functions, this specifies the encoding of
+.IR src .
+For the
+.B xlatetof
+functions, this specifies the encoding of
+.IR dst .
+
+.SH RETURN VALUE
+On success, return
+.IR dst ,
+which will contain the translated data.  If there is no difference
+between the file and memory representations,
+.I dst
+will contain a copy of the source data.  The
+.B d_type
+and
+.B d_size
+of
+.I dst
+will be set to those of
+.IR src .
+
+ If an error occurs, return
+NULL and set a libelf error code.
+
+.SH SEE ALSO
+.BR elf_errno (3),
+.BR elf_getdata (3),
+.BR elf_rawdata (3),
+.BR libelf (3),
+.BR elf (5)
+
+.SH ATTRIBUTES
+For an explanation of the terms used in this section, see
+.BR attributes (7).
+.TS
+allbox;
+lbx lb lb
+l l l.
+Interface	Attribute	Value
+T{
+.na
+.nh
+.BR elf32_xlatetom (),
+.BR elf64_xlatetom (),
+.BR elf32_xlatetof (),
+.BR elf64_xlatetof ()
+T}	Thread safety	MT-Safe
+.TE
+
+.SH REPORTING BUGS
+Report bugs to <elfutils-devel@sourceware.org> or https://sourceware.org/bugzilla/.

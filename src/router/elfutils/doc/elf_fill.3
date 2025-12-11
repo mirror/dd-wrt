@@ -1,0 +1,53 @@
+.TH ELF_FILL 3 2025-03-31 "Libelf" "Libelf Programmer's Manual"
+
+.SH NAME
+elf_fill \- Set fill byte used when constructing or editing ELF object files.
+
+.SH SYNOPSIS
+.nf
+#include <libelf.h>
+
+.BI "void elf_fill(int " fill ");"
+
+.SH DESCRIPTION
+The
+.B elf_fill
+function sets the fill byte used by libelf to pad new gaps between ELF sections
+or data elements when an ELF object file is resized or realigned using
+.BR elf_update .
+The default fill byte used by libelf is zero.
+
+.SH PARAMETERS
+.TP
+.I fill
+The value used to fill gaps in future writes to ELF objects.  This value
+should be between 0 and 255 (inclusive).  Only the least significant
+8 bits are used.
+
+.SH RETURN VALUE
+.B elf_fill
+returns no value.
+
+.SH SEE ALSO
+.BR elf_update (3),
+.BR libelf (3),
+.BR elf (5)
+
+.SH ATTRIBUTES
+For an explanation of the terms used in this section, see
+.BR attributes (7).
+.TS
+allbox;
+lbx lb lb
+l l l.
+Interface	Attribute	Value
+T{
+.na
+.nh
+.BR elf_fill ()
+T}	Thread safety	MT-Unsafe race
+.TE
+
+.SH REPORTING BUGS
+Report bugs to <elfutils-devel@sourceware.org> or https://sourceware.org/bugzilla/.
+

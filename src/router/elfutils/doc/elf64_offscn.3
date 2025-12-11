@@ -1,0 +1,64 @@
+.TH ELF64_OFFSCN 3 2024-07-18 "Libelf" "Libelf Programmer's Manual"
+
+.SH NAME
+elf64_offscn \- retrieve a section descriptor by file offset for a 64-bit ELF file
+
+.SH SYNOPSIS
+.B #include <libelf.h>
+
+.BI "Elf_Scn *elf64_offscn(Elf *" elf ", off_t " offset ");"
+
+.SH DESCRIPTION
+The
+.B elf64_offscn
+function retrieves the section descriptor for the non-empty section at the specified file offset in the ELF64 object referred to by
+.I elf.
+
+.SH PARAMETERS
+.TP
+.I elf
+An
+.I Elf
+pointer to the ELF object from which the section descriptor is to be retrieved.
+
+.TP
+.I offset
+An
+.I off_t
+value representing the file offset of the section whose descriptor is to be retrieved.
+
+.SH RETURN VALUE
+The
+.B elf64_offscn
+function returns a pointer to the
+.I Elf_Scn
+of the non-empty section with a sh_offset matching
+.I offset.
+If an error occurs, it returns NULL and sets an appropriate libelf error code.
+
+.SH ATTRIBUTES
+For an explanation of the terms used in this section, see
+.BR attributes (7).
+.TS
+allbox;
+lbx lb lb
+l l l.
+Interface	Attribute	Value
+T{
+.na
+.nh
+.BR elf64_offscn ()
+T}	Thread safety	MT-Safe
+.TE
+
+.SH SEE ALSO
+.BR elf32_offscn (3),
+.BR libelf (3),
+.BR elf (5),
+
+.SH REPORTING BUGS
+Report bugs to <elfutils-devel@sourceware.org> or https://sourceware.org/bugzilla/.
+
+.SH HISTORY
+.B elf64_offscn
+first appeared in elfutils 0.112.  This elfutils libelf function may not be found in other libelf implementations.

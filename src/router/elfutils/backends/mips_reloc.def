@@ -1,0 +1,93 @@
+/* List the relocation types for MIPS.  -*- C -*-
+   Copyright (C) 2024 CIP United Inc.
+   This file is part of elfutils.
+
+   This file is free software; you can redistribute it and/or modify
+   it under the terms of either
+
+     * the GNU Lesser General Public License as published by the Free
+       Software Foundation; either version 3 of the License, or (at
+       your option) any later version
+
+   or
+
+     * the GNU General Public License as published by the Free
+       Software Foundation; either version 2 of the License, or (at
+       your option) any later version
+
+   or both in parallel, as here.
+
+   elfutils is distributed in the hope that it will be useful, but
+   WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+   General Public License for more details.
+
+   You should have received copies of the GNU General Public License and
+   the GNU Lesser General Public License along with this program.  If
+   not, see <http://www.gnu.org/licenses/>.  */
+
+/*	    NAME,		REL|EXEC|DYN	*/
+
+
+RELOC_TYPE (NONE,		REL|EXEC|DYN)
+RELOC_TYPE (16,		        REL|EXEC|DYN)
+RELOC_TYPE (32,	                REL)
+RELOC_TYPE (REL32,	        REL|EXEC|DYN)
+RELOC_TYPE (26,		        REL|DYN)
+RELOC_TYPE (HI16,	        REL)
+RELOC_TYPE (LO16,		REL|EXEC|DYN)
+RELOC_TYPE (GPREL16,		REL|EXEC|DYN)
+RELOC_TYPE (LITERAL,		REL|EXEC|DYN)
+RELOC_TYPE (GOT16,		REL|EXEC|DYN)
+RELOC_TYPE (PC16,		REL)
+RELOC_TYPE (CALL16,		REL)
+RELOC_TYPE (GPREL32,		REL)
+RELOC_TYPE (SHIFT5,		REL)
+RELOC_TYPE (SHIFT6,		REL)
+RELOC_TYPE (64,		        REL)
+RELOC_TYPE (GOT_DISP,		REL)
+RELOC_TYPE (GOT_PAGE,		REL)
+RELOC_TYPE (GOT_OFST,		REL)
+RELOC_TYPE (GOT_HI16,		REL)
+RELOC_TYPE (GOT_LO16,		REL)
+RELOC_TYPE (SUB,		REL)
+RELOC_TYPE (INSERT_A,		REL)
+RELOC_TYPE (INSERT_B,		REL)
+RELOC_TYPE (DELETE,		REL)
+RELOC_TYPE (HIGHER,		REL)
+RELOC_TYPE (HIGHEST,		REL)
+RELOC_TYPE (CALL_HI16,		REL)
+RELOC_TYPE (CALL_LO16,		REL)
+RELOC_TYPE (SCN_DISP,		REL)
+RELOC_TYPE (REL16,		REL)
+RELOC_TYPE (ADD_IMMEDIATE,	REL)
+RELOC_TYPE (PJUMP,		REL)
+RELOC_TYPE (RELGOT,		REL)
+RELOC_TYPE (JALR,		REL)
+RELOC_TYPE (TLS_DTPMOD32,	DYN)
+RELOC_TYPE (TLS_DTPREL32,	REL)
+RELOC_TYPE (TLS_DTPMOD64,	DYN)
+RELOC_TYPE (TLS_DTPREL64,	REL)
+RELOC_TYPE (TLS_GD,		REL)
+RELOC_TYPE (TLS_LDM,		REL)
+RELOC_TYPE (TLS_DTPREL_HI16,	REL)
+RELOC_TYPE (TLS_DTPREL_LO16,	REL)
+RELOC_TYPE (TLS_GOTTPREL,	REL)
+RELOC_TYPE (TLS_TPREL32,	REL)
+RELOC_TYPE (TLS_TPREL64,	REL)
+RELOC_TYPE (TLS_TPREL_HI16,	REL)
+RELOC_TYPE (TLS_TPREL_LO16,	REL)
+RELOC_TYPE (GLOB_DAT,		REL)
+RELOC_TYPE (PC21_S2,		REL)
+RELOC_TYPE (PC26_S2,		REL)
+RELOC_TYPE (PC18_S3,		REL)
+RELOC_TYPE (PC19_S2,		REL)
+RELOC_TYPE (PCHI16,		REL)
+RELOC_TYPE (PCLO16,		REL)
+RELOC_TYPE (COPY,		REL)
+RELOC_TYPE (JUMP_SLOT,		REL)
+RELOC_TYPE (PC32,		REL)
+RELOC_TYPE (EH,			REL)
+RELOC_TYPE (GNU_REL16_S2,	REL)
+RELOC_TYPE (GNU_VTINHERIT,	REL)
+RELOC_TYPE (GNU_VTENTRY,	REL)

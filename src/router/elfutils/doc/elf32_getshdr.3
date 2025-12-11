@@ -1,0 +1,59 @@
+.TH ELF32_GETSHDR 3 2024-08-14 "Libelf" "Libelf Programmer's Manual"
+
+.SH NAME
+elf32_getshdr, elf64_getshdr \- retrieve the section header for a section
+in 32-bit or 64-bit ELF object file
+
+.SH SYNOPSIS
+.nf
+.B #include <libelf.h>
+
+.BI "Elf32_Shdr *elf32_getshdr(Elf_Scn *" scn ");"
+.BI "Elf64_Shdr *elf64_getshdr(Elf_Scn *" scn ");"
+
+.SH DESCRIPTION
+Retrieve the section header for the section referred to by
+.IR scn .
+If the retrieved section header is modified,
+.B elf_flagshdr
+must be called
+with
+.B ELF_C_SET
+and
+.B ELF_F_DIRTY
+in order to write the modified section header to disk.
+
+.SH PARAMETERS
+.TP
+.I scn
+The section descriptor whose section header is to be retrieved.
+
+.SH RETURN VALUE
+On success, return a pointer to the section header.  If scn is NULL then
+NULL will be returned.  If an error occurs, return NULL and set a libelf
+error code.
+
+.SH SEE ALSO
+.BR elf_errno (3),
+.BR elf_flagshdr (3),
+.BR libelf (3),
+.BR elf (5)
+
+.SH ATTRIBUTES
+For an explanation of the terms used in this section, see
+.BR attributes (7).
+.TS
+allbox;
+lbx lb lb
+l l l.
+Interface	Attribute	Value
+T{
+.na
+.nh
+.BR elf32_getshdr (),
+.BR elf64_getshdr ()
+T}	Thread safety	MT-Safe
+.TE
+
+.SH REPORTING BUGS
+Report bugs to <elfutils-devel@sourceware.org> or https://sourceware.org/bugzilla/.

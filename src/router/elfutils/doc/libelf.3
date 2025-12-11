@@ -1,0 +1,363 @@
+.TH LIBELF 3 2024-10-18 "Libelf" "Libelf Programmer's Manual"
+
+.SH NAME
+libelf \- a library for accessing and manipulating ELF (Executable and Linkable
+Format) files
+.SH LIBRARY
+Elfutils library (\fBlibelf\fP, \fBlibelf.so\fP, \fB-lelf\fP)
+.SH SYNOPSIS
+.nf
+.B #include <libelf.h>
+
+.SH DESCRIPTION
+The \fBlibelf\fP library provides an API for reading, writing, and manipulating
+ELF (Executable and Linkable Format) files. ELF is a standard format for object
+files, shared libraries, core dumps, and executables.  See
+.BR elf (5)
+for more information regarding ELF.
+
+\fBlibelf\fP provides routines for working with ELF object file headers,
+sections, symbol tables, relocation entries, and other key components.
+
+The core of the library is based on
+.I Elf
+file descriptors representing ELF files, which can be read from, written to,
+or updated in-place. The \fBelf_begin\fP function initializes access to an
+ELF object, while additional functions like \fBelf_getscn\fP, \fBelf_getdata\fP,
+and \fBelf_ndxscn\fP provide access to specific parts of the ELF file.
+
+.SH FILE VS MEMORY REPRESENTATION
+
+The \fBlibelf\fP library distinguishes between the file representation of an
+ELF file and its memory representation.
+
+.PP
+File Representation refers to the format in which an ELF file is stored on disk.
+The fields in the file may use specific sizes, alignment, and byte ordering
+(endianness) that could be different from the native format used by the host
+system.
+
+.PP
+Memory Representation refers to the way the ELF data is organized when loaded
+into an application's memory. In memory, the data structures are typically
+converted into the native format of the host system (e.g., the system's
+endianness, word size, and alignment).
+
+.PP
+\fBlibelf\fP provides the following functions to translate ELF data between
+file and memory representations:
+.BR elf32_xlatetom ,
+.BR elf64_xlatetom ,
+.BR elf32_xlatetof ,
+and
+.BR elf64_xlatetof .
+
+See
+.BR elf32_xlatetom (3)
+for more information.
+
+.SH ELF VERSION
+
+To account for the possibility of multiple versions of the ELF specification,
+the ELF version number must be specified with the \fBelf_version\fP function
+before any other \fBlibelf\fP functions. This function sets \fBlibelf\fP's ELF
+version to the specified value.  At this time the only supported ELF version is
+\fBEV_CURRENT\fP.
+
+.SH DESCRIPTORS
+.I Elf
+descriptors the central \fBlibelf\fP object for accessing and manipulating
+ELF files.  They are created with the
+.BR elf_begin ,
+.BR elf_clone ,
+and
+.B elf_memory
+functions and closed with the
+.B elf_end
+function.
+
+\fBlibelf\fP also provides
+.I Elf_Scn
+and
+.I Elf_Data
+descriptors for ELF sections and section contents, respectively.  Members
+of the
+.I Elf_Data
+struct are described below.
+Members of the
+.I Elf
+and
+.I Elf_Scn
+structs are hidden from applications.
+
+These descriptors can be acquired and modified using various
+functions provided by \fBlibelf\fP.  See
+.B libelf.h
+for a complete list.
+
+.SH ERROR HANDLING
+If a \fBlibelf\fP function encounters an error it will set an internal
+error code that can be retrieved with
+.BR elf_errno .
+Each thread maintains its own separate error code.  The meaning of
+each error code can be determined with
+.BR elf_errmsg,
+which returns a string describing the error.
+
+.SH MEMORY MANAGEMENT
+\fBlibelf\fP manages all of the memory it allocates and frees it with
+.BR elf_end .
+The application must not call
+.B free
+on any memory allocated by \fBlibelf\fP.
+
+.SH NAMESPACE
+\fBlibelf\fP uses the following prefix format. See \fBlibelf.h\fP for more
+information.
+
+.RS
+.TP
+.PD 0
+.TP
+.B elf_
+Functions usable with both 32-bit and 64-bit ELF files.
+
+.TP
+.B elf32_
+Functions usable with 32-bit ELF files.
+
+.TP
+.B elf64_
+Functions usable with 64-bit ELF files.
+
+.TP
+.B Elf_
+Type that represents data for both 32-bit and 64-bit ELF files.
+
+.TP
+.B Elf32_
+Type that represents data for 32-bit ELF files.
+
+.TP
+.B Elf64_
+Type that represents data for 64-bit ELF files.
+
+.TP
+.B ELF_C_
+.I Elf_Cmd
+values used in functions such as
+.B elf_flagset
+and
+.BR elf_cntl .
+
+.TP
+.B ELF_F_
+Flags for ELF structures.
+
+.TP
+.B ELF_K_
+.I Elf_Kind
+Identification values for recognized object file types.
+
+.TP
+.B ELF_T_
+.I Elf_Type
+values representing the known types of ELF data such as
+.BR ELF_T_BYTE ,
+(unsigned char)
+.BR ELF_T_REL ,
+(relocation entry)
+or
+.B ELF_T_SYM
+(symbol record).
+.fi
+.PD
+.RE
+
+.SH DATA STRUCTURES
+\fBlibelf\fP implements the following data structures, in addition to including
+the data structures given in the ELF specification (see
+.BR elf (5)
+for more information).
+
+.SS Section Compression Header
+.nf
+.in +4
+typedef struct {
+   Elf32_Word   ch_type;
+   Elf32_Word   ch_size;
+   Elf32_Word   ch_addralign;
+} Elf32_Chdr;
+
+typedef struct {
+   Elf64_Word   ch_type;
+   Elf64_Word   ch_reserved;
+   Elf64_Xword  ch_size;
+   Elf64_Xword  ch_addralign;
+ } Elf64_Chdr;
+.fi
+
+.TP
+.I ch_type
+Compression format type. Legal values include
+.BR ELFCOMPRESS_ZLIB ,
+.BR ELFCOMPRESS_ZSTD ,
+the inclusive range between
+.B ELFCOMPRESS_LOOS
+to
+.B ELFCOMPRESS_HIOS
+as well as the inclusive range between
+.B ELFCOMPRESS_LOPROC
+and
+.B ELFCOMPRESS_HIPROC
+
+.RS
+.TP
+.PD 0
+.B ELFCOMPRESS_ZLIB
+ZLIB/DEFLATE algorithm.
+.TP
+.B ELFCOMPRESS_ZSTD
+Zstandard algorithm.
+.TP
+.B ELFCOMPRESS_LOOS
+Start of OS-specific compression types.
+.TP
+.B ELFCOMPRESS_HIOS
+End of OS-specific compression types.
+.TP
+.B ELFCOMPRESS_LOPROC
+Start of processor-specific compression types.
+.TP
+.B ELFCOMPRESS_HIPROC
+End of processor-specific compression types.
+.PD
+.RE
+
+.TP
+.I ch_reserved
+Space reserved for use by \fBlibelf\fP.
+
+.TP
+.I ch_size
+Data size of uncompressed section.
+
+.TP
+.I ch_addralign
+Alignment of uncompressed section.
+
+
+.SS Section Data
+.nf
+.in +4
+typedef struct {
+  void *d_buf;
+  Elf_Type d_type;
+  unsigned int d_version;
+  size_t d_size;
+  int64_t d_off;
+  size_t d_align;
+} Elf_Data;
+.fi
+
+.TP
+.I d_buf
+Pointer to the actual data.
+Use
+.B elf_getdata
+to retrieve data in memory representation and
+.B elf_rawdata
+to retrieve data in file representation.
+
+.TP
+.I d_type
+The
+.I Elf_Type
+of this piece of data.  See the
+.I Elf_Type
+enum in
+.B libelf.h
+for descriptions of each value.
+
+.TP
+.I d_version
+The ELF version for this data.
+
+.TP
+.I d_size
+The size in bytes of this data.
+
+.TP
+.I d_off
+The section offset of this data.
+
+.TP
+.I d_align
+The section alignment of this data.
+
+.SS Archive Member Header
+.nf
+.in +4
+typedef struct {
+  char *ar_name;
+  time_t ar_date;
+  uid_t ar_uid;
+  gid_t ar_gid;
+  mode_t ar_mode;
+  int64_t ar_size;
+  char *ar_rawname;
+} Elf_Arhdr;
+.fi
+
+.TP
+.I ar_name
+Name of archive member.
+
+.TP
+.I ar_data
+File date.
+
+.TP
+.I ar_uid
+User ID.
+
+.TP
+.I ar_gid
+Group ID.
+
+.TP
+.I ar_mode
+File mode.
+
+.TP
+.I ar_size
+File size.
+
+.TP
+.I ar_rawname
+Original name of archive member.
+
+.SS Archive Symbol Table Entry
+.nf
+.in +4
+typedef struct {
+  char *as_name;
+  size_t as_off;
+  unsigned long int as_hash;
+} Elf_Arsym;
+.fi
+
+.TP
+.I as_name
+Symbol name.
+
+.TP
+.I as_off
+Offset for this file in the archive.
+
+.TP
+.I as_hash
+Hash value of the name.
+
+.SH REPORTING BUGS
+Report bugs to <elfutils-devel@sourceware.org> or https://sourceware.org/bugzilla/.

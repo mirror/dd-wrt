@@ -1,0 +1,78 @@
+.TH ELF_GETARHDR 3 2025-06-06 "Libelf" "Libelf Programmer's Manual"
+
+.SH NAME
+elf_getarhdr \- retrieve archive member header information
+
+.SH SYNOPSIS
+.nf
+.B #include <libelf.h>
+
+.BI "Elf_Arhdr *elf_getarhdr(Elf *" elf ");"
+.fi
+
+.SH DESCRIPTION
+Return a
+.B Elf_Arhdr *
+describing the archive header of the archive member currently referred
+to by an ELF descriptor.
+
+The
+.B Elf_Arhdr
+structure is defined as:
+
+.P
+.nf
+typedef struct {
+  char *ar_name;                /* Name of archive member.  */
+  time_t ar_date;               /* File date.  */
+  uid_t ar_uid;                 /* User ID.  */
+  gid_t ar_gid;                 /* Group ID.  */
+  mode_t ar_mode;               /* File mode.  */
+  int64_t ar_size;              /* File size.  */
+  char *ar_rawname;             /* Original name of archive member.  */
+} Elf_Arhdr;
+.fi
+
+.SH PARAMETERS
+.TP
+.I elf
+An ELF descriptor referring to a member of an archive file.
+
+.SH RETURN VALUE
+If
+.I elf
+refers to an archive member,
+.B elf_getarhdr()
+returns a pointer to its archive header.
+This pointer is valid until
+.I elf
+or the parent archive Elf descriptor are closed using
+.BR elf_end() .
+If
+.I elf
+does not refer to an archive member or the header cannot be
+acquired then NULL is returned.
+
+.SH SEE ALSO
+.BR elf_begin (3),
+.BR elf_getaroff (3),
+.BR elf_next (3),
+.BR elf_rand (3),
+.BR libelf (3),
+.BR elf (5)
+
+.SH ATTRIBUTES
+.TS
+allbox;
+lbx lb lb
+l l l.
+Interface	Attribute	Value
+T{
+.na
+.nh
+.BR elf_getarhdr ()
+T}	Thread safety	MT-safe
+.TE
+
+.SH REPORTING BUGS
+Report bugs to <elfutils-devel@sourceware.org> or https://sourceware.org/bugzilla/.

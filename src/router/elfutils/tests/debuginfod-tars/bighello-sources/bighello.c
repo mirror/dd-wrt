@@ -1,0 +1,7 @@
+#include <stdio.h>
+#include "moremoremoremoremoremoremoremore/moremoremoremoremoremoremoremore/moremoremoremoremoremoremoremore/moremoremoremoremoremoremoremore/moremoremoremoremoremoremoremore/moremoremoremoremoremoremoremore/moremoremoremoremoremoremoremore/moremoremoremoremoremoremoremore/moremoremoremoremoremoremoremore/moremoremoremoremoremoremoremore/moremoremoremoremoremoremoremore/moremoremoremoremoremoremoremore/moremoremoremoremoremoremoremore/moremoremoremoremoremoremoremore/moremoremoremoremoremoremoremore/bighello.h"
+
+int main() {
+   printf("%s\n", HELLO);
+   return 0;
+}

@@ -1,0 +1,62 @@
+.TH GELF_GETEHDR 3 2025-09-14 "Libelf" "Libelf Programmer's Manual"
+
+.SH NAME
+gelf_getehdr \- retrieve the header of an ELF binary as a class\-independent structure
+
+.SH SYNOPSIS
+.nf
+.B #include <gelf.h>
+
+.BI "GElf_Ehdr *gelf_getehdr(Elf *" elf ", GElf_Ehdr *" dest " );"
+.fi
+
+.SH DESCRIPTION
+.B gelf_getehdr()
+retrieve the ELF header of the binary referenced by
+.I elf
+as a class\-independent
+.B GElf_Ehdr
+representation.
+
+.SH PARAMETERS
+.TP
+.I elf
+Pointer to an ELF descriptor.
+.TP
+.I dest
+Pointer to a caller\-provided
+.B GElf_Ehdr
+structure that will receive the translated file header. Must not be
+NULL.  On success, the function stores the header in
+.IR *dest .
+
+.SH RETURN VALUE
+On success, returns
+.IR dest .
+On failure, returns
+.B NULL
+and sets elf_errno.  If
+.I elf
+is NULL, NULL is returned and elf_errno is not set.
+
+.SH SEE ALSO
+.BR gelf_newehdr (3),
+.BR gelf_update_ehdr (3),
+.BR libelf (3),
+.BR elf (5)
+
+.SH ATTRIBUTES
+.TS
+allbox;
+lbx lb lb
+l l l.
+Interface	Attribute	Value
+T{
+.na
+.nh
+.BR gelf_getehdr ()
+T}	Thread safety	MT-Safe
+.TE
+
+.SH REPORTING BUGS
+Report bugs to <elfutils-devel@sourceware.org> or https://sourceware.org/bugzilla/.

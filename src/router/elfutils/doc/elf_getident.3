@@ -1,0 +1,95 @@
+.TH ELF_GETIDENT 3 2025-06-30 "Libelf" "Libelf Programmer's Manual"
+
+.SH NAME
+elf_getident \- return the ELF identification bytes
+.SH SYNOPSIS
+.nf
+#include <libelf.h>
+
+.B char * elf_getident("Elf *elf", "size_t *nbytes");
+.fi
+.SH DESCRIPTION
+The
+.BR elf_getident ()
+function returns a pointer to the 16-byte ELF identification array
+from the ELF header of the given descriptor
+.IR elf .
+
+This identification data begins with the magic number `\fB\\177ELF\fR`
+and includes the class, data encoding, ELF version, OS ABI, and ABI
+version fields. It corresponds to the first
+.B EI_NIDENT
+bytes of the ELF header and can be accessed via the
+.B e_ident
+field of either
+.B Elf32_Ehdr
+or
+.B Elf64_Ehdr .
+
+If
+.I elf
+is a valid descriptor for an ELF object, the function returns a pointer to
+the internal buffer containing the header's identification bytes. The buffer
+is owned by the library and must not be modified or freed by the caller.
+
+If
+.I nbytes 
+is not NULL, the function sets
+.*nbytes
+to
+.B EI_NIDENT
+(16), the length in bytes of the returned identifier.
+
+.SH PARAMETERS
+.TP
+.I elf
+Pointer to an
+.B Elf
+descriptor referring to a valid ELF object.  If the descriptor does not
+represent an ELF object file (is NULL or
+.BR elf_kind ()
+is not
+.B ELF_K_ELF
+), NULL is returned.
+
+.TP
+.I nbytes
+Optional pointer to a
+.B size_t
+variable. If non-NULL, it will be set to the length of the returned buffer
+(always EI_NIDENT on success, 0 on failure).
+
+.SH RETURN VALUE
+Returns a pointer to the internal 16-byte
+.B e_ident
+buffer on success and NULL on failure.  Does not set elf_errno.
+
+This buffer is indexed using the
+.BR EI_CLASS ,
+.BR EI_DATA ,
+.BR EI_VERSION ,
+.BR EI_OSABI ,
+and
+.BR EI_ABIVERSION
+macros found in elf.h.  Also see
+.BR elf (5).
+
+.SH SEE ALSO
+.BR libelf (3),
+.BR elf (5)
+
+.SH ATTRIBUTES
+.TS
+allbox;
+lbx lb lb
+l l l.
+Interface	Attribute	Value
+T{
+.na
+.nh
+.BR elf_getident ()
+T}	Thread safety	MT-Safe
+.TE
+
+.SH REPORTING BUGS
+Report bugs to <elfutils-devel@sourceware.org> or https://sourceware.org/bugzilla/.

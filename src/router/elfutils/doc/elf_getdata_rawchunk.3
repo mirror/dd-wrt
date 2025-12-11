@@ -1,0 +1,140 @@
+.TH ELF_GETDATA_RAWCHUNK 3 2025-06-30 "Libelf" "Libelf Programmer's Manual"
+
+.SH NAME
+elf_getdata_rawchunk \- create a raw data descriptor from a file offset
+
+.SH SYNOPSIS
+.nf
+#include <libelf.h>
+
+.B Elf_Data * elf_getdata_rawchunk("Elf *elf", "int64_t offset", "size_t size", "Elf_Type type");
+.fi
+
+.SH DESCRIPTION
+The
+.BR elf_getdata_rawchunk ()
+function returns an
+.B Elf_Data
+descriptor that refers to a raw region of the ELF file, starting at the
+given file
+.I offset
+and spanning
+.I size
+bytes. This is used to access arbitrary byte ranges in the ELF file that may
+not correspond to any section or segment.
+
+The returned
+.B Elf_Data
+.I d_buf
+will be properly aligned for the requested
+.IR type .
+
+If the file’s byte order matches the host, and alignment permits, the raw data is
+returned as-is. If the file’s byte order differs, the buffer is converted into native
+byte order and aligned for direct access.  This behaves like
+.BR elf_getdata (),
+and not
+.BR elf_rawdata ().
+The contents of the return value's
+.I d_buf
+are a decoded representation.
+
+The returned data is not associated with any section or update mechanism. It will not
+be included in any output written by
+.BR elf_update (3).
+It is also owned by libelf and is valid until
+.BR elf_end ()
+is called on
+.IR elf .
+
+.SH PARAMETERS
+.TP
+.I elf
+A pointer to an
+.B Elf
+descriptor representing the ELF file.
+
+.TP
+.I offset
+The starting file offset in bytes. This must lie within the bounds of the file.
+
+.TP
+.I size
+The number of bytes to include in the data chunk, starting at
+.IR offset .
+
+.TP
+.I type
+An
+.B Elf_Type
+enumeration value indicating the intended interpretation of the data.  Values include:
+
+.RS
+.TP
+.B ELF_T_BYTE
+Raw bytes.
+.TP
+.B ELF_T_ADDR, ELF_T_OFF, ELF_T_HALF, ELF_T_WORD, ELF_T_XWORD, ELF_T_SWORD, ELF_T_SXWORD
+Integer and pointer types.
+.TP
+.B ELF_T_EHDR, ELF_T_SHDR, ELF_T_PHDR
+ELF file, section, and program headers.
+.TP
+.B ELF_T_SYM, ELF_T_DYN, ELF_T_REL, ELF_T_RELA, ELF_T_RELR
+Symbols and relocations.
+.TP
+.B ELF_T_NHDR, ELF_T_CHDR, ELF_T_NHDR8
+ELF note headers and compressed data headers.
+.TP
+.B ELF_T_VDEF, ELF_T_VDAUX, ELF_T_VNEED, ELF_T_VNAUX
+Versioning structures.
+.TP
+.B ELF_T_SYMINFO, ELF_T_MOVE, ELF_T_LIB
+Other ELF metadata.
+.TP
+.B ELF_T_GNUHASH
+GNU-style hash table.
+.TP
+.B ELF_T_AUXV
+Auxiliary vectors.
+.RE
+
+.SH RETURN VALUE
+Returns a pointer to an
+.B Elf_Data
+descriptor on success.
+
+Returns NULL if any arguments are invalid, or if memory allocation or file reading
+fails. An error code is set which can be retrieved with
+.BR elf_errmsg ().
+The result is cached and shared between repeated calls using the same arguments.
+
+.SH SEE ALSO
+.BR elf (3),
+.BR elf_errmsg (3),
+.BR elf_getdata (3),
+.BR elf_getscn (3),
+.BR elf_rawdata (3),
+.BR libelf (3),
+.BR elf (5)
+
+.SH ATTRIBUTES
+.TS
+allbox;
+lbx lb lb
+l l l.
+Interface	Attribute	Value
+T{
+.na
+.nh
+.BR elf_getdata_rawchunk ()
+T}	Thread safety	MT-Safe
+.TE
+
+.SH REPORTING BUGS
+Report bugs to <elfutils-devel@sourceware.org> or https://sourceware.org/bugzilla/.
+
+.SH HISTORY
+.B elf_getdata_rawchunk
+first appeared in elfutils 0.130.  This function is a elfutils libelf extension and
+may not be available in other libelf implementations.
