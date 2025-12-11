@@ -54,9 +54,9 @@ clean:
 
 install: all
 	install -d $(INSTALLDIR)/usr/sbin
-	install -d $(INSTALLDIR)/usr/bpf
+	install -d $(INSTALLDIR)/lib/bpf
 	install -D bridger $(INSTALLDIR)/usr/sbin/bridger
-	install -D bridger-bpf.o $(INSTALLDIR)/usr/bpf/bridger-bpf.o
+	install -D bridger-bpf.o $(INSTALLDIR)/lib/bpf/bridger-bpf.o
 
 bridger: $(OBJS)
 	$(CC) -o $@ $^ $(LDFLAGS)
