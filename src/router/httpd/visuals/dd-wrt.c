@@ -3239,6 +3239,19 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 		}
 	}
 
+	if (is_ath10k(prefix) || is_ath11k(prefix)) {
+		char wl_txbeacon[32];
+		sprintf(wl_txbeacon, "%s_beacon_tx_mode", prefix);
+		websWrite(wp, "<div class=\"setting\">\n");
+		show_caption(wp, "label", "wl_basic.beacon_tx_mode", NULL);
+		websWrite(wp, "<select name=\"%s\">\n", wl_txbeacon);
+		websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
+		websWrite(wp, "document.write(\"<option value=\\\"0\\\" %s >Staggered</option>\");\n",
+			  nvram_default_matchi(wl_txbeacon, 0, 0) ? "selected=\\\"selected\\\"" : "");
+		websWrite(wp, "document.write(\"<option value=\\\"1\\\" %s >Bursting</option>\");\n",
+			  nvram_default_matchi(wl_txbeacon, 1, 0) ? "selected=\\\"selected\\\"" : "");
+		websWrite(wp, "//]]>\n</script>\n</select>\n</div>\n");
+	}
 	showrtssettings(wp, prefix);
 	showairtimepolicy(wp, prefix, prefix);
 	if (!is_mac80211(prefix)) {
@@ -4935,6 +4948,20 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 			websWrite(wp, "//]]>\n</script>\n</select>\n</div>\n");
 			showRadio(wp, "wl_basic.ofdm_weak_det", wl_ofdm_weak_det);
 		}
+	}
+
+	if (is_ath10k(prefix) || is_ath11k(prefix)) {
+		char wl_txbeacon[32];
+		sprintf(wl_txbeacon, "%s_beacon_tx_mode", prefix);
+		websWrite(wp, "<div class=\"setting\">\n");
+		show_caption(wp, "label", "wl_basic.beacon_tx_mode", NULL);
+		websWrite(wp, "<select name=\"%s\">\n", wl_txbeacon);
+		websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
+		websWrite(wp, "document.write(\"<option value=\\\"0\\\" %s >Staggered</option>\");\n",
+			  nvram_default_matchi(wl_txbeacon, 0, 0) ? "selected=\\\"selected\\\"" : "");
+		websWrite(wp, "document.write(\"<option value=\\\"1\\\" %s >Bursting</option>\");\n",
+			  nvram_default_matchi(wl_txbeacon, 1, 0) ? "selected=\\\"selected\\\"" : "");
+		websWrite(wp, "//]]>\n</script>\n</select>\n</div>\n");
 	}
 
 	showrtssettings(wp, prefix);
