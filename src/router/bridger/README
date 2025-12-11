@@ -1,0 +1,4 @@
+Bridger is a Linux user space daemon which includes and eBPF tc classifier
+program that offloads the bridge network datapath.
+
+It depends on libubox and ubus from OpenWrt
