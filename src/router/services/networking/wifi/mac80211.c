@@ -762,6 +762,12 @@ void setupHostAP_generic_ath9k(const char *prefix, FILE *fp, int isrepeater, int
 	fprintf(fp, "tx_queue_data0_cwmin=3\n");
 	fprintf(fp, "tx_queue_data0_cwmax=7\n");
 	fprintf(fp, "tx_queue_data0_burst=1.5\n");
+	if (is_ath10k(prefix) || is_ath11k(prefix)) {
+		if (nvram_nmatch("1", "%s_beacon_tx_mode", prefix))
+			fprintf(fp, "beacon_tx_mode=2\n"); // burst mode
+		else
+			fprintf(fp, "beacon_tx_mode=1\n"); // staggered mode
+	}
 	const char *country = getIsoName(nvram_default_get("wlan0_regdomain", "UNITED_STATES"));
 	if (!country)
 		country = "DE";
