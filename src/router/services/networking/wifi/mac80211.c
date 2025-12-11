@@ -2279,6 +2279,13 @@ void setupSupplicant_ath9k(const char *prefix, char *ssidoverride, int isadhoc)
 		//              if (ismesh)
 		//                      fprintf(fp, "user_mpm=1\n");
 		fprintf(fp, "network={\n");
+
+		if (is_ath10k(prefix) || is_ath11k(prefix)) {
+			if (nvram_nmatch("1", "%s_beacon_tx_mode", prefix))
+				fprintf(fp, "\teacon_tx_mode=2\n"); // burst mode
+			else
+				fprintf(fp, "\tbeacon_tx_mode=1\n"); // staggered mode
+		}
 		char *netmode = nvram_nget("%s_net_mode", prefix);
 		char *channelbw = nvram_nget("%s_channelbw", prefix);
 		if (strcmp(netmode, "ac-only") && strcmp(netmode, "acn-mixed") && strcmp(netmode, "ax-only") &&
