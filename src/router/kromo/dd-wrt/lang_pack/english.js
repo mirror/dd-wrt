@@ -3253,6 +3253,7 @@ wl_basic.bg="B / G Mixed";
 wl_basic.rts="RTS Threshold";
 wl_basic.rtsvalue="Threshold";
 wl_basic.protmode="Protection Mode";
+wl_basic.beacon_tx_mode="Beacon TX Mode";
 wl_basic.legend2="Radio Time Restrictions";
 wl_basic.radio="Radio Status";
 wl_basic.radiotimer="Radio Scheduling";
