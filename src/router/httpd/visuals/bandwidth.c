@@ -159,10 +159,8 @@ skip:;
 		if (sta) {
 			snprintf(name, sizeof(name), "%s WAN (%s)", tran_string(buf, sizeof(buf), "share.wireless"),
 				 getNetworkLabel(wp, sta));
-		}
-		else
-			snprintf(name, sizeof(name), "WAN (%s)",
-				 getNetworkLabel(wp, wanport));
+		} else
+			snprintf(name, sizeof(name), "WAN (%s)", getNetworkLabel(wp, wanport));
 
 		show_bwif(wp, &ctx, wanport, name);
 
