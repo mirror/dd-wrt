@@ -78,7 +78,15 @@ else
 endif
 endif
 endif
-
+ifeq ($(CONFIG_OPENNDS),y)
+	echo "nft" >> $(TOP)/dnsmasq/newvariant
+endif
+ifeq ($(CONFIG_IPSET),y)
+	echo "ipset" >> $(TOP)/dnsmasq/newvariant
+endif
+ifneq ($(CONFIG_IPV6),y)
+	echo "noipv6" >> $(TOP)/dnsmasq/newvariant
+endif
 	if cmp -s $(TOP)/dnsmasq/newvariant $(TOP)/dnsmasq/oldvariant ; then \
 		echo "config unchanged. restore" ; \
 	else \
