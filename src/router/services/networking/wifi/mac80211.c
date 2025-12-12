@@ -2282,7 +2282,7 @@ void setupSupplicant_ath9k(const char *prefix, char *ssidoverride, int isadhoc)
 
 		if (is_ath10k(prefix) || is_ath11k(prefix)) {
 			if (nvram_nmatch("1", "%s_beacon_tx_mode", prefix))
-				fprintf(fp, "\teacon_tx_mode=2\n"); // burst mode
+				fprintf(fp, "\tbeacon_tx_mode=2\n"); // burst mode
 			else
 				fprintf(fp, "\tbeacon_tx_mode=1\n"); // staggered mode
 		}
