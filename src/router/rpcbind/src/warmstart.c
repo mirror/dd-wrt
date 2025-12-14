@@ -35,6 +35,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <stdio.h>
+#include <string.h>
 #include <rpc/rpc.h>
 #include <rpc/rpcb_prot.h>
 #include <rpc/xdr.h>

@@ -22,29 +22,20 @@
 /*
  * XXX for special case checks in check_callit.
  */
-#ifdef HAVE_RPCSVC_MOUNT_H
-#include <rpcsvc/mount.h>
-#include <rpcsvc/rquota.h>
-#include <rpcsvc/nfs_prot.h>
-#include <rpcsvc/yp.h>
-#include <rpcsvc/ypclnt.h>
-#include <rpcsvc/yppasswd.h>
-#else
-# define MOUNTPROC_MNT	1
-# define MOUNTPROC_UMNT	3
-# define NFS_PROGRAM	100003
-# define YPPROG		100004
-# define MOUNTPROG	100005
-# define YPBINDPROG	100007
-# define YPPASSWDPROG	100009
-# define RQUOTAPROG	100011
+#define MOUNTPROC_MNT	1
+#define MOUNTPROC_UMNT	3
+#define NFS_PROGRAM	100003
+#define YPPROG		100004
+#define MOUNTPROG	100005
+#define YPBINDPROG	100007
+#define YPPASSWDPROG	100009
+#define RQUOTAPROG	100011
 
-# define YPBINDPROC_SETDOM	2
-# define YPPROC_MATCH	3
-# define YPPROC_FIRST	4
-# define YPPROC_NEXT	5
-# define YPPROC_ALL	8
-#endif
+#define YPBINDPROC_SETDOM	2
+#define YPPROC_MATCH	3
+#define YPPROC_FIRST	4
+#define YPPROC_NEXT	5
+#define YPPROC_ALL	8
 
 #include "rpcbind.h"
 
@@ -154,7 +145,7 @@ is_loopback(struct netbuf *nbuf)
 #ifdef RPCBIND_DEBUG
 		if (debugging)
 			  xlog(LOG_DEBUG,
-				  "Checking caller's adress (port = %d)\n",
+				  "Checking caller's address (port = %d)\n",
 				  ntohs(sin->sin_port));
 #endif
 	       	return (sin->sin_addr.s_addr == htonl(INADDR_LOOPBACK));
@@ -166,7 +157,7 @@ is_loopback(struct netbuf *nbuf)
 #ifdef RPCBIND_DEBUG
 		if (debugging)
 			  xlog(LOG_DEBUG,
-				  "Checking caller's adress (port = %d)\n",
+				  "Checking caller's address (port = %d)\n",
 				  ntohs(sin6->sin6_port));
 #endif
 		return (IN6_IS_ADDR_LOOPBACK(&sin6->sin6_addr) ||
@@ -355,7 +346,7 @@ deny:
 	logit(deny_severity, sa, args->rmt_proc, args->rmt_prog,
 	    ": indirect call not allowed");
 #else
-	logit(0, sa, args->rmt_proc, args->rmt_prog,
+	logit(LOG_AUTH|LOG_WARNING, sa, args->rmt_proc, args->rmt_prog,
 	    ": indirect call not allowed");
 #endif
 	return 0;

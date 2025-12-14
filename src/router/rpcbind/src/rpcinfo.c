@@ -311,29 +311,17 @@ main (int argc, char **argv)
   return (0);
 }
 
+/* Evaluate to actual length of the `sockaddr_un' structure, whether
+ * abstract or not.
+ */
+#include <stddef.h>
+#define SUN_LEN_A(ptr) (offsetof(struct sockaddr_un, sun_path)	\
+			+ 1 + strlen((ptr)->sun_path + 1))
+
 static CLIENT *
 local_rpcb (rpcprog_t prog, rpcvers_t vers)
 {
-#if 0
-  void *localhandle;
-  struct netconfig *nconf;
   CLIENT *clnt;
-
-  localhandle = setnetconfig();
-  while ((nconf = getnetconfig(localhandle)) != NULL) {
-    if (nconf->nc_protofmly != NULL &&
-	strcmp(nconf->nc_protofmly, NC_LOOPBACK) == 0)
-      break;
-  }
-  if (nconf == NULL) {
-    warnx("getnetconfig: %s", nc_sperror());
-    return (NULL);
-  }
-
-  clnt = clnt_tp_create (/* "localhost"*/ NULL, prog, vers, nconf);
-  endnetconfig(localhandle);
-  return clnt;
-#else
   struct netbuf nbuf;
   struct sockaddr_un sun;
   int sock;
@@ -344,20 +332,31 @@ local_rpcb (rpcprog_t prog, rpcvers_t vers)
     return NULL;
 
   sun.sun_family = AF_LOCAL;
+
+#ifdef _PATH_RPCBINDSOCK_ABSTRACT
+  memcpy(sun.sun_path, _PATH_RPCBINDSOCK_ABSTRACT,
+         sizeof(_PATH_RPCBINDSOCK_ABSTRACT));
+  nbuf.len = SUN_LEN_A (&sun);
+  nbuf.maxlen = sizeof (struct sockaddr_un);
+  nbuf.buf = &sun;
+
+  clnt = clnt_vc_create (sock, &nbuf, prog, vers, 0, 0);
+  if (clnt)
+    return clnt;
+#endif
+
   strcpy (sun.sun_path, _PATH_RPCBINDSOCK);
   nbuf.len = SUN_LEN (&sun);
   nbuf.maxlen = sizeof (struct sockaddr_un);
   nbuf.buf = &sun;
 
-  return clnt_vc_create (sock, &nbuf, prog, vers, 0, 0);
-#endif
+  clnt = clnt_vc_create (sock, &nbuf, prog, vers, 0, 0);
+  return clnt;
 }
 
 #ifdef PORTMAP
 static enum clnt_stat
-ip_ping_one(client, vers)
-     CLIENT *client;
-     u_int32_t vers;
+ip_ping_one(CLIENT * client, u_int32_t vers)
 {
   struct timeval to = { .tv_sec = 10, .tv_usec = 0 };
 
@@ -375,11 +374,7 @@ ip_ping_one(client, vers)
  * version 0 calls succeeds, it tries for MAXVERS call and repeats the same.
  */
 static void
-ip_ping (portnum, proto, argc, argv)
-     u_short portnum;
-     char *proto;
-     int argc;
-     char **argv;
+ip_ping (u_short portnum, char *proto, int argc, char **argv)
 {
   CLIENT *client;
   enum clnt_stat rpc_stat;
@@ -479,9 +474,7 @@ ip_ping (portnum, proto, argc, argv)
  * Dump all the portmapper registerations
  */
 static void
-pmapdump (argc, argv)
-     int argc;
-     char **argv;
+pmapdump (int argc, char **argv)
 {
   struct pmaplist *head = NULL;
   struct timeval minutetimeout;
@@ -580,11 +573,8 @@ pmapdump (argc, argv)
  * the address using rpcb_getaddr.
  */
 CLIENT *
-ip_getclient(hostname, prognum, versnum, proto)
-     const char *hostname;
-     rpcprog_t prognum;
-     rpcvers_t versnum;
-     const char *proto;
+ip_getclient(const char *hostname, rpcprog_t prognum, 
+	rpcvers_t versnum, const char *proto)
 {
   void *handle;
   enum clnt_stat saved_stat = RPC_SUCCESS;
@@ -673,10 +663,10 @@ sa_len(struct sockaddr *sa)
  */
 
  /*ARGSUSED*/ static bool_t
-reply_proc (res, who, nconf)
-     void *res;			/* Nothing comes back */
-     struct netbuf *who;	/* Who sent us the reply */
-     struct netconfig *nconf;	/* On which transport the reply came */
+reply_proc (
+     void *res,			/* Nothing comes back */
+     struct netbuf *who,	/* Who sent us the reply */
+     struct netconfig *nconf)	/* On which transport the reply came */
 {
   char *uaddr;
   char hostbuf[NI_MAXHOST];
@@ -693,18 +683,16 @@ reply_proc (res, who, nconf)
     }
   if (!(uaddr = taddr2uaddr (nconf, who)))
     {
-      uaddr = UNKNOWN;
+      printf ("%s\t%s\n", UNKNOWN, hostname);
+    } else {
+      printf ("%s\t%s\n", uaddr, hostname);
+      free ((char *) uaddr);
     }
-  printf ("%s\t%s\n", uaddr, hostname);
-  if (strcmp (uaddr, UNKNOWN))
-    free ((char *) uaddr);
   return (FALSE);
 }
 
 static void
-brdcst (argc, argv)
-     int argc;
-     char **argv;
+brdcst (int argc, char **argv)
 {
   enum clnt_stat rpc_stat;
   u_long prognum, vers;
@@ -730,9 +718,7 @@ brdcst (argc, argv)
 }
 
 static bool_t
-add_version (rs, vers)
-     struct rpcbdump_short *rs;
-     u_long vers;
+add_version (struct rpcbdump_short *rs, u_long vers)
 {
   struct verslist *vl;
 
@@ -751,9 +737,7 @@ add_version (rs, vers)
 }
 
 static bool_t
-add_netid (rs, netid)
-     struct rpcbdump_short *rs;
-     char *netid;
+add_netid (struct rpcbdump_short *rs, char *netid)
 {
   struct netidlist *nl;
 
@@ -772,11 +756,11 @@ add_netid (rs, netid)
 }
 
 static void
-rpcbdump (dumptype, netid, argc, argv)
-     int dumptype;
-     char *netid;
-     int argc;
-     char **argv;
+rpcbdump (
+     int dumptype,
+     char *netid,
+     int argc,
+     char **argv)
 {
   rpcblist_ptr head = NULL;
   struct timeval minutetimeout;
@@ -973,6 +957,7 @@ rpcbdump (dumptype, netid, argc, argv)
 	("   program version(s) netid(s)                         service     owner\n");
       for (rs = rs_head; rs; rs = rs->next)
 	{
+	  size_t netidmax = sizeof(buf) - 1;
 	  char *p = buf;
 
 	  printf ("%10ld  ", rs->prog);
@@ -985,12 +970,22 @@ rpcbdump (dumptype, netid, argc, argv)
 	    }
 	  printf ("%-10s", buf);
 	  buf[0] = '\0';
-	  for (nl = rs->nlist; nl; nl = nl->next)
-	    {
-	      strcat (buf, nl->netid);
-	      if (nl->next)
-		strcat (buf, ",");
-	    }
+
+          for (nl = rs->nlist; nl; nl = nl->next)
+            {
+              strncat (buf, nl->netid, netidmax);
+              if (strlen (nl->netid) < netidmax)
+                netidmax -= strlen(nl->netid);
+              else
+                break;
+
+              if (nl->next && netidmax > 1)
+                {
+                  strncat (buf, ",", netidmax);
+                  netidmax --;
+                }
+            }
+
 	  printf ("%-32s", buf);
 	  rpc = getrpcbynumber (rs->prog);
 	  if (rpc)
@@ -1009,10 +1004,10 @@ error:fprintf (stderr, "rpcinfo: no memory\n");
 static char nullstring[] = "\000";
 
 static void
-rpcbaddrlist (netid, argc, argv)
-     char *netid;
-     int argc;
-     char **argv;
+rpcbaddrlist (
+     char *netid,
+     int argc,
+     char **argv)
 {
   rpcb_entry_list_ptr head = NULL;
   struct timeval minutetimeout;
@@ -1131,9 +1126,7 @@ rpcbaddrlist (netid, argc, argv)
  * monitor rpcbind
  */
 static void
-rpcbgetstat (argc, argv)
-     int argc;
-     char **argv;
+rpcbgetstat (int argc, char **argv)
 {
   rpcb_stat_byvers inf;
   struct timeval minutetimeout;
@@ -1367,10 +1360,10 @@ rpcbgetstat (argc, argv)
  * Delete registeration for this (prog, vers, netid)
  */
 static void
-deletereg (netid, argc, argv)
-     char *netid;
-     int argc;
-     char **argv;
+deletereg (
+     char *netid,
+     int argc,
+     char **argv)
 {
   struct netconfig *nconf = NULL;
 
@@ -1402,11 +1395,11 @@ deletereg (netid, argc, argv)
  * Exit if cannot create handle.
  */
 static CLIENT *
-clnt_addr_create (address, nconf, prog, vers)
-     char *address;
-     struct netconfig *nconf;
-     u_long prog;
-     u_long vers;
+clnt_addr_create (
+     char *address,
+     struct netconfig *nconf,
+     u_long prog,
+     u_long vers)
 {
   CLIENT *client;
   static struct netbuf *nbuf;
@@ -1444,11 +1437,11 @@ clnt_addr_create (address, nconf, prog, vers)
  * sent directly to the services themselves.
  */
 static void
-addrping (address, netid, argc, argv)
-     char *address;
-     char *netid;
-     int argc;
-     char **argv;
+addrping (
+     char *address,
+     char *netid,
+     int argc,
+     char **argv)
 {
   CLIENT *client;
   struct timeval to;
@@ -1571,10 +1564,10 @@ addrping (address, netid, argc, argv)
  * then sent directly to the services themselves.
  */
 static void
-progping (netid, argc, argv)
-     char *netid;
-     int argc;
-     char **argv;
+progping (
+     char *netid,
+     int argc,
+     char **argv)
 {
   CLIENT *client;
   struct timeval to;
@@ -1717,8 +1710,7 @@ usage ()
 }
 
 static u_long
-getprognum (arg)
-     char *arg;
+getprognum (char *arg)
 {
   char *strptr;
   register struct rpcent *rpc;
@@ -1749,8 +1741,7 @@ getprognum (arg)
 }
 
 static u_long
-getvers (arg)
-     char *arg;
+getvers (char *arg)
 {
   char *strptr;
   register u_long vers;
@@ -1772,10 +1763,10 @@ getvers (arg)
  * a good error message.
  */
 static int
-pstatus (client, prog, vers)
-     register CLIENT *client;
-     u_long prog;
-     u_long vers;
+pstatus (
+     register CLIENT *client,
+     u_long prog,
+     u_long vers)
 {
   struct rpc_err rpcerr;
 
@@ -1794,10 +1785,10 @@ pstatus (client, prog, vers)
 }
 
 static CLIENT *
-clnt_rpcbind_create (host, rpcbversnum, targaddr)
-     char *host;
-     int rpcbversnum;
-     struct netbuf **targaddr;
+clnt_rpcbind_create (
+     char *host,
+     int rpcbversnum,
+     struct netbuf **targaddr)
 {
   static char *tlist[3] = {
     "circuit_n", "circuit_v", "datagram_v"
@@ -1830,11 +1821,11 @@ clnt_rpcbind_create (host, rpcbversnum, targaddr)
 }
 
 static CLIENT *
-getclnthandle (host, nconf, rpcbversnum, targaddr)
-     char *host;
-     struct netconfig *nconf;
-     u_long rpcbversnum;
-     struct netbuf **targaddr;
+getclnthandle (
+     char *host,
+     struct netconfig *nconf,
+     u_long rpcbversnum,
+     struct netbuf **targaddr)
 {
   struct netbuf addr;
   struct addrinfo hints, *res;
@@ -1886,9 +1877,7 @@ getclnthandle (host, nconf, rpcbversnum, targaddr)
 }
 
 static void
-print_rmtcallstat (rtype, infp)
-     int rtype;
-     rpcb_stat *infp;
+print_rmtcallstat (int rtype, rpcb_stat *infp)
 {
   register rpcbs_rmtcalllist_ptr pr;
   struct rpcent *rpc;
@@ -1912,9 +1901,7 @@ print_rmtcallstat (rtype, infp)
 }
 
 static void
-print_getaddrstat (rtype, infp)
-     int rtype;
-     rpcb_stat *infp;
+print_getaddrstat (int rtype, rpcb_stat *infp)
 {
   rpcbs_addrlist_ptr al;
   register struct rpcent *rpc;
@@ -1933,8 +1920,7 @@ print_getaddrstat (rtype, infp)
 }
 
 static char *
-spaces (howmany)
-     int howmany;
+spaces (int howmany)
 {
   static char space_array[] =	/* 64 spaces */
     "                                                                ";

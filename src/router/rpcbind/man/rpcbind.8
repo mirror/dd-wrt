@@ -11,7 +11,7 @@
 .Nd universal addresses to RPC program number mapper
 .Sh SYNOPSIS
 .Nm
-.Op Fl adhiLls
+.Op Fl adfhilsvw
 .Sh DESCRIPTION
 The
 .Nm
@@ -86,9 +86,16 @@ checks are shown in detail.
 Do not fork and become a background process.
 .It Fl h
 Specify specific IP addresses to bind to for UDP requests.
-This option
-may be specified multiple times and is typically necessary when running
-on a multi-homed host.
+This option may be specified multiple times and can be used to
+restrict the interfaces rpcbind will respond to.
+When specifying IP addresses with
+.Fl h ,
+.Nm
+will automatically add
+.Li 127.0.0.1
+and if IPv6 is enabled,
+.Li ::1
+to the list.
 If no
 .Fl h
 option is specified,
@@ -99,14 +106,19 @@ which could lead to problems on a multi-homed host due to
 .Nm
 returning a UDP packet from a different IP address than it was
 sent to.
-Note that when specifying IP addresses with
-.Fl h ,
+Note that when
 .Nm
-will automatically add
-.Li 127.0.0.1
-and if IPv6 is enabled,
-.Li ::1
-to the list.
+is controlled via systemd's socket activation,
+the
+.Fl h
+option is ignored. In this case, you need to edit
+the
+.Nm ListenStream
+and
+.Nm ListenDgram
+definitions in
+.Nm /usr/lib/systemd/system/rpcbind.socket
+instead.
 .It Fl i
 .Dq Insecure
 mode.
@@ -129,6 +141,10 @@ to use non-privileged ports for outgoing connections, preventing non-privileged
 clients from using
 .Nm
 to connect to services from a privileged port.
+.It Fl v
+Print
+.Nm
+version and builtin configuration and exit.
 .It Fl w
 Cause
 .Nm
@@ -138,6 +154,14 @@ starts up. The state file is created when
 .Nm
 terminates.
 .El
+.Sh FILES
+The
+.Nm
+utility tries to load configuration file in following order:
+.Bd -literal
+.Pa /etc/rpcbind.conf
+.Pa /etc/default/rpcbind
+.Pa /etc/sysconfig/rpcbind
 .Sh NOTES
 All RPC servers must be restarted if
 .Nm
