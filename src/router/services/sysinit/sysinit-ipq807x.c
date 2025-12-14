@@ -428,7 +428,7 @@ static void init_skb(int profile, int maple)
 	int max_spare_skbs = 256;
 	int skb_recycler_enable = 1;
 
-	if (maple && profile == 512) {
+	if (profile == 512) {
 		max_skbs = 512;
 		max_spare_skbs = 128;
 		skb_recycler_enable = 0;
