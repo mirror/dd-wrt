@@ -1,4 +1,12 @@
 ------------------------------------------------------------------------
+r8570 | brainslayer | 2025-12-15 04:00:38 +0700 (Mon, 15 Dec 2025) | 1 line
+
+reduce memory footprint for 512 mb devices
+------------------------------------------------------------------------
+r8569 | brainslayer | 2025-12-15 04:00:12 +0700 (Mon, 15 Dec 2025) | 1 line
+
+reduce memory footprint for 512 mb devices
+------------------------------------------------------------------------
 r8568 | brainslayer | 2025-12-15 00:05:09 +0700 (Mon, 15 Dec 2025) | 1 line
 
 works well with newer firmwares
