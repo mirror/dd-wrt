@@ -405,7 +405,7 @@ static __always_inline enum kmalloc_cache_type kmalloc_type(gfp_t flags)
  * Callers where !size_is_constant should only be test modules, where runtime
  * overheads of __kmalloc_index() can be tolerated.  Also see kmalloc_slab().
  */
-static __always_inline unsigned int __kmalloc_index(size_t size,
+static inline __attribute__((__always_inline__)) unsigned int __kmalloc_index(size_t size,
 						    bool size_is_constant)
 {
 	if (!size)
