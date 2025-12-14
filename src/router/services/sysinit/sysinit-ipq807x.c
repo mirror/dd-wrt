@@ -1468,8 +1468,8 @@ static void load_ath11k_internal(int profile, int pci, int nss, int frame_mode, 
 			profile = 1024;
 			nvram_set("mem_profile", "1024");
 		}
-		//		if (profile == 512)
-		//			strcpy(postfix, "-512");
+		if (profile == 512)
+			strcpy(postfix, "-512");
 		sprintf(driver_ath11k, "ath11k%s", postfix);
 		sprintf(driver_ath11k_ahb, "ath11k_ahb%s", postfix);
 		sprintf(driver_ath11k_pci, "ath11k_pci%s", postfix);
