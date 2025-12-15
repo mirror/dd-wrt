@@ -1464,10 +1464,6 @@ static void load_ath11k_internal(int profile, int pci, int nss, int frame_mode, 
 		int od = nvram_default_geti("power_overdrive", 0);
 		char overdrive[32];
 		sprintf(overdrive, "poweroffset=%d", od);
-		if (!nss) {
-			profile = 1024;
-			nvram_set("mem_profile", "1024");
-		}
 		if (profile == 512)
 			strcpy(postfix, "-512");
 		sprintf(driver_ath11k, "ath11k%s", postfix);
