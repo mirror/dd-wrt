@@ -230,6 +230,7 @@ void start_sysinit(void)
 	 */
 	stime(&tm);
 	nvram_set("wl0_ifname", "wlan0");
+	init_skb_recycler(1024);
 
 	return;
 }

@@ -180,6 +180,7 @@ void start_sysinit(void)
 	nvram_set("wl0_ifname", "wlan0");
 	nvram_set("wl1_ifname", "wlan1");
 	nvram_set("clkfreq", "1700");
+	init_skb_recycler(1024);
 }
 
 void start_resetleds(void)

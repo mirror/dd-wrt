@@ -422,24 +422,6 @@ static void set_memprofile(int cpus, int cores, int profile)
 	sysprintf("echo %d > /proc/sys/dev/nss/rps/hash_bitmap", (1 << cpus) - 1);
 }
 
-static void init_skb(int profile, int maple)
-{
-	int max_skbs = 1024;
-	int max_spare_skbs = 256;
-	int skb_recycler_enable = 1;
-
-	if (profile == 512) {
-		max_skbs = 512;
-		max_spare_skbs = 128;
-		skb_recycler_enable = 0;
-	}
-	sysprintf("echo %d > /proc/net/skb_recycler/max_skbs", max_skbs);
-	sysprintf("echo %d > /proc/net/skb_recycler/max_spare_skbs", max_spare_skbs);
-	sysprintf("echo %d > /proc/net/skb_recycler/skb_recycler_enable", skb_recycler_enable);
-	if (!skb_recycler_enable)
-		sysprintf("echo %d > /proc/net/skb_recycler/flush", 1);
-}
-
 static int use_mesh(void)
 {
 	int count;
@@ -535,9 +517,9 @@ void loadnss(const char *module, const char *type)
 	insmod(driver);
 }
 
-static void load_nss(int profile, int maple, int cores, char *type)
+static void load_nss(int profile, int cores, char *type)
 {
-	init_skb(profile, maple);
+	init_skb_recycler(profile);
 	loadnss("qca-ssdk", type);
 
 	char driver[64];
@@ -595,7 +577,7 @@ static void load_nss_ipq60xx(int profile)
 	nvram_default_get("nss", "1");
 	//	if (use_mesh())
 	//		profile = 1024;
-	load_nss(profile, 0, 4, "ipq60xx");
+	load_nss(profile, 4, "ipq60xx");
 }
 
 static void load_nss_ipq50xx(int profile)
@@ -603,7 +585,7 @@ static void load_nss_ipq50xx(int profile)
 	nvram_default_get("nss", "0");
 	//	if (use_mesh())
 	//		profile = 1024;
-	load_nss(profile, 1, 2, "ipq50xx");
+	load_nss(profile, 2, "ipq50xx");
 }
 
 static void load_nss_ipq807x(int profile)
@@ -611,7 +593,7 @@ static void load_nss_ipq807x(int profile)
 	nvram_default_get("nss", "1");
 	//	if (use_mesh())
 	//		profile = 1024;
-	load_nss(profile, 0, 4, "ipq807x");
+	load_nss(profile, 4, "ipq807x");
 }
 
 void start_setup_affinity(void)

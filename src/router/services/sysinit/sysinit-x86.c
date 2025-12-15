@@ -311,6 +311,7 @@ void start_sysinit(void)
 	 */
 	stime(&tm);
 	eval("hwclock", "-s", "-u");
+	init_skb_recycler(1024);
 	return;
 }
 

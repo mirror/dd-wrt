@@ -69,6 +69,24 @@ static void set_systunes(void)
 #endif
 }
 
+void init_skb_recycler(int profile)
+{
+	int max_skbs = 1024;
+	int max_spare_skbs = 256;
+	int skb_recycler_enable = 1;
+
+	if (profile == 512) {
+		max_skbs = 512;
+		max_spare_skbs = 128;
+		skb_recycler_enable = 0;
+	}
+	sysprintf("echo %d > /proc/net/skb_recycler/max_skbs", max_skbs);
+	sysprintf("echo %d > /proc/net/skb_recycler/max_spare_skbs", max_spare_skbs);
+	sysprintf("echo %d > /proc/net/skb_recycler/skb_recycler_enable", skb_recycler_enable);
+	if (!skb_recycler_enable)
+		sysprintf("echo %d > /proc/net/skb_recycler/flush", 1);
+}
+
 static void set_tcp_params(void)
 {
 	start_conntrack();
