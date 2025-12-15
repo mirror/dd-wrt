@@ -23,6 +23,10 @@
 #include "skbuff_debug.h"
 #define CPU_NAME_SIZE 7
 
+#define mem_tracer_update_caller
+#define  mem_debug_update_skb(skb)
+#define  mem_debug_update_skb_list(skb_list)
+
 static struct proc_dir_entry *proc_net_skbrecycler;
 static struct proc_dir_entry *proc_net_skbrecycler_per_cpu;
 
