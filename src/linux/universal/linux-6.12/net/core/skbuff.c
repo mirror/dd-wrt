@@ -103,8 +103,6 @@
 static struct kmem_cache *skbuff_ext_cache __ro_after_init;
 #endif
 
-struct kmem_cache *skb_data_cache;
-
 /*
  * For low memory profile, NSS_SKB_FIXED_SIZE_2K is enabled and
  * CONFIG_SKB_RECYCLER is disabled. For premium and enterprise profile
@@ -1669,7 +1667,7 @@ void consume_skb(struct sk_buff *skb)
 	 * have done in __kfree_skb (above and beyond the skb_release_head_state
 	 * that we already did).
 	 */
-	skb_release_data(skb, SKB_CONSUMED, false);
+	skb_release_data(skb, SKB_CONSUMED);
 	kfree_skbmem(skb);
 }
 EXPORT_SYMBOL(consume_skb);
@@ -1706,7 +1704,7 @@ void consume_skb_list_fast(struct sk_buff_head *skb_list)
 		 * that we already did).
 		 */
 		if (likely(skb->head))
-			skb_release_data(skb, SKB_CONSUMED, false);
+			skb_release_data(skb, SKB_CONSUMED);
 
 		kfree_skbmem(skb);
 	}
@@ -5389,7 +5387,7 @@ static void skb_extensions_init(void) {}
 void __init skb_init(void)
 {
 
-	skb_data_cache = kmem_cache_create_usercopy("skb_data_cache",
+	net_hotdata.skb_data_cache = kmem_cache_create_usercopy("skb_data_cache",
 						SKB_DATA_CACHE_SIZE,
 						0, SLAB_PANIC, 0, SKB_DATA_CACHE_SIZE,
 						NULL);

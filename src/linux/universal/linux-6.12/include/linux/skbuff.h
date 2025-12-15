@@ -1320,8 +1320,7 @@ void check_skb_fast_recyclable(struct sk_buff *skb);
 void __consume_stateless_skb(struct sk_buff *skb);
 void  __kfree_skb(struct sk_buff *skb);
 extern void kfree_skbmem(struct sk_buff *skb);
-extern void skb_release_data(struct sk_buff *skb, enum skb_drop_reason reason,
-			     bool napi_safe);
+extern void skb_release_data(struct sk_buff *skb, enum skb_drop_reason reason);
 
 void kfree_skb_partial(struct sk_buff *skb, bool head_stolen);
 bool skb_try_coalesce(struct sk_buff *to, struct sk_buff *from,

@@ -18,7 +18,6 @@
 #include "skbuff_recycle.h"
 #include <linux/proc_fs.h>
 #include <linux/string.h>
-#include <linux/debug_mem_usage.h>
 #include <linux/kmemleak.h>
 #include "skbuff_debug.h"
 #define CPU_NAME_SIZE 7
@@ -76,12 +75,9 @@ do { \
  */
 void skb_recycler_clear_flags(struct sk_buff *skb)
 {
-	skb->fast_xmit = 0;
 	skb->is_from_recycler = 0;
 	skb->fast_recycled = 0;
 	skb->recycled_for_ds = 0;
-	skb->fast_qdisc = 0;
-	skb->int_pri = 0;
 }
 
 inline struct sk_buff *skb_recycler_alloc(struct net_device *dev,
@@ -439,7 +435,7 @@ static void skb_recycler_free_skb(struct sk_buff_head *list)
 #if (LINUX_VERSION_CODE < KERNEL_VERSION(6, 6, 0))
 		skb_release_data(skb);
 #else
-		skb_release_data(skb, SKB_CONSUMED, false);
+		skb_release_data(skb, SKB_CONSUMED);
 #endif
 		kfree_skbmem(skb);
 		/*
@@ -777,7 +773,7 @@ static int proc_skb_count_per_cpu_show(struct seq_file *seq, void *v)
 	int cpu;
 	int len;
 
-	cpu = (int *)seq->private;
+	cpu = (int)seq->private;
 	len = skb_queue_len(&per_cpu(recycle_list, cpu));
 	seq_printf(seq, "recycle_list[%d]: %d\n", cpu, len);
 
@@ -802,7 +798,7 @@ static const struct proc_ops proc_skb_count_per_cpu_fops = {
 
 static int skb_recycler_per_cpu_show(struct seq_file *seq, void *v, bool is_spare_skb)
 {
-	int cpu = (int *)seq->private;
+	int cpu = (int)seq->private;
 
 	if (is_spare_skb) {
 		seq_printf(seq, "%d\n", skb_recycler_max_spare_skbs_core[cpu]);
@@ -832,7 +828,7 @@ static ssize_t skb_recycler_per_cpu_write(struct file *file,
 	ret = kstrtoint(strstrip(buffer), 10, &max);
 	if (ret == 0 && max >= 0) {
 		seq = file->private_data;
-		cpu = (int *)seq->private;
+		cpu = (int)seq->private;
 
 		if (is_spare_skb) {
 			skb_recycler_max_spare_skbs_core[cpu] = max;
