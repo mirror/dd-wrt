@@ -837,8 +837,9 @@ static ssize_t skb_recycler_per_cpu_write(struct file *file,
 		if (is_spare_skb) {
 			skb_recycler_max_spare_skbs_core[cpu] = max;
 		} 
+		else 
 #endif
-		else {
+		{
 			skb_recycler_max_skbs_core[cpu] = max;
 		}
 	}
@@ -1008,9 +1009,9 @@ void skb_recycler_print_all_lists(void)
 {
 	unsigned long flags;
 	int cpu;
+	struct sk_buff_head *h;
 #ifdef CONFIG_SKB_RECYCLER_MULTI_CPU
 	int i;
-	struct sk_buff_head *h;
 
 	cpu = get_cpu();
 	spin_lock_irqsave(&glob_recycler.lock, flags);
