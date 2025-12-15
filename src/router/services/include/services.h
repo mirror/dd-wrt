@@ -283,6 +283,7 @@ void network_delay(const char *service);
 void set_stp_state(char *bridge, char *stp);
 
 char *getMacAddr(char *ifname, char *mac, size_t len);
+void init_skb_recycler(int profile);
 
 #ifdef HAVE_ATH9K
 void deconfigure_single_ath9k(int count);
