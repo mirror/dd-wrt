@@ -800,9 +800,12 @@ static int skb_recycler_per_cpu_show(struct seq_file *seq, void *v, bool is_spar
 {
 	int cpu = (int)seq->private;
 
+#ifdef CONFIG_SKB_RECYCLER_MULTI_CPU
 	if (is_spare_skb) {
 		seq_printf(seq, "%d\n", skb_recycler_max_spare_skbs_core[cpu]);
-	} else {
+	} else 
+#endif
+	{
 		seq_printf(seq, "%d\n", skb_recycler_max_skbs_core[cpu]);
 	}
 
@@ -830,9 +833,12 @@ static ssize_t skb_recycler_per_cpu_write(struct file *file,
 		seq = file->private_data;
 		cpu = (int)seq->private;
 
+#ifdef CONFIG_SKB_RECYCLER_MULTI_CPU
 		if (is_spare_skb) {
 			skb_recycler_max_spare_skbs_core[cpu] = max;
-		} else {
+		} 
+#endif
+		else {
 			skb_recycler_max_skbs_core[cpu] = max;
 		}
 	}
