@@ -58,6 +58,7 @@
 
 #include "devices/ethernet.c"
 #include "devices/wireless.c"
+#include <services.h>
 
 #define sys_reboot()                           \
 	{                                      \

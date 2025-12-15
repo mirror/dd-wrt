@@ -49,6 +49,7 @@
 #include <linux/sockios.h>
 #include <linux/mii.h>
 #include "devices/wireless.c"
+#include <services.h>
 
 void set_envtools(int mtd, char *offset, char *envsize, char *blocksize, int nums, char *offset2)
 {

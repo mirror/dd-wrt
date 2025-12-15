@@ -36,6 +36,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <airbag.h>
+#include <services.h>
 
 int isregistered_real(void);
 

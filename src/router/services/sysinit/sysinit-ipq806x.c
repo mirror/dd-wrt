@@ -49,6 +49,7 @@
 #include <linux/sockios.h>
 #include <linux/mii.h>
 #include "devices/wireless.c"
+#include <services.h>
 
 #define ALT_PART_NAME_LENGTH 16
 struct per_part_info {

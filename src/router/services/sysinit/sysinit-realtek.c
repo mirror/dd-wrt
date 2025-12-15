@@ -53,6 +53,7 @@
 #include <linux/mii.h>
 #include "devices/wireless.c"
 #include "devices/ethtools.c"
+#include <services.h>
 
 void set_envtools(int mtd, char *offset, char *envsize, char *blocksize, int nums)
 {
