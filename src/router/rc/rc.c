@@ -223,6 +223,18 @@ static int get_lanip_main(int argc, char **argv)
 	return 0;
 }
 
+static int get_langw_main(int argc, char **argv)
+{
+	fprintf(stdout, "%s", get_lan_gateway());
+	return 0;
+}
+
+static int get_lannm_main(int argc, char **argv)
+{
+	fprintf(stdout, "%s", get_lan_netmask());
+	return 0;
+}
+
 static int get_nfmark_main(int argc, char **argv)
 {
 	if (argc < 3) {
@@ -235,6 +247,19 @@ static int get_nfmark_main(int argc, char **argv)
 	}
 	char buffer[32];
 	fprintf(stdout, "%s\n", get_NFServiceMark(buffer, sizeof(buffer), argv[1], atol(argv[2])));
+	return 0;
+}
+
+static int getbridge_main(int argc, char *argv[])
+{
+	if (argc < 2) {
+		fprintf(stderr, "syntax: getbridge [ifname]\n");
+		return -1;
+	}
+	char tmp[256];
+	char *bridge = getBridge(argv[1], tmp);
+
+	fprintf(stdout, "%s\n", bridge);
 	return 0;
 }
 
@@ -303,7 +328,7 @@ static struct MAIN maincalls[] = {
 	{ "rtkswitch", "rtkswitch", NULL },
 #endif
 	{ "setuserpasswd", "setuserpasswd", NULL },
-	{ "getbridge", "getbridge", NULL },
+	{ "getbridge", "getbridge_main", NULL },
 	{ "getmask", "getmask", NULL },
 	{ "getipmask", "getipmask", NULL },
 //	{ "stopservices", NULL, stop_services_main },
@@ -326,6 +351,8 @@ static struct MAIN maincalls[] = {
 	{ "get_wanface", NULL, get_wanface_main },
 	{ "get_wanip", NULL, get_wanip_main },
 	{ "get_lanip", NULL, get_lanip_main },
+	{ "get_langw", NULL, get_langw_main },
+	{ "get_lan_netmask", NULL, get_lannm_main },
 #ifndef HAVE_XSCALE
 // {"ledtool", NULL, &ledtool_main},
 #endif
