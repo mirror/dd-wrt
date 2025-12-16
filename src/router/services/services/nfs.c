@@ -174,7 +174,9 @@ void start_nfs(void)
 
 void stop_nfs(void)
 {
+	eval("rpc.nfsd", "0");
 	eval("exportfs", "-a", "-u");
+	eval("exportfs", "-f");
 }
 #endif
 #ifdef TEST

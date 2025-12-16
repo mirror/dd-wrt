@@ -663,34 +663,6 @@ int ipfmt_main(int argc, char *argv[])
 	return 0;
 }
 
-int get_wanface_main(int argc, char **argv)
-{
-	char wan_if_buffer[33];
-	fprintf(stdout, "%s", safe_get_wan_face(wan_if_buffer));
-	return 0;
-}
-
-int get_wanip_main(int argc, char **argv)
-{
-	fprintf(stdout, "%s", get_wan_ipaddr());
-	return 0;
-}
-
-int get_nfmark_main(int argc, char **argv)
-{
-	if (argc < 3) {
-		fprintf(stderr, "usage: get_nfmark <service> <mark>\n\n"
-				"	services: FORWARD\n"
-				"		  HOTSPOT\n"
-				"		  QOS\n\n"
-				"	eg: get_nfmark QOS 10\n");
-		return 1;
-	}
-	char buffer[32];
-	fprintf(stdout, "%s\n", get_NFServiceMark(buffer, sizeof(buffer), argv[1], atol(argv[2])));
-	return 0;
-}
-
 #ifdef HAVE_PPTPD
 int pptpd_main(int argc, char **argv)
 {

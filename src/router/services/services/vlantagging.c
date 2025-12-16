@@ -401,19 +401,6 @@ char *getRealBridge(const char *ifname, char *word)
 
 #endif
 
-int getbridge_main(int argc, char *argv[])
-{
-	if (argc < 2) {
-		fprintf(stderr, "syntax: getbridge [ifname]\n");
-		return -1;
-	}
-	char tmp[256];
-	char *bridge = getBridge(argv[1], tmp);
-
-	fprintf(stdout, "%s\n", bridge);
-	return 0;
-}
-
 int setportprio_main(int argc, char *argv[])
 {
 	char word[256];
