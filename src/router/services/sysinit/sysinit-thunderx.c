@@ -54,6 +54,7 @@
 
 #include "devices/ethernet.c"
 #include "devices/wireless.c"
+#include <services.h>
 
 void start_sysinit(void)
 {
@@ -123,6 +124,7 @@ void start_sysinit(void)
 		eval("gsp_updater", "-f", "/etc/gsc_6904_v61.txt", "-r", "61");
 	if (!strncmp(board, "Gateworks Newport GW6905", 24))
 		eval("gsp_updater", "-f", "/etc/gsc_6905_v61.txt", "-r", "61");
+	init_skb_recycler(1024);
 
 	return;
 }

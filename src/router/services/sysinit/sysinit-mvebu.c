@@ -52,6 +52,7 @@
 #include <linux/sockios.h>
 #include <linux/mii.h>
 #include "devices/wireless.c"
+#include <services.h>
 
 void start_sysinit(void)
 {
@@ -192,6 +193,7 @@ void start_sysinit(void)
 	nvram_unset("sw_lan2");
 	nvram_unset("sw_lan3");
 	nvram_unset("sw_lan4");
+	init_skb_recycler(1024);
 
 	return;
 }
