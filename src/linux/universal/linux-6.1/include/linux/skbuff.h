@@ -1001,6 +1001,12 @@ struct sk_buff {
 	__u8			csum_not_inet:1;
 	__u8			scm_io_uring:1;
 	__u8			fast_forwarded:1;
+	/* Flag to check if skb is allocated from recycler */
+	__u8			is_from_recycler:1;
+	/* Flag for fast recycle in fast xmit path */
+	__u8			fast_recycled:1;
+	/* Flag for recycle in PPE DS */
+	__u8			recycled_for_ds:1;
 
 #ifdef CONFIG_NET_SCHED
 	__u16			tc_index;	/* traffic control index */
@@ -1244,7 +1250,7 @@ static inline void kfree_skb_list(struct sk_buff *segs)
 	kfree_skb_list_reason(segs, SKB_DROP_REASON_NOT_SPECIFIED);
 }
 
-#ifdef CONFIG_TRACEPOINTS
+#ifdef CONFIG_SKB_RECYCLER
 void consume_skb(struct sk_buff *skb);
 #else
 static inline void consume_skb(struct sk_buff *skb)
@@ -1253,6 +1259,8 @@ static inline void consume_skb(struct sk_buff *skb)
 }
 #endif
 
+void consume_skb_list_fast(struct sk_buff_head *skb_list);
+void check_skb_fast_recyclable(struct sk_buff *skb);
 void __consume_stateless_skb(struct sk_buff *skb);
 void  __kfree_skb(struct sk_buff *skb);
 #if defined(CONFIG_IMQ) || defined(CONFIG_IMQ_MODULE)
@@ -1260,6 +1268,9 @@ int skb_save_cb(struct sk_buff *skb);
 int skb_restore_cb(struct sk_buff *skb);
 #endif
 extern struct kmem_cache *skbuff_head_cache;
+extern void kfree_skbmem(struct sk_buff *skb);
+extern void skb_release_data(struct sk_buff *skb, enum skb_drop_reason reason,
+			     bool napi_safe);
 
 void kfree_skb_partial(struct sk_buff *skb, bool head_stolen);
 bool skb_try_coalesce(struct sk_buff *to, struct sk_buff *from,
@@ -1381,6 +1392,12 @@ static inline int skb_pad(struct sk_buff *skb, int pad)
 	return __skb_pad(skb, pad, true);
 }
 #define dev_kfree_skb(a)	consume_skb(a)
+#define dev_kfree_skb_list_fast(a)	consume_skb_list_fast(a)
+#if defined(SKB_FAST_RECYCLABLE_DEBUG_ENABLE) && defined(CONFIG_SKB_RECYCLER)
+#define dev_check_skb_fast_recyclable(a)       check_skb_fast_recyclable(a)
+#else
+#define dev_check_skb_fast_recyclable(a)
+#endif
 
 int skb_append_pagefrags(struct sk_buff *skb, struct page *page,
 			 int offset, size_t size);
@@ -3229,6 +3246,9 @@ static inline void *netdev_alloc_frag_align(unsigned int fragsz,
 }
 
 struct sk_buff *__netdev_alloc_skb(struct net_device *dev, unsigned int length,
+				   gfp_t gfp_mask);
+
+struct sk_buff *__netdev_alloc_skb_no_skb_reset(struct net_device *dev, unsigned int length,
 				   gfp_t gfp_mask);
 
 /**
