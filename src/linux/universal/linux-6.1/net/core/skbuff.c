@@ -1291,7 +1291,7 @@ void consume_skb(struct sk_buff *skb)
 	 * have done in __kfree_skb (above and beyond the skb_release_head_state
 	 * that we already did).
 	 */
-	skb_release_data(skb, SKB_CONSUMED, false);
+	skb_release_data(skb);
 	kfree_skbmem(skb);
 }
 EXPORT_SYMBOL(consume_skb);
@@ -1320,7 +1320,7 @@ void consume_skb_list_fast(struct sk_buff_head *skb_list)
 		 */
 		skb_release_head_state(skb);
 
-		trace_consume_skb(skb, __builtin_return_address(0));
+		trace_consume_skb(skb);
 
 		/*
 		 * We're not recycling so now we need to do the rest of what we would
@@ -1328,7 +1328,7 @@ void consume_skb_list_fast(struct sk_buff_head *skb_list)
 		 * that we already did).
 		 */
 		if (likely(skb->head))
-			skb_release_data(skb, SKB_CONSUMED, false);
+			skb_release_data(skb);
 
 		kfree_skbmem(skb);
 	}
