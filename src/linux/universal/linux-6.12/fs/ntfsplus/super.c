@@ -792,6 +792,7 @@ static bool parse_ntfs_boot_sector(struct ntfs_volume *vol,
 	 * volume size to 2TiB (2^41). On a 64-bit architecture, the compiler
 	 * will hopefully optimize the whole check away.
 	 */
+#if 0
 	if (sizeof(unsigned long) < 8) {
 		if ((ll << vol->cluster_size_bits) >= (1ULL << 41)) {
 			ntfs_error(vol->sb,
@@ -800,6 +801,7 @@ static bool parse_ntfs_boot_sector(struct ntfs_volume *vol,
 			return false;
 		}
 	}
+#endif
 	ll = le64_to_cpu(b->mft_lcn);
 	if (ll >= vol->nr_clusters) {
 		ntfs_error(vol->sb, "MFT LCN (%lli, 0x%llx) is beyond end of volume.  Weird.",
