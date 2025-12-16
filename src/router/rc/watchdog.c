@@ -288,7 +288,7 @@ static void watchdog(void)
 		//#endif
 		check_fan(brand);
 		check_wifi();
-		static int blockcounter=0;
+		static int blockcounter = 0;
 		sleep(5);
 		if (!((blockcounter++) % 60)) // check every 5 minutes
 			check_blocklist("watchdog", NULL);

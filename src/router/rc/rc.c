@@ -204,6 +204,40 @@ static void start_main_f(char *name, int argc, char **argv)
 	FORK(start_main(name, argc, argv));
 }
 
+static int get_wanface_main(int argc, char **argv)
+{
+	char wan_if_buffer[33];
+	fprintf(stdout, "%s", safe_get_wan_face(wan_if_buffer));
+	return 0;
+}
+
+static int get_wanip_main(int argc, char **argv)
+{
+	fprintf(stdout, "%s", get_wan_ipaddr());
+	return 0;
+}
+
+static int get_lanip_main(int argc, char **argv)
+{
+	fprintf(stdout, "%s", get_lan_ipaddr());
+	return 0;
+}
+
+static int get_nfmark_main(int argc, char **argv)
+{
+	if (argc < 3) {
+		fprintf(stderr, "usage: get_nfmark <service> <mark>\n\n"
+				"	services: FORWARD\n"
+				"		  HOTSPOT\n"
+				"		  QOS\n\n"
+				"	eg: get_nfmark QOS 10\n");
+		return 1;
+	}
+	char buffer[32];
+	fprintf(stdout, "%s\n", get_NFServiceMark(buffer, sizeof(buffer), argv[1], atol(argv[2])));
+	return 0;
+}
+
 static struct MAIN maincalls[] = {
 	// {"init", NULL, &main_loop},
 	{ "ip-up", "ipup", NULL },
@@ -289,9 +323,9 @@ static struct MAIN maincalls[] = {
 	//      {"roaming_daemon", NULL, &roaming_daemon_main},
 	{ "supplicant", "supplicant", NULL },
 #endif
-	{ "get_wanface", "get_wanface", NULL },
-	{ "get_wanip", "get_wanip", NULL },
-	{ "get_lanip", "get_lanip", NULL },
+	{ "get_wanface", NULL, get_wanface_main },
+	{ "get_wanip", NULL, get_wanip_main },
+	{ "get_lanip", NULL, get_lanip_main },
 #ifndef HAVE_XSCALE
 // {"ledtool", NULL, &ledtool_main},
 #endif
@@ -299,7 +333,7 @@ static struct MAIN maincalls[] = {
 	{ "regshell", NULL, &reg_main },
 #endif
 	{ "gratarp", NULL, &gratarp_main },
-	{ "get_nfmark", "get_nfmark", NULL },
+	{ "get_nfmark", NULL, get_nfmark_main },
 #ifdef HAVE_IPV6
 	{
 		"dhcp6c-state",
