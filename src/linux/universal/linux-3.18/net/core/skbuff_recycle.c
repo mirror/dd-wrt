@@ -502,8 +502,9 @@ static int proc_skb_recycle_enable_open(struct inode *inode, struct file *file)
 {
         return single_open(file,
                            proc_skb_recycler_enable_show,
-                           pde_data(inode));
+                           PDE_DATA(inode));
 }
+
 
 static ssize_t
 proc_skb_recycle_enable_write(struct file *file,
@@ -527,11 +528,12 @@ proc_skb_recycle_enable_write(struct file *file,
         return count;
 }
 
-static const struct proc_ops proc_skb_recycle_enable_fops = {
-        .proc_open    = proc_skb_recycle_enable_open,
-        .proc_read    = seq_read,
-        .proc_write   = proc_skb_recycle_enable_write,
-        .proc_release = single_release,
+static const struct file_operations proc_skb_recycle_enable_fops = {
+	.owner	      = THIS_MODULE,
+        .open    = proc_skb_recycle_enable_open,
+        .read    = seq_read,
+        .write   = proc_skb_recycle_enable_write,
+        .release = single_release,
 };
 
 static void skb_recycler_init_procfs(void)
