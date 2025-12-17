@@ -4,7 +4,7 @@
  *******************************************************************/
 
 #ifndef DROPBEAR_VERSION
-#define DROPBEAR_VERSION "2025.88"
+#define DROPBEAR_VERSION "2025.89"
 #endif
 
 /* IDENT_VERSION_PART is the optional part after "SSH-2.0-dropbear". Refer to RFC4253 for requirements. */
@@ -207,7 +207,7 @@
 /* LTC SHA384 depends on SHA512 */
 #define DROPBEAR_SHA512 ((DROPBEAR_SHA2_512_HMAC) || (DROPBEAR_ECC_521) \
 			|| (DROPBEAR_SHA384) || (DROPBEAR_DH_GROUP16) \
-			|| (DROPBEAR_ED25519))
+			|| (DROPBEAR_ED25519) || (DROPBEAR_SNTRUP761))
 
 #define DROPBEAR_DH_GROUP14 ((DROPBEAR_DH_GROUP14_SHA256) || (DROPBEAR_DH_GROUP14_SHA1))
 
@@ -266,7 +266,7 @@
 #else
 /* 521 bit ecdsa key */
 #define MAX_PUBKEY_SIZE 200
-#define MAX_PRIVKEY_SIZE 200
+#define MAX_PRIVKEY_SIZE 250
 #endif
 
 /* For kex hash buffer, worst case size for Q_C || Q_S || K */
@@ -332,7 +332,7 @@
 
 /* PAM requires ./configure --enable-pam */
 #if !defined(HAVE_LIBPAM) && DROPBEAR_SVR_PAM_AUTH
-#error "DROPBEAR_SVR_PATM_AUTH requires PAM headers. Perhaps ./configure --enable-pam ?"
+#error "DROPBEAR_SVR_PAM_AUTH requires PAM headers. Perhaps ./configure --enable-pam ?"
 #endif
 
 #if DROPBEAR_SVR_PASSWORD_AUTH && !HAVE_CRYPT
@@ -353,6 +353,10 @@
 
 #if !(DROPBEAR_RSA || DROPBEAR_DSS || DROPBEAR_ECDSA || DROPBEAR_ED25519)
 	#error "At least one hostkey or public-key algorithm must be enabled; RSA is recommended."
+#endif
+
+#if DROPBEAR_SVR_DROP_PRIVS && !defined(HAVE_SETRESGID)
+	#error "DROPBEAR_SVR_DROP_PRIVS requires setresgid()."
 #endif
 
 /* Source for randomness. This must be able to provide hundreds of bytes per SSH
@@ -438,6 +442,14 @@
 
 #ifndef DROPBEAR_MULTI
 #define DROPBEAR_MULTI 0
+#endif
+
+#if !DROPBEAR_SVR_MULTIUSER && DROPBEAR_SVR_DROP_PRIVS
+#error DROPBEAR_SVR_DROP_PRIVS needs DROPBEAR_SVR_MULTIUSER
+#endif
+
+#if !(DROPBEAR_SVR_DROP_PRIVS || !DROPBEAR_SVR_MULTIUSER) && DROPBEAR_SVR_LOCALSTREAMFWD 
+#error DROPBEAR_SVR_LOCALSTREAMFWD requires DROPBEAR_SVR_DROP_PRIVS or !DROPBEAR_SVR_MULTIUSER
 #endif
 
 /* Fuzzing expects all key types to be enabled */
