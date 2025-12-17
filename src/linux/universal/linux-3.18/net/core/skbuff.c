@@ -80,6 +80,8 @@
 #define BCMFASTPATH
 #define BCMFASTPATH_HOST
 
+#include "skbuff_recycle.h"
+
 struct kmem_cache *skbuff_head_cache __read_mostly;
 static struct kmem_cache *skbuff_fclone_cache __read_mostly;
 int sysctl_max_skb_frags __read_mostly = MAX_SKB_FRAGS;
@@ -525,7 +527,37 @@ struct sk_buff *__netdev_alloc_skb(struct net_device *dev,
 #ifdef CONFIG_ARCH_IXP4XX 
 	gfp_mask |= GFP_DMA;
 #endif
+	unsigned int len = length;
 
+#ifdef CONFIG_SKB_RECYCLER
+	skb = skb_recycler_alloc(dev, length);
+	if (likely(skb)) {
+		/* SKBs in the recycler are from various unknown sources.
+		 * Their truesize is unknown. We should set truesize
+		 * as the needed buffer size before using it.
+		 */
+		skb->truesize = SKB_TRUESIZE(SKB_DATA_ALIGN(len + NET_SKB_PAD));
+		return skb;
+	}
+
+	len = SKB_RECYCLE_SIZE;
+	if (unlikely(length > SKB_RECYCLE_SIZE))
+		len = length;
+
+	skb = __alloc_skb(len + NET_SKB_PAD, gfp_mask,
+			  SKB_ALLOC_RX, NUMA_NO_NODE);
+	if (!skb)
+		goto skb_fail;
+
+	/* Set truesize as the needed buffer size
+	 * rather than the allocated size by __alloc_skb().
+	 */
+	if (length + NET_SKB_PAD < SKB_WITH_OVERHEAD(PAGE_SIZE))
+		skb->truesize = SKB_TRUESIZE(SKB_DATA_ALIGN(length + NET_SKB_PAD));
+
+	goto skb_success;
+
+#else
 	/* If requested length is either too small or too big,
 	 * we use kmalloc() for skb->head allocation.
 	 */
@@ -552,6 +584,14 @@ struct sk_buff *__netdev_alloc_skb(struct net_device *dev,
 		skb->dev = dev;
 	}
 	return skb;
+#endif
+
+skb_success:
+	skb_reserve(skb, NET_SKB_PAD);
+	skb->dev = dev;
+skb_fail:
+	return skb;
+
 }
 EXPORT_SYMBOL(__netdev_alloc_skb);
 
@@ -620,7 +660,7 @@ static void skb_free_head(struct sk_buff *skb)
 		kfree(skb->head);
 }
 
-static void skb_release_data(struct sk_buff *skb)
+void skb_release_data(struct sk_buff *skb)
 {
 	struct skb_shared_info *shinfo = skb_shinfo(skb);
 	int i;
@@ -654,7 +694,7 @@ static void skb_release_data(struct sk_buff *skb)
 /*
  *	Free an skbuff by memory without cleaning the state.
  */
-static void kfree_skbmem(struct sk_buff *skb)
+void kfree_skbmem(struct sk_buff *skb)
 {
 	struct sk_buff_fclones *fclones;
 
@@ -814,12 +854,36 @@ void consume_skb(struct sk_buff *skb)
 {
 	if (unlikely(!skb))
 		return;
+
+	prefetch(&skb->destructor);
+
 	if (likely(atomic_read(&skb->users) == 1))
 		smp_rmb();
 	else if (likely(!atomic_dec_and_test(&skb->users)))
 		return;
+
+	/* If possible we'd like to recycle any skb rather than just free it,
+	 * but in order to do that we need to release any head state too.
+	 * We don't want to do this later because we'll be in a pre-emption
+	 * disabled state.
+	 */
+	skb_release_head_state(skb);
+
+	/* Can we recycle this skb?  If we can then it will be much faster
+	 * for us to recycle this one later than to allocate a new one
+	 * from scratch.
+	 */
+	if (likely(skb_recycler_consume(skb)))
+		return;
+
 	trace_consume_skb(skb);
-	__kfree_skb(skb);
+
+	/* We're not recycling so now we need to do the rest of what we would
+	 * have done in __kfree_skb (above and beyond the skb_release_head_state
+	 * that we already did).
+	 */
+	skb_release_data(skb);
+	kfree_skbmem(skb);
 }
 EXPORT_SYMBOL(consume_skb);
 
@@ -3429,6 +3493,7 @@ void __init skb_init(void)
 						  SLAB_HWCACHE_ALIGN|SLAB_PANIC,
 						  NULL);
 #endif
+	skb_recycler_init();
 }
 
 static int

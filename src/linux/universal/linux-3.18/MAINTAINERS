@@ -124,6 +124,11 @@ Maintainers List (try to look for most precise areas first)
 
 		-----------------------------------
 
+SKB RECYCLER SUPPORT
+M:	Casey Chen <kexinc@codeaurora.org>
+S:	Maintained
+F:	net/core/skbuff_recycle.*
+
 3C59X NETWORK DRIVER
 M:	Steffen Klassert <klassert@mathematik.tu-chemnitz.de>
 L:	netdev@vger.kernel.org
