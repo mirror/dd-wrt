@@ -263,6 +263,29 @@ static int getbridge_main(int argc, char *argv[])
 	return 0;
 }
 
+static int getmask_main(int argc, char **argv)
+{
+	if (argc != 2) {
+		fprintf(stderr, "%s <netmask>\n", argv[0]);
+		exit(1);
+	}
+	fprintf(stdout, "%d", getmask(argv[1]));
+
+	return 0;
+}
+
+static int getipmask_main(int argc, char **argv)
+{
+	char ipbuf[64];
+	if (argc != 2) {
+		fprintf(stderr, "%s <ifname>\n", argv[0]);
+		exit(1);
+	}
+	fprintf(stdout, "%s", get_ipfrominterface(argv[1], ipbuf));
+
+	return 0;
+}
+
 static struct MAIN maincalls[] = {
 	// {"init", NULL, &main_loop},
 	{ "ip-up", "ipup", NULL },
@@ -328,9 +351,9 @@ static struct MAIN maincalls[] = {
 	{ "rtkswitch", "rtkswitch", NULL },
 #endif
 	{ "setuserpasswd", "setuserpasswd", NULL },
-	{ "getbridge", "getbridge_main", NULL },
-	{ "getmask", "getmask", NULL },
-	{ "getipmask", "getipmask", NULL },
+	{ "getbridge", NULL, getbridge_main },
+	{ "getmask", NULL, getmask_main },
+	{ "getipmask", NULL, getipmask_main },
 //	{ "stopservices", NULL, stop_services_main },
 #ifdef HAVE_PPPOESERVER
 	{ "addpppoeconnected", "addpppoeconnected", NULL },
