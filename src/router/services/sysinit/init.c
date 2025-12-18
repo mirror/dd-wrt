@@ -81,6 +81,13 @@ void init_skb_recycler(int profile)
 		max_spare_skbs = 128;
 		skb_recycler_enable = 1;
 	}
+
+	if (profile == 256) {
+		max_skbs = 1;
+		max_spare_skbs = 1;
+		skb_recycler_enable = 0;
+	}
+
 	sysprintf("echo %d > /proc/net/skb_recycler/max_skbs", max_skbs);
 	sysprintf("echo %d > /proc/net/skb_recycler/max_spare_skbs", max_spare_skbs);
 	sysprintf("echo %d > /proc/net/skb_recycler/skb_recycler_enable", skb_recycler_enable);
