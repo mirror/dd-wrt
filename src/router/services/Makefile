@@ -103,7 +103,7 @@ HCFLAGS  += -I$(TOP)/services/include -I$(LINUXDIR)/brcm/wl/bcmwifi/include -I$(
 
 
 OBJS = init.o services.o network.o firewall.o mssid.o qos.o ddns.o devinit.o sysinit.o phase1.o phase2.o sysinit-$(ARCHITECTURE).o interface.o udhcpc.o mkfiles.o defaults.o \
-       igmp.o wpa.o vlanfiltering.o vlantagging.o httpd.o setuserpw.o gpio.o mask.o reset_defaults.o vpn.o cron.o syslog.o redial.o	\
+       igmp.o wpa.o vlanfiltering.o vlantagging.o httpd.o setuserpw.o gpio.o reset_defaults.o vpn.o cron.o syslog.o redial.o	\
        pppoe_dual.o pppoe.o pptpclient.o ttraff.o radiotimer.o processmonitor.o wland.o radiofunctions.o processmanager.o \
        utils.o iptable.o conntrack.o raid.o notifier.o watchdog.o sysinit/bench/mhz.o
 
