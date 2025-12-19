@@ -53,6 +53,7 @@
 #include <linux/mii.h>
 #include "devices/wireless.c"
 #include "devices/ethtools.c"
+#include <services.h>
 
 void start_sysinit(void)
 {
@@ -333,6 +334,7 @@ out:;
 	 */
 	stime(&tm);
 	nvram_set("wl0_ifname", "wlan0");
+	init_skb_recycler(1024);
 
 	return;
 }

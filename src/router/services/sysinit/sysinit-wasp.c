@@ -53,6 +53,7 @@
 #include <linux/mii.h>
 #include "devices/wireless.c"
 #include "devices/ethtools.c"
+#include <services.h>
 
 #ifdef HAVE_DIR869
 struct regiondef {
