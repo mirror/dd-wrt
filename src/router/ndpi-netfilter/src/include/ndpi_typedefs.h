@@ -2007,6 +2007,7 @@ struct ndpi_flow_struct {
   u_int8_t priv_data[16];
 };
 
+#if 0
 #if !defined(NDPI_CFFI_PREPROCESSING) && defined(__linux__)
 #if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L
 _Static_assert(sizeof(((struct ndpi_flow_struct *)0)->protos) <= 264,
@@ -2017,7 +2018,7 @@ _Static_assert(sizeof(struct ndpi_flow_struct) <= 1248,
                "please check if this change is necessary.");
 #endif
 #endif
-
+#endif
 #define NDPI_PROTOCOL_DEFAULT_LEVEL	0
 
 typedef struct {

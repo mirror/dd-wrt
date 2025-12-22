@@ -108,6 +108,14 @@ extern "C" {
   NDPI_STATIC u_int32_t ndpi_get_tot_allocated_memory(void);
 
   NDPI_STATIC char *ndpi_strip_leading_trailing_spaces(char *ptr, int *ptr_len) ;
+  NDPI_STATIC void ndpi_set_memory_alloction_functions(void *(*__ndpi_malloc)(size_t size),
+                                           void (*__ndpi_free)(void *ptr),
+                                           void *(*__ndpi_calloc)(size_t nmemb, size_t size),
+                                           void *(*__ndpi_realloc)(void *ptr, size_t size),
+                                           void *(*__ndpi_aligned_malloc)(size_t alignment, size_t size),
+                                           void (*__ndpi_aligned_free)(void *ptr),
+                                           void *(*__ndpi_flow_malloc)(size_t size),
+                                           void (*__ndpi_flow_free)(void *ptr));
 
   /**
    * Search the first occurrence of substring -find- in -s-
@@ -241,8 +249,10 @@ extern "C" {
    * @return the detected protocol even if the flow is not completed;
    *
    */
-  NDPI_STATIC ndpi_protocol ndpi_detection_giveup(struct ndpi_detection_module_struct *ndpi_str, struct ndpi_flow_struct *flow,
-				    u_int8_t *protocol_was_guessed);
+   NDPI_STATIC ndpi_protocol ndpi_detection_giveup(struct ndpi_detection_module_struct *ndpi_struct,
+				      struct ndpi_flow_struct *flow);
+
+
 
   /**
    * Processes one packet and returns the ID of the detected protocol.
@@ -482,7 +492,7 @@ extern "C" {
    *
    */
   NDPI_STATIC char* ndpi_protocol2name(struct ndpi_detection_module_struct *ndpi_mod,
-			   ndpi_protocol proto, char *buf, u_int buf_len);
+                           ndpi_master_app_protocol proto, char *buf, u_int buf_len);
 
   /**
    * Same as ndpi_protocol2name() with the difference that the numeric protocol
@@ -495,7 +505,7 @@ extern "C" {
    * @return  the buffer contains the master_protocol and protocol name
    *
    */
-  NDPI_STATIC char* ndpi_protocol2id(ndpi_protocol proto, char *buf, u_int buf_len);
+  NDPI_STATIC char* ndpi_protocol2id(ndpi_master_app_protocol proto, char *buf, u_int buf_len);
 
   /**
    * Find out if a given category is custom/user-defined
@@ -1054,8 +1064,8 @@ NDPI_STATIC  int ndpi_load_tcp_fingerprint_file(struct ndpi_detection_module_str
   NDPI_STATIC ndpi_l4_proto_info ndpi_get_l4_proto_info(struct ndpi_detection_module_struct *ndpi_struct, u_int16_t ndpi_proto_id);
   NDPI_STATIC const char* ndpi_get_l4_proto_name(ndpi_l4_proto_info proto);
 
-  NDPI_STATIC u_int16_t ndpi_get_lower_proto(ndpi_protocol proto);
-  NDPI_STATIC u_int16_t ndpi_get_upper_proto(ndpi_protocol proto);
+  NDPI_STATIC u_int16_t ndpi_get_lower_proto(ndpi_master_app_protocol proto);
+  NDPI_STATIC u_int16_t ndpi_get_upper_proto(ndpi_master_app_protocol proto);
   NDPI_STATIC bool ndpi_is_proto(ndpi_master_app_protocol proto, u_int16_t p);
   NDPI_STATIC bool ndpi_is_proto_unknown(ndpi_master_app_protocol proto);
   NDPI_STATIC bool ndpi_is_proto_equals(ndpi_master_app_protocol to_check, ndpi_master_app_protocol to_match, bool exact_match_only);
@@ -2047,19 +2057,6 @@ NDPI_STATIC  int ndpi_load_tcp_fingerprint_file(struct ndpi_detection_module_str
    *
    */
   NDPI_STATIC int ndpi_hash_find_entry(ndpi_str_hash *h, char *key, u_int key_len, u_int64_t *value);
-
-  /**
-   * Add an entry to the hashmap.
-   *
-   * @par    h            = pointer to the hash map [in, out]
-   * @par    key          = character string (no '\0' required) [in]
-   * @par    key_len      = length of the character string @key [in]
-   * @par    value        = pointer to the value to add [in]
-   *
-   * @return 0 if the entry was added, 1 otherwise
-   *
-   */
-  NDPI_STATIC int ndpi_hash_find_entry(ndpi_str_hash *h, char *key, u_int key_len, u_int32_t *value);
 
   /* ******************************* */
 

@@ -527,3 +527,7 @@
 #undef NDPI_CURRENT_PROTO
 #include "protocols/tristation.c"
 #undef NDPI_CURRENT_PROTO
+#include "protocols/json.c"
+#undef NDPI_CURRENT_PROTO
+#include "protocols/msgpack.c"
+#undef NDPI_CURRENT_PROTO
