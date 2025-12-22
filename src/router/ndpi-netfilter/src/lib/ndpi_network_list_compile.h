@@ -1,4 +1,4 @@
-#define NDPI_LAST_IMPLEMENTED_PROTOCOL 452
+#define NDPI_LAST_IMPLEMENTED_PROTOCOL 469
 
 const char *proto_def[NDPI_LAST_IMPLEMENTED_PROTOCOL+1] = {
 
@@ -109,8 +109,8 @@ _P(NDPI_PROTOCOL_DHCPV6),
 _P(NDPI_PROTOCOL_ARMAGETRON),
 _P(NDPI_PROTOCOL_CROSSFIRE),
 _P(NDPI_PROTOCOL_DOFUS),
-_P(NDPI_PROTOCOL_ADS_ANALYTICS_TRACK),
-_P(NDPI_PROTOCOL_FREE),
+_P(NDPI_PROTOCOL_BLACKNUT),
+_P(NDPI_PROTOCOL_BOOSTEROID),
 _P(NDPI_PROTOCOL_GUILDWARS2),
 _P(NDPI_PROTOCOL_AMAZON_ALEXA),
 _P(NDPI_PROTOCOL_KERBEROS),
@@ -448,16 +448,40 @@ _P(NDPI_PROTOCOL_DIGITALOCEAN),
 _P(NDPI_PROTOCOL_RUTUBE),
 _P(NDPI_PROTOCOL_LAGOFAST),
 _P(NDPI_PROTOCOL_GEARUP_BOOSTER),
-_P(NDPI_PROTOCOL_FREE_1),
+_P(NDPI_PROTOCOL_RUMBLE),
 _P(NDPI_PROTOCOL_UBIQUITY),
 _P(NDPI_PROTOCOL_MSDO),
 _P(NDPI_PROTOCOL_ROCKSTAR_GAMES),
 _P(NDPI_PROTOCOL_KICK),
 _P(NDPI_PROTOCOL_HAMACHI),
-_P(NDPI_PROTOCOL_GLBP)
+_P(NDPI_PROTOCOL_GLBP),
+_P(NDPI_PROTOCOL_EASYWEATHER),
+_P(NDPI_PROTOCOL_MUDFISH),
+_P(NDPI_PROTOCOL_TRISTATION),
+_P(NDPI_PROTOCOL_SAMSUNG_SDP),
+_P(NDPI_PROTOCOL_MATTER),
+_P(NDPI_PROTOCOL_AWS_COGNITO),
+_P(NDPI_PROTOCOL_AWS_API_GATEWAY),
+_P(NDPI_PROTOCOL_AWS_KINESIS),
+_P(NDPI_PROTOCOL_AWS_EC2),
+_P(NDPI_PROTOCOL_AWS_EMR),
+_P(NDPI_PROTOCOL_AWS_S3),
+_P(NDPI_PROTOCOL_AWS_CLOUDFRONT),
+_P(NDPI_PROTOCOL_AWS_DYNAMODB),
+_P(NDPI_PROTOCOL_ESPN),
+_P(NDPI_PROTOCOL_AKAMAI),
+_P(NDPI_PROTOCOL_JSON),
+_P(NDPI_PROTOCOL_MSGPACK)
 
 };
+#include "inc_generated/ndpi_akamai_match.c.inc"
+#include "inc_generated/ndpi_amazon_aws_api_gateway_match.c.inc"
+#include "inc_generated/ndpi_amazon_aws_cloudfront_match.c.inc"
+#include "inc_generated/ndpi_amazon_aws_dynamodb_match.c.inc"
+#include "inc_generated/ndpi_amazon_aws_ec2_match.c.inc"
+#include "inc_generated/ndpi_amazon_aws_kinesis_match.c.inc"
 #include "inc_generated/ndpi_amazon_aws_match.c.inc"
+#include "inc_generated/ndpi_amazon_aws_s3_match.c.inc"
 #include "inc_generated/ndpi_asn_alibaba.c.inc"
 #include "inc_generated/ndpi_asn_apple.c.inc"
 #include "inc_generated/ndpi_asn_avast.c.inc"
@@ -514,7 +538,14 @@ _P(NDPI_PROTOCOL_GLBP)
 #include "inc_generated/ndpi_zoom_match.c.inc"
 
 static ndpi_network * ip4list[] = {
+ &ndpi_protocol_akamai_protocol_list[0],
+ &ndpi_protocol_aws_api_gateway_protocol_list[0],
+ &ndpi_protocol_aws_cloudfront_protocol_list[0],
+ &ndpi_protocol_aws_dynamodb_protocol_list[0],
+ &ndpi_protocol_aws_ec2_protocol_list[0],
+ &ndpi_protocol_aws_kinesis_protocol_list[0],
  &ndpi_protocol_amazon_aws_protocol_list[0],
+ &ndpi_protocol_aws_s3_protocol_list[0],
  &ndpi_protocol_alibaba_protocol_list[0],
  &ndpi_protocol_apple_protocol_list[0],
  &ndpi_protocol_avast_protocol_list[0],
@@ -571,7 +602,14 @@ static ndpi_network * ip4list[] = {
  &ndpi_protocol_zoom_protocol_list[0]
 };
 static char * ip4list_file[] = {
+ "inc_generated/ndpi_akamai_match.c.inc",
+ "inc_generated/ndpi_amazon_aws_api_gateway_match.c.inc",
+ "inc_generated/ndpi_amazon_aws_cloudfront_match.c.inc",
+ "inc_generated/ndpi_amazon_aws_dynamodb_match.c.inc",
+ "inc_generated/ndpi_amazon_aws_ec2_match.c.inc",
+ "inc_generated/ndpi_amazon_aws_kinesis_match.c.inc",
  "inc_generated/ndpi_amazon_aws_match.c.inc",
+ "inc_generated/ndpi_amazon_aws_s3_match.c.inc",
  "inc_generated/ndpi_asn_alibaba.c.inc",
  "inc_generated/ndpi_asn_apple.c.inc",
  "inc_generated/ndpi_asn_avast.c.inc",
@@ -628,7 +666,14 @@ static char * ip4list_file[] = {
  "inc_generated/ndpi_zoom_match.c.inc"
 };
 static ndpi_network6 * ip6list[] = {
+ &ndpi_protocol_akamai_protocol_list_6[0],
+ &ndpi_protocol_aws_api_gateway_protocol_list_6[0],
+ &ndpi_protocol_aws_cloudfront_protocol_list_6[0],
+ &ndpi_protocol_aws_dynamodb_protocol_list_6[0],
+ &ndpi_protocol_aws_ec2_protocol_list_6[0],
+ &ndpi_protocol_aws_kinesis_protocol_list_6[0],
  &ndpi_protocol_amazon_aws_protocol_list_6[0],
+ &ndpi_protocol_aws_s3_protocol_list_6[0],
  &ndpi_protocol_alibaba_protocol_list_6[0],
  &ndpi_protocol_apple_protocol_list_6[0],
  &ndpi_protocol_avast_protocol_list_6[0],
@@ -685,7 +730,14 @@ static ndpi_network6 * ip6list[] = {
  &ndpi_protocol_zoom_protocol_list_6[0]
 };
 static char * ip6list_file[] = {
+ "inc_generated/ndpi_akamai_match.c.inc",
+ "inc_generated/ndpi_amazon_aws_api_gateway_match.c.inc",
+ "inc_generated/ndpi_amazon_aws_cloudfront_match.c.inc",
+ "inc_generated/ndpi_amazon_aws_dynamodb_match.c.inc",
+ "inc_generated/ndpi_amazon_aws_ec2_match.c.inc",
+ "inc_generated/ndpi_amazon_aws_kinesis_match.c.inc",
  "inc_generated/ndpi_amazon_aws_match.c.inc",
+ "inc_generated/ndpi_amazon_aws_s3_match.c.inc",
  "inc_generated/ndpi_asn_alibaba.c.inc",
  "inc_generated/ndpi_asn_apple.c.inc",
  "inc_generated/ndpi_asn_avast.c.inc",

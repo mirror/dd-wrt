@@ -33,6 +33,11 @@
 #include "ndpi_api.h"
 #include "ndpi_private.h"
 
+extern void ndpi_search_json(struct ndpi_detection_module_struct *ndpi_struct,
+                             struct ndpi_flow_struct *flow);
+extern void ndpi_search_msgpack(struct ndpi_detection_module_struct *ndpi_struct,
+                                struct ndpi_flow_struct *flow);
+
 static const char* binary_exec_file_mimes_e[] = { "exe", NULL };
 static const char* binary_exec_file_mimes_j[] = { "java-vm", NULL };
 static const char* binary_exec_file_mimes_v[] = { "vnd.ms-cab-compressed", "vnd.microsoft.portable-executable", NULL };
@@ -164,6 +169,13 @@ static int ndpi_search_http_tcp_again(struct ndpi_detection_module_struct *ndpi_
     }
 
     return(0); /* We are good now */
+  }
+
+  if (flow->detected_protocol_stack[1] == NDPI_PROTOCOL_UNKNOWN) {
+    ndpi_search_json(ndpi_struct, flow);
+  }
+  if (flow->detected_protocol_stack[1] == NDPI_PROTOCOL_UNKNOWN) {
+    ndpi_search_msgpack(ndpi_struct, flow);
   }
 
   /* Possibly more processing */
@@ -607,16 +619,6 @@ static void ndpi_http_parse_subprotocol(struct ndpi_detection_module_struct *ndp
     }
   }
 
-  if(flow->http.url
-     && (
-       ends_with(ndpi_struct, (char*)flow->http.url, "/generate_204")
-       || ends_with(ndpi_struct, (char*)flow->http.url, "/generate204")
-       )
-    ) {
-    flow->category = NDPI_PROTOCOL_CATEGORY_CONNECTIVITY_CHECK;
-    return;
-  }
-
   if(flow->detected_protocol_stack[1] == NDPI_PROTOCOL_UNKNOWN &&
      flow->http.url &&
      ((strstr(flow->http.url, ":8080/downloading?n=0.") != NULL) ||
@@ -951,7 +953,7 @@ static void ndpi_check_http_url(struct ndpi_detection_module_struct *ndpi_struct
 				char *url) {
   char msg[512];
   ndpi_risk_enum r;
-  
+
   if(strstr(url, "<php>") != NULL /* PHP code in the URL */) {
     r = NDPI_URL_POSSIBLE_RCE_INJECTION;
     snprintf(msg, sizeof(msg), "PHP code in URL [%s]", url);
@@ -965,8 +967,49 @@ static void ndpi_check_http_url(struct ndpi_detection_module_struct *ndpi_struct
     r = ndpi_validate_url(ndpi_struct, flow, url);
     return;
   }
-  
+
   ndpi_set_risk(ndpi_struct, flow, r, msg);
+}
+
+/* ************************************************************* */
+
+/* Check custom protocol */
+static void ndpi_check_http_url_subprotocol(struct ndpi_detection_module_struct *ndpi_struct,
+					    struct ndpi_flow_struct *flow) {
+  int custom_category = 0;
+
+  if(flow->http.url) {
+    if(ndpi_struct->http_url_hashmap) {
+      u_int64_t id;
+      u_int16_t proto, category, breed;
+      
+      /* This protocol has been defined in protos.txt-like files */
+      if(ndpi_hash_find_entry(ndpi_struct->http_url_hashmap,
+			      flow->http.url, strlen(flow->http.url),
+			      &id) == 0) {
+        proto = id & 0xFFFF;
+        category = (id & 0xFFFF0000) >> 16;
+        breed = (id & 0xFFFF00000000) >> 32;
+	ndpi_set_detected_protocol(ndpi_struct, flow, proto,
+				   ndpi_get_master_proto(ndpi_struct, flow),
+				   NDPI_CONFIDENCE_CUSTOM_RULE);
+	flow->category = category;
+	flow->breed = breed;
+
+	if(category != NDPI_PROTOCOL_CATEGORY_UNSPECIFIED)
+	  custom_category = 1;
+
+	return;
+      }
+    }
+
+    if(!custom_category) { /* Category from custom rule always wins */
+      if(ends_with(ndpi_struct, (char*)flow->http.url, "/generate_204")
+         || ends_with(ndpi_struct, (char*)flow->http.url, "/generate204")) {
+        flow->category = NDPI_PROTOCOL_CATEGORY_CONNECTIVITY_CHECK;
+      }
+    }    
+  }
 }
 
 /* ************************************************************* */
@@ -990,7 +1033,7 @@ static void ndpi_check_http_server(struct ndpi_detection_module_struct *ndpi_str
 	      && (ndpi_isdigit(server[i]) || (server[i] == '.')); i++)
 	  buf[j++] = server[i];
 
-	if(sscanf(buf, "%d.%d.%d", &a, &b, &c) == 3) {
+	if(sscanf(buf, "%u.%u.%u", &a, &b, &c) == 3) {
 	  u_int32_t version = (a * 1000000) + (b * 1000) + c;
 	  char msg[64];
 
@@ -1049,6 +1092,7 @@ static void check_content_type_and_change_protocol(struct ndpi_detection_module_
       ndpi_check_numeric_ip(ndpi_struct, flow, (char*)packet->host_line.ptr, packet->host_line.len);
 
     flow->http.url = ndpi_malloc(len);
+
     if(flow->http.url) {
       u_int offset = 0, host_end = 0;
 
@@ -1078,6 +1122,7 @@ static void check_content_type_and_change_protocol(struct ndpi_detection_module_
       }
 
       ndpi_check_http_url(ndpi_struct, flow, &flow->http.url[host_end]);
+      ndpi_check_http_url_subprotocol(ndpi_struct, flow);
     }
   }
 
@@ -1175,13 +1220,13 @@ static void check_content_type_and_change_protocol(struct ndpi_detection_module_
 
 	if(double_column != NULL)
 	  double_column[0] = '\0';
-	  
+
 	if(ndpi_struct->cfg.hostname_dns_check_enabled
 	   && (ndpi_check_is_numeric_ip(flow->http.host) == false)) {
 	  ndpi_ip_addr_t ip_addr;
 
 	  memset(&ip_addr, 0, sizeof(ip_addr));
-		      
+
 	  if(packet->iph)
 	    ip_addr.ipv4 = packet->iph->daddr;
 	  else
@@ -1204,7 +1249,7 @@ static void check_content_type_and_change_protocol(struct ndpi_detection_module_
       }
     }
   }
-  
+
   if(packet->content_line.ptr != NULL) {
     NDPI_LOG_DBG2(ndpi_struct, "Content Type line found %.*s\n",
 		  packet->content_line.len, packet->content_line.ptr);
@@ -1296,7 +1341,7 @@ static void check_content_type_and_change_protocol(struct ndpi_detection_module_
       if(ndpi_is_valid_hostname((char *)packet->host_line.ptr,
                                 host_line_length) == 0) {
 	char str[128];
-	
+
         if(is_flowrisk_info_enabled(ndpi_struct, NDPI_INVALID_CHARACTERS)) {
 	  snprintf(str, sizeof(str), "Invalid host %s", flow->host_server_name);
 	  ndpi_set_risk(ndpi_struct, flow, NDPI_INVALID_CHARACTERS, str);
@@ -1886,7 +1931,7 @@ static void ndpi_check_http_tcp(struct ndpi_detection_module_struct *ndpi_struct
 
     reset(ndpi_struct, flow);
     flow->l4.tcp.http_stage = 0;
-    return ndpi_check_http_tcp(ndpi_struct, flow);
+    ndpi_check_http_tcp(ndpi_struct, flow);
   }
 }
 

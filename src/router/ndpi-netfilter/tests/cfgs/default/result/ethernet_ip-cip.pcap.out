@@ -1,0 +1,37 @@
+DPI Packets (TCP):	2	(1.00 pkts/flow)
+Confidence DPI              : 2 (flows)
+Num dissector calls: 2 (1.00 diss/flow)
+LRU cache ookla:      0/0/0 (insert/search/found)
+LRU cache bittorrent: 0/0/0 (insert/search/found)
+LRU cache stun:       0/0/0 (insert/search/found)
+LRU cache tls_cert:   0/0/0 (insert/search/found)
+LRU cache mining:     0/0/0 (insert/search/found)
+LRU cache msteams:    0/0/0 (insert/search/found)
+LRU cache fpc_dns:    0/0/0 (insert/search/found)
+Automa host:          0/0 (search/found)
+Automa domain:        0/0 (search/found)
+Automa tls cert:      0/0 (search/found)
+Automa risk mask:     0/0 (search/found)
+Automa common alpns:  0/0 (search/found)
+Patricia risk mask:   0/0 (search/found)
+Patricia risk mask IPv6: 0/0 (search/found)
+Patricia risk:        0/0 (search/found)
+Patricia risk IPv6:   0/0 (search/found)
+Patricia protocols:   4/0 (search/found)
+Patricia protocols IPv6: 0/0 (search/found)
+Hash malicious ja4:        0/0 (search/found)
+Hash malicious sha1:       0/0 (search/found)
+Hash TCP fingerprints:     0/0 (search/found)
+Hash public domain suffix: 0/0 (search/found)
+Hash ja4 custom protos:    0/0 (search/found)
+Hash fp custom protos:     0/0 (search/found)
+Hash url custom protos:    0/0 (search/found)
+
+EthernetIP	268	46394	2
+
+Acceptable                     268 46394         2            
+
+Network                        268 46394         2            
+
+	1	TCP 192.168.10.105:3033 <-> 192.168.10.120:44818 [proto: 278/EthernetIP][Stack: EthernetIP][IP: 0/Unknown][ClearText][Confidence: DPI][FPC: 278/EthernetIP, Confidence: DPI][DPI packets: 1][cat: Network/14][Breed: Acceptable][134 pkts/21062 bytes <-> 133 pkts/25222 bytes][Goodput ratio: 66/72][20.01 sec][bytes ratio: -0.090 (Mixed)][IAT c2s/s2c min/avg/max/stddev: 3/4 154/151 508/505 221/220][Pkt Len c2s/s2c min/avg/max/stddev: 110/110 157/190 264/347 71/104][PLAIN TEXT (00 Eastern Time )][Plen Bins: 0,61,0,9,0,0,15,0,0,14,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+	2	TCP 10.100.90.51:37844 -> 10.100.40.11:44818 [VLAN: 90][proto: 278/EthernetIP][Stack: EthernetIP][IP: 0/Unknown][ClearText][Confidence: DPI][FPC: 278/EthernetIP, Confidence: DPI][DPI packets: 1][cat: Network/14][Breed: Acceptable][1 pkts/110 bytes -> 0 pkts/0 bytes][Goodput ratio: 47/0][< 1 sec][Risk: ** Unidirectional Traffic **][Risk Score: 10][Risk Info: No server to client traffic][PLAIN TEXT (pycomm)][Plen Bins: 0,100,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]

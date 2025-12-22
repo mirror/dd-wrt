@@ -4248,3 +4248,28 @@ References: `Official site <https://aws.amazon.com/dynamodb/>`_
 Visit ESPN to get up-to-the-minute sports news coverage, scores, highlights and commentary for NHL, NFL, MLB, NBA, College Football, NCAA Basketball and more.
 
 References: `Official site <https://www.espn.com/>`_
+
+
+.. _Proto_467:
+
+`NDPI_PROTOCOL_AKAMAI`
+======================
+Akamai Technologies, Inc. is an American company specialized in content delivery network (CDN), cybersecurity, DDoS mitigation, and cloud services.
+
+References: `Official site <https://www.akamai.com>`_
+
+
+.. _Proto_468:
+
+`NDPI_PROTOCOL_JSON`
+====================
+JSON (JavaScript Object Notation) is an open standard file format and data interchange format that uses human-readable text.
+
+
+.. _Proto_469:
+
+`NDPI_PROTOCOL_MSGPACK`
+=======================
+MessagePack is an extremely efficient object serialization library. It's like JSON, but very fast and small.
+
+References: `MessagePack Protocol Specs <https://github.com/msgpack/msgpack/blob/master/spec.md>`_

@@ -23,9 +23,14 @@ for line in $(nm -P -u "${NDPI_LIB}"); do
     if [ ! -z "${FOUND_SYMBOL}" ]; then
         SKIP=0
         case "${CURRENT_OBJECT}" in
-            '[ndpi_main.o]')
+            '[ndpi_main.o]'|'[ndpi_plugin.o]')
                 case "${FOUND_SYMBOL}" in
                     'printf'|'fprintf') SKIP=1 ;;
+                esac
+            ;;
+            '[ndpi_analyze.o]'|'[ndpi_cache.o]'|'[ndpi_config.o]')
+                case "${FOUND_SYMBOL}" in
+                    'fprintf') SKIP=1 ;;
                 esac
             ;;
             '[ahocorasick.o]')
@@ -40,7 +45,7 @@ for line in $(nm -P -u "${NDPI_LIB}"); do
             ;;
             '[ndpi_utils.o]'|'[ndpi_memory.o]')
                 case "${FOUND_SYMBOL}" in
-                    'malloc'|'calloc'|'free') SKIP=1 ;;
+                    'malloc'|'calloc'|'free'|'realloc') SKIP=1 ;;
                 esac
             ;;
             '[gcrypt_light.o]')

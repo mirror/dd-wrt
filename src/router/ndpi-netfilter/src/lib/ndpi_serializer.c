@@ -103,10 +103,8 @@ int ndpi_json_string_escape(const char *src, int src_len, char *dst, int dst_max
 
     c = (u_char) src[i];
 
-    if (c < 0x20 /* ' ' */ || c == 0x7F) {
-      ; // Non-printable ASCII character (skip)
-    } else if (c >= 0x20 && c <= 0x7E) {
-      // Valid ASCII character (escape if required by JSON)
+    if (c <= 0x7E) {
+      // ASCII character (escape if required by JSON)
       switch (c) {
       case '\\':
       case '"':
@@ -135,9 +133,14 @@ int ndpi_json_string_escape(const char *src, int src_len, char *dst, int dst_max
         dst[j++] = 'r';
         break;
       default:
-  	dst[j++] = c;
+        if (c < 0x20 /* ' ' */)
+          ; // Other non-printable ASCII character (skip)
+        else
+          dst[j++] = c; // Printable ASCII character not requiring escape
       }
 
+    } else if (c == 0x7F) {
+      ; // Non-printable ASCII character (skip)
     } else if ((c >= 0xC2 && c <= 0xDF) && (src_len - i) >= 2 && 
                ((u_char) src[i+1] >= 0x80 && (u_char) src[i+1] <= 0xBF)) {
       // 2-byte sequence (U+0080 to U+07FF)
@@ -286,7 +289,7 @@ static inline int ndpi_extend_serializer_buffer(ndpi_private_serializer_buffer *
   new_size = buffer->size + min_len;
   new_size = ((new_size / 4) + 1) * 4; /* required by zmq encryption */
 
-  r = ndpi_realloc((void *) buffer->data, buffer->size, new_size);
+  r = ndpi_realloc((void *) buffer->data, new_size);
 
   if(r == NULL)
     return(-1);

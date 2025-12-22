@@ -148,7 +148,7 @@ u_int32_t ndpi_domain_classify_add_domains(struct ndpi_detection_module_struct *
 
 bool ndpi_domain_classify_hostname(struct ndpi_detection_module_struct *ndpi_mod,
 				   ndpi_domain_classify *s,
-				   u_int32_t *class_id /* out */,
+				   u_int64_t *class_id /* out */,
 				   char *hostname) {
   const char *dot;
   char *item;
@@ -186,9 +186,43 @@ bool ndpi_domain_classify_hostname(struct ndpi_detection_module_struct *ndpi_mod
 
     next = strchr(item, '.');
 
-    if(!next) break; else item = &next[1];
+    if(!next)
+      break;
+    else {
+      item = &next[1];
+
+      if(strchr(item, '.') == NULL)
+	break; /* e.g. .com */
+    }
   }
 
+  if(ndpi_mod != NULL) {
+    /* Last resort: domain match with wildcard (e.g. google.) */
+    const char *domain_name = ndpi_get_host_domain(ndpi_mod, hostname);
+
+    if(domain_name != NULL) {
+      char buf[256], *dot;
+
+      snprintf(buf, sizeof(buf), "%s", domain_name);   
+      dot = strchr(buf, '.');
+
+      if(dot != NULL) {
+	dot[1] = '\0';
+
+#ifdef ENCODE_DATA
+	char out[256];	
+	u_int32_t out_len = ndpi_encode_domain(ndpi_mod, buf, out, sizeof(out));
+	
+	if(ndpi_hash_find_entry(s->domains, out, out_len, class_id) == 0)
+	  return(true);
+#else
+	if(ndpi_hash_find_entry(s->domains, item, strlen(item), class_id) == 0)
+	  return(true);
+#endif
+      }      
+    }
+  }
+  
   /* Not found */
   return(false);
 }

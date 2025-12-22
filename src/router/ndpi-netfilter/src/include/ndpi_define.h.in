@@ -104,7 +104,7 @@
 
 #define MAX_DEFAULT_PORTS                                        5
 
-#define NDPI_EXCLUDE_DISSECTOR(mod,flow) exclude_dissector(mod, flow, mod->current_dissector_idx, __FILE__, __FUNCTION__, __LINE__)
+#define NDPI_EXCLUDE_DISSECTOR(mod,flow) exclude_dissector(mod, flow, mod->current_dissector_idx, __FILE__, __func__, __LINE__)
 
 /**
  * macro for getting the string len of a static string
@@ -370,5 +370,11 @@ static inline uint64_t get_u_int64_t(const uint8_t* X, int O)
 #endif
 
 #define MAX_NBPF_CUSTOM_PROTO  8
+
+/* Unused parameters can be silenced as follows */
+#define __ndpi_unused_param(x) (void)(x)
+
+/* Maximum number of plugins supported by nDPI */
+#define NDPI_MAX_NUM_PLUGINS    32
 
 #endif /* __NDPI_DEFINE_INCLUDE_FILE__ */

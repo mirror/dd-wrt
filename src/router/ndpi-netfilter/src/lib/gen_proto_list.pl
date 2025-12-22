@@ -9,11 +9,11 @@ my (%L);
 die "BUG2" if !open(F,'<ndpi_main.c');
 while(<F>) {
 	next if !/ndpi_init_ptree_ipv/;
-	next if !/^\s+ndpi_init_ptree_ipv[46]\s*\(\s*ndpi_str,\s*ndpi_str->protocols_ptree6?,\s*(ndpi_[a-z-0-9_]+)\s*\)/;
-	$L{$1} = 1;
+	next if !/ndpi_init_ptree_ipv[46]/;
+	$L{$1} = 1 if /^\s+ndpi_init_ptree_ipv4\s*\(\s*ndpi_str->protocols->v4,\s*(ndpi_[a-z-0-9_]+)\s*\)/;
+	$L{$1} = 1 if /^\s+ndpi_init_ptree_ipv6\s*\(\s*ndpi_str,\s*ndpi_str->protocols->v6,\s*(ndpi_[a-z-0-9_]+)\s*\)/;
 }
 close(F);
-
 die "BUG1" if !open(F,'<../include/ndpi_protocol_ids.h');
 
 while(<F>) {
@@ -33,7 +33,7 @@ while(<F>) {
 close(F);
 my (@inclist,@iplist4,@iplist6,@iplist4_l,@iplist6_l);
 foreach my $ips (glob('inc_generated/*.c.inc')) {
-	next if $ips =~ /ndpi_crawlers_match/;
+	next if $ips =~ /ndpi_crawlers_match|ndpi_amazon_aws_api_gatewy_match/;
 	open(F,'<'.$ips) || die "open $ips $!";
 	my $found = 0;
 	foreach my $i (grep /^\s*static\s+(ndpi_network6?)\s+([a-zA-Z0-9_]+)\s*\[/,<F>) {

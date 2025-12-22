@@ -218,7 +218,6 @@ typedef struct ndpi_flow_info {
   // result only, not used for flow identification
   ndpi_protocol detected_protocol;
   ndpi_confidence_t confidence;
-  struct ndpi_fpc_info fpc;
   u_int16_t num_dissector_calls;
   u_int16_t dpi_packets;
   u_int8_t monitoring_state;
@@ -320,6 +319,9 @@ typedef struct ndpi_flow_info {
     ndpi_cipher_weakness client_unsafe_cipher, server_unsafe_cipher;
 
     u_int32_t quic_version;
+
+    u_int8_t num_blocks;
+    struct ndpi_tls_block blocks[NDPI_MAX_NUM_TLS_APPL_BLOCKS];
   } ssh_tls;
 
   struct {
@@ -359,7 +361,7 @@ typedef struct ndpi_flow_info {
 #else
   struct ndpi_bin payload_len_bin;
 #endif
-
+  
   /* Flow payload */
   u_int16_t flow_payload_len;
   char *flow_payload;  
@@ -399,6 +401,7 @@ typedef struct ndpi_stats {
   struct ndpi_lru_cache_stats lru_stats[NDPI_LRUCACHE_MAX];
   struct ndpi_automa_stats automa_stats[NDPI_AUTOMA_MAX];
   struct ndpi_patricia_tree_stats patricia_stats[NDPI_PTREE_MAX];
+  struct ndpi_str_hash_stats hash_stats[NDPI_STR_HASH_MAX];
 } ndpi_stats_t;
 
 

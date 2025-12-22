@@ -72,8 +72,8 @@ static void ndpi_search_rdp(struct ndpi_detection_module_struct *ndpi_struct,
   NDPI_LOG_DBG(ndpi_struct, "search RDP\n");
 
   if (packet->tcp != NULL) {
-    if(packet->payload_packet_len > 13 &&
-       tpkt_verify_hdr(packet) &&
+    int verified = tpkt_verify_hdr(packet);
+    if(packet->payload_packet_len > 13 && verified &&
        /* COTP */
        packet->payload[4] == packet->payload_packet_len - 5) {
 
@@ -83,7 +83,6 @@ static void ndpi_search_rdp(struct ndpi_detection_module_struct *ndpi_struct,
              packet->payload[13] == 0x08 /* RDP Length */) ||
 	    (packet->payload_packet_len > 17 &&
 	     memcmp(&packet->payload[11], "Cookie:", 7) == 0))) /* RDP Cookie */ {
-
 	  if(packet->payload_packet_len > 43) {
 	    u_int8_t rdp_requested_proto = packet->payload[43];
 
@@ -95,9 +94,11 @@ static void ndpi_search_rdp(struct ndpi_detection_module_struct *ndpi_struct,
 	      flow->extra_packets_func = ndpi_search_tls_over_rdp;
 	    }
 	  }
-	  
-          ndpi_int_rdp_add_connection(ndpi_struct, flow);
 
+	  if((flow->num_processed_pkts > 4) || flow->tls_quic.from_rdp)
+	    ndpi_int_rdp_add_connection(ndpi_struct, flow);
+	  else
+	    flow->l4.tcp.rdp_protocol_detected = 1 /* this looks like RDP */;
           return;
 	}
       } else {
@@ -105,11 +106,23 @@ static void ndpi_search_rdp(struct ndpi_detection_module_struct *ndpi_struct,
         if(packet->payload[5] == 0xD0 && /* COTP CC */
 	   packet->payload[11] == 0x02 && /* RDP Negotiation Response */
            packet->payload[13] == 0x08 /* RDP Length */) {
-          ndpi_int_rdp_add_connection(ndpi_struct, flow);
+
+	  ndpi_int_rdp_add_connection(ndpi_struct, flow);
 	  return;
 	}
       }
     }
+
+    if( flow->l4.tcp.rdp_protocol_detected) {
+      /* The first message os RDP but the responseis not */
+      ndpi_int_rdp_add_connection(ndpi_struct, flow);
+
+      if(!verified)
+	ndpi_set_risk(ndpi_struct, flow, NDPI_PROBING_ATTEMPT, "Mismatching client/server protocol");
+      
+      return;
+    }
+    
     NDPI_EXCLUDE_DISSECTOR(ndpi_struct, flow);
   } else if(packet->udp != NULL) {
     u_int16_t s_port = ntohs(packet->udp->source);
@@ -129,6 +142,7 @@ static void ndpi_search_rdp(struct ndpi_detection_module_struct *ndpi_struct,
 	     ntohs(get_u_int16_t(packet->payload, 12)) <= 1600 && /* Sensible values for upstream MTU */
 	     ntohs(get_u_int16_t(packet->payload, 14)) <= 1600) { /* Sensible values for downstream MTU */
 	    /* Initial "syn-ack" */
+
 	    ndpi_int_rdp_add_connection(ndpi_struct, flow);
 	    return;
 	  } else {
@@ -168,7 +182,7 @@ static void ndpi_search_rdp(struct ndpi_detection_module_struct *ndpi_struct,
 	    flow->l4.udp.rdp_to_srv_pkts = 2 /* stage 2 */;
 	    
 	    if(flow->l4.udp.rdp_from_srv_pkts == 2) {
-              ndpi_int_rdp_add_connection(ndpi_struct, flow);
+	      ndpi_int_rdp_add_connection(ndpi_struct, flow);
               return;
 	    }
 	  }

@@ -35,24 +35,50 @@
 
 static void *(*_ndpi_malloc)(size_t size);
 static void (*_ndpi_free)(void *ptr);
+static void *(*_ndpi_calloc)(size_t nmemb, size_t size);
+static void *(*_ndpi_realloc)(void *ptr, size_t size);
+static void *(*_ndpi_aligned_malloc)(size_t alignment, size_t size);
+static void (*_ndpi_aligned_free)(void *ptr);
+static void *(*_ndpi_flow_malloc)(size_t size);
+static void (*_ndpi_flow_free)(void *ptr);
 
-static atomic_t ndpi_tot_allocated_memory;
+static volatile long int ndpi_tot_allocated_memory;
 
 /* ****************************************** */
 
-void set_ndpi_malloc(void *(*__ndpi_malloc)(size_t size)) {
-  _ndpi_malloc = __ndpi_malloc;
-}
+void ndpi_set_memory_alloction_functions(void *(*__ndpi_malloc)(size_t size),
+                                         void (*__ndpi_free)(void *ptr),
+                                         void *(*__ndpi_calloc)(size_t nmemb, size_t size),
+                                         void *(*__ndpi_realloc)(void *ptr, size_t size),
+                                         void *(*__ndpi_aligned_malloc)(size_t alignment, size_t size),
+                                         void (*__ndpi_aligned_free)(void *ptr),
+                                         void *(*__ndpi_flow_malloc)(size_t size),
+                                         void (*__ndpi_flow_free)(void *ptr)) {
 
-void set_ndpi_free(void (*__ndpi_free)(void *ptr)) {
-  _ndpi_free = __ndpi_free;
+  /* We can't log here */
+
+  if(__ndpi_malloc && __ndpi_free &&
+     __ndpi_calloc && __ndpi_realloc) {
+    _ndpi_malloc = __ndpi_malloc;
+    _ndpi_free = __ndpi_free;
+    _ndpi_calloc = __ndpi_calloc;
+    _ndpi_realloc = __ndpi_realloc;
+  }
+  if(__ndpi_aligned_malloc && __ndpi_aligned_free) {
+    _ndpi_aligned_malloc = __ndpi_aligned_malloc;
+    _ndpi_aligned_free = __ndpi_aligned_free;
+  }
+  if(__ndpi_flow_malloc && __ndpi_flow_free) {
+    _ndpi_flow_malloc = __ndpi_flow_malloc;
+    _ndpi_flow_free = __ndpi_flow_free;
+  }
 }
 
 /* ****************************************** */
 
 u_int32_t ndpi_get_tot_allocated_memory() {
 #ifndef __KERNEL__
-   return(__sync_fetch_and_add(&ndpi_tot_allocated_memory, 0));
+  return(__sync_fetch_and_add(&ndpi_tot_allocated_memory, 0));
 #else
   return 0;
 #endif
@@ -61,32 +87,23 @@ u_int32_t ndpi_get_tot_allocated_memory() {
 /* ****************************************** */
 
 void *ndpi_malloc(size_t size) {
-#ifndef __KERNEL__
-   __sync_fetch_and_add(&ndpi_tot_allocated_memory, size);
-   return(_ndpi_malloc ? _ndpi_malloc(size) : malloc(size));
-#else
+#ifdef __KERNEL__
   return _ndpi_malloc(size);
+#else
+  __sync_fetch_and_add(&ndpi_tot_allocated_memory, size);
+  return(_ndpi_malloc ? _ndpi_malloc(size) : malloc(size));
 #endif
 }
 
 /* ****************************************** */
 
-void *ndpi_calloc(unsigned long count, size_t size) {
-  size_t len = count * size;
-#ifndef __KERNEL__
-  void *p = _ndpi_malloc ? _ndpi_malloc(len) : malloc(len);
+void *ndpi_calloc(size_t nmemb, size_t size) {
+#ifdef __KERNEL__
+  return _ndpi_calloc(nmemb, size);
 #else
-  void *p = _ndpi_malloc(len);
+  __sync_fetch_and_add(&ndpi_tot_allocated_memory, nmemb * size);
+  return(_ndpi_calloc ? _ndpi_calloc(nmemb, size) : calloc(nmemb, size));
 #endif
-
-  if(p) {
-    memset(p, 0, len);
-#ifndef __KERNEL__
-    __sync_fetch_and_add(&ndpi_tot_allocated_memory, len);
-#endif
-  }
-
-  return(p);
 }
 
 /* ****************************************** */
@@ -106,19 +123,71 @@ void ndpi_free(void *ptr) {
 #endif
 }
 
+void *ndpi_realloc(void *ptr, size_t size) {
+#ifdef __KERNEL__
+  return _ndpi_realloc(ptr, size);
+#else
+  __sync_fetch_and_add(&ndpi_tot_allocated_memory, size);
+  return(_ndpi_realloc ? _ndpi_realloc(ptr, size) : realloc(ptr, size));
+#endif
+}
+
 /* ****************************************** */
 
-void *ndpi_realloc(void *ptr, size_t old_size, size_t new_size) {
-  void *ret = ndpi_malloc(new_size);
+void *ndpi_aligned_malloc(size_t alignment, size_t size) {
+#ifdef __KERNEL__
+  return _ndpi_malloc(size);
+#else
+  __sync_fetch_and_add(&ndpi_tot_allocated_memory, size);
+  if(_ndpi_aligned_malloc) {
+    return _ndpi_aligned_malloc(alignment, size);
+  }
 
-  if(!ret)
-    return(ret);
-  else {
-    if(ptr != NULL) {
-      memcpy(ret, ptr, (old_size < new_size ? old_size : new_size));
-      ndpi_free(ptr);
-    }
-    return(ret);
+  void* p;
+#ifdef _MSC_VER
+  p = _aligned_malloc(size, alignment);
+#elif defined(__MINGW32__) || defined(__MINGW64__)
+  p = __mingw_aligned_malloc(size, alignment);
+#else
+  if (posix_memalign(&p, alignment, size) != 0)
+    return NULL;
+#endif
+  return p;
+#endif
+}
+
+/* ****************************************** */
+
+void ndpi_aligned_free(void *ptr) {
+#ifdef __KERNEL__
+  return _ndpi_free(ptr);
+#else
+  if(_ndpi_aligned_free) {
+    _ndpi_aligned_free(ptr);
+    return;
+  }
+#ifdef _MSC_VER
+  _aligned_free(ptr);
+#elif defined(__MINGW32__) || defined(__MINGW64__)
+  __mingw_aligned_free(ptr);
+#else
+  free(ptr); /* No ndpi_free!! */
+#endif
+#endif
+}
+
+/* ****************************************** */
+
+void *ndpi_flow_malloc(size_t size) {
+  return(_ndpi_flow_malloc ? _ndpi_flow_malloc(size) : ndpi_malloc(size));
+}
+
+/* ****************************************** */
+
+void ndpi_flow_free(void *ptr) {
+  if(ptr) {
+    ndpi_free_flow_data((struct ndpi_flow_struct *)ptr);
+    _ndpi_flow_free ? _ndpi_flow_free(ptr) : ndpi_free(ptr);
   }
 }
 

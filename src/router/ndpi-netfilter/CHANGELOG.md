@@ -1,5 +1,263 @@
 # CHANGELOG
 
+
+#### nDPI 5.0 (Nov 2025)
+
+## Major Changes
+
+ - Create a new nDPI fingerprint, combining TCP fingerprint, JA4 fingepriint and TLS SHA1 certificate (or JA3S if SHA1 is missing). See: https://www.ntop.org/beyond-ja3-ja4-introducing-ndpi-traffic-fingerprint/
+ - Add detection of (TLS/QUIC/HTTP) flows whose hostname was not previously resolved via DNS. See: https://www.ntop.org/when-snis-cannot-be-trusted/
+ - Add support for an unlimited number of (custom) protocols. See https://github.com/ntop/nDPI/issues/2136
+ - Extend custom rules (see https://github.com/ntop/nDPI/blob/dev/example/protos.txt for some examples):
+   - match via JA4 (https://github.com/ntop/nDPI/commit/087726d12d35299c1127910cd5c46e8170561f87)
+   - match via nDPI fingerprint (https://github.com/ntop/nDPI/commit/7c53fcde85ae7c5584e7e14499b6aed497ef1af8)
+   - match via HTTP URL (https://github.com/ntop/nDPI/commit/5abe185e2c44b18e422ef8a746487271a0292781, https://github.com/ntop/nDPI/pull/3014)
+   - support for category and breed in custom rules (https://github.com/ntop/nDPI/pull/2872)
+
+## Important API Changes
+
+ - Building system: you need to explicitly call `configure` script: `./autogen.sh && ./configure --$OPTIONS & make`. See: https://github.com/ntop/nDPI/pull/2993
+ - Remove `ndpi_set_protocol_detection_bitmask2()`: all protocols are enabled by default. If you need to disable some protocols you can use the usual `ndpi_set_config()`
+ - The defines `NDPI_MAX_SUPPORTED_PROTOCOLS` and `NDPI_MAX_NUM_CUSTOM_PROTOCOLS` have been removed: the number of protocols should be gotten only at runtime, via `ndpi_get_num_protocols()`
+ - Remove `NDPI_PROTOCOL_BITMASK` (because its size is hardcoded to 512). Create a new structure, `ndpi_bitmask`, where the max number of bits is specified at runtime
+ - Change the return parameter of `ndpi_detection_process_packet()`; get rid of `ndpi_extra_dissection_possible()`. See: https://github.com/ntop/nDPI/pull/2942
+ - Remove `NDPI_PROTOCOL_ADULT_CONTENT`, `NDPI_PROTOCOL_LLM` and `NDPI_PROTOCOL_ADS_ANALYTICS_TRACK` because they are not real protocol: keep only the categories with a similar name
+ - Modify the API to set a custom memory allocator
+ - Added ability to export host-based configuration (https://github.com/ntop/nDPI/pull/3022)
+
+Further information are available at https://github.com/ntop/nDPI/issues/2862
+
+## New Supported Protocols and Services
+
+ - Add Microsoft Delivery Optimization in https://github.com/ntop/nDPI/pull/2799
+ - Add Rockstar Games in https://github.com/ntop/nDPI/pull/2805
+ - Add kick.com in https://github.com/ntop/nDPI/pull/2813
+ - Remove World Of Kung Fu in https://github.com/ntop/nDPI/pull/2815
+ - Remove Vhua https://github.com/ntop/nDPI/pull/2816
+ - Rename Lotus Notes & Ubuntu One in https://github.com/ntop/nDPI/pull/2817
+ - Remove Half-Life 2 in https://github.com/ntop/nDPI/pull/2819
+ - Remove Warcraft 3 (pre Reforged) in https://github.com/ntop/nDPI/pull/2826
+ - Add MELSEC in https://github.com/ntop/nDPI/pull/2846
+ - Add Hamachi in https://github.com/ntop/nDPI/pull/2860
+ - Add GLBP in https://github.com/ntop/nDPI/pull/2879
+ - Added EasyWeather in https://github.com/ntop/nDPI/pull/2912
+ - Add Blacknut, Boosteroid and Rumble in https://github.com/ntop/nDPI/pull/2907
+ - Add Mudfish in https://github.com/ntop/nDPI/pull/2932
+ - Add TriStation https://github.com/ntop/nDPI/pull/2964
+ - Add Samsung SDP in https://github.com/ntop/nDPI/pull/2966
+ - Add Matter in https://github.com/ntop/nDPI/pull/2957
+ - Add new protocols for Amazon/AWS sub-classification in https://github.com/ntop/nDPI/pull/2975
+ - Add ESPN in https://github.com/ntop/nDPI/pull/2980
+ - Add Akamai in https://github.com/ntop/nDPI/commit/d69446893df06c0ffa63228d6dfab3dada6ac616
+ - Add ~30 new categories in  https://github.com/ntop/nDPI/commit/6dda4833293cda6a56fc1a5d7e36e890df91cab7 and https://github.com/ntop/nDPI/commit/99f94b9388589486f620e68b89e1b7da3e8f7697
+ - Remove `NDPI_PROTOCOL_ADULT_CONTENT`, `NDPI_PROTOCOL_LLM` and `NDPI_PROTOCOL_ADS_ANALYTICS_TRACK` because they are not real protocol: keep only the similar categories. See: https://github.com/ntop/nDPI/commit/3a243bb40d54529002f834e3ef770c0408b7b0d4, https://github.com/ntop/nDPI/pull/2900
+
+Further information are available at https://github.com/ntop/nDPI/blob/dev/doc/protocols.rst
+
+## New features
+
+ - Add support for out-of-tree builds (https://github.com/ntop/nDPI/pull/2993)
+ - Provide an explicit state for the flow classification process (https://github.com/ntop/nDPI/pull/2942)
+ - Add the concept of protocols stack: more than 2 protocols in the flow classification (https://github.com/ntop/nDPI/pull/2913)
+ - Add detection of flows where there is a mismatch between the numeric flow server IP address and the known IPs for such protocol. It is still a work-in-progress
+
+## New algorithms
+
+ - New API functions to encode/decode hex strings: `ndpi_hex_encode()`, `ndpi_hex_decode()` in https://github.com/ntop/nDPI/commit/74f5e0ea856ea61d979e7531f494c1139c9065fa
+ - New ranking detection API to determine rank changes: `ndpi_init_ranking()`, `ndpi_term_ranking()`, `ndpi_serialize_ranking()`, `ndpi_deserialize_ranking()`, `ndpi_ranking_add_epoch()`
+
+## New configuration knobs
+
+Further information are available at https://github.com/ntop/nDPI/blob/dev/doc/configuration_parameters.md
+
+ - `hostname_dns_check`: enable/disable detection of flows (TLS/QUIC/HTTP) whose hostname was not previously resolved via DNS
+ - `metadata.tcp_fingerprint`: enable/disable computation and export of raw TCP fingerprint
+ - `metadata.tcp_fingerprint_format`: format of the TCP fingerprint. 0 = native nDPI format, 1 = MuonOF (see: https://github.com/sundruid/muonfp)
+ - `http,metadata.resp.content_type`: enable/disable export of Content Type (response) header for HTTP flows
+ - `http,metadata.resp.server`: enable/disable export of Server (request) header for HTTP flows
+ - `tls,blocks_analysis`: enable/disable analysis of TLS blocks size
+
+## Improvements
+
+ - Improved protocol guess in https://github.com/ntop/nDPI/commit/b8dc84fe318d973a17cdd1be1c6cad65f960386f
+ - STUN: set default port for TCP, too in https://github.com/ntop/nDPI/pull/2804
+ - Add VK Video domain in https://github.com/ntop/nDPI/pull/2809
+ - Update Threema and VK ASN lists in https://github.com/ntop/nDPI/commit/febcc7e585db7e3c8e3ecd6f875fdbe9bbe79b2b
+ - Micro-optimizations of `ndpi_strncasestr` and 'LINE_*' macros in https://github.com/ntop/nDPI/pull/2808
+ - Improve Ubiquiti device discovery request/response detection  in https://github.com/ntop/nDPI/pull/2810
+ - Add raw tcp fingerprint to json in https://github.com/ntop/nDPI/pull/2812
+ - Improve Source Engine protocol detection in https://github.com/ntop/nDPI/pull/2819
+ - RTSP: simplify detection in https://github.com/ntop/nDPI/pull/2822
+ - TLS: register TLS dissector only once in https://github.com/ntop/nDPI/pull/2825
+ - Flow: keep track of "dissectors" in https://github.com/ntop/nDPI/pull/2828
+ - Gnutella: simplify code, to support only gtk-gnutella client in https://github.com/ntop/nDPI/pull/2830
+ - Minor simplification on protocol/dissector registration in https://github.com/ntop/nDPI/pull/2833
+ - Added new API calls: `ndpi_is_master_only_protocol()`, `ndpi_normalize_protocol()` in https://github.com/ntop/nDPI/commit/c590dc49551b32f12ebb4850e13a99cacbf90366
+ - CrossFire: update code in https://github.com/ntop/nDPI/pull/2834
+ - Another minor simplification on protocol/dissector registration in https://github.com/ntop/nDPI/pull/2835
+ - Drop GW1 support and add basic GW2 detection in https://github.com/ntop/nDPI/pull/2836
+ - ospf, ipsec: use different ids for protocols at layer3 in https://github.com/ntop/nDPI/pull/2838
+ - Add new Adjust domains in https://github.com/ntop/nDPI/pull/2841
+ - VRRP: add missing dissector registration in https://github.com/ntop/nDPI/pull/2842
+ - Improve BFCP detection in https://github.com/ntop/nDPI/pull/2844
+ - Simplify ZeroMQ detection in https://github.com/ntop/nDPI/pull/2847
+ - A new interface for dissectors registration in https://github.com/ntop/nDPI/pull/2843
+ - Add ndpi_memcasecmp, refactor mail protocol dissectors in https://github.com/ntop/nDPI/pull/2849
+ - ndpi_flow_tcp_struct refactoring in https://github.com/ntop/nDPI/pull/2848
+ - Dofus: update detection to version 3.X in https://github.com/ntop/nDPI/pull/2852
+ - Better separation between "protocols" and "dissectors" in https://github.com/ntop/nDPI/pull/2855
+ - Allow to specify default ports also via range in https://github.com/ntop/nDPI/pull/2856
+ - Improved detection of TCP scanners in https://github.com/ntop/nDPI/commit/9e5a67f3690e7f5a5ca6bd796ea9eea6c167a6d5
+ - Add `ndpi_load_protocols_dir()` API call for loading IP-based protocol detection in https://github.com/ntop/nDPI/commit/2e679ba8647aff7b0114de2940a03e4186ccc3dc
+ - Updated bots and scanners list in https://github.com/ntop/nDPI/commit/2e679ba8647aff7b0114de2940a03e4186ccc3dc
+ - New API to enable/disable protocols; remove `ndpi_set_protocol_detection_bitmask2()` in https://github.com/ntop/nDPI/pull/2853
+ - First step into a dynamic number of protocols in https://github.com/ntop/nDPI/pull/2857
+ - Hamachi: improve handshake check in https://github.com/ntop/nDPI/pull/2861
+ - Remove `ndpi_set_proto_defaults()` from the API in https://github.com/ntop/nDPI/pull/2863
+ - Split `ndpi_set_proto_defaults()` logic in https://github.com/ntop/nDPI/pull/2864
+ - Add a configuration to test a huge number of custom protocols in https://github.com/ntop/nDPI/pull/2865
+ - Improved HTTP risk message report in https://github.com/ntop/nDPI/commit/ed6f257f1d9788bc0efc65da595337e82d9e2b7f
+ - Speed up protocol lookup in `ndpi_get_proto_by_name()` in https://github.com/ntop/nDPI/pull/2867
+ - Speed up category lookup in `ndpi_get_category_id()` in https://github.com/ntop/nDPI/pull/2869
+ - Add `ndpi_get_breed_by_name()` in https://github.com/ntop/nDPI/pull/2870
+ - Dynamic allocation of `ndpi_struct->proto_defaults[]` in https://github.com/ntop/nDPI/pull/2866
+ - Added IMO and Badoo files in https://github.com/ntop/nDPI/commit/38cc4ac22b97f267fe00f2abc6979f5921653b72
+ - Normalize breed/category names: use _ instead of spaces and slashes in https://github.com/ntop/nDPI/pull/2873
+ - Remove `NDPI_PROTOCOL_BITMASK`; add a new generic bitmask data structure in https://github.com/ntop/nDPI/pull/2871
+ - Improved HTTP risk report in https://github.com/ntop/nDPI/commit/2a77c58ebefd60024e7731b3befb20714bc59314
+ - Simplify `ndpi_internal_detection_process_packet()` in https://github.com/ntop/nDPI/pull/2877
+ - Rework sanity checks and remove some functions from API in https://github.com/ntop/nDPI/pull/2882
+ - Check `ndpi_finalize_initialization()` return value in https://github.com/ntop/nDPI/pull/2884
+ - Prelimary work to remove `NDPI_LAST_IMPLEMENTED_PROTOCOL` in https://github.com/ntop/nDPI/pull/2885
+ - Move dissectors initialization to `ndpi_finalize_initialization()` in https://github.com/ntop/nDPI/pull/2886
+ - Faster configuration in https://github.com/ntop/nDPI/pull/2887
+ - Rework `ndpi_init_detection_module_ext()` in https://github.com/ntop/nDPI/pull/2888
+ - Rework default ports initialization in https://github.com/ntop/nDPI/pull/2893
+ - fuzz: fuzz loading of external protocols lists in https://github.com/ntop/nDPI/pull/2897
+ - New API to enable/disable protocols. Removed `NDPI_LAST_IMPLEMENTED_PROTOCOL` in https://github.com/ntop/nDPI/pull/2894
+ - Create a wrapper to check for `NDPI_KNOWN_PROTOCOL_ON_NON_STANDARD_PORT` risk in https://github.com/ntop/nDPI/pull/2898
+ - If `NDPI_KNOWN_PROTOCOL_ON_NON_STANDARD_PORT` risk is disabled, avoid some work in https://github.com/ntop/nDPI/pull/2899
+ - STUN: don't check `NDPI_KNOWN_PROTOCOL_ON_NON_STANDARD_PORT` flow risk in https://github.com/ntop/nDPI/pull/2901
+ - Bittorrent: update default ports in https://github.com/ntop/nDPI/pull/2902
+ - Rework classification in `ndpi_match_host_subprotocol()`-like functions in https://github.com/ntop/nDPI/pull/2910
+ - Add auto-updating cryptocurrency mining pool lists in https://github.com/ntop/nDPI/pull/2891
+ - websocket: `ndpi_set_detected_protocol()` should be called only once in https://github.com/ntop/nDPI/pull/2911
+ - Refactor: make src_name/dst_name dynamically allocated to reduce RAM usage in struct ndpi_flow_info in https://github.com/ntop/nDPI/pull/2908
+ - Add some domains with generic Game category in https://github.com/ntop/nDPI/pull/2930
+ - Added ability to enable DNS cache via API in https://github.com/ntop/nDPI/commit/db37becb20e0c065b94f5e15e67b47a5e833cca2
+ - Improved `ndpi_is_valid_hostname()` and changed its prototype (now it returns a bool) in https://github.com/ntop/nDPI/commit/9e5a7bde9dc5bae1ee93699733f3d73232904ab4
+ - Implemented nDPI fingerprint that is computed using TCP fingerprint, JA4 fingepriint, TLS SHA1 certificate (if present), or JA3S fingerprint (is SHA1 is missing) in https://github.com/ntop/nDPI/commit/11d74ea286a8ec91cbdcd6605c439323d5209553, https://github.com/ntop/nDPI/pull/2961, https://github.com/ntop/nDPI/pull/3002
+ - Initial (WiP/basic) implementation of the ranking detection API used to determine rank changes in https://github.com/ntop/nDPI/commit/a6e2b4e252002fd9ad28cc11b6deb2a668a47393, https://github.com/ntop/nDPI/commit/2b64ac72df19363a93daddd43b38c9c319f84f54, https://github.com/ntop/nDPI/commit/df94d7e6b708927b518ebbc81fe5afdfe933ff8e, https://github.com/ntop/nDPI/commit/52ce501355842f6ae589dda1720aafc5f01ee10c, https://github.com/ntop/nDPI/commit/15f8dad9e848b4e02df0ebfcbb97b115e129c00b
+ - croaring: update to 4.3.6 (from 3.0.0) in https://github.com/ntop/nDPI/pull/2934
+ - fuzz: add new fuzzers for bitmask and filter data structures in https://github.com/ntop/nDPI/pull/2937
+ - Rework flow breed in https://github.com/ntop/nDPI/pull/2926
+ - Update CryNetwork protocol dissector in https://github.com/ntop/nDPI/pull/2959
+ - Added checks on TLS key_share and supported_groups in https://github.com/ntop/nDPI/commit/37562c655d13fa301bc7fb584e4cb9331c303ff5, https://github.com/ntop/nDPI/pull/2963, https://github.com/ntop/nDPI/pull/2967
+ - Improved CryNetwork disector; detect "special" packets in https://github.com/ntop/nDPI/pull/2965
+ - Use `const` for some IPv6 structs used as fn args in https://github.com/ntop/nDPI/pull/2969
+ - HTTP: add further configuration to enable/disable metadata extraction in https://github.com/ntop/nDPI/pull/2972
+ - Updated fingerprint for macOS in https://github.com/ntop/nDPI/commit/02a92e387d64e19c60236982e082b1c1c87b7b51
+ - Improved Telnet detection. Fixes #2936 in https://github.com/ntop/nDPI/pull/2982
+ - We are not interested into entropy for encrypted flows in https://github.com/ntop/nDPI/pull/2983
+ - Add statistics about hash data structures in https://github.com/ntop/nDPI/pull/2995
+ - Improved Android classification in https://github.com/ntop/nDPI/commit/cb9e63fc8c726888208b98043b073703bae6a545
+ - Added NDPI_MISMATCHING_PROTOCOL_WITH_IP flow risk in https://github.com/ntop/nDPI/commit/d69446893df06c0ffa63228d6dfab3dada6ac616
+ - Added wildcard mapping support in categories in https://github.com/ntop/nDPI/commit/eca94a4f8bc56716db2be3774616ce867562fe76
+ - Extend values saved in hash data structure to `u_int64_t` in https://github.com/ntop/nDPI/pull/3013
+ - Added TLS Block Analysis in https://github.com/ntop/nDPI/pull/3016
+ - Update every lists in https://github.com/ntop/nDPI/pull/3017
+
+## Bug Fixes
+
+ - CentOS compilation fix in https://github.com/ntop/nDPI/commit/febcc7e585db7e3c8e3ecd6f875fdbe9bbe79b2b
+ - Fix classification when non tcp/udp protocols are disabled in https://github.com/ntop/nDPI/pull/2824
+ - Remove duplicate ALPS extension in https://github.com/ntop/nDPI/pull/2821
+ - uthash: use ndpi wrappers for memory allocation in https://github.com/ntop/nDPI/pull/2829
+ - Gnutella: avoid false positives in https://github.com/ntop/nDPI/pull/2832
+ - Fix `isAppProtocol` for GTP_U in https://github.com/ntop/nDPI/pull/2837
+ - IPP: fix selection bitmask in https://github.com/ntop/nDPI/pull/2845
+ - Fix some warnings reported by scan-build in https://github.com/ntop/nDPI/pull/2851
+ - BFCP: fix check on payload length and extract metadata in https://github.com/ntop/nDPI/pull/2854
+ - Fix configuration of ip lists of flow risks in https://github.com/ntop/nDPI/pull/2859
+ - Fixes invalid SSH client/server detection based on stage and not on packet direction in https://github.com/ntop/nDPI/commit/38fe9859b3c727d5c97c1d137cf57c1f755782f1
+ - TCP fingerprint: fix an heap-buffer-overflow in https://github.com/ntop/nDPI/pull/2876
+ - Fix heap-buffer-overflow in https://github.com/ntop/nDPI/pull/2896
+ - Viber: fix category in https://github.com/ntop/nDPI/commit/64ea82ce2808e6647d1496872ed011f4b2efb628
+ - ndpiReader: fix check on max number of packets per flow in https://github.com/ntop/nDPI/commit/06a49b4086257f46fd44a1f9f176a539fb49bcdc
+ - Fix segfault on -m option: safely reuse/reset stats between iterations (#2903) in https://github.com/ntop/nDPI/pull/2904
+ - Fix logic: reset stats once per thread after clearing all flow roots in https://github.com/ntop/nDPI/pull/2905
+ - Fix classification with nBPF rules in https://github.com/ntop/nDPI/commit/ed1e6e2a3946389c3f429bd725de7646b9b14959
+ - Fix `ndpi_reconcile_protocols()` with classification by port/ip in https://github.com/ntop/nDPI/commit/898135b2f7d5c7353da466778fca16a73e4b3d76
+ - Jabber: proper subclassification of TruePhone in https://github.com/ntop/nDPI/commit/e5dbe83ecfb072d980cf3efe8f4d607233303ebb
+ - Fix JA4 fingerprinting in https://github.com/ntop/nDPI/pull/2915
+ - Converts a host to a domain name to avoid mismatch when mixing domains with hosts in https://github.com/ntop/nDPI/commit/6785ae3825399519de8bc95a3c58dabc1b91bda8
+ - Fix corner cases for custom protocols and TCP fingerprint in https://github.com/ntop/nDPI/pull/2919
+ - Bittorrent: fix breed value in https://github.com/ntop/nDPI/commit/a79e5584a9bbbf51bcd6c67d8e64364169aa4b21
+ - Google, Signal: fix breed value in https://github.com/ntop/nDPI/pull/2920
+ - Whois/DAS: avoid false positives in https://github.com/ntop/nDPI/pull/2925
+ - MS domain lists: avoid duplicates in https://github.com/ntop/nDPI/pull/2928
+ - Z39.50: avoid false positives in https://github.com/ntop/nDPI/pull/2938
+ - Fix the crash issue during protocol guessing in multi-core scenarios in https://github.com/ntop/nDPI/pull/2939
+ - Add fix to allow hosts and domains match when using protos.txt in https://github.com/ntop/nDPI/commit/80b5c59fafea1e9e92076a4b06101c3e3821037d
+ - SSH: fix extraction of client identification string in https://github.com/ntop/nDPI/pull/2949
+ - Fixed risk typ0 in https://github.com/ntop/nDPI/pull/2952
+ - Fix string truncation warning in https://github.com/ntop/nDPI/pull/2954
+ - SSDP: fix extraction of SNI in https://github.com/ntop/nDPI/pull/2955
+ - Fix (clang) linker issue cuased by missing 'static inline's in https://github.com/ntop/nDPI/pull/2956
+ - Fix roaring_v2 build issue if compiling with `-Werrror -Wall -Wextra -fno-inline` in https://github.com/ntop/nDPI/pull/2958
+ - Fix JSON value "amount of TLS blocks" in tls2json if dissected protocol is QUIC in https://github.com/ntop/nDPI/pull/2960
+ - WindowsUpdate: fix category and flow risk (over HTTP) in https://github.com/ntop/nDPI/pull/2973
+ - Fix `ndpi_is_valid_hostname()` in https://github.com/ntop/nDPI/pull/2974
+ - Check `ndpi_init_deserializer_buf` params in https://github.com/ntop/nDPI/commit/7b8b1eb7f7fb6b1e13eab76aadec2e1342d54913
+ - Proper handling of internal/external ids in FPC; fix FPC with custom rules in https://github.com/ntop/nDPI/pull/3007
+ - Fixes invalid initialization that caused the two commands below to return different results in https://github.com/ntop/nDPI/commit/79b74115d292bed229cc32ea3122fe657c3532bd
+ - Proper handling of internal/external ids in ndpi_detection_giveup() in https://github.com/ntop/nDPI/commit/9a925abd28f1e91015ee0ea80514561fabad7b9b
+ - Proper handling of internal/external ids in FPC; fix FPC with custom rules (#3007)
+ - Fix FPC confidence with custom rules in https://github.com/ntop/nDPI/pull/3008
+ - Fix flow risks with custom rules in https://github.com/ntop/nDPI/pull/3010
+ - Fix broken header install in https://github.com/ntop/nDPI/pull/3012
+
+## Misc
+
+ - Fix unit test compilation on Window in https://github.com/ntop/nDPI/pull/2802
+ - Fix python dev requirements installation command in https://github.com/ntop/nDPI/pull/2800
+ - Remove ProtonVPN address lists in https://github.com/ntop/nDPI/pull/2831 and https://github.com/ntop/nDPI/pull/2811
+ - Update/Improve documentation in https://github.com/ntop/nDPI/pull/2820, https://github.com/ntop/nDPI/pull/2984, https://github.com/ntop/nDPI/pull/2985
+ - Fix README.md in https://github.com/ntop/nDPI/pull/2840
+ - A new attempt to improve public documentation in https://github.com/ntop/nDPI/pull/2881
+ - fuzz: make allocation failures a bit more unlikely in https://github.com/ntop/nDPI/commit/2b14b46df39e14d8c41ca1a5aa8db375bbc11ba6
+ - ndpiReader: print categories summary in https://github.com/ntop/nDPI/pull/2895
+ - Added simple tool hosts2domains used to extract domain names from hostnames written on a text file in https://github.com/ntop/nDPI/commit/16f332eb415feb3e1f475b2ed67d4438fedac51b
+ - Build tests in oss-fuzz in https://github.com/ntop/nDPI/pull/2918
+ - ndpiReader: add breed to flow information in https://github.com/ntop/nDPI/pull/2924
+ - ndpiReader: improve debug option '-x' to test category matches in https://github.com/ntop/nDPI/commit/6a3228388b35b782203663085c03b3688a3180f8
+ - Added utility to print content of rank files in https://github.com/ntop/nDPI/commit/d20f4bb1c0cf6642bcd96209cc856068c47d0e67
+ - fuzz: improve per-fuzzer introspector statistics in https://github.com/ntop/nDPI/pull/2970
+ - CI: update macOS runners in https://github.com/ntop/nDPI/pull/2971
+ - Rocky10 fixes in https://github.com/ntop/nDPI/commit/560e5c9fb27ee3d496743c257e142744c95121a6
+ - Automatically update the ip list of ChatGPT bots in https://github.com/ntop/nDPI/pull/2977
+ - ndpiReader: quick test for a list of domains in https://github.com/ntop/nDPI/pull/2978
+ - configure: avoid compiling rrdtool if `--with-only-libndpi` is set in https://github.com/ntop/nDPI/pull/2987
+ - ndpiReader: fix memory accounting in https://github.com/ntop/nDPI/pull/2988
+ - fuzz: simplify Makefile in https://github.com/ntop/nDPI/pull/2991
+ - configure: improve roaring version detection in https://github.com/ntop/nDPI/pull/2989
+ - Fix library installation path duplication (issue #1971) in https://github.com/ntop/nDPI/pull/2986
+ - Fix CI RPM build (switch to Alma Linux 8). Fix #2997 in https://github.com/ntop/nDPI/pull/3001
+ - fuzz: keep only real/interesting corpora in https://github.com/ntop/nDPI/pull/3009
+
+## New Contributors
+ - @lodagro made their first contribution in https://github.com/ntop/nDPI/pull/2800
+ - @funesca made their first contribution in https://github.com/ntop/nDPI/pull/2812
+ - @kriztalz made their first contribution in https://github.com/ntop/nDPI/pull/2821
+ - @bhaskarbhar made their first contribution in https://github.com/ntop/nDPI/pull/2840
+ - @TEA-CoderR made their first contribution in https://github.com/ntop/nDPI/pull/2891
+ - @kalindafab made their first contribution in https://github.com/ntop/nDPI/pull/2907
+ - @drnpkr made their first contribution in https://github.com/ntop/nDPI/pull/2915
+ - @AdamKorcz made their first contribution in https://github.com/ntop/nDPI/pull/2918
+ - @fanxb made their first contribution in https://github.com/ntop/nDPI/pull/2939
+
+**Full Changelog**: https://github.com/ntop/nDPI/compare/4.14...5.0
+
 #### nDPI 4.14 (Apr 2025)
 
 ## Major Changes
@@ -17,7 +275,7 @@
  - Add health category
  - Unify "Skype" and "Teams" IDs (#2687)
 
-Information about all protocols are available at https://github.com/ntop/nDPI/blob/dev/doc/protocols.rst
+Information about all protocols are available at https://github.com/ntop/nDPI/blob/dev/doc/protocols.md
 
 ## New features
 

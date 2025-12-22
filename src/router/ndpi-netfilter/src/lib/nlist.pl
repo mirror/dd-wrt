@@ -7,6 +7,7 @@ my %P;
 
 match_inc('ndpi_content_match.c.inc','host_protocol_list');
 foreach my $f (glob('inc_generated/*.c.inc')) {
+	print STDERR "found $f\n";
 	next if $f eq 'inc_generated/ndpi_dga_match.c.inc';
 #	next if $f eq 'ndpi_content_match.c.inc';
 #	next if $f !~ /^ndpi_([a-z0-9_]+)match.c.inc$/;
@@ -14,6 +15,7 @@ foreach my $f (glob('inc_generated/*.c.inc')) {
 	next if $f eq 'inc_generated/ndpi_crawlers_match.c.inc';
 	next if $f eq 'inc_generated/ndpi_gambling_match.c.inc';
 	next if $f eq 'inc_generated/ndpi_protonvpn_out_match.c.inc';
+	next if $f =~ /ndpi_amazon_aws_api_gatewy_match.c.inc/;
 	next if $f =~ /inc_generated\/ndpi_domains_/;
 	if($f eq 'inc_generated/ndpi_tor_exit_nodes_match.c.inc') {
 		match_inc($f,"ndpi_.*_protocol_list");

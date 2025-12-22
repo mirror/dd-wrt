@@ -1,5 +1,12 @@
 ACLOCAL_AMFLAGS = -I m4
-SUBDIRS = src/lib @EXTRA_TARGETS@
+
+SUBDIRS = src/lib
+
+if PLUGINS_ENABLED
+SUBDIRS += src/lib/plugins
+endif
+
+SUBDIRS += @EXTRA_TARGETS@
 
 if BUILD_FUZZTARGETS
 SUBDIRS += fuzz
@@ -34,7 +41,8 @@ EXTRA_DIST = README.md README.fuzzer.md CHANGELOG.md CONTRIBUTING.md \
 		lists/public_suffix_list.dat \
 		lists/README.md \
 		lists/protocols/README.md \
-	sonar-project.properties .github .ci-ignore
+	sonar-project.properties .github .ci-ignore \
+	src/lib/plugins/README.md
 
 doc:
 	make -C doc html
@@ -43,20 +51,61 @@ doc-view:
 	python3 -m http.server --bind 127.0.0.1 --directory doc/_build/html 8080
 
 coverage: all
-	mkdir -vp coverage_report/ndpi_coverage_report
+	$(MKDIR_P) coverage_report/ndpi_coverage_report
 	lcov --directory . --capture --output-file lcov.info
 	genhtml -o coverage_report/ndpi_coverage_report lcov.info
 
 clean-coverage:
-	rm -f lcov.info
+	$(RM) lcov.info
 	find . -type f -name "*.gcda" -exec rm "{}" +
 	find . -type f -name "*.gcno" -exec rm "{}" +
 
+distclean-local:
+	$(RM) -r autom4te.cache
+	$(RM) libtool config.status config.cache config.log
+	$(RM) src/include/stamp-h1
+
 pull:
-	git pull --rebase
-	if test -d ../nDPI-custom; then echo "Pulling ../nDPI-custom"; cd ../nDPI-custom; git pull --rebase; cd ../nDPI; fi
+	cd $(top_srcdir) && git pull --rebase
+	if test -d $(top_srcdir)/../nDPI-custom; then echo "Pulling ../nDPI-custom"; cd $(top_srcdir)/../nDPI-custom && git pull --rebase; fi
 
 changelog:
-	git log --since={`curl -s https://github.com/ntop/ndpi/releases | grep datetime | head -n1 | egrep -o "[0-9]+\-[0-9]+\-[0-9]+"`} --name-only --pretty=format:" - %s" | grep  "^ " > CHANGELOG.latest
+	cd $(top_srcdir) && git log --since={`curl -s https://github.com/ntop/ndpi/releases | grep datetime | head -n1 | egrep -o "[0-9]+\-[0-9]+\-[0-9]+"`} --name-only --pretty=format:" - %s" | grep  "^ " > CHANGELOG.latest
+
+# For out-of-tree builds: copy required configuration files
+# ndpiReader has some hard-coded paths in some unit tests: in the out-of-tree builds we need
+# some configuration files in the expected path
+# Avoid all of that if we are compiling only the library
+all-local:
+	@if test "$(srcdir)" != . && test -n "@EXTRA_TARGETS@" ; then \
+	  echo "Setting up out-of-tree build configuration files..."; \
+	  $(MKDIR_P) example lists tests/cfgs; \
+	  $(INSTALL_DATA) $(srcdir)/example/*.txt example/; \
+	  $(INSTALL_DATA) $(srcdir)/example/*.conf example/; \
+	  $(INSTALL_DATA) $(srcdir)/example/*.csv example/; \
+	  if test -d $(srcdir)/lists && test -n "$$(ls -A $(srcdir)/lists 2>/dev/null)"; then \
+	    cp -R $(srcdir)/lists/* lists/; \
+	  fi; \
+	  for cfg_dir in $(srcdir)/tests/cfgs/*/ ; do \
+	    cfg_name=$$(basename "$$cfg_dir"); \
+	    $(MKDIR_P) tests/cfgs/$$cfg_name; \
+	    if test -f "$$cfg_dir/config.txt" ; then \
+	      cp "$$cfg_dir/config.txt" tests/cfgs/$$cfg_name/config.txt; \
+	    fi; \
+	  done; \
+	fi
+
+clean-local:
+	@if test "$(srcdir)" != . && test -n "@EXTRA_TARGETS@" ; then \
+	  echo "Cleaning out-of-tree build configuration files..."; \
+	  -$(RM) example/*.txt; \
+	  -$(RM) example/*.conf; \
+	  -$(RM) example/*.csv; \
+	  -$(RM) -r lists/*; \
+	  -$(RM) tests/cfgs/*/config.txt; \
+	fi
 
 .PHONY: doc doc-view coverage clean-coverage changelog
+
+# Prevent parallel execution of clean/distclean to avoid potential race conditions
+.NOTPARALLEL: clean distclean

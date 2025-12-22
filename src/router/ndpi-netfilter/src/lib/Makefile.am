@@ -28,6 +28,7 @@ libndpi_a_SOURCES = ndpi_content_match.c.inc \
 		     ndpi_main.c \
 		     ndpi_memory.c \
 		     ndpi_utils.c \
+		     ndpi_config.c \
 		     ndpi_analyze.c \
 		     ndpi_classify.c \
 		     ndpi_serializer.c \
@@ -40,6 +41,7 @@ libndpi_a_SOURCES = ndpi_content_match.c.inc \
 		     ndpi_fingerprint.c \
 		     ndpi_filter.c \
 		     ndpi_bitmap.c \
+		     ndpi_plugin.c \
 		     protocols/activision.c \
 		     protocols/afp.c \
 		     protocols/alicloud.c \
@@ -144,6 +146,7 @@ libndpi_a_SOURCES = ndpi_content_match.c.inc \
 		     protocols/ethersbus.c \
 		     protocols/jabber.c \
 		     protocols/jrmi.c \
+		     protocols/json.c \
 		     protocols/json-rpc.c \
 		     protocols/kafka.c \
 		     protocols/kakaotalk_voice.c \
@@ -176,6 +179,7 @@ libndpi_a_SOURCES = ndpi_content_match.c.inc \
 		     protocols/mpegdash.c \
 		     protocols/mqtt.c \
 		     protocols/msdo.c \
+		     protocols/msgpack.c \
 		     protocols/mssql_tds.c \
 		     protocols/mudfish.c \
 		     protocols/mumble.c \
@@ -243,6 +247,7 @@ libndpi_a_SOURCES = ndpi_content_match.c.inc \
 		     protocols/sonos.c \
 		     protocols/source_engine.c \
 		     protocols/spotify.c \
+		     protocols/s7comm.c \
 		     protocols/ssdp.c \
 		     protocols/ssh.c \
 		     protocols/steam.c \

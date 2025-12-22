@@ -160,8 +160,10 @@ static bool str_contains_digit(char *str) {
 
 /* TODO: rename */
 static int keep_extra_dissection_tcp(struct ndpi_detection_module_struct *ndpi_struct,
-                                     struct ndpi_flow_struct *flow)
-{
+                                     struct ndpi_flow_struct *flow) {
+  if(ndpi_struct->cfg.tls_blocks_analysis_enabled)
+    return(1); /* Process as much TLS blocks as the max packet number */
+  
   /* Common path: found handshake on both directions */
   if(
      (flow->tls_quic.certificate_processed == 1 && flow->protos.tls_quic.client_hello_processed)
@@ -173,7 +175,6 @@ static int keep_extra_dissection_tcp(struct ndpi_detection_module_struct *ndpi_s
      || ((flow->protos.tls_quic.client_hello_processed && flow->l4.tcp.tls.app_data_seen[!flow->protos.tls_quic.ch_direction] == 1) ||
 	 (flow->protos.tls_quic.server_hello_processed && flow->l4.tcp.tls.app_data_seen[flow->protos.tls_quic.ch_direction] == 1))
      ) {
-    ndpi_compute_ndpi_flow_fingerprint(ndpi_struct, flow);
     return 0;
   }
 
@@ -198,7 +199,6 @@ static int keep_extra_dissection_tcp(struct ndpi_detection_module_struct *ndpi_s
         without sub-classification */
      /* TLS heuristics */
      (ndpi_struct->cfg.tls_heuristics == 0 || is_flow_addr_informative(flow))) {
-    ndpi_compute_ndpi_flow_fingerprint(ndpi_struct, flow);
     return 0;
   }
 
@@ -557,8 +557,7 @@ static int ndpi_search_tls_memory(struct ndpi_detection_module_struct* ndpi_stru
     void *newbuf;
     u_int new_len = message->buffer_len + payload_len - avail_bytes + 1;
     if(new_len >= ndpi_struct->cfg.tls_buf_size_limit) return -1;
-    newbuf  = ndpi_realloc(message->buffer,
-				 message->buffer_len, new_len);
+    newbuf  = ndpi_realloc(message->buffer, new_len);
     if(!newbuf) return -1;
 
 #ifdef DEBUG_TLS_MEMORY
@@ -1082,7 +1081,7 @@ static void processCertificateElements(struct ndpi_detection_module_struct *ndpi
                       } else if((u_int16_t)(flow->protos.tls_quic.server_names_len + dNSName_len + 1) > flow->protos.tls_quic.server_names_len) {
                         u_int16_t newstr_len = flow->protos.tls_quic.server_names_len + dNSName_len + 1;
                         char *newstr = (char*)ndpi_realloc(flow->protos.tls_quic.server_names,
-                                                           flow->protos.tls_quic.server_names_len+1, newstr_len+1);
+                                                           newstr_len + 1);
 
                         if(newstr) {
                           flow->protos.tls_quic.server_names = newstr;
@@ -1266,7 +1265,8 @@ static int processCertificate(struct ndpi_detection_module_struct *ndpi_struct,
 #endif
 
       /* For SHA-1 we take into account only the first certificate and not all of them */
-    if(ndpi_struct->cfg.tls_sha1_fingerprint_enabled) {
+    if(ndpi_struct->cfg.tls_sha1_fingerprint_enabled &&
+       (!ndpi_struct->cfg.tls_cert_first_only || num_certificates_found == 1)) {
       int rc1 = 0;
       SHA1_CTX srv_cert_fingerprint_ctx ;
 
@@ -1327,7 +1327,7 @@ static int processCertificate(struct ndpi_detection_module_struct *ndpi_struct,
   }
 
   if((ndpi_struct->num_tls_blocks_to_follow != 0)
-     && (flow->l4.tcp.tls.num_tls_blocks >= ndpi_struct->num_tls_blocks_to_follow)) {
+     && (flow->l4.tcp.tls.num_processed_tls_blocks >= ndpi_struct->num_tls_blocks_to_follow)) {
 #ifdef DEBUG_TLS_BLOCKS
     printf("*** [TLS Block] Enough blocks dissected\n");
 #endif
@@ -1494,6 +1494,23 @@ int ndpi_search_tls_tcp(struct ndpi_detection_module_struct *ndpi_struct,
 
     content_type = message->buffer[0];
 
+    if(ndpi_struct->cfg.tls_blocks_analysis_enabled) {
+      if(flow->l4.tcp.tls.num_tls_blocks < NDPI_MAX_NUM_TLS_APPL_BLOCKS) {
+	int16_t blen = len-5;
+	
+	/* Use positive values for c->s and negative for s->c */
+	if(packet->packet_direction != 0) blen = -blen;
+	
+	flow->l4.tcp.tls.tls_blocks[flow->l4.tcp.tls.num_tls_blocks].len = blen;
+	flow->l4.tcp.tls.tls_blocks[flow->l4.tcp.tls.num_tls_blocks++].block_type = content_type;
+	
+#ifdef DEBUG_TLS_BLOCKS
+	printf("*** [TLS Block] [len: %u][num_tls_blocks: %u/%u]\n",
+	       len-5, flow->l4.tcp.tls.num_tls_blocks, ndpi_struct->num_tls_blocks_to_follow);
+#endif
+      }
+    }
+
     /* Overwriting packet payload */
     p = packet->payload;
     p_len = packet->payload_packet_len; /* Backup */
@@ -1505,7 +1522,7 @@ int ndpi_search_tls_tcp(struct ndpi_detection_module_struct *ndpi_struct,
 	  so in this case we reset the number of observed
 	  TLS blocks
 	*/
-	flow->l4.tcp.tls.num_tls_blocks = 0;
+	flow->l4.tcp.tls.num_processed_tls_blocks = 0;
       }
       if(len == 6 &&
          message->buffer[1] == 0x03 && /* TLS >= 1.0 */
@@ -1521,8 +1538,15 @@ int ndpi_search_tls_tcp(struct ndpi_detection_module_struct *ndpi_struct,
         ndpi_int_tls_add_connection(ndpi_struct, flow);
         flow->l4.tcp.tls.app_data_seen[packet->packet_direction] = 1;
         /* Further data is encrypted so we are not able to parse it without
-           erros and without setting `something_went_wrong` variable */
-        break;
+           errors and without setting `something_went_wrong` variable */
+
+	if(!ndpi_struct->cfg.tls_blocks_analysis_enabled) {
+	  /*
+	    In case of TLS blocks analysis we want to analize all the blocks
+	    whereas in "standard" mode we can use this shortcut and break
+	  */
+	  break;
+	}
       }
     } else if(content_type == 0x15 /* Alert */) {
       /* https://techcommunity.microsoft.com/t5/iis-support-blog/ssl-tls-alert-protocol-and-the-alert-codes/ba-p/377132 */
@@ -1595,22 +1619,6 @@ int ndpi_search_tls_tcp(struct ndpi_detection_module_struct *ndpi_struct,
 	flow->l4.tcp.tls.app_data_seen[packet->packet_direction] = 1;
 	if(flow->l4.tcp.tls.app_data_seen[!packet->packet_direction] == 1)
 	  flow->tls_quic.certificate_processed = 1;
-
-	if(flow->tls_quic.certificate_processed) {
-	  if(flow->l4.tcp.tls.num_tls_blocks < ndpi_struct->num_tls_blocks_to_follow) {
-	    int16_t blen = len-5;
-
-	    /* Use positive values for c->s e negative for s->c */
-	    if(packet->packet_direction != 0) blen = -blen;
-
-	    flow->l4.tcp.tls.tls_application_blocks_len[flow->l4.tcp.tls.num_tls_blocks++] = blen;
-	  }
-
-#ifdef DEBUG_TLS_BLOCKS
-	  printf("*** [TLS Block] [len: %u][num_tls_blocks: %u/%u]\n",
-		 len-5, flow->l4.tcp.tls.num_tls_blocks, ndpi_struct->num_tls_blocks_to_follow);
-#endif
-	}
       }
     }
 
@@ -1634,7 +1642,7 @@ int ndpi_search_tls_tcp(struct ndpi_detection_module_struct *ndpi_struct,
 
   if(something_went_wrong
      || ((ndpi_struct->num_tls_blocks_to_follow > 0)
-	 && (flow->l4.tcp.tls.num_tls_blocks == ndpi_struct->num_tls_blocks_to_follow))
+	 && (flow->l4.tcp.tls.num_processed_tls_blocks == ndpi_struct->num_tls_blocks_to_follow))
      || ((ndpi_struct->num_tls_blocks_to_follow == 0)
 	 && (!keep_extra_dissection_tcp(ndpi_struct, flow)))
      ) {
@@ -3475,7 +3483,7 @@ compute_ja4c:
 	        ndpi_compute_ja4(ndpi_struct, flow, quic_version, ja);
 		
 		if(ndpi_struct->ja4_custom_protos != NULL) {
-		  u_int32_t proto_id;
+		  u_int64_t proto_id;
 
 		  /* This protocol has been defined in protos.txt-like files */
 		  if(ndpi_hash_find_entry(ndpi_struct->ja4_custom_protos,

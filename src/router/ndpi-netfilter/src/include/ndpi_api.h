@@ -87,11 +87,22 @@ extern "C" {
    * nDPI personal allocation and free functions
    **/
   NDPI_STATIC void * ndpi_malloc(size_t size);
-  NDPI_STATIC void * ndpi_calloc(unsigned long count, size_t size);
-  NDPI_STATIC void * ndpi_realloc(void *ptr, size_t old_size, size_t new_size);
+  NDPI_STATIC void * ndpi_calloc(size_t nmemb, size_t size);
+  NDPI_STATIC void * ndpi_realloc(void *ptr, size_t size);
+
+  /**
+   * Allocate aligned memory using nDPI's memory allocator.
+   * This function can be customized via ndpi_set_memory_alloction_functions() to use a custom allocator.
+   *
+   * @param the address of the allocated memory will be a multiple of `alignment`
+   * @param size Number of bytes to allocate
+   * @return Pointer to allocated memory, or NULL on failure
+   */
+  NDPI_STATIC void * ndpi_aligned_malloc(size_t alignment, size_t size);
   NDPI_STATIC char * ndpi_strdup(const char *s);
   NDPI_STATIC char * ndpi_strndup(const char *s, size_t size);
   NDPI_STATIC void   ndpi_free(void *ptr);
+  NDPI_STATIC void   ndpi_aligned_free(void *ptr);
   NDPI_STATIC void * ndpi_flow_malloc(size_t size);
   NDPI_STATIC void   ndpi_flow_free(void *ptr);
   NDPI_STATIC u_int32_t ndpi_get_tot_allocated_memory(void);
@@ -252,6 +263,46 @@ extern "C" {
 					      const unsigned short packetlen,
 					      const u_int64_t packet_time_ms,
 					      struct ndpi_flow_input_info *input_info);
+
+  /**
+   * Set protocol default ports
+   *
+   */
+  ndpi_port_range *ndpi_build_default_ports(ndpi_port_range *ports, u_int16_t portA, u_int16_t portB, u_int16_t portC,
+					    u_int16_t portD, u_int16_t portE);
+    
+  /**
+   * Set protocol default
+   *
+   */
+  int ndpi_set_proto_defaults(struct ndpi_detection_module_struct *ndpi_str,
+			      u_int8_t is_cleartext, u_int8_t is_app_protocol,
+			      ndpi_protocol_breed_t breed,
+			      u_int16_t protoId, char *protoName,
+			      ndpi_protocol_category_t protoCategory,
+			      ndpi_protocol_qoe_category_t qoeCategory,
+			      ndpi_port_range *tcpDefPorts,
+			      ndpi_port_range *udpDefPorts,
+			      u_int8_t is_custom_protocol);
+
+  /**
+   * Set protocol ids mapping
+   *
+   */
+  void ndpi_add_user_proto_id_mapping(struct ndpi_detection_module_struct *ndpi_str,
+                                      u_int16_t ndpi_proto_id, u_int16_t user_proto_id);
+
+  /**
+   * Dynamically load protocol plugins
+   *
+   *
+   * @par    ndpi_struct    = the detection module 
+   * @return number of loaded protocols
+   *
+   */
+  u_int ndpi_load_protocol_plugins(struct ndpi_detection_module_struct *ndpi_struct,
+				 char *dir_path);
+
   /**
    * Get the main protocol of the passed flows for the detected module
    *
@@ -1051,10 +1102,6 @@ NDPI_STATIC  int ndpi_load_tcp_fingerprint_file(struct ndpi_detection_module_str
 
   /* Utility functions to set ndpi malloc/free/print wrappers */
   NDPI_STATIC void set_ndpi_ticks_per_second(u_int32_t ticks_per_second);
-  NDPI_STATIC void set_ndpi_malloc(void* (*__ndpi_malloc)(size_t size));
-  NDPI_STATIC void set_ndpi_free(void  (*__ndpi_free)(void *ptr));
-  NDPI_STATIC void set_ndpi_flow_malloc(void* (*__ndpi_flow_malloc)(size_t size));
-  NDPI_STATIC void set_ndpi_flow_free(void  (*__ndpi_flow_free)(void *ptr));
   NDPI_STATIC void set_ndpi_debug_function(struct ndpi_detection_module_struct *ndpi_str,
 			       ndpi_debug_function_ptr ndpi_debug_printf);
   NDPI_STATIC u_int16_t ndpi_get_api_version(void);
@@ -1066,8 +1113,6 @@ NDPI_STATIC  int ndpi_load_tcp_fingerprint_file(struct ndpi_detection_module_str
   NDPI_STATIC int ndpi_flowv6_flow_hash(u_int8_t l4_proto, const struct ndpi_in6_addr *src_ip, const struct ndpi_in6_addr *dst_ip,
 			    u_int16_t src_port, u_int16_t dst_port, u_int8_t icmp_type, u_int8_t icmp_code,
 			    u_char *hash_buf, u_int8_t hash_buf_len);
-  NDPI_STATIC u_int8_t ndpi_extra_dissection_possible(struct ndpi_detection_module_struct *ndpi_str,
-                                          struct ndpi_flow_struct *flow);
   NDPI_STATIC u_int8_t ndpi_is_safe_ssl_cipher(u_int32_t cipher);
   NDPI_STATIC u_int16_t ndpi_guess_host_protocol_id(struct ndpi_detection_module_struct *ndpi_struct,
 					struct ndpi_flow_struct *flow);
@@ -1163,7 +1208,7 @@ NDPI_STATIC  int ndpi_load_tcp_fingerprint_file(struct ndpi_detection_module_str
   NDPI_STATIC u_int8_t ndpi_is_public_ipv4(u_int32_t a /* host byte order */);
   NDPI_STATIC u_int64_t ndpi_htonll(u_int64_t v);
   NDPI_STATIC u_int64_t ndpi_ntohll(u_int64_t v);
-  NDPI_STATIC u_int8_t ndpi_is_encrypted_proto(struct ndpi_detection_module_struct *ndpi_str, ndpi_protocol proto);
+  NDPI_STATIC u_int8_t ndpi_is_encrypted_proto(struct ndpi_detection_module_struct *ndpi_str, ndpi_master_app_protocol proto);
 
   /* DGA */
   NDPI_STATIC int ndpi_check_dga_name(struct ndpi_detection_module_struct *ndpi_str,
@@ -2001,7 +2046,7 @@ NDPI_STATIC  int ndpi_load_tcp_fingerprint_file(struct ndpi_detection_module_str
    * @return 0 if an entry with that key was found, 1 otherwise
    *
    */
-  NDPI_STATIC int ndpi_hash_find_entry(ndpi_str_hash *h, char *key, u_int key_len, u_int32_t *value);
+  NDPI_STATIC int ndpi_hash_find_entry(ndpi_str_hash *h, char *key, u_int key_len, u_int64_t *value);
 
   /**
    * Add an entry to the hashmap.
@@ -2020,7 +2065,15 @@ NDPI_STATIC  int ndpi_load_tcp_fingerprint_file(struct ndpi_detection_module_str
 
   NDPI_STATIC char* ndpi_get_flow_name(struct ndpi_flow_struct *flow);
 
-  NDPI_STATIC int ndpi_hash_add_entry(ndpi_str_hash **h, char *key, u_int8_t key_len, u_int32_t value);
+  NDPI_STATIC int ndpi_hash_add_entry(ndpi_str_hash **h, char *key, u_int8_t key_len, u_int64_t value);
+
+  typedef void (*ndpi_hash_walk_iter)(char *key, u_int64_t value64, void *data);
+  NDPI_STATIC void ndpi_hash_walk(ndpi_str_hash **h, ndpi_hash_walk_iter cb, void *data);
+  
+  NDPI_STATIC void ndpi_hash_get_stats(ndpi_str_hash *h, struct ndpi_str_hash_stats *stats);
+  NDPI_STATIC int ndpi_get_hash_stats(struct ndpi_detection_module_struct *ndpi_struct,
+                          str_hash_type hash_type,
+                          struct ndpi_str_hash_stats *stats);
 
   /* ******************************* */
 
@@ -2149,7 +2202,7 @@ NDPI_STATIC  int ndpi_load_tcp_fingerprint_file(struct ndpi_detection_module_str
 					     char *file_path);
   NDPI_STATIC bool ndpi_domain_classify_hostname(struct ndpi_detection_module_struct *ndpi_mod,
 				     ndpi_domain_classify *s,
-				     u_int32_t *class_id /* out */,
+				     u_int64_t *class_id /* out */,
 				     char *hostname);
 
   /* ******************************* */
@@ -2226,7 +2279,7 @@ NDPI_STATIC  int ndpi_load_tcp_fingerprint_file(struct ndpi_detection_module_str
    */
   NDPI_STATIC const char* ndpi_get_host_domain_suffix(struct ndpi_detection_module_struct *ndpi_str,
 					  const char *hostname,
-					  u_int32_t *suffix_id /* out */);
+					  u_int64_t *suffix_id /* out */);
 
   /**
    * Returns the domain (including the TLS) suffix out of the specified hostname.
@@ -2256,7 +2309,12 @@ NDPI_STATIC  int ndpi_load_tcp_fingerprint_file(struct ndpi_detection_module_str
 #ifndef __KERNEL__
   NDPI_STATIC char *ndpi_dump_config(struct ndpi_detection_module_struct *ndpi_str,
 			 FILE *fd);
+  void ndpi_dump_host_based_protocol_id(struct ndpi_detection_module_struct *ndpi_str,
+					ndpi_hash_walk_iter walker, void *data);
+  void ndpi_dump_host_based_category_id(struct ndpi_detection_module_struct *ndpi_str,
+					ndpi_hash_walk_iter walker, void *data);
 #endif
+
   /* ******************************* */
 
   /* Can't call libc functions from kernel space, define some stub instead */

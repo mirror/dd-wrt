@@ -130,6 +130,7 @@
     <ClCompile Include="..\src\lib\ndpi_geoip.c" />
     <ClCompile Include="..\src\lib\ndpi_main.c" />
     <ClCompile Include="..\src\lib\ndpi_cache.c" />
+    <ClCompile Include="..\src\lib\ndpi_config.c" />
     <ClCompile Include="..\src\lib\ndpi_filter.c" />
     <ClCompile Include="..\src\lib\ndpi_memory.c" />
     <ClCompile Include="..\src\lib\ndpi_serializer.c" />
@@ -140,6 +141,7 @@
     <ClCompile Include="..\src\lib\ndpi_hash.c" />
     <ClCompile Include="..\src\lib\ndpi_domain_classify.c" />
     <ClCompile Include="..\src\lib\ndpi_bitmap64_fuse.c" />
+    <ClCompile Include="..\src\lib\ndpi_plugin.c" />
     <ClCompile Include="..\src\lib\protocols\activision.c" />
     <ClCompile Include="..\src\lib\protocols\afp.c" />
     <ClCompile Include="..\src\lib\protocols\ajp.c" />
@@ -277,6 +279,7 @@
     <ClCompile Include="..\src\lib\protocols\monero.c" />
     <ClCompile Include="..\src\lib\protocols\mpegts.c" />
     <ClCompile Include="..\src\lib\protocols\mqtt.c" />
+    <ClCompile Include="..\src\lib\protocols\msgpack.c" />
     <ClCompile Include="..\src\lib\protocols\mssql_tds.c" />
     <ClCompile Include="..\src\lib\protocols\mudfish.c" />
     <ClCompile Include="..\src\lib\protocols\munin.c" />
@@ -359,6 +362,7 @@
     <ClCompile Include="..\src\lib\protocols\hislip.c" />
     <ClCompile Include="..\src\lib\protocols\uftp.c" />
     <ClCompile Include="..\src\lib\protocols\openflow.c" />
+    <ClCompile Include="..\src\lib\protocols\json.c" />
     <ClCompile Include="..\src\lib\protocols\json-rpc.c" />
     <ClCompile Include="..\src\lib\protocols\kafka.c" />
     <ClCompile Include="..\src\lib\protocols\nomachine.c" />

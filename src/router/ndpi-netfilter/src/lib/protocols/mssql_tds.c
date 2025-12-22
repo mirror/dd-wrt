@@ -62,7 +62,7 @@ static void ndpi_search_mssql_tds(struct ndpi_detection_module_struct *ndpi_stru
     return;
   }
   
-  if((h->type >= 1 && h->type <= 8) || (h->type >= 14 && h->type <= 18)) {
+  if((h->number > 0 && h->type >= 1 && h->type <= 8) || (h->type >= 14 && h->type <= 18)) {
     if(h->status == 0x00 || h->status == 0x01 || h->status == 0x02 || h->status == 0x04 || h->status == 0x08 || h->status == 0x09 || h->status == 0x10) {
       if(ntohs(h->length) == packet->payload_packet_len && h->window == 0x00) {
 	NDPI_LOG_INFO(ndpi_struct, "found mssql_tds\n");

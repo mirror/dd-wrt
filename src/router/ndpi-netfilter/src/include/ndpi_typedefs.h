@@ -120,7 +120,6 @@ typedef enum {
   2. Add the very same flow alert key to the table flow_alert_keys in scripts/lua/modules/alert_keys/flow_alert_keys.lua
   3. Add the risk to the array risk_enum_to_alert_type in src/FlowRiskAlerts.cpp
   4. Create a new file in scripts/lua/modules/alert_definitions/flow/ with the new alert risk defined
-  5. Update scripts/lua/modules/alert_keys/flow_alert_keys.lua adding a new risk
 
   Example: https://github.com/ntop/ntopng/commit/aecc1e3e6505a0522439dbb2b295a3703d3d0f9a
  */
@@ -146,7 +145,7 @@ typedef enum {
   NDPI_SSH_OBSOLETE_CLIENT_VERSION_OR_CIPHER,
   NDPI_SSH_OBSOLETE_SERVER_VERSION_OR_CIPHER,
   NDPI_SMB_INSECURE_VERSION, /* 20 */
-  NDPI_FREE_21,                                          /* FREE */
+  NDPI_MISMATCHING_PROTOCOL_WITH_IP,
   NDPI_UNSAFE_PROTOCOL,
   NDPI_DNS_SUSPICIOUS_TRAFFIC,
   NDPI_TLS_MISSING_SNI,
@@ -835,6 +834,23 @@ struct ndpi_automa_stats {
 };
 
 typedef enum {
+  NDPI_STR_HASH_MALICIOUS_JA4 = 0,
+  NDPI_STR_HASH_MALICIOUS_SHA1,
+  NDPI_STR_HASH_TCP_FINGERPRINTS,
+  NDPI_STR_HASH_PUBLIC_DOMAIN_SUFFIX,
+  NDPI_STR_HASH_JA4_CUSTOM_PROTOS,
+  NDPI_STR_HASH_FP_CUSTOM_PROTOS,
+  NDPI_STR_HASH_HTTP_URL,
+
+  NDPI_STR_HASH_MAX       /* Last one! */
+} str_hash_type;
+
+struct ndpi_str_hash_stats {
+  u_int64_t n_search;
+  u_int64_t n_found;
+};
+
+typedef enum {
   NDPI_LRUCACHE_OOKLA = 0,
   NDPI_LRUCACHE_BITTORRENT,
   NDPI_LRUCACHE_STUN,
@@ -895,8 +911,12 @@ struct ndpi_lru_cache {
 #define NDPI_HEURISTICS_TLS_OBFUSCATED_TLS		0x02 /* Enable heuristic to detect proxied/obfuscated TLS flows over TLS tunnels, i.e. TLS over TLS */
 #define NDPI_HEURISTICS_TLS_OBFUSCATED_HTTP		0x04 /* Enable heuristic to detect proxied/obfuscated TLS flows over HTTP/WebSocket */
 
-
 /* ************************************************** */
+
+struct ndpi_tls_block {
+  u_int8_t block_type; /* + = src->dst, - = dst->src */
+  int16_t len;
+};
 
 struct ndpi_flow_tcp_struct {
   /* TCP sequence number */
@@ -919,11 +939,9 @@ struct ndpi_flow_tcp_struct {
   struct {
     /* NDPI_PROTOCOL_TLS */
     u_int8_t app_data_seen[2];
-    u_int8_t num_tls_blocks;
-    int16_t tls_application_blocks_len[NDPI_MAX_NUM_TLS_APPL_BLOCKS]; /* + = src->dst, - = dst->src */
+    u_int8_t num_tls_blocks, num_processed_tls_blocks /* used internally for dissection */;
+    struct ndpi_tls_block tls_blocks[NDPI_MAX_NUM_TLS_APPL_BLOCKS];
   } tls;
-
-
 
   /* NDPI_PROTOCOL_MAIL_SMTP */
   u_int16_t smtp_command_bitmask;
@@ -1002,6 +1020,9 @@ struct ndpi_flow_tcp_struct {
   /* NDPI_PROTOCOL_MAIL_IMAP */
   u_int64_t mail_imap_stage:3;
   u_int64_t mail_imap_starttls:1;
+
+  /* NDPI_PROTOCOL_RDP */
+  u_int64_t rdp_protocol_detected:1;
 
   /* Reserved for future use */
   u_int64_t reserved:20;
@@ -1086,7 +1107,6 @@ struct ndpi_flow_udp_struct {
   /* NDPI_PROTOCOL_TFTP */
   u_int16_t tftp_data_num;
   u_int16_t tftp_ack_num;
-
 };
 
 /* ************************************************** */
@@ -1130,6 +1150,7 @@ typedef enum {
   NDPI_FPC_CONFIDENCE_IP,                       /* FPC based on IP address */
   NDPI_FPC_CONFIDENCE_DNS,                      /* FPC based on DNS information */
   NDPI_FPC_CONFIDENCE_DPI,                      /* FPC based on DPI information (i.e. flow classified via DPI with only one packet)*/
+  NDPI_FPC_CONFIDENCE_CUSTOM_RULE,              /* FPC based on custom rule matching (i.e. flow classified via custom rule with only one packet) */
 
   /*
     IMPORTANT
@@ -1322,7 +1343,7 @@ typedef enum {
 typedef struct ndpi_proto_defaults {
   char protoName[32];
   ndpi_protocol_category_t protoCategory;
-  u_int8_t isClearTextProto:1, isAppProtocol:1, isCustomProto:1, haveDissector:1, _notused:4;
+  u_int8_t isClearTextProto:1, isAppProtocol:1, isCustomProto:1, performIPcheck:1, haveDissector:1, _notused:3;
   u_int16_t *subprotocols;
   u_int32_t subprotocol_count;
   u_int16_t protoId, dissector_idx;
@@ -1337,7 +1358,10 @@ typedef struct _ndpi_automa {
   struct ndpi_automa_stats stats;
 } ndpi_automa;
 
-typedef void ndpi_str_hash;
+typedef struct ndpi_str_hash {
+  void *priv;
+  struct ndpi_str_hash_stats stats;
+} ndpi_str_hash;
 
 typedef struct {
   /*
@@ -1358,15 +1382,28 @@ typedef struct ndpi_proto_stack {
   u_int16_t protos_num;
 } ndpi_proto_stack;
 
+/* Flow classification state */
+typedef enum ndpi_classification_state {
+  NDPI_STATE_INSPECTING = 0, /* Initial state; work in progress: nDPI is trying to get a proper classification and all metadata */
+  NDPI_STATE_PARTIAL,        /* Work in progress: we have a partial/temporary classification that can change/improve later.
+                                More metadata might be extracted */
+  NDPI_STATE_MONITORING,     /* Classification is final, but nDPI will keep processing all the flow packets to extract more metadata.
+                                Note that a flow in this state will never move to classified state */
+  NDPI_STATE_CLASSIFIED,     /* Job done; the flow is fully classified and all metadata have been extracted. nDPI doesn't want/need more packets for this flow */
+
+} ndpi_classification_state;
+
 typedef struct ndpi_proto {
   ndpi_master_app_protocol proto;
   struct ndpi_proto_stack protocol_stack;
+  struct ndpi_fpc_info fpc;
   u_int16_t protocol_by_ip;
 #ifndef __KERNEL__
   ndpi_protocol_category_t category;
   ndpi_protocol_breed_t breed;
   void *custom_category_userdata;
 #endif
+  ndpi_classification_state state;
 } ndpi_protocol;
 
 
@@ -1457,17 +1494,126 @@ struct rtp_info {
   u_int32_t evs_subtype;
 };
 
+typedef enum {
+  ndpi_serialization_format_unknown = 0,
+  ndpi_serialization_format_tlv,
+  ndpi_serialization_format_json,
+  ndpi_serialization_format_csv,
+  ndpi_serialization_format_multiline_json, /* new-line separated records */
+  ndpi_serialization_format_inner_json /* no outer braces */
+} ndpi_serialization_format;
+
+/* Note:
+ * - up to 16 types (TLV encoding: "4 bit key type" << 4 | "4 bit value type")
+ * - key supports string and uint32 (compressed to uint8/uint16) only, this is also enforced by the API
+ * - always add new enum at the end of the list (to avoid breaking backward compatibility) */
+typedef enum {
+  ndpi_serialization_unknown        =  0,
+  ndpi_serialization_end_of_record  =  1,
+  ndpi_serialization_uint8          =  2,
+  ndpi_serialization_uint16         =  3,
+  ndpi_serialization_uint32         =  4,
+  ndpi_serialization_uint64         =  5,
+  ndpi_serialization_int8           =  6,
+  ndpi_serialization_int16          =  7,
+  ndpi_serialization_int32          =  8,
+  ndpi_serialization_int64          =  9,
+  ndpi_serialization_float          = 10,
+  ndpi_serialization_string         = 11,
+  ndpi_serialization_start_of_block = 12,
+  ndpi_serialization_end_of_block   = 13,
+  ndpi_serialization_start_of_list  = 14,
+  ndpi_serialization_end_of_list    = 15,
+  /* Do not add new types!
+   * Exceeding 16 types requires reworking the TLV encoding due to key type limit (4 bit) */
+  ndpi_serialization_double         = 16 /* FIXX this is currently unusable */
+} ndpi_serialization_type;
+
+#define NDPI_SERIALIZER_DEFAULT_HEADER_SIZE 1024
+#define NDPI_SERIALIZER_DEFAULT_BUFFER_SIZE  256
+#define NDPI_SERIALIZER_DEFAULT_BUFFER_INCR 1024
+
+#define NDPI_SERIALIZER_STATUS_COMMA     (1 << 0)
+#define NDPI_SERIALIZER_STATUS_ARRAY     (1 << 1)
+#define NDPI_SERIALIZER_STATUS_EOR       (1 << 2)
+#define NDPI_SERIALIZER_STATUS_SOB       (1 << 3)
+#define NDPI_SERIALIZER_STATUS_NOT_EMPTY (1 << 4)
+#define NDPI_SERIALIZER_STATUS_LIST      (1 << 5)
+#define NDPI_SERIALIZER_STATUS_SOL       (1 << 6)
+#define NDPI_SERIALIZER_STATUS_HDR_DONE  (1 << 7)
+#define NDPI_SERIALIZER_STATUS_CEOB      (1 << 8)
+
+typedef struct {
+  u_int32_t size_used;
+} ndpi_private_serializer_buffer_status;
+
+typedef struct {
+  u_int32_t flags;
+  ndpi_private_serializer_buffer_status buffer;
+  ndpi_private_serializer_buffer_status header;
+} ndpi_private_serializer_status;
+
+typedef struct {
+  u_int32_t initial_size;
+  u_int32_t size;
+  u_int8_t *data;
+} ndpi_private_serializer_buffer;
+
+typedef struct {
+  ndpi_private_serializer_status status;
+  ndpi_private_serializer_buffer buffer;
+  ndpi_private_serializer_buffer header;
+  ndpi_serialization_format fmt;
+  char csv_separator[2];
+  u_int8_t has_snapshot;
+  u_int8_t multiline_json_array;
+  u_int8_t inner_json;
+  ndpi_private_serializer_status snapshot;
+} ndpi_private_serializer;
+
+#define ndpi_private_deserializer ndpi_private_serializer
+
+#ifdef NDPI_CFFI_PREPROCESSING
+typedef struct { char c[72]; } ndpi_serializer;
+#else
+typedef struct { char c[sizeof(ndpi_private_serializer)]; } ndpi_serializer;
+#endif
+
+#define ndpi_deserializer ndpi_serializer
+
+/* **************************************** */
+
+typedef void (*nDPIPluginFctn)(struct ndpi_detection_module_struct *ndpi_struct);
+typedef void (*nDPIPluginFreeFlowFctn)(void *plugin_data);
+typedef void (*nDPIPluginJsonExportFlowFctn)(struct ndpi_detection_module_struct *ndpi_struct,
+					     struct ndpi_flow_struct *flow,
+					     ndpi_serializer *serializer);
+
+typedef struct ndpi_protocol_plugin {
+  u_int32_t ndpi_revision;
+  const char *protocol_name, *version, *description, *author;
+  nDPIPluginFctn initFctn;
+  nDPIPluginFreeFlowFctn freeFlowFctn;
+  nDPIPluginJsonExportFlowFctn jsonExportFctn;
+} NDPIProtocolPluginEntryPoint;
+
+/* **************************************** */
+
+typedef int (*ProcessExtraPacketsFunc) (struct ndpi_detection_module_struct *, struct ndpi_flow_struct *flow);
+
 struct ndpi_flow_struct {
   u_int16_t detected_protocol_stack[NDPI_PROTOCOL_SIZE];
   struct ndpi_proto_stack protocol_stack;
+  ndpi_classification_state state;
 
   u_int16_t guessed_protocol_id;       /* Classification by-port. Set with the first pkt and never updated */
   u_int16_t guessed_protocol_id_by_ip; /* Classification by-ip. Set with the first pkt and never updated */
   u_int16_t fast_callback_protocol_id; /* Partial/incomplete classification. Used internally as first callback when iterating all the protocols */
   u_int16_t guessed_header_category;
-  u_int8_t l4_proto, protocol_id_already_guessed:1, fail_with_unknown:1, ip_port_finished:1,
-    init_finished:1, client_packet_direction:1, packet_direction:1, is_ipv6:1, first_pkt_fully_encrypted:1;
-  u_int8_t skip_entropy_check: 1, monitoring:1, already_gaveup:1, _pad:5;
+  u_int8_t l4_proto, protocol_id_already_guessed:1,ip_port_finished:1,
+    init_finished:1, client_packet_direction:1, packet_direction:1, is_ipv6:1, first_pkt_fully_encrypted:1, skip_entropy_check: 1, protocol_was_guessed:1;
+  u_int8_t already_gaveup:1, _pad:6;
+  void *custom_category_userdata;
 
   u_int16_t num_dissector_calls;
   ndpi_confidence_t confidence; /* ndpi_confidence_t */
@@ -1495,7 +1641,7 @@ struct ndpi_flow_struct {
   u_int8_t num_processed_packets[2]; /* packet with payload. direct and replay. 255 max */
   u_int16_t num_processed_pkts; /* <= WARNING it can wrap but we do expect people to giveup earlier */
 
-  int (*extra_packets_func) (struct ndpi_detection_module_struct *, struct ndpi_flow_struct *flow);
+  ProcessExtraPacketsFunc extra_packets_func;
 
   u_int64_t last_packet_time_ms;
   u_int64_t last_packet_time;
@@ -1785,8 +1931,29 @@ struct ndpi_flow_struct {
       u_int16_t user_id;
     } bfcp;
 
+    struct {
+      u_int16_t num_requests;       /* Total number of requests (Job messages) */
+      u_int16_t num_responses;      /* Total number of responses (Ack_Data messages) */
+      u_int8_t num_acks;            /* Number of acknowledgments without data */
+      u_int8_t num_userdata;        /* Number of UserData messages */
+      /* Function code counters (top 8 most common S7Comm functions) */
+      u_int8_t num_read_var;        /* Read Var (0x04) */
+      u_int8_t num_write_var;       /* Write Var (0x05) */
+      u_int8_t num_setup_comm;      /* Setup Communication (0xF0) */
+      u_int8_t num_download;        /* Download (0x1A) */
+      u_int8_t num_upload;          /* Upload (0x1B) */
+      u_int8_t num_plc_control;     /* PLC Control (0x28) */
+      u_int8_t num_plc_stop;        /* PLC Stop (0x29) */
+      u_int8_t num_other_funcs;     /* Other function codes */
+    } s7comm;
+
   } protos;
 
+  struct {
+    NDPIProtocolPluginEntryPoint *plugin;
+    void *plugin_data;
+  } custom;
+  
   /* **Packet** metadata for flows where monitoring is enabled. It is reset after each packet! */
   struct ndpi_metadata_monitoring *monit;
 
@@ -1845,8 +2012,8 @@ struct ndpi_flow_struct {
 _Static_assert(sizeof(((struct ndpi_flow_struct *)0)->protos) <= 264,
                "Size of the struct member protocols increased to more than 264 bytes, "
                "please check if this change is necessary.");
-_Static_assert(sizeof(struct ndpi_flow_struct) <= 1232,
-               "Size of the flow struct increased to more than 1232 bytes, "
+_Static_assert(sizeof(struct ndpi_flow_struct) <= 1248,
+               "Size of the flow struct increased to more than 1248 bytes, "
                "please check if this change is necessary.");
 #endif
 #endif
@@ -1878,93 +2045,6 @@ typedef struct {
   ndpi_protocol_category_t protocol_category;
   ndpi_protocol_breed_t protocol_breed;
 } ndpi_protocol_match_result;
-
-typedef enum {
-  ndpi_serialization_format_unknown = 0,
-  ndpi_serialization_format_tlv,
-  ndpi_serialization_format_json,
-  ndpi_serialization_format_csv,
-  ndpi_serialization_format_multiline_json, /* new-line separated records */
-  ndpi_serialization_format_inner_json /* no outer braces */
-} ndpi_serialization_format;
-
-/* Note:
- * - up to 16 types (TLV encoding: "4 bit key type" << 4 | "4 bit value type")
- * - key supports string and uint32 (compressed to uint8/uint16) only, this is also enforced by the API
- * - always add new enum at the end of the list (to avoid breaking backward compatibility) */
-typedef enum {
-  ndpi_serialization_unknown        =  0,
-  ndpi_serialization_end_of_record  =  1,
-  ndpi_serialization_uint8          =  2,
-  ndpi_serialization_uint16         =  3,
-  ndpi_serialization_uint32         =  4,
-  ndpi_serialization_uint64         =  5,
-  ndpi_serialization_int8           =  6,
-  ndpi_serialization_int16          =  7,
-  ndpi_serialization_int32          =  8,
-  ndpi_serialization_int64          =  9,
-  ndpi_serialization_float          = 10,
-  ndpi_serialization_string         = 11,
-  ndpi_serialization_start_of_block = 12,
-  ndpi_serialization_end_of_block   = 13,
-  ndpi_serialization_start_of_list  = 14,
-  ndpi_serialization_end_of_list    = 15,
-  /* Do not add new types!
-   * Exceeding 16 types requires reworking the TLV encoding due to key type limit (4 bit) */
-  ndpi_serialization_double         = 16 /* FIXX this is currently unusable */
-} ndpi_serialization_type;
-
-#define NDPI_SERIALIZER_DEFAULT_HEADER_SIZE 1024
-#define NDPI_SERIALIZER_DEFAULT_BUFFER_SIZE  256
-#define NDPI_SERIALIZER_DEFAULT_BUFFER_INCR 1024
-
-#define NDPI_SERIALIZER_STATUS_COMMA     (1 << 0)
-#define NDPI_SERIALIZER_STATUS_ARRAY     (1 << 1)
-#define NDPI_SERIALIZER_STATUS_EOR       (1 << 2)
-#define NDPI_SERIALIZER_STATUS_SOB       (1 << 3)
-#define NDPI_SERIALIZER_STATUS_NOT_EMPTY (1 << 4)
-#define NDPI_SERIALIZER_STATUS_LIST      (1 << 5)
-#define NDPI_SERIALIZER_STATUS_SOL       (1 << 6)
-#define NDPI_SERIALIZER_STATUS_HDR_DONE  (1 << 7)
-#define NDPI_SERIALIZER_STATUS_CEOB      (1 << 8)
-
-typedef struct {
-  u_int32_t size_used;
-} ndpi_private_serializer_buffer_status;
-
-typedef struct {
-  u_int32_t flags;
-  ndpi_private_serializer_buffer_status buffer;
-  ndpi_private_serializer_buffer_status header;
-} ndpi_private_serializer_status;
-
-typedef struct {
-  u_int32_t initial_size;
-  u_int32_t size;
-  u_int8_t *data;
-} ndpi_private_serializer_buffer;
-
-typedef struct {
-  ndpi_private_serializer_status status;
-  ndpi_private_serializer_buffer buffer;
-  ndpi_private_serializer_buffer header;
-  ndpi_serialization_format fmt;
-  char csv_separator[2];
-  u_int8_t has_snapshot;
-  u_int8_t multiline_json_array;
-  u_int8_t inner_json;
-  ndpi_private_serializer_status snapshot;
-} ndpi_private_serializer;
-
-#define ndpi_private_deserializer ndpi_private_serializer
-
-#ifdef NDPI_CFFI_PREPROCESSING
-typedef struct { char c[72]; } ndpi_serializer;
-#else
-typedef struct { char c[sizeof(ndpi_private_serializer)]; } ndpi_serializer;
-#endif
-
-#define ndpi_deserializer ndpi_serializer
 
 typedef struct {
   char *str;

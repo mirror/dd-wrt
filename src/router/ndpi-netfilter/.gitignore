@@ -3,7 +3,6 @@
 *.db-*
 *.dll
 *.ilk
-*.in
 *.ipch
 *.ko
 *.la
@@ -36,8 +35,12 @@
 /.idea/
 /.vscode/
 /Makefile
+/Makefile.in
 /aclocal.m4
 /autom4te.cache/
+/build
+/build-fuzz
+/build-sanitizer
 /compile
 /config.guess
 /config.h
@@ -63,6 +66,7 @@
 /utils/print_rank
 /fuzz/.deps/
 /fuzz/Makefile
+/fuzz/Makefile.in
 /fuzz/fuzz_ndpi_reader
 /fuzz/fuzz_process_packet
 /fuzz/fuzz_ndpi_reader_alloc_fail
@@ -189,6 +193,7 @@
 /rrdtool/rrd_similarity
 /src/include/Makefile
 /src/include/ndpi_config.h
+/src/include/ndpi_config.h.in
 /src/include/ndpi_define.h
 /src/lib/Makefile
 /src/lib/Makefile.in
@@ -208,9 +213,19 @@
 /src/lib/protocols/.deps/
 /src/lib/third_party/src/.deps/
 /src/lib/third_party/src/fuzz/.deps/
+/src/lib/plugins/myproto_plugin.so
+/src/lib/plugins/Makefile
+/src/Makefile.in
 /tags
+/test-driver
+/tests/Makefile
+/tests/Makefile.in
+/tests/dga/Makefile
 /tests/dga/dga_evaluate
 /tests/dga/dga_evaluate.exe
+/tests/do.sh
+/tests/do-dga.sh
+/tests/do-unit.sh
 /tests/performance/Makefile
 /tests/unit/unit
 stamp-h1

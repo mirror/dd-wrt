@@ -70,7 +70,6 @@ typedef struct default_ports_tree_node {
   u_int16_t default_port;
 } default_ports_tree_node_t;
 
-
 #define LINE_STARTS(ndpi_int_one_line_struct, string_to_compare) \
   ((ndpi_int_one_line_struct).ptr != NULL && \
    (ndpi_int_one_line_struct).len >= strlen(string_to_compare) && \
@@ -301,6 +300,7 @@ struct ndpi_detection_module_config_struct {
   int tls_cert_validity_enabled;
   int tls_cert_issuer_enabled;
   int tls_cert_subject_enabled;
+  int tls_cert_first_only;
   int tls_broswer_enabled;
   int tls_ja3s_fingerprint_enabled;
   int tls_ja4c_fingerprint_enabled;
@@ -308,6 +308,7 @@ struct ndpi_detection_module_config_struct {
   int tls_subclassification_enabled;
   int tls_subclassification_cert_enabled;
 
+  int tls_blocks_analysis_enabled;
   int quic_subclassification_enabled;
 
   int smtp_opportunistic_tls_enabled;
@@ -419,7 +420,7 @@ struct ndpi_detection_module_struct {
    * update automa_type above
    */
 
-  ndpi_str_hash *malicious_ja4_hashmap, *malicious_sha1_hashmap, *tcp_fingerprint_hashmap;
+  ndpi_str_hash *malicious_ja4_hashmap, *malicious_sha1_hashmap, *tcp_fingerprint_hashmap, *http_url_hashmap;
   spinlock_t host_automa_lock;
 
   ndpi_list *trusted_issuer_dn;
@@ -523,6 +524,14 @@ struct ndpi_detection_module_struct {
   struct {    
     ndpi_filter *cache, *cache_shadow;
   } dns_hostname;
+
+  struct {
+    u_int num_loaded_plugins /* 0 ... NDPI_MAX_NUM_PLUGINS-1 */;
+    struct {
+      NDPIProtocolPluginEntryPoint *pluginPtr;
+      NDPIProtocolPluginEntryPoint *entryPoint;
+    } plugin[NDPI_MAX_NUM_PLUGINS];
+  } proto_plugins;
 #endif
 };
 
@@ -545,7 +554,6 @@ struct ndpi_detection_module_struct {
 #define NDPI_HOSTNAME_NORM_STRIP_EOLSP 4
 #define NDPI_HOSTNAME_NORM_STRIP_PORT 8 /* Used by SSDP/HTTP, for the time being */
 #define NDPI_HOSTNAME_NORM_ALL (NDPI_HOSTNAME_NORM_LC | NDPI_HOSTNAME_NORM_REPLACE_IC | NDPI_HOSTNAME_NORM_STRIP_EOLSP)
-
 
 #define NDPI_DEFAULT_MAX_TCP_RETRANSMISSION_WINDOW_SIZE 0x10000
 
@@ -752,6 +760,8 @@ NDPI_STATIC u_int16_t icmp4_checksum(u_int8_t const * const buf, size_t len);
 NDPI_STATIC ndpi_risk_enum ndpi_network_risk_ptree_match(struct ndpi_detection_module_struct *ndpi_str,
 					     struct in_addr *pin /* network byte order */);
 NDPI_STATIC int ndpi_handle_rule(struct ndpi_detection_module_struct *, char *);
+NDPI_STATIC int ndpi_set_default_config(struct ndpi_detection_module_config_struct *cfg,
+			    u_int16_t max_internal_proto);
 #ifndef __KERNEL__
 NDPI_STATIC int load_protocols_file_fd(struct ndpi_detection_module_struct *ndpi_mod, FILE *fd);
 NDPI_STATIC int load_categories_file_fd(struct ndpi_detection_module_struct *ndpi_str, FILE *fd, void *user_data);
@@ -776,9 +786,8 @@ NDPI_STATIC void proto_stack_reset(struct ndpi_proto_stack *s);
 
 NDPI_STATIC u_int8_t ndpi_is_valid_protoId(const struct ndpi_detection_module_struct *ndpi_str, u_int16_t protoId);
 
-NDPI_STATIC void ndpi_fill_protocol_category_and_breed(struct ndpi_detection_module_struct *ndpi_struct,
-                                           struct ndpi_flow_struct *flow,
-                                           ndpi_protocol *ret);
+NDPI_STATIC void fill_protocol_category_and_breed(struct ndpi_detection_module_struct *ndpi_struct,
+                                           struct ndpi_flow_struct *flow);
 NDPI_STATIC ndpi_protocol_breed_t get_proto_breed(struct ndpi_detection_module_struct *ndpi_str,
                                       ndpi_master_app_protocol proto);
 NDPI_STATIC ndpi_protocol_category_t get_proto_category(struct ndpi_detection_module_struct *ndpi_str,
@@ -859,6 +868,10 @@ NDPI_STATIC u_int64_t mining_make_lru_cache_key(struct ndpi_flow_struct *flow);
 /* nDPI fingerprint */
 NDPI_STATIC char* ndpi_compute_ndpi_flow_fingerprint(struct ndpi_detection_module_struct *ndpi_str, struct ndpi_flow_struct *flow);
 
+/* Plugins */
+void ndpi_unload_protocol_plugins(struct ndpi_detection_module_struct *ndpi_struct);
+u_int ndpi_init_protocol_plugins(struct ndpi_detection_module_struct *ndpi_struct);
+  
 /* Protocols init */
 NDPI_STATIC void init_diameter_dissector(struct ndpi_detection_module_struct *ndpi_struct);
 NDPI_STATIC void init_afp_dissector(struct ndpi_detection_module_struct *ndpi_struct);
@@ -1124,6 +1137,8 @@ NDPI_STATIC void init_mudfish_dissector(struct ndpi_detection_module_struct *ndp
 NDPI_STATIC void init_tristation_dissector(struct ndpi_detection_module_struct *ndpi_struct);
 NDPI_STATIC void init_samsung_sdp_dissector(struct ndpi_detection_module_struct *ndpi_struct);
 NDPI_STATIC void init_matter_dissector(struct ndpi_detection_module_struct *ndpi_struct);
+NDPI_STATIC void init_json_dissector(struct ndpi_detection_module_struct *ndpi_struct);
+NDPI_STATIC void init_msgpack_dissector(struct ndpi_detection_module_struct *ndpi_struct);
 
 
 #ifdef CUSTOM_NDPI_PROTOCOLS
