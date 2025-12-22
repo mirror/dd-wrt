@@ -1059,14 +1059,14 @@ static void _dump_host_based_protocol(struct ndpi_detection_module_struct *ndpi_
 
 /* ****************************************** */
 
-void ndpi_dump_host_based_protocol_id(struct ndpi_detection_module_struct *ndpi_str,
+NDPI_STATIC void ndpi_dump_host_based_protocol_id(struct ndpi_detection_module_struct *ndpi_str,
 				      ndpi_hash_walk_iter walker, void *data) {
   _dump_host_based_protocol(ndpi_str, walker, true /* protocol id */, data);
 }
 
 /* ****************************************** */
 
-void ndpi_dump_host_based_category_id(struct ndpi_detection_module_struct *ndpi_str,
+NDPI_STATIC void ndpi_dump_host_based_category_id(struct ndpi_detection_module_struct *ndpi_str,
 				      ndpi_hash_walk_iter walker, void *data) {
   _dump_host_based_protocol(ndpi_str, walker, false /* category */, data);
 }

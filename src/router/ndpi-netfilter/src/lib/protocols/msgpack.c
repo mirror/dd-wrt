@@ -185,7 +185,7 @@ static u_int32_t msgpack_dissect_next(u_int8_t const ** const start,
   return 0;
 }
 
-void ndpi_search_msgpack(struct ndpi_detection_module_struct *ndpi_struct,
+static void ndpi_search_msgpack(struct ndpi_detection_module_struct *ndpi_struct,
                          struct ndpi_flow_struct *flow)
 {
   struct ndpi_packet_struct * const packet = ndpi_get_packet_struct(ndpi_struct);

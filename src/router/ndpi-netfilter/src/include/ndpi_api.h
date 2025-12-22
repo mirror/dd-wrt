@@ -278,14 +278,14 @@ extern "C" {
    * Set protocol default ports
    *
    */
-  ndpi_port_range *ndpi_build_default_ports(ndpi_port_range *ports, u_int16_t portA, u_int16_t portB, u_int16_t portC,
+  NDPI_STATIC ndpi_port_range *ndpi_build_default_ports(ndpi_port_range *ports, u_int16_t portA, u_int16_t portB, u_int16_t portC,
 					    u_int16_t portD, u_int16_t portE);
     
   /**
    * Set protocol default
    *
    */
-  int ndpi_set_proto_defaults(struct ndpi_detection_module_struct *ndpi_str,
+  NDPI_STATIC int ndpi_set_proto_defaults(struct ndpi_detection_module_struct *ndpi_str,
 			      u_int8_t is_cleartext, u_int8_t is_app_protocol,
 			      ndpi_protocol_breed_t breed,
 			      u_int16_t protoId, char *protoName,
@@ -299,7 +299,7 @@ extern "C" {
    * Set protocol ids mapping
    *
    */
-  void ndpi_add_user_proto_id_mapping(struct ndpi_detection_module_struct *ndpi_str,
+  NDPI_STATIC void ndpi_add_user_proto_id_mapping(struct ndpi_detection_module_struct *ndpi_str,
                                       u_int16_t ndpi_proto_id, u_int16_t user_proto_id);
 
   /**
@@ -310,7 +310,7 @@ extern "C" {
    * @return number of loaded protocols
    *
    */
-  u_int ndpi_load_protocol_plugins(struct ndpi_detection_module_struct *ndpi_struct,
+  NDPI_STATIC u_int ndpi_load_protocol_plugins(struct ndpi_detection_module_struct *ndpi_struct,
 				 char *dir_path);
 
   /**
@@ -2306,9 +2306,9 @@ NDPI_STATIC  int ndpi_load_tcp_fingerprint_file(struct ndpi_detection_module_str
 #ifndef __KERNEL__
   NDPI_STATIC char *ndpi_dump_config(struct ndpi_detection_module_struct *ndpi_str,
 			 FILE *fd);
-  void ndpi_dump_host_based_protocol_id(struct ndpi_detection_module_struct *ndpi_str,
+  NDPI_STATIC void ndpi_dump_host_based_protocol_id(struct ndpi_detection_module_struct *ndpi_str,
 					ndpi_hash_walk_iter walker, void *data);
-  void ndpi_dump_host_based_category_id(struct ndpi_detection_module_struct *ndpi_str,
+  NDPI_STATIC void ndpi_dump_host_based_category_id(struct ndpi_detection_module_struct *ndpi_str,
 					ndpi_hash_walk_iter walker, void *data);
 #endif
 

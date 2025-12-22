@@ -33,9 +33,9 @@
 #include "ndpi_api.h"
 #include "ndpi_private.h"
 
-extern void ndpi_search_json(struct ndpi_detection_module_struct *ndpi_struct,
+static void ndpi_search_json(struct ndpi_detection_module_struct *ndpi_struct,
                              struct ndpi_flow_struct *flow);
-extern void ndpi_search_msgpack(struct ndpi_detection_module_struct *ndpi_struct,
+static void ndpi_search_msgpack(struct ndpi_detection_module_struct *ndpi_struct,
                                 struct ndpi_flow_struct *flow);
 
 static const char* binary_exec_file_mimes_e[] = { "exe", NULL };

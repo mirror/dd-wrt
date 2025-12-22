@@ -9421,7 +9421,7 @@ static int is_unidir_traffic_exception(struct ndpi_flow_struct *flow) {
 
 /* ********************************************************************************* */
 
-bool ndpi_is_cnd_cloud_provider(u_int16_t proto_id) {
+static bool ndpi_is_cnd_cloud_provider(u_int16_t proto_id) {
   switch(proto_id) {
   case NDPI_PROTOCOL_GOOGLE_CLOUD:
   case NDPI_PROTOCOL_CLOUDFLARE:
