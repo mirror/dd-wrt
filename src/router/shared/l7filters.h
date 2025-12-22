@@ -38,6 +38,7 @@ static l7filters filters_list[] = {
 	{ "aimwebcontent", L7_ONLY, 0, NULL },
 #ifdef HAVE_OPENDPI
 	{ "ajp", NDPI_ONLY, 0, NULL },
+	{ "akamai", NDPI_ONLY, 0, NULL },
 	{ "alibaba", NDPI_ONLY, 0, NULL },
 	{ "alicloud", NDPI_ONLY, 0, NULL },
 	{ "amazon", NDPI_ONLY, 0, NULL },
@@ -395,6 +396,7 @@ static l7filters filters_list[] = {
 	{ "jpeg", L7_ONLY, 0, NULL },
 #ifdef HAVE_OPENDPI
 	{ "jrmi", NDPI_ONLY, 0, NULL },
+	{ "json", NDPI_ONLY, 0, NULL },
 	{ "json_rpc", NDPI_ONLY, 0, NULL },
 	{ "kakaotalk", NDPI_ONLY, 0, NULL },
 	{ "kakaotalk_voice", NDPI_ONLY, 0, NULL },
@@ -468,6 +470,7 @@ static l7filters filters_list[] = {
 	{ "ms_onedrive", NDPI_ONLY, 0, NULL },
 	{ "ms_rpch", NDPI_ONLY, 0, NULL },
 	{ "msdo", NDPI_ONLY, 0, NULL },
+	{ "msgpack", NDPI_ONLY, 0, NULL },
 #endif
 	{ "msn-filetransfer", L7_ONLY, 0, NULL },
 	{ "msnmessenger", L7_ONLY, 0, NULL },
