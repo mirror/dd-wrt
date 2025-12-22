@@ -209,18 +209,18 @@ static php_stream * phar_wrapper_open_url(php_stream_wrapper *wrapper, const cha
 		php_url_free(resource);
 		efree(internal_file);
 
-		if (context && Z_TYPE(context->options) != IS_UNDEF && (pzoption = zend_hash_str_find(HASH_OF(&context->options), "phar", sizeof("phar")-1)) != NULL) {
+		if (context && Z_TYPE(context->options) != IS_UNDEF && (pzoption = zend_hash_str_find_ind(HASH_OF(&context->options), "phar", sizeof("phar")-1)) != NULL) {
 			pharcontext = HASH_OF(pzoption);
 			if (idata->internal_file->uncompressed_filesize == 0
 				&& idata->internal_file->compressed_filesize == 0
-				&& (pzoption = zend_hash_str_find(pharcontext, "compress", sizeof("compress")-1)) != NULL
+				&& (pzoption = zend_hash_str_find_ind(pharcontext, "compress", sizeof("compress")-1)) != NULL
 				&& Z_TYPE_P(pzoption) == IS_LONG
 				&& (Z_LVAL_P(pzoption) & ~PHAR_ENT_COMPRESSION_MASK) == 0
 			) {
 				idata->internal_file->flags &= ~PHAR_ENT_COMPRESSION_MASK;
 				idata->internal_file->flags |= Z_LVAL_P(pzoption);
 			}
-			if ((pzoption = zend_hash_str_find(pharcontext, "metadata", sizeof("metadata")-1)) != NULL) {
+			if ((pzoption = zend_hash_str_find_ind(pharcontext, "metadata", sizeof("metadata")-1)) != NULL) {
 				phar_metadata_tracker_free(&idata->internal_file->metadata_tracker, idata->internal_file->is_persistent);
 
 				metadata = pzoption;
@@ -424,11 +424,9 @@ static int phar_stream_seek(php_stream *stream, zend_off_t offset, int whence, z
 
 	zend_off_t temp_signed = (zend_off_t) temp;
 	if (temp_signed > data->zero + (zend_off_t) entry->uncompressed_filesize) {
-		*newoffset = -1; /* FIXME: this will invalidate the ZEND_ASSERT(stream->position >= 0); assertion in streams.c */
 		return -1;
 	}
 	if (temp_signed < data->zero) {
-		*newoffset = -1; /* FIXME: this will invalidate the ZEND_ASSERT(stream->position >= 0); assertion in streams.c */
 		return -1;
 	}
 	res = php_stream_seek(data->fp, temp_signed, SEEK_SET);
@@ -467,16 +465,17 @@ static ssize_t phar_stream_write(php_stream *stream, const char *buf, size_t cou
 static int phar_stream_flush(php_stream *stream) /* {{{ */
 {
 	char *error;
+	int ret;
 	phar_entry_data *data = (phar_entry_data *) stream->abstract;
 
 	if (data->internal_file->is_modified) {
 		data->internal_file->timestamp = time(0);
-		phar_flush(data->phar, &error);
+		ret = phar_flush(data->phar, &error);
 		if (error) {
 			php_stream_wrapper_log_error(stream->wrapper, REPORT_ERRORS, "%s", error);
 			efree(error);
 		}
-		return EOF;
+		return ret;
 	} else {
 		return EOF;
 	}

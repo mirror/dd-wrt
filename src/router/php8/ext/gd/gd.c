@@ -2453,8 +2453,18 @@ PHP_FUNCTION(imagegammacorrect)
 		RETURN_THROWS();
 	}
 
+	if (!zend_finite(input)) {
+		zend_argument_value_error(2, "must be finite");
+		RETURN_THROWS();
+	}
+
 	if (output <= 0.0) {
 		zend_argument_value_error(3, "must be greater than 0");
+		RETURN_THROWS();
+	}
+
+	if (!zend_finite(output)) {
+		zend_argument_value_error(3, "must be finite");
 		RETURN_THROWS();
 	}
 
@@ -3921,9 +3931,17 @@ PHP_FUNCTION(imagescale)
 		src_y = gdImageSY(im);
 
 		if (src_x && tmp_h < 0) {
+			if (tmp_w > (ZEND_LONG_MAX / src_y)) {
+				zend_argument_value_error(2, "must be less than or equal to " ZEND_LONG_FMT, (zend_long)(ZEND_LONG_MAX / src_y));
+				RETURN_THROWS();
+			}
 			tmp_h = tmp_w * src_y / src_x;
 		}
 		if (src_y && tmp_w < 0) {
+			if (tmp_h > (ZEND_LONG_MAX / src_x)) {
+				zend_argument_value_error(3, "must be less than or equal to " ZEND_LONG_FMT, (zend_long)(ZEND_LONG_MAX / src_x));
+				RETURN_THROWS();
+			}
 			tmp_w = tmp_h * src_x / src_y;
 		}
 	}
