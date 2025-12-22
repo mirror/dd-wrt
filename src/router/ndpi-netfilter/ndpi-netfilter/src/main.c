@@ -684,7 +684,7 @@ static void *realloc_wrapper(void *ptr, size_t size) {
 	if(!p) return NULL;
 	if(ptr) {
 		memcpy(p,ptr,size);
-		kvfree(ptr);
+		free_wrapper(ptr);
 	}
 	return p;
 }

@@ -57,18 +57,18 @@ enum SOMEIP_RETURN_CODES {
 };
 
 /* SPECIAL_MESSAGE_IDS */
-const u_int32_t MSG_MAGIC_COOKIE = 0xffff0000;
-const u_int32_t MSG_MAGIC_COOKIE_ACK = 0xffff8000;
-const u_int32_t MSG_SD = 0xffff8100;
+static const u_int32_t MSG_MAGIC_COOKIE = 0xffff0000;
+static const u_int32_t MSG_MAGIC_COOKIE_ACK = 0xffff8000;
+static const u_int32_t MSG_SD = 0xffff8100;
 
 enum PROTOCOL_VERSION{
   LEGAL_PROTOCOL_VERSION = 0x01
 };
 
 /* MAGIC_COOKIE_CONST */
-const u_int32_t MC_REQUEST_ID = 0xDEADBEEF;
-const u_int32_t MC_LENGTH = 0x08;
-const u_int32_t MC_INTERFACE_VERSION = 0x01;
+static const u_int32_t MC_REQUEST_ID = 0xDEADBEEF;
+static const u_int32_t MC_LENGTH = 0x08;
+static const u_int32_t MC_INTERFACE_VERSION = 0x01;
 
 /**
  * Entry point when protocol is identified.
