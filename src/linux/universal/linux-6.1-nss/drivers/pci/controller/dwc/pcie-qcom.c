@@ -434,6 +434,11 @@ static int qcom_pcie_post_init_2_1_0(struct qcom_pcie *pcie)
 	u32 val;
 	int ret;
 
+	val = readl(pci->dbi_base + offset + PCI_EXP_DEVCTL);
+	val &= ~PCI_EXP_DEVCTL_PAYLOAD;
+	val |= PCI_EXP_DEVCTL_PAYLOAD_256B;
+	writel(val, pci->dbi_base + offset + PCI_EXP_DEVCTL);
+
 	/* enable PCIe clocks and resets */
 	val = readl(pcie->parf + PARF_PHY_CTRL);
 	val &= ~BIT(0);
@@ -708,6 +713,11 @@ err_aux_clk:
 static int qcom_pcie_post_init_2_3_2(struct qcom_pcie *pcie)
 {
 	u32 val;
+
+	val = readl(pci->dbi_base + offset + PCI_EXP_DEVCTL);
+	val &= ~PCI_EXP_DEVCTL_PAYLOAD;
+	val |= PCI_EXP_DEVCTL_PAYLOAD_256B;
+	writel(val, pci->dbi_base + offset + PCI_EXP_DEVCTL);
 
 	/* enable PCIe clocks and resets */
 	val = readl(pcie->parf + PARF_PHY_CTRL);
@@ -988,6 +998,11 @@ static int qcom_pcie_post_init_2_4_0(struct qcom_pcie *pcie)
 {
 	u32 val;
 
+	val = readl(pci->dbi_base + offset + PCI_EXP_DEVCTL);
+	val &= ~PCI_EXP_DEVCTL_PAYLOAD;
+	val |= PCI_EXP_DEVCTL_PAYLOAD_256B;
+	writel(val, pci->dbi_base + offset + PCI_EXP_DEVCTL);
+
 	/* enable PCIe clocks and resets */
 	val = readl(pcie->parf + PARF_PHY_CTRL);
 	val &= ~BIT(0);
@@ -1151,7 +1166,13 @@ static int qcom_pcie_post_init_2_3_3(struct qcom_pcie *pcie)
 	u16 offset = dw_pcie_find_capability(pci, PCI_CAP_ID_EXP);
 	u32 val;
 
+	val = readl(pci->dbi_base + offset + PCI_EXP_DEVCTL);
+	val &= ~PCI_EXP_DEVCTL_PAYLOAD;
+	val |= PCI_EXP_DEVCTL_PAYLOAD_256B;
+	writel(val, pci->dbi_base + offset + PCI_EXP_DEVCTL);
+
 	writel(SLV_ADDR_SPACE_SZ, pcie->parf + PARF_SLV_ADDR_SPACE_SIZE);
+
 
 	val = readl(pcie->parf + PARF_PHY_CTRL);
 	val &= ~BIT(0);
@@ -1458,6 +1479,12 @@ static int qcom_pcie_post_init_2_9_0(struct qcom_pcie *pcie)
 	u16 offset = dw_pcie_find_capability(pci, PCI_CAP_ID_EXP);
 	u32 val;
 	int i;
+
+	val = readl(pci->dbi_base + offset + PCI_EXP_DEVCTL);
+	val &= ~PCI_EXP_DEVCTL_PAYLOAD;
+	val |= PCI_EXP_DEVCTL_PAYLOAD_256B;
+	writel(val, pci->dbi_base + offset + PCI_EXP_DEVCTL);
+
 
 	writel(SLV_ADDR_SPACE_SZ,
 		pcie->parf + PARF_SLV_ADDR_SPACE_SIZE);
