@@ -37,7 +37,7 @@
 	};
 
 	chosen {
-		bootargs-override = "console=ttyMSM0,115200n8 nohz_full=all rootfstype=squashfs noinitrd earlyprintk";
+		bootargs-override = "console=ttyMSM0,115200n8 nohz_full=all pci=pcie_bus_perf rootfstype=squashfs noinitrd earlyprintk";
 		stdout-path = "serial0:115200n8";
 	};
 };

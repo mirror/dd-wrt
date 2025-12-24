@@ -19,7 +19,7 @@
 	};
 
 	chosen {
-		bootargs-override = "console=ttyMSM0,115200n8  nohz_full=all";
+		bootargs-override = "console=ttyMSM0,115200n8 pci=pcie_bus_perf nohz_full=all";
 	};
 
 	leds {

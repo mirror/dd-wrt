@@ -33,7 +33,7 @@
 	};
 
 	chosen {
-		bootargs = "console=ttyMSM0,115200n8 rootfstype=squashfs noinitrd root=/dev/mtdblock6 nohz_full=all";
+		bootargs = "console=ttyMSM0,115200n8 rootfstype=squashfs noinitrd root=/dev/mtdblock6 nohz_full=all pci=pcie_bus_perf";
 	};
 
 	aliases {
