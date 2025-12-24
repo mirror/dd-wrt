@@ -850,12 +850,13 @@ static int qcom_pcie_post_init_2_3_3(struct qcom_pcie *pcie)
 	u16 offset = dw_pcie_find_capability(pci, PCI_CAP_ID_EXP);
 	u32 val;
 
-	writel(SLV_ADDR_SPACE_SZ, pcie->parf + PARF_SLV_ADDR_SPACE_SIZE);
 
 	val = readl(pci->dbi_base + offset + PCI_EXP_DEVCTL);
 	val &= ~PCI_EXP_DEVCTL_PAYLOAD;
 	val |= PCI_EXP_DEVCTL_PAYLOAD_256B;
 	writel(val, pci->dbi_base + offset + PCI_EXP_DEVCTL);
+
+	writel(SLV_ADDR_SPACE_SZ, pcie->parf + PARF_SLV_ADDR_SPACE_SIZE);
 
 	val = readl(pcie->parf + PARF_PHY_CTRL);
 	val &= ~PHY_TEST_PWR_DOWN;
@@ -1169,13 +1170,14 @@ static int qcom_pcie_post_init_2_9_0_ipq5018(struct qcom_pcie *pcie)
 	if (of_device_is_compatible(pci->dev->of_node, "qcom,pcie-ipq6018"))
 		max_speed = SPEED_GEN3;
 
-	writel(SLV_ADDR_SPACE_SZ,
-		pcie->parf + PARF_SLV_ADDR_SPACE_SIZE);
 
 	val = readl(pci->dbi_base + offset + PCI_EXP_DEVCTL);
 	val &= ~PCI_EXP_DEVCTL_PAYLOAD;
 	val |= PCI_EXP_DEVCTL_PAYLOAD_256B;
 	writel(val, pci->dbi_base + offset + PCI_EXP_DEVCTL);
+
+	writel(SLV_ADDR_SPACE_SZ,
+		pcie->parf + PARF_SLV_ADDR_SPACE_SIZE);
 
 	val = readl(pcie->parf + PARF_PHY_CTRL);
 	val &= ~PHY_TEST_PWR_DOWN;
@@ -1248,13 +1250,14 @@ static int qcom_pcie_post_init_2_9_0(struct qcom_pcie *pcie)
 	u32 val;
 	int i;
 
-	writel(SLV_ADDR_SPACE_SZ,
-		pcie->parf + PARF_SLV_ADDR_SPACE_SIZE);
 
 	val = readl(pci->dbi_base + offset + PCI_EXP_DEVCTL);
 	val &= ~PCI_EXP_DEVCTL_PAYLOAD;
 	val |= PCI_EXP_DEVCTL_PAYLOAD_256B;
 	writel(val, pci->dbi_base + offset + PCI_EXP_DEVCTL);
+
+	writel(SLV_ADDR_SPACE_SZ,
+		pcie->parf + PARF_SLV_ADDR_SPACE_SIZE);
 
 	val = readl(pcie->parf + PARF_PHY_CTRL);
 	val &= ~PHY_TEST_PWR_DOWN;
