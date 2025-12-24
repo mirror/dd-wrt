@@ -170,6 +170,13 @@
 			status = "disabled";
 		};
 
+		crypto0: crypto@c000 {
+			compatible = "realtek,realtek-crypto";
+			reg = <0xc000 0x10>;
+			interrupt-parent = <&intc>;
+			interrupts = <22 3>;
+		};
+
 		watchdog0: watchdog@3150 {
 			compatible = "realtek,rtl8380-wdt";
 			reg = <0x3150 0xc>;

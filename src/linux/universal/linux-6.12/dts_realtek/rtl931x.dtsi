@@ -119,6 +119,14 @@
 			status = "disabled";
 		};
 
+		crypto0: crypto@c000 {
+			compatible = "realtek,realtek-crypto";
+			reg = <0xc000 0x10>;
+			interrupt-parent = <&gic>;
+			interrupt-names = "sec";
+			interrupts = <GIC_SHARED 39 IRQ_TYPE_LEVEL_HIGH>;
+		};
+
 		watchdog0: watchdog@3260 {
 			compatible = "realtek,rtl9310-wdt";
 			reg = <0x3260 0xc>;
