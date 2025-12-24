@@ -435,6 +435,11 @@ static int qcom_pcie_post_init_2_1_0(struct qcom_pcie *pcie)
 	u32 val;
 	int ret;
 
+	val = readl(pci->dbi_base + offset + PCI_EXP_DEVCTL);
+	val &= ~PCI_EXP_DEVCTL_PAYLOAD;
+	val |= PCI_EXP_DEVCTL_PAYLOAD_256B;
+	writel(val, pci->dbi_base + offset + PCI_EXP_DEVCTL);
+
 	/* enable PCIe clocks and resets */
 	val = readl(pcie->parf + PARF_PHY_CTRL);
 	val &= ~PHY_TEST_PWR_DOWN;
@@ -642,6 +647,11 @@ static int qcom_pcie_post_init_2_3_2(struct qcom_pcie *pcie)
 {
 	u32 val;
 
+	val = readl(pci->dbi_base + offset + PCI_EXP_DEVCTL);
+	val &= ~PCI_EXP_DEVCTL_PAYLOAD;
+	val |= PCI_EXP_DEVCTL_PAYLOAD_256B;
+	writel(val, pci->dbi_base + offset + PCI_EXP_DEVCTL);
+
 	/* enable PCIe clocks and resets */
 	val = readl(pcie->parf + PARF_PHY_CTRL);
 	val &= ~PHY_TEST_PWR_DOWN;
@@ -841,6 +851,11 @@ static int qcom_pcie_post_init_2_3_3(struct qcom_pcie *pcie)
 	u32 val;
 
 	writel(SLV_ADDR_SPACE_SZ, pcie->parf + PARF_SLV_ADDR_SPACE_SIZE);
+
+	val = readl(pci->dbi_base + offset + PCI_EXP_DEVCTL);
+	val &= ~PCI_EXP_DEVCTL_PAYLOAD;
+	val |= PCI_EXP_DEVCTL_PAYLOAD_256B;
+	writel(val, pci->dbi_base + offset + PCI_EXP_DEVCTL);
 
 	val = readl(pcie->parf + PARF_PHY_CTRL);
 	val &= ~PHY_TEST_PWR_DOWN;
@@ -1157,6 +1172,11 @@ static int qcom_pcie_post_init_2_9_0_ipq5018(struct qcom_pcie *pcie)
 	writel(SLV_ADDR_SPACE_SZ,
 		pcie->parf + PARF_SLV_ADDR_SPACE_SIZE);
 
+	val = readl(pci->dbi_base + offset + PCI_EXP_DEVCTL);
+	val &= ~PCI_EXP_DEVCTL_PAYLOAD;
+	val |= PCI_EXP_DEVCTL_PAYLOAD_256B;
+	writel(val, pci->dbi_base + offset + PCI_EXP_DEVCTL);
+
 	val = readl(pcie->parf + PARF_PHY_CTRL);
 	val &= ~PHY_TEST_PWR_DOWN;
 	writel(val, pcie->parf + PARF_PHY_CTRL);
@@ -1230,6 +1250,11 @@ static int qcom_pcie_post_init_2_9_0(struct qcom_pcie *pcie)
 
 	writel(SLV_ADDR_SPACE_SZ,
 		pcie->parf + PARF_SLV_ADDR_SPACE_SIZE);
+
+	val = readl(pci->dbi_base + offset + PCI_EXP_DEVCTL);
+	val &= ~PCI_EXP_DEVCTL_PAYLOAD;
+	val |= PCI_EXP_DEVCTL_PAYLOAD_256B;
+	writel(val, pci->dbi_base + offset + PCI_EXP_DEVCTL);
 
 	val = readl(pcie->parf + PARF_PHY_CTRL);
 	val &= ~PHY_TEST_PWR_DOWN;
