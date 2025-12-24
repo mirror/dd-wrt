@@ -429,6 +429,7 @@ static int qcom_pcie_post_init_2_1_0(struct qcom_pcie *pcie)
 {
 	struct qcom_pcie_resources_2_1_0 *res = &pcie->res.v2_1_0;
 	struct dw_pcie *pci = pcie->pci;
+	u16 offset = dw_pcie_find_capability(pci, PCI_CAP_ID_EXP);
 	struct device *dev = pci->dev;
 	struct device_node *node = dev->of_node;
 	u32 val;
@@ -713,6 +714,8 @@ err_aux_clk:
 static int qcom_pcie_post_init_2_3_2(struct qcom_pcie *pcie)
 {
 	u32 val;
+	struct dw_pcie *pci = pcie->pci;
+	u16 offset = dw_pcie_find_capability(pci, PCI_CAP_ID_EXP);
 
 	val = readl(pci->dbi_base + offset + PCI_EXP_DEVCTL);
 	val &= ~PCI_EXP_DEVCTL_PAYLOAD;
@@ -997,6 +1000,8 @@ err_rst_phy:
 static int qcom_pcie_post_init_2_4_0(struct qcom_pcie *pcie)
 {
 	u32 val;
+	struct dw_pcie *pci = pcie->pci;
+	u16 offset = dw_pcie_find_capability(pci, PCI_CAP_ID_EXP);
 
 	val = readl(pci->dbi_base + offset + PCI_EXP_DEVCTL);
 	val &= ~PCI_EXP_DEVCTL_PAYLOAD;
