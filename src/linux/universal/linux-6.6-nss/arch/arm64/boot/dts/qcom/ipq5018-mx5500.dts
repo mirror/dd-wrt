@@ -23,7 +23,7 @@
 	};
 
     chosen {
-        bootargs-append = " pci=pcie_bus_safe mitigations=off root=/dev/ubiblock0_0";
+        bootargs-append = " pci=pcie_bus_perf mitigations=off root=/dev/ubiblock0_0";
 		stdout-path = "serial0:115200n8";
 	};
 

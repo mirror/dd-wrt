@@ -25,7 +25,7 @@
 
 	chosen {
 		stdout-path = "serial0:115200n8";
-		bootargs-append = " pci=pcie_bus_safe root=/dev/ubiblock0_0 rootfstype=squashfs ro";
+		bootargs-append = " pci=pcie_bus_perf root=/dev/ubiblock0_0 rootfstype=squashfs ro";
 	};
 
 	gpio_export {
