@@ -106,7 +106,7 @@ char *nss_modules = NSS_MODULES_DEFAULT;
 /* who to suid to if -s is given */
 #define RUN_AS  "daemon"
 
-#define RPCBINDDLOCK "/run/rpcbind.lock"
+#define RPCBINDDLOCK "/var/run/rpcbind.lock"
 
 int runasdaemon = 0;
 int insecure = 0;
