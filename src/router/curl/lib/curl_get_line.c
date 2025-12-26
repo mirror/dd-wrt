@@ -32,43 +32,48 @@
 /* The last #include file should be: */
 #include "memdebug.h"
 
-#define appendnl(b)                             \
-  curlx_dyn_addn(buf, "\n", 1)
-
 /*
- * Curl_get_line() returns only complete whole lines that end with newline.
- * When 'eof' is set TRUE, the last line has been read.
+ * Curl_get_line() makes sure to only return complete whole lines that end
+ * newlines.
  */
-CURLcode Curl_get_line(struct dynbuf *buf, FILE *input, bool *eof)
+int Curl_get_line(struct dynbuf *buf, FILE *input)
 {
   CURLcode result;
   char buffer[128];
   curlx_dyn_reset(buf);
   while(1) {
-    size_t rlen;
     char *b = fgets(buffer, sizeof(buffer), input);
 
-    *eof = feof(input);
+    if(b) {
+      size_t rlen = strlen(b);
 
-    rlen = b ? strlen(b) : 0;
-    if(rlen) {
+      if(!rlen)
+        break;
+
       result = curlx_dyn_addn(buf, b, rlen);
       if(result)
         /* too long line or out of memory */
-        return result;
+        return 0; /* error */
+
+      else if(b[rlen-1] == '\n')
+        /* end of the line */
+        return 1; /* all good */
+
+      else if(feof(input)) {
+        /* append a newline */
+        result = curlx_dyn_addn(buf, "\n", 1);
+        if(result)
+          /* too long line or out of memory */
+          return 0; /* error */
+        return 1; /* all good */
+      }
     }
-    /* now check the full line */
-    rlen = curlx_dyn_len(buf);
-    b = curlx_dyn_ptr(buf);
-    if(rlen && (b[rlen-1] == '\n'))
-      /* LF at end of the line */
-      return CURLE_OK; /* all good */
-    if(*eof)
-      /* append a newline */
-      return appendnl(buf);
-    /* otherwise get next line to append */
+    else if(curlx_dyn_len(buf))
+      return 1; /* all good */
+    else
+      break;
   }
-  /* UNREACHABLE */
+  return 0;
 }
 
 #endif /* if not disabled */

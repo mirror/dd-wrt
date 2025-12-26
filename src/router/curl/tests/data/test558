@@ -12,6 +12,9 @@ TrackMemory
 
 # Client-side
 <client>
+<server>
+none
+</server>
 <features>
 TrackMemory
 IPv6
@@ -24,6 +27,9 @@ lib%TESTNUMBER
 <name>
 libtest memory tracking operational
 </name>
+<command>
+nothing
+</command>
 </client>
 
 #

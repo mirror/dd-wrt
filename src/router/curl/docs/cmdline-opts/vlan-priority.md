@@ -6,6 +6,7 @@ Arg: <priority>
 Help: Set VLAN priority
 Added: 8.9.0
 Category: connection
+Protocols: All
 Multi: single
 See-also:
   - ip-tos

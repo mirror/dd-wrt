@@ -21,8 +21,7 @@
 # SPDX-License-Identifier: curl
 #
 ###########################################################################
-# Shared between CMakeLists.txt and Makefile.am
-
+# ./src/Makefile.inc
 # Using the backslash as line continuation character might be problematic with
 # some make flavours. If we ever want to change this in a portable manner then
 # we should consider this idea :
@@ -34,34 +33,25 @@
 # the official API, but we reuse the code here to avoid duplication.
 CURLX_CFILES = \
   ../lib/curlx/base64.c \
-  ../lib/curlx/dynbuf.c \
-  ../lib/curlx/fopen.c \
   ../lib/curlx/multibyte.c \
+  ../lib/curlx/dynbuf.c \
   ../lib/curlx/nonblock.c \
-  ../lib/curlx/strerr.c \
   ../lib/curlx/strparse.c \
   ../lib/curlx/timediff.c \
   ../lib/curlx/timeval.c \
   ../lib/curlx/version_win32.c \
-  ../lib/curlx/wait.c \
-  ../lib/curlx/warnless.c \
-  ../lib/curlx/winapi.c
+  ../lib/curlx/warnless.c
 
 CURLX_HFILES = \
-  ../lib/curl_setup.h \
-  ../lib/curlx/binmode.h \
-  ../lib/curlx/dynbuf.h \
-  ../lib/curlx/fopen.h \
   ../lib/curlx/multibyte.h \
+  ../lib/curl_setup.h \
+  ../lib/curlx/dynbuf.h \
   ../lib/curlx/nonblock.h \
-  ../lib/curlx/strerr.h \
   ../lib/curlx/strparse.h \
   ../lib/curlx/timediff.h \
   ../lib/curlx/timeval.h \
   ../lib/curlx/version_win32.h \
-  ../lib/curlx/wait.h \
-  ../lib/curlx/warnless.h \
-  ../lib/curlx/winapi.h
+  ../lib/curlx/warnless.h
 
 CURL_CFILES = \
   config2setopts.c \
@@ -97,6 +87,7 @@ CURL_CFILES = \
   tool_parsecfg.c \
   tool_progress.c \
   tool_setopt.c \
+  tool_sleep.c \
   tool_ssls.c \
   tool_stderr.c \
   tool_strdup.c \
@@ -112,6 +103,7 @@ CURL_HFILES = \
   config2setopts.h \
   slist_wc.h \
   terminal.h \
+  tool_binmode.h \
   tool_bname.h \
   tool_cb_dbg.h \
   tool_cb_hdr.h \
@@ -143,6 +135,7 @@ CURL_HFILES = \
   tool_sdecls.h \
   tool_setopt.h \
   tool_setup.h \
+  tool_sleep.h \
   tool_ssls.h \
   tool_stderr.h \
   tool_strdup.h \
@@ -156,3 +149,6 @@ CURL_HFILES = \
   var.h
 
 CURL_RCFILES = curl.rc
+
+# curl_SOURCES is special and gets assigned in src/Makefile.am
+CURL_FILES = $(CURL_CFILES) $(CURLX_CFILES) $(CURL_HFILES)

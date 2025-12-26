@@ -12,6 +12,7 @@ Protocol:
   - TLS
 TLS-backend:
   - OpenSSL
+  - BearSSL
   - wolfSSL
 Added-in: 7.52.0
 ---

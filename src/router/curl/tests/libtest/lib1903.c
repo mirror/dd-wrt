@@ -21,33 +21,36 @@
  * SPDX-License-Identifier: curl
  *
  ***************************************************************************/
-#include "first.h"
+#include "test.h"
 
+#include "testutil.h"
+#include "timediff.h"
+#include "warnless.h"
 #include "memdebug.h"
 
-static CURLcode test_lib1903(const char *URL)
+CURLcode test(char *URL)
 {
   CURLcode res = CURLE_OK;
-  CURL *curl = NULL;
+  CURL *ch = NULL;
   global_init(CURL_GLOBAL_ALL);
 
-  easy_init(curl);
+  easy_init(ch);
 
-  easy_setopt(curl, CURLOPT_URL, URL);
-  easy_setopt(curl, CURLOPT_COOKIEFILE, libtest_arg2);
-  res = curl_easy_perform(curl);
+  easy_setopt(ch, CURLOPT_URL, URL);
+  easy_setopt(ch, CURLOPT_COOKIEFILE, libtest_arg2);
+  res = curl_easy_perform(ch);
   if(res)
     goto test_cleanup;
 
-  curl_easy_reset(curl);
+  curl_easy_reset(ch);
 
-  easy_setopt(curl, CURLOPT_URL, URL);
-  easy_setopt(curl, CURLOPT_COOKIEFILE, libtest_arg2);
-  easy_setopt(curl, CURLOPT_COOKIEJAR, libtest_arg3);
-  res = curl_easy_perform(curl);
+  easy_setopt(ch, CURLOPT_URL, URL);
+  easy_setopt(ch, CURLOPT_COOKIEFILE, libtest_arg2);
+  easy_setopt(ch, CURLOPT_COOKIEJAR, libtest_arg3);
+  res = curl_easy_perform(ch);
 
 test_cleanup:
-  curl_easy_cleanup(curl);
+  curl_easy_cleanup(ch);
   curl_global_cleanup();
 
   return res;

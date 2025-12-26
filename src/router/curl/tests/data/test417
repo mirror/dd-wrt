@@ -24,6 +24,7 @@ nomnom
 <features>
 SSL
 !wolfssl
+!bearssl
 !mbedtls
 </features>
 <server>
@@ -38,7 +39,7 @@ https
 </command>
 </client>
 <verify>
-<protocol crlf="headers">
+<protocol>
 GET /%TESTNUMBER HTTP/1.1
 Host: %HOSTIP:%HTTPSPORT
 User-Agent: curl/%VERSION

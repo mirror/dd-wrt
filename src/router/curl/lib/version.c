@@ -34,6 +34,7 @@
 #include "http2.h"
 #include "vssh/ssh.h"
 #include "vquic/vquic.h"
+#include "curl_printf.h"
 #include "easy_lock.h"
 
 #ifdef USE_ARES
@@ -77,14 +78,6 @@
 #include <gsasl.h>
 #endif
 
-#ifdef HAVE_GSSAPI
-# ifdef HAVE_GSSGNU
-#  include <gss.h>
-# else
-#  include <gssapi/gssapi.h>
-# endif
-#endif
-
 #ifdef USE_OPENLDAP
 #include <ldap.h>
 #endif
@@ -96,7 +89,7 @@ static void brotli_version(char *buf, size_t bufsz)
   unsigned int major = brotli_version >> 24;
   unsigned int minor = (brotli_version & 0x00FFFFFF) >> 12;
   unsigned int patch = brotli_version & 0x00000FFF;
-  (void)curl_msnprintf(buf, bufsz, "brotli/%u.%u.%u", major, minor, patch);
+  (void)msnprintf(buf, bufsz, "brotli/%u.%u.%u", major, minor, patch);
 }
 #endif
 
@@ -107,7 +100,7 @@ static void zstd_version(char *buf, size_t bufsz)
   unsigned int major = version / (100 * 100);
   unsigned int minor = (version - (major * 100 * 100)) / 100;
   unsigned int patch = version - (major * 100 * 100) - (minor * 100);
-  (void)curl_msnprintf(buf, bufsz, "zstd/%u.%u.%u", major, minor, patch);
+  (void)msnprintf(buf, bufsz, "zstd/%u.%u.%u", major, minor, patch);
 }
 #endif
 
@@ -123,13 +116,13 @@ static void oldap_version(char *buf, size_t bufsz)
     unsigned int minor =
       (((unsigned int)api.ldapai_vendor_version - major * 10000)
        - patch) / 100;
-    curl_msnprintf(buf, bufsz, "%s/%u.%u.%u",
-                   api.ldapai_vendor_name, major, minor, patch);
+    msnprintf(buf, bufsz, "%s/%u.%u.%u",
+              api.ldapai_vendor_name, major, minor, patch);
     ldap_memfree(api.ldapai_vendor_name);
     ber_memvfree((void **)api.ldapai_extensions);
   }
   else
-    curl_msnprintf(buf, bufsz, "OpenLDAP");
+    msnprintf(buf, bufsz, "OpenLDAP");
 }
 #endif
 
@@ -139,10 +132,10 @@ static void psl_version(char *buf, size_t bufsz)
 #if defined(PSL_VERSION_MAJOR) && (PSL_VERSION_MAJOR > 0 ||     \
                                    PSL_VERSION_MINOR >= 11)
   int num = psl_check_version_number(0);
-  curl_msnprintf(buf, bufsz, "libpsl/%d.%d.%d",
-                 num >> 16, (num >> 8) & 0xff, num & 0xff);
+  msnprintf(buf, bufsz, "libpsl/%d.%d.%d",
+            num >> 16, (num >> 8) & 0xff, num & 0xff);
 #else
-  curl_msnprintf(buf, bufsz, "libpsl/%s", psl_get_version());
+  msnprintf(buf, bufsz, "libpsl/%s", psl_get_version());
 #endif
 }
 #endif
@@ -155,11 +148,11 @@ static void psl_version(char *buf, size_t bufsz)
 static void idn_version(char *buf, size_t bufsz)
 {
 #ifdef USE_LIBIDN2
-  curl_msnprintf(buf, bufsz, "libidn2/%s", idn2_check_version(NULL));
+  msnprintf(buf, bufsz, "libidn2/%s", idn2_check_version(NULL));
 #elif defined(USE_WIN32_IDN)
-  curl_msnprintf(buf, bufsz, "WinIDN");
+  msnprintf(buf, bufsz, "WinIDN");
 #elif defined(USE_APPLE_IDN)
-  curl_msnprintf(buf, bufsz, "AppleIDN");
+  msnprintf(buf, bufsz, "AppleIDN");
 #endif
 }
 #endif
@@ -204,10 +197,10 @@ char *curl_version(void)
 #ifdef USE_SSH
   char ssh_version[30];
 #endif
-#if !defined(CURL_DISABLE_HTTP) && defined(USE_NGHTTP2)
+#ifdef USE_NGHTTP2
   char h2_version[30];
 #endif
-#if !defined(CURL_DISABLE_HTTP) && defined(USE_HTTP3)
+#ifdef USE_HTTP3
   char h3_version[30];
 #endif
 #ifdef USE_LIBRTMP
@@ -215,9 +208,6 @@ char *curl_version(void)
 #endif
 #ifdef USE_GSASL
   char gsasl_buf[30];
-#endif
-#ifdef HAVE_GSSAPI
-  char gss_buf[40];
 #endif
 #ifdef USE_OPENLDAP
   char ldap_buf[30];
@@ -229,7 +219,7 @@ char *curl_version(void)
   /* Override version string when environment variable CURL_VERSION is set */
   const char *debugversion = getenv("CURL_VERSION");
   if(debugversion) {
-    curl_msnprintf(out, sizeof(out), "%s", debugversion);
+    msnprintf(out, sizeof(out), "%s", debugversion);
     return out;
   }
 #endif
@@ -240,7 +230,7 @@ char *curl_version(void)
   src[i++] = ssl_version;
 #endif
 #ifdef HAVE_LIBZ
-  curl_msnprintf(z_version, sizeof(z_version), "zlib/%s", zlibVersion());
+  msnprintf(z_version, sizeof(z_version), "zlib/%s", zlibVersion());
   src[i++] = z_version;
 #endif
 #ifdef HAVE_BROTLI
@@ -252,8 +242,8 @@ char *curl_version(void)
   src[i++] = zstd_ver;
 #endif
 #ifdef USE_ARES
-  curl_msnprintf(cares_version, sizeof(cares_version),
-                 "c-ares/%s", ares_version(NULL));
+  msnprintf(cares_version, sizeof(cares_version),
+            "c-ares/%s", ares_version(NULL));
   src[i++] = cares_version;
 #endif
 #ifdef USE_IDN
@@ -268,11 +258,11 @@ char *curl_version(void)
   Curl_ssh_version(ssh_version, sizeof(ssh_version));
   src[i++] = ssh_version;
 #endif
-#if !defined(CURL_DISABLE_HTTP) && defined(USE_NGHTTP2)
+#ifdef USE_NGHTTP2
   Curl_http2_ver(h2_version, sizeof(h2_version));
   src[i++] = h2_version;
 #endif
-#if !defined(CURL_DISABLE_HTTP) && defined(USE_HTTP3)
+#ifdef USE_HTTP3
   Curl_quic_ver(h3_version, sizeof(h3_version));
   src[i++] = h3_version;
 #endif
@@ -281,22 +271,10 @@ char *curl_version(void)
   src[i++] = rtmp_version;
 #endif
 #ifdef USE_GSASL
-  curl_msnprintf(gsasl_buf, sizeof(gsasl_buf), "libgsasl/%s",
-                 gsasl_check_version(NULL));
+  msnprintf(gsasl_buf, sizeof(gsasl_buf), "libgsasl/%s",
+            gsasl_check_version(NULL));
   src[i++] = gsasl_buf;
 #endif
-#ifdef HAVE_GSSAPI
-#ifdef HAVE_GSSGNU
-  curl_msnprintf(gss_buf, sizeof(gss_buf), "libgss/%s",
-                 GSS_VERSION);
-#elif defined(CURL_KRB5_VERSION)
-  curl_msnprintf(gss_buf, sizeof(gss_buf), "mit-krb5/%s",
-                 CURL_KRB5_VERSION);
-#else
-  curl_msnprintf(gss_buf, sizeof(gss_buf), "mit-krb5");
-#endif
-  src[i++] = gss_buf;
-#endif /* HAVE_GSSAPI */
 #ifdef USE_OPENLDAP
   oldap_version(ldap_buf, sizeof(ldap_buf));
   src[i++] = ldap_buf;
@@ -390,8 +368,10 @@ static const char * const supported_protocols[] = {
 #ifndef CURL_DISABLE_RTSP
   "rtsp",
 #endif
-#ifdef USE_SSH
+#if defined(USE_SSH) && !defined(USE_WOLFSSH)
   "scp",
+#endif
+#ifdef USE_SSH
   "sftp",
 #endif
 #if !defined(CURL_DISABLE_SMB) && defined(USE_CURL_NTLM_CORE)
@@ -448,7 +428,7 @@ static int idn_present(curl_version_info_data *info)
   !defined(CURL_DISABLE_HTTP)
 static int https_proxy_present(curl_version_info_data *info)
 {
-  (void)info;
+  (void) info;
   return Curl_ssl_supports(NULL, SSLSUPP_HTTPS_PROXY);
 }
 #endif
@@ -456,7 +436,7 @@ static int https_proxy_present(curl_version_info_data *info)
 #if defined(USE_SSL) && defined(USE_ECH)
 static int ech_present(curl_version_info_data *info)
 {
-  (void)info;
+  (void) info;
   return Curl_ssl_supports(NULL, SSLSUPP_ECH);
 }
 #endif
@@ -508,17 +488,17 @@ static const struct feat features_table[] = {
 #ifndef CURL_DISABLE_HSTS
   FEATURE("HSTS",        NULL,                CURL_VERSION_HSTS),
 #endif
-#if !defined(CURL_DISABLE_HTTP) && defined(USE_NGHTTP2)
+#if defined(USE_NGHTTP2)
   FEATURE("HTTP2",       NULL,                CURL_VERSION_HTTP2),
 #endif
-#if !defined(CURL_DISABLE_HTTP) && defined(USE_HTTP3)
+#if defined(USE_HTTP3)
   FEATURE("HTTP3",       NULL,                CURL_VERSION_HTTP3),
 #endif
 #if defined(USE_SSL) && !defined(CURL_DISABLE_PROXY) && \
   !defined(CURL_DISABLE_HTTP)
   FEATURE("HTTPS-proxy", https_proxy_present, CURL_VERSION_HTTPS_PROXY),
 #endif
-#ifdef USE_HTTPSRR
+#if defined(USE_HTTPSRR)
   FEATURE("HTTPSRR",     NULL,                0),
 #endif
 #if defined(USE_LIBIDN2) || defined(USE_WIN32_IDN) || defined(USE_APPLE_IDN)
@@ -543,11 +523,8 @@ static const struct feat features_table[] = {
 #ifdef USE_NTLM
   FEATURE("NTLM",        NULL,                CURL_VERSION_NTLM),
 #endif
-#ifdef USE_LIBPSL
+#if defined(USE_LIBPSL)
   FEATURE("PSL",         NULL,                CURL_VERSION_PSL),
-#endif
-#ifdef USE_APPLE_SECTRUST
-  FEATURE("AppleSecTrust", NULL,              0),
 #endif
 #ifdef USE_SPNEGO
   FEATURE("SPNEGO",      NULL,                CURL_VERSION_SPNEGO),
@@ -555,7 +532,7 @@ static const struct feat features_table[] = {
 #ifdef USE_SSL
   FEATURE("SSL",         NULL,                CURL_VERSION_SSL),
 #endif
-#ifdef USE_SSLS_EXPORT
+#if defined(USE_SSLS_EXPORT)
   FEATURE("SSLS-EXPORT", NULL,                0),
 #endif
 #ifdef USE_WINDOWS_SSPI
@@ -630,7 +607,7 @@ curl_version_info_data *curl_version_info(CURLversion stamp)
   const struct feat *p;
   int features = 0;
 
-#ifdef USE_SSH
+#if defined(USE_SSH)
   static char ssh_buf[80];  /* 'ssh_buffer' clashes with libssh/libssh.h */
 #endif
 #ifdef USE_SSL
@@ -647,7 +624,7 @@ curl_version_info_data *curl_version_info(CURLversion stamp)
   static char zstd_buffer[80];
 #endif
 
-  (void)stamp;
+  (void)stamp; /* avoid compiler warnings, we do not use this */
 
 #ifdef USE_SSL
   Curl_ssl_version(ssl_buffer, sizeof(ssl_buffer));
@@ -671,7 +648,7 @@ curl_version_info_data *curl_version_info(CURLversion stamp)
   version_info.libidn = idn2_check_version(IDN2_VERSION);
 #endif
 
-#ifdef USE_SSH
+#if defined(USE_SSH)
   Curl_ssh_version(ssh_buf, sizeof(ssh_buf));
   version_info.libssh_version = ssh_buf;
 #endif
@@ -696,7 +673,7 @@ curl_version_info_data *curl_version_info(CURLversion stamp)
   }
 #endif
 
-#if !defined(CURL_DISABLE_HTTP) && defined(USE_HTTP3)
+#ifdef USE_HTTP3
   {
     static char quicbuffer[80];
     Curl_quic_ver(quicbuffer, sizeof(quicbuffer));

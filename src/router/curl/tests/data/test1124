@@ -11,7 +11,7 @@ chunked Transfer-Encoding
 #
 # Server-side
 <reply>
-<data crlf="headers">
+<data>
 HTTP/1.1 200 OK
 Date: Mon, 29 Nov 2024 21:56:53 GMT
 Server: Something-TE-friendly/0.1
@@ -27,7 +27,7 @@ Transfer-Encoding: gzip, chunked
 
 </data>
 
-<datacheck crlf="headers">
+<datacheck>
 HTTP/1.1 200 OK
 Date: Mon, 29 Nov 2024 21:56:53 GMT
 Server: Something-TE-friendly/0.1
@@ -62,13 +62,13 @@ http://%HOSTIP:%HTTPPORT/%TESTNUMBER --tr-encoding
 #
 # Verify data after the test has been "shot"
 <verify>
-<protocol crlf="headers">
+<protocol>
 GET /%TESTNUMBER HTTP/1.1
 Host: %HOSTIP:%HTTPPORT
 User-Agent: curl/%VERSION
 Accept: */*
-TE: gzip
 Connection: TE
+TE: gzip
 
 </protocol>
 </verify>

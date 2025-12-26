@@ -86,43 +86,43 @@ static size_t writer(char *data, size_t size, size_t nmemb,
 //  libcurl connection initialization
 //
 
-static bool init(CURL *&curl, const char *url)
+static bool init(CURL *&conn, const char *url)
 {
-  CURLcode res;
+  CURLcode code;
 
-  curl = curl_easy_init();
+  conn = curl_easy_init();
 
-  if(!curl) {
-    fprintf(stderr, "Failed to create CURL handle\n");
+  if(conn == NULL) {
+    fprintf(stderr, "Failed to create CURL connection\n");
     return false;
   }
 
-  res = curl_easy_setopt(curl, CURLOPT_ERRORBUFFER, errorBuffer);
-  if(res != CURLE_OK) {
-    fprintf(stderr, "Failed to set error buffer [%d]\n", res);
+  code = curl_easy_setopt(conn, CURLOPT_ERRORBUFFER, errorBuffer);
+  if(code != CURLE_OK) {
+    fprintf(stderr, "Failed to set error buffer [%d]\n", code);
     return false;
   }
 
-  res = curl_easy_setopt(curl, CURLOPT_URL, url);
-  if(res != CURLE_OK) {
+  code = curl_easy_setopt(conn, CURLOPT_URL, url);
+  if(code != CURLE_OK) {
     fprintf(stderr, "Failed to set URL [%s]\n", errorBuffer);
     return false;
   }
 
-  res = curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
-  if(res != CURLE_OK) {
+  code = curl_easy_setopt(conn, CURLOPT_FOLLOWLOCATION, 1L);
+  if(code != CURLE_OK) {
     fprintf(stderr, "Failed to set redirect option [%s]\n", errorBuffer);
     return false;
   }
 
-  res = curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, writer);
-  if(res != CURLE_OK) {
+  code = curl_easy_setopt(conn, CURLOPT_WRITEFUNCTION, writer);
+  if(code != CURLE_OK) {
     fprintf(stderr, "Failed to set writer [%s]\n", errorBuffer);
     return false;
   }
 
-  res = curl_easy_setopt(curl, CURLOPT_WRITEDATA, &buffer);
-  if(res != CURLE_OK) {
+  code = curl_easy_setopt(conn, CURLOPT_WRITEDATA, &buffer);
+  if(code != CURLE_OK) {
     fprintf(stderr, "Failed to set write data [%s]\n", errorBuffer);
     return false;
   }
@@ -144,7 +144,7 @@ static void StartElement(void *voidContext,
     context->title = "";
     context->addTitle = true;
   }
-  (void)attributes;
+  (void) attributes;
 }
 
 //
@@ -262,8 +262,8 @@ static void parseHtml(const std::string &html,
 
 int main(int argc, char *argv[])
 {
-  CURL *curl = NULL;
-  CURLcode res;
+  CURL *conn = NULL;
+  CURLcode code;
   std::string title;
 
   // Ensure one argument is given
@@ -273,24 +273,21 @@ int main(int argc, char *argv[])
     return EXIT_FAILURE;
   }
 
-  res = curl_global_init(CURL_GLOBAL_ALL);
-  if(res)
-    return (int)res;
+  curl_global_init(CURL_GLOBAL_DEFAULT);
 
-  // Initialize CURL handle
+  // Initialize CURL connection
 
-  if(!init(curl, argv[1])) {
-    fprintf(stderr, "Handle initialization failed\n");
-    curl_global_cleanup();
+  if(!init(conn, argv[1])) {
+    fprintf(stderr, "Connection initialization failed\n");
     return EXIT_FAILURE;
   }
 
   // Retrieve content for the URL
 
-  res = curl_easy_perform(curl);
-  curl_easy_cleanup(curl);
+  code = curl_easy_perform(conn);
+  curl_easy_cleanup(conn);
 
-  if(res != CURLE_OK) {
+  if(code != CURLE_OK) {
     fprintf(stderr, "Failed to get '%s' [%s]\n", argv[1], errorBuffer);
     return EXIT_FAILURE;
   }
@@ -301,5 +298,5 @@ int main(int argc, char *argv[])
   // Display the extracted title
   printf("Title: %s\n", title.c_str());
 
-  return (int)res;
+  return EXIT_SUCCESS;
 }

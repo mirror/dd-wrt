@@ -60,7 +60,6 @@ BEGIN {
         os_is_win
         exe_ext
         dirsepadd
-        shell_quote
         sys_native_abs_path
         sys_native_current_path
         build_sys_abs_path
@@ -122,7 +121,7 @@ sub sys_native_abs_path {
     return File::Spec->rel2abs($path) if !os_is_win();
 
     # Do not process empty path.
-    return $path if($path eq '');
+    return $path if ($path eq '');
 
     my $res;
     if($^O eq 'msys' || $^O eq 'cygwin') {
@@ -171,14 +170,14 @@ sub build_sys_abs_path {
 #
 sub exe_ext {
     my ($component, @arr) = @_;
-    if($ENV{'CURL_TEST_EXE_EXT'}) {
+    if ($ENV{'CURL_TEST_EXE_EXT'}) {
         return $ENV{'CURL_TEST_EXE_EXT'};
     }
-    if($ENV{'CURL_TEST_EXE_EXT_'.$component}) {
+    if ($ENV{'CURL_TEST_EXE_EXT_'.$component}) {
         return $ENV{'CURL_TEST_EXE_EXT_'.$component};
     }
-    if($^O eq 'MSWin32' || $^O eq 'cygwin' || $^O eq 'msys' ||
-       $^O eq 'dos' || $^O eq 'os2') {
+    if ($^O eq 'MSWin32' || $^O eq 'cygwin' || $^O eq 'msys' ||
+        $^O eq 'dos' || $^O eq 'os2') {
         return '.exe';
     }
     return '';
@@ -191,25 +190,6 @@ sub dirsepadd {
     my ($dir) = @_;
     $dir =~ s/\/$//;
     return $dir . '/';
-}
-
-#######################################################################
-# Quote an argument for passing safely to a Bourne shell
-# This does the same thing as String::ShellQuote but doesn't need a package.
-#
-sub shell_quote {
-    my ($s)=@_;
-    if($^O eq 'MSWin32') {
-        $s = '"' . $s . '"';
-    }
-    else {
-        if($s !~ m/^[-+=.,_\/:a-zA-Z0-9]+$/) {
-            # string contains a "dangerous" character--quote it
-            $s =~ s/'/'"'"'/g;
-            $s = "'" . $s . "'";
-        }
-    }
-    return $s;
 }
 
 1;    # End of module

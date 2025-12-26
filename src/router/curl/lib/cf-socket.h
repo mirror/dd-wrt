@@ -48,12 +48,11 @@ struct Curl_sockaddr_ex {
   int protocol;
   unsigned int addrlen;
   union {
-    struct sockaddr sa;
-    struct Curl_sockaddr_storage buf;
-  } addr;
+    struct sockaddr addr;
+    struct Curl_sockaddr_storage buff;
+  } _sa_ex_u;
 };
-#define curl_sa_addr addr.sa
-#define curl_sa_addrbuf addr.buf
+#define curl_sa_addr _sa_ex_u.addr
 
 /*
  * Parse interface option, and return the interface name and the host part.
@@ -69,10 +68,10 @@ CURLcode Curl_parse_interface(const char *input,
  *
  */
 CURLcode Curl_socket_open(struct Curl_easy *data,
-                          const struct Curl_addrinfo *ai,
-                          struct Curl_sockaddr_ex *addr,
-                          int transport,
-                          curl_socket_t *sockfd);
+                            const struct Curl_addrinfo *ai,
+                            struct Curl_sockaddr_ex *addr,
+                            int transport,
+                            curl_socket_t *sockfd);
 
 int Curl_socket_close(struct Curl_easy *data, struct connectdata *conn,
                       curl_socket_t sock);
@@ -81,7 +80,7 @@ int Curl_socket_close(struct Curl_easy *data, struct connectdata *conn,
 /* When you run a program that uses the Windows Sockets API, you may
    experience slow performance when you copy data to a TCP server.
 
-   https://learn.microsoft.com/troubleshoot/windows-server/networking/slow-performance-copy-data-tcp-server-sockets-api
+   https://support.microsoft.com/kb/823764
 
    Work-around: Make the Socket Send Buffer Size Larger Than the Program Send
    Buffer Size
@@ -91,6 +90,14 @@ void Curl_sndbuf_init(curl_socket_t sockfd);
 #else
 #define Curl_sndbuf_init(y) Curl_nop_stmt
 #endif
+
+/**
+ * Assign the address `ai` to the Curl_sockaddr_ex `dest` and
+ * set the transport used.
+ */
+CURLcode Curl_sock_assign_addr(struct Curl_sockaddr_ex *dest,
+                               const struct Curl_addrinfo *ai,
+                               int transport);
 
 /**
  * Creates a cfilter that opens a TCP socket to the given address
@@ -158,7 +165,7 @@ CURLcode Curl_cf_socket_peek(struct Curl_cfilter *cf,
                              struct Curl_easy *data,
                              curl_socket_t *psock,
                              const struct Curl_sockaddr_ex **paddr,
-                             struct ip_quadruple *pip) WARN_UNUSED_RESULT;
+                             struct ip_quadruple *pip);
 
 extern struct Curl_cftype Curl_cft_tcp;
 extern struct Curl_cftype Curl_cft_udp;

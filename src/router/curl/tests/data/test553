@@ -10,7 +10,7 @@ huge request header
 # Server-side
 <reply>
 
-<data crlf="headers">
+<data>
 HTTP/1.1 200 Fine!
 Server: Apache/1.3.27 (Darwin) PHP/4.1.2
 Content-Length: 6
@@ -41,7 +41,7 @@ http://%HOSTIP:%HTTPPORT/path/%TESTNUMBER
 
 # Verify data after the test has been "shot"
 <verify>
-<protocol crlf="headers" nonewline="yes">
+<protocol nonewline="yes">
 POST /path/%TESTNUMBER HTTP/1.1
 Host: %HOSTIP:%HTTPPORT
 Accept: */*

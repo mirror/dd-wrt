@@ -31,7 +31,7 @@
 #ifdef USE_ABSTRACT
 /*
  * The abstract socket namespace is a nonportable Linux extension. The name
- * has no connection with file system pathnames.
+ * has no connection with filesystem pathnames.
  */
 #define ABSTRACT "http-unix-domain"
 #else
@@ -41,10 +41,7 @@
 int main(void)
 {
   CURL *curl;
-
-  CURLcode res = curl_global_init(CURL_GLOBAL_ALL);
-  if(res)
-    return (int)res;
+  CURLcode res;
 
   curl = curl_easy_init();
   if(curl) {
@@ -66,6 +63,5 @@ int main(void)
     /* always cleanup */
     curl_easy_cleanup(curl);
   }
-  curl_global_cleanup();
-  return (int)res;
+  return 0;
 }

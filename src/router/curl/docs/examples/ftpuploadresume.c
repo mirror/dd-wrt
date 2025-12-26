@@ -38,14 +38,14 @@ static size_t getcontentlengthfunc(void *ptr, size_t size, size_t nmemb,
   long len = 0;
 
   r = sscanf(ptr, "Content-Length: %ld\n", &len);
-  if(r == 1)
+  if(r)
     *((long *) stream) = len;
 
   return size * nmemb;
 }
 
 /* discard downloaded data */
-static size_t write_cb(void *ptr, size_t size, size_t nmemb, void *stream)
+static size_t discardfunc(void *ptr, size_t size, size_t nmemb, void *stream)
 {
   (void)ptr;
   (void)stream;
@@ -53,7 +53,7 @@ static size_t write_cb(void *ptr, size_t size, size_t nmemb, void *stream)
 }
 
 /* read data to upload */
-static size_t read_cb(char *ptr, size_t size, size_t nmemb, void *stream)
+static size_t readfunc(char *ptr, size_t size, size_t nmemb, void *stream)
 {
   FILE *f = stream;
   size_t n;
@@ -67,12 +67,12 @@ static size_t read_cb(char *ptr, size_t size, size_t nmemb, void *stream)
 }
 
 
-static int upload(CURL *curl, const char *remotepath,
+static int upload(CURL *curlhandle, const char *remotepath,
                   const char *localpath, long timeout, long tries)
 {
   FILE *f;
   long uploaded_len = 0;
-  CURLcode res = CURLE_GOT_NOTHING;
+  CURLcode r = CURLE_GOT_NOTHING;
   int c;
 
   f = fopen(localpath, "rb");
@@ -83,32 +83,32 @@ static int upload(CURL *curl, const char *remotepath,
     return 0;
   }
 
-  curl_easy_setopt(curl, CURLOPT_UPLOAD, 1L);
+  curl_easy_setopt(curlhandle, CURLOPT_UPLOAD, 1L);
 
-  curl_easy_setopt(curl, CURLOPT_URL, remotepath);
+  curl_easy_setopt(curlhandle, CURLOPT_URL, remotepath);
 
   if(timeout)
-    curl_easy_setopt(curl, CURLOPT_SERVER_RESPONSE_TIMEOUT, timeout);
+    curl_easy_setopt(curlhandle, CURLOPT_SERVER_RESPONSE_TIMEOUT, timeout);
 
-  curl_easy_setopt(curl, CURLOPT_HEADERFUNCTION, getcontentlengthfunc);
-  curl_easy_setopt(curl, CURLOPT_HEADERDATA, &uploaded_len);
+  curl_easy_setopt(curlhandle, CURLOPT_HEADERFUNCTION, getcontentlengthfunc);
+  curl_easy_setopt(curlhandle, CURLOPT_HEADERDATA, &uploaded_len);
 
-  curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_cb);
+  curl_easy_setopt(curlhandle, CURLOPT_WRITEFUNCTION, discardfunc);
 
-  curl_easy_setopt(curl, CURLOPT_READFUNCTION, read_cb);
-  curl_easy_setopt(curl, CURLOPT_READDATA, f);
+  curl_easy_setopt(curlhandle, CURLOPT_READFUNCTION, readfunc);
+  curl_easy_setopt(curlhandle, CURLOPT_READDATA, f);
 
   /* enable active mode */
-  curl_easy_setopt(curl, CURLOPT_FTPPORT, "-");
+  curl_easy_setopt(curlhandle, CURLOPT_FTPPORT, "-");
 
   /* allow the server no more than 7 seconds to connect back */
-  curl_easy_setopt(curl, CURLOPT_ACCEPTTIMEOUT_MS, 7000L);
+  curl_easy_setopt(curlhandle, CURLOPT_ACCEPTTIMEOUT_MS, 7000L);
 
-  curl_easy_setopt(curl, CURLOPT_FTP_CREATE_MISSING_DIRS, 1L);
+  curl_easy_setopt(curlhandle, CURLOPT_FTP_CREATE_MISSING_DIRS, 1L);
 
-  curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L);
+  curl_easy_setopt(curlhandle, CURLOPT_VERBOSE, 1L);
 
-  for(c = 0; (res != CURLE_OK) && (c < tries); c++) {
+  for(c = 0; (r != CURLE_OK) && (c < tries); c++) {
     /* are we resuming? */
     if(c) { /* yes */
       /* determine the length of the file already written */
@@ -116,53 +116,51 @@ static int upload(CURL *curl, const char *remotepath,
       /*
        * With NOBODY and NOHEADER, libcurl issues a SIZE command, but the only
        * way to retrieve the result is to parse the returned Content-Length
-       * header. Thus, getcontentlengthfunc(). We need write_cb() above
+       * header. Thus, getcontentlengthfunc(). We need discardfunc() above
        * because HEADER dumps the headers to stdout without it.
        */
-      curl_easy_setopt(curl, CURLOPT_NOBODY, 1L);
-      curl_easy_setopt(curl, CURLOPT_HEADER, 1L);
+      curl_easy_setopt(curlhandle, CURLOPT_NOBODY, 1L);
+      curl_easy_setopt(curlhandle, CURLOPT_HEADER, 1L);
 
-      res = curl_easy_perform(curl);
-      if(res != CURLE_OK)
+      r = curl_easy_perform(curlhandle);
+      if(r != CURLE_OK)
         continue;
 
-      curl_easy_setopt(curl, CURLOPT_NOBODY, 0L);
-      curl_easy_setopt(curl, CURLOPT_HEADER, 0L);
+      curl_easy_setopt(curlhandle, CURLOPT_NOBODY, 0L);
+      curl_easy_setopt(curlhandle, CURLOPT_HEADER, 0L);
 
       fseek(f, uploaded_len, SEEK_SET);
 
-      curl_easy_setopt(curl, CURLOPT_APPEND, 1L);
+      curl_easy_setopt(curlhandle, CURLOPT_APPEND, 1L);
     }
     else { /* no */
-      curl_easy_setopt(curl, CURLOPT_APPEND, 0L);
+      curl_easy_setopt(curlhandle, CURLOPT_APPEND, 0L);
     }
 
-    res = curl_easy_perform(curl);
+    r = curl_easy_perform(curlhandle);
   }
 
   fclose(f);
 
-  if(res == CURLE_OK)
+  if(r == CURLE_OK)
     return 1;
   else {
-    fprintf(stderr, "%s\n", curl_easy_strerror(res));
+    fprintf(stderr, "%s\n", curl_easy_strerror(r));
     return 0;
   }
 }
 
 int main(void)
 {
-  CURL *curl = NULL;
+  CURL *curlhandle = NULL;
 
-  CURLcode res = curl_global_init(CURL_GLOBAL_ALL);
-  if(res)
-    return (int)res;
+  curl_global_init(CURL_GLOBAL_ALL);
+  curlhandle = curl_easy_init();
 
-  curl = curl_easy_init();
-  if(curl) {
-    upload(curl, "ftp://user:pass@example.com/path/file", "C:\\file", 0, 3);
-    curl_easy_cleanup(curl);
-  }
+  upload(curlhandle, "ftp://user:pass@example.com/path/file", "C:\\file",
+         0, 3);
+
+  curl_easy_cleanup(curlhandle);
   curl_global_cleanup();
 
   return 0;

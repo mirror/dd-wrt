@@ -30,7 +30,6 @@
 #include "cshutdn.h"
 #include "hostip.h"
 #include "multi_ev.h"
-#include "multi_ntfy.h"
 #include "psl.h"
 #include "socketpair.h"
 #include "uint-bset.h"
@@ -73,9 +72,15 @@ typedef enum {
   MSTATE_LAST          /* 18 - not a true state, never use this */
 } CURLMstate;
 
+/* we support N sockets per easy handle. Set the corresponding bit to what
+   action we should wait for */
+#define MAX_SOCKSPEREASYHANDLE 5
+#define GETSOCK_READABLE (0x00ff)
+#define GETSOCK_WRITABLE (0xff00)
+
 #define CURLPIPE_ANY (CURLPIPE_MULTIPLEX)
 
-#ifndef CURL_DISABLE_SOCKETPAIR
+#if !defined(CURL_DISABLE_SOCKETPAIR)
 #define ENABLE_WAKEUP
 #endif
 
@@ -90,11 +95,9 @@ struct Curl_multi {
 
   unsigned int xfers_alive; /* amount of added transfers that have
                                not yet reached COMPLETE state */
-  curl_off_t xfers_total_ever; /* total of added transfers, ever. */
   struct uint_tbl xfers; /* transfers added to this multi */
   /* Each transfer's mid may be present in at most one of these */
   struct uint_bset process; /* transfer being processed */
-  struct uint_bset dirty; /* transfer to be run NOW, e.g. ASAP. */
   struct uint_bset pending; /* transfers in waiting (conn limit etc.) */
   struct uint_bset msgsent; /* transfers done with message for application */
 
@@ -135,8 +138,6 @@ struct Curl_multi {
 
   /* multi event related things */
   struct curl_multi_ev ev;
-  /* multi notification related things */
-  struct curl_multi_ntfy ntfy;
 
   /* `proto_hash` is a general key-value store for protocol implementations
    * with the lifetime of the multi handle. The number of elements kept here
@@ -181,7 +182,6 @@ struct Curl_multi {
   BIT(multiplexing);           /* multiplexing wanted */
   BIT(recheckstate);           /* see Curl_multi_connchanged */
   BIT(in_callback);            /* true while executing a callback */
-  BIT(in_ntfy_callback);       /* true while dispatching notifications */
 #ifdef USE_OPENSSL
   BIT(ssl_seeded);
 #endif

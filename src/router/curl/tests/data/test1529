@@ -9,7 +9,7 @@ HTTP proxy
 
 # Server-side
 <reply>
-<connect crlf="headers">
+<connect>
 HTTP/1.1 200 OK
 We-are: good
 

@@ -17,6 +17,9 @@ CURLOPT_HSTSREADFUNCTION
 HSTS
 http
 </features>
+<server>
+none
+</server>
 
 <name>
 HSTS read/write callbacks

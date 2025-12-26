@@ -23,6 +23,8 @@
  ***************************************************************************/
 #include "tool_setup.h"
 
+#include <curlx.h>
+
 #include "tool_help.h"
 #include "tool_libinfo.h"
 #include "tool_util.h"
@@ -33,7 +35,7 @@
 #include "tool_cfgable.h"
 #include "terminal.h"
 
-#include "memdebug.h" /* keep this as LAST include */
+#include <memdebug.h> /* keep this as LAST include */
 
 struct category_descriptors {
   const char *opt;
@@ -54,7 +56,7 @@ static const struct category_descriptors categories[] = {
   {"http", "HTTP and HTTPS protocol", CURLHELP_HTTP},
   {"imap", "IMAP protocol", CURLHELP_IMAP},
   {"ldap", "LDAP protocol", CURLHELP_LDAP},
-  {"output", "File system output", CURLHELP_OUTPUT},
+  {"output", "Filesystem output", CURLHELP_OUTPUT},
   {"pop3", "POP3 protocol", CURLHELP_POP3},
   {"post", "HTTP POST specific", CURLHELP_POST},
   {"proxy", "Options for proxies", CURLHELP_PROXY},
@@ -100,7 +102,7 @@ static void print_category(unsigned int category, unsigned int cols)
         else
           opt = 0;
       }
-      curl_mprintf(" %-*s  %s\n", (int)opt, helptext[i].opt, helptext[i].desc);
+      printf(" %-*s  %s\n", (int)opt, helptext[i].opt, helptext[i].desc);
     }
 }
 
@@ -110,7 +112,7 @@ static int get_category_content(const char *category, unsigned int cols)
   unsigned int i;
   for(i = 0; i < CURL_ARRAYSIZE(categories); ++i)
     if(curl_strequal(categories[i].opt, category)) {
-      curl_mprintf("%s: %s\n", categories[i].opt, categories[i].desc);
+      printf("%s: %s\n", categories[i].opt, categories[i].desc);
       print_category(categories[i].category, cols);
       return 0;
     }
@@ -122,7 +124,7 @@ static void get_categories(void)
 {
   unsigned int i;
   for(i = 0; i < CURL_ARRAYSIZE(categories); ++i)
-    curl_mprintf(" %-11s %s\n", categories[i].opt, categories[i].desc);
+    printf(" %-11s %s\n", categories[i].opt, categories[i].desc);
 }
 
 /* Prints all categories as a comma-separated list of given width */
@@ -135,18 +137,18 @@ static void get_categories_list(unsigned int width)
     if(i == CURL_ARRAYSIZE(categories) - 1) {
       /* final category */
       if(col + len + 1 < width)
-        curl_mprintf("%s.\n", categories[i].opt);
+        printf("%s.\n", categories[i].opt);
       else
         /* start a new line first */
-        curl_mprintf("\n%s.\n", categories[i].opt);
+        printf("\n%s.\n", categories[i].opt);
     }
     else if(col + len + 2 < width) {
-      curl_mprintf("%s, ", categories[i].opt);
+      printf("%s, ", categories[i].opt);
       col += len + 2;
     }
     else {
       /* start a new line first */
-      curl_mprintf("\n%s, ", categories[i].opt);
+      printf("\n%s, ", categories[i].opt);
       col = len + 2;
     }
   }
@@ -268,17 +270,17 @@ void tool_help(const char *category)
     else if(!category[2])
       a = findshortopt(category[1]);
     if(!a) {
-      curl_mfprintf(tool_stderr, "Incorrect option name to show help for,"
-                    " see curl -h\n");
+      fprintf(tool_stderr, "Incorrect option name to show help for,"
+              " see curl -h\n");
     }
     else {
       char cmdbuf[80];
       if(a->letter != ' ')
-        curl_msnprintf(cmdbuf, sizeof(cmdbuf), "\n    -%c, --", a->letter);
+        msnprintf(cmdbuf, sizeof(cmdbuf), "\n    -%c, --", a->letter);
       else if(a->desc & ARG_NO)
-        curl_msnprintf(cmdbuf, sizeof(cmdbuf), "\n    --no-%s", a->lname);
+        msnprintf(cmdbuf, sizeof(cmdbuf), "\n    --no-%s", a->lname);
       else
-        curl_msnprintf(cmdbuf, sizeof(cmdbuf), "\n    %s", category);
+        msnprintf(cmdbuf, sizeof(cmdbuf), "\n    %s", category);
 #ifdef USE_MANUAL
       if(a->cmd == C_XATTR)
         /* this is the last option, which then ends when FILES starts */
@@ -288,8 +290,8 @@ void tool_help(const char *category)
 #endif
     }
 #else
-    curl_mfprintf(tool_stderr, "Cannot comply. "
-                  "This curl was built without built-in manual\n");
+    fprintf(tool_stderr, "Cannot comply. "
+            "This curl was built without built-in manual\n");
 #endif
   }
   /* Otherwise print category and handle the case if the cat was not found */
@@ -312,15 +314,15 @@ void tool_version_info(void)
 {
   const char *const *builtin;
   if(is_debug())
-    curl_mfprintf(tool_stderr, "WARNING: this libcurl is Debug-enabled, "
-                  "do not use in production\n\n");
+    fprintf(tool_stderr, "WARNING: this libcurl is Debug-enabled, "
+            "do not use in production\n\n");
 
-  curl_mprintf(CURL_ID "%s\n", curl_version());
+  printf(CURL_ID "%s\n", curl_version());
 #ifdef CURL_PATCHSTAMP
-  curl_mprintf("Release-Date: %s, security patched: %s\n",
-               LIBCURL_TIMESTAMP, CURL_PATCHSTAMP);
+  printf("Release-Date: %s, security patched: %s\n",
+         LIBCURL_TIMESTAMP, CURL_PATCHSTAMP);
 #else
-  curl_mprintf("Release-Date: %s\n", LIBCURL_TIMESTAMP);
+  printf("Release-Date: %s\n", LIBCURL_TIMESTAMP);
 #endif
   if(built_in_protos[0]) {
 #ifndef CURL_DISABLE_IPFS
@@ -339,15 +341,15 @@ void tool_version_info(void)
       }
     }
 #endif /* !CURL_DISABLE_IPFS */
-    curl_mprintf("Protocols:");
+    printf("Protocols:");
     for(builtin = built_in_protos; *builtin; ++builtin) {
       /* Special case: do not list rtmp?* protocols.
          They may only appear together with "rtmp" */
       if(!curl_strnequal(*builtin, "rtmp", 4) || !builtin[0][4])
-        curl_mprintf(" %s", *builtin);
+        printf(" %s", *builtin);
 #ifndef CURL_DISABLE_IPFS
       if(insert && insert == *builtin) {
-        curl_mprintf(" ipfs ipns");
+        printf(" ipfs ipns");
         insert = NULL;
       }
 #endif /* !CURL_DISABLE_IPFS */
@@ -371,16 +373,16 @@ void tool_version_info(void)
       feat_ext[feat_ext_count] = NULL;
       qsort((void *)feat_ext, feat_ext_count, sizeof(*feat_ext),
             struplocompare4sort);
-      curl_mprintf("Features:");
+      printf("Features:");
       for(builtin = feat_ext; *builtin; ++builtin)
-        curl_mprintf(" %s", *builtin);
+        printf(" %s", *builtin);
       puts(""); /* newline */
       free((void *)feat_ext);
     }
   }
   if(strcmp(CURL_VERSION, curlinfo->version)) {
-    curl_mprintf("WARNING: curl and libcurl versions do not match. "
-                 "Functionality may be affected.\n");
+    printf("WARNING: curl and libcurl versions do not match. "
+           "Functionality may be affected.\n");
   }
 }
 
@@ -395,7 +397,7 @@ void tool_list_engines(void)
   puts("Build-time engines:");
   if(engines) {
     for(; engines; engines = engines->next)
-      curl_mprintf("  %s\n", engines->data);
+      printf("  %s\n", engines->data);
   }
   else {
     puts("  <none>");

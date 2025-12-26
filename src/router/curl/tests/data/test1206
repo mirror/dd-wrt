@@ -33,10 +33,13 @@ FTP PORT and 425 on download
 
 # Verify data after the test has been "shot"
 <verify>
+<strip>
+QUIT
+</strip>
 <strippart>
-s/^EPRT \|1\|(\S*)/EPRT \|1\|/
+s/^EPRT \|1\|(.*)/EPRT \|1\|/
 </strippart>
-<protocol crlf="yes">
+<protocol>
 USER anonymous
 PASS ftp@example.com
 PWD

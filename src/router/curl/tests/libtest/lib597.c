@@ -21,9 +21,15 @@
  * SPDX-License-Identifier: curl
  *
  ***************************************************************************/
-#include "first.h"
+#include "test.h"
 
+#include <limits.h>
+
+#include "testutil.h"
+#include "warnless.h"
 #include "memdebug.h"
+
+#define TEST_HANG_TIMEOUT 60 * 1000
 
 /*
  * Test case for below scenario:
@@ -34,9 +40,9 @@
  * with function curl_multi_info_read().
  */
 
-static CURLcode test_lib597(const char *URL)
+CURLcode test(char *URL)
 {
-  CURL *curl = NULL;
+  CURL *easy = NULL;
   CURLM *multi = NULL;
   CURLcode res = CURLE_OK;
   int running;
@@ -47,19 +53,19 @@ static CURLcode test_lib597(const char *URL)
 
   global_init(CURL_GLOBAL_ALL);
 
-  easy_init(curl);
+  easy_init(easy);
 
   multi_init(multi);
 
   /* go verbose */
-  easy_setopt(curl, CURLOPT_VERBOSE, 1L);
+  easy_setopt(easy, CURLOPT_VERBOSE, 1L);
 
   /* specify target */
-  easy_setopt(curl, CURLOPT_URL, URL);
+  easy_setopt(easy, CURLOPT_URL, URL);
 
-  easy_setopt(curl, CURLOPT_CONNECT_ONLY, 1L);
+  easy_setopt(easy, CURLOPT_CONNECT_ONLY, 1L);
 
-  multi_add_handle(multi, curl);
+  multi_add_handle(multi, easy);
 
   for(;;) {
     struct timeval interval;
@@ -113,14 +119,14 @@ static CURLcode test_lib597(const char *URL)
   if(msg)
     res = msg->data.result;
 
-  multi_remove_handle(multi, curl);
+  multi_remove_handle(multi, easy);
 
 test_cleanup:
 
   /* undocumented cleanup sequence - type UA */
 
   curl_multi_cleanup(multi);
-  curl_easy_cleanup(curl);
+  curl_easy_cleanup(easy);
   curl_global_cleanup();
 
   return res;

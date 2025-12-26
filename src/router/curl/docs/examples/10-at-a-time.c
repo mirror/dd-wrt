@@ -80,7 +80,7 @@ static const char *urls[] = {
   "https://www.un.org",
 };
 
-#define MAX_PARALLEL 10  /* number of simultaneous transfers */
+#define MAX_PARALLEL 10 /* number of simultaneous transfers */
 #define NUM_URLS sizeof(urls)/sizeof(char *)
 
 static size_t write_cb(char *data, size_t n, size_t l, void *userp)
@@ -88,72 +88,65 @@ static size_t write_cb(char *data, size_t n, size_t l, void *userp)
   /* take care of the data here, ignored in this example */
   (void)data;
   (void)userp;
-  return n * l;
+  return n*l;
 }
 
-static void add_transfer(CURLM *multi, unsigned int i, int *left)
+static void add_transfer(CURLM *cm, unsigned int i, int *left)
 {
-  CURL *curl = curl_easy_init();
-  if(curl) {
-    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_cb);
-    curl_easy_setopt(curl, CURLOPT_URL, urls[i]);
-    curl_easy_setopt(curl, CURLOPT_PRIVATE, urls[i]);
-    curl_multi_add_handle(multi, curl);
-  }
+  CURL *eh = curl_easy_init();
+  curl_easy_setopt(eh, CURLOPT_WRITEFUNCTION, write_cb);
+  curl_easy_setopt(eh, CURLOPT_URL, urls[i]);
+  curl_easy_setopt(eh, CURLOPT_PRIVATE, urls[i]);
+  curl_multi_add_handle(cm, eh);
   (*left)++;
 }
 
 int main(void)
 {
-  CURLM *multi;
+  CURLM *cm;
+  CURLMsg *msg;
+  unsigned int transfers = 0;
+  int msgs_left = -1;
+  int left = 0;
 
-  CURLcode res = curl_global_init(CURL_GLOBAL_ALL);
-  if(res)
-    return (int)res;
+  curl_global_init(CURL_GLOBAL_ALL);
+  cm = curl_multi_init();
 
-  multi = curl_multi_init();
-  if(multi) {
-    CURLMsg *msg;
-    unsigned int transfers = 0;
-    int msgs_left = -1;
-    int left = 0;
+  /* Limit the amount of simultaneous connections curl should allow: */
+  curl_multi_setopt(cm, CURLMOPT_MAXCONNECTS, (long)MAX_PARALLEL);
 
-    /* Limit the amount of simultaneous connections curl should allow: */
-    curl_multi_setopt(multi, CURLMOPT_MAXCONNECTS, (long)MAX_PARALLEL);
+  for(transfers = 0; transfers < MAX_PARALLEL && transfers < NUM_URLS;
+      transfers++)
+    add_transfer(cm, transfers, &left);
 
-    for(transfers = 0; transfers < MAX_PARALLEL && transfers < NUM_URLS;
-        transfers++)
-      add_transfer(multi, transfers, &left);
+  do {
+    int still_alive = 1;
+    curl_multi_perform(cm, &still_alive);
 
-    do {
-      int still_alive = 1;
-      curl_multi_perform(multi, &still_alive);
-
-      /* !checksrc! disable EQUALSNULL 1 */
-      while((msg = curl_multi_info_read(multi, &msgs_left)) != NULL) {
-        if(msg->msg == CURLMSG_DONE) {
-          char *url;
-          CURL *curl = msg->easy_handle;
-          curl_easy_getinfo(curl, CURLINFO_PRIVATE, &url);
-          fprintf(stderr, "R: %d - %s <%s>\n",
-                  msg->data.result, curl_easy_strerror(msg->data.result), url);
-          curl_multi_remove_handle(multi, curl);
-          curl_easy_cleanup(curl);
-          left--;
-        }
-        else {
-          fprintf(stderr, "E: CURLMsg (%d)\n", msg->msg);
-        }
-        if(transfers < NUM_URLS)
-          add_transfer(multi, transfers++, &left);
+    /* !checksrc! disable EQUALSNULL 1 */
+    while((msg = curl_multi_info_read(cm, &msgs_left)) != NULL) {
+      if(msg->msg == CURLMSG_DONE) {
+        char *url;
+        CURL *e = msg->easy_handle;
+        curl_easy_getinfo(msg->easy_handle, CURLINFO_PRIVATE, &url);
+        fprintf(stderr, "R: %d - %s <%s>\n",
+                msg->data.result, curl_easy_strerror(msg->data.result), url);
+        curl_multi_remove_handle(cm, e);
+        curl_easy_cleanup(e);
+        left--;
       }
-      if(left)
-        curl_multi_wait(multi, NULL, 0, 1000, NULL);
+      else {
+        fprintf(stderr, "E: CURLMsg (%d)\n", msg->msg);
+      }
+      if(transfers < NUM_URLS)
+        add_transfer(cm, transfers++, &left);
+    }
+    if(left)
+      curl_multi_wait(cm, NULL, 0, 1000, NULL);
 
-    } while(left);
+  } while(left);
 
-    curl_multi_cleanup(multi);
-  }
+  curl_multi_cleanup(cm);
   curl_global_cleanup();
 
   return EXIT_SUCCESS;

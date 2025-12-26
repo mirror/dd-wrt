@@ -37,11 +37,11 @@
  *
  * This is STUPID BLOCKING behavior
  */
-CURLcode Curl_blockread_all(struct Curl_cfilter *cf,
-                            struct Curl_easy *data,
-                            char *buf,
-                            size_t blen,
-                            size_t *pnread);
+int Curl_blockread_all(struct Curl_cfilter *cf,
+                       struct Curl_easy *data,
+                       char *buf,
+                       ssize_t buffersize,
+                       ssize_t *n);
 
 #if defined(HAVE_GSSAPI) || defined(USE_WINDOWS_SSPI)
 /*

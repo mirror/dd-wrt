@@ -22,6 +22,15 @@
 #
 ###########################################################################
 
+if BUILD_DOCS
+# if we disable man page building, ignore these
+RUNTESTS_DOCS = runtests.1
+TESTCURL_DOCS = testcurl.1
+MANFILES = $(RUNTESTS_DOCS) $(TESTCURL_DOCS)
+endif
+
+CURLPAGES = runtests.md testcurl.md
+
 # scripts used in test cases
 TESTSCRIPTS = \
  test1119.pl  \
@@ -47,6 +56,8 @@ TESTSCRIPTS = \
 
 EXTRA_DIST =        \
  CMakeLists.txt     \
+ FILEFORMAT.md      \
+ README.md          \
  allversions.pm     \
  appveyor.pm        \
  azure.pm           \
@@ -62,6 +73,8 @@ EXTRA_DIST =        \
  http2-server.pl    \
  http3-server.pl    \
  memanalyze.pl      \
+ mk-bundle-hints.sh \
+ mk-bundle.pl       \
  negtelnetserver.py \
  nghttpx.conf       \
  pathhelp.pm        \
@@ -82,7 +95,8 @@ EXTRA_DIST =        \
  util.py            \
  valgrind.pm        \
  valgrind.supp      \
- $(TESTSCRIPTS)
+ $(TESTSCRIPTS)     \
+ $(CURLPAGES)
 
 # we have two variables here to make sure DIST_SUBDIRS won't get 'unit'
 # added twice as then targets such as 'distclean' misbehave and try to
@@ -100,7 +114,7 @@ DIST_SUBDIRS = $(SUBDIRS) $(DIST_UNIT)
 
 PERLFLAGS = -I$(srcdir)
 
-CLEANFILES = .http.pid .https.pid .ftp.pid .ftps.pid
+CLEANFILES = .http.pid .https.pid .ftp.pid .ftps.pid $(MANDISTPAGES)
 
 curl:
 	@cd $(top_builddir) && $(MAKE)
@@ -117,7 +131,7 @@ else
 TEST_COMMON += !documentation
 endif
 
-TEST = srcdir=$(srcdir) @PERL@ $(PERLFLAGS) $(srcdir)/runtests.pl $(TEST_COMMON)
+TEST = srcdir=$(srcdir) $(PERL) $(PERLFLAGS) $(srcdir)/runtests.pl $(TEST_COMMON)
 TEST_Q = -a -s
 TEST_AM = -a -am
 TEST_F = -a -p -r
@@ -129,20 +143,24 @@ TEST_E = -a -e
 TEST_NF = -a -p ~flaky ~timing-dependent
 
 # special CI target derived from nonflaky with CI-specific flags
-TEST_CI = $(TEST_NF) -r --retry=5 -j20 --buildinfo
+TEST_CI = $(TEST_NF) -r --retry=5 -j20
 
 PYTEST = pytest
 endif
 
+CD2NROFF = $(top_srcdir)/scripts/cd2nroff $< >$@
+
+SUFFIXES = .1 .md
+
+.md.1:
+	$(CD2)$(CD2NROFF)
+
 # make sure that PERL is pointing to an executable
 perlcheck:
-	@if ! test -x "@PERL@"; then echo "No perl!"; exit 2; fi
+	@if ! test -x "$(PERL)"; then echo "No perl!"; exit 2; fi
 
-build-certs: perlcheck
+build-certs:
 	(cd certs && $(MAKE))
-
-# alias for 'test' to match CMake, where 'test' is a reserved target
-tests: test
 
 test: perlcheck all
 	$(TEST) $(TFLAGS)
@@ -178,7 +196,6 @@ checksrc:
 	(cd unit && $(MAKE) checksrc)
 	(cd tunit && $(MAKE) checksrc)
 	(cd server && $(MAKE) checksrc)
-	(cd client && $(MAKE) checksrc)
 	(cd http && $(MAKE) checksrc)
 
 all-local: $(MANFILES) build-certs

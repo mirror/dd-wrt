@@ -14,7 +14,6 @@ See-also:
   - http1.1
   - http3
   - no-alpn
-  - proxy-http2
 Example:
   - --http2 $URL
 ---

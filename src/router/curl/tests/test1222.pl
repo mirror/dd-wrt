@@ -32,13 +32,10 @@ use warnings;
 
 use File::Basename;
 
-my $root = $ARGV[0] || ".";
-my $bldroot = $ARGV[1] || ".";
-
+my $root=$ARGV[0] || ".";
 my $incdir = "$root/include/curl";
-my $docdir = "$bldroot/docs";
+my $docdir = "$root/docs";
 my $libdocdir = "$docdir/libcurl";
-
 my $errcode = 0;
 
 # Symbol-indexed hashes.
@@ -240,8 +237,8 @@ sub scan_man_page {
 
 
 # Read symbols-in-versions.
-open(my $fh, "<", "$root/docs/libcurl/symbols-in-versions") ||
-  die "$root/docs/libcurl/symbols-in-versions";
+open(my $fh, "<", "$libdocdir/symbols-in-versions") ||
+  die "$libdocdir/symbols-in-versions";
 while(<$fh>) {
     if($_ =~ /^((?:CURL|LIBCURL)\S+)\s+\S+\s*(\S*)\s*(\S*)$/) {
         if($3 eq "") {
@@ -253,11 +250,6 @@ while(<$fh>) {
     }
 }
 close($fh);
-
-if(!glob("$libdocdir/*.3")) {
-    print "curl built without the libcurl manual. Skipping test 1222.\n";
-    exit 0;
-}
 
 # Get header file names,
 opendir(my $dh, $incdir) || die "Can't opendir $incdir";

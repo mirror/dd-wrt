@@ -11,10 +11,12 @@ See-also:
 Protocol:
   - TLS
 TLS-backend:
+  - BearSSL
   - GnuTLS
   - mbedTLS
   - OpenSSL
   - Schannel
+  - Secure Transport
   - wolfSSL
 Added-in: 7.48.0
 ---
@@ -84,6 +86,10 @@ as well:
 ## Secure Channel
 
 **CtxtHandle ***
+
+## Secure Transport
+
+**SSLContext ***
 
 ## wolfSSL
 

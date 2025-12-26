@@ -5,7 +5,6 @@ Long: socks5-gssapi
 Help: Enable GSS-API auth for SOCKS5 proxies
 Added: 7.55.0
 Category: proxy auth
-Protocols: GSS/kerberos
 Multi: boolean
 See-also:
   - socks5

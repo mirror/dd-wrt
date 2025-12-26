@@ -53,8 +53,8 @@
 #include "fake_addrinfo.h"
 #include "curlx/inet_pton.h"
 #include "curlx/warnless.h"
-
-/* The last 2 #include files should be in this order */
+/* The last 3 #include files should be in this order */
+#include "curl_printf.h"
 #include "curl_memory.h"
 #include "memdebug.h"
 
@@ -68,7 +68,7 @@
  */
 
 #if defined(__INTEL_COMPILER) && (__INTEL_COMPILER == 910) && \
-  defined(__OPTIMIZE__) && defined(__unix__) &&  defined(__i386__)
+    defined(__OPTIMIZE__) && defined(__unix__) &&  defined(__i386__)
   /* workaround icc 9.1 optimizer issue */
 # define vqualifier volatile
 #else
@@ -218,7 +218,7 @@ Curl_getaddrinfo_ex(const char *nodename,
  *
  * This function returns a pointer to the first element of a newly allocated
  * Curl_addrinfo struct linked list filled with the data of a given hostent.
- * Curl_addrinfo is meant to work like the addrinfo struct does for an IPv6
+ * Curl_addrinfo is meant to work like the addrinfo struct does for a IPv6
  * stack, but usable also for IPv4, all hosts and environments.
  *
  * The memory allocated by this function *MUST* be free'd later on calling
@@ -398,7 +398,11 @@ Curl_ip2addr(int af, const void *inaddr, const char *hostname, int port)
     addr = (void *)ai->ai_addr; /* storage area for this info */
 
     memcpy(&addr->sin_addr, inaddr, sizeof(struct in_addr));
+#ifdef __MINGW32__
+    addr->sin_family = (short)af;
+#else
     addr->sin_family = (CURL_SA_FAMILY_T)af;
+#endif
     addr->sin_port = htons((unsigned short)port);
     break;
 
@@ -407,7 +411,11 @@ Curl_ip2addr(int af, const void *inaddr, const char *hostname, int port)
     addr6 = (void *)ai->ai_addr; /* storage area for this info */
 
     memcpy(&addr6->sin6_addr, inaddr, sizeof(struct in6_addr));
+#ifdef __MINGW32__
+    addr6->sin6_family = (short)af;
+#else
     addr6->sin6_family = (CURL_SA_FAMILY_T)af;
+#endif
     addr6->sin6_port = htons((unsigned short)port);
     break;
 #endif
@@ -460,7 +468,7 @@ struct Curl_addrinfo *Curl_unix2addr(const char *path, bool *longpath,
   sa_un = (void *) ai->ai_addr;
   sa_un->sun_family = AF_UNIX;
 
-  /* sun_path must be able to store the null-terminated path */
+  /* sun_path must be able to store the NUL-terminated path */
   path_len = strlen(path) + 1;
   if(path_len > sizeof(sa_un->sun_path)) {
     free(ai);
@@ -507,15 +515,13 @@ curl_dbg_freeaddrinfo(struct addrinfo *freethis,
     if(env)
       r_freeaddrinfo(freethis);
     else
-      /* !checksrc! disable BANNEDFUNC 1 */
       freeaddrinfo(freethis);
   }
 #else
-  /* !checksrc! disable BANNEDFUNC 1 */
   freeaddrinfo(freethis);
 #endif
 }
-#endif /* CURLDEBUG && HAVE_FREEADDRINFO */
+#endif /* defined(CURLDEBUG) && defined(HAVE_FREEADDRINFO) */
 
 
 #if defined(CURLDEBUG) && defined(HAVE_GETADDRINFO)
@@ -542,13 +548,11 @@ curl_dbg_getaddrinfo(const char *hostname,
   if(env)
     res = r_getaddrinfo(hostname, service, hints, result);
   else
-    /* !checksrc! disable BANNEDFUNC 1 */
     res = getaddrinfo(hostname, service, hints, result);
 #else
-  /* !checksrc! disable BANNEDFUNC 1 */
   int res = getaddrinfo(hostname, service, hints, result);
 #endif
-  if(res == 0)
+  if(0 == res)
     /* success */
     curl_dbg_log("ADDR %s:%d getaddrinfo() = %p\n",
                  source, line, (void *)*result);
@@ -557,7 +561,7 @@ curl_dbg_getaddrinfo(const char *hostname,
                  source, line);
   return res;
 }
-#endif /* CURLDEBUG && HAVE_GETADDRINFO */
+#endif /* defined(CURLDEBUG) && defined(HAVE_GETADDRINFO) */
 
 #if defined(HAVE_GETADDRINFO) && defined(USE_RESOLVE_ON_IPS)
 /*

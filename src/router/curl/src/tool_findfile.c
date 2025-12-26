@@ -24,19 +24,24 @@
 #include "tool_setup.h"
 
 #ifdef HAVE_PWD_H
-#ifdef __AMIGA__
 #undef __NO_NET_API /* required for AmigaOS to declare getpwuid() */
-#endif
 #include <pwd.h>
-#ifdef __AMIGA__
 #define __NO_NET_API
 #endif
+
+#ifdef HAVE_SYS_STAT_H
+#include <sys/stat.h>
 #endif
+#ifdef HAVE_FCNTL_H
+#include <fcntl.h>
+#endif
+
+#include <curlx.h>
 
 #include "tool_findfile.h"
 #include "tool_cfgable.h"
 
-#include "memdebug.h" /* keep this as LAST include */
+#include <memdebug.h> /* keep this as LAST include */
 
 struct finder {
   const char *env;
@@ -69,11 +74,11 @@ static char *checkhome(const char *home, const char *fname, bool dotscore)
   for(i = 0; i < (dotscore ? 2 : 1); i++) {
     char *c;
     if(dotscore)
-      c = curl_maprintf("%s" DIR_CHAR "%c%s", home, pref[i], &fname[1]);
+      c = aprintf("%s" DIR_CHAR "%c%s", home, pref[i], &fname[1]);
     else
-      c = curl_maprintf("%s" DIR_CHAR "%s", home, fname);
+      c = aprintf("%s" DIR_CHAR "%s", home, fname);
     if(c) {
-      int fd = curlx_open(c, O_RDONLY);
+      int fd = open(c, O_RDONLY);
       if(fd >= 0) {
         char *path = strdup(c);
         close(fd);
@@ -115,7 +120,7 @@ char *findfile(const char *fname, int dotscore)
         continue;
       }
       if(conf_list[i].append) {
-        char *c = curl_maprintf("%s%s", home, conf_list[i].append);
+        char *c = aprintf("%s%s", home, conf_list[i].append);
         curl_free(home);
         if(!c)
           return NULL;

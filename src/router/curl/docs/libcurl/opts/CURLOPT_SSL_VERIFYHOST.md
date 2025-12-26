@@ -8,8 +8,6 @@ See-also:
   - CURLOPT_CAINFO (3)
   - CURLOPT_PINNEDPUBLICKEY (3)
   - CURLOPT_SSL_VERIFYPEER (3)
-  - CURLOPT_PROXY_SSL_VERIFYHOST (3)
-  - CURLOPT_DOH_SSL_VERIFYHOST (3)
 Protocol:
   - TLS
 TLS-backend:
@@ -74,6 +72,14 @@ top-level domain.
 A certificate can be set for a numerical IP address (IPv4 or IPv6), but then
 it should be a Subject Alternate Name kind and its type should correctly
 identify the field as an IP address.
+
+# LIMITATIONS
+
+Secure Transport: If *verify* value is 0, then SNI is also disabled. SNI is a
+TLS extension that sends the hostname to the server. The server may use that
+information to do such things as sending back a specific certificate for the
+hostname, or forwarding the request to a specific origin server. Some
+hostnames may be inaccessible if SNI is not sent.
 
 # DEFAULT
 

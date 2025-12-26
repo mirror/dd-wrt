@@ -19,7 +19,7 @@ smtp
 <name>
 SMTP with multiple --mail-rcpt
 </name>
-<stdin crlf="yes">
+<stdin>
 From: different
 To: another
 
@@ -33,7 +33,7 @@ smtp://%HOSTIP:%SMTPPORT/%TESTNUMBER --mail-rcpt recipient.one@example.com --mai
 #
 # Verify data after the test has been "shot"
 <verify>
-<protocol crlf="yes">
+<protocol>
 EHLO %TESTNUMBER
 MAIL FROM:<sender@example.com>
 RCPT TO:<recipient.one@example.com>
@@ -44,7 +44,7 @@ RCPT TO:<recipient.five@example.com>
 DATA
 QUIT
 </protocol>
-<upload crlf="yes">
+<upload>
 From: different
 To: another
 

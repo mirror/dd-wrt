@@ -8,6 +8,9 @@ runtests.pl
 #
 # Client-side
 <client>
+<server>
+none
+</server>
 <name>
 Verify that runtests.pl accepts an -L option
 </name>

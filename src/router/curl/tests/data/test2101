@@ -23,7 +23,7 @@ idle
 http
 </server>
 
-# requires Debug so that it can use the DoH server without https
+# requires debug so that it can use the DoH server without https
 
 <features>
 Debug

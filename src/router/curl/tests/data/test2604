@@ -8,6 +8,9 @@ unittest
 #
 # Client-side
 <client>
+<server>
+none
+</server>
 <features>
 unittest
 sftp

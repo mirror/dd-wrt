@@ -90,8 +90,6 @@ class TestShutdown:
     def test_19_03_shutdown_by_server(self, env: Env, httpd, proto):
         if not env.curl_is_debug():
             pytest.skip('only works for curl debug builds')
-        if not env.curl_is_verbose():
-            pytest.skip('only works for curl with verbose strings')
         count = 10
         curl = CurlClient(env=env, run_env={
             'CURL_GRACEFUL_SHUTDOWN': '2000',
@@ -111,12 +109,10 @@ class TestShutdown:
     def test_19_04_shutdown_by_curl(self, env: Env, httpd, proto):
         if not env.curl_is_debug():
             pytest.skip('only works for curl debug builds')
-        if not env.curl_is_verbose():
-            pytest.skip('only works for curl with verbose strings')
         count = 10
         docname = 'data.json'
         url = f'https://localhost:{env.https_port}/{docname}'
-        client = LocalClient(name='cli_hx_download', env=env, run_env={
+        client = LocalClient(name='hx-download', env=env, run_env={
             'CURL_GRACEFUL_SHUTDOWN': '2000',
             'CURL_DEBUG': 'ssl,multi'
         })
@@ -136,8 +132,6 @@ class TestShutdown:
     def test_19_05_event_shutdown_by_server(self, env: Env, httpd, proto):
         if not env.curl_is_debug():
             pytest.skip('only works for curl debug builds')
-        if not env.curl_is_verbose():
-            pytest.skip('only works for curl with verbose strings')
         count = 10
         run_env = os.environ.copy()
         # forbid connection reuse to trigger shutdowns after transfer
@@ -168,8 +162,6 @@ class TestShutdown:
             pytest.skip("h3 not supported")
         if not env.curl_is_debug():
             pytest.skip('only works for curl debug builds')
-        if not env.curl_is_verbose():
-            pytest.skip('only works for curl with verbose strings')
         curl = CurlClient(env=env, run_env={
             'CURL_GRACEFUL_SHUTDOWN': '2000',
             'CURL_DEBUG': 'all'
@@ -193,7 +185,7 @@ class TestShutdown:
         count = 500
         docname = 'data.json'
         url = f'https://localhost:{env.https_port}/{docname}'
-        client = LocalClient(name='cli_hx_download', env=env, run_env={
+        client = LocalClient(name='hx-download', env=env, run_env={
             'CURL_GRACEFUL_SHUTDOWN': '2000',
             'CURL_DEBUG': 'ssl,multi'
         })

@@ -26,8 +26,8 @@
 
 #ifndef CURL_DISABLE_PROXY
 
-#include <curl/curl.h>  /* for curl_strnequal() */
 #include "curlx/inet_pton.h"
+#include "strcase.h"
 #include "noproxy.h"
 #include "curlx/strparse.h"
 
@@ -54,9 +54,9 @@ UNITTEST bool Curl_cidr4_match(const char *ipv4,    /* 1.2.3.4 address */
     /* strange input */
     return FALSE;
 
-  if(curlx_inet_pton(AF_INET, ipv4, &address) != 1)
+  if(1 != curlx_inet_pton(AF_INET, ipv4, &address))
     return FALSE;
-  if(curlx_inet_pton(AF_INET, network, &check) != 1)
+  if(1 != curlx_inet_pton(AF_INET, network, &check))
     return FALSE;
 
   if(bits && (bits != 32)) {
@@ -64,10 +64,9 @@ UNITTEST bool Curl_cidr4_match(const char *ipv4,    /* 1.2.3.4 address */
     unsigned int haddr = htonl(address);
     unsigned int hcheck = htonl(check);
 #if 0
-    curl_mfprintf(stderr, "Host %s (%x) network %s (%x) "
-                  "bits %u mask %x => %x\n",
-                  ipv4, haddr, network, hcheck, bits, mask,
-                  (haddr ^ hcheck) & mask);
+    fprintf(stderr, "Host %s (%x) network %s (%x) bits %u mask %x => %x\n",
+            ipv4, haddr, network, hcheck, bits, mask,
+            (haddr ^ hcheck) & mask);
 #endif
     if((haddr ^ hcheck) & mask)
       return FALSE;
@@ -93,13 +92,13 @@ UNITTEST bool Curl_cidr6_match(const char *ipv6,
   rest = bits & 0x07;
   if((bytes > 16) || ((bytes == 16) && rest))
     return FALSE;
-  if(curlx_inet_pton(AF_INET6, ipv6, address) != 1)
+  if(1 != curlx_inet_pton(AF_INET6, ipv6, address))
     return FALSE;
-  if(curlx_inet_pton(AF_INET6, network, check) != 1)
+  if(1 != curlx_inet_pton(AF_INET6, network, check))
     return FALSE;
   if(bytes && memcmp(address, check, bytes))
     return FALSE;
-  if(rest && ((address[bytes] ^ check[bytes]) & (0xff << (8 - rest))))
+  if(rest && !((address[bytes] ^ check[bytes]) & (0xff << (8 - rest))))
     return FALSE;
 
   return TRUE;
@@ -164,7 +163,7 @@ bool Curl_check_noproxy(const char *name, const char *no_proxy)
     else {
       unsigned int address;
       namelen = strlen(name);
-      if(curlx_inet_pton(AF_INET, name, &address) == 1)
+      if(1 == curlx_inet_pton(AF_INET, name, &address))
         type = TYPE_IPV4;
       else {
         /* ignore trailing dots in the hostname */
@@ -206,12 +205,12 @@ bool Curl_check_noproxy(const char *name, const char *no_proxy)
           */
           if(tokenlen == namelen)
             /* case A, exact match */
-            match = curl_strnequal(token, name, namelen);
+            match = strncasecompare(token, name, namelen);
           else if(tokenlen < namelen) {
             /* case B, tailmatch domain */
             match = (name[namelen - tokenlen - 1] == '.') &&
-              curl_strnequal(token, name + (namelen - tokenlen),
-                             tokenlen);
+              strncasecompare(token, name + (namelen - tokenlen),
+                              tokenlen);
           }
           /* case C passes through, not a match */
           break;
@@ -235,7 +234,7 @@ bool Curl_check_noproxy(const char *name, const char *no_proxy)
             /* if the bits variable gets a crazy value here, that is fine as
                the value will then be rejected in the cidr function */
             bits = (unsigned int)atoi(slash + 1);
-            *slash = 0; /* null-terminate there */
+            *slash = 0; /* null terminate there */
           }
           if(type == TYPE_IPV6)
             match = Curl_cidr6_match(name, check, bits);

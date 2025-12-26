@@ -22,11 +22,9 @@
 # SPDX-License-Identifier: curl
 #
 ###########################################################################
-use strict;
-use warnings;
-
 # Determine if curl-config --version matches the curl --version
-if($#ARGV != 2) {
+if ( $#ARGV != 2 )
+{
     print "Usage: $0 curl-config-script curl-version-output-file version|vernum\n";
     exit 3;
 }
@@ -48,7 +46,7 @@ open(CURLCONFIG, "sh $ARGV[0] --$what|") || die "Can't get curl-config --$what l
 $_ = <CURLCONFIG>;
 chomp;
 my $filever=$_;
-if($what eq "version") {
+if ( $what eq "version" ) {
     if($filever =~ /^libcurl ([\.\d]+((-DEV)|(-rc\d)|(-\d+))?)$/) {
         $curlconfigversion = $1;
     }
@@ -71,7 +69,7 @@ else { # "vernum" case
 close CURLCONFIG;
 
 my $different = $version ne $curlconfigversion;
-if($different || !$version) {
+if ($different || !$version) {
     print "Mismatch in --version:\n";
     print "curl:        $version\n";
     print "curl-config: $curlconfigversion\n";

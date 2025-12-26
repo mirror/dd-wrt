@@ -23,10 +23,11 @@
  ***************************************************************************/
 #include "tool_setup.h"
 
+#include <curlx.h>
 #include "tool_cfgable.h"
 #include "tool_writeout.h"
 #include "tool_writeout_json.h"
-#include "memdebug.h" /* keep this as LAST include */
+#include <memdebug.h> /* keep this as LAST include */
 
 static int writeTime(FILE *stream, const struct writeoutvar *wovar,
                      struct per_transfer *per, CURLcode per_result,
@@ -148,7 +149,7 @@ static const struct writeoutvar variables[] = {
   {"urle.scheme", VAR_INPUT_URLESCHEME, CURLINFO_NONE, writeString},
   {"urle.user", VAR_INPUT_URLEUSER, CURLINFO_NONE, writeString},
   {"urle.zoneid", VAR_INPUT_URLEZONEID, CURLINFO_NONE, writeString},
-  {"urlnum", VAR_URLNUM, CURLINFO_NONE, writeOffset},
+  {"urlnum", VAR_URLNUM, CURLINFO_NONE, writeLong},
   {"xfer_id", VAR_EASY_ID, CURLINFO_XFER_ID, writeOffset}
 };
 
@@ -176,14 +177,14 @@ static int writeTime(FILE *stream, const struct writeoutvar *wovar,
     us %= 1000000;
 
     if(use_json)
-      curl_mfprintf(stream, "\"%s\":", wovar->name);
+      fprintf(stream, "\"%s\":", wovar->name);
 
-    curl_mfprintf(stream, "%" CURL_FORMAT_CURL_OFF_TU
-                  ".%06" CURL_FORMAT_CURL_OFF_TU, secs, us);
+    fprintf(stream, "%" CURL_FORMAT_CURL_OFF_TU
+            ".%06" CURL_FORMAT_CURL_OFF_TU, secs, us);
   }
   else {
     if(use_json)
-      curl_mfprintf(stream, "\"%s\":null", wovar->name);
+      fprintf(stream, "\"%s\":null", wovar->name);
   }
 
   return 1; /* return 1 if anything was written */
@@ -361,8 +362,8 @@ static int writeString(FILE *stream, const struct writeoutvar *wovar,
       break;
     case VAR_ERRORMSG:
       if(per_result) {
-        strinfo = (per->errorbuffer[0]) ? per->errorbuffer :
-          curl_easy_strerror(per_result);
+        strinfo = (per->errorbuffer && per->errorbuffer[0]) ?
+          per->errorbuffer : curl_easy_strerror(per_result);
         valid = true;
       }
       break;
@@ -414,7 +415,7 @@ static int writeString(FILE *stream, const struct writeoutvar *wovar,
   DEBUGASSERT(!valid || strinfo);
   if(valid && strinfo) {
     if(use_json) {
-      curl_mfprintf(stream, "\"%s\":", wovar->name);
+      fprintf(stream, "\"%s\":", wovar->name);
       jsonWriteString(stream, strinfo, FALSE);
     }
     else
@@ -422,7 +423,7 @@ static int writeString(FILE *stream, const struct writeoutvar *wovar,
   }
   else {
     if(use_json)
-      curl_mfprintf(stream, "\"%s\":null", wovar->name);
+      fprintf(stream, "\"%s\":null", wovar->name);
   }
   curl_free((char *)CURL_UNCONST(freestr));
 
@@ -462,6 +463,12 @@ static int writeLong(FILE *stream, const struct writeoutvar *wovar,
       longinfo = (long)per_result;
       valid = true;
       break;
+    case VAR_URLNUM:
+      if(per->urlnum <= INT_MAX) {
+        longinfo = (long)per->urlnum;
+        valid = true;
+      }
+      break;
     default:
       DEBUGASSERT(0);
       break;
@@ -470,17 +477,17 @@ static int writeLong(FILE *stream, const struct writeoutvar *wovar,
 
   if(valid) {
     if(use_json)
-      curl_mfprintf(stream, "\"%s\":%ld", wovar->name, longinfo);
+      fprintf(stream, "\"%s\":%ld", wovar->name, longinfo);
     else {
       if(wovar->id == VAR_HTTP_CODE || wovar->id == VAR_HTTP_CODE_PROXY)
-        curl_mfprintf(stream, "%03ld", longinfo);
+        fprintf(stream, "%03ld", longinfo);
       else
-        curl_mfprintf(stream, "%ld", longinfo);
+        fprintf(stream, "%ld", longinfo);
     }
   }
   else {
     if(use_json)
-      curl_mfprintf(stream, "\"%s\":null", wovar->name);
+      fprintf(stream, "\"%s\":null", wovar->name);
   }
 
   return 1; /* return 1 if anything was written */
@@ -502,27 +509,18 @@ static int writeOffset(FILE *stream, const struct writeoutvar *wovar,
       valid = true;
   }
   else {
-    switch(wovar->id) {
-    case VAR_URLNUM:
-      if(per->urlnum <= INT_MAX) {
-        offinfo = per->urlnum;
-        valid = true;
-      }
-      break;
-    default:
-      DEBUGASSERT(0);
-    }
+    DEBUGASSERT(0);
   }
 
   if(valid) {
     if(use_json)
-      curl_mfprintf(stream, "\"%s\":", wovar->name);
+      fprintf(stream, "\"%s\":", wovar->name);
 
-    curl_mfprintf(stream, "%" CURL_FORMAT_CURL_OFF_T, offinfo);
+    fprintf(stream, "%" CURL_FORMAT_CURL_OFF_T, offinfo);
   }
   else {
     if(use_json)
-      curl_mfprintf(stream, "\"%s\":null", wovar->name);
+      fprintf(stream, "\"%s\":null", wovar->name);
   }
 
   return 1; /* return 1 if anything was written */
@@ -538,187 +536,6 @@ matchvar(const void *m1, const void *m2)
 }
 
 #define MAX_WRITEOUT_NAME_LENGTH 24
-
-/* return the position after %time{} */
-static const char *outtime(const char *ptr, /* %time{ ... */
-                           FILE *stream)
-{
-  const char *end;
-  ptr += 6;
-  end = strchr(ptr, '}');
-  if(end) {
-    struct tm *utc;
-    struct dynbuf format;
-    char output[256]; /* max output time length */
-#ifdef HAVE_GETTIMEOFDAY
-    struct timeval cnow;
-#else
-    struct curltime cnow;
-#endif
-    time_t secs;
-    unsigned int usecs;
-    size_t i;
-    size_t vlen;
-    CURLcode result = CURLE_OK;
-
-#ifdef HAVE_GETTIMEOFDAY
-    gettimeofday(&cnow, NULL);
-#else
-    cnow.tv_sec = time(NULL);
-    cnow.tv_usec = 0;
-#endif
-    secs = cnow.tv_sec;
-    usecs = (unsigned int)cnow.tv_usec;
-#ifdef DEBUGBUILD
-    {
-      const char *timestr = getenv("CURL_TIME");
-      if(timestr) {
-        curl_off_t val;
-        curlx_str_number(&timestr, &val, TIME_T_MAX);
-        secs = (time_t)val;
-        usecs = (unsigned int)(val % 1000000);
-      }
-    }
-#endif
-    vlen = end - ptr;
-    curlx_dyn_init(&format, 1024);
-
-    /* insert sub-seconds for %f */
-    /* insert +0000 for %z because it is otherwise not portable */
-    /* insert UTC for %Z because it is otherwise not portable */
-    for(i = 0; !result && i < vlen; i++) {
-      if((i < vlen - 1) && ptr[i] == '%' &&
-         ((ptr[i + 1] == 'f') || ((ptr[i + 1] | 0x20) == 'z'))) {
-        if(ptr[i + 1] == 'f')
-          result = curlx_dyn_addf(&format, "%06u", usecs);
-        else if(ptr[i + 1] == 'Z')
-          result = curlx_dyn_addn(&format, "UTC", 3);
-        else
-          result = curlx_dyn_addn(&format, "+0000", 5);
-        i++;
-      }
-      else
-        result = curlx_dyn_addn(&format, &ptr[i], 1);
-    }
-    if(!result) {
-      /* !checksrc! disable BANNEDFUNC 1 */
-      utc = gmtime(&secs);
-      if(curlx_dyn_len(&format) && utc &&
-         strftime(output, sizeof(output), curlx_dyn_ptr(&format), utc))
-        fputs(output, stream);
-      curlx_dyn_free(&format);
-    }
-    ptr = end + 1;
-  }
-  else
-    fputs("%time{", stream);
-  return ptr;
-}
-
-static void separator(const char *sep, size_t seplen, FILE *stream)
-{
-  while(seplen) {
-    if(*sep == '\\') {
-      switch(sep[1]) {
-      case 'r':
-        fputc('\r', stream);
-        break;
-      case 'n':
-        fputc('\n', stream);
-        break;
-      case 't':
-        fputc('\t', stream);
-        break;
-      case '}':
-        fputc('}', stream);
-        break;
-      case '\0':
-        break;
-      default:
-        /* unknown, just output this */
-        fputc(sep[0], stream);
-        fputc(sep[1], stream);
-        break;
-      }
-      sep += 2;
-      seplen -= 2;
-    }
-    else {
-      fputc(*sep, stream);
-      sep++;
-      seplen--;
-    }
-  }
-}
-
-static void output_header(struct per_transfer *per,
-                          FILE *stream,
-                          const char **pptr)
-{
-  const char *ptr = *pptr;
-  const char *end;
-  end = strchr(ptr, '}');
-  do {
-    if(!end || (end[-1] != '\\'))
-      break;
-    end = strchr(&end[1], '}');
-  } while(end);
-  if(end) {
-    char hname[256]; /* holds the longest header field name */
-    struct curl_header *header;
-    const char *instr;
-    const char *sep = NULL;
-    size_t seplen = 0;
-    size_t vlen = end - ptr;
-    instr = memchr(ptr, ':', vlen);
-    if(instr) {
-      /* instructions follow */
-      if(!strncmp(&instr[1], "all:", 4)) {
-        sep = &instr[5];
-        seplen = end - sep;
-        vlen -= (seplen + 5);
-      }
-    }
-    if(vlen < sizeof(hname)) {
-      memcpy(hname, ptr, vlen);
-      hname[vlen] = 0;
-      if(sep) {
-        /* get headers from all requests */
-        int reqno = 0;
-        size_t indno = 0;
-        bool output = FALSE;
-        do {
-          if(CURLHE_OK == curl_easy_header(per->curl, hname, indno,
-                                           CURLH_HEADER, reqno,
-                                           &header)) {
-            if(output)
-              /* output separator */
-              separator(sep, seplen, stream);
-            fputs(header->value, stream);
-            output = TRUE;
-          }
-          else
-            break;
-          if((header->index + 1) < header->amount)
-            indno++;
-          else {
-            ++reqno;
-            indno = 0;
-          }
-        } while(1);
-      }
-      else {
-        if(CURLHE_OK == curl_easy_header(per->curl, hname, 0,
-                                         CURLH_HEADER, -1, &header))
-          fputs(header->value, stream);
-      }
-    }
-    ptr = end + 1;
-  }
-  else
-    fputs("%header{", stream);
-  *pptr = ptr;
-}
 
 void ourWriteOut(struct OperationConfig *config, struct per_transfer *per,
                  CURLcode per_result)
@@ -772,13 +589,13 @@ void ourWriteOut(struct OperationConfig *config, struct per_transfer *per,
               break;
             case VAR_STDOUT:
               if(fclose_stream)
-                curlx_fclose(stream);
+                fclose(stream);
               fclose_stream = FALSE;
               stream = stdout;
               break;
             case VAR_STDERR:
               if(fclose_stream)
-                curlx_fclose(stream);
+                fclose(stream);
               fclose_stream = FALSE;
               stream = tool_stderr;
               break;
@@ -796,18 +613,30 @@ void ourWriteOut(struct OperationConfig *config, struct per_transfer *per,
             }
           }
           else {
-            curl_mfprintf(tool_stderr,
-                          "curl: unknown --write-out variable: '%.*s'\n",
-                          (int)vlen, ptr);
+            fprintf(tool_stderr,
+                    "curl: unknown --write-out variable: '%.*s'\n",
+                    (int)vlen, ptr);
           }
           ptr = end + 1; /* pass the end */
         }
         else if(!strncmp("header{", &ptr[1], 7)) {
           ptr += 8;
-          output_header(per, stream, &ptr);
-        }
-        else if(!strncmp("time{", &ptr[1], 5)) {
-          ptr = outtime(ptr, stream);
+          end = strchr(ptr, '}');
+          if(end) {
+            char hname[256]; /* holds the longest header field name */
+            struct curl_header *header;
+            vlen = end - ptr;
+            if(vlen < sizeof(hname)) {
+              memcpy(hname, ptr, vlen);
+              hname[vlen] = 0;
+              if(CURLHE_OK == curl_easy_header(per->curl, hname, 0,
+                                               CURLH_HEADER, -1, &header))
+                fputs(header->value, stream);
+            }
+            ptr = end + 1;
+          }
+          else
+            fputs("%header{", stream);
         }
         else if(!strncmp("output{", &ptr[1], 7)) {
           bool append = FALSE;
@@ -824,12 +653,12 @@ void ourWriteOut(struct OperationConfig *config, struct per_transfer *per,
               FILE *stream2;
               memcpy(fname, ptr, flen);
               fname[flen] = 0;
-              stream2 = curlx_fopen(fname, append ? FOPEN_APPENDTEXT :
-                                    FOPEN_WRITETEXT);
+              stream2 = fopen(fname, append ? FOPEN_APPENDTEXT :
+                              FOPEN_WRITETEXT);
               if(stream2) {
                 /* only change if the open worked */
                 if(fclose_stream)
-                  curlx_fclose(stream);
+                  fclose(stream);
                 stream = stream2;
                 fclose_stream = TRUE;
               }
@@ -872,6 +701,6 @@ void ourWriteOut(struct OperationConfig *config, struct per_transfer *per,
     }
   }
   if(fclose_stream)
-    curlx_fclose(stream);
+    fclose(stream);
   curlx_dyn_free(&name);
 }

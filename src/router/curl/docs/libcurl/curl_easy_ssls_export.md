@@ -13,6 +13,7 @@ Protocol:
 TLS-backend:
   - GnuTLS
   - OpenSSL
+  - BearSSL
   - wolfSSL
   - mbedTLS
 Added-in: 8.12.0
@@ -67,10 +68,10 @@ username/password are not exported.
 
 ## Session Key
 
-This is a printable, null-terminated string that starts with **hostname:port**
-the session ticket is originating from and also contains all relevant SSL
-parameters used in the connection. The key also carries the name and version
-number of the TLS backend used.
+This is a printable, 0-terminated string that starts with **hostname:port**
+the session ticket is originating from and also contains all relevant
+SSL parameters used in the connection. The key also carries the name
+and version number of the TLS backend used.
 
 It is recommended to only persist **session_key** when it can be protected
 from outside access. Since the hostname appears in plain text, it would
@@ -150,12 +151,6 @@ int main(void)
   if(curl) {
     curl_easy_setopt(curl, CURLOPT_SHARE, share);
 
-    /* run a transfer, all TLS sessions received will be added
-     * to the share. */
-    curl_easy_setopt(curl, CURLOPT_URL, "https://example.com/");
-    curl_easy_perform(curl);
-
-    /* export the TLS sessions collected in the share */
     rc = curl_easy_ssls_export(curl, my_export_cb, NULL);
 
     /* always cleanup */

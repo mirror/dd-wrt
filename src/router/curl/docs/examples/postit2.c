@@ -46,18 +46,17 @@
 int main(int argc, char *argv[])
 {
   CURL *curl;
+  CURLcode res;
 
-  CURLcode res = curl_global_init(CURL_GLOBAL_ALL);
-  if(res)
-    return (int)res;
+  curl_mime *form = NULL;
+  curl_mimepart *field = NULL;
+  struct curl_slist *headerlist = NULL;
+  static const char buf[] = "Expect:";
+
+  curl_global_init(CURL_GLOBAL_ALL);
 
   curl = curl_easy_init();
   if(curl) {
-    curl_mime *form = NULL;
-    curl_mimepart *field = NULL;
-    struct curl_slist *headerlist = NULL;
-    static const char buf[] = "Expect:";
-
     /* Create the form */
     form = curl_mime_init(curl);
 
@@ -101,8 +100,5 @@ int main(int argc, char *argv[])
     /* free slist */
     curl_slist_free_all(headerlist);
   }
-
-  curl_global_cleanup();
-
   return 0;
 }

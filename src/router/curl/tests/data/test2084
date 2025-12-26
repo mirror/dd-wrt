@@ -27,7 +27,7 @@ http
 Pre-request callback for HTTP with callback terminating transfer
 </name>
 <tool>
-lib2082
+libprereq
 </tool>
 
 <command>

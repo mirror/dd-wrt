@@ -459,15 +459,11 @@ class TestCA:
     def _add_leaf_usages(csr: Any, domains: List[str], issuer: Credentials) -> Any:
         names = []
         for name in domains:
-            m = re.match(r'dns:(.+)', name)
-            if m:
-                names.append(x509.DNSName(m.group(1)))
-            else:
-                try:
-                    names.append(x509.IPAddress(ipaddress.ip_address(name)))
-                # TODO: specify specific exceptions here
-                except:  # noqa: E722
-                    names.append(x509.DNSName(name))
+            try:
+                names.append(x509.IPAddress(ipaddress.ip_address(name)))
+            # TODO: specify specific exceptions here
+            except:  # noqa: E722
+                names.append(x509.DNSName(name))
 
         return csr.add_extension(
             x509.BasicConstraints(ca=False, path_length=None),

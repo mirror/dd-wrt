@@ -32,11 +32,7 @@
 
 set -eu
 
-if [ -d "$HOME/Library/Application Support"/Firefox/Profiles ]; then
-  db=$(ls -1d "$HOME/Library/Application Support"/Firefox/Profiles/*default*)
-else
-  db=$(ls -1d "$HOME"/.mozilla/firefox/*default*)
-fi
+db=$(ls -1d "$HOME"/.mozilla/firefox/*default*)
 out="${1:-}"
 
 if test -z "$out"; then
@@ -59,7 +55,7 @@ certutil -L -h 'Builtin Object Token' -d "$db" | \
 grep ' *[CcGTPpu]*,[CcGTPpu]*,[CcGTPpu]* *$' | \
 sed -e 's/ *[CcGTPpu]*,[CcGTPpu]*,[CcGTPpu]* *$//' -e 's/\(.*\)/"\1"/' | \
 sort | \
-while read -r nickname; do
-  echo "$nickname" | sed 's/Builtin Object Token://g'
-  echo "$nickname" | xargs -I{} certutil -d "$db" -L -a -n {}
+while read -r nickname; \
+ do echo "$nickname" | sed -e "s/Builtin Object Token://g"; \
+eval certutil -d "$db" -L -n "$nickname" -a ; \
 done >> "$out"

@@ -45,10 +45,10 @@ proxy
 <errorcode>
 33
 </errorcode>
-<protocol crlf="headers">
+<protocol>
 GET http://%HOSTIP:%HTTPPORT/want/%TESTNUMBER HTTP/1.1
 Host: %HOSTIP:%HTTPPORT
-Proxy-Authorization: Basic %b64[daniel:stenberg]b64%
+Proxy-Authorization: Basic ZGFuaWVsOnN0ZW5iZXJn
 Range: bytes=78-
 User-Agent: curl/%VERSION
 Accept: */*

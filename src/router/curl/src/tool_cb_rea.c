@@ -26,62 +26,17 @@
 #ifdef HAVE_SYS_SELECT_H
 #include <sys/select.h>
 #endif
-#ifdef HAVE_POLL_H
-#include <poll.h>
-#elif defined(HAVE_SYS_POLL_H)
-#include <sys/poll.h>
-#endif
+
+#include <curlx.h>
 
 #include "tool_cfgable.h"
 #include "tool_cb_rea.h"
 #include "tool_operate.h"
 #include "tool_util.h"
 #include "tool_msgs.h"
+#include "tool_sleep.h"
 
-#include "memdebug.h" /* keep this as LAST include */
-
-#ifndef _WIN32
-/* Wait up to a number of milliseconds for socket activity. This function
-   waits on read activity on a file descriptor that is not a socket which
-   makes it not work with select() or poll() on Windows. */
-static bool waitfd(int waitms, int fd)
-{
-#ifdef HAVE_POLL
-  struct pollfd set;
-
-  set.fd = fd;
-  set.events = POLLIN;
-  set.revents = 0;
-  if(poll(&set, 1, (int)waitms))
-    return TRUE; /* timeout */
-  return FALSE;
-#else
-  fd_set bits;
-  struct timeval timeout;
-
-  if(fd >= FD_SETSIZE)
-    /* can't wait! */
-    return FALSE;
-
-  /* wait this long at the most */
-  timeout.tv_sec = waitms / 1000;
-  timeout.tv_usec = (int)((waitms % 1000) * 1000);
-
-  FD_ZERO(&bits);
-#ifdef __DJGPP__
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Warith-conversion"
-#endif
-  FD_SET(fd, &bits);
-#ifdef __DJGPP__
-#pragma GCC diagnostic pop
-#endif
-  if(!select(fd + 1, &bits, NULL, NULL, &timeout))
-    return TRUE; /* timeout */
-  return FALSE;
-#endif
-}
-#endif
+#include <memdebug.h> /* keep this as LAST include */
 
 /*
 ** callback for CURLOPT_READFUNCTION
@@ -107,54 +62,47 @@ size_t tool_read_cb(char *buffer, size_t sz, size_t nmemb, void *userdata)
       /* timeout */
       return 0;
 #ifndef _WIN32
+    /* this logic waits on read activity on a file descriptor that is not a
+       socket which makes it not work with select() on Windows */
     else {
-      long w = config->timeout_ms - msdelta;
-      if(w > INT_MAX)
-        w = INT_MAX;
-      waitfd((int)w, per->infd);
+      fd_set bits;
+      struct timeval timeout;
+      long wait = config->timeout_ms - msdelta;
+
+      /* wait this long at the most */
+      timeout.tv_sec = wait/1000;
+      timeout.tv_usec = (int)((wait%1000)*1000);
+
+      FD_ZERO(&bits);
+#if defined(__DJGPP__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Warith-conversion"
+#endif
+      FD_SET(per->infd, &bits);
+#if defined(__DJGPP__)
+#pragma GCC diagnostic pop
+#endif
+      if(!select(per->infd + 1, &bits, NULL, NULL, &timeout))
+        return 0; /* timeout */
     }
 #endif
   }
 
-  /* If we are on Windows, and using `-T .`, then per->infd points to a socket
-   connected to stdin via a reader thread, and needs to be read with recv()
-   Make sure we are in non-blocking mode and infd is not regular stdin
-   On Linux per->infd should be stdin (0) and the block below should not
-   execute */
-  if(per->uploadfile && !strcmp(per->uploadfile, ".") && per->infd > 0) {
-#if defined(_WIN32) && !defined(CURL_WINDOWS_UWP) && !defined(UNDER_CE)
-    rc = CURL_RECV(per->infd, buffer, curlx_uztosi(sz * nmemb), 0);
-    if(rc < 0) {
-      if(SOCKERRNO == SOCKEWOULDBLOCK) {
-        CURL_SETERRNO(0);
-        config->readbusy = TRUE;
-        return CURL_READFUNC_PAUSE;
-      }
-
-      rc = 0;
+  rc = read(per->infd, buffer, sz*nmemb);
+  if(rc < 0) {
+    if(errno == EAGAIN) {
+      CURL_SETERRNO(0);
+      config->readbusy = TRUE;
+      return CURL_READFUNC_PAUSE;
     }
-#else
-    warnf("per->infd != 0: FD == %d. This behavior"
-          " is only supported on desktop Windows", per->infd);
-#endif
-  }
-  else {
-    rc = read(per->infd, buffer, sz*nmemb);
-    if(rc < 0) {
-      if(errno == EAGAIN) {
-        CURL_SETERRNO(0);
-        config->readbusy = TRUE;
-        return CURL_READFUNC_PAUSE;
-      }
-      /* since size_t is unsigned we cannot return negative values fine */
-      rc = 0;
-    }
+    /* since size_t is unsigned we cannot return negative values fine */
+    rc = 0;
   }
   if((per->uploadfilesize != -1) &&
      (per->uploadedsofar + rc > per->uploadfilesize)) {
     /* do not allow uploading more than originally set out to do */
     curl_off_t delta = per->uploadedsofar + rc - per->uploadfilesize;
-    warnf("File size larger in the end than when "
+    warnf(per->config->global, "File size larger in the end than when "
           "started. Dropping at least %" CURL_FORMAT_CURL_OFF_T " bytes",
           delta);
     rc = (ssize_t)(per->uploadfilesize - per->uploadedsofar);
@@ -175,28 +123,40 @@ int tool_readbusy_cb(void *clientp,
 {
   struct per_transfer *per = clientp;
   struct OperationConfig *config = per->config;
-  static curl_off_t ulprev;
 
-  (void)dltotal;
-  (void)dlnow;
-  (void)ultotal;
-  (void)ulnow;
+  (void)dltotal;  /* unused */
+  (void)dlnow;  /* unused */
+  (void)ultotal;  /* unused */
+  (void)ulnow;  /* unused */
 
   if(config->readbusy) {
+    /* lame code to keep the rate down because the input might not deliver
+       anything, get paused again and come back here immediately */
+    static timediff_t rate = 500;
+    static struct curltime prev;
+    static curl_off_t ulprev;
+
     if(ulprev == ulnow) {
-#ifndef _WIN32
-      waitfd(1, per->infd);
-#else
-      /* sleep */
-      curlx_wait_ms(1);
-#endif
+      /* it did not upload anything since last call */
+      struct curltime now = curlx_now();
+      if(prev.tv_sec)
+        /* get a rolling average rate */
+        rate -= rate/4 - curlx_timediff(now, prev)/4;
+      prev = now;
     }
-
-    config->readbusy = FALSE;
-    curl_easy_pause(per->curl, CURLPAUSE_CONT);
+    else {
+      rate = 50;
+      ulprev = ulnow;
+    }
+    if(rate >= 50) {
+      /* keeps the looping down to 20 times per second in the crazy case */
+      config->readbusy = FALSE;
+      curl_easy_pause(per->curl, CURLPAUSE_CONT);
+    }
+    else
+      /* sleep half a period */
+      tool_go_sleep(25);
   }
-
-  ulprev = ulnow;
 
   return per->noprogress ? 0 : CURL_PROGRESSFUNC_CONTINUE;
 }

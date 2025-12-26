@@ -40,10 +40,7 @@
 int main(void)
 {
   CURL *curl;
-
-  CURLcode res = curl_global_init(CURL_GLOBAL_ALL);
-  if(res)
-    return (int)res;
+  CURLcode res = CURLE_OK;
 
   curl = curl_easy_init();
   if(curl) {
@@ -51,8 +48,8 @@ int main(void)
     curl_easy_setopt(curl, CURLOPT_USERNAME, "user");
     curl_easy_setopt(curl, CURLOPT_PASSWORD, "secret");
 
-    /* This retrieves message 1 from the user's mailbox. Note the use of *
-       pop3s:// rather than pop3:// to request an SSL based connection. */
+    /* This retrieves message 1 from the user's mailbox. Note the use of
+     * pop3s:// rather than pop3:// to request a SSL based connection. */
     curl_easy_setopt(curl, CURLOPT_URL, "pop3s://pop.example.com/1");
 
     /* If you want to connect to a site who is not using a certificate that is
@@ -91,8 +88,6 @@ int main(void)
     /* Always cleanup */
     curl_easy_cleanup(curl);
   }
-
-  curl_global_cleanup();
 
   return (int)res;
 }

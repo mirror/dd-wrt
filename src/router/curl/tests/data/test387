@@ -9,7 +9,7 @@ gzip
 #
 # Server-side
 <reply>
-<data nocheck="yes" crlf="headers">
+<data nocheck="yes" crlf="yes">
 HTTP/1.1 200 OK
 Content-Length: 6
 Transfer-Encoding: gzip,gzip,gzip,gzip,gzip,gzip,gzip,gzip,gzip,gzip,gzip,gzip,gzip,gzip,gzip,gzip,gzip,gzip,gzip,gzip,gzip,gzip,gzip,gzip,gzip,gzip,gzip,gzip,gzip,gzip,gzip,gzip,gzip,gzip,gzip,gzip,gzip,gzip,gzip,gzip,gzip,gzip,gzip,gzip,gzip,gzip,gzip,gzip,gzip,gzip,gzip,gzip,gzip,gzip,gzip,gzip,gzip,gzip,gzip,gzip,gzip,gzip,gzip,gzip,gzip,gzip,gzip,gzip,gzip,gzip,gzip,gzip,gzip,gzip,gzip,gzip,gzip,gzip,gzip,gzip,gzip,gzip,gzip,gzip,gzip,gzip,gzip,gzip,gzip,gzip,gzip,gzip,gzip,gzip,gzip,gzip,gzip,gzip,gzip,gzip
@@ -38,13 +38,13 @@ http://%HOSTIP:%HTTPPORT/%TESTNUMBER -sS --tr-encoding
 #
 # Verify data after the test has been "shot"
 <verify>
-<protocol crlf="headers">
+<protocol>
 GET /%TESTNUMBER HTTP/1.1
 Host: %HOSTIP:%HTTPPORT
 User-Agent: curl/%VERSION
 Accept: */*
-TE: gzip
 Connection: TE
+TE: gzip
 
 </protocol>
 

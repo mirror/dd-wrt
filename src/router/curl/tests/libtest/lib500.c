@@ -21,10 +21,12 @@
  * SPDX-License-Identifier: curl
  *
  ***************************************************************************/
-#include "first.h"
+#include "test.h"
 
 #include "testtrace.h"
 #include "memdebug.h"
+
+#ifdef LIB585
 
 static int testcounter;
 
@@ -35,7 +37,7 @@ static curl_socket_t tst_opensocket(void *clientp,
   (void)clientp;
   (void)purpose;
   curl_mprintf("[OPEN] counter: %d\n", ++testcounter);
-  return CURL_SOCKET(addr->family, addr->socktype, addr->protocol);
+  return socket(addr->family, addr->socktype, addr->protocol);
 }
 
 static int tst_closesocket(void *clientp, curl_socket_t sock)
@@ -52,7 +54,12 @@ static void setupcallbacks(CURL *curl)
   testcounter = 0;
 }
 
-static CURLcode test_lib500(const char *URL)
+#else
+#define setupcallbacks(x) Curl_nop_stmt
+#endif
+
+
+CURLcode test(char *URL)
 {
   CURLcode res;
   CURL *curl;
@@ -73,24 +80,23 @@ static CURLcode test_lib500(const char *URL)
   test_setopt(curl, CURLOPT_URL, URL);
   test_setopt(curl, CURLOPT_HEADER, 1L);
 
-  debug_config.nohex = TRUE;
-  debug_config.tracetime = TRUE;
-  test_setopt(curl, CURLOPT_DEBUGDATA, &debug_config);
+  libtest_debug_config.nohex = 1;
+  libtest_debug_config.tracetime = 1;
+  test_setopt(curl, CURLOPT_DEBUGDATA, &libtest_debug_config);
   test_setopt(curl, CURLOPT_DEBUGFUNCTION, libtest_debug_cb);
   test_setopt(curl, CURLOPT_VERBOSE, 1L);
 
   if(libtest_arg3 && !strcmp(libtest_arg3, "activeftp"))
     test_setopt(curl, CURLOPT_FTPPORT, "-");
 
-  if(testnum == 585 || testnum == 586 || testnum == 595 || testnum == 596)
-    setupcallbacks(curl);
+  setupcallbacks(curl);
 
   res = curl_easy_perform(curl);
 
   if(!res) {
     res = curl_easy_getinfo(curl, CURLINFO_PRIMARY_IP, &ipstr);
     if(libtest_arg2) {
-      FILE *moo = curlx_fopen(libtest_arg2, "wb");
+      FILE *moo = fopen(libtest_arg2, "wb");
       if(moo) {
         curl_off_t time_namelookup;
         curl_off_t time_connect;
@@ -163,7 +169,7 @@ static CURLcode test_lib500(const char *URL)
                         (long)(time_total % 1000000));
         }
 
-        curlx_fclose(moo);
+        fclose(moo);
       }
     }
   }
@@ -175,3 +181,5 @@ test_cleanup:
 
   return res;
 }
+
+#undef setupcallbacks

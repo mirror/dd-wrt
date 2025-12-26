@@ -33,11 +33,14 @@ ftp://%HOSTIP:%FTPPORT/fully_simulated/UNIX/*.txt
 ############################################
 # Verify data after the test has been "shot"
 <verify>
+<strip>
+QUIT
+</strip>
 <errorcode>
 0
 </errorcode>
 # THERE SHOULD NOT BE "SIZE"! and one "USER/PASS"
-<protocol crlf="yes">
+<protocol>
 USER anonymous
 PASS ftp@example.com
 PWD
@@ -59,6 +62,9 @@ EPSV
 RETR file.txt
 EPSV
 RETR someothertext.txt
+CWD /
+CWD fully_simulated
+CWD UNIX
 EPSV
 TYPE A
 LIST

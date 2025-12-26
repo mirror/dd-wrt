@@ -37,6 +37,9 @@ curl_includes_arpa_inet="\
 #ifdef HAVE_SYS_TYPES_H
 #  include <sys/types.h>
 #endif
+#ifdef HAVE_SYS_SOCKET_H
+#  include <sys/socket.h>
+#endif
 #ifdef HAVE_NETINET_IN_H
 #  include <netinet/in.h>
 #endif
@@ -46,12 +49,10 @@ curl_includes_arpa_inet="\
 #ifdef _WIN32
 #include <winsock2.h>
 #include <ws2tcpip.h>
-#else
-#include <sys/socket.h>
 #endif
 /* includes end */"
   AC_CHECK_HEADERS(
-    sys/types.h netinet/in.h arpa/inet.h,
+    sys/types.h sys/socket.h netinet/in.h arpa/inet.h,
     [], [], [$curl_includes_arpa_inet])
 ])
 
@@ -91,7 +92,7 @@ curl_includes_ifaddrs="\
 #ifdef HAVE_SYS_TYPES_H
 #  include <sys/types.h>
 #endif
-#ifndef _WIN32
+#ifdef HAVE_SYS_SOCKET_H
 #  include <sys/socket.h>
 #endif
 #ifdef HAVE_NETINET_IN_H
@@ -102,7 +103,7 @@ curl_includes_ifaddrs="\
 #endif
 /* includes end */"
   AC_CHECK_HEADERS(
-    sys/types.h netinet/in.h ifaddrs.h,
+    sys/types.h sys/socket.h netinet/in.h ifaddrs.h,
     [], [], [$curl_includes_ifaddrs])
 ])
 
@@ -242,7 +243,7 @@ curl_includes_stropts="\
 #ifdef HAVE_UNISTD_H
 #  include <unistd.h>
 #endif
-#ifndef _WIN32
+#ifdef HAVE_SYS_SOCKET_H
 #  include <sys/socket.h>
 #endif
 #ifdef HAVE_SYS_IOCTL_H
@@ -253,7 +254,7 @@ curl_includes_stropts="\
 #endif
 /* includes end */"
   AC_CHECK_HEADERS(
-    sys/types.h unistd.h sys/ioctl.h stropts.h,
+    sys/types.h unistd.h sys/socket.h sys/ioctl.h stropts.h,
     [], [], [$curl_includes_stropts])
 ])
 
@@ -269,12 +270,12 @@ curl_includes_sys_socket="\
 #ifdef HAVE_SYS_TYPES_H
 #  include <sys/types.h>
 #endif
-#ifndef _WIN32
+#ifdef HAVE_SYS_SOCKET_H
 #  include <sys/socket.h>
 #endif
 /* includes end */"
   AC_CHECK_HEADERS(
-    sys/types.h,
+    sys/types.h sys/socket.h,
     [], [], [$curl_includes_sys_socket])
 ])
 
@@ -328,13 +329,13 @@ curl_includes_time="\
 #ifdef HAVE_SYS_TYPES_H
 #  include <sys/types.h>
 #endif
-#if !defined(_WIN32) || defined(__MINGW32__)
+#ifdef HAVE_SYS_TIME_H
 #  include <sys/time.h>
 #endif
 #include <time.h>
 /* includes end */"
   AC_CHECK_HEADERS(
-    sys/types.h,
+    sys/types.h sys/time.h,
     [], [], [$curl_includes_time])
 ])
 
@@ -370,7 +371,7 @@ curl_includes_winsock2="\
 /* includes start */
 #ifdef _WIN32
 #  ifndef WIN32_LEAN_AND_MEAN
-#  define WIN32_LEAN_AND_MEAN
+#    define WIN32_LEAN_AND_MEAN
 #  endif
 #  include <winsock2.h>
 #endif
@@ -389,7 +390,7 @@ curl_includes_ws2tcpip="\
 /* includes start */
 #ifdef _WIN32
 #  ifndef WIN32_LEAN_AND_MEAN
-#  define WIN32_LEAN_AND_MEAN
+#    define WIN32_LEAN_AND_MEAN
 #  endif
 #  include <winsock2.h>
 #  include <ws2tcpip.h>
@@ -407,7 +408,7 @@ dnl included when bsdsocket.h is to be included.
 AC_DEFUN([CURL_INCLUDES_BSDSOCKET], [
 curl_includes_bsdsocket="\
 /* includes start */
-#ifdef HAVE_PROTO_BSDSOCKET_H
+#if defined(HAVE_PROTO_BSDSOCKET_H)
 #  define __NO_NET_API
 #  define __USE_INLINE__
 #  include <proto/bsdsocket.h>
@@ -2356,7 +2357,7 @@ AC_DEFUN([CURL_CHECK_FUNC_INET_NTOP], [
      test "$tst_works_inet_ntop" != "no"; then
     AC_MSG_RESULT([yes])
     AC_DEFINE_UNQUOTED(HAVE_INET_NTOP, 1,
-      [Define to 1 if you have an IPv6 capable working inet_ntop function.])
+      [Define to 1 if you have a IPv6 capable working inet_ntop function.])
     curl_cv_func_inet_ntop="yes"
   else
     AC_MSG_RESULT([no])
@@ -2510,7 +2511,7 @@ AC_DEFUN([CURL_CHECK_FUNC_INET_PTON], [
      test "$tst_works_inet_pton" != "no"; then
     AC_MSG_RESULT([yes])
     AC_DEFINE_UNQUOTED(HAVE_INET_PTON, 1,
-      [Define to 1 if you have an IPv6 capable working inet_pton function.])
+      [Define to 1 if you have a IPv6 capable working inet_pton function.])
     curl_cv_func_inet_pton="yes"
   else
     AC_MSG_RESULT([no])
@@ -4290,31 +4291,25 @@ AC_DEFUN([CURL_COVERAGE],[
     AS_HELP_STRING([--enable-code-coverage], [Provide code coverage]),
     coverage="$enableval")
 
-  dnl if not gcc or clang switch off again
-  AS_IF([test "$compiler_id" != "GNU_C" -a "$compiler_id" != "CLANG" -a "$compiler_id" != "APPLECLANG"], coverage="no" )
+  dnl if not gcc switch off again
+  AS_IF([ test "$GCC" != "yes" ], coverage="no" )
   AC_MSG_RESULT($coverage)
 
   if test "x$coverage" = "xyes"; then
     curl_coverage_msg="enabled"
 
-    CPPFLAGS="$CPPFLAGS -DNDEBUG"
-    CFLAGS="$CFLAGS -O0 -g"
-
-    if test "$compiler_id" = "GNU_C"; then
-      AC_CHECK_TOOL([GCOV], [gcov], [gcov])
-      if test -z "$GCOV"; then
-        AC_MSG_ERROR([needs gcov for code coverage])
-      fi
-      AC_CHECK_PROG([LCOV], [lcov], [lcov])
-      if test -z "$LCOV"; then
-        AC_MSG_ERROR([needs lcov for code coverage])
-      fi
-      CFLAGS="$CFLAGS -ftest-coverage -fprofile-arcs"
-      LIBS="$LIBS -lgcov"
-    else
-      CFLAGS="$CFLAGS -fprofile-instr-generate -fcoverage-mapping"
-      LDFLAGS="$LDFLAGS -fprofile-instr-generate -fcoverage-mapping"
+    AC_CHECK_TOOL([GCOV], [gcov], [gcov])
+    if test -z "$GCOV"; then
+      AC_MSG_ERROR([needs gcov for code coverage])
     fi
+    AC_CHECK_PROG([LCOV], [lcov], [lcov])
+    if test -z "$LCOV"; then
+      AC_MSG_ERROR([needs lcov for code coverage])
+    fi
+
+    CPPFLAGS="$CPPFLAGS -DNDEBUG"
+    CFLAGS="$CFLAGS -O0 -g -fprofile-arcs -ftest-coverage"
+    LIBS="$LIBS -lgcov"
   fi
 ])
 

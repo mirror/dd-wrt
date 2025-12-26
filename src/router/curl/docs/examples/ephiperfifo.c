@@ -79,31 +79,36 @@ callback.
 
 
 /* Global information, common to all connections */
-struct GlobalInfo {
+typedef struct _GlobalInfo
+{
   int epfd;    /* epoll filedescriptor */
   int tfd;     /* timer filedescriptor */
   int fifofd;  /* fifo filedescriptor */
   CURLM *multi;
   int still_running;
   FILE *input;
-};
+} GlobalInfo;
+
 
 /* Information associated with a specific easy handle */
-struct ConnInfo {
-  CURL *curl;
+typedef struct _ConnInfo
+{
+  CURL *easy;
   char *url;
-  struct GlobalInfo *global;
+  GlobalInfo *global;
   char error[CURL_ERROR_SIZE];
-};
+} ConnInfo;
+
 
 /* Information associated with a specific socket */
-struct SockInfo {
+typedef struct _SockInfo
+{
   curl_socket_t sockfd;
-  CURL *curl;
+  CURL *easy;
   int action;
   long timeout;
-  struct GlobalInfo *global;
-};
+  GlobalInfo *global;
+} SockInfo;
 
 #define mycase(code) \
   case code: s = __STRING(code)
@@ -131,12 +136,12 @@ static void mcode_or_die(const char *where, CURLMcode code)
   }
 }
 
-static void timer_cb(struct GlobalInfo *g, int revents);
+static void timer_cb(GlobalInfo* g, int revents);
 
 /* Update the timer after curl_multi library does its thing. Curl informs the
  * application through this callback what it wants the new timeout to be,
  * after it does some work. */
-static int multi_timer_cb(CURLM *multi, long timeout_ms, struct GlobalInfo *g)
+static int multi_timer_cb(CURLM *multi, long timeout_ms, GlobalInfo *g)
 {
   struct itimerspec its;
 
@@ -158,39 +163,42 @@ static int multi_timer_cb(CURLM *multi, long timeout_ms, struct GlobalInfo *g)
     its.it_value.tv_nsec = 1;
   }
   else {
-    memset(&its, 0, sizeof(its));
+    memset(&its, 0, sizeof(struct itimerspec));
   }
 
   timerfd_settime(g->tfd, /* flags= */0, &its, NULL);
   return 0;
 }
 
+
 /* Check for completed transfers, and remove their easy handles */
-static void check_multi_info(struct GlobalInfo *g)
+static void check_multi_info(GlobalInfo *g)
 {
   char *eff_url;
   CURLMsg *msg;
   int msgs_left;
-  struct ConnInfo *conn;
+  ConnInfo *conn;
+  CURL *easy;
+  CURLcode res;
 
   fprintf(MSG_OUT, "REMAINING: %d\n", g->still_running);
   while((msg = curl_multi_info_read(g->multi, &msgs_left))) {
     if(msg->msg == CURLMSG_DONE) {
-      CURL *curl = msg->easy_handle;
-      CURLcode res = msg->data.result;
-      curl_easy_getinfo(curl, CURLINFO_PRIVATE, &conn);
-      curl_easy_getinfo(curl, CURLINFO_EFFECTIVE_URL, &eff_url);
+      easy = msg->easy_handle;
+      res = msg->data.result;
+      curl_easy_getinfo(easy, CURLINFO_PRIVATE, &conn);
+      curl_easy_getinfo(easy, CURLINFO_EFFECTIVE_URL, &eff_url);
       fprintf(MSG_OUT, "DONE: %s => (%d) %s\n", eff_url, res, conn->error);
-      curl_multi_remove_handle(g->multi, curl);
+      curl_multi_remove_handle(g->multi, easy);
       free(conn->url);
-      curl_easy_cleanup(curl);
+      curl_easy_cleanup(easy);
       free(conn);
     }
   }
 }
 
 /* Called by libevent when we get action on a multi socket filedescriptor */
-static void event_cb(struct GlobalInfo *g, int fd, int revents)
+static void event_cb(GlobalInfo *g, int fd, int revents)
 {
   CURLMcode rc;
   struct itimerspec its;
@@ -204,13 +212,13 @@ static void event_cb(struct GlobalInfo *g, int fd, int revents)
   check_multi_info(g);
   if(g->still_running <= 0) {
     fprintf(MSG_OUT, "last transfer done, kill timeout\n");
-    memset(&its, 0, sizeof(its));
+    memset(&its, 0, sizeof(struct itimerspec));
     timerfd_settime(g->tfd, 0, &its, NULL);
   }
 }
 
 /* Called by main loop when our timeout expires */
-static void timer_cb(struct GlobalInfo *g, int revents)
+static void timer_cb(GlobalInfo* g, int revents)
 {
   CURLMcode rc;
   uint64_t count = 0;
@@ -239,8 +247,10 @@ static void timer_cb(struct GlobalInfo *g, int revents)
   check_multi_info(g);
 }
 
+
+
 /* Clean up the SockInfo structure */
-static void remsock(struct SockInfo *f, struct GlobalInfo *g)
+static void remsock(SockInfo *f, GlobalInfo* g)
 {
   if(f) {
     if(f->sockfd) {
@@ -252,9 +262,11 @@ static void remsock(struct SockInfo *f, struct GlobalInfo *g)
   }
 }
 
+
+
 /* Assign information to a SockInfo structure */
-static void setsock(struct SockInfo *f, curl_socket_t s, CURL *e, int act,
-                    struct GlobalInfo *g)
+static void setsock(SockInfo *f, curl_socket_t s, CURL *e, int act,
+                    GlobalInfo *g)
 {
   struct epoll_event ev;
   int kind = ((act & CURL_POLL_IN) ? EPOLLIN : 0) |
@@ -268,7 +280,7 @@ static void setsock(struct SockInfo *f, curl_socket_t s, CURL *e, int act,
 
   f->sockfd = s;
   f->action = act;
-  f->curl = e;
+  f->easy = e;
 
   ev.events = kind;
   ev.data.fd = s;
@@ -277,22 +289,23 @@ static void setsock(struct SockInfo *f, curl_socket_t s, CURL *e, int act,
             s, strerror(errno));
 }
 
+
+
 /* Initialize a new SockInfo structure */
-static void addsock(curl_socket_t s, CURL *curl, int action,
-                    struct GlobalInfo *g)
+static void addsock(curl_socket_t s, CURL *easy, int action, GlobalInfo *g)
 {
-  struct SockInfo *fdp = (struct SockInfo*)calloc(1, sizeof(struct SockInfo));
+  SockInfo *fdp = (SockInfo*)calloc(1, sizeof(SockInfo));
 
   fdp->global = g;
-  setsock(fdp, s, curl, action, g);
+  setsock(fdp, s, easy, action, g);
   curl_multi_assign(g->multi, s, fdp);
 }
 
 /* CURLMOPT_SOCKETFUNCTION */
 static int sock_cb(CURL *e, curl_socket_t s, int what, void *cbp, void *sockp)
 {
-  struct GlobalInfo *g = (struct GlobalInfo*) cbp;
-  struct SockInfo *fdp = (struct SockInfo*) sockp;
+  GlobalInfo *g = (GlobalInfo*) cbp;
+  SockInfo *fdp = (SockInfo*) sockp;
   const char *whatstr[]={ "none", "IN", "OUT", "INOUT", "REMOVE" };
 
   fprintf(MSG_OUT,
@@ -316,6 +329,8 @@ static int sock_cb(CURL *e, curl_socket_t s, int what, void *cbp, void *sockp)
   return 0;
 }
 
+
+
 /* CURLOPT_WRITEFUNCTION */
 static size_t write_cb(void *ptr, size_t size, size_t nmemb, void *data)
 {
@@ -324,11 +339,12 @@ static size_t write_cb(void *ptr, size_t size, size_t nmemb, void *data)
   return size * nmemb;
 }
 
+
 /* CURLOPT_PROGRESSFUNCTION */
 static int prog_cb(void *p, double dltotal, double dlnow, double ult,
                    double uln)
 {
-  struct ConnInfo *conn = (struct ConnInfo *)p;
+  ConnInfo *conn = (ConnInfo *)p;
   (void)ult;
   (void)uln;
 
@@ -336,37 +352,38 @@ static int prog_cb(void *p, double dltotal, double dlnow, double ult,
   return 0;
 }
 
+
 /* Create a new easy handle, and add it to the global curl_multi */
-static void new_conn(const char *url, struct GlobalInfo *g)
+static void new_conn(const char *url, GlobalInfo *g)
 {
-  struct ConnInfo *conn;
+  ConnInfo *conn;
   CURLMcode rc;
 
-  conn = (struct ConnInfo*)calloc(1, sizeof(*conn));
+  conn = (ConnInfo*)calloc(1, sizeof(ConnInfo));
   conn->error[0] = '\0';
 
-  conn->curl = curl_easy_init();
-  if(!conn->curl) {
+  conn->easy = curl_easy_init();
+  if(!conn->easy) {
     fprintf(MSG_OUT, "curl_easy_init() failed, exiting!\n");
     exit(2);
   }
   conn->global = g;
   conn->url = strdup(url);
-  curl_easy_setopt(conn->curl, CURLOPT_URL, conn->url);
-  curl_easy_setopt(conn->curl, CURLOPT_WRITEFUNCTION, write_cb);
-  curl_easy_setopt(conn->curl, CURLOPT_WRITEDATA, conn);
-  curl_easy_setopt(conn->curl, CURLOPT_VERBOSE, 1L);
-  curl_easy_setopt(conn->curl, CURLOPT_ERRORBUFFER, conn->error);
-  curl_easy_setopt(conn->curl, CURLOPT_PRIVATE, conn);
-  curl_easy_setopt(conn->curl, CURLOPT_NOPROGRESS, 0L);
-  curl_easy_setopt(conn->curl, CURLOPT_PROGRESSFUNCTION, prog_cb);
-  curl_easy_setopt(conn->curl, CURLOPT_PROGRESSDATA, conn);
-  curl_easy_setopt(conn->curl, CURLOPT_FOLLOWLOCATION, 1L);
-  curl_easy_setopt(conn->curl, CURLOPT_LOW_SPEED_TIME, 3L);
-  curl_easy_setopt(conn->curl, CURLOPT_LOW_SPEED_LIMIT, 10L);
+  curl_easy_setopt(conn->easy, CURLOPT_URL, conn->url);
+  curl_easy_setopt(conn->easy, CURLOPT_WRITEFUNCTION, write_cb);
+  curl_easy_setopt(conn->easy, CURLOPT_WRITEDATA, conn);
+  curl_easy_setopt(conn->easy, CURLOPT_VERBOSE, 1L);
+  curl_easy_setopt(conn->easy, CURLOPT_ERRORBUFFER, conn->error);
+  curl_easy_setopt(conn->easy, CURLOPT_PRIVATE, conn);
+  curl_easy_setopt(conn->easy, CURLOPT_NOPROGRESS, 0L);
+  curl_easy_setopt(conn->easy, CURLOPT_PROGRESSFUNCTION, prog_cb);
+  curl_easy_setopt(conn->easy, CURLOPT_PROGRESSDATA, conn);
+  curl_easy_setopt(conn->easy, CURLOPT_FOLLOWLOCATION, 1L);
+  curl_easy_setopt(conn->easy, CURLOPT_LOW_SPEED_TIME, 3L);
+  curl_easy_setopt(conn->easy, CURLOPT_LOW_SPEED_LIMIT, 10L);
   fprintf(MSG_OUT,
-          "Adding easy %p to multi %p (%s)\n", conn->curl, g->multi, url);
-  rc = curl_multi_add_handle(g->multi, conn->curl);
+          "Adding easy %p to multi %p (%s)\n", conn->easy, g->multi, url);
+  rc = curl_multi_add_handle(g->multi, conn->easy);
   mcode_or_die("new_conn: curl_multi_add_handle", rc);
 
   /* note that the add_handle() sets a timeout to trigger soon so that the
@@ -374,7 +391,7 @@ static void new_conn(const char *url, struct GlobalInfo *g)
 }
 
 /* This gets called whenever data is received from the fifo */
-static void fifo_cb(struct GlobalInfo *g, int revents)
+static void fifo_cb(GlobalInfo* g, int revents)
 {
   char s[1024];
   long int rv = 0;
@@ -394,7 +411,7 @@ static void fifo_cb(struct GlobalInfo *g, int revents)
 
 /* Create a named pipe and tell libevent to monitor it */
 static const char *fifo = "hiper.fifo";
-static int init_fifo(struct GlobalInfo *g)
+static int init_fifo(GlobalInfo *g)
 {
   struct stat st;
   curl_socket_t sockfd;
@@ -430,7 +447,7 @@ static int init_fifo(struct GlobalInfo *g)
   return 0;
 }
 
-static void clean_fifo(struct GlobalInfo *g)
+static void clean_fifo(GlobalInfo *g)
 {
   epoll_ctl(g->epfd, EPOLL_CTL_DEL, g->fifofd, NULL);
   fclose(g->input);
@@ -447,37 +464,30 @@ void sigint_handler(int signo)
 
 int main(int argc, char **argv)
 {
-  CURLcode res;
-  struct GlobalInfo g;
+  GlobalInfo g;
   struct itimerspec its;
   struct epoll_event ev;
   struct epoll_event events[10];
   (void)argc;
   (void)argv;
 
-  res = curl_global_init(CURL_GLOBAL_ALL);
-  if(res)
-    return (int)res;
-
   g_should_exit_ = 0;
   signal(SIGINT, sigint_handler);
 
-  memset(&g, 0, sizeof(g));
+  memset(&g, 0, sizeof(GlobalInfo));
   g.epfd = epoll_create1(EPOLL_CLOEXEC);
   if(g.epfd == -1) {
     perror("epoll_create1 failed");
-    curl_global_cleanup();
     return 1;
   }
 
   g.tfd = timerfd_create(CLOCK_MONOTONIC, TFD_NONBLOCK | TFD_CLOEXEC);
   if(g.tfd == -1) {
     perror("timerfd_create failed");
-    curl_global_cleanup();
     return 1;
   }
 
-  memset(&its, 0, sizeof(its));
+  memset(&its, 0, sizeof(struct itimerspec));
   its.it_interval.tv_sec = 0;
   its.it_value.tv_sec = 1;
   timerfd_settime(g.tfd, 0, &its, NULL);
@@ -486,10 +496,8 @@ int main(int argc, char **argv)
   ev.data.fd = g.tfd;
   epoll_ctl(g.epfd, EPOLL_CTL_ADD, g.tfd, &ev);
 
-  if(init_fifo(&g)) {
-    curl_global_cleanup();
+  if(init_fifo(&g))
     return 1;
-  }
   g.multi = curl_multi_init();
 
   /* setup the generic multi interface options we want */
@@ -508,14 +516,12 @@ int main(int argc, char **argv)
     int err = epoll_wait(g.epfd, events,
                          sizeof(events)/sizeof(struct epoll_event), 10000);
     if(err == -1) {
-      /* !checksrc! disable ERRNOVAR 1 */
       if(errno == EINTR) {
         fprintf(MSG_OUT, "note: wait interrupted\n");
         continue;
       }
       else {
         perror("epoll_wait");
-        curl_global_cleanup();
         return 1;
       }
     }
@@ -538,6 +544,5 @@ int main(int argc, char **argv)
 
   curl_multi_cleanup(g.multi);
   clean_fifo(&g);
-  curl_global_cleanup();
   return 0;
 }

@@ -21,26 +21,28 @@
  * SPDX-License-Identifier: curl
  *
  ***************************************************************************/
-#include "first.h"
+#include "test.h"
 
+#include "testutil.h"
+#include "warnless.h"
 #include "memdebug.h"
 
-static CURLcode test_lib1910(const char *URL)
+CURLcode test(char *URL)
 {
   CURLcode ret = CURLE_OK;
-  CURL *curl;
+  CURL *hnd;
   start_test_timing();
 
   curl_global_init(CURL_GLOBAL_ALL);
 
-  curl = curl_easy_init();
-  if(curl) {
-    curl_easy_setopt(curl, CURLOPT_URL, URL);
-    curl_easy_setopt(curl, CURLOPT_NOPROGRESS, 1L);
-    curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
-    curl_easy_setopt(curl, CURLOPT_USERPWD, "user\nname:pass\nword");
-    ret = curl_easy_perform(curl);
-    curl_easy_cleanup(curl);
+  hnd = curl_easy_init();
+  if(hnd) {
+    curl_easy_setopt(hnd, CURLOPT_URL, URL);
+    curl_easy_setopt(hnd, CURLOPT_NOPROGRESS, 1L);
+    curl_easy_setopt(hnd, CURLOPT_FOLLOWLOCATION, 1L);
+    curl_easy_setopt(hnd, CURLOPT_USERPWD, "user\nname:pass\nword");
+    ret = curl_easy_perform(hnd);
+    curl_easy_cleanup(hnd);
   }
   curl_global_cleanup();
   return ret;

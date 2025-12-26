@@ -11,6 +11,9 @@ memory callbacks
 
 # Client-side
 <client>
+<server>
+none
+</server>
 <features>
 http
 </features>
@@ -22,6 +25,9 @@ lib%TESTNUMBER
 <name>
 initialization with memory callbacks and actual usage
 </name>
+<command>
+nothing
+</command>
 </client>
 
 #

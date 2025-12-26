@@ -31,7 +31,8 @@
 #include "psl.h"
 #include "share.h"
 
-/* The last 2 #include files should be in this order */
+/* The last 3 #include files should be in this order */
+#include "curl_printf.h"
 #include "curl_memory.h"
 #include "memdebug.h"
 

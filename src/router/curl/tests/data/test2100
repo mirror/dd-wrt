@@ -4,7 +4,6 @@
 HTTP
 HTTP GET
 DOH
-httpsrr
 </keywords>
 </info>
 
@@ -44,7 +43,7 @@ Funny-head: yesyes
 http
 </server>
 
-# requires Debug so that it can use the DoH server without https
+# requires debug so that it can use the DoH server without https
 # requires IPv6 so that we can assume and compare both DoH requests
 
 <features>
@@ -70,7 +69,7 @@ http://foo.example.com:%HTTPPORT/%TESTNUMBER --doh-url http://%HOSTIP:%HTTPPORT/
 <strippart>
 s/com\x00\x00(\x1c|\x01)/com-00-00!/g;
 </strippart>
-<protocol crlf="yes">
+<protocol>
 %if HTTPSRR
 POST /%TESTNUMBER0001 HTTP/1.1
 Host: %HOSTIP:%HTTPPORT

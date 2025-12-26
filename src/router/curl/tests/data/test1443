@@ -35,13 +35,13 @@ HTTP GET with -O and --remote-time
 http://%HOSTIP:%HTTPPORT/%TESTNUMBER -O --remote-time --output-dir %LOGDIR
 </command>
 # Verify the mtime of the file. The mtime is specifically chosen to be an even
-# number so that it can be represented exactly on a FAT file system.
+# number so that it can be represented exactly on a FAT filesystem.
 </client>
 
 #
 # Verify data after the test has been "shot"
 <verify>
-<protocol crlf="headers">
+<protocol>
 GET /%TESTNUMBER HTTP/1.1
 Host: %HOSTIP:%HTTPPORT
 User-Agent: curl/%VERSION

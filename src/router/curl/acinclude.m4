@@ -600,7 +600,9 @@ AC_DEFUN([TYPE_SOCKADDR_STORAGE],
      #ifdef HAVE_SYS_TYPES_H
      #include <sys/types.h>
      #endif
+     #ifdef HAVE_SYS_SOCKET_H
      #include <sys/socket.h>
+     #endif
      #ifdef HAVE_NETINET_IN_H
      #include <netinet/in.h>
      #endif
@@ -618,7 +620,7 @@ dnl Test if the socket recv() function is available,
 AC_DEFUN([CURL_CHECK_FUNC_RECV], [
   AC_REQUIRE([CURL_CHECK_NATIVE_WINDOWS])dnl
   AC_REQUIRE([CURL_INCLUDES_BSDSOCKET])dnl
-  AC_CHECK_HEADERS(sys/types.h)
+  AC_CHECK_HEADERS(sys/types.h sys/socket.h)
   #
   AC_MSG_CHECKING([for recv])
   AC_LINK_IFELSE([
@@ -634,7 +636,9 @@ AC_DEFUN([CURL_CHECK_FUNC_RECV], [
       #ifdef HAVE_SYS_TYPES_H
       #include <sys/types.h>
       #endif
+      #ifdef HAVE_SYS_SOCKET_H
       #include <sys/socket.h>
+      #endif
       #endif
     ]],[[
       recv(0, 0, 0, 0);
@@ -664,7 +668,7 @@ dnl Test if the socket send() function is available,
 AC_DEFUN([CURL_CHECK_FUNC_SEND], [
   AC_REQUIRE([CURL_CHECK_NATIVE_WINDOWS])dnl
   AC_REQUIRE([CURL_INCLUDES_BSDSOCKET])dnl
-  AC_CHECK_HEADERS(sys/types.h)
+  AC_CHECK_HEADERS(sys/types.h sys/socket.h)
   #
   AC_MSG_CHECKING([for send])
   AC_LINK_IFELSE([
@@ -680,7 +684,9 @@ AC_DEFUN([CURL_CHECK_FUNC_SEND], [
       #ifdef HAVE_SYS_TYPES_H
       #include <sys/types.h>
       #endif
+      #ifdef HAVE_SYS_SOCKET_H
       #include <sys/socket.h>
+      #endif
       #endif
     ]],[[
       char s[] = "";
@@ -708,7 +714,7 @@ dnl -------------------------------------------------
 dnl Check for MSG_NOSIGNAL
 
 AC_DEFUN([CURL_CHECK_MSG_NOSIGNAL], [
-  AC_CHECK_HEADERS(sys/types.h)
+  AC_CHECK_HEADERS(sys/types.h sys/socket.h)
   AC_CACHE_CHECK([for MSG_NOSIGNAL], [curl_cv_msg_nosignal], [
     AC_COMPILE_IFELSE([
       AC_LANG_PROGRAM([[
@@ -722,7 +728,9 @@ AC_DEFUN([CURL_CHECK_MSG_NOSIGNAL], [
         #ifdef HAVE_SYS_TYPES_H
         #include <sys/types.h>
         #endif
+        #ifdef HAVE_SYS_SOCKET_H
         #include <sys/socket.h>
+        #endif
         #endif
       ]],[[
         int flag = MSG_NOSIGNAL;
@@ -749,7 +757,7 @@ dnl Check for timeval struct
 
 AC_DEFUN([CURL_CHECK_STRUCT_TIMEVAL], [
   AC_REQUIRE([CURL_CHECK_NATIVE_WINDOWS])dnl
-  AC_CHECK_HEADERS(sys/types.h)
+  AC_CHECK_HEADERS(sys/types.h sys/time.h sys/socket.h)
   AC_CACHE_CHECK([for struct timeval], [curl_cv_struct_timeval], [
     AC_COMPILE_IFELSE([
       AC_LANG_PROGRAM([[
@@ -759,14 +767,17 @@ AC_DEFUN([CURL_CHECK_STRUCT_TIMEVAL], [
         #define WIN32_LEAN_AND_MEAN
         #endif
         #include <winsock2.h>
-        #else
-        #include <sys/socket.h>
-        #include <sys/time.h>
         #endif
         #ifdef HAVE_SYS_TYPES_H
         #include <sys/types.h>
         #endif
+        #ifdef HAVE_SYS_TIME_H
+        #include <sys/time.h>
+        #endif
         #include <time.h>
+        #ifdef HAVE_SYS_SOCKET_H
+        #include <sys/socket.h>
+        #endif
       ]],[[
         struct timeval ts;
         ts.tv_sec  = 0;
@@ -793,7 +804,7 @@ dnl -------------------------------------------------
 dnl Check if monotonic clock_gettime is available.
 
 AC_DEFUN([CURL_CHECK_FUNC_CLOCK_GETTIME_MONOTONIC], [
-  AC_CHECK_HEADERS(sys/types.h)
+  AC_CHECK_HEADERS(sys/types.h sys/time.h)
   AC_MSG_CHECKING([for monotonic clock_gettime])
   #
 
@@ -802,7 +813,7 @@ AC_DEFUN([CURL_CHECK_FUNC_CLOCK_GETTIME_MONOTONIC], [
       #ifdef HAVE_SYS_TYPES_H
       #include <sys/types.h>
       #endif
-      #ifndef _WIN32
+      #ifdef HAVE_SYS_TIME_H
       #include <sys/time.h>
       #endif
       #include <time.h>
@@ -828,7 +839,7 @@ dnl -------------------------------------------------
 dnl Check if monotonic clock_gettime is available.
 
 AC_DEFUN([CURL_CHECK_FUNC_CLOCK_GETTIME_MONOTONIC_RAW], [
-  AC_CHECK_HEADERS(sys/types.h)
+  AC_CHECK_HEADERS(sys/types.h sys/time.h)
   AC_MSG_CHECKING([for raw monotonic clock_gettime])
   #
   AC_COMPILE_IFELSE([
@@ -836,7 +847,7 @@ AC_DEFUN([CURL_CHECK_FUNC_CLOCK_GETTIME_MONOTONIC_RAW], [
       #ifdef HAVE_SYS_TYPES_H
       #include <sys/types.h>
       #endif
-      #ifndef _WIN32
+      #ifdef HAVE_SYS_TIME_H
       #include <sys/time.h>
       #endif
       #include <time.h>
@@ -882,7 +893,7 @@ AC_DEFUN([CURL_CHECK_LIBS_CLOCK_GETTIME_MONOTONIC], [
             #ifdef HAVE_SYS_TYPES_H
             #include <sys/types.h>
             #endif
-            #ifndef _WIN32
+            #ifdef HAVE_SYS_TIME_H
             #include <sys/time.h>
             #endif
             #include <time.h>
@@ -935,7 +946,7 @@ AC_DEFUN([CURL_CHECK_LIBS_CLOCK_GETTIME_MONOTONIC], [
           #ifdef HAVE_SYS_TYPES_H
           #include <sys/types.h>
           #endif
-          #ifndef _WIN32
+          #ifdef HAVE_SYS_TIME_H
           #include <sys/time.h>
           #endif
           #include <time.h>
@@ -1023,7 +1034,7 @@ dnl Test if the socket select() function is available.
 AC_DEFUN([CURL_CHECK_FUNC_SELECT], [
   AC_REQUIRE([CURL_CHECK_STRUCT_TIMEVAL])dnl
   AC_REQUIRE([CURL_INCLUDES_BSDSOCKET])dnl
-  AC_CHECK_HEADERS(sys/select.h)
+  AC_CHECK_HEADERS(sys/select.h sys/socket.h)
   #
   AC_MSG_CHECKING([for select])
   AC_LINK_IFELSE([
@@ -1034,12 +1045,12 @@ AC_DEFUN([CURL_CHECK_FUNC_SELECT], [
       #define WIN32_LEAN_AND_MEAN
       #endif
       #include <winsock2.h>
-      #else
-      #include <sys/socket.h>
-      #include <sys/time.h>
       #endif
       #ifdef HAVE_SYS_TYPES_H
       #include <sys/types.h>
+      #endif
+      #ifdef HAVE_SYS_TIME_H
+      #include <sys/time.h>
       #endif
       #include <time.h>
       #ifndef _WIN32
@@ -1047,6 +1058,9 @@ AC_DEFUN([CURL_CHECK_FUNC_SELECT], [
       #include <sys/select.h>
       #elif defined(HAVE_UNISTD_H)
       #include <unistd.h>
+      #endif
+      #ifdef HAVE_SYS_SOCKET_H
+      #include <sys/socket.h>
       #endif
       $curl_includes_bsdsocket
       #endif
@@ -1149,12 +1163,6 @@ AS_HELP_STRING([--without-ca-path], [Don't use a default CA path]),
   capath_warning="   (warning: certs not found)"
   check_capath=""
 
-  if test "x$APPLE_SECTRUST_ENABLED" = "x1"; then
-    ca_native="Apple SecTrust"
-  else
-    ca_native="no"
-  fi
-
   if test "x$want_ca" != "xno" -a "x$want_ca" != "xunset" -a \
           "x$want_capath" != "xno" -a "x$want_capath" != "xunset"; then
     dnl both given
@@ -1168,10 +1176,6 @@ AS_HELP_STRING([--without-ca-path], [Don't use a default CA path]),
     dnl --with-ca-path given
     capath="$want_capath"
     ca="no"
-  elif test "x$ca_native" != "xno"; then
-    # native ca configured, do not look further
-    ca="no"
-    capath="no"
   else
     dnl First try auto-detecting a CA bundle, then a CA path.
     dnl Both auto-detections can be skipped by --without-ca-*
@@ -1252,10 +1256,10 @@ AS_HELP_STRING([--without-ca-path], [Don't use a default CA path]),
     AC_MSG_RESULT([no])
   fi
 
-  AC_MSG_CHECKING([whether to use OpenSSL's built-in CA store])
+  AC_MSG_CHECKING([whether to use built-in CA store of SSL library])
   AC_ARG_WITH(ca-fallback,
-AS_HELP_STRING([--with-ca-fallback], [Use OpenSSL's built-in CA store])
-AS_HELP_STRING([--without-ca-fallback], [Don't use OpenSSL's built-in CA store]),
+AS_HELP_STRING([--with-ca-fallback], [Use the built-in CA store of the SSL library])
+AS_HELP_STRING([--without-ca-fallback], [Don't use the built-in CA store of the SSL library]),
   [
     if test "x$with_ca_fallback" != "xyes" -a "x$with_ca_fallback" != "xno"; then
       AC_MSG_ERROR([--with-ca-fallback only allows yes or no as parameter])
@@ -1264,10 +1268,10 @@ AS_HELP_STRING([--without-ca-fallback], [Don't use OpenSSL's built-in CA store])
   [ with_ca_fallback="no"])
   AC_MSG_RESULT([$with_ca_fallback])
   if test "x$with_ca_fallback" = "xyes"; then
-    if test "x$OPENSSL_ENABLED" != "x1"; then
-      AC_MSG_ERROR([--with-ca-fallback only works with OpenSSL])
+    if test "x$OPENSSL_ENABLED" != "x1" -a "x$GNUTLS_ENABLED" != "x1"; then
+      AC_MSG_ERROR([--with-ca-fallback only works with OpenSSL or GnuTLS])
     fi
-    AC_DEFINE_UNQUOTED(CURL_CA_FALLBACK, 1, [define "1" to use OpenSSL's built-in CA store])
+    AC_DEFINE_UNQUOTED(CURL_CA_FALLBACK, 1, [define "1" to use built-in CA store of SSL library])
   fi
 ])
 
@@ -1294,14 +1298,9 @@ AS_HELP_STRING([--without-ca-embed], [Don't embed a default CA bundle in the cur
 
   CURL_CA_EMBED=''
   if test "x$want_ca_embed" != "xno" -a "x$want_ca_embed" != "xunset" -a -f "$want_ca_embed"; then
-    if test -n "$PERL"; then
-      CURL_CA_EMBED="$want_ca_embed"
-      AC_SUBST(CURL_CA_EMBED)
-      AC_MSG_RESULT([$want_ca_embed])
-    else
-      AC_MSG_RESULT([no])
-      AC_MSG_WARN([perl was not found. Will not do CA embed.])
-    fi
+    CURL_CA_EMBED="$want_ca_embed"
+    AC_SUBST(CURL_CA_EMBED)
+    AC_MSG_RESULT([$want_ca_embed])
   else
     AC_MSG_RESULT([no])
   fi
@@ -1484,6 +1483,14 @@ AC_DEFUN([CURL_PREPARE_BUILDINFO], [
   if test "$curl_cv_winuwp" = 'yes'; then
     curl_pflags="${curl_pflags} UWP"
   fi
+  case $host in
+    *-*-*bsd*|*-*-aix*|*-*-hpux*|*-*-interix*|*-*-irix*|*-*-linux*|*-*-solaris*|*-*-sunos*|*-apple-*|*-*-cygwin*|*-*-msys*)
+      curl_pflags="${curl_pflags} UNIX";;
+  esac
+  case $host in
+    *-*-*bsd*)
+      curl_pflags="${curl_pflags} BSD";;
+  esac
   if test "$curl_cv_cygwin" = 'yes'; then
     curl_pflags="${curl_pflags} CYGWIN"
   fi
@@ -1493,11 +1500,6 @@ AC_DEFUN([CURL_PREPARE_BUILDINFO], [
   esac
   if test "x$compiler_id" = 'xGNU_C'; then
     curl_pflags="${curl_pflags} GCC"
-  fi
-  if test "$compiler_id" = "APPLECLANG"; then
-    curl_pflags="${curl_pflags} APPLE-CLANG"
-  elif test "$compiler_id" = "CLANG"; then
-    curl_pflags="${curl_pflags} LLVM-CLANG"
   fi
   case $host_os in
     mingw*) curl_pflags="${curl_pflags} MINGW";;

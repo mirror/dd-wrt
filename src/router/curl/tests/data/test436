@@ -8,7 +8,7 @@
 #
 # Server-side
 <reply>
-<data crlf="headers">
+<data>
 HTTP/1.1 200 OK
 Content-Length: 6
 Content-Type: text/1
@@ -30,8 +30,7 @@ http
 </server>
 <setenv>
 CURL_HOME=%PWD/%LOGDIR
-USERPROFILE
-XDG_CONFIG_HOME
+XDG_CONFIG_HOME=
 </setenv>
 <name>
 Find .curlrc in .config/curlrc via CURL_HOME
@@ -44,7 +43,7 @@ Find .curlrc in .config/curlrc via CURL_HOME
 #
 # Verify data after the test has been "shot"
 <verify>
-<protocol crlf="yes" nonewline="yes">
+<protocol nonewline="yes">
 POST /%TESTNUMBER HTTP/1.1
 Host: %HOSTIP:%HTTPPORT
 User-Agent: curl/%VERSION

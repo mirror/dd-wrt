@@ -21,16 +21,16 @@
  * SPDX-License-Identifier: curl
  *
  ***************************************************************************/
-#include "first.h"
+#include "test.h"
 
 #include "memdebug.h"
 
-static CURLcode test_lib501(const char *URL)
+CURLcode test(char *URL)
 {
   CURLcode res;
   CURL *curl;
 
-  (void)URL;
+  (void)URL; /* we don't use this */
 
   if(curl_global_init(CURL_GLOBAL_ALL) != CURLE_OK) {
     curl_mfprintf(stderr, "curl_global_init() failed\n");

@@ -6,8 +6,7 @@ Help: Send PASV/EPSV instead of PORT
 Protocols: FTP
 Added: 7.11.0
 Category: ftp
-Multi: mutex
-Mutexed: ftp-port
+Multi: boolean
 See-also:
   - disable-epsv
 Example:

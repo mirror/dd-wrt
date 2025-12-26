@@ -21,9 +21,15 @@
  * SPDX-License-Identifier: curl
  *
  ***************************************************************************/
-#include "first.h"
+#include "test.h"
 
+#include <fcntl.h>
+
+#include "testutil.h"
+#include "warnless.h"
 #include "memdebug.h"
+
+#define TEST_HANG_TIMEOUT 60 * 1000
 
 /* 3x download!
  * 1. normal
@@ -31,11 +37,11 @@
  * 3. with multi interface
  */
 
-static CURLcode test_lib575(const char *URL)
+CURLcode test(char *URL)
 {
-  CURL *curl = NULL;
-  CURL *curldupe = NULL;
-  CURLM *multi = NULL;
+  CURL *handle = NULL;
+  CURL *duphandle = NULL;
+  CURLM *mhandle = NULL;
   CURLcode res = CURLE_OK;
   int still_running = 0;
 
@@ -43,31 +49,31 @@ static CURLcode test_lib575(const char *URL)
 
   global_init(CURL_GLOBAL_ALL);
 
-  easy_init(curl);
+  easy_init(handle);
 
-  easy_setopt(curl, CURLOPT_URL, URL);
-  easy_setopt(curl, CURLOPT_WILDCARDMATCH, 1L);
-  easy_setopt(curl, CURLOPT_VERBOSE, 1L);
+  easy_setopt(handle, CURLOPT_URL, URL);
+  easy_setopt(handle, CURLOPT_WILDCARDMATCH, 1L);
+  easy_setopt(handle, CURLOPT_VERBOSE, 1L);
 
-  res = curl_easy_perform(curl);
+  res = curl_easy_perform(handle);
   if(res)
     goto test_cleanup;
 
-  res = curl_easy_perform(curl);
+  res = curl_easy_perform(handle);
   if(res)
     goto test_cleanup;
 
-  curldupe = curl_easy_duphandle(curl);
-  if(!curldupe)
+  duphandle = curl_easy_duphandle(handle);
+  if(!duphandle)
     goto test_cleanup;
-  curl_easy_cleanup(curl);
-  curl = curldupe;
+  curl_easy_cleanup(handle);
+  handle = duphandle;
 
-  multi_init(multi);
+  multi_init(mhandle);
 
-  multi_add_handle(multi, curl);
+  multi_add_handle(mhandle, handle);
 
-  multi_perform(multi, &still_running);
+  multi_perform(mhandle, &still_running);
 
   abort_on_test_timeout();
 
@@ -85,7 +91,7 @@ static CURLcode test_lib575(const char *URL)
     FD_ZERO(&fdwrite);
     FD_ZERO(&fdexcep);
 
-    multi_fdset(multi, &fdread, &fdwrite, &fdexcep, &maxfd);
+    multi_fdset(mhandle, &fdread, &fdwrite, &fdexcep, &maxfd);
 
     /* At this point, maxfd is guaranteed to be greater or equal than -1. */
 
@@ -93,7 +99,7 @@ static CURLcode test_lib575(const char *URL)
 
     abort_on_test_timeout();
 
-    multi_perform(multi, &still_running);
+    multi_perform(mhandle, &still_running);
 
     abort_on_test_timeout();
   }
@@ -102,8 +108,8 @@ test_cleanup:
 
   /* undocumented cleanup sequence - type UA */
 
-  curl_multi_cleanup(multi);
-  curl_easy_cleanup(curl);
+  curl_multi_cleanup(mhandle);
+  curl_easy_cleanup(handle);
   curl_global_cleanup();
 
   return res;

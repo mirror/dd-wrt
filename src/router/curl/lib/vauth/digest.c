@@ -42,6 +42,8 @@
 #include "../vtls/vtls.h"
 #include "../curlx/warnless.h"
 #include "../curlx/strparse.h"
+#include "../strcase.h"
+#include "../curl_printf.h"
 #include "../rand.h"
 
 /* The last #include files should be: */
@@ -146,16 +148,16 @@ static void auth_digest_md5_to_ascii(unsigned char *source, /* 16 bytes */
 {
   int i;
   for(i = 0; i < 16; i++)
-    curl_msnprintf((char *) &dest[i * 2], 3, "%02x", source[i]);
+    msnprintf((char *) &dest[i * 2], 3, "%02x", source[i]);
 }
 
 /* Convert sha256 or SHA-512/256 chunk to RFC7616 -suitable ASCII string */
 static void auth_digest_sha256_to_ascii(unsigned char *source, /* 32 bytes */
-                                        unsigned char *dest) /* 65 bytes */
+                                     unsigned char *dest) /* 65 bytes */
 {
   int i;
   for(i = 0; i < 32; i++)
-    curl_msnprintf((char *) &dest[i * 2], 3, "%02x", source[i]);
+    msnprintf((char *) &dest[i * 2], 3, "%02x", source[i]);
 }
 
 /* Perform quoted-string escaping as described in RFC2616 and its errata */
@@ -163,7 +165,7 @@ static char *auth_digest_string_quoted(const char *source)
 {
   char *dest;
   const char *s = source;
-  size_t n = 1; /* null-terminator */
+  size_t n = 1; /* null terminator */
 
   /* Calculate size needed */
   while(*s) {
@@ -193,43 +195,26 @@ static char *auth_digest_string_quoted(const char *source)
 /* Retrieves the value for a corresponding key from the challenge string
  * returns TRUE if the key could be found, FALSE if it does not exists
  */
-static bool auth_digest_get_key_value(const char *chlg, const char *key,
-                                      char *buf, size_t buflen)
+static bool auth_digest_get_key_value(const char *chlg,
+                                      const char *key,
+                                      char *value,
+                                      size_t max_val_len,
+                                      char end_char)
 {
-  /* keyword=[value],keyword2=[value]
-     The values may or may not be quoted.
-   */
+  char *find_pos;
+  size_t i;
 
-  do {
-    struct Curl_str data;
-    struct Curl_str name;
-    if(!curlx_str_until(&chlg, &name, 64, '=') &&
-       !curlx_str_single(&chlg, '=')) {
-      /* this is the key, get the value, possibly quoted */
-      int rc = curlx_str_quotedword(&chlg, &data, 256);
-      if(rc == STRE_BEGQUOTE)
-        /* try unquoted until comma */
-        rc = curlx_str_until(&chlg, &data, 256, ',');
-      if(rc)
-        return FALSE; /* weird */
+  find_pos = strstr(chlg, key);
+  if(!find_pos)
+    return FALSE;
 
-      if(curlx_str_cmp(&name, key)) {
-        /* if this is our key, return the value */
-        if(curlx_strlen(&data) >= buflen)
-          /* doesn't fit */
-          return FALSE;
-        memcpy(buf, curlx_str(&data), curlx_strlen(&data));
-        buf[curlx_strlen(&data)] = 0;
-        return TRUE;
-      }
-      if(curlx_str_single(&chlg, ','))
-        return FALSE;
-    }
-    else /* odd syntax */
-      break;
-  } while(1);
+  find_pos += strlen(key);
 
-  return FALSE;
+  for(i = 0; *find_pos && *find_pos != end_char && i < max_val_len - 1; ++i)
+    value[i] = *find_pos++;
+  value[i] = '\0';
+
+  return TRUE;
 }
 
 static CURLcode auth_digest_get_qop_values(const char *options, int *value)
@@ -285,21 +270,21 @@ static CURLcode auth_decode_digest_md5_message(const struct bufref *chlgref,
     return CURLE_BAD_CONTENT_ENCODING;
 
   /* Retrieve nonce string from the challenge */
-  if(!auth_digest_get_key_value(chlg, "nonce", nonce, nlen))
+  if(!auth_digest_get_key_value(chlg, "nonce=\"", nonce, nlen, '\"'))
     return CURLE_BAD_CONTENT_ENCODING;
 
   /* Retrieve realm string from the challenge */
-  if(!auth_digest_get_key_value(chlg, "realm", realm, rlen)) {
+  if(!auth_digest_get_key_value(chlg, "realm=\"", realm, rlen, '\"')) {
     /* Challenge does not have a realm, set empty string [RFC2831] page 6 */
     *realm = '\0';
   }
 
   /* Retrieve algorithm string from the challenge */
-  if(!auth_digest_get_key_value(chlg, "algorithm", alg, alen))
+  if(!auth_digest_get_key_value(chlg, "algorithm=", alg, alen, ','))
     return CURLE_BAD_CONTENT_ENCODING;
 
   /* Retrieve qop-options string from the challenge */
-  if(!auth_digest_get_key_value(chlg, "qop", qop, qlen))
+  if(!auth_digest_get_key_value(chlg, "qop=\"", qop, qlen, '\"'))
     return CURLE_BAD_CONTENT_ENCODING;
 
   return CURLE_OK;
@@ -420,7 +405,7 @@ CURLcode Curl_auth_create_digest_md5_message(struct Curl_easy *data,
 
   /* Convert calculated 16 octet hex into 32 bytes string */
   for(i = 0; i < MD5_DIGEST_LEN; i++)
-    curl_msnprintf(&HA1_hex[2 * i], 3, "%02x", digest[i]);
+    msnprintf(&HA1_hex[2 * i], 3, "%02x", digest[i]);
 
   /* Generate our SPN */
   spn = Curl_auth_build_spn(service, data->conn->host.name, NULL);
@@ -443,7 +428,7 @@ CURLcode Curl_auth_create_digest_md5_message(struct Curl_easy *data,
   Curl_MD5_final(ctxt, digest);
 
   for(i = 0; i < MD5_DIGEST_LEN; i++)
-    curl_msnprintf(&HA2_hex[2 * i], 3, "%02x", digest[i]);
+    msnprintf(&HA2_hex[2 * i], 3, "%02x", digest[i]);
 
   /* Now calculate the response hash */
   ctxt = Curl_MD5_init(&Curl_DIGEST_MD5);
@@ -473,14 +458,14 @@ CURLcode Curl_auth_create_digest_md5_message(struct Curl_easy *data,
   Curl_MD5_final(ctxt, digest);
 
   for(i = 0; i < MD5_DIGEST_LEN; i++)
-    curl_msnprintf(&resp_hash_hex[2 * i], 3, "%02x", digest[i]);
+    msnprintf(&resp_hash_hex[2 * i], 3, "%02x", digest[i]);
 
   /* Generate the response */
-  response = curl_maprintf("username=\"%s\",realm=\"%s\",nonce=\"%s\","
-                           "cnonce=\"%s\",nc=\"%s\",digest-uri=\"%s\","
-                           "response=%s,qop=%s",
-                           userp, realm, nonce,
-                           cnonce, nonceCount, spn, resp_hash_hex, qop);
+  response = aprintf("username=\"%s\",realm=\"%s\",nonce=\"%s\","
+                     "cnonce=\"%s\",nc=\"%s\",digest-uri=\"%s\",response=%s,"
+                     "qop=%s",
+                     userp, realm, nonce,
+                     cnonce, nonceCount, spn, resp_hash_hex, qop);
   free(spn);
   if(!response)
     return CURLE_OUT_OF_MEMORY;
@@ -525,31 +510,31 @@ CURLcode Curl_auth_decode_digest_http_message(const char *chlg,
 
     /* Extract a value=content pair */
     if(Curl_auth_digest_get_pair(chlg, value, content, &chlg)) {
-      if(curl_strequal(value, "nonce")) {
+      if(strcasecompare(value, "nonce")) {
         free(digest->nonce);
         digest->nonce = strdup(content);
         if(!digest->nonce)
           return CURLE_OUT_OF_MEMORY;
       }
-      else if(curl_strequal(value, "stale")) {
-        if(curl_strequal(content, "true")) {
+      else if(strcasecompare(value, "stale")) {
+        if(strcasecompare(content, "true")) {
           digest->stale = TRUE;
           digest->nc = 1; /* we make a new nonce now */
         }
       }
-      else if(curl_strequal(value, "realm")) {
+      else if(strcasecompare(value, "realm")) {
         free(digest->realm);
         digest->realm = strdup(content);
         if(!digest->realm)
           return CURLE_OUT_OF_MEMORY;
       }
-      else if(curl_strequal(value, "opaque")) {
+      else if(strcasecompare(value, "opaque")) {
         free(digest->opaque);
         digest->opaque = strdup(content);
         if(!digest->opaque)
           return CURLE_OUT_OF_MEMORY;
       }
-      else if(curl_strequal(value, "qop")) {
+      else if(strcasecompare(value, "qop")) {
         const char *token = content;
         struct Curl_str out;
         bool foundAuth = FALSE;
@@ -583,28 +568,28 @@ CURLcode Curl_auth_decode_digest_http_message(const char *chlg,
             return CURLE_OUT_OF_MEMORY;
         }
       }
-      else if(curl_strequal(value, "algorithm")) {
+      else if(strcasecompare(value, "algorithm")) {
         free(digest->algorithm);
         digest->algorithm = strdup(content);
         if(!digest->algorithm)
           return CURLE_OUT_OF_MEMORY;
 
-        if(curl_strequal(content, "MD5-sess"))
+        if(strcasecompare(content, "MD5-sess"))
           digest->algo = ALGO_MD5SESS;
-        else if(curl_strequal(content, "MD5"))
+        else if(strcasecompare(content, "MD5"))
           digest->algo = ALGO_MD5;
-        else if(curl_strequal(content, "SHA-256"))
+        else if(strcasecompare(content, "SHA-256"))
           digest->algo = ALGO_SHA256;
-        else if(curl_strequal(content, "SHA-256-SESS"))
+        else if(strcasecompare(content, "SHA-256-SESS"))
           digest->algo = ALGO_SHA256SESS;
-        else if(curl_strequal(content, "SHA-512-256")) {
+        else if(strcasecompare(content, "SHA-512-256")) {
 #ifdef CURL_HAVE_SHA512_256
           digest->algo = ALGO_SHA512_256;
 #else  /* ! CURL_HAVE_SHA512_256 */
           return CURLE_NOT_BUILT_IN;
 #endif /* ! CURL_HAVE_SHA512_256 */
         }
-        else if(curl_strequal(content, "SHA-512-256-SESS")) {
+        else if(strcasecompare(content, "SHA-512-256-SESS")) {
 #ifdef CURL_HAVE_SHA512_256
           digest->algo = ALGO_SHA512_256SESS;
 #else  /* ! CURL_HAVE_SHA512_256 */
@@ -614,8 +599,8 @@ CURLcode Curl_auth_decode_digest_http_message(const char *chlg,
         else
           return CURLE_BAD_CONTENT_ENCODING;
       }
-      else if(curl_strequal(value, "userhash")) {
-        if(curl_strequal(content, "true")) {
+      else if(strcasecompare(value, "userhash")) {
+        if(strcasecompare(content, "true")) {
           digest->userhash = TRUE;
         }
       }
@@ -723,8 +708,7 @@ static CURLcode auth_create_digest_http_message(
   }
 
   if(digest->userhash) {
-    hashthis = curl_maprintf("%s:%s", userp,
-                             digest->realm ? digest->realm : "");
+    hashthis = aprintf("%s:%s", userp, digest->realm ? digest->realm : "");
     if(!hashthis)
       return CURLE_OUT_OF_MEMORY;
 
@@ -746,8 +730,8 @@ static CURLcode auth_create_digest_http_message(
            unq(nonce-value) ":" unq(cnonce-value)
   */
 
-  hashthis = curl_maprintf("%s:%s:%s", userp,
-                           digest->realm ? digest->realm : "", passwdp);
+  hashthis = aprintf("%s:%s:%s", userp, digest->realm ? digest->realm : "",
+                     passwdp);
   if(!hashthis)
     return CURLE_OUT_OF_MEMORY;
 
@@ -759,7 +743,7 @@ static CURLcode auth_create_digest_http_message(
 
   if(digest->algo & SESSION_ALGO) {
     /* nonce and cnonce are OUTSIDE the hash */
-    tmp = curl_maprintf("%s:%s:%s", ha1, digest->nonce, digest->cnonce);
+    tmp = aprintf("%s:%s:%s", ha1, digest->nonce, digest->cnonce);
     if(!tmp)
       return CURLE_OUT_OF_MEMORY;
 
@@ -783,11 +767,11 @@ static CURLcode auth_create_digest_http_message(
     5.1.1 of RFC 2616)
   */
 
-  hashthis = curl_maprintf("%s:%s", request, uripath);
+  hashthis = aprintf("%s:%s", request, uripath);
   if(!hashthis)
     return CURLE_OUT_OF_MEMORY;
 
-  if(digest->qop && curl_strequal(digest->qop, "auth-int")) {
+  if(digest->qop && strcasecompare(digest->qop, "auth-int")) {
     /* We do not support auth-int for PUT or POST */
     char hashed[65];
     char *hashthis2;
@@ -799,7 +783,7 @@ static CURLcode auth_create_digest_http_message(
     }
     convert_to_ascii(hashbuf, (unsigned char *)hashed);
 
-    hashthis2 = curl_maprintf("%s:%s", hashthis, hashed);
+    hashthis2 = aprintf("%s:%s", hashthis, hashed);
     free(hashthis);
     hashthis = hashthis2;
   }
@@ -814,11 +798,11 @@ static CURLcode auth_create_digest_http_message(
   convert_to_ascii(hashbuf, ha2);
 
   if(digest->qop) {
-    hashthis = curl_maprintf("%s:%s:%08x:%s:%s:%s", ha1, digest->nonce,
-                             digest->nc, digest->cnonce, digest->qop, ha2);
+    hashthis = aprintf("%s:%s:%08x:%s:%s:%s", ha1, digest->nonce, digest->nc,
+                       digest->cnonce, digest->qop, ha2);
   }
   else {
-    hashthis = curl_maprintf("%s:%s:%s", ha1, digest->nonce, ha2);
+    hashthis = aprintf("%s:%s:%s", ha1, digest->nonce, ha2);
   }
 
   if(!hashthis)
@@ -865,37 +849,37 @@ static CURLcode auth_create_digest_http_message(
   }
 
   if(digest->qop) {
-    response = curl_maprintf("username=\"%s\", "
-                             "realm=\"%s\", "
-                             "nonce=\"%s\", "
-                             "uri=\"%s\", "
-                             "cnonce=\"%s\", "
-                             "nc=%08x, "
-                             "qop=%s, "
-                             "response=\"%s\"",
-                             userp_quoted,
-                             realm_quoted,
-                             nonce_quoted,
-                             uripath,
-                             digest->cnonce,
-                             digest->nc,
-                             digest->qop,
-                             request_digest);
+    response = aprintf("username=\"%s\", "
+                       "realm=\"%s\", "
+                       "nonce=\"%s\", "
+                       "uri=\"%s\", "
+                       "cnonce=\"%s\", "
+                       "nc=%08x, "
+                       "qop=%s, "
+                       "response=\"%s\"",
+                       userp_quoted,
+                       realm_quoted,
+                       nonce_quoted,
+                       uripath,
+                       digest->cnonce,
+                       digest->nc,
+                       digest->qop,
+                       request_digest);
 
     /* Increment nonce-count to use another nc value for the next request */
     digest->nc++;
   }
   else {
-    response = curl_maprintf("username=\"%s\", "
-                             "realm=\"%s\", "
-                             "nonce=\"%s\", "
-                             "uri=\"%s\", "
-                             "response=\"%s\"",
-                             userp_quoted,
-                             realm_quoted,
-                             nonce_quoted,
-                             uripath,
-                             request_digest);
+    response = aprintf("username=\"%s\", "
+                       "realm=\"%s\", "
+                       "nonce=\"%s\", "
+                       "uri=\"%s\", "
+                       "response=\"%s\"",
+                       userp_quoted,
+                       realm_quoted,
+                       nonce_quoted,
+                       uripath,
+                       request_digest);
   }
   free(nonce_quoted);
   free(realm_quoted);
@@ -912,7 +896,7 @@ static CURLcode auth_create_digest_http_message(
       free(response);
       return CURLE_OUT_OF_MEMORY;
     }
-    tmp = curl_maprintf("%s, opaque=\"%s\"", response, opaque_quoted);
+    tmp = aprintf("%s, opaque=\"%s\"", response, opaque_quoted);
     free(response);
     free(opaque_quoted);
     if(!tmp)
@@ -923,7 +907,7 @@ static CURLcode auth_create_digest_http_message(
 
   if(digest->algorithm) {
     /* Append the algorithm */
-    tmp = curl_maprintf("%s, algorithm=%s", response, digest->algorithm);
+    tmp = aprintf("%s, algorithm=%s", response, digest->algorithm);
     free(response);
     if(!tmp)
       return CURLE_OUT_OF_MEMORY;
@@ -933,7 +917,7 @@ static CURLcode auth_create_digest_http_message(
 
   if(digest->userhash) {
     /* Append the userhash */
-    tmp = curl_maprintf("%s, userhash=true", response);
+    tmp = aprintf("%s, userhash=true", response);
     free(response);
     if(!tmp)
       return CURLE_OUT_OF_MEMORY;

@@ -32,7 +32,8 @@
 #include "http1.h"
 #include "urlapi-int.h"
 
-/* The last 2 #include files should be in this order */
+/* The last 3 #include files should be in this order */
+#include "curl_printf.h"
 #include "curl_memory.h"
 #include "memdebug.h"
 
@@ -208,7 +209,7 @@ static CURLcode start_req(struct h1_req_parser *parser,
     path = target;
     path_len = target_len;
 
-    /* URL parser wants null-termination */
+    /* URL parser wants 0-termination */
     if(target_len >= sizeof(tmp))
       goto out;
     memcpy(tmp, target, target_len);

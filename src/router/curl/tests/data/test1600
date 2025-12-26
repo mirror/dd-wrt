@@ -9,6 +9,9 @@ NTLM
 #
 # Client-side
 <client>
+<server>
+none
+</server>
 <features>
 unittest
 NTLM

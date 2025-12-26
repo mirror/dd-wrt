@@ -27,16 +27,17 @@ versions of libs and build tools.
  - OpenSSL      1.0.2a
  - LibreSSL     2.9.1
  - GnuTLS       3.1.10
- - mbedTLS      3.2.0
  - zlib         1.2.5.2
- - libssh2      1.9.0
+ - libssh2      1.2.8
  - c-ares       1.6.0
  - libssh       0.9.0
  - libidn2      2.0.0
  - wolfSSL      3.4.6
  - OpenLDAP     2.0
- - MIT Kerberos 1.3
+ - MIT Kerberos 1.2.4
+ - Heimdal      ?
  - nghttp2      1.15.0
+ - Winsock      2.2 (on Windows 95+ and Windows CE .NET 4.1+)
 
 ## Build tools
 

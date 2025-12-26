@@ -24,7 +24,8 @@
 #include "tool_setup.h"
 
 #include "tool_util.h"
-#include "memdebug.h" /* keep this as LAST include */
+#include <curlx.h>
+#include <memdebug.h> /* keep this as LAST include */
 
 #ifdef _WIN32
 
@@ -127,7 +128,7 @@ FILE *tool_execpath(const char *filename, char **pathp)
       if(strlen(filename) < remaining - 1) {
         curl_msnprintf(lastdirchar, remaining, "%s%s", DIR_CHAR, filename);
         *pathp = filebuffer;
-        return curlx_fopen(filebuffer, FOPEN_READTEXT);
+        return fopen(filebuffer, FOPEN_READTEXT);
       }
     }
   }

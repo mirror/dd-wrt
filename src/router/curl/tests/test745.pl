@@ -22,6 +22,8 @@
 # SPDX-License-Identifier: curl
 #
 ###########################################################################
+#
+#
 
 use strict;
 use warnings;
@@ -45,8 +47,7 @@ sub gettypecheck {
 }
 
 sub getinclude {
-    my $f;
-    open($f, "<", "$root/include/curl/curl.h")
+    open(my $f, "<", "$root/include/curl/curl.h")
         || die "no curl.h";
     while(<$f>) {
         if($_ =~ /\((CURLOPT[^,]*), (CURLOPTTYPE_[^,]*)/) {
@@ -60,18 +61,6 @@ sub getinclude {
     $enum{"CURLOPT_CONV_FROM_NETWORK_FUNCTION"}++;
     $enum{"CURLOPT_CONV_FROM_UTF8_FUNCTION"}++;
     $enum{"CURLOPT_CONV_TO_NETWORK_FUNCTION"}++;
-    close($f);
-
-    open($f, "<", "$root/include/curl/multi.h")
-        || die "no curl.h";
-    while(<$f>) {
-        if($_ =~ /\((CURLMOPT[^,]*), (CURLOPTTYPE_[^,]*)/) {
-            my ($opt, $type) = ($1, $2);
-            if($type !~ /LONG|OFF_T/) {
-                $enum{$opt}++;
-            }
-        }
-    }
     close($f);
 }
 

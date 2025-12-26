@@ -9,7 +9,7 @@ CURLOPT_READFUNCTION
 
 # Server-side
 <reply>
-<data crlf="headers" nocheck="yes">
+<data crlf="yes" nocheck="yes">
 HTTP/1.1 200 OK
 Content-Length: 6
 Content-Type: text/html

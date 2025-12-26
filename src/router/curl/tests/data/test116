@@ -35,6 +35,9 @@ ftp://%HOSTIP:%FTPPORT/%TESTNUMBER -P 1.2.3.4
 
 # Verify data after the test has been "shot"
 <verify>
+<strip>
+QUIT
+</strip>
 <errorcode>
 30
 </errorcode>
@@ -43,7 +46,7 @@ ftp://%HOSTIP:%FTPPORT/%TESTNUMBER -P 1.2.3.4
 s/^(PORT \d{1,3},\d{1,3},\d{1,3},\d{1,3},)\d{1,3},\d{1,3}/$1/
 s/^(EPRT \|1\|\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\|)\d{1,5}\|/$1/
 </strippart>
-<protocol crlf="yes">
+<protocol>
 USER anonymous
 PASS ftp@example.com
 PWD

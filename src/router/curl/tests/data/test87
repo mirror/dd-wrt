@@ -11,14 +11,14 @@ FAILURE
 #
 # Server-side
 <reply>
-<data1 crlf="headers">
+<data1>
 HTTP/1.1 200 OK
 Funny-head: yesyes
 Content-Length: 15
 
 the number one
 </data1>
-<data2 crlf="headers">
+<data2>
 HTTP/1.1 200 OK
 Funny-head: yesyes
 Content-Length: 16
@@ -50,7 +50,7 @@ urlglob with out of range -o #[num] usage
 # survives
 #
 <verify>
-<file name="%LOGDIR/dumpit%TESTNUMBER-#2.dump" crlf="headers">
+<file name="%LOGDIR/dumpit%TESTNUMBER-#2.dump">
 HTTP/1.1 200 OK
 Funny-head: yesyes
 Content-Length: 16

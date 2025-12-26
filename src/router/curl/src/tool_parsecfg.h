@@ -25,9 +25,8 @@
  ***************************************************************************/
 #include "tool_setup.h"
 
-/* only allow this many levels of recursive --config use */
-#define CONFIG_MAX_LEVELS 5
-ParameterError parseconfig(const char *filename, int max_recursive);
+int parseconfig(const char *filename, struct GlobalConfig *config);
+
 bool my_get_line(FILE *fp, struct dynbuf *db, bool *error);
 
 #endif /* HEADER_CURL_TOOL_PARSECFG_H */

@@ -16,6 +16,7 @@ TLS-backend:
   - GnuTLS
   - wolfSSL
   - mbedTLS
+  - Secure Transport
   - Schannel
 Added-in: 7.39.0
 ---
@@ -128,6 +129,8 @@ footer:
 
 7.47.0: mbedTLS
 
+7.54.1: Secure Transport on macOS 10.7+/iOS 10+
+
 7.58.1: Schannel
 
 ## sha256 support
@@ -135,6 +138,8 @@ footer:
 7.44.0: OpenSSL, GnuTLS and wolfSSL
 
 7.47.0: mbedTLS
+
+7.54.1: Secure Transport on macOS 10.7+/iOS 10+
 
 7.58.1: Schannel
 

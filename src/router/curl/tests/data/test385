@@ -35,22 +35,22 @@ http
 HTTP with --json x 2
 </name>
 <command>
---json '{ "drink": "coffee",' --json ' "crunch": "cookie" }' http://%HOSTIP:%HTTPPORT/%TESTNUMBER -H "Content-Type: drinks/hot"
+--json '{ "drink": "coffe",' --json ' "crunch": "cookie" }' http://%HOSTIP:%HTTPPORT/%TESTNUMBER -H "Content-Type: drinks/hot"
 </command>
 </client>
 
 #
 # Verify data after the test has been "shot"
 <verify>
-<protocol crlf="yes" nonewline="yes">
+<protocol nonewline="yes">
 POST /%TESTNUMBER HTTP/1.1
 Host: %HOSTIP:%HTTPPORT
 User-Agent: curl/%VERSION
 Content-Type: drinks/hot
 Accept: application/json
-Content-Length: 41
+Content-Length: 40
 
-{ "drink": "coffee", "crunch": "cookie" }
+{ "drink": "coffe", "crunch": "cookie" }
 </protocol>
 </verify>
 </testcase>

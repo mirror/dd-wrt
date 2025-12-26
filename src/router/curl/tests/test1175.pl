@@ -22,12 +22,14 @@
 # SPDX-License-Identifier: curl
 #
 ###########################################################################
+#
+#
 
 use strict;
 use warnings;
 
 # we may get the dir root pointed out
-my $root = $ARGV[0] || ".";
+my $root=$ARGV[0] || ".";
 
 my %error; # from the include file
 my %docs; # from libcurl-errors.3

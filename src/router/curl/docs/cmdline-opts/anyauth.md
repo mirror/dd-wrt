@@ -6,7 +6,7 @@ Help: Pick any authentication method
 Protocols: HTTP
 Category: http proxy auth
 Added: 7.10.6
-Multi: custom
+Multi: mutex
 See-also:
   - proxy-anyauth
   - basic

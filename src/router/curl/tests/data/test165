@@ -11,7 +11,7 @@ IDN
 #
 # Server-side
 <reply>
-<data crlf="headers">
+<data>
 HTTP/1.1 200 OK
 Date: Tue, 09 Nov 2010 14:49:00 GMT
 Server: test-server/fake swsclose
@@ -33,7 +33,8 @@ proxy
 codeset-utf8
 </features>
 <setenv>
-LC_ALL=C.UTF-8
+LC_ALL=en_US.UTF-8
+LC_CTYPE=en_US.UTF-8
 </setenv>
 <name>
 HTTP over proxy with IDN host name
@@ -46,7 +47,7 @@ http://www.%hex[%c3%a5%c3%a4%c3%b6]hex%.se/page/%TESTNUMBER -x %HOSTIP:%HTTPPORT
 #
 # Verify data after the test has been "shot"
 <verify>
-<protocol crlf="headers">
+<protocol>
 GET http://www.xn--4cab6c.se/page/%TESTNUMBER HTTP/1.1
 Host: www.xn--4cab6c.se
 User-Agent: curl/%VERSION

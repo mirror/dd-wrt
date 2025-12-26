@@ -38,9 +38,6 @@
 #    version-check.pl [source file]
 #
 
-use strict;
-use warnings;
-
 open(S, "<../libcurl/symbols-in-versions") || die;
 
 my %doc;
@@ -67,7 +64,7 @@ sub age {
     my ($ver)=@_;
 
     my @s=split(/\./, $ver);
-    return $s[0]*10000+$s[1]*100+($s[2] || 0);
+    return $s[0]*10000+$s[1]*100+$s[2];
 }
 
 my %used;

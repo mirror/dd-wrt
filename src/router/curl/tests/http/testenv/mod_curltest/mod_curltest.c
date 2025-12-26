@@ -51,7 +51,7 @@ AP_DECLARE_MODULE(curltest) =
   NULL,  /* func to merge per server config */
   NULL,              /* command handlers */
   curltest_hooks,
-#ifdef AP_MODULE_FLAG_NONE
+#if defined(AP_MODULE_FLAG_NONE)
   AP_MODULE_FLAG_ALWAYS_MERGE
 #endif
 };
@@ -188,7 +188,6 @@ static int curltest_echo_handler(request_rec *r)
   char buffer[8192];
   const char *ct;
   apr_off_t die_after_len = -1, total_read_len = 0;
-  apr_time_t read_delay = 0;
   int just_die = 0, die_after_100 = 0;
   long l;
 
@@ -221,12 +220,6 @@ static int curltest_echo_handler(request_rec *r)
         else if(!strcmp("die_after_100", arg)) {
           die_after_100 = 1;
           continue;
-        }
-        else if(!strcmp("read_delay", arg)) {
-          rv = duration_parse(&read_delay, val, "s");
-          if(APR_SUCCESS == rv) {
-            continue;
-          }
         }
       }
     }
@@ -264,12 +257,6 @@ static int curltest_echo_handler(request_rec *r)
   if(apr_table_get(r->headers_in, "TE"))
     apr_table_setn(r->headers_out, "Request-TE",
                    apr_table_get(r->headers_in, "TE"));
-
-  if(read_delay) {
-    ap_log_rerror(APLOG_MARK, APLOG_TRACE1, 0, r,
-                  "put_handler: read_delay");
-    apr_sleep(read_delay);
-  }
 
   bb = apr_brigade_create(r->pool, c->bucket_alloc);
   /* copy any request body into the response */
@@ -623,7 +610,7 @@ static int curltest_put_handler(request_rec *r)
           }
         }
         else if(!strcmp("max_upload", arg)) {
-          rbody_max_len = (apr_off_t)apr_atoi64(val);
+          rbody_max_len = (int)apr_atoi64(val);
           continue;
         }
       }
@@ -642,7 +629,6 @@ static int curltest_put_handler(request_rec *r)
   apr_table_unset(r->headers_out, "Content-Length");
   /* Discourage content-encodings */
   apr_table_unset(r->headers_out, "Content-Encoding");
-  apr_table_setn(r->headers_out, "request-id", request_id);
   apr_table_setn(r->subprocess_env, "no-brotli", "1");
   apr_table_setn(r->subprocess_env, "no-gzip", "1");
 
@@ -650,8 +636,6 @@ static int curltest_put_handler(request_rec *r)
   ap_set_content_type(r, ct ? ct : "text/plain");
 
   if(read_delay) {
-    ap_log_rerror(APLOG_MARK, APLOG_TRACE1, 0, r,
-                  "put_handler: read_delay");
     apr_sleep(read_delay);
   }
   bb = apr_brigade_create(r->pool, c->bucket_alloc);
@@ -690,9 +674,9 @@ static int curltest_put_handler(request_rec *r)
   }
 
 cleanup:
-  if(rv == APR_SUCCESS ||
-     r->status != HTTP_OK ||
-     c->aborted) {
+  if(rv == APR_SUCCESS
+     || r->status != HTTP_OK
+     || c->aborted) {
     ap_log_rerror(APLOG_MARK, APLOG_TRACE1, rv, r, "put_handler: done");
     return OK;
   }
@@ -710,7 +694,13 @@ static int curltest_1_1_required(request_rec *r)
   apr_bucket_brigade *bb;
   apr_bucket *b;
   apr_status_t rv;
+  char buffer[16*1024];
   const char *ct;
+  const char *request_id = "none";
+  apr_time_t chunk_delay = 0;
+  apr_array_header_t *args = NULL;
+  long l;
+  int i;
 
   if(strcmp(r->handler, "curltest-1_1-required")) {
     return DECLINED;
@@ -754,9 +744,9 @@ static int curltest_1_1_required(request_rec *r)
   rv = ap_pass_brigade(r->output_filters, bb);
 
 cleanup:
-  if(rv == APR_SUCCESS ||
-     r->status != HTTP_OK ||
-     c->aborted) {
+  if(rv == APR_SUCCESS
+     || r->status != HTTP_OK
+     || c->aborted) {
     ap_log_rerror(APLOG_MARK, APLOG_TRACE1, rv, r, "1_1_handler: done");
     return OK;
   }
@@ -784,8 +774,10 @@ static int curltest_sslinfo_handler(request_rec *r)
   apr_bucket_brigade *bb;
   apr_bucket *b;
   apr_status_t rv;
+  apr_array_header_t *args = NULL;
   const char *request_id = NULL;
   int close_conn = 0;
+  long l;
   int i;
 
   if(strcmp(r->handler, "curltest-sslinfo")) {
@@ -829,8 +821,6 @@ static int curltest_sslinfo_handler(request_rec *r)
   apr_table_unset(r->headers_out, "Content-Length");
   /* Discourage content-encodings */
   apr_table_unset(r->headers_out, "Content-Encoding");
-  if(request_id)
-    apr_table_setn(r->headers_out, "request-id", request_id);
   apr_table_setn(r->subprocess_env, "no-brotli", "1");
   apr_table_setn(r->subprocess_env, "no-gzip", "1");
 
@@ -866,9 +856,9 @@ static int curltest_sslinfo_handler(request_rec *r)
 cleanup:
   if(close_conn)
     r->connection->keepalive = AP_CONN_CLOSE;
-  if(rv == APR_SUCCESS ||
-     r->status != HTTP_OK ||
-     c->aborted) {
+  if(rv == APR_SUCCESS
+     || r->status != HTTP_OK
+     || c->aborted) {
     ap_log_rerror(APLOG_MARK, APLOG_TRACE1, rv, r, "1_1_handler: done");
     return OK;
   }

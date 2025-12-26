@@ -14,6 +14,9 @@ variables
 #
 # Client-side
 <client>
+<server>
+none
+</server>
 <name>
 Missing environment variables in config file
 </name>
@@ -30,7 +33,7 @@ http://%HOSTIP:%HTTPPORT/%TESTNUMBER -K %LOGDIR/cmd
 # Verify data after the test has been "shot"
 <verify>
 <errorcode>
-2
+26
 </errorcode>
 </verify>
 </testcase>

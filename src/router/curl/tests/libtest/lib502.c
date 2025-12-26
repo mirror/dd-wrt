@@ -21,18 +21,22 @@
  * SPDX-License-Identifier: curl
  *
  ***************************************************************************/
-#include "first.h"
+#include "test.h"
 
+#include "testutil.h"
+#include "warnless.h"
 #include "memdebug.h"
+
+#define TEST_HANG_TIMEOUT 60 * 1000
 
 /*
  * Get a single URL without select().
  */
 
-static CURLcode test_lib502(const char *URL)
+CURLcode test(char *URL)
 {
-  CURL *curl = NULL;
-  CURLM *multi = NULL;
+  CURL *c = NULL;
+  CURLM *m = NULL;
   CURLcode res = CURLE_OK;
   int running;
 
@@ -40,13 +44,13 @@ static CURLcode test_lib502(const char *URL)
 
   global_init(CURL_GLOBAL_ALL);
 
-  easy_init(curl);
+  easy_init(c);
 
-  easy_setopt(curl, CURLOPT_URL, URL);
+  easy_setopt(c, CURLOPT_URL, URL);
 
-  multi_init(multi);
+  multi_init(m);
 
-  multi_add_handle(multi, curl);
+  multi_add_handle(m, c);
 
   for(;;) {
     struct timeval timeout;
@@ -56,7 +60,7 @@ static CURLcode test_lib502(const char *URL)
     timeout.tv_sec = 0;
     timeout.tv_usec = 100000L; /* 100 ms */
 
-    multi_perform(multi, &running);
+    multi_perform(m, &running);
 
     abort_on_test_timeout();
 
@@ -67,7 +71,7 @@ static CURLcode test_lib502(const char *URL)
     FD_ZERO(&fdwrite);
     FD_ZERO(&fdexcep);
 
-    multi_fdset(multi, &fdread, &fdwrite, &fdexcep, &maxfd);
+    multi_fdset(m, &fdread, &fdwrite, &fdexcep, &maxfd);
 
     /* At this point, maxfd is guaranteed to be greater or equal than -1. */
 
@@ -80,9 +84,9 @@ test_cleanup:
 
   /* proper cleanup sequence - type PA */
 
-  curl_multi_remove_handle(multi, curl);
-  curl_multi_cleanup(multi);
-  curl_easy_cleanup(curl);
+  curl_multi_remove_handle(m, c);
+  curl_multi_cleanup(m);
+  curl_easy_cleanup(c);
   curl_global_cleanup();
 
   return res;

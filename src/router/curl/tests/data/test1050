@@ -44,11 +44,14 @@ FTP-IPv6 dir list, EPRT with specified IP
 
 # Verify data after the test has been "shot"
 <verify>
+<strip>
+QUIT
+</strip>
 # Strip all valid kinds of EPRT that curl can send
 <strippart>
-s/^(EPRT \|2\|::1\|)(\S*)/$1/
+s/^(EPRT \|2\|::1\|)(.*)/$1/
 </strippart>
-<protocol crlf="yes">
+<protocol>
 USER anonymous
 PASS ftp@example.com
 PWD

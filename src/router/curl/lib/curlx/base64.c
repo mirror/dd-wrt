@@ -26,6 +26,13 @@
 
 #include "../curl_setup.h"
 
+#if !defined(CURL_DISABLE_HTTP_AUTH) || defined(USE_SSH) || \
+  !defined(CURL_DISABLE_LDAP) || \
+  !defined(CURL_DISABLE_SMTP) || \
+  !defined(CURL_DISABLE_POP3) || \
+  !defined(CURL_DISABLE_IMAP) || \
+  !defined(CURL_DISABLE_DIGEST_AUTH) || \
+  !defined(CURL_DISABLE_DOH) || defined(USE_SSL) || !defined(BUILDING_LIBCURL)
 #include <curl/curl.h>
 #include "warnless.h"
 #include "base64.h"
@@ -54,9 +61,9 @@ static const unsigned char decodetable[] =
 /*
  * curlx_base64_decode()
  *
- * Given a base64 null-terminated string at src, decode it and return a
- * pointer in *outptr to a newly allocated memory area holding decoded data.
- * Size of decoded data is returned in variable pointed by outlen.
+ * Given a base64 NUL-terminated string at src, decode it and return a
+ * pointer in *outptr to a newly allocated memory area holding decoded
+ * data. Size of decoded data is returned in variable pointed by outlen.
  *
  * Returns CURLE_OK on success, otherwise specific error code. Function
  * output shall not be considered valid unless CURLE_OK is returned.
@@ -182,12 +189,12 @@ static CURLcode base64_encode(const char *table64,
   *outlen = 0;
 
   if(!insize)
-    return CURLE_OK;
+    insize = strlen(inputbuff);
 
-  /* safety precaution */
-  DEBUGASSERT(insize <= CURL_MAX_BASE64_INPUT);
-  if(insize > CURL_MAX_BASE64_INPUT)
-    return CURLE_TOO_LARGE;
+#if SIZEOF_SIZE_T == 4
+  if(insize > UINT_MAX/4)
+    return CURLE_OUT_OF_MEMORY;
+#endif
 
   base64data = output = malloc((insize + 2) / 3 * 4 + 1);
   if(!output)
@@ -240,6 +247,8 @@ static CURLcode base64_encode(const char *table64,
  * encoded data. Size of encoded data is returned in variable pointed by
  * outlen.
  *
+ * Input length of 0 indicates input buffer holds a NUL-terminated string.
+ *
  * Returns CURLE_OK on success, otherwise specific error code. Function
  * output shall not be considered valid unless CURLE_OK is returned.
  *
@@ -260,7 +269,7 @@ CURLcode curlx_base64_encode(const char *inputbuff, size_t insize,
  * encoded data. Size of encoded data is returned in variable pointed by
  * outlen.
  *
- * Input length of 0 indicates input buffer holds a null-terminated string.
+ * Input length of 0 indicates input buffer holds a NUL-terminated string.
  *
  * Returns CURLE_OK on success, otherwise specific error code. Function
  * output shall not be considered valid unless CURLE_OK is returned.
@@ -272,3 +281,5 @@ CURLcode curlx_base64url_encode(const char *inputbuff, size_t insize,
 {
   return base64_encode(base64url, 0, inputbuff, insize, outptr, outlen);
 }
+
+#endif /* no users so disabled */

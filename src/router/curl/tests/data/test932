@@ -28,7 +28,6 @@ smtp
 </server>
 <features>
 crypto
-digest
 </features>
 <name>
 SMTP CRAM-MD5 graceful cancellation
@@ -48,7 +47,7 @@ smtp://%HOSTIP:%SMTPPORT/%TESTNUMBER --mail-rcpt recipient@example.com --mail-fr
 #
 # The multi interface considers a broken "CONNECT" as a prematurely broken
 # transfer and such a connection will not get a "QUIT"
-<protocol crlf="yes">
+<protocol>
 EHLO %TESTNUMBER
 AUTH CRAM-MD5
 *

@@ -47,18 +47,15 @@ Transport and OpenSSL.
 Tells libcurl to disable certificate revocation checks for those SSL backends
 where such behavior is present. This option is only supported for Schannel
 (the native Windows SSL library), with an exception in the case of Windows'
-Untrusted Publishers block list which it seems cannot be bypassed.
+Untrusted Publishers block list which it seems cannot be bypassed. (Added in
+7.44.0)
 
 ## CURLSSLOPT_NO_PARTIALCHAIN
 
 Tells libcurl to not accept "partial" certificate chains, which it otherwise
-does by default. This option fails the certificate verification if the chain
-ends with an intermediate certificate and not with a root cert.
-
-Works with OpenSSL and its forks (LibreSSL, BoringSSL, etc). (Added in 7.68.0)
-
-Works with Schannel if the user specified certificates to verify the peer.
-(Added in 8.15.0)
+does by default. This option is only supported for OpenSSL and fails the
+certificate verification if the chain ends with an intermediate certificate
+and not with a root cert. (Added in 7.68.0)
 
 ## CURLSSLOPT_REVOKE_BEST_EFFORT
 
@@ -121,18 +118,13 @@ int main(void)
     CURLcode res;
     curl_easy_setopt(curl, CURLOPT_URL, "https://example.com/");
     /* weaken TLS only for use with silly servers */
-    curl_easy_setopt(curl, CURLOPT_SSL_OPTIONS,
-                     CURLSSLOPT_ALLOW_BEAST | CURLSSLOPT_NO_REVOKE);
+    curl_easy_setopt(curl, CURLOPT_SSL_OPTIONS, (long)CURLSSLOPT_ALLOW_BEAST |
+                     CURLSSLOPT_NO_REVOKE);
     res = curl_easy_perform(curl);
     curl_easy_cleanup(curl);
   }
 }
 ~~~
-
-# HISTORY
-
-**CURLSSLOPT_*** macros became `long` types in 8.15.0, prior to this version
-a `long` cast was necessary when passed to curl_easy_setopt(3).
 
 # %AVAILABILITY%
 

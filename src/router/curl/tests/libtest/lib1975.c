@@ -9,7 +9,7 @@
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
- * are also available at https://curl.se/docs/copyright.html.
+ * are also available at https://curl.haxx.se/docs/copyright.html.
  *
  * You may opt to use, copy, modify, merge, publish, distribute and/or sell
  * copies of the Software, and permit persons to whom the Software is
@@ -21,20 +21,21 @@
  * SPDX-License-Identifier: curl
  *
  ***************************************************************************/
-#include "first.h"
+#include "test.h"
 
 #include "memdebug.h"
 
-static size_t t1975_read_cb(char *ptr, size_t size, size_t nitems, void *userp)
+static size_t read_callback(char *buffer, size_t size, size_t nitems,
+                            void *userdata)
 {
-  (void)ptr;
-  (void)size;
-  (void)nitems;
-  (void)userp;
+  (void)buffer; /* unused */
+  (void)size; /* unused */
+  (void)nitems; /* unused */
+  (void)userdata; /* unused */
   return 0;
 }
 
-static CURLcode test_lib1975(const char *URL)
+CURLcode test(char *URL)
 {
   CURL *curl;
   CURLcode res = TEST_ERR_MAJOR_BAD;
@@ -54,7 +55,7 @@ static CURLcode test_lib1975(const char *URL)
   }
 
   test_setopt(curl, CURLOPT_UPLOAD, 1L);
-  test_setopt(curl, CURLOPT_READFUNCTION, t1975_read_cb);
+  test_setopt(curl, CURLOPT_READFUNCTION, read_callback);
   test_setopt(curl, CURLOPT_VERBOSE, 1L);
   test_setopt(curl, CURLOPT_AWS_SIGV4, "aws:amz:us-east-1:s3");
   test_setopt(curl, CURLOPT_USERPWD, "xxx");

@@ -27,7 +27,7 @@ file contents should appear once for each file
 ftp
 </server>
 <tool>
-lib526
+lib%TESTNUMBER
 </tool>
 <name>
 FTP RETR same file using reset handles between each transfer
@@ -39,7 +39,10 @@ ftp://%HOSTIP:%FTPPORT/path/%TESTNUMBER
 
 # Verify data after the test has been "shot"
 <verify>
-<protocol crlf="yes">
+<strip>
+QUIT
+</strip>
+<protocol>
 USER anonymous
 PASS ftp@example.com
 PWD

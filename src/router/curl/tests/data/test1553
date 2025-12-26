@@ -10,7 +10,7 @@ FETCH
 #
 # Server-side
 <reply>
-<data crlf="yes">
+<data>
 From: me@somewhere
 To: fake@nowhere
 
@@ -51,5 +51,7 @@ imap://non-existing-host.haxx.se:%IMAPPORT/%TESTNUMBER
 #
 # Verify data after the test has been "shot"
 <verify>
+<protocol>
+</protocol>
 </verify>
 </testcase>

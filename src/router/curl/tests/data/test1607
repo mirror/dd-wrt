@@ -9,6 +9,9 @@ CURLOPT_RESOLVE
 #
 # Client-side
 <client>
+<server>
+none
+</server>
 <features>
 unittest
 </features>

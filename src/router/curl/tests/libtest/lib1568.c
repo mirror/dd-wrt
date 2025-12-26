@@ -21,30 +21,31 @@
  * SPDX-License-Identifier: curl
  *
  ***************************************************************************/
-#include "first.h"
+#include "test.h"
 
+#include "testtrace.h"
 #include "memdebug.h"
 
-static CURLcode test_lib1568(const char *URL)
+CURLcode test(char *URL)
 {
   CURLcode ret;
-  CURL *curl;
+  CURL *hnd;
   curl_global_init(CURL_GLOBAL_ALL);
 
-  curl = curl_easy_init();
-  curl_easy_setopt(curl, CURLOPT_URL, URL);
-  curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L);
-  curl_easy_setopt(curl, CURLOPT_HEADER, 1L);
-  curl_easy_setopt(curl, CURLOPT_USERPWD, "testuser:testpass");
-  curl_easy_setopt(curl, CURLOPT_USERAGENT, "lib1568");
-  curl_easy_setopt(curl, CURLOPT_HTTPAUTH, CURLAUTH_DIGEST);
-  curl_easy_setopt(curl, CURLOPT_MAXREDIRS, 50L);
-  curl_easy_setopt(curl, CURLOPT_PORT, atol(libtest_arg2));
+  hnd = curl_easy_init();
+  curl_easy_setopt(hnd, CURLOPT_URL, URL);
+  curl_easy_setopt(hnd, CURLOPT_VERBOSE, 1L);
+  curl_easy_setopt(hnd, CURLOPT_HEADER, 1L);
+  curl_easy_setopt(hnd, CURLOPT_USERPWD, "testuser:testpass");
+  curl_easy_setopt(hnd, CURLOPT_USERAGENT, "lib1568");
+  curl_easy_setopt(hnd, CURLOPT_HTTPAUTH, (long)CURLAUTH_DIGEST);
+  curl_easy_setopt(hnd, CURLOPT_MAXREDIRS, 50L);
+  curl_easy_setopt(hnd, CURLOPT_PORT, strtol(libtest_arg2, NULL, 10));
 
-  ret = curl_easy_perform(curl);
+  ret = curl_easy_perform(hnd);
 
-  curl_easy_cleanup(curl);
-  curl = NULL;
+  curl_easy_cleanup(hnd);
+  hnd = NULL;
 
   curl_global_cleanup();
   return ret;

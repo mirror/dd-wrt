@@ -13,6 +13,7 @@ Protocol:
 TLS-backend:
   - GnuTLS
   - OpenSSL
+  - BearSSL
   - wolfSSL
   - mbedTLS
 Added-in: 8.12.0
@@ -20,7 +21,7 @@ Added-in: 8.12.0
 
 # NAME
 
-curl_easy_ssls_import - import SSL sessions
+curl_easy_ssls_export - export SSL sessions
 
 # SYNOPSIS
 

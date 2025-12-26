@@ -39,7 +39,10 @@ FTP a type=A URL and CURLOPT_PORT set
 # There's no MTDM in the protocol here since this code doesn't ask for the
 # time/date of the file
 <verify>
-<protocol crlf="yes">
+<strip>
+QUIT
+</strip>
+<protocol>
 USER anonymous
 PASS ftp@example.com
 PWD

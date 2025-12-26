@@ -11,6 +11,9 @@ Range
 
 # Client-side
 <client>
+<server>
+none
+</server>
 <features>
 file
 </features>

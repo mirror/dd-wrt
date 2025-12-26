@@ -14,6 +14,9 @@ cmdline
 #
 # Client-side
 <client>
+<server>
+none
+</server>
 <name>
 use --next with missing URL before it
 </name>

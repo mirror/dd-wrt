@@ -21,13 +21,17 @@
  * SPDX-License-Identifier: curl
  *
  ***************************************************************************/
-#include "first.h"
+#include "test.h"
 
+#include "testutil.h"
+#include "warnless.h"
 #include "memdebug.h"
 
-static CURLcode test_lib3105(const char *URL)
+#define TEST_HANG_TIMEOUT 60 * 1000
+
+CURLcode test(char *URL)
 {
-  CURL *curl = NULL;
+  CURL *curls = NULL;
   CURLM *multi = NULL;
   CURLcode i = CURLE_OK;
   CURLcode res = CURLE_OK;
@@ -37,23 +41,23 @@ static CURLcode test_lib3105(const char *URL)
 
   multi_init(multi);
 
-  easy_init(curl);
+  easy_init(curls);
 
-  easy_setopt(curl, CURLOPT_URL, URL);
+  easy_setopt(curls, CURLOPT_URL, URL);
 
-  multi_add_handle(multi, curl);
+  multi_add_handle(multi, curls);
 
-  mc = curl_multi_remove_handle(multi, curl);
-  mc += curl_multi_remove_handle(multi, curl);
+  mc = curl_multi_remove_handle(multi, curls);
+  mc += curl_multi_remove_handle(multi, curls);
 
   if(mc) {
-    curl_mfprintf(stderr, "%d was unexpected\n", mc);
+    curl_mfprintf(stderr, "%d was unexpected\n", (int)mc);
     i = CURLE_FAILED_INIT;
   }
 
 test_cleanup:
   curl_multi_cleanup(multi);
-  curl_easy_cleanup(curl);
+  curl_easy_cleanup(curls);
   curl_global_cleanup();
 
   if(res)

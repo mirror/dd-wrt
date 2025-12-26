@@ -7,6 +7,9 @@ HSTS
 </info>
 
 <client>
+<server>
+none
+</server>
 <features>
 unittest
 HSTS

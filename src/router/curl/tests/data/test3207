@@ -16,8 +16,135 @@ Content-Length: 29
 
 run 1: foobar and so on fun!
 </data>
-<datacheck nonewline="yes">
-%repeat[128 x run 1: foobar and so on fun!%0a]%
+<datacheck>
+run 1: foobar and so on fun!
+run 1: foobar and so on fun!
+run 1: foobar and so on fun!
+run 1: foobar and so on fun!
+run 1: foobar and so on fun!
+run 1: foobar and so on fun!
+run 1: foobar and so on fun!
+run 1: foobar and so on fun!
+run 1: foobar and so on fun!
+run 1: foobar and so on fun!
+run 1: foobar and so on fun!
+run 1: foobar and so on fun!
+run 1: foobar and so on fun!
+run 1: foobar and so on fun!
+run 1: foobar and so on fun!
+run 1: foobar and so on fun!
+run 1: foobar and so on fun!
+run 1: foobar and so on fun!
+run 1: foobar and so on fun!
+run 1: foobar and so on fun!
+run 1: foobar and so on fun!
+run 1: foobar and so on fun!
+run 1: foobar and so on fun!
+run 1: foobar and so on fun!
+run 1: foobar and so on fun!
+run 1: foobar and so on fun!
+run 1: foobar and so on fun!
+run 1: foobar and so on fun!
+run 1: foobar and so on fun!
+run 1: foobar and so on fun!
+run 1: foobar and so on fun!
+run 1: foobar and so on fun!
+run 1: foobar and so on fun!
+run 1: foobar and so on fun!
+run 1: foobar and so on fun!
+run 1: foobar and so on fun!
+run 1: foobar and so on fun!
+run 1: foobar and so on fun!
+run 1: foobar and so on fun!
+run 1: foobar and so on fun!
+run 1: foobar and so on fun!
+run 1: foobar and so on fun!
+run 1: foobar and so on fun!
+run 1: foobar and so on fun!
+run 1: foobar and so on fun!
+run 1: foobar and so on fun!
+run 1: foobar and so on fun!
+run 1: foobar and so on fun!
+run 1: foobar and so on fun!
+run 1: foobar and so on fun!
+run 1: foobar and so on fun!
+run 1: foobar and so on fun!
+run 1: foobar and so on fun!
+run 1: foobar and so on fun!
+run 1: foobar and so on fun!
+run 1: foobar and so on fun!
+run 1: foobar and so on fun!
+run 1: foobar and so on fun!
+run 1: foobar and so on fun!
+run 1: foobar and so on fun!
+run 1: foobar and so on fun!
+run 1: foobar and so on fun!
+run 1: foobar and so on fun!
+run 1: foobar and so on fun!
+run 1: foobar and so on fun!
+run 1: foobar and so on fun!
+run 1: foobar and so on fun!
+run 1: foobar and so on fun!
+run 1: foobar and so on fun!
+run 1: foobar and so on fun!
+run 1: foobar and so on fun!
+run 1: foobar and so on fun!
+run 1: foobar and so on fun!
+run 1: foobar and so on fun!
+run 1: foobar and so on fun!
+run 1: foobar and so on fun!
+run 1: foobar and so on fun!
+run 1: foobar and so on fun!
+run 1: foobar and so on fun!
+run 1: foobar and so on fun!
+run 1: foobar and so on fun!
+run 1: foobar and so on fun!
+run 1: foobar and so on fun!
+run 1: foobar and so on fun!
+run 1: foobar and so on fun!
+run 1: foobar and so on fun!
+run 1: foobar and so on fun!
+run 1: foobar and so on fun!
+run 1: foobar and so on fun!
+run 1: foobar and so on fun!
+run 1: foobar and so on fun!
+run 1: foobar and so on fun!
+run 1: foobar and so on fun!
+run 1: foobar and so on fun!
+run 1: foobar and so on fun!
+run 1: foobar and so on fun!
+run 1: foobar and so on fun!
+run 1: foobar and so on fun!
+run 1: foobar and so on fun!
+run 1: foobar and so on fun!
+run 1: foobar and so on fun!
+run 1: foobar and so on fun!
+run 1: foobar and so on fun!
+run 1: foobar and so on fun!
+run 1: foobar and so on fun!
+run 1: foobar and so on fun!
+run 1: foobar and so on fun!
+run 1: foobar and so on fun!
+run 1: foobar and so on fun!
+run 1: foobar and so on fun!
+run 1: foobar and so on fun!
+run 1: foobar and so on fun!
+run 1: foobar and so on fun!
+run 1: foobar and so on fun!
+run 1: foobar and so on fun!
+run 1: foobar and so on fun!
+run 1: foobar and so on fun!
+run 1: foobar and so on fun!
+run 1: foobar and so on fun!
+run 1: foobar and so on fun!
+run 1: foobar and so on fun!
+run 1: foobar and so on fun!
+run 1: foobar and so on fun!
+run 1: foobar and so on fun!
+run 1: foobar and so on fun!
+run 1: foobar and so on fun!
+run 1: foobar and so on fun!
+run 1: foobar and so on fun!
 </datacheck>
 </reply>
 
@@ -44,8 +171,5 @@ https://localhost:%HTTPSPORT/%TESTNUMBER %CERTDIR/certs/test-ca.crt
 
 # Verify data after the test has been "shot"
 <verify>
-<limits>
-Allocations: 13600
-</limits>
 </verify>
 </testcase>

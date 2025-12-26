@@ -32,7 +32,8 @@
 #include "http_digest.h"
 #include "curlx/strparse.h"
 
-/* The last 2 #include files should be in this order */
+/* The last 3 #include files should be in this order */
+#include "curl_printf.h"
 #include "curl_memory.h"
 #include "memdebug.h"
 
@@ -119,7 +120,7 @@ CURLcode Curl_output_digest(struct Curl_easy *data,
   if(!passwdp)
     passwdp = "";
 
-#ifdef USE_WINDOWS_SSPI
+#if defined(USE_WINDOWS_SSPI)
   have_chlg = !!digest->input_token;
 #else
   have_chlg = !!digest->nonce;
@@ -140,7 +141,7 @@ CURLcode Curl_output_digest(struct Curl_easy *data,
      https://httpd.apache.org/docs/2.2/mod/mod_auth_digest.html#msie
 
      Further details on Digest implementation differences:
-     https://web.archive.org/web/2009/fngtps.com/2006/09/http-authentication
+     http://www.fngtps.com/2006/09/http-authentication
   */
 
   if(authp->iestyle) {
@@ -148,11 +149,11 @@ CURLcode Curl_output_digest(struct Curl_easy *data,
     if(tmp) {
       size_t urilen = tmp - (const char *)uripath;
       /* typecast is fine here since the value is always less than 32 bits */
-      path = (unsigned char *)curl_maprintf("%.*s", (int)urilen, uripath);
+      path = (unsigned char *) aprintf("%.*s", (int)urilen, uripath);
     }
   }
   if(!tmp)
-    path = (unsigned char *)strdup((const char *) uripath);
+    path = (unsigned char *) strdup((const char *) uripath);
 
   if(!path)
     return CURLE_OUT_OF_MEMORY;
@@ -163,8 +164,9 @@ CURLcode Curl_output_digest(struct Curl_easy *data,
   if(result)
     return result;
 
-  *allocuserpwd = curl_maprintf("%sAuthorization: Digest %s\r\n",
-                                proxy ? "Proxy-" : "", response);
+  *allocuserpwd = aprintf("%sAuthorization: Digest %s\r\n",
+                          proxy ? "Proxy-" : "",
+                          response);
   free(response);
   if(!*allocuserpwd)
     return CURLE_OUT_OF_MEMORY;

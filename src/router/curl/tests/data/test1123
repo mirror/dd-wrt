@@ -171,13 +171,13 @@ http://%HOSTIP:%HTTPPORT/%TESTNUMBER --tr-encoding
 #
 # Verify data after the test has been "shot"
 <verify>
-<protocol crlf="headers">
+<protocol>
 GET /%TESTNUMBER HTTP/1.1
 Host: %HOSTIP:%HTTPPORT
 User-Agent: curl/%VERSION
 Accept: */*
-TE: gzip
 Connection: TE
+TE: gzip
 
 </protocol>
 </verify>

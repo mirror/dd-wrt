@@ -47,7 +47,10 @@ machine %HOSTIP login mary password drfrank
 #
 # Verify data after the test has been "shot"
 <verify>
-<protocol crlf="yes">
+<strip>
+QUIT
+</strip>
+<protocol>
 USER mary
 PASS drfrank
 PWD

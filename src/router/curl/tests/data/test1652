@@ -7,9 +7,11 @@ infof
 </info>
 
 <client>
+<server>
+none
+</server>
 <features>
 unittest
-verbose-strings
 </features>
 <name>
 infof

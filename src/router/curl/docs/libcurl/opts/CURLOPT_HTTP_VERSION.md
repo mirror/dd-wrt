@@ -51,27 +51,27 @@ Enforce HTTP 1.1 requests.
 ## CURL_HTTP_VERSION_2_0
 
 Attempt HTTP 2 requests. libcurl falls back to HTTP 1.1 if HTTP 2 cannot be
-negotiated with the server.
+negotiated with the server. (Added in 7.33.0)
 
 When libcurl uses HTTP/2 over HTTPS, it does not itself insist on TLS 1.2 or
 higher even though that is required by the specification. A user can add this
 version requirement with CURLOPT_SSLVERSION(3).
 
-The alias *CURL_HTTP_VERSION_2* was added to better reflect the actual
-protocol name.
+The alias *CURL_HTTP_VERSION_2* was added in 7.43.0 to better reflect the
+actual protocol name.
 
 ## CURL_HTTP_VERSION_2TLS
 
 Attempt HTTP 2 over TLS (HTTPS) only. libcurl falls back to HTTP 1.1 if HTTP 2
 cannot be negotiated with the HTTPS server. For clear text HTTP servers,
-libcurl uses 1.1.
+libcurl uses 1.1. (Added in 7.47.0)
 
 ## CURL_HTTP_VERSION_2_PRIOR_KNOWLEDGE
 
 Issue non-TLS HTTP requests using HTTP/2 without HTTP/1.1 Upgrade. It requires
 prior knowledge that the server supports HTTP/2 straight away. HTTPS requests
 still do HTTP/2 the standard way with negotiated protocol version in the TLS
-handshake.
+handshake. (Added in 7.49.0)
 
 Since 8.10.0 if this option is set for an HTTPS request then the application
 layer protocol version (ALPN) offered to the server is only HTTP/2. Prior to
@@ -90,8 +90,6 @@ server does not support HTTP/3.
 
 # DEFAULT
 
-Since curl 8.13.0: CURL_HTTP_VERSION_NONE
-
 Since curl 7.62.0: CURL_HTTP_VERSION_2TLS
 
 Before that: CURL_HTTP_VERSION_1_1
@@ -107,7 +105,8 @@ int main(void)
   if(curl) {
     CURLcode ret;
     curl_easy_setopt(curl, CURLOPT_URL, "https://example.com/");
-    curl_easy_setopt(curl, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_2TLS);
+    curl_easy_setopt(curl, CURLOPT_HTTP_VERSION,
+                     (long)CURL_HTTP_VERSION_2TLS);
     ret = curl_easy_perform(curl);
     if(ret == CURLE_HTTP_RETURNED_ERROR) {
       /* an HTTP response error problem */
@@ -115,11 +114,6 @@ int main(void)
   }
 }
 ~~~
-
-# HISTORY
-
-**CURL_HTTP_VERSION_*** enums became `long` types in 8.13.0, prior to this
-version a `long` cast was necessary when passed to curl_easy_setopt(3).
 
 # %AVAILABILITY%
 

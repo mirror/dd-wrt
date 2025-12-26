@@ -61,7 +61,7 @@ bool Curl_tls_keylog_write(const char *label,
                            const unsigned char *secret, size_t secretlen);
 
 /*
- * Appends a line to the key log file, ensure it is terminated by an LF.
+ * Appends a line to the key log file, ensure it is terminated by a LF.
  * Returns true iff the key log file is open and a valid line was provided.
  */
 bool Curl_tls_keylog_write_line(const char *line);

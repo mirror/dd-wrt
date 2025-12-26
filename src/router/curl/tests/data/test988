@@ -9,7 +9,7 @@ FETCH
 #
 # Server-side
 <reply>
-<data crlf="yes">
+<data>
 From: me@somewhere
 To: fake@nowhere
 
@@ -37,7 +37,7 @@ IMAPS FETCH with redundant explicit SSL request
 #
 # Verify data after the test has been "shot"
 <verify>
-<protocol crlf="yes">
+<protocol>
 A001 CAPABILITY
 A002 LOGIN "\"user" "sec\"ret{"
 A003 SELECT %TESTNUMBER

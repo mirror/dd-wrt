@@ -21,15 +21,23 @@
  * SPDX-License-Identifier: curl
  *
  ***************************************************************************/
+#include "test.h"
+
 /* lib591 is used for test cases 591, 592, 593 and 594 */
 
-#include "first.h"
+#include <limits.h>
 
+#include <fcntl.h>
+
+#include "testutil.h"
+#include "warnless.h"
 #include "memdebug.h"
 
-static CURLcode test_lib591(const char *URL)
+#define TEST_HANG_TIMEOUT 60 * 1000
+
+CURLcode test(char *URL)
 {
-  CURL *curl = NULL;
+  CURL *easy = NULL;
   CURLM *multi = NULL;
   CURLcode res = CURLE_OK;
   int running;
@@ -39,44 +47,44 @@ static CURLcode test_lib591(const char *URL)
 
   start_test_timing();
 
-  upload = curlx_fopen(libtest_arg3, "rb");
+  upload = fopen(libtest_arg3, "rb");
   if(!upload) {
-    char errbuf[STRERROR_LEN];
     curl_mfprintf(stderr, "fopen() failed with error (%d) %s\n",
-                  errno, curlx_strerror(errno, errbuf, sizeof(errbuf)));
+            errno, strerror(errno));
     curl_mfprintf(stderr, "Error opening file '%s'\n", libtest_arg3);
     return TEST_ERR_FOPEN;
   }
 
   res_global_init(CURL_GLOBAL_ALL);
   if(res) {
-    curlx_fclose(upload);
+    fclose(upload);
     return res;
   }
 
-  easy_init(curl);
+  easy_init(easy);
 
   /* go verbose */
-  easy_setopt(curl, CURLOPT_VERBOSE, 1L);
+  easy_setopt(easy, CURLOPT_VERBOSE, 1L);
 
   /* specify target */
-  easy_setopt(curl, CURLOPT_URL, URL);
+  easy_setopt(easy, CURLOPT_URL, URL);
 
   /* enable uploading */
-  easy_setopt(curl, CURLOPT_UPLOAD, 1L);
+  easy_setopt(easy, CURLOPT_UPLOAD, 1L);
 
   /* data pointer for the file read function */
-  easy_setopt(curl, CURLOPT_READDATA, upload);
+  easy_setopt(easy, CURLOPT_READDATA, upload);
 
   /* use active mode FTP */
-  easy_setopt(curl, CURLOPT_FTPPORT, "-");
+  easy_setopt(easy, CURLOPT_FTPPORT, "-");
 
   /* server connection timeout */
-  easy_setopt(curl, CURLOPT_ACCEPTTIMEOUT_MS, atol(libtest_arg2)*1000);
+  easy_setopt(easy, CURLOPT_ACCEPTTIMEOUT_MS,
+              strtol(libtest_arg2, NULL, 10)*1000);
 
   multi_init(multi);
 
-  multi_add_handle(multi, curl);
+  multi_add_handle(multi, easy);
 
   for(;;) {
     struct timeval interval;
@@ -134,11 +142,11 @@ test_cleanup:
   /* undocumented cleanup sequence - type UA */
 
   curl_multi_cleanup(multi);
-  curl_easy_cleanup(curl);
+  curl_easy_cleanup(easy);
   curl_global_cleanup();
 
   /* close the local file */
-  curlx_fclose(upload);
+  fclose(upload);
 
   return res;
 }

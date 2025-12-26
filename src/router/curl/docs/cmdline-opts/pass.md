@@ -4,7 +4,7 @@ SPDX-License-Identifier: curl
 Long: pass
 Arg: <phrase>
 Help: Passphrase for the private key
-Protocols: TLS SCP SFTP
+Protocols: SSH TLS
 Category: ssh tls auth
 Added: 7.9.3
 Multi: single

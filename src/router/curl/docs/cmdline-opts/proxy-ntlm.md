@@ -5,7 +5,7 @@ Long: proxy-ntlm
 Help: NTLM authentication with the proxy
 Category: proxy auth
 Added: 7.10.7
-Multi: boolean
+Multi: mutex
 See-also:
   - proxy-negotiate
   - proxy-anyauth

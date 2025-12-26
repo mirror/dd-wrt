@@ -21,19 +21,25 @@
  * SPDX-License-Identifier: curl
  *
  ***************************************************************************/
-#include "first.h"
+#include "test.h"
 
 #ifdef HAVE_NETINET_IN_H
-#include <netinet/in.h>
+#  include <netinet/in.h>
 #endif
 #ifdef HAVE_NETDB_H
-#include <netdb.h>
+#  include <netdb.h>
 #endif
 #ifdef HAVE_ARPA_INET_H
-#include <arpa/inet.h>
+#  include <arpa/inet.h>
+#endif
+#ifdef HAVE_SYS_STAT_H
+#  include <sys/stat.h>
+#endif
+#ifdef HAVE_FCNTL_H
+#  include <fcntl.h>
 #endif
 
-#include "testutil.h"
+#include "warnless.h"
 #include "memdebug.h"
 
 #define RTP_PKT_CHANNEL(p)   ((int)((unsigned char)((p)[1])))
@@ -42,13 +48,13 @@
                              ((int)((unsigned char)((p)[3]))))
 
 #define RTP_DATA_SIZE 12
+static const char *RTP_DATA = "$_1234\n\0Rsdf";
 
 static int rtp_packet_count = 0;
 
-static size_t rtp_write(char *data, size_t size, size_t nmemb, void *stream)
+static size_t rtp_write(char *ptr, size_t size, size_t nmemb, void *stream)
 {
-  static const char *RTP_DATA = "$_1234\n\0Rsdf";
-
+  char *data = (char *)ptr;
   int channel = RTP_PKT_CHANNEL(data);
   int message_size;
   int coded_size = RTP_PKT_LENGTH(data);
@@ -61,7 +67,8 @@ static size_t rtp_write(char *data, size_t size, size_t nmemb, void *stream)
   curl_mprintf("RTP: message size %d, channel %d\n", message_size, channel);
   if(message_size != coded_size) {
     curl_mprintf("RTP embedded size (%d) does not match "
-                 "the write size (%d).\n", coded_size, message_size);
+                 "the write size (%d).\n",
+                 coded_size, message_size);
     return failure;
   }
 
@@ -76,7 +83,7 @@ static size_t rtp_write(char *data, size_t size, size_t nmemb, void *stream)
     else {
       if(memcmp(RTP_DATA, data + i, message_size - i) != 0) {
         curl_mprintf("RTP PAYLOAD END CORRUPTED (%d), [%s]\n",
-                     message_size - i, data + i);
+               message_size - i, data + i);
         /* return failure; */
       }
     }
@@ -88,14 +95,20 @@ static size_t rtp_write(char *data, size_t size, size_t nmemb, void *stream)
   return size * nmemb;
 }
 
-static CURLcode test_lib571(const char *URL)
+/* build request url */
+static char *suburl(const char *base, int i)
+{
+  return curl_maprintf("%s%.4d", base, i);
+}
+
+CURLcode test(char *URL)
 {
   CURLcode res;
   CURL *curl;
   char *stream_uri = NULL;
   int request = 1;
 
-  FILE *protofile = curlx_fopen(libtest_arg2, "wb");
+  FILE *protofile = fopen(libtest_arg2, "wb");
   if(!protofile) {
     curl_mfprintf(stderr, "Couldn't open the protocol dump file\n");
     return TEST_ERR_MAJOR_BAD;
@@ -103,20 +116,20 @@ static CURLcode test_lib571(const char *URL)
 
   if(curl_global_init(CURL_GLOBAL_ALL) != CURLE_OK) {
     curl_mfprintf(stderr, "curl_global_init() failed\n");
-    curlx_fclose(protofile);
+    fclose(protofile);
     return TEST_ERR_MAJOR_BAD;
   }
 
   curl = curl_easy_init();
   if(!curl) {
     curl_mfprintf(stderr, "curl_easy_init() failed\n");
-    curlx_fclose(protofile);
+    fclose(protofile);
     curl_global_cleanup();
     return TEST_ERR_MAJOR_BAD;
   }
   test_setopt(curl, CURLOPT_URL, URL);
 
-  stream_uri = tutil_suburl(URL, request++);
+  stream_uri = suburl(URL, request++);
   if(!stream_uri) {
     res = TEST_ERR_MAJOR_BAD;
     goto test_cleanup;
@@ -138,7 +151,7 @@ static CURLcode test_lib571(const char *URL)
     goto test_cleanup;
 
   /* This PLAY starts the interleave */
-  stream_uri = tutil_suburl(URL, request++);
+  stream_uri = suburl(URL, request++);
   if(!stream_uri) {
     res = TEST_ERR_MAJOR_BAD;
     goto test_cleanup;
@@ -153,7 +166,7 @@ static CURLcode test_lib571(const char *URL)
     goto test_cleanup;
 
   /* The DESCRIBE request will try to consume data after the Content */
-  stream_uri = tutil_suburl(URL, request++);
+  stream_uri = suburl(URL, request++);
   if(!stream_uri) {
     res = TEST_ERR_MAJOR_BAD;
     goto test_cleanup;
@@ -167,7 +180,7 @@ static CURLcode test_lib571(const char *URL)
   if(res)
     goto test_cleanup;
 
-  stream_uri = tutil_suburl(URL, request++);
+  stream_uri = suburl(URL, request++);
   if(!stream_uri) {
     res = TEST_ERR_MAJOR_BAD;
     goto test_cleanup;
@@ -194,7 +207,7 @@ test_cleanup:
   curl_free(stream_uri);
 
   if(protofile)
-    curlx_fclose(protofile);
+    fclose(protofile);
 
   curl_easy_cleanup(curl);
   curl_global_cleanup();

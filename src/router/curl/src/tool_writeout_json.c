@@ -23,6 +23,7 @@
  ***************************************************************************/
 #include "tool_setup.h"
 
+#include <curlx.h>
 #include "tool_cfgable.h"
 #include "tool_writeout_json.h"
 #include "tool_writeout.h"
@@ -112,9 +113,9 @@ void ourWriteOutJSON(FILE *stream, const struct writeoutvar mappings[],
 
   /* The variables are sorted in alphabetical order but as a special case
      curl_version (which is not actually a --write-out variable) is last. */
-  curl_mfprintf(stream, "\"curl_version\":");
+  fprintf(stream, "\"curl_version\":");
   jsonWriteString(stream, curl_version(), FALSE);
-  curl_mfprintf(stream, "}");
+  fprintf(stream, "}");
 }
 
 void headerJSON(FILE *stream, struct per_transfer *per)

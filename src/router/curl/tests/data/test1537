@@ -12,6 +12,9 @@ URL escape
 
 # Client-side
 <client>
+<server>
+none
+</server>
 <tool>
 lib%TESTNUMBER
 </tool>
@@ -19,6 +22,9 @@ lib%TESTNUMBER
 <name>
 libcurl URL escape/unescape tests
 </name>
+<command>
+nothing
+</command>
 </client>
 
 #

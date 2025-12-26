@@ -26,8 +26,6 @@
  * </DESC>
  */
 
-/* Requires: HAVE_PTHREAD_H */
-
 #include <stdio.h>
 #include <pthread.h>
 #include <curl/curl.h>
@@ -37,7 +35,7 @@
 /*
   List of URLs to fetch.
 
-  If you intend to use an SSL-based protocol here you might need to setup TLS
+  If you intend to use a SSL-based protocol here you might need to setup TLS
   library mutex callbacks as described here:
 
   https://curl.se/libcurl/c/threadsafe.html
@@ -50,17 +48,14 @@ static const char * const urls[NUMT]= {
   "www.example"
 };
 
-static void *pull_one_url(void *pindex)
+static void *pull_one_url(void *url)
 {
   CURL *curl;
 
   curl = curl_easy_init();
-  if(curl) {
-    int i = *(int *)pindex;
-    curl_easy_setopt(curl, CURLOPT_URL, urls[i]);
-    (void)curl_easy_perform(curl); /* ignores error */
-    curl_easy_cleanup(curl);
-  }
+  curl_easy_setopt(curl, CURLOPT_URL, url);
+  curl_easy_perform(curl); /* ignores error */
+  curl_easy_cleanup(curl);
 
   return NULL;
 }
@@ -74,21 +69,18 @@ static void *pull_one_url(void *pindex)
 
 int main(void)
 {
-  CURLcode res;
   pthread_t tid[NUMT];
   int i;
 
   /* Must initialize libcurl before any threads are started */
-  res = curl_global_init(CURL_GLOBAL_ALL);
-  if(res)
-    return (int)res;
+  curl_global_init(CURL_GLOBAL_ALL);
 
   for(i = 0; i < NUMT; i++) {
     int error = pthread_create(&tid[i],
                                NULL, /* default attributes please */
                                pull_one_url,
-                               (void *)&i);
-    if(error)
+                               (void *)urls[i]);
+    if(0 != error)
       fprintf(stderr, "Couldn't run thread number %d, errno %d\n", i, error);
     else
       fprintf(stderr, "Thread %d, gets %s\n", i, urls[i]);

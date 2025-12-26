@@ -109,7 +109,7 @@ class TestBasic:
         r.check_stats(http_status=200, count=1, exitcode=0,
                       remote_port=env.port_for(alpn_proto=proto),
                       remote_ip='127.0.0.1')
-        # got the Content-Length: header, but did not download anything
+        # got the Conten-Length: header, but did not download anything
         assert r.responses[0]['header']['content-length'] == '30', f'{r.responses[0]}'
         assert r.stats[0]['size_download'] == 0, f'{r.stats[0]}'
 
@@ -149,7 +149,7 @@ class TestBasic:
     # http: large response headers
     # send 48KB+ sized response headers to check we handle that correctly
     # larger than 64KB headers expose a bug in Apache HTTP/2 that is not
-    # RSTing the stream correctly when its internal limits are exceeded.
+    # RSTing the stream correclty when its internal limits are exceeded.
     @pytest.mark.parametrize("proto", ['http/1.1', 'h2', 'h3'])
     def test_01_11_large_resp_headers(self, env: Env, httpd, proto):
         if proto == 'h3' and not env.have_h3():
@@ -273,23 +273,3 @@ class TestBasic:
             assert r.responses[0]['header']['request-te'] == te_out, f'{r.responses[0]}'
         else:
             assert 'request-te' not in r.responses[0]['header'], f'{r.responses[0]}'
-
-    # check that an existing https: connection is not reused for http:
-    def test_01_18_tls_reuse(self, env: Env, httpd):
-        proto = 'h2'
-        curl = CurlClient(env=env)
-        url1 = f'https://{env.authority_for(env.domain1, proto)}/data.json'
-        url2 = f'http://{env.authority_for(env.domain1, proto)}/data.json'
-        r = curl.http_download(urls=[url1, url2], alpn_proto=proto, with_stats=True)
-        assert len(r.stats) == 2
-        assert r.total_connects == 2, f'{r.dump_logs()}'
-
-    # check that an existing http: connection is not reused for https:
-    def test_01_19_plain_reuse(self, env: Env, httpd):
-        proto = 'h2'
-        curl = CurlClient(env=env)
-        url1 = f'http://{env.domain1}:{env.http_port}/data.json'
-        url2 = f'https://{env.domain1}:{env.http_port}/data.json'
-        r = curl.http_download(urls=[url1, url2], alpn_proto=proto, with_stats=True)
-        assert len(r.stats) == 2
-        assert r.total_connects == 2, f'{r.dump_logs()}'

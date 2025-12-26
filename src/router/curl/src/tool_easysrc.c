@@ -27,11 +27,13 @@
 
 #ifndef CURL_DISABLE_LIBCURL_OPTION
 
+#include <curlx.h>
+
 #include "tool_cfgable.h"
 #include "tool_easysrc.h"
 #include "tool_msgs.h"
 
-#include "memdebug.h" /* keep this as LAST include */
+#include <memdebug.h> /* keep this as LAST include */
 
 /* global variable definitions, for easy-interface source code generation */
 
@@ -109,7 +111,7 @@ CURLcode easysrc_addf(struct slist_wc **plist, const char *fmt, ...)
   char *bufp;
   va_list ap;
   va_start(ap, fmt);
-  bufp = curl_mvaprintf(fmt, ap);
+  bufp = vaprintf(fmt, ap);
   va_end(ap);
   if(!bufp) {
     ret = CURLE_OUT_OF_MEMORY;
@@ -170,64 +172,64 @@ CURLcode easysrc_cleanup(void)
   return ret;
 }
 
-void dumpeasysrc(void)
+void dumpeasysrc(struct GlobalConfig *config)
 {
   struct curl_slist *ptr;
-  char *o = global->libcurl;
+  char *o = config->libcurl;
 
   FILE *out;
   bool fopened = FALSE;
   if(strcmp(o, "-")) {
-    out = curlx_fopen(o, FOPEN_WRITETEXT);
+    out = fopen(o, FOPEN_WRITETEXT);
     fopened = TRUE;
   }
   else
     out = stdout;
   if(!out)
-    warnf("Failed to open %s to write libcurl code", o);
+    warnf(config, "Failed to open %s to write libcurl code", o);
   else {
     int i;
     const char *c;
 
     for(i = 0; ((c = srchead[i]) != NULL); i++)
-      curl_mfprintf(out, "%s\n", c);
+      fprintf(out, "%s\n", c);
 
     /* Declare variables used for complex setopt values */
     if(easysrc_decl) {
       for(ptr = easysrc_decl->first; ptr; ptr = ptr->next)
-        curl_mfprintf(out, "  %s\n", ptr->data);
+        fprintf(out, "  %s\n", ptr->data);
     }
 
     /* Set up complex values for setopt calls */
     if(easysrc_data) {
-      curl_mfprintf(out, "\n");
+      fprintf(out, "\n");
 
       for(ptr = easysrc_data->first; ptr; ptr = ptr->next)
-        curl_mfprintf(out, "  %s\n", ptr->data);
+        fprintf(out, "  %s\n", ptr->data);
     }
 
-    curl_mfprintf(out, "\n");
+    fprintf(out, "\n");
     if(easysrc_code) {
       for(ptr = easysrc_code->first; ptr; ptr = ptr->next) {
         if(ptr->data[0]) {
-          curl_mfprintf(out, "  %s\n", ptr->data);
+          fprintf(out, "  %s\n", ptr->data);
         }
         else {
-          curl_mfprintf(out, "\n");
+          fprintf(out, "\n");
         }
       }
     }
 
     if(easysrc_clean) {
       for(ptr = easysrc_clean->first; ptr; ptr = ptr->next)
-        curl_mfprintf(out, "  %s\n", ptr->data);
+        fprintf(out, "  %s\n", ptr->data);
     }
 
     for(i = 0; ((c = srcend[i]) != NULL); i++)
-      curl_mfprintf(out, "%s\n", c);
+      fprintf(out, "%s\n", c);
 
     if(fopened)
-      curlx_fclose(out);
+      fclose(out);
   }
 
   easysrc_free();

@@ -27,7 +27,6 @@
 # a late evening in the #curl IRC channel.
 #
 
-use strict;
 use warnings;
 use vars qw($Cpreprocessor);
 use allversions;
@@ -44,7 +43,7 @@ my $rc = eval {
 };
 # Set default values if configure has not generated a configurehelp.pm file.
 # This is the case with cmake.
-if(!$rc) {
+if (!$rc) {
     $Cpreprocessor = 'cpp';
 }
 
@@ -53,15 +52,13 @@ my $root=$ARGV[0] || ".";
 
 # need an include directory when building out-of-tree
 my $i = ($ARGV[1]) ? "-I$ARGV[1] " : '';
-my $error = 0;
+my $error;
 
 my $versions = $ARGV[2];
 
 my @syms;
 my %manpage;
 my %symadded;
-
-our %pastversion;
 
 sub checkmanpage {
     my ($m) = @_;
@@ -130,12 +127,14 @@ close $s;
 
 my $ignored=0;
 for my $e (sort @syms) {
-    if($manpage{$e}) {
-        if($manpage{$e} ne $symadded{$e}) {
+    if( $manpage{$e} ) {
+
+        if( $manpage{$e} ne $symadded{$e} ) {
             printf "%s.md says version %s, but SIV says %s\n",
                 $e, $manpage{$e}, $symadded{$e};
             $error++;
         }
+
     }
 }
 print "OK\n" if(!$error);

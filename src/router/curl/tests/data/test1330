@@ -13,6 +13,9 @@ TrackMemory
 
 # Client-side
 <client>
+<server>
+none
+</server>
 <features>
 unittest
 TrackMemory
@@ -20,6 +23,9 @@ TrackMemory
 <name>
 unit tests memory tracking operational
 </name>
+<command>
+nothing
+</command>
 </client>
 
 #

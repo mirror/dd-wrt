@@ -9,6 +9,9 @@ uint_bset
 #
 # Client-side
 <client>
+<server>
+none
+</server>
 <features>
 unittest
 </features>

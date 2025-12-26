@@ -28,7 +28,10 @@ ftp://%HOSTIP:%FTPPORT/blalbla/%TESTNUMBER -z "-1 jan 2001"
 </client>
 
 <verify>
-<protocol crlf="yes">
+<strip>
+QUIT
+</strip>
+<protocol>
 USER anonymous
 PASS ftp@example.com
 PWD

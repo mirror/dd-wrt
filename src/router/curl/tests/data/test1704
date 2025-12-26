@@ -10,7 +10,7 @@ HTTP/2
 #
 # Server-side
 <reply>
-<data crlf="headers" nocheck="yes">
+<data nocheck="yes">
 HTTP/2 101 OK
 
 HTTP/1.1 200 OK
@@ -33,7 +33,7 @@ h2c
 http
 </server>
 <name>
-HTTP/1 doing HTTP/2 Upgrade: getting an HTTP/2 101 response
+HTTP/1 doing HTTP/2 Upgrade: getting a HTTP/2 101 response
 </name>
 <command>
 http://%HOSTIP:%HTTPPORT/%TESTNUMBER --http2
@@ -47,14 +47,14 @@ http://%HOSTIP:%HTTPPORT/%TESTNUMBER --http2
 ^X-Forwarded-Proto:.*
 ^Via:.*
 </strip>
-<protocol crlf="headers">
+<protocol>
 GET /%TESTNUMBER HTTP/1.1
 Host: %HOSTIP:%HTTPPORT
 User-Agent: curl/%VERSION
 Accept: */*
+Connection: Upgrade, HTTP2-Settings
 Upgrade: h2c
 HTTP2-Settings: AAMAAABkAAQAAQAAAAIAAAAA
-Connection: Upgrade, HTTP2-Settings
 
 </protocol>
 

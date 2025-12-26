@@ -10,6 +10,9 @@ CURLINFO_PROTOCOL
 </reply>
 
 <client>
+<server>
+none
+</server>
 <features>
 file
 </features>

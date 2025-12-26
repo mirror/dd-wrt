@@ -117,10 +117,7 @@ class Caddy:
         self._mkpath(self._tmp_dir)
         if self._process:
             self._process.terminate()
-            try:
-                self._process.wait(timeout=1)
-            except Exception:
-                self._process.kill()
+            self._process.wait(timeout=2)
             self._process = None
             return not wait_dead or self.wait_dead(timeout=timedelta(seconds=5))
         return True
@@ -181,9 +178,6 @@ class Caddy:
                 '{',
                 f'  http_port {self._http_port}',
                 f'  https_port {self._https_port}',
-                '  log default {',
-                '     level ERROR',
-                '}',
                 f'  servers :{self._https_port} {{',
                 '    protocols h3 h2 h1',
                 '  }',

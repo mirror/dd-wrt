@@ -6,6 +6,7 @@ Arg: <string>
 Help: Set IP Type of Service or Traffic Class
 Added: 8.9.0
 Category: connection
+Protocols: All
 Multi: single
 See-also:
   - tcp-nodelay

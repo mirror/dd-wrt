@@ -21,8 +21,10 @@
  * SPDX-License-Identifier: curl
  *
  ***************************************************************************/
-#include "first.h"
+#include "test.h"
 
+#include "testutil.h"
+#include "warnless.h"
 #include "memdebug.h"
 
 static int loadfile(const char *filename, void **filedata, size_t *filesize)
@@ -30,7 +32,7 @@ static int loadfile(const char *filename, void **filedata, size_t *filesize)
   size_t datasize = 0;
   void *data = NULL;
   if(filename) {
-    FILE *fInCert = curlx_fopen(filename, "rb");
+    FILE *fInCert = fopen(filename, "rb");
 
     if(fInCert) {
       long cert_tell = 0;
@@ -48,7 +50,7 @@ static int loadfile(const char *filename, void **filedata, size_t *filesize)
       if((!data) ||
          ((int)fread(data, datasize, 1, fInCert) != 1))
         continue_reading = FALSE;
-      curlx_fclose(fInCert);
+      fclose(fInCert);
       if(!continue_reading) {
         free(data);
         datasize = 0;
@@ -76,11 +78,12 @@ static CURLcode test_cert_blob(const char *url, const char *cafile)
   }
 
   if(loadfile(cafile, &certdata, &certsize)) {
-    curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L);
-    curl_easy_setopt(curl, CURLOPT_HEADER, 1L);
-    curl_easy_setopt(curl, CURLOPT_URL, url);
-    curl_easy_setopt(curl, CURLOPT_USERAGENT, "CURLOPT_CAINFO_BLOB");
-    curl_easy_setopt(curl, CURLOPT_SSL_OPTIONS, CURLSSLOPT_REVOKE_BEST_EFFORT);
+    curl_easy_setopt(curl, CURLOPT_VERBOSE,     1L);
+    curl_easy_setopt(curl, CURLOPT_HEADER,      1L);
+    curl_easy_setopt(curl, CURLOPT_URL,         url);
+    curl_easy_setopt(curl, CURLOPT_USERAGENT,   "CURLOPT_CAINFO_BLOB");
+    curl_easy_setopt(curl, CURLOPT_SSL_OPTIONS,
+                     (long)CURLSSLOPT_REVOKE_BEST_EFFORT);
 
     blob.data = certdata;
     blob.len = certsize;
@@ -94,19 +97,20 @@ static CURLcode test_cert_blob(const char *url, const char *cafile)
   return code;
 }
 
-static CURLcode test_lib678(const char *URL)
+CURLcode test(char *URL)
 {
   CURLcode res = CURLE_OK;
   curl_global_init(CURL_GLOBAL_DEFAULT);
   if(!strcmp("check", URL)) {
+    CURL *e;
     CURLcode w = CURLE_OK;
     struct curl_blob blob = {0};
-    CURL *curl = curl_easy_init();
-    if(curl) {
-      w = curl_easy_setopt(curl, CURLOPT_CAINFO_BLOB, &blob);
+    e = curl_easy_init();
+    if(e) {
+      w = curl_easy_setopt(e, CURLOPT_CAINFO_BLOB, &blob);
       if(w)
         curl_mprintf("CURLOPT_CAINFO_BLOB is not supported\n");
-      curl_easy_cleanup(curl);
+      curl_easy_cleanup(e);
     }
     res = w;
   }

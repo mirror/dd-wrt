@@ -17,6 +17,6 @@ Example:
 # `--ftp-ssl-ccc`
 
 Use CCC (Clear Command Channel) Shuts down the SSL/TLS layer after
-authenticating. The rest of the control channel communication is
+authenticating. The rest of the control channel communication is be
 unencrypted. This allows NAT routers to follow the FTP transaction. The
 default mode is passive.

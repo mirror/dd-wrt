@@ -9,7 +9,7 @@ GSS-API
 
 # Server-side
 <reply>
-<data crlf="headers">
+<data>
 HTTP/1.1 200 OK swsclose
 Content-Length: 23
 

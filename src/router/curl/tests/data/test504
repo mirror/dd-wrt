@@ -16,6 +16,9 @@ connect to non-listen
 
 # Client-side
 <client>
+<server>
+none
+</server>
 <features>
 http
 proxy
@@ -34,10 +37,10 @@ http://%HOSTIP:%NOLISTENPORT/%TESTNUMBER %HOSTIP:%NOLISTENPORT
 </client>
 
 # Verify data after the test has been "shot"
-# TEST_ERR_SUCCESS is errorcode 41
+# TEST_ERR_SUCCESS is errorcode 120
 <verify>
 <errorcode>
-41
+120
 </errorcode>
 </verify>
 </testcase>

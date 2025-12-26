@@ -31,10 +31,10 @@ Mime
 http
 </server>
 <name>
---libcurl plus -F with 3 files, one with explicit type & encoder
+--libcurl for HTTP RFC1867-type formposting - -F with 3 files, one with explicit type & encoder
 </name>
 <setenv>
-SSL_CERT_FILE
+SSL_CERT_FILE=
 </setenv>
 <command>
 http://%HOSTIP:%HTTPPORT/we/want/%TESTNUMBER -F name=value -F 'file=@%LOGDIR/test%TESTNUMBER.txt,%LOGDIR/test%TESTNUMBER.txt;type=magic/content;encoder=8bit,%LOGDIR/test%TESTNUMBER.txt;headers=X-testheader-1: header 1;headers=X-testheader-2: header 2' --libcurl %LOGDIR/test%TESTNUMBER.c
@@ -99,7 +99,6 @@ $_ = '' if /CURLOPT_SSL_VERIFYPEER/
 $_ = '' if /CURLOPT_SSH_KNOWNHOSTS/
 $_ = '' if /CURLOPT_HTTP_VERSION/
 $_ = '' if /CURLOPT_INTERLEAVEDATA/
-$_ = '' if /CURLOPT_SSLVERSION/
 # CURL_DOES_CONVERSION generates an extra comment.
 $_ = '' if /\/\* "value" \*\//
 </stripfile>
@@ -158,14 +157,14 @@ int main(int argc, char *argv[])
      as source easily. You may choose to either not use them or implement
      them yourself.
 
-  CURLOPT_DEBUGFUNCTION was set to a function pointer
-  CURLOPT_DEBUGDATA was set to an object pointer
   CURLOPT_WRITEDATA was set to an object pointer
   CURLOPT_WRITEFUNCTION was set to a function pointer
   CURLOPT_READDATA was set to an object pointer
   CURLOPT_READFUNCTION was set to a function pointer
   CURLOPT_SEEKDATA was set to an object pointer
   CURLOPT_SEEKFUNCTION was set to a function pointer
+  CURLOPT_DEBUGFUNCTION was set to a function pointer
+  CURLOPT_DEBUGDATA was set to an object pointer
   CURLOPT_HEADERFUNCTION was set to a function pointer
   CURLOPT_HEADERDATA was set to an object pointer
   CURLOPT_ERRORBUFFER was set to an object pointer

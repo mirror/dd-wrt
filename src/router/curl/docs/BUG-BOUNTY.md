@@ -7,8 +7,8 @@ SPDX-License-Identifier: curl
 # The curl bug bounty
 
 The curl project runs a bug bounty program in association with
-[HackerOne](https://www.hackerone.com/) and the [Internet Bug
-Bounty](https://internetbugbounty.org/).
+[HackerOne](https://www.hackerone.com) and the [Internet Bug
+Bounty](https://internetbugbounty.org).
 
 ## How does it work?
 
@@ -31,7 +31,8 @@ Bounty and they set the reward amounts. If it would turn out that they set
 amounts that are way lower than we can accept, the curl project intends to
 "top up" rewards.
 
-In 2025, typical "Medium" rated vulnerabilities are rewarded 2,500 USD each.
+In 2022, typical "Medium" rated vulnerabilities have been rewarded 2,400 USD
+each.
 
 ## Who is eligible for a reward?
 

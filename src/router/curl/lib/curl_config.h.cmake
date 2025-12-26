@@ -148,7 +148,7 @@
 /* disables SMTP */
 #cmakedefine CURL_DISABLE_SMTP 1
 
-/* disabled WebSocket */
+/* disabled WebSockets */
 #cmakedefine CURL_DISABLE_WEBSOCKETS 1
 
 /* disables use of socketpair for curl_multi_poll */
@@ -315,23 +315,29 @@
 /* if you have the gssapi libraries */
 #cmakedefine HAVE_GSSAPI 1
 
+/* Define to 1 if you have the <gssapi/gssapi_generic.h> header file. */
+#cmakedefine HAVE_GSSAPI_GSSAPI_GENERIC_H 1
+
+/* Define to 1 if you have the <gssapi/gssapi.h> header file. */
+#cmakedefine HAVE_GSSAPI_GSSAPI_H 1
+
 /* if you have the GNU gssapi libraries */
 #cmakedefine HAVE_GSSGNU 1
-
-/* MIT Kerberos version */
-#cmakedefine CURL_KRB5_VERSION ${CURL_KRB5_VERSION}
 
 /* Define to 1 if you have the <ifaddrs.h> header file. */
 #cmakedefine HAVE_IFADDRS_H 1
 
-/* Define to 1 if you have an IPv6 capable working inet_ntop function. */
+/* Define to 1 if you have a IPv6 capable working inet_ntop function. */
 #cmakedefine HAVE_INET_NTOP 1
 
-/* Define to 1 if you have an IPv6 capable working inet_pton function. */
+/* Define to 1 if you have a IPv6 capable working inet_pton function. */
 #cmakedefine HAVE_INET_PTON 1
 
 /* Define to 1 if symbol `sa_family_t' exists */
 #cmakedefine HAVE_SA_FAMILY_T 1
+
+/* Define to 1 if symbol `ADDRESS_FAMILY' exists */
+#cmakedefine HAVE_ADDRESS_FAMILY 1
 
 /* Define to 1 if you have the ioctlsocket function. */
 #cmakedefine HAVE_IOCTLSOCKET 1
@@ -417,6 +423,9 @@
 
 /* Define to 1 if you have the <net/if.h> header file. */
 #cmakedefine HAVE_NET_IF_H 1
+
+/* if you have an old MIT gssapi library, lacking GSS_C_NT_HOSTBASED_SERVICE */
+#cmakedefine HAVE_OLD_GSSMIT 1
 
 /* Define to 1 if you have the `pipe' function. */
 #cmakedefine HAVE_PIPE 1
@@ -577,8 +586,17 @@
 /* Define to 1 if you have the <sys/select.h> header file. */
 #cmakedefine HAVE_SYS_SELECT_H 1
 
+/* Define to 1 if you have the <sys/socket.h> header file. */
+#cmakedefine HAVE_SYS_SOCKET_H 1
+
 /* Define to 1 if you have the <sys/sockio.h> header file. */
 #cmakedefine HAVE_SYS_SOCKIO_H 1
+
+/* Define to 1 if you have the <sys/stat.h> header file. */
+#cmakedefine HAVE_SYS_STAT_H 1
+
+/* Define to 1 if you have the <sys/time.h> header file. */
+#cmakedefine HAVE_SYS_TIME_H 1
 
 /* Define to 1 if you have the <sys/types.h> header file. */
 #cmakedefine HAVE_SYS_TYPES_H 1
@@ -667,14 +685,17 @@ ${SIZEOF_TIME_T_CODE}
 /* if GnuTLS is enabled */
 #cmakedefine USE_GNUTLS 1
 
+/* if Secure Transport is enabled */
+#cmakedefine USE_SECTRANSP 1
+
 /* if SSL session export support is available */
 #cmakedefine USE_SSLS_EXPORT 1
 
 /* if mbedTLS is enabled */
 #cmakedefine USE_MBEDTLS 1
 
-/* if mbedTLS <4 has the mbedtls_des_crypt_ecb function. */
-#cmakedefine HAVE_MBEDTLS_DES_CRYPT_ECB 1
+/* if BearSSL is enabled */
+#cmakedefine USE_BEARSSL 1
 
 /* if Rustls is enabled */
 #cmakedefine USE_RUSTLS 1
@@ -702,6 +723,9 @@ ${SIZEOF_TIME_T_CODE}
 
 /* if libssh2 is in use */
 #cmakedefine USE_LIBSSH2 1
+
+/* if wolfssh is in use */
+#cmakedefine USE_WOLFSSH 1
 
 /* if libpsl is in use */
 #cmakedefine USE_LIBPSL 1
@@ -752,6 +776,9 @@ ${SIZEOF_TIME_T_CODE}
 /* Define to 1 if you have the quiche_conn_set_qlog_fd function. */
 #cmakedefine HAVE_QUICHE_CONN_SET_QLOG_FD 1
 
+/* to enable msh3 */
+#cmakedefine USE_MSH3 1
+
 /* if Unix domain sockets are enabled  */
 #cmakedefine USE_UNIX_SOCKETS 1
 
@@ -773,6 +800,18 @@ ${SIZEOF_TIME_T_CODE}
 /* Number of bits in a file offset, on hosts where this is settable. */
 #cmakedefine _FILE_OFFSET_BITS ${_FILE_OFFSET_BITS}
 
+/* Define for large files, on AIX-style hosts. */
+#cmakedefine _LARGE_FILES ${_LARGE_FILES}
+
+/* define this if you need it to compile thread-safe code */
+#cmakedefine _THREAD_SAFE ${_THREAD_SAFE}
+
+/* Define to empty if `const' does not conform to ANSI C. */
+#cmakedefine const ${const}
+
+/* Define to `unsigned int' if <sys/types.h> does not define. */
+#cmakedefine size_t ${size_t}
+
 /* the signed version of size_t */
 #cmakedefine ssize_t ${ssize_t}
 
@@ -784,9 +823,6 @@ ${SIZEOF_TIME_T_CODE}
 
 /* to enable Apple IDN */
 #cmakedefine USE_APPLE_IDN 1
-
-/* to enable Apple OS-native certificate verification */
-#cmakedefine USE_APPLE_SECTRUST 1
 
 /* Define to 1 if OpenSSL has the SSL_CTX_set_srp_username function. */
 #cmakedefine HAVE_OPENSSL_SRP 1
@@ -804,10 +840,7 @@ ${SIZEOF_TIME_T_CODE}
 #cmakedefine USE_ECH 1
 
 /* Define to 1 if you have the wolfSSL_CTX_GenerateEchConfig function. */
-#cmakedefine HAVE_WOLFSSL_CTX_GENERATEECHCONFIG 1
+#cmakedefine HAVE_WOLFSSL_CTX_GENERATEECHCONFIG
 
 /* Define to 1 if you have the SSL_set1_ech_config_list function. */
-#cmakedefine HAVE_SSL_SET1_ECH_CONFIG_LIST 1
-
-/* Define to 1 if OpenSSL has the DES_ecb_encrypt function. */
-#cmakedefine HAVE_DES_ECB_ENCRYPT 1
+#cmakedefine HAVE_SSL_SET1_ECH_CONFIG_LIST

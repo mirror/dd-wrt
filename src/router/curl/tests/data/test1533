@@ -12,7 +12,7 @@ CURLOPT_KEEP_SENDING_ON_ERROR
 <servercmd>
 auth_required
 </servercmd>
-<data crlf="headers" nocheck="yes">
+<data nocheck="yes">
 HTTP/1.1 401 Authorization Required
 Date: Tue, 09 Nov 2010 14:49:00 GMT
 Server: test-server/fake
@@ -38,12 +38,12 @@ http://%HOSTIP:%HTTPPORT/%TESTNUMBER
 </client>
 
 # Verify data after the test has been "shot"
-# TEST_ERR_SUCCESS is errorcode 41
+# TEST_ERR_SUCCESS is errorcode 120
 <verify>
 <errorcode>
-41
+120
 </errorcode>
-<protocol crlf="yes" nonewline="yes">
+<protocol nonewline="yes">
 POST /%TESTNUMBER HTTP/1.1
 Host: %HOSTIP:%HTTPPORT
 Accept: */*

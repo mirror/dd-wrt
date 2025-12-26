@@ -9,7 +9,7 @@ HTTP Digest auth
 
 # Server-side
 <reply>
-<data crlf="headers">
+<data>
 HTTP/1.1 401 authentication please
 Server: Microsoft-IIS/6.0
 WWW-Authenticate: Digest realm="testrealm", nonce="1053604144", algorithm="SHA-256", userhash=true
@@ -17,7 +17,7 @@ Content-Type: text/html; charset=iso-8859-1
 Content-Length: 0
 
 </data>
-<data1000 crlf="headers">
+<data1000>
 HTTP/1.1 200 A OK
 Server: Microsoft-IIS/6.0
 Content-Type: text/html; charset=iso-8859-1
@@ -26,7 +26,7 @@ Content-Length: 3
 ok
 </data1000>
 
-<datacheck crlf="headers">
+<datacheck>
 HTTP/1.1 401 authentication please
 Server: Microsoft-IIS/6.0
 WWW-Authenticate: Digest realm="testrealm", nonce="1053604144", algorithm="SHA-256", userhash=true
@@ -52,10 +52,9 @@ http
 <features>
 !SSPI
 crypto
-digest
 </features>
 <name>
-HTTP POST Digest with SHA-256, userhash and set Content-Length header
+HTTP POST --digest with SHA-256, userhash=true and user-specified Content-Length header
 </name>
 # This test is to ensure 'Content-Length: 0' is sent while negotiating auth
 # even when there is a user-specified Content-Length header.
@@ -67,7 +66,7 @@ HTTP POST Digest with SHA-256, userhash and set Content-Length header
 
 # Verify data after the test has been "shot"
 <verify>
-<protocol crlf="yes" nonewline="yes">
+<protocol nonewline="yes">
 POST /%TESTNUMBER HTTP/1.1
 Host: %HOSTIP:%HTTPPORT
 User-Agent: curl/%VERSION

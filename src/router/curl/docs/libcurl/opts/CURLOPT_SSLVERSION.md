@@ -42,7 +42,7 @@ Use one of the available defines for this purpose. The available options are:
 ## CURL_SSLVERSION_DEFAULT
 
 The default acceptable version range. The minimum acceptable version is by
-default TLS v1.2 since 8.16.0 (unless the TLS library has a stricter rule).
+default TLS v1.0 since 7.39.0 (unless the TLS library has a stricter rule).
 
 ## CURL_SSLVERSION_TLSv1
 
@@ -58,48 +58,58 @@ SSL v3 - refused
 
 ## CURL_SSLVERSION_TLSv1_0
 
-TLS v1.0 or later
+TLS v1.0 or later (Added in 7.34.0)
 
 ## CURL_SSLVERSION_TLSv1_1
 
-TLS v1.1 or later
+TLS v1.1 or later (Added in 7.34.0)
 
 ## CURL_SSLVERSION_TLSv1_2
 
-TLS v1.2 or later
+TLS v1.2 or later (Added in 7.34.0)
 
 ## CURL_SSLVERSION_TLSv1_3
 
-TLS v1.3 or later
+TLS v1.3 or later (Added in 7.52.0)
 
 ##
 
-The maximum TLS version can be set by using *one* of the CURL_SSLVERSION_MAX_
-macros below. It is also possible to OR *one* of the CURL_SSLVERSION_ macros
-with *one* of the CURL_SSLVERSION_MAX_ macros.
+The maximum TLS version can be set by using *one* of the
+CURL_SSLVERSION_MAX_ macros below. It is also possible to OR *one* of the
+CURL_SSLVERSION_ macros with *one* of the CURL_SSLVERSION_MAX_ macros.
 
 ## CURL_SSLVERSION_MAX_DEFAULT
 
 The flag defines the maximum supported TLS version by libcurl, or the default
 value from the SSL library is used. libcurl uses a sensible default maximum,
 which was TLS v1.2 up to before 7.61.0 and is TLS v1.3 since then - assuming
-the TLS library support it.
+the TLS library support it. (Added in 7.54.0)
 
 ## CURL_SSLVERSION_MAX_TLSv1_0
 
 The flag defines maximum supported TLS version as TLS v1.0.
+(Added in 7.54.0)
 
 ## CURL_SSLVERSION_MAX_TLSv1_1
 
 The flag defines maximum supported TLS version as TLS v1.1.
+(Added in 7.54.0)
 
 ## CURL_SSLVERSION_MAX_TLSv1_2
 
 The flag defines maximum supported TLS version as TLS v1.2.
+(Added in 7.54.0)
 
 ## CURL_SSLVERSION_MAX_TLSv1_3
 
 The flag defines maximum supported TLS version as TLS v1.3.
+(Added in 7.54.0)
+
+##
+
+In versions of curl prior to 7.54 the CURL_SSLVERSION_TLS options were
+documented to allow *only* the specified TLS version, but behavior was
+inconsistent depending on the TLS library.
 
 # DEFAULT
 
@@ -117,7 +127,7 @@ int main(void)
     curl_easy_setopt(curl, CURLOPT_URL, "https://example.com");
 
     /* ask libcurl to use TLS version 1.0 or later */
-    curl_easy_setopt(curl, CURLOPT_SSLVERSION, CURL_SSLVERSION_TLSv1);
+    curl_easy_setopt(curl, CURLOPT_SSLVERSION, (long)CURL_SSLVERSION_TLSv1);
 
     /* Perform the request */
     curl_easy_perform(curl);
@@ -139,9 +149,6 @@ supported with wolfSSL and the other macros did not set a minimum, but
 restricted the TLS version to only the specified one.
 
 Rustls support added in 8.10.0.
-
-**CURL_SSLVERSION_*** macros became `long` types in 8.16.0, prior to this
-version a `long` cast was necessary when passed to curl_easy_setopt(3).
 
 # %AVAILABILITY%
 

@@ -40,7 +40,10 @@ lib1569
 
 # Verify data after the test has been "shot"
 <verify>
-<protocol crlf="yes">
+<strip>
+QUIT
+</strip>
+<protocol>
 USER anonymous
 PASS ftp@example.com
 PWD

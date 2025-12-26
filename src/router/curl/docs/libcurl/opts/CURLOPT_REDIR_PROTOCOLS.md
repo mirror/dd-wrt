@@ -97,7 +97,7 @@ int main(int argc, char **argv)
     curl_easy_setopt(curl, CURLOPT_URL, argv[1]);
 
     /* only allow redirects to HTTP and HTTPS URLs */
-    curl_easy_setopt(curl, CURLOPT_REDIR_PROTOCOLS,
+    curl_easy_setopt(curl, CURLOPT_REDIR_PROTOCOLS, (long)
                      CURLPROTO_HTTP | CURLPROTO_HTTPS);
 
     /* Perform the request */
@@ -105,11 +105,6 @@ int main(int argc, char **argv)
   }
 }
 ~~~
-
-# HISTORY
-
-**CURLPROTO_*** macros became `long` types in 8.16.0, prior to this version
-a `long` cast was necessary when passed to curl_easy_setopt(3).
 
 # DEPRECATED
 

@@ -159,8 +159,6 @@ class TestFtpsVsFTPD:
 
     # check with `tcpdump` if curl causes any TCP RST packets
     @pytest.mark.skipif(condition=not Env.tcpdump(), reason="tcpdump not available")
-    @pytest.mark.skipif(condition=not Env.curl_is_debug(), reason="needs curl debug")
-    @pytest.mark.skipif(condition=not Env.curl_is_verbose(), reason="needs curl verbose strings")
     def test_32_06_shutdownh_download(self, env: Env, vsftpds: VsFTPD):
         docname = 'data-1k'
         curl = CurlClient(env=env)
@@ -176,8 +174,6 @@ class TestFtpsVsFTPD:
 
     # check with `tcpdump` if curl causes any TCP RST packets
     @pytest.mark.skipif(condition=not Env.tcpdump(), reason="tcpdump not available")
-    @pytest.mark.skipif(condition=not Env.curl_is_debug(), reason="needs curl debug")
-    @pytest.mark.skipif(condition=not Env.curl_is_verbose(), reason="needs curl verbose strings")
     def test_32_07_shutdownh_upload(self, env: Env, vsftpds: VsFTPD):
         docname = 'upload-1k'
         curl = CurlClient(env=env)
@@ -258,14 +254,7 @@ class TestFtpsVsFTPD:
         assert os.path.exists(dstfile)
         destdata = open(dstfile).readlines()
         expdata = [indata] if len(indata) else []
-        assert expdata == destdata, f'expected: {expdata}, got: {destdata}'
-
-    def test_32_11_download_non_existing(self, env: Env, vsftpds: VsFTPD):
-        curl = CurlClient(env=env)
-        url = f'ftps://{env.ftp_domain}:{vsftpds.port}/does-not-exist'
-        r = curl.ftp_get(urls=[url], with_stats=True)
-        r.check_exit_code(78)
-        r.check_stats(count=1, exitcode=78)
+        assert expdata == destdata, f'exected: {expdata}, got: {destdata}'
 
     def check_downloads(self, client, srcfile: str, count: int,
                         complete: bool = True):

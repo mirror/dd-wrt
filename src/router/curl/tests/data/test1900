@@ -16,6 +16,9 @@ HSTS
 HSTS
 http
 </features>
+<server>
+none
+</server>
 
 <name>
 HSTS curl_easy_duphandle

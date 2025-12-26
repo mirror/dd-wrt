@@ -41,9 +41,11 @@
 #include <sys/types.h>
 #endif
 
+#ifdef HAVE_SYS_STAT_H
 #include <sys/stat.h>
+#endif
 
-#if !defined(_WIN32) || defined(__MINGW32__)
+#ifdef HAVE_SYS_TIME_H
 #include <sys/time.h>
 #endif
 
@@ -61,6 +63,10 @@
 
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
+#endif
+
+#if defined(HAVE_STDINT_H) || defined(USE_WOLFSSL)
+#include <stdint.h>
 #endif
 
 /* Macro to strip 'const' without triggering a compiler warning.
@@ -90,7 +96,7 @@
 #  endif
 #endif
 
-#ifndef _WIN32
+#ifdef HAVE_SYS_SOCKET_H
 #include <sys/socket.h>
 #endif
 
@@ -191,15 +197,15 @@ struct timeval {
  */
 
 #ifdef HAVE_CLOSESOCKET
-#  define CURL_SCLOSE(x)  closesocket((x))
+#  define sclose(x)  closesocket((x))
 #elif defined(HAVE_CLOSESOCKET_CAMEL)
-#  define CURL_SCLOSE(x)  CloseSocket((x))
+#  define sclose(x)  CloseSocket((x))
 #elif defined(MSDOS)  /* Watt-32 */
-#  define CURL_SCLOSE(x)  close_s((x))
+#  define sclose(x)  close_s((x))
 #elif defined(USE_LWIPSOCK)
-#  define CURL_SCLOSE(x)  lwip_close((x))
+#  define sclose(x)  lwip_close((x))
 #else
-#  define CURL_SCLOSE(x)  close((x))
+#  define sclose(x)  close((x))
 #endif
 
 /*

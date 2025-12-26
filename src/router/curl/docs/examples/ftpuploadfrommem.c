@@ -31,7 +31,7 @@
 
 static const char data[]=
   "Lorem ipsum dolor sit amet, consectetur adipiscing elit. "
-  "___ rhoncus odio id venenatis volutpat. Vestibulum dapibus "
+  "Nam rhoncus odio id venenatis volutpat. Vestibulum dapibus "
   "bibendum ullamcorper. Maecenas finibus elit augue, vel "
   "condimentum odio maximus nec. In hac habitasse platea dictumst. "
   "Vestibulum vel dolor et turpis rutrum finibus ac at nulla. "
@@ -45,7 +45,7 @@ struct WriteThis {
   size_t sizeleft;
 };
 
-static size_t read_cb(char *ptr, size_t size, size_t nmemb, void *userp)
+static size_t read_callback(char *ptr, size_t size, size_t nmemb, void *userp)
 {
   struct WriteThis *upload = (struct WriteThis *)userp;
   size_t max = size*nmemb;
@@ -99,7 +99,7 @@ int main(void)
     curl_easy_setopt(curl, CURLOPT_UPLOAD, 1L);
 
     /* we want to use our own read function */
-    curl_easy_setopt(curl, CURLOPT_READFUNCTION, read_cb);
+    curl_easy_setopt(curl, CURLOPT_READFUNCTION, read_callback);
 
     /* pointer to pass to our read function */
     curl_easy_setopt(curl, CURLOPT_READDATA, &upload);
@@ -122,5 +122,5 @@ int main(void)
     curl_easy_cleanup(curl);
   }
   curl_global_cleanup();
-  return (int)res;
+  return 0;
 }

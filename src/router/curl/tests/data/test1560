@@ -9,8 +9,11 @@ urlapi
 #
 # Client-side
 <client>
+<server>
+none
+</server>
 <setenv>
-LC_ALL=C.UTF-8
+LANG=en_US.UTF-8
 </setenv>
 <features>
 file
@@ -35,8 +38,5 @@ lib%TESTNUMBER
 <stdout>
 success
 </stdout>
-<limits>
-Allocations: 3000
-</limits>
 </verify>
 </testcase>

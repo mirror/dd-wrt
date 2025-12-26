@@ -21,9 +21,21 @@
  * SPDX-License-Identifier: curl
  *
  ***************************************************************************/
-#include "unitcheck.h"
+#include "curlcheck.h"
 
 #include "splay.h"
+#include "warnless.h"
+
+
+static CURLcode unit_setup(void)
+{
+  return CURLE_OK;
+}
+
+static void unit_stop(void)
+{
+
+}
 
 static void splayprint(struct Curl_tree *t, int d, char output)
 {
@@ -36,10 +48,11 @@ static void splayprint(struct Curl_tree *t, int d, char output)
   splayprint(t->larger, d + 1, output);
   for(i = 0; i < d; i++)
     if(output)
-      curl_mprintf("  ");
+      printf("  ");
 
   if(output) {
-    curl_mprintf("%ld.%ld[%d]", (long)t->key.tv_sec, (long)t->key.tv_usec, i);
+    printf("%ld.%ld[%d]", (long)t->key.tv_sec,
+           (long)t->key.tv_usec, i);
   }
 
   for(count = 0, node = t->samen; node != t; node = node->samen, count++)
@@ -47,17 +60,15 @@ static void splayprint(struct Curl_tree *t, int d, char output)
 
   if(output) {
     if(count)
-      curl_mprintf(" [%d more]\n", count);
+      printf(" [%d more]\n", count);
     else
-      curl_mprintf("\n");
+      printf("\n");
   }
 
   splayprint(t->smaller, d + 1, output);
 }
 
-static CURLcode test_unit1309(const char *arg)
-{
-  UNITTEST_BEGIN_SIMPLE
+UNITTEST_START
 
 /* number of nodes to add to the splay tree */
 #define NUM_NODES 50
@@ -86,14 +97,14 @@ static CURLcode test_unit1309(const char *arg)
 
   for(i = 0; i < NUM_NODES; i++) {
     int rem = (i + 7)%NUM_NODES;
-    curl_mprintf("Tree look:\n");
+    printf("Tree look:\n");
     splayprint(root, 0, 1);
     curl_mprintf("remove pointer %d, payload %zu\n", rem,
                  *(size_t *)Curl_splayget(&nodes[rem]));
     rc = Curl_splayremove(root, &nodes[rem], &root);
     if(rc) {
       /* failed! */
-      curl_mprintf("remove %d failed!\n", rem);
+      printf("remove %d failed!\n", rem);
       fail("remove");
     }
   }
@@ -117,7 +128,7 @@ static CURLcode test_unit1309(const char *arg)
 
   removed = NULL;
   for(i = 0; i <= 1100; i += 100) {
-    curl_mprintf("Removing nodes not larger than %d\n", i);
+    printf("Removing nodes not larger than %d\n", i);
     tv_now.tv_usec = i;
     root = Curl_splaygetbest(tv_now, root, &removed);
     while(removed) {
@@ -130,5 +141,4 @@ static CURLcode test_unit1309(const char *arg)
 
   fail_unless(root == NULL, "tree not empty when it should be");
 
-  UNITTEST_END_SIMPLE
-}
+UNITTEST_STOP

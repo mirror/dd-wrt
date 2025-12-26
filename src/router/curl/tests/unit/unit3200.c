@@ -21,150 +21,171 @@
  * SPDX-License-Identifier: curl
  *
  ***************************************************************************/
-#include "unitcheck.h"
+#include "curlcheck.h"
 #include "curl_get_line.h"
 #include "memdebug.h"
-
-static CURLcode test_unit3200(const char *arg)
-{
-  UNITTEST_BEGIN_SIMPLE
 
 #if !defined(CURL_DISABLE_COOKIES) || !defined(CURL_DISABLE_ALTSVC) ||  \
   !defined(CURL_DISABLE_HSTS) || !defined(CURL_DISABLE_NETRC)
 
-#if defined(CURL_GNUC_DIAG) || defined(__clang__)
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Woverlength-strings"
-#endif
-
-  /* The test XML does not supply a way to write files without newlines
-   * so we write our own
-   */
+/* The test XML does not supply a way to write files without newlines
+ * so we write our own
+ */
 
 #define C64 "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
 #define C256 C64 C64 C64 C64
 #define C1024 C256 C256 C256 C256
 #define C4096 C1024 C1024 C1024 C1024
 
-  static const char *filecontents[] = {
-    /* Both should be read */
-    "LINE1\n"
-    "LINE2 NEWLINE\n",
+static CURLcode unit_setup(void)
+{
+  return CURLE_OK;
+}
 
-    /* Both should be read */
-    "LINE1\n"
-    "LINE2 NONEWLINE",
-
-    /* Only first should be read */
-    "LINE1\n"
-    C4096,
-
-    /* First line should be read */
-    "LINE1\n"
-    C4096 "SOME EXTRA TEXT",
-
-    /* Only first should be read */
-    "LINE1\n"
-    C4096 "SOME EXTRA TEXT\n"
-    "LINE3\n",
-
-    "LINE1\x1aTEST"
-  };
+static CURLcode unit_stop(void)
+{
+  return CURLE_OK;
+}
 
 #if defined(CURL_GNUC_DIAG) || defined(__clang__)
-#pragma GCC diagnostic pop
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Woverlength-strings"
 #endif
 
+#define NUMTESTS 6
+static const char *filecontents[] = {
+  /* Both should be read */
+  "LINE1\n"
+  "LINE2 NEWLINE\n",
+
+  /* Both should be read */
+  "LINE1\n"
+  "LINE2 NONEWLINE",
+
+  /* Only first should be read */
+  "LINE1\n"
+  C4096,
+
+  /* First line should be read */
+  "LINE1\n"
+  C4096 "SOME EXTRA TEXT",
+
+  /* Only first should be read */
+  "LINE1\n"
+  C4096 "SOME EXTRA TEXT\n"
+  "LINE3\n",
+
+  "LINE1\x1aTEST"
+};
+
+#if defined(CURL_GNUC_DIAG) || defined(__clang__)
+#pragma GCC diagnostic warning "-Woverlength-strings"
+#endif
+
+
+UNITTEST_START
   size_t i;
-  CURLcode result = CURLE_OK;
-  for(i = 0; i < CURL_ARRAYSIZE(filecontents); i++) {
+  int rc = 0;
+  for(i = 0; i < NUMTESTS; i++) {
     FILE *fp;
     struct dynbuf buf;
     size_t len = 4096;
     char *line;
-    bool eof;
     curlx_dyn_init(&buf, len);
 
-    fp = curlx_fopen(arg, "wb");
+    fp = fopen(arg, "wb");
     abort_unless(fp != NULL, "Cannot open testfile");
     fwrite(filecontents[i], 1, strlen(filecontents[i]), fp);
-    curlx_fclose(fp);
+    fclose(fp);
 
-    fp = curlx_fopen(arg, "rb");
+    fp = fopen(arg, "rb");
     abort_unless(fp != NULL, "Cannot open testfile");
 
     curl_mfprintf(stderr, "Test %zd...", i);
     switch(i) {
       case 0:
-        result = Curl_get_line(&buf, fp, &eof);
+        rc = Curl_get_line(&buf, fp);
         line = curlx_dyn_ptr(&buf);
-        fail_unless(!result && line && !strcmp("LINE1\n", line),
+        fail_unless(rc && line && !strcmp("LINE1\n", line),
                     "First line failed (1)");
-        result = Curl_get_line(&buf, fp, &eof);
+        rc = Curl_get_line(&buf, fp);
         line = curlx_dyn_ptr(&buf);
-        fail_unless(!result && line && !strcmp("LINE2 NEWLINE\n", line),
+        fail_unless(rc && line && !strcmp("LINE2 NEWLINE\n", line),
                     "Second line failed (1)");
-        result = Curl_get_line(&buf, fp, &eof);
-        abort_unless(eof, "Missed EOF (1)");
+        rc = Curl_get_line(&buf, fp);
+        abort_unless(!curlx_dyn_len(&buf), "Missed EOF (1)");
         break;
       case 1:
-        result = Curl_get_line(&buf, fp, &eof);
+        rc = Curl_get_line(&buf, fp);
         line = curlx_dyn_ptr(&buf);
-        fail_unless(!result && line && !strcmp("LINE1\n", line),
+        fail_unless(rc && line && !strcmp("LINE1\n", line),
                     "First line failed (2)");
-        result = Curl_get_line(&buf, fp, &eof);
+        rc = Curl_get_line(&buf, fp);
         line = curlx_dyn_ptr(&buf);
-        fail_unless(!result && line && !strcmp("LINE2 NONEWLINE\n", line),
+        fail_unless(rc && line && !strcmp("LINE2 NONEWLINE\n", line),
                     "Second line failed (2)");
-        result = Curl_get_line(&buf, fp, &eof);
-        abort_unless(eof, "Missed EOF (2)");
+        rc = Curl_get_line(&buf, fp);
+        abort_unless(!curlx_dyn_len(&buf), "Missed EOF (2)");
         break;
       case 2:
-        result = Curl_get_line(&buf, fp, &eof);
+        rc = Curl_get_line(&buf, fp);
         line = curlx_dyn_ptr(&buf);
-        fail_unless(!result && line && !strcmp("LINE1\n", line),
+        fail_unless(rc && line && !strcmp("LINE1\n", line),
                     "First line failed (3)");
-        result = Curl_get_line(&buf, fp, &eof);
+        rc = Curl_get_line(&buf, fp);
         fail_unless(!curlx_dyn_len(&buf),
                     "Did not detect max read on EOF (3)");
         break;
       case 3:
-        result = Curl_get_line(&buf, fp, &eof);
+        rc = Curl_get_line(&buf, fp);
         line = curlx_dyn_ptr(&buf);
-        fail_unless(!result && line && !strcmp("LINE1\n", line),
+        fail_unless(rc && line && !strcmp("LINE1\n", line),
                     "First line failed (4)");
-        result = Curl_get_line(&buf, fp, &eof);
+        rc = Curl_get_line(&buf, fp);
         fail_unless(!curlx_dyn_len(&buf),
                     "Did not ignore partial on EOF (4)");
         break;
       case 4:
-        result = Curl_get_line(&buf, fp, &eof);
+        rc = Curl_get_line(&buf, fp);
         line = curlx_dyn_ptr(&buf);
-        fail_unless(!result && line && !strcmp("LINE1\n", line),
+        fail_unless(rc && line && !strcmp("LINE1\n", line),
                     "First line failed (5)");
-        result = Curl_get_line(&buf, fp, &eof);
+        rc = Curl_get_line(&buf, fp);
         fail_unless(!curlx_dyn_len(&buf),
                     "Did not bail out on too long line");
         break;
       case 5:
-        result = Curl_get_line(&buf, fp, &eof);
+        rc = Curl_get_line(&buf, fp);
         line = curlx_dyn_ptr(&buf);
-        fail_unless(!result && line && !strcmp("LINE1\x1aTEST\n", line),
+        fail_unless(rc && line && !strcmp("LINE1\x1aTEST\n", line),
                     "Missed/Misinterpreted ^Z (6)");
-        result = Curl_get_line(&buf, fp, &eof);
-        abort_unless(eof, "Missed EOF (6)");
+        rc = Curl_get_line(&buf, fp);
+        abort_unless(!curlx_dyn_len(&buf), "Missed EOF (6)");
         break;
       default:
         abort_unless(1, "Unknown case");
         break;
     }
     curlx_dyn_free(&buf);
-    curlx_fclose(fp);
+    fclose(fp);
     curl_mfprintf(stderr, "OK\n");
   }
-  return result;
+  return (CURLcode)rc;
+UNITTEST_STOP
 
+#if defined(CURL_GNUC_DIAG) || defined(__clang__)
+#pragma GCC diagnostic pop
 #endif
 
-  UNITTEST_END_SIMPLE
+#else
+static CURLcode unit_setup(void)
+{
+  return CURLE_OK;
 }
+static void unit_stop(void)
+{
+}
+UNITTEST_START
+UNITTEST_STOP
+
+#endif

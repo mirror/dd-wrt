@@ -8,7 +8,7 @@ CURLOPT_FOLLOWLOCATION
 #
 # Server-side
 <reply>
-<data crlf="headers">
+<data crlf="yes">
 HTTP/1.1 308 OK
 Date: Thu, 09 Nov 2010 14:49:00 GMT
 Server: test-server/fake
@@ -23,7 +23,7 @@ Funny-head: yesyes
 
 -foo-
 </data>
-<data1 crlf="headers">
+<data1 crlf="yes">
 HTTP/1.1 200 OK
 Content-Length: 6
 Connection: close
@@ -31,7 +31,7 @@ Content-Type: text/html
 
 -bar-
 </data1>
-<datacheck crlf="headers">
+<datacheck crlf="yes">
 HTTP/1.1 308 OK
 Date: Thu, 09 Nov 2010 14:49:00 GMT
 Server: test-server/fake
@@ -75,7 +75,10 @@ http://%HOSTIP:%HTTPPORT/%TESTNUMBER 1578
 
 # Verify data after the test has been "shot"
 <verify>
-<protocol crlf="yes" nonewline="yes">
+<strip>
+^User-Agent:.*
+</strip>
+<protocol nonewline="yes" crlf="yes">
 CURL /%TESTNUMBER HTTP/1.1
 Host: %HOSTIP:%HTTPPORT
 Accept: */*

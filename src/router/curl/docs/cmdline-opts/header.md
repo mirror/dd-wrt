@@ -12,7 +12,6 @@ Multi: append
 See-also:
   - user-agent
   - referer
-  - proxy-header
 Example:
   - -H "X-First-Name: Joe" $URL
   - -H "User-Agent: yes-please/2000" $URL

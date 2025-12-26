@@ -34,7 +34,7 @@ struct uint_tbl {
   void **rows;  /* array of void* holding entries */
   Curl_uint_tbl_entry_dtor *entry_dtor;
   unsigned int nrows;  /* length of `rows` array */
-  unsigned int nentries; /* entries in table */
+  unsigned int nentries; /* entris in table */
   unsigned int last_key_added; /* UINT_MAX or last key added */
 #ifdef DEBUGBUILD
   int init;
@@ -59,6 +59,9 @@ unsigned int Curl_uint_tbl_capacity(struct uint_tbl *tbl);
 
 /* Get the number of entries in the table. */
 unsigned int Curl_uint_tbl_count(struct uint_tbl *tbl);
+
+/* Clear the table, making it empty. */
+void Curl_uint_tbl_clear(struct uint_tbl *tbl);
 
 /* Get the entry for key or NULL if not present */
 void *Curl_uint_tbl_get(struct uint_tbl *tbl, unsigned int key);

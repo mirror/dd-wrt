@@ -22,12 +22,10 @@
 # * SPDX-License-Identifier: curl
 # *
 # ***************************************************************************
-use strict;
-use warnings;
 
 use POSIX qw(strftime);
 my @ts;
-if(defined($ENV{SOURCE_DATE_EPOCH})) {
+if (defined($ENV{SOURCE_DATE_EPOCH})) {
     @ts = localtime($ENV{SOURCE_DATE_EPOCH});
 } else {
     @ts = localtime;
@@ -37,7 +35,7 @@ my $year = strftime "%Y", @ts;
 
 print <<HEADER
 ---
-c: Copyright (C) Daniel Stenberg, <daniel\@haxx.se>, et al.
+c: Copyright (C) Daniel Stenberg, <daniel@haxx.se>, et al.
 SPDX-License-Identifier: curl
 Title: libcurl-symbols
 Section: 3

@@ -29,7 +29,7 @@ ftp
 </server>
 # tool is what to use instead of 'curl'
 <tool>
-lib500
+lib585
 </tool>
 
 <name>
@@ -43,7 +43,10 @@ ftp://%HOSTIP:%FTPPORT/%TESTNUMBER %LOGDIR/ip%TESTNUMBER
 #
 # Verify data after the test has been "shot"
 <verify>
-<protocol crlf="yes">
+<strip>
+QUIT
+</strip>
+<protocol>
 USER anonymous
 PASS ftp@example.com
 PWD

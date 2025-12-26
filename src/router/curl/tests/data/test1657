@@ -9,6 +9,9 @@ Curl_x509_getASN1Element
 #
 # Client-side
 <client>
+<server>
+none
+</server>
 <features>
 unittest
 </features>

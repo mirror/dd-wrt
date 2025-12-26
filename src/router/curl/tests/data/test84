@@ -41,10 +41,10 @@ proxy
 #
 # Verify data after the test has been "shot"
 <verify>
-<protocol crlf="headers">
+<protocol>
 GET http://%HOSTIP:%HTTPPORT/we/want/that/page/%TESTNUMBER HTTP/1.1
 Host: %HOSTIP:%HTTPPORT
-Authorization: Basic %b64[iam:myself]b64%
+Authorization: Basic aWFtOm15c2VsZg==
 User-Agent: curl/%VERSION
 Accept: */*
 Proxy-Connection: Keep-Alive

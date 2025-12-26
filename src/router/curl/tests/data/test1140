@@ -10,6 +10,10 @@ documentation
 #
 # Client-side
 <client>
+<server>
+none
+</server>
+
 <name>
 Verify the nroff of manpages
 </name>

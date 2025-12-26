@@ -13,6 +13,9 @@ warning
 #
 # Client-side
 <client>
+<server>
+none
+</server>
 <features>
 UnixSockets
 </features>

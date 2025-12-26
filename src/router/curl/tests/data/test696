@@ -7,7 +7,7 @@ HTTP GET
 </info>
 
 <reply>
-<data crlf="headers" nocheck="yes">
+<data nocheck="yes">
 HTTP/1.1 200 OK swsclose
 Server: test-server/fake
 Last-Modified: Tue, 13 Jun 2000 12:10:00 GMT
@@ -25,7 +25,7 @@ Connection: close
 http
 </server>
 <tool>
-lib556
+lib%TESTNUMBER
 </tool>
 <name>
 CONNECT_ONLY and doing a second curl_easy_perform
@@ -38,7 +38,7 @@ http://%HOSTIP:%HTTPPORT
 #
 # Verify data after the test has been "shot"
 <verify>
-<stdout crlf="headers">
+<stdout>
 HTTP/1.1 200 OK swsclose
 Server: test-server/fake
 Last-Modified: Tue, 13 Jun 2000 12:10:00 GMT
@@ -54,11 +54,11 @@ Connection: close
 
 -foo-
 </stdout>
-<protocol crlf="headers">
-GET /%TESTNUMBER HTTP/1.1
+<protocol>
+GET /556 HTTP/1.1
 Host: ninja
 
-GET /%TESTNUMBER HTTP/1.1
+GET /556 HTTP/1.1
 Host: ninja
 
 </protocol>

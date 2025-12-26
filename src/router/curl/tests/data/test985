@@ -47,7 +47,7 @@ pop3://%HOSTIP:%POP3PORT/%TESTNUMBER -u user:secret --ssl-reqd
 <errorcode>
 64
 </errorcode>
-<protocol crlf="yes">
+<protocol>
 CAPA
 </protocol>
 </verify>

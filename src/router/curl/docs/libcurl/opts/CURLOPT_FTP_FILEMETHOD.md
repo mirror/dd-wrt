@@ -68,7 +68,8 @@ int main(void)
   if(curl) {
     CURLcode res;
     curl_easy_setopt(curl, CURLOPT_URL, "ftp://example.com/1/2/3/4/new.txt");
-    curl_easy_setopt(curl, CURLOPT_FTP_FILEMETHOD, CURLFTPMETHOD_SINGLECWD);
+    curl_easy_setopt(curl, CURLOPT_FTP_FILEMETHOD,
+                     (long)CURLFTPMETHOD_SINGLECWD);
 
     res = curl_easy_perform(curl);
 
@@ -76,11 +77,6 @@ int main(void)
   }
 }
 ~~~
-
-# HISTORY
-
-**CURLFTPMETHOD_*** enums became `long` types in 8.16.0, prior to this version
-a `long` cast was necessary when passed to curl_easy_setopt(3).
 
 # %AVAILABILITY%
 

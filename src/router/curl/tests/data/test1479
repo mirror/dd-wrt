@@ -9,13 +9,13 @@ HTTP/0.9
 #
 # Server-side
 <reply>
-<data crlf="headers">
+<data>
 HTTP/1.1 200 OK
 Content-Length: 5
 
 Data
 </data>
-<data2 crlf="yes">
+<data2>
 Data
 Data
 Data
@@ -41,7 +41,7 @@ http://%HOSTIP:%HTTPPORT/%TESTNUMBER http://%HOSTIP:%HTTPPORT/%TESTNUMBER0002
 #
 # Verify data after the test has been "shot"
 <verify>
-<protocol crlf="headers">
+<protocol>
 GET /%TESTNUMBER HTTP/1.1
 Host: %HOSTIP:%HTTPPORT
 User-Agent: curl/%VERSION

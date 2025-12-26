@@ -21,26 +21,29 @@
  * SPDX-License-Identifier: curl
  *
  ***************************************************************************/
-#include "first.h"
+#include "test.h"
 
 #include "memdebug.h"
 
-struct t654_WriteThis {
-  const char *readptr;
+static char testdata[]=
+  "dummy\n";
+
+struct WriteThis {
+  char *readptr;
   curl_off_t sizeleft;
   int freecount;
 };
 
 static void free_callback(void *userp)
 {
-  struct t654_WriteThis *pooh = (struct t654_WriteThis *) userp;
+  struct WriteThis *pooh = (struct WriteThis *) userp;
 
   pooh->freecount++;
 }
 
-static size_t t654_read_cb(char *ptr, size_t size, size_t nmemb, void *userp)
+static size_t read_callback(char *ptr, size_t size, size_t nmemb, void *userp)
 {
-  struct t654_WriteThis *pooh = (struct t654_WriteThis *)userp;
+  struct WriteThis *pooh = (struct WriteThis *)userp;
   int eof;
 
   if(size*nmemb < 1)
@@ -59,17 +62,15 @@ static size_t t654_read_cb(char *ptr, size_t size, size_t nmemb, void *userp)
   return 0;                         /* no more data left to deliver */
 }
 
-static CURLcode test_lib654(const char *URL)
+CURLcode test(char *URL)
 {
-  static const char testdata[] = "dummy\n";
-
-  CURL *curl = NULL;
-  CURL *curl2 = NULL;
+  CURL *easy = NULL;
+  CURL *easy2 = NULL;
   curl_mime *mime = NULL;
   curl_mimepart *part;
   struct curl_slist *hdrs = NULL;
   CURLcode res = TEST_ERR_FAILURE;
-  struct t654_WriteThis pooh;
+  struct WriteThis pooh;
 
   /*
    * Check proper copy/release of mime post data bound to a duplicated
@@ -81,16 +82,16 @@ static CURLcode test_lib654(const char *URL)
     return TEST_ERR_MAJOR_BAD;
   }
 
-  curl = curl_easy_init();
+  easy = curl_easy_init();
 
   /* First set the URL that is about to receive our POST. */
-  test_setopt(curl, CURLOPT_URL, URL);
+  test_setopt(easy, CURLOPT_URL, URL);
 
   /* get verbose debug output please */
-  test_setopt(curl, CURLOPT_VERBOSE, 1L);
+  test_setopt(easy, CURLOPT_VERBOSE, 1L);
 
   /* include headers in the output */
-  test_setopt(curl, CURLOPT_HEADER, 1L);
+  test_setopt(easy, CURLOPT_HEADER, 1L);
 
   /* Prepare the callback structure. */
   pooh.readptr = testdata;
@@ -98,7 +99,7 @@ static CURLcode test_lib654(const char *URL)
   pooh.freecount = 0;
 
   /* Build the mime tree. */
-  mime = curl_mime_init(curl);
+  mime = curl_mime_init(easy);
   part = curl_mime_addpart(mime);
   curl_mime_data(part, "hello", CURL_ZERO_TERMINATED);
   curl_mime_name(part, "greeting");
@@ -109,15 +110,15 @@ static CURLcode test_lib654(const char *URL)
   part = curl_mime_addpart(mime);
   curl_mime_filedata(part, libtest_arg2);
   part = curl_mime_addpart(mime);
-  curl_mime_data_cb(part, (curl_off_t) -1, t654_read_cb, NULL,
-                    free_callback, &pooh);
+  curl_mime_data_cb(part, (curl_off_t) -1, read_callback, NULL, free_callback,
+                    &pooh);
 
   /* Bind mime data to its easy handle. */
-  test_setopt(curl, CURLOPT_MIMEPOST, mime);
+  test_setopt(easy, CURLOPT_MIMEPOST, mime);
 
   /* Duplicate the handle. */
-  curl2 = curl_easy_duphandle(curl);
-  if(!curl2) {
+  easy2 = curl_easy_duphandle(easy);
+  if(!easy2) {
     curl_mfprintf(stderr, "curl_easy_duphandle() failed\n");
     res = TEST_ERR_FAILURE;
     goto test_cleanup;
@@ -129,7 +130,7 @@ static CURLcode test_lib654(const char *URL)
   mime = NULL;  /* Already cleaned up. */
 
   /* Perform on the first handle: should not send any data. */
-  res = curl_easy_perform(curl);
+  res = curl_easy_perform(easy);
   if(res != CURLE_OK) {
     curl_mfprintf(stderr, "curl_easy_perform(original) failed\n");
     goto test_cleanup;
@@ -137,7 +138,7 @@ static CURLcode test_lib654(const char *URL)
 
   /* Perform on the second handle: if the bound mime structure has not been
      duplicated properly, it should cause a valgrind error. */
-  res = curl_easy_perform(curl2);
+  res = curl_easy_perform(easy2);
   if(res != CURLE_OK) {
     curl_mfprintf(stderr, "curl_easy_perform(duplicated) failed\n");
     goto test_cleanup;
@@ -146,19 +147,19 @@ static CURLcode test_lib654(const char *URL)
   /* Free the duplicated handle: it should call free_callback again.
      If the mime copy was bad or not automatically released, valgrind
      will signal it. */
-  curl_easy_cleanup(curl2);
-  curl2 = NULL;  /* Already cleaned up. */
+  curl_easy_cleanup(easy2);
+  easy2 = NULL;  /* Already cleaned up. */
 
   if(pooh.freecount != 2) {
     curl_mfprintf(stderr, "free_callback() called %d times instead of 2\n",
-                  pooh.freecount);
+            pooh.freecount);
     res = TEST_ERR_FAILURE;
     goto test_cleanup;
   }
 
 test_cleanup:
-  curl_easy_cleanup(curl);
-  curl_easy_cleanup(curl2);
+  curl_easy_cleanup(easy);
+  curl_easy_cleanup(easy2);
   curl_mime_free(mime);
   curl_global_cleanup();
   return res;

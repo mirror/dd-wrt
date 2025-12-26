@@ -83,14 +83,15 @@ static void dump(const char *text, FILE *stream, unsigned char *ptr,
   fflush(stream);
 }
 
-static int my_trace(CURL *curl, curl_infotype type,
-                    unsigned char *data, size_t size,
-                    void *userp)
+static
+int my_trace(CURL *handle, curl_infotype type,
+             unsigned char *data, size_t size,
+             void *userp)
 {
   const char *text;
 
   (void)userp;
-  (void)curl;
+  (void)handle; /* prevent compiler warning */
 
   switch(type) {
   case CURLINFO_TEXT:
@@ -121,51 +122,40 @@ static int my_trace(CURL *curl, curl_infotype type,
  */
 int main(void)
 {
-  CURL *curl;
+  CURL *http_handle;
+  CURLM *multi_handle;
 
-  CURLcode res = curl_global_init(CURL_GLOBAL_ALL);
-  if(res)
-    return (int)res;
+  int still_running = 0; /* keep number of running handles */
 
-  curl = curl_easy_init();
-  if(curl) {
+  http_handle = curl_easy_init();
 
-    CURLM *multi;
+  /* set the options (I left out a few, you get the point anyway) */
+  curl_easy_setopt(http_handle, CURLOPT_URL, "https://www.example.com/");
 
-    /* set the options (I left out a few, you get the point anyway) */
-    curl_easy_setopt(curl, CURLOPT_URL, "https://www.example.com/");
+  curl_easy_setopt(http_handle, CURLOPT_DEBUGFUNCTION, my_trace);
+  curl_easy_setopt(http_handle, CURLOPT_VERBOSE, 1L);
 
-    curl_easy_setopt(curl, CURLOPT_DEBUGFUNCTION, my_trace);
-    curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L);
+  /* init a multi stack */
+  multi_handle = curl_multi_init();
 
-    /* init a multi stack */
-    multi = curl_multi_init();
-    if(multi) {
+  /* add the individual transfers */
+  curl_multi_add_handle(multi_handle, http_handle);
 
-      int still_running = 0; /* keep number of running handles */
+  do {
+    CURLMcode mc = curl_multi_perform(multi_handle, &still_running);
 
-      /* add the individual transfers */
-      curl_multi_add_handle(multi, curl);
+    if(still_running)
+      /* wait for activity, timeout or "nothing" */
+      mc = curl_multi_poll(multi_handle, NULL, 0, 1000, NULL);
 
-      do {
-        CURLMcode mc = curl_multi_perform(multi, &still_running);
+    if(mc)
+      break;
 
-        if(still_running)
-          /* wait for activity, timeout or "nothing" */
-          mc = curl_multi_poll(multi, NULL, 0, 1000, NULL);
+  } while(still_running);
 
-        if(mc)
-          break;
+  curl_multi_cleanup(multi_handle);
 
-      } while(still_running);
-
-      curl_multi_cleanup(multi);
-    }
-
-    curl_easy_cleanup(curl);
-  }
-
-  curl_global_cleanup();
+  curl_easy_cleanup(http_handle);
 
   return 0;
 }

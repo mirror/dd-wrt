@@ -98,6 +98,7 @@ CURLcode Curl_auth_create_ntlm_type1_message(struct Curl_easy *data,
   SecBufferDesc type_1_desc;
   SECURITY_STATUS status;
   unsigned long attrs;
+  TimeStamp expiry; /* For Windows 9x compatibility of SSPI calls */
 
   /* Clean up any former leftovers and initialise to defaults */
   Curl_auth_cleanup_ntlm(ntlm);
@@ -146,7 +147,7 @@ CURLcode Curl_auth_create_ntlm_type1_message(struct Curl_easy *data,
                                      (TCHAR *)CURL_UNCONST(TEXT(SP_NAME_NTLM)),
                                      SECPKG_CRED_OUTBOUND, NULL,
                                      ntlm->p_identity, NULL, NULL,
-                                     ntlm->credentials, NULL);
+                                     ntlm->credentials, &expiry);
   if(status != SEC_E_OK)
     return CURLE_LOGIN_DENIED;
 
@@ -169,13 +170,13 @@ CURLcode Curl_auth_create_ntlm_type1_message(struct Curl_easy *data,
 
   /* Generate our type-1 message */
   status = Curl_pSecFn->InitializeSecurityContext(ntlm->credentials, NULL,
-                                                  ntlm->spn,
-                                                  0, 0, SECURITY_NETWORK_DREP,
-                                                  NULL, 0,
-                                                  ntlm->context, &type_1_desc,
-                                                  &attrs, NULL);
+                                               ntlm->spn,
+                                               0, 0, SECURITY_NETWORK_DREP,
+                                               NULL, 0,
+                                               ntlm->context, &type_1_desc,
+                                               &attrs, &expiry);
   if(status == SEC_I_COMPLETE_NEEDED ||
-     status == SEC_I_COMPLETE_AND_CONTINUE)
+    status == SEC_I_COMPLETE_AND_CONTINUE)
     Curl_pSecFn->CompleteAuthToken(ntlm->context, &type_1_desc);
   else if(status == SEC_E_INSUFFICIENT_MEMORY)
     return CURLE_OUT_OF_MEMORY;
@@ -204,8 +205,8 @@ CURLcode Curl_auth_decode_ntlm_type2_message(struct Curl_easy *data,
                                              const struct bufref *type2,
                                              struct ntlmdata *ntlm)
 {
-#ifdef CURL_DISABLE_VERBOSE_STRINGS
-  (void)data;
+#if defined(CURL_DISABLE_VERBOSE_STRINGS)
+  (void) data;
 #endif
 
   /* Ensure we have a valid type-2 message */
@@ -254,12 +255,13 @@ CURLcode Curl_auth_create_ntlm_type3_message(struct Curl_easy *data,
   SecBufferDesc type_3_desc;
   SECURITY_STATUS status;
   unsigned long attrs;
+  TimeStamp expiry; /* For Windows 9x compatibility of SSPI calls */
 
-#ifdef CURL_DISABLE_VERBOSE_STRINGS
-  (void)data;
+#if defined(CURL_DISABLE_VERBOSE_STRINGS)
+  (void) data;
 #endif
-  (void)passwdp;
-  (void)userp;
+  (void) passwdp;
+  (void) userp;
 
   /* Setup the type-2 "input" security buffer */
   type_2_desc.ulVersion     = SECBUFFER_VERSION;
@@ -275,7 +277,8 @@ CURLcode Curl_auth_create_ntlm_type3_message(struct Curl_easy *data,
   * we have to pass a second SecBuffer to the SecBufferDesc
   * otherwise IIS will not pass the authentication (401 response).
   * Minimum supported version is Windows 7.
-  * https://learn.microsoft.com/security-updates/SecurityAdvisories/2009/973811
+  * https://docs.microsoft.com/en-us/security-updates
+  * /SecurityAdvisories/2009/973811
   */
   if(ntlm->sslContext) {
     SEC_CHANNEL_BINDINGS channelBindings;
@@ -305,15 +308,15 @@ CURLcode Curl_auth_create_ntlm_type3_message(struct Curl_easy *data,
 
   /* Generate our type-3 message */
   status = Curl_pSecFn->InitializeSecurityContext(ntlm->credentials,
-                                                  ntlm->context,
-                                                  ntlm->spn,
-                                                  0, 0, SECURITY_NETWORK_DREP,
-                                                  &type_2_desc,
-                                                  0, ntlm->context,
-                                                  &type_3_desc,
-                                                  &attrs, NULL);
+                                               ntlm->context,
+                                               ntlm->spn,
+                                               0, 0, SECURITY_NETWORK_DREP,
+                                               &type_2_desc,
+                                               0, ntlm->context,
+                                               &type_3_desc,
+                                               &attrs, &expiry);
   if(status != SEC_E_OK) {
-    infof(data, "NTLM handshake failure (type-3 message): Status=0x%08lx",
+    infof(data, "NTLM handshake failure (type-3 message): Status=%lx",
           status);
 
     if(status == SEC_E_INSUFFICIENT_MEMORY)

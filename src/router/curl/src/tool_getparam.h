@@ -90,7 +90,6 @@ typedef enum {
   C_FAIL_EARLY,
   C_FAIL_WITH_BODY,
   C_FALSE_START,
-  C_FOLLOW,
   C_FORM,
   C_FORM_ESCAPE,
   C_FORM_STRING,
@@ -139,7 +138,6 @@ typedef enum {
   C_KEEPALIVE_TIME,
   C_KEY,
   C_KEY_TYPE,
-  C_KNOWNHOSTS,
   C_KRB,
   C_KRB4,
   C_LIBCURL,
@@ -169,11 +167,9 @@ typedef enum {
   C_NTLM,
   C_NTLM_WB,
   C_OAUTH2_BEARER,
-  C_OUT_NULL,
   C_OUTPUT,
   C_OUTPUT_DIR,
   C_PARALLEL,
-  C_PARALLEL_HOST,
   C_PARALLEL_IMMEDIATE,
   C_PARALLEL_MAX,
   C_PASS,
@@ -321,8 +317,6 @@ typedef enum {
 #define ARG_TYPEMASK 0x03
 #define ARGTYPE(x) ((x) & ARG_TYPEMASK)
 
-#define ARG_DEPR 0x10 /* deprecated option */
-#define ARG_CLEAR 0x20 /* clear cmdline argument */
 #define ARG_TLS 0x40 /* requires TLS support */
 #define ARG_NO 0x80 /* set if the option is documented as --no-* */
 
@@ -335,6 +329,7 @@ struct LongShort {
 
 typedef enum {
   PARAM_OK = 0,
+  PARAM_OPTION_AMBIGUOUS,
   PARAM_OPTION_UNKNOWN,
   PARAM_REQUIRES_PARAMETER,
   PARAM_BAD_USE,
@@ -352,24 +347,27 @@ typedef enum {
   PARAM_NEXT_OPERATION,
   PARAM_NO_PREFIX,
   PARAM_NUMBER_TOO_LARGE,
+  PARAM_NO_NOT_BOOLEAN,
   PARAM_CONTDISP_RESUME_FROM, /* --continue-at and --remote-header-name */
   PARAM_READ_ERROR,
   PARAM_EXPAND_ERROR, /* --expand problem */
   PARAM_BLANK_STRING,
   PARAM_VAR_SYNTAX, /* --variable syntax error */
-  PARAM_RECURSION,
   PARAM_LAST
 } ParameterError;
 
+struct GlobalConfig;
 struct OperationConfig;
 
 const struct LongShort *findlongopt(const char *opt);
 const struct LongShort *findshortopt(char letter);
 
 ParameterError getparameter(const char *flag, const char *nextarg,
+                            argv_item_t cleararg1,
+                            argv_item_t cleararg2,
                             bool *usedarg,
-                            struct OperationConfig *config,
-                            int max_recursive);
+                            struct GlobalConfig *global,
+                            struct OperationConfig *operation);
 
 #ifdef UNITTESTS
 void parse_cert_parameter(const char *cert_parameter,
@@ -377,7 +375,8 @@ void parse_cert_parameter(const char *cert_parameter,
                           char **passphrase);
 #endif
 
-ParameterError parse_args(int argc, argv_item_t argv[]);
+ParameterError parse_args(struct GlobalConfig *config, int argc,
+                          argv_item_t argv[]);
 
 #if defined(UNICODE) && defined(_WIN32) && !defined(UNDER_CE)
 

@@ -19,6 +19,7 @@ Protocol:
 TLS-backend:
   - OpenSSL
   - rustls
+  - Secure Transport
   - Schannel
 Added-in: 7.77.0
 ---

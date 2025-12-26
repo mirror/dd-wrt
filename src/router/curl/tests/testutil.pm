@@ -38,6 +38,7 @@ BEGIN {
         runclientoutput
         setlogfunc
         exerunner
+        shell_quote
         subbase64
         subnewlines
         subsha256base64file
@@ -57,7 +58,7 @@ use globalconfig qw(
     $torture
     $verbose
     $dev_null
-    );
+);
 
 my $logfunc;      # optional reference to function for logging
 my @logmessages;  # array holding logged messages
@@ -147,9 +148,6 @@ sub subbase64 {
         $$thing =~ s/%%DAYS%%/%alternatives[$d,$d2]/;
     }
 
-    $$thing =~ s/%spc%/ /g;   # space
-    $$thing =~ s/%tab%/\t/g;  # horizontal tab
-
     # include a file
     $$thing =~ s/%include ([^%]*)%[\n\r]+/includefile($1)/ge;
 }
@@ -164,9 +162,8 @@ sub subnewlines {
         return;
     }
 
-    if(($$thing =~ /^HTTP\/(1.1|1.0|2|3) ([1-5]|9)[^\x0d]*\z/) ||
-       ($$thing =~ /^(GET|HEAD|POST|PUT|DELETE|CONNECT) \S+ HTTP\/\d+(\.\d+)?/) ||
-       ($$thing =~ /^(SETUP|GET_PARAMETER|OPTIONS|ANNOUNCE|DESCRIBE) \S+ RTSP\/\d+(\.\d+)?/) ||
+    if(($$thing =~ /^HTTP\/(1.1|1.0|2|3) [1-5][^\x0d]*\z/) ||
+       ($$thing =~ /^(GET|POST|PUT|DELETE) \S+ HTTP\/\d+(\.\d+)?/) ||
        (($$thing =~ /^[a-z0-9_-]+: [^\x0d]*\z/i) &&
         # skip curl error messages
         ($$thing !~ /^curl: \(\d+\) /))) {
@@ -222,6 +219,25 @@ sub exerunner {
     return '';
 }
 
+#######################################################################
+# Quote an argument for passing safely to a Bourne shell
+# This does the same thing as String::ShellQuote but doesn't need a package.
+#
+sub shell_quote {
+    my ($s)=@_;
+    if($^O eq 'MSWin32') {
+        $s = '"' . $s . '"';
+    }
+    else {
+        if($s !~ m/^[-+=.,_\/:a-zA-Z0-9]+$/) {
+            # string contains a "dangerous" character--quote it
+            $s =~ s/'/'"'"'/g;
+            $s = "'" . $s . "'";
+        }
+    }
+    return $s;
+}
+
 sub get_sha256_base64 {
     my ($file_path) = @_;
     return encode_base64(sha256(do { local $/; open my $fh, '<:raw', $file_path or die $!; <$fh> }), "");
@@ -231,7 +247,7 @@ sub subsha256base64file {
     my ($thing) = @_;
 
     # SHA-256 base64
-    while($$thing =~ s/%sha256b64file\[(.*?)\]sha256b64file%/%%SHA256B64FILE%%/i) {
+    while ($$thing =~ s/%sha256b64file\[(.*?)\]sha256b64file%/%%SHA256B64FILE%%/i) {
         my $file_path = $1;
         $file_path =~ s/%([0-9A-Fa-f]{2})/chr(hex($1))/eg;
         my $hash_b64 = get_sha256_base64($file_path);
@@ -252,7 +268,7 @@ sub substrippemfile {
     my ($thing) = @_;
 
     # File content substitution
-    while($$thing =~ s/%strippemfile\[(.*?)\]strippemfile%/%%FILE%%/i) {
+    while ($$thing =~ s/%strippemfile\[(.*?)\]strippemfile%/%%FILE%%/i) {
         my $file_path = $1;
         $file_path =~ s/%([0-9A-Fa-f]{2})/chr(hex($1))/eg;
         my $file_content = get_file_content($file_path);

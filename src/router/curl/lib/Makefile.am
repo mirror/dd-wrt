@@ -23,23 +23,19 @@
 ###########################################################################
 AUTOMAKE_OPTIONS = foreign nostdinc
 
-# Get CSOURCES, HHEADERS, LIB_RCFILES variables
-include Makefile.inc
-
 CMAKE_DIST = CMakeLists.txt curl_config.h.cmake
 
+CHECKSRC_DIST = .checksrc vauth/.checksrc vquic/.checksrc vssh/.checksrc \
+ vtls/.checksrc
+
 EXTRA_DIST = config-mac.h config-os400.h config-plan9.h config-riscos.h \
-  config-win32.h curl_config.h.in $(LIB_RCFILES) libcurl.def            \
-  $(CMAKE_DIST) Makefile.soname optiontable.pl
+ config-win32.h curl_config.h.in libcurl.rc libcurl.def                 \
+ $(CMAKE_DIST) Makefile.soname optiontable.pl $(CHECKSRC_DIST)
 
 lib_LTLIBRARIES = libcurl.la
 
 if BUILD_UNITTESTS
 noinst_LTLIBRARIES = libcurlu.la
-
-# generate a file with "private" prototypes for unit testing
-UNITPROTOS = unitprotos.h
-
 else
 noinst_LTLIBRARIES =
 endif
@@ -54,15 +50,16 @@ CFLAGS += @CURL_CFLAG_EXTRAS@
 #
 # $(top_srcdir)/include is for libcurl's external include files
 # $(top_builddir)/lib is for libcurl's generated lib/curl_config.h file
-# $(srcdir) for the generated unity source to find included sources
 
 AM_CPPFLAGS = -I$(top_srcdir)/include   \
-              -I$(top_builddir)/lib     \
-              -I$(srcdir)
+              -I$(top_builddir)/lib
 
 # Prevent LIBS from being used for all link targets
 LIBS = $(BLANK_AT_MAKETIME)
 
+include Makefile.soname
+
+AM_CPPFLAGS += -DBUILDING_LIBCURL
 AM_LDFLAGS =
 AM_CFLAGS =
 if DEBUGBUILD
@@ -71,36 +68,50 @@ endif
 if CURLDEBUG
 AM_CPPFLAGS += -DCURLDEBUG
 endif
-AM_CPPFLAGS += -DBUILDING_LIBCURL
+
+# Makefile.inc provides the CSOURCES and HHEADERS defines
+include Makefile.inc
 
 if DOING_NATIVE_WINDOWS
 CSOURCES += dllmain.c
+else
+if DOING_CYGWIN
+CSOURCES += dllmain.c
+endif
 endif
 
 if USE_UNITY
+# Keep these separate to avoid duplicate definitions when linking libtests
+# in static mode.
+curl_EXCLUDE = curl_threads.c curlx/timediff.c curlx/warnless.c
+if CURLDEBUG
+# We must compile this source separately to avoid memdebug.h redefinitions
+# applying to it.
+curl_EXCLUDE += memdebug.c
+endif
+# For Cygwin always compile dllmain.c as a separate unit since it
+# includes windows.h, which should not be included in other units.
+if DOING_CYGWIN
+curl_EXCLUDE += dllmain.c
+endif
 libcurl_unity.c: $(top_srcdir)/scripts/mk-unity.pl $(CSOURCES)
-	@PERL@ $(top_srcdir)/scripts/mk-unity.pl --include $(CSOURCES) > libcurl_unity.c
+	@PERL@ $(top_srcdir)/scripts/mk-unity.pl $(srcdir) $(CSOURCES) --exclude $(curl_EXCLUDE) > libcurl_unity.c
 
 nodist_libcurl_la_SOURCES = libcurl_unity.c
-libcurl_la_SOURCES =
+libcurl_la_SOURCES = $(curl_EXCLUDE)
 nodist_libcurlu_la_SOURCES = libcurl_unity.c
-libcurlu_la_SOURCES =
+libcurlu_la_SOURCES = $(curl_EXCLUDE)
 CLEANFILES = libcurl_unity.c
 else
 libcurl_la_SOURCES = $(CSOURCES) $(HHEADERS)
 libcurlu_la_SOURCES = $(CSOURCES) $(HHEADERS)
-CLEANFILES =
 endif
-
-CLEANFILES += $(UNITPROTOS)
 
 libcurl_la_CPPFLAGS_EXTRA =
 libcurl_la_LDFLAGS_EXTRA =
 libcurl_la_CFLAGS_EXTRA =
 
 if CURL_LT_SHLIB_USE_VERSION_INFO
-# Get VERSIONCHANGE, VERSIONADD, VERSIONDEL, VERSIONINFO variables
-include Makefile.soname
 libcurl_la_LDFLAGS_EXTRA += $(VERSIONINFO)
 endif
 
@@ -155,23 +166,12 @@ checksrc:
 if NOT_CURL_CI
 if DEBUGBUILD
 # for debug builds, we scan the sources on all regular make invokes
-CHECKSOURCES = checksrc
+all-local: checksrc
 endif
 endif
-
-all-local: $(CHECKSOURCES)
-
-UNIT_V = $(UNITV_$(V))
-UNITV_0 = @echo "  UNITPR  " $@;
-UNITV_1 =
-UNITV_ = $(UNITV_0)
-
-# UNITPROTOS depends on every C file in the lib/ dir
-$(UNITPROTOS): $(CSOURCES)
-	$(UNIT_V)(cd $(srcdir) && @PERL@ ../scripts/extract-unit-protos $(CSOURCES) > $(top_builddir)/lib/$(UNITPROTOS))
 
 # disable the tests that are mostly causing false positives
-TIDYFLAGS := -checks=-clang-analyzer-security.insecureAPI.bzero,-clang-analyzer-security.insecureAPI.strcpy,-clang-analyzer-optin.performance.Padding,-clang-analyzer-security.ArrayBound,-clang-analyzer-security.insecureAPI.DeprecatedOrUnsafeBufferHandling -quiet
+TIDYFLAGS := -checks=-clang-analyzer-security.insecureAPI.strcpy,-clang-analyzer-optin.performance.Padding,-clang-analyzer-security.insecureAPI.DeprecatedOrUnsafeBufferHandling -quiet
 if CURL_WERROR
 TIDYFLAGS += --warnings-as-errors=*
 endif

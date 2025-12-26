@@ -22,13 +22,8 @@
 #
 ###########################################################################
 
-# populate the %pastversion hash table with the version number as key and
+# populate the has %pastversion hash table with the version number as key and
 # release date as value
-
-use strict;
-use warnings;
-
-our %pastversion;
 
 sub allversions {
     my ($file) = @_;

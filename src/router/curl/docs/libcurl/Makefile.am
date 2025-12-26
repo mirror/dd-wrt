@@ -27,7 +27,6 @@ AUTOMAKE_OPTIONS = foreign no-dependencies
 SUBDIRS = opts
 
 if BUILD_DOCS
-# Get man_MANS variable
 include Makefile.inc
 
 CURLPAGES = $(man_MANS:.3=.md)

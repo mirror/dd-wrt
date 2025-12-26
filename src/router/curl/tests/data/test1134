@@ -45,16 +45,16 @@ http://%HOSTIP:%HTTPPORT/%TESTNUMBER -u user1:password1 --next http://%HOSTIP:%H
 #
 # Verify data after the test has been "shot"
 <verify>
-<protocol crlf="headers">
+<protocol>
 GET /%TESTNUMBER HTTP/1.1
 Host: %HOSTIP:%HTTPPORT
-Authorization: Basic %b64[user1:password1]b64%
+Authorization: Basic dXNlcjE6cGFzc3dvcmQx
 User-Agent: curl/%VERSION
 Accept: */*
 
 GET /%TESTNUMBER0001 HTTP/1.1
 Host: %HOSTIP:%HTTPPORT
-Authorization: Basic %b64[2user:password2]b64%
+Authorization: Basic MnVzZXI6cGFzc3dvcmQy
 User-Agent: curl/%VERSION
 Accept: */*
 

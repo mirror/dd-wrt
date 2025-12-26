@@ -137,12 +137,6 @@ Issues and patches for this are managed in the main curl project.
 - curl: https://git.savannah.gnu.org/gitweb/?p=guix.git;a=blob;f=gnu/packages/curl.scm;hb=HEAD
 - curl issues: https://issues.guix.gnu.org/search?query=curl
 
-## Haiku
-
-- curl: https://github.com/haikuports/haikuports/tree/master/net-misc/curl
-- curl issues: https://github.com/haikuports/haikuports/issues
-- curl patches: https://github.com/haikuports/haikuports/tree/master/net-misc/curl/patches (if any)
-
 ## Homebrew
 
 *Rolling Release*
@@ -194,7 +188,8 @@ unless it is specific to Homebrew's way of packaging software.
 
 ## NixOS
 
-- curl: https://github.com/NixOS/nixpkgs/blob/nixos-unstable/pkgs/by-name/cu/curlMinimal/package.nix
+- curl: https://github.com/NixOS/nixpkgs/blob/master/pkgs/tools/networking/curl/default.nix
+  (TODO: page has moved)
 - curl issues: https://github.com/NixOS/nixpkgs
 
 nixpkgs is the package repository used by the NixOS Linux distribution, but

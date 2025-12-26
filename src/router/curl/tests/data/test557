@@ -12,6 +12,9 @@ unittest
 
 # Client-side
 <client>
+<server>
+none
+</server>
 # tool is what to use instead of 'curl'
 <tool>
 lib%TESTNUMBER
@@ -20,6 +23,9 @@ lib%TESTNUMBER
 <name>
 curl_mprintf() testing
 </name>
+<command>
+nothing
+</command>
 </client>
 
 #

@@ -53,59 +53,24 @@ my %banfunc = (
     "gets" => 1,
     "strtok" => 1,
     "sprintf" => 1,
-    "snprintf" => 1,
     "vsprintf" => 1,
-    "vsnprintf" => 1,
-    "aprintf" => 1,
-    "fprintf" => 1,
-    "msnprintf" => 1,
-    "mvsnprintf" => 1,
-    "printf" => 1,
-    "vaprintf" => 1,
-    "vfprintf" => 1,
-    "vprintf" => 1,
-    "sscanf" => 1,
     "strcat" => 1,
-    "strerror" => 1,
     "strncat" => 1,
-    "strncpy" => 1,
-    "strtok_r" => 1,
-    "strtol" => 1,
-    "strtoul" => 1,
     "_mbscat" => 1,
     "_mbsncat" => 1,
     "_tcscat" => 1,
-    "_tcsdup" => 1,
     "_tcsncat" => 1,
     "_wcscat" => 1,
     "_wcsncat" => 1,
-    "_wcsdup" => 1,
-    "wcsdup" => 1,
     "LoadLibrary" => 1,
     "LoadLibraryA" => 1,
     "LoadLibraryW" => 1,
     "LoadLibraryEx" => 1,
     "LoadLibraryExA" => 1,
     "LoadLibraryExW" => 1,
-    "WSASocket" => 1,
-    "WSASocketA" => 1,
-    "WSASocketW" => 1,
     "_waccess" => 1,
     "_access" => 1,
     "access" => 1,
-    "accept" => 1,
-    "accept4" => 1,
-    "freeaddrinfo" => 1,
-    "getaddrinfo" => 1,
-    "recv" => 1,
-    "send" => 1,
-    "socket" => 1,
-    "socketpair" => 1,
-    "fclose" => 1,
-    "fdopen" => 1,
-    "fopen" => 1,
-    "open" => 1,
-    "stat" => 1,
     );
 
 my %warnings_extended = (
@@ -134,7 +99,6 @@ my %warnings = (
     'EQUALSNULL'            => 'if/while comparison with == NULL',
     'ERRNOVAR'              => 'use of bare errno define',
     'EXCLAMATIONSPACE'      => 'Whitespace after exclamation mark in expression',
-    'FIXME'                 => 'FIXME or TODO comment',
     'FOPENMODE'             => 'fopen needs a macro for the mode string',
     'INCLUDEDUP',           => 'same file is included again',
     'INDENTATION'           => 'wrong start column for code',
@@ -200,21 +164,17 @@ sub readlocalfile {
         $i++;
 
         # Lines starting with '#' are considered comments
-        if(/^\s*(#.*)/) {
+        if (/^\s*(#.*)/) {
             next;
         }
-        # Skip empty lines
-        elsif($_ eq '') {
-            next;
-        }
-        elsif(/^enable ([A-Z]+)$/) {
+        elsif (/^enable ([A-Z]+)$/) {
             if(!defined($warnings_extended{$1})) {
                 print STDERR "invalid warning specified in .checksrc: \"$1\"\n";
                 next;
             }
             $warnings{$1} = $warnings_extended{$1};
         }
-        elsif(/^disable ([A-Z]+)$/) {
+        elsif (/^disable ([A-Z]+)$/) {
             if(!defined($warnings{$1})) {
                 print STDERR "invalid warning specified in .checksrc: \"$1\"\n";
                 next;
@@ -222,10 +182,10 @@ sub readlocalfile {
             # Accept-list
             push @alist, $1;
         }
-        elsif(/^banfunc ([^ ]*)/) {
+        elsif (/^banfunc ([^ ]*)/) {
             $banfunc{$1} = $1;
         }
-        elsif(/^allowfunc ([^ ]*)/) {
+        elsif (/^allowfunc ([^ ]*)/) {
             undef $banfunc{$1};
         }
         else {
@@ -379,7 +339,7 @@ readlocalfile($file);
 do {
     if("$wlist" !~ / $file /) {
         my $fullname = $file;
-        $fullname = "$dir/$file" if($fullname !~ '^\.?\.?/');
+        $fullname = "$dir/$file" if ($fullname !~ '^\.?\.?/');
         scanfile($fullname);
     }
     $file = shift @ARGV;
@@ -550,7 +510,7 @@ sub scanfile {
         }
 
         # detect long lines
-        if(length($l) > $max_column && $l !~ / https:\/\//) {
+        if(length($l) > $max_column) {
             checkwarn("LONGLINE", $line, length($l), $file, $l,
                       "Longer than $max_column columns");
         }
@@ -913,17 +873,17 @@ sub scanfile {
         # scan for use of banned functions
         my $bl = $l;
       again:
-        if((($l =~ /^(.*?\W)(\w+)(\s*\()/x) && $banfunc{$2}) ||
-           (($l =~ /^(.*?\()(\w+)(\s*\()/x) && $banfunc{$2})) {
+        if(($l =~ /^(.*?\W)(\w+)(\s*\()/x) && $banfunc{$2}) {
             my $bad = $2;
             my $prefix = $1;
             my $suff = $3;
             checkwarn("BANNEDFUNC",
                       $line, length($prefix), $file, $ol,
                       "use of $bad is banned");
-            my $search = quotemeta($prefix . $bad . $suff);
-            my $replace = $prefix . 'x' x (length($bad) + 1);
-            $l =~ s/$search/$replace/;
+            my $replace = 'x' x (length($bad) + 1);
+            $prefix =~ s/\*/\\*/;
+            $suff =~ s/\(/\\(/;
+            $l =~ s/$prefix$bad$suff/$prefix$replace/;
             goto again;
         }
         $l = $bl; # restore to pre-bannedfunc content
@@ -942,8 +902,8 @@ sub scanfile {
         }
 
         # scan for use of non-binary fopen without the macro
-        if($l =~ /^(.*\W)(curlx_fopen|CURLX_FOPEN_LOW)\s*\([^,]*, *\"([^"]*)/) {
-            my $mode = $3;
+        if($l =~ /^(.*\W)fopen\s*\([^,]*, *\"([^"]*)/) {
+            my $mode = $2;
             if($mode !~ /b/) {
                 checkwarn("FOPENMODE",
                           $line, length($1), $file, $ol,
@@ -971,6 +931,7 @@ sub scanfile {
                     my $diff = $second - $first;
                     checkwarn("INDENTATION", $line, length($1), $file, $ol,
                               "not indented $indent steps (uses $diff)");
+
                 }
             }
         }

@@ -9,6 +9,9 @@ base64
 #
 # Client-side
 <client>
+<server>
+none
+</server>
 <features>
 unittest
 </features>

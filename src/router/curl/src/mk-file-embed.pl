@@ -23,11 +23,8 @@
 #
 ###########################################################################
 
-use strict;
-use warnings;
-
 my $varname = "var";
-if(@ARGV && $ARGV[0] eq "--var") {
+if($ARGV[0] eq "--var") {
     shift;
     $varname = shift @ARGV;
 }
@@ -47,7 +44,7 @@ const unsigned char ${varname}[] = {
 HEAD
     ;
 
-while(<STDIN>) {
+while (<STDIN>) {
     my $line = $_;
     foreach my $n (split //, $line) {
         my $ord = ord($n);

@@ -10,7 +10,7 @@ verbose logs
 
 # Server-side
 <reply>
-<data1 crlf="headers">
+<data1 crlf="yes">
 HTTP/1.1 200 OK
 Date: Tue, 09 Nov 2010 14:49:00 GMT
 Server: server.example.com
@@ -18,7 +18,7 @@ Content-Length: 47
 
 file contents should appear once for each file
 </data1>
-<data2 crlf="headers">
+<data2>
 HTTP/1.1 200 OK
 Date: Tue, 09 Nov 2010 14:49:00 GMT
 Server: server.example.com
@@ -26,7 +26,7 @@ Content-Length: 47
 
 file contents should appear once for each file
 </data2>
-<data3 crlf="headers">
+<data3>
 HTTP/1.1 200 OK
 Date: Tue, 09 Nov 2010 14:49:00 GMT
 Server: server.example.com
@@ -34,7 +34,7 @@ Content-Length: 47
 
 file contents should appear once for each file
 </data3>
-<data4 crlf="headers">
+<data4>
 HTTP/1.1 200 OK
 Date: Tue, 09 Nov 2010 14:49:00 GMT
 Server: server.example.com
@@ -49,7 +49,6 @@ file contents should appear once for each file
 <features>
 http/2
 SSL
-verbose-strings
 </features>
 <server>
 http/2
@@ -61,13 +60,13 @@ lib%TESTNUMBER
 HTTP/2 using STREAM_WEIGHTs
 </name>
 <command>
-- %HOSTIP %HTTP2TLSPORT
+https://%HOSTIP:%HTTP2TLSPORT/path/%TESTNUMBER %HOSTIP %HTTP2TLSPORT
 </command>
 </client>
 
 # Verify data after the test has been "shot"
 <verify>
-<protocol crlf="headers">
+<protocol crlf="yes">
 GET /path/%TESTNUMBER0001 HTTP/1.1
 Host: %HOSTIP:%HTTPPORT
 Accept: */*
@@ -97,13 +96,13 @@ Via: 2 nghttpx
 ^Host:.*
 </strip>
 <file name="%LOGDIR/stderr%TESTNUMBER" mode="text">
-* Connection #0 to host localhost:%HTTP2TLSPORT left intact
-* Connection #0 to host localhost:%HTTP2TLSPORT left intact
-* Connection #0 to host localhost:%HTTP2TLSPORT left intact
-* Connection #0 to host localhost:%HTTP2TLSPORT left intact
+* Connection #0 to host localhost left intact
+* Connection #0 to host localhost left intact
+* Connection #0 to host localhost left intact
+* Connection #0 to host localhost left intact
 </file>
 <stripfile>
-$_ = '' if(($_ !~ /left intact/) && ($_ !~ /Closing connection/))
+$_ = '' if (($_ !~ /left intact/) && ($_ !~ /Closing connection/))
 </stripfile>
 </verify>
 </testcase>

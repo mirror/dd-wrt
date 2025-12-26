@@ -26,16 +26,14 @@
 #include "uint-bset.h"
 #include "uint-spbset.h"
 
-/* The last 2 #include files should be in this order */
+/* The last 3 #include files should be in this order */
+#include "curl_printf.h"
 #include "curl_memory.h"
 #include "memdebug.h"
 
 #ifdef DEBUGBUILD
 #define CURL_UINT_SPBSET_MAGIC  0x70737362
 #endif
-
-/* Clear the bitset, making it empty. */
-UNITTEST void Curl_uint_spbset_clear(struct uint_spbset *bset);
 
 void Curl_uint_spbset_init(struct uint_spbset *bset)
 {
@@ -79,7 +77,7 @@ bool Curl_uint_spbset_empty(struct uint_spbset *bset)
   return TRUE;
 }
 
-UNITTEST void Curl_uint_spbset_clear(struct uint_spbset *bset)
+void Curl_uint_spbset_clear(struct uint_spbset *bset)
 {
   struct uint_spbset_chunk *next, *chunk;
 

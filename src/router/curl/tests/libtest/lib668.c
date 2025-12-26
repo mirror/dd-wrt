@@ -21,21 +21,23 @@
  * SPDX-License-Identifier: curl
  *
  ***************************************************************************/
-#include "first.h"
+#include "test.h"
 
 #include "memdebug.h"
 
-struct t668_WriteThis {
-  const char *readptr;
+static char testdata[]= "dummy";
+
+struct WriteThis {
+  char *readptr;
   curl_off_t sizeleft;
 };
 
-static size_t t668_read_cb(char *ptr, size_t size, size_t nmemb, void *userp)
+static size_t read_callback(char *ptr, size_t size, size_t nmemb, void *userp)
 {
-  struct t668_WriteThis *pooh = (struct t668_WriteThis *)userp;
+  struct WriteThis *pooh = (struct WriteThis *)userp;
   size_t len = strlen(pooh->readptr);
 
-  (void)size; /* Always 1 */
+  (void) size; /* Always 1.*/
 
   if(len > nmemb)
     len = nmemb;
@@ -46,15 +48,13 @@ static size_t t668_read_cb(char *ptr, size_t size, size_t nmemb, void *userp)
   return len;
 }
 
-static CURLcode test_lib668(const char *URL)
+CURLcode test(char *URL)
 {
-  static const char testdata[] = "dummy";
-
-  CURL *curl = NULL;
+  CURL *easy = NULL;
   curl_mime *mime = NULL;
   curl_mimepart *part;
   CURLcode res = TEST_ERR_FAILURE;
-  struct t668_WriteThis pooh1, pooh2;
+  struct WriteThis pooh1, pooh2;
 
   /*
    * Check early end of part data detection.
@@ -65,16 +65,16 @@ static CURLcode test_lib668(const char *URL)
     return TEST_ERR_MAJOR_BAD;
   }
 
-  curl = curl_easy_init();
+  easy = curl_easy_init();
 
   /* First set the URL that is about to receive our POST. */
-  test_setopt(curl, CURLOPT_URL, URL);
+  test_setopt(easy, CURLOPT_URL, URL);
 
   /* get verbose debug output please */
-  test_setopt(curl, CURLOPT_VERBOSE, 1L);
+  test_setopt(easy, CURLOPT_VERBOSE, 1L);
 
   /* include headers in the output */
-  test_setopt(curl, CURLOPT_HEADER, 1L);
+  test_setopt(easy, CURLOPT_HEADER, 1L);
 
   /* Prepare the callback structures. */
   pooh1.readptr = testdata;
@@ -82,18 +82,17 @@ static CURLcode test_lib668(const char *URL)
   pooh2 = pooh1;
 
   /* Build the mime tree. */
-  mime = curl_mime_init(curl);
+  mime = curl_mime_init(easy);
   part = curl_mime_addpart(mime);
   curl_mime_name(part, "field1");
   /* Early end of data detection can be done because the data size is known. */
   curl_mime_data_cb(part, (curl_off_t) strlen(testdata),
-                    t668_read_cb, NULL, NULL, &pooh1);
+                    read_callback, NULL, NULL, &pooh1);
   part = curl_mime_addpart(mime);
   curl_mime_name(part, "field2");
   /* Using an undefined length forces chunked transfer and disables early
      end of data detection for this part. */
-  curl_mime_data_cb(part, (curl_off_t) -1, t668_read_cb,
-                    NULL, NULL, &pooh2);
+  curl_mime_data_cb(part, (curl_off_t) -1, read_callback, NULL, NULL, &pooh2);
   part = curl_mime_addpart(mime);
   curl_mime_name(part, "field3");
   /* Regular file part sources early end of data can be detected because
@@ -101,16 +100,16 @@ static CURLcode test_lib668(const char *URL)
   curl_mime_filedata(part, libtest_arg2);
 
   /* Bind mime data to its easy handle. */
-  test_setopt(curl, CURLOPT_MIMEPOST, mime);
+  test_setopt(easy, CURLOPT_MIMEPOST, mime);
 
   /* Send data. */
-  res = curl_easy_perform(curl);
+  res = curl_easy_perform(easy);
   if(res != CURLE_OK) {
     curl_mfprintf(stderr, "curl_easy_perform() failed\n");
   }
 
 test_cleanup:
-  curl_easy_cleanup(curl);
+  curl_easy_cleanup(easy);
   curl_mime_free(mime);
   curl_global_cleanup();
   return res;

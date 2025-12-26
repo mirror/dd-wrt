@@ -14,6 +14,9 @@ config
 #
 # Client-side
 <client>
+<server>
+none
+</server>
 <name>
 config file with overly long option
 </name>
@@ -30,7 +33,7 @@ config file with overly long option
 <verify>
 # the used option in the config file is too long
 <errorcode>
-2
+26
 </errorcode>
 </verify>
 </testcase>

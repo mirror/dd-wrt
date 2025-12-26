@@ -90,7 +90,7 @@ sub scanmdpage {
         }
     }
     foreach my $m (@words) {
-        my @g = grep(/$m\b/, @m);
+        my @g = grep(/$m/, @m);
         if(!$g[0]) {
             print STDERR "Missing mention of $m in $file\n";
             $errors++;
@@ -202,7 +202,7 @@ while(<$r>) {
         $list=1;
     }
     elsif($list) {
-        if(/^  \{(\"[^,]*\").*\'(.)\',/) {
+        if( /^  \{(\"[^,]*\").*\'(.)\',/) {
             my ($l, $s)=($1, $2);
             my $sh;
             my $lo;

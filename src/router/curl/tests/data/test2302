@@ -8,7 +8,7 @@ WebSockets
 #
 # Sends a PING + a 5 byte hello TEXT
 <reply>
-<data crlf="headers" nocheck="yes" nonewline="yes">
+<data nocheck="yes" nonewline="yes">
 HTTP/1.1 101 Switching to WebSockets
 Server: test-server/fake
 Upgrade: websocket
@@ -27,14 +27,11 @@ upgrade
 #
 # Client-side
 <client>
-# require Debug for the forced CURL_ENTROPY
+# require debug for the forced CURL_ENTROPY
 <features>
 Debug
 ws
 </features>
-<setenv>
-CURL_ENTROPY=12345678
-</setenv>
 <server>
 http
 </server>
@@ -53,24 +50,21 @@ ws://%HOSTIP:%HTTPPORT/%TESTNUMBER
 # PONG with no data and the 32 bit mask
 #
 <verify>
-<protocol crlf="yes" nonewline="yes" nocheck="yes">
+<protocol nocheck="yes" nonewline="yes">
 GET /%TESTNUMBER HTTP/1.1
 Host: %HOSTIP:%HTTPPORT
 User-Agent: webbie-sox/3
 Accept: */*
 Upgrade: websocket
+Connection: Upgrade
 Sec-WebSocket-Version: 13
 Sec-WebSocket-Key: NDMyMTUzMjE2MzIxNzMyMQ==
-Connection: Upgrade
 
 %hex[%8a%808321]hex%
 </protocol>
 <stdout mode="text">
-68 65 6c 6c 6f%spc%
+68 65 6c 6c 6f 
 RECFLAGS: 1
 </stdout>
-<limits>
-Maximum allocated: 1300000
-</limits>
 </verify>
 </testcase>

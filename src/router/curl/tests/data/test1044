@@ -38,7 +38,10 @@ ftp://%HOSTIP:%FTPPORT/blalbla/%TESTNUMBER -I
 
 # Verify data after the test has been "shot"
 <verify>
-<protocol crlf="yes">
+<strip>
+QUIT
+</strip>
+<protocol>
 USER anonymous
 PASS ftp@example.com
 PWD
@@ -49,7 +52,7 @@ SIZE %TESTNUMBER
 REST 0
 QUIT
 </protocol>
-<stdout crlf="headers">
+<stdout>
 Last-Modified: Sat, 26 Jul 2008 10:26:59 GMT
 Content-Length: 9999999999
 Accept-ranges: bytes

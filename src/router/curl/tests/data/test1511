@@ -8,7 +8,7 @@ CURLOPT_TIMECONDITION
 
 # Server-side
 <reply>
-<data crlf="headers">
+<data>
 HTTP/1.1 200 OK
 Date: Tue, 09 Nov 2010 14:49:00 GMT
 Server: test-server/fakem
@@ -20,7 +20,7 @@ Connection: close
 Hello World
 </data>
 
-<datacheck crlf="headers">
+<datacheck>
 HTTP/1.1 200 OK
 Date: Tue, 09 Nov 2010 14:49:00 GMT
 Server: test-server/fakem
@@ -62,10 +62,10 @@ http://%HOSTIP:%HTTPPORT/%TESTNUMBER
 </client>
 
 # Verify data after the test has been "shot"
-# TEST_ERR_SUCCESS is errorcode 41
+# TEST_ERR_SUCCESS is errorcode 120
 <verify>
 <errorcode>
-41
+120
 </errorcode>
 </verify>
 </testcase>

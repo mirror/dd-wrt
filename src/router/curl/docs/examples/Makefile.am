@@ -24,8 +24,8 @@
 
 AUTOMAKE_OPTIONS = foreign nostdinc
 
-EXTRA_DIST = CMakeLists.txt .checksrc README.md Makefile.example \
-  $(COMPLICATED_MAY_BUILD) $(COMPLICATED_EXAMPLES)
+EXTRA_DIST = README.md Makefile.example CMakeLists.txt \
+  $(COMPLICATED_EXAMPLES) .checksrc
 
 # Specify our include paths here, and do it relative to $(top_srcdir) and
 # $(top_builddir), to ensure that these paths which belong to the library
@@ -36,25 +36,28 @@ EXTRA_DIST = CMakeLists.txt .checksrc README.md Makefile.example \
 
 AM_CPPFLAGS = -I$(top_srcdir)/include
 
+LIBDIR = $(top_builddir)/lib
+
+# Avoid libcurl obsolete stuff
+AM_CPPFLAGS += -DCURL_NO_OLDIES
+
 if USE_CPPFLAG_CURL_STATICLIB
 AM_CPPFLAGS += -DCURL_STATICLIB
 endif
 if DOING_NATIVE_WINDOWS
 AM_CPPFLAGS += -DWIN32_LEAN_AND_MEAN
 endif
-# Avoid libcurl obsolete stuff
-AM_CPPFLAGS += -DCURL_NO_OLDIES
 
 # Prevent LIBS from being used for all link targets
 LIBS = $(BLANK_AT_MAKETIME)
 
 # Dependencies
-LDADD = $(top_builddir)/lib/libcurl.la
+LDADD = $(LIBDIR)/libcurl.la @LIBCURL_PC_LIBS_PRIVATE@
 
 # This might hold -Werror
 CFLAGS += @CURL_CFLAG_EXTRAS@
 
-# Get check_PROGRAMS, COMPLICATED_MAY_BUILD, COMPLICATED_EXAMPLES variables
+# Makefile.inc provides the check_PROGRAMS and COMPLICATED_EXAMPLES defines
 include Makefile.inc
 
 all: $(check_PROGRAMS)

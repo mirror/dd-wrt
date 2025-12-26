@@ -31,44 +31,48 @@ AUTOMAKE_OPTIONS = foreign nostdinc
 # $(top_srcdir)/include is for libcurl's external include files
 # $(top_builddir)/lib is for libcurl's generated lib/curl_config.h file
 # $(top_srcdir)/lib for libcurl's lib/curl_setup.h and other "borrowed" files
-# $(srcdir) for the generated bundle source to find included test sources
 
 AM_CPPFLAGS = -I$(top_srcdir)/include        \
               -I$(top_builddir)/lib          \
               -I$(top_srcdir)/lib            \
+              -I$(top_srcdir)/lib/curlx      \
+              -I$(top_srcdir)/src            \
               -I$(top_srcdir)/tests/libtest  \
-              -I$(srcdir)
+              -I$(top_srcdir)/tests/unit
 
-# Get BUNDLE, FIRST_C, TESTS_C variables
-include Makefile.inc
-
-EXTRA_DIST = CMakeLists.txt README.md $(TESTS_C)
+EXTRA_DIST = CMakeLists.txt README.md
 
 CFLAGS += @CURL_CFLAG_EXTRAS@
 
 # Prevent LIBS from being used for all link targets
 LIBS = $(BLANK_AT_MAKETIME)
 
-AM_CPPFLAGS += -DCURL_STATICLIB -DUNITTESTS
+LDADD = $(top_builddir)/lib/libcurlu.la      \
+        @LIBCURL_PC_LDFLAGS_PRIVATE@ @LIBCURL_PC_LIBS_PRIVATE@
+
+AM_CPPFLAGS += -DCURL_STATICLIB -DUNITTESTS -DBUILDING_LIBCURL
 if DEBUGBUILD
 AM_CPPFLAGS += -DDEBUGBUILD
 endif
 if CURLDEBUG
 AM_CPPFLAGS += -DCURLDEBUG
 endif
-# unit tests are small pretend-libcurl-programs, pass BUILDING_LIBCURL to reflect that
-AM_CPPFLAGS += -DBUILDING_LIBCURL
+
+BUNDLE=units
 
 if BUILD_UNITTESTS
-$(BUNDLE).c: $(top_srcdir)/scripts/mk-unity.pl Makefile.inc $(FIRST_C) $(TESTS_C) $(top_builddir)/lib/unitprotos.h
-	@PERL@ $(top_srcdir)/scripts/mk-unity.pl --test $(TESTS_C) > $(BUNDLE).c
-
-$(top_builddir)/lib/unitprotos.h:
-	(cd $(top_builddir)/lib && $(MAKE) unitprotos.h)
+if USE_TEST_BUNDLES
+unit_bundle.c: $(top_srcdir)/tests/mk-bundle.pl Makefile.inc
+	@PERL@ $(top_srcdir)/tests/mk-bundle.pl $(srcdir) > unit_bundle.c
 
 noinst_PROGRAMS = $(BUNDLE)
-LDADD = $(top_builddir)/lib/libcurlu.la
-CLEANFILES = $(BUNDLE).c
+nodist_units_SOURCES = unit_bundle.c
+CLEANFILES = unit_bundle.c
+else
+# Makefile.inc provides neat definitions
+include Makefile.inc
+noinst_PROGRAMS = $(UNITPROGS)
+endif
 else
 noinst_PROGRAMS =
 endif
@@ -81,7 +85,7 @@ CS_ = $(CS_0)
 # ignore generated C files since they play by slightly different rules!
 checksrc:
 	$(CHECKSRC)(@PERL@ $(top_srcdir)/scripts/checksrc.pl -D$(srcdir) \
-	  -W$(srcdir)/$(BUNDLE).c \
+	  -W$(srcdir)/unit_bundle.c \
 	  $(srcdir)/*.[ch])
 
 if NOT_CURL_CI

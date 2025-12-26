@@ -27,18 +27,11 @@ package processhelp;
 use strict;
 use warnings;
 
-use Time::HiRes;
-
-use pathhelp qw(
-    os_is_win
-    );
-
-my $has_win32_process;
-
 BEGIN {
     use base qw(Exporter);
 
     our @EXPORT = qw(
+        portable_sleep
         pidfromfile
         pidexists
         pidwait
@@ -50,16 +43,15 @@ BEGIN {
         clear_advisor_read_lock
     );
 
-    if(os_is_win() && $^O ne 'MSWin32') {
-        $has_win32_process = eval {
-            no warnings "all";
-            # https://metacpan.org/pod/Win32::Process
-            require Win32::Process;
-            # https://metacpan.org/pod/Win32::Process::List
-            require Win32::Process::List;
-        };
-    } else {
-      $has_win32_process = 0;
+    # portable sleeping needs Time::HiRes
+    eval {
+        no warnings "all";
+        require Time::HiRes;
+    };
+    # portable sleeping falls back to native Sleep on Windows
+    eval {
+        no warnings "all";
+        require Win32;
     }
 }
 
@@ -69,9 +61,30 @@ use serverhelp qw(
     datasockf_pidfilename
     );
 
-use globalconfig qw(
-    $dev_null
+use pathhelp qw(
+    os_is_win
     );
+
+#######################################################################
+# portable_sleep uses Time::HiRes::sleep if available and falls back
+# to the classic approach of using select(undef, undef, undef, ...).
+# even though that one is not portable due to being implemented using
+# select on Windows: https://perldoc.perl.org/perlport.html#select
+# Therefore it uses Win32::Sleep on Windows systems instead.
+#
+sub portable_sleep {
+    my ($seconds) = @_;
+
+    if($Time::HiRes::VERSION) {
+        Time::HiRes::sleep($seconds);
+    }
+    elsif (os_is_win()) {
+        Win32::Sleep($seconds*1000);
+    }
+    else {
+        select(undef, undef, undef, $seconds);
+    }
+}
 
 #######################################################################
 # pidfromfile returns the pid stored in the given pidfile.  The value
@@ -81,18 +94,12 @@ use globalconfig qw(
 #
 sub pidfromfile {
     my $pidfile = $_[0];
-    my $timeout_sec = $_[1];
     my $pid = 0;
-    my $waits = 0;
-    # wait at max 15 seconds for the file to exist and have valid content
-    while(!$pid && ($waits <= ($timeout_sec * 10))) {
-        if(-f $pidfile && -s $pidfile && open(my $pidfh, "<", "$pidfile")) {
-            $pid = 0 + <$pidfh>;
-            close($pidfh);
-            $pid = 0 if($pid < 0);
-        }
-        Time::HiRes::sleep(0.1) unless $pid || !$timeout_sec;
-        ++$waits;
+
+    if(-f $pidfile && -s $pidfile && open(my $pidfh, "<", "$pidfile")) {
+        $pid = 0 + <$pidfh>;
+        close($pidfh);
+        $pid = 0 if($pid < 0);
     }
     return $pid;
 }
@@ -125,21 +132,14 @@ sub pidexists {
     if($pid > 0) {
         # verify if currently existing Windows process
         $pid = winpid_to_pid($pid);
-        if($pid > 4194304 && os_is_win()) {
+        if ($pid > 4194304 && os_is_win()) {
             $pid -= 4194304;
             if($^O ne 'MSWin32') {
-                if($has_win32_process) {
-                    my %processes = Win32::Process::List->new()->GetProcesses();
-                    if(exists $processes{$pid}) {
-                        return -$pid;
-                    }
-                } else {
-                    my $filter = "PID eq $pid";
-                    # https://ss64.com/nt/tasklist.html
-                    my $result = `tasklist -fi \"$filter\" 2>$dev_null`;
-                    if(index($result, "$pid") != -1) {
-                        return -$pid;
-                    }
+                my $filter = "PID eq $pid";
+                # https://ss64.com/nt/tasklist.html
+                my $result = `tasklist -fi \"$filter\" 2>nul`;
+                if(index($result, "$pid") != -1) {
+                    return -$pid;
                 }
                 return 0;
             }
@@ -163,17 +163,13 @@ sub pidterm {
     if($pid > 0) {
         # request the process to quit
         $pid = winpid_to_pid($pid);
-        if($pid > 4194304 && os_is_win()) {
+        if ($pid > 4194304 && os_is_win()) {
             $pid -= 4194304;
             if($^O ne 'MSWin32') {
-                if($has_win32_process) {
-                    Win32::Process::KillProcess($pid, 0);
-                } else {
-                    # https://ss64.com/nt/taskkill.html
-                    my $cmd = "taskkill -f -t -pid $pid >$dev_null 2>&1";
-                    print "Executing: '$cmd'\n";
-                    system($cmd);
-                }
+                # https://ss64.com/nt/taskkill.html
+                my $cmd = "taskkill -f -t -pid $pid >nul 2>&1";
+                print "Executing: '$cmd'\n";
+                system($cmd);
                 return;
             }
         }
@@ -192,17 +188,13 @@ sub pidkill {
     if($pid > 0) {
         # request the process to quit
         $pid = winpid_to_pid($pid);
-        if($pid > 4194304 && os_is_win()) {
+        if ($pid > 4194304 && os_is_win()) {
             $pid -= 4194304;
             if($^O ne 'MSWin32') {
-                if($has_win32_process) {
-                    Win32::Process::KillProcess($pid, 0);
-                } else {
-                    # https://ss64.com/nt/taskkill.html
-                    my $cmd = "taskkill -f -t -pid $pid >$dev_null 2>&1";
-                    print "Executing: '$cmd'\n";
-                    system($cmd);
-                }
+                # https://ss64.com/nt/taskkill.html
+                my $cmd = "taskkill -f -t -pid $pid >nul 2>&1";
+                print "Executing: '$cmd'\n";
+                system($cmd);
                 return;
             }
         }
@@ -221,7 +213,7 @@ sub pidwait {
 
     $pid = winpid_to_pid($pid);
     # check if the process exists
-    if($pid > 4194304 && os_is_win()) {
+    if ($pid > 4194304 && os_is_win()) {
         if($flags == &WNOHANG) {
             return pidexists($pid)?0:$pid;
         }
@@ -236,7 +228,7 @@ sub pidwait {
                     last;
                 }
             }
-            Time::HiRes::sleep(0.2);
+            portable_sleep(0.2);
         }
         return $pid;
     }
@@ -258,7 +250,7 @@ sub processexists {
     my $pidfile = $_[0];
 
     # fetch pid from pidfile
-    my $pid = pidfromfile($pidfile, 0);
+    my $pid = pidfromfile($pidfile);
 
     if($pid > 0) {
         # verify if currently alive
@@ -267,7 +259,7 @@ sub processexists {
         }
         else {
             # get rid of the certainly invalid pidfile
-            unlink($pidfile) if($pid == pidfromfile($pidfile, 0));
+            unlink($pidfile) if($pid == pidfromfile($pidfile));
             # reap its dead children, if not done yet
             pidwait($pid, &WNOHANG);
             # negative return value means dead process
@@ -344,7 +336,7 @@ sub killpid {
             last if(not scalar(@signalled));
             # give any zombies of us a chance to move on to the afterlife
             pidwait(0, &WNOHANG);
-            Time::HiRes::sleep(0.05);
+            portable_sleep(0.05);
         }
     }
 

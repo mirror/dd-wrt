@@ -38,9 +38,6 @@ use strict;
 use warnings;
 use 5.006;
 
-use File::Basename;
-use Time::HiRes;
-
 BEGIN {
     use base qw(Exporter);
 
@@ -84,7 +81,9 @@ use Storable qw(
 
 use pathhelp qw(
     exe_ext
-    shell_quote
+    );
+use processhelp qw(
+    portable_sleep
     );
 use servers qw(
     checkcmd
@@ -101,6 +100,7 @@ use testutil qw(
     logmsg
     runclient
     exerunner
+    shell_quote
     subbase64
     subsha256base64file
     substrippemfile
@@ -161,7 +161,7 @@ sub runner_init {
 
     # enable memory debugging if curl is compiled with it
     $ENV{'CURL_MEMDEBUG'} = "$logdir/$MEMDUMP";
-    delete $ENV{'CURL_ENTROPY'} if($ENV{'CURL_ENTROPY'});
+    $ENV{'CURL_ENTROPY'}="12345678";
     $ENV{'CURL_FORCETIME'}=1; # for debug NTLM magic
     $ENV{'CURL_GLOBAL_INIT'}=1; # debug curl_global_init/cleanup use
     $ENV{'HOME'}=$pwd;
@@ -249,7 +249,7 @@ sub runner_init {
 #######################################################################
 # Loop to execute incoming IPC calls until the shutdown call
 sub event_loop {
-    while() {
+    while () {
         if(ipcrecv()) {
             last;
         }
@@ -299,7 +299,7 @@ sub prepro {
     my (@entiretest) = @_;
     my $show = 1;
     my @out;
-    my $data_crlf = "";
+    my $data_crlf;
     my @pshow;
     my @altshow;
     my $plvl;
@@ -351,26 +351,21 @@ sub prepro {
             next;
         }
         if($show) {
-            # The processor does CRLF replacements in the <data*> and <connect*>
-            # sections if necessary since those parts might be read by separate
-            # servers.
-            if($s =~ /^ *<(data|connect)(.*)\>/) {
-                if($2 =~ /crlf="yes"/) {
-                    $data_crlf = "yes";
-                }
-                elsif($2 =~ /crlf="headers"/) {
-                    $data_crlf = "headers";
+            # The processor does CRLF replacements in the <data*> sections if
+            # necessary since those parts might be read by separate servers.
+            if($s =~ /^ *<data(.*)\>/) {
+                if($1 =~ /crlf="yes"/) {
+                    $data_crlf = 1;
                 }
             }
-            elsif(($s =~ /^ *<\/(data|connect)/) && $data_crlf ne "") {
-                $data_crlf = "";
+            elsif(($s =~ /^ *<\/data/) && $data_crlf) {
+                $data_crlf = 0;
             }
             subvariables(\$s, $testnum, "%");
             subbase64(\$s);
             subsha256base64file(\$s);
             substrippemfile(\$s);
-            subnewlines(1, \$s) if($data_crlf eq "yes");
-            subnewlines(0, \$s) if($data_crlf eq "headers");
+            subnewlines(0, \$s) if($data_crlf);
             push @out, $s;
         }
     }
@@ -422,7 +417,7 @@ sub waitlockunlock {
         my $lockretry = $serverlogslocktimeout * 20;
         my @locks;
         while((@locks = logslocked()) && $lockretry--) {
-            Time::HiRes::sleep(0.05);
+            portable_sleep(0.05);
         }
         if(($lockretry < 0) &&
            ($serverlogslocktimeout >= $defserverlogslocktimeout)) {
@@ -461,18 +456,18 @@ sub torture {
         return 0;
     }
 
-    my @torture_tests = (1 .. $count);
+    my @ttests = (1 .. $count);
     if($shallow && ($shallow < $count)) {
-        my $discard = scalar(@torture_tests) - $shallow;
-        my $percent = sprintf("%.2f%%", $shallow * 100 / scalar(@torture_tests));
+        my $discard = scalar(@ttests) - $shallow;
+        my $percent = sprintf("%.2f%%", $shallow * 100 / scalar(@ttests));
         logmsg " $count functions found, but only fail $shallow ($percent)\n";
         while($discard) {
             my $rm;
             do {
                 # find a test to discard
-                $rm = rand(scalar(@torture_tests));
-            } while(!$torture_tests[$rm]);
-            $torture_tests[$rm] = undef;
+                $rm = rand(scalar(@ttests));
+            } while(!$ttests[$rm]);
+            $ttests[$rm] = undef;
             $discard--;
         }
     }
@@ -480,7 +475,7 @@ sub torture {
         logmsg " $count functions to make fail\n";
     }
 
-    for (@torture_tests) {
+    for (@ttests) {
         my $limit = $_;
         my $fail;
         my $dumped_core;
@@ -507,6 +502,19 @@ sub torture {
         unlink("$LOGDIR/$MEMDUMP");
 
         my $cmd = $testcmd;
+        if($valgrind && !$gdbthis) {
+            my @valgrindoption = getpart("verify", "valgrind");
+            if((!@valgrindoption) || ($valgrindoption[0] !~ /disable/)) {
+                my $valgrindcmd = shell_quote($valgrind) . " ";
+                $valgrindcmd .= "$valgrind_tool " if($valgrind_tool);
+                $valgrindcmd .= "--quiet --leak-check=yes ";
+                $valgrindcmd .= "--suppressions=$srcdir/valgrind.supp ";
+                # $valgrindcmd .= "--gen-suppressions=all ";
+                $valgrindcmd .= "--num-callers=16 ";
+                $valgrindcmd .= "${valgrind_logfile}=$LOGDIR/valgrind$testnum";
+                $cmd = "$valgrindcmd $testcmd";
+            }
+        }
         logmsg "*** Function number $limit is now set to fail ***\n" if($gdbthis);
 
         my $ret = 0;
@@ -612,9 +620,13 @@ sub singletest_startservers {
 
     my $why;
     my $error;
-    if(!$listonly) {
+    if (!$listonly) {
         my @what = getpart("client", "server");
-        if($what[0]) {
+        if(!$what[0]) {
+            warn "Test case $testnum has no server(s) specified";
+            $why = "no server specified";
+            $error = -1;
+        } else {
             my $err;
             ($why, $err) = serverfortest(@what);
             if($err == 1) {
@@ -671,6 +683,17 @@ sub singletest_setenv {
             if($content =~ /^=(.*)/) {
                 # assign it
                 $content = $1;
+
+                if($var =~ /^LD_PRELOAD/) {
+                    if(exe_ext('TOOL') && (exe_ext('TOOL') eq '.exe')) {
+                        logmsg "Skipping LD_PRELOAD due to lack of OS support\n" if($verbose);
+                        next;
+                    }
+                    if($feature{"Debug"} || !$has_shared) {
+                        logmsg "Skipping LD_PRELOAD due to no release shared build\n" if($verbose);
+                        next;
+                    }
+                }
                 $ENV{$var} = "$content";
                 logmsg "setenv $var = $content\n" if($verbose);
             }
@@ -678,6 +701,7 @@ sub singletest_setenv {
                 # remove it
                 delete $ENV{$var} if($ENV{$var});
             }
+
         }
     }
     if($proxy_address) {
@@ -739,19 +763,11 @@ sub singletest_prepare {
     unlink("$LOGDIR/$SERVERIN");
     unlink("$LOGDIR/$PROXYIN");
 
-    # if this section exists, it might be server instructions:
-    my @servercmd = getpart("reply", "servercmd");
-    push @servercmd, "Testnum $testnum\n";
+    # if this section exists, it might be FTP server instructions:
+    my @ftpservercmd = getpart("reply", "servercmd");
+    push @ftpservercmd, "Testnum $testnum\n";
     # write the instructions to file
-    writearray("$LOGDIR/$SERVERCMD", \@servercmd);
-
-    # if this section exists, it might be DNS instructions:
-    my @dnscmd = getpart("reply", "dns");
-    # write the instructions to file
-    writearray("$LOGDIR/$DNSCMD", \@dnscmd);
-
-    # provide an environment variable
-    $ENV{'CURL_TESTNUM'} = $testnum;
+    writearray("$LOGDIR/$SERVERCMD", \@ftpservercmd);
 
     # create (possibly-empty) files before starting the test
     for my $partsuffix (('', '1', '2', '3', '4')) {
@@ -763,9 +779,12 @@ sub singletest_prepare {
                 logmsg " $testnum: IGNORED: Section client=>file has no name attribute\n";
                 return -1;
             }
+            my $fileContent = join('', @inputfile);
 
             # make directories if needed
-            my $path = dirname($filename);
+            my $path = $filename;
+            # cut off the file name part
+            $path =~ s/^(.*)\/[^\/]*/$1/;
             my @ldparts = split(/\//, $LOGDIR);
             my $nparts = @ldparts;
             my @parts = split(/\//, $path);
@@ -777,17 +796,13 @@ sub singletest_prepare {
                     mkdir $d; # 0777
                 }
             }
-            if(open(my $outfile, ">", "$filename")) {
+            if (open(my $outfile, ">", "$filename")) {
                 binmode $outfile; # for crapage systems, use binary
-
                 if($fileattr{'nonewline'}) {
                     # cut off the final newline
-                    chomp($inputfile[-1]);
+                    chomp($fileContent);
                 }
-                if($fileattr{'crlf'}) {
-                    subnewlines(1, \$_) for @inputfile;
-                }
-                print $outfile join('', @inputfile);
+                print $outfile $fileContent;
                 close($outfile);
             } else {
                 logmsg "ERROR: cannot write $filename\n";
@@ -822,7 +837,7 @@ sub singletest_run {
     my %cmdhash = getpartattr("client", "command");
     if((!$cmdhash{'option'}) || ($cmdhash{'option'} !~ /no-output/)) {
         #We may slap on --output!
-        if(!partexists("verify", "stdout") ||
+        if (!partexists("verify", "stdout") ||
                 ($cmdhash{'option'} && $cmdhash{'option'} =~ /force-output/)) {
             $out=" --output $CURLOUT ";
         }
@@ -870,6 +885,7 @@ sub singletest_run {
         else {
             $cmdargs .= "--trace-ascii $LOGDIR/trace$testnum ";
         }
+        $cmdargs .= "--trace-config all ";
         $cmdargs .= "--trace-time ";
         if($run_event_based) {
             $cmdargs .= "--test-event ";
@@ -888,7 +904,7 @@ sub singletest_run {
             }
         }
         $cmdargs .= $cmd;
-        if($proxy_address) {
+        if ($proxy_address) {
             $cmdargs .= " --proxy $proxy_address ";
         }
     }
@@ -903,15 +919,21 @@ sub singletest_run {
         }
 
         if($tool =~ /^lib/) {
-            $tool = "libtests" . exe_ext('TOOL');
+            if($bundle) {
+                $tool = "libtests" . exe_ext('TOOL');
+            }
             $CMDLINE=$LIBDIR . $tool;
         }
         elsif($tool =~ /^tool/) {
-            $tool = "tunits" . exe_ext('TOOL');
+            if($bundle) {
+                $tool = "tunits" . exe_ext('TOOL')
+            }
             $CMDLINE=$TUNITDIR . $tool;
         }
         elsif($tool =~ /^unit/) {
-            $tool = "units" . exe_ext('TOOL');
+            if($bundle) {
+                $tool = "units" . exe_ext('TOOL')
+            }
             $CMDLINE=$UNITDIR . $tool;
         }
 
@@ -922,11 +944,13 @@ sub singletest_run {
 
         $CMDLINE=exerunner() . $CMDLINE;
 
-        if($gdbthis) {
-            $cmdargs =" $tool_name$cmdargs";
-        }
-        else {
-            $CMDLINE.=" $tool_name";
+        if($bundle) {
+            if($gdbthis) {
+                $cmdargs =" $tool_name$cmdargs";
+            }
+            else {
+                $CMDLINE.=" $tool_name";
+            }
         }
 
         $DBGCURL=$CMDLINE;
@@ -953,10 +977,6 @@ sub singletest_run {
         if($hash{'nonewline'}) {
             # cut off the final newline from the final line of the stdin data
             chomp($stdintest[-1]);
-        }
-
-        if($hash{'crlf'}) {
-            subnewlines(1, \$_) for @stdintest;
         }
 
         writearray($stdinfile, \@stdintest);
@@ -1020,7 +1040,7 @@ sub singletest_run {
     $$testtimings{"timetoolini"} = Time::HiRes::time();
 
     # run the command line we built
-    if($torture) {
+    if ($torture) {
         $cmdres = torture($CMDLINE,
                           $testnum,
                           "$gdb --directory $LIBDIR " . shell_quote($DBGCURL) . " -x $LOGDIR/gdbcmd");
@@ -1097,7 +1117,7 @@ sub singletest_clean {
         }
     }
 
-    Time::HiRes::sleep($postcommanddelay) if($postcommanddelay);
+    portable_sleep($postcommanddelay) if($postcommanddelay);
 
     my @killtestservers = getpart("client", "killserver");
     if(@killtestservers) {
@@ -1152,6 +1172,7 @@ sub singletest_postcheck {
 }
 
 
+
 ###################################################################
 # Get ready to run a single test case
 sub runner_test_preprocess {
@@ -1201,7 +1222,7 @@ sub runner_test_preprocess {
 
         ###############################################################
         # Check that the test environment is fine to run this test case
-        if(!$listonly) {
+        if (!$listonly) {
             $why = singletest_precheck($testnum);
             $error = -1;
         }
@@ -1372,13 +1393,13 @@ sub runnerar {
 # Called by controller
 sub runnerar_ready {
     my ($blocking) = @_;
-    my $r_in = "";
+    my $rin = "";
     my %idbyfileno;
     my $maxfileno=0;
     my @ready_runners = ();
     foreach my $p (keys(%controllerr)) {
         my $fd = fileno($controllerr{$p});
-        vec($r_in, $fd, 1) = 1;
+        vec($rin, $fd, 1) = 1;
         $idbyfileno{$fd} = $p;  # save the runner ID for each pipe fd
         if($fd > $maxfileno) {
             $maxfileno = $fd;
@@ -1390,14 +1411,14 @@ sub runnerar_ready {
     # This may be interrupted and return EINTR, but this is ignored and the
     # caller will need to later call this function again.
     # TODO: this is relatively slow with hundreds of fds
-    my $e_in = $r_in;
-    if(select(my $r_out=$r_in, undef, my $e_out=$e_in, $blocking) >= 1) {
+    my $ein = $rin;
+    if(select(my $rout=$rin, undef, my $eout=$ein, $blocking) >= 1) {
         for my $fd (0..$maxfileno) {
             # Return an error condition first in case it's both
-            if(vec($e_out, $fd, 1)) {
+            if(vec($eout, $fd, 1)) {
                 return (undef, $idbyfileno{$fd});
             }
-            if(vec($r_out, $fd, 1)) {
+            if(vec($rout, $fd, 1)) {
                 push(@ready_runners, $idbyfileno{$fd});
             }
         }

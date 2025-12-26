@@ -21,24 +21,26 @@
  * SPDX-License-Identifier: curl
  *
  ***************************************************************************/
-#include "first.h"
+#include "test.h"
 
+#include "testutil.h"
+#include "warnless.h"
 #include "memdebug.h"
 
 /*
  * Get a single URL without select().
  */
 
-static CURLcode test_lib674(const char *URL)
+CURLcode test(char *URL)
 {
-  CURL *curl = NULL;
-  CURL *curl2;
+  CURL *handle = NULL;
+  CURL *handle2;
   CURLcode res = CURLE_OK;
   CURLU *urlp = NULL;
   CURLUcode uc = CURLUE_OK;
 
   global_init(CURL_GLOBAL_ALL);
-  easy_init(curl);
+  easy_init(handle);
 
   urlp = curl_url();
 
@@ -50,16 +52,17 @@ static CURLcode test_lib674(const char *URL)
   uc = curl_url_set(urlp, CURLUPART_URL, URL, 0);
   if(uc) {
     curl_mfprintf(stderr, "problem setting CURLUPART_URL: %s.",
-                  curl_url_strerror(uc));
+            curl_url_strerror(uc));
     goto test_cleanup;
   }
 
   /* demonstrate override behavior */
 
-  easy_setopt(curl, CURLOPT_CURLU, urlp);
-  easy_setopt(curl, CURLOPT_VERBOSE, 1L);
 
-  res = curl_easy_perform(curl);
+  easy_setopt(handle, CURLOPT_CURLU, urlp);
+  easy_setopt(handle, CURLOPT_VERBOSE, 1L);
+
+  res = curl_easy_perform(handle);
 
   if(res) {
     curl_mfprintf(stderr, "%s:%d curl_easy_perform() failed "
@@ -68,14 +71,14 @@ static CURLcode test_lib674(const char *URL)
     goto test_cleanup;
   }
 
-  curl2 = curl_easy_duphandle(curl);
-  res = curl_easy_perform(curl2);
-  curl_easy_cleanup(curl2);
+  handle2 = curl_easy_duphandle(handle);
+  res = curl_easy_perform(handle2);
+  curl_easy_cleanup(handle2);
 
 test_cleanup:
 
   curl_url_cleanup(urlp);
-  curl_easy_cleanup(curl);
+  curl_easy_cleanup(handle);
   curl_global_cleanup();
 
   return res;

@@ -22,6 +22,9 @@ non-existing host
 http
 IPv6
 </features>
+<server>
+none
+</server>
 <name>
 HTTP-IPv6 GET with invalid --interface
 </name>

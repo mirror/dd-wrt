@@ -21,15 +21,18 @@
  * SPDX-License-Identifier: curl
  *
  ***************************************************************************/
-#include "first.h"
+#include "test.h"
 
+#include "warnless.h"
 #include "memdebug.h"
 
-static CURLcode test_lib556(const char *URL)
+CURLcode test(char *URL)
 {
   CURLcode res;
   CURL *curl;
+#ifdef LIB696
   int transfers = 0;
+#endif
 
   if(curl_global_init(CURL_GLOBAL_ALL) != CURLE_OK) {
     curl_mfprintf(stderr, "curl_global_init() failed\n");
@@ -47,20 +50,20 @@ static CURLcode test_lib556(const char *URL)
   test_setopt(curl, CURLOPT_CONNECT_ONLY, 1L);
   test_setopt(curl, CURLOPT_VERBOSE, 1L);
 
+#ifdef LIB696
 again:
+#endif
 
   res = curl_easy_perform(curl);
 
   if(!res) {
     /* we are connected, now get an HTTP document the raw way */
-    char request[64];
+    const char *request =
+      "GET /556 HTTP/1.1\r\n"
+      "Host: ninja\r\n\r\n";
     const char *sbuf = request;
-    size_t sblen;
+    size_t sblen = strlen(request);
     size_t nwritten = 0, nread = 0;
-
-    sblen = curl_msnprintf(request, sizeof(request),
-                           "GET /%d HTTP/1.1\r\n"
-                           "Host: ninja\r\n\r\n", testnum);
 
     do {
       char buf[1024];
@@ -85,9 +88,8 @@ again:
 #else
         if((size_t)write(STDOUT_FILENO, buf, nread) != nread) {
 #endif
-          char errbuf[STRERROR_LEN];
           curl_mfprintf(stderr, "write() failed: errno %d (%s)\n",
-                        errno, curlx_strerror(errno, errbuf, sizeof(errbuf)));
+                  errno, strerror(errno));
           res = TEST_ERR_FAILURE;
           break;
         }
@@ -99,12 +101,12 @@ again:
       res = TEST_ERR_FAILURE;
   }
 
-  if(testnum == 696) {
-    ++transfers;
-    /* perform the transfer a second time */
-    if(!res && transfers == 1)
-      goto again;
-  }
+#ifdef LIB696
+  ++transfers;
+  /* perform the transfer a second time */
+  if(!res && transfers == 1)
+    goto again;
+#endif
 
 test_cleanup:
 

@@ -11,9 +11,6 @@ Multi: boolean
 See-also:
   - resolve
   - alt-svc
-  - follow
-  - proto-redir
-  - max-redirs
 Example:
   - -L $URL
 ---
@@ -42,5 +39,3 @@ using the dedicated options for that: --post301, --post302 and --post303.
 
 The method set with --request overrides the method curl would otherwise select
 to use.
-
-Restrict which protocols a redirect is accepted to follow with --proto-redir.

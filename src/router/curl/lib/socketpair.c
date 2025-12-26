@@ -84,14 +84,13 @@ int Curl_pipe(curl_socket_t socks[2], bool nonblocking)
 
 #ifndef CURL_DISABLE_SOCKETPAIR
 #ifdef HAVE_SOCKETPAIR
-#ifdef USE_SOCKETPAIR
 int Curl_socketpair(int domain, int type, int protocol,
                     curl_socket_t socks[2], bool nonblocking)
 {
 #ifdef SOCK_NONBLOCK
   type = nonblocking ? type | SOCK_NONBLOCK : type;
 #endif
-  if(CURL_SOCKETPAIR(domain, type, protocol, socks))
+  if(socketpair(domain, type, protocol, socks))
     return -1;
 #ifndef SOCK_NONBLOCK
   if(nonblocking) {
@@ -105,7 +104,6 @@ int Curl_socketpair(int domain, int type, int protocol,
 #endif
   return 0;
 }
-#endif /* USE_SOCKETPAIR */
 #else /* !HAVE_SOCKETPAIR */
 #ifdef _WIN32
 /*
@@ -134,7 +132,8 @@ int Curl_socketpair(int domain, int type, int protocol,
 #include "curlx/timeval.h"  /* needed before select.h */
 #include "select.h"   /* for Curl_poll */
 
-/* The last 2 #include files should be in this order */
+/* The last 3 #include files should be in this order */
+#include "curl_printf.h"
 #include "curl_memory.h"
 #include "memdebug.h"
 
@@ -153,7 +152,7 @@ int Curl_socketpair(int domain, int type, int protocol,
   (void)type;
   (void)protocol;
 
-  listener = CURL_SOCKET(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+  listener = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
   if(listener == CURL_SOCKET_BAD)
     return -1;
 
@@ -187,7 +186,7 @@ int Curl_socketpair(int domain, int type, int protocol,
     goto error;
   if(listen(listener, 1) == -1)
     goto error;
-  socks[0] = CURL_SOCKET(AF_INET, SOCK_STREAM, 0);
+  socks[0] = socket(AF_INET, SOCK_STREAM, 0);
   if(socks[0] == CURL_SOCKET_BAD)
     goto error;
   if(connect(socks[0], &a.addr, sizeof(a.inaddr)) == -1)
@@ -200,7 +199,7 @@ int Curl_socketpair(int domain, int type, int protocol,
   pfd[0].events = POLLIN;
   pfd[0].revents = 0;
   (void)Curl_poll(pfd, 1, 1000); /* one second */
-  socks[1] = CURL_ACCEPT(listener, NULL, NULL);
+  socks[1] = accept(listener, NULL, NULL);
   if(socks[1] == CURL_SOCKET_BAD)
     goto error;
   else {

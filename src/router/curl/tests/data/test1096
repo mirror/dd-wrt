@@ -30,10 +30,13 @@ ftp://%HOSTIP:%FTPPORT/dir/%TESTNUMBER ftp://%HOSTIP:%FTPPORT/dir/%TESTNUMBER
 
 # Verify data after the test has been "shot"
 <verify>
+<strip>
+QUIT
+</strip>
 <errorcode>
 78
 </errorcode>
-<protocol crlf="yes">
+<protocol>
 USER anonymous
 PASS ftp@example.com
 PWD

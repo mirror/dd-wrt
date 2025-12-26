@@ -9,6 +9,9 @@ Curl_pgrsTime
 #
 # Client-side
 <client>
+<server>
+none
+</server>
 <features>
 unittest
 </features>

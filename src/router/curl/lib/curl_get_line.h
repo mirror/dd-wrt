@@ -27,6 +27,6 @@
 #include "curlx/dynbuf.h"
 
 /* Curl_get_line() returns complete lines that end with a newline. */
-CURLcode Curl_get_line(struct dynbuf *buf, FILE *input, bool *eof);
+int Curl_get_line(struct dynbuf *buf, FILE *input);
 
 #endif /* HEADER_CURL_GET_LINE_H */

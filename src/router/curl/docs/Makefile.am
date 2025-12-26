@@ -28,23 +28,17 @@ if BUILD_DOCS
 # if we disable man page building, ignore these
 MK_CA_DOCS = mk-ca-bundle.1
 CURLCONF_DOCS = curl-config.1
-TEST_DOCS = runtests.1 testcurl.1
 man_MANS = curl-config.1 wcurl.1
 endif
 
-CURLPAGES = curl-config.md mk-ca-bundle.md wcurl.md runtests.md testcurl.md
+CURLPAGES = curl-config.md mk-ca-bundle.md wcurl.md
 
 SUBDIRS = . cmdline-opts libcurl
 DIST_SUBDIRS = $(SUBDIRS) examples
 
 if BUILD_DOCS
-CLEANFILES = $(MK_CA_DOCS) $(man_MANS) $(TEST_DOCS)
+CLEANFILES = mk-ca-bundle.1 curl-config.1 wcurl.1
 endif
-
-TESTDOCS =                                      \
- tests/FILEFORMAT.md                            \
- tests/HTTP.md                                  \
- tests/TEST-SUITE.md
 
 INTERNALDOCS =                                  \
  internals/BUFQ.md                              \
@@ -64,7 +58,6 @@ INTERNALDOCS =                                  \
  internals/NEW-PROTOCOL.md                      \
  internals/PORTING.md                           \
  internals/README.md                            \
- internals/SCORECARD.md                         \
  internals/SPLAY.md                             \
  internals/STRPARSE.md                          \
  internals/TLS-SESSIONS.md                      \
@@ -74,7 +67,6 @@ INTERNALDOCS =                                  \
 EXTRA_DIST =                                    \
  $(CURLPAGES)                                   \
  $(INTERNALDOCS)                                \
- $(TESTDOCS)                                    \
  ALTSVC.md                                      \
  BINDINGS.md                                    \
  BUG-BOUNTY.md                                  \
@@ -134,7 +126,7 @@ CD2_ = $(CD2_0)
 
 SUFFIXES = .1 .md
 
-all: $(MK_CA_DOCS) $(CURLCONF_DOCS) $(TEST_DOCS)
+all: $(MK_CA_DOCS) $(CURLCONF_DOCS)
 
 .md.1:
 	$(CD2)$(CD2NROFF)

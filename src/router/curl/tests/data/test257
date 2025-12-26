@@ -85,17 +85,17 @@ machine anotherone.com login user2 password passwd2
 
 # Verify data after the test has been "shot"
 <verify>
-<protocol crlf="headers">
+<protocol>
 GET http://supersite.com/want/%TESTNUMBER HTTP/1.1
 Host: supersite.com
-Authorization: Basic %b64[user1:passwd1]b64%
+Authorization: Basic dXNlcjE6cGFzc3dkMQ==
 User-Agent: curl/%VERSION
 Accept: */*
 Proxy-Connection: Keep-Alive
 
 GET http://anotherone.com/%TESTNUMBER0002 HTTP/1.1
 Host: anotherone.com
-Authorization: Basic %b64[user2:passwd2]b64%
+Authorization: Basic dXNlcjI6cGFzc3dkMg==
 User-Agent: curl/%VERSION
 Accept: */*
 Proxy-Connection: Keep-Alive

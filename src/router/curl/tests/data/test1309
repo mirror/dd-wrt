@@ -9,6 +9,9 @@ splay
 #
 # Client-side
 <client>
+<server>
+none
+</server>
 <features>
 unittest
 </features>

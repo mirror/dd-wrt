@@ -24,21 +24,23 @@
 
 #include "../curl_setup.h"
 
-#if defined(USE_GNUTLS) || defined(USE_WOLFSSL) || defined(USE_SCHANNEL) || \
+#if defined(USE_GNUTLS) || defined(USE_WOLFSSL) ||      \
+  defined(USE_SCHANNEL) || defined(USE_SECTRANSP) ||    \
   defined(USE_MBEDTLS) || defined(USE_RUSTLS)
 
-#if defined(USE_GNUTLS) || defined(USE_SCHANNEL) || defined(USE_MBEDTLS) || \
-  defined(USE_WOLFSSL) || defined(USE_RUSTLS)
+#if defined(USE_GNUTLS) || defined(USE_SCHANNEL) || defined(USE_SECTRANSP) || \
+  defined(USE_MBEDTLS) || defined(USE_WOLFSSL) || defined(USE_RUSTLS)
 #define WANT_PARSEX509 /* uses Curl_parseX509() */
 #endif
 
-#if defined(USE_GNUTLS) || defined(USE_SCHANNEL) || defined(USE_MBEDTLS) || \
-  defined(USE_RUSTLS)
+#if defined(USE_GNUTLS) || defined(USE_SCHANNEL) || defined(USE_SECTRANSP) || \
+  defined(USE_MBEDTLS) || defined(USE_RUSTLS)
 #define WANT_EXTRACT_CERTINFO /* uses Curl_extract_certinfo() */
 #endif
 
 #include <curl/curl.h>
 #include "../urldata.h"
+#include "../strcase.h"
 #include "../curl_ctype.h"
 #include "hostcheck.h"
 #include "vtls.h"
@@ -49,7 +51,8 @@
 #include "x509asn1.h"
 #include "../curlx/dynbuf.h"
 
-/* The last 2 #include files should be in this order */
+/* The last 3 #include files should be in this order */
+#include "../curl_printf.h"
 #include "../curl_memory.h"
 #include "../memdebug.h"
 
@@ -198,7 +201,7 @@ static const char *getASN1Element_(struct Curl_asn1Element *elem,
   elem->header = beg;
   b = (unsigned char) *beg++;
   elem->constructed = (b & 0x20) != 0;
-  elem->eclass = (b >> 6) & 3;
+  elem->class = (b >> 6) & 3;
   b &= 0x1F;
   if(b == 0x1F)
     return NULL; /* Long tag values not supported here. */
@@ -253,14 +256,14 @@ static const char *getASN1Element(struct Curl_asn1Element *elem,
 #ifdef WANT_EXTRACT_CERTINFO
 
 /*
- * Search the null-terminated OID or OID identifier in local table.
+ * Search the null terminated OID or OID identifier in local table.
  * Return the table entry pointer or NULL if not found.
  */
 static const struct Curl_OID *searchOID(const char *oid)
 {
   const struct Curl_OID *op;
   for(op = OIDtable; op->numoid; op++)
-    if(!strcmp(op->numoid, oid) || curl_strequal(op->textoid, oid))
+    if(!strcmp(op->numoid, oid) || strcasecompare(op->textoid, oid))
       return op;
 
   return NULL;
@@ -455,7 +458,7 @@ static CURLcode encodeOID(struct dynbuf *store,
     x = 0;
     do {
       if(x & 0xFF000000)
-        return CURLE_OK;
+        return 0;
       y = *(const unsigned char *) beg++;
       x = (x << 7) | (y & 0x7F);
     } while(y & 0x80);
@@ -588,7 +591,7 @@ CURLcode Curl_x509_GTime2str(struct dynbuf *store,
  * Return error code.
  */
 static CURLcode UTime2str(struct dynbuf *store,
-                          const char *beg, const char *end)
+                             const char *beg, const char *end)
 {
   const char *tzp;
   size_t tzl;
@@ -858,7 +861,7 @@ int Curl_parseX509(struct Curl_X509certificate *cert,
   if(!getASN1Element(&cert->subjectPublicKey, ccp,
                      cert->subjectPublicKeyInfo.end))
     return -1;
-  /* Get optional issuerUniqueID, subjectUniqueID and extensions. */
+  /* Get optional issuerUiqueID, subjectUniqueID and extensions. */
   cert->issuerUniqueID.tag = cert->subjectUniqueID.tag = 0;
   cert->extensions.tag = elem.tag = 0;
   cert->issuerUniqueID.header = cert->subjectUniqueID.header = NULL;
@@ -987,7 +990,7 @@ static int do_pubkey(struct Curl_easy *data, int certnum,
 
   /* Generate all information records for the public key. */
 
-  if(curl_strequal(algo, "ecPublicKey")) {
+  if(strcasecompare(algo, "ecPublicKey")) {
     /*
      * ECC public key is all the data, a value of type BIT STRING mapped to
      * OCTET STRING and should not be parsed as an ASN.1 value.
@@ -997,7 +1000,7 @@ static int do_pubkey(struct Curl_easy *data, int certnum,
       infof(data, "   ECC Public Key (%zu bits)", len);
     if(data->set.ssl.certinfo) {
       char q[sizeof(len) * 8 / 3 + 1];
-      (void)curl_msnprintf(q, sizeof(q), "%zu", len);
+      (void)msnprintf(q, sizeof(q), "%zu", len);
       if(ssl_push_certinfo(data, certnum, "ECC Public Key", q))
         return 1;
     }
@@ -1009,7 +1012,7 @@ static int do_pubkey(struct Curl_easy *data, int certnum,
   if(!getASN1Element(&pk, pubkey->beg + 1, pubkey->end))
     return 1;
 
-  if(curl_strequal(algo, "rsaEncryption")) {
+  if(strcasecompare(algo, "rsaEncryption")) {
     const char *q;
     size_t len;
 
@@ -1032,7 +1035,7 @@ static int do_pubkey(struct Curl_easy *data, int certnum,
       infof(data, "   RSA Public Key (%zu bits)", len);
     if(data->set.ssl.certinfo) {
       char r[sizeof(len) * 8 / 3 + 1];
-      curl_msnprintf(r, sizeof(r), "%zu", len);
+      msnprintf(r, sizeof(r), "%zu", len);
       if(ssl_push_certinfo(data, certnum, "RSA Public Key", r))
         return 1;
     }
@@ -1044,7 +1047,7 @@ static int do_pubkey(struct Curl_easy *data, int certnum,
     if(do_pubkey_field(data, certnum, "rsa(e)", &elem))
       return 1;
   }
-  else if(curl_strequal(algo, "dsa")) {
+  else if(strcasecompare(algo, "dsa")) {
     p = getASN1Element(&elem, param->beg, param->end);
     if(p) {
       if(do_pubkey_field(data, certnum, "dsa(p)", &elem))
@@ -1062,7 +1065,7 @@ static int do_pubkey(struct Curl_easy *data, int certnum,
       }
     }
   }
-  else if(curl_strequal(algo, "dhpublicnumber")) {
+  else if(strcasecompare(algo, "dhpublicnumber")) {
     p = getASN1Element(&elem, param->beg, param->end);
     if(p) {
       if(do_pubkey_field(data, certnum, "dh(p)", &elem))
@@ -1274,5 +1277,5 @@ done:
 
 #endif /* WANT_EXTRACT_CERTINFO */
 
-#endif /* USE_GNUTLS or USE_WOLFSSL or USE_SCHANNEL or USE_MBEDTLS or
-          USE_RUSTLS */
+#endif /* USE_GNUTLS or USE_WOLFSSL or USE_SCHANNEL or USE_SECTRANSP
+          or USE_MBEDTLS or USE_RUSTLS */

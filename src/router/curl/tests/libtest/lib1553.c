@@ -21,14 +21,18 @@
  * SPDX-License-Identifier: curl
  *
  ***************************************************************************/
-#include "first.h"
+#include "test.h"
 
+#include "testutil.h"
 #include "testtrace.h"
+#include "warnless.h"
 #include "memdebug.h"
 
-static int t1553_xferinfo(void *p,
-                          curl_off_t dltotal, curl_off_t dlnow,
-                          curl_off_t ultotal, curl_off_t ulnow)
+#define TEST_HANG_TIMEOUT 60 * 1000
+
+static int xferinfo(void *p,
+                    curl_off_t dltotal, curl_off_t dlnow,
+                    curl_off_t ultotal, curl_off_t ulnow)
 {
   (void)p;
   (void)dlnow;
@@ -39,9 +43,9 @@ static int t1553_xferinfo(void *p,
   return 1; /* fail as fast as we can */
 }
 
-static CURLcode test_lib1553(const char *URL)
+CURLcode test(char *URL)
 {
-  CURL *curl = NULL;
+  CURL *curls = NULL;
   CURLM *multi = NULL;
   int still_running;
   CURLcode i = CURLE_OK;
@@ -56,28 +60,28 @@ static CURLcode test_lib1553(const char *URL)
 
   multi_init(multi);
 
-  easy_init(curl);
+  easy_init(curls);
 
-  mime = curl_mime_init(curl);
+  mime = curl_mime_init(curls);
   field = curl_mime_addpart(mime);
   curl_mime_name(field, "name");
   curl_mime_data(field, "value", CURL_ZERO_TERMINATED);
 
-  easy_setopt(curl, CURLOPT_URL, URL);
-  easy_setopt(curl, CURLOPT_HEADER, 1L);
-  easy_setopt(curl, CURLOPT_VERBOSE, 1L);
-  easy_setopt(curl, CURLOPT_MIMEPOST, mime);
-  easy_setopt(curl, CURLOPT_USERPWD, "u:s");
-  easy_setopt(curl, CURLOPT_XFERINFOFUNCTION, t1553_xferinfo);
-  easy_setopt(curl, CURLOPT_NOPROGRESS, 1L);
+  easy_setopt(curls, CURLOPT_URL, URL);
+  easy_setopt(curls, CURLOPT_HEADER, 1L);
+  easy_setopt(curls, CURLOPT_VERBOSE, 1L);
+  easy_setopt(curls, CURLOPT_MIMEPOST, mime);
+  easy_setopt(curls, CURLOPT_USERPWD, "u:s");
+  easy_setopt(curls, CURLOPT_XFERINFOFUNCTION, xferinfo);
+  easy_setopt(curls, CURLOPT_NOPROGRESS, 1L);
 
-  debug_config.nohex = TRUE;
-  debug_config.tracetime = TRUE;
-  test_setopt(curl, CURLOPT_DEBUGDATA, &debug_config);
-  easy_setopt(curl, CURLOPT_DEBUGFUNCTION, libtest_debug_cb);
-  easy_setopt(curl, CURLOPT_VERBOSE, 1L);
+  libtest_debug_config.nohex = 1;
+  libtest_debug_config.tracetime = 1;
+  test_setopt(curls, CURLOPT_DEBUGDATA, &libtest_debug_config);
+  easy_setopt(curls, CURLOPT_DEBUGFUNCTION, libtest_debug_cb);
+  easy_setopt(curls, CURLOPT_VERBOSE, 1L);
 
-  multi_add_handle(multi, curl);
+  multi_add_handle(multi, curls);
 
   multi_perform(multi, &still_running);
 
@@ -103,9 +107,9 @@ static CURLcode test_lib1553(const char *URL)
 test_cleanup:
 
   curl_mime_free(mime);
-  curl_multi_remove_handle(multi, curl);
+  curl_multi_remove_handle(multi, curls);
   curl_multi_cleanup(multi);
-  curl_easy_cleanup(curl);
+  curl_easy_cleanup(curls);
   curl_global_cleanup();
 
   if(res)

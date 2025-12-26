@@ -11,12 +11,12 @@ proxytunnel
 
 # Server-side
 <reply>
-<connect crlf="headers">
+<connect>
 HTTP/1.1 200 OK
 We-are: good
 
 </connect>
-<data crlf="headers">
+<data>
 HTTP/1.1 200 OK swsclose
 Date: Tue, 09 Nov 2010 14:49:00 GMT
 Server: test-server/fake
@@ -50,7 +50,7 @@ proxy
 
 # Verify data after the test has been "shot"
 <verify>
-<proxy crlf="headers">
+<proxy>
 GET http://the.old.moo:%HTTPPORT/%TESTNUMBER HTTP/1.1
 Host: the.old.moo:%HTTPPORT
 Accept: */*

@@ -3,7 +3,7 @@ c: Copyright (C) Daniel Stenberg, <daniel@haxx.se>, et al.
 SPDX-License-Identifier: curl
 Long: form-escape
 Help: Escape form fields using backslash
-Protocols: HTTP IMAP SMTP
+Protocols: HTTP imap smtp
 Added: 7.81.0
 Category: http upload post
 Multi: single

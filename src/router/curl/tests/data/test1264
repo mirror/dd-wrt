@@ -12,6 +12,9 @@ HTTP GET
 
 # Client-side
 <client>
+<server>
+none
+</server>
 <features>
 http
 </features>

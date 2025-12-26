@@ -32,8 +32,10 @@ struct data {
   char trace_ascii; /* 1 or 0 */
 };
 
-static void dump(const char *text, FILE *stream, unsigned char *ptr,
-                 size_t size, char nohex)
+static
+void dump(const char *text,
+          FILE *stream, unsigned char *ptr, size_t size,
+          char nohex)
 {
   size_t i;
   size_t c;
@@ -81,12 +83,14 @@ static void dump(const char *text, FILE *stream, unsigned char *ptr,
   fflush(stream);
 }
 
-static int my_trace(CURL *curl, curl_infotype type,
-                    char *data, size_t size, void *userp)
+static
+int my_trace(CURL *handle, curl_infotype type,
+             char *data, size_t size,
+             void *userp)
 {
   struct data *config = (struct data *)userp;
   const char *text;
-  (void)curl;
+  (void)handle; /* prevent compiler warning */
 
   switch(type) {
   case CURLINFO_TEXT:
@@ -124,10 +128,6 @@ int main(void)
   CURLcode res;
   struct data config;
 
-  res = curl_global_init(CURL_GLOBAL_ALL);
-  if(res)
-    return (int)res;
-
   config.trace_ascii = 1; /* enable ASCII tracing */
 
   curl = curl_easy_init();
@@ -151,6 +151,5 @@ int main(void)
     /* always cleanup */
     curl_easy_cleanup(curl);
   }
-  curl_global_cleanup();
-  return (int)res;
+  return 0;
 }

@@ -21,33 +21,35 @@
  * SPDX-License-Identifier: curl
  *
  ***************************************************************************/
-#include "first.h"
+#include "test.h"
 
+#include "testutil.h"
+#include "warnless.h"
 #include "memdebug.h"
 
-static CURLcode test_lib1900(const char *URL)
+CURLcode test(char *URL)
 {
   CURLcode res = CURLE_OK;
-  CURL *curl1 = NULL;
-  CURL *curl2 = NULL;
+  CURL *hnd = NULL;
+  CURL *second = NULL;
 
   global_init(CURL_GLOBAL_ALL);
 
-  easy_init(curl1);
-  easy_setopt(curl1, CURLOPT_URL, URL);
-  easy_setopt(curl1, CURLOPT_HSTS, "first-hsts.txt");
-  easy_setopt(curl1, CURLOPT_HSTS, "second-hsts.txt");
+  easy_init(hnd);
+  easy_setopt(hnd, CURLOPT_URL, URL);
+  easy_setopt(hnd, CURLOPT_HSTS, "first-hsts.txt");
+  easy_setopt(hnd, CURLOPT_HSTS, "second-hsts.txt");
 
-  curl2 = curl_easy_duphandle(curl1);
+  second = curl_easy_duphandle(hnd);
 
-  curl_easy_cleanup(curl1);
-  curl_easy_cleanup(curl2);
+  curl_easy_cleanup(hnd);
+  curl_easy_cleanup(second);
   curl_global_cleanup();
   return CURLE_OK;
 
 test_cleanup:
-  curl_easy_cleanup(curl1);
-  curl_easy_cleanup(curl2);
+  curl_easy_cleanup(hnd);
+  curl_easy_cleanup(second);
   curl_global_cleanup();
   return res;
 }

@@ -21,25 +21,38 @@
  * SPDX-License-Identifier: curl
  *
  ***************************************************************************/
-#include "unitcheck.h"
+#include "curlcheck.h"
 
 #include "doh.h" /* from the lib dir */
 
-/* DoH + HTTPSRR are required */
-#if !defined(CURL_DISABLE_DOH) && defined(USE_HTTPSRR)
-
-static CURLcode t1658_setup(void)
+static CURLcode unit_setup(void)
 {
   /* whatever you want done first */
   curl_global_init(CURL_GLOBAL_ALL);
   return CURLE_OK;
 }
 
+static void unit_stop(void)
+{
+  curl_global_cleanup();
+  /* done before shutting down and exiting */
+}
+
+/* DoH + HTTPSRR are required */
+#if !defined(CURL_DISABLE_DOH) && defined(USE_HTTPSRR)
+
 extern CURLcode doh_resp_decode_httpsrr(struct Curl_easy *data,
                                         const unsigned char *cp, size_t len,
                                         struct Curl_https_rrinfo **hrr);
 extern void doh_print_httpsrr(struct Curl_easy *data,
                               struct Curl_https_rrinfo *hrr);
+
+struct test {
+  const char *name;
+  const unsigned char *dns;
+  size_t len; /* size of the dns packet */
+  const char *expect;
+};
 
 /*
  * The idea here is that we pass one DNS packet at the time to the decoder. we
@@ -114,21 +127,12 @@ static void rrresults(struct Curl_https_rrinfo *rr, CURLcode result)
   }
 }
 
-static CURLcode test_unit1658(const char *arg)
+UNITTEST_START
 {
-  UNITTEST_BEGIN(t1658_setup())
-
   /* The "SvcParamKeys" specified within the HTTPS RR packet *must* be
      provided in numerical order. */
 
-  struct test {
-    const char *name;
-    const unsigned char *dns;
-    size_t len; /* size of the dns packet */
-    const char *expect;
-  };
-
-  static const struct test t[] = {
+  static struct test t[] = {
     {
       "single h2 alpn",
       (const unsigned char *)"\x00\x00" /* 16-bit prio */
@@ -246,7 +250,7 @@ static CURLcode test_unit1658(const char *arg)
       "\x00\x03" /* data size */
       "\x02" /* ALPN length byte */
       "h2"
-      "\x00\x02" /* RR (2 == NO DEFAULT ALPN) */
+      "\x00\x02" /* RR (2 == NO DEFALT ALPN) */
       "\x00\x00", /* must be zero */
       24,
       "r:0|p:0|name.some.|alpn:10|no-def-alpn|"
@@ -259,7 +263,7 @@ static CURLcode test_unit1658(const char *arg)
       "\x00\x03" /* data size */
       "\x02" /* ALPN length byte */
       "h2"
-      "\x00\x02" /* RR (2 == NO DEFAULT ALPN) */
+      "\x00\x02" /* RR (2 == NO DEFALT ALPN) */
       "\x00\x01" /* must be zero */
       "\xff",
       25,
@@ -273,7 +277,7 @@ static CURLcode test_unit1658(const char *arg)
       "\x00\x03" /* data size */
       "\x02" /* ALPN length byte */
       "h2"
-      "\x00\x02" /* RR (2 == NO DEFAULT ALPN) */
+      "\x00\x02" /* RR (2 == NO DEFALT ALPN) */
       "\x00\x01", /* must be zero */
       /* missing last byte in the packet */
       24,
@@ -361,7 +365,7 @@ static CURLcode test_unit1658(const char *arg)
       "r:43|"
     },
     {
-      "alpn + two ipv4 addresses",
+      "alpn + two ipv4 addreses",
       (const unsigned char *)"\x00\x10" /* 16-bit prio */
       "\x00" /* no RNAME */
       "\x00\x01" /* RR (1 == ALPN) */
@@ -376,7 +380,7 @@ static CURLcode test_unit1658(const char *arg)
       "r:0|p:16|.|alpn:10|ipv4:192.168.0.1|ipv4:192.168.0.2|"
     },
     {
-      "alpn + two ipv4 addresses in wrong order",
+      "alpn + two ipv4 addreses in wrong order",
       (const unsigned char *)"\x00\x10" /* 16-bit prio */
       "\x00" /* no RNAME */
       "\x00\x04" /* RR (4 == Ipv4hints) */
@@ -474,7 +478,7 @@ static CURLcode test_unit1658(const char *arg)
       "h2"
       "\x02" /* ALPN length byte */
       "h1"
-      "\x00\x02" /* RR (2 == NO DEFAULT ALPN) */
+      "\x00\x02" /* RR (2 == NO DEFALT ALPN) */
       "\x00\x00" /* must be zero */
       "\x00\x03" /* RR (3 == PORT) */
       "\x00\x02" /* data size */
@@ -514,7 +518,7 @@ static CURLcode test_unit1658(const char *arg)
     for(i = 0; i < CURL_ARRAYSIZE(t); i++) {
       struct Curl_https_rrinfo *hrr;
 
-      curl_mprintf("test %u: %s\n", i, t[i].name);
+      printf("test %i: %s\n", i, t[i].name);
 
       result = doh_resp_decode_httpsrr(easy, t[i].dns, t[i].len, &hrr);
 
@@ -523,7 +527,7 @@ static CURLcode test_unit1658(const char *arg)
 
       /* is the output the expected? */
       if(strcmp(rrbuffer, t[i].expect)) {
-        curl_mfprintf(stderr, "Test %s (%u) failed\n"
+        curl_mfprintf(stderr, "Test %s (%i) failed\n"
                       "Expected: %s\n"
                       "Received: %s\n", t[i].name, i, t[i].expect, rrbuffer);
         unitfail++;
@@ -537,16 +541,13 @@ static CURLcode test_unit1658(const char *arg)
     }
     curl_easy_cleanup(easy);
   }
-
-  UNITTEST_END(curl_global_cleanup())
 }
+UNITTEST_STOP
 
 #else /* CURL_DISABLE_DOH or not HTTPSRR enabled */
 
-static CURLcode test_unit1658(const char *arg)
-{
-  UNITTEST_BEGIN_SIMPLE
-  UNITTEST_END_SIMPLE
-}
+UNITTEST_START
+/* nothing to do, just succeed */
+UNITTEST_STOP
 
 #endif

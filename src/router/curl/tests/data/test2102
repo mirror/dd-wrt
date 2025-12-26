@@ -9,7 +9,7 @@ HTTP GET
 #
 # Server-side
 <reply>
-<data crlf="headers">
+<data crlf="yes">
 HTTP/1.1 200 OK
 Date: Tue, 09 Nov 2010 14:49:00 GMT
 Server: test-server/fake
@@ -23,10 +23,6 @@ Funny-head: yesyes
 
 -foo-
 </data>
-<dns>
-A: %HOSTIP
-AAAA: %HOST6IP
-</dns>
 </reply>
 
 #
@@ -53,7 +49,7 @@ http://examplehost.example:%HTTPPORT/%TESTNUMBER
 #
 # Verify data after the test has been "shot"
 <verify>
-<protocol crlf="headers">
+<protocol crlf="yes">
 GET /%TESTNUMBER HTTP/1.1
 Host: examplehost.example:%HTTPPORT
 User-Agent: curl/%VERSION

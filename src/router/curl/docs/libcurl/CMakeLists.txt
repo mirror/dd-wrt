@@ -21,11 +21,10 @@
 # SPDX-License-Identifier: curl
 #
 ###########################################################################
-# Get man_MANS variable
+# Get 'man_MANS' variable
 curl_transform_makefile_inc("Makefile.inc" "${CMAKE_CURRENT_BINARY_DIR}/Makefile.inc.cmake")
 include("${CMAKE_CURRENT_BINARY_DIR}/Makefile.inc.cmake")
 
-# Generate man pages
 function(curl_add_manual_pages _listname)
   # Maximum number of files per command to stay within shell/OS limits
   if(CMAKE_HOST_UNIX)
@@ -52,9 +51,11 @@ function(curl_add_manual_pages _listname)
     endif()
 
     list(APPEND _rofffiles "${CMAKE_CURRENT_BINARY_DIR}/${_file}")
-    string(REPLACE ".3" ".md" _mdfile "${_file}")
-    if(_file STREQUAL "libcurl-symbols.3")  # Special case for auto-generated file
-      set(_mdfile "${CMAKE_CURRENT_BINARY_DIR}/${_mdfile}")
+    if(_file STREQUAL "libcurl-symbols.3")
+      # Special case, an auto-generated file.
+      string(REPLACE ".3" ".md" _mdfile "${CMAKE_CURRENT_BINARY_DIR}/${_file}")
+    else()
+      string(REPLACE ".3" ".md" _mdfile "${_file}")
     endif()
     list(APPEND _mdfiles "${_mdfile}")
   endforeach()
@@ -77,8 +78,8 @@ curl_add_manual_pages(man_MANS)
 add_custom_target(curl-man ALL DEPENDS ${man_MANS})
 if(NOT CURL_DISABLE_INSTALL)
   set(_src "")
-  foreach(_file IN LISTS man_MANS)
-    list(APPEND _src "${CMAKE_CURRENT_BINARY_DIR}/${_file}")
+  foreach(_f IN LISTS man_MANS)
+    list(APPEND _src "${CMAKE_CURRENT_BINARY_DIR}/${_f}")
   endforeach()
   install(FILES ${_src} DESTINATION "${CMAKE_INSTALL_MANDIR}/man3")
   unset(_src)

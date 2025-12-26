@@ -11,6 +11,9 @@ missing URL
 
 # Client-side
 <client>
+<server>
+none
+</server>
 <features>
 http
 </features>
@@ -22,6 +25,9 @@ lib%TESTNUMBER
 <name>
 simple libcurl attempt operation without URL set
 </name>
+<command>
+http://%HOSTIP:%NOLISTENPORT/%TESTNUMBER
+</command>
 </client>
 
 #

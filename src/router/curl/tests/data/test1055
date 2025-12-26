@@ -13,7 +13,7 @@ STOR
 #
 # Server-side
 <reply>
-<data crlf="headers">
+<data>
 HTTP/1.1 307 OK
 Date: Tue, 09 Nov 2010 14:49:00 GMT
 Server: test-server/fake swsclose
@@ -54,6 +54,9 @@ the
 #
 # Verify data after the test has been "shot"
 <verify>
+<strip>
+QUIT
+</strip>
 <protocol>
 PUT /%TESTNUMBER HTTP/1.1
 Host: %HOSTIP:%HTTPPORT

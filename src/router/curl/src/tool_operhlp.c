@@ -24,11 +24,12 @@
 #include "tool_setup.h"
 #include "tool_operate.h"
 
+#include <curlx.h>
 #include "tool_cfgable.h"
 #include "tool_doswin.h"
 #include "tool_operhlp.h"
 #include "tool_msgs.h"
-#include "memdebug.h" /* keep this as LAST include */
+#include <memdebug.h> /* keep this as LAST include */
 
 void clean_getout(struct OperationConfig *config)
 {
@@ -45,8 +46,8 @@ void clean_getout(struct OperationConfig *config)
       node = next;
     }
     config->url_list = NULL;
-    single_transfer_cleanup();
   }
+  single_transfer_cleanup(config);
 }
 
 bool output_expected(const char *url, const char *uploadfile)
@@ -134,10 +135,10 @@ CURLcode add_file_name_to_url(CURL *curl, char **inurlp, const char *filename)
         char *newurl;
         if(ptr)
           /* there is a trailing slash on the path */
-          newpath = curl_maprintf("%s%s", path, encfile);
+          newpath = aprintf("%s%s", path, encfile);
         else
           /* there is no trailing slash on the path */
-          newpath = curl_maprintf("%s/%s", path, encfile);
+          newpath = aprintf("%s/%s", path, encfile);
 
         curl_free(encfile);
 
@@ -173,7 +174,8 @@ fail:
  * Returns a pointer to a heap-allocated string or NULL if
  * no name part, at location indicated by first argument.
  */
-CURLcode get_url_file_name(char **filename, const char *url)
+CURLcode get_url_file_name(struct GlobalConfig *global,
+                           char **filename, const char *url)
 {
   CURLU *uh = curl_url();
   char *path = NULL;
@@ -211,7 +213,7 @@ CURLcode get_url_file_name(char **filename, const char *url)
       else {
         /* no slash => empty string, use default */
         *filename = strdup("curl_response");
-        warnf("No remote file name, uses \"%s\"", *filename);
+        warnf(global, "No remote file name, uses \"%s\"", *filename);
       }
 
       curl_free(path);

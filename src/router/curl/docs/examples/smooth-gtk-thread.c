@@ -60,31 +60,29 @@ const char * const urls[]= {
   "90030"
 };
 
-size_t write_cb(void *ptr, size_t size, size_t nmemb, FILE *stream)
+size_t write_file(void *ptr, size_t size, size_t nmemb, FILE *stream)
 {
   return fwrite(ptr, size, nmemb, stream);
 }
 
 static void run_one(gchar *http, int j)
 {
+  FILE *outfile = fopen(urls[j], "wb");
   CURL *curl;
 
   curl = curl_easy_init();
   if(curl) {
     printf("j = %d\n", j);
 
-    FILE *outfile = fopen(urls[j], "wb");
-    if(outfile) {
-      /* Set the URL and transfer type */
-      curl_easy_setopt(curl, CURLOPT_URL, http);
+    /* Set the URL and transfer type */
+    curl_easy_setopt(curl, CURLOPT_URL, http);
 
-      /* Write to the file */
-      curl_easy_setopt(curl, CURLOPT_WRITEDATA, outfile);
-      curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_cb);
-      (void)curl_easy_perform(curl);
+    /* Write to the file */
+    curl_easy_setopt(curl, CURLOPT_WRITEDATA, outfile);
+    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_file);
+    curl_easy_perform(curl);
 
-      fclose(outfile);
-    }
+    fclose(outfile);
     curl_easy_cleanup(curl);
   }
 }
@@ -132,7 +130,7 @@ void *create_thread(void *progress_bar)
                                NULL, /* default attributes please */
                                pull_one_url,
                                NULL);
-    if(error)
+    if(0 != error)
       fprintf(stderr, "Couldn't run thread number %d, errno %d\n", i, error);
     else
       fprintf(stderr, "Thread %d, gets %s\n", i, urls[i]);
@@ -171,9 +169,7 @@ int main(int argc, char **argv)
   GtkWidget *top_window, *outside_frame, *inside_frame, *progress_bar;
 
   /* Must initialize libcurl before any threads are started */
-  CURLcode res = curl_global_init(CURL_GLOBAL_ALL);
-  if(res)
-    return (int)res;
+  curl_global_init(CURL_GLOBAL_ALL);
 
   /* Init thread */
   g_thread_init(NULL);
@@ -217,8 +213,6 @@ int main(int argc, char **argv)
   gtk_main();
   gdk_threads_leave();
   printf("gdk_threads_leave\n");
-
-  curl_global_cleanup();
 
   return 0;
 }

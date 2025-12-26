@@ -9,6 +9,10 @@ documentation
 #
 # Client-side
 <client>
+<server>
+none
+</server>
+
 <name>
 Verify lib/optiontable.pl
 </name>

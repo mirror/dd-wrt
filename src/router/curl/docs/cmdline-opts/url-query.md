@@ -4,6 +4,7 @@ SPDX-License-Identifier: curl
 Long: url-query
 Arg: <data>
 Help: Add a URL query part
+Protocols: all
 Added: 7.87.0
 Category: http post upload
 Multi: append

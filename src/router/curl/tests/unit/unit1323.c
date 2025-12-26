@@ -21,41 +21,48 @@
  * SPDX-License-Identifier: curl
  *
  ***************************************************************************/
-#include "unitcheck.h"
+#include "curlcheck.h"
 
-static CURLcode test_unit1323(const char *arg)
+#include "timeval.h"
+
+static CURLcode unit_setup(void)
 {
-  UNITTEST_BEGIN_SIMPLE
+  return CURLE_OK;
+}
 
-  struct a {
-    struct curltime first;
-    struct curltime second;
-    timediff_t result;
-  };
+static void unit_stop(void)
+{
 
+}
+
+struct a {
+  struct curltime first;
+  struct curltime second;
+  time_t result;
+};
+
+UNITTEST_START
+{
   struct a tests[] = {
-    { {36762, 8345}, {36761, 995926}, 13 },
-    { {36761, 995926}, {36762, 8345}, -13 },
-    { {36761, 995926}, {0, 0}, 36761995 },
-    { {0, 0}, {36761, 995926}, -36761995 },
+    { {36762, 8345 }, {36761, 995926 }, 13 },
+    { {36761, 995926 }, {36762, 8345 }, -13 },
+    { {36761, 995926 }, {0, 0}, 36761995 },
+    { {0, 0}, {36761, 995926 }, -36761995 },
   };
-
   size_t i;
 
   for(i = 0; i < CURL_ARRAYSIZE(tests); i++) {
     timediff_t result = curlx_timediff(tests[i].first, tests[i].second);
     if(result != tests[i].result) {
-      curl_mprintf("%ld.%06u to %ld.%06u got %" FMT_TIMEDIFF_T
-                   ", but expected %" FMT_TIMEDIFF_T "\n",
-                   (long)tests[i].first.tv_sec,
-                   tests[i].first.tv_usec,
-                   (long)tests[i].second.tv_sec,
-                   tests[i].second.tv_usec,
-                   result,
-                   tests[i].result);
+      printf("%ld.%06u to %ld.%06u got %d, but expected %ld\n",
+             (long)tests[i].first.tv_sec,
+             tests[i].first.tv_usec,
+             (long)tests[i].second.tv_sec,
+             tests[i].second.tv_usec,
+             (int)result,
+             (long)tests[i].result);
       fail("unexpected result!");
     }
   }
-
-  UNITTEST_END_SIMPLE
 }
+UNITTEST_STOP

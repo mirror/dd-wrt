@@ -45,7 +45,7 @@ struct FtpFile {
   FILE *stream;
 };
 
-static size_t write_cb(void *buffer, size_t size, size_t nmemb,
+static size_t my_fwrite(void *buffer, size_t size, size_t nmemb,
                         void *stream)
 {
   struct FtpFile *out = (struct FtpFile *)stream;
@@ -62,14 +62,13 @@ static size_t write_cb(void *buffer, size_t size, size_t nmemb,
 int main(void)
 {
   CURL *curl;
+  CURLcode res;
   struct FtpFile ftpfile = {
     "yourfile.bin", /* name to store the file as if successful */
     NULL
   };
 
-  CURLcode res = curl_global_init(CURL_GLOBAL_ALL);
-  if(res)
-    return (int)res;
+  curl_global_init(CURL_GLOBAL_DEFAULT);
 
   curl = curl_easy_init();
   if(curl) {
@@ -79,7 +78,7 @@ int main(void)
     curl_easy_setopt(curl, CURLOPT_URL,
                      "sftp://user@server/home/user/file.txt");
     /* Define our callback to get called when there is data to be written */
-    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_cb);
+    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, my_fwrite);
     /* Set a pointer to our struct to pass to the callback */
     curl_easy_setopt(curl, CURLOPT_WRITEDATA, &ftpfile);
 
@@ -87,7 +86,7 @@ int main(void)
     /* We activate ssh agent. For this to work you need
        to have ssh-agent running (type set | grep SSH_AGENT to check) or
        pageant on Windows (there is an icon in systray if so) */
-    curl_easy_setopt(curl, CURLOPT_SSH_AUTH_TYPES, CURLSSH_AUTH_AGENT);
+    curl_easy_setopt(curl, CURLOPT_SSH_AUTH_TYPES, (long)CURLSSH_AUTH_AGENT);
 #endif
 
     /* Switch on full protocol/debug output */
@@ -109,5 +108,5 @@ int main(void)
 
   curl_global_cleanup();
 
-  return (int)res;
+  return 0;
 }

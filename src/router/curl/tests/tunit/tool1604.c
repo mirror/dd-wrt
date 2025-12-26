@@ -21,23 +21,38 @@
  * SPDX-License-Identifier: curl
  *
  ***************************************************************************/
-#include "unitcheck.h"
+#include "curlcheck.h"
 
 #include "tool_cfgable.h"
 #include "tool_doswin.h"
 
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
 #include "memdebug.h" /* LAST include file */
 
+static CURLcode unit_setup(void)
+{
+  return CURLE_OK;
+}
+
+static void unit_stop(void)
+{
+
+}
+
 #if defined(_WIN32) || defined(MSDOS)
+
 static char *getflagstr(int flags)
 {
   char *buf = malloc(256);
   if(buf) {
-    curl_msnprintf(buf, 256, "%s,%s",
-                   ((flags & SANITIZE_ALLOW_PATH) ?
-                    "SANITIZE_ALLOW_PATH" : ""),
-                   ((flags & SANITIZE_ALLOW_RESERVED) ?
-                    "SANITIZE_ALLOW_RESERVED" : ""));
+    msnprintf(buf, 256, "%s,%s",
+              ((flags & SANITIZE_ALLOW_PATH) ?
+               "SANITIZE_ALLOW_PATH" : ""),
+              ((flags & SANITIZE_ALLOW_RESERVED) ?
+               "SANITIZE_ALLOW_RESERVED" : ""));
   }
   return buf;
 }
@@ -46,30 +61,26 @@ static char *getcurlcodestr(int cc)
 {
   char *buf = malloc(256);
   if(buf) {
-    curl_msnprintf(buf, 256, "%s (%d)",
-             (cc == SANITIZE_ERR_OK ? "SANITIZE_ERR_OK" :
-              cc == SANITIZE_ERR_BAD_ARGUMENT ? "SANITIZE_ERR_BAD_ARGUMENT" :
-              cc == SANITIZE_ERR_INVALID_PATH ? "SANITIZE_ERR_INVALID_PATH" :
-              cc == SANITIZE_ERR_OUT_OF_MEMORY ? "SANITIZE_ERR_OUT_OF_MEMORY" :
-              "unexpected error code - add name"), cc);
+    msnprintf(buf, 256, "%s (%d)",
+              (cc == SANITIZE_ERR_OK ? "SANITIZE_ERR_OK" :
+               cc == SANITIZE_ERR_BAD_ARGUMENT ? "SANITIZE_ERR_BAD_ARGUMENT" :
+               cc == SANITIZE_ERR_INVALID_PATH ? "SANITIZE_ERR_INVALID_PATH" :
+               cc == SANITIZE_ERR_OUT_OF_MEMORY ? "SANITIZE_ERR_OUT_OF_MEMORY":
+               "unexpected error code - add name"),
+              cc);
   }
   return buf;
 }
-#endif
 
-static CURLcode test_tool1604(const char *arg)
-{
-  UNITTEST_BEGIN_SIMPLE
+struct data {
+  const char *input;
+  int flags;
+  const char *expected_output;
+  SANITIZEcode expected_result;
+};
 
-#if defined(_WIN32) || defined(MSDOS)
-  struct data {
-    const char *input;
-    int flags;
-    const char *expected_output;
-    SANITIZEcode expected_result;
-  };
-
-  /* START sanitize_file_name */
+UNITTEST_START
+{ /* START sanitize_file_name */
   struct data data[] = {
     { "", 0,
       "", SANITIZE_ERR_OK
@@ -224,31 +235,34 @@ static CURLcode test_tool1604(const char *arg)
     abort_unless(expected_ccstr, "out of memory");
 
     unitfail++;
-    curl_mfprintf(stderr, "\n"
-                  "%s:%d sanitize_file_name failed.\n"
-                  "input: %s\n"
-                  "flags: %s\n"
-                  "output: %s\n"
-                  "result: %s\n"
-                  "expected output: %s\n"
-                  "expected result: %s\n",
-                  __FILE__, __LINE__,
-                  data[i].input,
-                  flagstr,
-                  output ? output : "(null)",
-                  received_ccstr,
-                  data[i].expected_output ? data[i].expected_output : "(null)",
-                  expected_ccstr);
+    fprintf(stderr, "\n"
+            "%s:%d sanitize_file_name failed.\n"
+            "input: %s\n"
+            "flags: %s\n"
+            "output: %s\n"
+            "result: %s\n"
+            "expected output: %s\n"
+            "expected result: %s\n",
+            __FILE__, __LINE__,
+            data[i].input,
+            flagstr,
+            (output ? output : "(null)"),
+            received_ccstr,
+            (data[i].expected_output ? data[i].expected_output : "(null)"),
+            expected_ccstr);
 
     free(output);
     free(flagstr);
     free(received_ccstr);
     free(expected_ccstr);
   }
-  /* END sanitize_file_name */
+} /* END sanitize_file_name */
+
 #else
-  curl_mfprintf(stderr, "Skipped test not for this platform\n");
+UNITTEST_START
+{
+  fprintf(stderr, "Skipped test not for this platform\n");
+}
 #endif /* _WIN32 || MSDOS */
 
-  UNITTEST_END_SIMPLE
-}
+UNITTEST_STOP
