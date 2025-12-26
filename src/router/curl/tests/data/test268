@@ -9,7 +9,7 @@ variables
 #
 # Server-side
 <reply>
-<data crlf="yes">
+<data crlf="headers">
 HTTP/1.1 200 OK
 Date: Tue, 09 Nov 2010 14:49:00 GMT
 Server: test-server/fake
@@ -32,7 +32,7 @@ Funny-head: yesyes
 http
 </server>
 <name>
-JSON encoding of unicode string
+JSON encoding of Unicode string
 </name>
 <file name="%LOGDIR/junk" nonewline="yes">
 %hex[%e2%80%9c]hex%

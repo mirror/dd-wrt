@@ -60,18 +60,19 @@ static const struct detail scheme[] = {
   {"rtmps", "#ifdef USE_LIBRTMP" },
   {"rtmpts", "#ifdef USE_LIBRTMP" },
   {"rtsp", "#ifndef CURL_DISABLE_RTSP" },
-  {"scp", "#if defined(USE_SSH) && !defined(USE_WOLFSSH)" },
-  {"sftp", "#if defined(USE_SSH)" },
-  {"smb", "#if !defined(CURL_DISABLE_SMB) && defined(USE_CURL_NTLM_CORE) && \\\n"
-   "  (SIZEOF_CURL_OFF_T > 4)" },
+  {"scp", "#ifdef USE_SSH" },
+  {"sftp", "#ifdef USE_SSH" },
+  {"smb", "#if !defined(CURL_DISABLE_SMB) && \\\n"
+   "  defined(USE_CURL_NTLM_CORE) && (SIZEOF_CURL_OFF_T > 4)" },
   {"smbs", "#if defined(USE_SSL) && !defined(CURL_DISABLE_SMB) && \\\n"
    "  defined(USE_CURL_NTLM_CORE) && (SIZEOF_CURL_OFF_T > 4)" },
   {"smtp", "#ifndef CURL_DISABLE_SMTP" },
   {"smtps", "#if defined(USE_SSL) && !defined(CURL_DISABLE_SMTP)" },
   {"telnet", "#ifndef CURL_DISABLE_TELNET" },
   {"tftp", "#ifndef CURL_DISABLE_TFTP" },
-  {"ws", "#if defined(USE_WEBSOCKETS) && !defined(CURL_DISABLE_HTTP)" },
-  {"wss", "#if defined(USE_WEBSOCKETS) && \\\n"
+  {"ws",
+   "#if !defined(CURL_DISABLE_WEBSOCKETS) && !defined(CURL_DISABLE_HTTP)" },
+  {"wss", "#if !defined(CURL_DISABLE_WEBSOCKETS) && \\\n"
    "  defined(USE_SSL) && !defined(CURL_DISABLE_HTTP)" },
   { NULL, NULL }
 };
@@ -112,10 +113,10 @@ static void showtable(int try, int init, int shift)
   printf("  static const struct Curl_handler * const protocols[%d] = {", try);
 
   /* generate table */
-  for(i=0; i < try; i++) {
+  for(i = 0; i < try; i++) {
     int match = 0;
     int j;
-    for(j=0; scheme[j].n; j++) {
+    for(j = 0; scheme[j].n; j++) {
       if(ix[j] == i) {
         printf("\n");
         printf("%s\n", scheme[j].ifdef);
@@ -128,7 +129,7 @@ static void showtable(int try, int init, int shift)
       }
     }
     if(!match) {
-      if(!nulls || (nulls>10)) {
+      if(!nulls || (nulls > 10)) {
         printf("\n   ");
         nulls = 0;
       }
@@ -154,7 +155,7 @@ int main(void)
         unsigned int v = calc(scheme[i].n, add, shift);
         int j;
         int badcombo = 0;
-        for(j=0; j < i; j++) {
+        for(j = 0; j < i; j++) {
 
           if(num[j] == v) {
             /*
@@ -183,9 +184,8 @@ int main(void)
         /* check for dupes */
         for(i = 0; scheme[i].n && good; ++i) {
           int j;
-          for(j=0; j < i; j++) {
+          for(j = 0; j < i; j++) {
             if(ix[j] == ix[i]) {
-              /* printf("NOPE, try %u causes dupes (%d and %d)\n", try, j, i); */
               good = 0;
               break;
             }
