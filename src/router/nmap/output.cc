@@ -9,7 +9,7 @@
  *                                                                         *
  ***********************IMPORTANT NMAP LICENSE TERMS************************
  *
- * The Nmap Security Scanner is (C) 1996-2024 Nmap Software LLC ("The Nmap
+ * The Nmap Security Scanner is (C) 1996-2025 Nmap Software LLC ("The Nmap
  * Project"). Nmap is also a registered trademark of the Nmap Project.
  *
  * This program is distributed under the terms of the Nmap Public Source
@@ -63,7 +63,7 @@
  *
  ***************************************************************************/
 
-/* $Id: output.cc 38802 2024-03-11 15:49:29Z dmiller $ */
+/* $Id: output.cc 39235 2025-06-30 19:24:32Z dmiller $ */
 
 #include "nmap.h"
 #include "output.h"
@@ -218,22 +218,6 @@ static void print_xml_service(const struct serviceDeductions *sd) {
 }
 
 #ifdef WIN32
-/* Show a fatal error explaining that an interface is not Ethernet and won't
-   work on Windows. Do nothing if --send-ip (PACKET_SEND_IP_STRONG) was used. */
-void win32_fatal_raw_sockets(const char *devname) {
-  if ((o.sendpref & PACKET_SEND_IP_STRONG) != 0)
-    return;
-
-  if (devname != NULL) {
-    fatal("Only ethernet devices can be used for raw scans on Windows, and\n"
-          "\"%s\" is not an ethernet device. Use the --unprivileged option\n"
-          "for this scan.", devname);
-  } else {
-    fatal("Only ethernet devices can be used for raw scans on Windows. Use\n"
-          "the --unprivileged option for this scan.");
-  }
-}
-
 /* Display the mapping from libdnet interface names (like "eth0") to Npcap
    interface names (like "\Device\NPF_{...}"). This is the same mapping used by
    eth_open and so can help diagnose connection problems.  Additionally display
@@ -1318,6 +1302,15 @@ void write_xml_hosthint(const Target *currenths) {
   xml_end_tag();
   xml_newline();
   log_flush_all();
+}
+
+void log_bogus_target(const char *expr) {
+  xml_open_start_tag("target");
+  xml_attribute("specification", "%s", expr);
+  xml_attribute("status", "skipped");
+  xml_attribute("reason", "invalid");
+  xml_close_empty_tag();
+  xml_newline();
 }
 
 static void write_xml_osclass(const OS_Classification *osclass, double accuracy) {

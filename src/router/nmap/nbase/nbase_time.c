@@ -5,7 +5,7 @@
  *                                                                         *
  ***********************IMPORTANT NMAP LICENSE TERMS************************
  *
- * The Nmap Security Scanner is (C) 1996-2024 Nmap Software LLC ("The Nmap
+ * The Nmap Security Scanner is (C) 1996-2025 Nmap Software LLC ("The Nmap
  * Project"). Nmap is also a registered trademark of the Nmap Project.
  *
  * This program is distributed under the terms of the Nmap Public Source
@@ -59,7 +59,7 @@
  *
  ***************************************************************************/
 
-/* $Id: nbase_time.c 38790 2024-02-28 18:46:45Z dmiller $ */
+/* $Id: nbase_time.c 39083 2025-02-26 17:44:43Z dmiller $ */
 
 #include "nbase.h"
 #if HAVE_UNISTD_H
@@ -72,14 +72,15 @@
 #endif
 
 #ifndef HAVE_USLEEP
-void usleep(unsigned long usec) {
+int usleep(unsigned long usec) {
 #ifdef HAVE_NANOSLEEP
 struct timespec ts;
 ts.tv_sec = usec / 1000000;
 ts.tv_nsec = (usec % 1000000) * 1000;
-nanosleep(&ts, NULL);
+return nanosleep(&ts, NULL);
 #else /* Windows style */
  Sleep( usec / 1000 );
+ return 0;
 #endif /* HAVE_NANOSLEEP */
 }
 #endif

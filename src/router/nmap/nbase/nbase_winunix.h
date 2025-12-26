@@ -4,7 +4,7 @@
  *                                                                         *
  ***********************IMPORTANT NMAP LICENSE TERMS************************
  *
- * The Nmap Security Scanner is (C) 1996-2024 Nmap Software LLC ("The Nmap
+ * The Nmap Security Scanner is (C) 1996-2025 Nmap Software LLC ("The Nmap
  * Project"). Nmap is also a registered trademark of the Nmap Project.
  *
  * This program is distributed under the terms of the Nmap Public Source
@@ -58,7 +58,7 @@
  *
  ***************************************************************************/
 
-/* $Id: nbase_winunix.h 38790 2024-02-28 18:46:45Z dmiller $ */
+/* $Id: nbase_winunix.h 39083 2025-02-26 17:44:43Z dmiller $ */
 
 #ifndef NBASE_WINUNIX_H
 #define NBASE_WINUNIX_H
@@ -191,7 +191,14 @@ Nbase that legitimately use ENOENT for file operations.
 
 typedef unsigned short u_short_t;
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 int win_stdin_start_thread(void);
-int win_stdin_ready(void);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* NBASE_WINUNIX_H */

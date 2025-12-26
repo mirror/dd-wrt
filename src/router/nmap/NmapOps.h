@@ -5,7 +5,7 @@
  *                                                                         *
  ***********************IMPORTANT NMAP LICENSE TERMS************************
  *
- * The Nmap Security Scanner is (C) 1996-2024 Nmap Software LLC ("The Nmap
+ * The Nmap Security Scanner is (C) 1996-2025 Nmap Software LLC ("The Nmap
  * Project"). Nmap is also a registered trademark of the Nmap Project.
  *
  * This program is distributed under the terms of the Nmap Public Source
@@ -59,7 +59,7 @@
  *
  ***************************************************************************/
 
-/* $Id: NmapOps.h 38790 2024-02-28 18:46:45Z dmiller $ */
+/* $Id: NmapOps.h 39235 2025-06-30 19:24:32Z dmiller $ */
 
 #ifndef NMAP_OPS_H
 #define NMAP_OPS_H
@@ -123,24 +123,6 @@ class NmapOps {
   u8 debugging;
   bool resuming;
 
-#define PACKET_SEND_NOPREF 1
-#define PACKET_SEND_ETH_WEAK 2
-#define PACKET_SEND_ETH_STRONG 4
-#define PACKET_SEND_ETH 6
-#define PACKET_SEND_IP_WEAK 8
-#define PACKET_SEND_IP_STRONG 16
-#define PACKET_SEND_IP 24
-
-  /* How should we send raw IP packets?  Nmap can generally use either
-     ethernet or raw ip sockets.  Which is better depends on platform
-     and goals.  A _STRONG preference means that Nmap should use the
-     preferred method whenever it is possible (obviously it isn't
-     always possible -- sending ethernet frames won't work over a PPP
-     connection).  This is useful when the other type doesn't work at
-     all.  A _WEAK preference means that Nmap may use the other type
-     where it is substantially more efficient to do so. For example,
-     Nmap will still do an ARP ping scan of a local network even when
-     the pref is SEND_IP_WEAK */
   int sendpref;
   bool packetTrace() { return (debugging >= 3)? true : pTrace;  }
   bool versionTrace() { return packetTrace()? true : vTrace;  }
@@ -226,8 +208,8 @@ class NmapOps {
   /* Gets the spoofed MAC address, but returns NULL if it hasn't been set */
   const u8 *spoofMACAddress() { return spoof_mac_set? spoof_mac : NULL; }
 
-  unsigned int max_ips_to_scan; // Used for Random input (-iR) to specify how
-                       // many IPs to try before stopping. 0 means unlimited.
+  unsigned long max_ips_to_scan; // Used for Random input (-iR) to specify how
+                       // many IPs to try before stopping. 0 means unlimited if generate_random_ips is true
   int extra_payload_length; /* These two are for --data-length op */
   char *extra_payload;
   unsigned long host_timeout;

@@ -2,7 +2,7 @@
 
 # ***********************IMPORTANT NMAP LICENSE TERMS************************
 # *
-# * The Nmap Security Scanner is (C) 1996-2024 Nmap Software LLC ("The Nmap
+# * The Nmap Security Scanner is (C) 1996-2025 Nmap Software LLC ("The Nmap
 # * Project"). Nmap is also a registered trademark of the Nmap Project.
 # *
 # * This program is distributed under the terms of the Nmap Public Source
@@ -347,13 +347,13 @@ class HostInfo(object):
         services = []
         for p in self.ports:
             services.append({
-                "service_name": p.get("service_name", _("unknown")),
+                "service_name": p.get("service_name", "unknown"),
                 "portid": p.get("portid", ""),
                 "service_version": p.get("service_version",
                     _("Unknown version")),
                 "service_product": p.get("service_product", ""),
                 "service_extrainfo": p.get("service_extrainfo", ""),
-                "port_state": p.get("port_state", _("unknown")),
+                "port_state": p.get("port_state", "unknown"),
                 "protocol": p.get("protocol", "")
                 })
         return services
@@ -639,8 +639,10 @@ in epoch format!")
         if scan_name:
             return scan_name
         if self.profile_name and self.get_targets():
-            return _("%s on %s") % (self.profile_name,
-                    join_quoted(self.get_targets()))
+            return _("%(profile_name)s on %(targets)s") % {
+                    'profile_name': self.profile_name,
+                    'targets': join_quoted(self.get_targets())
+                    }
         return self.get_nmap_command()
 
     def set_scan_name(self, scan_name):
@@ -739,7 +741,7 @@ class NmapParserSAX(ParserBasics, ContentHandler):
 
     def parse_file(self, filename):
         """Parse an Nmap XML file from the named file."""
-        with open(filename, "r") as f:
+        with open(filename, "rb") as f:
             self.parse(f)
             self.filename = filename
 
@@ -1002,12 +1004,12 @@ class NmapParserSAX(ParserBasics, ContentHandler):
         f."""
         if self.nmap_output == "":
             return
-        f.write(self.nmap_output)
+        f.write(self.nmap_output.encode('utf-8','xmlcharrefreplace'))
 
     def write_xml(self, f):
         """Write the XML representation of this object to the file-like object
         f."""
-        writer = XMLGenerator(f)
+        writer = XMLGenerator(f, encoding='utf-8')
         writer.startDocument()
         if self.xml_stylesheet_data is not None:
             writer.processingInstruction(
@@ -1033,7 +1035,7 @@ class NmapParserSAX(ParserBasics, ContentHandler):
     def write_xml_to_file(self, filename):
         """Write the XML representation of this scan to the file whose name is
         given."""
-        fd = open(filename, "w")
+        fd = open(filename, "wb")
         self.write_xml(fd)
         fd.close()
 

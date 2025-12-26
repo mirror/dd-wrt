@@ -6,7 +6,7 @@
  *                                                                         *
  ***********************IMPORTANT NMAP LICENSE TERMS************************
  *
- * The Nmap Security Scanner is (C) 1996-2024 Nmap Software LLC ("The Nmap
+ * The Nmap Security Scanner is (C) 1996-2025 Nmap Software LLC ("The Nmap
  * Project"). Nmap is also a registered trademark of the Nmap Project.
  *
  * This program is distributed under the terms of the Nmap Public Source
@@ -60,7 +60,7 @@
  *
  ***************************************************************************/
 
-/* $Id: service_scan.h 38790 2024-02-28 18:46:45Z dmiller $ */
+/* $Id: service_scan.h 39083 2025-02-26 17:44:43Z dmiller $ */
 
 #ifndef SERVICE_SCAN_H
 #define SERVICE_SCAN_H
@@ -71,7 +71,11 @@
 #include <vector>
 
 #define PCRE2_CODE_UNIT_WIDTH 8
-#include <pcre2.h>
+#ifdef HAVE_PCRE2_PCRE2_H
+# include <pcre2/pcre2.h>
+#else
+# include <pcre2.h>
+#endif
 
 #undef NDEBUG
 #include <assert.h>

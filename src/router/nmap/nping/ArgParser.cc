@@ -8,7 +8,7 @@
  *                                                                         *
  ***********************IMPORTANT NMAP LICENSE TERMS************************
  *
- * The Nmap Security Scanner is (C) 1996-2024 Nmap Software LLC ("The Nmap
+ * The Nmap Security Scanner is (C) 1996-2025 Nmap Software LLC ("The Nmap
  * Project"). Nmap is also a registered trademark of the Nmap Project.
  *
  * This program is distributed under the terms of the Nmap Public Source
@@ -1119,7 +1119,7 @@ int ArgParser::parseArguments(int argc, char *argv[]) {
   * through calls to getNextTarget();
   * */
   const char *next_spec=NULL;
-  while ( (next_spec= grab_next_host_spec(NULL, false, argc, (const char **) argv)) != NULL )
+  while ( (next_spec= grab_next_host_spec(NULL, argc, (const char **) argv)) != NULL )
        o.targets.addSpec( (char *) next_spec );
 
  return OP_SUCCESS;

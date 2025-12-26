@@ -40,7 +40,7 @@ categories = {"discovery", "safe", "default"}
 dependencies = {"https-redirect"}
 
 portrule = function(host, port)
-  return shortport.ssl(host, port) or sslcert.getPrepareTLSWithoutReconnect(port)
+  return port.protocol == "tcp" and (shortport.ssl(host, port) or sslcert.getPrepareTLSWithoutReconnect(port))
 end
 
 
@@ -181,6 +181,7 @@ action = function(host, port)
     "pop3",
     "managesieve",
     "coap",
+    "co", -- COAP over DTLS
     "xmpp-client",
     "xmpp-server",
     "acme-tls/1",
@@ -197,6 +198,9 @@ action = function(host, port)
     "sip/2",
     "tds/8.0",
     "dicom",
+    "postgresql",
+    "radius/1.0",
+    "radius/1.1",
     -- Other sources
     "grpc-exp", -- gRPC, see grpc.io
   }

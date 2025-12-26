@@ -2,7 +2,7 @@
  * ncat.h                                                                  *
  ***********************IMPORTANT NMAP LICENSE TERMS************************
  *
- * The Nmap Security Scanner is (C) 1996-2024 Nmap Software LLC ("The Nmap
+ * The Nmap Security Scanner is (C) 1996-2025 Nmap Software LLC ("The Nmap
  * Project"). Nmap is also a registered trademark of the Nmap Project.
  *
  * This program is distributed under the terms of the Nmap Public Source
@@ -56,7 +56,7 @@
  *
  ***************************************************************************/
 
-/* $Id: ncat.h 38841 2024-04-12 17:20:51Z dmiller $ */
+/* $Id: ncat.h 39257 2025-08-06 21:22:38Z dmiller $ */
 
 #ifndef NCAT_H_
 #define NCAT_H_
@@ -79,7 +79,7 @@
 /* Ncat information for output, etc. */
 #define NCAT_NAME "Ncat"
 #define NCAT_URL "https://nmap.org/ncat"
-#define NCAT_VERSION "7.95"
+#define NCAT_VERSION "7.98"
 
 #ifndef __GNUC__
 #ifndef __attribute__

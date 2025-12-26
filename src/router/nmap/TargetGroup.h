@@ -7,7 +7,7 @@
  *                                                                         *
  ***********************IMPORTANT NMAP LICENSE TERMS************************
  *
- * The Nmap Security Scanner is (C) 1996-2024 Nmap Software LLC ("The Nmap
+ * The Nmap Security Scanner is (C) 1996-2025 Nmap Software LLC ("The Nmap
  * Project"). Nmap is also a registered trademark of the Nmap Project.
  *
  * This program is distributed under the terms of the Nmap Public Source
@@ -61,7 +61,7 @@
  *
  ***************************************************************************/
 
-/* $Id: TargetGroup.h 38790 2024-02-28 18:46:45Z dmiller $ */
+/* $Id: TargetGroup.h 39083 2025-02-26 17:44:43Z dmiller $ */
 
 #ifndef TARGETGROUP_H
 #define TARGETGROUP_H
@@ -70,22 +70,19 @@
 #include <cstddef>
 
 class NetBlock;
+class HostGroupState;
 
 class TargetGroup {
 public:
-  NetBlock *netblock;
-
-  TargetGroup() {
-    this->netblock = NULL;
-  }
+  TargetGroup() : netblocks() {}
 
   ~TargetGroup();
 
   /* Initializes (or reinitializes) the object with a new expression,
      such as 192.168.0.0/16 , 10.1.0-5.1-254 , or
      fe80::202:e3ff:fe14:1102 .  The af parameter is AF_INET or
-     AF_INET6 Returns 0 for success */
-  int parse_expr(const char *target_expr, int af);
+     AF_INET6. */
+  bool load_expressions(HostGroupState *hs, int af);
   /* Grab the next host from this expression (if any).  Returns 0 and
      fills in ss if successful.  ss must point to a pre-allocated
      sockaddr_storage structure */
@@ -101,6 +98,11 @@ public:
   const std::list<struct sockaddr_storage> &get_unscanned_addrs(void) const;
   /* is the current expression a named host */
   int get_namedhost() const;
+  void generate_random_ips(unsigned long num_random);
+  void reject_last_host();
+
+  private:
+  std::list<NetBlock *>netblocks;
 };
 
 #endif /* TARGETGROUP_H */

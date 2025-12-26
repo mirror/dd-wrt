@@ -4,7 +4,7 @@
  *                                                                         *
  ***********************IMPORTANT NSOCK LICENSE TERMS***********************
  *
- * The nsock parallel socket event library is (C) 1999-2024 Nmap Software LLC
+ * The nsock parallel socket event library is (C) 1999-2025 Nmap Software LLC
  * This library is free software; you may redistribute and/or modify it under
  * the terms of the GNU General Public License as published by the Free Software
  * Foundation; Version 2. This guarantees your right to use, modify, and
@@ -49,12 +49,10 @@
  *
  ***************************************************************************/
 
-/* $Id: nsock_timers.c 38790 2024-02-28 18:46:45Z dmiller $ */
+/* $Id: nsock_timers.c 39083 2025-02-26 17:44:43Z dmiller $ */
 
 #include "nsock_internal.h"
 #include "nsock_log.h"
-
-extern struct timeval nsock_tod;
 
 /* Send back an NSE_TYPE_TIMER after the number of milliseconds specified.  Of
  * course it can also return due to error, cancellation, etc. */

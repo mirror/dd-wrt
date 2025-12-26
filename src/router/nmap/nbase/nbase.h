@@ -9,7 +9,7 @@
  *                                                                         *
  ***********************IMPORTANT NMAP LICENSE TERMS************************
  *
- * The Nmap Security Scanner is (C) 1996-2024 Nmap Software LLC ("The Nmap
+ * The Nmap Security Scanner is (C) 1996-2025 Nmap Software LLC ("The Nmap
  * Project"). Nmap is also a registered trademark of the Nmap Project.
  *
  * This program is distributed under the terms of the Nmap Public Source
@@ -63,7 +63,7 @@
  *
  ***************************************************************************/
 
-/* $Id: nbase.h 38790 2024-02-28 18:46:45Z dmiller $ */
+/* $Id: nbase.h 39083 2025-02-26 17:44:43Z dmiller $ */
 
 #ifndef NBASE_H
 #define NBASE_H
@@ -378,7 +378,7 @@ char *socket_strerror(int errnum);
 /* The usleep() function is important as well */
 #ifndef HAVE_USLEEP
 #if defined( HAVE_NANOSLEEP) || defined(WIN32)
-void usleep(unsigned long usec);
+int usleep(unsigned long usec);
 #endif
 #endif
 

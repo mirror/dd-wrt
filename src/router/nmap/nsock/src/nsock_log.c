@@ -3,7 +3,7 @@
  *                                                                         *
  ***********************IMPORTANT NSOCK LICENSE TERMS***********************
  *
- * The nsock parallel socket event library is (C) 1999-2024 Nmap Software LLC
+ * The nsock parallel socket event library is (C) 1999-2025 Nmap Software LLC
  * This library is free software; you may redistribute and/or modify it under
  * the terms of the GNU General Public License as published by the Free Software
  * Foundation; Version 2. This guarantees your right to use, modify, and
@@ -48,7 +48,7 @@
  *
  ***************************************************************************/
 
-/* $Id: nsock_log.c 38790 2024-02-28 18:46:45Z dmiller $ */
+/* $Id: nsock_log.c 39083 2025-02-26 17:44:43Z dmiller $ */
 
 
 #define _GNU_SOURCE
@@ -63,8 +63,6 @@
 #include "nsock_log.h"
 
 static void nsock_stderr_logger(const struct nsock_log_rec *rec);
-
-extern struct timeval nsock_tod;
 
 nsock_loglevel_t    NsockLogLevel = NSOCK_LOG_ERROR;
 nsock_logger_t      NsockLogger   = nsock_stderr_logger;

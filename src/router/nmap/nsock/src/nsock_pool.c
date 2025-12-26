@@ -6,7 +6,7 @@
  *                                                                         *
  ***********************IMPORTANT NSOCK LICENSE TERMS***********************
  *
- * The nsock parallel socket event library is (C) 1999-2024 Nmap Software LLC
+ * The nsock parallel socket event library is (C) 1999-2025 Nmap Software LLC
  * This library is free software; you may redistribute and/or modify it under
  * the terms of the GNU General Public License as published by the Free Software
  * Foundation; Version 2. This guarantees your right to use, modify, and
@@ -51,7 +51,7 @@
  *
  ***************************************************************************/
 
-/* $Id: nsock_pool.c 38790 2024-02-28 18:46:45Z dmiller $ */
+/* $Id: nsock_pool.c 39083 2025-02-26 17:44:43Z dmiller $ */
 
 #include "nsock_internal.h"
 #include "nsock_log.h"
@@ -71,15 +71,10 @@
 #include <sys/resource.h>
 #endif
 
-extern struct timeval nsock_tod;
-
 /* To use this library, the first thing they must do is create a pool
  * so we do the initialization during the first pool creation */
 static int nsocklib_initialized = 0;
 
-
-/* defined in nsock_engines.h */
-struct io_engine *get_io_engine(void);
 
 /* ---- INTERNAL FUNCTIONS PROTOTYPES ---- */
 static void nsock_library_initialize(void);

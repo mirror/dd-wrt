@@ -2,7 +2,7 @@
 
 # ***********************IMPORTANT NMAP LICENSE TERMS************************
 # *
-# * The Nmap Security Scanner is (C) 1996-2024 Nmap Software LLC ("The Nmap
+# * The Nmap Security Scanner is (C) 1996-2025 Nmap Software LLC ("The Nmap
 # * Project"). Nmap is also a registered trademark of the Nmap Project.
 # *
 # * This program is distributed under the terms of the Nmap Public Source
@@ -321,5 +321,5 @@ if __name__ == "__main__":
 
     root = reader.get_root()
 
-    writer = XMLWriter(open("test.xml", 'w'), root)
+    writer = XMLWriter(open("test.xml", 'wb'), root)
     writer.write()

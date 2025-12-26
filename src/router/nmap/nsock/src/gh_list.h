@@ -3,7 +3,7 @@
  *                                                                         *
  ***********************IMPORTANT NSOCK LICENSE TERMS***********************
  *
- * The nsock parallel socket event library is (C) 1999-2024 Nmap Software LLC
+ * The nsock parallel socket event library is (C) 1999-2025 Nmap Software LLC
  * This library is free software; you may redistribute and/or modify it under
  * the terms of the GNU General Public License as published by the Free Software
  * Foundation; Version 2. This guarantees your right to use, modify, and
@@ -48,7 +48,7 @@
  *
  ***************************************************************************/
 
-/* $Id: gh_list.h 38790 2024-02-28 18:46:45Z dmiller $ */
+/* $Id: gh_list.h 39083 2025-02-26 17:44:43Z dmiller $ */
 
 #ifndef GH_LIST_H
 #define GH_LIST_H
@@ -209,6 +209,15 @@ static inline gh_lnode_t *gh_list_pop(gh_list_t *list) {
 
 static inline int gh_list_remove(gh_list_t *list, gh_lnode_t *lnode) {
   paranoid_list_check(list);
+
+#if GH_LIST_PARANOID
+  gh_lnode_t *cur;
+  for (cur = list->first; cur != list->last; cur = cur->next) {
+    if (cur == lnode)
+      break;
+  }
+  assert(cur == lnode);
+#endif
 
   if (lnode->prev) {
     lnode->prev->next = lnode->next;

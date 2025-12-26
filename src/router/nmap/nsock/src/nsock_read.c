@@ -4,7 +4,7 @@
  *                                                                         *
  ***********************IMPORTANT NSOCK LICENSE TERMS***********************
  *
- * The nsock parallel socket event library is (C) 1999-2024 Nmap Software LLC
+ * The nsock parallel socket event library is (C) 1999-2025 Nmap Software LLC
  * This library is free software; you may redistribute and/or modify it under
  * the terms of the GNU General Public License as published by the Free Software
  * Foundation; Version 2. This guarantees your right to use, modify, and
@@ -49,7 +49,7 @@
  *
  ***************************************************************************/
 
-/* $Id: nsock_read.c 38790 2024-02-28 18:46:45Z dmiller $ */
+/* $Id: nsock_read.c 39083 2025-02-26 17:44:43Z dmiller $ */
 
 #include "nsock_internal.h"
 #include "nsock_log.h"
@@ -71,8 +71,8 @@ nsock_event_id nsock_readlines(nsock_pool nsp, nsock_iod ms_iod,
   nse = event_new(ms, NSE_TYPE_READ, nsi, timeout_msecs, handler, userdata);
   assert(nse);
 
-  nsock_log_info("Read request for %d lines from IOD #%li [%s] EID %li",
-                 nlines, nsi->id, get_peeraddr_string(nsi), nse->id);
+  nsock_log_info("Read request for %d lines from IOD #%li [%s] (timeout: %dms) EID %li",
+                 nlines, nsi->id, get_peeraddr_string(nsi), timeout_msecs, nse->id);
 
   nse->readinfo.read_type = NSOCK_READLINES;
   nse->readinfo.num = nlines;
@@ -94,8 +94,8 @@ nsock_event_id nsock_readbytes(nsock_pool nsp, nsock_iod ms_iod,
   nse = event_new(ms, NSE_TYPE_READ, nsi, timeout_msecs, handler, userdata);
   assert(nse);
 
-  nsock_log_info("Read request for %d bytes from IOD #%li [%s] EID %li",
-                 nbytes, nsi->id, get_peeraddr_string(nsi), nse->id);
+  nsock_log_info("Read request for %d bytes from IOD #%li [%s] (timeout: %dms) EID %li",
+                 nbytes, nsi->id, get_peeraddr_string(nsi), timeout_msecs, nse->id);
 
   nse->readinfo.read_type = NSOCK_READBYTES;
   nse->readinfo.num = nbytes;
