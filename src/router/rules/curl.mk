@@ -31,7 +31,7 @@ curl-configure: openssl zlib
 	$(MAKE) -C zlib
 	$(MAKE) -C bearssl clean
 	$(MAKE) -C bearssl
-	cd curl && ./buildconf
+	cd curl && autoreconf -fi
 	mkdir -p curl/build
 	mkdir -p curl/build_static
 	cd curl/build && ../configure --disable-verbose \
