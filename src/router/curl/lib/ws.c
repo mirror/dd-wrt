@@ -694,6 +694,7 @@ static ssize_t ws_enc_write_head(struct Curl_easy *data,
                                  CURLcode *err)
 {
   unsigned char firstbyte = 0;
+  CURLcode result = CURLE_OK;
   unsigned char head[14];
   size_t hlen;
   ssize_t n;
