@@ -20,7 +20,6 @@
 #include <net/route.h>
 #if LINUX_VERSION_CODE < KERNEL_VERSION(4,19,0)
 #include <net/ipv6.h>
-#include <net/ipv6_frag.h>
 #else
 #include <net/ipv6_frag.h>
 #endif
@@ -903,11 +902,12 @@ static void *get_next_header_ptr6(void *pv6, int v6_len) {
 }
 
 static void fill_v4hdr_from_v6hdr(struct iphdr * iph, struct ipv6hdr *ip6h, __u32 v4saddr, __u32 v4daddr, __u16 id, __u16 frag_off, __u16 proto, int l3_payload_len) {
+  int tos = ip_tos_ignore ? 0 : ipv6_get_dsfield(ip6h);
   iph->ttl = ip6h->hop_limit;
   iph->saddr = v4saddr;
   iph->daddr = v4daddr;
   iph->protocol = proto;
-  *((__be16 *)iph) = htons((4 << 12) | (5 << 8) | (0x00/*tos*/ & 0xff));
+  *((__be16 *)iph) = htons((4 << 12) | (5 << 8) | (tos & 0xff));
   iph->frag_off = frag_off;
   iph->id = id;
   iph->tot_len = htons( l3_payload_len + IPV4HDRSIZE );
@@ -1368,6 +1368,7 @@ static uint16_t nat46_fixup_icmp_parameterprob(nat46_instance_t *nat46, struct i
    */
   static int ptr4_6[] = { 0, 1, 4, 4, -1, -1, -1, -1, 7, 6, -1, -1, 8, 8, 8, 8, 24, 24, 24, 24, -1 };
   u8 *icmp_pptr = icmp_parameter_ptr(icmph);
+  u32 *icmp6_pptr = icmp6_parameter_ptr((struct icmp6hdr *)icmph);
   int new_pptr = -1;
   switch (icmph->code) {
     case 0:
@@ -1376,7 +1377,7 @@ static uint16_t nat46_fixup_icmp_parameterprob(nat46_instance_t *nat46, struct i
         icmph->code = 0;
         new_pptr = ptr4_6[*icmp_pptr];
         if(new_pptr >= 0) {
-          /* FIXME: update the parameter pointer in ICMPv6 with new_pptr value */
+          *icmp6_pptr = htonl(new_pptr);
         }
       } else {
         iph->protocol = NEXTHDR_NONE;
@@ -1449,6 +1450,7 @@ static uint16_t nat46_fixup_icmp_dest_unreach(nat46_instance_t *nat46, struct ip
    *
    */
 
+  u32 *pptr6 = icmp6_parameter_ptr((struct icmp6hdr *)icmph);
   u16 *pmtu = ((u16 *)icmph) + 3; /* IPv4-compatible MTU value is 16 bit */
 
   switch (icmph->code) {
@@ -1457,9 +1459,9 @@ static uint16_t nat46_fixup_icmp_dest_unreach(nat46_instance_t *nat46, struct ip
       icmph->code = 0;
       break;
     case 2:
-      /* FIXME: set ICMPv6 parameter pointer to 6 */
       icmph->type = 4;
       icmph->code = 1;
+      *pptr6 = htonl(6);
       break;
     case 3:
       icmph->code = 4;
@@ -1973,7 +1975,7 @@ int nat46_ipv4_input(struct sk_buff *old_skb) {
   memset(hdr6, 0, sizeof(*hdr6) + (add_frag_header?8:0));
 
   /* build IPv6 header */
-  tclass = ip_tos_ignore ? 0 : hdr4->tos; /* traffic class */
+  tclass = ip_tos_ignore ? 0 : ipv4_get_dsfield(hdr4); /* traffic class */
   *(__be32 *)hdr6 = htonl(0x60000000 | (tclass << 20)) | flowlabel; /* version, priority, flowlabel */
 
   /* IPv6 length is a payload length, IPv4 is hdr+payload */

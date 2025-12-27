@@ -64,7 +64,7 @@ typedef struct {
   int debug;
 
   int npairs;
-  nat46_xlate_rulepair_t pairs[0]; /* npairs */
+  nat46_xlate_rulepair_t pairs[]; /* npairs */
 } nat46_instance_t;
 
 int nat46_ipv6_input(struct sk_buff *old_skb);

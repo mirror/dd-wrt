@@ -69,7 +69,7 @@ module_param(zero_csum_pass, int, 0);
 MODULE_PARM_DESC(zero_csum_pass, "pass all-zero checksum unchanged (default=0)");
 
 module_param(ip_tos_ignore, int, 0);
-MODULE_PARM_DESC(ip_tos_ignore, "ignore IPv4 TOS and set IPv6 traffic class to zero (default=0)");
+MODULE_PARM_DESC(ip_tos_ignore, "ignore IPv4/IPv6 DS field and set traffic class or TOS to zero (default=0)");
 
 static DEFINE_MUTEX(add_del_lock);
 
