@@ -51,7 +51,23 @@ void fscheck_main(int argc, char *argv[])
 		i++;
 	}
 }
+try_mount("xfs", fname, NULL, pname);
 
+int try_mount(const char *fs, const char *dev, const char *opt, const char *mountpoint)
+{
+	int count = 5;
+	if (count-- > 0) {
+		int ret;
+		if (opt)
+			ret = eval("mount", "-t", fs, dev, "-o", opt, mountpount);
+		else
+			ret = eval("mount", "-t", fs, dev, mountpount);
+		if (!ret)
+			return 0;
+		sleep(1);
+	}
+	return ret;
+}
 void stop_raid(void)
 {
 	// cannot be unloaded
@@ -233,7 +249,7 @@ void start_raid(void)
 				sysprintf("mdadm --create --assume-clean /dev/md%d --level=%s --raid-devices=%d --run %s", i, level,
 					  drives, raid);
 				char fname[32];
-				sprintf(fname, "/dev/md%d",i);
+				sprintf(fname, "/dev/md%d", i);
 				wait_file_exists(fname, 5, 0);
 				if (nvram_nmatch("ext4", "raidfs%d", i)) {
 					sysprintf("mkfs.ext4 -F -E lazy_itable_init=1 -L \"%s\" /dev/md%d", poolname, i);
@@ -301,32 +317,32 @@ void start_raid(void)
 		}
 		if (!strcmp(type, "zfs")) {
 			sysprintf("mkdir -p \"/tmp/mnt/%s\"", poolname);
-			sysprintf("zpool import -a -d /dev");
-			sysprintf("zpool upgrade %s", poolname);
-			sysprintf("zfs set checksum=blake3 %s", poolname);
-			sysprintf("zfs mount %s", poolname);
+			eval("zpool", "import", "-a", "-d", "/dev");
+			eval("zpool", "upgrade", poolname);
+			eval("zfs", "set", "checksum=blake3", poolname);
+			eval("zfs", "mount", poolname);
 			if (nvram_nmatch("zle", "raidlz%d", i))
-				sysprintf("zfs set compression=zle %s", poolname);
+				eval("zfs", "set", "compression=zle", poolname);
 			else if (nvram_nmatch("lz4", "raidlz%d", i))
-				sysprintf("zfs set compression=lz4 %s", poolname);
+				eval("zfs", "set", "compression=lz4", poolname);
 			else if (nvram_nmatch("gzip", "raidlz%d", i)) {
 				if (nvram_nmatch("0", "raidlzlevel%d", i))
-					sysprintf("zfs set compression=gzip %s", poolname);
+					eval("zfs", "set", "compression=gzip", poolname);
 				else
 					sysprintf("zfs set compression=gzip-%s %s", nvram_nget("raidlzlevel%d", i), poolname);
 			} else if (nvram_nmatch("lzjb", "raidlz%d", i))
-				sysprintf("zfs set compression=lzjb %s", poolname);
+				eval("zfs", "set", "compression=lzjb", poolname);
 			else if (nvram_nmatch("zstd", "raidlz%d", i)) {
 				if (nvram_nmatch("0", "raidlzlevel%d", i))
-					sysprintf("zfs set compression=zstd %s", poolname);
+					eval("zfs", "set", "compression=zstd", poolname);
 				else
 					sysprintf("zfs set compression=zstd-%s %s", nvram_nget("raidlzlevel%d", i), poolname);
 			} else
-				sysprintf("zfs set compression=off %s", poolname);
+				eval("zfs", "set", "compression=off", poolname);
 			if (nvram_nmatch("1", "raiddedup%d", i))
-				sysprintf("zfs set dedup=on %s", poolname);
+				eval("zfs", "set", "dedup=on", poolname);
 			else
-				sysprintf("zfs set dedup=off %s", poolname);
+				eval("zfs", "set", "dedup=off", poolname);
 
 			nvram_set("usb_reason", "zfs_pool_add");
 			nvram_set("usb_dev", raid);
@@ -334,7 +350,9 @@ void start_raid(void)
 		}
 		if (!strcmp(type, "md")) {
 			char fname[32];
-			sprintf(fname, "/dev/md%d",i);
+			char pname[128];
+			sprintf(fname, "/dev/md%d", i);
+			sprintf(pname, "/tmp/mnt/%s", poolname);
 			wait_file_exists(fname, 1, 0);
 			// disable NCQ
 			foreach(drive, raid, next) {
@@ -346,58 +364,53 @@ void start_raid(void)
 					tmp++;
 				sysprintf("echo 1 > /sys/block/%s/device/queue_depth", tmp);
 			}
-			sysprintf("mdadm --assemble /dev/md%d %s", i, raid);
-			sprintf(fname, "/dev/md%d",i);
+			sysprintf("mdadm --assemble %s %s", fname, raid);
 			wait_file_exists(fname, 5, 0);
 			sysprintf("echo 32768 > /sys/block/md%d/md/stripe_cache_size", i);
 			writeprocsys("dev/raid/speed_limit_max", nvram_default_get("dev.raid.speed_limit_max", "10000000"));
-			sysprintf("mkdir -p \"/tmp/mnt/%s\"", poolname);
+			eval("mkdir", "-p", pname);
 			if (nvram_nmatch("ext4", "raidfs%d", i)) {
-				sysprintf("fsck.ext4 -p /dev/md%d", i);
-				sysprintf(
-					"mount -t ext4 /dev/md%d -o init_itable=0,nobarrier,noatime,nobh,nodiratime,barrier=0 \"/tmp/mnt/%s\"",
-					i, poolname);
+				eval("fsck.ext4", "-p", fname);
+				try_mount("ext4", fname, "init_itable=0,nobarrier,noatime,nobh,nodiratime,barrier=0", pname);
 			}
 			if (nvram_nmatch("ext2", "raidfs%d", i)) {
-				sysprintf("fsck.ext2 -p /dev/md%d", i);
-				sysprintf("mount -t ext2 /dev/md%d -o nobarrier,noatime,nobh,nodiratime,barrier=0 \"/tmp/mnt/%s\"",
-					  i, poolname);
+				eval("fsck.ext2", "-p", fname);
+				try_mount("ext2", fname, "nobarrier,noatime,nobh,nodiratime,barrier=0", pname);
 			}
 			if (nvram_nmatch("ext3", "raidfs%d", i)) {
-				sysprintf("fsck.ext3 -p /dev/md%d", i);
-				sysprintf("mount -t ext3 /dev/md%d -o nobarrier,noatime,nobh,nodiratime,barrier=0 \"/tmp/mnt/%s\"",
-					  i, poolname);
+				eval("fsck.ext3", "-p", fname);
+				try_mount("ext3", fname, "nobarrier,noatime,nobh,nodiratime,barrier=0", pname);
 			}
 			if (nvram_nmatch("xfs", "raidfs%d", i)) {
-				sysprintf("mount -t xfs /dev/md%d \"/tmp/mnt/%s\"", i, poolname);
+				try_mount("xfs", fname, NULL, pname);
 			}
 			if (nvram_nmatch("btrfs", "raidfs%d", i)) {
-				sysprintf("mount -t btrfs /dev/md%d \"/tmp/mnt/%s\"", i, poolname);
+				try_mount("btrfs", fname, NULL, pname);
 			}
 			if (nvram_nmatch("exfat", "raidfs%d", i)) {
-				sysprintf("mount -t exfat -o iocharset=utf8 /dev/md%d \"/tmp/mnt/%s\"", i, poolname);
+				try_mount("exfat", fname, "iocharset=utf8", pname);
 			}
 			if (nvram_nmatch("apfs", "raidfs%d", i)) {
-				sysprintf("mount -t apfs /dev/md%d \"/tmp/mnt/%s\"", i, poolname);
+				try_mount("apfs", fname, NULL, pname);
 			}
 			if (nvram_nmatch("fat32", "raidfs%d", i)) {
-				sysprintf("mount -t vfat -o iocharset=utf8 /dev/md%d \"/tmp/mnt/%s\"", i, poolname);
+				try_mount("vfat", fname, "iocharset=utf8", pname);
 			}
 			if (nvram_nmatch("ntfs", "raidfs%d", i)) {
 #ifdef HAVE_LEGACY_KERNEL
 				sysprintf("ntfs-3g -o compression,direct_io,big_writes /dev/md%d \"/tmp/mnt/%s\"", i, poolname);
 #else
 #ifdef HAVE_NTFS3
-				if (sysprintf("mount -t ntfsplus -o nls=utf8,noatime /dev/md%d \"/tmp/mnt/%s\"", i, poolname))
-					sysprintf("mount -t ntfs3 -o nls=utf8,noatime /dev/md%d \"/tmp/mnt/%s\"", i, poolname);
+				if (try_mount("ntfsplus", fname, "nls=utf8,noatime", pname))
+					try_mount("ntfs3", fname, "nls=utf8,noatime", pname);
 #else
-				sysprintf("mount -t antfs -o utf8 /dev/md%d \"/tmp/mnt/%s\"", i, poolname);
+				try_mount("antfs", fname, "utf8", pname);
 #endif
 #endif
 			}
 			if (nvram_nmatch("zfs", "raidfs%d", i)) {
-				sysprintf("zpool import -a -d /dev");
-				sysprintf("zfs mount %s", poolname);
+				eval("zpool", "import", "-a", "-d", "/dev");
+				eval("zfs", "mount", poolname);
 			}
 			nvram_set("usb_reason", "md_raid_add");
 			nvram_set("usb_dev", poolname);
