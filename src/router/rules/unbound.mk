@@ -43,7 +43,7 @@ unbound-configure:
 		CFLAGS="$(COPTS) $(MIPS16_OPT) $(THUMB) $(UNBOUND_COPTS) -ffunction-sections -fdata-sections -Wl,--gc-sections -L$(SSLPATH)" \
 		LDFLAGS="-ffunction-sections -fdata-sections -Wl,--gc-sections -L$(SSLPATH) -lcrypto -lssl"
 
-	cd unbound/wolfssl && ../configure --disable-ecdsa \
+	-cd unbound/wolfssl && ../configure --disable-ecdsa \
 		--disable-gost \
 		--enable-allsymbols \
 		--enable-tfo-client \
