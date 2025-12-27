@@ -51,7 +51,6 @@ void fscheck_main(int argc, char *argv[])
 		i++;
 	}
 }
-try_mount("xfs", fname, NULL, pname);
 
 int try_mount(const char *fs, const char *dev, const char *opt, const char *mountpoint)
 {
