@@ -232,6 +232,9 @@ void start_raid(void)
 				dd_loginfo("raid", "creating MD Raid /dev/md%d", i);
 				sysprintf("mdadm --create --assume-clean /dev/md%d --level=%s --raid-devices=%d --run %s", i, level,
 					  drives, raid);
+				char fname[32];
+				sprintf(fname, "/dev/md%d",i);
+				wait_file_exists(fname, 5, 0);
 				if (nvram_nmatch("ext4", "raidfs%d", i)) {
 					sysprintf("mkfs.ext4 -F -E lazy_itable_init=1 -L \"%s\" /dev/md%d", poolname, i);
 				}
@@ -330,8 +333,12 @@ void start_raid(void)
 			eval("service", "run_rc_usb", "start");
 		}
 		if (!strcmp(type, "md")) {
+			char fname[32];
+			sprintf(fname, "/dev/md%d",i);
+			wait_file_exists(fname, 1, 0);
 			// disable NCQ
 			foreach(drive, raid, next) {
+				wait_file_exists(drive, 1, 0);
 				char *tmp = strrchr(drive, '/');
 				if (!tmp)
 					tmp = drive;
@@ -340,6 +347,8 @@ void start_raid(void)
 				sysprintf("echo 1 > /sys/block/%s/device/queue_depth", tmp);
 			}
 			sysprintf("mdadm --assemble /dev/md%d %s", i, raid);
+			sprintf(fname, "/dev/md%d",i);
+			wait_file_exists(fname, 5, 0);
 			sysprintf("echo 32768 > /sys/block/md%d/md/stripe_cache_size", i);
 			writeprocsys("dev/raid/speed_limit_max", nvram_default_get("dev.raid.speed_limit_max", "10000000"));
 			sysprintf("mkdir -p \"/tmp/mnt/%s\"", poolname);
