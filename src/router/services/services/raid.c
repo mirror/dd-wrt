@@ -54,13 +54,13 @@ void fscheck_main(int argc, char *argv[])
 
 int try_mount(const char *fs, const char *dev, const char *opt, const char *mountpoint)
 {
+	int ret = 0;
 	int count = 5;
 	if (count-- > 0) {
-		int ret;
 		if (opt)
-			ret = eval("mount", "-t", fs, dev, "-o", opt, mountpount);
+			ret = eval("mount", "-t", fs, dev, "-o", opt, mountpoint);
 		else
-			ret = eval("mount", "-t", fs, dev, mountpount);
+			ret = eval("mount", "-t", fs, dev, mountpoint);
 		if (!ret)
 			return 0;
 		sleep(1);
