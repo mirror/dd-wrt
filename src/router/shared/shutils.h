@@ -200,6 +200,8 @@ char *strlcat_r(const char *s1, const char *s2, char *buf, size_t len);
 char *dd_strncat(char *dst, const char *src, size_t len);
 size_t dd_strlcat(char *dst, const char *src, size_t len);
 
+int wait_file_exists(const char *name, int max, int invert);
+
 void recover_states(const char *name, void *state, size_t len);
 void store_states(const char *name, void *state, size_t len);
 
