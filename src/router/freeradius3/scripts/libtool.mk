@@ -41,7 +41,7 @@ all install: ${JLIBTOOL}
 ${JLIBTOOL}: ${top_makedir}/jlibtool.c
 	$(Q)mkdir -p $(dir $@)
 	$(Q)echo CC jlibtool.c
-	$(Q)${CC} $< -o $@ ${JLIBTOOL_DEFS}
+	$(Q)gcc $< -o $@ ${JLIBTOOL_DEFS}
 
 clean: jlibtool_clean
 
