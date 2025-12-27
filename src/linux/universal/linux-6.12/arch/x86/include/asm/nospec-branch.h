@@ -536,7 +536,7 @@ enum ssb_mitigation {
 	SPEC_STORE_BYPASS_SECCOMP,
 };
 
-static __always_inline
+static inline __attribute__((__always_inline__))
 void alternative_msr_write(unsigned int msr, u64 val, unsigned int feature)
 {
 	asm volatile(ALTERNATIVE("", "wrmsr", %c[feature])
