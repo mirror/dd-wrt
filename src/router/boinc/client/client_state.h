@@ -101,9 +101,12 @@ struct CLIENT_STATE {
     ACTIVE_TASK_SET active_tasks;
     HOST_INFO host_info;
 
-    // the following used only on Android
+#ifdef ANDROID
     DEVICE_STATUS device_status;
+        // info from GUI, e.g. battery status
     double device_status_time;
+        // time of last RPC from GUI
+#endif
 
     char language[16];                // ISO language code reported by GUI
     char client_brand[256];
@@ -148,8 +151,6 @@ struct CLIENT_STATE {
     char attach_project_auth[256];
     bool exit_before_upload;
         // exit when about to upload a file
-    bool run_test_app;
-        // API test mode
 #ifndef _WIN32
     gid_t boinc_project_gid;
 #endif
@@ -245,13 +246,19 @@ struct CLIENT_STATE {
     void process_autologin(bool first);
 
 // --------------- app_test.cpp:
-    bool app_test;
-    string app_test_file;
+    bool app_test;          // this and the following are not used,
+    string app_test_file;   // but if I remove them the client crashes on exit.  WTF???
     void app_test_init();
 
 // --------------- current_version.cpp:
     string newer_version;
+        // if nonempty, there was a newer client version than us.
+        // this is the newer version number.
     string client_version_check_url;
+        // where we last got version info from
+#ifdef _WIN32
+    int latest_boinc_buda_runner_version;
+#endif
 
 // --------------- client_state.cpp:
     CLIENT_STATE();
@@ -298,12 +305,12 @@ struct CLIENT_STATE {
     void clear_absolute_times();
     void set_now();
     void log_show_projects();
+    void init_result_resource_usage();
 
 // --------------- cpu_sched.cpp:
     double total_resource_share();
     double potentially_runnable_resource_share();
     double nearly_runnable_resource_share();
-    double fetchable_resource_share();
     double rec_interval_start;
     double total_cpu_time_this_rec_interval;
     bool must_enforce_cpu_schedule;
@@ -377,9 +384,9 @@ struct CLIENT_STATE {
 
     int latest_version(APP*, char*);
     int app_finished(ACTIVE_TASK&);
-    bool start_apps();
     bool handle_finished_apps();
-    void check_for_finished_jobs();
+    void check_overdue();
+    void docker_cleanup();
 
     ACTIVE_TASK* get_task(RESULT*);
 
@@ -424,7 +431,6 @@ struct CLIENT_STATE {
     int get_disk_usages();
     void get_disk_shares();
     double allowed_disk_usage(double boinc_total);
-    int allowed_project_disk_usage(double&);
     void show_suspend_tasks_message(int reason);
     int resume_tasks(int reason=0);
     void read_global_prefs(
@@ -437,7 +443,6 @@ struct CLIENT_STATE {
     double max_available_ram();
     int check_suspend_processing();
     void check_suspend_network();
-    void install_global_prefs();
     PROJECT* global_prefs_source_project();
     void show_global_prefs_source(bool);
 
@@ -511,13 +516,10 @@ struct CLIENT_STATE {
     void free_mem();
 
 // --------------- work_fetch.cpp:
-    int proj_min_results(PROJECT*, double);
     void check_project_timeout();
     double overall_cpu_frac();
     double overall_cpu_and_network_frac();
     double overall_gpu_frac();
-    double time_until_work_done(PROJECT*, int, double);
-    bool compute_work_requests();
     void scale_duration_correction_factors(double);
     void generate_new_host_cpid();
     void compute_nuploading_results();
@@ -554,6 +556,11 @@ struct CLIENT_STATE {
 
 extern CLIENT_STATE gstate;
 
+#ifdef __APPLE__
+// PID of process that initializes Podman VM, or zero if it's finished
+extern int podman_init_pid;
+#endif
+
 extern bool gpus_usable;
     // set to false if GPUs not usable because of remote desktop
     // or login situation (Windows)
@@ -568,6 +575,10 @@ extern double calculate_exponential_backoff(
 //
 extern THREAD_LOCK client_thread_mutex;
 extern THREAD throttle_thread;
+
+#ifdef _WIN32
+extern void show_wsl_messages();
+#endif
 
 //////// TIME-RELATED CONSTANTS ////////////
 
@@ -697,8 +708,7 @@ extern THREAD throttle_thread;
     // We rely on the GUI to report battery status.
 #define ANDROID_BATTERY_BACKOFF     300
     // Android: if battery is overheated or undercharged,
-    // suspend for at least this long
-    // (avoid rapid start/stop)
+    // suspend computing for at least this long (avoid rapid start/stop)
 
 #ifndef ANDROID
 #define USE_NET_PREFS

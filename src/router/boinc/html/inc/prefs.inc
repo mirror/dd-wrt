@@ -288,7 +288,6 @@ global $venue_name;
 // in config.xml so the right default is set for minimum free disk space
 //
 function get_disk_space_config() {
-    global $config;
     $config = get_config();
     $dp = new StdClass;
     $dp->disk_max_used_gb = parse_config($config, "<default_disk_max_used_gb>");
@@ -627,7 +626,13 @@ function print_prefs_form(
         prefs_form_project_specific($prefs->project_specific, $project_error);
     }
 
-    row2("", "<input class=\"btn btn-success\" type=submit value=\"$submit_value\" name=\"action\">");
+    row2("",
+        sprintf(
+            '<input class="btn" %s type=submit value="%s" name="action">',
+            button_style(),
+            $submit_value
+        )
+    );
     end_table();
     echo "</form>\n";
 }

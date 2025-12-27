@@ -29,7 +29,6 @@ extern void strcpy_overlap(char*, const char*);
 extern int ndays_to_string(double x, int smallest_timescale, char *buf);
 extern void nbytes_to_string(double nbytes, double total_bytes, char* str, int len);
 extern int parse_command_line(char*, char**);
-extern void c2x(char *what);
 extern void strip_whitespace(char *str);
 extern void strip_whitespace(std::string&);
 extern void strip_quotes(char *str);
@@ -87,13 +86,6 @@ extern int string_substitute(
 // convert UNIX time to MySQL timestamp (yyyymmddhhmmss)
 //
 extern void mysql_timestamp(double, char*);
-
-// parse host.serialnum into component parts.
-// Given a string of the form
-// [BOINC|7.2.42][CUDA|GeForce GTX 860M|1|2048MB|34052|101][INTEL|Intel(R) HD Graphics 4600|1|1752MB||102][vbox|4.2.16]
-// split it into the BOINC, vbox, and other (coproc) parts
-//
-extern void parse_serialnum(char* in, char* boinc, char* vbox, char* coprocs);
 
 // take a malloced string.
 // if \n is not last char, add it.

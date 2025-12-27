@@ -1,6 +1,6 @@
 // This file is part of BOINC.
-// http://boinc.berkeley.edu
-// Copyright (C) 2018 University of California
+// https://boinc.berkeley.edu
+// Copyright (C) 2024 University of California
 //
 // BOINC is free software; you can redistribute it and/or modify it
 // under the terms of the GNU Lesser General Public License
@@ -15,11 +15,14 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with BOINC.  If not, see <http://www.gnu.org/licenses/>.
 
-// flags determining what is written to standard out.
-// (errors go to stderr)
+// client configuration: cc_config.xml
 //
-// NOTE: all writes to stdout should have an if (log_flags.*) {} around them.
-//
+// This includes
+// 1) log flags: what messages are written
+//      These are editable via the GUI
+// 2) other config options
+//      These are mostly for debugging,
+//      or things that are too obscure to add them to the GUI
 
 #ifndef BOINC_CC_CONFIG_H
 #define BOINC_CC_CONFIG_H
@@ -151,7 +154,7 @@ struct EXCLUDE_GPU {
 // client/log_flags.cpp:
 //      parse_options_client()
 //      possibly show()
-// the web doc: https://boinc.berkeley.edu/wiki/Client_configuration
+// the web doc: https://github.com/BOINC/boinc/wiki/Client-configuration
 //
 struct CC_CONFIG {
     bool abort_jobs_on_exit;
@@ -167,6 +170,8 @@ struct CC_CONFIG {
     bool dont_suspend_nci;
     bool dont_use_vbox;
     bool dont_use_wsl;
+    std::vector<std::string> disallowed_wsls;
+    bool dont_use_docker;
     std::vector<EXCLUDE_GPU> exclude_gpus;
     std::vector<std::string> exclusive_apps;
     std::vector<std::string> exclusive_gpu_apps;
@@ -185,11 +190,13 @@ struct CC_CONFIG {
     int max_event_log_lines;
     int max_file_xfers;
     int max_file_xfers_per_project;
+    double max_overdue_days;
     double max_stderr_file_size;
     double max_stdout_file_size;
     int max_tasks_reported;
     int ncpus;
     bool no_alt_platform;
+    bool no_disk_usage;     // don't include disk usage in sched req
     bool no_gpus;
     bool no_info_fetch;
     bool no_opencl;
@@ -259,9 +266,10 @@ struct APP_CONFIGS {
     std::vector<APP_VERSION_CONFIG> app_version_configs;
     int project_max_concurrent;
     bool project_has_mc;
-        // have app- or project-level max concurrent restriction
+        // the project has app- or project-level restriction
+        // on # of concurrent jobs
     int project_min_mc;
-        // the min of these restrictions
+        // if true, the min of these restrictions
     bool report_results_immediately;
 
     int parse(XML_PARSER&, MSG_VEC&, LOG_FLAGS&);

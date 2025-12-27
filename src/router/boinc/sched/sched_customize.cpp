@@ -1,6 +1,6 @@
 // This file is part of BOINC.
-// http://boinc.berkeley.edu
-// Copyright (C) 2008 University of California
+// https://boinc.berkeley.edu
+// Copyright (C) 2024 University of California
 //
 // BOINC is free software; you can redistribute it and/or modify it
 // under the terms of the GNU Lesser General Public License
@@ -291,7 +291,7 @@ static bool ati_check(COPROC_ATI& c, HOST_USAGE& hu,
 }
 
 static inline bool app_plan_ati(
-    SCHEDULER_REQUEST& sreq, char* plan_class, HOST_USAGE& hu
+    SCHEDULER_REQUEST& sreq, const char* plan_class, HOST_USAGE& hu
 ) {
     COPROC_ATI& c = sreq.coprocs.ati;
     if (!c.count) {
@@ -509,7 +509,7 @@ static bool cuda_check(COPROC_NVIDIA& c, HOST_USAGE& hu,
 // the following is for an app that uses an NVIDIA GPU
 //
 static inline bool app_plan_nvidia(
-    SCHEDULER_REQUEST& sreq, char* plan_class, HOST_USAGE& hu
+    SCHEDULER_REQUEST& sreq, const char* plan_class, HOST_USAGE& hu
 ) {
     COPROC_NVIDIA& c = sreq.coprocs.nvidia;
     if (!c.count) {
@@ -874,7 +874,7 @@ static inline bool app_plan_opencl(
 // use 1 or 2 CPUs
 
 static inline bool app_plan_vbox(
-    SCHEDULER_REQUEST& sreq, char* plan_class, HOST_USAGE& hu
+    SCHEDULER_REQUEST& sreq, const char* plan_class, HOST_USAGE& hu
 ) {
     bool can_use_multicore = true;
 
@@ -959,10 +959,21 @@ static inline bool app_plan_vbox(
     return true;
 }
 
-// app planning function.
+static inline bool app_plan_wsl(
+    SCHEDULER_REQUEST& sreq, const char* plan_class, HOST_USAGE& hu
+) {
+    // no additional checks at the moment, just return true
+    return true;
+}
+
+// if host can handle the plan class, populate host usage and return true
+//
 // See https://github.com/BOINC/boinc/wiki/AppPlan
 //
-bool app_plan(SCHEDULER_REQUEST& sreq, char* plan_class, HOST_USAGE& hu, const WORKUNIT* wu) {
+bool app_plan(
+    SCHEDULER_REQUEST& sreq, const char* plan_class, HOST_USAGE& hu,
+    const WORKUNIT* wu
+) {
     char buf[256];
     static bool check_plan_class_spec = true;
     static bool have_plan_class_spec = false;
@@ -970,7 +981,11 @@ bool app_plan(SCHEDULER_REQUEST& sreq, char* plan_class, HOST_USAGE& hu, const W
 
     if (config.debug_version_select) {
         log_messages.printf(MSG_NORMAL,
-            "[version] Checking plan class '%s'\n", plan_class
+            "[version] Checking plan class '%s' check %d have %d bad %d\n",
+            plan_class,
+            check_plan_class_spec,
+            have_plan_class_spec,
+            bad_plan_class_spec
         );
     }
 
@@ -1019,6 +1034,8 @@ bool app_plan(SCHEDULER_REQUEST& sreq, char* plan_class, HOST_USAGE& hu, const W
         return app_plan_sse3(sreq, hu);
     } else if (strstr(plan_class, "vbox")) {
         return app_plan_vbox(sreq, plan_class, hu);
+    } else if (strstr(plan_class, "wsl")) {
+        return app_plan_wsl(sreq, plan_class, hu);
     }
     log_messages.printf(MSG_CRITICAL,
         "Unknown plan class: %s\n", plan_class

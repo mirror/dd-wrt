@@ -1,6 +1,6 @@
 // This file is part of BOINC.
-// http://boinc.berkeley.edu
-// Copyright (C) 2023 University of California
+// https://boinc.berkeley.edu
+// Copyright (C) 2024 University of California
 //
 // BOINC is free software; you can redistribute it and/or modify it
 // under the terms of the GNU Lesser General Public License
@@ -157,6 +157,8 @@ static bool wu_is_infeasible_for_plan_class(
     return false;
 }
 
+// parse plan_class_spec.xml
+//
 int PLAN_CLASS_SPECS::parse_file(const char* path) {
     FILE* f = boinc::fopen(path, "r");
     if (!f) return ERR_FOPEN;
@@ -304,20 +306,6 @@ bool PLAN_CLASS_SPEC::check(
             log_messages.printf(MSG_NORMAL,
                 "[version] plan_class_spec: not enough CPUs: %d < %f\n",
                 g_wreq->effective_ncpus, min_ncpus
-            );
-        }
-        return false;
-    }
-
-    // host summary
-    //
-    if (have_host_summary_regex
-        && regexec(&(host_summary_regex), g_reply->host.serialnum, 0, NULL, 0)
-    ) {
-        if (config.debug_version_select) {
-            log_messages.printf(MSG_NORMAL,
-                "[version] plan_class_spec: host summary '%s' didn't match regexp\n",
-                g_reply->host.serialnum
             );
         }
         return false;
@@ -540,6 +528,73 @@ bool PLAN_CLASS_SPEC::check(
             if (!is64bit) return false;
         } else {
             if (is64bit) return false;
+        }
+    }
+
+    if (wsl) {
+        if (sreq.dont_use_wsl) {
+            add_no_work_message("Client config does not allow using WSL");
+            return false;
+        }
+        if (sreq.host.wsl_distros.distros.empty()) {
+            add_no_work_message("No WSL distros found");
+            return false;
+        }
+        bool found = false;
+        for (WSL_DISTRO &wd: sreq.host.wsl_distros.distros) {
+            if (wd.disallowed) continue;
+            if (min_libc_version) {
+                if (wd.libc_version_int() < min_libc_version) continue;
+            }
+            found = true;
+        }
+        if (!found) {
+            add_no_work_message("No usable WSL distros found");
+            return false;
+        }
+    }
+
+    // Docker apps: check that:
+    // - Docker is allowed
+    // - Win:
+    //      - WSL is allowed
+    //      - There's an allowed WSL distro containing Docker
+    // - Unix:
+    //      - Docker is present
+    if (docker) {
+        if (sreq.dont_use_docker) {
+            add_no_work_message("Client config does not allow using Docker");
+            return false;
+        }
+        if (strstr(sreq.host.os_name, "Windows")) {
+            if (sreq.dont_use_wsl) {
+                add_no_work_message("Client config does not allow using WSL");
+                return false;
+            }
+            bool found = false;
+            for (WSL_DISTRO &wd: sreq.host.wsl_distros.distros) {
+                if (wd.disallowed) continue;
+                if (wd.docker_version.empty()) continue;
+                found = true;
+                break;
+            }
+            if (!found) {
+                add_no_work_message("No usable WSL distros found");
+                return false;
+            }
+        } else {
+            if (strlen(sreq.host.docker_version) == 0) {
+                add_no_work_message("Docker not present");
+                return false;
+            }
+            if (strstr(sreq.host.os_name, "Darwin")) {
+                if (sreq.core_client_version < 80206) {
+                    add_no_work_message(
+                        "Docker jobs need 8.2.6+ client"
+                    );
+                    return false;
+                }
+            }
         }
     }
 
@@ -785,7 +840,7 @@ bool PLAN_CLASS_SPEC::check(
 
     // Apple GPU
 
-    } else if (!strcmp(gpu_type, "apple_cpu")) {
+    } else if (!strcmp(gpu_type, "apple")) {
         COPROC& cp = sreq.coprocs.apple_gpu;
         cpp = &cp;
 
@@ -1059,7 +1114,7 @@ bool PLAN_CLASS_SPEC::check(
 }
 
 bool PLAN_CLASS_SPECS::check(
-    SCHEDULER_REQUEST& sreq, char* plan_class, HOST_USAGE& hu,
+    SCHEDULER_REQUEST& sreq, const char* plan_class, HOST_USAGE& hu,
     const WORKUNIT* wu
 ) {
     for (unsigned int i=0; i<classes.size(); i++) {
@@ -1072,7 +1127,7 @@ bool PLAN_CLASS_SPECS::check(
 }
 
 bool PLAN_CLASS_SPECS::wu_is_infeasible(
-    char* plan_class_name, const WORKUNIT* wu
+    const char* plan_class_name, const WORKUNIT* wu
 ) {
     if(wu_restricted_plan_class) {
         for (unsigned int i=0; i<classes.size(); i++) {
@@ -1099,6 +1154,8 @@ int PLAN_CLASS_SPEC::parse(XML_PARSER& xp) {
         if (xp.parse_bool("cal", cal)) continue;
         if (xp.parse_bool("opencl", opencl)) continue;
         if (xp.parse_bool("virtualbox", virtualbox)) continue;
+        if (xp.parse_bool("wsl", wsl)) continue;
+        if (xp.parse_bool("docker", docker)) continue;
         if (xp.parse_bool("is64bit", is64bit)) continue;
         if (xp.parse_str("cpu_feature", buf, sizeof(buf))) {
             cpu_features.push_back(" " + (string)buf + " ");
@@ -1138,14 +1195,6 @@ int PLAN_CLASS_SPEC::parse(XML_PARSER& xp) {
                 return ERR_XML_PARSE;
             }
             have_cpu_model_regex = true;
-            continue;
-        }
-        if (xp.parse_str("host_summary_regex", buf, sizeof(buf))) {
-            if (regcomp(&(host_summary_regex), buf, REG_EXTENDED|REG_NOSUB) ) {
-                log_messages.printf(MSG_CRITICAL, "BAD HOST SUMMARY REGEXP: %s\n", buf);
-                return ERR_XML_PARSE;
-            }
-            have_host_summary_regex = true;
             continue;
         }
         if (xp.parse_int("user_id", user_id)) continue;
@@ -1237,7 +1286,6 @@ int PLAN_CLASS_SPECS::parse_specs(FILE* f) {
     return ERR_XML_PARSE;
 }
 
-
 PLAN_CLASS_SPEC::PLAN_CLASS_SPEC() {
     strcpy(name, "");
     strcpy(gpu_type, "");
@@ -1245,6 +1293,8 @@ PLAN_CLASS_SPEC::PLAN_CLASS_SPEC() {
     cal = false;
     opencl = false;
     virtualbox = false;
+    wsl = false;
+    docker = false;
     is64bit = false;
     min_ncpus = 0;
     max_threads = 1;
@@ -1266,7 +1316,6 @@ PLAN_CLASS_SPEC::PLAN_CLASS_SPEC() {
     avg_ncpus = 0;
     min_core_client_version = 0;
     max_core_client_version = 0;
-    have_host_summary_regex = false;
     user_id = 0;
     infeasible_random = 0;
     min_wu_id=0;

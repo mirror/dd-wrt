@@ -36,6 +36,9 @@
 #include <sstream>
 #include <stdexcept>
 #include <unistd.h>
+#include <fcntl.h>
+#include <sys/mman.h>
+#include <pwd.h>
 #endif
 
 using std::string;
@@ -48,6 +51,7 @@ using std::string;
 #include "util.h"
 #include "error_numbers.h"
 #include "procinfo.h"
+#include "md5_file.h"
 #include "network.h"
 #include "boinc_api.h"
 #include "floppyio.h"
@@ -68,7 +72,6 @@ int VBOX_VM::initialize() {
     string new_path;
     string command;
     string output;
-    bool force_sandbox = false;
 
     get_install_directory(virtualbox_install_directory);
 
@@ -97,67 +100,105 @@ int VBOX_VM::initialize() {
     }
 #endif
 
-    // Determine the VirtualBox home directory.  Overwrite as needed.
+    // Determine the 'VirtualBox profile directory'.
+    // VboxSVC writes the main VM database and it's logfiles there.
+    // The default location is OS based as well as user based and
+    // can be modified via the VBOX_USER_HOME environment variable.
     //
-    if (getenv("VBOX_USER_HOME")) {
-        virtualbox_home_directory = getenv("VBOX_USER_HOME");
+    // See
+    // https://docs.oracle.com/en/virtualization/virtualbox/6.1/admin/TechnicalBackground.html#3.1.3.-Summary-of-Configuration-Data-Locations
+
+    // Check if specified by environment variable
+    //
+    char *p = getenv("VBOX_USER_HOME");
+    if (p) {
+        virtualbox_profile_directory = p;
     } else {
-        // If the override environment variable isn't specified then
-        // it is based of the current users HOME directory.
 #ifdef _WIN32
-        virtualbox_home_directory = getenv("USERPROFILE");
-#else
-        virtualbox_home_directory = getenv("HOME");
-#endif
-        virtualbox_home_directory += "/.VirtualBox";
-    }
+        // Default vbox profile is located in '%USERPROFILE%\.VirtualBox'.
+        // Check for '%USERPROFILE%' instead, since the vbox profile dir
+        // doesn't exist until the user has started
+        // a VirtualBox component at least once.
+        //
+        string vbox_profile_dir = getenv("USERPROFILE");
 
-    // On *nix style systems, VirtualBox expects
-    // that there is a home directory specified by environment variable.
-    // When it doesn't exist it attempts to store logging information
-    // in root's home directory.
-    // Bad things happen if the process attempts to use root's home directory.
-    //
-    // if the HOME environment variable is missing
-    // force VirtualBox to use a directory it
-    // has a reasonable chance of writing log files too.
-#ifndef _WIN32
-    if (NULL == getenv("HOME")) {
-        force_sandbox = true;
-    }
-#endif
+        if (vbox_profile_dir.size()) {
+            virtualbox_profile_directory  = vbox_profile_dir;
+            virtualbox_profile_directory += "/.VirtualBox";
 
-    // Set the location in which the VirtualBox Configuration files can be
-    // stored for this instance.
-    //
-    if (aid.using_sandbox || force_sandbox) {
-        virtualbox_home_directory = aid.project_dir;
-        virtualbox_home_directory += "/../virtualbox";
+            // If necessary VirtualBox automatically creates required dirs
+            // at the default locations.
+            //
+        } else {
+            // If '%USERPROFILE%' is not set.
+            //
+            virtualbox_profile_directory  = aid.boinc_dir;
+            virtualbox_profile_directory += "/projects/VirtualBox";
 
-        if (!boinc_file_exists(virtualbox_home_directory.c_str())) {
-            boinc_mkdir(virtualbox_home_directory.c_str());
+            // create if not there already
+            //
+            boinc_mkdir(virtualbox_profile_directory.c_str());
         }
+#else
+#ifdef __APPLE__
+        // If 'VBOX_USER_HOME' is not set
+        // then make it point to the BOINC project directory.
+        // Notes:
+        // 1) we can't put it in the home dir;
+        //  in a sandboxed config we're running as user 'boinc_projects',
+        //  which doesn't have write access to the (real user) home dir.
+        // 2) we can't put it in the BOINC data dir.
+        //  boinc_projects can't write their either
+        //
+        virtualbox_profile_directory  = aid.boinc_dir;
+        virtualbox_profile_directory += "/projects/VirtualBox";
 
+        // create if not there already
+        //
+        boinc_mkdir(virtualbox_profile_directory.c_str());
+#else
+        // Default vbox profile is located in '/home/user/.config/VirtualBox'.
+        // Check for '/home/user/.config' instead, since the vbox profile dir
+        // doesn't exist until the user has started
+        // a VirtualBox component at least once.
+        //
+        string linux_user = getenv("USER");
+        string vbox_profile_dir = "/home/";
+        vbox_profile_dir += linux_user;
+        vbox_profile_dir += "/.config";
+
+        if (is_dir(vbox_profile_dir.c_str())) {
+            virtualbox_profile_directory  = vbox_profile_dir;
+            virtualbox_profile_directory += "/VirtualBox";
+
+            // If necessary VirtualBox automatically creates required dirs
+            // at the default locations.
+            //
+        } else {
+            // If BOINC runs as a service without a user's home directory.
+            //
+            virtualbox_profile_directory  = aid.boinc_dir;
+            virtualbox_profile_directory += "/projects/VirtualBox";
+
+            // create if not there already
+            //
+            boinc_mkdir(virtualbox_profile_directory.c_str());
+        }
+#endif
+#endif
+
+        // set env var telling VBox where to put log file
 #ifdef _WIN32
-        if (!SetEnvironmentVariable("VBOX_USER_HOME", const_cast<char*>(virtualbox_home_directory.c_str()))) {
+        if (!SetEnvironmentVariable("VBOX_USER_HOME", const_cast<char*>(virtualbox_profile_directory.c_str()))) {
             vboxlog_msg("Failed to modify the search path.");
         }
 #else
         // putenv does not copy its input buffer, so we must use setenv
-        if (setenv("VBOX_USER_HOME", const_cast<char*>(virtualbox_home_directory.c_str()), 1)) {
+        if (setenv("VBOX_USER_HOME", const_cast<char*>(virtualbox_profile_directory.c_str()), 1)) {
             vboxlog_msg("Failed to modify the VBOX_USER_HOME path.");
         }
 #endif
     }
-
-#ifdef _WIN32
-
-    // Launch vboxsvc manually so that the DCOM subsystem won't be able too.
-    // Our version will have permission and direction to write
-    // its state information to the BOINC data directory.
-    //
-    launch_vboxsvc();
-#endif
 
     rc = get_version_information(
         virtualbox_version_raw, virtualbox_version_display
@@ -172,10 +213,15 @@ int VBOX_VM::initialize() {
 int VBOX_VM::create_vm() {
     string command;
     string output;
+    string needle;
     string default_interface;
     bool disable_acceleration = false;
     char buf[256];
     int retval;
+    int save_retval;
+    string vm_nictype1;
+    size_t vm_nictype1_start;
+    size_t vm_nictype1_end;
 
     vboxlog_msg("Create VM. (%s, slot#%d)", vm_master_name.c_str(), aid.slot);
 
@@ -248,7 +294,7 @@ int VBOX_VM::create_vm() {
 
     // Tweak the VM's Graphics Controller Options
     //
-    vboxlog_msg("Setting Graphics Controller Options for VM.");
+    vboxlog_msg("Setting Graphics Controller Options for VM. (Driver: %s, %dMB)", vm_graphics_controller_type.c_str(), (int)vram_size_mb);
     snprintf(buf, sizeof(buf), "%d", (int)vram_size_mb);
 
     command  = "modifyvm \"" + vm_name + "\" ";
@@ -277,11 +323,65 @@ int VBOX_VM::create_vm() {
 
     // Tweak the VM's Network Configuration
     //
+    command  = "showvminfo \"" + vm_name + "\" ";
+    command += "--machinereadable ";
+
+    retval = vbm_popen(command, output, "get default networkadapter type", false, false);
+    if (retval) return retval;
+
+    vm_nictype1.clear();
+    needle = "nictype1=\"";
+
+    if ((vm_nictype1_start = output.find(needle.c_str())) != string::npos) {
+        vm_nictype1_start += needle.size();
+        vm_nictype1_end = output.find("\"", vm_nictype1_start);
+        vm_nictype1 = output.substr(vm_nictype1_start, vm_nictype1_end - vm_nictype1_start);
+    }
+
+    // virtio-net is available since VirtualBox version 3.1.
+    // use it for Linux guests.
+    // see the VirtualBox manual for further details.
+    //
+    if (output.find("effparavirtprovider=\"kvm\"") != string::npos) {
+        vm_nictype1 = "virtio";
+    }
+
+    // if a valid adapter name is set in vbox_job.xml use that one
+    // see the VirtualBox manual for valid names.
+    //
+    if (vm_network_driver.size()) {
+        command = "help modifyvm ";
+
+        retval = vbm_popen(command, output, "verify custom networkadapter name", false, false);
+        if (retval) return retval;
+
+        if (output.find(vm_network_driver.c_str()) != string::npos) {
+            vm_nictype1 = vm_network_driver;
+        } else {
+            vboxlog_msg("Invalid vm_network_driver '%s' detected in 'vbox_job.xml'.", vm_network_driver.c_str());
+            vboxlog_msg("Will use '%s' instead.", vm_nictype1.c_str());
+        }
+    }
+
     if (network_bridged_mode) {
-        vboxlog_msg("Setting Network Configuration for Bridged Mode.");
+        vboxlog_msg("Setting Network Configuration for Bridged Mode. (Driver: %s)", vm_nictype1.c_str());
         command  = "modifyvm \"" + vm_name + "\" ";
         command += "--nic1 bridged ";
-        command += "--cableconnected1 off ";
+        if (is_virtualbox_version_newer(6, 9, 99)) {
+            if (vm_nictype1.size()) {
+                command += "--nic-type1 \"";
+                command += vm_nictype1;
+                command += "\" ";
+            }
+            command += "--cable-connected1 off ";
+        } else {
+            if (vm_nictype1.size()) {
+                command += "--nictype1 \"";
+                command += vm_nictype1;
+                command += "\" ";
+            }
+            command += "--cableconnected1 off ";
+        }
 
         retval = vbm_popen(command, output, "set bridged mode");
         if (retval) return retval;
@@ -297,11 +397,32 @@ int VBOX_VM::create_vm() {
         retval = vbm_popen(command, output, "set bridged interface");
         if (retval) return retval;
     } else {
-        vboxlog_msg("Setting Network Configuration for NAT.");
+        vboxlog_msg("Setting Network Configuration for NAT. (Driver: %s)", vm_nictype1.c_str());
         command  = "modifyvm \"" + vm_name + "\" ";
         command += "--nic1 nat ";
-        command += "--natdnsproxy1 on ";
-        command += "--cableconnected1 off ";
+        if (is_virtualbox_version_newer(6, 9, 99)) {
+            if (vm_nictype1.size()) {
+                command += "--nic-type1 \"";
+                command += vm_nictype1;
+                command += "\" ";
+            }
+            command += "--cable-connected1 off ";
+            command += "--nat-dns-proxy1 on ";
+            if (enable_nat_dns_host_resolver) {
+                command += "--nat-dns-host-resolver1 on ";
+            }
+        } else {
+            if (vm_nictype1.size()) {
+                command += "--nictype1 \"";
+                command += vm_nictype1;
+                command += "\" ";
+            }
+            command += "--cableconnected1 off ";
+            command += "--natdnsproxy1 on ";
+            if (enable_nat_dns_host_resolver) {
+                command += "--natdnshostresolver1 on ";
+            }
+        }
 
         retval = vbm_popen(command, output, "set nat mode");
         if (retval) return retval;
@@ -310,13 +431,21 @@ int VBOX_VM::create_vm() {
     if (enable_network) {
         vboxlog_msg("Enabling VM Network Access.");
         command  = "modifyvm \"" + vm_name + "\" ";
-        command += "--cableconnected1 on ";
+        if (is_virtualbox_version_newer(6, 9, 99)) {
+            command += "--cable-connected1 on ";
+        } else {
+            command += "--cableconnected1 on ";
+        }
         retval = vbm_popen(command, output, "enable network");
         if (retval) return retval;
     } else {
         vboxlog_msg("Disabling VM Network Access.");
         command  = "modifyvm \"" + vm_name + "\" ";
-        command += "--cableconnected1 off ";
+        if (is_virtualbox_version_newer(6, 9, 99)) {
+            command += "--cable-connected1 off ";
+        } else {
+            command += "--cableconnected1 off ";
+        }
         retval = vbm_popen(command, output, "disable network");
         if (retval) return retval;
     }
@@ -353,7 +482,12 @@ int VBOX_VM::create_vm() {
     //
     vboxlog_msg("Disabling Audio Support for VM.");
     command  = "modifyvm \"" + vm_name + "\" ";
-    command += "--audio none ";
+    if (is_virtualbox_version_newer(7, 0, 4)) {
+        command += "--audio-enabled off ";
+    } else {
+        command += "--audio none ";
+    }
+
 
     vbm_popen(command, output, "modifyaudio", false, false);
 
@@ -549,9 +683,22 @@ int VBOX_VM::create_vm() {
 
             vboxlog_msg("Adding virtual disk drive to VM. (%s)", multiattach_vdi_file.c_str());
 
+#ifdef _WIN32
+            HANDLE fd_race_mitigator = NULL;
+#else
+            int fd_race_mitigator = 0;
+#endif
             int retry_count = 0;
             bool log_error = false;
             bool vbox_bug_mitigation = false;
+            string lock_name = "";
+
+            retval = set_race_mitigation_lock(fd_race_mitigator, lock_name, medium_file);
+            if (retval) {
+                save_retval = retval;
+                vboxlog_msg("Could not set race mitigation lock in 'create_vm'.");
+                return save_retval;
+            }
 
             do {
                 string set_new_uuid = "";
@@ -563,6 +710,7 @@ int VBOX_VM::create_vm() {
 
                 retval = vbm_popen(command, output, "check if parent hdd is registered", false);
                 if (retval) {
+                    save_retval = retval;
                     // showhdinfo implicitly registers unregistered hdds.
                     // Hence, this has to be handled first.
                     //
@@ -579,11 +727,12 @@ int VBOX_VM::create_vm() {
                             );
                     } else {
                         // other errors
+                        remove_race_mitigation_lock(fd_race_mitigator, lock_name);
                         vboxlog_msg("Error in check if parent hdd is registered.\nCommand:\n%s\nOutput:\n%s",
                             command.c_str(),
                             output.c_str()
                         );
-                        return retval;
+                        return save_retval;
                     }
                 }
 
@@ -616,13 +765,21 @@ int VBOX_VM::create_vm() {
                     command += set_new_uuid + "--medium \"" + medium_file + "\" ";
 
                     retval = vbm_popen(command, output, "register parent vdi");
-                    if (retval) return retval;
+                    if (retval) {
+                        save_retval = retval;
+                        remove_race_mitigation_lock(fd_race_mitigator, lock_name);
+                        return save_retval;
+                    }
 
                     command  = command_fix_part;
                     command += "--medium none ";
 
                     retval = vbm_popen(command, output, "detach parent vdi");
-                    if (retval) return retval;
+                    if (retval) {
+                        save_retval = retval;
+                        remove_race_mitigation_lock(fd_race_mitigator, lock_name);
+                        return save_retval;
+                    }
                     // the vdi file is now registered and ready
                     // to be attached in multiattach mode
                 }
@@ -634,6 +791,7 @@ int VBOX_VM::create_vm() {
 
                     retval = vbm_popen(command, output, "storage attach (fixed disk - multiattach mode)", log_error);
                     if (retval) {
+                        save_retval = retval;
                         // VirtualBox occasionally writes the 'MultiAttach'
                         // attribute to the disk entry in VirtualBox.xml
                         // although this is not allowed there.
@@ -650,29 +808,32 @@ int VBOX_VM::create_vm() {
                             (output.find("MultiAttach") != string::npos) &&
                             (output.find("can only be attached to machines that were created with VirtualBox 4.0 or later") != string::npos)) {
                                 // try to deregister the medium from the global media store
-                                command = "closemedium \"" + medium_file + "\" ";
-
-                                retval = vbm_popen(command, output, "deregister parent vdi");
-                                if (retval) return retval;
+                                //
+                                retval = remove_vbox_disk_orphans(medium_file.c_str());
+                                if (retval) {
+                                    save_retval = retval;
+                                    remove_race_mitigation_lock(fd_race_mitigator, lock_name);
+                                    return save_retval;
+                                }
 
                                 retry_count++;
                                 log_error = true;
-                                boinc_sleep(1.0);
                                 break;
                         }
 
                         if (retry_count >= 1) {
                             // in case of other errors or if retry also failed
+                            //
+                            remove_race_mitigation_lock(fd_race_mitigator, lock_name);
                             vboxlog_msg("Error in storage attach (fixed disk - multiattach mode).\nCommand:\n%s\nOutput:\n%s",
                                 command.c_str(),
                                 output.c_str()
                                 );
-                            return retval;
+                            return save_retval;
                         }
 
                         retry_count++;
                         log_error = true;
-                        boinc_sleep(1.0);
 
                     } else {
                         vbox_bug_mitigation = true;
@@ -682,6 +843,7 @@ int VBOX_VM::create_vm() {
                 while (true);
             }
             while (!vbox_bug_mitigation);
+            remove_race_mitigation_lock(fd_race_mitigator, lock_name);
         }
 
 
@@ -793,6 +955,9 @@ int VBOX_VM::create_vm() {
             command += "--vrdeauthlibrary default ";
             command += "--vrdeauthtype null ";
             command += "--vrdeport " + string(buf) + " ";
+            if (is_virtualbox_version_newer(7, 0, 99)) {
+                command += "--vrde-property \"Security/Method=RDP\" ";
+            }
 
             retval = vbm_popen(command, output, "remote desktop");
             if (retval) return retval;
@@ -857,8 +1022,15 @@ int VBOX_VM::register_vm() {
 }
 
 int VBOX_VM::deregister_vm(bool delete_media) {
+    int retval;
     string command;
     string output;
+    string lock_name = "";
+#ifdef _WIN32
+    HANDLE fd_race_mitigator = NULL;
+#else
+    int fd_race_mitigator = 0;
+#endif
 
     vboxlog_msg("Deregistering VM. (%s, slot#%d)", vm_name.c_str(), aid.slot);
 
@@ -885,12 +1057,25 @@ int VBOX_VM::deregister_vm(bool delete_media) {
     }
 
     // Next, delete VM
+    // This automatically deletes child disk images connected to the VM.
     //
+    if (multiattach_vdi_file.size()) {
+        string medium_file  = aid.project_dir;
+        medium_file += "/" + multiattach_vdi_file;
+
+        retval = set_race_mitigation_lock(fd_race_mitigator, lock_name, medium_file);
+        if (retval) {
+            vboxlog_msg("Could not set race mitigation lock in 'deregister_vm'.");
+            vboxlog_msg("Warning: Will continue without a lock.");
+        }
+    }
+
     vboxlog_msg("Removing VM from VirtualBox.");
     command  = "unregistervm \"" + vm_name + "\" ";
     command += "--delete ";
 
     vbm_popen(command, output, "delete VM", false, false);
+    remove_race_mitigation_lock(fd_race_mitigator, lock_name);
 
     // Lastly delete medium(s) from Virtual Box Media Registry
     //
@@ -1007,9 +1192,6 @@ int VBOX_VM::poll(bool log_state) {
     // Is our environment still sane?
     //
 #ifdef _WIN32
-    if (aid.using_sandbox && vboxsvc_pid_handle && !process_exists(vboxsvc_pid_handle)) {
-        vboxlog_msg("Status Report: vboxsvc.exe is no longer running.");
-    }
     if (started_successfully && vm_pid_handle && !process_exists(vm_pid_handle)) {
         vboxlog_msg("Status Report: virtualbox.exe/vboxheadless.exe is no longer running.");
     }
@@ -1134,9 +1316,6 @@ int VBOX_VM::poll2(bool log_state) {
     // Is our environment still sane?
     //
 #ifdef _WIN32
-    if (aid.using_sandbox && vboxsvc_pid_handle && !process_exists(vboxsvc_pid_handle)) {
-        vboxlog_msg("Status Report: vboxsvc.exe is no longer running.");
-    }
     if (started_successfully && vm_pid_handle && !process_exists(vm_pid_handle)) {
         vboxlog_msg("Status Report: virtualbox.exe/vboxheadless.exe is no longer running.");
     }
@@ -1707,14 +1886,16 @@ bool VBOX_VM::is_disk_image_registered() {
     string command;
     string output;
 
-    command = "showhdinfo \"" + slot_dir_path + "/" + image_filename + "\" ";
-    if (vbm_popen(command, output, "hdd registration", false, false) == 0) {
-        if ((output.find("VBOX_E_FILE_ERROR") == string::npos)
-            && (output.find("VBOX_E_OBJECT_NOT_FOUND") == string::npos)
-            && (output.find("does not match the value") == string::npos)
-        ) {
-            // Error message not found in text
-            return true;
+    if (!multiattach_vdi_file.size()) {
+        command = "showhdinfo \"" + slot_dir_path + "/" + image_filename + "\" ";
+        if (vbm_popen(command, output, "hdd registration", false, false) == 0) {
+            if ((output.find("VBOX_E_FILE_ERROR") == string::npos)
+                && (output.find("VBOX_E_OBJECT_NOT_FOUND") == string::npos)
+                && (output.find("does not match the value") == string::npos)
+            ) {
+                // Error message not found in text
+                return true;
+            }
         }
     }
 
@@ -1741,7 +1922,7 @@ bool VBOX_VM::is_extpack_installed() {
     command = "list extpacks";
 
     if (vbm_popen(command, output, "extpack detection", false, false) == 0) {
-        if ((output.find("Oracle VM VirtualBox Extension Pack") != string::npos) && (output.find("VBoxVRDP") != string::npos)) {
+        if ((output.find("VirtualBox Extension Pack") != string::npos) && (output.find("VBoxVRDP") != string::npos)) {
             return true;
         }
     }
@@ -1841,6 +2022,7 @@ int VBOX_VM::get_version_information(string& version_raw, string& version_displa
             );
             version_display = buf;
         } else {
+            vboxlog_msg("VBoxManage version raw: %s", output.c_str());
             version_raw = "Unknown";
             version_display = "VirtualBox VboxManage Interface (Version: Unknown)";
         }
@@ -2230,4 +2412,272 @@ bool VBOX_VM::is_hostrtc_set_to_utc() {
     // Non-Windows Systems usually set their rtc to UTC.
     return true;
 #endif
+}
+
+#ifdef _WIN32
+void VBOX_VM::remove_race_mitigation_lock(HANDLE& fd_race_mitigator, string& lock_name) {
+    DWORD err = BOINC_SUCCESS;
+    bool retval;
+
+    if (fd_race_mitigator) {
+        retval = CloseHandle(fd_race_mitigator);
+        err = GetLastError();
+        if (!retval) {
+            vboxlog_msg("Could not remove race mitigation lock.");
+            vboxlog_msg("Lockname: %s", lock_name.c_str());
+            vboxlog_msg("Error: %d, %s", err, strerror(err));
+        }
+    }
+}
+#else
+void VBOX_VM::remove_race_mitigation_lock(int& fd_race_mitigator, string& lock_name) {
+    int err = BOINC_SUCCESS;
+    int retval;
+
+    if (fd_race_mitigator > 0) {
+        retval = shm_unlink(lock_name.c_str());
+        err = errno;
+        if (retval) {
+            vboxlog_msg("Could not remove race mitigation lock.");
+            vboxlog_msg("Lockname: %s", lock_name.c_str());
+            vboxlog_msg("Error: %d, %s", err, strerror(err));
+        }
+    }
+}
+#endif
+
+#ifdef _WIN32
+int VBOX_VM::set_race_mitigation_lock(HANDLE& fd_race_mitigator, string& lock_name, const string& medium_file) {
+#else
+int VBOX_VM::set_race_mitigation_lock(int& fd_race_mitigator, string& lock_name, const string& medium_file) {
+#endif
+    int attempts = 1;
+    double timeout = 0.0;
+    double sleep_low = 0.7;
+    double sleep_high = 2.4;
+
+    // The lock ensures that only 1 vboxwrapper instance can
+    // modify a given virtual disk entry at a given time.
+    // This is a must for multiattach disks since some modifications
+    // need more than 1 call to VBoxManage.
+    //
+    // lock_name should be derived from the full path of the disk's filename.
+    //
+    // Darwin limits the file name size to 32 characters (including the trailing '0').
+    // On POSIX we set a '/' as prefix.
+    // Hence, 'lock_name' must be shorter than 15 characters.
+    //
+    lock_name  = "boinc_lock_";
+    lock_name += md5_string(medium_file).substr(0, 16);
+
+    // Tests with Linux on a 16c/32t computer
+    // typically register 30 VMs in less than 8 s.
+    //
+    timeout = dtime() + 90;
+
+#ifdef _WIN32
+    DWORD err = BOINC_SUCCESS;
+
+    while (1) {
+        // Parameter #5 (size) must not be 0 if INVALID_HANDLE_VALUE is used.
+        //
+        fd_race_mitigator = CreateFileMapping(
+            INVALID_HANDLE_VALUE,
+            NULL,
+            PAGE_READONLY,
+            NULL,
+            1,
+            (LPTSTR)lock_name.c_str()
+        );
+        err = GetLastError();
+
+        if (!err) {
+            // Successfully set a fresh lock.
+            // No error implies we also have a valid handle.
+            //
+            if (attempts > 1) {
+                vboxlog_msg("Attempts: %d", attempts);
+            }
+            break;
+        } else {
+            // If we got a handle, it must not be used.
+            // Close it immediately.
+            //
+            if (fd_race_mitigator) {
+                CloseHandle(fd_race_mitigator);
+                fd_race_mitigator = NULL;
+            }
+
+            if (err == ERROR_ALREADY_EXISTS) {
+                // a lock exists, most likely set by another vboxwrapper
+                //
+                if (dtime() >= timeout) {
+                    // Either the lock is stale
+                    // or far too many VMs are starting concurrently.
+                    //
+                    vboxlog_msg("Could not set race mitigation lock.");
+                    vboxlog_msg("Lockname: '%s'", lock_name.c_str());
+                    vboxlog_msg("Error: ERR_TIMEOUT");
+                    vboxlog_msg("Attempts: %d", attempts);
+
+                    return ERR_TIMEOUT;
+                }
+                boinc_sleep(sleep_low + sleep_high * drand());
+                attempts++;
+            } else {
+                vboxlog_msg("Could not set race mitigation lock.");
+                vboxlog_msg("Lockname: '%s'", lock_name.c_str());
+                vboxlog_msg("Error: %d, %s", err, strerror(err));
+                vboxlog_msg("Attempts: %d", attempts);
+
+                return ERR_FOPEN;
+            }
+        }
+    }
+#else
+    int err = BOINC_SUCCESS;
+    lock_name = "/" + lock_name;
+
+    while (1) {
+        fd_race_mitigator = shm_open(lock_name.c_str(), O_RDWR | O_CREAT | O_EXCL, 0600);
+        err = errno;
+
+        if (fd_race_mitigator > 0) {
+            // Successfully set a fresh lock.
+            //
+            if (attempts > 1) {
+                vboxlog_msg("Attempts: %d", attempts);
+            }
+            break;
+        } else {
+            if ((fd_race_mitigator == -1)
+                && (err == EEXIST)) {
+                // a lock exists, most likely set by another vboxwrapper
+                //
+                if (dtime() >= timeout) {
+                    // Either the lock is stale
+                    // or far too many VMs are starting concurrently.
+                    //
+                    vboxlog_msg("Could not set race mitigation lock.");
+                    vboxlog_msg("Lockname: '%s'", lock_name.c_str());
+                    vboxlog_msg("Error: ERR_TIMEOUT");
+                    vboxlog_msg("Attempts: %d", attempts);
+
+                    fd_race_mitigator = 0;
+                    return ERR_TIMEOUT;
+                }
+                boinc_sleep(sleep_low + sleep_high * drand());
+                attempts++;
+            } else {
+                vboxlog_msg("Could not set race mitigation lock.");
+                vboxlog_msg("Lockname: '%s'", lock_name.c_str());
+                vboxlog_msg("Error: %d, %s", err, strerror(err));
+                vboxlog_msg("Attempts: %d", attempts);
+
+                fd_race_mitigator = 0;
+                return ERR_FOPEN;
+            }
+        }
+    }
+#endif
+    return BOINC_SUCCESS;
+}
+
+// To remove the parent disk entry use 'closemedium disk "<path to disk>"' instead of 'closemedium disk "<UUID>"'
+// since the latter sometimes returns an error like this:
+//
+// VBoxManage closemedium disk "1d9935fd-37c9-4c34-946b-f6d252c6a1af"
+// VBoxManage: error: The given path '1d9935fd-37c9-4c34-946b-f6d252c6a1af' is not fully qualified
+// VBoxManage: error: Details: code VBOX_E_FILE_ERROR (0x80bb0004), component MediumWrap, interface IMedium, callee nsISupports
+// VBoxManage: error: Context: "OpenMedium(Bstr(pszFilenameOrUuid).raw(), enmDevType, enmAccessMode, fForceNewUuidOnOpen, pMedium.asOutParam())" at line 197 of file VBoxManageDisk.cpp
+//
+// Output of 'VBoxManage showhdinfo "/path to/disk/parent_disk_name.vdi"' usually looks like this:
+//
+// UUID:           f81c0950-57ee-462e-b931-051193700d76
+// Parent UUID:    base
+// State:          created
+// Type:           multiattach
+// Location:       /path to/disk/parent_disk_name.vdi
+// Storage format: VDI
+// Format variant: dynamic default
+// Capacity:       51200 MBytes
+// Size on disk:   2 MBytes
+// Encryption:     disabled
+// Property:       AllocationBlockSize=1048576
+// Child UUIDs:    67e34269-e52e-4957-a813-c85f72084fba
+//                 5fa7905e-72e4-4f85-8405-dc6401417720
+//                 7262b5e5-2b32-482a-8c6e-2ef49548740b
+//
+int VBOX_VM::remove_vbox_disk_orphans(string vbox_disk) {
+    int retval;
+    string command;
+    string output;
+    string needle;
+    string childlist;
+    string child_uuid;
+    size_t childlist_start;
+    string loc_line;
+    size_t loc_start;
+    size_t loc_end;
+
+    command  = "showhdinfo \"" + vbox_disk + "\" ";
+    retval = vbm_popen(command, output, "hdd registration", false, false);
+    if (retval) {
+        vboxlog_msg("Could not get disk details in 'remove_vbox_disk_orphans'.");
+        return retval;
+    }
+
+    needle = "\nChild UUIDs:";
+
+    if ((childlist_start = output.find(needle.c_str())) != string::npos) {
+        size_t pos = 0;
+        size_t uuid_length = 36;
+
+        childlist = output.substr(childlist_start + needle.size());
+
+        needle = " ";
+        pos = childlist.find(needle);
+        while (pos != string::npos) {
+            childlist.replace(pos, 1, "");
+            pos = childlist.find(needle, pos);
+        }
+
+        needle = "\n";
+        pos = childlist.find(needle);
+        while (pos != string::npos) {
+            childlist.replace(pos, 1, "");
+            pos = childlist.find(needle, pos);
+        }
+
+        pos = 0;
+        while (pos < childlist.size()) {
+            child_uuid = childlist.substr(pos, uuid_length);
+            // recursively process child disks
+            //
+            retval = remove_vbox_disk_orphans(child_uuid);
+            if (retval) {
+                vboxlog_msg("Could not remove child disk '%s'.", child_uuid.c_str());
+                return retval;
+            }
+            pos += uuid_length;
+        }
+    }
+
+    // if no child disks are left, remove the disk itself
+    //
+    needle = "\nLocation:";
+    if ((loc_start = output.find(needle.c_str())) != string::npos) {
+        loc_start += needle.size();
+        loc_start = output.find_first_not_of(" ", loc_start);
+        loc_end = output.find("\n", loc_start) - loc_start;
+        loc_line = output.substr(loc_start, loc_end);
+
+        command = "closemedium disk \"" + loc_line + "\" ";
+        retval = vbm_popen(command, output, "remove virtual disk", false, false);
+        if (retval) {
+            vboxlog_msg("Could not remove parent disk '%s'.", loc_line.c_str());
+            return retval;
+        }
+    }
+    return BOINC_SUCCESS;
 }

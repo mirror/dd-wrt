@@ -1,6 +1,6 @@
 // This file is part of BOINC.
-// http://boinc.berkeley.edu
-// Copyright (C) 2023 University of California
+// https://boinc.berkeley.edu
+// Copyright (C) 2024 University of California
 //
 // BOINC is free software; you can redistribute it and/or modify it
 // under the terms of the GNU Lesser General Public License
@@ -15,10 +15,12 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with BOINC.  If not, see <http://www.gnu.org/licenses/>.
 
+// structures corresponding to various DB tables.
+// In some cases the structures have extra fields,
+// used by the server code but not stored in the DB
+
 #ifndef _BOINC_DB_TYPES_
 #define _BOINC_DB_TYPES_
-
-#include <vector>
 
 #include "average.h"
 #include "opencl_boinc.h"
@@ -89,6 +91,7 @@ struct APP {
         // type of locality scheduling used by this app (see above)
     int n_size_classes;
         // for multi-size apps, number of size classes
+        // if use batch acceleration: 'accelerable' flag
     bool fraction_done_exact;
         // fraction done reported by app is accurate
 
@@ -98,6 +101,9 @@ struct APP {
     // not in DB:
     bool have_job;
     double size_class_quantiles[MAX_SIZE_CLASSES];
+    inline bool accelerable() {
+        return n_size_classes > 0;
+    }
 };
 
 // A version of an application.
@@ -357,10 +363,13 @@ struct HOST {
         // dynamic estimate of fraction of results
         // that fail validation
         // DEPRECATED
+        // if use batch acceleration: 'low turnaround time' flag
     char product_name[256];
     double gpu_active_frac;
     int p_ngpus;
     double p_gpu_fpops;
+    char misc[BLOB_SIZE];
+        // JSON description of GPUs, Docker etc.
 
     // the following items are passed in scheduler requests,
     // and used in the scheduler,
@@ -372,8 +381,13 @@ struct HOST {
     bool p_vm_extensions_disabled;
     int num_opencl_cpu_platforms;
     OPENCL_CPU_PROP opencl_cpu_prop[MAX_OPENCL_CPU_PLATFORMS];
-    bool wsl_available;
-    WSLS wsls;
+    WSL_DISTROS wsl_distros;
+
+    // Docker info (non-Win only)
+    char docker_version[256];
+    int docker_type;
+    char docker_compose_version[256];
+    int docker_compose_type;
 
     // stuff from time_stats
     double cpu_and_network_available_frac;
@@ -389,6 +403,9 @@ struct HOST {
     void fix_nans();
     void clear();
     bool get_opencl_cpu_prop(const char* platform, OPENCL_CPU_PROP&);
+    inline bool low_turnaround() {
+        return _error_rate > 0;
+    }
 };
 
 struct HOST_DELETED {
@@ -398,17 +415,22 @@ struct HOST_DELETED {
     void clear();
 };
 
-// values for file_delete state
+// values for
+// WORKUNIT::file_delete_state
+// RESULT::file_delete_state
+// TRANSITIONER_ITEM::res_file_delete_state
 // see html/inc/common_defs.inc
+//
 #define FILE_DELETE_INIT        0
 #define FILE_DELETE_READY       1
-    // set to this value only when we believe all files are uploaded
+    // WU is assimilated and all results are OVER,
+    // so we don't need output files anymore
 #define FILE_DELETE_DONE        2
-    // means the files were successfully deleted
+    // files were successfully deleted
 #define FILE_DELETE_ERROR       3
-    // Any error was returned while attempting to delete the file
+    // error in file deletion
 
-// values for assimilate_state
+// values for WORKUNIT::assimilate_state
 #define ASSIMILATE_INIT         0
 #define ASSIMILATE_READY        1
 #define ASSIMILATE_DONE         2
@@ -427,7 +449,7 @@ struct HOST_DELETED {
 #define WU_ERROR_CANCELLED                      16
 #define WU_ERROR_NO_CANONICAL_RESULT            32
 
-// bit fields of transition_flags; used for assigned jobs
+// bit fields of WORKUNIT::transitioner_flags; used for assigned jobs
 //
 #define TRANSITION_NONE             1
     // don't transition; used for broadcast jobs

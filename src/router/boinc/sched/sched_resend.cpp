@@ -249,7 +249,16 @@ bool resend_lost_work() {
             );
             g_reply->insert_message(warning_msg, "low");
         } else {
-            retval = add_result_to_reply(result, wu, bavp, false);
+            HOST_USAGE hu;
+            BUDA_VARIANT *bvp = NULL;
+            if (is_buda(wu)) {
+                if (!choose_buda_variant(wu, -1, &bvp, hu)) {
+                    continue;
+                }
+            } else {
+                hu = bavp->host_usage;
+            }
+            retval = add_result_to_reply(result, wu, bavp, hu, bvp, false);
             if (retval) {
                 log_messages.printf(MSG_CRITICAL,
                     "[HOST#%lu] failed to send [RESULT#%lu]\n",

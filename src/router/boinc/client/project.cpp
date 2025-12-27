@@ -300,6 +300,8 @@ int PROJECT::parse_state(XML_PARSER& xp) {
             if (btemp) handle_no_rsc_ams(this, "CPU");
             continue;
         }
+
+        // the following 3 deprecated; use no_rsc_ams instead
         if (xp.parse_bool("no_cuda_ams", btemp)) {
             if (btemp) handle_no_rsc_ams(this, GPU_TYPE_NVIDIA);
             continue;
@@ -312,6 +314,7 @@ int PROJECT::parse_state(XML_PARSER& xp) {
             if (btemp) handle_no_rsc_ams(this, GPU_TYPE_INTEL);
             continue;
         }
+
         if (xp.parse_str("no_rsc_ams", buf, sizeof(buf))) {
             handle_no_rsc_ams(this, buf);
             continue;
@@ -695,7 +698,7 @@ void PROJECT::get_task_durs(double& not_started_dur, double& in_progress_dur) {
         RESULT* rp = gstate.results[i];
         if (rp->project != this) continue;
         double d = rp->estimated_runtime_remaining();
-        d /= gstate.time_stats.availability_frac(rp->avp->gpu_usage.rsc_type);
+        d /= gstate.time_stats.availability_frac(rp->resource_usage.rsc_type);
         if (rp->is_not_started()) {
             not_started_dur += d;
         } else {
@@ -824,7 +827,7 @@ bool PROJECT::runnable(int rsc_type) {
         RESULT* rp = gstate.results[i];
         if (rp->project != this) continue;
         if (rsc_type != RSC_TYPE_ANY) {
-            if (rp->avp->gpu_usage.rsc_type != rsc_type) {
+            if (rp->resource_usage.rsc_type != rsc_type) {
                 continue;
             }
         }
@@ -978,7 +981,7 @@ void PROJECT::check_no_apps() {
     for (unsigned int i=0; i<gstate.app_versions.size(); i++) {
         APP_VERSION* avp = gstate.app_versions[i];
         if (avp->project != this) continue;
-        no_rsc_apps[avp->gpu_usage.rsc_type] = false;
+        no_rsc_apps[avp->resource_usage.rsc_type] = false;
     }
 }
 

@@ -1,6 +1,6 @@
 // This file is part of BOINC.
-// http://boinc.berkeley.edu
-// Copyright (C) 2008 University of California
+// https://boinc.berkeley.edu
+// Copyright (C) 2025 University of California
 //
 // BOINC is free software; you can redistribute it and/or modify it
 // under the terms of the GNU Lesser General Public License
@@ -15,9 +15,8 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with BOINC.  If not, see <http://www.gnu.org/licenses/>.
 
-// The "policy" part of file transfer is here.
-// The "mechanism" part is in pers_file_xfer.C and file_xfer.C
-//
+// The policy part of file transfer.
+// The mechanism part is in pers_file_xfer.cpp and file_xfer.cpp
 
 #include "cpp.h"
 
@@ -103,21 +102,16 @@ int CLIENT_STATE::make_project_dirs() {
 
     string name;
     char path[MAXPATHLEN];
-    DirScanner dir("projects");
+    DirScanner dir(PROJECTS_DIR);
     while (dir.scan(name)) {
+        if (name == "app_test") continue;
         snprintf(path, sizeof(path), "projects/%s", name.c_str());
         if (std::find(pds.begin(), pds.end(), path) != pds.end()) {
             continue;
         }
         msg_printf(0, MSG_INFO,
-            "%s is not a project dir - removing", path
+            "%s is not a project directory", path
         );
-        if (is_dir(path)) {
-            clean_out_dir(path);
-            boinc_rmdir(path);
-        } else {
-            boinc_delete_file(path);
-        }
     }
 
     return 0;

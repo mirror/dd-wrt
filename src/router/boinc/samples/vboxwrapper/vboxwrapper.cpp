@@ -428,6 +428,7 @@ int main(int argc, char** argv) {
     double timeout = 0.0;
     bool report_net_usage = false;
     bool initial_heartbeat_check = true;
+    int backtoback_heartbeat_failure = 1;
     double net_usage_timer = 600;
     int vm_image = 0;
     unsigned long vm_exit_code = 0;
@@ -439,6 +440,14 @@ int main(int argc, char** argv) {
     char path[MAXPATHLEN];
     bool is_sporadic = false;
     bool register_only = false;
+
+    // seed random numbers
+    //
+#ifdef _WIN32
+    srand((unsigned int)GetCurrentProcessId());
+#else
+    srand((unsigned int)getpid());
+#endif
 
     // Initialize diagnostics system
     //
@@ -499,7 +508,7 @@ int main(int argc, char** argv) {
     } else {
         project_dir_path = aid.project_dir;
     }
-    getcwd(path, sizeof(path));
+    boinc_getcwd(path);
     slot_dir_path = path;
 
     vboxlog_msg("BOINC client version: %d.%d.%d",
@@ -681,7 +690,7 @@ int main(int argc, char** argv) {
 
     // Copy files to the shared directory
     //
-    for (int i=0; i<pVM->copy_to_shared.size(); ++i) {
+    for (long unsigned int i=0; i<pVM->copy_to_shared.size(); ++i) {
         string source = pVM->copy_to_shared[i];
         string destination = string("shared/") + source;
         if (!boinc_file_exists(destination.c_str())) {
@@ -790,13 +799,13 @@ int main(int argc, char** argv) {
     last_checkpoint_elapsed_time = elapsed_time;
     last_heartbeat_elapsed_time = elapsed_time;
     last_checkpoint_cpu_time = starting_cpu_time;
+    initial_heartbeat_check = true;
 
 
     // Choose a random interleave value for checkpoint intervals
     // to stagger disk I/O.
     //
     if (!pVM->disable_automatic_checkpoints) {
-        srand((int)getpid());
         random_checkpoint_factor = drand() * 600;
 
         vboxlog_msg(
@@ -881,7 +890,8 @@ int main(int argc, char** argv) {
         fraction_done,
         pVM->vm_pid,
         bytes_sent,
-        bytes_received
+        bytes_received,
+        0
     );
 
     // Wait for up to 5 minutes for the VM to switch states.
@@ -1042,36 +1052,54 @@ int main(int argc, char** argv) {
             boinc_finish(EXIT_ABORTED_BY_CLIENT);
         }
         if (pVM->heartbeat_filename.size()) {
+            int backtoback = 3;
 
-            if (elapsed_time >= (last_heartbeat_elapsed_time + pVM->minimum_heartbeat_interval))
-            {
+            if (elapsed_time >= (last_heartbeat_elapsed_time + pVM->minimum_heartbeat_interval/backtoback)) {
 
+                int return_code = BOINC_SUCCESS;
                 bool should_exit = false;
                 struct stat heartbeat_stat;
 
                 if (!shared_file_exists(pVM->heartbeat_filename)) {
                     vboxlog_msg("VM Heartbeat file specified, but missing.");
+                    return_code = ERR_FILE_MISSING;
                     should_exit = true;
-                }
-
-                if (shared_stat(pVM->heartbeat_filename, &heartbeat_stat)) {
-                    // Error
-                    vboxlog_msg("VM Heartbeat file specified, but missing file system status. (errno = '%d')", errno);
-                    should_exit = true;
-                }
-
-                if (initial_heartbeat_check) {
-                    // Force the next check to be successful
-                    last_heartbeat_mod_time = heartbeat_stat.st_mtime - 1;
-                }
-
-                if (heartbeat_stat.st_mtime > last_heartbeat_mod_time) {
-                    // Heartbeat successful
-                    last_heartbeat_mod_time = heartbeat_stat.st_mtime;
-                    last_heartbeat_elapsed_time = elapsed_time;
                 } else {
-                    vboxlog_msg("VM Heartbeat file specified, but missing heartbeat.");
-                    should_exit = true;
+
+                    if (shared_stat(pVM->heartbeat_filename, &heartbeat_stat)) {
+                        // Error
+                        vboxlog_msg("VM Heartbeat file specified, but missing file system status. (errno = '%d')", errno);
+                        return_code = ERR_STAT;
+                        should_exit = true;
+                    } else {
+
+                        if (initial_heartbeat_check) {
+                            // Force the next check to be successful
+                            last_heartbeat_mod_time = heartbeat_stat.st_mtime - 1;
+                        }
+
+                        if (heartbeat_stat.st_mtime > last_heartbeat_mod_time) {
+                            // Heartbeat successful
+                            backtoback_heartbeat_failure = 1;
+                        } else {
+                            // Timestamps are not always monotonuous
+                            // or in sync between guest and host
+                            // e.g. after a suspend/resume
+                            // or when local time switches between
+                            // normal time and DST
+                            //
+                            // Instead of fiddling around with complex checks
+                            // simply count backtoback inconsistencies
+                            //
+                            if (backtoback_heartbeat_failure < backtoback) {
+                                backtoback_heartbeat_failure++;
+                            } else {
+                                vboxlog_msg("VM Heartbeat file specified, but missing heartbeat.");
+                                return_code = ERR_TIMEOUT;
+                                should_exit = true;
+                            }
+                        }
+                    }
                 }
 
                 if (should_exit) {
@@ -1079,9 +1107,11 @@ int main(int argc, char** argv) {
                     pVM->capture_screenshot();
                     pVM->cleanup();
                     pVM->dump_hypervisor_logs(true);
-                    boinc_finish(EXIT_ABORTED_BY_CLIENT);
+                    boinc_finish(return_code);
                 }
 
+                last_heartbeat_mod_time = heartbeat_stat.st_mtime;
+                last_heartbeat_elapsed_time = elapsed_time;
                 initial_heartbeat_check = false;
             }
         }
@@ -1360,7 +1390,8 @@ int main(int argc, char** argv) {
                 fraction_done,
                 pVM->vm_pid,
                 bytes_sent,
-                bytes_received
+                bytes_received,
+                0
             );
 
             if (!retval) {

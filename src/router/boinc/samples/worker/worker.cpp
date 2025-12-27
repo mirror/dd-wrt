@@ -1,5 +1,5 @@
 // This file is part of BOINC.
-// http://boinc.berkeley.edu
+// https://boinc.berkeley.edu
 // Copyright (C) 2015 University of California
 //
 // BOINC is free software; you can redistribute it and/or modify it
@@ -18,11 +18,14 @@
 // worker - application without BOINC runtime system;
 // used for testing wrappers.
 //
-// worker [--nsecs N] infile outfile
+// worker [options] infile outfile
 //
 // copy infile to outfile, converting to uppercase
 // if infile is 'stdin', use stdin; same for stdout
-// --nsecs: use about N sec of CPU time
+//
+// options:
+// --nsecs: use about N sec of CPU time after writing file,
+//      write fraction done to file "fraction_done"
 //
 // THIS PROGRAM CAN'T USE ANY BOINC CODE.  That's the whole point.
 
@@ -32,7 +35,8 @@
 #include <string.h>
 #include <ctype.h>
 
-// do a billion floating-point ops
+// Do a billion floating-point ops.
+// This should take roughly .1 to 1 sec.
 // (note: I needed to add an arg to this;
 // otherwise the MS C++ compiler optimizes away
 // all but the first call to it!)
@@ -47,63 +51,77 @@ static double do_a_giga_flop(int foo) {
     return x;
 }
 
-void copy_uc(FILE* fin, FILE* fout) {
-    int c;
+int copy_uc(FILE* fin, FILE* fout) {
+    int c, n=0;
     while (1) {
         c = fgetc(fin);
         if (c == EOF) break;
         fputc(toupper(c), fout);
+        n++;
     }
+    return n;
 }
 
 int main(int argc, char** argv) {
+    const char *infile=NULL, *outfile=NULL;
     FILE* in=0, *out=0;
     int i, nsecs = 0;
-    char c;
 
     for (i=1; i<argc; i++) {
         if (!strcmp(argv[i], "--nsecs")) {
             nsecs = atoi(argv[++i]);
-        }
-        if (!in) {
-            if (!strcmp(argv[i], "stdin")) {
-                in = stdin;
-            } else {
-                in = fopen(argv[i], "r");
-                if (!in) {
-                    fprintf(stderr, "missing input file\n");
-                    exit(1);
-                }
-            }
+        } else if (!infile) {
+            infile = argv[i];
         } else {
-            if (!strcmp(argv[i], "stdout")) {
-                out = stdout;
-            } else {
-                out = fopen(argv[i], "w");
-                if (!out) {
-                    fprintf(stderr, "missing output file\n");
-                    exit(1);
-                }
-            }
+            outfile = argv[i];
         }
     }
-    if (!in || !out) {
-        fprintf(stderr, "worker: no files specified\n");
+    if (!infile) {
+        fprintf(stderr, "worker: no input file specified\n");
         exit(1);
+    }
+    if (!outfile) {
+        fprintf(stderr, "worker: no output file specified\n");
+        exit(1);
+    }
+    fprintf(stderr, "worker: infile=%s outfile=%s nsecs=%d\n",
+        infile, outfile, nsecs
+    );
+
+    if (!strcmp(infile, "stdin")) {
+        in = stdin;
+    } else {
+        in = fopen(infile, "r");
+        if (!in) {
+            fprintf(stderr, "missing input file %s\n", infile);
+            exit(1);
+        }
+    }
+    if (!strcmp(outfile, "stdout")) {
+        out = stdout;
+    } else {
+        out = fopen(outfile, "w");
+        if (!out) {
+            fprintf(stderr, "can't open output file %s\n", outfile);
+            exit(1);
+        }
     }
 
     fprintf(stderr, "worker: starting\n");
 
-    copy_uc(in, out);
-
-    int start = (int)time(0);
+    int nchars = copy_uc(in, out);
 
     i=0;
-    while (time(0) < start+nsecs) {
+    while (1) {
+        double t = clock()/(double)CLOCKS_PER_SEC;
+        if (t >= nsecs) break;
         do_a_giga_flop(i++);
+        FILE *f = fopen("fraction_done", "w");
+        fprintf(f, "%f\n", t/nsecs);
+        fclose(f);
     }
 
-    fprintf(stderr, "worker: done\n");
+    fprintf(stderr, "worker: done; copied %d chars\n", nchars);
     return 0;
 }
 
@@ -169,7 +187,7 @@ int parse_command_line(char* p, char** argv) {
     return argc;
 }
 
-int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR Args, int WinMode) {
+int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
     LPSTR command_line;
     char* argv[100];
     int argc;

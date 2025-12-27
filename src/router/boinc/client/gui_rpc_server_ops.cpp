@@ -24,6 +24,7 @@
 #include <libproc.h>
 #include "sandbox.h"
 #include "mac_branding.h"
+extern int compareOSVersionTo(int toMajor, int toMinor);
 #endif
 
 #ifdef _WIN32
@@ -1411,12 +1412,15 @@ static void handle_run_graphics_app(GUI_RPC_CONN& grc) {
     string theScreensaverLoginUser;
     char screensaverLoginUser[256];
     char switcher_path[MAXPATHLEN];
+    char gfx_switcher_path[MAXPATHLEN];
     char *execName, *execPath;
     char current_dir[MAXPATHLEN];
     char *execDir;
     int newPID = 0;
     ACTIVE_TASK* atp = NULL;
     char cmd[256];
+    bool need_to_launch_gfx_ss_bridge = false;
+    static int gfx_ss_bridge_pid = 0;
 
     while (!grc.xp.get_tag()) {
         if (grc.xp.match_tag("/run_graphics_app")) break;
@@ -1496,6 +1500,38 @@ static void handle_run_graphics_app(GUI_RPC_CONN& grc) {
                             theScreensaverLoginUser, grc);
         grc.mfout.printf("<success/>\n");
         return;
+    }
+
+    if (compareOSVersionTo(14, 0) >= 0) {
+        // As of MacOS 14.0, the legacyScreenSaver sandbox prevents using
+        // bootstrap_look_up, so we launch a bridging utility to relay Mach
+        // communications between the graphics apps and the legacyScreenSaver.
+        if (gfx_ss_bridge_pid == 0) {
+            need_to_launch_gfx_ss_bridge = true;
+        } else if (waitpid(gfx_ss_bridge_pid, 0, WNOHANG)) {
+            gfx_ss_bridge_pid = 0;
+            need_to_launch_gfx_ss_bridge = true;
+        }
+        if (need_to_launch_gfx_ss_bridge) {
+            if (g_use_sandbox) {
+
+                snprintf(gfx_switcher_path, sizeof(gfx_switcher_path),
+                    "/Library/Screen Savers/%s.saver/Contents/Resources/gfx_switcher",
+                    saverName[iBrandID]
+                );
+            }
+            argv[0] = const_cast<char*>("gfx_switcher");
+            argv[1] = "-run_bridge";
+            argv[2] = gfx_switcher_path;
+            argc = 3;
+            if (!theScreensaverLoginUser.empty()) {
+                argv[argc++] = "--ScreensaverLoginUser";
+                safe_strcpy(screensaverLoginUser, theScreensaverLoginUser.c_str());
+                argv[argc++] = screensaverLoginUser;
+            }
+            argv[argc] = 0;
+            retval = run_program(current_dir, gfx_switcher_path, argc, argv, gfx_ss_bridge_pid);
+        }
     }
 
     if (slot == -1) {
@@ -1667,6 +1703,7 @@ static void handle_set_language(GUI_RPC_CONN& grc) {
     grc.mfout.printf("<error>no language found</error>\n");
 }
 
+#ifdef ANDROID
 static void handle_report_device_status(GUI_RPC_CONN& grc) {
     DEVICE_STATUS d;
     while (!grc.xp.get_tag()) {
@@ -1731,6 +1768,8 @@ int DEVICE_STATUS::parse(XML_PARSER& xp) {
     }
     return ERR_XML_PARSE;
 }
+
+#endif      // ANDROID
 
 // Some of the RPCs have empty-element request messages.
 // We accept both <foo/> and <foo></foo>
@@ -1816,7 +1855,9 @@ GUI_RPC gui_rpcs[] = {
     GUI_RPC("read_cc_config", handle_read_cc_config,                true,   false,  false),
     GUI_RPC("read_global_prefs_override", handle_read_global_prefs_override,
                                                                     true,   false,  false),
+#ifdef ANDROID
     GUI_RPC("report_device_status", handle_report_device_status,    true,   false,  false),
+#endif
     GUI_RPC("reset_host_info", handle_reset_host_info,              true,   false,  false),
     GUI_RPC("resume_result", handle_resume_result,                  true,   false,  false),
     GUI_RPC("run_benchmarks", handle_run_benchmarks,                true,   false,  false),
@@ -1987,20 +2028,20 @@ void GUI_RPC_CONN::handle_get() {
 // return nonzero only if we need to close the connection
 //
 int GUI_RPC_CONN::handle_rpc() {
-    int n, retval=0;
+    int retval=0;
     char* p;
 
     int left = GUI_RPC_REQ_MSG_SIZE - request_nbytes;
 #ifdef _WIN32
-    n = recv(sock, request_msg+request_nbytes, left, 0);
+    SSIZE_T nb = recv(sock, request_msg+request_nbytes, left, 0);
 #else
-    n = read(sock, request_msg+request_nbytes, left);
+    ssize_t nb = read(sock, request_msg+request_nbytes, left);
 #endif
-    if (n <= 0) {
+    if (nb <= 0) {
         request_nbytes = 0;
         return ERR_READ;
     }
-    request_nbytes += n;
+    request_nbytes += nb;
 
     // buffer full?
     if (request_nbytes >= GUI_RPC_REQ_MSG_SIZE) {
@@ -2102,6 +2143,7 @@ int GUI_RPC_CONN::handle_rpc() {
     if (!http_request) {
         mfout.printf("\003");   // delimiter for non-HTTP replies
     }
+    int n;
     mout.get_buf(p, n);
     if (http_request) {
         char buf[1024];

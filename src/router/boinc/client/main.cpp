@@ -1,6 +1,6 @@
 // This file is part of BOINC.
-// http://boinc.berkeley.edu
-// Copyright (C) 2022 University of California
+// https://boinc.berkeley.edu
+// Copyright (C) 2025 University of California
 //
 // BOINC is free software; you can redistribute it and/or modify it
 // under the terms of the GNU Lesser General Public License
@@ -13,7 +13,7 @@
 // See the GNU Lesser General Public License for more details.
 //
 // You should have received a copy of the GNU Lesser General Public License
-// along with BOINC.  If not, see <http://www.gnu.org/licenses/>.
+// along with BOINC.  If not, see <https://www.gnu.org/licenses/>.
 
 // command-line version of the BOINC client
 
@@ -216,6 +216,13 @@ static void init_core_client(int argc, char** argv) {
             BOINC_DIAG_REDIRECTSTDOUT;
     }
 
+    // Win32 - detach from console if requested
+#ifdef _WIN32
+    if (gstate.detach_console) {
+        FreeConsole();
+    }
+#endif
+
     diagnostics_init(flags, "stdoutdae", "stderrdae");
 
 #ifdef _WIN32
@@ -239,13 +246,6 @@ static void init_core_client(int argc, char** argv) {
     if (read_nvc_config_file()) {
        // msg_printf(NULL, MSG_INFO, "nvc_config.xml not found - using defaults");
     }
-
-    // Win32 - detach from console if requested
-#ifdef _WIN32
-    if (gstate.detach_console) {
-        FreeConsole();
-    }
-#endif
 
     // Unix: install signal handlers
 #ifndef _WIN32
@@ -433,6 +433,7 @@ int boinc_main_loop() {
 
     log_message_startup("Initialization completed");
 
+    // client main loop; poll interval is 1 sec
     while (1) {
         if (!gstate.poll_slow_events()) {
             gstate.do_io_or_sleep(POLL_INTERVAL);
@@ -461,6 +462,7 @@ int boinc_main_loop() {
                 break;
             }
         }
+        gstate.check_overdue();
     }
 
     return finalize();
@@ -490,11 +492,6 @@ int main(int argc, char** argv) {
         if (!strcmp(argv[index], "--detect_gpus")) {
             do_gpu_detection(argc, argv);
             return 0;
-        }
-
-        if (!strcmp(argv[index], "--run_test_app")) {
-            read_config_file(true);
-            run_test_app();
         }
 
 #ifdef _WIN32

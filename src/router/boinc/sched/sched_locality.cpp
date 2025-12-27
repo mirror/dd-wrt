@@ -332,7 +332,16 @@ static int possibly_send_result(SCHED_DB_RESULT& result) {
         if (count > 0) return ERR_WU_USER_RULE;
     }
 
-    return add_result_to_reply(result, wu, bavp, true);
+    HOST_USAGE hu;
+    BUDA_VARIANT *bvp = NULL;
+    if (is_buda(wu)) {
+        if (!choose_buda_variant(wu, -1, &bvp, hu)) {
+            return -1;
+        }
+    } else {
+        hu = bavp->host_usage;
+    }
+    return add_result_to_reply(result, wu, bavp, hu, bvp, false);
 }
 
 // Retrieves and returns a trigger instance identified by the given

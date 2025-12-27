@@ -60,7 +60,7 @@ inline bool has_coproc_app(PROJECT* p, int rsc_type) {
     for (i=0; i<gstate.app_versions.size(); i++) {
         APP_VERSION* avp = gstate.app_versions[i];
         if (avp->project != p) continue;
-        if (avp->gpu_usage.rsc_type == rsc_type) return true;
+        if (avp->resource_usage.rsc_type == rsc_type) return true;
     }
     return false;
 }
@@ -68,6 +68,7 @@ inline bool has_coproc_app(PROJECT* p, int rsc_type) {
 ///////////////  RSC_PROJECT_WORK_FETCH  ///////////////
 
 void RSC_PROJECT_WORK_FETCH::rr_init(PROJECT *p) {
+    unsigned int i;
     fetchable_share = 0;
     n_runnable_jobs = 0;
     sim_nused = 0;
@@ -75,7 +76,29 @@ void RSC_PROJECT_WORK_FETCH::rr_init(PROJECT *p) {
     deadlines_missed = 0;
     mc_shortfall = 0;
     last_mc_limit_reltime = 0;
-    max_nused = p->app_configs.project_min_mc;
+    if (p->app_configs.project_has_mc) {
+        // compute x = max usage over this resource over P's app versions
+        double x = 0;
+        for (i=0; i<gstate.app_versions.size(); i++) {
+            APP_VERSION* avp = gstate.app_versions[i];
+            if (avp->project != p) continue;
+            if (rsc_type && (avp->resource_usage.rsc_type == rsc_type)) {
+                if (avp->resource_usage.coproc_usage > x) x = avp->resource_usage.coproc_usage;
+            } else {
+                if (avp->resource_usage.avg_ncpus > x) x = avp->resource_usage.avg_ncpus;
+            }
+        }
+
+        // max instances this project could use is (approximately)
+        // its smallest max concurrent limit times x
+        // This doesn't take into account e.g. that the MC limit
+        // could be from a different app than the one that determined x
+        //
+        mc_max_could_use = std::min(
+            p->app_configs.project_min_mc*x,
+            (double)(rsc_work_fetch[rsc_type].ninstances)
+        );
+    }
 }
 
 void RSC_PROJECT_WORK_FETCH::resource_backoff(PROJECT* p, const char* name) {
@@ -98,9 +121,7 @@ void RSC_PROJECT_WORK_FETCH::resource_backoff(PROJECT* p, const char* name) {
 // check for backoff must go last, so that if that's the reason
 // we know that there are no other reasons (for piggyback)
 //
-RSC_REASON RSC_PROJECT_WORK_FETCH::compute_rsc_project_reason(
-    PROJECT *p, int rsc_type
-) {
+RSC_REASON RSC_PROJECT_WORK_FETCH::compute_rsc_project_reason(PROJECT *p) {
     RSC_WORK_FETCH& rwf = rsc_work_fetch[rsc_type];
     // see whether work fetch for this resource is banned
     // by prefs, config, project, or acct mgr
@@ -373,7 +394,7 @@ void RSC_WORK_FETCH::clear_request() {
 
 void PROJECT_WORK_FETCH::reset(PROJECT* p) {
     for (int i=0; i<coprocs.n_rsc; i++) {
-        p->rsc_pwf[i].reset();
+        p->rsc_pwf[i].reset(i);
     }
 }
 
@@ -421,7 +442,7 @@ void WORK_FETCH::rr_init() {
         RESULT* rp = gstate.results[i];
         if (rp->schedule_backoff) {
             if (rp->schedule_backoff > gstate.now) {
-                int rt = rp->avp->gpu_usage.rsc_type;
+                int rt = rp->resource_usage.rsc_type;
                 rp->project->rsc_pwf[rt].has_deferred_job = true;
             } else {
                 rp->schedule_backoff = 0;
@@ -696,7 +717,7 @@ void WORK_FETCH::setup() {
         p->pwf.project_reason = compute_project_reason(p);
         for (int j=0; j<coprocs.n_rsc; j++) {
             RSC_PROJECT_WORK_FETCH& rpwf = p->rsc_pwf[j];
-            rpwf.rsc_project_reason = rpwf.compute_rsc_project_reason(p, j);
+            rpwf.rsc_project_reason = rpwf.compute_rsc_project_reason(p);
         }
     }
     for (int j=0; j<coprocs.n_rsc; j++) {
@@ -827,7 +848,7 @@ PROJECT* WORK_FETCH::choose_project() {
             }
         }
 
-        // If rsc_index is nonzero, it's a resource that this project
+        // If rsc_index is non-neg, it's a resource that this project
         // can ask for work, and which needs work.
         // And this is the highest-priority project having this property.
         // Request work from this resource,
@@ -926,14 +947,14 @@ PROJECT* WORK_FETCH::choose_project() {
 // in last dt sec, and add to project totals
 //
 void WORK_FETCH::accumulate_inst_sec(ACTIVE_TASK* atp, double dt) {
-    APP_VERSION* avp = atp->result->avp;
-    PROJECT* p = atp->result->project;
-    double x = dt*avp->avg_ncpus;
+    RESULT *rp = atp->result;
+    PROJECT* p = rp->project;
+    double x = dt*rp->resource_usage.avg_ncpus;
     p->rsc_pwf[0].secs_this_rec_interval += x;
     rsc_work_fetch[0].secs_this_rec_interval += x;
-    int rt = avp->gpu_usage.rsc_type;
+    int rt = rp->resource_usage.rsc_type;
     if (rt) {
-        x = dt*avp->gpu_usage.usage;
+        x = dt*rp->resource_usage.coproc_usage;
         p->rsc_pwf[rt].secs_this_rec_interval += x;
         rsc_work_fetch[rt].secs_this_rec_interval += x;
     }
@@ -1028,7 +1049,7 @@ void WORK_FETCH::handle_reply(
     }
     for (unsigned int i=0; i<new_results.size(); i++) {
         RESULT* rp = new_results[i];
-        got_work[rp->avp->gpu_usage.rsc_type] = true;
+        got_work[rp->resource_usage.rsc_type] = true;
     }
 
     for (int i=0; i<coprocs.n_rsc; i++) {
@@ -1106,7 +1127,7 @@ void WORK_FETCH::init() {
         for (j=0; j<gstate.app_versions.size(); j++) {
             APP_VERSION* avp = gstate.app_versions[j];
             if (avp->project != p) continue;
-            p->rsc_pwf[avp->gpu_usage.rsc_type].anonymous_platform_no_apps = false;
+            p->rsc_pwf[avp->resource_usage.rsc_type].anonymous_platform_no_apps = false;
         }
     }
 }
@@ -1114,7 +1135,7 @@ void WORK_FETCH::init() {
 // clear backoff for app's resource
 //
 void WORK_FETCH::clear_backoffs(APP_VERSION& av) {
-    av.project->rsc_pwf[av.gpu_usage.rsc_type].clear_backoff();
+    av.project->rsc_pwf[av.resource_usage.rsc_type].clear_backoff();
 }
 
 ////////////////////////
@@ -1299,10 +1320,14 @@ const char* project_reason_string(PROJECT* p, char* buf, int len) {
             x = "don't need (";
             for (int i=0; i<coprocs.n_rsc; i++) {
                 char buf2[256];
+                RSC_REASON reason = p->rsc_pwf[i].rsc_project_reason;
+                if (!reason) {
+                    reason = rsc_work_fetch[i].dont_fetch_reason;
+                }
                 snprintf(buf2, sizeof(buf2),
                     "%s: %s",
                     rsc_name_long(i),
-                    rsc_reason_string(p->rsc_pwf[i].rsc_project_reason)
+                    rsc_reason_string(reason)
                 );
                 x += buf2;
                 if (i < coprocs.n_rsc-1) {

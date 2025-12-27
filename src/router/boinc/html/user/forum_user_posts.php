@@ -26,13 +26,18 @@ if (DISABLE_FORUMS) error_page("Forums are disabled");
 check_get_args(array("userid", "offset"));
 
 $userid = get_int("userid");
+$user = BoincUser::lookup_id($userid);
+if (!$user) error_page('no such user');
 $offset = get_int("offset", true);
 if (!$offset) $offset=0;
 $items_per_page = 20;
 
-$user = BoincUser::lookup_id($userid);
 $logged_in_user = get_logged_in_user(false);
 BoincForumPrefs::lookup($logged_in_user);
+
+if (!is_moderator($logged_in_user) && is_banished($user)) {
+    error_page('User is banished');
+}
 
 // Policy for what to show:
 // Team message board posts:
@@ -77,6 +82,7 @@ page_head(tra("Posts by %1", $user->name));
 $posts = BoincPost::enum("user=$userid order by id desc limit 10000");
 $n = 0;
 start_table('table-striped');
+row_heading_array([tra('Info'), tra('Message')], ['', 'width=70%']);
 $options = get_output_options($logged_in_user);
 
 $show_next = false;
@@ -116,7 +122,7 @@ foreach ($posts as $post) {
     }
     $n++;
 }
-echo "</table><br><br>\n";
+end_table();
 
 if ($offset) {
 	$x = $offset - $items_per_page;

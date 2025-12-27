@@ -44,9 +44,12 @@ display_errors();
 // add your own stylesheets (included after bootstrap)
 //define("STYLESHEET", "aaa.css");
 //define("STYLESHEET2", "bbb.css");
+//define("SHORTCUT_ICON", "f.gif");     // browser tab icon
+define('DARK_MODE', true);      // enable dark mode if selected by user
 
 //-------------- enable/disable web features
 
+define('UNIQUE_USER_NAME', true);
 define("FORUM_QA_MERGED_MODE", true);
     // Set to true to merge Message boards and Q&A section
 define ("DISABLE_PROFILES", true);
@@ -123,22 +126,28 @@ function project_banner($title, $prefix, $is_main) {
 //$fixed_navbar = true;
 
 function project_footer($show_return, $show_date, $prefix) {
-    // If you include any links, prepend URL with $prefix
-    //
-    echo '<br>
-        <a class="brand boinc-logo" href="https://boinc.berkeley.edu/"><img class="img-responsive center-block" src="'.secure_url_base().'img/pb_boinc.gif" alt="Powered by BOINC"></a>
-        <div class="form-group"></div>
-        <p class="text-center"> &copy;'.gmdate("Y ").COPYRIGHT_HOLDER.'</p>
-    ';
+    echo sprintf(
+        '<center><a href="%s"><img src=%s/%s alt="%s"></a></center>',
+        'https://boinc.berkeley.edu',
+        secure_url_base(),
+        'img/pb_boinc.gif',
+        'Powered by BOINC'
+    );
+    echo sprintf('<p><center>&copy; %s %s</center>',
+        gmdate("Y "),
+        COPYRIGHT_HOLDER
+    );
     if ($show_date) {
-        $t = time_str(time());
-        echo "<center><small>".tra("Generated")." $t</small><center>\n";
+        echo sprintf('<center><small>%s %s</small><center>',
+            tra('Generated'),
+            time_str(time())
+        );
     }
 }
 
 //-------------- Caching
-
-//define("MEMCACHE_SERVERS", "127.0.0.1:11211");
+// format: "host:port:weight"
+//define("MEMCACHE_SERVERS", "127.0.0.1:11211:50");
 
 //-------------- Ops access control
 

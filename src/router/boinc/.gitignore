@@ -142,7 +142,7 @@ svn_version.h
 # list of executables
 apps/1sec
 apps/concat
-apps/upper_case
+apps/uppercase
 client/boinc
 client/boinc_client
 client/boinccmd
@@ -158,21 +158,26 @@ lib/parse_test
 py/lib.*/
 py/build/
 samples/condor/*boinc_gahp
+samples/docker_wrapper/docker_wrapper*
 samples/example_app/*uc2
 samples/example_app/*ucn
 samples/example_app/uc2_graphics
 samples/example_app/slide_show
 samples/example_app/ttfont.cpp
-samples/multi_thread/*multi_thread
+samples/multi_thread/*multi_thread*
 samples/sleeper/*sleeper
 samples/vboxmonitor/*vboxmonitor
 samples/vboxwrapper/*vboxwrapper
+samples/vboxwrapper/vboxwrapper_*-*
 samples/worker/*worker
+samples/worker/worker_*-*
 samples/wrapper/*wrapper
+samples/wrapper/wrapper_*-*
 samples/openclapp/*openclapp
 samples/wrappture/*wrappture_example
 samples/wrappture/*fermi
 samples/**/*.exe
+samples/sporadic/sporadic
 sched/adjust_user_priority
 sched/antique_file_deleter
 sched/census
@@ -230,19 +235,13 @@ vda/vdad
 build/
 build-*/
 
-# WASM
-*.wasm
-a.out.js
-boinc_client.js
-boinccmd.js
-switcher.js
-boinc.html
-boinc_client.html
-boinccmd.html
-switcher.html
-
 # snap
 parts/
 prime/
 stage/
 *.snap
+*.msi
+
+# vim temporary files
+*.swp
+

@@ -15,20 +15,23 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with BOINC.  If not, see <http://www.gnu.org/licenses/>.
 
-#if defined(_WIN32)
+// Windows utilities
+
 #include "boinc_win.h"
-#endif
 
 #include "diagnostics.h"
+#include "error_numbers.h"
 #include "util.h"
 #include "filesys.h"
-#include "win_util.h"
 #include "str_replace.h"
 #include "str_util.h"
 
-/**
- * This function terminates a process by process id instead of a handle.
- **/
+#include "win_util.h"
+
+using std::string;
+
+// terminate a process by process ID instead of a handle.
+//
 BOOL TerminateProcessById( DWORD dwProcessID ) {
     HANDLE hProcess;
     BOOL bRetVal = FALSE;
@@ -118,20 +121,30 @@ void chdir_to_data_dir() {
     if (lpszExpandedValue) free(lpszExpandedValue);
 }
 
-std::wstring boinc_ascii_to_wide(const std::string& str) {
-  int length_wide = MultiByteToWideChar(CP_ACP, 0, str.data(), -1, NULL, 0);
-  wchar_t *string_wide = static_cast<wchar_t*>(_alloca((length_wide * sizeof(wchar_t)) + sizeof(wchar_t)));
-  MultiByteToWideChar(CP_ACP, 0, str.data(), -1, string_wide, length_wide);
-  std::wstring result(string_wide, length_wide - 1);
-  return result;
+// convert string to wide string
+//
+std::wstring boinc_ascii_to_wide(const string& str) {
+    int length_wide = MultiByteToWideChar(CP_ACP, 0, str.data(), -1, NULL, 0);
+    wchar_t *string_wide = static_cast<wchar_t*>(
+        _alloca((length_wide * sizeof(wchar_t)) + sizeof(wchar_t))
+    );
+    MultiByteToWideChar(CP_ACP, 0, str.data(), -1, string_wide, length_wide);
+    std::wstring result(string_wide, length_wide - 1);
+    return result;
 }
 
+// convert wide string to string
+//
 std::string boinc_wide_to_ascii(const std::wstring& str) {
-  int length_ansi = WideCharToMultiByte(CP_UTF8, 0, str.data(), -1, NULL, 0, NULL, NULL);
-  char* string_ansi = static_cast<char*>(_alloca(length_ansi + sizeof(char)));
-  WideCharToMultiByte(CP_UTF8, 0, str.data(), -1, string_ansi, length_ansi, NULL, NULL);
-  std::string result(string_ansi, length_ansi - 1);
-  return result;
+    int length_ansi = WideCharToMultiByte(
+        CP_UTF8, 0, str.data(), -1, NULL, 0, NULL, NULL
+    );
+    char* string_ansi = static_cast<char*>(_alloca(length_ansi + sizeof(char)));
+    WideCharToMultiByte(
+        CP_UTF8, 0, str.data(), -1, string_ansi, length_ansi, NULL, NULL
+    );
+    string result(string_ansi, length_ansi - 1);
+    return result;
 }
 
 // get message for given error
@@ -176,4 +189,146 @@ char* windows_format_error_string(
     }
 
     return pszBuf;
+}
+
+// WSL_CMD: run commands in a WSL distro
+
+typedef HRESULT(WINAPI *PWslLaunch)(
+    PCWSTR, PCWSTR, BOOL, HANDLE, HANDLE, HANDLE, HANDLE*
+);
+
+static PWslLaunch pWslLaunch = NULL;
+static HINSTANCE wsl_lib = NULL;
+
+int WSL_CMD::setup(string &err_msg) {
+    in_read = NULL;
+    in_write = NULL;
+    out_read = NULL;
+    out_write = NULL;
+
+    if (!pWslLaunch) {
+        wsl_lib = LoadLibraryA("wslapi.dll");
+        if (!wsl_lib) {
+            err_msg = "Can't load wslapi.dll";
+            return -1;
+        }
+        pWslLaunch = (PWslLaunch)GetProcAddress(wsl_lib, "WslLaunch");
+        if (!pWslLaunch) {
+            err_msg = "WslLaunch not in wslapi.dll";
+            return -1;
+        }
+    }
+
+    SECURITY_ATTRIBUTES sa;
+    sa.nLength = sizeof(SECURITY_ATTRIBUTES);
+    sa.bInheritHandle = TRUE;
+    sa.lpSecurityDescriptor = NULL;
+
+    if (!CreatePipe(&out_read, &out_write, &sa, 0)) {
+        err_msg = "Can't create out pipe";
+        return -1;
+    }
+    if (!SetHandleInformation(out_read, HANDLE_FLAG_INHERIT, 0)) {
+        err_msg = "Can't inherit out pipe";
+        return -1;
+    }
+    if (!CreatePipe(&in_read, &in_write, &sa, 0)) {
+        err_msg = "Can't create in pipe";
+        return -1;
+    }
+    if (!SetHandleInformation(in_write, HANDLE_FLAG_INHERIT, 0)) {
+        err_msg = "Can't inherit in pipe";
+        return -1;
+    }
+    return 0;
+}
+
+int WSL_CMD::setup_podman(const char* distro_name) {
+    char cmd[1024];
+    if (distro_name == NULL) {
+        fprintf(stderr, "WSL_CMD::setup_podman() error: distro_name is NULL\n");
+        return -1;
+    }
+    if (!strcmp(distro_name, "boinc-buda-runner")) {
+        // if using our own WSL distro, use default user (boinc)
+        snprintf(cmd, sizeof(cmd), "wsl -d %s", distro_name);
+    } else {
+        snprintf(cmd, sizeof(cmd), "wsl -d %s -u root", distro_name);
+    }
+    int retval = run_program_pipe(cmd, in_write, out_read, proc_handle);
+    if (retval) {
+        fprintf(stderr, "WSL_CMD::setup_podman() failed: %d\n", retval);
+        return retval;
+    }
+    return 0;
+}
+
+int WSL_CMD::run_program_in_wsl(
+    const string distro_name, const string command, bool use_cwd
+) {
+    proc_handle = NULL;
+    HRESULT ret = pWslLaunch(
+        boinc_ascii_to_wide(distro_name).c_str(),
+        boinc_ascii_to_wide(command).c_str(),
+        use_cwd, in_read, out_write, out_write,
+        &proc_handle
+    );
+    if (ret != S_OK) {
+        fprintf(stderr, "pWslLaunch failed: 0x%08lx\n", ret);
+        proc_handle = NULL;
+        return ERR_NOT_FOUND;
+    }
+    return 0;
+}
+
+int read_from_pipe(
+    HANDLE pipe, HANDLE proc_handle, string& out, double timeout,
+    const char* eom
+) {
+    char buf[1024];
+    DWORD avail, nread, exit_code;
+    bool ret;
+    double elapsed = 0;
+    bool exited = false;
+    out = "";
+    while (1) {
+        PeekNamedPipe(pipe, NULL, 0, NULL, &avail, NULL);
+        if (avail) {
+            ret = ReadFile(pipe, buf, sizeof(buf) - 1, &nread, NULL);
+            if (!ret) return ERR_READ;
+            buf[nread] = 0;
+            out += buf;
+            if (eom) {
+                if (out.find(eom) != std::string::npos) {
+                    return 0;
+                }
+            }
+        } else {
+            if (exited) {
+                return ERR_CONNECT;
+            }
+            Sleep(200);
+            if (timeout) {
+                elapsed += .2;
+                if (elapsed > timeout) {
+                    return ERR_TIMEOUT;
+                }
+            }
+            if (proc_handle) {
+                ret = GetExitCodeProcess(proc_handle, &exit_code);
+                if (!ret) exited = true;
+                if (exit_code != STILL_ACTIVE) exited = true;
+            }
+        }
+    }
+}
+
+int write_to_pipe(HANDLE pipe, const char* buf) {
+    DWORD n = (DWORD) strlen(buf);
+    DWORD nwritten;
+    bool ret = WriteFile(pipe, buf, n, &nwritten, NULL);
+        // what if nwritten != n?
+        // The Win docs and examples do not clarify this
+    if (ret) return 0;
+    return -1;
 }

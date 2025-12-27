@@ -1,6 +1,6 @@
 // This file is part of BOINC.
-// http://boinc.berkeley.edu
-// Copyright (C) 2008 University of California
+// https://boinc.berkeley.edu
+// Copyright (C) 2025 University of California
 //
 // BOINC is free software; you can redistribute it and/or modify it
 // under the terms of the GNU Lesser General Public License
@@ -16,9 +16,8 @@
 // along with BOINC.  If not, see <http://www.gnu.org/licenses/>.
 
 // High-level logic for communicating with scheduling servers,
-// and for merging the result of a scheduler RPC into the client state
-
-// The scheduler RPC mechanism is in scheduler_op.C
+// and for merging the reply of a scheduler RPC into the client state
+// The scheduler RPC mechanism is in scheduler_op.cpp
 
 #include "cpp.h"
 
@@ -141,6 +140,9 @@ int CLIENT_STATE::make_scheduler_request(PROJECT* p) {
         g_use_sandbox?1:0,
         p->dont_request_more_work?1:0
     );
+    if (cc_config.dont_use_docker) {
+        fprintf(f, "    <dont_use_docker/>\n");
+    }
     work_fetch.write_request(f, p);
 
     // write client capabilities
@@ -187,16 +189,18 @@ int CLIENT_STATE::make_scheduler_request(PROJECT* p) {
 
     // get and write disk usage
     //
-    get_disk_usages();
-    get_disk_shares();
-    fprintf(f,
-        "    <disk_usage>\n"
-        "        <d_boinc_used_total>%f</d_boinc_used_total>\n"
-        "        <d_boinc_used_project>%f</d_boinc_used_project>\n"
-        "        <d_project_share>%f</d_project_share>\n"
-        "    </disk_usage>\n",
-        total_disk_usage, p->disk_usage, p->disk_share
-    );
+    if (!cc_config.no_disk_usage) {
+        get_disk_usages();
+        get_disk_shares();
+        fprintf(f,
+            "    <disk_usage>\n"
+            "        <d_boinc_used_total>%f</d_boinc_used_total>\n"
+            "        <d_boinc_used_project>%f</d_boinc_used_project>\n"
+            "        <d_project_share>%f</d_project_share>\n"
+            "    </disk_usage>\n",
+            total_disk_usage, p->disk_usage, p->disk_share
+        );
+    }
 
     if (coprocs.n_rsc > 1) {
         work_fetch.copy_requests();
@@ -302,22 +306,22 @@ int CLIENT_STATE::make_scheduler_request(PROJECT* p) {
             double x = rp->estimated_runtime_remaining();
             if (x == 0) continue;
             safe_strcpy(buf, "");
-            int rt = rp->avp->gpu_usage.rsc_type;
+            int rt = rp->resource_usage.rsc_type;
             if (rt) {
                 if (rt == rsc_index(GPU_TYPE_NVIDIA)) {
                     snprintf(buf, sizeof(buf),
                         "        <ncudas>%f</ncudas>\n",
-                        rp->avp->gpu_usage.usage
+                        rp->resource_usage.coproc_usage
                     );
                 } else if (rt == rsc_index(GPU_TYPE_ATI)) {
                     snprintf(buf, sizeof(buf),
                         "        <natis>%f</natis>\n",
-                        rp->avp->gpu_usage.usage
+                        rp->resource_usage.coproc_usage
                     );
                 } else if (rt == rsc_index(GPU_TYPE_INTEL)) {
                     snprintf(buf, sizeof(buf),
                         "        <nintel_gpus>%f</nintel_gpus>\n",
-                        rp->avp->gpu_usage.usage
+                        rp->resource_usage.coproc_usage
                     );
                 }
             }
@@ -332,7 +336,7 @@ int CLIENT_STATE::make_scheduler_request(PROJECT* p) {
                 rp->name,
                 rp->report_deadline,
                 x,
-                rp->avp->avg_ncpus,
+                rp->resource_usage.avg_ncpus,
                 buf
             );
         }
@@ -617,7 +621,14 @@ int CLIENT_STATE::handle_scheduler_reply(
                 //
                 strcpy(project->_project_dir, "");
                 strcpy(path2, project->project_dir());
-                boinc_rename(old_project_dir, path2);
+                retval = boinc_rename(old_project_dir, path2);
+                if (retval) {
+                    msg_printf(project, MSG_USER_ALERT,
+                        "Can't rename project dir from %s to %s",
+                        old_project_dir, path2
+                    );
+                    return retval;
+                }
 
                 // reset the project (clear jobs etc.).
                 // If any jobs are running, their soft links
@@ -713,7 +724,7 @@ int CLIENT_STATE::handle_scheduler_reply(
         // BAM! currently has mixed http, https; trim off
         char* p = strchr(global_prefs.source_project, '/');
         char* q = strchr(gstate.acct_mgr_info.master_url, '/');
-        if (!global_prefs.override_file_present && gstate.acct_mgr_info.using_am() && p && q && !strcmp(p, q)) {
+        if (gstate.acct_mgr_info.using_am() && p && q && !strcmp(p, q)) {
             if (log_flags.sched_op_debug) {
                 msg_printf(project, MSG_INFO,
                     "[sched_op] ignoring prefs from project; using prefs from AM"
@@ -902,10 +913,10 @@ int CLIENT_STATE::handle_scheduler_reply(
                 continue;
             }
         }
-        if (avpp.missing_coproc) {
+        if (avpp.resource_usage.missing_coproc) {
             msg_printf(project, MSG_INTERNAL_ERROR,
                 "App version uses non-existent %s GPU",
-                avpp.missing_coproc_name
+                avpp.resource_usage.missing_coproc_name
             );
         }
         APP* app = lookup_app(project, avpp.app_name);
@@ -919,15 +930,10 @@ int CLIENT_STATE::handle_scheduler_reply(
             app, avpp.platform, avpp.version_num, avpp.plan_class
         );
         if (avp) {
-            // update app version attributes in case they changed on server
-            //
-            avp->avg_ncpus = avpp.avg_ncpus;
-            avp->flops = avpp.flops;
-            safe_strcpy(avp->cmdline, avpp.cmdline);
-            avp->gpu_usage = avpp.gpu_usage;
-            strlcpy(avp->api_version, avpp.api_version, sizeof(avp->api_version));
-            avp->dont_throttle = avpp.dont_throttle;
-            avp->needs_network = avpp.needs_network;
+            // don't copy resource usage info from avpp to avp.
+            // That would undo app_config.xml.
+            // App versions are immutable;
+            // if a project wants to change something, create a new one
 
             // if we had download failures, clear them
             //
@@ -1006,7 +1012,8 @@ int CLIENT_STATE::handle_scheduler_reply(
             delete rp;
             continue;
         }
-        if (rp->avp->missing_coproc) {
+        rp->init_resource_usage();
+        if (rp->resource_usage.missing_coproc) {
             msg_printf(project, MSG_INTERNAL_ERROR,
                 "Missing coprocessor for task %s; aborting", rp->name
             );
@@ -1014,7 +1021,7 @@ int CLIENT_STATE::handle_scheduler_reply(
         } else {
             rp->set_state(RESULT_NEW, "handle_scheduler_reply");
             got_work_for_rsc[0] = true;
-            int rt = rp->avp->gpu_usage.rsc_type;
+            int rt = rp->resource_usage.rsc_type;
             if (rt > 0) {
                 est_rsc_runtime[rt] += rp->estimated_runtime();
                 got_work_for_rsc[rt] = true;

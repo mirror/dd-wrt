@@ -1,6 +1,6 @@
 // This file is part of BOINC.
-// http://boinc.berkeley.edu
-// Copyright (C) 2022 University of California
+// https://boinc.berkeley.edu
+// Copyright (C) 2024 University of California
 //
 // BOINC is free software; you can redistribute it and/or modify it
 // under the terms of the GNU Lesser General Public License
@@ -14,6 +14,8 @@
 //
 // You should have received a copy of the GNU Lesser General Public License
 // along with BOINC.  If not, see <http://www.gnu.org/licenses/>.
+
+// client initialization and main loop
 
 #ifdef _WIN32
 #include "boinc_win.h"
@@ -121,7 +123,6 @@ CLIENT_STATE::CLIENT_STATE()
     app_started = 0;
     cmdline_dir = false;
     exit_before_upload = false;
-    run_test_app = false;
 #ifndef _WIN32
     boinc_project_gid = 0;
 #endif
@@ -158,7 +159,9 @@ CLIENT_STATE::CLIENT_STATE()
     benchmarks_running = false;
     client_disk_usage = 0.0;
     total_disk_usage = 0.0;
-    device_status_time = 0;
+#ifdef ANDROID
+    device_status_time = dtime();
+#endif
 
     rec_interval_start = 0;
     total_cpu_time_this_rec_interval = 0.0;
@@ -182,7 +185,6 @@ CLIENT_STATE::CLIENT_STATE()
     now = 0.0;
     initialized = false;
     last_wakeup_time = dtime();
-    device_status_time = 0;
 #ifdef _WIN32
     have_sysmon_msg = false;
 #endif
@@ -247,22 +249,44 @@ void CLIENT_STATE::show_host_info() {
     );
 
 #ifdef _WIN64
-    if (host_info.wsl_available) {
-        msg_printf(NULL, MSG_INFO, "WSL detected:");
-        for (size_t i = 0; i < host_info.wsls.wsls.size(); ++i) {
-            const WSL& wsl = host_info.wsls.wsls[i];
-            if (wsl.is_default) {
+    if (host_info.wsl_distros.distros.empty()) {
+        msg_printf(NULL, MSG_INFO, "WSL: no usable distros found");
+    } else {
+        msg_printf(NULL, MSG_INFO, "Usable WSL distros:");
+        for (auto& wsl : host_info.wsl_distros.distros) {
+            msg_printf(NULL, MSG_INFO,
+                "-   %s (WSL %d)%s",
+                wsl.distro_name.c_str(),
+                wsl.wsl_version,
+                wsl.is_default ? " (default)" : ""
+            );
+            msg_printf(NULL, MSG_INFO,
+                "-      OS: %s (%s)",
+                wsl.os_name.c_str(), wsl.os_version.c_str()
+            );
+            if (!wsl.libc_version.empty()) {
                 msg_printf(NULL, MSG_INFO,
-                    "   [%s] (default): %s (%s)", wsl.distro_name.c_str(), wsl.name.c_str(), wsl.version.c_str()
+                    "-      libc version: %s", wsl.libc_version.c_str()
                 );
-            } else {
-                msg_printf(NULL, MSG_INFO,
-                    "   [%s]: %s (%s)", wsl.distro_name.c_str(), wsl.name.c_str(), wsl.version.c_str()
+            }
+            if (!wsl.docker_version.empty()) {
+                msg_printf(NULL, MSG_INFO, "-      Docker version %s (%s)",
+                    wsl.docker_version.c_str(),
+                    docker_type_str(wsl.docker_type)
+                );
+            }
+            if (!wsl.docker_compose_version.empty()) {
+                msg_printf(NULL, MSG_INFO, "-      Docker compose version %s (%s)",
+                    wsl.docker_compose_version.c_str(),
+                    docker_type_str(wsl.docker_compose_type)
+                );
+            }
+            if (wsl.boinc_buda_runner_version) {
+                msg_printf(NULL, MSG_INFO, "-      BOINC WSL distro version %d",
+                    wsl.boinc_buda_runner_version
                 );
             }
         }
-    } else {
-        msg_printf(NULL, MSG_INFO, "No WSL found.");
     }
 #endif
 
@@ -280,7 +304,24 @@ void CLIENT_STATE::show_host_info() {
         }
 #endif
     }
+
+#ifndef _WIN64
+    if (strlen(host_info.docker_version)) {
+        msg_printf(NULL, MSG_INFO, "Docker: version %s (%s)",
+            host_info.docker_version,
+            docker_type_str(host_info.docker_type)
+        );
+    }
+    if (strlen(host_info.docker_compose_version)) {
+        msg_printf(NULL, MSG_INFO, "Docker compose: version %s (%s)",
+            host_info.docker_compose_version,
+            docker_type_str(host_info.docker_compose_type)
+        );
+    }
+#endif
 }
+
+// TODO: the following 3 should be members of COPROCS
 
 int rsc_index(const char* name) {
     const char* nm = strcmp(name, "CUDA")?name:GPU_TYPE_NVIDIA;
@@ -387,13 +428,16 @@ bool CLIENT_STATE::is_new_client() {
         || (core_client_version.minor != old_minor_version)
         || (core_client_version.release != old_release)
     ) {
-        msg_printf(NULL, MSG_INFO,
-            "Version change (%d.%d.%d -> %d.%d.%d)",
-            old_major_version, old_minor_version, old_release,
-            core_client_version.major,
-            core_client_version.minor,
-            core_client_version.release
-        );
+        if (old_major_version) {
+            msg_printf_notice(0, true, 0,
+                "The BOINC client version has changed from %d.%d.%d to %d.%d.%d.<br>To see what's new, view the <a href=%s>Client release notes</a>.",
+                old_major_version, old_minor_version, old_release,
+                core_client_version.major,
+                core_client_version.minor,
+                core_client_version.release,
+                "https://github.com/BOINC/boinc/wiki/Client-release-notes"
+            );
+        }
         new_client = true;
     }
     if (statefile_platform_name.size() && strcmp(get_primary_platform(), statefile_platform_name.c_str())) {
@@ -427,6 +471,9 @@ static void set_client_priority() {
 #endif
 }
 
+// initialize the client, and print messages about
+// the host HW/SW and the configuration.
+//
 int CLIENT_STATE::init() {
     int retval;
     unsigned int i;
@@ -435,9 +482,6 @@ int CLIENT_STATE::init() {
 
     srand((unsigned int)time(0));
     now = dtime();
-#ifdef ANDROID
-    device_status_time = dtime();
-#endif
     scheduler_op->url_random = drand();
 
     notices.init();
@@ -619,9 +663,7 @@ int CLIENT_STATE::init() {
     //
     parse_state_file();
 
-    if (app_test) {
-        app_test_init();
-    }
+    app_test_init();
 
     bool new_client = is_new_client();
 
@@ -648,6 +690,30 @@ int CLIENT_STATE::init() {
     check_app_config();
     show_app_config();
 
+    // fill in resource usage for app versions that are missing it
+    // (typically anonymous platform)
+    //
+    for (APP_VERSION* avp: app_versions) {
+        if (!avp->resource_usage.avg_ncpus) {
+            avp->resource_usage.avg_ncpus = 1;
+        }
+        if (!avp->resource_usage.flops) {
+            avp->resource_usage.flops = avp->resource_usage.avg_ncpus * host_info.p_fpops;
+
+            // for GPU apps, use conservative estimate:
+            // assume GPU runs at 10X peak CPU speed
+            //
+            if (avp->resource_usage.rsc_type) {
+                avp->resource_usage.flops += avp->resource_usage.coproc_usage * 10 * host_info.p_fpops;
+            }
+        }
+    }
+
+    // must go after check_app_config() and parse_state_file()
+    // and after the above app version stuff
+    //
+    init_result_resource_usage();
+
     // this needs to go after parse_state_file() because
     // GPU exclusions refer to projects
     //
@@ -658,6 +724,10 @@ int CLIENT_STATE::init() {
     // read_nvc_config_file()
     //
     newer_version_startup_check();
+
+#if !defined(SIM) && defined(_WIN32)
+    show_wsl_messages();
+#endif
 
     // parse account files again,
     // now that we know the host's venue on each project
@@ -676,26 +746,9 @@ int CLIENT_STATE::init() {
         }
     }
 
-    // fill in avp->flops for anonymous platform projects
-    //
-    for (i=0; i<app_versions.size(); i++) {
-        APP_VERSION* avp = app_versions[i];
-        if (!avp->flops) {
-            if (!avp->avg_ncpus) {
-                avp->avg_ncpus = 1;
-            }
-            avp->flops = avp->avg_ncpus * host_info.p_fpops;
-
-            // for GPU apps, use conservative estimate:
-            // assume GPU runs at 10X peak CPU speed
-            //
-            if (avp->gpu_usage.rsc_type) {
-                avp->flops += avp->gpu_usage.usage * 10 * host_info.p_fpops;
-            }
-        }
-    }
-
     process_gpu_exclusions();
+
+    docker_cleanup();
 
     check_clock_reset();
 
@@ -735,6 +788,9 @@ int CLIENT_STATE::init() {
             net_status.need_to_contact_reference_site = true;
         }
     }
+    if (host_info.p_fpops == 0) {
+        run_cpu_benchmarks = true;
+    }
 
     check_if_need_benchmarks();
 
@@ -756,7 +812,7 @@ int CLIENT_STATE::init() {
 
     msg_printf(NULL, MSG_INFO, "Checking active tasks");
     active_tasks.init();
-    active_tasks.report_overdue();
+    check_overdue();
     active_tasks.handle_upload_files();
     had_or_requested_work = (active_tasks.active_tasks.size() > 0);
 
@@ -867,6 +923,33 @@ int CLIENT_STATE::init() {
     throttle_thread.run(throttler, NULL);
 
     sporadic_init();
+
+    // if Docker not present, notify user
+    //
+#ifndef ANDROID
+#ifdef _WIN32
+    const char* url = "https://github.com/BOINC/boinc/wiki/Installing-Docker-on-Windows";
+#elif defined(__APPLE__)
+    const char* url = "https://github.com/BOINC/boinc/wiki/Installing-Docker-on-Mac";
+#else
+    const char* url = "https://github.com/BOINC/boinc/wiki/Installing-Docker-on-Linux";
+#endif
+    if (!host_info.have_docker()) {
+        msg_printf(NULL, MSG_INFO,
+            "Some projects require Docker."
+        );
+        msg_printf(NULL, MSG_INFO,
+            "To install Docker, visit %s", url
+        );
+        NOTICE n;
+        n.description = "Some projects require Docker.  We recommend that you install it.  Instructions are <a href=" + (string)url + (string)">here</a>.";
+        strcpy(n.link, url);
+        n.create_time = now;
+        n.arrival_time = now;
+        strcpy(n.category, "client");
+        notices.append(n);
+    }
+#endif
 
     initialized = true;
     return 0;
@@ -996,18 +1079,32 @@ bool CLIENT_STATE::poll_slow_events() {
     }
 #endif
 
-    bool old_user_active = user_active;
-#ifdef ANDROID
-    user_active = device_status.user_active;
-#else
-    long idle_time = host_info.user_idle_time(check_all_logins);
-    user_active = idle_time < global_prefs.idle_time_to_run * 60;
+    // there are 2 reasons to get idle state:
+    // if needed for computing prefs,
+    // or (on Mac) we were started by screensaver
+    //
+    bool get_idle_state = global_prefs.need_idle_state;
+#ifdef __APPLE__
+    if (started_by_screensaver) get_idle_state = true;
 #endif
-
-    if (user_active != old_user_active) {
-        set_n_usable_cpus();
-            // if niu_max_ncpus_pct pref is set, # usable CPUs may change
-        request_schedule_cpus(user_active?"Not idle":"Idle");
+    long idle_time;
+    if (get_idle_state) {
+        bool old_user_active = user_active;
+#ifdef ANDROID
+        if (device_status_time) {
+            user_active = device_status.user_active;
+        }
+#else
+        idle_time = host_info.user_idle_time(check_all_logins);
+        user_active = idle_time < global_prefs.idle_time_to_run * 60;
+#endif
+        if (user_active != old_user_active) {
+            set_n_usable_cpus();
+                // if niu_max_ncpus_pct pref is set, # usable CPUs may change
+            request_schedule_cpus(user_active?"Not idle":"Idle");
+        }
+    } else {
+        user_active = false;    // shouldn't matter what it is
     }
 
 #if 0
@@ -1048,6 +1145,31 @@ bool CLIENT_STATE::poll_slow_events() {
     active_tasks.get_memory_usage();
     suspend_reason = check_suspend_processing();
 
+#ifdef __APPLE__
+    // Mac: if Podman VM initialization is active, see if it's done
+    static bool need_podman_check = true;
+    if (need_podman_check && podman_init_pid) {
+        int ret, status;
+        ret = waitpid(podman_init_pid, &status, WNOHANG);
+        if (ret > 0) {
+            need_podman_check = false;
+            // process has exited
+            if (host_info.is_podman_VM_running()) {
+                msg_printf(NULL, MSG_INFO, "Podman VM initialized");
+            } else {
+                // couldn't init VM; can't use Podman
+                msg_printf(NULL, MSG_INFO,
+                    "Podman VM initialization failed"
+                );
+                gstate.host_info.docker_version[0] = 0;
+            }
+            podman_init_pid = 0;
+        } else {
+            suspend_reason = SUSPEND_REASON_PODMAN_INIT;
+        }
+    }
+#endif
+
     // suspend or resume activities (but only if already did startup)
     //
     if (tasks_restarted) {
@@ -1058,8 +1180,13 @@ bool CLIENT_STATE::poll_slow_events() {
             }
             last_suspend_reason = suspend_reason;
         } else {
-            if (tasks_suspended && !tasks_throttled) {
-                resume_tasks(last_suspend_reason);
+            if (tasks_suspended) {
+                if (log_flags.task) {
+                    msg_printf(NULL, MSG_INFO, "Resuming computation");
+                }
+                if (!tasks_throttled) {
+                    resume_tasks(last_suspend_reason);
+                }
             }
         }
     } else if (first) {
@@ -1207,22 +1334,28 @@ bool CLIENT_STATE::poll_slow_events() {
 #endif // ifndef SIM
 
 // Find the project with the given master_url.
-// Ignore differences in protocol, case, and trailing /
+// Ignore differences in protocol, case, leading 'www.', and trailing /
+// (the URL could come from an account manager,
+// with differences from the real URL)
 //
 PROJECT* CLIENT_STATE::lookup_project(const char* master_url) {
     char buf[256];
 
     safe_strcpy(buf, master_url);
     canonicalize_master_url(buf, sizeof(buf));
-    char* p = strstr(buf, "//");
+    const char* p = strstr(buf, "//");
     if (!p) return NULL;
+    p += 2;
+    if (strcasestr(p, "www.") == p) p += 4;
 
-    for (unsigned int i=0; i<projects.size(); i++) {
-        char* q = strstr(projects[i]->master_url, "//");
+    for (PROJECT *project: projects) {
+        const char* q = strstr(project->master_url, "//");
         if (!q) continue;
+        q += 2;
+        if (strcasestr(q, "www.") == q) q += 4;
         if (!strcasecmp(p, q)) {
             // note: canonicalize_master_url() doesn't lower-case
-            return projects[i];
+            return project;
         }
     }
     return 0;
@@ -2118,7 +2251,7 @@ int CLIENT_STATE::reset_project(PROJECT* project, bool detaching) {
     project->min_rpc_time = 0;
     project->pwf.reset(project);
     for (int j=0; j<coprocs.n_rsc; j++) {
-        project->rsc_pwf[j].reset();
+        project->rsc_pwf[j].reset(j);
     }
     write_state_file();
     return 0;
@@ -2372,4 +2505,22 @@ bool CLIENT_STATE::abort_sequence_done() {
     return true;
 }
 
-#endif
+#endif  // !SIM
+
+// for each result, copy resource usage either from
+// - workunit if present there (e.g. BUDA jobs)
+// - app version otherwise
+//
+// call this on startup and after reread app_config.xml
+// (which can change app version resource usage)
+//
+void CLIENT_STATE::init_result_resource_usage() {
+    for (RESULT* rp: results) {
+        rp->init_resource_usage();
+        if (rp->resource_usage.missing_coproc) {
+            msg_printf(rp->project, MSG_INFO,
+                "Missing coprocessor for task %s", rp->name
+            );
+        }
+    }
+}

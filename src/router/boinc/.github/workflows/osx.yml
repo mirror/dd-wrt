@@ -1,6 +1,6 @@
 # This file is part of BOINC.
-# http://boinc.berkeley.edu
-# Copyright (C) 2023 University of California
+# https://boinc.berkeley.edu
+# Copyright (C) 2025 University of California
 #
 # BOINC is free software; you can redistribute it and/or modify it
 # under the terms of the GNU Lesser General Public License
@@ -19,7 +19,7 @@ name: OSX
 on:
   push:
     branches: [ master, 'client_release/**' ]
-    tags: [ 'client_release/**', 'vboxwrapper/**', 'wrapper/**' ]
+    tags: [ 'client_release/**', 'vboxwrapper/**', 'wrapper/**', 'dockerwrapper/**', 'worker/**' ]
   pull_request:
     branches: [ master ]
   schedule:
@@ -33,6 +33,7 @@ env:
   AWS_ACCESS_KEY_ID: ${{ secrets.S3_ACCESS_KEY }}
   AWS_SECRET_ACCESS_KEY: ${{ secrets.S3_SECRET_KEY }}
   AWS_DEFAULT_REGION: us-west-2
+  XCODE_VERSION: '26.0.1'
 
 jobs:
   build-dependencies:
@@ -41,12 +42,12 @@ jobs:
     steps:
       - uses: maxim-lobanov/setup-xcode@60606e260d2fc5762a71e64e74b2174e8ea3c8bd
         with:
-          xcode-version: '14.3.1'
+          xcode-version: ${{ env.XCODE_VERSION }}
 
-      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+      - uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3
 
       - name: Cache dependencies
-        uses: actions/cache@0c45773b623bea8c8e75f6c82b208c3cf94ea4f9
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830
         with:
           path: 3rdParty/buildCache
           key: osx-${{ hashFiles('.github/workflows/osx.yml', '3rdParty/buildMacDependencies.sh', 'mac_build/dependencyNames.sh', 'mac_build/buildc-ares.sh', 'mac_build/buildcurl.sh', 'mac_build/buildfreetype.sh', 'mac_build/buildFTGL.sh', 'mac_build/buildopenssl.sh', 'mac_build/buildWxMac.sh') }}
@@ -65,12 +66,12 @@ jobs:
     steps:
       - uses: maxim-lobanov/setup-xcode@60606e260d2fc5762a71e64e74b2174e8ea3c8bd
         with:
-          xcode-version: '14.3.1'
+          xcode-version: ${{ env.XCODE_VERSION }}
 
-      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+      - uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3
 
       - name: Cache dependencies
-        uses: actions/cache@0c45773b623bea8c8e75f6c82b208c3cf94ea4f9
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830
         with:
           path: 3rdParty/buildCache
           key: osx-${{ hashFiles('.github/workflows/osx.yml', '3rdParty/buildMacDependencies.sh', 'mac_build/dependencyNames.sh', 'mac_build/buildc-ares.sh', 'mac_build/buildcurl.sh', 'mac_build/buildfreetype.sh', 'mac_build/buildFTGL.sh', 'mac_build/buildopenssl.sh', 'mac_build/buildWxMac.sh') }}
@@ -89,7 +90,7 @@ jobs:
 
       - name: Upload logs on failure
         if: ${{ failure() }}
-        uses: actions/upload-artifact@0b2256b8c012f0828dc542b3febcab082c67f72b
+        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4
         with:
           name: osx_logs_${{ matrix.type }}_${{ github.event.pull_request.head.sha }}
           path: deploy/logs.7z
@@ -99,27 +100,27 @@ jobs:
 
       - name: Upload manager
         if: matrix.type == 'manager'
-        uses: actions/upload-artifact@0b2256b8c012f0828dc542b3febcab082c67f72b
+        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4
         with:
           name: osx_manager_${{ github.event.pull_request.head.sha }}
           path: deploy/macos_manager.7z
 
       - name: Upload apps
-        uses: actions/upload-artifact@0b2256b8c012f0828dc542b3febcab082c67f72b
+        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4
         with:
           name: osx_${{ matrix.type }}_apps_${{ github.event.pull_request.head.sha }}
           path: deploy/macos_apps.7z
 
       - name: Upload x86_64 apps
         if: matrix.type == 'samples-makefile'
-        uses: actions/upload-artifact@0b2256b8c012f0828dc542b3febcab082c67f72b
+        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4
         with:
           name: osx_x86_64_apps_${{ github.event.pull_request.head.sha }}
           path: deploy/macos_apps_x86_64.7z
 
       - name: Upload arm64 apps
         if: matrix.type == 'samples-makefile'
-        uses: actions/upload-artifact@0b2256b8c012f0828dc542b3febcab082c67f72b
+        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4
         with:
           name: osx_arm64_apps_${{ github.event.pull_request.head.sha }}
           path: deploy/macos_apps_arm64.7z
@@ -127,12 +128,17 @@ jobs:
   cmake-build:
     name: cmake-build
     runs-on: macos-latest
+
+    strategy:
+      matrix:
+        triplet: [x64-osx, arm64-osx]
+      fail-fast: false
     steps:
       - uses: maxim-lobanov/setup-xcode@60606e260d2fc5762a71e64e74b2174e8ea3c8bd
         with:
-          xcode-version: '14.3.1'
+          xcode-version: ${{ env.XCODE_VERSION }}
 
-      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+      - uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3
 
       - name: Check if build is running from origin repo
         if: ${{ success() && env.AWS_ACCESS_KEY_ID != 0 && env.AWS_SECRET_ACCESS_KEY != 0 }}
@@ -145,7 +151,11 @@ jobs:
           echo "VCPKG_BINARY_SOURCES=clear;x-aws-config,no-sign-request;x-aws,s3://vcpkg.cache.boinc/,read" >> $GITHUB_ENV
 
       - name: libs cmake
-        run: osx/ci_build_libs_cmake.sh
+        run: osx/ci_build_libs_cmake.sh ${{ matrix.triplet }}
+
+      - name: run unit tests
+        if: ${{ success() && matrix.triplet == 'arm64-osx' }}
+        run: ./tests/executeUnitTests.sh --report-coverage --report-xml
 
       - name: Prepare logs on failure
         if: ${{ failure() }}
@@ -153,7 +163,7 @@ jobs:
 
       - name: Upload logs on failure
         if: ${{ failure() }}
-        uses: actions/upload-artifact@0b2256b8c012f0828dc542b3febcab082c67f72b
+        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4
         with:
-          name: osx_logs_cmake-build_${{ github.event.pull_request.head.sha }}
+          name: osx_logs_cmake-build_${{ matrix.triplet }}_${{ github.event.pull_request.head.sha }}
           path: deploy/logs.7z

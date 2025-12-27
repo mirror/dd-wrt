@@ -1,6 +1,6 @@
 // This file is part of BOINC.
-// http://boinc.berkeley.edu
-// Copyright (C) 2022 University of California
+// https://boinc.berkeley.edu
+// Copyright (C) 2024 University of California
 //
 // BOINC is free software; you can redistribute it and/or modify it
 // under the terms of the GNU Lesser General Public License
@@ -106,12 +106,6 @@ int CLIENT_STATE::parse_state_file() {
         fname = STATE_FILE_PREV;
     } else {
         msg_printf(0, MSG_INFO, "Creating new client state file");
-
-        // avoid warning messages about version
-        //
-        old_major_version = BOINC_MAJOR_VERSION;
-        old_minor_version = BOINC_MINOR_VERSION;
-        old_release = BOINC_RELEASE;
         return ERR_FOPEN;
     }
     return parse_state_file_aux(fname);
@@ -292,18 +286,18 @@ int CLIENT_STATE::parse_state_file_aux(const char* fname) {
                     safe_strcpy(avp->platform, get_primary_platform());
                 }
             }
-            if (avp->missing_coproc) {
-                if (strstr(avp->missing_coproc_name, "Apple ")) {
+            if (avp->resource_usage.missing_coproc) {
+                if (strstr(avp->resource_usage.missing_coproc_name, "Apple ")) {
                     msg_printf(project, MSG_INFO,
                         "App version uses deprecated GPU type '%s' - discarding",
-                        avp->missing_coproc_name
+                        avp->resource_usage.missing_coproc_name
                     );
                     delete avp;
                     continue;
                 } else {
                     msg_printf(project, MSG_INFO,
                         "App version uses missing GPU '%s'",
-                        avp->missing_coproc_name
+                        avp->resource_usage.missing_coproc_name
                     );
                 }
             }
@@ -393,12 +387,6 @@ int CLIENT_STATE::parse_state_file_aux(const char* fname) {
                 );
                 delete rp;
                 continue;
-            }
-            if (rp->avp->missing_coproc) {
-                msg_printf(project, MSG_INFO,
-                    "Missing coprocessor for task %s", rp->name
-                );
-                rp->coproc_missing = true;
             }
             rp->wup->version_num = rp->version_num;
             results.push_back(rp);
@@ -517,6 +505,11 @@ int CLIENT_STATE::parse_state_file_aux(const char* fname) {
         if (xp.parse_string("newer_version", newer_version)) {
             continue;
         }
+#ifdef _WIN32
+        if (xp.parse_int("latest_boinc_buda_runner_version", latest_boinc_buda_runner_version)) {
+            continue;
+        }
+#endif
         if (xp.parse_string("client_version_check_url", client_version_check_url)) {
             continue;
         }
@@ -755,6 +748,7 @@ int CLIENT_STATE::write_state(MIOFILE& f) {
     if (retval) return retval;
     for (j=0; j<projects.size(); j++) {
         PROJECT* p = projects[j];
+        if (p->app_test) continue;  // don't write app_test project
         retval = p->write_state(f);
         if (retval) return retval;
         for (i=0; i<apps.size(); i++) {
@@ -818,9 +812,15 @@ int CLIENT_STATE::write_state(MIOFILE& f) {
     if (strlen(language)) {
         f.printf("<language>%s</language>\n", language);
     }
-    if (newer_version.size()) {
+    if (!newer_version.empty()) {
         f.printf("<newer_version>%s</newer_version>\n", newer_version.c_str());
     }
+#ifdef _WIN32
+    f.printf(
+        "<latest_boinc_buda_runner_version>%d</latest_boinc_buda_runner_version>\n",
+        latest_boinc_buda_runner_version
+    );
+#endif
     if (client_version_check_url.size()) {
         f.printf("<client_version_check_url>%s</client_version_check_url>\n", client_version_check_url.c_str());
     }
@@ -855,7 +855,8 @@ int CLIENT_STATE::write_state_file_if_needed() {
 
 // look for app_versions.xml file in project dir.
 // If find, get app versions from there,
-// and use "anonymous platform" mechanism for this project
+// and mark project as "anonymous platform".
+// This is called before parsing client_state.xml
 //
 void CLIENT_STATE::check_anonymous() {
     unsigned int i;
@@ -966,6 +967,13 @@ int CLIENT_STATE::parse_app_info(PROJECT* p, FILE* in) {
             if (cc_config.dont_use_wsl && strstr(avp->plan_class, "wsl")) {
                 msg_printf(p, MSG_INFO,
                     "skipping wsl app in app_info.xml; wsl disabled in cc_config.xml"
+                );
+                delete avp;
+                continue;
+            }
+            if (cc_config.dont_use_docker && strstr(avp->plan_class, "docker")) {
+                msg_printf(p, MSG_INFO,
+                    "skipping docker app in app_info.xml; docker disabled in cc_config.xml"
                 );
                 delete avp;
                 continue;

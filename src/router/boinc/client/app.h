@@ -53,12 +53,14 @@ typedef int PROCESS_ID;
 
 // Represents a job in progress.
 
-// When an active task is created, it is assigned a "slot"
+// When a job is started, it is assigned a "slot"
 // which determines the directory it runs in.
-// This doesn't change over the life of the active task;
-// thus the task can use the slot directory for temp files
+// This doesn't change over the life of the job;
+// so it can use the slot directory for temp files
 // that BOINC doesn't know about.
 
+// If you add anything, initialize it in the constructor
+//
 struct ACTIVE_TASK {
 #ifdef _WIN32
     HANDLE process_handle, shm_handle;
@@ -100,8 +102,12 @@ struct ACTIVE_TASK {
         // most recent CPU time reported by app
     bool once_ran_edf;
 
-    // END OF ITEMS SAVED IN STATE FILE
+    // END OF ITEMS SAVED IN STATE FILES
 
+    double wss_from_app;
+        // work set size reported by the app
+        // (e.g. docker_wrapper does this).
+        // If nonzero, use this instead of procinfo data
     double fraction_done;
         // App's estimate of how much of the work unit is done.
         // Passed from the application via an API call;
@@ -227,7 +233,8 @@ struct ACTIVE_TASK {
         // This is compared with project-specified limits
         // to decide whether to abort job; no other use.
     int get_free_slot(RESULT*);
-    int start(bool test=false);         // start a process
+    int setup_slot_dir(char *buf, unsigned int size);
+    int start();
 
     // Termination stuff.
     // Terminology:
@@ -339,7 +346,6 @@ public:
     void get_msgs();
     bool check_app_exited();
     bool check_rsc_limits_exceeded();
-    bool check_quit_timeout_exceeded();
     bool is_slot_in_use(int);
     bool is_slot_dir_in_use(char*);
     void send_heartbeats();

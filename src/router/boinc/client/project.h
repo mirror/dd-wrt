@@ -210,7 +210,8 @@ struct PROJECT : PROJ_AM {
     std::vector<FILE_REF> project_files;
         // files not specific to apps or work - e.g. icons
     bool app_test;
-        // this is the project created by --app_test
+        // this is the project created by app_test_init();
+        // use slots/app_test for its jobs
 
     ///////////////// member functions /////////////////
 
@@ -242,8 +243,6 @@ struct PROJECT : PROJ_AM {
         // runnable or contactable or downloading
     bool nearly_runnable();
         // runnable or downloading
-    bool overworked();
-        // the project has used too much CPU time recently
     bool some_download_stalled();
         // a download is backed off
     bool some_result_suspended();
@@ -276,9 +275,9 @@ struct PROJECT : PROJ_AM {
     //
     RSC_PROJECT_WORK_FETCH rsc_pwf[MAX_RSC];
     PROJECT_WORK_FETCH pwf;
-    inline void reset() {
+    inline void work_fetch_reset() {
         for (int i=0; i<coprocs.n_rsc; i++) {
-            rsc_pwf[i].reset();
+            rsc_pwf[i].reset(i);
         }
     }
     inline int deadlines_missed(int rsc_type) {
@@ -341,7 +340,6 @@ struct PROJECT : PROJ_AM {
 
     // statistic of the last x days
     std::vector<DAILY_STATS> statistics;
-    int parse_statistics(MIOFILE&);
     int parse_statistics(FILE*);
     int write_statistics(MIOFILE&);
     int write_statistics_file();
@@ -386,7 +384,6 @@ struct PROJECT : PROJ_AM {
     PROJECT_RESULTS project_results;
     void print_results(FILE*, SIM_RESULTS&);
     void backoff();
-    void update_dcf_stats(RESULT*);
 #endif
 };
 

@@ -29,8 +29,31 @@
 #ifndef BOINC_COMMON_DEFS_H
 #define BOINC_COMMON_DEFS_H
 
-#include "miofile.h"
-#include "parse.h"
+// states for sporadic apps
+//
+// client state
+enum SPORADIC_CA_STATE {
+    CA_NONE             = 0,
+    CA_DONT_COMPUTE     = 1,
+        // computing suspended (CPU and perhaps GPU)
+        // or other project have priority
+    CA_COULD_COMPUTE    = 2,
+        // not computing, but could
+    CA_COMPUTING        = 3
+        // go ahead and compute
+};
+
+// app state
+enum SPORADIC_AC_STATE {
+    AC_NONE                 = 0,
+    AC_DONT_WANT_COMPUTE    = 1,
+    AC_WANT_COMPUTE         = 2
+};
+
+#ifdef __cplusplus
+
+struct MIOFILE;
+struct XML_PARSER;
 
 #define GUI_RPC_PORT 31416
     // for TCP connection
@@ -157,7 +180,8 @@ enum SUSPEND_REASON {
     SUSPEND_REASON_WIFI_STATE = 4097,
     SUSPEND_REASON_BATTERY_CHARGING = 4098,
     SUSPEND_REASON_BATTERY_OVERHEATED = 4099,
-    SUSPEND_REASON_NO_GUI_KEEPALIVE = 4100
+    SUSPEND_REASON_NO_GUI_KEEPALIVE = 4100,
+    SUSPEND_REASON_PODMAN_INIT = 4101
 };
 
 // battery state (currently used only for Android)
@@ -170,27 +194,7 @@ enum BATTERY_STATE {
     BATTERY_STATE_OVERHEATED
 };
 
-// states for sporadic apps
-//
-// client state
-enum SPORADIC_CA_STATE {
-    CA_NONE             = 0,
-    CA_DONT_COMPUTE     = 1,
-    // computing suspended (CPU and perhaps GPU) or other project have priority
-    CA_COULD_COMPUTE    = 2,
-    // not computing, but could
-    CA_COMPUTING        = 3
-    // go ahead and compute
-};
-
-// app state
-enum SPORADIC_AC_STATE {
-    AC_NONE                 = 0,
-    AC_DONT_WANT_COMPUTE    = 1,
-    AC_WANT_COMPUTE         = 2
-};
-
-// Values of RESULT::state in client.
+// Values of RESULT::state (client) and RESULT::client_state (server)
 // THESE MUST BE IN NUMERICAL ORDER
 // (because of the > comparison in RESULT::computing_done())
 // see html/inc/common_defs.inc
@@ -275,12 +279,20 @@ enum SPORADIC_AC_STATE {
     // input/output files can be deleted,
     // result and workunit records can be purged.
 
-// credit types
+// credit types (not used AFAIK)
 //
 #define CREDIT_TYPE_FLOPS           0
 #define CREDIT_TYPE_STORAGE         1
 #define CREDIT_TYPE_NETWORK         2
 #define CREDIT_TYPE_PROJECT         3
+
+// An arg type for the 'dummy constructors' used to zero out structs.
+// Something that won't occur naturally, so that
+// COPROC c = 0;
+// will give a compile error, rather than creating a COPROC
+// using a dummy COPROC(int) constructor
+//
+typedef enum DUMMY_ENUM{DUMMY=0} DUMMY_TYPE;
 
 struct TIME_STATS {
     double now;
@@ -326,7 +338,6 @@ struct TIME_STATS {
     double total_gpu_active_duration;
         // time GPU computation allowed
 
-    void write(MIOFILE&);
     int parse(XML_PARSER&);
     void print();
     TIME_STATS() {
@@ -387,7 +398,7 @@ struct DEVICE_STATUS {
         battery_temperature_celsius = 0;
         wifi_online = false;
         user_active = false;
-        strcpy(device_name, "");
+        device_name[0] = 0;
     }
 };
 
@@ -412,7 +423,11 @@ struct DEVICE_STATUS {
 // You can define this in "configure" if you want.
 //
 #ifndef LINUX_DEFAULT_DATA_DIR
-#define LINUX_DEFAULT_DATA_DIR      "/var/lib/boinc-client"
+#define LINUX_DEFAULT_DATA_DIR      "/var/lib/boinc"
 #endif
 
+// impementations of Docker
+enum DOCKER_TYPE {NONE, DOCKER, PODMAN};
+
+#endif
 #endif

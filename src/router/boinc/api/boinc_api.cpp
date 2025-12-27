@@ -90,6 +90,7 @@
 #include "config.h"
 #include <cstdlib>
 #include <cstring>
+#include <string>
 #include <cstdio>
 #include <cstdarg>
 #include <sys/types.h>
@@ -123,6 +124,7 @@
 #include "boinc_api.h"
 
 using std::vector;
+using std::string;
 
 //#define VERBOSE
     // enable a bunch of fprintfs to stderr
@@ -283,7 +285,7 @@ char* boinc_msg_prefix(char* sbuf, int len) {
         strlcpy(sbuf, "localtime() failed", len);
         return sbuf;
     }
-    if (strftime(buf, sizeof(buf)-1, "%F %H:%M:%S", tmp) == 0) {
+    if (strftime(buf, sizeof(buf)-1, "%Y-%m-%d %H:%M:%S", tmp) == 0) {
         strlcpy(sbuf, "strftime() failed", len);
         return sbuf;
     }
@@ -796,6 +798,40 @@ int boinc_get_status(BOINC_STATUS *s) {
     return 0;
 }
 
+// Resolve virtual name (in slot dir) to physical path (in project dir).
+// Cases:
+// - Windows and pre-6.12 Unix:
+//   virtual name refers to a "soft link" (XML file acting as symbolic link)
+// - 6.12+ Unix:
+//   virtual name is a symbolic link
+// - Standalone: physical path is same as virtual name
+//
+int boinc_resolve_filename(
+    const char *virtual_name, char *physical_name, int len
+) {
+    return resolve_soft_link(virtual_name, physical_name, len);
+}
+
+// same, std::string version
+//
+int boinc_resolve_filename_s(const char *virtual_name, string& physical_name) {
+    char buf[512], *p;
+    if (!virtual_name) return ERR_NULL;
+    physical_name = virtual_name;
+#ifndef _WIN32
+    if (is_symlink(virtual_name)) {
+        return 0;
+    }
+#endif
+    FILE *fp = boinc_fopen(virtual_name, "r");
+    if (!fp) return 0;
+    buf[0] = 0;
+    p = fgets(buf, 512, fp);
+    fclose(fp);
+    if (p) parse_str(buf, "<soft_link>", physical_name);
+    return 0;
+}
+
 // if we have any new trickle-ups or file upload requests,
 // send a message describing them
 //
@@ -1052,7 +1088,8 @@ int boinc_report_app_status_aux(
     double _fraction_done,
     int other_pid,
     double _bytes_sent,
-    double _bytes_received
+    double _bytes_received,
+    double wss
 ) {
     char msg_buf[MSG_CHANNEL_SIZE], buf[1024];
     if (standalone) return 0;
@@ -1081,6 +1118,10 @@ int boinc_report_app_status_aux(
         sprintf(buf, "<sporadic_ac>%d</sporadic_ac>\n", ac_state);
         strlcat(msg_buf, buf, sizeof(msg_buf));
     }
+    if (wss) {
+        sprintf(buf, "<wss>%f</wss>\n", wss);
+        strlcat(msg_buf, buf, sizeof(msg_buf));
+    }
 #ifdef MSGS_FROM_FILE
     if (fout) {
         fputs(msg_buf, fout);
@@ -1100,7 +1141,7 @@ int boinc_report_app_status(
     double _fraction_done
 ){
     return boinc_report_app_status_aux(
-        cpu_time, checkpoint_cpu_time, _fraction_done, 0, 0, 0
+        cpu_time, checkpoint_cpu_time, _fraction_done, 0, 0, 0, 0
     );
 }
 

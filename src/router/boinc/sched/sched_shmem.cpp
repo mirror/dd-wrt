@@ -28,6 +28,7 @@
 #include <sys/param.h>
 
 using std::vector;
+using std::string;
 
 #include "boinc_db.h"
 #include "error_numbers.h"
@@ -38,7 +39,6 @@ using std::vector;
 #include "sched_types.h"
 #include "sched_util.h"
 #include "sched_shmem.h"
-
 
 void SCHED_SHMEM::init(int nwu_results) {
     int size = sizeof(SCHED_SHMEM) + nwu_results*sizeof(WU_RESULT);
@@ -107,6 +107,8 @@ static void overflow(const char* table, const char* param_name) {
     exit(1);
 }
 
+// scan various DB tables and populate shared-memory arrays
+//
 int SCHED_SHMEM::scan_tables() {
     DB_PLATFORM platform;
     DB_APP app;
@@ -392,7 +394,7 @@ void SCHED_SHMEM::show(FILE* f) {
                 "WU ID",
                 "result ID",
                 "batch",
-                "HR class",
+                "kwds",
                 "priority",
                 "in shmem",
                 "size class",
@@ -411,13 +413,13 @@ void SCHED_SHMEM::show(FILE* f) {
             appname = app?app->name:"missing";
             delta_t = dtime() - wu_result.time_added_to_shared_memory;
             boinc::fprintf(f,
-                "%4d %12.12s %10lu %10lu %10d %8d %10d %7ds %9d %12s %9d %9d\n",
+                "%4d %12.12s %10lu %10lu %10d %8s %10d %7ds %9d %12s %9d %9d\n",
                 i,
                 appname,
                 wu_result.workunit.id,
                 wu_result.resultid,
                 wu_result.workunit.batch,
-                wu_result.workunit.hr_class,
+                wu_result.workunit.keywords,
                 wu_result.res_priority,
                 delta_t,
                 wu_result.workunit.size_class,

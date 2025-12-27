@@ -1,6 +1,6 @@
 // This file is part of BOINC.
-// http://boinc.berkeley.edu
-// Copyright (C) 2018 University of California
+// https://boinc.berkeley.edu
+// Copyright (C) 2024 University of California
 //
 // BOINC is free software; you can redistribute it and/or modify it
 // under the terms of the GNU Lesser General Public License
@@ -195,8 +195,16 @@ void CC_CONFIG::show() {
     if (dont_use_vbox) {
         msg_printf(NULL, MSG_INFO, "Config: don't use VirtualBox");
     }
+    if (dont_use_docker) {
+        msg_printf(NULL, MSG_INFO, "Config: don't use Docker");
+    }
     if (dont_use_wsl) {
-        msg_printf(NULL, MSG_INFO, "Config: don't use the Windows Subsystem for Linux");
+        msg_printf(NULL, MSG_INFO, "Config: don't use Windows Subsystem for Linux");
+    }
+    for (string s: disallowed_wsls) {
+        msg_printf(NULL, MSG_INFO,
+            "Config: disallowed WSL distro: %s", s.c_str()
+        );
     }
     for (i=0; i<alt_platforms.size(); i++) {
         msg_printf(NULL, MSG_INFO,
@@ -250,6 +258,12 @@ void CC_CONFIG::show() {
         } else {
             msg_printf(NULL, MSG_INFO, "Config: event log limit disabled");
         }
+    }
+    if (max_overdue_days >= 0) {
+        msg_printf(NULL, MSG_INFO,
+            "Config: abort tasks overdue by > %.2f days",
+            max_overdue_days
+        );
     }
     if (ncpus>0) {
         msg_printf(NULL, MSG_INFO, "Config: simulate %d CPUs", cc_config.ncpus);
@@ -367,6 +381,11 @@ int CC_CONFIG::parse_options_client(XML_PARSER& xp) {
         if (xp.parse_bool("dont_suspend_nci", dont_suspend_nci)) continue;
         if (xp.parse_bool("dont_use_vbox", dont_use_vbox)) continue;
         if (xp.parse_bool("dont_use_wsl", dont_use_wsl)) continue;
+        if (xp.parse_string("disallowed_wsl", s)) {
+            disallowed_wsls.push_back(s);
+            continue;
+        }
+        if (xp.parse_bool("dont_use_docker", dont_use_docker)) continue;
         if (xp.match_tag("exclude_gpu")) {
             EXCLUDE_GPU eg;
             retval = eg.parse(xp);
@@ -427,11 +446,13 @@ int CC_CONFIG::parse_options_client(XML_PARSER& xp) {
         if (xp.parse_int("max_event_log_lines", max_event_log_lines)) continue;
         if (xp.parse_int("max_file_xfers", max_file_xfers)) continue;
         if (xp.parse_int("max_file_xfers_per_project", max_file_xfers_per_project)) continue;
+        if (xp.parse_double("max_overdue_days", max_overdue_days)) continue;
         if (xp.parse_double("max_stderr_file_size", max_stderr_file_size)) continue;
         if (xp.parse_double("max_stdout_file_size", max_stdout_file_size)) continue;
         if (xp.parse_int("max_tasks_reported", max_tasks_reported)) continue;
         if (xp.parse_int("ncpus", ncpus)) continue;
         if (xp.parse_bool("no_alt_platform", no_alt_platform)) continue;
+        if (xp.parse_bool("no_disk_usage", no_disk_usage)) continue;
         if (xp.parse_bool("no_gpus", no_gpus)) continue;
         if (xp.parse_bool("no_info_fetch", no_info_fetch)) continue;
         if (xp.parse_bool("no_opencl", no_opencl)) continue;
@@ -601,10 +622,9 @@ int read_config_file(bool init, const char* fname) {
 //   (used in work fetch)
 // - set PROJECT::rsc_pwf[rsc_type].ncoprocs_excluded
 //   (used in RR sim and work fetch)
-// - set APP_VERSION::coproc_missing for app versions where
+// - set APP_VERSION::missing_coproc for app versions where
 //   all instances are excluded
-// - set RESULT::coproc_missing for results for which
-//   APP_VERSION::coproc_missing is set.
+// - set RESULT::missing_coproc for results of these app versions
 //
 void process_gpu_exclusions() {
     unsigned int i, j, a;
@@ -750,8 +770,8 @@ void process_gpu_exclusions() {
 
     for (i=0; i<gstate.app_versions.size(); i++) {
         APP_VERSION* avp = gstate.app_versions[i];
-        if (avp->missing_coproc) continue;
-        int rt = avp->gpu_usage.rsc_type;
+        if (avp->resource_usage.missing_coproc) continue;
+        int rt = avp->resource_usage.rsc_type;
         if (!rt) continue;
         COPROC& cp = coprocs.coprocs[rt];
         bool found = false;
@@ -762,16 +782,17 @@ void process_gpu_exclusions() {
             }
         }
         if (found) continue;
-        avp->missing_coproc = true;
-        safe_strcpy(avp->missing_coproc_name, "");
+        avp->resource_usage.missing_coproc = true;
+        avp->resource_usage.missing_coproc_name[0] = 0;
         for (j=0; j<gstate.results.size(); j++) {
             RESULT* rp = gstate.results[j];
             if (rp->avp != avp) continue;
-            rp->coproc_missing = true;
             msg_printf(avp->project, MSG_INFO,
                 "marking %s as coproc missing",
                 rp->name
             );
+            rp->resource_usage.missing_coproc = true;
+            rp->resource_usage.missing_coproc_name[0] = 0;
         }
     }
 }

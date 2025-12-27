@@ -23,7 +23,6 @@
 // Object-caching and full-file caching is used to speed up queries
 // for data from this page.
 
-$cvs_version_tracker[]="\$Id$";  //Generated automatically - do not edit
 
 require_once("../inc/cache.inc");
 require_once("../inc/util.inc");
@@ -88,25 +87,38 @@ if ($format=="xml"){
     }
 
     $logged_in_user = get_logged_in_user(false);
+    $myself = $logged_in_user && ($logged_in_user->id == $user->id);
 
     page_head($user->name);
-    start_table();
-    echo "<tr><td valign=top>";
-    start_table("table-striped");
-    show_user_summary_public($user);
-    end_table();
-    project_user_summary($user);
-    show_other_projects($user, false);
-    echo "</td><td valign=top>";
-    start_table("table-striped");
-    show_badges_row(true, $user);
-    if (!DISABLE_PROFILES) {
-        show_profile_link($user);
-    }
-    community_links($community_links, $logged_in_user);
-    end_table();
-    echo "</td></tr>";
-    end_table();
+    grid(
+        false,
+        function() use ($data, $myself) {
+            panel(
+                tra("Account information"),
+                function() use ($data) {
+                    start_table("table-striped");
+                    show_user_summary_public($data->user);
+                    project_user_summary($data->user);
+                    end_table();
+                }
+            );
+            show_other_projects($data->user, $myself);
+        },
+        function() use ($data, $logged_in_user) {
+            panel(
+                tra("Community"),
+                function() use ($data, $logged_in_user) {
+                    start_table("table-striped");
+                    show_badges_row(true, $data->user);
+                    if (!DISABLE_PROFILES) {
+                        show_profile_link($data->user);
+                    }
+                    community_links($data->clo, $logged_in_user);
+                    end_table();
+                }
+            );
+        }
+    );
     page_tail(true);
 }
 

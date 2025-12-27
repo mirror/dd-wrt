@@ -22,7 +22,7 @@
 include_once("../inc/boinc_db.inc");
 include_once("../inc/util.inc");
 include_once("../inc/email.inc");
-include_once("../inc/recaptchalib.php");
+include_once("../inc/recaptchalib.inc");
 require_once("../inc/password_compat/password.inc");
 require_once("../inc/consent.inc");
 
@@ -86,15 +86,19 @@ function is_valid_user_name($name, &$reason) {
         $reason = tra("user name must be nonempty");
         return false;
     }
-    if (sanitize_tags($name) !== $name) {
-        $reason = tra("user name may not contain HTML tags");
+    if (filter_var($name, FILTER_SANITIZE_SPECIAL_CHARS) !== $name) {
+        $reason = tra("user name may not contain special characters");
+        return false;
+    }
+    if (is_numeric($name)) {
+        $reason = tra("user name may not be a number");
         return false;
     }
     return true;
 }
 
 function default_show_hosts() {
-    global $config;
+    $config = get_config();
     // If enable privacy by default is TRUE, then show_hosts' default
     // is FALSE.
     return parse_bool($config, "enable_privacy_by_default") ? 0 : 1;
@@ -106,7 +110,8 @@ function make_user(
     $email_addr, $name, $passwd_hash,
     $country=null, $postal_code=null, $project_prefs=null, $teamid=0
 ) {
-    if (!is_valid_email_addr($email_addr)) return null;
+    if (!is_valid_email_syntax($email_addr)) return null;
+        // caller generally has already checked
     if (is_banned_email_addr($email_addr)) return null;
 
     $authenticator = random_string();
@@ -170,7 +175,6 @@ function show_error($str) {
 // Else return user object
 //
 function validate_post_make_user() {
-    global $recaptcha_private_key;
     $config = get_config();
     if (parse_bool($config, "disable_account_creation")
         || parse_bool($config, "no_web_account_creation")
@@ -178,8 +182,8 @@ function validate_post_make_user() {
         error_page("Account creation is disabled");
     }
 
-    if ($recaptcha_private_key) {
-        if (!boinc_recaptcha_isValidated($recaptcha_private_key)) {
+    if (recaptcha_private_key()) {
+        if (!boinc_recaptcha_isValidated(recaptcha_private_key())) {
             show_error(
                 tra("Your reCAPTCHA response was not correct. Please try again.")
             );
@@ -206,7 +210,7 @@ function validate_post_make_user() {
         $team = BoincTeam::lookup_id($teamid);
         $clone_user = BoincUser::lookup_id($team->userid);
         if (!$clone_user) {
-            error_page("User $userid not found");
+            error_page("User $team->userid not found");
         }
         $project_prefs = $clone_user->project_prefs;
     } else {
@@ -228,15 +232,37 @@ function validate_post_make_user() {
     if (!is_valid_user_name($new_name, $reason)) {
         show_error($reason);
     }
+    if (UNIQUE_USER_NAME) {
+        $u = BoincUser::lookup_name($new_name);
+        if ($u) {
+            page_head("That name is in use");
+            echo "<p>The following user names are taken;
+                please go back and use a different one.<p>
+            ";
+            $users = BoincUser::enum(
+                sprintf("name like '%s%%'", $new_name)
+            );
+            foreach ($users as $u){
+                echo "<p>$u->name\n";
+            }
+            page_tail();
+            exit;
+        }
+    }
 
     $new_email_addr = strtolower(post_str("new_email_addr"));
-    if (!is_valid_email_addr($new_email_addr)) {
+    if (!is_valid_email_syntax($new_email_addr)) {
         show_error(tra("Invalid email address: please enter a valid address of the form name@xxx.yyy"));
     }
+    if (!is_valid_email_sfs($new_email_addr)) {
+        show_error("$new_email_addr was flagged by stopforumspam.com");
+    }
+
     $user = BoincUser::lookup_email_addr($new_email_addr);
     if ($user) {
         show_error(tra("There's already an account with that email address."));
     }
+
     $tmpuser = BoincUser::lookup_prev_email_addr($new_email_addr);
     if ($tmpuser) {
         show_error(tra("There's already an account with that email address."));

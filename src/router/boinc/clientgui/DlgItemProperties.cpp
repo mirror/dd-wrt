@@ -1,6 +1,6 @@
 // This file is part of BOINC.
 // http://boinc.berkeley.edu
-// Copyright (C) 2008 University of California
+// Copyright (C) 2024 University of California
 //
 // BOINC is free software; you can redistribute it and/or modify it
 // under the terms of the GNU Lesser General Public License
@@ -345,6 +345,12 @@ void CDlgItemProperties::renderInfos(PROJECT* project_in) {
                 project->rsc_desc_intel_gpu
             );
         }
+        if (pDoc->state.host_info.coprocs.have_apple_gpu()) {
+            show_rsc(
+                wxString(proc_type_name(PROC_TYPE_APPLE_GPU), wxConvUTF8),
+                project->rsc_desc_apple_gpu
+            );
+        }
         double dcf = project->duration_correction_factor;
         // if it's exactly 1, it's not being used
         //
@@ -446,6 +452,8 @@ void CDlgItemProperties::renderInfos(RESULT* result) {
     }
     if (avp) {
         addProperty(_("Executable"), wxString(avp->exec_filename, wxConvUTF8));
+        addProperty(_("Application Name"), wxString(avp->app_name, wxConvUTF8));
+        addProperty(_("Plan Class"), wxString(avp->plan_class, wxConvUTF8));
     }
     renderInfos();
 }

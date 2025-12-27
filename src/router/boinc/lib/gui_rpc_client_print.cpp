@@ -72,7 +72,7 @@ void GUI_URL::print() {
 
 void PROJECT::print_disk_usage() {
     printf("   master URL: %s\n", master_url);
-    printf("   disk usage: %.2fMB\n", disk_usage/MEGA);
+    printf("   disk usage: %.2fGB\n", disk_usage/GIGA);
 }
 
 void PROJECT::print() {
@@ -96,7 +96,7 @@ void PROJECT::print() {
     printf("   ended: %s\n", ended?"yes":"no");
     printf("   suspended via GUI: %s\n", suspended_via_gui?"yes":"no");
     printf("   don't request more work: %s\n", dont_request_more_work?"yes":"no");
-    printf("   disk usage: %.2fMB\n", disk_usage/MEGA);
+    printf("   disk usage: %.2fGB\n", disk_usage/GIGA);
     time_t foo = (time_t)last_rpc_time;
     printf("   last RPC: %s\n", ctime(&foo));
     printf("   project files downloaded: %f\n", project_files_downloaded_time);
@@ -134,6 +134,7 @@ void APP_VERSION::print() {
 }
 
 void WORKUNIT::print() {
+    printf("   project: %s\n", project->project_name.c_str());
     printf("   name: %s\n", name);
     printf("   FP estimate: %e\n", rsc_fpops_est);
     printf("   FP bound: %e\n", rsc_fpops_bound);
@@ -151,7 +152,11 @@ void WORKUNIT::print() {
 void RESULT::print() {
     printf("   name: %s\n", name);
     printf("   WU name: %s\n", wu_name);
-    printf("   project URL: %s\n", project_url);
+    if (project) {
+        printf("   project: %s\n", project->project_name.c_str());
+    } else {
+        printf("   project URL: %s\n", project_url);
+    }
     time_t foo = (time_t)received_time;
     printf("   received: %s", ctime(&foo));
     foo = (time_t)report_deadline;
@@ -293,7 +298,7 @@ void HOST_INFO::print() {
         }
         if (ci.have_opencl) {
             ci.opencl_prop.peak_flops = ci.peak_flops;
-            ci.opencl_prop.opencl_available_ram = ci.opencl_prop.global_mem_size;
+            ci.opencl_prop.opencl_available_ram = (double)ci.opencl_prop.global_mem_size;
             ci.opencl_prop.is_used = COPROC_USED;
             ci.opencl_prop.description(buf, sizeof(buf), "Intel GPU");
             printf("    %s\n", buf);
@@ -307,7 +312,7 @@ void HOST_INFO::print() {
         }
         if (cap.have_opencl) {
             cap.opencl_prop.peak_flops = cap.peak_flops;
-            cap.opencl_prop.opencl_available_ram = cap.opencl_prop.global_mem_size;
+            cap.opencl_prop.opencl_available_ram = (double)cap.opencl_prop.global_mem_size;
             cap.opencl_prop.is_used = COPROC_USED;
             cap.opencl_prop.description(buf, sizeof(buf), "Apple GPU");
             printf("    %s\n", buf);
@@ -441,8 +446,8 @@ void PROJECTS::print_urls() {
 void DISK_USAGE::print() {
     unsigned int i;
     printf("======== Disk usage ========\n");
-    printf("total: %.2fMB\n", d_total/MEGA);
-    printf("free: %.2fMB\n", d_free/MEGA);
+    printf("total: %.2fGB\n", d_total/GIGA);
+    printf("free: %.2fGB\n", d_free/GIGA);
     for (i=0; i<projects.size(); i++) {
         printf("%d) -----------\n", i+1);
         projects[i]->print_disk_usage();
@@ -502,8 +507,8 @@ void OLD_RESULT::print() {
         "   app name: %s\n"
         "   exit status: %d\n"
         "   elapsed time: %f sec\n"
-        "   completed time: %s\n"
-        "   reported time: %s\n",
+        "   task completed: %s\n"
+        "   acked by project: %s\n",
         result_name,
         project_url,
         app_name,

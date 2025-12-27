@@ -31,7 +31,7 @@ function make_login_token($user) {
         $user->update("login_token_time=$now");
         return $user->login_token;
     }
-    $token = substr(random_string(), 0, 8);
+    $token = substr(random_string(), 0, 16);
     $user->update("login_token='$token', login_token_time=$now");
     return $token;
 }
@@ -58,7 +58,6 @@ function toggle_passwd() {
 }
 
 function create_account_form($teamid, $next_url) {
-    global $recaptcha_public_key;
     form_input_hidden('next_url', $next_url);
 
     if ($teamid) {

@@ -51,6 +51,8 @@
 using std::string;
 using std::vector;
 
+//#define SHOW_MSGS
+
 RPC_CLIENT::RPC_CLIENT() {
     sock = -1;
     start_time = 0;
@@ -102,19 +104,19 @@ int RPC_CLIENT::get_ip_addr(const char* host, int port) {
         sin->sin_addr.s_addr = htonl(INADDR_LOOPBACK);
     }
     if (port) {
-        port = htons(port);
+        port = (int)htons((uint16_t)port);
     } else {
-        port = htons(GUI_RPC_PORT);
+        port = (int)htons(GUI_RPC_PORT);
     }
 #ifdef _WIN32
     addr.sin_port = port;
 #else
     if (addr.ss_family == AF_INET) {
         sockaddr_in* sin = (sockaddr_in*)&addr;
-        sin->sin_port = port;
+        sin->sin_port = (in_port_t)port;
     } else {
         sockaddr_in6* sin = (sockaddr_in6*)&addr;
-        sin->sin6_port = port;
+        sin->sin6_port = (in_port_t)port;
     }
 #endif
     return 0;
@@ -307,7 +309,7 @@ int RPC_CLIENT::send_request(const char* p) {
     buf = "<boinc_gui_rpc_request>\n";
     buf += p;
     buf += "</boinc_gui_rpc_request>\n\003";
-    int n = send(sock, buf.c_str(), (int)buf.size(), 0);
+    int n = (int)send(sock, buf.c_str(), (int)buf.size(), 0);
     if (n < 0) {
         //printf("send: %d\n", n);
         //perror("send");
@@ -325,7 +327,7 @@ int RPC_CLIENT::get_reply(char*& mbuf) {
 
     mf.puts("");    // make sure buffer is non-NULL
     while (1) {
-        n = recv(sock, buf, 8192, 0);
+        n = (int) recv(sock, buf, 8192, 0);
         if (n <= 0) return ERR_READ;
         buf[n]=0;
         mf.puts(buf);
@@ -352,7 +354,7 @@ int RPC::do_rpc(const char* req) {
 
     //fprintf(stderr, "RPC::do_rpc rpc_client->sock = '%d'", rpc_client->sock);
     if (rpc_client->sock == -1) return ERR_CONNECT;
-#ifdef DEBUG
+#ifdef SHOW_MSGS
     puts(req);
 #endif
     retval = rpc_client->send_request(req);
@@ -360,7 +362,7 @@ int RPC::do_rpc(const char* req) {
     retval = rpc_client->get_reply(mbuf);
     if (retval) return retval;
     fin.init_buf_read(mbuf);
-#ifdef DEBUG
+#ifdef SHOW_MSGS
     puts(mbuf);
 #endif
     return 0;
@@ -407,7 +409,7 @@ int RPC::parse_reply() {
 // Linux: look in:
 //  - current dir
 //  - a directory specified in /etc/boinc-client/config.properties
-//  - /var/lib/boinc-client
+//  - /var/lib/boinc
 //
 // Note: the Manager (on all platforms) has a -datadir cmdline option.
 // If present, it chdirs to that directory.

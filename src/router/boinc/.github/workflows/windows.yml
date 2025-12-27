@@ -1,6 +1,6 @@
 # This file is part of BOINC.
 # http://boinc.berkeley.edu
-# Copyright (C) 2023 University of California
+# Copyright (C) 2025 University of California
 #
 # BOINC is free software; you can redistribute it and/or modify it
 # under the terms of the GNU Lesser General Public License
@@ -19,7 +19,7 @@ name: Windows
 on:
   push:
     branches: [ master, 'client_release/**' ]
-    tags: [ 'client_release/**', 'vboxwrapper/**', 'wrapper/**' ]
+    tags: [ 'client_release/**', 'vboxwrapper/**', 'wrapper/**', 'dockerwrapper/**', 'wslwrapper/**', 'worker/**' ]
   pull_request:
     branches: [ master ]
   schedule:
@@ -33,37 +33,45 @@ env:
   AWS_ACCESS_KEY_ID: ${{secrets.S3_ACCESS_KEY}}
   AWS_SECRET_ACCESS_KEY: ${{secrets.S3_SECRET_KEY}}
   AWS_DEFAULT_REGION: us-west-2
+  AZURE_CLIENT_ID: ${{secrets.AZURE_CLIENT_ID}}
+  AZURE_CLIENT_SECRET: ${{secrets.AZURE_CLIENT_SECRET}}
+  AZURE_TENANT_ID: ${{secrets.AZURE_TENANT_ID}}
+  AZURE_ENDPOINT: ${{secrets.AZURE_ENDPOINT}}
+  AZURE_CODE_SIGNING_NAME: ${{secrets.AZURE_CODE_SIGNING_NAME}}
+  AZURE_CERT_PROFILE_NAME: ${{secrets.AZURE_CERT_PROFILE_NAME}}
+  TSCT: ${{github.workspace}}\temp\TSCT
+  DLIB: ${{github.workspace}}\temp\TSCT\Microsoft.Trusted.Signing.Client\bin\x64\Azure.CodeSigning.Dlib.dll
+  DMDF: ${{github.workspace}}\metadata.json
+  OpenCppCoverageVersion: 0.9.9.0
 
 jobs:
-  build:
-    name: ${{matrix.configuration}}-${{matrix.platform}}-${{matrix.type}}
-    runs-on: windows-2022
+  msbuild:
+    name: ${{matrix.configuration}}-${{matrix.platform}}-msbuild
+    runs-on: windows-latest
     strategy:
       matrix:
-        type: [libs-cmake, msbuild]
-        platform: [x64, ARM64]
-        configuration: [Release]
+        platform: [x64, arm64]
+        configuration: [Release, Debug]
       fail-fast: false
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
-      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+      - uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3
         with:
           fetch-depth: 2
 
       - name: Download OpenCppCoverage
-        uses: suisei-cn/actions-download-file@818d6b7dc8fe73f2f924b6241f2b1134ca1377d9
-        if: success() && matrix.platform == 'x64'
+        uses: suisei-cn/actions-download-file@9f75b8c2dad5ccced7509c44a3b881c5613abde2
+        if: success() && matrix.platform == 'x64' && matrix.configuration == 'Release'
         id: DownloadOpenCppCoverage
         with:
-          url: "https://opencppcoverage.gallerycdn.vsassets.io/extensions/opencppcoverage/opencppcoverageplugin/0.9.7.1/1581265346391/OpenCppCoverage-0.9.7.1.vsix"
+          url: "https://github.com/OpenCppCoverage/OpenCppCoverage/releases/download/release-${{ env.OpenCppCoverageVersion }}/OpenCppCoverageSetup-x64-${{ env.OpenCppCoverageVersion }}.exe"
           target: ${{github.workspace}}\temp\
 
-      - name: Unzip OpenCppCoverage
-        if: success() && matrix.platform == 'x64'
-        uses: DuckSoft/extract-7z-action@6eaaa506b410f047eaa9b22498696aad1e19a834
-        with:
-          pathSource: ${{github.workspace}}\temp\OpenCppCoverage-0.9.7.1.vsix
-          pathTarget: ${{github.workspace}}\temp\OpenCppCoverage
+      - name: Install OpenCppCoverage
+        if: success() && matrix.platform == 'x64' && matrix.configuration == 'Release'
+        shell: powershell
+        run: |
+          Start-Process "${{github.workspace}}\temp\OpenCppCoverageSetup-x64-${{ env.OpenCppCoverageVersion }}.exe" -ArgumentList "/verysilent /dir=${{github.workspace}}\temp\OpenCppCoverage" -Wait
 
       - name: Setup msbuild
         uses: microsoft/setup-msbuild@6fb02220983dee41ce7ae257b6f4d8f9bf5ed4ce
@@ -82,24 +90,60 @@ jobs:
         run: vcpkg.exe integrate remove
 
       - name: Cache dependencies
-        uses: actions/cache@0c45773b623bea8c8e75f6c82b208c3cf94ea4f9
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830
         with:
           path: |
             ${{github.workspace}}\3rdParty\Windows\cuda\
           key: windows-${{matrix.platform}}-${{matrix.configuration}}-${{hashFiles('win_build/vcpkg_3rdparty_dependencies.vcxproj', '.github/workflows/windows.yml')}}
 
+      - name: Install Trusted Signing Client Tools
+        if: success() && matrix.configuration == 'Release' && startsWith(github.ref, 'refs/tags/') && env.AZURE_CLIENT_ID != 0 && env.AZURE_CLIENT_SECRET != 0 && env.AZURE_TENANT_ID != 0 && env.AZURE_ENDPOINT != 0 && env.AZURE_CODE_SIGNING_NAME != 0 && env.AZURE_CERT_PROFILE_NAME != 0
+        run: nuget.exe install Microsoft.Trusted.Signing.Client -Version 1.0.60 -x -OutputDirectory "${{ env.TSCT }}"
+
+      - name: Write metadata.json
+        if: success() && matrix.configuration == 'Release' && startsWith(github.ref, 'refs/tags/') && env.AZURE_CLIENT_ID != 0 && env.AZURE_CLIENT_SECRET != 0 && env.AZURE_TENANT_ID != 0 && env.AZURE_ENDPOINT != 0 && env.AZURE_CODE_SIGNING_NAME != 0 && env.AZURE_CERT_PROFILE_NAME != 0
+        run: |
+          python ./ci_tools/create_signing_metadata.py "${{ env.DMDF }}" "${{ env.AZURE_ENDPOINT }}" "${{ env.AZURE_CODE_SIGNING_NAME }}" "${{ env.AZURE_CERT_PROFILE_NAME }}"
+
+      - name: Install MsiVal2 and Orca tools
+        if: success() && !startsWith(github.ref, 'refs/tags/') && matrix.configuration == 'Release'
+        shell: powershell
+        run: |
+          md -Force ./temp
+          cp 'C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\x86\MsiVal2-x86_en-us.msi' ./temp/
+          cp 'C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\x86\8e4755178e6b5bcba8d3538c3630b7a5.cab' ./temp/
+          cp 'C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\x86\b80b7321357f7c9f281536f9440dfe68.cab' ./temp/
+          cp 'C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\x86\c2aabf6ea5c1d348ec22f3aeb92f8656.cab' ./temp/
+          cp 'C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\x86\Orca-x86_en-us.msi' ./temp/
+          cp 'C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\x86\838060235bcd28bf40ef7532c50ee032.cab' ./temp/
+          cp 'C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\x86\a35cd6c9233b6ba3da66eecaa9190436.cab' ./temp/
+          cp 'C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\x86\fe38b2fd0d440e3c6740b626f51a22fc.cab' ./temp/
+          Start-Process "msiexec.exe" -ArgumentList "/i temp\MsiVal2-x86_en-us.msi" -Wait
+          Start-Process "msiexec.exe" -ArgumentList "/i temp\Orca-x86_en-us.msi" -Wait
+
       - name: Build
-        if: success() && matrix.type == 'msbuild'
-        run: msbuild win_build\boinc.sln -p:Configuration=${{matrix.configuration}} -p:Platform=${{matrix.platform}} -p:VcpkgTripletConfig=ci -m
+        if: success()
+        run: msbuild win_build\boinc.sln -p:Configuration=${{matrix.configuration}} -p:Platform=${{matrix.platform}} -p:VcpkgTripletConfig=ci -p:DLIB=${{ env.DLIB }} -p:DMDF=${{ env.DMDF }} -m
 
-      - name: Build CMake
-        if: success() && matrix.type == 'libs-cmake'
-        run: windows\ci_build_libs_cmake.bat ${{matrix.platform}} ${{matrix.configuration}}
-
-      - name: Run tests
-        if: success() && matrix.platform == 'x64' && matrix.type == 'msbuild'
+      - name: Run unit tests
+        if: success() && matrix.platform == 'x64' && matrix.configuration == 'Release'
         working-directory: win_build\Build\${{matrix.platform}}\${{matrix.configuration}}
-        run: ${{github.workspace}}\temp\OpenCppCoverage\OpenCppCoverage-x64\OpenCppCoverage.exe --cover_children --optimized_build --sources ${{github.workspace}} --export_type=cobertura:cobertura.xml -- unittests.exe --gtest_output=xml:gtest.xml
+        run: |
+          ${{github.workspace}}\temp\OpenCppCoverage\OpenCppCoverage.exe --cover_children --optimized_build --sources ${{github.workspace}} --export_type=binary:gtest.cov -- unittests.exe --gtest_output=xml:gtest.xml
+          ${{github.workspace}}\temp\OpenCppCoverage\OpenCppCoverage.exe --cover_children --optimized_build --modules ${{github.workspace}} --sources ${{github.workspace}} --input_coverage=gtest.cov --export_type=cobertura:cobertura.xml -- python ${{github.workspace}}\tests\crypt_prog_tests.py ${{github.workspace}}\win_build\Build\x64\${{matrix.configuration}}\crypt_prog.exe
+
+      - name: Verify MSI file
+        if: success() && !startsWith(github.ref, 'refs/tags/') && matrix.configuration == 'Release'
+        run: python ./tests/msi_validation.py "C:\Program Files (x86)\MsiVal2\MsiVal2.exe" "${{github.workspace}}\win_build\Build\${{matrix.platform}}\${{matrix.configuration}}\boinc.msi" "${{github.workspace}}\installer\darice.cub"
+
+      - name: Run installation
+        if: success() && matrix.platform == 'x64' && matrix.configuration == 'Release'
+        shell: powershell
+        run: Start-Process "msiexec.exe" -ArgumentList "/i ${{github.workspace}}\win_build\Build\x64\${{matrix.configuration}}\boinc.msi /quiet /qn /l*v ${{github.workspace}}\win_build\Build\x64\${{matrix.configuration}}\install.log" -Wait
+
+      - name: Run installation tests
+        if: success() && matrix.platform == 'x64' && matrix.configuration == 'Release'
+        run: python ./tests/windows_installer_integration_tests.py
 
       - name: Prepare logs on failure
         if: ${{failure()}}
@@ -108,13 +152,13 @@ jobs:
 
       - name: Upload logs on failure
         if: ${{failure()}}
-        uses: actions/upload-artifact@0b2256b8c012f0828dc542b3febcab082c67f72b
+        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4
         with:
-          name: windows_logs_${{matrix.type}}_${{github.event.pull_request.head.sha}}
+          name: windows_logs_msbuild_${{matrix.platform}}_${{matrix.configuration}}_${{github.event.pull_request.head.sha}}
           path: deploy/logs.7z
 
       - name: Prepare artifacts for deploy
-        if: success() && matrix.type == 'msbuild'
+        if: success() && matrix.configuration == 'Release'
         shell: cmd
         run: |
           python deploy\prepare_deployment.py win_apps
@@ -123,52 +167,95 @@ jobs:
           python deploy\prepare_deployment.py win_installer
 
       - name: Upload apps
-        if: success() && matrix.type == 'msbuild'
-        uses: actions/upload-artifact@0b2256b8c012f0828dc542b3febcab082c67f72b
+        if: success() && matrix.configuration == 'Release'
+        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4
         with:
           name: win_apps_${{matrix.platform}}_${{github.event.pull_request.head.sha}}
           path: deploy/win_apps.7z
 
       - name: Upload client
-        if: success() && matrix.type == 'msbuild'
-        uses: actions/upload-artifact@0b2256b8c012f0828dc542b3febcab082c67f72b
+        if: success() && matrix.configuration == 'Release'
+        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4
         with:
           name: win_client_${{matrix.platform}}_${{github.event.pull_request.head.sha}}
           path: deploy/win_client.7z
 
       - name: Upload manager
-        if: success() && matrix.type == 'msbuild'
-        uses: actions/upload-artifact@0b2256b8c012f0828dc542b3febcab082c67f72b
+        if: success() && matrix.configuration == 'Release'
+        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4
         with:
           name: win_manager_${{matrix.platform}}_${{github.event.pull_request.head.sha}}
           path: deploy/win_manager.7z
 
       - name: Upload installer files
-        if: success() && matrix.type == 'msbuild'
-        uses: actions/upload-artifact@0b2256b8c012f0828dc542b3febcab082c67f72b
+        if: success() && matrix.configuration == 'Release'
+        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4
         with:
           name: win_installer_${{matrix.platform}}_${{github.event.pull_request.head.sha}}
           path: deploy/win_installer.7z
 
       - name: Upload symbol files
-        if: success() && matrix.type == 'msbuild'
-        uses: actions/upload-artifact@0b2256b8c012f0828dc542b3febcab082c67f72b
+        if: success() && matrix.configuration == 'Release'
+        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4
         with:
           name: win_pdb_${{matrix.platform}}_${{github.event.pull_request.head.sha}}
           path: win_build/Build/${{matrix.platform}}/${{matrix.configuration}}/*.pdb
 
       - name: Upload Google Tests Results
-        if: always() && matrix.platform == 'x64' && matrix.type == 'msbuild'
-        uses: actions/upload-artifact@0b2256b8c012f0828dc542b3febcab082c67f72b
+        if: always() && matrix.platform == 'x64' && matrix.configuration == 'Release'
+        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4
         with:
           name: Windows_tests_results
           path: "win_build/Build/${{matrix.platform}}/${{matrix.configuration}}/**/gtest.xml"
 
       - name: Upload coverage report
-        if: success() && matrix.platform == 'x64' && matrix.type == 'msbuild'
-        uses: codecov/codecov-action@e28ff129e5465c2c0dcc6f003fc735cb6ae0c673
+        if: success() && matrix.platform == 'x64' && matrix.configuration == 'Release'
+        uses: codecov/codecov-action@5a1091511ad55cbe89839c7260b706298ca349f7
         env:
-          CODECOV_TOKEN: ${{secrets.CODECOV_TOKEN}}
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+
+  cmake:
+    name: ${{matrix.configuration}}-${{matrix.platform}}-cmake
+    runs-on: windows-latest
+    strategy:
+      matrix:
+        platform: [x64, arm64]
+        configuration: [Release, Debug]
+      fail-fast: false
+    steps:
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3
         with:
-          fail_ci_if_error: true
-          verbose: false
+          fetch-depth: 2
+
+      - name: Setup msbuild
+        uses: microsoft/setup-msbuild@6fb02220983dee41ce7ae257b6f4d8f9bf5ed4ce
+
+      - name: Check if build is running from origin repo
+        if: ${{success() && env.AWS_ACCESS_KEY_ID != 0 && env.AWS_SECRET_ACCESS_KEY != 0}}
+        run: |
+          echo "VCPKG_BINARY_SOURCES=clear;x-aws,s3://vcpkg.cache.boinc/,readwrite" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf-8 -Append
+
+      - name: Check if build is running from fork
+        if: ${{success() && (env.AWS_ACCESS_KEY_ID == 0 || env.AWS_SECRET_ACCESS_KEY == 0)}}
+        run: |
+          echo "VCPKG_BINARY_SOURCES=clear;x-aws-config,no-sign-request;x-aws,s3://vcpkg.cache.boinc/,read" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf-8 -Append
+
+      - name: Fix vcpkg
+        run: vcpkg.exe integrate remove
+
+      - name: Build
+        if: success()
+        run: windows\ci_build_libs_cmake.bat ${{matrix.platform}} ${{matrix.configuration}}
+
+      - name: Prepare logs on failure
+        if: ${{failure()}}
+        run: |
+          python ./deploy/prepare_deployment.py logs
+
+      - name: Upload logs on failure
+        if: ${{failure()}}
+        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4
+        with:
+          name: windows_logs_cmake_${{matrix.platform}}_${{matrix.configuration}}_${{github.event.pull_request.head.sha}}
+          path: deploy/logs.7z

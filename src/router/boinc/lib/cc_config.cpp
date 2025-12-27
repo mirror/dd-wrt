@@ -1,6 +1,6 @@
 // This file is part of BOINC.
-// http://boinc.berkeley.edu
-// Copyright (C) 2018 University of California
+// https://boinc.berkeley.edu
+// Copyright (C) 2024 University of California
 //
 // BOINC is free software; you can redistribute it and/or modify it
 // under the terms of the GNU Lesser General Public License
@@ -215,6 +215,8 @@ void CC_CONFIG::defaults() {
     dont_suspend_nci = false;
     dont_use_vbox = false;
     dont_use_wsl = false;
+    disallowed_wsls.clear();
+    dont_use_docker = false;
     exclude_gpus.clear();
     exclusive_apps.clear();
     exclusive_gpu_apps.clear();
@@ -235,11 +237,13 @@ void CC_CONFIG::defaults() {
     max_event_log_lines = DEFAULT_MAX_EVENT_LOG_LINES;
     max_file_xfers = 8;
     max_file_xfers_per_project = 2;
+    max_overdue_days = -1;
     max_stderr_file_size = 0;
     max_stdout_file_size = 0;
     max_tasks_reported = 0;
     ncpus = -1;
     no_alt_platform = false;
+    no_disk_usage = false;
     no_gpus = false;
     no_info_fetch = false;
     no_opencl = false;
@@ -346,7 +350,12 @@ int CC_CONFIG::parse_options(XML_PARSER& xp) {
         if (xp.parse_bool("lower_client_priority", lower_client_priority)) continue;
         if (xp.parse_bool("dont_suspend_nci", dont_suspend_nci)) continue;
         if (xp.parse_bool("dont_use_vbox", dont_use_vbox)) continue;
+        if (xp.parse_bool("dont_use_docker", dont_use_docker)) continue;
         if (xp.parse_bool("dont_use_wsl", dont_use_wsl)) continue;
+        if (xp.parse_string("disallowed_wsl", s)) {
+            disallowed_wsls.push_back(s);
+            continue;
+        }
         if (xp.match_tag("exclude_gpu")) {
             EXCLUDE_GPU eg;
             retval = eg.parse(xp);
@@ -395,14 +404,20 @@ int CC_CONFIG::parse_options(XML_PARSER& xp) {
             ignore_gpu_instance[PROC_TYPE_INTEL_GPU].push_back(n);
             continue;
         }
+        if (xp.parse_int("ignore_apple_dev", n)) {
+            ignore_gpu_instance[PROC_TYPE_APPLE_GPU].push_back(n);
+            continue;
+        }
         if (xp.parse_int("max_event_log_lines", max_event_log_lines)) continue;
         if (xp.parse_int("max_file_xfers", max_file_xfers)) continue;
         if (xp.parse_int("max_file_xfers_per_project", max_file_xfers_per_project)) continue;
+        if (xp.parse_double("max_overdue_days", max_overdue_days)) continue;
         if (xp.parse_double("max_stderr_file_size", max_stderr_file_size)) continue;
         if (xp.parse_double("max_stdout_file_size", max_stdout_file_size)) continue;
         if (xp.parse_int("max_tasks_reported", max_tasks_reported)) continue;
         if (xp.parse_int("ncpus", ncpus)) continue;
         if (xp.parse_bool("no_alt_platform", no_alt_platform)) continue;
+        if (xp.parse_bool("no_disk_usage", no_disk_usage)) continue;
         if (xp.parse_bool("no_gpus", no_gpus)) continue;
         if (xp.parse_bool("no_info_fetch", no_info_fetch)) continue;
         if (xp.parse_bool("no_opencl", no_opencl)) continue;
@@ -559,15 +574,24 @@ int CC_CONFIG::write(MIOFILE& out, LOG_FLAGS& log_flags) {
         "        <lower_client_priority>%d</lower_client_priority>\n"
         "        <dont_suspend_nci>%d</dont_suspend_nci>\n"
         "        <dont_use_vbox>%d</dont_use_vbox>\n"
-        "        <dont_use_wsl>%d</dont_use_wsl>\n",
+        "        <dont_use_wsl>%d</dont_use_wsl>\n"
+        "        <dont_use_docker>%d</dont_use_docker>\n",
         disallow_attach,
         dont_check_file_sizes,
         dont_contact_ref_site,
         lower_client_priority,
         dont_suspend_nci,
         dont_use_vbox,
-        dont_use_wsl
+        dont_use_wsl,
+        dont_use_docker
     );
+
+    for (i=0; i<disallowed_wsls.size(); ++i) {
+        out.printf(
+            "        <disallowed_wsl>%s</disallowed_wsl>\n",
+            disallowed_wsls[i].c_str()
+        );
+    }
 
     for (i=0; i<exclude_gpus.size(); i++) {
         exclude_gpus[i].write(out);
@@ -633,11 +657,13 @@ int CC_CONFIG::write(MIOFILE& out, LOG_FLAGS& log_flags) {
         "        <max_event_log_lines>%d</max_event_log_lines>\n"
         "        <max_file_xfers>%d</max_file_xfers>\n"
         "        <max_file_xfers_per_project>%d</max_file_xfers_per_project>\n"
+        "        <max_overdue_days>%f</max_overdue_days>\n"
         "        <max_stderr_file_size>%f</max_stderr_file_size>\n"
         "        <max_stdout_file_size>%f</max_stdout_file_size>\n"
         "        <max_tasks_reported>%d</max_tasks_reported>\n"
         "        <ncpus>%d</ncpus>\n"
         "        <no_alt_platform>%d</no_alt_platform>\n"
+        "        <no_disk_usage>%d</no_disk_usage>\n"
         "        <no_gpus>%d</no_gpus>\n"
         "        <no_info_fetch>%d</no_info_fetch>\n"
         "        <no_opencl>%d</no_opencl>\n"
@@ -649,11 +675,13 @@ int CC_CONFIG::write(MIOFILE& out, LOG_FLAGS& log_flags) {
         max_event_log_lines,
         max_file_xfers,
         max_file_xfers_per_project,
+        max_overdue_days,
         max_stderr_file_size,
         max_stdout_file_size,
         max_tasks_reported,
         ncpus,
         no_alt_platform,
+        no_disk_usage,
         no_gpus,
         no_info_fetch,
         no_opencl,

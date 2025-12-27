@@ -41,7 +41,7 @@ function team_search_form($params) {
     row2(
         tra('Key words').'<br><small>'.tra('Find teams with these words in their names or descriptions').'</small>',
         '<input class="form-control" type="text" name="keywords" value="' . htmlspecialchars($params->keywords) . '">');
-    row2_init(tra('Country'), '');
+    row2_init(tra('Country'));
     echo '<select class="form-control" name="country"><option value="" selected>---</option>';
     $country = $params->country;
     if (!$country || $country == 'None') $country = "XXX";
@@ -86,7 +86,6 @@ function display_team_page($team, $user) {
     global $team_name_sites;
     page_head("$team->name");
 
-    echo sanitize_html($team->name_html);
     echo "<p>";
     start_table();
     row1(tra('Team info'));
@@ -188,13 +187,15 @@ function display_team_page($team, $user) {
     if (count($team->new_members)) {
         $first = true;
         $x = "";
-        foreach ($team->new_members as $a) {
+        foreach ($team->new_members as $id) {
+            $u = BoincUser::lookup_id($id);
+            if (!$u) continue;
             if ($first) {
                 $first = false;
             } else {
                 $x .= " &middot; ";
             }
-            $x .= user_links($a, BADGE_HEIGHT_MEDIUM);
+            $x .= user_links($u, BADGE_HEIGHT_MEDIUM);
         }
     }
     row2(tra('New members in last day'), $x);
@@ -354,7 +355,7 @@ function new_member_list($teamid) {
     foreach ($deltas as $delta) {
         $u = BoincUser::lookup_id($delta->userid);
         if ($u->teamid == $teamid) {
-            $new_members[] = $u;  // they might have later quit
+            $new_members[] = $u->id;  // they might have later quit
         }
     }
     return array_unique($new_members);
@@ -459,7 +460,7 @@ function user_erase_team_delta($user) {
 }
 
 function team_edit_form($team, $label, $url) {
-    global $team_types, $recaptcha_public_key;
+    global $team_types;
     echo "<form method=post action=$url>\n";
     if ($team) {
         echo "<input type=hidden name=teamid value=$team->id>\n";
@@ -497,24 +498,27 @@ function team_edit_form($team, $label, $url) {
 
     row2(tra('Type of team').':', team_type_select($team?$team->type:null));
 
-    row2_init(tra('Country'),
-        '<select class="form-control" name="country">'
-    );
+    row2_init(tra('Country'));
+    echo '<select class="form-control" name="country">';
     echo country_select_options($team?$team->country:null);
-
     echo "</select></td></tr>\n";
+
     $x = (!$team || $team->joinable)?"checked":"";
     row2(tra("Accept new members?"), "<input type=checkbox name=joinable $x>");
     // Check if we're using reCaptcha to prevent spam accounts
     //
-    if (!$team && $recaptcha_public_key) {
+    if (!$team && recaptcha_public_key()) {
         row2(
             "",
-            boinc_recaptcha_get_html($recaptcha_public_key)
+            boinc_recaptcha_get_html(recaptcha_public_key())
         );
     }
     row2("",
-        "<input class=\"btn btn-success\" type=submit name=new value='$label'>"
+        sprintf(
+            '<input class="btn" %s type=submit name=new value="%s">',
+            button_style(),
+            $label
+        )
     );
     end_table();
     echo "</form>\n";
@@ -630,6 +634,5 @@ function make_team(
     }
 }
 
-$cvs_version_tracker[]="\$Id$";  //Generated automatically - do not edit
 
 ?>

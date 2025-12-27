@@ -177,8 +177,8 @@ void CLIENT_STATE::get_disk_shares() {
     double greedy_allowed = allowed - non_greedy_ddu;
     if (log_flags.disk_usage_debug) {
         msg_printf(0, MSG_INFO,
-            "[disk_usage] allowed %.2fMB used %.2fMB",
-            allowed/MEGA, total_disk_usage/MEGA
+            "[disk_usage] allowed %.2fGB used %.2fGB",
+            allowed/GIGA, total_disk_usage/GIGA
         );
     }
     for (i=0; i<projects.size(); i++) {
@@ -191,8 +191,8 @@ void CLIENT_STATE::get_disk_shares() {
         }
         if (log_flags.disk_usage_debug) {
             msg_printf(p, MSG_INFO,
-                "[disk_usage] usage %.2fMB share %.2fMB",
-                p->disk_usage/MEGA, p->disk_share/MEGA
+                "[disk_usage] usage %.2fGB share %.2fGB",
+                p->disk_usage/GIGA, p->disk_share/GIGA
             );
         }
     }
@@ -229,12 +229,9 @@ int CLIENT_STATE::check_suspend_processing() {
         ) {
             return SUSPEND_REASON_BATTERIES;
         }
-#ifndef ANDROID
-        // perform this check after SUSPEND_REASON_BATTERY_CHARGING on Android
         if (!global_prefs.run_if_user_active && user_active) {
             return SUSPEND_REASON_USER_ACTIVE;
         }
-#endif
         if (global_prefs.cpu_times.suspended(now)) {
             return SUSPEND_REASON_TIME_OF_DAY;
         }
@@ -265,55 +262,54 @@ int CLIENT_STATE::check_suspend_processing() {
     }
 
 #ifdef ANDROID
-    // suspend if we haven't heard from the GUI in 30 sec
-    // (we rely on it for battery info)
-    //
-    if (now > device_status_time + ANDROID_KEEPALIVE_TIMEOUT) {
-        requested_exit = true;
-        return SUSPEND_REASON_NO_GUI_KEEPALIVE;
-    }
+    // Battery checks.
+    // Do these only if we've received an RPC from the GUI
+    // (which is where we get battery info)
 
-    // check for hot battery
-    // If suspend because of hot battery, don't resume for at least 5 min
-    // (crude hysteresis)
-    //
-    static double battery_heat_resume_time=0;
-    if (now < battery_heat_resume_time) {
-        return SUSPEND_REASON_BATTERY_OVERHEATED;
-    }
-    if (device_status.battery_state == BATTERY_STATE_OVERHEATED) {
-        battery_heat_resume_time = now + ANDROID_BATTERY_BACKOFF;
-        return SUSPEND_REASON_BATTERY_OVERHEATED;
-    }
-    if (device_status.battery_temperature_celsius > global_prefs.battery_max_temperature) {
-        battery_heat_resume_time = now + ANDROID_BATTERY_BACKOFF;
-        return SUSPEND_REASON_BATTERY_OVERHEATED;
-    }
+    if (device_status_time) {
+        // exit if we haven't heard from the GUI in 30 sec
+        // (we rely on it for battery info)
+        //
+        if (now > device_status_time + ANDROID_KEEPALIVE_TIMEOUT) {
+            msg_printf(NULL, MSG_INTERNAL_ERROR,
+                "No RPC from GUI in last %d sec - exiting",
+                ANDROID_KEEPALIVE_TIMEOUT
+            );
+            requested_exit = true;
+            return SUSPEND_REASON_NO_GUI_KEEPALIVE;
+        }
 
-    // on some devices, running jobs can drain the battery even
-    // while it's recharging.
-    // So compute only if 95% charged or more.
-    //
-    static double battery_charge_resume_time=0;
-    if (now < battery_charge_resume_time) {
-        return SUSPEND_REASON_BATTERY_CHARGING;
-    }
-    int cp = device_status.battery_charge_pct;
-    if (cp >= 0) {
-        if (cp < global_prefs.battery_charge_min_pct) {
-            battery_charge_resume_time = now + ANDROID_BATTERY_BACKOFF;
+        // check for hot battery
+        // If suspend because of hot battery, don't resume for at least 5 min
+        // (crude hysteresis)
+        //
+        static double battery_heat_resume_time=0;
+        if (now < battery_heat_resume_time) {
+            return SUSPEND_REASON_BATTERY_OVERHEATED;
+        }
+        if (device_status.battery_state == BATTERY_STATE_OVERHEATED) {
+            battery_heat_resume_time = now + ANDROID_BATTERY_BACKOFF;
+            return SUSPEND_REASON_BATTERY_OVERHEATED;
+        }
+        if (device_status.battery_temperature_celsius > global_prefs.battery_max_temperature) {
+            battery_heat_resume_time = now + ANDROID_BATTERY_BACKOFF;
+            return SUSPEND_REASON_BATTERY_OVERHEATED;
+        }
+
+        // check for sufficient battery charge.
+        // If suspend, don't resume for at least 5 min
+        //
+        static double battery_charge_resume_time=0;
+        if (now < battery_charge_resume_time) {
             return SUSPEND_REASON_BATTERY_CHARGING;
         }
-    }
-
-    // user active.
-    // Do this check after checks that user can not influence on Android.
-    // E.g.
-    // 1. "connect to charger to continue computing"
-    // 2. "charge battery until 90%"
-    // 3. "turn screen off to continue computing"
-    if (!global_prefs.run_if_user_active && user_active) {
-        return SUSPEND_REASON_USER_ACTIVE;
+        int cp = device_status.battery_charge_pct;
+        if (cp >= 0) {
+            if (cp < global_prefs.battery_charge_min_pct) {
+                battery_charge_resume_time = now + ANDROID_BATTERY_BACKOFF;
+                return SUSPEND_REASON_BATTERY_CHARGING;
+            }
+        }
     }
 #endif
 
@@ -365,6 +361,7 @@ void CLIENT_STATE::show_suspend_tasks_message(int reason) {
                 suspend_reason_string(reason)
             );
         }
+#ifdef ANDROID
         switch (reason) {
         case SUSPEND_REASON_BATTERY_OVERHEATED:
             if (log_flags.task) {
@@ -385,6 +382,7 @@ void CLIENT_STATE::show_suspend_tasks_message(int reason) {
             }
             break;
         }
+#endif
     }
 }
 
@@ -392,9 +390,6 @@ int CLIENT_STATE::resume_tasks(int reason) {
     if (reason == SUSPEND_REASON_CPU_THROTTLE) {
         active_tasks.unsuspend_all(SUSPEND_REASON_CPU_THROTTLE);
     } else {
-        if (log_flags.task) {
-            msg_printf(NULL, MSG_INFO, "Resuming computation");
-        }
         active_tasks.unsuspend_all();
         request_schedule_cpus("Resuming computation");
     }
@@ -675,6 +670,9 @@ void CLIENT_STATE::read_global_prefs(
     file_xfers->set_bandwidth_limits(true);
     file_xfers->set_bandwidth_limits(false);
 #endif
+
+    bool have_gpu = coprocs.n_rsc > 1;
+    global_prefs.need_idle_state = global_prefs.get_need_idle_state(have_gpu);
     print_global_prefs();
     request_schedule_cpus("Prefs update");
     request_work_fetch("Prefs update");
@@ -815,6 +813,11 @@ void CLIENT_STATE::print_global_prefs() {
         allowed_disk_usage(total_disk_usage)/GIGA
     );
 #endif
+    if (!global_prefs.need_idle_state) {
+        msg_printf(NULL, MSG_INFO,
+            "-  Preferences don't depend on whether computer is in use"
+        );
+    }
     msg_printf(NULL, MSG_INFO,
         "-  (to change preferences, visit a project web site or select 'Options / Computing preferences...' in the Manager)"
     );

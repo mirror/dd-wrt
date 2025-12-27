@@ -1,6 +1,6 @@
 // This file is part of BOINC.
-// http://boinc.berkeley.edu
-// Copyright (C) 2023 University of California
+// https://boinc.berkeley.edu
+// Copyright (C) 2025 University of California
 //
 // BOINC is free software; you can redistribute it and/or modify it
 // under the terms of the GNU Lesser General Public License
@@ -34,6 +34,8 @@
 #include <errno.h>
 #include <sys/stat.h>
 
+using std::string;
+
 #include "backend_lib.h"
 #include "boinc_db.h"
 #include "error_numbers.h"
@@ -46,18 +48,19 @@
 #include "sched_vda.h"
 
 #include "credit.h"
-#include "sched_files.h"
-#include "sched_main.h"
-#include "sched_types.h"
-#include "sched_util.h"
 #include "handle_request.h"
+#include "sched_config.h"
+#include "sched_customize.h"
+#include "sched_files.h"
+#include "sched_host.h"
+#include "sched_locality.h"
+#include "sched_main.h"
 #include "sched_msgs.h"
 #include "sched_resend.h"
-#include "sched_send.h"
-#include "sched_config.h"
-#include "sched_locality.h"
 #include "sched_result.h"
-#include "sched_customize.h"
+#include "sched_send.h"
+#include "sched_types.h"
+#include "sched_util.h"
 #include "time_stats_log.h"
 
 // are the 2 hosts obviously different computers?
@@ -231,19 +234,51 @@ static void mark_results_over(DB_HOST& host) {
 }
 
 // Based on the info in the request message,
-// look up the host and its user, and make sure the authenticator matches.
-// Some special cases:
-//  1) If no host ID is supplied, or if RPC seqno mismatch,
-//     create a new host record
-//  2) If the host record specified by g_request->hostid is a "zombie"
-//     (i.e. it was merged with another host via the web site)
-//     then follow links to find the proper host
+// look up the appropriate user and host records; create host record if needed.
+// Return error if couldn't authenticate user.
+//
+// The request message may contain any or all of:
+// user info:
+//      authenticator (can be weak auth)
+//      cross_project_id
+// host info:
+//      hostid (DB ID of host)
+//      rpc_seqno
+//      host_cpid
+//      host info like name/IP/processor/RAM
+//
+// general logic (see comments for details)
+//      if hostid given
+//          lookup host record
+//          lookup user based on host.userid
+//              if host.authenticator doesn't match request
+//                  lookup user based on request auth
+//                  check that user.id == host.userid
+//      else
+//          lookup user based on request auth
+//          look for a host return matching host_cpid,
+//              or host info; probably means detach/reattach.
+//          if none, create host record
+//
+// Special cases:
+// - If no host ID is supplied, this is first RPC from host;
+//      create a new host record
+// - if RPC seqno mismatch, user probably copied client_state.xml
+//      to a new host; create a new host record
+// - If the host record specified by hostid is a "zombie"
+//      (i.e. it was merged with another host via the web)
+//      follow links to find the master host record
+//      We use the rpc_seqno field for these links.
 //
 // POSTCONDITION:
 // If this function returns zero, then:
 // - reply.host contains a valid host record (possibly new)
-// - reply.user contains a valid user record
+// - reply.user contains a valid user record,
+//      and host.userid == user.id
 // - if user belongs to a team, reply.team contains team record
+//
+// Also sets reply->email_hash,
+// and updates user CPID if needed to match request
 //
 int authenticate_user() {
     int retval;
@@ -256,6 +291,7 @@ int authenticate_user() {
         retval = host.lookup_id(g_request->hostid);
         while (!retval && host.userid==0) {
             // if host record is zombie, follow link to new host
+            // TODO: check for infinite loop
             //
             retval = host.lookup_id(host.rpc_seqno);
             if (!retval) {
@@ -267,6 +303,9 @@ int authenticate_user() {
             }
         }
         if (retval) {
+            // bad host ID, or broken zombie chain.
+            // Make new host record.
+            //
             g_reply->insert_message("Can't find host record", "low");
             log_messages.printf(MSG_NORMAL,
                 "[HOST#%lu?] can't find host\n",
@@ -278,8 +317,9 @@ int authenticate_user() {
 
         g_reply->host = host;
 
-        // look up user based on the ID in host record,
-        // and see if the authenticator matches (regular or weak)
+        // We have a host record based on ID.
+        // Look up user based on host.userid,
+        // and see if the authenticator matches request (regular or weak)
         //
         g_request->using_weak_auth = false;
         sprintf(buf, "where id=%lu", host.userid);
@@ -324,7 +364,13 @@ int authenticate_user() {
             }
         }
 
+        // At this point we have a host record,
+        // and a user record that's authenticated with the request
+
         g_reply->user = user;
+
+        // Check that the host and user records are consistent
+        // If not, make a new host record
 
         if (host.userid != user.id) {
             // If the request's host ID isn't consistent with the authenticator,
@@ -334,9 +380,8 @@ int authenticate_user() {
                 "[HOST#%lu] [USER#%lu] inconsistent host ID; creating new host\n",
                 host.id, user.id
             );
-            goto make_new_host;
+            goto didnt_find_host;
         }
-
 
         // If the seqno from the host is less than what we expect,
         // the user must have copied the state file to a different host.
@@ -348,7 +393,7 @@ int authenticate_user() {
                 "[HOST#%lu] [USER#%lu] RPC seqno %d less than expected %d; creating new host\n",
                 g_reply->host.id, user.id, g_request->rpc_seqno, g_reply->host.rpc_seqno
             );
-            goto make_new_host;
+            goto didnt_find_host;
         }
 
     } else {
@@ -359,6 +404,7 @@ lookup_user_and_make_new_host:
         // if authenticator contains _, it's a weak auth
         //
         if (strchr(g_request->authenticator, '_')) {
+            // weak auths start with 'userid_'
             int userid = atoi(g_request->authenticator);
             retval = user.lookup_id(userid);
             if (!retval) {
@@ -388,12 +434,16 @@ lookup_user_and_make_new_host:
             );
             return ERR_AUTHENTICATOR;
         }
+
+        // at this point we have a user record, authenticated by the request
+
         g_reply->user = user;
 
         // If host CPID is present,
-        // scan backwards through this user's hosts,
-        // looking for one with the same host CPID.
-        // If we find one, it means the user detached and reattached.
+        // find most recent host with the same host CPID
+        // belonging to this user.
+        // If we find one, and it has similar properties,
+        // it probably means the user detached and reattached.
         // Use the existing host record,
         // and mark in-progress results as over.
         //
@@ -419,15 +469,23 @@ lookup_user_and_make_new_host:
             }
         }
 
-make_new_host:
-        // One final attempt to locate an existing host record:
+didnt_find_host:
+        // we didn't find a usable host record; either
+        // - host ID was given but didn't match user ID,
+        //      or RPC seqno was too low.
+        // - host ID wasn't given
+        //
+        // Before we create a new host record,
+        // a final attempt to locate an existing host record:
         // scan backwards through this user's hosts,
         // looking for one with the same host name,
         // IP address, processor and amount of RAM.
-        // If found, use the existing host record,
+        // If found, it probably means the client detached and reattached.
+        // Use the existing host record,
         // and mark in-progress results as over.
         //
-        // NOTE: If the client was run with --allow_multiple_clients, skip this.
+        // NOTE: If the client was run with --allow_multiple_clients,
+        // skip this; each client instance needs its own host record.
         //
         if ((g_request->allow_multiple_clients != 1)
             && find_host_by_other(user, g_request->host, host)
@@ -444,11 +502,8 @@ make_new_host:
             }
             goto got_host;
         }
-        // either of the above cases,
-        // or host ID didn't match user ID,
-        // or RPC seqno was too low.
-        //
-        // Create a new host.
+
+        // Create a new host record.
         // g_reply->user is filled in and valid at this point
         //
         host = g_request->host;
@@ -471,6 +526,8 @@ make_new_host:
         host.id = boinc_db.insert_id();
 
 got_host:
+        // at this point we have a (possibly new) host record.
+        //
         g_reply->host = host;
         g_reply->hostid = g_reply->host.id;
         // this tells client to updates its host ID
@@ -480,7 +537,8 @@ got_host:
             // This kludge forces this.
     }
 
-    // have user record in g_reply->user at this point
+    // at this point we have user record in g_reply->user,
+    // and host record in g_reply->host
     //
 
     if (g_reply->user.teamid) {
@@ -528,28 +586,12 @@ inline static const char* get_remote_addr() {
 static int modify_host_struct(HOST& host) {
     host.timezone = g_request->host.timezone;
     strlcpy(host.domain_name, g_request->host.domain_name, sizeof(host.domain_name));
-    char buf[1024], buf2[1024];
-    sprintf(buf, "[BOINC|%d.%d.%d",
-        g_request->core_client_major_version,
-        g_request->core_client_minor_version,
-        g_request->core_client_release
-    );
-    if (strlen(g_request->client_brand)) {
-        strcat(buf, "|");
-        strcat(buf, g_request->client_brand);
-    }
-    strcat(buf, "]");
-    g_request->coprocs.summary_string(buf2, sizeof(buf2));
-    strlcpy(host.serialnum, buf, sizeof(host.serialnum));
-    strlcat(host.serialnum, buf2, sizeof(host.serialnum));
-    if (strlen(g_request->host.virtualbox_version)) {
-        sprintf(buf2, "[vbox|%s|%d|%d]",
-            g_request->host.virtualbox_version,
-            (strstr(g_request->host.p_features, "vmx") || strstr(g_request->host.p_features, "svm"))?1:0,
-            g_request->host.p_vm_extensions_disabled?0:1
-        );
-        strlcat(host.serialnum, buf2, sizeof(host.serialnum));
-    }
+
+    string s;
+    host_info_json(s);
+    //log_messages.printf(MSG_CRITICAL, "host info: %s\n", s.c_str());
+    safe_strcpy(host.misc, s.c_str());
+
     if (strcmp(host.last_ip_addr, g_request->host.last_ip_addr)) {
         strlcpy(
             host.last_ip_addr, g_request->host.last_ip_addr,
@@ -643,7 +685,7 @@ int send_result_abort() {
     int aborts_sent = 0;
     int retval = 0;
     DB_IN_PROGRESS_RESULT result;
-    std::string result_names;
+    string result_names;
     unsigned int i;
 
     if (g_request->other_results.size() == 0) {
@@ -1143,7 +1185,7 @@ bool bad_install_type() {
                     "Vista secure install - not sending work\n"
                 );
                 g_reply->insert_message(
-                    "Unable to send work to Vista with BOINC installed in protected mode.  Please reinstall BOINC and uncheck 'Protected application execution'",
+                    "Unable to send work to Vista with BOINC installed in protected mode.  Please reinstall BOINC and uncheck 'Service Install'",
                     "notice"
                 );
             }
@@ -1360,9 +1402,12 @@ void process_request(char* code_sign_key) {
 
     handle_results();
     handle_file_xfer_results();
+
+#if ENABLE_VDA
     if (config.enable_vda) {
         handle_vda();
     }
+#endif
 
     // Do this before resending lost jobs
     //

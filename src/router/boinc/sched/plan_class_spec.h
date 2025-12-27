@@ -1,6 +1,6 @@
 // This file is part of BOINC.
-// http://boinc.berkeley.edu
-// Copyright (C) 2023 University of California
+// https://boinc.berkeley.edu
+// Copyright (C) 2024 University of California
 //
 // BOINC is free software; you can redistribute it and/or modify it
 // under the terms of the GNU Lesser General Public License
@@ -32,6 +32,8 @@ struct PLAN_CLASS_SPEC {
     bool cal;
     bool opencl;
     bool virtualbox;
+    bool wsl;
+    bool docker;
     bool is64bit;
     std::vector<std::string> cpu_features;
     double min_ncpus;
@@ -52,6 +54,7 @@ struct PLAN_CLASS_SPEC {
     int min_android_version;
     int max_android_version;
     int min_libc_version;
+        // if WSL: applies to WSL distro
     char project_prefs_tag[256];
     bool have_project_prefs_regex;
     regex_t project_prefs_regex;
@@ -60,8 +63,6 @@ struct PLAN_CLASS_SPEC {
     int min_core_client_version;
     int max_core_client_version;
         // for non-compute-intensive, or override for GPU apps
-    bool have_host_summary_regex;
-    regex_t host_summary_regex;
     int user_id;
     double infeasible_random;
     long min_wu_id;
@@ -131,7 +132,9 @@ struct PLAN_CLASS_SPECS {
     std::vector<PLAN_CLASS_SPEC> classes;
     int parse_file(const char*);
     int parse_specs(FILE*);
-    bool check(SCHEDULER_REQUEST& sreq, char* plan_class, HOST_USAGE& hu, const WORKUNIT* wu);
-    bool wu_is_infeasible(char* plan_class, const WORKUNIT* wu);
+    bool check(SCHEDULER_REQUEST& sreq, const char* plan_class,
+        HOST_USAGE& hu, const WORKUNIT* wu
+    );
+    bool wu_is_infeasible(const char* plan_class, const WORKUNIT* wu);
     PLAN_CLASS_SPECS(){};
 };

@@ -1,6 +1,6 @@
 // This file is part of BOINC.
-// http://boinc.berkeley.edu
-// Copyright (C) 2023 University of California
+// https://boinc.berkeley.edu
+// Copyright (C) 2025 University of California
 //
 // BOINC is free software; you can redistribute it and/or modify it
 // under the terms of the GNU Lesser General Public License
@@ -13,7 +13,7 @@
 // See the GNU Lesser General Public License for more details.
 //
 // You should have received a copy of the GNU Lesser General Public License
-// along with BOINC.  If not, see <http://www.gnu.org/licenses/>.
+// along with BOINC.  If not, see <https://www.gnu.org/licenses/>.
 
 #include "stdwx.h"
 #include "miofile.h"
@@ -355,9 +355,9 @@ numSlides = 0;
         if ( (ratio < 0.95) || (ratio > 1.05) ) {
             wxImage img = m_SlideBitmap.ConvertToImage();
             img.Rescale((int) (m_SlideBitmap.GetWidth()*ratio),
-						(int) (m_SlideBitmap.GetHeight()*ratio),
-						(ratio > 1.0) ? wxIMAGE_QUALITY_BILINEAR : wxIMAGE_QUALITY_BOX_AVERAGE
-					);
+                       (int) (m_SlideBitmap.GetHeight()*ratio),
+                       (ratio > 1.0) ? wxIMAGE_QUALITY_BILINEAR : wxIMAGE_QUALITY_BOX_AVERAGE
+            );
             wxBitmap *bm = new wxBitmap(img);
             m_SlideBitmap = *bm;
             delete bm;
@@ -389,7 +389,7 @@ numSlides = 0;
         wxBrush oldBrush = dc.GetBrush();
         int oldMode = dc.GetBackgroundMode();
         wxPen bgPen(*wxBLACK, 2*slideshowBorder+1);
-        dc.SetBackgroundMode(wxSOLID);
+        dc.SetBackgroundMode(wxBRUSHSTYLE_SOLID);
         dc.SetPen(bgPen);
         dc.SetBrush(*wxBLACK_BRUSH);
 
@@ -403,7 +403,7 @@ numSlides = 0;
 
         if(m_SlideBitmap.Ok())
         {
-		    dc.DrawBitmap(m_SlideBitmap,
+            dc.DrawBitmap(m_SlideBitmap,
                         (w - m_SlideBitmap.GetWidth())/2,
                         (h - m_SlideBitmap.GetHeight())/2
                         );
@@ -449,7 +449,6 @@ CSimpleTaskPanel::CSimpleTaskPanel() {
 CSimpleTaskPanel::CSimpleTaskPanel( wxWindow* parent ) :
     CSimplePanelBase( parent )
 {
-    wxSize sz;
     int w, h;
     wxString str = wxEmptyString;
 
@@ -764,6 +763,10 @@ void CSimpleTaskPanel::ReskinInterface() {
     wxLogTrace(wxT("Function Start/End"), wxT("CSimpleTaskPanel::ReskinInterface - Function Begin"));
     CSimplePanelBase::ReskinInterface();
     m_SlideShowArea->AdvanceSlideShow(false, false);
+#ifdef __WXMAC__
+    m_TaskSelectionCtrl->Show();
+    m_myTasksLabel->Show();
+#endif
     UpdateTaskSelectionList(true);
     wxLogTrace(wxT("Function Start/End"), wxT("CSimpleTaskPanel::ReskinInterface - Function Begin"));
 }
@@ -898,7 +901,7 @@ void CSimpleTaskPanel::FindSlideShowFiles(TaskSelectionData *selData) {
         url_to_project_dir(state_result->project->master_url, proj_dir, sizeof(proj_dir));
         for(j=0; j<99; ++j) {
             snprintf(fileName, sizeof(fileName), "%s/slideshow_%s_%02d", proj_dir, state_result->app->name, j);
-            if(boinc_resolve_filename(fileName, resolvedFileName, sizeof(resolvedFileName)) == 0) {
+            if(resolve_soft_link(fileName, resolvedFileName, sizeof(resolvedFileName)) == 0) {
                 if (boinc_file_exists(resolvedFileName)) {
                     selData->slideShowFileNames.Add(wxString(resolvedFileName,wxConvUTF8));
                 }
@@ -910,7 +913,7 @@ void CSimpleTaskPanel::FindSlideShowFiles(TaskSelectionData *selData) {
         if ( selData->slideShowFileNames.size() == 0 ) {
             for(j=0; j<99; ++j) {
                 snprintf(fileName, sizeof(fileName), "%s/slideshow_%02d", proj_dir, j);
-                if(boinc_resolve_filename(fileName, resolvedFileName, sizeof(resolvedFileName)) == 0) {
+                if(resolve_soft_link(fileName, resolvedFileName, sizeof(resolvedFileName)) == 0) {
                     if (boinc_file_exists(resolvedFileName)) {
                         selData->slideShowFileNames.Add(wxString(resolvedFileName,wxConvUTF8));
                     }

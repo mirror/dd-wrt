@@ -136,8 +136,10 @@ function scale_image(
     }
 
     $gd_info = gd_info();
-    $newGD = (strstr($gd_info["GD Version"], "2.0")!="");
-    if ($newGD) {
+    $v = $gd_info["GD Version"];
+    $v = explode('.', $v);
+    $v = (int)$v[0];        // major version
+    if ($v >= 2) {
         // If you are using a modern PHP/GD installation that does
         // 'truecolor' images, this is what's needed.
         $newImage = ImageCreateTrueColor($destWidth, $destHeight);
@@ -194,10 +196,6 @@ function check_whether_to_show_profile($user, $logged_in_user) {
            tra("To prevent spam, profiles of users with an average credit of less than %1 are displayed only to logged-in users. We apologize for this inconvenience.", $min_credit)
         );
     }
-    if (is_banished($user)) {
-        error_page(tra("User is banished"));
-    }
-
 }
 
 // Displays a user's profile (if they have one);
@@ -276,6 +274,5 @@ function show_profile($user, $logged_in_user, $screen_mode = false) {
     }
 }
 
-$cvs_version_tracker[]="\$Id$";  //Generated automatically - do not edit
 
 ?>

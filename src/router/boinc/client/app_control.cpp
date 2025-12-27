@@ -351,11 +351,11 @@ static void limbo_message(ACTIVE_TASK& at) {
 // that use the GPU type, in case they're waiting for GPU RAM
 //
 static void clear_schedule_backoffs(ACTIVE_TASK* atp) {
-    int rt = atp->result->avp->rsc_type();
+    int rt = atp->result->resource_usage.rsc_type;
     if (rt == RSC_TYPE_CPU) return;
     for (unsigned int i=0; i<gstate.results.size(); i++) {
         RESULT* rp = gstate.results[i];
-        if (rp->avp->rsc_type() == rt) {
+        if (rp->resource_usage.rsc_type == rt) {
             rp->schedule_backoff = 0;
         }
     }
@@ -595,11 +595,6 @@ void ACTIVE_TASK::handle_exited_app(int stat) {
     // get rid of shared-mem segment and kill subsidiary processes
     //
     cleanup_task();
-
-    if (gstate.run_test_app) {
-        msg_printf(0, MSG_INFO, "test app finished - exiting");
-        exit(0);
-    }
 
     if (!will_restart) {
         copy_output_files();
@@ -900,7 +895,7 @@ bool ACTIVE_TASK_SET::check_rsc_limits_exceeded() {
             snprintf(buf, sizeof(buf), "exceeded elapsed time limit %.2f (%.2fG/%.2fG)",
                 atp->max_elapsed_time,
                 atp->result->wup->rsc_fpops_bound/1e9,
-                atp->result->avp->flops/1e9
+                atp->result->resource_usage.flops/1e9
             );
             msg_printf(atp->result->project, MSG_INFO,
                 "Aborting task %s: %s", atp->result->name, buf
@@ -1439,8 +1434,23 @@ bool ACTIVE_TASK::get_app_status_msg() {
             }
         }
     }
-    parse_double(msg_buf, "<current_cpu_time>", current_cpu_time);
-    parse_double(msg_buf, "<checkpoint_cpu_time>", checkpoint_cpu_time);
+    if (parse_double(msg_buf, "<current_cpu_time>", current_cpu_time)) {
+        if (current_cpu_time < 0) {
+            msg_printf(result->project, MSG_INFO,
+                "app reporting negative CPU: %f", current_cpu_time
+            );
+            current_cpu_time = 0;
+        }
+    }
+    if (parse_double(msg_buf, "<checkpoint_cpu_time>", checkpoint_cpu_time)) {
+        if (checkpoint_cpu_time < 0) {
+            msg_printf(result->project, MSG_INFO,
+                "app reporting negative checkpoint CPU: %f", checkpoint_cpu_time
+            );
+            checkpoint_cpu_time = 0;
+        }
+    }
+    parse_double(msg_buf, "<wss>", wss_from_app);
     parse_double(msg_buf, "<fpops_per_cpu_sec>", result->fpops_per_cpu_sec);
     parse_double(msg_buf, "<fpops_cumulative>", result->fpops_cumulative);
     parse_double(msg_buf, "<intops_per_cpu_sec>", result->intops_per_cpu_sec);
@@ -1469,18 +1479,6 @@ bool ACTIVE_TASK::get_app_status_msg() {
     }
     if (parse_int(msg_buf, "<sporadic_ac>", i)) {
         sporadic_ac_state = (SPORADIC_AC_STATE)i;
-    }
-    if (current_cpu_time < 0) {
-        msg_printf(result->project, MSG_INFO,
-            "app reporting negative CPU: %f", current_cpu_time
-        );
-        current_cpu_time = 0;
-    }
-    if (checkpoint_cpu_time < 0) {
-        msg_printf(result->project, MSG_INFO,
-            "app reporting negative checkpoint CPU: %f", checkpoint_cpu_time
-        );
-        checkpoint_cpu_time = 0;
     }
     return true;
 }

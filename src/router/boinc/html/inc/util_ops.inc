@@ -237,19 +237,32 @@ function current_versions($avs) {
 // - set the CANCELLED bit in workunit.error_mask
 //
 function cancel_wus($wuid1, $wuid2) {
-    $retval = BoincResult::update_aux("server_state=5, outcome=5 where server_state=2 and $wuid1<=workunitid and workunitid<=$wuid2");
+    $retval = BoincResult::update_aux(
+        sprintf(
+            'server_state=%d, outcome=%d where server_state=%d and workunitid>=%d and workunitid<=%d',
+            RESULT_SERVER_STATE_OVER,
+            RESULT_OUTCOME_DIDNT_NEED,
+            RESULT_SERVER_STATE_UNSENT,
+            $wuid1, $wuid2
+        )
+    );
     if (!$retval) {
         error_page("Result update failed");
     }
-    $retval = BoincWorkunit::update_aux("error_mask=error_mask|16 where $wuid1<=id and id<=$wuid2");
+
+    // mark WUs as cancelled and trigger the transitioner
+    //
+    $retval = BoincWorkunit::update_aux(
+        sprintf(
+            'error_mask=error_mask|%d, transition_time=%d where id>=%d and id<=%d',
+            WU_ERROR_CANCELLED,
+            time(),
+            $wuid1, $wuid2
+        )
+    );
     if (!$retval) {
         error_page("Workunit update failed");
     }
-
-    // trigger the transitioner (it will set file_delete_state)
-
-    $now = time();
-    $retval = BoincWorkunit::update_aux("transition_time=$now where $wuid1<=id and id<=$wuid2");
     return 0;
 }
 
@@ -259,9 +272,21 @@ function cancel_wus($wuid1, $wuid2) {
 function cancel_wus_if_unsent($id1, $id2) {
     $wus = BoincWorkunit::enum("id >= $id1 and id <= $id2");
     foreach ($wus as $wu) {
-        $results = BoincResult::enum("workunitid=$wu->id and server_state > 2");
+        $results = BoincResult::enum(
+            sprintf(
+                'workunitid=%d and server_state > %d',
+                $wu->id, RESULT_SERVER_STATE_UNSENT
+            )
+        );
         if (count($results)) continue;
-        $retval = BoincResult::update_aux("server_state=5, outcome=5 where workunitid=$wu->id");
+        $retval = BoincResult::update_aux(
+            sprintf(
+                'server_state=%d, outcome=%d where workunitid=%d',
+                RESULT_SERVER_STATE_OVER,
+                RESULT_OUTCOME_DIDNT_NEED,
+                $wu->id
+            )
+        );
         if (!$retval) {
             error_page("result update failed");
         }
@@ -306,6 +331,9 @@ function app_version_desc($avid) {
 ////// badge-related stuff
 
 function get_badge($name, $title, $image_url) {
+    $name = BoincDb::escape_string($name);
+    $title = BoincDb::escape_string($title);
+    $image_url = BoincDb::escape_string($image_url);
     $b = BoincBadge::lookup("name='$name'");
     if ($b) return $b;
     $now = time();
@@ -381,7 +409,10 @@ function in_rops() {
 
 function cancel_wus_where($clause) {
     $q1 = "CREATE TEMPORARY TABLE tmp SELECT id FROM workunit WHERE $clause;";
-    $q2 = "UPDATE result r INNER JOIN tmp t on r.workunitid=t.id SET server_state=5, outcome=5 WHERE server_state=2;";
+    $q2 = sprintf(
+        'UPDATE result r INNER JOIN tmp t on r.workunitid=t.id SET outcome=%d WHERE server_state=%d;',
+        RESULT_OUTCOME_DIDNT_NEED, RESULT_SERVER_STATE_UNSENT
+    );
     $q3 = "UPDATE workunit w INNER JOIN tmp t on w.id=t.id SET error_mask=error_mask|16, transition_time=0;";
     $q4 = "DROP TABLE tmp;";
 

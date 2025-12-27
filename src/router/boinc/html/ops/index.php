@@ -97,6 +97,7 @@ echo "
         <li><a href=\"db_form.php?table=app_version\">Application versions</a></li>
         <li><a href=\"db_action.php?table=platform\">Platforms</a></li>
         <li><a href=dbinfo.php>DB row counts and disk usage</a>
+        <li><a href=sample_table_stats.php>DB table details</a>
         <li><a href=\"show_log.php?f=mysql*.log&amp;l=-20\">Tail MySQL logs</a>
     </ul>
 
@@ -220,5 +221,4 @@ or by clicking here:
 
 admin_page_tail();
 
-$cvs_version_tracker[]="\$Id$";  //Generated automatically - do not edit
 ?>
