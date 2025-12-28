@@ -322,6 +322,8 @@ ifeq ($(CONFIG_IPV6),y)
 	-$(MAKE) -f Makefile.$(MAKEEXT) nat46-install
 endif
 ifeq ($(CONFIG_RTL8125),y)
+	-$(MAKE) -f Makefile.$(MAKEEXT) rtl8101
+	-$(MAKE) -f Makefile.$(MAKEEXT) rtl8101-install
 	-$(MAKE) -f Makefile.$(MAKEEXT) rtl8125
 	-$(MAKE) -f Makefile.$(MAKEEXT) rtl8125-install
 	-$(MAKE) -f Makefile.$(MAKEEXT) rtl8126
