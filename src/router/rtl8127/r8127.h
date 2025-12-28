@@ -1770,6 +1770,11 @@ enum RTL8127_register_content {
         LinkStatus = 0x02,
         FullDup = 0x01,
 
+#define RTL8127_FULL_DUPLEX_MASK (_10000bpsF | _5000bpsF | _2500bpsF | _1000bpsF | FullDup)
+#define RTL8127_SPEED_1000_MASK (_1000bpsF | _1000bpsL | _2500bpsL)
+#define RTL8127_SPEED_2500_MASK (_2500bpsF | _5000bpsL)
+#define RTL8127_SPEED_5000_MASK (_5000bpsF | _10000bpsL)
+
         /* DBG_reg */
         Fix_Nak_1 = (1 << 4),
         Fix_Nak_2 = (1 << 3),
