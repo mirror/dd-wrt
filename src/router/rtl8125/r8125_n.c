@@ -39,6 +39,7 @@
 #include <linux/module.h>
 #include <linux/version.h>
 #include <linux/pci.h>
+#include <linux/phy.h>
 #include <linux/netdevice.h>
 #include <linux/etherdevice.h>
 #include <linux/delay.h>
@@ -5051,6 +5052,38 @@ rtl8125_link_down_patch(struct net_device *dev)
 #endif
 }
 
+static unsigned int rtl8125_phy_duplex(u32 status)
+{
+        unsigned int duplex = DUPLEX_UNKNOWN;
+
+        if (status & LinkStatus) {
+                if (status & RTL8125_FULL_DUPLEX_MASK)
+                        duplex = DUPLEX_FULL;
+                else
+                        duplex = DUPLEX_HALF;
+        }
+
+        return duplex;
+}
+
+static int rtl8125_phy_speed(u32 status)
+{
+        int speed = SPEED_UNKNOWN;
+
+        if (status & LinkStatus) {
+                if (status & _2500bpsF)
+                        speed = SPEED_2500;
+                else if (status & RTL8125_SPEED_1000_MASK)
+                        speed = SPEED_1000;
+                else if (status & _100bps)
+                        speed = SPEED_100;
+                else if (status & _10bps)
+                        speed = SPEED_10;
+        }
+
+        return speed;
+}
+
 static void
 _rtl8125_check_link_status(struct net_device *dev, unsigned int link_state)
 {
@@ -5063,11 +5096,18 @@ _rtl8125_check_link_status(struct net_device *dev, unsigned int link_state)
         if (link_state == R8125_LINK_STATE_ON) {
                 rtl8125_link_on_patch(dev);
 
-                if (netif_msg_ifup(tp))
-                        printk(KERN_INFO PFX "%s: link up\n", dev->name);
+                if (netif_msg_ifup(tp)) {
+                        const u32 phy_status = RTL_R32(tp, PHYstatus);
+                        const unsigned int phy_duplex = rtl8125_phy_duplex(phy_status);
+                        const int phy_speed = rtl8125_phy_speed(phy_status);
+                        printk(KERN_INFO PFX "%s: Link is Up - %s/%s\n",
+                                dev->name,
+                                phy_speed_to_str(phy_speed),
+                                phy_duplex_to_str(phy_duplex));
+                }
         } else {
                 if (netif_msg_ifdown(tp))
-                        printk(KERN_INFO PFX "%s: link down\n", dev->name);
+                        printk(KERN_INFO PFX "%s: Link is Down\n", dev->name);
 
                 rtl8125_link_down_patch(dev);
         }
