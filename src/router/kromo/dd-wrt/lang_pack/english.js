@@ -1022,6 +1022,14 @@ nas.fs="File System";
 nas.drivemanager="Drive Manager";
 nas.drive="Drive";
 nas.compression="Compression";
+nas.loopback="Loopback Devices";
+
+nas.state_in_sync="In sync";
+nas.state_faulty="Faulty";
+nas.state_blocked="Blocked";
+nas.state_want_replacement="Want replacement";
+nas.state_replacement="Replacement";
+nas.state_spare="Spare";
 
 // Help container
 var hnas=new Object();
