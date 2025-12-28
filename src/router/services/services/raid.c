@@ -234,51 +234,53 @@ void start_raid(void)
 		char *done = nvram_nget("raiddone%d", i);
 		char *type = nvram_nget("raidtype%d", i);
 		char *poolname = nvram_nget("raidname%d", i);
+		char fname[32];
+		char pname[128];
+		sprintf(fname, "/dev/md%d", i);
+		sprintf(pname, "/tmp/mnt/%s", poolname);
 		if (strcmp(done, "1")) {
 			int drives = 0;
 			foreach(drive, raid, next) {
 				drives++;
-				sysprintf("umount %s", drive);
+				umount(drive);
 			}
-			sysprintf("umount /dev/md%d", i);
-			sysprintf("mdadm --stop /dev/md%d", i);
-			sysprintf("zpool destroy %s", poolname);
+			umount(fname);
+			eval("mdadm", "--stop", fname);
+			eval("zpool", "destroy", pname);
 			if (!strcmp(type, "md")) {
-				dd_loginfo("raid", "creating MD Raid /dev/md%d", i);
-				sysprintf("mdadm --create --assume-clean /dev/md%d --level=%s --raid-devices=%d --run %s", i, level,
+				dd_loginfo("raid", "creating MD Raid %s", fname);
+				sysprintf("mdadm --create --assume-clean %s --level=%s --raid-devices=%d --run %s", fname, level,
 					  drives, raid);
-				char fname[32];
-				sprintf(fname, "/dev/md%d", i);
 				wait_file_exists(fname, 5, 0);
 				if (nvram_nmatch("ext4", "raidfs%d", i)) {
-					sysprintf("mkfs.ext4 -F -E lazy_itable_init=1 -L \"%s\" /dev/md%d", poolname, i);
+					eval("mkfs.ext4", "-F", "-E", "lazy_itable_init=1", "-L", poolname, fname);
 				}
 				if (nvram_nmatch("ext2", "raidfs%d", i)) {
-					sysprintf("mkfs.ext2 -F -E lazy_itable_init=1 -L \"%s\" /dev/md%d", poolname, i);
+					eval("mkfs.ext2", "-F", "-E", "lazy_itable_init=1", "-L", poolname, fname);
 				}
 				if (nvram_nmatch("ext3", "raidfs%d", i)) {
-					sysprintf("mkfs.ext3 -F -E lazy_itable_init=1 -L \"%s\" /dev/md%d", poolname, i);
+					eval("mkfs.ext3", "-F", "-E", "lazy_itable_init=1", "-L", poolname, fname);
 				}
 				if (nvram_nmatch("xfs", "raidfs%d", i)) {
-					sysprintf("mkfs.xfs -f -L \"%s\" /dev/md%d", poolname, i);
+					eval("mkfs.xfs", "-f", "-L", poolname, fname);
 				}
 				if (nvram_nmatch("apfs", "raidfs%d", i)) {
-					sysprintf("mkfs.apfs -s -L \"%s\" /dev/md%d", poolname, i);
+					eval("mkfs.apfs", "-s", "-L", poolname, fname);
 				}
 				if (nvram_nmatch("btrfs", "raidfs%d", i)) {
-					sysprintf("mkfs.btrfs -f -L \"%s\" /dev/md%d", poolname, i);
+					eval("mkfs.btrfs", "-f", "-L", poolname, fname);
 				}
 				if (nvram_nmatch("exfat", "raidfs%d", i)) {
-					sysprintf("mkfs.exfat -n \"%s\" /dev/md%d", poolname, i);
+					eval("mkfs.exfat", "-n", poolname, fname);
 				}
 				if (nvram_nmatch("fat32", "raidfs%d", i)) {
-					sysprintf("mkfs.fat -F 32 -n \"%s\" /dev/md%d", poolname, i);
+					eval("mkfs.fat", "-F", "32", "-n", poolname, fname);
 				}
 				if (nvram_nmatch("ntfs", "raidfs%d", i)) {
-					sysprintf("mkfs.ntfs -Q -F -L \"%s\" /dev/md%d", poolname, i);
+					eval("mkfs.ntfs", "-Q", "-F", "-L", poolname, fname);
 				}
 				if (nvram_nmatch("zfs", "raidfs%d", i)) {
-					sysprintf("zpool create -f -m \"/tmp/mnt/%s\" \"%s\" /dev/md%d", poolname, poolname, i);
+					sysprintf("zpool create -f -m \"%s\" \"%s\" %s", pname, poolname, fname);
 				}
 			}
 			if (!strcmp(type, "btrfs")) {
@@ -295,17 +297,17 @@ void start_raid(void)
 			}
 			if (!strcmp(type, "zfs")) {
 				dd_loginfo("raid", "creating ZFS Pool %s", poolname);
-				sysprintf("mkdir -p /tmp/mnt/%s", poolname);
+				eval("mkdir", "-p", pname);
 				if (!strcmp(level, "1"))
-					sysprintf("zpool create -f -m \"/tmp/mnt/%s\" \"%s\" mirror %s", poolname, poolname, raid);
+					sysprintf("zpool create -f -m \"%s\" \"%s\" mirror %s", pname, poolname, raid);
 				if (!strcmp(level, "5"))
-					sysprintf("zpool create -f -m \"/tmp/mnt/%s\" \"%s\" raidz1 %s", poolname, poolname, raid);
+					sysprintf("zpool create -f -m \"%s\" \"%s\" raidz1 %s", pname, poolname, raid);
 				if (!strcmp(level, "6"))
-					sysprintf("zpool create -f -m \"/tmp/mnt/%s\" \"%s\" raidz2 %s", poolname, poolname, raid);
+					sysprintf("zpool create -f -m \"%s\" \"%s\" raidz2 %s", pname, poolname, raid);
 				if (!strcmp(level, "z3"))
-					sysprintf("zpool create -f -m \"/tmp/mnt/%s\" \"%s\" raidz3 %s", poolname, poolname, raid);
+					sysprintf("zpool create -f -m \"%s\" \"%s\" raidz3 %s", pname, poolname, raid);
 				if (!strcmp(level, "0"))
-					sysprintf("zpool create -f -m \"/tmp/mnt/%s\" \"%s\" %s", poolname, poolname, raid);
+					sysprintf("zpool create -f -m \"%s\" \"%s\" %s", pname, poolname, raid);
 			}
 			/* reread partition table */
 			foreach(drive, raid, next) {
@@ -315,7 +317,7 @@ void start_raid(void)
 			}
 		}
 		if (!strcmp(type, "zfs")) {
-			sysprintf("mkdir -p \"/tmp/mnt/%s\"", poolname);
+			eval("mkdir", "-p", pname);
 			eval("zpool", "import", "-a", "-d", "/dev");
 			eval("zpool", "upgrade", poolname);
 			eval("zfs", "set", "checksum=blake3", poolname);
@@ -348,10 +350,6 @@ void start_raid(void)
 			eval("service", "run_rc_usb", "start");
 		}
 		if (!strcmp(type, "md")) {
-			char fname[32];
-			char pname[128];
-			sprintf(fname, "/dev/md%d", i);
-			sprintf(pname, "/tmp/mnt/%s", poolname);
 			wait_file_exists(fname, 1, 0);
 			// disable NCQ
 			foreach(drive, raid, next) {
@@ -397,7 +395,7 @@ void start_raid(void)
 			}
 			if (nvram_nmatch("ntfs", "raidfs%d", i)) {
 #ifdef HAVE_LEGACY_KERNEL
-				sysprintf("ntfs-3g -o compression,direct_io,big_writes /dev/md%d \"/tmp/mnt/%s\"", i, poolname);
+				sysprintf("ntfs-3g -o compression,direct_io,big_writes %s \"%s\"", fname, pname);
 #else
 #ifdef HAVE_NTFS3
 				if (try_mount("ntfsplus", fname, "nls=utf8,noatime", pname))
@@ -419,20 +417,20 @@ void start_raid(void)
 			char *r = strdup(raid);
 			strcpy(r, raid);
 			strstrtok(r, ' ');
-			sysprintf("mkdir -p \"/tmp/mnt/%s\"", poolname);
+			sysprintf("mkdir -p \"%s\"", pname);
 
 			if (nvram_nmatch("lzo", "raidlz%d", i))
-				sysprintf("mount -t btrfs -o compression=lzo %s \"/tmp/mnt/%s\"", r, poolname);
+				sysprintf("mount -t btrfs -o compression=lzo %s \"%s\"", r, pname);
 			else if (nvram_nmatch("zstd", "raidlz%d", i))
-				sysprintf("mount -t btrfs -o compression=zstd %s \"/tmp/mnt/%s\"", r, poolname);
+				sysprintf("mount -t btrfs -o compression=zstd %s \"%s\"", r, pname);
 			else if (nvram_nmatch("gzip", "raidlz%d", i)) {
 				if (nvram_nmatch("0", "raidlzlevel%d", i))
-					sysprintf("mount -t btrfs -o compression=gzip %s \"/tmp/mnt/%s\"", r, poolname);
+					sysprintf("mount -t btrfs -o compression=gzip %s \"%s\"", r, pname);
 				else
-					sysprintf("mount -t btrfs -o compression=gzip:%s %s \"/tmp/mnt/%s\"",
-						  nvram_nget("raidlzlevel%d", i), r, poolname);
+					sysprintf("mount -t btrfs -o compression=gzip:%s %s \"%s\"", nvram_nget("raidlzlevel%d", i),
+						  r, pname);
 			} else
-				sysprintf("mount -t btrfs %s \"/tmp/mnt/%s\"", r, poolname);
+				sysprintf("mount -t btrfs %s \"%s\"", r, pname);
 			free(r);
 			nvram_set("usb_reason", "btrfs_raid_add");
 			nvram_set("usb_dev", poolname);
