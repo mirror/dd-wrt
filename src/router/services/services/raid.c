@@ -28,6 +28,7 @@
 #include <signal.h>
 #include <services.h>
 #include <sys/ioctl.h>
+#include <sys/mount.h>
 #include <linux/fs.h>
 #include <fcntl.h>
 
