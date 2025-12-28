@@ -135,6 +135,7 @@ nodist_libzpool_la_SOURCES = \
 	module/zfs/space_map.c \
 	module/zfs/space_reftree.c \
 	module/zfs/txg.c \
+	module/zfs/u8_textprep.c \
 	module/zfs/uberblock.c \
 	module/zfs/unique.c \
 	module/zfs/vdev.c \
@@ -196,7 +197,6 @@ nodist_libzpool_la_SOURCES = \
 
 libzpool_la_LIBADD = \
 	libicp.la \
-	libunicode.la \
 	libnvpair.la \
 	libzstd.la \
 	libzutil.la

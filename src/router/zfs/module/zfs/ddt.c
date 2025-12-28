@@ -362,20 +362,26 @@ static const ddt_kstats_t ddt_kstats_template = {
 };
 
 #ifdef _KERNEL
+/*
+ * Hot-path lookup counters use wmsums to avoid cache line bouncing.
+ * DDT_KSTAT_BUMP: Increment a wmsum counter (lookup stats).
+ *
+ * Sync-only counters use direct kstat assignment (no atomics needed).
+ * DDT_KSTAT_SET: Set a value (log entry counts, rates).
+ * DDT_KSTAT_SUB: Subtract from a value (decrement log entry counts).
+ * DDT_KSTAT_ZERO: Zero a value (clear log entry counts).
+ */
 #define	_DDT_KSTAT_STAT(ddt, stat) \
 	&((ddt_kstats_t *)(ddt)->ddt_ksp->ks_data)->stat.value.ui64
 #define	DDT_KSTAT_BUMP(ddt, stat) \
-	do { atomic_inc_64(_DDT_KSTAT_STAT(ddt, stat)); } while (0)
-#define	DDT_KSTAT_ADD(ddt, stat, val) \
-	do { atomic_add_64(_DDT_KSTAT_STAT(ddt, stat), val); } while (0)
+	wmsum_add(&(ddt)->ddt_kstat_##stat, 1)
 #define	DDT_KSTAT_SUB(ddt, stat, val) \
-	do { atomic_sub_64(_DDT_KSTAT_STAT(ddt, stat), val); } while (0)
+	do { *_DDT_KSTAT_STAT(ddt, stat) -= (val); } while (0)
 #define	DDT_KSTAT_SET(ddt, stat, val) \
-	do { atomic_store_64(_DDT_KSTAT_STAT(ddt, stat), val); } while (0)
+	do { *_DDT_KSTAT_STAT(ddt, stat) = (val); } while (0)
 #define	DDT_KSTAT_ZERO(ddt, stat) DDT_KSTAT_SET(ddt, stat, 0)
 #else
 #define	DDT_KSTAT_BUMP(ddt, stat) do {} while (0)
-#define	DDT_KSTAT_ADD(ddt, stat, val) do {} while (0)
 #define	DDT_KSTAT_SUB(ddt, stat, val) do {} while (0)
 #define	DDT_KSTAT_SET(ddt, stat, val) do {} while (0)
 #define	DDT_KSTAT_ZERO(ddt, stat) do {} while (0)
@@ -400,6 +406,9 @@ ddt_object_create(ddt_t *ddt, ddt_type_t type, ddt_class_t class,
 	ASSERT0(*objectp);
 	VERIFY0(ddt_ops[type]->ddt_op_create(os, objectp, tx, prehash));
 	ASSERT3U(*objectp, !=, 0);
+
+	VERIFY0(dnode_hold(os, *objectp, ddt,
+	    &ddt->ddt_object_dnode[type][class]));
 
 	ASSERT3U(ddt->ddt_version, !=, DDT_VERSION_UNCONFIGURED);
 
@@ -431,6 +440,10 @@ ddt_object_destroy(ddt_t *ddt, ddt_type_t type, ddt_class_t class,
 	VERIFY0(count);
 	VERIFY0(zap_remove(os, ddt->ddt_dir_object, name, tx));
 	VERIFY0(zap_remove(os, spa->spa_ddt_stat_object, name, tx));
+	if (ddt->ddt_object_dnode[type][class] != NULL) {
+		dnode_rele(ddt->ddt_object_dnode[type][class], ddt);
+		ddt->ddt_object_dnode[type][class] = NULL;
+	}
 	VERIFY0(ddt_ops[type]->ddt_op_destroy(os, *objectp, tx));
 	memset(&ddt->ddt_object_stats[type][class], 0, sizeof (ddt_object_t));
 
@@ -462,28 +475,38 @@ ddt_object_load(ddt_t *ddt, ddt_type_t type, ddt_class_t class)
 	if (error != 0)
 		return (error);
 
+	error = dnode_hold(ddt->ddt_os, ddt->ddt_object[type][class], ddt,
+	    &ddt->ddt_object_dnode[type][class]);
+	if (error != 0)
+		return (error);
+
 	error = zap_lookup(ddt->ddt_os, ddt->ddt_spa->spa_ddt_stat_object, name,
 	    sizeof (uint64_t), sizeof (ddt_histogram_t) / sizeof (uint64_t),
 	    &ddt->ddt_histogram[type][class]);
 	if (error != 0)
-		return (error);
+		goto error;
 
 	/*
 	 * Seed the cached statistics.
 	 */
 	error = ddt_object_info(ddt, type, class, &doi);
 	if (error)
-		return (error);
+		goto error;
 
 	error = ddt_object_count(ddt, type, class, &count);
 	if (error)
-		return (error);
+		goto error;
 
 	ddo->ddo_count = count;
 	ddo->ddo_dspace = doi.doi_physical_blocks_512 << 9;
 	ddo->ddo_mspace = doi.doi_fill_count * doi.doi_data_block_size;
 
 	return (0);
+
+error:
+	dnode_rele(ddt->ddt_object_dnode[type][class], ddt);
+	ddt->ddt_object_dnode[type][class] = NULL;
+	return (error);
 }
 
 static void
@@ -522,11 +545,11 @@ static int
 ddt_object_lookup(ddt_t *ddt, ddt_type_t type, ddt_class_t class,
     ddt_entry_t *dde)
 {
-	if (!ddt_object_exists(ddt, type, class))
+	dnode_t *dn = ddt->ddt_object_dnode[type][class];
+	if (dn == NULL)
 		return (SET_ERROR(ENOENT));
 
-	return (ddt_ops[type]->ddt_op_lookup(ddt->ddt_os,
-	    ddt->ddt_object[type][class], &dde->dde_key,
+	return (ddt_ops[type]->ddt_op_lookup(dn, &dde->dde_key,
 	    dde->dde_phys, DDT_PHYS_SIZE(ddt)));
 }
 
@@ -534,42 +557,42 @@ static int
 ddt_object_contains(ddt_t *ddt, ddt_type_t type, ddt_class_t class,
     const ddt_key_t *ddk)
 {
-	if (!ddt_object_exists(ddt, type, class))
+	dnode_t *dn = ddt->ddt_object_dnode[type][class];
+	if (dn == NULL)
 		return (SET_ERROR(ENOENT));
 
-	return (ddt_ops[type]->ddt_op_contains(ddt->ddt_os,
-	    ddt->ddt_object[type][class], ddk));
+	return (ddt_ops[type]->ddt_op_contains(dn, ddk));
 }
 
 static void
 ddt_object_prefetch(ddt_t *ddt, ddt_type_t type, ddt_class_t class,
     const ddt_key_t *ddk)
 {
-	if (!ddt_object_exists(ddt, type, class))
+	dnode_t *dn = ddt->ddt_object_dnode[type][class];
+	if (dn == NULL)
 		return;
 
-	ddt_ops[type]->ddt_op_prefetch(ddt->ddt_os,
-	    ddt->ddt_object[type][class], ddk);
+	ddt_ops[type]->ddt_op_prefetch(dn, ddk);
 }
 
 static void
 ddt_object_prefetch_all(ddt_t *ddt, ddt_type_t type, ddt_class_t class)
 {
-	if (!ddt_object_exists(ddt, type, class))
+	dnode_t *dn = ddt->ddt_object_dnode[type][class];
+	if (dn == NULL)
 		return;
 
-	ddt_ops[type]->ddt_op_prefetch_all(ddt->ddt_os,
-	    ddt->ddt_object[type][class]);
+	ddt_ops[type]->ddt_op_prefetch_all(dn);
 }
 
 static int
 ddt_object_update(ddt_t *ddt, ddt_type_t type, ddt_class_t class,
     const ddt_lightweight_entry_t *ddlwe, dmu_tx_t *tx)
 {
-	ASSERT(ddt_object_exists(ddt, type, class));
+	dnode_t *dn = ddt->ddt_object_dnode[type][class];
+	ASSERT(dn != NULL);
 
-	return (ddt_ops[type]->ddt_op_update(ddt->ddt_os,
-	    ddt->ddt_object[type][class], &ddlwe->ddlwe_key,
+	return (ddt_ops[type]->ddt_op_update(dn, &ddlwe->ddlwe_key,
 	    &ddlwe->ddlwe_phys, DDT_PHYS_SIZE(ddt), tx));
 }
 
@@ -577,20 +600,20 @@ static int
 ddt_object_remove(ddt_t *ddt, ddt_type_t type, ddt_class_t class,
     const ddt_key_t *ddk, dmu_tx_t *tx)
 {
-	ASSERT(ddt_object_exists(ddt, type, class));
+	dnode_t *dn = ddt->ddt_object_dnode[type][class];
+	ASSERT(dn != NULL);
 
-	return (ddt_ops[type]->ddt_op_remove(ddt->ddt_os,
-	    ddt->ddt_object[type][class], ddk, tx));
+	return (ddt_ops[type]->ddt_op_remove(dn, ddk, tx));
 }
 
 int
 ddt_object_walk(ddt_t *ddt, ddt_type_t type, ddt_class_t class,
     uint64_t *walk, ddt_lightweight_entry_t *ddlwe)
 {
-	ASSERT(ddt_object_exists(ddt, type, class));
+	dnode_t *dn = ddt->ddt_object_dnode[type][class];
+	ASSERT(dn != NULL);
 
-	int error = ddt_ops[type]->ddt_op_walk(ddt->ddt_os,
-	    ddt->ddt_object[type][class], walk, &ddlwe->ddlwe_key,
+	int error = ddt_ops[type]->ddt_op_walk(dn, walk, &ddlwe->ddlwe_key,
 	    &ddlwe->ddlwe_phys, DDT_PHYS_SIZE(ddt));
 	if (error == 0) {
 		ddlwe->ddlwe_type = type;
@@ -604,10 +627,10 @@ int
 ddt_object_count(ddt_t *ddt, ddt_type_t type, ddt_class_t class,
     uint64_t *count)
 {
-	ASSERT(ddt_object_exists(ddt, type, class));
+	dnode_t *dn = ddt->ddt_object_dnode[type][class];
+	ASSERT(dn != NULL);
 
-	return (ddt_ops[type]->ddt_op_count(ddt->ddt_os,
-	    ddt->ddt_object[type][class], count));
+	return (ddt_ops[type]->ddt_op_count(dn, count));
 }
 
 int
@@ -783,7 +806,7 @@ ddt_class_start(void)
 {
 	uint64_t start = gethrestime_sec();
 
-	if (ddt_prune_artificial_age) {
+	if (unlikely(ddt_prune_artificial_age)) {
 		/*
 		 * debug aide -- simulate a wider distribution
 		 * so we don't have to wait for an aged DDT
@@ -1004,6 +1027,7 @@ ddt_alloc_entry_io(ddt_entry_t *dde)
 		return;
 
 	dde->dde_io = kmem_zalloc(sizeof (ddt_entry_io_t), KM_SLEEP);
+	mutex_init(&dde->dde_io->dde_io_lock, NULL, MUTEX_DEFAULT, NULL);
 }
 
 static void
@@ -1016,6 +1040,7 @@ ddt_free(const ddt_t *ddt, ddt_entry_t *dde)
 		if (dde->dde_io->dde_repair_abd != NULL)
 			abd_free(dde->dde_io->dde_repair_abd);
 
+		mutex_destroy(&dde->dde_io->dde_io_lock);
 		kmem_free(dde->dde_io, sizeof (ddt_entry_io_t));
 	}
 
@@ -1028,13 +1053,6 @@ void
 ddt_remove(ddt_t *ddt, ddt_entry_t *dde)
 {
 	ASSERT(MUTEX_HELD(&ddt->ddt_lock));
-
-	/* Entry is still in the log, so charge the entry back to it */
-	if (dde->dde_flags & DDE_FLAG_LOGGED) {
-		ddt_lightweight_entry_t ddlwe;
-		DDT_ENTRY_TO_LIGHTWEIGHT(ddt, dde, &ddlwe);
-		ddt_histogram_add_entry(ddt, &ddt->ddt_log_histogram, &ddlwe);
-	}
 
 	avl_remove(&ddt->ddt_tree, dde);
 	ddt_free(ddt, dde);
@@ -1171,7 +1189,7 @@ ddt_lookup(ddt_t *ddt, const blkptr_t *bp, boolean_t verify)
 
 	ASSERT(MUTEX_HELD(&ddt->ddt_lock));
 
-	if (ddt->ddt_version == DDT_VERSION_UNCONFIGURED) {
+	if (unlikely(ddt->ddt_version == DDT_VERSION_UNCONFIGURED)) {
 		/*
 		 * This is the first use of this DDT since the pool was
 		 * created; finish getting it ready for use.
@@ -1226,62 +1244,60 @@ ddt_lookup(ddt_t *ddt, const blkptr_t *bp, boolean_t verify)
 
 	/* Time to make a new entry. */
 	dde = ddt_alloc(ddt, &search);
-
-	/* Record the time this class was created (used by ddt prune) */
-	if (ddt->ddt_flags & DDT_FLAG_FLAT)
-		dde->dde_phys->ddp_flat.ddp_class_start = ddt_class_start();
-
 	avl_insert(&ddt->ddt_tree, dde, where);
 
-	/* If its in the log tree, we can "load" it from there */
+	/*
+	 * The entry in ddt_tree has no DDE_FLAG_LOADED, so other possible
+	 * threads will wait even while we drop the lock.
+	 */
+	ddt_exit(ddt);
+
+	/*
+	 * If there is a log, we should try to "load" from there first.
+	 */
 	if (ddt->ddt_flags & DDT_FLAG_LOG) {
 		ddt_lightweight_entry_t ddlwe;
+		boolean_t from_flushing;
 
-		if (ddt_log_find_key(ddt, &search, &ddlwe)) {
-			/*
-			 * See if we have the key first, and if so, set up
-			 * the entry.
-			 */
+		/* Read-only search, no locks needed (logs stable during I/O) */
+		if (ddt_log_find_key(ddt, &search, &ddlwe, &from_flushing)) {
 			dde->dde_type = ddlwe.ddlwe_type;
 			dde->dde_class = ddlwe.ddlwe_class;
 			memcpy(dde->dde_phys, &ddlwe.ddlwe_phys,
 			    DDT_PHYS_SIZE(ddt));
-			/* Whatever we found isn't valid for this BP, eject */
-			if (verify &&
-			    !ddt_entry_lookup_is_valid(ddt, bp, dde)) {
+
+			/*
+			 * Check validity. If invalid and no waiters, clean up
+			 * immediately. Otherwise continue setup for waiters.
+			 */
+			boolean_t valid = !verify ||
+			    ddt_entry_lookup_is_valid(ddt, bp, dde);
+			ddt_enter(ddt);
+			if (!valid && dde->dde_waiters == 0) {
 				avl_remove(&ddt->ddt_tree, dde);
 				ddt_free(ddt, dde);
 				return (NULL);
 			}
 
-			/* Remove it and count it */
-			if (ddt_log_remove_key(ddt,
-			    ddt->ddt_log_active, &search)) {
-				DDT_KSTAT_BUMP(ddt, dds_lookup_log_active_hit);
-			} else {
-				VERIFY(ddt_log_remove_key(ddt,
-				    ddt->ddt_log_flushing, &search));
+			dde->dde_flags = DDE_FLAG_LOADED | DDE_FLAG_LOGGED;
+			if (from_flushing) {
+				dde->dde_flags |= DDE_FLAG_FROM_FLUSHING;
 				DDT_KSTAT_BUMP(ddt,
 				    dds_lookup_log_flushing_hit);
+			} else {
+				DDT_KSTAT_BUMP(ddt, dds_lookup_log_active_hit);
 			}
-
-			dde->dde_flags = DDE_FLAG_LOADED | DDE_FLAG_LOGGED;
 
 			DDT_KSTAT_BUMP(ddt, dds_lookup_log_hit);
 			DDT_KSTAT_BUMP(ddt, dds_lookup_existing);
 
-			return (dde);
+			cv_broadcast(&dde->dde_cv);
+
+			return (valid ? dde : NULL);
 		}
 
 		DDT_KSTAT_BUMP(ddt, dds_lookup_log_miss);
 	}
-
-	/*
-	 * ddt_tree is now stable, so unlock and let everyone else keep moving.
-	 * Anyone landing on this entry will find it without DDE_FLAG_LOADED,
-	 * and go to sleep waiting for it above.
-	 */
-	ddt_exit(ddt);
 
 	/* Search all store objects for the entry. */
 	error = ENOENT;
@@ -1594,6 +1610,46 @@ not_found:
 	return (0);
 }
 
+static int
+ddt_kstat_update(kstat_t *ksp, int rw)
+{
+	ddt_t *ddt = ksp->ks_private;
+	ddt_kstats_t *dds = ksp->ks_data;
+
+	if (rw == KSTAT_WRITE)
+		return (SET_ERROR(EACCES));
+
+	/* Aggregate wmsum counters for lookup stats */
+	dds->dds_lookup.value.ui64 =
+	    wmsum_value(&ddt->ddt_kstat_dds_lookup);
+	dds->dds_lookup_live_hit.value.ui64 =
+	    wmsum_value(&ddt->ddt_kstat_dds_lookup_live_hit);
+	dds->dds_lookup_live_wait.value.ui64 =
+	    wmsum_value(&ddt->ddt_kstat_dds_lookup_live_wait);
+	dds->dds_lookup_live_miss.value.ui64 =
+	    wmsum_value(&ddt->ddt_kstat_dds_lookup_live_miss);
+	dds->dds_lookup_existing.value.ui64 =
+	    wmsum_value(&ddt->ddt_kstat_dds_lookup_existing);
+	dds->dds_lookup_new.value.ui64 =
+	    wmsum_value(&ddt->ddt_kstat_dds_lookup_new);
+	dds->dds_lookup_log_hit.value.ui64 =
+	    wmsum_value(&ddt->ddt_kstat_dds_lookup_log_hit);
+	dds->dds_lookup_log_active_hit.value.ui64 =
+	    wmsum_value(&ddt->ddt_kstat_dds_lookup_log_active_hit);
+	dds->dds_lookup_log_flushing_hit.value.ui64 =
+	    wmsum_value(&ddt->ddt_kstat_dds_lookup_log_flushing_hit);
+	dds->dds_lookup_log_miss.value.ui64 =
+	    wmsum_value(&ddt->ddt_kstat_dds_lookup_log_miss);
+	dds->dds_lookup_stored_hit.value.ui64 =
+	    wmsum_value(&ddt->ddt_kstat_dds_lookup_stored_hit);
+	dds->dds_lookup_stored_miss.value.ui64 =
+	    wmsum_value(&ddt->ddt_kstat_dds_lookup_stored_miss);
+
+	/* Sync-only counters are already set directly in kstats */
+
+	return (0);
+}
+
 static void
 ddt_table_alloc_kstats(ddt_t *ddt)
 {
@@ -1601,12 +1657,28 @@ ddt_table_alloc_kstats(ddt_t *ddt)
 	char *name = kmem_asprintf("ddt_stats_%s",
 	    zio_checksum_table[ddt->ddt_checksum].ci_name);
 
+	/* Initialize wmsums for lookup counters */
+	wmsum_init(&ddt->ddt_kstat_dds_lookup, 0);
+	wmsum_init(&ddt->ddt_kstat_dds_lookup_live_hit, 0);
+	wmsum_init(&ddt->ddt_kstat_dds_lookup_live_wait, 0);
+	wmsum_init(&ddt->ddt_kstat_dds_lookup_live_miss, 0);
+	wmsum_init(&ddt->ddt_kstat_dds_lookup_existing, 0);
+	wmsum_init(&ddt->ddt_kstat_dds_lookup_new, 0);
+	wmsum_init(&ddt->ddt_kstat_dds_lookup_log_hit, 0);
+	wmsum_init(&ddt->ddt_kstat_dds_lookup_log_active_hit, 0);
+	wmsum_init(&ddt->ddt_kstat_dds_lookup_log_flushing_hit, 0);
+	wmsum_init(&ddt->ddt_kstat_dds_lookup_log_miss, 0);
+	wmsum_init(&ddt->ddt_kstat_dds_lookup_stored_hit, 0);
+	wmsum_init(&ddt->ddt_kstat_dds_lookup_stored_miss, 0);
+
 	ddt->ddt_ksp = kstat_create(mod, 0, name, "misc", KSTAT_TYPE_NAMED,
 	    sizeof (ddt_kstats_t) / sizeof (kstat_named_t), KSTAT_FLAG_VIRTUAL);
 	if (ddt->ddt_ksp != NULL) {
 		ddt_kstats_t *dds = kmem_alloc(sizeof (ddt_kstats_t), KM_SLEEP);
 		memcpy(dds, &ddt_kstats_template, sizeof (ddt_kstats_t));
 		ddt->ddt_ksp->ks_data = dds;
+		ddt->ddt_ksp->ks_update = ddt_kstat_update;
+		ddt->ddt_ksp->ks_private = ddt;
 		kstat_install(ddt->ddt_ksp);
 	}
 
@@ -1648,7 +1720,30 @@ ddt_table_free(ddt_t *ddt)
 		kstat_delete(ddt->ddt_ksp);
 	}
 
+	/* Cleanup wmsums for lookup counters */
+	wmsum_fini(&ddt->ddt_kstat_dds_lookup);
+	wmsum_fini(&ddt->ddt_kstat_dds_lookup_live_hit);
+	wmsum_fini(&ddt->ddt_kstat_dds_lookup_live_wait);
+	wmsum_fini(&ddt->ddt_kstat_dds_lookup_live_miss);
+	wmsum_fini(&ddt->ddt_kstat_dds_lookup_existing);
+	wmsum_fini(&ddt->ddt_kstat_dds_lookup_new);
+	wmsum_fini(&ddt->ddt_kstat_dds_lookup_log_hit);
+	wmsum_fini(&ddt->ddt_kstat_dds_lookup_log_active_hit);
+	wmsum_fini(&ddt->ddt_kstat_dds_lookup_log_flushing_hit);
+	wmsum_fini(&ddt->ddt_kstat_dds_lookup_log_miss);
+	wmsum_fini(&ddt->ddt_kstat_dds_lookup_stored_hit);
+	wmsum_fini(&ddt->ddt_kstat_dds_lookup_stored_miss);
+
 	ddt_log_free(ddt);
+	for (ddt_type_t type = 0; type < DDT_TYPES; type++) {
+		for (ddt_class_t class = 0; class < DDT_CLASSES; class++) {
+			if (ddt->ddt_object_dnode[type][class] != NULL) {
+				dnode_rele(ddt->ddt_object_dnode[type][class],
+				    ddt);
+				ddt->ddt_object_dnode[type][class] = NULL;
+			}
+		}
+	}
 	ASSERT0(avl_numnodes(&ddt->ddt_tree));
 	ASSERT0(avl_numnodes(&ddt->ddt_repair_tree));
 	avl_destroy(&ddt->ddt_tree);
@@ -2276,6 +2371,19 @@ ddt_sync_table_log(ddt_t *ddt, dmu_tx_t *tx)
 		    avl_destroy_nodes(&ddt->ddt_tree, &cookie)) != NULL) {
 			ASSERT(dde->dde_flags & DDE_FLAG_LOADED);
 			DDT_ENTRY_TO_LIGHTWEIGHT(ddt, dde, &ddlwe);
+
+			/* If from flushing log, remove it. */
+			if (dde->dde_flags & DDE_FLAG_FROM_FLUSHING) {
+				VERIFY(ddt_log_remove_key(ddt,
+				    ddt->ddt_log_flushing, &ddlwe.ddlwe_key));
+			}
+
+			/* Update class_start to track last modification time */
+			if (ddt->ddt_flags & DDT_FLAG_FLAT) {
+				ddlwe.ddlwe_phys.ddp_flat.ddp_class_start =
+				    ddt_class_start();
+			}
+
 			ddt_log_entry(ddt, &ddlwe, &dlu);
 			ddt_sync_scan_entry(ddt, &ddlwe, tx);
 			ddt_free(ddt, dde);
@@ -2336,6 +2444,13 @@ ddt_sync_table_flush(ddt_t *ddt, dmu_tx_t *tx)
 
 		ddt_lightweight_entry_t ddlwe;
 		DDT_ENTRY_TO_LIGHTWEIGHT(ddt, dde, &ddlwe);
+
+		/* Update class_start to track last modification time */
+		if (ddt->ddt_flags & DDT_FLAG_FLAT) {
+			ddlwe.ddlwe_phys.ddp_flat.ddp_class_start =
+			    ddt_class_start();
+		}
+
 		ddt_sync_flush_entry(ddt, &ddlwe,
 		    dde->dde_type, dde->dde_class, tx);
 		ddt_sync_scan_entry(ddt, &ddlwe, tx);
@@ -2687,7 +2802,7 @@ ddt_prune_walk(spa_t *spa, uint64_t cutoff, ddt_age_histo_t *histogram)
 		 * If this entry is on the log, then the stored entry is stale
 		 * and we should skip it.
 		 */
-		if (ddt_log_find_key(ddt, &ddlwe.ddlwe_key, NULL))
+		if (ddt_log_find_key(ddt, &ddlwe.ddlwe_key, NULL, NULL))
 			continue;
 
 		/* prune older entries */

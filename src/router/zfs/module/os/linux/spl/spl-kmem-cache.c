@@ -139,12 +139,12 @@ static void spl_cache_shrink(spl_kmem_cache_t *skc, void *obj);
 static void *
 kv_alloc(spl_kmem_cache_t *skc, int size, int flags)
 {
-	gfp_t lflags = kmem_flags_convert(flags);
+	gfp_t lflags = kmem_flags_convert(flags | KM_VMEM);
 	void *ptr;
 
 	if (skc->skc_flags & KMC_RECLAIMABLE)
 		lflags |= __GFP_RECLAIMABLE;
-	ptr = spl_vmalloc(size, lflags | __GFP_HIGHMEM);
+	ptr = spl_vmalloc(size, lflags);
 
 	/* Resulting allocated memory will be page aligned */
 	ASSERT(IS_P2ALIGNED(ptr, PAGE_SIZE));
@@ -840,7 +840,7 @@ spl_kmem_cache_destroy(spl_kmem_cache_t *skc)
 	id = skc->skc_taskqid;
 	spin_unlock(&skc->skc_lock);
 
-	taskq_cancel_id(spl_kmem_cache_taskq, id);
+	taskq_cancel_id(spl_kmem_cache_taskq, id, B_TRUE);
 
 	/*
 	 * Wait until all current callers complete, this is mainly
