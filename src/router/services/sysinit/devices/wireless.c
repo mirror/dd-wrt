@@ -169,7 +169,7 @@ int load_ath11k(void)
 	insmod("hwmon");
 	if (!nvram_match("noath11k", "1")) {
 		insmod("qmi_helpers");
-		eval("insmod","ath11k","frame_mode=1");
+		eval("insmod", "ath11k", "frame_mode=1");
 		insmod("qrtr");
 		insmod("mhi");
 		insmod("qrtr-mhi");
@@ -333,8 +333,8 @@ int load_rtlwifi(void)
 	wificnt += detectchange("rtw89_8852be");
 	wificnt += detectchange("rtw89_8852ce");
 	if (!wificnt) {
-		eval("modprobe","-r","rtw89_pci");
-		eval("modprobe","-r","rtw89_core");
+		eval("modprobe", "-r", "rtw89_pci");
+		eval("modprobe", "-r", "rtw89_core");
 	}
 	return 0;
 }
