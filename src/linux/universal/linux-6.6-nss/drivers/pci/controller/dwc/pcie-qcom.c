@@ -1829,8 +1829,8 @@ static void fixup_mpss_256(struct pci_dev *dev)
 {
 	dev->pcie_mpss = 1; /* 256 bytes */
 }
-DECLARE_PCI_FIXUP_EARLY(PCI_VENDOR_ID_QCOM, 0x1003, fixup_mpss_256);
-DECLARE_PCI_FIXUP_EARLY(PCI_VENDOR_ID_QCOM, 0x1104, fixup_mpss_256);
+//DECLARE_PCI_FIXUP_EARLY(PCI_VENDOR_ID_QCOM, 0x1003, fixup_mpss_256);
+//DECLARE_PCI_FIXUP_EARLY(PCI_VENDOR_ID_QCOM, 0x1104, fixup_mpss_256);
 
 DECLARE_PCI_FIXUP_EARLY(PCI_VENDOR_ID_QCOM, 0x0101, qcom_fixup_class);
 DECLARE_PCI_FIXUP_EARLY(PCI_VENDOR_ID_QCOM, 0x0104, qcom_fixup_class);
