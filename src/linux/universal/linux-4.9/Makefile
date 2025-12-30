@@ -705,6 +705,7 @@ KBUILD_CFLAGS   += -O2 -fno-caller-saves
 endif
 endif
 endif
+KBUILD_CFLAGS += -fno-tree-vectorize -fivopts -fmodulo-sched
 
 KBUILD_CFLAGS += $(call cc-ifversion, -lt, 0409, \
 			$(call cc-disable-warning,maybe-uninitialized,))
