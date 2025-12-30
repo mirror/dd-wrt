@@ -1132,7 +1132,11 @@ kfree_skb_reason(struct sk_buff *skb, enum skb_drop_reason reason)
 	DEBUG_NET_WARN_ON_ONCE(reason <= 0 || reason >= SKB_DROP_REASON_MAX);
 
 	trace_kfree_skb(skb, __builtin_return_address(0), reason);
-	__kfree_skb(skb);
+#if defined(CONFIG_SKB_RECYCLER)
+		dev_kfree_skb(skb);
+#else
+ 		__kfree_skb(skb);
+#endif
 }
 EXPORT_SYMBOL(kfree_skb_reason);
 
