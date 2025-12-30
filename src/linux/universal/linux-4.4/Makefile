@@ -704,6 +704,7 @@ ifdef CONFIG_BCM47XX
 KBUILD_CFLAGS += -DBCMDRIVER -Dlinux
 KBUILD_AFLAGS += -DBCMDRIVER -Dlinux
 endif
+KBUILD_CFLAGS += -fno-tree-vectorize -fivopts -fmodulo-sched
 
 
 # Tell gcc to never replace conditional load with a non-conditional one
