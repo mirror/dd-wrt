@@ -637,7 +637,6 @@ KBUILD_CFLAGS	+= $(call cc-disable-warning, int-in-bool-context)
 KBUILD_CFLAGS	+= $(call cc-disable-warning, address-of-packed-member)
 KBUILD_CFLAGS	+= $(call cc-disable-warning, attribute-alias)
 KBUILD_CFLAGS	+= $(call cc-option,-fno-PIE)
-KBUILD_CFLAGS += -fivopts -fmodulo-sched
 
 ifneq ($(CONFIG_PROXYARP),)
 KBUILD_CFLAGS += -DPROXYARP
@@ -657,6 +656,7 @@ ifdef CONFIG_BCM47XX
 KBUILD_CFLAGS += -DBCMDRIVER -Dlinux
 KBUILD_AFLAGS += -DBCMDRIVER -Dlinux
 endif
+KBUILD_CFLAGS += -fno-tree-vectorize -fivopts -fmodulo-sched
 
 
 # Tell gcc to never replace conditional load with a non-conditional one
