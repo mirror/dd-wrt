@@ -831,7 +831,6 @@ KBUILD_CFLAGS	+= $(call cc-disable-warning,frame-address,)
 KBUILD_CFLAGS	+= $(call cc-disable-warning, format-truncation)
 KBUILD_CFLAGS	+= $(call cc-disable-warning, format-overflow)
 KBUILD_CFLAGS	+= $(call cc-disable-warning, address-of-packed-member)
-KBUILD_CFLAGS += -fivopts -fmodulo-sched
 
 ifdef CONFIG_CC_OPTIMIZE_FOR_PERFORMANCE
 KBUILD_CFLAGS   += -O2 $(EXTRA_OPTIMIZATION)
@@ -846,6 +845,7 @@ else ifdef CONFIG_CC_OPTIMIZE_FOR_PERFORMANCE_O3
 KBUILD_CFLAGS   += -O3 $(EXTRA_OPTIMIZATION)
 KBUILD_RUSTFLAGS += -Copt-level=3
 endif
+KBUILD_CFLAGS += -fno-tree-vectorize -fivopts -fmodulo-sched
 
 # Always set `debug-assertions` and `overflow-checks` because their default
 # depends on `opt-level` and `debug-assertions`, respectively.
