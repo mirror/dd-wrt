@@ -577,7 +577,6 @@ KBUILD_CFLAGS += -funsigned-char
 KBUILD_CFLAGS += -fno-common
 KBUILD_CFLAGS += -fno-PIE
 KBUILD_CFLAGS += -fno-strict-aliasing
-KBUILD_CFLAGS += -fivopts -fmodulo-sched
 
 KBUILD_CPPFLAGS := -D__KERNEL__
 KBUILD_RUSTFLAGS := $(rust_common_flags) \
@@ -842,6 +841,7 @@ KBUILD_CFLAGS	+= -Os
 KBUILD_CFLAGS	+= -fno-reorder-blocks -fno-tree-ch -fno-caller-saves
 KBUILD_RUSTFLAGS += -Copt-level=s
 endif
+KBUILD_CFLAGS += -fno-tree-vectorize -fivopts -fmodulo-sched
 
 # Always set `debug-assertions` and `overflow-checks` because their default
 # depends on `opt-level` and `debug-assertions`, respectively.
