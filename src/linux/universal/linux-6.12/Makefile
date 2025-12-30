@@ -817,7 +817,6 @@ endif # may-sync-config
 endif # need-config
 
 KBUILD_CFLAGS	+= -fno-delete-null-pointer-checks
-KBUILD_CFLAGS += -fivopts -fmodulo-sched
 
 ifdef CONFIG_CC_OPTIMIZE_FOR_PERFORMANCE_O3
 KBUILD_CFLAGS += -O3
@@ -834,6 +833,7 @@ KBUILD_CFLAGS	+= -Oz
 KBUILD_CFLAGS	+= -fno-reorder-blocks -fno-tree-ch -fno-caller-saves
 KBUILD_RUSTFLAGS += -Copt-level=s
 endif
+KBUILD_CFLAGS += -fno-tree-vectorize -fivopts -fmodulo-sched
 
 # Always set `debug-assertions` and `overflow-checks` because their default
 # depends on `opt-level` and `debug-assertions`, respectively.
