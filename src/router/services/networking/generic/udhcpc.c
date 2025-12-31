@@ -223,8 +223,13 @@ static int bound(void)
 			stop_smartdns();
 			start_smartdns();
 #endif
+#ifdef HAVE_UNBOUND
 			stop_unbound();
 			start_unbound();
+#endif
+#ifdef HAVE_MACTELNET
+			restart_mactelnetd();
+#endif
 			start_wan_service();
 			nvram_seti("dhcpc_done", 1);
 		}
