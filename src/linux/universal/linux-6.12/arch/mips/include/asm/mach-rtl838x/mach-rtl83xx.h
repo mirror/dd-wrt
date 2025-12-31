@@ -48,8 +48,8 @@ struct rtl83xx_soc_info {
 	unsigned int revision;
 	unsigned int cpu;
 	bool testchip;
-	unsigned char *compatible;
 	int cpu_port;
+	int memory_size;
 };
 
 #define RTL838X_UART0_BASE	((volatile void *)(0xb8002000UL))

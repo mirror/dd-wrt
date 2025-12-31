@@ -17,6 +17,26 @@
 
 #include <mach-rtl83xx.h>
 
+#define RTL_SOC_BASE			((volatile void *) 0xB8000000)
+
+#define RTL83XX_DRAM_CONFIG		0x1004
+
+#define RTL9300_SRAMSAR0		0x4000
+#define RTL9300_SRAMSAR1		0x4010
+#define RTL9300_SRAMSAR2		0x4020
+#define RTL9300_SRAMSAR3		0x4030
+#define RTL9300_UMSAR0			0x1300
+#define RTL9300_UMSAR1			0x1310
+#define RTL9300_UMSAR2			0x1320
+#define RTL9300_UMSAR3			0x1330
+#define RTL9300_O0DOR2			0x4220
+#define RTL9300_O0DMAR2			0x4224
+
+#define RTL931X_DRAM_CONFIG		0x14304c
+
+#define soc_r32(reg)			readl(RTL_SOC_BASE + reg)
+#define soc_w32(val, reg)		writel(val, RTL_SOC_BASE + reg)
+
 struct rtl83xx_soc_info soc_info;
 EXPORT_SYMBOL(soc_info);
 const void *fdt;
@@ -50,13 +70,14 @@ static void __init rtl9310_l2cache_init(void)
 }
 #endif
 
-static char soc_name[16];
-static char rtl83xx_system_type[32];
+
+static char rtl_soc_name[16];
+static char rtl_system_type[48];
 
 #ifdef CONFIG_MIPS_MT_SMP
 
 extern const struct plat_smp_ops vsmp_smp_ops;
-static struct plat_smp_ops rtlops;
+static struct plat_smp_ops rtl_smp_ops;
 
 static void rtlsmp_init_secondary(void)
 {
@@ -92,10 +113,10 @@ static int rtlsmp_register(void)
 	if (!cpu_has_mipsmt)
 		return 1;
 
-	rtlops = vsmp_smp_ops;
-	rtlops.init_secondary = rtlsmp_init_secondary;
-	rtlops.smp_finish = rtlsmp_finish;
-	register_smp_ops(&rtlops);
+	rtl_smp_ops = vsmp_smp_ops;
+	rtl_smp_ops.init_secondary = rtlsmp_init_secondary;
+	rtl_smp_ops.smp_finish = rtlsmp_finish;
+	register_smp_ops(&rtl_smp_ops);
 
 	return 0;
 }
@@ -129,7 +150,63 @@ void __init device_tree_init(void)
 
 const char *get_system_type(void)
 {
-	return rtl83xx_system_type;
+	return rtl_system_type;
+}
+
+static void __init rtl838x_read_details(u32 model)
+{
+	u32 chip_info, ext_version, tmp;
+
+	sw_w32(0x3, RTL838X_INT_RW_CTRL);
+	sw_w32(0xa << 28, RTL838X_CHIP_INFO);
+
+	chip_info = sw_r32(RTL838X_CHIP_INFO);
+	soc_info.cpu = chip_info & 0xffff;
+
+	ext_version = sw_r32(RTL838X_EXT_VERSION);
+	tmp = ext_version & 0x1f;
+
+	if (tmp == 2) {
+		soc_info.revision = 1;
+	} else {
+		tmp = (chip_info >> 16) & 0x1f;
+		if (soc_info.cpu == 0x0477) {
+			soc_info.revision = tmp;
+			soc_info.testchip = true;
+		} else {
+			soc_info.revision = tmp - 1;
+		}
+	}
+}
+
+static void __init rtl839x_read_details(u32 model)
+{
+	u32 chip_info;
+
+	sw_w32(0xa << 28, RTL839X_CHIP_INFO);
+
+	chip_info = sw_r32(RTL839X_CHIP_INFO);
+	soc_info.cpu = chip_info & 0xffff;
+
+	soc_info.revision = (model >> 1) & 0x1f;
+
+	if (!(model & 0x3e))
+		soc_info.testchip = true;
+}
+
+static void __init rtl93xx_read_details(u32 model)
+{
+	u32 chip_info;
+
+	sw_w32(0xa << 16, RTL93XX_CHIP_INFO);
+
+	chip_info = sw_r32(RTL93XX_CHIP_INFO);
+	soc_info.cpu = chip_info & 0xffff;
+
+	soc_info.revision = model & 0xf;
+
+	if (model & 0x30)
+		soc_info.testchip = true;
 }
 
 static uint32_t __init read_model_name(void)
@@ -141,6 +218,8 @@ static uint32_t __init read_model_name(void)
 	if ((id >= 0x8380 && id <= 0x8382) || id == 0x8330 || id == 0x8332) {
 		soc_info.id = id;
 		soc_info.family = RTL8380_FAMILY_ID;
+		soc_info.cpu_port = RTL838X_CPU_PORT;
+		rtl838x_read_details(model);
 		return model;
 	}
 
@@ -149,6 +228,8 @@ static uint32_t __init read_model_name(void)
 	if ((id >= 0x8391 && id <= 0x8396) || (id >= 0x8351 && id <= 0x8353)) {
 		soc_info.id = id;
 		soc_info.family = RTL8390_FAMILY_ID;
+		soc_info.cpu_port = RTL839X_CPU_PORT;
+		rtl839x_read_details(model);
 		return model;
 	}
 
@@ -157,12 +238,14 @@ static uint32_t __init read_model_name(void)
 	if (id >= 0x9301 && id <= 0x9303) {
 		soc_info.id = id;
 		soc_info.family = RTL9300_FAMILY_ID;
-		soc_info.revision = model & 0xf;
+		soc_info.cpu_port = RTL930X_CPU_PORT;
+		rtl93xx_read_details(model);
 		return model;
 	} else if (id >= 0x9311 && id <= 0x9313) {
 		soc_info.id = id;
 		soc_info.family = RTL9310_FAMILY_ID;
-		soc_info.revision = model & 0xf;
+		soc_info.cpu_port = RTL931X_CPU_PORT;
+		rtl93xx_read_details(model);
 		return model;
 	}
 
@@ -205,10 +288,10 @@ static void __init parse_model_name(uint32_t model)
 		soc_info.testchip = true;
 	}
 
-	snprintf(soc_name, sizeof(soc_name), "RTL%04X%s",
+	snprintf(rtl_soc_name, sizeof(rtl_soc_name), "RTL%04X%s",
 		 soc_info.id, suffix);
 
-	soc_info.name = soc_name;
+	soc_info.name = rtl_soc_name;
 }
 
 static void __init read_chip_info(void)
@@ -239,14 +322,19 @@ static void __init read_chip_info(void)
 	soc_info.cpu = val & 0xffff;
 }
 
-static void __init rtl83xx_set_system_type(void) {
+static void __init set_system_type(void) {
 	char revision = '?';
+	char *es = "";
 
-	if (soc_info.revision > 0 && soc_info.revision <= 24)
-		revision = 'A' + (soc_info.revision - 1);
+	if (soc_info.revision >= 0 && soc_info.revision < 26)
+		revision = 'A' + soc_info.revision;
 
-	snprintf(rtl83xx_system_type, sizeof(rtl83xx_system_type),
-		 "Realtek %s rev %c (%04X)", soc_info.name, revision, soc_info.cpu);
+	if (soc_info.testchip)
+		es = " ES";
+
+	snprintf(rtl_system_type, sizeof(rtl_system_type),
+		 "Realtek %s%s rev %c (%04X)",
+		 soc_info.name, es, revision, soc_info.cpu);
 }
 
 #ifdef CONFIG_EARLY_PRINTK
@@ -270,6 +358,54 @@ void prom_putchar(char c)
 }
 #endif
 
+static void get_system_memory(void)
+{
+	unsigned int dcr, bits;
+
+	if (soc_info.family == RTL9310_FAMILY_ID) {
+		dcr = soc_r32(RTL931X_DRAM_CONFIG);
+		bits = (dcr >> 12) + ((dcr >> 6) & 0x3f) + (dcr & 0x3f);
+	} else {
+		dcr = soc_r32(RTL83XX_DRAM_CONFIG);
+		bits = ((dcr >> 28) & 0x3) + ((dcr >> 24) & 0x3) +
+		       ((dcr >> 20) & 0xf) + ((dcr >> 16) & 0xf) + 20;
+	}
+
+	soc_info.memory_size = 1 << bits;
+}
+
+static void prepare_highmem(void)
+{
+	if ((soc_info.family != RTL9300_FAMILY_ID) ||
+	    (soc_info.memory_size <= 256 * 1024 * 1024) ||
+	    !IS_ENABLED(CONFIG_HIGHMEM))
+		return;
+
+	/*
+	 * To use highmem on RTL930x, SRAM must be deactivated and the highmem mapping
+	 * registers must be setup properly. The hardcoded 0x70000000 might be strange
+	 * but at least it conforms somehow to the RTL931x devices.
+	 *
+	 * - RTL930x: highmem start 0x20000000 + offset 0x70000000 = 0x90000000
+	 * - RTL931x: highmem start 0x90000000 + no offset at all  = 0x90000000
+	 */
+
+	pr_info("highmem kernel on RTL930x with > 256 MB RAM, adapt SoC memory mapping\n");
+
+	soc_w32(0, RTL9300_UMSAR0);
+	soc_w32(0, RTL9300_UMSAR1);
+	soc_w32(0, RTL9300_UMSAR2);
+	soc_w32(0, RTL9300_UMSAR3);
+	soc_w32(0, RTL9300_SRAMSAR0);
+	soc_w32(0, RTL9300_SRAMSAR1);
+	soc_w32(0, RTL9300_SRAMSAR2);
+	soc_w32(0, RTL9300_SRAMSAR3);
+	__sync();
+
+	soc_w32(0x70000000, RTL9300_O0DOR2);
+	soc_w32(0x7fffffff, RTL9300_O0DMAR2);
+	__sync();
+}
 
 void __init prom_init(void)
 {
@@ -280,9 +416,12 @@ void __init prom_init(void)
 	model = read_model_name();
 	parse_model_name(model);
 	read_chip_info();
-	rtl83xx_set_system_type();
+	set_system_type();
+	get_system_memory();
 
-	pr_info("SoC Type: %s\n", get_system_type());
+	pr_info("%s SoC with %d MB\n", get_system_type(), soc_info.memory_size >> 20);
+
+	prepare_highmem();
 
 	/*
 	 * fw_arg2 is be the pointer to the environment. Some devices (e.g. HP JG924A) hand
