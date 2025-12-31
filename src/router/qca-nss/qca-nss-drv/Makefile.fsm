@@ -118,6 +118,6 @@ ccflags-y += -I$(obj)/nss_hal/include
 ccflags-y += -I$(obj)/nss_data_plane/include
 ccflags-y += -I$(obj)/exports
 ccflags-y += -I$(obj)/nss_hal/fsm9010 -DNSS_HAL_FSM9010_SUPPORT
-ccflags-y += -DNSS_DEBUG_LEVEL=0 -DNSS_PKT_STATS_ENABLED=1
+ccflags-y += -DNSS_DEBUG_LEVEL=2 -DNSS_PKT_STATS_ENABLED=1
 ccflags-y += -DNSS_DT_SUPPORT=1 -DNSS_PM_SUPPORT=0 -DNSS_FW_DBG_SUPPORT=0 -DNSS_SKB_REUSE_SUPPORT=0
 ccflags-y += -DNSS_PPP_SUPPORT=0 -DNSS_FREQ_SCALE_SUPPORT=0 -DNSS_FABRIC_SCALING_SUPPORT=0
