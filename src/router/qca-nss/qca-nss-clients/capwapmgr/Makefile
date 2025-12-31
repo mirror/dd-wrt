@@ -13,5 +13,5 @@ obj-m += qca-nss-capwapmgr.o
 qca-nss-capwapmgr-objs := nss_capwapmgr.o
 ccflags-y += -DNSS_CAPWAPMGR_DEBUG_LEVEL=6
 
-ccflags-y += $(NSS_CCFLAGS) -DNSS_DEBUG_LEVEL=2 -DNSS_PKT_STATS_ENABLED=0
+ccflags-y += $(NSS_CCFLAGS) -DNSS_DEBUG_LEVEL=0 -DNSS_PKT_STATS_ENABLED=0
 ccflags-y += -Wall -Werror
