@@ -477,6 +477,19 @@ int safe_fwrite(const void *ptr, size_t size, size_t nmemb, FILE *stream)
 	return ret;
 }
 
+FILE *fopencreate(const char *name, const char *mode)
+{
+	if (strchr(mode, 'w')) {
+		char *dir = strdup(name);
+		char *p = strrchr(dir, '/');
+		if (p)
+			*p = 0;
+		//only last component. no recursive support yet
+		mkdir(dir, 0700);
+		free(dir);
+	}
+	return fopen(name, mode);
+}
 /*
  * Convert Ethernet address string representation to binary data
  * @param       a       string in xx:xx:xx:xx:xx:xx notation
@@ -1517,7 +1530,7 @@ char *get_hwaddr(const char *name, char *eabuf)
 		char *hwaddr = nvram_safe_get("lan_hwaddr");
 		if (*hwaddr)
 			strcpy(eabuf, hwaddr);
-		else 
+		else
 			strcpy(eabuf, "00:00:00:00:00:00");
 	}
 	return NULL;
