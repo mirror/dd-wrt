@@ -642,8 +642,8 @@ void start_dnsmasq(void)
 	/*
 	 * Write configuration file based on current information 
 	 */
-	if (!(fp = fopen("/tmp/dnsmasq.conf", "w"))) {
-		perror("/tmp/dnsmasq.conf");
+	if (!(fp = fopencreate("/tmp/dnsmasq/dnsmasq.conf", "w"))) {
+		perror("/tmp/dnsmasq/dnsmasq.conf");
 		return;
 	}
 	//    fprintf(fp, "bind-interfaces\n");
@@ -746,7 +746,7 @@ void start_dnsmasq(void)
 		}
 	}
 	fprintf(fp, "\n");
-	fprintf(fp, "resolv-file=/tmp/resolv.dnsmasq\n");
+	fprintf(fp, "resolv-file=/tmp/dnsmasq/resolv.dnsmasq\n");
 	//fprintf(fp, "all-servers\n");
 	if (nvram_matchi("dnsmasq_strict", 1))
 		fprintf(fp, "strict-order\n");
@@ -1120,7 +1120,7 @@ void start_dnsmasq(void)
 	dns_to_resolv();
 
 	chmod("/etc/lease_update.sh", 0700);
-	log_eval("dnsmasq", "-u", "root", "-g", "root", "-C", getdefaultconfig("dnsmasq", path, sizeof(path), "dnsmasq.conf"));
+	log_eval("dnsmasq", "-u", "root", "-g", "root", "-C", getdefaultconfig("dnsmasq", path, sizeof(path), "dnsmasq/dnsmasq.conf"));
 
 	return;
 }
@@ -1137,7 +1137,7 @@ void stop_dnsmasq(void)
 	stop_smartdns();
 #endif
 	if (stop_process("dnsmasq", "daemon")) {
-		unlink("/tmp/resolv.dnsmasq");
+		unlink("/tmp/dnsmasq/resolv.dnsmasq");
 	}
 }
 #endif

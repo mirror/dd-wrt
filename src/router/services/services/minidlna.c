@@ -56,7 +56,7 @@ void start_dlna(void)
 	if (!nvram_matchi("dlna_enable", 1))
 		return;
 	mkdir("/tmp/db", 0700);
-	FILE *fp = fopen("/tmp/minidlna.conf", "wb");
+	FILE *fp = fopencreate("/tmp/minidlna/minidlna.conf", "wb");
 	if (jffs_mounted() && (freediskSpace("/jffs") > 134217728)) {
 		mkdir("/jffs/minidlna", 0700);
 		if (nvram_matchi("dlna_cleandb", 1)) {
@@ -120,7 +120,7 @@ void start_dlna(void)
 	fprintf(fp, "notify_interval=300\n");
 	fprintf(fp, "serial=12345678\nmodel_number=AllShare1.0\n");
 	fclose(fp);
-	log_eval("minidlna", "-f", getdefaultconfig("dlna", path, sizeof(path), "minidlna.conf"));
+	log_eval("minidlna", "-f", getdefaultconfig("dlna", path, sizeof(path), "minidlna/minidlna.conf"));
 
 	return;
 }

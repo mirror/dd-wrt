@@ -99,7 +99,7 @@ void start_privoxy(void)
 		whitelist = 1;
 	}
 
-	FILE *fp = fopen("/tmp/privoxy.conf", "wb");
+	FILE *fp = fopencreate("/tmp/privoxy/privoxy.conf", "wb");
 
 	if (nvram_matchi("privoxy_advanced", 1) && nvram_invmatch("privoxy_conf", "")) {
 		fprintf(fp, "%s", nvram_safe_get("privoxy_conf"));
@@ -128,7 +128,7 @@ void start_privoxy(void)
 			whitelist ? "/tmp/user.action" : "user.action", ip, mode, nvram_geti("privoxy_maxclient"));
 	}
 	fclose(fp);
-	log_eval("privoxy", "/tmp/privoxy.conf");
+	log_eval("privoxy", "/tmp/privoxy/privoxy.conf");
 	return;
 }
 

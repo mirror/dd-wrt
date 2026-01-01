@@ -43,7 +43,7 @@ void start_nfs(void)
 	int cpucount = getlogicalcores();
 	if (!nvram_matchi("nfs_enable", 1))
 		return;
-	FILE *fp = fopen("/tmp/exports", "wb");
+	FILE *fp = fopencreate("/tmp/nfs/exports", "wb");
 	if (fp) {
 		nfsshares = getnfsshares();
 		for (cs = nfsshares; cs; cs = csnext) {
@@ -58,7 +58,7 @@ void start_nfs(void)
 		}
 		fclose(fp);
 	}
-	fp = fopen("/tmp/nfs.conf", "wb");
+	fp = fopencreate("/tmp/nfs/nfs.conf", "wb");
 	if (fp) {
 		fprintf(fp, "[general]\n");
 		fprintf(fp, "# pipefs-directory=/var/lib/nfs/rpc_pipefs\n");

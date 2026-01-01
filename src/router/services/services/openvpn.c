@@ -285,11 +285,11 @@ void create_openvpnrules(FILE *fp)
 			"if [[ ! -z \"$alldns\" ]]; then\n"
 			"spbr=\"$(nvram get openvpncl_spbr)\"\n"
 			"splitdns=\"$(nvram get openvpncl_splitdns)\"\n"
-			"cat /tmp/resolv.dnsmasq > /tmp/resolv.dnsmasq_isp\n"
-			"[[ $spbr != \"1\" || $splitdns = \"0\" ]] && { rm -f /tmp/resolv.dnsmasq; nvram set openvpn_get_dns=\"$alldns\"; }\n"
+			"cat /tmp/dnsmasq/resolv.dnsmasq > /tmp/dnsmasq/resolv.dnsmasq_isp\n"
+			"[[ $spbr != \"1\" || $splitdns = \"0\" ]] && { rm -f /tmp/dnsmasq/resolv.dnsmasq; nvram set openvpn_get_dns=\"$alldns\"; }\n"
 			"set=0\n"
 			"for dns in $alldns;do\n"
-			"[[ $spbr != \"1\" || $splitdns = \"0\" ]] && echo \"nameserver $dns\" >> /tmp/resolv.dnsmasq\n"
+			"[[ $spbr != \"1\" || $splitdns = \"0\" ]] && echo \"nameserver $dns\" >> /tmp/dnsmasq/resolv.dnsmasq\n"
 			//route only the pushed DNS servers via the tunnel the added ones must be routed manually if required
 			"grep -q \"^dhcp-option DNS $dns\" /tmp/openvpncl/openvpn.conf || ip route add $dns via $route_vpn_gateway dev $dev 2> /dev/null\n");
 		//"ip route add $dns via $route_vpn_gateway dev $dev 2> /dev/null\n"
@@ -1251,7 +1251,7 @@ void start_openvpn(void)
 	}
 	if (nvram_match("openvpncl_tuntap", "tun")) {
 		fprintf(fp,
-			"[ -f /tmp/resolv.dnsmasq_isp ] && cp -f /tmp/resolv.dnsmasq_isp /tmp/resolv.dnsmasq && nvram unset openvpn_get_dns\n");
+			"[ -f /tmp/dnsmasq/resolv.dnsmasq_isp ] && cp -f /tmp/dnsmasq/resolv.dnsmasq_isp /tmp/dnsmasq/resolv.dnsmasq && nvram unset openvpn_get_dns\n");
 	}
 	if (nvram_match("openvpncl_mit", "1")) {
 		fprintf(fp, "[[ ! -z \"$ifconfig_netmask\" ]] && vpn_netmask=\"/$ifconfig_netmask\"\n");

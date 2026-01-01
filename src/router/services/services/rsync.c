@@ -54,7 +54,7 @@ void start_rsync(void)
 	stop_rsync();
 	if (!nvram_matchi("rsyncd_enable", 1))
 		return;
-	FILE *fp = fopen("/tmp/rsyncd.conf", "wb");
+	FILE *fp = fopencreate("/tmp/rsync/rsyncd.conf", "wb");
 
 	fprintf(fp, "gid = root\n");
 	fprintf(fp, "uid = root\n");
@@ -81,7 +81,7 @@ void start_rsync(void)
 		}
 		fclose(fp);
 	}
-	log_eval("rsyncd", "--daemon", "--config=/tmp/rsyncd.conf");
+	log_eval("rsyncd", "--daemon", "--config=/tmp/rsync/rsyncd.conf");
 	return;
 }
 

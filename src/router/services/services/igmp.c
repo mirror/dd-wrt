@@ -35,13 +35,13 @@ void start_igmprt(void)
 	char wan_if_buffer[33];
 	char name[80], *svbuf;
 	const char *next;
-	char *argv[] = { "igmprt", "/tmp/igmpproxy.conf", NULL };
+	char *argv[] = { "igmprt", "/tmp/igmpproxy/igmpproxy.conf", NULL };
 
 	int ifcount = 0;
 	if (nvram_match("wan_proto", "disabled") || !*(safe_get_wan_face(wan_if_buffer))) // todo: add upstream
 		return;
 
-	FILE *fp = fopen("/tmp/igmpproxy.conf", "wb");
+	FILE *fp = fopencreate("/tmp/igmpproxy/igmpproxy.conf", "wb");
 	int fromvlan = 0;
 	fromvlan |= (nvram_matchi("dtag_vlan8", 1) && nvram_matchi("wan_vdsl", 1));
 #ifdef HAVE_PPTP

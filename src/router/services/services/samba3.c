@@ -109,7 +109,7 @@ void start_samba3(void)
 	eval("ksmbd.adduser", "-u", "nobody", "-p", "nobody", "-i", "/tmp/smb.db");
 #endif
 	if (nvram_matchi("samba3_advanced", 1)) {
-		write_nvram("/tmp/smb.conf", "samba3_conf");
+		write_nvram("/tmp/samba/smb.conf", "samba3_conf");
 	} else {
 		samba3users = getsamba3users();
 		for (cu = samba3users; cu; cu = cunext) {
@@ -126,7 +126,7 @@ void start_samba3(void)
 			free(cu);
 		}
 		char *smbmaxproto = nvram_safe_get("samba3_max_proto");
-		fp = fopen("/tmp/smb.conf", "wb");
+		fp = fopencreate("/tmp/samba/smb.conf", "wb");
 		fprintf(fp,
 			"[global]\n" //
 			"log level = 1\n" //
@@ -248,26 +248,26 @@ nextshare:;
 	if (reload_process("smbd")) {
 #ifdef HAVE_SMP
 		if (eval("/usr/bin/taskset", "0x2", "/usr/sbin/smbd", "-D", "-s",
-			 getdefaultconfig(NULL, path, sizeof(path), "smb.conf")))
+			 getdefaultconfig(NULL, path, sizeof(path), "samba/smb.conf")))
 #endif
-			log_eval("smbd", "-D", "-s", getdefaultconfig(NULL, path, sizeof(path), "smb.conf"));
+			log_eval("smbd", "-D", "-s", getdefaultconfig(NULL, path, sizeof(path), "samba/smb.conf"));
 
 		if (pidof("smbd") <= 0) {
 #ifdef HAVE_SMP
 			if (eval("/usr/bin/taskset", "0x2", "/usr/sbin/smbd", "-D", "-s",
-				 getdefaultconfig(NULL, path, sizeof(path), "smb.conf")))
+				 getdefaultconfig(NULL, path, sizeof(path), "samba/smb.conf")))
 #endif
-				log_eval("smbd", "-D", "-s", getdefaultconfig(NULL, path, sizeof(path), "smb.conf"));
+				log_eval("smbd", "-D", "-s", getdefaultconfig(NULL, path, sizeof(path), "samba/smb.conf"));
 		}
 	}
 	if (reload_process("nmbd")) {
-		log_eval("nmbd", "-D", "-s", getdefaultconfig(NULL, path, sizeof(path), "smb.conf"));
+		log_eval("nmbd", "-D", "-s", getdefaultconfig(NULL, path, sizeof(path), "samba/smb.conf"));
 		if (pidof("nmbd") <= 0) {
-			log_eval("nmbd", "-D", "-s", getdefaultconfig(NULL, path, sizeof(path), "smb.conf"));
+			log_eval("nmbd", "-D", "-s", getdefaultconfig(NULL, path, sizeof(path), "samba/smb.conf"));
 		}
 	}
 #ifdef HAVE_SAMBA4
-	log_eval("winbindd", "-D", "-s", getdefaultconfig(NULL, path, sizeof(path), "smb.conf"));
+	log_eval("winbindd", "-D", "-s", getdefaultconfig(NULL, path, sizeof(path), "samba/smb.conf"));
 #endif
 #else
 	insmod("oid_registry nls_base nls_utf8 crypto_hash crypto_null aead aead2 sha256_generic sha512_generic geniv seqiv arc4 ecb" //
@@ -296,7 +296,7 @@ nextshare:;
 	char c1[64];
 	char c2[64];
 	if (reload_process("ksmbd.mountd")) {
-		log_eval("ksmbd.mountd", "-c", getdefaultconfig(NULL, c1, sizeof(c1), "smb.conf"), "-u",
+		log_eval("ksmbd.mountd", "-c", getdefaultconfig(NULL, c1, sizeof(c1), "samba/smb.conf"), "-u",
 			 getdefaultconfig(NULL, c2, sizeof(c2), "smb.db"));
 	}
 #endif

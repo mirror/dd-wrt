@@ -120,12 +120,12 @@ void start_dhcp6c(void)
 
 	if (nvram_matchi("dhcp6c_custom", 1)) {
 		if (nvram_exists("dhcp6c_conf"))
-			writenvram("dhcp6c_conf", "/tmp/dhcp6c.conf");
+			writenvram("dhcp6c_conf", "/tmp/dhcp6/dhcp6c.conf");
 	} else {
 		//sla_len = 64 - ipv6_pf_len ?: 64;    // egc: why this ? This will stop working if prefix is 64 which can work for one subnet
 		sla_len = (64 - ipv6_pf_len < 0) ? 0 : (64 - ipv6_pf_len);
 
-		if ((fpc = fopen("/etc/dhcp6c.conf", "w"))) {
+		if ((fpc = fopencreate("/etc/dhcp6/dhcp6c.conf", "w"))) {
 			fprintf(fpc,
 				"interface %s {\n" //
 				" send ia-pd 0;\n" //
@@ -243,9 +243,9 @@ void start_dhcp6c(void)
 	}
 #endif
 	if (nvram_match("dhcp6c_norelease", "1"))
-		log_eval("dhcp6c", "-n", "-c", "/tmp/dhcp6c.conf", "-T", "LL", wan_ifname);
+		log_eval("dhcp6c", "-n", "-c", "/tmp/dhcp6/dhcp6c.conf", "-T", "LL", wan_ifname);
 	else
-		log_eval("dhcp6c", "-c", "/tmp/dhcp6c.conf", "-T", "LL", wan_ifname);
+		log_eval("dhcp6c", "-c", "/tmp/dhcp6/dhcp6c.conf", "-T", "LL", wan_ifname);
 }
 
 void stop_dhcp6c(void)
@@ -294,9 +294,9 @@ void start_dhcp6s(void)
 
 	if (nvram_matchi("dhcp6s_custom", 1)) {
 		if (nvram_exists("dhcp6s_conf"))
-			writenvram("dhcp6s_conf", "/tmp/dhcp6s.conf");
+			writenvram("dhcp6s_conf", "/tmp/dhcp6/dhcp6s.conf");
 	} else {
-		if ((fp = fopen("/tmp/dhcp6s.conf", "w")) == NULL)
+		if ((fp = fopencreate("/tmp/dhcp6/dhcp6s.conf", "w")) == NULL)
 			return;
 
 		fprintf(fp, "option refreshtime %d;\n", 900); /* 15 minutes for now */
@@ -331,7 +331,7 @@ void start_dhcp6s(void)
 		fclose(fp);
 	}
 
-	log_eval("dhcp6s", "-c", "/tmp/dhcp6s.conf", nvram_safe_get("lan_ifname"));
+	log_eval("dhcp6s", "-c", "/tmp/dhcp6/dhcp6s.conf", nvram_safe_get("lan_ifname"));
 }
 
 void stop_dhcp6s(void)

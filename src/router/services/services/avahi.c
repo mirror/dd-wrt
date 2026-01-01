@@ -50,7 +50,7 @@ void start_mdns(void)
 	mkdir("/tmp/var/run/avahi-daemon", 0744);
 
 	FILE *fp;
-	fp = fopen("/tmp/mdns.conf", "wb");
+	fp = fopencreate("/tmp/mdns/mdns.conf", "wb");
 	fprintf(fp,
 		"[server]\n" //
 		"host-name=%s\n" //
@@ -123,7 +123,7 @@ void start_mdns(void)
 #endif
 
 	if (reload_process("avahi-daemon")) {
-		snprintf(conffile, sizeof(conffile), getdefaultconfig("mdns", path, sizeof(path), "mdns.conf"));
+		snprintf(conffile, sizeof(conffile), getdefaultconfig("mdns", path, sizeof(path), "mdns/mdns.conf"));
 		log_eval("avahi-daemon", "-D", "-f", conffile, "--no-drop-root");
 	}
 	return;

@@ -46,7 +46,7 @@ void start_lighttpd(void)
 	eval("mkdir", "-p", "/tmp/lighttpd/logs");
 	eval("mkdir", "-p", nvram_safe_get("lighttpd_root"));
 
-	fp = fopen("/tmp/lighttpd.conf", "wb");
+	fp = fopencreate("/tmp/lighttpd/lighttpd.conf", "wb");
 	if (fp != NULL) {
 		fprintf(fp,
 			"debug.log-request-handling   = \"disable\"\n"
@@ -132,7 +132,7 @@ void start_lighttpd(void)
 		fclose(fp);
 	}
 
-	log_eval("lighttpd", "-f", getdefaultconfig(NULL, path, sizeof(path), "lighttpd.conf"));
+	log_eval("lighttpd", "-f", getdefaultconfig(NULL, path, sizeof(path), "lighttpd/lighttpd.conf"));
 	return;
 }
 

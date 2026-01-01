@@ -30,7 +30,7 @@
 #include <sys/stat.h>
 #include <services.h>
 #define NODOG_CONF "nodogsplash.conf"
-#define NODOG_CONF_PATH "/tmp/" NODOG_CONF
+#define NODOG_CONF_PATH "/tmp/nodog/" NODOG_CONF
 extern void addHost(char *host, char *ip, int withdomain);
 
 int mk_nodog_conf(void)
@@ -38,7 +38,7 @@ int mk_nodog_conf(void)
 	FILE *fp;
 	int i;
 
-	if (!(fp = fopen(NODOG_CONF_PATH, "w"))) {
+	if (!(fp = fopencreate(NODOG_CONF_PATH, "w"))) {
 		perror(NODOG_CONF_PATH);
 		return errno;
 	}

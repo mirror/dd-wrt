@@ -287,7 +287,7 @@ void start_dns_clear_resolv(void)
 	/*
 	 * Save DNS to resolv.conf 
 	 */
-	if (!(fp_w = fopen(RESOLV_FILE, "w"))) {
+	if (!(fp_w = fopencreate(RESOLV_FILE, "w"))) {
 		perror(RESOLV_FILE);
 		return;
 	}

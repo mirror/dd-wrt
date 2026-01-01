@@ -112,7 +112,6 @@ void run_l2tp(int status)
 		insmod("ipv6 udp_tunnel ip6_udp_tunnel l2tp_core l2tp_netlink l2tp_ppp");
 		mkdir("/tmp/ppp", 0777);
 		mkdir("/var/run/xl2tpd", 0777);
-		mkdir("/tmp/xl2tpd", 0777);
 		symlink("/sbin/rc", "/tmp/ppp/ip-up");
 		symlink("/sbin/rc", "/tmp/ppp/ip-down");
 		symlink("/dev/null", "/tmp/ppp/connect-errors");
@@ -120,7 +119,7 @@ void run_l2tp(int status)
 		/*
 		 * Generate L2TP configuration file 
 		 */
-		if (!(fp = fopen("/tmp/xl2tpd/xl2tpd.conf", "w"))) {
+		if (!(fp = fopencreate("/tmp/xl2tpd/xl2tpd.conf", "w"))) {
 			perror("/tmp/xl2tpd/xl2tpd.conf");
 			return;
 		}

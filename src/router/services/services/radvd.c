@@ -91,7 +91,7 @@ void start_radvd(void)
 	if (nvram_matchi("radvd_custom", 1)) {
 		buf = nvram_safe_get("radvd_conf");
 		if (buf != NULL)
-			writenvram("radvd_conf", "/tmp/radvd.conf");
+			writenvram("radvd_conf", "/tmp/radvd/radvd.conf");
 	} else {
 		if (nvram_match("ipv6_typ", "ipv6native")) {
 			if (do_mtu) {
@@ -113,7 +113,7 @@ void start_radvd(void)
 
 		if (!(*prefix) || (strlen(prefix) <= 0))
 			prefix = "::";
-		if ((fp = fopen("/tmp/radvd.conf", "w")) == NULL)
+		if ((fp = fopencreate("/tmp/radvd/radvd.conf", "w")) == NULL)
 			return;
 
 		char buf[INET6_ADDRSTRLEN];
@@ -160,7 +160,7 @@ void start_radvd(void)
 		fclose(fp);
 	}
 	if (reload_process("radvd")) {
-		log_eval("radvd", "-C", "/tmp/radvd.conf");
+		log_eval("radvd", "-C", "/tmp/radvd/radvd.conf");
 	}
 	return;
 }

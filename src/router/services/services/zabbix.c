@@ -51,7 +51,7 @@ void start_zabbix(void)
 			HOST = nvram_safe_get("wan_hostname");
 		char *SRVIP = nvram_safe_get("zabbix_serverip");
 		char *IP = get_lan_ipaddr();
-		FILE *fp = fopen("/tmp/zabbix.conf", "wb");
+		FILE *fp = fopencreate("/tmp/zabbix/zabbix.conf", "wb");
 		fprintf(fp, "LogType=file\n");
 
 		fprintf(fp, "LogType=file\n");
@@ -93,7 +93,7 @@ void start_zabbix(void)
 			fprintf(fp, "\n%s\n", nvram_safe_get("zabbix_usrpara"));
 		fclose(fp);
 		char path[128];
-		dd_logstart("zabbix", eval("zabbix_agentd", "-c", getdefaultconfig("zabbix", path, sizeof(path), "zabbix.conf")));
+		dd_logstart("zabbix", eval("zabbix_agentd", "-c", getdefaultconfig("zabbix", path, sizeof(path), "zabbix/zabbix.conf")));
 	}
 
 	return;

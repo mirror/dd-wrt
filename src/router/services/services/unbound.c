@@ -37,7 +37,7 @@ static void unbound_config(void)
 	int port = 7053;
 	if (!nvram_matchi("dns_dnsmasq", 1) && !nvram_matchi("smartdns", 1))
 		port = 53;
-	FILE *fp = fopen("/tmp/unbound.conf", "wb");
+	FILE *fp = fopencreate("/tmp/unbound/unbound.conf", "wb");
 	fprintf(fp, "server:\n" //
 		    "verbosity: 1\n");
 
@@ -156,7 +156,7 @@ void start_unbound(void)
 		if (reload_process("unbound")) {
 			eval("cp", "-R", "/etc/unbound", "/tmp/etc");
 			eval("mount", "--bind", "/tmp/etc/unbound", "/etc/unbound");
-			log_eval("unbound", "-c", getdefaultconfig("unbound", path, sizeof(path), "unbound.conf"));
+			log_eval("unbound", "-c", getdefaultconfig("unbound", path, sizeof(path), "unbound/unbound.conf"));
 		}
 	} else {
 		stop_unbound();

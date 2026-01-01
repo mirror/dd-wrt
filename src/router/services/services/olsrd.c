@@ -47,7 +47,7 @@ void start_olsrd(void)
 
 	sscanf(net, "%d.%d.%d.%d", &a, &b, &c, &d);
 	sprintf(net, "%d.%d.%d.0", a, b, c);
-	FILE *fp = fopen("/tmp/olsrd.conf", "wb");
+	FILE *fp = fopencreate("/tmp/olsrd/olsrd.conf", "wb");
 
 	if (*(nvram_safe_get("olsrd_conf"))) {
 		fwritenvram("olsrd_conf", fp);

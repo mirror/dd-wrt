@@ -61,14 +61,14 @@ void start_smcrouted(void)
 	}
 	*/
 
-	FILE *fp = fopen("/tmp/smcroute.conf", "w+");
+	FILE *fp = fopencreate("/tmp/smcroute/smcroute.conf", "w+");
 	if (fp == NULL)
 		return;
 	if (nvram_invmatch("smcrouted_conf", ""))
 		fprintf(fp, nvram_get("smcrouted_conf"));
 
 	if (reload_process("smcrouted")) {
-		snprintf(conffile, sizeof(conffile), getdefaultconfig(NULL, path, sizeof(path), "smcroute.conf"));
+		snprintf(conffile, sizeof(conffile), getdefaultconfig(NULL, path, sizeof(path), "smcroute/smcroute.conf"));
 		//log_eval("smcrouted", "-s", "-f", conffile, "-P", "smcrouted", "-N", "-l", loglevel);   //default log level is notice > info > debug
 		//log_eval("smcrouted", "-s", "-f", conffile, "-P", "smcrouted", "-N", "-l", !strcmp(nvram_safe_get("smcrouted_loglevel"), "") ? "info" : nvram_safe_get("smcrouted_loglevel"));   //default log level is notice > info > debug
 		log_eval("smcrouted", "-s", "-f", conffile, "-P", "smcrouted", "-N", "-c",

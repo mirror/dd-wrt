@@ -110,7 +110,7 @@ static int zebra_init(void)
 
 void start_quagga_writememory(void)
 {
-	FILE *in = fopen("/tmp/zebra.conf", "rb");
+	FILE *in = fopencreate("/tmp/routing/zebra.conf", "rb");
 
 	if (in != NULL) {
 		fseek(in, 0, SEEK_END);
@@ -129,7 +129,7 @@ void start_quagga_writememory(void)
 		nvram_seti("zebra_copt", 0);
 		nvram_unset("zebra_conf");
 	}
-	in = fopen("/tmp/ospfd.conf", "rb");
+	in = fopencreate("/tmp/routing/ospfd.conf", "rb");
 
 	if (in != NULL) {
 		fseek(in, 0, SEEK_END);
@@ -149,7 +149,7 @@ void start_quagga_writememory(void)
 		nvram_unset("ospfd_conf");
 	}
 
-	in = fopen("/tmp/ospf6d.conf", "rb");
+	in = fopencreate("/tmp/routing/ospf6d.conf", "rb");
 
 	if (in != NULL) {
 		fseek(in, 0, SEEK_END);
@@ -169,7 +169,7 @@ void start_quagga_writememory(void)
 		nvram_unset("ospf6d_conf");
 	}
 
-	in = fopen("/tmp/bgpd.conf", "rb");
+	in = fopencreate("/tmp/routing/bgpd.conf", "rb");
 
 	if (in != NULL) {
 		fseek(in, 0, SEEK_END);
@@ -189,7 +189,7 @@ void start_quagga_writememory(void)
 		nvram_unset("bgpd_conf");
 	}
 
-	in = fopen("/tmp/ripd.conf", "rb");
+	in = fopencreate("/tmp/routing/ripd.conf", "rb");
 
 	if (in != NULL) {
 		fseek(in, 0, SEEK_END);
@@ -221,8 +221,8 @@ static int zebra_ospf_init(void)
 	/*
 	 * Write configuration file based on current information 
 	 */
-	if (!(fp = fopen("/tmp/zebra.conf", "w"))) {
-		perror("/tmp/zebra.conf");
+	if (!(fp = fopencreate("/tmp/routing/zebra.conf", "w"))) {
+		perror("/tmp/routing/zebra.conf");
 		return errno;
 	}
 
@@ -236,8 +236,8 @@ static int zebra_ospf_init(void)
 
 	fclose(fp);
 
-	if (!(fp = fopen("/tmp/ospfd.conf", "w"))) {
-		perror("/tmp/ospfd.conf");
+	if (!(fp = fopencreate("/tmp/routing/ospfd.conf", "w"))) {
+		perror("/tmp/routing/ospfd.conf");
 		return errno;
 	}
 
@@ -374,8 +374,8 @@ static int zebra_ospf6_init(void)
 	/*
 	 * Write configuration file based on current information 
 	 */
-	if (!(fp = fopen("/tmp/zebra.conf", "w"))) {
-		perror("/tmp/zebra.conf");
+	if (!(fp = fopencreate("/tmp/routing/zebra.conf", "w"))) {
+		perror("/tmp/routing/zebra.conf");
 		return errno;
 	}
 
@@ -389,8 +389,8 @@ static int zebra_ospf6_init(void)
 
 	fclose(fp);
 
-	if (!(fp = fopen("/tmp/ospf6d.conf", "w"))) {
-		perror("/tmp/ospf6d.conf");
+	if (!(fp = fopencreate("/tmp/routing/ospf6d.conf", "w"))) {
+		perror("/tmp/routing/ospf6d.conf");
 		return errno;
 	}
 
@@ -485,8 +485,8 @@ static int zebra_ripd_init(void)
 	/*
 	 * Write configuration file based on current information 
 	 */
-	if (!(fp = fopen("/tmp/zebra.conf", "w"))) {
-		perror("/tmp/zebra.conf");
+	if (!(fp = fopencreate("/tmp/routing/zebra.conf", "w"))) {
+		perror("/tmp/routing/zebra.conf");
 		return errno;
 	}
 
@@ -500,8 +500,8 @@ static int zebra_ripd_init(void)
 
 	fclose(fp);
 
-	if (!(fp = fopen("/tmp/ripd.conf", "w"))) {
-		perror("/tmp/ripd.conf");
+	if (!(fp = fopencreate("/tmp/routing/ripd.conf", "w"))) {
+		perror("/tmp/routing/ripd.conf");
 		return errno;
 	}
 
@@ -569,8 +569,8 @@ static int zebra_bgp_init(void)
 	/*
 	 * Write configuration file based on current information 
 	 */
-	if (!(fp = fopen("/tmp/zebra.conf", "w"))) {
-		perror("/tmp/zebra.conf");
+	if (!(fp = fopencreate("/tmp/routing/zebra.conf", "w"))) {
+		perror("/tmp/routing/zebra.conf");
 		return errno;
 	}
 
@@ -584,8 +584,8 @@ static int zebra_bgp_init(void)
 
 	fclose(fp);
 
-	if (!(fp = fopen("/tmp/bgpd.conf", "w"))) {
-		perror("/tmp/bgpd.conf");
+	if (!(fp = fopencreate("/tmp/routing/bgpd.conf", "w"))) {
+		perror("/tmp/routing/bgpd.conf");
 		return errno;
 	}
 	if (nvram_matchi("bgpd_copt", 1)) {

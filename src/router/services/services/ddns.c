@@ -326,12 +326,10 @@ void start_ddns(void)
 	if (flag > 65 || flag < 1)
 		return;
 
-	mkdir("/tmp/ddns", 0744);
-
 	/*
 	 * Generate ddns configuration file 
 	 */
-	if ((fp = fopen("/tmp/ddns/inadyn.conf", "w"))) {
+	if ((fp = fopencreate("/tmp/ddns/inadyn.conf", "w"))) {
 		if (nvram_matchi("ddns_enable", 7))
 			fprintf(fp, "period = %s\n", "900");
 		else

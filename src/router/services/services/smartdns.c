@@ -40,7 +40,7 @@ void start_smartdns(void)
 	char path[64];
 	if (!nvram_matchi("smartdns", 1))
 		return;
-	FILE *fp = fopen("/tmp/smartdns.conf", "wb");
+	FILE *fp = fopencreate("/tmp/smartdns/smartdns.conf", "wb");
 	int port = 6053;
 	if (!nvram_matchi("dns_dnsmasq", 1))
 		port = 53;
@@ -113,7 +113,7 @@ void start_smartdns(void)
 	fwritenvram("smartdns_options", fp);
 	fclose(fp);
 
-	log_eval("smartdns", "-c", getdefaultconfig("smartdns", path, sizeof(path), "smartdns.conf"));
+	log_eval("smartdns", "-c", getdefaultconfig("smartdns", path, sizeof(path), "smartdns/smartdns.conf"));
 }
 
 void stop_smartdns(void)
