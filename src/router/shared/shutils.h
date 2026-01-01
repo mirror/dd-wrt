@@ -132,7 +132,7 @@ extern int safe_fread(void *ptr, size_t size, size_t nmemb, FILE *stream);
 extern int safe_fwrite(const void *ptr, size_t size, size_t nmemb, FILE *stream);
 
 
-extern FILE *fopencreate(const char *name);
+extern FILE *fopencreate(const char *name, const char *mode);
 /*
  * Convert Ethernet address string representation to binary data
  * @param       a       string in xx:xx:xx:xx:xx:xx notation
