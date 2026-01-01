@@ -230,7 +230,7 @@ static int parse_fixed_partitions(struct mtd_info *master,
 					len += (master->erasesize - 1);
 					len &= ~(master->erasesize - 1);
 					len -= (offset & 0x000fffff);
-					printk(KERN_EMERG "found squashfs at %X with len of %d bytes\n", offset, len);
+					printk(KERN_INFO "found squashfs at %X with len of %d bytes\n", offset, len);
 					i++;
 					parts[i].offset = offset;
 					if (!strcmp(partname, "linux2"))
