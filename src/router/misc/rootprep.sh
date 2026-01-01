@@ -63,9 +63,10 @@ rm ldconfig
 # miscellaneous
 ln -sf tmp/mnt mnt
 mkdir -p proc
+mkdir -p etc/dhcp6
 mkdir -p opt/lib/iptables
 ln -sf /opt/usr/lib/iptables usr/lib/iptables
 ln -sf /tmp/TZ etc/TZ
 ln -sf /opt/lib/functions.sh lib/functions.sh
-ln -sf /tmp/dhcp6c.conf etc/dhcp6c.conf
-ln -sf /tmp/dhcp6s.conf etc/dhcp6s.conf
+ln -sf /tmp/dhcp6/dhcp6c.conf etc/dhcp6/dhcp6c.conf
+ln -sf /tmp/dhcp6/dhcp6s.conf etc/dhcp6/dhcp6s.conf
