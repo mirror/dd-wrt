@@ -77,6 +77,6 @@ void stop_mactelnetd(void)
 
 void restart_mactelnetd(void)
 {
-	reload_process("mactelnetd", "daemon");
+	reload_process("mactelnetd");
 }
 #endif
