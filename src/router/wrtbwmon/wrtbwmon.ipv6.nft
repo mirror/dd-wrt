@@ -61,7 +61,7 @@ lookup()
     MAC=$1
     IP=$2
     userDB=$3
-    for USERSFILE in $userDB /tmp/dhcp.leases /tmp/hosts/dhcp.* /tmp/dnsmasq.conf /etc/dnsmasq.conf /etc/hosts; do
+    for USERSFILE in $userDB /tmp/dhcp.leases /tmp/hosts/dhcp.* /tmp/dnsmasq/dnsmasq.conf /etc/dnsmasq/dnsmasq.conf /etc/hosts; do
 	[ -e "$USERSFILE" ] || continue
 	case $USERSFILE in
 	    /tmp/dhcp.leases )
