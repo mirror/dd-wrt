@@ -694,8 +694,8 @@ void setupSupplicant(const char *prefix, char *ssidoverride)
 		if (!strncmp(prefix, "wlan1", 4))
 			led_control(LED_SEC1, LED_ON);
 
-		sprintf(fstr, "/tmp/%s_wpa_supplicant.conf", prefix);
-		FILE *fp = fopen(fstr, "wb");
+		sprintf(fstr, "/tmp/wifi/%s_wpa_supplicant.conf", prefix);
+		FILE *fp = fopencreate(fstr, "wb");
 
 		fprintf(fp, "ctrl_interface=/var/run/wpa_supplicant\n");
 		fprintf(fp, "ap_scan=1\n");
@@ -829,8 +829,8 @@ void setupSupplicant(const char *prefix, char *ssidoverride)
 			led_control(LED_SEC0, LED_ON);
 		if (!strncmp(prefix, "wlan1", 4))
 			led_control(LED_SEC1, LED_ON);
-		sprintf(fstr, "/tmp/%s_wpa_supplicant.conf", prefix);
-		FILE *fp = fopen(fstr, "wb");
+		sprintf(fstr, "/tmp/wifi/%s_wpa_supplicant.conf", prefix);
+		FILE *fp = fopencreate(fstr, "wb");
 		fprintf(fp, "ctrl_interface=/var/run/wpa_supplicant\n");
 		fprintf(fp, "ap_scan=1\n");
 		fprintf(fp, "fast_reauth=1\n");
@@ -870,8 +870,8 @@ void setupSupplicant(const char *prefix, char *ssidoverride)
 			if (!strncmp(prefix, "wlan1", 4))
 				led_control(LED_SEC1, LED_ON);
 		}
-		sprintf(fstr, "/tmp/%s_wpa_supplicant.conf", prefix);
-		FILE *fp = fopen(fstr, "wb");
+		sprintf(fstr, "/tmp/wifi/%s_wpa_supplicant.conf", prefix);
+		FILE *fp = fopencreate(fstr, "wb");
 
 		fprintf(fp, "ctrl_interface=/var/run/wpa_supplicant\n");
 		fprintf(fp, "ap_scan=1\n");
@@ -969,7 +969,7 @@ void do_hostapd(char **fstr, const char *prefix)
 		else if (debug == 3)
 			argv[argc++] = "-ddd";
 		argv[argc++] = "-f";
-		sprintf(file, "/tmp/%s_debug", prefix);
+		sprintf(file, "/tmp/wifi/%s_debug", prefix);
 		argv[argc++] = file;
 	}
 	int i = 0;
@@ -1031,9 +1031,9 @@ static void checkhostapd(char *ifname, int force)
 			if (needrestart) {
 				char fstr[32];
 				if (sup)
-					sprintf(fstr, "/tmp/%s_wpa_supplicant.conf", ifname);
+					sprintf(fstr, "/tmp/wifi/%s_wpa_supplicant.conf", ifname);
 				else
-					sprintf(fstr, "/tmp/%s_hostap.conf", ifname);
+					sprintf(fstr, "/tmp/wifi/%s_hostap.conf", ifname);
 				if (force == 1) {
 					dd_loginfo(sup ? "wpa_supplicant" : "hostapd",
 						   "daemon on %s with pid %d is forced to be restarted....", ifname, pid);
@@ -1682,8 +1682,8 @@ void setupHostAP(const char *prefix, char *driver, int iswan)
 			led_control(LED_SEC0, LED_ON);
 		if (!strncmp(prefix, "wlan1", 4))
 			led_control(LED_SEC1, LED_ON);
-		sprintf(fstr, "/tmp/%s_hostap.conf", prefix);
-		FILE *fp = fopen(fstr, "wb");
+		sprintf(fstr, "/tmp/wifi/%s_hostap.conf", prefix);
+		FILE *fp = fopencreate(fstr, "wb");
 		fprintf(fp, "interface=%s\n", prefix);
 		if (nvram_nmatch("1", "%s_bridged", prefix))
 			fprintf(fp, "bridge=%s\n", getBridge(prefix, tmp));
@@ -1715,8 +1715,8 @@ void setupHostAP(const char *prefix, char *driver, int iswan)
 
 	} else if (ispsk || ispsk2 || ispsk3 || iswpa || iswpa2 || iswpa3 || iswpa3_128 || iswpa3_192 || iswpa2sha256 ||
 		   iswpa2sha384 || ispsk2sha256) {
-		sprintf(fstr, "/tmp/%s_hostap.conf", prefix);
-		FILE *fp = fopen(fstr, "wb");
+		sprintf(fstr, "/tmp/wifi/%s_hostap.conf", prefix);
+		FILE *fp = fopencreate(fstr, "wb");
 		fprintf(fp, "interface=%s\n", prefix);
 		fprintf(fp, "driver=%s\n", driver);
 		setupHostAPPSK(fp, prefix, 1);
@@ -2077,7 +2077,7 @@ static void configure_single(int count, char **configs, int *configidx)
 	if (is_mac80211(dev)) {
 		configure_single_ath9k(count);
 		ath9k_start_supplicant(count, dev, configs, configidx);
-		sysprintf("touch /tmp/wlan%d_configured", count);
+		sysprintf("touch /tmp/wifi/wlan%d_configured", count);
 		return;
 	}
 #endif
@@ -2104,7 +2104,7 @@ static void configure_single(int count, char **configs, int *configidx)
 	// create base device
 	sprintf(net, "%s_net_mode", dev);
 	if (nvram_match(net, "disabled")) {
-		sysprintf("touch /tmp/wlan%d_configured", count);
+		sysprintf("touch /tmp/wifi/wlan%d_configured", count);
 		return;
 	}
 	//    set_compression( count );
@@ -2815,7 +2815,7 @@ static void configure_single(int count, char **configs, int *configidx)
 		eval("ifconfig", dev, "0.0.0.0", "up");
 	}
 #endif
-	sysprintf("touch /tmp/wlan%d_configured", count);
+	sysprintf("touch /tmp/wifi/wlan%d_configured", count);
 }
 
 void start_vifs(void)
@@ -2990,7 +2990,7 @@ void configure_wifi(void) // madwifi implementation for atheros based
 		char *configs[32] = { NULL };
 		int configidx = 0;
 		for (i = 0; i < c; i++) {
-			sysprintf("rm -f /tmp/wlan%d_configured", (c - 1) - i);
+			sysprintf("rm -f /tmp/wifi/wlan%d_configured", (c - 1) - i);
 			sprintf(fwtype_use, "wlan%d_fwtype_use", (c - 1) - i);
 			strcat(changestring, nvram_safe_get(fwtype_use));
 			configure_single((c - 1) - i, configs, &configidx);
@@ -3047,7 +3047,7 @@ void configure_wifi(void) // madwifi implementation for atheros based
 		/* this sucks, we take it as workaround */
 		deconfigure_wifi();
 		for (i = 0; i < c; i++) {
-			sysprintf("rm -f /tmp/wlan%d_configured", (c - 1) - i);
+			sysprintf("rm -f /tmp/wifi/wlan%d_configured", (c - 1) - i);
 			configure_single((c - 1) - i, configs, &configidx);
 		}
 		if (configs[0])
@@ -3102,7 +3102,7 @@ void configure_wifi(void) // madwifi implementation for atheros based
 		int cnf = 0;
 		for (i = 0; i < c; i++) {
 			char path[42];
-			sprintf(path, "/tmp/wlan%d_configured", i);
+			sprintf(path, "/tmp/wifi/wlan%d_configured", i);
 			FILE *check = fopen(path, "rb");
 			if (check) {
 				cnf++;

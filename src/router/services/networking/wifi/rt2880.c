@@ -96,8 +96,8 @@ void setupSupplicant(const char *prefix)
 		char psk[64];
 		char ath[64];
 
-		sprintf(fstr, "/tmp/%s_wpa_supplicant.conf", prefix);
-		FILE *fp = fopen(fstr, "wb");
+		sprintf(fstr, "/tmp/wifi/%s_wpa_supplicant.conf", prefix);
+		FILE *fp = fopencreate(fstr, "wb");
 
 		fprintf(fp, "ap_scan=1\n");
 		fprintf(fp, "fast_reauth=1\n");
@@ -125,21 +125,21 @@ void setupSupplicant(const char *prefix)
 			// <- added habeIchVergessen
 			fprintf(fp, "\teap=TLS\n");
 			fprintf(fp, "\tidentity=\"%s\"\n", nvram_prefix_get("tls8021xuser", prefix));
-			sprintf(psk, "/tmp/%s", prefix);
+			sprintf(psk, "/tmp/wifi/%s", prefix);
 			mkdir(psk, 0700);
-			sprintf(psk, "/tmp/%s/ca.pem", prefix);
+			sprintf(psk, "/tmp/wifi/%s/ca.pem", prefix);
 			sprintf(ath, "%s_tls8021xca", prefix);
 			write_nvram(psk, ath);
-			sprintf(psk, "/tmp/%s/user.pem", prefix);
+			sprintf(psk, "/tmp/wifi/%s/user.pem", prefix);
 			sprintf(ath, "%s_tls8021xpem", prefix);
 			write_nvram(psk, ath);
 
-			sprintf(psk, "/tmp/%s/user.prv", prefix);
+			sprintf(psk, "/tmp/wifi/%s/user.prv", prefix);
 			sprintf(ath, "%s_tls8021xprv", prefix);
 			write_nvram(psk, ath);
-			fprintf(fp, "\tca_cert=/tmp/%s/ca.pem\n", prefix);
-			fprintf(fp, "\tclient_cert=/tmp/%s/user.pem\n", prefix);
-			fprintf(fp, "\tprivate_key=/tmp/%s/user.prv\n", prefix);
+			fprintf(fp, "\tca_cert=/tmp/wifi/%s/ca.pem\n", prefix);
+			fprintf(fp, "\tclient_cert=/tmp/wifi/%s/user.pem\n", prefix);
+			fprintf(fp, "\tprivate_key=/tmp/wifi/%s/user.prv\n", prefix);
 			fprintf(fp, "\tprivate_key_passwd=\"%s\"\n", nvram_prefix_get("tls8021xpasswd", prefix));
 			fprintf(fp, "\teapol_flags=3\n");
 			if (*(nvram_nget("%s_tls8021xphase2", prefix))) {
@@ -163,13 +163,13 @@ void setupSupplicant(const char *prefix)
 			fprintf(fp, "\tphase1=\"peapver=0\"\n");
 			fprintf(fp, "\tidentity=\"%s\"\n", nvram_prefix_get("peap8021xuser", prefix));
 			fprintf(fp, "\tpassword=\"%s\"\n", nvram_prefix_get("peap8021xpasswd", prefix));
-			sprintf(psk, "/tmp/%s", prefix);
+			sprintf(psk, "/tmp/wifi/%s", prefix);
 			mkdir(psk, 0700);
-			sprintf(psk, "/tmp/%s/ca.pem", prefix);
+			sprintf(psk, "/tmp/wifi/%s/ca.pem", prefix);
 			sprintf(ath, "%s_peap8021xca", prefix);
 			if (!nvram_match(ath, "")) {
 				write_nvram(psk, ath);
-				fprintf(fp, "\tca_cert=\"/tmp/%s/ca.pem\"\n", prefix);
+				fprintf(fp, "\tca_cert=\"/tmp/wifi/%s/ca.pem\"\n", prefix);
 			}
 			if (*(nvram_nget("%s_peap8021xphase2", prefix))) {
 				fprintf(fp, "\tphase2=\"%s\"\n", nvram_nget("%s_peap8021xphase2", prefix));
@@ -192,12 +192,12 @@ void setupSupplicant(const char *prefix)
 			fprintf(fp, "\tidentity=\"%s\"\n", nvram_prefix_get("ttls8021xuser", prefix));
 			fprintf(fp, "\tpassword=\"%s\"\n", nvram_prefix_get("ttls8021xpasswd", prefix));
 			if (*(nvram_nget("%s_ttls8021xca", prefix))) {
-				sprintf(psk, "/tmp/%s", prefix);
+				sprintf(psk, "/tmp/wifi/%s", prefix);
 				mkdir(psk, 0700);
-				sprintf(psk, "/tmp/%s/ca.pem", prefix);
+				sprintf(psk, "/tmp/wifi/%s/ca.pem", prefix);
 				sprintf(ath, "%s_ttls8021xca", prefix);
 				write_nvram(psk, ath);
-				fprintf(fp, "\tca_cert=\"/tmp/%s/ca.pem\"\n", prefix);
+				fprintf(fp, "\tca_cert=\"/tmp/wifi/%s/ca.pem\"\n", prefix);
 			}
 			if (*(nvram_nget("%s_ttls8021xphase2", prefix))) {
 				fprintf(fp, "\tphase2=\"%s\"\n", nvram_nget("%s_ttls8021xphase2", prefix));

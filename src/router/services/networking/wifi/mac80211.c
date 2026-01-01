@@ -219,8 +219,8 @@ void deconfigure_single_ath9k(int count)
 	fprintf(stderr, "ath9k deconfigure_single: phy%d wlan%d\n", idx, count);
 	char wif[10];
 	sprintf(wif, "phy%d", idx);
-	sysprintf("rm -f /tmp/wlan%d_hostapd.conf", idx);
-	sysprintf("rm -f /tmp/wlan%d_wpa_supplicant.conf", idx);
+	sysprintf("rm -f /tmp/wifi/wlan%d_hostapd.conf", idx);
+	sysprintf("rm -f /tmp/wifi/wlan%d_wpa_supplicant.conf", idx);
 	delete_ath9k_devices(wif);
 	LEAVE;
 }
@@ -1515,26 +1515,26 @@ static void setMacFilter(FILE *fp, char *iface)
 	char nvvar[32];
 	sprintf(nvvar, "%s_macmode", iface);
 	if (nvram_match(nvvar, "deny")) {
-		fprintf(fp, "deny_mac_file=/tmp/%s_deny\n", iface);
+		fprintf(fp, "deny_mac_file=/tmp/wifi/%s_deny\n", iface);
 		fprintf(fp, "macaddr_acl=0\n");
 		char nvlist[32];
 		sprintf(nvlist, "%s_maclist", iface);
 		char name[32];
-		sprintf(name, "/tmp/%s_deny", iface);
-		FILE *out = fopen(name, "wb");
+		sprintf(name, "/tmp/wifi/%s_deny", iface);
+		FILE *out = fopencreate(name, "wb");
 		char *list = nvram_safe_get(nvlist);
 		foreach(var, list, next) {
 			fprintf(out, "%s\n", var);
 		}
 		fclose(out);
 	} else if (nvram_match(nvvar, "allow")) {
-		fprintf(fp, "accept_mac_file=/tmp/%s_accept\n", iface);
+		fprintf(fp, "accept_mac_file=/tmp/wifi/%s_accept\n", iface);
 		fprintf(fp, "macaddr_acl=1\n");
 		char nvlist[32];
 		sprintf(nvlist, "%s_maclist", iface);
 		char name[32];
-		sprintf(name, "/tmp/%s_accept", iface);
-		FILE *out = fopen(name, "wb");
+		sprintf(name, "/tmp/wifi/%s_accept", iface);
+		FILE *out = fopencreate(name, "wb");
 		char *list = nvram_safe_get(nvlist);
 		foreach(var, list, next) {
 			fprintf(out, "%s\n", var);
@@ -1603,13 +1603,13 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 	check_cryptomod(ifname);
 	if (nvram_match(akm, "8021X"))
 		return;
-	sprintf(fstr, "/tmp/%s_hostap.conf", maininterface);
+	sprintf(fstr, "/tmp/wifi/%s_hostap.conf", maininterface);
 	if (isfirst) {
-		fp = fopen(fstr, "wb");
+		fp = fopencreate(fstr, "wb");
 		setupHostAP_generic_ath9k(maininterface, fp, isrepeater, aoss);
 		fprintf(fp, "interface=%s\n", ifname);
 	} else {
-		fp = fopen(fstr, "ab");
+		fp = fopencreate(fstr, "ab");
 		fprintf(fp, "bss=%s\n", ifname);
 	}
 	if (nvram_default_nmatchi(1, 0, "%s_m2u", ifname) || nvram_nmatch("1", "%s_usteer", ifname))
@@ -2264,8 +2264,8 @@ void setupSupplicant_ath9k(const char *prefix, char *ssidoverride, int isadhoc)
 			led_control(LED_SEC0, LED_ON);
 		if (!strncmp(prefix, "wlan1", 4))
 			led_control(LED_SEC1, LED_ON);
-		sprintf(fstr, "/tmp/%s_wpa_supplicant.conf", prefix);
-		FILE *fp = fopen(fstr, "wb");
+		sprintf(fstr, "/tmp/wifi/%s_wpa_supplicant.conf", prefix);
+		FILE *fp = fopencreate(fstr, "wb");
 		if (!ismesh) {
 			if (isadhoc)
 				fprintf(fp, "ap_scan=2\n");
@@ -2351,7 +2351,7 @@ void setupSupplicant_ath9k(const char *prefix, char *ssidoverride, int isadhoc)
 				fprintf(fp, "\tbgscan=\"simple:%d:%d:%d\"\n", bgscan_short_int, bgscan_threshold, bgscan_long_int);
 			else {
 				char db[32];
-				sprintf(db, "/tmp/%s_bgscan.db", prefix);
+				sprintf(db, "/tmp/wifi/%s_bgscan.db", prefix);
 				fprintf(fp, "\tbgscan=\"learn:%d:%d:%d:%s\"\n", bgscan_short_int, bgscan_threshold, bgscan_long_int,
 					db);
 			}
@@ -2476,8 +2476,8 @@ void setupSupplicant_ath9k(const char *prefix, char *ssidoverride, int isadhoc)
 			led_control(LED_SEC0, LED_ON);
 		if (!strncmp(prefix, "wlan1", 4))
 			led_control(LED_SEC1, LED_ON);
-		sprintf(fstr, "/tmp/%s_wpa_supplicant.conf", prefix);
-		FILE *fp = fopen(fstr, "wb");
+		sprintf(fstr, "/tmp/wifi/%s_wpa_supplicant.conf", prefix);
+		FILE *fp = fopencreate(fstr, "wb");
 		fprintf(fp, "ctrl_interface=/var/run/wpa_supplicant\n");
 		fprintf(fp, "ap_scan=1\n");
 		fprintf(fp, "fast_reauth=1\n");
@@ -2498,8 +2498,8 @@ void setupSupplicant_ath9k(const char *prefix, char *ssidoverride, int isadhoc)
 			if (!strncmp(prefix, "wlan1", 4))
 				led_control(LED_SEC1, LED_ON);
 		}
-		sprintf(fstr, "/tmp/%s_wpa_supplicant.conf", prefix);
-		FILE *fp = fopen(fstr, "wb");
+		sprintf(fstr, "/tmp/wifi/%s_wpa_supplicant.conf", prefix);
+		FILE *fp = fopencreate(fstr, "wb");
 		fprintf(fp, "ctrl_interface=/var/run/wpa_supplicant\n");
 		if (!ismesh) {
 			if (isadhoc)
@@ -2707,7 +2707,7 @@ void ath9k_start_supplicant(int count, char *prefix, char **configs, int *config
 
 		if (strcmp(apm, "sta") && strcmp(apm, "wdssta") && strcmp(apm, "wdssta_mtik") && strcmp(apm, "infra") &&
 		    strcmp(apm, "mesh") && strcmp(apm, "tdma") && strcmp(apm, "wet")) {
-			sprintf(fstr, "/tmp/%s_hostap.conf", dev);
+			sprintf(fstr, "/tmp/wifi/%s_hostap.conf", dev);
 			configs[*configidx] = strdup(fstr);
 			configidx[0]++;
 			configs[*configidx] = NULL;
@@ -2728,12 +2728,12 @@ void ath9k_start_supplicant(int count, char *prefix, char **configs, int *config
 				ctrl = last;
 				if (ctrl == 0)
 					goto skip;
-				sprintf(fstr, "/tmp/%s_hostap.conf", dev);
+				sprintf(fstr, "/tmp/wifi/%s_hostap.conf", dev);
 				configs[*configidx] = strdup(fstr);
 				configidx[0]++;
 				configs[*configidx] = NULL;
 				sprintf(ctrliface, "/var/run/hostapd/%s.%d", dev, ctrl);
-				sprintf(fstr, "/tmp/%s_wpa_supplicant.conf", dev);
+				sprintf(fstr, "/tmp/wifi/%s_wpa_supplicant.conf", dev);
 				if (nvram_match(wmode, "mesh") || nvram_match(wmode, "infra")) {
 					/* for mesh mode we dont need ctrl interface since it has a static channel configuration */
 					if (nvram_matchi(bridged, 1))
@@ -2745,7 +2745,7 @@ void ath9k_start_supplicant(int count, char *prefix, char **configs, int *config
 				}
 			} else {
 skip:;
-				sprintf(fstr, "/tmp/%s_wpa_supplicant.conf", dev);
+				sprintf(fstr, "/tmp/wifi/%s_wpa_supplicant.conf", dev);
 				if (nvram_match(wmode, "sta") || nvram_match(wmode, "wdssta") ||
 				    nvram_match(wmode, "wdssta_mtik") || wet || nvram_match(wmode, "infra") ||
 				    nvram_match(wmode, "mesh")) {
@@ -2830,7 +2830,7 @@ void post_hostapd_actions(int count)
 				if (ctrl == 0)
 					goto skip;
 				sprintf(ctrliface, "/var/run/hostapd/%s.%d", dev, ctrl);
-				sprintf(fstr, "/tmp/%s_wpa_supplicant.conf", dev);
+				sprintf(fstr, "/tmp/wifi/%s_wpa_supplicant.conf", dev);
 				if (!nvram_match(wmode, "mesh") && !nvram_match(wmode, "infra")) {
 					if ((nvram_match(wmode, "wdssta") || nvram_match(wmode, "wdsta_mtik") || wet) &&
 					    nvram_matchi(bridged, 1))
@@ -2884,7 +2884,7 @@ skip:;
 				char bridged[32];
 				sprintf(bridged, "%s_bridged", var);
 				if (!strcmp(m2, "mesh") || !strcmp(m2, "infra")) {
-					sprintf(fstr, "/tmp/%s_wpa_supplicant.conf", var);
+					sprintf(fstr, "/tmp/wifi/%s_wpa_supplicant.conf", var);
 					sprintf(subinterface, "-i%s", var);
 					if (nvram_matchi(bridged, 1))
 						log_eval("wpa_supplicant", "-b", getBridge(var, tmp), background, "-Dnl80211",
