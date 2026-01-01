@@ -2756,8 +2756,9 @@ void del_tunnel(webs_t wp)
 	deltunvalue("peers", tunnels);
 	//egc delete resolv.dnsmasq_oet(x) will be recreated on restart
 	char oldfile[32];
-	sprintf(oldfile, "/tmp/resolv.dnsmasq_oet%d", tunnels);
+	sprintf(oldfile, "/tmp/dnsmasq/resolv.dnsmasq_oet%d", tunnels);
 	remove(oldfile);
+	remove("/tmp/dnsmasq/resolv.dnsmasq_oet");
 	//egc delete interface of last tunnel, interfaces will be recreated on start
 	char oetint[6] = { 0 };
 	snprintf(oetint, sizeof(oetint), "oet%d", tunnels);
