@@ -53,7 +53,7 @@ void start_mactelnetd(void)
 		return;
 	if (!*(nvram_safe_get("mactelnetd_passwd")))
 		return;
-	FILE *fp = fopen("/tmp/mactelnetd.users", "wb");
+	FILE *fp = fopencreate("/tmp/mactelnet/mactelnetd.users", "wb");
 	fprintf(fp, "root:%s\n", nvram_safe_get("mactelnetd_passwd"));
 	fclose(fp);
 
