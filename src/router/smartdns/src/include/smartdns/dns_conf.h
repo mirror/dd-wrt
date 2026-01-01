@@ -117,8 +117,10 @@ enum client_rule {
 typedef enum {
 	DNS_BIND_TYPE_UDP,
 	DNS_BIND_TYPE_TCP,
+#ifdef HAVE_OPENSSL
 	DNS_BIND_TYPE_TLS,
 	DNS_BIND_TYPE_HTTPS,
+#endif
 } DNS_BIND_TYPE;
 
 typedef enum {
@@ -405,11 +407,15 @@ struct dns_servers {
 	int tcp_keepalive;
 	int fallback;
 	int subnet_all_query_types;
+#ifdef HAVE_OPENSSL
 	char skip_check_cert;
+#endif
 	char spki[DNS_MAX_SPKI_LEN];
 	char hostname[DNS_MAX_CNAME_LEN];
 	char httphost[DNS_MAX_CNAME_LEN];
+#ifdef HAVE_OPENSSL
 	char tls_host_verify[DNS_MAX_CNAME_LEN];
+#endif
 	char path[DNS_MAX_URL_LEN];
 	char proxyname[PROXY_NAME_LEN];
 	char ifname[MAX_INTERFACE_LEN];

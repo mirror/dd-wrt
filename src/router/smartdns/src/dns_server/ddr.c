@@ -32,10 +32,12 @@ static const char *_ddr_get_alpn(const struct dns_bind_ip *bind_ip)
 	}
 
 	switch (bind_ip->type) {
+#ifdef HAVE_OPENSSL
 	case DNS_BIND_TYPE_TLS:
 		return "dot";
 	case DNS_BIND_TYPE_HTTPS:
 		return "h2,http/1.1";
+#endif
 	default:
 		return NULL;
 	}

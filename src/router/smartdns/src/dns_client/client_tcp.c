@@ -161,6 +161,7 @@ static int _dns_client_process_tcp_buff(struct dns_server_info *server_info)
 	int ret = -1;
 
 	while (1) {
+#ifdef HAVE_OPENSSL
 		if (server_info->type == DNS_SERVER_HTTPS) {
 			http_head = http_head_init(4096, HTTP_VERSION_1_1);
 			if (http_head == NULL) {
@@ -193,7 +194,9 @@ static int _dns_client_process_tcp_buff(struct dns_server_info *server_info)
 
 			dns_packet_len = http_head_get_data_len(http_head);
 			inpacket_data = (unsigned char *)http_head_get_data(http_head);
-		} else {
+		} else 
+#endif
+		{
 			/* tcp result format
 			 * | len (short) | dns query result |
 			 */

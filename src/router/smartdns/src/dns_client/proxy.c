@@ -57,8 +57,12 @@ int _dns_proxy_handshake(struct dns_server_info *server_info, struct epoll_event
 	memset(&fd_event, 0, sizeof(fd_event));
 	if (ret == PROXY_HANDSHAKE_CONNECTED) {
 		fd_event.events = EPOLLIN;
-		if (server_info->type == DNS_SERVER_UDP || server_info->type == DNS_SERVER_HTTP3 ||
-			server_info->type == DNS_SERVER_QUIC) {
+		if (server_info->type == DNS_SERVER_UDP 
+#ifdef HAVE_OPENSSL
+		|| server_info->type == DNS_SERVER_HTTP3 ||
+			server_info->type == DNS_SERVER_QUIC
+#endif
+			) {
 			epoll_ctl(client.epoll_fd, EPOLL_CTL_DEL, fd, NULL);
 			event->events = 0;
 			fd = proxy_conn_get_udpfd(server_info->proxy);

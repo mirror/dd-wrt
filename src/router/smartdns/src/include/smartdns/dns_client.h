@@ -43,10 +43,12 @@ extern "C" {
 typedef enum {
 	DNS_SERVER_UDP,
 	DNS_SERVER_TCP,
+#ifdef HAVE_OPENSSL
 	DNS_SERVER_TLS,
 	DNS_SERVER_HTTPS,
 	DNS_SERVER_QUIC,
 	DNS_SERVER_HTTP3,
+#endif
 	DNS_SERVER_MDNS,
 	DNS_SERVER_TYPE_END,
 } dns_server_type_t;
@@ -137,6 +139,7 @@ struct client_dns_server_flag_mdns {
 	int padding;
 };
 
+#ifdef HAVE_OPENSSL
 struct client_dns_server_flag_tls {
 	char spki[DNS_SERVER_SPKI_LEN];
 	int spi_len;
@@ -157,6 +160,7 @@ struct client_dns_server_flag_https {
 	char alpn[DNS_MAX_ALPN_LEN];
 	char skip_check_cert;
 };
+#endif
 
 struct client_dns_server_flag_ecs {
 	int enable;

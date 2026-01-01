@@ -92,7 +92,9 @@ static int _config_server(int argc, char *argv[], dns_server_type_t type, int de
 	server->path[0] = '\0';
 	server->hostname[0] = '\0';
 	server->httphost[0] = '\0';
+#ifdef HAVE_OPENSSL
 	server->tls_host_verify[0] = '\0';
+#endif
 	server->proxyname[0] = '\0';
 	server->set_mark = -1;
 	server->drop_packet_latency_ms = drop_packet_latency_ms;
@@ -104,6 +106,7 @@ static int _config_server(int argc, char *argv[], dns_server_type_t type, int de
 	}
 
 	if (scheme[0] != '\0') {
+#ifdef HAVE_OPENSSL
 		if (strcasecmp(scheme, "https") == 0) {
 			type = DNS_SERVER_HTTPS;
 			default_port = DEFAULT_DNS_HTTPS_PORT;
@@ -119,7 +122,9 @@ static int _config_server(int argc, char *argv[], dns_server_type_t type, int de
 		} else if (strcasecmp(scheme, "tls") == 0) {
 			type = DNS_SERVER_TLS;
 			default_port = DEFAULT_DNS_TLS_PORT;
-		} else if (strcasecmp(scheme, "tcp") == 0) {
+		} else 
+#endif
+		if (strcasecmp(scheme, "tcp") == 0) {
 			type = DNS_SERVER_TCP;
 			default_port = DEFAULT_DNS_PORT;
 		} else if (strcasecmp(scheme, "udp") == 0) {
@@ -195,11 +200,13 @@ static int _config_server(int argc, char *argv[], dns_server_type_t type, int de
 			break;
 		}
 
+#ifdef HAVE_OPENSSL
 		case 'k': {
 			server->skip_check_cert = 1;
 			no_tls_host_verify = 1;
 			break;
 		}
+#endif
 		case 'b': {
 			is_bootstrap_dns = 1;
 			break;
@@ -255,6 +262,7 @@ static int _config_server(int argc, char *argv[], dns_server_type_t type, int de
 			safe_strncpy(server->httphost, optarg, DNS_MAX_CNAME_LEN);
 			break;
 		}
+#ifdef HAVE_OPENSSL
 		case 262: {
 			safe_strncpy(server->tls_host_verify, optarg, DNS_MAX_CNAME_LEN);
 			if (strncmp(server->tls_host_verify, "-", 2) == 0) {
@@ -263,6 +271,7 @@ static int _config_server(int argc, char *argv[], dns_server_type_t type, int de
 			}
 			break;
 		}
+#endif
 		case 263: {
 			server->tcp_keepalive = atoi(optarg);
 			break;
@@ -292,9 +301,11 @@ static int _config_server(int argc, char *argv[], dns_server_type_t type, int de
 
 	if (check_is_ipaddr(server->server) != 0) {
 		/* if server is domain name, then verify domain */
+#ifdef HAVE_OPENSSL
 		if (server->tls_host_verify[0] == '\0' && no_tls_host_verify == 0) {
 			safe_strncpy(server->tls_host_verify, server->server, DNS_MAX_CNAME_LEN);
 		}
+#endif
 
 		if (server->hostname[0] == '\0' && no_tls_host_name == 0) {
 			safe_strncpy(server->hostname, server->server, DNS_MAX_CNAME_LEN);
@@ -310,9 +321,11 @@ static int _config_server(int argc, char *argv[], dns_server_type_t type, int de
 	}
 
 	/* if server is domain name, then verify domain */
+#ifdef HAVE_OPENSSL
 	if (server->tls_host_verify[0] == '\0' && server->hostname[0] != '\0' && no_tls_host_verify == 0) {
 		safe_strncpy(server->tls_host_verify, server->hostname, DNS_MAX_CNAME_LEN);
 	}
+#endif
 
 	/* add new server */
 	server->type = type;
@@ -322,6 +335,7 @@ static int _config_server(int argc, char *argv[], dns_server_type_t type, int de
 	server->ttl = ttl;
 	server->drop_packet_latency_ms = drop_packet_latency_ms;
 
+#ifdef HAVE_OPENSSL
 	if (server->type == DNS_SERVER_HTTPS || server->type == DNS_SERVER_HTTP3) {
 		if (server->path[0] == 0) {
 			safe_strncpy(server->path, "/", sizeof(server->path));
@@ -331,6 +345,7 @@ static int _config_server(int argc, char *argv[], dns_server_type_t type, int de
 			set_http_host(server->server, server->port, DEFAULT_DNS_HTTPS_PORT, server->httphost);
 		}
 	}
+#endif
 
 	if (group_name) {
 		if (_dns_conf_get_group_set(group_name, server) != 0) {
@@ -368,6 +383,7 @@ int _config_server_tcp(void *data, int argc, char *argv[])
 	return _config_server(argc, argv, DNS_SERVER_TCP, DEFAULT_DNS_PORT);
 }
 
+#ifdef HAVE_OPENSSL
 int _config_server_tls(void *data, int argc, char *argv[])
 {
 	return _config_server(argc, argv, DNS_SERVER_TLS, DEFAULT_DNS_TLS_PORT);
@@ -396,3 +412,4 @@ int _config_server_http3(void *data, int argc, char *argv[])
 
 	return ret;
 }
+#endif
