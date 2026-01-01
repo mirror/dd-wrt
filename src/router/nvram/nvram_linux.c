@@ -679,7 +679,7 @@ void writenvram(const char *var, char *file)
 		if (p)
 			*p = 0;
 		//only last component. no recursive support yet
-		mkdir(dir, 0700);
+		mkdir(dir, 0744);
 		free(dir);
 	}
 	FILE *fp = fopen(file, "wb");
@@ -697,7 +697,7 @@ int write_nvram(char *name, char *nv)
 		if (p)
 			*p = 0;
 		//only last component. no recursive support yet
-		mkdir(dir, 0700);
+		mkdir(dir, 0744);
 		free(dir);
 	}
 	if (nvram_invmatch(nv, "")) {
