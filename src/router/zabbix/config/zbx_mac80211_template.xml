@@ -235,7 +235,7 @@
                     <snmp_community/>
                     <multiplier>0</multiplier>
                     <snmp_oid/>
-                    <key>vfs.file.cksum[/tmp/dnsmasq.conf]</key>
+                    <key>vfs.file.cksum[/tmp/dnsmasq/dnsmasq.conf]</key>
                     <delay>600</delay>
                     <history>7</history>
                     <trends>365</trends>
@@ -4144,8 +4144,8 @@
             <dependencies/>
         </trigger>
         <trigger>
-            <expression>{Template_Linux_DDWRT:vfs.file.cksum[/tmp/dnsmasq.conf].diff(0)}&gt;0</expression>
-            <name>/tmp/dnsmasq.conf has been changed on server {HOSTNAME}</name>
+            <expression>{Template_Linux_DDWRT:vfs.file.cksum[/tmp/dnsmasq/dnsmasq.conf].diff(0)}&gt;0</expression>
+            <name>/tmp/dnsmasq/dnsmasq.conf has been changed on server {HOSTNAME}</name>
             <url/>
             <status>0</status>
             <priority>4</priority>
