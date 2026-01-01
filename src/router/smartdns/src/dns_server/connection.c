@@ -18,6 +18,7 @@
 
 #include "connection.h"
 #include "dns_server.h"
+#include "server_http2.h"
 
 #include "smartdns/http2.h"
 
@@ -64,6 +65,11 @@ void _dns_server_conn_release(struct dns_server_conn_head *conn)
 			SSL_free(tls_client->ssl);
 			tls_client->ssl = NULL;
 		}
+
+		if (tls_client->http2_ctx != NULL) {
+			http2_ctx_put(tls_client->http2_ctx);
+			tls_client->http2_ctx = NULL;
+		}
 		pthread_mutex_destroy(&tls_client->ssl_lock);
 	} else if (conn->type == DNS_CONN_TYPE_TLS_SERVER || conn->type == DNS_CONN_TYPE_HTTPS_SERVER) {
 		struct dns_server_conn_tls_server *tls_server = (struct dns_server_conn_tls_server *)conn;
@@ -72,7 +78,11 @@ void _dns_server_conn_release(struct dns_server_conn_head *conn)
 			tls_server->ssl_ctx = NULL;
 		}
 	} else if (conn->type == DNS_CONN_TYPE_HTTP2_STREAM) {
-		/* Nothing to release for stream connection wrapper, just free(conn) at the end */
+		struct dns_server_conn_http2_stream *http2_stream = (struct dns_server_conn_http2_stream *)conn;
+		if (http2_stream->stream != NULL) {
+			http2_stream_close(http2_stream->stream);
+			http2_stream->stream = NULL;
+		}
 	}
 #endif
 
@@ -110,7 +120,7 @@ void _dns_server_close_socket(void)
 #ifdef HAVE_OPENSSL
 		if (conn->type == DNS_CONN_TYPE_TLS_CLIENT || conn->type == DNS_CONN_TYPE_HTTPS_CLIENT) {
 			struct dns_server_conn_tls_client *tls_client = (struct dns_server_conn_tls_client *)conn;
-			
+
 			/* Free SSL connection */
 			if (tls_client->ssl != NULL) {
 				SSL_free(tls_client->ssl);
@@ -173,7 +183,6 @@ int _dns_server_client_close(struct dns_server_conn_head *conn)
 		struct dns_server_conn_tls_client *tls_client = (struct dns_server_conn_tls_client *)conn;
 		if (tls_client->http2_ctx != NULL) {
 			http2_ctx_close(tls_client->http2_ctx);
-			http2_ctx_free(tls_client->http2_ctx);
 			tls_client->http2_ctx = NULL;
 		}
 	}

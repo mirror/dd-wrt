@@ -21,6 +21,7 @@
 #include "connection.h"
 #include "dns_server.h"
 #include "server_tls.h"
+#include "smartdns/dns_conf.h"
 #include "smartdns/http2.h"
 #include "smartdns/tlog.h"
 #include "smartdns/util.h"
@@ -95,6 +96,9 @@ static void _dns_server_http2_process_stream(struct dns_server_conn_tls_client *
 		len = http2_stream_read_body(stream, buf, sizeof(buf));
 		if (len < 0) {
 			/* Error or no data yet */
+			if (http2_stream_is_end(stream)) {
+				goto close_out;
+			}
 			return;
 		}
 
@@ -107,7 +111,7 @@ static void _dns_server_http2_process_stream(struct dns_server_conn_tls_client *
 		char *base64_query = NULL;
 
 		if (http2_stream_get_ex_data(stream)) {
-			return;
+			goto close_out;
 		}
 		http2_stream_set_ex_data(stream, (void *)1);
 
@@ -116,33 +120,34 @@ static void _dns_server_http2_process_stream(struct dns_server_conn_tls_client *
 
 		if (path == NULL) {
 			_dns_server_http2_send_response(stream, 404, "text/plain", "Not Found", 9);
-			return;
+			goto close_out;
 		}
 
 		/* Check path prefix */
 		if (strncmp(path, "/dns-query", 10) != 0) {
 			_dns_server_http2_send_response(stream, 404, "text/plain", "Not Found", 9);
-			return;
+			goto close_out;
 		}
 
 		/* Parse query string */
 		char *query_val = http2_stream_get_query_param(stream, "dns");
 		if (query_val == NULL) {
 			_dns_server_http2_send_response(stream, 400, "text/plain", "Bad Request", 11);
-			return;
+			goto close_out;
 		}
 
 		base64_query = malloc(DNS_IN_PACKSIZE);
 		if (base64_query == NULL) {
 			free(query_val);
-			return;
+			_dns_server_http2_send_response(stream, 500, "text/plain", "Bad Request", 11);
+			goto close_out;
 		}
 
 		if (urldecode(base64_query, DNS_IN_PACKSIZE, query_val) < 0) {
 			free(query_val);
 			free(base64_query);
 			_dns_server_http2_send_response(stream, 400, "text/plain", "Bad Request", 11);
-			return;
+			goto close_out;
 		}
 		free(query_val);
 
@@ -151,19 +156,19 @@ static void _dns_server_http2_process_stream(struct dns_server_conn_tls_client *
 
 		if (len <= 0) {
 			_dns_server_http2_send_response(stream, 400, "text/plain", "Bad Request", 11);
-			return;
+			goto close_out;
 		}
 	} else {
 		_dns_server_http2_send_response(stream, 405, "text/plain", "Method Not Allowed", 18);
-		return;
+		goto close_out;
 	}
 
 	if (len > 0) {
 		/* Create a fake connection object for this stream */
 		struct dns_server_conn_http2_stream *stream_conn = zalloc(1, sizeof(struct dns_server_conn_http2_stream));
 		if (stream_conn == NULL) {
-			tlog(TLOG_ERROR, "malloc failed for stream conn");
-			return;
+			_dns_server_http2_send_response(stream, 500, "text/plain", "Bad Request", 11);
+			goto close_out;
 		}
 
 		/* Initialize the fake connection */
@@ -187,6 +192,14 @@ static void _dns_server_http2_process_stream(struct dns_server_conn_tls_client *
 		/* Release our reference (request holds one now) */
 		_dns_server_conn_release(&stream_conn->head);
 	}
+
+	return;
+
+close_out:
+	if (stream != NULL) {
+		/* Close stream on error */
+		http2_stream_close(stream);
+	}
 }
 
 int _dns_server_process_http2(struct dns_server_conn_tls_client *tls_client, struct epoll_event *event,
@@ -200,12 +213,12 @@ int _dns_server_process_http2(struct dns_server_conn_tls_client *tls_client, str
 		struct http2_settings settings;
 		memset(&settings, 0, sizeof(settings));
 		settings.max_concurrent_streams = DNS_SERVER_HTTP2_MAX_CONCURRENT_STREAMS;
-		ctx = http2_ctx_server_new("smartdns-server", _http2_server_bio_read, _http2_server_bio_write, tls_client, &settings);
+		ctx = http2_ctx_server_new("smartdns-server", _http2_server_bio_read, _http2_server_bio_write, tls_client,
+								   &settings);
 		if (ctx == NULL) {
 			tlog(TLOG_ERROR, "init http2 context failed.");
 			return -1;
 		}
-		tls_client->http2_ctx = ctx;
 
 		/* Perform initial handshake */
 		ret = http2_ctx_handshake(ctx);
@@ -216,8 +229,11 @@ int _dns_server_process_http2(struct dns_server_conn_tls_client *tls_client, str
 				log_level = TLOG_DEBUG; /* Less noisy for clients that disconnect early or misbehave */
 			}
 			tlog(log_level, "http2 handshake failed, ret=%d (%s), alpn=%s.", ret, err_msg, tls_client->alpn_selected);
+			http2_ctx_close(ctx);
 			return -1;
 		}
+		
+		tls_client->http2_ctx = ctx;
 	}
 
 	/* Handle EPOLLOUT - flush pending writes */
@@ -230,6 +246,9 @@ int _dns_server_process_http2(struct dns_server_conn_tls_client *tls_client, str
 			if (ret < 0) {
 				break;
 			}
+			if (poll_count > 0 && poll_items[0].stream) {
+				http2_stream_put(poll_items[0].stream);
+			}
 		}
 	}
 
@@ -238,7 +257,7 @@ int _dns_server_process_http2(struct dns_server_conn_tls_client *tls_client, str
 		struct http2_poll_item poll_items[10];
 		int poll_count = 0;
 		int loop_count = 0;
-		const int MAX_LOOP_COUNT = 128;
+		const int MAX_LOOP_COUNT = 512;
 
 		/* Ensure handshake is complete */
 		ret = http2_ctx_handshake(ctx);
@@ -258,7 +277,7 @@ int _dns_server_process_http2(struct dns_server_conn_tls_client *tls_client, str
 		/* Poll and process */
 		while (loop_count++ < MAX_LOOP_COUNT) {
 			poll_count = 0;
-			ret = http2_ctx_poll(ctx, poll_items, 10, &poll_count);
+			ret = http2_ctx_poll_readable(ctx, poll_items, 10, &poll_count);
 			if (ret < 0) {
 				if (ret == HTTP2_ERR_EAGAIN) {
 					break;
@@ -281,6 +300,7 @@ int _dns_server_process_http2(struct dns_server_conn_tls_client *tls_client, str
 					if (poll_items[i].readable) {
 						struct http2_stream *stream = http2_ctx_accept_stream(ctx);
 						if (stream) {
+							/* Accept and immediately process new HTTP/2 stream */
 							_dns_server_http2_process_stream(tls_client, stream);
 						}
 					}
@@ -289,6 +309,10 @@ int _dns_server_process_http2(struct dns_server_conn_tls_client *tls_client, str
 
 				if (poll_items[i].stream && poll_items[i].readable) {
 					_dns_server_http2_process_stream(tls_client, poll_items[i].stream);
+				}
+				
+				if (poll_items[i].stream) {
+					http2_stream_put(poll_items[i].stream); /* Release poll reference */
 				}
 			}
 		}

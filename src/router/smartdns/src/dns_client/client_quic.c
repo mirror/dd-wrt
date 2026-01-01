@@ -66,6 +66,12 @@ static int _dns_client_quic_bio_recvmmsg(BIO *bio, BIO_MSG *msg, size_t stride, 
 				break;
 			}
 
+			if (errno == EPIPE || errno == ECONNRESET) {
+				/* Ignore broken pipe and connection reset errors */
+				tlog(TLOG_DEBUG, "recvmsg broken pipe or connection reset, %s", server_info->ip);
+				return total_len;
+			}
+
 			tlog(TLOG_ERROR, "recvmsg failed, %s", strerror(errno));
 			return 0;
 		}
@@ -106,6 +112,12 @@ static int _dns_client_quic_bio_sendmmsg(BIO *bio, BIO_MSG *msg, size_t stride, 
 
 			if (errno == EAGAIN || errno == EWOULDBLOCK) {
 				break;
+			}
+
+			if (errno == EPIPE || errno == ECONNRESET) {
+				/* Ignore broken pipe and connection reset errors */
+				tlog(TLOG_DEBUG, "sendmsg broken pipe or connection reset, %s", server_info->ip);
+				return total_len;
 			}
 
 			tlog(TLOG_ERROR, "sendmsg failed, %s", strerror(errno));
@@ -331,6 +343,8 @@ errout:
 	}
 
 	server_info->status = DNS_SERVER_STATUS_INIT;
+	server_info->proxy = NULL;
+	server_info->ssl_write_len = -1;
 
 	if (fd > 0 && proxy == NULL) {
 		close(fd);
@@ -574,7 +588,7 @@ static int _dns_client_quic_pending_data(struct dns_conn_stream *stream, struct 
 		return -1;
 	}
 
-	if (server_info->fd <= 0) {
+	if (client.epoll_fd <= 0) {
 		errno = ECONNRESET;
 		goto errout;
 	}
@@ -583,6 +597,12 @@ static int _dns_client_quic_pending_data(struct dns_conn_stream *stream, struct 
 	stream->send_buff.len += len;
 
 	pthread_mutex_lock(&server_info->lock);
+	if (server_info->fd <= 0) {
+		pthread_mutex_unlock(&server_info->lock);
+		errno = ECONNRESET;
+		goto errout;
+	}
+
 	if (list_empty(&stream->server_list)) {
 		list_add_tail(&stream->server_list, &server_info->conn_stream_list);
 		_dns_client_conn_stream_get(stream);
@@ -594,21 +614,32 @@ static int _dns_client_quic_pending_data(struct dns_conn_stream *stream, struct 
 		_dns_client_conn_stream_get(stream);
 	}
 	stream->query = query;
-	pthread_mutex_unlock(&server_info->lock);
-
-	if (client.epoll_fd <= 0) {
-		errno = ECONNRESET;
-		goto errout;
-	}
 
 	memset(&event, 0, sizeof(event));
 	event.events = EPOLLIN | EPOLLOUT;
 	event.data.ptr = server_info;
 	if (epoll_ctl(client.epoll_fd, EPOLL_CTL_MOD, server_info->fd, &event) != 0) {
 		tlog(TLOG_ERROR, "epoll ctl failed, %s", strerror(errno));
-		goto errout;
+		pthread_mutex_unlock(&server_info->lock);
+		goto errout_put;
 	}
+	pthread_mutex_unlock(&server_info->lock);
 	return 0;
+
+errout_put:
+	pthread_mutex_lock(&server_info->lock);
+	if (!list_empty(&stream->server_list)) {
+		list_del_init(&stream->server_list);
+		stream->server_info = NULL;
+		_dns_client_conn_stream_put(stream);
+	}
+	if (!list_empty(&stream->query_list)) {
+		list_del_init(&stream->query_list);
+		stream->query = NULL;
+		_dns_client_conn_stream_put(stream);
+	}
+	pthread_mutex_unlock(&server_info->lock);
+
 errout:
 
 	return -1;
@@ -632,6 +663,7 @@ int _dns_client_send_quic_data(struct dns_query_struct *query, struct dns_server
 		tlog(TLOG_ERROR, "malloc memory failed.");
 		return -1;
 	}
+	stream->type = server_info->type;
 
 	if (server_info->status != DNS_SERVER_STATUS_CONNECTED) {
 		ret = _dns_client_quic_pending_data(stream, server_info, query, packet, len);
@@ -681,7 +713,7 @@ int _dns_client_send_quic_data(struct dns_query_struct *query, struct dns_server
 
 	send_len = _dns_client_socket_ssl_send_ext(server_info, quic_stream, packet, len, SSL_WRITE_FLAG_CONCLUDE);
 	if (send_len <= 0) {
-		if (errno == EAGAIN || errno == EPIPE || server_info->ssl == NULL) {
+		if (errno == EAGAIN || server_info->ssl == NULL) {
 			/* save data to buffer, and retry when EPOLLOUT is available */
 			ret = _dns_client_quic_pending_data(stream, server_info, query, packet, len);
 			goto out;

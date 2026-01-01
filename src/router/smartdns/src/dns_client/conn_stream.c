@@ -54,23 +54,21 @@ void _dns_client_conn_stream_put(struct dns_conn_stream *stream)
 	int refcnt = atomic_dec_return(&stream->refcnt);
 	if (refcnt) {
 		if (refcnt < 0) {
-			BUG("BUG: stream refcnt is %d", refcnt);
+			BUG("BUG: stream  %p, refcnt is %d", stream, refcnt);
 		}
 		return;
 	}
 
 #ifdef HAVE_OPENSSL
-	/* Clean up QUIC stream */
 	if (stream->quic_stream) {
 		SSL_free(stream->quic_stream);
 		stream->quic_stream = NULL;
 	}
 
-	/* Clean up HTTP/2 stream */
 	if (stream->http2_stream) {
 		struct http2_stream *http2_stream = stream->http2_stream;
 		stream->http2_stream = NULL;
-		http2_stream_put(http2_stream);
+		http2_stream_close(http2_stream);
 	}
 #endif
 	if (stream->query) {
@@ -80,9 +78,7 @@ void _dns_client_conn_stream_put(struct dns_conn_stream *stream)
 
 	if (stream->server_info) {
 		pthread_mutex_lock(&stream->server_info->lock);
-		if (!list_empty(&stream->server_list)) {
-			list_del_init(&stream->server_list);
-		}
+		list_del_init(&stream->server_list);
 		pthread_mutex_unlock(&stream->server_info->lock);
 	}
 
@@ -112,11 +108,9 @@ void _dns_client_conn_server_streams_free(struct dns_server_info *server_info, s
 			SSL_free(stream->quic_stream);
 			stream->quic_stream = NULL;
 		}
-		/* Clean up HTTP/2 stream */
 		if (stream->http2_stream) {
-			struct http2_stream *http2_stream = stream->http2_stream;
+			http2_stream_close(stream->http2_stream);
 			stream->http2_stream = NULL;
-			http2_stream_put(http2_stream);
 		}
 #endif
 		_dns_client_conn_stream_put(stream);

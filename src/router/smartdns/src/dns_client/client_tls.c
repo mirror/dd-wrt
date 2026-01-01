@@ -382,6 +382,11 @@ int _dns_client_create_socket_tls(struct dns_server_info *server_info, const cha
 		fd = socket(server_info->ai_family, SOCK_STREAM, 0);
 	}
 
+	if (fd < 0) {
+		tlog(TLOG_ERROR, "create socket failed, %s", strerror(errno));
+		goto errout;
+	}
+
 	if (server_info->flags.ifname[0] != '\0') {
 		struct ifreq ifr;
 		memset(&ifr, 0, sizeof(struct ifreq));
@@ -396,11 +401,6 @@ int _dns_client_create_socket_tls(struct dns_server_info *server_info, const cha
 	ssl = SSL_new(server_info->ssl_ctx);
 	if (ssl == NULL) {
 		tlog(TLOG_ERROR, "new ssl failed, %s", server_info->ip);
-		goto errout;
-	}
-
-	if (fd < 0) {
-		tlog(TLOG_ERROR, "create socket failed, %s", strerror(errno));
 		goto errout;
 	}
 
@@ -488,7 +488,7 @@ int _dns_client_create_socket_tls(struct dns_server_info *server_info, const cha
 	event.events = EPOLLIN | EPOLLOUT;
 	event.data.ptr = server_info;
 	if (epoll_ctl(client.epoll_fd, EPOLL_CTL_ADD, fd, &event) != 0) {
-		tlog(TLOG_ERROR, "epoll ctl failed.");
+		tlog(TLOG_ERROR, "epoll ctl failed, %s", strerror(errno));
 		goto errout;
 	}
 
@@ -505,6 +505,8 @@ errout:
 	}
 
 	server_info->status = DNS_SERVER_STATUS_INIT;
+	server_info->proxy = NULL;
+	server_info->ssl_write_len = -1;
 
 	if (fd > 0 && proxy == NULL) {
 		close(fd);
@@ -574,7 +576,7 @@ int _dns_client_socket_ssl_send_ext(struct dns_server_info *server, SSL *ssl, co
 		}
 #endif
 
-		tlog(TLOG_ERROR, "server %s SSL write fail error: %s", server->ip, ERR_error_string(ssl_err, buff));
+		tlog(TLOG_WARN, "server %s SSL write fail error: %s", server->ip, ERR_error_string(ssl_err, buff));
 		errno = EFAULT;
 		ret = -1;
 	} break;
@@ -645,7 +647,7 @@ int _dns_client_socket_ssl_recv_ext(struct dns_server_info *server, SSL *ssl, vo
 			break;
 		}
 
-		tlog(TLOG_ERROR, "server %s SSL read fail error: %s", server->ip, ERR_error_string(ssl_err, buff));
+		tlog(TLOG_WARN, "server %s SSL read fail error: %s", server->ip, ERR_error_string(ssl_err, buff));
 		errno = EFAULT;
 		ret = -1;
 	} break;
@@ -1113,8 +1115,8 @@ errout:
 	pthread_mutex_lock(&server_info->lock);
 	server_info->recv_buff.len = 0;
 	server_info->send_buff.len = 0;
-	_dns_client_close_socket(server_info);
 	pthread_mutex_unlock(&server_info->lock);
+	_dns_client_close_socket(server_info);
 
 	return -1;
 }

@@ -96,11 +96,6 @@ void _dns_client_close_socket_ext(struct dns_server_info *server_info, int no_de
 	server_status = server_info->status;
 	server_info->status = DNS_SERVER_STATUS_DISCONNECTED;
 
-	/* remove fd from epoll */
-	if (server_info->fd > 0) {
-		epoll_ctl(client.epoll_fd, EPOLL_CTL_DEL, server_info->fd, NULL);
-	}
-
 	if (server_info->fd <= 0) {
 		return;
 	}
@@ -135,14 +130,13 @@ void _dns_client_close_socket_ext(struct dns_server_info *server_info, int no_de
 				_dns_client_conn_stream_put(conn_stream);
 			}
 		} else if (server_info->type == DNS_SERVER_HTTPS) {
-			/* Clean up HTTP/2 streams for this server */
 			struct dns_conn_stream *conn_stream = NULL;
 			struct dns_conn_stream *tmp = NULL;
 
 			list_for_each_entry_safe(conn_stream, tmp, &server_info->conn_stream_list, server_list)
 			{
 				if (conn_stream->http2_stream) {
-					http2_stream_put(conn_stream->http2_stream);
+					http2_stream_close(conn_stream->http2_stream);
 					conn_stream->http2_stream = NULL;
 				}
 
@@ -163,7 +157,7 @@ void _dns_client_close_socket_ext(struct dns_server_info *server_info, int no_de
 
 	/* Clean up HTTP/2 context (connection-level) */
 	if (server_info->http2_ctx) {
-		http2_ctx_free(server_info->http2_ctx);
+		http2_ctx_put(server_info->http2_ctx);
 		server_info->http2_ctx = NULL;
 	}
 
@@ -179,12 +173,9 @@ void _dns_client_close_socket_ext(struct dns_server_info *server_info, int no_de
 	} else if (server_info->fd > 0) {
 		close(server_info->fd);
 	}
-
-	if (server_info->fd > 0) {
-		tlog(TLOG_DEBUG, "server %s:%d closed.", server_info->ip, server_info->port);
-	}
-
 	server_info->fd = -1;
+	tlog(TLOG_DEBUG, "server %s:%d closed.", server_info->ip, server_info->port);
+
 	/* update send recv time */
 	time(&server_info->last_send);
 	time(&server_info->last_recv);

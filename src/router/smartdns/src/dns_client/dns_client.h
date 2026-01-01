@@ -238,10 +238,9 @@ struct dns_conn_stream {
 	struct dns_server_info *server_info;
 
 #ifdef HAVE_OPENSSL
-	union {
-		SSL *quic_stream;
-		struct http2_stream *http2_stream;
-	};
+	SSL *quic_stream;
+	struct http2_stream *http2_stream;
+	dns_server_type_t type;
 #endif
 };
 
