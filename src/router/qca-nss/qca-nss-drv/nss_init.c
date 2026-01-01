@@ -340,7 +340,7 @@ static int nss_get_average_inst_handler(struct ctl_table *ctl, int write, void _
 		return ret;
 	}
 
-	printk("Current Inst Per Ms %x\n", nss_runtime_samples.average);
+	printk("Current Inst Per Ms %d\n", nss_runtime_samples.average);
 
 	*lenp = 0;
 	return ret;
