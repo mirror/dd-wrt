@@ -1386,14 +1386,14 @@ nft_set () {
 
 	# Define the dnsmask config file location for generic Linux
 	# Edit this if your non-uci system uses a non standard location:
-	conflocation="/tmp/dnsmasq.conf"
+	conflocation="/tmp/dnsmasq/dnsmasq.conf"
 
 	if [ "$nftsetmode" = "delete" ]; then
 		# Delete rules using the set, the set itself and the Dnsmasq config
 
 		# Generic Linux
-		linnum=$(cat /tmp/dnsmasq.conf | grep -n -w "$nftsetname" | awk -F":" '{printf "%s", $1}')
-		sed "$linnum""d" "/tmp/dnsmasq.conf" &>/dev/null
+		linnum=$(cat /tmp/dnsmasq/dnsmasq.conf | grep -n -w "$nftsetname" | awk -F":" '{printf "%s", $1}')
+		sed "$linnum""d" "/tmp/dnsmasq/dnsmasq.conf" &>/dev/null
 
 		ipset destroy "$nftsetname" &>/dev/null
 	else
