@@ -654,7 +654,7 @@ int dns_to_resolv(void)
 	/*
 	 * Save DNS to resolv.conf 
 	 */
-	if (!(fp_w = fopen(RESOLV_FILE, "w"))) {
+	if (!(fp_w = fopencreate(RESOLV_FILE, "w"))) {
 		perror(RESOLV_FILE);
 		return errno;
 	}
@@ -671,7 +671,7 @@ int dns_to_resolv(void)
 			fprintf(fp_w, "nameserver %s\n", "::1");
 		}
 		fclose(fp_w);
-		if (!(fp_w = fopen(RESOLV_FORW, "w"))) {
+		if (!(fp_w = fopencreate(RESOLV_FORW, "w"))) {
 			perror(RESOLV_FORW);
 			return errno;
 		}

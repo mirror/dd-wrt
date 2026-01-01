@@ -1151,8 +1151,8 @@ struct detect_wans {
 #define PING_TMP "/tmp/ping.log"
 // #define TRACEROUTE_TMP "/tmp/traceroute.log"
 
-#define RESOLV_FILE "/tmp/resolv.conf"
-#define RESOLV_FORW "/tmp/resolv.dnsmasq"
+#define RESOLV_FILE "/tmp/dnsmasq/resolv.conf"
+#define RESOLV_FORW "/tmp/dnsmasq/resolv.dnsmasq"
 #define HOSTS_FILE "/tmp/hosts"
 
 #define LOG_FILE "/var/log/mess"

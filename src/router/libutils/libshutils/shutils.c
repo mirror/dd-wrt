@@ -485,7 +485,7 @@ FILE *fopencreate(const char *name, const char *mode)
 		if (p)
 			*p = 0;
 		//only last component. no recursive support yet
-		mkdir(dir, 0700);
+		mkdir(dir, 0744);
 		free(dir);
 	}
 	return fopen(name, mode);
