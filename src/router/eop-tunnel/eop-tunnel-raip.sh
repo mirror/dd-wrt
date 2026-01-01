@@ -214,7 +214,7 @@ for i in $(seq 1 $tunnels); do
 				[[ -z $DNSTIME ]] && DNSTIME=0 || sleep $DNSTIME
 				SLEEPDNSCT=$DNSTIME
 				MAXDNSTIME=45
-				while [[ ! -f /tmp/resolv.dnsmasq ]]; do
+				while [[ ! -f /tmp/dnsmasq/resolv.dnsmasq ]]; do
 					SLEEPDNSCT=$((SLEEPDNSCT+2))
 					sleep 2
 					if [[ $SLEEPDNSCT -gt $MAXDNSTIME && $MAXDNSTIME -ne 0 ]]; then
@@ -224,26 +224,26 @@ for i in $(seq 1 $tunnels); do
 				done
 				logger -p user.info "WireGuard waited $SLEEPDNSCT sec. for DNSMasq"
 				# check if other instances did not set already
-				if [[ -e /tmp/resolv.dnsmasq_oet ]]; then
+				if [[ -e /tmp/dnsmasq/resolv.dnsmasq_oet ]]; then
 					logger -p user.warning "WireGuard DNS WARNING, already set when running oet${i} will overwrite"
-					#consider adding sleep i otherwise this tunnel will change resolv.dnsmasq within one second and it will not get polled
+					#consider adding sleep i otherwise this tunnel will change dnsmasq/resolv.dnsmasq within one second and it will not get polled
 					#sleep i
 				fi
 				#if PBR is used with split DNS
 				if [[ $($nv get oet${i}_spbr) -eq 1 && $($nv get oet${i}_dnspbr) -eq 1 && ! -z "$($nv get oet${i}_dns | sed '/^[[:blank:]]*#/d')" ]]; then
 					logger -p user.info "WireGuard DNS Split tunnel for PBR oet${i}"
 				else
-					cp -n /tmp/resolv.dnsmasq /tmp/resolv.dnsmasq_oet
-					rm -f /tmp/resolv.dnsmasq
+					cp -n /tmp/dnsmasq/resolv.dnsmasq /tmp/dnsmasq/resolv.dnsmasq_oet
+					rm -f /tmp/dnsmasq/resolv.dnsmasq
 					for wgdns in $($nv get oet${i}_dns | sed "s/,/ /g"); do
 						#nvram_dns="$wgdns $nvram_dns"
 						nvram_dns="$nvram_dns $wgdns"
-						echo -e "nameserver $wgdns" >> /tmp/resolv.dnsmasq
+						echo -e "nameserver $wgdns" >> /tmp/dnsmasq/resolv.dnsmasq
 					done
 					$nv set wg_get_dns="$nvram_dns"
 					#if [[ $($nv get wgtouchdns) -eq 1 ]]; then
 					#	sleep 1
-					#	touch /tmp/resolv.dnsmasq
+					#	touch /tmp/dnsmasq/resolv.dnsmasq
 					#fi
 				fi
 			fi
@@ -340,13 +340,13 @@ for i in $(seq 1 $tunnels); do
 				[[ -z "$PINGIP" ]] && PINGIP="8.8.8.8"
 				sh /usr/bin/wireguard-fwatchdog.sh $i $PINGTIME $PINGIP $fset &
 			fi
-			#restart dnsmasq when the last tunnel has been setup to reread resolv.dnsmasq, due to a bug this does not happen on change of resolv.dnsmasq
+			#restart dnsmasq when the last tunnel has been setup to reread dnsmasq/resolv.dnsmasq, due to a bug this does not happen on change of dnsmasq/resolv.dnsmasq
 			# for now disabled waiting for DNSMasq to be repaired 2.86 works but 287test4 is buggy and does not want to replace a DNS resolver which is already in memory
 			#restartdns=$($nv get wg_restart_dnsmasq); [[ -z $restartdns ]] && restartdns=0 #moved to begin
 			#[[ $i -eq $x && $restartdns -ge 1 ]] && { sleep $restartdns; restart dnsmasq; }
 			# restart dnsmasq if ipset is set
 			[[ $i -eq $x && $restartdns -ge 1 ]] && { logger -p user.info "WireGuard: DNSMasq restarted due to active ipset"; restart dnsmasq; } &
-			# reload but not restart works of resolv.dnsmasq only if "no-poll" is set
+			# reload but not restart works of dnsmasq/resolv.dnsmasq only if "no-poll" is set
 			#[[ $i -eq $x && $restart -ge 1 ]] && { sleep $restart; kill -1 $(pidof dnsmasq); }
 		fi
 	fi

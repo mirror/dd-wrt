@@ -99,10 +99,10 @@ acquire_lock
 
 #reset dns
 $nv unset wg_get_dns
-if [[ -e /tmp/resolv.dnsmasq_oet ]]; then
+if [[ -e /tmp/dnsmasq/resolv.dnsmasq_oet ]]; then
 	logger -p user.info "WireGuard DNS reset"
-	cp -f /tmp/resolv.dnsmasq_oet /tmp/resolv.dnsmasq
-	rm -f /tmp/resolv.dnsmasq_oet
+	cp -f /tmp/dnsmasq/resolv.dnsmasq_oet /tmp/dnsmasq/resolv.dnsmasq
+	rm -f /tmp/dnsmasq/resolv.dnsmasq_oet
 fi
 
 if is_eop_active; then
