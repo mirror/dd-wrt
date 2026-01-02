@@ -526,7 +526,7 @@ CLEANFILES = ${man_MANS} iptables-extensions.8.tmpl
 @ENABLE_IPV6_TRUE@v6_sbin_links = ip6tables-legacy ip6tables-legacy-restore \
 @ENABLE_IPV6_TRUE@		 ip6tables ip6tables-restore
 
-@ENABLE_NFTABLES_TRUE@x_sbin_links = iptables-nft iptables-nft-restore iptables-nft-save \
+@ENABLE_NFTABLES_TRUE@x_sbin_links = iptables-nft iptables-nft-restore \
 @ENABLE_NFTABLES_TRUE@		ip6tables-nft ip6tables-nft-restore \
 @ENABLE_NFTABLES_TRUE@		ebtables-nft ebtables \
 @ENABLE_NFTABLES_TRUE@		ebtables-nft-restore ebtables-restore
