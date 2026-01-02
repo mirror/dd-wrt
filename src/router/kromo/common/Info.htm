@@ -392,10 +392,6 @@ function refresh(F) {
 										<% nvm("lan_proto", "dhcp", "<script type="text/javascript">Capture(share.enabled)</script>"); %><% nvm("lan_proto", "static", "<script type="text/javascript">Capture(share.disabled)</script>"); %>&nbsp;
 									</div>
 									-->
-									<div class="setting">
-										<div class="label"><% tran("radius.titl"); %></div>
-									<% nvim("wl0_mode", "ap", "<script type="text/javascript">Capture(wl_basic.ap)</script><!--"); %><% nvm("wl0_radauth","0","<script type="text/javascript">Capture(share.disabled)</script>"); %><% nvm("wl0_radauth","1","<script type="text/javascript">Capture(share.enabled)</script>"); %><% nvim("wl0_mode", "ap", "-->"); %>&nbsp;
-									</div>
 									<% ifndef("RFLOW", "<!--"); %>
 									<div class="setting">
 										<div class="label"><% tran("service.rflow_srv1"); %></div>
