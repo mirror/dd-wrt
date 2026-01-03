@@ -135,49 +135,49 @@
 		phy0: ethernet-phy@0 {
 			reg = <0>;
 			compatible = "ethernet-phy-ieee802.3-c45";
-			rtl9300,smi-address = <0 4>;
+			realtek,smi-address = <0 4>;
 			sds = < 2 >;
 		};
 		phy1: ethernet-phy@1 {
 			reg = <8>;
 			compatible = "ethernet-phy-ieee802.3-c45";
-			rtl9300,smi-address = <0 2>;
+			realtek,smi-address = <0 2>;
 			sds = < 3 >;
 		};
 		phy2: ethernet-phy@2 {
 			reg = <16>;
 			compatible = "ethernet-phy-ieee802.3-c45";
-			rtl9300,smi-address = <0 6>;
+			realtek,smi-address = <0 6>;
 			sds = < 4 >;
 		};
 		phy3: ethernet-phy@3 {
 			reg = <24>;
 			compatible = "ethernet-phy-ieee802.3-c45";
-			rtl9300,smi-address = <0 1>;
+			realtek,smi-address = <0 1>;
 			sds = < 5 >;
 		};
 		phy4: ethernet-phy@4 {
 			reg = <32>;
 			compatible = "ethernet-phy-ieee802.3-c45";
-			rtl9300,smi-address = <1 4>;
+			realtek,smi-address = <1 4>;
 			sds = < 6 >;
 		};
 		phy5: ethernet-phy@5 {
 			reg = <40>;
 			compatible = "ethernet-phy-ieee802.3-c45";
-			rtl9300,smi-address = <1 2>;
+			realtek,smi-address = <1 2>;
 			sds = < 7 >;
 		};
 		phy6: ethernet-phy@6 {
 			reg = <48>;
 			compatible = "ethernet-phy-ieee802.3-c45";
-			rtl9300,smi-address = <1 6>;
+			realtek,smi-address = <1 6>;
 			sds = < 8 >;
 		};
 		phy7: ethernet-phy@7 {
 			reg = <50>;
 			compatible = "ethernet-phy-ieee802.3-c45";
-			rtl9300,smi-address = <1 1>;
+			realtek,smi-address = <1 1>;
 			sds = < 9 >;
 		};
 
