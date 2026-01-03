@@ -386,12 +386,14 @@ void start_raid(void)
 				try_mount("btrfs", fname, NULL, pname);
 			}
 			if (nvram_nmatch("exfat", "raidfs%d", i)) {
+				eval("fsck.exfat", "-p", fname);
 				try_mount("exfat", fname, "iocharset=utf8", pname);
 			}
 			if (nvram_nmatch("apfs", "raidfs%d", i)) {
 				try_mount("apfs", fname, NULL, pname);
 			}
 			if (nvram_nmatch("fat32", "raidfs%d", i)) {
+				eval("fsck.vfat", "-p", fname);
 				try_mount("vfat", fname, "iocharset=utf8", pname);
 			}
 			if (nvram_nmatch("ntfs", "raidfs%d", i)) {
