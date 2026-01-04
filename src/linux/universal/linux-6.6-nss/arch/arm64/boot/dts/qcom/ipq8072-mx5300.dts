@@ -323,7 +323,6 @@
 			partition@13c80000 {
 				label = "nvram";
 				reg = <0x13c80000 0x200000>;
-				read-only;
 			};
 
 			partition@13e80000 {
@@ -335,7 +334,6 @@
 			partition@13f00000 {
 				label = "ddwrt";
 				reg = <0x13f00000 0xb800000>;
-				read-only;
 			};
 
 			partition@1f700000 {
