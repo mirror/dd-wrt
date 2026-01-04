@@ -360,11 +360,6 @@
 				label = "nvram";
 				reg = <0x00780000 0x00040000>;
 			};
-
-			partition@7c0000 {
-				label = "oops";
-				reg = <0x007c0000 0x00040000>;
-			};
 		};
 	};
 };
@@ -417,7 +412,12 @@
 
 			partition@10000000 {
 				label = "fap_data";
-				reg = <0x10000000 0x10000000>;
+				reg = <0x10000000 0xfc00000>;
+			};
+
+			partition@1fc00000 {
+				label = "oops";
+				reg = <0x1fc00000 0x400000>;
 			};
 		};
 	};
