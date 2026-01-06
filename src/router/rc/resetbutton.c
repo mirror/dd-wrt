@@ -884,6 +884,7 @@ static void service_restart(void)
 static void handle_reset(void)
 {
 	if ((brand & 0x000f) != 0x000f) {
+		fprintf(stderr, "Reset to factory defaults\n");
 		dd_loginfo("resetbutton", "factory default.");
 #if !defined(HAVE_XSCALE) && !defined(HAVE_MAGICBOX) && !defined(HAVE_FONERA) && !defined(HAVE_WHRAG108) &&                   \
 	!defined(HAVE_GATEWORX) && !defined(HAVE_LS2) && !defined(HAVE_CA8) && !defined(HAVE_TW6600) && !defined(HAVE_LS5) && \
