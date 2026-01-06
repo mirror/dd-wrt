@@ -478,7 +478,8 @@ int main(int argc, char **argv)
 		putc(1, out);
 		fclose(out);
 	}
-	dd_loginfo("init", "starting Architecture code for " ARCHITECTURE "");
+	fprintf(stderr, "starting Architecture code for " ARCHITECTURE " (%s)", nvram_safe_get("DD_BOARD"));
+	dd_loginfo("init", "starting Architecture code for " ARCHITECTURE " (%s)", nvram_safe_get("DD_BOARD"));
 	start_service("sysinit");
 #ifndef HAVE_MICRO
 	start_service("watchdog");
