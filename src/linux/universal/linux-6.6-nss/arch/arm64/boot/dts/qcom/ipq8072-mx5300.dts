@@ -532,6 +532,7 @@
 			qcom,ath10k-calibration-variant = "Linksys-MX5300";
 			nvmem-cell-names = "pre-calibration";
 			nvmem-cells = <&caldata_qca9984>;
+			ieee80211-freq-limit = <5500000 6000000>;
 		};
 	};
 };
