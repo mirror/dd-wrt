@@ -1561,12 +1561,12 @@ void start_wifi_drivers(void)
 			break;
 
 		case ROUTER_LINKSYS_MX5300:
+			load_ath10k();
+			wait_for_wifi(1);
 			//                      char *cert_region = get_deviceinfo_linksys("cert_region");
 			//                      if (!cert_region)
 			load_ath11k_internal(profile, 0, !nvram_match("ath11k_nss", "0") && !nss_disabled(0), frame_mode,
 					     cert_region, 1);
-			wait_for_wifi(2);
-			load_ath10k();
 			minif = 3;
 			break;
 
