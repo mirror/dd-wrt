@@ -323,8 +323,14 @@ static inline u32 linkmode_adv_to_mii_10gbt_adv_t(unsigned long *advertising)
  * to linkmode advertisement settings. Other bits in advertising aren't changed.
  */
 static inline void mii_10gbt_stat_mod_linkmode_lpa_t(unsigned long *advertising,
-						     u32 lpa)
+						     u32 lpa_in)
 {
+	u32 lpa = lpa_in;
+
+	if (!(lpa & MDIO_AN_10GBT_STAT_REMOK) ||
+	    !(lpa & MDIO_AN_10GBT_STAT_LOCOK))
+		lpa = 0;
+
 	linkmode_mod_bit(ETHTOOL_LINK_MODE_2500baseT_Full_BIT,
 			 advertising, lpa & MDIO_AN_10GBT_STAT_LP2_5G);
 	linkmode_mod_bit(ETHTOOL_LINK_MODE_5000baseT_Full_BIT,

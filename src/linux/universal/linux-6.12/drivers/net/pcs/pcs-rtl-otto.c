@@ -106,6 +106,7 @@
 #define RTL931X_SERDES_MODE_CTRL		(0x13cc)
 #define RTL931X_PS_SERDES_OFF_MODE_CTRL_ADDR	(0x13F4)
 #define RTL931X_MAC_SERDES_MODE_CTRL(sds)	(0x136C + (((sds) << 2)))
+#define RTPCS_931X_ISR_SERDES_RXIDLE		(0x12f8)
 
 enum rtpcs_sds_mode {
 	RTPCS_SDS_MODE_OFF = 0,
@@ -129,6 +130,18 @@ enum rtpcs_sds_mode {
 	RTPCS_SDS_MODE_USXGMII_5GSXGMII,
 	RTPCS_SDS_MODE_USXGMII_5GDXGMII,
 	RTPCS_SDS_MODE_USXGMII_2_5GSXGMII,
+};
+
+enum rtpcs_port_media {
+	RTPCS_PORT_MEDIA_NONE,
+	RTPCS_PORT_MEDIA_FIBER_100M,
+	RTPCS_PORT_MEDIA_FIBER_1G,
+	RTPCS_PORT_MEDIA_FIBER_2_5G,
+	RTPCS_PORT_MEDIA_FIBER_10G,
+	RTPCS_PORT_MEDIA_DAC_50CM,
+	RTPCS_PORT_MEDIA_DAC_100CM,
+	RTPCS_PORT_MEDIA_DAC_300CM,
+	RTPCS_PORT_MEDIA_DAC_500CM,
 };
 
 struct rtpcs_ctrl;
@@ -176,11 +189,11 @@ struct rtpcs_config {
 	int (*setup_serdes)(struct rtpcs_serdes *sds, phy_interface_t mode);
 };
 
-typedef struct {
+struct rtpcs_sds_config {
 	u8 page;
 	u8 reg;
 	u16 data;
-} sds_config;
+};
 
 static int rtpcs_sds_to_mmd(int sds_page, int sds_regnum)
 {
@@ -1500,7 +1513,6 @@ static void rtpcs_930x_sds_rxcal_tap_get(struct rtpcs_serdes *sds,
 	}
 }
 
-__always_unused
 static void rtpcs_930x_sds_do_rx_calibration_1(struct rtpcs_serdes *sds,
 					       phy_interface_t phy_mode)
 {
@@ -1665,7 +1677,6 @@ static void rtpcs_930x_sds_do_rx_calibration_2_3(struct rtpcs_serdes *sds)
 	pr_info("%s: end_1.2.3\n", __func__);
 }
 
-__always_unused
 static void rtpcs_930x_sds_do_rx_calibration_2(struct rtpcs_serdes *sds)
 {
 	rtpcs_930x_sds_rx_reset(sds, PHY_INTERFACE_MODE_10GBASER);
@@ -2034,7 +2045,7 @@ static int rtpcs_930x_sds_set_polarity(struct rtpcs_serdes *sds,
 	return rtpcs_sds_write_bits(sds, 0x0, 0x0, 9, 8, val);
 }
 
-static const sds_config rtpcs_930x_sds_cfg_10gr_even[] = {
+static const struct rtpcs_sds_config rtpcs_930x_sds_cfg_10gr_even[] = {
 	/* 1G */
 	{0x00, 0x0E, 0x3053}, {0x01, 0x14, 0x0100}, {0x21, 0x03, 0x8206},
 	{0x21, 0x05, 0x40B0}, {0x21, 0x06, 0x0010}, {0x21, 0x07, 0xF09F},
@@ -2081,7 +2092,7 @@ static const sds_config rtpcs_930x_sds_cfg_10gr_even[] = {
 	{0x2F, 0x19, 0x4902}, {0x2F, 0x1D, 0x76E1},
 };
 
-static const sds_config rtpcs_930x_sds_cfg_10gr_odd[] = {
+static const struct rtpcs_sds_config rtpcs_930x_sds_cfg_10gr_odd[] = {
 	/* 1G */
 	{0x00, 0x0E, 0x3053}, {0x01, 0x14, 0x0100}, {0x21, 0x03, 0x8206},
 	{0x21, 0x06, 0x0010}, {0x21, 0x07, 0xF09F}, {0x21, 0x0A, 0x0003},
@@ -2123,7 +2134,7 @@ static const sds_config rtpcs_930x_sds_cfg_10gr_odd[] = {
 	{0x2B, 0x14, 0x3108}, {0x2D, 0x13, 0x3C87}, {0x2D, 0x14, 0x1808},
 };
 
-static const sds_config rtpcs_930x_sds_cfg_10g_2500bx_even[] = {
+static const struct rtpcs_sds_config rtpcs_930x_sds_cfg_10g_2500bx_even[] = {
 	{0x00, 0x0E, 0x3053}, {0x01, 0x14, 0x0100},
 	{0x21, 0x03, 0x8206}, {0x21, 0x05, 0x40B0}, {0x21, 0x06, 0x0010}, {0x21, 0x07, 0xF09F},
 	{0x21, 0x0C, 0x0007}, {0x21, 0x0D, 0x6009}, {0x21, 0x0E, 0x0000}, {0x21, 0x0F, 0x0008},
@@ -2145,7 +2156,7 @@ static const sds_config rtpcs_930x_sds_cfg_10g_2500bx_even[] = {
 	{0x2F, 0x13, 0x0050}, {0x2F, 0x18, 0x8E88}, {0x2F, 0x19, 0x4902}, {0x2F, 0x1D, 0x66E1},
 };
 
-static const sds_config rtpcs_930x_sds_cfg_10g_2500bx_odd[] = {
+static const struct rtpcs_sds_config rtpcs_930x_sds_cfg_10g_2500bx_odd[] = {
 	{0x00, 0x0E, 0x3053}, {0x01, 0x14, 0x0100},
 	{0x21, 0x03, 0x8206}, {0x21, 0x06, 0x0010}, {0x21, 0x07, 0xF09F}, {0x21, 0x0A, 0x0003},
 	{0x21, 0x0B, 0x0005}, {0x21, 0x0C, 0x0007}, {0x21, 0x0D, 0x6009}, {0x21, 0x0E, 0x0000},
@@ -2197,7 +2208,7 @@ static void rtpcs_930x_sds_usxgmii_config(struct rtpcs_serdes *sds, int nway_en,
 static void rtpcs_930x_sds_patch(struct rtpcs_serdes *sds, phy_interface_t mode)
 {
 	struct rtpcs_serdes *even_sds = rtpcs_sds_get_even(sds);
-	const sds_config *config;
+	const struct rtpcs_sds_config *config;
 	bool is_even_sds;
 	size_t count;
 
@@ -2390,6 +2401,23 @@ static void rtpcs_931x_sds_clear_symerr(struct rtpcs_serdes *sds,
 	default:
 		break;
 	}
+}
+
+static int rtpcs_931x_sds_init_leq_dfe(struct rtpcs_serdes *sds)
+{
+	rtpcs_sds_write_bits(sds, 0x2e, 0xd, 6, 0, 0x0);
+	rtpcs_sds_write_bits(sds, 0x2e, 0xd, 7, 7, 0x1);
+
+	rtpcs_sds_write_bits(sds, 0x2e, 0x1c, 5, 0, 0x1e);
+	rtpcs_sds_write_bits(sds, 0x2e, 0x1d, 11, 0, 0x0);
+	rtpcs_sds_write_bits(sds, 0x2e, 0x1f, 11, 0, 0x0);
+	rtpcs_sds_write_bits(sds, 0x2f, 0x0, 11, 0, 0x0);
+	rtpcs_sds_write_bits(sds, 0x2f, 0x1, 11, 0, 0x0);
+
+	rtpcs_sds_write_bits(sds, 0x2e, 0xf, 12, 6, 0x7f);
+	rtpcs_sds_write(sds, 0x2f, 0x12, 0xaaa);
+
+	return 0;
 }
 
 static int rtpcs_931x_sds_power(struct rtpcs_serdes *sds, bool power_on)
@@ -2743,7 +2771,108 @@ static int rtpcs_931x_sds_set_polarity(struct rtpcs_serdes *sds,
 	return rtpcs_sds_write_bits(sds, 0x80, 0x0, 9, 8, val);
 }
 
-static sds_config sds_config_10p3125g_type1[] = {
+static int rtpcs_931x_sds_set_port_media(struct rtpcs_serdes *sds,
+					 enum rtpcs_port_media port_media)
+{
+	struct rtpcs_serdes *even_sds = rtpcs_sds_get_even(sds);
+	bool is_dac, is_10g;
+
+	/*
+	 * SDK identifies this as some kind of gating. It's enabled
+	 * here and later deactivated for non-10G.
+	 * (from DMS1250 SDK)
+	 */
+	rtpcs_sds_write_bits(sds, 0x5f, 0x1, 0, 0, 0x1);
+
+	/* media none behavior */
+	rtpcs_sds_write(sds, 0x2e, 0x12, 0x2740);
+	rtpcs_sds_write(sds, 0x2f, 0x0, 0x0);
+	rtpcs_sds_write(sds, 0x2f, 0x2, 0x2010);
+	rtpcs_sds_write(sds, 0x20, 0x0, 0xcd1);
+	rtpcs_sds_write_bits(sds, 0x2e, 0xf, 5, 0, 0x4);
+
+	rtpcs_sds_write_bits(sds, 0x2a, 0x12, 7, 6, 0x1);
+	/* TODO: can we drop this in favor of turning off SerDes ealier? */
+	rtpcs_931x_sds_set_mode(sds, RTPCS_SDS_MODE_OFF);
+
+	if (port_media == RTPCS_PORT_MEDIA_NONE)
+		return 0;
+
+	rtpcs_sds_write(sds, 0x21, 0x19, 0xf0f0); /* from XS1930-10 SDK */
+	rtpcs_sds_write(even_sds, 0x2e, 0x8, 0x0294);
+
+	/* from _phy_rtl9310_sds_init, DMS1250 SDK */
+	rtpcs_sds_write_bits(sds, 0x2e, 0xe, 13, 11, 0x0);
+	rtpcs_931x_sds_rx_reset(sds);
+	rtpcs_931x_sds_init_leq_dfe(sds);
+
+	is_dac = (port_media == RTPCS_PORT_MEDIA_DAC_50CM ||
+		  port_media == RTPCS_PORT_MEDIA_DAC_100CM ||
+		  port_media == RTPCS_PORT_MEDIA_DAC_300CM ||
+		  port_media == RTPCS_PORT_MEDIA_DAC_500CM);
+	is_10g = is_dac || port_media == RTPCS_PORT_MEDIA_FIBER_10G;
+
+	if (port_media != RTPCS_PORT_MEDIA_FIBER_100M) {
+		rtpcs_sds_write_bits(sds, 0x20, 0x0, 11, 10, 0x0);
+		rtpcs_sds_write_bits(sds, 0x2a, 0x7, 15, 15, is_dac ? 0x1 : 0x0);
+		rtpcs_sds_write_bits(sds, 0x20, 0x0, 11, 10, 0x3);
+	}
+
+	switch (port_media) {
+	case RTPCS_PORT_MEDIA_DAC_50CM:
+	case RTPCS_PORT_MEDIA_DAC_100CM:
+		rtpcs_sds_write_bits(sds, 0x2e, 0x1, 15, 0, 0x1340);
+		rtpcs_sds_write(sds, 0x21, 0x19, 0xf0a5); /* from XS1930-10 SDK */
+		rtpcs_sds_write(even_sds, 0x2e, 0x8, 0x02a0);
+		break;
+
+	case RTPCS_PORT_MEDIA_DAC_300CM:
+	case RTPCS_PORT_MEDIA_DAC_500CM:
+		rtpcs_sds_write_bits(sds, 0x2e, 0x1, 15, 0, 0x5200);
+		rtpcs_sds_write(sds, 0x21, 0x19, 0xf0a5); /* from XS1930-10 SDK */
+		rtpcs_sds_write(even_sds, 0x2e, 0x8, 0x02a0);
+		break;
+
+	case RTPCS_PORT_MEDIA_FIBER_10G:
+		/*
+		 * TODO: this would need to be saved during early init, before
+		 * actually changing any SerDes settings. Then restored here.
+		 * see phy_rtl9310_init in SDK
+		 */
+		// rtpcs_sds_write(sds, 0x2e, 0x1, phy_rtl9310_10g_tx[unit][sds]);
+		rtpcs_sds_write_bits(sds, 0x2e, 0xf, 5, 0, 0x2); /* from DMS1250 SDK */
+		break;
+	default:
+		break;
+	}
+
+	rtpcs_sds_write_bits(sds, 0x6, 0xd, 6, 6, is_dac ? 0x0 : 0x1);
+
+	if (is_10g) {
+		rtpcs_sds_write(sds, 0x2e, 0x12, 0x27c0);
+		rtpcs_sds_write(sds, 0x2f, 0x0, 0xc000);
+		rtpcs_sds_write(sds, 0x2f, 0x2, 0x6010);
+	}
+
+	/* FIXME: is this redundant with the writes below? */
+	rtpcs_sds_write(sds, 0x20, 0x0, 0xc30);
+	rtpcs_sds_write_bits(sds, 0x20, 0x0, 9, 0, 0x30);
+	rtpcs_sds_write_bits(sds, 0x2a, 0x12, 7, 6, 0x3);
+
+	rtpcs_sds_write_bits(sds, 0x20, 0x0, 11, 10, 0x1);
+	rtpcs_sds_write_bits(sds, 0x20, 0x0, 11, 10, 0x3);
+
+	regmap_write_bits(sds->ctrl->map, RTPCS_931X_ISR_SERDES_RXIDLE,
+			  BIT(sds->id - 2), BIT(sds->id - 2));
+
+	/* Gating as mentioned above, deactivated here for non-10G */
+	if (!is_10g)
+		rtpcs_sds_write_bits(sds, 0x5f, 0x1, 0, 0, 0x0);
+
+	return 0;
+}
+
+static const struct rtpcs_sds_config rtpcs_931x_sds_cfg_10p3125g_type1[] = {
 	{ 0x2E, 0x00, 0x0107 }, { 0x2E, 0x01, 0x01A3 }, { 0x2E, 0x02, 0x6A24 },
 	{ 0x2E, 0x03, 0xD10D }, { 0x2E, 0x04, 0x8000 }, { 0x2E, 0x05, 0xA17E },
 	{ 0x2E, 0x06, 0xE31D }, { 0x2E, 0x07, 0x800E }, { 0x2E, 0x08, 0x0294 },
@@ -2759,7 +2888,7 @@ static sds_config sds_config_10p3125g_type1[] = {
 	{ 0x2F, 0x13, 0x0000 }
 };
 
-static sds_config sds_config_10p3125g_cmu_type1[] = {
+static const struct rtpcs_sds_config rtpcs_931x_sds_cfg_10p3125g_cmu_type1[] = {
 	{ 0x2F, 0x03, 0x4210 }, { 0x2F, 0x04, 0x0000 }, { 0x2F, 0x05, 0x0019 },
 	{ 0x2F, 0x06, 0x18A6 }, { 0x2F, 0x07, 0x2990 }, { 0x2F, 0x08, 0xFFF4 },
 	{ 0x2F, 0x09, 0x1F08 }, { 0x2F, 0x0A, 0x0000 }, { 0x2F, 0x0B, 0x8000 },
@@ -2840,18 +2969,18 @@ static int rtpcs_931x_sds_config_hw_mode(struct rtpcs_serdes *sds,
 		if (chiptype) {
 			rtpcs_sds_write_bits(sds, 0x6, 0x2, 12, 12, 1);
 
-			for (int i = 0; i < sizeof(sds_config_10p3125g_type1) / sizeof(sds_config); ++i) {
+			for (int i = 0; i < ARRAY_SIZE(rtpcs_931x_sds_cfg_10p3125g_type1); ++i) {
 				rtpcs_sds_write(sds,
-						sds_config_10p3125g_type1[i].page - 0x4,
-						sds_config_10p3125g_type1[i].reg,
-						sds_config_10p3125g_type1[i].data);
+						rtpcs_931x_sds_cfg_10p3125g_type1[i].page - 0x4,
+						rtpcs_931x_sds_cfg_10p3125g_type1[i].reg,
+						rtpcs_931x_sds_cfg_10p3125g_type1[i].data);
 			}
 
-			for (int i = 0; i < sizeof(sds_config_10p3125g_cmu_type1) / sizeof(sds_config); ++i) {
+			for (int i = 0; i < ARRAY_SIZE(rtpcs_931x_sds_cfg_10p3125g_cmu_type1); ++i) {
 				rtpcs_sds_write(even_sds,
-						sds_config_10p3125g_cmu_type1[i].page - 0x4,
-						sds_config_10p3125g_cmu_type1[i].reg,
-						sds_config_10p3125g_cmu_type1[i].data);
+						rtpcs_931x_sds_cfg_10p3125g_cmu_type1[i].page - 0x4,
+						rtpcs_931x_sds_cfg_10p3125g_cmu_type1[i].reg,
+						rtpcs_931x_sds_cfg_10p3125g_cmu_type1[i].data);
 			}
 
 			rtpcs_sds_write_bits(sds, 0x6, 0x2, 12, 12, 0);
@@ -2962,6 +3091,24 @@ static int rtpcs_931x_setup_serdes(struct rtpcs_serdes *sds,
 	ret = rtpcs_931x_sds_config_hw_mode(sds, hw_mode, chiptype);
 	if (ret < 0)
 		return ret;
+
+	switch (hw_mode) {
+	case RTPCS_SDS_MODE_OFF:
+		ret = rtpcs_931x_sds_set_port_media(sds, RTPCS_PORT_MEDIA_NONE);
+		break;
+	case RTPCS_SDS_MODE_2500BASEX:
+		ret = rtpcs_931x_sds_set_port_media(sds, RTPCS_PORT_MEDIA_FIBER_2_5G);
+		break;
+	case RTPCS_SDS_MODE_10GBASER:
+		ret = rtpcs_931x_sds_set_port_media(sds, RTPCS_PORT_MEDIA_FIBER_10G);
+		break;
+	case RTPCS_SDS_MODE_SGMII:
+	case RTPCS_SDS_MODE_1000BASEX:
+		ret = rtpcs_931x_sds_set_port_media(sds, RTPCS_PORT_MEDIA_FIBER_1G);
+		break;
+	default:
+		break;
+	}
 
 	rtpcs_931x_sds_cmu_type_set(sds, mode, chiptype);
 
@@ -3378,5 +3525,6 @@ static struct platform_driver rtpcs_driver = {
 module_platform_driver(rtpcs_driver);
 
 MODULE_AUTHOR("Markus Stockhausen <markus.stockhausen@gmx.de>");
+MODULE_AUTHOR("Jonas Jelonek <jelonek.jonas@gmail.com>");
 MODULE_DESCRIPTION("Realtek Otto SerDes PCS driver");
 MODULE_LICENSE("GPL v2");
