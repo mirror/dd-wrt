@@ -1433,7 +1433,7 @@ void start_sysinit(void)
 	return;
 }
 
-static void load_mac80211_internal(void)
+static void load_mac80211_internal(int nss)
 {
 	if (!nvram_match("noath11k", "1")) {
 		if (nss) {
@@ -1531,16 +1531,15 @@ void start_wifi_drivers(void)
 		}
 		insmod("compat_firmware_class");
 		insmod("cfg80211");
+		load_mac80211_internal(!nvram_match("ath11k_nss", "0") && !nss_disabled(0));
 		switch (brand) {
 		case ROUTER_LINKSYS_MR5500:
 		case ROUTER_LINKSYS_MX5500:
 			if (frame_mode == 2)
 				frame_mode = 1;
-			load_mac80211_internal();
 			load_ath11k_internal(profile, 1, 0, frame_mode, "", 1);
 			break;
 		case ROUTER_FORTINET_FAP231F:
-			load_mac80211_internal();
 			load_ath11k_internal(profile, 0, !nvram_match("ath11k_nss", "0") && !nss_disabled(0), frame_mode, "", 1);
 			wait_for_wifi(2);
 			load_ath10k();
@@ -1560,7 +1559,6 @@ void start_wifi_drivers(void)
 			   eval("ssdk_sh", "debug", "phy", "set", "8", "0x40070000", "0x3200"); */
 			//                      char *cert_region = get_deviceinfo_linksys("cert_region");
 			//                      if (!cert_region)
-			load_mac80211_internal();
 			load_ath11k_internal(profile, 1, !nvram_match("ath11k_nss", "0") && !nss_disabled(0), frame_mode,
 					     cert_region, 0);
 			minif = 3;
@@ -1568,14 +1566,12 @@ void start_wifi_drivers(void)
 		case ROUTER_LINKSYS_MX8500:
 			//                      char *cert_region = get_deviceinfo_linksys("cert_region");
 			//                      if (!cert_region)
-			load_mac80211_internal();
 			load_ath11k_internal(profile, 1, !nvram_match("ath11k_nss", "0") && !nss_disabled(0), frame_mode,
 					     cert_region, 1);
 			minif = 3;
 			break;
 
 		case ROUTER_LINKSYS_MX5300:
-			load_mac80211_internal();
 			load_ath10k();
 			wait_for_wifi(1);
 			//                      char *cert_region = get_deviceinfo_linksys("cert_region");
@@ -1586,7 +1582,6 @@ void start_wifi_drivers(void)
 			break;
 
 		default:
-			load_mac80211_internal();
 			load_ath11k_internal(profile, 0, !nvram_match("ath11k_nss", "0") && !nss_disabled(0), frame_mode, "", 1);
 			break;
 		}
