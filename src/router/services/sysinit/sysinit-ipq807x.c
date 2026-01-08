@@ -1436,7 +1436,6 @@ void start_sysinit(void)
 static void load_mac80211_internal(void)
 {
 	if (!nvram_match("noath11k", "1")) {
-		insmod("qmi_helpers");
 		if (nss) {
 			insmod("mac80211");
 		} else {
@@ -1468,6 +1467,7 @@ static void load_ath11k_internal(int profile, int pci, int nss, int frame_mode, 
 		sprintf(driver_frame_mode, "frame_mode=%d", frame_mode);
 		sprintf(driver_regionvariant, "regionvariant=%s", cert_region);
 		sprintf(driver_coldboot, "cold_boot_cal=%d", coldboot);
+		insmod("qmi_helpers");
 		if (nss) {
 			eval("insmod", driver_ath11k, driver_frame_mode, overdrive, driver_regionvariant, driver_coldboot);
 		} else {
