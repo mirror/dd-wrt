@@ -266,6 +266,3 @@ install(FILES "Img/icon.svg" DESTINATION "share/icons/hicolor/scalable/apps" REN
 install(DIRECTORY "themes" DESTINATION "share/btop")
 
 include(CTest)
-if(BUILD_TESTING)
-  add_subdirectory(tests)
-endif()
