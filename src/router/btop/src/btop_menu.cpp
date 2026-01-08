@@ -185,6 +185,7 @@ namespace Menu {
 		{"Up, Down", "Select in process list."},
 		{"Enter", "Show detailed information for selected process."},
 		{"Spacebar", "Expand/collapse the selected process in tree view."},
+		{"u", "Expand/collapse the selected process' children."},
 		{"Pg Up, Pg Down", "Jump 1 page in process list."},
 		{"Home, End", "Jump to first or last page in process list."},
 		{"Left, Right", "Select previous/next sorting column."},
@@ -194,6 +195,7 @@ namespace Menu {
 		{"a", "Toggle auto scaling for the network graphs."},
 		{"y", "Toggle synced scaling mode for network graphs."},
 		{"f, /", "To enter a process filter. Start with ! for regex."},
+		{"F", "Pause process list."},
 		{"delete", "Clear any entered filter."},
 		{"c", "Toggle per-core cpu usage of processes."},
 		{"r", "Reverse sorting order in processes box."},
@@ -203,6 +205,7 @@ namespace Menu {
 		{"Selected t", "Terminate selected process with SIGTERM - 15."},
 		{"Selected k", "Kill selected process with SIGKILL - 9."},
 		{"Selected s", "Select or enter signal to send to process."},
+		{"Selected N", "Select new nice value for selected process."},
 		{"", " "},
 		{"", "For bug reporting and project updates, visit:"},
 		{"", "https://github.com/aristocratos/btop"},
@@ -294,6 +297,13 @@ namespace Menu {
 				"True or False",
 				"",
 				"Is always False if TTY mode is ON."},
+			{"terminal_sync",
+				"Output synchronization.",
+				"",
+				"Use terminal synchronized output sequences",
+				"to reduce flickering on supported terminals.",
+				"",
+				"True or False."},
 			{"graph_symbol",
 				"Default symbols to use for graph creation.",
 				"",
@@ -367,7 +377,17 @@ namespace Menu {
 				"\"ERROR\", \"WARNING\", \"INFO\" and \"DEBUG\".",
 				"",
 				"The level set includes all lower levels,",
-				"i.e. \"DEBUG\" will show all logging info."}
+				"i.e. \"DEBUG\" will show all logging info."},
+			{"save_config_on_exit",
+				"Save config on exit.",
+				"",
+				"Automatically save current settings to",
+				"config file on exit.",
+				"",
+				"When this is toggled from True to False",
+				"a save is immediately triggered.",
+				"This way a manual save can be done by",
+				"toggling this setting on and off again."}
 		},
 		{
 			{"cpu_bottom",
@@ -499,6 +519,22 @@ namespace Menu {
 				"",
 				"Can cause slowdowns on systems with many",
 				"cores and certain kernel versions."},
+		#ifdef __linux__
+			{"freq_mode",
+				"How the CPU frequency will be displayed.",
+				"",
+				"First, get the frequency from the first",
+				"core.",
+				"",
+				"Range, show the lowest and the highest",
+				"frequency.",
+				"",
+				"Lowest, the lowest frequency.",
+				"",
+				"Highest, the highest frequency.",
+				"",
+				"Average, sum and divide."},
+		#endif
 			{"custom_cpu_name",
 				"Custom cpu model name in cpu percentage box.",
 				"",
@@ -542,6 +578,14 @@ namespace Menu {
 				"Horizontally mirror the GPU graph.",
 				"",
 				"True or False."},
+			{"shown_gpus",
+				"Manually set which gpu vendors to show.",
+				"",
+				"Available values are",
+				"\"nvidia\", \"amd\", and \"intel\".",
+				"Separate values with whitespace.",
+				"",
+				"A restart is required to apply changes."},
 			{"custom_gpu_name0",
 				"Custom gpu0 model name in gpu stats box.",
 				"",
@@ -795,6 +839,12 @@ namespace Menu {
 				" ",
 				"Will show percentage of total memory",
 				"if False."},
+			{"keep_dead_proc_usage",
+				"Cpu and Mem usage for dead processes",
+				"",
+				"Set true if process should preserve the cpu",
+				"and memory usage of when it died while",
+				"paused."},
 			{"proc_cpu_graphs",
 				"Show cpu graph for each process.",
 				"",
@@ -1201,6 +1251,9 @@ static int optionsMenu(const string& key) {
 			{"color_theme", std::cref(Theme::themes)},
 			{"log_level", std::cref(Logger::log_levels)},
 			{"temp_scale", std::cref(Config::temp_scales)},
+		#ifdef __linux__
+			{"freq_mode", std::cref(Config::freq_modes)},
+		#endif
 			{"proc_sorting", std::cref(Proc::sort_vector)},
 			{"graph_symbol", std::cref(Config::valid_graph_symbols)},
 			{"graph_symbol_cpu", std::cref(Config::valid_graph_symbols_def)},
@@ -1391,6 +1444,12 @@ static int optionsMenu(const string& key) {
 				}
 				else if (option == "base_10_sizes") {
 					recollect = true;
+				}
+				else if (option == "save_config_on_exit" and not Config::getB("save_config_on_exit")) {
+					const bool old_write_new = Config::write_new;
+					Config::write_new = true;
+					Config::write();
+					Config::write_new = old_write_new;
 				}
 			}
 			else if (selPred.test(isBrowsable)) {
@@ -1595,6 +1654,94 @@ static int optionsMenu(const string& key) {
 		return (redraw ? Changed : retval);
 	}
 
+	static int reniceMenu(const string& key) {
+		auto s_pid = (Config::getB("show_detailed") and Config::getI("selected_pid") == 0 ? Config::getI("detailed_pid") : Config::getI("selected_pid"));
+		static int x{};
+		static int y{};
+		static int selected_nice = 0;
+		static string nice_edit;
+
+		if (bg.empty()) {
+			selected_nice = 0;
+			nice_edit.clear();
+		}
+		auto& out = Global::overlay;
+		int retval = Changed;
+
+		if (redraw) {
+			x = Term::width/2 - 25;
+			y = Term::height/2 - 6;
+			bg = Draw::createBox(x + 2, y, 50, 13, Theme::c("hi_fg"), true, "renice");
+			bg += Mv::to(y+2, x+3) + Theme::c("title") + Fx::b + cjust("Renice PID " + to_string(s_pid) + " ("
+				+ uresize((s_pid == Config::getI("detailed_pid") ? Proc::detailed.entry.name : Config::getS("selected_name")), 15) + ")", 48);
+		}
+		else if (is_in(key, "escape", "q")) {
+			return Closed;
+		}
+		else if (is_in(key, "enter", "space")) {
+			if (s_pid > 0) {
+				if (not nice_edit.empty()) {
+					try {
+						selected_nice = stoi(nice_edit);
+					}
+					catch (...) { selected_nice = 0; }
+				}
+				if (not Proc::set_priority(s_pid, selected_nice)) {
+					// TODO: show error message
+				}
+			}
+			return Closed;
+		}
+		else if (key.size() == 1 and (isdigit(key.at(0)) or (key.at(0) == '-' and nice_edit.empty()))) {
+			nice_edit += key;
+		}
+		else if (key == "backspace" and not nice_edit.empty()) {
+			nice_edit.pop_back();
+		}
+		else if (is_in(key, "up", "k")) {
+			if (++selected_nice > 19) selected_nice = -20;
+			nice_edit.clear();
+		}
+		else if (is_in(key, "down", "j")) {
+			if (--selected_nice < -20) selected_nice = 19;
+			nice_edit.clear();
+		}
+		else if (is_in(key, "left", "h")) {
+			if ((selected_nice -= 5) < -20) selected_nice += 40;
+			nice_edit.clear();
+		}
+		else if (is_in(key, "right", "l")) {
+			if ((selected_nice += 5) > 19) selected_nice -= 40;
+			nice_edit.clear();
+		}
+		else {
+			retval = NoChange;
+		}
+
+		if (retval == Changed) {
+			int cy = y+4;
+			if (not nice_edit.empty()) {
+				try {
+					selected_nice = stoi(nice_edit);
+				}
+				catch (...) { selected_nice = 0; }
+			}
+			out = bg + Mv::to(cy++, x+3) + Theme::c("main_fg") + Fx::ub
+				+ rjust("Enter nice value: ", 30) + Theme::c("hi_fg") + (nice_edit.empty() ? to_string(selected_nice) : nice_edit) + Theme::c("main_fg") + Fx::bl + "█" + Fx::ubl;
+
+			cy++;
+			out += Mv::to(++cy, x+3) + Fx::b + Theme::c("hi_fg") + rjust( "↑ ↓", 20, true) + Theme::c("main_fg") + Fx::ub + " | To change value.";
+			out += Mv::to(++cy, x+3) + Fx::b + Theme::c("hi_fg") + rjust( "← →", 20, true) + Theme::c("main_fg") + Fx::ub + " | To change value by 5.";
+			out += Mv::to(++cy, x+3) + Fx::b + Theme::c("hi_fg") + rjust("0-9", 20) + Theme::c("main_fg") + Fx::ub + " | Enter manually.";
+			out += Mv::to(++cy, x+3) + Fx::b + Theme::c("hi_fg") + rjust("ENTER", 20) + Theme::c("main_fg") + Fx::ub + " | To set nice value.";
+			out += Mv::to(++cy, x+3) + Fx::b + Theme::c("hi_fg") + rjust("ESC or 'q'", 20) + Theme::c("main_fg") + Fx::ub + " | To abort.";
+
+			out += Fx::reset;
+		}
+
+		return (redraw ? Changed : retval);
+	}
+
 	//* Add menus here and update enum Menus in header
 	const auto menuFunc = vector{
 		ref(sizeError),
@@ -1603,6 +1750,7 @@ static int optionsMenu(const string& key) {
 		ref(signalReturn),
 		ref(optionsMenu),
 		ref(helpMenu),
+		ref(reniceMenu),
 		ref(mainMenu),
 	};
 	bitset<8> menuMask;

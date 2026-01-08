@@ -20,12 +20,14 @@ tab-size = 4
 #include <atomic>
 #include <filesystem>
 #include <fstream>
+#include <iterator>
 #include <locale>
 #include <optional>
 #include <ranges>
 #include <string_view>
 #include <utility>
 
+#include <fmt/base.h>
 #include <fmt/core.h>
 #include <sys/statvfs.h>
 
@@ -70,6 +72,8 @@ namespace Config {
 								"#* Conflicting keys for h:\"help\" and k:\"kill\" is accessible while holding shift."},
 
 		{"rounded_corners",		"#* Rounded corners on boxes, is ignored if TTY mode is ON."},
+
+		{"terminal_sync", 		"#* Use terminal synchronized output sequences to reduce flickering on supported terminals."},
 
 		{"graph_symbol", 		"#* Default symbols to use for graph creation, \"braille\", \"block\" or \"tty\".\n"
 								"#* \"braille\" offers the highest resolution but might not be included in all fonts.\n"
@@ -116,6 +120,8 @@ namespace Config {
 
 		{"proc_aggregate",		"#* In tree-view, always accumulate child process resources in the parent process."},
 
+		{"keep_dead_proc_usage", "#* Should cpu and memory usage display be preserved for dead processes when paused."},
+
 		{"cpu_graph_upper", 	"#* Sets the CPU stat shown in upper half of the CPU graph, \"total\" is always available.\n"
 								"#* Select from a list of detected attributes from the options menu."},
 
@@ -150,7 +156,9 @@ namespace Config {
 		{"base_10_sizes",		"#* Use base 10 for bits/bytes sizes, KB = 1000 instead of KiB = 1024."},
 
 		{"show_cpu_freq", 		"#* Show CPU frequency."},
-
+	#ifdef __linux__
+		{"freq_mode",				"#* How to calculate CPU frequency, available values: \"first\", \"range\", \"lowest\", \"highest\" and \"average\"."},
+	#endif
 		{"clock_format", 		"#* Draw a clock at top of screen, formatting according to strftime, empty string to disable.\n"
 								"#* Special formatting: /host = hostname | /user = username | /uptime = system uptime"},
 
@@ -208,8 +216,9 @@ namespace Config {
 
 		{"show_battery_watts",	"#* Show power stats of battery next to charge indicator."},
 
-		{"log_level", 			"#* Set loglevel for \"~/.config/btop/btop.log\" levels are: \"ERROR\" \"WARNING\" \"INFO\" \"DEBUG\".\n"
+		{"log_level", 			"#* Set loglevel for \"~/.local/state/btop.log\" levels are: \"ERROR\" \"WARNING\" \"INFO\" \"DEBUG\".\n"
 								"#* The level set includes all lower levels, i.e. \"DEBUG\" will show all logging info."},
+		{"save_config_on_exit",  "#* Automatically save current settings to config file on exit."},
 	#ifdef GPU_SUPPORT
 
 		{"nvml_measure_pcie_speeds",
@@ -217,6 +226,7 @@ namespace Config {
 		{"rsmi_measure_pcie_speeds",
 								"#* Measure PCIe throughput on AMD cards, may impact performance on certain cards."},
 		{"gpu_mirror_graph",	"#* Horizontally mirror the GPU graph."},
+		{"shown_gpus",			"#* Set which GPU vendors to show. Available values are \"nvidia amd intel\""},
 		{"custom_gpu_name0",	"#* Custom gpu0 model name, empty string to disable."},
 		{"custom_gpu_name1",	"#* Custom gpu1 model name, empty string to disable."},
 		{"custom_gpu_name2",	"#* Custom gpu2 model name, empty string to disable."},
@@ -243,6 +253,9 @@ namespace Config {
 		{"selected_battery", "Auto"},
 		{"cpu_core_map", ""},
 		{"temp_scale", "celsius"},
+	#ifdef __linux__
+		{"freq_mode", "first"},
+	#endif
 		{"clock_format", "%X"},
 		{"custom_cpu_name", ""},
 		{"disks_filter", ""},
@@ -260,7 +273,8 @@ namespace Config {
 		{"custom_gpu_name3", ""},
 		{"custom_gpu_name4", ""},
 		{"custom_gpu_name5", ""},
-		{"show_gpu_info", "Auto"}
+		{"show_gpu_info", "Auto"},
+		{"shown_gpus", "nvidia amd intel"}
 	#endif
 	};
 	std::unordered_map<std::string_view, string> stringsTmp;
@@ -313,11 +327,15 @@ namespace Config {
 		{"show_detailed", false},
 		{"proc_filtering", false},
 		{"proc_aggregate", false},
+		{"pause_proc_list", false},
+		{"keep_dead_proc_usage", false},
 	#ifdef GPU_SUPPORT
 		{"nvml_measure_pcie_speeds", true},
 		{"rsmi_measure_pcie_speeds", true},
-		{"gpu_mirror_graph", true}
+		{"gpu_mirror_graph", true},
 	#endif
+		{"terminal_sync", true},
+		{"save_config_on_exit", true}
 	};
 	std::unordered_map<std::string_view, bool> boolsTmp;
 
@@ -474,7 +492,7 @@ namespace Config {
 			if (vals.at(0).starts_with("gpu")) {
 				set("graph_symbol_gpu", vals.at(2));
 			} else {
-				set("graph_symbol_" + vals.at(0), vals.at(2));
+				set(strings.find("graph_symbol_" + vals.at(0))->first, vals.at(2));
 			}
 		}
 
@@ -709,7 +727,7 @@ namespace Config {
 			valid_names.reserve(descriptions.size());
 			for (const auto &n : descriptions)
 				valid_names.push_back(n[0]);
-			if (string v_string; cread.peek() != '#' or (getline(cread, v_string, '\n') and not s_contains(v_string, Global::Version)))
+			if (string v_string; cread.peek() != '#' or (getline(cread, v_string, '\n') and not v_string.contains(Global::Version)))
 				write_new = true;
 			while (not cread.eof()) {
 				cread >> std::ws;
@@ -768,54 +786,64 @@ namespace Config {
 		Logger::debug("Writing new config file");
 		if (geteuid() != Global::real_uid and seteuid(Global::real_uid) != 0) return;
 		std::ofstream cwrite(conf_file, std::ios::trunc);
-		cwrite.imbue(std::locale::classic());
+		// TODO: Report error when stream is in a bad state.
 		if (cwrite.good()) {
-			cwrite << "#? Config file for btop v. " << Global::Version << "\n";
-			for (const auto& [name, description] : descriptions) {
-				cwrite << "\n" << (description.empty() ? "" : description + "\n")
-						<< name << " = ";
-				if (strings.contains(name))
-					cwrite << "\"" << strings.at(name) << "\"";
-				else if (ints.contains(name))
-					cwrite << ints.at(name);
-				else if (bools.contains(name))
-					cwrite << (bools.at(name) ? "True" : "False");
-				cwrite << "\n";
-			}
+			cwrite << current_config();
 		}
 	}
 
-	static auto get_xdg_state_dir() -> std::optional<std::filesystem::path> {
-		std::optional<std::filesystem::path> xdg_state_home;
+	static constexpr auto get_xdg_state_dir() -> std::optional<fs::path> {
+		std::optional<fs::path> xdg_state_home;
 
 		{
-			const auto xdg_state_home_ptr = std::getenv("XDG_STATE_HOME");
+			const auto* xdg_state_home_ptr = std::getenv("XDG_STATE_HOME");
 			if (xdg_state_home_ptr != nullptr) {
 				xdg_state_home = std::make_optional(fs::path(xdg_state_home_ptr));
 			} else {
-				const auto home_ptr = std::getenv("HOME");
+				const auto* home_ptr = std::getenv("HOME");
 				if (home_ptr != nullptr) {
-					xdg_state_home = std::make_optional(std::filesystem::path(home_ptr) / ".local" / "state");
+					xdg_state_home = std::make_optional(fs::path(home_ptr) / ".local" / "state");
 				}
 			}
 		}
 
 		if (xdg_state_home.has_value()) {
 			std::error_code err;
-			std::filesystem::create_directories(xdg_state_home.value(), err);
+			fs::create_directories(xdg_state_home.value(), err);
 			if (err) {
 				return std::nullopt;
 			}
-			return std::make_optional(xdg_state_home.value());
+			return xdg_state_home;
 		}
 		return std::nullopt;
 	}
 
-	auto get_log_file() -> std::optional<std::filesystem::path> {
-		auto xdg_state_home = get_xdg_state_dir();
-		if (xdg_state_home.has_value()) {
-			return std::make_optional(std::filesystem::path(xdg_state_home.value()) / "btop.log");
+	auto get_log_file() -> std::optional<fs::path> {
+		return get_xdg_state_dir().transform([](auto&& state_home) -> auto { return state_home / "btop.log"; });
+	}
+
+	auto current_config() -> std::string {
+		auto buffer = std::string {};
+		fmt::format_to(std::back_inserter(buffer), "#? Config file for btop v.{}\n", Global::Version);
+
+		for (const auto& [name, description] : descriptions) {
+			// Write a description comment if available.
+			fmt::format_to(std::back_inserter(buffer), "\n");
+			if (!description.empty()) {
+				fmt::format_to(std::back_inserter(buffer), "{}\n", description);
+			}
+
+			fmt::format_to(std::back_inserter(buffer), "{} = ", name);
+			// Lookup default value by name and write it out.
+			if (strings.contains(name)) {
+				fmt::format_to(std::back_inserter(buffer), R"("{}")", strings[name]);
+			} else if (ints.contains(name)) {
+				fmt::format_to(std::back_inserter(buffer), std::locale::classic(), "{:L}", ints[name]);
+			} else if (bools.contains(name)) {
+				fmt::format_to(std::back_inserter(buffer), "{}", bools[name] ? "true" : "false");
+			}
+			fmt::format_to(std::back_inserter(buffer), "\n");
 		}
-		return std::nullopt;
+		return buffer;
 	}
 }

@@ -127,7 +127,7 @@ namespace Term {
 		int gpu = 0;
         if (Gpu::count > 0)
         	for (char i = '0'; i <= '5'; i++)
-        		gpu += (Tools::s_contains(boxes, "gpu"s + i) ? 1 : 0);
+        		gpu += (boxes.contains("gpu"s + i) ? 1 : 0);
 	#endif
         int width = 0;
 		if (mem) width = Mem::min_width;
@@ -142,7 +142,8 @@ namespace Term {
 		if (proc) height += Proc::min_height;
 		else height += (mem ? Mem::min_height : 0) + (net ? Net::min_height : 0);
 	#ifdef GPU_SUPPORT
-		height += Gpu::min_height*gpu;
+		for (int i = 0; i < gpu; i++)
+			height += Gpu::gpu_b_height_offsets[i] + 4;
 	#endif
 
 		return { width, height };
@@ -312,17 +313,6 @@ namespace Tools {
 		return str;
 	}
 
-	auto ssplit(const string& str, const char& delim) -> vector<string> {
-		vector<string> out;
-		for (const auto& s : str 	| rng::views::split(delim)
-									| rng::views::transform([](auto &&rng) {
-										return std::string_view(&*rng.begin(), rng::distance(rng));
-		})) {
-			if (not s.empty()) out.emplace_back(s);
-		}
-		return out;
-	}
-
 	string ljust(string str, const size_t x, bool utf, bool wide, bool limit) {
 		if (utf) {
 			if (limit and ulen(str, wide) > x)
@@ -446,20 +436,12 @@ namespace Tools {
 		if (mega) {
 			while (value >= 100000) {
 				value /= 1000;
-				if (value < 100) {
-					out = fmt::format("{}", value);
-					break;
-				}
 				start++;
 			}
 		}
 		else {
 			while (value >= 102400) {
 				value >>= 10;
-				if (value < 100) {
-					out = fmt::format("{}", value);
-					break;
-				}
 				start++;
 			}
 		}
@@ -481,16 +463,20 @@ namespace Tools {
 		}
 
 		if (shorten) {
-			auto f_pos = out.find(".");
-			if (f_pos == 1 and out.size() > 3) {
+			auto has_sep = out.find(".") != string::npos;
+			if (has_sep) {
 				out = fmt::format("{:.1f}", stod(out));
 			}
-			else if (f_pos != string::npos) {
-				out = fmt::format("{:.0f}", stod(out));
-			}
 			if (out.size() > 3) {
-				out = fmt::format("{:d}.0", out[0] - '0');
-				start++;
+				// if out is of the form xy.z
+				if (has_sep) {
+					out = fmt::format("{:.0f}", stod(out));
+				}
+				// if out is of the form xyzw (only when not using base 10)
+				else {
+					out = fmt::format("{:d}.0", out[0] - '0');
+					start++;
+				}
 			}
 			out.push_back(units[start][0]);
 		}

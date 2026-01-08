@@ -254,12 +254,6 @@ namespace Tools {
 		return std::ranges::find(vec, find_val) != vec.end();
 	}
 
-	//* Check if string <str> contains value <find_val>
-	template <typename T>
-	constexpr bool s_contains(const std::string_view str, const T& find_val) {
-		return str.find(find_val) != string::npos;
-	}
-
 	//* Check if string <str> contains string <find_val>, while ignoring case
 	inline bool s_contains_ic(const std::string_view str, const std::string_view find_val) {
 		auto it = std::search(
@@ -324,7 +318,10 @@ namespace Tools {
 	}
 
 	//* Split <string> at all occurrences of <delim> and return as vector of strings
-	auto ssplit(const string& str, const char& delim = ' ') -> vector<string>;
+	constexpr auto ssplit(std::string_view str, char delim = ' ') {
+		return str | std::views::split(delim) | std::views::filter([](auto&& range) { return !std::ranges::empty(range); }) |
+			   std::ranges::to<std::vector<std::string>>();
+	}
 
 	//* Put current thread to sleep for <ms> milliseconds
 	inline void sleep_ms(const size_t& ms) {
@@ -352,9 +349,9 @@ namespace Tools {
 	string sec_to_dhms(size_t seconds, bool no_days = false, bool no_seconds = false);
 
 	//* Scales up in steps of 1024 to highest positive value unit and returns string with unit suffixed
-	//* bit=True or defaults to bytes
+	//* bit=true or defaults to bytes
 	//* start=int to set 1024 multiplier starting unit
-	//* short=True always returns 0 decimals and shortens unit to 1 character
+	//* shorten=true shortens value to at most 3 characters and shortens unit to 1 character
 	string floating_humanizer(uint64_t value, bool shorten = false, size_t start = 0, bool bit = false, bool per_second = false);
 
 	//* Add std::string operator * : Repeat string <str> <n> number of times

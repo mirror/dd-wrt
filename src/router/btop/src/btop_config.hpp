@@ -50,6 +50,9 @@ namespace Config {
 #endif
 		};
 	const vector<string> temp_scales = { "celsius", "fahrenheit", "kelvin", "rankine" };
+#ifdef __linux__
+	const vector<string> freq_modes = { "first", "range", "lowest", "highest", "average" };
+#endif
 #ifdef GPU_SUPPORT
 	const vector<string> show_gpu_values = { "Auto", "On", "Off" };
 #endif
@@ -58,6 +61,8 @@ namespace Config {
 	extern vector<string> preset_list;
 	extern vector<string> available_batteries;
 	extern int current_preset;
+
+	extern bool write_new;
 
 	constexpr int ONE_DAY_MILLIS = 1000 * 60 * 60 * 24;
 
@@ -129,4 +134,7 @@ namespace Config {
 	void write();
 
 	auto get_log_file() -> std::optional<std::filesystem::path>;
+
+	// Write default config to an in-memory buffer
+	[[nodiscard]] auto current_config() -> std::string;
 }

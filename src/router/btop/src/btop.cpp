@@ -16,6 +16,8 @@ indent = tab
 tab-size = 4
 */
 
+#include "btop.hpp"
+
 #include <algorithm>
 #include <csignal>
 #include <clocale>
@@ -23,6 +25,8 @@ tab-size = 4
 #include <iterator>
 #include <optional>
 #include <pthread.h>
+#include <span>
+#include <string_view>
 #ifdef __FreeBSD__
 	#include <pthread_np.h>
 #endif
@@ -37,13 +41,18 @@ tab-size = 4
 #include <regex>
 #include <chrono>
 #include <utility>
-#include <variant>
 #include <semaphore>
 
 #ifdef __APPLE__
 	#include <CoreFoundation/CoreFoundation.h>
 	#include <mach-o/dyld.h>
 	#include <limits.h>
+#endif
+
+#ifdef __NetBSD__
+	#include <sys/param.h>
+	#include <sys/sysctl.h>
+	#include <unistd.h>
 #endif
 
 #include "btop_cli.hpp"
@@ -81,7 +90,7 @@ namespace Global {
 		{"#801414", "██████╔╝   ██║   ╚██████╔╝██║        ╚═╝    ╚═╝"},
 		{"#000000", "╚═════╝    ╚═╝    ╚═════╝ ╚═╝"},
 	};
-	const string Version = "1.4.5";
+	const string Version = "1.4.6";
 
 	int coreCount;
 	string overlay;
@@ -216,7 +225,10 @@ void clean_quit(int sig) {
 	Gpu::Rsmi::shutdown();
 #endif
 
-	Config::write();
+
+	if (Config::getB("save_config_on_exit")) {
+		Config::write();
+	}
 
 	if (Term::initialized) {
 		Input::clear();
@@ -254,6 +266,16 @@ static void _resume() {
 
 static void _exit_handler() {
 	clean_quit(-1);
+}
+
+static void _crash_handler(const int sig) {
+	// Restore terminal before crashing
+	if (Term::initialized) {
+		Term::restore();
+	}
+	// Re-raise the signal to get default behavior (core dump)
+	std::signal(sig, SIG_DFL);
+	std::raise(sig);
 }
 
 static void _signal_handler(const int sig) {
@@ -504,7 +526,9 @@ namespace Runner {
 			#ifdef GPU_SUPPORT
 				//? GPU data collection
 				const bool gpu_in_cpu_panel = Gpu::gpu_names.size() > 0 and (
-					Config::getS("cpu_graph_lower").starts_with("gpu-") or Config::getS("cpu_graph_upper").starts_with("gpu-")
+					Config::getS("cpu_graph_lower").starts_with("gpu-")
+					or (Config::getS("cpu_graph_lower") == "Auto")
+					or Config::getS("cpu_graph_upper").starts_with("gpu-")
 					or (Gpu::shown == 0 and Config::getS("show_gpu_info") != "Off")
 				);
 
@@ -703,10 +727,11 @@ namespace Runner {
 			}
 
 			//? If overlay isn't empty, print output without color and then print overlay on top
-			cout << Term::sync_start << (conf.overlay.empty()
+			const bool term_sync = Config::getB("terminal_sync");
+			cout << (term_sync ? Term::sync_start : "") << (conf.overlay.empty()
 					? output
 					: (output.empty() ? "" : Fx::ub + Theme::c("inactive_fg") + Fx::uncolor(output)) + conf.overlay)
-				<< Term::sync_end << flush;
+				<< (term_sync ? Term::sync_end : "") << flush;
 		}
 		//* ----------------------------------------------- THREAD LOOP -----------------------------------------------
 		return {};
@@ -721,6 +746,14 @@ namespace Runner {
 			active = false;
 			// exit(1);
 			pthread_cancel(Runner::runner_id);
+
+			// Wait for the thread to actually terminate before creating a new one
+			void* thread_result;
+			int join_result = pthread_join(Runner::runner_id, &thread_result);
+			if (join_result != 0) {
+				Logger::warning("Failed to join cancelled thread: " + string(strerror(join_result)));
+			}
+
 			if (pthread_create(&Runner::runner_id, nullptr, &Runner::_runner, nullptr) != 0) {
 				Global::exit_error_msg = "Failed to re-create _runner thread!";
 				clean_quit(1);
@@ -729,10 +762,12 @@ namespace Runner {
 		if (stopping or Global::resized) return;
 
 		if (box == "overlay") {
-			cout << Term::sync_start << Global::overlay << Term::sync_end << flush;
+			const bool term_sync = Config::getB("terminal_sync");
+			cout << (term_sync ? Term::sync_start : "") << Global::overlay << (term_sync ? Term::sync_end : "") << flush;
 		}
 		else if (box == "clock") {
-			cout << Term::sync_start << Global::clock << Term::sync_end << flush;
+			const bool term_sync = Config::getB("terminal_sync");
+			cout << (term_sync ? Term::sync_start : "") << Global::clock << (term_sync ? Term::sync_end : "") << flush;
 		}
 		else {
 			Config::unlock();
@@ -803,7 +838,7 @@ static auto configure_tty_mode(std::optional<bool> force_tty) {
 
 
 //* --------------------------------------------- Main starts here! ---------------------------------------------------
-int main(const int argc, const char** argv) {
+[[nodiscard]] auto btop_main(const std::span<const std::string_view> args) -> int {
 
 	//? ------------------------------------------------ INIT ---------------------------------------------------------
 
@@ -822,23 +857,17 @@ int main(const int argc, const char** argv) {
 
 	Cli::Cli cli;
 	{
-		// Wrap the command line arguments in a vector, ignoring the first element, which is the basename (executable name)
-		const std::vector<std::string_view> args {
-			std::next(argv, std::ptrdiff_t { 1 }),
-			std::next(argv, static_cast<std::ptrdiff_t>(argc))
-		};
-
 		// Get the cli options or return with an exit code
-		auto cli_or_ret = Cli::parse(args);
-		if (std::holds_alternative<Cli::Cli>(cli_or_ret)) {
-			cli = std::get<Cli::Cli>(cli_or_ret);
+		auto result = Cli::parse(args);
+		if (result.has_value()) {
+			cli = result.value();
 		} else {
-			auto ret = std::get<std::int32_t>(cli_or_ret);
-			if (ret != 0) {
+			auto error = result.error();
+			if (error != 0) {
 				Cli::usage();
 				Cli::help_hint();
 			}
-			return ret;
+			return error;
 		}
 	}
 
@@ -877,6 +906,19 @@ int main(const int argc, const char** argv) {
 		if(!_NSGetExecutablePath(buf, &bufsize))
 			Global::self_path = fs::path(buf).remove_filename();
 	}
+#elif __NetBSD__
+	{
+		int mib[4];
+		char buf[PATH_MAX];
+		size_t bufsize = sizeof buf;
+
+		mib[0] = CTL_KERN;
+		mib[1] = KERN_PROC_ARGS;
+		mib[2] = getpid();
+		mib[3] = KERN_PROC_PATHNAME;
+		if (sysctl(mib, 4, buf, &bufsize, NULL, 0) == 0)
+			Global::self_path = fs::path(buf).remove_filename();
+	}
 #endif
 	if (std::error_code ec; not Global::self_path.empty()) {
 		Theme::theme_dir = fs::canonical(Global::self_path / "../share/btop/themes", ec);
@@ -892,11 +934,17 @@ int main(const int argc, const char** argv) {
 		}
 	}
 
+	//? Set custom themes directory from command line if provided
+	if (cli.themes_dir.has_value()) {
+		Theme::custom_theme_dir = cli.themes_dir.value();
+		Logger::info("Using custom themes directory: " + Theme::custom_theme_dir.string());
+	}
+
 	//? Config init
 	init_config(cli.low_color, cli.filter);
 
 	//? Try to find and set a UTF-8 locale
-	if (std::setlocale(LC_ALL, "") != nullptr and not s_contains((string)std::setlocale(LC_ALL, ""), ";")
+	if (std::setlocale(LC_ALL, "") != nullptr and not std::string_view { std::setlocale(LC_ALL, "") }.contains(";")
 	and str_to_upper(s_replace((string)std::setlocale(LC_ALL, ""), "-", "")).ends_with("UTF8")) {
 		Logger::debug("Using locale " + std::locale().name());
 	}
@@ -1018,6 +1066,12 @@ int main(const int argc, const char** argv) {
 	std::signal(SIGWINCH, _signal_handler);
 	std::signal(SIGUSR1, _signal_handler);
 	std::signal(SIGUSR2, _signal_handler);
+	// Add crash handlers to restore terminal on crash
+	std::signal(SIGSEGV, _crash_handler);
+	std::signal(SIGABRT, _crash_handler);
+	std::signal(SIGTRAP, _crash_handler);
+	std::signal(SIGBUS, _crash_handler);
+	std::signal(SIGILL, _crash_handler);
 
 	sigset_t mask;
 	sigemptyset(&mask);
@@ -1053,7 +1107,8 @@ int main(const int argc, const char** argv) {
 	Draw::calcSizes();
 
 	//? Print out box outlines
-	cout << Term::sync_start << Cpu::box << Mem::box << Net::box << Proc::box << Term::sync_end << flush;
+	const bool term_sync = Config::getB("terminal_sync");
+	cout << (term_sync ? Term::sync_start : "") << Cpu::box << Mem::box << Net::box << Proc::box << (term_sync ? Term::sync_end : "") << flush;
 
 
 	//? ------------------------------------------------ MAIN LOOP ----------------------------------------------------
@@ -1144,5 +1199,5 @@ int main(const int argc, const char** argv) {
 		Global::exit_error_msg = "Exception in main loop -> " + string{e.what()};
 		clean_quit(1);
 	}
-
+	return 0;
 }

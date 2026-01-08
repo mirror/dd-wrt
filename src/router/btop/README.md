@@ -10,7 +10,7 @@
 ![NetBSD](https://img.shields.io/badge/-NetBSD-black?logo=netbsd)
 ![OpenBSD](https://img.shields.io/badge/-OpenBSD-black?logo=openbsd)
 ![Usage](https://img.shields.io/badge/Usage-System%20resource%20monitor-yellow)
-![c++20](https://img.shields.io/badge/cpp-c%2B%2B20-green)
+![c++23](https://img.shields.io/badge/cpp-c%2B%2B23-green)
 ![latest_release](https://img.shields.io/github/v/tag/aristocratos/btop?label=release)
 [![Donate](https://img.shields.io/badge/-Donate-yellow?logo=paypal)](https://paypal.me/aristocratos)
 [![Sponsor](https://img.shields.io/badge/-Sponsor-red?logo=github)](https://github.com/sponsors/aristocratos)
@@ -39,12 +39,21 @@
 * [Compilation FreeBSD](#compilation-freebsd)
 * [Compilation NetBSD](#compilation-netbsd)
 * [Compilation OpenBSD](#compilation-openbsd)
+* [Testing](#testing)
 * [GPU compatibility](#gpu-compatibility)
 * [Installing the snap](#installing-the-snap)
 * [Configurability](#configurability)
 * [License](#license)
 
 ## News
+
+##### 4 December 2025
+
+Since there is a increasing amount of AI generated/assisted PR's, the following guidlines have been added to CONTRIBUTING.md:
+
+* Submissions where the majority of the code is AI generated must be marked with [AI generated].
+
+* "Vibe coded" PR's where it seems like the author doesn't understand the generated code will be dismissed.
 
 ##### 22 September 2024
 
@@ -193,6 +202,7 @@ C++ version and continuation of [bashtop](https://github.com/aristocratos/bashto
 * Easy switching between sorting options.
 * Tree view of processes.
 * Send any signal to selected process.
+* Pause the process list.
 * UI menu for changing all config file options.
 * Auto scaling graph for network usage.
 * Shows IO activity and speeds for disks.
@@ -223,6 +233,9 @@ The user themes directory depends on which environment variables are set:
 
 The `make install` command places the default themes in `[$PREFIX or /usr/local]/share/btop/themes`.
 User created themes should be placed in the user themes directory.
+
+Use the `--themes-dir` command-line option to specify a custom themes directory.
+When specified, this directory takes priority over the default search paths.
 
 Let me know if you want to contribute with new themes.
 
@@ -257,21 +270,21 @@ See [GPU compatibility](#gpu-compatibility) section for more about compiling wit
 
  * **NVIDIA**
 
-If you have an NVIDIA GPU you must use an official NVIDIA driver, both the closed-source and open-source ones have been verified to work.
+   If you have an NVIDIA GPU you must use an official NVIDIA driver, both the closed-source and open-source ones have been verified to work.
 
-In addition to that you must also have the nvidia-ml dynamic library installed, which should be included with the driver package of your distribution.
+   In addition to that you must also have the nvidia-ml dynamic library installed, which should be included with the driver package of your distribution.
 
  * **AMD**
 
-If you have an AMD GPU `rocm_smi_lib` is required, which may or may not be packaged for your distribution.
+   If you have an AMD GPU `rocm_smi_lib` is required, which may or may not be packaged for your distribution.
 
  * **INTEL**
 
-Requires a working C compiler if compiling from source - tested with GCC12 and Clang16.
+   Requires a working C compiler if compiling from source.
 
-Also requires the user to have permission to read from SYSFS.
+   Also requires the user to have permission to read from SYSFS.
 
-Can be set with `make setcap` (preferred) or `make setuid` or by running btop with `sudo` or equivalent.
+   Can be set with `make setcap` (preferred) or `make setuid` or by running btop with `sudo` or equivalent.
 
 ### **Notice (Text rendering issues)**
 
@@ -401,7 +414,7 @@ Can be set with `make setcap` (preferred) or `make setuid` or by running btop wi
 
 ## Compilation Linux
 
-   Requires at least GCC 11 or Clang 16.
+   Requires at least GCC 14 or Clang 19.
 
    The Makefile also needs GNU `coreutils` and `sed` (should already be installed on any modern distribution).
 
@@ -437,10 +450,10 @@ Can be set with `make setcap` (preferred) or `make setuid` or by running btop wi
 ### With Make
 </summary>
 
-1. **Install dependencies (example for Ubuntu 21.04 Hirsute)**
+1. **Install dependencies (example for Ubuntu 24.04 Noble)**
 
    ```bash
-   sudo apt install coreutils sed git build-essential gcc-11 g++-11 lowdown
+   sudo apt install coreutils sed git build-essential lowdown
    ```
 
 2. **Clone repository**
@@ -602,9 +615,7 @@ Can be set with `make setcap` (preferred) or `make setuid` or by running btop wi
 
 ## Compilation macOS OSX
 
-   Requires at least GCC 12 or Clang 16.
-
-   With GCC, version 12 (or better) is needed for macOS Ventura. If you get linker errors on Ventura you'll need to upgrade your command line tools (Version 14.0) is bugged.
+   Requires at least GCC 14 or Clang 19.
 
    The Makefile also needs GNU coreutils and `sed`.
 
@@ -619,7 +630,7 @@ Can be set with `make setcap` (preferred) or `make setuid` or by running btop wi
 1. **Install dependencies (example for Homebrew)**
 
    ```bash
-   brew install coreutils make gcc@12 lowdown
+   brew install coreutils make gcc@15 lowdown
    ```
 
 2. **Clone repository**
@@ -730,8 +741,6 @@ Can be set with `make setcap` (preferred) or `make setuid` or by running btop wi
    cmake --build build
    ```
 
-   _**Note:** btop uses lots of C++ 20 features, so it's necessary to be specific about the compiler and the standard library. If you get a compile with Apple-Clang or GCC, feel free to add the instructions here._
-
    This will automatically build a release version of btop.
 
    Some useful options to pass to the configure step:
@@ -770,7 +779,7 @@ Can be set with `make setcap` (preferred) or `make setuid` or by running btop wi
 
 ## Compilation FreeBSD
 
-   Requires at least GCC 11 or Clang 16.
+   Requires at least Clang 19 (default) or GCC 14.
 
    Note that GNU make (`gmake`) is required to compile on FreeBSD.
 
@@ -783,7 +792,7 @@ Can be set with `make setcap` (preferred) or `make setuid` or by running btop wi
 1. **Install dependencies**
 
    ```bash
-   sudo pkg install gmake gcc11 coreutils git lowdown
+   sudo pkg install gmake coreutils git lowdown
    ```
 
 2. **Clone repository**
@@ -871,16 +880,8 @@ Can be set with `make setcap` (preferred) or `make setuid` or by running btop wi
 
    Requires Clang / GCC, CMake, Ninja, Lowdown and Git
 
-   _**Note:** LLVM's libc++ shipped with FreeBSD 13 is too old and cannot compile btop._
-
-	FreeBSD 14 and later:
    ```bash
    pkg install cmake ninja lowdown
-   ```
-
-	FreeBSD 13:
-   ```bash
-   pkg install cmake gcc13 ninja lowdown
    ```
 
 2. **Clone the repository**
@@ -891,18 +892,9 @@ Can be set with `make setcap` (preferred) or `make setuid` or by running btop wi
 
 3. **Compile**
 
-	FreeBSD 14 and later:
    ```bash
    # Configure
    cmake -B build -G Ninja
-   # Build
-   cmake --build build
-   ```
-
-	FreeBSD 13:
-   ```bash
-   # Configure
-   CXX=g++13 cmake -B build -G Ninja
    # Build
    cmake --build build
    ```
@@ -948,7 +940,7 @@ Can be set with `make setcap` (preferred) or `make setuid` or by running btop wi
 
 ## Compilation NetBSD
 
-   Requires at least GCC 11.
+   Requires at least GCC 14.
 
    Note that GNU make (`gmake`) is required to compile on NetBSD.
 
@@ -961,7 +953,8 @@ Can be set with `make setcap` (preferred) or `make setuid` or by running btop wi
 1. **Install dependencies**
 
    ```bash
-   pkg_add gmake gcc11 coreutils git
+   /usr/sbin/pkg_add pkgin
+   pkgin install -y coregutils gcc14 git gmake
    ```
 
 2. **Clone repository**
@@ -974,7 +967,7 @@ Can be set with `make setcap` (preferred) or `make setuid` or by running btop wi
 3. **Compile**
 
    ```bash
-   gmake CXXFLAGS="-DNDEBUG"
+   CXX=/usr/pkg/gcc14/bin/g++ gmake CXXFLAGS="-DNDEBUG"
    ```
 
    Options for make:
@@ -1050,7 +1043,8 @@ Can be set with `make setcap` (preferred) or `make setuid` or by running btop wi
    Requires GCC, CMake, Ninja and Git
 
    ```bash
-   pkg_add cmake ninja-build gcc11 coreutils git
+   /usr/sbin/pkg_add pkgin
+   pkgin install cmake ninja-build gcc14 git
    ```
 
 2. **Clone the repository**
@@ -1063,7 +1057,7 @@ Can be set with `make setcap` (preferred) or `make setuid` or by running btop wi
 
    ```bash
    # Configure
-   cmake -DCMAKE_CXX_COMPILER="/usr/pkg/gcc11/bin/g++" -B build -G Ninja
+   CXX="/usr/pkg/gcc14/bin/g++" cmake -B build -G Ninja
    # Build
    cmake --build build
    ```
@@ -1106,8 +1100,6 @@ Can be set with `make setcap` (preferred) or `make setuid` or by running btop wi
 
 ## Compilation OpenBSD
 
-   Requires at least GCC 11.
-
    Note that GNU make (`gmake`) is required to compile on OpenBSD.
 
 <details>
@@ -1119,7 +1111,7 @@ Can be set with `make setcap` (preferred) or `make setuid` or by running btop wi
 1. **Install dependencies**
 
    ```bash
-   pkg_add gmake gcc%11 g++%11 coreutils git lowdown
+   pkg_add coreutils git gmake lowdown
    ```
 
 2. **Clone repository**
@@ -1132,7 +1124,7 @@ Can be set with `make setcap` (preferred) or `make setuid` or by running btop wi
 3. **Compile**
 
    ```bash
-   gmake CXX=eg++
+   gmake
    ```
 
    Options for make:
@@ -1210,7 +1202,7 @@ Can be set with `make setcap` (preferred) or `make setuid` or by running btop wi
    _**Note:** LLVM's libc++ shipped with OpenBSD 7.4 is too old and cannot compile btop._
 
    ```bash
-   pkg_add cmake g++%11 git ninja lowdown
+   pkg_add cmake git ninja lowdown
    ```
 
 2. **Clone the repository**
@@ -1223,7 +1215,7 @@ Can be set with `make setcap` (preferred) or `make setuid` or by running btop wi
 
    ```bash
    # Configure
-   CXX=eg++ cmake -B build -G Ninja
+   cmake -B build -G Ninja
    # Build
    cmake --build build
    ```
@@ -1235,8 +1227,6 @@ Can be set with `make setcap` (preferred) or `make setuid` or by running btop wi
    | Configure flag                  | Description                                                             |
    |---------------------------------|-------------------------------------------------------------------------|
    | `-DBTOP_LTO=<ON\|OFF>`          | Enables link time optimization (ON by default)                          |
-
-
    | `-DCMAKE_INSTALL_PREFIX=<path>` | The installation prefix ('/usr/local' by default)                       |
 
    To force any other compiler, run `CXX=<compiler> cmake -B build -G Ninja`
@@ -1263,6 +1253,12 @@ Can be set with `make setcap` (preferred) or `make setuid` or by running btop wi
    ```
 
 </details>
+
+## Testing
+
+Testing requires [CMake](cmake.org). Tests are build by default and can be run with `ctest --test-dir <build>`.
+
+If you want to disable building tests, pass `-DBUILD_TESTING=OFF` to the configure step.
 
 ## Installing the snap
 [![btop](https://snapcraft.io/btop/badge.svg)](https://snapcraft.io/btop)
@@ -1291,7 +1287,6 @@ Can be set with `make setcap` (preferred) or `make setuid` or by running btop wi
 	sudo snap connect btop-desktop:removable-media
 	```
 
-
 ## Configurability
 
 All options changeable from within UI.
@@ -1299,22 +1294,22 @@ Config and log files stored in `$XDG_CONFIG_HOME/btop` or `$HOME/.config/btop` f
 
 #### btop.conf: (auto generated if not found)
 
-```bash
-#? Config file for btop v. 1.2.2
+```toml
+#? Config file for btop v.1.4.5
 
 #* Name of a btop++/bpytop/bashtop formatted ".theme" file, "Default" and "TTY" for builtin themes.
 #* Themes should be placed in "../share/btop/themes" relative to binary or "$HOME/.config/btop/themes"
 color_theme = "Default"
 
 #* If the theme set background should be shown, set to False if you want terminal background transparency.
-theme_background = True
+theme_background = true
 
 #* Sets if 24-bit truecolor should be used, will convert 24-bit colors to 256 color (6x6x6 color cube) if false.
-truecolor = True
+truecolor = true
 
 #* Set to true to force tty mode regardless if a real tty has been detected or not.
 #* Will force 16-color mode and TTY theme, set all graph symbols to "tty" and swap out other non tty friendly symbols.
-force_tty = False
+force_tty = false
 
 #* Define presets for the layout of the boxes. Preset 0 is always all boxes shown with default settings. Max 9 presets.
 #* Format: "box_name:P:G,box_name:P:G" P=(0 or 1) for alternate positions, G=graph symbol to use for box.
@@ -1324,10 +1319,13 @@ presets = "cpu:1:default,proc:0:default cpu:0:default,mem:0:default,net:0:defaul
 
 #* Set to True to enable "h,j,k,l,g,G" keys for directional control in lists.
 #* Conflicting keys for h:"help" and k:"kill" is accessible while holding shift.
-vim_keys = False
+vim_keys = false
 
 #* Rounded corners on boxes, is ignored if TTY mode is ON.
-rounded_corners = True
+rounded_corners = true
+
+#* Use terminal synchronized output sequences to reduce flickering on supported terminals.
+terminal_sync = true
 
 #* Default symbols to use for graph creation, "braille", "block" or "tty".
 #* "braille" offers the highest resolution but might not be included in all fonts.
@@ -1349,70 +1347,82 @@ graph_symbol_net = "default"
 graph_symbol_proc = "default"
 
 #* Manually set which boxes to show. Available values are "cpu mem net proc" and "gpu0" through "gpu5", separate values with whitespace.
-shown_boxes = "proc cpu mem net"
+shown_boxes = "cpu mem net proc"
 
 #* Update time in milliseconds, recommended 2000 ms or above for better sample times for graphs.
-update_ms = 1500
+update_ms = 2000
 
 #* Processes sorting, "pid" "program" "arguments" "threads" "user" "memory" "cpu lazy" "cpu direct",
 #* "cpu lazy" sorts top process over time (easier to follow), "cpu direct" updates top process directly.
 proc_sorting = "cpu lazy"
 
 #* Reverse sorting order, True or False.
-proc_reversed = False
+proc_reversed = false
 
 #* Show processes as a tree.
-proc_tree = False
+proc_tree = false
 
 #* Use the cpu graph colors in the process list.
-proc_colors = True
+proc_colors = true
 
 #* Use a darkening gradient in the process list.
-proc_gradient = True
+proc_gradient = true
 
 #* If process cpu usage should be of the core it's running on or usage of the total available cpu power.
-proc_per_core = True
+proc_per_core = false
 
 #* Show process memory as bytes instead of percent.
-proc_mem_bytes = True
+proc_mem_bytes = true
+
+#* Show cpu graph for each process.
+proc_cpu_graphs = true
 
 #* Use /proc/[pid]/smaps for memory information in the process info box (very slow but more accurate)
-proc_info_smaps = False
+proc_info_smaps = false
 
 #* Show proc box on left side of screen instead of right.
-proc_left = False
+proc_left = false
+
+#* (Linux) Filter processes tied to the Linux kernel(similar behavior to htop).
+proc_filter_kernel = false
+
+#* In tree-view, always accumulate child process resources in the parent process.
+proc_aggregate = false
+
+#* Should cpu and memory usage display be preserved for dead processes when paused.
+keep_dead_proc_usage = false
 
 #* Sets the CPU stat shown in upper half of the CPU graph, "total" is always available.
 #* Select from a list of detected attributes from the options menu.
-cpu_graph_upper = "total"
+cpu_graph_upper = "Auto"
 
 #* Sets the CPU stat shown in lower half of the CPU graph, "total" is always available.
 #* Select from a list of detected attributes from the options menu.
-cpu_graph_lower = "total"
+cpu_graph_lower = "Auto"
 
 #* Toggles if the lower CPU graph should be inverted.
-cpu_invert_lower = True
+cpu_invert_lower = true
 
 #* Set to True to completely disable the lower CPU graph.
-cpu_single_graph = False
+cpu_single_graph = false
 
 #* Show cpu box at bottom of screen instead of top.
-cpu_bottom = False
+cpu_bottom = false
 
 #* Shows the system uptime in the CPU box.
-show_uptime = True
+show_uptime = true
 
 #* Shows the CPU package current power consumption in watts. Requires running `make setcap` or `make setuid` or running with sudo.
-show_cpu_watts = True
+show_cpu_watts = true
 
 #* Show cpu temperature.
-check_temp = True
+check_temp = true
 
 #* Which sensor to use for cpu temperature, use options menu to select from list of available sensors.
 cpu_sensor = "Auto"
 
 #* Show temperatures for cpu cores also if check_temp is True and sensors has been found.
-show_coretemp = True
+show_coretemp = true
 
 #* Set a custom mapping between core and coretemp, can be needed on certain cpus to get correct temperature for correct core.
 #* Use lm-sensors or similar to see which cores are reporting temperatures on your machine.
@@ -1424,60 +1434,66 @@ cpu_core_map = ""
 temp_scale = "celsius"
 
 #* Use base 10 for bits/bytes sizes, KB = 1000 instead of KiB = 1024.
-base_10_sizes = False
+base_10_sizes = false
 
 #* Show CPU frequency.
-show_cpu_freq = True
+show_cpu_freq = true
+
+#* How to calculate CPU frequency, available values: "first", "range", "lowest", "highest" and "average".
+freq_mode = "first"
 
 #* Draw a clock at top of screen, formatting according to strftime, empty string to disable.
 #* Special formatting: /host = hostname | /user = username | /uptime = system uptime
-clock_format = "%H:%M"
+clock_format = "%X"
 
 #* Update main ui in background when menus are showing, set this to false if the menus is flickering too much for comfort.
-background_update = True
+background_update = true
 
 #* Custom cpu model name, empty string to disable.
 custom_cpu_name = ""
 
 #* Optional filter for shown disks, should be full path of a mountpoint, separate multiple values with whitespace " ".
-#* Begin line with "exclude=" to change to exclude filter, otherwise defaults to "most include" filter. Example: disks_filter="exclude=/boot /home/user".
-disks_filter = "exclude=/boot"
+#* Only disks matching the filter will be shown. Prepend exclude= to only show disks not matching the filter. Examples: disk_filter="/boot /home/user", disks_filter="exclude=/boot /home/user"
+disks_filter = ""
 
 #* Show graphs instead of meters for memory values.
-mem_graphs = True
+mem_graphs = true
 
 #* Show mem box below net box instead of above.
-mem_below_net = False
+mem_below_net = false
 
 #* Count ZFS ARC in cached and available memory.
-zfs_arc_cached = True
+zfs_arc_cached = true
 
 #* If swap memory should be shown in memory box.
-show_swap = True
+show_swap = true
 
 #* Show swap as a disk, ignores show_swap value above, inserts itself after first disk.
-swap_disk = True
+swap_disk = true
 
 #* If mem box should be split to also show disks info.
-show_disks = True
+show_disks = true
 
 #* Filter out non physical disks. Set this to False to include network disks, RAM disks and similar.
-only_physical = True
+only_physical = true
 
 #* Read disks list from /etc/fstab. This also disables only_physical.
-use_fstab = False
+use_fstab = true
+
+#* Setting this to True will hide all datasets, and only show ZFS pools. (IO stats will be calculated per-pool)
+zfs_hide_datasets = false
 
 #* Set to true to show available disk space for privileged users.
-disk_free_priv = False
+disk_free_priv = false
 
 #* Toggles if io activity % (disk busy time) should be shown in regular disk usage view.
-show_io_stat = True
+show_io_stat = true
 
 #* Toggles io mode for disks, showing big graphs for disk read/write speeds.
-io_mode = False
+io_mode = false
 
 #* Set to True to show combined read/write io graphs in io mode.
-io_graph_combined = False
+io_graph_combined = false
 
 #* Set the top speed for the io graphs in MiB/s (100 by default), use format "mountpoint:speed" separate disks with whitespace " ".
 #* Example: "/mnt/media:100 /:20 /boot:1".
@@ -1489,23 +1505,29 @@ net_download = 100
 net_upload = 100
 
 #* Use network graphs auto rescaling mode, ignores any values set above and rescales down to 10 Kibibytes at the lowest.
-net_auto = True
+net_auto = true
 
 #* Sync the auto scaling for download and upload to whichever currently has the highest scale.
-net_sync = False
+net_sync = true
 
 #* Starts with the Network Interface specified here.
-net_iface = "br0"
+net_iface = ""
+
+#* "True" shows bitrates in base 10 (Kbps, Mbps). "False" shows bitrates in binary sizes (Kibps, Mibps, etc.). "Auto" uses base_10_sizes.
+base_10_bitrate = "Auto"
 
 #* Show battery stats in top right if battery is present.
-show_battery = True
+show_battery = true
 
 #* Which battery to use if multiple are present. "Auto" for auto detection.
 selected_battery = "Auto"
 
-#* Set loglevel for "~/.config/btop/btop.log" levels are: "ERROR" "WARNING" "INFO" "DEBUG".
+#* Show power stats of battery next to charge indicator.
+show_battery_watts = true
+
+#* Set loglevel for "~/.local/state/btop.log" levels are: "ERROR" "WARNING" "INFO" "DEBUG".
 #* The level set includes all lower levels, i.e. "DEBUG" will show all logging info.
-log_level = "DEBUG"
+log_level = "WARNING"
 ```
 
 #### Command line options
@@ -1523,6 +1545,7 @@ Options:
   -t, --tty               Force tty mode with ANSI graph symbols and 16 colors only
       --no-tty            Force disable tty mode
   -u, --update <ms>       Set an initial update rate in milliseconds
+      --default-config    Print default config to standard output
   -h, --help              Show this help message and exit
   -V, --version           Show a version message and exit (more with --version)
 ```

@@ -16,23 +16,29 @@ indent = tab
 tab-size = 4
 */
 
+#include <algorithm>
+#include <charconv>
+#include <cmath>
 #include <cstdlib>
+#include <filesystem>
+#include <fstream>
+#include <future>
+#include <iterator>
+#include <numeric>
+#include <optional>
+#include <ranges>
+#include <string_view>
 #include <unordered_map>
 #include <unordered_set>
-#include <fstream>
-#include <ranges>
-#include <cmath>
-#include <unistd.h>
-#include <numeric>
-#include <sys/statvfs.h>
-#include <netdb.h>
+#include <utility>
+
+#include <arpa/inet.h> // for inet_ntop()
+#include <dlfcn.h>
 #include <ifaddrs.h>
 #include <net/if.h>
-#include <arpa/inet.h> // for inet_ntop()
-#include <filesystem>
-#include <future>
-#include <dlfcn.h>
-#include <utility>
+#include <netdb.h>
+#include <sys/statvfs.h>
+#include <unistd.h>
 
 #if defined(RSMI_STATIC)
 	#include <rocm_smi/rocm_smi.h>
@@ -93,10 +99,10 @@ long long get_monotonicTimeUSec()
 namespace Cpu {
 	vector<long long> core_old_totals;
 	vector<long long> core_old_idles;
+	vector<fs::path> core_freq;
 	vector<string> available_fields = {"Auto", "total"};
 	vector<string> available_sensors = {"Auto"};
 	cpu_info current_cpu;
-	fs::path freq_path = "/sys/devices/system/cpu/cpufreq/policy0/scaling_cur_freq";
 	bool got_sensors{};
 	bool cpu_temp_only{};
 	bool supports_watts = true;
@@ -289,11 +295,18 @@ namespace Shared {
 		}
 
 		//? Init for namespace Cpu
-		if (not fs::exists(Cpu::freq_path) or access(Cpu::freq_path.c_str(), R_OK) == -1) Cpu::freq_path.clear();
 		Cpu::current_cpu.core_percent.insert(Cpu::current_cpu.core_percent.begin(), Shared::coreCount, {});
 		Cpu::current_cpu.temp.insert(Cpu::current_cpu.temp.begin(), Shared::coreCount + 1, {});
 		Cpu::core_old_totals.insert(Cpu::core_old_totals.begin(), Shared::coreCount, 0);
 		Cpu::core_old_idles.insert(Cpu::core_old_idles.begin(), Shared::coreCount, 0);
+
+		for (int i = 0; i < Shared::coreCount; ++i) {
+			Cpu::core_freq.push_back("/sys/devices/system/cpu/cpufreq/policy" + to_string(i) + "/scaling_cur_freq");
+			if (not fs::exists(Cpu::core_freq.back()) or access(Cpu::core_freq.back().c_str(), R_OK) == -1) {
+				Cpu::core_freq.pop_back();
+			}
+		}
+
 		Cpu::collect();
 		if (Runner::coreNum_reset) Runner::coreNum_reset = false;
 		for (auto& [field, vec] : Cpu::current_cpu.cpu_percent) {
@@ -306,11 +319,23 @@ namespace Shared {
 		}
 		Cpu::core_mapping = Cpu::get_core_mapping();
 
+		Cpu::container_engine = detect_container();
+
 		//? Init for namespace Gpu
 	#ifdef GPU_SUPPORT
-		Gpu::Nvml::init();
-		Gpu::Rsmi::init();
-		Gpu::Intel::init();
+		auto shown_gpus = Config::getS("shown_gpus");
+		if (shown_gpus.contains("nvidia")) {
+		    Gpu::Nvml::init();
+		}
+
+		if (shown_gpus.contains("amd")) {
+			Gpu::Rsmi::init();
+		}
+
+		if (shown_gpus.contains("intel")) {
+			Gpu::Intel::init();
+		}
+
 		if (not Gpu::gpu_names.empty()) {
 			for (auto const& [key, _] : Gpu::gpus[0].gpu_percent)
 				Cpu::available_fields.push_back(key);
@@ -405,7 +430,7 @@ namespace Cpu {
 					fs::path add_path = fs::canonical(dir.path());
 					if (v_contains(search_paths, add_path) or v_contains(search_paths, add_path / "device")) continue;
 
-					if (s_contains(add_path.c_str(), "coretemp"))
+					if (std::string_view { add_path.c_str() }.contains("coretemp"))
 						got_coretemp = true;
 
 					for (const auto & file : fs::directory_iterator(add_path)) {
@@ -450,7 +475,7 @@ namespace Cpu {
 						const int file_id = atoi(file.path().filename().c_str() + 4); // skip "temp" prefix
 						string file_path = file.path();
 
-						if (!s_contains(file_path, file_suffix) or s_contains(file_path, "nvme")) {
+						if (!file_path.contains(file_suffix) or file_path.contains("nvme")) {
 							continue;
 						}
 
@@ -513,7 +538,7 @@ namespace Cpu {
 
 		if (cpu_sensor.empty() and not found_sensors.empty()) {
 			for (const auto& [name, sensor] : found_sensors) {
-				if (s_contains(str_to_lower(name), "cpu") or s_contains(str_to_lower(name), "k10temp")) {
+				if (str_to_lower(name).contains("cpu") or str_to_lower(name).contains("k10temp")) {
 					cpu_sensor = name;
 					break;
 				}
@@ -552,6 +577,26 @@ namespace Cpu {
 		}
 	}
 
+	static string normalize_frequency(double hz) {
+		string str;
+		if (hz > 999999) {
+			str = fmt::format("{:.1f}", hz / 1'000'000);
+			str.resize(3);
+			if (str.back() == '.') str.pop_back();
+			str += " THz";
+		}
+		else if (hz > 999) {
+			str = fmt::format("{:.1f}", hz / 1'000);
+			str.resize(3);
+			if (str.back() == '.') str.pop_back();
+			str += " GHz";
+		}
+		else {
+			str = fmt::format("{:.0f} MHz", hz);
+		}
+		return str;
+	}
+
 	string get_cpuHz() {
 		static int failed{};
 
@@ -559,20 +604,60 @@ namespace Cpu {
 			return ""s;
 
 		string cpuhz;
+
+		const auto &freq_mode = Config::getS("freq_mode");
+
 		try {
-			double hz{};
-			//? Try to get freq from /sys/devices/system/cpu/cpufreq/policy first (faster)
-			if (not freq_path.empty()) {
-				hz = stod(readfile(freq_path, "0.0")) / 1000;
-				if (hz <= 0.0 and ++failed >= 2)
-					freq_path.clear();
+			double hz = 0.0;
+			// Read frequencies from all CPU cores
+			vector<double> frequencies;
+			for (auto it = Cpu::core_freq.begin(); it != Cpu::core_freq.end(); ) {
+    			if (it->empty()) {
+        			it = Cpu::core_freq.erase(it);
+        			continue;
+    			}
+
+    			double core_hz = stod(readfile(*it, "0.0")) / 1000;
+    			if (core_hz <= 0.0 and ++failed >= 2) {
+        			it = Cpu::core_freq.erase(it);
+    			} else {
+        			frequencies.push_back(core_hz);
+        			if (freq_mode == "first") break;
+        			++it;
+    			}
+ 			}
+
+			if (not frequencies.empty()) {
+				if (freq_mode == "first") {
+					hz = frequencies.front();
+				}
+				if (freq_mode == "average") {
+					hz = std::accumulate(frequencies.begin(), frequencies.end(), 0.0) / static_cast<double>(frequencies.size());
+				}
+				else if (freq_mode == "highest") {
+					hz = *std::max_element(frequencies.begin(), frequencies.end());
+				}
+				else if (freq_mode == "lowest") {
+					hz = *std::min_element(frequencies.begin(), frequencies.end());
+				}
+				else if (freq_mode == "range") {
+					auto [min_hz,max_hz] = std::minmax_element(frequencies.begin(), frequencies.end());
+
+					// Format as range
+					string min_str, max_str;
+					min_str = normalize_frequency(*min_hz);
+					max_str = normalize_frequency(*max_hz);
+
+					return min_str + " - " + max_str;
+				}
 			}
 			//? If freq from /sys failed or is missing try to use /proc/cpuinfo
 			if (hz <= 0.0) {
 				ifstream cpufreq(Shared::procPath / "cpuinfo");
 				if (cpufreq.good()) {
 					while (cpufreq.ignore(SSmax, '\n')) {
-						if (cpufreq.peek() == 'c') {
+						// peek is caps sensitive so it was skipping 'CPU MHz'. This aims to fix it.
+						if (cpufreq.peek() == 'c' || cpufreq.peek() == 'C') {
 							cpufreq.ignore(SSmax, ' ');
 							if (cpufreq.peek() == 'M') {
 								cpufreq.ignore(SSmax, ':');
@@ -588,21 +673,7 @@ namespace Cpu {
 			if (hz <= 1 or hz >= 999999999)
 				throw std::runtime_error("Failed to read /sys/devices/system/cpu/cpufreq/policy and /proc/cpuinfo.");
 
-			if (hz > 999999) {
-				cpuhz = fmt::format("{:.1f}", hz / 1'000'000);
-				cpuhz.resize(3);
-				if (cpuhz.back() == '.') cpuhz.pop_back();
-				cpuhz += " THz";
-			}
-			else if (hz > 999) {
-				cpuhz = fmt::format("{:.1f}", hz / 1'000);
-				cpuhz.resize(3);
-				if (cpuhz.back() == '.') cpuhz.pop_back();
-				cpuhz += " GHz";
-			}
-			else {
-				cpuhz = fmt::format("{:.0f} MHz", hz);
-			}
+			cpuhz = normalize_frequency(hz);
 
 		}
 		catch (const std::exception& e) {
@@ -841,13 +912,13 @@ namespace Cpu {
 				catch (const std::invalid_argument&) { }
 				catch (const std::out_of_range&) { }
 			}
-		} 
+		}
 		//? Or get seconds to full
 		else if(is_in(status, "charging")) {
 			if (b.use_energy_or_charge ) {
 				if (not b.power_now.empty()) {
 					try {
-						seconds = (round(stod(readfile(b.energy_full , "0")) - round(stod(readfile(b.energy_now, "0"))))  
+						seconds = (round(stod(readfile(b.energy_full , "0")) - round(stod(readfile(b.energy_now, "0"))))
 									/ abs(stod(readfile(b.power_now, "1"))) * 3600);
 					}
 					catch (const std::invalid_argument&) { }
@@ -855,14 +926,14 @@ namespace Cpu {
 				}
 				else if (not b.current_now.empty()) {
 					try {
-						seconds = (round(stod(readfile(b.charge_full , "0")) - stod(readfile(b.charge_now, "0")))  
+						seconds = (round(stod(readfile(b.charge_full , "0")) - stod(readfile(b.charge_now, "0")))
 									/ std::abs(stod(readfile(b.current_now, "1"))) * 3600);
 					}
 					catch (const std::invalid_argument&) { }
 					catch (const std::out_of_range&) { }
 				}
 			}
-		} 
+		}
 
 		//? Get power draw
 		if (b.use_power) {
@@ -926,6 +997,37 @@ namespace Cpu {
 
 		return watts;
 	}
+
+    static constexpr auto to_int(std::string_view view) {
+        std::uint32_t value {};
+        std::from_chars(view.data(), view.data() + view.size(), value);
+        return value;
+    }
+
+    static constexpr auto detect_active_cpus() {
+        auto stream = std::ifstream { "/sys/fs/cgroup/cpuset.cpus.effective" };
+        auto buf = std::string { std::istreambuf_iterator<char> { stream }, {} };
+
+        if (buf.empty()) {
+            return std::views::iota(0, Shared::coreCount) | std::ranges::to<std::vector<std::int32_t>>();
+        }
+
+        return buf | std::views::split(',') | std::views::transform([](auto&& range) -> auto {
+                   auto view = std::string_view { range };
+                   auto dash = view.find('-');
+
+                   if (dash == std::string_view::npos) {
+                       // Single CPU, return iota of single element
+                       auto value = to_int(view);
+                       return std::views::iota(value, value + 1);
+                   }
+
+                   auto start = to_int(view.substr(0, dash));
+                   auto end = to_int(view.substr(dash + 1));
+                   return std::views::iota(start, end + 1);
+               }) |
+               std::views::join | std::ranges::to<std::vector<std::int32_t>>();
+    }
 
 	auto collect(bool no_update) -> cpu_info& {
 		if (Runner::stopping or (no_update and not current_cpu.cpu_percent.at("total").empty())) return current_cpu;
@@ -1000,7 +1102,7 @@ namespace Cpu {
 					//? Calculate values for totals from first line of stat
 					if (i == 0) {
 						const long long calc_totals = max(1ll, totals - cpu_old.at("totals"));
-						const long long calc_idles = max(1ll, idles - cpu_old.at("idles"));
+						const long long calc_idles = max(0ll, idles - cpu_old.at("idles"));
 						cpu_old.at("totals") = totals;
 						cpu_old.at("idles") = idles;
 
@@ -1031,7 +1133,7 @@ namespace Cpu {
 							cpu.core_percent.emplace_back();
 						}
 						const long long calc_totals = max(1ll, totals - core_old_totals.at(i-1));
-						const long long calc_idles = max(1ll, idles - core_old_idles.at(i-1));
+						const long long calc_idles = max(0ll, idles - core_old_idles.at(i-1));
 						core_old_totals.at(i-1) = totals;
 						core_old_idles.at(i-1) = idles;
 
@@ -1066,6 +1168,8 @@ namespace Cpu {
 
 		if (Config::getB("show_cpu_watts") and supports_watts)
 			current_cpu.usage_watts = get_cpuConsumptionWatts();
+
+		cpu.active_cpus = std::make_optional(detect_active_cpus());
 
 		return cpu;
 	}
@@ -2070,17 +2174,15 @@ namespace Mem {
 					diskread.close();
 				}
 
-				//? Get mounts from /proc/self/mountinfo
-				diskread.open((Shared::procPath / "self/mountinfo"));
+				//? Get mounts from /etc/mtab or /proc/self/mounts
+				diskread.open((fs::exists("/etc/mtab") ? fs::path("/etc/mtab") : Shared::procPath / "self/mounts"));
 				if (diskread.good()) {
 					vector<string> found;
 					found.reserve(last_found.size());
-					string dev, major_minor, mountpoint, fstype, _;
+					string dev, mountpoint, fstype;
 					while (not diskread.eof()) {
-						// See proc_pid_mountinfo(5) for the file format
-						// We specifically want the major/minor device numbers
 						std::error_code ec;
-						diskread >> _ >> _ >> major_minor >> _ >> mountpoint >> _ >> _ >> _ >> fstype >> dev >> _;
+						diskread >> dev >> mountpoint >> fstype;
 						diskread.ignore(SSmax, '\n');
 
 						// A mountpoint can ascii escape codes, which will not work with `statvfs`.
@@ -2113,17 +2215,25 @@ namespace Mem {
 									if (mountpoint == "/mnt") disks.at(mountpoint).name = "root";
 								#endif
 								if (disks.at(mountpoint).name.empty()) disks.at(mountpoint).name = (mountpoint == "/" ? "root" : mountpoint);
-
-								// Use the major:minor device numbers to get device stats; see sysfs(5)
-								auto stat_path = "/sys/dev/block/" + major_minor + "/stat";
-								if (fs::exists(stat_path, ec) and access(stat_path.c_str(), R_OK) == 0) {
-									disks.at(mountpoint).stat = stat_path;
-								} else if (fstype == "zfs") {
+								string devname = disks.at(mountpoint).dev.filename();
+								int c = 0;
+								while (devname.size() >= 2) {
+									if (fs::exists("/sys/block/" + devname + "/stat", ec) and access(string("/sys/block/" + devname + "/stat").c_str(), R_OK) == 0) {
+										if (c > 0 and fs::exists("/sys/block/" + devname + '/' + disks.at(mountpoint).dev.filename().string() + "/stat", ec))
+											disks.at(mountpoint).stat = "/sys/block/" + devname + '/' + disks.at(mountpoint).dev.filename().string() + "/stat";
+										else
+											disks.at(mountpoint).stat = "/sys/block/" + devname + "/stat";
+										break;
 									//? Set ZFS stat filepath
-									disks.at(mountpoint).stat = get_zfs_stat_file(dev, zfs_dataset_name_start, zfs_hide_datasets);
-									if (disks.at(mountpoint).stat.empty()) {
-										Logger::debug("Failed to get ZFS stat file for device " + dev);
+									} else if (fstype == "zfs") {
+										disks.at(mountpoint).stat = get_zfs_stat_file(dev, zfs_dataset_name_start, zfs_hide_datasets);
+										if (disks.at(mountpoint).stat.empty()) {
+											Logger::debug("Failed to get ZFS stat file for device " + dev);
+										}
+										break;
 									}
+									devname.resize(devname.size() - 1);
+									c++;
 								}
 							}
 
@@ -2150,7 +2260,7 @@ namespace Mem {
 					last_found = std::move(found);
 				}
 				else
-					throw std::runtime_error("Failed to get mounts from /proc/self/mountinfo");
+					throw std::runtime_error("Failed to get mounts from /etc/mtab and /proc/self/mounts");
 				diskread.close();
 
 				//? Get disk/partition stats
@@ -2665,11 +2775,12 @@ namespace Proc {
 	string current_sort;
 	string current_filter;
 	bool current_rev{};
+	bool is_tree_mode;
 
 	fs::file_time_type passwd_time;
 
 	uint64_t cputimes;
-	int collapse = -1, expand = -1;
+	int collapse = -1, expand = -1, toggle_children = -1;
 	uint64_t old_cputimes{};
 	atomic<int> numpids{};
 	int filter_found{};
@@ -2677,6 +2788,7 @@ namespace Proc {
 	detail_container detailed;
 	constexpr size_t KTHREADD = 2;
 	static std::unordered_set<size_t> kernels_procs = {KTHREADD};
+	static std::unordered_set<size_t> dead_procs;
 
 	//* Get detailed info for selected process
 	static void _collect_details(const size_t pid, const uint64_t uptime, vector<proc_info>& procs) {
@@ -2698,7 +2810,8 @@ namespace Proc {
 		while (cmp_greater(detailed.cpu_percent.size(), width)) detailed.cpu_percent.pop_front();
 
 		//? Process runtime
-		detailed.elapsed = sec_to_dhms(uptime - (detailed.entry.cpu_s / Shared::clkTck));
+		if (detailed.entry.state != 'X') detailed.elapsed = sec_to_dhms(uptime - (detailed.entry.cpu_s / Shared::clkTck));
+		else detailed.elapsed = sec_to_dhms(detailed.entry.death_time);
 		if (detailed.elapsed.size() > 8) detailed.elapsed.resize(detailed.elapsed.size() - 3);
 
 		//? Get parent process name
@@ -2785,14 +2898,17 @@ namespace Proc {
 		auto should_filter_kernel = Config::getB("proc_filter_kernel");
 		auto tree = Config::getB("proc_tree");
 		auto show_detailed = Config::getB("show_detailed");
+		const auto pause_proc_list = Config::getB("pause_proc_list");
 		const size_t detailed_pid = Config::getI("detailed_pid");
 		bool should_filter = current_filter != filter;
 		if (should_filter) current_filter = filter;
 		bool sorted_change = (sorting != current_sort or reverse != current_rev or should_filter);
+		bool tree_mode_change = tree != is_tree_mode;
 		if (sorted_change) {
 			current_sort = sorting;
 			current_rev = reverse;
 		}
+		if (tree_mode_change) is_tree_mode = tree;
 		ifstream pread;
 		string long_string;
 		string short_str;
@@ -2880,11 +2996,16 @@ namespace Proc {
 				//? Check if pid already exists in current_procs
 				auto find_old = rng::find(current_procs, pid, &proc_info::pid);
 				bool no_cache{};
+				//? Only add new processes if not paused
 				if (find_old == current_procs.end()) {
-					current_procs.push_back({pid});
-					find_old = current_procs.end() - 1;
-					no_cache = true;
+					if (not pause_proc_list) {
+						current_procs.push_back({pid});
+						find_old = current_procs.end() - 1;
+						no_cache = true;
+					}
+					else continue;
 				}
+				else if (dead_procs.contains(pid)) continue;
 
 				auto& new_proc = *find_old;
 
@@ -3039,9 +3160,27 @@ namespace Proc {
 				}
 			}
 
-			//? Clear dead processes from current_procs and remove kernel processes if enabled
-			auto eraser = rng::remove_if(current_procs, [&](const auto& element){ return not v_contains(found, element.pid); });
-			current_procs.erase(eraser.begin(), eraser.end());
+			//? Clear dead processes from current_procs and remove kernel processes if enabled and not paused
+			if (not pause_proc_list) {
+				auto eraser = rng::remove_if(current_procs, [&](const auto& element){ return not v_contains(found, element.pid); });
+				current_procs.erase(eraser.begin(), eraser.end());
+				if (!dead_procs.empty()) dead_procs.clear();
+			}
+			//? Set correct state of dead processes if paused
+			else {
+				for (auto& r : current_procs) {
+					if (rng::find(found, r.pid) == found.end()) {
+						if (r.state != 'X') r.death_time = round(uptime) - (r.cpu_s / Shared::clkTck);
+						r.state = 'X';
+						dead_procs.emplace(r.pid);
+						//? Reset cpu usage for dead processes if paused and option is set
+						if (!Config::getB("keep_dead_proc_usage")) {
+							r.cpu_p = 0.0;
+							r.mem = 0;
+						}
+					}
+				}
+			}
 
 			//? Update the details info box for process if active
 			if (show_detailed and got_detailed) {
@@ -3074,13 +3213,30 @@ namespace Proc {
 		}
 
 		//* Sort processes
-		if (sorted_change or not no_update) {
+		if ((sorted_change or tree_mode_change) or (not no_update and not pause_proc_list)) {
 			proc_sorter(current_procs, sorting, reverse, tree);
 		}
 
 		//* Generate tree view if enabled
 		if (tree and (not no_update or should_filter or sorted_change)) {
 			bool locate_selection = false;
+
+			if (toggle_children != -1) {
+				auto collapser = rng::find(current_procs, toggle_children, &proc_info::pid);
+				if (collapser != current_procs.end()){
+					for (auto& p : current_procs) {
+						if (p.ppid == collapser->pid) {
+							auto child = rng::find(current_procs, p.pid, &proc_info::pid);
+							if (child != current_procs.end()){
+								child->collapsed = not child->collapsed;
+							}
+						}
+					}
+					if (Config::ints.at("proc_selected") > 0) locate_selection = true;
+				}
+				toggle_children = -1;
+			}
+			
 			if (auto find_pid = (collapse != -1 ? collapse : expand); find_pid != -1) {
 				auto collapser = rng::find(current_procs, find_pid, &proc_info::pid);
 				if (collapser != current_procs.end()) {
@@ -3102,8 +3258,10 @@ namespace Proc {
 			vector<tree_proc> tree_procs;
 			tree_procs.reserve(current_procs.size());
 
-			for (auto& p : current_procs) {
-				if (not v_contains(found, p.ppid)) p.ppid = 0;
+			if (!pause_proc_list) {
+				for (auto& p : current_procs) {
+					if (not v_contains(found, p.ppid)) p.ppid = 0;
+				}
 			}
 
 			//? Stable sort to retain selected sorting among processes with the same parent
@@ -3116,7 +3274,7 @@ namespace Proc {
 
 			//? Recursive sort over tree structure to account for collapsed processes in the tree
 			int index = 0;
-			tree_sort(tree_procs, sorting, reverse, index, current_procs.size());
+			tree_sort(tree_procs, sorting, reverse, (pause_proc_list and not (sorted_change or tree_mode_change)), index, current_procs.size());
 
 			//? Recursive construction of ASCII tree prefixes.
 			for (auto t = tree_procs.begin(); t != tree_procs.end(); ++t) {
@@ -3124,7 +3282,7 @@ namespace Proc {
 			}
 
 			//? Final sort based on tree index
-			rng::sort(current_procs, rng::less{}, & proc_info::tree_index);
+			rng::stable_sort(current_procs, rng::less {}, &proc_info::tree_index);
 
 			//? Move current selection/view to the selected process when collapsing/expanding in the tree
 			if (locate_selection) {

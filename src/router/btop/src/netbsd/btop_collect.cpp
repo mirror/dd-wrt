@@ -52,6 +52,7 @@ tab-size = 4
 #include <kvm.h>
 #include <paths.h>
 #include <fcntl.h>
+#include <regex.h>
 #include <unistd.h>
 #include <uvm/uvm_extern.h>
 
@@ -65,6 +66,7 @@ tab-size = 4
 #include <string>
 #include <memory>
 #include <utility>
+#include <unordered_set>
 
 #include "../btop_config.hpp"
 #include "../btop_shared.hpp"
@@ -220,12 +222,12 @@ namespace Cpu {
 		prop_object_t fields_array;
 		// List of common thermal sensors in NetBSD.
 		const string sensors[6] = {
-			"acpitz0",
-			"acpitz1",
 			"coretemp0",
-			"coretemp1",
+			"acpitz0",
 			"thinkpad0",
-			"amdzentemp0"
+			"amdzentemp0",
+			"coretemp1",
+			"acpitz1"
 		};
 
 		int fd = open(_PATH_SYSMON, O_RDONLY);
@@ -242,10 +244,9 @@ namespace Cpu {
 			return got_sensors;
 		}
 
+		close(fd);
+
 		if (prop_dictionary_count(dict) == 0) {
-			if (fd != -1) {
-				close(fd);
-			}
 			Logger::warning("no drivers registered for envsys");
 			return got_sensors;
 		}
@@ -261,15 +262,13 @@ namespace Cpu {
 			}
 		}
 		if (prop_object_type(fields_array) != PROP_TYPE_ARRAY) {
-			if (fd != -1) {
-				close(fd);
-			}
 			return got_sensors;
 		}
 
 		if (Config::getB("show_coretemp") and Config::getB("check_temp")) {
 			got_sensors = true;
 		}
+
 		return got_sensors;
 	}
 
@@ -294,32 +293,32 @@ namespace Cpu {
 			return;
 		}
 
+		close(fd);
+
 		if (prop_dictionary_count(dict) == 0) {
-			if (fd != -1) {
-				close(fd);
-			}
 			Logger::warning("no drivers registered for envsys");
 			return;
 		}
 
 		prop_object_t fields_array = prop_dictionary_get(prop_dictionary_t(dict), Cpu::cpu_sensor.c_str());
 		if (prop_object_type(fields_array) != PROP_TYPE_ARRAY) {
-			if (fd != -1) {
-				close(fd);
-			}
 			Logger::warning("unknown device " + Cpu::cpu_sensor);
 			return;
 		}
 
 		prop_object_iterator_t fields_iter = prop_array_iterator(prop_array_t(fields_array));
 		if (fields_iter == NULL) {
-			if (fd != -1) {
-				close(fd);
-			}
+			return;
+		}
+
+		regex_t r;
+		if (regcomp(&r, "(cpu[0-9]* )*temperature", REG_EXTENDED)) {
+			Logger::warning("regcomp() failed");
 			return;
 		}
 
 		string prop_description = "no description";
+		char buf[64];
 		while ((fields = (prop_dictionary_t) prop_object_iterator_next(prop_object_iterator_t(fields_iter))) != NULL) {
 			props = (prop_dictionary_t) prop_dictionary_get(fields, "device-properties");
 			if (props != NULL) continue;
@@ -333,15 +332,18 @@ namespace Cpu {
 			}
 
 
-			prop_description = prop_string_cstring(prop_string_t(description));
+			prop_string_copy_value(prop_string_t(description), buf, sizeof buf);
+			prop_description = buf;
 
-			if (prop_description == "temperature") {
-				current_temp = prop_number_integer_value(prop_number_t(cur_value));
+			if (regexec(&r, prop_description.c_str(), 0, NULL, 0) == 0) {
+				current_temp = prop_number_signed_value(prop_number_t(cur_value));
 				if (max_value != NULL) {
-					current_cpu.temp_max = MUKTOC(prop_number_integer_value(prop_number_t(max_value)));
+					current_cpu.temp_max = MUKTOC(prop_number_signed_value(prop_number_t(max_value)));
 				}
 			}
 		}
+
+		regfree(&r);
 
 		prop_object_iterator_release(fields_iter);
 		prop_object_release(dict);
@@ -441,10 +443,9 @@ namespace Cpu {
 			return {0, 0.0, 0, ""};
 		}
 
+		close(fd);
+
 		if (prop_dictionary_count(dict) == 0) {
-			if (fd != -1) {
-				close(fd);
-			}
 			has_battery = false;
 			Logger::warning("no drivers registered for envsys");
 			return {0, 0.0, 0, ""};
@@ -452,9 +453,6 @@ namespace Cpu {
 
 		prop_object_t fields_array = prop_dictionary_get(prop_dictionary_t(dict), "acpibat0");
 		if (prop_object_type(fields_array) != PROP_TYPE_ARRAY) {
-			if (fd != -1) {
-				close(fd);
-			}
 			has_battery = false;
 			Logger::warning("unknown device 'acpibat0'");
 			return {0, 0.0, 0, ""};
@@ -462,9 +460,6 @@ namespace Cpu {
 
 		prop_object_iterator_t fields_iter = prop_array_iterator(prop_array_t(fields_array));
 		if (fields_iter == NULL) {
-			if (fd != -1) {
-				close(fd);
-			}
 			has_battery = false;
 			return {0, 0.0, 0, ""};
 		}
@@ -476,6 +471,7 @@ namespace Cpu {
 		int64_t max_charge = 0;
 		string status = "unknown";
 		string prop_description = "no description";
+		char buf[64];
 
 		while ((fields = (prop_dictionary_t) prop_object_iterator_next(prop_object_iterator_t(fields_iter))) != NULL) {
 			props = (prop_dictionary_t) prop_dictionary_get(fields, "device-properties");
@@ -490,23 +486,26 @@ namespace Cpu {
 			}
 
 
-			prop_description = prop_string_cstring(prop_string_t(description));
+			prop_string_copy_value(prop_string_t(description), buf, sizeof buf);
+			prop_description = buf;
 
 			if (prop_description == "charge") {
 				if (max_value == NULL) {
 					continue;
 				}
-				cur_charge = prop_number_integer_value(prop_number_t(cur_value));
-				max_charge = prop_number_integer_value(prop_number_t(max_value));
+				cur_charge = prop_number_signed_value(prop_number_t(cur_value));
+				max_charge = prop_number_signed_value(prop_number_t(max_value));
 			}
 
 			if (prop_description == "present") {
-				is_present = prop_number_integer_value(prop_number_t(cur_value));
+				is_present = prop_number_signed_value(prop_number_t(cur_value));
 			}
 
 			if (prop_description == "charging") {
 				status = prop_description;
-				string charging_type = prop_string_cstring(prop_string_t(prop_dictionary_get(fields, "type")));
+				char buf[64];
+				prop_string_copy_value(prop_string_t(prop_dictionary_get(fields, "type")), buf, sizeof buf);
+				string charging_type = buf;
 				is_battery = charging_type == "Battery charge" ? true : false;
 			}
 
@@ -1093,16 +1092,18 @@ namespace Proc {
 	string current_sort;
 	string current_filter;
 	bool current_rev = false;
+	bool is_tree_mode;
 
 	fs::file_time_type passwd_time;
 
 	uint64_t cputimes;
-	int collapse = -1, expand = -1;
+	int collapse = -1, expand = -1, toggle_children = -1;
 	uint64_t old_cputimes = 0;
 	atomic<int> numpids = 0;
 	int filter_found = 0;
 
 	detail_container detailed;
+	static std::unordered_set<size_t> dead_procs;
 
 	string get_status(char s) {
 		if (s & LSRUN) return "Running";
@@ -1133,7 +1134,9 @@ namespace Proc {
 		//? Process runtime : current time - start time (both in unix time - seconds since epoch)
 		struct timeval currentTime;
 		gettimeofday(&currentTime, nullptr);
-		detailed.elapsed = sec_to_dhms(currentTime.tv_sec - detailed.entry.cpu_s); // only interested in second granularity, so ignoring tc_usec
+		// only interested in second granularity, so ignoring tc_usec
+		if (detailed.entry.state != 'X') detailed.elapsed = sec_to_dhms(currentTime.tv_sec - detailed.entry.cpu_s);
+		else detailed.elapsed = sec_to_dhms(detailed.entry.death_time);
 		if (detailed.elapsed.size() > 8) detailed.elapsed.resize(detailed.elapsed.size() - 3);
 
 		//? Get parent process name
@@ -1164,14 +1167,17 @@ namespace Proc {
 		auto per_core = Config::getB("proc_per_core");
 		auto tree = Config::getB("proc_tree");
 		auto show_detailed = Config::getB("show_detailed");
+		const auto pause_proc_list = Config::getB("pause_proc_list");
 		const size_t detailed_pid = Config::getI("detailed_pid");
 		bool should_filter = current_filter != filter;
 		if (should_filter) current_filter = filter;
 		bool sorted_change = (sorting != current_sort or reverse != current_rev or should_filter);
+		bool tree_mode_change = tree != is_tree_mode;
 		if (sorted_change) {
 			current_sort = sorting;
 			current_rev = reverse;
 		}
+		if (tree_mode_change) is_tree_mode = tree;
 
 		const int cmult = (per_core) ? Shared::coreCount : 1;
 		bool got_detailed = false;
@@ -1204,11 +1210,16 @@ namespace Proc {
 				//? Check if pid already exists in current_procs
 				bool no_cache = false;
 				auto find_old = rng::find(current_procs, pid, &proc_info::pid);
+				//? Only add new processes if not paused
 				if (find_old == current_procs.end()) {
-					current_procs.push_back({pid});
-					find_old = current_procs.end() - 1;
-					no_cache = true;
+					if (not pause_proc_list) {
+						current_procs.push_back({pid});
+						find_old = current_procs.end() - 1;
+						no_cache = true;
+					}
+					else continue;
 				}
+				else if (dead_procs.contains(pid)) continue;
 
 				auto &new_proc = *find_old;
 
@@ -1261,9 +1272,31 @@ namespace Proc {
 				}
 			}
 
-			//? Clear dead processes from current_procs
-			auto eraser = rng::remove_if(current_procs, [&](const auto &element) { return not v_contains(found, element.pid); });
-			current_procs.erase(eraser.begin(), eraser.end());
+			//? Clear dead processes from current_procs if not paused
+			if (not pause_proc_list) {
+				auto eraser = rng::remove_if(current_procs, [&](const auto& element) { return not v_contains(found, element.pid); });
+				current_procs.erase(eraser.begin(), eraser.end());
+				if (!dead_procs.empty()) dead_procs.clear();
+			}
+			//? Set correct state of dead processes if paused
+			else {
+				for (auto& r : current_procs) {
+					if (rng::find(found, r.pid) == found.end()) {
+						if (r.state != 'X') {
+							struct timeval currentTime;
+							gettimeofday(&currentTime, nullptr);
+							r.death_time = currentTime.tv_sec - r.cpu_s;
+						}
+						r.state = 'X';
+						dead_procs.emplace(r.pid);
+						//? Reset cpu usage for dead processes if paused and option is set
+						if (!Config::getB("keep_dead_proc_usage")) {
+							r.cpu_p = 0.0;
+							r.mem = 0;
+						}
+					}
+				}
+			}
 
 			//? Update the details info box for process if active
 			if (show_detailed and got_detailed) {
@@ -1302,7 +1335,7 @@ namespace Proc {
 		}
 
 		//* Sort processes
-		if (sorted_change or not no_update) {
+		if ((sorted_change or tree_mode_change) or (not no_update and not pause_proc_list)) {
 			proc_sorter(current_procs, sorting, reverse, tree);
 		}
 
@@ -1330,8 +1363,10 @@ namespace Proc {
 			vector<tree_proc> tree_procs;
 			tree_procs.reserve(current_procs.size());
 
-			for (auto& p : current_procs) {
-				if (not v_contains(found, p.ppid)) p.ppid = 0;
+			if (!pause_proc_list) {
+				for (auto& p : current_procs) {
+					if (not v_contains(found, p.ppid)) p.ppid = 0;
+				}
 			}
 
 			//? Stable sort to retain selected sorting among processes with the same parent
@@ -1344,7 +1379,7 @@ namespace Proc {
 
 			//? Recursive sort over tree structure to account for collapsed processes in the tree
 			int index = 0;
-			tree_sort(tree_procs, sorting, reverse, index, current_procs.size());
+			tree_sort(tree_procs, sorting, reverse, (pause_proc_list and not (sorted_change or tree_mode_change)), index, current_procs.size());
 
 			//? Recursive construction of ASCII tree prefixes.
 			for (auto t = tree_procs.begin(); t != tree_procs.end(); ++t) {
@@ -1352,7 +1387,7 @@ namespace Proc {
 			}
 
 			//? Final sort based on tree index
-			rng::sort(current_procs, rng::less{}, & proc_info::tree_index);
+			rng::stable_sort(current_procs, rng::less {}, &proc_info::tree_index);
 
 			//? Move current selection/view to the selected process when collapsing/expanding in the tree
 			if (locate_selection) {
