@@ -2163,6 +2163,7 @@ mlxsw_sp_neigh_entry_alloc(struct mlxsw_sp *mlxsw_sp, struct neighbour *n,
 	if (!neigh_entry)
 		return NULL;
 
+	neigh_hold(n);
 	neigh_entry->key.n = n;
 	neigh_entry->rif = rif;
 	INIT_LIST_HEAD(&neigh_entry->nexthop_list);
@@ -2172,6 +2173,7 @@ mlxsw_sp_neigh_entry_alloc(struct mlxsw_sp *mlxsw_sp, struct neighbour *n,
 
 static void mlxsw_sp_neigh_entry_free(struct mlxsw_sp_neigh_entry *neigh_entry)
 {
+	neigh_release(neigh_entry->key.n);
 	kfree(neigh_entry);
 }
 
@@ -4027,6 +4029,8 @@ mlxsw_sp_nexthop_dead_neigh_replace(struct mlxsw_sp *mlxsw_sp,
 	if (err)
 		goto err_neigh_entry_insert;
 
+	neigh_release(old_n);
+
 	read_lock_bh(&n->lock);
 	nud_state = n->nud_state;
 	dead = n->dead;
@@ -4035,13 +4039,9 @@ mlxsw_sp_nexthop_dead_neigh_replace(struct mlxsw_sp *mlxsw_sp,
 
 	list_for_each_entry(nh, &neigh_entry->nexthop_list,
 			    neigh_list_node) {
-		neigh_release(old_n);
-		neigh_clone(n);
 		__mlxsw_sp_nexthop_neigh_update(nh, !entry_connected);
 		mlxsw_sp_nexthop_group_refresh(mlxsw_sp, nh->nhgi->nh_grp);
 	}
-
-	neigh_release(n);
 
 	return 0;
 
@@ -4130,6 +4130,11 @@ static int mlxsw_sp_nexthop_neigh_init(struct mlxsw_sp *mlxsw_sp,
 		}
 	}
 
+	/* Release the reference taken by neigh_lookup() / neigh_create() since
+	 * neigh_entry already holds one.
+	 */
+	neigh_release(n);
+
 	/* If that is the first nexthop connected to that neigh, add to
 	 * nexthop_neighs_list
 	 */
@@ -4156,11 +4161,9 @@ static void mlxsw_sp_nexthop_neigh_fini(struct mlxsw_sp *mlxsw_sp,
 					struct mlxsw_sp_nexthop *nh)
 {
 	struct mlxsw_sp_neigh_entry *neigh_entry = nh->neigh_entry;
-	struct neighbour *n;
 
 	if (!neigh_entry)
 		return;
-	n = neigh_entry->key.n;
 
 	__mlxsw_sp_nexthop_neigh_update(nh, true);
 	list_del(&nh->neigh_list_node);
@@ -4174,8 +4177,6 @@ static void mlxsw_sp_nexthop_neigh_fini(struct mlxsw_sp *mlxsw_sp,
 
 	if (!neigh_entry->connected && list_empty(&neigh_entry->nexthop_list))
 		mlxsw_sp_neigh_entry_destroy(mlxsw_sp, neigh_entry);
-
-	neigh_release(n);
 }
 
 static bool mlxsw_sp_ipip_netdev_ul_up(struct net_device *ol_dev)

@@ -2715,9 +2715,15 @@ static void __mptcp_retrans(struct sock *sk)
 	info.sent = 0;
 	info.limit = READ_ONCE(msk->csum_enabled) ? dfrag->data_len : dfrag->already_sent;
 
-	/* make the whole retrans decision, xmit, disallow fallback atomic */
+	/*
+	 * make the whole retrans decision, xmit, disallow
+	 * fallback atomic, note that we can't retrans even
+	 * when an infinite fallback is in progress, i.e. new
+	 * subflows are disallowed.
+	 */
 	spin_lock_bh(&msk->fallback_lock);
-	if (__mptcp_check_fallback(msk)) {
+	if (__mptcp_check_fallback(msk) ||
+	    !msk->allow_subflows) {
 		spin_unlock_bh(&msk->fallback_lock);
 		release_sock(ssk);
 		return;
@@ -2806,6 +2812,12 @@ static void mptcp_do_fastclose(struct sock *sk)
 			goto unlock;
 
 		subflow->send_fastclose = 1;
+
+		/* Initialize rcv_mss to TCP_MIN_MSS to avoid division by 0
+		 * issue in __tcp_select_window(), see tcp_disconnect().
+		 */
+		inet_csk(ssk)->icsk_ack.rcv_mss = TCP_MIN_MSS;
+
 		tcp_send_active_reset(ssk, ssk->sk_allocation);
 unlock:
 		release_sock(ssk);

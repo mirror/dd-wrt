@@ -1085,7 +1085,16 @@ struct pqi_stream_data {
 	u32	last_accessed;
 };
 
-#define PQI_MAX_LUNS_PER_DEVICE         256
+#define PQI_MAX_LUNS_PER_DEVICE		256
+
+struct pqi_tmf_work {
+	struct work_struct work_struct;
+	struct scsi_cmnd *scmd;
+	struct pqi_ctrl_info *ctrl_info;
+	struct pqi_scsi_dev *device;
+	u8	lun;
+	u8	scsi_opcode;
+};
 
 struct pqi_scsi_dev {
 	int	devtype;		/* as reported by INQUIRY command */
@@ -1110,6 +1119,7 @@ struct pqi_scsi_dev {
 	u8	ignore_device : 1;
 	bool	aio_enabled;		/* only valid for physical disks */
 	bool	in_remove;
+	bool	in_reset[PQI_MAX_LUNS_PER_DEVICE];
 	bool	device_offline;
 	u8	vendor[8];		/* bytes 8-15 of inquiry data */
 	u8	model[16];		/* bytes 16-31 of inquiry data */
@@ -1147,7 +1157,9 @@ struct pqi_scsi_dev {
 
 	struct pqi_stream_data stream_data[NUM_STREAMS_PER_LUN];
 	atomic_t scsi_cmds_outstanding[PQI_MAX_LUNS_PER_DEVICE];
-	atomic_t raid_bypass_cnt;
+	unsigned int raid_bypass_cnt;
+
+	struct pqi_tmf_work tmf_work[PQI_MAX_LUNS_PER_DEVICE];
 };
 
 /* VPD inquiry pages */
@@ -1307,7 +1319,6 @@ struct pqi_ctrl_info {
 	dma_addr_t	error_buffer_dma_handle;
 	size_t		sg_chain_buffer_length;
 	unsigned int	num_queue_groups;
-	u16		max_hw_queue_index;
 	u16		num_elements_per_iq;
 	u16		num_elements_per_oq;
 	u16		max_inbound_iu_length_per_firmware;
@@ -1369,8 +1380,6 @@ struct pqi_ctrl_info {
 	u64		sas_address;
 
 	struct pqi_io_request *io_request_pool;
-	u16		next_io_request_slot;
-
 	struct pqi_event events[PQI_NUM_SUPPORTED_EVENTS];
 	struct work_struct event_work;
 
