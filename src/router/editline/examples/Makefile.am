@@ -10,3 +10,4 @@ fileman_SOURCES  = fileman.c
 noinst_PROGRAMS += wtc1
 wtc1_SOURCES     = wtc1.c
 
+EXTRA_DIST = fuzz1.c

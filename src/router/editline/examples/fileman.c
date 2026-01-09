@@ -71,8 +71,8 @@ COMMAND commands[] = {
 };
 
 /* Forward declarations. */
-char *stripwhite ();
-COMMAND *find_command ();
+char * stripwhite (char *string);
+COMMAND * find_command (char *name);
 
 /* The name of this program, as taken from argv[0]. */
 char *progname;
@@ -261,9 +261,7 @@ fileman_completion (const char* text, int start, int end __attribute__((__unused
    know whether to start from scratch; without any state
    (i.e. STATE == 0), then we start at the top of the list. */
 char *
-command_generator (text, state)
-   const char *text;
-   int state;
+command_generator (const char *text, int state)
 {
    static int list_index, len;
    char *name;

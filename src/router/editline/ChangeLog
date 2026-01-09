@@ -1,6 +1,92 @@
    * See also NetBSD changelog:
 	http://cvsweb.netbsd.org/bsdweb.cgi/src/lib/libedit
 
+2025-10-16 Jess Thrysoee
+
+   * all: sync with upstream source
+
+2025-01-04 Jess Thrysoee
+
+   * all: sync with upstream source
+
+2024-08-08 Jess Thrysoee
+
+   * all: sync with upstream source
+
+   * doc/Makefile.am: fix regression. Name all manpage links as el_*
+	(e.g. el_history.3) to avoid conflicts.
+	Reported by Zopolis4
+
+2024-05-17 Jess Thrysoee
+
+   * all: sync with upstream source
+
+2023-08-28 Jess Thrysoee
+
+   * src/chartype.c: Add missing stdint.h
+	Reported by Rui Chen
+
+2023-08-27 Jess Thrysoee
+
+   * all: sync with upstream source
+
+2022-10-30 Jess Thrysoee
+
+   * src/sys.h, src/reallocarr.c: Remove unused sys/cdefs.h include, to compile against musl libc
+	Reported by Matt Boehlke
+
+   * version-info: 0:70:0
+
+2022-10-09 Jess Thrysoee
+
+   * version-info: 0:69:0
+
+   * src/sys.h: Add __sun guard around sys/types.h in sys.h
+
+   * all: sync with upstream source
+
+2021-09-10 Jess Thrysoee
+
+   * all: sync with upstream source
+
+2021-07-14 Jess Thrysoee
+
+   * all: sync with upstream source
+
+   * src/histedit.h: Add wcsdup declaration when ifndef HAVE_WCSDUP. Patch by Rainer Jung.
+
+   * examples/wtc1.c: Fix warnings and add missing brace. Patch by Rainer Jung.
+
+2021-05-22 Jess Thrysoee
+
+   * version-info: 0:66:0
+
+   * all: sync with upstream source
+
+   * src/el.c: editrc not read on systems without issetugid
+	Patch by Trevor Cordes
+
+2021-04-19 Jess Thrysoee
+
+   * version-info: 0:65:0
+
+   * all: sync with upstream source
+
+   * src/getline.c,src/sys.h: Provide getline.c implementation if not available
+	Patch by Claes Nästén
+
+   * src/makelist: Use Posix locale; mainly to get ASCII character classes in e.g. `tr`
+	Patch by Claes Nästén
+
+  * examples/test_filecompletion.c, examples/wtc1.c: err.h not supported by
+	Solaris
+
+2021-02-16 Jess Thrysoee
+
+   * version-info: 0:64:0
+
+   * all: sync with upstream source
+
 2019-12-31 Jess Thrysoee
 
    * version-info: 0:63:0

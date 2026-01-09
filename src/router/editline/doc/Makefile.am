@@ -20,14 +20,14 @@ EL_MAN_LINKS = \
 		el_resize.3 \
 		el_set.3 \
 		el_source.3 \
-		history.3 \
-		history_end.3 \
-		history_init.3 \
-		tok_end.3 \
-		tok_init.3 \
-		tok_line.3 \
-		tok_reset.3 \
-		tok_str.3
+		el_history.3 \
+		el_history_end.3 \
+		el_history_init.3 \
+		el_tok_end.3 \
+		el_tok_init.3 \
+		el_tok_line.3 \
+		el_tok_reset.3 \
+		el_tok_str.3
 
 EL_MAN_LINKS += \
 		el_wdeletestr.3 \
@@ -39,14 +39,14 @@ EL_MAN_LINKS += \
 		el_wparse.3 \
 		el_wpush.3 \
 		el_wset.3 \
-		history_w.3 \
-		history_wend.3 \
-		history_winit.3 \
-		tok_wend.3 \
-		tok_winit.3 \
-		tok_wline.3 \
-		tok_wreset.3 \
-		tok_wstr.3
+		el_history_w.3 \
+		el_history_wend.3 \
+		el_history_winit.3 \
+		el_tok_wend.3 \
+		el_tok_winit.3 \
+		el_tok_wline.3 \
+		el_tok_wreset.3 \
+		el_tok_wstr.3
 
 
 install-data-hook: $(EL_MAN_LINKS)
