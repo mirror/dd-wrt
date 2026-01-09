@@ -1270,6 +1270,9 @@ int skb_restore_cb(struct sk_buff *skb);
 extern struct kmem_cache *skbuff_head_cache;
 extern void kfree_skbmem(struct sk_buff *skb);
 extern void skb_release_data(struct sk_buff *skb);
+extern void kfree_skbmem(struct sk_buff *skb);
+extern void skb_release_data(struct sk_buff *skb, enum skb_drop_reason reason,
+			     bool napi_safe);
 
 void kfree_skb_partial(struct sk_buff *skb, bool head_stolen);
 bool skb_try_coalesce(struct sk_buff *to, struct sk_buff *from,

@@ -1700,15 +1700,6 @@ static void subflow_state_change(struct sock *sk)
 	__subflow_state_change(sk);
 
 	msk = mptcp_sk(parent);
-	if (subflow_simultaneous_connect(sk)) {
-		mptcp_propagate_sndbuf(parent, sk);
-		WARN_ON_ONCE(!mptcp_try_fallback(sk));
-		mptcp_rcv_space_init(msk, sk);
-		pr_fallback(msk);
-		subflow->conn_finished = 1;
-		mptcp_set_connected(parent);
-	}
-
 	/* as recvmsg() does not acquire the subflow socket for ssk selection
 	 * a fin packet carrying a DSS can be unnoticed if we don't trigger
 	 * the data available machinery here.
