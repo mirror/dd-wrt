@@ -257,6 +257,7 @@ include rules/ipsec-tools.mk
 include rules/libunwind.mk
 include rules/strace.mk
 include rules/util-linux.mk
+include rules/libedit.mk
 include rules/asterisk.mk
 include rules/zaptel.mk
 ifeq ($(CONFIG_IPERF),y)
