@@ -1,4 +1,5 @@
 libedit-configure:
+	cd libedit && autoreconf -vfi
 	cd libedit && ./configure --host=$(ARCH)-linux-uclibc --prefix=/usr --libdir=/usr/lib \
 	CFLAGS="$(COPTS) $(MIPS16_OPT) -DNEED_PRINTF -D_GNU_SOURCE -I$(TOP)/ncurses/include" \
 	CXXFLAGS="$(COPTS) $(MIPS16_OPT) -DNEED_PRINTF -D_GNU_SOURCE -I$(TOP)/ncurses/include" \
