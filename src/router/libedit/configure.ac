@@ -69,7 +69,6 @@ AM_CONDITIONAL(ENABLE_EXAMPLES, [test "$enable_examples" = "yes"])
 
 # Checks for header files.
 AC_HEADER_DIRENT
-AC_CHECK_INCLUDES_DEFAULT
 AC_PROG_EGREP
 
 AC_HEADER_SYS_WAIT
