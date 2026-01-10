@@ -1,5 +1,5 @@
 
-dbus-configure:
+dbus-configure: expat
 	#cd dbus && autoreconf -fsi
 	rm -f dbus/config.cache
 	cd dbus && ./autogen.sh --prefix=/usr --host=$(ARCH)-linux \
@@ -27,7 +27,7 @@ dbus-configure:
 	$(MAKE) -C dbus
 	$(MAKE) -C dbus DESTDIR=$(TOP)/dbus/staged install
 
-dbus:
+dbus: expat
 	$(MAKE) -C dbus
 
 dbus-install:
