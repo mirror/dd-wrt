@@ -42,7 +42,7 @@ long long nativePhysicalMemory() {
 }
 
 void *nativeStackBase() {
-#ifdef __UCLIBC__
+#if 1 //def __UCLIBC__
     return NULL;
 #else
     pthread_attr_t attr;
