@@ -1,10 +1,10 @@
 This is readline.info, produced by makeinfo version 7.1 from rlman.texi.
 
-This manual describes the GNU Readline Library (version 8.3, 29 November
+This manual describes the GNU Readline Library (version 8.3, 30 December
 2024), a library which aids in the consistency of user interface across
 discrete programs which provide a command line interface.
 
-   Copyright © 1988-2024 Free Software Foundation, Inc.
+   Copyright © 1988-2025 Free Software Foundation, Inc.
 
      Permission is granted to copy, distribute and/or modify this
      document under the terms of the GNU Free Documentation License,
@@ -859,7 +859,7 @@ Key Bindings
 
      When entering the text of a macro, single or double quotes must be
      used to indicate a macro definition.  Unquoted text is assumed to
-     be a function name.  Tthe backslash escapes described above are
+     be a function name.  The backslash escapes described above are
      expanded in the macro body.  Backslash will quote any other
      character in the macro text, including ‘"’ and ‘'’.  For example,
      the following binding will make ‘‘C-x’ \’ insert a single ‘\’ into
@@ -966,7 +966,7 @@ File: readline.info,  Node: Sample Init File,  Prev: Conditional Init Constructs
 Here is an example of an INPUTRC file.  This illustrates key binding,
 variable assignment, and conditional syntax.
 
-     # This file controls the behaviour of line input editing for
+     # This file controls the behavior of line input editing for
      # programs that use the GNU Readline library.  Existing
      # programs include FTP, Bash, and GDB.
      #
@@ -1147,7 +1147,8 @@ File: readline.info,  Node: Commands For Moving,  Next: Commands For History,  U
 
 ‘clear-screen (C-l)’
      Clear the screen, then redraw the current line, leaving the current
-     line at the top of the screen.
+     line at the top of the screen.  If given a numeric argument, this
+     refreshes the current line without clearing the screen.
 
 ‘redraw-current-line ()’
      Refresh the current line.  By default, this is unbound.
@@ -1662,7 +1663,7 @@ and subsequent lines with ‘j’, and so forth.
 aiding in the consistency of user interface across discrete programs
 that need to provide a command line interface.
 
-   Copyright (C) 1988-2024 Free Software Foundation, Inc.
+   Copyright (C) 1988-2025 Free Software Foundation, Inc.
 
    Permission is granted to make and distribute verbatim copies of this
 manual provided the copyright notice and this permission notice pare
@@ -1710,7 +1711,7 @@ File: readline.info,  Node: Basic Behavior,  Next: Custom Functions,  Up: Progra
 ==================
 
 Many programs provide a command line interface, such as ‘mail’, ‘ftp’,
-and ‘sh’.  For such programs, the default behaviour of Readline is
+and ‘sh’.  For such programs, the default behavior of Readline is
 sufficient.  This section describes how to use Readline in the simplest
 way possible, perhaps to replace calls in your code to ‘fgets()’.
 
@@ -1781,7 +1782,7 @@ and has the advantage of no static buffer to overflow:
        return (line_read);
      }
 
-   This function gives the user the default behaviour of <TAB>
+   This function gives the user the default behavior of <TAB>
 completion: filename completion.  If you do not want Readline to
 complete filenames, you can change the binding of the <TAB> key with
 ‘rl_bind_key()’.
@@ -2338,7 +2339,7 @@ which keymap to use.
 
  -- Function: void rl_free_keymap (Keymap keymap)
      Free all storage associated with KEYMAP.  This calls
-     ‘rl_discard_keymap’ to free subordindate keymaps and macros.
+     ‘rl_discard_keymap’ to free subordinate keymaps and macros.
 
  -- Function: int rl_empty_keymap (Keymap keymap)
      Return non-zero if there are no keys bound to functions in KEYMAP;
@@ -2687,7 +2688,7 @@ File: readline.info,  Node: Redisplay,  Next: Modifying Text,  Prev: Allowing Un
 
  -- Function: void rl_restore_prompt (void)
      Restore the local Readline prompt display state saved by the most
-     recent call to ‘rl_save_prompt’.  if you called ‘rl_save_prompt’ to
+     recent call to ‘rl_save_prompt’.  If you called ‘rl_save_prompt’ to
      save the prompt before a call to ‘rl_message’, you should call this
      function before the corresponding call to ‘rl_clear_message’.
 
@@ -5092,7 +5093,7 @@ Function and Variable Index
 * re-read-init-file (C-x C-r):           Miscellaneous Commands.
                                                               (line   6)
 * readline:                              Basic Behavior.      (line  11)
-* redraw-current-line ():                Commands For Moving. (line  53)
+* redraw-current-line ():                Commands For Moving. (line  54)
 * reverse-search-history (C-r):          Commands For History.
                                                               (line  28)
 * revert-all-at-newline:                 Readline Init File Syntax.
@@ -5454,48 +5455,48 @@ Node: Readline Arguments10628
 Node: Searching11689
 Node: Readline Init File13902
 Node: Readline Init File Syntax15099
-Node: Conditional Init Constructs41574
-Node: Sample Init File45963
-Node: Bindable Readline Commands49088
-Node: Commands For Moving50472
-Node: Commands For History52543
-Node: Commands For Text57885
-Node: Commands For Killing61730
-Node: Numeric Arguments64186
-Node: Commands For Completion65342
-Node: Keyboard Macros68625
-Node: Miscellaneous Commands69330
-Node: Readline vi Mode73661
-Node: Programming with GNU Readline75558
-Node: Basic Behavior76544
-Node: Custom Functions80607
-Node: Readline Typedefs82129
-Node: Function Writing84015
-Node: Readline Variables85321
-Node: Readline Convenience Functions100275
-Node: Function Naming101351
-Node: Keymaps102682
-Node: Binding Keys105844
-Node: Associating Function Names and Bindings110669
-Node: Allowing Undoing114499
-Node: Redisplay117249
-Node: Modifying Text121551
-Node: Character Input123090
-Node: Terminal Management126247
-Node: Utility Functions128134
-Node: Miscellaneous Functions131244
-Node: Alternate Interface135134
-Node: A Readline Example138029
-Node: Alternate Interface Example139947
-Node: Readline Signal Handling143566
-Node: Custom Completers153116
-Node: How Completing Works153836
-Node: Completion Functions157212
-Node: Completion Variables160879
-Node: A Short Completion Example179197
-Node: GNU Free Documentation License191866
-Node: Concept Index217043
-Node: Function and Variable Index218564
+Node: Conditional Init Constructs41573
+Node: Sample Init File45962
+Node: Bindable Readline Commands49086
+Node: Commands For Moving50470
+Node: Commands For History52637
+Node: Commands For Text57979
+Node: Commands For Killing61824
+Node: Numeric Arguments64280
+Node: Commands For Completion65436
+Node: Keyboard Macros68719
+Node: Miscellaneous Commands69424
+Node: Readline vi Mode73755
+Node: Programming with GNU Readline75652
+Node: Basic Behavior76638
+Node: Custom Functions80699
+Node: Readline Typedefs82221
+Node: Function Writing84107
+Node: Readline Variables85413
+Node: Readline Convenience Functions100367
+Node: Function Naming101443
+Node: Keymaps102774
+Node: Binding Keys105935
+Node: Associating Function Names and Bindings110760
+Node: Allowing Undoing114590
+Node: Redisplay117340
+Node: Modifying Text121642
+Node: Character Input123181
+Node: Terminal Management126338
+Node: Utility Functions128225
+Node: Miscellaneous Functions131335
+Node: Alternate Interface135225
+Node: A Readline Example138120
+Node: Alternate Interface Example140038
+Node: Readline Signal Handling143657
+Node: Custom Completers153207
+Node: How Completing Works153927
+Node: Completion Functions157303
+Node: Completion Variables160970
+Node: A Short Completion Example179288
+Node: GNU Free Documentation License191957
+Node: Concept Index217134
+Node: Function and Variable Index218655
 
 End Tag Table
 

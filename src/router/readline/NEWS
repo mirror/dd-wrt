@@ -45,6 +45,9 @@ l. The default value for `readline-colored-completion-prefix' no longer has a
 m. There is a new bindable command, `export-completions', which writes the
    possible completions for a word to the standard output in a defined format.
 
+n. Readline can reset its idea of the screen dimensions when executing after
+   a SIGCONT.
+
 -------------------------------------------------------------------------------
 This is a terse description of the new features added to readline-8.2 since
 the release of readline-8.1.

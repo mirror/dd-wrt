@@ -4,11 +4,11 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
 <!-- This document describes the GNU History library
-(version 8.3, 29 November 2024),
+(version 8.3, 30 December 2024),
 a programming tool that provides a consistent user interface for
 recalling lines of previously typed input.
 
-Copyright © 1988-2024 Free Software Foundation, Inc.
+Copyright © 1988-2025 Free Software Foundation, Inc.
 
 Permission is granted to copy, distribute and/or modify this document
 under the terms of the GNU Free Documentation License, Version 1.3 or
@@ -288,6 +288,8 @@ It may be omitted if the word designator begins with a &lsquo;<samp class="samp"
 &lsquo;<samp class="samp">*</samp>&rsquo;, &lsquo;<samp class="samp">-</samp>&rsquo;, or &lsquo;<samp class="samp">%</samp>&rsquo;.
 Words are numbered from the beginning of the line,
 with the first word being denoted by 0 (zero).
+That first word is usually the command word, and the arguments begin
+with the second word.
 Words are inserted into the current line separated by single spaces.
 </p>
 <p>For example,
@@ -299,7 +301,7 @@ When you type this, the preceding command is repeated in toto.
 </p>
 </dd>
 <dt><code class="code">!!:$</code></dt>
-<dd><p>designates the last argument of the preceding command.
+<dd><p>designates the last word of the preceding command.
 This may be shortened to <code class="code">!$</code>.
 </p>
 </dd>

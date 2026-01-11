@@ -92,7 +92,7 @@ shlib/Makefile.in	f
 support/config.guess	f
 support/config.rpath	f	755
 support/config.sub	f
-support/install.sh	f	755
+support/install-sh	f	755
 support/mkdirs		f	755
 support/mkdist		f
 support/mkinstalldirs	f	755

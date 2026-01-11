@@ -1,6 +1,6 @@
 /* search.c - code for non-incremental searching in emacs and vi modes. */
 
-/* Copyright (C) 1992-2024 Free Software Foundation, Inc.
+/* Copyright (C) 1992-2025 Free Software Foundation, Inc.
 
    This file is part of the GNU Readline Library (Readline), a library
    for reading lines of text with interactive input and history editing.      
@@ -590,7 +590,6 @@ rl_history_search_internal (int count, int dir)
 {
   HIST_ENTRY *temp;
   int ret, oldpos, newcol;
-  char *t;
 
   oldpos = where_history ();	/* where are we now? */
   temp = (HIST_ENTRY *)NULL;
@@ -650,6 +649,7 @@ rl_history_search_internal (int count, int dir)
   else
     {
 #if 0
+      char *t;
       t = strstr (rl_line_buffer, history_search_string);	/* XXX */
       rl_point = t ? (int)(t - rl_line_buffer) + _rl_history_search_len : rl_end;
 #else

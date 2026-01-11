@@ -4,11 +4,11 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
 <!-- This manual describes the GNU Readline Library
-(version 8.3, 29 November 2024), a library which aids in the
+(version 8.3, 30 December 2024), a library which aids in the
 consistency of user interface across discrete programs which provide
 a command line interface.
 
-Copyright © 1988-2024 Free Software Foundation, Inc.
+Copyright © 1988-2025 Free Software Foundation, Inc.
 
 Permission is granted to copy, distribute and/or modify this document
 under the terms of the GNU Free Documentation License, Version 1.3 or
@@ -612,9 +612,10 @@ A sample value might be &lsquo;<samp class="samp">\e[01;33m</samp>&rsquo;.
 </p>
 </dd>
 <dt><a id="index-active_002dregion_002dend_002dcolor"></a><span><code class="code">active-region-end-color</code><a class="copiable-link" href="#index-active_002dregion_002dend_002dcolor"> &para;</a></span></dt>
-<dd><p>A string variable that &quot;undoes&quot; the effects of <code class="code">active-region-start-color</code>
-and restores &quot;normal&quot; terminal display appearance after displaying text
-in the active region.
+<dd><p>A string variable that &ldquo;undoes&rdquo;
+the effects of <code class="code">active-region-start-color</code>
+and restores &ldquo;normal&rdquo;
+terminal display appearance after displaying text in the active region.
 This string must not take up any physical character positions on the display,
 so it should consist only of terminal escape sequences.
 It is output to the terminal after displaying the text in the active region.
@@ -1214,7 +1215,7 @@ set of backslash escapes is available:
 <p>When entering the text of a macro, single or double quotes must
 be used to indicate a macro definition.
 Unquoted text is assumed to be a function name.
-Tthe backslash escapes described above are expanded
+The backslash escapes described above are expanded
 in the macro body.
 Backslash will quote any other character in the macro text,
 including &lsquo;<samp class="samp">&quot;</samp>&rsquo; and &lsquo;<samp class="samp">'</samp>&rsquo;.
@@ -1368,7 +1369,7 @@ Previous: <a href="#Conditional-Init-Constructs" accesskey="p" rel="prev">Condit
 binding, variable assignment, and conditional syntax.
 </p>
 <div class="example">
-<pre class="example-preformatted"># This file controls the behaviour of line input editing for
+<pre class="example-preformatted"># This file controls the behavior of line input editing for
 # programs that use the GNU Readline library.  Existing
 # programs include FTP, Bash, and GDB.
 #
@@ -1488,10 +1489,13 @@ Command names without an accompanying key sequence are unbound by default.
 position, and <em class="dfn">mark</em> refers to a cursor position saved by the
 <code class="code">set-mark</code> command.
 The text between the point and mark is referred to as the <em class="dfn">region</em>.
-Readline has the concept of an <em class="emph">active region</em>:
+Readline
+has the concept of an <em class="emph">active region</em>:
 when the region is active,
 Readline redisplay highlights the region using the
-value of the <code class="code">active-region-start-color</code> variable.
+value of the
+<code class="code">active-region-start-color</code>
+variable.
 The <code class="code">enable-active-region</code> variable turns this on and off.
 Several commands set the region to active; those are noted below.
 </p>
@@ -1571,6 +1575,8 @@ leaving the current line at the top of the screen.
 <dd><p>Clear the screen,
 then redraw the current line,
 leaving the current line at the top of the screen.
+If given a numeric argument, this refreshes the current line
+without clearing the screen.
 </p>
 </dd>
 <dt><a id="index-redraw_002dcurrent_002dline-_0028_0029"></a><span><code class="code">redraw-current-line ()</code><a class="copiable-link" href="#index-redraw_002dcurrent_002dline-_0028_0029"> &para;</a></span></dt>
@@ -2031,7 +2037,7 @@ using the following format, writing information on separate lines:
 <li>the number of matches <var class="var">N</var>;
 </li><li>the word being completed;
 </li><li><var class="var">S</var>:<var class="var">E</var>,
-where S and E are the start and end offsets of the word
+where <var class="var">S</var> and <var class="var">E</var> are the start and end offsets of the word
 in the Readline line buffer; then
 </li><li>each match, one per line
 </li></ul>
@@ -2294,7 +2300,7 @@ Next: <a href="#Custom-Functions" accesskey="n" rel="next">Custom Functions</a>,
 
 <p>Many programs provide a command line interface, such as <code class="code">mail</code>,
 <code class="code">ftp</code>, and <code class="code">sh</code>.
-For such programs, the default behaviour of Readline is sufficient.
+For such programs, the default behavior of Readline is sufficient.
 This section describes how to use Readline in
 the simplest way possible, perhaps to replace calls in your code to
 <code class="code">fgets()</code>.
@@ -2382,7 +2388,7 @@ rl_gets ()
 }
 </pre></div>
 
-<p>This function gives the user the default behaviour of <kbd class="key">TAB</kbd>
+<p>This function gives the user the default behavior of <kbd class="key">TAB</kbd>
 completion: filename completion.
 If you do not want Readline to
 complete filenames, you can change the binding of the <kbd class="key">TAB</kbd> key
@@ -3100,7 +3106,7 @@ The caller should free <var class="var">keymap</var>.
 <dl class="first-deftypefn first-deftypefun-alias-first-deftypefn">
 <dt class="deftypefn deftypefun-alias-deftypefn" id="index-rl_005ffree_005fkeymap"><span class="category-def">Function: </span><span><code class="def-type">void</code> <strong class="def-name">rl_free_keymap</strong> <code class="def-code-arguments">(Keymap keymap)</code><a class="copiable-link" href="#index-rl_005ffree_005fkeymap"> &para;</a></span></dt>
 <dd><p>Free all storage associated with <var class="var">keymap</var>.
-This calls <code class="code">rl_discard_keymap</code> to free subordindate
+This calls <code class="code">rl_discard_keymap</code> to free subordinate
 keymaps and macros.
 </p></dd></dl>
 
@@ -3575,7 +3581,7 @@ displaying a new message in the message area with <code class="code">rl_message(
 <dt class="deftypefn deftypefun-alias-deftypefn" id="index-rl_005frestore_005fprompt"><span class="category-def">Function: </span><span><code class="def-type">void</code> <strong class="def-name">rl_restore_prompt</strong> <code class="def-code-arguments">(void)</code><a class="copiable-link" href="#index-rl_005frestore_005fprompt"> &para;</a></span></dt>
 <dd><p>Restore the local Readline prompt display state saved by the most
 recent call to <code class="code">rl_save_prompt</code>.
-if you called <code class="code">rl_save_prompt</code> to save the prompt before a call
+If you called <code class="code">rl_save_prompt</code> to save the prompt before a call
 to <code class="code">rl_message</code>, you should call this function before the
 corresponding call to <code class="code">rl_clear_message</code>.
 </p></dd></dl>

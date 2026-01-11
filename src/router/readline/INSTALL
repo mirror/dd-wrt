@@ -49,6 +49,27 @@ results of its tests to speed up reconfiguring, and a file
 `config.log' containing compiler output (useful mainly for
 debugging `configure'). 
 
+To find out more about the options and arguments that the `configure'
+script understands, type
+
+     bash-4.2$ ./configure --help
+
+at a shell prompt in your readline source directory.
+
+If you want to build readline in a directory separate from the source
+directory - to build for multiple architectures, for example - just use
+the full path to the configure script.  The following commands will
+build readline in a directory under `/usr/local/build' from the source code
+in `/usr/local/src/readline/readline-8.3':
+
+     mkdir /usr/local/build/readline-8.3
+     cd /usr/local/build/readline-8.3
+     bash /usr/local/src/readline/readline-8.3/configure
+     make
+
+See `Compiling For Multiple Architectures' below for more information
+about building in a directory separate from the source.
+
 If you need to do unusual things to compile readline, please try
 to figure out how `configure' could check whether to do them, and
 mail diffs or instructions to <bug-readline@gnu.org> so they can
@@ -98,12 +119,11 @@ Installation Names
 ==================
 
 By default, `make install' will install the readline libraries in
-`/usr/local/lib', the include files in
-`/usr/local/include/readline', the man pages in `/usr/local/man',
-and the info files in `/usr/local/info'.  You can specify an
-installation prefix other than `/usr/local' by giving `configure'
-the option `--prefix=PATH' or by supplying a value for the
-DESTDIR variable when running `make install'. 
+`/usr/local/lib', the include files in `/usr/local/include/readline',
+the man pages in `/usr/local/man', and the info files in `/usr/local/info'.
+You can specify an installation prefix other than `/usr/local' by
+giving `configure' the option `--prefix=PATH' or by supplying a value for
+the DESTDIR variable when running `make install'. 
 
 You can specify separate installation prefixes for
 architecture-specific files and architecture-independent files. 

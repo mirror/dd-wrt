@@ -4,7 +4,7 @@ NNAAMMEE
        history - GNU History Library
 
 CCOOPPYYRRIIGGHHTT
-       The GNU History Library is Copyright (C) 1989-2024 by the Free Software
+       The GNU History Library is Copyright (C) 1989-2025 by the Free Software
        Foundation, Inc.
 
 DDEESSCCRRIIPPTTIIOONN
@@ -532,4 +532,4 @@ BBUUGG RREEPPOORRTTSS
        Comments and bug reports concerning this manual page should be directed
        to _c_h_e_t_._r_a_m_e_y_@_c_a_s_e_._e_d_u.
 
-GNU History 8.3                2024 November 29                     _H_I_S_T_O_R_Y(3)
+GNU History 8.3                2024 December 31                     _H_I_S_T_O_R_Y(3)

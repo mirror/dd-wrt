@@ -108,6 +108,18 @@ jj. Fixes for some use-after-free of the undo list errors when stacking multiple
 kk. Fixes to ensure that completion-prefix-display-length and
     colored-completion-prefix are mutually exclusive.
 
+ll. Fixed a bug that allowed a history search to change the current history
+    list position.
+
+mm. Fixed a bug that allowed ^G to retain a saved command to execute.
+   
+nn. Updates to new export-completions command to allow filename suffixes.
+
+oo. Fixed a redisplay bug with prompts containing multiple sequences of
+    invisible characters that are longer than the screen width.
+
+pp. The history library no longer skips blank lines while it is reading a
+    multiline history entry from a history file.
 
 2. New Features in Readline
 
@@ -152,6 +164,9 @@ l. The default value for `readline-colored-completion-prefix' no longer has a
 
 m. There is a new bindable command, `export-completions', which writes the
    possible completions for a word to the standard output in a defined format.
+
+n. Readline can reset its idea of the screen dimensions when executing after
+   a SIGCONT.
 
 -------------------------------------------------------------------------------
 This document details the changes between this version, readline-8.2, and

@@ -1,7 +1,7 @@
 /* readline.c -- a general facility for reading lines of input
    with emacs style editing and completion. */
 
-/* Copyright (C) 1987-2024 Free Software Foundation, Inc.
+/* Copyright (C) 1987-2025 Free Software Foundation, Inc.
 
    This file is part of the GNU Readline Library (Readline), a library
    for reading lines of text with interactive input and history editing.      
@@ -1366,6 +1366,7 @@ readline_default_bindings (void)
     rl_tty_set_default_bindings (_rl_keymap);
 }
 
+#if defined (DEBUG)
 /* Reset the default bindings for the terminal special characters we're
    interested in back to rl_insert and read the new ones. */
 static void
@@ -1377,6 +1378,7 @@ reset_default_bindings (void)
       rl_tty_set_default_bindings (_rl_keymap);
     }
 }
+#endif
 
 /* Bind some common arrow key sequences in MAP. */
 static void

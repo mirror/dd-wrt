@@ -91,7 +91,9 @@ main (int c, char **v)
 
   /* Handle window size changes when readline is not active and reading
      characters. */
+#ifdef SIGWINCH
   signal (SIGWINCH, sigwinch_handler);
+#endif
   signal (SIGINT, sigint_handler);
 
   rl_getc_function = my_getc;

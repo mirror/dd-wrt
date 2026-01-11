@@ -45,6 +45,8 @@
 
 #undef ssize_t
 
+#undef mode_t
+
 #undef const
 
 #undef volatile
@@ -157,6 +159,12 @@
 
 /* Define if you have the tcgetattr function.  */
 #undef HAVE_TCGETATTR
+
+/* Define if you have the tcgetwinsize function.  */
+#undef HAVE_TCGETWINSIZE
+
+/* Define if you have the tcsetwinsize function.  */
+#undef HAVE_TCSETWINSIZE
 
 /* Define if you have the towlower function.  */
 #undef HAVE_TOWLOWER

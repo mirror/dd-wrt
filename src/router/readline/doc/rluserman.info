@@ -2,11 +2,11 @@ This is rluserman.info, produced by makeinfo version 7.1 from
 rluserman.texi.
 
 This manual describes the end user interface of the GNU Readline Library
-(version 8.3, 29 November 2024), a library which aids in the consistency
+(version 8.3, 30 December 2024), a library which aids in the consistency
 of user interface across discrete programs which provide a command line
 interface.
 
-   Copyright © 1988-2024 Free Software Foundation, Inc.
+   Copyright © 1988-2025 Free Software Foundation, Inc.
 
      Permission is granted to copy, distribute and/or modify this
      document under the terms of the GNU Free Documentation License,
@@ -857,7 +857,7 @@ Key Bindings
 
      When entering the text of a macro, single or double quotes must be
      used to indicate a macro definition.  Unquoted text is assumed to
-     be a function name.  Tthe backslash escapes described above are
+     be a function name.  The backslash escapes described above are
      expanded in the macro body.  Backslash will quote any other
      character in the macro text, including ‘"’ and ‘'’.  For example,
      the following binding will make ‘‘C-x’ \’ insert a single ‘\’ into
@@ -964,7 +964,7 @@ File: rluserman.info,  Node: Sample Init File,  Prev: Conditional Init Construct
 Here is an example of an INPUTRC file.  This illustrates key binding,
 variable assignment, and conditional syntax.
 
-     # This file controls the behaviour of line input editing for
+     # This file controls the behavior of line input editing for
      # programs that use the GNU Readline library.  Existing
      # programs include FTP, Bash, and GDB.
      #
@@ -1145,7 +1145,8 @@ File: rluserman.info,  Node: Commands For Moving,  Next: Commands For History,  
 
 ‘clear-screen (C-l)’
      Clear the screen, then redraw the current line, leaving the current
-     line at the top of the screen.
+     line at the top of the screen.  If given a numeric argument, this
+     refreshes the current line without clearing the screen.
 
 ‘redraw-current-line ()’
      Refresh the current line.  By default, this is unbound.
@@ -2152,19 +2153,19 @@ Node: Readline Arguments10475
 Node: Searching11537
 Node: Readline Init File13751
 Node: Readline Init File Syntax14949
-Node: Conditional Init Constructs41425
-Node: Sample Init File45815
-Node: Bindable Readline Commands48941
-Node: Commands For Moving50326
-Node: Commands For History52398
-Node: Commands For Text57741
-Node: Commands For Killing61587
-Node: Numeric Arguments64044
-Node: Commands For Completion65201
-Node: Keyboard Macros68485
-Node: Miscellaneous Commands69191
-Node: Readline vi Mode73523
-Node: GNU Free Documentation License74517
+Node: Conditional Init Constructs41424
+Node: Sample Init File45814
+Node: Bindable Readline Commands48939
+Node: Commands For Moving50324
+Node: Commands For History52492
+Node: Commands For Text57835
+Node: Commands For Killing61681
+Node: Numeric Arguments64138
+Node: Commands For Completion65295
+Node: Keyboard Macros68579
+Node: Miscellaneous Commands69285
+Node: Readline vi Mode73617
+Node: GNU Free Documentation License74611
 
 End Tag Table
 
