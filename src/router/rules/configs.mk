@@ -595,7 +595,7 @@ obj-$(CONFIG_FIRMWARES) += firmwares
 obj-$(CONFIG_SERVICEGATE) += servicegate
 obj-$(CONFIG_UNBOUND) += unbound
 obj-$(CONFIG_JAVA) += java
-obj-$(CONFIG_SOFTETHER) += libsodium readline softether
+obj-$(CONFIG_SOFTETHER) += libsodium ncurses readline softether
 ifeq ($(KERNELVERSION),4.9)
 obj-$(CONFIG_ALPINE) += qca-ssdk qca-ssdk-shell
 endif
@@ -720,7 +720,7 @@ obj-$(CONFIG_REALTEK) += cryptodev
 obj-$(CONFIG_MVEBU) += cryptodev
 obj-$(CONFIG_NUT) += nut
 obj-$(CONFIG_PROCPS) += ncurses procps
-obj-$(CONFIG_BLUEZ) += json-c libffi expat glib20 readline dbus bluez bluez-tools pcre2
+obj-$(CONFIG_BLUEZ) += json-c libffi expat glib20 ncurses readline dbus bluez bluez-tools pcre2
 obj-$(CONFIG_IPTOOLS) += libmnl iptools
 obj-$(CONFIG_REALTEK) += libubox json-c ubus realtek-poe
 obj-$(CONFIG_BRIDGER) += musl-fts argp-standalone elfutils libbpf libubox ubus libnl-tiny bridger

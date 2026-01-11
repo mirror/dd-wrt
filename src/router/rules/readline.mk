@@ -1,10 +1,10 @@
-readline-configure: 
-	cd readline && ./configure --host=$(ARCH)-uclibc-linux --prefix=/usr --libdir=/usr/lib --disable-static CFLAGS="$(COPTS) $(MIPS16_OPT) -fPIC -fno-strict-aliasing" LDFLAGS="$(COPTS)"
+readline-configure: ncurses
+	cd readline && ./configure --host=$(ARCH)-uclibc-linux --prefix=/usr --libdir=/usr/lib --disable-static --with-pic --with-curses --disable-install-examples CFLAGS="$(COPTS) $(MIPS16_OPT) -fPIC -fno-strict-aliasing -I$(TOP)/ncurses/include" LDFLAGS="$(COPTS) -L$(TOP)/ncurses/lib"
 	make -C readline clean all
 	cd readline/shlib && rm -f libreadline.so
 	cd readline/shlib && rm -f libhistory.so
 
-readline:
+readline: ncurses
 	make -C readline
 	cd readline/shlib && rm -f libreadline.so
 	cd readline/shlib && rm -f libhistory.so
