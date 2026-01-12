@@ -2,6 +2,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/ioctl.h>
+#include <fcntl.h>
+#include <unistd.h>
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <linux/if.h>
