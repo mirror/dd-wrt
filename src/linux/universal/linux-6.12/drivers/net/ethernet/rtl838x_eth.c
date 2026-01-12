@@ -1649,7 +1649,7 @@ static const struct ethtool_ops rteth_ethtool_ops = {
 	.set_link_ksettings = rteth_set_link_ksettings,
 };
 
-static int __init rtl838x_eth_probe(struct platform_device *pdev)
+static int rtl838x_eth_probe(struct platform_device *pdev)
 {
 	struct net_device *dev;
 	struct device_node *dn = pdev->dev.of_node;
@@ -1657,7 +1657,7 @@ static int __init rtl838x_eth_probe(struct platform_device *pdev)
 	const struct rteth_config *matchdata;
 	phy_interface_t phy_mode;
 	struct phylink *phylink;
-	u8 mac_addr[ETH_ALEN];
+	u8 mac_addr[ETH_ALEN] = {0};
 	int err = 0, rxrings, rxringlen;
 	struct ring_b *ring;
 
