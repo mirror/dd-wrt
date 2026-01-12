@@ -875,22 +875,6 @@ set_passive(struct hfsc_class *cl)
 	 */
 }
 
-static unsigned int
-qdisc_peek_len(struct Qdisc *sch)
-{
-	struct sk_buff *skb;
-	unsigned int len;
-
-	skb = sch->ops->peek(sch);
-	if (skb == NULL) {
-		qdisc_warn_nonwc("qdisc_peek_len", sch);
-		return 0;
-	}
-	len = qdisc_pkt_len(skb);
-
-	return len;
-}
-
 static void
 hfsc_purge_queue(struct Qdisc *sch, struct hfsc_class *cl)
 {

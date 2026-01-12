@@ -1056,6 +1056,13 @@ static void ata_gen_ata_sense(struct ata_queued_cmd *qc)
 
 	cmd->result = (DRIVER_SENSE << 24) | SAM_STAT_CHECK_CONDITION;
 
+	if (ata_id_is_locked(dev->id)) {
+		/* Security locked */
+		/* LOGICAL UNIT ACCESS NOT AUTHORIZED */
+		ata_scsi_set_sense(cmd, DATA_PROTECT, 0x74, 0x71);
+		return;
+	}
+
 	/* sense data is current and format is descriptor */
 	sb[0] = 0x72;
 
