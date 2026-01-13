@@ -2,7 +2,7 @@
 
 pound-configure: openssl
 	cd pound && ./bootstrap
-	cd pound && ./configure --prefix=/usr --disable-pcreposix --with-ssl=$(SSLPATH) --host=$(ARCH)-linux CC="ccache $(ARCH)-linux-uclibc-gcc" LDFLAGS="-Drpl_malloc=malloc -ffunction-sections -fdata-sections -Wl,--gc-sections -L$(SSLPATH) -lpthread" CFLAGS="-Drpl_malloc=malloc -DNEED_PRINTF -ffunction-sections -fdata-sections -Wl,--gc-sections $(COPTS) $(MIPS16_OPT) -I$(SSLPATH)/include"
+	cd pound && ./configure --prefix=/usr --disable-pcre --with-ssl=$(SSLPATH) --host=$(ARCH)-linux CC="ccache $(ARCH)-linux-uclibc-gcc" LDFLAGS="-Drpl_malloc=malloc -ffunction-sections -fdata-sections -Wl,--gc-sections -L$(SSLPATH) -lpthread" CFLAGS="-Drpl_malloc=malloc -DNEED_PRINTF -ffunction-sections -fdata-sections -Wl,--gc-sections $(COPTS) $(MIPS16_OPT) -I$(SSLPATH)/include"
 
 pound-clean:
 	make -C pound clean
