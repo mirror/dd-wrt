@@ -1,5 +1,5 @@
 # This file is part of pound testsuite. -*- autotest -*-
-# Copyright (C) 2022-2024 Sergey Poznyakoff
+# Copyright (C) 2022-2025 Sergey Poznyakoff
 #
 # Pound is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -123,13 +123,21 @@ End
 PT_CONF([# Mandatory parameters
 Service
 	Backend
-		Address 127.0.0.1
+		Port 80
 	End
 End
 ],
 [1],
 [],
-[pound: pound.cfg:3.9-5.11: Backend missing Port declaration
+[pound: pound.cfg:3.9-5.11: Backend missing Address declaration
+])
+
+PT_CONF([# Port statement is optional
+Service
+	Backend
+		Address 127.0.0.1
+	End
+End
 ])
 
 PT_CONF([# Keyword ordering
@@ -139,10 +147,6 @@ Service
 		Address 127.0.0.1
 	End
 End
-],
-[1],
-[],
-[pound: pound.cfg:4.17-20: Address statement should precede Port
 ])
 
 PT_CONF([# Superfluous statement
@@ -155,7 +159,7 @@ End
 ],
 [1],
 [],
-[pound: pound.cfg:5.22-23: Port is not applicable to this address family
+[pound: pound.cfg:3.9-6.11: Port is not applicable to this address family
 ])
 
 PT_CONF([# UNIX socket

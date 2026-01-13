@@ -1,5 +1,5 @@
 # This file is part of pound testsuite. -*- autotest -*-
-# Copyright (C) 2022-2024 Sergey Poznyakoff
+# Copyright (C) 2022-2025 Sergey Poznyakoff
 #
 # Pound is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -44,9 +44,9 @@ ListenHTTP
 	End
 End],
 [HTTP_EXPECT(200, BASIC_HTTP)
-HTTP_EXPECT(501, EXT_HTTP)
-HTTP_EXPECT(501, WEBDAV_HTTP)
-HTTP_EXPECT(501, WEBDAV_EXT)
+HTTP_EXPECT(405, EXT_HTTP)
+HTTP_EXPECT(405, WEBDAV_HTTP)
+HTTP_EXPECT(405, WEBDAV_EXT)
 ])
 
 PT_CHECK([# Allow extended HTTP requests (PUT, PATCH, DELETE)
@@ -61,8 +61,8 @@ ListenHTTP
 End],
 [HTTP_EXPECT(200, BASIC_HTTP)
 HTTP_EXPECT(200, EXT_HTTP)
-HTTP_EXPECT(501, WEBDAV_HTTP)
-HTTP_EXPECT(501, WEBDAV_EXT)
+HTTP_EXPECT(405, WEBDAV_HTTP)
+HTTP_EXPECT(405, WEBDAV_EXT)
 ])
 
 PT_CHECK([# Additionally allow standard WebDAV requests
@@ -78,7 +78,7 @@ End],
 [HTTP_EXPECT(200, BASIC_HTTP)
 HTTP_EXPECT(200, EXT_HTTP)
 HTTP_EXPECT(200, WEBDAV_HTTP)
-HTTP_EXPECT(501, WEBDAV_EXT)
+HTTP_EXPECT(405, WEBDAV_EXT)
 ])
 
 PT_CHECK([# Additionally allow MS WebDAV extensions

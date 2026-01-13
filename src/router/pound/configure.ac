@@ -1,6 +1,6 @@
 # Pound - the reverse-proxy load-balancer                -*- autoconf -*-
 # Copyright (C) 2002-2010 Apsis GmbH
-# Copyright (C) 2018-2024 Sergey Poznyakoff
+# Copyright (C) 2018-2025 Sergey Poznyakoff
 #
 # Pound is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,23 +14,79 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with pound.  If not, see <http://www.gnu.org/licenses/>.
-AC_PREREQ([2.69])
-AC_INIT([pound],[4.11],[gray@gnu.org],
+AC_PREREQ([2.71])
+AC_INIT([pound],[4.19],[gray@gnu.org],
 	[pound],[https://github.com/graygnuorg/pound])
 AC_CONFIG_AUX_DIR([build-aux])
 AC_CONFIG_SRCDIR([src/pound.c])
 AC_CONFIG_HEADERS([config.h])
-AM_INIT_AUTOMAKE([1.15.1 gnu tar-ustar])
+AC_CONFIG_MACRO_DIR([m4])
+AM_INIT_AUTOMAKE([1.16.5 gnu tar-ustar subdir-objects])
 AC_CANONICAL_HOST
 
 # Checks for programs.
 AC_PROG_CC
-AC_PROG_RANLIB
+LT_INIT
 
 # Checks for libraries.
 AX_PTHREAD([CC="$PTHREAD_CC"],
 	   [AC_MSG_ERROR([No suitable pthread library found])])
 AC_CHECK_LIB(crypt, crypt)
+
+# Checks for headers
+AC_CHECK_HEADERS([getopt.h pthread.h crypt.h openssl/ssl.h openssl/engine.h])
+
+AC_TYPE_UID_T
+AC_TYPE_PID_T
+AC_TYPE_UNSIGNED_LONG_LONG_INT
+AC_TYPE_LONG_LONG_INT
+
+# Check whether they want dynamic backends
+AC_ARG_ENABLE([dynamic-backends],
+ [AS_HELP_STRING([--enable-dynamic-backends],
+		 [enable dynamic backend support (default)])],
+ [status_dynamic_backends=${enableval}],
+ [status_dynamic_backends=probe])
+
+if test $status_dynamic_backends != no; then
+  # Check for adns library
+  AC_CHECK_HEADERS([adns.h])
+  AC_CHECK_LIB([adns], [adns_init])
+  if test "$ac_cv_lib_adns_adns_init$ac_cv_header_adns_h" = yesyes; then
+    AC_DEFINE([ENABLE_DYNAMIC_BACKENDS], [1],
+	      [Define if dynamic backends are supported])
+    status_dynamic_backends=yes
+  elif test $status_dynamic_backends = yes; then
+    AC_MSG_FAILURE([required library adns not found; install it or use --disable-resolver to disable])
+  else
+    status_dynamic_backends=no
+  fi
+fi
+AM_CONDITIONAL([COND_DYNAMIC_BACKENDS], [test $status_dynamic_backends = yes])
+
+AC_ARG_ENABLE([dns-tests],
+ [AS_HELP_STRING([--enable-dns-tests],
+		 [enable DNS-based dynamic backend tests])],
+ [if test "${status_dynamic_backends}${enableval}" = yesyes; then
+    status_dns_tests=yes
+  else
+    status_dns_tests=no
+  fi
+ ],
+ [status_dns_tests=no])
+
+if test $status_dns_tests = yes; then
+  AC_COMPILE_IFELSE(
+	[AC_LANG_PROGRAM([
+	      #include <sys/syscall.h>
+	      int x[] = { SYS_connect, SYS_sendto, SYS_recvfrom };
+	   ],
+	   [[void main(){}]])],
+	 [],
+	 [status_dns_tests=no])
+fi
+
+AM_CONDITIONAL([COND_BUILD_FAKEDNS], [test "$status_dns_tests" = yes])
 
 AC_SUBST(SSL_CPPFLAGS)
 AC_SUBST(SSL_LDFLAGS)
@@ -89,16 +145,6 @@ AC_ARG_WITH([maxbuf],
 
 AC_DEFINE_UNQUOTED([MAXBUF],[$MAXBUF],
  [Max. buffer size])
-
-AC_SUBST(I_OWNER)
-AC_ARG_WITH([owner],
- [AS_HELP_STRING([--with-owner=name],[The account that will own the files installed by Pound])],
- [I_OWNER="${with_owner}"])
-
-AC_SUBST(I_GRP)
-AC_ARG_WITH([group],
- [AS_HELP_STRING([--with-group=name],[The group that will own the files installed by Pound])],
- [I_GRP="${with_group}"])
 
 AC_ARG_ENABLE([tcmalloc],
  [AS_HELP_STRING([--enable-tcmalloc],[enable or disable using the tcmalloc library (default: enabled if available)])],
@@ -160,41 +206,76 @@ AM_CONDITIONAL([SET_DH_AUTO],[test "$SET_DH_AUTO" = 1])
 AC_DEFINE_UNQUOTED([SET_DH_AUTO],[$SET_DH_AUTO],
   [Define to 1 of *set_dh_auto macros are available])
 
-PND_PCREPOSIX
+PND_PCRE
+AM_CONDITIONAL([COND_PCRE], [test $status_pcre = 1])
+AM_CONDITIONAL([COND_PCRE2], [test $status_pcre = 2])
 
-AC_CHECK_HEADERS([getopt.h pthread.h crypt.h openssl/ssl.h openssl/engine.h])
+AC_ARG_ENABLE([lua],
+ [AS_HELP_STRING([--enable-lua],
+		 [enable Lua extensions])],
+ [status_lua=${withval}],
+ [status_lua=probe])
 
-AC_TYPE_UID_T
-AC_TYPE_PID_T
-AC_TYPE_UNSIGNED_LONG_LONG_INT
-AC_TYPE_LONG_LONG_INT
-
-AC_MSG_CHECKING([for default pound owner user name])
-if test -z "${I_OWNER}"; then
-    for u in proxy www daemon bin sys root
-    do
-	if id $u >/dev/null 2>&1; then
-	    I_OWNER=$u
-	    break
-	fi
-    done
+if test $status_lua != no; then
+  PKG_PROG_PKG_CONFIG
+  PKG_CHECK_MODULES([LUA], [lua >= 5.3],
+      [status_lua=yes
+       AC_DEFINE([ENABLE_LUA], [1],
+		 [Define if Lua extension language is supported])],
+      [status_lua=no])
+  AC_MSG_CHECKING([For liblua 5.3 or newer])
+  AC_MSG_RESULT([$status_lua])
 fi
-AC_MSG_RESULT([$I_OWNER])
 
-AC_MSG_CHECKING([for default pound owner group name])
-if test -z "${I_GRP}"; then
-    I_GRP=$(id -n -g $I_OWNER)
-    if test -z $I_GRP; then
-	for g in proxy www daemon bin sys root
-	do
-	    if grep "^$g:" /etc/group >/dev/null 2>&1; then
-		I_GRP=$g
-		break
-	    fi
-	done
-    fi
+AM_CONDITIONAL([COND_LUA], [test $status_lua = yes])
+
+# **********************
+# Event monitoring
+# **********************
+AC_CHECK_HEADERS([sys/inotify.h sys/event.h])
+AC_CHECK_FUNCS([inotify_init kqueue])
+
+if test "$ac_cv_header_sys_inotify_h/$ac_cv_func_inotify_init" = yes/yes; then
+  status_fsevmon=inotify
+elif test "$ac_cv_header_sys_event_h/$ac_cv_func_kqueue" = yes/yes; then
+  status_fsevmon=kqueue
+else
+  status_fsevmon=none
 fi
-AC_MSG_RESULT([$I_GRP])
+
+AC_ARG_WITH(fsevmon,
+	[AS_HELP_STRING([--without-fsevmon],
+	  [disable filesystem event monitoring API])],
+	[case $withval in
+	 inotify)
+	     if test $status_fsevmon != inotify; then
+	       AC_MSG_ERROR([inotify is requested, but not available])
+	     fi
+	     ;;
+	 kqueue)
+	     if test $status_fsevmon != kqueue; then
+	       AC_MSG_ERROR([kqueue is requested, but not available])
+	     fi
+	     ;;
+	 yes) ;;
+	 no|periodic) status_fsevmon=none
+	     ;;
+	 *) AC_MSG_ERROR([unsupported value for --with-fsevmon: $witval])
+	 esac])
+
+AC_ARG_WITH(inotify,[],
+	    [case $withval$status_fsevmon in
+	     noinotify)
+	       status_fsevmon=none
+	       ;;
+	     no*|yesinotify)
+	       ;;
+	     *)
+	       AC_MSG_ERROR([--with-inotify doesn't take arguments])
+	     esac])
+
+AM_CONDITIONAL([COND_INOTIFY],[test $status_fsevmon = inotify])
+AM_CONDITIONAL([COND_KQUEUE],[test $status_fsevmon = kqueue])
 
 AC_MSG_CHECKING([if building from git clone])
 if test -d .git; then
@@ -205,6 +286,12 @@ fi
 AC_MSG_RESULT([$build_from_git])
 AM_CONDITIONAL([FROM_GIT],[test "$build_from_git" = yes])
 
+# Documentation
+AC_ARG_VAR([MAKEINFO_INIT_FILE],
+ [Initialization file for generation of the html manual])
+
+AM_CONDITIONAL([COND_MAKEINFO_INIT_FILE],[test -n "$MAKEINFO_INIT_FILE"])
+
 AC_CONFIG_COMMANDS([status],[
 cat <<EOF
 
@@ -212,22 +299,22 @@ cat <<EOF
 Pound configuration parameters:
 
 Buffer size ................................... $bufsize
-Owner user .................................... $owner_user
-Owner group ................................... $owner_group
-PCRE POSIX library ............................ $status_pcreposix
+Regular expressions ........................... POSIX$status_pcre
 Memory allocator .............................. $memory_allocator
 Early pthread_cancel probe .................... $status_pthread_cancel_probe
+Dynamic backends .............................. $status_dynamic_backends
+Test dynamic backends ......................... $status_dns_tests
+Filesystem event monitoring ................... $status_fsevmon
+Lua support ................................... $status_lua
 *******************************************************************
 
 EOF
 ],
 [bufsize=$MAXBUF
-owner_user=$I_OWNER
-owner_group=$I_GRP
-if test $status_pcreposix != no; then
-  status_pcreposix=pcre$status_pcreposix
+if test $status_pcre != no; then
+  status_pcre=", PCRE$status_pcre"
 else
-  status_pcreposix=$status_pcreposix
+  status_pcre=""
 fi
 memory_allocator=$memory_allocator
 if test "$early_pthread_cancel_probe" = 1; then
@@ -235,6 +322,10 @@ if test "$early_pthread_cancel_probe" = 1; then
 else
   status_pthread_cancel_probe=no
 fi
+status_dynamic_backends=$status_dynamic_backends
+status_dns_tests=$status_dns_tests
+status_lua=$status_lua
+status_fsevmon=$status_fsevmon
 ])
 
 AC_CONFIG_TESTDIR(tests)

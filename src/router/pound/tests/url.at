@@ -1,5 +1,5 @@
 # This file is part of pound testsuite. -*- autotest -*-
-# Copyright (C) 2022-2024 Sergey Poznyakoff
+# Copyright (C) 2022-2025 Sergey Poznyakoff
 #
 # Pound is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,7 +14,7 @@
 # You should have received a copy of the GNU General Public License
 # along with pound.  If not, see <http://www.gnu.org/licenses/>.
 AT_SETUP([URL])
-AT_KEYWORDS([url])
+AT_KEYWORDS([cond url])
 PT_CHECK([ListenHTTP
 	Service "0"
 		URL "\\.(jpg|gif)"
@@ -66,6 +66,20 @@ PT_CHECK([ListenHTTP
 		End
 	End
 	Service "7"
+		Url -contain "substr"
+		Backend
+			Address
+			Port
+		End
+	End
+	Service "8"
+		Url -contain -icase "substr"
+		Backend
+			Address
+			Port
+		End
+	End
+	Service "9"
 		Backend
 			Address
 			Port
@@ -127,6 +141,20 @@ end
 
 200
 x-backend-number: 6
+end
+
+GET /echo/match_substring
+end
+
+200
+x-backend-number: 7
+end
+
+GET /echo/match_sUBString
+end
+
+200
+x-backend-number: 8
 end
 ])
 

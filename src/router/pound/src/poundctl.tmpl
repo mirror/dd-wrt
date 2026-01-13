@@ -1,5 +1,5 @@
 {{- /* Default template for poundctl */ -}}
-{{- /* Copyright (C) 2023 Sergey Poznyakoff
+{{- /* Copyright (C) 2023, 2025 Sergey Poznyakoff
      *
      * Pound is free software; you can redistribute it and/or modify
      * it under the terms of the GNU General Public License as published by
@@ -15,8 +15,30 @@
      * along with pound.  If not, see <http://www.gnu.org/licenses/>.
      */ -}}
 
+{{define "hours" -}}
+  {{div . 36e8 | printf "%02d:" -}}
+  {{with mod . 36e8 -}}
+    {{div . 6e7 | printf "%02d:" -}}
+    {{with mod . 6e7 -}}
+      {{div . 1e6 | printf "%02d" -}}
+      {{mod . 1e6 | printf ".%06d" -}}
+    {{end -}}
+  {{end -}}
+{{end -}}
+
+{{define "duration" -}}
+  {{if gt . 864e8}}{{div . 864e8}} days,
+    {{- with mod . 864e8 }} {{template "hours" .}}{{end -}}
+  {{else -}}
+    {{template "hours" . -}}
+  {{end -}}
+{{end -}}
+
 {{define "default.core" -}}
 Server time: {{ .timestamp }}
+{{if exists . "uptime" -}}
+Uptime: {{ template "duration" .uptime }}
+{{end -}}
 Pound version: {{ .version }}
 PID: {{ .pid }}
 {{with .workers -}}
@@ -27,29 +49,20 @@ Workers:
   Active:  {{ .active }}
 Idle timeout: {{ .timeout }}
 {{end}}{{ /* with */ -}}
+Queue: {{ .queue_len }}
 {{end}}{{ /* define */ }}
 
 {{define "milliseconds" -}}
-{{ div . 1000000 | printf "%.2f" }}
+{{ fdiv . 1000000 | printf "%.2f" }}
 {{- end}}
 
-{{define "default" -}}
-
-{{- /* The code below deduces the type of object passed to it by
-       presence of certain attributes:
-
-	 "listeners"  -  entire listing as requested by poundctl list
-	 "services"   -  single listener as requested by poundctl list /L
-			 Notice that this attribute is present in the full
-			 listing as well, so presence of "listeners" should
-			 be checked first.
-	 "backends"   -  single service as requested by poundctl list /L/S
-
-       otherwise, a backend listing (poundctl list /L/S/B) is assumed. */ -}}
-
-{{if exists . "listeners" -}}
-{{- /* Iterate over all listeners */ -}}
+{{define "default.pound" -}}
+{{if exists . "core" -}}
+{{block "default.core" .core}}
+{{else -}}
 {{block "default.core" .}}
+{{end -}}
+{{- /* Iterate over all listeners */ -}}
 Listeners:
 
 {{range $lno,$lstn = .listeners -}}
@@ -59,15 +72,20 @@ Listeners:
  {{block "default.print_services" .services}}
  {{- range $sno,$svc = .}}
    {{printf "%3d" $sno}}. {{block "default.print_service" $svc -}}
-   Service {{if .name}}"{{.name}}" {{end}}{{if .enabled}}active{{else}}disabled{{end}} ({{.tot_pri}})
+   Service {{if .name}}"{{.name}}" {{end}}{{if .enabled}}active{{else}}disabled{{end}}
   {{- /* List each backend in service */ -}}
   {{- range $bno,$backend = .backends}}
       {{printf "%3d" $bno}}. {{block "default.print_backend" $backend -}}
-       {{.type}} {{if eq .type "backend" -}}
+       {{.type}}
+       {{- if exists . "weight" }} ({{.weight}}){{end}}
+       {{- if exists . "parent"}} [mtx {{.parent}}]{{end}} {{if eq .type "backend" -}}
 {{.protocol}} {{.address}} {{.priority}} {{if .alive}}alive{{else}}dead{{end}}
+     {{- else if eq .type "matrix" -}}
+"{{.hostname}}" {{.resolve_mode}} {{.family}} {{.priority}}
      {{- else if eq .type "redirect" -}}
 {{.code}} {{.url}}{{if .redir_req}} (redirect request){{end}}
      {{- end}} {{if .enabled}}active{{else}}disabled{{end}}
+     {{- if exists . "expire"}} [expires {{.expire}}]{{end}}
      {{- if exists . "stats"}} - {{with .stats -}}
        {{.request_count}} requests{{if gt .request_count 0}}, {{template "milliseconds" .request_time_avg}} ms avg, {{template "milliseconds" .request_time_stddev}} stddev{{end}}
        {{- end}}
@@ -91,26 +109,61 @@ Listeners:
 Global services:
 {{block "default.print_services" .services}}
 {{end -}}{{ /* if len .services */ }}
-{{else if exists . "services" -}}
-{{block "default.print_listener" .}}
-{{else if exists . "backends" -}}
-{{block "default.print_service" .}}
-{{else -}}
-{{block "default.print_backend" .}}
-{{end -}}
+{{- end}}
+
+{{define "default" -}}
+  {{if exists . "kind" -}}
+    {{- /* This is for v4.18 and later. */ -}}
+    {{if eq .kind "pound" -}}
+      {{block "default.pound" . -}}
+    {{else if eq .kind "listener" -}}
+      {{block "default.print_listener" . -}}
+    {{else if eq .kind "service" -}}
+      {{block "default.print_service" . -}}
+    {{else if eq .kind "core" -}}
+      {{block "default.core" . -}}
+    {{else if eq .kind "backend" -}}
+      {{block "default.print_backend" . -}}
+    {{else -}}
+      Unsupported kind of object!
+    {{end -}}
+  {{else -}}
+  {{- /* The code below is for pound versions prior to 4.18. It deduces
+	 the type of object passed to it by presence of certain attributes:
+
+	 "listeners"  -  entire listing as requested by poundctl list.
+	 "services"   -  single listener as requested by poundctl list /L
+			 Notice that this attribute is present in the full
+			 listing as well, so presence of "listeners" should
+			 be checked first.
+	 "backends"   -  single service as requested by poundctl list /L/S.
+	 "pid"        -  core status listing.
+
+	 Otherwise, a backend listing (poundctl list /L/S/B) is assumed. */ -}}
+    {{if exists . "listeners" -}}
+      {{block "default.pound" . -}}
+    {{else if exists . "services" -}}
+      {{block "default.print_listener" . -}}
+    {{else if exists . "backends" -}}
+      {{block "default.print_service" . -}}
+    {{else if exists . "pid" -}}
+      {{block "default.core" . -}}
+    {{else -}}
+      {{block "default.print_backend" . -}}
+    {{end -}}
+  {{end}}
 {{end -}}{{ /* define */ }}
 
-
-{{define "xml" -}}
-<pound>
-{{- if exists . "listeners" }}
-  {{ /* This is a full listing. */ -}}
+{{define "xml.core" -}}
   <core>
     <timestamp>{{ .timestamp }}</timestamp>
     <server>
       <version>{{ .version }}</version>
       <pid>{{ .pid }}</pid>
-    <server>
+      {{- if exists . "uptime"}}
+      <uptime>{{ template "duration" .uptime }}</uptime>
+      {{- end}}
+    </server>
     <workers>
       {{with .workers -}}
       <min>{{ .min }}</min>
@@ -122,10 +175,18 @@ Global services:
     </workers>
     <queue size="{{ .queue_len }}" />
   </core>
+{{- end}}
+
+{{define "xml.pound" -}}
+  {{- if exists . "core" }}
+  {{- block "xml.core" .core}}
+  {{- else}}
+  {{- block "xml.core" .}}
+  {{- end}}
   {{- /* Iterate over all listeners */ -}}
   {{- range $lno,$lstn = .listeners }}
     {{block "xml.print_listener" $lstn -}}
-    <listener name="{{ .name }}" index="{{ $lno }}" protocol="{{ .protocol }}" address="{{ .address }}" status="{{if .enabled}}active{{else}}DISABLED{{end}}>
+    <listener name="{{ .name }}" index="{{ $lno }}" protocol="{{ .protocol }}" address="{{ .address }}" status="{{if .enabled}}active{{else}}DISABLED{{end}}">
     {{- block "xml.print_services" .services}}
     {{- range $sno,$svc = . }}
       {{block "xml.print_service" $svc -}}
@@ -145,18 +206,48 @@ Global services:
     {{- end}}{{ /* block xml.print_service */ -}}
     {{end -}}
     {{end}}
-    </listener>{{end}}
-  {{- end -}}
+    </listener>{{end -}}
+  {{end -}}
   {{block "xml.print_services" .services }}
-{{else if exists . "services" -}}
-  {{- /* Single listener. */ -}}
-  {{block "xml.print_listener" .}}
-{{else if exists . "backends" -}}
-  {{- /* Single service. */ -}}
-  {{block "xml.print_service" .}}
-{{else -}}
-  {{- /* Backend listing. */ -}}
-  {{block "xml.print_backend" .}}
-{{end -}}
+{{- end}}
+
+{{define "xml" -}}
+<pound>
+  {{if exists . "kind" -}}
+    {{if eq .kind "pound" -}}
+      {{- /* This is a full listing. */ -}}
+      {{block "xml.pound" . -}}
+    {{else if eq .kind "listener" -}}
+      {{- /* Single listener. */ -}}
+      {{block "xml.print_listener" . -}}
+    {{else if eq .kind "service" -}}
+      {{- /* Single service. */ -}}
+      {{block "xml.print_service" . -}}
+    {{else if eq .kind "core" -}}
+      {{- /* Core stat. */ -}}
+      {{block "xml.core" . -}}
+    {{else if eq .kind "backend" -}}
+      {{- /* Backend listing. */ -}}
+      {{block "xml.print_backend" . -}}
+    {{else -}}
+    <error>Missing or unsupported kind of object.</error>
+    {{- end -}}
+  {{else -}}
+    {{if exists . "listeners" -}}
+      {{block "xml.pound" . -}}
+    {{else if exists . "services" -}}
+      {{- /* Single listener. */ -}}
+      {{block "xml.print_listener" .}}
+    {{else if exists . "backends" -}}
+      {{- /* Single service. */ -}}
+      {{block "xml.print_service" . -}}
+    {{else if exists . "pid" -}}
+      {{- /* Core stat. */ -}}
+      {{block "xml.core" . -}}
+    {{else -}}
+      {{- /* Backend listing. */ -}}
+      {{block "xml.print_backend" . -}}
+    {{end -}}
+  {{end}}
 </pound>
 {{end}}

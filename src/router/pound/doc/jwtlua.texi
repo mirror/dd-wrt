@@ -1,0 +1,162 @@
+-- Simple implementation of JWT for Pound documentation.
+-- Supports only HMAC signing algorithms.
+
+local jwt = @{@}
+
+local json = require 'dkjson'
+local base64 = require 'base64'
+
+local base64url_encoder = base64.makeencoder( '-', '_' )
+local base64url_decoder = base64.makedecoder( '-', '_' )
+
+-- base64url encoding. RFC 7515, Appendix C.
+local function base64url_encode(s)
+   b = base64.encode(s, base64url_encoder)
+   return b:gsub('=*$','')
+end
+
+-- base64url encoding. RFC 7515, Appendix C.
+local function base64url_decode(s)
+   n = #s % 4
+   if n == 3 then
+      s = s .. '='
+   elseif n == 2 then
+      s = s .. '=='
+   elseif n ~= 0 then
+      return nil, 'invalid base64 encoding'
+   end
+   ok, val = pcall(base64.decode, s, base64url_decoder)
+   if ok then
+      return val
+   else
+      return nil, val
+   end
+end
+
+local openssl = require 'openssl'
+
+-- Constant declarator
+local constant = @{@}
+function constant.declare(t)
+   return setmetatable(t, @{
+	 __index = function (table, key)
+	    if t[key] then
+	       return t[key]
+	    else
+	       error("No such constant: "..tostring(key))
+	    end
+	 end;
+	 __newindex = function(table, key, value)
+	    error("Attempt to modify read-only table")
+	 end;
+	 __metatable = false;
+   @});
+end
+
+setmetatable(constant, @{
+		__call = function(_, ...) return constant.declare(...) end
+@})
+
+local S = constant @{
+   JWT = "JWT",
+@}
+
+local function hmac(alg, secret, message)
+   return openssl.hmac.hmac(alg, message, secret, true)
+end
+
+local sign_algo = constant @{
+   HS256 = function (secret, message)
+	 return hmac('SHA256', secret, message)
+   end;
+   HS384 = function (secret, message)
+	 return hmac('SHA384', secret, message)
+   end;
+   HS512 = function (secret, message)
+	 return hmac('SHA512', secret, message)
+   end
+@}
+
+-- Sign a JWT using supplied secret.
+local function jwt_sign(jwt, secret)
+   input = jwt.raw.header .. '.' .. jwt.raw.payload
+   return base64url_encode(sign_algo[jwt.header.alg](secret, input))
+end
+
+-- Verify JWT using supplied secret.  Cache result in the
+-- "verified" field.
+local function jwt_verify(jwt, secret)
+   if jwt.verified == nil then
+      jwt.verified = jwt_sign(jwt, secret) == jwt.raw.signature
+   end
+   return jwt.verified
+end
+
+local jwt_metatable = @{
+   __index = @{
+      sign = jwt_sign,
+      verify = jwt_verify
+   @}
+@}
+
+-- Create new JWT object from the encoded JWT input.
+-- Return the created object, or nil and textual error description on
+-- error.
+function jwt.parse(input)
+   function split(s, n)
+      i = s:find("[.]")
+      if i == nil then
+	 return s, true
+      elseif n == 0 then
+	 return s, false
+      else
+	 return s:sub(1,i-1), split(s:sub(i+1),n-1)
+      end
+   end
+
+   local r = @{@}
+   r['header'], r['payload'], r['signature'], ok = split(input,2)
+   if not ok then
+      return nil, 'required JWT parts missing'
+   end
+
+   local j = @{ ['raw'] = r @}
+   local val, err = base64url_decode(r['header'], base64url_decoder)
+   if err ~= nil then
+      return nil, 'header fails to decode'
+   end
+
+   j['header'], _, err = json.decode(val)
+   if err then
+      return nil, 'malformed header JSON'
+   end
+   if j.header.typ ~= S.JWT then
+      return nil, 'unsupported type'
+   end
+
+   val, err = base64url_decode(r['payload'], base64url_decoder)
+   if err ~= nil then
+      return nil, 'paiload fails to decode'
+   end
+   j['payload'], _, err = json.decode(val)
+   if err then
+      return nil, 'malformed payload JSON'
+   end
+   setmetatable(j, jwt_metatable)
+   return j, nil
+end
+
+function jwt.new(payload, secret)
+   local j = @{@}
+   j.header = @{
+      typ = S.JWT,
+      alg = "HS256"
+   @}
+   j.payload = payload
+   j.raw = @{@}
+   j.raw.header = base64url_encode(json.encode(j.header))
+   j.raw.payload = base64url_encode(json.encode(j.payload))
+   return j.raw.header .. '.' .. j.raw.payload .. '.' .. jwt_sign(j,secret)
+end
+
+return jwt

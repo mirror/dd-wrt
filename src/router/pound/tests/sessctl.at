@@ -1,5 +1,5 @@
 # This file is part of pound testsuite. -*- autotest -*-
-# Copyright (C) 2023-2024 Sergey Poznyakoff
+# Copyright (C) 2023-2025 Sergey Poznyakoff
 #
 # Pound is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -16,16 +16,30 @@
 AT_SETUP([Session control])
 AT_KEYWORDS([poundctl sessctl])
 AT_DATA([test.tmpl],
-[{{define "milliseconds" -}}
-{{ div . 1000000 | printf "%.2f" }}
+[{{define "default.core" -}}
+Server time: {{ .timestamp }}
+Uptime: {{ .uptime }}
+Pound version: {{ .version }}
+PID: {{ .pid }}
+{{with .workers -}}
+Workers:
+  Min:     {{ .min }}
+  Max:     {{ .max }}
+  Current: {{ .count }}
+  Active:  {{ .active }}
+Idle timeout: {{ .timeout }}
+{{end}}{{ /* with */ -}}
+{{end}}{{ /* define */ }}
+
+{{define "milliseconds" -}}
+{{ fdiv . 1000000 | printf "%.2f" }}
 {{- end}}
 
 {{define "print_status" -}}
 {{if .enabled}}enabled{{else}}disabled{{end -}}
 {{end -}}
 
-{{define "default" -}}
-{{if exists . "listeners" -}}
+{{define "default.pound" -}}
 {{- /* Iterate over all listeners */ -}}
 Listeners:
 
@@ -36,7 +50,7 @@ Listeners:
  {{block "default.print_services" .services}}
  {{- range $sno,$svc = .}}
    {{printf "%3d" $sno}}: {{block "default.print_service" $svc -}}
-   Service {{if .name}}"{{.name}}" {{end}}{{template "print_status" .}}, {{.tot_pri}}
+   Service {{if .name}}"{{.name}}" {{end}}{{template "print_status" .}}
   {{- /* List each backend in service */ -}}
   {{- range $bno,$backend = .backends}}
       {{printf "%3d" $bno}}: {{block "default.print_backend" $backend -}}
@@ -66,19 +80,31 @@ Listeners:
 Global services:
 {{block "default.print_services" .services}}
 {{end -}}{{ /* if len .services */ }}
-{{else if exists . "services" -}}
+{{end}}
+
+{{define "pound.core" -}}
+{{block "default.core" .core -}}
+{{end}}
+
+{{define "default" -}}
+{{if eq .kind "core" -}}
+{{block "default.core" . -}}
+{{else if eq .kind "pound" -}}
+{{block "default.pound" .}}
+{{else if eq .kind "listener" -}}
 {{block "default.print_listener" .}}
-{{else if exists . "backends" -}}
+{{else if eq .kind "service" -}}
 {{block "default.print_service" .}}
-{{else -}}
+{{else if eq .kind "backend" -}}
 {{block "default.print_backend" .}}
+{{else -}}
+Unknown object kind!
 {{end -}}
 {{end -}}{{ /* define */ }}
 ])
 
 PT_CHECK(
-[Control "pound.ctl"
-ListenHTTP
+[ListenHTTP
 	Service
 		Session
 			Type Header
@@ -127,7 +153,7 @@ run poundctl -f ./pound.cfg -t ./test.tmpl list /1
 status 0
 stdout
 Listener http://127\.0\.0\.1:\d+ enabled
-     0: Service enabled, 10
+     0: Service enabled
         0: backend http 127\.0\.0\.1:\d+ 5 alive enabled
         1: backend http 127\.0\.0\.1:\d+ 5 alive enabled
      Session type: HEADER
@@ -149,7 +175,7 @@ run poundctl -f ./pound.cfg -t ./test.tmpl list /1
 status 0
 stdout
 Listener http://127\.0\.0\.1:\d+ enabled
-     0: Service enabled, 10
+     0: Service enabled
         0: backend http 127\.0\.0\.1:\d+ 5 alive enabled
         1: backend http 127\.0\.0\.1:\d+ 5 alive enabled
      Session type: HEADER
@@ -170,7 +196,7 @@ run poundctl -f ./pound.cfg -t ./test.tmpl list /1
 status 0
 stdout
 Listener http://127\.0\.0\.1:\d+ enabled
-     0: Service enabled, 10
+     0: Service enabled
         0: backend http 127\.0\.0\.1:\d+ 5 alive enabled
         1: backend http 127\.0\.0\.1:\d+ 5 alive enabled
      Session type: HEADER

@@ -1,5 +1,5 @@
 # This file is part of pound testsuite. -*- autotest -*-
-# Copyright (C) 2022-2024 Sergey Poznyakoff
+# Copyright (C) 2022-2025 Sergey Poznyakoff
 #
 # Pound is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -16,8 +16,9 @@
 
 AT_SETUP([RewriteLocation])
 AT_KEYWORDS([rewriteloc])
+
 PT_CHECK([ListenHTTP
-	RewriteLocation 0
+	# RewriteLocation true is the default.
 	Service
 		Backend
 			Address
@@ -26,91 +27,43 @@ PT_CHECK([ListenHTTP
 	End
 End
 ],
-[GET /redirect/foo
-end
-
-301
-location: /echo/foo
-end
-
-
+[# Case 1:
+# Original location points to the listener with another port (without port
+# in this case, which means default port 80 is assumed).
+# The location is rewritten.
 GET /redirect/foo
-x-redirect: http://${BACKEND}
-end
-
-301
-location: http://${BACKEND}/echo/foo
-end
-
-GET /redirect/foo
-x-redirect: https://${LISTENER}
-end
-
-301
-location: https://${LISTENER}/echo/foo
-end
-])
-
-PT_CHECK([ListenHTTP
-	RewriteLocation 1
-	Service
-		Backend
-			Address
-			Port
-		End
-	End
-End
-],
-[GET /redirect/foo
-end
-
-301
-location: /echo/foo
-end
-
-GET /redirect/foo
-x-redirect: http://${BACKEND}
+x-redirect: http://${LISTENER:IP}
 end
 
 301
 location: http://${LISTENER}/echo/foo
 end
 
+# Case 2:
+# Same as above but with another Host: header.
 GET /redirect/foo
-x-redirect: https://${LISTENER}
+Host: example.com
+x-redirect: http://${LISTENER:IP}
+end
+
+301
+location: http://example.com:${LISTENER:PORT}/echo/foo
+end
+
+# Case 3
+# Redirect protocol differs.
+# Location is rewritten.
+GET /redirect/foo
+x-redirect: https://${LISTENER:IP}
 end
 
 301
 location: http://${LISTENER}/echo/foo
 end
-])
 
-PT_CHECK([ListenHTTP
-	Service
-		Backend
-			Address
-			Port
-		End
-	End
-End
-],
-[GET /redirect/foo
-end
-
-301
-location: /echo/foo
-end
-
+# Case 4: Redirect points to the backend.
 GET /redirect/foo
 x-redirect: http://${BACKEND}
-end
-
-301
-location: http://${LISTENER}/echo/foo
-end
-
-GET /redirect/foo
-x-redirect: https://${LISTENER}
 end
 
 301
@@ -128,13 +81,34 @@ PT_CHECK([ListenHTTP
 	End
 End
 ],
-[GET /redirect/foo
+[# The first three cases are not rewritten: listener address is not compared.
+GET /redirect/foo
+x-redirect: http://${LISTENER:IP}
 end
 
 301
-location: /echo/foo
+location: http://${LISTENER:IP}/echo/foo
 end
 
+GET /redirect/foo
+Host: example.com
+x-redirect: http://${LISTENER:IP}
+end
+
+301
+location: http://${LISTENER:IP}/echo/foo
+end
+
+GET /redirect/foo
+x-redirect: https://${LISTENER:IP}
+end
+
+301
+location: https://${LISTENER:IP}/echo/foo
+end
+
+# Case 4: Redirect points to the backend.  It is handled the same as for
+# RewriteLocation 1.
 GET /redirect/foo
 x-redirect: http://${BACKEND}
 end
@@ -142,13 +116,50 @@ end
 301
 location: http://${LISTENER}/echo/foo
 end
+])
 
+PT_CHECK([ListenHTTP
+	RewriteLocation 0
+	Service
+		Backend
+			Address
+			Port
+		End
+	End
+End
+],
+[
 GET /redirect/foo
-x-redirect: https://${LISTENER}
+x-redirect: http://${LISTENER:IP}
 end
 
 301
-location: https://${LISTENER}/echo/foo
+location: http://${LISTENER:IP}/echo/foo
+end
+
+GET /redirect/foo
+Host: example.com
+x-redirect: http://${LISTENER:IP}
+end
+
+301
+location: http://${LISTENER:IP}/echo/foo
+end
+
+GET /redirect/foo
+x-redirect: https://${LISTENER:IP}
+end
+
+301
+location: https://${LISTENER:IP}/echo/foo
+end
+
+GET /redirect/foo
+x-redirect: http://${BACKEND}
+end
+
+301
+location: http://${BACKEND}/echo/foo
 end
 ])
 

@@ -1,0 +1,73 @@
+# This file is part of pound testsuite. -*- autotest -*-
+# Copyright (C) 2025 Sergey Poznyakoff
+#
+# Pound is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# Pound is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with pound.  If not, see <http://www.gnu.org/licenses/>.
+AT_SETUP([Pattern from file (keeping type)])
+AT_KEYWORDS([cond fromfile patfile])
+
+# A bug in pound versions up to commit d1b1248206 (inclusive) caused
+# a change in type of patterns read from a file.
+# When using -file with one of the following pattern types: -exact, -beg,
+# -end, -contain, only first pattern from the file was compiled using the
+# requested pattern type.  Remaining patterns were treated as POSIX regular
+# expressions.
+#
+# This regression test verifies that it is no longer the case.
+
+AT_DATA([hostfile],
+[example.org
+local.host
+])
+
+PT_CHECK([ListenHTTP
+	Service
+		Host -exact -file "hostfile"
+		Backend
+			Address
+			Port
+		End
+	End
+	Service "fallback"
+		Backend
+			Address
+			Port
+		End
+	End
+End
+],
+[GET /echo/foo
+Host: example.org
+end
+
+200
+x-backend-number: 0
+end
+
+GET /echo/foo
+Host: local.host
+end
+
+200
+x-backend-number: 0
+end
+
+GET /echo/foo
+Host: localehost
+end
+
+200
+x-backend-number: 1
+end
+])
+AT_CLEANUP

@@ -1,4 +1,4 @@
-# Copyright (C) 2023-2024 Sergey Poznyakoff
+# Copyright (C) 2023-2025 Sergey Poznyakoff
 #
 # Pound is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -15,7 +15,7 @@
 AT_SETUP([Includes in various scopes])
 AT_KEYWORDS([include inclscope])
 
-AT_DATA([backend],
+AT_DATA([backend.cfg],
 [Backend
 	Address
 	Port
@@ -49,14 +49,13 @@ AT_DATA([svc.cfg],
 End
 ])
 
-AT_DATA([pound.cfi],
+m4_pushdef([POUND_CFG],
 [ListenHTTP
 Include "svc.cfg"
 End
 ])
 
-AT_CHECK([
-AT_DATA([input],
+PT_CHECK([POUND_CFG],
 [GET /echo/foo
 Host: example.com
 end
@@ -72,11 +71,7 @@ end
 end
 ])
 
-perl $HARNESS --preproc backend --transcript xscript.log input
-])
-
-AT_CHECK([
-AT_DATA([input],
+PT_CHECK([POUND_CFG],
 [stats samples=100 min=0 max=100
 
 GET /echo/foo?id=123
@@ -86,8 +81,5 @@ end
 200
 end
 ])
-
-perl $HARNESS --preproc backend --transcript xscript.log input
-])
-
+m4_popdef([POUND_CFG])
 AT_CLEANUP

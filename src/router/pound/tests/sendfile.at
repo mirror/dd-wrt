@@ -1,0 +1,65 @@
+# This file is part of pound testsuite. -*- autotest -*-
+# Copyright (C) 2025 Sergey Poznyakoff
+#
+# Pound is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# Pound is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with pound.  If not, see <http://www.gnu.org/licenses/>.
+AT_SETUP([SendFile backend])
+AT_KEYWORDS([sendfile file])
+
+m4_pushdef([ARAR],
+[Flumen est Arar, quod per fines Haeduorum et Sequanorum in Rhodanum influit,
+incredibili lenitate, ita ut oculis in utram partem fluat iudicari non possit.])
+
+AT_DATA([arar.txt],[ARAR
+])
+
+PT_CHECK([ListenHTTP
+	Service
+		SendFile "."
+	End
+End
+],
+[GET /arar.txt
+end
+
+200
+Content-Type: text/plain
+
+ARAR
+end
+])
+
+PT_CHECK([ListenHTTP
+	Service
+		Path -re "/public/(.+)"
+		SetPath "$1"
+		Rewrite response
+			SetHeader "Content-Type: text/html"
+		End
+		SendFile "."
+	End
+End
+],
+[GET /public/arar.txt
+end
+
+200
+Content-Type: text/html
+
+ARAR
+end
+])
+
+m4_popdef([ARAR])
+
+AT_CLEANUP

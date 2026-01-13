@@ -1,5 +1,5 @@
 /* Openmetrics support for pound
- * Copyright (C) 2023-2024 Sergey Poznyakoff
+ * Copyright (C) 2023-2025 Sergey Poznyakoff
  *
  * Pound is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -240,12 +240,8 @@ static int gen_listener_info (EXPOSITION *exp, struct metric *metric,
 			      METRIC_LABELS *pfx, struct json_value *obj);
 static int gen_backends_count (EXPOSITION *exp, struct metric *metric,
 			       METRIC_LABELS *pfx, struct json_value *obj);
-static int gen_service_info (EXPOSITION *exp, struct metric *metric,
-			     METRIC_LABELS *pfx, struct json_value *obj);
 static int gen_service_enabled (EXPOSITION *exp, struct metric *metric,
 				METRIC_LABELS *pfx, struct json_value *obj);
-static int gen_service_pri (EXPOSITION *exp, struct metric *metric,
-			    METRIC_LABELS *pfx, struct json_value *obj);
 static int gen_backend_state (EXPOSITION *exp, struct metric *metric,
 			      METRIC_LABELS *pfx, struct json_value *obj);
 static int gen_backend_requests (EXPOSITION *exp, struct metric *metric,
@@ -256,6 +252,8 @@ static int gen_backend_request_stddev (EXPOSITION *exp, struct metric *metric,
 				 METRIC_LABELS *pfx, struct json_value *obj);
 static int gen_workers (EXPOSITION *exp, struct metric *metric,
 			METRIC_LABELS *pfx, struct json_value *obj);
+static int gen_number (EXPOSITION *exp, struct metric *metric,
+		       METRIC_LABELS *pfx, struct json_value *obj);
 
 static struct metric_family listener_metric_families[] = {
   { "pound_listener_enabled",
@@ -273,21 +271,11 @@ static struct metric_family listener_metric_families[] = {
 };
 
 static struct metric_family service_metric_families[] = {
-  { "pound_service_info",
-    "info",
-    NULL,
-    "Description of a service.",
-    gen_service_info },
   { "pound_service_enabled",
     "stateset",
     NULL,
     "State of a particular service.",
     gen_service_enabled },
-  { "pound_service_pri",
-    "gauge",
-    NULL,
-    "Service priority value.",
-    gen_service_pri },
   { "pound_backends",
     "gauge",
     NULL,
@@ -306,7 +294,7 @@ static struct metric_family backend_metric_families[] = {
   { "pound_backend_requests",
     "gauge",
     NULL,
-    "Number of requests processed by backend,",
+    "Number of requests processed by backend.",
     gen_backend_requests },
   { "pound_backend_request_time_avg_nanoseconds",
     "gauge",
@@ -330,6 +318,23 @@ static struct metric_family workers_metric_families[] = {
   { NULL }
 };
 
+static struct metric_family uptime_metric_families[] = {
+  { "pound_uptime",
+    "counter",
+    NULL,
+    "Pound uptime, milliseconds since startup.",
+    gen_number },
+  { NULL }
+};
+
+static struct metric_family queue_len_metric_families[] = {
+  { "pound_queue_len",
+    "counter",
+    NULL,
+    "Number of connections waiting in queue.",
+    gen_number },
+  { NULL }
+};
 
 /*
  * Metric family definitions describe how to iterate over the root
@@ -342,6 +347,7 @@ struct metric_family_defn
   char const *attr;        /* JSON attribute that contains array of objects
 			      of this family. */
   char const *index_label; /* Label to hold index of the current object. */
+  char const *tag_label;   /* Label to hold tag of the current object. */
   int descend_family;      /* After handling each retrieved object, descend
 			      into that family. */
 };
@@ -359,14 +365,17 @@ struct metric_family_defn metric_family_defn[] = {
   { listener_metric_families,
     "listeners",
     "listener",
+    "listener_name",
     METRIC_FAMILY_SERVICE },
   { service_metric_families,
     "services",
     "service",
+    "service_name",
     METRIC_FAMILY_BACKEND },
   { backend_metric_families,
     "backends",
     "backend",
+    NULL,
     METRIC_FAMILY_NONE },
   { NULL }
 };
@@ -525,10 +534,22 @@ exposition_iterate (EXPOSITION *exp, METRIC_LABELS const *pfx, int fn,
   n = json_array_length (arr);
   for (i = 0; i < n; i++)
     {
+      int has_name = 0;
       jv = arr->v.a->ov[i];
       snprintf (nbuf, sizeof nbuf, "%zu", i);
       if ((res = metric_labels_add (&pfxcopy, defn->index_label, nbuf)) != 0)
 	break;
+      if (defn->tag_label)
+	{
+	  struct json_value *nv;
+	  if (json_object_get_name (jv, &nv) == 0 && nv->v.s && nv->v.s[0])
+	    {
+	      if ((res = metric_labels_add (&pfxcopy, defn->tag_label,
+					    nv->v.s)) != 0)
+		break;
+	      has_name = 1;
+	    }
+	}
       if ((res = exposition_apply_family (exp, &pfxcopy, defn->family, jv)) != 0)
 	break;
       if (defn->descend_family != METRIC_FAMILY_NONE)
@@ -536,6 +557,8 @@ exposition_iterate (EXPOSITION *exp, METRIC_LABELS const *pfx, int fn,
 	  if ((res = exposition_iterate (exp, &pfxcopy, defn->descend_family, jv)) != 0)
 	    break;
 	}
+      if (has_name)
+	metric_labels_pop (&pfxcopy);
       metric_labels_pop (&pfxcopy);
     }
   metric_labels_free (&pfxcopy);
@@ -569,9 +592,6 @@ gen_listener_info (EXPOSITION *exp, struct metric *metric,
     return -1;
 
   if (json_object_get_name (obj, &jv))
-    return -1;
-  if (metric_labels_add (&samp->labels, "name",
-			 jv->type == json_string ? jv->v.s : ""))
     return -1;
 
   if (json_object_get_type (obj, "address", json_string, &jv))
@@ -646,24 +666,6 @@ gen_backends_count (EXPOSITION *exp, struct metric *metric,
 }
 
 static int
-gen_service_info (EXPOSITION *exp, struct metric *metric,
-		  METRIC_LABELS *pfx, struct json_value *obj)
-{
-  struct metric_sample *samp;
-  struct json_value *jv;
-
-  if (json_object_get_name (obj, &jv))
-    return -1;
-  if ((samp = metric_add_sample (metric, pfx)) == NULL)
-    return -1;
-  if (metric_labels_add (&samp->labels, "name",
-			 jv->type == json_string ? jv->v.s : ""))
-    return -1;
-  samp->number = 1;
-  return 0;
-}
-
-static int
 gen_service_enabled (EXPOSITION *exp, struct metric *metric,
 		     METRIC_LABELS *pfx, struct json_value *obj)
 {
@@ -675,32 +677,6 @@ gen_service_enabled (EXPOSITION *exp, struct metric *metric,
   if ((samp = metric_add_sample (metric, pfx)) == NULL)
     return -1;
   samp->number = jv->v.b;
-  return 0;
-}
-
-static int
-gen_service_pri (EXPOSITION *exp, struct metric *metric,
-		 METRIC_LABELS *pfx, struct json_value *obj)
-{
-  struct metric_sample *samp;
-  struct json_value *jv;
-
-  if (json_object_get_type (obj, "tot_pri", json_integer, &jv))
-    return -1;
-  if ((samp = metric_add_sample (metric, pfx)) == NULL)
-    return -1;
-  if (metric_labels_add (&samp->labels, "entity", "total"))
-    return -1;
-  samp->number = jv->v.n;
-
-  if (json_object_get_type (obj, "abs_pri", json_integer, &jv))
-    return -1;
-  if ((samp = metric_add_sample (metric, pfx)) == NULL)
-    return -1;
-  if (metric_labels_add (&samp->labels, "entity", "absolute"))
-    return -1;
-  samp->number = jv->v.n;
-
   return 0;
 }
 
@@ -821,21 +797,43 @@ gen_workers (EXPOSITION *exp, struct metric *metric,
     }
   return 0;
 }
+
+static int
+gen_number (EXPOSITION *exp, struct metric *metric,
+	    METRIC_LABELS *pfx, struct json_value *val)
+{
+  struct metric_sample *samp;
+
+  if ((samp = metric_add_sample (metric, pfx)) == NULL)
+    return -1;
+  samp->number = val->v.n;
+  return 0;
+}
 
+static int
+exposition_fill_core (EXPOSITION *exp, struct json_value *obj)
+{
+  struct json_value *core, *val;
+
+  if (json_object_get_type (obj, "core", json_object, &core) ||
+      json_object_get_type (core, "uptime", json_number, &val) ||
+      exposition_apply_family (exp, NULL, uptime_metric_families, val) ||
+      json_object_get_type (core, "workers", json_object, &val) ||
+      exposition_apply_family (exp, NULL, workers_metric_families, val) ||
+      json_object_get_type (core, "queue_len", json_number, &val) ||
+      exposition_apply_family (exp, NULL, queue_len_metric_families, val))
+    return -1;
+  return 0;
+}
 /*
  * Initialize the exposition and fill it, using OBJ as input.
  */
 static int
 exposition_fill (EXPOSITION *exp, struct json_value *obj)
 {
-  struct json_value *val;
-
   EXPOSITION_INIT (exp);
 
-  if (json_object_get_type (obj, "workers", json_object, &val))
-    return -1;
-
-  if (exposition_apply_family (exp, NULL, workers_metric_families, val))
+  if (exposition_fill_core (exp, obj))
     return -1;
 
   if (exposition_iterate (exp, NULL, METRIC_FAMILY_LISTENER, obj))

@@ -1,6 +1,6 @@
 /*
  * Pound - the reverse-proxy load-balancer
- * Copyright (C) 2023-2024 Sergey Poznyakoff
+ * Copyright (C) 2023-2025 Sergey Poznyakoff
  *
  * Pound is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -102,6 +102,13 @@ print_str (struct stringbuf *sb, const char *arg)
 }
 
 static void
+i_nosys (struct stringbuf *sb, struct http_log_instr *instr,
+	 POUND_HTTP *phttp)
+{
+  print_str (sb, "-");
+}
+
+static void
 i_print (struct stringbuf *sb, struct http_log_instr *instr,
 	 POUND_HTTP *phttp)
 {
@@ -134,14 +141,14 @@ anon_addr2str (char *buf, size_t size, struct addrinfo const *from_host)
 
 static void
 i_remote_ip (struct stringbuf *sb, struct http_log_instr *instr,
-		    POUND_HTTP *phttp)
+	     POUND_HTTP *phttp)
 {
   char caddr[MAX_ADDR_BUFSIZE];
-  print_str (sb, anon_addr2str (caddr, sizeof (caddr), &phttp->from_host));
+  print_str (sb, addr2str (caddr, sizeof (caddr), &phttp->from_host, 1));
 }
 
 static int
-acl_match_ip (ACL *acl, char const *ipstr)
+acl_match_ip (ACL *acl, char const *ipstr, struct addrinfo **ret_addr)
 {
   struct addrinfo hints, *res, *ap;
 
@@ -157,21 +164,25 @@ acl_match_ip (ACL *acl, char const *ipstr)
 	  if ((rc = acl_match (acl, ap->ai_addr) == 0))
 	    break;
 	}
-      freeaddrinfo (res);
+      if (rc == 0 && ret_addr)
+	*ret_addr = res;
+      else
+	freeaddrinfo (res);
       return rc;
     }
   return -1;
 }
 
-static char *
-scan_forwarded_header (char const *hdr, ACL *acl)
+static int
+scan_forwarded_header (char const *hdr, ACL *acl, struct addrinfo **ret_addr)
 {
   char const *end;
   char *buf = NULL;
   size_t bufsize = 0;
+  int rc = -1;
 
   if (!hdr || !acl)
-    return NULL;
+    return -1;
 
   end = hdr + strlen (hdr);
   while (end > hdr)
@@ -192,8 +203,8 @@ scan_forwarded_header (char const *hdr, ACL *acl)
 	    }
 	  else
 	    {
-	      free (buf);
-	      return NULL;
+	      rc = -1;
+	      break;
 	    }
 	}
 
@@ -201,39 +212,28 @@ scan_forwarded_header (char const *hdr, ACL *acl)
       j = 0;
       if (*p == ',')
 	j++;
-      while (j < len && isspace (p[j]))
+      while (j < len && c_isspace (p[j]))
 	j++;
       while (j < len)
 	{
-	  if (isspace (p[j]))
+	  if (c_isspace (p[j]))
 	    break;
 	  buf[i++] = p[j++];
 	}
       buf[i] = 0;
 
-      switch (acl_match_ip (acl, buf))
-	{
-	case 0:
-	  return buf;
-
-	case 1:
-	  break;
-
-	default:
-	  goto end;
-	}
-
+      if ((rc = acl_match_ip (acl, buf, ret_addr)) != 1)
+	break;
       end = p;
     }
- end:
   free (buf);
-  return NULL;
+  return rc;
 }
 
 static char const *
 get_forwarded_header_name (POUND_HTTP *phttp)
 {
-  if (phttp->svc->forwarded_header)
+  if (phttp->svc && phttp->svc->forwarded_header)
     return phttp->svc->forwarded_header;
   if (phttp->lstn->forwarded_header)
     return phttp->lstn->forwarded_header;
@@ -245,7 +245,7 @@ get_forwarded_header_name (POUND_HTTP *phttp)
 static ACL *
 get_trusted_ips (POUND_HTTP *phttp)
 {
-  if (phttp->svc->trusted_ips)
+  if (phttp->svc && phttp->svc->trusted_ips)
     return phttp->svc->trusted_ips;
   if (phttp->lstn->trusted_ips)
     return phttp->lstn->trusted_ips;
@@ -254,15 +254,14 @@ get_trusted_ips (POUND_HTTP *phttp)
   return NULL;
 }
 
-void
-save_forwarded_header (POUND_HTTP *phttp)
+static char *
+get_forwarded_header (POUND_HTTP *phttp)
 {
   struct http_header *hdr;
   char const *hname;
   char const *val;
+  char *retval = NULL;
 
-  free (phttp->orig_forwarded_header);
-  phttp->orig_forwarded_header = NULL;
   hname = get_forwarded_header_name (phttp);
   if ((hdr = http_header_list_locate_name (&phttp->request.headers,
 					   hname, strlen (hname))) != NULL)
@@ -270,7 +269,10 @@ save_forwarded_header (POUND_HTTP *phttp)
       if (is_combinable_header (hdr))
 	{
 	  if ((val = http_header_get_value (hdr)) != NULL)
-	    phttp->orig_forwarded_header = xstrdup (val);
+	    {
+	      if ((retval = strdup (val)) == NULL)
+		lognomem ();
+	    }
 	}
       else
 	{
@@ -290,28 +292,48 @@ save_forwarded_header (POUND_HTTP *phttp)
 	      else
 		break;
 	    }
-	  phttp->orig_forwarded_header = stringbuf_finish (&sb);
-	  if (!phttp->orig_forwarded_header)
+	  if ((retval = stringbuf_finish (&sb)) == NULL)
 	    stringbuf_free (&sb);
 	}
     }
+  return retval;
+}
+
+struct addrinfo *
+get_remote_ip (POUND_HTTP *phttp, int forwarded, struct addrinfo **pres)
+{
+  if (forwarded)
+    {
+      int rc;
+      struct addrinfo *res;
+      char *fwh = get_forwarded_header (phttp);
+      rc = scan_forwarded_header (fwh, get_trusted_ips (phttp), &res);
+      free (fwh);
+      if (rc == 0)
+	{
+	  *pres = res;
+	  return res;
+	}
+    }
+  *pres = NULL;
+  return &phttp->from_host;
+}
+
+void
+stringbuf_store_ip (struct stringbuf *sb, POUND_HTTP *phttp, int forwarded)
+{
+  struct addrinfo *res, *tmp;
+  char caddr[MAX_ADDR_BUFSIZE];
+  res = get_remote_ip (phttp, forwarded, &tmp);
+  stringbuf_add_string (sb, anon_addr2str (caddr, sizeof (caddr), res));
+  freeaddrinfo (tmp);
 }
 
 static void
 i_forwarded_ip (struct stringbuf *sb, struct http_log_instr *instr,
 		POUND_HTTP *phttp)
 {
-  char *ip;
-  char caddr[MAX_ADDR_BUFSIZE];
-
-  if ((ip = scan_forwarded_header (phttp->orig_forwarded_header,
-				    get_trusted_ips (phttp))) != NULL)
-    {
-      print_str (sb, ip);
-      free (ip);
-    }
-  else
-    print_str (sb, anon_addr2str (caddr, sizeof (caddr), &phttp->from_host));
+  stringbuf_store_ip (sb, phttp, 1);
 }
 
 static void
@@ -371,7 +393,17 @@ i_status (struct stringbuf *sb, struct http_log_instr *instr,
 	  POUND_HTTP *phttp)
 {
   if (instr->arg)
-    stringbuf_add_string (sb, http_request_orig_line (&phttp->response));
+    {
+      char const *s = http_request_orig_line (&phttp->response);
+      if (s[0] == 0)
+	{
+	  /* Special backends don't fill in the response */
+	  stringbuf_printf (sb, "%3d ", phttp->response_code);
+	  print_str (sb, http_status_reason (phttp->response_code));
+	}
+      else
+	stringbuf_add_string (sb, s);
+    }
   else
     stringbuf_printf (sb, "%3d", phttp->response_code);
 }
@@ -617,13 +649,6 @@ i_url (struct stringbuf *sb, struct http_log_instr *instr,
 }
 
 static void
-i_listener_name (struct stringbuf *sb, struct http_log_instr *instr,
-		 POUND_HTTP *phttp)
-{
-  print_str (sb, phttp->lstn->name);
-}
-
-static void
 i_tid (struct stringbuf *sb, struct http_log_instr *instr,
        POUND_HTTP *phttp)
 {
@@ -641,41 +666,20 @@ static void
 i_backend (struct stringbuf *sb, struct http_log_instr *instr,
 	   POUND_HTTP *phttp)
 {
-  char caddr[MAX_ADDR_BUFSIZE];
-  print_str (sb, str_be (caddr, sizeof (caddr), phttp->backend));
-}
-
-static char *
-be_service_name (BACKEND *be)
-{
-  switch (be->be_type)
+  if (phttp->backend)
     {
-    case BE_BACKEND:
-      if (be->service->name)
-       return be->service->name;
-      break;
-    case BE_REDIRECT:
-      return "(redirect)";
-    case BE_ACME:
-      return "(acme)";
-    case BE_CONTROL:
-      return "(control)";
-    case BE_ERROR:
-      return "(error)";
-    case BE_METRICS:
-      return "(metrics)";
-    case BE_BACKEND_REF:
-      /* shouldn't happen */
-      break;
+      char caddr[MAX_ADDR_BUFSIZE];
+      print_str (sb, str_be (caddr, sizeof (caddr), phttp->backend));
     }
-  return "-";
+  else
+    print_str (sb, NULL);
 }
 
 static void
 i_service (struct stringbuf *sb, struct http_log_instr *instr,
 	   POUND_HTTP *phttp)
 {
-  print_str (sb, be_service_name (phttp->backend));
+  print_str (sb, phttp->svc ? phttp->svc->name : NULL);
 }
 
 static void
@@ -710,21 +714,27 @@ static void
 i_backend_locus (struct stringbuf *sb, struct http_log_instr *instr,
 		 POUND_HTTP *phttp)
 {
-  print_str (sb, phttp->backend->locus);
+  if (phttp->backend)
+    stringbuf_format_locus_range (sb, &phttp->backend->locus);
+  else
+    print_str (sb, NULL);
 }
 
 static void
 i_service_locus (struct stringbuf *sb, struct http_log_instr *instr,
 		 POUND_HTTP *phttp)
 {
-  print_str (sb, phttp->svc->locus);
+  if (phttp->svc)
+    stringbuf_format_locus_range (sb, &phttp->svc->locus);
+  else
+    print_str (sb, NULL);
 }
 
 static void
 i_listener_locus (struct stringbuf *sb, struct http_log_instr *instr,
 		 POUND_HTTP *phttp)
 {
-  print_str (sb, phttp->lstn->locus);
+  stringbuf_format_locus_range (sb, &phttp->lstn->locus);
 }
 
 static struct argprt locprt[] = {
@@ -748,36 +758,80 @@ p_objloc (struct http_log_parser *parser, char const *arg, int len)
   return 0;
 }
 
+#define F_NONE      0
+#define F_CLF       0x1
+#define F_PORTSTRIP 0x2
+#define F_LOCALIP   0x4
+
 static void
-i_header (struct stringbuf *sb, struct http_log_instr *instr,
-	  POUND_HTTP *phttp)
+print_header (struct stringbuf *sb, char const *name, POUND_HTTP *phttp,
+	      int flags)
 {
   struct http_header *hdr;
   char const *val = NULL;
 
-  if (instr->arg &&
-      (hdr = http_header_list_locate_name (&phttp->request.headers, instr->arg,
-					   strlen (instr->arg))) != NULL)
+  if (name &&
+      (hdr = http_header_list_locate_name (&phttp->request.headers, name,
+					   strlen (name))) != NULL)
     val = http_header_get_value (hdr);
-  if (val)
-    stringbuf_add_string (sb, val);
+  if (!val)
+    {
+      if (flags & F_LOCALIP)
+	{
+	  char caddr[MAX_ADDR_BUFSIZE];
+	  print_str (sb, addr2str (caddr, sizeof (caddr),
+				   &phttp->lstn->addr, 1));
+	  return;
+	}
+      else if (!(flags & F_CLF))
+	return;
+    }
+  else if (flags & F_PORTSTRIP)
+    {
+      char *p;
+      if ((p = strrchr (val, ':')) != NULL)
+	{
+	  stringbuf_add (sb, val, p - val);
+	  return;
+	}
+    }
+  print_str (sb, val);
+}
+
+static void
+i_header (struct stringbuf *sb, struct http_log_instr *instr,
+	  POUND_HTTP *phttp)
+{
+  print_header (sb, instr->arg, phttp, F_NONE);
 }
 
 static void
 i_header_clf (struct stringbuf *sb, struct http_log_instr *instr,
 	      POUND_HTTP *phttp)
 {
-  struct http_header *hdr;
-  char const *val = NULL;
-
-  if (instr->arg &&
-      (hdr = http_header_list_locate_name (&phttp->request.headers,
-					   instr->arg,
-					   strlen (instr->arg))) != NULL)
-    val = http_header_get_value (hdr);
-  print_str (sb, val);
+  print_header (sb, instr->arg, phttp, F_CLF);
 }
 
+
+static void
+i_server_name (struct stringbuf *sb, struct http_log_instr *instr,
+	       POUND_HTTP *phttp)
+{
+  print_header (sb, "Host", phttp, F_LOCALIP | F_PORTSTRIP);
+}
+
+static void
+i_listener_port (struct stringbuf *sb, struct http_log_instr *instr,
+		 POUND_HTTP *phttp)
+{
+  char portstr[6];
+  char *port = NULL;
+  if (getnameinfo (phttp->lstn->addr.ai_addr, phttp->lstn->addr.ai_addrlen,
+		   NULL, 0,
+		   portstr, sizeof (portstr), NI_NUMERICSERV) == 0)
+    port = portstr;
+  print_str (sb, port);
+}
 
 enum
   {
@@ -807,7 +861,7 @@ static struct http_log_spec http_log_spec[] = {
        than a 0 when no bytes are sent. */
     { 'b', i_response_size_clf },
     /* The time taken to serve the request, in microseconds. */
-    { 'D', i_process_time_ms },
+    { 'D', i_process_time_us },
     /* Remote hostname - same as %a */
     { 'h', i_remote_ip },
     /* The request protocol. */
@@ -817,6 +871,7 @@ static struct http_log_spec http_log_spec[] = {
     { 'i', i_header, SPEC_REQ_ARG },
     /* Same as %i, but in CLF format. */
     { 'I', i_header_clf, SPEC_REQ_ARG },
+    { 'l', i_nosys },
     /* Object locus & name:
        %{backend}N
        %{service}N
@@ -826,7 +881,7 @@ static struct http_log_spec http_log_spec[] = {
     /* The request method. */
     { 'm', i_method },
     /* The canonical port of the server serving the request. */
-    // { 'p', i_canon_port },
+    { 'p', i_listener_port },
     /* Thread ID */
     { 'P', i_tid },
     /* The query string (prepended with a ? if a query string exists,
@@ -852,7 +907,7 @@ static struct http_log_spec http_log_spec[] = {
     /* The URL path requested, not including any query string. */
     { 'U', i_url },
     /* Listener name */
-    { 'v', i_listener_name },
+    { 'v', i_server_name },
     { 0 }
 };
 
@@ -1032,7 +1087,8 @@ http_log (POUND_HTTP *phttp)
 
   if (http_log_format_check (phttp->lstn->log_level))
     return;
-  if (STATUS_MASK (phttp->response_code) & phttp->svc->log_suppress_mask)
+  if (phttp->svc &&
+      (STATUS_MASK (phttp->response_code) & phttp->svc->log_suppress_mask))
     return;
   prog = http_log_tab + phttp->lstn->log_level;
   if (SLIST_EMPTY (&prog->head))

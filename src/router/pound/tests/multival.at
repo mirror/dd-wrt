@@ -1,5 +1,5 @@
 # This file is part of pound testsuite. -*- autotest -*-
-# Copyright (C) 2023-2024 Sergey Poznyakoff
+# Copyright (C) 2023-2025 Sergey Poznyakoff
 #
 # Pound is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -37,6 +37,31 @@ end
 
 200
 x-orig-header-X-FooBar: 192.0.2.2, 192.0.2.5, 192.0.2.8
+end
+])
+
+PT_CHECK(
+[CombineHeaders
+	"X-FooBar"
+End
+ListenHTTP
+	Service
+		Backend
+			Address
+			Port
+		End
+	End
+End
+],
+[# Test elimination of empty list elements.
+GET /echo/foo
+X-FooBar: 192.0.2.2, ,,		 127.0.0.1
+X-FooBar: 192.0.2.5,  , "text\"input, word", , 127.0.0.2
+X-FooBar: 192.0.2.8
+end
+
+200
+x-orig-header-X-FooBar: 192.0.2.2, 127.0.0.1, 192.0.2.5, "text\"input, word", 127.0.0.2, 192.0.2.8
 end
 ])
 

@@ -1,0 +1,55 @@
+@c This file is part of the pound manual.
+@c Copyright (C) 2024--2025 Sergey Poznyakoff
+@c This file is distributed under GFDL 1.3 or any later version
+@c published by the Free Software Foundation.
+
+Prior to version 4.18, JSON output from @command{pound} control
+interface differred from the current format (@pxref{Input object})
+in several important aspects:
+
+@enumerate 1
+@item
+Objects didn't carry the @code{kind} attribute.
+
+@item
+The @dfn{full listing} object incorporated attributes from the
+@dfn{core} listing directly, instead of storing them under the
+@code{core} attribute.
+
+@item
+The @dfn{core listing} object lacked @code{uptime} attribute.
+@end enumerate
+
+In the absense of explicit indication of the object type being passed
+(see pt. 1 above), templates were using an heuristics based on the
+presence or absence of certain attribute to deduce the object type in
+question.  This heuristic is described in the following pseudo-code
+fragment:
+
+@example
+@group
+@{@{if exists . "listeners" @}@}
+  @{@{/* This is a full listing, as requested by @command{poundctl list}. */@}@}
+  ...
+@{@{else if exists . "services"@}@}
+  @{@{/* Single listener, as requested by @command{poundctl list /@var{L}}.
+       Notice that this attribute is present in the full listing as
+       well, so presence of "listeners" should be checked first. */@}@}
+  ...
+@{@{else if exists . "backends"@}@}
+  @{@{/* Single service, as requested by @command{poundctl list /@var{L}/@var{S}}. */@}@}
+  ...
+@{@{else if exists . "pid"@}@}
+  @{@{/* Core statistics (@command{poundctl core}) */@}@}
+  ...
+@{@{else@}@}
+  @{@{/* Backend listing (@command{poundctl list /@var{L}/@var{I}/@var{B}}) */@}@}
+  ...
+@{@{end@}@}
+@end group
+@end example
+
+For backward compatibility, template file shipped with
+@command{pound} version @value{VERSION} checks whether @code{kind}
+attribute is present, and if it is not, falls back to using the
+heuristics above.

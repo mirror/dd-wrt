@@ -1,7 +1,7 @@
 /*
  * Pound - the reverse-proxy load-balancer
  * Copyright (C) 2002-2010 Apsis GmbH
- * Copyright (C) 2018-2024 Sergey Poznyakoff
+ * Copyright (C) 2018-2025 Sergey Poznyakoff
  *
  * Pound is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,10 +20,14 @@
 #include "pound.h"
 #include "json.h"
 #include "extern.h"
+#include "watcher.h"
 
 /* common variables */
 char *user;			/* user to run as */
 char *group;			/* group to run as */
+static uid_t user_id = -1;
+static gid_t group_id = -1;
+
 char *root_jail;		/* directory to chroot to */
 char *pid_name = POUND_PID;     /* file to record pid in */
 
@@ -43,12 +47,21 @@ LISTENER_HEAD listeners = SLIST_HEAD_INITIALIZER (listeners);
 				/* all available listeners */
 int n_listeners;                /* Number of listeners */
 
-regex_t HEADER,			/* Allowed header */
+GENPAT HEADER,		/* Allowed header */
   CONN_UPGRD,			/* upgrade in connection header */
   LOCATION;			/* the host we are redirected to */
 
 char *forwarded_header;         /* "forwarded" header name */
 ACL *trusted_ips;               /* Trusted IP addresses */
+
+char *syslog_tag;               /* Tag to mark syslog messages with.
+				   If NULL, progname will be used. */
+
+pthread_mutexattr_t mutex_attr_recursive;
+pthread_attr_t thread_attr_detached;
+static pthread_attr_t thread_attr_worker;
+
+struct timespec start_time;
 
 #ifndef  SOL_TCP
 /* for systems without the definition */
@@ -103,6 +116,30 @@ logmsg (const int priority, const char *fmt, ...)
   va_end (ap);
 }
 
+static void
+pound_cfg_error_msg (char const *msg)
+{
+  logmsg (LOG_ERR, "%s", msg);
+}
+
+/*
+ * Log an out of memory condition and return.
+ * Take care not to use [v]logmsg as this could create infinite recursion.
+ */
+void
+lognomem (void)
+{
+  if (log_facility == -1 || print_log)
+    {
+      fprintf (stderr, "%s: out of memory\n", progname);
+    }
+
+  if (log_facility != -1)
+    {
+      syslog (LOG_CRIT, "out of memory");
+    }
+}
+
 /*
  * This is used as exit point if memory allocation failures occur at program
  * startup (e.g. when parsing config or the like).
@@ -110,32 +147,30 @@ logmsg (const int priority, const char *fmt, ...)
 void
 xnomem (void)
 {
-  logmsg (LOG_CRIT, "out of memory");
+  lognomem ();
   exit (1);
-}
-
-/*
- * This is used as json_memabrt hook.  The code in svc.c handles memory
- * allocation failures gracefully and returns 500 if any occurs.
- */
-void
-lognomem (void)
-{
-  logmsg (LOG_CRIT, "out of memory");
 }
 
 /*
  * Log a message at LOG_CRIT and terminate the program.
  */
 void
-abend (char const *fmt, ...)
+abend (struct locus_range const *range, char const *fmt, ...)
 {
   va_list ap;
   va_start (ap, fmt);
-  vlogmsg (LOG_CRIT, fmt, ap);
+  vconf_error_at_locus_range (range, fmt, ap);
   va_end (ap);
   logmsg (LOG_NOTICE, "pound terminated");
   _exit (1);
+}
+
+struct timespec
+pound_uptime (void)
+{
+  struct timespec now;
+  clock_gettime (CLOCK_REALTIME, &now);
+  return timespec_sub (&now, &start_time);
 }
 
 /*
@@ -198,7 +233,6 @@ static unsigned active_threads; /* Number of threads currently active,
 				   i.e processing requests. */
 
 static unsigned worker_count = 0;
-static pthread_attr_t attr;
 
 unsigned worker_min_count = DEFAULT_WORKER_MIN;
 unsigned worker_max_count = DEFAULT_WORKER_MAX;
@@ -238,8 +272,8 @@ worker_start (void)
   pthread_t thr;
   int rc;
 
-  if ((rc = pthread_create (&thr, &attr, thr_http, NULL)) != 0)
-    abend ("can't create worker thread: %s", strerror (rc));
+  if ((rc = pthread_create (&thr, &thread_attr_worker, thr_http, NULL)) != 0)
+    abend (NULL, "can't create worker thread: %s", strerror (rc));
   worker_count++;
 }
 
@@ -251,11 +285,12 @@ pound_http_enqueue (int sock, LISTENER *lstn, struct sockaddr *sa, socklen_t sal
 {
   POUND_HTTP *res;
 
-  if ((res = calloc (1, sizeof (res[0]))) == NULL)
+  if ((res = calloc (1, sizeof (res[0]) + lstn->linebufsize)) == NULL)
     {
       lognomem ();
       return -1;
     }
+  res->buffer = (char*)(res + 1);
 
   if ((res->from_host.ai_addr = malloc (salen)) == NULL)
     {
@@ -273,6 +308,7 @@ pound_http_enqueue (int sock, LISTENER *lstn, struct sockaddr *sa, socklen_t sal
 
   http_request_init (&res->request);
   http_request_init (&res->response);
+
   /*
    * Note: submatch_queue_init is not called, because res is already
    * filled with zeros.  Revise this if submatch_queue stuff changes.
@@ -364,8 +400,6 @@ void
 pound_http_destroy (POUND_HTTP *arg)
 {
   free (arg->from_host.ai_addr);
-
-  free (arg->orig_forwarded_header);
   http_request_free (&arg->request);
   http_request_free (&arg->response);
 
@@ -375,6 +409,7 @@ pound_http_destroy (POUND_HTTP *arg)
       BIO_ssl_shutdown (arg->cl);
     }
 
+  backend_unref (arg->backend);
   if (arg->be != NULL)
     {
       BIO_flush (arg->be);
@@ -510,8 +545,8 @@ thr_dispatch (void *unused)
 			}
 
 		      if (pound_http_enqueue (clnt, lstn,
-					   (struct sockaddr *) &clnt_addr,
-					   clnt_length))
+					      (struct sockaddr *) &clnt_addr,
+					      clnt_length))
 			close (clnt);
 		    }
 		}
@@ -653,6 +688,44 @@ cleanup (void)
     }
 }
 
+#if EARLY_PTHREAD_CANCEL_PROBE
+/*
+ * In GNU libc, a call to pthread_cancel involves loading the libgcc_s.so.1
+ * shared library.  If pound is running in a chroot, this fails with the
+ * diagnostics
+ *
+ *    libgcc_s.so.1 must be installed for pthread_cancel to work
+ *
+ * after which the program aborts.  That means that normal pound shutdown
+ * sequence is not performed properly.  To avoid this, the following kludge
+ * is implemented: a dummy thread is created and immediately cancelled before
+ * doing chroot.  This should load libgcc_s.so.1 early, so that it remains
+ * loaded after chroot.
+ *
+ * In case other libc flavours exhibit similar behaviour, this hack can
+ * be enabled at compile time by giving the --enable-pthread-cancel-probe
+ * option to configure.
+ */
+static void *
+thr_cancel (void *dummy)
+{
+  pause ();
+  return NULL;
+}
+
+static void
+probe_pthread_cancel (void)
+{
+  pthread_t t;
+  void *p;
+  pthread_create (&t, NULL, thr_cancel, NULL);
+  pthread_cancel (t);
+  pthread_join (t, &p);
+}
+#else
+# define probe_pthread_cancel()
+#endif
+
 struct signal_handler
 {
   int signo;
@@ -683,6 +756,35 @@ server (void)
   sigset_t sigs;
   void *res;
 
+  watcher_setup ();
+
+  /* chroot if necessary */
+  if (root_jail)
+    {
+      unsigned char random;
+
+      /* Make sure openssl opens /dev/urandom before the chroot. */
+      RAND_bytes (&random, 1);
+
+      /*
+       * Give libc a chance to load any libraries necessary for pthread_cancel
+       * to work.  See the comment above.
+       */
+      probe_pthread_cancel ();
+
+      if (chroot (root_jail))
+	abend (NULL, "chroot: %s", strerror (errno));
+
+      if (chdir ("/"))
+	abend (NULL, "chdir /: %s", strerror (errno));
+    }
+
+  if (group_id != -1 && (setgid (group_id) || setegid (group_id)))
+      abend (NULL, "setgid: %s", strerror (errno));
+
+  if (user_id != -1 && (setuid (user_id) || seteuid (user_id)))
+      abend (NULL, "setuid: %s", strerror (errno));
+
   sigemptyset (&sigs);
 
   act.sa_flags = 0;
@@ -697,16 +799,10 @@ server (void)
   pthread_sigmask (SIG_BLOCK, &sigs, NULL);
 
   /* thread stuff */
-  pthread_attr_init (&attr);
-  pthread_attr_setdetachstate (&attr, PTHREAD_CREATE_DETACHED);
-
-  /* set new stack size  */
-  if (pthread_attr_setstacksize (&attr, 1 << 18))
-    abend ("can't set stack size");
 
   /* start timer */
-  if (pthread_create (&thr, &attr, thr_timer, NULL))
-    abend ("can't create timer thread: %s", strerror (errno));
+  if (pthread_create (&thr, &thread_attr_detached, thr_timer, NULL))
+    abend (NULL, "can't create timer thread: %s", strerror (errno));
 
   /*
    * Create the worker threads
@@ -879,12 +975,12 @@ detach (void)
   sa.sa_flags = 0;
 
   if (sigaction (SIGHUP, &sa, &oldsa))
-    abend ("sigaction: %s", strerror (errno));
+    abend (NULL, "sigaction: %s", strerror (errno));
 
   switch (fork ())
     {
     case -1:
-      abend ("fork: %s", strerror (errno));
+      abend (NULL, "fork: %s", strerror (errno));
       _exit (1);
 
     case 0:
@@ -900,66 +996,162 @@ detach (void)
   sigaction (SIGHUP, &oldsa, NULL);
 
   if (pid == -1)
-    abend ("setsid: %s", strerror (ec));
+    abend (NULL, "setsid: %s", strerror (ec));
 
   if (chdir ("/"))
-    abend ("can't change to /: %s", strerror (errno));
+    abend (NULL, "can't change to /: %s", strerror (errno));
 
   close (0);
   close (1);
   close (2);
   if (open ("/dev/null", O_RDONLY) == -1)
-    abend ("can't open /dev/null: %s", strerror (errno));
+    abend (NULL, "can't open /dev/null: %s", strerror (errno));
   if (open ("/dev/null", O_WRONLY) == -1)
-    abend ("can't open /dev/null: %s", strerror (errno));
+    abend (NULL, "can't open /dev/null: %s", strerror (errno));
   if (dup (1) == -1)
-    abend ("dup failed: %s", strerror (errno));
+    abend (NULL, "dup failed: %s", strerror (errno));
 }
 
-#if EARLY_PTHREAD_CANCEL_PROBE
-/*
- * In GNU libc, a call to pthread_cancel involves loading the libgcc_s.so.1
- * shared library.  If pound is running in a chroot, this fails with the
- * diagnostics
- *
- *    libgcc_s.so.1 must be installed for pthread_cancel to work
- *
- * after which the program aborts.  That means that normal pound shutdown
- * sequence is not performed properly.  To avoid this, the following kludge
- * is implemented: a dummy thread is created and immediately cancelled before
- * doing chroot.  This should load libgcc_s.so.1 early, so that it remains
- * loaded after chroot.
- *
- * In case other libc flavours exhibit similar behaviour, this hack can
- * be enabled at compile time by giving the --enable-pthread-cancel-probe
- * option to configure.
- */
-static void *
-thr_cancel (void *dummy)
+static int
+read_fd (int fd)
 {
-  pause ();
-  return NULL;
+  struct msghdr msg;
+  struct iovec iov[1];
+  char base[1];
+  union
+  {
+    struct cmsghdr cm;
+    char control[CMSG_SPACE (sizeof (int))];
+  } control_un;
+  struct cmsghdr *cmptr;
+
+  msg.msg_control = control_un.control;
+  msg.msg_controllen = sizeof (control_un.control);
+
+  msg.msg_name = NULL;
+  msg.msg_namelen = 0;
+
+  iov[0].iov_base = base;
+  iov[0].iov_len = sizeof (base);
+
+  msg.msg_iov = iov;
+  msg.msg_iovlen = 1;
+  if (recvmsg (fd, &msg, 0) > 0)
+    {
+      if ((cmptr = CMSG_FIRSTHDR (&msg)) != NULL
+	  && cmptr->cmsg_len == CMSG_LEN (sizeof (int))
+	  && cmptr->cmsg_level == SOL_SOCKET
+	  && cmptr->cmsg_type == SCM_RIGHTS)
+	return *((int*) CMSG_DATA (cmptr));
+    }
+  return -1;
 }
 
 static void
-probe_pthread_cancel (void)
+listener_socket_from (LISTENER *lst)
 {
-  pthread_t t;
-  void *p;
-  pthread_create (&t, NULL, thr_cancel, NULL);
-  pthread_cancel (t);
-  pthread_join (t, &p);
+  struct sockaddr_storage ss;
+  socklen_t sslen = sizeof (ss);
+  int sfd, fd;
+  struct stringbuf sb;
+  char tmp[MAX_ADDR_BUFSIZE];
+
+  if ((sfd = socket (PF_UNIX, SOCK_STREAM, 0)) < 0)
+    abend (&lst->locus, "socket: %s", strerror (errno));
+
+  if (connect (sfd, lst->addr.ai_addr, lst->addr.ai_addrlen) < 0)
+    abend (&lst->locus, "connect %s: %s",
+	   ((struct sockaddr_un*)lst->addr.ai_addr)->sun_path,
+	   strerror (errno));
+
+  fd = read_fd (sfd);
+
+  if (fd == -1)
+    abend (&lst->locus, "can't get socket: %s", strerror (errno));
+
+  if (getsockname (fd, (struct sockaddr*) &ss, &sslen) == -1)
+    abend (&lst->locus, "can't get socket address: %s", strerror (errno));
+
+  lst->sock = fd;
+
+  free (lst->addr.ai_addr);
+  lst->addr.ai_addr = xmalloc (sslen);
+  memcpy (lst->addr.ai_addr, &ss, sslen);
+  lst->addr.ai_addrlen = sslen;
+  lst->addr.ai_family = ss.ss_family;
+
+  xstringbuf_init (&sb);
+  stringbuf_format_locus_range (&sb, &lst->locus);
+  stringbuf_add_string (&sb, ": obtained address ");
+  stringbuf_add_string (&sb, addr2str (tmp, sizeof (tmp), &lst->addr, 0));
+  logmsg (LOG_DEBUG, "%s", stringbuf_finish (&sb));
+  stringbuf_free (&sb);
 }
-#else
-# define probe_pthread_cancel()
-#endif
+
+static void
+listener_init (LISTENER *lst, uid_t user_id, gid_t group_id)
+{
+  int opt;
+  int domain;
+  char abuf[MAX_ADDR_BUFSIZE];
+  mode_t oldmask;
+
+  switch (lst->addr.ai_family)
+    {
+    case AF_INET:
+      domain = PF_INET;
+      break;
+
+    case AF_INET6:
+      domain = PF_INET6;
+      break;
+
+    case AF_UNIX:
+      domain = PF_UNIX;
+      unlink (((struct sockaddr_un*)lst->addr.ai_addr)->sun_path);
+      oldmask = umask (0777 & ~lst->mode);
+      break;
+
+    default:
+      abort ();
+    }
+
+  if ((lst->sock = socket (domain, SOCK_STREAM, 0)) < 0)
+    abend (&lst->locus, "can't create HTTP socket %s: %s",
+	   addr2str (abuf, sizeof (abuf), &lst->addr, 0),
+	   strerror (errno));
+
+  opt = 1;
+  setsockopt (lst->sock, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof (opt));
+  if (bind (lst->sock, lst->addr.ai_addr, lst->addr.ai_addrlen) < 0)
+    abend (&lst->locus, "can't bind HTTP socket to %s: %s",
+	   addr2str (abuf, sizeof (abuf), &lst->addr, 0),
+	   strerror (errno));
+
+  if (domain == PF_UNIX)
+    {
+      umask (oldmask);
+      if (lst->chowner)
+	{
+	  char *sname = ((struct sockaddr_un*)lst->addr.ai_addr)->sun_path;
+	  if (chown (sname, user_id, group_id))
+	    conf_error_at_locus_range (&lst->locus,
+				       "can't chown socket %s to %d:%d: %s",
+				       sname, user_id, group_id,
+				       strerror (errno));
+	}
+    }
+
+  if (listen (lst->sock, 512))
+    abend (&lst->locus, "can't listen on %s: %s",
+	   addr2str (abuf, sizeof (abuf), &lst->addr, 0),
+	   strerror (errno));
+}
 
 int
 main (const int argc, char **argv)
 {
   LISTENER *lstn;
-  uid_t user_id = -1;
-  gid_t group_id = -1;
 #ifndef SOL_TCP
   struct protoent *pe;
 #endif
@@ -976,13 +1168,16 @@ main (const int argc, char **argv)
   CRYPTO_set_locking_callback (l_lock);
 
   /* prepare regular expressions */
-  if (regcomp (&HEADER, "^([a-z0-9!#$%&'*+.^_`|~-]+):[ \t]*(.*)[ \t]*$",
-	       REG_ICASE | REG_NEWLINE | REG_EXTENDED)
-      || regcomp (&CONN_UPGRD, "(^|[ \t,])upgrade([ \t,]|$)",
-		  REG_ICASE | REG_NEWLINE | REG_EXTENDED)
-      || regcomp (&LOCATION, "(http|https)://([^/]+)(.*)",
-		  REG_ICASE | REG_NEWLINE | REG_EXTENDED))
-    abend ("bad essential Regex");
+  if (genpat_compile (&HEADER, GENPAT_POSIX,
+		     "^([a-z0-9!#$%&'*+.^_`|~-]+):[ \t]*(.*)[ \t]*$",
+		     GENPAT_ICASE | GENPAT_MULTILINE)
+      || genpat_compile (&CONN_UPGRD, GENPAT_POSIX,
+			"(^|[ \t,])upgrade([ \t,]|$)",
+			GENPAT_ICASE | GENPAT_MULTILINE)
+      || genpat_compile (&LOCATION,  GENPAT_POSIX,
+			"(http|https)://([^/]+)(.*)",
+			GENPAT_ICASE | GENPAT_MULTILINE))
+    abend (NULL, "bad essential Regex");
 
 #ifndef SOL_TCP
   /* for systems without the definition */
@@ -994,13 +1189,29 @@ main (const int argc, char **argv)
   SOL_TCP = pe->p_proto;
 #endif
 
+  pthread_mutexattr_init (&mutex_attr_recursive);
+  pthread_mutexattr_settype (&mutex_attr_recursive, PTHREAD_MUTEX_RECURSIVE);
+
+  pthread_attr_init (&thread_attr_detached);
+  pthread_attr_setdetachstate (&thread_attr_detached, PTHREAD_CREATE_DETACHED);
+
+  pthread_attr_init (&thread_attr_worker);
+  pthread_attr_setdetachstate (&thread_attr_worker, PTHREAD_CREATE_DETACHED);
+  /* set new stack size  */
+  if (pthread_attr_setstacksize (&thread_attr_worker, 1 << 18))
+    abend (NULL, "can't set stack size");
+
   json_memabrt = lognomem;
 
   /* read config */
   config_parse (argc, argv);
 
   if (log_facility != -1)
-    openlog (progname, LOG_CONS | LOG_NDELAY | LOG_PID, log_facility);
+    {
+      openlog (syslog_tag ? syslog_tag : progname,
+	       LOG_CONS | LOG_NDELAY | LOG_PID, log_facility);
+      cfg_error_msg = pound_cfg_error_msg;
+    }
 
   /* set uid if necessary */
   if (user)
@@ -1008,7 +1219,7 @@ main (const int argc, char **argv)
       struct passwd *pw;
 
       if ((pw = getpwnam (user)) == NULL)
-	abend ("no such user %s", user);
+	abend (NULL, "no such user %s", user);
       user_id = pw->pw_uid;
     }
 
@@ -1018,9 +1229,11 @@ main (const int argc, char **argv)
       struct group *gr;
 
       if ((gr = getgrnam (group)) == NULL)
-	abend ("no such group %s", group);
+	abend (NULL, "no such group %s", group);
       group_id = gr->gr_gid;
     }
+
+  clock_gettime (CLOCK_REALTIME, &start_time);
 
   logmsg (LOG_NOTICE, "starting...");
 
@@ -1028,60 +1241,10 @@ main (const int argc, char **argv)
   n_listeners = 0;
   SLIST_FOREACH (lstn, &listeners, next)
     {
-      if (lstn->sock == -1)
-	{
-	  /* prepare the socket */
-	  int opt;
-	  int domain;
-	  char abuf[MAX_ADDR_BUFSIZE];
-	  mode_t oldmask;
-
-	  switch (lstn->addr.ai_family)
-	    {
-	    case AF_INET:
-	      domain = PF_INET;
-	      break;
-	    case AF_INET6:
-	      domain = PF_INET6;
-	      break;
-	    case AF_UNIX:
-	      domain = PF_UNIX;
-	      unlink (((struct sockaddr_un*)lstn->addr.ai_addr)->sun_path);
-	      oldmask = umask (0777 & ~lstn->mode);
-	      break;
-	    default:
-	      abort ();
-	    }
-	  if ((lstn->sock = socket (domain, SOCK_STREAM, 0)) < 0)
-	    abend ("can't create HTTP socket %s: %s",
-		   addr2str (abuf, sizeof (abuf), &lstn->addr, 0),
-		   strerror (errno));
-
-	  opt = 1;
-	  setsockopt (lstn->sock, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof (opt));
-	  if (bind (lstn->sock, lstn->addr.ai_addr,
-		    (socklen_t) lstn->addr.ai_addrlen) < 0)
-	    abend ("can't bind HTTP socket to %s: %s",
-		   addr2str (abuf, sizeof (abuf), &lstn->addr, 0),
-		   strerror (errno));
-
-	  if (domain == PF_UNIX)
-	    {
-	      umask (oldmask);
-	      if (lstn->chowner)
-		{
-		  char *sname = ((struct sockaddr_un*)lstn->addr.ai_addr)->sun_path;
-		  if (chown (sname, user_id, group_id))
-		    logmsg (LOG_ERR, "can't chown socket %s to %d:%d: %s",
-			    sname, user_id, group_id, strerror (errno));
-		}
-	    }
-
-	  if (listen (lstn->sock, 512))
-	    abend ("can't listen on %s: %s",
-                   addr2str (abuf, sizeof (abuf), &lstn->addr, 0),
-                   strerror (errno));
-	}
+      if (lstn->socket_from)
+	listener_socket_from (lstn);
+      else
+	listener_init (lstn, user_id, group_id);
       n_listeners++;
     }
 
@@ -1091,7 +1254,7 @@ main (const int argc, char **argv)
 
   pidfile_create ();
 
-  /* chroot if necessary */
+  /* chroot preparations */
   if (root_jail)
     {
       unsigned char random;
@@ -1104,21 +1267,7 @@ main (const int argc, char **argv)
        * to work.  See the comment above.
        */
       probe_pthread_cancel ();
-
-      if (chroot (root_jail))
-	abend ("chroot: %s", strerror (errno));
-
-      if (chdir ("/"))
-	abend ("chdir /: %s", strerror (errno));
     }
-
-  if (group)
-    if (setgid (group_id) || setegid (group_id))
-      abend ("setgid: %s", strerror (errno));
-
-  if (user)
-    if (setuid (user_id) || seteuid (user_id))
-      abend ("setuid: %s", strerror (errno));
 
   if (enable_supervisor && daemonize)
     supervisor ();

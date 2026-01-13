@@ -1,0 +1,202 @@
+# This file is part of pound testsuite. -*- autotest -*-
+# Copyright (C) 2025 Sergey Poznyakoff
+#
+# Pound is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# Pound is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with pound.  If not, see <http://www.gnu.org/licenses/>.
+AT_SETUP([listener])
+AT_KEYWORDS([ctl listener ctl-listener])
+AT_DATA([404.html],[Not Found
+])
+
+PT_CHECK([
+ListenHTTP
+	Service "a"
+		Path "/a"
+		Backend
+		End
+
+		Emergency
+		End
+	End
+
+	Service "b"
+		Path "/b"
+		Redirect 302 "http://b.example.org"
+	End
+
+	Service "c"
+		Path "/c"
+		Error 404 "404.html"
+	End
+
+	Service "d"
+		Path "/d"
+		SendFile "/"
+	End
+
+	Service "metrics"
+		URL "/metrics"
+		Metrics
+	End
+
+	Service
+		Control
+	End
+End
+],
+[[GET /listener/1?indent=2
+end
+
+200
+Content-Type: application/json
+
+:re
+\{
+  "address": "127.0.0.1:\d+",
+  "enabled": true,
+  "kind": "listener",
+  "name": null,
+  "protocol": "http",
+  "services": \[
+    \{
+      "backends": \[
+        \{
+          "address": "127.0.0.1:\d+",
+          "alive": true,
+          "conn_to": 15,
+          "enabled": true,
+          "io_to": 15,
+          "kind": "backend",
+          "priority": 5,
+          "protocol": "http",
+          "servername": null,
+          "type": "backend",
+          "weight": 0,
+          "ws_to": 600
+        \},
+        \{
+          "address": "127.0.0.1:\d+",
+          "alive": true,
+          "conn_to": 120,
+          "enabled": true,
+          "io_to": 120,
+          "kind": "backend",
+          "priority": 5,
+          "protocol": "http",
+          "servername": null,
+          "type": "backend",
+          "weight": 65535,
+          "ws_to": 120
+        \}
+      \],
+      "enabled": true,
+      "kind": "service",
+      "name": "a",
+      "session_type": "NONE",
+      "sessions": null
+    \},
+    \{
+      "backends": \[
+        \{
+          "alive": true,
+          "code": 302,
+          "enabled": true,
+          "has_uri": false,
+          "kind": "backend",
+          "priority": 1,
+          "type": "redirect",
+          "url": "http://b.example.org",
+          "weight": 0
+        \}
+      \],
+      "enabled": true,
+      "kind": "service",
+      "name": "b",
+      "session_type": "NONE",
+      "sessions": null
+    \},
+    \{
+      "backends": \[
+        \{
+          "alive": true,
+          "enabled": true,
+          "kind": "backend",
+          "priority": 1,
+          "status": 404,
+          "text": "Not Found\\n",
+          "type": "error",
+          "weight": 0
+        \}
+      \],
+      "enabled": true,
+      "kind": "service",
+      "name": "c",
+      "session_type": "NONE",
+      "sessions": null
+    \},
+    \{
+      "backends": \[
+        \{
+          "alive": true,
+          "enabled": true,
+          "kind": "backend",
+          "priority": 1,
+          "type": "file",
+          "weight": 0
+        \}
+      \],
+      "enabled": true,
+      "kind": "service",
+      "name": "d",
+      "session_type": "NONE",
+      "sessions": null
+    \},
+    \{
+      "backends": \[
+        \{
+          "alive": true,
+          "enabled": true,
+          "kind": "backend",
+          "priority": 1,
+          "type": "metrics",
+          "weight": 0
+        \}
+      \],
+      "enabled": true,
+      "kind": "service",
+      "name": "metrics",
+      "session_type": "NONE",
+      "sessions": null
+    \},
+    \{
+      "backends": \[
+        \{
+          "alive": true,
+          "enabled": true,
+          "kind": "backend",
+          "priority": 1,
+          "type": "control",
+          "weight": 0
+        \}
+      \],
+      "enabled": true,
+      "kind": "service",
+      "name": null,
+      "session_type": "NONE",
+      "sessions": null
+    \}
+  \]
+\}
+endnonl
+]])
+AT_CLEANUP

@@ -1,5 +1,5 @@
 # This file is part of pound testsuite. -*- autotest -*-
-# Copyright (C) 2023-2024 Sergey Poznyakoff
+# Copyright (C) 2023-2025 Sergey Poznyakoff
 #
 # Pound is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -92,6 +92,150 @@ end
 ])
 
 AT_CHECK([fgrep -q 'pound: path "/echo/$1/$1(1)/$1(2)/$1(3)/$1(4)/$1(5)/$1(6)/$1(7)/$1(8)" refers to non-existing group $1(8)' pound.log])
+
+PT_CHECK([ListenHTTP
+	Service
+		Rewrite
+			Header "X-A: (.*)"
+			Header "X-B: (.*)"
+			Header "X-C: (.*)"
+			Header "X-D: (.*)"
+			Header "X-E: (.*)"
+			Header "X-F: (.*)"
+			Header "X-G: (.*)"
+			Header "X-H: (.*)"
+			Header "X-I: (.*)"
+			SetPath ["/echo/$1/$1(1)/$1(2/$1(3)/$1(4)/$1(5)/$1(6)/$1(7)/$1(8)"]
+		End
+		Backend
+			Address
+			Port
+		End
+	End
+End
+],
+[GET /foo
+X-A: a
+X-B: b
+X-C: c
+X-D: d
+X-E: e
+X-F: f
+X-G: g
+X-H: h
+X-I: i
+end
+
+500
+end
+])
+
+AT_CHECK([[fgrep -q 'pound: path "/echo/$1/$1(1)/$1(2/$1(3)/$1(4)/$1(5)/$1(6)/$1(7)/$1(8)": missing closing parenthesis in reference started at offset 16' pound.log]])
+
+PT_CHECK([ListenHTTP
+	Service
+		Rewrite
+			Header "X-A" -tag "A" "(.*)"
+			Header "X-B" -tag "B" "(.*)"
+			Header "X-C" -tag "C" "(.*)"
+			Header "X-D" -tag "D" "(.*)"
+			Header "X-E" -tag "E" "(.*)"
+			Header "X-F" -tag "F" "(.*)"
+			Header "X-G" -tag "G" "(.*)"
+			Header "X-H" -tag "H" "(.*)"
+			Header "X-I" -tag "I" "(.*)"
+			SetPath ["/echo/$1(I)/$1(H)/$1(G)/$1(F)/$1(E)/$1(D)/$1(C)/$1(B)"]
+		End
+		Backend
+			Address
+			Port
+		End
+	End
+End
+],
+[GET /foo
+X-A: a
+X-B: b
+X-C: c
+X-D: d
+X-E: e
+X-F: f
+X-G: g
+X-H: h
+X-I: i
+end
+
+200
+x-orig-uri: /echo/i/h/g/f/e/d/c/b
+end
+])
+
+# Check if backreference groups are indexed properly.
+PT_CHECK([[ListenHTTP
+	Service
+		Path -re "([^./]+\\.([^.]+))$"
+		Rewrite
+			# Unqualified backreference here refers to the last
+			# matched condition, i.e. to the Path.
+			StringMatch "$2" "html"
+			# If the above condition is met, new backreference
+			# group appears on stack, so that backreferences in
+			# Path must be qualified by group index.
+			SetPath "/echo/markup/$1(1)"
+		Else
+			# Same here.  Additionally, this checks that failed
+			# conditionals don't alter backreference group indices.
+			StringMatch "$2" "txt"
+			SetPath "/echo/plaintext/$1(1)"
+		End
+		Backend
+		End
+	End
+End]],
+[GET /index.html
+end
+
+200
+x-orig-uri: /echo/markup/index.html
+end
+
+GET /readme.txt
+end
+
+200
+x-orig-uri: /echo/plaintext/readme.txt
+end
+])
+
+# Text explicit group indexing.
+PT_CHECK([[ListenHTTP
+	Service
+		Path -tag "suffix" -re "([^./]+\\.([^.]+))$"
+		Rewrite
+			StringMatch "$2(suffix)" "html"
+			SetPath "/echo/markup/$1(suffix)"
+		Else
+			StringMatch "$2(suffix)" "txt"
+			SetPath "/echo/plaintext/$1(suffix)"
+		End
+		Backend
+		End
+	End
+End]],
+[GET /index.html
+end
+
+200
+x-orig-uri: /echo/markup/index.html
+end
+
+GET /readme.txt
+end
+
+200
+x-orig-uri: /echo/plaintext/readme.txt
+end
+])
 
 AT_CLEANUP
 

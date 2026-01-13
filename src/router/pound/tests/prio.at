@@ -1,5 +1,5 @@
 # This file is part of pound testsuite. -*- autotest -*-
-# Copyright (C) 2022-2024 Sergey Poznyakoff
+# Copyright (C) 2022-2025 Sergey Poznyakoff
 #
 # Pound is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -22,7 +22,7 @@ PT_CHECK(
 		Backend
 			Address
 			Port
-			Priority 0
+			Priority 2
 		End
 		Backend
 			Address
@@ -32,18 +32,7 @@ PT_CHECK(
 	End
 End
 ],
-[#
-# Let N be the number of backends and Wi weight (priority) of the i-th
-# backend.  Then, assuming 0-based weights, number of samples necessary
-# to finish a round-robin cycle is N+Sum(W).  Number of requests served
-# by backend j during the cycle is
-#
-#                    Wj + 1
-#                  ----------
-#                  N + Sum(W)
-#
-# In this test, N=2, Sum(W)=8, so that:
-stats samples=10 index=1 avg=0.9
+[stats samples=10 index=1 avg=0.8
 
 GET /echo/foo
 end
@@ -74,8 +63,7 @@ PT_CHECK(
 	End
 End
 ],
-[# N=2, Sum(W)=23, number of requests for backend 1 is 8/23:
-stats samples=23 index=1 avg=0.348
+[stats samples=100 index=1 avg=0.35
 
 GET /echo/foo
 end
@@ -101,9 +89,7 @@ PT_CHECK(
 End
 ],
 [# Default priority is 5
-# N=2, Sum(W)=16
-#
-stats samples=16 index=1 avg=0.625
+stats samples=100 index=1 avg=0.64
 
 GET /echo/foo
 end

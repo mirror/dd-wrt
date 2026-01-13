@@ -1,0 +1,150 @@
+@c This is part of the mailfromd manual.
+@c Copyright (C) 2006 Free Software Foundation, Inc.
+@c This file is distributed under GFDL 1.1 or any later version
+@c published by the Free Software Foundation.
+
+
+@cindex time formats
+  This appendix documents the time format specifications understood by
+the @samp{%@{@var{format}@}t} log format conversion.  Essentially, it
+is a reproduction of the man page for GNU @code{strftime} function.
+
+  Ordinary characters placed in the format string are reproduced without
+conversion.  Conversion specifiers are introduced by a @samp{%}
+character, and are replaced as follows:
+
+@multitable @columnfractions 0.2 0.7
+@item %a @tab The abbreviated weekday name according to the current locale.
+
+@item %A @tab The full weekday name according to the current locale.
+
+@item %b @tab The abbreviated month name according to the current locale.
+
+@item %B @tab The full month name according to the current locale.
+
+@anchor{%c time format}
+@item %c @tab The preferred date and time representation for the current locale.
+
+@item %C @tab The century number (year/100) as a 2-digit integer.
+
+@item %d @tab The day of the month as a decimal number (range 01 to 31).
+
+@item %D @tab Equivalent to @samp{%m/%d/%y}. 
+
+@item %e @tab Like @samp{%d}, the day of the month as a decimal
+number, but a leading zero is replaced by a space.  
+
+@item %E @tab Modifier: use alternative format, see below
+(@pxref{conversion specs}).
+
+@item %F @tab Equivalent to @samp{%Y-%m-%d} (the ISO 8601 date format).
+
+@item %G
+@tab The ISO 8601 year with century as a decimal number.
+The 4-digit year corresponding to the ISO week number (see @samp{%V}).  This
+has the same format and value as @samp{%y}, except that if the ISO week
+number belongs to the previous or next year, that year is used instead. 
+
+@item %g @tab Like @samp{%G}, but without century, i.e., with a 2-digit
+ year (00-99). 
+
+@item %h @tab Equivalent to @samp{%b}.
+
+@item %H @tab The hour as a decimal number using a 24-hour clock
+(range 00 to 23). 
+
+@item %I @tab The hour as a decimal number using a 12-hour clock
+(range 01 to 12).
+
+@item %j @tab The day of the year as a decimal number (range 001
+to 366).
+
+@item %k @tab The hour (24-hour clock) as a decimal number (range
+0 to 23); single digits are preceded by a blank.
+(See also @samp{%H}.)
+
+@item %l @tab The hour (12-hour clock) as a decimal number (range
+1 to 12); single digits are preceded by a blank. (See also @samp{%I}.) 
+
+@item %m @tab The month as a decimal number (range 01 to 12).
+
+@item %M @tab The minute as a decimal number (range 00 to 59).
+
+@item %n @tab A newline character.
+
+@item %O @tab Modifier: use alternative format, see below
+(@pxref{conversion specs}).
+
+@item %p @tab Either @samp{AM} or @samp{PM} according to the given time
+value, or the corresponding strings for the current locale.  Noon is
+treated as @samp{pm} and midnight as @samp{am}.
+
+@item %P @tab Like @samp{%p} but in lowercase: @samp{am} or @samp{pm}
+or a corresponding string for the current locale. 
+
+@item %r @tab The time in @samp{a.m.} or @samp{p.m.} notation.  In the POSIX
+locale this is equivalent to @samp{%I:%M:%S %p}. 
+
+@item %R @tab The time in 24-hour notation (@samp{%H:%M}).  For a
+version including the seconds, see @samp{%T} below. 
+
+@anchor{%s time format}
+@item %s @tab The number of seconds since the Epoch, i.e., since 1970-01-01 00:00:00 UTC. 
+
+@item %S @tab The second as a decimal number (range 00 to 61).
+
+@item %t @tab A tab character. 
+
+@item %T @tab The time in 24-hour notation (@samp{%H:%M:%S}). 
+
+@item %u @tab The day of the week as a decimal, range 1 to 7,
+Monday being 1.  See also @samp{%w}. 
+
+@item %U @tab The week number of the current year as a decimal number,
+range 00 to 53, starting with the first Sunday as the first day of
+week 01.  See also @samp{%V} and @samp{%W}.
+
+@item %V @tab The ISO 8601:1988 week number of the current year
+as a decimal number, range 01 to 53, where week 1 is the first week
+that has at least 4 days in the current year, and with Monday as the
+first day of the week.  See also @samp{%U} and @samp{%W}. 
+
+@item %w @tab The day of the week as a decimal, range 0 to 6, Sunday
+being 0.  See also @samp{%u}. 
+
+@item %W @tab The week number of the current year as a decimal number,
+range 00 to 53, starting with the first Monday as the first day of week 01.
+
+@item %x @tab The preferred date representation for the current locale
+without the time. 
+
+@item %X @tab The preferred time representation for the current locale
+without the date. 
+
+@item %y @tab The year as a decimal number without a century (range 00 to 99).
+
+@item %Y @tab The year as a decimal number including the century.
+
+@item %z @tab The time-zone as hour offset from @acronym{GMT}.  Required to
+emit RFC822-conformant dates (using @samp{%a, %d %b %Y %H:%M:%S %z})
+
+@item %Z @tab The time zone or name or abbreviation.
+
+@item %+ @tab The date and time in @cite{date(1)} format. 
+
+@item %% @tab A literal @samp{%} character.
+@end multitable
+
+@anchor{conversion specs}
+Some conversion specifiers can be modified by preceding them by the
+@samp{E} or @samp{O} modifier to indicate that an alternative format
+should be used.  If the alternative format or specification does not
+exist for the current locale, the behaviour will be as if the
+unmodified conversion specification were used.  The Single Unix
+Specification mentions @samp{%Ec}, @samp{%EC}, @samp{%Ex}, @samp{%EX},
+@samp{%Ry}, @samp{%EY}, @samp{%Od}, @samp{%Oe}, @samp{%OH},
+@samp{%OI}, @samp{%Om}, @samp{%OM}, @samp{%OS}, @samp{%Ou},
+@samp{%OU}, @samp{%OV}, @samp{%Ow}, @samp{%OW}, @samp{%Oy}, where the
+effect of the @samp{O} modifier is to use alternative numeric symbols
+(say, roman numerals), and that of the @samp{E} modifier is to use a
+locale-dependent alternative representation. 

@@ -1,7 +1,7 @@
 /*
  * Pound - the reverse-proxy load-balancer
  * Copyright (C) 2002-2010 Apsis GmbH
- * Copyright (C) 2018-2024 Sergey Poznyakoff
+ * Copyright (C) 2018-2025 Sergey Poznyakoff
  *
  * Pound is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,8 +20,35 @@
 #include "json.h"
 #include <assert.h>
 
+typedef struct
+{
+  int tls;
+  char *path;
+  char *host;
+  char *user;
+  char *pass;
+  socklen_t addrlen;
+  union
+  {
+    struct sockaddr sa;
+    struct sockaddr_in in4;
+    struct sockaddr_in6 in6;
+    struct sockaddr_un un;
+  } addr;
+} URL;
+
+typedef struct server_defn
+{
+  char *name;
+  char *url;
+  char *ca_file;
+  char *ca_path;
+  char *cert;
+  int verify;
+  struct locus_range locus;
+} SERVER;
+
 char *conf_name = POUND_CONF;
-char *socket_name;
 int json_option;
 int indent_option;
 int verbose_option;
@@ -29,176 +56,562 @@ char *tmpl_path;
 char *tmpl_file = "poundctl.tmpl";
 char *tmpl_name = "default";
 
-struct keyword
-{
-  char const *name;
-  size_t len;
-  int flag;
+SERVER default_server_defn = {
+  .verify = 1
 };
+SERVER *server = &default_server_defn;
+URL *url;
 
-#define S(a) a, sizeof (a) - 1
-static struct keyword inline_keyword[] = {
-  { S("control"), 1 },
-  { NULL }
-};
-static struct keyword block_keyword[] = {
-  { S("socket"), 1 },
-  { S("end"), 0 },
-  { NULL }
-};
+#define HT_TYPE SERVER
+#define HT_NO_HASH_FREE
+#define HT_NO_DELETE
+#define HT_NO_FOREACH
+#define HT_NO_FOREACH_SAFE
+#include "ht.h"
 
-static struct keyword *keywords[] = {
-  inline_keyword,
-  block_keyword
+SERVER_HASH *server_hash;
+
+static CFGPARSER_TABLE server_parsetab[] = {
+  {
+    .name = "End",
+    .parser = cfg_parse_end
+  },
+  {
+    .name = "URL",
+    .parser = cfg_assign_string,
+    .off = offsetof (struct server_defn, url)
+  },
+  {
+    .name = "CAFile",
+    .parser = cfg_assign_string,
+    .off = offsetof (struct server_defn, ca_file)
+  },
+  {
+    .name = "CAPath",
+    .parser = cfg_assign_string,
+    .off = offsetof (struct server_defn, ca_path)
+  },
+  {
+    .name = "ClientCert",
+    .parser = cfg_assign_string,
+    .off = offsetof (struct server_defn, cert)
+  },
+  {
+    .name = "Verify",
+    .parser = cfg_assign_bool,
+    .off = offsetof (struct server_defn, verify)
+  },
+  { NULL }
 };
 
 static int
-find_keyword (int kwtab, char const *arg, size_t len)
+parse_server (void *call_data, void *section_data)
 {
-  struct keyword *kw;
-  for (kw = keywords[kwtab]; kw->name; kw++)
-    if (strncasecmp (kw->name, arg, len) == 0)
-      return kw->flag;
-  return -1;
+  struct token *tok;
+  SERVER *srv, *old;
+
+  if ((tok = gettkn_expect (T_STRING)) == NULL)
+    return CFGPARSER_FAIL;
+  XZALLOC (srv);
+  srv->name = xstrdup (tok->str);
+  if ((old = SERVER_INSERT (server_hash, srv)) != NULL)
+    {
+      conf_error ("redefinition of %s", srv->name);
+      conf_error_at_locus_range (&old->locus, "previously defined here");
+      return CFGPARSER_FAIL;
+    }
+  return cfgparser_loop (server_parsetab, srv, NULL, DEPREC_OK, &srv->locus);
 }
 
-/*
- * A temporary solution to obtain socket name from the pound.cfg file.
- * FIXME: Use the parser from config.c for that.
- */
-char *
-get_socket_name (void)
+static CFGPARSER_TABLE top_level_parsetab[] = {
+  {
+    .type = KWT_TOPLEVEL,
+  },
+  {
+    .name = "URL",
+    .parser = cfg_assign_string,
+    .data = &default_server_defn.url
+  },
+  {
+    .name = "CAFile",
+    .parser = cfg_assign_string,
+    .data = &default_server_defn.ca_file
+  },
+  {
+    .name = "CAPath",
+    .parser = cfg_assign_string,
+    .data = &default_server_defn.ca_path
+  },
+  {
+    .name = "ClientCert",
+    .parser = cfg_assign_string,
+    .data = &default_server_defn.cert
+  },
+  {
+    .name = "Verify",
+    .parser = cfg_assign_bool,
+    .data = &default_server_defn.verify
+  },
+  {
+    .name = "TemplateFile",
+    .parser = cfg_assign_string,
+    .data = &tmpl_file,
+  },
+  {
+    .name = "TemplatePath",
+    .parser = cfg_assign_string,
+    .data = &tmpl_path
+  },
+  {
+    .name = "TemplateName",
+    .parser = cfg_assign_string,
+    .data = &tmpl_name
+  },
+  {
+    .name = "Server",
+    .parser = parse_server
+  },
+  { NULL }
+};
+
+#define DOT_POUNDCTL_NAME ".poundctl"
+
+static void
+read_config (void)
 {
-  FILE *fp;
-  char  buf[MAXBUF], *name = NULL;
-  int line = 0;
-  int kwtab = 0;
-
-  if (verbose_option)
-    errormsg (0, 0, "scanning file %s", conf_name);
-  fp = fopen (conf_name, "r");
-  if (!fp)
+  char *poundctl_conf;
+  char *homedir = getenv ("HOME");
+  if (!homedir)
     {
-      if (errno != ENOENT || verbose_option)
-	errormsg (0, errno, "can't open %s", conf_name);
-      return NULL;
+      struct passwd *pwd = getpwuid (getuid ());
+      if (!pwd)
+	errormsg (1, errno, "can't get passwd entry for uid %ld",
+		  (long) getuid ());
+      homedir = pwd->pw_dir;
     }
-  while (fgets (buf, sizeof (buf), fp))
+
+  server_hash = SERVER_HASH_NEW ();
+
+  if ((poundctl_conf = getenv ("POUNDCTL_CONF")) != NULL)
     {
-      size_t len;
-      char *p;
-
-      ++line;
-      len = strlen (buf);
-      if (len == 0)
-	continue;
-      if (buf[len-1] != '\n')
+      if (poundctl_conf[0])
 	{
-	  errormsg (0, 0, "%s:%d: line too long", conf_name, line);
-	  break;
+	  if (cfgparser_parse (poundctl_conf, homedir, top_level_parsetab, NULL,
+			       DEPREC_OK, 0))
+	    exit (1);
 	}
-      while (len > 0 && isspace (buf[len-1]))
-	--len;
-      buf[len] = 0;
+    }
+  else
+    {
+      char *buf = xmalloc (strlen (homedir) + 1 + sizeof (DOT_POUNDCTL_NAME));
+      strcat (strcat (strcpy (buf, homedir), "/"), DOT_POUNDCTL_NAME);
+      if (access (buf, F_OK) == 0)
+	{
+	  if (cfgparser_parse (".poundctl", homedir, top_level_parsetab, NULL,
+			       DEPREC_OK, 0))
+	    exit (1);
+	}
+      free (buf);
+    }
+}
+
+static int skip_section (void *call_data, void *section_data);
+static int skip_acl_def (void *call_data, void *section_data);
+static int skip_acl_ref (void *call_data, void *section_data);
+static int skip_directive (void *call_data, void *section_data);
 
-      for (p = buf; *p && isspace (*p); p++)
+
+static CFGPARSER_TABLE section_parsetab[] = {
+  {
+    .name = "End",
+    .parser = cfg_parse_end
+  },
+  {
+    .name = "Service",
+    .parser = skip_section
+  },
+  {
+    .name = "Backend",
+    .parser = skip_section
+  },
+  {
+    .name = "Emergency",
+    .parser = skip_section
+  },
+  {
+    .name = "Session",
+    .parser = skip_section
+  },
+  {
+    .name = "Match",
+    .parser = skip_section
+  },
+  {
+    .name = "Rewrite",
+    .parser = skip_section
+  },
+  {
+    .name = "ACL",
+    .parser = skip_acl_ref,
+  },
+  {
+    .name = "TrustedIP",
+    .parser = skip_acl_ref
+  },
+  {
+    .name = "",
+    .type = KWT_WILDCARD,
+    .parser = skip_directive
+  },
+  { NULL }
+};
+
+static int
+skip_section (void *call_data, void *section_data)
+{
+  if (skip_directive (call_data, section_data) == CFGPARSER_FAIL)
+    return CFGPARSER_FAIL;
+  return cfgparser_loop (section_parsetab, call_data, section_data,
+			 DEPREC_OK, NULL);
+}
+
+static int
+skip_to_end (void)
+{
+  struct token *tok;
+  while ((tok = gettkn_any ()) != NULL)
+    {
+      if (tok->type == T_IDENT && c_strcasecmp (tok->str, "end") == 0)
+	return CFGPARSER_OK;
+      while ((tok = gettkn_any ()) != NULL && tok->type != '\n')
 	;
-
-      if (*p == 0 || *p == '#')
-	continue;
-
-      len = strcspn (p, " \t");
-      switch (find_keyword (kwtab, p, len))
-	{
-	case 0:
-	  kwtab = 0;
-	  break;
-
-	case 1:
-	  for (p += len; *p && isspace (*p); p++)
-	    ;
-	  if (*p == '"')
-	    {
-	      char *q;
-
-	      q = name = ++p;
-	      while (*p != '"')
-		{
-		  if (*p == 0)
-		    {
-		      errormsg (0, 0, "%s:%d:%ld missing closing double-quote",
-				conf_name, line, p - buf + 1);
-		      name = NULL;
-		      goto end;
-		    }
-
-		  if (*p == '\\')
-		    {
-		      if (p[1] == '\\' || p[1] == '\"')
-			{
-			  p++;
-			}
-		      else
-			{
-			  errormsg (0, 0, "%s:%d:%ld unrecognized escape character",
-				    conf_name, line, p - buf + 1);
-			}
-		    }
-		  *q++ = *p++;
-		}
-	      *q = 0;
-	    }
-	  else if (*p == 0 && kwtab == 0)
-	    {
-	      kwtab = 1;
-	      continue;
-	    }
-	  else
-	    {
-	      errormsg (0, 0, "%s:%d:%ld: expected quoted string",
-			conf_name, line, p - buf + 1);
-	    }
-	  goto end;
-
-	default:
-	  continue;
-	}
     }
- end:
-  if (ferror (fp))
+  conf_error ("%s", "unexpected end of file");
+  return CFGPARSER_FAIL;
+}
+
+static int
+skip_acl_def (void *call_data, void *section_data)
+{
+  if (skip_directive (call_data, section_data) == CFGPARSER_FAIL)
+    return CFGPARSER_FAIL;
+  return skip_to_end ();
+}
+
+static int
+skip_acl_ref (void *call_data, void *section_data)
+{
+  struct token *tok;
+  if ((tok = gettkn_any ()) == NULL)
+    return CFGPARSER_FAIL;
+  if (tok->type == '\n')
+    return skip_to_end ();
+  return skip_directive (call_data, section_data);
+}
+
+static int
+skip_stringlist (void *call_data, void *section_data)
+{
+  return skip_to_end ();
+}
+
+static int
+skip_directive (void *call_data, void *section_data)
+{
+  struct token *tok;
+  while ((tok = gettkn_any ()) != NULL)
     {
-      errormsg (0, 0, "%s: %s", conf_name, strerror (errno));
+      if (tok->type == '\n')
+	return CFGPARSER_OK_NONL;
     }
-  fclose (fp);
+  return CFGPARSER_FAIL;
+}
 
-  if (name)
-    socket_name = xstrdup (name);
+static CFGPARSER_TABLE resolver_parsetab[] = {
+  {
+    .name = "End",
+    .parser = cfg_parse_end
+  },
+  {
+    .name = "ConfigText",
+    .parser = skip_stringlist
+  },
+  {
+    .name = "",
+    .type = KWT_WILDCARD,
+    .parser = skip_directive
+  },
+  { NULL }
+};
 
-  return socket_name;
+static int
+skip_resolver (void *call_data, void *section_data)
+{
+  return cfgparser_loop (resolver_parsetab, call_data, section_data,
+			 DEPREC_OK, NULL);
+}
+
+static CFGPARSER_TABLE control_parsetab[] = {
+  {
+    .name = "End",
+    .parser = cfg_parse_end
+  },
+  {
+    .name = "Socket",
+    .parser = cfg_assign_string
+  },
+  {
+    .name = "",
+    .type = KWT_WILDCARD,
+    .parser = skip_directive
+  },
+  { NULL }
+};
+
+static int
+parse_control (void *call_data, void *section_data)
+{
+  struct token *tok;
+  if ((tok = gettkn_any ()) == NULL)
+    return CFGPARSER_FAIL;
+  switch (tok->type)
+    {
+    case '\n':
+      return cfgparser_loop (control_parsetab, call_data, section_data,
+			     DEPREC_OK, NULL);
+    case T_STRING:
+      *(char **) call_data = xstrdup (tok->str);
+      break;
+    default:
+      conf_error ("expected string or newline, but found %s",
+		  token_type_str (tok->type));
+      return CFGPARSER_FAIL;
+    }
+  return CFGPARSER_OK;
+}
+
+static CFGPARSER_TABLE pound_top_level_parsetab[] = {
+  {
+    .type = KWT_TOPLEVEL
+  },
+  {
+    .name = "IncludeDir",
+    .parser = cfg_parse_includedir
+  },
+  {
+    .name = "Control",
+    .parser = parse_control,
+  },
+  {
+    .name = "ListenHTTP",
+    .parser = skip_section
+  },
+  {
+    .name = "ListenHTTPS",
+    .parser = skip_section
+  },
+  {
+    .name = "Service",
+    .parser = skip_section
+  },
+  {
+    .name = "ACL",
+    .parser = skip_acl_def,
+  },
+  {
+    .name = "TrustedIP",
+    .parser = skip_acl_def,
+  },
+  {
+    .name = "CombineHeaders",
+    .parser = skip_stringlist
+  },
+  {
+    .name = "Resolver",
+    .parser = skip_resolver
+  },
+  {
+    .name = "",
+    .type = KWT_TABREF,
+    .ref = cfg_global_parsetab
+  },
+  {
+    .name = "",
+    .type = KWT_WILDCARD,
+    .parser = skip_directive
+  },
+  { NULL }
+};
+
+char *
+scan_pound_cfg (void)
+{
+  char *control_socket = NULL;
+  if (access (conf_name, F_OK) == 0)
+    {
+      if (verbose_option)
+	errormsg (0, 0, "scanning file %s", conf_name);
+      if (cfgparser_parse (conf_name, NULL, pound_top_level_parsetab,
+			   &control_socket, DEPREC_OK, 0))
+	return NULL;
+    }
+  return control_socket;
+}
+
+static void
+openssl_errormsg (int code, char const *fmt, ...)
+{
+  va_list ap;
+  unsigned long n = ERR_get_error ();
+
+  fprintf (stderr, "%s: ", progname);
+  va_start (ap, fmt);
+  vfprintf (stderr, fmt, ap);
+  fprintf (stderr, ": %s", ERR_error_string (n, NULL));
+
+  if ((n = ERR_get_error ()) != 0)
+    {
+      do
+	{
+	  fprintf (stderr, ": %s", ERR_error_string (n, NULL));
+	}
+      while ((n = ERR_get_error ()) != 0);
+    }
+  fputc ('\n', stderr);
+  if (code)
+    exit (code);
+}
+
+static void
+url_parse_host (char *str, URL *url)
+{
+  struct addrinfo *addr;
+  struct addrinfo hints;
+  int n = strcspn (str, "/");
+  char *host = xstrndup (str, n);
+  char *p;
+  int rc, len;
+
+  memset (&hints, 0, sizeof (hints));
+  hints.ai_socktype = SOCK_STREAM;
+
+  if (host[0] == '[' && host[n-1] == ']')
+    hints.ai_family = AF_INET6;
+  else
+    hints.ai_family = AF_UNSPEC;
+
+  if ((p = strchr (host, ':')) != NULL)
+    *p++ = 0;
+  else if (url->tls)
+    p = PORT_HTTPS_STR;
+  else
+    p = PORT_HTTP_STR;
+
+  if ((rc = getaddrinfo (host, p, &hints, &addr)) == 0)
+    {
+      if (addr->ai_family == AF_INET || addr->ai_family == AF_INET6)
+	{
+	  url->addrlen = addr->ai_addrlen;
+	  memcpy (&url->addr, addr->ai_addr, addr->ai_addrlen);
+	}
+      else
+	errormsg (1, 0, "unexpected address family");
+      freeaddrinfo (addr);
+    }
+  else
+    errormsg (1, 0, "can't resolve %s: %s", host, gai_strerror (rc));
+
+  url->host = host;
+  str += n;
+  len = strlen (str);
+  if (!(len > 0 && str[len-1] == '/'))
+    {
+      url->path = xmalloc (len + 2);
+      strcpy (url->path, str);
+      url->path[len] = '/';
+      url->path[len+1] = 0;
+    }
+  else
+    url->path = xstrdup (str);
+}
+
+static void
+url_parse_creds (char *str, URL *url)
+{
+  int n, j;
+  char **dst = &url->user;
+
+  switch (str[n = strcspn (str, ":@")])
+    {
+    case ':':
+      j = strcspn (str + n + 1, "@");
+      if (str[n + 1 + j] != '@')
+	break;
+      url->user = xstrndup (str, n);
+      str += n + 1;
+      n = j;
+      dst = &url->pass;
+      /* fall through */
+    case '@':
+      *dst = xstrndup (str, n);
+      str += n + 1;
+      /* fall through */
+    }
+  url_parse_host (str, url);
+}
+
+static void
+url_parse_scheme (char *str, URL *url)
+{
+  char *p;
+  int len;
+
+  if ((p = strchr (str, ':')) != NULL && p[1] == '/' && p[2] == '/')
+    {
+      if ((len = (p - str)) == 4 && memcmp (str, "http", len) == 0)
+	url->tls = 0;
+      else if (len == 5 && memcmp (str, "https", len) == 0)
+	url->tls = 1;
+      else
+	errormsg (1, 0, "unsupported URL scheme: %s", str);
+      str = p + 3;
+
+      url_parse_creds (str, url);
+    }
+  else
+    {
+      url->tls = 0;
+      url->path = xstrdup ("/");
+      url->host = xstrdup ("localhost");
+      url->user = NULL;
+      url->pass = NULL;
+      url->addrlen = sizeof (struct sockaddr_un);
+      url->addr.un.sun_family = AF_UNIX;
+      if (strlen (str) > sizeof (url->addr.un.sun_path))
+	errormsg (1, 0, "socket name too long");
+      strncpy (url->addr.un.sun_path, str, sizeof (url->addr.un.sun_path));
+    }
+}
+
+static URL *
+url_parse (char *str)
+{
+  URL *url = xzalloc (sizeof (*url));
+  url_parse_scheme (str, url);
+  return url;
 }
 
 BIO *
-open_socket (void)
+open_socket (URL *url)
 {
-  struct sockaddr_un ctrl;
   int fd;
-  BIO *bio;
+  BIO *bio, *bb;
 
-  if (verbose_option)
-    errormsg (0, 0, "connecting to %s", socket_name);
-
-  if (strlen (socket_name) > sizeof (ctrl.sun_path))
-    {
-      errormsg (1, 0, "socket name too long");
-    }
-
-  ctrl.sun_family = AF_UNIX;
-  strncpy (ctrl.sun_path, socket_name, sizeof (ctrl.sun_path));
-  if ((fd = socket (PF_UNIX, SOCK_STREAM, 0)) < 0)
+  if ((fd = socket (url->addr.sa.sa_family, SOCK_STREAM, 0)) < 0)
     {
       errormsg (1, errno, "socket");
     }
-  if (connect (fd, (struct sockaddr *) &ctrl, sizeof (ctrl)) < 0)
+  if (connect (fd, &url->addr.sa, url->addrlen) < 0)
     {
       errormsg (1, errno, "connect");
       exit (1);
@@ -208,6 +621,67 @@ open_socket (void)
     {
       errormsg (1, 0, "BIO_new_fd failed");
     }
+  BIO_set_close (bio,  BIO_CLOSE);
+
+  if (url->tls)
+    {
+      SSL_CTX *ctx;
+      SSL *ssl;
+      X509 *x509;
+      int verify_result;
+
+      if ((ctx = SSL_CTX_new (SSLv23_client_method ())) == NULL)
+	errormsg (1, 0, "SSL_CTX_new");
+      SSL_CTX_set_verify (ctx, SSL_VERIFY_NONE, NULL);
+      SSL_CTX_set_mode (ctx, SSL_MODE_AUTO_RETRY);
+
+      if (server->verify)
+	{
+	  if (!SSL_CTX_load_verify_locations (ctx, server->ca_file,
+					      server->ca_path))
+	    openssl_errormsg (1, "SSL_CTX_load_verify_locations");
+	}
+
+      if (server->cert)
+	{
+	  if (SSL_CTX_use_certificate_chain_file (ctx, server->cert) != 1)
+	    openssl_errormsg (1, "SSL_CTX_use_certificate_chain_file");
+	  if (SSL_CTX_use_PrivateKey_file (ctx, server->cert, SSL_FILETYPE_PEM) != 1)
+	    openssl_errormsg (1, "SSL_CTX_use_PrivateKey_file");
+	  if (SSL_CTX_check_private_key (ctx) != 1)
+	    openssl_errormsg (1, "SSL_CTX_check_private_key failed");
+	}
+
+      if ((ssl = SSL_new (ctx)) == NULL)
+	errormsg (1, 0, "SSL_new");
+      SSL_set_tlsext_host_name (ssl, url->host);
+      SSL_set_bio (ssl, bio, bio);
+
+      if ((bb = BIO_new (BIO_f_ssl ())) == NULL)
+	errormsg (1, 0, "BIO_new");
+      BIO_set_ssl (bb, ssl, BIO_CLOSE);
+      BIO_set_ssl_mode (bb, 1);
+
+      if (BIO_do_handshake (bb) <= 0)
+	errormsg (1, 0, "BIO_do_handshake failed: %s",
+		  ERR_error_string (ERR_get_error (), NULL));
+
+      if (server->verify &&
+	  (x509 = SSL_get_peer_certificate (ssl)) != NULL &&
+	  (verify_result = SSL_get_verify_result (ssl)) != X509_V_OK)
+	{
+	  errormsg (1, 0, "certificate verification failed: %s",
+		    X509_verify_cert_error_string (verify_result));
+	}
+
+      bio = bb;
+    }
+
+  if ((bb = BIO_new (BIO_f_buffer ())) == NULL)
+    errormsg (1, 0, "BIO_f_buffer failed");
+  BIO_set_buffer_size (bb, MAXBUF);
+  BIO_set_close (bb, BIO_CLOSE);
+  bio = BIO_push (bb, bio);
 
   return bio;
 }
@@ -322,10 +796,10 @@ read_response_line (BIO *bio, char *ret_status, size_t size, int *ret_version)
   if (ver != 0 && ver != 1)
     goto err;
   p = buf + 8;
-  if (!isspace (*p))
+  if (!c_isspace (*p))
     goto err;
 
-  while (isspace (*p))
+  while (c_isspace (*p))
     {
       if (!*p)
 	goto err;
@@ -366,7 +840,7 @@ read_response (BIO *bio)
   static char h_##n[] = v;				\
   static size_t l_##n = sizeof (h_##n) - 1
 #define HDREQ(n, s)				\
-  (strncasecmp (s, h_##n, l_##n) == 0 && s[l_##n] == ':')
+  (c_strncasecmp (s, h_##n, l_##n) == 0 && s[l_##n] == ':')
 #define HDRVAL(n, s)				\
   (s + l_##n + 1)
 
@@ -408,7 +882,7 @@ read_response (BIO *bio)
 	{
 	  p = HDRVAL (connection, buf);
 	  p += strspn (p, " \t");
-	  conn_close = strcasecmp (p, "close") == 0;
+	  conn_close = c_strcasecmp (p, "close") == 0;
 	}
     }
 
@@ -469,8 +943,52 @@ print_json (struct json_value *val, FILE *fp)
   json_value_format (val, &format, 0);
 }
 
+static void
+send_request (BIO *bio, char const *method, char const *fmt, ...)
+{
+  va_list ap;
+
+  BIO_printf (bio, "%s %s", method, url->path);
+  va_start (ap, fmt);
+  BIO_vprintf (bio, fmt, ap);
+  va_end (ap);
+  BIO_printf (bio, " HTTP/1.1\r\n"
+		   "Host: %s\r\n",
+	      url->host);
+  if (url->pass)
+    {
+      size_t len = strlen (url->user) + strlen (url->pass) + 1;
+      char *buf = xmalloc (len + 1);
+      char iobuf[MAXBUF];
+      int inlen;
+      BIO *bb, *b64;
+
+      strcat (strcat (strcpy (buf, url->user), ":"), url->pass);
+
+      if ((b64 = BIO_new (BIO_f_base64 ())) == NULL)
+	errormsg (1, errno, "BIO_f_base64");
+
+      if ((bb = BIO_new (BIO_s_mem ())) == NULL)
+	errormsg (1, errno, "BIO_s_mem");
+
+      b64 = BIO_push (b64, bb);
+      BIO_write (b64, buf, len);
+      BIO_flush (b64);
+      inlen = BIO_read (bb, iobuf, sizeof (iobuf));
+      if (inlen == -1)
+	errormsg (1, errno, "failed to encode credentials");
+      BIO_free_all (b64);
+
+      BIO_printf (bio, "Authorization: Basic ");
+      BIO_write (bio, iobuf, inlen-1);
+      BIO_printf (bio, "\r\n");
+    }
+  BIO_printf (bio, "\r\n");
+  BIO_flush (bio);
+}
+
 int
-command_list (BIO *bio, int argc, char **argv)
+command_gen (char const *path, BIO *bio, int argc, char **argv)
 {
   char *uri = "/";
   struct json_value *val;
@@ -481,9 +999,7 @@ command_list (BIO *bio, int argc, char **argv)
     {
       errormsg (1, 0, "too many arguments");
     }
-  BIO_printf (bio, "GET /listener%s HTTP/1.1\r\n"
-		   "Host: localhost\r\n\r\n",
-	      uri);
+  send_request (bio, "GET", "%s%s", path, uri);
   val = read_response (bio);
   if (json_option)
     print_json (val, stdout);
@@ -503,6 +1019,18 @@ command_list (BIO *bio, int argc, char **argv)
 }
 
 int
+command_core (BIO *bio, int argc, char **argv)
+{
+  return command_gen ("core", bio, argc, argv);
+}
+
+int
+command_list (BIO *bio, int argc, char **argv)
+{
+  return command_gen ("listener", bio, argc, argv);
+}
+
+int
 command_on_off (BIO *bio, int argc, char **argv, char const *verb)
 {
   char *uri;
@@ -517,9 +1045,7 @@ command_on_off (BIO *bio, int argc, char **argv, char const *verb)
       errormsg (1, 0, "too many arguments");
     }
   uri = argv[0];
-  BIO_printf (bio, "%s /listener%s HTTP/1.1\r\n"
-		   "Host: localhost\r\n\r\n",
-	      verb, uri);
+  send_request (bio, verb, "listener%s", uri);
   val = read_response (bio);
   if (json_option)
     print_json (val, stdout);
@@ -579,9 +1105,7 @@ command_delete_session (BIO *bio, int argc, char **argv)
     }
 
   key = argv[1];
-  BIO_printf (bio, "DELETE /session%s?key=%s HTTP/1.1\r\n"
-		   "Host: localhost\r\n\r\n",
-	      uri, key);
+  send_request (bio, "DELETE", "session%s?key=%s", uri, key);
   val = read_response (bio);
   if (json_option)
     print_json (val, stdout);
@@ -626,9 +1150,7 @@ command_add_session (BIO *bio, int argc, char **argv)
     }
 
   key = argv[1];
-  BIO_printf (bio, "PUT /session%s?key=%s HTTP/1.1\r\n"
-		   "Host: localhost\r\n\r\n",
-	      uri, key);
+  send_request (bio, "PUT", "session%s?key=%s", uri, key);
   val = read_response (bio);
   if (json_option)
     print_json (val, stdout);
@@ -658,6 +1180,7 @@ struct dispatch_table
 
 static struct dispatch_table dispatch[] = {
   { "list", command_list },
+  { "core", command_core },
   { "disable", command_disable },
   { "off", command_disable },
   { "enable", command_enable },
@@ -686,6 +1209,7 @@ static char *usage_text[] = {
   "",
   "COMMANDs are:"
   "",
+  "   core              show core status",
   "   list [/L/S/B]     list pound status; without argument, shows all",
   "                     listeners and underlying objects.",
   "   enable /L/S/B     enable listener, service, or backend.",
@@ -699,10 +1223,14 @@ static char *usage_text[] = {
   "   del               same as delete",
   "",
   "OPTIONS:",
+  "   -C FILE           load CA certificates from FILE (or directory)",
   "   -f FILE           location of pound configuration file",
   "   -i N              indentation level for JSON output",
   "   -j                JSON output format",
-  "   -s SOCKET         sets control socket pathname",
+  "   -K FILE           load client certificate and key from FILE",
+  "   -k                disable peer verification",
+  "   -S SERVER         connect to SERVER defined in ~/.poundctl file",
+  "   -s SOCKET         sets control socket pathname or URL",
   "   -t FILE           read templates from this file",
   "   -T NAME           name of the default template",
   "   -v                verbose output",
@@ -924,7 +1452,9 @@ read_template (void)
 }
 
 static struct string_value poundctl_settings[] = {
-  { "Configuration file",  STRING_CONSTANT, { .s_const = POUND_CONF } },
+  { "Configuration file", STRING_CONSTANT,
+    { .s_const = "~/" DOT_POUNDCTL_NAME } },
+  { "Pound configuration file",  STRING_CONSTANT, { .s_const = POUND_CONF } },
   { "Template search path",STRING_CONSTANT, { .s_const = POUND_TMPL_PATH } },
   { NULL }
 };
@@ -935,20 +1465,42 @@ main (int argc, char **argv)
   int c;
   BIO *bio;
   COMMAND command;
+  struct stat sb;
 
   set_progname (argv[0]);
   json_memabrt = xnomem;
 
-  while ((c = getopt (argc, argv, "f:i:jhs:T:t:vV")) != EOF)
+  read_config ();
+  while ((c = getopt (argc, argv, "C:f:i:jK:khS:s:T:t:vV")) != EOF)
     {
       switch (c)
 	{
+	case 'C':
+	  if (stat (optarg, &sb))
+	    errormsg (1, errno, "can't stat %s", optarg);
+	  else if (S_ISDIR (sb.st_mode))
+	    server->ca_path = optarg;
+	  else
+	    server->ca_file = optarg;
+	  break;
+
 	case 'f':
 	  conf_name = optarg;
 	  break;
 
+	case 'S':
+	  if (server_hash)
+	    {
+	      SERVER key = { .name = optarg };
+	      server = SERVER_RETRIEVE (server_hash, &key);
+	      if (!server)
+		errormsg (1, 0, "%s: no such server defined in configuration",
+			  optarg);
+	    }
+	  break;
+
 	case 's':
-	  socket_name = optarg;
+	  server->url = optarg;
 	  break;
 
 	case 'h':
@@ -960,6 +1512,14 @@ main (int argc, char **argv)
 
 	case 'j':
 	  json_option = 1;
+	  break;
+
+	case 'K':
+	  server->cert = optarg;
+	  break;
+
+	case 'k':
+	  server->verify = 0;
 	  break;
 
 	case 'T':
@@ -986,12 +1546,12 @@ main (int argc, char **argv)
   if ((tmpl_path = getenv ("POUND_TMPL_PATH")) == NULL)
     tmpl_path = POUND_TMPL_PATH;
 
-  if (!socket_name && get_socket_name () == NULL)
+  if (!server->url && (server->url = scan_pound_cfg ()) == NULL)
     {
       errormsg (1, 0, "can't determine control socket name; use the -s option");
     }
   if (verbose_option)
-    errormsg (0, 0, "info: using socket %s", socket_name);
+    errormsg (0, 0, "info: using socket %s", server->url);
 
   argc -= optind;
   argv += optind;
@@ -1007,7 +1567,13 @@ main (int argc, char **argv)
     }
 
   read_template ();
-  bio = open_socket ();
+
+  url = url_parse (server->url);
+
+  if (verbose_option)
+    errormsg (0, 0, "connecting to %s", server->url);
+
+  bio = open_socket (url);
 
   return command (bio, argc, argv);
 }

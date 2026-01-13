@@ -1,6 +1,6 @@
 ## Makefile for the pound testsuite
 ## Process this file with automake to produce Makefile.in.
-## Copyright (C) 2022-2024 Sergey Poznyakoff
+## Copyright (C) 2022-2025 Sergey Poznyakoff
 ##
 ## Pound is free software; you can redistribute it and/or modify
 ## it under the terms of the GNU General Public License as published by
@@ -14,9 +14,10 @@
 ##
 ## You should have received a copy of the GNU General Public License
 ## along with pound.  If not, see <http://www.gnu.org/licenses/>.
-EXTRA_DIST = $(TESTSUITE_AT) testsuite package.m4 poundharness.pl
+EXTRA_DIST = $(TESTSUITE_AT) testsuite package.m4 poundharness.pl\
+ perllib/PoundNS.pm perllib/PoundSub.pm
 DISTCLEANFILES       = atconfig $(check_SCRIPTS)
-MAINTAINERCLEANFILES = Makefile.in $(TESTSUITE)
+MAINTAINERCLEANFILES = Makefile.in $(TESTSUITE) package.m4
 
 ## ------------ ##
 ## package.m4.  ##
@@ -61,18 +62,34 @@ check-local: atconfig atlocal $(TESTSUITE)
 
 TESTSUITE_AT = \
  testsuite.at \
+ acl.at\
  acme.at\
  addheader.at\
  backref.at\
  balancing.at\
+ basicauth.at\
  bemix.at\
  checkurl.at\
  chgvis.at\
  chunked.at\
  chunked2.at\
  config.at\
+ ctl-core.at\
+ ctl-listener.at\
+ ctl-service.at\
+ dti.at\
+ detcond.at\
  disable.at\
+ dyn_a.at\
+ dyn_a_ttl.at\
+ dyn_srv.at\
+ dyn_srv_0.at\
+ dyn_srv_ttl.at\
+ dynacl.at\
+ dynbauth.at\
+ dynpat.at\
  echo.at\
+ err503.at\
  errfile.at\
  error.at\
  experr.at\
@@ -85,31 +102,49 @@ TESTSUITE_AT = \
  https.at\
  include.at\
  incldir.at\
+ inclglob.at\
  inclnest.at\
  inclscope.at\
+ invenc.at\
  list.at\
  logfmt.at\
  loglevcomp.at\
  loglevrun.at\
  logsup.at\
  lstset.at\
+ lua-be.at\
+ lua-load.at\
+ lua-match.at\
+ lua-modresp.at\
+ lua-modreq.at\
+ lua-http.at\
+ lua-path.at\
  maxrequest.at\
+ maxuri.at\
  multival.at\
+ nacl.at\
+ ndynacl.at\
  nb.at\
  not.at\
  optfwd.at\
  optorder.at\
  optssl.at\
  or.at\
+ patfile.at\
  path.at\
+ pcre.at\
  prio.at\
  query.at\
  queryparam.at\
+ regextype.at\
  reqacc.at\
  redirect.at\
  resprw.at\
  rewriteloc.at\
+ rewriteloc_https.at\
  rwchain.at\
+ rwerr.at\
+ sendfile.at\
  sessauth.at\
  sessctl.at\
  sesscookie.at\
@@ -119,12 +154,24 @@ TESTSUITE_AT = \
  sessurl.at\
  set.at\
  stringmatch.at\
+ tbf.at\
  template.at\
  url.at\
  virthost.at\
+ warndep.at\
  xhttp.at
 
 noinst_PROGRAMS = tmplrun
 tmplrun_SOURCES = tmplrun.c
 AM_CPPFLAGS = -I$(top_srcdir)/src
-tmplrun_LDADD = ../src/libpound.a
+tmplrun_LDADD = ../src/libpound.a ../src/tmpl.o
+tmplrun_LDFLAGS = -lm
+
+if COND_DYNAMIC_BACKENDS
+if COND_BUILD_FAKEDNS
+noinst_LTLIBRARIES = libfakedns.la
+libfakedns_la_SOURCES = fakedns.c
+libfakedns_la_LDFLAGS = -module -export-dynamic -avoid-version -rpath '/lib'
+noinst_PROGRAMS += getsoa
+endif
+endif

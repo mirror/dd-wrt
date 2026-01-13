@@ -1,5 +1,5 @@
 /* This file is part of pound
- * Copyright (C) 2020-2024 Sergey Poznyakoff
+ * Copyright (C) 2020-2025 Sergey Poznyakoff
  *
  * Pound is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -207,15 +207,18 @@ stringbuf_vprintf (struct stringbuf *sb, char const *fmt, va_list ap)
 {
   for (;;)
     {
+      char *bufp = sb->base;
       size_t bufsize = sb->size - sb->len;
       ssize_t n;
       va_list aq;
 
+      if (bufp)
+	bufp += sb->len;
       va_copy (aq, ap);
-      n = vsnprintf (sb->base + sb->len, bufsize, fmt, aq);
+      n = vsnprintf (bufp, bufsize, fmt, aq);
       va_end (aq);
 
-      if (n < 0 || n >= bufsize || !memchr (sb->base + sb->len, '\0', n + 1))
+      if (n < 0 || n >= bufsize || !memchr (bufp, '\0', n + 1))
 	{
 	  char *p = mem2nrealloc (sb->base, &sb->size, 1);
 	  if (p == NULL)

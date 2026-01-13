@@ -1,5 +1,5 @@
 # This file is part of pound testsuite. -*- autotest -*-
-# Copyright (C) 2022-2024 Sergey Poznyakoff
+# Copyright (C) 2022-2025 Sergey Poznyakoff
 #
 # Pound is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,7 +14,7 @@
 # You should have received a copy of the GNU General Public License
 # along with pound.  If not, see <http://www.gnu.org/licenses/>.
 AT_SETUP([Host])
-AT_KEYWORDS([host])
+AT_KEYWORDS([cond host])
 PT_CHECK([ListenHTTP
 	Service
 		Host "example.org"
@@ -25,6 +25,20 @@ PT_CHECK([ListenHTTP
 	End
 	Service
 		Host "example.com"
+		Backend
+			Address
+			Port
+		End
+	End
+	Service
+		Host -beg "WWW."
+		Backend
+			Address
+			Port
+		End
+	End
+	Service
+		Host -end ".NET"
 		Backend
 			Address
 			Port
@@ -46,6 +60,22 @@ end
 
 200
 x-backend-number: 1
+end
+
+GET /echo/foo
+Host: www.example.com
+end
+
+200
+x-backend-number: 2
+end
+
+GET /echo/foo
+Host: example.net
+end
+
+200
+x-backend-number: 3
 end
 ])
 AT_CLEANUP

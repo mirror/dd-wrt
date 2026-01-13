@@ -1,0 +1,172 @@
+# This file is part of pound testsuite. -*- autotest -*-
+# Copyright (C) 2025 Sergey Poznyakoff
+#
+# Pound is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# Pound is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with pound.  If not, see <http://www.gnu.org/licenses/>.
+AT_SETUP([service])
+AT_KEYWORDS([ctl service ctl-service])
+PT_CHECK([
+Service
+	Path -beg "/echo"
+	Session
+		Type Header
+		TTL 300
+		ID  "X-Session"
+	End
+	Backend
+		Address
+		Port
+	End
+	Backend
+		Address
+		Port
+	End
+End
+ListenHTTP
+	Service
+		Path -beg "/service"
+		Control
+	End
+End
+],
+[[GET /service/0?indent=2
+end
+
+200
+Content-Type: application/json
+
+:re
+\{
+  "backends": \[
+    \{
+      "address": "127.0.0.1:\d+",
+      "alive": true,
+      "conn_to": 15,
+      "enabled": true,
+      "io_to": 15,
+      "kind": "backend",
+      "priority": 5,
+      "protocol": "http",
+      "servername": null,
+      "type": "backend",
+      "weight": 0,
+      "ws_to": 600
+    \},
+    \{
+      "address": "127.0.0.1:\d+",
+      "alive": true,
+      "conn_to": 15,
+      "enabled": true,
+      "io_to": 15,
+      "kind": "backend",
+      "priority": 5,
+      "protocol": "http",
+      "servername": null,
+      "type": "backend",
+      "weight": 0,
+      "ws_to": 600
+    \}
+  \],
+  "enabled": true,
+  "kind": "service",
+  "name": null,
+  "session_type": "HEADER",
+  "sessions": \[\]
+\}
+endnonl
+
+GET /echo/foo
+X-Session: 1
+end
+
+200
+end
+
+GET /echo/foo
+X-Session: 2
+end
+
+200
+end
+
+GET /echo/foo
+X-Session: 3
+end
+
+200
+end
+
+GET /service/0?indent=2
+end
+
+200
+Content-Type: application/json
+
+:re
+\{
+  "backends": \[
+    \{
+      "address": "127.0.0.1:\d+",
+      "alive": true,
+      "conn_to": 15,
+      "enabled": true,
+      "io_to": 15,
+      "kind": "backend",
+      "priority": 5,
+      "protocol": "http",
+      "servername": null,
+      "type": "backend",
+      "weight": 0,
+      "ws_to": 600
+    \},
+    \{
+      "address": "127.0.0.1:\d+",
+      "alive": true,
+      "conn_to": 15,
+      "enabled": true,
+      "io_to": 15,
+      "kind": "backend",
+      "priority": 5,
+      "protocol": "http",
+      "servername": null,
+      "type": "backend",
+      "weight": 0,
+      "ws_to": 600
+    \}
+  \],
+  "enabled": true,
+  "kind": "service",
+  "name": null,
+  "session_type": "HEADER",
+  "sessions": \[
+    \{
+      "backend": [01],
+      "expire": "\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{6}",
+      "key": "1"
+    \},
+    \{
+      "backend": [01],
+      "expire": "\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{6}",
+      "key": "2"
+    \},
+    \{
+      "backend": [01],
+      "expire": "\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{6}",
+      "key": "3"
+    \}
+  \]
+\}
+endnonl
+]])
+AT_CLEANUP
+		

@@ -1,6 +1,6 @@
 .\" Pound - the reverse-proxy load-balancer
 .\" Copyright (C) 2002-2010 Apsis GmbH
-.\" Copyright (C) 2018-2024 Sergey Poznyakoff
+.\" Copyright (C) 2018-2025 Sergey Poznyakoff
 .\"
 .\" Pound is free software; you can redistribute it and/or modify
 .\" it under the terms of the GNU General Public License as published by
@@ -14,15 +14,18 @@
 .\"
 .\" You should have received a copy of the GNU General Public License
 .\" along with pound.  If not, see <http://www.gnu.org/licenses/>.
-.TH POUNDCTL 8 "November 6, 2023" "poundctl" "System Manager's Manual"
+.TH POUNDCTL 8 "October 28, 2025" "poundctl" "System Manager's Manual"
 .SH NAME
 poundctl \- control the pound daemon
 .SH SYNOPSIS
 .B poundctl
-[\fB\-Vvh\fR]
+[\fB\-kVvh\fR]
+[\fB\-C \fIFILE\fR]
 [\fB\-f \fIFILE\fR]
 [\fB\-i \fIN\fR]
 [\fB\-j\fR]
+[\fB\-K \fIFILE\fR]
+[\fB\-S \fINAME\fR]
 [\fB\-s \fISOCKET\fR]
 [\fB\-T \fITEMPLATE-FILE\fR]
 [\fB\-t \fITEMPLATE-NAME\fR]
@@ -37,23 +40,23 @@ proxy server.
 .PP
 The program communicates with the running
 .BR pound
-program via a UNIX \fIcontrol socket\fR.  The
-.B pound.cfg
-file must contain a
-.B Control
-statement for this to work.  By default,
+program via a UNIX \fIcontrol socket\fR, or remotely, via HTTP.  The
+URL of the control socket is looked up in the following locatiions,
+in that order:
+.TP
+.B ~/.poundctl
+Main
 .B poundctl
-will open the default
+configuration file.
+.TP
 .B pound.cfg
-file, look up for this statement and use the pathname defined by it as
-the control socket file.  This can be altered in two ways.  First, if
-using the configuration file in a non-standard location, the pathname
-of this file can be given to the program using the
-.B \-f
-command line option.  Secondly, the socket name can be supplied in the
-command line explicitly, using the
+The program scans it for a
+.B Control
+statement and obtains control socket name from it.
+.TP
+Argument of the 
 .B \-s
-option.
+command line option.
 .PP
 The \fICOMMAND\fR argument instructs the program what action it
 is supposed to perform.  Missing \fICOMMAND\fR is equivalent to
@@ -102,6 +105,9 @@ disables the service 1 defined in the global scope of
 .PP
 The following commands are available:
 .TP
+.B core
+Show core status: daemon PID, uptime, worker statistics, etc.
+.TP
 \fBlist\fR \fB/\fIL\fB/\fIS\fB/\fIB\fR
 List status of the given object and its subordinates.  Without
 argument, shows all listeners and underlying objects.
@@ -119,11 +125,95 @@ Disable listener, service, or backend.
 Same as \fBdisable\fR.
 .TP
 \fBdelete\fR \fB/\fIL\fB/\fIS\fR \fIKEY\fR
-Delete session with the given key.  Notice that backend may not be
+Delete the session with the given key.  Notice that backend may not be
 specified.
 .TP
 \fBadd\fR \fB/\fIL\fB/\fIS\fB/\fIB\fR \fIKEY\fR
-Add session with given key.
+Add a session with the given key.
+.SH CONFIGURATION
+Configuration is read from file
+.B .poundctl
+located in the user home directory.  It is not an error if that file
+does not exist.
+.PP
+Alternative location of the configuration file can be specified via
+the
+.B POUNDCTL_CONF
+environment variable.  Setting that variable to an empty value
+disables the configuration.
+.PP
+The file consists of simple statements and sections, delimited by any
+amount of newlines.  Comments are introduced by \fB#\fR sign and
+extend to the end of physical line where it appears.
+.PP
+Simple statements consist of a keyword and value separated by any
+amount of whitespace.  Leading and trailing whitespace is ignored.
+.PP
+Sections begin with a keyword and value separated by any
+amount of whitespace as well.  They are followed by a newline and any
+number of statements belonging to that section.  Sections end with a
+word
+.B End
+on a line by itself.
+.PP
+The following statements are defined:
+.TP
+\fBURL "\fIURL\fB"\fR
+Sets the URL of the @command{pound} management socket.  The value is
+either a file name of a UNIX socket file, or a remote URL (http or
+https).
+.TP
+\fBCAFile "\fIFILE\fB"\fR
+Read certificate authority certificate from \fIFILE\fR.
+.TP
+\fBCAPath "\fIDIR\fB"\fR
+Read certificate authority certificates from PEM files located in the
+directory \fIDIR\fR.
+.TP
+\fBClientCert "\fIFILE\fB"\fR
+Read client certificate and private key from \fIFILE\fR.  Use this if
+.B pound
+configuration requires client authentication using the
+.B ClientCert
+statement.
+.TP
+.BI Verify " bool"
+Enables or disables peer certificate verification.  The default is
+.BR on .
+.TP
+\fBTemplateFile "\fIFILE\fB"\fR
+Name of the template file (see below).
+.TP
+\fBTemplateName "\fINAME\fB"\fR
+Name of the template to use.
+.TP
+\fBTemplatePath "\fIFILE\fB"\fR
+Search path for template files.
+.PP
+Multiple
+.B Server
+sections can appear in the file.  They provide a convenient way to
+organize management of multiple \fBpound\fR servers.  You define the
+settings for each remote \fBpound\fR servers (URL, etc.) in a separate
+.B Server
+section identified by a unique name.  Then, when you need to manage
+that particular server, you identify it by using the
+\fB\-S \fINAME\fR command line option.
+.PP
+Syntactically, each section is
+.PP
+.EX
+Server "\fINAME\fR"
+  \fI...\fR
+End  
+.EE
+.PP
+where ellipsis denotes one or more of the following statements:
+.BR URL ,
+.BR CAFile ,
+.BR CAPath ,
+.BR ClientCert ,
+.BR Verify .
 .SH TEMPLATES
 Information received from
 .B pound
@@ -143,7 +233,9 @@ This file is searched in template search path which is, by default,
 the file \fB.poundctl.tmpl\fR in the user home directory and the
 file \fBpoundctl.tmpl\fR (without the leading dot) in the \fIprogram
 data directory\fR, normally \fB/usr/share/pound\fR.  The default
-search path can be changed by setting the
+search path can be changed from configuration file, using the
+.B TemplatePath
+statement of by setting the
 environment variable
 .BR POUND_TMPL_PATH ,
 which see.  To examine the default value of the search path, use the
@@ -151,6 +243,7 @@ which see.  To examine the default value of the search path, use the
 command line option.
 .PP
 The template file to use can be requested
+from the configuration file, via the \fBTemplateFile\fR statement, or
 from the command line using the
 .B \-t
 option.  In this case, template search path in not searched and the
@@ -159,14 +252,19 @@ supplied file is used verbatim.
 Unless instructed otherwise,
 .B poundctl
 uses the template "default".  You can request another template name
-using the
+using the \fBTemplateName\fR configuration statement, or from command
+line, using the
 .B \-T
-command line option.
+option.
 .PP
 The default
 .B poundctl.tmpl
 file defines two templates: \fBdefault\fR and \fBxml\fR.
 .SH OPTIONS
+.TP
+\fB\-C \fIFILE\fR
+Load certificate authority files from \fIFILE\fR.  \fIFILE\fR can also
+be a directory containing CA certificates in PEM format.
 .TP
 \fB\-f \fIFILE\fR
 Location of \fBpound\fR configuration file.
@@ -174,14 +272,31 @@ Location of \fBpound\fR configuration file.
 \fB\-i \fIN\fR
 Sets indentation level for JSON output.
 .TP
-\fB\-j\fr
+\fB\-j\fR
 JSON output format.
+.TP
+\fB\-K \fIFILE\fR
+Load client certificate and key from \fIFILE\fR and send them to the
+server during handshake for authentication.
+.TP
+.B \-k
+Disable peer verification.
 .TP
 \fB\-h\fR
 Shows a short help output and exit.
 .TP
+\fB\-S \fINAME\fR
+Operate on server defined in
+.B .poundctl
+file, section \fBServer \(dq\fINAME\fB\(dq\fR.
+.TP
 \fB\-s \fISOCKET\fR
-Sets control socket pathname.
+Sets control socket pathname.  \fISOCKET\fR can also be a URL in the
+form:
+.IP
+{\fBhttp\fR|\fBhttps\fR}\fB://\fR[\fIUSER\fR[\fB:\fIPASS\fR]\fB@\fR]\fIHOSTNAME\fR[\fB:\fIPORT\fT][\fB/\fIPATH\fR]
+.IP
+where \fB{|}\fR denote alternative forms and \fB[]\fR enclose optional parts.
 .TP
 \fB\-T \fITEMPLATE-FILE\fR
 Sets the name of the template file to use.
@@ -195,6 +310,11 @@ Print program version, compilation settings, and exit.
 .B \-v
 Increases output verbosity level.
 .SH ENVIRONMENT
+.TP
+.B POUNDCTL_CONF
+Alternative name for the default configuration file.  Unless absolute,
+the file is searched in the user home directory.  Empty value restores
+built-in defaults.
 .TP
 .B POUND_TMPL_PATH
 Overrides the template search path.  The value is a column-delimited
@@ -218,7 +338,7 @@ at https://github.com/graygnuorg/pound/issues.
 .SH COPYRIGHT
 Copyright \(co 2002-2010 Apsis GmbH.
 .br
-Copyright \(co 2018-2023 Sergey Poznyakoff
+Copyright \(co 2018-2025 Sergey Poznyakoff
 .sp
 .na
 License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>
@@ -227,7 +347,7 @@ License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>
 This is free software: you are free to change and redistribute it.
 There is NO WARRANTY, to the extent permitted by law.
 .\" Local variables:
-.\" eval: (add-hook 'write-file-hooks 'time-stamp)
+.\" eval: (add-hook 'write-file-functions 'time-stamp)
 .\" time-stamp-start: ".TH [A-Z_][A-Z0-9_.\\-]* [0-9] \""
 .\" time-stamp-format: "%:B %:d, %:y"
 .\" time-stamp-end: "\""

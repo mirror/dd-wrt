@@ -1,0 +1,79 @@
+# This file is part of pound testsuite. -*- autotest -*-
+# Copyright (C) 2025 Sergey Poznyakoff
+#
+# Pound is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# Pound is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with pound.  If not, see <http://www.gnu.org/licenses/>.
+AT_SETUP([Lua load])
+AT_KEYWORDS([cond lua lua-load])
+
+AT_SKIP_IF([test "$LUA_AVAILABLE" != 1])
+
+AT_DATA([gtest.lua],
+[function gtest()
+    return pound.loadctx == nil
+end
+pound.log(pound.DEBUG, "Global Context " .. tostring(pound.loadctx))
+])
+
+AT_DATA([xtest.lua],
+[function xtest()
+    return pound.loadctx == nil 
+end
+pound.log(pound.DEBUG, "Context " .. tostring(pound.loadctx))
+])
+
+PT_CHECK([
+WorkerMinCount 2
+WorkerMaxCount 2
+Lua
+	Load "xtest.lua"
+	LoadGlobal "gtest.lua"
+End
+ListenHTTP
+	Service
+		Path "/echo/foo"
+		LuaMatch "xtest"
+		Backend
+		End
+	End
+	Service
+		Path "/echo/bar"
+		LuaMatch "gtest"
+		Backend
+		End
+	End
+End
+],
+[GET /echo/foo
+end
+
+200
+x-backend-number: 0
+end
+
+GET /echo/bar
+end
+
+200
+x-backend-number: 1
+end
+])
+
+AT_CHECK([grep Context pound.log],
+[0],
+[pound: Global Context 0
+pound: Context 1
+pound: Context 2
+])
+
+AT_CLEANUP

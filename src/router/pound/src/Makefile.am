@@ -1,6 +1,6 @@
-# Pound - the reverse-proxy load-balancer                -*- automake -*-
+# Pound - the reverse-proxy load-balancer
 # Copyright (C) 2002-2010 Apsis GmbH
-# Copyright (C) 2018-2024 Sergey Poznyakoff
+# Copyright (C) 2018-2025 Sergey Poznyakoff
 #
 # Pound is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -17,40 +17,68 @@
 
 AM_CFLAGS = @PTHREAD_CFLAGS@
 
-AM_CPPFLAGS = @SSL_CPPFLAGS@ @PCREPOSIX_CFLAGS@ \
+AM_CPPFLAGS = @SSL_CPPFLAGS@ @LUA_CFLAGS@ @PCRE_CFLAGS@ \
  -DSYSCONFDIR=\"$(sysconfdir)\"\
  -DLOCALSTATEDIR=\"$(localstatedir)\"\
  -DPKGDATADIR=\"$(pkgdatadir)\"
 AM_LDFLAGS  = @SSL_LDFLAGS@
-LDADD = libpound.a @PCREPOSIX_LIBS@ @PTHREAD_LIBS@
+LDADD = libpound.a @LUA_LIBS@ @PCRE_LIBS@ @PTHREAD_LIBS@
 
 sbin_PROGRAMS=pound
 pound_SOURCES=\
  bauth.c\
  config.c\
+ genpat.c\
  http.c\
  log.c\
  metrics.c\
  pound.c\
- svc.c
+ svc.c\
+ tbf.c\
+ watcher.c
+
+if COND_PCRE
+  pound_SOURCES += regex_pcre.c
+endif
+if COND_PCRE2
+  pound_SOURCES += regex_pcre2.c
+endif
+if COND_DYNAMIC_BACKENDS
+  pound_SOURCES += resolver.c dynbe.c
+endif
+if COND_LUA
+  pound_SOURCES += pndlua.c
+endif
+
+if COND_INOTIFY
+  pound_SOURCES += fsevmon.c watcher/inotify.c
+  AM_CPPFLAGS += -DWITH_INOTIFY=1
+else
+if  COND_KQUEUE
+  pound_SOURCES += fsevmon.c watcher/kqueue.c
+  AM_CPPFLAGS += -DWITH_KQUEUE=1
+else
+  pound_SOURCES += watcher/periodic.c
+endif
+endif
 
 noinst_LIBRARIES = libpound.a
-libpound_a_SOURCES = json.c json.h mem.c progname.c tmpl.c
+libpound_a_SOURCES = \
+ cctype.c\
+ cctype.h\
+ cfgparser.c\
+ cfgparser.h\
+ json.c\
+ json.h\
+ mem.c\
+ mem.h\
+ progname.c
 
 pkgdata_DATA = poundctl.tmpl mvh.inc
-EXTRA_DIST = poundctl.tmpl mvh.inc
 
-install-exec-hook:
-	-@if test "$${EUID:-65535}" -eq 0; then \
-		for program in $(sbin_PROGRAMS); do \
-			chown @I_OWNER@:@I_GRP@ $(DESTDIR)$(sbindir)/$$program$(EXEEXT); \
-		done; \
-		for program in $(bin_PROGRAMS); do \
-			chown @I_OWNER@:@I_GRP@ $(DESTDIR)$(bindir)/$$program$(EXEEXT); \
-		done; \
-	fi
+EXTRA_DIST = $(pkgdata_DATA) pound-mode.el
 
-noinst_HEADERS=pound.h extern.h list.h ht.h
+noinst_HEADERS=pound.h extern.h list.h ht.h resolver.h watcher.h
 
 if SET_DH_AUTO
 DHSRC =
@@ -73,4 +101,5 @@ DISTCLEANFILES=dh.h dh512.h dh1024.h dh2048.h
 endif
 
 bin_PROGRAMS=poundctl
-poundctl_SOURCES=poundctl.c
+poundctl_SOURCES=poundctl.c tmpl.c
+poundctl_LDFLAGS=-lm

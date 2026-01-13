@@ -1,0 +1,61 @@
+use strict;
+use warnings;
+set_from_init_file('EXTRA_HEAD', qq{
+<link rel="stylesheet" type="text/css" href="css/manual.css"/>
+});
+set_from_init_file('CSS_LINES', '');
+set_from_init_file('SHOW_TITLE',undef);
+# set_from_init_file('TOP_FILE','Pound.html');
+# set_from_init_file('TOP_BUTTONS', undef);
+
+sub gray_node_direction($$)
+{
+    my $self = shift;
+    my $direction = shift;
+
+    my $href = $self->_element_direction($self->{'current_element'},
+					 $direction, 'href');
+    my $node = $self->_element_direction($self->{'current_element'},
+                                         $direction, 'node');
+
+    my $result;
+    if (defined($href) and defined($node) and $node =~ /\S/) {
+	my $anchor_attributes = $self->_direction_href_attributes($direction);
+	if ($direction eq 'Contents' || $direction eq 'Index') {
+	    $result = '<span class="button-right">' .
+	              "[<a href=\"$href\"${anchor_attributes}>$direction</a>]" .
+	              '</span>';
+        } else {
+            $result = '<span class="button">' .
+	              $self->get_conf('BUTTONS_TEXT')->{$direction} .
+	              ": <a href=\"$href\"${anchor_attributes}>$node</a>" .
+ 	              '</span>';
+        }
+    }
+    if ($Texinfo::Convert::HTML::VERSION < 6.8) {
+	return $result;
+    } else {
+	return ($result,0);
+    }
+}
+
+my @gray_buttons = ( [ 'Back', \&gray_node_direction ],
+		     [ 'Forward', \&gray_node_direction ],
+                     [ 'NodeUp', \&gray_node_direction ],
+		     [ 'Contents', \&gray_node_direction ],
+                     [ 'Index', \&gray_node_direction ] );
+my %gray_buttons_text = (
+    Back => 'Prev',
+    Forward => 'Next',
+    NodeUp => 'Up',
+    Contents => 'Contents',
+    Index => 'Index'
+);
+
+set_from_init_file('BUTTONS_TEXT', \%gray_buttons_text);
+set_from_init_file('TOP_BUTTONS', undef);
+set_from_init_file('SECTION_BUTTONS', \@gray_buttons);
+set_from_init_file('CHAPTER_BUTTONS', \@gray_buttons);
+set_from_init_file('NODE_FOOTER_BUTTONS', \@gray_buttons);
+set_from_init_file('SECTION_FOOTER_BUTTONS', \@gray_buttons);
+set_from_init_file('MISC_BUTTONS', \@gray_buttons);

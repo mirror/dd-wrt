@@ -1,0 +1,214 @@
+# This file is part of pound testsuite. -*- autotest -*-
+# Copyright (C) 2024-2025 Sergey Poznyakoff
+#
+# Pound is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# Pound is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with pound.  If not, see <http://www.gnu.org/licenses/>.
+AT_SETUP([SRV record])
+AT_KEYWORDS([dynamic srv_rr])
+
+AT_CHECK([PT_PREREQ_DYNAMIC_BACKENDS
+PT_PREREQ_FAKEDNS])
+
+m4_pushdef([HARNESS_OPTIONS],[--fakedns=$LIBFAKEDNS])
+PT_CHECK([ListenHTTP
+	Service
+		Balancer iwrr
+		Backend
+			Resolve srv
+			Address "_proxy._tcp.pound.example.org"
+			Family inet
+		End
+	End
+End
+],
+[[mkbackend 127.0.0.1
+mkbackend 127.0.0.2
+mkbackend 127.0.0.3
+mkbackend 127.0.0.4
+mkbackend 127.0.0.5
+mkbackend 127.0.0.6
+
+zonefile
+$ORIGIN example.org.
+@   IN SOA  mname rname 1 2h 1h 2w 1h
+$ORIGIN pound.example.org.
+
+be0             60      A       127.0.0.1
+be1             60      A       127.0.0.2
+be2            120      A       127.0.0.3
+
+$ORIGIN _tcp.pound.example.org.
+; _srv  TTL     SRV     prio    weight  port target.
+_proxy  10      SRV     10      40      ${BACKEND0:PORT} be0.pound.example.org.
+_proxy  10      SRV     10      70      ${BACKEND1:PORT} be1.pound.example.org.
+_proxy  10      SRV     20      10      ${BACKEND2:PORT} be2.pound.example.org.
+end
+sleep 3
+backends 1 0
+[{
+   "type":"matrix",
+   "family":2,
+   "resolve_mode":"srv",
+   "hostname":"_proxy._tcp.pound.example.org",
+   "weight":0
+},
+{
+   "type":"backend",
+   "parent":0,
+   "weight":10,
+   "priority":40,
+   "address":"${BACKEND0}"
+},
+{
+   "type":"backend",
+   "parent":0,
+   "weight":10,
+   "priority":70,
+   "address":"${BACKEND1}"
+},
+{
+   "type":"backend",
+   "parent":0,
+   "weight":20,
+   "priority":10,
+   "address":"${BACKEND2}"
+}]   
+end
+
+zonefile
+$ORIGIN example.org.
+@   IN SOA  mname rname 1 2h 1h 2w 1h
+$ORIGIN pound.example.org.
+
+be0             60      A       127.0.0.1
+be1             60      A       127.0.0.2
+be2            120      A       127.0.0.3
+be3		10	A	127.0.0.4
+
+$ORIGIN _tcp.pound.example.org.
+; _srv  TTL     SRV     prio    weight  port target.
+_proxy  10      SRV     10      40      ${BACKEND0:PORT} be0.pound.example.org.
+_proxy  10      SRV     10      70      ${BACKEND1:PORT} be1.pound.example.org.
+_proxy  10      SRV     10      20      ${BACKEND3:PORT} be3.pound.example.org.
+_proxy  10      SRV     20      10      ${BACKEND2:PORT} be2.pound.example.org.
+end
+
+sleep 10
+
+backends 1 0
+[{
+   "type":"matrix",
+   "family":2,
+   "resolve_mode":"srv",
+   "hostname":"_proxy._tcp.pound.example.org",
+   "weight":0
+},
+{
+   "type":"backend",
+   "parent":0,
+   "weight":10,
+   "priority":20,
+   "address":"${BACKEND3}"
+},
+{
+   "type":"backend",
+   "parent":0,
+   "weight":10,
+   "priority":40,
+   "address":"${BACKEND0}"
+},
+{
+   "type":"backend",
+   "parent":0,
+   "weight":10,
+   "priority":70,
+   "address":"${BACKEND1}"
+},
+{
+   "type":"backend",
+   "parent":0,
+   "weight":20,
+   "priority":10,
+   "address":"${BACKEND2}"
+}]   
+end
+
+zonefile
+$ORIGIN example.org.
+@   IN SOA  mname rname 1 2h 1h 2w 1h
+$ORIGIN pound.example.org.
+
+be0             60      A       127.0.0.1
+be1             60      A       127.0.0.2
+be2            120      A       127.0.0.3
+be3		10	A	127.0.0.4
+be3             5       A       127.0.0.5
+be3             10      A       127.0.0.6
+
+$ORIGIN _tcp.pound.example.org.
+; _srv  TTL     SRV     prio    weight  port target.
+_proxy  10      SRV     10      70      ${BACKEND1:PORT} be1.pound.example.org.
+_proxy  10      SRV     10      20      ${BACKEND3:PORT} be3.pound.example.org.
+_proxy  10      SRV     20      10      ${BACKEND2:PORT} be2.pound.example.org.
+end
+
+sleep 10
+
+backends 1 0
+[{
+   "type":"matrix",
+   "family":2,
+   "resolve_mode":"srv",
+   "hostname":"_proxy._tcp.pound.example.org",
+   "weight":0
+},
+{
+   "type":"backend",
+   "parent":0,
+   "weight":10,
+   "priority":20,
+   "address":"${BACKEND3}"
+},
+{
+   "type":"backend",
+   "parent":0,
+   "weight":10,
+   "priority":20,
+   "address":"${BACKEND4:IP}:${BACKEND3:PORT}"
+},
+{
+   "type":"backend",
+   "parent":0,
+   "weight":10,
+   "priority":20,
+   "address":"${BACKEND5:IP}:${BACKEND3:PORT}"
+},
+{
+   "type":"backend",
+   "parent":0,
+   "weight":10,
+   "priority":70,
+   "address":"${BACKEND1}"
+},
+{
+   "type":"backend",
+   "parent":0,
+   "weight":20,
+   "priority":10,
+   "address":"${BACKEND2}"
+}]   
+end
+]])
+
+m4_popdef([HARNESS_OPTIONS])
+AT_CLEANUP

@@ -1,0 +1,371 @@
+# This file is part of pound testsuite. -*- autotest -*-
+# Copyright (C) 2025 Sergey Poznyakoff
+#
+# Pound is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# Pound is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with pound.  If not, see <http://www.gnu.org/licenses/>.
+AT_SETUP([LuaModify])
+AT_KEYWORDS([cond lua lua-modreq])
+AT_SKIP_IF([test "$LUA_AVAILABLE" != 1])
+
+AT_DATA([mod.lua],
+[[function set_req_path(a)
+   http.req.path = a
+end
+function set_req_url(a)
+   http.req.path = a
+end
+function reset_req_headers()
+   http.req.headers = {
+       ['Host'] = 'example.org',
+       ['X-Mark'] = 'one'
+   }
+end
+function set_req_header(f,v)
+   http.req.headers[f] = v
+end
+function set_req_query(a)
+   http.req.query = a
+end
+function del_req_query_param(f)
+   http.req.query[f] = nil
+end
+function set_req_query_param(f,v)
+   http.req.query[f] = v
+end
+]])
+
+# LuaModify in listener
+PT_CHECK([Lua
+	Load "mod.lua"
+End
+ListenHTTP
+	LuaModify "set_req_path" "/echo/file"
+	Service
+		Backend
+		End
+	End
+End
+],
+[GET /foobar
+end
+
+200
+x-orig-uri: /echo/file
+end
+])
+
+PT_CHECK([Lua
+	Load "mod.lua"
+End
+ListenHTTP
+	LuaModify "set_req_url" "/echo/file"
+	Service
+		Backend
+		End
+	End
+End
+],
+[GET /foobar
+end
+
+200
+x-orig-uri: /echo/file
+end
+])
+
+PT_CHECK([Lua
+	Load "mod.lua"
+End
+ListenHTTP
+	LuaModify "reset_req_headers"
+	Service
+		Backend
+		End
+	End
+End
+],
+[GET /echo/foo
+Host: qux.com
+X-Delete: me
+end
+
+200
+x-orig-header-host: example.org
+x-orig-header-x-mark: one
+-x-orig-header-x-delete: me
+end
+])
+
+PT_CHECK([Lua
+	Load "mod.lua"
+End
+ListenHTTP
+	LuaModify "set_req_header" "X-Test" "ok"
+	Service
+		Backend
+		End
+	End
+End
+],
+[GET /echo/file
+end
+
+200
+x-orig-header-x-test: ok
+end
+])
+
+PT_CHECK([Lua
+	Load "mod.lua"
+End
+ListenHTTP
+	LuaModify "set_req_query" "t=ok"
+	Service
+		Backend
+		End
+	End
+End
+],
+[GET /echo/file
+end
+
+200
+x-orig-uri: /echo/file?t=ok
+end
+])
+
+PT_CHECK([Lua
+	Load "mod.lua"
+End
+ListenHTTP
+	LuaModify "set_req_query_param" "t" "ok"
+	Service
+		Backend
+		End
+	End
+End
+],
+[GET /echo/file?print=1
+end
+
+200
+x-orig-uri: /echo/file?print=1&t=ok
+end
+])
+
+PT_CHECK([Lua
+	Load "mod.lua"
+End
+ListenHTTP
+	LuaModify "del_req_query_param" "print"
+	Service
+		Backend
+		End
+	End
+End
+],
+[GET /echo/file?print=1
+end
+
+200
+x-orig-uri: /echo/file
+end
+])
+
+PT_CHECK([Lua
+	Load "mod.lua"
+End
+ListenHTTP
+	Rewrite
+		LuaModify "set_req_path" "/echo/file"
+		LuaModify "set_req_query" "t=ok"
+		LuaModify "set_req_header" "X-Test" "ok"
+	End
+	Service
+		Backend
+		End
+	End
+End
+],
+[GET /foobar
+end
+
+200
+x-orig-uri: /echo/file?t=ok
+x-orig-header-x-test: ok
+end
+])
+
+# LuaModify in service
+PT_CHECK([Lua
+	Load "mod.lua"
+End
+ListenHTTP
+	Service
+		LuaModify "set_req_path" "/echo/file"
+		Backend
+		End
+	End
+End
+],
+[GET /foobar
+end
+
+200
+x-orig-uri: /echo/file
+end
+])
+
+PT_CHECK([Lua
+	Load "mod.lua"
+End
+ListenHTTP
+	Service
+		LuaModify "set_req_url" "/echo/file"
+		Backend
+		End
+	End
+End
+],
+[GET /foobar
+end
+
+200
+x-orig-uri: /echo/file
+end
+])
+
+PT_CHECK([Lua
+	Load "mod.lua"
+End
+ListenHTTP
+	Service
+		LuaModify "reset_req_headers"
+		Backend
+		End
+	End
+End
+],
+[GET /echo/foo
+Host: qux.com
+X-Delete: me
+end
+
+200
+x-orig-header-host: example.org
+x-orig-header-x-mark: one
+-x-orig-header-x-delete: me
+end
+])
+
+PT_CHECK([Lua
+	Load "mod.lua"
+End
+ListenHTTP
+	Service
+		LuaModify "set_req_header" "X-Test" "ok"
+		Backend
+		End
+	End
+End
+],
+[GET /echo/file
+end
+
+200
+x-orig-header-x-test: ok
+end
+])
+
+PT_CHECK([Lua
+	Load "mod.lua"
+End
+ListenHTTP
+	Service
+		LuaModify "set_req_query" "t=ok"
+		Backend
+		End
+	End
+End
+],
+[GET /echo/file
+end
+
+200
+x-orig-uri: /echo/file?t=ok
+end
+])
+
+PT_CHECK([Lua
+	Load "mod.lua"
+End
+ListenHTTP
+	Service
+		LuaModify "set_req_query_param" "t" "ok"
+		Backend
+		End
+	End
+End
+],
+[GET /echo/file?print=1
+end
+
+200
+x-orig-uri: /echo/file?print=1&t=ok
+end
+])
+
+PT_CHECK([Lua
+	Load "mod.lua"
+End
+ListenHTTP
+	Service
+		LuaModify "del_req_query_param" "print"
+		Backend
+		End
+	End
+End
+],
+[GET /echo/file?print=1
+end
+
+200
+x-orig-uri: /echo/file
+end
+])
+
+PT_CHECK([Lua
+	Load "mod.lua"
+End
+ListenHTTP
+	Service
+		Rewrite
+			LuaModify "set_req_path" "/echo/file"
+			LuaModify "set_req_query" "t=ok"
+			LuaModify "set_req_header" "X-Test" "ok"
+		End
+		Backend
+		End
+	End
+End
+],
+[GET /foobar
+end
+
+200
+x-orig-uri: /echo/file?t=ok
+x-orig-header-x-test: ok
+end
+])
+
+AT_CLEANUP

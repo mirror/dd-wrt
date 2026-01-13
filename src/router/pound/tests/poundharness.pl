@@ -1,5 +1,5 @@
 # This file is part of pound testsuite
-# Copyright (C) 2018-2024 Sergey Poznyakoff
+# Copyright (C) 2018-2025 Sergey Poznyakoff
 #
 # Pound is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -16,13 +16,14 @@
 use strict;
 use warnings;
 use Socket qw(:DEFAULT :crlf);
-use threads;
-use threads::shared;
 use Getopt::Long;
 use HTTP::Tiny;
 use POSIX qw(:sys_wait_h);
 use Cwd qw(abs_path);
 use File::Spec;
+use Socket;
+use lib qw(perllib);
+use PoundSub;
 
 my $config = 'pound.cfi:pound.cfg';
 my @preproc_files;
@@ -38,15 +39,21 @@ my $backends = ListenerList->new(0);
 my $pound_pid;
 my $startup_timeout = 2;
 my $statistics;
+my $fakedns;
+my $valgrind;
+my @source_addr;
 
 use constant {
     EX_SUCCESS => 0,
     EX_FAILURE => 1,
     EX_ERROR => 2,
     EX_USAGE => 3,
-    EX_SKIP => 77
+    EX_SKIP => 77,
+    EX_EXEC => 127
 };
 
+my $nameserver;
+
 ## Early checks
 ## ------------
 
@@ -64,10 +71,16 @@ if ($@) {
     exit(EX_SKIP);
 }
 
+eval "require JSON";
+if ($@) {
+    print STDERR "required module JSON not present\n";
+    exit(::EX_SKIP);
+}
+
 sub cleanup {
     if ($pound_pid) {
 	if ($verbose) {
-	    print "Stopping pound ($pound_pid)\n";
+	    print "$$ Stopping pound ($pound_pid)\n";
 	}
 	kill 'HUP', $pound_pid;
     }
@@ -79,14 +92,8 @@ sub cleanup {
 my %status_codes;
 
 $SIG{QUIT} = $SIG{HUP} = $SIG{TERM} = $SIG{INT} = \&cleanup;
-sub sigchild {
-    my $pid = waitpid(-1, 0);
-    if ($pid != $pound_pid) {
-	$status_codes{$pid} = $?;
-	$SIG{CHLD} = \&sigchild;
-	return;
-    }
-    $pound_pid = 0;
+
+sub handle_pound_status {
     if (WIFEXITED($?)) {
 	if (WEXITSTATUS($?)) {
 	    print STDERR "pound terminated with code " . WEXITSTATUS($?) . "\n";
@@ -94,22 +101,85 @@ sub sigchild {
 	    if ($verbose) {
 		print "pound finished\n";
 	    }
-	    $SIG{CHLD} = \&sigchild;
-	    return;
+	    return 1;
 	}
     } elsif (WIFSIGNALED($?)) {
 	print STDERR "pound terminated on signal " . WTERMSIG($?) . "\n";
     } else {
 	print STDERR "pound terminated with unrecognized status " . $? . "\n";
     }
-    exit(EX_ERROR);
+
+    return 0;
+}
+
+sub sigchild {
+    while (1) {
+	my $pid = waitpid(-1, WNOHANG);
+	if ($pid == -1) {
+	    return
+	}
+	if (!defined($pound_pid) || $pid != $pound_pid) {
+	    $status_codes{$pid} = $?;
+	    $SIG{CHLD} = \&sigchild;
+	    return;
+	}
+	$pound_pid = 0;
+	if (handle_pound_status()) {
+	    $SIG{CHLD} = \&sigchild;
+	    return;
+	}
+	exit(EX_ERROR);
+    }
 };
 $SIG{CHLD} = \&sigchild;
 
 END {
-    cleanup;
+#    print STDERR "XXX END $$\n";
+    PoundSub->stop;
 }
+
+sub fakedns_self_check {
+    my $params = 'ns1.example.org. rname@example.org. 42 7200 3600 1209600 3600';
 
+    $nameserver->ZoneUpdate(
+	'$ORIGIN example.org.',
+	'@ IN SOA '.$params
+    );
+
+    local $ENV{LD_PRELOAD} = $fakedns;
+    local %SIG;
+    if (open(my $fh, '-|', 'getsoa', 'example.org', '192.0.2.24')) {
+	chomp(my $s = <$fh>);
+	if ($s ne $params) {
+	    print STDERR "Self-check: got $s\n";
+	    return;
+	}
+	if (<$fh>) {
+	    print STDERR "Self-check: garbage after response: $_\n";
+	    return;
+	}
+	close $fh;
+	return 1;
+    }
+}
+
+sub assert_source_ip {
+    my ($ip) = @_;
+    socket(my $sock, PF_INET, SOCK_STREAM, 0)
+	or do {
+	    warn "socket: $!";
+	    exit 77;
+    };
+    setsockopt($sock, SOL_SOCKET, SO_REUSEADDR, 1);
+    unless (bind($sock, sockaddr_in(0, inet_aton($ip)))) {
+	# FIXME: To be strict, this should check for $!{EADDRNOTAVAIL} and
+	# exit 77 if so.
+	warn "bind($ip): $!";
+	exit(77);
+    }
+    close($sock)
+}
+
 ## Start the program
 ## -----------------
 sub usage_error {
@@ -125,11 +195,46 @@ GetOptions('config|f=s' => \$config,
 	   'transcript|x=s' => \$transcript_file,
 	   'statistics|s' => \$statistics,
 	   'startup-timeout|t=n' => \$startup_timeout,
-	   'include-dir=s' => \$include_dir)
+	   'include-dir=s' => \$include_dir,
+	   'fakedns=s' => \$fakedns,
+	   'valgrind=s' => \$valgrind,
+	   'source-address|a=s@' => sub {
+	       my (undef, $ip) = @_;
+	       assert_source_ip($ip);
+	       push @source_addr, $ip;
+	   },
+	   'test-threads' => sub {
+	       exit(PoundSub->using_threads == 0);
+	   }
+    )
     or exit(EX_USAGE);
 
 my $script_file = shift @ARGV or usage_error "required parameter missing";
 usage_error "too many arguments\n" if @ARGV;
+
+if ($fakedns) {
+    eval "require PoundNS";
+    if ($@) {
+	print STDERR "PoundNS: $@\n";
+	exit(EX_SKIP);
+    }
+    unless (-e $fakedns) {
+	print STDERR "$fakedns: file not found\n";
+	exit(EX_SKIP);
+    }
+
+    if (!File::Spec->file_name_is_absolute($fakedns)) {
+	$fakedns = File::Spec->rel2abs($fakedns);
+    }
+
+    $nameserver = PoundNS->new or die "can't create nameserver";
+    ($ENV{FAKEDNS_UDP_PORT}, $ENV{FAKEDNS_TCP_PORT}) = $nameserver->start_server();
+
+    unless (fakedns_self_check()) {
+	print STDERR "Self-check failed\n";
+	exit(EX_SKIP);
+    }
+}
 
 foreach my $file (@preproc_files) {
     if ($file =~ m{(?<src>.+):(?<dst>.+)}) {
@@ -152,6 +257,8 @@ if ($include_dir) {
     $config = abs_path($config)
 }
 
+$ENV{POUNDCTL_CONF} = "";
+
 # Start HTTP listeners
 $backends->read_and_process;
 
@@ -159,7 +266,8 @@ $backends->read_and_process;
 runner();
 
 # Parse and run the script file
-my $ps = PoundScript->new($script_file, $transcript_file);
+my $ps = PoundScript->new($script_file, $transcript_file, $nameserver,
+			  \@source_addr);
 $ps->parse;
 
 # Terminate
@@ -170,6 +278,17 @@ if ($statistics) {
 } elsif ($ps->failures) {
     print STDERR $ps->failures . " from " . $ps->tests . " tests failed\n";
 }
+
+if (defined($pound_pid) && $pound_pid > 0) {
+    $SIG{CHLD} = sub { };
+    cleanup;
+    if (waitpid($pound_pid, 0) == $pound_pid) {
+	if (handle_pound_status() == 0) {
+	    exit(EX_ERROR);
+	}
+    }
+}
+
 exit ($ps->failures ? EX_FAILURE : EX_SUCCESS);
 
 ## Configuration file processing
@@ -179,6 +298,11 @@ sub dequote {
     my $arg = shift;
     $arg =~ s/^\"(.+)\"$/$1/;
     return $arg;
+}
+
+sub isglob {
+    my $arg = shift;
+    return $arg =~ m/(?<!\\)[*?\[\]]/;
 }
 
 sub addport {
@@ -218,8 +342,10 @@ sub preproc {
 	ST_LISTENER => 1,
 	ST_SERVICE => 2,
 	ST_BACKEND => 3,
-	ST_SESSION => 4,
-	ST_SECTION => 5
+	ST_BACKEND_STAT => 4,
+	ST_BACKEND_DYN => 5,
+	ST_SESSION => 6,
+	ST_SECTION => 7
     };
     my @state;
     unshift @state, $initstate // ST_INIT;
@@ -227,14 +353,26 @@ sub preproc {
 	print $out <<EOT;
 # Initial settings by $0
 Daemon 0
+Control "pound.ctl"
 LogFacility -
 EOT
     ;
 	if ($log_level >= 0) {
 	    print $out "LogLevel $log_level\n";
 	}
+	if ($fakedns) {
+	    print $out <<EOT;
+Resolver
+    ConfigText
+	nameserver 192.0.2.24
+    End
+    RetryInterval 10
+End
+EOT
+    ;
+	}
     }
-    my $be;
+    my $be_loc;
     while (<$in>) {
 	chomp;
 	if (/^\s*(?:#.)?$/) {
@@ -255,30 +393,58 @@ EOT
 	    next;
 	} elsif (/^(?<indent>\s*)Include\s+(?<arg>.+)/) {
 	    my $arg = dequote($+{arg});
-	    my $file = $arg . '.pha';
-	    preproc($arg, $file, 0, $state[0]);
-	    print $out "$+{indent}# Edited by $0\n";
-	    $_ = "$+{indent}Include \"$file\"";
+	    if (isglob($arg)) {
+		foreach my $file (glob $arg) {
+		    my $outfile = $file . '.pha';
+		    preproc($file, $outfile, 0, $state[0]);
+		}
+		print $out "$+{indent}# Edited by $0\n";
+		$_ = "$+{indent}Include \"$arg.pha\"";
+	    } else {
+		my $file = $arg . '.pha';
+		preproc($arg, $file, 0, $state[0]);
+		print $out "$+{indent}# Edited by $0\n";
+		$_ = "$+{indent}Include \"$file\"";
+	    }
 	} elsif (/^\s*Service/i) {
 	    unshift @state, ST_SERVICE;
 	} elsif (/^\s*Session/i) {
 	    unshift @state, ST_SESSION;
 	} elsif (/^\s*(Backend|Emergency)/i) {
+	    $be_loc = "$infile:$.";
 	    unshift @state, ST_BACKEND;
-	    $be = $backends->create("$infile:$.");
-	    if ($verbose) {
-		print "$infile:$.: Backend ".$be->ident . ": " . $be->address."\n";
-	    }
-	} elsif (/^s*(TrustedIP|ACL|CombineHeaders)\b/) {
+	} elsif (/^\s*((Match)|(Rewrite)|(TrustedIP)|(ACL)|(CombineHeaders)|(Condition)|(Lua))\b/i) {
 	    unshift @state, ST_SECTION
-	} elsif (/^\s*End/i) {
+	} elsif (/^(\s*)End/i) {
+	    if ($state[0] == ST_BACKEND) {
+		my $be = $backends->create($be_loc);
+		if ($verbose) {
+		    print "$infile:$.: Backend ".$be->ident . ": " . $be->address."\n";
+		}
+		print $out "# Inserted by $0\n";
+		print $out "$1\tAddress ".$be->host."\n";
+		print $out "$1\tPort ".$be->port."\n";
+	    }
 	    shift @state
 	} elsif ($state[0] == ST_BACKEND) {
-	    if (/^(\s*Address)/i) {
-		$_ = $1 . ' ' . $be->host;
-	    } elsif (/^(\s*Port)/i) {
-		$_ = $1 . ' ' . $be->port;
+	    shift @state;
+	    if (/^\s*Resolve/) {
+		unshift @state, ST_BACKEND_DYN;
+	    } else {
+		unshift @state, ST_BACKEND_STAT;
+		my $be = $backends->create($be_loc);
+		if ($verbose) {
+		    print "$infile:$.: Backend ".$be->ident . ": " . $be->address."\n";
+		}
+		/^(\s*)([\S]+)/;
+		my ($indent, $kw) = ($1, $2);
+		print $out "# Inserted by $0\n";
+		print $out "${indent}Address ".$be->host."\n";
+		print $out "${indent}Port ".$be->port."\n";
+		next if ($kw =~ /^Address/i || $kw =~ /^Port/i);
 	    }
+	} elsif ($state[0] == ST_BACKEND_STAT) {
+	    next if (/^\s*Address/i || /^\s*Port/i);
 	} elsif ($state[0] == ST_LISTENER) {
 	    if (/^\s*(Address|Port|SocketFrom)/i) {
 		    $_ = "# Commented out: $_";
@@ -293,9 +459,9 @@ EOT
 		    my $file;
 		    while ($hostline =~ m/^\s*(-\S+)(.*)/) {
 			push @opts, $1;
-			if ($1 eq '-re' || $1 eq '-beg' || $1 eq '-end') {
+			if ($1 eq '-re' || $1 eq '-beg') {
 			    $exact = 0;
-			} elsif ($1 eq '-file') {
+			} elsif ($1 eq '-file' || $1 eq '-filewatch') {
 			    $file = 1;
 			}
 			$hostline = $2;
@@ -350,8 +516,21 @@ sub runner {
     }
     open(STDOUT, '>', $log_file);
     open(STDERR, ">&STDOUT");
-    exec 'pound', '-p', $pid_file, '-f', $config, '-v', '-W', 'no-dns', '-W',
-	  $include_dir ? "include-dir=$include_dir" : 'no-include-dir';
+    STDOUT->autoflush(1);
+    STDERR->autoflush(1);
+    my @cmd = (
+	'pound', '-p', $pid_file, '-f', $config, '-v', '-e',
+	'-W', $include_dir ? "include-dir=$include_dir" : 'no-include-dir'
+    );
+    if ($valgrind) {
+	unshift @cmd, 'valgrind', '--log-file=' . $valgrind;
+    }
+    if ($fakedns) {
+	$ENV{LD_PRELOAD} = $fakedns;
+    } else {
+	push @cmd, '-W', 'no-dns';
+    }
+    exec @cmd or exit(EX_EXEC);
 }
 
 package PoundScript;
@@ -365,8 +544,8 @@ use IPC::Open3;
 use Symbol 'gensym';
 
 sub new {
-    my ($class, $file, $xscript) = @_;
-    my $self = bless { tests => 0, failures => 0 }, $class;
+    my ($class, $file, $xscript, $ns, $srcaddr) = @_;
+    my $self = bless { tests => 0, failures => 0, ns => $ns }, $class;
     if ($file ne '-') {
 	open(my $fh, '<', $file)
 	    or croak "can't open script $file: $!";
@@ -381,14 +560,59 @@ sub new {
 	    or croak "can't create transcript file $xscript: $!";
     }
     $self->{server} = 0;
-    $self->{http} = HTTP::Tiny->new(max_redirect => 0);
+    $self->{source_addr} = '127.0.0.1';
+    if ($srcaddr) {
+	unshift @$srcaddr, $self->{source_addr}
+    } else {
+	$srcaddr = [ $self->{source_addr} ]
+    }
+    foreach my $addr (@$srcaddr) {
+	$self->{http}{$addr} = HTTP::Tiny->new(
+			  max_redirect => 0,
+			  verify_SSL => 0,
+			  local_address => $addr
+	    );
+    }
     return $self;
 }
 
 sub tests { shift->{tests} }
 sub failures { shift->{failures} }
 
-sub http { shift->{http} }
+sub http {
+    my ($self) = @_;
+    return $self->{http}{$self->{source_addr}}
+}
+
+sub source_address {
+    my ($self, $addr) = @_;
+    croak "unknown source address" unless exists $self->{http}{$addr};
+    $self->{source_addr} = $addr
+}
+
+sub transcript {
+    my ($self, $text, %opt) = @_;
+    if (my $fh = $self->{xscript}) {
+	if (my $locus = delete $opt{locus}) {
+	    print $fh "$self->{filename}:$locus->{BEG}-$locus->{END}";
+	} else {
+	    print $fh "$self->{filename}:$self->{line}";
+	}
+	print $fh ": ";
+	print $fh $text;
+	print $fh "\n";
+    }
+}
+
+sub transcript_ml {
+    my $self = shift;
+    if (my $fh = $self->{xscript}) {
+	print $fh join("\n", @_)."\n";
+    }
+}
+
+sub transcript_ok { shift->transcript("OK", @_) }
+sub transcript_fail { shift->transcript("FAIL", @_) }
 
 sub send_and_expect {
     my ($self, $lst, $host, $stats) = @_;
@@ -416,14 +640,12 @@ sub send_and_expect {
     if ($verbose) {
 	print "URL $self->{REQ}{METHOD} $url\n";
     }
-    if (my $fh = $self->{xscript}) {
-	print $fh "$self->{filename}:$self->{REQ}{BEG}-$self->{REQ}{END}: sending $self->{REQ}{METHOD} $url to server $self->{server}\n";
-    }
+
+    $self->transcript("sending $self->{REQ}{METHOD} $url to server $self->{server}",
+		      locus => $self->{REQ});
+
     my $response = $self->http->request($self->{REQ}{METHOD}, $url, \%options);
-    if (my $fh = $self->{xscript}) {
-	print $fh "$self->{filename}:$self->{REQ}{BEG}-$self->{REQ}{END}: got:\n";
-	print $fh Dumper([$response]);
-    }
+    $self->transcript("got:\n".Dumper([$response]), locus => $self->{REQ});
 
     $self->{tests}++;
     my $ok = $self->assert($response);
@@ -434,10 +656,7 @@ sub send_and_expect {
     } else {
 	$self->{failures}++;
     }
-    if (my $fh = $self->{xscript}) {
-	print $fh "$self->{filename}:$self->{EXP}{BEG}-$self->{EXP}{END}: " .
-		   ($ok ? "OK" : "FAIL")."\n";
-    }
+    $self->transcript($ok ? "OK" : "FAIL", locus => $self->{EXP});
     return $ok
 }
 
@@ -472,9 +691,8 @@ sub send {
 	    if (exists($self->{stats}{$k})) {
 		unless ($self->check_expect($s->${ \$k }, $self->{stats}{$k})) {
 		    $ok = 0;
-		    if (my $fh = $self->{xscript}) {
-			print $fh "$self->{filename}:$self->{EXP}{BEG}-$self->{EXP}{END}: $k: expected value mismatch\n";
-		    }
+		    $self->transcript("$k: expected value mismatch",
+				      locus => $self->{EXP});
 		}
 	    }
 	}
@@ -486,21 +704,20 @@ sub send {
 		unless ($self->check_expect($s->sample($i),
 					    $self->{stats}{expect}{$i})) {
 		    $ok = 0;
-		    if (my $fh = $self->{xscript}) {
-			print $fh "$self->{filename}:$self->{EXP}{BEG}-$self->{EXP}{END}: element $i: expected value mismatch\n";
-		    }
+		    $self->transcript("element $i: expected value mismatch",
+				      locus => $self->{EXP});
 		}
 	    }
 	}
 
 	$self->{failures}++ unless $ok;
 
-	if (my $fh = $self->{xscript}) {
-	    printf $fh "min=%f, avg=%f, max=%f, stddev=%f\n", $s->min, $s->avg, $s->max, $s->stddev;
+	if ($self->{xscript}) {
+	    $self->transcript(sprintf("min=%f, avg=%f, max=%f, stddev=%f",
+				      $s->min, $s->avg, $s->max, $s->stddev));
 	    local $Data::Dumper::Sortkeys=1;
-	    print $fh Dumper([$s->samples]);
-	    print $fh "$self->{filename}:$self->{EXP}{BEG}-$self->{EXP}{END}: " .
-		($ok ? "OK" : "FAIL")."\n";
+	    $self->transcript(Dumper([$s->samples]));
+	    $self->transcript($ok ? "OK" : "FAIL", locus => $self->{EXP});
 	}
     } else {
 	$self->send_and_expect($lst, $host);
@@ -509,6 +726,18 @@ sub send {
     delete $self->{REQ};
     delete $self->{EXP};
     delete $self->{stats};
+}
+
+sub body_match {
+    my ($self, $body) = @_;
+    if ($self->{EXP}{BODY} =~ m{^:re\s*\n(.+)}s) {
+	my $rx = $1;
+	return $body =~ m{$rx}ms
+    } elsif ($self->{EXP}{BODY} =~ m{^:exact\s*\n(.+)}s) {
+	return $1 eq $body
+    } else {
+	return $self->{EXP}{BODY} eq $body
+    }
 }
 
 sub assert {
@@ -549,8 +778,7 @@ sub assert {
 	    }
 	}
 
-	if (exists($self->{EXP}{BODY}) &&
-	    $self->{EXP}{BODY} ne $response->{content}) {
+	if (exists($self->{EXP}{BODY}) && !$self->body_match($response->{content})) {
 	    print STDERR "$self->{filename}:$self->{EXP}{BEG}-$self->{EXP}{END}: response content mismatch\n";
 	    print STDERR "EXP '".$self->{EXP}{BODY}."'\n";
 	    print STDERR "GOT '".$response->{content}."'\n";
@@ -562,8 +790,15 @@ sub assert {
 
 sub parse {
     my $self = shift;
-    while (!$self->{eof}) {
-	$self->parse_req;
+    eval {
+	while (!$self->{eof}) {
+	    $self->parse_req;
+	}
+    };
+    if ($@) {
+	print STDERR "$@";
+	print STDERR "Abnormal termination\n";
+	$self->{failures}++;
     }
 }
 
@@ -589,6 +824,33 @@ sub parse_req {
 	    $self->{server} = $1;
 	    next;
 	}
+	if (/^source\s+(.+)/) {
+	    $self->source_address($1);
+	    next;
+	}
+	if (/^mkbackend\s+(127(\.\d+){3})/) {
+	    $backends->create("$self->{filename}:$self->{line}", 'HTTP', $1);
+	    next;
+	}
+	if (/^sleep\s+(\d+)/) {
+	    sleep $1;
+	    next;
+	}
+	if (/^echo\s+(.+)/) {
+	    print STDERR "# ".$self->expandvars($1)."\n";
+	    next;
+	}
+
+	if (/^zonefile/) {
+	    $self->parse_zonefile;
+	    next;
+	}
+
+	if (m{^backends\s+(\d+)\s+(\d+)(?:\s+(.+))?}) {
+	    $self->parse_control_backends($1, $2);
+	    next;
+	}
+
 	if (s/^stats//) {
 	    foreach my $k (qw(samples min max avg stddev index)) {
 		if (s{\s+$k = (?:
@@ -665,6 +927,78 @@ sub parse_req {
     $self->syntax_error("unexpected end of file") if $self->{REQ}{BEG};
 }
 
+sub parse_zonefile {
+    my $self = shift;
+    my $fh = $self->{fh};
+
+    my @zonetext;
+    while (<$fh>) {
+	$self->{line}++;
+	chomp;
+	last if /^end$/;
+	push @zonetext, $self->expandvars($_)
+    }
+
+    $self->{ns}->ZoneUpdate(@zonetext);
+}
+
+sub jsoncmp {
+    my ($a, $b) = @_;
+
+    my $rtype = ref($a);
+    return 0 if $rtype ne ref($b);
+    if ($rtype eq '') {
+	return $a eq $b;
+    } elsif ($rtype eq 'ARRAY') {
+	return 0 if @{$a} != @{$b};
+	for (my $i = 0; $i <= $#{$a}; $i++) {
+	    return 0 unless jsoncmp($a->[$i], $b->[$i]);
+	}
+    } elsif ($rtype eq 'HASH') {
+	foreach my $k (keys %$a) {
+	    return 0 unless jsoncmp($a->{$k}, $b->{$k});
+	}
+    } else {
+	return 0
+    }
+    return 1
+}
+
+sub parse_control_backends {
+    my ($self, $ls, $sv) = @_;
+
+    if ($verbose) {
+	print "querying control interface\n";
+    }
+
+    $self->transcript("querying control interface");
+
+    my $fh = $self->{fh};
+    $self->{tests}++;
+    my @exp;
+    while (<$fh>) {
+	$self->{line}++;
+	chomp;
+	last if /^end$/;
+	push @exp, $self->expandvars($_)
+    }
+
+    my $ctl = PoundControl->new();
+    my $belist = $ctl->backends($ls, $sv, sort => 1);
+    my $json = JSON->new->boolean_values(0,1);
+    my $exp = $json->decode(join(' ', @exp));
+
+    if (jsoncmp($exp, $belist)) {
+	$self->transcript_ok;
+    } else {
+	$self->{failures}++;
+	$self->transcript_ml("backend listings don't match",
+			     "exp: " . $json->canonical->pretty->encode($exp),
+			     "got: " . $json->canonical->pretty->encode($belist));
+	$self->transcript_fail;
+    }
+}
+
 sub parse_headers {
     my $self = shift;
     my $fh = $self->{fh};
@@ -716,10 +1050,11 @@ sub parse_body {
 	$self->{line}++;
 	chomp;
 
-	if (/^end$/) {
+	if (/^end(nonl)?$/) {
 	    $self->{REQ}{END} = $self->{line};
 	    if ($self->{REQ}{BODY}) {
-		$self->{REQ}{BODY} = join("\n", @{$self->{REQ}{BODY}})."\n";
+		$self->{REQ}{BODY} = join("\n", @{$self->{REQ}{BODY}});
+		$self->{REQ}{BODY} .= "\n" unless /nonl/;
 	    }
 	    $self->parse_expect;
 	    return;
@@ -783,6 +1118,11 @@ sub parse_runcom {
 	    next;
 	}
 
+	if (/^logtail\s+\"(.+)\"(:?\s+([[:digit:]]+))?\s*$/) {
+	    $self->{RUNCOM}{tail} = [ $log_file, $1, $2 ];
+	    next;
+	}
+
 	$self->syntax_error;
     }
     $self->{eof} = 1;
@@ -792,9 +1132,13 @@ sub parse_runcom {
 sub runcom {
     my $self = shift;
 
+    my $tail;
+    if ($self->{RUNCOM}{tail}) {
+	$tail = Tail->new(@{$self->{RUNCOM}{tail}});
+    }
+
     my ($child_stdin, $child_stdout, $child_stderr);
     $child_stderr = gensym();
-    %status_codes = ();
     my $pid = open3($child_stdin, $child_stdout, $child_stderr,
 		    $self->{RUNCOM}{command});
     close $child_stdin;
@@ -804,10 +1148,28 @@ sub runcom {
     my $CHUNK_SIZE = 1000;
     my @ready;
     my %data = ( $child_stdout => '', $child_stderr => '' );
+    my $timeout = $self->{RUNCOM}{timeout};
+    my @args;
+    push @args, 1 if $timeout;
+    my $start = time;
+    while (1) {
+	$! = 0;
+	@ready = $sel->can_read(@args);
+	unless (@ready) {
+	    if ($!) {
+		$self->transcript("waiting for output: $!",
+				  locus => $self->{RUNCOM});
+		last;
+	    }
+	    last unless $timeout;
+	}
+	if ($timeout && time - $start > $timeout) {
+	    $self->transcript("timed out", locus => $self->{RUNCOM});
+	    kill 'KILL', $pid unless defined($status_codes{$pid});
+	    last;
+	}
 
-    while (!defined($status_codes{$pid}) && (@ready = $sel->can_read)) {
 	foreach my $fh (@ready) {
-	    my $data;
 	    while (1) {
 		my $len = sysread($fh, $data{$fh}, $CHUNK_SIZE,
 				  length($data{$fh}));
@@ -827,42 +1189,41 @@ sub runcom {
 
     my $code;
     if (!defined($status_codes{$pid})) {
-	die "failed to execute " . $self->{RUNCOM}{command} . ": $!";
+	die "failed to execute $self->{RUNCOM}{command}";
     } elsif ($status_codes{$pid} & 127) {
 	die "\"".$self->{RUNCOM}{command}."\" terminated on signal ".($status_codes{$pid} & 127);
     } else {
 	$code = $status_codes{$pid} >> 8;
+	delete $status_codes{$pid};
     }
 
-    if (my $fh = $self->{xscript}) {
-	print $fh "Command: " . $self->{RUNCOM}{command} . "\n";
-	print $fh "Status code: $code\n";
-	print $fh "Stdout:\n";
-	print $fh $data{$child_stdout};
-	print $fh "\nEnd\n";
-	print $fh "Stderr:\n";
-	print $fh $data{$child_stderr};
-	print $fh "\nEnd\n";
-    }
+    $self->transcript_ml(
+	"Command: " . $self->{RUNCOM}{command},
+	"Status code: $code",
+	"Stdout:",
+	$data{$child_stdout},
+	"End",
+	"Stderr:",
+	$data{$child_stderr},
+	"End"
+    );
 
     $self->{tests}++;
+    my $ok = 1;
+
     if (exists($self->{RUNCOM}{status}) && $code != $self->{RUNCOM}{status}) {
 	$self->{failures}++;
-	if (my $fh = $self->{xscript}) {
-	    print $fh "$self->{filename}:$self->{RUNCOM}{BEG}-$self->{RUNCOM}{END}: exit code differs\n";
-	    return 0;
-	}
+	$self->transcript("exit code differs", locus => $self->{RUNCOM});
+	$ok = 0;
     }
 
     if (exists($self->{RUNCOM}{stdout})) {
 	my $s = join("\n", @{$self->{RUNCOM}{stdout}});
 	if ($data{$child_stdout} !~ m{$s}ms) {
 	    $self->{failures}++;
-	    if (my $fh = $self->{xscript}) {
-		print $fh "$self->{filename}:$self->{RUNCOM}{BEG}-$self->{RUNCOM}{END}: stdout differs\n";
-		print $fh "rx: $s\n";
-		return 0;
-	    }
+	    $self->transcript("stdout differs:\nrx: {$s}",
+			      locus => $self->{RUNCOM});
+	    $ok = 0;
 	}
     }
 
@@ -870,15 +1231,22 @@ sub runcom {
 	my $s = join("\n", @{$self->{RUNCOM}{stderr}});
 	if ($data{$child_stderr} !~ m{$s}ms) {
 	    $self->{failures}++;
-	    if (my $fh = $self->{xscript}) {
-		print $fh "$self->{filename}:$self->{RUNCOM}{BEG}-$self->{RUNCOM}{END}: stderr differs\n";
-		print $fh "rx: $s\n";
-		return 0;
-	    }
+	    $self->transcript("stderr differs:\nrx: {$s}",
+			      locus => $self->{RUNCOM});
+	    $ok = 0;
 	}
     }
 
-    return 1
+    if ($ok && $tail) {
+	$ok = $tail->wait;
+	if ($ok == 0) {
+	    $self->transcript("expected string didn't appear in logfile");
+	    $self->{failures}++;
+	}
+    }
+
+    $self->transcript($ok ? "OK" : "FAIL");
+    return $ok
 }
 
 sub parse_expect {
@@ -915,12 +1283,16 @@ sub parse_expect {
 sub replvar {
     my ($self, $var) = @_;
     if ($var =~ m{(LISTENER|BACKEND)(\d+)?(?::(PORT|IP))?}) {
-	my $var = ($1 eq 'LISTENER') ? $listeners : $backends;
+	my $list = ($1 eq 'LISTENER') ? $listeners : $backends;
 	my $meth = 'address';
 	if (defined($3)) {
 	    $meth = ($3 eq 'PORT') ? 'port' : 'host';
 	}
-	return $var->get($2//0)->${ \$meth };
+	if (my $obj = $list->get($2//0)) {
+	    return $obj->${ \$meth };
+	} else {
+	    $self->syntax_error("unrecognized variable $var");
+	}
     }
     return '${' . $var . '}';
 }
@@ -976,25 +1348,57 @@ sub parse_expect_body {
 	$self->{line}++;
 	chomp;
 
-	if (/^end$/) {
+	if (/^end(nonl)?$/) {
 	    $self->{EXP}{END} = $self->{line};
-	    $self->{EXP}{BODY} = join("\n", @{$self->{EXP}{BODY}})."\n";
+	    if ($self->{EXP}{BODY}) {
+		$self->{EXP}{BODY} = join("\n", @{$self->{EXP}{BODY}});
+		$self->{EXP}{BODY} .= "\n" unless /nonl/;
+	    }
 	    $self->send;
 	    return;
 	}
 
-	# if (/^(?:#.*)?$/) {
-	#     next;
-	# }
-
-	if (/\\(.*)/) {
-	    push @{$self->{EXP}{BODY}}, $1;
-	} else {
-	    push @{$self->{EXP}{BODY}}, $_;
-	}
+        push @{$self->{EXP}{BODY}}, $_;
     }
     $self->{eof} = 1;
     $self->syntax_error("unexpected end of file");
+}
+
+package Tail;
+use strict;
+use warnings;
+use Carp;
+use Fcntl qw(:seek);
+
+sub new {
+    my ($class, $file, $expect, $ttl) = @_;
+    open(my $fh, '<', $file) or croak "can't open $file: $!";
+    seek $fh, 0, SEEK_END;
+    return bless { file => $file, fh => $fh, expect => $expect,
+		   ttl => $ttl // 2 }, $class;
+}
+
+sub wait {
+    my $self = shift;
+    my $line = '';
+    my $fh = $self->{fh};
+    my $start = time;
+    while (1) {
+	if (my $s = <$fh>) {
+	    $line .= $s;
+	    if ($line =~ /\n/m) {
+		chomp($line);
+		return 1 if $line =~ /$self->{expect}/;
+		$line = '';
+	    }
+	} elsif (time - $start >= $self->{ttl}) {
+	    return 0;
+	} else {
+	    # Clear EOF indicator
+	    seek($fh, 0, 1);
+	}
+	sleep 0.2;
+    }
 }
 
 package Stats;
@@ -1100,12 +1504,12 @@ if ($@) {
 }
 
 sub new {
-    my ($class, $number, $ident, $keepopen, $proto) = @_;
+    my ($class, $number, $ident, $keepopen, $proto, $ip) = @_;
     my $socket;
     socket($socket, PF_INET, SOCK_STREAM, 0)
 	or croak "socket: $!";
     setsockopt($socket, SOL_SOCKET, SO_REUSEADDR, 1);
-    bind($socket, pack_sockaddr_in(0, inet_aton('127.0.0.1')))
+    bind($socket, pack_sockaddr_in(0, inet_aton($ip // '127.0.0.1')))
 	or die "bind: $!";
     if ($keepopen) {
 	listen($socket, 128);
@@ -1115,12 +1519,12 @@ sub new {
 	    or croak "fcntl F_SETFD: $!";
     }
     my $sa = getsockname($socket);
-    my ($port, $ip) = sockaddr_in($sa);
+    my ($port, $ipaddr) = sockaddr_in($sa);
     bless {
 	number => $number,
 	ident => $ident,
 	socket => $socket,
-	host => inet_ntoa($ip),
+	host => inet_ntoa($ipaddr),
 	port => $port,
 	proto => lc($proto // "http")
     }, $class;
@@ -1154,7 +1558,8 @@ sub set_pass_fd {
 sub send_fd {
     my $self = shift;
     croak "not applicable" unless $self->pass_fd;
-    accept(my $fh, $self->pass_fd);
+    accept(my $fh, $self->pass_fd)
+	or croak "accept on pass_fd failed: $!";
     IO::FDPass::send(fileno($fh), $self->fd)
 	or croak "failed to pass socket: $!";
     close $self->socket_handle;
@@ -1182,7 +1587,7 @@ sub new {
 sub keepopen { shift->{keepopen} }
 sub count { scalar @{shift->{listeners}} }
 sub create {
-    my ($self, $ident, $proto) = @_;
+    my ($self, $ident, $proto, $ip) = @_;
     if (defined($proto) && lc($proto) eq 'HTTPS') {
 	my ($ok, $why) = HTTP::Tiny->can_ssl;
 	unless ($ok) {
@@ -1190,7 +1595,7 @@ sub create {
 	    exit(main::EX_SKIP);
 	}
     }
-    my $lst = Listener->new($self->count(), $ident, $self->keepopen, $proto);
+    my $lst = Listener->new($self->count(), $ident, $self->keepopen, $proto, $ip);
     if ($self->keepopen) {
 	$lst->set_pass_fd("lst".$self->count().".sock");
     }
@@ -1248,15 +1653,15 @@ sub read_and_process {
     }
 
     foreach my $lst (@{$self->{listeners}}) {
-	threads->create(sub {
+	PoundSub->start(sub {
 	    my $lst = shift;
 	    $lst->listen;
 	    while (1) {
 		my $fh;
-		accept($fh, $lst->socket_handle);
+		accept($fh, $lst->socket_handle) or PoundSub->exit();
 		process_http_request($fh, $lst)
 	    }
-	}, $lst)->detach;
+	}, $lst);
     }
 }
 
@@ -1282,8 +1687,30 @@ sub http_redirect {
     my ($http, $rest) = @_;
     my $redir = $http->header('x-redirect')//'';
     $http->reply(301, "Moved Permanently", headers => {
-			'location' => $redir . '/echo' . $rest
-		 });
+	'location' => $redir . '/echo' . $rest,
+	'x-orig-location' => $redir . '/echo' . $rest
+    });
+}
+
+sub http_status {
+    my ($http, $rest) = @_;
+    my $status = $rest;
+    $status =~ s{^/}{};
+    $status = 500 unless $status =~ /^\d{3}$/;
+    my $reason = $http->header('x-reason')//'Unknown';
+    my $text = <<EOT;
+====================
+$status $reason
+====================
+
+This response page was generated for HTTP status code $status
+by poundharness.
+EOT
+    $http->reply($status, $reason,
+		 headers => {
+		     'content-type' => 'text/plain'
+		 },
+		 body => $text);
 }
 
 sub process_http_request {
@@ -1292,6 +1719,7 @@ sub process_http_request {
     my %endpoints = (
 	'echo' => \&http_echo,
 	'redirect' => \&http_redirect,
+	'status' => \&http_status
     );
 
     local $| = 1;
@@ -1309,7 +1737,7 @@ sub process_http_request {
 			 });
 	}
     } else {
-	$http->reply(500, "Malformed URI");
+	$http->reply(500, "Malformed URI: ".$http->uri);
     }
     $http->close;
 }
@@ -1359,7 +1787,7 @@ sub getline {
 sub ParseRequest {
     my $http = shift;
 
-    my $input = $http->getline() or threads->exit();
+    my $input = $http->getline() or PoundSub->exit();
     #    print "GOT $input\n";
     my @res = split " ", $input;
     if (@res != 3) {
@@ -1425,6 +1853,94 @@ sub reply {
 	print $fh $opt{body};
     }
 }
+
+package PoundControl;
+use strict;
+use warnings;
+use Carp;
+use IPC::Open3;
+use IO::Select;
+use Symbol 'gensym';
+use Data::Dumper;
+
+sub new {
+    my ($class, $config) = @_;
+    return bless {
+	config => $config//'pound.cfg',
+    }, $class
+}
+
+sub request {
+    my ($self, $command, $arg) = @_;
+
+    local $SIG{CHLD} = sub {};
+    my ($child_stdin, $child_stdout, $child_stderr);
+    $child_stderr = gensym();
+    my $pid = open3($child_stdin, $child_stdout, $child_stderr,
+		    'poundctl', '-f', $self->{config}, '-j', $command, $arg);
+    close $child_stdin;
+
+    my $sel = IO::Select->new();
+    $sel->add($child_stdout, $child_stderr);
+    my $CHUNK_SIZE = 1000;
+    my @ready;
+    my %data = ( $child_stdout => '', $child_stderr => '' );
+
+    while (@ready = $sel->can_read) {
+	foreach my $fh (@ready) {
+	    my $data;
+	    while (1) {
+		my $len = sysread($fh, $data{$fh}, $CHUNK_SIZE,
+				  length($data{$fh}));
+		croak "sysread: $!" unless defined($len);
+		if ($len == 0) {
+		    $sel->remove($fh);
+		    $fh->close;
+		    last;
+		}
+	    }
+	}
+    }
+
+    waitpid($pid, 0);
+
+    my $code;
+    if ($? == -1) {
+	croak "failed to run poundctl: $!";
+    } elsif ($? & 127) {
+	croak "poundctl terminated on signal ".($? & 127);
+    } elsif ($? >> 8) {
+	croak "poundctl failed: " . $data{$child_stderr};
+    }
+    return JSON->new->boolean_values(0,1)->decode($data{$child_stdout});
+}
+
+sub list {
+    my $self = shift;
+    my $arg;
+    if (@_) {
+	$arg .= '/' . join('/', @_)
+    }
+    return $self->request('list', $arg);
+}
+
+sub backends {
+    my ($self, $lst, $srv, %opts) = @_;
+    my $res = $self->list($lst, $srv);
+    if ($opts{sort}) {
+	$res->{backends} = [sort {
+	    if ($a->{weight} != $b->{weight}) {
+		$a->{weight} <=> $b->{weight}
+	    } elsif ($a->{priority} != $b->{priority}) {
+		$a->{priority} <=> $b->{priority}
+	    } else {
+		($a->{address}//'') cmp ($b->{address}//'')
+	    }
+	} @{$res->{backends}}];
+    }
+    return $res->{backends};
+}
+
 1;
 __END__
 
@@ -1436,14 +1952,20 @@ poundharness - run pound tests
 
 B<poundharness>
 [B<-sv>]
+[B<-a> I<IP>]
 [B<-f I<FILE>>]
 [B<-l I<N>>]
 [B<-t I<N>>]
 [B<-x I<FILE>>]
 [B<--config=>I<SRC>[B<:>I<DST>]]
+[B<--fakedns=>[I<PORT>:]I<LIB>]
+[B<--include-dir=>I<DIR>]
 [B<--log-level=>I<N>]
+[B<--preproc=>I<FILE>[:I<DST>]]
+[B<--source-address=>I<IP>]
 [B<--startup-timeout=>I<N>]
 [B<--statistics>]
+[B<--test-threads>]
 [B<--transcript=>I<FILE>]
 [B<--verbose>]
 I<SCRIPT>
@@ -1454,7 +1976,7 @@ Upon startup, B<poundharness> reads B<pound> configuration file F<pound.cfi>,
 modifies the settings as described below and writes the resulting configuration
 to B<pound.cfg>.  During modification, the following statements are removed:
 B<Daemon>, B<LogFacility> and B<LogLevel>.  The settings suitable for running
-B<pound> as a subordinate process are inserted istead.  In particular,
+B<pound> as a subordinate process are inserted instead.  In particular,
 B<LogLevel> is set from the value passed with the B<--log-level> command
 line option.  For each B<ListenHTTP> and B<ListenHTTPS> section, the actual
 socket configuration (i.e. the B<Address>, B<Port>, or B<SocketFrom> statements)
@@ -1465,10 +1987,16 @@ socket information is stored in the B<Address> and B<Port> statements that
 replace the removed ones and a backend HTTP server is started listening
 on that socket.
 
+A B<Control> statement is inserted at the beginning of the file, enabling
+the control interface via the F<pound.ctl> socket.
+
 B<Include> statements are processed in the following manner: the file
 supplied as the argument is preprocessed and the result is written to
 a file with the name obtained by appending suffix C<.pha> to the original
 name.  An B<Include> statement with this name is output.
+
+If B<Include> argument is a shell globbing pattern, all files matching that
+pattern are processed as described.
 
 When a B<Host> statement with exact comparison method is encountered,
 a colon and actual port number of the enclosing listener is appended
@@ -1500,6 +2028,20 @@ If these requirements are not met, it exits with code 77.
 Status 3 is returned if B<poundharness> is used with wrong command line
 switches or arguments,
 
+=head2 Multi-process model
+
+Whenever available, B<poundharness> uses I<perl threads> (I<ithreads>) to run its
+subordinate tasks (HTTP and DNS servers, in particular).  If perl is built
+without I<ithreads>, the traditional UNIX forking model is used, with each task
+served by a separate child process.  To see if threads are available, use
+
+  perl poundharness.pl --test-threads && echo OK
+
+(see the description of B<--test-threads> below).
+
+To force using forking module instead of the default threads, set the
+B<POUNDSUB_FORK> environment variable to a non-zero value.
+
 =head1 OPTIONS
 
 =over 4
@@ -1511,14 +2053,63 @@ to I<DST> and use it as configuration file when running B<pound>.  If
 I<DST> is omitted, F<pound.cfg> is assumed.  If this option is not given,
 I<SRC> defaults to F<pound.cfi>.
 
+=item B<--fakedns=>I<LIB>
+
+Start a mock DNS server listening on arbitrary free ports (UDP and TCP),
+initialize environment variables B<FAKEDNS_UDP_PORT> and B<FAKEDNS_TCP_PORT>
+to these port numbers, and preload the library I<LIB> before exec'ing
+B<pound>.  I<LIB> must be the absolute pathname of the B<libfakedns.so> file.
+See B<fakedns.c> for details about this library.
+
+This option also instructs B<poundharness> to emit a B<Resolv> section to
+the created B<pound.cfg> file and to extend the script file syntax with
+the statements described in the B<DNS Statements> section (see below).
+
+If B<Net::DNS> perl module is not available and B<poundharness>
+is given this option, it will exit with status code 77.
+
+To avoid spurious failures, before actually using this functionality
+B<poundharness> performs a self-test, consisting in querying a SOA record of
+a mock DNS zone, using external helper program B<getsoa>.  If the test
+returns the correct data (indicating thereby that the trick with B<fakedns>
+works), B<poundharness> continues.  Otherwise, it exists with status code 77.
+
+=item B<--include-dir=>I<DIR>
+
+Look for relative file names in I<DIR>.  In particular, relative file names
+given as arguments to the B<--preproc> option or appearing in B<Include>
+statements in B<pound> configuration file will be searched in I<DIR>.
+This directory is also passed to B<pound> via the B<-Winclude-dir=I<DIR>>
+option.
+
 =item B<-l>, B<--log-level=> I<N>
 
 Set B<pound> I<LogLevel> configuration parameter.  If I<N> is B<-1>,
 I<LogLevel> set in the configuration file is used.
 
+=item B<--preproc=>I<FILE>[:I<DST>]
+
+Preprocess I<FILE> as described in the B<DESCRIPTION>.  Write the resulting
+material to I<DST>.  If the latter is omitted, the destination file will be
+named I<FILE>B<.cfg>.
+
+=item B<-a>, B<--source-address=> I<IP>
+
+Register I<IP> as a possible source address for HTTP requests.  Argument
+should match C<127.0.0.0/8>.  Registered source addresses can be used in
+B<source> statement in the script file.
+
 =item B<-s>, B<--statistics>
 
 Print short statistics at the end of the run.
+
+=item B<--test-threads>
+
+Test if Perl threads are available.  Exit with success if so.  Use
+
+  perl poundharness.pl --test-threads && echo OK
+
+if you wish to get a textual response.
 
 =item B<-t>, B<--startup-timeout=> I<N>
 
@@ -1544,12 +2135,14 @@ Two types of send/expect stanzas are available:
 
 =head2 HTTP send/expect
 
-An HTTP send/expect defined a HTTP requests and expected response.
+An HTTP send/expect defines a HTTP requests and expected response.
 
 A request starts with a line specifying the request method in uppercase
 (e.g. B<GET>, B<POST>, etc.) followed by an URI.  This line may be followed
 by arbitrary number of HTTP headers, newline and request body.  The request
-is terminated with the word B<end> on a line alone.
+is terminated with the word B<end> or B<endnonl> on a line alone.  If
+terminated with B<endnonl>, last newline will not be included in the request
+body.
 
 The sequence B<@@> has a special meaning when used in the body.  These
 characters instruct B<poundharness> to send the body using B<chunked> transfer
@@ -1572,9 +2165,13 @@ in the response. E.g. the header line
 means that the response may not contain B<X-Forwarded-Proto: https> header.
 The test will fail if such header is present.
 
-Headers may be followed by a newline and response body (content).  If
-present, it will be matched literally against the actual response.
-The response is terminated with the word B<end> on a line alone.
+Headers may be followed by a newline and response body (content), optionally
+preceded by B<:re> or B<:exact> on a separate line.  The B<:re> line instructs
+the program to treat the following text as a multiline regular expression.
+B<:exact> means use literal match.  This is also the default.
+
+The response is terminated with the word B<end> or B<endnonl> on a line
+alone (the semantics of the latter is described above).
 
 Values of both request and expected headers may contain the following
 I<variables>, which are expanded when reading the file:
@@ -1619,6 +2216,17 @@ correspondingly.
 
 Numbering of listeners and backends starts from 0.
 
+By default, requests sent by B<poundharness.pl> originate from 127.0.0.1.
+Another source address can be set using the B<source> statement:
+
+  source IP
+
+The IP must have been previously declared as a source using the
+B<--source-address> command line option.  Obviously, the networking
+configuration of the host machine must allow it to be used as a
+source IP, otherwise B<poundharness.pl> issue a diagnostic message and
+exit with code 77.
+
 The B<server> statement can be used to specify the B<pound> listener to
 send the requests to.  It has the form
 
@@ -1632,7 +2240,7 @@ occurs first.
 =head2 External program send/expect
 
 This type of stanza allow you to run an external program and examine its
-exit code, standard output and error streams.  It is inlcuded mainly for
+exit code, standard output and error streams.  It is included mainly for
 testing the B<poundctl> command.
 
 The stanza begins with the keyword B<run> followed by the command
@@ -1648,7 +2256,7 @@ Expect program to return exit status I<N> (a decimal number).
 
 Expect text on stdout.  Everything below this keyword and up to the
 B<end> keyword appearing on a line alone is taken to be the expected
-text.  When matching actiual program output, this text is treated as
+text.  When matching actual program output, this text is treated as
 Perl multi-line regular expression (see the B<m> and B<s> flags in
 B<perlre>).  To expect a line containing the word C<end> alone, prefix
 it with a backslash.
@@ -1657,6 +2265,124 @@ it with a backslash.
 
 Expect text on stderr.  See the description of B<stdout> above for
 its syntax.
+
+=item B<logtail> "I<expect>" [I<T>]
+Wait for a line matching I<expect> to appear in the pound log file.  The
+optional argument I<T> sets time to wait, in seconds.  The default is 2
+seconds.  The test will fail if no matching string appears in the log within
+that time.
+
+=back
+
+=head2 Backend Usage Analysis
+
+The statement
+
+=over 4
+
+=item B<stats> B<samples>=I<N> I<K>=I<V>...
+
+=back
+
+causes the following send/expect statements to be executed I<N> times in
+turn.  After this, backend usage statistics will be computed and the
+resulting values compared with the expected values supplied by I<K>=I<V>
+pairs.  Allowed values for I<K> are:
+
+=over 4
+
+=item B<samples>
+
+Number of samples to run.
+
+=item B<min>
+
+Minimum number of requests served by a backend.
+
+=item B<max>
+
+Maximum number of requests served by a backend.
+
+=item B<avg>
+
+Average number of requests served by a backend.
+
+=item B<stddev>
+
+Standard deviation of the number of requests served by a backend.
+
+=item B<index>
+
+Apply the above values to this backend (0-based index).
+
+=back
+
+=head2 Querying the Control Interface
+
+The following statement query the B<pound> control interface and verify
+if the response matches the expectation.  The latter is supplied after the
+statement, in JSON format, and ends with the keyword B<end> on a line by
+itself.  Only attributes present in the expectation are compared.
+
+=over 4
+
+=item backends I<LN> I<SN>
+
+Query for backends in service I<SN> of listener I<LN>.
+The returned backend array is sorted by weight, priority and address.
+
+=back
+
+=head2 Additional Directives
+
+=over 4
+
+=item B<mkbackend> I<IP>
+
+Declares new backend with the given IP address.  I<IP> must fall within
+127.0.0.0/8.
+
+Normally backends are created automatically and this statement is not needed.
+Use it for testing dynamic backends.
+
+=item B<sleep> I<N>
+
+Pause execution for I<N> seconds.
+
+=item B<echo> I<WORD> [I<WORD>...]
+
+Expand variables (see B<HTTP send/expect> above) in I<WORD>s and output
+the result on standard error, prefixed with the B<#> sign.
+
+=head2 DNS Statements
+
+The following keywords are designed for testing dynamic DNS-based backends.
+They become available if the following two conditions are met:
+
+=over 4
+
+=item *
+
+The module B<Net::DNS> is available.
+
+=item *
+
+Full pathname of the B<libfakedns.so> library is given using the
+B<--fakedns> option.
+
+=back
+
+When these conditions are met, B<poundharness> will start a subsidiary DNS
+server and modify the produced B<pound.cfg> file to use it.  The following
+extended keywords can then be used:
+
+=over 4
+
+=item zonefile
+
+This statement defines the DNS zone (or zones) served by the subsidiary
+DNS.  The zone definition follows the keyword and ends with the keyword
+B<end> on a line by itself.  Zone file syntax is defined by RFC1035.
 
 =back
 
@@ -1710,6 +2436,11 @@ will get the following response:
     Location: https://example.org/echo/foo?bar=0
 
 This backend is used to test the B<RewriteLocation> functionality.
+
+=head2 /status/CODE
+
+Returns HTTP status I<CODE>.  The reason text may be supplied in
+the B<X-Reason> header.
 
 =head1 FILES
 

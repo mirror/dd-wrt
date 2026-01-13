@@ -1,5 +1,5 @@
 # This file is part of pound testsuite. -*- autotest -*-
-# Copyright (C) 2022-2024 Sergey Poznyakoff
+# Copyright (C) 2022-2025 Sergey Poznyakoff
 #
 # Pound is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,7 +14,7 @@
 # You should have received a copy of the GNU General Public License
 # along with pound.  If not, see <http://www.gnu.org/licenses/>.
 AT_SETUP([QueryParam])
-AT_KEYWORDS([queryparam QueryParam])
+AT_KEYWORDS([cond queryparam QueryParam])
 PT_CHECK([ListenHTTP
 	Service
 		QueryParam "index" -exact "10"
@@ -35,6 +35,11 @@ PT_CHECK([ListenHTTP
 		Backend
 			Address
 			Port
+		End
+	End
+	Service
+		QueryParam "index" -decode -end "s?"
+		Backend
 		End
 	End		
 End
@@ -61,6 +66,14 @@ end
 
 200
 x-backend-number: 2
+end
+
+GET /echo/foo?index=questions%3F
+Host: example.com
+end
+
+200
+x-backend-number: 3
 end
 ])
 AT_CLEANUP

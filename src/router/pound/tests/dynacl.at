@@ -1,0 +1,126 @@
+# This file is part of pound testsuite. -*- autotest -*-
+# Copyright (C) 2025 Sergey Poznyakoff
+#
+# Pound is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# Pound is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with pound.  If not, see <http://www.gnu.org/licenses/>.
+
+AT_SETUP([ACL])
+AT_KEYWORDS([cond dyncond acl dynacl])
+m4_pushdef([HARNESS_OPTIONS],[--source-address=127.0.0.2 dnl
+ --source-address=127.0.0.3 dnl
+ --source-address=127.0.0.9 --source-address=127.0.0.17])
+
+AT_DATA([aclfile],
+[127.0.0.1
+])
+
+AT_DATA([aclfile.full],
+[127.0.0.1
+127.0.0.2
+127.0.0.8/29
+])
+
+AT_DATA([input],
+[GET /echo/foo
+Host: example.org
+end
+
+200
+end
+
+source 127.0.0.2
+
+GET /echo/foo
+Host: example.org
+end
+
+404
+end
+
+# Make sure file mtime is at least one second past its initial value
+#:mtime sleep 1
+
+run echo 127.0.0.2 >> aclfile
+logtail "file reloaded"
+end
+
+GET /echo/foo
+Host: example.org
+end
+
+200
+end
+
+run rm aclfile
+logtail "content cleared"
+end
+
+GET /echo/foo
+Host: example.org
+end
+
+404
+end
+
+run cp aclfile.full aclfile
+logtail "file reloaded"
+end
+
+GET /echo/foo
+Host: example.org
+end
+
+200
+end
+
+source 127.0.0.3
+
+GET /echo/foo
+Host: example.org
+end
+
+404
+end
+
+source 127.0.0.9
+
+GET /echo/foo
+Host: example.org
+end
+
+200
+end
+])
+
+AT_CHECK([if test "$EVMON_AVAILABLE" != "1"; then
+  sed -i -e 's/^#:mtime //' input
+fi
+])
+
+PT_CHECK([WatcherTTL 1
+ListenHTTP
+	Service
+		ACL -filewatch "aclfile"
+		Backend
+			Address
+			Port
+		End
+	End
+	Service
+		Error 404
+	End
+End],
+[input])
+
+m4_popdef([HARNESS_OPTIONS])
+AT_CLEANUP

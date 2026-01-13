@@ -1,5 +1,5 @@
 .\" Pound - the reverse-proxy load-balancer
-.\" Copyright (C) 2023-2024 Sergey Poznyakoff
+.\" Copyright (C) 2023-2025 Sergey Poznyakoff
 .\"
 .\" Pound is free software; you can redistribute it and/or modify
 .\" it under the terms of the GNU General Public License as published by
@@ -13,7 +13,7 @@
 .\"
 .\" You should have received a copy of the GNU General Public License
 .\" along with pound.  If not, see <http://www.gnu.org/licenses/>.
-.TH POUNDCTL.TMPL 5 "February 7, 2023" "pound" "File Formats Manual"
+.TH POUNDCTL.TMPL 5 "October 28, 2025" "pound" "File Formats Manual"
 .SH NAME
 poundctl.tmpl \- templates for poundctl.
 .SH DESCRIPTION
@@ -81,7 +81,7 @@ value is copied to the output.
 .BI "{{if " pipeline }} " T1 " {{end}}
 If the value of the \fIpipeline\fR is empty, no output is generated;
 otherwise, \fIT1\fR is executed.  The empty values are \fBnull\fR,
-\fBfalse\fR, numeric \fB0\fR, \fBnull\fR, empty string (\fB""\fR),
+\fBfalse\fR, numeric \fB0\fR, empty string (\fB""\fR),
 array (\fB[]\fR), or object (\fB{}\fR).	 Dot is unaffected.
 .TP
 .BI "{{if " pipeline }} " T1 " {{else}} " T0 " {{end}}
@@ -207,7 +207,7 @@ where \fIfunc\fR is the name of one of the built-in functions
 discussed below.
 .PP
 Pipelines are executed from left to right, with the result of the
-previous command implicitly added to the list of argument of each
+previous command implicitly added to the list of arguments of each
 subsequent command.  For example, the pipeline
 .PP
 .EX
@@ -234,7 +234,7 @@ evaluation: both pipelines are evaluated prior to calling \fBand\fR.
 .BI or " A1 A2"
 Evaluates to \fItrue\fR if at least one of the pipelines \fIA1\fR and
 \fIA2\fR evaluates to \fItrue\fR.  Notice, that there is no boolean shortcut
-evaluation: both pipelines are evaluated prior to calling \fBand\fR.
+evaluation: both pipelines are evaluated prior to calling \fBor\fR.
 .TP
 \fBindex \fIA1 A2...\fR
 Returns the result of indexing its first argument by the following
@@ -258,7 +258,7 @@ if both \fIA1\fR and \fIA2\fR are numeric or if they both are strings.
 .TP
 .BI ne " A1 A2"
 Returns \fItrue\fR if its arguments (both must be numeric or strings)
-are not strings.
+are not equal.
 .TP
 .BI lt " A1 A2"
 Returns \fItrue\fR if \fIA1\fR is numerically less than \fIA2\fR.
@@ -376,7 +376,7 @@ A full listing contains the following attributes:
 An array of \fIlistener\fR objects.  See below for a description.
 .TP
 .B services
-An array of \fIservices\fR objects, representing services defined in
+An array of \fIservice\fR objects, representing services defined in
 the global scope of the \fBpound\fR configuration file.
 .TP
 .B pid
@@ -415,6 +415,11 @@ Number of incoming HTTP requests in the queue (integer).
 .B timestamp
 Current time on the server, formatted as ISO 8601 date-time with
 microsecond precision, e.g.: "2023-01-05T22:43:18.071559".
+.TP
+.B uptime
+Uptime of the
+.B pound
+daemon: number of microseconds elapsed since its startup.
 .SS Listener
 A \fIlistener\fR object represents a single HTTP or HTTPS listener in
 \fBpound\fR configuration.  It has the following attributes:
@@ -431,7 +436,7 @@ Protocol used: either \fBhttp\fR or \fBhttps\fR.
 .TP
 .B services
 Array of \fIservice\fR objects representing services defined in this
-listener.  See below for a definition of \fIservice\fR object.
+listener.  See below for the definition of a \fIservice\fR object.
 .TP
 .B enabled
 .BR Boolean .
@@ -451,14 +456,6 @@ Symbolic name of this service.
 .B enabled
 .BR Boolean .
 Whether this service is enabled or not.
-.TP
-.B tot_pri
-.BR Integer .
-Sum of priority values of active backends in this service.
-.TP
-.B abs_pri
-.BR Integer .
-Sum of priority values of all defined backends in this service.
 .TP
 .B session_type
 .BR String .
@@ -587,7 +584,7 @@ Standard deviation of the above.
 Report bugs to <gray@gnu.org>.  You may also use github issue tracker
 at https://github.com/graygnuorg/pound/issues.
 .SH COPYRIGHT
-Copyright \(co 2023 Sergey Poznyakoff
+Copyright \(co 2023-2025 Sergey Poznyakoff
 .sp
 .na
 License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>
@@ -596,7 +593,7 @@ License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>
 This is free software: you are free to change and redistribute it.
 There is NO WARRANTY, to the extent permitted by law.
 .\" Local variables:
-.\" eval: (add-hook 'write-file-hooks 'time-stamp)
+.\" eval: (add-hook 'write-file-functions 'time-stamp)
 .\" time-stamp-start: ".TH [A-Z_][A-Z0-9_.\\-]* [0-9] \""
 .\" time-stamp-format: "%:B %:d, %:y"
 .\" time-stamp-end: "\""

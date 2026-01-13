@@ -1,5 +1,5 @@
 # This file is part of pound testsuite. -*- autotest -*-
-# Copyright (C) 2023-2024 Sergey Poznyakoff
+# Copyright (C) 2023-2025 Sergey Poznyakoff
 #
 # Pound is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -71,7 +71,7 @@ end
 end
 ])
 
-AT_CHECK([fgrep -q 'pound: path "/echo${11bar": missing closing brace in reference started in position 6' pound.log])
+AT_CHECK([fgrep -q 'pound: path "/echo${11bar": missing closing brace in reference started at offset 6' pound.log])
 
 PT_CHECK([ListenHTTP
 	Service
@@ -90,7 +90,7 @@ end
 end
 ])
 
-AT_CHECK([fgrep -q 'pound: path "/echo%{11bar": missing closing brace in reference started in position 6' pound.log])
+AT_CHECK([fgrep -q 'pound: path "/echo%{11bar": missing closing brace in reference started at offset 6' pound.log])
 
 PT_CHECK([ListenHTTP
 	Service
@@ -109,7 +109,7 @@ end
 end
 ])
 
-AT_CHECK([fgrep -q 'pound: path "/echo%qbar": unescaped % character in position 6' pound.log])
+AT_CHECK([fgrep -q 'pound: path "/echo%qbar": unescaped % character at offset 6' pound.log])
 
 PT_CHECK([ListenHTTP
 	Service
@@ -134,7 +134,7 @@ end
 end
 ])
 
-AT_CHECK([fgrep -q 'pound: path ["/echo/$1(1"]: missing closing parenthesis in reference started in position 7' pound.log])
+AT_CHECK([fgrep -q 'pound: path ["/echo/$1(1"]: missing closing parenthesis in reference started at offset 7' pound.log])
 
 PT_CHECK([ListenHTTP
 	Service
@@ -159,6 +159,6 @@ end
 end
 ])
 
-AT_CHECK([fgrep -q 'pound: path ["/echo/${1(1}"]: missing closing parenthesis in reference started in position 7' pound.log])
+AT_CHECK([fgrep -q 'pound: path ["/echo/${1(1}"]: missing closing parenthesis in reference started at offset 7' pound.log])
 
 AT_CLEANUP

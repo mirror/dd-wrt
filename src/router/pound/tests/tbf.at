@@ -1,0 +1,128 @@
+# This file is part of pound testsuite. -*- autotest -*-
+# Copyright (C) 2025 Sergey Poznyakoff
+#
+# Pound is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# Pound is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with pound.  If not, see <http://www.gnu.org/licenses/>.
+AT_SETUP([TBF])
+AT_KEYWORDS([cond tbf])
+PT_CHECK([[ListenHTTP
+	Service
+		TBF "%[path]" 1 3
+		Backend
+		End
+	End
+	Service
+		Error 403
+	End
+End
+]],
+[GET /echo/foo
+end
+
+200
+end
+
+GET /echo/bar
+end
+
+200
+end
+
+GET /echo/foo
+end
+
+200
+end
+
+GET /echo/bar
+end
+
+200
+end
+
+GET /echo/foo
+end
+
+200
+end
+
+GET /echo/bar
+end
+
+200
+end
+
+GET /echo/foo
+end
+
+403
+end
+
+GET /echo/bar
+end
+
+403
+end
+
+sleep 4
+
+GET /echo/foo
+end
+
+200
+end
+
+GET /echo/bar
+end
+
+200
+end
+
+GET /echo/foo
+end
+
+200
+end
+
+GET /echo/bar
+end
+
+200
+end
+
+GET /echo/foo
+end
+
+200
+end
+
+GET /echo/bar
+end
+
+200
+end
+
+GET /echo/foo
+end
+
+403
+end
+
+GET /echo/bar
+end
+
+403
+end
+])
+
+AT_CLEANUP

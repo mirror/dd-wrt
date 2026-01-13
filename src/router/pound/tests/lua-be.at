@@ -1,0 +1,96 @@
+# This file is part of pound testsuite. -*- autotest -*-
+# Copyright (C) 2025 Sergey Poznyakoff
+#
+# Pound is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# Pound is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with pound.  If not, see <http://www.gnu.org/licenses/>.
+AT_SETUP([Lua backends])
+AT_KEYWORDS([cond lua lua-be])
+
+AT_SKIP_IF([test "$LUA_AVAILABLE" != 1])
+
+AT_DATA([backend.lua],
+[[function be_simple(code, body, reason)
+   if code == "0" then
+      http.resp.code = 200
+      http.resp.headers['Content-Type'] = "text/plain"
+      http.resp.headers['X-bar'] = "foo"
+   elseif code == "1" then
+      http.resp.code = 200
+      http.resp.headers = {
+	 ['Content-Type'] = "text/plain",
+	 ['X-bar'] = "foo",
+	 ['X-foo'] = "bar"
+      }
+   else
+      http.resp.code = code
+   end
+   http.resp.body = string.gsub(body, '\\n', '\n')
+   http.resp.reason = reason
+end
+]])
+
+PT_CHECK([Lua
+	Load "backend.lua"
+End
+ListenHTTP
+	Service
+		LuaBackend "be_simple" "200" "Response text\\nGoes here\\n"
+	End
+End
+],
+[GET /echo/foo
+end
+
+200
+
+Response text
+Goes here
+end
+])
+
+PT_CHECK([[Lua
+	Load "backend.lua"
+End
+ListenHTTP
+	Service
+		LuaBackend "be_simple" "%[header X-Code]" "Response text\\nGoes here\\n"
+	End
+End
+]],
+[GET /echo/foo
+X-Code: 0
+end
+
+200
+Content-Type: text/plain
+X-bar: foo
+
+Response text
+Goes here
+end
+
+GET /echo/foo
+X-Code: 1
+end
+
+200
+Content-Type: text/plain
+X-bar: foo
+X-foo: bar
+
+Response text
+Goes here
+end
+])
+
+AT_CLEANUP

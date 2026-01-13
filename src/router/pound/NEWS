@@ -1,4 +1,4 @@
-Pound -- history of user-visible changes. 2024-01-03
+Pound -- history of user-visible changes. 2025-12-11
 See the end of file for copying conditions.
 
 Pound is a continuation of the software originally developed by
@@ -6,6 +6,684 @@ Robert Segall at Apsis GmbH, which was officially discontinued
 on 2022-09-19.  See the README file for details.
 
 Please send pound bug reports to <gray@gnu.org>
+
+Version 4.19, 2025-12-11
+
+* Support for Lua
+
+Functions written in Lua can be used to implement complex request
+matching conditions, modify requests and/or responses, and implement
+new backends.  You will need Lua version 5.3 or newer.  By default,
+configure will enable Lua support if it finds the necessary headers
+and libraries.  This can be controlled using --disable-lua and
+--enable-lua options.
+
+At runtime, Lua sources are loaded using Load statement in the Lua
+global section of the configuration file:
+
+   Lua
+      Load "impl.lua"
+   End
+
+A function returning boolean value can be used as a conditional:
+
+   LuaMatch "myfun" "arg"
+
+Any number of arguments (all of string type) can be provided.
+Arguments undergo usual expansions prior to being passed to the
+function.
+
+Two more similar statements are added:
+
+   LuaModify   - Applies a Lua function to modify the request (or
+                 response).  It can be used in ListenHTTP,
+                 ListenHTTPS, Service, Match and Rewrite statements.
+
+   LuaBackend  - Calls a Lua function that implements a backend.
+
+* Detached conditions
+
+Detached condition is a set of conditional statements not associated
+with any service, which is assigned a unique symbolic name.  Detached
+conditions are defined using the Condition statement in the global
+scope of pound configuration file, e.g.:
+
+  Condition "protected"
+     Path -beg "/admin"
+     ACL -file "internal.acl"
+     BasicAuth "htpasswd"
+  End
+
+Detached conditions can be invoked using the "Eval" statement, which
+is allowed anyplace where the normal conditional is allowed.  Result
+of evaluation is cached and reused in subsequent Eval statements
+referring to the same condition.  E.g.:
+
+  Service
+     Eval "protected"
+     ...
+  End
+
+Detached conditions provide a convenient way to define conditional
+statements with are used repeatedly in multiple Service statements.
+
+* New request modification statement: DeleteQuery
+
+Removes query part of the request URL.
+
+* One-argument form of SetQueryParam
+
+When used with one argument (name of a query parameter), SetQueryParam
+causes removal of that query parameter.
+
+* Percent encoding and decoding
+
+The Path and QueryParam conditional statements accept new option
+-decode.  When given this option, the value will undergo
+percent-decoding prior to comparison.  E.g.:
+
+   QueryParam "t" -decode "?"
+
+Similarly, SetPath and SetQueryParam statements accept new option
+-encode.  When given this option, the value will be percent-encoded
+prior to setting it.
+
+* Relative pathname in SendFile statement.
+
+If the argument to SendFile statement is not an absolute file name, it
+is resolved relative to pound include directory.
+
+* Turning PID file off.
+
+To disable PID file creation, use PIDFile "-".
+
+Version 4.18, 2025-10-29
+
+* Emacs mode for editing pound configuration files
+
+Major mode for editing pound configuration files in GNU Emacs is
+implemented in file src/pound-mode.el.  Its installation and usage is
+covered by Chapter 11 of the Pound Manual, entitled "Emacs Major Mode".
+
+* Include statement accepts globbing patterns
+
+If the argument to "Include" configuration statement is a shell
+globbing pattern, all regular files matching that pattern will be
+included, in lexicographical order.
+
+* New configuration statement: LineBufferSize
+
+Sets the line buffer size.  Line buffer is used when reading request
+line, backend response status line, and header fields in both requests
+and responses.  Thus, this value limits the maximum length allowed for
+these parts of HTTP messages.  By default, it is set to the internal
+buffer size (4096), which is also its minimum allowed value.
+
+This statement can be used in global scope and within ListenHTTP
+(ListenHTTPS) sections.
+
+* TBF statement
+
+This conditional statement implements token bucket filter.  Its
+arguments are: the ID of the bucket (a string, subject to
+backreference expansion and request accessor interpretation), maximum
+allowed rate (requests per second) and a burst size (number of
+requests).  The statement evaluates to true if the token bucket accepts
+the request and to false otherwise.
+
+See Pound Manual, Section 4.6 "Rate-limiting", for a detailed
+discussion.
+
+* New request accessor: remoteip
+
+%[remoteip 0]  expands to the real originator IP;
+%[remoteip 1]  expands to the IP determined from the X-Forwarded-For
+               (or similar) header.
+
+* Originator IP for ACL matching
+
+By default, ACLs are applied to the IP address from which the request
+was received.  It is now possible to use the IP obtained from X-Forwarded-For 
+header, instead.  To do so, use the -forwarded option keyword, e.g.:
+
+   ACL -forwarded -file "acl.lst"
+
+* Changes in log format specifications
+
+** Expansion of %v changed
+
+The %v specifier now expands to the host name used in the request, as
+obtained from the "Host" header, with port specification removed.
+
+If you want the old expansion (name of the listener that served the
+request), use "%{listener}N".
+
+** Support for new specifiers
+
+ . %l            Reserved for future use.  Expands to single dash.
+ . %p            Port number of the listener that served the request.
+
+** Built-in formats changed accordingly:
+
+3, "vhost_combined"
+   "%v:%p %a %l %u %t \"%r\" %s %b \"%{Referer}i\" \"%{User-Agent}i\""
+4, "combined"
+   "%a %l %u %t \"%r\" %s %b \"%{Referer}i\" \"%{User-Agent}i\""
+5, "detailed"
+   "%v:%p %a %l %u %t \"%r\" %s %b \"%{Referer}i\" \"%{User-Agent}i\"
+   (%{service}N -> %{backend}N) %{f}T sec"
+
+* poundctl core
+
+This command shows core pound statistics: server time, daemon version,
+pid, and uptime, as well as worker threads configuration and
+statistics.
+
+* Openmetrics output
+
+Metrics describing listeners and services are labeled by the listener
+and service names, as well as by their ordinal numbers in the
+configuration.
+
+* Testsuite: optionally use multi-process model
+
+If Perl is built without ithreads, testsuite harness switches to
+multi-process model.
+
+
+Version 4.17, 2025-07-29
+
+* Tagging conditional statements
+
+All conditional statements that match against a pattern can be tagged
+using the following option:
+
+   -tag "T"
+
+where T is an arbitrary string.  This tag can then be used to refer to
+a subexpression obtained as a result of matching, for example:
+
+   Path -tag "dir" -re "^/static(/.*)"
+   Header -tag "type" "Content-Type:([^/]+)/([^;]+)"
+   SetPath "/assets/$1(type).$2(type)$1(dir)"
+
+* Changes to the "ACL" statements
+
+Two new forms of the ACL statements are provided:
+
+ - ACL -file "NAME"
+
+   Reads ACL from the file NAME.  The file shall contain a list of
+   CIDRs, one per input line.  CIDRs need not be quoted.  Empty lines
+   and comments are allowed.
+
+   The file is read once, at program startup.
+
+ - ACL -filewatch "NAME"
+
+   Same as above, but the file will be monitored for changes during
+   the runtime.  If a change is detected, the file will be rescanned
+   and the ACL updated.  To ensure file changes are noticed
+   immediately, pound relies on filesystem monitoring API provided by
+   the operating system - inotify on GNU/Linux systems and kqueue on
+   BSD.  On systems not supporting either interface, the file will be
+   checked periodically.  The interval between two successive checks is
+   defined by the WatcherTTL global directive.
+
+The corresponding new forms are implemented for all ACL statements,
+i.e.:
+
+ - Named ACLs:
+
+   ACL "name" -file "filename"
+   ACL "name" -filewatch "filename"
+
+ - Trusted IP lists:
+
+   TrustedIP -file "filename"
+   TrustedIP -filewatch "filename"
+
+* Use of "-filewatch" with request matching directives
+
+In addition to ACL, the -filewatch flag discussed above can be used with
+the following request matching directives: Header, Path, Query, QueryParam,
+StringMatch, URL.
+
+* Changes to the "BasicAuth" statement
+
+The statement takes an option: -filewatch or -file.  The option
+-filewatch is the default (see above).  The -file option can be used
+to disable file change monitoring.
+
+* Changes to the "Header" statement
+
+New statement form is introduced:
+
+    Header "FIELD" [OPTIONS] "VALUE"
+
+In this form, pattern modification options apply to header value only,
+e.g.
+
+    Header "Content-Type" -beg "text/"
+
+* New special backend "SendFile"
+
+This backend treats the path part of the request as local file name
+and sends back the contents of that file, if it exists.  Default
+content type is "text/plain".  Both parameters can be changed using
+request (for file name), and response (for content type) rewriting.
+
+The syntax is:
+
+	 SendFile DIR
+
+where DIR specifies the directory from which to serve files.
+
+* Error file contents
+
+Error file supplied with "Error", "ErrorFile", or any "ErrNNN"
+directvie, can begin with HTTP headers.  If so, these will be
+sent along with the response, and the actual response contents will
+begin after the empty line that terminates the headers.
+
+* Error response rewriting
+
+  When a regular backend responds with an error, the content (body)
+of that response can be replaced with an arbitrary custom page.  For
+this to work, the listener must define a custom page for the
+status code in question using the ErrorFile statement, and error
+response rewriting must be explicitly enabled.  The latter is done
+with the following statement:
+
+   RewriteErrors on
+
+The statement can be used both in ListenHTTP (ListenHTTPS) and in
+Service blocks, the latter overriding the former.
+
+* Bugfixes
+
+** Improper pattern handling in patterns read from file
+
+When using -file with one of the following pattern types: -exact, -beg,
+-end, -contain, only first pattern from the file was compiled using the
+requested pattern type.  Remaining ones were treated as POSIX regular
+expressions.
+
+
+Version 4.16, 2025-01-13
+
+* Fix backend probing when compiled without support for dynamic backends.
+
+* Reject requests with oversized chunk bodies.
+
+* Handle errors that occur during evaluation of conditionals.
+
+Version 4.15, 2024-11-17
+
+* New configuration statement: IgnoreSRVWeight
+
+Instructs pound to ignore weight value of an SRV record when
+generating new backend from it.  Priority of the generated backend is
+copied from its matrix backend.
+
+* New configuration statement: OverrideTTL
+
+When used with dynamic backends, instructs pound to use the supplied
+value as TTL, instead of the one returned in DNS response.
+
+* Load balancing code revisited
+
+Removed arbitrary limit on backend priority value.  The allowed range
+is now 1..65535.
+
+Remove priority mapping for SRV-generated backends.  SRV weights are
+assigned to backend priorities verbatim.
+
+* Fix access to freed memory in session handling code.
+
+* Improve testsuite
+
+Check for missing perl modules and skip tests if needed.
+
+DNS-based tests are disabled by default, due to their experimental
+nature.  Use --enable-dns-tests to enable them.
+
+The poundharness.pl script runs a self-test when invoked with the
+--fakedns option, to avoid spurious test failures.
+
+
+Version 4.14, 2024-10-13
+
+* Dynamic backends
+
+Dynamic backends are created and updated on the fly based on the
+information from DNS.  To declare backend as dynamic, use a
+symbolic host name in its "Address" statement and add the "Resolve"
+statement with one of the following values:
+
+  first     Resolve the symbolic host name and use first IP from
+	    the DNS response as the address of the created dynamic
+	    backend.  Thus, at most one dynamic backend will be
+	    created.
+
+  all       Resolve the symbolic host name and create one backend for
+	    each address from the DNS response.  This enables load
+	    balancing between created backends.  Each backend will be
+	    assigned the same priority.
+
+  srv       Obtain SRV records for the host name and use them to
+	    generate regular backends.  Each record produces new
+	    dynamic backend of "Resolve all" type, which creates
+	    regular backends as described above.  The weight field
+	    of the SRV record is mapped to the priority field of each
+	    generated backend.  The SRV priority field determines
+	    the balancing group (see below) where the backend will
+	    be hosted.
+
+By default, both IPv4 and IPv6 addresses are looked for.  You can
+select the specific address family using the "Family" statement.  Its
+allowed values are:
+
+  any       Use all address families available.  This is the default.
+
+  inet      Use only IPv4 addresses.
+
+  inet6     Use only IPv6 addresses.
+
+For example:
+
+  Backend
+      Address "be0.example.net"
+      Port 8080
+      Resolve first
+      Family inet
+  End
+
+Dynamic backends will be updated periodically, when the TTL of the
+corresponding DNS records expires.  If the hostname cannot be resolved
+or a DNS failure occurs, next update will be scheduled in 600
+seconds after the failure.  This interval can be configured using the
+"RetryInterval" statement in the "Backend" section, or globally, in
+the "Resolver" section.
+
+The "Resolver" section allows you to control how DNS lookups are
+performed.  It can contain the following directives:
+
+  CNAMEChain          (integer) Maximum allowed length of a "CNAME
+		      chain".  CNAME chains are formed by DNS CNAME
+		      records pointing to another CNAME.  Although
+		      prohibited by the RFC, such usage occurs
+		      sometimes in the wild.  By default, pound does
+		      not accept CNAME chains.  If you work with a
+		      nameserver that uses them, set this statement
+		      to a small integer value, defining maximum
+		      number of CNAMEs in the chain that pound will
+		      accept.  The value of 2 or 3 should suffice in
+		      most cases.
+
+  ConfigFile          (string) Name of the resolver configuration file.
+		      Default is "/etc/resolv.conf".
+
+  ConfigText
+    ...
+  End                 The material within this section is read
+		      verbatim and used as the content of the resolver
+		      configuration file.
+
+		      If both ConfigFile and ConfigText are used, the
+		      last statement used wins.
+
+  Debug               (boolean) Whether to enable DNS debugging info.
+
+  RetryInterval       (integer) Interval in seconds, after which to
+		      retry failed DNS queries or queries that
+		      returned no RRs.  This value is used unless the
+		      backend defines its own retry interval value.
+
+Dynamic backends can be controlled using poundctl.  For example,
+consider the following output from "poundctl list":
+
+  1. Listener http://192.0.2.1:80 enabled
+      0. Service active (5)
+	  0. matrix "be0.example.com" 2 0 active
+	  1. backend http 198.51.100.15:8081 5 alive active
+	  2. backend http 203.0.113.121:8081 5 alive active
+	  3. backend http 192.0.2.203:8081 5 alive active
+
+The backend 0 ("matrix") refers to the "Backend" statement in the
+configuration file that produced the other three dynamic backends.
+Disabling it (poundctl disable /1/0/0) causes the dynamic ones to
+be removed.  Enabling it will create them again.  In a pinch, this
+can be used to force backend re-creation prior to TTL expiration.
+
+** Compiling
+
+To enable dynamic backend support, you will need the adns library.  On
+debian-based systems, it is installed by the following command
+
+  apt-get install libadns1-dev
+
+If all preconditions necessary for enabling dynamic backends are met,
+the output from configure will end with the following status line:
+
+  Dynamic backends .............................. yes
+  *******************************************************************
+
+When compiled with the dynamic backend support, output of "pound -V"
+will contain the following line in the "Built-in defaults" section:
+
+  Dynamic backends:           enabled
+
+* Backend groups
+
+Backend groups are a new pound feature, that extends the idea of
+regular and emergency backends used in previous versions.  Any number
+of backend groups can be associated with a service.  Each group
+is assigned an integer number (weight).  The groups are ordered by
+weight (in ascending order) and are tried in that order when looking
+for a backend to serve the request.  The look up starts with the first
+group.  The balancing algorithm configured for the service is applied.
+If no backend can be selected, next group will be tried, and so on.
+
+In the static configuration, regular backends are hosted in backend
+group of weight 0 and emergency (high availability) backends are
+stored in group of weight 65535.  One consequence of this is that
+any number of Emergency backend declarations are now allowed in
+a service.  More backend groups can be allocated when using dynamic
+backends of "srv" resolve type (see above).
+
+* Emergency backends
+
+Any number of emergency backends can be defined.  Usual request
+balancing algorithm applies when selecting an emergency backend.
+
+All statements valid within a "Backend" section are also valid within
+an emergency backend declaration.
+
+* Listener address configuration
+
+Both "Address" and "Port" statements are now optional.  If "Address"
+is omitted, pound will listen on all available interfaces.  If "Port"
+is omitted (and not listening on a UNIX socket), default port number
+for this kind of listener will be used: 80, for "ListenHTTP", and 443,
+for "ListenHTTPS".
+
+* New request matching conditional: ClientCert
+
+The syntax is:
+
+   ClientCert "FILENAME"
+
+The conditional evaluates to true if the client presented the
+certificate matching that from the given file (PEM format).
+
+It cannot be used in standalone services (i.e. services
+that are defined in global scope).  It also cannot be used if the
+"ListenHTTPS" section that hosts the service has the "ClientCert"
+statement on its own.
+
+* Remote access to the management interface
+
+A new backend type "Control" is introduced to make it possible to
+access the management interface remotely.  The example below shows
+how to configure pound to expose the management interface on
+http://192.0.2.1:3434:
+
+  ListenHTTP
+      Address 192.0.2.1
+      Port 3434
+      Service
+	  ACL "secure"
+	  Control
+      End
+  End
+
+* poundctl
+
+Changes in poundctl functionality reflect those in the management
+interface.  First of all, the -s option accepts URL as its argument:
+
+  -s https://user:password@hostname:8080/path
+
+Additionally, the following new options are implemented:
+
+  -C FILE      Load CA certificates from FILE.  If FILE is a
+	       directory, all PEM files will be loaded from it.
+  -K FILE      Load client certificate and key from FILE.  During TLS
+	       handshake, send them to the peer for authentication.
+  -k           Insecure mode: disable peer verification.
+  -S NAME      Take settings for server NAME from the poundctl
+	       configuration file (see below).
+
+** .poundctl
+
+The file ".poundctl" in user home directory provides configuration
+settings for the poundctl command.  Syntactically, it is similar to
+pound.cfg.  Upon startup, poundctl first checks if "~/.poundctl"
+exists and reads it if so.  If the program cannot determine the URL of
+the control socket from it (possibly using the argument to the -S
+option, if given), it scans the pound configuration file (if it
+exists), looking for Control statement.  Finally, if neither method
+determines the URL, poundctl requires the user to supply the -s
+option.
+
+The default name and location of the poundctl configuration file can
+be changed using the environment variable POUNDCTL_CONF.  Setting it
+to empty string disables the configuration mechanism altogether.
+
+* configure
+
+Removed historic "--with-owner" and "--with-group" options.
+
+
+Version 4.13, 2024-08-24
+
+* Support for pcre and pcre2 rewritten
+
+The pcre2posix (or pcreposix) layer is no longer used.  Instead, pound
+uses the native API of the corresponding library.  This provides for
+additional speed-up and (in case of pcre2) avoids coredumps under high
+load.
+
+* Use of POSIX and Perl-compatible regular expressions
+
+In contrast to previous versions, both types of regular expressions
+can be used simultaneously in the configuration file.  The flavour
+of the regex to use can be specified either individually with each
+request matching statement (such as URL, Header, etc.), or globally.
+
+To set it globally, use the RegexType statement.  The type of regular
+expression set by it will be used in all matching statements that
+appear below that statement, unless they declare regex type
+explicitly.  It remains in effect until next RegexType statement or
+end of file is encountered, whichever occurs first.  For example, to
+use PCRE by default, add the following statement somewhere near the
+beginning of your pound.cfg file:
+
+  RegexType pcre
+
+To change the default back to POSIX regexps, do
+
+  RegexType posix
+
+Regular expression type can also be specified with each matching
+statement individually.  For example, the -pcre option indicates that
+Perl-compatible regular expression is given as argument, e.g.:
+
+  Host -pcre -icase "(?<!www\\.)example.org"
+
+Similarly, the -posix option indicates that POSIX extended regular
+expression is used.  Use these options to override the default for a
+single statement.
+
+* New matching option: -contain
+
+The -contain option enables substring match. E.g. the following will
+match if URL contains the word "user" (case-insensitive):
+
+  URL -contain -icase "user"
+
+* New configuration statement: LogTag
+
+Sets a string to tag syslog messages with.  By default, the name used
+to start the program is assumed.
+
+* Bugfixes
+
+** Fix infinite recursion on reporting an out of memory condition.
+** Fix deadlock in session expiration handling.
+** Fix RewriteLocation functionality.
+
+Version 4.12, 2024-04-26
+
+* Includes manual in texinfo format
+
+* Change in the order of applying rewrites to responses
+
+When rewriting a response, rules defined in the service section are
+applied first, followed by the ones defined in the listener.
+
+When rewriting incoming requests, the order is opposite: first the
+rules in the listener, then the ones in the service.
+
+* Requests with unrecognized Transfer-Encoding are rejected
+
+* Requests containing both Transfer-Encoding and Content-Length are rejected
+
+* Deprecated configuration statements
+
+Pound issues a warning for each deprecated statement used in the
+configuration file.  The warning message contains a suggestion on what
+to use instead of the offending statement.  You are advised to replace
+each occurrence of deprecated statements in accordance with these
+suggestions, since such statements will be removed in future releases.
+
+If it is not feasible to do so for a while, you can suppress these
+messages by using the "-W no-warn-deprecated" command line option.
+
+* ServerName directive is allowed in the Emergency section
+
+* New statement: ErrorFile
+
+  ErrorFile NNN "FILENAME"
+
+This statement defines content of the response page returned with
+the HTTP status NNN from the file FILENAME.  It obsoletes the
+Err400 - Err503 statements used in previous versions.  These
+statements are still supported for backward compatibility, although
+their use is discouraged.
+
+* New statement: MaxURI
+
+This statement sets the maximum allowed length of the request URI.
+It can be used in ListenHTTP and ListenHTTPS sections.
+
+* Bugfixes
+
+** Don't try to access the include directory, unless needed by configuration.
+
+** Fix handling of session deletion/addition on request from poundctl.
+
 
 Version 4.11, 2024-01-03
 
@@ -897,7 +1575,7 @@ Version 4.0, 2022-12-02
 =========================================================================
 Copyright information:
 
-Copyright (C) 2018-2024 Sergey Poznyakoff
+Copyright (C) 2018-2025 Sergey Poznyakoff
 
    Permission is granted to anyone to make or distribute verbatim copies
    of this document as received, in any medium, provided that the
@@ -912,7 +1590,7 @@ Copyright (C) 2018-2024 Sergey Poznyakoff
 Local variables:
 mode: outline
 paragraph-separate: "[  ]*$"
-eval: (add-hook 'write-file-hooks 'time-stamp)
+eval: (add-hook 'write-file-functions 'time-stamp)
 time-stamp-start: "changes. "
 time-stamp-format: "%:y-%02m-%02d"
 time-stamp-end: "\n"

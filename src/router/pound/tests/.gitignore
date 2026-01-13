@@ -1,0 +1,11 @@
+atconfig
+atlocal
+getsoa
+package.m4
+testsuite
+testsuite.log
+testsuite.dir
+tmplrun
+*.lo
+*.la
+.libs

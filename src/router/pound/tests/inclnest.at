@@ -1,4 +1,4 @@
-# Copyright (C) 2023-2024 Sergey Poznyakoff
+# Copyright (C) 2023-2025 Sergey Poznyakoff
 #
 # Pound is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -15,8 +15,7 @@
 AT_SETUP([Nested includes])
 AT_KEYWORDS([include inclnest])
 
-AT_CHECK([
-mkdir conf
+AT_CHECK([mkdir conf])
 
 AT_DATA([conf/svc1.cfg],
 [Service
@@ -45,11 +44,10 @@ End
 Include "svc1.cfg"
 ])
 
-AT_DATA([pound.cfi],
+m4_pushdef([HARNESS_OPTIONS],[--include-dir=conf])
+PT_CHECK(
 [Include "main.cfg"
-])
-
-AT_DATA([input],
+],
 [GET /echo/foo
 Host: example.org
 end
@@ -66,10 +64,7 @@ end
 x-backend-number: 1
 end
 ])
-
-perl $HARNESS --include-dir=conf \
-	      --transcript xscript.log input
-])
+m4_popdef([HARNESS_OPTIONS])
 
 AT_CLEANUP
 

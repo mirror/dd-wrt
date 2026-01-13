@@ -1,0 +1,70 @@
+# This file is part of pound testsuite. -*- autotest -*-
+# Copyright (C) 2025 Sergey Poznyakoff
+#
+# Pound is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# Pound is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with pound.  If not, see <http://www.gnu.org/licenses/>.
+AT_SETUP([Detached conditions])
+AT_KEYWORDS([cond detcond])
+PT_CHECK([Condition "first" or
+	Host "example.org"
+	Host "example.net"
+End
+
+Condition "second"
+	Path -contain "/static/"
+End
+
+ListenHTTP
+	Service
+		Eval "second"
+		Eval "first"
+		Backend
+		End
+	End
+	Service
+		Eval "first"
+		Backend
+		End
+	End
+	Service
+		Eval "second"
+		Backend
+		End
+	End
+End
+],
+[GET /echo/static/file
+Host: example.org
+end
+
+200
+x-backend-number: 0
+end
+
+GET /echo/file
+Host: example.org
+end
+
+200
+x-backend-number: 1
+end
+
+GET /echo/static/file
+Host: foo.bar
+end
+
+200
+x-backend-number: 2
+end
+])
+AT_CLEANUP

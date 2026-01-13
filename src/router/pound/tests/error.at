@@ -1,5 +1,5 @@
 # This file is part of pound testsuite. -*- autotest -*-
-# Copyright (C) 2023-2024 Sergey Poznyakoff
+# Copyright (C) 2023-2025 Sergey Poznyakoff
 #
 # Pound is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -27,7 +27,13 @@ End
 end
 
 404
-end
+Content-Type: text/html
+Expires: now
+Pragma: no-cache
+Cache-control: no-cache,no-store
+
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML 2.0//EN"><html><head><title>404 Not Found</title></head><body><h1>Not Found</h1><p>The requested URL was not found on this server.</p></body></html>
+endnonl
 ])
 
 m4_pushdef([ERR404],
@@ -35,14 +41,20 @@ m4_pushdef([ERR404],
 <head><title>Custom Not Found Error</title></head>
 <body>
 <p>The requested resource is not found on that server.</p>
-<p>This custom error page was supplied using the Err404 directive.</p>
+<p>This custom error page was supplied using the ErrorFile directive.</p>
 </body>])
 
 AT_DATA([404.html],[ERR404
 ])
 
+AT_DATA([404.txt],[Content-Type: text/plain
+Cache-Control: no-cache
+
+ERR404
+])
+
 PT_CHECK([ListenHTTP
-	Err404 "404.html"
+	ErrorFile 404 "404.html"
 	Service
 		Error 404
 	End
@@ -52,6 +64,10 @@ End
 end
 
 404
+Content-Type: text/html
+Expires: now
+Pragma: no-cache
+Cache-control: no-cache,no-store
 
 ERR404
 end
@@ -67,6 +83,49 @@ End
 end
 
 404
+Content-Type: text/html
+Expires: now
+Pragma: no-cache
+Cache-control: no-cache,no-store
+
+ERR404
+end
+])
+
+PT_CHECK([ListenHTTP
+	ErrorFile 404 "404.txt"
+	Service
+		Error 404
+	End
+End
+],
+[GET /foo/bar
+end
+
+404
+content-type: text/plain
+Expires: now
+Pragma: no-cache
+Cache-control: no-cache
+
+ERR404
+end
+])
+
+PT_CHECK([ListenHTTP
+	Service
+		Error 404 "404.txt"
+	End
+End
+],
+[GET /foo/bar
+end
+
+404
+content-type: text/plain
+Expires: now
+Pragma: no-cache
+Cache-control: no-cache
 
 ERR404
 end

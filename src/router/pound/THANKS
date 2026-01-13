@@ -2,10 +2,6 @@ Pound THANKS file
 
 Please see the AUTHORS file for the list of principal authors.
 
-Many people further contributed to pound by reporting problems,
-suggesting various improvements or submitting actual code.  Here is a
-list of these people.  Help me keep it complete and exempt of errors.
-
 Abner G. Jacobsen did a lot of testing in a production environment and
 contributed some very nice ideas.
 
@@ -57,3 +53,14 @@ Shinji Tanaka contributed a patch for controlling logging to disk
 files. This is available at http://www.hatena-inc.co.jp/~stanaka/pound/
 
 Simon Matter packages and makes available RPMs for various Pound versions.
+
+  Many people further contributed to pound by reporting problems,
+suggesting various improvements or submitting actual code.  Here is a
+list of these people.  Help me keep it complete and exempt of errors.
+
+Alessandro Baldoni	(https://github.com/abaldoni)
+Ben Kallus		(https://github.com/kenballus)
+Carsten Leonhardt	<leo@debian.org>
+Jakob Bohm		<jb-gnumlists@wisemo.com>
+johndoe7000		<https://github.com/johndoe7000>
+Michael Toth		<mtoth@queldor.net>

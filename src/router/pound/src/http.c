@@ -1,7 +1,7 @@
 /*
  * Pound - the reverse-proxy load-balancer
  * Copyright (C) 2002-2010 Apsis GmbH
- * Copyright (C) 2018-2024 Sergey Poznyakoff
+ * Copyright (C) 2018-2025 Sergey Poznyakoff
  *
  * Pound is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
 #include "extern.h"
 
 /*
- * Emit to BIO response line with the given CODE, descriptive TEXT and
+ * Emit to BIO a response line with the given CODE, descriptive TEXT and
  * HEADERS (may be NULL).  TYPE and LEN supply values for Content-Type
  * and Content-Length, correspondingly.  PROTO gives the minor version
  * of the HTTP protocol version: 0 or 1.  If it is 1, the Connection:
@@ -32,12 +32,12 @@ bio_http_reply_start (BIO *bio, int proto, int code, char const *text,
 		      char const *headers,
 		      char const *type, CONTENT_LENGTH len)
 {
-  BIO_printf (bio, "HTTP/1.%d %d %s\r\n"
-	      "Content-Type: %s\r\n",
+  BIO_printf (bio, "HTTP/1.%d %d %s\r\n",
 	      proto,
 	      code,
-	      text,
-	      type);
+	      text);
+  if (type)
+    BIO_printf (bio, "Content-Type: %s\r\n", type);
   if (proto == 1)
     {
       BIO_printf (bio,
@@ -118,6 +118,11 @@ static HTTP_STATUS http_status[] = {
     "Not Found",
     "The requested URL was not found on this server."
   },
+  [HTTP_STATUS_METHOD_NOT_ALLOWED] = {
+    405,
+    "Method Not Allowed",
+    "The request method is not supported for the requested resource."
+  },
   [HTTP_STATUS_PAYLOAD_TOO_LARGE] = {
     413,
     "Payload Too Large",
@@ -128,6 +133,11 @@ static HTTP_STATUS http_status[] = {
     "URI Too Long",
     "The length of the requested URL exceeds the capacity limit for"
     " this server."
+  },
+  [HTTP_STATUS_TOO_MANY_REQUESTS] = {
+    429,
+    "Too Many Requests",
+    "Originator sent too many requests in a given amount of time."
   },
   [HTTP_STATUS_INTERNAL_SERVER_ERROR] = {
     500,
@@ -183,37 +193,109 @@ pound_to_http_status (int err)
   return http_status[err].code;
 }
 
+char const *
+http_status_reason (int code)
+{
+  int n = http_status_to_pound (code);
+  if (n == -1)
+    return NULL;
+  return http_status[n].reason;
+}
+
 /*
  * Write to BIO an error HTTP 1.PROTO response.  ERR is one of
  * HTTP_STATUS_* constants.  TXT supplies the error page content.
  * If it is NULL, the default text from the http_status table is
  * used.
  */
-static void
-bio_err_reply (BIO *bio, int proto, int err, char const *content)
+static int
+bio_err_reply (BIO *bio, int proto, int err, struct http_errmsg *msg,
+	       int (*cbf) (HTTP_HEADER_LIST *, void *), void *data,
+	       int *resp_code, CONTENT_LENGTH *resp_size, char **resp_line)
 {
-  struct stringbuf sb;
+  char const *content;
+  struct http_errmsg tmp = HTTP_ERRMSG_INITIALIZER (tmp);
+  char *mem = NULL;
+  HTTP_HEADER_LIST hlist = DLIST_HEAD_INITIALIZER (hlist);
+  size_t len;
+  int rc = HTTP_STATUS_OK;
 
   if (!(err >= 0 && err < HTTP_STATUS_MAX))
     {
-      logmsg (LOG_NOTICE, "INTERNAL ERROR: unsupported error code in call to bio_err_reply");
+      logmsg (LOG_NOTICE,
+	      "INTERNAL ERROR: unsupported error code in call to bio_err_reply");
       err = HTTP_STATUS_INTERNAL_SERVER_ERROR;
     }
 
-  stringbuf_init_log (&sb);
-  if (!content)
+  if (!(msg && msg->text))
     {
+      struct stringbuf sb;
+      stringbuf_init_log (&sb);
       stringbuf_printf (&sb, default_error_page,
 			http_status[err].code,
 			http_status[err].reason,
 			http_status[err].reason,
 			http_status[err].text);
-      if ((content = stringbuf_finish (&sb)) == NULL)
-	content = http_status[err].text;
+      if ((mem = stringbuf_finish (&sb)) != NULL)
+	tmp.text = mem;
+      else
+	{
+	  stringbuf_free (&sb);
+	  tmp.text = (char*)http_status[err].text;
+	}
+      msg = &tmp;
     }
-  bio_http_reply (bio, proto, http_status[err].code, http_status[err].reason,
-		  err_headers, "text/html", content);
-  stringbuf_free (&sb);
+
+  content = msg->text;
+  len = strlen (content);
+
+  http_header_list_append_list (&hlist, &msg->hdr);
+  http_header_list_append (&hlist, "Content-Type: text/html", H_KEEP);
+  http_header_list_parse (&hlist, err_headers, H_KEEP, NULL);
+
+  if (!cbf || (rc = cbf (&hlist, data)) == HTTP_STATUS_OK)
+    {
+      bio_http_reply_start_list (bio,
+				 proto,
+				 http_status[err].code,
+				 http_status[err].reason,
+				 &hlist,
+				 (CONTENT_LENGTH) len);
+      BIO_write (bio, content, len);
+      BIO_flush (bio);
+    }
+
+  http_header_list_free (&hlist);
+  free (mem);
+
+  if (rc == HTTP_STATUS_OK)
+    {
+      if (resp_code)
+	*resp_code = http_status[err].code;
+      if (resp_size)
+	*resp_size = len;
+      if (resp_line)
+	{
+	  struct stringbuf sb;
+	  stringbuf_init_log (&sb);
+	  stringbuf_printf (&sb, "%d %s",
+			    http_status[err].code,
+			    http_status[err].reason);
+	  if ((*resp_line = stringbuf_finish (&sb)) == NULL)
+	    stringbuf_free (&sb);
+	}
+    }
+
+  return rc;
+}
+
+static inline int
+http_err_reply_cb (POUND_HTTP *phttp, int err, struct http_errmsg *msg,
+		   int (*cbf) (HTTP_HEADER_LIST *, void *), void *data)
+{
+  return bio_err_reply (phttp->cl, phttp->request.version, err, msg, cbf, data,
+			&phttp->response_code, &phttp->res_bytes,
+			&phttp->response.request);
 }
 
 /*
@@ -223,21 +305,187 @@ bio_err_reply (BIO *bio, int proto, int err, char const *content)
  * it will be used, otherwise the default error page for the ERR code
  * will be generated
  */
-static void
+static int
 http_err_reply (POUND_HTTP *phttp, int err)
 {
-  bio_err_reply (phttp->cl, phttp->request.version, err,
-		 phttp->lstn->http_err[err]);
+  int rc = http_err_reply_cb (phttp, err, phttp->lstn->http_err[err],
+			      NULL, NULL);
   phttp->conn_closed = 1;
+  return rc;
+}
+
+#define LOG_TIME_SIZE   32
+
+static char *
+log_duration (char *buf, size_t size, struct timespec const *start)
+{
+  struct timespec end, diff;
+  clock_gettime (CLOCK_REALTIME, &end);
+  diff = timespec_sub (&end, start);
+  snprintf (buf, size, "%ld.%03ld", diff.tv_sec, diff.tv_nsec / 1000000);
+  return buf;
+}
+
+/*
+ * Log an error message.
+ * Arguments:
+ *   phttp   - pointer to a POUND_HTTP structure describing current connection;
+ *   flags   - bitmask of the flags below;
+ *   code    - HTTP status code; -1 means don't show status code;
+ *   en      - system error number; if 0, system error is not included in the
+ *             message; if -1, output SSL error instead
+ *   fmt     - printf-style format;
+ *   ...     - arguments to fmt
+ */
+
+#define max(a,b) ((a) > (b) ? (a) : (b))
+#define max3(a,b,c) max(max((a), (b)), (c))
+
+#define PHTTP_LOG_DFL        0
+#define PHTTP_LOG_BACKEND    0x01  /* Include backend information. */
+#define PHTTP_LOG_REVERSE    0x02  /* Indicate reverse direction. */
+#define PHTTP_LOG_HANDSHAKE  0x04  /* Reporting handshake error: zero return
+				      from ERR_get_error() indicates
+				      ECONNRESET. */
+
+static void ATTR_PRINTFLIKE(5,6)
+phttp_log (POUND_HTTP *phttp, int flags, int status, int en,
+	   char const *fmt, ...)
+{
+  va_list ap;
+  struct stringbuf sb;
+  char buf[max3(MAXBUF, MAX_ADDR_BUFSIZE, LOG_TIME_SIZE)];
+  char *p;
+
+  stringbuf_init_log (&sb);
+  stringbuf_printf (&sb, "(%"PRItid")", POUND_TID ());
+  if (status != -1)
+    stringbuf_printf (&sb, " e%d", pound_to_http_status (status));
+  stringbuf_printf (&sb, ": %s",
+		    addr2str (buf, sizeof (buf), &phttp->from_host, 1));
+  if (phttp->be && (flags & PHTTP_LOG_BACKEND))
+    {
+      if (flags & PHTTP_LOG_REVERSE)
+	stringbuf_add (&sb, " <= ", 4);
+      else
+	stringbuf_add (&sb, " => ", 4);
+      stringbuf_add_string (&sb, str_be (buf, sizeof (buf), phttp->backend));
+    }
+
+  if (phttp->request.request)
+    stringbuf_printf (&sb, ": \"%s\"", phttp->request.request);
+
+  stringbuf_add (&sb, ": ", 2);
+  va_start (ap, fmt);
+  stringbuf_vprintf (&sb, fmt, ap);
+  va_end (ap);
+
+  switch (en)
+    {
+    case 0:
+      break;
+
+    case -1:
+      {
+	unsigned long err = ERR_get_error ();
+	if (err == 0)
+	  {
+	    if (flags & PHTTP_LOG_HANDSHAKE)
+	      stringbuf_add_string (&sb, ": connection reset by peer");
+	  }
+	else
+	  {
+	    stringbuf_add (&sb, ": ", 2);
+	    ERR_error_string_n (err, buf, sizeof (buf));
+	    stringbuf_add_string (&sb, buf);
+	  }
+      }
+      break;
+
+    default:
+      stringbuf_add (&sb, ": ", 2);
+      stringbuf_add_string (&sb, strerror (en));
+    }
+
+  if (phttp->response.request)
+    stringbuf_printf (&sb, " (%s sec)",
+		      log_duration (buf, sizeof (buf), &phttp->start_req));
+
+  if ((p = stringbuf_finish (&sb)) != NULL)
+    logmsg (LOG_NOTICE, "%s", p);
+  else
+    logmsg (LOG_CRIT, "failed to log message");
+  stringbuf_free (&sb);
+}
+
+static char xdig[] = "0123456789ABCDEF";
+
+static inline int
+xtod (int c)
+{
+  char *p = strchr (xdig, c_toupper (c));
+  return p ? p - xdig : -1;
+}
+
+static char *
+urlencode (char const *input, char const *exc)
+{
+  int c;
+  struct stringbuf sb;
+  stringbuf_init_log (&sb);
+  while ((c = *input++) != 0)
+    {
+      if (c_is_class (c, CCTYPE_UNRSRV) || (exc && strchr (exc, c)))
+	stringbuf_add_char (&sb, c);
+      else
+	{
+	  stringbuf_add_char (&sb, '%');
+	  stringbuf_add_char (&sb, xdig[c >> 4]);
+	  stringbuf_add_char (&sb, xdig[c & 0xf]);
+	}
+    }
+  stringbuf_add_char (&sb, 0);
+  return stringbuf_finish (&sb);
+}
+
+static char *
+urldecode (char const *input, char **end)
+{
+  int c;
+  struct stringbuf sb;
+  stringbuf_init_log (&sb);
+  while ((c = *input++) != 0)
+    {
+      if (c == '%')
+	{
+	  int n;
+	  c = xtod (*input++);
+	  if (c == -1)
+	    break;
+	  n = c << 4;
+	  c = xtod (*input++);
+	  if (c == -1)
+	    break;
+	  n += c;
+	  stringbuf_add_char (&sb, n);
+	}
+      else
+	stringbuf_add_char (&sb, c);
+    }
+  if (c == -1)
+    --input;
+  if (end)
+    *end = (char*)input;
+  return stringbuf_finish (&sb);
 }
 
 static int
-submatch_realloc (struct submatch *sm, regex_t const *re)
+submatch_realloc (struct submatch *sm, GENPAT re)
 {
-  size_t n = re->re_nsub + 1;
+  size_t n = genpat_nsub (re);
   if (n > sm->matchmax)
     {
-      regmatch_t *p = realloc (sm->matchv, n * sizeof (p[0]));
+      POUND_REGMATCH *p = realloc (sm->matchv, n * sizeof (p[0]));
       if (!p)
 	return -1;
       sm->matchmax = n;
@@ -248,19 +496,21 @@ submatch_realloc (struct submatch *sm, regex_t const *re)
 }
 
 static void
-submatch_free (struct submatch *sm)
-{
-  free (sm->matchv);
-  free (sm->subject);
-  submatch_init (sm);
-}
-
-static void
 submatch_reset (struct submatch *sm)
 {
+  string_unref (sm->tag);
+  sm->tag = NULL;
   free (sm->subject);
   sm->subject = NULL;
   sm->matchn = 0;
+}
+
+static void
+submatch_free (struct submatch *sm)
+{
+  submatch_reset (sm);
+  free (sm->matchv);
+  submatch_init (sm);
 }
 
 void
@@ -281,27 +531,42 @@ submatch_queue_get (struct submatch_queue const *smq, int n)
 }
 
 static struct submatch *
-submatch_queue_push (struct submatch_queue *smq)
+submatch_queue_push (struct submatch_queue *smq, STRING *tag,
+		     struct submatch *src)
 {
   struct submatch *sm;
   smq->cur = (smq->cur + 1) % SMQ_SIZE;
   sm = submatch_queue_get (smq, 0);
   submatch_reset (sm);
+  *sm = *src;
+  sm->tag = string_ref (tag);
   return sm;
 }
 
 static int
-submatch_exec (regex_t const *re, char const *subject, struct submatch *sm)
+submatch_queue_find (struct submatch_queue *smq, char const *tag, size_t len)
+{
+  int i;
+  for (i = 0; i < SMQ_SIZE; i++)
+    {
+      char const *s = string_ptr (submatch_queue_get (smq, i)->tag);
+      if (s && strlen (s) == len && memcmp (s, tag, len) == 0)
+	return i;
+    }
+  return -1;
+}
+
+static int
+submatch_exec (GENPAT re, char const *subject, struct submatch *sm)
 {
   int res;
 
-  submatch_free (sm);
   if (submatch_realloc (sm, re))
     {
       lognomem ();
       return 0;
     }
-  res = regexec (re, subject, sm->matchn, sm->matchv, 0) == 0;
+  res = genpat_match (re, subject, sm->matchn, sm->matchv) == 0;
   if (res)
     {
       if ((sm->subject = strdup (subject)) == NULL)
@@ -309,13 +574,30 @@ submatch_exec (regex_t const *re, char const *subject, struct submatch *sm)
     }
   return res;
 }
+
+static int
+submatch_exec_decode (GENPAT re, char const *subject, int decode,
+		      struct submatch *sm)
+{
+  int res;
+  char *decoded = NULL;
+  if (decode)
+    {
+      if ((decoded = urldecode (subject, NULL)) == NULL)
+	return -1;
+      subject = decoded;
+    }
+  res = submatch_exec (re, subject, sm);
+  free (decoded);
+  return res;
+}
 
 static int http_request_get_query_param (struct http_request *,
 					 char const *, size_t,
 					 struct query_param **);
 
-typedef int (*accessor_func) (struct http_request *, char const *, int,
-			      char const **, size_t *);
+typedef int (*accessor_func) (POUND_HTTP *, char const *, int,
+			      struct stringbuf *);
 
 struct accessor
 {
@@ -325,117 +607,136 @@ struct accessor
 };
 
 static int
-accessor_url (struct http_request *req, char const *arg, int arglen,
-	      char const **ret_val, size_t *ret_len)
+accessor_url (POUND_HTTP *phttp, char const *arg, int arglen,
+	      struct stringbuf *sb)
 {
   char const *val;
-  int rc = http_request_get_url (req, &val);
+  int rc = http_request_get_url (&phttp->request, &val);
   if (rc == RETRIEVE_OK && val)
-    {
-      *ret_len = strlen (val);
-      *ret_val = val;
-    }
+    stringbuf_add_string (sb, val);
+  else
+    rc = RETRIEVE_NOT_FOUND;
   return rc;
 }
 
 static int
-accessor_path (struct http_request *req, char const *arg, int arglen,
-	       char const **ret_val, size_t *ret_len)
+accessor_path (POUND_HTTP *phttp, char const *arg, int arglen,
+	       struct stringbuf *sb)
 {
   char const *val;
-  int rc = http_request_get_path (req, &val);
+  int rc = http_request_get_path (&phttp->request, &val);
   if (rc == RETRIEVE_OK && val)
-    {
-      *ret_len = strlen (val);
-      *ret_val = val;
-    }
+    stringbuf_add_string (sb, val);
+  else
+    rc = RETRIEVE_NOT_FOUND;
   return rc;
 }
 
 static int
-accessor_query (struct http_request *req, char const *arg, int arglen,
-		char const **ret_val, size_t *ret_len)
+accessor_query (POUND_HTTP *phttp, char const *arg, int arglen,
+		struct stringbuf *sb)
 {
   char const *val;
-  int rc = http_request_get_query (req, &val);
+  int rc = http_request_get_query (&phttp->request, &val);
   if (rc == RETRIEVE_OK && val)
-    {
-      *ret_len = strlen (val);
-      *ret_val = val;
-    }
+    stringbuf_add_string (sb, val);
+  else
+    rc = RETRIEVE_NOT_FOUND;
   return rc;
 }
 
 static int
-accessor_param (struct http_request *req, char const *arg, int arglen,
-		char const **ret_val, size_t *ret_len)
+accessor_param (POUND_HTTP *phttp, char const *arg, int arglen,
+		struct stringbuf *sb)
 {
   struct query_param *qp;
   int rc;
-  if ((rc = http_request_get_query_param (req, arg, arglen, &qp)) == RETRIEVE_OK)
-    {
-      *ret_val = qp->value;
-      if (qp->value)
-	*ret_len = strlen (qp->value);
-    }
+  if ((rc = http_request_get_query_param (&phttp->request, arg,
+					  arglen, &qp)) == RETRIEVE_OK &&
+      qp->value)
+    stringbuf_add_string (sb, qp->value);
+  else
+    rc = RETRIEVE_NOT_FOUND;
   return rc;
 }
 
 static int
-accessor_header (struct http_request *req, char const *arg, int arglen,
-		 char const **ret_val, size_t *ret_len)
+accessor_get_header (POUND_HTTP *phttp, char const *arg, int arglen,
+		     char const **ret_val, size_t *ret_len)
 {
   struct http_header *hdr;
+  char const *val;
 
-  if ((hdr = http_header_list_locate_name (&req->headers, arg, arglen)) == NULL)
+  if ((hdr = http_header_list_locate_name (&phttp->request.headers,
+					   arg, arglen)) == NULL)
     return RETRIEVE_NOT_FOUND;
 
-  if ((*ret_val = http_header_get_value (hdr)) != NULL)
-    *ret_len = strlen (*ret_val);
+  if ((val = http_header_get_value (hdr)) != NULL)
+    {
+      *ret_val = val;
+      *ret_len = strlen (val);
+    }
+  else
+    return RETRIEVE_NOT_FOUND;
+
   return RETRIEVE_OK;
 }
 
 static int
-accessor_host (struct http_request *req, char const *arg, int arglen,
-	       char const **ret_val, size_t *ret_len)
+accessor_header (POUND_HTTP *phttp, char const *arg, int arglen,
+		 struct stringbuf *sb)
+{
+  char const *val;
+  size_t len;
+  int rc;
+
+  rc = accessor_get_header (phttp, arg, arglen, &val, &len);
+  if (rc == RETRIEVE_OK)
+    stringbuf_add (sb, val, len);
+  return rc;
+}
+
+static int
+accessor_host (POUND_HTTP *phttp, char const *arg, int arglen,
+	       struct stringbuf *sb)
 {
   char const *host;
   size_t len;
-  int rc = accessor_header (req, "host", 4, &host, &len);
-  if (rc == RETRIEVE_OK && host)
+  int rc = accessor_get_header (phttp, "host", 4, &host, &len);
+  if (rc == RETRIEVE_OK)
     {
       char *p;
-      *ret_val = host;
       if ((p = memchr (host, ':', len)) != NULL)
-	*ret_len = p - host;
-      else
-	*ret_len = len;
+	len = p - host;
+      stringbuf_add (sb, host, len);
     }
   return rc;
 }
 
 static int
-accessor_port (struct http_request *req, char const *arg, int arglen,
-	       char const **ret_val, size_t *ret_len)
+accessor_port (POUND_HTTP *phttp, char const *arg, int arglen,
+	       struct stringbuf *sb)
 {
   char const *host;
   size_t len;
-  int rc = accessor_header (req, "host", 4, &host, &len);
-  if (rc == RETRIEVE_OK && host)
+  if (accessor_get_header (phttp, "host", 4, &host, &len) == RETRIEVE_OK)
     {
       char *p;
       if ((p = memchr (host, ':', len)) != NULL)
 	{
-	  *ret_val = p;
-	  *ret_len = len - (p - host);
-	}
-      else
-	{
-	  *ret_val = host + len;
-	  *ret_len = 0;
+	  stringbuf_add (sb, p, len - (p - host));
+	  return RETRIEVE_OK;
 	}
     }
-  return rc;
+  return RETRIEVE_NOT_FOUND;
+}
+
+int
+accessor_remote_ip (POUND_HTTP *phttp, char const *arg, int arglen,
+		    struct stringbuf *sb)
+{
+  stringbuf_store_ip (sb, phttp, !(arg[0] == '0' && arg[1] == 0));
+  return RETRIEVE_OK;
 }
 
 static struct accessor accessors[] = {
@@ -446,6 +747,7 @@ static struct accessor accessors[] = {
   { "header",   accessor_header, 1 },
   { "host",     accessor_host },
   { "port",     accessor_port },
+  { "remoteip", accessor_remote_ip, 1 },
   { NULL }
 };
 
@@ -457,17 +759,10 @@ find_accessor (char const *input, size_t len, char **ret_arg, size_t *ret_arglen
   size_t arglen = 0;
   size_t i;
 
-  while (len && (*input == ' ' || *input == '\t'))
-    {
-      input++;
-      len--;
-    }
+  input = c_trimlws (input, &len);
   if (len == 0)
     return NULL;
-
-  for (i = 0; i < len; i++)
-    if (input[i] == ' ' || input[i] == '\t')
-      break;
+  i = c_memcspn (input, CCTYPE_BLANK, len);
 
   for (ap = accessors; ; ap++)
     {
@@ -479,31 +774,20 @@ find_accessor (char const *input, size_t len, char **ret_arg, size_t *ret_arglen
 
   if (ap->arg)
     {
-      if (!isspace (input[i]))
+      if (!c_isblank (input[i]))
 	return NULL;
-
-      do
-	{
-	  i++;
-	  if (i == len)
-	    return NULL;
-	}
-      while (isspace (input[i]));
+      i += c_memspn (input + i, CCTYPE_BLANK, len - i);
 
       arg = input + i;
       arglen = len - i;
 
-      do
-	{
-	  if (arglen == 0)
-	    return NULL;
-	}
-      while (isspace (arg[arglen-1]));
+      arglen = c_trimrws (arg, arglen);
+      if (arglen == 0)
+	return NULL;
     }
   else
     {
-      while (i < len && isspace(input[i]))
-	i++;
+      i += c_memspn (input + i, CCTYPE_BLANK, len - i);
       if (i < len)
 	return NULL;
       arg = NULL;
@@ -553,7 +837,7 @@ expand_string_to_buffer (struct stringbuf *sb, char const *str,
 	  stringbuf_add_char (sb, str[0]);
 	  str += 2;
 	}
-      else if (str[0] == '%' && isxdigit (str[1]) && isxdigit (str[2]))
+      else if (str[0] == '%' && c_isxdigit (str[1]) && c_isxdigit (str[2]))
 	{
 	  stringbuf_add (sb, str, 3);
 	  str += 3;
@@ -565,7 +849,6 @@ expand_string_to_buffer (struct stringbuf *sb, char const *str,
 	  accessor_func acc;
 	  char *arg;
 	  size_t arglen;
-	  char const *val;
 
 	  q = strchr (str + 2, ']');
 	  if (q == NULL)
@@ -584,16 +867,15 @@ expand_string_to_buffer (struct stringbuf *sb, char const *str,
 	    {
 	      stringbuf_add (sb, str, len + 1);
 	    }
-	  else if (acc (&phttp->request, arg, arglen, &val, &len) == 0 && val)
+	  else if (acc (phttp, arg, arglen, sb) == RETRIEVE_OK)
 	    {
-	      stringbuf_add (sb, val, len);
 	      if (result >= 0)
 		result++;
 	    }
 
 	  str = q + 1;
 	}
-      else if ((brace = (str[1] == '{')) || isdigit (str[1]))
+      else if ((brace = (str[1] == '{')) || c_isdigit (str[1]))
 	{
 	  long groupno;
 	  errno = 0;
@@ -615,19 +897,42 @@ expand_string_to_buffer (struct stringbuf *sb, char const *str,
 	      if (str[0] == '$' && *p == '(')
 		{
 		  long n;
-		  errno = 0;
-		  n = strtoul (p + 1, &p, 10);
-		  if (errno || *p != ')')
+
+		  p++;
+		  len = strcspn (p, "()");
+		  if (p[len] != ')')
 		    {
-		      int len = str - start + 1;
 		      logmsg (LOG_WARNING,
 			      "%s \"%s\": missing closing parenthesis in"
-			      " reference started in position %d ",
-			      what, start, len);
+			      " reference started at offset %ld",
+			      what, start, str - start + 1);
+		      p += len;
 		      stringbuf_add (sb, str, p - str);
 		      str = p;
 		      result = -1;
 		      continue;
+		    }
+
+		  if (c_isdigit (*p))
+		    {
+		      errno = 0;
+		      n = strtoul (p, &p, 10);
+		      if (errno || *p != ')')
+			{
+			  logmsg (LOG_WARNING,
+				  "%s \"%s\": invalid reference number "
+				  "at offset %ld",
+				  what, start, p - start + 1);
+			  stringbuf_add (sb, str, p - start);
+			  str = p;
+			  result = -1;
+			  continue;
+			}
+		    }
+		  else
+		    {
+		      n = submatch_queue_find (&phttp->smq, p, len);
+		      p += len;
 		    }
 		  if (n < 0 || n >= SMQ_SIZE)
 		    {
@@ -648,10 +953,10 @@ expand_string_to_buffer (struct stringbuf *sb, char const *str,
 		{
 		  if (*p != '}')
 		    {
-		      int n = str - start + 1;
 		      logmsg (LOG_WARNING,
 			      "%s \"%s\": missing closing brace in reference"
-			      " started in position %d", what, start, n);
+			      " started at offset %ld",
+			      what, start, str - start + 1);
 		      stringbuf_add (sb, str, p - str);
 		      str = p;
 		      result = -1;
@@ -685,7 +990,7 @@ expand_string_to_buffer (struct stringbuf *sb, char const *str,
 	{
 	  int n = str - start + 1;
 	  logmsg (LOG_WARNING,
-		  "%s \"%s\": unescaped %% character in position %d",
+		  "%s \"%s\": unescaped %% character at offset %d",
 		  what, start, n);
 	  stringbuf_add_char (sb, *str);
 	  str++;
@@ -707,6 +1012,22 @@ expand_string (char const *str, POUND_HTTP *phttp, struct http_request *req,
       || (p = stringbuf_finish (&sb)) == NULL)
     stringbuf_free (&sb);
   return p;
+}
+
+char *
+expand_string_encode (char const *str, int encode, char const *exc,
+		      POUND_HTTP *phttp,
+		      struct http_request *req,
+		      char *what)
+{
+  char *s = expand_string (str, phttp, req, what);
+  if (s && encode)
+    {
+      char *enc = urlencode (s, exc);
+      free (s);
+      s = enc;
+    }
+  return s;
 }
 
 static char *
@@ -739,10 +1060,53 @@ expand_url (char const *url, POUND_HTTP *phttp, int has_uri)
     stringbuf_free (&sb);
   return p;
 }
+
+typedef int (*PNDLUA_FUN) (POUND_HTTP *phttp,
+			   struct pndlua_closure const *clos,
+			   char **argv, void *data);
 
-static int rewrite_apply (REWRITE_RULE_HEAD *rewrite_rules,
-			  struct http_request *request, POUND_HTTP *phttp);
+static int
+pndlua_apply (PNDLUA_FUN plfun, POUND_HTTP *phttp, struct http_request *req,
+	      struct pndlua_closure const *clos, void *data)
+{
+  int i;
+  char **argv;
+  int res = -1;
 
+  argv = calloc (clos->argc, sizeof (argv[0]));
+  if (!argv)
+    {
+      lognomem ();
+      return -1;
+    }
+
+  for (i = 0; i < clos->argc; i++)
+    {
+      argv[i] = expand_string (clos->argv[i], phttp, req, "lua");
+      if (argv[i] == 0)
+	goto err;
+    }
+
+  res = plfun (phttp, clos, argv, data);
+
+ err:
+  for (i = 0; i < clos->argc && argv[i]; i++)
+    free (argv[i]);
+  free (argv);
+
+  return res;
+}
+
+static int rewrite_apply (POUND_HTTP *phttp, struct http_request *request,
+			  int what);
+
+static int
+control_response (POUND_HTTP *phttp)
+{
+  if (rewrite_apply (phttp, &phttp->request, REWRITE_REQUEST))
+    return HTTP_STATUS_INTERNAL_SERVER_ERROR;
+  return control_response_basic (phttp);
+}
 /*
  * Reply with a redirect
  */
@@ -783,16 +1147,13 @@ redirect_response (POUND_HTTP *phttp)
       break;
 
     default:
-      logmsg (LOG_NOTICE,
+      logmsg (LOG_ERR,
 	      "INTERNAL ERROR: unsupported status code %d passed to"
 	      " redirect_response; please report", code);
       return HTTP_STATUS_INTERNAL_SERVER_ERROR;
     }
 
-  if (rewrite_apply (&phttp->lstn->rewrite[REWRITE_REQUEST], &phttp->request,
-		     phttp) ||
-      rewrite_apply (&phttp->svc->rewrite[REWRITE_REQUEST], &phttp->request,
-		     phttp))
+  if (rewrite_apply (phttp, &phttp->request, REWRITE_REQUEST))
     return HTTP_STATUS_INTERNAL_SERVER_ERROR;
 
   xurl = expand_url (redirect->url, phttp, redirect->has_uri);
@@ -812,10 +1173,10 @@ redirect_response (POUND_HTTP *phttp)
   stringbuf_init_log (&sb_url);
   for (i = 0; xurl[i]; i++)
     {
-      if (isalnum (xurl[i]) || xurl[i] == '_' || xurl[i] == '.'
+      if (c_isalnum (xurl[i]) || xurl[i] == '_' || xurl[i] == '.'
 	  || xurl[i] == ':' || xurl[i] == '/' || xurl[i] == '?'
 	  || xurl[i] == '&' || xurl[i] == ';' || xurl[i] == '-'
-	  || xurl[i] == '=')
+	  || xurl[i] == '=' || xurl[i] == '+')
 	stringbuf_add_char (&sb_url, xurl[i]);
       else
 	stringbuf_printf (&sb_url, "%%%02x", xurl[i]);
@@ -867,33 +1228,83 @@ redirect_response (POUND_HTTP *phttp)
   return HTTP_STATUS_OK;
 }
 
+enum
+  {
+    COPY_OK,
+    COPY_EOF,
+    COPY_READ_ERR,
+    COPY_WRITE_ERR,
+    COPY_BAD_DATA,
+    COPY_TOO_LONG
+  };
+
+static char const *
+copy_status_string (int rc)
+{
+  switch (rc)
+    {
+    case COPY_OK:
+      return "no error";
+
+    case COPY_EOF:
+      return "unexpected end of input";
+
+    case COPY_READ_ERR:
+      return "read error";
+
+    case COPY_WRITE_ERR:
+      return "write error";
+
+    case COPY_BAD_DATA:
+      return "malformed data";
+
+    case COPY_TOO_LONG:
+      return "line too long";
+
+    default:
+      return "unknown error";
+    }
+}
+
 /*
  * Read and write some binary data
  */
 static int
-copy_bin (BIO *cl, BIO *be, CONTENT_LENGTH cont, CONTENT_LENGTH *res_bytes,
-	  int no_write)
+copy_bin (BIO *cl, BIO *be, CONTENT_LENGTH cont, int no_write,
+	  CONTENT_LENGTH *res_bytes)
 {
   char buf[MAXBUF];
   int res;
 
   while (cont > 0)
     {
-      if ((res = BIO_read (cl, buf, cont > sizeof (buf) ? sizeof (buf) : cont)) < 0)
-	return -1;
+      if ((res = BIO_read (cl, buf,
+			   cont > sizeof (buf) ? sizeof (buf) : cont)) < 0)
+	{
+	  if (BIO_should_retry (cl))
+	    continue;
+	  return COPY_READ_ERR;
+	}
       else if (res == 0)
-	return -2;
+	return COPY_EOF;
       if (!no_write)
-	if (BIO_write (be, buf, res) != res)
-	  return -3;
+	{
+	  int rc;
+
+	  while ((rc = BIO_write (be, buf, res)) < 0)
+	    {
+	      if (!BIO_should_retry (be))
+		return COPY_WRITE_ERR;
+	    }
+	}
       cont -= res;
       if (res_bytes)
 	*res_bytes += res;
     }
   if (!no_write)
     if (BIO_flush (be) != 1)
-      return -4;
-  return 0;
+      return COPY_WRITE_ERR;
+  return COPY_OK;
 }
 
 static int
@@ -905,10 +1316,7 @@ acme_response (POUND_HTTP *phttp)
   char *file_name;
   int rc = HTTP_STATUS_OK;
 
-  if (rewrite_apply (&phttp->lstn->rewrite[REWRITE_REQUEST], &phttp->request,
-		     phttp) ||
-      rewrite_apply (&phttp->svc->rewrite[REWRITE_REQUEST], &phttp->request,
-		     phttp))
+  if (rewrite_apply (phttp, &phttp->request, REWRITE_REQUEST))
     return HTTP_STATUS_INTERNAL_SERVER_ERROR;
 
   file_name = expand_url ("$1", phttp, 1);
@@ -921,29 +1329,48 @@ acme_response (POUND_HTTP *phttp)
 	}
       else
 	{
-	  logmsg (LOG_ERR, "can't open %s: %s", file_name, strerror (errno));
 	  rc = HTTP_STATUS_INTERNAL_SERVER_ERROR;
+	  phttp_log (phttp, PHTTP_LOG_DFL,
+		     rc, errno, "can't open %s", file_name);
 	}
     }
   else if (fstat (fd, &st))
     {
-      logmsg (LOG_ERR, "can't stat %s: %s", file_name, strerror (errno));
-      close (fd);
       rc = HTTP_STATUS_INTERNAL_SERVER_ERROR;
+      phttp_log (phttp, PHTTP_LOG_DFL,
+		 rc, errno, "can't stat %s", file_name);
+      close (fd);
     }
   else
     {
+      int ec;
+
       bin = BIO_new_fd (fd, BIO_CLOSE);
 
       phttp->response_code = 200;
       bio_http_reply_start (phttp->cl, phttp->request.version, 200, "OK", NULL,
 			    "text/html", (CONTENT_LENGTH) st.st_size);
-
-      if (copy_bin (bin, phttp->cl, st.st_size, NULL, 0))
+      ec = copy_bin (bin, phttp->cl, st.st_size, 0, NULL);
+      switch (ec)
 	{
-	  if (errno)
-	    logmsg (LOG_NOTICE, "(%"PRItid") error copying file %s: %s",
-		    POUND_TID (), file_name, strerror (errno));
+	case COPY_OK:
+	  break;
+
+	case COPY_READ_ERR:
+	case COPY_WRITE_ERR:
+	  rc = HTTP_STATUS_INTERNAL_SERVER_ERROR;
+	  phttp_log (phttp, PHTTP_LOG_DFL,
+		     rc, errno,
+		     "%s while sending file %s",
+		     copy_status_string (ec), file_name);
+	  break;
+
+	default:
+	  rc = HTTP_STATUS_INTERNAL_SERVER_ERROR;
+	  phttp_log (phttp, PHTTP_LOG_DFL,
+		     rc, 0,
+		     "%s while sending file %s",
+		     copy_status_string (ec), file_name);
 	}
 
       BIO_free (bin);
@@ -954,7 +1381,8 @@ acme_response (POUND_HTTP *phttp)
 }
 
 int
-parse_header_text (HTTP_HEADER_LIST *head, char const *text)
+http_header_list_parse (HTTP_HEADER_LIST *head, char const *text,
+			int replace, char **end)
 {
   struct stringbuf sb;
   int res = 0;
@@ -971,7 +1399,7 @@ parse_header_text (HTTP_HEADER_LIST *head, char const *text)
       stringbuf_reset (&sb);
       stringbuf_add (&sb, text, len);
       if ((hdr = stringbuf_finish (&sb)) == NULL ||
-	  http_header_list_append (head, hdr, H_REPLACE))
+	  http_header_list_append (head, hdr, replace))
 	{
 	  res = -1;
 	  break;
@@ -984,57 +1412,228 @@ parse_header_text (HTTP_HEADER_LIST *head, char const *text)
 	text++;
     }
   stringbuf_free (&sb);
+  if (end)
+    *end = (char*) text;
   return res;
+}
+
+static int
+cb_hdr_rewrite (HTTP_HEADER_LIST *hlist, void *data)
+{
+  POUND_HTTP *phttp = data;
+  struct http_request req;
+  int rc = 0;
+
+  http_request_init (&req);
+  req.headers = *hlist;
+  if (rewrite_apply (phttp, &req, REWRITE_RESPONSE))
+    rc = HTTP_STATUS_INTERNAL_SERVER_ERROR;
+  *hlist = req.headers;
+  DLIST_INIT (&req.headers);
+  http_request_free (&req);
+  return rc;
 }
 
 static int
 error_response (POUND_HTTP *phttp)
 {
   int err = phttp->backend->v.error.status;
-  const char *text = phttp->backend->v.error.text
-			? phttp->backend->v.error.text
-			: phttp->lstn->http_err[err]
-			    ? phttp->lstn->http_err[err]
-			    : http_status[err].text;
-  size_t len = strlen (text);
+  struct http_errmsg *ep;
+
+  if (rewrite_apply (phttp, &phttp->request, REWRITE_REQUEST))
+    return HTTP_STATUS_INTERNAL_SERVER_ERROR;
+
+  if (phttp->backend->v.error.msg.text)
+    ep = &phttp->backend->v.error.msg;
+  else if (phttp->lstn->http_err[err])
+    ep = phttp->lstn->http_err[err];
+  else
+    ep = NULL;
+
+  return http_err_reply_cb (phttp, err, ep, cb_hdr_rewrite, phttp);
+}
+
+static char file_headers[] = "Content-Type: text/plain\r\n";
+
+static int
+file_response (POUND_HTTP *phttp)
+{
+  char const *file_name;
   struct http_request req;
   BIO *bin;
+  int rc, fd;
+  struct stat st;
+
+  if (rewrite_apply (phttp, &phttp->request, REWRITE_REQUEST))
+    return HTTP_STATUS_INTERNAL_SERVER_ERROR;
 
   http_request_init (&req);
-  if (parse_header_text (&req.headers, err_headers))
+  if (http_header_list_parse (&req.headers, file_headers, H_REPLACE, NULL))
     return HTTP_STATUS_INTERNAL_SERVER_ERROR;
 
-  if (rewrite_apply (&phttp->lstn->rewrite[REWRITE_RESPONSE], &req, phttp) ||
-      rewrite_apply (&phttp->svc->rewrite[REWRITE_RESPONSE], &req, phttp))
+  if (rewrite_apply (phttp, &req, REWRITE_RESPONSE))
     return HTTP_STATUS_INTERNAL_SERVER_ERROR;
 
-  bin = BIO_new_mem_buf (text, len);
-
-  bio_http_reply_start_list (phttp->cl,
-			     phttp->request.version,
-			     http_status[err].code,
-			     http_status[err].reason,
-			     &req.headers,
-			     (CONTENT_LENGTH) len);
-  if (copy_bin (bin, phttp->cl, len, NULL, 0))
+  if (http_request_get_path (&phttp->request, &file_name))
     {
-      if (errno)
-	logmsg (LOG_NOTICE, "(%"PRItid") error sending response %d: %s",
-		POUND_TID (), http_status[err].code, strerror (errno));
+      http_request_free (&req);
+      return HTTP_STATUS_INTERNAL_SERVER_ERROR;
+    }
+  if (*file_name == '/')
+    file_name++;
+  if (!*file_name)
+    rc = HTTP_STATUS_NOT_FOUND;
+
+  else if ((fd = openat (phttp->backend->v.file.wd, file_name, O_RDONLY)) == -1)
+    {
+      if (errno == ENOENT)
+	{
+	  rc = HTTP_STATUS_NOT_FOUND;
+	}
+      else
+	{
+	  rc = HTTP_STATUS_INTERNAL_SERVER_ERROR;
+	  phttp_log (phttp, PHTTP_LOG_DFL,
+		     rc, errno, "can't open %s", file_name);
+	}
+    }
+  else if (fstat (fd, &st))
+    {
+      rc = HTTP_STATUS_INTERNAL_SERVER_ERROR;
+      phttp_log (phttp, PHTTP_LOG_DFL,
+		 rc, errno, "can't stat %s", file_name);
+      close (fd);
+    }
+  else
+    {
+      bin = BIO_new_fd (fd, BIO_CLOSE);
+      bio_http_reply_start_list (phttp->cl,
+				 phttp->request.version,
+				 http_status[HTTP_STATUS_OK].code,
+				 http_status[HTTP_STATUS_OK].reason,
+				 &req.headers,
+				 (CONTENT_LENGTH) st.st_size);
+      rc = copy_bin (bin, phttp->cl, st.st_size, 0, NULL);
+      switch (rc)
+	{
+	case COPY_OK:
+	  break;
+
+	case COPY_READ_ERR:
+	case COPY_WRITE_ERR:
+	  rc = HTTP_STATUS_INTERNAL_SERVER_ERROR;
+	  phttp_log (phttp, PHTTP_LOG_DFL,
+		     rc, errno,
+		     "%s while sending file %s",
+		     copy_status_string (rc), file_name);
+	  break;
+
+	default:
+	  rc = HTTP_STATUS_INTERNAL_SERVER_ERROR;
+	  phttp_log (phttp, PHTTP_LOG_DFL,
+		     rc, 0,
+		     "%s while sending file %s",
+		     copy_status_string (rc), file_name);
+	}
+
+      BIO_free (bin);
+      BIO_flush (phttp->cl);
+      rc = HTTP_STATUS_OK;
     }
 
-  BIO_free (bin);
-  BIO_flush (phttp->cl);
-  http_request_free
-    (&req);
-  phttp->response_code = http_status[err].code;
-  return 0;
+  http_request_free (&req);
+
+  return rc;
+}
+
+static int
+http_response_ok (POUND_HTTP *phttp)
+{
+  return phttp->response_code >= 100 && phttp->response_code <= 599;
+}
+
+static int
+lua_response (POUND_HTTP *phttp)
+{
+  int res;
+
+  if (rewrite_apply (phttp, &phttp->request, REWRITE_REQUEST))
+    return HTTP_STATUS_INTERNAL_SERVER_ERROR;
+
+  res = pndlua_apply (pndlua_backend, phttp, &phttp->request,
+		      &phttp->backend->v.lua, NULL);
+  if (res != -1)
+    {
+      /* Verify response. */
+      if (!http_response_ok (phttp))
+	{
+	  phttp_log (phttp, PHTTP_LOG_BACKEND, -1, 0, "malformed response");
+	  res = -1;
+	}
+      else
+	{
+	  int n;
+	  struct stringbuf *body;
+	  char const *reason = phttp->response.request;
+	  if (reason && *reason)
+	    {
+	      if (c_isdigit (reason[0]) &&
+		  c_isdigit (reason[1]) &&
+		  c_isdigit (reason[2]) &&
+		  c_isblank (reason[3]))
+		{
+		  reason = c_trimlws (reason + 4, NULL);
+		}
+	    }
+	  else if ((n = http_status_to_pound (phttp->response_code)) != -1)
+	    reason = http_status[n].reason;
+	  else
+	    reason = "";
+
+	  body = phttp->response.body;
+	  phttp->res_bytes = body ? stringbuf_len (body) : 0;
+
+	  if (rewrite_apply (phttp, &phttp->response, REWRITE_RESPONSE))
+	    return HTTP_STATUS_INTERNAL_SERVER_ERROR;
+
+	  bio_http_reply_start_list (phttp->cl,
+				     phttp->request.version,
+				     phttp->response_code,
+				     reason,
+				     &phttp->response.headers,
+				     (CONTENT_LENGTH) phttp->res_bytes);
+	  if (body)
+	    BIO_write (phttp->cl, stringbuf_value (body), phttp->res_bytes);
+	  BIO_flush (phttp->cl);
+
+	  res = HTTP_STATUS_OK;
+	}
+    }
+
+  return res;
+
+}
+
+static void
+drain_eol (BIO *in)
+{
+  char c;
+  do
+    {
+      if (BIO_read (in, &c, 1) <= 0)
+	{
+	  if (BIO_should_retry (in))
+	    continue;
+	  break;
+	}
+    }
+  while (c != '\n');
 }
 
 /*
  * Get a "line" from a BIO, strip the trailing newline, skip the input
  * stream if buffer too small.
- * The result buffer is NULL terminated.
+ * The result buffer is 0-terminated.
  * Return 0 on success.
  */
 static int
@@ -1051,10 +1650,13 @@ get_line (BIO *in, char *const buf, int bufsize)
 	/*
 	 * BIO_gets not implemented
 	 */
-	return -1;
+	return COPY_READ_ERR;
       case 0:
+	if (BIO_should_retry (in))
+	  continue;
+	return i == 0 ? COPY_EOF : COPY_OK;
       case -1:
-	return 1;
+	return COPY_READ_ERR;
       default:
 	if (seen_cr)
 	  {
@@ -1063,13 +1665,8 @@ get_line (BIO *in, char *const buf, int bufsize)
 		/*
 		 * we have CR not followed by NL
 		 */
-		do
-		  {
-		    if (BIO_read (in, &tmp, 1) <= 0)
-		      return 1;
-		  }
-		while (tmp != '\n');
-		return 1;
+		drain_eol (in);
+		return COPY_BAD_DATA;
 	      }
 	    else
 	      {
@@ -1078,7 +1675,7 @@ get_line (BIO *in, char *const buf, int bufsize)
 	      }
 	  }
 
-	if (!iscntrl (tmp) || tmp == '\t')
+	if (!c_iscntrl (tmp) || tmp == '\t')
 	  {
 	    buf[i] = tmp;
 	    continue;
@@ -1102,25 +1699,15 @@ get_line (BIO *in, char *const buf, int bufsize)
 	/*
 	 * all other control characters cause an error
 	 */
-	do
-	  {
-	    if (BIO_read (in, &tmp, 1) <= 0)
-	      return 1;
-	  }
-	while (tmp != '\n');
-	return 1;
+	drain_eol (in);
+	return COPY_BAD_DATA;
       }
 
   /*
    * line too long
    */
-  do
-    {
-      if (BIO_read (in, &tmp, 1) <= 0)
-	return 1;
-    }
-  while (tmp != '\n');
-  return 1;
+  drain_eol (in);
+  return COPY_TOO_LONG;
 }
 
 /*
@@ -1166,7 +1753,7 @@ strtoclen (char const *arg, int base, CONTENT_LENGTH *retval, char **endptr)
   for (c = *s; c != '\0'; c = *++s)
     {
       if (c >= '0' && c <= '9')
-        c -= '0';
+	c -= '0';
       else if (base == 16)
 	{
 	  if (c >= 'a' && c <= 'f')
@@ -1185,10 +1772,10 @@ strtoclen (char const *arg, int base, CONTENT_LENGTH *retval, char **endptr)
 	  break;
 	}
       else
-        {
-          val *= (CONTENT_LENGTH) base;
-          val += c;
-        }
+	{
+	  val *= (CONTENT_LENGTH) base;
+	  val += c;
+	}
     }
 
   if (rc == 0)
@@ -1217,15 +1804,11 @@ get_content_length (char const *arg, int mode)
   CONTENT_LENGTH n;
 
   if (mode == CL_HEADER)
-    {
-      while (*arg == ' ' || *arg == '\t')
-	arg++;
-    }
+    arg = c_trimlws (arg, NULL);
 
   if (strtoclen (arg, mode == CL_HEADER ? 10 : 16, &n, &p))
     return NO_CONTENT_LENGTH;
-  while (*p == ' ' || *p == '\t')
-    p++;
+  p = (char*) c_trimlws (p, NULL);
   if (*p)
     {
       if (!(mode == CL_CHUNK && *p == ';'))
@@ -1239,29 +1822,24 @@ get_content_length (char const *arg, int mode)
  * Copy chunked
  */
 static int
-copy_chunks (BIO *cl, BIO *be, CONTENT_LENGTH *res_bytes, int no_write,
-	     CONTENT_LENGTH max_size)
+copy_chunks (BIO *cl, BIO *be, char *buf, unsigned bufsize,
+	     int no_write,
+	     CONTENT_LENGTH max_size, CONTENT_LENGTH *res_bytes)
 {
-  char buf[MAXBUF];
   CONTENT_LENGTH cont, tot_size;
   int res;
 
   for (tot_size = 0;;)
     {
-      if ((res = get_line (cl, buf, sizeof (buf))) < 0)
+      if ((res = get_line (cl, buf, bufsize)) != COPY_OK)
 	{
-	  logmsg (LOG_NOTICE, "(%"PRItid" chunked read error: %s",
+	  logmsg (LOG_NOTICE, "(%"PRItid") chunked read error: %s",
 		  POUND_TID (),
-		  strerror (errno));
-	  return res < 0
-	         ? HTTP_STATUS_INTERNAL_SERVER_ERROR
-	         : HTTP_STATUS_BAD_REQUEST;
+		  copy_status_string (res));
+	  return res == COPY_READ_ERR
+	    ? HTTP_STATUS_INTERNAL_SERVER_ERROR
+	    : HTTP_STATUS_BAD_REQUEST;
 	}
-      else if (res > 0)
-	/*
-	 * EOF
-	 */
-	return HTTP_STATUS_OK;
 
       if ((cont = get_content_length (buf, CL_CHUNK)) == NO_CONTENT_LENGTH)
 	{
@@ -1290,12 +1868,30 @@ copy_chunks (BIO *cl, BIO *be, CONTENT_LENGTH *res_bytes, int no_write,
 
       if (cont > 0)
 	{
-	  if (copy_bin (cl, be, cont, res_bytes, no_write))
+	  int ec = copy_bin (cl, be, cont, no_write, res_bytes);
+	  switch (ec)
 	    {
+	    case COPY_OK:
+	      break;
+
+	    case COPY_READ_ERR:
+	    case COPY_WRITE_ERR:
 	      if (errno)
-		logmsg (LOG_NOTICE, "(%"PRItid") error copyinh chunk of length %"PRICLEN": %s",
-			POUND_TID (), cont, strerror (errno));
+		logmsg (LOG_NOTICE,
+			"(%"PRItid") %s while copying chunk of length %"PRICLEN": %s",
+			POUND_TID (), copy_status_string (ec), cont,
+			strerror (errno));
+	      else
+		logmsg (LOG_NOTICE,
+			"(%"PRItid") %s while copying chunk of length %"PRICLEN,
+			POUND_TID (), copy_status_string (ec), cont);
 	      return HTTP_STATUS_INTERNAL_SERVER_ERROR;
+
+	    default:
+	      logmsg (LOG_NOTICE,
+		      "(%"PRItid") %s while copying chunk of length %"PRICLEN,
+			  POUND_TID (), copy_status_string (ec), cont);
+	      return HTTP_STATUS_BAD_REQUEST;
 	    }
 	}
       else
@@ -1303,24 +1899,22 @@ copy_chunks (BIO *cl, BIO *be, CONTENT_LENGTH *res_bytes, int no_write,
       /*
        * final CRLF
        */
-      if ((res = get_line (cl, buf, sizeof (buf))) < 0)
+      if ((res = get_line (cl, buf, bufsize)) != COPY_OK)
 	{
 	  logmsg (LOG_NOTICE, "(%"PRItid") error after chunk: %s",
 		  POUND_TID (),
-		  strerror (errno));
-	  return res < 0
-	         ? HTTP_STATUS_INTERNAL_SERVER_ERROR
-	         : HTTP_STATUS_BAD_REQUEST;
+		  copy_status_string (res));
+	  return res == COPY_READ_ERR
+	    ? HTTP_STATUS_INTERNAL_SERVER_ERROR
+	    : HTTP_STATUS_BAD_REQUEST;
 	}
-      else if (res > 0)
+
+      if (buf[0])
 	{
-	  logmsg (LOG_NOTICE, "(%"PRItid") unexpected EOF after chunk",
-		  POUND_TID ());
+	  logmsg (LOG_NOTICE, "(%"PRItid") unexpected after chunk \"%s\"",
+		  POUND_TID (), buf);
 	  return HTTP_STATUS_BAD_REQUEST;
 	}
-      if (buf[0])
-	logmsg (LOG_NOTICE, "(%"PRItid") unexpected after chunk \"%s\"",
-		POUND_TID (), buf);
       if (!no_write)
 	if (BIO_printf (be, "%s\r\n", buf) <= 0)
 	  {
@@ -1334,17 +1928,16 @@ copy_chunks (BIO *cl, BIO *be, CONTENT_LENGTH *res_bytes, int no_write,
    */
   for (;;)
     {
-      if ((res = get_line (cl, buf, sizeof (buf))) < 0)
+      if ((res = get_line (cl, buf, bufsize)) != COPY_OK)
 	{
 	  logmsg (LOG_NOTICE, "(%"PRItid") error post-chunk: %s",
 		  POUND_TID (),
-		  strerror (errno));
-	  return res < 0
-	         ? HTTP_STATUS_INTERNAL_SERVER_ERROR
-	         : HTTP_STATUS_BAD_REQUEST;
+		  copy_status_string (res));
+	  return res == COPY_READ_ERR
+	    ? HTTP_STATUS_INTERNAL_SERVER_ERROR
+	    : HTTP_STATUS_BAD_REQUEST;
 	}
-      else if (res > 0)
-	break;
+
       if (!no_write)
 	if (BIO_printf (be, "%s\r\n", buf) <= 0)
 	  {
@@ -1383,8 +1976,7 @@ bio_callback
 (BIO *bio, int cmd, const char *argp, size_t len, int argi,
  long argl, int ret, size_t *processed)
 #else
-(BIO *bio, int cmd, const char *argp, int argi,
-	      long argl, long ret)
+(BIO *bio, int cmd, const char *argp, int argi, long argl, long ret)
 #endif
 {
   BIO_ARG *bio_arg;
@@ -1449,8 +2041,8 @@ bio_callback
 	      else
 		{
 #ifdef  EBUG
-		  logmsg (LOG_WARNING, "(%lx) CALLBACK read 0x%04x poll: %s",
-			  pthread_self (), p.revents, strerror (p_err));
+		  logmsg (LOG_WARNING, "(%"PRItid") CALLBACK read 0x%04x poll: %s",
+			  POUND_TID (), p.revents, strerror (p_err));
 #endif
 		  errno = EIO;
 		}
@@ -1465,8 +2057,8 @@ bio_callback
 	      else
 		{
 #ifdef  EBUG
-		  logmsg (LOG_WARNING, "(%lx) CALLBACK write 0x%04x poll: %s",
-			  pthread_self (), p.revents, strerror (p_err));
+		  logmsg (LOG_WARNING, "(%"PRItid") CALLBACK write 0x%04x poll: %s",
+			  POUND_TID (), p.revents, strerror (p_err));
 #endif
 		  errno = ECONNRESET;
 		}
@@ -1480,8 +2072,8 @@ bio_callback
 	  bio_arg->timeout = err_to;
 #ifdef  EBUG
 	  logmsg (LOG_WARNING,
-		  "(%lx) CALLBACK timeout poll after %d secs: %s",
-		  pthread_self (), to / 1000, strerror (p_err));
+		  "(%"PRItid") CALLBACK timeout poll after %d secs: %s",
+		  POUND_TID (), to / 1000, strerror (p_err));
 #endif
 	  errno = ETIMEDOUT;
 	  return 0;
@@ -1493,15 +2085,15 @@ bio_callback
 	  if (p_err != EINTR)
 	    {
 #ifdef  EBUG
-	      logmsg (LOG_WARNING, "(%lx) CALLBACK bad %d poll: %s",
-		      pthread_self (), p_res, strerror (p_err));
+	      logmsg (LOG_WARNING, "(%"PRItid") CALLBACK bad %d poll: %s",
+		      POUND_TID (), p_res, strerror (p_err));
 #endif
 	      return -2;
 #ifdef  EBUG
 	    }
 	  else
-	    logmsg (LOG_WARNING, "(%lx) CALLBACK interrupted %d poll: %s",
-		    pthread_self (), p_res, strerror (p_err));
+	    logmsg (LOG_WARNING, "(%"PRItid") CALLBACK interrupted %d poll: %s",
+		    POUND_TID (), p_res, strerror (p_err));
 #else
 	    }
 #endif
@@ -1597,7 +2189,7 @@ find_method (const char *str, int len)
 
   for (m = methods; m->name; m++)
     {
-      if (len == m->length && strncasecmp (m->name, str, m->length) == 0)
+      if (len == m->length && c_strncasecmp (m->name, str, m->length) == 0)
 	return m;
     }
   return NULL;
@@ -1638,7 +2230,7 @@ typedef struct
 /*
  * A modified version of strhash function from OpenSSL.
  */
-static unsigned long
+unsigned long
 strhash_ci (const char *c, size_t len)
 {
   unsigned long ret = 0;
@@ -1652,7 +2244,7 @@ strhash_ci (const char *c, size_t len)
   n = 0x100;
   while (len--)
     {
-      v = n | tolower (*c);
+      v = n | c_tolower (*c);
       n += 0x100;
       r = (int)((v >> 2) ^ v) & 0x0f;
       /* cast to uint64_t to avoid 32 bit shift of 32 bit value */
@@ -1673,7 +2265,7 @@ HEADER_NAME_hash (const HEADER_NAME *hname)
 static int
 HEADER_NAME_cmp (const HEADER_NAME *a, const HEADER_NAME *b)
 {
-  return a->len != b->len || strncasecmp (a->name, b->name, a->len);
+  return a->len != b->len || c_strncasecmp (a->name, b->name, a->len);
 }
 
 #define HT_TYPE HEADER_NAME
@@ -1720,50 +2312,152 @@ is_combinable_header (struct http_header *hdr)
 }
 
 /*
- * Find first occurrence of TOK in a comma-separated list of values SUBJ.
- * Use case-insensitive comparison unless CI is 0.  Ignore whitespace.
- *
- * Return pointer to the first occurrence of TOK, if found or NULL
- * otherwise.
- * Unless NEXTP is NULL, initialize it with the pointer to the next item in
- * SUBJ.
+ * Return length of the quoted string beginning at FSTR[0], scanning at
+ * most FLEN bytes.  The returned length includes both initial and closing
+ * double-quote (if such is present).
  */
-static char *
-cs_locate_token (char const *subj, char const *tok, int ci, char **nextp)
+size_t
+field_string_len (char const *fstr, size_t flen)
 {
-  size_t toklen = strlen (tok);
-  char const *next = NULL;
-
-  while (*subj)
+  size_t i;
+  for (i = 1; i < flen; i++)
     {
-      size_t i, len;
-
-      while (*subj && isspace (*subj))
-	subj++;
-      if (!*subj)
-	return NULL;
-      len = strcspn (subj, ",");
-      for (i = len; i > 0; i--)
-	if (!isspace (subj[i-1]))
+      if (fstr[i] == '"')
+	{
+	  i++;
 	  break;
-      next = subj + len;
-      if (*next)
-	next++;
-      if (i == toklen && (ci ? strncasecmp : strncmp) (subj, tok, i) == 0)
-	break;
-      subj = next;
+	}
+      else if (fstr[i] == '\\')
+	{
+	  i++;
+	  if (i == flen)
+	    break;
+	}
     }
+  return i;
+}
 
-  if (nextp)
-    *nextp = (char*) next;
+/*
+ * Return length of the initial segment of FSTR ending with an unquoted ','.
+ * Scan at most FLEN bytes.
+ */
+size_t
+field_segment_len (char const *fstr, size_t flen)
+{
+  size_t i;
+  for (i = 0; i < flen; )
+    {
+      if (fstr[i] == ',')
+	break;
+      else if (fstr[i] == '"')
+	i += field_string_len (fstr, flen);
+      else
+	i++;
+    }
+  return i;
+}
 
-  return *subj != 0 ? (char*) subj : NULL;
+/*
+ * Apply PRED to each non-empty element in comma-separated list of values HVAL.
+ * Continue until HLEN bytes have been processed or PRED returned non-0,
+ * whichever happens first.  Return the last value returned by PRED.
+ * If ENDP is not NULL, store there the pointer to the last element processed
+ * by PRED.
+ *
+ * The function is called as:
+ *
+ *       PRED(ELT, LEN, DATA)
+ *
+ * where ELT is a pointer to the list element with leading whitespace removed,
+ * LEN is its length (not counting trailing whitespace), and DATA is the DATA
+ * argument passed to field_list_filter.
+ */
+int
+field_list_filter (char const *hval, size_t hlen,
+		   int (*pred) (char const *, size_t, void *),
+		   void *data,
+		   char **endp)
+{
+  int retval = 0;
+  char *last = NULL;
+
+  do
+    {
+      size_t n = c_memspn (hval, CCTYPE_BLANK, hlen);
+      hval += n;
+      hlen -= n;
+      if (hlen == 0)
+	break;
+      n = field_segment_len (hval, hlen);
+      if (n > 0)
+	{
+	  size_t i = n;
+
+	  last = c_trimws (hval, &i);
+
+	  hval += n;
+	  hlen -= n;
+
+	  retval = pred (last, i, data);
+	}
+      if (hlen > 0)
+	{
+	  hval++;
+	  hlen--;
+	}
+    }
+  while (hlen > 0 && retval == 0);
+
+  if (endp)
+    *endp = last;
+
+  return retval;
+}
+
+struct token_closure
+{
+  char const *token;
+  size_t toklen;
+};
+
+static int
+field_token_casecmp (char const *str, size_t len, void *data)
+{
+  struct token_closure *cp = data;
+  return len == cp->toklen && c_strncasecmp (str, cp->token, len) == 0;
+}
+
+static char *
+cs_locate_token (char const *subj, char const *tok, char **nextp)
+{
+  struct token_closure tc;
+  char *found;
+  size_t len = strlen(subj);
+
+  tc.token = tok;
+  tc.toklen = strlen (tok);
+  if (field_list_filter (subj, len, field_token_casecmp,
+			 &tc, &found))
+    {
+      if (nextp)
+	{
+	  char *p = strchr (found + tc.toklen, ',');
+	  if (p)
+	    {
+	      p++;
+	      p += c_memspn (p, CCTYPE_BLANK, strlen (p));
+	    }
+	  *nextp = p;
+	}
+      return found;
+    }
+  return NULL;
 }
 
 static int
 qualify_header (struct http_header *hdr)
 {
-  regmatch_t matches[4];
+  POUND_REGMATCH matches[4];
   static struct
   {
     char const *header;
@@ -1788,7 +2482,7 @@ qualify_header (struct http_header *hdr)
   };
   int i;
 
-  if (regexec (&HEADER, hdr->header, 4, matches, 0) == 0)
+  if (genpat_match (HEADER, hdr->header, 4, matches) == 0)
     {
       hdr->name_start = matches[1].rm_so;
       hdr->name_end = matches[1].rm_eo;
@@ -1796,8 +2490,9 @@ qualify_header (struct http_header *hdr)
       hdr->val_end = matches[2].rm_eo;
       for (i = 0; hd_types[i].len > 0; i++)
 	if ((matches[1].rm_eo - matches[1].rm_so) == hd_types[i].len
-	    && strncasecmp (hdr->header + matches[1].rm_so, hd_types[i].header,
-			    hd_types[i].len) == 0)
+	    && c_strncasecmp (hdr->header + matches[1].rm_so,
+			      hd_types[i].header,
+			      hd_types[i].len) == 0)
 	  {
 	    return hdr->code = hd_types[i].val;
 	  }
@@ -1808,7 +2503,7 @@ qualify_header (struct http_header *hdr)
 }
 
 static struct http_header *
-http_header_alloc (char *text)
+http_header_alloc (char const *text)
 {
   struct http_header *hdr;
 
@@ -1827,6 +2522,27 @@ http_header_alloc (char *text)
   qualify_header (hdr);
 
   return hdr;
+}
+
+static struct http_header *
+http_header_dup (struct http_header *hdr)
+{
+  struct http_header *p = calloc (1, sizeof (*p));
+  if (p)
+    {
+      *p = *hdr;
+      if ((p->header = strdup (hdr->header)) != NULL)
+	{
+	  p->value = NULL;
+	  return p;
+	}
+      else
+	{
+	  free (p);
+	  p = NULL;
+	}
+    }
+  return p;
 }
 
 static void
@@ -1919,7 +2635,7 @@ http_header_list_locate_name (HTTP_HEADER_LIST *head, char const *name,
   DLIST_FOREACH (hdr, head, link)
     {
       if (http_header_name_len (hdr) == len &&
-	  strncasecmp (http_header_name_ptr (hdr), name, len) == 0)
+	  c_strncasecmp (http_header_name_ptr (hdr), name, len) == 0)
 	return hdr;
     }
   return NULL;
@@ -1934,7 +2650,7 @@ http_header_list_next (struct http_header *hdr)
   while ((hdr = DLIST_NEXT (hdr, link)) != NULL)
     {
       if (http_header_name_len (hdr) == len &&
-	  strncasecmp (http_header_name_ptr (hdr), name, len) == 0)
+	  c_strncasecmp (http_header_name_ptr (hdr), name, len) == 0)
 	return hdr;
     }
   return NULL;
@@ -1949,7 +2665,7 @@ http_header_list_next (struct http_header *hdr)
  * new value.
  */
 int
-http_header_list_append (HTTP_HEADER_LIST *head, char *text, int replace)
+http_header_list_append (HTTP_HEADER_LIST *head, char const *text, int replace)
 {
   struct http_header *hdr;
 
@@ -1965,7 +2681,7 @@ http_header_list_append (HTTP_HEADER_LIST *head, char *text, int replace)
 
 	case H_APPEND:
 	  {
-	    char *val = http_header_get_value (hdr);
+	    char const *val = http_header_get_value (hdr);
 	    if (*val)
 	      {
 		struct stringbuf sb;
@@ -1975,7 +2691,7 @@ http_header_list_append (HTTP_HEADER_LIST *head, char *text, int replace)
 			       hdr->val_end - hdr->name_start);
 		stringbuf_add_char (&sb, ',');
 		val = text + hdr->name_end + 1;
-		if (!isspace (*val))
+		if (!c_isspace (*val))
 		  stringbuf_add_char (&sb, ' ');
 		stringbuf_add_string (&sb, val);
 		val = stringbuf_finish (&sb);
@@ -2001,19 +2717,41 @@ http_header_list_append (HTTP_HEADER_LIST *head, char *text, int replace)
 }
 
 int
-http_header_list_append_list (HTTP_HEADER_LIST *head, HTTP_HEADER_LIST *add,
-			      int replace)
+http_header_list_append_list (HTTP_HEADER_LIST *head, HTTP_HEADER_LIST *add)
 {
   struct http_header *hdr;
   DLIST_FOREACH (hdr, add, link)
     {
-      if (http_header_list_append (head, hdr->header, replace))
-	return -1;
+      struct http_header *copy = http_header_dup (hdr);
+      if (!copy)
+	{
+	  lognomem ();
+	  return -1;
+	}
+      DLIST_INSERT_TAIL (head, copy, link);
     }
   return 0;
 }
 
-static void
+void
+http_header_list_remove_field (HTTP_HEADER_LIST *head, char const *field)
+{
+  struct http_header *hdr, *tmp;
+  size_t len = strlen (field);
+
+  /* Remove existing headers with this field name. */
+  DLIST_FOREACH_SAFE (hdr, tmp, head, link)
+    {
+      if (http_header_name_len (hdr) == len &&
+	  c_strncasecmp (http_header_name_ptr (hdr), field, len) == 0)
+	{
+	  DLIST_REMOVE (head, hdr, link);
+	  http_header_free (hdr);
+	}
+    }
+}
+
+void
 http_header_list_free (HTTP_HEADER_LIST *head)
 {
   while (!DLIST_EMPTY (head))
@@ -2038,7 +2776,7 @@ http_header_list_filter (HTTP_HEADER_LIST *head, MATCHER *m)
 
   DLIST_FOREACH_SAFE (hdr, tmp, head, link)
     {
-      if (regexec (&m->pat, hdr->header, 0, NULL, 0) == 0)
+      if (genpat_match (m->pat, hdr->header, 0, NULL) == 0)
 	{
 	  http_header_list_remove (head, hdr);
 	}
@@ -2207,7 +2945,7 @@ http_request_get_url (struct http_request *req, char const **retval)
   return 0;
 }
 
-static int
+int
 http_request_set_url (struct http_request *req, char const *url)
 {
   char *p;
@@ -2227,12 +2965,12 @@ int
 http_request_get_path (struct http_request *req, char const **retval)
 {
   if (http_request_split (req))
-      return -1;
+    return -1;
   *retval = req->path;
   return 0;
 }
 
-static int
+int
 http_request_set_path (struct http_request *req, char const *path)
 {
   char *val;
@@ -2343,6 +3081,19 @@ http_request_parse_query (struct http_request *req)
   return 0;
 }
 
+int
+http_request_count_query_param (struct http_request *req)
+{
+  struct query_param *qp;
+  int n = 0;
+
+  if (http_request_split (req))
+    return -1;
+  DLIST_FOREACH (qp, &req->query_head, link)
+    n++;
+  return n;
+}
+
 static int
 http_request_get_query_param (struct http_request *req,
 			      char const *name, size_t namelen,
@@ -2377,14 +3128,16 @@ http_request_get_query_param_value (struct http_request *req, char const *name,
   return rc;
 }
 
-static int
+int
 http_request_set_query (struct http_request *req, char const *rawquery)
 {
   char *p;
 
   if (http_request_split (req))
       return -1;
-  if ((p = strdup (rawquery)) == NULL)
+  if (!rawquery)
+    p = NULL;
+  else if ((p = strdup (rawquery)) == NULL)
     {
       lognomem ();
       return -1;
@@ -2395,7 +3148,7 @@ http_request_set_query (struct http_request *req, char const *rawquery)
   return http_request_rebuild_url (req);
 }
 
-static int
+int
 http_request_set_query_param (struct http_request *req, char const *name,
 			      char const *raw_value)
 {
@@ -2433,10 +3186,16 @@ http_request_set_query_param (struct http_request *req, char const *name,
       break;
 
     case 0:
-      if (raw_value == 0)
+      if (raw_value == NULL)
 	{
 	  DLIST_REMOVE (&req->query_head, qp, link);
 	  query_param_free (qp);
+	  if (DLIST_EMPTY (&req->query_head))
+	    {
+	      free (req->query);
+	      req->query = NULL;
+	      return http_request_rebuild_url (req);
+	    }
 	}
       else
 	{
@@ -2479,6 +3238,12 @@ http_request_free (struct http_request *req)
   free (req->query);
   http_request_free_query (req);
   free (req->orig_request_line);
+  free (req->eval_result);
+  if (req->body)
+    {
+      stringbuf_free (req->body);
+      free (req->body);
+    }
   http_request_init (req);
 }
 
@@ -2486,6 +3251,7 @@ typedef struct
 {
   struct http_header *hdr;
   struct stringbuf sb;
+  int count;
 } COMPOSE_HEADER;
 
 static unsigned long
@@ -2501,8 +3267,8 @@ COMPOSE_HEADER_cmp (const COMPOSE_HEADER *a, const COMPOSE_HEADER *b)
   size_t alen, blen;
   alen = http_header_name_len (a->hdr);
   blen = http_header_name_len (b->hdr);
-  return alen != blen || strncasecmp (http_header_name_ptr (a->hdr),
-				      http_header_name_ptr (b->hdr), alen);
+  return alen != blen || c_strncasecmp (http_header_name_ptr (a->hdr),
+					http_header_name_ptr (b->hdr), alen);
 }
 
 #define HT_TYPE COMPOSE_HEADER
@@ -2550,9 +3316,20 @@ compose_header_finish (COMPOSE_HEADER *chdr, void *data)
 }
 
 static int
-http_request_read (BIO *in, const LISTENER *lstn, struct http_request *req)
+compose_header_add (char const *str, size_t len, void *data)
 {
-  char buf[MAXBUF];
+  COMPOSE_HEADER *comp = data;
+  if (comp->count > 0)
+    stringbuf_add (&comp->sb, ", ", 2);
+  stringbuf_add (&comp->sb, str, len);
+  comp->count++;
+  return 0;
+}
+
+static int
+http_request_read (BIO *in, const LISTENER *lstn, char *buf,
+		   struct http_request *req)
+{
   int res;
   COMPOSE_HEADER_HASH *chash = NULL;
 
@@ -2562,7 +3339,7 @@ http_request_read (BIO *in, const LISTENER *lstn, struct http_request *req)
       if (!chash)
 	{
 	  lognomem ();
-	  return -1;
+	  return HTTP_STATUS_INTERNAL_SERVER_ERROR;
 	}
     }
 
@@ -2571,37 +3348,54 @@ http_request_read (BIO *in, const LISTENER *lstn, struct http_request *req)
   /*
    * HTTP/1.1 allows leading CRLF
    */
-  while ((res = get_line (in, buf, sizeof (buf))) == 0)
+  while ((res = get_line (in, buf, lstn->linebufsize)) == COPY_OK)
     if (buf[0])
       break;
 
-  if (res < 0)
+  switch (res)
     {
-      /*
-       * this is expected to occur only on client reads
-       */
-      return -1;
+    case COPY_OK:
+      break;
+
+    case COPY_EOF:
+      return HTTP_STATUS_OK;
+
+    case COPY_READ_ERR:
+      logmsg (LOG_NOTICE, "(%"PRItid") %s",
+	      POUND_TID (),
+	      copy_status_string (res));
+      return HTTP_STATUS_INTERNAL_SERVER_ERROR;
+
+    case COPY_TOO_LONG:
+      logmsg (LOG_NOTICE, "(%"PRItid") %s",
+	      POUND_TID (),
+	      copy_status_string (res));
+      return HTTP_STATUS_URI_TOO_LONG;
+
+    default:
+      logmsg (LOG_NOTICE, "(%"PRItid") %s",
+	      POUND_TID (),
+	      copy_status_string (res));
+      return HTTP_STATUS_BAD_REQUEST;
     }
 
   if ((req->request = strdup (buf)) == NULL)
     {
       lognomem ();
       compose_header_hash_free (chash);
-      return -1;
+      return HTTP_STATUS_INTERNAL_SERVER_ERROR;
     }
 
   for (;;)
     {
       struct http_header *hdr;
 
-      if (get_line (in, buf, sizeof (buf)))
+      if ((res = get_line (in, buf, lstn->linebufsize)) != COPY_OK)
 	{
 	  http_request_free (req);
 	  compose_header_hash_free (chash);
-	  /*
-	   * this is not necessarily an error, EOF/timeout are possible
-	   */
-	  return -1;
+	  return res == COPY_TOO_LONG ?
+	    HTTP_STATUS_PAYLOAD_TOO_LARGE : HTTP_STATUS_INTERNAL_SERVER_ERROR;
 	}
 
       if (!buf[0])
@@ -2611,7 +3405,7 @@ http_request_read (BIO *in, const LISTENER *lstn, struct http_request *req)
 	{
 	  http_request_free (req);
 	  compose_header_hash_free (chash);
-	  return -1;
+	  return HTTP_STATUS_INTERNAL_SERVER_ERROR;
 	}
       else if (hdr->code == HEADER_ILLEGAL)
 	http_header_free (hdr);
@@ -2624,15 +3418,16 @@ http_request_read (BIO *in, const LISTENER *lstn, struct http_request *req)
 	      key.hdr = hdr;
 	      if ((comp = COMPOSE_HEADER_RETRIEVE (chash, &key)) != NULL)
 		{
-		  stringbuf_add (&comp->sb, ", ", 2);
-		  stringbuf_add (&comp->sb, hdr->header + hdr->val_start,
-				 hdr->val_end - hdr->val_start);
+		  field_list_filter (hdr->header + hdr->val_start,
+				     hdr->val_end - hdr->val_start,
+				     compose_header_add,
+				     comp, NULL);
 		  http_header_free (hdr);
 		  if (stringbuf_err (&comp->sb))
 		    {
 		      http_request_free (req);
 		      compose_header_hash_free (chash);
-		      return -1;
+		      return HTTP_STATUS_INTERNAL_SERVER_ERROR;
 		    }
 		  continue;
 		}
@@ -2643,20 +3438,23 @@ http_request_read (BIO *in, const LISTENER *lstn, struct http_request *req)
 		      lognomem ();
 		      http_request_free (req);
 		      compose_header_hash_free (chash);
-		      return -1;
+		      return HTTP_STATUS_INTERNAL_SERVER_ERROR;
 		    }
 		  comp->hdr = hdr;
+		  comp->count = 0;
 		  stringbuf_init_log (&comp->sb);
 		  stringbuf_add (&comp->sb, http_header_name_ptr (hdr),
 				 http_header_name_len (hdr));
 		  stringbuf_add (&comp->sb, ": ", 2);
-		  stringbuf_add (&comp->sb, hdr->header + hdr->val_start,
-				 hdr->val_end - hdr->val_start);
+		  field_list_filter (hdr->header + hdr->val_start,
+				     hdr->val_end - hdr->val_start,
+				     compose_header_add,
+				     comp, NULL);
 		  if (stringbuf_err (&comp->sb))
 		    {
 		      http_request_free (req);
 		      compose_header_hash_free (chash);
-		      return -1;
+		      return HTTP_STATUS_INTERNAL_SERVER_ERROR;
 		    }
 		  COMPOSE_HEADER_INSERT (chash, comp);
 		}
@@ -2674,11 +3472,11 @@ http_request_read (BIO *in, const LISTENER *lstn, struct http_request *req)
       if (res)
 	{
 	  http_request_free (req);
-	  return -1;
+	  return HTTP_STATUS_INTERNAL_SERVER_ERROR;
 	}
     }
 
-  return 0;
+  return HTTP_STATUS_OK;
 }
 
 /*
@@ -2702,12 +3500,11 @@ get_basic_auth (char const *hdrval, char **u_name, char **u_pass)
   char buf[MAXBUF], *q;
   int rc;
 
-  if (strncasecmp (hdrval, "Basic", 5))
+  if (c_strncasecmp (hdrval, "Basic", 5))
     return 1;
 
   hdrval += 5;
-  while (*hdrval && isspace (*hdrval))
-    hdrval++;
+  hdrval += c_memspn (hdrval, CCTYPE_BLANK, strlen (hdrval));
 
   len = strlen (hdrval);
   if (*hdrval == '"')
@@ -2715,8 +3512,7 @@ get_basic_auth (char const *hdrval, char **u_name, char **u_pass)
       hdrval++;
       len--;
 
-      while (len > 0 && isspace (hdrval[len-1]))
-	len--;
+      len = c_trimrws (hdrval, len);
 
       if (len == 0 || hdrval[len] != '"')
 	return 1;
@@ -2725,13 +3521,13 @@ get_basic_auth (char const *hdrval, char **u_name, char **u_pass)
 
   if ((bb = BIO_new (BIO_s_mem ())) == NULL)
     {
-      logmsg (LOG_WARNING, "(%"PRItid") Can't alloc BIO_s_mem", POUND_TID ());
+      logmsg (LOG_WARNING, "(%"PRItid") can't alloc BIO_s_mem", POUND_TID ());
       return -1;
     }
 
   if ((b64 = BIO_new (BIO_f_base64 ())) == NULL)
     {
-      logmsg (LOG_WARNING, "(%"PRItid") Can't alloc BIO_f_base64",
+      logmsg (LOG_WARNING, "(%"PRItid") can't alloc BIO_f_base64",
 	      POUND_TID ());
       BIO_free (bb);
       return -1;
@@ -2744,7 +3540,7 @@ get_basic_auth (char const *hdrval, char **u_name, char **u_pass)
   BIO_free_all (b64);
   if (inlen <= 0)
     {
-      logmsg (LOG_WARNING, "(%"PRItid") Can't read BIO_f_base64",
+      logmsg (LOG_WARNING, "(%"PRItid") can't read BIO_f_base64",
 	      POUND_TID ());
       return -1;
     }
@@ -2779,6 +3575,12 @@ get_basic_auth (char const *hdrval, char **u_name, char **u_pass)
   return rc;
 }
 
+/*
+ * If the request bears the Authorization header, extract username and
+ * password from it.  Return 0 on success, 1 if no data are available
+ * (either Authorization header is missing, or it is not a Basic auth
+ * header), and -1 on error.
+ */
 int
 http_request_get_basic_auth (struct http_request *req,
 			     char **u_name, char **u_pass)
@@ -2787,65 +3589,82 @@ http_request_get_basic_auth (struct http_request *req,
   char const *val;
 
   if ((hdr = http_header_list_locate (&req->headers,
-				      HEADER_AUTHORIZATION)) != NULL &&
-      (val = http_header_get_value (hdr)) != NULL)
-    return get_basic_auth (val, u_name, u_pass);
-  return -1;
+				      HEADER_AUTHORIZATION)) != NULL)
+    {
+      if ((val = http_header_get_value (hdr)) == NULL)
+	return -1;
+      return get_basic_auth (val, u_name, u_pass);
+    }
+  return 1;
 }
 
 static int
 parse_http_request (struct http_request *req, int group)
 {
   char *str;
-  size_t len;
+  size_t len, ulen;
   struct method_def *md;
   char const *url;
   int http_ver;
+  int status = HTTP_STATUS_OK;
+  int rebuild = 0;
 
   str = req->request;
   len = strcspn (str, " ");
   if (len == 0 || str[len-1] == 0)
-    return -1;
+    return HTTP_STATUS_BAD_REQUEST;
 
   if ((md = find_method (str, len)) == NULL)
-    return -1;
+    return HTTP_STATUS_BAD_REQUEST;
 
   if (md->group > group)
-    return -1;
+    status = HTTP_STATUS_METHOD_NOT_ALLOWED;
 
   str += len;
-  str += strspn (str, " ");
+  len = strspn (str, " ");
+  if (len > 1)
+    rebuild = 1;
+  str += len;
 
   if (*str == 0)
-    return -1;
+    return HTTP_STATUS_BAD_REQUEST;
 
   url = str;
   len = strcspn (url, " ");
+  ulen = len;
 
   str += len;
-  str += strspn (str, " ");
+  len = strspn (str, " ");
+  if (len > 1)
+    rebuild = 1;
+  str += len;
+
   if (!(strncmp (str, "HTTP/1.", 7) == 0 &&
 	((http_ver = str[7]) == '0' || http_ver == '1') &&
 	str[8] == 0))
-    return -1;
+    return HTTP_STATUS_BAD_REQUEST;
 
-  req->method = md->meth;
-  if ((req->url = malloc (len + 1)) == NULL)
+  if (status == HTTP_STATUS_OK)
     {
-      lognomem ();
-      return -1;
+     req->method = md->meth;
+      if ((req->url = xstrndup (url, ulen)) == NULL)
+	{
+	  lognomem ();
+	  return HTTP_STATUS_INTERNAL_SERVER_ERROR;
+	}
+
+      req->version = http_ver - '0';
+      req->split = 1;
+
+      if (rebuild)
+	http_request_rebuild_line (req);
     }
-  memcpy (req->url, url, len);
-  req->url[len] = 0;
 
-  req->version = http_ver - '0';
-  req->split = 1;
-
-  return 0;
+  return status;
 }
-
+
 static int
-match_headers (HTTP_HEADER_LIST *headers, regex_t const *re,
+match_headers (HTTP_HEADER_LIST *headers, GENPAT re,
 	       struct submatch *sm)
 {
   struct http_header *hdr;
@@ -2858,43 +3677,66 @@ match_headers (HTTP_HEADER_LIST *headers, regex_t const *re,
   return 0;
 }
 
+/*
+ * Match request (or response) REQ obtained from PHTTP against condition COND.
+ * Return value:
+ *
+ *  0    request does not satisfy the condition;
+ *  1    request satisfies the condition;
+ * -1    an error occurred; diagnostic message has been issued;
+ */
 int
 match_cond (SERVICE_COND *cond, POUND_HTTP *phttp,
 	    struct http_request *req)
 {
   int res = 1;
+  int r;
   SERVICE_COND *subcond;
   char const *str;
+  struct submatch sm = SUBMATCH_INITIALIZER;
 
+  watcher_lock (cond->watcher);
   switch (cond->type)
     {
     case COND_ACL:
-      res = acl_match (cond->acl, phttp->from_host.ai_addr) == 0;
+      {
+	struct addrinfo *tmp;
+	if ((r = acl_match (cond->acl.acl,
+			    get_remote_ip (phttp,
+					   cond->acl.forwarded,
+					   &tmp)->ai_addr)) == -1)
+	  res = -1;
+	else
+	  res = r == 0;
+	if (tmp)
+	  freeaddrinfo (tmp);
+      }
       break;
 
     case COND_URL:
       if (http_request_get_url (req, &str) == -1)
 	res = -1;
-      else
-	res = submatch_exec (&cond->re, str, submatch_queue_push (&phttp->smq));
+      else if ((res = submatch_exec (cond->re, str, &sm)) == 1)
+	submatch_queue_push (&phttp->smq, cond->tag, &sm);
       break;
 
     case COND_PATH:
       if (http_request_get_path (req, &str) == -1)
 	res = -1;
-      else
-	res = submatch_exec (&cond->re, str, submatch_queue_push (&phttp->smq));
+      else if ((res = submatch_exec_decode (cond->re, str, cond->decode, &sm)) == 1)
+	submatch_queue_push (&phttp->smq, cond->tag, &sm);
       break;
 
     case COND_QUERY:
       if (http_request_get_query (req, &str) == -1)
 	res = -1;
-      else
-	res = submatch_exec (&cond->re, str, submatch_queue_push (&phttp->smq));
+      else if ((res = submatch_exec (cond->re, str, &sm)) == 1)
+	submatch_queue_push (&phttp->smq, cond->tag, &sm);
       break;
 
     case COND_QUERY_PARAM:
-      switch (http_request_get_query_param_value (req, cond->sm.string->value,
+      switch (http_request_get_query_param_value (req,
+						  string_ptr (cond->sm.string),
 						  &str))
 	{
 	case RETRIEVE_ERROR:
@@ -2908,20 +3750,20 @@ match_cond (SERVICE_COND *cond, POUND_HTTP *phttp,
 	default:
 	  if (str == NULL)
 	    res = 0;
-	  else
-	    res = submatch_exec (&cond->sm.re, str,
-				 submatch_queue_push (&phttp->smq));
+	  else if ((res = submatch_exec_decode (cond->sm.re, str, cond->decode,
+						&sm)) == 1)
+	    submatch_queue_push (&phttp->smq, cond->tag, &sm);
 	}
       break;
 
     case COND_HDR:
-      res = match_headers (&req->headers, &cond->re,
-			   submatch_queue_push (&phttp->smq));
+      if ((res = match_headers (&req->headers, cond->re, &sm)) == 1)
+	submatch_queue_push (&phttp->smq, cond->tag, &sm);
       break;
 
     case COND_HOST:
-      res = match_headers (&req->headers, &cond->re,
-			   submatch_queue_push (&phttp->smq));
+      if ((res = match_headers (&req->headers, cond->re, &sm)) == 1)
+	submatch_queue_push (&phttp->smq, cond->tag, &sm);
       if (res)
 	{
 	  /*
@@ -2931,7 +3773,7 @@ match_cond (SERVICE_COND *cond, POUND_HTTP *phttp,
 	  struct submatch *sm = submatch_queue_get (&phttp->smq, 0);
 	  int n, i;
 	  char const *s = sm->subject;
-	  regmatch_t *mv = sm->matchv;
+	  POUND_REGMATCH *mv = sm->matchv;
 	  int mc = sm->matchn;
 	  char *p;
 
@@ -2964,19 +3806,22 @@ match_cond (SERVICE_COND *cond, POUND_HTTP *phttp,
       break;
 
     case COND_BASIC_AUTH:
-      res = basic_auth (&cond->pwfile, req) == 0;
+      if ((r = basic_auth (&cond->pwfile, req)) == -1)
+	res = -1;
+      else
+	res = r == 0;
       break;
 
     case COND_STRING_MATCH:
       {
 	char *subj;
 
-	subj = expand_string (cond->sm.string->value, phttp, req,
+	subj = expand_string (string_ptr (cond->sm.string), phttp, req,
 			      "string_match");
 	if (subj)
 	  {
-	    res = submatch_exec (&cond->sm.re, subj,
-				 submatch_queue_push (&phttp->smq));
+	    if ((res = submatch_exec (cond->sm.re, subj, &sm)) == 1)
+	      submatch_queue_push (&phttp->smq, cond->tag, &sm);
 	    free (subj);
 	  }
 	else
@@ -2984,37 +3829,79 @@ match_cond (SERVICE_COND *cond, POUND_HTTP *phttp,
       }
       break;
 
-    case COND_BOOL:
-      if (cond->bool.op == BOOL_NOT)
+    case COND_DYN:
+      if (SLIST_EMPTY (&cond->dyn.boolean.head))
 	{
-	  subcond = SLIST_FIRST (&cond->bool.head);
-	  res = ! match_cond (subcond, phttp, req);
+	  res = 0;
+	  break;
+	}
+      /* fall through */
+    case COND_BOOL:
+      if (cond->boolean.op == BOOL_NOT)
+	{
+	  subcond = SLIST_FIRST (&cond->boolean.head);
+	  if ((r = match_cond (subcond, phttp, req)) == -1)
+	    res = -1;
+	  else
+	    res = ! r;
 	}
       else
 	{
-	  SLIST_FOREACH (subcond, &cond->bool.head, next)
+	  SLIST_FOREACH (subcond, &cond->boolean.head, next)
 	    {
 	      res = match_cond (subcond, phttp, req);
-	      if ((cond->bool.op == BOOL_AND) ? (res == 0) : (res == 1))
+	      if (res == -1)
+		break;
+	      if ((cond->boolean.op == BOOL_AND) ? (res == 0) : (res == 1))
 		break;
 	    }
 	}
       break;
+
+    case COND_CLIENT_CERT:
+      res = (phttp->x509 != NULL &&
+	     X509_cmp (phttp->x509, cond->x509) == 0 &&
+	     SSL_get_verify_result (phttp->ssl) == X509_V_OK);
+      break;
+
+    case COND_LUA:
+      res = pndlua_apply (pndlua_match, phttp, req, &cond->clua, NULL);
+      break;
+
+    case COND_TBF:
+      {
+	char *key;
+
+	key = expand_string (string_ptr (cond->tbf.key), phttp, req, "tbf");
+	if (key)
+	  {
+	    res = tbf_eval (cond->tbf.tbf, key);
+	    free (key);
+	  }
+	else
+	  res = -1;
+      }
+      break;
+
+    case COND_REF:
+      if ((res = http_request_eval_get (req, cond->ref)) == -1)
+	{
+	  /* Save away current submatch queue. */
+	  struct submatch_queue smq = phttp->smq;
+	  /* Reinitialize the queue. */
+	  submatch_queue_init (&phttp->smq);
+	  /* Evaluate the condition and cache the result. */
+	  res = match_cond (detached_cond (cond->ref), phttp, req);
+	  http_request_eval_cache (req, cond->ref, res);
+	  /* Restore submatch queue. */
+	  submatch_queue_free (&phttp->smq);
+	  phttp->smq = smq;
+	}
+      break;
     }
+  watcher_unlock (cond->watcher);
 
   return res;
-}
-
-#define LOG_TIME_SIZE   32
-
-static char *
-log_duration (char *buf, size_t size, struct timespec const *start)
-{
-  struct timespec end, diff;
-  clock_gettime (CLOCK_REALTIME, &end);
-  diff = timespec_sub (&end, start);
-  snprintf (buf, size, "%ld.%03ld", diff.tv_sec, diff.tv_nsec / 1000000);
-  return buf;
 }
 
 static int
@@ -3103,6 +3990,30 @@ add_forwarded_headers (POUND_HTTP *phttp)
 }
 
 static int
+set_header_from_bio (BIO *bio, struct http_request *req,
+		     char const *hdr, struct stringbuf *sb)
+{
+  char buf[MAXBUF];
+  int rc;
+  char *str;
+
+  if ((rc = get_line (bio, buf, sizeof (buf))) == COPY_OK)
+    {
+      stringbuf_reset (sb);
+      stringbuf_printf (sb, "%s: %s", hdr, c_trimlws (buf, NULL));
+      if ((str = stringbuf_finish (sb)) == NULL
+	  || http_header_list_append (&req->headers, str, H_REPLACE))
+	{
+	  return -1;
+	}
+    }
+  else if (rc != COPY_EOF)
+    logmsg (LOG_ERR, "(%"PRItid") error reading data: %s",
+	    POUND_TID (), copy_status_string (rc));
+  return 0;
+}
+
+static int
 add_ssl_headers (POUND_HTTP *phttp)
 {
   int res = 0;
@@ -3132,52 +4043,40 @@ add_ssl_headers (POUND_HTTP *phttp)
   if (phttp->lstn->clnt_check > 0 && phttp->x509 != NULL
       && (bio = BIO_new (BIO_s_mem ())) != NULL)
     {
+      int i;
+
+      BIO_set_mem_eof_return (bio, 0);
       X509_NAME_print_ex (bio, X509_get_subject_name (phttp->x509), 8,
 			  XN_FLAG_ONELINE & ~ASN1_STRFLGS_ESC_MSB);
-      get_line (bio, buf, sizeof (buf));
-      stringbuf_printf (&sb, "X-SSL-Subject: %s", buf);
-      if ((str = stringbuf_finish (&sb)) == NULL
-	  || http_header_list_append (&phttp->request.headers, str, H_REPLACE))
+      if (set_header_from_bio (bio, &phttp->request, "X-SSL-Subject", &sb))
 	{
 	  res = -1;
 	  goto end;
 	}
-      stringbuf_reset (&sb);
 
       X509_NAME_print_ex (bio, X509_get_issuer_name (phttp->x509), 8,
 			  XN_FLAG_ONELINE & ~ASN1_STRFLGS_ESC_MSB);
-      get_line (bio, buf, sizeof (buf));
-      stringbuf_printf (&sb, "X-SSL-Issuer: %s", buf);
-      if ((str = stringbuf_finish (&sb)) == NULL
-	  || http_header_list_append (&phttp->request.headers, str, H_REPLACE))
+      if (set_header_from_bio (bio, &phttp->request, "X-SSL-Issuer", &sb))
 	{
 	  res = -1;
 	  goto end;
 	}
-      stringbuf_reset (&sb);
 
       ASN1_TIME_print (bio, X509_get_notBefore (phttp->x509));
-      get_line (bio, buf, sizeof (buf));
-      stringbuf_printf (&sb, "X-SSL-notBefore: %s", buf);
-      if ((str = stringbuf_finish (&sb)) == NULL
-	  || http_header_list_append (&phttp->request.headers, str, H_REPLACE))
+      if (set_header_from_bio (bio, &phttp->request, "X-SSL-notBefore", &sb))
 	{
 	  res = -1;
 	  goto end;
 	}
-      stringbuf_reset (&sb);
 
       ASN1_TIME_print (bio, X509_get_notAfter (phttp->x509));
-      get_line (bio, buf, sizeof (buf));
-      stringbuf_printf (&sb, "X-SSL-notAfter: %s", buf);
-      if ((str = stringbuf_finish (&sb)) == NULL
-	  || http_header_list_append (&phttp->request.headers, str, H_REPLACE))
+      if (set_header_from_bio (bio, &phttp->request, "X-SSL-notAfter", &sb))
 	{
 	  res = -1;
 	  goto end;
 	}
-      stringbuf_reset (&sb);
 
+      stringbuf_reset (&sb);
       stringbuf_printf (&sb, "X-SSL-serial: %ld",
 			ASN1_INTEGER_get (X509_get_serialNumber (phttp->x509)));
       if ((str = stringbuf_finish (&sb)) == NULL
@@ -3190,9 +4089,13 @@ add_ssl_headers (POUND_HTTP *phttp)
 
       PEM_write_bio_X509 (bio, phttp->x509);
       stringbuf_add_string (&sb, "X-SSL-certificate: ");
-      while (get_line (bio, buf, sizeof (buf)) == 0)
+      i = 0;
+      while (get_line (bio, buf, sizeof (buf)) == COPY_OK)
 	{
+	  if (i > 0)
+	    stringbuf_add_string (&sb, "\r\n\t");
 	  stringbuf_add_string (&sb, buf);
+	  i++;
 	}
       if ((str = stringbuf_finish (&sb)) == NULL
 	  || http_header_list_append (&phttp->request.headers, str, H_REPLACE))
@@ -3212,11 +4115,11 @@ add_ssl_headers (POUND_HTTP *phttp)
 
 static int rewrite_rule_check (REWRITE_RULE *rule,
 			       struct http_request *request,
-			       POUND_HTTP *phttp);
+			       POUND_HTTP *phttp, int what);
 
 static int
 rewrite_op_apply (REWRITE_OP_HEAD *head, struct http_request *request,
-		  POUND_HTTP *phttp)
+		  POUND_HTTP *phttp, int what)
 {
   int res = 0;
   REWRITE_OP *op;
@@ -3226,9 +4129,10 @@ rewrite_op_apply (REWRITE_OP_HEAD *head, struct http_request *request,
   {
     char *name;
     int (*setter) (struct http_request *, char const *);
+    char *xenc;
   } rwtab[] = {
     [REWRITE_URL_SET]    = { "url", http_request_set_url },
-    [REWRITE_PATH_SET]   = { "path", http_request_set_path },
+    [REWRITE_PATH_SET]   = { "path", http_request_set_path, "/" },
     [REWRITE_QUERY_SET]  = { "query", http_request_set_query },
   };
 
@@ -3237,7 +4141,7 @@ rewrite_op_apply (REWRITE_OP_HEAD *head, struct http_request *request,
       switch (op->type)
 	{
 	case REWRITE_REWRITE_RULE:
-	  res = rewrite_rule_check (op->v.rule, request, phttp);
+	  res = rewrite_rule_check (op->v.rule, request, phttp, what);
 	  break;
 
 	case REWRITE_HDR_DEL:
@@ -3255,8 +4159,11 @@ rewrite_op_apply (REWRITE_OP_HEAD *head, struct http_request *request,
 	  break;
 
 	case REWRITE_QUERY_PARAM_SET:
-	  if ((s = expand_string (op->v.qp.value, phttp, request,
-				  "query parameter")) != NULL)
+	  if (op->v.qp.value == NULL)
+	    res = http_request_set_query_param (request, op->v.qp.name, NULL);
+	  else if ((s = expand_string_encode (op->v.qp.value, op->encode, NULL,
+					      phttp, request,
+					      "query parameter")) != NULL)
 	    {
 	      res = http_request_set_query_param (request, op->v.qp.name, s);
 	      free (s);
@@ -3265,9 +4172,20 @@ rewrite_op_apply (REWRITE_OP_HEAD *head, struct http_request *request,
 	    res = -1;
 	  break;
 
+	case REWRITE_QUERY_DELETE:
+	  res = http_request_set_query (request, NULL);
+	  break;
+
+	case REWRITE_LUA:
+	  res = pndlua_apply (pndlua_modify, phttp, request,
+			      &op->v.lua, &what);
+	  break;
+
 	default:
-	  if ((s = expand_string (op->v.str, phttp, request,
-				  rwtab[op->type].name)) != NULL)
+	  if ((s = expand_string_encode (op->v.str, op->encode,
+					 rwtab[op->type].xenc,
+					 phttp, request,
+					 rwtab[op->type].name)) != NULL)
 	    {
 	      res = rwtab[op->type].setter (request, s);
 	      free (s);
@@ -3285,15 +4203,15 @@ rewrite_op_apply (REWRITE_OP_HEAD *head, struct http_request *request,
 
 static int
 rewrite_rule_check (REWRITE_RULE *rule, struct http_request *request,
-		    POUND_HTTP *phttp)
+		    POUND_HTTP *phttp, int what)
 {
   int res = 0;
 
   do
     {
-      if (match_cond (&rule->cond, phttp, request))
+      if (match_cond (&rule->cond, phttp, request) == 1)
 	{
-	  res = rewrite_op_apply (&rule->ophead, request, phttp);
+	  res = rewrite_op_apply (&rule->ophead, request, phttp, what);
 	  break;
 	}
     }
@@ -3302,18 +4220,37 @@ rewrite_rule_check (REWRITE_RULE *rule, struct http_request *request,
 }
 
 static int
-rewrite_apply (REWRITE_RULE_HEAD *rewrite_rules,
-	       struct http_request *request, POUND_HTTP *phttp)
+rewrite_apply_rules (POUND_HTTP *phttp, int what,
+		     REWRITE_RULE_HEAD *rewrite_rules,
+		     struct http_request *request)
 {
   int res = 0;
   REWRITE_RULE *rule;
 
   SLIST_FOREACH (rule, rewrite_rules, next)
     {
-      if ((res = rewrite_rule_check (rule, request, phttp)) != 0)
+      if ((res = rewrite_rule_check (rule, request, phttp, what)) != 0)
 	break;
     }
   return res;
+}
+
+static int
+rewrite_apply (POUND_HTTP *phttp, struct http_request *request, int what)
+{
+  REWRITE_RULE_HEAD *rwhead[2] = {
+    &phttp->lstn->rewrite[what],
+    &phttp->svc->rewrite[what]
+  };
+  if (what == REWRITE_RESPONSE)
+    {
+      REWRITE_RULE_HEAD *t = rwhead[0];
+      rwhead[0] = rwhead[1];
+      rwhead[1] = t;
+    }
+
+  return rewrite_apply_rules (phttp, what, rwhead[0], request) ||
+    rewrite_apply_rules (phttp, what, rwhead[1], request);
 }
 
 /*
@@ -3385,17 +4322,43 @@ close_backend (POUND_HTTP *phttp)
     }
 }
 
+static int
+http_response_validate (struct http_request *req)
+{
+  char const *str = req->request;
+  int http_ver;
+
+  if (!(strncmp (str, "HTTP/1.", 7) == 0 &&
+	((http_ver = str[7]) == '0' || http_ver == '1') &&
+	c_isblank (str[8])))
+    return 0;
+  req->version = http_ver - '0';
+
+  str = c_trimlws (str + 8, NULL);
+
+  switch (str[0])
+    {
+    case '1':
+    case '2':
+    case '3':
+    case '4':
+    case '5':
+      if (c_isdigit (str[1]) && c_isdigit (str[2]) && (str[3] == 0 || c_isblank (str[3])))
+	return (int) strtol (str, NULL, 10);
+    }
+
+  return 0;
+}
+
 /*
  * get the response
  */
 static int
 backend_response (POUND_HTTP *phttp)
 {
-  int skip = 0;
+  enum { RESP_OK, RESP_SKIP, RESP_DRAIN } resp_mode = RESP_OK;
   int be_11 = 0;  /* Whether backend connection is using HTTP/1.1. */
   CONTENT_LENGTH content_length;
-  char caddr[MAX_ADDR_BUFSIZE], caddr2[MAX_ADDR_BUFSIZE];
-  char duration_buf[LOG_TIME_SIZE];
   char buf[MAXBUF];
   struct http_header *hdr;
   char *val;
@@ -3405,33 +4368,36 @@ backend_response (POUND_HTTP *phttp)
   do
     {
       int chunked; /* True if request contains Transfer-Encoding: chunked */
+      int code;
 
       /* Free previous response, if any */
       http_request_free (&phttp->response);
-
-      if (http_request_read (phttp->be, phttp->lstn, &phttp->response))
+      res = http_request_read (phttp->be, phttp->lstn, phttp->buffer,
+			       &phttp->response);
+      if (res != HTTP_STATUS_OK)
 	{
-	  logmsg (LOG_NOTICE,
-		  "(%"PRItid") e500 for %s response error read from %s/%s: %s (%s secs)",
-		  POUND_TID (),
-		  addr2str (caddr, sizeof (caddr), &phttp->from_host, 1),
-		  str_be (caddr2, sizeof (caddr2), phttp->backend),
-		  phttp->request.request, strerror (errno),
-		  log_duration (duration_buf, sizeof (duration_buf),
-				&phttp->start_req));
-	  return HTTP_STATUS_INTERNAL_SERVER_ERROR;
+	  phttp_log (phttp, PHTTP_LOG_BACKEND | PHTTP_LOG_REVERSE,
+		     res, errno, "response read error");
+	  return res;
+	}
+      else if (phttp->response.request == NULL)
+	{
+	  res = HTTP_STATUS_SERVICE_UNAVAILABLE;
+	  phttp_log (phttp, PHTTP_LOG_BACKEND | PHTTP_LOG_REVERSE,
+		     res, 0, "eof from backend");
+	  return res;
 	}
 
-      if (rewrite_apply (&phttp->lstn->rewrite[REWRITE_RESPONSE],
-			 &phttp->response,
-			 phttp) ||
-	  rewrite_apply (&phttp->svc->rewrite[REWRITE_RESPONSE],
-			 &phttp->response,
-			 phttp))
-	return HTTP_STATUS_INTERNAL_SERVER_ERROR;
+      if ((code = http_response_validate (&phttp->response)) == 0)
+	{
+	  res = HTTP_STATUS_SERVICE_UNAVAILABLE;
+	  phttp_log (phttp, PHTTP_LOG_BACKEND | PHTTP_LOG_REVERSE,
+		     res, 0, "malformed response");
+	  return res;
+	}
 
-      be_11 = (phttp->response.request[7] == '1');
-      phttp->response_code = strtol (phttp->response.request+9, NULL, 10);
+      be_11 = (phttp->response.version == 1);
+      phttp->response_code = code;
 
       switch (phttp->response_code)
 	{
@@ -3439,7 +4405,7 @@ backend_response (POUND_HTTP *phttp)
 	  /*
 	   * responses with code 100 are never passed back to the client
 	   */
-	  skip = 1;
+	  resp_mode = RESP_SKIP;
 	  break;
 
 	case 101:
@@ -3456,8 +4422,36 @@ backend_response (POUND_HTTP *phttp)
 	  break;
 
 	default:
-	  if (phttp->response_code / 100 == 1)
-	    phttp->no_cont = 1;
+	  switch (phttp->response_code / 100)
+	    {
+	    case 1:
+	      phttp->no_cont = 1;
+	      break;
+
+	    case 4:
+	    case 5:
+	      if (phttp->svc->rewrite_errors != -1
+		  ? phttp->svc->rewrite_errors
+		  : phttp->lstn->rewrite_errors == 1)
+		{
+		  int err = http_status_to_pound (phttp->response_code);
+		  if (err != -1 && phttp->lstn->http_err[err])
+		    {
+		      if (http_err_reply_cb (phttp, err,
+					     phttp->lstn->http_err[err],
+					     cb_hdr_rewrite, phttp)
+			  != HTTP_STATUS_OK)
+			return HTTP_STATUS_INTERNAL_SERVER_ERROR;
+		      resp_mode = RESP_DRAIN;
+		    }
+		}
+	    }
+	}
+
+      if (resp_mode == RESP_OK)
+	{
+	  if (rewrite_apply (phttp, &phttp->response, REWRITE_RESPONSE))
+	    return HTTP_STATUS_INTERNAL_SERVER_ERROR;
 	}
 
       chunked = 0;
@@ -3469,26 +4463,28 @@ backend_response (POUND_HTTP *phttp)
 	    case HEADER_CONNECTION:
 	      if ((val = http_header_get_value (hdr)) == NULL)
 		return HTTP_STATUS_INTERNAL_SERVER_ERROR;
-	      if (!strcasecmp ("close", val))
+	      if (!c_strcasecmp ("close", val))
 		phttp->conn_closed = 1;
 	      /*
 	       * Connection: upgrade
 	       */
-	      else if (!regexec (&CONN_UPGRD, val, 0, NULL, 0))
+	      else if (genpat_match (CONN_UPGRD, val, 0, NULL) == 0)
 		phttp->ws_state |= WSS_RESP_HEADER_CONNECTION_UPGRADE;
 	      break;
 
 	    case HEADER_UPGRADE:
 	      if ((val = http_header_get_value (hdr)) == NULL)
 		return HTTP_STATUS_INTERNAL_SERVER_ERROR;
-	      if (cs_locate_token (val, "websocket", 1, NULL))
+	      if (cs_locate_token (val, "websocket", NULL))
 		phttp->ws_state |= WSS_RESP_HEADER_UPGRADE_WEBSOCKET;
 	      break;
 
 	    case HEADER_TRANSFER_ENCODING:
 	      if ((val = http_header_get_value (hdr)) == NULL)
 		return HTTP_STATUS_INTERNAL_SERVER_ERROR;
-	      if (cs_locate_token (val, "chunked", 1, NULL))
+	      if (cs_locate_token (val, "chunked", NULL) &&
+			  phttp->request.method != METH_HEAD &&
+			  phttp->response_code != 304)
 		{
 		  chunked = 1;
 		  phttp->no_cont = 0;
@@ -3500,8 +4496,9 @@ backend_response (POUND_HTTP *phttp)
 		return HTTP_STATUS_INTERNAL_SERVER_ERROR;
 	      if ((content_length = get_content_length (val, CL_HEADER)) == NO_CONTENT_LENGTH)
 		{
-		  logmsg (LOG_WARNING, "(%"PRItid") invalid content length: %s",
-			  POUND_TID (), val);
+		  phttp_log (phttp,
+			     PHTTP_LOG_BACKEND | PHTTP_LOG_REVERSE,
+			     -1, 0, "invalid content length: %s", val);
 		  http_header_list_remove (&phttp->response.headers, hdr);
 		}
 	      break;
@@ -3528,9 +4525,6 @@ backend_response (POUND_HTTP *phttp)
 		      if ((p = stringbuf_finish (&sb)) == NULL)
 			{
 			  stringbuf_free (&sb);
-			  logmsg (LOG_WARNING,
-				  "(%"PRItid") rewrite Location - out of memory: %s",
-				  POUND_TID (), strerror (errno));
 			  return HTTP_STATUS_INTERNAL_SERVER_ERROR;
 			}
 		      http_header_change (hdr, p, 0);
@@ -3561,10 +4555,6 @@ backend_response (POUND_HTTP *phttp)
 		      if ((p = stringbuf_finish (&sb)) == NULL)
 			{
 			  stringbuf_free (&sb);
-			  logmsg (LOG_WARNING,
-				  "(%"PRItid") rewrite Content-location - "
-				  "out of memory: %s",
-				  POUND_TID (), strerror (errno));
 			  return HTTP_STATUS_INTERNAL_SERVER_ERROR;
 			}
 		      http_header_change (hdr, p, 0);
@@ -3583,17 +4573,13 @@ backend_response (POUND_HTTP *phttp)
       /*
        * send the response
        */
-      if (!skip)
+      if (resp_mode == RESP_OK)
 	{
 	  if (http_request_send (phttp->cl, &phttp->response))
 	    {
 	      if (errno)
-		{
-		  logmsg (LOG_NOTICE, "(%"PRItid") error write to %s: %s",
-			  POUND_TID (),
-			  addr2str (caddr, sizeof (caddr), &phttp->from_host, 1),
-			  strerror (errno));
-		}
+		phttp_log (phttp, PHTTP_LOG_BACKEND | PHTTP_LOG_REVERSE,
+			   -1, errno, "error writing response");
 	      return -1;
 	    }
 	  /* Final CRLF */
@@ -3603,12 +4589,8 @@ backend_response (POUND_HTTP *phttp)
       if (BIO_flush (phttp->cl) != 1)
 	{
 	  if (errno)
-	    {
-	      logmsg (LOG_NOTICE, "(%"PRItid") error flush headers to %s: %s",
-		      POUND_TID (),
-		      addr2str (caddr, sizeof (caddr), &phttp->from_host, 1),
-		      strerror (errno));
-	    }
+	    phttp_log (phttp, PHTTP_LOG_BACKEND | PHTTP_LOG_REVERSE,
+		       -1, errno, "error sending response headers");
 	  return -1;
 	}
 
@@ -3623,8 +4605,10 @@ backend_response (POUND_HTTP *phttp)
 	       * had Transfer-encoding: chunked so read/write all
 	       * the chunks (HTTP/1.1 only)
 	       */
-	      if (copy_chunks (phttp->be, phttp->cl, &phttp->res_bytes,
-			       skip, 0) != HTTP_STATUS_OK)
+	      if (copy_chunks (phttp->be, phttp->cl,
+			       phttp->buffer, phttp->lstn->linebufsize,
+			       resp_mode != RESP_OK, 0,
+			       &phttp->res_bytes) != HTTP_STATUS_OK)
 		{
 		  /*
 		   * copy_chunks() has its own error messages
@@ -3638,17 +4622,32 @@ backend_response (POUND_HTTP *phttp)
 	       * may have had Content-length, so do raw reads/writes
 	       * for the length
 	       */
-	      if (copy_bin (phttp->be, phttp->cl, content_length,
-			    &phttp->res_bytes, skip))
+	      int ec = copy_bin (phttp->be, phttp->cl, content_length,
+				 resp_mode != RESP_OK, &phttp->res_bytes);
+	      switch (ec)
 		{
-		  if (errno)
-		    logmsg (LOG_NOTICE,
-			    "(%"PRItid") error copy server cont: %s",
-			    POUND_TID (), strerror (errno));
+		case COPY_OK:
+		  break;
+
+		case COPY_READ_ERR:
+		case COPY_WRITE_ERR:
+		  phttp_log (phttp,
+			     PHTTP_LOG_BACKEND | PHTTP_LOG_REVERSE,
+			     -1, errno,
+			     "%s while sending backend response",
+			     copy_status_string (ec));
+		  return -1;
+
+		default:
+		  phttp_log (phttp,
+			     PHTTP_LOG_BACKEND | PHTTP_LOG_REVERSE,
+			     -1, 0,
+			     "%s while sending backend response",
+			     copy_status_string (ec));
 		  return -1;
 		}
 	    }
-	  else if (!skip)
+	  else if (resp_mode == RESP_OK)
 	    {
 	      if (is_readable (phttp->be, phttp->backend->v.reg.to))
 		{
@@ -3669,17 +4668,19 @@ backend_response (POUND_HTTP *phttp)
 		    {
 		      if (BIO_read (phttp->be, &one, 1) != 1)
 			{
-			  logmsg (LOG_NOTICE,
-				  "(%"PRItid") error read response pending: %s",
-				  POUND_TID (), strerror (errno));
+			  phttp_log (phttp,
+				     PHTTP_LOG_BACKEND | PHTTP_LOG_REVERSE,
+				     -1, errno,
+				     "error reading response");
 			  return -1;
 			}
 		      if (BIO_write (phttp->cl, &one, 1) != 1)
 			{
 			  if (errno)
-			    logmsg (LOG_NOTICE,
-				    "(%"PRItid") error write response pending: %s",
-				    POUND_TID (), strerror (errno));
+			    phttp_log (phttp,
+				       PHTTP_LOG_BACKEND | PHTTP_LOG_REVERSE,
+				       -1, errno,
+				       "error writing response");
 			  return -1;
 			}
 		      phttp->res_bytes++;
@@ -3695,8 +4696,8 @@ backend_response (POUND_HTTP *phttp)
 					    ? BIO_TYPE_SSL
 					    : BIO_TYPE_SOCKET)) == NULL)
 		    {
-		      logmsg (LOG_WARNING,
-			      "(%"PRItid") error get unbuffered: %s",
+		      logmsg (LOG_ERR,
+			      "(%"PRItid") error getting unbuffered BIO: %s",
 			      POUND_TID (), strerror (errno));
 		      return -1;
 		    }
@@ -3708,10 +4709,10 @@ backend_response (POUND_HTTP *phttp)
 		    {
 		      if (BIO_write (phttp->cl, buf, res) != res)
 			{
-			  if (errno)
-			    logmsg (LOG_NOTICE,
-				    "(%"PRItid") error copy response body: %s",
-				    POUND_TID (), strerror (errno));
+			  phttp_log (phttp,
+				     PHTTP_LOG_BACKEND | PHTTP_LOG_REVERSE,
+				     -1, errno,
+				     "error copying response body");
 			  return -1;
 			}
 		      else
@@ -3725,12 +4726,10 @@ backend_response (POUND_HTTP *phttp)
 	  if (BIO_flush (phttp->cl) != 1)
 	    {
 	      if (errno)
-		{
-		  logmsg (LOG_NOTICE, "(%"PRItid") error final flush to %s: %s",
-			  POUND_TID (),
-			  addr2str (caddr, sizeof (caddr), &phttp->from_host, 1),
-			  strerror (errno));
-		}
+		phttp_log (phttp,
+			   PHTTP_LOG_BACKEND | PHTTP_LOG_REVERSE,
+			   -1, errno,
+			   "error flushing response");
 	      return -1;
 	    }
 	}
@@ -3765,17 +4764,16 @@ backend_response (POUND_HTTP *phttp)
 		{
 		  if (BIO_read (phttp->cl, &one, 1) != 1)
 		    {
-		      logmsg (LOG_NOTICE,
-			      "(%"PRItid") error read ws request pending: %s",
-			      POUND_TID (), strerror (errno));
+		      phttp_log (phttp, PHTTP_LOG_BACKEND,
+				 -1, -1,
+				 "error reading ws request");
 		      return -1;
 		    }
 		  if (BIO_write (phttp->be, &one, 1) != 1)
 		    {
-		      if (errno)
-			logmsg (LOG_NOTICE,
-				"(%"PRItid") error write ws request pending: %s",
-				POUND_TID (), strerror (errno));
+		      phttp_log (phttp, PHTTP_LOG_BACKEND,
+				 -1, -1,
+				 "error writing ws request");
 		      return -1;
 		    }
 		}
@@ -3785,17 +4783,18 @@ backend_response (POUND_HTTP *phttp)
 		{
 		  if (BIO_read (phttp->be, &one, 1) != 1)
 		    {
-		      logmsg (LOG_NOTICE,
-			      "(%"PRItid") error read ws response pending: %s",
-			      POUND_TID (), strerror (errno));
+		      phttp_log (phttp,
+				 PHTTP_LOG_BACKEND | PHTTP_LOG_REVERSE,
+				 -1, errno,
+				 "error reading ws response");
 		      return -1;
 		    }
 		  if (BIO_write (phttp->cl, &one, 1) != 1)
 		    {
 		      if (errno)
-			logmsg (LOG_NOTICE,
-				"(%"PRItid") error write ws response pending: %s",
-				POUND_TID (), strerror (errno));
+			phttp_log (phttp, PHTTP_LOG_BACKEND,
+				   -1, -1,
+				   "error writing ws response");
 		      return -1;
 		    }
 		  phttp->res_bytes++;
@@ -3810,7 +4809,8 @@ backend_response (POUND_HTTP *phttp)
 				  SLIST_EMPTY (&phttp->lstn->ctx_head)
 				  ? BIO_TYPE_SOCKET : BIO_TYPE_SSL)) == NULL)
 		{
-		  logmsg (LOG_WARNING, "(%"PRItid") error get unbuffered: %s",
+		  logmsg (LOG_ERR,
+			  "(%"PRItid") error getting unbuffered BIO: %s",
 			  POUND_TID (), strerror (errno));
 		  return -1;
 		}
@@ -3819,7 +4819,8 @@ backend_response (POUND_HTTP *phttp)
 					       ? BIO_TYPE_SSL
 					       : BIO_TYPE_SOCKET)) == NULL)
 		{
-		  logmsg (LOG_WARNING, "(%"PRItid") error get unbuffered: %s",
+		  logmsg (LOG_ERR,
+			  "(%"PRItid") error getting unbuffered BIO: %s",
 			  POUND_TID (), strerror (errno));
 		  return -1;
 		}
@@ -3837,9 +4838,9 @@ backend_response (POUND_HTTP *phttp)
 		  if (BIO_write (phttp->be, buf, res) != res)
 		    {
 		      if (errno)
-			logmsg (LOG_NOTICE,
-				"(%"PRItid") error copy ws request body: %s",
-				POUND_TID (), strerror (errno));
+			phttp_log (phttp, PHTTP_LOG_BACKEND,
+				   -1, -1,
+				   "error copying ws request body");
 		      return -1;
 		    }
 		  else
@@ -3858,9 +4859,10 @@ backend_response (POUND_HTTP *phttp)
 		  if (BIO_write (phttp->cl, buf, res) != res)
 		    {
 		      if (errno)
-			logmsg (LOG_NOTICE,
-				"(%"PRItid") error copy ws response body: %s",
-				POUND_TID (), strerror (errno));
+			phttp_log (phttp,
+				   PHTTP_LOG_DFL | PHTTP_LOG_REVERSE,
+				   -1, errno,
+				   "error copying ws response body");
 		      return -1;
 		    }
 		  else
@@ -3873,7 +4875,7 @@ backend_response (POUND_HTTP *phttp)
 	    }
 	}
     }
-  while (skip);
+  while (resp_mode == RESP_SKIP);
 
   if (!be_11)
     close_backend (phttp);
@@ -3890,8 +4892,6 @@ send_to_backend (POUND_HTTP *phttp, int chunked, CONTENT_LENGTH content_length)
 {
   struct http_header *hdr;
   char const *val;
-  char caddr[MAX_ADDR_BUFSIZE], caddr2[MAX_ADDR_BUFSIZE];
-  char duration_buf[LOG_TIME_SIZE];
 
   /*
    * this is the earliest we can check for Destination - we
@@ -3901,18 +4901,19 @@ send_to_backend (POUND_HTTP *phttp, int chunked, CONTENT_LENGTH content_length)
       (hdr = http_header_list_locate (&phttp->request.headers,
 				      HEADER_DESTINATION)) != NULL)
     {
-      regmatch_t matches[4];
+      POUND_REGMATCH matches[4];
 
       if ((val = http_header_get_value (hdr)) == NULL)
 	return HTTP_STATUS_INTERNAL_SERVER_ERROR;
 
-      if (regexec (&LOCATION, val, 4, matches, 0))
+      if (genpat_match (LOCATION, val, 4, matches))
 	{
-	  logmsg (LOG_NOTICE, "(%"PRItid") Can't parse Destination %s",
+	  logmsg (LOG_ERR, "(%"PRItid") can't parse Destination %s",
 		  POUND_TID (), val);
 	}
       else
 	{
+	  char caddr[MAX_ADDR_BUFSIZE];
 	  struct stringbuf sb;
 	  char *p;
 
@@ -3926,9 +4927,6 @@ send_to_backend (POUND_HTTP *phttp, int chunked, CONTENT_LENGTH content_length)
 	  if ((p = stringbuf_finish (&sb)) == NULL)
 	    {
 	      stringbuf_free (&sb);
-	      logmsg (LOG_WARNING,
-		      "(%"PRItid") rewrite Destination - out of memory: %s",
-		      POUND_TID (), strerror (errno));
 	      return HTTP_STATUS_INTERNAL_SERVER_ERROR;
 	    }
 
@@ -3971,10 +4969,7 @@ send_to_backend (POUND_HTTP *phttp, int chunked, CONTENT_LENGTH content_length)
 	return HTTP_STATUS_INTERNAL_SERVER_ERROR;
     }
 
-  if (rewrite_apply (&phttp->lstn->rewrite[REWRITE_REQUEST], &phttp->request,
-		     phttp)
-      || rewrite_apply (&phttp->svc->rewrite[REWRITE_REQUEST], &phttp->request,
-			phttp))
+  if (rewrite_apply (phttp, &phttp->request, REWRITE_REQUEST))
     return HTTP_STATUS_INTERNAL_SERVER_ERROR;
 
   /*
@@ -3983,14 +4978,9 @@ send_to_backend (POUND_HTTP *phttp, int chunked, CONTENT_LENGTH content_length)
   if (http_request_send (phttp->be, &phttp->request))
     {
       if (errno)
-	{
-	  logmsg (LOG_WARNING,
-		  "(%"PRItid") e500 error write to %s/%s: %s (%s sec)",
-		  POUND_TID (),
-		  str_be (caddr, sizeof (caddr), phttp->backend),
-		  phttp->request.request, strerror (errno),
-		  log_duration (duration_buf, sizeof (duration_buf), &phttp->start_req));
-	}
+	phttp_log (phttp, PHTTP_LOG_BACKEND,
+		   HTTP_STATUS_INTERNAL_SERVER_ERROR, errno,
+		   "error writing to backend");
       return HTTP_STATUS_INTERNAL_SERVER_ERROR;
     }
 
@@ -4005,20 +4995,14 @@ send_to_backend (POUND_HTTP *phttp, int chunked, CONTENT_LENGTH content_length)
        * had Transfer-encoding: chunked so read/write all the chunks
        * (HTTP/1.1 only)
        */
-      int rc = copy_chunks (phttp->cl, phttp->be, NULL,
-			    phttp->backend->be_type != BE_BACKEND,
-			    phttp->lstn->max_req);
+      int rc = copy_chunks (phttp->cl, phttp->be,
+			    phttp->buffer, phttp->lstn->linebufsize,
+			    phttp->backend->be_type != BE_REGULAR,
+			    phttp->lstn->max_req_size, NULL);
       if (rc != HTTP_STATUS_OK)
 	{
-	  logmsg (LOG_NOTICE,
-		  "(%"PRItid") e%d for %s copy_chunks to %s/%s (%s sec)",
-		  POUND_TID (),
-		  pound_to_http_status(rc),
-		  addr2str (caddr, sizeof (caddr), &phttp->from_host, 1),
-		  str_be (caddr2, sizeof (caddr2), phttp->backend),
-		  phttp->request.request,
-		  log_duration (duration_buf, sizeof (duration_buf),
-				&phttp->start_req));
+	  phttp_log (phttp, PHTTP_LOG_BACKEND,
+		     rc, 0, "error sending chunks");
 	  return rc;
 	}
     }
@@ -4027,16 +5011,26 @@ send_to_backend (POUND_HTTP *phttp, int chunked, CONTENT_LENGTH content_length)
       /*
        * had Content-length, so do raw reads/writes for the length
        */
-      if (copy_bin (phttp->cl, phttp->be, content_length, NULL,
-		    phttp->backend->be_type != BE_BACKEND))
+      int rc = copy_bin (phttp->cl, phttp->be, content_length,
+			 phttp->backend->be_type != BE_REGULAR, NULL);
+      switch (rc)
 	{
-	  logmsg (LOG_NOTICE,
-		  "(%"PRItid") e500 for %s error copy client cont to %s/%s: %s (%s sec)",
-		  POUND_TID (),
-		  addr2str (caddr, sizeof (caddr), &phttp->from_host, 1),
-		  str_be (caddr2, sizeof (caddr2), phttp->backend),
-		  phttp->request.request, strerror (errno),
-		  log_duration (duration_buf, sizeof (duration_buf), &phttp->start_req));
+	case COPY_OK:
+	  break;
+
+	case COPY_READ_ERR:
+	case COPY_WRITE_ERR:
+	  phttp_log (phttp, PHTTP_LOG_BACKEND,
+		     HTTP_STATUS_INTERNAL_SERVER_ERROR, errno,
+		     "%s while sending client request",
+		     copy_status_string (rc));
+	  return HTTP_STATUS_INTERNAL_SERVER_ERROR;
+
+	default:
+	  phttp_log (phttp, PHTTP_LOG_BACKEND,
+		     HTTP_STATUS_INTERNAL_SERVER_ERROR, 0,
+		     "%s while sending client request",
+		     copy_status_string (rc));
 	  return HTTP_STATUS_INTERNAL_SERVER_ERROR;
 	}
     }
@@ -4046,14 +5040,9 @@ send_to_backend (POUND_HTTP *phttp, int chunked, CONTENT_LENGTH content_length)
    */
   if (BIO_flush (phttp->be) != 1)
     {
-      logmsg (LOG_NOTICE,
-	      "(%"PRItid") e500 for %s error flush to %s/%s: %s (%s sec)",
-	      POUND_TID (),
-	      addr2str (caddr, sizeof (caddr), &phttp->from_host, 1),
-	      str_be (caddr2, sizeof (caddr2), phttp->backend),
-	      phttp->request.request, strerror (errno),
-	      log_duration (duration_buf, sizeof (duration_buf),
-			    &phttp->start_req));
+      phttp_log (phttp, PHTTP_LOG_BACKEND,
+		 HTTP_STATUS_INTERNAL_SERVER_ERROR, errno,
+		 "error flushing data");
       return HTTP_STATUS_INTERNAL_SERVER_ERROR;
     }
   return 0;
@@ -4062,14 +5051,14 @@ send_to_backend (POUND_HTTP *phttp, int chunked, CONTENT_LENGTH content_length)
 static int
 open_backend (POUND_HTTP *phttp, BACKEND *backend, int sock)
 {
-  char caddr[MAX_ADDR_BUFSIZE];
   BIO *bb;
 
   /* Create new BIO */
   if ((phttp->be = BIO_new_socket (sock, 1)) == NULL)
     {
-      logmsg (LOG_WARNING, "(%"PRItid") e503 BIO_new_socket server failed",
-	      POUND_TID ());
+      phttp_log (phttp, PHTTP_LOG_DFL,
+		 HTTP_STATUS_SERVICE_UNAVAILABLE, -1,
+		 "BIO_new_socket server failed");
       shutdown (sock, 2);
       close (sock);
       return HTTP_STATUS_SERVICE_UNAVAILABLE;
@@ -4091,7 +5080,9 @@ open_backend (POUND_HTTP *phttp, BACKEND *backend, int sock)
 
       if ((be_ssl = SSL_new (backend->v.reg.ctx)) == NULL)
 	{
-	  logmsg (LOG_WARNING, "(%"PRItid") be SSL_new: failed", POUND_TID ());
+	  phttp_log (phttp, PHTTP_LOG_DFL,
+		     HTTP_STATUS_SERVICE_UNAVAILABLE, -1,
+		     "SSL_new to backend failed");
 	  return HTTP_STATUS_SERVICE_UNAVAILABLE;
 	}
       if (backend->v.reg.servername)
@@ -4099,8 +5090,9 @@ open_backend (POUND_HTTP *phttp, BACKEND *backend, int sock)
       SSL_set_bio (be_ssl, phttp->be, phttp->be);
       if ((bb = BIO_new (BIO_f_ssl ())) == NULL)
 	{
-	  logmsg (LOG_WARNING, "(%"PRItid") BIO_new(Bio_f_ssl()) failed",
-		  POUND_TID ());
+	  phttp_log (phttp, PHTTP_LOG_DFL,
+		     HTTP_STATUS_SERVICE_UNAVAILABLE, -1,
+		     "BIO_new(Bio_f_ssl()) failed");
 	  return HTTP_STATUS_SERVICE_UNAVAILABLE;
 	}
 
@@ -4110,17 +5102,18 @@ open_backend (POUND_HTTP *phttp, BACKEND *backend, int sock)
 
       if (BIO_do_handshake (phttp->be) <= 0)
 	{
-	  logmsg (LOG_NOTICE, "BIO_do_handshake with %s failed: %s",
-		  str_be (caddr, sizeof (caddr), backend),
-		  ERR_error_string (ERR_get_error (), NULL));
+	  phttp_log (phttp, PHTTP_LOG_HANDSHAKE,
+		     HTTP_STATUS_SERVICE_UNAVAILABLE, -1,
+		     "handshake with backend failed");
 	  return HTTP_STATUS_SERVICE_UNAVAILABLE;
 	}
     }
 
   if ((bb = BIO_new (BIO_f_buffer ())) == NULL)
     {
-      logmsg (LOG_WARNING, "(%"PRItid") e503 BIO_new(buffer) server failed",
-	      POUND_TID ());
+      phttp_log (phttp, PHTTP_LOG_DFL,
+		 HTTP_STATUS_SERVICE_UNAVAILABLE, -1,
+		 "BIO_new(buffer) server failed");
       return HTTP_STATUS_SERVICE_UNAVAILABLE;
     }
 
@@ -4136,7 +5129,6 @@ select_backend (POUND_HTTP *phttp)
 {
   BACKEND *backend;
   int sock;
-  char const *v_host;
   char caddr[MAX_ADDR_BUFSIZE];
 
   if ((backend = get_backend (phttp)) != NULL)
@@ -4144,15 +5136,18 @@ select_backend (POUND_HTTP *phttp)
       if (phttp->be != NULL)
 	{
 	  if (backend == phttp->backend)
-	    /* Same backend as before: nothing to do */
-	    return 0;
+	    {
+	      /* Same backend as before: nothing to do */
+	      backend_unref (backend);
+	      return 0;
+	    }
 	  else
 	    close_backend (phttp);
 	}
 
       do
 	{
-	  if (backend->be_type == BE_BACKEND)
+	  if (backend->be_type == BE_REGULAR)
 	    {
 	      /*
 	       * Try to open connection to this backend.
@@ -4174,19 +5169,21 @@ select_backend (POUND_HTTP *phttp)
 		  break;
 
 		default:
-		  logmsg (LOG_WARNING,
-			  "(%"PRItid") e503 backend: unknown family %d",
-			  POUND_TID (), backend->v.reg.addr.ai_family);
+		  phttp_log (phttp, PHTTP_LOG_DFL,
+			     HTTP_STATUS_SERVICE_UNAVAILABLE, 0,
+			     "backend: unknown family %d",
+			     backend->v.reg.addr.ai_family);
+		  backend_unref (backend);
 		  return HTTP_STATUS_SERVICE_UNAVAILABLE;
 		}
 
 	      if ((sock = socket (sock_proto, SOCK_STREAM, 0)) < 0)
 		{
-		  logmsg (LOG_WARNING,
-			  "(%"PRItid") e503 backend %s socket create: %s",
-			  POUND_TID (),
-			  str_be (caddr, sizeof (caddr), backend),
-			  strerror (errno));
+		  phttp_log (phttp, PHTTP_LOG_DFL,
+			     HTTP_STATUS_SERVICE_UNAVAILABLE, errno,
+			     "backend %s: socket create",
+			     str_be (caddr, sizeof (caddr), backend));
+		  backend_unref (backend);
 		  return HTTP_STATUS_SERVICE_UNAVAILABLE;
 		}
 
@@ -4206,14 +5203,14 @@ select_backend (POUND_HTTP *phttp)
 		      return res;
 		    }
 		  /* New backend selected. */
+		  backend_unref (phttp->backend);
 		  phttp->backend = backend;
 		  return 0;
 		}
 
-	      logmsg (LOG_WARNING, "(%"PRItid") backend %s connect: %s",
-		      POUND_TID (),
-		      str_be (caddr, sizeof (caddr), backend),
-		      strerror (errno));
+	      phttp_log (phttp, PHTTP_LOG_DFL,
+			 -1, errno, "can't connect to backend %s",
+			 str_be (caddr, sizeof (caddr), backend));
 	      shutdown (sock, 2);
 	      close (sock);
 	      /*
@@ -4224,10 +5221,12 @@ select_backend (POUND_HTTP *phttp)
 	       */
 	      kill_be (phttp->svc, backend, BE_KILL);
 	      /* Try next backend now. */
+	      backend_unref (backend);
 	    }
 	  else
 	    {
 	      /* New backend selected. */
+	      backend_unref (phttp->backend);
 	      phttp->backend = backend;
 	      return 0;
 	    }
@@ -4238,11 +5237,8 @@ select_backend (POUND_HTTP *phttp)
   /*
    * No backend found or is available.
    */
-  v_host = http_request_host (&phttp->request);
-  logmsg (LOG_NOTICE, "(%"PRItid") e503 no back-end \"%s\" from %s %s",
-	  POUND_TID (), phttp->request.request,
-	  addr2str (caddr, sizeof (caddr), &phttp->from_host, 1),
-	  (v_host && v_host[0]) ? v_host : "-");
+  phttp_log (phttp, PHTTP_LOG_DFL,
+	     HTTP_STATUS_SERVICE_UNAVAILABLE, 0, "no backend found");
 
   return HTTP_STATUS_SERVICE_UNAVAILABLE;
 }
@@ -4263,23 +5259,325 @@ backend_update_stats (BACKEND *be, struct timespec const *start,
   pthread_mutex_unlock (&be->mut);
 }
 
+enum transfer_encoding
+  {
+    TRANSFER_ENCODING_NONE,
+    TRANSFER_ENCODING_CHUNKED,
+    TRANSFER_ENCODING_UNKNOWN
+  };
+
+enum { HTTP_ABORT = -2 };
+
+static inline int
+is_http10 (POUND_HTTP *phttp)
+{
+  return phttp->request.version == 0;
+}
+
+static int
+http_process_request (POUND_HTTP *phttp)
+{
+  int res;  /* General-purpose result variable */
+  CONTENT_LENGTH content_length;
+  struct http_header *hdr, *hdrtemp;
+  char *val;
+  /* FIXME: this belongs to struct http_request, perhaps. */
+  int transfer_encoding;
+
+  /*
+   * check for correct request
+   */
+  if ((res = parse_http_request (&phttp->request,
+				 phttp->lstn->verb)) != HTTP_STATUS_OK)
+    {
+      phttp_log (phttp, PHTTP_LOG_DFL,
+		 res, 0, "error parsing request");
+      return res;
+    }
+
+  phttp->no_cont = phttp->request.method == METH_HEAD;
+  if (phttp->request.method == METH_GET)
+    phttp->ws_state |= WSS_REQ_GET;
+
+  if (phttp->lstn->url_pat &&
+      genpat_match (phttp->lstn->url_pat, phttp->request.url, 0, NULL))
+    {
+      phttp_log (phttp, PHTTP_LOG_DFL,
+		 HTTP_STATUS_NOT_IMPLEMENTED, 0,
+		 "bad URL \"%s\"", phttp->request.url);
+      return HTTP_STATUS_NOT_IMPLEMENTED;
+    }
+
+  /*
+   * check headers
+   */
+  transfer_encoding = TRANSFER_ENCODING_NONE;
+  content_length = NO_CONTENT_LENGTH;
+  DLIST_FOREACH_SAFE (hdr, hdrtemp, &phttp->request.headers, link)
+    {
+      switch (hdr->code)
+	{
+	case HEADER_CONNECTION:
+	  if ((val = http_header_get_value (hdr)) == NULL)
+	    return HTTP_ABORT;
+	  if (cs_locate_token (val, "close", NULL))
+	    phttp->conn_closed = 1;
+	  /*
+	   * Connection: upgrade
+	   */
+	  else if (genpat_match (CONN_UPGRD, val, 0, NULL) == 0)
+	    phttp->ws_state |= WSS_REQ_HEADER_CONNECTION_UPGRADE;
+	  break;
+
+	case HEADER_UPGRADE:
+	  if ((val = http_header_get_value (hdr)) == NULL)
+	    return HTTP_ABORT;
+	  if (cs_locate_token (val, "websocket", NULL))
+	    phttp->ws_state |= WSS_REQ_HEADER_UPGRADE_WEBSOCKET;
+	  break;
+
+	case HEADER_TRANSFER_ENCODING:
+	  if ((val = http_header_get_value (hdr)) == NULL)
+	    return HTTP_ABORT;
+	  else if (transfer_encoding == TRANSFER_ENCODING_CHUNKED)
+	    {
+	      phttp_log (phttp, PHTTP_LOG_DFL,
+			 HTTP_STATUS_BAD_REQUEST, 0,
+			 "multiple Transfer-Encoding headers");
+	      return HTTP_STATUS_BAD_REQUEST;
+	    }
+	  else
+	    {
+	      char *next;
+	      if (cs_locate_token (val, "chunked", &next))
+		{
+		  if (next)
+		    {
+		      /*
+		       * When the "chunked" transfer-coding is used,
+		       * it MUST be the last transfer-coding applied
+		       * to the message-body.
+		       */
+		      phttp_log (phttp, PHTTP_LOG_DFL,
+				 HTTP_STATUS_BAD_REQUEST, 0,
+				 "multiple Transfer-Encoding headers");
+		      return HTTP_STATUS_BAD_REQUEST;
+		    }
+		  transfer_encoding = TRANSFER_ENCODING_CHUNKED;
+		}
+	      else
+		transfer_encoding = TRANSFER_ENCODING_UNKNOWN;
+	    }
+	  break;
+
+	case HEADER_CONTENT_LENGTH:
+	  if ((val = http_header_get_value (hdr)) == NULL)
+	    return HTTP_ABORT;
+	  if (content_length != NO_CONTENT_LENGTH || strchr (val, ','))
+	    {
+	      phttp_log (phttp, PHTTP_LOG_DFL,
+			 HTTP_STATUS_BAD_REQUEST, 0,
+			 "multiple Content-Length headers");
+	      return HTTP_STATUS_BAD_REQUEST;
+	    }
+	  else if ((content_length = get_content_length (val, CL_HEADER)) == NO_CONTENT_LENGTH)
+	    {
+	      phttp_log (phttp, PHTTP_LOG_DFL,
+			 HTTP_STATUS_BAD_REQUEST, 0,
+			 "bad Content-Length value");
+	      return HTTP_STATUS_BAD_REQUEST;
+	    }
+
+	  if (content_length == NO_CONTENT_LENGTH)
+	    {
+	      http_header_list_remove (&phttp->request.headers, hdr);
+	    }
+	  break;
+
+	case HEADER_EXPECT:
+	  /*
+	   * We do NOT support the "Expect: 100-continue" headers;
+	   * Supporting them may involve severe performance penalties
+	   * (non-responding back-end, etc).
+	   * As a stop-gap measure we just skip these headers.
+	   */
+	  if ((val = http_header_get_value (hdr)) == NULL)
+	    return HTTP_ABORT;
+	  if (!c_strcasecmp ("100-continue", val))
+	    {
+	      http_header_list_remove (&phttp->request.headers, hdr);
+	    }
+	  break;
+
+	case HEADER_ILLEGAL:
+	  /*
+	   * FIXME: This should not happen.  See the handling of
+	   * HEADER_ILLEGAL in http_header_list_append.
+	   */
+	  phttp_log (phttp, PHTTP_LOG_DFL,
+		     -1, 0, "bad header: %s", hdr->header);
+	  http_header_list_remove (&phttp->request.headers, hdr);
+	  break;
+	}
+    }
+
+  /*
+   * check for possible request smuggling attempt
+   */
+  if (transfer_encoding != TRANSFER_ENCODING_NONE)
+    {
+      if (transfer_encoding == TRANSFER_ENCODING_UNKNOWN)
+	{
+	  phttp_log (phttp, PHTTP_LOG_DFL,
+		     HTTP_STATUS_NOT_IMPLEMENTED, 0,
+		     "unknown Transfer-Encoding");
+	  return HTTP_STATUS_NOT_IMPLEMENTED;
+	}
+      else if (content_length != NO_CONTENT_LENGTH)
+	{
+	  phttp_log (phttp, PHTTP_LOG_DFL,
+		     HTTP_STATUS_BAD_REQUEST, 0,
+		     "both Transfer-Encoding and Content-Length given");
+	  return HTTP_STATUS_BAD_REQUEST;
+	}
+    }
+
+  if (phttp->lstn->max_uri_length > 0)
+    {
+      int rc;
+      char const *url;
+      rc = http_request_get_url (&phttp->request, &url);
+      if (rc == RETRIEVE_OK)
+	{
+	  size_t urlen;
+	  if ((urlen = strlen (url)) > phttp->lstn->max_uri_length)
+	    {
+	      phttp_log (phttp, PHTTP_LOG_DFL,
+			 HTTP_STATUS_URI_TOO_LONG, 0,
+			 "URI too long: %zu bytes",
+			 urlen);
+	      return HTTP_STATUS_URI_TOO_LONG;
+	    }
+	}
+      else
+	{
+	  phttp_log (phttp, PHTTP_LOG_DFL,
+		     HTTP_STATUS_INTERNAL_SERVER_ERROR, 0,
+		     "can't get URL from the request (shouldn't happen)");
+	  return HTTP_ABORT;
+	}
+    }
+
+  /*
+   * possibly limited request size
+   */
+  if (phttp->lstn->max_req_size > 0 && content_length > 0
+      && content_length > phttp->lstn->max_req_size)
+    {
+      phttp_log (phttp, PHTTP_LOG_DFL,
+		 HTTP_STATUS_PAYLOAD_TOO_LARGE, 0,
+		 "request too large: %"PRICLEN" bytes",
+		 content_length);
+      return HTTP_STATUS_PAYLOAD_TOO_LARGE;
+    }
+
+  if (phttp->be != NULL)
+    {
+      if (is_readable (phttp->be, 0))
+	{
+	  /*
+	   * The only way it's readable is if it's at EOF, so close
+	   * it!
+	   */
+	  close_backend (phttp);
+	}
+    }
+
+  /*
+   * check that the requested URL still fits the old back-end (if
+   * any)
+   */
+  if ((phttp->svc = get_service (phttp)) == NULL)
+    {
+      phttp_log (phttp, PHTTP_LOG_DFL,
+		 HTTP_STATUS_SERVICE_UNAVAILABLE, 0,
+		 "no suitable service found");
+      return HTTP_STATUS_SERVICE_UNAVAILABLE;
+    }
+
+  if ((res = select_backend (phttp)) != 0)
+    return res;
+
+  /*
+   * if we have anything but a regular backend we close the channel
+   */
+  if (phttp->be != NULL && phttp->backend->be_type != BE_REGULAR)
+    close_backend (phttp);
+
+  if (force_http_10 (phttp))
+    phttp->conn_closed = 1;
+
+  phttp->res_bytes = 0;
+  http_request_free (&phttp->response);
+
+  clock_gettime (CLOCK_REALTIME, &phttp->be_start);
+  switch (phttp->backend->be_type)
+    {
+    case BE_REDIRECT:
+      res = redirect_response (phttp);
+      break;
+
+    case BE_ACME:
+      res = acme_response (phttp);
+      break;
+
+    case BE_CONTROL:
+      res = control_response (phttp);
+      break;
+
+    case BE_ERROR:
+      res = error_response (phttp);
+      break;
+
+    case BE_METRICS:
+      res = metrics_response (phttp);
+      break;
+
+    case BE_REGULAR:
+      /* Send the request. */
+      res = send_to_backend (phttp,
+			     !is_http10 (phttp) &&
+			     (transfer_encoding == TRANSFER_ENCODING_CHUNKED),
+			     content_length);
+      if (res == 0)
+	/* Process the response. */
+	res = backend_response (phttp);
+      break;
+
+    case BE_FILE:
+      res = file_response (phttp);
+      break;
+
+    case BE_LUA:
+      res = lua_response (phttp);
+      break;
+
+    case BE_MATRIX:
+    case BE_BACKEND_REF:
+      /* shouldn't happen */
+      abort ();
+    }
+  return res;
+}
+
 /*
  * handle an HTTP request
  */
 void
 do_http (POUND_HTTP *phttp)
 {
-  int cl_11;  /* Whether client connection is using HTTP/1.1 */
   int res;  /* General-purpose result variable */
-  int chunked; /* True if request contains Transfer-Encoding: chunked
-		* FIXME: this belongs to struct http_request, perhaps.
-		*/
   BIO *bb;
-  char caddr[MAX_ADDR_BUFSIZE];
-  CONTENT_LENGTH content_length;
-  struct http_header *hdr, *hdrtemp;
-  char *val;
-  struct timespec be_start;
 
   if (phttp->lstn->allow_client_reneg)
     phttp->reneg_state = RENEG_ALLOW;
@@ -4290,7 +5588,8 @@ do_http (POUND_HTTP *phttp)
 
   if ((phttp->cl = BIO_new_socket (phttp->sock, 1)) == NULL)
     {
-      logmsg (LOG_ERR, "(%"PRItid") BIO_new_socket failed", POUND_TID ());
+      phttp_log (phttp, PHTTP_LOG_DFL,
+		 -1, -1, "BIO_new_socket failed");
       shutdown (phttp->sock, 2);
       close (phttp->sock);
       return;
@@ -4301,15 +5600,16 @@ do_http (POUND_HTTP *phttp)
     {
       if ((phttp->ssl = SSL_new (SLIST_FIRST (&phttp->lstn->ctx_head)->ctx)) == NULL)
 	{
-	  logmsg (LOG_ERR, "(%"PRItid") SSL_new: failed", POUND_TID ());
+	  phttp_log (phttp, PHTTP_LOG_DFL,
+		     -1, -1, "SSL_new failed");
 	  return;
 	}
       SSL_set_app_data (phttp->ssl, &phttp->reneg_state);
       SSL_set_bio (phttp->ssl, phttp->cl, phttp->cl);
       if ((bb = BIO_new (BIO_f_ssl ())) == NULL)
 	{
-	  logmsg (LOG_ERR, "(%"PRItid") BIO_new(Bio_f_ssl()) failed",
-		  POUND_TID ());
+	  phttp_log (phttp, PHTTP_LOG_DFL,
+		     -1, -1, "BIO_new(Bio_f_ssl()) failed");
 	  return;
 	}
       BIO_set_ssl (bb, phttp->ssl, BIO_CLOSE);
@@ -4317,6 +5617,8 @@ do_http (POUND_HTTP *phttp)
       phttp->cl = bb;
       if (BIO_do_handshake (phttp->cl) <= 0)
 	{
+	  phttp_log (phttp, PHTTP_LOG_HANDSHAKE,
+		     -1, -1, "handshake failed");
 	  return;
 	}
       else
@@ -4325,325 +5627,72 @@ do_http (POUND_HTTP *phttp)
 	      && phttp->lstn->clnt_check < 3
 	      && SSL_get_verify_result (phttp->ssl) != X509_V_OK)
 	    {
-	      logmsg (LOG_NOTICE, "Bad certificate from %s",
-		      addr2str (caddr, sizeof (caddr), &phttp->from_host, 1));
+	      phttp_log (phttp, PHTTP_LOG_DFL,
+			 -1, 0, "bad certificate");
 	      return;
 	    }
 	}
     }
   else
     {
+      X509_free (phttp->x509);
       phttp->x509 = NULL;
     }
   phttp->backend = NULL;
 
   if ((bb = BIO_new (BIO_f_buffer ())) == NULL)
     {
-      logmsg (LOG_ERR, "(%"PRItid") BIO_new(buffer) failed", POUND_TID ());
+      phttp_log (phttp, PHTTP_LOG_DFL, -1, -1, "BIO_new failed");
       return;
     }
   BIO_set_close (phttp->cl, BIO_CLOSE);
   BIO_set_buffer_size (phttp->cl, MAXBUF);
   phttp->cl = BIO_push (bb, phttp->cl);
 
-  cl_11 = 0;
   for (;;)
     {
       http_request_free (&phttp->request);
       http_request_free (&phttp->response);
+      submatch_queue_free (&phttp->smq);
+      phttp_lua_stash_reset (phttp);
 
       phttp->ws_state = WSS_INIT;
       phttp->conn_closed = 0;
-      if (http_request_read (phttp->cl, phttp->lstn, &phttp->request))
-	{
-	  if (!cl_11)
-	    {
-	      if (errno)
-		{
-		  logmsg (LOG_NOTICE, "(%"PRItid") error read from %s: %s",
-			  POUND_TID (),
-			  addr2str (caddr, sizeof (caddr), &phttp->from_host, 1),
-			  strerror (errno));
-		}
-	    }
-	  return;
-	}
-
       clock_gettime (CLOCK_REALTIME, &phttp->start_req);
-
-      /*
-       * check for correct request
-       */
-      if (parse_http_request (&phttp->request, phttp->lstn->verb))
+      res = http_request_read (phttp->cl, phttp->lstn, phttp->buffer,
+			       &phttp->request);
+      if (res != HTTP_STATUS_OK)
 	{
-	  logmsg (LOG_WARNING, "(%"PRItid") e501 bad request \"%s\" from %s",
-		  POUND_TID (), phttp->request.request,
-		  addr2str (caddr, sizeof (caddr), &phttp->from_host, 1));
-	  http_err_reply (phttp, HTTP_STATUS_NOT_IMPLEMENTED);
-	  return;
-	}
-      cl_11 = phttp->request.version;
-
-      phttp->no_cont = phttp->request.method == METH_HEAD;
-      if (phttp->request.method == METH_GET)
-	phttp->ws_state |= WSS_REQ_GET;
-
-      if (phttp->lstn->has_pat &&
-	  regexec (&phttp->lstn->url_pat, phttp->request.url, 0, NULL, 0))
-	{
-	  logmsg (LOG_NOTICE, "(%"PRItid") e501 bad URL \"%s\" from %s",
-		  POUND_TID (), phttp->request.url,
-		  addr2str (caddr, sizeof (caddr), &phttp->from_host, 1));
-	  http_err_reply (phttp, HTTP_STATUS_NOT_IMPLEMENTED);
-	  return;
-	}
-
-      /*
-       * check headers
-       */
-      chunked = 0;
-      content_length = NO_CONTENT_LENGTH;
-      DLIST_FOREACH_SAFE (hdr, hdrtemp, &phttp->request.headers, link)
-	{
-	  switch (hdr->code)
+	  if (errno)
 	    {
-	    case HEADER_CONNECTION:
-	      if ((val = http_header_get_value (hdr)) == NULL)
-		goto err;
-	      if (cs_locate_token (val, "close", 1, NULL))
-		phttp->conn_closed = 1;
-	      /*
-	       * Connection: upgrade
-	       */
-	      else if (!regexec (&CONN_UPGRD, val, 0, NULL, 0))
-		phttp->ws_state |= WSS_REQ_HEADER_CONNECTION_UPGRADE;
-	      break;
-
-	    case HEADER_UPGRADE:
-	      if ((val = http_header_get_value (hdr)) == NULL)
-		goto err;
-	      if (cs_locate_token (val, "websocket", 1, NULL))
-		phttp->ws_state |= WSS_REQ_HEADER_UPGRADE_WEBSOCKET;
-	      break;
-
-	    case HEADER_TRANSFER_ENCODING:
-	      if ((val = http_header_get_value (hdr)) == NULL)
-		goto err;
-	      else if (chunked)
-		{
-		  logmsg (LOG_NOTICE,
-			  "(%"PRItid") e400 multiple Transfer-encoding: chunked on \"%s\" from %s",
-			  POUND_TID (), phttp->request.url,
-			  addr2str (caddr, sizeof (caddr), &phttp->from_host, 1));
-		  http_err_reply (phttp, HTTP_STATUS_BAD_REQUEST);
-		  return;
-		}
-	      else
-		{
-		  char *next;
-		  if (cs_locate_token (val, "chunked", 1, &next))
-		    {
-		      if (*next)
-			{
-			  /*
-			   * When the "chunked" transfer-coding is used,
-			   * it MUST be the last transfer-coding applied
-			   * to the message-body.
-			   */
-			  logmsg (LOG_NOTICE,
-				  "(%"PRItid") e400 multiple Transfer-encoding on \"%s\" from %s",
-				  POUND_TID (), phttp->request.url,
-				  addr2str (caddr, sizeof (caddr), &phttp->from_host, 1));
-			  http_err_reply (phttp, HTTP_STATUS_BAD_REQUEST);
-			  return;
-			}
-		      chunked = 1;
-		    }
-		}
-	      break;
-
-	    case HEADER_CONTENT_LENGTH:
-	      if ((val = http_header_get_value (hdr)) == NULL)
-		goto err;
-	      if (content_length != NO_CONTENT_LENGTH || strchr (val, ','))
-		{
-		  logmsg (LOG_NOTICE,
-			  "(%"PRItid") e400 multiple Content-length \"%s\" from %s",
-			  POUND_TID (), phttp->request.url,
-			  addr2str (caddr, sizeof (caddr), &phttp->from_host, 1));
-		  http_err_reply (phttp, HTTP_STATUS_BAD_REQUEST);
-		  return;
-		}
-	      else if ((content_length = get_content_length (val, CL_HEADER)) == NO_CONTENT_LENGTH)
-		{
-		  logmsg (LOG_NOTICE,
-			  "(%"PRItid") e400 Content-length bad value \"%s\" from %s",
-			  POUND_TID (), phttp->request.url,
-			  addr2str (caddr, sizeof (caddr), &phttp->from_host, 1));
-		  http_err_reply (phttp, HTTP_STATUS_BAD_REQUEST);
-		  return;
-		}
-
-	      if (content_length == NO_CONTENT_LENGTH)
-		{
-		  http_header_list_remove (&phttp->request.headers, hdr);
-		}
-	      break;
-
-	    case HEADER_EXPECT:
-	      /*
-	       * We do NOT support the "Expect: 100-continue" headers;
-	       * Supporting them may involve severe performance penalties
-	       * (non-responding back-end, etc).
-	       * As a stop-gap measure we just skip these headers.
-	       */
-	      if ((val = http_header_get_value (hdr)) == NULL)
-		goto err;
-	      if (!strcasecmp ("100-continue", val))
-		{
-		  http_header_list_remove (&phttp->request.headers, hdr);
-		}
-	      break;
-
-	    case HEADER_ILLEGAL:
-	      /*
-	       * FIXME: This should not happen.  See the handling of
-	       * HEADER_ILLEGAL in http_header_list_append.
-	       */
-	      logmsg (LOG_NOTICE, "(%"PRItid") bad header from %s (%s)",
-		      POUND_TID (),
-		      addr2str (caddr, sizeof (caddr), &phttp->from_host, 1),
-		      hdr->header);
-
-	      http_header_list_remove (&phttp->request.headers, hdr);
-	      break;
+	      phttp_log (phttp, PHTTP_LOG_DFL,
+			 res, errno, "error reading request");
 	    }
+	  clock_gettime (CLOCK_REALTIME, &phttp->end_req);
 	}
-
-      /*
-       * check for possible request smuggling attempt
-       */
-      if (chunked != 0 && content_length != NO_CONTENT_LENGTH)
-	{
-	  logmsg (LOG_NOTICE,
-		  "(%"PRItid") e501 Transfer-encoding and Content-length \"%s\" from %s",
-		  POUND_TID (), phttp->request.url,
-		  addr2str (caddr, sizeof (caddr), &phttp->from_host, 1));
-	  http_err_reply (phttp, HTTP_STATUS_BAD_REQUEST);
-	  return;
-	}
-
-      /*
-       * possibly limited request size
-       */
-      if (phttp->lstn->max_req > 0 && content_length > 0
-	  && content_length > phttp->lstn->max_req)
-	{
-	  logmsg (LOG_NOTICE,
-		  "(%"PRItid") e413 request too large (%"PRICLEN") from %s",
-		  POUND_TID (), content_length,
-		  addr2str (caddr, sizeof (caddr), &phttp->from_host, 1));
-	  http_err_reply (phttp, HTTP_STATUS_PAYLOAD_TOO_LARGE);
-	  return;
-	}
-
-      if (phttp->be != NULL)
-	{
-	  if (is_readable (phttp->be, 0))
-	    {
-	      /*
-	       * The only way it's readable is if it's at EOF, so close
-	       * it!
-	       */
-	      close_backend (phttp);
-	    }
-	}
-
-      /*
-       * check that the requested URL still fits the old back-end (if
-       * any)
-       */
-      if ((phttp->svc = get_service (phttp)) == NULL)
-	{
-	  char const *v_host = http_request_host (&phttp->request);
-	  logmsg (LOG_NOTICE, "(%"PRItid") e503 no service \"%s\" from %s %s",
-		  POUND_TID (), phttp->request.request,
-		  addr2str (caddr, sizeof (caddr), &phttp->from_host, 1),
-		  (v_host && v_host[0]) ? v_host : "-");
-	  http_err_reply (phttp, HTTP_STATUS_SERVICE_UNAVAILABLE);
-	  return;
-	}
-
-      if ((res = select_backend (phttp)) != 0)
-	{
-	  http_err_reply (phttp, res);
-	  return;
-	}
-
-      /*
-       * if we have anything but a BACK_END we close the channel
-       */
-      if (phttp->be != NULL && phttp->backend->be_type != BE_BACKEND)
-	close_backend (phttp);
-
-      if (force_http_10 (phttp))
-	phttp->conn_closed = 1;
-
-      phttp->res_bytes = 0;
-      http_request_free (&phttp->response);
-
-      save_forwarded_header (phttp);
-
-      clock_gettime (CLOCK_REALTIME, &be_start);
-      switch (phttp->backend->be_type)
-	{
-	case BE_REDIRECT:
-	  res = redirect_response (phttp);
-	  break;
-
-	case BE_ACME:
-	  res = acme_response (phttp);
-	  break;
-
-	case BE_CONTROL:
-	  res = control_response (phttp);
-	  break;
-
-	case BE_ERROR:
-	  res = error_response (phttp);
-	  break;
-
-	case BE_METRICS:
-	  res = metrics_response (phttp);
-	  break;
-
-	case BE_BACKEND:
-	  /* Send the request. */
-	  res = send_to_backend (phttp, cl_11 && chunked, content_length);
-	  if (res == 0)
-	    /* Process the response. */
-	    res = backend_response (phttp);
-	  break;
-
-	case BE_BACKEND_REF:
-	  /* shouldn't happen */
-	  abort ();
-	}
-
-      clock_gettime (CLOCK_REALTIME, &phttp->end_req);
-      if (enable_backend_stats)
-	backend_update_stats (phttp->backend, &be_start, &phttp->end_req);
-
-      if (res == -1)
+      else if (phttp->request.request == NULL)
 	break;
       else
 	{
-	  if (res != HTTP_STATUS_OK)
-	    http_err_reply (phttp, res);
-	  if (phttp->response_code == 0)
-	    phttp->response_code = http_status[res].code;
-	  http_log (phttp);
+	  clock_gettime (CLOCK_REALTIME, &phttp->start_req);
+	  res = http_process_request (phttp);
+	  clock_gettime (CLOCK_REALTIME, &phttp->end_req);
+	  if (enable_backend_stats && phttp->backend)
+	    backend_update_stats (phttp->backend, &phttp->be_start,
+				  &phttp->end_req);
 	}
+
+      if (res < 0)
+	http_err_reply (phttp, HTTP_STATUS_INTERNAL_SERVER_ERROR);
+      else if (res != HTTP_STATUS_OK)
+	http_err_reply (phttp, res);
+
+      if (phttp->response_code == 0)
+	phttp->response_code = http_status[res].code;
+      http_log (phttp);
+
+      if (res < 0)
+	break;
 
       /*
        * Stop processing if:
@@ -4651,15 +5700,9 @@ do_http (POUND_HTTP *phttp)
        *      or
        *  - we had a "Connection: closed" header
        */
-      if (!cl_11 || phttp->conn_closed)
+      if (is_http10 (phttp) || phttp->conn_closed)
 	break;
     }
-
-  return;
-
- err:
-  http_err_reply (phttp, HTTP_STATUS_INTERNAL_SERVER_ERROR);
-  return;
 }
 
 void *

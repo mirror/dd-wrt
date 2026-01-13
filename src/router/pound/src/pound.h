@@ -1,7 +1,7 @@
 /*
  * Pound - the reverse-proxy load-balancer
  * Copyright (C) 2002-2010 Apsis GmbH
- * Copyright (C) 2018-2024 Sergey Poznyakoff
+ * Copyright (C) 2018-2025 Sergey Poznyakoff
  *
  * This file is part of Pound.
  *
@@ -42,7 +42,6 @@
 #include <grp.h>
 #include <syslog.h>
 #include <signal.h>
-#include <ctype.h>
 #include <errno.h>
 #include <sys/wait.h>
 #include <sys/stat.h>
@@ -69,11 +68,20 @@
 
 #define MAX_ADDR_BUFSIZE (NI_MAXHOST + NI_MAXSERV + 4)
 
+#define PORT_HTTP 80
+#define PORT_HTTPS 443
+
+#define TS(s) #s
+#define TOSTR(s) TS(s)
+#define PORT_HTTP_STR TOSTR(PORT_HTTP)
+#define PORT_HTTPS_STR TOSTR(PORT_HTTPS)
+
 #if HAVE_OPENSSL_SSL_H
 # define OPENSSL_THREAD_DEFINES
 # include <openssl/ssl.h>
 # include <openssl/lhash.h>
 # include <openssl/err.h>
+# include <openssl/rand.h>
 # if OPENSSL_VERSION_NUMBER >= 0x00907000L
 #  ifndef OPENSSL_THREADS
 #   error "Pound requires OpenSSL with thread support"
@@ -91,18 +99,60 @@
 # include <openssl/engine.h>
 #endif
 
-#if HAVE_LIBPCREPOSIX == 2
-# include <pcre2posix.h>
-#elif HAVE_LIBPCREPOSIX == 1
-# if HAVE_PCREPOSIX_H
-#  include <pcreposix.h>
-# elif HAVE_PCRE_PCREPOSIX_H
-#  include <pcre/pcreposix.h>
-# else
-#  error "You have libpcreposix, but the header files are missing. Use --disable-pcreposix"
-# endif
+struct genpat
+{
+  struct genpat_defn const *vtab;
+  void *data;
+};
+
+typedef struct genpat *GENPAT;
+
+typedef struct {
+  int rm_so;
+  int rm_eo;
+} POUND_REGMATCH;
+
+#define GENPAT_DEFAULT   0
+#define GENPAT_ICASE     0x1
+#define GENPAT_MULTILINE 0x2
+
+int genpat_compile (GENPAT *, int, const char *, int);
+int genpat_match (GENPAT, const char *, size_t, POUND_REGMATCH *);
+void genpat_free (GENPAT);
+char const *genpat_error (GENPAT, size_t *);
+size_t genpat_nsub (GENPAT);
+
+enum
+  {
+    GENPAT_POSIX,
+    GENPAT_PCRE,
+    GENPAT_PREFIX,
+    GENPAT_SUFFIX,
+    GENPAT_CONTAIN,
+    GENPAT_EXACT,
+  };
+
+struct genpat_defn
+{
+  int (*gp_init) (GENPAT);
+  int (*gp_compile) (void *, const char *, int);
+  char const *(*gp_error) (void *, size_t *);
+  int (*gp_exec) (void *, const char *, size_t, POUND_REGMATCH *);
+  size_t (*gp_nsub) (void *);
+  void (*gp_free) (void *);
+};
+
+extern struct genpat_defn posix_genpat_defn;
+extern struct genpat_defn prefix_genpat_defn;
+extern struct genpat_defn suffix_genpat_defn;
+extern struct genpat_defn contain_genpat_defn;
+extern struct genpat_defn exact_genpat_defn;
+
+#ifdef HAVE_LIBPCRE
+extern struct genpat_defn pcre_genpat_defn;
+# define PCRE_REGEX_DEFN &pcre_genpat_defn
 #else
-# include <regex.h>
+# define PCRE_REGEX_DEFN NULL
 #endif
 
 #ifdef  HAVE_LONG_LONG_INT
@@ -118,6 +168,8 @@ typedef long CONTENT_LENGTH;
 #define NO_CONTENT_LENGTH ((CONTENT_LENGTH) -1)
 
 int strtoclen (char const *arg, int base, CONTENT_LENGTH *retval, char **endptr);
+unsigned long strhash_ci (const char *c, size_t len);
+
 
 #ifndef DEFAULT_WORKER_MIN
 # define DEFAULT_WORKER_MIN 5
@@ -212,8 +264,10 @@ enum
     HTTP_STATUS_UNAUTHORIZED,      // 401
     HTTP_STATUS_FORBIDDEN,         // 403
     HTTP_STATUS_NOT_FOUND,         // 404
+    HTTP_STATUS_METHOD_NOT_ALLOWED,// 405
     HTTP_STATUS_PAYLOAD_TOO_LARGE, // 413
     HTTP_STATUS_URI_TOO_LONG,      // 414
+    HTTP_STATUS_TOO_MANY_REQUESTS, // 429
     HTTP_STATUS_INTERNAL_SERVER_ERROR,          // 500
     HTTP_STATUS_NOT_IMPLEMENTED,   // 501
     HTTP_STATUS_SERVICE_UNAVAILABLE, // 503
@@ -240,6 +294,8 @@ timespec_cmp (struct timespec const *a, struct timespec const *b)
   return 0;
 }
 
+enum { NANOSECOND = 1000000000L };
+
 static inline struct timespec
 timespec_sub (struct timespec const *a, struct timespec const *b)
 {
@@ -250,37 +306,26 @@ timespec_sub (struct timespec const *a, struct timespec const *b)
   if (d.tv_nsec < 0)
     {
       --d.tv_sec;
-      d.tv_nsec += 1e9;
+      d.tv_nsec += NANOSECOND;
     }
 
   return d;
 }
-
 
+/* Memory allocation primitives. */
+#include "mem.h"
 /* List definitions. */
 #include "list.h"
+/* Configuration parser */
+#include "cfgparser.h"
+#include "cctype.h"
+
+char *locus_point_str (struct locus_point const *loc);
+char *locus_range_str (struct locus_range const *loc);
 
-/* Locations in the source file */
-struct locus_point
-{
-  char const *filename;
-  int line;
-  int col;
-};
-
-struct locus_range
-{
-  struct locus_point beg, end;
-};
-
-typedef struct workdir
-{
-  DLIST_ENTRY (workdir) link;
-  int refcount;
-  int fd;
-  char name[1];
-} WORKDIR;
-
+int field_list_filter (char const *subj, size_t len,
+		       int (*pred) (char const *, size_t, void *),
+		       void *data, char **endp);
 
 /* Header types */
 enum
@@ -327,6 +372,11 @@ http_header_name_len (struct http_header *hdr)
 }
 
 typedef DLIST_HEAD(,http_header) HTTP_HEADER_LIST;
+#define HTTP_HEADER_LIST_INITIALIZER DLIST_HEAD_INITIALIZER
+
+int http_header_list_parse (HTTP_HEADER_LIST *head, char const *text,
+			    int replace, char **end);
+void http_header_list_free (HTTP_HEADER_LIST *head);
 
 /* Append modes: what to do if the header with that name already exist. */
 enum
@@ -336,7 +386,11 @@ enum
     H_APPEND    /* Append to the value (assume #(values)) */
   };
 
-int http_header_list_append (HTTP_HEADER_LIST *head, char *text, int replace);
+int http_header_list_append (HTTP_HEADER_LIST *head, char const *text,
+			     int replace);
+int http_header_list_append_list (HTTP_HEADER_LIST *head,
+				  HTTP_HEADER_LIST *add);
+void http_header_list_remove_field (HTTP_HEADER_LIST *head, char const *field);
 
 struct query_param
 {
@@ -360,6 +414,11 @@ struct http_request
   QUERY_HEAD query_head;
   char *orig_request_line;   /* Original request line (for logging purposes) */
   int split;
+  char *eval_result;         /* Array of return statuses from evaluation of
+				detached conditions. */
+  struct stringbuf *body;    /* Response body overridden by modification
+				request. Deliberately not using any stream
+				type here. */
 };
 
 static inline void http_request_init (struct http_request *http)
@@ -370,9 +429,51 @@ static inline void http_request_init (struct http_request *http)
 }
 
 void http_request_free (struct http_request *);
+int http_request_eval_get (struct http_request *http, int n);
+int http_request_eval_cache (struct http_request *http, int n, int res);
+
+/*
+ * Return codes for http_request_get_query_param,
+ * http_request_get_query_param_value, and request accessors.
+ */
+enum
+  {
+    RETRIEVE_OK,
+    RETRIEVE_NOT_FOUND,
+    RETRIEVE_ERROR = -1
+  };
+
+int http_request_get_url (struct http_request *, char const **);
+int http_request_get_query (struct http_request *, char const **);
+int http_request_get_path (struct http_request *req, char const **retval);
+int http_request_count_query_param (struct http_request *req);
+int http_request_get_query_param_value (struct http_request *req,
+					char const *name,
+					char const **retval);
+char const *http_request_orig_line (struct http_request *req);
+int http_request_get_basic_auth (struct http_request *req,
+				 char **u_name, char **u_pass);
+
+int http_request_set_path (struct http_request *req, char const *path);
+int http_request_set_url (struct http_request *req, char const *url);
+int http_request_set_query (struct http_request *req, char const *rawquery);
+int http_request_set_query_param (struct http_request *req, char const *name,
+				  char const *raw_value);
 
 #define POUND_TID() ((unsigned long)pthread_self ())
 #define PRItid "lx"
+
+typedef struct watcher WATCHER;
+
+void watcher_lock (WATCHER *);
+void watcher_unlock (WATCHER *);
+WATCHER *watcher_register (void *obj, char
+			   const *filename, struct locus_range const *loc,
+			   int (*read) (void *, char const *, WORKDIR *),
+			   void (*clear) (void *));
+int watcher_setup (void);
+
+char const *filename_split_wd (char const *filename, WORKDIR **wdp);
 
 struct cidr;
 
@@ -381,16 +482,58 @@ typedef struct acl
   char *name;                 /* ACL name (optional) */
   SLIST_HEAD (,cidr) head;    /* List of CIDRs */
   SLIST_ENTRY (acl) next;
+  WATCHER *watcher;
 } ACL;
 
 typedef SLIST_HEAD (,acl) ACL_HEAD;
 
+static inline void
+acl_lock (ACL *acl)
+{
+  watcher_lock (acl->watcher);
+}
+
+static inline void
+acl_unlock (ACL *acl)
+{
+  watcher_unlock (acl->watcher);
+}
+
 int acl_match (ACL *acl, struct sockaddr *sa);
+void acl_clear (ACL *acl);
+
+enum job_ctl
+  {
+    job_ctl_run,
+    job_ctl_cancel
+  };
+typedef void (*JOB_FUNC) (enum job_ctl, void *, const struct timespec *);
+typedef unsigned long JOB_ID;
+
+JOB_ID job_enqueue (struct timespec const *ts, JOB_FUNC func, void *data);
+JOB_ID job_enqueue_after (unsigned t, JOB_FUNC func, void *data);
+void job_cancel (JOB_ID id);
+int job_get_timestamp (JOB_ID jid, struct timespec *ts);
+
+enum
+  {
+    PNDLUA_CTX_GLOBAL,
+    PNDLUA_CTX_THREAD
+  };
+
+struct pndlua_closure
+{
+  int ctx;
+  char *func;
+  int argc;
+  char **argv;
+  struct locus_range locus;
+};
 
 /* matcher chain */
 typedef struct _matcher
 {
-  regex_t pat;		/* pattern to match the request/header against */
+  GENPAT pat;		/* pattern to match the request/header against */
   SLIST_ENTRY (_matcher) next;
 } MATCHER;
 
@@ -411,15 +554,65 @@ typedef enum
 
 typedef enum
   {
-    BE_BACKEND,
+    BE_REGULAR,
+    BE_MATRIX,
     BE_REDIRECT,
     BE_ACME,
     BE_CONTROL,
     BE_ERROR,
     BE_METRICS,
     BE_BACKEND_REF,     /* See be_name in BACKEND */
+    BE_FILE,
+    BE_LUA
   }
   BACKEND_TYPE;
+
+enum backend_resolve_mode
+  {
+    bres_immediate,
+    bres_first,
+    bres_all,
+    bres_srv
+  };
+
+char const *resolve_mode_str (int mode);
+
+typedef struct backend_table *BACKEND_TABLE;
+
+struct be_matrix
+{
+  char *hostname;       /* Hostname or IP address. */
+  int port;             /* Port number (network order). */
+  int family;           /* Address family for resolving hostname. */
+  int resolve_mode;     /* Mode for resolving hostname. */
+  unsigned retry_interval; /* Retry interval for failed queries. */
+  int ignore_srv_weight;   /* Ignore weight field in SRV RR. */
+  unsigned override_ttl;   /* Use this TTL instead of one returned from DNS. */
+
+  unsigned to;		/* read/write time-out */
+  unsigned conn_to;	/* connection time-out */
+  unsigned ws_to;	/* websocket time-out */
+  SSL_CTX *ctx;		/* CTX for SSL connections */
+  char *servername;     /* SNI */
+
+  BACKEND_TABLE betab;  /* Table of regular backends generated from this
+			   matrix. */
+  JOB_ID jid;           /* ID of the periodic job scheduled to update this
+			   matrix. */
+  int weight;           /* Weight of the backend list where to allocate
+			   regular backends. */
+  struct _backend *parent;  /* Points to matrix backend, if this backend was
+			       dynamically generated. */
+};
+
+struct http_errmsg
+{
+  char *text;
+  HTTP_HEADER_LIST hdr;
+};
+
+#define HTTP_ERRMSG_INITIALIZER(m) \
+  { NULL, HTTP_HEADER_LIST_INITIALIZER(m.hdr) }
 
 struct be_regular
 {
@@ -430,6 +623,9 @@ struct be_regular
   unsigned ws_to;	/* websocket time-out */
   SSL_CTX *ctx;		/* CTX for SSL connections */
   char *servername;     /* SNI */
+
+  struct _backend *parent; /* Points to matrix backend, if this backend was
+			      dynamically generated. */
 };
 
 struct be_redirect
@@ -439,7 +635,7 @@ struct be_redirect
   int has_uri;		 /* URL has path and/or query part. */
 };
 
-struct be_acme
+struct be_file           /* For ACME services and FILE backends. */
 {
   int wd;                /* Working directory descriptor. */
 };
@@ -447,21 +643,30 @@ struct be_acme
 struct be_error
 {
   int status;            /* Pound HTTP status index */
-  char *text;            /* Error content page */
+  struct http_errmsg msg;
 };
 
 /* back-end definition */
 typedef struct _backend
 {
   struct _service *service;     /* Back pointer to the owning service */
-  char *locus;                  /* Location in the config file */
+  struct balancer *balancer;    /* Back pointer to the owning backend list. */
+  struct locus_range locus;     /* Location in the config file */
   BACKEND_TYPE be_type;         /* Backend type */
   int priority;			/* priority */
   int disabled;			/* true if the back-end is disabled */
-  SLIST_ENTRY (_backend) next;
+  DLIST_ENTRY (_backend) link;
+
+  /* Auxiliary fields. */
+  int mark;                     /* If set, this backend is a candidate for
+				   deletion. */
+
 
   /* Statistics */
   pthread_mutex_t mut;		/* mutex for this back-end */
+#ifdef ENABLE_DYNAMIC_BACKENDS
+  unsigned long refcount;       /* reference counter */
+#endif
   double numreq;		/* number of requests seen */
   double avgtime;		/* Avg. time per request */
   double avgsqtime;             /* Avg. squared time per request */
@@ -470,26 +675,40 @@ typedef struct _backend
   union
   {
     struct be_regular reg;
-    struct be_acme acme;
+    struct be_matrix mtx;
+    struct be_file acme;
+    struct be_file file;
     struct be_redirect redirect;
     struct be_error error;
+    struct pndlua_closure lua;
     char *be_name;              /* Name of the backend; Used during parsing. */
   } v;
 
 } BACKEND;
 
-typedef SLIST_HEAD (,_backend) BACKEND_HEAD;
+typedef DLIST_HEAD (,_backend) BACKEND_HEAD;
 
 static inline int backend_is_https (BACKEND *be)
 {
-  return be->be_type == BE_BACKEND && be->v.reg.ctx != NULL;
+  return be->be_type == BE_REGULAR && be->v.reg.ctx != NULL;
 }
 
 static inline int backend_is_alive (BACKEND *be)
 {
-  /* Redirects, ACME, and control backends are always alive */
-  return be->be_type != BE_BACKEND || be->v.reg.alive;
+  /* Matrix backends are special, they are never alive. */
+  if (be->be_type == BE_MATRIX)
+    return 0;
+  /* Redirects, ACME, and control backends are always alive. */
+  return be->be_type != BE_REGULAR || be->v.reg.alive;
 }
+
+static inline int backend_is_active (BACKEND *be)
+{
+  return !be->disabled && backend_is_alive (be);
+}
+
+BACKEND *backend_create (BACKEND_TYPE type, int prio,
+			 struct locus_range const *loc);
 
 typedef struct session
 {
@@ -541,18 +760,26 @@ enum service_cond_type
 		   Host: header */
     COND_BASIC_AUTH,  /* Check if request passes basic auth. */
     COND_STRING_MATCH,/* String match. */
+    COND_CLIENT_CERT,
+    COND_DYN,
+    COND_TBF,
+    COND_LUA,
+    COND_REF    /* Reference to detached condition. */
   };
 
-typedef struct string_ref
+struct dyn_service_cond
 {
-  unsigned refcount;
-  char value[1];
-} STRING_REF;
+  struct bool_service_cond boolean;
+  STRING *string;
+  enum service_cond_type cond_type;
+  int pat_type;
+  int flags;
+};
 
 struct string_match
 {
-  STRING_REF *string;
-  regex_t re;
+  STRING *string;
+  GENPAT re;
 };
 
 struct user_pass
@@ -566,24 +793,41 @@ typedef SLIST_HEAD(,user_pass) USER_PASS_HEAD;
 
 struct pass_file
 {
-  WORKDIR *wd;
-  char *filename;
-  struct locus_range locus;
-  struct timespec mtim;
   USER_PASS_HEAD head;
+};
+
+typedef struct tbf TBF;
+
+struct tbf_cond
+{
+  STRING *key;
+  TBF *tbf;
+};
+
+struct acl_cond
+{
+  ACL *acl;
+  int forwarded;
 };
 
 typedef struct _service_cond
 {
   enum service_cond_type type;
+  STRING *tag;
+  int decode;
+  WATCHER *watcher;
   union
   {
-    ACL *acl;
-    regex_t re;
-    struct bool_service_cond bool;
-    struct _service_cond *cond;
+    struct acl_cond acl;
+    GENPAT re;
+    struct bool_service_cond boolean;
+    struct dyn_service_cond dyn;
+    int ref;                 /* COND_REF */
     struct string_match sm;  /* COND_QUERY_PARAM and COND_STRING_MATCH */
     struct pass_file pwfile; /* COND_BASIC_AUTH */
+    X509 *x509;              /* COND_CLIENT_CERT */
+    struct pndlua_closure clua; /* COND_LUA */
+    struct tbf_cond tbf;     /* COND_TBF */
   };
   SLIST_ENTRY (_service_cond) next;
 } SERVICE_COND;
@@ -600,8 +844,8 @@ service_cond_init (SERVICE_COND *cond, int type)
       break;
 
     case COND_BOOL:
-      cond->bool.op = BOOL_AND;
-      SLIST_INIT (&cond->bool.head);
+      cond->boolean.op = BOOL_AND;
+      SLIST_INIT (&cond->boolean.head);
       break;
     }
 }
@@ -614,7 +858,9 @@ enum rewrite_type
     REWRITE_URL_SET,
     REWRITE_PATH_SET,
     REWRITE_QUERY_SET,
-    REWRITE_QUERY_PARAM_SET
+    REWRITE_QUERY_PARAM_SET,
+    REWRITE_QUERY_DELETE,
+    REWRITE_LUA
   };
 
 typedef SLIST_HEAD(,rewrite_op) REWRITE_OP_HEAD;
@@ -624,6 +870,7 @@ typedef struct rewrite_op
 {
   SLIST_ENTRY (rewrite_op) next; /* Next op in the list. */
   enum rewrite_type type;        /* Rewrite operation type. */
+  int encode;                    /* Percent-encode value before setting. */
   union
   {
     struct rewrite_rule *rule;   /* type == REWRITE_REWRITE_RULE */
@@ -634,6 +881,7 @@ typedef struct rewrite_op
       char *value;
     } qp;                        /* type == REWRITE_QUERY_PARAM_SET */
     char *str;                   /* type == REWRITE_*_SET */
+    struct pndlua_closure lua;   /* type == REWRITE_LUA */
   } v;
 } REWRITE_OP;
 
@@ -647,9 +895,11 @@ typedef struct rewrite_rule
 
 typedef enum
   {
-    BALANCER_RANDOM,
-    BALANCER_IWRR,
-  } BALANCER;
+    BALANCER_ALGO_RANDOM,
+    BALANCER_ALGO_IWRR,
+  } BALANCER_ALGO;
+
+#define PRI_MAX   65535
 
 enum
   {
@@ -657,33 +907,64 @@ enum
     REWRITE_RESPONSE
   };
 
+struct iwrr_balancer
+{
+  int round;
+  int max_pri;                  /* maximum priority */
+  BACKEND *cur;
+};
+
+struct rand_balancer
+{
+  unsigned long sum_pri;	/* sum of priorities of active backends */
+};
+
+typedef struct balancer
+{
+  BALANCER_ALGO algo;
+  int weight;                   /* relative weight among other balancers */
+  unsigned act_num;             /* number of active backends */
+  BACKEND_HEAD backends;
+  DLIST_ENTRY (balancer) link;
+  union
+  {
+    struct iwrr_balancer iwrr;
+    struct rand_balancer rand;
+  };
+} BALANCER;
+
+typedef DLIST_HEAD (,balancer) BALANCER_LIST;
+
 /* service definition */
 typedef struct _service
 {
   char *name;			/* symbolic name */
-  char *locus;                  /* Location in the config file */
+  struct locus_range locus;     /* Location in the config file. */
   SERVICE_COND cond;
   REWRITE_RULE_HEAD rewrite[2];
-  BACKEND_HEAD backends;
-  BACKEND *emergency;
-  int abs_pri;			/* abs total priority for all back-ends */
-  int tot_pri;			/* total priority for current back-ends */
-  int max_pri;                  /* maximum priority */
-  BALANCER balancer;
-  /* For IWRR balancer */
-  int iwrr_round;
-  BACKEND *iwrr_cur;
+  BALANCER_LIST balancers;
+  BALANCER_ALGO balancer_algo;
   pthread_mutex_t mut;		/* mutex for this service */
   SESS_TYPE sess_type;
   unsigned sess_ttl;		/* session time-to-live */
   char *sess_id;                /* Session anchor ID */
   SESSION_TABLE *sessions;	/* currently active sessions */
   int disabled;			/* true if the service is disabled */
+  int rewrite_errors;           /* Rewrite HTTP errors. */
+
   /* Logging */
   char *forwarded_header;       /* "forwarded" header name */
   ACL *trusted_ips;             /* Trusted IP addresses */
   int log_suppress_mask;        /* Suppress HTTP logging for these status
 				   codes.  A bitmask. */
+
+  /* Backend removal */
+  BACKEND_HEAD be_rem_head;     /* List of backends scheduled for removal. */
+  pthread_cond_t be_rem_cond;   /* Condition through which the removal thread
+				   is notified that a backend from the list is
+				   ready for removal.
+				 */
+
   SLIST_ENTRY (_service) next;
 } SERVICE;
 
@@ -720,7 +1001,7 @@ int http_log_format_check (int n);
 typedef struct _listener
 {
   char *name;			/* symbolic name */
-  char *locus;                  /* Location in the config file */
+  struct locus_range locus;     /* Location in the config file. */
   struct addrinfo addr;		/* Socket address */
   int mode;                     /* File mode for AF_UNIX */
   int chowner;                  /* Change to effective owner, for AF_UNIX */
@@ -730,12 +1011,14 @@ typedef struct _listener
   int noHTTPS11;		/* HTTP 1.1 mode for SSL */
   int header_options;           /* additional header options */
   REWRITE_RULE_HEAD rewrite[2];
+  int rewrite_errors;           /* Rewrite HTTP errors. */
   int verb;			/* allowed HTTP verb group */
   unsigned to;			/* client time-out */
-  int has_pat;			/* was a URL pattern defined? */
-  regex_t url_pat;		/* pattern to match the request URL against */
-  char *http_err[HTTP_STATUS_MAX];	/* error messages */
-  CONTENT_LENGTH max_req;	/* max. request size */
+  GENPAT url_pat;	/* pattern to match the request URL against */
+  struct http_errmsg *http_err[HTTP_STATUS_MAX];	/* error messages */
+  unsigned linebufsize;         /* Line buffer size */
+  CONTENT_LENGTH max_req_size;	/* max. request size */
+  unsigned max_uri_length;      /* max. URI length */
   int rewr_loc;			/* rewrite location response */
   int rewr_dest;		/* rewrite destination header */
   int disabled;			/* true if the listener is disabled */
@@ -747,9 +1030,12 @@ typedef struct _listener
   SLIST_ENTRY (_listener) next;
 
   /* Used during configuration parsing */
+  char *addr_str;
+  char *port_str;
   int ssl_op_enable;
   int ssl_op_disable;
-  int has_other;
+  int verify;
+  int socket_from;
 } LISTENER;
 
 typedef SLIST_HEAD(,_listener) LISTENER_HEAD;
@@ -758,9 +1044,12 @@ struct submatch
 {
   size_t matchn;
   size_t matchmax;
-  regmatch_t *matchv;
+  POUND_REGMATCH *matchv;
   char *subject;
+  STRING *tag;
 };
+
+#define SUBMATCH_INITIALIZER { 0, 0, NULL, NULL, NULL }
 
 #define SMQ_SIZE 8
 
@@ -769,8 +1058,6 @@ struct submatch_queue
   int cur;
   struct submatch sm[SMQ_SIZE+1];
 };
-
-#define SUBMATCH_INITIALIZER { 0, 0, NULL, NULL }
 
 static inline void
 submatch_init (struct submatch *sm)
@@ -781,6 +1068,9 @@ submatch_init (struct submatch *sm)
   sm->subject = NULL;
 }
 
+static inline void submatch_queue_init (struct submatch_queue *smq) {
+  memset (smq, 0, sizeof (*smq));
+}
 void submatch_queue_free (struct submatch_queue *smq);
 
 enum
@@ -815,6 +1105,7 @@ typedef struct _pound_http
   int sock;
   LISTENER *lstn;
   struct addrinfo from_host;
+  char *buffer; /* Line buffer, allocated after the structure. */
 
   /* Deduced information */
   SERVICE *svc;
@@ -837,19 +1128,29 @@ typedef struct _pound_http
 
   struct timespec start_req; /* Time when original request was received */
   struct timespec end_req;   /* Time after the response was sent */
+  struct timespec be_start;  /* Time when the request was handed to the
+				backend */
 
-  char *orig_forwarded_header; /* Original value of forwarded header */
   int response_code;
 
   CONTENT_LENGTH res_bytes;
+
+#if ENABLE_LUA
+  char stash_init[2];
+#endif
 
   SLIST_ENTRY(_pound_http) next;
 } POUND_HTTP;
 
 typedef SLIST_HEAD(,_pound_http) POUND_HTTP_HEAD;
 
-void save_forwarded_header (POUND_HTTP *phttp);
+SERVICE_COND *detached_cond (int n);
+
+void stringbuf_store_ip (struct stringbuf *sb, POUND_HTTP *phttp, int fwd);
 void http_log (POUND_HTTP *phttp);
+struct addrinfo *get_remote_ip (POUND_HTTP *phttp, int forwarded,
+				struct addrinfo **pres);
+struct timespec pound_uptime (void);
 
 /* add a request to the queue */
 int pound_http_enqueue (int sock, LISTENER *lstn, struct sockaddr *sa, socklen_t salen);
@@ -868,8 +1169,8 @@ void *thr_http (void *);
 /* Log an error to the syslog or to stderr */
 void logmsg (const int, const char *, ...)
   ATTR_PRINTFLIKE(2,3);
-void abend (char const *fmt, ...)
-  ATTR_PRINTFLIKE(1,2);
+void abend (struct locus_range const *range, char const *fmt, ...)
+  ATTR_PRINTFLIKE(2,3);
 
 /* Translate inet/inet6 address into a string */
 char *addr2str (char *, int, const struct addrinfo *, int);
@@ -883,8 +1184,32 @@ SERVICE *get_service (POUND_HTTP *);
 /* Find the right back-end for a request */
 BACKEND *get_backend (POUND_HTTP *phttp);
 
+#ifdef ENABLE_DYNAMIC_BACKENDS
+void backend_ref (BACKEND *be);
+void backend_unref (BACKEND *be);
+static inline void
+backend_refcount_init (BACKEND *be)
+{
+  be->refcount = 1;
+}
+static inline int backend_referenced (BACKEND *be)
+{
+  return be->refcount > 1;
+}
+#else
+# define backend_ref(be)
+# define backend_unref(be)
+# define backend_refcount_init(be)
+# define backend_referenced(be) 1
+#endif
+
+void backend_matrix_to_regular (struct be_matrix *mtx, struct addrinfo *addr,
+				struct be_regular *reg);
+void backend_matrix_init (BACKEND *be);
+void backend_matrix_disable (BACKEND *be, int disable_mode);
+
 /* Search for a host name, return the addrinfo for it */
-int get_host (char *const, struct addrinfo *, int);
+int get_host (char const *, struct addrinfo *, int);
 
 /*
  * Find if a redirect needs rewriting
@@ -905,14 +1230,50 @@ void upd_session (SERVICE *, HTTP_HEADER_LIST *, BACKEND *);
 
 /*
  * mark a backend host as dead;
- * do nothing if no resurection code is active
+ * do nothing if no resurrection code is active
  */
 void kill_be (SERVICE *, BACKEND *, const int);
 
-/*
- * Update the number of requests and time to answer for a given back-end
- */
-void upd_be (SERVICE * const svc, BACKEND * const be, const double);
+void service_session_remove_by_backend (SERVICE *svc, BACKEND *be);
+void service_recompute_pri (SERVICE *svc,
+			    BALANCER *bl,
+			    void (*cb) (BACKEND *, void *),
+			    void *data);
+void service_recompute_pri_unlocked (SERVICE *svc,
+				     void (*cb) (BACKEND *, void *),
+				     void *data);
+void balancer_recompute_pri_unlocked (BALANCER *bl,
+					  void (*cb) (BACKEND *, void *),
+					  void *data);
+
+static inline void balancer_add_backend (BALANCER *bl, BACKEND *be)
+{
+  be->balancer = bl;
+  DLIST_INSERT_TAIL (&bl->backends, be, link);
+}
+
+static inline void balancer_remove_backend (BALANCER *bl, BACKEND *be)
+{
+  be->balancer = NULL;
+  DLIST_REMOVE (&bl->backends, be, link);
+}
+
+BALANCER *balancer_list_alloc (BALANCER_LIST *ml);
+BALANCER *balancer_list_get (BALANCER_LIST *ml, int n, BALANCER_ALGO algo);
+
+#define BALANCER_WEIGTH_MAX  65535
+
+static inline BALANCER *
+balancer_list_get_normal (BALANCER_LIST *ml)
+{
+  return balancer_list_get (ml, 0, BALANCER_ALGO_RANDOM);
+}
+
+static inline BALANCER *
+balancer_list_get_emerg (BALANCER_LIST *ml)
+{
+  return balancer_list_get (ml, BALANCER_WEIGTH_MAX, BALANCER_ALGO_RANDOM);
+}
 
 /*
  * Non-blocking version of connect(2). Does the same as connect(2) but
@@ -924,6 +1285,7 @@ int connect_nb (const int, const struct addrinfo *, const int);
  * Parse arguments/config file
  */
 void config_parse (int, char **);
+int config_parse_acl_file (ACL *acl, char const *filename, WORKDIR *wd);
 
 /*
  * RSA ephemeral keys: how many and how often
@@ -949,82 +1311,8 @@ void *thr_timer (void *);
 void POUND_SSL_CTX_init (SSL_CTX *ctx);
 int set_ECDHCurve (char *name);
 
-void *mem2nrealloc (void *p, size_t *pn, size_t s);
-void xnomem (void);
-void *xmalloc (size_t s);
-void *xcalloc (size_t nmemb, size_t size);
-#define xzalloc(s) xcalloc(1, s)
-#define XZALLOC(v) (v = xzalloc (sizeof ((v)[0])))
-
-void *xrealloc (void *p, size_t s);
-void *x2nrealloc (void *p, size_t *pn, size_t s);
-char *xstrdup (char const *s);
-char *xstrndup (const char *s, size_t n);
-
-struct stringbuf
-{
-  char *base;                     /* Buffer storage. */
-  size_t size;                    /* Size of buf. */
-  size_t len;                     /* Actually used length in buf. */
-  void (*nomem) (void);           /* Out of memory handler. */
-  int err;                        /* Error indicator */
-};
-
-void stringbuf_init (struct stringbuf *sb, void (*nomem) (void));
-void stringbuf_reset (struct stringbuf *sb);
-int stringbuf_truncate (struct stringbuf *sb, size_t len);
-char *stringbuf_finish (struct stringbuf *sb);
-void stringbuf_free (struct stringbuf *sb);
-int stringbuf_add (struct stringbuf *sb, char const *str, size_t len);
-int stringbuf_add_char (struct stringbuf *sb, int c);
-int stringbuf_add_string (struct stringbuf *sb, char const *str);
-int stringbuf_vprintf (struct stringbuf *sb, char const *fmt, va_list ap);
-int stringbuf_printf (struct stringbuf *sb, char const *fmt, ...)
-  ATTR_PRINTFLIKE(2,3);
-char *stringbuf_set (struct stringbuf *sb, int c, size_t n);
-int stringbuf_strftime (struct stringbuf *sb, char const *fmt,
-			const struct tm *tm);
-
-static inline int
-stringbuf_err (struct stringbuf *sb)
-{
-  return sb->err;
-}
-
-static inline char *stringbuf_value (struct stringbuf *sb)
-{
-  return sb->base;
-}
-
-static inline size_t stringbuf_len (struct stringbuf *sb)
-{
-  return sb->len;
-}
-
-extern void xnomem (void);
-extern void lognomem (void);
-
-static inline void xstringbuf_init (struct stringbuf *sb)
-{
-  stringbuf_init (sb, xnomem);
-}
-
-static inline void stringbuf_init_log (struct stringbuf *sb)
-{
-  stringbuf_init (sb, lognomem);
-}
-
-void job_enqueue_unlocked (struct timespec const *ts, void (*func) (void *), void *data);
-void job_enqueue_after_unlocked (unsigned t, void (*func) (void *), void *data);
-
-void job_enqueue (struct timespec const *ts, void (*func) (void *), void *data);
-void job_enqueue_after (unsigned t, void (*func) (void *), void *data);
-
-void job_rearm_unlocked (struct timespec *ts, void (*func) (void *), void *data);
-void job_rearm (struct timespec *ts, void (*func) (void *), void *data);
-
 char const *sess_type_to_str (int type);
-int control_response (POUND_HTTP *arg);
+int control_response_basic (POUND_HTTP *arg);
 void pound_atexit (void (*func) (void *), void *arg);
 int unlink_at_exit (char const *file_name);
 
@@ -1075,11 +1363,14 @@ void template_run (TEMPLATE tmpl, struct json_value *val, FILE *outfile);
 char const *template_strerror (int ec);
 void template_free (TEMPLATE tmpl);
 
-void errormsg (int ex, int ec, char const *fmt, ...);
-void json_error (struct json_value *val, char const *fmt, ...);
+void errormsg (int ex, int ec, char const *fmt, ...)
+  ATTR_PRINTFLIKE(3,4);
+void json_error (struct json_value *val, char const *fmt, ...)
+  ATTR_PRINTFLIKE(2,3);
 
 int http_status_to_pound (int status);
 int pound_to_http_status (int err);
+char const *http_status_reason (int code);
 
 struct json_value *workers_serialize (void);
 struct json_value *pound_serialize (void);
@@ -1092,32 +1383,15 @@ struct http_header *http_header_list_locate_name (HTTP_HEADER_LIST *head, char c
 struct http_header *http_header_list_next (struct http_header *hdr);
 char *http_header_get_value (struct http_header *hdr);
 
-/*
- * Return codes for http_request_get_query_param,
- * http_request_get_query_param_value, and request accessors.
- */
-enum
-  {
-    RETRIEVE_OK,
-    RETRIEVE_NOT_FOUND,
-    RETRIEVE_ERROR = -1
-  };
-
-int http_request_get_url (struct http_request *, char const **);
-int http_request_get_query (struct http_request *, char const **);
-int http_request_get_path (struct http_request *req, char const **retval);
-int http_request_get_query_param_value (struct http_request *req,
-					char const *name,
-					char const **retval);
-char const *http_request_orig_line (struct http_request *req);
-int http_request_get_basic_auth (struct http_request *req,
-				 char **u_name, char **u_pass);
 
 void service_lb_init (SERVICE *svc);
+void service_lb_reset (SERVICE *svc, BACKEND *be);
 
 FILE *fopen_wd (WORKDIR *wd, const char *filename);
+FILE *fopen_include (const char *filename);
 void fopen_error (int pri, int ec, WORKDIR *wd, const char *filename,
-		  struct locus_range *loc);
+		  struct locus_range const *loc);
+char *filename_resolve (const char *filename);
 
 typedef int (*LISTENER_ITERATOR) (LISTENER *, void *);
 int foreach_listener (LISTENER_ITERATOR itr, void *data);
@@ -1128,7 +1402,65 @@ int foreach_service (SERVICE_ITERATOR itr, void *data);
 typedef int (*BACKEND_ITERATOR) (BACKEND *, void *);
 int foreach_backend (BACKEND_ITERATOR itr, void *data);
 
+int basic_auth_read (void *obj, char const *filename, WORKDIR *wd);
+void basic_auth_clear (void *obj);
 int basic_auth (struct pass_file *pwf, struct http_request *req);
 
 void combinable_header_add (char const *name);
 int is_combinable_header (struct http_header *hdr);
+
+TBF *tbf_alloc (uint64_t rate, unsigned burst);
+int tbf_eval (TBF *env, char const *keyid);
+
+#if ENABLE_LUA
+static inline void phttp_lua_stash_reset (POUND_HTTP *p)
+{
+  p->stash_init[PNDLUA_CTX_GLOBAL] = p->stash_init[PNDLUA_CTX_THREAD] = 0;
+}
+int pndlua_init (void);
+int pndlua_match (POUND_HTTP *phttp, struct pndlua_closure const *cond,
+		  char **argv, void *data);
+int pndlua_modify (POUND_HTTP *phttp, struct pndlua_closure const *cond,
+		   char **argv, void *data);
+int pndlua_backend (POUND_HTTP *phttp, struct pndlua_closure const *cond,
+		    char **argv, void *data);
+int pndlua_parse_config (void *call_data, void *section_data);
+int pndlua_parse_closure (struct pndlua_closure *cond);
+#else
+# define phttp_lua_stash_reset(p)
+static inline int pndlua_init (void) { return 0; }
+static inline int
+cfg_no_lua (void)
+{
+  conf_error ("%s", "this pound is compiled without support for Lua");
+  return CFGPARSER_FAIL;
+}
+static inline int
+pndlua_parse_config (void *call_data, void *section_data)
+{
+  return cfg_no_lua ();
+}
+static inline int
+pndlua_parse_closure (struct pndlua_closure *cond)
+{
+  return cfg_no_lua ();
+}
+static inline int
+pndlua_match (POUND_HTTP *phttp, struct pndlua_closure const *cond,
+	      char **argv, void *data)
+{
+  return -1;
+}
+static inline int
+pndlua_modify (POUND_HTTP *phttp, struct pndlua_closure const *cond,
+	       char **argv, void *data)
+{
+  return -1;
+}
+static inline int
+pndlua_backend (POUND_HTTP *phttp, struct pndlua_closure const *cond,
+		char **argv, void *data)
+{
+  return -1;
+}
+#endif

@@ -1,6 +1,6 @@
 /*
  * General-purpose hash table macros for pound.
- * Copyright (C) 2023-2024 Sergey Poznyakoff
+ * Copyright (C) 2023-2025 Sergey Poznyakoff
  *
  * Pound is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,7 +19,7 @@
 /*
  * SYNOPSIS
  *      typedef struct {
- *          char name;
+ *          char *name;
  *          ...
  *      } X
  *      #define HT_TYPE X
@@ -36,6 +36,11 @@
  *     X *X_RETRIEVE(X_HASH *, X *);
  *     X *X_DELETE(X_HASH *, X *);
  *     void X_FOREACH(X_HASH *, void (*)(X *, void *), void *)
+ *     void X_FOREACH_SAFE(X_HASH *, void (*)(X *, void *), void *)
+ *
+ *   The X_FOREACH and X_FOREACH_SAFE functions iterate over all elements
+ *   in hash invoking the supplied callback function on each of them.  Use
+ *   X_FOREACH_SAFE if the callback can delete elements from the hash.
  *
  *   If the name of the key field is not "name", the HT_NAME_FIELD must
  *   be defined before including ht.h:
@@ -57,10 +62,11 @@
  *   If some functions from the list above are not needed, define the
  *   following symbols to prevent them from being declared:
  *
- *     HT_NO_HASH_FREE   - omit X_HASH_FREE function;
- *     HT_NO_RETRIEVE    - omit X_RETRIEVE function;
- *     HT_NO_DELETE      - omit X_DELETE function;
- *     HT_NO_FOREACH     - omit X_FOREACH function;
+ *     HT_NO_HASH_FREE    - omit X_HASH_FREE function;
+ *     HT_NO_RETRIEVE     - omit X_RETRIEVE function;
+ *     HT_NO_DELETE       - omit X_DELETE function;
+ *     HT_NO_FOREACH      - omit X_FOREACH and X_FOREACH_SAFE function;
+ *     HT_NO_FOREACH_SAFE - omit X_FOREACH_SAFE;
  *
  *   (there is no way to omit the X_INSERT function - you need to populate
  *   the hash somehow, don't you?)
@@ -133,9 +139,9 @@ static inline void
 cat2(HT_TYPE,_HASH_FREE) (HT_TYPE_HASH_T *tab)
 {
 #if OPENSSL_VERSION_NUMBER >= 0x10100000L
-  return cat3(lh_, HT_TYPE, _free) (tab);
+  cat3(lh_, HT_TYPE, _free) (tab);
 #else
-  return LHM_lh_free (HT_TYPE, tab);
+  LHM_lh_free (HT_TYPE, tab);
 #endif
 }
 #endif /* HT_NO_HASH_FREE */
@@ -180,8 +186,8 @@ IMPLEMENT_LHASH_DOALL_ARG (HT_TYPE, void);
 #endif
 
 static inline void
-cat2(HT_TYPE, _FOREACH) (HT_TYPE_HASH_T *tab, void (*fun) (HT_TYPE *, void *),
-			 void *data)
+cat2(HT_TYPE, _FOREACH) (HT_TYPE_HASH_T *tab,
+			 void (*fun) (HT_TYPE *, void *), void *data)
 {
 #if OPENSSL_VERSION_NUMBER >= 0x10100000L
   cat3 (lh_, HT_TYPE, _doall_void) (tab, fun, data);
@@ -189,6 +195,37 @@ cat2(HT_TYPE, _FOREACH) (HT_TYPE_HASH_T *tab, void (*fun) (HT_TYPE *, void *),
   LHM_lh_doall_arg (HT_TYPE, tab, (void (*)(void *, void *)) fun, void *, data);
 #endif
 }
+
+static inline unsigned long
+cat2(HT_TYPE, _get_down_load) (HT_TYPE_HASH_T *tab)
+{
+#if OPENSSL_VERSION_NUMBER >= 0x10100000L
+  return cat3 (lh_, HT_TYPE, _get_down_load) (tab);
+#else
+  return CHECKED_LHASH_OF (HT_TYPE, tab)->down_load;
+#endif
+}
+
+static inline void
+cat2(HT_TYPE, _set_down_load) (HT_TYPE_HASH_T *tab, unsigned long dl)
+{
+#if OPENSSL_VERSION_NUMBER >= 0x10100000L
+  cat3 (lh_, HT_TYPE, _set_down_load) (tab, dl);
+#else
+  CHECKED_LHASH_OF (HT_TYPE, tab)->down_load = dl;
+#endif
+}
+
+#ifndef HT_NO_FOREACH_SAFE
+static inline void
+cat2(HT_TYPE, _FOREACH_SAFE) (HT_TYPE_HASH_T *tab,
+			      void (*fun) (HT_TYPE *, void *), void *data)
+{
+  unsigned long dl = cat2(HT_TYPE, _get_down_load) (tab);
+  cat2(HT_TYPE, _FOREACH) (tab, fun, data);
+  cat2(HT_TYPE, _set_down_load) (tab, dl);
+}
+#endif /* HT_NO_FOREACH_SAFE */
 #endif /* HT_NO_FOREACH */
 
 #undef __cat2__

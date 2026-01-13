@@ -1,5 +1,5 @@
 # This file is part of pound testsuite. -*- autotest -*-
-# Copyright (C) 2023-2024 Sergey Poznyakoff
+# Copyright (C) 2023-2025 Sergey Poznyakoff
 #
 # Pound is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -58,6 +58,26 @@ end
 PT_CHECK([ListenHTTP
 	Service
 		Rewrite
+			SetPath -encode "/echo/one&other"
+		End
+		Backend
+			Address
+			Port
+		End
+	End
+End
+],
+[GET /one
+end
+
+200
+x-orig-uri: /echo/one%26other
+end
+])
+
+PT_CHECK([ListenHTTP
+	Service
+		Rewrite
 			SetQuery "foo=10&quux=b%20ar"
 		End
 		Backend
@@ -72,6 +92,26 @@ end
 
 200
 x-orig-uri: /echo/one?foo=10&quux=b%20ar
+end
+])
+
+PT_CHECK([ListenHTTP
+	Service
+		Rewrite
+			DeleteQuery
+		End
+		Backend
+			Address
+			Port
+		End
+	End
+End
+],
+[GET /echo/one?foo=10&quux=b%20ar
+end
+
+200
+x-orig-uri: /echo/one
 end
 ])
 
@@ -93,6 +133,47 @@ end
 
 200
 x-orig-uri: /echo/one?foo=10&quux=b%20ar
+end
+])
+
+PT_CHECK([ListenHTTP
+	Service
+		Rewrite
+			SetQueryParam -encode "quux" "foo & bar"
+			SetQueryParam "foo" -encode "q?"
+		End
+		Backend
+			Address
+			Port
+		End
+	End
+End
+],
+[GET /echo/one?foo=10
+end
+
+200
+x-orig-uri: /echo/one?foo=q%3F&quux=foo%20%26%20bar
+end
+])
+
+PT_CHECK([ListenHTTP
+	Service
+		Rewrite
+			SetQueryParam "foo"
+		End
+		Backend
+			Address
+			Port
+		End
+	End
+End
+],
+[GET /echo/one?foo=10&quux=b%20ar
+end
+
+200
+x-orig-uri: /echo/one?quux=b%20ar
 end
 ])
 

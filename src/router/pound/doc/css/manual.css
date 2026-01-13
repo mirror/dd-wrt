@@ -1,0 +1,120 @@
+html, body {
+   font-size: 1em;
+   text-align: left;
+   text-decoration: none;
+}
+html { background-color: #e7e7e7; }
+
+body {
+   max-width: 45em;
+   margin: 0 auto;
+   padding: .5em 1em 1em 1em;
+   background-color: white;
+   border: .1em solid #c0c0c0;
+}
+
+/* makeinfo 6.5 converts @quotation to <blockquote>.  Highlight them.  */
+blockquote {
+    font-style: normal;
+    border-left: solid 10px red;
+    padding-left: 2.5%;
+    margin-left: 0px;
+}
+
+/* Increase inter-line spacing to improve readability.  */
+p, pre, li, dt, dd, table, code, address { line-height: 1.5em; }
+
+var { font-style: italic; }
+
+/* Lay out @lisp just like @example.  Copied from what /style.css
+   does for the 'example' class.  */
+div.lisp { padding: .8em 1.2em .4em; }
+pre.lisp { padding: .8em 1.2em; }
+div.lisp, pre.lisp {
+   margin: 1em 0 1em 3% ;
+   -webkit-border-radius: .3em;
+   -moz-border-radius: .3em;
+   border-radius: .3em;
+   border: 1px solid #d4cbb6;
+   background-color: #f2efe4;
+}
+div.lisp > pre.lisp {
+   padding: 0 0 .4em;
+   margin: 0;
+   border: none;
+}
+
+/* makeinfo 6.7 uses <div class="header"> for navigation links above node
+   titles.  Make those links less prominent.  */
+.header {
+    line-height: 2em;
+    font-size: 87.5%;
+    color: #433;
+}
+
+/* In title and node titles, use Fira Sans if available as it is more
+   pleasant and more compact than Helvetica.  */
+.settitle, .top, .chapter, .section, .subsection, .subsubsection {
+    font-family: Fira Sans, sans-serif;
+}
+
+/* This makes the very long tables of contents in Gnulib and other
+   manuals easier to read. */
+.contents ul, .shortcontents ul { font-weight: bold; }
+.contents ul ul, .shortcontents ul ul { font-weight: normal; }
+.contents ul { list-style: none; }
+
+/* For colored navigation bars (Emacs manual): make the bar extend
+   across the whole width of the page and give it a decent height. */
+.header, .node { margin: 0 -1em; padding: 0 1em; }
+.header p, .node p { line-height: 2em; }
+
+/* For navigation links. We can't use inline-block display to avoid wrapping
+   because this makes the links appear much smaller than normal text on 
+   phones with Chromium (RT #1872370). */
+.node a, .header a { /*display: inline-block;*/ line-height: 2em; }
+.node a:hover, .header a:hover { background: #f2efe4; }
+
+/* Inserts */
+table.cartouche td { padding: 1.5em; }
+
+div.display, div.lisp, div.smalldisplay,
+ div.smallexample, div.smalllisp { margin-left: 3%; }
+
+div.example { padding: .8em 1.2em .4em; }
+pre.example { padding: .8em 1.2em; }
+div.example, pre.example {
+   margin: 1em 0 1em 3% ;
+   -webkit-border-radius: .3em;
+   -moz-border-radius: .3em;
+   border-radius: .3em;
+   border: 1px solid #d4cbb6;
+   background-color: #f2efe4;
+}
+div.example > pre.example {
+   padding: 0 0 .4em;
+   margin: 0;
+   border: none;
+}
+
+pre.menu-comment { padding-top: 1.3em; margin: 0; }
+
+span.button {
+    padding-left: 1em;
+}
+
+span.button-right {
+    float: right;
+}
+
+div.header {
+    display: flex;
+    flex-direction: column;
+}
+
+/*** FOR WIDE SCREENS ***/
+
+@media (min-width: 40em) {
+   body { padding: .5em 3em 1em 3em; }
+   div.header, div.node { margin: 0 -3em; padding: 0 3em; }
+}

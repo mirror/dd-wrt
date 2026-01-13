@@ -1,6 +1,6 @@
 .\" Pound - the reverse-proxy load-balancer
 .\" Copyright (C) 2002-2010 Apsis GmbH
-.\" Copyright (C) 2018-2024 Sergey Poznyakoff
+.\" Copyright (C) 2018-2025 Sergey Poznyakoff
 .\"
 .\" Pound is free software; you can redistribute it and/or modify
 .\" it under the terms of the GNU General Public License as published by
@@ -14,7 +14,7 @@
 .\"
 .\" You should have received a copy of the GNU General Public License
 .\" along with pound.  If not, see <http://www.gnu.org/licenses/>.
-.TH POUND 8 "October 22, 2023" "pound" "System Manager's Manual"
+.TH POUND 8 "November 14, 2025" "pound" "System Manager's Manual"
 .SH NAME
 pound \- HTTP/HTTPS reverse-proxy and load-balancer
 .SH SYNOPSIS
@@ -68,7 +68,7 @@ attempts to match it to each service in turn, starting with the
 services defined in the listener itself and, if needed, continuing
 with those defined at the global level.  Services may define their own
 conditions as to which requests they can answer: typically this
-involves certain URLs (images only, or a certain path) or specific
+involves certain URLs (e.g. images only, or a certain path) or specific
 headers (such as the Host header).  A service may also define a
 .I session
 mechanism: if so, future requests from a given client will always
@@ -77,12 +77,8 @@ be answered by the same
 .TP
 \fBBackends\fR
 .I Backends
-are the actual servers for the content requested. By itself,
-.B pound
-supplies no responses - all contents must be received from a "real"
-web server.  A
-.I backend
-defines how the server should be contacted.
+define where to obtain the content requested.  Most often, they refer
+to "real" web servers and define how to contact them.
 .IP
 Several types of backends are defined:
 .RS
@@ -95,6 +91,10 @@ of
 A regular backend passes received requests to a backend server, waits
 for it to respond and sends the response back to the requesting
 client.
+.TP
+.I Emergency backend
+A special case of regular backend which will be used only if all other
+regular backends fail to respond.
 .TP
 .I Redirect backend
 A redirect backend responds to each request with a redirect response.
@@ -113,63 +113,56 @@ See the
 section below.
 .TP
 .I Error backend
-An error backend creates and returns an HTTP status response.
+The error backend creates and returns a predefined HTTP status response.
 .TP
-.I Emergency backend
-A special case of regular backend which will be used only if all other
-regular backends fail to respond.
+.I Static file backend
+This backend responds with a contents of a disk file.
 .RE
 .IP
-Multiple backends may be defined within a service, in which case
+Multiple regular or emergency backends may be defined within a
+service, in which case
 .B pound
 will balance the load between the available backends.
 .IP
 Two types of load-balancing strategies are implemented: random
 balancing (default), and interleaved weighted round-robin balancing.
 .IP
-If a backend fails to respond, it will be considered "dead", in which
+If a regular backend fails to respond, it will be considered "dead", in which
 case
 .B pound
-will stop sending requests to it. Dead
-.I backends
-are periodically checked for availability, and once they respond again they
-are "resurrected" and requests are sent again their way. If no backends
+will stop sending requests to it. Dead backends are periodically
+checked for availability, and once they respond again they are
+"resurrected" and requests are sent again their way. If no backends
 are available (none were defined, or all are "dead"), then
 .B pound
 will reply with "503 Service Unavailable", without checking additional
 services.
 .IP
-Normally, the connection between
+Normally,
 .B pound
-and its backends is via plain HTTP.  It is, however, possible to use
-HTTPS as well.
+communicates with its backends via plain HTTP.  It is, however,
+possible to use HTTPS as well.
 .PP
 A working
 .B pound
 configuration may define multiple listeners and services.  They can be
 identified either by 0-based ordinal number within the configuration
 (or, for services, within the listener) or by their symbolic name.
-Backends are identified by their ordinal number within service.
+Backends are identified by their ordinal number within the service.
 .SH REQUEST BALANCING
 \fILoad balancing strategy\fR defines algorithm used to distribute
-incoming requests between multiple regular backends.  Two such
-strategies are implemented:
-.TP
-.B Weighted Random Balancing
-This is the default strategy.  Each backend is assigned a numeric
+incoming requests between multiple regular backends.  Each backend
+is assigned a
 .I priority
-between 0 and 9 (inclusive).  The backend to use for each request is
-determined at random taking into account backend priorities, so that
-backends with numerically greater priorities have proportionally greater
-chances of being selected than the ones with lesser priorities.  The
-share of requests a backend handles can be estimated as:
+-- a positive number indicating its relative weight among other backends.
+The share of requests a backend handles can be estimated as:
 .IP
 .RS
 .EX
 .BR "Pi / S(P)" ,
 .EE
 .RE
-.IP
+.PP
 where
 .B Pi
 is priority of the backend with index
@@ -177,28 +170,46 @@ is priority of the backend with index
 and
 .B S(P)
 is sum of all priorities.
+.PP
+Two balancing strategies are implemented:
+.TP
+.B Weighted Random Balancing
+This is the default strategy.  The backend to use for each request is
+determined at random taking into account backend priorities, so that
+backends with numerically greater priorities have proportionally
+greater chances of being selected than the ones with lesser priorities.
 .TP
 .B Interleaved Weighted Round Robin Balancing
-Requests are assigned to each backend in turn.  Backend priorities, or
-.I weights
-are used to control the share of requests handled by each backend.
-The greater the weight, the more requests will be sent to this backend.
-In general, the share of requests assigned to a backend is calculated
-by the following relation:
+This strategy cycles over all active backends, considering each one in
+its turn.  An integer ordinal number is assigned to each round, which
+is incremented (modulo number of backends) each time a new round is
+started.  A backend is assigned a request only if its priority is
+greater than the round number.
 .IP
-.RS
-.EX
-.BR "(Pi + 1) / (N + S(P))" ,
-.EE
-.RE
-.IP
-where
-.B N
-is the number of backends,
-.B Pi
-and
-.B S(P)
-as discussed above.
+This strategy offers several advantages compared with the previous
+one.  First, it results in a more even distribution of the
+requests.  Secondly, the resulting distribution is predictable.
+.PP
+Within each \fBService\fR, multiple backends are grouped in
+.IR "balancer groups" .
+Each such group is assigned a unique integer \fIpriority\fR, which
+defines the order in which the groups are tried.  When selecting a
+backend, a group with the numerically lesser priority is selected and
+a suitable backend is looked up among backends defined in the group,
+using one of the balancing strategies discussed above.  If no backend
+can be selected (e.g. all backends are unavailable), next group is
+tried.  The process continues until either a backend is chosen or
+the list of balancer groups is exhausted.
+.PP
+By default, backends declared using the \fBBackend\fR keyword are
+assigned to the balancer group 0.  These are backends used during
+normal operation.  Backends declared using the \fBEmergency\fR keyword
+are assigned to the balancer group 65535.  These backends form a pull
+of \fIhigh availability\fR backends, which will be tried only if all
+of the normal backends fail.
+.PP
+More backend groups can be added using dynamic backends, discussed
+below.
 .SH WORKER MODEL
 Each incoming request is processed by a specific \fIworker\fR, i.e. a
 thread in the running program.  The number of running workers is
@@ -233,7 +244,8 @@ server.
 .TP
 \fB\-e\fR
 Log to standard error (standard output for \fBLOG_DEBUG\fR and
-\fBLOG_INFO\fR severity levels).  This option implies \fIforeground mode\fR
+\fBLOG_INFO\fR severity levels).  Both standard streams are set to
+line buffering mode.  This option implies \fIforeground mode\fR
 (\fB\-F\fR) and overrides the \fILogLevel\fR configuration setting.
 .TP
 \fB\-F\fR
@@ -284,6 +296,9 @@ terms, and configuration flags.
 Enable or disable (if prefixed with \fBno\-\fR) additional \fBpound\fR
 features.  As of this version, the following \fIFEATURE\fRs are implemented:
 .RS
+.TP
+.RB [ no\- ] warn\-deprecated
+Warn if any deprecated statements are used in configuration file.
 .TP
 .RB [ no\- ] dns
 Resolve host names found in configuration file.  This is the default.
@@ -352,6 +367,143 @@ Unless specified otherwise, directives may appear in any order.
 Global directives may appear anywhere at the top level within the
 configuration file, although it is customary for them to be at the
 start.
+.SS Program settings
+.TP
+\fBDaemon\fR \fIbool\fR
+Instructs
+.B pound
+to run in the foreground (if \fIfalse\fR) or as a daemon (if
+\fItrue\fR). By default
+.B pound
+runs as a daemon (i.e. detaches itself from the controlling terminal and
+continues operating in the background). By setting this directive to
+\fIfalse\fR you
+can force
+.B pound
+to work like a regular process.  See also \fB\-F\fR and \fB\-e\fR
+options, above.
+.TP
+\fBBalancer\fR \fBrandom\fR | \fBiwrr\fR
+Defines the load-balancing strategy to use.  Possible arguments are:
+\fBrandom\fR, to use weighted random balancing algorithm, and
+\fBiwrr\fR, meaning interleaved weighted round robin balancing.
+See
+.BR "REQUEST BALANCING" ,
+above, for a detailed discussion of these balancing strategies.
+.IP
+The \fBBalancer\fR statement in the global scope applies to all
+\fBService\fR directives that don't contain \fBBalancer\fR
+definitions of their own.
+.TP
+\fBControl\fR "\fIpathname\fR"
+Set the control socket path.
+See the
+.B Control socket
+section below, for a detailed description of this feature.
+.TP
+\fBIgnoreCase\fR \fIbool\fR
+Ignore letter case when doing regex matching (default: \fIfalse\fR). This
+directive sets the default for the following service matching
+directives:
+.BR URL ,
+.BR Path ,
+.BR QueryParam ,
+.BR Query ,
+.BR StringMatch ,
+as well as for the \fBDeleteHeader\fR modification directive.  Its
+value can be overridden for specific services.
+.IP
+This statement is deprecated and will be removed in future versions.
+Please, use the \fB\-icase\fR option to the service matching directive
+instead.  See the discussion of \fIoptions\fR in
+.B Service Matching Directives
+section below.
+.TP
+\fBLineBufferSize\fR \fIN\fR
+Sets the line buffer size.  Line buffer is used when reading request
+line, backend response status line, and header fields in both requests
+and responses.  Thus, this value limits the maximum length allowed for
+these parts of HTTP messages.  By default, it is set to the internal
+buffer size (4096 bytes, configurable at compile time using the
+\fB\-\-with\-maxbuf\fR option).  It cannot be set to a value less than
+that default.
+.TP
+\fBPIDFile\fR "\fIfilename\fR"
+Sets the name of the file where to store program PID.  It can be
+overridden by the
+.B \-p
+command line option.
+.IP
+.I Notice
+the following:
+.RS
+.nr step 1 1
+.IP \n[step].
+When running with a supervisor, this file holds PID of the supervisor
+process.  Otherwise, it holds PID of the main
+.B pound
+process.  This means it is always suitable for signalling the program
+using the traditional \fBkill `cat filename`\fR technique.
+.IP \n+[step].
+Before shutting down,
+.B pound
+removes this file.  However, this may not be possible if it switches to
+privileges of another user after startup (i.e. at least one of \fBUser\fR or
+\fBGroup\fR are set in the configuration file) and the file is stored in
+a directory whose permissions forbid write access for that user.
+.RE
+.TP
+\fBRegexType posix\fR | \fBpcre\fR | \fBperl\fR
+Sets the type of regular expressions to use in request matching
+statements.
+.B posix
+selects POSIX extended regular expressions and
+.B pcre
+or
+.B perl
+select Perl-compatible regular expressions.  The latter requires
+compile-time support.  The selected regular expression type remains in
+effect until next
+.B RegexType
+statement or end of the configuration file, whichever occurs first.
+.TP
+\fBSupervisor\fR \fIbool\fR
+When running in daemon mode, start a \fIsupervisor\fR process first.
+This process will monitor the subordinate \fBpound\fR process, restarting
+it if it fails.
+.TP
+\fBThreads\fR \fIN\fR
+This statement, retained for backward compatibility with previous
+versions of
+.BR pound ,
+is equivalent to:
+.IP
+.RS
+.EX
+WorkerMinCount \fIN\fR
+WorkerMaxCount \fIN\fR
+.EE
+.RE
+.TP
+\fBWorkerIdleTimeout\fR \fISEC\fR
+Sets idle timeout for a worker thread.  Default is 30 seconds.
+See the section
+.B WORKER MODEL
+above for a detailed discussion.
+.TP
+\fBWorkerMinCount\fR \fIN\fR
+Sets minimum number of worker threads that must always be running.
+The default is 5.
+See the section
+.B WORKER MODEL
+above for a detailed discussion.
+.TP
+\fBWorkerMaxCount\fR \fIN\fR
+Sets maximum number of worker threads.  The default is 128.
+See the section
+.B WORKER MODEL
+above for a detailed discussion.
+.SS Privilege selection
 .TP
 \fBUser\fR "\fIuser_name\fR"
 Specify the user
@@ -367,94 +519,24 @@ will run as (must be defined in the system group database).
 Specify the directory that
 .B pound
 will chroot to at runtime.
+.SS SSL engine settings
 .TP
-\fBHeaderOption\fR \fIopt\fR...
-Sets default options for header addition.  \fIopt\fR is one of:
-\fBnone\fR to disable additional headers, \fBforwarded\fR to enable
-adding
-.BR X\-Forwarded\-For ,
-.BR X\-Forwarded\-Proto ,
-and
-.B X\-Forwarded\-Port
-headers, and
-.B ssl
-to enable passing information about SSL certificates in various
-.B X\-SSL\-*
-headers.  The default is
-.IP
-.RS
-.B HeaderOption forwarded ssl
-.RE
-.IP
-This setting can be overridden on a per-listener basis.  See the
-description of \fBHeaderOption\fR directive in \fBHTTP Listener\fR
-section, and section \fBBUILT-IN HEADERS\fR, for a detailed
-discussion of various header modification directives and their effect.
+\fBSSLEngine\fR "\fIname\fR"
+Use an OpenSSL hardware acceleration card called \fIname\fR. Available
+only if OpenSSL-engine is installed on your system.
 .TP
-\fBBalancer\fR \fBrandom\fR | \fBiwrr\fR
-Defines the load-balancing strategy to use.  Possible arguments are:
-\fBrandom\fR, to use weighted random balancing algorithm. an
-\fBiwrr\fR, meaning interleaved weighted round robin balancing.
-See
-.BR "REQUEST BALANCING" ,
-above, for a detailed discussion of these balancing strategies.
-.IP
-The \fBBalancer\fR statement in global scope applies to all
-\fBService\fR directives that don't contain \fBBalancer\fR
-definitions of their own.
+\fBECDHcurve\fR "\fIname\fR"
+Use the named curve for elliptical curve encryption (default: prime256v1).
+.SS Logging
 .TP
-\fBDaemon\fR \fIbool\fR
-Have
-.B pound
-run in the foreground (if \fIfalse\fR) or as a daemon (if
-\fItrue\fR). By default
-.B pound
-runs as a daemon (detaches itself from the controlling terminal and
-puts itself in the background). By specifying this option you can force
-.B pound
-to work like a regular process. Useful for debugging or if you want to
-use something like \fIdaemontools\fR.
-.TP
-\fBSupervisor\fR \fIbool\fR
-When running in daemon mode, start a \fIsupervisor\fR process first.
-This process will monitor the subordinate \fBpound\fR process, restarting
-it if it fails.
-.TP
-\fBWorkerMinCount\fR \fIN\fR
-Sets minimum number of worker threads that must always be running.
-The default is 5.
-See the section
-.B WORKER MODEL
-above for a detailed discussion.
-.TP
-\fBWorkerMaxCount\fR \fIN\fR
-Sets maximum number of worker threads.  The default is 128.
-See the section
-.B WORKER MODEL
-above for a detailed discussion.
-.TP
-\fBWorkerIdleTimeout\fR \fISEC\fR
-Sets idle timeout for a worker thread.  Default is 30 seconds.
-See the section
-.B WORKER MODEL
-above for a detailed discussion.
-.TP
-\fBThreads\fR \fIN\fR
-This statement, retained for backward compatibility with previous
-versions of
-.BR pound ,
-is equivalent to:
-.IP
-.RS
-.EX
-WorkerMinCount \fIN\fR
-WorkerMaxCount \fIN\fR
-.EE
-.RE
+\fBAnonymise\fR
+(alternative spelling \fBAnonymize\fR also accepted) Replace the last
+byte of the client address with 0 for logging purposes.
+Default: log the client address in full.
 .TP
 \fBLogFacility\fR \fIident\fR
-Specify the log facility to use.  The
-.I ident
+Specify the log facility to use.
+.I Ident
 is one of the following:
 .BR auth ,
 .BR authpriv ,
@@ -511,11 +593,17 @@ be either one of five built-in format names
 .BR combined ,
 or
 .BR detailed ),
+corresponding to the numeric indices discussed above,
 or a format name defined earlier via the
 .B LogFormat
 directive.  See section
 .BR "REQUEST LOGGING" ,
 for a detailed discussion.
+.TP
+\fBLogTag\fR "\fIstring\fR"
+Sets the string to tag log messages with.  This is used when log
+output goes to syslog.  Default is the name with which \fBpound\fR
+was started.
 .TP
 \fBForwardedHeader\fR \fIname\fR
 Defines the name of the HTTP header that carries the list of proxies
@@ -538,10 +626,10 @@ specifier in
 for a detailed discussion.
 .IP
 This statement is a special form of \fBACL\fR statement, described
-below.  It can appear as a \fIsection\fR or \fIdirective\fR.  When
-used as a section, it is followed by a list of one or more CIDRs
-each appearing on a separate line.  The \fBEnd\fR keyword terminates
-the statement, e.g.:
+below.  It can appear as an \fIanonymous ACL\fR (\fIsection\fR),
+\fIfile reference\fR, or as an \fIACL reference\fR.  In anonymous ACL
+form, it is followed by a list of one or more CIDRs each appearing on
+a separate line.  The \fBEnd\fR keyword terminates the statement, e.g.:
 .IP
 .RS
 .EX
@@ -552,8 +640,25 @@ End
 .EE
 .RE
 .IP
-In directive form, this statement takes single argument, the name of
-an access control list defined earlier using the \fBACL\fR statement,
+In file reference form, the statement is:
+.IP
+.RS
+.EX
+TrustedIP \-file "\fIfilename\fR"
+.EE
+or
+.EX
+TrustedIP \-filewatch "\fIfilename\fR"
+.EE
+.RE
+.IP
+and the list of IP addresses is read from file \fIfilename\fR.  When
+used with
+.BR \-filewatch ,
+the file will be watched for changes and reloaded when such occur.
+.IP
+In ACL reference form, this statement takes single argument, the name of
+the access control list defined earlier using the \fBACL\fR statement,
 e.g.
 .IP
 .RS
@@ -561,24 +666,7 @@ e.g.
 TrustedIP "proxy_addresses"
 .EE
 .RE
-.TP
-\fBIgnoreCase\fR \fIbool\fR
-Ignore case when doing regex matching (default: \fIfalse\fR). This
-directive sets the default for the following service matching
-directives:
-.BR URL ,
-.BR Path ,
-.BR QueryParam ,
-.BR Query ,
-.BR StringMatch ,
-as well as for the \fBDeleteHeader\fR modification directive.  Its
-value can be overridden for specific services.
-.IP
-This statement is deprecated and will be removed in future versions.
-Please, use the \fB\-icase\fR option to the service matching directive
-instead.  See the discussion of \fIoptions\fR in
-.B Service Matching Directives
-section below.
+.SS Timeouts
 .TP
 \fBAlive\fR \fIn\fR
 Specify how often
@@ -595,15 +683,9 @@ will wait for a client request (default: 10 seconds). After this
 long has passed without the client sending any data
 .B pound
 will close the connection. Set it higher if your clients
-time-out on a slow network or over-loaded server, lower if you
-start getting DOS attacks or run into problems with IE clients.
+time-out on a slow network or over-loaded server, or lower it down if
+you start getting DOS attacks or run into problems with IE clients.
 This value can be overridden for specific listeners.
-.TP
-\fBTimeOut\fR \fIn\fR
-How long should
-.B pound
-wait for a response from the backend (in seconds). Default: 15 seconds.
-This value can be overridden for specific backends.
 .TP
 \fBConnTO\fR \fIn\fR
 How long should
@@ -611,13 +693,6 @@ How long should
 wait for a connection to the backend (in seconds). Default: the
 .B TimeOut
 value. This value can be overridden for specific backends.
-.TP
-\fBWSTimeOut\fR \fIn\fR
-How long should
-.B pound
-wait for data from either backend or client in a connection upgraded to
-a WebSocket (in seconds). Default: 600 seconds.
-This value can be overridden for specific backends.
 .TP
 \fBGrace\fR \fIn\fR
 How long should
@@ -629,18 +704,28 @@ immediately. You can bypass this behaviour by stopping
 with a TERM or QUIT signal, in which case the program exits without any
 delay.
 .TP
-\fBSSLEngine\fR "\fIname\fR"
-Use an OpenSSL hardware acceleration card called \fIname\fR. Available
-only if OpenSSL-engine is installed on your system.
+\fBTimeOut\fR \fIn\fR
+How long should
+.B pound
+wait for a response from the backend (in seconds). Default: 15 seconds.
+This value can be overridden for specific backends.
 .TP
-\fBECDHcurve\fR "\fIname\fR"
-Use the named curve for elliptical curve encryption (default: prime256v1).
+\fBWSTimeOut\fR \fIn\fR
+How long should
+.B pound
+wait for data from either backend or client in a connection upgraded to
+a WebSocket (in seconds). Default: 600 seconds.
+This value can be overridden for specific backends.
 .TP
-\fBControl\fR "\fIpathname\fR"
-Set the control socket path.
-See the
-.B Control socket
-section below, for a detailed description of this feature.
+\fBWatcherTTL \fIN\fR
+If conditions with \fB\-filewatch\fR flag are used, and the underlying
+operating system doesn't provide file system monitoring API
+.RB ( inotify
+or
+.BR kqueue ),
+this directive defines the interval between two successive checks
+of file modification times.
+.SS Header manipulation
 .TP
 \fBCombineHeaders\fR ... \fBEnd\fR
 Declare names of the headers that can appear multiple times in a
@@ -650,6 +735,32 @@ must appear one per line between \fBCombineHeaders\fR and \fBEnd\fR.
 See the section
 .BR "MULTI-VALUE HEADERS" ,
 for a detailed discussion of this feature.
+.TP
+\fBHeaderOption\fR \fIopt\fR...
+Sets default options for header addition.  \fIopt\fR is one of:
+\fBnone\fR to disable additional headers, \fBforwarded\fR to enable
+adding
+.BR X\-Forwarded\-For ,
+.BR X\-Forwarded\-Proto ,
+and
+.B X\-Forwarded\-Port
+headers, and
+.B ssl
+to enable passing information about SSL certificates in various
+.B X\-SSL\-*
+headers.  The option may be prefixed with
+.B no\-
+in which case it disables the corresponding header group.  The default is
+.IP
+.RS
+.B HeaderOption forwarded ssl
+.RE
+.IP
+This setting can be overridden on a per-listener basis.  See the
+description of \fBHeaderOption\fR directive in \fBHTTP Listener\fR
+section, and section \fBBUILT-IN HEADERS\fR, for a detailed
+discussion of various header modification directives and their effect.
+.SS File inclusion
 .TP
 \fBIncludeDir\fR "\fIdir\fR"
 Sets the \fIinclude directory\fR.  This is the directory
@@ -661,19 +772,22 @@ can be changed in the command line using the
 \fB\-W include\-dir=\fIname\fR option or reset to the current working
 directory using the \fB\-W no\-include\-dir\fR option (see the
 discussion of \fB\-W\fR below).
+.IP
+The directory set by \fBIncludeDir\fR statement remains in effect
+until next \fBIncludeDir\fR statement is encountered, or end of input,
+whichever occurs first.
 .TP
 \fBInclude\fR "\fIfile\fR"
 Include the file as though it were part of the configuration file.  If
 \fIfile\fR is a relative file name, it will be looked in the \fIinclude
-directory\fR (see above).
+directory\fR (see above).  If \fIfile\fR is a shell globbing pattern
+.RB ( glob (7)),
+all regular files matching that pattern will be included.  The list or
+files will be sorted lexicographically.
 .IP
 This directive is allowed both at topmost level and in any subsections
 of the configuration file.
-.TP
-\fBAnonymise\fR
-(alternative spelling \fBAnonymize\fR also accepted) Replace the last
-byte of the client address with 0 for logging purposes.
-Default: log the client address in full.
+.SS Access control lists
 .TP
 \fBACL\fR "\fIname\fR"
 Define a \fInamed access control list\fR (\fIACL\fR).  An ACL is a
@@ -700,46 +814,63 @@ Named ACLs can be used in \fBService\fR definitions to make services
 available from certain IP addresses only.
 .RE
 .TP
-\fBPIDFile\fR "\fIfilename\fR"
-Sets the name of the file where to store program PID.  It can be
-overridden by the
-.B \-p
-command line option.
+\fBACL\fR "\fIname\fR" \fB\-file\fR "\fIfilename\fR"
+Same as above, but reads ACL definition from file \fIfilename\fR.
+The name is taken relative to the \fBIncludeDir\fR directory, unless
+it starts with a slash.
 .IP
-.I Notice
-the following:
-.RS
-.nr step 1 1
-.IP \n[step].
-When running with a supervisor, this file holds PID of the supervisor
-process.  Otherwise, it holds PID of the main
-.B pound
-process.  This means it is always suitable for signalling the program
-using the traditional \fBkill `cat filename`\fR technique.
-.IP \n+[step].
-Before shutting down,
-.B pound
-removes this file.  However, this may be not possible if it switches to
-privileges of another user after startup (at least one of \fBUser\fR or
-\fBGroup\fR are set in the configuration file) and the file is stored in
-a directory whose permissions forbid write access for that user.
-.RE
+The ACL file should contain one CIDR per line.  Empty lines and
+comments are allowed.
+.TP
+\fBACL\fR "\fIname\fR" \fB\-filewatch\fR "\fIfilename\fR"
+Same as above, but \fIfilename\fR will be watched for changes during
+the runtime.  Once a change is detected, the file will be reloaded and
+the ACL updated.
+.IP
+If possible, this uses OS-specific API
+.RB ( inotify (7),
+on GNU/Linux and
+.BR kqueue (7)
+on *BSD systems).  On systems that don't provide such an API
+the file will be checked for changes periodically.  The interval
+between two successive checks is defined by the
+.B WatcherTTL
+setting.
+.SS Detached conditions
+.EX
+\fBCondition \fR"\fINAME\fR"
+    ...
+\fBEnd\fR    
+.EE
+.PP
+Saves away a set of conditional statements for further evaluation.
+Ellipsis represents a sequence of conditional statements as described
+in section \fIService Matching Directives\fR.  The detached condition
+can be used where a normal conditional is allowed, using the following
+construct:
+.PP
+.EX
+\fBEval \fR"\fINAME\fR"
+.EE
+.PP
+Detached conditions are evaluated at most once.  Result of
+evaluation is cached and used by all subsequent \fBEval\fR statements 
+that refer to the same \fINAME\fR.
 .SS Control socket
 .B Pound
-can be instructed to listen on a UNIX socket for management requests,
+can be instructed to listen for management requests,
 which will allow you to obtain information about the running
 instance, change state of configured listeners, services, and
 backends, etc.  These requests may be issued by using the
 .BR poundctl (8)
 utility.
 .PP
-The use of this
-.I control socket
-is configured via the
+Usually, a UNIX socket is used to communicate with the management interface.
+It is configured via the
 .B Control
 statement.  This statement has two forms.  In
 .I inline
-form, the statement takes a single argument, specifying the name of
+form, it takes a single argument, specifying the name of
 the UNIX socket file to create and listen on.  For example:
 .PP
 .EX
@@ -779,6 +910,15 @@ global statements is used.  When set to
 .B true
 it will change the owner of the socket file to that specified by
 those two statements.
+.PP
+It is also possible to have
+.B pound
+listen for management requests on an INET or INET6 address.  See
+description of the
+.B Control
+statement in section
+.BR "Backend definitions" ,
+below.
 .SH "HTTP Listener"
 An HTTP listener defines an address and port that
 .B pound
@@ -794,25 +934,28 @@ All configuration directives enclosed between
 and
 .B End
 are specific to a single HTTP listener.  At the very least you must specify
-IP address and port for each listener. The following directives are
-available:
+IP address and, optionally, port for each listener. The following
+directives are available:
 .TP
 \fBAddress\fR \fIaddress\fR
 The address that
 .B pound
-will listen on. This can be a numeric IP address, or a symbolic host name
-that must be resolvable at run-time, or a full pathname of a UNIX
-socket.  Either this parameter or
+will listen on. This can be a numeric IP address, or a full pathname
+of a UNIX socket.  If neither this directive nor
 .B SocketFrom
-(see below) must be present. The address 0.0.0.0 may be used as an
-alias for 'all available addresses on this machine'.
+(see below) is given,
+.I ::0
+is assumed.
 .TP
 \fBPort\fR \fIport\fR
 The port number or service name that
 .B pound
-will listen on.  This parameter must be present if the
-.B Address
-parameter contains an IPv4 or IPv6 address.
+will listen on.  If not given, default port number is assumed, i.e.
+80, for
+.BR ListenHTTP ,
+and 443, for
+.B ListenHTTPS
+(see below).
 .TP
 \fBSocketFrom\fR "\fIpathname\fR"
 Read the socket to listen on from the UNIX socket given as argument.
@@ -820,7 +963,7 @@ If this parameter is supplied, neither
 .B Address
 nor
 .B Port
-may be used.  This parameter is intended for testing
+may be used.  This directive is intended for testing
 .BR pound .
 .TP
 \fBxHTTP\fR \fIn\fR
@@ -852,48 +995,82 @@ listener. A request that does not match is considered to be illegal.
 By default
 .B pound
 accepts all requests (i.e. the pattern is ".*"), but you are free to
-limit it to something more reasonable. Please note that this applies
+limit it to something more reasonable.  Please note that this applies
 only to the request path -
 .B pound
 will still check that the request is syntactically correct.
 .TP
-\fBErr400\fR "\fIfilename\fR"
-A file with the text to be displayed if an Error 400 occurs.
+\fBErrorFile\fR \fINNN\fR "\fIfilename\fR"
+Read the content to be returned along with the HTTP status code
+\fINNN\fR from the file \fIfilename\fR.  The file will be read
+exactly once, at the program startup.
+.IP
+The file can begin with one or more HTTP headers,
+separated from the actual body with an empty line (i.e., two newline
+characters).  These headers will be returned along with the
+response.  This can be used, in particular, to change the response
+content type, which is
+.B text/html
+by default.
+.IP
+Allowed values for \fINNN\fR are:
+.BR 400 ,
+.BR 401 ,
+.BR 404 ,
+.BR 405 ,
+.BR 413 ,
+.BR 414 ,
+.BR 500 ,
+.BR 501 ,
+.BR 503 .
 .TP
-\fBErr401\fR "\fIfilename\fR"
-A file with the text to be displayed if an Error 401 occurs.
+\fBErr\fINNN\fR "\fIfilename\fR"
+This statement is equivalent to
+.IP
+.EX
+ErrorFile \fINNN\fR "\fIfilename\fR"
+.EE
+.IP
+See above for the allowed values of \fINNN\fR.
+.IP
+This form is provided for compatibility with previous versions of the
+program.  It will be removed in future releases.
 .TP
-\fBErr403\fR "\fIfilename\fR"
-A file with the text to be displayed if an Error 401 occurs.
+\fBRewriteErrors\fR \fIbool\fR
+If \fIbool\fR is \fBtrue\fR, this enables backend error response
+rewriting, i.e. replacing the content of error responses returned by a
+regular backend with a custom error text defined by the
+.B ErrorFile
+statement.  See
+.BR "ERROR RESPONSE REWRITING" ,
+for a detailed discussion of this feature.
+.IP
+The same statement can also appear in
+.B Service
+block, in which case it overrides the settings of the listener.
 .TP
-\fBErr404\fR "\fIfilename\fR"
-A file with the text to be displayed if an Error 404 occurs.
-.TP
-\fBErr413\fR "\fIfilename\fR"
-A file with the text to be displayed if an Error 413 occurs.
-Default text: "Request too large.".
-.TP
-\fBErr414\fR "\fIfilename\fR"
-A file with the text to be displayed if an Error 414 occurs.
-.TP
-\fBErr500\fR "\fIfilename\fR"
-A file with the text to be displayed if an Error 500 occurs.
-.TP
-\fBErr501\fR "\fIfilename\fR"
-A file with the text to be displayed if an Error 501 occurs.
-.TP
-\fBErr503\fR "\fIfilename\fR"
-A file with the text to be displayed if an Error 503 occurs.
+\fBLineBufferSize\fR \fIN\fR
+Sets the line buffer size.  Line buffer is used when reading request
+line, backend response status line, and header fields in both requests
+and responses.  The default is inherited from the global setting.
 .TP
 \fBMaxRequest\fR \fIn\fR
 Maximum allowed size of incoming request. All requests will be limited
 to these many bytes. If a request contains more data than allowed, an
 error 413 is returned. Default: unlimited.
 .TP
+\fBMaxURI\fR \fIn\fR
+Maximum allowed length of an URI.  If the URI of a request is longer than
+\fIn\fR bytes, an error 414 is returned. Default: unlimited.
+.TP
 \fBRewriteLocation\fR 0|1|2
 If set to 1, force
 .B pound
-to change the Location: and Content-location: headers in responses. If they
+to change the
+.B Location:
+and
+.B Content-location:
+headers in responses. If they
 point to the backend itself or to the listener (but with the wrong protocol),
 the response will be changed to show the virtual host in the request. Default:
 1 (active).  If the value is set to 2, only the backend address is compared;
@@ -901,9 +1078,11 @@ this is useful for redirecting a request to an HTTPS listener on
 the same server as the HTTP listener.
 .TP
 \fBRewriteDestination\fR \fIbool\fR
-If set to \fItrue\fI, force
+If set to \fItrue\fR, force
 .B pound
-to change the "Destination:" header in requests. The header is changed
+to change the
+.B Destination:
+header in requests. The header is changed
 to point to the backend itself with the correct protocol. Default:
 \fIfalse\fR.
 .TP
@@ -1025,31 +1204,43 @@ values that undergo several \fIexpansions\fR before use.  These
 expansions are as follows:
 .TP
 .B Backreference expansion
-Backrefence is a construct that refers to a \fIparenthesized
+Backreference is a construct that refers to a \fIparenthesized
 group\fR within a regular expression matched by one of service
-matching directives described above.  During backreference expansion,
+matching directives (see the section
+.BR "Service Matching Directives" ,
+below).  During backreference expansion,
 each occurrence of such construct in a string is replaced with the
 actual value of that parenthesized group.
 .IP
-Syntactically backreference can take two forms.  The construct
-\fB$\fIN\fR (\fIN\fR is a decimal number)
+Syntactically a backreference can take two forms.  The construct
+\fB$\fIN\fR (where \fIN\fR is a decimal number)
 refers to \fIN\fRth parenthesized subexpression of the most
 recently matched statement, and \fB$\fIN\fB(\fIM\fB)\fR refers to
 \fIN\fRth parenthesized subexpression of \fIM\fRth recently matched
 statement.  Numbering of subexpressions starts at 1 (\fB$0\fR refers
-to the entire matching string).  Numbering of matches starts
+to the entire matching string).  Numbering of matched statements starts
 at 0.
+.IP
+Conditional statements can also be tagged using the
+.BI -tag " T "
+option.  When referring to a
+subexpression in such a statement, the form
+\fB$\fIN\fB(\fIT\fB)\fR can be used.
 .IP
 For example, given the following statements
 .IP
 .EX
-Host -re "www\\.(.+)"
-Header -re -icase "^Content-Type: *(.*)"
-Path "^/static(/.*)?"
+Host -tag "host" -re "www\\.(.+)"
+Header -tag "type" -re -icase "^Content-Type: *(.*)"
+Path -tag "dir" "^/static(/.*)?"
 .EE
 .IP
-\fB$1\fR refers to the subgroup of \fBPath\fR, \fB$1(1)\fR - to that of
-\fBHeader\fR, and \fB$1(2)\fR - to that of \fBHost\fR.
+.BR $1 " or " $1(dir)
+refers to the subgroup of \fBPath\fR,
+.BR $1(1) " or " $1(type)
+- to that of \fBHeader\fR, and
+.BR $1(2) " or " $1(host)
+- to that of \fBHost\fR.
 .IP
 Curly braces may be used to avoid incorrectly parsing text fragment
 that follows the reference as being its part.  This is useful if the
@@ -1066,9 +1257,9 @@ correspondingly.
 .TP
 .B Request accessor interpretation
 Request accessor is \fB%[\fIname\fR\fB]\fR, where \fIname\fR denotes
-part of the incoming request to access.  Accessors are interpreted and
+a part of the incoming request to access.  Accessors are interpreted and
 replaced with the corresponding part of the request.  Some accessors
-take an argument, which is specified after accessor name and is delimited
+take an argument, which is specified after accessor name and is separated
 from it by one or more whitespace characters.
 .IP
 The following accessors are defined:
@@ -1093,6 +1284,7 @@ The value of HTTP header \fINAME\fR.
 Hostname part of the \fBHost\fR header.  If the latter
 does not include port number, it is equivalent to \fB%[header
 host]\fR.
+.TP
 .B port
 If the value of the \fBHost\fR header includes port number,
 \fB%[port]\fR evaluates to port number with the leading colon
@@ -1104,27 +1296,70 @@ in section
 .BR "REQUEST MODIFICATION" ,
 below.
 .TP
-\fBDeleteHeader\fR "\fIheader\fB: \fIpattern\fR"
+\fBDeleteHeader\fR [\fIoptions\fR] "\fIpattern\fR"
 Remove certain headers from the incoming requests. All occurrences of
-the matching header will be removed. The argument is treated verbatim.
+the matching header will be removed. \fIOptions\fR define how to
+match \fIpattern\fR:
+.RS
+.TP
+.TP
+.B \-beg
+Exact match at the beginning of header (prefix match).
+.TP
+.B \-case
+Case-sensitive comparison.
+.TP
+.B \-contain
+Match substring of the header.
+.TP
+.B \-end
+Exact match at the end of string (suffix match).
+.TP
+.B \-exact
+Exact string match.
+.TP
+.B \-icase
+Case-insensitive comparison.
+.TP
+.BR \-pcre " or " \-perl
+Use Perl-compatible regular expression (requires compilation-time
+support).
+.TP
+.B \-posix
+Use POSIX extended regular expression.
+.TP
+.B \-re
+Use regular expression matching, as set by the
+.B RegexType
+statement.
+.RE
+.IP
+The default is
+.BR \-re ,
+that is \fIpattern\fR is treated as a regular expression as defined by
+the
+.B RegexType
+statement.
 .TP
 \fBSetHeader\fR "\fIheader\fB: \fIvalue\fR"
-Add header to the request passed to the backend server. Argument
+Adds header to the request passed to the backend server. Argument
 undergoes string expansion as described above. The expanded value must
 be a valid header line.
 .TP
 \fBSetURL\fR "\fIvalue\fR"
 Sets the URL part of the request. Argument is subject to string expansion.
 .TP
-\fBSetPath\fR "\fIvalue\fR"
-Sets the path part of the request. Argument is subject to string expansion.
+\fBSetPath\fR [\fB\-encode\fR] "\fIvalue\fR"
+Sets the path part of the request. Argument is subject to string
+expansion, and, if \fB\-encode\fR is given, percent-encoding.
 .TP
 \fBSetQuery\fR "\fIvalue\fR"
 Sets the query part of the request. Argument is subject to string expansion.
 .TP
-\fBSetQueryParam\fR "\fIname\fR" "\fIvalue\fR"
+\fBSetQueryParam\fR "\fIname\fR" [\fB\-encode\fR] "\fIvalue\fR"
 Modifies the query.  Sets the query parameter \fIname\fR to
-\fIvalue\fR. The \fIvalue\fR argument is subject to string expansion.
+\fIvalue\fR. The \fIvalue\fR argument is subject to string expansion,
+and, if \fB\-encode\fR is given, percent-encoding.
 .TP
 .BR Rewrite " [" request | response "] ... [ " Else " ... ] " End
 Conditionally modify request or response depending on whether it
@@ -1132,7 +1367,7 @@ matches certain conditions.  If the argument is omitted, \fBrequest\fR
 is assumed.
 .IP
 Request modification is described in detail in section
-.B "REQUEST MODIFICATION DIRECTIVES" .
+.BR "REQUEST MODIFICATION DIRECTIVES" .
 .IP
 Response modification is covered by section
 .BR "RESPONSE MODIFICATION" .
@@ -1168,9 +1403,10 @@ All configuration directives enclosed between
 and
 .B End
 are specific to a single HTTPS listener. At the very least you must specify
-an address, a port and a server certificate for each listener. All directives
-defined for HTTP listeners are applicable to HTTPS listeners as well. The
-following additional directives are also available:
+an address, optionally a port, and a server certificate for each
+listener. All directives defined for HTTP listeners are applicable to
+HTTPS listeners as well. The following additional directives are also
+available:
 .TP
 \fBCert\fR "\fIfilename\fR"
 Specify the server certificate.  \fIFilename\fR is either a
@@ -1264,8 +1500,11 @@ that contains the CRLs (in PEM format).
 Behave like an HTTP/1.0 server for HTTPS clients. If this value is
 0, disable the check. If the value is 1, do not allow multiple
 requests on SSL connections. If the value is 2 (default), disable multiple
-requests on SSL connections only for MSIE clients. Required
-work-around for a bug in certain versions of IE.
+requests on SSL connections only for clients whose
+.B User-Agent
+header contains substring
+.BR MSIE .
+This may be required as a work-around for a bug in certain versions of IE.
 .SH "Service"
 A service is a definition of which backend servers
 .B pound
@@ -1290,7 +1529,7 @@ definitions\fR.
 These directives determine whether a particular request should be
 handled by this service.  When a request arrives, each service is
 considered in turn (first services defined within the listener that
-received the request, then the ones defined in global scope).  First
+received the request, then the ones defined in global scope).  The first
 service that matches the request will be used.  If no service matches,
 a 503 "Service unavailable" error is returned.
 .PP
@@ -1299,49 +1538,121 @@ directives are joined by a boolean \fBAND\fR.
 .PP
 A service with no matching directives always matches.
 .TP
-\fBACL\fR "\fIname\fR"
+\fBACL\fR [\fB\-forwarded\fR] "\fIname\fR"
 Match the source IP address against the named ACL.  The ACL must have
 been defined earlier (see the
 .B ACL
 statement in
 .B "GLOBAL DIRECTIVES"
-section above).  If the IP doesn't match, then this service will be
-skipped and next one tried.
+section above).  If the originating IP doesn't match any CIDR from the
+list, then this service will be skipped and next one tried.
+.IP
+The \fB\-forwarded\fR keyword, if present, instructs the program to
+deduce originator IP from the
+.BR X\-Forwarded\-For
+header, instead of using the actual source IP address.  See the
+description of
+.B %a
+specifier in
+.BR "REQUEST LOGGING" ,
+for a detailed discussion of how the IP is determined.
 .TP
-\fBACL\fR
+\fBACL\fR [\fB\-forwarded\fR]
 This statement defines an unnamed ACL to match the source IP against.
-This line must be followed by one or more lines defining CIDRs, as
-described in the
+See above for the meaning of the optional argument.  This line must be
+followed by one or more lines defining CIDRs, as described in the
 .B "GLOBAL DIRECTIVES"
 section above.
 The ACL definition is finished with a
 .B End
 keyword on a line by itself.
-.sp
+.IP
 Semantically it is equivalent to the named ACL reference described
 above.
 .TP
-\fBBasicAuth\fR "\fIfilename\fR"
+\fBACL\fR [\fB\-forwarded\fR] \fB\-file\fR "\fIfilename\fR"
+Same as above, but reads ACL definition from file \fIfilename\fR.
+The name is taken relative to the \fBIncludeDir\fR directory, unless
+it starts with a slash.
+.IP
+The ACL file should contain one CIDR per line.  CIDRs need not be
+quoted.  Empty lines and comments are allowed.
+.IP
+The \fB\-forwarded\fR optional keyword has the same meaning as
+described above.
+.TP
+\fBACL\fR [\fB\-forwarded\fR] \fB\-filewatch\fR "\fIfilename\fR"
+Same as above, but \fIfilename\fR will be watched for changes during
+the runtime.  Once a change is detected, the file will be reloaded and
+the ACL updated.
+.IP
+If possible, this uses OS-specific filesystem monitoring API
+.RB ( inotify (7),
+on GNU/Linux and
+.BR kqueue (7)
+on *BSD systems).  On systems that don't provide such API,
+the file will be checked for changes periodically, in intervals
+defined by the
+.B WatcherTTL
+setting.
+.TP
+\fBBasicAuth\fR [\fIoption\fR] "\fIfilename\fR"
 Evaluates to true if the incoming request passes basic authorization
 as described in RFC 7617.  \fIfilename\fR is the name of a plain text
 file containing usernames and passwords, created with
 .BR htpasswd (1)
 or similar utility.  Unless it starts with a slash, it is taken
-relative to the \fBIncludeDir\fR directory.  The file is cached in
-the memory on the first authorization attempt, so that further
-authorizations do not result in disk operations.  The file will
-be rescanned if \fBPound\fR notices that its modification time has
-changed.
+relative to the \fBIncludeDir\fR directory.  The file is read at
+startup and cached in memory, so that authorizations normally don't
+result in disk operations.  \fBPound\fR will monitor the file using
+the same mechanism as for \fBACL \-filewatch\fR (see above), and
+reload it when it changes.
 .IP
 See the section entitled
 .BR "BASIC AUTHENTICATION" ,
 for a detailed discussion.
+.IP
+For consistency with other conditions,
+.B BasicAuth
+accepts an option:
+.B \-file
+or
+.BR \-filewatch .
+The latter is the default and normally need not be specified
+explicitly.  The former can be used to disable file change monitoring.
+.TP
+\fBClientCert \fR"\fIfilename\fR"
+Evaluates to \fItrue\fR if the client presented the certificate
+matching that from the file \fIfilename\fR (PEM format).
+.IP
+This conditional cannot be used in standalone services (i.e. services
+that are defined in global scope), or if the \fBListenHTTPS\fR section
+that hosts the service has the \fBClientCert\fR statement on its own.
+.TP
+\fBEval\fR "\fINAME\fR"
+Evaluate detached condition \fINAME\fR.  The condition should be
+defined using a \fBCondition\fR statement preceding this one (see
+above, section
+.BR "GLOBAL DIRECTIVES" ).
+If multiple \fBEval\fR statements refer to the same \fINAME\fR, the
+condition is evaluated once, and the result is reused by subsequent
+statements.
 .TP
 \fBHeader\fR [\fIoptions\fR] "\fIpattern\fR"
 The request must contain at least one header matching the given
-\fIpattern\fR.  By default, \fIpattern\fR is treated as
+\fIpattern\fR.  By default, \fIpattern\fR is treated as a
 case-insensitive extended regular expression.  This can be changed by
 \fIoptions\fR, described below.
+.TP
+\fBHeader\fR "\fIName\fR" [\fIoptions\fR] "\fIpattern\fR"
+Alternative form of the \fBHeader\fR statement.  In this form,
+\fIpattern\fR is matched against header value.  For example:
+.IP
+.RS
+.EX
+Header "Content-Type" -beg "text/"
+.EE
+.RE
 .TP
 \fBHost\fR [\fIoptions\fR] "\fIhostname\fR"
 The request must contain a \fBHost\fR header whose value matches
@@ -1377,6 +1688,32 @@ Match the value of the query parameter \fIname\fR.
 Expand \fIstring\fR as described in \fBString expansion\fR (see below)
 and match the resulting value against \fIpattern\fR.
 .TP
+\fBTBF\fR "\fIkey\fR" \fIrate\fR \fIburst\fR
+Defines a
+.I token bucket filter
+for that service.  See below, the section entitled
+.BR "REQUEST RATE",
+for a discussion.  Arguments are:
+.RS
+.TP
+.I key
+A string identifying the bucket to use.  It is subject to string expansion
+(see the subsection \fBString expansion\fR, above).
+.TP
+.I rate
+Allowed request rate, requests per second.  Fractional rates are
+allowed as well:
+.BR 1/2 " (one request each two seconds)",
+.BR 3/500ms " (three requests each 500 milliseconds)",
+etc.
+.TP
+.I burst
+Burst size, i.e. maximum number of tokens the bucket can contain.
+.RE
+.IP
+The \fBTBF\fR conditional evaluates to \fItrue\fR if the request
+conforms to the defined rate policy, and \fIfalse\fR otherwise.
+.TP
 \fBURL\fR [\fIoptions\fR] "\fIpattern\fR"
 Match the URL of the incoming request.  By default, \fIpattern\fR is
 treated as case-sensitive extended regular expression.  This can be
@@ -1386,23 +1723,20 @@ The \fIoptions\fR argument in the above directives can be used to
 select the comparison method.  It consists of zero or more option
 flags from the following list:
 .TP
-.B \-re
-Use regular expression matching.
-.TP
-.B \-exact
-Use exact string matching.
-.TP
 .B \-beg
 Exact match at the beginning of string (prefix match).
-.TP
-.B \-end
-Exact match at the end of string (suffix match).
 .TP
 .B \-case
 Case-sensitive comparison.
 .TP
-.B \-icase
-Case-insensitive comparison.
+.B \-contain
+Match substring.
+.TP
+.B \-end
+Exact match at the end of string (suffix match).
+.TP
+.B \-exact
+Exact string match.
 .TP
 .B \-file
 Treat \fIpattern\fR as the name of a file to read patterns from.  If
@@ -1411,13 +1745,64 @@ directory\fR (see the discussion of the \fBIncludeDir\fR directory
 above).  Patterns are read from the file line by line.  Leading and
 trailing whitespace is removed.  Empty
 lines and comments (lines starting with \fB#\fR) are ignored.
-.PP
+.TP
+.B \-filewatch
+Same as \fB\-file\fR, except that the file will be monitored for
+changes and reloaded as soon as these occur.
+.IP
+If possible, this uses OS-specific API
+.RB ( inotify (7),
+on GNU/Linux and
+.BR kqueue (7)
+on *BSD systems).  On systems that don't provide such an API
+the file will be checked for changes periodically.  The interval
+between two successive checks is defined by the
+.B WatcherTTL
+setting.
+.TP
+.B \-icase
+Case-insensitive comparison.
+.TP
+.BR \-pcre " or " \-perl
+Use Perl-compatible regular expression (requires compile-time
+support).  This overrides global
+.B RegexType
+settings.
+.TP
+.B \-posix
+Use POSIX extended regular expression.  This overrides global
+.B RegexType
+settings.
+.TP
+.B \-re
+Use regular expression matching, as set by the
+.B RegexType
+statement.
+.TP
+\fB\-tag "\fIT\fB"
+Tag the statement with string \fIT\fR.  This string can be used in
+subsequent modification statements to refer to a subexpression of this
+statement's pattern, using the following syntax:
+.BI $ I ( T )\fR,
+where \fII\fR is the ordinal number of the subexpression.
+.IP
 For example, the following will match any request whose \fBHost\fR
 header begins with "www." (case-insensitive):
-.PP
-.EE
-Host -icase -beg "www."
+.IP
+.RS
 .EX
+Host -icase -beg "www."
+.EE
+.RE
+.PP
+Additionally,
+.B Path
+and
+.B QueryParam
+directives accept the option
+.BR \-decode ,
+which causes the obtained value to undergo percent-decoding prior to
+comparison.
 .SS Compatibility directives
 The following directives are provided for backward compatibility with
 older versions of
@@ -1465,10 +1850,9 @@ Match \fIOP\fR
 End
 .EE
 .PP
-where \fIOP\fR is \fBAND\fR to use boolean and, and \fBOR\fR
-(case-insensitive) to use boolean \fIor\fR, and \fIdirectives\fR stand for
-any number of matching directives discussed above (including the
-\fBMatch\fR directive).
+where \fIOP\fR is \fBAND\fR or \fBOR\fR (case-insensitive),
+and \fIdirectives\fR stand for any number of matching directives
+discussed above (including the \fBMatch\fR directive itself).
 .PP
 Prefixing \fBMatch\fR directive with a word \fBnot\fR reverts its result.
 .PP
@@ -1483,8 +1867,16 @@ in the section
 .BR "REQUEST MODIFICATION" ,
 below.
 .TP
-\fBDeleteHeader\fR "\fIheader\fB: \fIpattern\fR"
-Remove matching headers from the incoming requests.
+\fBDeleteHeader\fR [\fIoptions\fR] "\fIpattern\fR"
+Remove matching headers from the incoming requests.  For the list of
+available \fIoptions\fR and their effect on matching, see the
+description of
+.B DeleteHeader
+statement in section
+.BR "HTTP Listener" ,
+subsection
+.BR "Modification directives" ,
+above.
 .TP
 \fBSetHeader\fR "\fIheader\fB: \fIvalue\fR"
 Add the defined header to the request passed to the backend
@@ -1493,14 +1885,17 @@ server.
 \fBSetURL\fR "\fIvalue\fR"
 Sets the URL part of the request.
 .TP
-\fBSetPath\fR "\fIvalue\fR"
-Sets the path part.
+\fBSetPath\fR [\fB\-encode\fR] "\fIvalue\fR"
+Sets the path part.  If given the \fB\-encode\fR option, after usual
+expansions, \fIvalue\fR will be percent-encoded.
 .TP
 \fBSetQuery\fR "\fIvalue\fR"
 Sets the query part.
 .TP
-\fBSetQueryParam\fR "\fIname\fR" "\fIvalue\fR"
-Modifies the query.  Sets the query parameter \fIname\fR to \fIvalue\fR.
+\fBSetQueryParam\fR "\fIname\fR" [\fB\-encode\fR] "\fIvalue\fR"
+Modifies the query.  Sets the query parameter \fIname\fR to
+\fIvalue\fR.  If given the \fB\-encode\fR option, after usual
+expansions, \fIvalue\fR will be percent-encoded.
 .TP
 .BR Rewrite " [" request | response "] ... [ " Else " ... ] " End
 Conditionally modify request or response depending on whether it
@@ -1512,6 +1907,28 @@ Request modification is described in detail in section
 .IP
 Response modification is covered by section
 .BR "RESPONSE MODIFICATION" .
+.TP
+\fBRewriteErrors\fR \fIbool\fR
+If \fIbool\fR is \fBtrue\fR, this enables backend error response
+rewriting for this service, i.e. replacing the content of error
+responses returned by a regular backend with a custom error text
+defined by the
+.B ErrorFile
+statement in the listener.  See
+.BR "ERROR RESPONSE REWRITING" ,
+for a detailed discussion of this feature.
+.IP
+This statement overrides settings of the enclosing listener, so that
+.PP
+.RS
+.EX
+RewriteErrors off
+.EE
+.RE
+.IP
+appearing in a
+.B Service
+will disable that feature for that particular service.
 .SS Backend definitions
 .TP
 \fBBalancer\fR \fBrandom\fR | \fBiwrr\fR
@@ -1533,7 +1950,43 @@ the following
 directives define a single backend server (see below for details). You
 may define multiple backends per service, in which case
 .B pound
-will attempt to load-balance between them.
+will distribute the load between them, according to the selected
+balancer strategy.
+.TP
+.B Control
+Enables a special \fBcontrol backend\fR -- a management interface that
+returns information about the running \fBpound\fR server, makes it
+possible to change state of configured listeners, services and
+backends, and provides other management facilities.  The management
+interface is discussed in detail in
+section
+.BR "Control socket" ,
+above.  The \fBControl\fR backend provides remote access to this
+interface.  Be careful to properly protect the control interface
+by use of HTTPS, ACLs and/or basic authorization, e.g.:
+.IP
+.RS
+.EX
+ListenHTTPS
+    Address 192.0.2.1
+    Port 443
+    Cert "/etc/ssl/priv/example.pem"
+
+    Service
+        Not BasicAuth "pound/htpasswd"
+        Rewrite response
+            SetHeader "WWW-Authenticate: Basic realm=\(rs"Restricted access\(rs""
+        End
+        Error 401
+    End
+
+    Service
+        ACL "secure"
+        Control
+    End
+End
+.EE
+.RE
 .TP
 \fBRedirect\fR [\fIcode\fR] "\fIurl\fR"
 This is a special type of backend. Instead of sending the request to a backend
@@ -1612,9 +2065,11 @@ it will be sent to
 \fBError \fISTATUS\fR [\fIFILE\fR]
 Special case of backend that returns HTTP error page.  The \fISTATUS\fR
 argument supplies HTTP status code.  Optional \fIFILE\fR argument is
-the name of a disk file with the error page content (HTML).  If not
-supplied, the text is determined as usual: first the
-.BI Err STATUS
+the name of a disk file with the error page content.  If supplied, the
+file is handled as in \fBErrorFile\fR directive, which see.  If not
+present, the content to return in the response is determined as usual:
+first the
+.BI ErrorFile " STATUS"
 statement for the enclosing listener is consulted.  If it is not present, the
 default error page is used.
 .IP
@@ -1622,15 +2077,26 @@ The \fBError\fR directive is useful in a catch-all service, which
 outputs an error page if no service matching the incoming request was
 found.  See the \fBEXAMPLES\fR section for details.
 .TP
+\fBSendFile \fIDIR\fR
+Static file backend.  It responds with the content of a file from
+directory \fIDIR\fR.  The path part of the request supplies
+the path to the requested file, relative to the directory \fIDIR\fR.
+The path may be modified, if need be, using request rewriting
+techniques (in particular, \fBSetPath\fR) discussed in
+.BR "REQUEST MODIFICATION DIRECTIVES" .
+Content type of the response is assumed to be
+.BR text/plain .
+This can be changed using \fBSetHeader\fR statement (see
+.BR "RESPONSE MODIFICATION" ).
+.TP
 \fBEmergency\fR
 Directives enclosed between
 .B Emergency
 and the following
 .B End
 directives define an emergency backend server (see below for
-details). You may define only one emergency server per service, which
-.B pound
-will attempt to use if all backends are down.
+details). You may define any number of emergency servers.  A backend
+will be selected from emergency backends if all regular backends are down.
 .TP
 .B Metrics
 Special backend type that implements Openmetrics protocol output.  See
@@ -1824,9 +2290,14 @@ This directive may appear only after the
 directive.
 .TP
 \fBPriority\fR \fIn\fR
-The priority of this backend (between 1 and 9, 5 is default). Higher priority
-backends will be used more often than lower priority ones, so you should
-define higher priorities for more capable servers.
+The priority of this backend. Higher priority backends will be used
+more often than lower priority ones, so you should define higher
+priorities for more capable servers. The scheduling algorithm depends
+on the load balancing strategy in use (see the section
+.BR "REQUEST BALANCING" ,
+above).  Allowed range for priorities is 0 to 65535, inclusive.
+.IP
+Default value is 5.
 .TP
 \fBTimeOut\fR \fIn\fR
 Override the global
@@ -1849,6 +2320,66 @@ Start
 with this backend disabled (1) or enabled (0). If started as disabled, the
 backend can be later enabled with
 .BR poundctl (8).
+.SS Dynamic backends
+Dynamic backends are created and updated on the fly based on the
+information from DNS.  A backend is declared as dynamic by the
+.B Resolve
+statement.  Its value defines what type of DNS record is used to
+generate dynamic backend instances:
+.TP
+.B first
+Resolve the symbolic host name from the \fBAddress\fR directive and
+use first IP from the DNS response as the address of the created dynamic
+backend.  Thus, at most one dynamic backend will be produced.
+.TP
+.B all
+Resolve the symbolic host name from the \fBAddress\fR directive and
+create one backend for each address from the DNS response.  This
+enables load balancing between created backends.  Each backend will be
+assigned the same priority.
+.TP
+.B srv
+Obtain
+.B SRV
+records for the host name and use them to generate
+backends.  Each record produces new dynamic backend of the
+.B Resolve all
+type, which produces regular backends as described above.  The weight field
+of the SRV record is mapped to the priority field of each generated
+backend.  The SRV priority field identifies the balancer group where
+the backend will be hosted.
+.PP
+The following directives further configure dynamic backends:
+.TP
+\fBFamily any \fR|\fB inet \fR|\fB inet6
+Selects the family of the addresses to look for:
+.RS
+.TP
+.B any
+Use all address families available.  This is the default.
+.TP
+.B inet
+Use only IPv4 addresses (\fBA\fR DNS RRs).
+.TP
+.B inet6
+Use only IPv6 addresses (\fBAAAA\fR DNS RRs).
+.RE
+.TP
+\fBIgnoreSRVWeight \fIbool\fR
+When using \fBSRV\fR records, ignore their \fIweight\fR fields and
+assign priorities for the generated backends from the priority of
+the producing backend.
+
+This directive is valid when used together with
+.BR "Resolve srv" .
+.TP
+.BI OverrideTTL " N"
+Query DNS each \fIN\fR seconds for possible changes in configuration
+of the existing dynamic backends.  If this statement is not used, the
+TTL value returned with the DNS response will be used instead.
+.TP
+.BI RetryInterval " N"
+Retry failed DNS queries each \fIN\fR seconds.  Default is 600.
 .SS Global and per-service backends
 A
 .B Backend
@@ -1925,43 +2456,53 @@ it to this service.
 .PP
 The actual global definition may appear before as well as after
 service or services it is used in.
+.SH "Resolver"
+The \fBResolver\fR section controls DNS lookups for dynamic backend
+generation (see above).  It can contain the following directives:
+.TP
+.BI CNAMEChain " N"
+Maximum allowed length of a \fICNAME chain\fR.  CNAME chains are
+formed by DNS CNAME records pointing to another CNAME.  Although
+prohibited by the RFC, such usage does occur sometimes.  By default,
+.B pound
+does not accept CNAME chains.  If you work with nameservers that
+return them, set this statement to a small integer value, defining
+maximum number of CNAMEs in the chain that can be accepted.  The value
+of 2 or 3 should suffice in most cases.
+.TP
+\fBConfigFile\fR "\fIFILE\fR"
+Read the resolver configuration from \fIFILE\fR, instead of the
+default \fB/etc/resolv.conf\fR.
+.TP
+\fBConfigText\fR ... \fBEnd\fR
+Alternative way to supply resolver configuration.  The material within
+this section is read verbatim and used as the content of the resolver
+configuration file.
+.IP
+If both
+.B ConfigFile
+and
+.B ConfigText
+are used, the last used statement wins.
+.TP
+.BI debug " bool"
+Whether to enable DNS debugging info.
+.TP
+.BI RetryInterval " N"
+Interval in seconds, after which to retry failed DNS queries or queries that
+returned no RRs.  This value is used unless the backend defines its
+own retry interval value.
 .SH "Emergency"
-The emergency server will be used once all existing backends are "dead".
+Emergency servers will be used once all existing backends are "dead".
 All configuration directives enclosed between
 .B Emergency
 and
 .B End
-are specific to a single service. The following directives are available:
-.TP
-\fBAddress\fR \fIaddress\fR
-The address that
-.B pound
-will connect to. This can be a numeric IP address, or a symbolic host name
-that must be resolvable at run-time. If the name cannot be resolved to a valid
-address,
-.B pound
-will assume that it represents the path for a Unix-domain socket. This is a
-.B mandatory
-parameter.
-.TP
-\fBPort\fR \fIport\fR
-The port number that
-.B pound
-will connect to. This is a
-.B mandatory
-parameter for non Unix-domain backends.
-.PP
-Additionally, the following directives are also supported:
-.BR TimeOut ,
-.BR WSTimeOut ,
-.BR ConnTO ,
-.BR HTTPS ,
-.BR Cert ,
-.BR Ciphers ,
-.BR Disable  .
-These have the same meaning as in the
-.B Backend
-section, which see.
+are specific to a single service.  For the list of directives allowed
+for use in
+.B Emergency
+sections, refer to the description of
+.BR Backend .
 .SH "Session"
 Defines how a service deals with possible HTTP sessions.  All configuration
 directives enclosed between
@@ -1975,10 +2516,20 @@ server.
 .PP
 The following directives are available:
 .TP
-\fBType\fR IP|BASIC|URL|PARM|COOKIE|HEADER
-What kind of sessions are we looking for: IP (the client address), BASIC (basic
-authentication), URL (a request parameter), PARM (a URI parameter), COOKIE (a
-certain cookie), or HEADER (a certain request header).
+.BR "Type IP" | BASIC | URL | PARM | COOKIE | HEADER
+What kind of sessions are we looking for:
+.B IP
+(the client address),
+.B BASIC
+(basic authentication),
+.B URL
+(a request parameter),
+.B PARM
+(a URI parameter),
+.B COOKIE
+(a certain cookie), or
+.B HEADER
+(a certain request header).
 This is a
 .B mandatory
 parameter.
@@ -1992,8 +2543,12 @@ parameter.
 .TP
 \fBID\fR "\fIname\fR"
 The session identifier. This directive is permitted only for sessions of type
-URL (the name of the request parameter we need to track), COOKIE (the name of
-the cookie) and HEADER (the header name).
+.B URL
+(the name of the request parameter we need to track),
+.B COOKIE
+(the name of the cookie) and
+.B HEADER
+(the header name).
 .PP
 See below for some examples.
 .SH Metrics
@@ -2050,7 +2605,7 @@ The clients that happen to hit a dead backend server will just receive a
 .I "503 Service Unavailable"
 message.
 .SH REQUEST MODIFICATION DIRECTIVES
-Several statements are provided to modify the incoming requests prior
+Several statements are provided to modify incoming requests prior
 to passing them to the backend.  These statements can be present both in
 .B ListenHTTP
 .RB ( ListenHTTPS )
@@ -2063,17 +2618,19 @@ Basic request modification directives are:
 \fBSetURL\fR "\fIvalue\fR"
 Set the URL of the incoming request to \fIvalue\fR.
 .TP
-\fBSetPath\fR "\fIvalue\fR"
-Set the path part of the URL to the given string.
+\fBSetPath\fR [\fB\-encode\fR] "\fIvalue\fR"
+Set the path part of the URL to the given string.  The \fB\-encode\fR
+option enables percent-encoding of \fIvalue\fR.
 .TP
 \fBSetQuery\fR "\fIvalue\fR"
 Set the query part of the URL to the given string.  \fIvalue\fR must be
 a valid query with the special characters properly encoded using
 percent encoding.
 .TP
-\fBSetQueryParam\fR "\fIname\fR" "\fIvalue\fR"
-Set the query parameter \fIname\fR to the \fIvalue\fR.  Value must be
-properly encoded if it contains reserved characters.
+\fBSetQueryParam\fR "\fIname\fR" [\fB\-encode\fR] "\fIvalue\fR"
+Set the query parameter \fIname\fR to the \fIvalue\fR.  If
+\fB\-encode\fR is given, after usual expansions \fIvalue\fR will
+undergo percent-encoding.
 .TP
 \fBSetHeader\fR "\fIname\fB: \fIvalue\fR"
 Sets the HTTP header.  If the header \fIname\fR already exists, it
@@ -2083,29 +2640,43 @@ of the header list.
 \fBDeleteHeader\fR [\fIoptions\fR] "\fIpattern\fR"
 Remove from the request all headers matching \fIpattern\fR.  By
 default, \fIpattern\fR is treated as extended POSIX regular
-expression.  One or more \fIoptions\fR can be supplied to modify
-the default behavior.  The \fIoptions\fR argument in the above
-directives can be used to select the comparison method.  It consists
-of zero or more option flags from the following list:
+expression.  The \fIoptions\fR argument can be used to change this
+behavior.  It consists of zero or more option flags from the following list:
 .RS
-.TP
-.B \-re
-Use regular expression matching.
-.TP
-.B \-exact
-Use exact string matching.
 .TP
 .B \-beg
 Exact match at the beginning of string (prefix match).
 .TP
-.B \-end
-Exact match at the end of string (suffix match).
-.TP
 .B \-case
 Case-sensitive comparison.
 .TP
+.B \-contain
+Match substring.
+.TP
+.B \-end
+Exact match at the end of string (suffix match).
+.TP
+.B \-exact
+Use exact string matching.
+.TP
 .B \-icase
 Case-insensitive comparison.
+.TP
+.BR \-pcre " or " \-perl
+Use Perl-compatible regular expression (requires compilation-time
+support).  This overrides global
+.B RegexType
+settings.
+.TP
+.B \-posix
+Use POSIX extended regular expression.  This overrides global
+.B RegexType
+settings.
+.TP
+.B \-re
+Use regular expression matching, as set by the
+.B RegexType
+statement.
 .RE
 .PP
 The \fIvalue\fR argument in the above directives is subject to
@@ -2184,8 +2755,14 @@ Else
 End
 .EE
 .PP
-Request modification directives are applied in the same order as they
-appear in the configuration file.
+Request modification directives from
+.B ListenHTTP
+(or
+.BR ListenHTTPS )
+section are applied first, followed by directives from the
+.B Service
+section.  Directives appearing within a single section are
+applied in the same order as they appear in the configuration file.
 .SH BUILT-IN HEADERS
 In addition to the \fBSetHeader\fR and \fBDeleteHeader\fR directives
 discussed above, the \fBHeaderOption\fR directive controls insertion
@@ -2205,6 +2782,9 @@ within a \fBListenHTTP\fR or \fBListenHTTPS\fR block, it affects only
 settings for that listener.
 .PP
 The \fIopt\fR values passed to the directive are:
+.TP
+.B all
+Enable both kinds of additional headers.
 .TP
 .B none
 Disable both kinds of additional headers.
@@ -2232,10 +2812,10 @@ to trim down headers added by
 The headers in the \fIforwarded\fR header group are:
 .TP
 .B X\-Forwarded\-For
-The IP address of the HTTP client that sent the request,
+IP address of the HTTP client that sent the request,
 .TP
 .B X\-Forwarded\-Proto
-The protocol (\fBhttp\fR or \fBhttps\fR) that the client used to
+Protocol (\fBhttp\fR or \fBhttps\fR) that the client used to
 connect to
 .BR pound .
 .TP
@@ -2301,11 +2881,26 @@ and
 .B Service
 definitions.
 .PP
+Response modification directives from the
+.B Service
+section are applied first, followed by directives from the
+.B ListenHTTP
+(or
+.BR ListenHTTPS )
+section.  Directives appearing within a single section are
+applied in the same order as they appear in the configuration file.
+.PP
 Response matching statements are:
 .TP
 \fBHeader\fR [\fIoptions\fR] "\fIpattern\fR"
 Matches if the response contains at least one header matching the given
 \fIpattern\fR.
+.TP
+\fBHeader\fR "\fIname\fR" [\fIoptions\fR] "\fIpattern\fR"
+Alternative form of the
+.B Header
+statement, that matches \fIpattern\fR against value part of each
+header \fIname\fR.
 .TP
 \fBStringMatch\fR "\fIstring\fR" [\fIoptions\fR] "\fIpattern\fR"
 Expand \fIstring\fR as described in \fBString expansion\fR (see below)
@@ -2328,13 +2923,43 @@ Placed before any of the above directives, reverts its result.
 .PP
 Following \fIresponse modification\fR statements are defined:
 .TP
-\fBDeleteHeader\fR "\fIheader\fB: \fIpattern\fR"
+\fBDeleteHeader\fR "\fIpattern\fR"
 Remove matching headers from the response.
 .TP
 \fBSetHeader\fR "\fIheader\fB: \fIvalue\fR"
 Add header to the response.  Argument
 undergoes string expansion as described above. The expanded value must
 be a valid header line.
+.SH ERROR RESPONSE REWRITING
+When a regular backend responds with an error, the content
+of that response can be replaced with an arbitrary custom page, if its
+status code is one of the http status codes supported by
+.BR pound ,
+i.e. one of
+.BR 400 ,
+.BR 401 ,
+.BR 404 ,
+.BR 405 ,
+.BR 413 ,
+.BR 414 ,
+.BR 500 ,
+.BR 501 ,
+.BR 503 ,
+and a custom error page for that status is provided using the
+.B ErrorFile
+directive
+(or one of the legacy
+.BI ErrNNN
+directives).
+.PP
+To enable such error response rewriting use the following statement:
+.PP
+.EX
+RewriteErrors on
+.EE
+.PP
+in the \fBService\fR block, where the responding backend is defined,
+or in the enclosing \fBListenHTTP\fR (\fBListenHTTPS\fR) block.
 .SH MULTI-VALUE HEADERS
 HTTP protocol allows for certain headers to appear in the message
 multiple times.  Namely, multiple headers with the same header name
@@ -2415,6 +3040,31 @@ as shown in the following example:
 Placing this service definition before others ensures that services
 defined below it will be tried only if the incoming request passes
 basic authentication.
+.SH REQUEST RATE
+Request rate can be controlled using the
+.B TBF
+service selection statement.  The statement implements a
+.IR "token bucket filter" ,
+and takes three arguments: a string identifying the bucket, request flow
+rate in requests per second, and token burst size, i.e. maximum number
+of requests per bucket.  The first argument is expanded as discussed
+in
+.BR "String expansion" .
+The statement evaluates to
+.IR true ,
+if the request conforms to the rate policy, and to
+.I false
+otherwise.  It is customary to use its negation together with the
+.B Error
+special backend in order to control request flow, e.g.:
+.PP
+.EX
+Service "rate-limit"
+  Path -re "^/([^/]+).*"
+  Not TBF "$1" 3 10
+  Error 429
+End
+.EE
 .SH REQUEST LOGGING
 Logging of HTTP requests and responses is controlled by
 .B LogLevel
@@ -2453,7 +3103,7 @@ corresponding piece of information about the request or reply.
 Conversion specifications are single characters prefixed with a
 percent sign.  Depending on the specification, an optional
 \fIconversion argument\fR in curly brackets may appear between
-\fB%\fR and conversion character.
+\fB%\fR and the conversion character.
 .PP
 The following conversion characters are defined:
 .TP
@@ -2465,7 +3115,7 @@ Originator IP address of the request.  If the request contains
 the \fBX\-Forwarded\-For\fR header and \fBTrustedIP\fR ACL is
 defined, the value of the header is consulted to obtain the IP
 address.  The value must be a comma-delimited list of intermediate
-useragent IP addresses.  To determine the actual useragent IP, the
+user agent IP addresses.  To determine the actual user agent IP, the
 list is traversed from right to left, until an IP is found that is not
 listed in \fBTrustedIP\fR ACL.
 .IP
@@ -2489,7 +3139,18 @@ TrustedIP "\fIname\fR"
 .RE
 .IP
 refers to the named ACL \fIname\fR (which must be defined earlier),
-and
+.IP
+.RS
+.EX
+TrustedIP \-file "\fIname\fR"
+.EE
+or
+.EX
+TrustedIP \-filewatch "\fIname\fR"
+.EE
+.RE
+.IP
+read the list of IPs (or CIDRs) from the file \fIname\fR, and
 .IP
 .RS
 .EX
@@ -2533,6 +3194,9 @@ made by header modification directives affect this.
 .BI %{ VARNAME }I
 Same as \fB%i\fR, except that if no such header is present in the
 request, a dash is substituted.
+.TP
+.B %l
+Single dash.  This specifier is reserved for future use.
 .TP
 .BI %{ OBJNAME }L
 Location of the
@@ -2579,6 +3243,9 @@ are:
 and
 .BR backend .
 .TP
+.B %p
+Port number of the listener serving the request.
+.TP
 .B %P
 Thread ID of the serving thread.
 .TP
@@ -2610,7 +3277,6 @@ to the requester.  In addition to
 .BR strftime (3)
 formats, the following specifications are recognized:
 .RS
-.RE
 .TP
 .B sec
 Number of seconds since the Epoch.
@@ -2646,7 +3312,8 @@ The URL path requested.  This is affected by request modification
 directives.
 .TP
 .B %v
-The listener name.
+Hostname used in the request (from the \fBHost\fI header, without
+port number).
 .SS Built-in formats
 There are five built-in formats.  These can be identified either by
 their numeric index in the format table, or by symbolic name.  The
@@ -2669,31 +3336,40 @@ No request logging at all.
 .BR 3 ", " vhost_combined
 (Split in two lines for readability)
 .EX
-"%{Host}I %a - %u %t \(rs\(dq%r\(rs\(dq %s %b \(rs\(dq%{Referer}i\(rs\(dq \(rs
+"%v:%p %a %l %u %t \(rs\(dq%r\(rs\(dq %s %b \(rs\(dq%{Referer}i\(rs\(dq \(rs
 \(rs\(dq%{User\-Agent}i\(rs\(dq"
 .EE
 .TP
 .BR 4 ", " combined
 .EX
-"%a \- %u %t \(rs\(dq%r\(rs\(dq %s %b \(rs\(dq%{Referer}i\(rs\(dq \(rs\(dq%{User\-Agent}i\(rs\(dq"
+"%a %l %u %t \(rs\(dq%r\(rs\(dq %s %b \(rs\(dq%{Referer}i\(rs\(dq \(rs\(dq%{User\-Agent}i\(rs\(dq"
 .EE
 .TP
 .BR 5 ", " detailed
 (Split in two lines for readability)
 .EX
-"%{Host}I %a - %u %t \(rs\(dq%r\(rs\(dq %s %b \(rs\(dq%{Referer}i\(rs\(dq \(rs
+"%v:%p %a %l %u %t \(rs\(dq%r\(rs\(dq %s %b \(rs\(dq%{Referer}i\(rs\(dq \(rs
 \(rs\(dq%{User\-Agent}\(rs\(dq (%{service}N \-> %{backend}N) %{f}T sec"
 .EE
 .SH SECURITY
 .PP
-In general,
+.B Pound
+makes very limited use of the hard disk.
+The configuration file, server certificate files and error messages
+.RB ( ErrorFile )
+are opened read-only on startup, read, and closed immediately
+afterwards.  Read access during runtime is required only for certain
+special features, such as
+.BR BasicAuth ,
+.BR SendFile ,
+and request matching directives with the
+.B \-filewatch
+option.  The only disk write
 .B pound
-does not read or write to the hard-disk. The exceptions are reading
-the configuration file and (possibly) the server certificate file(s)
-and error message(s), which are opened read-only on startup, read, and
-closed, and the pid file which is opened on start-up, written to and
-immediately closed. Following this there is no disk access whatsoever,
-so using a \fBRootJail\fR directive is only for extra security bonus points.
+ever does, is saving its PID in the pid file at startup.
+.PP
+Giving such limitied I/O, using a \fBRootJail\fR directive can provide
+only limited security bonus.
 .PP
 .B Pound
 tries to sanitize all HTTP/HTTPS requests: the request itself, the
@@ -2731,11 +3407,34 @@ instead.  See the section
 .BR "REQUEST MODIFICATION DIRECTIVES" ,
 for details.
 .TP
+.BR HeaderRemove " and " HeadRemove
+Use
+.B DeleteHeader
+instead. See the section
+.BR "REQUEST MODIFICATION DIRECTIVES" ,
+for details.
+.TP
 .B IgnoreCase
 Use the \fB\-icase\fR option to the \fBURL\fR directive
 instead.  See the discussion of \fIoptions\fR in the
 .B Service Matching Directives
 section.
+.TP
+.BI Err NNN
+(where \fINNN\fR is one of:
+.BR 400 ,
+.BR 401 ,
+.BR 403 ,
+.BR 404 ,
+.BR 413 ,
+.BR 414 ,
+.BR 500 ,
+.BR 501 ,
+.BR 503 )
+.IP
+Use the \fBErrorFile\fR directive, described in the section
+.BR "HTTP Listener" ,
+above.
 .SS Redirect request hack
 The use of the \fIredirect request\fR hack in the \fBRedirect\fR
 statement is deprecated as well.
@@ -3012,7 +3711,7 @@ command line option.   Use
 to inspect the actual default.
 .TP
 .B /etc/pound.cfg\fR
-The default configuration file.  The exact location is
+Default configuration file.  The exact location is
 determined at compile time by the value of the \fB\-\-sysconfdir\fR
 configuration switch.  It can be changed at runtime using the
 .B \-f
@@ -3021,7 +3720,7 @@ command line option.  Use
 to inspect the actual default.
 .TP
 .B /usr/local/etc/pound/cert.pem
-the certificate file(s) for HTTPS. The location must be defined in the configuration
+Certificate file(s) for HTTPS. The location must be defined in the configuration
 file - this is only a suggestion. The file must contain a PEM-encoded certificate,
 optionally a certificate chain from a known Certificate Authority to your server certificate
 and a PEM-encoded private key (not password protected). See
@@ -3036,7 +3735,7 @@ at https://github.com/graygnuorg/pound/issues.
 .SH COPYRIGHT
 Copyright \(co 2002-2010 Apsis GmbH.
 .br
-Copyright \(co 2018-2023 Sergey Poznyakoff
+Copyright \(co 2018-2025 Sergey Poznyakoff
 .sp
 .na
 License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>
@@ -3045,7 +3744,7 @@ License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>
 This is free software: you are free to change and redistribute it.
 There is NO WARRANTY, to the extent permitted by law.
 .\" Local variables:
-.\" eval: (add-hook 'write-file-hooks 'time-stamp)
+.\" eval: (add-hook 'write-file-functions 'time-stamp)
 .\" time-stamp-start: ".TH [A-Z_][A-Z0-9_.\\-]* [0-9] \""
 .\" time-stamp-format: "%:B %:d, %:y"
 .\" time-stamp-end: "\""

@@ -1,0 +1,53 @@
+local _M = @{@}
+
+-- Return the value of cookie @var{name} or nil if it is not set.
+function _M.get(name)
+   -- Return true if string @var{s} begins with the @var{name}
+   -- followed by an equals sign.
+   function is_name(s)
+      local i,j = s:find(name..'=')
+      if j ~= nil then
+         return s:sub(j+1)
+      else
+         return nil
+      end
+   end
+   -- Given partial value of the @code{Cookie} header @var{cookie},
+   -- find the cookie @var{name} and return its value.
+   local function find_cookie(cookie, name)
+      if cookie == nil then
+         return nil
+      end
+
+      local i, j = cookie:find(";%s*")
+      if i == nil then
+         return is_name(cookie)
+      else
+         local s = is_name(cookie:sub(1, i-1))
+         if s ~= nil then
+            return s
+         else
+            return find_cookie(cookie:sub(j+1), name)
+         end
+      end
+   end
+
+   return find_cookie(http.req.headers['Cookie'], name)
+end
+
+-- Set cookie @var{name} to the given @var{value}.  Use @var{ttl}
+-- as its @code{Max-Age}.
+function _M.set(name, value, ttl)
+   cv = name .. '=' .. value .. '; Max-Age=' .. ttl
+   cookie = http.resp.headers['Set-cookie']
+   if cookie == nil then
+      cookie = @{ cv @}
+   elseif type(cookie) == 'table' then
+      table.insert(cookie, cv)
+   else
+      cookie = @{ cookie, cv @}
+   end
+   http.resp.headers['Set-cookie'] = cookie
+end
+
+return _M

@@ -1,0 +1,39 @@
+# This file is part of pound testsuite. -*- autotest -*-
+# Copyright (C) 2025 Sergey Poznyakoff
+#
+# Pound is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# Pound is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with pound.  If not, see <http://www.gnu.org/licenses/>.
+AT_SETUP([Detached condition isolation])
+AT_KEYWORDS([cond detcond dti])
+PT_CHECK([[
+Condition "a"
+	Path -re "([^./]+)$"
+End
+ListenHTTP
+	Service
+		Path -re "/static(/.*)"
+		Eval "a"
+		SetPath "$1"
+		Backend
+		End
+	End
+End
+]],
+[GET /static/echo/foo
+end
+
+200
+x-orig-uri: /echo/foo
+end
+])
+AT_CLEANUP

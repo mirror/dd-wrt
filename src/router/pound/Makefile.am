@@ -1,6 +1,6 @@
-# Pound - the reverse-proxy load-balancer                -*- automake -*-
+# Pound - the reverse-proxy load-balancer
 # Copyright (C) 2002-2010 Apsis GmbH
-# Copyright (C) 2018-2024 Sergey Poznyakoff
+# Copyright (C) 2018-2025 Sergey Poznyakoff
 #
 # Pound is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -18,7 +18,7 @@ SUBDIRS = src tests doc
 
 EXTRA_DIST = ChangeLog.apsis
 
-ACLOCAL_AMFLAGS = -I am
+ACLOCAL_AMFLAGS = -I m4 -I am
 
 if FROM_GIT
 README: README.md

@@ -1,0 +1,75 @@
+# This file is part of pound testsuite. -*- autotest -*-
+# Copyright (C) 2024-2025 Sergey Poznyakoff
+#
+# Pound is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# Pound is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with pound.  If not, see <http://www.gnu.org/licenses/>.
+AT_SETUP([Deprecation control])
+AT_KEYWORDS([deprecated warndep])
+
+AT_DATA([errfile.html],[Cryptic Error Text
+])
+AT_DATA([pound.cfg],
+[IgnoreCase 1
+ListenHTTP
+	Address 127.0.0.1
+	Port 80
+	Err400 "errfile.html"
+	Err401 "errfile.html"
+	Err403 "errfile.html"
+	Err404 "errfile.html"
+	Err413 "errfile.html"
+	Err414 "errfile.html"
+	Err500 "errfile.html"
+	Err501 "errfile.html"
+	Err503 "errfile.html"
+	HeaderAdd "X-Foo: bar"
+	AddHeader "X-Foo: bar"
+	HeaderRemove "X-Bar:.*"
+	HeadRemove "X-Bar:.*"
+	Service
+		HeadRequire "Host: foo"
+		HeadDeny "Host: bar"
+		IgnoreCase 0
+                Backend
+                        Address 127.0.0.1
+                        Port 8080
+                End
+	End
+End
+])
+
+AT_CHECK([pound -Wno-dns -Wno-include-dir -c -f ./pound.cfg],
+[0],
+[],
+[pound: ./pound.cfg:1.1-10: warning: deprecated statement, use the -icase matching directive flag to request case-insensitive comparison
+pound: ./pound.cfg:5.9-14: warning: deprecated statement, use "ErrorFile 400" instead
+pound: ./pound.cfg:6.9-14: warning: deprecated statement, use "ErrorFile 401" instead
+pound: ./pound.cfg:7.9-14: warning: deprecated statement, use "ErrorFile 403" instead
+pound: ./pound.cfg:8.9-14: warning: deprecated statement, use "ErrorFile 404" instead
+pound: ./pound.cfg:9.9-14: warning: deprecated statement, use "ErrorFile 413" instead
+pound: ./pound.cfg:10.9-14: warning: deprecated statement, use "ErrorFile 414" instead
+pound: ./pound.cfg:11.9-14: warning: deprecated statement, use "ErrorFile 500" instead
+pound: ./pound.cfg:12.9-14: warning: deprecated statement, use "ErrorFile 501" instead
+pound: ./pound.cfg:13.9-14: warning: deprecated statement, use "ErrorFile 503" instead
+pound: ./pound.cfg:14.9-17: warning: deprecated statement, use "SetHeader" instead
+pound: ./pound.cfg:15.9-17: warning: deprecated statement, use "SetHeader" instead
+pound: ./pound.cfg:16.9-20: warning: deprecated statement, use "DeleteHeader" instead
+pound: ./pound.cfg:17.9-18: warning: deprecated statement, use "DeleteHeader" instead
+pound: ./pound.cfg:19.17-27: warning: deprecated statement, use "Header" instead
+pound: ./pound.cfg:20.17-24: warning: deprecated statement, use "Not Header" instead
+pound: ./pound.cfg:21.17-26: warning: deprecated statement, use the -icase matching directive flag to request case-insensitive comparison
+])
+
+AT_CHECK([pound -Wno-dns -Wno-include-dir -Wno-warn-deprecated -c -f ./pound.cfg])
+
+AT_CLEANUP

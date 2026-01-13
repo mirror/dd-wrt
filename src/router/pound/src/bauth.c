@@ -1,6 +1,6 @@
 /*
  * Pound - the reverse-proxy load-balancer
- * Copyright (C) 2023-2024 Sergey Poznyakoff
+ * Copyright (C) 2023-2025 Sergey Poznyakoff
  *
  * Pound is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -288,104 +288,65 @@ auth_match (const char *pass, const char *hash)
   return 1;
 }
 
-static void
-user_pass_free (USER_PASS_HEAD *head)
+int
+basic_auth_read (void *obj, char const *filename, WORKDIR *wd)
 {
-  while (!SLIST_EMPTY (head))
-    {
-      struct user_pass *up = SLIST_FIRST (head);
-      SLIST_SHIFT (head, link);
-      free (up);
-    }
-}
+  SERVICE_COND *cond = obj;
+  struct pass_file *pwf = &cond->pwfile;
+  FILE *fp;
+  char buf[MAXBUF];
 
-static int
-pass_file_changed (struct pass_file *pwf, struct stat const *st)
-{
-#if HAVE_STRUCT_STAT_ST_MTIM
-  if (timespec_cmp (&pwf->mtim, &st->st_mtim))
+  if ((fp = fopen_wd (wd, filename)) == NULL)
+    return -1;
+
+  /* Rescan the file. */
+  while (fgets (buf, sizeof (buf), fp))
     {
-      pwf->mtim = st->st_mtim;
-      return 1;
+      struct user_pass *up;
+      char *p, *q;
+      int ulen;
+
+      for (p = buf; *p && (*p == ' ' || *p == '\t'); p++);
+      if (*p == '#')
+	continue;
+      q = p + strlen (p);
+      if (q == p)
+	continue;
+      if (q[-1] == '\n')
+	*--q = 0;
+      if (!*p)
+	continue;
+      if ((q = strchr (p, ':')) == NULL)
+	continue;
+      ulen = q - p;
+
+      if ((up = malloc (sizeof (up[0]) + strlen (p))) == NULL)
+	{
+	  lognomem ();
+	  break;
+	}
+
+      strcpy (up->user, p);
+      up->user[ulen] = 0;
+      up->pass = up->user + ulen + 1;
+
+      SLIST_PUSH (&pwf->head, up, link);
     }
-#else
-  if (pwf->mtim.tv_sec != st->st_mtime)
-    {
-      pwf->mtim.tv_sec = st->st_mtime;
-      return 1;
-    }
-#endif
+  fclose (fp);
   return 0;
 }
 
-static void
-pass_file_fill (struct pass_file *pwf)
+void
+basic_auth_clear (void *obj)
 {
-  FILE *fp;
-  char buf[MAXBUF];
-  struct stat st;
-
-  if ((fp = fopen_wd (pwf->wd, pwf->filename)) == NULL)
+  SERVICE_COND *cond = obj;
+  struct pass_file *pwf = &cond->pwfile;
+  while (!SLIST_EMPTY (&pwf->head))
     {
-      int ec = errno;
-      fopen_error (LOG_WARNING, ec, pwf->wd, pwf->filename, &pwf->locus);
-      if (ec == ENOENT)
-	{
-	  user_pass_free (&pwf->head);
-	  memset (&pwf->mtim, 0, sizeof (pwf->mtim));
-	}
-      return;
+      struct user_pass *up = SLIST_FIRST (&pwf->head);
+      SLIST_SHIFT (&pwf->head, link);
+      free (up);
     }
-
-  if (fstat (fileno (fp), &st))
-    {
-      logmsg (LOG_WARNING, "fstat(%s) failed: %s", pwf->filename,
-	      strerror (errno));
-      fclose (fp);
-      return;
-    }
-
-  if (pass_file_changed (pwf, &st))
-    {
-      /* Free existing entries. */
-      user_pass_free (&pwf->head);
-
-      /* Rescan the file. */
-      while (fgets (buf, sizeof (buf), fp))
-	{
-	  struct user_pass *up;
-	  char *p, *q;
-	  int ulen;
-
-	  for (p = buf; *p && (*p == ' ' || *p == '\t'); p++);
-	  if (*p == '#')
-	    continue;
-	  q = p + strlen (p);
-	  if (q == p)
-	    continue;
-	  if (q[-1] == '\n')
-	    *--q = 0;
-	  if (!*p)
-	    continue;
-	  if ((q = strchr (p, ':')) == NULL)
-	    continue;
-	  ulen = q - p;
-
-	  if ((up = malloc (sizeof (up[0]) + strlen (p))) == NULL)
-	    {
-	      lognomem ();
-	      break;
-	    }
-
-	  strcpy (up->user, p);
-	  up->user[ulen] = 0;
-	  up->pass = up->user + ulen + 1;
-
-	  SLIST_PUSH (&pwf->head, up, link);
-	}
-    }
-  fclose (fp);
-  return;
 }
 
 static int
@@ -393,7 +354,6 @@ basic_auth_internal (struct pass_file *pwf, char const *user, char const *pass)
 {
   struct user_pass *up;
 
-  pass_file_fill (pwf);
   SLIST_FOREACH (up, &pwf->head, link)
     {
       if (strcmp (user, up->user) == 0)
