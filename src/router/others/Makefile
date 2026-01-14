@@ -172,6 +172,7 @@ endif
 	install init.d/rcS $(INSTALLDIR)/etc/init.d
 	install init.d/S01dummy $(INSTALLDIR)/etc/init.d
 #install nvram/nvram $(INSTALLDIR)/etc/nvram
+	mkdir -p /tmp/dnsmasq
 	ln -sf /tmp/dnsmasq/resolv.conf $(INSTALLDIR)/etc/resolv.conf
 	ln -sf /tmp/hosts $(INSTALLDIR)/etc/hosts
 	ln -sf /tmp/cron.d $(INSTALLDIR)/etc/cron.d
