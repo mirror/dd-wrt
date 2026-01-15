@@ -250,6 +250,7 @@ static struct xt_match lscan_mt_reg[] __read_mostly = {
 		.proto      = IPPROTO_TCP,
 		.me         = THIS_MODULE,
 	},
+#ifdef WITH_IPV6
 	{
 		.name       = "lscan",
 		.revision   = 0,
@@ -260,6 +261,7 @@ static struct xt_match lscan_mt_reg[] __read_mostly = {
 		.proto      = IPPROTO_TCP,
 		.me         = THIS_MODULE,
 	},
+#endif
 };
 
 static int __init lscan_mt_init(void)
@@ -279,4 +281,6 @@ MODULE_AUTHOR("Jan Engelhardt ");
 MODULE_DESCRIPTION("Xtables: Low-level scan (e.g. nmap) match");
 MODULE_LICENSE("GPL");
 MODULE_ALIAS("ipt_lscan");
+#ifdef WITH_IPV6
 MODULE_ALIAS("ip6t_lscan");
+#endif

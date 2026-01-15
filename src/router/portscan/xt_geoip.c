@@ -28,11 +28,15 @@ MODULE_LICENSE("GPL");
 MODULE_AUTHOR("Nicolas Bouliane");
 MODULE_AUTHOR("Samuel Jean");
 MODULE_DESCRIPTION("xtables module for geoip match");
+#ifdef WITH_IPV6
 MODULE_ALIAS("ip6t_geoip");
+#endif
 MODULE_ALIAS("ipt_geoip");
 
 enum geoip_proto {
+#ifdef WITH_IPV6
 	GEOIPROTO_IPV6,
+#endif
 	GEOIPROTO_IPV4,
 	__GEOIPROTO_MAX,
 };
@@ -55,11 +59,15 @@ static struct list_head geoip_head[__GEOIPROTO_MAX];
 static DEFINE_SPINLOCK(geoip_lock);
 
 static const enum geoip_proto nfp2geo[] = {
+#ifdef WITH_IPV6
 	[NFPROTO_IPV6] = GEOIPROTO_IPV6,
+#endif
 	[NFPROTO_IPV4] = GEOIPROTO_IPV4,
 };
 static const size_t geoproto_size[] = {
+#ifdef WITH_IPV6
 	[GEOIPROTO_IPV6] = sizeof(struct geoip_subnet6),
+#endif
 	[GEOIPROTO_IPV4] = sizeof(struct geoip_subnet4),
 };
 
@@ -152,6 +160,7 @@ static struct geoip_country_kernel *find_node(unsigned short cc,
 	return NULL;
 }
 
+#ifdef WITH_IPV6
 static inline int
 ipv6_cmp(const struct in6_addr *p, const struct in6_addr *q)
 {
@@ -221,6 +230,7 @@ xt_geoip_mt6(const struct sk_buff *skb, struct xt_action_param *par)
 	rcu_read_unlock();
 	return info->flags & XT_GEOIP_INV;
 }
+#endif
 
 static bool geoip_bsearch4(const struct geoip_subnet4 *range,
     uint32_t addr, int lo, int hi)
@@ -326,6 +336,7 @@ static void xt_geoip_mt_destroy(const struct xt_mtdtor_param *par)
 }
 
 static struct xt_match xt_geoip_match[] __read_mostly = {
+#ifdef WITH_IPV6
 	{
 		.name       = "geoip",
 		.revision   = 2,
@@ -336,6 +347,7 @@ static struct xt_match xt_geoip_match[] __read_mostly = {
 		.matchsize  = sizeof(struct xt_geoip_match_info),
 		.me         = THIS_MODULE,
 	},
+#endif
 	{
 		.name       = "geoip",
 		.revision   = 2,
