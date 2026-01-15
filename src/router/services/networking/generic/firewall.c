@@ -3742,18 +3742,6 @@ static void run_firewall6(char *vifs)
 #endif
 void start_loadfwmodules(void)
 {
-#ifdef HAVE_PORTSCAN
-	insmod("iptable_raw iptable_mangle nf_conntrack_h323 xt_NFLOG" //
-	       " xt_length xt_REDIRECT xt_CT xt_limit xt_TCPMSS" //
-	       " xt_connbytes xt_connlimit" //
-	       " xt_CLASSIFY xt_recent ipv6 xt_geoip xt_TARPIT xt_lscan xt_psd ipt_recent" //
-	       " xt_conntrack xt_state" //
-	       " xt_string xt_LOG xt_iprange xt_tcpmss" //
-	       " xt_NETMAP compat_xtables" //
-	       " ipt_MASQUERADE iptable_filter nf_reject_ipv4" //
-	       " ipt_REJECT nf_nat_h323" //
-	       " ipt_TRIGGER nf_nat_masquerade_ipv4 ipt_ah");
-#else
 	insmod("iptable_raw iptable_mangle nf_conntrack_h323 xt_NFLOG" //
 	       " xt_length xt_REDIRECT xt_CT xt_limit xt_TCPMSS" //
 	       " xt_connbytes xt_connlimit" //
@@ -3764,6 +3752,13 @@ void start_loadfwmodules(void)
 	       " ipt_MASQUERADE iptable_filter nf_reject_ipv4" //
 	       " ipt_REJECT nf_nat_h323" //
 	       " ipt_TRIGGER nf_nat_masquerade_ipv4 ipt_ah");
+#ifdef HAVE_PORTSCAN
+#ifdef HAVE_IPV6
+	if (nvram_match("ipv6_enable", "1"))
+	       insmod("ipv6 xt_geoip xt_TARPIT_ipv6 xt_lscan xt_psd_ipv6");
+	else
+#endif
+	       insmod("xt_geoip xt_TARPIT xt_lscan xt_psd");
 #endif
 }
 
