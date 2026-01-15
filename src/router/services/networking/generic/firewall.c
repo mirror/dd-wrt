@@ -3755,7 +3755,7 @@ void start_loadfwmodules(void)
 #ifdef HAVE_PORTSCAN
 #ifdef HAVE_IPV6
 	if (nvram_match("ipv6_enable", "1"))
-	       insmod("ipv6 xt_geoip xt_TARPIT_ipv6 xt_lscan xt_psd_ipv6");
+	       insmod("ipv6 xt_geoip_ipv6 xt_TARPIT_ipv6 xt_lscan_ipv6 xt_psd_ipv6");
 	else
 #endif
 	       insmod("xt_geoip xt_TARPIT xt_lscan xt_psd");
