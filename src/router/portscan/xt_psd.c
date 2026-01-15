@@ -53,9 +53,9 @@ MODULE_ALIAS("ip6t_psd");
 #define HASH_LOG			9
 #define PSD_HASH_SIZE			(1 << HASH_LOG)
 #define HASH_MAX			0x10
-#if IS_ENABLED(CONFIG_IP6_NF_IPTABLES)
-#	define WITH_IPV6 1
-#endif
+//#if IS_ENABLED(CONFIG_IP6_NF_IPTABLES)
+//#	define WITH_IPV6 1
+//#endif
 
 /*
  * Information we keep per each target port
