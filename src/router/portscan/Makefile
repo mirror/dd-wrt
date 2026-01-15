@@ -7,6 +7,9 @@ PWD := $(shell pwd)
 
 
 all:
+	@$(MAKE) -C $(KDIR) M=$(PWD) modules EXTRA_CFLAGS="-DWITH_IPV6=1" $(if $(VERSION),LDFLAGS_MODULE="--build-id=0x666") MODPROBE=true KBUILD_MODPOST_WARN=1
+	mv xt_psd.ko xt_psd_ipv6.ko
+	mv xt_TARPIT.ko xt_TARPIT_ipv6.ko
 	@$(MAKE) -C $(KDIR) M=$(PWD) modules $(if $(VERSION),LDFLAGS_MODULE="--build-id=0x666") MODPROBE=true KBUILD_MODPOST_WARN=1
 
 configure:

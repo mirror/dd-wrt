@@ -56,9 +56,9 @@
 #include "compat_xtables.c"
 #include "compat_xtables.h"
 #include "xt_TARPIT.h"
-#if IS_ENABLED(CONFIG_IP6_NF_IPTABLES)
-#	define WITH_IPV6 1
-#endif
+//#if IS_ENABLED(CONFIG_IP6_NF_IPTABLES)
+//#	define WITH_IPV6 1
+//#endif
 
 static bool xttarpit_tarpit(struct tcphdr *tcph, const struct tcphdr *oth)
 {

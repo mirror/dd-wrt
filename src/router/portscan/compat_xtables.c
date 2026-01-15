@@ -23,9 +23,9 @@
 #include <net/ipv6.h>
 #include <net/route.h>
 #include <linux/export.h>
-#if IS_ENABLED(CONFIG_IP6_NF_IPTABLES)
-#	define WITH_IPV6 1
-#endif
+//#if IS_ENABLED(CONFIG_IP6_NF_IPTABLES)
+//#	define WITH_IPV6 1
+//#endif
 
 #if 0
 extern void *HX_memmem(const void *space, size_t spacesize, const void *point, size_t pointsize);
