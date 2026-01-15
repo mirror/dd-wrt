@@ -157,7 +157,8 @@ iperf_exit(struct iperf_test *test, int exit_code, const char *format, va_list a
     exit(exit_code);
 }
 
-int i_errno;
+int i_errno = 0;
+const char *errarg = NULL;
 
 char *
 iperf_strerror(int int_errno)
@@ -394,6 +395,8 @@ iperf_strerror(int int_errno)
             break;
         case IEUDPFILETRANSFER:
             snprintf(errstr, len, "cannot transfer file using UDP");
+        case IEUNITVAL:
+            snprintf(errstr, len, "invalid unit value or suffix: '%s'", errarg);
             break;
         case IERVRSONLYRCVTIMEOUT:
             snprintf(errstr, len, "client receive timeout is valid only in receiving mode");
@@ -482,6 +485,9 @@ iperf_strerror(int int_errno)
 	case IETOTALRATE:
 	    snprintf(errstr, len, "total required bandwidth is larger than server limit");
             break;
+        case IETOTALINTERVAL:
+            snprintf(errstr, len, "invalid time interval for calculating average data rate");
+            break;
         case IESKEWTHRESHOLD:
 	    snprintf(errstr, len, "skew threshold must be a positive number");
             break;
@@ -547,6 +553,9 @@ iperf_strerror(int int_errno)
         case IESETCNTLKACOUNT:
             snprintf(errstr, len, "unable to set/get socket keepalive TCP number of retries (TCP_KEEPCNT) option");
             perr = 1;
+            break;
+        case IEMAXSERVERTESTDURATIONEXCEEDED:
+            snprintf(errstr, len, "client's requested duration exceeds the server's maximum permitted limit");
             break;
 	default:
 	    snprintf(errstr, len, "int_errno=%d", int_errno);
