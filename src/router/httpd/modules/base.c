@@ -2758,18 +2758,18 @@ static int do_crashlog(unsigned char method, struct mime_handler *handler, char 
 
 	do_ddwrt_inspired_themes(stream);
 	int c;
-	char *storage = "ramoops";
+	char *storage[] = { "ramoops", "blk" };
 	websWrite(stream, "<div style=\"height: 770px; overflow-y: auto; overflow-x: hidden;\"><table><tbody>");
 	for (c = 0; c < 2; c++) {
 		char type[128];
-		sprintf(type, "/sys/fs/pstore/dmesg-pstore_%s-%d", storage, c);
+		sprintf(type, "/sys/fs/pstore/dmesg-pstore_%s-%d", storage[c], c);
 		FILE *fp = fopen(type, "rb");
 		if (fp) {
 			fclose(fp);
 			char nums[64];
 			int i;
 			for (i = 0; i < 255; i++) {
-				sprintf(nums, "/sys/fs/pstore/dmesg-pstore_%s-%d", storage, i);
+				sprintf(nums, "/sys/fs/pstore/dmesg-pstore_%s-%d", storage[c], i);
 				fp = fopen(nums, "r");
 				if (fp != NULL) {
 					char line[1024];
@@ -2804,7 +2804,6 @@ static int do_crashlog(unsigned char method, struct mime_handler *handler, char 
 					break;
 			}
 		}
-		storage = "blk";
 	}
 	websWrite(stream, "</tbody></table></div>");
 	websWrite(stream, "</fieldset></body>");
