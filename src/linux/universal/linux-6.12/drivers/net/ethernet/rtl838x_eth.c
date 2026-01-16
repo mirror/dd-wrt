@@ -693,16 +693,16 @@ static int rtl838x_eth_open(struct net_device *ndev)
 		__func__, ctrl->rxrings, ctrl->rxringlen, TXRINGS, TXRINGLEN);
 
 	spin_lock_irqsave(&ctrl->lock, flags);
-	rtl838x_hw_reset(priv);
-	rtl838x_setup_ring_buffer(priv, ring);
+	rtl838x_hw_reset(ctrl);
+	rtl838x_setup_ring_buffer(ctrl, ring);
 	if (ctrl->r->family_id == RTL8390_FAMILY_ID) {
-		rtl839x_setup_notify_ring_buffer(priv);
+		rtl839x_setup_notify_ring_buffer(ctrl);
 		/* Make sure the ring structure is visible to the ASIC */
 		mb();
 		flush_cache_all();
 	}
 
-	rtl838x_hw_ring_setup(priv);
+	rtl838x_hw_ring_setup(ctrl);
 	phylink_start(ctrl->phylink);
 
 	for (int i = 0; i < ctrl->rxrings; i++)
@@ -710,7 +710,7 @@ static int rtl838x_eth_open(struct net_device *ndev)
 
 	switch (ctrl->r->family_id) {
 	case RTL8380_FAMILY_ID:
-		rtl838x_hw_en_rxtx(priv);
+		rtl838x_hw_en_rxtx(ctrl);
 		/* Trap IGMP/MLD traffic to CPU-Port */
 		sw_w32(0x3, RTL838X_SPCL_TRAP_IGMP_CTRL);
 		/* Flush learned FDB entries on link down of a port */
@@ -823,7 +823,7 @@ static int rtl838x_eth_stop(struct net_device *ndev)
 	pr_info("in %s\n", __func__);
 
 	phylink_stop(ctrl->phylink);
-	rtl838x_hw_stop(priv);
+	rtl838x_hw_stop(ctrl);
 
 	for (int i = 0; i < ctrl->rxrings; i++)
 		napi_disable(&ctrl->rx_qs[i].napi);
@@ -1158,7 +1158,7 @@ static int rtl838x_hw_receive(struct net_device *dev, int r, int budget)
 static int rtl838x_poll_rx(struct napi_struct *napi, int budget)
 {
 	struct rtl838x_rx_q *rx_q = container_of(napi, struct rtl838x_rx_q, napi);
-	struct rteth_ctrl *ctrl = rx_q->priv;
+	struct rteth_ctrl *ctrl = rx_q->ctrl;
 	unsigned long flags;
 	int ring = rx_q->id;
 	int work_done = 0;
@@ -1411,7 +1411,7 @@ static netdev_features_t rteth_fix_features(struct net_device *dev,
 	return features;
 }
 
-static int rteth_set_features(struct net_device *dev, netdev_features_t features)
+static int rteth_83xx_set_features(struct net_device *dev, netdev_features_t features)
 {
 	struct rteth_ctrl *ctrl = netdev_priv(dev);
 
@@ -1681,7 +1681,7 @@ static int rtl838x_eth_probe(struct platform_device *pdev)
 	if (!dev)
 		return -ENOMEM;
 	SET_NETDEV_DEV(dev, &pdev->dev);
-	priv = netdev_priv(dev);
+	ctrl = netdev_priv(dev);
 	ctrl->r = matchdata;
 
 	/* Allocate buffer memory */
@@ -1763,7 +1763,7 @@ static int rtl838x_eth_probe(struct platform_device *pdev)
 
 	for (int i = 0; i < ctrl->rxrings; i++) {
 		ctrl->rx_qs[i].id = i;
-		ctrl->rx_qs[i].priv = priv;
+		ctrl->rx_qs[i].ctrl = ctrl;
 		netif_napi_add(dev, &ctrl->rx_qs[i].napi, rtl838x_poll_rx);
 	}
 
