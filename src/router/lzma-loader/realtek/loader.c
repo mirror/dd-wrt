@@ -110,8 +110,10 @@ static inline int read_byte(void *object, const unsigned char **buffer, UInt32 *
 	*bufferSize = 1;
 	val = get_byte();
 	*buffer = &val;
-	if (icnt++ % (1024 * 10) == 0) {
-		printf("[%ld%%]\r", (100 * icnt) / lzma_datasize);
+	if (!FLASH_ADDR) {
+		if (icnt++ % (1024 * 10) == 0) {
+			printf("[%ld%%]\r", (100 * icnt) / lzma_datasize);
+		}
 	}
 	return LZMA_RESULT_OK;
 }
@@ -171,8 +173,13 @@ static void lzma_init_data(void)
 	extern unsigned char _lzma_data_end[];
 
 	kernel_la = LOADADDR;
-	lzma_data = _lzma_data_start;
-	lzma_datasize = _lzma_data_end - _lzma_data_start;
+	if (FLASH_ADDR) {
+		lzma_data = (unsigned char *)FLASH_ADDR;
+		lzma_datasize = 0;
+	} else {
+		lzma_data = _lzma_data_start;
+		lzma_datasize = _lzma_data_end - _lzma_data_start;
+	}
 	inptr = 0;
 }
 
