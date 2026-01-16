@@ -113,7 +113,7 @@ static struct kmem_cache *skbuff_ext_cache __ro_after_init;
 #if defined(CONFIG_SKB_RECYCLER)
 /*
  * 2688 for 64bit arch, 2624 for 32bit arch
-/
+ */
 #define SKB_DATA_CACHE_SIZE (SKB_DATA_ALIGN(SKB_RECYCLE_SIZE + NET_SKB_PAD) + SKB_DATA_ALIGN(sizeof(struct skb_shared_info)))
 #else
 /*
