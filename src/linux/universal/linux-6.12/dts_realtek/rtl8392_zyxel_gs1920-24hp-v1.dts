@@ -10,12 +10,12 @@
 	compatible = "zyxel,gs1920-24hp-v1", "realtek,rtl8392-soc";
 	model = "Zyxel GS1920-24HPv1";
 
-	aliases {
+/*	aliases {
 		led-boot = &led_sys;
 		led-failsafe = &led_sys;
 		led-running = &led_sys;
 		led-upgrade = &led_sys;
-	};
+	};*/
 
 	memory@0 {
 		device_type = "memory";
@@ -27,7 +27,7 @@
 	};
 
 
-	leds {
+/*	leds {
 		pinctrl-names = "default";
 		pinctrl-0 = <&pinmux_disable_sys_led>;
 		compatible = "gpio-leds";
@@ -60,7 +60,7 @@
 			gpios = <&gpio1 32 GPIO_ACTIVE_LOW>;
 			linux,code = <KEY_RESTART>;
 		};
-	};
+	};*/
 
 	/* i2c of the lower left SFP cage: port 25 */
 	i2c0: i2c-gpio-0 {
@@ -199,7 +199,7 @@
 
 				partition@10000 {
 					label = "firmware";
-					reg = <0x10000 0xf40000>;
+					reg = <0x10000 0xf20000>;
 					compatible = "openwrt,uimage", "denx,uimage";
 				};
 			};
