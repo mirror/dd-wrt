@@ -256,6 +256,10 @@ int internal_getRouterBrand()
 		setRouter("Zyxel GS1900-24 A1");
 		return ROUTER_ZYXEL_GS1900;
 	}
+	if (!strcmp(modelstr, "GS1920-24HPv1")) {
+		setRouter("Zyxel GS1920-24 HP v1");
+		return ROUTER_ZYXEL_GS1920;
+	}
 	if (!strcmp(modelstr, "GS1900-16")) {
 		setRouter("Zyxel GS1900-16");
 		return ROUTER_ZYXEL_GS1900;

@@ -73,6 +73,10 @@ static void getledconfig(struct ledconfig *cfg)
 		cfg->power_gpio = 0;
 		cfg->diag_gpio = GPIO_LOW | 0;
 		break;
+	case ROUTER_ZYXEL_GS1920: // todo
+		cfg->power_gpio = 0;
+		cfg->diag_gpio = GPIO_LOW | 8;
+		break; 
 	case ROUTER_ZYXEL_GS1900:
 		cfg->power_gpio = 0;
 		cfg->diag_gpio = GPIO_LOW | 0;
