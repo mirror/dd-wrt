@@ -714,7 +714,7 @@ ifneq ($(CONFIG_RTL838X),y)
 	cat lzma-loader/realtek/vmlinux.lzma >> $(ARCH)-uclibc/loader-flash.bin
 	dd if=$(ARCH)-uclibc/loader-flash.bin of=$(ARCH)-uclibc/loader-flash.bin.tmp bs=64k conv=sync
 	cat $(ARCH)-uclibc/root.fs >> $(ARCH)-uclibc/loader-flash.bin.tmp
-	./tools/trx_n -m 80000000 -o $(ARCH)-uclibc/webflash-realtek-gs1920-24-v1.trx $(ARCH)-uclibc/loader-flash.bin.tmp
+	./tools/trx_n -m 80000000 -o $(ARCH)-uclibc/webflash-realtek-gs1920-24hp-v1.trx $(ARCH)-uclibc/loader-flash.bin.tmp
 	
 
 	$(ARCH)-linux-objcopy -O binary $(LINUXDIR)/vmlinux-initramfs $(ARCH)-uclibc/vmlinux.bin
