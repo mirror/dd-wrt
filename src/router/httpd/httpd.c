@@ -503,7 +503,7 @@ static int auth_check(webs_t conn_fp)
 
 	/* Basic authorization info? */
 	if (!conn_fp->authorization || strncmp(conn_fp->authorization, "Basic ", 6) != 0) {
-		dd_loginfo("httpd", "Authentication fail");
+		dd_loginfo("httpd", "Authentication fail for %s", conn_fp->http_client_ip);
 
 		goto out;
 	}
