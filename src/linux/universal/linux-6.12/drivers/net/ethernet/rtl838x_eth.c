@@ -3,6 +3,7 @@
  * Copyright (C) 2020 B. Koblitz
  */
 
+#include <linux/cacheflush.h>
 #include <linux/dma-mapping.h>
 #include <linux/etherdevice.h>
 #include <linux/interrupt.h>
@@ -18,14 +19,11 @@
 #include <linux/pkt_sched.h>
 #include <net/dsa.h>
 #include <net/switchdev.h>
-#include <asm/cacheflush.h>
 
 #include <asm/mach-rtl838x/mach-rtl83xx.h>
 #include "rtl838x_eth.h"
 
-extern struct rtl83xx_soc_info soc_info;
-
-extern int rtl83xx_setup_tc(struct net_device *dev, enum tc_setup_type type, void *type_data);
+int rtl83xx_setup_tc(struct net_device *dev, enum tc_setup_type type, void *type_data);
 
 /* Maximum number of RX rings is 8 on RTL83XX and 32 on the 93XX
  * The ring is assigned by switch based on packet/port priortity
@@ -53,33 +51,33 @@ extern int rtl83xx_setup_tc(struct net_device *dev, enum tc_setup_type type, voi
 #define RING_BUFFER	1600
 
 struct p_hdr {
-	uint8_t		*buf;
-	uint16_t	reserved;
-	uint16_t	size;		/* buffer size */
-	uint16_t	offset;
-	uint16_t	len;		/* pkt len */
-	/* cpu_tag[0] is a reserved uint16_t on RTL83xx */
-	uint16_t	cpu_tag[10];
+	u8	*buf;
+	u16	reserved;
+	u16	size;		/* buffer size */
+	u16	offset;
+	u16	len;		/* pkt len */
+	/* cpu_tag[0] is a reserved u16 on RTL83xx */
+	u16	cpu_tag[10];
 } __packed __aligned(1);
 
 struct n_event {
-	uint32_t	type:2;
-	uint32_t	fidVid:12;
-	uint64_t	mac:48;
-	uint32_t	slp:6;
-	uint32_t	valid:1;
-	uint32_t	reserved:27;
+	u32	type:2;
+	u32	fidVid:12;
+	u64	mac:48;
+	u32	slp:6;
+	u32	valid:1;
+	u32	reserved:27;
 } __packed __aligned(1);
 
 struct ring_b {
-	uint32_t	rx_r[MAX_RXRINGS][MAX_RXLEN];
-	uint32_t	tx_r[TXRINGS][TXRINGLEN];
+	u32	rx_r[MAX_RXRINGS][MAX_RXLEN];
+	u32	tx_r[TXRINGS][TXRINGLEN];
 	struct	p_hdr	rx_header[MAX_RXRINGS][MAX_RXLEN];
 	struct	p_hdr	tx_header[TXRINGS][TXRINGLEN];
-	uint32_t	c_rx[MAX_RXRINGS];
-	uint32_t	c_tx[TXRINGS];
-	uint8_t		tx_space[TXRINGS * TXRINGLEN * RING_BUFFER];
-	uint8_t		*rx_space;
+	u32	c_rx[MAX_RXRINGS];
+	u32	c_tx[TXRINGS];
+	u8		tx_space[TXRINGS * TXRINGLEN * RING_BUFFER];
+	u8		*rx_space;
 };
 
 struct notify_block {
@@ -320,13 +318,13 @@ static void rtl838x_fdb_sync(struct work_struct *work)
 	const struct fdb_update_work *uw = container_of(work, struct fdb_update_work, work);
 
 	for (int i = 0; uw->macs[i]; i++) {
-	        struct switchdev_notifier_fdb_info info;
-	        u8 addr[ETH_ALEN];
-	        int action;
+		struct switchdev_notifier_fdb_info info;
+		u8 addr[ETH_ALEN];
+		int action;
 
 		action = (uw->macs[i] & (1ULL << 63)) ?
-		         SWITCHDEV_FDB_ADD_TO_BRIDGE :
-		         SWITCHDEV_FDB_DEL_TO_BRIDGE;
+			 SWITCHDEV_FDB_ADD_TO_BRIDGE :
+			 SWITCHDEV_FDB_DEL_TO_BRIDGE;
 		u64_to_ether_addr(uw->macs[i] & 0xffffffffffffULL, addr);
 		info.addr = &addr[0];
 		info.vid = 0;
@@ -340,19 +338,18 @@ static void rtl838x_fdb_sync(struct work_struct *work)
 static void rtl839x_l2_notification_handler(struct rteth_ctrl *ctrl)
 {
 	struct notify_b *nb = ctrl->membase + sizeof(struct ring_b);
-        u32 e = ctrl->lastEvent;
+	u32 e = ctrl->lastEvent;
 
 	while (!(nb->ring[e] & 1)) {
-                struct fdb_update_work *w;
-                struct n_event *event;
-                u64 mac;
-                int i;
+		struct fdb_update_work *w;
+		struct n_event *event;
+		u64 mac;
+		int i;
 
 		w = kzalloc(sizeof(*w), GFP_ATOMIC);
-		if (!w) {
-			pr_err("Out of memory: %s", __func__);
+		if (!w)
 			return;
-		}
+
 		INIT_WORK(&w->work, rtl838x_fdb_sync);
 
 		for (i = 0; i < NOTIFY_EVENTS; i++) {
@@ -414,7 +411,7 @@ static irqreturn_t rtl93xx_net_irq(int irq, void *dev_id)
 	u32 status_tx = sw_r32(ctrl->r->dma_if_intr_tx_done_sts);
 
 	pr_debug("In %s, status_tx: %08x, status_rx: %08x, status_rx_r: %08x\n",
-		__func__, status_tx, status_rx, status_rx_r);
+		 __func__, status_tx, status_rx, status_rx_r);
 
 	/*  Ignore TX interrupt */
 	if (status_tx) {
@@ -440,7 +437,7 @@ static irqreturn_t rtl93xx_net_irq(int irq, void *dev_id)
 	/* RX buffer overrun */
 	if (status_rx_r) {
 		pr_debug("RX buffer overrun: status %x, mask: %x\n",
-		         status_rx_r, sw_r32(ctrl->r->dma_if_intr_rx_runout_msk));
+			 status_rx_r, sw_r32(ctrl->r->dma_if_intr_rx_runout_msk));
 		sw_w32(status_rx_r, ctrl->r->dma_if_intr_rx_runout_sts);
 	}
 
@@ -506,7 +503,7 @@ static void rtl838x_hw_reset(struct rteth_ctrl *ctrl)
 
 			sw_w32_mask(0x3ff << pos, 0, ctrl->r->dma_if_rx_ring_size(i));
 			sw_w32_mask(0x3ff << pos, ctrl->rxringlen,
-			            ctrl->r->dma_if_rx_ring_cntr(i));
+				    ctrl->r->dma_if_rx_ring_cntr(i));
 		}
 	}
 
@@ -627,20 +624,20 @@ static void rtl93xx_hw_en_rxtx(struct rteth_ctrl *ctrl)
 static void rtl838x_setup_ring_buffer(struct rteth_ctrl *ctrl, struct ring_b *ring)
 {
 	for (int i = 0; i < ctrl->rxrings; i++) {
-	        struct p_hdr *h;
-                int j;
+		struct p_hdr *h;
+		int j;
 
 		for (j = 0; j < ctrl->rxringlen; j++) {
 			h = &ring->rx_header[i][j];
 			memset(h, 0, sizeof(struct p_hdr));
 			h->buf = (u8 *)KSEG1ADDR(ring->rx_space +
-			                         i * ctrl->rxringlen * RING_BUFFER +
-			                         j * RING_BUFFER);
+						 i * ctrl->rxringlen * RING_BUFFER +
+						 j * RING_BUFFER);
 			h->size = RING_BUFFER;
 			/* All rings owned by switch, last one wraps */
 			ring->rx_r[i][j] = KSEG1ADDR(h) | 1 | (j == (ctrl->rxringlen - 1) ?
-			                   WRAP :
-			                   0);
+					   WRAP :
+					   0);
 		}
 		ring->c_rx[i] = 0;
 	}
@@ -653,8 +650,8 @@ static void rtl838x_setup_ring_buffer(struct rteth_ctrl *ctrl, struct ring_b *ri
 			h = &ring->tx_header[i][j];
 			memset(h, 0, sizeof(struct p_hdr));
 			h->buf = (u8 *)KSEG1ADDR(ring->tx_space +
-			                         i * TXRINGLEN * RING_BUFFER +
-			                         j * RING_BUFFER);
+						 i * TXRINGLEN * RING_BUFFER +
+						 j * RING_BUFFER);
 			h->size = RING_BUFFER;
 			ring->tx_r[i][j] = KSEG1ADDR(&ring->tx_header[i][j]);
 		}
@@ -671,7 +668,7 @@ static void rtl839x_setup_notify_ring_buffer(struct rteth_ctrl *ctrl)
 	for (int i = 0; i < NOTIFY_BLOCKS; i++)
 		b->ring[i] = KSEG1ADDR(&b->blocks[i]) | 1 | (i == (NOTIFY_BLOCKS - 1) ? WRAP : 0);
 
-	sw_w32((u32) b->ring, RTL839X_DMA_IF_NBUF_BASE_DESC_ADDR_CTRL);
+	sw_w32((u32)b->ring, RTL839X_DMA_IF_NBUF_BASE_DESC_ADDR_CTRL);
 	sw_w32_mask(0x3ff << 2, 100 << 2, RTL839X_L2_NOTIFICATION_CTRL);
 
 	/* Setup notification events */
@@ -690,7 +687,7 @@ static int rtl838x_eth_open(struct net_device *ndev)
 	struct ring_b *ring = ctrl->membase;
 
 	pr_debug("%s called: RX rings %d(length %d), TX rings %d(length %d)\n",
-		__func__, ctrl->rxrings, ctrl->rxringlen, TXRINGS, TXRINGLEN);
+		 __func__, ctrl->rxrings, ctrl->rxringlen, TXRINGS, TXRINGLEN);
 
 	spin_lock_irqsave(&ctrl->lock, flags);
 	rtl838x_hw_reset(ctrl);
@@ -793,9 +790,9 @@ static void rtl838x_hw_stop(struct rteth_ctrl *ctrl)
 	if (ctrl->r->family_id == RTL8380_FAMILY_ID || ctrl->r->family_id == RTL8390_FAMILY_ID)
 		sw_w32(force_mac, ctrl->r->mac_force_mode_ctrl + ctrl->r->cpu_port * 4);
 	else if (ctrl->r->family_id == RTL9300_FAMILY_ID)
-		sw_w32_mask(0x3, 0, ctrl->r->mac_force_mode_ctrl + ctrl->r->cpu_port *4);
+		sw_w32_mask(0x3, 0, ctrl->r->mac_force_mode_ctrl + ctrl->r->cpu_port * 4);
 	else if (ctrl->r->family_id == RTL9310_FAMILY_ID)
-		sw_w32_mask(BIT(0) | BIT(9), 0, ctrl->r->mac_force_mode_ctrl + ctrl->r->cpu_port *4);
+		sw_w32_mask(BIT(0) | BIT(9), 0, ctrl->r->mac_force_mode_ctrl + ctrl->r->cpu_port * 4);
 	mdelay(100);
 
 	/* Disable all TX/RX interrupts */
@@ -965,7 +962,6 @@ static int rteth_start_xmit(struct sk_buff *skb, struct net_device *dev)
 
 	/* We can send this packet if CPU owns the descriptor */
 	if (!(ring->tx_r[q][ring->c_tx[q]] & 0x1)) {
-
 		/* Set descriptor for tx */
 		h = &ring->tx_header[q][ring->c_tx[q]];
 		h->size = len;
@@ -991,6 +987,7 @@ static int rteth_start_xmit(struct sk_buff *skb, struct net_device *dev)
 		if (ctrl->r->family_id == RTL8380_FAMILY_ID) {
 			for (int i = 0; i < 10; i++) {
 				u32 val = sw_r32(ctrl->r->dma_if_ctrl);
+
 				if ((val & 0xc) == 0xc)
 					break;
 			}
@@ -1027,9 +1024,9 @@ txdone:
  * so we do round-robin
  */
 static u16 rteth_83xx_pick_tx_queue(struct net_device *dev, struct sk_buff *skb,
-			  struct net_device *sb_dev)
+				 struct net_device *sb_dev)
 {
-	static u8 last = 0;
+	static u8 last;
 
 	last++;
 	return last % TXRINGS;
@@ -1038,7 +1035,7 @@ static u16 rteth_83xx_pick_tx_queue(struct net_device *dev, struct sk_buff *skb,
 /* Return queue number for TX. On the RTL93XX, queue 1 is the high priority queue
  */
 static u16 rteth_93xx_pick_tx_queue(struct net_device *dev, struct sk_buff *skb,
-			  struct net_device *sb_dev)
+				 struct net_device *sb_dev)
 {
 	if (skb->priority >= TC_PRIO_CONTROL)
 		return 1;
@@ -1069,7 +1066,7 @@ static int rtl838x_hw_receive(struct net_device *dev, int r, int budget)
 		if ((ring->rx_r[r][ring->c_rx[r]] & 0x1)) {
 			if (&ring->rx_r[r][ring->c_rx[r]] != last) {
 				netdev_warn(dev, "Ring contention: r: %x, last %x, cur %x\n",
-				    r, (uint32_t)last, (u32) &ring->rx_r[r][ring->c_rx[r]]);
+					    r, (u32)last, (u32)&ring->rx_r[r][ring->c_rx[r]]);
 			}
 			break;
 		}
@@ -1141,8 +1138,8 @@ static int rtl838x_hw_receive(struct net_device *dev, int r, int budget)
 		h->size = RING_BUFFER;
 
 		ring->rx_r[r][ring->c_rx[r]] = KSEG1ADDR(h) | 0x1 | (ring->c_rx[r] == (ctrl->rxringlen - 1) ?
-		                               WRAP :
-		                               0x1);
+					       WRAP :
+					       0x1);
 		ring->c_rx[r] = (ring->c_rx[r] + 1) % ctrl->rxringlen;
 		last = (u32 *)KSEG1ADDR(sw_r32(ctrl->r->dma_if_rx_cur + r * 4));
 	} while (&ring->rx_r[r][ring->c_rx[r]] != last && work_done < budget);
@@ -1165,6 +1162,7 @@ static int rtl838x_poll_rx(struct napi_struct *napi, int budget)
 
 	while (work_done < budget) {
 		int work = rtl838x_hw_receive(ctrl->netdev, ring, budget - work_done);
+
 		if (!work)
 			break;
 		work_done += work;
@@ -1314,7 +1312,7 @@ static int rteth_set_mac_address(struct net_device *dev, void *p)
 {
 	struct rteth_ctrl *ctrl = netdev_priv(dev);
 	const struct sockaddr *addr = p;
-	u8 *mac = (u8 *) (addr->sa_data);
+	u8 *mac = (u8 *)(addr->sa_data);
 
 	if (!is_valid_ether_addr(addr->sa_data))
 		return -EADDRNOTAVAIL;
@@ -1406,7 +1404,7 @@ static int rteth_set_link_ksettings(struct net_device *ndev,
 }
 
 static netdev_features_t rteth_fix_features(struct net_device *dev,
-					  netdev_features_t features)
+					      netdev_features_t features)
 {
 	return features;
 }
@@ -1662,7 +1660,7 @@ static int rtl838x_eth_probe(struct platform_device *pdev)
 	struct ring_b *ring;
 
 	pr_info("Probing RTL838X eth device pdev: %x, dev: %x\n",
-		(u32)pdev, (u32)(&(pdev->dev)));
+		(u32)pdev, (u32)(&pdev->dev));
 
 	if (!dn) {
 		dev_err(&pdev->dev, "No DT found\n");
@@ -1686,8 +1684,8 @@ static int rtl838x_eth_probe(struct platform_device *pdev)
 
 	/* Allocate buffer memory */
 	ctrl->membase = dmam_alloc_coherent(&pdev->dev, rxrings * rxringlen * RING_BUFFER +
-	                                    sizeof(struct ring_b) + sizeof(struct notify_b),
-	                                    (void *)&dev->mem_start, GFP_KERNEL);
+					    sizeof(struct ring_b) + sizeof(struct notify_b),
+					    (void *)&dev->mem_start, GFP_KERNEL);
 	if (!ctrl->membase) {
 		dev_err(&pdev->dev, "cannot allocate DMA buffer\n");
 		return -ENOMEM;
@@ -1711,16 +1709,14 @@ static int rtl838x_eth_probe(struct platform_device *pdev)
 
 	/* Obtain device IRQ number */
 	dev->irq = platform_get_irq(pdev, 0);
-	if (dev->irq < 0) {
-		dev_err(&pdev->dev, "cannot obtain network-device IRQ\n");
-		return err;
-	}
+	if (dev->irq < 0)
+		return -ENODEV;
 
 	err = devm_request_irq(&pdev->dev, dev->irq, ctrl->r->net_irq,
 			       IRQF_SHARED, dev->name, dev);
 	if (err) {
 		dev_err(&pdev->dev, "%s: could not acquire interrupt: %d\n",
-			   __func__, err);
+			__func__, err);
 		return err;
 	}
 
@@ -1756,8 +1752,9 @@ static int rtl838x_eth_probe(struct platform_device *pdev)
 			netdev_warn(dev, "Failed to set MAC address.\n");
 	}
 	pr_info("Using MAC %08x%08x\n", sw_r32(ctrl->r->mac),
-					sw_r32(ctrl->r->mac + 4));
-	strcpy(dev->name, "eth%d");
+		sw_r32(ctrl->r->mac + 4));
+	strscpy(dev->name, "eth%d", sizeof(dev->name));
+
 	ctrl->pdev = pdev;
 	ctrl->netdev = dev;
 
