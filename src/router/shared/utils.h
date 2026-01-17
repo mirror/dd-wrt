@@ -852,6 +852,8 @@
 
 #define ROUTER_ZYXEL_XGS1010 0x12b0ff
 
+#define ROUTER_ZYXEL_GS1920 0x12c138
+
 #define NVROUTER "DD_BOARD"
 #define NVROUTER_ALT "alternate_name"
 
