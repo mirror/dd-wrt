@@ -129,6 +129,10 @@ struct config {
 
 	unsigned int forced_baudrate;
 	unsigned int port_count;
+
+	int i2c_bus;
+	int i2c_addr;
+
 	uint8_t pse_id_set_budget_mask;
 	struct port_config ports[MAX_PORT];
 };
