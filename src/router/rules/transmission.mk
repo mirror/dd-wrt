@@ -18,6 +18,7 @@ transmission: curl zlib
 	$(MAKE) -C transmission/build
 
 transmission-install:
+	rm -rf $(INSTALLDIR)/transmission/
 	$(MAKE) -C transmission/build install DESTDIR=$(INSTALLDIR)/transmission
 	mv $(INSTALLDIR)/transmission/usr/bin/transmission-daemon $(INSTALLDIR)/transmission/usr/bin/transmissiond
 	rm -rf $(INSTALLDIR)/transmission/usr/share/man
