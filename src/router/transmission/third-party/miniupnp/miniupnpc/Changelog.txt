@@ -1,5 +1,58 @@
-$Id: Changelog.txt,v 1.264 2024/03/19 23:26:05 nanard Exp $
+$Id: Changelog.txt,v 1.281 2025/05/26 22:56:38 nanard Exp $
 miniUPnP client Changelog.
+
+VERSION 2.3.3 : released 2025/05/27
+
+2025/05/25:
+  define WIN32_LEAN_AND_MEAN
+
+2025/03/29:
+  fix a bug in ssdpDiscoverDevices() that has been there since 2010/04/05
+    and the use of getaddrinfo()
+  more argument checks in UPNP_AddAnyPortMapping() and
+    UPNP_GetGenericPortMappingEntryExt()
+
+2025/03/18:
+  Add UPNP_GetSpecificPortMappingEntryExt() and
+  UPNP_GetGenericPortMappingEntryExt() functions to support retrieving
+  arbitrary long descriptions.
+  Increments API_VERSION to 21
+
+VERSION 2.3.2 : released 2025/03/05
+
+2025/02/24:
+  remove STRTOUI from public headers
+  remove parseURL() from public headers
+  remove struct NameValue from upnpreplyparse.h and use flexible array member
+  Increments API_VERSION to 20
+
+VERSION 2.3.1 : released 2025/02/23
+
+2025/02/23:
+  allocate argument arrays on stack instead of heap in upnpcommand.c
+
+2025/02/09:
+  doxygen documentation of the public headers
+
+VERSION 2.3.0 : released 2025/01/11
+
+2025/01/10:
+  Change simpleUPnPcommand() prototype to remove unused first argument
+  Increments API_VERSION to 19
+
+2024/07/27:
+  Add #define for UPNP_GetValidIGD() return values
+
+VERSION 2.2.8 : released 2024/06/09
+
+2024/05/16:
+  IPv6: try site-local before link-local
+
+2024/05/08:
+  upnpc.c: Add -f option to upnpc program (delete multiple port redirections)
+  UPNP_GetValidIGD(): distinguish between not connected and connected to a
+    "private" network (with a reserved IP address).
+  Increments API_VERSION to 18
 
 VERSION 2.2.7 : released 2024/03/20
 

@@ -59,7 +59,7 @@ $Id: Changelog.txt,v 1.33 2013/11/26 08:47:36 nanard Exp $
   Trying to have windows get gateway working if not using DHCP
 
 2009/02/27:
-  dont include declspec.h if not under WIN32.
+  don't include declspec.h if not under WIN32.
 
 2009/01/23:
   Prefixed the libraries name with lib

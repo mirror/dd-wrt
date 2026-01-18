@@ -1,11 +1,9 @@
+include(CheckAtomic)
 include(CheckLibraryExists)
 include(CheckSymbolExists)
 
 if(ENABLE_NLS)
-    check_library_exists(intl libintl_gettext "" HAVE_LIBINTL)
-    if(HAVE_LIBINTL)
-        set(LIBINTL_LIBRARY intl)
-    endif()
+    find_package(Intl)
 endif()
 
 check_symbol_exists(SO_REUSEPORT "sys/types.h;sys/socket.h" HAVE_SO_REUSEPORT)
@@ -16,6 +14,11 @@ add_compile_options(
 
 add_library(${TR_NAME} STATIC)
 
+set(IS_APPLE_CLANG FALSE)
+if(APPLE AND CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+    set(IS_APPLE_CLANG TRUE)
+endif()
+
 target_sources(${TR_NAME}
     PRIVATE
         announce-list.cc
@@ -25,6 +28,8 @@ target_sources(${TR_NAME}
         announcer-udp.cc
         announcer.cc
         announcer.h
+        api-compat.cc
+        api-compat.h
         bandwidth.cc
         bandwidth.h
         benc.h
@@ -50,6 +55,7 @@ target_sources(${TR_NAME}
         error-types.h
         error.cc
         error.h
+        file-capacity.cc
         file-piece-map.cc
         file-piece-map.h
         file-posix.cc
@@ -61,6 +67,8 @@ target_sources(${TR_NAME}
         history.h
         inout.cc
         inout.h
+        ip-cache.cc
+        ip-cache.h
         log.cc
         log.h
         lru-cache.h
@@ -71,13 +79,12 @@ target_sources(${TR_NAME}
         mime-types.h
         net.cc
         net.h
+        observable.h
         open-files.cc
         open-files.h
         peer-common.h
         peer-io.cc
         peer-io.h
-        peer-mgr-active-requests.cc
-        peer-mgr-active-requests.h
         peer-mgr-wishlist.cc
         peer-mgr-wishlist.h
         peer-mgr.cc
@@ -88,8 +95,6 @@ target_sources(${TR_NAME}
         peer-msgs.h
         peer-socket.cc
         peer-socket.h
-        platform-quota.cc
-        platform-quota.h
         platform.cc
         platform.h
         port-forwarding-natpmp.cc
@@ -106,11 +111,12 @@ target_sources(${TR_NAME}
         rpc-server.h
         rpcimpl.cc
         rpcimpl.h
+        serializer.cc
+        serializer.h
         session-alt-speeds.cc
         session-alt-speeds.h
         session-id.cc
         session-id.h
-        session-settings.cc
         session-thread.cc
         session-thread.h
         session.cc
@@ -124,19 +130,21 @@ target_sources(${TR_NAME}
         timer-ev.h
         timer.h
         torrent-ctor.cc
+        torrent-ctor.h
         torrent-files.cc
         torrent-files.h
         torrent-magnet.cc
         torrent-magnet.h
         torrent-metainfo.cc
         torrent-metainfo.h
+        torrent-queue.cc
+        torrent-queue.h
         torrent.cc
         torrent.h
         torrents.cc
         torrents.h
         tr-assert.cc
         tr-assert.h
-        tr-assert.mm
         tr-buffer.h
         tr-dht.cc
         tr-dht.h
@@ -154,10 +162,8 @@ target_sources(${TR_NAME}
         utils-ev.h
         utils.cc
         utils.h
-        utils.mm
+        $<$<BOOL:${IS_APPLE_CLANG}>:utils.mm>
         variant-benc.cc
-        variant-common.h
-        variant-converters.cc
         variant-json.cc
         variant.cc
         variant.h
@@ -201,11 +207,6 @@ tr_allow_compile_if(
         watchdir-inotify.cc
     [=[[WITH_KQUEUE]]=]
         watchdir-kqueue.cc
-    [=[[APPLE AND CMAKE_CXX_COMPILER_ID MATCHES "Clang"]]=]
-        tr-assert.mm
-        utils.mm
-    [=[[NOT (APPLE AND CMAKE_CXX_COMPILER_ID MATCHES "Clang")]]=]
-        tr-assert.cc
     [=[[WIN32]]=]
         file-win32.cc
         subprocess-win32.cc
@@ -223,23 +224,20 @@ target_compile_definitions(${TR_NAME}
         $<$<BOOL:${WITH_INOTIFY}>:WITH_INOTIFY>
         $<$<BOOL:${WITH_KQUEUE}>:WITH_KQUEUE>
         $<$<BOOL:${ENABLE_UTP}>:WITH_UTP>
-        $<$<VERSION_LESS:${MINIUPNPC_VERSION},1.7>:MINIUPNPC_API_VERSION=${MINIUPNPC_API_VERSION}> # API version macro was only added in 1.7
         $<$<BOOL:${USE_SYSTEM_B64}>:USE_SYSTEM_B64>
         $<$<BOOL:${HAVE_SO_REUSEPORT}>:HAVE_SO_REUSEPORT=1>
     PUBLIC
-        $<$<NOT:$<BOOL:${ENABLE_NLS}>>:DISABLE_GETTEXT>)
+        $<$<STREQUAL:${CRYPTO_PKG},ccrypto>:WITH_CCRYPTO>
+        $<$<STREQUAL:${CRYPTO_PKG},mbedtls>:WITH_MBEDTLS>
+        $<$<STREQUAL:${CRYPTO_PKG},openssl>:WITH_OPENSSL>
+        $<$<STREQUAL:${CRYPTO_PKG},wolfssl>:WITH_WOLFSSL>
+        $<$<BOOL:${Intl_FOUND}>:ENABLE_GETTEXT>)
 
 tr_target_compile_definitions_for_headers(${TR_NAME}
     PRIVATE
         sys/statvfs.h
         xfs/xfs.h
         xlocale.h)
-
-if(ENABLE_NLS)
-    tr_target_compile_definitions_for_headers(${TR_NAME}
-        PRIVATE
-            libintl.h)
-endif()
 
 tr_target_compile_definitions_for_functions(${TR_NAME}
     PRIVATE
@@ -256,25 +254,22 @@ tr_target_compile_definitions_for_functions(${TR_NAME}
         pread
         pwrite
         sendfile64
-        statvfs
-    PUBLIC
-        gettext
-        ngettext
-    REQUIRED_LIBS
-        $<$<BOOL:${HAVE_LIBINTL}>:${LIBINTL_LIBRARY}>) # gettext, ngettext
+        statvfs)
 
 target_include_directories(${TR_NAME}
-    PRIVATE
-        ${CMAKE_CURRENT_BINARY_DIR}
-    INTERFACE
+    PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}/..
-        ${CMAKE_CURRENT_BINARY_DIR}/..)
+        ${CMAKE_CURRENT_BINARY_DIR}/..
+        ${Intl_INCLUDE_DIRS})
+
+if(ANDROID)
+    find_library(log-lib log)
+endif()
 
 target_link_libraries(${TR_NAME}
     PRIVATE
         Threads::Threads
         deflate::deflate
-        transmission::crypto_impl
         CURL::libcurl
         FastFloat::fast_float
         psl::psl
@@ -283,19 +278,24 @@ target_link_libraries(${TR_NAME}
         dht::dht
         libutp::libutp
         libb64::libb64
-        ${LIBINTL_LIBRARY}
+        ${Intl_LIBRARIES}
         ${LIBM_LIBRARY}
         ${LIBQUOTA_LIBRARY}
         ${TR_NETWORK_LIBRARIES}
-        jsonsl
+        RapidJSON
         utf8::cpp
         wildmat
         WideInteger::WideInteger
+        Crc32c::crc32c
         $<$<BOOL:${WIN32}>:crypt32>
         $<$<BOOL:${WIN32}>:shlwapi>
         "$<$<BOOL:${APPLE}>:-framework Foundation>"
+        "$<$<BOOL:${ANDROID}>:${log-lib}>"
+        $<$<BOOL:${HAVE_LIBATOMIC}>:atomic>
     PUBLIC
+        transmission::crypto_impl
         fmt::fmt-header-only
+        small::small
         libevent::event)
 
 if(INSTALL_LIB)
@@ -321,6 +321,7 @@ if(INSTALL_LIB)
             tr-strbuf.h
             transmission.h
             utils.h
+            values.h
             variant.h
             watchdir.h
             web-utils.h

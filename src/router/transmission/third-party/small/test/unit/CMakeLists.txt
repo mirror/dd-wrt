@@ -67,8 +67,10 @@ macro(add_small_test TEST_NAME)
         # Link with catch-main
         target_link_libraries(ut_${TEST_NAME} PUBLIC ${LINK_LIBS} catch_main)
 
-        # Enable UTF-8 on windows
-        target_msvc_compile_options(ut_${TEST_NAME} INTERFACE "/utf-8")
+        # Enable UTF-8 on MSVC
+        if (MSVC)
+            target_compile_options(ut_${TEST_NAME} PUBLIC /utf-8)
+        endif ()
 
         # Register with ctest
         catch_discover_tests(ut_${TEST_NAME})

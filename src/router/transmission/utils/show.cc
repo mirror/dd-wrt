@@ -1,4 +1,4 @@
-// This file Copyright © 2012-2023 Mnemosyne LLC.
+// This file Copyright © Mnemosyne LLC.
 // It may be used under GPLv2 (SPDX: GPL-2.0-only), GPLv3 (SPDX: GPL-3.0-only),
 // or any future license endorsed by Mnemosyne LLC.
 // License text can be found in the licenses/ folder.
@@ -6,59 +6,68 @@
 #include <algorithm>
 #include <array>
 #include <condition_variable>
+#include <cstdint> // int64_t
+#include <cstdio>
+#include <cstdlib>
 #include <ctime>
 #include <chrono>
+#include <iterator> // std::back_inserter
 #include <mutex>
+#include <optional>
 #include <string>
 #include <string_view>
+#include <vector>
 
 #include <fmt/chrono.h>
-#include <fmt/core.h>
 #include <fmt/format.h>
 
 #include <libtransmission/transmission.h>
 
 #include <libtransmission/error.h>
 #include <libtransmission/log.h>
+#include <libtransmission/quark.h>
 #include <libtransmission/torrent-metainfo.h>
 #include <libtransmission/tr-getopt.h>
-#include <libtransmission/tr-macros.h>
 #include <libtransmission/tr-strbuf.h>
 #include <libtransmission/utils.h>
+#include <libtransmission/values.h>
 #include <libtransmission/variant.h>
 #include <libtransmission/version.h>
 #include <libtransmission/web.h>
 #include <libtransmission/web-utils.h>
 
-#include "units.h"
-
 using namespace std::literals;
+using namespace libtransmission::Values;
 
 namespace
 {
-
 auto constexpr TimeoutSecs = std::chrono::seconds{ 30 };
 
 char constexpr MyName[] = "transmission-show";
 char constexpr Usage[] = "Usage: transmission-show [options] <torrent-file>";
 
-auto options = std::array<tr_option, 14>{
-    { { 'd', "header", "Show only header section", "d", false, nullptr },
-      { 'i', "info", "Show only info section", "i", false, nullptr },
-      { 't', "trackers", "Show only trackers section", "t", false, nullptr },
-      { 'f', "files", "Show only file list", "f", false, nullptr },
-      { 'D', "no-header", "Do not show header section", "D", false, nullptr },
-      { 'I', "no-info", "Do not show info section", "I", false, nullptr },
-      { 'T', "no-trackers", "Do not show trackers section", "T", false, nullptr },
-      { 'F', "no-files", "Do not show files section", "F", false, nullptr },
-      { 'b', "bytes", "Show file sizes in bytes", "b", false, nullptr },
-      { 'm', "magnet", "Give a magnet link for the specified torrent", "m", false, nullptr },
-      { 's', "scrape", "Ask the torrent's trackers how many peers are in the torrent's swarm", "s", false, nullptr },
-      { 'u', "unsorted", "Do not sort files by name", "u", false, nullptr },
-      { 'V', "version", "Show version number and exit", "V", false, nullptr },
-      { 0, nullptr, nullptr, nullptr, false, nullptr } }
-};
+using Arg = tr_option::Arg;
+auto constexpr Options = std::array<tr_option, 14>{ {
+    { 'd', "header", "Show only header section", "d", Arg::None, nullptr },
+    { 'i', "info", "Show only info section", "i", Arg::None, nullptr },
+    { 't', "trackers", "Show only trackers section", "t", Arg::None, nullptr },
+    { 'f', "files", "Show only file list", "f", Arg::None, nullptr },
+    { 'D', "no-header", "Do not show header section", "D", Arg::None, nullptr },
+    { 'I', "no-info", "Do not show info section", "I", Arg::None, nullptr },
+    { 'T', "no-trackers", "Do not show trackers section", "T", Arg::None, nullptr },
+    { 'F', "no-files", "Do not show files section", "F", Arg::None, nullptr },
+    { 'b', "bytes", "Show file sizes in bytes", "b", Arg::None, nullptr },
+    { 'm', "magnet", "Give a magnet link for the specified torrent", "m", Arg::None, nullptr },
+    { 's', "scrape", "Ask the torrent's trackers how many peers are in the torrent's swarm", "s", Arg::None, nullptr },
+    { 'u', "unsorted", "Do not sort files by name", "u", Arg::None, nullptr },
+    { 'V', "version", "Show version number and exit", "V", Arg::None, nullptr },
+    { 0, nullptr, nullptr, nullptr, Arg::None, nullptr },
+} };
+static_assert(Options[std::size(Options) - 2].val != 0);
+} // namespace
 
+namespace
+{
 struct app_opts
 {
     std::string_view filename;
@@ -78,7 +87,7 @@ int parseCommandLine(app_opts& opts, int argc, char const* const* argv)
     int c;
     char const* optarg;
 
-    while ((c = tr_getopt(Usage, argc, argv, std::data(options), &optarg)) != TR_OPT_DONE)
+    while ((c = tr_getopt(Usage, argc, argv, std::data(Options), &optarg)) != TR_OPT_DONE)
     {
         switch (c)
         {
@@ -160,7 +169,7 @@ int parseCommandLine(app_opts& opts, int argc, char const* const* argv)
 
 [[nodiscard]] auto toString(time_t now)
 {
-    return now == 0 ? "Unknown" : fmt::format("{:%a %b %d %T %Y}", fmt::localtime(now));
+    return now == 0 ? "Unknown" : fmt::format("{:%a %b %d %T %Y}", *std::localtime(&now));
 }
 
 bool compareSecondField(std::string_view l, std::string_view r)
@@ -189,16 +198,16 @@ void showInfo(app_opts const& opts, tr_torrent_metainfo const& metainfo)
     {
         fmt::print("GENERAL\n\n");
         fmt::print("  Name: {:s}\n", metainfo.name());
-        if (metainfo.hasV1Metadata())
+        if (metainfo.has_v1_metadata())
         {
-            fmt::print("  Hash v1: {:s}\n", metainfo.infoHashString());
+            fmt::print("  Hash v1: {:s}\n", metainfo.info_hash_string());
         }
-        if (metainfo.hasV2Metadata())
+        if (metainfo.has_v2_metadata())
         {
-            fmt::print("  Hash v2: {:s}\n", metainfo.infoHash2String());
+            fmt::print("  Hash v2: {:s}\n", metainfo.info_hash2_string());
         }
         fmt::print("  Created by: {:s}\n", std::empty(metainfo.creator()) ? "Unknown" : metainfo.creator());
-        fmt::print("  Created on: {:s}\n\n", toString(metainfo.dateCreated()));
+        fmt::print("  Created on: {:s}\n\n", toString(metainfo.date_created()));
 
         if (!std::empty(metainfo.comment()))
         {
@@ -210,10 +219,10 @@ void showInfo(app_opts const& opts, tr_torrent_metainfo const& metainfo)
             fmt::print("  Source: {:s}\n", metainfo.source());
         }
 
-        fmt::print("  Piece Count: {:d}\n", metainfo.pieceCount());
-        fmt::print("  Piece Size: {:s}\n", tr_formatter_mem_B(metainfo.pieceSize()));
-        fmt::print("  Total Size: {:s}\n", tr_formatter_size_B(metainfo.totalSize()));
-        fmt::print("  Privacy: {:s}\n", metainfo.isPrivate() ? "Private torrent" : "Public torrent");
+        fmt::print("  Piece Count: {:d}\n", metainfo.piece_count());
+        fmt::print("  Piece Size: {:s}\n", Memory{ metainfo.piece_size(), Memory::Units::Bytes }.to_string());
+        fmt::print("  Total Size: {:s}\n", Storage{ metainfo.total_size(), Storage::Units::Bytes }.to_string());
+        fmt::print("  Privacy: {:s}\n", metainfo.is_private() ? "Private torrent" : "Public torrent");
     }
 
     /**
@@ -225,7 +234,7 @@ void showInfo(app_opts const& opts, tr_torrent_metainfo const& metainfo)
         fmt::print("\nTRACKERS\n");
         auto current_tier = std::optional<tr_tracker_tier_t>{};
         auto print_tier = size_t{ 1 };
-        for (auto const& tracker : metainfo.announceList())
+        for (auto const& tracker : metainfo.announce_list())
         {
             if (!current_tier || current_tier != tracker.tier)
             {
@@ -241,7 +250,7 @@ void showInfo(app_opts const& opts, tr_torrent_metainfo const& metainfo)
         ***
         **/
 
-        if (auto const n_webseeds = metainfo.webseedCount(); n_webseeds > 0)
+        if (auto const n_webseeds = metainfo.webseed_count(); n_webseeds > 0)
         {
             fmt::print("\nWEBSEEDS\n\n");
 
@@ -264,21 +273,21 @@ void showInfo(app_opts const& opts, tr_torrent_metainfo const& metainfo)
         }
 
         auto filenames = std::vector<std::string>{};
-        for (tr_file_index_t i = 0, n = metainfo.fileCount(); i < n; ++i)
+        for (tr_file_index_t i = 0, n = metainfo.file_count(); i < n; ++i)
         {
             std::string filename;
             if (opts.show_bytesize)
             {
-                filename = std::to_string(metainfo.fileSize(i));
+                filename = std::to_string(metainfo.file_size(i));
                 filename += " ";
-                filename += metainfo.fileSubpath(i);
+                filename += metainfo.file_subpath(i);
             }
             else
             {
                 filename = "  ";
-                filename += metainfo.fileSubpath(i);
+                filename += metainfo.file_subpath(i);
                 filename += " (";
-                filename += tr_formatter_size_B(metainfo.fileSize(i));
+                filename += Storage{ metainfo.file_size(i), Storage::Units::Bytes }.to_string();
                 filename += ')';
             }
             filenames.emplace_back(filename);
@@ -316,7 +325,7 @@ void doScrape(tr_torrent_metainfo const& metainfo)
     auto mediator = Mediator{};
     auto web = tr_web::create(mediator);
 
-    for (auto const& tracker : metainfo.announceList())
+    for (auto const& tracker : metainfo.announce_list())
     {
         if (std::empty(tracker.scrape))
         {
@@ -325,9 +334,9 @@ void doScrape(tr_torrent_metainfo const& metainfo)
 
         // build the full scrape URL
         auto scrape_url = tr_urlbuf{ tracker.scrape.sv() };
-        auto delimiter = tr_strvContains(scrape_url, '?') ? '&' : '?';
+        auto delimiter = tr_strv_contains(scrape_url, '?') ? '&' : '?';
         scrape_url.append(delimiter, "info_hash=");
-        tr_urlPercentEncode(std::back_inserter(scrape_url), metainfo.infoHash());
+        tr_urlPercentEncode(std::back_inserter(scrape_url), metainfo.info_hash());
         fmt::print("{:s} ... ", scrape_url);
         fflush(stdout);
 
@@ -336,14 +345,15 @@ void doScrape(tr_torrent_metainfo const& metainfo)
         auto response_mutex = std::mutex{};
         auto response_cv = std::condition_variable{};
         auto lock = std::unique_lock(response_mutex);
-        web->fetch({ scrape_url,
-                     [&response, &response_cv](tr_web::FetchResponse const& resp)
-                     {
-                         response = resp;
-                         response_cv.notify_one();
-                     },
-                     nullptr,
-                     TimeoutSecs });
+        web->fetch(
+            { scrape_url,
+              [&response, &response_cv](tr_web::FetchResponse const& resp)
+              {
+                  response = resp;
+                  response_cv.notify_one();
+              },
+              nullptr,
+              TimeoutSecs });
         response_cv.wait(lock);
 
         // check the response code
@@ -354,12 +364,13 @@ void doScrape(tr_torrent_metainfo const& metainfo)
         }
 
         // print it out
-        auto top = tr_variant{};
-        if (!tr_variantFromBuf(&top, TR_VARIANT_PARSE_BENC | TR_VARIANT_PARSE_INPLACE, response.body))
+        auto otop = tr_variant_serde::benc().inplace().parse(response.body);
+        if (!!otop)
         {
             fmt::print("error parsing scrape response\n");
             continue;
         }
+        auto& top = *otop;
 
         bool matched = false;
         if (tr_variant* files = nullptr; tr_variantDictFindDict(&top, TR_KEY_files, &files))
@@ -368,8 +379,8 @@ void doScrape(tr_torrent_metainfo const& metainfo)
             tr_quark key;
             tr_variant* val;
 
-            auto hashsv = std::string_view{ reinterpret_cast<char const*>(std::data(metainfo.infoHash())),
-                                            std::size(metainfo.infoHash()) };
+            auto hashsv = std::string_view{ reinterpret_cast<char const*>(std::data(metainfo.info_hash())),
+                                            std::size(metainfo.info_hash()) };
 
             while (tr_variantDictChild(files, child_pos, &key, &val))
             {
@@ -386,8 +397,6 @@ void doScrape(tr_torrent_metainfo const& metainfo)
             }
         }
 
-        tr_variantClear(&top);
-
         if (!matched)
         {
             fmt::print("no match\n");
@@ -399,13 +408,12 @@ void doScrape(tr_torrent_metainfo const& metainfo)
 
 int tr_main(int argc, char* argv[])
 {
+    tr_lib_init();
+
     tr_locale_set_global("");
 
     tr_logSetQueueEnabled(false);
     tr_logSetLevel(TR_LOG_ERROR);
-    tr_formatter_mem_init(MemK, MemKStr, MemMStr, MemGStr, MemTStr);
-    tr_formatter_size_init(DiskK, DiskKStr, DiskMStr, DiskGStr, DiskTStr);
-    tr_formatter_speed_init(SpeedK, SpeedKStr, SpeedMStr, SpeedGStr, SpeedTStr);
 
     auto opts = app_opts{};
     if (parseCommandLine(opts, argc, (char const* const*)argv) != 0)
@@ -423,19 +431,18 @@ int tr_main(int argc, char* argv[])
     if (std::empty(opts.filename))
     {
         fmt::print(stderr, "ERROR: No torrent file specified.\n");
-        tr_getopt_usage(MyName, Usage, std::data(options));
+        tr_getopt_usage(MyName, Usage, std::data(Options));
         fmt::print(stderr, "\n");
         return EXIT_FAILURE;
     }
 
     /* try to parse the torrent file */
     auto metainfo = tr_torrent_metainfo{};
-    tr_error* error = nullptr;
-    auto const parsed = metainfo.parseTorrentFile(opts.filename, nullptr, &error);
-    if (error != nullptr)
+    auto error = tr_error{};
+    auto const parsed = metainfo.parse_torrent_file(opts.filename, nullptr, &error);
+    if (error)
     {
-        fmt::print(stderr, "Error parsing torrent file '{:s}': {:s} ({:d})\n", opts.filename, error->message, error->code);
-        tr_error_clear(&error);
+        fmt::print(stderr, "Error parsing torrent file '{:s}': {:s} ({:d})\n", opts.filename, error.message(), error.code());
     }
     if (!parsed)
     {

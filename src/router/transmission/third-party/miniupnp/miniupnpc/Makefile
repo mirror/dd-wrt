@@ -1,9 +1,9 @@
-# $Id: Makefile,v 1.150 2023/06/15 22:55:24 nanard Exp $
+# $Id: Makefile,v 1.156 2025/03/18 23:40:14 nanard Exp $
 # MiniUPnP Project
 # http://miniupnp.free.fr/
 # https://miniupnp.tuxfamily.org/
 # https://github.com/miniupnp/miniupnp
-# (c) 2005-2023 Thomas Bernard
+# (c) 2005-2025 Thomas Bernard
 # to install use :
 # $ make DESTDIR=/tmp/dummylocation install
 # or
@@ -84,9 +84,10 @@ ifneq (, $(findstring sun, $(OS))$(findstring solaris, $(OS)))
 endif
 
 # APIVERSION is used to build SONAME
-APIVERSION = 17
+APIVERSION = 21
 
 SRCS = $(wildcard $(SRCDIR)/*.c)
+PRIVATE_HEADERS = $(wildcard $(SRCDIR)/*.h)
 
 LIBOBJS = $(addprefix $(BUILD)/,miniwget.o minixml.o igd_desc_parse.o minisoap.o \
           miniupnpc.o upnpreplyparse.o upnpcommands.o upnperrors.o \
@@ -167,7 +168,7 @@ endif
 
 
 .PHONY:	install clean depend all check test everything \
-	installpythonmodule updateversion
+	installpythonmodule updateversion doc
 
 all:	$(LIBRARY) $(EXECUTABLES)
 
@@ -178,8 +179,13 @@ check:	validateminixml validateminiwget validateupnpreplyparse \
 
 everything:	all $(EXECUTABLES_ADDTESTS)
 
+doc:	doxygen/html/index.html
+
+# note : the python module "wheel" is required for bdist_wheel
 pythonmodule:	$(LIBRARY) $(SRCDIR)/miniupnpcmodule.c setup.py
 	MAKE=$(MAKE) python setup.py build
+	MAKE=$(MAKE) python setup.py sdist
+	MAKE=$(MAKE) python setup.py bdist_wheel --skip-build
 	touch $@
 
 installpythonmodule:	pythonmodule
@@ -393,6 +399,9 @@ ideb:
 	(sudo apt-get install python-all-dev)
 
 minihttptestserver:	minihttptestserver.o
+
+doxygen/html/index.html: Doxyfile $(SRCS) $(HEADERS) $(PRIVATE_HEADERS)
+	doxygen
 
 print-%:
 	@echo "$* = $($*)"

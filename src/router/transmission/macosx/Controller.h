@@ -1,4 +1,4 @@
-// This file Copyright © 2005-2023 Transmission authors and contributors.
+// This file Copyright © Transmission authors and contributors.
 // It may be used under the MIT (SPDX: MIT) license.
 // License text can be found in the licenses/ folder.
 
@@ -17,18 +17,18 @@
 @class PrefsController;
 @class Torrent;
 
-typedef NS_ENUM(unsigned int, addType) { //
-    ADD_MANUAL,
-    ADD_AUTO,
-    ADD_SHOW_OPTIONS,
-    ADD_URL,
-    ADD_CREATED
+typedef NS_ENUM(NSUInteger, AddType) { //
+    AddTypeManual,
+    AddTypeAuto,
+    AddTypeShowOptions,
+    AddTypeURL,
+    AddTypeCreated
 };
 
 @interface Controller
-    : NSObject<NSApplicationDelegate, NSUserNotificationCenterDelegate, NSPopoverDelegate, NSSharingServiceDelegate, NSSharingServicePickerDelegate, NSSoundDelegate, NSToolbarDelegate, NSWindowDelegate, QLPreviewPanelDataSource, QLPreviewPanelDelegate, VDKQueueDelegate, SUUpdaterDelegate>
+    : NSObject<NSApplicationDelegate, NSMenuItemValidation, NSPopoverDelegate, NSSharingServiceDelegate, NSSharingServicePickerDelegate, NSSoundDelegate, NSToolbarDelegate, NSToolbarItemValidation, NSWindowDelegate, QLPreviewPanelDataSource, QLPreviewPanelDelegate, VDKQueueDelegate, SUUpdaterDelegate>
 
-- (void)openFiles:(NSArray<NSString*>*)filenames addType:(addType)type forcePath:(NSString*)path;
+- (void)openFiles:(NSArray<NSString*>*)filenames addType:(AddType)type forcePath:(NSString*)path;
 
 - (void)askOpenConfirmed:(AddWindowController*)addController add:(BOOL)add;
 - (void)openCreatedFile:(NSNotification*)notification;
@@ -45,6 +45,8 @@ typedef NS_ENUM(unsigned int, addType) { //
 
 - (void)openURL:(NSString*)urlString;
 - (IBAction)openURLShowSheet:(id)sender;
+
+- (void)openPasteboard;
 
 @property(nonatomic, readonly) tr_session* sessionHandle;
 
@@ -141,8 +143,6 @@ typedef NS_ENUM(unsigned int, addType) { //
 
 - (void)beginCreateFile:(NSNotification*)notification;
 
-- (void)sleepCallback:(natural_t)messageType argument:(void*)messageArgument;
-
 @property(nonatomic, readonly) VDKQueue* fileWatcherQueue;
 
 - (void)torrentTableViewSelectionDidChange:(NSNotification*)notification;
@@ -153,6 +153,7 @@ typedef NS_ENUM(unsigned int, addType) { //
 
 - (IBAction)toggleStatusBar:(id)sender;
 - (IBAction)toggleFilterBar:(id)sender;
+- (IBAction)toggleToolbarShown:(id)sender;
 - (void)focusFilterField;
 
 - (void)allToolbarClicked:(id)sender;
@@ -163,7 +164,7 @@ typedef NS_ENUM(unsigned int, addType) { //
 - (void)setWindowSizeToFit;
 - (void)updateForAutoSize;
 - (void)updateWindowAfterToolbarChange;
-- (void)removeStackViewHeightConstraints;
+- (void)removeHeightConstraints;
 @property(nonatomic, readonly) CGFloat minScrollViewHeightAllowed;
 @property(nonatomic, readonly) CGFloat toolbarHeight;
 @property(nonatomic, readonly) CGFloat mainWindowComponentHeight;

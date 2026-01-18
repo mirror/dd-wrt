@@ -182,6 +182,9 @@ struct struct_utp_context {
 	bool log_normal:1;	// log normal events?
 	bool log_mtu:1;		// log MTU related events?
 	bool log_debug:1;	// log debugging events? (Must also compile with UTP_DEBUG_LOGGING defined)
+
+private:
+	void log_impl(utp_socket *socket, char const *fmt, va_list va);
 };
 
 #endif //__UTP_INTERNAL_H__

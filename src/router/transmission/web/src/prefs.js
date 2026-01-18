@@ -1,4 +1,4 @@
-/* @license This file Copyright © 2020-2023 Mnemosyne LLC.
+/* @license This file Copyright © Mnemosyne LLC.
    It may be used under GPLv2 (SPDX: GPL-2.0-only), GPLv3 (SPDX: GPL-3.0-only),
    or any future license endorsed by Mnemosyne LLC.
    License text can be found in the licenses/ folder. */
@@ -71,14 +71,20 @@ export class Prefs extends EventTarget {
     if (value === null) {
       return fallback;
     }
-    if (value === 'true') {
-      return true;
+
+    const type = typeof fallback;
+    if (type === 'boolean') {
+      if (value === 'true') {
+        return true;
+      }
+      if (value === 'false') {
+        return false;
+      }
+      return fallback;
     }
-    if (value === 'false') {
-      return false;
-    }
-    if (/^\d+$/.test(value)) {
-      return Number.parseInt(value, 10);
+    if (type === 'number') {
+      const f = Number.parseFloat(value);
+      return Number.isNaN(f) ? fallback : f;
     }
     return value;
   }
@@ -94,12 +100,18 @@ Prefs.AltSpeedEnabled = 'alt-speed-enabled';
 Prefs.DisplayCompact = 'compact';
 Prefs.DisplayFull = 'full';
 Prefs.DisplayMode = 'display-mode';
+Prefs.ContrastLess = 'less';
+Prefs.ContrastMore = 'more';
+Prefs.ContrastMode = 'contrast-mode';
 Prefs.FilterActive = 'active';
 Prefs.FilterAll = 'all';
 Prefs.FilterDownloading = 'downloading';
+Prefs.FilterError = 'error';
 Prefs.FilterFinished = 'finished';
 Prefs.FilterMode = 'filter-mode';
 Prefs.FilterPaused = 'paused';
+Prefs.FilterPrivate = 'private';
+Prefs.FilterPublic = 'public';
 Prefs.FilterSeeding = 'seeding';
 Prefs.NotificationsEnabled = 'notifications-enabled';
 Prefs.RefreshRate = 'refresh-rate-sec';
@@ -119,6 +131,10 @@ Prefs.SortMode = 'sort-mode';
 Prefs._Defaults = {
   [Prefs.AltSpeedEnabled]: false,
   [Prefs.DisplayMode]: Prefs.DisplayFull,
+  [Prefs.ContrastMode]: globalThis.matchMedia('(prefers-contrast: more)')
+    .matches
+    ? Prefs.ContrastMore
+    : Prefs.ContrastLess,
   [Prefs.FilterMode]: Prefs.FilterAll,
   [Prefs.NotificationsEnabled]: false,
   [Prefs.RefreshRate]: 5,

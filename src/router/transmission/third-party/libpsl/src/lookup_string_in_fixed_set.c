@@ -7,12 +7,6 @@
 
 #include <stddef.h>
 
-#if defined(__GNUC__) && defined(__GNUC_MINOR__)
-#       define _GCC_VERSION_AT_LEAST(major, minor) ((__GNUC__ > (major)) || (__GNUC__ == (major) && __GNUC_MINOR__ >= (minor)))
-#else
-#       define _GCC_VERSION_AT_LEAST(major, minor) 0
-#endif
-
 #define CHECK_LT(a, b) if ((a) >= b) return 0
 
 static const char multibyte_length_table[16] = {

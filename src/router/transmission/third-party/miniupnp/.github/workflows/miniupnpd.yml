@@ -1,0 +1,48 @@
+# This is a basic workflow to help you get started with Actions
+
+name: miniupnpd
+
+# Controls when the action will run. Triggers the workflow on push or pull request
+# events but only for the master branch
+on:
+  push:
+    paths:
+    - 'miniupnpd/**'
+    - '.githib/workflows/miniupnpd.yml'
+  pull_request:
+    branches: [ master ]
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+  # This workflow contains a single job called "build"
+  build:
+    # The type of runner that the job will run on
+    runs-on: ubuntu-latest
+
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - uses: actions/checkout@v4
+
+      - name: install packages
+        run: sudo apt-get install libiptc-dev libxtables-dev libnfnetlink-dev libnftnl-dev libmnl-dev libssl-dev
+
+      - name: build miniupnpd(iptables)
+        run: |
+          mkdir -p miniupnpd/build-ipt
+          cd miniupnpd/build-ipt
+          ../configure --ipv6 --igd2 --strict --portinuse --firewall=iptables
+          make all check
+
+      - name: install miniupnpd(iptables)
+        run: cd miniupnpd/build-ipt && make DESTDIR=/tmp/miniupnpd_iptables install
+
+      - name: build miniupnpd(nftables)
+        run: |
+          mkdir -p miniupnpd/build-nft
+          cd miniupnpd/build-nft
+          ../configure --ipv6 --igd2 --strict --portinuse --firewall=nftables
+          make all check
+
+      - name: install miniupnpd(nftables)
+        run: cd miniupnpd/build-nft && make DESTDIR=/tmp/miniupnpd_iptables install

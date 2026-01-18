@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////
-//  Copyright Christopher Kormanyos 2018 - 2022.                 //
+//  Copyright Christopher Kormanyos 2018 - 2025.                 //
 //  Distributed under the Boost Software License,                //
 //  Version 1.0. (See accompanying file LICENSE_1_0.txt          //
 //  or copy at http://www.boost.org/LICENSE_1_0.txt)             //
@@ -37,15 +37,15 @@ namespace local_random
     using wide_integer_type  = WIDE_INTEGER_NAMESPACE::math::wide_integer::uintwide_t<static_cast<WIDE_INTEGER_NAMESPACE::math::wide_integer::size_t>(UINT32_C(256)), std::uint32_t, AllocatorType>;
     using distribution_type  = WIDE_INTEGER_NAMESPACE::math::wide_integer::uniform_int_distribution<wide_integer_type::my_width2, typename wide_integer_type::limb_type>;
     #else
-    using wide_integer_type  = math::wide_integer::uintwide_t<static_cast<math::wide_integer::size_t>(UINT32_C(256)), std::uint32_t, AllocatorType>;
-    using distribution_type  = math::wide_integer::uniform_int_distribution<wide_integer_type::my_width2, typename wide_integer_type::limb_type>;
+    using wide_integer_type  = ::math::wide_integer::uintwide_t<static_cast<math::wide_integer::size_t>(UINT32_C(256)), std::uint32_t, AllocatorType>;
+    using distribution_type  = ::math::wide_integer::uniform_int_distribution<wide_integer_type::my_width2, typename wide_integer_type::limb_type>;
     #endif
 
     // Generate a random number with wide_integer_type having limbs of type LimbType.
     // Purosely use the default seed.
     random_engine_type generator; // NOLINT(cert-msc32-c,cert-msc51-cpp)
 
-    distribution_type distribution;
+    distribution_type distribution { };
 
     const wide_integer_type n = distribution(generator);
 
@@ -59,7 +59,7 @@ namespace local_random
 #if defined(WIDE_INTEGER_NAMESPACE)
 auto WIDE_INTEGER_NAMESPACE::math::wide_integer::example007_random_generator() -> bool
 #else
-auto math::wide_integer::example007_random_generator() -> bool
+auto ::math::wide_integer::example007_random_generator() -> bool
 #endif
 {
   const bool result_08_is_ok = local_random::generate<std::uint8_t> ();
@@ -84,7 +84,7 @@ auto main() -> int
   #if defined(WIDE_INTEGER_NAMESPACE)
   const auto result_is_ok = WIDE_INTEGER_NAMESPACE::math::wide_integer::example007_random_generator();
   #else
-  const auto result_is_ok = math::wide_integer::example007_random_generator();
+  const auto result_is_ok = ::math::wide_integer::example007_random_generator();
   #endif
 
   std::cout << "result_is_ok: " << std::boolalpha << result_is_ok << std::endl;

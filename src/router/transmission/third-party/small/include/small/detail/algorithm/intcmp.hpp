@@ -146,7 +146,7 @@ namespace small {
                           second_is_signed;
                 static constexpr bool largest_needs_double
                     = largest_size == smallest_size && largest_size != 64 / 8
-                      && not largest_is_signed && smallest_is_signed;
+                      && !largest_is_signed && smallest_is_signed;
                 static constexpr size_t value = largest_size
                                                 * (largest_needs_double ? 2 : 1);
             };

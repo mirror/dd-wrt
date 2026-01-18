@@ -1,0 +1,7 @@
+*.o
+*.a
+*.so
+ucat
+ucat-static
+tags
+*~

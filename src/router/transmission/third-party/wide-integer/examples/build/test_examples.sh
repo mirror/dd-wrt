@@ -1,5 +1,5 @@
-﻿#
-#  Copyright Christopher Kormanyos 2020 - 2022.
+﻿#!/bin/bash
+#  Copyright Christopher Kormanyos 2020 - 2024.
 #  Distributed under the Boost Software License,
 #  Version 1.0. (See accompanying file LICENSE_1_0.txt
 #  or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -21,46 +21,48 @@ mkdir -p bin
 
 rm -f ./bin/*.*
 
-echo run examples with GCC=$GCC STD=$STD
+echo run examples with GCC="$GCC" STD="$STD"
 
-$GCC -std=$STD -Wall -Werror -O3 -march=native -I../.. -DWIDE_INTEGER_STANDALONE_EXAMPLE000A_BUILTIN_CONVERT      ../../examples/example000a_builtin_convert.cpp                        -o ./bin/example000a_builtin_convert.exe
+"$GCC" -std="$STD" -Wall -Werror -O3 -march=native -I../.. -DWIDE_INTEGER_STANDALONE_EXAMPLE000A_BUILTIN_CONVERT      ../../examples/example000a_builtin_convert.cpp                        -o ./bin/example000a_builtin_convert.exe
 ls -la ./bin/example000a_builtin_convert.exe
-$GCC -std=$STD -Wall -Werror -O3 -march=native -I../.. -DWIDE_INTEGER_STANDALONE_EXAMPLE000_NUMERIC_LIMITS        ../../examples/example000_numeric_limits.cpp                          -o ./bin/example000_numeric_limits.exe
+"$GCC" -std="$STD" -Wall -Werror -O3 -march=native -I../.. -DWIDE_INTEGER_STANDALONE_EXAMPLE000_NUMERIC_LIMITS        ../../examples/example000_numeric_limits.cpp                          -o ./bin/example000_numeric_limits.exe
 ls -la ./bin/example000_numeric_limits.exe
-$GCC -std=$STD -Wall -Werror -O3 -march=native -I../.. -DWIDE_INTEGER_STANDALONE_EXAMPLE001A_DIV_MOD              ../../examples/example001a_div_mod.cpp                                -o ./bin/example001a_div_mod.exe
+"$GCC" -std="$STD" -Wall -Werror -O3 -march=native -I../.. -DWIDE_INTEGER_STANDALONE_EXAMPLE001A_DIV_MOD              ../../examples/example001a_div_mod.cpp                                -o ./bin/example001a_div_mod.exe
 ls -la ./bin/example001a_div_mod.exe
-$GCC -std=$STD -Wall -Werror -O3 -march=native -I../.. -DWIDE_INTEGER_STANDALONE_EXAMPLE001_MUL_DIV               ../../examples/example001_mul_div.cpp                                 -o ./bin/example001_mul_div.exe
+"$GCC" -std="$STD" -Wall -Werror -O3 -march=native -I../.. -DWIDE_INTEGER_STANDALONE_EXAMPLE001_MUL_DIV               ../../examples/example001_mul_div.cpp                                 -o ./bin/example001_mul_div.exe
 ls -la ./bin/example001_mul_div.exe
-$GCC -std=$STD -Wall -Werror -O3 -march=native -I../.. -DWIDE_INTEGER_STANDALONE_EXAMPLE002_SHL_SHR               ../../examples/example002_shl_shr.cpp                                 -o ./bin/example002_shl_shr.exe
+"$GCC" -std="$STD" -Wall -Werror -O3 -march=native -I../.. -DWIDE_INTEGER_STANDALONE_EXAMPLE002_SHL_SHR               ../../examples/example002_shl_shr.cpp                                 -o ./bin/example002_shl_shr.exe
 ls -la ./bin/example002_shl_shr.exe
-$GCC -std=$STD -Wall -Werror -O3 -march=native -I../.. -DWIDE_INTEGER_STANDALONE_EXAMPLE003A_CBRT                 ../../examples/example003a_cbrt.cpp                                   -o ./bin/example003a_cbrt.exe
+"$GCC" -std="$STD" -Wall -Werror -O3 -march=native -I../.. -DWIDE_INTEGER_STANDALONE_EXAMPLE003A_CBRT                 ../../examples/example003a_cbrt.cpp                                   -o ./bin/example003a_cbrt.exe
 ls -la ./bin/example003a_cbrt.exe
-$GCC -std=$STD -Wall -Werror -O3 -march=native -I../.. -DWIDE_INTEGER_STANDALONE_EXAMPLE003_SQRT                  ../../examples/example003_sqrt.cpp                                    -o ./bin/example003_sqrt.exe
+"$GCC" -std="$STD" -Wall -Werror -O3 -march=native -I../.. -DWIDE_INTEGER_STANDALONE_EXAMPLE003_SQRT                  ../../examples/example003_sqrt.cpp                                    -o ./bin/example003_sqrt.exe
 ls -la ./bin/example003_sqrt.exe
-$GCC -std=$STD -Wall -Werror -O3 -march=native -I../.. -DWIDE_INTEGER_STANDALONE_EXAMPLE004_ROOTK_POW             ../../examples/example004_rootk_pow.cpp                               -o ./bin/example004_rootk_pow.exe
+"$GCC" -std="$STD" -Wall -Werror -O3 -march=native -I../.. -DWIDE_INTEGER_STANDALONE_EXAMPLE004_ROOTK_POW             ../../examples/example004_rootk_pow.cpp                               -o ./bin/example004_rootk_pow.exe
 ls -la ./bin/example004_rootk_pow.exe
-$GCC -std=$STD -Wall -Werror -O3 -march=native -I../.. -DWIDE_INTEGER_STANDALONE_EXAMPLE005A_POW_FACTORS_OF_P99   ../../examples/example005a_pow_factors_of_p99.cpp                     -o ./bin/example005a_pow_factors_of_p99.exe
+"$GCC" -std="$STD" -Wall -Werror -O3 -march=native -I../.. -DWIDE_INTEGER_STANDALONE_EXAMPLE005A_POW_FACTORS_OF_P99   ../../examples/example005a_pow_factors_of_p99.cpp                     -o ./bin/example005a_pow_factors_of_p99.exe
 ls -la ./bin/example005a_pow_factors_of_p99.exe
-$GCC -std=$STD -Wall -Werror -O3 -march=native -I../.. -DWIDE_INTEGER_STANDALONE_EXAMPLE005_POWM                  ../../examples/example005_powm.cpp                                    -o ./bin/example005_powm.exe
+"$GCC" -std="$STD" -Wall -Werror -O3 -march=native -I../.. -DWIDE_INTEGER_STANDALONE_EXAMPLE005_POWM                  ../../examples/example005_powm.cpp                                    -o ./bin/example005_powm.exe
 ls -la ./bin/example005_powm.exe
-$GCC -std=$STD -Wall -Werror -O3 -march=native -I../.. -DWIDE_INTEGER_STANDALONE_EXAMPLE006_GCD                   ../../examples/example006_gcd.cpp                                     -o ./bin/example006_gcd.exe
+"$GCC" -std="$STD" -Wall -Werror -O3 -march=native -I../.. -DWIDE_INTEGER_STANDALONE_EXAMPLE006_GCD                   ../../examples/example006_gcd.cpp                                     -o ./bin/example006_gcd.exe
 ls -la ./bin/example006_gcd.exe
-$GCC -std=$STD -Wall -Werror -O3 -march=native -I../.. -DWIDE_INTEGER_STANDALONE_EXAMPLE007_RANDOM_GENERATOR      ../../examples/example007_random_generator.cpp                        -o ./bin/example007_random_generator.exe
+"$GCC" -std="$STD" -Wall -Werror -O3 -march=native -I../.. -DWIDE_INTEGER_STANDALONE_EXAMPLE007_RANDOM_GENERATOR      ../../examples/example007_random_generator.cpp                        -o ./bin/example007_random_generator.exe
 ls -la ./bin/example007_random_generator.exe
-$GCC -std=$STD -Wall -Werror -O3 -march=native -I../.. -DWIDE_INTEGER_STANDALONE_EXAMPLE008_MILLER_RABIN_PRIME    ../../examples/example008_miller_rabin_prime.cpp                      -o ./bin/example008_miller_rabin_prime.exe
+"$GCC" -std="$STD" -Wall -Werror -O3 -march=native -I../.. -DWIDE_INTEGER_STANDALONE_EXAMPLE008_MILLER_RABIN_PRIME    ../../examples/example008_miller_rabin_prime.cpp                      -o ./bin/example008_miller_rabin_prime.exe
 ls -la ./bin/example008_miller_rabin_prime.exe
-$GCC -std=$STD -Wall -Werror -O3 -march=native -I../.. -DWIDE_INTEGER_STANDALONE_EXAMPLE009A_TIMED_MUL_4_BY_4     ../../examples/example009a_timed_mul_4_by_4.cpp                       -o ./bin/example009a_timed_mul_4_by_4.exe
+"$GCC" -std="$STD" -Wall -Werror -O3 -march=native -I../.. -DWIDE_INTEGER_STANDALONE_EXAMPLE009A_TIMED_MUL_4_BY_4     ../../examples/example009a_timed_mul_4_by_4.cpp                       -o ./bin/example009a_timed_mul_4_by_4.exe
 ls -la ./bin/example009a_timed_mul_4_by_4.exe
-$GCC -std=$STD -Wall -Werror -O3 -march=native -I../.. -DWIDE_INTEGER_STANDALONE_EXAMPLE009B_TIMED_MUL_8_BY_8     ../../examples/example009b_timed_mul_8_by_8.cpp                       -o ./bin/example009b_timed_mul_8_by_8.exe
+"$GCC" -std="$STD" -Wall -Werror -O3 -march=native -I../.. -DWIDE_INTEGER_STANDALONE_EXAMPLE009B_TIMED_MUL_8_BY_8     ../../examples/example009b_timed_mul_8_by_8.cpp                       -o ./bin/example009b_timed_mul_8_by_8.exe
 ls -la ./bin/example009b_timed_mul_8_by_8.exe
-$GCC -std=$STD -Wall -Werror -O3 -march=native -I../.. -DWIDE_INTEGER_STANDALONE_EXAMPLE009_TIMED_MUL             ../../examples/example009_timed_mul.cpp                               -o ./bin/example009_timed_mul.exe
+"$GCC" -std="$STD" -Wall -Werror -O3 -march=native -I../.. -DWIDE_INTEGER_STANDALONE_EXAMPLE009_TIMED_MUL             ../../examples/example009_timed_mul.cpp                               -o ./bin/example009_timed_mul.exe
 ls -la ./bin/example009_timed_mul.exe
-$GCC -std=$STD -Wall -Werror -O3 -march=native -I../.. -DWIDE_INTEGER_STANDALONE_EXAMPLE010_UINT48_T              ../../examples/example010_uint48_t.cpp                                -o ./bin/example010_uint48_t.exe
+"$GCC" -std="$STD" -Wall -Werror -O3 -march=native -I../.. -DWIDE_INTEGER_STANDALONE_EXAMPLE010_UINT48_T              ../../examples/example010_uint48_t.cpp                                -o ./bin/example010_uint48_t.exe
 ls -la ./bin/example010_uint48_t.exe
-$GCC -std=$STD -Wall -Werror -O3 -march=native -I../.. -DWIDE_INTEGER_STANDALONE_EXAMPLE011_UINT24_T              ../../examples/example011_uint24_t.cpp                                -o ./bin/example011_uint24_t.exe
+"$GCC" -std="$STD" -Wall -Werror -O3 -march=native -I../.. -DWIDE_INTEGER_STANDALONE_EXAMPLE011_UINT24_T              ../../examples/example011_uint24_t.cpp                                -o ./bin/example011_uint24_t.exe
 ls -la ./bin/example011_uint24_t.exe
-$GCC -std=$STD -Wall -Werror -O3 -march=native -I../.. -DWIDE_INTEGER_STANDALONE_EXAMPLE012_RSA_CRYPTO            ../../examples/example012_rsa_crypto.cpp                              -o ./bin/example012_rsa_crypto.exe
+"$GCC" -std="$STD" -Wall -Werror -O3 -march=native -I../.. -DWIDE_INTEGER_STANDALONE_EXAMPLE012_RSA_CRYPTO            ../../examples/example012_rsa_crypto.cpp                              -o ./bin/example012_rsa_crypto.exe
 ls -la ./bin/example012_rsa_crypto.exe
+"$GCC" -std="$STD" -Wall -Werror -O3 -march=native -I../.. -DWIDE_INTEGER_STANDALONE_EXAMPLE013_ECDSA_SIGN_VERIFY     ../../examples/example013_ecdsa_sign_verify.cpp                       -o ./bin/example013_ecdsa_sign_verify.exe
+ls -la ./bin/example013_ecdsa_sign_verify.exe
 
 ./bin/example000a_builtin_convert.exe
 result_var_000a_builtin_convert=$?
@@ -119,6 +121,9 @@ result_var_011_uint24_t=$?
 ./bin/example012_rsa_crypto.exe
 result_var_012_rsa_crypto=$?
 
+./bin/example013_ecdsa_sign_verify.exe
+result_var_013_ecdsa_sign_verify=$?
+
 echo "result_var_000a_builtin_convert     : "  "$result_var_000a_builtin_convert"
 echo "result_var_000_numeric_limits       : "  "$result_var_000_numeric_limits"
 echo "result_var_001a_div_mod             : "  "$result_var_001a_div_mod"
@@ -138,8 +143,9 @@ echo "result_var_009_timed_mul            : "  "$result_var_009_timed_mul"
 echo "result_var_010_uint48_t             : "  "$result_var_010_uint48_t"
 echo "result_var_011_uint24_t             : "  "$result_var_011_uint24_t"
 echo "result_var_012_rsa_crypto           : "  "$result_var_012_rsa_crypto"
+echo "result_var_013_ecdsa_sign_verify    : "  "$result_var_013_ecdsa_sign_verify"
 
-result_total=$((result_var_000a_builtin_convert+result_var_000_numeric_limits+result_var_001a_div_mod+result_var_001_mul_div+result_var_002_shl_shr+result_var_003a_cbrt+result_var_003_sqrt+result_var_004_rootk_pow+result_var_005a_pow_factors_of_p99+result_var_005_powm+result_var_006_gcd+result_var_007_random_generator+result_var_008_miller_rabin_prime+result_var_009a_timed_mul_4_by_4+result_var_009b_timed_mul_8_by_8+result_var_009_timed_mul+result_var_010_uint48_t+result_var_011_uint24_t+result_var_012_rsa_crypto))
+result_total=$((result_var_000a_builtin_convert+result_var_000_numeric_limits+result_var_001a_div_mod+result_var_001_mul_div+result_var_002_shl_shr+result_var_003a_cbrt+result_var_003_sqrt+result_var_004_rootk_pow+result_var_005a_pow_factors_of_p99+result_var_005_powm+result_var_006_gcd+result_var_007_random_generator+result_var_008_miller_rabin_prime+result_var_009a_timed_mul_4_by_4+result_var_009b_timed_mul_8_by_8+result_var_009_timed_mul+result_var_010_uint48_t+result_var_011_uint24_t+result_var_012_rsa_crypto+result_var_013_ecdsa_sign_verify))
 
 echo "result_total                        : "  "$result_total"
 

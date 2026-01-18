@@ -1,4 +1,4 @@
-// This file Copyright © 2009-2023 Mnemosyne LLC.
+// This file Copyright © Mnemosyne LLC.
 // It may be used under GPLv2 (SPDX: GPL-2.0-only), GPLv3 (SPDX: GPL-3.0-only),
 // or any future license endorsed by Mnemosyne LLC.
 // License text can be found in the licenses/ folder.
@@ -19,7 +19,9 @@
 #endif
 
 #include <libtransmission/transmission.h>
-#include <libtransmission/utils.h>
+
+#include <libtransmission/api-compat.h>
+#include <libtransmission/serializer.h>
 #include <libtransmission/variant.h>
 
 #include "CustomVariantType.h"
@@ -27,12 +29,14 @@
 #include "Prefs.h"
 #include "VariantHelpers.h"
 
+namespace api_compat = libtransmission::api_compat;
+using libtransmission::serializer::to_value;
+using libtransmission::serializer::to_variant;
 using ::trqt::variant_helpers::dictAdd;
 using ::trqt::variant_helpers::getValue;
+using namespace std::string_view_literals;
 
-/***
-****
-***/
+// ---
 
 namespace
 {
@@ -52,8 +56,10 @@ void ensureSoundCommandIsAList(tr_variant* dict)
         key,
         std::array<std::string_view, 5>{
             "canberra-gtk-play",
-            TR_ARG_TUPLE("-i", "complete-download"),
-            TR_ARG_TUPLE("-d", "transmission torrent downloaded"),
+            "-i",
+            "complete-download",
+            "-d",
+            "transmission torrent downloaded",
         });
 }
 
@@ -77,7 +83,7 @@ std::array<Prefs::PrefItem, Prefs::PREFS_COUNT> const Prefs::Items{
     { FILTERBAR, TR_KEY_show_filterbar, QMetaType::Bool },
     { STATUSBAR, TR_KEY_show_statusbar, QMetaType::Bool },
     { STATUSBAR_STATS, TR_KEY_statusbar_stats, QMetaType::QString },
-    { SHOW_TRACKER_SCRAPES, TR_KEY_show_extra_peer_details, QMetaType::Bool },
+    { SHOW_TRACKER_SCRAPES, TR_KEY_show_tracker_scrapes, QMetaType::Bool },
     { SHOW_BACKUP_TRACKERS, TR_KEY_show_backup_trackers, QMetaType::Bool },
     { TOOLBAR, TR_KEY_show_toolbar, QMetaType::Bool },
     { BLOCKLIST_DATE, TR_KEY_blocklist_date, QMetaType::QDateTime },
@@ -87,7 +93,7 @@ std::array<Prefs::PrefItem, Prefs::PREFS_COUNT> const Prefs::Items{
     { MAIN_WINDOW_WIDTH, TR_KEY_main_window_width, QMetaType::Int },
     { MAIN_WINDOW_X, TR_KEY_main_window_x, QMetaType::Int },
     { MAIN_WINDOW_Y, TR_KEY_main_window_y, QMetaType::Int },
-    { FILTER_MODE, TR_KEY_filter_mode, CustomVariantType::FilterModeType },
+    { FILTER_MODE, TR_KEY_filter_mode, CustomVariantType::ShowModeType },
     { FILTER_TRACKERS, TR_KEY_filter_trackers, QMetaType::QString },
     { FILTER_TEXT, TR_KEY_filter_text, QMetaType::QString },
     { SESSION_IS_REMOTE, TR_KEY_remote_session_enabled, QMetaType::Bool },
@@ -95,11 +101,11 @@ std::array<Prefs::PrefItem, Prefs::PREFS_COUNT> const Prefs::Items{
     { SESSION_REMOTE_HTTPS, TR_KEY_remote_session_https, QMetaType::Bool },
     { SESSION_REMOTE_PASSWORD, TR_KEY_remote_session_password, QMetaType::QString },
     { SESSION_REMOTE_PORT, TR_KEY_remote_session_port, QMetaType::Int },
-    { SESSION_REMOTE_AUTH, TR_KEY_remote_session_requres_authentication, QMetaType::Bool },
+    { SESSION_REMOTE_AUTH, TR_KEY_remote_session_requires_authentication, QMetaType::Bool },
     { SESSION_REMOTE_USERNAME, TR_KEY_remote_session_username, QMetaType::QString },
+    { SESSION_REMOTE_RPC_URL_PATH, TR_KEY_remote_session_rpc_url_path, QMetaType::QString },
     { COMPLETE_SOUND_COMMAND, TR_KEY_torrent_complete_sound_command, QMetaType::QStringList },
     { COMPLETE_SOUND_ENABLED, TR_KEY_torrent_complete_sound_enabled, QMetaType::Bool },
-    { USER_HAS_GIVEN_INFORMED_CONSENT, TR_KEY_user_has_given_informed_consent, QMetaType::Bool },
     { READ_CLIPBOARD, TR_KEY_read_clipboard, QMetaType::Bool },
 
     /* libtransmission settings */
@@ -118,7 +124,7 @@ std::array<Prefs::PrefItem, Prefs::PREFS_COUNT> const Prefs::Items{
     { DOWNLOAD_DIR, TR_KEY_download_dir, QMetaType::QString },
     { DOWNLOAD_QUEUE_ENABLED, TR_KEY_download_queue_enabled, QMetaType::Bool },
     { DOWNLOAD_QUEUE_SIZE, TR_KEY_download_queue_size, QMetaType::Int },
-    { ENCRYPTION, TR_KEY_encryption, QMetaType::Int },
+    { ENCRYPTION, TR_KEY_encryption, CustomVariantType::EncryptionModeType },
     { IDLE_LIMIT, TR_KEY_idle_seeding_limit, QMetaType::Int },
     { IDLE_LIMIT_ENABLED, TR_KEY_idle_seeding_limit_enabled, QMetaType::Bool },
     { INCOMPLETE_DIR, TR_KEY_incomplete_dir, QMetaType::QString },
@@ -135,7 +141,7 @@ std::array<Prefs::PrefItem, Prefs::PREFS_COUNT> const Prefs::Items{
     { SCRIPT_TORRENT_DONE_FILENAME, TR_KEY_script_torrent_done_filename, QMetaType::QString },
     { SCRIPT_TORRENT_DONE_SEEDING_ENABLED, TR_KEY_script_torrent_done_seeding_enabled, QMetaType::Bool },
     { SCRIPT_TORRENT_DONE_SEEDING_FILENAME, TR_KEY_script_torrent_done_seeding_filename, QMetaType::QString },
-    { SOCKET_TOS, TR_KEY_peer_socket_tos, QMetaType::QString },
+    { SOCKET_DIFFSERV, TR_KEY_peer_socket_diffserv, QMetaType::QString },
     { START, TR_KEY_start_added_torrents, QMetaType::Bool },
     { TRASH_ORIGINAL, TR_KEY_trash_original_torrent_files, QMetaType::Bool },
     { PEX_ENABLED, TR_KEY_pex_enabled, QMetaType::Bool },
@@ -161,37 +167,12 @@ std::array<Prefs::PrefItem, Prefs::PREFS_COUNT> const Prefs::Items{
 
 namespace
 {
-
-auto constexpr FilterModes = std::array<std::pair<int, std::string_view>, FilterMode::NUM_MODES>{ {
-    { FilterMode::SHOW_ALL, "show-all" },
-    { FilterMode::SHOW_ACTIVE, "show-active" },
-    { FilterMode::SHOW_DOWNLOADING, "show-downloading" },
-    { FilterMode::SHOW_SEEDING, "show-seeding" },
-    { FilterMode::SHOW_PAUSED, "show-paused" },
-    { FilterMode::SHOW_FINISHED, "show-finished" },
-    { FilterMode::SHOW_VERIFYING, "show-verifying" },
-    { FilterMode::SHOW_ERROR, "show-error" },
-} };
-
-auto constexpr SortModes = std::array<std::pair<int, std::string_view>, SortMode::NUM_MODES>{ {
-    { SortMode::SORT_BY_NAME, "sort-by-name" },
-    { SortMode::SORT_BY_ACTIVITY, "sort-by-activity" },
-    { SortMode::SORT_BY_AGE, "sort-by-age" },
-    { SortMode::SORT_BY_ETA, "sort-by-eta" },
-    { SortMode::SORT_BY_PROGRESS, "sort-by-progress" },
-    { SortMode::SORT_BY_QUEUE, "sort-by-queue" },
-    { SortMode::SORT_BY_RATIO, "sort-by-ratio" },
-    { SortMode::SORT_BY_SIZE, "sort-by-size" },
-    { SortMode::SORT_BY_STATE, "sort-by-state" },
-    { SortMode::SORT_BY_ID, "sort-by-id" },
-} };
-
 bool isValidUtf8(QByteArray const& byteArray)
 {
 #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
 
-    auto decoder = QStringDecoder(QStringConverter::Utf8, QStringConverter::Flag::Stateless);
-    auto const text = QString(decoder.decode(byteArray));
+    auto decoder = QStringDecoder{ QStringConverter::Utf8, QStringConverter::Flag::Stateless };
+    auto const text = QString{ decoder.decode(byteArray) };
     return !decoder.hasError() && !text.contains(QChar::ReplacementCharacter);
 
 #else
@@ -204,6 +185,19 @@ bool isValidUtf8(QByteArray const& byteArray)
 #endif
 }
 
+[[nodiscard]] constexpr auto prefIsSavable(int pref)
+{
+    switch (pref)
+    {
+    // these are the prefs that don't get saved to settings.json
+    // when the application exits.
+    case Prefs::FILTER_TEXT:
+        return false;
+
+    default:
+        return true;
+    }
+}
 } // namespace
 
 /***
@@ -211,7 +205,7 @@ bool isValidUtf8(QByteArray const& byteArray)
 ***/
 
 Prefs::Prefs(QString config_dir)
-    : config_dir_(std::move(config_dir))
+    : config_dir_{ std::move(config_dir) }
 {
     static_assert(sizeof(Items) / sizeof(Items[0]) == PREFS_COUNT);
 
@@ -223,19 +217,13 @@ Prefs::Prefs(QString config_dir)
 
 #endif
 
-    // these are the prefs that don't get saved to settings.json
-    // when the application exits.
-    temporary_prefs_ << FILTER_TEXT;
-
-    tr_variant top;
-    tr_variantInitDict(&top, 0);
-    initDefaults(&top);
-    tr_sessionLoadSettings(&top, config_dir_.toUtf8().constData(), nullptr);
-    ensureSoundCommandIsAList(&top);
+    auto const app_defaults = get_default_app_settings();
+    auto settings = tr_sessionLoadSettings(config_dir_.toStdString(), &app_defaults);
+    ensureSoundCommandIsAList(&settings);
 
     for (int i = 0; i < PREFS_COUNT; ++i)
     {
-        tr_variant const* b = tr_variantDictFind(&top, Items[i].key);
+        tr_variant const* b = tr_variantDictFind(&settings, getKey(i));
 
         switch (Items[i].type)
         {
@@ -246,31 +234,24 @@ Prefs::Prefs(QString config_dir)
             }
             break;
 
-        case CustomVariantType::SortModeType:
-            if (auto const value = getValue<std::string_view>(b); value)
+        case CustomVariantType::EncryptionModeType:
+            if (auto const val = to_value<tr_encryption_mode>(*b))
             {
-                auto const test = [&value](auto const& item)
-                {
-                    return item.second == *value;
-                };
-                // NOLINTNEXTLINE(readability-qualified-auto)
-                auto const it = std::find_if(std::cbegin(SortModes), std::cend(SortModes), test);
-                auto const& [mode, mode_str] = it == std::end(SortModes) ? SortModes.front() : *it;
-                values_[i] = QVariant::fromValue(SortMode{ mode });
+                values_[i] = QVariant::fromValue(*val);
             }
             break;
 
-        case CustomVariantType::FilterModeType:
-            if (auto const value = getValue<std::string_view>(b); value)
+        case CustomVariantType::SortModeType:
+            if (auto const val = to_value<SortMode>(*b))
             {
-                auto const test = [&value](auto const& item)
-                {
-                    return item.second == *value;
-                };
-                // NOLINTNEXTLINE(readability-qualified-auto)
-                auto const it = std::find_if(std::cbegin(FilterModes), std::cend(FilterModes), test);
-                auto const& [mode, mode_str] = it == std::end(FilterModes) ? FilterModes.front() : *it;
-                values_[i] = QVariant::fromValue(FilterMode{ mode });
+                values_[i] = QVariant::fromValue(*val);
+            }
+            break;
+
+        case CustomVariantType::ShowModeType:
+            if (auto const val = to_value<ShowMode>(*b))
+            {
+                values_[i] = QVariant::fromValue(*val);
             }
             break;
 
@@ -305,11 +286,7 @@ Prefs::Prefs(QString config_dir)
         case QMetaType::QDateTime:
             if (auto const value = getValue<time_t>(b); value)
             {
-#if QT_VERSION >= QT_VERSION_CHECK(5, 8, 0)
                 values_[i].setValue(QDateTime::fromSecsSinceEpoch(*value));
-#else
-                values_[i].setValue(QDateTime::fromTime_t(*value));
-#endif
             }
             break;
 
@@ -318,8 +295,6 @@ Prefs::Prefs(QString config_dir)
             break;
         }
     }
-
-    tr_variantClear(&top);
 }
 
 Prefs::~Prefs()
@@ -330,13 +305,13 @@ Prefs::~Prefs()
 
     for (int i = 0; i < PREFS_COUNT; ++i)
     {
-        if (temporary_prefs_.contains(i))
+        if (!prefIsSavable(i))
         {
             continue;
         }
 
-        tr_quark const key = Items[i].key;
-        QVariant const& val = values_[i];
+        auto const key = getKey(i);
+        auto const& val = values_[i];
 
         switch (Items[i].type)
         {
@@ -344,33 +319,17 @@ Prefs::~Prefs()
             dictAdd(&current_settings, key, val.toInt());
             break;
 
-        case CustomVariantType::SortModeType:
-            {
-                auto const mode = val.value<SortMode>().mode();
-                auto const test = [&mode](auto const& item)
-                {
-                    return item.first == mode;
-                };
-                // NOLINTNEXTLINE(readability-qualified-auto)
-                auto const it = std::find_if(std::cbegin(SortModes), std::cend(SortModes), test);
-                auto const& [mode_val, mode_str] = it == std::end(SortModes) ? SortModes.front() : *it;
-                dictAdd(&current_settings, key, mode_str);
-                break;
-            }
+        case CustomVariantType::EncryptionModeType:
+            *tr_variantDictAdd(&current_settings, key) = to_variant(val.value<tr_encryption_mode>());
+            break;
 
-        case CustomVariantType::FilterModeType:
-            {
-                auto const mode = val.value<FilterMode>().mode();
-                auto const test = [&mode](auto const& item)
-                {
-                    return item.first == mode;
-                };
-                // NOLINTNEXTLINE(readability-qualified-auto)
-                auto const it = std::find_if(std::cbegin(FilterModes), std::cend(FilterModes), test);
-                auto const& [mode_val, mode_str] = it == std::end(FilterModes) ? FilterModes.front() : *it;
-                dictAdd(&current_settings, key, mode_str);
-                break;
-            }
+        case CustomVariantType::SortModeType:
+            *tr_variantDictAdd(&current_settings, key) = to_variant(val.value<SortMode>());
+            break;
+
+        case CustomVariantType::ShowModeType:
+            *tr_variantDictAdd(&current_settings, key) = to_variant(val.value<ShowMode>());
+            break;
 
         case QMetaType::QString:
             dictAdd(&current_settings, key, val.toString());
@@ -389,11 +348,7 @@ Prefs::~Prefs()
             break;
 
         case QMetaType::QDateTime:
-#if QT_VERSION >= QT_VERSION_CHECK(5, 8, 0)
             dictAdd(&current_settings, key, int64_t{ val.toDateTime().toSecsSinceEpoch() });
-#else
-            dictAdd(&current_settings, key, val.toDateTime().toTime_t());
-#endif
             break;
 
         default:
@@ -403,78 +358,68 @@ Prefs::~Prefs()
     }
 
     // update settings.json with our settings
-    tr_variant file_settings;
-    QFile const file(QDir(config_dir_).absoluteFilePath(QStringLiteral("settings.json")));
-
-    if (!tr_variantFromFile(&file_settings, TR_VARIANT_PARSE_JSON, file.fileName().toStdString(), nullptr))
+    auto serde = tr_variant_serde::json();
+    auto const file = QFile{ QDir{ config_dir_ }.absoluteFilePath(QStringLiteral("settings.json")) };
+    auto const filename = file.fileName().toStdString();
+    auto settings = tr_variant::make_map(PREFS_COUNT);
+    if (auto const file_settings = serde.parse_file(filename); file_settings)
     {
-        tr_variantInitDict(&file_settings, PREFS_COUNT);
+        settings.merge(*file_settings);
     }
 
-    tr_variantMergeDicts(&file_settings, &current_settings);
-    tr_variantToFile(&file_settings, TR_VARIANT_FMT_JSON, file.fileName().toStdString());
-    tr_variantClear(&file_settings);
-
-    // cleanup
-    tr_variantClear(&current_settings);
+    settings.merge(current_settings);
+    api_compat::convert_outgoing_data(settings);
+    serde.to_file(settings, filename);
 }
 
 /**
  * This is where we initialize the preferences file with the default values.
  * If you add a new preferences key, you /must/ add a default value here.
  */
-void Prefs::initDefaults(tr_variant* d) const
+tr_variant Prefs::get_default_app_settings()
 {
-    auto constexpr FilterMode = std::string_view{ "all" };
-    auto constexpr SessionHost = std::string_view{ "localhost" };
-    auto constexpr SessionPassword = std::string_view{};
-    auto constexpr SessionUsername = std::string_view{};
-    auto constexpr SortMode = std::string_view{ "sort-by-name" };
-    auto constexpr StatsMode = std::string_view{ "total-ratio" };
-    auto constexpr WindowLayout = std::string_view{ "menu,toolbar,filter,list,statusbar" };
-
     auto const download_dir = tr_getDefaultDownloadDir();
 
-    tr_variantDictReserve(d, 38);
-    dictAdd(d, TR_KEY_blocklist_updates_enabled, true);
-    dictAdd(d, TR_KEY_compact_view, false);
-    dictAdd(d, TR_KEY_inhibit_desktop_hibernation, false);
-    dictAdd(d, TR_KEY_prompt_before_exit, true);
-    dictAdd(d, TR_KEY_remote_session_enabled, false);
-    dictAdd(d, TR_KEY_remote_session_requres_authentication, false);
-    dictAdd(d, TR_KEY_show_backup_trackers, false);
-    dictAdd(d, TR_KEY_show_extra_peer_details, false);
-    dictAdd(d, TR_KEY_show_filterbar, true);
-    dictAdd(d, TR_KEY_show_notification_area_icon, false);
-    dictAdd(d, TR_KEY_start_minimized, false);
-    dictAdd(d, TR_KEY_show_options_window, true);
-    dictAdd(d, TR_KEY_show_statusbar, true);
-    dictAdd(d, TR_KEY_show_toolbar, true);
-    dictAdd(d, TR_KEY_show_tracker_scrapes, false);
-    dictAdd(d, TR_KEY_sort_reversed, false);
-    dictAdd(d, TR_KEY_torrent_added_notification_enabled, true);
-    dictAdd(d, TR_KEY_torrent_complete_notification_enabled, true);
-    dictAdd(d, TR_KEY_torrent_complete_sound_enabled, true);
-    dictAdd(d, TR_KEY_user_has_given_informed_consent, false);
-    dictAdd(d, TR_KEY_watch_dir_enabled, false);
-    dictAdd(d, TR_KEY_blocklist_date, 0);
-    dictAdd(d, TR_KEY_main_window_height, 500);
-    dictAdd(d, TR_KEY_main_window_width, 300);
-    dictAdd(d, TR_KEY_main_window_x, 50);
-    dictAdd(d, TR_KEY_main_window_y, 50);
-    dictAdd(d, TR_KEY_remote_session_port, TR_DEFAULT_RPC_PORT);
-    dictAdd(d, TR_KEY_download_dir, download_dir);
-    dictAdd(d, TR_KEY_filter_mode, FilterMode);
-    dictAdd(d, TR_KEY_main_window_layout_order, WindowLayout);
-    dictAdd(d, TR_KEY_open_dialog_dir, QDir::home().absolutePath());
-    dictAdd(d, TR_KEY_remote_session_https, false);
-    dictAdd(d, TR_KEY_remote_session_host, SessionHost);
-    dictAdd(d, TR_KEY_remote_session_password, SessionPassword);
-    dictAdd(d, TR_KEY_remote_session_username, SessionUsername);
-    dictAdd(d, TR_KEY_sort_mode, SortMode);
-    dictAdd(d, TR_KEY_statusbar_stats, StatsMode);
-    dictAdd(d, TR_KEY_watch_dir, download_dir);
-    dictAdd(d, TR_KEY_read_clipboard, false);
+    auto settings = tr_variant::Map{ 64U };
+    settings.try_emplace(TR_KEY_blocklist_date, 0);
+    settings.try_emplace(TR_KEY_blocklist_updates_enabled, true);
+    settings.try_emplace(TR_KEY_compact_view, false);
+    settings.try_emplace(TR_KEY_download_dir, download_dir);
+    settings.try_emplace(TR_KEY_filter_mode, to_variant(DefaultShowMode));
+    settings.try_emplace(TR_KEY_inhibit_desktop_hibernation, false);
+    settings.try_emplace(TR_KEY_main_window_height, 500);
+    settings.try_emplace(TR_KEY_main_window_layout_order, tr_variant::unmanaged_string("menu,toolbar,filter,list,statusbar"sv));
+    settings.try_emplace(TR_KEY_main_window_width, 600);
+    settings.try_emplace(TR_KEY_main_window_x, 50);
+    settings.try_emplace(TR_KEY_main_window_y, 50);
+    settings.try_emplace(TR_KEY_open_dialog_dir, QDir::home().absolutePath().toStdString());
+    settings.try_emplace(TR_KEY_prompt_before_exit, true);
+    settings.try_emplace(TR_KEY_read_clipboard, false);
+    settings.try_emplace(TR_KEY_remote_session_enabled, false);
+    settings.try_emplace(TR_KEY_remote_session_host, tr_variant::unmanaged_string("localhost"sv));
+    settings.try_emplace(TR_KEY_remote_session_https, false);
+    settings.try_emplace(TR_KEY_remote_session_password, tr_variant::unmanaged_string(""sv));
+    settings.try_emplace(TR_KEY_remote_session_port, TrDefaultRpcPort);
+    settings.try_emplace(TR_KEY_remote_session_requires_authentication, false);
+    settings.try_emplace(TR_KEY_remote_session_rpc_url_path, tr_variant::unmanaged_string(TR_DEFAULT_RPC_URL_STR "rpc"));
+    settings.try_emplace(TR_KEY_remote_session_username, tr_variant::unmanaged_string(""sv));
+    settings.try_emplace(TR_KEY_show_backup_trackers, false);
+    settings.try_emplace(TR_KEY_show_filterbar, true);
+    settings.try_emplace(TR_KEY_show_notification_area_icon, false);
+    settings.try_emplace(TR_KEY_show_options_window, true);
+    settings.try_emplace(TR_KEY_show_statusbar, true);
+    settings.try_emplace(TR_KEY_show_toolbar, true);
+    settings.try_emplace(TR_KEY_show_tracker_scrapes, false);
+    settings.try_emplace(TR_KEY_sort_mode, to_variant(DefaultSortMode));
+    settings.try_emplace(TR_KEY_sort_reversed, false);
+    settings.try_emplace(TR_KEY_start_minimized, false);
+    settings.try_emplace(TR_KEY_statusbar_stats, tr_variant::unmanaged_string("total-ratio"));
+    settings.try_emplace(TR_KEY_torrent_added_notification_enabled, true);
+    settings.try_emplace(TR_KEY_torrent_complete_notification_enabled, true);
+    settings.try_emplace(TR_KEY_torrent_complete_sound_enabled, true);
+    settings.try_emplace(TR_KEY_watch_dir, download_dir);
+    settings.try_emplace(TR_KEY_watch_dir_enabled, false);
+    return tr_variant{ std::move(settings) };
 }
 
 /***
@@ -517,9 +462,7 @@ QDateTime Prefs::getDateTime(int key) const
     return values_[key].toDateTime();
 }
 
-/***
-****
-***/
+// ---
 
 void Prefs::toggleBool(int key)
 {

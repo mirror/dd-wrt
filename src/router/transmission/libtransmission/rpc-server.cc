@@ -1,4 +1,4 @@
-// This file Copyright © 2008-2023 Mnemosyne LLC.
+// This file Copyright © Mnemosyne LLC.
 // It may be used under GPLv2 (SPDX: GPL-2.0-only), GPLv3 (SPDX: GPL-3.0-only),
 // or any future license endorsed by Mnemosyne LLC.
 // License text can be found in the licenses/ folder.
@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <array>
 #include <chrono>
+#include <cstdint>
 #include <cstring> /* for strcspn() */
 #include <ctime>
 #include <memory>
@@ -14,43 +15,44 @@
 #include <utility>
 #include <vector>
 
-#ifndef _WIN32
-#include <sys/un.h>
+#ifdef _WIN32
+#include <ws2tcpip.h>
+#else
+#include <sys/socket.h>
 #include <sys/stat.h>
+#include <sys/un.h>
 #include <unistd.h>
 #endif
 
 #include <event2/buffer.h>
 #include <event2/http.h>
-#include <event2/http_struct.h> /* TODO: eventually remove this */
 #include <event2/listener.h>
 
-#include <fmt/core.h>
 #include <fmt/chrono.h>
+#include <fmt/format.h>
 
 #include <libdeflate.h>
 
-#include "transmission.h"
+#include "libtransmission/transmission.h"
 
-#include "crypto-utils.h" /* tr_ssha1_matches() */
-#include "error.h"
-#include "log.h"
-#include "net.h"
-#include "platform.h" /* tr_getWebClientDir() */
-#include "quark.h"
-#include "rpc-server.h"
-#include "rpcimpl.h"
-#include "session-id.h"
-#include "session.h"
-#include "timer.h"
-#include "tr-assert.h"
-#include "tr-strbuf.h"
-#include "utils.h"
-#include "variant.h"
-#include "web-utils.h"
-#include "web.h"
+#include "libtransmission/crypto-utils.h" /* tr_ssha1_matches() */
+#include "libtransmission/error.h"
+#include "libtransmission/log.h"
+#include "libtransmission/net.h"
+#include "libtransmission/platform.h" /* tr_getWebClientDir() */
+#include "libtransmission/quark.h"
+#include "libtransmission/rpc-server.h"
+#include "libtransmission/rpcimpl.h"
+#include "libtransmission/session.h"
+#include "libtransmission/timer.h"
+#include "libtransmission/tr-strbuf.h"
+#include "libtransmission/utils.h"
+#include "libtransmission/variant.h"
+#include "libtransmission/web-utils.h"
 
-/* session-id is used to make cross-site request forgery attacks difficult.
+struct evbuffer;
+
+/* session_id is used to make cross-site request forgery attacks difficult.
  * Don't disable this feature unless you really know what you're doing!
  * https://en.wikipedia.org/wiki/Cross-site_request_forgery
  * https://shiflett.org/articles/cross-site-request-forgeries
@@ -71,45 +73,108 @@ auto constexpr TrUnixSocketPrefix = "unix:"sv;
 #ifdef _WIN32
 auto inline constexpr TrUnixAddrStrLen = size_t{ INET6_ADDRSTRLEN };
 #else
-auto inline constexpr TrUnixAddrStrLen = size_t{ sizeof(((struct sockaddr_un*)nullptr)->sun_path) +
+auto inline constexpr TrUnixAddrStrLen = size_t{ sizeof(std::declval<struct sockaddr_un>().sun_path) +
                                                  std::size(TrUnixSocketPrefix) };
 #endif
 
-enum tr_rpc_address_type
+enum tr_rpc_address_type : uint8_t
 {
-    TR_RPC_AF_INET,
-    TR_RPC_AF_INET6,
-    TR_RPC_AF_UNIX
+    TR_RPC_INET_ADDR,
+    TR_RPC_UNIX_ADDR
+};
+
+class tr_unix_addr
+{
+public:
+    [[nodiscard]] std::string to_string() const
+    {
+        return std::empty(unix_socket_path_) ? std::string(TrUnixSocketPrefix) : unix_socket_path_;
+    }
+
+    [[nodiscard]] bool from_string(std::string_view src)
+    {
+        if (!tr_strv_starts_with(src, TrUnixSocketPrefix))
+        {
+            return false;
+        }
+
+        if (std::size(src) >= TrUnixAddrStrLen)
+        {
+            tr_logAddError(
+                fmt::format(
+                    fmt::runtime(_("Unix socket path must be fewer than {count} characters (including '{prefix}' prefix)")),
+                    fmt::arg("count", TrUnixAddrStrLen - 1),
+                    fmt::arg("prefix", TrUnixSocketPrefix)));
+            return false;
+        }
+        unix_socket_path_ = src;
+        return true;
+    }
+
+private:
+    std::string unix_socket_path_;
 };
 } // namespace
 
-struct tr_rpc_address
+class tr_rpc_address
 {
-    tr_rpc_address_type type;
-    union
+public:
+    tr_rpc_address()
+        : inet_addr_{ tr_address::any(TR_AF_INET) }
     {
-        struct in_addr addr4;
-        struct in6_addr addr6;
-        std::array<char, TrUnixAddrStrLen> unixSocketPath;
-    } addr;
-
-    void set_inaddr_any()
-    {
-        type = TR_RPC_AF_INET;
-        addr.addr4 = { INADDR_ANY };
     }
+
+    [[nodiscard]] constexpr auto is_unix_addr() const noexcept
+    {
+        return type_ == TR_RPC_UNIX_ADDR;
+    }
+
+    [[nodiscard]] constexpr auto is_inet_addr() const noexcept
+    {
+        return type_ == TR_RPC_INET_ADDR;
+    }
+
+    bool from_string(std::string_view src)
+    {
+        if (auto address = tr_address::from_string(src); address.has_value())
+        {
+            type_ = TR_RPC_INET_ADDR;
+            inet_addr_ = address.value();
+            return true;
+        }
+
+        if (unix_addr_.from_string(src))
+        {
+            type_ = TR_RPC_UNIX_ADDR;
+            return true;
+        }
+
+        return false;
+    }
+
+    [[nodiscard]] std::string to_string(tr_port port = {}) const
+    {
+        if (type_ == TR_RPC_UNIX_ADDR)
+        {
+            return unix_addr_.to_string();
+        }
+
+        if (std::empty(port))
+        {
+            return inet_addr_.display_name();
+        }
+        return tr_socket_address::display_name(inet_addr_, port);
+    }
+
+private:
+    tr_rpc_address_type type_ = TR_RPC_INET_ADDR;
+    struct tr_address inet_addr_;
+    class tr_unix_addr unix_addr_;
 };
 
 namespace
 {
 int constexpr DeflateLevel = 6; // medium / default
-
-#ifdef TR_ENABLE_ASSERTS
-bool constexpr tr_rpc_address_is_valid(tr_rpc_address const& a)
-{
-    return a.type == TR_RPC_AF_INET || a.type == TR_RPC_AF_INET6 || a.type == TR_RPC_AF_UNIX;
-}
-#endif
 
 // ---
 
@@ -147,7 +212,7 @@ void send_simple_response(struct evhttp_request* req, int code, char const* text
 
     for (auto const& [suffix, mime_type] : Types)
     {
-        if (tr_strvEndsWith(path, suffix))
+        if (tr_strv_ends_with(path, suffix))
         {
             return mime_type;
         }
@@ -183,7 +248,7 @@ void send_simple_response(struct evhttp_request* req, int code, char const* text
         if (0 < compressed_len && compressed_len < std::size(content))
         {
             iov.iov_len = compressed_len;
-            evhttp_add_header(req->output_headers, "Content-Encoding", "gzip");
+            evhttp_add_header(output_headers, "Content-Encoding", "gzip");
         }
         else
         {
@@ -205,26 +270,26 @@ void add_time_header(struct evkeyvalq* headers, char const* key, time_t now)
 
 void serve_file(struct evhttp_request* req, tr_rpc_server const* server, std::string_view filename)
 {
-    if (req->type != EVHTTP_REQ_GET)
+    auto* const output_headers = evhttp_request_get_output_headers(req);
+    if (auto const cmd = evhttp_request_get_command(req); cmd != EVHTTP_REQ_GET)
     {
-        evhttp_add_header(req->output_headers, "Allow", "GET");
+        evhttp_add_header(output_headers, "Allow", "GET");
         send_simple_response(req, HTTP_BADMETHOD);
         return;
     }
 
     auto content = std::vector<char>{};
 
-    if (tr_error* error = nullptr; !tr_loadFile(filename, content, &error))
+    if (auto error = tr_error{}; !tr_file_read(filename, content, &error))
     {
-        send_simple_response(req, HTTP_NOTFOUND, fmt::format("{} ({})", filename, error->message).c_str());
-        tr_error_free(error);
+        send_simple_response(req, HTTP_NOTFOUND, fmt::format("{} ({})", filename, error.message()).c_str());
         return;
     }
 
     auto const now = tr_time();
-    add_time_header(req->output_headers, "Date", now);
-    add_time_header(req->output_headers, "Expires", now + (24 * 60 * 60));
-    evhttp_add_header(req->output_headers, "Content-Type", mimetype_guess(filename));
+    add_time_header(output_headers, "Date", now);
+    add_time_header(output_headers, "Expires", now + (24 * 60 * 60));
+    evhttp_add_header(output_headers, "Content-Type", mimetype_guess(filename));
 
     auto* const response = make_response(req, server, std::string_view{ std::data(content), std::size(content) });
     evhttp_send_reply(req, HTTP_OK, "OK", response);
@@ -246,78 +311,78 @@ void handle_web_client(struct evhttp_request* req, tr_rpc_server const* server)
             "<p>Package Builders: to set a custom default at compile time, "
             "#define PACKAGE_DATA_DIR in libtransmission/platform.c "
             "or tweak tr_getClutchDir() by hand.</p>");
+        return;
+    }
+
+    // convert the URL path component (ex: "/transmission/web/images/favicon.png")
+    // into a filesystem path (ex: "/usr/share/transmission/web/images/favicon.png")
+
+    // remove the "/transmission/web/" prefix
+    static auto constexpr Web = "web/"sv;
+    auto subpath = std::string_view{ evhttp_request_get_uri(req) }.substr(std::size(server->url()) + std::size(Web));
+
+    // remove any trailing query / fragment
+    subpath = subpath.substr(0, subpath.find_first_of("?#"sv));
+
+    // if the query is empty, use the default
+    if (std::empty(subpath))
+    {
+        static auto constexpr DefaultPage = "index.html"sv;
+        subpath = DefaultPage;
+    }
+
+    if (tr_strv_contains(subpath, ".."sv))
+    {
+        if (auto* const con = evhttp_request_get_connection(req); con != nullptr)
+        {
+#if LIBEVENT_VERSION_NUMBER >= 0x02020001
+            char const* remote_host = nullptr;
+#else
+            char* remote_host = nullptr;
+#endif
+            auto remote_port = ev_uint16_t{};
+            evhttp_connection_get_peer(con, &remote_host, &remote_port);
+            tr_logAddWarn(
+                fmt::format(
+                    fmt::runtime(_("Rejected request from {host} (possible directory traversal attack)")),
+                    fmt::arg("host", remote_host)));
+        }
+        send_simple_response(req, HTTP_NOTFOUND);
     }
     else
     {
-        // convert `req->uri` (ex: "/transmission/web/images/favicon.png")
-        // into a filesystem path (ex: "/usr/share/transmission/web/images/favicon.png")
-
-        // remove the "/transmission/web/" prefix
-        static auto constexpr Web = "web/"sv;
-        auto subpath = std::string_view{ req->uri }.substr(std::size(server->url()) + std::size(Web));
-
-        // remove any trailing query / fragment
-        subpath = subpath.substr(0, subpath.find_first_of("?#"sv));
-
-        // if the query is empty, use the default
-        static auto constexpr DefaultPage = "index.html"sv;
-        if (std::empty(subpath))
-        {
-            subpath = DefaultPage;
-        }
-
-        if (tr_strvContains(subpath, ".."sv))
-        {
-            send_simple_response(req, HTTP_NOTFOUND);
-        }
-        else
-        {
-            serve_file(req, server, tr_pathbuf{ server->web_client_dir_, '/', subpath });
-        }
+        serve_file(req, server, tr_pathbuf{ server->web_client_dir_, '/', subpath });
     }
-}
-
-struct rpc_response_data
-{
-    struct evhttp_request* req;
-    tr_rpc_server* server;
-};
-
-void rpc_response_func(tr_session* /*session*/, tr_variant* content, void* user_data)
-{
-    auto* data = static_cast<struct rpc_response_data*>(user_data);
-
-    auto* const response = make_response(data->req, data->server, tr_variantToStr(content, TR_VARIANT_FMT_JSON_LEAN));
-    evhttp_add_header(data->req->output_headers, "Content-Type", "application/json; charset=UTF-8");
-    evhttp_send_reply(data->req, HTTP_OK, "OK", response);
-    evbuffer_free(response);
-
-    delete data;
 }
 
 void handle_rpc_from_json(struct evhttp_request* req, tr_rpc_server* server, std::string_view json)
 {
-    auto top = tr_variant{};
-    auto const have_content = tr_variantFromBuf(&top, TR_VARIANT_PARSE_JSON | TR_VARIANT_PARSE_INPLACE, json);
-
-    tr_rpc_request_exec_json(
+    tr_rpc_request_exec(
         server->session,
-        have_content ? &top : nullptr,
-        rpc_response_func,
-        new rpc_response_data{ req, server });
+        json,
+        [req, server](tr_session* /*session*/, tr_variant&& content)
+        {
+            if (!content.has_value())
+            {
+                evhttp_send_reply(req, HTTP_NOCONTENT, "OK", nullptr);
+                return;
+            }
 
-    if (have_content)
-    {
-        tr_variantClear(&top);
-    }
+            auto* const output_headers = evhttp_request_get_output_headers(req);
+            auto* const response = make_response(req, server, tr_variant_serde::json().compact().to_string(content));
+            evhttp_add_header(output_headers, "Content-Type", "application/json; charset=UTF-8");
+            evhttp_send_reply(req, HTTP_OK, "OK", response);
+            evbuffer_free(response);
+        });
 }
 
 void handle_rpc(struct evhttp_request* req, tr_rpc_server* server)
 {
-    if (req->type == EVHTTP_REQ_POST)
+    if (auto const cmd = evhttp_request_get_command(req); cmd == EVHTTP_REQ_POST)
     {
-        auto json = std::string_view{ reinterpret_cast<char const*>(evbuffer_pullup(req->input_buffer, -1)),
-                                      evbuffer_get_length(req->input_buffer) };
+        auto* const input_buffer = evhttp_request_get_input_buffer(req);
+        auto json = std::string_view{ reinterpret_cast<char const*>(evbuffer_pullup(input_buffer, -1)),
+                                      evbuffer_get_length(input_buffer) };
         handle_rpc_from_json(req, server, json);
         return;
     }
@@ -325,15 +390,27 @@ void handle_rpc(struct evhttp_request* req, tr_rpc_server* server)
     send_simple_response(req, HTTP_BADMETHOD);
 }
 
-bool isAddressAllowed(tr_rpc_server const* server, char const* address)
+bool is_address_allowed(tr_rpc_server const* server, char const* address)
 {
-    if (!server->isWhitelistEnabled())
+    if (!server->is_whitelist_enabled())
     {
         return true;
     }
 
+    // Convert IPv4-mapped address to IPv4 address
+    // so that it can match with IPv4 whitelist entries
+    auto native = std::string{};
+    if (auto ipv4_mapped = tr_address::from_string(address); ipv4_mapped)
+    {
+        if (auto addr = ipv4_mapped->from_ipv4_mapped(); addr)
+        {
+            native = addr->display_name();
+        }
+    }
+    auto const* const addr = std::empty(native) ? address : native.c_str();
+
     auto const& src = server->whitelist_;
-    return std::any_of(std::begin(src), std::end(src), [&address](auto const& s) { return tr_wildmat(address, s); });
+    return std::any_of(std::begin(src), std::end(src), [&addr](auto const& s) { return tr_wildmat(addr, s.c_str()); });
 }
 
 bool isIPAddressWithOptionalPort(char const* host)
@@ -345,21 +422,21 @@ bool isIPAddressWithOptionalPort(char const* host)
     return evutil_parse_sockaddr_port(host, reinterpret_cast<sockaddr*>(&address), &address_len) != -1;
 }
 
-bool isHostnameAllowed(tr_rpc_server const* server, evhttp_request const* req)
+bool isHostnameAllowed(tr_rpc_server const* server, evhttp_request* const req)
 {
     /* If password auth is enabled, any hostname is permitted. */
-    if (server->isPasswordEnabled())
+    if (server->is_password_enabled())
     {
         return true;
     }
 
     /* If whitelist is disabled, no restrictions. */
-    if (!server->is_host_whitelist_enabled_)
+    if (!server->settings_.is_host_whitelist_enabled)
     {
         return true;
     }
 
-    char const* const host = evhttp_find_header(req->input_headers, "Host");
+    auto const* const host = evhttp_request_get_host(req);
 
     /* No host header, invalid request. */
     if (host == nullptr)
@@ -374,27 +451,32 @@ bool isHostnameAllowed(tr_rpc_server const* server, evhttp_request const* req)
     }
 
     /* Host header might include the port. */
-    auto const hostname = std::string(host, strcspn(host, ":"));
+    auto const hostname = std::string_view{ host, strcspn(host, ":") };
 
     /* localhost is always acceptable. */
-    if (hostname == "localhost" || hostname == "localhost.")
+    if (hostname == "localhost"sv || hostname == "localhost."sv)
     {
         return true;
     }
 
     auto const& src = server->host_whitelist_;
-    return std::any_of(std::begin(src), std::end(src), [&hostname](auto const& str) { return tr_wildmat(hostname, str); });
+    auto const hostname_sz = tr_urlbuf{ hostname };
+    return std::any_of(
+        std::begin(src),
+        std::end(src),
+        [&hostname_sz](auto const& str) { return tr_wildmat(hostname_sz, str.c_str()); });
 }
 
-bool test_session_id(tr_rpc_server const* server, evhttp_request const* req)
+bool test_session_id(tr_rpc_server const* server, evhttp_request* const req)
 {
-    char const* const session_id = evhttp_find_header(req->input_headers, TR_RPC_SESSION_ID_HEADER);
+    auto const* const input_headers = evhttp_request_get_input_headers(req);
+    char const* const session_id = evhttp_find_header(input_headers, TR_RPC_SESSION_ID_HEADER);
     return session_id != nullptr && server->session->sessionId() == session_id;
 }
 
-bool isAuthorized(tr_rpc_server const* server, char const* auth_header)
+bool is_authorized(tr_rpc_server const* server, char const* auth_header)
 {
-    if (!server->isPasswordEnabled())
+    if (!server->is_password_enabled())
     {
         return true;
     }
@@ -404,7 +486,7 @@ bool isAuthorized(tr_rpc_server const* server, char const* auth_header)
 
     auto constexpr Prefix = "Basic "sv;
     auto auth = std::string_view{ auth_header != nullptr ? auth_header : "" };
-    if (!tr_strvStartsWith(auth, Prefix))
+    if (!tr_strv_starts_with(auth, Prefix))
     {
         return false;
     }
@@ -412,9 +494,9 @@ bool isAuthorized(tr_rpc_server const* server, char const* auth_header)
     auth.remove_prefix(std::size(Prefix));
     auto const decoded_str = tr_base64_decode(auth);
     auto decoded = std::string_view{ decoded_str };
-    auto const username = tr_strvSep(&decoded, ':');
+    auto const username = tr_strv_sep(&decoded, ':');
     auto const password = decoded;
-    return server->username() == username && tr_ssha1_matches(server->salted_password_, password);
+    return server->username() == username && tr_ssha1_matches(server->settings().salted_password, password);
 }
 
 void handle_request(struct evhttp_request* req, void* arg)
@@ -422,184 +504,157 @@ void handle_request(struct evhttp_request* req, void* arg)
     auto constexpr HttpErrorUnauthorized = 401;
     auto constexpr HttpErrorForbidden = 403;
 
+    if (req == nullptr)
+    {
+        return;
+    }
+
+    auto* const con = evhttp_request_get_connection(req);
+    if (con == nullptr)
+    {
+        return;
+    }
+
     auto* server = static_cast<tr_rpc_server*>(arg);
 
-    if (req != nullptr && req->evcon != nullptr)
-    {
-        evhttp_add_header(req->output_headers, "Server", MY_REALM);
-
-        if (server->isAntiBruteForceEnabled() && server->login_attempts_ >= server->anti_brute_force_limit_)
-        {
-            send_simple_response(req, HttpErrorForbidden);
-            return;
-        }
-
-        if (!isAddressAllowed(server, req->remote_host))
-        {
-            send_simple_response(req, HttpErrorForbidden);
-            return;
-        }
-
-        evhttp_add_header(req->output_headers, "Access-Control-Allow-Origin", "*");
-
-        if (req->type == EVHTTP_REQ_OPTIONS)
-        {
-            if (char const* headers = evhttp_find_header(req->input_headers, "Access-Control-Request-Headers");
-                headers != nullptr)
-            {
-                evhttp_add_header(req->output_headers, "Access-Control-Allow-Headers", headers);
-            }
-
-            evhttp_add_header(req->output_headers, "Access-Control-Allow-Methods", "GET, POST, OPTIONS");
-            send_simple_response(req, HTTP_OK);
-            return;
-        }
-
-        if (!isAuthorized(server, evhttp_find_header(req->input_headers, "Authorization")))
-        {
-            evhttp_add_header(req->output_headers, "WWW-Authenticate", "Basic realm=\"" MY_REALM "\"");
-            if (server->isAntiBruteForceEnabled())
-            {
-                ++server->login_attempts_;
-            }
-
-            send_simple_response(req, HttpErrorUnauthorized);
-            return;
-        }
-
-        server->login_attempts_ = 0;
-
-        auto uri = std::string_view{ req->uri };
-        auto const location = tr_strvStartsWith(uri, server->url()) ? uri.substr(std::size(server->url())) : ""sv;
-
-        if (std::empty(location) || location == "web"sv)
-        {
-            auto const new_location = fmt::format(FMT_STRING("{:s}web/"), server->url());
-            evhttp_add_header(req->output_headers, "Location", new_location.c_str());
-            send_simple_response(req, HTTP_MOVEPERM, nullptr);
-        }
-        else if (tr_strvStartsWith(location, "web/"sv))
-        {
-            handle_web_client(req, server);
-        }
-        else if (!isHostnameAllowed(server, req))
-        {
-            char const* const tmp =
-                "<p>Transmission received your request, but the hostname was unrecognized.</p>"
-                "<p>To fix this, choose one of the following options:"
-                "<ul>"
-                "<li>Enable password authentication, then any hostname is allowed.</li>"
-                "<li>Add the hostname you want to use to the whitelist in settings.</li>"
-                "</ul></p>"
-                "<p>If you're editing settings.json, see the 'rpc-host-whitelist' and 'rpc-host-whitelist-enabled' entries.</p>"
-                "<p>This requirement has been added to help prevent "
-                "<a href=\"https://en.wikipedia.org/wiki/DNS_rebinding\">DNS Rebinding</a> "
-                "attacks.</p>";
-            send_simple_response(req, 421, tmp);
-        }
-#ifdef REQUIRE_SESSION_ID
-        else if (!test_session_id(server, req))
-        {
-            auto const session_id = std::string{ server->session->sessionId() };
-            auto const tmp = fmt::format(
-                FMT_STRING("<p>Your request had an invalid session-id header.</p>"
-                           "<p>To fix this, follow these steps:"
-                           "<ol><li> When reading a response, get its X-Transmission-Session-Id header and remember it"
-                           "<li> Add the updated header to your outgoing requests"
-                           "<li> When you get this 409 error message, resend your request with the updated header"
-                           "</ol></p>"
-                           "<p>This requirement has been added to help prevent "
-                           "<a href=\"https://en.wikipedia.org/wiki/Cross-site_request_forgery\">CSRF</a> "
-                           "attacks.</p>"
-                           "<p><code>{:s}: {:s}</code></p>"),
-                TR_RPC_SESSION_ID_HEADER,
-                session_id);
-            evhttp_add_header(req->output_headers, TR_RPC_SESSION_ID_HEADER, session_id.c_str());
-            evhttp_add_header(req->output_headers, "Access-Control-Expose-Headers", TR_RPC_SESSION_ID_HEADER);
-            send_simple_response(req, 409, tmp.c_str());
-        }
+#if LIBEVENT_VERSION_NUMBER >= 0x02020001
+    char const* remote_host = nullptr;
+#else
+    char* remote_host = nullptr;
 #endif
-        else if (tr_strvStartsWith(location, "rpc"sv))
+    auto remote_port = ev_uint16_t{};
+    evhttp_connection_get_peer(con, &remote_host, &remote_port);
+
+    auto* const output_headers = evhttp_request_get_output_headers(req);
+    evhttp_add_header(output_headers, "Server", MY_REALM);
+
+    if (server->is_anti_brute_force_enabled() && server->login_attempts_ >= server->settings().anti_brute_force_limit)
+    {
+        tr_logAddWarn(
+            fmt::format(
+                fmt::runtime(_("Rejected request from {host} (brute force protection active)")),
+                fmt::arg("host", remote_host)));
+        send_simple_response(req, HttpErrorForbidden);
+        return;
+    }
+
+    if (!is_address_allowed(server, remote_host))
+    {
+        tr_logAddWarn(
+            fmt::format(fmt::runtime(_("Rejected request from {host} (IP not whitelisted)")), fmt::arg("host", remote_host)));
+        send_simple_response(req, HttpErrorForbidden);
+        return;
+    }
+
+    evhttp_add_header(output_headers, "Access-Control-Allow-Origin", "*");
+
+    auto const* const input_headers = evhttp_request_get_input_headers(req);
+    if (auto const cmd = evhttp_request_get_command(req); cmd == EVHTTP_REQ_OPTIONS)
+    {
+        if (char const* headers = evhttp_find_header(input_headers, "Access-Control-Request-Headers"); headers != nullptr)
         {
-            handle_rpc(req, server);
+            evhttp_add_header(output_headers, "Access-Control-Allow-Headers", headers);
         }
-        else
+
+        evhttp_add_header(output_headers, "Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+        send_simple_response(req, HTTP_OK);
+        return;
+    }
+
+    if (!is_authorized(server, evhttp_find_header(input_headers, "Authorization")))
+    {
+        tr_logAddWarn(
+            fmt::format(
+                fmt::runtime(_("Rejected request from {host} (failed authentication)")),
+                fmt::arg("host", remote_host)));
+        evhttp_add_header(output_headers, "WWW-Authenticate", "Basic realm=\"" MY_REALM "\"");
+        if (server->is_anti_brute_force_enabled())
         {
-            send_simple_response(req, HTTP_NOTFOUND, req->uri);
+            ++server->login_attempts_;
         }
+
+        send_simple_response(req, HttpErrorUnauthorized);
+        return;
+    }
+
+    server->login_attempts_ = 0;
+
+    auto const* const uri = evhttp_request_get_uri(req);
+    auto const uri_sv = std::string_view{ uri };
+    auto const location = tr_strv_starts_with(uri_sv, server->url()) ? uri_sv.substr(std::size(server->url())) : ""sv;
+
+    if (std::empty(location) || location == "web"sv)
+    {
+        auto const new_location = fmt::format("{:s}web/", server->url());
+        evhttp_add_header(output_headers, "Location", new_location.c_str());
+        send_simple_response(req, HTTP_MOVEPERM, nullptr);
+    }
+    else if (tr_strv_starts_with(location, "web/"sv))
+    {
+        handle_web_client(req, server);
+    }
+    else if (!isHostnameAllowed(server, req))
+    {
+        static auto constexpr Body =
+            "<p>Transmission received your request, but the hostname was unrecognized.</p>"
+            "<p>To fix this, choose one of the following options:"
+            "<ul>"
+            "<li>Enable password authentication, then any hostname is allowed.</li>"
+            "<li>Add the hostname you want to use to the whitelist in settings.</li>"
+            "</ul></p>"
+            "<p>If you're editing settings.json, see the 'rpc_host_whitelist' and 'rpc_host_whitelist_enabled' entries.</p>"
+            "<p>This requirement has been added to help prevent "
+            "<a href=\"https://en.wikipedia.org/wiki/DNS_rebinding\">DNS Rebinding</a> "
+            "attacks.</p>";
+        tr_logAddWarn(
+            fmt::format(fmt::runtime(_("Rejected request from {host} (Host not whitelisted)")), fmt::arg("host", remote_host)));
+        send_simple_response(req, 421, Body);
+    }
+#ifdef REQUIRE_SESSION_ID
+    else if (!test_session_id(server, req))
+    {
+        auto const session_id = std::string{ server->session->sessionId() };
+        auto const body = fmt::format(
+            "<p>Your request had an invalid session_id header.</p>"
+            "<p>To fix this, follow these steps:"
+            "<ol><li> When reading a response, get its " TR_RPC_SESSION_ID_HEADER
+            " header and remember it"
+            "<li> Add the updated header to your outgoing requests"
+            "<li> When you get this 409 error message, resend your request with the updated header"
+            "</ol></p>"
+            "<p>This requirement has been added to help prevent "
+            "<a href=\"https://en.wikipedia.org/wiki/Cross-site_request_forgery\">CSRF</a> "
+            "attacks.</p>"
+            "<p><code>{:s}: {:s}</code></p>",
+            TR_RPC_SESSION_ID_HEADER,
+            session_id);
+        evhttp_add_header(output_headers, TR_RPC_SESSION_ID_HEADER, session_id.c_str());
+        evhttp_add_header(output_headers, TR_RPC_RPC_VERSION_HEADER, std::data(TrRpcVersionSemver));
+        evhttp_add_header(
+            output_headers,
+            "Access-Control-Expose-Headers",
+            TR_RPC_SESSION_ID_HEADER ", " TR_RPC_RPC_VERSION_HEADER);
+        send_simple_response(req, 409, body.c_str());
+    }
+#endif
+    else if (tr_strv_starts_with(location, "rpc"sv))
+    {
+        handle_rpc(req, server);
+    }
+    else
+    {
+        tr_logAddWarn(
+            fmt::format(
+                fmt::runtime(_("Unknown URI from {host}: '{uri}'")),
+                fmt::arg("host", remote_host),
+                fmt::arg("uri", uri_sv)));
+        send_simple_response(req, HTTP_NOTFOUND, uri);
     }
 }
 
-auto constexpr ServerStartRetryCount = int{ 10 };
+auto constexpr ServerStartRetryCount = 10;
 auto constexpr ServerStartRetryDelayIncrement = 5s;
 auto constexpr ServerStartRetryMaxDelay = 60s;
-
-char const* tr_rpc_address_to_string(tr_rpc_address const& addr, char* buf, size_t buflen)
-{
-    TR_ASSERT(tr_rpc_address_is_valid(addr));
-
-    switch (addr.type)
-    {
-    case TR_RPC_AF_INET:
-        return evutil_inet_ntop(AF_INET, &addr.addr, buf, buflen);
-
-    case TR_RPC_AF_INET6:
-        return evutil_inet_ntop(AF_INET6, &addr.addr, buf, buflen);
-
-    case TR_RPC_AF_UNIX:
-        tr_strlcpy(buf, std::data(addr.addr.unixSocketPath), buflen);
-        return buf;
-
-    default:
-        return nullptr;
-    }
-}
-
-std::string tr_rpc_address_with_port(tr_rpc_server const* server)
-{
-    auto addr_buf = std::array<char, TrUnixAddrStrLen>{};
-    tr_rpc_address_to_string(*server->bind_address_, std::data(addr_buf), std::size(addr_buf));
-
-    std::string addr_port_str = std::data(addr_buf);
-    if (server->bind_address_->type != TR_RPC_AF_UNIX)
-    {
-        addr_port_str.append(":" + std::to_string(server->port().host()));
-    }
-    return addr_port_str;
-}
-
-bool tr_rpc_address_from_string(tr_rpc_address& dst, std::string_view src)
-{
-    if (tr_strvStartsWith(src, TrUnixSocketPrefix))
-    {
-        if (std::size(src) >= TrUnixAddrStrLen)
-        {
-            tr_logAddError(fmt::format(
-                _("Unix socket path must be fewer than {count} characters (including '{prefix}' prefix)"),
-                fmt::arg("count", TrUnixAddrStrLen - 1),
-                fmt::arg("prefix", TrUnixSocketPrefix)));
-            return false;
-        }
-
-        dst.type = TR_RPC_AF_UNIX;
-        tr_strlcpy(std::data(dst.addr.unixSocketPath), std::string{ src }.c_str(), std::size(dst.addr.unixSocketPath));
-        return true;
-    }
-
-    if (evutil_inet_pton(AF_INET, std::string{ src }.c_str(), &dst.addr) == 1)
-    {
-        dst.type = TR_RPC_AF_INET;
-        return true;
-    }
-
-    if (evutil_inet_pton(AF_INET6, std::string{ src }.c_str(), &dst.addr) == 1)
-    {
-        dst.type = TR_RPC_AF_INET6;
-        return true;
-    }
-
-    return false;
-}
 
 bool bindUnixSocket(
     [[maybe_unused]] struct event_base* base,
@@ -608,14 +663,15 @@ bool bindUnixSocket(
     [[maybe_unused]] tr_mode_t socket_mode)
 {
 #ifdef _WIN32
-    tr_logAddError(fmt::format(
-        _("Unix sockets are unsupported on Windows. Please change '{key}' in your settings."),
-        fmt::arg("key", tr_quark_get_string_view(TR_KEY_rpc_bind_address))));
+    tr_logAddError(
+        fmt::format(
+            _("Unix sockets are unsupported on Windows. Please change '{key}' in your settings."),
+            fmt::arg("key", tr_quark_get_string_view(TR_KEY_rpc_bind_address))));
     return false;
 #else
     auto addr = sockaddr_un{};
     addr.sun_family = AF_UNIX;
-    tr_strlcpy(addr.sun_path, path + std::size(TrUnixSocketPrefix), sizeof(addr.sun_path));
+    *fmt::format_to_n(addr.sun_path, sizeof(addr.sun_path) - 1, "{:s}", path + std::size(TrUnixSocketPrefix)).out = '\0';
 
     unlink(addr.sun_path);
 
@@ -636,25 +692,27 @@ bool bindUnixSocket(
     if (chmod(addr.sun_path, socket_mode) != 0)
     {
         tr_logAddWarn(
-            fmt::format(_("Couldn't set RPC socket mode to {mode:#o}, defaulting to 0755"), fmt::arg("mode", socket_mode)));
+            fmt::format(
+                fmt::runtime(_("Couldn't set RPC socket mode to {mode:#o}, defaulting to 0755")),
+                fmt::arg("mode", socket_mode)));
     }
 
     return evhttp_bind_listener(httpd, lev) != nullptr;
 #endif
 }
 
-void startServer(tr_rpc_server* server);
+void start_server(tr_rpc_server* server);
 
 auto rpc_server_start_retry(tr_rpc_server* server)
 {
     if (!server->start_retry_timer)
     {
-        server->start_retry_timer = server->session->timerMaker().create([server]() { startServer(server); });
+        server->start_retry_timer = server->session->timerMaker().create([server]() { start_server(server); });
     }
 
     ++server->start_retry_counter;
     auto const interval = std::min(ServerStartRetryDelayIncrement * server->start_retry_counter, ServerStartRetryMaxDelay);
-    server->start_retry_timer->startSingleShot(std::chrono::duration_cast<std::chrono::milliseconds>(interval));
+    server->start_retry_timer->start_single_shot(std::chrono::duration_cast<std::chrono::milliseconds>(interval));
     return interval;
 }
 
@@ -664,26 +722,78 @@ void rpc_server_start_retry_cancel(tr_rpc_server* server)
     server->start_retry_counter = 0;
 }
 
-void startServer(tr_rpc_server* server)
+int tr_evhttp_bind_socket(struct evhttp* httpd, char const* address, ev_uint16_t port)
+{
+#ifdef _WIN32
+    struct addrinfo* result = nullptr;
+    struct addrinfo hints = {};
+    ZeroMemory(&hints, sizeof(hints));
+    hints.ai_family = AF_UNSPEC;
+    hints.ai_socktype = SOCK_STREAM;
+    hints.ai_protocol = IPPROTO_TCP;
+    hints.ai_flags = AI_PASSIVE;
+
+    if (getaddrinfo(address, std::to_string(port).c_str(), &hints, &result) != 0)
+    {
+        return evhttp_bind_socket(httpd, address, port);
+    }
+
+    int const fd = socket(result->ai_family, result->ai_socktype, result->ai_protocol);
+    if (fd == INVALID_SOCKET)
+    {
+        freeaddrinfo(result);
+        return evhttp_bind_socket(httpd, address, port);
+    }
+    evutil_make_socket_nonblocking(fd);
+    evutil_make_listen_socket_reuseable(fd);
+
+    // Making dual stack
+    if (result->ai_family == AF_INET6)
+    {
+        int off = 0;
+        setsockopt(fd, IPPROTO_IPV6, IPV6_V6ONLY, reinterpret_cast<char*>(&off), sizeof(off));
+    }
+    // Set keep alive
+    int on = 1;
+    setsockopt(fd, SOL_SOCKET, SO_KEEPALIVE, reinterpret_cast<char*>(&on), sizeof(on));
+    if (bind(fd, result->ai_addr, result->ai_addrlen) != 0 || listen(fd, 128) == -1)
+    {
+        closesocket(fd);
+        freeaddrinfo(result);
+        return evhttp_bind_socket(httpd, address, port);
+    }
+    if (evhttp_accept_socket(httpd, fd) == 0)
+    {
+        freeaddrinfo(result);
+        return 0;
+    }
+    // Fallback
+    closesocket(fd);
+    freeaddrinfo(result);
+#endif
+    return evhttp_bind_socket(httpd, address, port);
+}
+
+void start_server(tr_rpc_server* server)
 {
     if (server->httpd)
     {
         return;
     }
 
-    struct event_base* base = server->session->eventBase();
-    struct evhttp* httpd = evhttp_new(base);
+    auto* const base = server->session->event_base();
+    auto* const httpd = evhttp_new(base);
 
     evhttp_set_allowed_methods(httpd, EVHTTP_REQ_GET | EVHTTP_REQ_POST | EVHTTP_REQ_OPTIONS);
 
-    auto const address = server->getBindAddress();
+    auto const address = server->get_bind_address();
     auto const port = server->port();
 
-    bool const success = server->bind_address_->type == TR_RPC_AF_UNIX ?
-        bindUnixSocket(base, httpd, address.c_str(), server->socket_mode_) :
-        (evhttp_bind_socket(httpd, address.c_str(), port.host()) != -1);
+    bool const success = server->bind_address_->is_unix_addr() ?
+        bindUnixSocket(base, httpd, address.c_str(), server->settings().socket_mode) :
+        (tr_evhttp_bind_socket(httpd, address.c_str(), port.host()) != -1);
 
-    auto const addr_port_str = tr_rpc_address_with_port(server);
+    auto const addr_port_str = server->bind_address_->to_string(port);
 
     if (!success)
     {
@@ -697,26 +807,30 @@ void startServer(tr_rpc_server* server)
             return;
         }
 
-        tr_logAddError(fmt::format(
-            tr_ngettext(
-                "Couldn't bind to {address} after {count} attempt, giving up",
-                "Couldn't bind to {address} after {count} attempts, giving up",
-                ServerStartRetryCount),
-            fmt::arg("address", addr_port_str),
-            fmt::arg("count", ServerStartRetryCount)));
+        tr_logAddError(
+            fmt::format(
+                fmt::runtime(tr_ngettext(
+                    "Couldn't bind to {address} after {count} attempt, giving up",
+                    "Couldn't bind to {address} after {count} attempts, giving up",
+                    ServerStartRetryCount)),
+                fmt::arg("address", addr_port_str),
+                fmt::arg("count", ServerStartRetryCount)));
     }
     else
     {
         evhttp_set_gencb(httpd, handle_request, server);
         server->httpd.reset(httpd);
 
-        tr_logAddInfo(fmt::format(_("Listening for RPC and Web requests on '{address}'"), fmt::arg("address", addr_port_str)));
+        tr_logAddInfo(
+            fmt::format(
+                fmt::runtime(_("Listening for RPC and Web requests on '{address}'")),
+                fmt::arg("address", addr_port_str)));
     }
 
     rpc_server_start_retry_cancel(server);
 }
 
-void stopServer(tr_rpc_server* server)
+void stop_server(tr_rpc_server* server)
 {
     auto const lock = server->session->unique_lock();
 
@@ -728,40 +842,43 @@ void stopServer(tr_rpc_server* server)
         return;
     }
 
-    auto const address = server->getBindAddress();
+    auto const address = server->get_bind_address();
 
     httpd.reset();
 
-    if (server->bind_address_->type == TR_RPC_AF_UNIX)
+    if (server->bind_address_->is_unix_addr())
     {
         unlink(address.c_str() + std::size(TrUnixSocketPrefix));
     }
 
-    tr_logAddInfo(fmt::format(
-        _("Stopped listening for RPC and Web requests on '{address}'"),
-        fmt::arg("address", tr_rpc_address_with_port(server))));
+    tr_logAddInfo(
+        fmt::format(
+            fmt::runtime(_("Stopped listening for RPC and Web requests on '{address}'")),
+            fmt::arg("address", server->bind_address_->to_string(server->port()))));
 }
 
-void restartServer(tr_rpc_server* const server)
+void restart_server(tr_rpc_server* const server)
 {
-    if (server->isEnabled())
+    if (server->is_enabled())
     {
-        stopServer(server);
-        startServer(server);
+        stop_server(server);
+        start_server(server);
     }
 }
 
-auto parseWhitelist(std::string_view whitelist)
+auto parse_whitelist(std::string_view whitelist)
 {
     auto list = std::vector<std::string>{};
 
-    while (!std::empty(whitelist))
+    auto item = std::string_view{};
+    while (tr_strv_sep(&whitelist, &item, ",;"sv))
     {
-        auto const pos = whitelist.find_first_of(" ,;"sv);
-        auto const token = tr_strvStrip(whitelist.substr(0, pos));
-        list.emplace_back(token);
-        tr_logAddInfo(fmt::format(_("Added '{entry}' to host whitelist"), fmt::arg("entry", token)));
-        whitelist = pos == std::string_view::npos ? ""sv : whitelist.substr(pos + 1);
+        item = tr_strv_strip(item);
+        if (!std::empty(item))
+        {
+            list.emplace_back(item);
+            tr_logAddInfo(fmt::format(fmt::runtime(_("Added '{entry}' to host whitelist")), fmt::arg("entry", item)));
+        }
     }
 
     return list;
@@ -769,82 +886,80 @@ auto parseWhitelist(std::string_view whitelist)
 
 } // namespace
 
-void tr_rpc_server::setEnabled(bool is_enabled)
+void tr_rpc_server::set_enabled(bool is_enabled)
 {
-    is_enabled_ = is_enabled;
+    settings_.is_enabled = is_enabled;
 
-    session->runInSessionThread(
+    session->run_in_session_thread(
         [this]()
         {
-            if (!is_enabled_)
+            if (!settings_.is_enabled)
             {
-                stopServer(this);
+                stop_server(this);
             }
             else
             {
-                startServer(this);
+                start_server(this);
             }
         });
 }
 
-void tr_rpc_server::setPort(tr_port port) noexcept
+void tr_rpc_server::set_port(tr_port port) noexcept
 {
-    if (port_ == port)
+    if (settings_.port == port)
     {
         return;
     }
 
-    port_ = port;
+    settings_.port = port;
 
-    if (isEnabled())
+    if (is_enabled())
     {
-        session->runInSessionThread(&restartServer, this);
+        session->run_in_session_thread(&restart_server, this);
     }
 }
 
-void tr_rpc_server::setUrl(std::string_view url)
+void tr_rpc_server::set_url(std::string_view url)
 {
-    url_ = url;
-    tr_logAddDebug(fmt::format(FMT_STRING("setting our URL to '{:s}'"), url_));
+    settings_.url = url;
+    tr_logAddDebug(fmt::format("setting our URL to '{:s}'", url));
 }
 
-void tr_rpc_server::setWhitelist(std::string_view whitelist)
+void tr_rpc_server::set_whitelist(std::string_view whitelist)
 {
-    this->whitelist_str_ = whitelist;
-    this->whitelist_ = parseWhitelist(whitelist);
+    settings_.whitelist_str = whitelist;
+    whitelist_ = parse_whitelist(whitelist);
 }
 
 // --- PASSWORD
 
-void tr_rpc_server::setUsername(std::string_view username)
+void tr_rpc_server::set_username(std::string_view username)
 {
-    username_ = username;
-    tr_logAddDebug(fmt::format(FMT_STRING("setting our username to '{:s}'"), username_));
+    settings_.username = username;
+    tr_logAddDebug(fmt::format("setting our username to '{:s}'", username));
 }
 
-void tr_rpc_server::setPassword(std::string_view password) noexcept
+void tr_rpc_server::set_password(std::string_view password) noexcept
 {
     auto const is_salted = tr_ssha1_test(password);
-    salted_password_ = is_salted ? password : tr_ssha1(password);
-
-    tr_logAddDebug(fmt::format(FMT_STRING("setting our salted password to '{:s}'"), salted_password_));
+    settings_.salted_password = is_salted ? password : tr_ssha1(password);
+    tr_logAddDebug(fmt::format("setting our salted password to '{:s}'", settings_.salted_password));
 }
 
-void tr_rpc_server::setPasswordEnabled(bool enabled)
+void tr_rpc_server::set_password_enabled(bool enabled)
 {
-    authentication_required_ = enabled;
+    settings_.authentication_required = enabled;
     tr_logAddDebug(fmt::format("setting password-enabled to '{}'", enabled));
 }
 
-std::string tr_rpc_server::getBindAddress() const
+std::string tr_rpc_server::get_bind_address() const
 {
-    auto buf = std::array<char, TrUnixAddrStrLen>{};
-    return tr_rpc_address_to_string(*this->bind_address_, std::data(buf), std::size(buf));
+    return bind_address_->to_string();
 }
 
-void tr_rpc_server::setAntiBruteForceEnabled(bool enabled) noexcept
+void tr_rpc_server::set_anti_brute_force_enabled(bool enabled) noexcept
 {
-    is_anti_brute_force_enabled_ = enabled;
+    settings_.is_anti_brute_force_enabled = enabled;
 
     if (!enabled)
     {
@@ -854,65 +969,58 @@ void tr_rpc_server::setAntiBruteForceEnabled(bool enabled) noexcept
 
 // --- LIFECYCLE
 
-tr_rpc_server::tr_rpc_server(tr_session* session_in, tr_variant* settings)
+tr_rpc_server::tr_rpc_server(tr_session* session_in, Settings&& settings)
     : compressor{ libdeflate_alloc_compressor(DeflateLevel), libdeflate_free_compressor }
     , web_client_dir_{ tr_getWebClientDir(session_in) }
-    , bind_address_(std::make_unique<struct tr_rpc_address>())
+    , bind_address_{ std::make_unique<class tr_rpc_address>() }
     , session{ session_in }
 {
-    load(settings);
+    load(std::move(settings));
 }
 
-void tr_rpc_server::load(tr_variant* src)
+void tr_rpc_server::load(Settings&& settings)
 {
-#define V(key, field, type, default_value, comment) \
-    if (auto* const child = tr_variantDictFind(src, key); child != nullptr) \
-    { \
-        if (auto val = libtransmission::VariantConverter::load<decltype(field)>(child); val) \
-        { \
-            this->field = *val; \
-        } \
-    }
-    RPC_SETTINGS_FIELDS(V)
-#undef V
+    settings_ = std::move(settings);
 
-    if (!tr_strvEndsWith(url_, '/'))
+    if (!tr_strv_ends_with(settings_.url, '/'))
     {
-        url_ = fmt::format(FMT_STRING("{:s}/"), url_);
+        settings_.url = fmt::format("{:s}/", settings_.url);
     }
 
-    this->host_whitelist_ = parseWhitelist(host_whitelist_str_);
-    this->setPasswordEnabled(authentication_required_);
-    this->setWhitelist(whitelist_str_);
-    this->setUsername(username_);
-    this->setPassword(salted_password_);
+    host_whitelist_ = parse_whitelist(settings_.host_whitelist_str);
+    set_password_enabled(settings_.authentication_required);
+    set_whitelist(settings_.whitelist_str);
+    set_username(settings_.username);
+    set_password(settings_.salted_password);
 
-    if (!tr_rpc_address_from_string(*bind_address_, bind_address_str_))
+    if (!bind_address_->from_string(settings_.bind_address_str))
     {
-        tr_logAddWarn(fmt::format(
-            _("The '{key}' setting is '{value}' but must be an IPv4 or IPv6 address or a Unix socket path. Using default value '0.0.0.0'"),
-            fmt::arg("key", tr_quark_get_string_view(TR_KEY_rpc_bind_address)),
-            fmt::arg("value", bind_address_str_)));
-        bind_address_->set_inaddr_any();
+        // NOTE: bind_address_ is default initialized to INADDR_ANY
+        tr_logAddWarn(
+            fmt::format(
+                fmt::runtime(_(
+                    "The '{key}' setting is '{value}' but must be an IPv4 or IPv6 address or a Unix socket path. Using default value '0.0.0.0'")),
+                fmt::arg("key", tr_quark_get_string_view(TR_KEY_rpc_bind_address)),
+                fmt::arg("value", settings_.bind_address_str)));
     }
 
-    if (bind_address_->type == TR_RPC_AF_UNIX)
+    if (bind_address_->is_unix_addr())
     {
-        this->setWhitelistEnabled(false);
-        this->is_host_whitelist_enabled_ = false;
+        set_whitelist_enabled(false);
+        settings_.is_host_whitelist_enabled = false;
     }
-    if (this->isEnabled())
+    if (this->is_enabled())
     {
-        auto const rpc_uri = tr_rpc_address_with_port(this) + this->url_;
-        tr_logAddInfo(fmt::format(_("Serving RPC and Web requests on {address}"), fmt::arg("address", rpc_uri)));
-        session->runInSessionThread(startServer, this);
+        auto const rpc_uri = bind_address_->to_string(port()) + settings_.url;
+        tr_logAddInfo(fmt::format(fmt::runtime(_("Serving RPC and Web requests on {address}")), fmt::arg("address", rpc_uri)));
+        session->run_in_session_thread(start_server, this);
 
-        if (this->isWhitelistEnabled())
+        if (this->is_whitelist_enabled())
         {
             tr_logAddInfo(_("Whitelist enabled"));
         }
 
-        if (this->isPasswordEnabled())
+        if (this->is_password_enabled())
         {
             tr_logAddInfo(_("Password required"));
         }
@@ -920,30 +1028,12 @@ void tr_rpc_server::load(tr_variant* src)
 
     if (!std::empty(web_client_dir_))
     {
-        tr_logAddInfo(fmt::format(_("Serving RPC and Web requests from '{path}'"), fmt::arg("path", web_client_dir_)));
+        tr_logAddInfo(
+            fmt::format(fmt::runtime(_("Serving RPC and Web requests from '{path}'")), fmt::arg("path", web_client_dir_)));
     }
-}
-
-void tr_rpc_server::save(tr_variant* tgt) const
-{
-#define V(key, field, type, default_value, comment) \
-    tr_variantDictRemove(tgt, key); \
-    libtransmission::VariantConverter::save<decltype(field)>(tr_variantDictAdd(tgt, key), field);
-    RPC_SETTINGS_FIELDS(V)
-#undef V
-}
-
-void tr_rpc_server::defaultSettings(tr_variant* tgt){
-#define V(key, field, type, default_value, comment) \
-    { \
-        tr_variantDictRemove(tgt, key); \
-        libtransmission::VariantConverter::save<decltype(field)>(tr_variantDictAdd(tgt, key), default_value); \
-    }
-    RPC_SETTINGS_FIELDS(V)
-#undef V
 }
 
 tr_rpc_server::~tr_rpc_server()
 {
-    stopServer(this);
+    stop_server(this);
 }

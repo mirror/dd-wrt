@@ -46,20 +46,68 @@ POSSIBILITY OF SUCH DAMAGE.
 #endif
 #include "natpmp.h"
 
+/* List of IP address blocks which are private / reserved and therefore not suitable for public external IP addresses */
+#define IP(a, b, c, d) (((a) << 24) + ((b) << 16) + ((c) << 8) + (d))
+#define MSK(m) (32-(m))
+static const struct { uint32_t address; uint32_t rmask; } reserved[] = {
+	{ IP(  0,   0,   0, 0), MSK( 8) }, /* RFC1122 "This host on this network" */
+	{ IP( 10,   0,   0, 0), MSK( 8) }, /* RFC1918 Private-Use */
+	{ IP(100,  64,   0, 0), MSK(10) }, /* RFC6598 Shared Address Space */
+	{ IP(127,   0,   0, 0), MSK( 8) }, /* RFC1122 Loopback */
+	{ IP(169, 254,   0, 0), MSK(16) }, /* RFC3927 Link-Local */
+	{ IP(172,  16,   0, 0), MSK(12) }, /* RFC1918 Private-Use */
+	{ IP(192,   0,   0, 0), MSK(24) }, /* RFC6890 IETF Protocol Assignments */
+	{ IP(192,   0,   2, 0), MSK(24) }, /* RFC5737 Documentation (TEST-NET-1) */
+	{ IP(192,  31, 196, 0), MSK(24) }, /* RFC7535 AS112-v4 */
+	{ IP(192,  52, 193, 0), MSK(24) }, /* RFC7450 AMT */
+	{ IP(192,  88,  99, 0), MSK(24) }, /* RFC7526 6to4 Relay Anycast */
+	{ IP(192, 168,   0, 0), MSK(16) }, /* RFC1918 Private-Use */
+	{ IP(192, 175,  48, 0), MSK(24) }, /* RFC7534 Direct Delegation AS112 Service */
+	{ IP(198,  18,   0, 0), MSK(15) }, /* RFC2544 Benchmarking */
+	{ IP(198,  51, 100, 0), MSK(24) }, /* RFC5737 Documentation (TEST-NET-2) */
+	{ IP(203,   0, 113, 0), MSK(24) }, /* RFC5737 Documentation (TEST-NET-3) */
+	{ IP(224,   0,   0, 0), MSK( 4) }, /* RFC1112 Multicast */
+	{ IP(240,   0,   0, 0), MSK( 4) }, /* RFC1112 Reserved for Future Use + RFC919 Limited Broadcast */
+};
+#undef IP
+#undef MSK
+
+static int addr_is_reserved(struct in_addr * addr)
+{
+	uint32_t address = ntohl(addr->s_addr);
+	size_t i;
+
+	for (i = 0; i < sizeof(reserved)/sizeof(reserved[0]); ++i) {
+		if ((address >> reserved[i].rmask) == (reserved[i].address >> reserved[i].rmask))
+			return 1;
+	}
+
+	return 0;
+}
+
 void usage(FILE * out, const char * argv0)
 {
-	fprintf(out, "Usage :\n");
-	fprintf(out, "  %s [options]\n", argv0);
-	fprintf(out, "\tdisplay the public IP address.\n");
-	fprintf(out, "  %s -h\n", argv0);
-	fprintf(out, "\tdisplay this help screen.\n");
-	fprintf(out, "  %s [options] -a <public port> <private port> <protocol> [lifetime]\n", argv0);
-	fprintf(out, "\tadd a port mapping.\n");
-	fprintf(out, "\nOption available :\n");
-	fprintf(out, "  -g ipv4address\n");
-	fprintf(out, "\tforce the gateway to be used as destination for NAT-PMP commands.\n");
-	fprintf(out, "\n  In order to remove a mapping, set it with a lifetime of 0 seconds.\n");
-	fprintf(out, "  To remove all mappings for your machine, use 0 as private port and lifetime.\n");
+    fprintf(out, "Usage :\n"
+        "  %s [options]\n"
+        "\tdisplay the public IP address.\n"
+        "  %s -h\n"
+        "\tdisplay this help screen.\n"
+        "  %s [options] -a <public port> <private port> <protocol> [lifetime]\n"
+        "\tadd a port mapping.\n"
+        "\nOption available :\n"
+        "  -g ipv4address\n"
+        "\tforce the gateway to be used as destination for NAT-PMP commands.\n"
+        "\n  In order to remove a mapping, set it with a lifetime of 0 seconds.\n"
+        "  To remove all mappings for your machine, use 0 as private port and lifetime.\n", argv0, argv0, argv0);
+}
+
+static void handlenatpmpbadreplytype(natpmp_t* pnatpmp, const natpmpresp_t* presponse, int* preturncode){
+	char retry = (pnatpmp->try_number <= 9);
+	printf("readnatpmpresponseorretry received unexpected reply type %hu , %s...\n", presponse->type, (retry == 1 ? "retrying" : "no more retry"));
+	if (retry) {
+		*preturncode = NATPMP_TRYAGAIN;
+		pnatpmp->has_pending_request = 1;
+	}
 }
 
 /* sample code for using libnatpmp */
@@ -188,11 +236,23 @@ int main(int argc, char * * argv)
 			fprintf(stderr, "  errno=%d '%s'\n",
 			        sav_errno, strerror(sav_errno));
 		}
+		if (r >= 0 && response.type != 0) {
+			handlenatpmpbadreplytype(&natpmp, &response, &r);
+		}
 	} while(r==NATPMP_TRYAGAIN);
 	if(r<0)
 		return 1;
 
-	/* TODO : check that response.type == 0 */
+	if(response.type!=NATPMP_RESPTYPE_PUBLICADDRESS) {
+		fprintf(stderr, "readnatpmpresponseorretry() failed : invalid response type %u\n", response.type);
+		return 1;
+	}
+
+	if(addr_is_reserved(&response.pnu.publicaddress.addr)) {
+		fprintf(stderr, "readnatpmpresponseorretry() failed : invalid Public IP address %s\n", inet_ntoa(response.pnu.publicaddress.addr));
+		return 1;
+	}
+
 	printf("Public IP address : %s\n", inet_ntoa(response.pnu.publicaddress.addr));
 	printf("epoch = %u\n", response.epoch);
 
@@ -214,6 +274,11 @@ int main(int argc, char * * argv)
 			r = readnatpmpresponseorretry(&natpmp, &response);
 			printf("readnatpmpresponseorretry returned %d (%s)\n",
 			       r, r==0?"OK":(r==NATPMP_TRYAGAIN?"TRY AGAIN":"FAILED"));
+			if (r >= 0 && (
+					protocol == NATPMP_PROTOCOL_TCP && response.type != NATPMP_RESPTYPE_TCPPORTMAPPING ||
+					protocol == NATPMP_PROTOCOL_UDP && response.type != NATPMP_RESPTYPE_UDPPORTMAPPING)) {
+				handlenatpmpbadreplytype(&natpmp, &response, &r);
+			}
 		} while(r==NATPMP_TRYAGAIN);
 		if(r<0) {
 #ifdef ENABLE_STRNATPMPERR
@@ -224,7 +289,7 @@ int main(int argc, char * * argv)
 		}
 
 		printf("Mapped public port %hu protocol %s to local port %hu "
-		       "liftime %u\n",
+		       "lifetime %u\n",
 	    	   response.pnu.newportmapping.mappedpublicport,
 			   response.type == NATPMP_RESPTYPE_UDPPORTMAPPING ? "UDP" :
 			    (response.type == NATPMP_RESPTYPE_TCPPORTMAPPING ? "TCP" :

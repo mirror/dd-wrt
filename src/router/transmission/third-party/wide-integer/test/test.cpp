@@ -1,40 +1,42 @@
 ﻿///////////////////////////////////////////////////////////////////
-//  Copyright Christopher Kormanyos 2018 - 2022.                 //
+//  Copyright Christopher Kormanyos 2018 - 2025.                 //
 //  Distributed under the Boost Software License,                //
 //  Version 1.0. (See accompanying file LICENSE_1_0.txt          //
 //  or copy at http://www.boost.org/LICENSE_1_0.txt)             //
 ///////////////////////////////////////////////////////////////////
 
 // On Windows subsystem for LINUX
-// cd /mnt/c/Users/User/Documents/Ks/PC_Software/NumericalPrograms/ExtendedNumberTypes/wide_integer
-
-// When using -std=c++20 and g++-10
-// g++-10 -finline-functions -march=native -mtune=native -O3 -Wall -Wextra -Wconversion -Wsign-conversion -std=c++20 -DWIDE_INTEGER_HAS_LIMB_TYPE_UINT64 -DWIDE_INTEGER_HAS_MUL_8_BY_8_UNROLL -I. -I/mnt/c/boost/boost_1_79_0 -pthread -lpthread test/test.cpp test/test_uintwide_t_boost_backend.cpp test/test_uintwide_t_edge_cases.cpp test/test_uintwide_t_examples.cpp test/test_uintwide_t_float_convert.cpp test/test_uintwide_t_int_convert.cpp test/test_uintwide_t_n_base.cpp test/test_uintwide_t_n_binary_ops_base.cpp examples/example000a_builtin_convert.cpp test/test_uintwide_t_spot_values.cpp examples/example000_numeric_limits.cpp examples/example001_mul_div.cpp examples/example001a_div_mod.cpp examples/example002_shl_shr.cpp examples/example003_sqrt.cpp examples/example003a_cbrt.cpp examples/example004_rootk_pow.cpp examples/example005_powm.cpp examples/example005a_pow_factors_of_p99.cpp examples/example006_gcd.cpp examples/example007_random_generator.cpp examples/example008_miller_rabin_prime.cpp examples/example008a_miller_rabin_prime.cpp examples/example009_timed_mul.cpp examples/example009a_timed_mul_4_by_4.cpp examples/example009b_timed_mul_8_by_8.cpp examples/example010_uint48_t.cpp examples/example011_uint24_t.cpp examples/example012_rsa_crypto.cpp -o wide_integer.exe
+// cd /mnt/c/Users/ckorm/Documents/Ks/PC_Software/NumericalPrograms/ExtendedNumberTypes/wide_integer
 
 // When using local Boost-develop branch, use specific include paths.
 // -I/mnt/c/boost/modular_boost/boost/libs/config/include -I/mnt/c/boost/modular_boost/boost/libs/multiprecision/include
 
-// When using -std=c++14 and g++
-// g++ -finline-functions -march=native -mtune=native -O3 -Wall -Wextra -Wconversion -Wsign-conversion -std=c++14 -DWIDE_INTEGER_HAS_LIMB_TYPE_UINT64 -DWIDE_INTEGER_HAS_MUL_8_BY_8_UNROLL -I. -I/mnt/c/boost/boost_1_79_0 -pthread -lpthread test/test.cpp test/test_uintwide_t_boost_backend.cpp test/test_uintwide_t_edge_cases.cpp test/test_uintwide_t_examples.cpp test/test_uintwide_t_float_convert.cpp test/test_uintwide_t_int_convert.cpp test/test_uintwide_t_n_base.cpp test/test_uintwide_t_n_binary_ops_base.cpp examples/example000a_builtin_convert.cpp test/test_uintwide_t_spot_values.cpp examples/example000_numeric_limits.cpp examples/example001_mul_div.cpp examples/example001a_div_mod.cpp examples/example002_shl_shr.cpp examples/example003_sqrt.cpp examples/example003a_cbrt.cpp examples/example004_rootk_pow.cpp examples/example005_powm.cpp examples/example005a_pow_factors_of_p99.cpp examples/example006_gcd.cpp examples/example007_random_generator.cpp examples/example008_miller_rabin_prime.cpp examples/example008a_miller_rabin_prime.cpp examples/example009_timed_mul.cpp examples/example009a_timed_mul_4_by_4.cpp examples/example009b_timed_mul_8_by_8.cpp examples/example010_uint48_t.cpp examples/example011_uint24_t.cpp examples/example012_rsa_crypto.cpp -o wide_integer.exe
+// When using -std=c++14/20 and g++
+// g++ -finline-functions -march=native -mtune=native -O3 -Werror -Wall -Wextra -Wpedantic -Wconversion -Wsign-conversion -Wshadow -Wundef -Wunused-parameter -Wuninitialized -Wunreachable-code -Winit-self -Wzero-as-null-pointer-constant -std=c++14 -DWIDE_INTEGER_HAS_LIMB_TYPE_UINT64 -DWIDE_INTEGER_HAS_MUL_8_BY_8_UNROLL -I. -I/mnt/c/boost/boost_1_89_0 -pthread -lpthread test/test.cpp test/test_uintwide_t_boost_backend.cpp test/test_uintwide_t_edge_cases.cpp test/test_uintwide_t_examples.cpp test/test_uintwide_t_float_convert.cpp test/test_uintwide_t_int_convert.cpp test/test_uintwide_t_n_base.cpp test/test_uintwide_t_n_binary_ops_base.cpp examples/example000a_builtin_convert.cpp test/test_uintwide_t_spot_values.cpp examples/example000_numeric_limits.cpp examples/example001_mul_div.cpp examples/example001a_div_mod.cpp examples/example002_shl_shr.cpp examples/example003_sqrt.cpp examples/example003a_cbrt.cpp examples/example004_rootk_pow.cpp examples/example005_powm.cpp examples/example005a_pow_factors_of_p99.cpp examples/example006_gcd.cpp examples/example007_random_generator.cpp examples/example008_miller_rabin_prime.cpp examples/example008a_miller_rabin_prime.cpp examples/example009_timed_mul.cpp examples/example009a_timed_mul_4_by_4.cpp examples/example009b_timed_mul_8_by_8.cpp examples/example010_uint48_t.cpp examples/example011_uint24_t.cpp examples/example012_rsa_crypto.cpp examples/example013_ecdsa_sign_verify.cpp examples/example014_pi_spigot_wide.cpp -o wide_integer.exe
+// g++ -finline-functions -march=native -mtune=native -O3 -Werror -Wall -Wextra -Wpedantic -Wconversion -Wsign-conversion -Wshadow -Wundef -Wunused-parameter -Wuninitialized -Wunreachable-code -Winit-self -Wzero-as-null-pointer-constant -std=c++20 -DWIDE_INTEGER_HAS_LIMB_TYPE_UINT64 -DWIDE_INTEGER_HAS_MUL_8_BY_8_UNROLL -I. -I/mnt/c/boost/boost_1_89_0 -pthread -lpthread test/test.cpp test/test_uintwide_t_boost_backend.cpp test/test_uintwide_t_edge_cases.cpp test/test_uintwide_t_examples.cpp test/test_uintwide_t_float_convert.cpp test/test_uintwide_t_int_convert.cpp test/test_uintwide_t_n_base.cpp test/test_uintwide_t_n_binary_ops_base.cpp examples/example000a_builtin_convert.cpp test/test_uintwide_t_spot_values.cpp examples/example000_numeric_limits.cpp examples/example001_mul_div.cpp examples/example001a_div_mod.cpp examples/example002_shl_shr.cpp examples/example003_sqrt.cpp examples/example003a_cbrt.cpp examples/example004_rootk_pow.cpp examples/example005_powm.cpp examples/example005a_pow_factors_of_p99.cpp examples/example006_gcd.cpp examples/example007_random_generator.cpp examples/example008_miller_rabin_prime.cpp examples/example008a_miller_rabin_prime.cpp examples/example009_timed_mul.cpp examples/example009a_timed_mul_4_by_4.cpp examples/example009b_timed_mul_8_by_8.cpp examples/example010_uint48_t.cpp examples/example011_uint24_t.cpp examples/example012_rsa_crypto.cpp examples/example013_ecdsa_sign_verify.cpp examples/example014_pi_spigot_wide.cpp -o wide_integer.exe
 
+// cd /mnt/c/Users/ckorm/Documents/Ks/PC_Software/NumericalPrograms/ExtendedNumberTypes/wide_integer
 // cd .tidy/make
-// make prepare -f make_tidy_01_generic.gmk MY_BOOST_ROOT=/mnt/c/boost/boost_1_79_0
-// make tidy -f make_tidy_01_generic.gmk --jobs=8 MY_BOOST_ROOT=/mnt/c/boost/boost_1_79_0
+// make prepare -f make_tidy_01_generic.gmk MY_BOOST_ROOT=/mnt/c/boost/boost_1_89_0
+// make tidy -f make_tidy_01_generic.gmk --jobs=8 MY_BOOST_ROOT=/mnt/c/boost/boost_1_89_0
 
+// cd /mnt/c/Users/ckorm/Documents/Ks/PC_Software/NumericalPrograms/ExtendedNumberTypes/wide_integer
 // cd .gcov/make
-// make prepare -f make_gcov_01_generic.gmk MY_ALL_COV=0 MY_BOOST_ROOT=/mnt/c/boost/boost_1_79_0 MY_CC=g++
-// make gcov -f make_gcov_01_generic.gmk --jobs=8 MY_ALL_COV=0 MY_BOOST_ROOT=/mnt/c/boost/boost_1_79_0 MY_CC=g++
+// make prepare -f make_gcov_01_generic.gmk MY_ALL_COV=0 MY_BOOST_ROOT=/mnt/c/boost/boost_1_89_0 MY_CC=g++
+// make gcov -f make_gcov_01_generic.gmk --jobs=8 MY_ALL_COV=0 MY_BOOST_ROOT=/mnt/c/boost/boost_1_89_0 MY_CC=g++
 
-// cd /mnt/c/Users/User/Documents/Ks/PC_Software/NumericalPrograms/ExtendedNumberTypes/wide_integer
-// PATH=/home/chris/local/coverity/cov-analysis-linux64-2021.12.1/bin:$PATH
-// cov-build --dir cov-int g++ -finline-functions -march=native -mtune=native -O3 -Wall -Wextra -Wconversion -Wsign-conversion -std=c++14 -DWIDE_INTEGER_HAS_LIMB_TYPE_UINT64 -DWIDE_INTEGER_HAS_MUL_8_BY_8_UNROLL -I. -I/mnt/c/boost/boost_1_79_0 -pthread -lpthread test/test.cpp test/test_uintwide_t_boost_backend.cpp test/test_uintwide_t_edge_cases.cpp test/test_uintwide_t_examples.cpp test/test_uintwide_t_float_convert.cpp test/test_uintwide_t_int_convert.cpp test/test_uintwide_t_n_base.cpp test/test_uintwide_t_n_binary_ops_base.cpp examples/example000a_builtin_convert.cpp test/test_uintwide_t_spot_values.cpp examples/example000_numeric_limits.cpp examples/example001_mul_div.cpp examples/example001a_div_mod.cpp examples/example002_shl_shr.cpp examples/example003_sqrt.cpp examples/example003a_cbrt.cpp examples/example004_rootk_pow.cpp examples/example005_powm.cpp examples/example005a_pow_factors_of_p99.cpp examples/example006_gcd.cpp examples/example007_random_generator.cpp examples/example008_miller_rabin_prime.cpp examples/example008a_miller_rabin_prime.cpp examples/example009_timed_mul.cpp examples/example009a_timed_mul_4_by_4.cpp examples/example009b_timed_mul_8_by_8.cpp examples/example010_uint48_t.cpp examples/example011_uint24_t.cpp examples/example012_rsa_crypto.cpp -o wide_integer.exe
+// cd /mnt/c/Users/ckorm/Documents/Ks/PC_Software/NumericalPrograms/ExtendedNumberTypes/wide_integer
+// PATH=/home/chris/coverity/cov-analysis-linux64-2023.12.2/bin:$PATH
+// cov-build --dir cov-int g++ -finline-functions -march=native -mtune=native -O3 -Werror -Wall -Wextra -Wpedantic -Wconversion -Wsign-conversion -Wshadow -Wundef -Wunused-parameter -Wuninitialized -Wunreachable-code -Winit-self -Wzero-as-null-pointer-constant -std=c++14 -DWIDE_INTEGER_HAS_LIMB_TYPE_UINT64 -DWIDE_INTEGER_HAS_MUL_8_BY_8_UNROLL -I. -I/mnt/c/boost/boost_1_89_0 -pthread -lpthread test/test.cpp test/test_uintwide_t_boost_backend.cpp test/test_uintwide_t_edge_cases.cpp test/test_uintwide_t_examples.cpp test/test_uintwide_t_float_convert.cpp test/test_uintwide_t_int_convert.cpp test/test_uintwide_t_n_base.cpp test/test_uintwide_t_n_binary_ops_base.cpp examples/example000a_builtin_convert.cpp test/test_uintwide_t_spot_values.cpp examples/example000_numeric_limits.cpp examples/example001_mul_div.cpp examples/example001a_div_mod.cpp examples/example002_shl_shr.cpp examples/example003_sqrt.cpp examples/example003a_cbrt.cpp examples/example004_rootk_pow.cpp examples/example005_powm.cpp examples/example005a_pow_factors_of_p99.cpp examples/example006_gcd.cpp examples/example007_random_generator.cpp examples/example008_miller_rabin_prime.cpp examples/example008a_miller_rabin_prime.cpp examples/example009_timed_mul.cpp examples/example009a_timed_mul_4_by_4.cpp examples/example009b_timed_mul_8_by_8.cpp examples/example010_uint48_t.cpp examples/example011_uint24_t.cpp examples/example012_rsa_crypto.cpp examples/example013_ecdsa_sign_verify.cpp examples/example014_pi_spigot_wide.cpp -o wide_integer.exe
 // tar caf wide-integer.bz2 cov-int
 
-#include <chrono>
-#include <iomanip>
-#include <iostream>
+#include <test/stopwatch.h>
 
 #include <boost/version.hpp>
+
+#include <iomanip>
+#include <iostream>
+#include <sstream>
 
 #if !defined(BOOST_VERSION)
 #error BOOST_VERSION is not defined. Ensure that <boost/version.hpp> is properly included.
@@ -42,6 +44,21 @@
 
 #if ((BOOST_VERSION >= 107900) && !defined(BOOST_MP_STANDALONE))
 #define BOOST_MP_STANDALONE
+#endif
+
+#if ((BOOST_VERSION >= 108000) && !defined(BOOST_NO_EXCEPTIONS))
+#define BOOST_NO_EXCEPTIONS
+#endif
+
+#if (((BOOST_VERSION == 108000) || (BOOST_VERSION == 108100)) && defined(BOOST_NO_EXCEPTIONS))
+#if defined(__clang__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wsometimes-uninitialized"
+#endif
+#if defined(_MSC_VER)
+#pragma warning(push)
+#pragma warning(disable : 4701)
+#endif
 #endif
 
 #if (BOOST_VERSION < 107900)
@@ -76,13 +93,13 @@
   #if defined(__SANITIZE_THREAD__) || defined(WIDE_INTEGER_HAS_COVERAGE)
   #define UINTWIDE_T_REDUCE_TEST_DEPTH
   #endif
+#elif defined(_MSC_VER)
+  #if defined(_DEBUG)
+  #define UINTWIDE_T_REDUCE_TEST_DEPTH
+  #endif
 #endif
 
 namespace local {
-
-using clock_type = std::chrono::high_resolution_clock;
-
-const auto wide_decimal_time_start = clock_type::now();
 
 #if !defined(UINTWIDE_T_REDUCE_TEST_DEPTH)
 constexpr auto test_uintwide_t_n_binary_ops_rounds = static_cast<std::size_t>(4U); // NOLINT(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
@@ -96,6 +113,40 @@ constexpr std::size_t test_uintwide_t_n_binary_ops_4_by_4_cases = std::uint32_t(
 constexpr std::size_t test_uintwide_t_n_binary_ops_4_by_4_cases = std::uint32_t(1UL << 9U); // NOLINT(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
 #endif
 
+auto test_uintwide_t_small_bits() -> bool;
+auto test_uintwide_t_boost_backend() -> bool;
+auto test_uintwide_t_examples() -> bool;
+auto test_uintwide_t_edge_cases() -> bool;
+auto test_uintwide_t_float_convert() -> bool;
+auto test_uintwide_t_int_convert() -> bool;
+auto test_uintwide_t_spot_values() -> bool;
+auto test_uintwide_t_0000024() -> bool;
+auto test_uintwide_t_0000048() -> bool;
+auto test_uintwide_t_0000064() -> bool;
+auto test_uintwide_t_0000064_signed() -> bool;
+auto test_uintwide_t_0000096() -> bool;
+auto test_uintwide_t_0000128() -> bool;
+auto test_uintwide_t_0000256() -> bool;
+#if defined(WIDE_INTEGER_HAS_LIMB_TYPE_UINT64)
+auto test_uintwide_t_0000256_limb_type_uint64_t() -> bool;
+#endif
+auto test_uintwide_t_0000512() -> bool;
+auto test_uintwide_t_0000512_signed() -> bool;
+auto test_uintwide_t_0001024() -> bool;
+auto test_uintwide_t_0002048() -> bool;
+auto test_uintwide_t_0008192() -> bool;
+#if defined(WIDE_INTEGER_HAS_LIMB_TYPE_UINT64)
+auto test_uintwide_t_0008192_limb_type_uint64_t() -> bool;
+#endif
+auto test_uintwide_t_0012288() -> bool;
+auto test_uintwide_t_0032768() -> bool;
+auto test_uintwide_t_0065536_alloc() -> bool;
+auto test_uintwide_t_0008192_by_0012288() -> bool;
+auto test_uintwide_t_0012288_by_0008192() -> bool;
+auto test_uintwide_t_0000032_by_0000032_4_by_4() -> bool;
+auto test_uintwide_t_0000064_by_0000064_4_by_4() -> bool;
+auto run() -> bool;
+
 auto test_uintwide_t_small_bits() -> bool
 {
   std::cout << "running: test_uintwide_t_small_bits" << std::endl;
@@ -106,7 +157,7 @@ auto test_uintwide_t_small_bits() -> bool
     #if defined(WIDE_INTEGER_NAMESPACE)
     using local_uint16_t = WIDE_INTEGER_NAMESPACE::math::wide_integer::uintwide_t<static_cast<WIDE_INTEGER_NAMESPACE::math::wide_integer::size_t>(UINT32_C(16)), std::uint8_t>;
     #else
-    using local_uint16_t = math::wide_integer::uintwide_t<static_cast<math::wide_integer::size_t>(UINT32_C(16)), std::uint8_t>;
+    using local_uint16_t = ::math::wide_integer::uintwide_t<static_cast<math::wide_integer::size_t>(UINT32_C(16)), std::uint8_t>;
     #endif
 
     local_uint16_t a = UINT16_C(0x5522); // NOLINT(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
@@ -121,7 +172,7 @@ auto test_uintwide_t_small_bits() -> bool
     #if defined(WIDE_INTEGER_NAMESPACE)
     using local_uint24_t = WIDE_INTEGER_NAMESPACE::math::wide_integer::uintwide_t<static_cast<WIDE_INTEGER_NAMESPACE::math::wide_integer::size_t>(UINT32_C(24)), std::uint8_t>;
     #else
-    using local_uint24_t = math::wide_integer::uintwide_t<static_cast<math::wide_integer::size_t>(UINT32_C(24)), std::uint8_t>;
+    using local_uint24_t = ::math::wide_integer::uintwide_t<static_cast<math::wide_integer::size_t>(UINT32_C(24)), std::uint8_t>;
     #endif
 
     local_uint24_t a = UINT32_C(0x11FF5522); // NOLINT(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
@@ -129,14 +180,14 @@ auto test_uintwide_t_small_bits() -> bool
 
     local_uint24_t c = a * b;
 
-    result_is_ok = ((c == UINT32_C(0xF368039C)) && result_is_ok); // NOLINT(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
+    result_is_ok = ((c == UINT32_C(0x0068039C)) && result_is_ok); // NOLINT(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
   }
 
   {
     #if defined(WIDE_INTEGER_NAMESPACE)
     using local_uint32_t = WIDE_INTEGER_NAMESPACE::math::wide_integer::uintwide_t<static_cast<WIDE_INTEGER_NAMESPACE::math::wide_integer::size_t>(UINT32_C(32)), std::uint16_t>;
     #else
-    using local_uint32_t = math::wide_integer::uintwide_t<static_cast<math::wide_integer::size_t>(UINT32_C(32)), std::uint16_t>;
+    using local_uint32_t = ::math::wide_integer::uintwide_t<static_cast<math::wide_integer::size_t>(UINT32_C(32)), std::uint16_t>;
     #endif
 
     local_uint32_t a = UINT32_C(0x11FF5522); // NOLINT(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
@@ -156,7 +207,7 @@ auto test_uintwide_t_boost_backend() -> bool
   #if defined(WIDE_INTEGER_NAMESPACE)
   const bool result_test_uintwide_t_boost_backend_is_ok = WIDE_INTEGER_NAMESPACE::math::wide_integer::test_uintwide_t_boost_backend();
   #else
-  const bool result_test_uintwide_t_boost_backend_is_ok = math::wide_integer::test_uintwide_t_boost_backend();
+  const bool result_test_uintwide_t_boost_backend_is_ok = ::math::wide_integer::test_uintwide_t_boost_backend();
   #endif
   return result_test_uintwide_t_boost_backend_is_ok;
 }
@@ -167,7 +218,7 @@ auto test_uintwide_t_examples() -> bool
   #if defined(WIDE_INTEGER_NAMESPACE)
   const bool result_test_uintwide_t_examples_is_ok = WIDE_INTEGER_NAMESPACE::math::wide_integer::test_uintwide_t_examples();
   #else
-  const bool result_test_uintwide_t_examples_is_ok = math::wide_integer::test_uintwide_t_examples();
+  const bool result_test_uintwide_t_examples_is_ok = ::math::wide_integer::test_uintwide_t_examples();
   #endif
   return result_test_uintwide_t_examples_is_ok;
 }
@@ -178,7 +229,7 @@ auto test_uintwide_t_edge_cases() -> bool
   #if defined(WIDE_INTEGER_NAMESPACE)
   const bool result_test_uintwide_t_edge_cases_is_ok = WIDE_INTEGER_NAMESPACE::math::wide_integer::test_uintwide_t_edge_cases();
   #else
-  const bool result_test_uintwide_t_edge_cases_is_ok = math::wide_integer::test_uintwide_t_edge_cases();
+  const bool result_test_uintwide_t_edge_cases_is_ok = ::math::wide_integer::test_uintwide_t_edge_cases();
   #endif
   return result_test_uintwide_t_edge_cases_is_ok;
 }
@@ -189,7 +240,7 @@ auto test_uintwide_t_float_convert() -> bool
   #if defined(WIDE_INTEGER_NAMESPACE)
   const bool result_test_uintwide_t_float_convert_is_ok = WIDE_INTEGER_NAMESPACE::math::wide_integer::test_uintwide_t_float_convert();
   #else
-  const bool result_test_uintwide_t_float_convert_is_ok = math::wide_integer::test_uintwide_t_float_convert();
+  const bool result_test_uintwide_t_float_convert_is_ok = ::math::wide_integer::test_uintwide_t_float_convert();
   #endif
   return result_test_uintwide_t_float_convert_is_ok;
 }
@@ -200,7 +251,7 @@ auto test_uintwide_t_int_convert() -> bool
   #if defined(WIDE_INTEGER_NAMESPACE)
   const bool result_test_uintwide_t_int_convert_is_ok = WIDE_INTEGER_NAMESPACE::math::wide_integer::test_uintwide_t_int_convert();
   #else
-  const bool result_test_uintwide_t_int_convert_is_ok = math::wide_integer::test_uintwide_t_int_convert();
+  const bool result_test_uintwide_t_int_convert_is_ok = ::math::wide_integer::test_uintwide_t_int_convert();
   #endif
   return result_test_uintwide_t_int_convert_is_ok;
 }
@@ -211,15 +262,21 @@ auto test_uintwide_t_spot_values() -> bool
   #if defined(WIDE_INTEGER_NAMESPACE)
   const bool result_test_uintwide_t_spot_values_is_ok = WIDE_INTEGER_NAMESPACE::math::wide_integer::test_uintwide_t_spot_values();
   #else
-  const bool result_test_uintwide_t_spot_values_is_ok = math::wide_integer::test_uintwide_t_spot_values();
+  const bool result_test_uintwide_t_spot_values_is_ok = ::math::wide_integer::test_uintwide_t_spot_values();
   #endif
   return result_test_uintwide_t_spot_values_is_ok;
 }
 
 auto test_uintwide_t_0000024() -> bool
 {
+  #if !defined(UINTWIDE_T_REDUCE_TEST_DEPTH)
+  constexpr auto count = static_cast<std::size_t>(1UL << 13U);
+  #else
+  constexpr auto count = static_cast<std::size_t>(1UL << 10U);
+  #endif
+
   std::cout << "running: test_uintwide_t_0000024" << std::endl;
-  test_uintwide_t_n_binary_ops_template<24U, std::uint8_t> test_uintwide_t_n_binary_ops_template_instance(1UL << 13U); // NOLINT(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
+  test_uintwide_t_n_binary_ops_template<24U, std::uint8_t> test_uintwide_t_n_binary_ops_template_instance(count); // NOLINT(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
   const auto result_is_ok =
     test_uintwide_t_n_binary_ops_template_instance.do_test(test_uintwide_t_n_binary_ops_rounds);
   return result_is_ok;
@@ -227,8 +284,14 @@ auto test_uintwide_t_0000024() -> bool
 
 auto test_uintwide_t_0000048() -> bool
 {
+  #if !defined(UINTWIDE_T_REDUCE_TEST_DEPTH)
+  constexpr auto count = static_cast<std::size_t>(1UL << 13U);
+  #else
+  constexpr auto count = static_cast<std::size_t>(1UL << 10U);
+  #endif
+
   std::cout << "running: test_uintwide_t_0000048" << std::endl;
-  test_uintwide_t_n_binary_ops_template<48U, std::uint16_t> test_uintwide_t_n_binary_ops_template_instance(1UL << 13U); // NOLINT(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
+  test_uintwide_t_n_binary_ops_template<48U, std::uint16_t> test_uintwide_t_n_binary_ops_template_instance(count); // NOLINT(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
   const auto result_is_ok =
     test_uintwide_t_n_binary_ops_template_instance.do_test(test_uintwide_t_n_binary_ops_rounds);
   return result_is_ok;
@@ -236,8 +299,14 @@ auto test_uintwide_t_0000048() -> bool
 
 auto test_uintwide_t_0000064() -> bool
 {
+  #if !defined(UINTWIDE_T_REDUCE_TEST_DEPTH)
+  constexpr auto count = static_cast<std::size_t>(1UL << 13U);
+  #else
+  constexpr auto count = static_cast<std::size_t>(1UL << 10U);
+  #endif
+
   std::cout << "running: test_uintwide_t_0000064" << std::endl;
-  test_uintwide_t_n_binary_ops_template<64U, std::uint32_t> test_uintwide_t_n_binary_ops_template_instance(1UL << 13U); // NOLINT(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
+  test_uintwide_t_n_binary_ops_template<64U, std::uint32_t> test_uintwide_t_n_binary_ops_template_instance(count); // NOLINT(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
   const auto result_is_ok =
     test_uintwide_t_n_binary_ops_template_instance.do_test(test_uintwide_t_n_binary_ops_rounds);
   return result_is_ok;
@@ -245,8 +314,14 @@ auto test_uintwide_t_0000064() -> bool
 
 auto test_uintwide_t_0000064_signed() -> bool
 {
+  #if !defined(UINTWIDE_T_REDUCE_TEST_DEPTH)
+  constexpr auto count = static_cast<std::size_t>(1UL << 13U);
+  #else
+  constexpr auto count = static_cast<std::size_t>(1UL << 10U);
+  #endif
+
   std::cout << "running: test_uintwide_t_0000064_signed" << std::endl;
-  test_uintwide_t_n_binary_ops_template_signed<64U, std::uint16_t> test_uintwide_t_n_binary_ops_template_instance(1UL << 13U); // NOLINT(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
+  test_uintwide_t_n_binary_ops_template_signed<64U, std::uint16_t> test_uintwide_t_n_binary_ops_template_instance(count); // NOLINT(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
   const auto result_is_ok =
     test_uintwide_t_n_binary_ops_template_instance.do_test(test_uintwide_t_n_binary_ops_rounds);
   return result_is_ok;
@@ -254,8 +329,14 @@ auto test_uintwide_t_0000064_signed() -> bool
 
 auto test_uintwide_t_0000096() -> bool
 {
+  #if !defined(UINTWIDE_T_REDUCE_TEST_DEPTH)
+  constexpr auto count = static_cast<std::size_t>(1UL << 13U);
+  #else
+  constexpr auto count = static_cast<std::size_t>(1UL << 10U);
+  #endif
+
   std::cout << "running: test_uintwide_t_0000096" << std::endl;
-  test_uintwide_t_n_binary_ops_template<96U, std::uint16_t> test_uintwide_t_n_binary_ops_template_instance(1UL << 13U); // NOLINT(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
+  test_uintwide_t_n_binary_ops_template<96U, std::uint16_t> test_uintwide_t_n_binary_ops_template_instance(count); // NOLINT(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
   const auto result_is_ok =
     test_uintwide_t_n_binary_ops_template_instance.do_test(test_uintwide_t_n_binary_ops_rounds);
   return result_is_ok;
@@ -263,8 +344,14 @@ auto test_uintwide_t_0000096() -> bool
 
 auto test_uintwide_t_0000128() -> bool
 {
+  #if !defined(UINTWIDE_T_REDUCE_TEST_DEPTH)
+  constexpr auto count = static_cast<std::size_t>(1UL << 13U);
+  #else
+  constexpr auto count = static_cast<std::size_t>(1UL << 10U);
+  #endif
+
   std::cout << "running: test_uintwide_t_0000128" << std::endl;
-  test_uintwide_t_n_binary_ops_template<128U> test_uintwide_t_n_binary_ops_template_instance(1UL << 13U); // NOLINT(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
+  test_uintwide_t_n_binary_ops_template<128U> test_uintwide_t_n_binary_ops_template_instance(count); // NOLINT(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
   const auto result_is_ok =
     test_uintwide_t_n_binary_ops_template_instance.do_test(test_uintwide_t_n_binary_ops_rounds);
   return result_is_ok;
@@ -272,8 +359,14 @@ auto test_uintwide_t_0000128() -> bool
 
 auto test_uintwide_t_0000256() -> bool
 {
+  #if !defined(UINTWIDE_T_REDUCE_TEST_DEPTH)
+  constexpr auto count = static_cast<std::size_t>(1UL << 13U);
+  #else
+  constexpr auto count = static_cast<std::size_t>(1UL << 10U);
+  #endif
+
   std::cout << "running: test_uintwide_t_0000256" << std::endl;
-  test_uintwide_t_n_binary_ops_template<256U> test_uintwide_t_n_binary_ops_template_instance(1UL << 13U); // NOLINT(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
+  test_uintwide_t_n_binary_ops_template<256U> test_uintwide_t_n_binary_ops_template_instance(count); // NOLINT(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
   const auto result_is_ok =
     test_uintwide_t_n_binary_ops_template_instance.do_test(test_uintwide_t_n_binary_ops_rounds);
   return result_is_ok;
@@ -282,8 +375,14 @@ auto test_uintwide_t_0000256() -> bool
 #if defined(WIDE_INTEGER_HAS_LIMB_TYPE_UINT64)
 auto test_uintwide_t_0000256_limb_type_uint64_t() -> bool
 {
+  #if !defined(UINTWIDE_T_REDUCE_TEST_DEPTH)
+  constexpr auto count = static_cast<std::size_t>(1UL << 13U);
+  #else
+  constexpr auto count = static_cast<std::size_t>(1UL << 10U);
+  #endif
+
   std::cout << "running: test_uintwide_t_0000256_limb_type_uint64_t" << std::endl;
-  test_uintwide_t_n_binary_ops_template<256U, std::uint64_t> test_uintwide_t_n_binary_ops_template_instance(1UL << 13U); // NOLINT(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
+  test_uintwide_t_n_binary_ops_template<256U, std::uint64_t> test_uintwide_t_n_binary_ops_template_instance(count); // NOLINT(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
   const auto result_is_ok =
     test_uintwide_t_n_binary_ops_template_instance.do_test(test_uintwide_t_n_binary_ops_rounds);
   return result_is_ok;
@@ -292,8 +391,14 @@ auto test_uintwide_t_0000256_limb_type_uint64_t() -> bool
 
 auto test_uintwide_t_0000512() -> bool
 {
+  #if !defined(UINTWIDE_T_REDUCE_TEST_DEPTH)
+  constexpr auto count = static_cast<std::size_t>(1UL << 13U);
+  #else
+  constexpr auto count = static_cast<std::size_t>(1UL << 10U);
+  #endif
+
   std::cout << "running: test_uintwide_t_0000512" << std::endl;
-  test_uintwide_t_n_binary_ops_template<512U> test_uintwide_t_n_binary_ops_template_instance(1UL << 13U); // NOLINT(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
+  test_uintwide_t_n_binary_ops_template<512U> test_uintwide_t_n_binary_ops_template_instance(count); // NOLINT(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
   const auto result_is_ok =
     test_uintwide_t_n_binary_ops_template_instance.do_test(test_uintwide_t_n_binary_ops_rounds);
   return result_is_ok;
@@ -301,8 +406,14 @@ auto test_uintwide_t_0000512() -> bool
 
 auto test_uintwide_t_0000512_signed() -> bool
 {
+  #if !defined(UINTWIDE_T_REDUCE_TEST_DEPTH)
+  constexpr auto count = static_cast<std::size_t>(1UL << 13U);
+  #else
+  constexpr auto count = static_cast<std::size_t>(1UL << 10U);
+  #endif
+
   std::cout << "running: test_uintwide_t_0000512_signed" << std::endl;
-  test_uintwide_t_n_binary_ops_template_signed<512U> test_uintwide_t_n_binary_ops_template_signed_instance(1UL << 13U); // NOLINT(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
+  test_uintwide_t_n_binary_ops_template_signed<512U> test_uintwide_t_n_binary_ops_template_signed_instance(count); // NOLINT(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
   const auto result_is_ok =
     test_uintwide_t_n_binary_ops_template_signed_instance.do_test(test_uintwide_t_n_binary_ops_rounds);
   return result_is_ok;
@@ -310,8 +421,14 @@ auto test_uintwide_t_0000512_signed() -> bool
 
 auto test_uintwide_t_0001024() -> bool
 {
+  #if !defined(UINTWIDE_T_REDUCE_TEST_DEPTH)
+  constexpr auto count = static_cast<std::size_t>(1UL << 12U);
+  #else
+  constexpr auto count = static_cast<std::size_t>(1UL << 9U);
+  #endif
+
   std::cout << "running: test_uintwide_t_0001024" << std::endl;
-  test_uintwide_t_n_binary_ops_template<1024U> test_uintwide_t_n_binary_ops_template_instance(1UL << 12U); // NOLINT(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
+  test_uintwide_t_n_binary_ops_template<1024U> test_uintwide_t_n_binary_ops_template_instance(count); // NOLINT(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
   const auto result_is_ok =
     test_uintwide_t_n_binary_ops_template_instance.do_test(test_uintwide_t_n_binary_ops_rounds);
   return result_is_ok;
@@ -319,8 +436,14 @@ auto test_uintwide_t_0001024() -> bool
 
 auto test_uintwide_t_0002048() -> bool
 {
+  #if !defined(UINTWIDE_T_REDUCE_TEST_DEPTH)
+  constexpr auto count = static_cast<std::size_t>(1UL << 11U);
+  #else
+  constexpr auto count = static_cast<std::size_t>(1UL << 8U);
+  #endif
+
   std::cout << "running: test_uintwide_t_0002048" << std::endl;
-  test_uintwide_t_n_binary_ops_template<2048U> test_uintwide_t_n_binary_ops_template_instance(1UL << 11U); // NOLINT(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
+  test_uintwide_t_n_binary_ops_template<2048U> test_uintwide_t_n_binary_ops_template_instance(count); // NOLINT(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
   const auto result_is_ok =
     test_uintwide_t_n_binary_ops_template_instance.do_test(test_uintwide_t_n_binary_ops_rounds);
   return result_is_ok;
@@ -344,8 +467,14 @@ auto test_uintwide_t_0008192() -> bool
 #if defined(WIDE_INTEGER_HAS_LIMB_TYPE_UINT64)
 auto test_uintwide_t_0008192_limb_type_uint64_t() -> bool
 {
+  #if !defined(UINTWIDE_T_REDUCE_TEST_DEPTH)
+  constexpr auto count = static_cast<std::size_t>(1UL << 8U);
+  #else
+  constexpr auto count = static_cast<std::size_t>(1UL << 5U);
+  #endif
+
   std::cout << "running: test_uintwide_t_0008192_limb_type_uint64_t" << std::endl;
-  test_uintwide_t_n_binary_ops_template<8192U, std::uint64_t> test_uintwide_t_n_binary_ops_template_instance(1UL << 8U); // NOLINT(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
+  test_uintwide_t_n_binary_ops_template<8192U, std::uint64_t> test_uintwide_t_n_binary_ops_template_instance(count); // NOLINT(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
   const auto result_is_ok =
     test_uintwide_t_n_binary_ops_template_instance.do_test(test_uintwide_t_n_binary_ops_rounds);
   return result_is_ok;
@@ -452,11 +581,13 @@ auto run() -> bool // NOLINT(readability-function-cognitive-complexity)
   using boost_wrapexcept_runtime_type = ::boost::wrapexcept<std::runtime_error>;
   #endif
 
-  const auto start = clock_type::now();
+  using stopwatch_type = concurrency::stopwatch;
+
+  stopwatch_type my_stopwatch { };
 
   bool result_is_ok = true;
 
-  #if (BOOST_VERSION < 107900)
+  #if ((BOOST_VERSION < 107900) || ((BOOST_VERSION >= 108000) && !defined(BOOST_NO_EXCEPTIONS)))
   try
   {
   #endif
@@ -494,7 +625,7 @@ auto run() -> bool // NOLINT(readability-function-cognitive-complexity)
   result_is_ok = (test_uintwide_t_0000032_by_0000032_4_by_4()  && result_is_ok);   std::cout << "result_is_ok: " << std::boolalpha << result_is_ok << std::endl;
   result_is_ok = (test_uintwide_t_0000064_by_0000064_4_by_4()  && result_is_ok);   std::cout << "result_is_ok: " << std::boolalpha << result_is_ok << std::endl;
 
-  #if (BOOST_VERSION < 107900)
+  #if ((BOOST_VERSION < 107900) || ((BOOST_VERSION >= 108000) && !defined(BOOST_NO_EXCEPTIONS)))
   }
   catch(boost_wrapexcept_lexical_type& e)
   {
@@ -510,24 +641,22 @@ auto run() -> bool // NOLINT(readability-function-cognitive-complexity)
   }
   #endif
 
-  const auto stop = clock_type::now();
+  const auto execution_time = stopwatch_type::elapsed_time<float>(my_stopwatch);
 
   {
-    constexpr auto one_thousand_milliseconds = 1000.0F;
+    std::stringstream strm { };
 
-    const auto flg = std::cout.flags();
+    strm << "result_is_ok: "
+         << std::boolalpha
+         << result_is_ok
+         << ", time: "
+         << std::fixed
+         << std::setprecision(1)
+         << execution_time
+         << "s"
+         ;
 
-    std::cout << "result_is_ok: "
-              << std::boolalpha
-              << result_is_ok
-              << ", time: "
-              << std::fixed
-              << std::setprecision(1)
-              << (static_cast<float>(std::chrono::duration_cast<std::chrono::milliseconds>(stop - start).count())) / one_thousand_milliseconds
-              << "s"
-              << std::endl;
-
-    std::cout.flags(flg);
+    std::cout << strm.str() << std::endl;
   }
 
   return result_is_ok;
@@ -537,9 +666,13 @@ auto run() -> bool // NOLINT(readability-function-cognitive-complexity)
 
 auto main() -> int // NOLINT(bugprone-exception-escape)
 {
-  const auto result_is_ok = local::run();
+  const bool result_is_ok { local::run() };
 
-  return (result_is_ok ? 0 : -1);
+  const int result_of_main { (result_is_ok ? static_cast<int>(INT8_C(0)) : static_cast<int>(INT8_C(-1))) };
+
+  std::cout << "result_of_main: " << result_of_main << std::endl;
+
+  return result_of_main;
 }
 
 #if (defined(__GNUC__) && !defined(__clang__) && (__GNUC__ >= 12))
@@ -550,5 +683,14 @@ auto main() -> int // NOLINT(bugprone-exception-escape)
 #if defined(__GNUC__)
 #pragma GCC diagnostic pop
 #pragma GCC diagnostic pop
+#endif
+#endif
+
+#if (((BOOST_VERSION == 108000) || (BOOST_VERSION == 108100)) && defined(BOOST_NO_EXCEPTIONS))
+#if defined(__clang__)
+#pragma GCC diagnostic pop
+#endif
+#if defined(_MSC_VER)
+#pragma warning(pop)
 #endif
 #endif

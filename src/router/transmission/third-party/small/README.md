@@ -366,7 +366,7 @@ If contributing to the documentation, please edit [`README.md`](README.md) direc
         <a href="https://github.com/tomasz-szyszko">
             <img src="https://avatars.githubusercontent.com/u/108388844?v=4" width="100;" alt="tomasz-szyszko"/>
             <br />
-            <sub><b>tomasz-szyszko</b></sub>
+            <sub><b>Tomasz-szyszko</b></sub>
         </a>
     </td>
     <td align="center">

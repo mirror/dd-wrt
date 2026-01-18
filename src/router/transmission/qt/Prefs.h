@@ -1,4 +1,4 @@
-// This file Copyright © 2009-2023 Mnemosyne LLC.
+// This file Copyright © Mnemosyne LLC.
 // It may be used under GPLv2 (SPDX: GPL-2.0-only), GPLv3 (SPDX: GPL-3.0-only),
 // or any future license endorsed by Mnemosyne LLC.
 // License text can be found in the licenses/ folder.
@@ -8,12 +8,12 @@
 #include <array>
 
 #include <QObject>
-#include <QSet>
 #include <QString>
 #include <QVariant>
 
 #include <libtransmission/quark.h>
-#include <libtransmission/tr-macros.h>
+
+#include <libtransmission-app/display-modes.h>
 
 class QDateTime;
 
@@ -25,7 +25,6 @@ extern "C"
 class Prefs : public QObject
 {
     Q_OBJECT
-    TR_DISABLE_COPY_MOVE(Prefs)
 
 public:
     enum
@@ -67,9 +66,9 @@ public:
         SESSION_REMOTE_PORT,
         SESSION_REMOTE_AUTH,
         SESSION_REMOTE_USERNAME,
+        SESSION_REMOTE_RPC_URL_PATH,
         COMPLETE_SOUND_COMMAND,
         COMPLETE_SOUND_ENABLED,
-        USER_HAS_GIVEN_INFORMED_CONSENT,
         READ_CLIPBOARD,
         /* core prefs */
         FIRST_CORE_PREF,
@@ -105,7 +104,7 @@ public:
         SCRIPT_TORRENT_DONE_FILENAME,
         SCRIPT_TORRENT_DONE_SEEDING_ENABLED,
         SCRIPT_TORRENT_DONE_SEEDING_FILENAME,
-        SOCKET_TOS,
+        SOCKET_DIFFSERV,
         START,
         TRASH_ORIGINAL,
         PEX_ENABLED,
@@ -133,6 +132,10 @@ public:
     };
 
     explicit Prefs(QString config_dir);
+    Prefs(Prefs&&) = delete;
+    Prefs(Prefs const&) = delete;
+    Prefs& operator=(Prefs&&) = delete;
+    Prefs& operator=(Prefs const&) = delete;
     ~Prefs() override;
 
     [[nodiscard]] constexpr auto isCore(int key) const noexcept
@@ -167,7 +170,7 @@ public:
     QDateTime getDateTime(int key) const;
 
     template<typename T>
-    T get(int key) const
+    [[nodiscard]] T get(int const key) const
     {
         return values_[key].value<T>();
     }
@@ -198,13 +201,12 @@ private:
         int type;
     };
 
-    void initDefaults(tr_variant*) const;
+    [[nodiscard]] static tr_variant get_default_app_settings();
 
     void set(int key, char const* value) = delete;
 
     QString const config_dir_;
 
-    QSet<int> temporary_prefs_;
     std::array<QVariant, PREFS_COUNT> mutable values_;
 
     static std::array<PrefItem, PREFS_COUNT> const Items;

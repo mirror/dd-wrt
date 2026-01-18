@@ -1,28 +1,31 @@
-// This file Copyright © 2008-2023 Mnemosyne LLC.
+// This file Copyright © Mnemosyne LLC.
 // It may be used under GPLv2 (SPDX: GPL-2.0-only), GPLv3 (SPDX: GPL-3.0-only),
 // or any future license endorsed by Mnemosyne LLC.
 // License text can be found in the licenses/ folder.
 
+#include <algorithm>
 #include <array>
 #include <cctype> /* isdigit() */
+#include <cstddef> // size_t, std::byte
+#include <cstdint> // int64_t
 #include <deque>
-#include <string_view>
 #include <optional>
+#include <string>
+#include <string_view>
+#include <utility>
+#include <vector>
 
 #include <fmt/compile.h>
 #include <fmt/format.h>
 
+#include <small/vector.hpp>
+
 #define LIBTRANSMISSION_VARIANT_MODULE
 
-#include "transmission.h"
-
-#include "benc.h"
-#include "quark.h"
-#include "tr-assert.h"
-#include "tr-buffer.h"
-#include "utils.h"
-#include "variant-common.h"
-#include "variant.h"
+#include "libtransmission/benc.h"
+#include "libtransmission/quark.h"
+#include "libtransmission/utils.h"
+#include "libtransmission/variant.h"
 
 using namespace std::literals;
 
@@ -50,7 +53,7 @@ std::optional<int64_t> ParseInt(std::string_view* benc)
 
     // find the beginning delimiter
     auto walk = *benc;
-    if (std::size(walk) < 3 || !tr_strvStartsWith(walk, Prefix))
+    if (std::size(walk) < 3 || !tr_strv_starts_with(walk, Prefix))
     {
         return {};
     }
@@ -70,15 +73,15 @@ std::optional<int64_t> ParseInt(std::string_view* benc)
     }
 
     // parse the string and make sure the next char is `Suffix`
-    auto const value = tr_parseNum<int64_t>(walk, &walk);
-    if (!value || !tr_strvStartsWith(walk, Suffix))
+    auto value = tr_num_parse<int64_t>(walk, &walk);
+    if (!value || !tr_strv_starts_with(walk, Suffix))
     {
         return {};
     }
 
     walk.remove_prefix(std::size(Suffix));
     *benc = walk;
-    return *value;
+    return value;
 }
 
 /**
@@ -103,7 +106,7 @@ std::optional<std::string_view> ParseString(std::string_view* benc)
         return {};
     }
 
-    auto const len = tr_parseNum<size_t>(svtmp, &svtmp);
+    auto const len = tr_num_parse<size_t>(svtmp, &svtmp);
     if (!len || *len >= MaxBencStrLength)
     {
         return {};
@@ -132,13 +135,13 @@ namespace parse_helpers
 struct MyHandler : public transmission::benc::Handler
 {
     tr_variant* const top_;
-    int const parse_opts_;
+    bool inplace_;
     std::deque<tr_variant*> stack_;
     std::optional<tr_quark> key_;
 
-    MyHandler(tr_variant* top, int parse_opts)
+    MyHandler(tr_variant* top, bool inplace)
         : top_{ top }
-        , parse_opts_{ parse_opts }
+        , inplace_{ inplace }
     {
     }
 
@@ -157,28 +160,19 @@ struct MyHandler : public transmission::benc::Handler
             return false;
         }
 
-        tr_variantInitInt(variant, value);
+        *variant = value;
         return true;
     }
 
     bool String(std::string_view sv, Context const& /*context*/) final
     {
-        auto* const variant = get_node();
-        if (variant == nullptr)
+        if (auto* const variant = get_node(); variant != nullptr)
         {
-            return false;
+            *variant = inplace_ ? tr_variant::unmanaged_string(sv) : tr_variant{ sv };
+            return true;
         }
 
-        if ((parse_opts_ & TR_VARIANT_PARSE_INPLACE) != 0)
-        {
-            tr_variantInitStrView(variant, sv);
-        }
-        else
-        {
-            tr_variantInitStr(variant, sv);
-        }
-
-        return true;
+        return false;
     }
 
     bool StartDict(Context const& /*context*/) final
@@ -245,11 +239,11 @@ private:
         {
             node = top_;
         }
-        else if (auto* parent = stack_.back(); tr_variantIsList(parent))
+        else if (auto* parent = stack_.back(); parent != nullptr && parent->holds_alternative<tr_variant::Vector>())
         {
             node = tr_variantListAdd(parent);
         }
-        else if (key_ && tr_variantIsDict(parent))
+        else if (key_ && parent != nullptr && parent->holds_alternative<tr_variant::Map>())
         {
             node = tr_variantDictAdd(parent, *key_);
             key_.reset();
@@ -261,14 +255,20 @@ private:
 } // namespace parse_helpers
 } // namespace
 
-bool tr_variantParseBenc(tr_variant& top, int parse_opts, std::string_view benc, char const** setme_end, tr_error** error)
+std::optional<tr_variant> tr_variant_serde::parse_benc(std::string_view input)
 {
     using namespace parse_helpers;
     using Stack = transmission::benc::ParserStack<512>;
 
+    auto top = tr_variant{};
     auto stack = Stack{};
-    auto handler = MyHandler{ &top, parse_opts };
-    return transmission::benc::parse(benc, stack, handler, setme_end, error) && std::empty(stack);
+    auto handler = MyHandler{ &top, parse_inplace_ };
+    if (transmission::benc::parse(input, stack, handler, &end_, &error_) && std::empty(stack))
+    {
+        return std::optional<tr_variant>{ std::move(top) };
+    }
+
+    return {};
 }
 
 // ---
@@ -277,78 +277,109 @@ namespace
 {
 namespace to_string_helpers
 {
-using Buffer = libtransmission::Buffer;
+using OutBuf = fmt::memory_buffer;
 
-void saveIntFunc(tr_variant const* val, void* vout)
+[[nodiscard]] auto sorted_entries(tr_variant::Map const& map)
 {
-    auto buf = std::array<char, 64>{};
-    auto const* const out = fmt::format_to(std::data(buf), FMT_COMPILE("i{:d}e"), val->val.i);
-    static_cast<Buffer*>(vout)->add(std::data(buf), static_cast<size_t>(out - std::data(buf)));
+    static auto constexpr N = 32U;
+    auto entries = small::vector<std::pair<std::string_view, tr_variant const*>, N>{};
+    entries.reserve(map.size());
+    for (auto const& [key, child] : map)
+    {
+        entries.emplace_back(tr_quark_get_string_view(key), &child);
+    }
+
+    std::sort(std::begin(entries), std::end(entries));
+    return entries;
 }
 
-void saveBoolFunc(tr_variant const* val, void* vout)
+struct BencWriter
 {
-    static_cast<Buffer*>(vout)->add(val->val.b ? "i1e"sv : "i0e"sv);
-}
+    void operator()(std::monostate /*unused*/) const
+    {
+    }
 
-void saveStringImpl(Buffer* tgt, std::string_view sv)
-{
-    // `${sv.size()}:${sv}`
-    auto prefix = std::array<char, 32>{};
-    auto const* const out = fmt::format_to(std::data(prefix), FMT_COMPILE("{:d}:"), std::size(sv));
-    tgt->add(std::data(prefix), out - std::data(prefix));
-    tgt->add(sv);
-}
+    void operator()(std::nullptr_t) const
+    {
+        write_string(""sv);
+    }
 
-void saveStringFunc(tr_variant const* v, void* vout)
-{
-    auto sv = std::string_view{};
-    (void)!tr_variantGetStrView(v, &sv);
-    saveStringImpl(static_cast<Buffer*>(vout), sv);
-}
+    void operator()(bool val) const
+    {
+        append_literal(val ? "i1e"sv : "i0e"sv);
+    }
 
-void saveRealFunc(tr_variant const* val, void* vout)
-{
-    // the benc spec doesn't handle floats; save it as a string.
+    void operator()(int64_t val) const
+    {
+        write_int(val);
+    }
 
-    auto buf = std::array<char, 64>{};
-    auto const* const out = fmt::format_to(std::data(buf), FMT_COMPILE("{:f}"), val->val.d);
-    saveStringImpl(static_cast<Buffer*>(vout), { std::data(buf), static_cast<size_t>(out - std::data(buf)) });
-}
+    void operator()(double val) const
+    {
+        write_real(val);
+    }
 
-void saveDictBeginFunc(tr_variant const* /*val*/, void* vbuf)
-{
-    static_cast<Buffer*>(vbuf)->push_back('d');
-}
+    void operator()(std::string_view sv) const
+    {
+        write_string(sv);
+    }
 
-void saveListBeginFunc(tr_variant const* /*val*/, void* vbuf)
-{
-    static_cast<Buffer*>(vbuf)->push_back('l');
-}
+    void operator()(tr_variant::Vector const& vec) const
+    {
+        out_.push_back('l');
+        for (auto const& child : vec)
+        {
+            child.visit(*this);
+        }
+        out_.push_back('e');
+    }
 
-void saveContainerEndFunc(tr_variant const* /*val*/, void* vbuf)
-{
-    static_cast<Buffer*>(vbuf)->push_back('e');
-}
+    void operator()(tr_variant::Map const& map) const
+    {
+        out_.push_back('d');
+        auto entries = sorted_entries(map);
+        for (auto const& [key, child] : entries)
+        {
+            write_string(key);
+            child->visit(*this);
+        }
+        out_.push_back('e');
+    }
 
-struct VariantWalkFuncs const walk_funcs = {
-    saveIntFunc, //
-    saveBoolFunc, //
-    saveRealFunc, //
-    saveStringFunc, //
-    saveDictBeginFunc, //
-    saveListBeginFunc, //
-    saveContainerEndFunc, //
+    OutBuf& out_;
+
+private:
+    void write_string(std::string_view sv) const
+    {
+        fmt::format_to(fmt::appender(out_), "{:d}:{:s}", std::size(sv), sv);
+    }
+
+    void write_int(int64_t val) const
+    {
+        fmt::format_to(fmt::appender(out_), "i{:d}e", val);
+    }
+
+    void write_real(double val) const
+    {
+        auto buf = std::array<char, 64>{};
+        auto const* const out_ptr = fmt::format_to(std::data(buf), "{:f}", val);
+        write_string({ std::data(buf), static_cast<size_t>(out_ptr - std::data(buf)) });
+    }
+
+    void append_literal(std::string_view literal) const
+    {
+        out_.append(std::data(literal), std::data(literal) + std::size(literal));
+    }
 };
 
 } // namespace to_string_helpers
 } // namespace
 
-std::string tr_variantToStrBenc(tr_variant const* top)
+std::string tr_variant_serde::to_benc_string(tr_variant const& var)
 {
     using namespace to_string_helpers;
 
-    auto buf = libtransmission::Buffer{};
-    tr_variantWalk(top, &walk_funcs, &buf, true);
-    return buf.to_string();
+    auto buf = OutBuf{};
+    var.visit(BencWriter{ buf });
+    return fmt::to_string(buf);
 }

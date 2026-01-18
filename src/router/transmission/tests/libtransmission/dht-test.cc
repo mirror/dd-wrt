@@ -4,18 +4,49 @@
 // License text can be found in the licenses/ folder.
 
 #include <algorithm>
+#include <array>
+#include <cassert>
 #include <chrono>
+#include <cstddef> // size_t, std::byte
+#include <ctime> // time(), time_t
 #include <fstream>
+#include <functional>
+#include <iterator> // std::back_inserter
+#include <map>
 #include <memory>
+#include <string>
+#include <string_view>
 #include <utility>
+#include <vector>
+
+#ifdef _WIN32
+#include <ws2tcpip.h>
+#else
+#include <netdb.h> // addrinfo, freeaddrinfo
+#include <sys/socket.h> // AF_INET, AF_INET6, AF_UN...
+#endif
+
+#include <dht/dht.h> // dht_callback_t
 
 #include <event2/event.h>
 
+#include <fmt/format.h>
+
 #include <libtransmission/transmission.h>
 
+#include <libtransmission/crypto-utils.h> // tr_rand_obj
 #include <libtransmission/file.h>
-#include <libtransmission/timer-ev.h>
+#include <libtransmission/log.h>
+#include <libtransmission/net.h>
+#include <libtransmission/quark.h>
 #include <libtransmission/session-thread.h> // for tr_evthread_init();
+#include <libtransmission/timer.h>
+#include <libtransmission/timer-ev.h>
+#include <libtransmission/tr-dht.h>
+#include <libtransmission/tr-macros.h>
+#include <libtransmission/tr-strbuf.h>
+#include <libtransmission/utils.h>
+#include <libtransmission/variant.h>
 
 #include "gtest/gtest.h"
 #include "test-fixtures.h"
@@ -29,17 +60,14 @@ using namespace std::literals;
 
 namespace libtransmission::test
 {
+namespace
+{
 
 bool waitFor(struct event_base* event_base, std::chrono::milliseconds msec)
 {
-    return waitFor( //
-        event_base,
-        []() { return false; },
-        msec);
+    return libtransmission::test::waitFor(event_base, []() { return false; }, msec);
 }
 
-namespace
-{
 auto constexpr IdLength = size_t{ 20U };
 auto constexpr MockTimerInterval = 40ms;
 
@@ -54,34 +82,33 @@ protected:
         // Fake data to be written to the test state file
 
         std::array<char, IdLength> const id_ = tr_rand_obj<std::array<char, IdLength>>();
+        int64_t id_timestamp_ = std::time(nullptr);
 
-        std::vector<std::pair<tr_address, tr_port>> ipv4_nodes_ = {
-            std::make_pair(*tr_address::from_string("10.10.10.1"), tr_port::fromHost(128)),
-            std::make_pair(*tr_address::from_string("10.10.10.2"), tr_port::fromHost(129)),
-            std::make_pair(*tr_address::from_string("10.10.10.3"), tr_port::fromHost(130)),
-            std::make_pair(*tr_address::from_string("10.10.10.4"), tr_port::fromHost(131)),
-            std::make_pair(*tr_address::from_string("10.10.10.5"), tr_port::fromHost(132))
-        };
+        std::vector<tr_socket_address> ipv4_nodes_ = { { *tr_address::from_string("10.10.10.1"), tr_port::from_host(128) },
+                                                       { *tr_address::from_string("10.10.10.2"), tr_port::from_host(129) },
+                                                       { *tr_address::from_string("10.10.10.3"), tr_port::from_host(130) },
+                                                       { *tr_address::from_string("10.10.10.4"), tr_port::from_host(131) },
+                                                       { *tr_address::from_string("10.10.10.5"), tr_port::from_host(132) } };
 
-        std::vector<std::pair<tr_address, tr_port>> ipv6_nodes_ = {
-            std::make_pair(*tr_address::from_string("1002:1035:4527:3546:7854:1237:3247:3217"), tr_port::fromHost(6881)),
-            std::make_pair(*tr_address::from_string("1002:1035:4527:3546:7854:1237:3247:3218"), tr_port::fromHost(6882)),
-            std::make_pair(*tr_address::from_string("1002:1035:4527:3546:7854:1237:3247:3219"), tr_port::fromHost(6883)),
-            std::make_pair(*tr_address::from_string("1002:1035:4527:3546:7854:1237:3247:3220"), tr_port::fromHost(6884)),
-            std::make_pair(*tr_address::from_string("1002:1035:4527:3546:7854:1237:3247:3221"), tr_port::fromHost(6885))
+        std::vector<tr_socket_address> ipv6_nodes_ = {
+            { *tr_address::from_string("1002:1035:4527:3546:7854:1237:3247:3217"), tr_port::from_host(6881) },
+            { *tr_address::from_string("1002:1035:4527:3546:7854:1237:3247:3218"), tr_port::from_host(6882) },
+            { *tr_address::from_string("1002:1035:4527:3546:7854:1237:3247:3219"), tr_port::from_host(6883) },
+            { *tr_address::from_string("1002:1035:4527:3546:7854:1237:3247:3220"), tr_port::from_host(6884) },
+            { *tr_address::from_string("1002:1035:4527:3546:7854:1237:3247:3221"), tr_port::from_host(6885) }
         };
 
         [[nodiscard]] auto nodesString() const
         {
             auto str = std::string{};
-            for (auto const& [addr, port] : ipv4_nodes_)
+            for (auto const& socket_address : ipv4_nodes_)
             {
-                str += addr.display_name(port);
+                str += socket_address.display_name();
                 str += ',';
             }
-            for (auto const& [addr, port] : ipv6_nodes_)
+            for (auto const& socket_address : ipv6_nodes_)
             {
-                str += addr.display_name(port);
+                str += socket_address.display_name();
                 str += ',';
             }
             return str;
@@ -96,23 +123,22 @@ protected:
         {
             auto const dat_file = MockStateFile::filename(path);
 
-            auto dict = tr_variant{};
-            tr_variantInitDict(&dict, 3U);
-            tr_variantDictAddRaw(&dict, TR_KEY_id, std::data(id_), std::size(id_));
+            auto map = tr_variant::Map{ 3U };
+            map.try_emplace(TR_KEY_id, tr_variant::make_raw(id_));
+            map.try_emplace(TR_KEY_id_timestamp, id_timestamp_);
             auto compact = std::vector<std::byte>{};
-            for (auto const& [addr, port] : ipv4_nodes_)
+            for (auto const& socket_address : ipv4_nodes_)
             {
-                addr.to_compact_ipv4(std::back_inserter(compact), port);
+                socket_address.to_compact(std::back_inserter(compact));
             }
-            tr_variantDictAddRaw(&dict, TR_KEY_nodes, std::data(compact), std::size(compact));
+            map.try_emplace(TR_KEY_nodes, tr_variant::make_raw(compact));
             compact.clear();
-            for (auto const& [addr, port] : ipv6_nodes_)
+            for (auto const& socket_address : ipv6_nodes_)
             {
-                addr.to_compact_ipv6(std::back_inserter(compact), port);
+                socket_address.to_compact(std::back_inserter(compact));
             }
-            tr_variantDictAddRaw(&dict, TR_KEY_nodes6, std::data(compact), std::size(compact));
-            tr_variantToFile(&dict, TR_VARIANT_FMT_BENC, dat_file);
-            tr_variantClear(&dict);
+            map.try_emplace(TR_KEY_nodes6, tr_variant::make_raw(compact));
+            tr_variant_serde::benc().to_file(tr_variant{ std::move(map) }, dat_file);
         }
     };
 
@@ -165,10 +191,9 @@ protected:
 
         int ping_node(struct sockaddr const* sa, int /*salen*/) override
         {
-            auto addrport = tr_address::from_sockaddr(sa);
+            auto addrport = tr_socket_address::from_sockaddr(sa);
             assert(addrport);
-            auto const [addr, port] = *addrport;
-            pinged_.push_back(Pinged{ addr, port, tr_time() });
+            pinged_.push_back(Pinged{ *addrport, tr_time() });
             return 0;
         }
 
@@ -176,11 +201,11 @@ protected:
         {
             auto info_hash = tr_sha1_digest_t{};
             std::copy_n(reinterpret_cast<std::byte const*>(id), std::size(info_hash), std::data(info_hash));
-            searched_.push_back(Searched{ info_hash, tr_port::fromHost(port), af });
+            searched_.push_back(Searched{ info_hash, tr_port::from_host(port), af });
             return 0;
         }
 
-        int init(int dht_socket, int dht_socket6, unsigned const char* id, unsigned const char* /*v*/) override
+        int init(int dht_socket, int dht_socket6, unsigned char const* id, unsigned char const* /*v*/) override
         {
             inited_ = true;
             dht_socket_ = dht_socket;
@@ -222,8 +247,7 @@ protected:
 
         struct Pinged
         {
-            tr_address address;
-            tr_port port;
+            tr_socket_address addrport;
             time_t timestamp;
         };
 
@@ -236,6 +260,7 @@ protected:
         std::vector<Pinged> pinged_;
         std::vector<Searched> searched_;
         std::array<char, IdLength> id_ = {};
+        int64_t id_timestamp_ = {};
         tr_socket_t dht_socket_ = TR_BAD_SOCKET;
         tr_socket_t dht_socket6_ = TR_BAD_SOCKET;
     };
@@ -254,19 +279,19 @@ protected:
             real_timer_->stop();
         }
 
-        void setCallback(std::function<void()> callback) override
+        void set_callback(std::function<void()> callback) override
         {
-            real_timer_->setCallback(std::move(callback));
+            real_timer_->set_callback(std::move(callback));
         }
 
-        void setRepeating(bool repeating = true) override
+        void set_repeating(bool repeating = true) override
         {
-            real_timer_->setRepeating(repeating);
+            real_timer_->set_repeating(repeating);
         }
 
-        void setInterval(std::chrono::milliseconds /*interval*/) override
+        void set_interval(std::chrono::milliseconds /*interval*/) override
         {
-            real_timer_->setInterval(MockTimerInterval);
+            real_timer_->set_interval(MockTimerInterval);
         }
 
         void start() override
@@ -279,9 +304,9 @@ protected:
             return real_timer_->interval();
         }
 
-        [[nodiscard]] bool isRepeating() const noexcept override
+        [[nodiscard]] bool is_repeating() const noexcept override
         {
-            return real_timer_->isRepeating();
+            return real_timer_->is_repeating();
         }
 
     private:
@@ -313,12 +338,12 @@ protected:
         {
         }
 
-        [[nodiscard]] std::vector<tr_torrent_id_t> torrentsAllowingDHT() const override
+        [[nodiscard]] std::vector<tr_torrent_id_t> torrents_allowing_dht() const override
         {
             return torrents_allowing_dht_;
         }
 
-        [[nodiscard]] tr_sha1_digest_t torrentInfoHash(tr_torrent_id_t id) const override
+        [[nodiscard]] tr_sha1_digest_t torrent_info_hash(tr_torrent_id_t id) const override
         {
             if (auto const iter = info_hashes_.find(id); iter != std::end(info_hashes_))
             {
@@ -328,12 +353,12 @@ protected:
             return {};
         }
 
-        [[nodiscard]] std::string_view configDir() const override
+        [[nodiscard]] std::string_view config_dir() const override
         {
             return config_dir_;
         }
 
-        [[nodiscard]] libtransmission::TimerMaker& timerMaker() override
+        [[nodiscard]] libtransmission::TimerMaker& timer_maker() override
         {
             return mock_timer_maker_;
         }
@@ -343,7 +368,7 @@ protected:
             return mock_dht_;
         }
 
-        void addPex(tr_sha1_digest_t const& /*info_hash*/, tr_pex const* /*pex*/, size_t /*n_pex*/) override
+        void add_pex(tr_sha1_digest_t const& /*info_hash*/, tr_pex const* /*pex*/, size_t /*n_pex*/) override
         {
         }
 
@@ -353,36 +378,6 @@ protected:
         MockDht mock_dht_;
         MockTimerMaker mock_timer_maker_;
     };
-
-    [[nodiscard]] static std::pair<tr_address, tr_port> getSockaddr(std::string_view name, tr_port port)
-    {
-        auto hints = addrinfo{};
-        hints.ai_socktype = SOCK_DGRAM;
-        hints.ai_family = AF_UNSPEC;
-
-        auto const szname = tr_urlbuf{ name };
-        auto const port_str = std::to_string(port.host());
-        addrinfo* info = nullptr;
-        if (int const rc = getaddrinfo(szname.c_str(), std::data(port_str), &hints, &info); rc != 0)
-        {
-            tr_logAddWarn(fmt::format(
-                _("Couldn't look up '{address}:{port}': {error} ({error_code})"),
-                fmt::arg("address", name),
-                fmt::arg("port", port.host()),
-                fmt::arg("error", gai_strerror(rc)),
-                fmt::arg("error_code", rc)));
-            return {};
-        }
-
-        auto opt = tr_address::from_sockaddr(info->ai_addr);
-        freeaddrinfo(info);
-        if (opt)
-        {
-            return *opt;
-        }
-
-        return {};
-    }
 
     void SetUp() override
     {
@@ -407,7 +402,7 @@ protected:
     // declared here with "Arbitrary" in the name to make that clear.
     static auto constexpr ArbitrarySock4 = tr_socket_t{ 404 };
     static auto constexpr ArbitrarySock6 = tr_socket_t{ 418 };
-    static auto constexpr ArbitraryPeerPort = tr_port::fromHost(909);
+    static auto constexpr ArbitraryPeerPort = tr_port::from_host(909);
 };
 
 TEST_F(DhtTest, initsWithCorrectSockets)
@@ -446,6 +441,8 @@ TEST_F(DhtTest, loadsStateFromStateFile)
     auto const state_file = MockStateFile{};
     state_file.save(sandboxDir());
 
+    tr_timeUpdate(time(nullptr));
+
     // Make the DHT
     auto mediator = MockMediator{ event_base_ };
     mediator.config_dir_ = sandboxDir();
@@ -456,9 +453,9 @@ TEST_F(DhtTest, loadsStateFromStateFile)
     auto const n_expected_nodes = std::size(state_file.ipv4_nodes_) + std::size(state_file.ipv6_nodes_);
     waitFor(event_base_, [&pinged, n_expected_nodes]() { return std::size(pinged) >= n_expected_nodes; });
     auto actual_nodes_str = std::string{};
-    for (auto const& [addr, port, timestamp] : pinged)
+    for (auto const& [addrport, timestamp] : pinged)
     {
-        actual_nodes_str += addr.display_name(port);
+        actual_nodes_str += addrport.display_name();
         actual_nodes_str += ',';
     }
 
@@ -466,6 +463,41 @@ TEST_F(DhtTest, loadsStateFromStateFile)
 
     // dht_init() should have been called with the state file's id
     EXPECT_EQ(state_file.id_, mediator.mock_dht_.id_);
+
+    // dht_ping_nodedht_init() should have been called with state file's nodes
+    EXPECT_EQ(state_file.nodesString(), actual_nodes_str);
+}
+
+TEST_F(DhtTest, loadsStateFromStateFileExpiredId)
+{
+    auto state_file = MockStateFile{};
+    state_file.id_timestamp_ = 0;
+    state_file.save(sandboxDir());
+
+    tr_timeUpdate(time(nullptr));
+
+    // Make the DHT
+    auto mediator = MockMediator{ event_base_ };
+    mediator.config_dir_ = sandboxDir();
+    auto dht = tr_dht::create(mediator, ArbitraryPeerPort, ArbitrarySock4, ArbitrarySock6);
+
+    // Wait for all the state nodes to be pinged
+    auto& pinged = mediator.mock_dht_.pinged_;
+    auto const n_expected_nodes = std::size(state_file.ipv4_nodes_) + std::size(state_file.ipv6_nodes_);
+    waitFor(event_base_, [&pinged, n_expected_nodes]() { return std::size(pinged) >= n_expected_nodes; });
+    auto actual_nodes_str = std::string{};
+    for (auto const& [addrport, timestamp] : pinged)
+    {
+        actual_nodes_str += addrport.display_name();
+        actual_nodes_str += ',';
+    }
+
+    /// Confirm that the state was loaded
+
+    // dht_init() should have been called with the state file's id
+    // N.B. There is a minuscule chance for this to fail, this is
+    // normal because id generation is random
+    EXPECT_NE(state_file.id_, mediator.mock_dht_.id_);
 
     // dht_ping_nodedht_init() should have been called with state file's nodes
     EXPECT_EQ(state_file.nodesString(), actual_nodes_str);
@@ -548,11 +580,11 @@ TEST_F(DhtTest, usesBootstrapFile)
     // Make the 'dht.bootstrap' file.
     // This a file with each line holding `${host} ${port}`
     // which tr-dht will try to ping as nodes
-    static auto constexpr BootstrapNodeName = "example.com"sv;
-    static auto constexpr BootstrapNodePort = tr_port::fromHost(8080);
+    static auto constexpr BootstrapNodeName = "91.121.74.28"sv;
+    static auto constexpr BootstrapNodePort = tr_port::from_host(8080);
     if (auto ofs = std::ofstream{ tr_pathbuf{ sandboxDir(), "/dht.bootstrap" } }; ofs)
     {
-        ofs << BootstrapNodeName << ' ' << BootstrapNodePort.host() << std::endl;
+        ofs << BootstrapNodeName << ' ' << BootstrapNodePort.host() << '\n';
         ofs.close();
     }
 
@@ -564,17 +596,15 @@ TEST_F(DhtTest, usesBootstrapFile)
     // We didn't create a 'dht.dat' file to load state from,
     // so 'dht.bootstrap' should be the first nodes in the bootstrap list.
     // Confirm that BootstrapNodeName gets pinged first.
-    auto const expected = getSockaddr(BootstrapNodeName, BootstrapNodePort);
+    auto const expected = tr_socket_address{ tr_address::from_string(BootstrapNodeName).value_or(tr_address{}),
+                                             BootstrapNodePort };
     auto& pinged = mediator.mock_dht_.pinged_;
-    waitFor( //
-        event_base_,
-        [&pinged]() { return !std::empty(pinged); },
-        5s);
+    waitFor(event_base_, [&pinged]() { return !std::empty(pinged); }, 5s);
     ASSERT_EQ(1U, std::size(pinged));
-    auto const actual = pinged.front();
-    EXPECT_EQ(expected.first, actual.address);
-    EXPECT_EQ(expected.second, actual.port);
-    EXPECT_EQ(expected.first.display_name(expected.second), actual.address.display_name(actual.port));
+    auto const [actual_addrport, time] = pinged.front();
+    EXPECT_EQ(expected.address(), actual_addrport.address());
+    EXPECT_EQ(expected.port(), actual_addrport.port());
+    EXPECT_EQ(expected.display_name(), actual_addrport.display_name());
 }
 
 TEST_F(DhtTest, pingsAddedNodes)
@@ -588,18 +618,18 @@ TEST_F(DhtTest, pingsAddedNodes)
     auto const addr = tr_address::from_string("10.10.10.1");
     EXPECT_TRUE(addr.has_value());
     assert(addr.has_value());
-    auto constexpr Port = tr_port::fromHost(128);
-    dht->addNode(*addr, Port);
+    auto constexpr Port = tr_port::from_host(128);
+    dht->maybe_add_node(*addr, Port);
 
     ASSERT_EQ(1U, std::size(mediator.mock_dht_.pinged_));
-    EXPECT_EQ(addr, mediator.mock_dht_.pinged_.front().address);
-    EXPECT_EQ(Port, mediator.mock_dht_.pinged_.front().port);
+    EXPECT_EQ(addr, mediator.mock_dht_.pinged_.front().addrport.address());
+    EXPECT_EQ(Port, mediator.mock_dht_.pinged_.front().addrport.port());
 }
 
 TEST_F(DhtTest, announcesTorrents)
 {
     auto constexpr Id = tr_torrent_id_t{ 1 };
-    auto constexpr PeerPort = tr_port::fromHost(999);
+    auto constexpr PeerPort = tr_port::from_host(999);
     auto const info_hash = tr_rand_obj<tr_sha1_digest_t>();
 
     tr_timeUpdate(time(nullptr));

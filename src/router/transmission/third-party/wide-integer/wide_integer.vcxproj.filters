@@ -47,6 +47,33 @@
     <Filter Include=".props">
       <UniqueIdentifier>{78812fa7-c747-46fb-861d-bb6cfe3070ab}</UniqueIdentifier>
     </Filter>
+    <Filter Include="target">
+      <UniqueIdentifier>{5e008254-9733-4d69-99e2-8d2f93c4b374}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="target\build">
+      <UniqueIdentifier>{67bbe456-ef04-4dd3-8fbe-d20ffe14c2dc}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="target\micros">
+      <UniqueIdentifier>{27be7d17-0d98-431e-bea5-96948075efef}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="target\micros\stm32f429">
+      <UniqueIdentifier>{0bfd6ce7-a9b6-4847-9b45-f4cd69735e04}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="target\micros\stm32f429\make">
+      <UniqueIdentifier>{e181fa1c-901d-4680-9c9b-62a576f135d2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="target\micros\stm32f429\make\single">
+      <UniqueIdentifier>{083f53f0-1b7d-4be6-8adf-c6a9ab7671c1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\examples\build">
+      <UniqueIdentifier>{24de4171-df89-40f3-87b7-3dfdee251467}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\util">
+      <UniqueIdentifier>{81934cc8-18b6-4dc9-8558-f5adcec3bf99}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\util\utility">
+      <UniqueIdentifier>{5995e678-0e77-4d1b-b881-ef1ada7cb408}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="boost\multiprecision\uintwide_t_backend.hpp">
@@ -90,6 +117,9 @@
     </ClInclude>
     <ClInclude Include="test\test_arithmetic.hpp">
       <Filter>Source Files\test</Filter>
+    </ClInclude>
+    <ClInclude Include="util\utility\util_pseudorandom_time_point_seed.h">
+      <Filter>Source Files\util\utility</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -186,6 +216,18 @@
     <ClCompile Include="test\coverity.c">
       <Filter>Source Files\test</Filter>
     </ClCompile>
+    <ClCompile Include="target\micros\stm32f429\make\single\crt.cpp">
+      <Filter>target\micros\stm32f429\make\single</Filter>
+    </ClCompile>
+    <ClCompile Include="test\test_uintwide_t_xtra_from_issue_335.cpp">
+      <Filter>Source Files\test</Filter>
+    </ClCompile>
+    <ClCompile Include="examples\example013_ecdsa_sign_verify.cpp">
+      <Filter>Source Files\examples</Filter>
+    </ClCompile>
+    <ClCompile Include="examples\example014_pi_spigot_wide.cpp">
+      <Filter>Source Files\examples</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include=".github\workflows\wide_integer.yml">
@@ -224,6 +266,18 @@
       <Filter>.props</Filter>
     </None>
     <None Include="codecov.yml" />
+    <None Include="target\micros\stm32f429\make\stm32f429.ld">
+      <Filter>target\micros\stm32f429\make</Filter>
+    </None>
+    <None Include="target\build\test_examples_emulator.py">
+      <Filter>target\build</Filter>
+    </None>
+    <None Include="examples\build\test_examples.sh">
+      <Filter>Source Files\examples\build</Filter>
+    </None>
+    <None Include=".github\workflows\CodeQL.yml">
+      <Filter>.github\workflows</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Text Include="examples\CMakeLists.txt">

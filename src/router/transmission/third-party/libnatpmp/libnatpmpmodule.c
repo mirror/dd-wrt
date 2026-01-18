@@ -85,7 +85,7 @@ static void
 NATPMPObject_dealloc(NATPMPObject *self)
 {
   closenatpmp(&self->natpmp);
-  self->ob_type->tp_free((PyObject*)self);
+  Py_TYPE(self)->tp_free((PyObject*)self);
 }
 
 static PyObject *

@@ -12,8 +12,8 @@ target_sources(${TR_NAME}-gtk
         DetailsDialog.h
         Dialogs.cc
         Dialogs.h
+        DynamicPropertyStore.h
         FaviconCache.cc
-        FaviconCache.h
         FileList.cc
         FileList.h
         FilterBar.cc
@@ -73,6 +73,10 @@ target_sources(${TR_NAME}-gtk
         Utils.cc
         Utils.h)
 
+tr_allow_compile_if(
+    [=[[GTK_VERSION EQUAL 3]]=]
+        TorrentCellRenderer.cc)
+
 target_sources(${TR_NAME}-gtk
     PRIVATE
         ui/gtk3/AddTrackerDialog.ui
@@ -106,6 +110,8 @@ target_sources(${TR_NAME}-gtk
         ui/gtk4/PrefsDialog.ui
         ui/gtk4/RelocateDialog.ui
         ui/gtk4/StatsDialog.ui
+        ui/gtk4/TorrentListItemCompact.ui
+        ui/gtk4/TorrentListItemFull.ui
         ui/gtk4/TorrentUrlChooserDialog.ui)
 
 source_group(Ui/GTK4
@@ -191,6 +197,7 @@ target_include_directories(${TR_NAME}-gtk SYSTEM
 
 target_link_libraries(${TR_NAME}-gtk
     PRIVATE
+        ${TR_NAME}-app
         ${TR_NAME}
         transmission::gtk_impl
         fmt::fmt-header-only
@@ -220,7 +227,7 @@ foreach(ICON ${PUBLIC_ICONS})
     string(REGEX REPLACE ${ICON_NAME_REGEX} "\\1/\\3/\\2" ICON_DIR ${ICON})
     string(REGEX REPLACE ${ICON_NAME_REGEX} "\\4" ICON_NAME ${ICON})
     install(
-        FILES icons/${ICON}
+        FILES ${SOURCE_ICONS_DIR}/${ICON}
         DESTINATION ${CMAKE_INSTALL_DATADIR}/icons/${ICON_DIR}/
         RENAME ${ICON_NAME})
 endforeach()

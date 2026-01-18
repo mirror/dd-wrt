@@ -91,8 +91,8 @@ build-info:
 	@echo Configuration/Platform: $(CFG)/$(PLAT)
 	@echo Library Build Type: $(PSL_LIBTYPE)
 	@echo Enabled Runtime: $(ENABLED_RUNTIME)
-	@echo Enabled Builtin: $(ENABLED_BUILTIN)
-	@if not "$(ENABLED_BUILTIN)" == "none" echo PSL File: $(PSL_FILE)
+	@echo Enabled Builtin: $(ENABLE_BUILTIN)
+	@if not "$(ENABLE_BUILTIN)" == "no" echo PSL File: $(PSL_FILE)
 
 clean:
 	@if exist vs$(VSVER)\$(CFG)\$(PLAT)\psl.dafsa del vs$(VSVER)\$(CFG)\$(PLAT)\psl.dafsa

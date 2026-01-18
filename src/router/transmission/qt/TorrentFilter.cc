@@ -1,10 +1,12 @@
-// This file Copyright © 2009-2023 Mnemosyne LLC.
+// This file Copyright © Mnemosyne LLC.
 // It may be used under GPLv2 (SPDX: GPL-2.0-only), GPLv3 (SPDX: GPL-3.0-only),
 // or any future license endorsed by Mnemosyne LLC.
 // License text can be found in the licenses/ folder.
 
 #include <array>
 #include <optional>
+
+#include "libtransmission/utils.h"
 
 #include "Filters.h"
 #include "Prefs.h"
@@ -14,7 +16,7 @@
 #include "Utils.h"
 
 TorrentFilter::TorrentFilter(Prefs const& prefs)
-    : prefs_(prefs)
+    : prefs_{ prefs }
 {
     connect(&prefs_, &Prefs::changed, this, &TorrentFilter::onPrefChanged);
     connect(&refilter_timer_, &QTimer::timeout, this, &TorrentFilter::refilter);
@@ -50,6 +52,9 @@ void TorrentFilter::onPrefChanged(int key)
     case Prefs::SORT_REVERSED:
         msec = FastMSec;
         break;
+
+    default:
+        break;
     }
 
     // if this pref change affects filtering, ensure that a refilter is queued
@@ -70,114 +75,93 @@ void TorrentFilter::refilter()
 ****
 ***/
 
-namespace
-{
-
-template<typename T>
-int compare(T const a, T const b)
-{
-    if (a < b)
-    {
-        return -1;
-    }
-
-    if (b < a)
-    {
-        return 1;
-    }
-
-    return 0;
-}
-
-} // namespace
-
 bool TorrentFilter::lessThan(QModelIndex const& left, QModelIndex const& right) const
 {
     int val = 0;
     auto const* a = sourceModel()->data(left, TorrentModel::TorrentRole).value<Torrent const*>();
     auto const* b = sourceModel()->data(right, TorrentModel::TorrentRole).value<Torrent const*>();
 
-    switch (prefs_.get<SortMode>(Prefs::SORT_MODE).mode())
+    switch (prefs_.get<SortMode>(Prefs::SORT_MODE))
     {
-    case SortMode::SORT_BY_QUEUE:
+    case SortMode::SortByQueue:
         if (val == 0)
         {
-            val = -compare(a->queuePosition(), b->queuePosition());
+            val = -tr_compare_3way(a->queuePosition(), b->queuePosition());
         }
 
         break;
 
-    case SortMode::SORT_BY_SIZE:
+    case SortMode::SortBySize:
         if (val == 0)
         {
-            val = compare(a->sizeWhenDone(), b->sizeWhenDone());
+            val = tr_compare_3way(a->sizeWhenDone(), b->sizeWhenDone());
         }
 
         break;
 
-    case SortMode::SORT_BY_AGE:
+    case SortMode::SortByAge:
         if (val == 0)
         {
-            val = compare(a->dateAdded(), b->dateAdded());
+            val = tr_compare_3way(a->dateAdded(), b->dateAdded());
         }
 
         break;
 
-    case SortMode::SORT_BY_ID:
+    case SortMode::SortById:
         if (val == 0)
         {
-            val = compare(a->id(), b->id());
+            val = tr_compare_3way(a->id(), b->id());
         }
 
         break;
 
-    case SortMode::SORT_BY_ACTIVITY:
+    case SortMode::SortByActivity:
         if (val == 0)
         {
-            val = compare(a->downloadSpeed() + a->uploadSpeed(), b->downloadSpeed() + b->uploadSpeed());
+            val = tr_compare_3way(a->downloadSpeed() + a->uploadSpeed(), b->downloadSpeed() + b->uploadSpeed());
         }
 
         if (val == 0)
         {
-            val = compare(
+            val = tr_compare_3way(
                 a->peersWeAreUploadingTo() + a->webseedsWeAreDownloadingFrom(),
                 b->peersWeAreUploadingTo() + b->webseedsWeAreDownloadingFrom());
         }
 
         [[fallthrough]];
 
-    case SortMode::SORT_BY_STATE:
+    case SortMode::SortByState:
         if (val == 0)
         {
-            val = -compare(a->isPaused(), b->isPaused());
+            val = -tr_compare_3way(a->isPaused(), b->isPaused());
         }
 
         if (val == 0)
         {
-            val = compare(a->getActivity(), b->getActivity());
+            val = tr_compare_3way(a->getActivity(), b->getActivity());
         }
 
         if (val == 0)
         {
-            val = -compare(a->queuePosition(), b->queuePosition());
+            val = -tr_compare_3way(a->queuePosition(), b->queuePosition());
         }
 
         if (val == 0)
         {
-            val = compare(a->hasError(), b->hasError());
+            val = tr_compare_3way(a->hasError(), b->hasError());
         }
 
         [[fallthrough]];
 
-    case SortMode::SORT_BY_PROGRESS:
+    case SortMode::SortByProgress:
         if (val == 0)
         {
-            val = compare(a->metadataPercentDone(), b->metadataPercentDone());
+            val = tr_compare_3way(a->metadataPercentDone(), b->metadataPercentDone());
         }
 
         if (val == 0)
         {
-            val = compare(a->percentComplete(), b->percentComplete());
+            val = tr_compare_3way(a->percentComplete(), b->percentComplete());
         }
 
         if (val == 0)
@@ -187,12 +171,12 @@ bool TorrentFilter::lessThan(QModelIndex const& left, QModelIndex const& right) 
 
         if (val == 0)
         {
-            val = -compare(a->queuePosition(), b->queuePosition());
+            val = -tr_compare_3way(a->queuePosition(), b->queuePosition());
         }
 
         [[fallthrough]];
 
-    case SortMode::SORT_BY_RATIO:
+    case SortMode::SortByRatio:
         if (val == 0)
         {
             val = a->compareRatio(*b);
@@ -200,7 +184,7 @@ bool TorrentFilter::lessThan(QModelIndex const& left, QModelIndex const& right) 
 
         break;
 
-    case SortMode::SORT_BY_ETA:
+    case SortMode::SortByEta:
         if (val == 0)
         {
             val = a->compareETA(*b);
@@ -219,7 +203,7 @@ bool TorrentFilter::lessThan(QModelIndex const& left, QModelIndex const& right) 
 
     if (val == 0)
     {
-        val = compare(a->hash(), b->hash());
+        val = tr_compare_3way(a->hash(), b->hash());
     }
 
     return val < 0;
@@ -237,8 +221,8 @@ bool TorrentFilter::filterAcceptsRow(int source_row, QModelIndex const& source_p
 
     if (accepts)
     {
-        auto const m = prefs_.get<FilterMode>(Prefs::FILTER_MODE);
-        accepts = m.test(tor);
+        auto const show_mode = prefs_.get<ShowMode>(Prefs::FILTER_MODE);
+        accepts = should_show_torrent(tor, show_mode);
     }
 
     if (accepts)
@@ -257,15 +241,21 @@ bool TorrentFilter::filterAcceptsRow(int source_row, QModelIndex const& source_p
     return accepts;
 }
 
-std::array<int, FilterMode::NUM_MODES> TorrentFilter::countTorrentsPerMode() const
+std::array<int, ShowModeCount> TorrentFilter::countTorrentsPerMode() const
 {
-    std::array<int, FilterMode::NUM_MODES> torrent_counts = {};
-
-    for (auto const& tor : dynamic_cast<TorrentModel*>(sourceModel())->torrents())
+    auto* const torrent_model = dynamic_cast<TorrentModel*>(sourceModel());
+    if (torrent_model == nullptr)
     {
-        for (int mode = 0; mode < FilterMode::NUM_MODES; ++mode)
+        return {};
+    }
+
+    auto torrent_counts = std::array<int, ShowModeCount>{};
+
+    for (auto const& tor : torrent_model->torrents())
+    {
+        for (unsigned int mode = 0; mode < ShowModeCount; ++mode)
         {
-            if (FilterMode::test(*tor, mode))
+            if (should_show_torrent(*tor, static_cast<ShowMode>(mode)))
             {
                 ++torrent_counts[mode];
             }

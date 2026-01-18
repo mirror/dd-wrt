@@ -1,12 +1,11 @@
 ﻿# ------------------------------------------------------------------------------
-#  Copyright Christopher Kormanyos 2022.
+#  Copyright Christopher Kormanyos 2022 - 2025.
 #  Distributed under the Boost Software License,
 #  Version 1.0. (See accompanying file LICENSE_1_0.txt
 #  or copy at http://www.boost.org/LICENSE_1_0.txt)
 # ------------------------------------------------------------------------------
 
-FILES_PRJ  =   $(PATH_SRC)/test/test_uintwide_t_boost_backend              \
-               $(PATH_SRC)/test/test_uintwide_t_edge_cases                 \
+FILES_PRJ  =   $(PATH_SRC)/test/test_uintwide_t_edge_cases                 \
                $(PATH_SRC)/test/test_uintwide_t_examples                   \
                $(PATH_SRC)/test/test_uintwide_t_float_convert              \
                $(PATH_SRC)/test/test_uintwide_t_int_convert                \
@@ -32,6 +31,6 @@ FILES_PRJ  =   $(PATH_SRC)/test/test_uintwide_t_boost_backend              \
                $(PATH_SRC)/examples/example009b_timed_mul_8_by_8           \
                $(PATH_SRC)/examples/example010_uint48_t                    \
                $(PATH_SRC)/examples/example011_uint24_t                    \
-               $(PATH_SRC)/examples/example012_rsa_crypto
-
-#$(PATH_SRC)/test/test                                       \
+               $(PATH_SRC)/examples/example012_rsa_crypto                  \
+               $(PATH_SRC)/examples/example013_ecdsa_sign_verify           \
+               $(PATH_SRC)/examples/example014_pi_spigot_wide

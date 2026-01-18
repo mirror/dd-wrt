@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////////
-//  Copyright Christopher Kormanyos 2019 - 2022.
+//  Copyright Christopher Kormanyos 2019 - 2025.
 //  Distributed under the Boost Software License,
 //  Version 1.0. (See accompanying file LICENSE_1_0.txt
 //  or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -13,6 +13,21 @@
 
 #if ((BOOST_VERSION >= 107900) && !defined(BOOST_MP_STANDALONE))
 #define BOOST_MP_STANDALONE
+#endif
+
+#if ((BOOST_VERSION >= 108000) && !defined(BOOST_NO_EXCEPTIONS))
+#define BOOST_NO_EXCEPTIONS
+#endif
+
+#if (((BOOST_VERSION == 108000) || (BOOST_VERSION == 108100)) && defined(BOOST_NO_EXCEPTIONS))
+#if defined(__clang__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wsometimes-uninitialized"
+#endif
+#if defined(_MSC_VER)
+#pragma warning(push)
+#pragma warning(disable : 4701)
+#endif
 #endif
 
 #if (BOOST_VERSION < 108000)
@@ -32,7 +47,7 @@
 #endif
 
 #if (BOOST_VERSION < 108000)
-#if (defined(__clang__) && (__clang_major__ > 9)) && !defined(__APPLE__)
+#if ((defined(__clang__) && (__clang_major__ > 9)) && !defined(__APPLE__))
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wdeprecated-copy"
 #endif
@@ -63,7 +78,7 @@ using boost_uint_type = boost::multiprecision::number<boost_uint_backend_type,
 #if defined(WIDE_INTEGER_NAMESPACE)
 auto WIDE_INTEGER_NAMESPACE::math::wide_integer::test_uintwide_t_boost_backend() -> bool
 #else
-auto math::wide_integer::test_uintwide_t_boost_backend() -> bool
+auto ::math::wide_integer::test_uintwide_t_boost_backend() -> bool
 #endif
 {
   bool result_is_ok = true;
@@ -108,22 +123,20 @@ auto math::wide_integer::test_uintwide_t_boost_backend() -> bool
 
   // Test a very simple constexpr example.
   {
-    WIDE_INTEGER_CONSTEXPR local_uint_type cu("123");
+    constexpr local_uint_type cu { "123" };
 
-    WIDE_INTEGER_CONSTEXPR bool result_cu_is_ok = (cu == 123U); // NOLINT(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
+    constexpr bool result_cu_is_ok = (cu == 123U); // NOLINT(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
 
     result_is_ok = (result_cu_is_ok && result_is_ok);
 
-    #if defined(WIDE_INTEGER_CONSTEXPR_IS_COMPILE_TIME_CONST) && (WIDE_INTEGER_CONSTEXPR_IS_COMPILE_TIME_CONST != 0)
     static_assert(result_cu_is_ok, "Error: test_uintwide_t_boost_backend not OK!");
-    #endif
   }
 
   return result_is_ok;
 }
 
 #if (BOOST_VERSION < 108000)
-#if (defined(__clang__) && (__clang_major__ > 9)) && !defined(__APPLE__)
+#if ((defined(__clang__) && (__clang_major__ > 9)) && !defined(__APPLE__))
 #pragma GCC diagnostic pop
 #endif
 #endif
@@ -137,5 +150,14 @@ auto math::wide_integer::test_uintwide_t_boost_backend() -> bool
 #pragma GCC diagnostic pop
 #pragma GCC diagnostic pop
 #pragma GCC diagnostic pop
+#endif
+#endif
+
+#if (((BOOST_VERSION == 108000) || (BOOST_VERSION == 108100)) && defined(BOOST_NO_EXCEPTIONS))
+#if defined(__clang__)
+#pragma GCC diagnostic pop
+#endif
+#if defined(_MSC_VER)
+#pragma warning(pop)
 #endif
 #endif

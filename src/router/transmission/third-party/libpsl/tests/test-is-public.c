@@ -1,5 +1,5 @@
 /*
- * Copyright(c) 2014-2018 Tim Ruehsen
+ * Copyright(c) 2014-2024 Tim Ruehsen
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -35,11 +35,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#ifdef HAVE_ALLOCA_H
-#	include <alloca.h>
-#endif
 
 #include <libpsl.h>
+#include "common.h"
 
 #define countof(a) (sizeof(a)/sizeof(*(a)))
 
@@ -193,11 +191,7 @@ int main(int argc, const char * const *argv)
 		const char *valgrind = getenv("TESTS_VALGRIND");
 
 		if (valgrind && *valgrind) {
-			size_t cmdsize = strlen(valgrind) + strlen(argv[0]) + 32;
-			char *cmd = alloca(cmdsize);
-
-			snprintf(cmd, cmdsize, "TESTS_VALGRIND="" %s %s", valgrind, argv[0]);
-			return system(cmd) != 0;
+			return run_valgrind(valgrind, argv[0]);
 		}
 	}
 

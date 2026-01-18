@@ -436,7 +436,9 @@ namespace small {
 
         /// \brief Construct small vector with a given allocator
         constexpr explicit vector(const allocator_type &alloc)
-            : vector(0, alloc) {}
+            : enable_allocator_type() {
+            enable_allocator_type::set_allocator(alloc);
+        }
 
         /// \brief Construct small array with size n
         /// Any of the n values should be constructed with new (p) value_type();
@@ -1241,8 +1243,8 @@ namespace small {
             std::enable_if_t<!std::is_trivially_copyable_v<T2>, int> = 0>
         void
         copy_inline_trivial(vector const &) {
-            throw std::logic_error(
-                "Attempting to trivially copy not trivially copyable type");
+            small::detail::throw_exception(std::logic_error(
+                "Attempting to trivially copy not trivially copyable type"));
         }
 
         /// \brief Make it empty and with no heap

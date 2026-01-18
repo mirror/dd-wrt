@@ -1,28 +1,32 @@
-// This file Copyright © 2007-2023 Mnemosyne LLC.
+// This file Copyright © Mnemosyne LLC.
 // It may be used under GPLv2 (SPDX: GPL-2.0-only), GPLv3 (SPDX: GPL-3.0-only),
 // or any future license endorsed by Mnemosyne LLC.
 // License text can be found in the licenses/ folder.
 
 #include <array>
 #include <cerrno>
-#include <cstdint> // uint32_t
-#include <ctime>
+
+#ifdef _WIN32
+#include <ws2tcpip.h>
+#else
+#include <sys/socket.h> // AF_INET
+#endif
 
 #include <event2/util.h> /* evutil_inet_ntop() */
 
-#include <fmt/core.h>
+#include <fmt/format.h>
 
 #define ENABLE_STRNATPMPERR
 #include "natpmp.h"
 
 #define LIBTRANSMISSION_PORT_FORWARDING_MODULE
 
-#include "transmission.h"
+#include "libtransmission/transmission.h"
 
-#include "log.h"
-#include "port-forwarding-natpmp.h"
-#include "port-forwarding.h"
-#include "utils.h"
+#include "libtransmission/log.h"
+#include "libtransmission/net.h"
+#include "libtransmission/port-forwarding-natpmp.h"
+#include "libtransmission/utils.h"
 
 namespace
 {
@@ -39,13 +43,14 @@ void log_val(char const* func, int ret)
     }
     else
     {
-        tr_logAddDebug(fmt::format(
-            "{} failed. Natpmp returned {} ({}); errno is {} ({})",
-            func,
-            ret,
-            strnatpmperr(ret),
-            errno,
-            tr_strerror(errno)));
+        tr_logAddDebug(
+            fmt::format(
+                "{} failed. Natpmp returned {} ({}); errno is {} ({})",
+                func,
+                ret,
+                strnatpmperr(ret),
+                errno,
+                tr_strerror(errno)));
     }
 }
 } // namespace
@@ -83,7 +88,8 @@ tr_natpmp::PulseResult tr_natpmp::pulse(tr_port local_port, bool is_enabled)
         {
             auto str = std::array<char, 128>{};
             evutil_inet_ntop(AF_INET, &response.pnu.publicaddress.addr, std::data(str), std::size(str));
-            tr_logAddInfo(fmt::format(_("Found public address '{address}'"), fmt::arg("address", std::data(str))));
+            tr_logAddInfo(
+                fmt::format(fmt::runtime(_("Found public address '{address}'")), fmt::arg("address", std::data(str))));
             state_ = State::Idle;
         }
         else if (val != NATPMP_TRYAGAIN)
@@ -118,9 +124,10 @@ tr_natpmp::PulseResult tr_natpmp::pulse(tr_port local_port, bool is_enabled)
 
         if (val >= 0)
         {
-            auto const unmapped_port = tr_port::fromHost(resp.pnu.newportmapping.privateport);
+            auto const unmapped_port = tr_port::from_host(resp.pnu.newportmapping.privateport);
 
-            tr_logAddInfo(fmt::format(_("Port {port} is no longer forwarded"), fmt::arg("port", unmapped_port.host())));
+            tr_logAddInfo(
+                fmt::format(fmt::runtime(_("Port {port} is no longer forwarded")), fmt::arg("port", unmapped_port.host())));
 
             if (local_port_ == unmapped_port)
             {
@@ -136,16 +143,10 @@ tr_natpmp::PulseResult tr_natpmp::pulse(tr_port local_port, bool is_enabled)
         }
     }
 
-    if (state_ == State::Idle)
+    if ((state_ == State::Idle || state_ == State::Err) &&
+        (is_mapped_ ? tr_time() >= renew_time_ : is_enabled && has_discovered_))
     {
-        if (is_enabled && !is_mapped_ && has_discovered_)
-        {
-            state_ = State::SendMap;
-        }
-        else if (is_mapped_ && tr_time() >= renew_time_)
-        {
-            state_ = State::SendMap;
-        }
+        state_ = State::SendMap;
     }
 
     if (state_ == State::SendMap && canSendCommand())
@@ -172,9 +173,10 @@ tr_natpmp::PulseResult tr_natpmp::pulse(tr_port local_port, bool is_enabled)
             state_ = State::Idle;
             is_mapped_ = true;
             renew_time_ = tr_time() + (resp.pnu.newportmapping.lifetime / 2);
-            local_port_ = tr_port::fromHost(resp.pnu.newportmapping.privateport);
-            advertised_port_ = tr_port::fromHost(resp.pnu.newportmapping.mappedpublicport);
-            tr_logAddInfo(fmt::format(_("Port {port} forwarded successfully"), fmt::arg("port", local_port_.host())));
+            local_port_ = tr_port::from_host(resp.pnu.newportmapping.privateport);
+            advertised_port_ = tr_port::from_host(resp.pnu.newportmapping.mappedpublicport);
+            tr_logAddInfo(
+                fmt::format(fmt::runtime(_("Port {port} forwarded successfully")), fmt::arg("port", local_port_.host())));
         }
         else if (val != NATPMP_TRYAGAIN)
         {

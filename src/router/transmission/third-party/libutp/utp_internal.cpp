@@ -2926,14 +2926,14 @@ int utp_process_udp(utp_context *ctx, const byte *buffer, size_t len, const stru
 		if (ctx->rst_info.size() > RST_INFO_LIMIT) {
 
 			#if UTP_DEBUG_LOGGING
-			ctx->log(UTP_LOG_DEBUG, NULL, "recv not sending RST to non-SYN (limit at %u stored)", (uint)ctx->rst_info.GetCount());
+			ctx->log(UTP_LOG_DEBUG, NULL, "recv not sending RST to non-SYN (limit at %tu stored)", std::size(ctx->rst_info));
 			#endif
 
 			return 1;
 		}
 
 		#if UTP_DEBUG_LOGGING
-		ctx->log(UTP_LOG_DEBUG, NULL, "recv send RST to non-SYN (%u stored)", (uint)ctx->rst_info.GetCount());
+		ctx->log(UTP_LOG_DEBUG, NULL, "recv send RST to non-SYN (%tu stored)", std::size(ctx->rst_info));
 		#endif
 
 		ctx->rst_info.emplace_back(addr, id, seq_nr, ctx->current_ms);
@@ -2960,7 +2960,7 @@ int utp_process_udp(utp_context *ctx, const byte *buffer, size_t len, const stru
 		if (ctx->utp_sockets.size() > 3000) {
 
 			#if UTP_DEBUG_LOGGING
-			ctx->log(UTP_LOG_DEBUG, NULL, "rejected incoming connection, too many uTP sockets %d", ctx->utp_sockets->GetCount());
+			ctx->log(UTP_LOG_DEBUG, NULL, "rejected incoming connection, too many uTP sockets %tu", std::size(ctx->utp_sockets));
 			#endif
 
 			return 1;
@@ -3388,21 +3388,26 @@ void struct_utp_context::log(int level, utp_socket *socket, char const *fmt, ...
 
 	va_list va;
 	va_start(va, fmt);
-	log_unchecked(socket, fmt, va);
+	log_impl(socket, fmt, va);
 	va_end(va);
 }
 
 void struct_utp_context::log_unchecked(utp_socket *socket, char const *fmt, ...)
 {
 	va_list va;
+	va_start(va, fmt);
+	log_impl(socket, fmt, va);
+	va_end(va);
+}
+
+void struct_utp_context::log_impl(utp_socket *socket, char const *fmt, va_list va)
+{
 	char buf[4096];
 
-	va_start(va, fmt);
 	vsnprintf(buf, 4096, fmt, va);
 	buf[4095] = '\0';
-	va_end(va);
 
-	utp_call_log(this, socket, (const byte *)buf);
+	utp_call_log(this, socket, reinterpret_cast<const byte *>(buf));
 }
 
 inline bool struct_utp_context::would_log(int level)

@@ -2,7 +2,7 @@
 # This is just the minimum subset needed for building an embedded
 # static library into Transmission.
 
-cmake_minimum_required(VERSION 3.0)
+cmake_minimum_required(VERSION 3.10)
 
 project(psl
   VERSION 0.21.1.0 # when changing this, must set LIBPSL_VERSION_NUMBER too
@@ -22,7 +22,7 @@ add_definitions(
   # ensure that builtin list is enabled even though the client code
   # is going to ensure utf8 + lowercase instead of bundling more
   # dependencies here (e.g. libidn2, libunistring)
-  -DFORCE_BUILTIN_LIST=1
+  -DENABLE_BUILTIN=1
 )
 
 set(PSL_FILE "${CMAKE_SOURCE_DIR}/list/public_suffix_list.dat")

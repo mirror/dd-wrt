@@ -33,4 +33,6 @@ FILES_PRJ  =   $(PATH_SRC)/test/test                                            
                $(PATH_SRC)/examples/example009b_timed_mul_8_by_8                \
                $(PATH_SRC)/examples/example010_uint48_t                         \
                $(PATH_SRC)/examples/example011_uint24_t                         \
-               $(PATH_SRC)/examples/example012_rsa_crypto
+               $(PATH_SRC)/examples/example012_rsa_crypto                       \
+               $(PATH_SRC)/examples/example013_ecdsa_sign_verify                \
+               $(PATH_SRC)/examples/example014_pi_spigot_wide

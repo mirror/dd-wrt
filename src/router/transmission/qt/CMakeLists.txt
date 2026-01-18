@@ -1,11 +1,16 @@
 set_property(GLOBAL PROPERTY AUTOGEN_SOURCE_GROUP "Generated Files")
 
+# https://doc.qt.io/qt-6/macos.html#supported-versions
+set(CMAKE_OSX_DEPLOYMENT_TARGET 11)
+
 add_executable(${TR_NAME}-qt WIN32)
 
 target_sources(${TR_NAME}-qt
     PRIVATE
         AboutDialog.cc
         AboutDialog.h
+        AccessibleSqueezeLabel.cc
+        AccessibleSqueezeLabel.h
         AddData.cc
         AddData.h
         Application.cc
@@ -21,7 +26,6 @@ target_sources(${TR_NAME}-qt
         DetailsDialog.cc
         DetailsDialog.h
         FaviconCache.cc
-        FaviconCache.h
         FileTreeDelegate.cc
         FileTreeDelegate.h
         FileTreeItem.cc
@@ -52,10 +56,14 @@ target_sources(${TR_NAME}-qt
         InteropObject.h
         LicenseDialog.cc
         LicenseDialog.h
+        main.cc
         MainWindow.cc
         MainWindow.h
         MakeDialog.cc
         MakeDialog.h
+        NativeIcon.cc
+        $<$<BOOL:${APPLE}>:NativeIconMac.mm>
+        NativeIcon.h
         OptionsDialog.cc
         OptionsDialog.h
         PathButton.cc
@@ -135,12 +143,6 @@ target_sources(${TR_NAME}-qt
     PRIVATE
         application.qrc)
 
-if(WIN32 OR APPLE)
-    target_sources(${TR_NAME}-qt
-        PRIVATE
-            icons/Faenza/Faenza.qrc)
-endif()
-
 source_group(Resources
     REGULAR_EXPRESSION [[.*\.qrc$]])
 
@@ -155,9 +157,11 @@ set(LINGUAS
     eu
     fi
     fr
+    he
     hu
     id
-    it_IT
+    is
+    it
     ja
     ka
     kk
@@ -174,7 +178,8 @@ set(LINGUAS
     sv
     tr
     uk
-    zh_CN)
+    zh_CN
+    zh_TW)
 
 if(ENABLE_NLS)
     set(ENABLED_LINGUAS ${LINGUAS})
@@ -206,6 +211,7 @@ target_include_directories(${TR_NAME}-qt
 
 target_link_libraries(${TR_NAME}-qt
     PRIVATE
+        ${TR_NAME}-app
         ${TR_NAME}
         transmission::qt_impl)
 
@@ -229,13 +235,28 @@ set_target_properties(
 
 tr_win32_app_info(${TR_NAME}-qt
     "Transmission Qt Client"
-    "transmission-qt"
-    "transmission-qt.exe"
-    "qtr.ico")
+    "${TR_NAME}-qt"
+    "${TR_NAME}-qt.exe"
+    "${SOURCE_ICONS_DIR}/${TR_NAME}.ico")
 
 install(
     TARGETS ${TR_NAME}-qt
     DESTINATION ${CMAKE_INSTALL_BINDIR})
+
+set(PUBLIC_ICONS
+    hicolor_apps_scalable_transmission.svg
+    hicolor_apps_scalable_transmission-devel.svg
+    hicolor_apps_symbolic_transmission-symbolic.svg)
+
+set(ICON_NAME_REGEX "^([^_]+)_([^_]+)_([^_]+)_(.+)$")
+foreach(ICON ${PUBLIC_ICONS})
+    string(REGEX REPLACE ${ICON_NAME_REGEX} "\\1/\\3/\\2" ICON_DIR ${ICON})
+    string(REGEX REPLACE ${ICON_NAME_REGEX} "\\4" ICON_NAME ${ICON})
+    install(
+        FILES ${SOURCE_ICONS_DIR}/${ICON}
+        DESTINATION ${CMAKE_INSTALL_DATADIR}/icons/${ICON_DIR}/
+        RENAME ${ICON_NAME})
+endforeach()
 
 if(INSTALL_DOC)
     install(

@@ -101,7 +101,7 @@ parse_msearch_reply(const char * reply, int size,
 		case '\x0d':
 			if(b!=0) {
 				/* skip the colon and white spaces */
-				do { b++; } while(reply[b]==' ' && b<size);
+				do { b++; } while(reply[b]==' ' && b<i);
 				if(0==strncasecmp(reply+a, "location:", 9)) {
 					*location = reply+b;
 					*locationsize = i-b;
@@ -181,9 +181,9 @@ static int upnpc_receive_and_parse_ssdp(upnpc_t * p)
 		debug_printf("empty packet received\n");
 	} else {
 		const char * location = NULL;
-		unsigned int locationsize;
+		unsigned int locationsize = 0;
 		const char * st = NULL;
-		unsigned int stsize;
+		unsigned int stsize = 0;
 		debug_printf("%.*s", n, bufr);
 		parse_msearch_reply(bufr, n, &location, &locationsize, &st, &stsize);
 		debug_printf("location = '%.*s'\n", locationsize, location);
@@ -399,7 +399,7 @@ static int upnpc_send_request(upnpc_device_t * p)
 	ssize_t n;
 	static const char reqfmt[] = "GET %s HTTP/1.1\r\n"
 		"Host: %s:%hu\r\n"
-		"Connection: Close\r\n"
+		"Connection: close\r\n"
 		"User-Agent: OS/version UPnP/1.1 MiniUPnPc-async/2.2\r\n"
 		"\r\n";
 
@@ -693,9 +693,8 @@ static int upnpc_build_soap_request(upnpc_device_t * p, const char * url,
 		"Content-Length: %d\r\n"
 		"Content-Type: text/xml charset=\"utf-8\"\r\n"
 		"SOAPAction: \"%s#%s\"\r\n"
-		"Connection: Close\r\n"
+		"Connection: close\r\n"
 		"Cache-Control: no-cache\r\n"	/* ??? */
-		"Pragma: no-cache\r\n"
 		"\r\n"
 		"%s";
 	char hostname[MAXHOSTNAMELEN+1];

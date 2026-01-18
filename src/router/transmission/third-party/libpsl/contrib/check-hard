@@ -12,7 +12,7 @@ echo "Running: make distclean"
 make distclean > /dev/null || true
 
 # We define _GNU_SOURCE to avoid warnings with missing prototypes.
-# C89 does not know snprintf, strdup, strndup, popen, pclose
+# C89 does not know snprintf, popen, pclose
 CFLAGS="-std=gnu89 -pedantic -g -Wall -Wextra -Wstrict-prototypes -Wold-style-definition -Wwrite-strings -Wshadow -Wformat -Wformat-security -Wunreachable-code -Wstrict-prototypes -Wmissing-prototypes -Wold-style-definition"
 
 CACHEFILE=$PWD/config_check.cache
@@ -37,10 +37,10 @@ for CC in gcc clang; do
   rm -f $CACHEFILE
 
   for options in \
-  "--enable-runtime=libicu --enable-builtin=libicu" \
-  "--enable-runtime=libidn2 --enable-builtin=libidn2" \
-  "--enable-runtime=libidn --enable-builtin=libidn" \
-  "--disable-runtime --enable-builtin=libicu"; do
+  "--enable-runtime=libicu" \
+  "--enable-runtime=libidn2" \
+  "--enable-runtime=libidn" \
+  "--disable-runtime"; do
     export DISTCHECK_CONFIGURE_FLAGS="-q -C --cache-file=$CACHEFILE $options"
     if test "$CC" = "clang"; then
       echo

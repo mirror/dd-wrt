@@ -1,4 +1,4 @@
-// This file Copyright © 2021-2023 Mnemosyne LLC.
+// This file Copyright © Mnemosyne LLC.
 // It may be used under GPLv2 (SPDX: GPL-2.0-only), GPLv3 (SPDX: GPL-3.0-only),
 // or any future license endorsed by Mnemosyne LLC.
 // License text can be found in the licenses/ folder.
@@ -6,8 +6,8 @@
 #include <algorithm>
 #include <array>
 #include <cctype>
+#include <cstdint>
 #include <cstdlib> // for strtoul()
-#include <cstddef>
 #include <limits>
 #include <optional>
 #include <string>
@@ -19,14 +19,13 @@
 #define PSL_STATIC
 #include <libpsl.h>
 
-#include "transmission.h"
-
-#include "log.h"
-#include "net.h"
-#include "tr-assert.h"
-#include "tr-strbuf.h"
-#include "utils.h"
-#include "web-utils.h"
+#include "libtransmission/log.h"
+#include "libtransmission/net.h"
+#include "libtransmission/tr-assert.h"
+#include "libtransmission/tr-macros.h"
+#include "libtransmission/tr-strbuf.h"
+#include "libtransmission/utils.h"
+#include "libtransmission/web-utils.h"
 
 using namespace std::literals;
 
@@ -179,7 +178,7 @@ namespace
 
 auto parsePort(std::string_view port_sv)
 {
-    auto const port = tr_parseNum<int>(port_sv);
+    auto const port = tr_num_parse<int>(port_sv);
 
     using PortLimits = std::numeric_limits<uint16_t>;
     return port && PortLimits::min() <= *port && *port <= PortLimits::max() ? *port : -1;
@@ -220,7 +219,7 @@ TR_CONSTEXPR20 bool urlCharsAreValid(std::string_view url)
     };
 
     return !std::empty(url) &&
-        std::all_of(std::begin(url), std::end(url), [&ValidChars](auto ch) { return tr_strvContains(ValidChars, ch); });
+        std::all_of(std::begin(url), std::end(url), [&ValidChars](auto ch) { return tr_strv_contains(ValidChars, ch); });
 }
 
 bool tr_isValidTrackerScheme(std::string_view scheme)
@@ -292,11 +291,24 @@ std::string_view getSiteName(std::string_view host)
 
     return host;
 }
+
+// Not part of the RFC3986 standard, but included for convenience
+// when using the result with API that does not accept IPv6 address
+// strings that are wrapped in square brackets (e.g. inet_pton())
+std::string_view getHostWoBrackets(std::string_view host)
+{
+    if (tr_strv_starts_with(host, '['))
+    {
+        host.remove_prefix(1);
+        host.remove_suffix(1);
+    }
+    return host;
+}
 } // namespace
 
 std::optional<tr_url_parsed_t> tr_urlParse(std::string_view url)
 {
-    url = tr_strvStrip(url);
+    url = tr_strv_strip(url);
 
     auto parsed = tr_url_parsed_t{};
     parsed.full = url;
@@ -304,7 +316,7 @@ std::optional<tr_url_parsed_t> tr_urlParse(std::string_view url)
     // So many magnet links are malformed, e.g. not escaping text
     // in the display name, that we're better off handling magnets
     // as a special case before even scanning for invalid chars.
-    if (auto constexpr MagnetStart = "magnet:?"sv; tr_strvStartsWith(url, MagnetStart))
+    if (auto constexpr MagnetStart = "magnet:?"sv; tr_strv_starts_with(url, MagnetStart))
     {
         parsed.scheme = "magnet"sv;
         parsed.query = url.substr(std::size(MagnetStart));
@@ -317,7 +329,7 @@ std::optional<tr_url_parsed_t> tr_urlParse(std::string_view url)
     }
 
     // scheme
-    parsed.scheme = tr_strvSep(&url, ':');
+    parsed.scheme = tr_strv_sep(&url, ':');
     if (std::empty(parsed.scheme))
     {
         return std::nullopt;
@@ -327,7 +339,7 @@ std::optional<tr_url_parsed_t> tr_urlParse(std::string_view url)
     // The authority component is preceded by a double slash ("//") and is
     // terminated by the next slash ("/"), question mark ("?"), or number
     // sign ("#") character, or by the end of the URI.
-    if (auto key = "//"sv; tr_strvStartsWith(url, key))
+    if (auto key = "//"sv; tr_strv_starts_with(url, key))
     {
         url.remove_prefix(std::size(key));
         auto pos = url.find_first_of("/?#");
@@ -339,11 +351,16 @@ std::optional<tr_url_parsed_t> tr_urlParse(std::string_view url)
         // within square brackets ("[" and "]").  This is the only place where
         // square bracket characters are allowed in the URI syntax.
         auto remain = parsed.authority;
-        if (tr_strvStartsWith(remain, '['))
+        if (tr_strv_starts_with(remain, '['))
         {
-            remain.remove_prefix(1); // '['
-            parsed.host = tr_strvSep(&remain, ']');
-            if (tr_strvStartsWith(remain, ':'))
+            pos = remain.find(']');
+            if (pos == std::string_view::npos)
+            {
+                return std::nullopt;
+            }
+            parsed.host = remain.substr(0, pos + 1);
+            remain.remove_prefix(pos + 1);
+            if (tr_strv_starts_with(remain, ':'))
             {
                 remain.remove_prefix(1);
             }
@@ -357,8 +374,9 @@ std::optional<tr_url_parsed_t> tr_urlParse(std::string_view url)
         }
         else
         {
-            parsed.host = tr_strvSep(&remain, ':');
+            parsed.host = tr_strv_sep(&remain, ':');
         }
+        parsed.host_wo_brackets = getHostWoBrackets(parsed.host);
         parsed.sitename = getSiteName(parsed.host);
         parsed.port = parsePort(!std::empty(remain) ? remain : getPortForScheme(parsed.scheme));
     }
@@ -370,7 +388,7 @@ std::optional<tr_url_parsed_t> tr_urlParse(std::string_view url)
     url = pos == std::string_view::npos ? ""sv : url.substr(pos);
 
     // query
-    if (tr_strvStartsWith(url, '?'))
+    if (tr_strv_starts_with(url, '?'))
     {
         url.remove_prefix(1);
         pos = url.find('#');
@@ -379,7 +397,7 @@ std::optional<tr_url_parsed_t> tr_urlParse(std::string_view url)
     }
 
     // fragment
-    if (tr_strvStartsWith(url, '#'))
+    if (tr_strv_starts_with(url, '#'))
     {
         parsed.fragment = url.substr(1);
     }
@@ -390,7 +408,7 @@ std::optional<tr_url_parsed_t> tr_urlParse(std::string_view url)
 std::optional<tr_url_parsed_t> tr_urlParseTracker(std::string_view url)
 {
     auto const parsed = tr_urlParse(url);
-    return parsed && tr_isValidTrackerScheme(parsed->scheme) ? std::make_optional(*parsed) : std::nullopt;
+    return parsed && tr_isValidTrackerScheme(parsed->scheme) ? parsed : std::nullopt;
 }
 
 bool tr_urlIsValidTracker(std::string_view url)
@@ -409,27 +427,25 @@ std::string tr_urlTrackerLogName(std::string_view url)
 {
     if (auto const parsed = tr_urlParse(url); parsed)
     {
-        return fmt::format(FMT_STRING("{:s}://{:s}:{:d}"), parsed->scheme, parsed->host, parsed->port);
+        return fmt::format("{:s}://{:s}:{:d}", parsed->scheme, parsed->host, parsed->port);
     }
 
     // we have an invalid URL, we log the full string
     return std::string{ url };
 }
 
-tr_url_query_view::iterator& tr_url_query_view::iterator::operator++()
+std::vector<std::pair<std::string_view, std::string_view>> tr_url_parsed_t::query_entries() const
 {
-    auto pair = tr_strvSep(&remain, '&');
-    keyval.first = tr_strvSep(&pair, '=');
-    keyval.second = pair;
-    return *this;
-}
-
-tr_url_query_view::iterator tr_url_query_view::begin() const
-{
-    auto it = iterator{};
-    it.remain = query;
-    ++it;
-    return it;
+    auto tmp = query;
+    auto ret = std::vector<std::pair<std::string_view, std::string_view>>{};
+    ret.reserve(std::count(std::begin(tmp), std::end(tmp), '&') + 1U);
+    while (!std::empty(tmp))
+    {
+        auto val = tr_strv_sep(&tmp, '&');
+        auto key = tr_strv_sep(&val, '=');
+        ret.emplace_back(key, val);
+    }
+    return ret;
 }
 
 std::string tr_urlPercentDecode(std::string_view in)

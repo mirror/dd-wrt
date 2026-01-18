@@ -1,8 +1,8 @@
-/* $Id: miniupnpd.c,v 1.259 2024/01/17 00:05:14 nanard Exp $ */
+/* $Id: miniupnpd.c,v 1.268 2025/04/08 21:28:42 nanard Exp $ */
 /* vim: tabstop=4 shiftwidth=4 noexpandtab
  * MiniUPnP project
  * http://miniupnp.free.fr/ or https://miniupnp.tuxfamily.org/
- * (c) 2006-2024 Thomas Bernard
+ * (c) 2006-2025 Thomas Bernard
  * This software is subject to the conditions detailed
  * in the LICENCE file provided within the distribution */
 
@@ -49,6 +49,10 @@
 #endif
 #ifdef HAS_LIBCAP_NG
 #include <cap-ng.h>
+#endif
+
+#ifdef USE_SYSTEMD
+#include <systemd/sd-daemon.h>
 #endif
 
 /* unix sockets */
@@ -302,6 +306,14 @@ tomato_helper(void)
 }
 #endif  /* 1 (tomato) */
 #endif	/* TOMATO */
+
+static int gen_current_notify_interval(int notify_interval) {
+	/* if possible, remove a random number of seconds between 1 and 64 */
+	if (notify_interval > 65)
+		return notify_interval - 1 - (random() & 0x3f);
+	else
+		return notify_interval;
+}
 
 /* OpenAndConfHTTPSocket() :
  * setup the socket used to handle incoming HTTP connections. */
@@ -896,10 +908,13 @@ struct runtime_vars {
 #ifdef ENABLE_HTTPS
 	int https_port;	/* HTTPS Port */
 #endif
-	int notify_interval;	/* seconds between SSDP announces */
+	int notify_interval;	/* seconds between SSDP announces. Should be >= 900s */
 	/* unused rules cleaning related variables : */
 	int clean_ruleset_threshold;	/* threshold for removing unused rules */
 	int clean_ruleset_interval;		/* (minimum) interval between checks. 0=disabled */
+#ifdef USE_SYSTEMD
+	int systemd_notify;
+#endif
 };
 
 /* parselanaddr()
@@ -920,33 +935,59 @@ parselanaddr(struct lan_addr_s * lan_addr, const char * str, int debug_flag)
 	const char * p;
 	unsigned int n;
 	char tmp[16];
+	unsigned int dot_count = 0;
+	int only_digits_and_dots = 1;
 
 	memset(lan_addr, 0, sizeof(struct lan_addr_s));
 	p = str;
-	while(*p && *p != '/' && !isspace(*p))
+	while(*p && *p != '/' && !isspace(*p)) {
+		if (*p == '.')
+			dot_count++;
+		else if (!isdigit(*p))
+			only_digits_and_dots = 0;
 		p++;
+	}
 	n = p - str;
-	if(!isdigit(str[0]) && n < (int)sizeof(lan_addr->ifname))
-	{
-		/* not starting with a digit : suppose it is an interface name */
+	if(!only_digits_and_dots || dot_count != 3) {
+		/* not only digits and dots : suppose it is an interface name */
+		int r;
+		if (n >= (unsigned int)sizeof(lan_addr->ifname)) {
+			INIT_PRINT_ERR("interface name \"%.*s\" is too long (maximum is %d caracters)\n",
+			               n, str, (int)sizeof(lan_addr->ifname) - 1);
+			goto parselan_error;
+		}
 		memcpy(lan_addr->ifname, str, n);
 		lan_addr->ifname[n] = '\0';
-		if(getifaddr(lan_addr->ifname, lan_addr->str, sizeof(lan_addr->str),
-		             &lan_addr->addr, &lan_addr->mask) < 0) {
+		r = getifaddr(lan_addr->ifname, lan_addr->str, sizeof(lan_addr->str),
+		             &lan_addr->addr, &lan_addr->mask);
 #ifdef ENABLE_IPV6
-			fprintf(stderr, "interface \"%s\" has no IPv4 address\n", str);
-			syslog(LOG_NOTICE, "interface \"%s\" has no IPv4 address\n", str);
+		if(r == GETIFADDR_NO_ADDRESS) {
+			fprintf(stderr, "interface \"%s\" has no IPv4 address\n", lan_addr->ifname);
+			syslog(LOG_NOTICE, "interface \"%s\" has no IPv4 address\n", lan_addr->ifname);
 			lan_addr->str[0] = '\0';
 			lan_addr->addr.s_addr = htonl(0x00000000u);
 			lan_addr->mask.s_addr = htonl(0xffffffffu);
-#else /* ENABLE_IPV6 */
+		} else if(r != GETIFADDR_OK) {
+			INIT_PRINT_ERR("error getting address for interface %s\n", lan_addr->ifname);
 			goto parselan_error;
-#endif /* ENABLE_IPV6 */
 		}
-		/*printf("%s => %s\n", lan_addr->ifname, lan_addr->str);*/
-	}
-	else
-	{
+#else /* ENABLE_IPV6 */
+		if(r == GETIFADDR_NO_ADDRESS) {
+			INIT_PRINT_ERR("interface \"%s\" has no address\n", lan_addr->ifname);
+			goto parselan_error;
+		} else if (r == GETIFADDR_DEVICE_NOT_CONFIGURED) {
+			INIT_PRINT_ERR("interface \"%s\" is not configured\n", lan_addr->ifname);
+			goto parselan_error;
+		} else if (r == GETIFADDR_IF_DOWN) {
+			INIT_PRINT_ERR("interface \"%s\" is down\n", lan_addr->ifname);
+			goto parselan_error;
+		} else if(r != GETIFADDR_OK) {
+			INIT_PRINT_ERR("error getting address for interface %s\n", lan_addr->ifname);
+			goto parselan_error;
+		}
+#endif /* ENABLE_IPV6 */
+	} else { /* if(!only_digits_and_dots || dot_count != 3) */
+		/* only digits and 3 dots, so it looks like an IPv4 address */
 		if(n>15)
 			goto parselan_error;
 		memcpy(lan_addr->str, str, n);
@@ -1011,13 +1052,18 @@ parselanaddr(struct lan_addr_s * lan_addr, const char * str, int debug_flag)
 				return -1;
 			}
 			if(addr_is_reserved(&lan_addr->ext_ip_addr)) {
-				/* error */
-				INIT_PRINT_ERR("Error: option ext_ip address contains reserved / private address : %s\n", lan_addr->ext_ip_str);
-				return -1;
+				if (GETFLAG(ALLOWPRIVATEIPV4MASK)) {
+					syslog(LOG_WARNING, "IGNORED : option ext_ip address contains reserved / private address : %s", lan_addr->ext_ip_str);
+				} else {
+					/* error */
+					INIT_PRINT_ERR("Error: option ext_ip address contains reserved / private address : %s\n", lan_addr->ext_ip_str);
+					return -1;
+				}
 			}
 		}
 	}
 #else
+	/* add associated network interfaces (for bridges) */
 	while(*p) {
 		/* skip spaces */
 		while(*p && isspace(*p))
@@ -1100,25 +1146,73 @@ int update_ext_ip_addr_from_stun(int init)
 		syslog(LOG_INFO, "Port forwarding is now enabled");
 	} else if ((init || !disable_port_forwarding) && restrictive_nat) {
 		if (addr_is_reserved(&if_addr)) {
-			syslog(LOG_WARNING, "STUN: ext interface %s with private IP address %s is now behind restrictive or symmetric NAT with public IP address %s which does not support port forwarding", ext_if_name, if_addr_str, ext_addr_str);
+			syslog(LOG_WARNING, "STUN: ext interface %s with private IP address %s is now possibly behind restrictive or symmetric NAT with public IP address %s which does not support port forwarding", ext_if_name, if_addr_str, ext_addr_str);
 			syslog(LOG_WARNING, "NAT on upstream router blocks incoming connections set by miniupnpd");
 			syslog(LOG_WARNING, "Turn off NAT on upstream router or change it to full-cone NAT 1:1 type");
 		} else {
 			syslog(LOG_WARNING, "STUN: ext interface %s has now public IP address %s but firewall filters incoming connections set by miniunnpd", ext_if_name, if_addr_str);
 			syslog(LOG_WARNING, "Check configuration of firewall on local machine and also on upstream router");
 		}
-		syslog(LOG_WARNING, "Port forwarding is now disabled");
+		if (!GETFLAG(ALLOWFILTEREDSTUNMASK)) {
+			syslog(LOG_WARNING, "Port forwarding is now disabled");
+			syslog(LOG_WARNING, "Set ext_perform_stun=allow-filtered if you still want to use port forwarding in current situation");
+		}
 	} else {
 		syslog(LOG_INFO, "STUN: ... done");
 	}
 
 	use_ext_ip_addr = ext_addr_str;
-	disable_port_forwarding = restrictive_nat;
+	if (!GETFLAG(ALLOWFILTEREDSTUNMASK))
+		disable_port_forwarding = restrictive_nat;
 	return 0;
 }
 
+/*! \brief check external IP address and update disable_port_forwarding
+ */
+static void update_disable_port_forwarding(void)
+{
+	char if_addr[INET_ADDRSTRLEN];
+	struct in_addr addr;
+	int r = getifaddr(ext_if_name, if_addr, INET_ADDRSTRLEN, &addr, NULL);
+	if (r < 0) {
+		switch(r) {
+		case GETIFADDR_DEVICE_NOT_CONFIGURED:
+			syslog(LOG_WARNING, "ext interface %s is not configured / no such device", ext_if_name);
+			break;
+		case GETIFADDR_IF_DOWN:
+			syslog(LOG_WARNING, "ext interface %s is down", ext_if_name);
+			break;
+		case GETIFADDR_NO_ADDRESS:
+			syslog(LOG_WARNING, "ext interface %s has no IPv4 address. Network is down", ext_if_name);
+			break;
+		default:
+			syslog(LOG_ERR, "Error getting IPv4 address for ext interface %s. Network is down", ext_if_name);
+		}
+		disable_port_forwarding = 1;
+	} else {
+		int reserved = addr_is_reserved(&addr);
+		if (!disable_port_forwarding && reserved) {
+			if (GETFLAG(ALLOWPRIVATEIPV4MASK)) {
+				syslog(LOG_WARNING, "IGNORED : Reserved / private IP address %s on ext interface %s", if_addr, ext_if_name);
+			} else {
+				syslog(LOG_WARNING, "Reserved / private IP address %s on ext interface %s: Port forwarding is impossible", if_addr, ext_if_name);
+				syslog(LOG_INFO, "You are probably behind NAT, enable option ext_perform_stun=yes to detect public IP address");
+				syslog(LOG_INFO, "Or use ext_ip= / -o option to declare public IP address");
+				syslog(LOG_INFO, "In case that miniupnpd is thinking that it's behind symmetric NAT while it actually is full-cone");
+				syslog(LOG_INFO, "You can set option ignore_private_ip_check=yes to enable port forwarding");
+				syslog(LOG_INFO, "But you may still need to configure stun server or ext_ip to make it work correctly");
+				syslog(LOG_INFO, "Public IP address is required by UPnP/PCP/PMP protocols and clients do not work without it");
+				disable_port_forwarding = 1;
+			}
+		} else if (disable_port_forwarding && !reserved) {
+			syslog(LOG_INFO, "Public IP address %s on ext interface %s: Port forwarding is enabled", if_addr, ext_if_name);
+			disable_port_forwarding = 0;
+		}
+	}
+}
+
 /* fill uuidvalue_wan and uuidvalue_wcd based on uuidvalue_igd */
-void complete_uuidvalues(void)
+static void complete_uuidvalues(void)
 {
 	size_t len;
 	len = strlen(uuidvalue_igd);
@@ -1166,6 +1260,9 @@ init(int argc, char * * argv, struct runtime_vars * v)
 	int pid;
 #endif
 	int debug_flag = 0;
+#ifdef USE_SYSTEMD
+	int systemd_flag = 0;
+#endif
 	int verbosity_level = 0;	/* for determining setlogmask() */
 	int openlog_option;
 	struct in_addr addr;
@@ -1186,6 +1283,10 @@ init(int argc, char * * argv, struct runtime_vars * v)
 			goto print_usage;
 		if(0 == strcmp(argv[i], "-d"))
 			debug_flag = 1;
+#ifdef USE_SYSTEMD
+		else if(0 == strcmp(argv[i], "-D"))
+			systemd_flag = 1;
+#endif
 	}
 
 	openlog_option = LOG_PID|LOG_CONS;
@@ -1220,7 +1321,7 @@ init(int argc, char * * argv, struct runtime_vars * v)
 #ifdef ENABLE_HTTPS
 	v->https_port = -1;
 #endif
-	v->notify_interval = 30;	/* seconds between SSDP announces */
+	v->notify_interval = 900;	/* seconds between SSDP announces */
 	v->clean_ruleset_threshold = 20;
 	v->clean_ruleset_interval = 0;	/* interval between ruleset check. 0=disabled */
 #ifndef DISABLE_CONFIG_FILE
@@ -1252,9 +1353,18 @@ init(int argc, char * * argv, struct runtime_vars * v)
 			case UPNPEXT_IP:
 				use_ext_ip_addr = ary_options[i].value;
 				break;
+			case UPNPEXT_ALLOW_PRIVATE_IPV4:
+				if(strcmp(ary_options[i].value, "yes") == 0)
+					SETFLAG(ALLOWPRIVATEIPV4MASK);
+				break;
 			case UPNPEXT_PERFORM_STUN:
 				if(strcmp(ary_options[i].value, "yes") == 0)
 					SETFLAG(PERFORMSTUNMASK);
+				else if(strcmp(ary_options[i].value, "allow-filtered") == 0)
+				{
+					SETFLAG(PERFORMSTUNMASK);
+					SETFLAG(ALLOWFILTEREDSTUNMASK);
+				}
 				break;
 			case UPNPEXT_STUN_HOST:
 				ext_stun_host = ary_options[i].value;
@@ -1713,6 +1823,10 @@ init(int argc, char * * argv, struct runtime_vars * v)
 #endif
 		case 'd':	/* discarding */
 			break;
+#ifdef USE_SYSTEMD
+		case 'D':	/* handled above, discarding */
+			break;
+#endif
 		case 'w':
 			if(i+1 < argc)
 				presurl = argv[++i];
@@ -1860,13 +1974,21 @@ init(int argc, char * * argv, struct runtime_vars * v)
 			return 1;
 		}
 		if (addr_is_reserved(&addr)) {
-			INIT_PRINT_ERR("Error: option ext_ip contains reserved / private address %s, not public routable\n", use_ext_ip_addr);
-			return 1;
+			if (GETFLAG(ALLOWPRIVATEIPV4MASK)) {
+				syslog(LOG_WARNING, "IGNORED : option ext_ip contains reserved / private address %s, not public routable", use_ext_ip_addr);
+			} else {
+				INIT_PRINT_ERR("Error: option ext_ip contains reserved / private address %s, not public routable\n", use_ext_ip_addr);
+				return 1;
+			}
 		}
 	}
 
 #ifndef NO_BACKGROUND_NO_PIDFILE
-	if(debug_flag)
+	if (debug_flag
+#ifdef USE_SYSTEMD
+	    || systemd_flag
+#endif
+	)
 	{
 		pid = getpid();
 	}
@@ -1988,6 +2110,16 @@ init(int argc, char * * argv, struct runtime_vars * v)
 		pidfilename = NULL;
 #endif
 
+#ifdef USE_SYSTEMD
+	if (systemd_flag) {
+		int r = sd_notify(0,
+			"STATUS=version " MINIUPNPD_VERSION " starting\n"
+		);
+		if (r > 0)
+			v->systemd_notify = 1;
+	}
+#endif
+
 #ifdef ENABLE_LEASEFILE
 	/*remove(lease_file);*/
 	syslog(LOG_INFO, "Reloading rules from lease file");
@@ -2054,12 +2186,15 @@ print_usage:
 #endif
 			"\n"
 	        "\nNotes:\n\tThere can be one or several listening_ips.\n"
-	        "\tNotify interval is in seconds. Default is 30 seconds.\n"
+	        "\tNotify interval is in seconds. Default is 900 seconds.\n"
 #ifndef NO_BACKGROUND_NO_PIDFILE
 			"\tDefault pid file is '%s'.\n"
 #endif
 			"\tDefault config file is '%s'.\n"
-			"\tWith -d miniupnpd will run as a standard program.\n"
+			"\t-d starts miniupnpd in foreground in debug mode.\n"
+#ifdef USE_SYSTEMD
+	                "\t-D starts miniupnpd in foreground as a systemd service.\n"
+#endif
 			"\t-o argument is either an IPv4 address or \"STUN:host[:port]\".\n"
 #ifdef ENABLE_IPV6
 			"\t-4 disable IPv6\n"
@@ -2147,6 +2282,7 @@ main(int argc, char * * argv)
 	fd_set readset;	/* for select() */
 	fd_set writeset;
 	struct timeval timeout, timeofday, lasttimeofday = {0, 0};
+	int current_notify_interval;	/* with random variation */
 	int max_fd = -1;
 #ifdef USE_MINIUPNPDCTL
 	int sctl = -1;
@@ -2233,6 +2369,7 @@ main(int argc, char * * argv)
 	memset(&v, 0, sizeof(v));
 	if(init(argc, argv, &v) != 0)
 		return 1;
+	current_notify_interval = gen_current_notify_interval(v.notify_interval);
 #ifdef ENABLE_HTTPS
 	if(init_ssl() < 0)
 		return 1;
@@ -2286,7 +2423,7 @@ main(int argc, char * * argv)
 	       GETFLAG(ENABLEUPNPMASK) ? "UPnP-IGD " : "",
 	       ext_if_name, upnp_bootid);
 #ifdef ENABLE_IPV6
-	if (ext_if_name6 != ext_if_name) {
+	if (strcmp(ext_if_name6, ext_if_name) != 0) {
 		syslog(LOG_INFO, "specific IPv6 ext if %s", ext_if_name6);
 	}
 #endif
@@ -2300,18 +2437,7 @@ main(int argc, char * * argv)
 	}
 	else if (!use_ext_ip_addr)
 	{
-		char if_addr[INET_ADDRSTRLEN];
-		struct in_addr addr;
-		if (getifaddr(ext_if_name, if_addr, INET_ADDRSTRLEN, &addr, NULL) < 0) {
-			syslog(LOG_WARNING, "Cannot get IP address for ext interface %s. Network is down", ext_if_name);
-			disable_port_forwarding = 1;
-		} else if (addr_is_reserved(&addr)) {
-			syslog(LOG_INFO, "Reserved / private IP address %s on ext interface %s: Port forwarding is impossible", if_addr, ext_if_name);
-			syslog(LOG_INFO, "You are probably behind NAT, enable option ext_perform_stun=yes to detect public IP address");
-			syslog(LOG_INFO, "Or use ext_ip= / -o option to declare public IP address");
-			syslog(LOG_INFO, "Public IP address is required by UPnP/PCP/PMP protocols and clients do not work without it");
-			disable_port_forwarding = 1;
-		}
+		update_disable_port_forwarding();
 	}
 
 #ifdef DYNAMIC_OS_VERSION
@@ -2420,6 +2546,28 @@ main(int argc, char * * argv)
 		                "messages. EXITING");
 			return 1;
 		}
+
+#if defined(UPNP_STRICT) && defined(IGD_V2)
+		/* WANIPConnection:2 Service p9 :
+		 * Upon startup, UPnP IGD DCP MUST broadcast an ssdp:byebye before
+		 * sending the initial ssdp:alive onto the local network. Sending an
+		 * ssdp:byebye as part of the normal start up process for a UPnP
+		 * device ensures that UPnP control points with information about the
+		 * previous device instance will safely discard state information
+		 * about the previous device instance before communicating with the
+		 * new device instance. */
+		if (GETFLAG(ENABLEUPNPMASK))
+		{
+#ifndef ENABLE_IPV6
+			if(SendSSDPGoodbye(snotify, addr_count) < 0)
+#else
+			if(SendSSDPGoodbye(snotify, addr_count * 2) < 0)
+#endif
+			{
+				syslog(LOG_WARNING, "Failed to broadcast good-bye notifications");
+			}
+		}
+#endif /* UPNP_STRICT */
 
 #ifdef USE_IFACEWATCHER
 		/* open socket for kernel notifications about new network interfaces */
@@ -2559,6 +2707,15 @@ main(int argc, char * * argv)
 	}
 #endif /* HAS_LIBCAP_NG */
 
+#ifdef USE_SYSTEMD
+	if (v.systemd_notify) {
+		upnp_update_status();
+		sd_notify(0,
+			"READY=1\n"
+		);
+	}
+#endif
+
 	/* main loop */
 	while(!quitting)
 	{
@@ -2590,24 +2747,7 @@ main(int argc, char * * argv)
 			}
 			else if (!use_ext_ip_addr)
 			{
-				char if_addr[INET_ADDRSTRLEN];
-				struct in_addr addr;
-				if (getifaddr(ext_if_name, if_addr, INET_ADDRSTRLEN, &addr, NULL) < 0) {
-					syslog(LOG_WARNING, "Cannot get IP address for ext interface %s. Network is down", ext_if_name);
-					disable_port_forwarding = 1;
-				} else {
-					int reserved = addr_is_reserved(&addr);
-					if (!disable_port_forwarding && reserved) {
-						syslog(LOG_INFO, "Reserved / private IP address %s on ext interface %s: Port forwarding is impossible", if_addr, ext_if_name);
-						syslog(LOG_INFO, "You are probably behind NAT, enable option ext_perform_stun=yes to detect public IP address");
-						syslog(LOG_INFO, "Or use ext_ip= / -o option to declare public IP address");
-						syslog(LOG_INFO, "Public IP address is required by UPnP/PCP/PMP protocols and clients do not work without it");
-						disable_port_forwarding = 1;
-					} else if (disable_port_forwarding && !reserved) {
-						syslog(LOG_INFO, "Public IP address %s on ext interface %s: Port forwarding is enabled", if_addr, ext_if_name);
-						disable_port_forwarding = 0;
-					}
-				}
+				update_disable_port_forwarding();
 			}
 #ifdef ENABLE_NATPMP
 			if(GETFLAG(ENABLENATPMPMASK))
@@ -2636,13 +2776,13 @@ main(int argc, char * * argv)
 		if(upnp_gettimeofday(&timeofday) < 0)
 		{
 			syslog(LOG_ERR, "gettimeofday(): %m");
-			timeout.tv_sec = v.notify_interval;
+			timeout.tv_sec = current_notify_interval;
 			timeout.tv_usec = 0;
 		}
 		else
 		{
 			/* the comparaison is not very precise but who cares ? */
-			if(timeofday.tv_sec >= (lasttimeofday.tv_sec + v.notify_interval))
+			if(timeofday.tv_sec >= (lasttimeofday.tv_sec + current_notify_interval))
 			{
 				if (GETFLAG(ENABLEUPNPMASK))
 					SendSSDPNotifies2(snotify,
@@ -2651,13 +2791,14 @@ main(int argc, char * * argv)
 					              (unsigned short)v.https_port,
 #endif
 				                  v.notify_interval << 1);
+				current_notify_interval = gen_current_notify_interval(v.notify_interval);
 				memcpy(&lasttimeofday, &timeofday, sizeof(struct timeval));
-				timeout.tv_sec = v.notify_interval;
+				timeout.tv_sec = current_notify_interval;
 				timeout.tv_usec = 0;
 			}
 			else
 			{
-				timeout.tv_sec = lasttimeofday.tv_sec + v.notify_interval
+				timeout.tv_sec = lasttimeofday.tv_sec + current_notify_interval
 				                 - timeofday.tv_sec;
 				if(timeofday.tv_usec > lasttimeofday.tv_usec)
 				{
@@ -3135,10 +3276,26 @@ main(int argc, char * * argv)
 			e = next;
 		}
 
+#ifdef USE_SYSTEMD
+		if (v.systemd_notify) {
+			upnp_update_status();
+		}
+#endif
+
 	}	/* end of main loop */
 
 shutdown:
+
 	syslog(LOG_NOTICE, "shutting down MiniUPnPd");
+#ifdef USE_SYSTEMD
+	if (v.systemd_notify) {
+		sd_notify(0,
+			"STATUS=version " MINIUPNPD_VERSION " shutting down\n"
+			"STOPPING=1\n"
+		);
+	}
+#endif
+
 	/* send good-bye */
 	if (GETFLAG(ENABLEUPNPMASK))
 	{
@@ -3253,4 +3410,3 @@ shutdown:
 	closelog();
 	return 0;
 }
-

@@ -1,0 +1,55 @@
+#!/bin/bash
+
+set -e
+
+# just in case...
+unset CC
+unset CXX
+
+#PREFIX=i686-w64-mingw32
+PREFIX=x86_64-w64-mingw32
+
+#export PATH="/usr/$PREFIX/bin:$PATH"
+export INSTALLDIR="$PWD/$PREFIX"
+export PKG_CONFIG_PATH=$INSTALLDIR/lib/pkgconfig:/usr/$PREFIX/lib/pkgconfig
+export PKG_CONFIG_LIBDIR="$INSTALLDIR/lib/pkgconfig"
+export PKG_CONFIG="/usr/bin/${PREFIX}-pkg-config"
+export CPPFLAGS="-I$INSTALLDIR/include"
+export LDFLAGS="-L$INSTALLDIR/lib"
+
+# without WINEPATH our local DLLs won't be find when running tests
+export WINEPATH="$INSTALLDIR/bin;$INSTALLDIR/lib;/usr/$PREFIX/bin;/usr/$PREFIX/lib;$PWD/libwget/.libs;$GCCLIB"
+
+# let mingw compiler be less verbose
+export CFLAGS="-O2 -Wall -Wno-format"
+
+rm -rf libiconv-*
+wget -q -O- https://ftp.gnu.org/pub/gnu/libiconv/libiconv-1.17.tar.gz | tar xz
+cd libiconv-*
+./configure --build=x86_64-pc-linux-gnu --host=$PREFIX --disable-shared --enable-static --prefix=$INSTALLDIR
+make -j$(nproc)
+make install
+cd ..
+
+rm -rf libunistring-*
+wget -q -O- https://ftp.gnu.org/gnu/libunistring/libunistring-latest.tar.gz | tar xz
+cd libunistring-*
+./configure --build=x86_64-pc-linux-gnu --host=$PREFIX --disable-shared --enable-static --prefix=$INSTALLDIR
+make -j$(nproc)
+make install
+cd ..
+
+rm -rf libidn2-*
+wget -q -O- https://ftp.gnu.org/gnu/libidn/libidn2-latest.tar.gz | tar xz
+cd libidn2-*
+./configure --build=x86_64-pc-linux-gnu --host=$PREFIX --disable-shared --enable-static --disable-doc --prefix=$INSTALLDIR
+make -j$(nproc)
+make install
+cd ..
+
+# build libpsl
+./autogen.sh
+./configure --build=x86_64-pc-linux-gnu --host=$PREFIX --disable-shared --enable-static --disable-gtk-doc --enable-runtime=libidn2 --prefix=$INSTALLDIR
+make clean
+make -j$(nproc)
+make check -j$(nproc) LOG_COMPILER=wine

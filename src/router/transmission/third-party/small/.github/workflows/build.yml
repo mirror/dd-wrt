@@ -1,0 +1,133 @@
+#
+# Copyright (c) 2022 alandefreitas (alandefreitas@gmail.com)
+#
+# Distributed under the Boost Software License, Version 1.0.
+# https://www.boost.org/LICENSE_1_0.txt
+#
+
+name: Small
+
+on:
+  push:
+    paths:
+      - '**.c'
+      - '**.cpp'
+      - '**.h'
+      - '**.hpp'
+      - '**.cmake'
+      - '**/CMakeLists.txt'
+      - '.github/workflows/build.yml'
+  pull_request:
+    paths:
+      - '**.c'
+      - '**.cpp'
+      - '**.h'
+      - '**.hpp'
+      - '**.cmake'
+      - '**/CMakeLists.txt'
+      - '.github/workflows/build.yml'
+
+concurrency:
+  group: ${{format('{0}:{1}', github.repository, github.ref)}}
+  cancel-in-progress: true
+
+jobs:
+  Build:
+    name: ${{ matrix.config.name }}
+    runs-on: ${{ matrix.config.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        config:
+          # see: https://github.com/actions/virtual-environments
+          - {
+            name: "Windows-MSVC/2019/Static/X86/Release",
+            os: windows-2019,
+            config: Release,
+            cmake_extra_args: -G "Visual Studio 16 2019" -A Win32 -DCMAKE_CXX_FLAGS="/EHsc",
+            sudocmd: "",
+            artifact_name: "Windows x86",
+            cores: 2,
+            install_dir: "C:/Program Files (x86)/small"
+          }
+          - {
+            name: "Windows-MSVC/2019/Static/X64/Release",
+            os: windows-2019,
+            config: Release,
+            cmake_extra_args: -G "Visual Studio 16 2019" -A x64 -DCMAKE_CXX_FLAGS="/EHsc",
+            sudocmd: "",
+            artifact_name: "Windows x64",
+            cores: 2,
+            install_dir: "C:/Program Files/small"
+          }
+          - {
+            name: "Ubuntu/22.04/Static/X64/Release",
+            os: ubuntu-22.04,
+            config: Release,
+            cmake_extra_args: "",
+            sudocmd: "sudo",
+            artifact_name: "Ubuntu 22.04",
+            cores: 2,
+            install_dir: "/usr/local/"
+          }
+          - {
+            name: "Ubuntu/22.04/Static/X64/fsanitize",
+            os: ubuntu-22.04,
+            config: Debug,
+            cmake_extra_args: "-DCMAKE_C_COMPILER=/usr/bin/clang-15 -DCMAKE_CXX_COMPILER=/usr/bin/clang++-15 -DCMAKE_C_FLAGS='-fsanitize=address,pointer-compare,pointer-subtract,leak,undefined' -DCMAKE_CXX_FLAGS='-fsanitize=address,pointer-compare,pointer-subtract,leak,undefined'",
+            sudocmd: "sudo",
+            artifact_name: "Ubuntu 22.04 fsanitize",
+            cores: 2,
+            install_dir: "/usr/local/"
+          }
+          - {
+            name: "MacOSX/15/Static/X64/Release",
+            os: macos-15,
+            config: Release,
+            cmake_extra_args: "",
+            sudocmd: "sudo",
+            artifact_name: "MacOSX 15",
+            cores: 4,
+            install_dir: "/usr/local/"
+          }
+    steps:
+      - uses: actions/checkout@v6
+      - name: Create Work Dir
+        run: mkdir build
+      - name: Configure
+        working-directory: ./build
+        run: |
+          cmake .. ${{ matrix.config.cmake_extra_args }} -D CMAKE_BUILD_TYPE=${{ matrix.config.config }} -DSMALL_DEVELOPER_MODE=ON
+      - name: Build
+        working-directory: ./build
+        run: cmake --build . --parallel ${{ matrix.config.cores }} --config ${{ matrix.config.config }}
+      - name: Test
+        working-directory: ./build
+        run: ctest --parallel ${{ matrix.config.cores }} -C ${{ matrix.config.config }} --verbose
+      - name: Install
+        working-directory: ./build
+        run: ${{ matrix.config.sudocmd }} cmake --install . --prefix "${{ matrix.config.install_dir }}"
+      - name: CMake Subdir Test
+        working-directory: ./test/cmake
+        run: |
+          mkdir build_with_subdir
+          cd build_with_subdir
+          cmake .. ${{ matrix.config.cmake_extra_args }} -D CMAKE_BUILD_TYPE=${{ matrix.config.config }}
+          cmake --build . --parallel ${{ matrix.config.cores }} --config ${{ matrix.config.config }}
+          ctest -C ${{ matrix.config.config }} --verbose
+      - name: CMake Find Package Test
+        working-directory: ./test/cmake
+        run: |
+          mkdir build_with_package
+          cd build_with_package
+          cmake .. ${{ matrix.config.cmake_extra_args }} -D CMAKE_BUILD_TYPE=${{ matrix.config.config }} -D BOOST_CI_INSTALL_TEST=ON -D Small_DIR="${{ matrix.config.install_dir }}"
+          cmake --build . --parallel ${{ matrix.config.cores }} --config ${{ matrix.config.config }}
+          ctest -C ${{ matrix.config.config }} --verbose
+      - name: Create packages
+        working-directory: ./build
+        run: ${{ matrix.config.sudocmd }} cpack
+      - name: Archive Packages
+        uses: actions/upload-artifact@v6
+        with:
+          name: Binary Packages ${{ matrix.config.artifact_name }}
+          path: build/small-?.?.?-*.*

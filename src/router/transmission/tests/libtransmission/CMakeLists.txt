@@ -7,6 +7,7 @@ target_sources(libtransmission-test
         announce-list-test.cc
         announcer-test.cc
         announcer-udp-test.cc
+        api-compat-test.cc
         benc-test.cc
         bitfield-test.cc
         block-info-test.cc
@@ -15,15 +16,15 @@ target_sources(libtransmission-test
         clients-test.cc
         completion-test.cc
         copy-test.cc
-        crypto-test-ref.h
         crypto-test.cc
-        error-test.cc
         dht-test.cc
+        error-test.cc
         file-piece-map-test.cc
         file-test.cc
         getopt-test.cc
         handshake-test.cc
         history-test.cc
+        ip-cache-test.cc
         json-test.cc
         lpd-test.cc
         magnet-metainfo-test.cc
@@ -31,7 +32,6 @@ target_sources(libtransmission-test
         move-test.cc
         net-test.cc
         open-files-test.cc
-        peer-mgr-active-requests-test.cc
         peer-mgr-wishlist-test.cc
         peer-msgs-test.cc
         platform-test.cc
@@ -39,6 +39,7 @@ target_sources(libtransmission-test
         remove-test.cc
         rename-test.cc
         rpc-test.cc
+        serializer-tests.cc
         session-test.cc
         session-alt-speeds-test.cc
         settings-test.cc
@@ -50,8 +51,11 @@ target_sources(libtransmission-test
         torrent-files-test.cc
         torrent-magnet-test.cc
         torrent-metainfo-test.cc
+        torrent-queue-test.cc
         torrents-test.cc
+        tr-peer-info-test.cc
         utils-test.cc
+        values-test.cc
         variant-test.cc
         watchdir-test.cc
         web-utils-test.cc)
@@ -104,10 +108,6 @@ target_sources(subprocess-test
 set_property(
     TARGET subprocess-test
     PROPERTY FOLDER "tests")
-
-target_include_directories(subprocess-test
-    PRIVATE
-        ${CMAKE_SOURCE_DIR}/libtransmission)
 
 target_link_libraries(subprocess-test
     PRIVATE

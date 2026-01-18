@@ -1,5 +1,7 @@
-﻿///////////////////////////////////////////////////////////////
-//  Copyright 2012 John Maddock. Distributed under the Boost
+///////////////////////////////////////////////////////////////
+//  Copyright 2012 John Maddock.
+//  Copyright 2022 - 2025 Christopher Kormanyos.
+//  Distributed under the Boost
 //  Software License, Version 1.0. (See accompanying file
 //  LICENSE_1_0.txt or copy at https://www.boost.org/LICENSE_1_0.txt
 
@@ -7,17 +9,18 @@
 #include <vld.h>
 #endif
 
-#include <functional>
-#include <numeric>
-#include <type_traits>
-#include <typeinfo>
-#include "test.hpp"
+#include <test/test.hpp>
 
 #ifndef BOOST_MP_STANDALONE
 #include <boost/math/special_functions/pow.hpp>
 #include <boost/integer/common_factor_rt.hpp>
 #include <boost/lexical_cast.hpp>
 #endif
+
+#include <functional>
+#include <numeric>
+#include <type_traits>
+#include <typeinfo>
 
 template <class T>
 struct is_boost_rational : public std::integral_constant<bool, false>
@@ -36,25 +39,32 @@ struct is_checked_cpp_int : public std::integral_constant<bool, false>
 // for __int128 and/or __float128:
 //
 template <class T>
-inline const char* name_of()
+const char* name_of()
 {
    return typeid(T).name();
 }
 #ifdef BOOST_HAS_INT128
+#if (defined(__GNUC__) && !defined(__clang__))
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wpedantic"
+#endif
 template <>
-inline const char* name_of<__int128>()
+const char* name_of<__int128>()
 {
    return "__int128";
 }
 template <>
-inline const char* name_of<unsigned __int128>()
+const char* name_of<unsigned __int128>()
 {
    return "unsigned __int128";
 }
+#if (defined(__GNUC__) && !defined(__clang__))
+#pragma GCC diagnostic pop
+#endif
 #endif
 #ifdef BOOST_HAS_FLOAT128
 //template <>
-//inline const char* name_of<__float128>()
+//const char* name_of<__float128>()
 //{
 //   return "__float128";
 //}
@@ -550,12 +560,12 @@ void test_signed_integer_ops(const std::integral_constant<bool, false>&)
 }
 
 template <class Real>
-inline Real negate_if_signed(Real r, const std::integral_constant<bool, true>&)
+Real negate_if_signed(Real r, const std::integral_constant<bool, true>&)
 {
    return -r;
 }
 template <class Real>
-inline Real negate_if_signed(Real r, const std::integral_constant<bool, false>&)
+Real negate_if_signed(Real r, const std::integral_constant<bool, false>&)
 {
    return r;
 }
@@ -1952,7 +1962,7 @@ void test_mixed(const std::integral_constant<bool, false>&)
 }
 
 template <class Real>
-inline bool check_is_nan(const Real& val, const std::integral_constant<bool, true>&)
+bool check_is_nan(const Real& val, const std::integral_constant<bool, true>&)
 {
    #ifndef BOOST_MP_STANDALONE
    return (boost::math::isnan)(val);
@@ -1962,17 +1972,17 @@ inline bool check_is_nan(const Real& val, const std::integral_constant<bool, tru
    #endif
 }
 template <class Real>
-inline bool check_is_nan(const Real&, const std::integral_constant<bool, false>&)
+bool check_is_nan(const Real&, const std::integral_constant<bool, false>&)
 {
    return false;
 }
 template <class Real>
-inline Real negate_value(const Real& val, const std::integral_constant<bool, true>&)
+Real negate_value(const Real& val, const std::integral_constant<bool, true>&)
 {
    return -val;
 }
 template <class Real>
-inline Real negate_value(const Real& val, const std::integral_constant<bool, false>&)
+Real negate_value(const Real& val, const std::integral_constant<bool, false>&)
 {
    return val;
 }
@@ -2035,10 +2045,17 @@ struct is_definitely_unsigned_int
     : public std::integral_constant<bool, std::numeric_limits<Num>::is_specialized && !std::numeric_limits<Num>::is_signed>
 {};
 #ifdef BOOST_HAS_INT128
+#if (defined(__GNUC__) && !defined(__clang__))
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wpedantic"
+#endif
 template <>
 struct is_definitely_unsigned_int<unsigned __int128>
     : public std::true_type
 {};
+#if (defined(__GNUC__) && !defined(__clang__))
+#pragma GCC diagnostic pop
+#endif
 #endif
 
 template <class Real, class Num>
@@ -2902,7 +2919,7 @@ void test_basic_conditionals(Real a, Real b)
 
 template <class T>
 typename std::enable_if<boost::multiprecision::number_category<T>::value == boost::multiprecision::number_kind_complex>::type
-test_relationals(T a, T b)
+test_comparisons(T a, T b)
 {
    BOOST_CHECK_EQUAL((a == b), false);
    BOOST_CHECK_EQUAL((a != b), true);
@@ -2933,7 +2950,7 @@ test_relationals(T a, T b)
 
 template <class T>
 typename std::enable_if<boost::multiprecision::number_category<T>::value != boost::multiprecision::number_kind_complex>::type
-test_relationals(T a, T b)
+test_comparisons(T a, T b)
 {
    BOOST_CHECK_EQUAL((a == b), false);
    BOOST_CHECK_EQUAL((a != b), true);
@@ -3063,11 +3080,18 @@ void test()
    test_mixed<Real, unsigned long long>(tag);
 #endif
 #if defined(BOOST_HAS_INT128) && !defined(BOOST_NO_CXX17_IF_CONSTEXPR)
+#if (defined(__GNUC__) && !defined(__clang__))
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wpedantic"
+#endif
    if constexpr (std::is_constructible<Real, __int128>::value)
    {
       test_mixed<Real, __int128>(tag);
       test_mixed<Real, unsigned __int128>(tag);
    }
+#if (defined(__GNUC__) && !defined(__clang__))
+#pragma GCC diagnostic pop
+#endif
 #endif
    test_mixed<Real, float>(tag);
    test_mixed<Real, double>(tag);
@@ -3248,7 +3272,7 @@ void test()
    //
    // Comparisons:
    //
-   test_relationals(a, b);
+   test_comparisons(a, b);
    test_members(a);
    //
    // Use in Boolean context:

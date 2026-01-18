@@ -91,7 +91,7 @@ namespace small {
                 /// value This should work in O(1) time because we have a hint
                 /// to the byte index
                 operator typename String::wide_value_type() const noexcept {
-                    if constexpr (not is_utf32_v<value_type>) {
+                    if constexpr (!is_utf32_v<value_type>) {
                         // Get reference to element and convert from utf8 to
                         // wide type
                         wide_value_type v;
@@ -126,7 +126,7 @@ namespace small {
                 operator<<(
                     std::ostream &os,
                     const codepoint_reference_impl &impl) {
-                    if constexpr (not is_utf32_v<value_type>) {
+                    if constexpr (!is_utf32_v<value_type>) {
                         if (impl.size() == 1) {
                             os << static_cast<char>(
                                 impl.container_->operator[](impl.byte_index_));

@@ -1,5 +1,5 @@
 /*
- * Copyright(c) 2014-2018 Tim Ruehsen
+ * Copyright(c) 2014-2024 Tim Ruehsen
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -35,11 +35,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#ifdef HAVE_ALLOCA_H
-#	include <alloca.h>
-#endif
 
 #include <libpsl.h>
+#include "common.h"
 
 static int
 	ok,
@@ -86,10 +84,7 @@ static void test(const psl_ctx_t *psl, const char *domain, const char *expected_
 
 static void test_iso(const psl_ctx_t *psl, const char *domain, const char *expected_result)
 {
-	/* makes only sense with a runtime IDN library configured */
-#if defined(WITH_LIBIDN) || defined(WITH_LIBIDN2) || defined(WITH_LIBICU)
 	testx(psl, domain, "iso-8859-15", "de", expected_result);
-#endif
 }
 
 static void test_psl(void)
@@ -124,7 +119,10 @@ static void test_psl(void)
 	test(psl, "www.\303\270yer.no", "www.\303\270yer.no");
 
 	/* Norwegian with lowercase oe, encoded as ISO-8859-15 */
+        /* makes only sense with a runtime IDN library configured */
+#if defined(WITH_LIBIDN) || defined(WITH_LIBIDN2) || defined(WITH_LIBICU)
 	test_iso(psl, "www.\370yer.no", "www.\303\270yer.no");
+#endif
 
 	/* Testing special code paths of psl_str_to_utf8lower() */
 	for (it = 254; it <= 257; it++) {
@@ -197,11 +195,7 @@ int main(int argc, const char * const *argv)
 		const char *valgrind = getenv("TESTS_VALGRIND");
 
 		if (valgrind && *valgrind) {
-			size_t cmdsize = strlen(valgrind) + strlen(argv[0]) + 32;
-			char *cmd = alloca(cmdsize);
-
-			snprintf(cmd, cmdsize, "TESTS_VALGRIND="" %s %s", valgrind, argv[0]);
-			return system(cmd) != 0;
+			return run_valgrind(valgrind, argv[0]);
 		}
 	}
 

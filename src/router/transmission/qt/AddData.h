@@ -1,4 +1,4 @@
-// This file Copyright © 2012-2023 Mnemosyne LLC.
+// This file Copyright © Mnemosyne LLC.
 // It may be used under GPLv2 (SPDX: GPL-2.0-only), GPLv3 (SPDX: GPL-3.0-only),
 // or any future license endorsed by Mnemosyne LLC.
 // License text can be found in the licenses/ folder.
@@ -40,9 +40,9 @@ public:
 
     int set(QString const&);
 
-    QByteArray toBase64() const;
-    QString readableName() const;
-    QString readableShortName() const;
+    [[nodiscard]] QByteArray toBase64() const;
+    [[nodiscard]] QString readableName() const;
+    [[nodiscard]] QString readableShortName() const;
 
     void disposeSourceFile() const;
 
@@ -51,7 +51,7 @@ public:
         disposal_ = disposal;
     }
 
-    constexpr auto& fileDisposal() const noexcept
+    [[nodiscard]] constexpr auto& fileDisposal() const noexcept
     {
         return disposal_;
     }

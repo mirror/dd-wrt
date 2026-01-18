@@ -1,27 +1,28 @@
 ///////////////////////////////////////////////////////////////////
-//  Copyright Christopher Kormanyos 2018 - 2022.                 //
+//  Copyright Christopher Kormanyos 2018 - 2025.                 //
 //  Distributed under the Boost Software License,                //
 //  Version 1.0. (See accompanying file LICENSE_1_0.txt          //
 //  or copy at http://www.boost.org/LICENSE_1_0.txt)             //
 ///////////////////////////////////////////////////////////////////
 
+#include <examples/example_uintwide_t.h>
+#include <math/wide_integer/uintwide_t.h>
+#include <test/stopwatch.h>
+
+#include <util/utility/util_pseudorandom_time_point_seed.h>
+
 #include <algorithm>
-#include <chrono>
 #include <cstddef>
 #include <cstdint>
 #include <iomanip>
 #include <iostream>
-#include <iterator>
 #include <limits>
 #include <random>
 #include <vector>
 
-#include <examples/example_uintwide_t.h>
-#include <math/wide_integer/uintwide_t.h>
-
 namespace local_timed_mul
 {
-  constexpr std::uint32_t wide_integer_test9_digits2 = std::uint32_t(1ULL << 15U);
+  constexpr std::uint32_t wide_integer_test9_digits2 = static_cast<std::uint32_t>(1ULL << 15U);
 
   template<typename UnsignedIntegralIteratorType,
            typename RandomEngineType>
@@ -34,7 +35,7 @@ namespace local_timed_mul
       WIDE_INTEGER_NAMESPACE::math::wide_integer::uniform_int_distribution<std::numeric_limits<local_uint_type>::digits, typename local_uint_type::limb_type>;
     #else
     using distribution_type =
-      math::wide_integer::uniform_int_distribution<std::numeric_limits<local_uint_type>::digits, typename local_uint_type::limb_type>;
+      ::math::wide_integer::uniform_int_distribution<std::numeric_limits<local_uint_type>::digits, typename local_uint_type::limb_type>;
     #endif
 
     distribution_type distribution;
@@ -45,7 +46,7 @@ namespace local_timed_mul
   #if defined(WIDE_INTEGER_NAMESPACE)
   using big_uint_type = WIDE_INTEGER_NAMESPACE::math::wide_integer::uintwide_t<wide_integer_test9_digits2>;
   #else
-  using big_uint_type = math::wide_integer::uintwide_t<wide_integer_test9_digits2>;
+  using big_uint_type = ::math::wide_integer::uintwide_t<wide_integer_test9_digits2>;
   #endif
 
   auto local_a() -> std::vector<big_uint_type>&
@@ -70,7 +71,7 @@ namespace local_timed_mul
 #if defined(WIDE_INTEGER_NAMESPACE)
 auto WIDE_INTEGER_NAMESPACE::math::wide_integer::example009_timed_mul() -> bool
 #else
-auto math::wide_integer::example009_timed_mul() -> bool
+auto ::math::wide_integer::example009_timed_mul() -> bool
 #endif
 {
   using random_engine_type =
@@ -78,7 +79,7 @@ auto math::wide_integer::example009_timed_mul() -> bool
 
   random_engine_type rng; // NOLINT(cert-msc32-c,cert-msc51-cpp)
 
-  rng.seed(static_cast<typename random_engine_type::result_type>(std::clock()));
+  rng.seed(::util::util_pseudorandom_time_point_seed::value<typename random_engine_type::result_type>());
 
   for(auto i = static_cast<typename std::vector<local_timed_mul::big_uint_type>::size_type>(0U); i < local_timed_mul::local_a().size(); ++i)
   {
@@ -89,17 +90,13 @@ auto math::wide_integer::example009_timed_mul() -> bool
   std::uint64_t count = 0U;
   std::size_t   index = 0U;
 
-  std::intmax_t total_time { };
+  using stopwatch_type = concurrency::stopwatch;
 
-  const std::chrono::high_resolution_clock::time_point begin = std::chrono::high_resolution_clock::now();
+  stopwatch_type my_stopwatch { };
 
-  for(;;)
+  while(stopwatch_type::elapsed_time<float>(my_stopwatch) < static_cast<float>(6.0L)) // NOLINT(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
   {
     local_timed_mul::local_a().at(index) * local_timed_mul::local_b().at(index);
-
-    const std::chrono::high_resolution_clock::time_point end = std::chrono::high_resolution_clock::now();
-
-    total_time = static_cast<std::intmax_t>(std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count());
 
     ++count;
     ++index;
@@ -108,14 +105,9 @@ auto math::wide_integer::example009_timed_mul() -> bool
     {
       index = 0U;
     }
-
-    if(total_time > INTMAX_C(5999))
-    {
-      break;
-    }
   }
 
-  const float kops_per_sec = float(count) / float(static_cast<std::uint32_t>(total_time));
+  const float kops_per_sec = static_cast<float>(count) / static_cast<float>(static_cast<float>(stopwatch_type::elapsed_time<float>(my_stopwatch) * 1000.0F));
 
   {
     const auto flg = std::cout.flags();
@@ -146,7 +138,7 @@ auto main() -> int
   #if defined(WIDE_INTEGER_NAMESPACE)
   const auto result_is_ok = WIDE_INTEGER_NAMESPACE::math::wide_integer::example009_timed_mul();
   #else
-  const auto result_is_ok = math::wide_integer::example009_timed_mul();
+  const auto result_is_ok = ::math::wide_integer::example009_timed_mul();
   #endif
 
   std::cout << "result_is_ok: " << std::boolalpha << result_is_ok << std::endl;

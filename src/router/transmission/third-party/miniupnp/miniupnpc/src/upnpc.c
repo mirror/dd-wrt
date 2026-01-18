@@ -1,7 +1,7 @@
-/* $Id: upnpc.c,v 1.141 2024/01/26 23:34:01 nanard Exp $ */
+/* $Id: upnpc.c,v 1.146 2025/01/10 23:02:54 nanard Exp $ */
 /* Project : miniupnp
  * Author : Thomas Bernard
- * Copyright (c) 2005-2024 Thomas Bernard
+ * Copyright (c) 2005-2025 Thomas Bernard
  * This software is subject to the conditions detailed in the
  * LICENCE file provided in this distribution. */
 
@@ -403,7 +403,7 @@ static void GetFirewallStatus(struct UPNPUrls * urls, struct IGDdatas * data)
 /* Test function
  * 1 - Add pinhole
  * 2 - Check if pinhole is working from the IGD side */
-static void SetPinholeAndTest(struct UPNPUrls * urls, struct IGDdatas * data,
+static int SetPinholeAndTest(struct UPNPUrls * urls, struct IGDdatas * data,
 					const char * remoteaddr, const char * eport,
 					const char * intaddr, const char * iport,
 					const char * proto, const char * lease_time)
@@ -416,7 +416,7 @@ static void SetPinholeAndTest(struct UPNPUrls * urls, struct IGDdatas * data,
 	if(!intaddr || !remoteaddr || !iport || !eport || !proto || !lease_time)
 	{
 		fprintf(stderr, "Wrong arguments\n");
-		return;
+		return -1;
 	}
 	if(atoi(proto) == 0)
 	{
@@ -435,13 +435,16 @@ static void SetPinholeAndTest(struct UPNPUrls * urls, struct IGDdatas * data,
 		else
 		{
 			fprintf(stderr, "invalid protocol\n");
-			return;
+			return -1;
 		}
 	}
 	r = UPNP_AddPinhole(urls->controlURL_6FC, data->IPv6FC.servicetype, remoteaddr, eport, intaddr, iport, proto, lease_time, uniqueID);
 	if(r!=UPNPCOMMAND_SUCCESS)
+	{
 		printf("AddPinhole([%s]:%s -> [%s]:%s) failed with code %d (%s)\n",
 		       remoteaddr, eport, intaddr, iport, r, strupnperror(r));
+		return -2;
+	}
 	else
 	{
 		printf("AddPinhole: ([%s]:%s -> [%s]:%s) / Pinhole ID = %s\n",
@@ -451,6 +454,7 @@ static void SetPinholeAndTest(struct UPNPUrls * urls, struct IGDdatas * data,
 			printf("CheckPinholeWorking() failed with code %d (%s)\n", r, strupnperror(r));
 		printf("CheckPinholeWorking: Pinhole ID = %s / IsWorking = %s\n", uniqueID, (isWorking)? "Yes":"No");*/
 	}
+	return 0;
 }
 
 /* Test function
@@ -548,7 +552,7 @@ CheckPinhole(struct UPNPUrls * urls,
 		printf("CheckPinholeWorking: Pinhole ID = %s / IsWorking = %s\n", uniqueID, (isWorking)? "Yes":"No");
 }
 
-static void
+static int
 RemovePinhole(struct UPNPUrls * urls,
                struct IGDdatas * data, const char * uniqueID)
 {
@@ -556,10 +560,11 @@ RemovePinhole(struct UPNPUrls * urls,
 	if(!uniqueID)
 	{
 		fprintf(stderr, "invalid arguments\n");
-		return;
+		return -1;
 	}
 	r = UPNP_DeletePinhole(urls->controlURL_6FC, data->IPv6FC.servicetype, uniqueID);
 	printf("UPNP_DeletePinhole() returned : %d\n", r);
+	return r;
 }
 
 static void usage(FILE * out, const char * argv0) {
@@ -567,6 +572,7 @@ static void usage(FILE * out, const char * argv0) {
 	fprintf(out, "  %s [options] -a ip port external_port protocol [duration] [remote host]\n    Add port mapping\n", argv0);
 	fprintf(out, "  %s [options] -r port1 [external_port1] protocol1 [port2 [external_port2] protocol2] [...]\n    Add multiple port mappings to the current host\n", argv0);
 	fprintf(out, "  %s [options] -d external_port protocol [remote host]\n    Delete port redirection\n", argv0);
+	fprintf(out, "  %s [options] -f external_port1 protocol1 [external_port2 protocol2] [...]\n    Delete multiple port redirections\n", argv0);
 	fprintf(out, "  %s [options] -s\n    Get Connection status\n", argv0);
 	fprintf(out, "  %s [options] -l\n    List redirections\n", argv0);
 	fprintf(out, "  %s [options] -L\n    List redirections (using GetListOfPortMappings (for IGD:2 only)\n", argv0);
@@ -603,6 +609,7 @@ int main(int argc, char ** argv)
 	int commandargc = 0;
 	struct UPNPDev * devlist = 0;
 	char lanaddr[64] = "unset";	/* my ip address on the LAN */
+	char wanaddr[64] = "unset";	/* up address of the IGD on the WAN */
 	int i;
 	const char * rootdescurl = 0;
 	const char * multicastif = 0;
@@ -625,7 +632,7 @@ int main(int argc, char ** argv)
 	}
 #endif
     printf("upnpc: miniupnpc library test client, version %s.\n", MINIUPNPC_VERSION_STRING);
-	printf(" (c) 2005-2024 Thomas Bernard.\n");
+	printf(" (c) 2005-2025 Thomas Bernard.\n");
     printf("More information at https://miniupnp.tuxfamily.org/ or http://miniupnp.free.fr/\n\n");
 
 	/* command line processing */
@@ -726,17 +733,20 @@ int main(int argc, char ** argv)
 		}
 		i = 1;
 		if( (rootdescurl && UPNP_GetIGDFromUrl(rootdescurl, &urls, &data, lanaddr, sizeof(lanaddr)))
-		  || (i = UPNP_GetValidIGD(devlist, &urls, &data, lanaddr, sizeof(lanaddr))))
+		  || (i = UPNP_GetValidIGD(devlist, &urls, &data, lanaddr, sizeof(lanaddr), wanaddr, sizeof(wanaddr))))
 		{
 			switch(i) {
-			case 1:
+			case UPNP_CONNECTED_IGD:
 				printf("Found valid IGD : %s\n", urls.controlURL);
 				break;
-			case 2:
+			case UPNP_PRIVATEIP_IGD:
+				printf("Found an IGD with a reserved IP address (%s) : %s\n", wanaddr, urls.controlURL);
+				break;
+			case UPNP_DISCONNECTED_IGD:
 				printf("Found a (not connected?) IGD : %s\n", urls.controlURL);
 				if (ignore) printf("Trying to continue anyway\n");
 				break;
-			case 3:
+			case UPNP_UNKNOWN_DEVICE:
 				printf("UPnP device found. Is it an IGD ? : %s\n", urls.controlURL);
 				if (ignore) printf("Trying to continue anyway\n");
 				break;
@@ -744,7 +754,7 @@ int main(int argc, char ** argv)
 				printf("Found device (igd ?) : %s\n", urls.controlURL);
 				if (ignore) printf("Trying to continue anyway\n");
 			}
-			if(i==1 || ignore) {
+			if(i==UPNP_CONNECTED_IGD || i==UPNP_PRIVATEIP_IGD || ignore) {
 
 			printf("Local LAN ip address : %s\n", lanaddr);
 			#if 0
@@ -834,11 +844,35 @@ int main(int argc, char ** argv)
 					}
 				}
 				break;
+			case 'f':
+				i = 0;
+				while(i<commandargc)
+				{
+					if(!is_int(commandargv[i])) {
+						/* 1st parameter not an integer : error */
+						fprintf(stderr, "command -f : %s is not an port number\n", commandargv[i]);
+						retcode = 1;
+						break;
+					} else if(i+1 == commandargc){
+						/* too few arguments */
+						fprintf(stderr, "command -f : too few arguments\n");
+						retcode = 2;
+						break;
+					} else {
+						/* <port> <protocol> */
+						if (RemoveRedirect(&urls, &data,
+								commandargv[i], commandargv[i+1], NULL) < 0)
+							retcode = 3;
+						i+=2;	/* 2 parameters parsed */
+					}
+				}
+				break;
 			case 'A':
-				SetPinholeAndTest(&urls, &data,
+				if (SetPinholeAndTest(&urls, &data,
 				                  commandargv[0], commandargv[1],
 				                  commandargv[2], commandargv[3],
-				                  commandargv[4], commandargv[5]);
+				                  commandargv[4], commandargv[5]) < 0)
+					retcode = 2;
 				break;
 			case 'U':
 				GetPinholeAndUpdate(&urls, &data,
@@ -859,7 +893,8 @@ int main(int argc, char ** argv)
 			case 'D':
 				for(i=0; i<commandargc; i++)
 				{
-					RemovePinhole(&urls, &data, commandargv[i]);
+					if (RemovePinhole(&urls, &data, commandargv[i]) < 0)
+						retcode = 2;
 				}
 				break;
 			case 'S':

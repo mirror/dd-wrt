@@ -7,7 +7,7 @@ set -e
 set -u
 
 # We define _GNU_SOURCE to avoid warnings with missing prototypes.
-# C89 does not know snprintf, strdup, strndup, popen, pclose
+# C89 does not know snprintf, popen, pclose
 export CFLAGS="-std=gnu89 -pedantic -g -Wall -Wextra -Wstrict-prototypes -Wold-style-definition -Wwrite-strings -Wshadow -Wformat -Wformat-security -Wunreachable-code -Wstrict-prototypes -Wmissing-prototypes -Wold-style-definition"
 
 ASAN_FLAGS="-fsanitize=address -fno-omit-frame-pointer -fsanitize-address-use-after-scope"

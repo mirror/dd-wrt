@@ -1,4 +1,4 @@
-/* @license This file Copyright © 2020-2023 Mnemosyne LLC.
+/* @license This file Copyright © Mnemosyne LLC.
    It may be used under GPLv2 (SPDX: GPL-2.0-only), GPLv3 (SPDX: GPL-3.0-only),
    or any future license endorsed by Mnemosyne LLC.
    License text can be found in the licenses/ folder. */
@@ -6,12 +6,7 @@
 import { FileRow } from './file-row.js';
 import { Formatter } from './formatter.js';
 import { Torrent } from './torrent.js';
-import {
-  OutsideClickListener,
-  Utils,
-  createTextualTabsContainer,
-  setTextContent,
-} from './utils.js';
+import { Utils, createTextualTabsContainer, setTextContent } from './utils.js';
 
 const peer_column_classes = [
   'encryption',
@@ -39,28 +34,26 @@ export class Inspector extends EventTarget {
     this.file_torrent = null;
     this.file_torrent_n = null;
     this.file_rows = null;
-    this.outside = new OutsideClickListener(this.elements.root);
-    this.outside.addEventListener('click', () => this.close());
+    this.elements.dismiss.addEventListener('click', () => this.close());
     Object.seal(this);
 
     controller.addEventListener(
       'torrent-selection-changed',
-      this.selection_listener
+      this.selection_listener,
     );
     this._setTorrents(this.controller.getSelectedTorrents());
 
-    document.body.append(this.elements.root);
+    document.querySelector('#mainwin-workarea').append(this.elements.root);
   }
 
   close() {
     if (!this.closed) {
-      this.outside.stop();
       clearInterval(this.interval);
       this._setTorrents([]);
       this.elements.root.remove();
       this.controller.removeEventListener(
         'torrent-selection-changed',
-        this.selection_listener
+        this.selection_listener,
       );
       this.dispatchEvent(new Event('close'));
       for (const property of Object.keys(this)) {
@@ -110,13 +103,14 @@ export class Inspector extends EventTarget {
 
     append_section_title('Details');
     rows = [
+      ['name', 'Name:'],
       ['size', 'Size:'],
       ['location', 'Location:'],
       ['hash', 'Hash:'],
       ['privacy', 'Privacy:'],
       ['origin', 'Origin:'],
-      ['dateAdded', 'Date added:'],
-      ['magnetLink', 'Magnet:'],
+      ['date_added', 'Date added:'],
+      ['magnet_link', 'Magnet:'],
       ['comment', 'Comment:'],
       ['labels', 'Labels:'],
     ];
@@ -190,7 +184,7 @@ export class Inspector extends EventTarget {
         ['inspector-tab-tiers', pages.tiers.root, 'Tiers'],
         ['inspector-tab-files', pages.files.root, 'Files'],
       ],
-      on_activated.bind(this)
+      on_activated.bind(this),
     );
 
     return { ...elements, ...pages };
@@ -260,7 +254,7 @@ export class Inspector extends EventTarget {
     const { elements: e, torrents } = this;
     const sizeWhenDone = torrents.reduce(
       (accumulator, t) => accumulator + t.getSizeWhenDone(),
-      0
+      0,
     );
 
     // state
@@ -285,29 +279,29 @@ export class Inspector extends EventTarget {
     } else {
       const verified = torrents.reduce(
         (accumulator, t) => accumulator + t.getHaveValid(),
-        0
+        0,
       );
       const unverified = torrents.reduce(
         (accumulator, t) => accumulator + t.getHaveUnchecked(),
-        0
+        0,
       );
       const leftUntilDone = torrents.reduce(
         (accumulator, t) => accumulator + t.getLeftUntilDone(),
-        0
+        0,
       );
 
       const d =
         100 *
         (sizeWhenDone ? (sizeWhenDone - leftUntilDone) / sizeWhenDone : 1);
-      string = fmt.percentString(d);
+      string = fmt.percentString(d, 1);
 
       if (unverified) {
         string = `${fmt.size(verified)} of ${fmt.size(
-          sizeWhenDone
+          sizeWhenDone,
         )} (${string}%), ${fmt.size(unverified)} Unverified`;
       } else if (leftUntilDone) {
         string = `${fmt.size(verified)} of ${fmt.size(
-          sizeWhenDone
+          sizeWhenDone,
         )} (${string}%)`;
       } else {
         string = `${fmt.size(verified)} (100%)`;
@@ -324,23 +318,23 @@ export class Inspector extends EventTarget {
     } else {
       const available = torrents.reduce(
         (accumulator, t) => t.getHave() + t.getDesiredAvailable(),
-        0
+        0,
       );
-      string = `${fmt.percentString((100 * available) / sizeWhenDone)}%`;
+      string = `${fmt.percentString((100 * available) / sizeWhenDone, 1)}%`;
     }
     setTextContent(e.info.availability, fmt.stringSanitizer(string));
 
-    //  downloaded
+    // downloaded
     if (torrents.length === 0) {
       string = none;
     } else {
       const d = torrents.reduce(
         (accumulator, t) => accumulator + t.getDownloadedEver(),
-        0
+        0,
       );
       const f = torrents.reduce(
         (accumulator, t) => accumulator + t.getFailedEver(),
-        0
+        0,
       );
       string = f
         ? `${fmt.size(d)} (+${fmt.size(f)} discarded after failed checksum)`
@@ -355,16 +349,16 @@ export class Inspector extends EventTarget {
     } else {
       const uploaded = torrents.reduce(
         (accumulator, t) => accumulator + t.getUploadedEver(),
-        0
+        0,
       );
       const denominator =
         torrents.reduce(
           (accumulator, t) => accumulator + t.getSizeWhenDone(),
-          0
+          0,
         ) ||
         torrents.reduce((accumulator, t) => accumulator + t.getHaveValid(), 0);
       string = `${fmt.size(uploaded)} (Ratio: ${fmt.ratioString(
-        Utils.ratio(uploaded, denominator)
+        Utils.ratio(uploaded, denominator),
       )})`;
     }
     setTextContent(e.info.uploaded, string);
@@ -373,7 +367,7 @@ export class Inspector extends EventTarget {
     if (torrents.length === 0) {
       string = none;
     } else if (torrents.every((t) => t.isStopped())) {
-      string = stateString; // paused || finished}
+      string = stateString;
     } else {
       const get = (t) => t.getStartDate();
       const first = get(torrents[0]);
@@ -405,7 +399,7 @@ export class Inspector extends EventTarget {
     } else {
       const latest = torrents.reduce(
         (accumulator, t) => Math.max(accumulator, t.getLastActivity()),
-        -1
+        -1,
       );
       const now_seconds = Math.floor(now / 1000);
       if (0 < latest && latest <= now_seconds) {
@@ -428,19 +422,27 @@ export class Inspector extends EventTarget {
     }
     setTextContent(e.info.error, string || none);
 
+    // torrent name
+    if (torrents.length === 1) {
+      string = torrents[0].getName();
+    } else {
+      string = torrents.length > 0 ? mixed : none;
+    }
+    setTextContent(e.info.name, string);
+
     // size
     if (torrents.length === 0) {
       string = none;
     } else {
       const size = torrents.reduce(
         (accumulator, t) => accumulator + t.getTotalSize(),
-        0
+        0,
       );
       if (size) {
         const get = (t) => t.getPieceSize();
         const pieceCount = torrents.reduce(
           (accumulator, t) => accumulator + t.getPieceCount(),
-          0
+          0,
         );
         const pieceString = fmt.number(pieceCount);
         const pieceSize = get(torrents[0]);
@@ -490,10 +492,7 @@ export class Inspector extends EventTarget {
     string = string || none;
     if (string.startsWith('https://') || string.startsWith('http://')) {
       string = encodeURI(string);
-      Utils.setInnerHTML(
-        e.info.comment,
-        `<a href="${string}" target="_blank" >${string}</a>`
-      );
+      e.info.comment.innerHTML = `<a href="${string}" target="_blank" >${string}</a>`;
     } else {
       setTextContent(e.info.comment, string);
     }
@@ -526,7 +525,7 @@ export class Inspector extends EventTarget {
         string = `Created on ${new Date(date * 1000).toDateString()}`;
       } else {
         string = `Created by ${creator} on ${new Date(
-          date * 1000
+          date * 1000,
         ).toDateString()}`;
       }
     }
@@ -542,29 +541,36 @@ export class Inspector extends EventTarget {
     }
     setTextContent(e.info.location, string);
 
-    // dateAdded
+    // date_added
     if (torrents.length === 0) {
       string = none;
     } else {
       const get = (t) => t.getDateAdded();
       const first = get(torrents[0]);
       string = torrents.every((t) => get(t) === first)
-        ? new Date(first * 1000).toDateString()
+        ? new Date(first * 1000).toLocaleString(navigator.language, {
+            day: '2-digit',
+            hour: '2-digit',
+            hour12: false,
+            minute: '2-digit',
+            month: 'short',
+            second: '2-digit',
+            timeZoneName: 'short',
+            weekday: 'short',
+            year: 'numeric',
+          })
         : mixed;
     }
-    setTextContent(e.info.dateAdded, string);
+    setTextContent(e.info.date_added, string);
 
-    // magnetLink
+    // magnet_link
     if (torrents.length === 0) {
-      setTextContent(e.info.magnetLink, none);
+      setTextContent(e.info.magnet_link, none);
     } else if (torrents.length > 1) {
-      setTextContent(e.info.magnetLink, mixed);
+      setTextContent(e.info.magnet_link, mixed);
     } else {
       const link = torrents[0].getMagnetLink();
-      Utils.setInnerHTML(
-        e.info.magnetLink,
-        `<a class="inspector-info-magnet" href="${link}"><button></button></a>`
-      );
+      e.info.magnet_link.innerHTML = `<a class="inspector-info-magnet" href="${link}"><button></button></a>`;
     }
   }
 
@@ -599,25 +605,31 @@ export class Inspector extends EventTarget {
 
     const cell_setters = [
       (peer, td) => {
-        td.dataset.encrypted = peer.isEncrypted;
+        td.dataset.encrypted = peer.is_encrypted;
       },
       (peer, td) =>
         setTextContent(
           td,
-          peer.rateToPeer ? fmt.speedBps(peer.rateToPeer) : ''
+          peer.rate_to_peer ? fmt.speedBps(peer.rate_to_peer) : '',
         ),
       (peer, td) =>
         setTextContent(
           td,
-          peer.rateToClient ? fmt.speedBps(peer.rateToClient) : ''
+          peer.rate_to_client ? fmt.speedBps(peer.rate_to_client) : '',
         ),
       (peer, td) => setTextContent(td, `${Math.floor(peer.progress * 100)}%`),
       (peer, td) => {
-        setTextContent(td, peer.flagStr);
-        td.setAttribute('title', Inspector._peerStatusTitle(peer.flagStr));
+        setTextContent(td, peer.flag_str);
+        td.setAttribute('title', Inspector._peerStatusTitle(peer.flag_str));
       },
-      (peer, td) => setTextContent(td, peer.address),
-      (peer, td) => setTextContent(td, peer.clientName),
+      (peer, td) => {
+        setTextContent(td, peer.address);
+        td.setAttribute('title', peer.address);
+      },
+      (peer, td) => {
+        setTextContent(td, peer.client_name);
+        td.setAttribute('title', peer.client_name);
+      },
     ];
 
     const rows = [];
@@ -655,24 +667,24 @@ export class Inspector extends EventTarget {
   /// TRACKERS PAGE
 
   static getAnnounceState(tracker) {
-    switch (tracker.announceState) {
+    switch (tracker.announce_state) {
       case Torrent._TrackerActive:
         return 'Announce in progress';
       case Torrent._TrackerWaiting: {
         const timeUntilAnnounce = Math.max(
           0,
-          tracker.nextAnnounceTime - Date.now() / 1000
+          tracker.next_announce_time - Date.now() / 1000,
         );
         return `Next announce in ${Formatter.timeInterval(timeUntilAnnounce)}`;
       }
       case Torrent._TrackerQueued:
         return 'Announce is queued';
       case Torrent._TrackerInactive:
-        return tracker.isBackup
+        return tracker.is_backup
           ? 'Tracker will be used as a backup'
           : 'Announce not scheduled';
       default:
-        return `unknown announce state: ${tracker.announceState}`;
+        return `unknown announce state: ${tracker.announce_state}`;
     }
   }
 
@@ -680,19 +692,25 @@ export class Inspector extends EventTarget {
     let lastAnnounceLabel = 'Last Announce';
     let lastAnnounce = ['N/A'];
 
-    if (tracker.hasAnnounced) {
-      const lastAnnounceTime = Formatter.timestamp(tracker.lastAnnounceTime);
-      if (tracker.lastAnnounceSucceeded) {
+    if (tracker.has_announced) {
+      const lastAnnounceTime = Formatter.timestamp(tracker.last_announce_time);
+      if (tracker.last_announce_succeeded) {
         lastAnnounce = [
           lastAnnounceTime,
           ' (got ',
-          Formatter.countString('peer', 'peers', tracker.lastAnnouncePeerCount),
+          Formatter.countString(
+            'peer',
+            'peers',
+            tracker.last_announce_peer_count,
+          ),
           ')',
         ];
       } else {
         lastAnnounceLabel = 'Announce error';
         lastAnnounce = [
-          tracker.lastAnnounceResult ? `${tracker.lastAnnounceResult} - ` : '',
+          tracker.last_announce_result
+            ? `${tracker.last_announce_result} - `
+            : '',
           lastAnnounceTime,
         ];
       }
@@ -707,15 +725,16 @@ export class Inspector extends EventTarget {
     let lastScrapeLabel = 'Last Scrape';
     let lastScrape = 'N/A';
 
-    if (tracker.hasScraped) {
-      const lastScrapeTime = Formatter.timestamp(tracker.lastScrapeTime);
-      if (tracker.lastScrapeSucceeded) {
+    if (tracker.has_scraped) {
+      const lastScrapeTime = Formatter.timestamp(tracker.last_scrape_time);
+      if (tracker.last_scrape_succeeded) {
         lastScrape = lastScrapeTime;
       } else {
         lastScrapeLabel = 'Scrape error';
         lastScrape =
-          (tracker.lastScrapeResult ? `${tracker.lastScrapeResult} - ` : '') +
-          lastScrapeTime;
+          (tracker.last_scrape_result
+            ? `${tracker.last_scrape_result} - `
+            : '') + lastScrapeTime;
       }
     }
     return {
@@ -748,10 +767,6 @@ export class Inspector extends EventTarget {
 
     const rows = [];
     for (const tor of torrents) {
-      const group = document.createElement('div');
-      group.classList.add('inspector-group');
-      rows.push(group);
-
       // if >1 torrent to be shown, give a title
       if (torrents.length > 1) {
         const title = document.createElement('div');
@@ -760,13 +775,13 @@ export class Inspector extends EventTarget {
         rows.push(title);
       }
 
-      for (const [index, tracker] of tor.getTrackers().entries()) {
+      for (const tracker of tor.getTrackers()) {
         const announceState = Inspector.getAnnounceState(tracker);
         const lastAnnounceStatusHash = Inspector.lastAnnounceStatus(tracker);
         const lastScrapeStatusHash = Inspector.lastScrapeStatus(tracker);
 
         const tier_div = document.createElement('div');
-        tier_div.classList.add('tier-list-row', index % 2 ? 'odd' : 'even');
+        tier_div.classList.add('tier-list-row');
 
         let element = document.createElement('div');
         const site = Inspector._getOrigin(tracker);
@@ -779,7 +794,7 @@ export class Inspector extends EventTarget {
         element.classList.add('tier-announce');
         setTextContent(
           element,
-          `${lastAnnounceStatusHash.label}: ${lastAnnounceStatusHash.value}`
+          `${lastAnnounceStatusHash.label}: ${lastAnnounceStatusHash.value}`,
         );
         tier_div.append(element);
 
@@ -787,7 +802,7 @@ export class Inspector extends EventTarget {
         element.classList.add('tier-seeders');
         setTextContent(
           element,
-          `Seeders: ${tracker.seederCount > -1 ? tracker.seederCount : na}`
+          `Seeders: ${tracker.seeder_count > -1 ? tracker.seeder_count : na}`,
         );
         tier_div.append(element);
 
@@ -800,7 +815,9 @@ export class Inspector extends EventTarget {
         element.classList.add('tier-leechers');
         setTextContent(
           element,
-          `Leechers: ${tracker.leecherCount > -1 ? tracker.leecherCount : na}`
+          `Leechers: ${
+            tracker.leecher_count > -1 ? tracker.leecher_count : na
+          }`,
         );
         tier_div.append(element);
 
@@ -808,7 +825,7 @@ export class Inspector extends EventTarget {
         element.classList.add('tier-scrape');
         setTextContent(
           element,
-          `${lastScrapeStatusHash.label}: ${lastScrapeStatusHash.value}`
+          `${lastScrapeStatusHash.label}: ${lastScrapeStatusHash.value}`,
         );
         tier_div.append(element);
 
@@ -817,8 +834,8 @@ export class Inspector extends EventTarget {
         setTextContent(
           element,
           `Downloads: ${
-            tracker.downloadCount > -1 ? tracker.downloadCount : na
-          }`
+            tracker.download_count > -1 ? tracker.download_count : na
+          }`,
         );
         tier_div.append(element);
 
@@ -845,7 +862,7 @@ export class Inspector extends EventTarget {
     const { indices, wanted } = event_;
     this._changeFileCommand(
       indices,
-      wanted ? 'files-wanted' : 'files-unwanted'
+      wanted ? 'files_wanted' : 'files_unwanted',
     );
   }
 
@@ -855,14 +872,13 @@ export class Inspector extends EventTarget {
     let command = null;
     switch (priority.toString()) {
       case '-1':
-        command = 'priority-low';
+        command = 'priority_low';
         break;
       case '1':
-        command = 'priority-high';
+        command = 'priority_high';
         break;
       default:
-        command = 'priority-normal';
-        break;
+        command = 'priority_normal';
     }
 
     this._changeFileCommand(indices, command);
@@ -920,33 +936,26 @@ export class Inspector extends EventTarget {
     return tree;
   }
 
-  addNodeToView(tor, parent, sub, index) {
-    const row = new FileRow(
-      tor,
-      sub.depth,
-      sub.name,
-      sub.file_indices,
-      index % 2
-    );
+  addNodeToView(tor, parent, subtree) {
+    const row = new FileRow(this.controller, tor, subtree);
     row.addEventListener('wantedToggled', this._onFileWantedToggled.bind(this));
     row.addEventListener(
       'priorityToggled',
-      this._onFilePriorityToggled.bind(this)
+      this._onFilePriorityToggled.bind(this),
     );
     this.file_rows.push(row);
     parent.append(row.getElement());
   }
 
-  addSubtreeToView(tor, parent, sub, index) {
+  addSubtreeToView(tor, parent, sub) {
     if (sub.parent) {
-      this.addNodeToView(tor, parent, sub, index++);
+      this.addNodeToView(tor, parent, sub);
     }
     if (sub.children) {
       for (const value of Object.values(sub.children)) {
-        index = this.addSubtreeToView(tor, parent, value, index);
+        this.addSubtreeToView(tor, parent, value);
       }
     }
-    return index;
   }
 
   _updateFiles() {
@@ -969,7 +978,7 @@ export class Inspector extends EventTarget {
       this.file_rows = [];
       const fragment = document.createDocumentFragment();
       const tree = Inspector.createFileTreeModel(tor);
-      this.addSubtreeToView(tor, fragment, tree, 0);
+      this.addSubtreeToView(tor, fragment, tree);
       list.append(fragment);
     } else {
       // ...refresh the already-existing file list

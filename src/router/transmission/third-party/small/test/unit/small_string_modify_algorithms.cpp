@@ -304,7 +304,7 @@ TEST_CASE("String Modifying Algorithms") {
                 }
             }
 
-            if constexpr (not is_windows()) {
+            if constexpr (!is_windows()) {
                 SECTION("UTF32 rhs") {
                     string a = u8"😐🙂😀🙂😀😐";
                     SECTION("Starts not-empty") {

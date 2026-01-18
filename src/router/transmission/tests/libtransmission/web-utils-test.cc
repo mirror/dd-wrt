@@ -3,7 +3,11 @@
 // or any future license endorsed by Mnemosyne LLC.
 // License text can be found in the licenses/ folder.
 
+#include <array>
+#include <cstddef> // size_t
 #include <string_view>
+#include <utility>
+#include <vector>
 
 #ifdef _WIN32
 #include <windows.h>
@@ -11,17 +15,12 @@
 #define unsetenv(key) SetEnvironmentVariableA(key, nullptr)
 #endif
 
-#include <libtransmission/transmission.h>
-
 #include <libtransmission/crypto-utils.h>
-#include <libtransmission/platform.h>
 #include <libtransmission/web-utils.h>
 
 #include "test-fixtures.h"
 
-using namespace std::literals;
-
-using WebUtilsTest = ::testing::Test;
+using WebUtilsTest = ::libtransmission::test::TransmissionTest;
 using namespace std::literals;
 
 TEST_F(WebUtilsTest, urlParse)
@@ -125,8 +124,8 @@ TEST_F(WebUtilsTest, urlParse)
     url = "http://[2001:0db8:11a3:09d7:1f34:8a2e:07a0:765d]:8080/announce"sv;
     parsed = tr_urlParse(url);
     EXPECT_EQ("http"sv, parsed->scheme);
-    EXPECT_EQ("2001:0db8:11a3:09d7:1f34:8a2e:07a0:765d"sv, parsed->sitename);
-    EXPECT_EQ("2001:0db8:11a3:09d7:1f34:8a2e:07a0:765d"sv, parsed->host);
+    EXPECT_EQ("[2001:0db8:11a3:09d7:1f34:8a2e:07a0:765d]"sv, parsed->sitename);
+    EXPECT_EQ("[2001:0db8:11a3:09d7:1f34:8a2e:07a0:765d]"sv, parsed->host);
     EXPECT_EQ("/announce"sv, parsed->path);
     EXPECT_EQ(8080, parsed->port);
 
@@ -134,8 +133,8 @@ TEST_F(WebUtilsTest, urlParse)
     url = "http://[2001:0db8:11a3:09d7:1f34:8a2e:07a0:765d]/announce"sv;
     parsed = tr_urlParse(url);
     EXPECT_EQ("http"sv, parsed->scheme);
-    EXPECT_EQ("2001:0db8:11a3:09d7:1f34:8a2e:07a0:765d"sv, parsed->sitename);
-    EXPECT_EQ("2001:0db8:11a3:09d7:1f34:8a2e:07a0:765d"sv, parsed->host);
+    EXPECT_EQ("[2001:0db8:11a3:09d7:1f34:8a2e:07a0:765d]"sv, parsed->sitename);
+    EXPECT_EQ("[2001:0db8:11a3:09d7:1f34:8a2e:07a0:765d]"sv, parsed->host);
     EXPECT_EQ("/announce"sv, parsed->path);
     EXPECT_EQ(80, parsed->port);
 
@@ -149,7 +148,7 @@ TEST_F(WebUtilsTest, urlParse)
     EXPECT_EQ(80, parsed->port);
 }
 
-TEST(WebUtilsTest, urlParseFuzz)
+TEST_F(WebUtilsTest, urlParseFuzz)
 {
     auto buf = std::vector<char>{};
 
@@ -161,13 +160,15 @@ TEST(WebUtilsTest, urlParseFuzz)
     }
 }
 
-TEST_F(WebUtilsTest, urlNextQueryPair)
+TEST_F(WebUtilsTest, urlQueryEntries)
 {
-    auto constexpr Query = "a=1&b=two&c=si&d_has_no_val&e=&f&g=gee"sv;
-    auto const query_view = tr_url_query_view{ Query };
-    auto const end = std::end(query_view);
+    auto parsed = tr_url_parsed_t{};
+    parsed.query = "a=1&b=two&c=si&d_has_no_val&e=&f&g=gee"sv;
 
-    auto it = std::begin(query_view);
+    auto const keyvals = parsed.query_entries();
+    auto const end = std::cend(keyvals);
+
+    auto it = std::cbegin(keyvals);
     EXPECT_NE(end, it);
     EXPECT_EQ("a"sv, it->first);
     EXPECT_EQ("1"sv, it->second);

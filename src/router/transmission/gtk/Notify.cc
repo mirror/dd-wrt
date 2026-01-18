@@ -1,4 +1,4 @@
-// This file Copyright © 2008-2023 Mnemosyne LLC.
+// This file Copyright © Mnemosyne LLC.
 // It may be used under GPLv2 (SPDX: GPL-2.0-only), GPLv3 (SPDX: GPL-3.0-only),
 // or any future license endorsed by Mnemosyne LLC.
 // License text can be found in the licenses/ folder.
@@ -20,7 +20,7 @@
 #include <glibmm/ustring.h>
 #include <glibmm/variant.h>
 
-#include <fmt/core.h>
+#include <fmt/format.h>
 
 #include <map>
 #include <utility>
@@ -144,11 +144,12 @@ void dbus_proxy_ready_callback(Glib::RefPtr<Gio::AsyncResult>& res)
     }
     catch (Glib::Error const& e)
     {
-        gtr_warning(fmt::format(
-            _("Couldn't create proxy for '{bus}': {error} ({error_code})"),
-            fmt::arg("bus", NotificationsDbusName),
-            fmt::arg("error", TR_GLIB_EXCEPTION_WHAT(e)),
-            fmt::arg("error_code", e.code())));
+        gtr_warning(
+            fmt::format(
+                fmt::runtime(_("Couldn't create proxy for '{bus}': {error} ({error_code})")),
+                fmt::arg("bus", NotificationsDbusName),
+                fmt::arg("error", TR_GLIB_EXCEPTION_WHAT(e)),
+                fmt::arg("error_code", e.code())));
         return;
     }
 

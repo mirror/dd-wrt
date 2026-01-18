@@ -1,5 +1,5 @@
 ﻿///////////////////////////////////////////////////////////////////////////////
-//  Copyright Christopher Kormanyos 2017 - 2022.
+//  Copyright Christopher Kormanyos 2017 - 2025.
 //  Distributed under the Boost Software License,
 //  Version 1.0. (See accompanying file LICENSE_1_0.txt
 //  or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -21,9 +21,17 @@
                       callable_function_type parallel_function) -> void
     {
       // Estimate the number of threads available.
-      const auto number_of_threads_hint = static_cast<unsigned>(std::thread::hardware_concurrency());
+      const auto number_of_threads_hint =
+        static_cast<unsigned>
+        (
+          std::thread::hardware_concurrency()
+        );
 
-      const auto number_of_threads = static_cast<unsigned>(((number_of_threads_hint == 0U) ? 4U : number_of_threads_hint)); // NOLINT(altera-id-dependent-backward-branch)
+      const auto number_of_threads = // NOLINT(altera-id-dependent-backward-branch)
+        static_cast<unsigned>
+        (
+          (number_of_threads_hint == static_cast<unsigned>(UINT8_C(0))) ? static_cast<unsigned>(UINT8_C(4)) : number_of_threads_hint // NOLINT(altera-id-dependent-backward-branch)
+        );
 
       // Set the size of a slice for the range functions.
       const auto n =
@@ -35,7 +43,7 @@
       const auto slice =
         (std::max)
         (
-          static_cast<index_type>(std::round(static_cast<double>(n) / static_cast<double>(number_of_threads))),
+          static_cast<index_type>(std::round(static_cast<float>(n) / static_cast<float>(number_of_threads))),
           static_cast<index_type>(1)
         );
 
@@ -43,14 +51,14 @@
       const auto launch_range =
         [&parallel_function](index_type index_lo, index_type index_hi)
         {
-          for(index_type i = index_lo; i < index_hi; ++i) // NOLINT(altera-id-dependent-backward-branch)
+          for(auto i = index_lo; i < index_hi; ++i) // NOLINT(altera-id-dependent-backward-branch)
           {
             parallel_function(i);
           }
         };
 
       // Create the thread pool and launch the jobs.
-      std::vector<std::thread> pool;
+      std::vector<std::thread> pool { };
 
       pool.reserve(number_of_threads);
 
@@ -72,7 +80,7 @@
       }
 
       // Wait for the jobs to finish.
-      for(std::thread& thread_in_pool : pool)
+      for(auto& thread_in_pool : pool)
       {
         if(thread_in_pool.joinable())
         {

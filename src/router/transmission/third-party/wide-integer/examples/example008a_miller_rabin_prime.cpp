@@ -1,5 +1,5 @@
 ﻿///////////////////////////////////////////////////////////////////
-//  Copyright Christopher Kormanyos 2018 - 2022.                 //
+//  Copyright Christopher Kormanyos 2018 - 2025.                 //
 //  Distributed under the Boost Software License,                //
 //  Version 1.0. (See accompanying file LICENSE_1_0.txt          //
 //  or copy at http://www.boost.org/LICENSE_1_0.txt)             //
@@ -8,14 +8,15 @@
 // This Miller-Rabin primality test is loosely based on
 // an adaptation of some code from Boost.Multiprecision.
 // The Boost.Multiprecision code can be found here:
-// https://www.boost.org/doc/libs/1_78_0/libs/multiprecision/doc/html/boost_multiprecision/tut/primetest.html
+// https://www.boost.org/doc/libs/1_88_0/libs/multiprecision/doc/html/boost_multiprecision/tut/primetest.html
 
-#include <ctime>
 #include <random>
 #include <sstream>
 #include <string>
 
 #include <boost/version.hpp>
+
+#include <util/utility/util_pseudorandom_time_point_seed.h>
 
 #if !defined(BOOST_VERSION)
 #error BOOST_VERSION is not defined. Ensure that <boost/version.hpp> is properly included.
@@ -23,6 +24,10 @@
 
 #if ((BOOST_VERSION >= 107900) && !defined(BOOST_MP_STANDALONE))
 #define BOOST_MP_STANDALONE
+#endif
+
+#if ((BOOST_VERSION >= 108000) && !defined(BOOST_NO_EXCEPTIONS))
+#define BOOST_NO_EXCEPTIONS
 #endif
 
 #if (BOOST_VERSION < 108000)
@@ -39,10 +44,12 @@
 #if (defined(__GNUC__) && !defined(__clang__) && (__GNUC__ >= 12))
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wrestrict"
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Warray-bounds"
 #endif
 
 #if (BOOST_VERSION < 108000)
-#if (defined(__clang__) && (__clang_major__ > 9)) && !defined(__APPLE__)
+#if ((defined(__clang__) && (__clang_major__ > 9)) && !defined(__APPLE__))
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wdeprecated-copy"
 #endif
@@ -70,7 +77,7 @@ auto lexical_cast(const UnsignedIntegralType& u) -> std::string
 #if defined(WIDE_INTEGER_NAMESPACE)
 auto WIDE_INTEGER_NAMESPACE::math::wide_integer::example008a_miller_rabin_prime() -> bool
 #else
-auto math::wide_integer::example008a_miller_rabin_prime() -> bool
+auto ::math::wide_integer::example008a_miller_rabin_prime() -> bool
 #endif
 {
   #if defined(WIDE_INTEGER_NAMESPACE)
@@ -91,20 +98,20 @@ auto math::wide_integer::example008a_miller_rabin_prime() -> bool
   using local_wide_integer_type = WIDE_INTEGER_NAMESPACE::math::wide_integer::uintwide_t              <static_cast<WIDE_INTEGER_NAMESPACE::math::wide_integer::size_t>(std::numeric_limits<boost_wide_integer_type>::digits)>;
   using local_distribution_type = WIDE_INTEGER_NAMESPACE::math::wide_integer::uniform_int_distribution<static_cast<WIDE_INTEGER_NAMESPACE::math::wide_integer::size_t>(std::numeric_limits<boost_wide_integer_type>::digits)>;
   #else
-  using local_wide_integer_type = math::wide_integer::uintwide_t              <static_cast<math::wide_integer::size_t>(std::numeric_limits<boost_wide_integer_type>::digits)>;
-  using local_distribution_type = math::wide_integer::uniform_int_distribution<static_cast<math::wide_integer::size_t>(std::numeric_limits<boost_wide_integer_type>::digits)>;
+  using local_wide_integer_type = ::math::wide_integer::uintwide_t              <static_cast<math::wide_integer::size_t>(std::numeric_limits<boost_wide_integer_type>::digits)>;
+  using local_distribution_type = ::math::wide_integer::uniform_int_distribution<static_cast<math::wide_integer::size_t>(std::numeric_limits<boost_wide_integer_type>::digits)>;
   #endif
 
   using random_engine1_type = std::mt19937;
   using random_engine2_type = std::linear_congruential_engine<std::uint32_t, UINT32_C(48271), UINT32_C(0), UINT32_C(2147483647)>; // NOLINT(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
 
-  const auto seed_start = std::clock();
+  const auto seed_start = ::util::util_pseudorandom_time_point_seed::value<std::uint64_t>();
 
   random_engine1_type gen1(static_cast<typename random_engine1_type::result_type>(seed_start));
   random_engine2_type gen2(static_cast<typename random_engine2_type::result_type>(seed_start));
 
   // Select prime candidates from a range of 10^150 ... max(uint512_t)-1.
-  WIDE_INTEGER_CONSTEXPR local_wide_integer_type
+  constexpr local_wide_integer_type
     dist_min
     (
       "1"
@@ -113,11 +120,12 @@ auto math::wide_integer::example008a_miller_rabin_prime() -> bool
       "00000000000000000000000000000000000000000000000000"
     );
 
-  WIDE_INTEGER_CONSTEXPR local_wide_integer_type
-    dist_max
-    (
-      (std::numeric_limits<local_wide_integer_type>::max)() - 1
-    );
+  constexpr auto dist_max =
+    local_wide_integer_type
+    {
+        (std::numeric_limits<local_wide_integer_type>::max)()
+      - static_cast<int>(INT8_C(1))
+    };
 
   local_distribution_type
     dist
@@ -149,12 +157,7 @@ auto math::wide_integer::example008a_miller_rabin_prime() -> bool
     }
   }
 
-  auto seed_next = std::clock();
-
-  while(seed_next == seed_start)
-  {
-    seed_next = std::clock();
-  }
+  const auto seed_next = ::util::util_pseudorandom_time_point_seed::value<std::uint64_t>();
 
   gen1.seed(static_cast<typename random_engine1_type::result_type>(seed_next));
 
@@ -193,7 +196,7 @@ auto main() -> int // NOLINT(bugprone-exception-escape)
   #if defined(WIDE_INTEGER_NAMESPACE)
   const auto result_is_ok = WIDE_INTEGER_NAMESPACE::math::wide_integer::example008a_miller_rabin_prime();
   #else
-  const auto result_is_ok = math::wide_integer::example008a_miller_rabin_prime();
+  const auto result_is_ok = ::math::wide_integer::example008a_miller_rabin_prime();
   #endif
 
   std::cout << "result_is_ok: " << std::boolalpha << result_is_ok << std::endl;
@@ -204,12 +207,13 @@ auto main() -> int // NOLINT(bugprone-exception-escape)
 #endif
 
 #if (BOOST_VERSION < 108000)
-#if (defined(__clang__) && (__clang_major__ > 9)) && !defined(__APPLE__)
+#if ((defined(__clang__) && (__clang_major__ > 9)) && !defined(__APPLE__))
 #pragma GCC diagnostic pop
 #endif
 #endif
 
 #if (defined(__GNUC__) && !defined(__clang__) && (__GNUC__ >= 12))
+#pragma GCC diagnostic pop
 #pragma GCC diagnostic pop
 #endif
 

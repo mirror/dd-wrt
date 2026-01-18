@@ -1,5 +1,5 @@
 /*
- * Copyright(c) 2014-2018 Tim Ruehsen
+ * Copyright(c) 2014-2024 Tim Ruehsen
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -36,11 +36,12 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
-#ifdef HAVE_ALLOCA_H
-#	include <alloca.h>
+#if defined _WIN32
+#	include <malloc.h>
 #endif
 
 #include <libpsl.h>
+#include "common.h"
 
 static int
 	ok,
@@ -118,7 +119,7 @@ static void test_psl_entry(const psl_ctx_t *psl, const char *domain, int type)
 	} else if (*domain == '*') { /* a wildcard, e.g. *.ck or *.platform.sh */
 		/* '*.platform.sh' -> 'y.x.platform.sh' */
 		size_t len = strlen(domain);
-		char *xdomain = alloca(len + 3);
+		char *xdomain = malloc(len + 3);
 
 		memcpy(xdomain, "y.x", 3);
 		memcpy(xdomain + 3, domain + 1, len);
@@ -127,6 +128,7 @@ static void test_psl_entry(const psl_ctx_t *psl, const char *domain, int type)
 		test_type_any(psl, xdomain + 2, type, 1); /* random wildcard-matching domain is a PS... */
 		test_type_any(psl, xdomain, type, 0); /* ... but sub domain is not */
 
+		free(xdomain);
 	} else {
 		test_type_any(psl, domain, type, 1); /* Any normal PSL entry */
 	}
@@ -228,11 +230,7 @@ int main(int argc, const char * const *argv)
 		const char *valgrind = getenv("TESTS_VALGRIND");
 
 		if (valgrind && *valgrind) {
-			size_t cmdsize = strlen(valgrind) + strlen(argv[0]) + 32;
-			char *cmd = alloca(cmdsize);
-
-			snprintf(cmd, cmdsize, "TESTS_VALGRIND="" %s %s", valgrind, argv[0]);
-			return system(cmd) != 0;
+			return run_valgrind(valgrind, argv[0]);
 		}
 	}
 

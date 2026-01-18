@@ -5,7 +5,7 @@
  * (c) 2015 Tomofumi Hayashi
  * (c) 2019 Sven Auhagen
  * (c) 2019 Paul Chambers
- * (c) 2020-2024 Thomas Bernard
+ * (c) 2020-2025 Thomas Bernard
  *
  * This software is subject to the conditions detailed
  * in the LICENCE file provided within the distribution.
@@ -316,12 +316,17 @@ delete_redirect_and_filter_rules(unsigned short eport, int proto)
 	d_printf(("delete_redirect_and_filter_rules(%d %d)\n", eport, proto));
 	refresh_nft_cache_redirect();
 
-	// Delete Redirect Rule
+	// Delete Redirect Rule  eport => iaddr:iport
 	LIST_FOREACH(p, &head_redirect, entry) {
+		d_printf(("redirect src %08x:%hu dst %08x:%hu nat %08x:%hu proto=%d  type=%d nat_type=%d\n",
+		          p->saddr, p->sport, p->daddr, p->dport, p->nat_addr, p->nat_port, p->proto,
+		          p->type, p->nat_type));
 		if (p->dport == eport && p->proto == proto &&
 		    (p->type == RULE_NAT && p->nat_type == NFT_NAT_DNAT)) {
 			iaddr = p->nat_addr;
 			iport = p->nat_port;
+			syslog(LOG_DEBUG, "%s: found redirect rule %hu => %08x:%hu proto %d",
+			       "delete_redirect_and_filter_rules", eport, iaddr, iport, proto);
 
 			r = rule_del_handle(p);
 			/* Todo: send bulk request */
@@ -332,16 +337,24 @@ delete_redirect_and_filter_rules(unsigned short eport, int proto)
 
 	if (iaddr != 0 && iport != 0) {
 		refresh_nft_cache_filter();
-		// Delete Forward Rule
+		// Delete Forward Rule  on iaddr:iport
 		LIST_FOREACH(p, &head_filter, entry) {
-			if (p->nat_port == iport &&
-				p->nat_addr == iaddr && p->type == RULE_FILTER) {
+			d_printf(("filter   src %08x:%hu dst %08x:%hu nat %08x:%hu proto=%d  type=%d nat_type=%d\n",
+			          p->saddr, p->sport, p->daddr, p->dport, p->nat_addr, p->nat_port, p->proto,
+			          p->type, p->nat_type));
+			if (p->dport == iport && p->daddr == iaddr && p->proto == proto
+			    && p->type == RULE_FILTER) {
+				syslog(LOG_DEBUG, "%s: found forward/filter rule %08x:%hu proto %d",
+				       "delete_redirect_and_filter_rules", iaddr, iport, p->proto);
 				r = rule_del_handle(p);
 				/* Todo: send bulk request */
 				nft_send_rule(r, NFT_MSG_DELRULE, RULE_CHAIN_FILTER);
 				break;
 			}
 		}
+	} else {
+		syslog(LOG_WARNING, "%s: redirect rule with eport=%hu proto %d NOT FOUND",
+		       "delete_redirect_and_filter_rules", eport, proto);
 	}
 
 	iaddr = 0;
@@ -452,9 +465,7 @@ get_peer_rule_by_index(int index,
 			if (timestamp) {
 				*timestamp = get_timestamp(r->dport, r->proto);
 			}
-			/*
-			 * TODO: Implement counter in case of add {nat,filter}
-			 */
+
 			return 0;
 		}
 	}
@@ -561,16 +572,11 @@ get_redirect_rule_by_index(int index,
 				*timestamp = get_timestamp(*eport, *proto);
 			}
 
-			if (packets || bytes) {
-				if (packets)
-					*packets = r->packets;
-				if (bytes)
-					*bytes = r->bytes;
-			}
+			if (packets)
+				*packets = r->packets;
+			if (bytes)
+				*bytes = r->bytes;
 
-			/*
-			 * TODO: Implement counter in case of add {nat,filter}
-			 */
 			return 0;
 		}
 	}
@@ -595,8 +601,6 @@ get_nat_redirect_rule(const char * nat_chain_name, const char * ifname,
 	struct in_addr addr;
 	UNUSED(nat_chain_name);
 	UNUSED(ifname);
-	UNUSED(packets);
-	UNUSED(bytes);
 	UNUSED(rhost);
 	UNUSED(rhostlen);
 
@@ -623,6 +627,11 @@ get_nat_redirect_rule(const char * nat_chain_name, const char * ifname,
 
 			if(timestamp != NULL)
 				*timestamp = get_timestamp(eport, proto);
+
+			if(packets)
+				*packets = p->packets;
+			if(bytes)
+				*bytes = p->bytes;
 
 			return 0;
 		}

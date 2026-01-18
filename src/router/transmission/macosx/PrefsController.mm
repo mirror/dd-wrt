@@ -1,4 +1,4 @@
-// This file Copyright © 2015-2023 Transmission authors and contributors.
+// This file Copyright © Transmission authors and contributors.
 // It may be used under the MIT (SPDX: MIT) license.
 // License text can be found in the licenses/ folder.
 
@@ -11,6 +11,7 @@
 #import "BlocklistDownloaderViewController.h"
 #import "BlocklistScheduler.h"
 #import "Controller.h"
+#import "DefaultAppHelper.h"
 #import "PortChecker.h"
 #import "BonjourController.h"
 #import "NSImageAdditions.h"
@@ -58,6 +59,8 @@ static NSString* const kWebUIURLFormat = @"http://localhost:%ld/";
 @property(nonatomic, copy) NSString* fInitialString;
 
 @property(nonatomic) IBOutlet NSButton* fSystemPreferencesButton;
+@property(nonatomic) IBOutlet NSButton* fSetDefaultForMagnetButton;
+@property(nonatomic) IBOutlet NSButton* fSetDefaultForTorrentButton;
 @property(nonatomic) IBOutlet NSTextField* fCheckForUpdatesLabel;
 @property(nonatomic) IBOutlet NSButton* fCheckForUpdatesButton;
 @property(nonatomic) IBOutlet NSButton* fCheckForUpdatesBetaButton;
@@ -101,6 +104,7 @@ static NSString* const kWebUIURLFormat = @"http://localhost:%ld/";
 @property(nonatomic, readonly) NSMutableArray<NSString*>* fRPCWhitelistArray;
 @property(nonatomic) IBOutlet NSSegmentedControl* fRPCAddRemoveControl;
 @property(nonatomic, copy) NSString* fRPCPassword;
+@property(nonatomic, readonly) DefaultAppHelper* fDefaultAppHelper;
 
 @end
 
@@ -173,6 +177,8 @@ static NSString* const kWebUIURLFormat = @"http://localhost:%ld/";
             //[[SUUpdater sharedUpdater] setAutomaticallyChecksForUpdates:[fDefaults boolForKey:@"CheckForUpdates"]];
             [_fDefaults removeObjectForKey:@"CheckForUpdates"];
         }
+
+        _fDefaultAppHelper = [[DefaultAppHelper alloc] init];
     }
 
     return self;
@@ -180,8 +186,6 @@ static NSString* const kWebUIURLFormat = @"http://localhost:%ld/";
 
 - (void)dealloc
 {
-    [NSNotificationCenter.defaultCenter removeObserver:self];
-
     [_fPortStatusTimer invalidate];
     if (_fPortChecker)
     {
@@ -191,6 +195,7 @@ static NSString* const kWebUIURLFormat = @"http://localhost:%ld/";
 
 - (void)awakeFromNib
 {
+    [super awakeFromNib];
     self.fHasLoaded = YES;
 
     self.window.restorationClass = [self class];
@@ -210,6 +215,8 @@ static NSString* const kWebUIURLFormat = @"http://localhost:%ld/";
     [self.window center];
 
     [self setPrefView:nil];
+
+    [self updateDefaultsStates];
 
     //set special-handling of magnet link add window checkbox
     [self updateShowAddMagnetWindowField];
@@ -295,7 +302,7 @@ static NSString* const kWebUIURLFormat = @"http://localhost:%ld/";
     if ([ident isEqualToString:ToolbarTabGeneral])
     {
         item.label = NSLocalizedString(@"General", "Preferences -> toolbar item title");
-        item.image = [NSImage systemSymbol:@"gearshape" withFallback:NSImageNamePreferencesGeneral];
+        item.image = [NSImage imageWithSystemSymbolName:@"gearshape" accessibilityDescription:nil];
         item.target = self;
         item.action = @selector(setPrefView:);
         item.autovalidates = NO;
@@ -303,7 +310,7 @@ static NSString* const kWebUIURLFormat = @"http://localhost:%ld/";
     else if ([ident isEqualToString:ToolbarTabTransfers])
     {
         item.label = NSLocalizedString(@"Transfers", "Preferences -> toolbar item title");
-        item.image = [NSImage systemSymbol:@"arrow.up.arrow.down" withFallback:@"Transfers"];
+        item.image = [NSImage imageWithSystemSymbolName:@"arrow.up.arrow.down" accessibilityDescription:nil];
         item.target = self;
         item.action = @selector(setPrefView:);
         item.autovalidates = NO;
@@ -311,7 +318,7 @@ static NSString* const kWebUIURLFormat = @"http://localhost:%ld/";
     else if ([ident isEqualToString:ToolbarTabGroups])
     {
         item.label = NSLocalizedString(@"Groups", "Preferences -> toolbar item title");
-        item.image = [NSImage systemSymbol:@"pin" withFallback:@"Groups"];
+        item.image = [NSImage imageWithSystemSymbolName:@"pin" accessibilityDescription:nil];
         item.target = self;
         item.action = @selector(setPrefView:);
         item.autovalidates = NO;
@@ -319,7 +326,7 @@ static NSString* const kWebUIURLFormat = @"http://localhost:%ld/";
     else if ([ident isEqualToString:ToolbarTabBandwidth])
     {
         item.label = NSLocalizedString(@"Bandwidth", "Preferences -> toolbar item title");
-        item.image = [NSImage systemSymbol:@"speedometer" withFallback:@"Bandwidth"];
+        item.image = [NSImage imageWithSystemSymbolName:@"speedometer" accessibilityDescription:nil];
         item.target = self;
         item.action = @selector(setPrefView:);
         item.autovalidates = NO;
@@ -327,7 +334,7 @@ static NSString* const kWebUIURLFormat = @"http://localhost:%ld/";
     else if ([ident isEqualToString:ToolbarTabPeers])
     {
         item.label = NSLocalizedString(@"Peers", "Preferences -> toolbar item title");
-        item.image = [NSImage systemSymbol:@"person.2" withFallback:NSImageNameUserGroup];
+        item.image = [NSImage imageWithSystemSymbolName:@"person.2" accessibilityDescription:nil];
         item.target = self;
         item.action = @selector(setPrefView:);
         item.autovalidates = NO;
@@ -335,7 +342,7 @@ static NSString* const kWebUIURLFormat = @"http://localhost:%ld/";
     else if ([ident isEqualToString:ToolbarTabNetwork])
     {
         item.label = NSLocalizedString(@"Network", "Preferences -> toolbar item title");
-        item.image = [NSImage systemSymbol:@"network" withFallback:NSImageNameNetwork];
+        item.image = [NSImage imageWithSystemSymbolName:@"network" accessibilityDescription:nil];
         item.target = self;
         item.action = @selector(setPrefView:);
         item.autovalidates = NO;
@@ -343,7 +350,7 @@ static NSString* const kWebUIURLFormat = @"http://localhost:%ld/";
     else if ([ident isEqualToString:ToolbarTabRemote])
     {
         item.label = NSLocalizedString(@"Remote", "Preferences -> toolbar item title");
-        item.image = [NSImage systemSymbol:@"antenna.radiowaves.left.and.right" withFallback:@"Remote"];
+        item.image = [NSImage imageWithSystemSymbolName:@"antenna.radiowaves.left.and.right" accessibilityDescription:nil];
         item.target = self;
         item.action = @selector(setPrefView:);
         item.autovalidates = NO;
@@ -463,19 +470,19 @@ static NSString* const kWebUIURLFormat = @"http://localhost:%ld/";
     [self.fPortStatusProgress stopAnimation:self];
     switch (self.fPortChecker.status)
     {
-    case PORT_STATUS_OPEN:
+    case PortStatusOpen:
         self.fPortStatusField.stringValue = NSLocalizedString(@"Port is open", "Preferences -> Network -> port status");
         self.fPortStatusImage.image = [NSImage imageNamed:NSImageNameStatusAvailable];
         break;
-    case PORT_STATUS_CLOSED:
+    case PortStatusClosed:
         self.fPortStatusField.stringValue = NSLocalizedString(@"Port is closed", "Preferences -> Network -> port status");
         self.fPortStatusImage.image = [NSImage imageNamed:NSImageNameStatusUnavailable];
         break;
-    case PORT_STATUS_ERROR:
+    case PortStatusError:
         self.fPortStatusField.stringValue = NSLocalizedString(@"Port check site is down", "Preferences -> Network -> port status");
         self.fPortStatusImage.image = [NSImage imageNamed:NSImageNameStatusPartiallyAvailable];
         break;
-    case PORT_STATUS_CHECKING:
+    case PortStatusChecking:
         break;
     default:
         NSAssert(NO, @"Port checker returned invalid status: %lu", self.fPortChecker.status);
@@ -771,7 +778,7 @@ static NSString* const kWebUIURLFormat = @"http://localhost:%ld/";
     return static_cast<int>(components.hour * 60 + components.minute);
 }
 
-+ (NSDate*)timeSumToDate:(int)sum
++ (NSDate*)timeSumToDate:(NSInteger)sum
 {
     NSDateComponents* comps = [[NSDateComponents alloc] init];
     comps.hour = sum / 60;
@@ -805,7 +812,24 @@ static NSString* const kWebUIURLFormat = @"http://localhost:%ld/";
 
 - (IBAction)openNotificationSystemPrefs:(NSButton*)sender
 {
-    [NSWorkspace.sharedWorkspace openURL:[NSURL fileURLWithPath:@"/System/Library/PreferencePanes/Notifications.prefPane"]];
+    NSURL* prefPaneUrl = nil;
+    if (@available(macOS 13, *))
+    {
+        NSString* prefPaneName = @"x-apple.systempreferences:com.apple.Notifications-Settings.extension?id=";
+        prefPaneName = [prefPaneName stringByAppendingString:NSBundle.mainBundle.bundleIdentifier];
+        prefPaneUrl = [NSURL URLWithString:prefPaneName];
+    }
+    else if (@available(macOS 12, *))
+    {
+        NSString* prefPaneName = @"x-apple.systempreferences:com.apple.preference.notifications?id=";
+        prefPaneName = [prefPaneName stringByAppendingString:NSBundle.mainBundle.bundleIdentifier];
+        prefPaneUrl = [NSURL URLWithString:prefPaneName];
+    }
+    else
+    {
+        prefPaneUrl = [NSURL fileURLWithPath:@"/System/Library/PreferencePanes/Notifications.prefPane"];
+    }
+    [NSWorkspace.sharedWorkspace openURL:prefPaneUrl];
 }
 
 - (void)resetWarnings:(id)sender
@@ -823,14 +847,29 @@ static NSString* const kWebUIURLFormat = @"http://localhost:%ld/";
     //[fDefaults removeObjectForKey: @"WarningLegal"];
 }
 
-- (void)setDefaultForMagnets:(id)sender
+- (IBAction)setDefaultForMagnets:(id)sender
 {
-    NSString* bundleID = NSBundle.mainBundle.bundleIdentifier;
-    OSStatus const result = LSSetDefaultHandlerForURLScheme((CFStringRef) @"magnet", (__bridge CFStringRef)bundleID);
-    if (result != noErr)
-    {
-        NSLog(@"Failed setting default magnet link handler");
-    }
+    PrefsController* __weak weakSelf = self;
+    [self.fDefaultAppHelper setDefaultForMagnetURLs:^{
+        [weakSelf updateDefaultsStates];
+    }];
+}
+
+- (IBAction)setDefaultForTorrentFiles:(id)sender
+{
+    PrefsController* __weak weakSelf = self;
+    [self.fDefaultAppHelper setDefaultForTorrentFiles:^{
+        [weakSelf updateDefaultsStates];
+    }];
+}
+
+- (void)updateDefaultsStates
+{
+    BOOL const isDefaultForMagnetURLs = [self.fDefaultAppHelper isDefaultForMagnetURLs];
+    self.fSetDefaultForMagnetButton.enabled = !isDefaultForMagnetURLs;
+
+    BOOL const isDefaultForTorrentFiles = [self.fDefaultAppHelper isDefaultForTorrentFiles];
+    self.fSetDefaultForTorrentButton.enabled = !isDefaultForTorrentFiles;
 }
 
 - (void)setQueue:(id)sender
@@ -840,7 +879,7 @@ static NSString* const kWebUIURLFormat = @"http://localhost:%ld/";
     tr_sessionSetQueueEnabled(self.fHandle, TR_UP, [self.fDefaults boolForKey:@"QueueSeed"]);
 
     //handle if any transfers switch from queued to paused
-    [NSNotificationCenter.defaultCenter postNotificationName:@"UpdateQueue" object:self];
+    [NSNotificationCenter.defaultCenter postNotificationName:@"UpdateTorrentsState" object:nil];
 }
 
 - (void)setQueueNumber:(id)sender
@@ -875,6 +914,12 @@ static NSString* const kWebUIURLFormat = @"http://localhost:%ld/";
 {
     [self.fDefaults setBool:self.fFolderPopUp.indexOfSelectedItem == DownloadPopupIndexFolder forKey:@"DownloadLocationConstant"];
     [self updateShowAddMagnetWindowField];
+}
+
+- (IBAction)setVerifyDataOnCompletion:(id)sender
+{
+    bool enabled = [self.fDefaults boolForKey:@"VerifyDataOnCompletion"];
+    tr_sessionSetCompleteVerifyEnabled(self.fHandle, enabled);
 }
 
 - (void)folderSheetShow:(id)sender
@@ -1463,7 +1508,7 @@ static NSString* const kWebUIURLFormat = @"http://localhost:%ld/";
         self.fQueueSeedField.integerValue = seedQueueNum;
 
         //check stalled handled by bindings
-        self.fStalledField.intValue = stalledMinutes;
+        self.fStalledField.integerValue = stalledMinutes;
     }
 
     [NSNotificationCenter.defaultCenter postNotificationName:@"SpeedLimitUpdate" object:nil];

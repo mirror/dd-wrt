@@ -1,0 +1,62 @@
+# Build directories
+build
+cmake-build-*
+cmake-build-debug
+cmake-build-release
+cmake-build-debug-gcc
+cmake-build-release-gcc
+cmake-build-debug-msvc
+cmake-build-release-msvc
+cmake-build-debug-*
+cmake-build-release-*
+build*/
+out
+
+# Local dependencies build
+cpp_modules
+
+# IDE settings
+.idea
+codealike.json
+.vs
+CMakeLists.txt.user
+CMakeSettings.json
+gh-md-toc
+/.vs
+/CMakeSettings.json
+
+# Hidden files
+.DS_Store
+
+# Prerequisites
+*.d
+
+# Compiled Object files
+*.slo
+*.lo
+*.o
+*.obj
+
+# Precompiled Headers
+*.gch
+*.pch
+
+# Compiled Dynamic libraries
+*.so
+*.dylib
+*.dll
+
+# Fortran module files
+*.mod
+*.smod
+
+# Compiled Static libraries
+*.lai
+*.la
+*.a
+*.lib
+
+# Executables
+*.exe
+*.out
+*.app

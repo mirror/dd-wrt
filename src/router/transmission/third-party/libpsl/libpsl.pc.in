@@ -8,4 +8,5 @@ Description: Public Suffix List C library.
 Version: @PACKAGE_VERSION@
 URL: @PACKAGE_URL@
 Libs: -L${libdir} -lpsl
+Libs.private: @LIBS@
 Cflags: -I${includedir}

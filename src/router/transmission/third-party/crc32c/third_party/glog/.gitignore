@@ -1,0 +1,6 @@
+*.orig
+/build*/
+/site/
+bazel-*
+# Bzlmod lockfile
+/MODULE.bazel.lock

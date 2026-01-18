@@ -1,6 +1,6 @@
 project('libpsl', 'c',
   version : files('version.txt'),
-  meson_version : '>=0.57.0')
+  meson_version : '>=0.60.0')
 
 cc = meson.get_compiler('c')
 
@@ -25,7 +25,7 @@ link_language = 'c'
 # https://github.com/mesonbuild/meson/issues/4566
 # Dependency fallbacks would help too:
 # https://github.com/mesonbuild/meson/pull/4595
-if ['libidn2', 'auto'].contains(enable_runtime) or ['libidn2', 'auto'].contains(enable_builtin)
+if ['libidn2', 'auto'].contains(enable_runtime)
   libidn2_dep = dependency('libidn2', required : false)
   if not libidn2_dep.found() and cc.has_header('idn2.h')
     libidn2_dep = cc.find_library('idn2', required : false)
@@ -34,44 +34,30 @@ if ['libidn2', 'auto'].contains(enable_runtime) or ['libidn2', 'auto'].contains(
     if enable_runtime == 'auto'
       enable_runtime = 'libidn2'
     endif
-    if enable_builtin == 'auto'
-      enable_builtin = 'libidn2'
-    endif
-  elif [enable_runtime, enable_builtin].contains('libidn2')
+  elif enable_runtime == 'libidn2'
     error('You requested libidn2 but it is not installed.')
   endif
 endif
 
-if ['libicu', 'auto'].contains(enable_runtime) or ['libicu', 'auto'].contains(enable_builtin)
-  libicu_dep = dependency('icu-uc', required : false)
-  if not libicu_dep.found() and cc.has_header('unicode/ustring.h')
-    # MSVC: the debug configuration of ICU generated the libraries with d suffix
-    # we must handle this and search for the right library depending on the
-    # build type. Note debugoptimized is just a release build with .pdb files enabled
-    if cc.get_id() == 'msvc' and buildtype == 'debug'
-      libicu_dep = cc.find_library('icuucd', required : false)
-    else
-      libicu_dep = cc.find_library('icuuc', required : false)
-    endif
-  endif
+if ['libicu', 'auto'].contains(enable_runtime)
+  libicu_dep = dependency('icu-uc', 'ICU',
+                          components: 'uc',
+                          required : false)
   if libicu_dep.found()
     if enable_runtime == 'auto'
       enable_runtime = 'libicu'
-    endif
-    if enable_builtin == 'auto'
-      enable_builtin = 'libicu'
     endif
     if add_languages('cpp', native : false)
         link_language = 'cpp'
     else
         error('C++ compiler is not available')
     endif
-  elif [enable_runtime, enable_builtin].contains('libicu')
+  elif enable_runtime == 'libicu'
     error('You requested libicu but it is not installed.')
   endif
 endif
 
-if ['libidn', 'auto'].contains(enable_runtime) or ['libidn', 'auto'].contains(enable_builtin)
+if ['libidn', 'auto'].contains(enable_runtime)
   libidn_dep = dependency('libidn', required : false)
   if not libidn_dep.found() and cc.has_header('idna.h')
     libidn_dep = cc.find_library('idn', required : false)
@@ -80,10 +66,7 @@ if ['libidn', 'auto'].contains(enable_runtime) or ['libidn', 'auto'].contains(en
     if enable_runtime == 'auto'
       enable_runtime = 'libidn'
     endif
-    if enable_builtin == 'auto'
-      enable_builtin = 'libidn'
-    endif
-  elif [enable_runtime, enable_builtin].contains('libidn')
+  elif enable_runtime == 'libidn'
     error('You requested libidn but it is not installed.')
   endif
 endif
@@ -91,19 +74,7 @@ endif
 if libidn2_dep.found() or libidn_dep.found()
   # Check for libunistring, we need it for psl_str_to_utf8lower()
   libunistring = cc.find_library('unistring')
-  found_iconv = false
-  if cc.has_function('iconv_open')
-    libiconv_dep = []
-    found_iconv = true
-  endif
-  if not found_iconv and cc.has_header_symbol('iconv.h', 'iconv_open')
-    libiconv_dep = [cc.find_library('iconv')]
-    found_iconv = true
-  endif
-
-  if not found_iconv
-    error('iconv implementation not found')
-  endif
+  libiconv_dep = dependency('iconv')
 endif
 
 if host_machine.system() == 'windows'
@@ -113,27 +84,22 @@ endif
 if enable_runtime == 'auto'
   enable_runtime = 'no'
 endif
-if enable_builtin == 'auto'
-  enable_builtin = 'no'
-endif
 
 config = configuration_data()
 config.set_quoted('PACKAGE_VERSION', meson.project_version())
 config.set('WITH_LIBIDN2', enable_runtime == 'libidn2')
 config.set('WITH_LIBICU', enable_runtime == 'libicu')
 config.set('WITH_LIBIDN', enable_runtime == 'libidn')
-config.set('BUILTIN_GENERATOR_LIBIDN2', enable_builtin == 'libidn2')
-config.set('BUILTIN_GENERATOR_LIBICU', enable_builtin == 'libicu')
-config.set('BUILTIN_GENERATOR_LIBIDN', enable_builtin == 'libidn')
+config.set('ENABLE_BUILTIN', enable_builtin)
 config.set('HAVE_UNISTD_H', cc.check_header('unistd.h'))
 config.set('HAVE_STDINT_H', cc.check_header('stdint.h'))
-config.set('HAVE_ALLOCA_H', cc.check_header('alloca.h'))
 config.set('HAVE_DIRENT_H', cc.check_header('dirent.h'))
-config.set('HAVE_ALLOCA', cc.has_function('alloca'))
-config.set('HAVE_STRNDUP', cc.has_function('strndup'))
 config.set('HAVE_CLOCK_GETTIME', cc.has_function('clock_gettime'))
 config.set('HAVE_FMEMOPEN', cc.has_function('fmemopen'))
 config.set('HAVE_NL_LANGINFO', cc.has_function('nl_langinfo'))
+if cc.has_function_attribute('visibility')
+  config.set('HAVE_VISIBILITY', 1)
+endif
 configure_file(output : 'config.h', configuration : config)
 
 configinc = include_directories('.')
@@ -149,7 +115,7 @@ if psl_test_file == ''
   psl_test_file = join_paths(meson.current_source_dir(), 'list', 'tests', 'tests.txt')
 endif
 
-python = import('python').find_installation()
+python = find_program('python3')
 pkgconfig = import('pkgconfig')
 
 if cc.get_id() == 'msvc'
@@ -158,14 +124,13 @@ if cc.get_id() == 'msvc'
       add_project_arguments('-Dsnprintf=_snprintf', language: 'c')
     endif
   endif
-  if cc.has_header_symbol('malloc.h', '_alloca')
-    add_project_arguments('-Dalloca=_alloca', language: 'c')
-  endif
 endif
 
 subdir('include')
 subdir('src')
 subdir('tools')
-subdir('tests')
-subdir('fuzz')
+if get_option('tests')
+  subdir('tests')
+  subdir('fuzz')
+endif
 subdir(join_paths('docs', 'libpsl'))

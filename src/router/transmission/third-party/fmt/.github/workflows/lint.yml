@@ -1,0 +1,28 @@
+name: lint
+
+on:
+  pull_request:
+    paths:
+      - '**.h'
+      - '**.cc'
+
+permissions:
+  contents: read
+
+jobs:
+  format_code:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+
+    - name: Install clang-format
+      run: |
+        wget https://apt.llvm.org/llvm.sh
+        sudo bash ./llvm.sh 17
+        sudo apt install clang-format-17
+
+    - name: Run clang-format
+      run: |
+        find include src -name '*.h' -o -name '*.cc' | \
+          xargs clang-format-17 -i -style=file -fallback-style=none
+        git diff --exit-code

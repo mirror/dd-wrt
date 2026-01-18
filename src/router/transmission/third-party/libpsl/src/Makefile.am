@@ -11,7 +11,7 @@ lib_LTLIBRARIES = libpsl.la
 libpsl_la_SOURCES = $(LIBPSL_SRCS)
 libpsl_la_CPPFLAGS = -I$(top_srcdir)/include -I$(top_builddir)/include -DPSL_DISTFILE=\"$(PSL_DISTFILE)\" \
   $(CFLAG_VISIBILITY) -DBUILDING_PSL
-libpsl_la_LIBADD = $(LTLIBICONV) $(LTLIBINTL) @INTL_MACOSX_LIBS@
+libpsl_la_LIBADD = $(LTLIBUNISTRING) $(LTLIBICONV) $(LTLIBINTL) @INTL_MACOSX_LIBS@
 
 # include ABI version information
 libpsl_la_LDFLAGS = -no-undefined -version-info $(LIBPSL_SO_VERSION)
@@ -20,6 +20,8 @@ libpsl_la_LDFLAGS = -no-undefined -version-info $(LIBPSL_SO_VERSION)
 # PSL_FILE can be set by ./configure --with-psl-file=[PATH]
 suffixes_dafsa.h: $(PSL_FILE) $(srcdir)/psl-make-dafsa
 	$(PYTHON) $(srcdir)/psl-make-dafsa --output-format=cxx+ "$(PSL_FILE)" suffixes_dafsa.h
+
+bin_SCRIPTS = psl-make-dafsa
 
 EXTRA_DIST = psl-make-dafsa LICENSE.chromium meson.build
 

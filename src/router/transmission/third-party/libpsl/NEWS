@@ -1,4 +1,29 @@
-Copyright (C) 2014-2020 Tim Rühsen
+Copyright (C) 2014-2024 Tim Rühsen
+
+13.01.2024 Release V0.21.5
+  * Fix version.txt
+
+13.01.2024 Release V0.21.4
+  * Fix meson build (missing ICONV_CONST in config.h)
+
+13.01.2024 Release V0.21.3
+  * Improved build with meson
+  * Fixed and improved build on Windows
+  * Improved build instructions
+  * Install psl-make-dafsa
+
+26.12.2022 Release V0.21.2
+  * Increased internal label size
+  * Meson build improvements (needs meson >= 0.60.0)
+  * Autoconf build improvements
+  * Add instructions on how to build from tarball
+  * Add WSAStartup() for Windows psl tool and tests
+  * Bump gettext version to 0.19.3
+  * Fix stack buffer overflow WRITE 1 in domain_to_punycode()
+    (Relevant only when built without any IDNA library.)
+  * Fix undefined behavior in library code
+  * Ensures that calls to fopen() and stat() can handle largefiles
+  * Several minor (non-functional) changes
 
 18.07.2020 Release V0.21.1
   * Fixing a test due to recent changes in upstream PSL

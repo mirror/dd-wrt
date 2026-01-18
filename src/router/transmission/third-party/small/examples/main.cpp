@@ -109,7 +109,7 @@ print(R&& v) {
     for (const auto& x: v) {
         constexpr bool x_is_pair = small::detail::is_pair_v<
             std::decay_t<decltype(x)>>;
-        if constexpr (not x_is_pair) {
+        if constexpr (!x_is_pair) {
             std::cout << x << ' ';
         } else {
             std::cout << '<' << x.first << ',' << x.second << '>' << ' ';

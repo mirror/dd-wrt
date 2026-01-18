@@ -1,4 +1,4 @@
-// This file Copyright © 2022-2023 Mnemosyne LLC.
+// This file Copyright © Mnemosyne LLC.
 // It may be used under GPLv2 (SPDX: GPL-2.0-only), GPLv3 (SPDX: GPL-3.0-only),
 // or any future license endorsed by Mnemosyne LLC.
 // License text can be found in the licenses/ folder.
@@ -26,23 +26,40 @@ private:
 
 public:
     using value_type = Char;
-    using const_reference = const Char&;
+    using const_reference = Char const&;
 
     tr_strbuf()
     {
         ensure_sz();
     }
 
-    tr_strbuf(tr_strbuf const& other) = delete;
-    tr_strbuf& operator=(tr_strbuf const& other) = delete;
+    tr_strbuf(tr_strbuf const& other)
+    {
+        if (this != &other)
+        {
+            assign(other.sv());
+        }
+    }
 
-    tr_strbuf(tr_strbuf&& other)
+    tr_strbuf& operator=(tr_strbuf const& other)
+    {
+        if (this != &other)
+        {
+            assign(other.sv());
+        }
+
+        return *this;
+    }
+
+    tr_strbuf(tr_strbuf&& other) noexcept
         : buffer_{ std::move(other.buffer_) }
     {
         ensure_sz();
     }
 
-    tr_strbuf& operator=(tr_strbuf&& other)
+    ~tr_strbuf() = default;
+
+    tr_strbuf& operator=(tr_strbuf&& other) noexcept
     {
         buffer_ = std::move(other.buffer_);
         ensure_sz();
@@ -116,7 +133,7 @@ public:
     }
 
     template<typename ContiguousRange>
-    [[nodiscard]] constexpr auto operator==(ContiguousRange const& x) const noexcept
+    [[nodiscard]] constexpr bool operator==(ContiguousRange const& x) const noexcept
     {
         return sv() == x;
     }
@@ -254,11 +271,13 @@ public:
         join(std::basic_string_view<Char>{ sz_delim }, args...);
     }
 
+    // NOLINTNEXTLINE(google-explicit-constructor)
     [[nodiscard]] constexpr operator std::basic_string_view<Char>() const noexcept
     {
         return sv();
     }
 
+    // NOLINTNEXTLINE(google-explicit-constructor)
     [[nodiscard]] constexpr operator auto() const noexcept
     {
         return c_str();
@@ -266,6 +285,7 @@ public:
 
     bool popdir() noexcept
     {
+        // NOLINTNEXTLINE(readability-redundant-declaration): P.S. This looks like some dark magic
         std::string_view tr_sys_path_dirname(std::string_view path);
         auto const parent = tr_sys_path_dirname(sv());
         auto const changed = parent != sv();

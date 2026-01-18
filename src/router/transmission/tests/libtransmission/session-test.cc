@@ -3,22 +3,26 @@
 // or any future license endorsed by Mnemosyne LLC.
 // License text can be found in the licenses/ folder.
 
-#include <libtransmission/transmission.h>
-
-#include <libtransmission/session-alt-speeds.h>
-#include <libtransmission/session-id.h>
-#include <libtransmission/session.h>
-#include <libtransmission/version.h>
-
-#include "test-fixtures.h"
-
-#include <algorithm>
 #include <array>
 #include <cstdlib>
 #include <cstring>
+#include <ctime>
+#include <initializer_list>
 #include <memory>
 #include <string>
 #include <string_view>
+
+#include <libtransmission/transmission.h>
+
+#include <libtransmission/crypto-utils.h>
+#include <libtransmission/quark.h>
+#include <libtransmission/session-id.h>
+#include <libtransmission/session.h>
+#include <libtransmission/variant.h>
+#include <libtransmission/version.h>
+
+#include "gtest/gtest.h"
+#include "test-fixtures.h"
 
 using namespace std::literals;
 
@@ -164,12 +168,12 @@ TEST_F(SessionTest, propertiesApi)
 
     for (auto const value : { true, false })
     {
-        session->useBlocklist(value);
-        EXPECT_EQ(value, session->useBlocklist());
+        session->set_blocklist_enabled(value);
+        EXPECT_EQ(value, session->blocklist_enabled());
         EXPECT_EQ(value, tr_blocklistIsEnabled(session));
 
         tr_sessionSetIncompleteDirEnabled(session, value);
-        EXPECT_EQ(value, session->useBlocklist());
+        EXPECT_EQ(value, session->blocklist_enabled());
         EXPECT_EQ(value, tr_blocklistIsEnabled(session));
     }
 }
@@ -204,8 +208,8 @@ namespace current_time_mock
 {
 namespace
 {
+
 auto value = time_t{};
-}
 
 time_t get()
 {
@@ -217,6 +221,7 @@ void set(time_t now)
     value = now;
 }
 
+} // unnamed namespace
 } // namespace current_time_mock
 
 TEST_F(SessionTest, sessionId)
@@ -226,8 +231,8 @@ TEST_F(SessionTest, sessionId)
     GTEST_SKIP();
 #endif
 
-    EXPECT_FALSE(tr_session_id::isLocal(""));
-    EXPECT_FALSE(tr_session_id::isLocal("test"));
+    EXPECT_FALSE(tr_session_id::is_local(""));
+    EXPECT_FALSE(tr_session_id::is_local("test"));
 
     current_time_mock::set(0U);
     auto session_id = std::make_unique<tr_session_id>(current_time_mock::get);
@@ -236,62 +241,60 @@ TEST_F(SessionTest, sessionId)
     EXPECT_EQ(session_id->sv(), session_id->c_str()) << session_id->sv() << ", " << session_id->c_str();
     EXPECT_EQ(48U, strlen(session_id->c_str()));
     auto session_id_str_1 = std::string{ session_id->sv() };
-    EXPECT_TRUE(tr_session_id::isLocal(session_id_str_1));
+    EXPECT_TRUE(tr_session_id::is_local(session_id_str_1));
 
     current_time_mock::set(current_time_mock::get() + (3600U - 1U));
-    EXPECT_TRUE(tr_session_id::isLocal(session_id_str_1));
+    EXPECT_TRUE(tr_session_id::is_local(session_id_str_1));
     auto session_id_str_2 = std::string{ session_id->sv() };
     EXPECT_EQ(session_id_str_1, session_id_str_2);
 
     current_time_mock::set(3600U);
-    EXPECT_TRUE(tr_session_id::isLocal(session_id_str_1));
+    EXPECT_TRUE(tr_session_id::is_local(session_id_str_1));
     session_id_str_2 = std::string{ session_id->sv() };
     EXPECT_NE(session_id_str_1, session_id_str_2);
     EXPECT_EQ(session_id_str_2, session_id->c_str());
     EXPECT_EQ(48U, strlen(session_id->c_str()));
 
-    EXPECT_TRUE(tr_session_id::isLocal(session_id_str_2));
-    EXPECT_TRUE(tr_session_id::isLocal(session_id_str_1));
+    EXPECT_TRUE(tr_session_id::is_local(session_id_str_2));
+    EXPECT_TRUE(tr_session_id::is_local(session_id_str_1));
     current_time_mock::set(7200U);
-    EXPECT_TRUE(tr_session_id::isLocal(session_id_str_2));
-    EXPECT_TRUE(tr_session_id::isLocal(session_id_str_1));
+    EXPECT_TRUE(tr_session_id::is_local(session_id_str_2));
+    EXPECT_TRUE(tr_session_id::is_local(session_id_str_1));
 
     auto const session_id_str_3 = std::string{ session_id->sv() };
     EXPECT_EQ(48U, std::size(session_id_str_3));
     EXPECT_NE(session_id_str_2, session_id_str_3);
     EXPECT_NE(session_id_str_1, session_id_str_3);
 
-    EXPECT_TRUE(tr_session_id::isLocal(session_id_str_3));
-    EXPECT_TRUE(tr_session_id::isLocal(session_id_str_2));
-    EXPECT_FALSE(tr_session_id::isLocal(session_id_str_1));
+    EXPECT_TRUE(tr_session_id::is_local(session_id_str_3));
+    EXPECT_TRUE(tr_session_id::is_local(session_id_str_2));
+    EXPECT_FALSE(tr_session_id::is_local(session_id_str_1));
 
     current_time_mock::set(36000U);
-    EXPECT_TRUE(tr_session_id::isLocal(session_id_str_3));
-    EXPECT_TRUE(tr_session_id::isLocal(session_id_str_2));
-    EXPECT_FALSE(tr_session_id::isLocal(session_id_str_1));
+    EXPECT_TRUE(tr_session_id::is_local(session_id_str_3));
+    EXPECT_TRUE(tr_session_id::is_local(session_id_str_2));
+    EXPECT_FALSE(tr_session_id::is_local(session_id_str_1));
 
     session_id.reset();
-    EXPECT_FALSE(tr_session_id::isLocal(session_id_str_3));
-    EXPECT_FALSE(tr_session_id::isLocal(session_id_str_2));
-    EXPECT_FALSE(tr_session_id::isLocal(session_id_str_1));
+    EXPECT_FALSE(tr_session_id::is_local(session_id_str_3));
+    EXPECT_FALSE(tr_session_id::is_local(session_id_str_2));
+    EXPECT_FALSE(tr_session_id::is_local(session_id_str_1));
 }
 
 TEST_F(SessionTest, getDefaultSettingsIncludesSubmodules)
 {
-    auto settings = tr_variant{};
-    tr_variantInitDict(&settings, 0);
-    tr_sessionGetDefaultSettings(&settings);
+    auto settings = tr_sessionGetDefaultSettings();
+    auto* settings_map = settings.get_if<tr_variant::Map>();
+    ASSERT_NE(settings_map, nullptr);
 
     // Choose a setting from each of [tr_session, tr_session_alt_speeds, tr_rpc_server] to test all of them.
     // These are all `false` by default
     for (auto const& key : { TR_KEY_peer_port_random_on_start, TR_KEY_alt_speed_time_enabled, TR_KEY_rpc_enabled })
     {
-        auto flag = bool{};
-        EXPECT_TRUE(tr_variantDictFindBool(&settings, key, &flag));
-        EXPECT_FALSE(flag);
+        auto flag = settings_map->value_if<bool>(key);
+        ASSERT_TRUE(flag);
+        EXPECT_FALSE(*flag);
     }
-
-    tr_variantClear(&settings);
 }
 
 TEST_F(SessionTest, honorsSettings)
@@ -303,16 +306,14 @@ TEST_F(SessionTest, honorsSettings)
 
     // Choose a setting from each of [tr_session, tr_session_alt_speeds, tr_rpc_server] to test all of them.
     // These are all `false` by default
-    auto settings = tr_variant{};
-    tr_variantInitDict(&settings, 0);
-    tr_sessionGetDefaultSettings(&settings);
+    auto settings = tr_sessionGetDefaultSettings();
+    auto* settings_map = settings.get_if<tr_variant::Map>();
+    ASSERT_NE(settings_map, nullptr);
     for (auto const& key : { TR_KEY_peer_port_random_on_start, TR_KEY_alt_speed_time_enabled, TR_KEY_rpc_enabled })
     {
-        tr_variantDictRemove(&settings, key);
-        tr_variantDictAddBool(&settings, key, true);
+        settings_map->insert_or_assign(key, true);
     }
-    auto* session = tr_sessionInit(sandboxDir().data(), false, &settings);
-    tr_variantClear(&settings);
+    auto* session = tr_sessionInit(sandboxDir(), false, settings);
 
     // confirm that these settings were enabled
     EXPECT_TRUE(session->isPortRandom());
@@ -334,16 +335,44 @@ TEST_F(SessionTest, savesSettings)
     tr_sessionSetRPCEnabled(session_, true);
 
     // Choose a setting from each of [tr_session, tr_session_alt_speeds, tr_rpc_server] to test all of them.
-    auto settings = tr_variant{};
-    tr_variantInitDict(&settings, 0);
-    tr_sessionGetSettings(session_, &settings);
+    auto settings = tr_sessionGetSettings(session_);
+    auto* settings_map = settings.get_if<tr_variant::Map>();
+    ASSERT_NE(settings_map, nullptr);
     for (auto const& key : { TR_KEY_peer_port_random_on_start, TR_KEY_alt_speed_time_enabled, TR_KEY_rpc_enabled })
     {
-        auto flag = bool{};
-        EXPECT_TRUE(tr_variantDictFindBool(&settings, key, &flag));
-        EXPECT_TRUE(flag);
+        auto flag = settings_map->value_if<bool>(key);
+        ASSERT_TRUE(flag);
+        EXPECT_TRUE(*flag);
     }
-    tr_variantClear(&settings);
+}
+
+TEST_F(SessionTest, loadTorrentsThenMagnets)
+{
+    static auto constexpr TorrentFile = LIBTRANSMISSION_TEST_ASSETS_DIR "/archlinux-2025.05.01-x86_64.iso.torrent";
+    static auto constexpr MagnetFile = LIBTRANSMISSION_TEST_ASSETS_DIR "/archlinux-2025.05.01-x86_64.iso.magnet";
+
+    if (auto error = tr_error{};
+        !tr_sys_path_copy(
+            TorrentFile,
+            tr_pathbuf{ session_->torrentDir(), "/2e34989b1c60df821b2d046c884d8f4d1858b97a.torrent"sv },
+            &error) ||
+        !tr_sys_path_copy(
+            MagnetFile,
+            tr_pathbuf{ session_->torrentDir(), "/2e34989b1c60df821b2d046c884d8f4d1858b97a.magnet"sv },
+            &error))
+    {
+        GTEST_SKIP() << fmt::format("Failed to setup torrents dir: {} ({})", error.message(), error.code());
+    }
+
+    auto* const ctor = tr_ctorNew(session_);
+    ctor->set_paused(TR_FORCE, false);
+    EXPECT_EQ(tr_sessionLoadTorrents(session_, ctor), 1U);
+    tr_ctorFree(ctor);
+
+    auto* const tor = session_->torrents().get(1U);
+    ASSERT_NE(tor, nullptr);
+
+    EXPECT_TRUE(tor->has_metainfo());
 }
 
 } // namespace libtransmission::test

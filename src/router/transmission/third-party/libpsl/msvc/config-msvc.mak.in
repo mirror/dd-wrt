@@ -13,8 +13,8 @@ PSL_TESTFILE=..\list\tests\tests.txt
 PSL_FILE_INPUT = $(PSL_FILE:\=/)
 PSL_TESTFILE_INPUT = $(PSL_TESTFILE:\=/)
 
-# We only support using the ICU runtime and/or builtin, or no runtime
-# and/or builtin for Visual Studio builds
+# We only support using the ICU runtime, or no runtime
+# for Visual Studio builds
 !if "$(CFG)" == "Release" || "$(CFG)" == "release"
 ICUUC_LIB = icuuc.lib
 !else
@@ -79,9 +79,9 @@ PSL_DLL_SUFFIX =
 
 PSL_DLL = vs$(VSVER)\$(CFG)\$(PLAT)\$(PSL_DLL_PREFIX)psl$(PSL_DLL_SUFFIX).dll
 
-# ENABLE_RUNTIME_ICU and ENABLE_BUILTIN_ICU are currently dummy arguments to NMake
+# ENABLED_RUNTIME and ENABLE_BUILTIN are currently dummy arguments to NMake
 ENABLED_RUNTIME =
-ENABLED_BUILTIN =
+ENABLE_BUILTIN =
 
 !ifndef DISABLE_RUNTIME
 BASE_CFLAGS = $(BASE_CFLAGS) /DWITH_LIBICU=1
@@ -92,11 +92,11 @@ ENABLED_RUNTIME = none
 !endif
 
 !ifndef DISABLE_BUILTIN
-BASE_CFLAGS = $(BASE_CFLAGS) /DBUILTIN_GENERATOR_LIBICU=1
-ENABLED_BUILTIN = libicu
+BASE_CFLAGS = $(BASE_CFLAGS) /DENABLE_BUILTIN=1
+ENABLE_BUILTIN = yes
 !else
 PSL_MAKE_OPTIONS = $(PSL_MAKE_OPTIONS) DISABLE_BUILTIN^=1
-ENABLED_BUILTIN = none
+ENABLE_BUILTIN = no
 !endif
 
 !ifdef STATIC
@@ -107,8 +107,11 @@ PSL_LIBTYPE = static
 PSL_LIBTYPE = DLL
 !endif
 
-!if "$(DISABLE_RUNTIME)" == "" || "$(DISABLE_BUILTIN)" == ""
+!if "$(DISABLE_RUNTIME)" == ""
 PSL_ADDITIONAL_LIBS = $(PSL_ADDITIONAL_LIBS) $(ICUUC_LIB)
+!endif
+
+!if "$(DISABLE_BUILTIN)" == ""
 PSL_TESTS =	\
 	$(PSL_TESTS)	\
 	vs$(VSVER)\$(CFG)\$(PLAT)\test-is-public-builtin.exe	\

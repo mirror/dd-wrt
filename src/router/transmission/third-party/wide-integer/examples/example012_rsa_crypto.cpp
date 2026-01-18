@@ -1,5 +1,5 @@
 ﻿///////////////////////////////////////////////////////////////////
-//  Copyright Christopher Kormanyos 2021 - 2022.                 //
+//  Copyright Christopher Kormanyos 2021 - 2025.                 //
 //  Distributed under the Boost Software License,                //
 //  Version 1.0. (See accompanying file LICENSE_1_0.txt          //
 //  or copy at http://www.boost.org/LICENSE_1_0.txt)             //
@@ -10,6 +10,8 @@
 
 #include <examples/example_uintwide_t.h>
 #include <math/wide_integer/uintwide_t.h>
+
+#include <util/utility/util_pseudorandom_time_point_seed.h>
 
 namespace local_rsa
 {
@@ -28,7 +30,7 @@ namespace local_rsa
                                                                                   LimbType,
                                                                                   allocator_type>;
     #else
-    using my_uintwide_t  = math::wide_integer::uintwide_t<static_cast<math::wide_integer::size_t>(bit_count),
+    using my_uintwide_t  = ::math::wide_integer::uintwide_t<static_cast<math::wide_integer::size_t>(bit_count),
                                                           LimbType,
                                                           allocator_type>;
     #endif
@@ -40,7 +42,7 @@ namespace local_rsa
     #if defined(WIDE_INTEGER_NAMESPACE)
     using crypto_string  = WIDE_INTEGER_NAMESPACE::math::wide_integer::detail::dynamic_array<crypto_char, crypto_alloc>;
     #else
-    using crypto_string  = math::wide_integer::detail::dynamic_array<crypto_char, crypto_alloc>;
+    using crypto_string  = ::math::wide_integer::detail::dynamic_array<crypto_char, crypto_alloc>;
     #endif
 
     using private_key_type =
@@ -73,19 +75,19 @@ namespace local_rsa
 
         if(a == 0)
         {
-          *x = local_integer_type(0U);
-          *y = local_integer_type(1U);
+          *x = local_integer_type { 0U };
+          *y = local_integer_type { 1U };
 
           return b;
         }
 
-        local_integer_type tmp_x;
-        local_integer_type tmp_y;
+        local_integer_type tmp_x { };
+        local_integer_type tmp_y { };
 
         local_integer_type gcd_ext = extended_euclidean(b % a, a, &tmp_x, &tmp_y);
 
-        *x = tmp_y - ((b / a) * tmp_x);
-        *y = tmp_x;
+        *x = std::move(tmp_y - ((b / a) * tmp_x));
+        *y = std::move(tmp_x);
 
         return gcd_ext;
       }
@@ -100,14 +102,14 @@ namespace local_rsa
                typename OutputIterator>
       auto encrypt(InputIterator in_first, const std::size_t count, OutputIterator out) -> void
       {
-        for(auto it = in_first; it != in_first + typename std::iterator_traits<InputIterator>::difference_type(count); ++it) // NOLINT(altera-id-dependent-backward-branch)
+        for(auto it = in_first; it != in_first + static_cast<typename std::iterator_traits<InputIterator>::difference_type>(count); ++it) // NOLINT(altera-id-dependent-backward-branch)
         {
           *out++ = powm(my_uintwide_t(*it), public_key.r, public_key.m);
         }
       }
 
     private:
-      const public_key_type& public_key; // NOLINT(readability-identifier-naming)
+      const public_key_type& public_key; // NOLINT(readability-identifier-naming,cppcoreguidelines-avoid-const-or-ref-data-members)
     };
 
     class decryptor
@@ -119,7 +121,7 @@ namespace local_rsa
                typename OutputIterator>
       auto decrypt(InputIterator cry_in, const std::size_t count, OutputIterator cypher_out) -> void
       {
-        InputIterator cry_end(cry_in + typename std::iterator_traits<InputIterator>::difference_type(count));
+        InputIterator cry_end(cry_in + static_cast<typename std::iterator_traits<InputIterator>::difference_type>(count));
 
         for(auto it = cry_in; it !=  cry_end; ++it) // NOLINT(altera-id-dependent-backward-branch)
         {
@@ -130,7 +132,7 @@ namespace local_rsa
       }
 
     private:
-      const private_key_type& private_key; // NOLINT(readability-identifier-naming)
+      const private_key_type& private_key; // NOLINT(readability-identifier-naming,cppcoreguidelines-avoid-const-or-ref-data-members)
     };
 
     rsa_base(const rsa_base& other) : my_p       (other.my_p),
@@ -193,7 +195,7 @@ namespace local_rsa
       encryptor(public_key).encrypt(str.cbegin(), str.length(), str_out.begin());
 
       return str_out;
-    }
+    } // LCOV_EXCL_LINE
 
     auto decrypt(const crypto_string& str) const -> std::string
     {
@@ -206,14 +208,14 @@ namespace local_rsa
 
     template<typename RandomEngineType = std::minstd_rand>
     static auto is_prime(const my_uintwide_t& p,
-                         const RandomEngineType& generator = RandomEngineType(static_cast<typename RandomEngineType::result_type>(std::clock()))) -> bool
+                         const RandomEngineType& generator = RandomEngineType(util::util_pseudorandom_time_point_seed::value<typename RandomEngineType::result_type>())) -> bool
     {
       #if defined(WIDE_INTEGER_NAMESPACE)
       using local_distribution_type =
         WIDE_INTEGER_NAMESPACE::math::wide_integer::uniform_int_distribution<WIDE_INTEGER_NAMESPACE::math::wide_integer::size_t(bit_count), limb_type, allocator_type>;
       #else
       using local_distribution_type =
-        math::wide_integer::uniform_int_distribution<math::wide_integer::size_t(bit_count), limb_type, allocator_type>;
+        ::math::wide_integer::uniform_int_distribution<static_cast<math::wide_integer::size_t>(bit_count), limb_type, allocator_type>;
       #endif
 
       local_distribution_type distribution;
@@ -228,40 +230,40 @@ namespace local_rsa
     rsa_base() = delete;
 
   protected:
-    my_uintwide_t    my_p;        // NOLINT(cppcoreguidelines-non-private-member-variables-in-classes,misc-non-private-member-variables-in-classes,readability-identifier-naming)
-    my_uintwide_t    my_q;        // NOLINT(cppcoreguidelines-non-private-member-variables-in-classes,misc-non-private-member-variables-in-classes,readability-identifier-naming)
-    my_uintwide_t    my_r;        // NOLINT(cppcoreguidelines-non-private-member-variables-in-classes,misc-non-private-member-variables-in-classes,readability-identifier-naming)
-    my_uintwide_t    my_m;        // NOLINT(cppcoreguidelines-non-private-member-variables-in-classes,misc-non-private-member-variables-in-classes,readability-identifier-naming)
-    my_uintwide_t    phi_of_m;    // NOLINT(cppcoreguidelines-non-private-member-variables-in-classes,misc-non-private-member-variables-in-classes,readability-identifier-naming)
-    public_key_type  public_key;  // NOLINT(cppcoreguidelines-non-private-member-variables-in-classes,misc-non-private-member-variables-in-classes,readability-identifier-naming)
-    private_key_type private_key; // NOLINT(cppcoreguidelines-non-private-member-variables-in-classes,misc-non-private-member-variables-in-classes,readability-identifier-naming)
+    my_uintwide_t    my_p;            // NOLINT(cppcoreguidelines-non-private-member-variables-in-classes,misc-non-private-member-variables-in-classes,readability-identifier-naming)
+    my_uintwide_t    my_q;            // NOLINT(cppcoreguidelines-non-private-member-variables-in-classes,misc-non-private-member-variables-in-classes,readability-identifier-naming)
+    my_uintwide_t    my_r;            // NOLINT(cppcoreguidelines-non-private-member-variables-in-classes,misc-non-private-member-variables-in-classes,readability-identifier-naming)
+    my_uintwide_t    my_m;            // NOLINT(cppcoreguidelines-non-private-member-variables-in-classes,misc-non-private-member-variables-in-classes,readability-identifier-naming)
+    my_uintwide_t    phi_of_m    { }; // NOLINT(cppcoreguidelines-non-private-member-variables-in-classes,misc-non-private-member-variables-in-classes,readability-identifier-naming)
+    public_key_type  public_key  { }; // NOLINT(cppcoreguidelines-non-private-member-variables-in-classes,misc-non-private-member-variables-in-classes,readability-identifier-naming)
+    private_key_type private_key { }; // NOLINT(cppcoreguidelines-non-private-member-variables-in-classes,misc-non-private-member-variables-in-classes,readability-identifier-naming)
 
     rsa_base(my_uintwide_t p_in,
              my_uintwide_t q_in,
-             my_uintwide_t r_in) : my_p       (std::move(p_in)),
-                                   my_q       (std::move(q_in)),
-                                   my_r       (std::move(r_in)),
-                                   my_m       (my_p * my_q),
-                                   phi_of_m   (),
-                                   public_key (),
-                                   private_key()
+             my_uintwide_t r_in) : my_p(std::move(p_in)),
+                                   my_q(std::move(q_in)),
+                                   my_r(std::move(r_in)),
+                                   my_m(my_p * my_q)
     {
       public_key = public_key_type { my_r, my_m }; // NOLINT(cppcoreguidelines-prefer-member-initializer)
     }
 
     auto calculate_private_key() -> void
     {
-      my_uintwide_t a = phi_of_m;
-      my_uintwide_t b = my_r;
+      my_uintwide_t a { phi_of_m };
+      my_uintwide_t b { my_r };
 
-      my_uintwide_t x(0U);
-      my_uintwide_t s(0U);
+      my_uintwide_t x { };
+      my_uintwide_t s { };
 
       euclidean::extended_euclidean(a, b, &x, &s);
 
-      s = is_neg(s) ? make_positive(s, phi_of_m) : s;
+      if(is_neg(s))
+      {
+        s = std::move(make_positive(s, phi_of_m));
+      }
 
-      private_key = private_key_type { s, my_p, my_q };
+      private_key = std::move( private_key_type { std::move(s), my_p, my_q } );
     }
 
   private:
@@ -373,7 +375,7 @@ namespace local_rsa
 #if defined(WIDE_INTEGER_NAMESPACE)
 auto WIDE_INTEGER_NAMESPACE::math::wide_integer::example012_rsa_crypto() -> bool
 #else
-auto math::wide_integer::example012_rsa_crypto() -> bool
+auto ::math::wide_integer::example012_rsa_crypto() -> bool
 #endif
 {
   // Consider lines 25-30 in the file "KeyGen_186-3.rsp".
@@ -399,7 +401,7 @@ auto math::wide_integer::example012_rsa_crypto() -> bool
   {
     using local_random_engine_type = std::mt19937;
 
-    local_random_engine_type generator(static_cast<typename std::mt19937::result_type>(std::clock()));
+    local_random_engine_type generator(::util::util_pseudorandom_time_point_seed::value<typename std::mt19937::result_type>());
 
     const bool p_is_prime = rsa_type::is_prime(p, generator);
 
@@ -446,7 +448,7 @@ auto main() -> int
   #if defined(WIDE_INTEGER_NAMESPACE)
   const auto result_is_ok = WIDE_INTEGER_NAMESPACE::math::wide_integer::example012_rsa_crypto();
   #else
-  const auto result_is_ok = math::wide_integer::example012_rsa_crypto();
+  const auto result_is_ok = ::math::wide_integer::example012_rsa_crypto();
   #endif
 
   std::cout << "result_is_ok: " << std::boolalpha << result_is_ok << std::endl;

@@ -68,6 +68,8 @@ _HASH=^#
     && ![echo PLAT=Win32 >> vercl.x] \
     && ![echo $(_HASH)elif defined(_M_AMD64) >> vercl.x] \
     && ![echo PLAT=x64 >> vercl.x] \
+    && ![echo $(_HASH)elif defined(_M_ARM64) >> vercl.x] \
+    && ![echo PLAT=arm64 >> vercl.x] \
     && ![echo $(_HASH)endif >> vercl.x] \
     && ![cl -nologo -TC -P vercl.x $(ERRNUL)]
 !include vercl.i
@@ -91,8 +93,10 @@ VSVER = 12
 VSVER = 14
 !elseif $(VCVERSION) > 1909 && $(VCVERSION) < 1920
 VSVER = 15
-!elseif $(VCVERSION) > 1919 && $(VCVERSION) < 2000
+!elseif $(VCVERSION) > 1919 && $(VCVERSION) < 1930
 VSVER = 16
+!elseif $(VCVERSION) > 1929 && $(VCVERSION) < 2000
+VSVER = 17
 !else
 VSVER = 0
 !endif
@@ -100,7 +104,7 @@ VSVER = 0
 !if "$(VSVER)" == "0"
 MSG = ^
 This NMake Makefile set supports Visual Studio^
-9 (2008) through 16 (2019).  Your Visual Studio^
+9 (2008) through 17 (2022).  Your Visual Studio^
 version is not supported.
 !error $(MSG)
 !elseif $(VSVER) < 15
@@ -132,6 +136,8 @@ LDFLAGS_ARCH = /machine:x64
 !elseif "$(PLAT)" == "arm"
 LDFLAGS_ARCH = /machine:arm
 CFLAGS_ADD = $(CFLAGS_ADD) /DWINAPI_FAMILY=3
+!elseif "$(PLAT)" == "arm64"
+LDFLAGS_ARCH = /machine:arm64
 !else
 LDFLAGS_ARCH = /machine:x86
 !endif

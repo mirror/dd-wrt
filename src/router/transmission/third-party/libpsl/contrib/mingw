@@ -51,7 +51,7 @@ cd ..
 # build libpsl
 export WINEPATH="$INSTALLDIR/bin;$INSTALLDIR/lib;/usr/$PREFIX/bin;/usr/$PREFIX/lib;$PWD/libpsl/.libs;$GCCLIB"
 ./autogen.sh
-./configure --build=x86_64-pc-linux-gnu --host=$PREFIX --enable-shared --disable-gtk-doc --enable-runtime=libidn2 --enable-builtin=libidn2 --prefix=$INSTALLDIR
+./configure --build=x86_64-pc-linux-gnu --host=$PREFIX --enable-shared --disable-gtk-doc --enable-runtime=libidn2 --prefix=$INSTALLDIR
 make clean
 make -j$(nproc)
 make check -j$(nproc) LOG_COMPILER=wine

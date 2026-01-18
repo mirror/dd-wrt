@@ -31,9 +31,6 @@ include(cmake/small/variables.cmake)
 option(SMALL_BUILD_INSTALLER "Build installer target" ${SMALL_MASTER_PROJECT})
 option(SMALL_BUILD_PACKAGE "Build package" ${SMALL_MASTER_PROJECT})
 
-# How to build
-option(SMALL_BUILD_WITH_EXCEPTIONS "Add compiler flags to use exceptions." ON)
-
 # Development options
 include(cmake/small/dev-options.cmake)
 

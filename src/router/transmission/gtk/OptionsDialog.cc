@@ -1,4 +1,4 @@
-// This file Copyright © 2010-2023 Mnemosyne LLC.
+// This file Copyright © Mnemosyne LLC.
 // It may be used under GPLv2 (SPDX: GPL-2.0-only), GPLv3 (SPDX: GPL-3.0-only),
 // or any future license endorsed by Mnemosyne LLC.
 // License text can be found in the licenses/ folder.
@@ -73,9 +73,11 @@ public:
         Glib::RefPtr<Gtk::Builder> const& builder,
         Glib::RefPtr<Session> const& core,
         std::unique_ptr<tr_ctor, void (*)(tr_ctor*)> ctor);
-    ~Impl() = default;
-
-    TR_DISABLE_COPY_MOVE(Impl)
+    Impl(Impl&&) = delete;
+    Impl(Impl const&) = delete;
+    Impl& operator=(Impl&&) = delete;
+    Impl& operator=(Impl const&) = delete;
+    ~Impl();
 
 private:
     void sourceChanged(PathButton* b);
@@ -102,12 +104,17 @@ private:
     FreeSpaceLabel* freespace_label_ = nullptr;
 };
 
+OptionsDialog::Impl::~Impl()
+{
+    removeOldTorrent();
+}
+
 void OptionsDialog::Impl::removeOldTorrent()
 {
     if (tor_ != nullptr)
     {
         file_list_->clear();
-        tr_torrentRemove(tor_, false, nullptr, nullptr);
+        tr_torrentRemove(tor_, false, nullptr, nullptr, nullptr, nullptr);
         tor_ = nullptr;
     }
 }
@@ -118,7 +125,7 @@ void OptionsDialog::Impl::addResponseCB(int response)
     {
         if (response == TR_GTK_RESPONSE_TYPE(ACCEPT))
         {
-            tr_torrentSetPriority(tor_, gtr_combo_box_get_active_enum(*priority_combo_));
+            tr_torrentSetPriority(tor_, static_cast<tr_priority_t>(gtr_combo_box_get_active_enum(*priority_combo_)));
 
             if (run_check_->get_active())
             {
@@ -133,10 +140,7 @@ void OptionsDialog::Impl::addResponseCB(int response)
             }
 
             gtr_save_recent_dir("download", core_, downloadDir_);
-        }
-        else if (response == TR_GTK_RESPONSE_TYPE(CANCEL))
-        {
-            removeOldTorrent();
+            tor_ = nullptr;
         }
     }
 
@@ -338,16 +342,7 @@ void TorrentFileChooserDialog::onOpenDialogResponse(int response, Glib::RefPtr<S
         bool const do_prompt = get_choice(std::string(ShowOptionsDialogChoice)) == "true";
         bool const do_notify = false;
 
-#if GTKMM_CHECK_VERSION(4, 0, 0)
-        auto files = std::vector<Glib::RefPtr<Gio::File>>();
-        auto files_model = get_files();
-        for (auto i = guint{ 0 }; i < files_model->get_n_items(); ++i)
-        {
-            files.push_back(gtr_ptr_dynamic_cast<Gio::File>(files_model->get_object(i)));
-        }
-#else
-        auto const files = get_files();
-#endif
+        auto const files = IF_GTKMM4(get_files2, get_files)();
         g_assert(!files.empty());
 
         /* remember this folder the next time we use this dialog */
@@ -362,8 +357,6 @@ void TorrentFileChooserDialog::onOpenDialogResponse(int response, Glib::RefPtr<S
 
         core->add_files(files, do_start, do_prompt, do_notify);
     }
-
-    close();
 }
 
 std::unique_ptr<TorrentFileChooserDialog> TorrentFileChooserDialog::create(
@@ -374,12 +367,9 @@ std::unique_ptr<TorrentFileChooserDialog> TorrentFileChooserDialog::create(
 }
 
 TorrentFileChooserDialog::TorrentFileChooserDialog(Gtk::Window& parent, Glib::RefPtr<Session> const& core)
-    : Gtk::FileChooserDialog(parent, _("Open a Torrent"), TR_GTK_FILE_CHOOSER_ACTION(OPEN))
+    : Gtk::FileChooserNative(_("Open a Torrent"), parent, TR_GTK_FILE_CHOOSER_ACTION(OPEN), _("_Open"), _("_Cancel"))
 {
     set_modal(true);
-
-    add_button(_("_Cancel"), TR_GTK_RESPONSE_TYPE(CANCEL));
-    add_button(_("_Open"), TR_GTK_RESPONSE_TYPE(ACCEPT));
 
     set_select_multiple(true);
     addTorrentFilters(this);
@@ -400,7 +390,6 @@ TorrentFileChooserDialog::TorrentFileChooserDialog(Gtk::Window& parent, Glib::Re
 
 void TorrentUrlChooserDialog::onOpenURLResponse(int response, Gtk::Entry const& entry, Glib::RefPtr<Session> const& core)
 {
-
     if (response == TR_GTK_RESPONSE_TYPE(CANCEL))
     {
         close();
@@ -442,16 +431,14 @@ TorrentUrlChooserDialog::TorrentUrlChooserDialog(
     set_transient_for(parent);
 
     auto* const e = gtr_get_widget<Gtk::Entry>(builder, "url_entry");
+    auto* const accept = get_widget_for_response(TR_GTK_RESPONSE_TYPE(ACCEPT));
     gtr_paste_clipboard_url_into_entry(*e);
 
-    signal_response().connect([this, e, core](int response) { onOpenURLResponse(response, *e, core); });
+#if GTKMM_CHECK_VERSION(4, 0, 0)
+    set_default_widget(*accept);
+#else
+    set_default(*accept);
+#endif
 
-    if (e->get_text_length() == 0)
-    {
-        e->grab_focus();
-    }
-    else
-    {
-        get_widget_for_response(TR_GTK_RESPONSE_TYPE(ACCEPT))->grab_focus();
-    }
+    signal_response().connect([this, e, core](int response) { onOpenURLResponse(response, *e, core); });
 }

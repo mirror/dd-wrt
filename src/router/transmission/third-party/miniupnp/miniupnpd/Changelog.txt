@@ -1,4 +1,85 @@
-$Id: Changelog.txt,v 1.515 2024/03/19 23:40:30 nanard Exp $
+$Id: Changelog.txt,v 1.535 2025/04/26 13:07:53 nanard Exp $
+
+2025/05/26:
+  Fix false negative filtered STUN CGNAT test result for
+    unsupported servers #825
+
+2025/05/24:
+  Fix Mac OS X 10.9 build
+
+2025/05/15:
+  build: teststun executable
+
+2025/04/28:
+  pf: fix delete_pinhole for openbsd. Was broken since miniupnpd 2.3.7
+
+2025/04/26
+  Fix parsing of interfaces names starting with a digit
+  nftables: add counter for DNAT rule (ENABLE_NFT_RULE_COUNTER in config.h)
+  nftables: improve scripts to support already existing tables
+
+VERSION 2.3.9 : released on 2025/04/22
+
+2025/04/22:
+  NFTables: don't apply iif to rules if USE_IFNAME_IN_RULES is disabled
+
+2025/04/16:
+  Restore the default behavior of update_ext_ip_addr_from_stun function,
+    and now setting ext_perform_stun=allow-filtered would allow failed
+    STUN CGNAT filter check to be ignored
+
+2025/04/10:
+  Unify naming scheme and rename to ext_allow_private_ipv4 for
+  ignore_private_ip_check
+  Remove the ability to disable port forwarding for
+  update_ext_ip_addr_from_stun function
+
+2025/04/08:
+  improve get_wan_connection_status()
+
+2025/04/07:
+  Add a ignore_private_ip_check option in the configuration file to enable
+    port forwarding even with a WAN IP address in a reserved/private subnet
+
+VERSION 2.3.8 : released on 2025/04/03
+
+2025/04/03:
+  Add doxygen documentation to some of the functions
+
+2025/03/31:
+  Clean bsd/ subdirectory. Build testifacewatcher
+
+2025/01/25:
+  Send byebye messages also to FF05::C (and eventually FF0E::C)
+
+2025/01/10:
+  NFTables: fix delete_redirect_and_filter_rules() (remove filter rule)
+
+2025/01/09:
+  Fix get_redirect_rule_by_index() for OpenBSD >= 7.4
+
+2025/01/05:
+  Fix get_src_for_route_to() for OpenBSD >= 6.6
+
+2024/10/05:
+  Rework the buildsystem + systemd integration
+
+2024/07/27:
+  Hide the PCP nonce in descriptions returned by UPnP
+
+2024/07/11:
+  PCP: Check nonce when renewing IPv6 pinhole
+
+VERSION 2.3.7 : released on 2024/06/22
+
+2024/06/17:
+  FreeBSD: use libpfctl (FreeBSD 15+ or --libpfctl)
+
+2024/06/09:
+  default NOTIFY interval of 900s minus a random value
+
+2024/04/29:
+  ipv6: prefer globally routable addresses
 
 VERSION 2.3.6 : released on 2024/03/20
 

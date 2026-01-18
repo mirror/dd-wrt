@@ -1,7 +1,7 @@
 /* $Id: minissdpd.c,v 1.61 2021/11/04 23:27:28 nanard Exp $ */
 /* vim: tabstop=4 shiftwidth=4 noexpandtab
  * MiniUPnP project
- * (c) 2007-2022 Thomas Bernard
+ * (c) 2007-2024 Thomas Bernard
  * website : http://miniupnp.free.fr/ or https://miniupnp.tuxfamily.org/
  * This software is subject to the conditions detailed
  * in the LICENCE file provided within the distribution */
@@ -472,7 +472,7 @@ SendSSDPMSEARCHResponse(int s, const struct sockaddr * sockname,
 	 *
 	 * have a look at the document "UPnP Device Architecture v1.1 */
 	l = snprintf(buf, sizeof(buf), "HTTP/1.1 200 OK\r\n"
-		"CACHE-CONTROL: max-age=120\r\n"
+		"CACHE-CONTROL: max-age=1800\r\n"
 		/*"DATE: ...\r\n"*/
 		"ST: %.*s\r\n"
 		"USN: %s\r\n"
@@ -1529,7 +1529,7 @@ int main(int argc, char * * argv)
 			}
 		}
 		gettimeofday(&now, NULL);
-		i = get_sendto_fds(&writefds, &max_fd, &now);
+		get_sendto_fds(&writefds, &max_fd, &now);
 		/* select call */
 		if(select(max_fd + 1, &readfds, &writefds, 0, 0) < 0) {
 			if(errno != EINTR) {
@@ -1660,23 +1660,19 @@ int main(int argc, char * * argv)
 quit:
 	if(s_ssdp >= 0) {
 		close(s_ssdp);
-		s_ssdp = -1;
 	}
 #ifdef ENABLE_IPV6
 	if(s_ssdp6 >= 0) {
 		close(s_ssdp6);
-		s_ssdp6 = -1;
 	}
 #endif	/* ENABLE_IPV6 */
 	if(s_unix >= 0) {
 		close(s_unix);
-		s_unix = -1;
 		if(unlink(sockpath) < 0)
 			syslog(LOG_ERR, "unlink(%s): %m", sockpath);
 	}
 	if(s_ifacewatch >= 0) {
 		close(s_ifacewatch);
-		s_ifacewatch = -1;
 	}
 	/* empty LAN interface/address list */
 	while(lan_addrs.lh_first != NULL) {

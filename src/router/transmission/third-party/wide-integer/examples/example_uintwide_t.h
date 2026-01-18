@@ -1,5 +1,5 @@
 ﻿///////////////////////////////////////////////////////////////////
-//  Copyright Christopher Kormanyos 2021 - 2022.                 //
+//  Copyright Christopher Kormanyos 2021 - 2025.                 //
 //  Distributed under the Boost Software License,                //
 //  Version 1.0. (See accompanying file LICENSE_1_0.txt          //
 //  or copy at http://www.boost.org/LICENSE_1_0.txt)             //
@@ -40,6 +40,8 @@
   auto example010_uint48_t           () -> bool;
   auto example011_uint24_t           () -> bool;
   auto example012_rsa_crypto         () -> bool;
+  auto example013_ecdsa_sign_verify  () -> bool;
+  auto example014_pi_spigot_wide     () -> bool;
 
   #if(__cplusplus >= 201703L)
   } // namespace math::wide_integer

@@ -1,4 +1,4 @@
-// This file Copyright © 2007-2023 Mnemosyne LLC.
+// This file Copyright © Mnemosyne LLC.
 // It may be used under GPLv2 (SPDX: GPL-2.0-only), GPLv3 (SPDX: GPL-3.0-only),
 // or any future license endorsed by Mnemosyne LLC.
 // License text can be found in the licenses/ folder.
@@ -10,26 +10,28 @@
 #include "Session.h"
 #include "Utils.h"
 
-#include <libtransmission/transmission.h>
+#include <libtransmission/quark.h>
 
-#include <giomm/liststore.h>
-#include <giomm/menuattributeiter.h>
-#include <giomm/menulinkiter.h>
 #include <giomm/simpleaction.h>
 #include <glibmm/i18n.h>
 #include <glibmm/variant.h>
 
-#if GTKMM_CHECK_VERSION(4, 0, 0)
-#include <gtkmm/shortcut.h>
-#include <gtkmm/shortcutaction.h>
-#include <gtkmm/shortcuttrigger.h>
-#endif
-
 #include <array>
-#include <stack>
 #include <string>
 #include <string_view>
 #include <unordered_map>
+
+#if GTKMM_CHECK_VERSION(4, 0, 0)
+#include <giomm/liststore.h>
+#include <giomm/menuattributeiter.h>
+#include <giomm/menulinkiter.h>
+#include <gtkmm/shortcut.h>
+#include <gtkmm/shortcutaction.h>
+#include <gtkmm/shortcuttrigger.h>
+
+#include <stack>
+#include <utility>
+#endif
 
 using namespace std::string_view_literals;
 
@@ -51,10 +53,7 @@ void sort_changed_cb(Gio::SimpleAction& action, Glib::VariantBase const& value, 
     myCore->set_pref(TR_KEY_sort_mode, Glib::VariantBase::cast_dynamic<Glib::Variant<Glib::ustring>>(value).get());
 }
 
-std::array<std::string_view, 2> const show_toggle_entries = {
-    "toggle-main-window"sv,
-    "toggle-message-log"sv,
-};
+auto const show_toggle_entries = std::array<Glib::ustring, 2U>{ GTR_KEY_toggle_main_window, GTR_KEY_toggle_message_log };
 
 void toggle_pref_cb(Gio::SimpleAction& action, gpointer /*user_data*/)
 {
@@ -67,45 +66,45 @@ void toggle_pref_cb(Gio::SimpleAction& action, gpointer /*user_data*/)
     myCore->set_pref(tr_quark_new({ key.c_str(), key.size() }), !val);
 }
 
-std::array<std::string_view, 6> const pref_toggle_entries = {
-    "alt-speed-enabled"sv, //
-    "compact-view"sv, //
-    "sort-reversed"sv, //
-    "show-filterbar"sv, //
-    "show-statusbar"sv, //
-    "show-toolbar"sv, //
+std::array<tr_quark, 6> const pref_toggle_entries = {
+    TR_KEY_alt_speed_enabled, //
+    TR_KEY_compact_view, //
+    TR_KEY_sort_reversed, //
+    TR_KEY_show_filterbar, //
+    TR_KEY_show_statusbar, //
+    TR_KEY_show_toolbar, //
 };
 
-std::array<std::string_view, 29> const entries = {
-    "copy-magnet-link-to-clipboard"sv,
-    "open-torrent-from-url"sv,
-    "open-torrent"sv,
-    "torrent-start"sv,
-    "torrent-start-now"sv,
-    "show-stats"sv,
-    "donate"sv,
-    "torrent-verify"sv,
-    "torrent-stop"sv,
-    "pause-all-torrents"sv,
-    "start-all-torrents"sv,
-    "relocate-torrent"sv,
-    "remove-torrent"sv,
-    "delete-torrent"sv,
-    "new-torrent"sv,
-    "quit"sv,
-    "select-all"sv,
-    "deselect-all"sv,
-    "edit-preferences"sv,
-    "show-torrent-properties"sv,
-    "open-torrent-folder"sv,
-    "show-about-dialog"sv,
-    "help"sv,
-    "torrent-reannounce"sv,
-    "queue-move-top"sv,
-    "queue-move-up"sv,
-    "queue-move-down"sv,
-    "queue-move-bottom"sv,
-    "present-main-window"sv,
+auto const entries = std::array<Glib::ustring, 29>{
+    GTR_KEY_copy_magnet_link_to_clipboard,
+    GTR_KEY_open_torrent_from_url,
+    GTR_KEY_open_torrent,
+    GTR_KEY_torrent_start,
+    GTR_KEY_torrent_start_now,
+    GTR_KEY_show_stats,
+    GTR_KEY_donate,
+    GTR_KEY_torrent_verify,
+    GTR_KEY_torrent_stop,
+    GTR_KEY_pause_all_torrents,
+    GTR_KEY_start_all_torrents,
+    GTR_KEY_relocate_torrent,
+    GTR_KEY_remove_torrent,
+    GTR_KEY_delete_torrent,
+    GTR_KEY_new_torrent,
+    GTR_KEY_quit,
+    GTR_KEY_select_all,
+    GTR_KEY_deselect_all,
+    GTR_KEY_edit_preferences,
+    GTR_KEY_show_torrent_properties,
+    GTR_KEY_open_torrent_folder,
+    GTR_KEY_show_about_dialog,
+    GTR_KEY_help,
+    GTR_KEY_torrent_reannounce,
+    GTR_KEY_queue_move_top,
+    GTR_KEY_queue_move_up,
+    GTR_KEY_queue_move_down,
+    GTR_KEY_queue_move_bottom,
+    GTR_KEY_present_main_window,
 };
 
 Gtk::Builder* myBuilder = nullptr;
@@ -128,7 +127,7 @@ Glib::RefPtr<Gio::SimpleActionGroup> gtr_actions_init(Glib::RefPtr<Gtk::Builder>
     auto const match = gtr_pref_string_get(TR_KEY_sort_mode);
 
     {
-        auto const action_name = Glib::ustring("sort-torrents");
+        auto const action_name = GTR_KEY_sort_torrents;
         auto const action = Gio::SimpleAction::create_radio_string(action_name, match);
         action->signal_activate().connect([a = action.get(), callback_user_data](auto const& value)
                                           { sort_changed_cb(*a, value, callback_user_data); });
@@ -146,10 +145,11 @@ Glib::RefPtr<Gio::SimpleActionGroup> gtr_actions_init(Glib::RefPtr<Gtk::Builder>
         key_to_action.try_emplace(action_name, action);
     }
 
-    for (auto const& action_name_view : pref_toggle_entries)
+    for (auto const action_name_quark : pref_toggle_entries)
     {
-        auto const action_name = Glib::ustring(std::string(action_name_view));
-        auto const action = Gio::SimpleAction::create_bool(action_name, gtr_pref_flag_get(tr_quark_new(action_name_view)));
+        auto const action_name_sv = tr_quark_get_string_view(action_name_quark);
+        auto const action_name = Glib::ustring{ std::data(action_name_sv), std::size(action_name_sv) };
+        auto const action = Gio::SimpleAction::create_bool(action_name, gtr_pref_flag_get(action_name_quark));
         action->signal_activate().connect([a = action.get(), callback_user_data](auto const& /*value*/)
                                           { toggle_pref_cb(*a, callback_user_data); });
         action_group->add_action(action);
@@ -236,9 +236,10 @@ Glib::RefPtr<Gio::ListModel> gtr_shortcuts_get_from_menu(Glib::RefPtr<Gio::MenuM
 
             if (!action_name.empty() && !action_accel.empty())
             {
-                result->append(Gtk::Shortcut::create(
-                    Gtk::ShortcutTrigger::parse_string(action_accel),
-                    Gtk::NamedAction::create(action_name)));
+                result->append(
+                    Gtk::Shortcut::create(
+                        Gtk::ShortcutTrigger::parse_string(action_accel),
+                        Gtk::NamedAction::create(action_name)));
             }
 
             for (auto it = link->iterate_item_links(i); it->next();)

@@ -440,7 +440,7 @@ namespace small {
                 [[nodiscard]] constexpr bool
                 is_at_step_size() const {
                     return multibyte_index_ % step_size == step_size - 1
-                           && not is_end();
+                           && !is_end();
                 }
 
                 /// \brief Check if this is the end iterator
@@ -1646,7 +1646,7 @@ namespace small {
                     it = first;
                     step = search_range / 2;
                     std::advance(it, step);
-                    if (not it.contains_codepoint_information()) {
+                    if (!it.contains_codepoint_information()) {
                         // We can go a few indexes ahead or behind to fix this
                         const size_type indexes_behind = (step_size - 1)
                                                          - (it.multibyte_index()

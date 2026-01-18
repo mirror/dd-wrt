@@ -13,22 +13,21 @@ AM_LDFLAGS = -no-install
 # Do not call test-registrable-domain here: it would fail due to missing punycode entries in PSL file.
 PSL_TESTS = test-is-public test-is-public-all test-is-cookie-domain-acceptable
 
-if BUILTIN_GENERATOR_LIBICU
+if ENABLE_BUILTIN
   PSL_TESTS += test-is-public-builtin test-registrable-domain
-endif
-
-if BUILTIN_GENERATOR_LIBIDN2
-  PSL_TESTS += test-is-public-builtin test-registrable-domain
-endif
-
-if BUILTIN_GENERATOR_LIBIDN
-  PSL_TESTS += test-is-public-builtin test-registrable-domain
+  test_is_public_builtin_SOURCES = test-is-public-builtin.c $(common_SOURCES)
+  test_registrable_domain_SOURCES = test-registrable-domain.c $(common_SOURCES)
 endif
 
 check_PROGRAMS = $(PSL_TESTS)
 
 TESTS_ENVIRONMENT = TESTS_VALGRIND="@VALGRIND_ENVIRONMENT@"
 TESTS = $(PSL_TESTS)
+
+common_SOURCES = common.c common.h
+test_is_public_SOURCES = test-is-public.c $(common_SOURCES)
+test_is_public_all_SOURCES = test-is-public-all.c $(common_SOURCES)
+test_is_cookie_domain_acceptable_SOURCES = test-is-cookie-domain-acceptable.c $(common_SOURCES)
 
 # dafsa.psl and dafsa_ascii.psl must be created before any test is executed
 # check-local target works in parallel to the tests, so the test suite will likely fail

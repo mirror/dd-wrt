@@ -1,6 +1,6 @@
 /* $Id: natpmp.c,v 1.18 2013/11/26 08:47:36 nanard Exp $ */
 /* libnatpmp
-Copyright (c) 2007-2013, Thomas BERNARD
+Copyright (c) 2007-2018, Thomas BERNARD
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -27,7 +27,7 @@ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 POSSIBILITY OF SUCH DAMAGE.
 */
 #ifdef __linux__
-#define _BSD_SOURCE 1
+#define _DEFAULT_SOURCE 1
 #endif
 #include <string.h>
 #include <time.h>
@@ -39,6 +39,12 @@ POSSIBILITY OF SUCH DAMAGE.
 #include <winsock2.h>
 #include <ws2tcpip.h>
 #include <io.h>
+#ifdef EWOULDBLOCK
+#undef EWOULDBLOCK
+#endif
+#ifdef ECONNREFUSED
+#undef ECONNREFUSED
+#endif
 #define EWOULDBLOCK WSAEWOULDBLOCK
 #define ECONNREFUSED WSAECONNREFUSED
 #include "wingettimeofday.h"
@@ -125,7 +131,7 @@ int sendnatpmprequest(natpmp_t * p)
 	int n;
 	if(!p)
 		return NATPMP_ERR_INVALIDARGS;
-	/* TODO : check if no request is allready pending */
+	/* TODO : check if no request is already pending */
 	p->has_pending_request = 1;
 	p->try_number = 1;
 	n = sendpendingrequest(p);
@@ -201,7 +207,11 @@ NATPMP_LIBSPEC int readnatpmpresponse(natpmp_t * p, natpmpresp_t * response)
 	unsigned char buf[16];
 	struct sockaddr_in addr;
 	socklen_t addrlen = sizeof(addr);
+#ifdef _WIN32
 	int n;
+#else
+	ssize_t n;
+#endif
 	if(!p)
 		return NATPMP_ERR_INVALIDARGS;
 	n = recvfrom(p->s, buf, sizeof(buf), 0,
@@ -254,15 +264,22 @@ NATPMP_LIBSPEC int readnatpmpresponse(natpmp_t * p, natpmpresp_t * response)
 			}
 		} else {
 			response->type = buf[1] & 0x7f;
-			if(buf[1] == 128)
+			if(buf[1] == 128) {
 				//response->publicaddress.addr = *((uint32_t *)(buf + 8));
 				response->pnu.publicaddress.addr.s_addr = *((uint32_t *)(buf + 8));
-			else {
-				response->pnu.newportmapping.privateport = ntohs(*((uint16_t *)(buf + 8)));
-				response->pnu.newportmapping.mappedpublicport = ntohs(*((uint16_t *)(buf + 10)));
-				response->pnu.newportmapping.lifetime = ntohl(*((uint32_t *)(buf + 12)));
+				n = 0;
+			} else {
+				/* check that the private port matches our current request */
+				if(*(uint16_t*)(p->pending_request + 4) == *((uint16_t*)(buf + 8))) {
+					response->pnu.newportmapping.privateport = ntohs(*((uint16_t*)(buf + 8)));
+					response->pnu.newportmapping.mappedpublicport = ntohs(*((uint16_t*)(buf + 10)));
+					response->pnu.newportmapping.lifetime = ntohl(*((uint32_t*)(buf + 12)));
+					n = 0;
+				} else {
+					/* ignore the old response and continue waiting */
+					n = NATPMP_TRYAGAIN;
+				}
 			}
-			n = 0;
 		}
 	}
 	return n;
@@ -282,7 +299,7 @@ NATPMP_LIBSPEC int readnatpmpresponseorretry(natpmp_t * p, natpmpresp_t * respon
 			gettimeofday(&now, NULL);	// check errors !
 			if(timercmp(&now, &p->retry_time, >=)) {
 				int delay, r;
-				if(p->try_number >= 9) {
+				if(p->try_number >= NATPMP_MAX_RETRIES) {
 					return NATPMP_ERR_NOGATEWAYSUPPORT;
 				}
 				/*printf("retry! %d\n", p->try_number);*/
@@ -302,7 +319,14 @@ NATPMP_LIBSPEC int readnatpmpresponseorretry(natpmp_t * p, natpmpresp_t * respon
 			}
 		}
 	} else {
-		p->has_pending_request = 0;
+		// check the response type
+		// we may receive reply from another type being reply to previous request because of network latency and retry mechanisms
+		if (p->pending_request[1] != response->type) {
+			n = NATPMP_TRYAGAIN;
+			// not a timeout : DON'T increment p->try_number and keep p->retry_time to trigger immediate receive retry, without new sending
+		} else {
+			p->has_pending_request = 0;
+		}
 	}
 	return n;
 }

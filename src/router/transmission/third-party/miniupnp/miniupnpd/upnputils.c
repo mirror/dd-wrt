@@ -1,13 +1,14 @@
-/* $Id: upnputils.c,v 1.12 2018/03/13 10:25:20 nanard Exp $ */
+/* $Id: upnputils.c,v 1.16 2025/04/21 22:56:49 nanard Exp $ */
 /* MiniUPnP project
- * http://miniupnp.free.fr/ or http://miniupnp.tuxfamily.org/
- * (c) 2006-2018 Thomas Bernard
+ * http://miniupnp.free.fr/ or https://miniupnp.tuxfamily.org/
+ * (c) 2006-2025 Thomas Bernard
  * This software is subject to the conditions detailed
  * in the LICENCE file provided within the distribution */
 
 #include "config.h"
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <syslog.h>
 #include <unistd.h>
@@ -22,6 +23,7 @@
 #endif
 #include <errno.h>
 
+#include "config.h"
 #include "upnputils.h"
 #include "upnpglobalvars.h"
 #ifdef ENABLE_IPV6
@@ -185,6 +187,11 @@ get_lan_for_peer(const struct sockaddr * peer)
 	return lan_addr;
 }
 
+/* Note : clock_gettime() is POSIX
+ * It is available in standard C library (libc, -lc), since glibc 2.17
+ * Before glibc 2.17, Real-time library (librt, -lrt)
+ * In libc on OpenBSD / FreeBSD / etc. */
+
 time_t upnp_time(void)
 {
 #if defined(CLOCK_MONOTONIC_FAST) || defined(CLOCK_MONOTONIC)
@@ -236,3 +243,58 @@ int upnp_gettimeofday(struct timeval * tv)
 	return gettimeofday(tv, NULL);
 #endif
 }
+
+int
+proto_atoi(const char * protocol)
+{
+	int proto = IPPROTO_TCP;
+	if(strcasecmp(protocol, "UDP") == 0)
+		proto = IPPROTO_UDP;
+#ifdef IPPROTO_UDPLITE
+	else if(strcasecmp(protocol, "UDPLITE") == 0)
+		proto = IPPROTO_UDPLITE;
+#endif /* IPPROTO_UDPLITE */
+	return proto;
+}
+
+const char *
+proto_itoa(int proto)
+{
+	const char * protocol;
+	switch(proto) {
+	case IPPROTO_UDP:
+		protocol = "UDP";
+		break;
+	case IPPROTO_TCP:
+		protocol = "TCP";
+		break;
+#ifdef IPPROTO_UDPLITE
+	case IPPROTO_UDPLITE:
+		protocol = "UDPLITE";
+		break;
+#endif /* IPPROTO_UDPLITE */
+	default:
+		protocol = "*UNKNOWN*";
+	}
+	return protocol;
+}
+
+#ifdef NO_STRNDUP
+char * strndup_impl(const char * str, size_t len)
+{
+	size_t str_len;
+	char * p;
+
+	if (str == NULL)
+		return NULL;
+	str_len = strlen(str);
+	if (str_len < len)
+		len = str_len;
+	p = malloc(len + 1);
+	if (p == NULL)
+		return NULL;
+	memcpy(p, str, len);
+	p[len] = '\0';
+	return p;
+}
+#endif /* NO_STRNDUP */

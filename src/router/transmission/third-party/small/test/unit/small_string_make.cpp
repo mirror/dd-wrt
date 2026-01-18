@@ -465,7 +465,7 @@ TEST_CASE("String Rule of 5") {
                 REQUIRE(dv[0] == '\0');
             }
 
-            if constexpr (not is_windows()) {
+            if constexpr (!is_windows()) {
                 SECTION("Move and set alloc") {
                     std::allocator<int> alloc;
                     // There's no safe way to do that on MSVC :O
@@ -496,7 +496,7 @@ TEST_CASE("String Rule of 5") {
     }
 
     SECTION("Assignment Operator") {
-        if constexpr (not is_windows()) {
+        if constexpr (!is_windows()) {
             SECTION("String") {
                 string dv = u8"1😀2😀3😀";
                 string d;

@@ -1,5 +1,5 @@
 ﻿///////////////////////////////////////////////////////////////////////////////
-//  Copyright Christopher Kormanyos 2019 - 2022.
+//  Copyright Christopher Kormanyos 2019 - 2025.
 //  Distributed under the Boost Software License,
 //  Version 1.0. (See accompanying file LICENSE_1_0.txt
 //  or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -16,12 +16,14 @@
 
   #include <test/test_uintwide_t_n_binary_ops_base.h>
 
+  #include <util/utility/util_pseudorandom_time_point_seed.h>
+
   #if defined(WIDE_INTEGER_NAMESPACE)
   template<const WIDE_INTEGER_NAMESPACE::math::wide_integer::size_t MyDigits2,
            typename MyLimbType = std::uint32_t,
            typename AllocatorType = void>
   #else
-  template<const math::wide_integer::size_t MyDigits2,
+  template<const ::math::wide_integer::size_t MyDigits2,
            typename MyLimbType = std::uint32_t,
            typename AllocatorType = void>
   #endif
@@ -50,23 +52,19 @@
     #if defined(WIDE_INTEGER_NAMESPACE)
     using local_uint_type = WIDE_INTEGER_NAMESPACE::math::wide_integer::uintwide_t<digits2, local_limb_type, AllocatorType>;
     #else
-    using local_uint_type = math::wide_integer::uintwide_t<digits2, local_limb_type, AllocatorType>;
+    using local_uint_type = ::math::wide_integer::uintwide_t<digits2, local_limb_type, AllocatorType>;
     #endif
 
   public:
     explicit test_uintwide_t_n_binary_ops_template(const std::size_t count)
-      : test_uintwide_t_n_binary_ops_base(count),
-        a_local(),
-        b_local(),
-        a_boost(),
-        b_boost() { }
+      : test_uintwide_t_n_binary_ops_base(count) { }
 
     ~test_uintwide_t_n_binary_ops_template() override = default;
 
     #if defined(WIDE_INTEGER_NAMESPACE)
     WIDE_INTEGER_NODISCARD auto get_digits2() const -> WIDE_INTEGER_NAMESPACE::math::wide_integer::size_t override { return digits2; }
     #else
-    WIDE_INTEGER_NODISCARD auto get_digits2() const -> math::wide_integer::size_t override { return digits2; }
+    WIDE_INTEGER_NODISCARD auto get_digits2() const -> ::math::wide_integer::size_t override { return digits2; }
     #endif
 
     auto initialize() -> void override
@@ -203,7 +201,7 @@
     {
       std::atomic_flag test_lock = ATOMIC_FLAG_INIT;
 
-      my_gen().seed(static_cast<typename random_generator_type::result_type>(std::clock()));
+      my_gen().seed(util::util_pseudorandom_time_point_seed::value<typename random_generator_type::result_type>());
       std::uniform_int_distribution<> dis(1, static_cast<int>(digits2 - 1U));
 
       bool result_is_ok = true;
@@ -237,7 +235,7 @@
     {
       std::atomic_flag test_lock = ATOMIC_FLAG_INIT;
 
-      my_gen().seed(static_cast<typename random_generator_type::result_type>(std::clock()));
+      my_gen().seed(util::util_pseudorandom_time_point_seed::value<typename random_generator_type::result_type>());
       std::uniform_int_distribution<> dis(1, static_cast<int>(digits2 - 1U));
 
       bool result_is_ok = true;
@@ -295,11 +293,11 @@
     }
 
   private:
-    std::vector<local_uint_type> a_local; // NOLINT(readability-identifier-naming)
-    std::vector<local_uint_type> b_local; // NOLINT(readability-identifier-naming)
+    std::vector<local_uint_type> a_local { }; // NOLINT(readability-identifier-naming)
+    std::vector<local_uint_type> b_local { }; // NOLINT(readability-identifier-naming)
 
-    std::vector<boost_uint_type> a_boost; // NOLINT(readability-identifier-naming)
-    std::vector<boost_uint_type> b_boost; // NOLINT(readability-identifier-naming)
+    std::vector<boost_uint_type> a_boost { }; // NOLINT(readability-identifier-naming)
+    std::vector<boost_uint_type> b_boost { }; // NOLINT(readability-identifier-naming)
   };
 
 #endif // TEST_UINTWIDE_T_N_BINARY_OPS_TEMPLATE_2019_12_19_H

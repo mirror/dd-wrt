@@ -1,17 +1,15 @@
 ///////////////////////////////////////////////////////////////////////////////
-//  Copyright Christopher Kormanyos 2021 - 2022.
+//  Copyright Christopher Kormanyos 2021 - 2025.
 //  Distributed under the Boost Software License,
 //  Version 1.0. (See accompanying file LICENSE_1_0.txt
 //  or copy at http://www.boost.org/LICENSE_1_0.txt)
 //
 
-#include <cstdint>
-#include <ctime>
 #include <random>
-#include <sstream>
-#include <string>
 
 #include <boost/version.hpp>
+
+#include <util/utility/util_pseudorandom_time_point_seed.h>
 
 #if !defined(BOOST_VERSION)
 #error BOOST_VERSION is not defined. Ensure that <boost/version.hpp> is properly included.
@@ -19,6 +17,21 @@
 
 #if ((BOOST_VERSION >= 107900) && !defined(BOOST_MP_STANDALONE))
 #define BOOST_MP_STANDALONE
+#endif
+
+#if ((BOOST_VERSION >= 108000) && !defined(BOOST_NO_EXCEPTIONS))
+#define BOOST_NO_EXCEPTIONS
+#endif
+
+#if (((BOOST_VERSION == 108000) || (BOOST_VERSION == 108100)) && defined(BOOST_NO_EXCEPTIONS))
+#if defined(__clang__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wsometimes-uninitialized"
+#endif
+#if defined(_MSC_VER)
+#pragma warning(push)
+#pragma warning(disable : 4701)
+#endif
 #endif
 
 #if (BOOST_VERSION < 108000)
@@ -38,7 +51,7 @@
 #endif
 
 #if (BOOST_VERSION < 108000)
-#if (defined(__clang__) && (__clang_major__ > 9)) && !defined(__APPLE__)
+#if ((defined(__clang__) && (__clang_major__ > 9)) && !defined(__APPLE__))
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wdeprecated-copy"
 #endif
@@ -48,6 +61,20 @@
 
 #include <math/wide_integer/uintwide_t.h>
 #include <test/test_uintwide_t.h>
+
+#if defined(__clang__)
+  #if defined __has_feature && __has_feature(thread_sanitizer)
+  #define UINTWIDE_T_REDUCE_TEST_DEPTH
+  #endif
+#elif defined(__GNUC__)
+  #if defined(__SANITIZE_THREAD__) || defined(WIDE_INTEGER_HAS_COVERAGE)
+  #define UINTWIDE_T_REDUCE_TEST_DEPTH
+  #endif
+#elif defined(_MSC_VER)
+  #if defined(_DEBUG)
+  #define UINTWIDE_T_REDUCE_TEST_DEPTH
+  #endif
+#endif
 
 namespace local_float_convert
 {
@@ -60,7 +87,7 @@ namespace local_float_convert
                            const UnsignedIntegralType hi) -> std::uniform_int_distribution<UnsignedIntegralType>
   {
     return std::uniform_int_distribution<UnsignedIntegralType>(lo, hi);
-  };
+  }
 
   template<typename FloatingPointType,
            const std::int32_t LoExp10,
@@ -72,8 +99,8 @@ namespace local_float_convert
     static std::uniform_real_distribution<local_builtin_float_type>
     dist_man
     (
-      local_builtin_float_type(0.0F),
-      local_builtin_float_type(1.0F)
+      static_cast<local_builtin_float_type>(0.0F),
+      static_cast<local_builtin_float_type>(1.0F)
     );
 
     static auto dist_sgn = unsigned_dist_maker(static_cast<unsigned>(UINT8_C(0)),
@@ -85,8 +112,8 @@ namespace local_float_convert
 
     const auto p10 = dist_e10(engine_e10());
 
-    const local_builtin_float_type e10 = pow(local_builtin_float_type(10.0F),
-                                             local_builtin_float_type(p10));
+    const local_builtin_float_type e10 = pow(static_cast<local_builtin_float_type>(10.0F),
+                                             static_cast<local_builtin_float_type>(p10));
 
     const local_builtin_float_type a = dist_man(engine_man()) * e10;
 
@@ -156,7 +183,7 @@ namespace local_float_convert
   }
 
   template<typename UnsignedIntegralType>
-  static auto hexlexical_cast(const UnsignedIntegralType& u) -> std::string
+  auto hexlexical_cast(const UnsignedIntegralType& u) -> std::string
   {
     std::stringstream ss;
 
@@ -169,7 +196,7 @@ namespace local_float_convert
 #if defined(WIDE_INTEGER_NAMESPACE)
 auto WIDE_INTEGER_NAMESPACE::math::wide_integer::test_uintwide_t_float_convert() -> bool
 #else
-auto math::wide_integer::test_uintwide_t_float_convert() -> bool
+auto ::math::wide_integer::test_uintwide_t_float_convert() -> bool
 #endif
 {
   constexpr auto digits2 = static_cast<unsigned>(256U);
@@ -192,16 +219,25 @@ auto math::wide_integer::test_uintwide_t_float_convert() -> bool
   using local_limb_type = std::uint32_t;
   #endif
 
-  using local_uint_type = math::wide_integer::uintwide_t<digits2, local_limb_type, void>;
-  using local_sint_type = math::wide_integer::uintwide_t<digits2, local_limb_type, void, true>;
+  #if defined(WIDE_INTEGER_NAMESPACE)
+  using local_uint_type = WIDE_INTEGER_NAMESPACE::math::wide_integer::uintwide_t<digits2, local_limb_type, void>;
+  using local_sint_type = WIDE_INTEGER_NAMESPACE::math::wide_integer::uintwide_t<digits2, local_limb_type, void, true>;
+  #else
+  using local_uint_type = ::math::wide_integer::uintwide_t<digits2, local_limb_type, void>;
+  using local_sint_type = ::math::wide_integer::uintwide_t<digits2, local_limb_type, void, true>;
+  #endif
 
-  local_float_convert::engine_man().seed(static_cast<typename std::mt19937::result_type>                                                        (std::clock()));
-  local_float_convert::engine_sgn().seed(static_cast<typename std::ranlux24_base::result_type>                                                  (std::clock()));
-  local_float_convert::engine_e10().seed(static_cast<typename std::linear_congruential_engine<std::uint32_t, 48271, 0, 2147483647>::result_type>(std::clock())); // NOLINT(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
+  local_float_convert::engine_man().seed(::util::util_pseudorandom_time_point_seed::value<typename std::mt19937::result_type                                                        >());
+  local_float_convert::engine_sgn().seed(::util::util_pseudorandom_time_point_seed::value<typename std::ranlux24_base::result_type                                                  >());
+  local_float_convert::engine_e10().seed(::util::util_pseudorandom_time_point_seed::value<typename std::linear_congruential_engine<std::uint32_t, 48271, 0, 2147483647>::result_type>()); // NOLINT(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
 
   bool result_is_ok = true;
 
+  #if !defined(UINTWIDE_T_REDUCE_TEST_DEPTH)
   for(auto i = static_cast<std::size_t>(0U); i < static_cast<std::size_t>(UINT32_C(0x80000)); ++i)
+  #else
+  for(auto i = static_cast<std::size_t>(0U); i < static_cast<std::size_t>(UINT32_C(0x10000)); ++i)
+  #endif
   {
     const auto f = local_float_convert::get_random_float<float, -1, 27>();
 
@@ -214,7 +250,11 @@ auto math::wide_integer::test_uintwide_t_float_convert() -> bool
     result_is_ok = ((str_boost_signed == str_local_signed) && result_is_ok);
   }
 
+  #if !defined(UINTWIDE_T_REDUCE_TEST_DEPTH)
   for(auto i = static_cast<std::size_t>(0U); i < static_cast<std::size_t>(UINT32_C(0x80000)); ++i)
+  #else
+  for(auto i = static_cast<std::size_t>(0U); i < static_cast<std::size_t>(UINT32_C(0x10000)); ++i)
+  #endif
   {
     const auto d = local_float_convert::get_random_float<double, -1, 75>();
 
@@ -227,11 +267,15 @@ auto math::wide_integer::test_uintwide_t_float_convert() -> bool
     result_is_ok = ((str_boost_signed == str_local_signed) && result_is_ok);
   }
 
-  local_float_convert::engine_man().seed(static_cast<typename std::mt19937::result_type>                                                        (std::clock()));
-  local_float_convert::engine_sgn().seed(static_cast<typename std::ranlux24_base::result_type>                                                  (std::clock()));
-  local_float_convert::engine_e10().seed(static_cast<typename std::linear_congruential_engine<std::uint32_t, 48271, 0, 2147483647>::result_type>(std::clock())); // NOLINT(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
+  local_float_convert::engine_man().seed(::util::util_pseudorandom_time_point_seed::value<typename std::mt19937::result_type                                                        >());
+  local_float_convert::engine_sgn().seed(::util::util_pseudorandom_time_point_seed::value<typename std::ranlux24_base::result_type                                                  >());
+  local_float_convert::engine_e10().seed(::util::util_pseudorandom_time_point_seed::value<typename std::linear_congruential_engine<std::uint32_t, 48271, 0, 2147483647>::result_type>()); // NOLINT(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
 
+  #if !defined(UINTWIDE_T_REDUCE_TEST_DEPTH)
   for(auto i = static_cast<std::size_t>(0U); i < static_cast<std::size_t>(UINT32_C(0x100000)); ++i)
+  #else
+  for(auto i = static_cast<std::size_t>(0U); i < static_cast<std::size_t>(UINT32_C(0x20000)); ++i)
+  #endif
   {
     std::string str_digits;
 
@@ -245,7 +289,7 @@ auto math::wide_integer::test_uintwide_t_float_convert() -> bool
 
     using std::fabs;
 
-    constexpr auto cast_tol_float = float(std::numeric_limits<float>::epsilon() * 2.0F);
+    constexpr auto cast_tol_float = static_cast<float>(std::numeric_limits<float>::epsilon() * 2.0F);
 
     const float closeness      = fabs(1.0F - fabs(f_boost / f_local));
     const bool  result_f_is_ok = (closeness < cast_tol_float);
@@ -253,7 +297,11 @@ auto math::wide_integer::test_uintwide_t_float_convert() -> bool
     result_is_ok = (result_f_is_ok && result_is_ok);
   }
 
+  #if !defined(UINTWIDE_T_REDUCE_TEST_DEPTH)
   for(auto i = static_cast<std::size_t>(0U); i < static_cast<std::size_t>(UINT32_C(0x40000)); ++i)
+  #else
+  for(auto i = static_cast<std::size_t>(0U); i < static_cast<std::size_t>(UINT32_C(0x08000)); ++i)
+  #endif
   {
     std::string str_digits;
 
@@ -279,7 +327,7 @@ auto math::wide_integer::test_uintwide_t_float_convert() -> bool
 }
 
 #if (BOOST_VERSION < 108000)
-#if (defined(__clang__) && (__clang_major__ > 9)) && !defined(__APPLE__)
+#if ((defined(__clang__) && (__clang_major__ > 9)) && !defined(__APPLE__))
 #pragma GCC diagnostic pop
 #endif
 #endif
@@ -293,5 +341,14 @@ auto math::wide_integer::test_uintwide_t_float_convert() -> bool
 #pragma GCC diagnostic pop
 #pragma GCC diagnostic pop
 #pragma GCC diagnostic pop
+#endif
+#endif
+
+#if (((BOOST_VERSION == 108000) || (BOOST_VERSION == 108100)) && defined(BOOST_NO_EXCEPTIONS))
+#if defined(__clang__)
+#pragma GCC diagnostic pop
+#endif
+#if defined(_MSC_VER)
+#pragma warning(pop)
 #endif
 #endif

@@ -64,16 +64,6 @@ if (SMALL_MASTER_PROJECT)
         add_sanitizers()
     endif ()
 
-    # Allow exceptions in MSVC
-    if (MSVC AND SMALL_BUILD_WITH_EXCEPTIONS)
-        add_compile_options(/EHsc)
-    endif ()
-
-    # Allow utf-8 in MSVC
-    if (SMALL_BUILD_WITH_UTF8 AND MSVC)
-        set(CMAKE_CXX_FLAGS "/utf-8")
-    endif ()
-
     # MSVC hack to disable windows min/max
     # http://www.suodenjoki.dk/us/archive/2010/min-max.htm
     if (MSVC AND SMALL_BUILD_WITH_MSVC_HACKS)

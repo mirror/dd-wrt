@@ -143,7 +143,7 @@ static uint64 __GetMicroseconds()
 
 #else // !__APPLE__
 
-#if ! (defined(_POSIX_TIMERS) && _POSIX_TIMERS > 0 && defined(CLOCK_MONOTONIC))
+#if ! ((defined(_POSIX_TIMERS) && _POSIX_TIMERS > 0 && defined(CLOCK_MONOTONIC)) || defined(__OpenBSD__))
     #pragma message ("Using non-monotonic function gettimeofday() in UTP_GetMicroseconds()")
 #endif
 
@@ -155,7 +155,7 @@ static uint64_t __GetMicroseconds()
 {
 	struct timeval tv;
 
-	#if defined(_POSIX_TIMERS) && _POSIX_TIMERS > 0 && defined(CLOCK_MONOTONIC)
+	#if ((defined(_POSIX_TIMERS) && _POSIX_TIMERS > 0 && defined(CLOCK_MONOTONIC)) || defined(__OpenBSD__))
 		static int have_posix_clocks = -1;
 		int rc;
 

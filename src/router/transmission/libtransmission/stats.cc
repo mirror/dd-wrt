@@ -1,88 +1,74 @@
-// This file Copyright © 2007-2023 Mnemosyne LLC.
+// This file Copyright © Mnemosyne LLC.
 // It may be used under GPLv2 (SPDX: GPL-2.0-only), GPLv3 (SPDX: GPL-3.0-only),
 // or any future license endorsed by Mnemosyne LLC.
 // License text can be found in the licenses/ folder.
 
-#include "transmission.h"
+#include <initializer_list>
+#include <optional>
+#include <utility>
 
-#include "file.h"
-#include "stats.h"
-#include "tr-strbuf.h"
-#include "utils.h" // for tr_getRatio(), tr_time()
-#include "variant.h"
+#include "libtransmission/transmission.h"
+
+#include "libtransmission/api-compat.h"
+#include "libtransmission/file.h"
+#include "libtransmission/quark.h"
+#include "libtransmission/serializer.h"
+#include "libtransmission/stats.h"
+#include "libtransmission/tr-strbuf.h"
+#include "libtransmission/utils.h" // for tr_getRatio(), tr_time()
+#include "libtransmission/variant.h"
 
 using namespace std::literals;
+using namespace libtransmission;
 
-tr_session_stats tr_stats::loadOldStats(std::string_view config_dir)
+namespace
 {
+template<auto MemberPtr>
+using Field = serializer::Field<MemberPtr>;
+
+constexpr auto Fields = std::tuple{
+    Field<&tr_session_stats::downloadedBytes>{ TR_KEY_downloaded_bytes },
+    Field<&tr_session_stats::filesAdded>{ TR_KEY_files_added },
+    Field<&tr_session_stats::secondsActive>{ TR_KEY_seconds_active },
+    Field<&tr_session_stats::sessionCount>{ TR_KEY_session_count },
+    Field<&tr_session_stats::uploadedBytes>{ TR_KEY_uploaded_bytes },
+};
+} // namespace
+
+tr_session_stats tr_stats::load_old_stats(std::string_view const config_dir)
+{
+    auto var = std::optional<tr_variant>{};
+
+    if (auto file = tr_pathbuf{ config_dir, "/stats.json"sv }; tr_sys_path_exists(file))
+    {
+        var = tr_variant_serde::json().parse_file(file);
+    }
+    else if (auto oldfile = tr_pathbuf{ config_dir, "/stats.benc"sv }; tr_sys_path_exists(oldfile))
+    {
+        var = tr_variant_serde::benc().parse_file(oldfile);
+    }
+
+    if (!var)
+    {
+        return {};
+    }
+
+    api_compat::convert_incoming_data(*var);
     auto ret = tr_session_stats{};
-
-    auto top = tr_variant{};
-    auto filename = tr_pathbuf{ config_dir, "/stats.json"sv };
-    bool loaded = tr_sys_path_exists(filename) && tr_variantFromFile(&top, TR_VARIANT_PARSE_JSON, filename.sv(), nullptr);
-
-    if (!loaded)
-    {
-        // maybe the user just upgraded from an old version of Transmission
-        // that was still using stats.benc
-        filename.assign(config_dir, "/stats.benc");
-        loaded = tr_sys_path_exists(filename) && tr_variantFromFile(&top, TR_VARIANT_PARSE_BENC, filename.sv(), nullptr);
-    }
-
-    if (loaded)
-    {
-        auto i = int64_t{};
-
-        if (tr_variantDictFindInt(&top, TR_KEY_downloaded_bytes, &i))
-        {
-            ret.downloadedBytes = (uint64_t)i;
-        }
-
-        if (tr_variantDictFindInt(&top, TR_KEY_files_added, &i))
-        {
-            ret.filesAdded = (uint64_t)i;
-        }
-
-        if (tr_variantDictFindInt(&top, TR_KEY_seconds_active, &i))
-        {
-            ret.secondsActive = (uint64_t)i;
-        }
-
-        if (tr_variantDictFindInt(&top, TR_KEY_session_count, &i))
-        {
-            ret.sessionCount = (uint64_t)i;
-        }
-
-        if (tr_variantDictFindInt(&top, TR_KEY_uploaded_bytes, &i))
-        {
-            ret.uploadedBytes = (uint64_t)i;
-        }
-
-        tr_variantClear(&top);
-    }
-
+    serializer::load(ret, Fields, *var);
     return ret;
 }
 
 void tr_stats::save() const
 {
-    auto const saveme = cumulative();
-    auto const filename = tr_pathbuf{ config_dir_, "/stats.json"sv };
-    auto top = tr_variant{};
-    tr_variantInitDict(&top, 5);
-    tr_variantDictAddInt(&top, TR_KEY_downloaded_bytes, saveme.downloadedBytes);
-    tr_variantDictAddInt(&top, TR_KEY_files_added, saveme.filesAdded);
-    tr_variantDictAddInt(&top, TR_KEY_seconds_active, saveme.secondsActive);
-    tr_variantDictAddInt(&top, TR_KEY_session_count, saveme.sessionCount);
-    tr_variantDictAddInt(&top, TR_KEY_uploaded_bytes, saveme.uploadedBytes);
-    tr_variantToFile(&top, TR_VARIANT_FMT_JSON, filename);
-    tr_variantClear(&top);
+    auto var = tr_variant{ serializer::save(cumulative(), Fields) };
+    api_compat::convert_outgoing_data(var);
+    tr_variant_serde::json().to_file(var, tr_pathbuf{ config_dir_, "/stats.json"sv });
 }
 
 void tr_stats::clear()
 {
     single_ = old_ = Zero;
-    is_dirty_ = true;
     start_time_ = tr_time();
 }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright(c) 2014-2018 Tim Ruehsen
+ * Copyright(c) 2014-2024 Tim Ruehsen
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -32,18 +32,12 @@
 # include <config.h>
 #endif
 
-#ifdef _WIN32
-# include <winsock2.h> // WSAStartup, WSACleanup
-#endif
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#ifdef HAVE_ALLOCA_H
-#	include <alloca.h>
-#endif
 
 #include <libpsl.h>
+#include "common.h"
 
 #define countof(a) (sizeof(a)/sizeof(*(a)))
 
@@ -113,28 +107,12 @@ static void test_psl(void)
 
 int main(int argc, const char * const *argv)
 {
-#ifdef _WIN32
-	WSADATA wsa_data;
-	int err;
-
-	if ((err = WSAStartup(MAKEWORD(2,2), &wsa_data))) {
-		printf("WSAStartup failed with error: %d\n", err);
-		return 1;
-	}
-
-	atexit((void (__cdecl*)(void)) WSACleanup);
-#endif
-
 	/* if VALGRIND testing is enabled, we have to call ourselves with valgrind checking */
 	if (argc == 1) {
 		const char *valgrind = getenv("TESTS_VALGRIND");
 
 		if (valgrind && *valgrind) {
-			size_t cmdsize = strlen(valgrind) + strlen(argv[0]) + 32;
-			char *cmd = alloca(cmdsize);
-
-			snprintf(cmd, cmdsize, "TESTS_VALGRIND="" %s %s", valgrind, argv[0]);
-			return system(cmd) != 0;
+			return run_valgrind(valgrind, argv[0]);
 		}
 	}
 

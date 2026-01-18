@@ -2,9 +2,9 @@ option('runtime', type : 'combo',
   choices : ['libidn2', 'libicu', 'libidn', 'no', 'auto'], value : 'auto',
   description : 'Specify the IDNA library used for libpsl run-time conversions')
 
-option('builtin', type : 'combo',
-  choices : ['libidn2', 'libicu', 'libidn', 'no', 'auto'], value : 'auto',
-  description : 'Specify the IDNA library used for built-in data generation')
+option('builtin', type : 'boolean',
+  value : true,
+  description : 'Specify whether libpsl will include built-in PSL data')
 
 option('psl_distfile', type : 'string', value : '',
   description : 'path to distribution-wide PSL file')
@@ -17,3 +17,6 @@ option('psl_testfile', type : 'string', value : '',
 
 option('docs', type: 'boolean', value: false,
   description: 'Build the API reference (requires gtk-doc)')
+
+option('tests', type: 'boolean', value: true,
+  description: 'Build the tests and fuzzers')

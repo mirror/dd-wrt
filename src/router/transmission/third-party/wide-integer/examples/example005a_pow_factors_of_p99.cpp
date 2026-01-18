@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////
-//  Copyright Christopher Kormanyos 2018 - 2022.                 //
+//  Copyright Christopher Kormanyos 2018 - 2025.                 //
 //  Distributed under the Boost Software License,                //
 //  Version 1.0. (See accompanying file LICENSE_1_0.txt          //
 //  or copy at http://www.boost.org/LICENSE_1_0.txt)             //
@@ -11,13 +11,13 @@
 #if defined(WIDE_INTEGER_NAMESPACE)
 auto WIDE_INTEGER_NAMESPACE::math::wide_integer::example005a_pow_factors_of_p99() -> bool
 #else
-auto math::wide_integer::example005a_pow_factors_of_p99() -> bool
+auto ::math::wide_integer::example005a_pow_factors_of_p99() -> bool
 #endif
 {
   #if defined(WIDE_INTEGER_NAMESPACE)
-  using uint384_t = math::wide_integer::uintwide_t<static_cast<WIDE_INTEGER_NAMESPACE::math::wide_integer::size_t>(UINT32_C(384))>;
+  using uint384_t = WIDE_INTEGER_NAMESPACE::math::wide_integer::uintwide_t<static_cast<WIDE_INTEGER_NAMESPACE::math::wide_integer::size_t>(UINT32_C(384))>;
   #else
-  using uint384_t = math::wide_integer::uintwide_t<static_cast<math::wide_integer::size_t>(UINT32_C(384))>;
+  using uint384_t = ::math::wide_integer::uintwide_t<static_cast<math::wide_integer::size_t>(UINT32_C(384))>;
   #endif
 
   const uint384_t c = (pow(uint384_t(10U), 99) - 1) / 9;
@@ -67,7 +67,7 @@ auto main() -> int
   #if defined(WIDE_INTEGER_NAMESPACE)
   const auto result_is_ok = WIDE_INTEGER_NAMESPACE::math::wide_integer::example005a_pow_factors_of_p99();
   #else
-  const auto result_is_ok = math::wide_integer::example005a_pow_factors_of_p99();
+  const auto result_is_ok = ::math::wide_integer::example005a_pow_factors_of_p99();
   #endif
 
   std::cout << "result_is_ok: " << std::boolalpha << result_is_ok << std::endl;

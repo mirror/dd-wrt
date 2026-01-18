@@ -1,8 +1,8 @@
-/* $Id: upnpsoap.c,v 1.165 2023/06/26 23:15:56 nanard Exp $ */
+/* $Id: upnpsoap.c,v 1.169 2025/04/06 22:30:26 nanard Exp $ */
 /* vim: tabstop=4 shiftwidth=4 noexpandtab
  * MiniUPnP project
  * http://miniupnp.free.fr/ or https://miniupnp.tuxfamily.org/
- * (c) 2006-2024 Thomas Bernard
+ * (c) 2006-2025 Thomas Bernard
  * This software is subject to the conditions detailed
  * in the LICENCE file provided within the distribution */
 
@@ -44,6 +44,29 @@ static int is_numeric(const char * s)
 	}
 	return 1;
 }
+
+#ifdef ENABLE_PCP
+/**
+ * Hide the PCP nonce value from the description returned to clients
+ */
+void hide_pcp_nonce(char * desc)
+{
+	int i;
+	if (desc == NULL) return;
+	/* format is "PCP %s %08x%08x%08x" */
+	if (*desc++ != 'P') return;
+	if (*desc++ != 'C') return;
+	if (*desc++ != 'P') return;
+	if (*desc++ != ' ') return;
+	/* skip the op code */
+	while (*desc >= 'A' && *desc <= 'Z') desc++;
+	if (*desc++ != ' ') return;
+	for (i = 0; i < 24; i++) {
+		if (desc[i] == '\0') return;
+		desc[i] = 'x';	/* replace nonce with 'x' characters */
+	}
+}
+#endif
 
 static void
 BuildSendAndCloseSoapResp(struct upnphttp * h,
@@ -347,8 +370,12 @@ GetExternalIPAddress(struct upnphttp * h, const char * action, const char * ns)
 				ext_if_name);
 			ext_ip_addr[0] = '\0';
 		} else if (addr_is_reserved(&addr)) {
-			syslog(LOG_NOTICE, "private/reserved address %s is not suitable for external IP", ext_ip_addr);
-			ext_ip_addr[0] = '\0';
+			if (GETFLAG(ALLOWPRIVATEIPV4MASK)) {
+				syslog(LOG_WARNING, "IGNORED : private/reserved address %s is not suitable for external IP", ext_ip_addr);
+			} else {
+				syslog(LOG_NOTICE, "private/reserved address %s is not suitable for external IP", ext_ip_addr);
+				ext_ip_addr[0] = '\0';
+			}
 		}
 	}
 #else
@@ -824,6 +851,9 @@ GetSpecificPortMappingEntry(struct upnphttp * h, const char * action, const char
 		       action,
 		       r_host ? r_host : "NULL", ext_port, protocol, int_ip,
 		       (unsigned int)iport, desc, leaseduration);
+#ifdef ENABLE_PCP
+		hide_pcp_nonce(desc);
+#endif
 		bodylen = snprintf(body, sizeof(body), resp,
 				action, ns/*SERVICE_TYPE_WANIPC*/,
 				(unsigned int)iport, int_ip, desc, leaseduration,
@@ -1091,6 +1121,9 @@ GetGenericPortMappingEntry(struct upnphttp * h, const char * action, const char 
 	{
 		int bodylen;
 		char body[2048];
+#ifdef ENABLE_PCP
+		hide_pcp_nonce(desc);
+#endif
 		bodylen = snprintf(body, sizeof(body), resp,
 			action, ns, /*SERVICE_TYPE_WANIPC,*/ rhost,
 			(unsigned int)eport, protocol, (unsigned int)iport, iaddr, desc,
@@ -1247,6 +1280,9 @@ http://www.upnp.org/schemas/gw/WANIPConnection-v2.xsd">
 		                               &leaseduration);
 		if(r == 0)
 		{
+#ifdef ENABLE_PCP
+			hide_pcp_nonce(desc);
+#endif
 			bodylen += snprintf(body+bodylen, bodyalloc-bodylen, entry,
 			                    rhost, port_list[i], protocol,
 			                    iport, int_ip, desc, leaseduration);

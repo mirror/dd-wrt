@@ -1,4 +1,4 @@
-#! /usr/bin/python
+#! /usr/bin/env python
 # $Id: setupmingw32.py,v 1.3 2012/03/05 04:54:01 nanard Exp $
 # python script to build the miniupnpc module under windows
 #

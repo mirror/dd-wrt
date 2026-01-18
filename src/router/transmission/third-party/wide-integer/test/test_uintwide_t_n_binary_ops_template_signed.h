@@ -1,5 +1,5 @@
 ﻿///////////////////////////////////////////////////////////////////////////////
-//  Copyright Christopher Kormanyos 2021 - 2022.
+//  Copyright Christopher Kormanyos 2021 - 2025.
 //  Distributed under the Boost Software License,
 //  Version 1.0. (See accompanying file LICENSE_1_0.txt
 //  or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -16,12 +16,14 @@
 
   #include <test/test_uintwide_t_n_binary_ops_base.h>
 
+  #include <util/utility/util_pseudorandom_time_point_seed.h>
+
   #if defined(WIDE_INTEGER_NAMESPACE)
   template<const WIDE_INTEGER_NAMESPACE::math::wide_integer::size_t MyDigits2,
            typename MyLimbType = std::uint32_t,
            typename AllocatorType = void>
   #else
-  template<const math::wide_integer::size_t MyDigits2,
+  template<const ::math::wide_integer::size_t MyDigits2,
            typename MyLimbType = std::uint32_t,
            typename AllocatorType = void>
   #endif
@@ -61,8 +63,8 @@
     using local_uint_type = WIDE_INTEGER_NAMESPACE::math::wide_integer::uintwide_t<digits2, local_limb_type, AllocatorType>;
     using local_sint_type = WIDE_INTEGER_NAMESPACE::math::wide_integer::uintwide_t<digits2, local_limb_type, AllocatorType, true>;
     #else
-    using local_uint_type = math::wide_integer::uintwide_t<digits2, local_limb_type, AllocatorType>;
-    using local_sint_type = math::wide_integer::uintwide_t<digits2, local_limb_type, AllocatorType, true>;
+    using local_uint_type = ::math::wide_integer::uintwide_t<digits2, local_limb_type, AllocatorType>;
+    using local_sint_type = ::math::wide_integer::uintwide_t<digits2, local_limb_type, AllocatorType, true>;
     #endif
 
   public:
@@ -74,7 +76,7 @@
     #if defined(WIDE_INTEGER_NAMESPACE)
     WIDE_INTEGER_NODISCARD auto get_digits2() const -> WIDE_INTEGER_NAMESPACE::math::wide_integer::size_t override { return digits2; }
     #else
-    WIDE_INTEGER_NODISCARD auto get_digits2() const -> math::wide_integer::size_t override { return digits2; }
+    WIDE_INTEGER_NODISCARD auto get_digits2() const -> ::math::wide_integer::size_t override { return digits2; }
     #endif
 
     auto initialize() -> void override
@@ -309,8 +311,8 @@
     using local_uint_type = WIDE_INTEGER_NAMESPACE::math::wide_integer::uintwide_t<digits2, local_limb_type, AllocatorType>;
     using local_sint_type = WIDE_INTEGER_NAMESPACE::math::wide_integer::uintwide_t<digits2, local_limb_type, AllocatorType, true>;
     #else
-    using local_uint_type = math::wide_integer::uintwide_t<digits2, local_limb_type, AllocatorType>;
-    using local_sint_type = math::wide_integer::uintwide_t<digits2, local_limb_type, AllocatorType, true>;
+    using local_uint_type = ::math::wide_integer::uintwide_t<digits2, local_limb_type, AllocatorType>;
+    using local_sint_type = ::math::wide_integer::uintwide_t<digits2, local_limb_type, AllocatorType, true>;
     #endif
 
   public:
@@ -322,7 +324,7 @@
     #if defined(WIDE_INTEGER_NAMESPACE)
     WIDE_INTEGER_NODISCARD auto get_digits2() const -> WIDE_INTEGER_NAMESPACE::math::wide_integer::size_t override { return digits2; }
     #else
-    WIDE_INTEGER_NODISCARD auto get_digits2() const -> math::wide_integer::size_t override { return digits2; }
+    WIDE_INTEGER_NODISCARD auto get_digits2() const -> ::math::wide_integer::size_t override { return digits2; }
     #endif
 
     auto initialize() -> void override
@@ -339,7 +341,7 @@
       a_native_signed.resize(size());
       b_native_signed.resize(size());
 
-      std::mt19937_64 eng64(static_cast<typename std::mt19937_64::result_type>(std::clock()));
+      std::mt19937_64 eng64(util::util_pseudorandom_time_point_seed::value<typename std::mt19937_64::result_type>());
 
       std::uniform_int_distribution<std::uint64_t> dst_u64(UINT64_C(1), UINT64_C(0xFFFFFFFFFFFFFFFF));
 
@@ -348,8 +350,8 @@
         a_native_signed[i] = static_cast<std::int64_t>(dst_u64(eng64));
         b_native_signed[i] = static_cast<std::int64_t>(dst_u64(eng64));
 
-        a_local_signed[i] = local_sint_type(local_uint_type(a_native_signed[i]));
-        b_local_signed[i] = local_sint_type(local_uint_type(b_native_signed[i]));
+        a_local_signed[i] = static_cast<local_sint_type>(a_native_signed[i]);
+        b_local_signed[i] = static_cast<local_sint_type>(b_native_signed[i]);
       }
     }
 
@@ -535,7 +537,7 @@
 
     WIDE_INTEGER_NODISCARD virtual auto test_binary_shr() const -> bool
     {
-      my_gen().seed(static_cast<typename random_generator_type::result_type>(std::clock()));
+      my_gen().seed(util::util_pseudorandom_time_point_seed::value<typename random_generator_type::result_type>());
 
       bool result_is_ok = true;
 
