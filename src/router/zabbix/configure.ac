@@ -1974,34 +1974,11 @@ ZBXJS_LDFLAGS="$ZBXJS_LDFLAGS $LIBCURL_LDFLAGS"
 ZBXJS_LIBS="$ZBXJS_LIBS $LIBCURL_LIBS"
 
 if test "x$server" = "xyes" || test "x$proxy" = "xyes" || test "x$agent" = "xyes" || test "x$agent2" = "xyes"; then
-want_libpcre=yes
-want_libpcre2=no
+#	LIBPCRE2_CHECK_CONFIG([mandatory])
 
-if test "x$want_libpcre2" = "xno"; then # default to old pcre
-	if test "x$want_libpcre" = "xno"; then
-		AC_MSG_NOTICE([using old pcre library by default])
-	fi
-
-	CFLAGS="$CFLAGS $LIBPCRE_CFLAGS"
-	LDFLAGS="$LDFLAGS $LIBPCRE_LDFLAGS"
-	if test "x$ARCH" = "xosx"; then
-		LIBS="$LIBPCRE_LIBS $LIBS"
-	else
-		LIBS="$LIBS $LIBPCRE_LIBS"
-	fi
-
-	AC_DEFINE([HAVE_PCRE_H], 1, [Define to 1 if you have the 'libpcre' library (-lpcre)])
-	have_pcre=1
-else
-	if test "x$want_libpcre" != "xno"; then
-		AC_MSG_ERROR([cannot use both pcre and pcre2 at the same time])
-	fi
-
-	LIBPCRE2_CHECK_CONFIG([mandatory])
-
-	if test "x$found_libpcre2" != "xyes"; then
-	    AC_MSG_ERROR([unable to use libpcre2 (libpcre2 check failed)])
-	fi
+#	if test "x$found_libpcre2" != "xyes"; then
+#	    AC_MSG_ERROR([unable to use libpcre2 (libpcre2 check failed)])
+#	fi
 
 	CFLAGS="$CFLAGS $LIBPCRE2_CFLAGS"
 	LDFLAGS="$LDFLAGS $LIBPCRE2_LDFLAGS"
