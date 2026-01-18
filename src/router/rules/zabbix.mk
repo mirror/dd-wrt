@@ -33,10 +33,10 @@ zabbix-configure: zlib pcre
 	&& libtoolize -f -c && autoreconf --force --install \
 	&& ./configure ac_cv_host=$(ARCH)-uclibc-linux --target=$(ARCH)-linux --host=$(ARCH) CC=$(ARCH)-linux-uclibc-gcc \
 	--disable-server --disable-proxy --disable-java --enable-agent --without-iconv \
-	--with-libpcre="$(TOP)/pcre" \
-	--with-libpcre-include="$(TOP)/pcre" \
-	--with-libpcre-lib="$(TOP)/pcre/.libs" \
-	CFLAGS="$(COPTS) $(MIPS16_OPT) $(THUMB) -DOLD_LIBC_MODE -L$(TOP)/pcre/.libs  -ffunction-sections -fdata-sections -Wl,--gc-section" \
-	LIBPCRE_CFLAGS="-I$(TOP)/pcre" \
-	LIBPCRE_LDFLAGS="-L$(TOP)/pcre/.libs -lpcre"
+	--with-libpcre2="$(TOP)/pcre2" \
+	--with-libpcre2-include="$(TOP)/pcre2/src" \
+	--with-libpcre2-lib="$(TOP)/pcre2/.libs" \
+	CFLAGS="$(COPTS) $(MIPS16_OPT) $(THUMB) -DOLD_LIBC_MODE -L$(TOP)/pcre2/.libs  -ffunction-sections -fdata-sections -Wl,--gc-section" \
+	LIBPCRE2_CFLAGS="-I$(TOP)/pcre2/src" \
+	LIBPCRE2_LDFLAGS="-L$(TOP)/pcre2/.libs -lpcre2-8"
 	cd zabbix && touch *
