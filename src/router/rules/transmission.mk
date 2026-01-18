@@ -32,7 +32,7 @@ transmission-install:
 transmission-clean:
 	$(MAKE) -C transmission/build clean
 
-transmission-configure: curl-configure zlib
+transmission-configure: curl zlib
 	rm -f $(TOP)/transmission/CMakeCache.txt
 	rm -rf $(TOP)/transmission/build
 	mkdir -p $(TOP)/transmission/build
