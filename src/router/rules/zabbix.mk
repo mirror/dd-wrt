@@ -1,5 +1,5 @@
 
-zabbix: zlib
+zabbix: pcre2 zlib
 	install -D zabbix/config/zabbix.webservices httpd/ej_temp/zabbix.webservices
 	CC="ccache $(ARCH)-linux-uclibc-gcc" \
 	CFLAGS="$(COPTS) $(MIPS16_OPT) $(THUMB) -I$(TOP)/zlib -ffunction-sections -fdata-sections -Wl,--gc-sections" \
@@ -28,7 +28,7 @@ endif
 zabbix-clean:
 	$(MAKE) -C zabbix clean
 
-zabbix-configure: zlib pcre
+zabbix-configure: zlib pcre2
 	cd zabbix && rm -rf config.{cache,status} \
 	&& libtoolize -f -c && autoreconf --force --install \
 	&& ./configure ac_cv_host=$(ARCH)-uclibc-linux --target=$(ARCH)-linux --host=$(ARCH) CC=$(ARCH)-linux-uclibc-gcc \
