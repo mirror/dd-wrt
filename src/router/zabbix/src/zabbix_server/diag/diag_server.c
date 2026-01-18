@@ -475,7 +475,7 @@ static int	diag_add_alerting_info(const struct zbx_json_parse *jp, struct zbx_js
 					if (FAIL == (ret = zbx_alerter_get_top_sources(map->value, &sources, error)))
 					{
 						zbx_vector_am_source_stats_ptr_clear_ext(&sources,
-								(zbx_am_source_stats_ptr_free_func_t)zbx_ptr_free);
+								zbx_am_source_stats_free);
 						zbx_vector_am_source_stats_ptr_destroy(&sources);
 						goto out;
 					}
@@ -483,8 +483,7 @@ static int	diag_add_alerting_info(const struct zbx_json_parse *jp, struct zbx_js
 					time_total += time2 - time1;
 
 					diag_add_alerting_sources(json, map->name, &sources);
-					zbx_vector_am_source_stats_ptr_clear_ext(&sources,
-							(zbx_am_source_stats_ptr_free_func_t)zbx_ptr_free);
+					zbx_vector_am_source_stats_ptr_clear_ext(&sources, zbx_am_source_stats_free);
 					zbx_vector_am_source_stats_ptr_destroy(&sources);
 				}
 				else
@@ -512,16 +511,16 @@ out:
  *                                                                            *
  * Purpose: add requested section diagnostic information                      *
  *                                                                            *
- * Parameters: section - [IN] the section name                                *
- *             jp      - [IN] the request                                     *
- *             json    - [IN/OUT] the json to update                          *
- *             error   - [OUT] the error message                              *
+ * Parameters: section - [IN] section name                                    *
+ *             jp      - [IN] request                                         *
+ *             json    - [IN/OUT] JSON to update                              *
+ *             error   - [OUT] error message                                  *
  *                                                                            *
- * Return value: SUCCEED - the information was retrieved successfully         *
+ * Return value: SUCCEED - information was retrieved successfully             *
  *               FAIL    - otherwise                                          *
  *                                                                            *
  ******************************************************************************/
-int	diag_add_section_info(const char *section, const struct zbx_json_parse *jp, struct zbx_json *json,
+int	diag_add_section_info_server(const char *section, const struct zbx_json_parse *jp, struct zbx_json *json,
 		char **error)
 {
 	int	ret = FAIL;

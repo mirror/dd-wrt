@@ -1,5 +1,5 @@
 //-----------------------------------------------------------------------------
-// Copyright (c) 2016, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2016, 2024, Oracle and/or its affiliates.
 //
 // This software is dual-licensed to you under the Universal Permissive License
 // (UPL) 1.0 as shown at https://oss.oracle.com/licenses/upl and Apache License
@@ -93,7 +93,7 @@ static const char* const dpiErrorMessages[DPI_ERR_MAX - DPI_ERR_NO_ERR] = {
     "DPI-1064: array variables are not supported with dpiStmt_executeMany()", // DPI_ERR_ARRAY_VAR_NOT_SUPPORTED
     "DPI-1065: events mode is required to subscribe to events in the database", // DPI_ERR_EVENTS_MODE_REQUIRED
     "DPI-1066: Oracle Database is at version %d.%d but version %d.%d or higher is needed", // DPI_ERR_ORACLE_DB_TOO_OLD
-    "DPI-1067: call timeout of %u ms exceeded with ORA-%d", // DPI_ERR_CALL_TIMEOUT
+    "DPI-1067: call timeout of %u ms exceeded with ORA-%05d", // DPI_ERR_CALL_TIMEOUT
     "DPI-1068: SODA cursor was already closed", // DPI_ERR_SODA_CURSOR_CLOSED
     "DPI-1069: proxy user name must be enclosed in [] when using external authentication", // DPI_ERR_EXT_AUTH_INVALID_PROXY
     "DPI-1070: no payload provided in message properties", // DPI_ERR_QUEUE_NO_PAYLOAD
@@ -106,8 +106,11 @@ static const char* const dpiErrorMessages[DPI_ERR_MAX - DPI_ERR_NO_ERR] = {
     "DPI-1077: JSON scalar type %d is not supported", // DPI_ERR_UNHANDLED_JSON_SCALAR_TYPE
     "DPI-1078: native type %d with Oracle type %d is not supported by JSON", // DPI_ERR_UNHANDLED_CONVERSION_TO_JSON
     "DPI-1079: Oracle Client library is at version %d.%d but either version %d.%d (or later DBRU) or version %d.%d (or higher) is needed", // DPI_ERR_ORACLE_CLIENT_TOO_OLD_MULTI
-    "DPI-1080: connection was closed by ORA-%d", // DPI_ERR_CONN_CLOSED
-    "DPI-1081: invalid dpiAccessToken structure. Both the token and the private key must contain values", // DPI_ERR_TOKEN_BASED_AUTH
+    "DPI-1080: connection was closed by ORA-%05d", // DPI_ERR_CONN_CLOSED
+    "DPI-1081: invalid dpiAccessToken structure. The token must contain a value", // DPI_ERR_TOKEN_BASED_AUTH
     "DPI-1082: invalid connection pool configuration for token based authentication. Both homogeneous and externalAuth fields in the dpiPoolCreateParams structure must be set to 1", //DPI_ERR_POOL_TOKEN_BASED_AUTH
-    "DPI-1083: invalid standalone connection configuration for token based authentication. The externalAuth field in the dpiConnCreateParams structure must be set to 1", //DPI_ERR_STANDALONE_TOKEN_BASED_AUTH
+    "DPI-1083: invalid standalone connection configuration for token based authentication. The externalAuth field in the dpiConnCreateParams structure must be set to 1", // DPI_ERR_STANDALONE_TOKEN_BASED_AUTH
+    "DPI-1084: unsupported vector format %d", // DPI_ERR_UNSUPPORTED_VECTOR_FORMAT
+    "DPI-1085: SODA document has JSON content. Call dpiJson_getJsonContent() instead.", // DPI_ERR_SODA_DOC_IS_JSON
+    "DPI-1086: SODA document does not have JSON content. Call dpiJson_getContent() instead.", // DPI_ERR_SODA_DOC_IS_NOT_JSON
 };

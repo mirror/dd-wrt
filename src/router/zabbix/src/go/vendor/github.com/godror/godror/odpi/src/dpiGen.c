@@ -1,5 +1,5 @@
 //-----------------------------------------------------------------------------
-// Copyright (c) 2016, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2016, 2024, Oracle and/or its affiliates.
 //
 // This software is dual-licensed to you under the Universal Permissive License
 // (UPL) 1.0 as shown at https://oss.oracle.com/licenses/upl and Apache License
@@ -158,6 +158,12 @@ static const dpiTypeDef dpiAllTypeDefs[DPI_HTYPE_MAX - DPI_HTYPE_NONE - 1] = {
         sizeof(dpiJson),                // size of structure
         0xf6712bec,                     // check integer
         (dpiTypeFreeProc) dpiJson__free
+    },
+    {
+        "dpiVector",                    // name
+        sizeof(dpiVector),              // size of structure
+        0x6c3dd6e9,                     // check integer
+        (dpiTypeFreeProc) dpiVector__free
     }
 };
 

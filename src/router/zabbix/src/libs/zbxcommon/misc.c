@@ -12,7 +12,15 @@
 ** If not, see <https://www.gnu.org/licenses/>.
 **/
 
+#include <fcntl.h>
+#include <stdlib.h>
+
+#if defined(_WINDOWS) || defined(__MINGW32__)
+#	include <stddef.h>
+#endif
+
 #include "zbxcommon.h"
+#include "zbxtypes.h"
 
 #if defined(_WINDOWS) || defined(__MINGW32__)
 #	include "zbxstr.h"
@@ -74,34 +82,37 @@ const char	*get_program_name(const char *path)
 
 /******************************************************************************
  *                                                                            *
- * Purpose: allocates nmemb * size bytes of memory and fills it with zeros    *
+ * Purpose: checks result of calloc()                                         *
  *                                                                            *
- * Return value: returns a pointer to the newly allocated memory              *
+ * Return value: returns a pointer to newly allocated memory or terminates    *
+ *               program if out of memory                                     *
  *                                                                            *
  ******************************************************************************/
-void	*zbx_calloc2(const char *filename, int line, void *old, size_t nmemb, size_t size)
+void	*zbx_calloc2(const char *filename, int line, void *old, size_t nmemb, size_t size, void *new_ptr)
 {
-	int	max_attempts;
-	void	*ptr = NULL;
-
 	/* old pointer must be NULL */
 	if (NULL != old)
 	{
-		zabbix_log(LOG_LEVEL_CRIT, "[file:%s,line:%d] zbx_calloc: allocating already allocated memory. "
+		zabbix_log(LOG_LEVEL_CRIT,
+				"[file:%s,line:%d] zbx_calloc: allocating already allocated memory. "
 				"Please report this to Zabbix developers.",
 				filename, line);
 	}
 
-	for (
-		max_attempts = 10, nmemb = MAX(nmemb, 1), size = MAX(size, 1);
-		0 < max_attempts && NULL == ptr;
-		ptr = calloc(nmemb, size), max_attempts--
-	);
+	if (0 == nmemb || 0 == size)
+	{
+		zabbix_log(LOG_LEVEL_DEBUG,
+				"[file:%s,line:%d] zbx_calloc: "
+				"allocating " ZBX_FS_SIZE_T " memory objects of size " ZBX_FS_SIZE_T ". "
+				"Please report this to Zabbix developers.",
+				filename, line, (zbx_fs_size_t)nmemb, (zbx_fs_size_t)size);
+	}
 
-	if (NULL != ptr)
-		return ptr;
+	if (NULL != new_ptr)
+		return new_ptr;
 
-	zabbix_log(LOG_LEVEL_CRIT, "[file:%s,line:%d] zbx_calloc: out of memory. Requested " ZBX_FS_SIZE_T " bytes.",
+	zabbix_log(LOG_LEVEL_CRIT,
+			"[file:%s,line:%d] zbx_calloc: out of memory. Requested " ZBX_FS_SIZE_T " bytes.",
 			filename, line, (zbx_fs_size_t)size);
 
 	exit(EXIT_FAILURE);
@@ -109,34 +120,37 @@ void	*zbx_calloc2(const char *filename, int line, void *old, size_t nmemb, size_
 
 /******************************************************************************
  *                                                                            *
- * Purpose: allocates size bytes of memory                                    *
+ * Purpose: checks result of malloc()                                         *
  *                                                                            *
- * Return value: returns a pointer to the newly allocated memory              *
+ * Return value: returns a pointer to newly allocated memory or terminates    *
+ *               program if out of memory                                     *
  *                                                                            *
  ******************************************************************************/
-void	*zbx_malloc2(const char *filename, int line, void *old, size_t size)
+void	*zbx_malloc2(const char *filename, int line, void *old, size_t size, void *new_ptr)
 {
-	int	max_attempts;
-	void	*ptr = NULL;
-
 	/* old pointer must be NULL */
 	if (NULL != old)
 	{
-		zabbix_log(LOG_LEVEL_CRIT, "[file:%s,line:%d] zbx_malloc: allocating already allocated memory. "
+		zabbix_log(LOG_LEVEL_CRIT,
+				"[file:%s,line:%d] zbx_malloc: allocating already allocated memory. "
 				"Please report this to Zabbix developers.",
 				filename, line);
 	}
 
-	for (
-		max_attempts = 10, size = MAX(size, 1);
-		0 < max_attempts && NULL == ptr;
-		ptr = malloc(size), max_attempts--
-	);
+	if (0 == size)
+	{
+		zabbix_log(LOG_LEVEL_DEBUG,
+				"[file:%s,line:%d] zbx_malloc: allocating 0 bytes. "
+				"Please report this to Zabbix developers.",
+				filename, line);
+	}
 
-	if (NULL != ptr)
-		return ptr;
+	if (NULL != new_ptr)
+		return new_ptr;
 
-	zabbix_log(LOG_LEVEL_CRIT, "[file:%s,line:%d] zbx_malloc: out of memory. Requested " ZBX_FS_SIZE_T " bytes.",
+	zabbix_log(LOG_LEVEL_CRIT,
+			"[file:%s,line:%d] zbx_malloc: out of memory. "
+			"Requested " ZBX_FS_SIZE_T " byte(s).",
 			filename, line, (zbx_fs_size_t)size);
 
 	exit(EXIT_FAILURE);
@@ -144,27 +158,27 @@ void	*zbx_malloc2(const char *filename, int line, void *old, size_t size)
 
 /******************************************************************************
  *                                                                            *
- * Purpose: changes the size of the memory block pointed to by old            *
- *          to size bytes                                                     *
+ * Purpose: checks result of realloc()                                        *
  *                                                                            *
- * Return value: returns a pointer to the newly allocated memory              *
+ * Return value: returns a pointer to reallocated memory or terminates        *
+ *               program if out of memory                                     *
  *                                                                            *
  ******************************************************************************/
-void	*zbx_realloc2(const char *filename, int line, void *old, size_t size)
+void	*zbx_realloc2(const char *filename, int line, size_t size, void *new_ptr)
 {
-	int	max_attempts;
-	void	*ptr = NULL;
+	if (0 == size)
+	{
+		zabbix_log(LOG_LEVEL_DEBUG,
+				"[file:%s,line:%d] zbx_realloc: reallocating to 0 bytes. "
+				"Please report this to Zabbix developers.",
+				filename, line);
+	}
 
-	for (
-		max_attempts = 10, size = MAX(size, 1);
-		0 < max_attempts && NULL == ptr;
-		ptr = realloc(old, size), max_attempts--
-	);
+	if (NULL != new_ptr)
+		return new_ptr;
 
-	if (NULL != ptr)
-		return ptr;
-
-	zabbix_log(LOG_LEVEL_CRIT, "[file:%s,line:%d] zbx_realloc: out of memory. Requested " ZBX_FS_SIZE_T " bytes.",
+	zabbix_log(LOG_LEVEL_CRIT,
+			"[file:%s,line:%d] zbx_realloc: out of memory. Requested " ZBX_FS_SIZE_T " bytes.",
 			filename, line, (zbx_fs_size_t)size);
 
 	exit(EXIT_FAILURE);
@@ -172,18 +186,16 @@ void	*zbx_realloc2(const char *filename, int line, void *old, size_t size)
 
 char	*zbx_strdup2(const char *filename, int line, char *old, const char *str)
 {
-	int	retry;
 	char	*ptr = NULL;
 
 	zbx_free(old);
 
-	for (retry = 10; 0 < retry && NULL == ptr; ptr = strdup(str), retry--)
-		;
-
+	ptr = strdup(str);
 	if (NULL != ptr)
 		return ptr;
 
-	zabbix_log(LOG_LEVEL_CRIT, "[file:%s,line:%d] zbx_strdup: out of memory. Requested " ZBX_FS_SIZE_T " bytes.",
+	zabbix_log(LOG_LEVEL_CRIT,
+			"[file:%s,line:%d] zbx_strdup: out of memory. Requested " ZBX_FS_SIZE_T " bytes.",
 			filename, line, (zbx_fs_size_t)(strlen(str) + 1));
 
 	exit(EXIT_FAILURE);

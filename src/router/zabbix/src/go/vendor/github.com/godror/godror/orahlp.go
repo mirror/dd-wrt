@@ -16,8 +16,11 @@ import (
 	"io"
 	"math"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
+
+	"github.com/godror/godror/slog"
 )
 
 // Number as string
@@ -36,9 +39,8 @@ type intType struct{}
 
 func (intType) String() string { return "Int64" }
 func (intType) ConvertValue(v interface{}) (driver.Value, error) {
-	logger := getLogger()
-	if logger != nil {
-		logger.Log("ConvertValue", "Int64", "value", v)
+	if logger := getLogger(context.TODO()); logger != nil && logger.Enabled(context.TODO(), slog.LevelDebug) {
+		logger.Debug("ConvertValue Int64", "value", v)
 	}
 	switch x := v.(type) {
 	case int8:
@@ -89,9 +91,8 @@ type floatType struct{}
 
 func (floatType) String() string { return "Float64" }
 func (floatType) ConvertValue(v interface{}) (driver.Value, error) {
-	logger := getLogger()
-	if logger != nil {
-		logger.Log("ConvertValue", "Float64", "value", v)
+	if logger := getLogger(context.TODO()); logger != nil && logger.Enabled(context.TODO(), slog.LevelDebug) {
+		logger.Debug("ConvertValue Float64", "value", v)
 	}
 	switch x := v.(type) {
 	case int8:
@@ -136,9 +137,8 @@ type numType struct{}
 
 func (numType) String() string { return "Num" }
 func (numType) ConvertValue(v interface{}) (driver.Value, error) {
-	logger := getLogger()
-	if logger != nil {
-		logger.Log("ConvertValue", "Num", "value", v)
+	if logger := getLogger(context.TODO()); logger != nil && logger.Enabled(context.TODO(), slog.LevelDebug) {
+		logger.Debug("ConvertValue Num", "value", v)
 	}
 	switch x := v.(type) {
 	case string:
@@ -156,11 +156,28 @@ func (numType) ConvertValue(v interface{}) (driver.Value, error) {
 			return 0, nil
 		}
 		return string(*x), nil
-	case int8, int16, int32, int64, uint16, uint32, uint64:
-		return fmt.Sprintf("%d", x), nil
-	case float32, float64:
-		return fmt.Sprintf("%f", x), nil
+	case int8:
+		return strconv.FormatInt(int64(x), 10), nil
+	case int16:
+		return strconv.FormatInt(int64(x), 10), nil
+	case int32:
+		return strconv.FormatInt(int64(x), 10), nil
+	case int64:
+		return strconv.FormatInt(x, 10), nil
+	case uint16:
+		return strconv.FormatUint(uint64(x), 10), nil
+	case uint32:
+		return strconv.FormatUint(uint64(x), 10), nil
+	case uint64:
+		return strconv.FormatUint(x, 10), nil
+	case float32:
+		return strconv.FormatFloat(float64(x), 'f', -1, 32), nil
+	case float64:
+		return strconv.FormatFloat(x, 'f', -1, 64), nil
 	case decimalDecompose:
+		if x == nil {
+			return "", fmt.Errorf("nil Decomposer")
+		}
 		var n Number
 		err := n.Compose(x.Decompose(nil))
 		return string(n), err
@@ -192,10 +209,24 @@ func (n *Number) Scan(v interface{}) error {
 		} else {
 			*n = *x
 		}
-	case int8, int16, int32, int64, uint16, uint32, uint64:
-		*n = Number(fmt.Sprintf("%d", x))
-	case float32, float64:
-		*n = Number(fmt.Sprintf("%f", x))
+	case int8:
+		*n = Number(strconv.FormatInt(int64(x), 10))
+	case int16:
+		*n = Number(strconv.FormatInt(int64(x), 10))
+	case int32:
+		*n = Number(strconv.FormatInt(int64(x), 10))
+	case int64:
+		*n = Number(strconv.FormatInt(x, 10))
+	case uint16:
+		*n = Number(strconv.FormatUint(uint64(x), 10))
+	case uint32:
+		*n = Number(strconv.FormatUint(uint64(x), 10))
+	case uint64:
+		*n = Number(strconv.FormatUint(x, 10))
+	case float32:
+		*n = Number(strconv.FormatFloat(float64(x), 'f', -1, 32))
+	case float64:
+		*n = Number(strconv.FormatFloat(x, 'f', -1, 64))
 	case decimalDecompose:
 		return n.Compose(x.Decompose(nil))
 	default:
@@ -311,10 +342,9 @@ func DescribeQuery(ctx context.Context, db Execer, qry string) ([]QueryColumn, e
 
 // CompileError represents a compile-time error as in user_errors view.
 type CompileError struct {
-	Owner, Name, Type    string
-	Line, Position, Code int64
-	Text                 string
-	Warning              bool
+	Owner, Name, Type, Text string
+	Line, Position, Code    int64
+	Warning                 bool
 }
 
 func (ce CompileError) Error() string {
@@ -330,6 +360,9 @@ func (ce CompileError) Error() string {
 //
 // If all is false, only errors are returned; otherwise, warnings, too.
 func GetCompileErrors(ctx context.Context, queryer Querier, all bool) ([]CompileError, error) {
+	if queryer == nil {
+		return nil, fmt.Errorf("nil queryer")
+	}
 	rows, err := queryer.QueryContext(ctx, `
 	SELECT USER owner, name, type, line, position, message_number, text, attribute
 		FROM user_errors
@@ -562,6 +595,9 @@ var getConnMu sync.Mutex
 
 // getConn will acquire a separate connection to the same DB as what ex is connected to.
 func getConn(ctx context.Context, ex Execer) (*conn, error) {
+	if ex == nil {
+		return nil, fmt.Errorf("nil ex")
+	}
 	getConnMu.Lock()
 	defer getConnMu.Unlock()
 	var c interface{}
@@ -631,6 +667,9 @@ type ConnPool struct {
 func NewConnPool(pool interface {
 	Conn(context.Context) (*sql.Conn, error)
 }, size int) *ConnPool {
+	if pool == nil {
+		panic(fmt.Errorf("nil pool"))
+	}
 	if size < 1 {
 		size = 1
 	}
@@ -641,6 +680,9 @@ func NewConnPool(pool interface {
 //
 // You must call Close on the returned PooledConn to return it to the pool!
 func (p *ConnPool) Conn(ctx context.Context) (*PooledConn, error) {
+	if p == nil {
+		return nil, fmt.Errorf("nil ConnPool")
+	}
 	select {
 	case c := <-p.freeList:
 		return c, nil
@@ -693,4 +735,37 @@ func (c *PooledConn) Close() error {
 	conn := c.Conn
 	c.Conn, c.pool = nil, nil
 	return conn.Close()
+}
+
+// ReplaceQuestionPlacholders replaces ? marks with Oracle-supported :%d placeholders.
+//
+// THIS IS JUST A SIMPLE CONVENIENCE FUNCTION, WITHOUT WARRANTIES:
+// - does not handle '?' - mark in string
+// - does not handle --? - mark in line comment
+// - does not handle /*?*/ - mark in block comment
+func ReplaceQuestionPlacholders(qry string) string {
+	n := strings.Count(qry, "?")
+	if n == 0 {
+		return qry
+	}
+	nLog10, x := 1, 10
+	for n > x {
+		nLog10++
+		x *= 10
+	}
+	//fmt.Println("\n## n:", n, "x:", x, "nLog10:", nLog10)
+	num := make([]byte, 0, nLog10)
+	var buf strings.Builder
+	buf.Grow(len(qry) + n*(nLog10))
+	var idx int64
+	for i := strings.IndexByte(qry, '?'); i >= 0; i = strings.IndexByte(qry, '?') {
+		buf.WriteString(qry[:i])
+		qry = qry[i+1:]
+		buf.WriteByte(':')
+		idx++
+		num = strconv.AppendInt(num[:0], idx, 10)
+		buf.Write(num)
+	}
+	buf.WriteString(qry)
+	return buf.String()
 }

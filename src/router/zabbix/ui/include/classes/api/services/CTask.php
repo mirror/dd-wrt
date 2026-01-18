@@ -21,7 +21,7 @@ class CTask extends CApiService {
 
 	public const ACCESS_RULES = [
 		'get' => ['min_user_type' => USER_TYPE_SUPER_ADMIN],
-		'create' => ['min_user_type' => USER_TYPE_SUPER_ADMIN]
+		'create' => ['min_user_type' => USER_TYPE_ZABBIX_USER]
 	];
 
 	protected $tableName = 'task';
@@ -521,6 +521,12 @@ class CTask extends CApiService {
 		$itemids_cnt = count($itemids);
 
 		if (count($items) != $itemids_cnt) {
+			if (self::$userData['type'] < USER_TYPE_ZABBIX_ADMIN) {
+				self::exception(ZBX_API_ERROR_PERMISSIONS,
+					_('No permissions to referred object or it does not exist!')
+				);
+			}
+
 			$items += API::DiscoveryRule()->get([
 				'output' => ['type', 'name', 'status', 'flags', 'master_itemid'],
 				'selectHosts' => ['name', 'status'],
@@ -546,7 +552,7 @@ class CTask extends CApiService {
 			if (!in_array($item['type'], $allowed_types)) {
 				self::exception(ZBX_API_ERROR_PARAMETERS,
 					_s('Cannot send request: %1$s.',
-						($item['flags'] == ZBX_FLAG_DISCOVERY_RULE)
+						in_array($item['flags'], [ZBX_FLAG_DISCOVERY_RULE, ZBX_FLAG_DISCOVERY_RULE_CREATED])
 							? _('wrong discovery rule type')
 							: _('wrong item type')
 					)
@@ -555,7 +561,7 @@ class CTask extends CApiService {
 
 			if ($item['status'] != ITEM_STATUS_ACTIVE || $item['hosts'][0]['status'] != HOST_STATUS_MONITORED) {
 				$host_name = $item['hosts'][0]['name'];
-				$problem = ($item['flags'] == ZBX_FLAG_DISCOVERY_RULE)
+				$problem = in_array($item['flags'], [ZBX_FLAG_DISCOVERY_RULE, ZBX_FLAG_DISCOVERY_RULE_CREATED])
 					? _s('discovery rule "%1$s" on host "%2$s" is not monitored', $item['name'], $host_name)
 					: _s('item "%1$s" on host "%2$s" is not monitored', $item['name'], $host_name);
 				self::exception(ZBX_API_ERROR_PARAMETERS, _s('Cannot send request: %1$s.', $problem));

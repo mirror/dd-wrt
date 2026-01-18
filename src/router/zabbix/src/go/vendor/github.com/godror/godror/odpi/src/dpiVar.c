@@ -1,5 +1,5 @@
 //-----------------------------------------------------------------------------
-// Copyright (c) 2016, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2016, 2024, Oracle and/or its affiliates.
 //
 // This software is dual-licensed to you under the Universal Permissive License
 // (UPL) 1.0 as shown at https://oss.oracle.com/licenses/upl and Apache License
@@ -47,6 +47,8 @@ static int dpiVar__setFromObject(dpiVar *var, uint32_t pos, dpiObject *obj,
 static int dpiVar__setFromRowid(dpiVar *var, uint32_t pos, dpiRowid *rowid,
         dpiError *error);
 static int dpiVar__setFromStmt(dpiVar *var, uint32_t pos, dpiStmt *stmt,
+        dpiError *error);
+static int dpiVar__setFromVector(dpiVar *var, uint32_t pos, dpiVector *vector,
         dpiError *error);
 static int dpiVar__validateTypes(const dpiOracleType *oracleType,
         dpiNativeTypeNum nativeTypeNum, dpiError *error);
@@ -229,6 +231,9 @@ static void dpiVar__assignCallbackBuffer(dpiVar *var, dpiVarBuffer *buffer,
         case DPI_ORACLE_TYPE_JSON:
             *bufpp = buffer->data.asJsonDescriptor[index];
             break;
+        case DPI_ORACLE_TYPE_VECTOR:
+            *bufpp = buffer->data.asVectorDescriptor[index];
+            break;
         case DPI_ORACLE_TYPE_STMT:
             *bufpp = buffer->data.asStmt[index];
             break;
@@ -336,6 +341,9 @@ int dpiVar__copyData(dpiVar *var, uint32_t pos, dpiData *sourceData,
         case DPI_NATIVE_TYPE_ROWID:
             return dpiVar__setFromRowid(var, pos, sourceData->value.asRowid,
                     error);
+        case DPI_NATIVE_TYPE_VECTOR:
+            return dpiVar__setFromVector(var, pos, sourceData->value.asVector,
+                    error);
         default:
             memcpy(targetData, sourceData, sizeof(dpiData));
     }
@@ -392,6 +400,7 @@ int32_t dpiVar__defineCallback(dpiVar *var, UNUSED void *defnp, uint32_t iter,
 int dpiVar__extendedPreFetch(dpiVar *var, dpiVarBuffer *buffer,
         dpiError *error)
 {
+    dpiVector *vector;
     dpiRowid *rowid;
     dpiData *data;
     dpiStmt *stmt;
@@ -499,11 +508,28 @@ int dpiVar__extendedPreFetch(dpiVar *var, dpiVarBuffer *buffer,
                 }
                 buffer->data.asJsonDescriptor[i] = NULL;
                 data->value.asJson = NULL;
-                if (dpiJson__allocate(var->conn, &json, error) < 0)
+                if (dpiJson__allocate(var->conn, NULL, &json, error) < 0)
                     return DPI_FAILURE;
                 buffer->references[i].asJson = json;
                 buffer->data.asJsonDescriptor[i] = json->handle;
                 data->value.asJson = json;
+            }
+            break;
+        case DPI_ORACLE_TYPE_VECTOR:
+            for (i = 0; i < buffer->maxArraySize; i++) {
+                data = &buffer->externalData[i];
+                if (buffer->references[i].asVector) {
+                    dpiGen__setRefCount(buffer->references[i].asVector,
+                            error, -1);
+                    buffer->references[i].asVector = NULL;
+                }
+                buffer->data.asVectorDescriptor[i] = NULL;
+                data->value.asVector = NULL;
+                if (dpiVector__allocate(var->conn, &vector, error) < 0)
+                    return DPI_FAILURE;
+                buffer->references[i].asVector = vector;
+                buffer->data.asVectorDescriptor[i] = vector->handle;
+                data->value.asVector = vector;
             }
             break;
         default:
@@ -757,6 +783,7 @@ int dpiVar__getValue(dpiVar *var, dpiVarBuffer *buffer, uint32_t pos,
                 case DPI_ORACLE_TYPE_LONG_VARCHAR:
                 case DPI_ORACLE_TYPE_LONG_NVARCHAR:
                 case DPI_ORACLE_TYPE_LONG_RAW:
+                case DPI_ORACLE_TYPE_XMLTYPE:
                     if (buffer->dynamicBytes)
                         return dpiVar__setBytesFromDynamicBytes(bytes,
                                 &buffer->dynamicBytes[pos], error);
@@ -1007,6 +1034,7 @@ static int dpiVar__initBuffer(dpiVar *var, dpiVarBuffer *buffer,
         case DPI_ORACLE_TYPE_STMT:
         case DPI_ORACLE_TYPE_ROWID:
         case DPI_ORACLE_TYPE_JSON:
+        case DPI_ORACLE_TYPE_VECTOR:
             return dpiVar__extendedPreFetch(var, buffer, error);
         case DPI_ORACLE_TYPE_OBJECT:
             if (!var->objectType)
@@ -1486,6 +1514,44 @@ static int dpiVar__setFromStmt(dpiVar *var, uint32_t pos, dpiStmt *stmt,
 
 
 //-----------------------------------------------------------------------------
+// dpiVar__setFromVector() [PRIVATE]
+//   Set the value of the variable at the given array position from a vector
+// value. A reference to the vector value is retained by the variable.
+//-----------------------------------------------------------------------------
+static int dpiVar__setFromVector(dpiVar *var, uint32_t pos, dpiVector *vector,
+        dpiError *error)
+{
+    dpiData *data;
+
+    // validate the vector value
+    if (dpiGen__checkHandle(vector, DPI_HTYPE_VECTOR, "check vector",
+             error) < 0)
+        return DPI_FAILURE;
+
+    // mark the value as not null
+    data = &var->buffer.externalData[pos];
+    data->isNull = 0;
+
+    // if values are the same, nothing to do
+    if (var->buffer.references[pos].asVector == vector)
+        return DPI_SUCCESS;
+
+    // clear original value, if needed
+    if (var->buffer.references[pos].asVector) {
+        dpiGen__setRefCount(var->buffer.references[pos].asVector, error, -1);
+        var->buffer.references[pos].asVector = NULL;
+    }
+
+    // add reference to passed object
+    dpiGen__setRefCount(vector, error, 1);
+    var->buffer.references[pos].asVector = vector;
+    var->buffer.data.asVectorDescriptor[pos] = vector->handle;
+    data->value.asVector = vector;
+    return DPI_SUCCESS;
+}
+
+
+//-----------------------------------------------------------------------------
 // dpiVar__setValue() [PRIVATE]
 //   Sets the contents of the variable using the type specified, if possible.
 //-----------------------------------------------------------------------------
@@ -1896,6 +1962,28 @@ int dpiVar_setFromStmt(dpiVar *var, uint32_t pos, dpiStmt *stmt)
         return dpiGen__endPublicFn(var, DPI_FAILURE, &error);
     }
     status = dpiVar__setFromStmt(var, pos, stmt, &error);
+    return dpiGen__endPublicFn(var, status, &error);
+}
+
+
+//-----------------------------------------------------------------------------
+// dpiVar_setFromVector() [PUBLIC]
+//  Set the value of the variable at the given position from a vector value.
+// Checks on the array position and the validity of the passed value.
+// A reference to the vector value is retained by the variable.
+//-----------------------------------------------------------------------------
+int dpiVar_setFromVector(dpiVar *var, uint32_t pos, dpiVector *vector)
+{
+    dpiError error;
+    int status;
+
+    if (dpiVar__checkArraySize(var, pos, __func__, &error) < 0)
+        return dpiGen__endPublicFn(var, DPI_FAILURE, &error);
+    if (var->nativeTypeNum != DPI_NATIVE_TYPE_VECTOR) {
+        dpiError__set(&error, "native type", DPI_ERR_NOT_SUPPORTED);
+        return dpiGen__endPublicFn(var, DPI_FAILURE, &error);
+    }
+    status = dpiVar__setFromVector(var, pos, vector, &error);
     return dpiGen__endPublicFn(var, status, &error);
 }
 

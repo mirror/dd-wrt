@@ -1283,47 +1283,7 @@ class CRole extends CApiService {
 			unset($role);
 		}
 
-		if ($options['selectUsers'] !== null) {
-			if ($options['selectUsers'] === API_OUTPUT_COUNT) {
-				$output = ['userid', 'roleid'];
-			}
-			elseif ($options['selectUsers'] === API_OUTPUT_EXTEND) {
-				$output = self::$userData['type'] == USER_TYPE_SUPER_ADMIN
-					? CUser::OUTPUT_FIELDS
-					: CUser::OWN_LIMITED_OUTPUT_FIELDS;
-			}
-			else {
-				$output = array_unique(array_merge(['userid', 'roleid'], $options['selectUsers']));
-			}
-
-			if (self::$userData['type'] == USER_TYPE_SUPER_ADMIN) {
-				$users = API::User()->get([
-					'output' => $output,
-					'filter' => ['roleid' => $roleids],
-					'preservekeys' => true
-				]);
-			}
-			else {
-				$users = array_key_exists(self::$userData['roleid'], $result)
-					? API::User()->get([
-						'output' => $output,
-						'userids' => self::$userData['userid'],
-						'preservekeys' => true
-					])
-					: [];
-			}
-
-			$relation_map = $this->createRelationMap($users, 'roleid', 'userid');
-			$users = $this->unsetExtraFields($users, ['userid', 'roleid'], $options['selectUsers']);
-			$result = $relation_map->mapMany($result, $users, 'users');
-
-			if ($options['selectUsers'] === API_OUTPUT_COUNT) {
-				foreach ($result as &$row) {
-					$row['users'] = (string) count($row['users']);
-				}
-				unset($row);
-			}
-		}
+		$this->addRelatedUsers($options, $result);
 
 		return $result;
 	}
@@ -1575,6 +1535,52 @@ class CRole extends CApiService {
 		}
 
 		return $result;
+	}
+
+	private function addRelatedUsers(array $options, array &$result): void {
+		if ($options['selectUsers'] === null) {
+			return;
+		}
+
+		if ($options['selectUsers'] === API_OUTPUT_COUNT) {
+			$output = ['userid', 'roleid'];
+		}
+		elseif ($options['selectUsers'] === API_OUTPUT_EXTEND) {
+			$output = self::$userData['type'] == USER_TYPE_SUPER_ADMIN
+				? CUser::OUTPUT_FIELDS
+				: CUser::OWN_LIMITED_OUTPUT_FIELDS;
+		}
+		else {
+			$output = array_unique(array_merge(['userid', 'roleid'], $options['selectUsers']));
+		}
+
+		if (self::$userData['type'] == USER_TYPE_SUPER_ADMIN) {
+			$users = API::User()->get([
+				'output' => $output,
+				'filter' => ['roleid' => array_keys($result)],
+				'preservekeys' => true
+			]);
+		}
+		else {
+			$users = array_key_exists(self::$userData['roleid'], $result)
+				? API::User()->get([
+					'output' => $output,
+					'userids' => self::$userData['userid'],
+					'preservekeys' => true
+				])
+				: [];
+		}
+
+		$relation_map = $this->createRelationMap($users, 'roleid', 'userid');
+		$users = $this->unsetExtraFields($users, ['userid', 'roleid'], $options['selectUsers']);
+		$result = $relation_map->mapMany($result, $users, 'users');
+
+		if ($options['selectUsers'] === API_OUTPUT_COUNT) {
+			foreach ($result as &$row) {
+				$row['users'] = (string) count($row['users']);
+			}
+			unset($row);
+		}
 	}
 
 	/**

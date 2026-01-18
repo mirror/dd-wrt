@@ -15,8 +15,11 @@ CREATE TEMP TABLE temp_trends (
 
 DO $$
 DECLARE
-	chunk_tm_interval	INTEGER;
 	jobid			INTEGER;
+	tsdb_version		TEXT;
+	tsdb_version_major	INTEGER;
+	tsdb_version_minor	INTEGER;
+	compress_after		INTEGER;
 BEGIN
 	PERFORM create_hypertable('trends', 'clock', chunk_time_interval => (
 		SELECT integer_interval FROM timescaledb_information.dimensions WHERE hypertable_name='trends_old'
@@ -27,4 +30,4 @@ BEGIN
 
 END $$;
 
-UPDATE config SET compression_status=0;
+UPDATE settings SET value_int=0 WHERE name='compression_status';

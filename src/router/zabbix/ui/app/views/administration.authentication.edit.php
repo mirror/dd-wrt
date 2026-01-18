@@ -203,7 +203,8 @@ $ldap_tab = (new CFormGrid())
 	->addItem([
 		new CLabel(_('Provisioning period'), 'jit_provision_interval'),
 		new CFormField(
-			(new CTextBox('jit_provision_interval', $data['jit_provision_interval']))
+			(new CTextBox('jit_provision_interval', $data['jit_provision_interval'], false,
+					CSettingsSchema::getFieldLength('jit_provision_interval')))
 				->setWidth(ZBX_TEXTAREA_4DIGITS_WIDTH)
 				->setEnabled($ldap_auth_enabled && $data['ldap_jit_status'] == JIT_PROVISIONING_ENABLED)
 		)
@@ -584,7 +585,7 @@ if ($data['is_http_auth_allowed']) {
 			new CLabel(_('Remove domain name'), 'http_strip_domains'),
 			new CFormField(
 				(new CTextBox('http_strip_domains', $data['http_strip_domains'], false,
-					DB::getFieldLength('config', 'http_strip_domains')
+					CSettingsSchema::getFieldLength('http_strip_domains')
 				))
 					->setEnabled($data['http_auth_enabled'])
 					->setWidth(ZBX_TEXTAREA_STANDARD_WIDTH)

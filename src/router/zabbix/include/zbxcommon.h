@@ -141,7 +141,8 @@ typedef enum
 	ITEM_TYPE_HTTPAGENT,
 	ITEM_TYPE_SNMP,
 	ITEM_TYPE_SCRIPT,
-	ITEM_TYPE_BROWSER	/* 22 */
+	ITEM_TYPE_BROWSER,
+	ITEM_TYPE_NESTED_LLD 	/* 23 */
 }
 zbx_item_type_t;
 
@@ -352,16 +353,17 @@ zbx_user_permission_t;
 #	define MIN(a, b) ((a) < (b) ? (a) : (b))
 #endif
 
-#define zbx_calloc(old, nmemb, size)	zbx_calloc2(__FILE__, __LINE__, old, nmemb, size)
-#define zbx_malloc(old, size)		zbx_malloc2(__FILE__, __LINE__, old, size)
-#define zbx_realloc(src, size)		zbx_realloc2(__FILE__, __LINE__, src, size)
+#define zbx_calloc(old, nmemb, size)	\
+		zbx_calloc2(__FILE__, __LINE__, old, nmemb, size, calloc(MAX(nmemb, 1), MAX(size, 1)))
+#define zbx_malloc(old, size)		zbx_malloc2(__FILE__, __LINE__, old, size, malloc(MAX(size, 1)))
+#define zbx_realloc(src, size)		zbx_realloc2(__FILE__, __LINE__, size, realloc(src, MAX(size, 1)))
 #define zbx_strdup(old, str)		zbx_strdup2(__FILE__, __LINE__, old, str)
 
 #define ZBX_STRDUP(var, str)	(var = zbx_strdup(var, str))
 
-void	*zbx_calloc2(const char *filename, int line, void *old, size_t nmemb, size_t size);
-void	*zbx_malloc2(const char *filename, int line, void *old, size_t size);
-void	*zbx_realloc2(const char *filename, int line, void *old, size_t size);
+void	*zbx_calloc2(const char *filename, int line, void *old, size_t nmemb, size_t size, void *new_ptr);
+void	*zbx_malloc2(const char *filename, int line, void *old, size_t size, void *new_ptr);
+void	*zbx_realloc2(const char *filename, int line, size_t size, void *new_ptr);
 char	*zbx_strdup2(const char *filename, int line, char *old, const char *str);
 
 void	*zbx_guaranteed_memset(void *v, int c, size_t n);
@@ -532,6 +534,7 @@ zbx_proxy_suppress_t;
 #define ZBX_JAN_1970_IN_SEC	2208988800.0	/* 1970 - 1900 in seconds */
 
 #define ZBX_MAX_RECV_DATA_SIZE		(1 * ZBX_GIBIBYTE)
+#define ZBX_MAX_RECV_2KB_DATA_SIZE	(2 * ZBX_KIBIBYTE)
 #if (4 < SIZEOF_SIZE_T)
 #define ZBX_MAX_RECV_LARGE_DATA_SIZE	(__UINT64_C(16) * ZBX_GIBIBYTE)
 #else
@@ -710,6 +713,8 @@ int	zbx_alarm_timed_out(void);
 #define ZBX_PREPROC_FAIL_SET_VALUE	2
 #define ZBX_PREPROC_FAIL_SET_ERROR	3
 
+#define ZBX_SHA512_BINARY_LENGTH 64
+
 /* includes terminating '\0' */
 #define CUID_LEN	26
 void	zbx_new_cuid(char *cuid);
@@ -811,6 +816,7 @@ zbx_log_component_t;
 
 void	zbx_set_log_component(const char *name, zbx_log_component_t *component);
 void	zbx_change_component_log_level(zbx_log_component_t *component, int direction);
+void	zbx_malloc_trim(time_t now, int period, size_t pad);
 #endif
 
 #endif

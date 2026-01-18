@@ -21,14 +21,15 @@ import (
 	"strings"
 )
 
+//nolint:revive // these consts are part of higher level script
 const (
-	ZABBIX_REVDATE          = "20 May 2025"
+	ZABBIX_REVDATE          = "17 December 2025"
 	ZABBIX_VERSION_MAJOR    = 7
-	ZABBIX_VERSION_MINOR    = 2
-	ZABBIX_VERSION_PATCH    = 7
+	ZABBIX_VERSION_MINOR    = 4
+	ZABBIX_VERSION_PATCH    = 6
 	ZABBIX_VERSION_RC       = ""
 	ZABBIX_VERSION_RC_NUM   = "1400"
-	ZABBIX_VERSION_REVISION = "1274916a6bc"
+	ZABBIX_VERSION_REVISION = "626d2b8a482"
 	copyrightMessage        = "Copyright (C) 2025 Zabbix SIA\n" +
 		"License AGPLv3: GNU Affero General Public License version 3 <https://www.gnu.org/licenses/>.\n" +
 		"This is free software: you are free to change and redistribute it according to\n" +

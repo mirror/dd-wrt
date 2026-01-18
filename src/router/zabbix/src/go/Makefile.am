@@ -21,10 +21,6 @@ AGENT_GOLDFLAGS += -X main.applicationName=zabbix_agent2
 WEBSERVICE_GOLDFLAGS = ${GOLDFLAGS}
 WEBSERVICE_GOLDFLAGS += -X main.applicationName=zabbix_web_service
 
-if HAVE_PCRE
-AGENT_GOTAGS = pcre
-endif
-
 if HAVE_PCRE2
 AGENT_GOTAGS = pcre2
 endif
@@ -67,6 +63,7 @@ clean: clean-go-build clean-sbom
 
 clean-go-build:
 	-$(GO) clean ./...
+	-$(GO) clean -cache
 	-rm -f bin/mock_server
 	-rm -f bin/zabbix_agent2
 	-rm -f bin/zabbix_web_service
@@ -92,6 +89,10 @@ install-bin/zabbix_agent2: bin/zabbix_agent2
 	$(INSTALL_DATA) conf/zabbix_agent2.conf "$(DESTDIR)$(sysconfdir)"
 	$(INSTALL) -d "$(DESTDIR)$(AGENT2_PLUGIN_CONFIG_DIR)"
 	(cd conf/zabbix_agent2.d/plugins.d && \
+	for _f in *.conf; do \
+		$(INSTALL_DATA) $${_f} "$(DESTDIR)$(AGENT2_PLUGIN_CONFIG_DIR)"; \
+	done)
+	(cd conf/zabbix_agent2.d/plugins.d/nix && \
 	for _f in *.conf; do \
 		$(INSTALL_DATA) $${_f} "$(DESTDIR)$(AGENT2_PLUGIN_CONFIG_DIR)"; \
 	done)

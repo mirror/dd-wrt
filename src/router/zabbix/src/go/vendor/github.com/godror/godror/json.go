@@ -223,6 +223,7 @@ void godror_dpiJsonfreeMem(dpiJsonNode *node) {
 import "C"
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -304,31 +305,28 @@ func (j JSON) GetJSONScalar(opts JSONOption) (JSONScalar, error) {
 
 // GetValue converts the native DB type stored in JSON into an interface value.
 // The scalar values stored in JSON get converted as below.
-//      map[string]interface{}, for JSON object type
-//      []interface{}, for JSON arrays
-//      godror.Number or float64 based on options for NUMBER
-//      bool , for boolean
-//      byte[], for RAW
-//      time.Duration, for INTERVAL DAY TO SECOND
-//      time.Time, for TIMESTAMP
-//      string, for VARCHAR2(string)
+//
+//	map[string]interface{}, for JSON object type
+//	[]interface{}, for JSON arrays
+//	godror.Number or float64 based on options for NUMBER
+//	bool , for boolean
+//	byte[], for RAW
+//	time.Duration, for INTERVAL DAY TO SECOND
+//	time.Time, for TIMESTAMP
+//	string, for VARCHAR2(string)
 func (j JSON) GetValue(opts JSONOption) (interface{}, error) {
 	jScalar, err := j.GetJSONScalar(opts)
-	logger := getLogger()
 	if err != nil {
-		if logger != nil {
-			logger.Log("msg", "JSON.GetValue", "Error", err.Error())
-		}
-		return nil, err
+		// later
+	} else if val, err2 := jScalar.GetValue(); err2 != nil {
+		err = err2
+	} else {
+		return val, nil
 	}
-	val, err := jScalar.GetValue()
-	if err != nil {
-		if logger != nil {
-			logger.Log("msg", "JSON.GetValue", "Error", err.Error())
-		}
-		return nil, err
+	if logger := getLogger(context.TODO()); logger != nil {
+		logger.Error("JSON.GetValue", "error", err)
 	}
-	return val, nil
+	return nil, err
 }
 
 // String returns standard JSON formatted string
@@ -338,28 +336,19 @@ func (j JSON) String() string {
 	// Returning empty string for error case, fix?
 
 	jScalar, err := j.GetJSONScalar(JSONOptNumberAsString)
-	logger := getLogger()
 	if err != nil {
-		if logger != nil {
-			logger.Log("msg", "JSON.String", "Error", err.Error())
-		}
-		return ""
+		// later
+	} else if jScalarVal, err2 := jScalar.GetValue(); err2 != nil {
+		err = err2
+	} else if data, err2 := json.Marshal(jScalarVal); err2 != nil {
+		err = err2
+	} else {
+		return string(data)
 	}
-	jScalarVal, err := jScalar.GetValue()
-	if err != nil {
-		if logger != nil {
-			logger.Log("msg", "JSON.String", "Error", err.Error())
-		}
-		return ""
+	if logger := getLogger(context.TODO()); logger != nil {
+		logger.Error("JSON.String", "error", err)
 	}
-	data, err := json.Marshal(jScalarVal)
-	if err != nil {
-		if logger != nil {
-			logger.Log("msg", "JSON.String", "Error", err.Error())
-		}
-		return ""
-	}
-	return string(data)
+	return ""
 }
 
 // jsonNodeToData gets the data from dpiJsonNode
@@ -411,14 +400,15 @@ type JSONScalar struct {
 
 // GetValue converts native DB type stored in JSONScalar to an interface value.
 // The scalar value stored in JSONScalar gets converted as below.
-//      map[string]interface{}, for JSON object type
-//      []interface{}, for JSON arrays
-//      godror.Number or float64 based on options for NUMBER
-//      bool , for JSON boolean
-//      byte[], for JSON RAW
-//      time.Duration, for INTERVAL DAY TO SECOND
-//      time.Time, for TIMESTAMP
-//      string, for VARCHAR2(string)
+//
+//	map[string]interface{}, for JSON object type
+//	[]interface{}, for JSON arrays
+//	godror.Number or float64 based on options for NUMBER
+//	bool , for JSON boolean
+//	byte[], for JSON RAW
+//	time.Duration, for INTERVAL DAY TO SECOND
+//	time.Time, for TIMESTAMP
+//	string, for VARCHAR2(string)
 func (j JSONScalar) GetValue() (val interface{}, err error) {
 	var d Data
 	jsonNodeToData(&d, j.dpiJsonNode)
@@ -442,18 +432,18 @@ func (j JSONScalar) GetValue() (val interface{}, err error) {
 }
 
 // getJSONScalarNumber returns DB NUMBER as godror.Number for option,
-// JSONOptNumberAsString and float64 for otpion, JSONOptDefault.
+// JSONOptNumberAsString and float64 for option, JSONOptDefault.
 func getJSONScalarNumber(d Data) (val interface{}) {
 	b := d.Get()
 	if d.NativeTypeNum == C.DPI_NATIVE_TYPE_BYTES {
-		val = Number(string(b.([]byte)))
+		val = Number(b.([]byte))
 	} else {
 		val = b.(float64)
 	}
 	return
 }
 
-//getJSONScalarString converts the byte array of VARCHAR2 to string
+// getJSONScalarString converts the byte array of VARCHAR2 to string
 func getJSONScalarString(d Data) (string, error) {
 	b := d.Get()
 	return string(b.([]byte)), nil
@@ -528,7 +518,8 @@ func (j JSONArray) GetValue() (nodes []interface{}, err error) {
 
 func jsonArraySlice(arr *C.dpiJsonArray) []C.dpiJsonNode {
 	n := int(arr.numElements)
-	return ((*[maxArraySize]C.dpiJsonNode)(unsafe.Pointer(arr.elements)))[:n:n]
+	//return ((*[maxArraySize]C.dpiJsonNode)(unsafe.Pointer(arr.elements)))[:n:n]
+	return unsafe.Slice(arr.elements, n)
 }
 
 // JSONObject represents the map input.
@@ -595,6 +586,7 @@ func (j JSONObject) GetInto(v interface{}) {
 	for _, f := range jsonObjectFields(j.dpiJsonObject) {
 		var d Data
 		jsonNodeToData(&d, f.Value)
+		// nosemgrep: go.lang.security.audit.unsafe-reflect-by-name.unsafe-reflect-by-name
 		rv.FieldByName(f.Name).Set(reflect.ValueOf(d.Get()))
 	}
 }
@@ -606,15 +598,19 @@ type jsonField struct {
 
 func jsonObjectFields(obj *C.dpiJsonObject) []jsonField {
 	n := int(obj.numFields)
-	names := ((*[maxArraySize]*C.char)(unsafe.Pointer(obj.fieldNames)))[:n:n]
-	nameLengths := ((*[maxArraySize]C.uint32_t)(unsafe.Pointer(obj.fieldNameLengths)))[:n:n]
-	fields := ((*[maxArraySize]C.dpiJsonNode)(unsafe.Pointer(obj.fields)))[:n:n]
+	//names := ((*[maxArraySize]*C.char)(unsafe.Pointer(obj.fieldNames)))[:n:n]
+	names := unsafe.Slice(obj.fieldNames, n)
+	//nameLengths := ((*[maxArraySize]C.uint32_t)(unsafe.Pointer(obj.fieldNameLengths)))[:n:n]
+	nameLengths := unsafe.Slice(obj.fieldNameLengths, n)
+	//fields := ((*[maxArraySize]C.dpiJsonNode)(unsafe.Pointer(obj.fields)))[:n:n]
+	fields := unsafe.Slice(obj.fields, n)
 	ff := make([]jsonField, n)
 	for i := range fields {
 		ff[i] = jsonField{
 			Name:  C.GoStringN(names[i], C.int(nameLengths[i])),
 			Value: &fields[i],
 		}
+		C.free(unsafe.Pointer(names[i]))
 	}
 	return ff
 }
@@ -653,8 +649,8 @@ func populateJSONNode(jsonnode *C.dpiJsonNode, in interface{}) error {
 		for k, v := range m {
 			cKey = C.CString(k)
 			C.godror_dpiJsonObject_setKey(jsonnode, i, cKey, C.uint32_t(len(k)))
-			var jsonnodelocal *C.dpiJsonNode
 			C.free(unsafe.Pointer(cKey))
+			var jsonnodelocal *C.dpiJsonNode
 			C.godror_setObjectFields(dpijsonobj, i, (**C.dpiJsonNode)(unsafe.Pointer(&jsonnodelocal)))
 			err := populateJSONNode(jsonnodelocal, v)
 			if err != nil {

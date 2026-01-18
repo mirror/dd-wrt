@@ -27,6 +27,7 @@
 #include "zbxalgo.h"
 #include "zbxcomms.h"
 #include "zbxbincommon.h"
+#include "zbxip.h"
 
 #if !defined(_WINDOWS)
 #	include "zbxnix.h"
@@ -279,8 +280,6 @@ static const char	*help_message[] = {
 };
 
 static zbx_config_tls_t	*zbx_config_tls = NULL;
-
-int	CONFIG_TCP_MAX_BACKLOG_SIZE	= SOMAXCONN;
 
 /* COMMAND LINE OPTIONS */
 
@@ -539,10 +538,10 @@ static int	check_response(char *response, const char *server, unsigned short por
 	unsigned char		redirect_reset;
 	zbx_uint64_t		redirect_revision;
 
-	ret = zbx_json_open(response, &jp);
+	if (FAIL == zbx_json_open(response, &jp))
+		return FAIL;
 
-	if (SUCCEED == ret)
-		ret = zbx_json_value_by_name(&jp, ZBX_PROTO_TAG_RESPONSE, value, sizeof(value), NULL);
+	ret = zbx_json_value_by_name(&jp, ZBX_PROTO_TAG_RESPONSE, value, sizeof(value), NULL);
 
 	if (SUCCEED == ret && 0 != strcmp(value, ZBX_PROTO_VALUE_SUCCESS))
 		ret = FAIL;
@@ -550,8 +549,10 @@ static int	check_response(char *response, const char *server, unsigned short por
 	if (SUCCEED == ret && SUCCEED == zbx_json_value_by_name(&jp, ZBX_PROTO_TAG_INFO, info, sizeof(info), NULL))
 	{
 		int	failed;
+		char	server_port[MAX_STRING_LEN];
 
-		printf("Response from \"%s:%hu\": \"%s\"\n", server, port, info);
+		printf("Response from \"%s\": \"%s\"\n", zbx_join_hostport(server_port, sizeof(server_port), server,
+				port), info);
 		fflush(stdout);
 
 		if (1 == sscanf(info, "processed: %*d; failed: %d", &failed) && 0 < failed)
@@ -561,13 +562,21 @@ static int	check_response(char *response, const char *server, unsigned short por
 	if (FAIL == ret && SUCCEED == zbx_parse_redirect_response(&jp, &rhost, &redirect_port, &redirect_revision,
 			&redirect_reset))
 	{
+		char	server_port[MAX_STRING_LEN];
+
 		if (0 == redirect_reset)
 		{
-			printf("Response from \"%s:%hu\": \"Redirect to \"%s:%hu\"\n", server, port, rhost,
-					redirect_port);
+			char	rhost_port[MAX_STRING_LEN];
+
+			printf("Response from \"%s\": \"Redirect to \"%s\"\n",
+					zbx_join_hostport(server_port, sizeof(server_port), server, port),
+					zbx_join_hostport(rhost_port, sizeof(rhost_port), rhost, redirect_port));
 		}
 		else
-			printf("Response from \"%s:%hu\": \"Redirect reset\n", server, port);
+		{
+			printf("Response from \"%s\": \"Redirect reset\n", zbx_join_hostport(server_port,
+					sizeof(server_port), server, port));
+		}
 
 		fflush(stdout);
 		zbx_free(rhost);
@@ -650,9 +659,11 @@ static	ZBX_THREAD_ENTRY(send_value, args)
 
 		if (FAIL == ret_resp)
 		{
-			zabbix_log(LOG_LEVEL_WARNING, "incorrect answer from \"%s:%hu\": [%s]",
-					sendval_args->addrs->values[0]->ip, sendval_args->addrs->values[0]->port,
-					data);
+			char	ip_port[MAX_STRING_LEN];
+
+			zabbix_log(LOG_LEVEL_WARNING, "incorrect answer from \"%s\": [%s]",
+					zbx_join_hostport(ip_port, sizeof(ip_port), sendval_args->addrs->values[0]->ip,
+					sendval_args->addrs->values[0]->port), data);
 
 			zbx_addrs_failover(sendval_args->addrs);
 		}
@@ -753,15 +764,11 @@ static int	perform_data_sending(zbx_thread_sendval_args *sendval_args, int old_s
  *                                                                            *
  * Purpose: add server or proxy to the list of destinations                   *
  *                                                                            *
- * Parameters:                                                                *
- *      host - [IN] IP or hostname                                            *
- *      port - [IN] port number                                               *
- *                                                                            *
  * Return value:  SUCCEED - destination added successfully                    *
  *                FAIL - destination has been already added                   *
  *                                                                            *
  ******************************************************************************/
-static int	sender_add_serveractive_host_cb(const zbx_vector_addr_ptr_t *addrs, zbx_vector_str_t *hostnames,
+static int	add_serveractive_host_sender_cb(const zbx_vector_addr_ptr_t *addrs, zbx_vector_str_t *hostnames,
 		void *data)
 {
 	ZBX_UNUSED(hostnames);
@@ -844,8 +851,6 @@ static void	zbx_load_config(const char *config_file_in)
 				ZBX_CONF_PARM_OPT,	0,			0},
 		{"TLSCipherPSK",		&cfg_tls_cipher_psk,			ZBX_CFG_TYPE_STRING,
 				ZBX_CONF_PARM_OPT,	0,			0},
-		{"ListenBacklog",		&CONFIG_TCP_MAX_BACKLOG_SIZE,		ZBX_CFG_TYPE_INT,
-				ZBX_CONF_PARM_OPT,	0,			INT_MAX},
 		{0}
 	};
 
@@ -878,7 +883,7 @@ static void	zbx_load_config(const char *config_file_in)
 
 			if (FAIL == zbx_set_data_destination_hosts(cfg_active_hosts,
 					(unsigned short)ZBX_DEFAULT_SERVER_PORT, "ServerActive",
-					sender_add_serveractive_host_cb, NULL, NULL, &error))
+					add_serveractive_host_sender_cb, NULL, NULL, &error))
 			{
 				zbx_error("%s", error);
 				exit(EXIT_FAILURE);
@@ -1083,7 +1088,7 @@ static void	parse_commandline(int argc, char **argv)
 			port = (unsigned short)ZBX_DEFAULT_SERVER_PORT;
 
 		if (FAIL == zbx_set_data_destination_hosts(ZABBIX_SERVER, port, "-z",
-				sender_add_serveractive_host_cb, NULL, NULL, &error))
+				add_serveractive_host_sender_cb, NULL, NULL, &error))
 		{
 			zbx_error("%s", error);
 			exit(EXIT_FAILURE);

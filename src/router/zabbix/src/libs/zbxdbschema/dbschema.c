@@ -115,6 +115,8 @@ static zbx_db_table_t	tables[] = {
 			{"vendor_version", "", NULL, NULL, 32, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
 			{"proxy_groupid", NULL, "proxy_group", "proxy_groupid", 0, ZBX_TYPE_ID, 0, 0},
 			{"monitored_by", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"wizard_ready", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"readme", "", NULL, NULL, ZBX_TYPE_TEXT_LEN, ZBX_TYPE_TEXT, ZBX_NOTNULL, 0},
 			{0}
 		},
 		NULL
@@ -392,6 +394,23 @@ static zbx_db_table_t	tables[] = {
 		},
 		"name"
 	},
+	{"media_type_oauth", "mediatypeid", 0,
+		{
+			{"mediatypeid", NULL, "media_type", "mediatypeid", 0, ZBX_TYPE_ID, ZBX_NOTNULL, ZBX_FK_CASCADE_DELETE},
+			{"redirection_url", "", NULL, NULL, 2048, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"client_id", "", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"client_secret", "", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"authorization_url", "", NULL, NULL, 2048, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"tokens_status", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"access_token", "", NULL, NULL, ZBX_TYPE_TEXT_LEN, ZBX_TYPE_TEXT, ZBX_NOTNULL, 0},
+			{"access_token_updated", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"access_expires_in", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"refresh_token", "", NULL, NULL, ZBX_TYPE_TEXT_LEN, ZBX_TYPE_TEXT, ZBX_NOTNULL, 0},
+			{"token_url", "", NULL, NULL, 2048, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{0}
+		},
+		NULL
+	},
 	{"media_type_param", "mediatype_paramid", 0,
 		{
 			{"mediatype_paramid", NULL, NULL, NULL, 0, ZBX_TYPE_ID, ZBX_NOTNULL, 0},
@@ -632,130 +651,6 @@ static zbx_db_table_t	tables[] = {
 		},
 		NULL
 	},
-	{"config", "configid", 0,
-		{
-			{"configid", NULL, NULL, NULL, 0, ZBX_TYPE_ID, ZBX_NOTNULL, 0},
-			{"work_period", "1-5,09:00-18:00", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
-			{"alert_usrgrpid", NULL, "usrgrp", "usrgrpid", 0, ZBX_TYPE_ID, 0, 0},
-			{"default_theme", "blue-theme", NULL, NULL, 128, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
-			{"authentication_type", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
-			{"discovery_groupid", NULL, "hstgrp", "groupid", 0, ZBX_TYPE_ID, 0, 0},
-			{"max_in_table", "50", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
-			{"search_limit", "1000", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
-			{"severity_color_0", "97AAB3", NULL, NULL, 6, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
-			{"severity_color_1", "7499FF", NULL, NULL, 6, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
-			{"severity_color_2", "FFC859", NULL, NULL, 6, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
-			{"severity_color_3", "FFA059", NULL, NULL, 6, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
-			{"severity_color_4", "E97659", NULL, NULL, 6, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
-			{"severity_color_5", "E45959", NULL, NULL, 6, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
-			{"severity_name_0", "Not classified", NULL, NULL, 32, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
-			{"severity_name_1", "Information", NULL, NULL, 32, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
-			{"severity_name_2", "Warning", NULL, NULL, 32, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
-			{"severity_name_3", "Average", NULL, NULL, 32, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
-			{"severity_name_4", "High", NULL, NULL, 32, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
-			{"severity_name_5", "Disaster", NULL, NULL, 32, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
-			{"ok_period", "5m", NULL, NULL, 32, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
-			{"blink_period", "2m", NULL, NULL, 32, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
-			{"problem_unack_color", "CC0000", NULL, NULL, 6, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
-			{"problem_ack_color", "CC0000", NULL, NULL, 6, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
-			{"ok_unack_color", "009900", NULL, NULL, 6, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
-			{"ok_ack_color", "009900", NULL, NULL, 6, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
-			{"problem_unack_style", "1", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
-			{"problem_ack_style", "1", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
-			{"ok_unack_style", "1", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
-			{"ok_ack_style", "1", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
-			{"snmptrap_logging", "1", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL | ZBX_PROXY, 0},
-			{"server_check_interval", "10", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
-			{"hk_events_mode", "1", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
-			{"hk_events_trigger", "365d", NULL, NULL, 32, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
-			{"hk_events_internal", "1d", NULL, NULL, 32, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
-			{"hk_events_discovery", "1d", NULL, NULL, 32, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
-			{"hk_events_autoreg", "1d", NULL, NULL, 32, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
-			{"hk_services_mode", "1", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
-			{"hk_services", "365d", NULL, NULL, 32, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
-			{"hk_audit_mode", "1", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
-			{"hk_audit", "31d", NULL, NULL, 32, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
-			{"hk_sessions_mode", "1", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
-			{"hk_sessions", "365d", NULL, NULL, 32, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
-			{"hk_history_mode", "1", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
-			{"hk_history_global", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL | ZBX_PROXY, 0},
-			{"hk_history", "31d", NULL, NULL, 32, ZBX_TYPE_CHAR, ZBX_NOTNULL | ZBX_PROXY, 0},
-			{"hk_trends_mode", "1", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
-			{"hk_trends_global", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
-			{"hk_trends", "365d", NULL, NULL, 32, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
-			{"default_inventory_mode", "-1", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
-			{"custom_color", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
-			{"http_auth_enabled", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
-			{"http_login_form", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
-			{"http_strip_domains", "", NULL, NULL, 2048, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
-			{"http_case_sensitive", "1", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
-			{"ldap_auth_enabled", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
-			{"ldap_case_sensitive", "1", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
-			{"db_extension", "", NULL, NULL, 32, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
-			{"autoreg_tls_accept", "1", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL | ZBX_PROXY, 0},
-			{"compression_status", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
-			{"compress_older", "7d", NULL, NULL, 32, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
-			{"instanceid", "", NULL, NULL, 32, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
-			{"saml_auth_enabled", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
-			{"saml_case_sensitive", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
-			{"default_lang", "en_US", NULL, NULL, 5, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
-			{"default_timezone", "system", NULL, NULL, 50, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
-			{"login_attempts", "5", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
-			{"login_block", "30s", NULL, NULL, 32, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
-			{"show_technical_errors", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
-			{"validate_uri_schemes", "1", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
-			{"uri_valid_schemes", "http,https,ftp,file,mailto,tel,ssh", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
-			{"x_frame_options", "SAMEORIGIN", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
-			{"iframe_sandboxing_enabled", "1", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
-			{"iframe_sandboxing_exceptions", "", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
-			{"max_overview_table_size", "50", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
-			{"history_period", "24h", NULL, NULL, 32, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
-			{"period_default", "1h", NULL, NULL, 32, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
-			{"max_period", "2y", NULL, NULL, 32, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
-			{"socket_timeout", "3s", NULL, NULL, 32, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
-			{"connect_timeout", "3s", NULL, NULL, 32, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
-			{"media_type_test_timeout", "65s", NULL, NULL, 32, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
-			{"script_timeout", "60s", NULL, NULL, 32, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
-			{"item_test_timeout", "60s", NULL, NULL, 32, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
-			{"session_key", "", NULL, NULL, 32, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
-			{"url", "", NULL, NULL, 2048, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
-			{"report_test_timeout", "60s", NULL, NULL, 32, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
-			{"dbversion_status", "", NULL, NULL, ZBX_TYPE_TEXT_LEN, ZBX_TYPE_TEXT, ZBX_NOTNULL, 0},
-			{"hk_events_service", "1d", NULL, NULL, 32, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
-			{"passwd_min_length", "8", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
-			{"passwd_check_rules", "8", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
-			{"auditlog_enabled", "1", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
-			{"ha_failover_delay", "1m", NULL, NULL, 32, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
-			{"geomaps_tile_provider", "", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
-			{"geomaps_tile_url", "", NULL, NULL, 2048, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
-			{"geomaps_max_zoom", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
-			{"geomaps_attribution", "", NULL, NULL, 1024, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
-			{"vault_provider", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
-			{"ldap_userdirectoryid", "NULL ", "userdirectory", "userdirectoryid", 0, ZBX_TYPE_ID, 0, 0},
-			{"server_status", "", NULL, NULL, ZBX_TYPE_TEXT_LEN, ZBX_TYPE_TEXT, ZBX_NOTNULL, 0},
-			{"jit_provision_interval", "1h", NULL, NULL, 32, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
-			{"saml_jit_status", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
-			{"ldap_jit_status", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
-			{"disabled_usrgrpid", "NULL", "usrgrp", "usrgrpid", 0, ZBX_TYPE_ID, 0, 0},
-			{"timeout_zabbix_agent", "3s", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL | ZBX_PROXY, 0},
-			{"timeout_simple_check", "3s", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL | ZBX_PROXY, 0},
-			{"timeout_snmp_agent", "3s", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL | ZBX_PROXY, 0},
-			{"timeout_external_check", "3s", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL | ZBX_PROXY, 0},
-			{"timeout_db_monitor", "3s", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL | ZBX_PROXY, 0},
-			{"timeout_http_agent", "3s", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL | ZBX_PROXY, 0},
-			{"timeout_ssh_agent", "3s", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL | ZBX_PROXY, 0},
-			{"timeout_telnet_agent", "3s", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL | ZBX_PROXY, 0},
-			{"timeout_script", "3s", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL | ZBX_PROXY, 0},
-			{"auditlog_mode", "1", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
-			{"mfa_status", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
-			{"mfaid", NULL, "mfa", "mfaid", 0, ZBX_TYPE_ID, 0, 0},
-			{"software_update_checkid", "", NULL, NULL, 32, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
-			{"software_update_check_data", "", NULL, NULL, ZBX_TYPE_TEXT_LEN, ZBX_TYPE_TEXT, ZBX_NOTNULL, 0},
-			{"timeout_browser", "60s", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL | ZBX_PROXY, 0},
-			{0}
-		},
-		NULL
-	},
 	{"triggers", "triggerid", 0,
 		{
 			{"triggerid", NULL, NULL, NULL, 0, ZBX_TYPE_ID, ZBX_NOTNULL, 0},
@@ -890,6 +785,21 @@ static zbx_db_table_t	tables[] = {
 			{0}
 		},
 		"hostid,macro"
+	},
+	{"hostmacro_config", "hostmacroid", 0,
+		{
+			{"hostmacroid", NULL, "hostmacro", "hostmacroid", 0, ZBX_TYPE_ID, ZBX_NOTNULL, ZBX_FK_CASCADE_DELETE},
+			{"type", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"priority", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"section_name", "", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"label", "", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"description", "", NULL, NULL, ZBX_TYPE_TEXT_LEN, ZBX_TYPE_TEXT, ZBX_NOTNULL, 0},
+			{"required", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"regex", "", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"options", "", NULL, NULL, ZBX_TYPE_TEXT_LEN, ZBX_TYPE_TEXT, ZBX_NOTNULL, 0},
+			{0}
+		},
+		NULL
 	},
 	{"hosts_groups", "hostgroupid", 0,
 		{
@@ -1035,6 +945,9 @@ static zbx_db_table_t	tables[] = {
 			{"userid", NULL, "users", "userid", 0, ZBX_TYPE_ID, ZBX_NOTNULL, 0},
 			{"private", "1", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
 			{"show_suppressed", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"background_scale", "1", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"show_element_label", "1", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"show_link_label", "1", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
 			{0}
 		},
 		"name"
@@ -1060,6 +973,8 @@ static zbx_db_table_t	tables[] = {
 			{"viewtype", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
 			{"use_iconmap", "1", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
 			{"evaltype", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"show_label", "-1", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"zindex", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
 			{0}
 		},
 		NULL
@@ -1073,6 +988,9 @@ static zbx_db_table_t	tables[] = {
 			{"drawtype", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
 			{"color", "000000", NULL, NULL, 6, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
 			{"label", "", NULL, NULL, 2048, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"show_label", "-1", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"indicator_type", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"itemid", NULL, "items", "itemid", 0, ZBX_TYPE_ID, 0, 0},
 			{0}
 		},
 		NULL
@@ -1087,6 +1005,20 @@ static zbx_db_table_t	tables[] = {
 			{0}
 		},
 		"linkid,triggerid"
+	},
+	{"sysmap_link_threshold", "linkthresholdid", 0,
+		{
+			{"linkthresholdid", NULL, NULL, NULL, 0, ZBX_TYPE_ID, ZBX_NOTNULL, 0},
+			{"linkid", NULL, "sysmaps_links", "linkid", 0, ZBX_TYPE_ID, ZBX_NOTNULL, ZBX_FK_CASCADE_DELETE},
+			{"drawtype", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"color", "000000", NULL, NULL, 6, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"type", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"threshold", "", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"pattern", "", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"sortorder", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{0}
+		},
+		NULL
 	},
 	{"sysmap_element_url", "sysmapelementurlid", 0,
 		{
@@ -1612,13 +1544,14 @@ static zbx_db_table_t	tables[] = {
 		{
 			{"itemdiscoveryid", NULL, NULL, NULL, 0, ZBX_TYPE_ID, ZBX_NOTNULL, 0},
 			{"itemid", NULL, "items", "itemid", 0, ZBX_TYPE_ID, ZBX_NOTNULL, ZBX_FK_CASCADE_DELETE},
-			{"parent_itemid", NULL, "items", "itemid", 0, ZBX_TYPE_ID, ZBX_NOTNULL, ZBX_FK_CASCADE_DELETE},
+			{"parent_itemid", NULL, "items", "itemid", 0, ZBX_TYPE_ID, 0, ZBX_FK_CASCADE_DELETE},
 			{"key_", "", NULL, NULL, 2048, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
 			{"lastcheck", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
 			{"ts_delete", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
 			{"status", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
 			{"disable_source", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
 			{"ts_disable", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
+			{"lldruleid", NULL, "items", "itemid", 0, ZBX_TYPE_ID, 0 , 0},
 			{0}
 		},
 		"itemid,parent_itemid"
@@ -1627,7 +1560,7 @@ static zbx_db_table_t	tables[] = {
 		{
 			{"hostid", NULL, "hosts", "hostid", 0, ZBX_TYPE_ID, ZBX_NOTNULL, ZBX_FK_CASCADE_DELETE},
 			{"parent_hostid", NULL, "hosts", "hostid", 0, ZBX_TYPE_ID, 0, 0},
-			{"parent_itemid", NULL, "items", "itemid", 0, ZBX_TYPE_ID, 0, 0},
+			{"lldruleid", NULL, "items", "itemid", 0, ZBX_TYPE_ID, 0, 0},
 			{"host", "", NULL, NULL, 128, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
 			{"lastcheck", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
 			{"ts_delete", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
@@ -2798,6 +2731,30 @@ static zbx_db_table_t	tables[] = {
 		},
 		NULL
 	},
+	{"settings", "name", 0,
+		{
+			{"name", NULL, NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"type", NULL, NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"value_str", "", NULL, NULL, ZBX_TYPE_TEXT_LEN, ZBX_TYPE_TEXT, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"value_int", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL | ZBX_PROXY, 0},
+			{"value_usrgrpid", NULL, "usrgrp", "usrgrpid", 0, ZBX_TYPE_ID, 0, 0},
+			{"value_hostgroupid", NULL, "hstgrp", "groupid", 0, ZBX_TYPE_ID, 0, 0},
+			{"value_userdirectoryid", NULL, "userdirectory", "userdirectoryid", 0, ZBX_TYPE_ID, 0, 0},
+			{"value_mfaid", NULL, "mfa", "mfaid", 0, ZBX_TYPE_ID, 0, 0},
+			{0}
+		},
+		NULL
+	},
+	{"lld_macro_export", "lld_macro_exportid", 0,
+		{
+			{"lld_macro_exportid", NULL, NULL, NULL, 0, ZBX_TYPE_ID, ZBX_NOTNULL, 0},
+			{"itemid", NULL, "items", "itemid", 0, ZBX_TYPE_ID, ZBX_NOTNULL, ZBX_FK_CASCADE_DELETE},
+			{"lld_macro", "", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0},
+			{"value", "", NULL, NULL, ZBX_TYPE_TEXT_LEN, ZBX_TYPE_TEXT, ZBX_NOTNULL, 0},
+			{0}
+		},
+		NULL
+	},
 	{"dbversion", "dbversionid", 0,
 		{
 			{"dbversionid", NULL, NULL, NULL, 0, ZBX_TYPE_ID, ZBX_NOTNULL, 0},
@@ -2814,27 +2771,27 @@ static zbx_db_table_t	tables[] = {
 
 static const zbx_db_table_changelog_t	changelog_tables[] =
 {
-	{"trigger_tag", 6},
-	{"httpstep_field", 15},
-	{"httpstep", 14},
-	{"connector_tag", 18},
-	{"httpstepitem", 16},
 	{"item_tag", 4},
 	{"connector", 17},
+	{"httpstepitem", 16},
+	{"connector_tag", 18},
+	{"triggers", 5},
+	{"items", 3},
 	{"item_preproc", 8},
+	{"httpstep_field", 15},
+	{"httptest", 11},
 	{"proxy", 19},
 	{"httptestitem", 13},
-	{"host_proxy", 21},
-	{"proxy_group", 20},
 	{"functions", 7},
-	{"hosts", 1},
-	{"triggers", 5},
-	{"httptest_field", 12},
-	{"drules", 9},
+	{"httpstep", 14},
 	{"dchecks", 10},
-	{"httptest", 11},
 	{"host_tag", 2},
-	{"items", 3},
+	{"httptest_field", 12},
+	{"proxy_group", 20},
+	{"trigger_tag", 6},
+	{"drules", 9},
+	{"hosts", 1},
+	{"host_proxy", 21},
 	{0}
 };
 #if defined(HAVE_SQLITE3)
@@ -2927,6 +2884,8 @@ vendor_name varchar(64) DEFAULT '' NOT NULL,\n\
 vendor_version varchar(32) DEFAULT '' NOT NULL,\n\
 proxy_groupid bigint  NULL REFERENCES proxy_group (proxy_groupid),\n\
 monitored_by integer DEFAULT '0' NOT NULL,\n\
+wizard_ready integer DEFAULT '0' NOT NULL,\n\
+readme text DEFAULT '' NOT NULL,\n\
 PRIMARY KEY (hostid)\n\
 );\n\
 CREATE INDEX hosts_1 ON hosts (host);\n\
@@ -3201,6 +3160,20 @@ provider integer DEFAULT '0' NOT NULL,\n\
 PRIMARY KEY (mediatypeid)\n\
 );\n\
 CREATE UNIQUE INDEX media_type_1 ON media_type (name);\n\
+CREATE TABLE media_type_oauth (\n\
+mediatypeid bigint  NOT NULL REFERENCES media_type (mediatypeid) ON DELETE CASCADE,\n\
+redirection_url varchar(2048) DEFAULT '' NOT NULL,\n\
+client_id varchar(255) DEFAULT '' NOT NULL,\n\
+client_secret varchar(255) DEFAULT '' NOT NULL,\n\
+authorization_url varchar(2048) DEFAULT '' NOT NULL,\n\
+tokens_status integer DEFAULT '0' NOT NULL,\n\
+access_token text DEFAULT '' NOT NULL,\n\
+access_token_updated integer DEFAULT '0' NOT NULL,\n\
+access_expires_in integer DEFAULT '0' NOT NULL,\n\
+refresh_token text DEFAULT '' NOT NULL,\n\
+token_url varchar(2048) DEFAULT '' NOT NULL,\n\
+PRIMARY KEY (mediatypeid)\n\
+);\n\
 CREATE TABLE media_type_param (\n\
 mediatype_paramid bigint  NOT NULL,\n\
 mediatypeid bigint  NOT NULL REFERENCES media_type (mediatypeid) ON DELETE CASCADE,\n\
@@ -3411,132 +3384,6 @@ value2 varchar(255) DEFAULT '' NOT NULL,\n\
 PRIMARY KEY (conditionid)\n\
 );\n\
 CREATE INDEX conditions_1 ON conditions (actionid);\n\
-CREATE TABLE config (\n\
-configid bigint  NOT NULL,\n\
-work_period varchar(255) DEFAULT '1-5,09:00-18:00' NOT NULL,\n\
-alert_usrgrpid bigint  NULL REFERENCES usrgrp (usrgrpid),\n\
-default_theme varchar(128) DEFAULT 'blue-theme' NOT NULL,\n\
-authentication_type integer DEFAULT '0' NOT NULL,\n\
-discovery_groupid bigint  NULL REFERENCES hstgrp (groupid),\n\
-max_in_table integer DEFAULT '50' NOT NULL,\n\
-search_limit integer DEFAULT '1000' NOT NULL,\n\
-severity_color_0 varchar(6) DEFAULT '97AAB3' NOT NULL,\n\
-severity_color_1 varchar(6) DEFAULT '7499FF' NOT NULL,\n\
-severity_color_2 varchar(6) DEFAULT 'FFC859' NOT NULL,\n\
-severity_color_3 varchar(6) DEFAULT 'FFA059' NOT NULL,\n\
-severity_color_4 varchar(6) DEFAULT 'E97659' NOT NULL,\n\
-severity_color_5 varchar(6) DEFAULT 'E45959' NOT NULL,\n\
-severity_name_0 varchar(32) DEFAULT 'Not classified' NOT NULL,\n\
-severity_name_1 varchar(32) DEFAULT 'Information' NOT NULL,\n\
-severity_name_2 varchar(32) DEFAULT 'Warning' NOT NULL,\n\
-severity_name_3 varchar(32) DEFAULT 'Average' NOT NULL,\n\
-severity_name_4 varchar(32) DEFAULT 'High' NOT NULL,\n\
-severity_name_5 varchar(32) DEFAULT 'Disaster' NOT NULL,\n\
-ok_period varchar(32) DEFAULT '5m' NOT NULL,\n\
-blink_period varchar(32) DEFAULT '2m' NOT NULL,\n\
-problem_unack_color varchar(6) DEFAULT 'CC0000' NOT NULL,\n\
-problem_ack_color varchar(6) DEFAULT 'CC0000' NOT NULL,\n\
-ok_unack_color varchar(6) DEFAULT '009900' NOT NULL,\n\
-ok_ack_color varchar(6) DEFAULT '009900' NOT NULL,\n\
-problem_unack_style integer DEFAULT '1' NOT NULL,\n\
-problem_ack_style integer DEFAULT '1' NOT NULL,\n\
-ok_unack_style integer DEFAULT '1' NOT NULL,\n\
-ok_ack_style integer DEFAULT '1' NOT NULL,\n\
-snmptrap_logging integer DEFAULT '1' NOT NULL,\n\
-server_check_interval integer DEFAULT '10' NOT NULL,\n\
-hk_events_mode integer DEFAULT '1' NOT NULL,\n\
-hk_events_trigger varchar(32) DEFAULT '365d' NOT NULL,\n\
-hk_events_internal varchar(32) DEFAULT '1d' NOT NULL,\n\
-hk_events_discovery varchar(32) DEFAULT '1d' NOT NULL,\n\
-hk_events_autoreg varchar(32) DEFAULT '1d' NOT NULL,\n\
-hk_services_mode integer DEFAULT '1' NOT NULL,\n\
-hk_services varchar(32) DEFAULT '365d' NOT NULL,\n\
-hk_audit_mode integer DEFAULT '1' NOT NULL,\n\
-hk_audit varchar(32) DEFAULT '31d' NOT NULL,\n\
-hk_sessions_mode integer DEFAULT '1' NOT NULL,\n\
-hk_sessions varchar(32) DEFAULT '365d' NOT NULL,\n\
-hk_history_mode integer DEFAULT '1' NOT NULL,\n\
-hk_history_global integer DEFAULT '0' NOT NULL,\n\
-hk_history varchar(32) DEFAULT '31d' NOT NULL,\n\
-hk_trends_mode integer DEFAULT '1' NOT NULL,\n\
-hk_trends_global integer DEFAULT '0' NOT NULL,\n\
-hk_trends varchar(32) DEFAULT '365d' NOT NULL,\n\
-default_inventory_mode integer DEFAULT '-1' NOT NULL,\n\
-custom_color integer DEFAULT '0' NOT NULL,\n\
-http_auth_enabled integer DEFAULT '0' NOT NULL,\n\
-http_login_form integer DEFAULT '0' NOT NULL,\n\
-http_strip_domains varchar(2048) DEFAULT '' NOT NULL,\n\
-http_case_sensitive integer DEFAULT '1' NOT NULL,\n\
-ldap_auth_enabled integer DEFAULT '0' NOT NULL,\n\
-ldap_case_sensitive integer DEFAULT '1' NOT NULL,\n\
-db_extension varchar(32) DEFAULT '' NOT NULL,\n\
-autoreg_tls_accept integer DEFAULT '1' NOT NULL,\n\
-compression_status integer DEFAULT '0' NOT NULL,\n\
-compress_older varchar(32) DEFAULT '7d' NOT NULL,\n\
-instanceid varchar(32) DEFAULT '' NOT NULL,\n\
-saml_auth_enabled integer DEFAULT '0' NOT NULL,\n\
-saml_case_sensitive integer DEFAULT '0' NOT NULL,\n\
-default_lang varchar(5) DEFAULT 'en_US' NOT NULL,\n\
-default_timezone varchar(50) DEFAULT 'system' NOT NULL,\n\
-login_attempts integer DEFAULT '5' NOT NULL,\n\
-login_block varchar(32) DEFAULT '30s' NOT NULL,\n\
-show_technical_errors integer DEFAULT '0' NOT NULL,\n\
-validate_uri_schemes integer DEFAULT '1' NOT NULL,\n\
-uri_valid_schemes varchar(255) DEFAULT 'http,https,ftp,file,mailto,tel,ssh' NOT NULL,\n\
-x_frame_options varchar(255) DEFAULT 'SAMEORIGIN' NOT NULL,\n\
-iframe_sandboxing_enabled integer DEFAULT '1' NOT NULL,\n\
-iframe_sandboxing_exceptions varchar(255) DEFAULT '' NOT NULL,\n\
-max_overview_table_size integer DEFAULT '50' NOT NULL,\n\
-history_period varchar(32) DEFAULT '24h' NOT NULL,\n\
-period_default varchar(32) DEFAULT '1h' NOT NULL,\n\
-max_period varchar(32) DEFAULT '2y' NOT NULL,\n\
-socket_timeout varchar(32) DEFAULT '3s' NOT NULL,\n\
-connect_timeout varchar(32) DEFAULT '3s' NOT NULL,\n\
-media_type_test_timeout varchar(32) DEFAULT '65s' NOT NULL,\n\
-script_timeout varchar(32) DEFAULT '60s' NOT NULL,\n\
-item_test_timeout varchar(32) DEFAULT '60s' NOT NULL,\n\
-session_key varchar(32) DEFAULT '' NOT NULL,\n\
-url varchar(2048) DEFAULT '' NOT NULL,\n\
-report_test_timeout varchar(32) DEFAULT '60s' NOT NULL,\n\
-dbversion_status text DEFAULT '' NOT NULL,\n\
-hk_events_service varchar(32) DEFAULT '1d' NOT NULL,\n\
-passwd_min_length integer DEFAULT '8' NOT NULL,\n\
-passwd_check_rules integer DEFAULT '8' NOT NULL,\n\
-auditlog_enabled integer DEFAULT '1' NOT NULL,\n\
-ha_failover_delay varchar(32) DEFAULT '1m' NOT NULL,\n\
-geomaps_tile_provider varchar(255) DEFAULT '' NOT NULL,\n\
-geomaps_tile_url varchar(2048) DEFAULT '' NOT NULL,\n\
-geomaps_max_zoom integer DEFAULT '0' NOT NULL,\n\
-geomaps_attribution varchar(1024) DEFAULT '' NOT NULL,\n\
-vault_provider integer DEFAULT '0' NOT NULL,\n\
-ldap_userdirectoryid bigint DEFAULT NULL  NULL REFERENCES userdirectory (userdirectoryid),\n\
-server_status text DEFAULT '' NOT NULL,\n\
-jit_provision_interval varchar(32) DEFAULT '1h' NOT NULL,\n\
-saml_jit_status integer DEFAULT '0' NOT NULL,\n\
-ldap_jit_status integer DEFAULT '0' NOT NULL,\n\
-disabled_usrgrpid bigint DEFAULT NULL NULL REFERENCES usrgrp (usrgrpid),\n\
-timeout_zabbix_agent varchar(255) DEFAULT '3s' NOT NULL,\n\
-timeout_simple_check varchar(255) DEFAULT '3s' NOT NULL,\n\
-timeout_snmp_agent varchar(255) DEFAULT '3s' NOT NULL,\n\
-timeout_external_check varchar(255) DEFAULT '3s' NOT NULL,\n\
-timeout_db_monitor varchar(255) DEFAULT '3s' NOT NULL,\n\
-timeout_http_agent varchar(255) DEFAULT '3s' NOT NULL,\n\
-timeout_ssh_agent varchar(255) DEFAULT '3s' NOT NULL,\n\
-timeout_telnet_agent varchar(255) DEFAULT '3s' NOT NULL,\n\
-timeout_script varchar(255) DEFAULT '3s' NOT NULL,\n\
-auditlog_mode integer DEFAULT '1' NOT NULL,\n\
-mfa_status integer DEFAULT '0' NOT NULL,\n\
-mfaid bigint  NULL REFERENCES mfa (mfaid),\n\
-software_update_checkid varchar(32) DEFAULT '' NOT NULL,\n\
-software_update_check_data text DEFAULT '' NOT NULL,\n\
-timeout_browser varchar(255) DEFAULT '60s' NOT NULL,\n\
-PRIMARY KEY (configid)\n\
-);\n\
-CREATE INDEX config_1 ON config (alert_usrgrpid);\n\
-CREATE INDEX config_2 ON config (discovery_groupid);\n\
-CREATE INDEX config_3 ON config (ldap_userdirectoryid);\n\
-CREATE INDEX config_4 ON config (disabled_usrgrpid);\n\
-CREATE INDEX config_5 ON config (mfaid);\n\
 CREATE TABLE triggers (\n\
 triggerid bigint  NOT NULL,\n\
 expression varchar(2048) DEFAULT '' NOT NULL,\n\
@@ -3666,6 +3513,18 @@ automatic integer DEFAULT '0' NOT NULL,\n\
 PRIMARY KEY (hostmacroid)\n\
 );\n\
 CREATE UNIQUE INDEX hostmacro_1 ON hostmacro (hostid,macro);\n\
+CREATE TABLE hostmacro_config (\n\
+hostmacroid bigint  NOT NULL REFERENCES hostmacro (hostmacroid) ON DELETE CASCADE,\n\
+type integer DEFAULT '0' NOT NULL,\n\
+priority integer DEFAULT '0' NOT NULL,\n\
+section_name varchar(255) DEFAULT '' NOT NULL,\n\
+label varchar(255) DEFAULT '' NOT NULL,\n\
+description text DEFAULT '' NOT NULL,\n\
+required integer DEFAULT '0' NOT NULL,\n\
+regex varchar(255) DEFAULT '' NOT NULL,\n\
+options text DEFAULT '' NOT NULL,\n\
+PRIMARY KEY (hostmacroid)\n\
+);\n\
 CREATE TABLE hosts_groups (\n\
 hostgroupid bigint  NOT NULL,\n\
 hostid bigint  NOT NULL REFERENCES hosts (hostid) ON DELETE CASCADE,\n\
@@ -3797,6 +3656,9 @@ severity_min integer DEFAULT '0' NOT NULL,\n\
 userid bigint  NOT NULL REFERENCES users (userid),\n\
 private integer DEFAULT '1' NOT NULL,\n\
 show_suppressed integer DEFAULT '0' NOT NULL,\n\
+background_scale integer DEFAULT '1' NOT NULL,\n\
+show_element_label integer DEFAULT '1' NOT NULL,\n\
+show_link_label integer DEFAULT '1' NOT NULL,\n\
 PRIMARY KEY (sysmapid)\n\
 );\n\
 CREATE UNIQUE INDEX sysmaps_1 ON sysmaps (name);\n\
@@ -3823,6 +3685,8 @@ height integer DEFAULT '200' NOT NULL,\n\
 viewtype integer DEFAULT '0' NOT NULL,\n\
 use_iconmap integer DEFAULT '1' NOT NULL,\n\
 evaltype integer DEFAULT '0' NOT NULL,\n\
+show_label integer DEFAULT '-1' NOT NULL,\n\
+zindex integer DEFAULT '0' NOT NULL,\n\
 PRIMARY KEY (selementid)\n\
 );\n\
 CREATE INDEX sysmaps_elements_1 ON sysmaps_elements (sysmapid);\n\
@@ -3838,11 +3702,15 @@ selementid2 bigint  NOT NULL REFERENCES sysmaps_elements (selementid) ON DELETE 
 drawtype integer DEFAULT '0' NOT NULL,\n\
 color varchar(6) DEFAULT '000000' NOT NULL,\n\
 label varchar(2048) DEFAULT '' NOT NULL,\n\
+show_label integer DEFAULT '-1' NOT NULL,\n\
+indicator_type integer DEFAULT '0' NOT NULL,\n\
+itemid bigint  NULL REFERENCES items (itemid),\n\
 PRIMARY KEY (linkid)\n\
 );\n\
 CREATE INDEX sysmaps_links_1 ON sysmaps_links (sysmapid);\n\
 CREATE INDEX sysmaps_links_2 ON sysmaps_links (selementid1);\n\
 CREATE INDEX sysmaps_links_3 ON sysmaps_links (selementid2);\n\
+CREATE INDEX sysmaps_links_4 ON sysmaps_links (itemid);\n\
 CREATE TABLE sysmaps_link_triggers (\n\
 linktriggerid bigint  NOT NULL,\n\
 linkid bigint  NOT NULL REFERENCES sysmaps_links (linkid) ON DELETE CASCADE,\n\
@@ -3853,6 +3721,18 @@ PRIMARY KEY (linktriggerid)\n\
 );\n\
 CREATE UNIQUE INDEX sysmaps_link_triggers_1 ON sysmaps_link_triggers (linkid,triggerid);\n\
 CREATE INDEX sysmaps_link_triggers_2 ON sysmaps_link_triggers (triggerid);\n\
+CREATE TABLE sysmap_link_threshold (\n\
+linkthresholdid bigint  NOT NULL,\n\
+linkid bigint  NOT NULL REFERENCES sysmaps_links (linkid) ON DELETE CASCADE,\n\
+drawtype integer DEFAULT '0' NOT NULL,\n\
+color varchar(6) DEFAULT '000000' NOT NULL,\n\
+type integer DEFAULT '0' NOT NULL,\n\
+threshold varchar(255) DEFAULT '' NOT NULL,\n\
+pattern varchar(255) DEFAULT '' NOT NULL,\n\
+sortorder integer DEFAULT '0' NOT NULL,\n\
+PRIMARY KEY (linkthresholdid)\n\
+);\n\
+CREATE INDEX sysmap_link_threshold_1 ON sysmap_link_threshold (linkid);\n\
 CREATE TABLE sysmap_element_url (\n\
 sysmapelementurlid bigint  NOT NULL,\n\
 selementid bigint  NOT NULL REFERENCES sysmaps_elements (selementid) ON DELETE CASCADE,\n\
@@ -4314,21 +4194,23 @@ CREATE UNIQUE INDEX images_1 ON images (name);\n\
 CREATE TABLE item_discovery (\n\
 itemdiscoveryid bigint  NOT NULL,\n\
 itemid bigint  NOT NULL REFERENCES items (itemid) ON DELETE CASCADE,\n\
-parent_itemid bigint  NOT NULL REFERENCES items (itemid) ON DELETE CASCADE,\n\
+parent_itemid bigint  NULL REFERENCES items (itemid) ON DELETE CASCADE,\n\
 key_ varchar(2048) DEFAULT '' NOT NULL,\n\
 lastcheck integer DEFAULT '0' NOT NULL,\n\
 ts_delete integer DEFAULT '0' NOT NULL,\n\
 status integer DEFAULT '0' NOT NULL,\n\
 disable_source integer DEFAULT '0' NOT NULL,\n\
 ts_disable integer DEFAULT '0' NOT NULL,\n\
+lldruleid bigint  NULL REFERENCES items (itemid),\n\
 PRIMARY KEY (itemdiscoveryid)\n\
 );\n\
 CREATE UNIQUE INDEX item_discovery_1 ON item_discovery (itemid,parent_itemid);\n\
 CREATE INDEX item_discovery_2 ON item_discovery (parent_itemid);\n\
+CREATE INDEX item_discovery_3 ON item_discovery (lldruleid);\n\
 CREATE TABLE host_discovery (\n\
 hostid bigint  NOT NULL REFERENCES hosts (hostid) ON DELETE CASCADE,\n\
 parent_hostid bigint  NULL REFERENCES hosts (hostid),\n\
-parent_itemid bigint  NULL REFERENCES items (itemid),\n\
+lldruleid bigint  NULL REFERENCES items (itemid),\n\
 host varchar(128) DEFAULT '' NOT NULL,\n\
 lastcheck integer DEFAULT '0' NOT NULL,\n\
 ts_delete integer DEFAULT '0' NOT NULL,\n\
@@ -4338,7 +4220,7 @@ ts_disable integer DEFAULT '0' NOT NULL,\n\
 PRIMARY KEY (hostid)\n\
 );\n\
 CREATE INDEX host_discovery_1 ON host_discovery (parent_hostid);\n\
-CREATE INDEX host_discovery_2 ON host_discovery (parent_itemid);\n\
+CREATE INDEX host_discovery_2 ON host_discovery (lldruleid);\n\
 CREATE TABLE interface_discovery (\n\
 interfaceid bigint  NOT NULL REFERENCES interface (interfaceid) ON DELETE CASCADE,\n\
 parent_interfaceid bigint  NOT NULL REFERENCES interface (interfaceid) ON DELETE CASCADE,\n\
@@ -5322,13 +5204,36 @@ PRIMARY KEY (mfa_totp_secretid)\n\
 );\n\
 CREATE INDEX mfa_totp_secret_1 ON mfa_totp_secret (mfaid);\n\
 CREATE INDEX mfa_totp_secret_2 ON mfa_totp_secret (userid);\n\
+CREATE TABLE settings (\n\
+name varchar(255)  NOT NULL,\n\
+type integer  NOT NULL,\n\
+value_str text DEFAULT '' NOT NULL,\n\
+value_int integer DEFAULT '0' NOT NULL,\n\
+value_usrgrpid bigint  NULL REFERENCES usrgrp (usrgrpid),\n\
+value_hostgroupid bigint  NULL REFERENCES hstgrp (groupid),\n\
+value_userdirectoryid bigint  NULL REFERENCES userdirectory (userdirectoryid),\n\
+value_mfaid bigint  NULL REFERENCES mfa (mfaid),\n\
+PRIMARY KEY (name)\n\
+);\n\
+CREATE INDEX settings_2 ON settings (value_usrgrpid);\n\
+CREATE INDEX settings_3 ON settings (value_hostgroupid);\n\
+CREATE INDEX settings_4 ON settings (value_userdirectoryid);\n\
+CREATE INDEX settings_5 ON settings (value_mfaid);\n\
+CREATE TABLE lld_macro_export (\n\
+lld_macro_exportid bigint  NOT NULL,\n\
+itemid bigint  NOT NULL REFERENCES items (itemid) ON DELETE CASCADE,\n\
+lld_macro varchar(255) DEFAULT '' NOT NULL,\n\
+value text DEFAULT '' NOT NULL,\n\
+PRIMARY KEY (lld_macro_exportid)\n\
+);\n\
+CREATE INDEX lld_macro_export_1 ON lld_macro_export (itemid);\n\
 CREATE TABLE dbversion (\n\
 dbversionid bigint  NOT NULL,\n\
 mandatory integer DEFAULT '0' NOT NULL,\n\
 optional integer DEFAULT '0' NOT NULL,\n\
 PRIMARY KEY (dbversionid)\n\
 );\n\
-INSERT INTO dbversion VALUES ('1','7020000','7020004');\n\
+INSERT INTO dbversion VALUES ('1','7040000','7040008');\n\
 create trigger hosts_insert after insert on hosts\n\
 for each row\n\
 begin\n\

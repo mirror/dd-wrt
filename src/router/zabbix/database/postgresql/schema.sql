@@ -86,6 +86,8 @@ CREATE TABLE hosts (
 	vendor_version           varchar(32)     DEFAULT ''                NOT NULL,
 	proxy_groupid            bigint                                    NULL,
 	monitored_by             integer         DEFAULT '0'               NOT NULL,
+	wizard_ready             integer         DEFAULT '0'               NOT NULL,
+	readme                   text            DEFAULT ''                NOT NULL,
 	PRIMARY KEY (hostid)
 );
 CREATE INDEX hosts_1 ON hosts (host);
@@ -360,6 +362,20 @@ CREATE TABLE media_type (
 	PRIMARY KEY (mediatypeid)
 );
 CREATE UNIQUE INDEX media_type_1 ON media_type (name);
+CREATE TABLE media_type_oauth (
+	mediatypeid              bigint                                    NOT NULL,
+	redirection_url          varchar(2048)   DEFAULT ''                NOT NULL,
+	client_id                varchar(255)    DEFAULT ''                NOT NULL,
+	client_secret            varchar(255)    DEFAULT ''                NOT NULL,
+	authorization_url        varchar(2048)   DEFAULT ''                NOT NULL,
+	tokens_status            integer         DEFAULT '0'               NOT NULL,
+	access_token             text            DEFAULT ''                NOT NULL,
+	access_token_updated     integer         DEFAULT '0'               NOT NULL,
+	access_expires_in        integer         DEFAULT '0'               NOT NULL,
+	refresh_token            text            DEFAULT ''                NOT NULL,
+	token_url                varchar(2048)   DEFAULT ''                NOT NULL,
+	PRIMARY KEY (mediatypeid)
+);
 CREATE TABLE media_type_param (
 	mediatype_paramid        bigint                                    NOT NULL,
 	mediatypeid              bigint                                    NOT NULL,
@@ -570,132 +586,6 @@ CREATE TABLE conditions (
 	PRIMARY KEY (conditionid)
 );
 CREATE INDEX conditions_1 ON conditions (actionid);
-CREATE TABLE config (
-	configid                 bigint                                    NOT NULL,
-	work_period              varchar(255)    DEFAULT '1-5,09:00-18:00' NOT NULL,
-	alert_usrgrpid           bigint                                    NULL,
-	default_theme            varchar(128)    DEFAULT 'blue-theme'      NOT NULL,
-	authentication_type      integer         DEFAULT '0'               NOT NULL,
-	discovery_groupid        bigint                                    NULL,
-	max_in_table             integer         DEFAULT '50'              NOT NULL,
-	search_limit             integer         DEFAULT '1000'            NOT NULL,
-	severity_color_0         varchar(6)      DEFAULT '97AAB3'          NOT NULL,
-	severity_color_1         varchar(6)      DEFAULT '7499FF'          NOT NULL,
-	severity_color_2         varchar(6)      DEFAULT 'FFC859'          NOT NULL,
-	severity_color_3         varchar(6)      DEFAULT 'FFA059'          NOT NULL,
-	severity_color_4         varchar(6)      DEFAULT 'E97659'          NOT NULL,
-	severity_color_5         varchar(6)      DEFAULT 'E45959'          NOT NULL,
-	severity_name_0          varchar(32)     DEFAULT 'Not classified'  NOT NULL,
-	severity_name_1          varchar(32)     DEFAULT 'Information'     NOT NULL,
-	severity_name_2          varchar(32)     DEFAULT 'Warning'         NOT NULL,
-	severity_name_3          varchar(32)     DEFAULT 'Average'         NOT NULL,
-	severity_name_4          varchar(32)     DEFAULT 'High'            NOT NULL,
-	severity_name_5          varchar(32)     DEFAULT 'Disaster'        NOT NULL,
-	ok_period                varchar(32)     DEFAULT '5m'              NOT NULL,
-	blink_period             varchar(32)     DEFAULT '2m'              NOT NULL,
-	problem_unack_color      varchar(6)      DEFAULT 'CC0000'          NOT NULL,
-	problem_ack_color        varchar(6)      DEFAULT 'CC0000'          NOT NULL,
-	ok_unack_color           varchar(6)      DEFAULT '009900'          NOT NULL,
-	ok_ack_color             varchar(6)      DEFAULT '009900'          NOT NULL,
-	problem_unack_style      integer         DEFAULT '1'               NOT NULL,
-	problem_ack_style        integer         DEFAULT '1'               NOT NULL,
-	ok_unack_style           integer         DEFAULT '1'               NOT NULL,
-	ok_ack_style             integer         DEFAULT '1'               NOT NULL,
-	snmptrap_logging         integer         DEFAULT '1'               NOT NULL,
-	server_check_interval    integer         DEFAULT '10'              NOT NULL,
-	hk_events_mode           integer         DEFAULT '1'               NOT NULL,
-	hk_events_trigger        varchar(32)     DEFAULT '365d'            NOT NULL,
-	hk_events_internal       varchar(32)     DEFAULT '1d'              NOT NULL,
-	hk_events_discovery      varchar(32)     DEFAULT '1d'              NOT NULL,
-	hk_events_autoreg        varchar(32)     DEFAULT '1d'              NOT NULL,
-	hk_services_mode         integer         DEFAULT '1'               NOT NULL,
-	hk_services              varchar(32)     DEFAULT '365d'            NOT NULL,
-	hk_audit_mode            integer         DEFAULT '1'               NOT NULL,
-	hk_audit                 varchar(32)     DEFAULT '31d'             NOT NULL,
-	hk_sessions_mode         integer         DEFAULT '1'               NOT NULL,
-	hk_sessions              varchar(32)     DEFAULT '365d'            NOT NULL,
-	hk_history_mode          integer         DEFAULT '1'               NOT NULL,
-	hk_history_global        integer         DEFAULT '0'               NOT NULL,
-	hk_history               varchar(32)     DEFAULT '31d'             NOT NULL,
-	hk_trends_mode           integer         DEFAULT '1'               NOT NULL,
-	hk_trends_global         integer         DEFAULT '0'               NOT NULL,
-	hk_trends                varchar(32)     DEFAULT '365d'            NOT NULL,
-	default_inventory_mode   integer         DEFAULT '-1'              NOT NULL,
-	custom_color             integer         DEFAULT '0'               NOT NULL,
-	http_auth_enabled        integer         DEFAULT '0'               NOT NULL,
-	http_login_form          integer         DEFAULT '0'               NOT NULL,
-	http_strip_domains       varchar(2048)   DEFAULT ''                NOT NULL,
-	http_case_sensitive      integer         DEFAULT '1'               NOT NULL,
-	ldap_auth_enabled        integer         DEFAULT '0'               NOT NULL,
-	ldap_case_sensitive      integer         DEFAULT '1'               NOT NULL,
-	db_extension             varchar(32)     DEFAULT ''                NOT NULL,
-	autoreg_tls_accept       integer         DEFAULT '1'               NOT NULL,
-	compression_status       integer         DEFAULT '0'               NOT NULL,
-	compress_older           varchar(32)     DEFAULT '7d'              NOT NULL,
-	instanceid               varchar(32)     DEFAULT ''                NOT NULL,
-	saml_auth_enabled        integer         DEFAULT '0'               NOT NULL,
-	saml_case_sensitive      integer         DEFAULT '0'               NOT NULL,
-	default_lang             varchar(5)      DEFAULT 'en_US'           NOT NULL,
-	default_timezone         varchar(50)     DEFAULT 'system'          NOT NULL,
-	login_attempts           integer         DEFAULT '5'               NOT NULL,
-	login_block              varchar(32)     DEFAULT '30s'             NOT NULL,
-	show_technical_errors    integer         DEFAULT '0'               NOT NULL,
-	validate_uri_schemes     integer         DEFAULT '1'               NOT NULL,
-	uri_valid_schemes        varchar(255)    DEFAULT 'http,https,ftp,file,mailto,tel,ssh' NOT NULL,
-	x_frame_options          varchar(255)    DEFAULT 'SAMEORIGIN'      NOT NULL,
-	iframe_sandboxing_enabled integer         DEFAULT '1'               NOT NULL,
-	iframe_sandboxing_exceptions varchar(255)    DEFAULT ''                NOT NULL,
-	max_overview_table_size  integer         DEFAULT '50'              NOT NULL,
-	history_period           varchar(32)     DEFAULT '24h'             NOT NULL,
-	period_default           varchar(32)     DEFAULT '1h'              NOT NULL,
-	max_period               varchar(32)     DEFAULT '2y'              NOT NULL,
-	socket_timeout           varchar(32)     DEFAULT '3s'              NOT NULL,
-	connect_timeout          varchar(32)     DEFAULT '3s'              NOT NULL,
-	media_type_test_timeout  varchar(32)     DEFAULT '65s'             NOT NULL,
-	script_timeout           varchar(32)     DEFAULT '60s'             NOT NULL,
-	item_test_timeout        varchar(32)     DEFAULT '60s'             NOT NULL,
-	session_key              varchar(32)     DEFAULT ''                NOT NULL,
-	url                      varchar(2048)   DEFAULT ''                NOT NULL,
-	report_test_timeout      varchar(32)     DEFAULT '60s'             NOT NULL,
-	dbversion_status         text            DEFAULT ''                NOT NULL,
-	hk_events_service        varchar(32)     DEFAULT '1d'              NOT NULL,
-	passwd_min_length        integer         DEFAULT '8'               NOT NULL,
-	passwd_check_rules       integer         DEFAULT '8'               NOT NULL,
-	auditlog_enabled         integer         DEFAULT '1'               NOT NULL,
-	ha_failover_delay        varchar(32)     DEFAULT '1m'              NOT NULL,
-	geomaps_tile_provider    varchar(255)    DEFAULT ''                NOT NULL,
-	geomaps_tile_url         varchar(2048)   DEFAULT ''                NOT NULL,
-	geomaps_max_zoom         integer         DEFAULT '0'               NOT NULL,
-	geomaps_attribution      varchar(1024)   DEFAULT ''                NOT NULL,
-	vault_provider           integer         DEFAULT '0'               NOT NULL,
-	ldap_userdirectoryid     bigint          DEFAULT NULL              NULL,
-	server_status            text            DEFAULT ''                NOT NULL,
-	jit_provision_interval   varchar(32)     DEFAULT '1h'              NOT NULL,
-	saml_jit_status          integer         DEFAULT '0'               NOT NULL,
-	ldap_jit_status          integer         DEFAULT '0'               NOT NULL,
-	disabled_usrgrpid        bigint          DEFAULT NULL              NULL,
-	timeout_zabbix_agent     varchar(255)    DEFAULT '3s'              NOT NULL,
-	timeout_simple_check     varchar(255)    DEFAULT '3s'              NOT NULL,
-	timeout_snmp_agent       varchar(255)    DEFAULT '3s'              NOT NULL,
-	timeout_external_check   varchar(255)    DEFAULT '3s'              NOT NULL,
-	timeout_db_monitor       varchar(255)    DEFAULT '3s'              NOT NULL,
-	timeout_http_agent       varchar(255)    DEFAULT '3s'              NOT NULL,
-	timeout_ssh_agent        varchar(255)    DEFAULT '3s'              NOT NULL,
-	timeout_telnet_agent     varchar(255)    DEFAULT '3s'              NOT NULL,
-	timeout_script           varchar(255)    DEFAULT '3s'              NOT NULL,
-	auditlog_mode            integer         DEFAULT '1'               NOT NULL,
-	mfa_status               integer         DEFAULT '0'               NOT NULL,
-	mfaid                    bigint                                    NULL,
-	software_update_checkid  varchar(32)     DEFAULT ''                NOT NULL,
-	software_update_check_data text            DEFAULT ''                NOT NULL,
-	timeout_browser          varchar(255)    DEFAULT '60s'             NOT NULL,
-	PRIMARY KEY (configid)
-);
-CREATE INDEX config_1 ON config (alert_usrgrpid);
-CREATE INDEX config_2 ON config (discovery_groupid);
-CREATE INDEX config_3 ON config (ldap_userdirectoryid);
-CREATE INDEX config_4 ON config (disabled_usrgrpid);
-CREATE INDEX config_5 ON config (mfaid);
 CREATE TABLE triggers (
 	triggerid                bigint                                    NOT NULL,
 	expression               varchar(2048)   DEFAULT ''                NOT NULL,
@@ -825,6 +715,18 @@ CREATE TABLE hostmacro (
 	PRIMARY KEY (hostmacroid)
 );
 CREATE UNIQUE INDEX hostmacro_1 ON hostmacro (hostid,macro);
+CREATE TABLE hostmacro_config (
+	hostmacroid              bigint                                    NOT NULL,
+	type                     integer         DEFAULT '0'               NOT NULL,
+	priority                 integer         DEFAULT '0'               NOT NULL,
+	section_name             varchar(255)    DEFAULT ''                NOT NULL,
+	label                    varchar(255)    DEFAULT ''                NOT NULL,
+	description              text            DEFAULT ''                NOT NULL,
+	required                 integer         DEFAULT '0'               NOT NULL,
+	regex                    varchar(255)    DEFAULT ''                NOT NULL,
+	options                  text            DEFAULT ''                NOT NULL,
+	PRIMARY KEY (hostmacroid)
+);
 CREATE TABLE hosts_groups (
 	hostgroupid              bigint                                    NOT NULL,
 	hostid                   bigint                                    NOT NULL,
@@ -956,6 +858,9 @@ CREATE TABLE sysmaps (
 	userid                   bigint                                    NOT NULL,
 	private                  integer         DEFAULT '1'               NOT NULL,
 	show_suppressed          integer         DEFAULT '0'               NOT NULL,
+	background_scale         integer         DEFAULT '1'               NOT NULL,
+	show_element_label       integer         DEFAULT '1'               NOT NULL,
+	show_link_label          integer         DEFAULT '1'               NOT NULL,
 	PRIMARY KEY (sysmapid)
 );
 CREATE UNIQUE INDEX sysmaps_1 ON sysmaps (name);
@@ -982,6 +887,8 @@ CREATE TABLE sysmaps_elements (
 	viewtype                 integer         DEFAULT '0'               NOT NULL,
 	use_iconmap              integer         DEFAULT '1'               NOT NULL,
 	evaltype                 integer         DEFAULT '0'               NOT NULL,
+	show_label               integer         DEFAULT '-1'              NOT NULL,
+	zindex                   integer         DEFAULT '0'               NOT NULL,
 	PRIMARY KEY (selementid)
 );
 CREATE INDEX sysmaps_elements_1 ON sysmaps_elements (sysmapid);
@@ -997,11 +904,15 @@ CREATE TABLE sysmaps_links (
 	drawtype                 integer         DEFAULT '0'               NOT NULL,
 	color                    varchar(6)      DEFAULT '000000'          NOT NULL,
 	label                    varchar(2048)   DEFAULT ''                NOT NULL,
+	show_label               integer         DEFAULT '-1'              NOT NULL,
+	indicator_type           integer         DEFAULT '0'               NOT NULL,
+	itemid                   bigint                                    NULL,
 	PRIMARY KEY (linkid)
 );
 CREATE INDEX sysmaps_links_1 ON sysmaps_links (sysmapid);
 CREATE INDEX sysmaps_links_2 ON sysmaps_links (selementid1);
 CREATE INDEX sysmaps_links_3 ON sysmaps_links (selementid2);
+CREATE INDEX sysmaps_links_4 ON sysmaps_links (itemid);
 CREATE TABLE sysmaps_link_triggers (
 	linktriggerid            bigint                                    NOT NULL,
 	linkid                   bigint                                    NOT NULL,
@@ -1012,6 +923,18 @@ CREATE TABLE sysmaps_link_triggers (
 );
 CREATE UNIQUE INDEX sysmaps_link_triggers_1 ON sysmaps_link_triggers (linkid,triggerid);
 CREATE INDEX sysmaps_link_triggers_2 ON sysmaps_link_triggers (triggerid);
+CREATE TABLE sysmap_link_threshold (
+	linkthresholdid          bigint                                    NOT NULL,
+	linkid                   bigint                                    NOT NULL,
+	drawtype                 integer         DEFAULT '0'               NOT NULL,
+	color                    varchar(6)      DEFAULT '000000'          NOT NULL,
+	type                     integer         DEFAULT '0'               NOT NULL,
+	threshold                varchar(255)    DEFAULT ''                NOT NULL,
+	pattern                  varchar(255)    DEFAULT ''                NOT NULL,
+	sortorder                integer         DEFAULT '0'               NOT NULL,
+	PRIMARY KEY (linkthresholdid)
+);
+CREATE INDEX sysmap_link_threshold_1 ON sysmap_link_threshold (linkid);
 CREATE TABLE sysmap_element_url (
 	sysmapelementurlid       bigint                                    NOT NULL,
 	selementid               bigint                                    NOT NULL,
@@ -1473,21 +1396,23 @@ CREATE UNIQUE INDEX images_1 ON images (name);
 CREATE TABLE item_discovery (
 	itemdiscoveryid          bigint                                    NOT NULL,
 	itemid                   bigint                                    NOT NULL,
-	parent_itemid            bigint                                    NOT NULL,
+	parent_itemid            bigint                                    NULL,
 	key_                     varchar(2048)   DEFAULT ''                NOT NULL,
 	lastcheck                integer         DEFAULT '0'               NOT NULL,
 	ts_delete                integer         DEFAULT '0'               NOT NULL,
 	status                   integer         DEFAULT '0'               NOT NULL,
 	disable_source           integer         DEFAULT '0'               NOT NULL,
 	ts_disable               integer         DEFAULT '0'               NOT NULL,
+	lldruleid                bigint                                    NULL,
 	PRIMARY KEY (itemdiscoveryid)
 );
 CREATE UNIQUE INDEX item_discovery_1 ON item_discovery (itemid,parent_itemid);
 CREATE INDEX item_discovery_2 ON item_discovery (parent_itemid);
+CREATE INDEX item_discovery_3 ON item_discovery (lldruleid);
 CREATE TABLE host_discovery (
 	hostid                   bigint                                    NOT NULL,
 	parent_hostid            bigint                                    NULL,
-	parent_itemid            bigint                                    NULL,
+	lldruleid                bigint                                    NULL,
 	host                     varchar(128)    DEFAULT ''                NOT NULL,
 	lastcheck                integer         DEFAULT '0'               NOT NULL,
 	ts_delete                integer         DEFAULT '0'               NOT NULL,
@@ -1497,7 +1422,7 @@ CREATE TABLE host_discovery (
 	PRIMARY KEY (hostid)
 );
 CREATE INDEX host_discovery_1 ON host_discovery (parent_hostid);
-CREATE INDEX host_discovery_2 ON host_discovery (parent_itemid);
+CREATE INDEX host_discovery_2 ON host_discovery (lldruleid);
 CREATE TABLE interface_discovery (
 	interfaceid              bigint                                    NOT NULL,
 	parent_interfaceid       bigint                                    NOT NULL,
@@ -2482,13 +2407,36 @@ CREATE TABLE mfa_totp_secret (
 );
 CREATE INDEX mfa_totp_secret_1 ON mfa_totp_secret (mfaid);
 CREATE INDEX mfa_totp_secret_2 ON mfa_totp_secret (userid);
+CREATE TABLE settings (
+	name                     varchar(255)                              NOT NULL,
+	type                     integer                                   NOT NULL,
+	value_str                text            DEFAULT ''                NOT NULL,
+	value_int                integer         DEFAULT '0'               NOT NULL,
+	value_usrgrpid           bigint                                    NULL,
+	value_hostgroupid        bigint                                    NULL,
+	value_userdirectoryid    bigint                                    NULL,
+	value_mfaid              bigint                                    NULL,
+	PRIMARY KEY (name)
+);
+CREATE INDEX settings_2 ON settings (value_usrgrpid);
+CREATE INDEX settings_3 ON settings (value_hostgroupid);
+CREATE INDEX settings_4 ON settings (value_userdirectoryid);
+CREATE INDEX settings_5 ON settings (value_mfaid);
+CREATE TABLE lld_macro_export (
+	lld_macro_exportid       bigint                                    NOT NULL,
+	itemid                   bigint                                    NOT NULL,
+	lld_macro                varchar(255)    DEFAULT ''                NOT NULL,
+	value                    text            DEFAULT ''                NOT NULL,
+	PRIMARY KEY (lld_macro_exportid)
+);
+CREATE INDEX lld_macro_export_1 ON lld_macro_export (itemid);
 CREATE TABLE dbversion (
 	dbversionid              bigint                                    NOT NULL,
 	mandatory                integer         DEFAULT '0'               NOT NULL,
 	optional                 integer         DEFAULT '0'               NOT NULL,
 	PRIMARY KEY (dbversionid)
 );
-INSERT INTO dbversion VALUES ('1','7020000','7020004');
+INSERT INTO dbversion VALUES ('1','7040000','7040008');
 create or replace function changelog_hosts_insert() returns trigger as $$
 begin
 insert into changelog (object,objectid,operation,clock)
@@ -3163,6 +3111,7 @@ ALTER TABLE ONLY httpstepitem ADD CONSTRAINT c_httpstepitem_1 FOREIGN KEY (https
 ALTER TABLE ONLY httpstepitem ADD CONSTRAINT c_httpstepitem_2 FOREIGN KEY (itemid) REFERENCES items (itemid);
 ALTER TABLE ONLY httptestitem ADD CONSTRAINT c_httptestitem_1 FOREIGN KEY (httptestid) REFERENCES httptest (httptestid);
 ALTER TABLE ONLY httptestitem ADD CONSTRAINT c_httptestitem_2 FOREIGN KEY (itemid) REFERENCES items (itemid);
+ALTER TABLE ONLY media_type_oauth ADD CONSTRAINT c_media_type_oauth_1 FOREIGN KEY (mediatypeid) REFERENCES media_type (mediatypeid) ON DELETE CASCADE;
 ALTER TABLE ONLY media_type_param ADD CONSTRAINT c_media_type_param_1 FOREIGN KEY (mediatypeid) REFERENCES media_type (mediatypeid) ON DELETE CASCADE;
 ALTER TABLE ONLY media_type_message ADD CONSTRAINT c_media_type_message_1 FOREIGN KEY (mediatypeid) REFERENCES media_type (mediatypeid) ON DELETE CASCADE;
 ALTER TABLE ONLY usrgrp ADD CONSTRAINT c_usrgrp_2 FOREIGN KEY (userdirectoryid) REFERENCES userdirectory (userdirectoryid);
@@ -3196,11 +3145,6 @@ ALTER TABLE ONLY optemplate ADD CONSTRAINT c_optemplate_1 FOREIGN KEY (operation
 ALTER TABLE ONLY optemplate ADD CONSTRAINT c_optemplate_2 FOREIGN KEY (templateid) REFERENCES hosts (hostid);
 ALTER TABLE ONLY opconditions ADD CONSTRAINT c_opconditions_1 FOREIGN KEY (operationid) REFERENCES operations (operationid) ON DELETE CASCADE;
 ALTER TABLE ONLY conditions ADD CONSTRAINT c_conditions_1 FOREIGN KEY (actionid) REFERENCES actions (actionid) ON DELETE CASCADE;
-ALTER TABLE ONLY config ADD CONSTRAINT c_config_1 FOREIGN KEY (alert_usrgrpid) REFERENCES usrgrp (usrgrpid);
-ALTER TABLE ONLY config ADD CONSTRAINT c_config_2 FOREIGN KEY (discovery_groupid) REFERENCES hstgrp (groupid);
-ALTER TABLE ONLY config ADD CONSTRAINT c_config_3 FOREIGN KEY (ldap_userdirectoryid) REFERENCES userdirectory (userdirectoryid);
-ALTER TABLE ONLY config ADD CONSTRAINT c_config_4 FOREIGN KEY (disabled_usrgrpid) REFERENCES usrgrp (usrgrpid);
-ALTER TABLE ONLY config ADD CONSTRAINT c_config_5 FOREIGN KEY (mfaid) REFERENCES mfa (mfaid);
 ALTER TABLE ONLY triggers ADD CONSTRAINT c_triggers_1 FOREIGN KEY (templateid) REFERENCES triggers (triggerid);
 ALTER TABLE ONLY trigger_depends ADD CONSTRAINT c_trigger_depends_1 FOREIGN KEY (triggerid_down) REFERENCES triggers (triggerid) ON DELETE CASCADE;
 ALTER TABLE ONLY trigger_depends ADD CONSTRAINT c_trigger_depends_2 FOREIGN KEY (triggerid_up) REFERENCES triggers (triggerid) ON DELETE CASCADE;
@@ -3212,6 +3156,7 @@ ALTER TABLE ONLY graphs ADD CONSTRAINT c_graphs_3 FOREIGN KEY (ymax_itemid) REFE
 ALTER TABLE ONLY graphs_items ADD CONSTRAINT c_graphs_items_1 FOREIGN KEY (graphid) REFERENCES graphs (graphid) ON DELETE CASCADE;
 ALTER TABLE ONLY graphs_items ADD CONSTRAINT c_graphs_items_2 FOREIGN KEY (itemid) REFERENCES items (itemid) ON DELETE CASCADE;
 ALTER TABLE ONLY hostmacro ADD CONSTRAINT c_hostmacro_1 FOREIGN KEY (hostid) REFERENCES hosts (hostid) ON DELETE CASCADE;
+ALTER TABLE ONLY hostmacro_config ADD CONSTRAINT c_hostmacro_config_1 FOREIGN KEY (hostmacroid) REFERENCES hostmacro (hostmacroid) ON DELETE CASCADE;
 ALTER TABLE ONLY hosts_groups ADD CONSTRAINT c_hosts_groups_1 FOREIGN KEY (hostid) REFERENCES hosts (hostid) ON DELETE CASCADE;
 ALTER TABLE ONLY hosts_groups ADD CONSTRAINT c_hosts_groups_2 FOREIGN KEY (groupid) REFERENCES hstgrp (groupid) ON DELETE CASCADE;
 ALTER TABLE ONLY hosts_templates ADD CONSTRAINT c_hosts_templates_1 FOREIGN KEY (hostid) REFERENCES hosts (hostid) ON DELETE CASCADE;
@@ -3240,8 +3185,10 @@ ALTER TABLE ONLY sysmaps_elements ADD CONSTRAINT c_sysmaps_elements_5 FOREIGN KE
 ALTER TABLE ONLY sysmaps_links ADD CONSTRAINT c_sysmaps_links_1 FOREIGN KEY (sysmapid) REFERENCES sysmaps (sysmapid) ON DELETE CASCADE;
 ALTER TABLE ONLY sysmaps_links ADD CONSTRAINT c_sysmaps_links_2 FOREIGN KEY (selementid1) REFERENCES sysmaps_elements (selementid) ON DELETE CASCADE;
 ALTER TABLE ONLY sysmaps_links ADD CONSTRAINT c_sysmaps_links_3 FOREIGN KEY (selementid2) REFERENCES sysmaps_elements (selementid) ON DELETE CASCADE;
+ALTER TABLE ONLY sysmaps_links ADD CONSTRAINT c_sysmaps_links_4 FOREIGN KEY (itemid) REFERENCES items (itemid);
 ALTER TABLE ONLY sysmaps_link_triggers ADD CONSTRAINT c_sysmaps_link_triggers_1 FOREIGN KEY (linkid) REFERENCES sysmaps_links (linkid) ON DELETE CASCADE;
 ALTER TABLE ONLY sysmaps_link_triggers ADD CONSTRAINT c_sysmaps_link_triggers_2 FOREIGN KEY (triggerid) REFERENCES triggers (triggerid) ON DELETE CASCADE;
+ALTER TABLE ONLY sysmap_link_threshold ADD CONSTRAINT c_sysmap_link_threshold_1 FOREIGN KEY (linkid) REFERENCES sysmaps_links (linkid) ON DELETE CASCADE;
 ALTER TABLE ONLY sysmap_element_url ADD CONSTRAINT c_sysmap_element_url_1 FOREIGN KEY (selementid) REFERENCES sysmaps_elements (selementid) ON DELETE CASCADE;
 ALTER TABLE ONLY sysmap_url ADD CONSTRAINT c_sysmap_url_1 FOREIGN KEY (sysmapid) REFERENCES sysmaps (sysmapid) ON DELETE CASCADE;
 ALTER TABLE ONLY sysmap_user ADD CONSTRAINT c_sysmap_user_1 FOREIGN KEY (sysmapid) REFERENCES sysmaps (sysmapid) ON DELETE CASCADE;
@@ -3275,9 +3222,10 @@ ALTER TABLE ONLY graph_discovery ADD CONSTRAINT c_graph_discovery_2 FOREIGN KEY 
 ALTER TABLE ONLY host_inventory ADD CONSTRAINT c_host_inventory_1 FOREIGN KEY (hostid) REFERENCES hosts (hostid) ON DELETE CASCADE;
 ALTER TABLE ONLY item_discovery ADD CONSTRAINT c_item_discovery_1 FOREIGN KEY (itemid) REFERENCES items (itemid) ON DELETE CASCADE;
 ALTER TABLE ONLY item_discovery ADD CONSTRAINT c_item_discovery_2 FOREIGN KEY (parent_itemid) REFERENCES items (itemid) ON DELETE CASCADE;
+ALTER TABLE ONLY item_discovery ADD CONSTRAINT c_item_discovery_3 FOREIGN KEY (lldruleid) REFERENCES items (itemid);
 ALTER TABLE ONLY host_discovery ADD CONSTRAINT c_host_discovery_1 FOREIGN KEY (hostid) REFERENCES hosts (hostid) ON DELETE CASCADE;
 ALTER TABLE ONLY host_discovery ADD CONSTRAINT c_host_discovery_2 FOREIGN KEY (parent_hostid) REFERENCES hosts (hostid);
-ALTER TABLE ONLY host_discovery ADD CONSTRAINT c_host_discovery_3 FOREIGN KEY (parent_itemid) REFERENCES items (itemid);
+ALTER TABLE ONLY host_discovery ADD CONSTRAINT c_host_discovery_3 FOREIGN KEY (lldruleid) REFERENCES items (itemid);
 ALTER TABLE ONLY interface_discovery ADD CONSTRAINT c_interface_discovery_1 FOREIGN KEY (interfaceid) REFERENCES interface (interfaceid) ON DELETE CASCADE;
 ALTER TABLE ONLY interface_discovery ADD CONSTRAINT c_interface_discovery_2 FOREIGN KEY (parent_interfaceid) REFERENCES interface (interfaceid) ON DELETE CASCADE;
 ALTER TABLE ONLY profiles ADD CONSTRAINT c_profiles_1 FOREIGN KEY (userid) REFERENCES users (userid) ON DELETE CASCADE;
@@ -3404,3 +3352,8 @@ ALTER TABLE ONLY host_proxy ADD CONSTRAINT c_host_proxy_1 FOREIGN KEY (hostid) R
 ALTER TABLE ONLY host_proxy ADD CONSTRAINT c_host_proxy_2 FOREIGN KEY (proxyid) REFERENCES proxy (proxyid);
 ALTER TABLE ONLY mfa_totp_secret ADD CONSTRAINT c_mfa_totp_secret_1 FOREIGN KEY (mfaid) REFERENCES mfa (mfaid) ON DELETE CASCADE;
 ALTER TABLE ONLY mfa_totp_secret ADD CONSTRAINT c_mfa_totp_secret_2 FOREIGN KEY (userid) REFERENCES users (userid) ON DELETE CASCADE;
+ALTER TABLE ONLY settings ADD CONSTRAINT c_settings_2 FOREIGN KEY (value_usrgrpid) REFERENCES usrgrp (usrgrpid);
+ALTER TABLE ONLY settings ADD CONSTRAINT c_settings_3 FOREIGN KEY (value_hostgroupid) REFERENCES hstgrp (groupid);
+ALTER TABLE ONLY settings ADD CONSTRAINT c_settings_4 FOREIGN KEY (value_userdirectoryid) REFERENCES userdirectory (userdirectoryid);
+ALTER TABLE ONLY settings ADD CONSTRAINT c_settings_5 FOREIGN KEY (value_mfaid) REFERENCES mfa (mfaid);
+ALTER TABLE ONLY lld_macro_export ADD CONSTRAINT c_lld_macro_export_1 FOREIGN KEY (itemid) REFERENCES items (itemid) ON DELETE CASCADE;

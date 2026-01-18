@@ -32,7 +32,7 @@ func (N Number) Decompose(buf []byte) (form byte, negative bool, coefficient []b
 		negative = true
 	}
 	c := (i.BitLen() + 7) >> 3
-	if c <= cap(buf) {
+	if buf != nil && c <= cap(buf) {
 		buf = buf[:c]
 	} else {
 		buf = make([]byte, c)

@@ -11,6 +11,7 @@
 ** You should have received a copy of the GNU Affero General Public License along with this program.
 ** If not, see <https://www.gnu.org/licenses/>.
 **/
+
 #include "zbxcacheconfig.h"
 #include "dbconfig.h"
 #include "user_macro.h"
@@ -31,9 +32,9 @@ static void	DCdump_config(void)
 	if (NULL == config->config)
 		goto out;
 
-	zabbix_log(LOG_LEVEL_TRACE, "revision:" ZBX_FS_UI64, config->revision.config_table);
+	zabbix_log(LOG_LEVEL_TRACE, "revision:" ZBX_FS_UI64, config->revision.settings_table);
 	zabbix_log(LOG_LEVEL_TRACE, "discovery_groupid:" ZBX_FS_UI64, config->config->discovery_groupid);
-	zabbix_log(LOG_LEVEL_TRACE, "snmptrap_logging:%hhu", config->config->snmptrap_logging);
+	zabbix_log(LOG_LEVEL_TRACE, "snmptrap_logging:%d", config->config->snmptrap_logging);
 	zabbix_log(LOG_LEVEL_TRACE, "default_inventory_mode:%d", config->config->default_inventory_mode);
 
 	zabbix_log(LOG_LEVEL_TRACE, "db:");
@@ -42,7 +43,7 @@ static void	DCdump_config(void)
 			config->config->db.history_compression_status);
 	zabbix_log(LOG_LEVEL_TRACE, "  history_compress_older: %d", config->config->db.history_compress_older);
 
-	zabbix_log(LOG_LEVEL_TRACE, "autoreg_tls_accept:%hhu", config->config->autoreg_tls_accept);
+	zabbix_log(LOG_LEVEL_TRACE, "autoreg_tls_accept:%d", config->config->autoreg_tls_accept);
 
 	zabbix_log(LOG_LEVEL_TRACE, "severity names:");
 	for (int i = 0; TRIGGER_SEVERITY_COUNT > i; i++)
@@ -175,10 +176,10 @@ static void	DCdump_autoreg_hosts(void)
 	while (NULL != (autoreg_host = (ZBX_DC_AUTOREG_HOST *)zbx_hashset_iter_next(&iter)))
 	{
 		zabbix_log(LOG_LEVEL_TRACE, " host:'%s' listen_ip:'%s' listen_dns:'%s' host_metadata:'%s' flags:%d"
-				" timestamp:%d listen_port:%u",
+				" timestamp:%d listen_port:%u connection_type:%u",
 				autoreg_host->host, autoreg_host->listen_ip, autoreg_host->listen_dns,
 				autoreg_host->host_metadata, autoreg_host->flags, autoreg_host->timestamp,
-				autoreg_host->listen_port);
+				autoreg_host->listen_port, autoreg_host->connection_type);
 	}
 
 	zabbix_log(LOG_LEVEL_TRACE, "End of %s()", __func__);
@@ -299,8 +300,9 @@ static void	DCdump_ipmihosts(void)
 	{
 		ipmihost = (ZBX_DC_IPMIHOST *)index.values[i];
 		zabbix_log(LOG_LEVEL_TRACE, "hostid:" ZBX_FS_UI64 " ipmi:[username:'%s' password:'%s' authtype:%d"
-				" privilege:%u]", ipmihost->hostid, ipmihost->ipmi_username, ipmihost->ipmi_password,
-				ipmihost->ipmi_authtype, ipmihost->ipmi_privilege);
+				" privilege:%u]", ipmihost->hostid, ZBX_STRMASK(ipmihost->ipmi_username),
+				ZBX_STRMASK(ipmihost->ipmi_password), ipmihost->ipmi_authtype,
+				ipmihost->ipmi_privilege);
 	}
 
 	zbx_vector_ptr_destroy(&index);
@@ -414,14 +416,15 @@ static void	DCdump_interfaces(void)
 				zbx_hashset_search(&(get_dc_config())->interfaces_snmp, &interface->interfaceid)))
 		{
 			zbx_snprintf_alloc(&if_msg, &alloc, &offset, "snmp:[bulk:%u snmp_type:%u community:'%s']",
-					snmp->bulk, snmp->version, snmp->community);
+					snmp->bulk, snmp->version, ZBX_STRMASK(snmp->community));
 
 			if (ZBX_IF_SNMP_VERSION_3 == snmp->version)
 			{
 				zbx_snprintf_alloc(&if_msg, &alloc, &offset," snmpv3:["
 					"securityname:'%s' securitylevel:%u authprotocol:%u privprotocol:%u"
-					" contextname:'%s']", snmp->securityname, snmp->securitylevel,
-					snmp->authprotocol, snmp->privprotocol, snmp->contextname);
+					" contextname:'%s']",
+					ZBX_STRMASK(snmp->securityname), snmp->securitylevel, snmp->authprotocol,
+					snmp->privprotocol, ZBX_STRMASK(snmp->contextname));
 			}
 		}
 
@@ -464,15 +467,16 @@ static void	DCdump_logitem(ZBX_DC_LOGITEM *logitem)
 static void	DCdump_dbitem(const ZBX_DC_DBITEM *dbitem)
 {
 	zabbix_log(LOG_LEVEL_TRACE, "  db:[params:'%s' username:'%s' password:'%s']", dbitem->params,
-			dbitem->username, dbitem->password);
+			ZBX_STRMASK(dbitem->username), ZBX_STRMASK(dbitem->password));
 }
 
 static void	DCdump_sshitem(const ZBX_DC_SSHITEM *sshitem)
 {
 	zabbix_log(LOG_LEVEL_TRACE, "  ssh:[username:'%s' password:'%s' authtype:%u params:'%s']",
-			sshitem->username, sshitem->password, sshitem->authtype, sshitem->params);
-	zabbix_log(LOG_LEVEL_TRACE, "  ssh:[publickey:'%s' privatekey:'%s']", sshitem->publickey,
-			sshitem->privatekey);
+			ZBX_STRMASK(sshitem->username), ZBX_STRMASK(sshitem->password), sshitem->authtype,
+			sshitem->params);
+	zabbix_log(LOG_LEVEL_TRACE, "  ssh:[publickey:'%s' privatekey:'%s']", ZBX_STRMASK(sshitem->publickey),
+			ZBX_STRMASK(sshitem->privatekey));
 }
 
 static void	DCdump_depitem(const ZBX_DC_DEPENDENTITEM *depitem)
@@ -496,10 +500,10 @@ static void	DCdump_httpitem(const ZBX_DC_HTTPITEM *httpitem)
 			httpitem->output_format, httpitem->allow_traps, httpitem->trapper_hosts);
 
 	zabbix_log(LOG_LEVEL_TRACE, "  http:[username:'%s' password:'%s' authtype:%u]",
-			httpitem->username, httpitem->password, httpitem->authtype);
+			ZBX_STRMASK(httpitem->username), ZBX_STRMASK(httpitem->password), httpitem->authtype);
 	zabbix_log(LOG_LEVEL_TRACE, "  http:[publickey:'%s' privatekey:'%s' ssl key password:'%s' verify peer:%u"
-			" verify host:%u]", httpitem->ssl_cert_file, httpitem->ssl_key_file, httpitem->ssl_key_password,
-			httpitem->verify_peer, httpitem->verify_host);
+			" verify host:%u]", httpitem->ssl_cert_file, httpitem->ssl_key_file,
+			ZBX_STRMASK(httpitem->ssl_key_password), httpitem->verify_peer, httpitem->verify_host);
 }
 
 static void	DCdump_scriptitem(const ZBX_DC_SCRIPTITEM *scriptitem)
@@ -534,20 +538,23 @@ static void	DCdump_browseritem(const ZBX_DC_BROWSERITEM *browseritem)
 
 static void	DCdump_telnetitem(const ZBX_DC_TELNETITEM *telnetitem)
 {
-	zabbix_log(LOG_LEVEL_TRACE, "  telnet:[username:'%s' password:'%s' params:'%s']", telnetitem->username,
-			telnetitem->password, telnetitem->params);
+	zabbix_log(LOG_LEVEL_TRACE, "  telnet:[username:'%s' password:'%s' params:'%s']",
+			ZBX_STRMASK(telnetitem->username), ZBX_STRMASK(telnetitem->password), telnetitem->params);
 }
 
 static void	DCdump_simpleitem(const ZBX_DC_SIMPLEITEM *simpleitem)
 {
-	zabbix_log(LOG_LEVEL_TRACE, "  simple:[username:'%s' password:'%s']", simpleitem->username,
-			simpleitem->password);
+#ifndef ZBX_DEBUG
+	ZBX_UNUSED(simpleitem);
+#endif
+	zabbix_log(LOG_LEVEL_TRACE, "  simple:[username:'%s' password:'%s']", ZBX_STRMASK(simpleitem->username),
+			ZBX_STRMASK(simpleitem->password));
 }
 
 static void	DCdump_jmxitem(const ZBX_DC_JMXITEM *jmxitem)
 {
 	zabbix_log(LOG_LEVEL_TRACE, "  jmx:[username:'%s' password:'%s' endpoint:'%s']",
-			jmxitem->username, jmxitem->password, jmxitem->jmx_endpoint);
+			ZBX_STRMASK(jmxitem->username), ZBX_STRMASK(jmxitem->password), jmxitem->jmx_endpoint);
 }
 
 static void	DCdump_calcitem(const ZBX_DC_CALCITEM *calcitem)
@@ -631,11 +638,12 @@ static void	DCdump_items(void)
 				item->itemid, item->hostid, item->key, item->revision);
 		zabbix_log(LOG_LEVEL_TRACE, "  type:%u value_type:%u", item->type, item->value_type);
 		zabbix_log(LOG_LEVEL_TRACE, "  interfaceid:" ZBX_FS_UI64, item->interfaceid);
-		zabbix_log(LOG_LEVEL_TRACE, "  state:%u error:'%s'", item->state, item->error);
-		zabbix_log(LOG_LEVEL_TRACE, "  flags:%u status:%u", item->flags, item->status);
+		zabbix_log(LOG_LEVEL_TRACE, "  state:%u", item->state);
+		zabbix_log(LOG_LEVEL_TRACE, "  flags:%x status:%u", item->flags, item->status);
 		zabbix_log(LOG_LEVEL_TRACE, "  valuemapid:" ZBX_FS_UI64, item->valuemapid);
 		zabbix_log(LOG_LEVEL_TRACE, "  lastlogsize:" ZBX_FS_UI64 " mtime:%d", item->lastlogsize, item->mtime);
-		zabbix_log(LOG_LEVEL_TRACE, "  delay:'%s' nextcheck:%d", item->delay, item->nextcheck);
+		zabbix_log(LOG_LEVEL_TRACE, "  delay_ex:'%s' delay:'%s' nextcheck:%d", ZBX_NULL2STR(item->delay_ex),
+				item->delay, item->nextcheck);
 		zabbix_log(LOG_LEVEL_TRACE, "  data_expected_from:%d", item->data_expected_from);
 		zabbix_log(LOG_LEVEL_TRACE, "  history:%s", item->history_period);
 		zabbix_log(LOG_LEVEL_TRACE, "  poller_type:%u location:%u", item->poller_type, item->location);
@@ -712,6 +720,8 @@ static void	DCdump_items(void)
 				break;
 			case ITEM_TYPE_BROWSER:
 				DCdump_browseritem(item->itemtype.browseritem);
+				break;
+			case ITEM_TYPE_NESTED_LLD:
 				break;
 		}
 
@@ -905,7 +915,7 @@ static void	DCdump_triggers(void)
 		zbx_uint64_t	*itemid;
 
 		trigger = (ZBX_DC_TRIGGER *)index.values[i];
-		if (ZBX_FLAG_DISCOVERY_PROTOTYPE == trigger->flags)
+		if (0 != (trigger->flags & ZBX_FLAG_DISCOVERY_PROTOTYPE))
 		{
 			zabbix_log(LOG_LEVEL_TRACE, "triggerid:" ZBX_FS_UI64 " flags:%u", trigger->triggerid,
 					trigger->flags);
@@ -1366,7 +1376,7 @@ static void	DCdump_maintenances(void)
 }
 
 /* stringpool dumping is disabled by default to avoid leaking secret macro data */
-#ifdef HAVE_TESTS
+#ifdef ZBX_DEBUG
 static int	strpool_compare(const void *v1, const void *v2)
 {
 	const char	*s1 = *(const char * const *)v1 + sizeof(zbx_uint32_t);
@@ -1676,7 +1686,7 @@ void	DCdump_configuration(void)
 	DCdump_connectors();
 	DCdump_proxy_groups();
 	DCdump_host_proxy_index();
-#ifdef HAVE_TESTS
+#ifdef ZBX_DEBUG
 	DCdump_strpool();
 #endif
 }

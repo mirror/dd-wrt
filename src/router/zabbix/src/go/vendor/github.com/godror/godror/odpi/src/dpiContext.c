@@ -1,5 +1,5 @@
 //-----------------------------------------------------------------------------
-// Copyright (c) 2016, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2016, 2025, Oracle and/or its affiliates.
 //
 // This software is dual-licensed to you under the Universal Permissive License
 // (UPL) 1.0 as shown at https://oss.oracle.com/licenses/upl and Apache License
@@ -66,6 +66,17 @@ static int dpiContext__create(const char *fnName, unsigned int majorVersion,
         return DPI_FAILURE;
     tempContext->dpiMinorVersion = (uint8_t) minorVersion;
     tempContext->versionInfo = versionInfo;
+
+    // using a SODA JSON descriptor is only allowed with 23.4 and higher so
+    // only set the flag if that version is being used; otherwise, ignore the
+    // flag completely
+    if (versionInfo->versionNum > 23 ||
+            (versionInfo->versionNum == 23 && versionInfo->releaseNum >= 4)) {
+        tempContext->sodaUseJsonDesc = params->sodaUseJsonDesc;
+        tempContext->useJsonId = params->useJsonId;
+    } else {
+        params->sodaUseJsonDesc = 0;
+    }
 
     // store default encoding, if applicable
     if (params->defaultEncoding) {
@@ -202,30 +213,38 @@ int dpiContext_createWithParams(unsigned int majorVersion,
         unsigned int minorVersion, dpiContextCreateParams *params,
         dpiContext **context, dpiErrorInfo *errorInfo)
 {
+    int status, update_use_soda_json_desc = 0;
     dpiContextCreateParams localParams;
     dpiErrorInfo localErrorInfo;
     dpiError error;
-    int status;
 
     // make a copy of the parameters so that the addition of defaults doesn't
     // modify the original parameters that were passed; then add defaults, if
     // needed
     if (params) {
-        memcpy(&localParams, params, sizeof(localParams));
+        if (majorVersion < 5 || (majorVersion == 5 && minorVersion < 2)) {
+            memcpy(&localParams, params, sizeof(dpiContextCreateParams__v51));
+        } else {
+            memcpy(&localParams, params, sizeof(localParams));
+            update_use_soda_json_desc = 1;
+        }
     } else {
         memset(&localParams, 0, sizeof(localParams));
     }
     if (!localParams.loadErrorUrl)
         localParams.loadErrorUrl = DPI_DEFAULT_LOAD_ERROR_URL;
 
-    if (dpiDebugLevel & DPI_DEBUG_LEVEL_FNS)
-        dpiDebug__print("fn start %s\n", __func__);
     status = dpiContext__create(__func__, majorVersion, minorVersion,
             &localParams, context, &error);
     if (status < 0) {
         dpiError__getInfo(&error, &localErrorInfo);
         memcpy(errorInfo, &localErrorInfo, sizeof(dpiErrorInfo__v33));
     }
+    if (update_use_soda_json_desc)
+        params->sodaUseJsonDesc = localParams.sodaUseJsonDesc;
+    if (params && !params->oracleClientConfigDir &&
+            localParams.oracleClientConfigDir)
+        params->oracleClientConfigDir = localParams.oracleClientConfigDir;
     if (dpiDebugLevel & DPI_DEBUG_LEVEL_FNS)
         dpiDebug__print("fn end %s -> %d\n", __func__, status);
     return status;
@@ -255,6 +274,23 @@ int dpiContext_destroy(dpiContext *context)
     if (dpiDebugLevel & DPI_DEBUG_LEVEL_FNS)
         dpiDebug__print("%s\n", message);
     return DPI_SUCCESS;
+}
+
+
+//-----------------------------------------------------------------------------
+// dpiContext_freeStringList() [PUBLIC]
+//   Frees the contents of a string list.
+//-----------------------------------------------------------------------------
+int dpiContext_freeStringList(dpiContext *context, dpiStringList *list)
+{
+    dpiError error;
+
+    if (dpiGen__startPublicFn(context, DPI_HTYPE_CONTEXT, __func__,
+            &error) < 0)
+        return dpiGen__endPublicFn(context, DPI_FAILURE, &error);
+    DPI_CHECK_PTR_NOT_NULL(context, list)
+    dpiStringList__free(list);
+    return dpiGen__endPublicFn(context, DPI_SUCCESS, &error);
 }
 
 
@@ -298,25 +334,13 @@ void dpiContext_getError(const dpiContext *context, dpiErrorInfo *info)
 int dpiContext_initCommonCreateParams(const dpiContext *context,
         dpiCommonCreateParams *params)
 {
-    dpiCommonCreateParams localParams;
     dpiError error;
 
     if (dpiGen__startPublicFn(context, DPI_HTYPE_CONTEXT, __func__,
             &error) < 0)
         return dpiGen__endPublicFn(context, DPI_FAILURE, &error);
     DPI_CHECK_PTR_NOT_NULL(context, params)
-
-    // size changed in version 4.2 and 4.4; local structure and checks can
-    // be dropped once version 5 released
-    if (context->dpiMinorVersion > 3) {
-        dpiContext__initCommonCreateParams(context, params);
-    } else if (context->dpiMinorVersion > 1) {
-        dpiContext__initCommonCreateParams(context, &localParams);
-        memcpy(params, &localParams, sizeof(dpiCommonCreateParams__v43));
-    } else {
-        dpiContext__initCommonCreateParams(context, &localParams);
-        memcpy(params, &localParams, sizeof(dpiCommonCreateParams__v41));
-    }
+    dpiContext__initCommonCreateParams(context, params);
 
     return dpiGen__endPublicFn(context, DPI_SUCCESS, &error);
 }
@@ -348,22 +372,13 @@ int dpiContext_initConnCreateParams(const dpiContext *context,
 int dpiContext_initPoolCreateParams(const dpiContext *context,
         dpiPoolCreateParams *params)
 {
-    dpiPoolCreateParams localParams;
     dpiError error;
 
     if (dpiGen__startPublicFn(context, DPI_HTYPE_CONTEXT, __func__,
             &error) < 0)
         return dpiGen__endPublicFn(context, DPI_FAILURE, &error);
     DPI_CHECK_PTR_NOT_NULL(context, params)
-
-    // size changed in version 4.4; local structure and checks
-    // can be dropped once version 5 released
-    if (context->dpiMinorVersion > 3) {
-        dpiContext__initPoolCreateParams(params);
-    } else {
-        dpiContext__initPoolCreateParams(&localParams);
-        memcpy(params, &localParams, sizeof(dpiPoolCreateParams__v43));
-    }
+    dpiContext__initPoolCreateParams(params);
 
     return dpiGen__endPublicFn(context, DPI_SUCCESS, &error);
 }
@@ -376,22 +391,13 @@ int dpiContext_initPoolCreateParams(const dpiContext *context,
 int dpiContext_initSodaOperOptions(const dpiContext *context,
         dpiSodaOperOptions *options)
 {
-    dpiSodaOperOptions localOptions;
     dpiError error;
 
     if (dpiGen__startPublicFn(context, DPI_HTYPE_CONTEXT, __func__,
             &error) < 0)
         return dpiGen__endPublicFn(context, DPI_FAILURE, &error);
     DPI_CHECK_PTR_NOT_NULL(context, options)
-
-    // size changed in version 4.2; local structure and check can be dropped
-    // once version 5 released
-    if (context->dpiMinorVersion > 1) {
-        dpiContext__initSodaOperOptions(options);
-    } else {
-        dpiContext__initSodaOperOptions(&localOptions);
-        memcpy(options, &localOptions, sizeof(dpiSodaOperOptions__v41));
-    }
+    dpiContext__initSodaOperOptions(options);
 
     return dpiGen__endPublicFn(context, DPI_SUCCESS, &error);
 }

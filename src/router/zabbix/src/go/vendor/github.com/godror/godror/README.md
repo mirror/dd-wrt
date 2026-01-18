@@ -77,6 +77,12 @@ Note that `connect_timeout` requires at least 19c client.
 For more connection options, see [Godor Connection
 Handling](https://godror.github.io/godror/doc/connection.html).
 
+## Pooling
+Oracle's OCI client (which this driver uses under the hood) has problems with fast connect-reconnect cycles,
+which may result in SIGSEGV in the C library. As this cannot be isolated from the Go program,
+please use some kind of connection pooling - either db.SetMaxIdleConns with something bigger than 0,
+or the driver's built-in session pooling (standaloneConnection=0, poolMinSessions=1).
+
 ## Extras
 
 To use the godror-specific functions, you'll need a `*godror.conn`.
@@ -88,7 +94,7 @@ See [z_qrcn_test.go](./z_qrcn_test.go) for using that to reach
 
 Use `ExecContext` and mark each OUT parameter with `sql.Out`.
 
-As sql.DB will close the statemenet ASAP, for long-lived objects (LOB, REF CURSOR),
+As sql.DB will close the statement ASAP, for long-lived objects (LOB, REF CURSOR),
 you have to keep the Stmt alive: Prepare the statement, 
 and Close only after finished with the Lob/Rows.
 

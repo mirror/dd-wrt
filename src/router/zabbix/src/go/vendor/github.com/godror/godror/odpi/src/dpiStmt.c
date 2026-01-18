@@ -1,5 +1,5 @@
 //-----------------------------------------------------------------------------
-// Copyright (c) 2016, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2016, 2024, Oracle and/or its affiliates.
 //
 // This software is dual-licensed to you under the Universal Permissive License
 // (UPL) 1.0 as shown at https://oss.oracle.com/licenses/upl and Apache License
@@ -280,6 +280,7 @@ static void dpiStmt__clearBindVars(dpiStmt *stmt, dpiError *error)
 //-----------------------------------------------------------------------------
 static void dpiStmt__clearQueryVars(dpiStmt *stmt, dpiError *error)
 {
+    dpiDataTypeInfo *typeInfo;
     uint32_t i;
 
     if (stmt->queryVars) {
@@ -288,10 +289,14 @@ static void dpiStmt__clearQueryVars(dpiStmt *stmt, dpiError *error)
                 dpiGen__setRefCount(stmt->queryVars[i], error, -1);
                 stmt->queryVars[i] = NULL;
             }
-            if (stmt->queryInfo[i].typeInfo.objectType) {
-                dpiGen__setRefCount(stmt->queryInfo[i].typeInfo.objectType,
-                        error, -1);
-                stmt->queryInfo[i].typeInfo.objectType = NULL;
+            typeInfo = &stmt->queryInfo[i].typeInfo;
+            if (typeInfo->objectType) {
+                dpiGen__setRefCount(typeInfo->objectType, error, -1);
+                typeInfo->objectType = NULL;
+            }
+            if (typeInfo->annotations) {
+                dpiUtils__freeMemory(typeInfo->annotations);
+                typeInfo->annotations = NULL;
             }
         }
         dpiUtils__freeMemory(stmt->queryVars);
@@ -609,16 +614,18 @@ static int dpiStmt__execute(dpiStmt *stmt, uint32_t numIters,
         mode |= DPI_OCI_STMT_SCROLLABLE_READONLY;
 
     // perform execution
-    // re-execute statement for ORA-01007: variable not in select list
-    // drop statement from cache for all errors (except those which are due to
-    // invalid data which may be fixed in subsequent execution)
+    // re-execute statement for ORA-01007: variable not in select list and
+    // ORA-00932: inconsistent data types; drop statement from cache for all
+    // errors (except those which are due to invalid data which may be fixed in
+    // subsequent execution)
     if (dpiOci__stmtExecute(stmt, numIters, mode, error) < 0) {
         dpiOci__attrGet(stmt->handle, DPI_OCI_HTYPE_STMT, &tempOffset, 0,
                 DPI_OCI_ATTR_PARSE_ERROR_OFFSET, "set parse offset", error);
         error->buffer->offset = tempOffset;
         switch (error->buffer->code) {
+            case 932:
             case 1007:
-                if (reExecute)
+                if (reExecute && stmt->statementType == DPI_STMT_TYPE_SELECT)
                     return dpiStmt__reExecute(stmt, numIters, mode, error);
                 stmt->deleteFromCache = 1;
                 break;
@@ -1720,7 +1727,17 @@ int dpiStmt_getQueryInfo(dpiStmt *stmt, uint32_t pos, dpiQueryInfo *info)
     }
 
     // copy query information from internal cache
-    memcpy(info, &stmt->queryInfo[pos - 1], sizeof(dpiQueryInfo));
+    // the size of the dpiDataTypeInfo structure changed in version 5.1 and
+    // again in 5.2; this check and memcpy() for older versions can be removed
+    // once 6.0 is released
+    if (stmt->env->context->dpiMinorVersion > 1) {
+        memcpy(info, &stmt->queryInfo[pos - 1], sizeof(dpiQueryInfo));
+    } else if (stmt->env->context->dpiMinorVersion == 1) {
+        memcpy(info, &stmt->queryInfo[pos - 1], sizeof(dpiQueryInfo__v51));
+    } else {
+        memcpy(info, &stmt->queryInfo[pos - 1], sizeof(dpiQueryInfo__v50));
+    }
+
     return dpiGen__endPublicFn(stmt, DPI_SUCCESS, &error);
 }
 

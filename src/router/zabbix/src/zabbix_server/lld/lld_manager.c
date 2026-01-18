@@ -24,6 +24,8 @@
 #include "zbxipcservice.h"
 #include "zbxstr.h"
 #include "zbxtime.h"
+#include "zbx_rtc_constants.h"
+#include "zbxrtc.h"
 
 /*
  * The LLD queue is organized as a queue (rule_queue binary heap) of LLD rules,
@@ -127,6 +129,11 @@ static void	lld_rule_clear(zbx_lld_rule_t *rule)
 	}
 }
 
+static void	lld_rule_clear_wrapper(void *data)
+{
+	lld_rule_clear((zbx_lld_rule_t*)data);
+}
+
 ZBX_PTR_VECTOR_IMPL(lld_rule_info_ptr, zbx_lld_rule_info_t*)
 
 static void	lld_manager_init(zbx_lld_manager_t *manager, zbx_get_config_forks_f get_config_forks_cb)
@@ -140,8 +147,8 @@ static void	lld_manager_init(zbx_lld_manager_t *manager, zbx_get_config_forks_f 
 	zbx_hashset_create(&manager->workers_client, 0, worker_hash_func, worker_compare_func);
 
 	zbx_hashset_create_ext(&manager->rule_index, 0, ZBX_DEFAULT_UINT64_HASH_FUNC, ZBX_DEFAULT_UINT64_COMPARE_FUNC,
-			(zbx_clean_func_t)lld_rule_clear,
-			ZBX_DEFAULT_MEM_MALLOC_FUNC, ZBX_DEFAULT_MEM_REALLOC_FUNC, ZBX_DEFAULT_MEM_FREE_FUNC);
+			lld_rule_clear_wrapper, ZBX_DEFAULT_MEM_MALLOC_FUNC, ZBX_DEFAULT_MEM_REALLOC_FUNC,
+			ZBX_DEFAULT_MEM_FREE_FUNC);
 
 	zbx_binary_heap_create(&manager->rule_queue, rule_elem_compare_func, ZBX_BINARY_HEAP_OPTION_EMPTY);
 
@@ -268,7 +275,8 @@ static void	lld_queue_request(zbx_lld_manager_t *manager, const zbx_ipc_message_
 
 	if (NULL == (rule = zbx_hashset_search(&manager->rule_index, &hostid)))
 	{
-		zbx_lld_rule_t	rule_local = {.hostid = hostid, .values_num = 0, .tail = data, .head = data};
+		zbx_lld_rule_t	rule_local = {.hostid = hostid, .values_num = 0, .tail = data, .head = data,
+				.dup = NULL};
 
 		data->prev = NULL;
 
@@ -334,7 +342,7 @@ static void	lld_process_next_request(zbx_lld_manager_t *manager, zbx_lld_worker_
 	data = worker->rule->head;
 	buf_len = zbx_lld_serialize_item_value(&buf, data->itemid, 0, data->value, &data->ts, data->meta,
 			data->lastlogsize, data->mtime, data->error);
-	zbx_ipc_client_send(worker->client, ZBX_IPC_LLD_TASK, buf, buf_len);
+	zbx_ipc_client_send(worker->client, ZBX_IPC_LLD_PREPARE_VALUE, buf, buf_len);
 	zbx_free(buf);
 }
 
@@ -379,6 +387,7 @@ static void	lld_process_result(zbx_lld_manager_t *manager, zbx_ipc_client_t *cli
 	rule = worker->rule;
 	worker->rule = NULL;
 
+	rule->dup = NULL;
 	data = rule->head;
 	rule->head = rule->head->next;
 
@@ -394,12 +403,96 @@ static void	lld_process_result(zbx_lld_manager_t *manager, zbx_ipc_client_t *cli
 	}
 
 	lld_data_free(data);
+	manager->queued_num--;
 
 	if (SUCCEED != zbx_binary_heap_empty(&manager->rule_queue))
 		lld_process_next_request(manager, worker);
 	else
 		zbx_queue_ptr_push(&manager->free_workers, worker);
 
+	zabbix_log(LOG_LEVEL_DEBUG, "End of %s()", __func__);
+}
+
+/******************************************************************************
+ *                                                                            *
+ * Purpose: get next value from the same rule if it's not empty               *
+ *                                                                            *
+ ******************************************************************************/
+static zbx_lld_data_t	*lld_data_get_next_value(zbx_lld_data_t *from, zbx_uint64_t itemid)
+{
+	zbx_lld_data_t	*data;
+
+	for (data = from; NULL != data; data = data->next)
+	{
+		if (data->itemid == itemid)
+		{
+			if (NULL != data->value)
+				return data;
+			break;
+		}
+	}
+
+	return NULL;
+}
+
+/******************************************************************************
+ *                                                                            *
+ * Purpose: processes LLD worker 'next' response                              *
+ *                                                                            *
+ * Parameters: manager - [IN]                                                 *
+ *             client  - [IN] worker's IPC client connection                  *
+ *                                                                            *
+ ******************************************************************************/
+static void	lld_process_next(zbx_lld_manager_t *manager, zbx_ipc_client_t *client)
+{
+	zbx_lld_worker_t	*worker;
+	zbx_lld_rule_t		*rule;
+
+	zabbix_log(LOG_LEVEL_DEBUG, "In %s()", __func__);
+
+	worker = lld_get_worker_by_client(manager, client);
+	rule = worker->rule;
+
+	zabbix_log(LOG_LEVEL_DEBUG, "discovery rule:" ZBX_FS_UI64 " duplicate check in progress, values:%d",
+			rule->head->itemid, rule->values_num);
+
+	if (NULL != rule->dup)
+	{
+		/* worker asking for another value after duplicate check  */
+		/* means that the checked value was duplicate - discard it */
+
+		zbx_lld_data_t	*dup = rule->dup;
+
+		if (NULL != dup->prev)
+			dup->prev->next = dup->next;
+		else
+			rule->head = dup->next;
+
+		if (NULL != dup->next)
+			dup->next->prev = dup->prev;
+		else
+			rule->tail = dup->prev;
+
+		rule->values_num--;
+		rule->dup = NULL;
+
+		lld_data_free(dup);
+		manager->queued_num--;
+	}
+
+	if (NULL == (rule->dup = lld_data_get_next_value(rule->head->next, rule->head->itemid)))
+	{
+		zbx_ipc_client_send(client, ZBX_IPC_LLD_PROCESS, NULL, 0);
+		goto out;
+	}
+
+	unsigned char	*buf;
+	zbx_uint32_t	buf_len;
+
+	buf_len = zbx_lld_serialize_value(&buf, rule->dup->value);
+	zbx_ipc_client_send(client, ZBX_IPC_LLD_CHECK_VALUE, buf, buf_len);
+	zbx_free(buf);
+out:
 	zabbix_log(LOG_LEVEL_DEBUG, "End of %s()", __func__);
 }
 
@@ -536,6 +629,8 @@ ZBX_THREAD_ENTRY(lld_manager_thread, args)
 		exit(EXIT_FAILURE);
 	}
 
+	zbx_rtc_subscribe_service(ZBX_PROCESS_TYPE_LLDMANAGER, 0, NULL, 0, SEC_PER_MIN, ZBX_IPC_SERVICE_LLD);
+
 	lld_manager_init(&manager, args_in->get_process_forks_cb_arg);
 
 	/* initialize statistics */
@@ -547,6 +642,8 @@ ZBX_THREAD_ENTRY(lld_manager_thread, args)
 
 	while (ZBX_IS_RUNNING())
 	{
+		int	shutdown = 0;
+
 		time_now = zbx_time();
 
 		if (STAT_INTERVAL < time_now - time_stat)
@@ -585,7 +682,9 @@ ZBX_THREAD_ENTRY(lld_manager_thread, args)
 				case ZBX_IPC_LLD_DONE:
 					lld_process_result(&manager, client);
 					processed_num++;
-					manager.queued_num--;
+					break;
+				case ZBX_IPC_LLD_NEXT:
+					lld_process_next(&manager, client);
 					break;
 				case ZBX_IPC_LLD_QUEUE:
 					zbx_ipc_client_send(client, message->code, (unsigned char *)&manager.queued_num,
@@ -597,6 +696,10 @@ ZBX_THREAD_ENTRY(lld_manager_thread, args)
 				case ZBX_IPC_LLD_TOP_ITEMS:
 					lld_process_top_items(&manager, client, message);
 					break;
+				case ZBX_RTC_SHUTDOWN:
+					zabbix_log(LOG_LEVEL_DEBUG, "shutdown message received, terminating...");
+					shutdown = 1;
+					break;
 			}
 
 			zbx_ipc_message_free(message);
@@ -604,7 +707,12 @@ ZBX_THREAD_ENTRY(lld_manager_thread, args)
 
 		if (NULL != client)
 			zbx_ipc_client_release(client);
+
+		if (1 == shutdown)
+			break;
 	}
+
+	zbx_ipc_service_close(&lld_service);
 
 	zbx_setproctitle("%s #%d [terminated]", get_process_type_string(process_type), process_num);
 

@@ -14,7 +14,7 @@ dnl
 
 dnl Process this file with autoconf to produce a configure script.
 
-AC_INIT([Zabbix], [7.2.7])
+AC_INIT([Zabbix], [7.4.6])
 
 AC_MSG_NOTICE([Configuring $PACKAGE_NAME $PACKAGE_VERSION])
 
@@ -1345,6 +1345,7 @@ dnl *****************************************************************
 AC_ARG_ENABLE(static,[  --enable-static         Build statically linked binaries],
 [case "${enableval}" in
   yes)
+    enable_static=yes
     LDFLAGS="${LDFLAGS} -static"
     AC_MSG_CHECKING(if static linking is possible)
     AC_LINK_IFELSE([AC_LANG_PROGRAM(,)],
@@ -1363,7 +1364,7 @@ esac])
 AC_ARG_ENABLE(static-libs,[  --enable-static-libs    Build statically linked binaries with selected libs from default folders],
 [case "${enableval}" in
   yes)
-    static_linking_libs=yes
+    enable_static_libs=yes
     saved_LIBS="$LIBS"
     LIBS="${saved_LIBS} -Wl,-bstatic -Wl,-bdynamic"
     AC_MSG_CHECKING([if libs static linking with "-Wl,-b" is possible])
@@ -1384,13 +1385,21 @@ AC_ARG_ENABLE(static-libs,[  --enable-static-libs    Build statically linked bin
           static_linking_support=no])
           LIBS="$saved_LIBS"
     fi
+
+    if test "x$static_linking_support" = "xno"; then
+      AC_MSG_ERROR([static linking with selected libs is not possible on this system])
+    fi
     ;;
   no) ;;
   *) AC_MSG_ERROR([bad value ${enableval} for --enable-static-libs]) ;;
 esac])
 
-if test "x#static_linking" = "xyes" && test "x$static_linking_libs" = "xyes"; then
-  AC_MSG_ERROR([cannot use --static and --static-libs at the same time])
+if test "x$enable_static" = "xyes" && test "x$enable_static_libs" = "xyes"; then
+  AC_MSG_ERROR([cannot use --enable-static and --enable-static-libs at the same time])
+fi
+
+if test "x$enable_static" = "xyes" || test "x$enable_static_libs" = "xyes"; then
+  AC_DEFINE(STATIC_LINKING,1,[Define to 1 if libraries are linked statically.])
 fi
 
 AC_ARG_ENABLE(server,[  --enable-server         Turn on build of Zabbix server],
@@ -1638,8 +1647,8 @@ if test "x$server" = "xyes" || test "x$proxy" = "xyes"; then
 
 	AC_SUBST(SNMP_CFLAGS)
 
-	dnl Check for LIBSSH2 [by default - skip] at least of version 1.0.0.
-	LIBSSH2_CHECK_CONFIG([no])
+	dnl Check for LIBSSH2 [by default - skip]
+	LIBSSH2_CHECK_CONFIG([no],[1.8.0])
 	LIBSSH_CHECK_CONFIG([no])
 	if test "x$want_ssh2" = "xyes"; then
 		if test "x$want_ssh" != "xno"; then
@@ -1649,7 +1658,7 @@ if test "x$server" = "xyes" || test "x$proxy" = "xyes"; then
 		if test "x$found_ssh2" != "xyes"; then
 			AC_MSG_ERROR([SSH2 library not found])
 		elif test "x$accept_ssh2_version" != "xyes"; then
-			AC_MSG_ERROR([SSH2 library version requirement not met (>= 1.0.0)])
+			AC_MSG_ERROR([SSH2 library version requirement not met (>= 1.8.0)])
 		else
 			have_ssh="yes (libssh2)"
 		fi
@@ -2006,12 +2015,6 @@ else
 	have_pcre2=1
 fi
 
-if test "x$have_pcre" != "x1" && test "x$have_pcre2" != "x1"; then
-    AC_MSG_ERROR([cannot build with libpcre or libpcre2])
-fi
-fi
-
-AM_CONDITIONAL([HAVE_PCRE], [test "x$have_pcre" = "x1"])
 AM_CONDITIONAL([HAVE_PCRE2], [test "x$have_pcre2" = "x1"])
 
 found_iconv="no"
@@ -2073,7 +2076,7 @@ if test "x$HAVE_START_GROUP" = "xyes"; then
 fi
 
 if test "x$agent2" = "xyes"; then
-	CGO_CFLAGS="$TLS_CFLAGS $LIBPCRE_CFLAGS $LIBPCRE2_CFLAGS"
+	CGO_CFLAGS="$TLS_CFLAGS $LIBPCRE2_CFLAGS"
 	CGO_LDFLAGS="$AGENT2_LDFLAGS $LD_START_GROUP \
 		\${abs_top_builddir}/src/libs/zbxalgo/libzbxalgo.a \
 		\${abs_top_builddir}/src/libs/zbxinterface/libzbxinterface.a \
@@ -2411,10 +2414,6 @@ Configuration:
 
 if test "x$DB_CFLAGS" != "x"; then
 	echo "    database:              ${DB_CFLAGS}"
-fi
-
-if test "x$LIBPCRE_CFLAGS" != "x"; then
-	echo "    libpcre:               ${LIBPCRE_CFLAGS}"
 fi
 
 if test "x$LIBPCRE2_CFLAGS" != "x"; then

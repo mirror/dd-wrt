@@ -297,15 +297,17 @@ function getPosition(obj) {
 }
 
 /**
- * Opens popup content in overlay dialogue.
+ * Preload and display popup dialogue.
  *
- * @param {string}           action              Popup controller related action.
- * @param {Array|Object}     parameters          Array with key/value pairs that will be used as query for popup
- *                                               request.
- *
+ * @param {string}           action              Popup action (controller).
+ * @param {Array|Object}     parameters          Popup action (controller) parameters.
+ * @param {string|null}      dialogueid          Dialogue overlay ID.
  * @param {string}           dialogue_class      CSS class, usually based on .modal-popup and .modal-popup-{size}.
- * @param {string|null}      dialogueid          ID of overlay dialogue.
- * @param {HTMLElement|null} trigger_element     UI element which was clicked to open overlay dialogue.
+ * @param {boolean}	         is_modal            Whether to prevent interaction with background objects.
+ * @param {boolean}	         is_draggable        Whether to allow dragging the form around.
+ * @param {string|undefined} position            Positioning strategy (Overlay.prototype.POSITION_*).
+ * @param {Object|null}      position_fix        Specific position, if not null.
+ * @param {HTMLElement|null} trigger_element     DOM element which triggered opening overlay dialogue.
  * @param {boolean}          prevent_navigation  Show warning when navigating away from an active dialogue.
  *
  * @returns {Overlay}
@@ -313,6 +315,10 @@ function getPosition(obj) {
 function PopUp(action, parameters, {
 	dialogueid = null,
 	dialogue_class = '',
+	is_modal = true,
+	is_draggable = false,
+	position = undefined,
+	position_fix = null,
 	trigger_element = document.activeElement,
 	prevent_navigation = false
 } = {}) {
@@ -322,16 +328,25 @@ function PopUp(action, parameters, {
 
 	if (!overlay) {
 		overlay = overlayDialogue({
-			dialogueid,
 			title: '',
 			doc_url: '',
 			content: jQuery('<div>', {'height': '68px', 'width': '105px', class: 'is-loading'}),
-			class: 'modal-popup ' + dialogue_class,
+			class: `modal-popup ${dialogue_class}`,
 			buttons: [],
-			element: trigger_element,
-			type: 'popup',
 			prevent_navigation
+		}, {
+			type: 'popup',
+			dialogueid,
+			is_modal,
+			is_draggable,
+			position,
+			position_fix,
+			trigger_element
 		});
+	}
+	else {
+		// Throw reload event for dialogs to shut down scripting properly.
+		overlay.$dialogue[0].dispatchEvent(new CustomEvent('dialogue.reload'));
 	}
 
 	overlay
@@ -381,11 +396,17 @@ function PopUp(action, parameters, {
 					doc_url: resp.doc_url,
 					content: resp.body,
 					controls: resp.controls,
-					class: 'modal-popup ' + resp.dialogue_class ?? dialogue_class,
+					class: `modal-popup ${resp.dialogue_class ?? dialogue_class}`,
 					buttons,
 					debug: resp.debug,
 					script_inline: resp.script_inline,
 					data: resp.data || null
+				});
+
+				overlay.$dialogue[0].addEventListener('dialogue.close', () => {
+					for (const form of overlay.$dialogue.$body[0].querySelectorAll('form')) {
+						form.dispatchEvent(new CustomEvent('form.destroyed'));
+					}
 				});
 
 				const resizeHandler = (grid) => {
@@ -479,7 +500,14 @@ function closeDialogHandler(event) {
 			switch (overlay.type) {
 				// Close overlay popup.
 				case 'popup':
-					overlayDialogueDestroy(overlay.dialogueid, Overlay.prototype.CLOSE_BY_USER);
+					if (overlay.has_custom_cancel) {
+						overlay.$dialogue[0].dispatchEvent(new CustomEvent('dialogue.cancel', {detail: {
+							dialogueid: overlay.dialogueid
+						}}));
+					}
+					else {
+						overlayDialogueDestroy(overlay.dialogueid, Overlay.prototype.CLOSE_BY_USER);
+					}
 					break;
 
 				// Close overlay hintbox.
@@ -507,11 +535,6 @@ function closeDialogHandler(event) {
 					jQuery(ZBX_MESSAGES).each(function(i, msg) {
 						msg.closeAllMessages();
 					});
-					break;
-
-				// Close overlay color picker.
-				case 'color_picker':
-					jQuery.colorpicker('hide');
 					break;
 
 				// Close map/shape overlay.
@@ -651,41 +674,6 @@ function addSelectedValues(object, parentid) {
 }
 
 /**
- * Add media.
- *
- * @param {string} formname			name of destination form
- * @param {integer} media			media id. If -1, then assumes that this is new media
- * @param {integer} mediatypeid		media type id
- * @param {string} sendto			media sendto value
- * @param {string} period			media period value
- * @param {string} active			media active value
- * @param {string} severity			media severity value
- *
- * @returns true
- */
-function add_media(formname, media, mediatypeid, sendto, period, active, severity) {
-	var form = window.document.forms[formname];
-	var media_name = (media > -1) ? 'medias[' + media + ']' : 'new_media';
-
-	window.create_var(form, media_name + '[mediatypeid]', mediatypeid);
-	if (typeof sendto === "object") {
-		window.removeVarsBySelector(form, 'input[name^="'+media_name+'[sendto]"]');
-		jQuery(sendto).each(function(i, st) {
-			window.create_var(form, media_name + '[sendto]['+i+']', st);
-		});
-	}
-	else {
-		window.create_var(form, media_name + '[sendto]', sendto);
-	}
-	window.create_var(form, media_name + '[period]', period);
-	window.create_var(form, media_name + '[active]', active);
-	window.create_var(form, media_name + '[severity]', severity);
-
-	form.submit();
-	return true;
-}
-
-/**
  * Send trigger expression form data to server for validation before adding it to trigger expression field.
  *
  * @param {Overlay} overlay
@@ -729,6 +717,10 @@ function validate_trigger_expression(overlay) {
 			overlayDialogueDestroy(overlay.dialogueid);
 
 			obj.dispatchEvent(new Event('change'));
+
+			if (window.trigger_edit_popup) {
+				window.trigger_edit_popup.form.validateChanges(['expression', 'recovery_expression']);
+			}
 		},
 		dataType: 'json',
 		type: 'POST'
@@ -882,7 +874,7 @@ function showHideVisible(obj) {
 /**
  * Check if element is visible.
  *
- * @param {object} element
+ * @param {Element} element
  *
  * @return {boolean}
  */
@@ -1098,6 +1090,37 @@ function uncheckTableRows(page, keepids = [], mvc = true) {
 	else {
 		sessionStorage.removeItem(key);
 	}
+}
+
+/**
+ * Set value in multidimensional object.
+ *
+ * @param {object} object - object to modify
+ * @param {array}  path   - array with keys, where value must be added
+ * @param {mixed}  value  - value to be added
+ *
+ * @return {object} - modified input object
+ */
+function objectSetDeepValue(object, path, value) {
+	let tmp = object;
+
+	while (path.length > 1) {
+		const key = path.shift();
+
+		if (!(key in tmp)) {
+			tmp[key] = {};
+		}
+
+		if (typeof tmp[key] !== 'object') {
+			throw Error('Invalid path. Node is not an Object.');
+		}
+
+		tmp = tmp[key];
+	}
+
+	tmp[path.shift()] = value;
+
+	return object;
 }
 
 // Fix jQuery ui.sortable vertical positioning bug.

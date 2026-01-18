@@ -18,6 +18,8 @@ class CWidgetItemHistory extends CWidget {
 	static VALUE_TYPE_IMAGE = 'image';
 	static VALUE_TYPE_RAW = 'raw';
 
+	static NEW_VALUES_BOTTOM = 1;
+
 	#binary_data_cache = new Map();
 	#binary_buttons = new Map();
 
@@ -27,9 +29,51 @@ class CWidgetItemHistory extends CWidget {
 
 	#values_table;
 
+	#scroll_bottom = true;
+
+	#contents_client_height = null;
+	#contents_client_width = null;
+	#contents_scroll_height = null;
+	#contents_scroll_width = null;
+
 	#selected_itemid = null;
 	#selected_clock = null;
 	#selected_key_ = null;
+
+	onStart() {
+		if (this._fields.sortorder === CWidgetItemHistory.NEW_VALUES_BOTTOM) {
+			this._events = {
+				...this._events,
+				scrollHandler: () => {
+					if (!this.#hasContentsDimensionsChanged()) {
+						const contents_scroll_position = this._contents.clientHeight + this._contents.scrollTop + 2;
+						this.#scroll_bottom = contents_scroll_position >= this._contents.scrollHeight;
+					}
+					else {
+						this.#updateContentsDimensions();
+					}
+
+					if (this.#scroll_bottom) {
+						this._contents.scrollTop = this._contents.scrollHeight + 1;
+					}
+				}
+			};
+		}
+	}
+
+	onActivate() {
+		if (this._fields.sortorder === CWidgetItemHistory.NEW_VALUES_BOTTOM) {
+			this._contents.scrollTop = this._contents.scrollHeight + 1;
+
+			this._contents.addEventListener('scroll', this._events.scrollHandler);
+		}
+	}
+
+	onDeactivate() {
+		if (this._fields.sortorder === CWidgetItemHistory.NEW_VALUES_BOTTOM) {
+			this._contents.removeEventListener('scroll', this._events.scrollHandler);
+		}
+	}
 
 	setContents(response) {
 		super.setContents(response);
@@ -71,17 +115,19 @@ class CWidgetItemHistory extends CWidget {
 			}
 		});
 
-		if (!this.hasEverUpdated() && this.isReferred()) {
-			const element = this.#getDefaultSelectable();
+		if (this.isReferred() && (this.isFieldsReferredDataUpdated() || !this.hasEverUpdated())) {
+			if (this.#selected_itemid === null || !items_data.has(this.#selected_itemid)) {
+				const element = this.#getDefaultSelectable();
 
-			if (element !== null) {
-				this.#selected_clock = element.dataset.clock;
-				this.#selected_itemid = element.dataset.itemid;
-				this.#selected_key_ = element.dataset.key_;
-
-				this.#broadcast();
-				this.#markSelected();
+				if (element !== null) {
+					this.#selected_clock = element.dataset.clock;
+					this.#selected_itemid = element.dataset.itemid;
+					this.#selected_key_ = element.dataset.key_;
+				}
 			}
+
+			this.#broadcast();
+			this.#markSelected();
 		}
 		else if (this.#selected_itemid !== null) {
 			if (!items_data.has(this.#selected_itemid)) {
@@ -97,6 +143,14 @@ class CWidgetItemHistory extends CWidget {
 			}
 
 			this.#markSelected();
+		}
+
+		if (this._fields.sortorder === CWidgetItemHistory.NEW_VALUES_BOTTOM) {
+			if (this.#scroll_bottom) {
+				this._contents.scrollTop = this._contents.scrollHeight + 1;
+			}
+
+			this.#updateContentsDimensions();
 		}
 	}
 
@@ -129,6 +183,30 @@ class CWidgetItemHistory extends CWidget {
 			...super.getUpdateRequestData(),
 			has_custom_time_period: this.getFieldsReferredData().has('time_period') ? undefined : 1
 		}
+	}
+
+	onResize() {
+		if (this._fields.sortorder === CWidgetItemHistory.NEW_VALUES_BOTTOM) {
+			if (this.#scroll_bottom) {
+				this._contents.scrollTop = this._contents.scrollHeight + 1;
+			}
+
+			this.#updateContentsDimensions();
+		}
+	}
+
+	#hasContentsDimensionsChanged() {
+		return this.#contents_client_height !== this._contents.clientHeight
+			|| this.#contents_client_width !== this._contents.clientWidth
+			|| this.#contents_scroll_height !== this._contents.scrollHeight
+			|| this.#contents_scroll_width !== this._contents.scrollWidth;
+	}
+
+	#updateContentsDimensions() {
+		this.#contents_client_height = this._contents.clientHeight;
+		this.#contents_client_width = this._contents.clientWidth;
+		this.#contents_scroll_height = this._contents.scrollHeight;
+		this.#contents_scroll_width = this._contents.scrollWidth;
 	}
 
 	#broadcast() {

@@ -1,5 +1,5 @@
 //-----------------------------------------------------------------------------
-// Copyright (c) 2018, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2024, Oracle and/or its affiliates.
 //
 // This software is dual-licensed to you under the Universal Permissive License
 // (UPL) 1.0 as shown at https://oss.oracle.com/licenses/upl and Apache License
@@ -36,14 +36,50 @@
 int dpiSodaDoc__allocate(dpiSodaDb *db, void *handle, dpiSodaDoc **doc,
         dpiError *error)
 {
+    int isJson, status = DPI_SUCCESS;
     dpiSodaDoc *tempDoc;
+    uint32_t tempLen;
+    void *jsonHandle;
 
+    // allocate SODA document structure
     if (dpiGen__allocate(DPI_HTYPE_SODA_DOC, db->env, (void**) &tempDoc,
-            error) < 0)
+            error) < 0) {
+        if (handle)
+            dpiOci__handleFree(tempDoc->handle, DPI_OCI_HTYPE_SODA_DOCUMENT);
         return DPI_FAILURE;
+    }
+
+    // if no handle was provided, allocate one
+    if (!handle) {
+        status = dpiOci__handleAlloc(db->env->handle, &tempDoc->handle,
+                DPI_OCI_HTYPE_SODA_DOCUMENT, "allocate SODA document handle",
+                error);
+
+    // otherwise, for Oracle 23ai and higher, acquire JSON, if applicable
+    } else {
+        tempDoc->handle = handle;
+        if (db->env->context->sodaUseJsonDesc) {
+            status = dpiOci__attrGet(handle, DPI_OCI_HTYPE_SODA_DOCUMENT,
+                    (void*) &isJson, 0, DPI_OCI_ATTR_SODA_JSON_DESC,
+                    "get is JSON", error);
+            if (status == DPI_SUCCESS && isJson) {
+                status = dpiOci__attrGet(handle, DPI_OCI_HTYPE_SODA_DOCUMENT,
+                        (void*) &jsonHandle, &tempLen,
+                        DPI_OCI_ATTR_SODA_CONTENT, "get JSON descriptor",
+                        error);
+                if (status == DPI_SUCCESS)
+                    status = dpiJson__allocate(db->conn, jsonHandle,
+                            &tempDoc->json, error);
+            }
+        }
+    }
+    if (status < 0) {
+        dpiSodaDoc__free(tempDoc, error);
+        return DPI_FAILURE;
+    }
+
     dpiGen__setRefCount(db, error, 1);
     tempDoc->db = db;
-    tempDoc->handle = handle;
     *doc = tempDoc;
     return DPI_SUCCESS;
 }
@@ -72,6 +108,10 @@ static int dpiSodaDoc__check(dpiSodaDoc *doc, const char *fnName,
 //-----------------------------------------------------------------------------
 void dpiSodaDoc__free(dpiSodaDoc *doc, dpiError *error)
 {
+    if (doc->json) {
+        dpiGen__setRefCount(doc->json, error, -1);
+        doc->json = NULL;
+    }
     if (doc->handle) {
         dpiOci__handleFree(doc->handle, DPI_OCI_HTYPE_SODA_DOCUMENT);
         doc->handle = NULL;
@@ -133,6 +173,11 @@ int dpiSodaDoc_getContent(dpiSodaDoc *doc, const char **value,
     DPI_CHECK_PTR_NOT_NULL(doc, value)
     DPI_CHECK_PTR_NOT_NULL(doc, valueLength)
     DPI_CHECK_PTR_NOT_NULL(doc, encoding)
+    if (doc->json) {
+        dpiError__set(&error, "check content of SODA document",
+                DPI_ERR_SODA_DOC_IS_JSON);
+        return dpiGen__endPublicFn(doc, DPI_FAILURE, &error);
+    }
 
     // get content
     if (dpiOci__attrGet(doc->handle, DPI_OCI_HTYPE_SODA_DOCUMENT,
@@ -183,6 +228,51 @@ int dpiSodaDoc_getCreatedOn(dpiSodaDoc *doc, const char **value,
 {
     return dpiSodaDoc__getAttributeText(doc,
             DPI_OCI_ATTR_SODA_CREATE_TIMESTAMP, value, valueLength, __func__);
+}
+
+
+//-----------------------------------------------------------------------------
+// dpiSodaDoc_getIsJson() [PUBLIC]
+//   Return a boolean value indicating if the document contains JSON or not.
+// If the value contains JSON, the method dpiSodaDoc_getJsonContent() should be
+// called; otherwise, dpiSodaDoc_getContent() should be called.
+//-----------------------------------------------------------------------------
+int dpiSodaDoc_getIsJson(dpiSodaDoc *doc, int *isJson)
+{
+    dpiError error;
+
+    // validate parameters
+    if (dpiSodaDoc__check(doc, __func__, &error) < 0)
+        return dpiGen__endPublicFn(doc, DPI_FAILURE, &error);
+    DPI_CHECK_PTR_NOT_NULL(doc, isJson)
+
+    // calculate value
+    *isJson = (doc->json) ? 1 : 0;
+    return dpiGen__endPublicFn(doc, DPI_SUCCESS, &error);
+}
+
+
+//-----------------------------------------------------------------------------
+// dpiSodaDoc_getJsonContent() [PUBLIC]
+//   Return the JSON content of the SODA document.
+//-----------------------------------------------------------------------------
+int dpiSodaDoc_getJsonContent(dpiSodaDoc *doc, dpiJson **json)
+{
+    dpiError error;
+
+    // validate parameters
+    if (dpiSodaDoc__check(doc, __func__, &error) < 0)
+        return dpiGen__endPublicFn(doc, DPI_FAILURE, &error);
+    DPI_CHECK_PTR_NOT_NULL(doc, json)
+    if (!doc->json) {
+        dpiError__set(&error, "check content of SODA document",
+                DPI_ERR_SODA_DOC_IS_NOT_JSON);
+        return dpiGen__endPublicFn(doc, DPI_FAILURE, &error);
+    }
+
+    // get content
+    *json = doc->json;
+    return dpiGen__endPublicFn(doc, DPI_SUCCESS, &error);
 }
 
 

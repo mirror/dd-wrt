@@ -27,12 +27,21 @@ import (
 	"golang.zabbix.com/sdk/errs"
 )
 
+// Constants representing the result of a ping operation.
+const (
+	PingFailed Ping = 0
+	PingOk     Ping = 1
+)
+
 const (
 	// JSONType specifies that the data transmitted is encoded in JSON format.
 	JSONType      = uint32(1)
 	headerTypeLen = 4
 	headerDataLen = 4
 )
+
+// Ping represents the status of a ping check.
+type Ping int
 
 // Read reads a single loadable plugin and agent communications request.
 func Read(conn net.Conn) (Common, []byte, error) {

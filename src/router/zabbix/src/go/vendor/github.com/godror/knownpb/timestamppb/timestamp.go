@@ -16,9 +16,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/VictoriaMetrics/easyproto"
 	"github.com/godror/knownpb/internal"
-	"google.golang.org/protobuf/proto"
-	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
@@ -29,30 +28,110 @@ var (
 	_ = encoding.TextUnmarshaler((*Timestamp)(nil))
 	_ = xml.Marshaler((*Timestamp)(nil))
 	_ = xml.Unmarshaler((*Timestamp)(nil))
-	_ = proto.Message((*Timestamp)(nil))
+	// _ = proto.Message((*Timestamp)(nil))
 	_ = sql.Scanner((*Timestamp)(nil))
 	_ = driver.Valuer((*Timestamp)(nil))
 )
 
+// go : generate go get -tool github.com/planetscale/vtprotobuf/cmd/protoc-gen-go-vtproto@latest
+//go:generate sh -c "mkdir -p $(go env GOPATH)/src/google/protobuf; curl -sS -L -m 30 -o $(go env GOPATH)/src/google/protobuf/timestamp.proto https://github.com/protocolbuffers/protobuf/raw/main/src/google/protobuf/timestamp.proto"
+// go : generate sh -c "protoc -I$(go env GOPATH)/src --go-vtproto_out=$(go env GOPATH)/src --go-vtproto_opt=features=marshal+unmarshal+size $(go env GOPATH)/src/google/protobuf/timestamp.proto && cp -a $(go env GOPATH)/src/google.golang.org/protobuf/types/known/timestamppb/timestamp_vtproto.pb.go timestamp_vtproto.go"
+
 // Timestamp is a wrapped timestamppb.Timestamp with proper JSON and XML marshaling (as string date).
 type Timestamp struct {
-	timestamppb.Timestamp
+	// Represents seconds of UTC time since Unix epoch
+	// 1970-01-01T00:00:00Z. Must be from 0001-01-01T00:00:00Z to
+	// 9999-12-31T23:59:59Z inclusive.
+	Seconds int64 `protobuf:"varint,1,opt,name=seconds,proto3" json:"seconds,omitempty"`
+	// Non-negative fractions of a second at nanosecond resolution. Negative
+	// second values with fractions must still have non-negative nanos values
+	// that count forward in time. Must be from 0 to 999,999,999
+	// inclusive.
+	Nanos int32 `protobuf:"varint,2,opt,name=nanos,proto3" json:"nanos,omitempty"`
 }
 
-func New(t time.Time) *Timestamp {
-	return &Timestamp{*timestamppb.New(t)}
+// Now constructs a new Timestamp from the current time.
+func Now() *Timestamp {
+	return New(time.Now())
 }
-func (ts *Timestamp) AsTimestamp() *timestamppb.Timestamp {
-	if ts == nil {
+
+// New constructs a new Timestamp from the provided time.Time.
+func New(t time.Time) *Timestamp {
+	return &Timestamp{
+		Seconds: int64(t.Unix()),
+		Nanos:   int32(t.Nanosecond()),
+	}
+}
+
+// AsTime converts x to a time.Time.
+func (x *Timestamp) AsTime() time.Time {
+	if x.IsZero() {
+		return time.Time{}
+	}
+	return time.Unix(int64(x.Seconds), int64(x.Nanos)).UTC()
+}
+
+// IsValid reports whether the timestamp is valid.
+// It is equivalent to CheckValid == nil.
+func (x *Timestamp) IsValid() bool {
+	return x.check() == 0
+}
+
+// CheckValid returns an error if the timestamp is invalid.
+// In particular, it checks whether the value represents a date that is
+// in the range of 0001-01-01T00:00:00Z to 9999-12-31T23:59:59Z inclusive.
+// An error is reported for a nil Timestamp.
+func (x *Timestamp) CheckValid() error {
+	switch x.check() {
+	case invalidNil:
+		return fmt.Errorf("invalid nil Timestamp")
+	case invalidUnderflow:
+		return fmt.Errorf("timestamp (%v) before 0001-01-01", x)
+	case invalidOverflow:
+		return fmt.Errorf("timestamp (%v) after 9999-12-31", x)
+	case invalidNanos:
+		return fmt.Errorf("timestamp (%v) has out-of-range nanos", x)
+	default:
 		return nil
 	}
-	return &ts.Timestamp
 }
+
+const (
+	_ = iota
+	invalidNil
+	invalidUnderflow
+	invalidOverflow
+	invalidNanos
+)
+
+func (x *Timestamp) check() uint {
+	const minTimestamp = -62135596800  // Seconds between 1970-01-01T00:00:00Z and 0001-01-01T00:00:00Z, inclusive
+	const maxTimestamp = +253402300799 // Seconds between 1970-01-01T00:00:00Z and 9999-12-31T23:59:59Z, inclusive
+	secs := x.Seconds
+	nanos := x.Nanos
+	switch {
+	case x == nil:
+		return invalidNil
+	case secs < minTimestamp:
+		return invalidUnderflow
+	case secs > maxTimestamp:
+		return invalidOverflow
+	case nanos < 0 || nanos >= 1e9:
+		return invalidNanos
+	default:
+		return 0
+	}
+}
+
+func (x *Timestamp) Reset() { *x = Timestamp{} }
+
+func (*Timestamp) ProtoMessage() {}
+
 func (ts *Timestamp) Format(layout string) string {
 	if ts == nil {
 		return ""
 	}
-	t := ts.Timestamp.AsTime()
+	t := ts.AsTime()
 	if t.IsZero() {
 		return ""
 	}
@@ -62,16 +141,11 @@ func (ts *Timestamp) AppendFormat(b []byte, layout string) []byte {
 	if ts == nil {
 		return nil
 	}
-	t := ts.Timestamp.AsTime()
+	t := ts.AsTime()
 	if t.IsZero() {
 		return nil
 	}
 	return t.AppendFormat(b, layout)
-}
-func (ts *Timestamp) Reset() {
-	if t := ts.AsTimestamp(); t != nil {
-		t.Reset()
-	}
 }
 func (ts *Timestamp) Scan(src interface{}) error {
 	if src == nil {
@@ -158,12 +232,6 @@ func (ts *Timestamp) UnmarshalXML(dec *xml.Decoder, st xml.StartElement) error {
 func (ts *Timestamp) IsZero() (zero bool) {
 	return ts == nil || ts.Seconds == 0 && ts.Nanos == 0
 }
-func (ts *Timestamp) AsTime() time.Time {
-	if ts.IsZero() {
-		return time.Time{}
-	}
-	return ts.AsTimestamp().AsTime()
-}
 func (ts *Timestamp) MarshalJSON() ([]byte, error) {
 	if ts != nil {
 		t := ts.AsTime()
@@ -238,7 +306,7 @@ func (ts *Timestamp) UnmarshalText(data []byte) error {
 	if err != nil {
 		return fmt.Errorf("ParseInLocation(%q, %q): %w", layout, string(data), err)
 	}
-	*(ts.AsTimestamp()) = *timestamppb.New(t)
+	*ts = *New(t)
 	return nil
 }
 
@@ -251,5 +319,56 @@ func (ts *Timestamp) String() string {
 	}
 	return ""
 }
-func (ts *Timestamp) Proto()                             {}
-func (ts *Timestamp) ProtoReflect() protoreflect.Message { return ts.AsTimestamp().ProtoReflect() }
+func (ts *Timestamp) Proto() {}
+
+// func (ts *Timestamp) ProtoReflect() protoreflect.Message { return ts.AsTimestamp().ProtoReflect() }
+
+// MarshalProtobuf marshals ts into protobuf message, appends this message to dst and returns the result.
+//
+// This function doesn't allocate memory on repeated calls.
+func (ts *Timestamp) MarshalProtobuf(dst []byte) []byte {
+	m := mp.Get()
+	ts.marshalProtobuf(m.MessageMarshaler())
+	dst = m.Marshal(dst)
+	mp.Put(m)
+	return dst
+}
+
+func (ts *Timestamp) marshalProtobuf(mm *easyproto.MessageMarshaler) {
+	mm.AppendInt64(1, ts.Seconds)
+	mm.AppendInt32(2, ts.Nanos)
+}
+
+var mp easyproto.MarshalerPool
+
+// UnmarshalProtobuf unmarshals ts from protobuf message at src.
+func (ts *Timestamp) UnmarshalProtobuf(src []byte) (err error) {
+	// Set default Timestamp values
+	ts.Reset()
+
+	// Parse Timestamp message at src
+	var fc easyproto.FieldContext
+	for len(src) > 0 {
+		src, err = fc.NextField(src)
+		if err != nil {
+			return fmt.Errorf("cannot read next field in Timestamp message")
+		}
+		switch fc.FieldNum {
+		case 1:
+			secs, ok := fc.Int64()
+			if !ok {
+				return fmt.Errorf("cannot read Timestamp seconds")
+			}
+			// name refers to src. This means that the name changes when src changes.
+			// Make a copy with strings.Clone(name) if needed.
+			ts.Seconds = secs
+		case 2:
+			nanos, ok := fc.Int32()
+			if !ok {
+				return fmt.Errorf("cannot read Timestamp nanos")
+			}
+			ts.Nanos = nanos
+		}
+	}
+	return nil
+}

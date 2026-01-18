@@ -529,8 +529,10 @@ static int	rm_get_report_range(int report_time, unsigned char period, struct tm 
 	zbx_time_unit_t	period2unit[] = {ZBX_TIME_UNIT_DAY, ZBX_TIME_UNIT_WEEK, ZBX_TIME_UNIT_MONTH,
 						ZBX_TIME_UNIT_YEAR};
 
-	if (ARRSIZE(period2unit) <= period || NULL == (tm = localtime(&from_time)))
+	if (ARRSIZE(period2unit) <= period)
 		return FAIL;
+
+	tm = zbx_localtime(&from_time, NULL);
 
 	*to = *tm;
 	zbx_tm_round_down(to, period2unit[period]);
@@ -575,11 +577,9 @@ static char	*rm_get_report_name(const char *name, int report_time)
 		}
 	}
 
-	if (NULL == (tm = localtime(&rtime)))
-		name_full = zbx_dsprintf(NULL, "%s.pdf", name_esc);
-	else
-		name_full = zbx_dsprintf(NULL, "%s_%04d-%02d-%02d_%02d-%02d.pdf", name_esc, tm->tm_year + 1900,
-				tm->tm_mon + 1, tm->tm_mday, tm->tm_hour, tm->tm_min);
+	tm = zbx_localtime(&rtime, NULL);
+	name_full = zbx_dsprintf(NULL, "%s_%04d-%02d-%02d_%02d-%02d.pdf", name_esc, tm->tm_year + 1900,
+			tm->tm_mon + 1, tm->tm_mday, tm->tm_hour, tm->tm_min);
 
 	zbx_free(name_esc);
 
@@ -841,18 +841,27 @@ static void	rm_update_cache_settings(zbx_rm_t *manager)
 
 	zabbix_log(LOG_LEVEL_DEBUG, "In %s()", __func__);
 
-	zbx_db_result_t	result = zbx_db_select("select session_key,url from config");
+	zbx_db_result_t	result = zbx_db_select("select name, value_str from settings"
+			" where name='session_key' or name='url'");
 
-	if (NULL != (row = zbx_db_fetch(result)))
+	manager->session_key = zbx_strdup(manager->session_key, "");
+	manager->zabbix_url = zbx_strdup(manager->zabbix_url, "");
+
+	while (NULL != (row = zbx_db_fetch(result)))
 	{
-		manager->session_key = zbx_strdup(manager->session_key, row[0]);
-		manager->zabbix_url = zbx_strdup(manager->zabbix_url, row[1]);
+		const char	*name = row[0];
+		const char	*value = row[1];
+
+		if (0 == strcmp(name, "session_key"))
+		{
+			manager->session_key = zbx_strdup(manager->session_key, value);
+		}
+		else if (0 == strcmp(name, "url"))
+		{
+			manager->zabbix_url = zbx_strdup(manager->zabbix_url, value);
+		}
 	}
-	else
-	{
-		manager->session_key = zbx_strdup(manager->session_key, "");
-		manager->zabbix_url = zbx_strdup(manager->zabbix_url, "");
-	}
+
 	zbx_db_free_result(result);
 
 	zabbix_log(LOG_LEVEL_DEBUG, "End of %s()", __func__);
@@ -863,18 +872,18 @@ static void	rm_update_cache_settings(zbx_rm_t *manager)
  * Purpose: checks if report is active based on specified time                *
  *                                                                            *
  * Parameters: report - [IN]                                                  *
- *             now    - [IN] current  time                                    *
+ *             when   - [IN] next check time                                  *
  *                                                                            *
  * Return value: SUCCEED - report is active                                   *
  *               FAIL    - otherwise                                          *
  *                                                                            *
  ******************************************************************************/
-static int	rm_is_report_active(const zbx_rm_report_t *report, int now)
+static int	rm_is_report_active(const zbx_rm_report_t *report, int when)
 {
-	if (0 != report->active_since && now < report->active_since)
+	if (0 != report->active_since && when < report->active_since)
 		return FAIL;
 
-	if (0 != report->active_till && now >= report->active_till)
+	if (0 != report->active_till && when >= report->active_till)
 		return FAIL;
 
 	return SUCCEED;
@@ -1018,7 +1027,7 @@ static void	rm_update_cache_reports(zbx_rm_t *manager, int now)
 		{
 			if (nextcheck != report->nextcheck)
 			{
-				if (SUCCEED == rm_is_report_active(report, now))
+				if (SUCCEED == rm_is_report_active(report, nextcheck))
 				{
 					zbx_binary_heap_elem_t	elem = {report->reportid, (void *)report};
 					int			nextcheck_old = report->nextcheck;
@@ -1116,7 +1125,7 @@ static void	rm_update_cache_reports_params(zbx_rm_t *manager)
 	}
 	zbx_db_free_result(result);
 
-	if (0 != params.values_num)
+	if (NULL != report && 0 != params.values_num)
 		rm_report_update_params(report, &params);
 
 	report_destroy_params(&params);
@@ -1189,7 +1198,7 @@ static void	rm_update_cache_reports_users(zbx_rm_t *manager)
 	}
 	zbx_db_free_result(result);
 
-	if (0 != users.values_num || 0 != users_excl.values_num)
+	if (NULL != report && (0 != users.values_num || 0 != users_excl.values_num))
 		rm_report_update_users(report, &users, &users_excl);
 
 	zbx_vector_uint64_destroy(&users_excl);
@@ -1253,7 +1262,7 @@ static void	rm_update_cache_reports_usergroups(zbx_rm_t *manager)
 	}
 	zbx_db_free_result(result);
 
-	if (0 != usergroups.values_num)
+	if (NULL != report && 0 != usergroups.values_num)
 		rm_report_update_usergroups(report, &usergroups);
 
 	zbx_vector_recipient_destroy(&usergroups);
@@ -1490,7 +1499,7 @@ static int	rm_writer_process_job(zbx_rm_writer_t *writer, zbx_rm_job_t *job, cha
 				"select mediatypeid,type,smtp_server,smtp_helo,smtp_email,exec_path,gsm_modem,username,"
 					"passwd,smtp_port,smtp_security,smtp_verify_peer,smtp_verify_host,"
 					"smtp_authentication,maxsessions,maxattempts,attempt_interval,"
-					"message_format,script,timeout"
+					"message_format,script,timeout,name"
 				" from media_type"
 				" where");
 
@@ -1524,6 +1533,7 @@ static int	rm_writer_process_job(zbx_rm_writer_t *writer, zbx_rm_job_t *job, cha
 			ZBX_STR2UCHAR(mt.message_format, row[17]);
 			mt.script = zbx_strdup(NULL, row[18]);
 			mt.timeout = zbx_strdup(NULL, row[19]);
+			mt.name = zbx_strdup(NULL, row[20]);
 
 			for (; index < dsts.values_num; index++)
 			{
@@ -1871,7 +1881,7 @@ static int	rm_schedule_jobs(zbx_rm_t *manager, int now)
 		{
 			if (-1 != (nextcheck = rm_report_calc_nextcheck(report, now, &error)))
 			{
-				if (SUCCEED == rm_is_report_active(report, now))
+				if (SUCCEED == rm_is_report_active(report, nextcheck))
 				{
 					zbx_binary_heap_elem_t	elem_new = {report->reportid, report};
 

@@ -228,6 +228,7 @@ final class CItemData {
 			'icmpping[<target>,<packets>,<interval>,<size>,<timeout>,<options>]',
 			'icmppingloss[<target>,<packets>,<interval>,<size>,<timeout>,<options>]',
 			'icmppingsec[<target>,<packets>,<interval>,<size>,<timeout>,<mode>,<options>]',
+			'icmppingretry[<target>,<retries>,<backoff>,<size>,<timeout>,<options>]',
 			'net.tcp.service.perf[service,<ip>,<port>]',
 			'net.tcp.service[service,<ip>,<port>]',
 			'net.udp.service.perf[service,<ip>,<port>]',
@@ -909,6 +910,9 @@ final class CItemData {
 					'js-item-timeout-field',
 					['id' => 'key', 'defaultValue' => ''],
 					['id' => 'value_type', 'defaultValue' => '']
+				],
+				ITEM_TYPE_NESTED => [
+					['id' => 'key', 'defaultValue' => '']
 				]
 			],
 			// Ids to toggle when the field 'authtype' is changed.
@@ -1109,6 +1113,13 @@ final class CItemData {
 				'value_type' => ITEM_VALUE_TYPE_FLOAT,
 				'documentation_link' => [
 					ITEM_TYPE_SIMPLE => 'config/items/itemtypes/simple_checks#icmppingsec'
+				]
+			],
+			'icmppingretry[<target>,<retries>,<backoff>,<size>,<timeout>,<options>]' => [
+				'description' => _('Checks if host is accessible by ICMP ping with retries. 0 - ICMP ping fails. 1 - ICMP ping successful.'),
+				'value_type' => ITEM_VALUE_TYPE_UINT64,
+				'documentation_link' => [
+					ITEM_TYPE_SIMPLE => 'config/items/itemtypes/simple_checks#icmppingretry'
 				]
 			],
 			'ipmi.get' => [

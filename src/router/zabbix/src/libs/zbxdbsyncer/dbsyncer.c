@@ -29,6 +29,7 @@
 #include "zbx_rtc_constants.h"
 #include "zbxipcservice.h"
 #include "zbxlog.h"
+#include "zbxhistory.h"
 
 static sigset_t			orig_mask;
 
@@ -101,8 +102,7 @@ static void	db_trigger_queue_cleanup(void)
  ******************************************************************************/
 ZBX_THREAD_ENTRY(zbx_dbsyncer_thread, args)
 {
-	int			sleeptime = -1, total_values_num = 0, values_num, more, total_triggers_num = 0,
-				triggers_num, running = 1;
+	int			sleeptime = -1, running = 1;
 	double			sec, total_sec = 0.0;
 	time_t			last_stat_time;
 	char			*stats = NULL;
@@ -114,6 +114,7 @@ ZBX_THREAD_ENTRY(zbx_dbsyncer_thread, args)
 	unsigned char		process_type = ((zbx_thread_args_t *)args)->info.process_type;
 	zbx_uint32_t		rtc_msgs[] = {ZBX_RTC_HISTORY_SYNC_NOTIFY};
 	zbx_ipc_async_socket_t	rtc;
+	zbx_history_sync_stats_t	sync_stats = {0};
 
 	zbx_thread_dbsyncer_args	*dbsyncer_args = (zbx_thread_dbsyncer_args *)
 			(((zbx_thread_args_t *)args)->args);
@@ -175,7 +176,7 @@ ZBX_THREAD_ENTRY(zbx_dbsyncer_thread, args)
 
 		zbx_prof_start(__func__, ZBX_PROF_PROCESSING);
 		zbx_sync_history_cache(dbsyncer_args->events_cbs, &rtc, dbsyncer_args->config_history_storage_pipelines,
-				&values_num, &triggers_num, &more);
+				&sync_stats);
 		zbx_prof_end();
 
 		if (!ZBX_IS_RUNNING() && SUCCEED != zbx_db_trigger_queue_locked())
@@ -183,26 +184,38 @@ ZBX_THREAD_ENTRY(zbx_dbsyncer_thread, args)
 
 		zbx_unblock_signals(&orig_mask);
 
-		total_values_num += values_num;
-		total_triggers_num += triggers_num;
 		total_sec += zbx_time() - sec;
 
-		sleeptime = (ZBX_SYNC_MORE == more || !ZBX_IS_RUNNING()  ? 0 :
+		sleeptime = (ZBX_SYNC_MORE == sync_stats.more || !ZBX_IS_RUNNING()  ? 0 :
 				dbsyncer_args->config_histsyncer_frequency);
 
 		if (0 != sleeptime || STAT_INTERVAL <= time(NULL) - last_stat_time)
 		{
+			zbx_history_sync_stats_t	sync_stats_reset = {.more = sync_stats.more};
+
 			stats_offset = 0;
 			zbx_snprintf_alloc(&stats, &stats_alloc, &stats_offset, "processed %d values",
-					total_values_num);
+					sync_stats.values_num);
 
 			if (0 != (info->program_type & ZBX_PROGRAM_TYPE_SERVER))
 			{
-				zbx_snprintf_alloc(&stats, &stats_alloc, &stats_offset, ", %d triggers",
-						total_triggers_num);
+				zbx_snprintf_alloc(&stats, &stats_alloc, &stats_offset, ", %d+%d triggers",
+						sync_stats.triggers_num, sync_stats.timers_num);
 			}
 
-			zbx_snprintf_alloc(&stats, &stats_alloc, &stats_offset, " in " ZBX_FS_DBL " sec", total_sec);
+			zbx_snprintf_alloc(&stats, &stats_alloc, &stats_offset, " in " ZBX_FS_DBL
+					" (%.3f,%.3f", total_sec, sync_stats.time_write_history,
+					sync_stats.time_update_items);
+
+			if (0 != (info->program_type & ZBX_PROGRAM_TYPE_SERVER))
+			{
+				zbx_snprintf_alloc(&stats, &stats_alloc, &stats_offset,
+						",%.3f,%.3f,%.3f",
+						sync_stats.time_write_trends, sync_stats.time_calculate_triggers,
+						sync_stats.time_process_events);
+			}
+
+			zbx_strcpy_alloc(&stats, &stats_alloc, &stats_offset, ") sec");
 
 			if (0 == sleeptime)
 			{
@@ -214,8 +227,7 @@ ZBX_THREAD_ENTRY(zbx_dbsyncer_thread, args)
 						sleeptime);
 			}
 
-			total_values_num = 0;
-			total_triggers_num = 0;
+			sync_stats = sync_stats_reset;
 			total_sec = 0.0;
 			last_stat_time = time(NULL);
 		}
@@ -237,7 +249,7 @@ ZBX_THREAD_ENTRY(zbx_dbsyncer_thread, args)
 			}
 		}
 
-		if (ZBX_SYNC_MORE == more)
+		if (ZBX_SYNC_MORE == sync_stats.more)
 			continue;
 
 		/* always check if there are values to sync when stopping */
@@ -256,7 +268,7 @@ ZBX_THREAD_ENTRY(zbx_dbsyncer_thread, args)
 
 	if (0 != zbx_hc_release())
 	{
-		struct timespec		poll_delay = {0, 1e8};
+		struct timespec	poll_delay = {0, 1e8};
 
 		while (0 != zbx_hc_refcount_peek())
 			nanosleep(&poll_delay, NULL);
@@ -269,8 +281,11 @@ ZBX_THREAD_ENTRY(zbx_dbsyncer_thread, args)
 	zbx_db_close();
 	zbx_unblock_signals(&orig_mask);
 
+	if (0 != (info->program_type & ZBX_PROGRAM_TYPE_SERVER))
+		zbx_history_destroy();
+
 	if (SUCCEED != zbx_ipc_async_socket_flush(&rtc, dbsyncer_args->config_timeout))
-			zabbix_log(LOG_LEVEL_WARNING, "%s #%d cannot flush RTC socket", process_name, process_num);
+		zabbix_log(LOG_LEVEL_WARNING, "%s #%d cannot flush RTC socket", process_name, process_num);
 
 	if (SUCCEED == zbx_is_export_enabled(ZBX_FLAG_EXPTYPE_HISTORY))
 		zbx_export_deinit(history_export);
@@ -280,6 +295,8 @@ ZBX_THREAD_ENTRY(zbx_dbsyncer_thread, args)
 
 	if (SUCCEED == zbx_is_export_enabled(ZBX_FLAG_EXPTYPE_EVENTS))
 		zbx_export_deinit(problems_export);
+
+	zbx_ipc_async_socket_close(&rtc);
 
 	zbx_free(stats);
 

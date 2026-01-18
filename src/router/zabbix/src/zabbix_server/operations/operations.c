@@ -233,7 +233,7 @@ static unsigned char	get_host_monitored_by(zbx_uint64_t src_proxyid, zbx_uint64_
  * Return value: hostid - new/existing hostid                                 *
  *                                                                            *
  ******************************************************************************/
-static zbx_uint64_t	add_discovered_host(const zbx_db_event *event, int *status, zbx_config_t *cfg)
+static zbx_uint64_t	add_discovered_host(const zbx_db_event *event, int *status, const zbx_config_t *cfg)
 {
 	zbx_db_result_t		result, result2;
 	zbx_db_row_t		row, row2;
@@ -330,7 +330,7 @@ static zbx_uint64_t	add_discovered_host(const zbx_db_event *event, int *status, 
 						" where h.hostid=i.hostid"
 							" and i.ip=ds.ip"
 							" and h.status in (%d,%d)"
-							" and h.flags<>%d"
+							" and h.flags&%d=0"
 							" and h.monitored_by=%u"
 							" and ds.dhostid=" ZBX_FS_UI64,
 							HOST_STATUS_MONITORED, HOST_STATUS_NOT_MONITORED,
@@ -554,11 +554,12 @@ static zbx_uint64_t	add_discovered_host(const zbx_db_event *event, int *status, 
 
 		if (NULL != (row = zbx_db_fetch(result)))
 		{
-			char			*host_esc, *sql = NULL;
+			char			*host_esc, *sql = NULL, psk_identity[HOST_TLS_PSK_IDENTITY_LEN_MAX],
+						psk[HOST_TLS_PSK_LEN_MAX];
 			zbx_uint64_t		host_proxyid, new_proxyid;
 			zbx_conn_flags_t	flags;
 			int			flags_int, tls_accepted;
-			unsigned char		useip = 1, new_monitored_by;
+			unsigned char		new_monitored_by, cfg_tls_accept, useip = 1;
 
 			ZBX_DBROW2UINT64(proxyid, row[0]);
 
@@ -586,6 +587,26 @@ static zbx_uint64_t	add_discovered_host(const zbx_db_event *event, int *status, 
 
 			tls_accepted = atoi(row[6]);
 
+			zbx_dc_get_autoreg_tls_config(sizeof(psk_identity), sizeof(psk), &cfg_tls_accept, psk_identity,
+					psk);
+
+			if (ZBX_TCP_SEC_UNENCRYPTED == tls_accepted &&
+					(0 == (cfg_tls_accept & ZBX_TCP_SEC_UNENCRYPTED)))
+			{
+				zabbix_log(LOG_LEVEL_WARNING, "cannot add autoregistered host \"%s\":"
+						" unencrypted connection from agent is not accepted for"
+						" autoregistration", row[1]);
+				goto out;
+			}
+
+			if (ZBX_TCP_SEC_TLS_PSK == tls_accepted && (0 == (cfg_tls_accept & ZBX_TCP_SEC_TLS_PSK)))
+			{
+				zabbix_log(LOG_LEVEL_WARNING, "cannot add autoregistered host \"%s\":"
+						" connection from agent encrypted with PSK is not accepted for"
+						" autoregistration", row[1]);
+				goto out;
+			}
+
 			result2 = zbx_db_select(
 					"select null"
 					" from hosts"
@@ -595,7 +616,7 @@ static zbx_uint64_t	add_discovered_host(const zbx_db_event *event, int *status, 
 
 			if (NULL != zbx_db_fetch(result2))
 			{
-				zabbix_log(LOG_LEVEL_WARNING, "cannot add discovered host \"%s\":"
+				zabbix_log(LOG_LEVEL_WARNING, "cannot add autoregistered host \"%s\":"
 						" template with the same name already exists", row[1]);
 				zbx_db_free_result(result2);
 				goto out;
@@ -603,10 +624,10 @@ static zbx_uint64_t	add_discovered_host(const zbx_db_event *event, int *status, 
 			zbx_db_free_result(result2);
 
 			sql = zbx_dsprintf(sql,
-					"select hostid,proxyid,name,status,proxy_groupid,monitored_by"
+					"select hostid,proxyid,name,status,proxy_groupid,monitored_by,tls_accept"
 					" from hosts"
 					" where host='%s'"
-						" and flags<>%d"
+						" and flags&%d=0"
 						" and status in (%d,%d)"
 					" order by hostid",
 					host_esc, ZBX_FLAG_DISCOVERY_PROTOTYPE,
@@ -624,11 +645,6 @@ static zbx_uint64_t	add_discovered_host(const zbx_db_event *event, int *status, 
 
 				if (ZBX_TCP_SEC_TLS_PSK == tls_accepted)
 				{
-					char	psk_identity[HOST_TLS_PSK_IDENTITY_LEN_MAX], psk[HOST_TLS_PSK_LEN_MAX];
-
-					zbx_dc_get_autoregistration_psk(psk_identity, sizeof(psk_identity),
-							(unsigned char *)psk, sizeof(psk));
-
 					zbx_db_insert_prepare(&db_insert, "hosts", "hostid", "proxyid", "proxy_groupid",
 							"host", "name", "tls_connect", "tls_accept",
 							"tls_psk_identity", "tls_psk", "monitored_by", (char *)NULL);
@@ -683,6 +699,7 @@ static zbx_uint64_t	add_discovered_host(const zbx_db_event *event, int *status, 
 			{
 				zbx_uint64_t	proxy_groupid;
 				unsigned char	monitored_by;
+				int		host_tls_accept;
 
 				ZBX_STR2UINT64(hostid, row2[0]);
 				ZBX_DBROW2UINT64(host_proxyid, row2[1]);
@@ -690,6 +707,7 @@ static zbx_uint64_t	add_discovered_host(const zbx_db_event *event, int *status, 
 				*status = atoi(row2[3]);
 				ZBX_DBROW2UINT64(proxy_groupid, row2[4]);
 				ZBX_STR2UCHAR(monitored_by, row2[5]);
+				host_tls_accept = atoi(row2[6]);
 
 				zbx_audit_host_create_entry(zbx_map_db_event_to_audit_context(event),
 						ZBX_AUDIT_ACTION_UPDATE, hostid, hostname);
@@ -707,7 +725,7 @@ static zbx_uint64_t	add_discovered_host(const zbx_db_event *event, int *status, 
 				}
 
 				if (host_proxyid != new_proxyid || proxy_groupid != new_proxy_groupid ||
-						monitored_by != new_monitored_by)
+						monitored_by != new_monitored_by || host_tls_accept != tls_accepted)
 				{
 					char	delim = ' ';
 					size_t	sql_alloc = 0, sql_offset = 0;
@@ -749,6 +767,30 @@ static zbx_uint64_t	add_discovered_host(const zbx_db_event *event, int *status, 
 								(int)monitored_by, (int)new_monitored_by);
 					}
 
+					if (host_tls_accept != tls_accepted)
+					{
+						char	*esc_psk_identity = NULL, *esc_psk = NULL;
+
+						if (ZBX_TCP_SEC_TLS_PSK == tls_accepted)
+						{
+							esc_psk_identity = zbx_db_dyn_escape_string(psk_identity);
+							esc_psk = zbx_db_dyn_escape_string(psk);
+						}
+
+						zbx_snprintf_alloc(&sql, &sql_alloc, &sql_offset, "%ctls_connect=%d,"
+								"tls_accept=%d,tls_psk_identity='%s',tls_psk='%s'",
+								delim, tls_accepted, tls_accepted,
+								ZBX_NULL2EMPTY_STR(esc_psk_identity),
+								ZBX_NULL2EMPTY_STR(esc_psk));
+
+						zbx_free(esc_psk_identity);
+						zbx_free(esc_psk);
+
+						zbx_audit_host_update_json_add_tls_and_psk(
+								zbx_map_db_event_to_audit_context(event), hostid,
+								tls_accepted, tls_accepted);
+					}
+
 					zbx_snprintf_alloc(&sql, &sql_alloc, &sql_offset,
 							" where hostid=" ZBX_FS_UI64, hostid);
 
@@ -766,7 +808,6 @@ out:
 		zbx_db_free_result(result);
 	}
 clean:
-	zbx_config_clean(cfg);
 	zbx_vector_uint64_destroy(&groupids);
 	zbx_free(hostname);
 
@@ -973,7 +1014,7 @@ static void	discovered_host_tags_save(zbx_uint64_t hostid, zbx_vector_db_tag_ptr
  *             cfg   - [IN] global configuration data                         *
  *                                                                            *
  ******************************************************************************/
-void	op_host_add(const zbx_db_event *event, zbx_config_t *cfg)
+void	op_host_add(const zbx_db_event *event, const zbx_config_t *cfg)
 {
 	int	status;
 
@@ -1014,7 +1055,7 @@ void	op_host_del(const zbx_db_event *event)
 	zbx_vector_str_create(&hostnames);
 	zbx_vector_str_append(&hostnames, zbx_strdup(NULL, hostname));
 
-	zbx_db_delete_hosts_with_prototypes(&hostids, &hostnames, zbx_map_db_event_to_audit_context(event));
+	zbx_db_delete_hosts(&hostids, &hostnames, zbx_map_db_event_to_audit_context(event));
 	hostname_esc = zbx_db_dyn_escape_string(hostname);
 	zbx_db_execute("delete from autoreg_host where host='%s'", hostname_esc);
 
@@ -1283,7 +1324,7 @@ out:
  *             lnk_templateids - [IN] array of template IDs                   *
  *                                                                            *
  ******************************************************************************/
-void	op_template_add(const zbx_db_event *event, zbx_config_t *cfg, zbx_vector_uint64_t *lnk_templateids)
+void	op_template_add(const zbx_db_event *event, const zbx_config_t *cfg, zbx_vector_uint64_t *lnk_templateids)
 {
 	zbx_uint64_t	hostid;
 	char		*error = NULL;

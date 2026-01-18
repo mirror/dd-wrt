@@ -52,6 +52,8 @@ static const char	*ex_macros[] =
 	MVAR_ITEM_LASTVALUE,
 	MVAR_ITEM_STATE,
 	MVAR_ITEM_VALUE, MVAR_ITEM_VALUETYPE,
+	MVAR_ITEM_VALUE_TIMESTAMP, MVAR_ITEM_VALUE_TIME, MVAR_ITEM_VALUE_DATE, MVAR_ITEM_VALUE_AGE,
+	MVAR_ITEM_LASTVALUE_TIMESTAMP, MVAR_ITEM_LASTVALUE_TIME, MVAR_ITEM_LASTVALUE_DATE, MVAR_ITEM_LASTVALUE_AGE,
 	MVAR_ITEM_LOG_DATE, MVAR_ITEM_LOG_TIME, MVAR_ITEM_LOG_TIMESTAMP, MVAR_ITEM_LOG_AGE, MVAR_ITEM_LOG_SOURCE,
 	MVAR_ITEM_LOG_SEVERITY, MVAR_ITEM_LOG_NSEVERITY, MVAR_ITEM_LOG_EVENTID,
 	MVAR_FUNCTION_VALUE, MVAR_FUNCTION_RECOVERY_VALUE,
@@ -122,7 +124,7 @@ static int	substitute_macros_args(zbx_token_search_t search, char **data, char *
 			case ZBX_TOKEN_USER_FUNC_MACRO:
 				p.raw_value = 1;
 				/* user macros are not indexed */
-				if (NULL == (m_ptr = zbx_get_macro_from_func(*data, &p.token.data.func_macro, &p.index))
+				if (NULL == (m_ptr = zbx_get_macro_from_func(*data, &p.token.data.func_macro, NULL))
 						|| SUCCEED != zbx_token_find(*data, p.token.data.func_macro.macro.l,
 						&p.inner_token, p.token_search))
 				{

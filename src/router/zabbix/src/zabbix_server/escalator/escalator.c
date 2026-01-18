@@ -109,6 +109,11 @@ ZBX_PTR_VECTOR_IMPL(tag_filter_ptr, zbx_tag_filter_t*)
 ZBX_PTR_VECTOR_DECL(db_escalation_ptr, zbx_db_escalation*)
 ZBX_PTR_VECTOR_IMPL(db_escalation_ptr, zbx_db_escalation*)
 
+static void	db_escalation_free(zbx_db_escalation *de)
+{
+	zbx_free(de);
+}
+
 static void	zbx_tag_filter_free(zbx_tag_filter_t *tag_filter)
 {
 	zbx_free(tag_filter->tag);
@@ -998,7 +1003,7 @@ static void	add_sentusers_msg_esc_cancel(zbx_user_msg_t **user_msg, zbx_uint64_t
 				" and acknowledgeid is null"
 				" and eventid=" ZBX_FS_UI64
 				" order by userid,mediatypeid,esc_step desc",
-			actionid, ALERT_TYPE_MESSAGE, event->eventid);
+				actionid, ALERT_TYPE_MESSAGE, event->eventid);
 
 	result = zbx_db_select("%s", sql);
 
@@ -1738,8 +1743,9 @@ static void	add_message_alert(const zbx_db_event *event, const zbx_db_event *r_e
 		period = zbx_strdup(period, row[3]);
 		type = atoi(row[6]);
 
-		zbx_substitute_simple_macros(NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
-				&period, ZBX_MACRO_TYPE_COMMON, NULL, 0);
+		zbx_dc_um_handle_t	*um_handle = zbx_dc_open_user_macros();
+		zbx_dc_expand_user_and_func_macros(um_handle, &period, NULL, 0, NULL);
+		zbx_dc_close_user_macros(um_handle);
 
 		zabbix_log(LOG_LEVEL_DEBUG, "severity:%d, media severity:%d, period:'%s', userid:" ZBX_FS_UI64,
 				priority, severity, period, userid);
@@ -1981,8 +1987,10 @@ static void	escalation_execute_operations(zbx_db_escalation *escalation, zbx_db_
 		ZBX_STR2UINT64(operationid, row[0]);
 
 		tmp = zbx_strdup(NULL, row[2]);
-		zbx_substitute_simple_macros(NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
-				&tmp, ZBX_MACRO_TYPE_COMMON, NULL, 0);
+
+		zbx_dc_um_handle_t	*um_handle = zbx_dc_open_user_macros();
+		zbx_dc_expand_user_and_func_macros(um_handle, &tmp, NULL, 0, NULL);
+		zbx_dc_close_user_macros(um_handle);
 
 		if (SUCCEED != zbx_is_time_suffix(tmp, &esc_period, ZBX_LENGTH_UNLIMITED))
 		{
@@ -2787,6 +2795,11 @@ zbx_escalation_diff_t;
 ZBX_PTR_VECTOR_DECL(escalation_diff_ptr, zbx_escalation_diff_t*)
 ZBX_PTR_VECTOR_IMPL(escalation_diff_ptr, zbx_escalation_diff_t*)
 
+static void	escalation_diff_free(zbx_escalation_diff_t *ed)
+{
+	zbx_free(ed);
+}
+
 #define ZBX_DIFF_ESCALATION_UNSET			__UINT64_C(0x0000)
 #define ZBX_DIFF_ESCALATION_UPDATE_NEXTCHECK		__UINT64_C(0x0001)
 #define ZBX_DIFF_ESCALATION_UPDATE_ESC_STEP		__UINT64_C(0x0002)
@@ -3097,6 +3110,11 @@ static void	service_role_clean(zbx_service_role_t *role)
 	zbx_vector_uint64_destroy(&role->serviceids);
 }
 
+static void	service_role_clean_wrapper(void *data)
+{
+	service_role_clean((zbx_service_role_t*)data);
+}
+
 static int	process_db_escalations(int now, int *nextcheck, zbx_vector_db_escalation_ptr_t *escalations,
 		zbx_vector_uint64_t *eventids, zbx_vector_uint64_t *problem_eventids, zbx_vector_uint64_t *actionids,
 		const char *default_timezone, int config_timeout, int config_trapper_timeout,
@@ -3127,7 +3145,7 @@ static int	process_db_escalations(int now, int *nextcheck, zbx_vector_db_escalat
 	zbx_vector_db_service_create(&services);
 
 	zbx_hashset_create_ext(&service_roles, 100, ZBX_DEFAULT_UINT64_HASH_FUNC,
-			ZBX_DEFAULT_UINT64_COMPARE_FUNC, (zbx_clean_func_t)service_role_clean,
+			ZBX_DEFAULT_UINT64_COMPARE_FUNC, service_role_clean_wrapper,
 			ZBX_DEFAULT_MEM_MALLOC_FUNC, ZBX_DEFAULT_MEM_REALLOC_FUNC, ZBX_DEFAULT_MEM_FREE_FUNC);
 
 	add_ack_escalation_r_eventids(escalations, eventids, &event_pairs);
@@ -3442,7 +3460,7 @@ static int	process_db_escalations(int now, int *nextcheck, zbx_vector_db_escalat
 out:
 	zbx_dc_close_user_macros(um_handle);
 
-	zbx_vector_escalation_diff_ptr_clear_ext(&diffs, (void (*)(zbx_escalation_diff_t *))zbx_ptr_free);
+	zbx_vector_escalation_diff_ptr_clear_ext(&diffs, escalation_diff_free);
 	zbx_vector_escalation_diff_ptr_destroy(&diffs);
 
 	zbx_vector_db_action_ptr_clear_ext(&actions, free_db_action);
@@ -3647,8 +3665,7 @@ static int	process_escalations(int now, int *nextcheck, unsigned int escalation_
 			ret += process_db_escalations(now, nextcheck, &escalations, &eventids, &problem_eventids,
 					&actionids, default_timezone, config_timeout, config_trapper_timeout,
 					config_source_ip, config_ssh_key_location, get_config_forks, config_enable_global_scripts, program_type);
-			zbx_vector_db_escalation_ptr_clear_ext(&escalations,
-					(void (*)(zbx_db_escalation *))zbx_ptr_free);
+			zbx_vector_db_escalation_ptr_clear_ext(&escalations, db_escalation_free);
 			zbx_vector_uint64_clear(&actionids);
 			zbx_vector_uint64_clear(&eventids);
 			zbx_vector_uint64_clear(&problem_eventids);
@@ -3663,7 +3680,7 @@ static int	process_escalations(int now, int *nextcheck, unsigned int escalation_
 		ret += process_db_escalations(now, nextcheck, &escalations, &eventids, &problem_eventids,
 				&actionids, default_timezone, config_timeout, config_trapper_timeout,
 				config_source_ip, config_ssh_key_location, get_config_forks, config_enable_global_scripts, program_type);
-		zbx_vector_db_escalation_ptr_clear_ext(&escalations, (void (*)(zbx_db_escalation *))zbx_ptr_free);
+		zbx_vector_db_escalation_ptr_clear_ext(&escalations, db_escalation_free);
 	}
 
 	zbx_vector_db_escalation_ptr_destroy(&escalations);
@@ -3832,7 +3849,7 @@ ZBX_THREAD_ENTRY(escalator_thread, args)
 			{
 				case ZBX_RTC_SHUTDOWN:
 					zbx_set_exiting_with_succeed();
-					break;
+					goto out;
 				case ZBX_RTC_ESCALATOR_NOTIFY:
 					deserialize_escalationids(&escalationids, rtc_data);
 					zbx_free(rtc_data);
@@ -3850,8 +3867,11 @@ ZBX_THREAD_ENTRY(escalator_thread, args)
 #		undef STAT_INTERVAL
 	}
 
+out:
+	zbx_ipc_async_socket_close(&rtc);
 	zbx_vector_uint64_destroy(&escalationids);
 	notify_alerter(ALERTER_CLOSE);
+	zbx_db_close();
 
 	zbx_setproctitle("%s #%d [terminated]", get_process_type_string(process_type), process_num);
 

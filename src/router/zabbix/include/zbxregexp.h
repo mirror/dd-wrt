@@ -46,11 +46,13 @@ ZBX_PTR_VECTOR_DECL(expression, zbx_expression_t *)
 
 /* regular expressions */
 int	zbx_regexp_compile(const char *pattern, zbx_regexp_t **regexp, char **err_msg);
-int	zbx_regexp_compile_ext(const char *pattern, zbx_regexp_t **regexp, int flags, char **err_msg);
+int	zbx_regexp_compile_ext(const char *pattern, zbx_regexp_t **regexp,
+		zbx_uint32_t flags, char **err_msg);
 void	zbx_regexp_free(zbx_regexp_t *regexp);
 int	zbx_regexp_match_precompiled(const char *string, const zbx_regexp_t *regexp);
 int	zbx_regexp_match_precompiled2(const char *string, const zbx_regexp_t *regexp, char **err_msg);
 char	*zbx_regexp_match(const char *string, const char *pattern, int *len);
+char	*zbx_regexp_match_full(const char *string, const char *pattern, int *len);
 int	zbx_regexp_sub(const char *string, const char *pattern, const char *output_template, char **out);
 int	zbx_mregexp_sub(const char *string, const char *pattern, const char *output_template,
 		zbx_regexp_group_check_t group_check, char **out);
@@ -76,5 +78,6 @@ void	zbx_wildcard_minimize(char *str);
 int	zbx_wildcard_match(const char *value, const char *wildcard);
 
 void	zbx_init_regexp_env(void);
+void	zbx_deinit_regexp_env(void);
 
 #endif /* ZABBIX_ZBXREGEXP_H */

@@ -62,7 +62,9 @@ type Param struct {
 type Metric struct {
 	description string
 	params      []*Param
-	varParam    bool
+	// varParam is true - the metric contains variable parameters. For example, you have some
+	// custom SQL query to be passed to the metric and that query has some specific params.
+	varParam bool
 }
 
 // MetricSet stores a mapping of keys to metrics.

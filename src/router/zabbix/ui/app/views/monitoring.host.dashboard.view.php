@@ -19,17 +19,6 @@
  * @var array $data
  */
 
-$this->addJsFile('class.dashboard.js');
-$this->addJsFile('class.dashboard.page.js');
-$this->addJsFile('class.dashboard.widget.placeholder.js');
-$this->addJsFile('class.widgets-data.js');
-$this->addJsFile('class.widget-base.js');
-$this->addJsFile('class.widget.js');
-$this->addJsFile('class.widget.inaccessible.js');
-$this->addJsFile('class.widget.iterator.js');
-$this->addJsFile('class.widget.misconfigured.js');
-$this->addJsFile('class.widget.paste-placeholder.js');
-
 if (array_key_exists('error', $data)) {
 	show_error_message($data['error']);
 }
@@ -44,9 +33,6 @@ if (array_key_exists('no_data', $data)) {
 	return;
 }
 
-$this->addJsFile('class.csvggraph.js');
-$this->addJsFile('class.svg.canvas.js');
-$this->addJsFile('class.svg.map.js');
 $this->addJsFile('d3.js');
 $this->addJsFile('flickerfreescreen.js');
 $this->addJsFile('gtlc.js');

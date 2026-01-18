@@ -102,6 +102,10 @@ final class CHistFunctionData {
 			['rules' => [['type' => 'query']]],
 			['rules' => [['type' => 'period', 'mode' => self::PERIOD_MODE_SEC]]]
 		],
+		'firstclock' => [
+			['rules' => [['type' => 'query']]],
+			['rules' => [['type' => 'period', 'mode' => self::PERIOD_MODE_SEC]]]
+		],
 		'forecast' => [
 			['rules' => [['type' => 'query']]],
 			['rules' => [['type' => 'period', 'mode' => self::PERIOD_MODE_DEFAULT]]],
@@ -126,6 +130,10 @@ final class CHistFunctionData {
 			['rules' => [['type' => 'query']]],
 			['rules' => [['type' => 'period', 'mode' => self::PERIOD_MODE_NUM_ONLY]], 'required' => false]
 		],
+		'lastclock' => [
+			['rules' => [['type' => 'query']]],
+			['rules' => [['type' => 'period', 'mode' => self::PERIOD_MODE_NUM_ONLY]], 'required' => false]
+		],
 		'last_foreach' => [
 			['rules' => [['type' => 'query']]],
 			['rules' => [['type' => 'period', 'mode' => self::PERIOD_MODE_SEC_ONLY]], 'required' => false]
@@ -143,6 +151,10 @@ final class CHistFunctionData {
 			['rules' => [['type' => 'query']]],
 			['rules' => [['type' => 'period', 'mode' => self::PERIOD_MODE_NUM_ONLY]], 'required' => false],
 			['required' => false]
+		],
+		'logtimestamp' => [
+			['rules' => [['type' => 'query']]],
+			['rules' => [['type' => 'period', 'mode' => self::PERIOD_MODE_NUM_ONLY]], 'required' => false]
 		],
 		'mad' => [
 			['rules' => [['type' => 'query']]],
@@ -301,7 +313,9 @@ final class CHistFunctionData {
 		'avg_foreach' => [
 			[
 				'type' => 'require_math_parent',
-				'in' => ['avg', 'max', 'min', 'sum'],
+				'in' => ['avg', 'kurtosis', 'mad', 'max', 'min', 'skewness', 'stddevpop', 'stddevsamp', 'sum',
+					'sumofsquares', 'varpop', 'varsamp'
+				],
 				'parameters' => ['count' => 1],
 				'position' => 0
 			],
@@ -321,7 +335,9 @@ final class CHistFunctionData {
 		'count_foreach' => [
 			[
 				'type' => 'require_math_parent',
-				'in' => ['avg', 'max', 'min', 'sum'],
+				'in' => ['avg', 'kurtosis', 'mad', 'max', 'min', 'skewness', 'stddevpop', 'stddevsamp', 'sum',
+					'sumofsquares', 'varpop', 'varsamp'
+				],
 				'parameters' => ['count' => 1],
 				'position' => 0
 			],
@@ -335,7 +351,9 @@ final class CHistFunctionData {
 		'exists_foreach' => [
 			[
 				'type' => 'require_math_parent',
-				'in' => ['avg', 'max', 'min', 'sum'],
+				'in' => ['avg', 'kurtosis', 'mad', 'max', 'min', 'skewness', 'stddevpop', 'stddevsamp', 'sum',
+					'sumofsquares', 'varpop', 'varsamp'
+				],
 				'parameters' => ['count' => 1],
 				'position' => 0
 			],
@@ -365,7 +383,9 @@ final class CHistFunctionData {
 		'max_foreach' => [
 			[
 				'type' => 'require_math_parent',
-				'in' => ['avg', 'max', 'min', 'sum'],
+				'in' => ['avg', 'kurtosis', 'mad', 'max', 'min', 'skewness', 'stddevpop', 'stddevsamp', 'sum',
+					'sumofsquares', 'varpop', 'varsamp'
+				],
 				'parameters' => ['count' => 1],
 				'position' => 0
 			],
@@ -379,7 +399,9 @@ final class CHistFunctionData {
 		'min_foreach' => [
 			[
 				'type' => 'require_math_parent',
-				'in' => ['avg', 'max', 'min', 'sum'],
+				'in' => ['avg', 'kurtosis', 'mad', 'max', 'min', 'skewness', 'stddevpop', 'stddevsamp', 'sum',
+					'sumofsquares', 'varpop', 'varsamp'
+				],
 				'parameters' => ['count' => 1],
 				'position' => 0
 			],
@@ -393,7 +415,9 @@ final class CHistFunctionData {
 		'sum_foreach' => [
 			[
 				'type' => 'require_math_parent',
-				'in' => ['avg', 'max', 'min', 'sum'],
+				'in' => ['avg', 'kurtosis', 'mad', 'max', 'min', 'skewness', 'stddevpop', 'stddevsamp', 'sum',
+					'sumofsquares', 'varpop', 'varsamp'
+				],
 				'parameters' => ['count' => 1],
 				'position' => 0
 			],
@@ -448,15 +472,18 @@ final class CHistFunctionData {
 		'exists_foreach' => self::ITEM_VALUE_TYPES_ALL,
 		'find' => self::ITEM_VALUE_TYPES_ALL,
 		'first' => self::ITEM_VALUE_TYPES_ALL,
+		'firstclock' => self::ITEM_VALUE_TYPES_ALL,
 		'forecast' => self::ITEM_VALUE_TYPES_NUM,
 		'fuzzytime' => self::ITEM_VALUE_TYPES_NUM,
 		'item_count' => self::ITEM_VALUE_TYPES_ALL,
 		'kurtosis' => self::ITEM_VALUE_TYPES_NUM,
 		'last' => self::ITEM_VALUE_TYPES_ALL,
+		'lastclock' => self::ITEM_VALUE_TYPES_ALL,
 		'last_foreach' => self::ITEM_VALUE_TYPES_ALL,
 		'logeventid' => self::ITEM_VALUE_TYPES_LOG,
 		'logseverity' => self::ITEM_VALUE_TYPES_LOG,
 		'logsource' => self::ITEM_VALUE_TYPES_LOG,
+		'logtimestamp' => self::ITEM_VALUE_TYPES_LOG,
 		'mad' => self::ITEM_VALUE_TYPES_NUM,
 		'max' => self::ITEM_VALUE_TYPES_NUM,
 		'max_foreach' => self::ITEM_VALUE_TYPES_NUM,

@@ -44,7 +44,7 @@ $house_keeper_tab = (new CFormList())
 	->addRow(
 		(new CLabel(_('Trigger data storage period'), 'hk_events_trigger'))->setAsteriskMark(),
 		(new CTextBox('hk_events_trigger', $data['hk_events_trigger'], false,
-			DB::getFieldLength('config', 'hk_events_trigger')
+			CSettingsSchema::getFieldLength('hk_events_trigger')
 		))
 			->setWidth(ZBX_TEXTAREA_TINY_WIDTH)
 			->setEnabled($data['hk_events_mode'] == 1)
@@ -53,7 +53,7 @@ $house_keeper_tab = (new CFormList())
 	->addRow(
 		(new CLabel(_('Service data storage period'), 'hk_events_service'))->setAsteriskMark(),
 		(new CTextBox('hk_events_service', $data['hk_events_service'], false,
-			DB::getFieldLength('config', 'hk_events_service')
+			CSettingsSchema::getFieldLength('hk_events_service')
 		))
 			->setWidth(ZBX_TEXTAREA_TINY_WIDTH)
 			->setEnabled($data['hk_events_mode'] == 1)
@@ -62,7 +62,7 @@ $house_keeper_tab = (new CFormList())
 	->addRow(
 		(new CLabel(_('Internal data storage period'), 'hk_events_internal'))->setAsteriskMark(),
 		(new CTextBox('hk_events_internal', $data['hk_events_internal'], false,
-			DB::getFieldLength('config', 'hk_events_internal')
+			CSettingsSchema::getFieldLength('hk_events_internal')
 		))
 			->setWidth(ZBX_TEXTAREA_TINY_WIDTH)
 			->setEnabled($data['hk_events_mode'] == 1)
@@ -72,7 +72,7 @@ $house_keeper_tab = (new CFormList())
 		(new CLabel(_('Network discovery data storage period'), 'hk_events_discovery'))
 			->setAsteriskMark(),
 		(new CTextBox('hk_events_discovery', $data['hk_events_discovery'], false,
-			DB::getFieldLength('config', 'hk_events_discovery')
+			CSettingsSchema::getFieldLength('hk_events_discovery')
 		))
 			->setWidth(ZBX_TEXTAREA_TINY_WIDTH)
 			->setEnabled($data['hk_events_mode'] == 1)
@@ -82,7 +82,7 @@ $house_keeper_tab = (new CFormList())
 		(new CLabel(_('Autoregistration data storage period'), 'hk_events_autoreg'))
 			->setAsteriskMark(),
 		(new CTextBox('hk_events_autoreg', $data['hk_events_autoreg'], false,
-			DB::getFieldLength('config', 'hk_events_autoreg')
+			CSettingsSchema::getFieldLength('hk_events_autoreg')
 		))
 			->setWidth(ZBX_TEXTAREA_TINY_WIDTH)
 			->setEnabled($data['hk_events_mode'] == 1)
@@ -96,7 +96,7 @@ $house_keeper_tab = (new CFormList())
 	->addRow(
 		(new CLabel(_('Data storage period'), 'hk_services'))
 			->setAsteriskMark(),
-		(new CTextBox('hk_services', $data['hk_services'], false, DB::getFieldLength('config', 'hk_services')))
+		(new CTextBox('hk_services', $data['hk_services'], false, CSettingsSchema::getFieldLength('hk_services')))
 			->setWidth(ZBX_TEXTAREA_TINY_WIDTH)
 			->setEnabled($data['hk_services_mode'] == 1)
 			->setAriaRequired()
@@ -109,7 +109,7 @@ $house_keeper_tab = (new CFormList())
 	->addRow(
 		(new CLabel(_('Data storage period'), 'hk_sessions'))
 			->setAsteriskMark(),
-		(new CTextBox('hk_sessions', $data['hk_sessions'], false, DB::getFieldLength('config', 'hk_sessions')))
+		(new CTextBox('hk_sessions', $data['hk_sessions'], false, CSettingsSchema::getFieldLength('hk_sessions')))
 			->setWidth(ZBX_TEXTAREA_TINY_WIDTH)
 			->setEnabled($data['hk_sessions_mode'] == 1)
 			->setAriaRequired()
@@ -135,7 +135,7 @@ $house_keeper_tab = (new CFormList())
 	->addRow(
 		(new CLabel(_('Data storage period'), 'hk_history'))
 			->setAsteriskMark(),
-		(new CTextBox('hk_history', $data['hk_history'], false, DB::getFieldLength('config', 'hk_history')))
+		(new CTextBox('hk_history', $data['hk_history'], false, CSettingsSchema::getFieldLength('hk_history')))
 			->setWidth(ZBX_TEXTAREA_TINY_WIDTH)
 			->setEnabled($data['hk_history_global'] == 1)
 			->setAriaRequired()
@@ -159,30 +159,32 @@ $house_keeper_tab = (new CFormList())
 	->addRow(
 		(new CLabel(_('Data storage period'), 'hk_trends'))
 			->setAsteriskMark(),
-		(new CTextBox('hk_trends', $data['hk_trends'], false, DB::getFieldLength('config', 'hk_trends')))
+		(new CTextBox('hk_trends', $data['hk_trends'], false, CSettingsSchema::getFieldLength('hk_trends')))
 			->setWidth(ZBX_TEXTAREA_TINY_WIDTH)
 			->setEnabled($data['hk_trends_global'] == 1)
 			->setAriaRequired()
 	);
 
 	if ($data['db_extension'] === ZBX_DB_EXTENSION_TIMESCALEDB) {
+		$timescaledb_label = _('Unsupported TimescaleDB time-series database extension for PostgreSQL is used.');
+
 		switch ($data['extension_err_code']) {
 			case ZBX_EXT_ERR_UNDEFINED:
-				$timescaledb_error = _('Unable to retrieve TimescaleDB compression support status.');
+				$timescaledb_error = _('Unable to retrieve compression support status of TimescaleDB time-series database extension for PostgreSQL.');
 				break;
 
 			case ZBX_TIMESCALEDB_VERSION_FAILED_TO_RETRIEVE:
 				$timescaledb_error = _('Compression is not supported.').' '.
-					_('Unable to retrieve TimescaleDB version.');
+					_('Unable to retrieve version of TimescaleDB time-series database extension for PostgreSQL.');
 				break;
 
 			case ZBX_TIMESCALEDB_VERSION_LOWER_THAN_MINIMUM:
-				$timescaledb_error = _('Compression is not supported.').' '.
-					_s('Minimum required TimescaleDB version is %1$s.', $data['timescaledb_min_version']);
+				$timescaledb_error = _('Compression is not supported.').' '.$timescaledb_label.' '.
+					_s('Minimum required version is %1$s.', $data['timescaledb_min_version']);
 				break;
 
 			case ZBX_TIMESCALEDB_VERSION_NOT_SUPPORTED:
-				$timescaledb_error = _s('Unsupported TimescaleDB version. Should be at least %1$s.',
+				$timescaledb_error = $timescaledb_label.' '._s('Should be at least %1$s.',
 					$data['timescaledb_min_supported_version']
 				);
 
@@ -192,13 +194,14 @@ $house_keeper_tab = (new CFormList())
 				break;
 
 			case ZBX_TIMESCALEDB_VERSION_HIGHER_THAN_MAXIMUM:
-				$timescaledb_error = _s('Unsupported TimescaleDB version. Should not be higher than %1$s.',
+				$timescaledb_error = $timescaledb_label.' '._s('Should not be higher than %1$s.',
 					$data['timescaledb_max_version']
 				);
 				break;
 
 			case ZBX_TIMESCALEDB_LICENSE_NOT_COMMUNITY:
-				$timescaledb_error = _('Detected TimescaleDB license does not support compression. Compression is supported in TimescaleDB Community Edition.');
+				$timescaledb_error = $timescaledb_label.' '.
+					_('Detected license does not support compression. Compression is supported in TimescaleDB Community Edition.');
 				break;
 
 			case ZBX_EXT_SUCCEED:
@@ -224,7 +227,7 @@ $house_keeper_tab = (new CFormList())
 				(new CLabel(_('Compress records older than'), 'compress_older'))
 					->setAsteriskMark(),
 				(new CTextBox('compress_older', $data['compress_older'], false,
-					DB::getFieldLength('config', 'compress_older')
+					CSettingsSchema::getFieldLength('compress_older')
 				))
 					->setWidth(ZBX_TEXTAREA_TINY_WIDTH)
 					->setEnabled($data['compression_status'] == 1 && $data['compression_availability'])

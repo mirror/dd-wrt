@@ -255,7 +255,8 @@ foreach ($data['templates'] as $template) {
 		],
 		[
 			new CLink(_('Graphs'),
-				(new CUrl('graphs.php'))
+				(new CUrl('zabbix.php'))
+					->setArgument('action', 'graph.list')
 					->setArgument('filter_set', '1')
 					->setArgument('filter_hostids', [$template['templateid']])
 					->setArgument('context', 'template')
@@ -278,7 +279,7 @@ foreach ($data['templates'] as $template) {
 					->setArgument('filter_hostids', [$template['templateid']])
 					->setArgument('context', 'template')
 			),
-			CViewHelper::showNum($template['discoveries'])
+			CViewHelper::showNum($template['discoveryRules'])
 		],
 		[
 			new CLink(_('Web'),
@@ -293,7 +294,7 @@ foreach ($data['templates'] as $template) {
 		$template['vendor_version'],
 		$linked_templates_output,
 		$linked_to_output,
-		$data['tags'][$template['templateid']]
+		(new CDiv($data['tags'][$template['templateid']]))->addClass(ZBX_STYLE_TAGS_WRAPPER)
 	]);
 }
 

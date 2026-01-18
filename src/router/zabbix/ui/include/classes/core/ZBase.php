@@ -386,6 +386,10 @@ class ZBase {
 		};
 	}
 
+	public static function getConfig(): array {
+		return self::getInstance()->config;
+	}
+
 	/**
 	 * Check if maintenance mode is enabled.
 	 *
@@ -410,6 +414,7 @@ class ZBase {
 		$config = new CConfigFile($configFile);
 
 		$this->config = $config->load();
+		$this->component_registry->config = $config;
 	}
 
 	/**
@@ -564,7 +569,10 @@ class ZBase {
 			throw new Exception(_('Session initialization error.'));
 		}
 
-		CSessionHelper::set('sessionid', CWebUser::$data['sessionid']);
+		if (CSessionHelper::get('sessionid') !== CWebUser::$data['sessionid']) {
+			CSessionHelper::unset(['saml_data']);
+			CSessionHelper::set('sessionid', CWebUser::$data['sessionid']);
+		}
 
 		if (CWebUser::isAutologinEnabled()) {
 			$session->lifetime = time() + SEC_PER_MONTH;
@@ -702,21 +710,12 @@ class ZBase {
 				'stylesheet' => [
 					'files' => []
 				],
-				'web_layout_mode' => ZBX_LAYOUT_NORMAL
-			];
-
-			try {
-				$layout_data_defaults['config'] = [
+				'web_layout_mode' => ZBX_LAYOUT_NORMAL,
+				'config' => [
 					'server_check_interval' => CSettingsHelper::get(CSettingsHelper::SERVER_CHECK_INTERVAL),
 					'x_frame_options' => CSettingsHelper::get(CSettingsHelper::X_FRAME_OPTIONS)
-				];
-			}
-			catch (Throwable $e) {
-				$layout_data_defaults['config'] = [
-					'server_check_interval' => DB::getDefault('config', 'server_check_interval'),
-					'x_frame_options' => DB::getDefault('config', 'x_frame_options')
-				];
-			}
+				]
+			];
 
 			if ($router->getView() !== null && $response->isViewEnabled()) {
 				$this->view = new CView($router->getView(), $response->getData());

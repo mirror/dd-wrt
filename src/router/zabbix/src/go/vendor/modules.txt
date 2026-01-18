@@ -11,6 +11,9 @@ github.com/Microsoft/go-winio/internal/fs
 github.com/Microsoft/go-winio/internal/socket
 github.com/Microsoft/go-winio/internal/stringbuffer
 github.com/Microsoft/go-winio/pkg/guid
+# github.com/VictoriaMetrics/easyproto v0.1.4
+## explicit; go 1.18
+github.com/VictoriaMetrics/easyproto
 # github.com/chromedp/cdproto v0.0.0-20241003230502-a4a8f7c660df
 ## explicit; go 1.19
 github.com/chromedp/cdproto
@@ -75,6 +78,9 @@ github.com/chromedp/chromedp/kb
 # github.com/chromedp/sysutil v1.0.0
 ## explicit; go 1.15
 github.com/chromedp/sysutil
+# github.com/davecgh/go-spew v1.1.1
+## explicit
+github.com/davecgh/go-spew/spew
 # github.com/dustin/gomemcached v0.0.0-20160817010731-a2284a01c143
 ## explicit
 github.com/dustin/gomemcached
@@ -89,12 +95,9 @@ github.com/fsnotify/fsnotify
 # github.com/go-ldap/ldap v3.0.3+incompatible
 ## explicit
 github.com/go-ldap/ldap
-# github.com/go-logfmt/logfmt v0.5.1
+# github.com/go-logfmt/logfmt v0.6.0
 ## explicit; go 1.17
 github.com/go-logfmt/logfmt
-# github.com/go-logr/logr v1.2.3
-## explicit; go 1.16
-github.com/go-logr/logr
 # github.com/go-ole/go-ole v1.3.0
 ## explicit; go 1.12
 github.com/go-ole/go-ole
@@ -124,19 +127,20 @@ github.com/gobwas/ws/wsutil
 # github.com/godbus/dbus/v5 v5.1.0
 ## explicit; go 1.12
 github.com/godbus/dbus/v5
-# github.com/godror/godror v0.34.0
-## explicit; go 1.17
+# github.com/godror/godror v0.48.0
+## explicit; go 1.23.0
 github.com/godror/godror
 github.com/godror/godror/dsn
 github.com/godror/godror/odpi/embed
 github.com/godror/godror/odpi/include
 github.com/godror/godror/odpi/src
-# github.com/godror/knownpb v0.1.0
-## explicit; go 1.17
+github.com/godror/godror/slog
+# github.com/godror/knownpb v0.3.0
+## explicit; go 1.22.4
 github.com/godror/knownpb/internal
 github.com/godror/knownpb/timestamppb
-# github.com/google/go-cmp v0.6.0
-## explicit; go 1.13
+# github.com/google/go-cmp v0.7.0
+## explicit; go 1.21
 github.com/google/go-cmp/cmp
 github.com/google/go-cmp/cmp/cmpopts
 github.com/google/go-cmp/cmp/internal/diff
@@ -174,14 +178,30 @@ github.com/miekg/dns
 # github.com/omeid/go-yarn v0.0.1
 ## explicit; go 1.13
 github.com/omeid/go-yarn
+# github.com/pmezard/go-difflib v1.0.0
+## explicit
+github.com/pmezard/go-difflib/difflib
 # github.com/sokurenko/go-netstat v1.0.0
 ## explicit; go 1.13
 github.com/sokurenko/go-netstat/netstat
-# golang.org/x/mod v0.17.0
-## explicit; go 1.18
+# github.com/stretchr/objx v0.5.2
+## explicit; go 1.20
+github.com/stretchr/objx
+# github.com/stretchr/testify v1.8.4
+## explicit; go 1.20
+github.com/stretchr/testify/assert
+github.com/stretchr/testify/mock
+# golang.org/x/exp v0.0.0-20250620022241-b7579e27df2b
+## explicit; go 1.23.0
+golang.org/x/exp/slices
+golang.org/x/exp/slog
+golang.org/x/exp/slog/internal
+golang.org/x/exp/slog/internal/buffer
+# golang.org/x/mod v0.25.0
+## explicit; go 1.23.0
 golang.org/x/mod/semver
-# golang.org/x/net v0.34.0
-## explicit; go 1.18
+# golang.org/x/net v0.41.0
+## explicit; go 1.23.0
 golang.org/x/net/bpf
 golang.org/x/net/html
 golang.org/x/net/html/atom
@@ -192,20 +212,20 @@ golang.org/x/net/internal/socks
 golang.org/x/net/ipv4
 golang.org/x/net/ipv6
 golang.org/x/net/proxy
-# golang.org/x/sync v0.10.0
-## explicit; go 1.18
+# golang.org/x/sync v0.15.0
+## explicit; go 1.23.0
 golang.org/x/sync/errgroup
 golang.org/x/sync/semaphore
-# golang.org/x/sys v0.29.0
-## explicit; go 1.18
+# golang.org/x/sys v0.33.0
+## explicit; go 1.23.0
 golang.org/x/sys/unix
 golang.org/x/sys/windows
 golang.org/x/sys/windows/registry
 golang.org/x/sys/windows/svc
 golang.org/x/sys/windows/svc/eventlog
 golang.org/x/sys/windows/svc/mgr
-# golang.org/x/text v0.21.0
-## explicit; go 1.18
+# golang.org/x/text v0.26.0
+## explicit; go 1.23.0
 golang.org/x/text/encoding
 golang.org/x/text/encoding/charmap
 golang.org/x/text/encoding/htmlindex
@@ -223,13 +243,13 @@ golang.org/x/text/internal/utf8internal
 golang.org/x/text/language
 golang.org/x/text/runes
 golang.org/x/text/transform
-# golang.org/x/tools v0.21.1-0.20240508182429-e35e4ccd0d2d
-## explicit; go 1.19
+# golang.org/x/tools v0.34.0
+## explicit; go 1.23.0
 golang.org/x/tools/cmd/stringer
 golang.org/x/tools/go/gcexportdata
-golang.org/x/tools/go/internal/packagesdriver
 golang.org/x/tools/go/packages
 golang.org/x/tools/go/types/objectpath
+golang.org/x/tools/go/types/typeutil
 golang.org/x/tools/internal/aliases
 golang.org/x/tools/internal/event
 golang.org/x/tools/internal/event/core
@@ -240,15 +260,15 @@ golang.org/x/tools/internal/gocommand
 golang.org/x/tools/internal/packagesinternal
 golang.org/x/tools/internal/pkgbits
 golang.org/x/tools/internal/stdlib
-golang.org/x/tools/internal/tokeninternal
+golang.org/x/tools/internal/typeparams
 golang.org/x/tools/internal/typesinternal
 golang.org/x/tools/internal/versions
 # golang.org/x/xerrors v0.0.0-20220907171357-04be3eba64a2
 ## explicit; go 1.17
 golang.org/x/xerrors
 golang.org/x/xerrors/internal
-# golang.zabbix.com/sdk v1.2.2-0.20250403095707-99a08e4cf3af
-## explicit; go 1.21
+# golang.zabbix.com/sdk v1.2.2-0.20251205121622-d63cfc5d737a
+## explicit; go 1.24.10
 golang.zabbix.com/sdk/conf
 golang.zabbix.com/sdk/errs
 golang.zabbix.com/sdk/log
@@ -261,8 +281,9 @@ golang.zabbix.com/sdk/uri
 golang.zabbix.com/sdk/zbxerr
 golang.zabbix.com/sdk/zbxflag
 golang.zabbix.com/sdk/zbxnet
-# google.golang.org/protobuf v1.34.1
-## explicit; go 1.17
+golang.zabbix.com/sdk/zbxsync
+# google.golang.org/protobuf v1.36.6
+## explicit; go 1.22
 google.golang.org/protobuf/encoding/prototext
 google.golang.org/protobuf/encoding/protowire
 google.golang.org/protobuf/internal/descfmt
@@ -281,6 +302,7 @@ google.golang.org/protobuf/internal/genid
 google.golang.org/protobuf/internal/impl
 google.golang.org/protobuf/internal/order
 google.golang.org/protobuf/internal/pragma
+google.golang.org/protobuf/internal/protolazy
 google.golang.org/protobuf/internal/set
 google.golang.org/protobuf/internal/strs
 google.golang.org/protobuf/internal/version
@@ -293,3 +315,6 @@ google.golang.org/protobuf/types/known/timestamppb
 # gopkg.in/asn1-ber.v1 v1.0.0-20181015200546-f715ec2f112d
 ## explicit
 gopkg.in/asn1-ber.v1
+# gopkg.in/yaml.v3 v3.0.1
+## explicit
+gopkg.in/yaml.v3

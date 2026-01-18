@@ -319,7 +319,7 @@ static zbx_config_log_t	log_file_cfg	= {NULL, NULL, ZBX_LOG_TYPE_UNDEFINED, 1};
 void	zbx_co_uninitialize();
 #endif
 
-void	zbx_free_service_resources(int ret);
+void	zbx_free_service_resources(void);
 
 static int	get_process_info_by_thread(int local_server_num, unsigned char *local_process_type,
 		int *local_process_num)
@@ -815,7 +815,8 @@ static void	zbx_validate_config(ZBX_TASK_EX *task)
 	zbx_config_eventlog_max_lines_per_second = zbx_config_max_lines_per_second;
 }
 
-static int	add_serveractive_host_cb(const zbx_vector_addr_ptr_t *addrs, zbx_vector_str_t *hostnames, void *data)
+static int	add_serveractive_host_agent_cb(const zbx_vector_addr_ptr_t *addrs, zbx_vector_str_t *hostnames,
+		void *data)
 {
 	int	forks, new_forks;
 
@@ -1086,7 +1087,7 @@ static void	zbx_load_config(int requirement, ZBX_TASK_EX *task)
 		char	*error;
 
 		if (FAIL == zbx_set_data_destination_hosts(active_hosts, ZBX_DEFAULT_SERVER_PORT, "ServerActive",
-				add_serveractive_host_cb, &hostnames, NULL, &error))
+				add_serveractive_host_agent_cb, &hostnames, NULL, &error))
 		{
 			zbx_error("%s", error);
 			exit(EXIT_FAILURE);
@@ -1194,7 +1195,7 @@ static void	zbx_on_exit(int ret, void *on_exit_args)
 			zbx_tcp_unlisten(args->listen_sock);
 	}
 #endif
-	zbx_free_service_resources(ret);
+	zbx_free_service_resources();
 
 #if defined(HAVE_GNUTLS) || defined(HAVE_OPENSSL)
 	zbx_tls_free();
@@ -1313,7 +1314,7 @@ int	MAIN_ZABBIX_ENTRY(int flags)
 	if (SUCCEED != zbx_coredump_disable())
 	{
 		zabbix_log(LOG_LEVEL_CRIT, "cannot disable core dump, exiting...");
-		zbx_free_service_resources(FAIL);
+		zbx_free_service_resources();
 		exit(EXIT_FAILURE);
 	}
 #endif
@@ -1321,7 +1322,7 @@ int	MAIN_ZABBIX_ENTRY(int flags)
 	if (FAIL == zbx_load_modules(config_load_module_path, config_load_module, zbx_config_timeout, 1))
 	{
 		zabbix_log(LOG_LEVEL_CRIT, "loading modules failed, exiting...");
-		zbx_free_service_resources(FAIL);
+		zbx_free_service_resources();
 		exit(EXIT_FAILURE);
 	}
 #endif
@@ -1330,7 +1331,7 @@ int	MAIN_ZABBIX_ENTRY(int flags)
 	{
 		zabbix_log(LOG_LEVEL_CRIT, "cannot load user parameters: %s", error);
 		zbx_free(error);
-		zbx_free_service_resources(FAIL);
+		zbx_free_service_resources();
 		exit(EXIT_FAILURE);
 	}
 
@@ -1345,7 +1346,7 @@ int	MAIN_ZABBIX_ENTRY(int flags)
 				zbx_config_timeout, config_tcp_max_backlog_size))
 		{
 			zabbix_log(LOG_LEVEL_CRIT, "listener failed: %s", zbx_socket_strerror());
-			zbx_free_service_resources(FAIL);
+			zbx_free_service_resources();
 			exit(EXIT_FAILURE);
 		}
 	}
@@ -1354,7 +1355,7 @@ int	MAIN_ZABBIX_ENTRY(int flags)
 	{
 		zabbix_log(LOG_LEVEL_CRIT, "cannot initialize modbus: %s", error);
 		zbx_free(error);
-		zbx_free_service_resources(FAIL);
+		zbx_free_service_resources();
 		exit(EXIT_FAILURE);
 	}
 
@@ -1362,7 +1363,7 @@ int	MAIN_ZABBIX_ENTRY(int flags)
 	{
 		zabbix_log(LOG_LEVEL_CRIT, "cannot initialize collector: %s", error);
 		zbx_free(error);
-		zbx_free_service_resources(FAIL);
+		zbx_free_service_resources();
 		exit(EXIT_FAILURE);
 	}
 
@@ -1390,7 +1391,7 @@ int	MAIN_ZABBIX_ENTRY(int flags)
 	{
 		zabbix_log(LOG_LEVEL_CRIT, "Too many agent threads. Please reduce the StartAgents configuration"
 				" parameter or the number of active servers in ServerActive configuration parameter.");
-		zbx_free_service_resources(FAIL);
+		zbx_free_service_resources();
 		exit(EXIT_FAILURE);
 	}
 #endif
@@ -1481,7 +1482,7 @@ int	MAIN_ZABBIX_ENTRY(int flags)
 
 		if (0 < (pid = waitpid((pid_t)-1, &ws, WNOHANG)))
 		{
-			if (SUCCEED == zbx_is_child_pid(pid, zbx_threads, zbx_threads_num))
+			if (SUCCEED == zbx_child_cleanup(pid, zbx_threads, zbx_threads_num))
 			{
 				zbx_set_exiting_with_fail();
 				break;
@@ -1511,12 +1512,12 @@ int	MAIN_ZABBIX_ENTRY(int flags)
  * Purpose: frees service resources allocated by main thread                  *
  *                                                                            *
  ******************************************************************************/
-void	zbx_free_service_resources(int ret)
+void	zbx_free_service_resources(void)
 {
 	if (NULL != zbx_threads)
 	{
 		/* wait for all child processes to exit */
-		zbx_threads_kill_and_wait(zbx_threads, threads_flags, zbx_threads_num, ret);
+		zbx_threads_kill_and_wait(zbx_threads, threads_flags, zbx_threads_num, SUCCEED);
 
 		zbx_free(zbx_threads);
 		zbx_free(threads_flags);

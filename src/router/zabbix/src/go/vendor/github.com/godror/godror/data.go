@@ -11,13 +11,18 @@ package godror
 */
 import "C"
 import (
+	"context"
 	"database/sql"
 	"database/sql/driver"
 	"errors"
 	"fmt"
+	"io"
 	"reflect"
+	"strconv"
 	"time"
 	"unsafe"
+
+	"github.com/godror/godror/slog"
 )
 
 // Data holds the data to/from Oracle.
@@ -27,6 +32,27 @@ type Data struct {
 	implicitObj   bool
 	NativeTypeNum C.dpiNativeTypeNum
 }
+
+const (
+	NativeTypeInt64      = C.DPI_NATIVE_TYPE_INT64
+	NativeTypeUint64     = C.DPI_NATIVE_TYPE_UINT64
+	NativeTypeFloat      = C.DPI_NATIVE_TYPE_FLOAT
+	NativeTypeDouble     = C.DPI_NATIVE_TYPE_DOUBLE
+	NativeTypeBytes      = C.DPI_NATIVE_TYPE_BYTES
+	NativeTypeTimestamp  = C.DPI_NATIVE_TYPE_TIMESTAMP
+	NativeTypeIntervalDS = C.DPI_NATIVE_TYPE_INTERVAL_DS
+	NativeTypeIntervalYM = C.DPI_NATIVE_TYPE_INTERVAL_YM
+	NativeTypeLOB        = C.DPI_NATIVE_TYPE_LOB
+	NativeTypeObject     = C.DPI_NATIVE_TYPE_OBJECT
+	NativeTypeStmt       = C.DPI_NATIVE_TYPE_STMT
+	NativeTypeBoolean    = C.DPI_NATIVE_TYPE_BOOLEAN
+	NativeTypeRowid      = C.DPI_NATIVE_TYPE_ROWID
+	NativeTypeJSON       = C.DPI_NATIVE_TYPE_JSON
+	NativeTypeJSONOBject = C.DPI_NATIVE_TYPE_JSON_OBJECT
+	NativeTypeJSONArray  = C.DPI_NATIVE_TYPE_JSON_ARRAY
+	// NativeTypeNULL       = C.DPI_NATIVE_TYPE_NULL
+	// NativeTypeVector     = C.DPI_NATIVE_TYPE_VECTOR
+)
 
 var ErrNotSupported = errors.New("not supported")
 
@@ -83,7 +109,8 @@ func (d *Data) GetBytes() []byte {
 	if b.ptr == nil || b.length == 0 {
 		return nil
 	}
-	return ((*[32767]byte)(unsafe.Pointer(b.ptr)))[:b.length:b.length]
+	//return ((*[32767]byte)(unsafe.Pointer(b.ptr)))[:b.length:b.length]
+	return ([]byte)(unsafe.Slice((*byte)(unsafe.Pointer(b.ptr)), b.length))
 }
 
 // SetBytes set the data as []byte.
@@ -134,10 +161,10 @@ func (d *Data) GetInt64() int64 {
 	}
 	//i := C.dpiData_getInt64(&d.dpiData)
 	i := *((*int64)(unsafe.Pointer(&d.dpiData.value)))
-	logger := getLogger()
-	if logger != nil {
-		logger.Log("msg", "GetInt64", "data", d, "p", fmt.Sprintf("%p", d), "i", i)
+	if logger := getLogger(context.TODO()); logger != nil && logger.Enabled(context.TODO(), slog.LevelDebug) {
+		logger.Debug("GetInt64", "data", d, "p", fmt.Sprintf("%p", d), "i", i)
 	}
+
 	return i
 }
 
@@ -229,13 +256,19 @@ func (d *Data) GetObject() *Object {
 		}
 	}
 	obj := &Object{dpiObject: o, ObjectType: d.ObjectType}
-	obj.init()
+	if err := obj.init(nil); err != nil {
+		panic(err)
+	}
 	return obj
 }
 
 // SetObject sets Object to data.
 func (d *Data) SetObject(o *Object) {
 	d.NativeTypeNum = C.DPI_NATIVE_TYPE_OBJECT
+	if o == nil {
+		d.SetNull()
+		return
+	}
 	d.ObjectType = o.ObjectType
 	C.dpiData_setObject(&d.dpiData, o.dpiObject)
 }
@@ -280,11 +313,53 @@ func (d *Data) SetTime(t time.Time) {
 		return
 	}
 	d.NativeTypeNum = C.DPI_NATIVE_TYPE_TIMESTAMP
-	_, z := t.Zone()
-	C.dpiData_setTimestamp(&d.dpiData,
-		C.int16_t(t.Year()), C.uint8_t(t.Month()), C.uint8_t(t.Day()),
-		C.uint8_t(t.Hour()), C.uint8_t(t.Minute()), C.uint8_t(t.Second()), C.uint32_t(t.Nanosecond()),
-		C.int8_t(z/3600), C.int8_t((z%3600)/60),
+	dataSetTime(context.Background(), &d.dpiData, t, nil)
+}
+
+func dataSetTime(ctx context.Context, dpiData *C.dpiData, t time.Time, connTZ *time.Location) {
+	logger := getLogger(ctx)
+	tz, tzOff := connTZ, 0
+	if tz == nil {
+		tz = t.Location()
+	}
+	if tz != time.UTC && // Against ORA-08192
+		date8192begin.Before(t) && date8192end.After(t) {
+		tz = time.UTC
+	}
+	if t.Location() != tz {
+		t = t.In(tz)
+	}
+	if tz != time.UTC {
+		_, tzOff = t.Zone()
+	}
+	Y, M, D := t.Date()
+	if Y <= 0 { // Oracle skips year 0, 0001-01-01 follows -0001-12-31 !
+		Y--
+	}
+	if -4713 > Y || Y == 0 || 9999 < Y { // Against ORA-01841
+		panic(fmt.Errorf("%v: %w", t, ErrBadDate))
+	}
+	h, m, s := t.Clock()
+	ns := t.Nanosecond()
+	// DST transition creates a gap and both times may be correct.
+	if (h == 1 || h == 23) && m == 0 && s == 0 && ns == 0 &&
+		tz != nil && tz != time.UTC {
+		zs, ze := t.ZoneBounds()
+		if zs.Equal(t) || ze.Equal(t) {
+			h = 0
+		}
+		// fmt.Printf("bounds: %s - %s (%s -> h=%d)\n", zs, ze, t, h)
+	}
+	if logger != nil {
+		logger.Debug("setTimestamp", "time", t.Format(time.RFC3339), "utc", t.UTC(), "tz", tzOff,
+			"Y", Y, "M", M, "D", D, "h", h, "m", m, "s", s, "t", ns,
+			"tzHour", tzOff/3600, "tzMin", (tzOff%3600)/60)
+	}
+
+	C.dpiData_setTimestamp(dpiData,
+		C.int16_t(Y), C.uint8_t(M), C.uint8_t(D),
+		C.uint8_t(h), C.uint8_t(m), C.uint8_t(s), C.uint32_t(ns),
+		C.int8_t(tzOff/3600), C.int8_t((tzOff%3600)/60),
 	)
 }
 
@@ -310,9 +385,9 @@ type IntervalYM struct {
 
 // Get returns the contents of Data.
 func (d *Data) Get() interface{} {
-	if logger := getLogger(); logger != nil {
-		logger.Log("msg", "Get", "data", fmt.Sprintf("%#v", d), "p", fmt.Sprintf("%p", d))
-	}
+	// if logger := getLogger(context.TODO()); logger != nil && logger.Enabled(context.TODO(), slog.LevelDebug) {
+	// 	 logger.Debug("Get", "data", fmt.Sprintf("%#v", d), "p", fmt.Sprintf("%p", d))
+	// }
 	switch d.NativeTypeNum {
 	case 0:
 		return nil
@@ -345,7 +420,7 @@ func (d *Data) Get() interface{} {
 	case C.DPI_NATIVE_TYPE_JSON_OBJECT:
 		return d.GetJSONObject()
 	default:
-		panic(fmt.Sprintf("unknown NativeTypeNum=%d", d.NativeTypeNum))
+		panic("unknown NativeTypeNum=" + strconv.FormatInt(int64(d.NativeTypeNum), 10))
 	}
 }
 
@@ -361,8 +436,20 @@ func (d *Data) Set(v interface{}) error {
 		d.SetInt64(int64(x))
 	case int32:
 		d.SetInt64(int64(x))
+	case sql.NullInt32:
+		if x.Valid {
+			d.SetInt64(int64(x.Int32))
+		} else {
+			d.SetNull()
+		}
 	case int64:
 		d.SetInt64(x)
+	case sql.NullInt64:
+		if x.Valid {
+			d.SetInt64(x.Int64)
+		} else {
+			d.SetNull()
+		}
 	case int:
 		d.SetInt64(int64(x))
 	case uint8:
@@ -379,6 +466,12 @@ func (d *Data) Set(v interface{}) error {
 		d.SetFloat32(x)
 	case float64:
 		d.SetFloat64(x)
+	case sql.NullFloat64:
+		if x.Valid {
+			d.SetFloat64(x.Float64)
+		} else {
+			d.SetNull()
+		}
 	case string:
 		d.SetBytes([]byte(x))
 	case []byte:
@@ -394,6 +487,12 @@ func (d *Data) Set(v interface{}) error {
 		d.SetIntervalDS(x)
 	case IntervalYM:
 		d.SetIntervalYM(x)
+	case *Lob:
+		b, err := io.ReadAll(x.Reader)
+		if err != nil {
+			return err
+		}
+		d.SetBytes(b)
 	case *DirectLob:
 		d.SetLob(x)
 	case *Object:
@@ -407,15 +506,25 @@ func (d *Data) Set(v interface{}) error {
 	//d.SetStmt(x)
 	case bool:
 		d.SetBool(x)
+	case sql.NullBool:
+		if x.Valid {
+			d.SetBool(x.Bool)
+		} else {
+			d.SetNull()
+		}
 	//case rowid:
 	//d.NativeTypeNum = C.DPI_NATIVE_TYPE_ROWID
 	//d.SetRowid(x)
 	default:
-		return fmt.Errorf("%T: %w", v, ErrNotSupported)
+		if logger := getLogger(context.TODO()); logger != nil && logger.Enabled(context.TODO(), slog.LevelDebug) {
+			logger.Debug("Set", "data", d, "type", fmt.Sprintf("%T", v))
+		}
+
+		return fmt.Errorf("data Set type %T: %w", v, ErrNotSupported)
 	}
-	logger := getLogger()
+	logger := getLogger(context.TODO())
 	if logger != nil {
-		logger.Log("msg", "Set", "data", d)
+		logger.Debug("Set", "data", d)
 	}
 	return nil
 }
@@ -546,6 +655,16 @@ func (d *Data) GetJSONObject() JSONObject {
 }
 func (d *Data) GetJSONArray() JSONArray {
 	return JSONArray{dpiJsonArray: ((*C.dpiJsonArray)(unsafe.Pointer(&d.dpiData.value)))}
+}
+
+// Prepare buffer for NUMBER OracleTypeNum.
+func (d *Data) prepare(oracleTypeNum C.uint) {
+	// If the native type is DPI_NATIVE_TYPE_BYTES and the Oracle type of the attribute is DPI_ORACLE_TYPE_NUMBER, a buffer must be supplied in the value.asBytes.ptr attribute and the maximum length of that buffer must be supplied in the value.asBytes.length attribute before calling this function. For all other conversions, the buffer is supplied by the library and remains valid as long as a reference to the object is held.
+	if d.NativeTypeNum == C.DPI_NATIVE_TYPE_BYTES &&
+		oracleTypeNum == C.DPI_ORACLE_TYPE_NUMBER {
+		var a [39]byte
+		C.dpiData_setBytes(&d.dpiData, (*C.char)(unsafe.Pointer(&a[0])), C.uint32_t(len(a)))
+	}
 }
 
 // For tests

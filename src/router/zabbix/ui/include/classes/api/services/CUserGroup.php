@@ -65,20 +65,15 @@ class CUserGroup extends CApiService {
 		$defOptions = [
 			'usrgrpids'					=> null,
 			'userids'					=> null,
-			'mfaids'					=> null,
 			'status'					=> null,
 			'mfa_status'				=> null,
 			// filter
-			'filter'					=> null,
-			'search'					=> null,
 			'searchByAny'				=> null,
 			'startSearch'				=> false,
 			'excludeSearch'				=> false,
 			'searchWildcardsEnabled'	=> null,
 			// output
 			'editable'					=> false,
-			'output'					=> API_OUTPUT_EXTEND,
-			'selectUsers'				=> null,
 			'selectHostGroupRights'		=> null,
 			'selectTemplateGroupRights'	=> null,
 			'selectTagFilters'			=> null,
@@ -91,6 +86,36 @@ class CUserGroup extends CApiService {
 
 		$options = zbx_array_merge($defOptions, $options);
 
+		if (self::$userData['type'] == USER_TYPE_SUPER_ADMIN) {
+			$usrgrps_output_fields = self::OUTPUT_FIELDS;
+			$user_output_fields = CUser::OUTPUT_FIELDS;
+		}
+		else {
+			$usrgrps_output_fields = self::LIMITED_OUTPUT_FIELDS;
+			$user_output_fields = CUser::OWN_LIMITED_OUTPUT_FIELDS;
+		}
+
+		$api_input_rules = ['type' => API_OBJECT, 'flags' => API_ALLOW_UNEXPECTED, 'fields' => [
+			// filter
+			'mfaids' =>			['type' => API_MULTIPLE, 'rules' => [
+									['if' => static fn(): bool => self::$userData['type'] == USER_TYPE_SUPER_ADMIN, 'type' => API_IDS, 'flags' => API_ALLOW_NULL | API_NORMALIZE, 'default' => null],
+									['else' => true, 'type' => API_UNEXPECTED]
+			]],
+			'filter' =>			['type' => API_FILTER, 'flags' => API_ALLOW_NULL, 'default' => null, 'fields' => DB::getFilterFields($this->tableName, $usrgrps_output_fields)],
+			'search' =>			['type' => API_FILTER, 'flags' => API_ALLOW_NULL, 'default' => null, 'fields' => DB::getSearchFields($this->tableName, $usrgrps_output_fields)],
+			// output
+			'output' =>			['type' => API_OUTPUT, 'in' => implode(',', $usrgrps_output_fields), 'default' => API_OUTPUT_EXTEND],
+			'selectUsers' =>	['type' => API_OUTPUT, 'flags' => API_ALLOW_NULL, 'in' => implode(',', $user_output_fields), 'default' => null]
+		]];
+
+		if (!CApiInputValidator::validate($api_input_rules, $options, '/', $error)) {
+			self::exception(ZBX_API_ERROR_PARAMETERS, $error);
+		}
+
+		if ($options['output'] === API_OUTPUT_EXTEND) {
+			$options['output'] = $usrgrps_output_fields;
+		}
+
 		// permissions
 		if (self::$userData['type'] != USER_TYPE_SUPER_ADMIN) {
 			if (!$options['editable']) {
@@ -102,20 +127,6 @@ class CUserGroup extends CApiService {
 			}
 			else {
 				return [];
-			}
-		}
-
-		// output
-		if (!$options['countOutput']) {
-			$usrgrps_output_fields = self::$userData['type'] == USER_TYPE_SUPER_ADMIN
-				? self::OUTPUT_FIELDS
-				: self::LIMITED_OUTPUT_FIELDS;
-
-			if (is_array($options['output'])) {
-				$options['output'] = array_intersect($options['output'], $usrgrps_output_fields);
-			}
-			elseif ($options['output'] === API_OUTPUT_EXTEND) {
-				$options['output'] = $usrgrps_output_fields;
 			}
 		}
 
@@ -135,13 +146,7 @@ class CUserGroup extends CApiService {
 			$sqlParts['where']['gug'] = 'g.usrgrpid=ug.usrgrpid';
 		}
 
-		if (!is_null($options['mfaids'])) {
-			if (self::$userData['type'] != USER_TYPE_SUPER_ADMIN) {
-				return [];
-			}
-
-			zbx_value2array($options['mfaids']);
-
+		if (array_key_exists('mfaids', $options) && $options['mfaids'] !== null) {
 			$sqlParts['where'][] = dbConditionId('g.mfaid', $options['mfaids']);
 		}
 
@@ -156,26 +161,8 @@ class CUserGroup extends CApiService {
 			$sqlParts['where'][] = dbConditionInt('g.mfa_status', $options['mfa_status']);
 		}
 
-		$limited_output_fields = array_flip(self::LIMITED_OUTPUT_FIELDS);
-
 		// filter
 		if (is_array($options['filter'])) {
-			if (self::$userData['type'] != USER_TYPE_SUPER_ADMIN) {
-				if ($options['searchByAny'] !== null && $options['searchByAny'] !== false) {
-					$options['filter'] = array_diff_key($options['filter'], array_flip(['userdirectoryid', 'mfaid']));
-				}
-				else {
-					$has_private_fields = array_intersect_key(
-						array_diff_key($options['filter'], $limited_output_fields),
-						array_flip(['userdirectoryid', 'mfaid'])
-					);
-
-					if($has_private_fields) {
-						return [];
-					}
-				}
-			}
-
 			$this->dbFilter('usrgrp g', $options, $sqlParts);
 		}
 
@@ -1200,7 +1187,6 @@ class CUserGroup extends CApiService {
 
 		self::unlinkUsers($db_usrgrps);
 
-		DB::delete('rights', ['groupid' => $usrgrpids]);
 		DB::delete('usrgrp', ['usrgrpid' => $usrgrpids]);
 
 		self::addAuditLog(CAudit::ACTION_DELETE, CAudit::RESOURCE_USER_GROUP, $db_usrgrps);
@@ -1365,27 +1351,7 @@ class CUserGroup extends CApiService {
 	protected function addRelatedObjects(array $options, array $result) {
 		$result = parent::addRelatedObjects($options, $result);
 
-		// adding users
-		if ($options['selectUsers'] !== null && $options['selectUsers'] != API_OUTPUT_COUNT) {
-			$dbUsers = [];
-			$relationMap = $this->createRelationMap($result, 'usrgrpid', 'userid', 'users_groups');
-			$related_ids = $relationMap->getRelatedIds();
-
-			if ($related_ids) {
-				$get_access = ($this->outputIsRequested('gui_access', $options['selectUsers'])
-					|| $this->outputIsRequested('debug_mode', $options['selectUsers'])
-					|| $this->outputIsRequested('users_status', $options['selectUsers'])) ? true : null;
-
-				$dbUsers = API::User()->get([
-					'output' => $options['selectUsers'],
-					'userids' => $related_ids,
-					'getAccess' => $get_access,
-					'preservekeys' => true
-				]);
-			}
-
-			$result = $relationMap->mapMany($result, $dbUsers, 'users');
-		}
+		$this->addRelatedUsers($options, $result);
 
 		self::addRelatedHostGroupRights($options, $result);
 		self::addRelatedTemplateGroupRights($options, $result);
@@ -1427,6 +1393,26 @@ class CUserGroup extends CApiService {
 		}
 
 		return $result;
+	}
+
+	private function addRelatedUsers(array $options, array &$result): void {
+		if ($options['selectUsers'] === null) {
+			return;
+		}
+
+		$db_users = [];
+		$relation_map = $this->createRelationMap($result, 'usrgrpid', 'userid', 'users_groups');
+		$related_ids = $relation_map->getRelatedIds();
+
+		if ($related_ids) {
+			$db_users = API::User()->get([
+				'output' => $options['selectUsers'],
+				'userids' => $related_ids,
+				'preservekeys' => true
+			]);
+		}
+
+		$result = $relation_map->mapMany($result, $db_users, 'users');
 	}
 
 	private static function addRelatedHostGroupRights(array $options, array &$result): void {

@@ -1,5 +1,5 @@
 //-----------------------------------------------------------------------------
-// Copyright (c) 2016, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2016, 2024, Oracle and/or its affiliates.
 //
 // This software is dual-licensed to you under the Universal Permissive License
 // (UPL) 1.0 as shown at https://oss.oracle.com/licenses/upl and Apache License
@@ -70,8 +70,10 @@ static int dpiLob__check(dpiLob *lob, const char *fnName, dpiError *error)
 {
     if (dpiGen__startPublicFn(lob, DPI_HTYPE_LOB, fnName, error) < 0)
         return DPI_FAILURE;
+    if (!lob->conn || !lob->conn->handle)
+        return dpiError__set(error, "conn closed?", DPI_ERR_NOT_CONNECTED);
     if (!lob->locator)
-        return dpiError__set(error, "check closed", DPI_ERR_LOB_CLOSED);
+        return dpiError__set(error, "LOB closed?", DPI_ERR_LOB_CLOSED);
     return dpiConn__checkConnected(lob->conn, error);
 }
 

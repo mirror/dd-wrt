@@ -17,8 +17,11 @@ CREATE TEMP TABLE temp_history_log (
 
 DO $$
 DECLARE
-	chunk_tm_interval	INTEGER;
 	jobid			INTEGER;
+	tsdb_version		TEXT;
+	tsdb_version_major	INTEGER;
+	tsdb_version_minor	INTEGER;
+	compress_after		INTEGER;
 BEGIN
 	PERFORM create_hypertable('history_log', 'clock', chunk_time_interval => (
 		SELECT integer_interval FROM timescaledb_information.dimensions WHERE hypertable_name='history_log_old'
@@ -29,4 +32,4 @@ BEGIN
 
 END $$;
 
-UPDATE config SET compression_status=0;
+UPDATE settings SET value_int=0 WHERE name='compression_status';

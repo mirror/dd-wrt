@@ -286,7 +286,7 @@ typedef struct
 	zbx_uint64_t		valuemapid;
 	const char		*key;
 	const char		*port;
-	const char		*error;
+	char			error_hash[ZBX_SHA512_BINARY_LENGTH];
 	const char		*delay;
 	const char		*delay_ex;
 	const char		*history_period;
@@ -404,6 +404,7 @@ typedef struct
 	const char	*name;
 	int		maintenance_from;
 	int		data_expected_from;
+	zbx_uint64_t	flags;
 	zbx_uint64_t	revision;
 
 	unsigned char	maintenance_status;
@@ -439,6 +440,7 @@ typedef struct
 	int		flags;
 	int		timestamp;
 	unsigned short	listen_port;
+	unsigned int	connection_type;
 }
 ZBX_DC_AUTOREG_HOST;
 
@@ -543,6 +545,7 @@ zbx_dc_kv_t;
 typedef struct
 {
 	const char	*path;
+	const char	*last_error;
 	zbx_hashset_t	kvs;
 }
 zbx_dc_kvs_path_t;
@@ -568,6 +571,7 @@ typedef struct
 	/* item statistics per interface */
 	int		items_num;
 	int		version;
+	zbx_uint64_t	revision;
 }
 ZBX_DC_INTERFACE;
 
@@ -632,15 +636,18 @@ ZBX_DC_EXPRESSION;
 
 typedef struct
 {
+	zbx_uint64_t	alert_usrgrpid;
+
 	const char	*severity_name[TRIGGER_SEVERITY_COUNT];
 	const char	*instanceid;
 	zbx_uint64_t	discovery_groupid;
 	int		default_inventory_mode;
-	unsigned char	snmptrap_logging;
-	unsigned char	autoreg_tls_accept;
+	int		snmptrap_logging;
+	int		autoreg_tls_accept;
 	const char	*default_timezone;
 	int		auditlog_enabled;
 	int		auditlog_mode;
+	int		proxy_secrets_provider;
 
 	/* database configuration data for ZBX_CONFIG_DB_EXTENSION_* extensions */
 	zbx_config_db_t	db;
@@ -1076,10 +1083,38 @@ void	set_dc_config(zbx_dc_config_t *in);
 
 int		zbx_get_sync_in_progress(void);
 zbx_rwlock_t	zbx_get_config_lock(void);
+int		zbx_config_wlock_is_locked(void);
+void		zbx_config_wlock_set_locked(void);
+void		zbx_config_wlock_set_unlocked(void);
 
-#define	RDLOCK_CACHE	do { if (0 == zbx_get_sync_in_progress()) zbx_rwlock_rdlock(zbx_get_config_lock()); } while(0)
-#define	WRLOCK_CACHE	do { if (0 == zbx_get_sync_in_progress()) zbx_rwlock_wrlock(zbx_get_config_lock()); } while(0)
-#define	UNLOCK_CACHE	do { if (0 == zbx_get_sync_in_progress()) zbx_rwlock_unlock(zbx_get_config_lock()); } while(0)
+#define	RDLOCK_CACHE	do								\
+			{								\
+				if (0 == zbx_get_sync_in_progress())			\
+				{							\
+					zbx_rwlock_rdlock(zbx_get_config_lock());	\
+				}							\
+			}								\
+			while(0)
+
+#define	WRLOCK_CACHE	do								\
+			{								\
+				if (0 == zbx_get_sync_in_progress())			\
+				{							\
+					zbx_rwlock_wrlock(zbx_get_config_lock());	\
+					zbx_config_wlock_set_locked();			\
+				}							\
+			}								\
+			while(0)
+
+#define	UNLOCK_CACHE	do								\
+			{								\
+				if (0 == zbx_get_sync_in_progress())			\
+				{							\
+					zbx_config_wlock_set_unlocked();		\
+					zbx_rwlock_unlock(zbx_get_config_lock());	\
+				}							\
+			}								\
+			while(0)
 
 zbx_rwlock_t	zbx_get_config_history_lock(void);
 
@@ -1137,6 +1172,7 @@ void		DCget_function(zbx_dc_function_t *dst_function, const ZBX_DC_FUNCTION *src
 void		DCget_trigger(zbx_dc_trigger_t *dst_trigger, const ZBX_DC_TRIGGER *src_trigger, unsigned int flags);
 int		DCitem_nextcheck_update(ZBX_DC_ITEM *item, const ZBX_DC_INTERFACE *interface, int flags, int now,
 			char **error);
+unsigned char	zbx_dc_item_requires_preprocessing(const ZBX_DC_ITEM *src_item);
 
 #define ZBX_TRIGGER_TIMER_NONE			0x0000
 #define ZBX_TRIGGER_TIMER_TRIGGER		0x0001
@@ -1145,8 +1181,7 @@ int		DCitem_nextcheck_update(ZBX_DC_ITEM *item, const ZBX_DC_INTERFACE *interfac
 #define ZBX_TRIGGER_TIMER_FUNCTION		(ZBX_TRIGGER_TIMER_FUNCTION_TIME | ZBX_TRIGGER_TIMER_FUNCTION_TREND)
 
 zbx_um_cache_t	*um_cache_sync(zbx_um_cache_t *cache, zbx_uint64_t revision, zbx_dbsync_t *gmacros,
-		zbx_dbsync_t *hmacros, zbx_dbsync_t *htmpls, const zbx_config_vault_t *config_vault,
-		unsigned char program_type);
+		zbx_dbsync_t *hmacros, zbx_dbsync_t *htmpls, const zbx_config_vault_t *config_vault);
 
 void	dc_host_deregister_proxy(ZBX_DC_HOST *host, zbx_uint64_t proxyid, zbx_uint64_t revision);
 void	dc_host_register_proxy(ZBX_DC_HOST *host, zbx_uint64_t proxyid, zbx_uint64_t revision);

@@ -21,108 +21,19 @@ package tlsconfig
 import (
 	"crypto/tls"
 	"crypto/x509"
-	"errors"
-	"fmt"
 	"os"
 
 	"golang.zabbix.com/sdk/errs"
 	"golang.zabbix.com/sdk/uri"
 )
 
-// Details holds required data for TLS connections
-type Details struct {
-	SessionName        string
-	TlsConnect         string
-	TlsCaFile          string
-	TlsCertFile        string
-	TlsKeyFile         string
-	RawUri             string
-	AllowedConnections map[string]bool
-}
+var (
+	errTLSCaFileMustNotBeSet   = errs.New("TLS CA file must not be set")
+	errTLSCertFileMustNotBeSet = errs.New("TLS certificate file must not be set")
+	errTLSKeyFileMustNotBeSet  = errs.New("TLS key file must not be set")
+)
 
-// Validate checks if set TlsConnect type is allowed
-// if checkCA is true checks if TLSCAFile is set (does not validate the file)
-// if checkCertFile is true checks if TlsCertFile is set (does not validate the file)
-// if checkKeyFile is true checks if TlsKeyFile is set (does not validate the file)
-func (d *Details) Validate(checkCA, checkCertFile, checkKeyFile bool) error {
-	if len(d.AllowedConnections) == 0 {
-		return errors.New("no connection types allowed")
-	}
-
-	if d.TlsConnect == "" {
-		return errors.New("connection type must be set")
-	}
-
-	if !d.AllowedConnections[d.TlsConnect] {
-		return fmt.Errorf("connection type %s not allowed", d.TlsConnect)
-	}
-
-	if checkCA && d.TlsCaFile == "" {
-		return fmt.Errorf("TLS CA file must be set with connection type %s", d.TlsConnect)
-	}
-
-	if checkCertFile && d.TlsCertFile == "" {
-		return fmt.Errorf("TLS certificate file must be set with connection type %s", d.TlsConnect)
-	}
-
-	if checkKeyFile && d.TlsKeyFile == "" {
-		return fmt.Errorf("TLS key file must be set with connection type %s", d.TlsConnect)
-	}
-
-	return nil
-}
-
-// GetTLSConfig creates tls.Config from details
-func (d *Details) GetTLSConfig(skipVerify bool) (*tls.Config, error) {
-	rootCertPool := x509.NewCertPool()
-
-	pem, err := os.ReadFile(d.TlsCaFile)
-	if err != nil {
-		return nil, errs.Wrap(err, "failed to read TLS CA file")
-	}
-
-	if ok := rootCertPool.AppendCertsFromPEM(pem); !ok {
-		return nil, errs.New("failed to append PEM")
-	}
-
-	clientCerts, err := d.LoadCertificates()
-	if err != nil {
-		return nil, err
-	}
-
-	if skipVerify {
-		return &tls.Config{RootCAs: rootCertPool, Certificates: clientCerts, InsecureSkipVerify: skipVerify}, nil
-	}
-
-	url, err := uri.New(d.RawUri, nil)
-	if err != nil {
-		return nil, errs.Wrap(err, "failed to parse uri")
-	}
-
-	return &tls.Config{
-		RootCAs: rootCertPool, Certificates: clientCerts, InsecureSkipVerify: skipVerify, ServerName: url.Host(),
-	}, nil
-}
-
-// LoadCertificates combines cert and key files
-func (d *Details) LoadCertificates() ([]tls.Certificate, error) {
-	if d.TlsCertFile == "" || d.TlsKeyFile == "" {
-		return nil, nil
-	}
-
-	var Certs []tls.Certificate
-
-	certs, err := tls.LoadX509KeyPair(d.TlsCertFile, d.TlsKeyFile)
-	if err != nil {
-		return nil, errs.Wrap(err, "failed to load tls cert and/or key file")
-	}
-
-	Certs = []tls.Certificate{certs}
-
-	return Certs, nil
-}
-
-func VerifyPeerCertificateFunc(
+func verifyPeerCertificateFunc(
 	dnsName string, rootCAPool *x509.CertPool,
 ) func(certificates [][]byte, _ [][]*x509.Certificate) error {
 	return func(certificates [][]byte, _ [][]*x509.Certificate) error {
@@ -164,96 +75,105 @@ func VerifyPeerCertificateFunc(
 	}
 }
 
-// CreateConfig (deprecated) creates tls.Config from details
+// CreateConfig (deprecated) creates tls.Config from details.
+// Deprecated: use Details.GetTLSConfig method.
+//
+//nolint:gocritic
 func CreateConfig(details Details, skipVerify bool) (*tls.Config, error) {
 	rootCertPool := x509.NewCertPool()
 
-	pem, err := os.ReadFile(details.TlsCaFile)
+	pem, err := os.ReadFile(details.TLSCaFile)
 	if err != nil {
-		return nil, err
+		return nil, errs.Wrap(err, "failed to read TLS CA file")
 	}
 
-	if ok := rootCertPool.AppendCertsFromPEM(pem); !ok {
+	ok := rootCertPool.AppendCertsFromPEM(pem)
+	if !ok {
 		return nil, errs.New("failed to append PEM")
 	}
 
 	clientCerts := make([]tls.Certificate, 0, 1)
 
-	certs, err := tls.LoadX509KeyPair(details.TlsCertFile, details.TlsKeyFile)
+	certs, err := tls.LoadX509KeyPair(details.TLSCertFile, details.TLSKeyFile)
 	if err != nil {
-		return nil, err
+		return nil, errs.Wrap(err, "failed to load key pair")
 	}
 
 	clientCerts = append(clientCerts, certs)
 
 	if skipVerify {
+		//nolint:gosec
 		return &tls.Config{RootCAs: rootCertPool, Certificates: clientCerts, InsecureSkipVerify: skipVerify}, nil
 	}
 
-	url, err := uri.New(details.RawUri, nil)
+	url, err := uri.New(details.RawURI, nil)
 	if err != nil {
-		return nil, err
+		return nil, errs.Wrap(err, "failed to parse URI")
 	}
 
 	return &tls.Config{
+		//nolint:gosec
 		RootCAs: rootCertPool, Certificates: clientCerts, InsecureSkipVerify: skipVerify, ServerName: url.Host(),
 	}, nil
 }
 
-// NewDetails creates new Details struct with no validation
-func NewDetails(session, dbConnect, caFile, certFile, keyFile, uri string, connectionTypes ...string) Details {
-	connTypes := make(map[string]bool)
-	for _, v := range connectionTypes {
-		connTypes[v] = true
-	}
-
-	return Details{session, dbConnect, caFile, certFile, keyFile, uri, connTypes}
-}
-
-// CreateDetails (deprecated) creates details with validation
-func CreateDetails(session, dbConnect, caFile, certFile, keyFile, uri string) (Details, error) {
+// CreateDetails (deprecated) creates details with validation.
+// Deprecated: use NewDetails.
+//
+//nolint:revive // deprecated function
+func CreateDetails(session, dbConnect, caFile, certFile, keyFile, u string) (Details, error) {
 	if dbConnect != "" && dbConnect != "required" {
-		if err := validateSetTLSFiles(caFile, certFile, keyFile); err != nil {
-			return Details{}, fmt.Errorf("%s uri %s, with session %s", err.Error(), uri, session)
+		err := validateSetTLSFiles(caFile, certFile, keyFile)
+		if err != nil {
+			return Details{}, errs.Wrap(err, "uri "+u+", with session "+session)
 		}
 	} else {
-		if err := validateUnsetTLSFiles(caFile, certFile, keyFile); err != nil {
-			return Details{}, fmt.Errorf("%s uri %s, with session %s", err.Error(), uri, session)
+		err := validateUnsetTLSFiles(caFile, certFile, keyFile)
+		if err != nil {
+			return Details{}, errs.Wrap(err, "uri "+u+", with session "+session)
 		}
 	}
 
-	return Details{session, dbConnect, caFile, certFile, keyFile, uri, nil}, nil
+	return Details{
+		SessionName:        session,
+		TLSConnect:         TLSConnectionType(dbConnect),
+		TLSCaFile:          caFile,
+		TLSCertFile:        certFile,
+		TLSKeyFile:         keyFile,
+		RawURI:             u,
+		AllowedConnections: nil,
+	}, nil
 }
 
 func validateSetTLSFiles(caFile, certFile, keyFile string) error {
 	if caFile == "" {
-		return errors.New("missing TLS CA file")
+		return errs.New("missing TLS CA file")
 	}
 
 	if certFile == "" {
-		return errors.New("missing TLS certificate file")
+		return errs.New("missing TLS certificate file")
 	}
 
 	if keyFile == "" {
-		return errors.New("missing TLS key file")
+		return errs.New("missing TLS key file")
 	}
 
 	return nil
 }
 
 func validateUnsetTLSFiles(caFile, certFile, keyFile string) error {
-	errTmpl := "TLS %s file must not be set, when unencrypted connection or TLS without identity checks is configured"
+	const errCtx = "when unencrypted connection or TLS without identity checks is configured"
 
 	if caFile != "" {
-		return fmt.Errorf(errTmpl, "CA")
+		return errs.Wrap(errTLSCaFileMustNotBeSet, errCtx)
 	}
 
 	if certFile != "" {
-		return fmt.Errorf(errTmpl, "certificate")
+		return errs.Wrap(errTLSCertFileMustNotBeSet, errCtx)
 	}
 
 	if keyFile != "" {
-		return fmt.Errorf(errTmpl, "key")
+		return errs.Wrap(errTLSKeyFileMustNotBeSet, errCtx)
 	}
 
 	return nil

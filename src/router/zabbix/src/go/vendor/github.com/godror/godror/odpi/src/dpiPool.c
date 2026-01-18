@@ -112,6 +112,7 @@ static int dpiPool__create(dpiPool *pool, const char *userName,
         const dpiCommonCreateParams *commonParams,
         dpiPoolCreateParams *createParams, dpiError *error)
 {
+    int32_t pingInterval;
     uint32_t poolMode;
     uint8_t getMode;
     void *authInfo;
@@ -156,16 +157,16 @@ static int dpiPool__create(dpiPool *pool, const char *userName,
             return DPI_FAILURE;
 
         if (createParams->accessTokenCallback) {
-            // set IAM context callback on session handle
+            // set token based auth context callback on session handle
             if (dpiOci__attrSet(authInfo, DPI_OCI_HTYPE_SESSION,
-                    (void*) pool, 0, DPI_OCI_ATTR_IAM_CBKCTX,
+                    (void*) pool, 0, DPI_OCI_ATTR_TOKEN_CBKCTX,
                     "set token callback context", error) < 0)
                 return DPI_FAILURE;
 
-            // set IAM callback on session handle
+            // set token based auth callback on session handle
             if (dpiOci__attrSet(authInfo, DPI_OCI_HTYPE_SESSION,
                     (void*) dpiPool__accessTokenCallback, 0,
-                    DPI_OCI_ATTR_IAM_CBK, "set token callback", error) < 0)
+                    DPI_OCI_ATTR_TOKEN_CBK, "set token callback", error) < 0)
                 return DPI_FAILURE;
         }
     }
@@ -244,6 +245,16 @@ static int dpiPool__create(dpiPool *pool, const char *userName,
             DPI_OCI_ATTR_SPOOL_STMTCACHESIZE, "set stmt cache size",
             error) < 0)
         return DPI_FAILURE;
+
+    // disable ping interval in Oracle Database 23ai since it does not handle
+    // ping timeout yet
+    if (pool->env->versionInfo->versionNum >= 23) {
+        pingInterval = -1;
+        if (dpiOci__attrSet(pool->handle, DPI_OCI_HTYPE_SPOOL,
+                (void*) &pingInterval, 0, DPI_OCI_ATTR_PING_INTERVAL,
+                "disable ping interval", error) < 0)
+            return DPI_FAILURE;
+    }
 
     // set remaining attributes directly
     pool->homogeneous = createParams->homogeneous;

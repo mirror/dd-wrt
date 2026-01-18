@@ -176,10 +176,14 @@ int dpiUtils__getAttrStringWithDup(const char *action, const void *ociHandle,
     if (dpiOci__attrGet(ociHandle, ociHandleType, (void*) &source,
             valueLength, ociAttribute, action, error) < 0)
         return DPI_FAILURE;
-    if (dpiUtils__allocateMemory(1, *valueLength, 0, action, (void**) &temp,
-            error) < 0)
-        return DPI_FAILURE;
-    *value = (const char*) memcpy(temp, source, *valueLength);
+    if (*valueLength == 0) {
+        *value = NULL;
+    } else {
+        if (dpiUtils__allocateMemory(1, *valueLength, 0, action,
+                (void**) &temp, error) < 0)
+            return DPI_FAILURE;
+        *value = (const char*) memcpy(temp, source, *valueLength);
+    }
     return DPI_SUCCESS;
 }
 
@@ -533,29 +537,49 @@ int dpiUtils__setAccessTokenAttributes(void *handle,
         dpiAccessToken *accessToken, dpiVersionInfo *versionInfo,
         dpiError *error)
 {
-    // only available in Oracle Client 19.14+ and 21.5+ libraries
-    if (dpiUtils__checkClientVersionMulti(versionInfo,
-            19, 14, 21, 5, error) < 0)
-        return DPI_FAILURE;
+    int isBearer = 1;
 
     // check validity of access token
     if (!accessToken->token || accessToken->tokenLength == 0 ||
-            !accessToken->privateKey || accessToken->privateKeyLength == 0)
+            (accessToken->privateKey && accessToken->privateKeyLength == 0))
         return dpiError__set(error,
                 "check token based authentication parameters",
                 DPI_ERR_TOKEN_BASED_AUTH);
 
+    // IAM feature only available in Oracle Client 19.14+ and 21.5+ libraries
+    if (accessToken->privateKey) {
+        if (dpiUtils__checkClientVersionMulti(versionInfo, 19, 14, 21, 5,
+                error) < 0)
+            return DPI_FAILURE;
+
+    // OAuth feature only available in Oracle Client 19.15+ and 21.7+ libraries
+    } else {
+        if (dpiUtils__checkClientVersionMulti(versionInfo, 19, 15, 21, 7,
+                error) < 0)
+            return DPI_FAILURE;
+    }
+
     // set token on auth handle
     if (dpiOci__attrSet(handle, DPI_OCI_HTYPE_AUTHINFO,
             (void*) accessToken->token, accessToken->tokenLength,
-            DPI_OCI_ATTR_IAM_TOKEN, "set DB token", error) < 0)
+            DPI_OCI_ATTR_TOKEN, "set access token", error) < 0)
         return DPI_FAILURE;
 
-    // set private key on auth handle
-    if (dpiOci__attrSet(handle, DPI_OCI_HTYPE_AUTHINFO,
-            (void*) accessToken->privateKey, accessToken->privateKeyLength,
-            DPI_OCI_ATTR_IAM_PRIVKEY, "set DB token private key", error) < 0)
-        return DPI_FAILURE;
+    // set IAM private key on auth handle
+    if (accessToken->privateKey) {
+        if (dpiOci__attrSet(handle, DPI_OCI_HTYPE_AUTHINFO,
+                (void*) accessToken->privateKey,
+                accessToken->privateKeyLength, DPI_OCI_ATTR_IAM_PRIVKEY,
+                "set access token private key", error) < 0)
+            return DPI_FAILURE;
+
+    // set OAuth bearer flag on auth handle
+    } else {
+        if (dpiOci__attrSet(handle, DPI_OCI_HTYPE_AUTHINFO,
+                (void*) &isBearer, 0, DPI_OCI_ATTR_TOKEN_ISBEARER,
+                "set bearer flag", error) < 0)
+            return DPI_FAILURE;
+    }
 
     return DPI_SUCCESS;
 }

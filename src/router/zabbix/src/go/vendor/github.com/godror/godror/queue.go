@@ -1,4 +1,4 @@
-// Copyright 2019, 2022 The Godror Authors
+// Copyright 2019, 2023 The Godror Authors
 //
 //
 // SPDX-License-Identifier: UPL-1.0 OR Apache-2.0
@@ -83,10 +83,11 @@ func NewQueue(ctx context.Context, execer Execer, name string, payloadObjectType
 
 	var payloadType *C.dpiObjectType
 	if payloadObjectTypeName != "" {
-		if Q.PayloadObjectType, err = Q.conn.GetObjectType(payloadObjectTypeName); err != nil {
+		ot, err := Q.conn.GetObjectType(payloadObjectTypeName)
+		if err != nil {
 			return nil, err
 		}
-		payloadType = Q.PayloadObjectType.dpiObjectType
+		Q.PayloadObjectType, payloadType = ot, ot.dpiObjectType
 	}
 	value := C.CString(name)
 	err = Q.conn.checkExec(func() C.int {
@@ -98,14 +99,25 @@ func NewQueue(ctx context.Context, execer Execer, name string, payloadObjectType
 		return nil, fmt.Errorf("newQueue %q: %w", name, err)
 	}
 
-	var a [4096]byte
-	stack := a[:runtime.Stack(a[:], false)]
-	runtime.SetFinalizer(&Q, func(Q *Queue) {
-		if Q != nil && Q.dpiQueue != nil {
-			fmt.Printf("ERROR: queue %p of NewQueue is not Closed!\n%s\n", Q, stack)
-			Q.Close()
+	if guardWithFinalizers.Load() {
+		if !logLingeringResourceStack.Load() {
+			runtime.SetFinalizer(&Q, func(Q *Queue) {
+				if Q != nil && Q.dpiQueue != nil {
+					fmt.Printf("ERROR: queue %p of NewQueue is not Closed!\n", Q)
+					Q.Close()
+				}
+			})
+		} else {
+			var a [4096]byte
+			stack := a[:runtime.Stack(a[:], false)]
+			runtime.SetFinalizer(&Q, func(Q *Queue) {
+				if Q != nil && Q.dpiQueue != nil {
+					fmt.Printf("ERROR: queue %p of NewQueue is not Closed!\n%s\n", Q, stack)
+					Q.Close()
+				}
+			})
 		}
-	})
+	}
 
 	enqOpts := DefaultEnqOptions
 	deqOpts := DefaultDeqOptions
@@ -155,7 +167,7 @@ func (Q *Queue) Close() error {
 
 // Purge the expired messages from the queue.
 func (Q *Queue) PurgeExpired(ctx context.Context) error {
-	const qry = `BEGIN 
+	return Q.execQ(ctx, `BEGIN 
   FOR row IN (
     SELECT sys_context('USERENV', 'CURRENT_SCHEMA')||'.'||queue_table AS queue_table 
 	  FROM user_queues
@@ -163,16 +175,8 @@ func (Q *Queue) PurgeExpired(ctx context.Context) error {
   ) LOOP
     dbms_aqadm.purge_queue_table(row.queue_table, 'qtview.msg_state = ''EXPIRED''', NULL);
   END LOOP;
-END;`
-	stmt, err := Q.conn.PrepareContext(ctx, qry)
-	if err != nil {
-		return fmt.Errorf("%s: %w", qry, err)
-	}
-	defer stmt.Close()
-	if _, err = stmt.(driver.StmtExecContext).ExecContext(ctx, []driver.NamedValue{{Ordinal: 2, Value: Q.name}}); err != nil {
-		return fmt.Errorf("%s [%q]: %w", qry, Q.name, err)
-	}
-	return nil
+END;`,
+	)
 }
 
 // Name of the queue.
@@ -216,29 +220,44 @@ func (Q *Queue) Dequeue(messages []Message) (int, error) {
 	}
 	Q.props = props
 
-	var rc C.int
-	num := C.uint(len(props))
-	deqOne := num == 1
-	if deqOne {
-		rc = C.dpiQueue_deqOne(Q.dpiQueue, &props[0])
-	} else {
-		rc = C.dpiQueue_deqMany(Q.dpiQueue, &num, &props[0])
+	var num C.uint
+	deqOne := len(props) == 1
+	dequeue := func() C.int {
+		num = C.uint(len(props))
+		if deqOne {
+			return C.dpiQueue_deqOne(Q.dpiQueue, &props[0])
+		}
+		return C.dpiQueue_deqMany(Q.dpiQueue, &num, &props[0])
 	}
-	if rc == C.DPI_FAILURE {
+	if dequeue() == C.DPI_FAILURE {
 		err := Q.conn.getError()
 		var ec interface{ Code() int }
 		if errors.As(err, &ec) {
 			switch ec.Code() {
 			case 3156:
-				return 0, nil
+				err = nil
 			case 24010: // 0RA-24010: Queue does not exist
 				Q.Close()
 				//case 25263: // ORA-25263: no message in queue with message ID
 				//return 0, nil
+			case 25226: // ORA-25226: dequeue failed, queue <owner>.<queue_name> is not enabled for dequeue
+				if startErr := Q.start(); startErr != nil {
+					return 0, fmt.Errorf("%w: %w", startErr, err)
+				} else {
+					// try again
+					if dequeue() == C.DPI_FAILURE {
+						err = Q.conn.getError()
+					} else {
+						err = nil
+					}
+				}
 			}
 		}
-		return 0, fmt.Errorf("dequeue: %w", err)
+		if err != nil {
+			return 0, fmt.Errorf("dequeue: %w", err)
+		}
 	}
+
 	var firstErr error
 	for i, p := range props[:int(num)] {
 		if err := messages[i].fromOra(Q.conn, p, Q.PayloadObjectType); err != nil {
@@ -252,6 +271,26 @@ func (Q *Queue) Dequeue(messages []Message) (int, error) {
 		}
 	}
 	return int(num), firstErr
+}
+
+func (Q *Queue) execQ(ctx context.Context, qry string) error {
+	stmt, err := Q.conn.PrepareContext(ctx, qry)
+	if err != nil {
+		return fmt.Errorf("%s: %w", qry, err)
+	}
+	defer stmt.Close()
+	if _, err = stmt.(driver.StmtExecContext).
+		ExecContext(ctx, []driver.NamedValue{
+			{Ordinal: 1, Value: Q.name},
+		}); err != nil {
+		return fmt.Errorf("%s [%q]: %w", qry, Q.name, err)
+	}
+	return nil
+}
+func (Q *Queue) start() error {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	return Q.execQ(ctx, `BEGIN DBMS_AQADM.start_queue(queue_name=>:1); END;`)
 }
 
 // Enqueue all the messages given.
@@ -288,19 +327,35 @@ func (Q *Queue) Enqueue(messages []Message) error {
 		}
 	}
 
-	var rc C.int
-	if len(messages) == 1 {
-		rc = C.dpiQueue_enqOne(Q.dpiQueue, props[0])
-	} else {
-		rc = C.dpiQueue_enqMany(Q.dpiQueue, C.uint(len(props)), &props[0])
+	enqueue := func() C.int {
+		if len(messages) == 1 {
+			return C.dpiQueue_enqOne(Q.dpiQueue, props[0])
+		}
+		return C.dpiQueue_enqMany(Q.dpiQueue, C.uint(len(props)), &props[0])
 	}
-	if rc == C.DPI_FAILURE {
+	if enqueue() == C.DPI_FAILURE {
 		err := Q.conn.getError()
 		var ec interface{ Code() int }
-		if errors.As(err, &ec) && ec.Code() == 24010 { // 0RA-24010: Queue does not exist
-			Q.Close()
+		if errors.As(err, &ec) {
+			switch ec.Code() {
+			case 24010: // 0RA-24010: Queue does not exist
+				Q.Close()
+			case 25207: // ORA-25207: enque failed, queue string.string is disabled from enqueuing
+				if startErr := Q.start(); startErr != nil {
+					err = fmt.Errorf("%w: %w", startErr, err)
+				} else {
+					// try again
+					if enqueue() == C.DPI_FAILURE {
+						err = Q.conn.getError()
+					} else {
+						err = nil
+					}
+				}
+			}
 		}
-		return fmt.Errorf("enqueue %#v: %w", messages, err)
+		if err != nil {
+			return fmt.Errorf("enqueue %#v: %w", messages, err)
+		}
 	}
 
 	// Read back the MsgIDs
@@ -359,7 +414,6 @@ func (M *Message) toOra(d *drv, props *C.dpiMsgProps) error {
 	if M.Correlation != "" {
 		value := C.CString(M.Correlation)
 		OK(C.dpiMsgProps_setCorrelation(props, value, C.uint(len(M.Correlation))), "setCorrelation")
-		C.free(unsafe.Pointer(value))
 	}
 
 	OK(C.dpiMsgProps_setDelay(props, C.int(M.Delay/time.Second)), "setDelay")
@@ -367,7 +421,6 @@ func (M *Message) toOra(d *drv, props *C.dpiMsgProps) error {
 	if M.ExceptionQ != "" {
 		value := C.CString(M.ExceptionQ)
 		OK(C.dpiMsgProps_setExceptionQ(props, value, C.uint(len(M.ExceptionQ))), "setExceptionQ")
-		C.free(unsafe.Pointer(value))
 	}
 
 	OK(C.dpiMsgProps_setExpiration(props, C.int(M.Expiration/time.Second)), "setExpiration")
@@ -409,7 +462,7 @@ func (M *Message) fromOra(c *conn, props *C.dpiMsgProps, objType *ObjectType) er
 	var value *C.char
 	var length C.uint
 	M.Correlation = ""
-	if OK(C.dpiMsgProps_getCorrelation(props, &value, &length), "getCorrelation") {
+	if OK(C.dpiMsgProps_getCorrelation(props, &value, &length), "getCorrelation") && value != nil && length != 0 {
 		M.Correlation = C.GoStringN(value, C.int(length))
 	}
 
@@ -425,7 +478,7 @@ func (M *Message) fromOra(c *conn, props *C.dpiMsgProps, objType *ObjectType) er
 	}
 
 	M.ExceptionQ = ""
-	if OK(C.dpiMsgProps_getExceptionQ(props, &value, &length), "getExceptionQ") {
+	if OK(C.dpiMsgProps_getExceptionQ(props, &value, &length), "getExceptionQ") && value != nil && length != 0 {
 		M.ExceptionQ = C.GoStringN(value, C.int(length))
 	}
 
@@ -524,7 +577,7 @@ func (E *EnqOptions) fromOra(d *drv, opts *C.dpiEnqOptions) error {
 
 	var value *C.char
 	var length C.uint
-	if OK(C.dpiEnqOptions_getTransformation(opts, &value, &length), "getTransformation") {
+	if OK(C.dpiEnqOptions_getTransformation(opts, &value, &length), "getTransformation") && value != nil && length != 0 {
 		E.Transformation = C.GoStringN(value, C.int(length))
 	}
 
@@ -600,19 +653,19 @@ func (D *DeqOptions) fromOra(d *drv, opts *C.dpiDeqOptions) error {
 	var value *C.char
 	var length C.uint
 	D.Transformation = ""
-	if OK(C.dpiDeqOptions_getTransformation(opts, &value, &length), "getTransformation") {
+	if OK(C.dpiDeqOptions_getTransformation(opts, &value, &length), "getTransformation") && value != nil && length != 0 {
 		D.Transformation = C.GoStringN(value, C.int(length))
 	}
 	D.Condition = ""
-	if OK(C.dpiDeqOptions_getCondition(opts, &value, &length), "getCondifion") {
+	if OK(C.dpiDeqOptions_getCondition(opts, &value, &length), "getCondifion") && value != nil && length != 0 {
 		D.Condition = C.GoStringN(value, C.int(length))
 	}
 	D.Consumer = ""
-	if OK(C.dpiDeqOptions_getConsumerName(opts, &value, &length), "getConsumer") {
+	if OK(C.dpiDeqOptions_getConsumerName(opts, &value, &length), "getConsumer") && value != nil && length != 0 {
 		D.Consumer = C.GoStringN(value, C.int(length))
 	}
 	D.Correlation = ""
-	if OK(C.dpiDeqOptions_getCorrelation(opts, &value, &length), "getCorrelation") {
+	if OK(C.dpiDeqOptions_getCorrelation(opts, &value, &length), "getCorrelation") && value != nil && length != 0 {
 		D.Correlation = C.GoStringN(value, C.int(length))
 	}
 	D.DeliveryMode = DeliverPersistent
@@ -623,7 +676,8 @@ func (D *DeqOptions) fromOra(d *drv, opts *C.dpiDeqOptions) error {
 	D.MsgID = nil
 	if OK(C.dpiDeqOptions_getMsgId(opts, &value, &length), "getMsgId") {
 		if length != 0 {
-			D.MsgID = ((*[1 << 30]byte)(unsafe.Pointer(value)))[:int(length)]
+			//D.MsgID = ((*[1 << 30]byte)(unsafe.Pointer(value)))[:int(length):int(length)]
+			D.MsgID = ([]byte)(unsafe.Slice((*byte)(unsafe.Pointer(value)), length))
 		}
 	}
 	var nav C.dpiDeqNavigation

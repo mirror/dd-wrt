@@ -171,7 +171,7 @@ void	*zbx_hashset_insert_ext(zbx_hashset_t *hs, const void *data, size_t size, s
 		zbx_hashset_uniq_t uniq);
 void	*zbx_hashset_search(const zbx_hashset_t *hs, const void *data);
 void	zbx_hashset_remove(zbx_hashset_t *hs, const void *data);
-void	zbx_hashset_remove_direct(zbx_hashset_t *hs, void *data);
+void	zbx_hashset_remove_direct(zbx_hashset_t *hs, const void *data);
 
 void	zbx_hashset_clear(zbx_hashset_t *hs);
 
@@ -187,6 +187,17 @@ void	zbx_hashset_iter_reset(zbx_hashset_t *hs, zbx_hashset_iter_t *iter);
 void	*zbx_hashset_iter_next(zbx_hashset_iter_t *iter);
 void	zbx_hashset_iter_remove(zbx_hashset_iter_t *iter);
 void	zbx_hashset_copy(zbx_hashset_t *dst, const zbx_hashset_t *src, size_t size);
+
+typedef struct
+{
+	const zbx_hashset_t		*hashset;
+	int				slot;
+	const ZBX_HASHSET_ENTRY_T	*entry;
+}
+zbx_hashset_const_iter_t;
+
+void	zbx_hashset_const_iter_reset(const zbx_hashset_t *hs, zbx_hashset_const_iter_t *iter);
+const void	*zbx_hashset_const_iter_next(zbx_hashset_const_iter_t *iter);
 
 /* hashmap */
 

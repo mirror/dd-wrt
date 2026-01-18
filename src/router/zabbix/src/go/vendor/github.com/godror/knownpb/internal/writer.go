@@ -14,5 +14,9 @@ import (
 func GetXMLEncoderWriter(enc *xml.Encoder) *bufio.Writer {
 	rEnc := reflect.ValueOf(enc)
 	rP := rEnc.Elem().FieldByName("p").Addr()
-	return *(**bufio.Writer)(unsafe.Pointer(rP.Elem().FieldByName("Writer").UnsafeAddr()))
+	w := rP.Elem().FieldByName("w")
+	if !w.IsValid() { // pre-1.20
+		w = rP.Elem().FieldByName("Writer")
+	}
+	return *(**bufio.Writer)(unsafe.Pointer(w.UnsafeAddr()))
 }

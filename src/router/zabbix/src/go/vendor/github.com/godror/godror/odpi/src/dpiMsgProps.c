@@ -1,5 +1,5 @@
 //-----------------------------------------------------------------------------
-// Copyright (c) 2016, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2016, 2024, Oracle and/or its affiliates.
 //
 // This software is dual-licensed to you under the Universal Permissive License
 // (UPL) 1.0 as shown at https://oss.oracle.com/licenses/upl and Apache License
@@ -80,6 +80,10 @@ void dpiMsgProps__free(dpiMsgProps *props, dpiError *error)
     if (props->payloadObj) {
         dpiGen__setRefCount(props->payloadObj, error, -1);
         props->payloadObj = NULL;
+    }
+    if (props->payloadJson) {
+        dpiGen__setRefCount(props->payloadJson, error, -1);
+        props->payloadJson = NULL;
     }
     if (props->payloadRaw) {
         dpiOci__rawResize(props->env->handle, &props->payloadRaw, 0, error);
@@ -361,6 +365,23 @@ int dpiMsgProps_getPayload(dpiMsgProps *props, dpiObject **obj,
 
 
 //-----------------------------------------------------------------------------
+// dpiMsgProps_getPayloadJson() [PUBLIC]
+//   Get the JSON payload for the message (as a dpiJson).
+//-----------------------------------------------------------------------------
+int dpiMsgProps_getPayloadJson(dpiMsgProps *props, dpiJson **json)
+{
+    dpiError error;
+
+    if (dpiGen__startPublicFn(props, DPI_HTYPE_MSG_PROPS, __func__,
+            &error) < 0)
+        return dpiGen__endPublicFn(props, DPI_FAILURE, &error);
+    DPI_CHECK_PTR_NOT_NULL(props, json)
+    *json = props->payloadJson;
+    return dpiGen__endPublicFn(props, DPI_SUCCESS, &error);
+}
+
+
+//-----------------------------------------------------------------------------
 // dpiMsgProps_getPriority() [PUBLIC]
 //   Return the priority of the message.
 //-----------------------------------------------------------------------------
@@ -490,6 +511,27 @@ int dpiMsgProps_setPayloadBytes(dpiMsgProps *props, const char *value,
     status = dpiOci__rawAssignBytes(props->env->handle, value, valueLength,
             &props->payloadRaw, &error);
     return dpiGen__endPublicFn(props, status, &error);
+}
+
+
+//-----------------------------------------------------------------------------
+// dpiMsgProps_setPayloadJson() [PUBLIC]
+//   Set the payload for the message (as a JSON object).
+//-----------------------------------------------------------------------------
+int dpiMsgProps_setPayloadJson(dpiMsgProps *props, dpiJson *json)
+{
+    dpiError error;
+    if (dpiGen__startPublicFn(props, DPI_HTYPE_MSG_PROPS, __func__,
+            &error) < 0)
+        return dpiGen__endPublicFn(props, DPI_FAILURE, &error);
+    if (dpiGen__checkHandle(json, DPI_HTYPE_JSON, "check json object",
+            &error) < 0)
+        return dpiGen__endPublicFn(props, DPI_FAILURE, &error);
+    if (props->payloadJson)
+        dpiGen__setRefCount(props->payloadJson, &error, -1);
+    dpiGen__setRefCount(json, &error, 1);
+    props->payloadJson = json;
+    return dpiGen__endPublicFn(props, DPI_SUCCESS, &error);
 }
 
 

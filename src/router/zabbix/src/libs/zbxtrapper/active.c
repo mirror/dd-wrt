@@ -16,7 +16,6 @@
 
 #include "zbxtrapper.h"
 
-#include "zbxexpression.h"
 #include "zbxregexp.h"
 #include "zbxcompress.h"
 #include "zbxcrypto.h"
@@ -96,7 +95,7 @@ static void	db_register_host(const char *host, const char *ip, unsigned short po
 	now = time(NULL);
 
 	/* update before changing database in case Zabbix proxy also changed database and then deleted from cache */
-	zbx_dc_config_update_autoreg_host(host, p_ip, p_dns, port, host_metadata, flag, now);
+	zbx_dc_config_update_autoreg_host(host, p_ip, p_dns, port, host_metadata, flag, connection_type, now);
 
 	autoreg_update_host_func_cb(NULL, host, p_ip, p_dns, port, connection_type, host_metadata, (unsigned short)flag,
 			now, events_cbs);
@@ -112,7 +111,7 @@ static int	zbx_autoreg_host_check_permissions(const char *host, const char *ip, 
 
 	zbx_config_get(&cfg, ZBX_CONFIG_FLAGS_AUTOREG_TLS_ACCEPT);
 
-	if (0 == (cfg.autoreg_tls_accept & sock->connection_type))
+	if (0 == ((unsigned int)cfg.autoreg_tls_accept & sock->connection_type))
 	{
 		zabbix_log(LOG_LEVEL_WARNING, "autoregistration from \"%s\" denied (host:\"%s\" ip:\"%s\""
 				" port:%hu): connection type \"%s\" is not allowed for autoregistration",
@@ -171,8 +170,8 @@ out:
  *                FAIL - error occurred or host not found                           *
  *                                                                                  *
  * Comments: NB! adds host to the database if it does not exist or if it            *
- *           exists but metadata, interface, interface type or port has             *
- *           changed                                                                *
+ *           exists but metadata, interface, interface type, connection type        *
+ *           or port has changed                                                    *
  *                                                                                  *
  ************************************************************************************/
 static int	get_hostid_by_host_or_autoregister(const zbx_socket_t *sock, const char *host, const char *ip,
@@ -186,7 +185,7 @@ static int	get_hostid_by_host_or_autoregister(const zbx_socket_t *sock, const ch
 
 	char		*ch_error;
 	int		ret = FAIL;
-	int		autoreg = AUTOREG_ENABLED;
+	int		autoreg = AUTOREG_ENABLED, change_flags = 0;
 	unsigned char	status, monitored_by;
 
 	zabbix_log(LOG_LEVEL_DEBUG, "In %s() host:'%s' metadata:'%s'", __func__, host, host_metadata);
@@ -198,19 +197,26 @@ static int	get_hostid_by_host_or_autoregister(const zbx_socket_t *sock, const ch
 		goto out;
 	}
 
-	/* if host exists then check host connection permissions */
-	if (FAIL == zbx_dc_check_host_conn_permissions(host, sock, hostid, &status, &monitored_by, revision, redirect,
-			&ch_error))
-	{
-		zbx_snprintf(error, MAX_STRING_LEN, "%s", ch_error);
-		zbx_free(ch_error);
-		goto out;
-	}
-
 	if (0 != (trapper_get_program_type()() & ZBX_PROGRAM_TYPE_SERVER))
 	{
 		if (0 == zbx_dc_get_auto_registration_action_count())
 			autoreg = AUTOREG_DISABLED;
+	}
+
+	/* First check if autoregistration host has changed */
+	if (AUTOREG_ENABLED == autoreg)
+	{
+		change_flags = zbx_dc_is_autoreg_host_changed(host, port, host_metadata, flag, interface,
+				sock->connection_type, (int)time(NULL));
+	}
+
+	/* if host exists then check host connection permissions */
+	if (FAIL == zbx_dc_check_host_conn_permissions(host, sock, hostid, &status, &monitored_by, revision, redirect,
+			change_flags, &ch_error))
+	{
+		zbx_snprintf(error, MAX_STRING_LEN, "%s", ch_error);
+		zbx_free(ch_error);
+		goto out;
 	}
 
 	/* if host does not exist then check autoregistration connection permissions */
@@ -220,8 +226,8 @@ static int	get_hostid_by_host_or_autoregister(const zbx_socket_t *sock, const ch
 		autoreg = AUTOREG_DISABLED;
 	}
 
-	if (AUTOREG_ENABLED == autoreg && SUCCEED == zbx_dc_is_autoreg_host_changed(host, port, host_metadata, flag,
-			interface, (int)time(NULL)))
+	/* Register host if autoregistration is enabled and host does not exist yet or has changed */
+	if (AUTOREG_ENABLED == autoreg && 0 != change_flags)
 	{
 		db_register_host(host, ip, port, sock->connection_type, host_metadata, flag, interface, events_cbs,
 				config_timeout, autoreg_update_host_func_cb);
@@ -335,8 +341,8 @@ int	send_list_of_active_checks(zbx_socket_t *sock, char *request, const zbx_even
 			if (HOST_STATUS_MONITORED != dc_items[i].host.status)
 				continue;
 
-			zbx_substitute_simple_macros(NULL, NULL, NULL, NULL, &dc_items[i].host.hostid, NULL, NULL, NULL,
-					NULL, NULL, NULL, NULL, &dc_items[i].delay, ZBX_MACRO_TYPE_COMMON, NULL, 0);
+			zbx_dc_expand_user_and_func_macros(um_handle, &dc_items[i].delay, &dc_items[i].host.hostid, 1,
+					NULL);
 
 			if (SUCCEED != zbx_interval_preproc(dc_items[i].delay, &delay, NULL, NULL))
 				continue;
@@ -588,14 +594,14 @@ int	send_list_of_active_checks_json(zbx_socket_t *sock, zbx_json_parse_t *jp,
 	{
 		zbx_dc_item_t		*dc_items;
 		int			*errcodes, delay;
-		zbx_dc_um_handle_t	*um_handle;
 		char			*timeout = NULL;
 
 		dc_items = (zbx_dc_item_t *)zbx_malloc(NULL, sizeof(zbx_dc_item_t) * num);
 		errcodes = (int *)zbx_malloc(NULL, sizeof(int) * num);
 		zbx_dc_config_get_active_items_by_hostid(dc_items, hostid, errcodes, num);
 
-		um_handle = zbx_dc_open_user_macros();
+		zbx_dc_um_handle_t	*um_handle_masked = zbx_dc_open_user_macros_masked();
+		zbx_dc_um_handle_t	*um_handle_secure = zbx_dc_open_user_macros_secure();
 
 		for (int i = 0; i < num; i++)
 		{
@@ -613,8 +619,8 @@ int	send_list_of_active_checks_json(zbx_socket_t *sock, zbx_json_parse_t *jp,
 			if (HOST_STATUS_MONITORED != dc_items[i].host.status)
 				continue;
 
-			zbx_substitute_simple_macros(NULL, NULL, NULL, NULL, &dc_items[i].host.hostid, NULL, NULL, NULL,
-					NULL, NULL, NULL, NULL, &dc_items[i].delay, ZBX_MACRO_TYPE_COMMON, NULL, 0);
+			zbx_dc_expand_user_and_func_macros(um_handle_masked, &dc_items[i].delay,
+					&dc_items[i].host.hostid, 1, NULL);
 
 			if (ZBX_COMPONENT_VERSION(4, 4, 0) > version &&
 					SUCCEED != zbx_interval_preproc(dc_items[i].delay, &delay, NULL, NULL))
@@ -623,8 +629,8 @@ int	send_list_of_active_checks_json(zbx_socket_t *sock, zbx_json_parse_t *jp,
 			}
 
 			dc_items[i].key = zbx_strdup(dc_items[i].key, dc_items[i].key_orig);
-			zbx_substitute_key_macros_unmasked(&dc_items[i].key, NULL, &dc_items[i], NULL, NULL,
-					ZBX_MACRO_TYPE_ITEM_KEY, NULL, 0);
+			zbx_substitute_item_key_params(&dc_items[i].key, NULL, 0, zbx_item_key_subst_cb,
+					um_handle_secure, &dc_items[i]);
 
 			zbx_json_addobject(&json, NULL);
 			zbx_json_addstring(&json, ZBX_PROTO_TAG_KEY, dc_items[i].key, ZBX_JSON_TYPE_STRING);
@@ -657,9 +663,8 @@ int	send_list_of_active_checks_json(zbx_socket_t *sock, zbx_json_parse_t *jp,
 
 			timeout = zbx_strdup(NULL, dc_items[i].timeout_orig);
 
-			zbx_substitute_simple_macros(NULL, NULL, NULL, NULL, &dc_items[i].host.hostid, NULL, NULL,
-						NULL, NULL, NULL, NULL, NULL, &timeout, ZBX_MACRO_TYPE_COMMON, NULL,
-						0);
+			zbx_dc_expand_user_and_func_macros(um_handle_masked, &timeout, &dc_items[i].host.hostid, 1,
+					NULL);
 
 			zbx_json_addstring(&json, ZBX_PROTO_TAG_TIMEOUT, timeout, ZBX_JSON_TYPE_STRING);
 
@@ -676,7 +681,8 @@ int	send_list_of_active_checks_json(zbx_socket_t *sock, zbx_json_parse_t *jp,
 		zbx_free(errcodes);
 		zbx_free(dc_items);
 
-		zbx_dc_close_user_macros(um_handle);
+		zbx_dc_close_user_macros(um_handle_secure);
+		zbx_dc_close_user_macros(um_handle_masked);
 	}
 
 	zbx_json_close(&json);

@@ -136,7 +136,7 @@ func Open(logType, level int, filename string, filesize int) error {
 	case File:
 		var err error
 
-		logStat.f, err = os.OpenFile(filename, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644) //nolint:gosec
+		logStat.f, err = os.OpenFile(filename, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o640) //nolint:gosec
 		if err != nil {
 			return errs.Wrap(err, "failed to open log file")
 		}
@@ -220,7 +220,7 @@ func rotateLog() {
 		if err != nil || fstat.Size() == 0 || logStat.currentSize > fstat.Size() {
 			logStat.f.Close()
 
-			if logStat.f, err = os.OpenFile(logStat.filename, os.O_CREATE|os.O_WRONLY, 0o644); err != nil {
+			if logStat.f, err = os.OpenFile(logStat.filename, os.O_CREATE|os.O_WRONLY, 0o640); err != nil {
 				logStat.logType = Undefined
 				log.Fatalf("Cannot open log file %s", logStat.filename)
 			}
@@ -246,7 +246,7 @@ func rotateLog() {
 					printError = err.Error()
 				}
 
-				logStat.f, err = os.OpenFile(logStat.filename, os.O_CREATE|os.O_WRONLY, 0o644)
+				logStat.f, err = os.OpenFile(logStat.filename, os.O_CREATE|os.O_WRONLY, 0o640)
 				if err != nil {
 					errmsg := "Cannot open log file " + logStat.filename
 					if printError != "" {

@@ -6,6 +6,106 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [0.48.0]
+### Added
+- Vector and sparse vector support
+
+## [0.47.1]
+### Fixed
+- Read NCLOB: must count in UTF-16, and don't split surrogates (ORA-22831)
+- Use CallTimeout as context.WithTimeout
+
+## [0.47.0]
+### Changed
+- ConnectionParams IsSysDBA, IsSysOper, IsSysASM -> AdminRole
+
+## [0.46.2]
+### Changed
+- Use ODPI-5.5.0
+
+## [0.46.0]
+### Changed
+- dsn.StandaloneConnection, dsn.Heterogeneous and dsn.ExternalAuth became sql.NullBool to be able to differentiate set and not set.
+- Use ODPI-v5.4.1, fixing SIGSEGV on standalone connection with external auth.
+
+## [v0.45.2]
+### Added
+- NoRetry option to disable re-execution of a statement on ORA-04061, ORA-04065 or ORA-04068
+- WarningAsError option to return ORA-24344 as an error instead of skipping it
+- SetAttribute that sidesteps ORA-21602
+
+### Changed
+- Make CLOB written sizem mismatch only a warning.
+
+## [v0.45.0]
+### Added
+- Add cloexec subpackage for setting the connections to FD_CLOEXEC.
+- Export DPI_NATIVE_TYPE_* constants for Data.NativeType comparisons.
+
+### Changed
+- Require Go 1.20 (drop support for Go 1.19)
+- ODPI-C v5.4.0
+
+## [v0.44.0]
+### Added
+- Allow specifying Token authentication
+- PartialBatch option for SAVE EXCEPTIONS handling
+- Obey to context cancelation (as the documentation says),
+not just deadlines
+- add noBreakOnContextCancel option as a safety valve it the previous
+change cause SIGSEGV.
+
+## [v0.40.3]
+### Changed
+- Fix compilation regression with Go 1.19, caused by introducing log/slog.
+
+## [v0.40.2]
+### Changed
+- Fix performance issue of #301.
+
+## [v0.40.0]
+### Changed
+- ODPI-C v5.0.0
+
+## [v0.39.3]
+### Changed
+- Make resources' (last resort) Close with Finalizers opt-in with GuardWithFinalizers().
+- Remove string/Number interning, as it resulted higher memory usage.
+- Simplify DB time zone caching's key.
+
+## [v0.39.2]
+### Changed
+- simplify handleDeadline, hopefully eliminiate SIGSEGVs
+
+## [v0.39.1]
+### Changed
+- Update golang.org/x/exp/slog
+- Raise 3s default first connection timeout to 10s
+
+## [v0.39.0]
+### Changed
+- Use ODPI-C v5.0
+
+## [v0.38.0]
+### Added
+- Auto-start queue on specific failures (if possible)
+- NumberAsFloat64 option to return every number as float64
+
+## Changed
+- Log with slog (use github.com/godror/godror/slog shim or directly log/slog or golang.org/x/exp/slog)
+
+## [v0.37.0]
+### Changed
+- ODPI-C v4.6.1
+
+## [v0.36.0]
+### Added
+- initOnNewConnection connection flag to call OnInit only when the connection is new.
+
+## [v0.35.0]
+### Changed
+- Use ODPI-v4.6.0
+
 ## [v0.34.0]
 ### Added
 - ObjectType.AttributeNames() returns the attribute names in DB order.

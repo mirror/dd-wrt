@@ -28,17 +28,22 @@ use Widgets\TopItems\Includes\{
 use Widgets\TopItems\Widget;
 
 $table = new CTableInfo();
+$header = [];
+
+if ($data['show_column_header'] != WidgetForm::COLUMN_HEADER_OFF) {
+	$header[] = $data['layout'] == WidgetForm::LAYOUT_VERTICAL
+		? new CColHeader(_('Items'))
+		: new CColHeader(_('Hosts'));
+
+	$table->setHeader($header);
+}
 
 if ($data['error'] !== null) {
-	$table->setNoDataMessage($data['error']);
+	$table->setNoDataMessage($data['error'], null, ZBX_ICON_SEARCH_LARGE);
 }
 else {
 	if ($data['show_column_header'] != WidgetForm::COLUMN_HEADER_OFF) {
-		$header = [];
-
 		if ($data['layout'] == WidgetForm::LAYOUT_VERTICAL) {
-			$header[] = new CColHeader(_('Items'));
-
 			foreach ($data['rows'][0] as $cell) {
 				$hostid = $cell[Widget::CELL_HOSTID];
 				$title = $data['db_hosts'][$hostid]['name'];
@@ -52,8 +57,6 @@ else {
 			}
 		}
 		else {
-			$header[] = new CColHeader(_('Hosts'));
-
 			foreach ($data['rows'][0] as $cell) {
 				['name' => $title, 'is_view_value_in_column' => $is_view_value] = $cell[Widget::CELL_METADATA];
 				$header[] = (new CColHeader(
@@ -233,7 +236,7 @@ function makeTableCellViewsText(array $cell, array $data, $formatted_value, bool
 	$color = '';
 	if (array_key_exists('highlights', $column)) {
 		foreach ($column['highlights'] as $highlight) {
-			if (@preg_match('('.$highlight['pattern'].')', $value)) {
+			if (@preg_match('/'.CRegexHelper::handleSlashEscaping($highlight['pattern']).'/', $value)) {
 				$color = $highlight['color'];
 				break;
 			}

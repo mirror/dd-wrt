@@ -1,5 +1,5 @@
 //-----------------------------------------------------------------------------
-// Copyright (c) 2016, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2016, 2025, Oracle and/or its affiliates.
 //
 // This software is dual-licensed to you under the Universal Permissive License
 // (UPL) 1.0 as shown at https://oss.oracle.com/licenses/upl and Apache License
@@ -218,12 +218,9 @@ int dpiError__setFromOCI(dpiError *error, int status, dpiConn *conn,
         }
 
         // if session is marked as dead, return a unified error message
-        if (conn->deadSession) {
-            dpiError__set(error, action, DPI_ERR_CONN_CLOSED,
+        if (conn->deadSession)
+            return dpiError__wrap(error, DPI_ERR_CONN_CLOSED,
                     error->buffer->code);
-            error->buffer->code = 0;
-            return DPI_FAILURE;
-        }
 
         // check for call timeout and return a unified message instead
         switch (error->buffer->code) {
@@ -235,11 +232,9 @@ int dpiError__setFromOCI(dpiError *error, int status, dpiConn *conn,
                     dpiOci__attrGet(conn->handle, DPI_OCI_HTYPE_SVCCTX,
                             (void*) &callTimeout, 0, DPI_OCI_ATTR_CALL_TIMEOUT,
                             NULL, error);
-                if (callTimeout > 0) {
-                    dpiError__set(error, action, DPI_ERR_CALL_TIMEOUT,
+                if (callTimeout > 0)
+                    return dpiError__wrap(error, DPI_ERR_CALL_TIMEOUT,
                             callTimeout, error->buffer->code);
-                    error->buffer->code = 0;
-                }
                 break;
         }
 
@@ -285,5 +280,55 @@ int dpiError__setFromOS(dpiError *error, const char *action)
     dpiError__set(error, action, DPI_ERR_OS, message);
 
 #endif
+    return DPI_FAILURE;
+}
+
+
+//-----------------------------------------------------------------------------
+// dpiError__wrap() [INTERNAL]
+//   Set the error buffer to the specified DPI error but retain the error that
+// was already set and concatenate it to the new error. It is assumed that the
+// error that is wrapping accepts one argument: the original error number that
+// was raised. Returns DPI_FAILURE as a convenience to the caller.
+// -----------------------------------------------------------------------------
+int dpiError__wrap(dpiError *error, dpiErrorNum errorNum, ...)
+{
+    uint32_t origMessageLength;
+    char *origMessage, *ptr;
+    size_t ptrLength;
+    va_list varArgs;
+
+    // retain copy of original message, if possible
+    origMessageLength = error->buffer->messageLength;
+    origMessage = malloc(origMessageLength);
+    if (origMessage)
+        memcpy(origMessage, error->buffer->message, origMessageLength);
+
+    // clear original error and set new error
+    error->buffer->code = 0;
+    error->buffer->errorNum = errorNum;
+    va_start(varArgs, errorNum);
+    error->buffer->messageLength =
+            (uint32_t) vsnprintf(error->buffer->message,
+            sizeof(error->buffer->message),
+            dpiErrorMessages[errorNum - DPI_ERR_NO_ERR], varArgs);
+    va_end(varArgs);
+
+    // concatenate original message to new one (separated by line feed)
+    if (origMessage) {
+        ptr = error->buffer->message + error->buffer->messageLength;
+        ptrLength = sizeof(error->buffer->message) -
+                error->buffer->messageLength;
+        error->buffer->messageLength += (uint32_t) snprintf(ptr, ptrLength,
+                "\n%*s", origMessageLength, origMessage);
+        free(origMessage);
+    }
+
+    // log message, if applicable
+    if (dpiDebugLevel & DPI_DEBUG_LEVEL_ERRORS)
+        dpiDebug__print("internal error %.*s (%s / %s)\n",
+                error->buffer->messageLength, error->buffer->message,
+                error->buffer->fnName, error->buffer->action);
+
     return DPI_FAILURE;
 }

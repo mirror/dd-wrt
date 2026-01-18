@@ -1,5 +1,5 @@
 //-----------------------------------------------------------------------------
-// Copyright (c) 2018, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2024, Oracle and/or its affiliates.
 //
 // This software is dual-licensed to you under the Universal Permissive License
 // (UPL) 1.0 as shown at https://oss.oracle.com/licenses/upl and Apache License
@@ -96,12 +96,6 @@ static int dpiSodaColl__createOperOptions(dpiSodaColl *coll,
     if (!options) {
         dpiContext__initSodaOperOptions(&localOptions);
         options = &localOptions;
-
-    // size changed in version 4.2; this can be removed in version 5
-    } else if (coll->env->context->dpiMinorVersion < 2) {
-        dpiContext__initSodaOperOptions(&localOptions);
-        memcpy(&localOptions, options, sizeof(dpiSodaOperOptions__v41));
-        options = &localOptions;
     }
 
     // allocate new handle
@@ -145,8 +139,11 @@ static int dpiSodaColl__find(dpiSodaColl *coll,
         return DPI_FAILURE;
 
     // determine OCI flags to use
-    ociFlags = (coll->binaryContent) ? DPI_OCI_SODA_AS_STORED :
-            DPI_OCI_SODA_AS_AL32UTF8;
+    if (coll->binaryContent || coll->env->context->sodaUseJsonDesc) {
+        ociFlags = DPI_OCI_SODA_AS_STORED;
+    } else {
+        ociFlags = DPI_OCI_SODA_AS_AL32UTF8;
+    }
 
     // perform actual find
     if (cursor) {
@@ -311,6 +308,47 @@ static int dpiSodaColl__insertMany(dpiSodaColl *coll, uint32_t numDocs,
 
 
 //-----------------------------------------------------------------------------
+// dpiSodaColl__listIndexes() [INTERNAL]
+//   Return the list of indexes associated with the collection.
+//-----------------------------------------------------------------------------
+int dpiSodaColl__listIndexes(dpiSodaColl *coll, uint32_t flags,
+        dpiStringList *list, dpiError *error)
+{
+    uint32_t ptrLen, numAllocatedStrings = 0;
+    void *listHandle = NULL;
+    void **elem, *elemInd;
+    int32_t i, listLen;
+    int exists, status;
+    char *ptr;
+
+    if (dpiUtils__checkClientVersionMulti(coll->env->versionInfo, 19, 13,
+            21, 3, error) < 0)
+        return DPI_FAILURE;
+    if (dpiOci__sodaIndexList(coll, flags, &listHandle, error) < 0)
+        return DPI_FAILURE;
+    status = dpiOci__collSize(coll->db->conn, listHandle, &listLen, error);
+    for (i = 0; i < listLen && status == DPI_SUCCESS; i++) {
+        status = dpiOci__collGetElem(coll->db->conn, listHandle, i, &exists,
+                (void**) &elem, &elemInd, error);
+        if (status < 0)
+            break;
+        status = dpiOci__stringPtr(coll->env->handle, *elem, &ptr);
+        if (status < 0)
+            break;
+        status = dpiOci__stringSize(coll->env->handle, *elem, &ptrLen);
+        if (status < 0)
+            break;
+        status = dpiStringList__addElement(list, ptr, ptrLen,
+                &numAllocatedStrings, error);
+    }
+
+    if (listHandle)
+        dpiOci__objectFree(coll->env->handle, listHandle, 0, error);
+    return status;
+}
+
+
+//-----------------------------------------------------------------------------
 // dpiSodaColl__populateOperOptions() [INTERNAL]
 //   Populate the SODA operation options handle with the information found in
 // the supplied structure.
@@ -384,6 +422,17 @@ static int dpiSodaColl__populateOperOptions(dpiSodaColl *coll,
         if (dpiOci__attrSet(handle, DPI_OCI_HTYPE_SODA_OPER_OPTIONS,
                 (void*) options->hint, options->hintLength,
                 DPI_OCI_ATTR_SODA_HINT, "set hint", error) < 0)
+            return DPI_FAILURE;
+    }
+
+    // set lock, if applicable (only available in 19.11+/21.3+ client)
+    if (options->lock) {
+        if (dpiUtils__checkClientVersionMulti(coll->env->versionInfo, 19, 11,
+                21, 3, error) < 0)
+            return DPI_FAILURE;
+        if (dpiOci__attrSet(handle, DPI_OCI_HTYPE_SODA_OPER_OPTIONS,
+                (void*) &options->lock, 0, DPI_OCI_ATTR_SODA_LOCK, "set lock",
+                error) < 0)
             return DPI_FAILURE;
     }
 
@@ -906,6 +955,34 @@ int dpiSodaColl_insertOneWithOptions(dpiSodaColl *coll, dpiSodaDoc *doc,
         }
     }
 
+    return dpiGen__endPublicFn(coll, status, &error);
+}
+
+
+//-----------------------------------------------------------------------------
+// dpiSodaColl_listIndexes() [PUBLIC]
+//   Return the list of indexes associated with the collection.
+//-----------------------------------------------------------------------------
+int dpiSodaColl_listIndexes(dpiSodaColl *coll, uint32_t flags,
+        dpiStringList *list)
+{
+    dpiError error;
+    uint32_t mode;
+    int status;
+
+    // validate parameters
+    if (dpiSodaColl__check(coll, __func__, &error) < 0)
+        return dpiGen__endPublicFn(coll, DPI_FAILURE, &error);
+    DPI_CHECK_PTR_NOT_NULL(coll, list)
+
+    // get indexes
+    memset(list, 0, sizeof(dpiStringList));
+    mode = DPI_OCI_DEFAULT;
+    if (flags & DPI_SODA_FLAGS_ATOMIC_COMMIT)
+        mode |= DPI_OCI_SODA_ATOMIC_COMMIT;
+    status = dpiSodaColl__listIndexes(coll, mode, list, &error);
+    if (status < 0)
+        dpiStringList__free(list);
     return dpiGen__endPublicFn(coll, status, &error);
 }
 

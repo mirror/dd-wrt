@@ -34,19 +34,23 @@
 #define ZBX_RTC_PROXYPOLLER_PROCESS		19
 #define ZBX_RTC_PROF_ENABLE			20
 #define ZBX_RTC_PROF_DISABLE			21
+#define ZBX_RTC_HISTORY_CACHE_CLEAR		22
 
 /* internal rtc messages */
 #define ZBX_RTC_SUBSCRIBE			100
 #define ZBX_RTC_SHUTDOWN			101
 #define ZBX_RTC_CONFIG_CACHE_RELOAD_WAIT	102
 #define ZBX_RTC_SUBSCRIBE_SERVICE		103
-#define ZBX_RTC_NOTIFY				104
+#define ZBX_RTC_UNSUBSCRIBE_SERVICE		104
+#define ZBX_RTC_NOTIFY				105
+
 
 /* runtime control notifications, must be less than 10000 */
 #define ZBX_RTC_CONFIG_SYNC_NOTIFY		9999
 #define ZBX_RTC_SERVICE_SYNC_NOTIFY		9998
 #define ZBX_RTC_HISTORY_SYNC_NOTIFY		9997
 #define ZBX_RTC_ESCALATOR_NOTIFY		9996
+#define ZBX_RTC_TASK_MANAGER_NOTIFY		9995
 
 #define ZBX_IPC_RTC_MAX				9999
 
@@ -67,5 +71,6 @@
 #define ZBX_PROXY_CONFIG_CACHE_RELOAD	"proxy_config_cache_reload"
 #define ZBX_PROF_ENABLE			"prof_enable"
 #define ZBX_PROF_DISABLE		"prof_disable"
+#define ZBX_HISTORY_CACHE_CLEAR		"history_cache_clear"
 
 #endif

@@ -37,12 +37,12 @@ class CWidgetFieldDataSet extends CWidgetField {
 
 	// Predefined colors for data-sets in JSON format. Each next data set takes next sequential value from palette.
 	public const DEFAULT_COLOR_PALETTE = [
-		'FF465C', 'FFD54F', '0EC9AC', '524BBC', 'ED1248', 'D1E754', '2AB5FF', '385CC7', 'EC1594', 'BAE37D',
-		'6AC8FF', 'EE2B29', '3CA20D', '6F4BBC', '00A1FF', 'F3601B', '1CAE59', '45CFDB', '894BBC', '6D6D6D'
+		'FFD54F', '0EC9AC', '524BBC', 'ED1248', 'D1E754', '2AB5FF', '385CC7', 'EC1594', 'BAE37D', '6AC8FF', 'EE2B29',
+		'3CA20D', '6F4BBC', '00A1FF', 'F3601B', '1CAE59', '45CFDB', '894BBC', '6D6D6D'
 	];
 
-	// First color from the default color palette.
-	private const DEFAULT_COLOR = 'FF465C';
+	// First palette from predefined palettes.
+	private const DEFAULT_PALETTE = 0;
 
 	public function __construct(string $name, ?string $label = null) {
 		parent::__construct($name, $label);
@@ -55,7 +55,8 @@ class CWidgetFieldDataSet extends CWidgetField {
 				'items'					=> ['type' => API_STRINGS_UTF8],
 				'itemids'				=> ['type' => API_IDS],
 				'references'			=> ['type' => API_STRINGS_UTF8],
-				'color'					=> ['type' => API_COLOR, 'flags' => API_REQUIRED | API_NOT_EMPTY],
+				'color'					=> ['type' => API_COLOR, 'flags' => API_NOT_EMPTY],
+				'color_palette'			=> ['type' => API_INT32, 'flags' => API_NOT_EMPTY],
 				'aggregate_function'	=> ['type' => API_INT32, 'flags' => API_REQUIRED, 'in' => implode(',', [AGGREGATE_MIN, AGGREGATE_MAX, AGGREGATE_AVG, AGGREGATE_COUNT, AGGREGATE_SUM, AGGREGATE_FIRST, AGGREGATE_LAST])],
 				'dataset_aggregation'	=> ['type' => API_INT32, 'flags' => API_REQUIRED, 'in' => implode(',', [AGGREGATE_NONE, AGGREGATE_MIN, AGGREGATE_MAX, AGGREGATE_AVG, AGGREGATE_COUNT, AGGREGATE_SUM])],
 				'type'					=> ['type' => API_INTS32, 'flags' => null, 'in' => implode(',', [self::ITEM_TYPE_NORMAL, self::ITEM_TYPE_TOTAL])],
@@ -63,10 +64,33 @@ class CWidgetFieldDataSet extends CWidgetField {
 			]]);
 	}
 
+	public function getValue() {
+		$values = parent::getValue();
+
+		foreach ($values as &$value) {
+			if ($value['dataset_type'] != self::DATASET_TYPE_SINGLE_ITEM) {
+				continue;
+			}
+
+			foreach (array_keys($value['itemids']) as $i) {
+				if (!array_key_exists($i, $value['type'])) {
+					$value['type'][$i] = self::ITEM_TYPE_NORMAL;
+				}
+			}
+		}
+		unset($value);
+
+		return $values;
+	}
+
 	public function setValue($value): self {
 		$data_sets = [];
 
 		foreach ((array) $value as $data_set) {
+			if (array_key_exists('itemids', $data_set)) {
+				$data_set['itemids'] = array_values($data_set['itemids']);
+			}
+
 			$data_sets[] = $data_set + self::getDefaults();
 		}
 
@@ -79,7 +103,7 @@ class CWidgetFieldDataSet extends CWidgetField {
 			'hosts' => [],
 			'items' => [],
 			'itemids' => [],
-			'color' => self::DEFAULT_COLOR,
+			'color_palette' => self::DEFAULT_PALETTE,
 			'aggregate_function' => AGGREGATE_LAST,
 			'dataset_aggregation' => AGGREGATE_NONE,
 			'type' => [],
@@ -117,16 +141,15 @@ class CWidgetFieldDataSet extends CWidgetField {
 			return [];
 		}
 
-		$errors = [];
 		$total_item_count = 0;
 
 		$validation_rules = $this->getValidationRules($strict);
 		$value = $this->getValue();
 		$label = $this->getErrorLabel();
 
-		if (!count($value)) {
+		if (!$value) {
 			if (!CApiInputValidator::validate($validation_rules, $value, $label, $error)) {
-				$errors[] = $error;
+				return [$error];
 			}
 		}
 		else {
@@ -161,13 +184,18 @@ class CWidgetFieldDataSet extends CWidgetField {
 			}
 
 			if (!CApiInputValidator::validate($validation_rules_by_type, $data, $label.'/'.($index + 1), $error)) {
-				$errors[] = $error;
-				break;
+				return [$error];
 			}
 
 			if ($data['dataset_type'] == self::DATASET_TYPE_SINGLE_ITEM) {
 				foreach ($data['itemids'] as $i => &$item_spec) {
 					if ($item_spec == 0) {
+						if ($data['references'][$i] === '') {
+							return [_s('Invalid parameter "%1$s": %2$s.', $label.'/'.($index + 1),
+								_('referred widget is unavailable')
+							)];
+						}
+
 						$item_spec = [CWidgetField::FOREIGN_REFERENCE_KEY => $data['references'][$i]];
 					}
 				}
@@ -179,24 +207,20 @@ class CWidgetFieldDataSet extends CWidgetField {
 		unset($data);
 
 		if ($total_item_count > 1) {
-			$errors[] = _('Cannot add more than one item with type "Total" to the chart.');
+			return [_('Cannot add more than one item with type "Total" to the chart.')];
 		}
 
 		if ($total_item_count > 0) {
 			foreach ($value as $data) {
 				if ($data['dataset_aggregation'] !== AGGREGATE_NONE) {
-					$errors[] =
-						_('Cannot set "Data set aggregation" when item with type "Total" is added to the chart.');
-					break;
+					return [_('Cannot set "Data set aggregation" when item with type "Total" is added to the chart.')];
 				}
 			}
 		}
 
-		if (!$errors) {
-			$this->setValue($value);
-		}
+		$this->setValue($value);
 
-		return $errors;
+		return [];
 	}
 
 	public function toApi(array &$widget_fields = []): void {
@@ -262,11 +286,20 @@ class CWidgetFieldDataSet extends CWidgetField {
 				}
 			}
 			else {
-				$widget_fields[] = [
-					'type' => ZBX_WIDGET_FIELD_TYPE_STR,
-					'name' => $this->name.'.'.$index.'.color',
-					'value' => $value['color']
-				];
+				if (array_key_exists('color', $value)) {
+					$widget_fields[] = [
+						'type' => ZBX_WIDGET_FIELD_TYPE_STR,
+						'name' => $this->name.'.'.$index.'.color',
+						'value' => $value['color']
+					];
+				}
+				elseif (array_key_exists('color_palette', $value)) {
+					$widget_fields[] = [
+						'type' => ZBX_WIDGET_FIELD_TYPE_INT32,
+						'name' => $this->name.'.'.$index.'.color_palette',
+						'value' => $value['color_palette']
+					];
+				}
 			}
 
 			// Other dataset fields are stored if different from the defaults.

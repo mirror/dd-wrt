@@ -18,16 +18,16 @@ class CControllerAuditSettingsUpdate extends CController {
 
 	protected function checkInput(): bool {
 		$fields = [
-			'auditlog_enabled'	=> 'db config.auditlog_enabled|in 1',
-			'auditlog_mode'		=> 'db config.auditlog_mode|in 1',
-			'hk_audit_mode'		=> 'db config.hk_audit_mode|in 1',
-			'hk_audit'			=> 'db config.hk_audit|time_unit '.implode(':', [SEC_PER_DAY, 25 * SEC_PER_YEAR])
+			'auditlog_enabled'	=> 'in 1',
+			'auditlog_mode'		=> 'in 1',
+			'hk_audit_mode'		=> 'in 1',
+			'hk_audit'			=> 'time_unit '.implode(':', [SEC_PER_DAY, 25 * SEC_PER_YEAR])
 		];
 
 		$ret = $this->validateInput($fields);
 
 		if (!$ret) {
-			switch ($this->getValidationError()) {
+			switch ($this->getValidationResult()) {
 				case self::VALIDATION_ERROR:
 					$response = new CControllerResponseRedirect(
 						(new CUrl('zabbix.php'))->setArgument('action', 'audit.settings.edit')
