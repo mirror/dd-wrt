@@ -290,7 +290,7 @@ obj-$(CONFIG_SED) += sed
 
 obj-$(CONFIG_POWERTOP) += pciutils ncurses powertop
 #obj-$(CONFIG_RTPPROXY) += rtpproxy
-obj-$(CONFIG_ZABBIX) += pcre zabbix
+obj-$(CONFIG_ZABBIX) += pcre2 zabbix
 obj-$(CONFIG_SAMBA) += samba
 ifneq ($(CONFIG_SAMBA4),y)
 ifneq ($(CONFIG_SMBD),y)
@@ -723,6 +723,7 @@ obj-$(CONFIG_PROCPS) += ncurses procps
 obj-$(CONFIG_BLUEZ) += json-c libffi expat glib20 ncurses readline dbus bluez bluez-tools pcre2
 obj-$(CONFIG_IPTOOLS) += libmnl iptools
 obj-$(CONFIG_REALTEK) += libubox json-c ubus realtek-poe
+obj-$(CONFIG_REALTEKPOE) += libubox json-c ubus realtek-poe
 obj-$(CONFIG_BRIDGER) += musl-fts argp-standalone elfutils libbpf libubox ubus libnl-tiny bridger
 
 ifneq ($(CONFIG_DIST),"micro")
