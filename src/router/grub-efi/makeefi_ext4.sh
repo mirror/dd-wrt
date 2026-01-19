@@ -23,7 +23,7 @@ echo "menuentry \"MEMTEST86\" {" >> tmp/boot/grub/grub.cfg
 echo "	set root='hd0,gpt1'" >> tmp/boot/grub/grub.cfg
 echo "	chainloader (\$root)/efi/memtest86/memtest64.efi" >> tmp/boot/grub/grub.cfg
 echo "}" >> tmp/boot/grub/grub.cfg
-PADDING="1" SIGNATURE="$IMG_PART_SIGNATURE" GUID="$IMG_PART_DISKGUID" ./scripts/gen_image_generic.sh efi.img 32 tmp 2147483648 ../x86_64-uclibc/root.fs 256 128
+PADDING="1" SIGNATURE="$IMG_PART_SIGNATURE" GUID="$IMG_PART_DISKGUID" ./scripts/gen_image_generic.sh efi-ext4.img 32 tmp 2147483647 ../x86_64-uclibc/root.ext4 256 128
 
 rm -rf imp
 mkdir -p img
@@ -33,25 +33,25 @@ echo "(hd0) `pwd`/efi.img" > img/device.map
 
 grub-tools/grub-bios-setup -m "img/device.map" -d "img" \
 		-r "hd0,gpt1" \
-		efi.img
+		efi-ext4.img
 
-./trunc efi.img efi.tmp
-mv -f efi.tmp efi.img 
+./trunc efi-ext4.img efi-ext4.tmp
+mv -f efi-ext4.tmp efi-ext4.img 
 
-PADDING="1" SIGNATURE="$IMG_PART_SIGNATURE" GUID="$IMG_PART_DISKGUID" ./scripts/gen_image_generic.sh efi-big.img 32 tmp 2147483648 ../x86_64-uclibc/root.fs 256 1780
+PADDING="1" SIGNATURE="$IMG_PART_SIGNATURE" GUID="$IMG_PART_DISKGUID" ./scripts/gen_image_generic.sh efi-ext4-big.img 32 tmp 2147483647 ../x86_64-uclibc/root.ext4 256 1780
 
 rm -rf imp
 mkdir -p img
 cp boot/grub/boot.img img
 cp boot/grub/core.img img
-echo "(hd0) `pwd`/efi-big.img" > img/device.map
+echo "(hd0) `pwd`/efi-ext4-big.img" > img/device.map
 
 grub-tools/grub-bios-setup -m "img/device.map" -d "img" \
 		-r "hd0,gpt1" \
-		efi-big.img
+		efi-ext4-big.img
 
-./trunc efi-big.img efi-big.tmp
-mv -f efi-big.tmp efi-big.img 
+./trunc efi-ext4-big.img efi-ext4-big.tmp
+mv -f efi-ext4-big.tmp efi-ext4-big.img 
 
 
 rm -rf tmp
@@ -70,30 +70,30 @@ echo "	set root='hd0,gpt1'" >> tmp/boot/grub/grub.cfg
 echo "	chainloader (\$root)/efi/memtest86/memtest64.efi" >> tmp/boot/grub/grub.cfg
 echo "}" >> tmp/boot/grub/grub.cfg
 
-PADDING="1" SIGNATURE="$IMG_PART_SIGNATURE" GUID="$IMG_PART_DISKGUID" ./scripts/gen_image_generic.sh efi-vga.img 32 tmp 400 ../x86_64-uclibc/root.fs 256 128
+PADDING="1" SIGNATURE="$IMG_PART_SIGNATURE" GUID="$IMG_PART_DISKGUID" ./scripts/gen_image_generic.sh efi-ext4-vga.img 32 tmp 2147483647 ../x86_64-uclibc/root.ext4 256 128
 rm -rf imp
 mkdir -p img
 cp boot/grub/boot.img img
 cp boot/grub/core.img img
-echo "(hd0) `pwd`/efi-vga.img" > img/device.map
+echo "(hd0) `pwd`/efi-ext4-vga.img" > img/device.map
 
 grub-tools/grub-bios-setup -m "img/device.map" -d "img" \
 		-r "hd0,gpt1" \
-		efi-vga.img
+		efi-ext4-vga.img
 
-./trunc efi-vga.img efi-vga.tmp
-mv -f efi-vga.tmp efi-vga.img 
+./trunc efi-ext4-vga.img efi-ext4-vga.tmp
+mv -f efi-ext4-vga.tmp efi-ext4-vga.img 
 
-PADDING="1" SIGNATURE="$IMG_PART_SIGNATURE" GUID="$IMG_PART_DISKGUID" ./scripts/gen_image_generic.sh efi-vga-big.img 32 tmp 400 ../x86_64-uclibc/root.fs 256 1780
+PADDING="1" SIGNATURE="$IMG_PART_SIGNATURE" GUID="$IMG_PART_DISKGUID" ./scripts/gen_image_generic.sh efi-ext4-vga-big.img 32 tmp 2147483647 ../x86_64-uclibc/root.ext4 256 1780
 rm -rf imp
 mkdir -p img
 cp boot/grub/boot.img img
 cp boot/grub/core.img img
-echo "(hd0) `pwd`/efi-vga-big.img" > img/device.map
+echo "(hd0) `pwd`/efi-ext4-vga-big.img" > img/device.map
 
 grub-tools/grub-bios-setup -m "img/device.map" -d "img" \
 		-r "hd0,gpt1" \
 		efi-vga-big.img
 
-./trunc efi-vga-big.img efi-vga-big.tmp
-mv -f efi-vga-big.tmp efi-vga-big.img 
+./trunc efi-ext4-vga-big.img efi-ext4-vga-big.tmp
+mv -f efi-ext4-vga-big.tmp efi-ext4-vga-big.img 
