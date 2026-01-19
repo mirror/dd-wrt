@@ -369,12 +369,12 @@ endif
 	cp $(LINUXDIR)/arch/x86_64/boot/bzImage $(ARCH)-uclibc/root.grub/boot/vmlinuz
 
 	cp grub/menu_serial_ext4.lst $(ARCH)-uclibc/root.grub/boot/grub/menu.lst
-	-PATH="$(INSTALLDIR)/grub/usr/local/sbin:$(INSTALLDIR)/grub/usr/local/bin:$(PATH)" ./gen_image.sh $(ARCH)-uclibc/dd-wrt_serial.image.ext4.src 32 $(ARCH)-uclibc/root.grub 2147483647 $(ARCH)-uclibc/root.ext4 128
+	-PATH="$(INSTALLDIR)/grub/usr/local/sbin:$(INSTALLDIR)/grub/usr/local/bin:$(PATH)" ./gen_image.sh $(ARCH)-uclibc/dd-wrt_serial.image.ext4.src 32 $(ARCH)-uclibc/root.grub 2048 $(ARCH)-uclibc/root.ext4 128
 	cp grub/menu_serial.lst $(ARCH)-uclibc/root.grub/boot/grub/menu.lst
 	-PATH="$(INSTALLDIR)/grub/usr/local/sbin:$(INSTALLDIR)/grub/usr/local/bin:$(PATH)" ./gen_image.sh $(ARCH)-uclibc/dd-wrt_serial.image.src 32 $(ARCH)-uclibc/root.grub 600 $(ARCH)-uclibc/root.fs 128
 	-PATH="$(INSTALLDIR)/grub/usr/local/sbin:$(INSTALLDIR)/grub/usr/local/bin:$(PATH)" ./gen_image.sh $(ARCH)-uclibc/dd-wrt_serial_2GB.image.src 32 $(ARCH)-uclibc/root.grub 600 $(ARCH)-uclibc/root.fs 1780
 	cp grub/menu_vga_ext4.lst $(ARCH)-uclibc/root.grub/boot/grub/menu.lst
-	-PATH="$(INSTALLDIR)/grub/usr/local/sbin:$(INSTALLDIR)/grub/usr/local/bin:$(PATH)" ./gen_image.sh $(ARCH)-uclibc/dd-wrt_vga.image.ext4.src 32 $(ARCH)-uclibc/root.grub 2147483647 $(ARCH)-uclibc/root.ext4 128
+	-PATH="$(INSTALLDIR)/grub/usr/local/sbin:$(INSTALLDIR)/grub/usr/local/bin:$(PATH)" ./gen_image.sh $(ARCH)-uclibc/dd-wrt_vga.image.ext4.src 32 $(ARCH)-uclibc/root.grub 2048 $(ARCH)-uclibc/root.ext4 128
 	cp grub/menu_vga.lst $(ARCH)-uclibc/root.grub/boot/grub/menu.lst
 	-PATH="$(INSTALLDIR)/grub/usr/local/sbin:$(INSTALLDIR)/grub/usr/local/bin:$(PATH)" ./gen_image.sh $(ARCH)-uclibc/dd-wrt_vga.image.src 32 $(ARCH)-uclibc/root.grub 600 $(ARCH)-uclibc/root.fs 128
 	-PATH="$(INSTALLDIR)/grub/usr/local/sbin:$(INSTALLDIR)/grub/usr/local/bin:$(PATH)" ./gen_image.sh $(ARCH)-uclibc/dd-wrt_vga_2GB.image.src 32 $(ARCH)-uclibc/root.grub 600 $(ARCH)-uclibc/root.fs 1780
