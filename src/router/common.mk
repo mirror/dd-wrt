@@ -105,6 +105,10 @@ clean: rc-clean httpd-clean services-clean upnp-clean radauth-clean shared-clean
 	rm -rf $(TARGETDIR)
 	rm -f $(TARGETDIR)/*
 	-rm -f $(ARCH)-uclibc/*
+	-rm -f grub-efi/*.img
+	-rm -f grub-efi/*.vdi
+	-rm -f grub-efi/*.vhdx
+	-rm -f grub-efi/*.vmdx
 
 clean_target:
 	rm -rf $(TARGETDIR)
