@@ -386,6 +386,24 @@ endif
 	dd if=$(ARCH)-uclibc/dd-wrt_vga_2GB.image.src of=$(ARCH)-uclibc/dd-wrt_vga_2GB.image bs=1048576 conv=sync
 	dd if=$(ARCH)-uclibc/dd-wrt_serial_2GB.image.src of=$(ARCH)-uclibc/dd-wrt_serial_2GB.image bs=1048576 conv=sync
 	rm $(ARCH)-uclibc/*.src
+	cd grub-efi && ./makeefi.sh
+	cd grub-efi && ./makeefi_ext4.sh
+
+	qemu-img convert -f raw -O vdi grub-efi/efi.img grub-efi/efi.vdi
+	qemu-img convert -f raw -O vdi grub-efi/efi-vga.img grub-efi/efi-vga.vdi
+	qemu-img convert -f raw -O vdi grub-efi/efi-big.img grub-efi/efi-big.vdi
+	qemu-img convert -f raw -O vdi grub-efi/efi-vga-big.img grub-efi/efi-vga-big.vdi
+	qemu-img convert -f raw -O vdi grub-efi/efi-ext4.img grub-efi/efi-ext4.vdi
+	qemu-img convert -f raw -O vdi grub-efi/efi-ext4-vga.img grub-efi/efi-ext4-vga.vdi
+
+	qemu-img convert -f raw -O vmdk grub-efi/efi.img grub-efi/efi.vmdk
+	qemu-img convert -f raw -O vmdk grub-efi/efi-vga.img grub-efi/efi-vga.vmdk
+	qemu-img convert -f raw -O vmdk grub-efi/efi-big.img grub-efi/efi-big.vmdk
+	qemu-img convert -f raw -O vmdk grub-efi/efi-vga-big.img grub-efi/efi-vga-big.vmdk
+	qemu-img convert -f raw -O vmdk grub-efi/efi-ext4.img grub-efi/efi-ext4.vmdk
+	qemu-img convert -f raw -O vmdk grub-efi/efi-ext4-vga.img grub-efi/efi-ext4-vga.vmdk
+
+
 	qemu-img convert -f raw -O vdi $(ARCH)-uclibc/dd-wrt_vga_ext4.image $(ARCH)-uclibc/dd-wrt_vga_ext4.vdi
 	qemu-img convert -f raw -O vdi $(ARCH)-uclibc/dd-wrt_serial_ext4.image $(ARCH)-uclibc/dd-wrt_serial_ext4.vdi
 	qemu-img convert -f raw -O vdi $(ARCH)-uclibc/dd-wrt_vga.image $(ARCH)-uclibc/dd-wrt_vga.vdi
@@ -403,8 +421,6 @@ endif
 	./tools/wrap $(ARCH)-uclibc/dd-wrt_serial.image $(ARCH)-uclibc/dd-wrt-serial-webupgrade.bin
 	./tools/wrap $(ARCH)-uclibc/dd-wrt_vga_2GB.image $(ARCH)-uclibc/dd-wrt-vga-webupgrade_2GB.bin
 	./tools/wrap $(ARCH)-uclibc/dd-wrt_serial_2GB.image $(ARCH)-uclibc/dd-wrt-serial-webupgrade_2GB.bin
-	cd grub-efi && ./makeefi.sh
-	cd grub-efi && ./makeefi_ext4.sh
 
 	./tools/wrap grub-efi/efi-vga.img $(ARCH)-uclibc/dd-wrt-vga-efi-webupgrade.bin
 	./tools/wrap grub-efi/efi.img $(ARCH)-uclibc/dd-wrt-serial-efi-webupgrade.bin
