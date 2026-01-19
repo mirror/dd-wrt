@@ -1,5 +1,5 @@
 #
-# Version $Revision: 1.157 $
+# Version $Revision: 1.158 $
 #
 # The makefile for building all versions of iozone for all supported
 # platforms
@@ -173,10 +173,10 @@ hpux_no_ansi:	iozone_hpux_no.o  libbif.o
 # GNU 'C' compiler Linux build with threads, largefiles, async I/O 
 #
 linux:	iozone_linux.o libasync.o libbif.o fileop_linux.o pit_server.o
-	$(CC)  -O3 -DNEED_PRINTF $(CFLAGS) $(LDFLAGS) iozone_linux.o libasync.o libbif.o -lpthread \
+	$(CC)  -O3 $(CFLAGS) iozone_linux.o libasync.o libbif.o -lpthread \
 		-lrt -o iozone
-	$(CC)  -O3 -DNEED_PRINTF -Dlinux $(CFLAGS) fileop_linux.o -o fileop
-	$(CC)  -O3 -DNEED_PRINTF -Dlinux $(CFLAGS) pit_server.o -o pit_server
+	$(CC)  -O3 $(CFLAGS) -Dlinux fileop_linux.o -o fileop
+	$(CC)  -O3 $(CFLAGS) -Dlinux pit_server.o -o pit_server
 
 #
 # GNU 'C' compiler Linux build for powerpc chip with threads, largefiles, async I/O 
@@ -842,12 +842,12 @@ iozone_linux.o:	iozone.c libbif.c libasync.c
 	@echo ""
 	@echo "Building iozone for Linux"
 	@echo ""
-	$(CC) -Wmissing-prototypes -Wall -c -O3 -Dunix -DHAVE_ANSIC_C -DASYNC_IO -DHAVE_PREAD \
+	$(CC) -Wmissing-prototypes -c -O3 -Dunix -DHAVE_ANSIC_C -DASYNC_IO -DHAVE_PREAD \
 		-DSHARED_MEM -Dlinux -D_LARGEFILE64_SOURCE $(CFLAGS) iozone.c \
 		-DNAME='"linux"' -o iozone_linux.o
-	$(CC) -Wmissing-prototypes -Wall -c -O3 -Dunix -DHAVE_ANSIC_C -DASYNC_IO -D_LARGEFILE64_SOURCE \
+	$(CC) -Wmissing-prototypes -c -O3 -Dunix -DHAVE_ANSIC_C -DASYNC_IO -D_LARGEFILE64_SOURCE \
 		-DSHARED_MEM -Dlinux $(CFLAGS) libbif.c -o libbif.o
-	$(CC) -Wmissing-prototypes -Wall -c -O3 -Dunix -Dlinux -DHAVE_ANSIC_C -DASYNC_IO \
+	$(CC) -Wmissing-prototypes -c -O3 -Dunix -Dlinux -DHAVE_ANSIC_C -DASYNC_IO \
 		-D_LARGEFILE64_SOURCE $(CFLAGS) libasync.c  -o libasync.o 
 
 fileop_AIX.o:	fileop.c
@@ -908,7 +908,7 @@ fileop_netbsd-AMD64.o: fileop.c
 	@echo ""
 	@echo "Building fileop for NetBSD/AMD64"
 	@echo ""
-	$(CC) -Wall -c -O $(CFLAGS) fileop.c -o fileop_netbsd-AMD64.o
+	$(CC) -c -O $(CFLAGS) fileop.c -o fileop_netbsd-AMD64.o
 
 fileop_Solaris.o:	fileop.c
 	@echo ""
@@ -952,79 +952,79 @@ fileop_linux.o:	fileop.c
 	@echo ""
 	@echo "Building fileop for Linux"
 	@echo ""
-	$(CC) -Wall -c -O3 $(CFLAGS) fileop.c -o fileop_linux.o
+	$(CC) -c -O3 $(CFLAGS) fileop.c -o fileop_linux.o
 
 fileop_openbsd.o:	fileop.c
 	@echo ""
 	@echo "Building fileop for OpenBSD"
 	@echo ""
-	$(CC) -Wall -c -O $(CFLAGS) fileop.c -o fileop_openbsd.o
+	$(CC) -c -O $(CFLAGS) fileop.c -o fileop_openbsd.o
 
 fileop_macosx.o:	fileop.c
 	@echo ""
 	@echo "Building fileop for MAC OS X"
 	@echo ""
-	$(CC) -Wall -c -O3 -DIOZ_macosx $(CFLAGS) fileop.c -o fileop_macosx.o
+	$(CC) -c -O3 -DIOZ_macosx $(CFLAGS) fileop.c -o fileop_macosx.o
 
 fileop_linux-ia64.o:	fileop.c
 	@echo ""
 	@echo "Building fileop for Linux-ia64"
 	@echo ""
-	$(CC) -Wall -c -O3 $(CFLAGS) fileop.c -o fileop_linux-ia64.o
+	$(CC) -c -O3 $(CFLAGS) fileop.c -o fileop_linux-ia64.o
 
 fileop_linux-ppc.o:	fileop.c
 	@echo ""
 	@echo "Building fileop for Linux-powerpc"
 	@echo ""
-	$(CC) -Wall -c -O3 $(CFLAGS) fileop.c -o fileop_linux-ppc.o
+	$(CC) -c -O3 $(CFLAGS) fileop.c -o fileop_linux-ppc.o
 
 fileop_linux-ppc64.o:	fileop.c
 	@echo ""
 	@echo "Building fileop for Linux-powerpc64"
 	@echo ""
-	$(CC) -Wall -c -O3 $(CFLAGS) $(FLAG64BIT) fileop.c -o fileop_linux-ppc64.o
+	$(CC) -c -O3 $(CFLAGS) $(FLAG64BIT) fileop.c -o fileop_linux-ppc64.o
 
 fileop_linux-AMD64.o:	fileop.c
 	@echo ""
 	@echo "Building fileop for Linux-AMD64"
 	@echo ""
-	$(CC) -Wall -c -O3 $(CFLAGS) fileop.c -o fileop_linux-AMD64.o
+	$(CC) -c -O3 $(CFLAGS) fileop.c -o fileop_linux-AMD64.o
 
 fileop_linux-arm.o:  fileop.c
 	@echo ""
 	@echo "Building fileop for Linux-arm"
 	@echo ""
-	$(GCC) -Wall -c -O3 $(CFLAGS) fileop.c -o fileop_linux-arm.o
+	$(GCC) -c -O3 $(CFLAGS) fileop.c -o fileop_linux-arm.o
 
 fileop_android.o:  fileop.c
 	@echo ""
 	@echo "Building fileop for Android"
 	@echo ""
-	$(GCC) -Wall -c -O3 $(CFLAGS) $(ANDROID_CFLAGS) fileop.c -o fileop_android.o
+	$(GCC) -c -O3 $(CFLAGS) $(ANDROID_CFLAGS) fileop.c -o fileop_android.o
 
 fileop_linux-s390.o:  fileop.c
 	@echo ""
 	@echo "Building fileop for Linux-S390"
 	@echo ""
-	$(GCC) -Wall -c -O3 $(CFLAGS) fileop.c -o fileop_linux-s390.o
+	$(GCC) -c -O3 $(CFLAGS) fileop.c -o fileop_linux-s390.o
 
 fileop_linux-s390x.o:  fileop.c
 	@echo ""
 	@echo "Building fileop for Linux-s390x"
 	@echo ""
-	$(GCC) -Wall -c -O3 $(CFLAGS) fileop.c -o fileop_linux-s390x.o
+	$(GCC) -c -O3 $(CFLAGS) fileop.c -o fileop_linux-s390x.o
 
 fileop_windows.o: fileop.c
 	@echo ""
 	@echo "Building fileop for Windows"
 	@echo ""
-	$(GCC) -Wall -c -O3 $(CFLAGS) -DWindows fileop.c -o fileop_windows.o
+	$(GCC) -c -O3 $(CFLAGS) -DWindows fileop.c -o fileop_windows.o
 
 fileop_sua.o: fileop.c
 	@echo ""
 	@echo "Building fileop for Windows SUA"
 	@echo ""
-	$(GCC) -Wall -c -O3 $(CFLAGS) -D_SUA_ fileop.c -o fileop_sua.o
+	$(GCC) -c -O3 $(CFLAGS) -D_SUA_ fileop.c -o fileop_sua.o
 
 iozone_linux-ia64.o:	iozone.c libbif.c libasync.c
 	@echo ""

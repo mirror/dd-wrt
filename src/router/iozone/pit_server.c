@@ -61,8 +61,8 @@ extern char *optarg, *opterr;
 /*
 ** Simple boolean type definition.
 */
-int false = 0;
-int true = 1;
+int my_false = 0;
+int my_true = 1;
 /*
 ** Prototypes for internal helper functions.
 */
@@ -111,7 +111,7 @@ int need;
                        strerror( errno ) );                         \
               exit( 1 );                                            \
            }   /* End IF system call failed. */                     \
-        } while ( false )
+        } while ( my_false )
 /******************************************************************************
 * Function: main
 *
@@ -151,7 +151,7 @@ int main( int   argc,
       {
          case 'v':   /* Verbose mode. */
          {
-            verbose = true;
+            verbose = my_true;
             break;
          }
          case 'p':   /* Get the port number */
@@ -534,7 +534,7 @@ static void pit( int    tSckt[ ],
    ** an interative server, and all requests are handled directly within the
    ** main loop.
    */
-   while ( true )   /* Do forever. */
+   while ( my_true )   /* Do forever. */
    {
       /*
       ** Wait for activity on one of the sockets.  The DO..WHILE construct is

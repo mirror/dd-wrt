@@ -15,7 +15,7 @@
  *  revised versions of this work",
  *
  *
-  fileop [-f X ]|[-l # -u #] [-s Y] [-e] [-b] [-w] [-d <dir>] [-t] [-v] [-h]
+  fileop [-f X ]|[-l # -u #] [-s Y] [-e] [-b] [-w] [-n] [-d <dir>] [-t] [-v] [-h]
        -f #      Force factor. X^3 files will be created and removed.
        -l #      Lower limit on the value of the Force factor.
        -u #      Upper limit on the value of the Force factor.
@@ -23,6 +23,8 @@
        -e        Excel importable format.
        -b        Output best case.
        -w        Output worst case.
+       -n        Fill files with non-compressible data.
+       -L        Leave files behind.
        -d <dir>  Specify starting directory.
        -U <dir>  Mount point to remount between tests.
        -t        Verbose output option.
@@ -137,7 +139,7 @@ const char *mountname=NULL; /* Default is not to unmount anything between the te
 int cret;
 int lower, upper,range;
 int i;
-int best, worst;
+int best, worst,nc,leave;
 int dirlen;
 
 /************************************************************************/
@@ -174,12 +176,13 @@ void purge_buffer_cache()
 
 int main(int argc, char **argv)
 {
+	int *intptr;
 	if(argc == 1)
 	{
 		usage();
 		exit(1);
 	}
-	while((cret = getopt(argc,argv,"hbwetvf:s:l:u:d:U:i: ")) != EOF){
+	while((cret = getopt(argc,argv,"hbLnwetvf:s:l:u:d:U:i: ")) != EOF){
 		switch(cret){
                 case 'h':
                         usage();
@@ -246,10 +249,28 @@ int main(int argc, char **argv)
 		case 'w':	/* Worst */
 			worst=1;
 			break;
+		case 'L':	/* Leave files behind */
+			leave=1;
+			break;
+		case 'n':	/* non-compressible */
+			nc=1;
+			break;
 		}
 	}
 	mbuffer=(char *)malloc(sz);
-	memset(mbuffer,'a',sz);
+	if(nc)
+	{
+		intptr = (int *)mbuffer;
+		for(i=0;i<sz; i+=sizeof(int))
+		{
+			*intptr=rand();
+			intptr++;
+		}
+	}
+	else
+	{
+		memset(mbuffer,'a',sz);
+	}
 	if(!excel)
 	  printf("\nFileop:  Working in %s, File size is %d,  Output is in Ops/sec. (A=Avg, B=Best, W=Worst)\n", thedir, sz);
 	if(!verbose)
@@ -484,7 +505,7 @@ int main(int argc, char **argv)
 	    * unlink test 
 	    */
 	   purge_buffer_cache();
-	   file_unlink(x);
+	   file_unlink(x); 
 	   if(verbose)
 	   {
 	      printf("unlink:  Files = %9lld ",stats[_STAT_UNLINK].counter);
@@ -502,7 +523,8 @@ int main(int argc, char **argv)
 	    * Delete test 
 	    */
 	   purge_buffer_cache();
-	   file_delete(x);
+	   if(!leave)
+	      file_delete(x);
 	   if(verbose)
 	   {
 	      printf("delete:  Files = %9lld ",stats[_STAT_DELETE].counter);
@@ -738,11 +760,12 @@ dir_traverse(int x)
 void 
 file_create(int x)
 {
-	int i,j,k;
+	int i,j,k,m;
 	int fd;
 	int ret;
 	char buf[100];
 	char value;
+	int *intptr;
 	stats[_STAT_CREATE].best=(double)999999.9;
 	stats[_STAT_CREATE].worst=(double)0.0;
 	stats[_STAT_WRITE].best=(double)999999.9;
@@ -772,8 +795,6 @@ file_create(int x)
 	    for(k=0;k<x;k++)
 	    {
 	      sprintf(buf,"fileop_file_%d_%d_%d",i,j,k);
-	      value=(char) ((i^j^k) & 0xff);
-	      memset(mbuffer,value,sz);
 	      stats[_STAT_CREATE].starttime=time_so_far();
 	      fd=creat(buf,O_RDWR|0600);
 	      if(fd < 0)
@@ -793,6 +814,20 @@ file_create(int x)
 		 stats[_STAT_CREATE].worst=stats[_STAT_CREATE].speed;
 
 	      stats[_STAT_WRITE].starttime=time_so_far();
+
+	      if(nc)
+	      {
+	          intptr = (int *)mbuffer;
+	          for(m=0;m<sz; m+=sizeof(int))
+	          {
+		    *intptr=rand();
+		    intptr++;
+	          }
+	      } else
+	      {
+	          value=(char) ((i^j^k) & 0xff);
+	          memset(mbuffer,value,sz);
+	      }
 	      junk=write(fd,mbuffer,sz);
 	      stats[_STAT_WRITE].endtime=time_so_far();
 	      stats[_STAT_WRITE].counter++;
@@ -1204,7 +1239,7 @@ file_read(int x)
 {
 	int i,j,k,y,fd;
 	char buf[100];
-	char value;
+	char value = 0;
 	stats[_STAT_READ].best=(double)99999.9;
 	stats[_STAT_READ].worst=(double)0.00000000;
 	stats[_STAT_OPEN].best=(double)99999.9;
@@ -1220,7 +1255,8 @@ file_read(int x)
 	    for(k=0;k<x;k++)
 	    {
 	      sprintf(buf,"fileop_file_%d_%d_%d",i,j,k);
-	      value=(char)((i^j^k) &0xff);
+	      if(!nc)
+	          value=(char)((i^j^k) &0xff);
 	      stats[_STAT_OPEN].starttime=time_so_far();
 	      fd=open(buf,O_RDONLY);
 	      if(fd < 0)
@@ -1246,8 +1282,12 @@ file_read(int x)
 	        printf("Read failed\n");
 	        exit(1);
 	      }
-	      if(validate(mbuffer,sz, value) !=0)
-		printf("Error: Data Mis-compare\n");;
+
+	      if(!nc)
+	      {
+	          if(validate(mbuffer,sz, value) !=0)
+		    printf("Error: Data Mis-compare\n");;
+	      }
 	      stats[_STAT_READ].endtime=time_so_far();
 	      close(fd);
 	      stats[_STAT_READ].speed=stats[_STAT_READ].endtime-stats[_STAT_READ].starttime;
@@ -1329,7 +1369,7 @@ void
 usage(void)
 {
   splash();
-  printf("     fileop [-f X ]|[-l # -u #] [-s Y] [-e] [-b] [-w] [-d <dir>] [-t] [-v] [-h]\n");
+  printf("     fileop [-f X ]|[-l # -u #] [-s Y] [-e] [-b] [-w] [-n] [-d <dir>] [-t] [-v] [-h]\n");
   printf("\n");
   printf("     -f #      Force factor. X^3 files will be created and removed.\n");
   printf("     -l #      Lower limit on the value of the Force factor.\n");
@@ -1339,6 +1379,8 @@ usage(void)
   printf("     -b        Output best case results.\n");
   printf("     -i #      Increment force factor by this increment.\n");
   printf("     -w        Output worst case results.\n");
+  printf("     -n        Fill files with non-compressible data.\n");
+  printf("     -L        Leave files behind.\n");
   printf("     -d <dir>  Specify starting directory.\n");
   printf("     -U <dir>  Mount point to remount between tests.\n");
   printf("     -t        Verbose output option.\n");

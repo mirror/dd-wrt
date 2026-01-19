@@ -30,7 +30,7 @@
 /* cluster testing and much more.					*/
 /*									*/
 /* The frontend now uses getopt() and the user can control many more	*/
-/* of the actions.							*/
+/* of the actions. 							*/
 /*									*/
 /*									*/
 /************************************************************************/
@@ -59,7 +59,7 @@
 /************************************************************************/
 
 /* The version number */
-#define THISVERSION "        Version $Revision: 3.506 $"
+#define THISVERSION "        Version $Revision: 3.508 $"
 
 #if defined(Windows)
 #define NO_THREADS
@@ -113,19 +113,60 @@ extern  int h_errno; /* imported for errors */
 #ifdef HAVE_PROTO
 #include "proto.h"
 #else
-int atoi();
-int close();
-int unlink();
-int main();
+int atoi(const char *);
+int close(int);
+int unlink(const char *);
+int * main(int, char **);
 #if !defined(linux)
 int wait();
 #endif
-int fsync();
-void srand48();
-long lrand48();
+int fsync(int);
+void srand48(long int);
+long lrand48(void);
 void create_list();
 void init_by_array64(unsigned long long *, unsigned long long );
 unsigned long long genrand64_int64(void);
+#endif
+
+#ifdef ASYNC_IO
+#include <aio.h>
+
+struct cache_ent {
+#if defined(_LARGEFILE64_SOURCE) && defined(__CrayX1__)
+	aiocb64_t myaiocb;		/* For use in large file mode */
+#elif defined(_LARGEFILE64_SOURCE) && !defined(__LP64__)
+	struct aiocb64 myaiocb;		/* For use in large file mode */
+#else
+	struct aiocb myaiocb;
+#endif 
+	long long fd;				/* File descriptor */
+	long long size;				/* Size of the transfer */
+	struct cache_ent *forward;		/* link to next element on cache list */
+	struct cache_ent *back;			/* link to previous element on the cache list */
+	long long direct;			/* flag to indicate if the buffer should be */
+						/* de-allocated by library */
+	char *real_address;			/* Real address to free */
+	
+	volatile void *oldbuf;			/* Used for firewall to prevent in flight */
+						/* accidents */
+	int oldfd;				/* Used for firewall to prevent in flight */
+						/* accidents */
+	size_t oldsize;				/* Used for firewall to prevent in flight */
+						/* accidents */
+	off64_t  offset;				
+};
+/*
+ * Head of the cache list
+ */
+struct cache {
+	struct cache_ent *head;		/* Head of cache list */
+	struct cache_ent *tail;		/* tail of cache list */
+	struct cache_ent *inuse_head;	/* head of in-use list */
+	long long count;		/* How many elements on the cache list */
+	struct cache_ent *w_head;		/* Head of cache list */
+	struct cache_ent *w_tail;		/* tail of cache list */
+	long long w_count;		/* How many elements on the write list */
+	};
 #endif
 
 #include <fcntl.h>
@@ -1046,7 +1087,7 @@ void fetchit(char *,long long);
 long long verify_buffer(volatile char *,long long, off64_t, long long, unsigned long long, char );
 void purgeit(char *,long long);
 void prepage(char *,long long);
-void write_perf_test(off64_t, long long, long long *,long long *);
+void write_perf_test(off64_t,long long, long long *,long long *);
 void fwrite_perf_test(off64_t, long long, long long *,long long *);
 void fread_perf_test(off64_t, long long, long long *, long long *);
 void read_perf_test(off64_t,long long,long long *,long long *);
@@ -1164,7 +1205,8 @@ void fetchit();			/* Prime on chip cache		  */
 long long verify_buffer();
 void purgeit();			/* Purge on chip cache		  */
 void prepage();			/* Pre-fault user buffer	  */
-void write_perf_test();		/* write/rewrite test		  */
+void write_perf_test(off64_t, long long, long long *,long long *);
+/* void write_perf_test();	 write/rewrite test		  */
 void fwrite_perf_test();	/* fwrite/refwrite test		  */
 void fread_perf_test();		/* fread/refread test		  */
 void read_perf_test();		/* read/reread test		  */
@@ -1268,33 +1310,38 @@ int pit_gettimeofday();
 
 #ifdef HAVE_ANSIC_C
 #if defined (HAVE_PREAD) && defined(_LARGEFILE64_SOURCE)
-ssize_t pwrite64(); 
-ssize_t pread64(); 
+ssize_t pwrite64(int, const void *, size_t, off_t);
+/* ssize_t pwrite64(); */
+ssize_t pread64(int, void *, size_t, off_t);
+/*ssize_t pread64(); */
 #endif
 #if !defined(linux)
 char *getenv();
 char *inet_ntoa();
 int system();
 #endif
+
 #ifdef ASYNC_IO
-size_t async_write();
-void async_release();
-int async_read();
-int async_read_no_copy();
-size_t async_write_no_copy();
-void end_async();
-void async_init();
+void async_init(struct cache **,int, int);
+int async_read_no_copy(struct cache *, long long, char **, off64_t, long long, long long, off64_t, long long);
+void async_release(struct cache *gc);
+void end_async(struct cache *);
+int async_read(struct cache *, long long , char *, off64_t, long long, long long, off64_t, long long);
+size_t async_write(struct cache *,long long, char *, long long, off64_t, long long);
+size_t async_write_no_copy(struct cache *,long long ,char *,long long,long long,long long,char *);
 #else
+long long *gc=0;
+void async_init(long long **,int,int);
 int async_read();
 int async_read_no_copy();
 size_t async_write();
 size_t async_write_no_copy();
 void async_release();
 #endif
-void do_float();
-int create_xls();
-void close_xls();
-void do_label();
+void do_float(int, double, int, int);
+int create_xls(char *);
+void close_xls(int);
+void do_label(int, char *, int, int );
 int mylockf(int, int, int);
 int mylockr(int,int, int, off64_t, off64_t);
 int rand(void);
@@ -1345,7 +1392,6 @@ FILE *open_r_traj(void);
 void traj_vers(void);
 void r_traj_size(void);
 long long w_traj_size(void);
-void init_file_sizes();
 off64_t get_next_file_size(off64_t);
 void add_file_size(off64_t);
 void init_file_sizes( off64_t,  off64_t);
@@ -1367,6 +1413,7 @@ void close_xls();
 void do_label();
 int create_xls();
 void do_float();
+
 #ifdef ASYNC_IO
 void async_release();
 size_t async_write();
@@ -1446,7 +1493,7 @@ void dump_hist();
 /************************************************************************/
 /* The list of tests to be called.					*/
 /************************************************************************/
-void (*func[])() = { 
+void (*func[])(off64_t,long long, long long *, long long *) = { 
 			write_perf_test, 
 			read_perf_test,
 			random_perf_test,
@@ -1834,7 +1881,7 @@ long long rest_val;
  */
 void stop_child_send();
 void stop_child_send();
-void child_send();
+void child_send(char *, struct master_command *, int );
 void compressible_rand_16_int(int *);
 void new_touch_dedup(char *, int);
 
@@ -1846,10 +1893,7 @@ void new_touch_dedup(char *, int);
 /****************************************************************/
 int negatives, positives;
 
-int
-main(argc,argv) 
-int argc;
-char **argv;
+int * main(int argc,char **argv) 
 {
 
 	long long fileindx,i,tval;
@@ -9079,8 +9123,7 @@ long long *data1,*data2;
 			      async_init(&gc,fd,direct_flag);
 #endif
 			    if(no_copy_flag)
-			      async_read_no_copy(gc, (long long)fd, &buffer1, (i*reclen), reclen,
-			    	1LL,(numrecs64*reclen),depth);
+			      async_read_no_copy(gc, (long long)fd, (char **)&buffer1, (off64_t)(i*reclen), (long long)reclen, 1LL,(long long)(numrecs64*reclen),depth);
 			    else
 			      async_read(gc, (long long)fd, nbuff, (i*reclen),reclen,
 			    	1LL,(numrecs64*reclen),depth);
@@ -9598,7 +9641,7 @@ long long *data1, *data2;
 			      async_init(&gc,fd,direct_flag);
 #endif
 			     if(no_copy_flag)
-			        async_read_no_copy(gc, (long long)fd, &buffer1, offset64,reclen,
+			        async_read_no_copy(gc, (long long)fd, (char **)&buffer1, offset64,reclen,
 			    	  0LL,(numrecs64*reclen),depth);
 			     else
 				 async_read(gc, (long long)fd, nbuff, (offset64),reclen,
@@ -10065,7 +10108,7 @@ long long *data1,*data2;
 				async_init(&gc,fd,direct_flag);
 #endif
 			    if(no_copy_flag)
-			       async_read_no_copy(gc, (long long)fd, &buffer1, ((((numrecs64-1)-i)*reclen)),
+			       async_read_no_copy(gc, (long long)fd, (char **)&buffer1, ((((numrecs64-1)-i)*reclen)),
 			          reclen, -1LL,(numrecs64*reclen),depth);
 			    else
 			       async_read(gc, (long long)fd, nbuff, (((numrecs64-1)-i)*reclen),
@@ -10706,7 +10749,7 @@ printf("Read_Stride\n");
 			if(async_flag)
 			{
 			    if(no_copy_flag)
-			      async_read_no_copy(gc, (long long)fd, &buffer1, current_position,
+			      async_read_no_copy(gc, (long long)fd, (char **)&buffer1, current_position,
 			      	reclen, stride,(numrecs64*reclen),depth);
 			    else
 			       async_read(gc, (long long)fd, nbuff, current_position, reclen,
@@ -15393,7 +15436,7 @@ thread_read_test(x)
 				   async_init(&gc,fd,direct_flag);
 #endif
 			    if(no_copy_flag)
-			      async_read_no_copy(gc, (long long)fd, &buffer1, (i*reclen), reclen,
+			      async_read_no_copy(gc, (long long)fd, (char **)&buffer1, (i*reclen), reclen,
 			    	1LL,(numrecs64*reclen),depth);
 			    else
 			      async_read(gc, (long long)fd, nbuff, (i*reclen), reclen,
@@ -15980,7 +16023,7 @@ thread_pread_test(x)
 				   async_init(&gc,fd,direct_flag);
 #endif
 			    if(no_copy_flag)
-			      async_read_no_copy(gc, (long long)fd, &buffer1, (i*reclen), reclen,
+			      async_read_no_copy(gc, (long long)fd, (char **)&buffer1, (i*reclen), reclen,
 			    	1LL,(numrecs64*reclen),depth);
 			    else
 			      async_read(gc, (long long)fd, nbuff, (traj_offset), reclen,
@@ -16573,7 +16616,7 @@ thread_rread_test(x)
 			         async_init(&gc,fd,direct_flag);
 #endif
 			    if(no_copy_flag)
-			      async_read_no_copy(gc, (long long)fd, &buffer1, (i*reclen),reclen,
+			      async_read_no_copy(gc, (long long)fd, (char **)&buffer1, (i*reclen),reclen,
 			    	1LL,(filebytes64),depth);
 			    else
 			      async_read(gc, (long long)fd, nbuff, (i*reclen),reclen,
@@ -17169,7 +17212,7 @@ thread_reverse_read_test(x)
 			      async_init(&gc,fd,direct_flag);
 #endif
 			    if(no_copy_flag)
-			      async_read_no_copy(gc, (long long)fd, &buffer1, (current_position),
+			      async_read_no_copy(gc, (long long)fd, (char **)&buffer1, (current_position),
 			      	reclen, -1LL,(numrecs64*reclen),depth);
 			    else
 			      async_read(gc, (long long)fd, nbuff, (current_position),reclen,
@@ -17703,7 +17746,7 @@ thread_stride_read_test(x)
 			        async_init(&gc,fd,direct_flag);
 #endif
 			    if(no_copy_flag)
-			      async_read_no_copy(gc, (long long)fd, &buffer1, (current_position),
+			      async_read_no_copy(gc, (long long)fd, (char **)&buffer1, (current_position),
 			      	reclen, stride,(numrecs64*reclen),depth);
 			    else
 			      async_read(gc, (long long)fd, nbuff, (current_position),reclen,
@@ -18450,7 +18493,7 @@ void *x;
 				async_init(&gc,fd,direct_flag);
 #endif
 			    if(no_copy_flag)
-			      async_read_no_copy(gc, (long long)fd, &buffer1, (current_offset),
+			      async_read_no_copy(gc, (long long)fd, (char **)&buffer1, (current_offset),
 			      	 reclen, 0LL,(numrecs64*reclen),depth);
 			    else
 			      async_read(gc, (long long)fd, nbuff, (current_offset), reclen,
@@ -25043,40 +25086,36 @@ old_compressible_rand(void)
 void
 compressible_rand_16_int(int *L_ptr)
 {
-	int pattern = 0;
         /* zero_pct:[0,100] */
-	int k;
+        int k,j;
         int toss = ((lrand48()>>3)%100)+1;
         if (toss>zero_pct)
         {
-		/* Fill in 16 ints with data */
-		for(k=0;k<16;k++)
-		{
-		    negatives++;
-		    L_ptr[k]=(int)rand();
-		}
+                /* Fill in 16 ints with data */
+                for(k=0;k<16;k++)
+                {
+                    negatives++;
+                    L_ptr[k]=(int)rand();
+                }
                 return;
         }
         else
         {
-		/* Fill in 16 ints with zeros so that compression algorithms 
- 		 * will see the savings and engage. Without having a bunch of 
- 		 * adjacent zeros the compression will dis-engage.
-		 */
-		/*
- 		 * Pick a new pattern so that we exercise more dictionary 
- 		 * entries.
- 		 */
-		pattern = (int)rand();
-		for(k=0;k<16;k++)
-		{
-		    positives++;
-		    L_ptr[k]=pattern;
-		}
+                /* Fill in 16 ints with repeating int so that compression
+                 * algorithms will see the savings and engage. Without having
+                 * a bunch of adjacent matches the compression will dis-engage.
+                 * This is a bit more work for the compression engine as it
+                 * will consume more dictionary entries.
+                 */
+                j=(int)rand();
+                for(k=0;k<16;k++)
+                {
+                    positives++;
+                    L_ptr[k]=j;
+                }
                 return;
         }
 }
-
 
 /* 
  * Used to touch all of the buffers so that the CPU data
@@ -25345,10 +25384,10 @@ int main(void)
 ** Type definitions (for convenience).
 */
 #if defined(Windows)
-int false = 0;
-int true = 1;
+int my_false = 0;
+int my_true = 1;
 #else
-typedef enum { false = 0, true } boolean;
+typedef enum { my_false = 0, my_true } boolean;
 #endif
 typedef struct sockaddr_in       sockaddr_in_t;
 typedef struct sockaddr_in6      sockaddr_in6_t;

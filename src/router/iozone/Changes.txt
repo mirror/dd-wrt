@@ -2739,5 +2739,11 @@ Fix async no copy
 Revision 3.506
 Fix async without no copy.
 =============================================================================
+Revision 3.507
+Fix GCC compile warnings.
+=============================================================================
+Revision 3.508
+Put an end to the (&*% stupid GCC breaking builds for no valid reason.
+=============================================================================
 
 

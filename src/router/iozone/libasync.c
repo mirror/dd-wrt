@@ -139,7 +139,7 @@
 #include <strings.h> /* For the BSD string functions */
 #endif
 
-static void mbcopy(const char *source, char *dest, size_t len);
+void mbcopy(const char *source, char *dest, size_t len);
 
 
 #if !defined(solaris) && !defined(off64_t) && !defined(_OFF64_T) && !defined(__off64_t_defined) && !defined(SCO_Unixware_gcc)
@@ -161,7 +161,7 @@ extern int one;
  * cache, pointed to by async_init(gc) will be of
  * this structure type.
  */
-static const char version[] = "Libasync Version $Revision: 3.52 $";
+static const char version[] = "Libasync Version $Revision: 3.53 $";
 struct cache_ent {
 #if defined(_LARGEFILE64_SOURCE) && defined(__CrayX1__)
 	aiocb64_t myaiocb;		/* For use in large file mode */
@@ -202,8 +202,10 @@ struct cache {
 
 long long max_depth;
 extern int errno;
+/*
 static struct cache_ent *alloc_cache();
 static struct cache_ent *incache();
+*/
 
 #ifdef HAVE_ANSIC_C
 void async_init(struct cache **,int, int);
@@ -437,7 +439,7 @@ long long depth;
 		 */
 		del_cache(gc);
 		del_read++;
-		first_ce=alloc_cache(gc,fd,offset,size,(long long)LIO_READ);
+		first_ce=alloc_cache((struct cache *)gc,(long long)fd,(off64_t)offset,(long long)size,(long long)LIO_READ);
 again:
 		ret=aio_read(&first_ce->myaiocb);
 		if(ret!=0)
@@ -471,7 +473,7 @@ again:
 			continue;
 		if((ce=incache(gc,fd,r_offset,a_size)))
 			continue;
-		ce=alloc_cache(gc,fd,r_offset,a_size,(long long)LIO_READ);
+		ce=alloc_cache((struct cache *)gc,(long long)fd,(off64_t)r_offset,(long long)a_size,(long long)LIO_READ);
 		ret=aio_read(&ce->myaiocb);
 		if(ret!=0)
 		{
@@ -1060,7 +1062,7 @@ long long depth;
 	size_t ret;
 	ce=allocate_write_buffer(gc,fd,offset,size,(long long)LIO_WRITE,depth,0LL,(char *)0,(char *)0);
 	ce->direct=0;	 /* not direct. Lib supplies buffer and must free it */
-	mbcopy(buffer,(char *)(ce->myaiocb.aio_buf),(size_t)size);
+	mbcopy((char *)buffer,(char *)(ce->myaiocb.aio_buf),(size_t)size);
 	async_put_on_write_queue(gc,ce);
 	/*
 	printf("asw: fd %d offset %lld, size %zd\n",ce->myaiocb.aio_fildes,
@@ -1198,7 +1200,7 @@ struct cache_ent *ce;
 /*************************************************************************
  * Cleanup all outstanding writes
  *************************************************************************/
-#ifdef HAVE_AHSIC_C
+#ifdef HAVE_ANSIC_C
 void
 async_write_finish(struct cache *gc)
 #else
@@ -1354,10 +1356,7 @@ again2:
 	return((ssize_t)size);
 }
 
-void mbcopy(source, dest, len)
-const char *source;
-char *dest;
-size_t len;
+void mbcopy(const char *source, char *dest, size_t len)
 {
 	int i;
 	for(i=0;i<len;i++)

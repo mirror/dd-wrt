@@ -1,7 +1,7 @@
 Summary: Iozone Filesystem Benchmark
 Name: iozone
 Version: 3
-Release: 506
+Release: 508
 License: Freeware
 Group: Applications/Engineering
 Source: %{name}%{version}_%{release}.tar
@@ -16,6 +16,7 @@ computer platform. The benchmark tests file I/O performance for the following
 operations: Read, write, re-read, re-write, read backwards, read strided,
 fread, fwrite, random read, pread ,mmap, aio_read, aio_write.
 
+%global debug_package %{nil}
 
 ##
 ## PREP
@@ -25,7 +26,7 @@ fread, fwrite, random read, pread ,mmap, aio_read, aio_write.
 ##
 ## SETUP and PATCH
 ##
-%setup -n iozone3_506/src/current
+%setup -n iozone3_508/src/current
 
 
 ##
@@ -75,22 +76,22 @@ fread, fwrite, random read, pread ,mmap, aio_read, aio_write.
 ##
 %install
 mkdir -p $RPM_BUILD_ROOT/opt/iozone/bin
-cp $RPM_BUILD_DIR/iozone3_506/src/current/iozone $RPM_BUILD_ROOT/opt/iozone/bin/
-cp $RPM_BUILD_DIR/iozone3_506/src/current/fileop $RPM_BUILD_ROOT/opt/iozone/bin/
-cp $RPM_BUILD_DIR/iozone3_506/src/current/pit_server $RPM_BUILD_ROOT/opt/iozone/bin/
-cp $RPM_BUILD_DIR/iozone3_506/src/current/Generate_Graphs $RPM_BUILD_ROOT/opt/iozone/bin/
-cp $RPM_BUILD_DIR/iozone3_506/src/current/gengnuplot.sh $RPM_BUILD_ROOT/opt/iozone/bin/
-cp $RPM_BUILD_DIR/iozone3_506/src/current/gnu3d.dem $RPM_BUILD_ROOT/opt/iozone/bin/
+cp $RPM_BUILD_DIR/iozone3_508/src/current/iozone $RPM_BUILD_ROOT/opt/iozone/bin/
+cp $RPM_BUILD_DIR/iozone3_508/src/current/fileop $RPM_BUILD_ROOT/opt/iozone/bin/
+cp $RPM_BUILD_DIR/iozone3_508/src/current/pit_server $RPM_BUILD_ROOT/opt/iozone/bin/
+cp $RPM_BUILD_DIR/iozone3_508/src/current/Generate_Graphs $RPM_BUILD_ROOT/opt/iozone/bin/
+cp $RPM_BUILD_DIR/iozone3_508/src/current/gengnuplot.sh $RPM_BUILD_ROOT/opt/iozone/bin/
+cp $RPM_BUILD_DIR/iozone3_508/src/current/gnu3d.dem $RPM_BUILD_ROOT/opt/iozone/bin/
 
 mkdir -p $RPM_BUILD_ROOT/opt/iozone/docs
-cp $RPM_BUILD_DIR/iozone3_506/docs/IOzone_msword_98.pdf $RPM_BUILD_ROOT/opt/iozone/docs/
-cp $RPM_BUILD_DIR/iozone3_506/docs/Run_rules.doc $RPM_BUILD_ROOT/opt/iozone/docs/
-cp $RPM_BUILD_DIR/iozone3_506/docs/IOzone_msword_98.doc $RPM_BUILD_ROOT/opt/iozone/docs/
-cp $RPM_BUILD_DIR/iozone3_506/docs/Iozone_ps.gz $RPM_BUILD_ROOT/opt/iozone/docs/
-cp $RPM_BUILD_DIR/iozone3_506/src/current/Gnuplot.txt $RPM_BUILD_ROOT/opt/iozone/docs/
+cp $RPM_BUILD_DIR/iozone3_508/docs/IOzone_msword_98.pdf $RPM_BUILD_ROOT/opt/iozone/docs/
+cp $RPM_BUILD_DIR/iozone3_508/docs/Run_rules.doc $RPM_BUILD_ROOT/opt/iozone/docs/
+cp $RPM_BUILD_DIR/iozone3_508/docs/IOzone_msword_98.doc $RPM_BUILD_ROOT/opt/iozone/docs/
+cp $RPM_BUILD_DIR/iozone3_508/docs/Iozone_ps.gz $RPM_BUILD_ROOT/opt/iozone/docs/
+cp $RPM_BUILD_DIR/iozone3_508/src/current/Gnuplot.txt $RPM_BUILD_ROOT/opt/iozone/docs/
 
 mkdir -p $RPM_BUILD_ROOT/opt/iozone/man/man1
-cp $RPM_BUILD_DIR/iozone3_506/docs/iozone.1 $RPM_BUILD_ROOT/opt/iozone/man/man1/
+cp $RPM_BUILD_DIR/iozone3_508/docs/iozone.1 $RPM_BUILD_ROOT/opt/iozone/man/man1/
 
 
 ##
