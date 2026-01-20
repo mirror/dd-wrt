@@ -1296,20 +1296,20 @@ static int rootdetect(char *fname)
 	if (buf[0x400 + 56] == 0x53 && buf[0x400 + 57] == 0xEF) { // linux ext filesystem signature
 		int fslevel = 0;
 		/* Ext3/4 external journal: INCOMPAT feature JOURNAL_DEV */
-		if (get_le_long(&buf{0x400 + 96]) & 0x0008) {
+		if (get_le_long(&buf[0x400 + 96]) & 0x0008) {
 		    fslevel = 3;
 		}
 		/* Ext3/4 COMPAT feature: HAS_JOURNAL */
-		if (get_le_long(&buf{0x400 + 92]) & 0x0004)
+		if (get_le_long(&buf[0x400 + 92]) & 0x0004)
 			fslevel = 3;
 		/* Ext4 INCOMPAT features: EXTENTS, 64BIT, FLEX_BG */
-		if (get_le_long(&buf{0x400 + 96]) & 0x02C0)
+		if (get_le_long(&buf[0x400 + 96]) & 0x02C0)
 			fslevel = 4;
 		/* Ext4 RO_COMPAT features: HUGE_FILE, GDT_CSUM, DIR_NLINK, EXTRA_ISIZE */
-		if (get_le_long(&buf{0x400 + 100]) & 0x0078)
+		if (get_le_long(&buf[0x400 + 100]) & 0x0078)
 			fslevel = 4;
 		/* Ext4 sets min_extra_isize even on external journals */
-		if (get_le_short(&buf{0x400 + 348]) >= 0x1c)
+		if (get_le_short(&buf[0x400 + 348]) >= 0x1c)
 			fslevel = 4;
 		if (fslevel == 4)
 			return 1;
