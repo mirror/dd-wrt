@@ -1278,6 +1278,11 @@ static unsigned int get_le_long(void *from)
 	unsigned char *p = from;
 	return ((unsigned int)(p[3]) << 24) + ((unsigned int)(p[2]) << 16) + ((unsigned int)(p[1]) << 8) + (unsigned int)p[0];
 }
+static unsigned short get_le_short(void *from)
+{
+	unsigned char *p = from;
+	return ((unsigned short)(p[1]) << 8) + (unsigned short)p[0];
+}
 
 static int rootdetect(char *fname)
 {
@@ -1293,11 +1298,11 @@ static int rootdetect(char *fname)
 	if (!memcmp(&buf[0], "tqsh", 4) || !memcmp(&buf[0], "hsqt", 4) || !memcmp(&buf[0], "hsqs", 4)) {
 		return 1;
 	}
-	if (buf[0x400 + 56] == 0x53 && buf[0x400 + 57] == 0xEF) { // linux ext filesystem signature
+	if (get_le_short(&buf[0x400 + 56]) == 0xEF53) {
 		int fslevel = 0;
 		/* Ext3/4 external journal: INCOMPAT feature JOURNAL_DEV */
 		if (get_le_long(&buf[0x400 + 96]) & 0x0008) {
-		    fslevel = 3;
+			fslevel = 3;
 		}
 		/* Ext3/4 COMPAT feature: HAS_JOURNAL */
 		if (get_le_long(&buf[0x400 + 92]) & 0x0004)
@@ -1313,7 +1318,6 @@ static int rootdetect(char *fname)
 			fslevel = 4;
 		if (fslevel == 4)
 			return 1;
-
 	}
 	return 0;
 }
@@ -1540,7 +1544,7 @@ int set_ether_hwaddr(const char *name, unsigned char *hwaddr)
 int set_hwaddr(const char *name, const char *hwaddr)
 {
 	unsigned char mac[6];
-	if (ether_atoe(hwaddr, mac)) {
+	if (ether_atoe(hwaddr, (char *)mac)) {
 		return set_ether_hwaddr(name, mac);
 	}
 	return -1;
@@ -1551,7 +1555,7 @@ char *get_hwaddr(const char *name, char *eabuf)
 	unsigned char buf[6] = { 0 };
 	unsigned char *mac = get_ether_hwaddr(name, buf);
 	if (mac) {
-		if (ether_etoa(mac, eabuf)) {
+		if (ether_etoa((char *)mac, eabuf)) {
 			return eabuf;
 		}
 	} else {
