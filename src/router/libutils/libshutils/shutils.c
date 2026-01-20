@@ -1273,6 +1273,12 @@ char *getentrybyidx(char *buf, char *list, int idx)
 }
 
 #if defined(HAVE_X86) || defined(HAVE_NEWPORT) || defined(HAVE_RB600) || defined(HAVE_EROUTER) && !defined(HAVE_WDR4900)
+static unsigned int get_le_long(void *from)
+{
+	unsigned char *p = from;
+	return ((unsigned int)(p[3]) << 24) + ((unsigned int)(p[2]) << 16) + ((unsigned int)(p[1]) << 8) + (unsigned int)p[0];
+}
+
 static int rootdetect(char *fname)
 {
 	FILE *in = fopen(fname, "rb");
@@ -1280,12 +1286,34 @@ static int rootdetect(char *fname)
 	if (in == NULL)
 		return -1;
 	// exist, skipping
-	char buf[4];
+	char buf[0x400 + 350];
 
-	fread(buf, 4, 1, in);
+	fread(buf, 0x400 + 350, 1, in);
 	fclose(in);
 	if (!memcmp(&buf[0], "tqsh", 4) || !memcmp(&buf[0], "hsqt", 4) || !memcmp(&buf[0], "hsqs", 4)) {
 		return 1;
+	}
+	if (buf[0x400 + 56] == 0x53 && buf[0x400 + 57] == 0xEF) { // linux ext filesystem signature
+		int fslevel = 0;
+		/* Ext3/4 external journal: INCOMPAT feature JOURNAL_DEV */
+		if (get_le_long(&buf{0x400 + 96]) & 0x0008) {
+		    fslevel = 3;
+		}
+		/* Ext3/4 COMPAT feature: HAS_JOURNAL */
+		if (get_le_long(&buf{0x400 + 92]) & 0x0004)
+			fslevel = 3;
+		/* Ext4 INCOMPAT features: EXTENTS, 64BIT, FLEX_BG */
+		if (get_le_long(&buf{0x400 + 96]) & 0x02C0)
+			fslevel = 4;
+		/* Ext4 RO_COMPAT features: HUGE_FILE, GDT_CSUM, DIR_NLINK, EXTRA_ISIZE */
+		if (get_le_long(&buf{0x400 + 100]) & 0x0078)
+			fslevel = 4;
+		/* Ext4 sets min_extra_isize even on external journals */
+		if (get_le_short(&buf{0x400 + 348]) >= 0x1c)
+			fslevel = 4;
+		if (fslevel == 4)
+			return 1;
+
 	}
 	return 0;
 }
