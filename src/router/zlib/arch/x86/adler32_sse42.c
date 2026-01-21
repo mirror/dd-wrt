@@ -13,15 +13,14 @@
 
 #ifdef X86_SSE42
 
-Z_INTERNAL uint32_t adler32_fold_copy_sse42(uint32_t adler, uint8_t *dst, const uint8_t *src, size_t len) {
+Z_INTERNAL uint32_t adler32_copy_sse42(uint32_t adler, uint8_t *dst, const uint8_t *src, size_t len) {
     uint32_t adler0, adler1;
     adler1 = (adler >> 16) & 0xffff;
     adler0 = adler & 0xffff;
 
 rem_peel:
-    if (len < 16) {
-       return adler32_copy_len_16(adler0, src, dst, len, adler1);
-    }
+    if (UNLIKELY(len < 16))
+       return adler32_copy_len_16(adler0, dst, src, len, adler1, 1);
 
     __m128i vbuf, vbuf_0;
     __m128i vs1_0, vs3, vs1, vs2, vs2_0, v_sad_sum1, v_short_sum2, v_short_sum2_0,

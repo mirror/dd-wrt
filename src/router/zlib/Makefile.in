@@ -30,7 +30,7 @@ LDSHARED=$(CC)
 LDSHAREDFLAGS=-shared
 LDVERSIONSCRIPT=
 
-VER=2.2.1
+VER=2.3.1
 VER1=2
 
 STATICLIB=$(LIBNAME1).a
@@ -76,11 +76,9 @@ pkgconfigdir = ${libdir}/pkgconfig
 
 OBJZ = \
 	arch/generic/adler32_c.o \
-	arch/generic/adler32_fold_c.o \
 	arch/generic/chunkset_c.o \
 	arch/generic/compare256_c.o \
 	arch/generic/crc32_braid_c.o \
-	arch/generic/crc32_fold_c.o \
 	arch/generic/slide_hash_c.o \
 	adler32.o \
 	compress.o \
@@ -99,10 +97,10 @@ OBJZ = \
 	inflate.o \
 	inftrees.o \
 	insert_string.o \
-	insert_string_roll.o \
 	trees.o \
 	uncompr.o \
 	zutil.o \
+	arch/generic/crc32_chorba_c.o \
 	cpu_features.o \
 	$(ARCH_STATIC_OBJS)
 
@@ -116,11 +114,9 @@ OBJC = $(OBJZ) $(OBJG)
 
 PIC_OBJZ = \
 	arch/generic/adler32_c.lo \
-	arch/generic/adler32_fold_c.lo \
 	arch/generic/chunkset_c.lo \
 	arch/generic/compare256_c.lo \
 	arch/generic/crc32_braid_c.lo \
-	arch/generic/crc32_fold_c.lo \
 	arch/generic/slide_hash_c.lo \
 	adler32.lo \
 	compress.lo \
@@ -139,10 +135,10 @@ PIC_OBJZ = \
 	inflate.lo \
 	inftrees.lo \
 	insert_string.lo \
-	insert_string_roll.lo \
 	trees.lo \
 	uncompr.lo \
 	zutil.lo \
+	arch/generic/crc32_chorba_c.lo \
 	cpu_features.lo \
 	$(ARCH_SHARED_OBJS)
 
@@ -239,10 +235,10 @@ gzlib.o: $(SRCDIR)/gzlib.c
 gzlib.lo: $(SRCDIR)/gzlib.c
 	$(CC) $(SFLAGS) -DPIC -DWITH_GZFILEOP $(INCLUDES) -c -o $@ $<
 
-gzread.o: gzread.c
+gzread.o: $(SRCDIR)/gzread.c
 	$(CC) $(CFLAGS) -DWITH_GZFILEOP $(INCLUDES) -c -o $@ $<
 
-gzread.lo: gzread.c
+gzread.lo: $(SRCDIR)/gzread.c
 	$(CC) $(SFLAGS) -DPIC -DWITH_GZFILEOP $(INCLUDES) -c -o $@ $<
 
 gzwrite.o: $(SRCDIR)/gzwrite.c
@@ -385,7 +381,7 @@ maintainer-clean: distclean
 distclean: clean
 	@if [ -f $(ARCHDIR)/Makefile ]; then $(MAKE) -C $(ARCHDIR) distclean; fi
 	@if [ -f test/Makefile ]; then $(MAKE) -C test distclean; fi
-	rm -f $(PKGFILE) configure.log zconf.h zconf.h.cmakein zlib$(SUFFIX).h zlib_name_mangling$(SUFFIX).h *.pc gzread.c
+	rm -f $(PKGFILE) configure.log zconf.h zconf.h.cmakein zlib$(SUFFIX).h zlib_name_mangling$(SUFFIX).h *.pc gzread_mangle.h zlib${SUFFIX}.map
 	-@rm -f .DS_Store
 # Reset Makefile if building inside source tree
 	@if [ -f Makefile.in ]; then \

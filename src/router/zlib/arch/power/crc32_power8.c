@@ -32,9 +32,7 @@
 #include "crc32_constants.h"
 #include "crc32_braid_tbl.h"
 
-#if defined (__clang__)
-#include "fallback_builtins.h"
-#endif
+#include "power_intrins.h"
 
 #define MAX_SIZE    32768
 #define VMX_ALIGN	16
@@ -54,9 +52,6 @@ Z_INTERNAL uint32_t crc32_power8(uint32_t crc, const unsigned char *p, size_t _l
 
     unsigned long len = (unsigned long) _len;
 
-    if (p == (const unsigned char *) 0x0)
-        return 0;
-
     crc ^= 0xffffffff;
 
     if (len < VMX_ALIGN + VMX_ALIGN_MASK) {
@@ -65,7 +60,7 @@ Z_INTERNAL uint32_t crc32_power8(uint32_t crc, const unsigned char *p, size_t _l
     }
 
     if ((unsigned long)p & VMX_ALIGN_MASK) {
-        prealign = VMX_ALIGN - ((unsigned long)p & VMX_ALIGN_MASK);
+        prealign = (unsigned int)ALIGN_DIFF(p, VMX_ALIGN);
         crc = crc32_align(crc, p, prealign);
         len -= prealign;
         p += prealign;
@@ -82,6 +77,12 @@ Z_INTERNAL uint32_t crc32_power8(uint32_t crc, const unsigned char *p, size_t _l
 out:
     crc ^= 0xffffffff;
 
+    return crc;
+}
+
+Z_INTERNAL uint32_t crc32_copy_power8(uint32_t crc, uint8_t *dst, const uint8_t *src, size_t len) {
+    crc = crc32_power8(crc, src, len);
+    memcpy(dst, src, len);
     return crc;
 }
 

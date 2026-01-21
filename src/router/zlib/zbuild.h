@@ -16,6 +16,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdint.h>
+#include <stdio.h>
 
 /* Determine compiler version of C Standard */
 #ifdef __STDC_VERSION__
@@ -47,6 +48,17 @@
 #  endif
 #endif
 
+/* Hint to compiler that a block of code is unreachable, typically in a switch default condition */
+#ifndef Z_UNREACHABLE
+#  if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 202311L
+#    define Z_UNREACHABLE() unreachable()           // C23 approach
+#  elif (defined(__GNUC__) && (__GNUC__ >= 5)) || defined(__clang__)
+#    define Z_UNREACHABLE() __builtin_unreachable()
+#  else
+#    define Z_UNREACHABLE()
+#  endif
+#endif
+
 #ifndef Z_TARGET
 #  if Z_HAS_ATTRIBUTE(__target__)
 #    define Z_TARGET(x) __attribute__((__target__(x)))
@@ -68,6 +80,16 @@
 #  else
     #define SSIZE_MAX LONG_MAX
 #  endif
+#endif
+
+/* A forced inline decorator */
+#if defined(_MSC_VER)
+#  define Z_FORCEINLINE __forceinline
+#elif defined(__GNUC__)
+#  define Z_FORCEINLINE inline __attribute__((always_inline))
+#else
+    /* It won't actually force inlining but it will suggest it */
+#  define Z_FORCEINLINE inline
 #endif
 
 /* MS Visual Studio does not allow inline in C, only C++.
@@ -98,12 +120,33 @@
 #  define z_uintmax_t size_t
 #endif
 
+/* In zlib-compat headers some function return values and parameter types use int or unsigned, but zlib-ng headers use
+   int32_t and uint32_t, which will cause type mismatch when compiling zlib-ng if int32_t is long and uint32_t is
+   unsigned long */
+#if defined(ZLIB_COMPAT)
+#  define z_int32_t int
+#  define z_uint32_t unsigned int
+#else
+#  define z_int32_t int32_t
+#  define z_uint32_t uint32_t
+#endif
+
 /* Minimum of a and b. */
 #define MIN(a, b) ((a) > (b) ? (b) : (a))
 /* Maximum of a and b. */
 #define MAX(a, b) ((a) < (b) ? (b) : (a))
 /* Ignore unused variable warning */
 #define Z_UNUSED(var) (void)(var)
+
+/* Force the compiler to treat variable as modified. Empty asm statement with a "+r" constraint prevents
+   the compiler from reordering or eliminating loads into the variable. This can help keep critical latency
+   chains in the hot path from being shortened or optimized away. */
+#if (defined(__GNUC__) || defined(__clang__)) && \
+        (defined(ARCH_X86) || (defined(ARCH_ARM) && defined(ARCH_64BIT)))
+#  define Z_TOUCH(var) __asm__ ("" : "+r"(var))
+#else
+#  define Z_TOUCH(var) (void)(var)
+#endif
 
 #if defined(HAVE_VISIBILITY_INTERNAL)
 #  define Z_INTERNAL __attribute__((visibility ("internal")))
@@ -200,6 +243,9 @@
 #  define ALIGNED_(x) __attribute__ ((aligned(x)))
 #elif defined(_MSC_VER)
 #  define ALIGNED_(x) __declspec(align(x))
+#else
+/* TODO: Define ALIGNED_ for your compiler */
+#  define ALIGNED_(x)
 #endif
 
 #ifdef HAVE_BUILTIN_ASSUME_ALIGNED
@@ -210,6 +256,10 @@
 #define HINT_ALIGNED_16(p) HINT_ALIGNED((p),16)
 #define HINT_ALIGNED_64(p) HINT_ALIGNED((p),64)
 #define HINT_ALIGNED_4096(p) HINT_ALIGNED((p),4096)
+
+/* Number of bytes needed to align ptr to the next alignment boundary */
+#define ALIGN_DIFF(ptr, align) \
+    (((uintptr_t)(align) - ((uintptr_t)(ptr) & ((align) - 1))) & ((align) - 1))
 
 /* PADSZ returns needed bytes to pad bpos to pad size
  * PAD_NN calculates pad size and adds it to bpos, returning the result.
@@ -222,10 +272,9 @@
 
 /* Diagnostic functions */
 #ifdef ZLIB_DEBUG
-#  include <stdio.h>
    extern int Z_INTERNAL z_verbose;
    extern void Z_INTERNAL z_error(const char *m);
-#  define Assert(cond, msg) {if (!(cond)) z_error(msg);}
+#  define Assert(cond, msg) {int _cond = (cond); if (!(_cond)) z_error(msg);}
 #  define Trace(x) {if (z_verbose >= 0) fprintf x;}
 #  define Tracev(x) {if (z_verbose > 0) fprintf x;}
 #  define Tracevv(x) {if (z_verbose > 1) fprintf x;}
@@ -240,28 +289,40 @@
 #  define Tracecv(c, x)
 #endif
 
-#ifndef NO_UNALIGNED
-#  if defined(__x86_64__) || defined(_M_X64) || defined(__amd64__) || defined(_M_AMD64)
-#    define UNALIGNED_OK
-#    define UNALIGNED64_OK
-#  elif defined(__i386__) || defined(__i486__) || defined(__i586__) || \
-        defined(__i686__) || defined(_X86_) || defined(_M_IX86)
-#    define UNALIGNED_OK
-#  elif defined(__aarch64__) || defined(_M_ARM64) || defined(_M_ARM64EC)
-#    if (defined(__GNUC__) && defined(__ARM_FEATURE_UNALIGNED)) || !defined(__GNUC__)
-#      define UNALIGNED_OK
-#      define UNALIGNED64_OK
+/* OPTIMAL_CMP values determine the comparison width:
+ * 64: Best for 64-bit architectures with unaligned access
+ * 32: Best for 32-bit architectures with unaligned access
+ * 16: Safe default for unknown architectures
+ * 8:  Safe fallback for architectures without unaligned access
+ * Note: The unaligned access mentioned is cpu-support, this allows compiler or
+ *       separate unaligned intrinsics to utilize safe unaligned access, without
+ *       utilizing unaligned C pointers that are known to have undefined behavior.
+ */
+#if !defined(OPTIMAL_CMP)
+#  ifdef ARCH_64BIT
+#    ifdef ARCH_ARM
+#      if defined(__ARM_FEATURE_UNALIGNED) || defined(_WIN32)
+#        define OPTIMAL_CMP 64
+#      else
+#        define OPTIMAL_CMP 8
+#      endif
+#    else
+#      define OPTIMAL_CMP 64
 #    endif
-#  elif defined(__arm__) || (_M_ARM >= 7)
-#    if (defined(__GNUC__) && defined(__ARM_FEATURE_UNALIGNED)) || !defined(__GNUC__)
-#      define UNALIGNED_OK
-#    endif
-#  elif defined(__powerpc64__) || defined(__ppc64__)
-#    if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
-#      define UNALIGNED_OK
-#      define UNALIGNED64_OK
+#  elif defined(ARCH_32BIT)
+#    ifdef ARCH_ARM
+#      if defined(__ARM_FEATURE_UNALIGNED) || defined(_WIN32)
+#        define OPTIMAL_CMP 32
+#      else
+#        define OPTIMAL_CMP 8
+#      endif
+#    else
+#      define OPTIMAL_CMP 32
 #    endif
 #  endif
+#endif
+#if !defined(OPTIMAL_CMP)
+#  define OPTIMAL_CMP 16
 #endif
 
 #if defined(__has_feature)
@@ -275,8 +336,8 @@
 /*
  * __asan_loadN() and __asan_storeN() calls are inserted by compilers in order to check memory accesses.
  * They can be called manually too, with the following caveats:
- * gcc says: "warning: implicit declaration of function ‘...’"
- * g++ says: "error: new declaration ‘...’ ambiguates built-in declaration ‘...’"
+ * gcc says: "warning: implicit declaration of function '...'"
+ * g++ says: "error: new declaration '...' ambiguates built-in declaration '...'"
  * Accommodate both.
  */
 #ifdef Z_ADDRESS_SANITIZER

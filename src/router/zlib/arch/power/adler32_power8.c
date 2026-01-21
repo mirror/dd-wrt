@@ -52,21 +52,17 @@ static inline vector unsigned int vec_sumsu(vector unsigned int __a, vector unsi
     return __a;
 }
 
-Z_INTERNAL uint32_t adler32_power8(uint32_t adler, const uint8_t *buf, size_t len) {
+Z_FORCEINLINE static uint32_t adler32_impl(uint32_t adler, const uint8_t *buf, size_t len) {
     uint32_t s1 = adler & 0xffff;
     uint32_t s2 = (adler >> 16) & 0xffff;
 
     /* in case user likes doing a byte at a time, keep it fast */
     if (UNLIKELY(len == 1))
-        return adler32_len_1(s1, buf, s2);
-
-    /* If buffer is empty or len=0 we need to return adler initial value.  */
-    if (UNLIKELY(buf == NULL))
-        return 1;
+        return adler32_copy_len_1(s1, NULL, buf, s2, 0);
 
     /* This is faster than VSX code for len < 64.  */
     if (len < 64)
-        return adler32_len_64(s1, buf, len, s2);
+        return adler32_copy_len_64(s1, NULL, buf, len, s2, 0);
 
     /* Use POWER VSX instructions for len >= 64. */
     const vector unsigned int v_zeros = { 0 };
@@ -147,7 +143,17 @@ Z_INTERNAL uint32_t adler32_power8(uint32_t adler, const uint8_t *buf, size_t le
     s2 = vs2[0] % BASE;
 
     /* Process tail (len < 16).  */
-    return adler32_len_16(s1, buf, len, s2);
+    return adler32_copy_len_16(s1, NULL, buf, len, s2, 0);
 }
 
+Z_INTERNAL uint32_t adler32_power8(uint32_t adler, const uint8_t *buf, size_t len) {
+    return adler32_impl(adler, buf, len);
+}
+
+/* VSX/VMX stores can have higher latency than optimized memcpy on POWER8+ */
+Z_INTERNAL uint32_t adler32_copy_power8(uint32_t adler, uint8_t *dst, const uint8_t *buf, size_t len) {
+    adler = adler32_impl(adler, buf, len);
+    memcpy(dst, buf, len);
+    return adler;
+}
 #endif /* POWER8_VSX */

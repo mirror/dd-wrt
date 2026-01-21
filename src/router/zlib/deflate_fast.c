@@ -5,9 +5,11 @@
  */
 
 #include "zbuild.h"
+#include "zmemory.h"
 #include "deflate.h"
 #include "deflate_p.h"
 #include "functable.h"
+#include "insert_string_p.h"
 
 /* ===========================================================================
  * Compress as much as possible from the input stream, return the current
@@ -17,12 +19,13 @@
  * matches. It is used only for the fast compression options.
  */
 Z_INTERNAL block_state deflate_fast(deflate_state *s, int flush) {
-    Pos hash_head;        /* head of the hash chain */
+    unsigned char *window = s->window;
     int bflush = 0;       /* set if current block must be flushed */
-    int64_t dist;
     uint32_t match_len = 0;
 
     for (;;) {
+        uint8_t lc;
+
         /* Make sure that we always have enough lookahead, except
          * at the end of the input file. We need STD_MAX_MATCH bytes
          * for the next match, plus WANT_MIN_MATCH bytes to insert the
@@ -41,8 +44,14 @@ Z_INTERNAL block_state deflate_fast(deflate_state *s, int flush) {
          * dictionary, and set hash_head to the head of the hash chain:
          */
         if (s->lookahead >= WANT_MIN_MATCH) {
-            hash_head = quick_insert_string(s, s->strstart);
-            dist = (int64_t)s->strstart - hash_head;
+#if BYTE_ORDER == LITTLE_ENDIAN
+            uint32_t str_val = zng_memread_4(window + s->strstart);
+#else
+            uint32_t str_val = ZSWAP32(zng_memread_4(window + s->strstart));
+#endif
+            uint32_t hash_head = quick_insert_value(s, s->strstart, str_val);
+            int64_t dist = (int64_t)s->strstart - hash_head;
+            lc = (uint8_t)str_val;
 
             /* Find the longest match, discarding those <= prev_length.
              * At this point we have always match length < WANT_MIN_MATCH
@@ -52,12 +61,16 @@ Z_INTERNAL block_state deflate_fast(deflate_state *s, int flush) {
                  * of window index 0 (in particular we have to avoid a match
                  * of the string with itself at the start of the input file).
                  */
-                match_len = FUNCTABLE_CALL(longest_match)(s, hash_head);
+                match_len = FUNCTABLE_CALL(longest_match)(s, (uint32_t)hash_head);
                 /* longest_match() sets match_start */
             }
+        } else {
+            lc = window[s->strstart];
         }
 
         if (match_len >= WANT_MIN_MATCH) {
+            Assert(s->strstart <= UINT16_MAX, "strstart should fit in uint16_t");
+            Assert(s->match_start <= UINT16_MAX, "match_start should fit in uint16_t");
             check_match(s, s->strstart, s->match_start, match_len);
 
             bflush = zng_tr_tally_dist(s, s->strstart - s->match_start, match_len - STD_MIN_MATCH);
@@ -71,7 +84,7 @@ Z_INTERNAL block_state deflate_fast(deflate_state *s, int flush) {
                 match_len--; /* string at strstart already in table */
                 s->strstart++;
 
-                insert_string(s, s->strstart, match_len);
+                insert_string_static(s, s->strstart, match_len);
                 s->strstart += match_len;
             } else {
                 s->strstart += match_len;
@@ -84,7 +97,7 @@ Z_INTERNAL block_state deflate_fast(deflate_state *s, int flush) {
             match_len = 0;
         } else {
             /* No match, output a literal byte */
-            bflush = zng_tr_tally_lit(s, s->window[s->strstart]);
+            bflush = zng_tr_tally_lit(s, lc);
             s->lookahead--;
             s->strstart++;
         }
@@ -92,6 +105,7 @@ Z_INTERNAL block_state deflate_fast(deflate_state *s, int flush) {
             FLUSH_BLOCK(s, 0);
     }
     s->insert = s->strstart < (STD_MIN_MATCH - 1) ? s->strstart : (STD_MIN_MATCH - 1);
+
     if (UNLIKELY(flush == Z_FINISH)) {
         FLUSH_BLOCK(s, 1);
         return finish_done;

@@ -7,7 +7,6 @@
 #include "functable.h"
 #include "adler32_p.h"
 
-/* ========================================================================= */
 Z_INTERNAL uint32_t adler32_c(uint32_t adler, const uint8_t *buf, size_t len) {
     uint32_t sum2;
     unsigned n;
@@ -18,15 +17,11 @@ Z_INTERNAL uint32_t adler32_c(uint32_t adler, const uint8_t *buf, size_t len) {
 
     /* in case user likes doing a byte at a time, keep it fast */
     if (UNLIKELY(len == 1))
-        return adler32_len_1(adler, buf, sum2);
-
-    /* initial Adler-32 value (deferred check for len == 1 speed) */
-    if (UNLIKELY(buf == NULL))
-        return 1L;
+        return adler32_copy_len_1(adler, NULL, buf, sum2, 0);
 
     /* in case short lengths are provided, keep it somewhat fast */
     if (UNLIKELY(len < 16))
-        return adler32_len_16(adler, buf, len, sum2);
+        return adler32_copy_len_16(adler, NULL, buf, len, sum2, 0);
 
     /* do length NMAX blocks -- requires just one modulo operation */
     while (len >= NMAX) {
@@ -38,10 +33,10 @@ Z_INTERNAL uint32_t adler32_c(uint32_t adler, const uint8_t *buf, size_t len) {
 #endif
         do {
 #ifdef UNROLL_MORE
-            DO16(adler, sum2, buf);          /* 16 sums unrolled */
+            ADLER_DO16(adler, sum2, buf);          /* 16 sums unrolled */
             buf += 16;
 #else
-            DO8(adler, sum2, buf, 0);         /* 8 sums unrolled */
+            ADLER_DO8(adler, sum2, buf, 0);         /* 8 sums unrolled */
             buf += 8;
 #endif
         } while (--n);
@@ -50,5 +45,11 @@ Z_INTERNAL uint32_t adler32_c(uint32_t adler, const uint8_t *buf, size_t len) {
     }
 
     /* do remaining bytes (less than NMAX, still just one modulo) */
-    return adler32_len_64(adler, buf, len, sum2);
+    return adler32_copy_len_64(adler, NULL, buf, len, sum2, 0);
+}
+
+Z_INTERNAL uint32_t adler32_copy_c(uint32_t adler, uint8_t *dst, const uint8_t *src, size_t len) {
+    adler = FUNCTABLE_CALL(adler32)(adler, src, len);
+    memcpy(dst, src, len);
+    return adler;
 }

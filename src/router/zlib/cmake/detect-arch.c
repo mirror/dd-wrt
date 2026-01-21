@@ -8,7 +8,8 @@
     #error archfound x86_64
 
 // x86
-#elif defined(__i386) || defined(_M_IX86)
+#elif defined(__i386__) || defined(__i486__) || defined(__i586__) || defined(__i686__) || \
+      defined(__i386) || defined(_M_IX86)
     #error archfound i686
 
 // ARM
@@ -32,7 +33,7 @@
     #endif
 
 // PowerPC
-#elif defined(__powerpc__) || defined(_ppc__) || defined(__PPC__)
+#elif defined(__powerpc__) || defined(__ppc__) || defined(__PPC__)
     #if defined(__64BIT__) || defined(__powerpc64__) || defined(__ppc64__)
         #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
             #error archfound powerpc64le

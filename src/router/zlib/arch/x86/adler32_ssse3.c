@@ -14,7 +14,7 @@
 
 #include <immintrin.h>
 
-Z_INTERNAL uint32_t adler32_ssse3(uint32_t adler, const uint8_t *buf, size_t len) {
+Z_FORCEINLINE static uint32_t adler32_impl(uint32_t adler, const uint8_t *buf, size_t len) {
     uint32_t sum2;
 
      /* split Adler-32 into component sums */
@@ -23,15 +23,11 @@ Z_INTERNAL uint32_t adler32_ssse3(uint32_t adler, const uint8_t *buf, size_t len
 
     /* in case user likes doing a byte at a time, keep it fast */
     if (UNLIKELY(len == 1))
-        return adler32_len_1(adler, buf, sum2);
-
-    /* initial Adler-32 value (deferred check for len == 1 speed) */
-    if (UNLIKELY(buf == NULL))
-        return 1L;
+        return adler32_copy_len_1(adler, NULL, buf, sum2, 0);
 
     /* in case short lengths are provided, keep it somewhat fast */
     if (UNLIKELY(len < 16))
-        return adler32_len_16(adler, buf, len, sum2);
+        return adler32_copy_len_16(adler, NULL, buf, len, sum2, 0);
 
     const __m128i dot2v = _mm_setr_epi8(32, 31, 30, 29, 28, 27, 26, 25, 24, 23, 22, 21, 20, 19, 18, 17);
     const __m128i dot2v_0 = _mm_setr_epi8(16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1);
@@ -150,7 +146,17 @@ unaligned_jmp:
     }
 
     /* Process tail (len < 16).  */
-    return adler32_len_16(adler, buf, len, sum2);
+    return adler32_copy_len_16(adler, NULL, buf, len, sum2, 0);
 }
 
+Z_INTERNAL uint32_t adler32_ssse3(uint32_t adler, const uint8_t *buf, size_t len) {
+    return adler32_impl(adler, buf, len);
+}
+
+/* SSSE3 unaligned stores have a huge penalty, so we use memcpy. */
+Z_INTERNAL uint32_t adler32_copy_ssse3(uint32_t adler, uint8_t *dst, const uint8_t *src, size_t len) {
+    adler = adler32_impl(adler, src, len);
+    memcpy(dst, src, len);
+    return adler;
+}
 #endif

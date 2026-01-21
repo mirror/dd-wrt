@@ -15,6 +15,7 @@
 
 #include "zbuild.h"
 #include "deflate.h"
+#include "deflate_p.h"
 #include "trees_emit.h"
 #include "dfltcc_deflate.h"
 #include "dfltcc_detail.h"
@@ -59,7 +60,7 @@ static inline int dfltcc_can_deflate_with_params(PREFIX3(streamp) strm, int leve
 int Z_INTERNAL PREFIX(dfltcc_can_deflate)(PREFIX3(streamp) strm) {
     deflate_state *state = (deflate_state *)strm->state;
 
-    return dfltcc_can_deflate_with_params(strm, state->level, state->w_bits, state->strategy, state->reproducible);
+    return dfltcc_can_deflate_with_params(strm, state->level, W_BITS(state), state->strategy, state->reproducible);
 }
 
 static inline void dfltcc_gdht(PREFIX3(streamp) strm) {
@@ -90,8 +91,10 @@ static inline dfltcc_cc dfltcc_cmpr(PREFIX3(streamp) strm) {
 static inline void send_eobs(PREFIX3(streamp) strm, const struct dfltcc_param_v0 *param) {
     deflate_state *state = (deflate_state *)strm->state;
 
-    send_bits(state, PREFIX(bi_reverse)(param->eobs >> (15 - param->eobl), param->eobl), param->eobl, state->bi_buf, state->bi_valid);
-    PREFIX(flush_pending)(strm);
+    send_bits(state, bi_reverse((uint16_t)(param->eobs >> (15 - param->eobl)), param->eobl),
+        param->eobl, state->bi_buf, state->bi_valid);
+
+    flush_pending_inline(strm);
     if (state->pending != 0) {
         /* The remaining data is located in pending_out[0:pending]. If someone
          * calls put_byte() - this might happen in deflate() - the byte will be
@@ -225,7 +228,7 @@ again:
     if (state->wrap == 1)
         param->cv = strm->adler;
     else if (state->wrap == 2)
-        param->cv = ZSWAP32(state->crc_fold.value);
+        param->cv = ZSWAP32(strm->adler);
 
     /* When opening a block, choose a Huffman-Table Type */
     if (!param->bcf) {
@@ -259,7 +262,7 @@ again:
     if (state->wrap == 1)
         strm->adler = param->cv;
     else if (state->wrap == 2)
-        state->crc_fold.value = ZSWAP32(param->cv);
+        strm->adler = ZSWAP32(param->cv);
 
     /* Unmask the input data */
     strm->avail_in += masked_avail_in;
@@ -318,7 +321,7 @@ static int dfltcc_was_deflate_used(PREFIX3(streamp) strm) {
 int Z_INTERNAL PREFIX(dfltcc_deflate_params)(PREFIX3(streamp) strm, int level, int strategy, int *flush) {
     deflate_state *state = (deflate_state *)strm->state;
     int could_deflate = PREFIX(dfltcc_can_deflate)(strm);
-    int can_deflate = dfltcc_can_deflate_with_params(strm, level, state->w_bits, strategy, state->reproducible);
+    int can_deflate = dfltcc_can_deflate_with_params(strm, level, W_BITS(state), strategy, state->reproducible);
 
     if (can_deflate == could_deflate)
         /* We continue to work in the same mode - no changes needed */

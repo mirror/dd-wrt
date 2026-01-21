@@ -1,8 +1,6 @@
-cmake_minimum_required(VERSION 3.5.1)
+cmake_minimum_required(VERSION 3.14...4.2.1)
 
 if(CMAKE_C_COMPILER_ID MATCHES "Clang")
-    enable_language(CXX)
-
     if(DEFINED ENV{LIB_FUZZING_ENGINE})
         set(FUZZING_ENGINE $ENV{LIB_FUZZING_ENGINE})
         set(FUZZING_ENGINE_FOUND ON)
@@ -32,18 +30,16 @@ foreach(FUZZER ${FUZZERS})
     endif()
 
     if(NOT DEFINED BUILD_SHARED_LIBS)
-        target_link_libraries(${FUZZER} zlibstatic)
+        target_link_libraries(${FUZZER} zlib-ng-static)
     else()
-        target_link_libraries(${FUZZER} zlib)
+        target_link_libraries(${FUZZER} zlib-ng)
     endif()
 
     if(FUZZING_ENGINE_FOUND)
         target_link_libraries(${FUZZER} ${FUZZING_ENGINE})
     endif()
 
-    if(ZLIB_ENABLE_TESTS)
-        file(GLOB FUZZER_TEST_FILES ${PROJECT_SOURCE_DIR}/*)
-        set(FUZZER_COMMAND ${CMAKE_CROSSCOMPILING_EMULATOR} $<TARGET_FILE:${FUZZER}> ${FUZZER_TEST_FILES})
-        add_test(NAME ${FUZZER} COMMAND ${FUZZER_COMMAND})
-    endif()
+    file(GLOB FUZZER_TEST_FILES ${PROJECT_SOURCE_DIR}/*)
+    set(FUZZER_COMMAND ${CMAKE_CROSSCOMPILING_EMULATOR} $<TARGET_FILE:${FUZZER}> ${FUZZER_TEST_FILES})
+    add_test(NAME ${FUZZER} COMMAND ${FUZZER_COMMAND})
 endforeach()

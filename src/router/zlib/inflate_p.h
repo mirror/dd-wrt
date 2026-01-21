@@ -6,6 +6,7 @@
 #define INFLATE_P_H
 
 #include <stdlib.h>
+#include "zmemory.h"
 
 /* Architecture-specific hooks. */
 #ifdef S390_DFLTCC_INFLATE
@@ -71,6 +72,13 @@
     } while (0)
 #endif
 
+/* Compiler optimization for bit accumulator on x86 architectures */
+#ifdef ARCH_X86
+typedef uint8_t bits_t;
+#else
+typedef unsigned bits_t;
+#endif
+
 /* Load registers with state in inflate() for speed */
 #define LOAD() \
     do { \
@@ -79,7 +87,7 @@
         next = strm->next_in; \
         have = strm->avail_in; \
         hold = state->hold; \
-        bits = state->bits; \
+        bits = (bits_t)state->bits; \
     } while (0)
 
 /* Restore state from registers in inflate() */
@@ -104,7 +112,7 @@
    not enough available input to do that, then return from inflate()/inflateBack(). */
 #define NEEDBITS(n) \
     do { \
-        while (bits < (unsigned)(n)) \
+        while (bits < (bits_t)(n)) \
             PULLBYTE(); \
     } while (0)
 
@@ -116,7 +124,7 @@
 #define DROPBITS(n) \
     do { \
         hold >>= (n); \
-        bits -= (unsigned)(n); \
+        bits -= (bits_t)(n); \
     } while (0)
 
 /* Remove zero to seven bits as needed to go to a byte boundary */
@@ -138,8 +146,7 @@
 
 /* Load 64 bits from IN and place the bytes at offset BITS in the result. */
 static inline uint64_t load_64_bits(const unsigned char *in, unsigned bits) {
-    uint64_t chunk;
-    memcpy(&chunk, in, sizeof(chunk));
+    uint64_t chunk = zng_memread_8(in);
 
 #if BYTE_ORDER == LITTLE_ENDIAN
     return chunk << bits;
@@ -150,7 +157,7 @@ static inline uint64_t load_64_bits(const unsigned char *in, unsigned bits) {
 
 /* Behave like chunkcopy, but avoid writing beyond of legal output. */
 static inline uint8_t* chunkcopy_safe(uint8_t *out, uint8_t *from, uint64_t len, uint8_t *safe) {
-    uint64_t safelen = (safe - out) + 1;
+    uint64_t safelen = safe - out;
     len = MIN(len, safelen);
     int32_t olap_src = from >= out && from < out + len;
     int32_t olap_dst = out >= from && out < from + len;
@@ -174,25 +181,16 @@ static inline uint8_t* chunkcopy_safe(uint8_t *out, uint8_t *from, uint64_t len,
      * behind or lookahead distance. */
     uint64_t non_olap_size = llabs(from - out); // llabs vs labs for compatibility with windows
 
-    memcpy(out, from, (size_t)non_olap_size);
-    out += non_olap_size;
-    from += non_olap_size;
-    len -= non_olap_size;
-
     /* So this doesn't give use a worst case scenario of function calls in a loop,
-     * we want to instead break this down into copy blocks of fixed lengths */
+     * we want to instead break this down into copy blocks of fixed lengths
+     *
+     * TODO: The memcpy calls aren't inlined on architectures with strict memory alignment
+     */
     while (len) {
         tocopy = MIN(non_olap_size, len);
         len -= tocopy;
 
-        while (tocopy >= 32) {
-            memcpy(out, from, 32);
-            out += 32;
-            from += 32;
-            tocopy -= 32;
-        }
-
-        if (tocopy >= 16) {
+        while (tocopy >= 16) {
             memcpy(out, from, 16);
             out += 16;
             from += 16;
@@ -213,14 +211,7 @@ static inline uint8_t* chunkcopy_safe(uint8_t *out, uint8_t *from, uint64_t len,
             tocopy -= 4;
         }
 
-        if (tocopy >= 2) {
-            memcpy(out, from, 2);
-            out += 2;
-            from += 2;
-            tocopy -= 2;
-        }
-
-        if (tocopy) {
+        while (tocopy--) {
             *out++ = *from++;
         }
     }

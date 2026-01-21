@@ -6,12 +6,13 @@
 #ifdef X86_VPCLMULQDQ_CRC
 
 #define X86_VPCLMULQDQ
-#define CRC32_FOLD_COPY  crc32_fold_vpclmulqdq_copy
-#define CRC32_FOLD       crc32_fold_vpclmulqdq
-#define CRC32_FOLD_RESET crc32_fold_vpclmulqdq_reset
-#define CRC32_FOLD_FINAL crc32_fold_vpclmulqdq_final
-#define CRC32            crc32_vpclmulqdq
-
 #include "crc32_pclmulqdq_tpl.h"
 
+Z_INTERNAL uint32_t crc32_vpclmulqdq(uint32_t crc, const uint8_t *buf, size_t len) {
+    return crc32_copy_impl(crc, NULL, buf, len, 0);
+}
+
+Z_INTERNAL uint32_t crc32_copy_vpclmulqdq(uint32_t crc, uint8_t *dst, const uint8_t *src, size_t len) {
+    return crc32_copy_impl(crc, dst, src, len, 1);
+}
 #endif

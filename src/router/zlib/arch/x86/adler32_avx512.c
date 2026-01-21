@@ -15,10 +15,7 @@
 #include "x86_intrins.h"
 #include "adler32_avx512_p.h"
 
-static inline uint32_t adler32_fold_copy_impl(uint32_t adler, uint8_t *dst, const uint8_t *src, size_t len, const int COPY) {
-    if (src == NULL) return 1L;
-    if (len == 0) return adler;
-
+Z_FORCEINLINE static uint32_t adler32_copy_impl(uint32_t adler, uint8_t *dst, const uint8_t *src, size_t len, const int COPY) {
     uint32_t adler0, adler1;
     adler1 = (adler >> 16) & 0xffff;
     adler0 = adler & 0xffff;
@@ -26,7 +23,7 @@ static inline uint32_t adler32_fold_copy_impl(uint32_t adler, uint8_t *dst, cons
 rem_peel:
     if (len < 64) {
         /* This handles the remaining copies, just call normal adler checksum after this */
-        if (COPY) {
+        if (COPY && len) {
             __mmask64 storemask = (0xFFFFFFFFFFFFFFFFUL >> (64 - len));
             __m512i copy_vec = _mm512_maskz_loadu_epi8(storemask, src);
             _mm512_mask_storeu_epi8(dst, storemask, copy_vec);
@@ -96,13 +93,12 @@ rem_peel:
     return adler;
 }
 
-Z_INTERNAL uint32_t adler32_fold_copy_avx512(uint32_t adler, uint8_t *dst, const uint8_t *src, size_t len) {
-    return adler32_fold_copy_impl(adler, dst, src, len, 1);
+Z_INTERNAL uint32_t adler32_avx512(uint32_t adler, const uint8_t *src, size_t len) {
+    return adler32_copy_impl(adler, NULL, src, len, 0);
 }
 
-Z_INTERNAL uint32_t adler32_avx512(uint32_t adler, const uint8_t *src, size_t len) {
-    return adler32_fold_copy_impl(adler, NULL, src, len, 0);
+Z_INTERNAL uint32_t adler32_copy_avx512(uint32_t adler, uint8_t *dst, const uint8_t *src, size_t len) {
+    return adler32_copy_impl(adler, dst, src, len, 1);
 }
 
 #endif
-

@@ -11,6 +11,7 @@
 #include "deflate.h"
 #include "deflate_p.h"
 #include "functable.h"
+#include "insert_string_p.h"
 
 struct match {
     uint16_t match_start;
@@ -45,12 +46,10 @@ static void insert_match(deflate_state *s, struct match match) {
     if (UNLIKELY(s->lookahead <= (unsigned int)(match.match_length + WANT_MIN_MATCH)))
         return;
 
-    /* string at strstart already in table */
-    match.strstart++;
-    match.match_length--;
-
     /* matches that are not long enough we need to emit as literals */
-    if (LIKELY(match.match_length < WANT_MIN_MATCH - 1)) {
+    if (LIKELY(match.match_length < WANT_MIN_MATCH)) {
+        match.strstart++;
+        match.match_length--;
         if (UNLIKELY(match.match_length > 0)) {
             if (match.strstart >= match.orgstart) {
                 if (match.strstart + match.match_length - 1 >= match.orgstart) {
@@ -65,25 +64,43 @@ static void insert_match(deflate_state *s, struct match match) {
         return;
     }
 
-    /* Insert into hash table. */
-    if (LIKELY(match.strstart >= match.orgstart)) {
-        if (LIKELY(match.strstart + match.match_length - 1 >= match.orgstart)) {
-            insert_string(s, match.strstart, match.match_length);
-        } else {
-            insert_string(s, match.strstart, match.orgstart - match.strstart + 1);
+    /* Insert new strings in the hash table only if the match length
+     * is not too large. This saves time but degrades compression.
+     */
+    if (match.match_length <= 16 * s->max_insert_length && s->lookahead >= WANT_MIN_MATCH) {
+        match.match_length--; /* string at strstart already in table */
+        match.strstart++;
+
+        if (LIKELY(match.strstart >= match.orgstart)) {
+            if (LIKELY(match.strstart + match.match_length - 1 >= match.orgstart)) {
+                insert_string(s, match.strstart, match.match_length);
+            } else {
+                insert_string(s, match.strstart, match.orgstart - match.strstart + 1);
+            }
+        } else if (match.orgstart < match.strstart + match.match_length) {
+            insert_string(s, match.orgstart, match.strstart + match.match_length - match.orgstart);
         }
-    } else if (match.orgstart < match.strstart + match.match_length) {
-        insert_string(s, match.orgstart, match.strstart + match.match_length - match.orgstart);
+        match.strstart += match.match_length;
+        match.match_length = 0;
+    } else {
+        match.strstart += match.match_length;
+        match.match_length = 0;
+
+        if (match.strstart >= (STD_MIN_MATCH - 2))
+            quick_insert_string(s, match.strstart + 2 - STD_MIN_MATCH);
+
+        /* If lookahead < WANT_MIN_MATCH, ins_h is garbage, but it does not
+         * matter since it will be recomputed at next deflate call.
+         */
     }
-    match.strstart += match.match_length;
-    match.match_length = 0;
 }
 
 static void fizzle_matches(deflate_state *s, struct match *current, struct match *next) {
-    Pos limit;
+    unsigned char *window;
     unsigned char *match, *orig;
-    int changed = 0;
     struct match c, n;
+    int changed = 0;
+    Pos limit;
     /* step zero: sanity checks */
 
     if (current->match_length <= 1)
@@ -95,8 +112,10 @@ static void fizzle_matches(deflate_state *s, struct match *current, struct match
     if (UNLIKELY(current->match_length > 1 + next->strstart))
         return;
 
-    match = s->window - current->match_length + 1 + next->match_start;
-    orig  = s->window - current->match_length + 1 + next->strstart;
+    window = s->window;
+
+    match = window - current->match_length + 1 + next->match_start;
+    orig  = window - current->match_length + 1 + next->strstart;
 
     /* quick exit check.. if this fails then don't bother with anything else */
     if (LIKELY(*match != *orig))
@@ -108,8 +127,8 @@ static void fizzle_matches(deflate_state *s, struct match *current, struct match
     /* step one: try to move the "next" match to the left as much as possible */
     limit = next->strstart > MAX_DIST(s) ? next->strstart - (Pos)MAX_DIST(s) : 0;
 
-    match = s->window + n.match_start - 1;
-    orig = s->window + n.strstart - 1;
+    match = window + n.match_start - 1;
+    orig = window + n.strstart - 1;
 
     while (*match == *orig) {
         if (UNLIKELY(c.match_length < 1))
@@ -154,7 +173,7 @@ Z_INTERNAL block_state deflate_medium(deflate_state *s, int flush) {
     memset(&next_match, 0, sizeof(struct match));
 
     for (;;) {
-        Pos hash_head = 0;    /* head of the hash chain */
+        uint32_t hash_head = 0;    /* head of the hash chain */
         int bflush = 0;       /* set if current block must be flushed */
         int64_t dist;
 

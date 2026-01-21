@@ -59,13 +59,10 @@ void Z_INTERNAL INFLATE_FAST(PREFIX3(stream) *strm, uint32_t start) {
     unsigned char *beg;         /* inflate()'s initial strm->next_out */
     unsigned char *end;         /* while out < end, enough space available */
     unsigned char *safe;        /* can use chunkcopy provided out < safe */
-#ifdef INFLATE_STRICT
-    unsigned dmax;              /* maximum distance from zlib header */
-#endif
+    unsigned char *window;      /* allocated sliding window, if wsize != 0 */
     unsigned wsize;             /* window size or zero if not using window */
     unsigned whave;             /* valid bytes in the window */
     unsigned wnext;             /* window write index */
-    unsigned char *window;      /* allocated sliding window, if wsize != 0 */
 
     /* hold is a local copy of strm->hold. By default, hold satisfies the same
        invariants that strm->hold does, namely that (hold >> bits) == 0. This
@@ -104,18 +101,18 @@ void Z_INTERNAL INFLATE_FAST(PREFIX3(stream) *strm, uint32_t start) {
        with (1<<bits)-1 to drop those excess bits so that, on function exit, we
        keep the invariant that (state->hold >> state->bits) == 0.
     */
+    bits_t bits;                /* local strm->bits */
     uint64_t hold;              /* local strm->hold */
-    unsigned bits;              /* local strm->bits */
-    code const *lcode;          /* local strm->lencode */
-    code const *dcode;          /* local strm->distcode */
     unsigned lmask;             /* mask for first level of length codes */
     unsigned dmask;             /* mask for first level of distance codes */
-    const code *here;           /* retrieved table entry */
+    code const *lcode;          /* local strm->lencode */
+    code const *dcode;          /* local strm->distcode */
+    code here;                  /* retrieved table entry */
     unsigned op;                /* code bits, operation, extra bits, or */
                                 /*  window position, window bytes to copy */
     unsigned len;               /* match length, unused bytes */
-    unsigned dist;              /* match distance */
     unsigned char *from;        /* where to copy match from */
+    unsigned dist;              /* match distance */
     unsigned extra_safe;        /* copy chunks safely in all cases */
 
     /* copy state to local variables */
@@ -126,15 +123,12 @@ void Z_INTERNAL INFLATE_FAST(PREFIX3(stream) *strm, uint32_t start) {
     beg = out - (start - strm->avail_out);
     end = out + (strm->avail_out - (INFLATE_FAST_MIN_LEFT - 1));
     safe = out + strm->avail_out;
-#ifdef INFLATE_STRICT
-    dmax = state->dmax;
-#endif
     wsize = state->wsize;
     whave = state->whave;
     wnext = state->wnext;
     window = state->window;
     hold = state->hold;
-    bits = state->bits;
+    bits = (bits_t)state->bits;
     lcode = state->lencode;
     dcode = state->distcode;
     lmask = (1U << state->lenbits) - 1;
@@ -143,12 +137,11 @@ void Z_INTERNAL INFLATE_FAST(PREFIX3(stream) *strm, uint32_t start) {
     /* Detect if out and window point to the same memory allocation. In this instance it is
        necessary to use safe chunk copy functions to prevent overwriting the window. If the
        window is overwritten then future matches with far distances will fail to copy correctly. */
-    extra_safe = (wsize != 0 && out >= window && out + INFLATE_FAST_MIN_LEFT <= window + wsize);
+    extra_safe = (wsize != 0 && out >= window && out + INFLATE_FAST_MIN_LEFT <= window + state->wbufsize);
 
 #define REFILL() do { \
         hold |= load_64_bits(in, bits); \
-        in += 7; \
-        in -= ((bits >> 3) & 7); \
+        in += (63 ^ bits) >> 3; \
         bits |= 56; \
     } while (0)
 
@@ -156,44 +149,48 @@ void Z_INTERNAL INFLATE_FAST(PREFIX3(stream) *strm, uint32_t start) {
        input data or output space */
     do {
         REFILL();
-        here = lcode + (hold & lmask);
-        if (here->op == 0) {
-            *out++ = (unsigned char)(here->val);
-            DROPBITS(here->bits);
-            here = lcode + (hold & lmask);
-            if (here->op == 0) {
-                *out++ = (unsigned char)(here->val);
-                DROPBITS(here->bits);
-                here = lcode + (hold & lmask);
+        here = lcode[hold & lmask];
+        Z_TOUCH(here);
+        DROPBITS(here.bits);
+        if (here.op == 0) {
+            *out++ = (unsigned char)(here.val);
+            here = lcode[hold & lmask];
+            Z_TOUCH(here);
+            DROPBITS(here.bits);
+            if (here.op == 0) {
+                *out++ = (unsigned char)(here.val);
+                here = lcode[hold & lmask];
+                Z_TOUCH(here);
+                DROPBITS(here.bits);
             }
         }
       dolen:
-        DROPBITS(here->bits);
-        op = here->op;
+        op = here.op;
         if (op == 0) {                          /* literal */
-            Tracevv((stderr, here->val >= 0x20 && here->val < 0x7f ?
+            Tracevv((stderr, here.val >= 0x20 && here.val < 0x7f ?
                     "inflate:         literal '%c'\n" :
-                    "inflate:         literal 0x%02x\n", here->val));
-            *out++ = (unsigned char)(here->val);
+                    "inflate:         literal 0x%02x\n", here.val));
+            *out++ = (unsigned char)(here.val);
         } else if (op & 16) {                     /* length base */
-            len = here->val;
+            len = here.val;
             op &= MAX_BITS;                       /* number of extra bits */
             len += BITS(op);
             DROPBITS(op);
             Tracevv((stderr, "inflate:         length %u\n", len));
-            here = dcode + (hold & dmask);
+            here = dcode[hold & dmask];
+            Z_TOUCH(here);
             if (bits < MAX_BITS + MAX_DIST_EXTRA_BITS) {
                 REFILL();
             }
           dodist:
-            DROPBITS(here->bits);
-            op = here->op;
+            DROPBITS(here.bits);
+            op = here.op;
             if (op & 16) {                      /* distance base */
-                dist = here->val;
+                dist = here.val;
                 op &= MAX_BITS;                 /* number of extra bits */
                 dist += BITS(op);
 #ifdef INFLATE_STRICT
-                if (dist > dmax) {
+                if (dist > state->dmax) {
                     SET_BAD("invalid distance too far back");
                     break;
                 }
@@ -204,11 +201,11 @@ void Z_INTERNAL INFLATE_FAST(PREFIX3(stream) *strm, uint32_t start) {
                 if (dist > op) {                /* see if copy from window */
                     op = dist - op;             /* distance back in window */
                     if (op > whave) {
+#ifdef INFLATE_ALLOW_INVALID_DISTANCE_TOOFAR_ARRR
                         if (state->sane) {
                             SET_BAD("invalid distance too far back");
                             break;
                         }
-#ifdef INFLATE_ALLOW_INVALID_DISTANCE_TOOFAR_ARRR
                         if (len <= op - whave) {
                             do {
                                 *out++ = 0;
@@ -226,6 +223,9 @@ void Z_INTERNAL INFLATE_FAST(PREFIX3(stream) *strm, uint32_t start) {
                             } while (--len);
                             continue;
                         }
+#else
+                        SET_BAD("invalid distance too far back");
+                        break;
 #endif
                     }
                     from = window;
@@ -238,7 +238,7 @@ void Z_INTERNAL INFLATE_FAST(PREFIX3(stream) *strm, uint32_t start) {
                         from += wsize - op;
                         if (op < len) {         /* some from end of window */
                             len -= op;
-                            out = chunkcopy_safe(out, from, op, safe);
+                            out = CHUNKCOPY_SAFE(out, from, op, safe);
                             from = window;      /* more from start of window */
                             op = wnext;
                             /* This (rare) case can create a situation where
@@ -248,38 +248,50 @@ void Z_INTERNAL INFLATE_FAST(PREFIX3(stream) *strm, uint32_t start) {
                     }
                     if (op < len) {             /* still need some from output */
                         len -= op;
-                        out = chunkcopy_safe(out, from, op, safe);
-                        out = CHUNKUNROLL(out, &dist, &len);
-                        out = chunkcopy_safe(out, out - dist, len, safe);
+                        if (!extra_safe) {
+                            out = CHUNKCOPY_SAFE(out, from, op, safe);
+                            out = CHUNKUNROLL(out, &dist, &len);
+                            out = CHUNKCOPY_SAFE(out, out - dist, len, safe);
+                        } else {
+                            out = chunkcopy_safe(out, from, op, safe);
+                            out = chunkcopy_safe(out, out - dist, len, safe);
+                        }
                     } else {
-                        out = chunkcopy_safe(out, from, len, safe);
+#ifndef HAVE_MASKED_READWRITE
+                        if (extra_safe)
+                            out = chunkcopy_safe(out, from, len, safe);
+                        else
+#endif
+                            out = CHUNKCOPY_SAFE(out, from, len, safe);
                     }
+#ifndef HAVE_MASKED_READWRITE
                 } else if (extra_safe) {
                     /* Whole reference is in range of current output. */
-                    if (dist >= len || dist >= state->chunksize)
                         out = chunkcopy_safe(out, out - dist, len, safe);
-                    else
-                        out = CHUNKMEMSET_SAFE(out, dist, len, (unsigned)((safe - out) + 1));
+#endif
                 } else {
                     /* Whole reference is in range of current output.  No range checks are
                        necessary because we start with room for at least 258 bytes of output,
                        so unroll and roundoff operations can write beyond `out+len` so long
                        as they stay within 258 bytes of `out`.
                     */
-                    if (dist >= len || dist >= state->chunksize)
+                    if (dist >= len || dist >= CHUNKSIZE())
                         out = CHUNKCOPY(out, out - dist, len);
                     else
-                        out = CHUNKMEMSET(out, dist, len);
+                        out = CHUNKMEMSET(out, out - dist, len);
                 }
             } else if ((op & 64) == 0) {          /* 2nd level distance code */
-                here = dcode + here->val + BITS(op);
+                here = dcode[here.val + BITS(op)];
+                Z_TOUCH(here);
                 goto dodist;
             } else {
                 SET_BAD("invalid distance code");
                 break;
             }
         } else if ((op & 64) == 0) {              /* 2nd level length code */
-            here = lcode + here->val + BITS(op);
+            here = lcode[here.val + BITS(op)];
+            Z_TOUCH(here);
+            DROPBITS(here.bits);
             goto dolen;
         } else if (op & 32) {                     /* end-of-block */
             Tracevv((stderr, "inflate:         end of block\n"));
@@ -294,7 +306,7 @@ void Z_INTERNAL INFLATE_FAST(PREFIX3(stream) *strm, uint32_t start) {
     /* return unused bytes (on entry, bits < 8, so in won't go too far back) */
     len = bits >> 3;
     in -= len;
-    bits -= len << 3;
+    bits -= (bits_t)(len << 3);
     hold &= (UINT64_C(1) << bits) - 1;
 
     /* update state and return */

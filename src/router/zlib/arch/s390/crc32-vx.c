@@ -202,21 +202,27 @@ uint32_t Z_INTERNAL crc32_s390_vx(uint32_t crc, const unsigned char *buf, size_t
     size_t prealign, aligned, remaining;
 
     if (len < VX_MIN_LEN + VX_ALIGN_MASK)
-        return PREFIX(crc32_braid)(crc, buf, len);
+        return crc32_braid(crc, buf, len);
 
     if ((uintptr_t)buf & VX_ALIGN_MASK) {
-        prealign = VX_ALIGNMENT - ((uintptr_t)buf & VX_ALIGN_MASK);
+        prealign = (size_t)ALIGN_DIFF(buf, VX_ALIGNMENT);
         len -= prealign;
-        crc = PREFIX(crc32_braid)(crc, buf, prealign);
+        crc = crc32_braid(crc, buf, prealign);
         buf += prealign;
     }
     aligned = len & ~VX_ALIGN_MASK;
     remaining = len & VX_ALIGN_MASK;
 
-    crc = crc32_le_vgfm_16(crc ^ 0xffffffff, buf, aligned) ^ 0xffffffff;
+    crc = ~crc32_le_vgfm_16(~crc, buf, aligned);
 
     if (remaining)
-        crc = PREFIX(crc32_braid)(crc, buf + aligned, remaining);
+        crc = crc32_braid(crc, buf + aligned, remaining);
 
+    return crc;
+}
+
+Z_INTERNAL uint32_t crc32_copy_s390_vx(uint32_t crc, uint8_t *dst, const uint8_t *src, size_t len) {
+    crc = crc32_s390_vx(crc, src, len);
+    memcpy(dst, src, len);
     return crc;
 }

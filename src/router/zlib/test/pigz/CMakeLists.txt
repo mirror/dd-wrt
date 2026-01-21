@@ -18,7 +18,7 @@
 #   PTHREADS4W_ROOT     - Path to pthreads4w source directory on Windows.
 #                         If not specified then threading will be disabled.
 
-cmake_minimum_required(VERSION 3.11)
+cmake_minimum_required(VERSION 3.14...4.2.1)
 
 include(CheckCCompilerFlag)
 include(FeatureSummary)
@@ -65,10 +65,7 @@ FetchContent_Declare(pigz
     GIT_REPOSITORY https://github.com/madler/pigz.git
     GIT_TAG ${PIGZ_TAG})
 
-FetchContent_GetProperties(pigz)
-if(NOT pigz_POPULATED)
-    FetchContent_Populate(pigz)
-endif()
+FetchContent_MakeAvailable(pigz)
 
 set(PIGZ_SRCS
     ${pigz_SOURCE_DIR}/pigz.c
@@ -120,6 +117,7 @@ if(NOT DEFINED ZLIB_ROOT)
     find_package(Zlib REQUIRED)
 endif()
 
+set(ZLIB_ALIASES ON)
 set(ZLIB_COMPAT ON)
 set(ZLIB_ENABLE_TESTS OFF)
 

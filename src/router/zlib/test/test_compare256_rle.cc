@@ -43,21 +43,18 @@ static inline void compare256_rle_match_check(compare256_rle_func compare256_rle
 
 #define TEST_COMPARE256_RLE(name, func, support_flag) \
     TEST(compare256_rle, name) { \
-        if (!support_flag) { \
+        if (!(support_flag)) { \
             GTEST_SKIP(); \
             return; \
         } \
         compare256_rle_match_check(func); \
     }
 
-TEST_COMPARE256_RLE(c, compare256_rle_c, 1)
-
-#ifdef UNALIGNED_OK
-TEST_COMPARE256_RLE(unaligned_16, compare256_rle_unaligned_16, 1)
-#ifdef HAVE_BUILTIN_CTZ
-TEST_COMPARE256_RLE(unaligned_32, compare256_rle_unaligned_32, 1)
+TEST_COMPARE256_RLE(8, compare256_rle_8, 1)
+TEST_COMPARE256_RLE(16, compare256_rle_16, 1)
+#if defined(HAVE_BUILTIN_CTZ)
+TEST_COMPARE256_RLE(32, compare256_rle_32, 1)
 #endif
-#if defined(UNALIGNED64_OK) && defined(HAVE_BUILTIN_CTZLL)
-TEST_COMPARE256_RLE(unaligned_64, compare256_rle_unaligned_64, 1)
-#endif
+#if defined(HAVE_BUILTIN_CTZLL)
+TEST_COMPARE256_RLE(64, compare256_rle_64, 1)
 #endif

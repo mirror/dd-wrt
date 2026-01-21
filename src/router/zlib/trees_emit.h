@@ -38,6 +38,10 @@ extern Z_INTERNAL const int base_dist[D_CODES];
 /* If not enough room in bi_buf, use (valid) bits from bi_buf and
  * (64 - bi_valid) bits from value, leaving (width - (64-bi_valid))
  * unused bits in value.
+ *
+ * NOTE: Static analyzers can't evaluate value of total_bits, so we
+ *       also need to make sure bi_valid is within acceptable range,
+ *       otherwise the shifts will overflow.
  */
 #define send_bits(s, t_val, t_len, bi_buf, bi_valid) {\
     uint64_t val = (uint64_t)t_val;\
@@ -45,10 +49,10 @@ extern Z_INTERNAL const int base_dist[D_CODES];
     uint32_t total_bits = bi_valid + len;\
     send_bits_trace(s, val, len);\
     sent_bits_add(s, len);\
-    if (total_bits < BIT_BUF_SIZE) {\
+    if (total_bits < BIT_BUF_SIZE && bi_valid < BIT_BUF_SIZE) {\
         bi_buf |= val << bi_valid;\
         bi_valid = total_bits;\
-    } else if (bi_valid == BIT_BUF_SIZE) {\
+    } else if (bi_valid >= BIT_BUF_SIZE) {\
         put_uint64(s, bi_buf);\
         bi_buf = val;\
         bi_valid = len;\
@@ -74,7 +78,7 @@ extern Z_INTERNAL const int base_dist[D_CODES];
 /* ===========================================================================
  * Flush the bit buffer and align the output on a byte boundary
  */
-static void bi_windup(deflate_state *s) {
+static inline void bi_windup(deflate_state *s) {
     if (s->bi_valid > 56) {
         put_uint64(s, s->bi_buf);
     } else {
@@ -116,7 +120,7 @@ static inline uint32_t zng_emit_lit(deflate_state *s, const ct_data *ltree, unsi
 /* ===========================================================================
  * Emit match distance/length code
  */
-static inline uint32_t zng_emit_dist(deflate_state *s, const ct_data *ltree, const ct_data *dtree,
+static uint32_t zng_emit_dist(deflate_state *s, const ct_data *ltree, const ct_data *dtree,
     uint32_t lc, uint32_t dist) {
     uint32_t c, extra;
     uint8_t code;

@@ -1,6 +1,3 @@
-#ifndef INSERT_STRING_H_
-#define INSERT_STRING_H_
-
 /* insert_string_tpl.h -- Private insert_string functions shared with more than
  *                        one insert string implementation
  *
@@ -22,22 +19,13 @@
  *
  */
 
-#ifndef HASH_CALC_OFFSET
-#  define HASH_CALC_OFFSET 0
-#endif
-#ifndef HASH_CALC_MASK
-#  define HASH_CALC_MASK HASH_MASK
-#endif
 #ifndef HASH_CALC_READ
 #  if BYTE_ORDER == LITTLE_ENDIAN
 #    define HASH_CALC_READ \
-        memcpy(&val, strstart, sizeof(val));
+        val = zng_memread_4(strstart);
 #  else
 #    define HASH_CALC_READ \
-        val  = ((uint32_t)(strstart[0])); \
-        val |= ((uint32_t)(strstart[1]) << 8); \
-        val |= ((uint32_t)(strstart[2]) << 16); \
-        val |= ((uint32_t)(strstart[3]) << 24);
+        val = ZSWAP32(zng_memread_4(strstart));
 #  endif
 #endif
 
@@ -47,9 +35,30 @@
  *    input characters, so that a running hash key can be computed from the
  *    previous key instead of complete recalculation each time.
  */
-Z_INTERNAL uint32_t UPDATE_HASH(uint32_t h, uint32_t val) {
+Z_FORCEINLINE static uint32_t UPDATE_HASH(uint32_t h, uint32_t val) {
     HASH_CALC(h, val);
     return h & HASH_CALC_MASK;
+}
+
+/* ===========================================================================
+ * Quick insert string str in the dictionary using a pre-read value and set match_head
+ * to the previous head of the hash chain (the most recent string with same hash key).
+ * Return the previous length of the hash chain.
+ */
+Z_FORCEINLINE static uint32_t QUICK_INSERT_VALUE(deflate_state *const s, uint32_t str, uint32_t val) {
+    uint32_t hm, head;
+
+    HASH_CALC_VAR_INIT;
+    HASH_CALC(HASH_CALC_VAR, val);
+    HASH_CALC_VAR &= HASH_CALC_MASK;
+    hm = HASH_CALC_VAR;
+
+    head = s->head[hm];
+    if (LIKELY(head != str)) {
+        s->prev[str & W_MASK(s)] = (Pos)head;
+        s->head[hm] = (Pos)str;
+    }
+    return head;
 }
 
 /* ===========================================================================
@@ -57,10 +66,9 @@ Z_INTERNAL uint32_t UPDATE_HASH(uint32_t h, uint32_t val) {
  * of the hash chain (the most recent string with same hash key). Return
  * the previous length of the hash chain.
  */
-Z_INTERNAL Pos QUICK_INSERT_STRING(deflate_state *const s, uint32_t str) {
-    Pos head;
+Z_FORCEINLINE static uint32_t QUICK_INSERT_STRING(deflate_state *const s, uint32_t str) {
     uint8_t *strstart = s->window + str + HASH_CALC_OFFSET;
-    uint32_t val, hm;
+    uint32_t val, hm, head;
 
     HASH_CALC_VAR_INIT;
     HASH_CALC_READ;
@@ -70,7 +78,7 @@ Z_INTERNAL Pos QUICK_INSERT_STRING(deflate_state *const s, uint32_t str) {
 
     head = s->head[hm];
     if (LIKELY(head != str)) {
-        s->prev[str & s->w_mask] = head;
+        s->prev[str & W_MASK(s)] = (Pos)head;
         s->head[hm] = (Pos)str;
     }
     return head;
@@ -84,12 +92,17 @@ Z_INTERNAL Pos QUICK_INSERT_STRING(deflate_state *const s, uint32_t str) {
  *    input characters and the first STD_MIN_MATCH bytes of str are valid
  *    (except for the last STD_MIN_MATCH-1 bytes of the input file).
  */
-Z_INTERNAL void INSERT_STRING(deflate_state *const s, uint32_t str, uint32_t count) {
+Z_FORCEINLINE static void INSERT_STRING(deflate_state *const s, uint32_t str, uint32_t count) {
     uint8_t *strstart = s->window + str + HASH_CALC_OFFSET;
     uint8_t *strend = strstart + count;
 
-    for (Pos idx = (Pos)str; strstart < strend; idx++, strstart++) {
-        uint32_t val, hm;
+    /* Local pointers to avoid indirection */
+    Pos *headp = s->head;
+    Pos *prevp = s->prev;
+    const unsigned int w_mask = W_MASK(s);
+
+    for (uint32_t idx = str; strstart < strend; idx++, strstart++) {
+        uint32_t val, hm, head;
 
         HASH_CALC_VAR_INIT;
         HASH_CALC_READ;
@@ -97,11 +110,10 @@ Z_INTERNAL void INSERT_STRING(deflate_state *const s, uint32_t str, uint32_t cou
         HASH_CALC_VAR &= HASH_CALC_MASK;
         hm = HASH_CALC_VAR;
 
-        Pos head = s->head[hm];
+        head = headp[hm];
         if (LIKELY(head != idx)) {
-            s->prev[idx & s->w_mask] = head;
-            s->head[hm] = idx;
+            prevp[idx & w_mask] = (Pos)head;
+            headp[hm] = (Pos)idx;
         }
     }
 }
-#endif
