@@ -188,7 +188,7 @@ config NET_IPGRE_DEMUX
 	 Required by ip_gre, pptp and eoip modules.
 
 config NET_IP_TUNNEL
-	tristate
+	tristate "IP: ip_tunnel, required for wireguard"
 	default n
 
 config NET_IPGRE
