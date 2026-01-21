@@ -109,6 +109,11 @@ clean: rc-clean httpd-clean services-clean upnp-clean radauth-clean shared-clean
 	-rm -f grub-efi/*.vdi
 	-rm -f grub-efi/*.vhdx
 	-rm -f grub-efi/*.vmdx
+	-rm -f grub-efi/*.img.gz
+	-rm -f grub-efi/*.vdi.gz
+	-rm -f grub-efi/*.vhdx.gz
+	-rm -f grub-efi/*.vmdx.gz
+	-rm -f grub-efi/*.gz
 
 clean_target:
 	rm -rf $(TARGETDIR)

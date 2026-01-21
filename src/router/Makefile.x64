@@ -431,16 +431,16 @@ endif
 	qemu-img convert -f raw -O vhdx $(ARCH)-uclibc/dd-wrt_serial_ext4.image $(ARCH)-uclibc/dd-wrt_serial_ext4.vhdx
 	qemu-img convert -f raw -O vhdx $(ARCH)-uclibc/dd-wrt_vga_2GB.image $(ARCH)-uclibc/dd-wrt_vga_2GB.vhdx
 	qemu-img convert -f raw -O vhdx $(ARCH)-uclibc/dd-wrt_serial_2GB.image $(ARCH)-uclibc/dd-wrt_serial_2GB.vhdx
-	gzip -6 $(ARCH)-uclibc/dd-wrt_vga_ext4.image
-	gzip -6 $(ARCH)-uclibc/dd-wrt_serial_ext4.image
-	gzip -6 $(ARCH)-uclibc/*.vhdx
-	gzip -6 $(ARCH)-uclibc/*.vdi
-	gzip -6 $(ARCH)-uclibc/*.vmdk
-	gzip -6 grub-efi/*.vhdx
-	gzip -6 grub-efi/*.vdi
-	gzip -6 grub-efi/*.vmdk
-	gzip -6 grub-efi/efi-ext4-vga.img
-	gzip -6 grub-efi/efi-ext4.img
+	libdeflate -6 $(ARCH)-uclibc/dd-wrt_vga_ext4.image
+	libdeflate -6 $(ARCH)-uclibc/dd-wrt_serial_ext4.image
+	libdeflate -6 $(ARCH)-uclibc/*.vhdx
+	libdeflate -6 $(ARCH)-uclibc/*.vdi
+	libdeflate -6 $(ARCH)-uclibc/*.vmdk
+	libdeflate -6 grub-efi/*.vhdx
+	libdeflate -6 grub-efi/*.vdi
+	libdeflate -6 grub-efi/*.vmdk
+	libdeflate -6 grub-efi/efi-ext4-vga.img
+	libdeflate -6 grub-efi/efi-ext4.img
 	./tools/wrap $(ARCH)-uclibc/dd-wrt_vga.image $(ARCH)-uclibc/dd-wrt-vga-webupgrade.bin
 	./tools/wrap $(ARCH)-uclibc/dd-wrt_serial.image $(ARCH)-uclibc/dd-wrt-serial-webupgrade.bin
 	./tools/wrap $(ARCH)-uclibc/dd-wrt_vga_2GB.image $(ARCH)-uclibc/dd-wrt-vga-webupgrade_2GB.bin
