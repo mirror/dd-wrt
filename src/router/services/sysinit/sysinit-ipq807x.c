@@ -145,7 +145,13 @@ void set_envtools(int mtd, char *offset, char *envsize, char *blocksize, int num
 		fclose(fp);
 	}
 }
-
+void set_6ghz_defaults(void) {
+	// autochannel does not work on 6ghz. so set sane defaults
+	nvram_default_get("wlan2_channel", "6115");
+	nvram_default_get("wlan2_channel2", "0");
+	nvram_default_get("wlan2_channelbw", "80");
+	nvram_default_get("wlan2_nctrlsb", "ulu");
+}
 void *get_deviceinfo(char *partname, char *var)
 {
 	char mtd[64];
@@ -1123,6 +1129,7 @@ void start_sysinit(void)
 		set_envtools(getMTD("appsblenv"), "0x0", "0x40000", "0x20000", 1);
 		break;
 	case ROUTER_LINKSYS_MR7500:
+		set_6ghz_defaults();
 		MAC_ADD(ethaddr);
 		nvram_set("wlan0_hwaddr", ethaddr);
 		patch(ethaddr, 14);
@@ -1216,6 +1223,7 @@ void start_sysinit(void)
 		set_envtools(uenv, "0x0", "0x40000", "0x40000", 2);
 		break;
 	case ROUTER_LINKSYS_MX8500:
+		set_6ghz_defaults();
 		MAC_ADD(ethaddr);
 		nvram_set("wlan0_hwaddr", ethaddr);
 		patch(ethaddr, 14);
