@@ -5,7 +5,7 @@ message(STATUS "Using CMake version ${CMAKE_VERSION}")
 # Configuration items that affect the global compiler environment standards
 # should be issued before the "project" command.
 if(NOT DEFINED CMAKE_C_STANDARD)
-    set(CMAKE_C_STANDARD 11)          # The C standard whose features are requested to build this target
+    set(CMAKE_C_STANDARD 99)          # The C standard whose features are requested to build this target
 endif()
 if(NOT DEFINED CMAKE_C_STANDARD_REQUIRED)
     set(CMAKE_C_STANDARD_REQUIRED ON) # Boolean describing whether the value of C_STANDARD is a requirement
@@ -124,8 +124,8 @@ if(BASEARCH_ARM_FOUND)
     endif()
 elseif(BASEARCH_PPC_FOUND)
     option(WITH_ALTIVEC "Build with AltiVec (VMX) optimisations for PowerPC" ON)
-    option(WITH_POWER8 "Build with optimisations for POWER8" ON)
-    option(WITH_POWER9 "Build with optimisations for POWER9" ON)
+    option(WITH_POWER8 "Build with optimisations for POWER8" OFF)
+    option(WITH_POWER9 "Build with optimisations for POWER9" OFF)
 elseif(BASEARCH_RISCV_FOUND)
     option(WITH_RVV "Build with RVV intrinsics" ON)
     option(WITH_RISCV_ZBC "Build with RISCV ZBC" ON)
