@@ -1220,7 +1220,7 @@ static void show_channel(webs_t wp, char *dev, char *prefix, int type)
 			int offset = get_freqoffset(prefix);
 			int poffset = wifi_gettxpoweroffset(prefix);
 			// int cnt = getchannelcount ();
-			if (!nvram_nmatch("mesh", "%s_mode", prefix) && !nvram_nmatch("infra", "%s_mode", prefix))
+			if (!nvram_nmatch("mesh", "%s_mode", prefix) && !nvram_nmatch("infra", "%s_mode", prefix) && !has_6ghz(prefix))
 				websWrite(wp, "document.write(\"<option value=\\\"0\\\" %s>\" + share.auto + \"</option>\");\n",
 					  !strcmp(wlc, "0") ? "selected=\\\"selected\\\"" : "");
 			int i = 0;
