@@ -82,7 +82,6 @@ static struct option original_opts[] = {
 	{.name = "goto",	  .has_arg = 1, .val = 'g'},
 	{.name = "ipv4",	  .has_arg = 0, .val = '4'},
 	{.name = "ipv6",	  .has_arg = 0, .val = '6'},
-	{.name = "compat",        .has_arg = 0, .val = 20},
 	{NULL},
 };
 
@@ -149,7 +148,6 @@ int do_commandx(struct nft_handle *h, int argc, char *argv[], char **table,
 		.restore	= restore,
 		.line		= line,
 		.ops		= &h->ops->cmd_parse,
-		.compat		= compat_env_val(),
 	};
 	struct iptables_command_state cs = {
 		.jumpto = "",
@@ -164,7 +162,6 @@ int do_commandx(struct nft_handle *h, int argc, char *argv[], char **table,
 
 	do_parse(argc, argv, &p, &cs, &args);
 	h->verbose = p.verbose;
-	h->compat  = p.compat;
 
 	if (!nft_table_builtin_find(h, p.table))
 		xtables_error(VERSION_PROBLEM,

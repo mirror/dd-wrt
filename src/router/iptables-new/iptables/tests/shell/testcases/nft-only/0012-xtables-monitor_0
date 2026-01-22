@@ -124,16 +124,16 @@ monitorcheck ebtables -F FORWARD
 EXP=" EVENT: arptables -t filter -D INPUT -j ACCEPT"
 monitorcheck arptables -F INPUT
 
-EXP=" EVENT: nft: DEL chain: ip filter FORWARD use 0 type filter hook forward prio 0 policy accept packets 0 bytes 0 flags 1"
+EXP=" EVENT: iptables -t filter -X FORWARD"
 monitorcheck iptables -X FORWARD
 
-EXP=" EVENT: nft: DEL chain: ip6 filter FORWARD use 0 type filter hook forward prio 0 policy accept packets 0 bytes 0 flags 1"
+EXP=" EVENT: ip6tables -t filter -X FORWARD"
 monitorcheck ip6tables -X FORWARD
 
-EXP=" EVENT: nft: DEL chain: bridge filter FORWARD use 0 type filter hook forward prio -200 policy accept packets 0 bytes 0 flags 1"
+EXP=" EVENT: ebtables -t filter -X FORWARD"
 monitorcheck ebtables -X FORWARD
 
-EXP=" EVENT: nft: DEL chain: arp filter INPUT use 0 type filter hook input prio 0 policy accept packets 0 bytes 0 flags 1"
+EXP=" EVENT: arptables -t filter -X INPUT"
 monitorcheck arptables -X INPUT
 
 exit $rc

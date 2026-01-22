@@ -10,6 +10,7 @@
  * This code has been sponsored by Sophos Astaro <http://www.sophos.com>
  */
 
+#include "config.h"
 #include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
@@ -27,6 +28,7 @@
 
 #include <xtables.h>
 
+#include "nft-compat.h"
 #include "nft-ruleparse.h"
 #include "nft.h"
 
@@ -887,6 +889,45 @@ static void nft_parse_range(struct nft_xt_ctx *ctx, struct nftnl_expr *e)
 	}
 }
 
+bool nft_parse_rule_expr(struct nft_handle *h,
+			 struct nftnl_expr *expr,
+			 struct nft_xt_ctx *ctx)
+{
+	const char *name = nftnl_expr_get_str(expr, NFTNL_EXPR_NAME);
+
+	if (strcmp(name, "counter") == 0)
+		nft_parse_counter(expr, &ctx->cs->counters);
+	else if (strcmp(name, "payload") == 0)
+		nft_parse_payload(ctx, expr);
+	else if (strcmp(name, "meta") == 0)
+		nft_parse_meta(ctx, expr);
+	else if (strcmp(name, "bitwise") == 0)
+		nft_parse_bitwise(ctx, expr);
+	else if (strcmp(name, "cmp") == 0)
+		nft_parse_cmp(ctx, expr);
+	else if (strcmp(name, "immediate") == 0)
+		nft_parse_immediate(ctx, expr);
+	else if (strcmp(name, "match") == 0)
+		nft_parse_match(ctx, expr);
+	else if (strcmp(name, "target") == 0)
+		nft_parse_target(ctx, expr);
+	else if (strcmp(name, "limit") == 0)
+		nft_parse_limit(ctx, expr);
+	else if (strcmp(name, "lookup") == 0)
+		nft_parse_lookup(ctx, h, expr);
+	else if (strcmp(name, "log") == 0)
+		nft_parse_log(ctx, expr);
+	else if (strcmp(name, "range") == 0)
+		nft_parse_range(ctx, expr);
+
+	if (ctx->errmsg) {
+		fprintf(stderr, "Error: %s\n", ctx->errmsg);
+		ctx->errmsg = NULL;
+		return false;
+	}
+	return true;
+}
+
 bool nft_rule_to_iptables_command_state(struct nft_handle *h,
 					const struct nftnl_rule *r,
 					struct iptables_command_state *cs)
@@ -905,41 +946,24 @@ bool nft_rule_to_iptables_command_state(struct nft_handle *h,
 
 	expr = nftnl_expr_iter_next(ctx.iter);
 	while (expr != NULL) {
-		const char *name =
-			nftnl_expr_get_str(expr, NFTNL_EXPR_NAME);
-
-		if (strcmp(name, "counter") == 0)
-			nft_parse_counter(expr, &ctx.cs->counters);
-		else if (strcmp(name, "payload") == 0)
-			nft_parse_payload(&ctx, expr);
-		else if (strcmp(name, "meta") == 0)
-			nft_parse_meta(&ctx, expr);
-		else if (strcmp(name, "bitwise") == 0)
-			nft_parse_bitwise(&ctx, expr);
-		else if (strcmp(name, "cmp") == 0)
-			nft_parse_cmp(&ctx, expr);
-		else if (strcmp(name, "immediate") == 0)
-			nft_parse_immediate(&ctx, expr);
-		else if (strcmp(name, "match") == 0)
-			nft_parse_match(&ctx, expr);
-		else if (strcmp(name, "target") == 0)
-			nft_parse_target(&ctx, expr);
-		else if (strcmp(name, "limit") == 0)
-			nft_parse_limit(&ctx, expr);
-		else if (strcmp(name, "lookup") == 0)
-			nft_parse_lookup(&ctx, h, expr);
-		else if (strcmp(name, "log") == 0)
-			nft_parse_log(&ctx, expr);
-		else if (strcmp(name, "range") == 0)
-			nft_parse_range(&ctx, expr);
-
-		if (ctx.errmsg) {
-			fprintf(stderr, "Error: %s\n", ctx.errmsg);
-			ctx.errmsg = NULL;
+		if (!nft_parse_rule_expr(h, expr, &ctx))
 			ret = false;
-		}
-
 		expr = nftnl_expr_iter_next(ctx.iter);
+	}
+	if ((!ret || h->compat > 1) && rule_has_udata_ext(r)) {
+		fprintf(stderr,
+			"Warning: Rule parser failed, trying compat fallback\n");
+
+		h->ops->clear_cs(cs);
+		if (h->ops->init_cs)
+			h->ops->init_cs(cs);
+
+		nftnl_expr_iter_destroy(ctx.iter);
+		ctx.iter = nftnl_expr_iter_create(r);
+		if (!ctx.iter)
+			return false;
+
+		ret = rule_parse_udata_ext(&ctx, r);
 	}
 
 	nftnl_expr_iter_destroy(ctx.iter);

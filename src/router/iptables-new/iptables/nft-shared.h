@@ -105,11 +105,7 @@ void add_l4proto(struct nft_handle *h, struct nftnl_rule *r, uint8_t proto, uint
 void add_compat(struct nftnl_rule *r, uint32_t proto, bool inv);
 
 bool is_same_interfaces(const char *a_iniface, const char *a_outiface,
-			unsigned const char *a_iniface_mask,
-			unsigned const char *a_outiface_mask,
-			const char *b_iniface, const char *b_outiface,
-			unsigned const char *b_iniface_mask,
-			unsigned const char *b_outiface_mask);
+			const char *b_iniface, const char *b_outiface);
 
 void __get_cmp_data(struct nftnl_expr *e, void *data, size_t dlen, uint8_t *op);
 void get_cmp_data(struct nftnl_expr *e, void *data, size_t dlen, bool *inv);

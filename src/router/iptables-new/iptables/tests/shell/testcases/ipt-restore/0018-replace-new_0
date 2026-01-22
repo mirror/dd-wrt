@@ -1,0 +1,31 @@
+#!/bin/bash
+
+set -e
+
+RS='*filter
+-A FORWARD -m comment --comment "new rule being replaced"
+-R FORWARD 1 -m comment --comment "new replacing rule"
+COMMIT'
+EXP='*filter
+:INPUT ACCEPT [0:0]
+:FORWARD ACCEPT [0:0]
+:OUTPUT ACCEPT [0:0]
+-A FORWARD -m comment --comment "new replacing rule"
+COMMIT'
+$XT_MULTI iptables-restore <<< "$RS"
+diff -u -Z <(echo -e "$EXP") <($XT_MULTI iptables-save | grep -v '^#')
+
+RS='*filter
+-A FORWARD -m comment --comment "rule to insert before"
+-I FORWARD 1 -m comment --comment "new rule being replaced"
+-R FORWARD 1 -m comment --comment "new replacing rule"
+COMMIT'
+EXP='*filter
+:INPUT ACCEPT [0:0]
+:FORWARD ACCEPT [0:0]
+:OUTPUT ACCEPT [0:0]
+-A FORWARD -m comment --comment "new replacing rule"
+-A FORWARD -m comment --comment "rule to insert before"
+COMMIT'
+$XT_MULTI iptables-restore <<< "$RS"
+diff -u -Z <(echo -e "$EXP") <($XT_MULTI iptables-save | grep -v '^#')

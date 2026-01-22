@@ -95,7 +95,7 @@ static int nft_ipv4_add(struct nft_handle *h, struct nft_rule_ctx *ctx,
 	if (add_counters(r, cs->counters.pcnt, cs->counters.bcnt) < 0)
 		return -1;
 
-	return add_action(r, cs, !!(cs->fw.ip.flags & IPT_F_GOTO));
+	return add_action(h, r, cs, !!(cs->fw.ip.flags & IPT_F_GOTO));
 }
 
 static bool nft_ipv4_is_same(const struct iptables_command_state *a,
@@ -113,9 +113,7 @@ static bool nft_ipv4_is_same(const struct iptables_command_state *a,
 	}
 
 	return is_same_interfaces(a->fw.ip.iniface, a->fw.ip.outiface,
-				  a->fw.ip.iniface_mask, a->fw.ip.outiface_mask,
-				  b->fw.ip.iniface, b->fw.ip.outiface,
-				  b->fw.ip.iniface_mask, b->fw.ip.outiface_mask);
+				  b->fw.ip.iniface, b->fw.ip.outiface);
 }
 
 static void nft_ipv4_set_goto_flag(struct iptables_command_state *cs)

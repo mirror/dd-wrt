@@ -77,6 +77,14 @@ AC_ARG_WITH([xt-lock-name], AS_HELP_STRING([--with-xt-lock-name=PATH],
 AC_ARG_ENABLE([profiling],
 	AS_HELP_STRING([--enable-profiling], [build for use of gcov/gprof]),
 	[enable_profiling="$enableval"], [enable_profiling="no"])
+AC_ARG_WITH([zlib], [AS_HELP_STRING([--without-zlib],
+	    [Disable payload compression of rule compat expressions])],
+           [], [with_zlib=yes])
+AS_IF([test "x$with_zlib" != xno], [
+       AC_CHECK_LIB([z], [compress], ,
+		    AC_MSG_ERROR([No suitable version of zlib found]))
+       AC_DEFINE([HAVE_ZLIB], [1], [Define if you have zlib])
+])
 
 AC_MSG_CHECKING([whether $LD knows -Wl,--no-undefined])
 saved_LDFLAGS="$LDFLAGS";
@@ -202,8 +210,8 @@ fi;
 pkgdatadir='${datadir}/xtables';
 
 if test "x$enable_profiling" = "xyes"; then
-	regular_CFLAGS+=" -fprofile-arcs -ftest-coverage"
-	regular_LDFLAGS+=" -lgcov --coverage"
+	regular_CFLAGS="$regular_CFLAGS -fprofile-arcs -ftest-coverage"
+	regular_LDFLAGS="$regular_LDFLAGS -lgcov --coverage"
 fi
 
 AC_MSG_CHECKING([whether the build is using musl-libc])
@@ -222,7 +230,7 @@ AC_COMPILE_IFELSE(
 AC_MSG_RESULT([${enable_musl_build}])
 
 if test "x$enable_musl_build" = "xyes"; then
-	regular_CFLAGS+=" -D__UAPI_DEF_ETHHDR=0"
+	regular_CFLAGS="$regular_CFLAGS -D__UAPI_DEF_ETHHDR=0"
 fi
 
 define([EXPAND_VARIABLE],
@@ -289,6 +297,7 @@ Iptables Configuration:
   nftables support:			${enable_nftables}
   connlabel support:			${enable_connlabel}
   profiling support:			${enable_profiling}
+  compress rule compat expressions:	${with_zlib}
 
 Build parameters:
   Put plugins into executable (static):	${enable_static}

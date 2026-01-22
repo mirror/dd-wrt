@@ -167,7 +167,7 @@ static int nft_arp_add(struct nft_handle *h, struct nft_rule_ctx *ctx,
 		else if (strcmp(cs->jumpto, XTC_LABEL_RETURN) == 0)
 			ret = add_verdict(r, NFT_RETURN);
 		else
-			ret = add_target(r, cs->target->t);
+			ret = add_target(h, r, cs->target->t);
 	} else if (strlen(cs->jumpto) > 0) {
 		/* No goto in arptables */
 		ret = add_jumpto(r, cs->jumpto, NFT_JUMP);
@@ -385,14 +385,8 @@ static bool nft_arp_is_same(const struct iptables_command_state *cs_a,
 		return false;
 	}
 
-	return is_same_interfaces(a->arp.iniface,
-				  a->arp.outiface,
-				  (unsigned char *)a->arp.iniface_mask,
-				  (unsigned char *)a->arp.outiface_mask,
-				  b->arp.iniface,
-				  b->arp.outiface,
-				  (unsigned char *)b->arp.iniface_mask,
-				  (unsigned char *)b->arp.outiface_mask);
+	return is_same_interfaces(a->arp.iniface, a->arp.outiface,
+				  b->arp.iniface, b->arp.outiface);
 }
 
 static void nft_arp_save_chain(const struct nftnl_chain *c, const char *policy)
@@ -465,10 +459,7 @@ static void nft_arp_post_parse(int command,
 	cs->arp.arp.invflags = args->invflags;
 
 	memcpy(cs->arp.arp.iniface, args->iniface, IFNAMSIZ);
-	memcpy(cs->arp.arp.iniface_mask, args->iniface_mask, IFNAMSIZ);
-
 	memcpy(cs->arp.arp.outiface, args->outiface, IFNAMSIZ);
-	memcpy(cs->arp.arp.outiface_mask, args->outiface_mask, IFNAMSIZ);
 
 	cs->arp.counters.pcnt = args->pcnt_cnt;
 	cs->arp.counters.bcnt = args->bcnt_cnt;

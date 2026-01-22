@@ -262,7 +262,6 @@ struct xtables_args {
 	uint8_t		flags;
 	uint16_t	invflags;
 	char		iniface[IFNAMSIZ], outiface[IFNAMSIZ];
-	unsigned char	iniface_mask[IFNAMSIZ], outiface_mask[IFNAMSIZ];
 	char		bri_iniface[IFNAMSIZ], bri_outiface[IFNAMSIZ];
 	bool		goto_set;
 	const char	*shostnetworkmask, *dhostnetworkmask;
@@ -300,6 +299,7 @@ struct xt_cmd_parse {
 	bool				restore;
 	int				line;
 	int				verbose;
+	uint8_t				compat;
 	bool				rule_ranges;
 	struct xt_cmd_parse_ops		*ops;
 };

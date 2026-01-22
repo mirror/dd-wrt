@@ -52,6 +52,9 @@ static const struct xt_icmp_names {
 
 	{ "timestamp-reply", 14, 0, 0xFF },
 
+	{ "info-request", 15, 0, 0xFF },
+	{ "info-reply", 16, 0, 0xFF },
+
 	{ "address-mask-request", 17, 0, 0xFF },
 
 	{ "address-mask-reply", 18, 0, 0xFF }

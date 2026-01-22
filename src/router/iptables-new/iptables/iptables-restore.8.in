@@ -48,6 +48,20 @@ Print a short option summary.
 \fB\-n\fR, \fB\-\-noflush\fR
 Don't flush the previous contents of the table. If not specified,
 both commands flush (delete) all previous contents of the respective table.
+Note that this option will flush user-defined chains if they are declared.
+Example:
+.P
+.in +4n
+.EX
+*filter
+:FILTERS - [0:0]
+-A FILTERS ...
+.EE
+
+will flush and re-build the FILTERS chain from scratch,
+while retaining the content of all other chains in the table.
+.in
+.P
 .TP
 \fB\-t\fP, \fB\-\-test\fP
 Only parse and construct the ruleset, but do not commit it.
@@ -74,6 +88,18 @@ determine the executable's path.
 .TP
 \fB\-T\fP, \fB\-\-table\fP \fIname\fP
 Restore only the named table even if the input stream contains other ones.
+.TP
+\fB\-\-compat\fP (nft-variants only)
+When creating a rule, attach compatibility data to the rule's userdata section
+for use as aid in parsing the rule by an older version of the program. The old
+version obviously needs to support this, though.
+Specifying this option a second time instructs the program to default to the
+rule's compatibility data when parsing, which is mostly useful for debugging or
+testing purposes.
+
+The \fBXTABLES_COMPAT\fP environment variable can be used to override the
+default setting. The expected value is a natural number representing the number
+of times \fB--compat\fP was specified.
 .SH BUGS
 None known as of iptables-1.2.1 release
 .SH AUTHORS

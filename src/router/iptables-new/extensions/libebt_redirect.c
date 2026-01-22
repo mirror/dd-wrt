@@ -60,27 +60,10 @@ static void brredir_print(const void *ip, const struct xt_entry_target *target, 
 	printf("--redirect-target %s", ebt_target_name(redirectinfo->target));
 }
 
-static const char* brredir_verdict(int verdict)
-{
-	switch (verdict) {
-	case EBT_ACCEPT: return "accept";
-	case EBT_DROP: return "drop";
-	case EBT_CONTINUE: return "continue";
-	case EBT_RETURN: return "return";
-	}
-
-	return "";
-}
-
 static int brredir_xlate(struct xt_xlate *xl,
 			 const struct xt_xlate_tg_params *params)
 {
-	const struct ebt_redirect_info *red = (const void*)params->target->data;
-
-	xt_xlate_add(xl, "meta pkttype set host");
-	if (red->target != EBT_CONTINUE)
-		xt_xlate_add(xl, " %s ", brredir_verdict(red->target));
-	return 1;
+	return 0;
 }
 
 static struct xtables_target brredirect_target = {

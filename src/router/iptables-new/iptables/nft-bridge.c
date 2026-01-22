@@ -88,7 +88,8 @@ static int add_meta_broute(struct nftnl_rule *r)
 	return 0;
 }
 
-static int _add_action(struct nftnl_rule *r, struct iptables_command_state *cs)
+static int _add_action(struct nft_handle *h, struct nftnl_rule *r,
+		       struct iptables_command_state *cs)
 {
 	const char *table = nftnl_rule_get_str(r, NFTNL_RULE_TABLE);
 
@@ -104,7 +105,7 @@ static int _add_action(struct nftnl_rule *r, struct iptables_command_state *cs)
 		}
 	}
 
-	return add_action(r, cs, false);
+	return add_action(h, r, cs, false);
 }
 
 static int
@@ -192,7 +193,7 @@ static int nft_bridge_add(struct nft_handle *h, struct nft_rule_ctx *ctx,
 			if (nft_bridge_add_match(h, fw, ctx, r, iter->u.match->m))
 				break;
 		} else {
-			if (add_target(r, iter->u.watcher->t))
+			if (add_target(h, r, iter->u.watcher->t))
 				break;
 		}
 	}
@@ -200,7 +201,7 @@ static int nft_bridge_add(struct nft_handle *h, struct nft_rule_ctx *ctx,
 	if (add_counters(r, cs->counters.pcnt, cs->counters.bcnt) < 0)
 		return -1;
 
-	return _add_action(r, cs);
+	return _add_action(h, r, cs);
 }
 
 static void nft_bridge_init_cs(struct iptables_command_state *cs)

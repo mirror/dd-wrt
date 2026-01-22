@@ -1,0 +1,9 @@
+#!/bin/bash
+
+[[ $XT_MULTI == *xtables-nft-multi ]] || { echo "skip $XT_MULTI"; exit 0; }
+
+$XT_MULTI iptables -N test
+$XT_MULTI iptables -A test -i lo \! -o lo -j REJECT
+$XT_MULTI iptables -C test -i abcdefgh \! -o abcdefgh -j REJECT 2>/dev/null && exit 1
+
+exit 0

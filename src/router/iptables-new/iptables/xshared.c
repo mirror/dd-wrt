@@ -980,7 +980,7 @@ static void generic_opt_check(struct xt_cmd_parse_ops *ops,
 	 */
 	for (i = 0, optval = 1; i < NUMBER_OF_OPT; optval = (1 << ++i)) {
 		if ((options & optval) &&
-		    (options_v_commands[i] & command) != command)
+		    !(options_v_commands[i] & command))
 			xtables_error(PARAMETER_PROBLEM,
 				      "Illegal option `%s' with this command",
 				      ops->option_name(optval));
@@ -1254,6 +1254,9 @@ void xtables_printhelp(struct iptables_command_state *cs)
 		printf(
 "[!] --fragment	-f		match second or further fragments only\n");
 
+	if (strstr(xt_params->program_version, "nf_tables"))
+	printf(
+"  --compat			append compatibility data to new rules\n");
 	printf(
 "  --modprobe=<command>		try to insert modules using this command\n"
 "  --set-counters -c PKTS BYTES	set the counter during insert/append\n"
@@ -1918,6 +1921,10 @@ void do_parse(int argc, char *argv[],
 
 			exit_tryhelp(2, p->line);
 
+		case 20: /* --compat */
+			p->compat++;
+			break;
+
 		case 1: /* non option */
 			if (optarg[0] == '!' && optarg[1] == '\0') {
 				if (invert)
@@ -2104,12 +2111,7 @@ void ipv6_post_parse(int command, struct iptables_command_state *cs,
 	cs->fw6.ipv6.invflags = args->invflags;
 
 	memcpy(cs->fw6.ipv6.iniface, args->iniface, IFNAMSIZ);
-	memcpy(cs->fw6.ipv6.iniface_mask,
-	       args->iniface_mask, IFNAMSIZ*sizeof(unsigned char));
-
 	memcpy(cs->fw6.ipv6.outiface, args->outiface, IFNAMSIZ);
-	memcpy(cs->fw6.ipv6.outiface_mask,
-	       args->outiface_mask, IFNAMSIZ*sizeof(unsigned char));
 
 	if (args->goto_set)
 		cs->fw6.ipv6.flags |= IP6T_F_GOTO;

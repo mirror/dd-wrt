@@ -220,36 +220,16 @@ void add_l4proto(struct nft_handle *h, struct nftnl_rule *r,
 }
 
 bool is_same_interfaces(const char *a_iniface, const char *a_outiface,
-			unsigned const char *a_iniface_mask,
-			unsigned const char *a_outiface_mask,
-			const char *b_iniface, const char *b_outiface,
-			unsigned const char *b_iniface_mask,
-			unsigned const char *b_outiface_mask)
+			const char *b_iniface, const char *b_outiface)
 {
-	int i;
-
-	for (i = 0; i < IFNAMSIZ; i++) {
-		if (a_iniface_mask[i] != b_iniface_mask[i]) {
-			DEBUGP("different iniface mask %x, %x (%d)\n",
-			a_iniface_mask[i] & 0xff, b_iniface_mask[i] & 0xff, i);
-			return false;
-		}
-		if ((a_iniface[i] & a_iniface_mask[i])
-		    != (b_iniface[i] & b_iniface_mask[i])) {
-			DEBUGP("different iniface\n");
-			return false;
-		}
-		if (a_outiface_mask[i] != b_outiface_mask[i]) {
-			DEBUGP("different outiface mask\n");
-			return false;
-		}
-		if ((a_outiface[i] & a_outiface_mask[i])
-		    != (b_outiface[i] & b_outiface_mask[i])) {
-			DEBUGP("different outiface\n");
-			return false;
-		}
+	if (strncmp(a_iniface, b_iniface, IFNAMSIZ)) {
+		DEBUGP("different iniface\n");
+		return false;
 	}
-
+	if (strncmp(a_outiface, b_outiface, IFNAMSIZ)) {
+		DEBUGP("different outiface\n");
+		return false;
+	}
 	return true;
 }
 

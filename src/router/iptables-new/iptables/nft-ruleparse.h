@@ -133,4 +133,8 @@ int parse_meta(struct nft_xt_ctx *ctx, struct nftnl_expr *e, uint8_t key,
 int nft_parse_hl(struct nft_xt_ctx *ctx, struct nftnl_expr *e,
 		 struct iptables_command_state *cs);
 
+bool nft_parse_rule_expr(struct nft_handle *h,
+			 struct nftnl_expr *expr,
+			 struct nft_xt_ctx *ctx);
+
 #endif /* _NFT_RULEPARSE_H_ */

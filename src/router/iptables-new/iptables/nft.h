@@ -108,6 +108,7 @@ struct nft_handle {
 	struct nft_cache_req	cache_req;
 	bool			restore;
 	bool			noflush;
+	uint8_t			compat;
 	int8_t			config_done;
 	struct list_head	cmd_list;
 	bool			cache_init;
@@ -192,12 +193,15 @@ bool nft_rule_is_policy_rule(struct nftnl_rule *r);
  */
 int add_counters(struct nftnl_rule *r, uint64_t packets, uint64_t bytes);
 int add_verdict(struct nftnl_rule *r, int verdict);
+void __add_match(struct nftnl_expr *e, const struct xt_entry_match *m);
 int add_match(struct nft_handle *h, struct nft_rule_ctx *ctx,
 	      struct nftnl_rule *r, struct xt_entry_match *m);
-int add_target(struct nftnl_rule *r, struct xt_entry_target *t);
+void __add_target(struct nftnl_expr *e, const struct xt_entry_target *t);
+int add_target(struct nft_handle *h, struct nftnl_rule *r,
+	       struct xt_entry_target *t);
 int add_jumpto(struct nftnl_rule *r, const char *name, int verdict);
-int add_action(struct nftnl_rule *r, struct iptables_command_state *cs, bool goto_set);
-int add_log(struct nftnl_rule *r, struct iptables_command_state *cs);
+int add_action(struct nft_handle *h, struct nftnl_rule *r,
+	       struct iptables_command_state *cs, bool goto_set);
 char *get_comment(const void *data, uint32_t data_len);
 
 enum nft_rule_print {
@@ -273,5 +277,19 @@ void nft_assert_table_compatible(struct nft_handle *h,
 
 int ebt_set_user_chain_policy(struct nft_handle *h, const char *table,
 			      const char *chain, const char *policy);
+
+struct nftnl_udata;
+
+enum udata_type {
+	UDATA_TYPE_COMMENT,
+	UDATA_TYPE_EBTABLES_POLICY,
+	UDATA_TYPE_COMPAT_EXT,
+	__UDATA_TYPE_MAX,
+};
+#define UDATA_TYPE_MAX (__UDATA_TYPE_MAX - 1)
+
+int parse_udata_cb(const struct nftnl_udata *attr, void *data);
+
+uint8_t compat_env_val(void);
 
 #endif

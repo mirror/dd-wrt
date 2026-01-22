@@ -1,3 +1,9 @@
+iptables-translate -A INPUT -m sctp -j DROP
+nft 'add rule ip filter INPUT meta l4proto sctp counter drop'
+
+iptables-translate -A INPUT -p sctp -m sctp -j DROP
+nft 'add rule ip filter INPUT meta l4proto sctp counter drop'
+
 iptables-translate -A INPUT -p sctp --dport 80 -j DROP
 nft 'add rule ip filter INPUT sctp dport 80 counter drop'
 

@@ -157,7 +157,9 @@ static int chain_cb(const struct nlmsghdr *nlh, void *data)
 
 	printf(" EVENT: ");
 
-	if (nftnl_chain_is_set(c, NFTNL_CHAIN_PRIO) || !family_cmd(family)) {
+	if (!family_cmd(family) ||
+	    (type == NFT_MSG_NEWCHAIN &&
+	     nftnl_chain_is_set(c, NFTNL_CHAIN_PRIO))) {
 		nftnl_chain_snprintf(buf, sizeof(buf),
 				     c, NFTNL_OUTPUT_DEFAULT, 0);
 		printf("nft: %s chain: %s\n",

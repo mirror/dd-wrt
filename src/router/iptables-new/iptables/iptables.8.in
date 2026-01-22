@@ -397,6 +397,18 @@ corresponding to that rule's position in the chain.
 \fB\-\-modprobe=\fP\fIcommand\fP
 When adding or inserting rules into a chain, use \fIcommand\fP
 to load any necessary modules (targets, match extensions, etc).
+.TP
+\fB\-\-compat\fP (nft-variants only)
+When creating a rule, attach compatibility data to the rule's userdata section
+for use as aid in parsing the rule by an older version of the program. The old
+version obviously needs to support this, though.
+Specifying this option a second time instructs the program to default to the
+rule's compatibility data when parsing, which is mostly useful for debugging or
+testing purposes.
+
+The \fBXTABLES_COMPAT\fP environment variable can be used to override the
+default setting. The expected value is a natural number representing the number
+of times \fB--compat\fP was specified.
 
 .SH LOCK FILE
 iptables uses the \fI@XT_LOCK_NAME@\fP file to take an exclusive lock at

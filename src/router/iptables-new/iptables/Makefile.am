@@ -57,6 +57,7 @@ xtables_nft_multi_SOURCES += nft.c nft.h \
 			     nft-ruleparse-arp.c nft-ruleparse-bridge.c \
 			     nft-ruleparse-ipv4.c nft-ruleparse-ipv6.c \
 			     nft-shared.c nft-shared.h \
+			     nft-compat.c nft-compat.h \
 			     xtables-monitor.c \
 			     xtables.c xtables-arp.c xtables-eb.c \
 			     xtables-standalone.c xtables-eb-standalone.c \

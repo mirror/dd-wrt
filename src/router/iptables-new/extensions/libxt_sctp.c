@@ -535,8 +535,10 @@ static int sctp_xlate(struct xt_xlate *xl,
 	const struct xt_sctp_info *einfo =
 		(const struct xt_sctp_info *)params->match->data;
 
-	if (!einfo->flags)
-		return 0;
+	if (!einfo->flags) {
+		xt_xlate_add(xl, "meta l4proto sctp");
+		return 1;
+	}
 
 	if (einfo->flags & XT_SCTP_SRC_PORTS) {
 		if (einfo->spts[0] != einfo->spts[1])

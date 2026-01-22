@@ -23,6 +23,10 @@ its value is used as offset into the mapping port range. This allows one to crea
 shifted portmap ranges and is available since kernel version 4.18.
 For a single port or \fIbaseport\fP, a service name as listed in
 \fB/etc/services\fP may be used.
+If \fIipaddr\fP is an IPv4 loopback address (i.e. 127.0.0.0/8) the
+"net.ipv4.conf.*.route_localnet" sysctl for the input interface needs
+to be set to 1. Otherwise packets will be dropped by the routing code
+as "martians".
 .TP
 \fB\-\-random\fP
 Randomize source port mapping (kernel >= 2.6.22).

@@ -81,7 +81,7 @@ static int nft_ipv6_add(struct nft_handle *h, struct nft_rule_ctx *ctx,
 	if (add_counters(r, cs->counters.pcnt, cs->counters.bcnt) < 0)
 		return -1;
 
-	return add_action(r, cs, !!(cs->fw6.ipv6.flags & IP6T_F_GOTO));
+	return add_action(h, r, cs, !!(cs->fw6.ipv6.flags & IP6T_F_GOTO));
 }
 
 static bool nft_ipv6_is_same(const struct iptables_command_state *a,
@@ -99,11 +99,7 @@ static bool nft_ipv6_is_same(const struct iptables_command_state *a,
 	}
 
 	return is_same_interfaces(a->fw6.ipv6.iniface, a->fw6.ipv6.outiface,
-				  a->fw6.ipv6.iniface_mask,
-				  a->fw6.ipv6.outiface_mask,
-				  b->fw6.ipv6.iniface, b->fw6.ipv6.outiface,
-				  b->fw6.ipv6.iniface_mask,
-				  b->fw6.ipv6.outiface_mask);
+				  b->fw6.ipv6.iniface, b->fw6.ipv6.outiface);
 }
 
 static void nft_ipv6_set_goto_flag(struct iptables_command_state *cs)

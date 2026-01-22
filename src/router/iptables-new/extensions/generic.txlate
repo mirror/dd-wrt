@@ -76,17 +76,17 @@ nft 'add rule ip filter FORWARD ip protocol != sctp counter'
 ip6tables-translate -A FORWARD ! -p 132
 nft 'add rule ip6 filter FORWARD meta l4proto != sctp counter'
 
-iptables-translate -A FORWARD -p 141
-nft 'add rule ip filter FORWARD ip protocol 141 counter'
+iptables-translate -A FORWARD -p 253
+nft 'add rule ip filter FORWARD ip protocol 253 counter'
 
-ip6tables-translate -A FORWARD -p 141
-nft 'add rule ip6 filter FORWARD meta l4proto 141 counter'
+ip6tables-translate -A FORWARD -p 253
+nft 'add rule ip6 filter FORWARD meta l4proto 253 counter'
 
-iptables-translate -A FORWARD ! -p 141
-nft 'add rule ip filter FORWARD ip protocol != 141 counter'
+iptables-translate -A FORWARD ! -p 253
+nft 'add rule ip filter FORWARD ip protocol != 253 counter'
 
-ip6tables-translate -A FORWARD ! -p 141
-nft 'add rule ip6 filter FORWARD meta l4proto != 141 counter'
+ip6tables-translate -A FORWARD ! -p 253
+nft 'add rule ip6 filter FORWARD meta l4proto != 253 counter'
 
 iptables-translate -A FORWARD -m tcp --dport 22 -p tcp
 nft 'add rule ip filter FORWARD tcp dport 22 counter'
