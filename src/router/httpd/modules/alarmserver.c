@@ -93,7 +93,7 @@ static int hik_generic(const char *filename, const char *mem, size_t len)
 		lastevent = new;
 	if ((new - lastevent) < (5 * 60)) {
 		dd_loginfo("alarmserver", "ignore event from %s (time delta %d)", addr ? addr : "N/A", new - lastevent);
-		return;
+		return 0;
 	}
 	lastevent = new;
 
@@ -101,14 +101,16 @@ static int hik_generic(const char *filename, const char *mem, size_t len)
 		dd_loginfo("alarmserver", "Alarmserver: received event from %s", addr);
 		sysprintf("%s \\\"%s\\\" \\\"%s\\\" \\\"%s\\\" \\\"%s\\\" \\\"%s\\\"", nvram_safe_get("alarmserver_cmd"), filename,
 			  date, addr, name, desc);
+		return 0;
 	} else if (date && name && desc && addr) {
 		dd_loginfo("alarmserver", "Alarmserver: received event from %s", addr);
 		sysprintf("%s \\\"unspecified\\\" \\\"%s\\\" \\\"%s\\\" \\\"%s\\\" \\\"%s\\\"", nvram_safe_get("alarmserver_cmd"),
 			  date, addr, name, desc);
+		return 0;
 	}
 	dd_loginfo("alarmserver", "Alarmserver: event parse error from addr %s name=%s, desc=%s, date=%s", addr ? addr : "N/A",
 		   name ? name : "N/A", desc ? desc : "N/A", date ? date : "N/A");
-	return 0;
+	return -1;
 }
 
 static struct hikvision_dispatch dispatch[] = {
