@@ -183,7 +183,7 @@ static int alarmserver_in(char *url, webs_t wp, size_t len, char *boundary)
 		mem[len] = 0;
 		char s_desc[128];
 		char *desc = getXMLTag(mem, "eventDescription", s_desc, sizeof(s_desc));
-		static int lastevent = 0;
+		static int lastevent = -(5 * 60);
 		int new = time(NULL);
 		if (new < lastevent)
 			lastevent = new;
