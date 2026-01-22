@@ -623,7 +623,7 @@ ifeq ($(CONFIG_RTL930X),y)
 
 	cp $(ARCH)-uclibc/vmlinux $(ARCH)-uclibc/vmlinux.bak 
 	$(ARCH)-linux-objcopy -O binary $(LINUXDIR)/vmlinux-initramfs $(ARCH)-uclibc/vmlinux.bin
-	$(ARCH)-linux-uclibc-cpp -nostdinc -x assembler-with-cpp  -I$(LINUXDIR)/arch/mips/boot/dts -I$(LINUXDIR)/arch/mips/boot/dts/include -I$(LINUXDIR)/include/ -I$(LINUXDIR)/scripts/dtc/include-prefixes -undef -D__DTS__  -o $(ARCH)-uclibc/image-rtl9302_zyxel_xgs1250-12.dtb.tmp $(LINUXDIR)/dts_realtek/rtl9302_zyxel_xgs1250-12.dts
+	$(ARCH)-linux-uclibc-cpp -nostdinc -x assembler-with-cpp  -I$(LINUXDIR)/arch/mips/boot/dts -I$(LINUXDIR)/arch/mips/boot/dts/include -I$(LINUXDIR)/include/ -I$(LINUXDIR)/scripts/dtc/include-prefixes -undef -D__DTS__  -o $(ARCH)-uclibc/image-rtl9302_zyxel_xgs1250-12.dtb.tmp $(LINUXDIR)/dts_realtek/rtl9302_zyxel_xgs1250-12-a1.dts
 	$(LINUXDIR)/scripts/dtc/dtc -O dtb -i$(LINUXDIR)/dts_realtek -Wno-interrupt_provider -Wno-unique_unit_address -Wno-unit_address_vs_reg -Wno-avoid_unnecessary_addr_size -Wno-alias_paths -Wno-graph_child_address -Wno-simple_bus_reg -o $(ARCH)-uclibc/image-rtl9302_zyxel_xgs1250-12.dtb $(ARCH)-uclibc/image-rtl9302_zyxel_xgs1250-12.dtb.tmp
 	cat $(ARCH)-uclibc/image-rtl9302_zyxel_xgs1250-12.dtb >> $(ARCH)-uclibc/vmlinux.bin
 	make -f Makefile.realtek compress_lzma
@@ -632,7 +632,7 @@ ifeq ($(CONFIG_RTL930X),y)
 	tools/realtek/mkimage -A mips -O linux -T kernel -C none -a 0x80100000 -e 0x80100000 -n 'DD-WRT r$(DD_RELEASE)' -M 0x93001250  -d $(ARCH)-uclibc/vmlinux.bin.deflate $(ARCH)-uclibc/vmlinux.bin.uimage
 
 	$(ARCH)-linux-objcopy -O binary $(LINUXDIR)/vmlinux $(ARCH)-uclibc/vmlinux.bin
-	$(ARCH)-linux-uclibc-cpp -nostdinc -x assembler-with-cpp  -I$(LINUXDIR)/arch/mips/boot/dts -I$(LINUXDIR)/arch/mips/boot/dts/include -I$(LINUXDIR)/include/ -I$(LINUXDIR)/scripts/dtc/include-prefixes -undef -D__DTS__  -o $(ARCH)-uclibc/image-rtl9302_zyxel_xgs1250-12.dtb.tmp $(LINUXDIR)/dts_realtek/rtl9302_zyxel_xgs1250-12.dts
+	$(ARCH)-linux-uclibc-cpp -nostdinc -x assembler-with-cpp  -I$(LINUXDIR)/arch/mips/boot/dts -I$(LINUXDIR)/arch/mips/boot/dts/include -I$(LINUXDIR)/include/ -I$(LINUXDIR)/scripts/dtc/include-prefixes -undef -D__DTS__  -o $(ARCH)-uclibc/image-rtl9302_zyxel_xgs1250-12.dtb.tmp $(LINUXDIR)/dts_realtek/rtl9302_zyxel_xgs1250-12-a1.dts
 	$(LINUXDIR)/scripts/dtc/dtc -O dtb -i$(LINUXDIR)/dts_realtek -Wno-interrupt_provider -Wno-unique_unit_address -Wno-unit_address_vs_reg -Wno-avoid_unnecessary_addr_size -Wno-alias_paths -Wno-graph_child_address -Wno-simple_bus_reg -o $(ARCH)-uclibc/image-rtl9302_zyxel_xgs1250-12.dtb $(ARCH)-uclibc/image-rtl9302_zyxel_xgs1250-12.dtb.tmp
 	cat $(ARCH)-uclibc/image-rtl9302_zyxel_xgs1250-12.dtb >> $(ARCH)-uclibc/vmlinux.bin
 	make -f Makefile.realtek compress_lzma
@@ -652,7 +652,7 @@ ifeq ($(CONFIG_RTL930X),y)
 
 	cp $(ARCH)-uclibc/vmlinux $(ARCH)-uclibc/vmlinux.bak 
 	$(ARCH)-linux-objcopy -O binary $(LINUXDIR)/vmlinux-initramfs $(ARCH)-uclibc/vmlinux.bin
-	$(ARCH)-linux-uclibc-cpp -nostdinc -x assembler-with-cpp  -I$(LINUXDIR)/arch/mips/boot/dts -I$(LINUXDIR)/arch/mips/boot/dts/include -I$(LINUXDIR)/include/ -I$(LINUXDIR)/scripts/dtc/include-prefixes -undef -D__DTS__  -o $(ARCH)-uclibc/image-rtl9302_zyxel_xgs1250-12-v2.dtb.tmp $(LINUXDIR)/dts_realtek/rtl9302_zyxel_xgs1250-12-v2.dts
+	$(ARCH)-linux-uclibc-cpp -nostdinc -x assembler-with-cpp  -I$(LINUXDIR)/arch/mips/boot/dts -I$(LINUXDIR)/arch/mips/boot/dts/include -I$(LINUXDIR)/include/ -I$(LINUXDIR)/scripts/dtc/include-prefixes -undef -D__DTS__  -o $(ARCH)-uclibc/image-rtl9302_zyxel_xgs1250-12-b1.dtb.tmp $(LINUXDIR)/dts_realtek/rtl9302_zyxel_xgs1250-12-v2.dts
 	$(LINUXDIR)/scripts/dtc/dtc -O dtb -i$(LINUXDIR)/dts_realtek -Wno-interrupt_provider -Wno-unique_unit_address -Wno-unit_address_vs_reg -Wno-avoid_unnecessary_addr_size -Wno-alias_paths -Wno-graph_child_address -Wno-simple_bus_reg -o $(ARCH)-uclibc/image-rtl9302_zyxel_xgs1250-12-v2.dtb $(ARCH)-uclibc/image-rtl9302_zyxel_xgs1250-12-v2.dtb.tmp
 	cat $(ARCH)-uclibc/image-rtl9302_zyxel_xgs1250-12-v2.dtb >> $(ARCH)-uclibc/vmlinux.bin
 	make -f Makefile.realtek compress_lzma
@@ -661,7 +661,7 @@ ifeq ($(CONFIG_RTL930X),y)
 	tools/realtek/mkimage -A mips -O linux -T kernel -C none -a 0x80100000 -e 0x80100000 -n 'DD-WRT r$(DD_RELEASE)' -M 0x93001250  -d $(ARCH)-uclibc/vmlinux.bin.deflate $(ARCH)-uclibc/vmlinux.bin.uimage
 
 	$(ARCH)-linux-objcopy -O binary $(LINUXDIR)/vmlinux $(ARCH)-uclibc/vmlinux.bin
-	$(ARCH)-linux-uclibc-cpp -nostdinc -x assembler-with-cpp  -I$(LINUXDIR)/arch/mips/boot/dts -I$(LINUXDIR)/arch/mips/boot/dts/include -I$(LINUXDIR)/include/ -I$(LINUXDIR)/scripts/dtc/include-prefixes -undef -D__DTS__  -o $(ARCH)-uclibc/image-rtl9302_zyxel_xgs1250-12-v2.dtb.tmp $(LINUXDIR)/dts_realtek/rtl9302_zyxel_xgs1250-12-v2.dts
+	$(ARCH)-linux-uclibc-cpp -nostdinc -x assembler-with-cpp  -I$(LINUXDIR)/arch/mips/boot/dts -I$(LINUXDIR)/arch/mips/boot/dts/include -I$(LINUXDIR)/include/ -I$(LINUXDIR)/scripts/dtc/include-prefixes -undef -D__DTS__  -o $(ARCH)-uclibc/image-rtl9302_zyxel_xgs1250-12-b1.dtb.tmp $(LINUXDIR)/dts_realtek/rtl9302_zyxel_xgs1250-12-v2.dts
 	$(LINUXDIR)/scripts/dtc/dtc -O dtb -i$(LINUXDIR)/dts_realtek -Wno-interrupt_provider -Wno-unique_unit_address -Wno-unit_address_vs_reg -Wno-avoid_unnecessary_addr_size -Wno-alias_paths -Wno-graph_child_address -Wno-simple_bus_reg -o $(ARCH)-uclibc/image-rtl9302_zyxel_xgs1250-12-v2.dtb $(ARCH)-uclibc/image-rtl9302_zyxel_xgs1250-12-v2.dtb.tmp
 	cat $(ARCH)-uclibc/image-rtl9302_zyxel_xgs1250-12-v2.dtb >> $(ARCH)-uclibc/vmlinux.bin
 	make -f Makefile.realtek compress_lzma
