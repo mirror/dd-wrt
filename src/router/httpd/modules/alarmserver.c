@@ -95,6 +95,7 @@ static int hik_generic(const char *filename, const char *mem, size_t len)
 		sysprintf("%s \\\"unspecified\\\" \\\"%s\\\" \\\"%s\\\" \\\"%s\\\" \\\"%s\\\"", nvram_safe_get("alarmserver_cmd"),
 			  date, addr, name, desc);
 	}
+        dd_loginfo("alarmserver", "Alarmserver: event parse error from addr %s name=%s, desc=%s, date=%s", addr ? add : "N/A", name ? name: "N/A", desc ? desc: "N/A", date ? date : "N/A");
 	return 0;
 }
 
