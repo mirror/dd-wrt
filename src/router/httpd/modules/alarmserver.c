@@ -87,11 +87,11 @@ static int hik_generic(const char *filename, const char *mem, size_t len)
 	char *desc = getXMLTag(mem, "eventDescription", s_desc, sizeof(s_desc));
 	char *addr = getXMLTag(mem, "ipAddress", s_addr, sizeof(s_addr));
 	if (filename && date && name && desc && addr) {
-		dd_loginfo("alarmserver", "Alarmserver: received event from %s", ipAddress);
+		dd_loginfo("alarmserver", "Alarmserver: received event from %s", addr);
 		sysprintf("%s \\\"%s\\\" \\\"%s\\\" \\\"%s\\\" \\\"%s\\\" \\\"%s\\\"", nvram_safe_get("alarmserver_cmd"), filename,
 			  date, addr, name, desc);
 	} else if (date && name && desc && addr) {
-		dd_loginfo("alarmserver", "Alarmserver: received event from %s", ipAddress);
+		dd_loginfo("alarmserver", "Alarmserver: received event from %s", addr);
 		sysprintf("%s \\\"unspecified\\\" \\\"%s\\\" \\\"%s\\\" \\\"%s\\\" \\\"%s\\\"", nvram_safe_get("alarmserver_cmd"),
 			  date, addr, name, desc);
 	}
