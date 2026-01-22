@@ -184,6 +184,8 @@ static int alarmserver_in(char *url, webs_t wp, size_t len, char *boundary)
 		char *desc = getXMLTag(mem, "eventDescription", s_desc, sizeof(s_desc));
 		static int lastevent = 0;
 		int new = time(NULL);
+		if (new < lastevent)
+			lastevent = new;
 		if ((new - lastevent) < (5 * 60)) {
 			dd_loginfo("alarmserver", "ignore event (time delta %d)", new - lastevent);
 			goto out;
