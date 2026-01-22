@@ -2,14 +2,14 @@ iptables-new-configure:
 	cd iptables-new && ./autogen.sh
 	mkdir -p iptables-new/normal
 	mkdir -p iptables-new/nftables
-	cd iptables-new/normal && ../configure --host=$(ARCH)-linux --prefix=/usr --libdir=/usr/lib --with-kernel=$(LINUXDIR) --enable-libipq --disable-shared --enable-static --disable-nftables \
+	cd iptables-new/normal && ../configure --host=$(ARCH)-linux --prefix=/usr --libdir=/usr/lib --with-kernel=$(LINUXDIR) --without-zlib --enable-libipq --disable-shared --enable-static --disable-nftables \
 		CFLAGS="$(COPTS) $(MIPS16_OPT) $(THUMB) $(LTO) -ffunction-sections -fdata-sections -Wl,--gc-sections -fcommon -DNEED_PRINTF" \
 		LDFLAGS="$(COPTS) $(MIPS16_OPT) $(THUMB) $(LDLTO) -ffunction-sections -fdata-sections -Wl,--gc-sections" \
 		AR_FLAGS="cru $(LTOPLUGIN)" \
 		RANLIB="$(ARCH)-linux-ranlib $(LTOPLUGIN)"
 	make -C iptables-new/normal CFLAGS="$(COPTS) $(MIPS16_OPT) $(THUMB) $(LTO) -ffunction-sections -fdata-sections -Wl,--gc-sections -fcommon -DNEED_PRINTF"
 
-	cd iptables-new/nftables && ../configure --host=$(ARCH)-linux --prefix=/usr --libdir=/usr/lib --with-kernel=$(LINUXDIR) --enable-libipq --disable-shared --enable-static \
+	cd iptables-new/nftables && ../configure --host=$(ARCH)-linux --prefix=/usr --libdir=/usr/lib --with-kernel=$(LINUXDIR) --without-zlib --enable-libipq --disable-shared --enable-static \
 		CFLAGS="$(COPTS) $(MIPS16_OPT) $(THUMB) $(LTO) -ffunction-sections -fdata-sections -Wl,--gc-sections -fcommon -DNEED_PRINTF" \
 		LDFLAGS="$(COPTS) $(MIPS16_OPT) $(THUMB) $(LDLTO) -ffunction-sections -fdata-sections -Wl,--gc-sections" \
 		libnftnl_CFLAGS="-I$(TOP)/libnftnl/include -I$(TOP)/kernel_headers/$(KERNELRELEASE)/include" \
