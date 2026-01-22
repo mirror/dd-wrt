@@ -298,6 +298,10 @@ int internal_getRouterBrand()
 		setRouter("Zyxel XGS1250-12 B1");
 		return ROUTER_ZYXEL_XGS1250;
 	}
+	if (!strcmp(modelstr, "XGS1250-12") && !strcmp(version,"B1")) {
+		setRouter("Zyxel XGS1250-12 B1");
+		return ROUTER_ZYXEL_XGS1250;
+	}
 	if (!strcmp(modelstr, "XGS1010-12") && !strcmp(version,"A1")) {
 		setRouter("Zyxel XGS1010-12 A1");
 		return ROUTER_ZYXEL_XGS1010;
