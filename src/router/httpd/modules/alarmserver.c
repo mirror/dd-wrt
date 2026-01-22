@@ -86,6 +86,17 @@ static int hik_generic(const char *filename, const char *mem, size_t len)
 	char *name = getXMLTag(mem, "channelName", s_name, sizeof(s_name));
 	char *desc = getXMLTag(mem, "eventDescription", s_desc, sizeof(s_desc));
 	char *addr = getXMLTag(mem, "ipAddress", s_addr, sizeof(s_addr));
+
+	static int lastevent = -(5 * 60);
+	int new = time(NULL);
+	if (new < lastevent)
+		lastevent = new;
+	if ((new - lastevent) < (5 * 60)) {
+		dd_loginfo("alarmserver", "ignore event from %s (time delta %d)", addr ? addr : "N/A", new - lastevent);
+		goto out;
+	}
+	lastevent = new;
+
 	if (filename && date && name && desc && addr) {
 		dd_loginfo("alarmserver", "Alarmserver: received event from %s", addr);
 		sysprintf("%s \\\"%s\\\" \\\"%s\\\" \\\"%s\\\" \\\"%s\\\" \\\"%s\\\"", nvram_safe_get("alarmserver_cmd"), filename,
@@ -95,7 +106,8 @@ static int hik_generic(const char *filename, const char *mem, size_t len)
 		sysprintf("%s \\\"unspecified\\\" \\\"%s\\\" \\\"%s\\\" \\\"%s\\\" \\\"%s\\\"", nvram_safe_get("alarmserver_cmd"),
 			  date, addr, name, desc);
 	}
-        dd_loginfo("alarmserver", "Alarmserver: event parse error from addr %s name=%s, desc=%s, date=%s", addr ? add : "N/A", name ? name: "N/A", desc ? desc: "N/A", date ? date : "N/A");
+	dd_loginfo("alarmserver", "Alarmserver: event parse error from addr %s name=%s, desc=%s, date=%s", addr ? add : "N/A",
+		   name ? name : "N/A", desc ? desc : "N/A", date ? date : "N/A");
 	return 0;
 }
 
@@ -133,7 +145,7 @@ static int alarmserver_in(char *url, webs_t wp, size_t len, char *boundary)
 	char buf[1024];
 	wp->restore_ret = EINVAL;
 	int i;
-	
+
 	if (nvram_match("alarmserver", "1")) {
 		/*
 	 * Look for our part 
@@ -183,15 +195,6 @@ static int alarmserver_in(char *url, webs_t wp, size_t len, char *boundary)
 		mem[len] = 0;
 		char s_desc[128];
 		char *desc = getXMLTag(mem, "eventDescription", s_desc, sizeof(s_desc));
-		static int lastevent = -(5 * 60);
-		int new = time(NULL);
-		if (new < lastevent)
-			lastevent = new;
-		if ((new - lastevent) < (5 * 60)) {
-			dd_loginfo("alarmserver", "ignore event (time delta %d)", new - lastevent);
-			goto out;
-		}
-		lastevent = new;
 		if (filename) {
 			for (i = 0; i < sizeof(dispatch) / sizeof(dispatch[0]); i++)
 				if (!strcmp(dispatch[i].filename, filename)) {
