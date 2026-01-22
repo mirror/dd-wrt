@@ -5,7 +5,7 @@
 
 / {
 	compatible = "zyxel,xgs1250-12-b1", "realtek,rtl838x-soc";
-	model = "Zyxel XGS1250-12 V2 Switch";
+	model = "Zyxel XGS1250-12 B1 Switch";
 };
 
 &mdio_bus1 {
