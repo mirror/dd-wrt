@@ -1,0 +1,65 @@
+#!/bin/sh
+usage() {
+	printf 'usage: %s [-hv] [-o ro|force|allow_others[,...]]... device|image mountpoint\n\nUse fuse2fs instead.\n' "${0##*/}"
+	exit 9
+}
+
+args="$(getopt -o 'hvo:' --long 'help,verbose,options:' -n "${0##*/}" -s 'sh' -- "$@")" || exit
+eval set -- "$args"
+
+original_options=
+readonly=
+force=
+while :; do
+	case "$1" in
+		-o|--options)
+			original_options="$original_options,$2"
+			shift 2
+			;;
+		-h|--help)
+			usage
+			shift
+			;;
+		-v|--verbose)
+			shift
+			;;
+		--)
+			shift
+			break
+			;;
+	esac
+done
+
+[ $# -eq 2 ] || usage
+device="$1"
+mountpoint="$2"
+
+# let fuse2fs check $device
+
+options=
+while [ -n "${original_options#,}" ]; do
+	original_options="${original_options#,}"
+	full="${original_options%%,*}"
+	original_options="${original_options#*,},"
+	case "${full%%=*}" in
+		"ro"    ) readonly=y               ;;  # Read-only mount.
+		"rw"    ) readonly=                ;;  # Read-write mount
+		"rw+"   ) readonly=; force=y       ;;  # Read-write mount
+		"silent")                          ;;  # keep silent
+		"force" ) force=y                  ;;  # enable read/write
+		*       ) options="$options,$full"; continue ;;
+	esac
+	[ "$full" = "${full%=*}" ] || {
+		printf '%s: %s: value given but not allowed\n' "${0##*/}" "$full" >&2
+		exit 254
+	}
+done
+
+[ -z "$readonly" ] && [ -z "$force" ] && {
+	printf '%s: Mounting %s Read-Only. Use '\''force'\'' or '\''rw+'\'' options to enable Read-Write mode\n' "${0##*/}" "$device" >&2
+	readonly=y
+}
+
+[ -n "$readonly" ] && options="$options,ro" || options="$options,rw"
+
+exec /usr/bin/fuse2fs "$device" "$mountpoint" -o "${options#,}"

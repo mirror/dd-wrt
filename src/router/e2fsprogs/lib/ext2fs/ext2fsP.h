@@ -214,4 +214,7 @@ typedef void (*ext2_exit_fn)(void *);
 errcode_t ext2fs_add_exit_fn(ext2_exit_fn fn, void *data);
 errcode_t ext2fs_remove_exit_fn(ext2_exit_fn fn, void *data);
 
+#define ARRAY_SIZE(array)			\
+        (sizeof(array) / sizeof(array[0]))
+
 #define EXT2FS_BUILD_BUG_ON(cond) ((void)sizeof(char[1 - 2*!!(cond)]))

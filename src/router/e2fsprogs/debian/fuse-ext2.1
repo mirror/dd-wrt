@@ -1,0 +1,67 @@
+.\" SPDX-License-Identifier: 0BSD
+.\"
+.Dd October 24, 2024
+.Dt FUSE-EXT2 1
+.Os fuse2fs
+.
+.Sh NAME
+.Nm fuse-ext2
+.Nd fuse2fs compatibility wrapper
+.Sh SYNOPSIS
+.Nm
+.Op Fl hv
+.Oo Fl o Cm ro Ns \&| Ns Cm force Ns \&| Ns Cm allow_others Ns Oo ,… Oc Oc Ns …
+.Ar device Ns \&| Ns Ar image
+.Ar mountpoint
+.
+.Sh DESCRIPTION
+This wrapper provides the
+.Nm
+interface via
+.Xr fuse2fs 1 ,
+which you should migrate to instead.
+.
+.Sh OPTIONS
+.Bl -tag -compact -width ".Fl o , -options Ar option Ns Op ,…"
+.It Fl h , -help
+Show usage string.
+.
+.It Fl v , -verbose
+Ignored.
+.
+.It Fl o , -options Ar option Ns Op ,…
+.Xr mount.fuse3 8
+options, of which these are handled specially:
+.Bl -tag -compact -offset 4n -width ".Cm silent"
+.It Cm ro
+Mount read-only.
+.
+.It Cm rw
+Mount read-write
+.Em if
+.Cm force
+also given.
+This is the default.
+.
+.It Cm rw+
+Same as
+.Fl o Cm rw , Ns Cm force
+.It Cm silent
+Ignored.
+.It Cm force
+If
+.Cm rw ,
+mount read-write.
+.El
+all other
+.Ar option Ns s
+are forwarded to
+.Nm fuse2fs
+directly.
+.Pp
+If
+.Cm rw
+but not
+.Cm force ,
+the mount is read-only and a warning is issued.
+.El

@@ -119,7 +119,7 @@ ctime: 0x539ff5b2 -- Tue Jun 17 08:00:50 2014
 atime: 0x539ff5b2 -- Tue Jun 17 08:00:50 2014
 mtime: 0x539ff5b2 -- Tue Jun 17 08:00:50 2014
 EXTENTS:
-(0-1):1136-1137, (2):1138
+(0-2):1136-1138
 debugfs: stat /b
 Inode: 13   Type: regular    Mode:  0644   Flags: 0x80000
 Generation: 1117152158    Version: 0x00000001
@@ -143,7 +143,7 @@ ctime: 0x539ff5b2 -- Tue Jun 17 08:00:50 2014
 atime: 0x539ff5b2 -- Tue Jun 17 08:00:50 2014
 mtime: 0x539ff5b2 -- Tue Jun 17 08:00:50 2014
 EXTENTS:
-(0-1):1216-1217, (2):1218
+(0-2):1216-1218
 debugfs: stat /d
 Inode: 15   Type: regular    Mode:  0644   Flags: 0x80000
 Generation: 1117152160    Version: 0x00000001
@@ -178,7 +178,7 @@ ctime: 0x539ff5b2 -- Tue Jun 17 08:00:50 2014
 atime: 0x539ff5b2 -- Tue Jun 17 08:00:50 2014
 mtime: 0x539ff5b2 -- Tue Jun 17 08:00:50 2014
 EXTENTS:
-(0):1232, (1):1233, (2):1234
+(0-2):1232-1234
 debugfs: stat /g
 Inode: 18   Type: regular    Mode:  0644   Flags: 0x80000
 Generation: 1117152163    Version: 0x00000001
@@ -190,5 +190,5 @@ ctime: 0x539ff5b2 -- Tue Jun 17 08:00:50 2014
 atime: 0x539ff5b2 -- Tue Jun 17 08:00:50 2014
 mtime: 0x539ff5b2 -- Tue Jun 17 08:00:50 2014
 EXTENTS:
-(0-2):1680-1682, (3):1683
+(0-3):1680-1683
 debugfs: quit

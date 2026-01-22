@@ -53,6 +53,24 @@ do not replay the journal and mount the file system read-only
 .TP
 \fB-o\fR fuse2fs_debug
 enable fuse2fs debugging
+.TP
+\fB-o\fR kernel
+Behave more like the kernel ext4 driver in the following ways:
+Allows processes owned by other users to access the filesystem.
+Uses the kernel's permissions checking logic instead of fuse2fs's.
+Enables setuid and device files.
+Note that these options can still be overridden (e.g.
+.I nosuid
+) later.
+.TP
+\fB-o\fR direct
+Use O_DIRECT to access the block device.
+.TP
+\fB-o\fR cache_size
+Set the disk cache size to this quantity.
+The quantity may contain the suffixes k, m, or g.
+By default, the size is 32MB.
+The size may not be larger than 2GB.
 .SS "FUSE options:"
 .TP
 \fB-d -o\fR debug

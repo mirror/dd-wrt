@@ -37,7 +37,7 @@ stat /emptydir
 stat /dir
 stat /dir/file
 ENDL
-$DEBUGFS -f $TMPFILE.cmd $TMPFILE 2>&1 | egrep "(stat|Size:|Type:)" >> $OUT
+$DEBUGFS -f $TMPFILE.cmd $TMPFILE 2>&1 | $EGREP "(stat|Size:|Type:)" >> $OUT
 
 cat > $TMPFILE.cmd << ENDL
 ex /emptyfile

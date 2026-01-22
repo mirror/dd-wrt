@@ -254,7 +254,8 @@ static int link_proc(ext2_ino_t dir EXT2FS_ATTR((unused)),
 	ext2fs_dirent_set_name_len(dirent, ls->namelen);
 	strncpy(dirent->name, ls->name, ls->namelen);
 	if (ext2fs_has_feature_filetype(ls->sb))
-		ext2fs_dirent_set_file_type(dirent, ls->flags & 0x7);
+		ext2fs_dirent_set_file_type(dirent,
+					    ls->flags & EXT2FS_LINK_FT_MASK);
 
 	ls->done++;
 	return DIRENT_ABORT|DIRENT_CHANGED;
@@ -617,6 +618,7 @@ errcode_t ext2fs_link(ext2_filsys fs, ext2_ino_t dir, const char *name,
 	if (!(fs->flags & EXT2_FLAG_RW))
 		return EXT2_ET_RO_FILSYS;
 
+retry:
 	if ((retval = ext2fs_read_inode(fs, dir, &inode)) != 0)
 		return retval;
 
@@ -633,14 +635,46 @@ errcode_t ext2fs_link(ext2_filsys fs, ext2_ino_t dir, const char *name,
 	ls.blocksize = fs->blocksize;
 	ls.err = 0;
 
-	retval = ext2fs_dir_iterate2(fs, dir, DIRENT_FLAG_INCLUDE_EMPTY,
-				     NULL, link_proc, &ls);
+	if ((flags & EXT2FS_LINK_APPEND) &&
+	    !(inode.i_flags & EXT4_INLINE_DATA_FL)) {
+		blk64_t		lblk, pblk = 0;
+		struct dir_context ctx;
+
+		lblk = (inode.i_size / fs->blocksize) - 1;
+		retval = ext2fs_bmap2(fs, dir, &inode, NULL, 0, lblk,
+				      NULL, &pblk);
+		if (retval)
+			return retval;
+
+		ctx.dir = dir;
+		ctx.flags = DIRENT_FLAG_INCLUDE_EMPTY;
+		ctx.func = link_proc;
+		ctx.priv_data = &ls;
+		ctx.errcode = 0;
+		retval = ext2fs_get_mem(fs->blocksize, &ctx.buf);
+		if (retval)
+			return retval;
+
+		ext2fs_process_dir_block(fs, &pblk, lblk, 0, 0, &ctx);
+		retval = ctx.errcode;
+		ext2fs_free_mem(&ctx.buf);
+	} else {
+		retval = ext2fs_dir_iterate2(fs, dir,
+					     DIRENT_FLAG_INCLUDE_EMPTY,
+					     NULL, link_proc, &ls);
+	}
 	if (retval)
 		return retval;
 	if (ls.err)
 		return ls.err;
 
-	if (!ls.done)
-		return EXT2_ET_DIR_NO_SPACE;
+	if (!ls.done) {
+		if (!(flags & EXT2FS_LINK_EXPAND))
+			return EXT2_ET_DIR_NO_SPACE;
+		retval = ext2fs_expand_dir(fs, dir);
+		if (retval)
+			return retval;
+		goto retry;
+	}
 	return 0;
 }

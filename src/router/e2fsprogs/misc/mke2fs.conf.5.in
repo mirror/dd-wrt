@@ -438,6 +438,24 @@ This boolean relation specifies whether the
 .BR mke2fs (8)
 should attempt to discard device prior to file system creation.
 .TP
+.I set_raid_stride
+This relation specifies whether the file sytem's RAID stride size is set
+from the block device if available.  Valid values are:
+.IR always ,
+.IR disk ,
+.IR never .
+The default value is
+.IR always .
+.TP
+.I set_raid_stripe
+This relation specifies whether the file sytem's RAID stripe size is set
+from the block device if available.  Valid values are:
+.IR always ,
+.IR disk ,
+.IR never .
+The default value is
+.IR disk .
+.TP
 .I cluster_size
 This relation specifies the default cluster size if the bigalloc file
 system feature is enabled.  It can be overridden via the

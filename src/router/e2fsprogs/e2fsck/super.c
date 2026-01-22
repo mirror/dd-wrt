@@ -424,7 +424,16 @@ return_abort:
 		ino = ext2fs_le32_to_cpu(bdata[j]);
 		if (release_orphan_inode(ctx, &ino, pd->block_buf))
 			goto return_abort;
+		bdata[j] = 0;
 	}
+	if (ext2fs_has_feature_metadata_csum(fs->super)) {
+		tail->ob_checksum =
+			ext2fs_cpu_to_le32(ext2fs_do_orphan_file_block_csum(fs,
+				    pd->ino, pd->generation, blk, pd->buf));
+	}
+	pd->errcode = io_channel_write_blk64(fs->io, blk, 1, pd->buf);
+	if (pd->errcode)
+		goto return_abort;
 	return 0;
 }
 
@@ -465,6 +474,8 @@ static int process_orphan_file(e2fsck_t ctx, char *block_buf)
 	pd.ctx = ctx;
 	pd.abort = 0;
 	pd.errcode = 0;
+	pd.ino = orphan_inum;
+	pd.generation = orphan_inode.i_generation;
 	retval = ext2fs_block_iterate3(fs, orphan_inum,
 				       BLOCK_FLAG_DATA_ONLY | BLOCK_FLAG_HOLE,
 				       orphan_buf, process_orphan_block, &pd);
@@ -482,6 +493,9 @@ static int process_orphan_file(e2fsck_t ctx, char *block_buf)
 				orphan_inum);
 		}
 		ret = 1;
+	} else {
+		ext2fs_clear_feature_orphan_present(fs->super);
+		ext2fs_mark_super_dirty(fs);
 	}
 out:
 	ext2fs_free_mem(&orphan_buf);
@@ -605,8 +619,9 @@ return_abort:
 		 * Update checksum to match expected buffer contents with
 		 * appropriate block number.
 		 */
-		tail->ob_checksum = ext2fs_do_orphan_file_block_csum(fs,
-				pd->ino, pd->generation, blk, pd->buf);
+		tail->ob_checksum =
+			ext2fs_cpu_to_le32(ext2fs_do_orphan_file_block_csum(fs,
+				    pd->ino, pd->generation, blk, pd->buf));
 	}
 	if (!pd->clear) {
 		pd->errcode = io_channel_read_blk64(fs->io, blk, 1,

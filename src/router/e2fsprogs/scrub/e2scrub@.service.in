@@ -16,5 +16,5 @@ User=root
 IOSchedulingClass=idle
 CPUSchedulingPolicy=idle
 Environment=SERVICE_MODE=1
-ExecStart=@root_sbindir@/e2scrub -t %f
+ExecStart=@root_sbindir@/e2scrub %f
 SyslogIdentifier=%N

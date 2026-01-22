@@ -141,9 +141,13 @@ static int lsattr_dir_proc (const char * dir_name, struct dirent * de,
 {
 	STRUCT_STAT	st;
 	char *path;
-	int dir_len = strlen(dir_name);
+	size_t dir_len = strlen(dir_name), name_len = strlen (de->d_name);
 
-	path = malloc(dir_len + strlen (de->d_name) + 2);
+	if ((dir_len > 1024 * 1024 * 1024) ||
+	    (name_len > 1024 * 1024 * 1024))
+		return -1;
+
+	path = malloc(dir_len + name_len + 2);
 	if (!path) {
 		fputs(_("Couldn't allocate path variable in lsattr_dir_proc\n"),
 			stderr);

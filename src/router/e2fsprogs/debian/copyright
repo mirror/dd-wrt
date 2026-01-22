@@ -21,6 +21,15 @@ Copyright: 2003-2007 Theodore Ts'o <tytso@mit.edu>
            1995-1996 Michael Nonweiler <mrn20@cam.ac.uk>
 License: GPL-2
 
+Files: debian/fuse-ext2
+Copyright: 2008-2010 Alper Akcan <alper.akcan@gmail.com>
+           2009-2010 Renzo Davoli <renzo@cs.unibo.it>
+License: GPL-2+
+
+Files: debian/fuse-ext2.1
+Copyright: 2024 наб <nabijaczleweli@nabijaczleweli.xyz>
+License: 0BSD
+
 Files: lib/et/*
        lib/ss/*
 Copyright: 1987-1988 MIT Student Information Processing Board
@@ -366,9 +375,7 @@ License: GPL-2+ with Texinfo exception
  General Public License for more details.
  .
  You should have received a copy of the GNU General Public License
- along with this texinfo.tex file; see the file COPYING.  If not, write
- to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
- Boston, MA 02110-1301, USA.
+ along with this program. If not, see <https://www.gnu.org/licenses/>.
  .
  As a special exception, when this file is read by TeX when processing
  a Texinfo source document, you may use the result without
@@ -470,6 +477,35 @@ License: GPL-2
 Comment:
  On Debian systems, the complete text of the GNU General
  Public License version 2 can be found in "/usr/share/common-licenses/GPL-2".
+
+License: GPL-2+
+ This program is free software; you can redistribute it and/or modify
+ it under the terms of the GNU General Public License as published by
+ the Free Software Foundation; either version 2 of the License, or
+ (at your option) any later version.
+ .
+ This program is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU General Public License for more details.
+ .
+ You should have received a copy of the GNU General Public License
+ along with this program. If not, see <https://www.gnu.org/licenses/>.
+Comment:
+ On Debian systems, the complete text of the GNU General
+ Public License version 2 can be found in "/usr/share/common-licenses/GPL-2".
+
+License: 0BSD
+ Permission to use, copy, modify, and/or distribute this software for any
+ purpose with or without fee is hereby granted.
+ .
+ THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+ WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+ MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+ ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+ WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+ ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 License: LGPL-2
  This library is free software; you can redistribute it and/or

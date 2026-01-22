@@ -190,7 +190,7 @@ the
 option to
 .BR mke2fs (8)
 or
-.BR tune2fs(8) .
+.BR tune2fs 8) .
 .TP
 .B large_dir
 .br
@@ -244,6 +244,13 @@ available in the resize inode.
 This ext4 feature provides multiple mount protection (MMP).  MMP helps to
 protect the file system from being multiply mounted and is useful in
 shared storage environments.
+.TP
+.B orphan_file
+.br
+This ext4 feature fixes a potential scalability bottleneck for workloads
+that are doing a large number of truncate or file extensions in
+parallel.  It is supported by Linux kernels starting version 5.15, and
+by e2fsprogs starting with version 1.47.0.
 .TP
 .B project
 .br
@@ -456,7 +463,7 @@ program using the
 option to print out where the superblocks exist, supposing
 .B mke2fs
 is supplied with arguments that are consistent with the file system's layout
-(e.g. blocksize, blocks per group,
+(e.g., blocksize, blocks per group,
 .BR sparse_super ,
 etc.).
 .IP
@@ -517,7 +524,7 @@ ordered mode.
 .B data_err=abort
 Abort the journal if an error occurs in a file data buffer in ordered mode.
 .TP
-.BR barrier=0 " / " barrier=1 "
+.BR barrier=0 " / " barrier=1
 This disables / enables the use of write barriers in the jbd code.  barrier=0
 disables, barrier=1 enables (default). This also requires an IO stack which can
 support barriers, and if jbd gets an error on a barrier write, it will disable
@@ -689,7 +696,7 @@ This limits the size of the directories so that any attempt to expand them
 beyond the specified limit in kilobytes will cause an ENOSPC error. This is
 useful in memory-constrained environments, where a very large directory can
 cause severe performance problems or even provoke the Out Of Memory killer. (For
-example, if there is only 512\ MB memory available, a 176\ MB directory may
+example, if there is only 512\~MiB memory available, a 176\~MiB directory may
 seriously cramp the system's style.)
 .TP
 .B i_version
@@ -713,27 +720,27 @@ attributes on Linux systems using the
 .BR chattr (1)
 utility:
 .sp
-.BR a " - append only"
+.BR a " \- append only"
 .sp
-.BR A " - no atime updates"
+.BR A " \- no atime updates"
 .sp
-.BR d " - no dump"
+.BR d " \- no dump"
 .sp
-.BR D " - synchronous directory updates"
+.BR D " \- synchronous directory updates"
 .sp
-.BR i " - immutable"
+.BR i " \- immutable"
 .sp
-.BR S " - synchronous updates"
+.BR S " \- synchronous updates"
 .sp
-.BR u " - undeletable"
+.BR u " \- undeletable"
 .sp
 In addition, the ext3 and ext4 file systems support the following flag:
 .sp
-.BR j " - data journaling"
+.BR j " \- data journaling"
 .sp
 Finally, the ext4 file system also supports the following flag:
 .sp
-.BR e " - extents format"
+.BR e " \- extents format"
 .sp
 For descriptions of these attribute flags, please refer to the
 .BR chattr (1)
@@ -747,49 +754,49 @@ feature may still be considered in an experimental state.  Finally, note
 that some distributions may have backported features into older kernels;
 in particular the kernel versions in certain "enterprise distributions"
 can be extremely misleading.
-.IP "\fBfiletype\fR" 2in
+.IP "\fBfiletype\fR" 2i
 ext2, 2.2.0
-.IP "\fBsparse_super\fR" 2in
+.IP "\fBsparse_super\fR" 2i
 ext2, 2.2.0
-.IP "\fBlarge_file\fR" 2in
+.IP "\fBlarge_file\fR" 2i
 ext2, 2.2.0
-.IP "\fBhas_journal\fR" 2in
+.IP "\fBhas_journal\fR" 2i
 ext3, 2.4.15
-.IP "\fBext_attr\fR" 2in
+.IP "\fBext_attr\fR" 2i
 ext2/ext3, 2.6.0
-.IP "\fBdir_index\fR" 2in
+.IP "\fBdir_index\fR" 2i
 ext3, 2.6.0
-.IP "\fBresize_inode\fR" 2in
+.IP "\fBresize_inode\fR" 2i
 ext3, 2.6.10 (online resizing)
-.IP "\fB64bit\fR" 2in
+.IP "\fB64bit\fR" 2i
 ext4, 2.6.28
-.IP "\fBdir_nlink\fR" 2in
+.IP "\fBdir_nlink\fR" 2i
 ext4, 2.6.28
-.IP "\fBextent\fR" 2in
+.IP "\fBextent\fR" 2i
 ext4, 2.6.28
-.IP "\fBextra_isize\fR" 2in
+.IP "\fBextra_isize\fR" 2i
 ext4, 2.6.28
-.IP "\fBflex_bg\fR" 2in
+.IP "\fBflex_bg\fR" 2i
 ext4, 2.6.28
-.IP "\fBhuge_file\fR" 2in
+.IP "\fBhuge_file\fR" 2i
 ext4, 2.6.28
-.IP "\fBmeta_bg\fR" 2in
+.IP "\fBmeta_bg\fR" 2i
 ext4, 2.6.28
-.IP "\fBuninit_bg\fR" 2in
+.IP "\fBuninit_bg\fR" 2i
 ext4, 2.6.28
-.IP "\fBmmp\fR" 2in
+.IP "\fBmmp\fR" 2i
 ext4, 3.0
-.IP "\fBbigalloc\fR" 2in
+.IP "\fBbigalloc\fR" 2i
 ext4, 3.2
-.IP "\fBquota\fR" 2in
+.IP "\fBquota\fR" 2i
 ext4, 3.6
-.IP "\fBinline_data\fR" 2in
+.IP "\fBinline_data\fR" 2i
 ext4, 3.8
-.IP "\fBsparse_super2\fR" 2in
+.IP "\fBsparse_super2\fR" 2i
 ext4, 3.16
-.IP "\fBmetadata_csum\fR" 2in
+.IP "\fBmetadata_csum\fR" 2i
 ext4, 3.18
-.IP "\fBencrypt\fR" 2in
+.IP "\fBencrypt\fR" 2i
 ext4, 4.1
 .IP "\fBmetadata_csum_seed\fR" 2i
 ext4, 4.4

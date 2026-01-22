@@ -74,10 +74,6 @@ mke2fs \- create an ext2/ext3/ext4 file system
 .B \-q
 ]
 [
-.B \-r
-.I fs-revision-level
-]
-[
 .B \-E
 .I extended-options
 ]
@@ -284,6 +280,21 @@ option is still accepted for backwards compatibility, but is deprecated.
 The following extended options are supported:
 .RS 1.2i
 .TP
+.B assume_storage_prezeroed\fR[\fB= \fI<0 to disable, 1 to enable>\fR]
+If enabled,
+.BR mke2fs
+assumes that the storage device has been prezeroed, skips zeroing the journal
+and inode tables, and annotates the block group flags to signal that the inode
+table has been zeroed.
+.TP
+.B discard
+Attempt to discard blocks at mkfs time (discarding blocks initially is useful
+on solid state devices and sparse / thin-provisioned storage). When the device
+advertises that discard also zeroes data (any subsequent read after the discard
+and before write returns zero), then mark all not-yet-zeroed inode tables as
+zeroed. This significantly speeds up file system initialization. This is set
+as default.
+.TP
 .BI encoding= encoding-name
 Enable the
 .I casefold
@@ -309,6 +320,24 @@ In the default configuration, the
 .I strict
 flag is disabled.
 .TP
+.B lazy_itable_init\fR[\fB= \fI<0 to disable, 1 to enable>\fR]
+If enabled and the uninit_bg feature is enabled, the inode table will
+not be fully initialized by
+.BR mke2fs .
+This speeds up file system
+initialization noticeably, but it requires the kernel to finish
+initializing the file system in the background when the file system is
+first mounted.  If the option value is omitted, it defaults to 1 to
+enable lazy inode table zeroing.
+.TP
+.B lazy_journal_init\fR[\fB= \fI<0 to disable, 1 to enable>\fR]
+If enabled, the journal inode will not be fully zeroed out by
+.BR mke2fs .
+This speeds up file system initialization noticeably, but carries some
+small risk if the system crashes before the journal has been overwritten
+entirely one time.  If the option value is omitted, it defaults to 1 to
+enable lazy journal inode zeroing.
+.TP
 .BI mmp_update_interval= interval
 Adjust the initial MMP update interval to
 .I interval
@@ -318,6 +347,80 @@ of 0 means to use the default interval.  The specified interval must
 be less than 300 seconds.  Requires that the
 .B mmp
 feature be enabled.
+.B nodiscard
+Do not attempt to discard blocks at mkfs time.
+.TP
+.B no_copy_xattrs
+Normally
+.B mke2fs
+will copy the extended attributes of the files in the directory
+hierarchy specified via the (optional)
+.B \-d
+option.  This will disable the copy and leaves the files in the newly
+created file system without any extended attributes.
+.TP
+.BI num_backup_sb= <0|1|2>
+If the
+.B sparse_super2
+file system feature is enabled this option controls whether there will
+be 0, 1, or 2 backup superblocks created in the file system.
+.TP
+.BI offset= offset
+Create the file system at an offset from the beginning of the device or
+file.  This can be useful when creating disk images for virtual machines.
+.TP
+.TP
+.BI orphan_file_size= size
+Set size of the file for tracking unlinked but still open inodes and inodes
+with truncate in progress. Larger file allows for better scalability, reserving
+a few blocks per cpu is ideal.
+.TP
+.B packed_meta_blocks\fR[\fB= \fI<0 to disable, 1 to enable>\fR]
+Place the allocation bitmaps and the inode table at the beginning of the
+disk.  This option requires that the flex_bg file system feature to be
+enabled in order for it to have effect, and will also create the journal
+at the beginning of the file system.  This option is useful for flash
+devices that use SLC flash at the beginning of the disk.
+It also maximizes the range of contiguous data blocks, which
+can be useful for certain specialized use cases, such as supported
+Shingled Drives.
+.TP
+.B quotatype
+Specify the which  quota types (usrquota, grpquota, prjquota) which
+should be enabled in the created file system.  The argument of this
+extended option should be a colon separated list.  This option has
+effect only if the
+.B quota
+feature is set.   The default quota types to be initialized if this
+option is not specified is both user and group quotas.  If the project
+feature is enabled that project quotas will be initialized as well.
+.TP
+.BI resize= max-online-resize
+Reserve enough space so that the block group descriptor table can grow
+to support a file system that has
+.I max-online-resize
+blocks.
+.TP
+.BI revision= fs-revision
+Specify the file system revision number.   Revision 0 file systems
+provide compatibility with pre-1.2 Linux kernels (dating from before
+1995).   This is only needed for testing or people who want to use
+very early, historical Linux systems.  The current default (supported
+by all modern Linux systems) is revision 1.
+.TP
+.BI root_owner [=uid:gid]
+Specify the numeric user and group ID of the root directory.  If no UID:GID
+is specified, use the user and group ID of the user running \fBmke2fs\fR.
+In \fBmke2fs\fR 1.42 and earlier the UID and GID of the root directory were
+set by default to the UID and GID of the user running the mke2fs command.
+The \fBroot_owner=\fR option allows explicitly specifying these values,
+and avoid side-effects for users that do not expect the contents of the
+file system to change based on the user running \fBmke2fs\fR.
+.TP
+.BI root_perms [=permissions]
+Specify the root directory permissions in octal format. If no permissions
+are specified then the root directory permissions would be set in accordance with
+the default filesystem umask.
 .TP
 .BI stride= stride-size
 Configure the file system for a RAID array with
@@ -339,109 +442,9 @@ parity disk, so N will be the number of disks in the array minus 1).
 This allows the block allocator to prevent read-modify-write of the
 parity in a RAID stripe if possible when the data is written.
 .TP
-.BI offset= offset
-Create the file system at an offset from the beginning of the device or
-file.  This can be useful when creating disk images for virtual machines.
-.TP
-.BI resize= max-online-resize
-Reserve enough space so that the block group descriptor table can grow
-to support a file system that has
-.I max-online-resize
-blocks.
-.TP
-.B lazy_itable_init\fR[\fB= \fI<0 to disable, 1 to enable>\fR]
-If enabled and the uninit_bg feature is enabled, the inode table will
-not be fully initialized by
-.BR mke2fs .
-This speeds up file system
-initialization noticeably, but it requires the kernel to finish
-initializing the file system in the background when the file system is
-first mounted.  If the option value is omitted, it defaults to 1 to
-enable lazy inode table zeroing.
-.TP
-.B lazy_journal_init\fR[\fB= \fI<0 to disable, 1 to enable>\fR]
-If enabled, the journal inode will not be fully zeroed out by
-.BR mke2fs .
-This speeds up file system initialization noticeably, but carries some
-small risk if the system crashes before the journal has been overwritten
-entirely one time.  If the option value is omitted, it defaults to 1 to
-enable lazy journal inode zeroing.
-.TP
-.B assume_storage_prezeroed\fR[\fB= \fI<0 to disable, 1 to enable>\fR]
-If enabled,
-.BR mke2fs
-assumes that the storage device has been prezeroed, skips zeroing the journal
-and inode tables, and annotates the block group flags to signal that the inode
-table has been zeroed.
-.TP
-.B no_copy_xattrs
-Normally
-.B mke2fs
-will copy the extended attributes of the files in the directory
-hierarchy specified via the (optional)
-.B \-d
-option.  This will disable the copy and leaves the files in the newly
-created file system without any extended attributes.
-.TP
-.BI num_backup_sb= <0|1|2>
-If the
-.B sparse_super2
-file system feature is enabled this option controls whether there will
-be 0, 1, or 2 backup superblocks created in the file system.
-.TP
-.B packed_meta_blocks\fR[\fB= \fI<0 to disable, 1 to enable>\fR]
-Place the allocation bitmaps and the inode table at the beginning of the
-disk.  This option requires that the flex_bg file system feature to be
-enabled in order for it to have effect, and will also create the journal
-at the beginning of the file system.  This option is useful for flash
-devices that use SLC flash at the beginning of the disk.
-It also maximizes the range of contiguous data blocks, which
-can be useful for certain specialized use cases, such as supported
-Shingled Drives.
-.TP
-.BI root_owner [=uid:gid]
-Specify the numeric user and group ID of the root directory.  If no UID:GID
-is specified, use the user and group ID of the user running \fBmke2fs\fR.
-In \fBmke2fs\fR 1.42 and earlier the UID and GID of the root directory were
-set by default to the UID and GID of the user running the mke2fs command.
-The \fBroot_owner=\fR option allows explicitly specifying these values,
-and avoid side-effects for users that do not expect the contents of the
-file system to change based on the user running \fBmke2fs\fR.
-.TP
-.BI root_perms [=permissions]
-Specify the root directory permissions in octal format. If no permissions
-are specified then the root directory permissions would be set in accordance with
-the default filesystem umask.
-.TP
 .B test_fs
 Set a flag in the file system superblock indicating that it may be
 mounted using experimental kernel code, such as the ext4dev file system.
-.TP
-.BI orphan_file_size= size
-Set size of the file for tracking unlinked but still open inodes and inodes
-with truncate in progress. Larger file allows for better scalability, reserving
-a few blocks per cpu is ideal.
-.TP
-.B discard
-Attempt to discard blocks at mkfs time (discarding blocks initially is useful
-on solid state devices and sparse / thin-provisioned storage). When the device
-advertises that discard also zeroes data (any subsequent read after the discard
-and before write returns zero), then mark all not-yet-zeroed inode tables as
-zeroed. This significantly speeds up file system initialization. This is set
-as default.
-.TP
-.B nodiscard
-Do not attempt to discard blocks at mkfs time.
-.TP
-.B quotatype
-Specify the which  quota types (usrquota, grpquota, prjquota) which
-should be enabled in the created file system.  The argument of this
-extended option should be a colon separated list.  This option has
-effect only if the
-.B quota
-feature is set.   The default quota types to be initialized if this
-option is not specified is both user and group quotas.  If the project
-feature is enabled that project quotas will be initialized as well.
 .RE
 .TP
 .B \-F
@@ -532,43 +535,6 @@ Journal options are comma
 separated, and may take an argument using the equals ('=')  sign.
 The following journal options are supported:
 .RS 1.2i
-.TP
-.BI size= journal-size
-Create an internal journal (i.e., stored inside the file system) of size
-.I journal-size
-megabytes.
-The size of the journal must be at least 1024 file system blocks
-(i.e., 1MB if using 1k blocks, 4MB if using 4k blocks, etc.)
-and may be no more than 10,240,000 file system blocks or half the total
-file system size (whichever is smaller)
-.TP
-.BI fast_commit_size= fast-commit-size
-Create an additional fast commit journal area of size
-.I fast-commit-size
-kilobytes.
-This option is only valid if
-.B fast_commit
-feature is enabled
-on the file system. If this option is not specified and if
-.B fast_commit
-feature is turned on, fast commit area size defaults to
-.I journal-size
-/ 64 megabytes. The total size of the journal with
-.B fast_commit
-feature set is
-.I journal-size
-+ (
-.I fast-commit-size
-* 1024) megabytes. The total journal size may be no more than
-10,240,000 file system blocks or half the total file system size
-(whichever is smaller).
-.TP
-.BI location =journal-location
-Specify the location of the journal.  The argument
-.I journal-location
-can either be specified as a block number, or if the number has a units
-suffix (e.g., 'M', 'G', etc.) interpret it as the offset from the
-beginning of the file system.
 @JDEV@.TP
 @JDEV@.BI device= external-journal
 @JDEV@Attach the file system to the journal block device located on
@@ -602,6 +568,43 @@ beginning of the file system.
 @JDEV@.B -L
 @JDEV@option of
 @JDEV@.BR tune2fs (8).
+.TP
+.BI fast_commit_size= fast-commit-size
+Create an additional fast commit journal area of size
+.I fast-commit-size
+kilobytes.
+This option is only valid if
+.B fast_commit
+feature is enabled
+on the file system. If this option is not specified and if
+.B fast_commit
+feature is turned on, fast commit area size defaults to
+.I journal-size
+/ 64 megabytes. The total size of the journal with
+.B fast_commit
+feature set is
+.I journal-size
++ (
+.I fast-commit-size
+* 1024) megabytes. The total journal size may be no more than
+10,240,000 file system blocks or half the total file system size
+(whichever is smaller).
+.TP
+.BI location =journal-location
+Specify the location of the journal.  The argument
+.I journal-location
+can either be specified as a block number, or if the number has a units
+suffix (e.g., 'M', 'G', etc.) interpret it as the offset from the
+beginning of the file system.
+.TP
+.BI size= journal-size
+Create an internal journal (i.e., stored inside the file system) of size
+.I journal-size
+megabytes.
+The size of the journal must be at least 1024 file system blocks
+(i.e., 1MB if using 1k blocks, 4MB if using 4k blocks, etc.)
+and may be no more than 10,240,000 file system blocks or half the total
+file system size (whichever is smaller)
 .RE
 @JDEV@.IP
 @JDEV@Only one of the
@@ -711,7 +714,7 @@ by commas, that are to be enabled.  To disable a feature, simply
 prefix the feature name with a caret ('^') character.
 Features with dependencies will not be removed successfully.
 The pseudo-file system feature "none" will clear all file system features.
-.TP
+.sp
 For more information about the features which can be set, please see
 the manual page
 .BR ext4 (5).
@@ -720,12 +723,6 @@ the manual page
 Quiet execution.  Useful if
 .B mke2fs
 is run in a script.
-.TP
-.BI \-r " revision"
-Set the file system revision for the new file system.  Note that 1.2
-kernels only support revision 0 file systems.  The default is to
-create revision 1 file systems.
-.TP
 .B \-S
 Write superblock and group descriptors only.  This is an extreme
 measure to be taken only in the very unlikely case that all of

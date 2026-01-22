@@ -58,6 +58,7 @@ extern void * __jbd_kmalloc (char *where, size_t size, int flags, int retry);
 	__jbd_kmalloc(__FUNCTION__, (size), (flags), 1)
 
 #define JBD2_MIN_JOURNAL_BLOCKS 1024
+#define JBD2_MAX_JOURNAL_BLOCKS (JBD2_MIN_JOURNAL_BLOCKS * 10000)
 #define JBD2_DEFAULT_FAST_COMMIT_BLOCKS 256
 
 /*

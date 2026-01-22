@@ -55,7 +55,7 @@ catastrophically corrupted file systems.
 It is a very good idea to create image files for all file systems on a
 system and save the partition layout (which can be generated using the
 .B fdisk \-l
-command) at regular intervals --- at boot time, and/or every week or so.
+command) at regular intervals \(em at boot time, and/or every week or so.
 The image file should be stored on some file system other than
 the file system whose data it contains, to ensure that this data is
 accessible in the case where the file system has been badly damaged.
@@ -127,7 +127,7 @@ some cases.  This option forces e2fsck to only try locating the superblock
 with a particular blocksize. If the superblock is not found, e2image will
 terminate with a fatal error.
 .TP
-.BI \-c
+.B \-c
 Compare each block to be copied from the source
 .I device
 to the corresponding block in the target
@@ -216,7 +216,7 @@ so that
 .BR dumpe2fs (8),
 .BR e2fsck (8),
 .BR losetup (8),
-etc. and can be run directly on the raw image file.  In order to minimize
+etc. can be run directly on the raw image file.  In order to minimize
 the amount of disk space consumed by the raw image file, it is
 created as a sparse file.  (Beware of copying or
 compressing/decompressing this file with utilities that don't understand
@@ -230,7 +230,6 @@ recommended command is as follows (replace
 .B hda1
 with the appropriate device for your system):
 .PP
-.br
 	\fBe2image \-r /dev/hda1 \- | bzip2 > hda1.e2i.bz2\fR
 .PP
 This will only send the metadata information, without any data blocks.
@@ -260,10 +259,9 @@ e2fsprogs, use following commands (replace
 .B hda1
 with the appropriate device for your system):
 .PP
+\&	\fBe2image \-Q /dev/hda1 hda1.qcow2\fR
 .br
-\	\fBe2image \-Q /dev/hda1 hda1.qcow2\fR
-.br
-\	\fBbzip2 -z hda1.qcow2\fR
+\&	\fBbzip2 -z hda1.qcow2\fR
 .PP
 This will only send the metadata information, without any data blocks.
 As described for
@@ -280,8 +278,7 @@ such as for example
 .PP
 You can convert a .qcow2 image into a raw image with:
 .PP
-.br
-\	\fBe2image \-r hda1.qcow2 hda1.raw\fR
+\&	\fBe2image \-r hda1.qcow2 hda1.raw\fR
 .br
 .PP
 This can be useful to write a QCOW2 image containing all data to a
@@ -305,15 +302,13 @@ For example, if you have a
 image of a whole hard drive that contains an ext2 fs in a partition
 starting at 1 MiB, you can clone that image to a block device with:
 .PP
-.br
-\	\fBe2image \-aro 1048576 img /dev/sda1\fR
+\&	\fBe2image \-aro 1048576 img /dev/sda1\fR
 .br
 .PP
 Or you can clone a file system from a block device into an image file,
 leaving room in the first MiB for a partition table with:
 .PP
-.br
-\	\fBe2image -arO 1048576 /dev/sda1 img\fR
+\&	\fBe2image -arO 1048576 /dev/sda1 img\fR
 .br
 .PP
 If you specify at least one offset, and only one file, an in-place
@@ -331,5 +326,5 @@ http://e2fsprogs.sourceforge.net.
 
 .SH SEE ALSO
 .BR dumpe2fs (8),
-.BR debugfs (8)
+.BR debugfs (8),
 .BR e2fsck (8)

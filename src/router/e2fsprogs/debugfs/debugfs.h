@@ -186,6 +186,9 @@ extern void do_journal_open(int argc, ss_argv_t argv, int sci_idx, void *infop);
 extern void do_journal_close(int argc, ss_argv_t argv, int sci_idx, void *infop);
 extern void do_journal_run(int argc, ss_argv_t argv, int sci_idx, void *infop);
 
+/* orphan.c */
+extern void do_orphan_inodes(int argc, ss_argv_t argv, int sci_idx, void *infop);
+
 /* quota.c */
 extern void do_list_quota(int argc, ss_argv_t argv, int sci_idx, void *infop);
 extern void do_get_quota(int argc, ss_argv_t argv, int sci_idx, void *infop);

@@ -40,7 +40,7 @@ INSTALL ?= install
 INSTALL_PROGRAM ?= $(INSTALL) -p -m 0755
 
 ifneq (,$(findstring update-symbols,$(DEB_BUILD_OPTIONS)))
-SYMBOL_LIBS := libext2fst64 libcomerr2 libss2
+SYMBOL_LIBS := libext2fst64 libcom-err2 libss2
 endif
 
 CFLAGS_SHLIB = $(CFLAGS)
@@ -195,7 +195,7 @@ endif
 override_dh_gencontrol:
 	dh_gencontrol -pcomerr-dev -- -v${COMERR_VERSION}-${DEB_VERSION} -VmainBinary=${DEB_VERSION}
 	dh_gencontrol -pss-dev -- -v${SS_VERSION}-${DEB_VERSION} -VmainBinary=${DEB_VERSION}
-	dh_gencontrol --remaining-packages
+	dh_gencontrol --remaining-packages -- -Vmisc:Built-Using="$(shell dpkg-query -f '$${source:Package} (= $${source:Version})' -W libc-dev-bin)"
 
 override_dh_auto_test:
 ifeq (,$(findstring nocheck,$(DEB_BUILD_OPTIONS)))

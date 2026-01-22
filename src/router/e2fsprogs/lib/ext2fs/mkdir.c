@@ -32,13 +32,13 @@
 #define EXT2_FT_DIR		2
 #endif
 
-errcode_t ext2fs_mkdir(ext2_filsys fs, ext2_ino_t parent, ext2_ino_t inum,
-		       const char *name)
+errcode_t ext2fs_mkdir2(ext2_filsys fs, ext2_ino_t parent, ext2_ino_t ino,
+			unsigned long flags, int link_flags, const char *name,
+			ext2_ino_t *ret_ino)
 {
 	ext2_extent_handle_t	handle;
 	errcode_t		retval;
 	struct ext2_inode	parent_inode, inode;
-	ext2_ino_t		ino = inum;
 	ext2_ino_t		scratch_ino;
 	blk64_t			blk;
 	char			*block = 0;
@@ -64,6 +64,8 @@ errcode_t ext2fs_mkdir(ext2_filsys fs, ext2_ino_t parent, ext2_ino_t inum,
 		if (retval)
 			goto cleanup;
 	}
+	if (ret_ino)
+		*ret_ino = ino;
 
 	/*
 	 * Allocate a data block for the directory
@@ -115,6 +117,7 @@ errcode_t ext2fs_mkdir(ext2_filsys fs, ext2_ino_t parent, ext2_ino_t inum,
 		inode.i_size = fs->blocksize;
 		ext2fs_iblk_set(fs, &inode, 1);
 	}
+	inode.i_flags |= flags & (EXT2_FL_USER_MODIFIABLE & ~EXT4_EXTENTS_FL);
 	inode.i_links_count = 2;
 
 	/*
@@ -165,7 +168,8 @@ errcode_t ext2fs_mkdir(ext2_filsys fs, ext2_ino_t parent, ext2_ino_t inum,
 		}
 		if (retval != EXT2_ET_FILE_NOT_FOUND)
 			goto cleanup;
-		retval = ext2fs_link(fs, parent, name, ino, EXT2_FT_DIR);
+		retval = ext2fs_link(fs, parent, name, ino,
+				     EXT2_FT_DIR | link_flags);
 		if (retval)
 			goto cleanup;
 	}
@@ -197,4 +201,8 @@ cleanup:
 
 }
 
-
+errcode_t ext2fs_mkdir(ext2_filsys fs, ext2_ino_t parent, ext2_ino_t ino,
+		       const char *name)
+{
+	return ext2fs_mkdir2(fs, parent, ino, 0, 0, name, NULL);
+}

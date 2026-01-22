@@ -85,7 +85,7 @@ $FSCK $FSCK_OPT -N test_filesys $TMPFILE >> $OUT 2>&1
 status=$?
 echo Exit status is $status >> $OUT
 
-$DUMPE2FS $TMPFILE 2> /dev/null | egrep '^(Filesystem features:|Filesystem UUID:|Inode size:)' > $OUT.before
+$DUMPE2FS $TMPFILE 2> /dev/null | $EGREP '^(Filesystem features:|Filesystem UUID:|Inode size:)' > $OUT.before
 
 # add mcsum
 echo "tune2fs -O metadata_csum test.img" >> $OUT
@@ -110,7 +110,7 @@ echo Exit status is $status >> $OUT
 $FSCK -yD -N test_filesys $TMPFILE >> $OUT 2>&1
 
 # dump and check
-$DUMPE2FS $TMPFILE 2> /dev/null | egrep '^(Filesystem features:|Filesystem UUID:|Inode size:)' > $OUT.after
+$DUMPE2FS $TMPFILE 2> /dev/null | $EGREP '^(Filesystem features:|Filesystem UUID:|Inode size:)' > $OUT.after
 echo "Change in FS metadata:" >> $OUT
 diff -u $OUT.before $OUT.after | tail -n +3 >> $OUT
 $FSCK $FSCK_OPT -N test_filesys $TMPFILE >> $OUT 2>&1

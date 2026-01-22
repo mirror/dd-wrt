@@ -4,6 +4,7 @@ build.profiled
 build.static
 FILES
 ^core
+.depend
 *~
 patches
 Makefile
@@ -19,6 +20,7 @@ Makefile
 *.swp
 00[0-9][1-9]*.patch
 MCONFIG
+Makefile.in.old
 asm_types.h
 config.log
 config.status

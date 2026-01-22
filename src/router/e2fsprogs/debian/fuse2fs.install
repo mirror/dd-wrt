@@ -1,2 +1,5 @@
 /usr/bin/fuse2fs
 /usr/share/man/man1/fuse2fs.1
+
+debian/fuse-ext2   /usr/bin/
+debian/fuse-ext2.1 /usr/share/man/man1/

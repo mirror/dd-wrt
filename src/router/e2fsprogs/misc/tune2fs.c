@@ -1800,10 +1800,26 @@ static int handle_quota_options(ext2_filsys fs)
 	}
 
 	for (qtype = 0; qtype < MAXQUOTAS; qtype++) {
+		if (quota_enable[qtype] == QOPT_ENABLE &&
+		    *quota_sb_inump(fs->super, qtype) == 0) {
+			/* Some work needed to match the configuration. */
+			break;
+		}
+		if (quota_enable[qtype] == QOPT_DISABLE &&
+		    *quota_sb_inump(fs->super, qtype)) {
+			/* Some work needed to match the configuration. */
+			break;
+		}
+	}
+	if (qtype == MAXQUOTAS) {
+		/* Nothing to do. */
+		return 0;
+	}
+
+	for (qtype = 0; qtype < MAXQUOTAS; qtype++) {
 		if (quota_enable[qtype] == QOPT_ENABLE)
 			qtype_bits |= 1 << qtype;
 	}
-
 	retval = quota_init_context(&qctx, fs, qtype_bits);
 	if (retval) {
 		com_err(program_name, retval,
@@ -2864,6 +2880,7 @@ static int resize_inode(ext2_filsys fs, unsigned long new_size)
 	int new_ino_blks_per_grp;
 	ext2fs_block_bitmap bmap;
 
+	ext2fs_update_dynamic_rev(fs);
 	retval = ext2fs_read_inode_bitmap(fs);
 	if (retval) {
 		fputs(_("Failed to read inode bitmap\n"), stderr);
@@ -3381,9 +3398,13 @@ _("Warning: The journal is dirty. You may wish to replay the journal like:\n\n"
 		printf(_("Setting error behavior to %d\n"), errors);
 	}
 	if (g_flag) {
-		sb->s_def_resgid = resgid;
-		ext2fs_mark_super_dirty(fs);
-		printf(_("Setting reserved blocks gid to %lu\n"), resgid);
+		if (sb->s_def_resgid != resgid) {
+			sb->s_def_resgid = resgid;
+			ext2fs_mark_super_dirty(fs);
+			printf(_("Setting reserved blocks gid to %lu\n"), resgid);
+		} else {
+			printf(_("Reserved blocks gid already set to %lu\n"), resgid);
+		}
 	}
 	if (i_flag) {
 		if ((unsigned long long)interval >= (1ULL << 32)) {

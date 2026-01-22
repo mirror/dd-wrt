@@ -46,6 +46,9 @@ extern int optind;
 #ifdef HAVE_SYS_IOCTL_H
 #include <sys/ioctl.h>
 #endif
+#ifdef HAVE_SYS_SYSMACROS_H
+#include <sys/sysmacros.h>
+#endif
 #include <libgen.h>
 #include <limits.h>
 #include <blkid.h>
@@ -99,7 +102,7 @@ static e2_blkcnt_t	orphan_file_blocks;
 static int	lazy_itable_init;
 static int	assume_storage_prezeroed;
 static int	packed_meta_blocks;
-int		no_copy_xattrs;
+static int	populate_flags = POPULATE_FS_LINK_APPEND;
 static char	*bad_blocks_filename = NULL;
 static __u32	fs_stride;
 /* Initialize usr/grp quotas by default */
@@ -139,33 +142,12 @@ static void usage(void)
 	"\t[-m reserved-blocks-percentage] [-o creator-os]\n"
 	"\t[-g blocks-per-group] [-L volume-label] "
 	"[-M last-mounted-directory]\n\t[-O feature[,...]] "
-	"[-r fs-revision] [-E extended-option[,...]]\n"
-	"\t[-t fs-type] [-T usage-type ] [-U UUID] [-e errors_behavior]"
+	"[-E extended-option[,...]] [-t fs-type]\n"
+	"\t[-T usage-type ] [-U UUID] [-e errors_behavior]"
 	"[-z undo_file]\n"
 	"\t[-jnqvDFSV] device [blocks-count]\n"),
 		program_name);
 	exit(1);
-}
-
-static int int_log2(unsigned long long arg)
-{
-	int	l = 0;
-
-	arg >>= 1;
-	while (arg) {
-		l++;
-		arg >>= 1;
-	}
-	return l;
-}
-
-int int_log10(unsigned long long arg)
-{
-	int	l;
-
-	for (l=0; arg ; l++)
-		arg = arg / 10;
-	return l;
 }
 
 #ifdef __linux__
@@ -782,7 +764,7 @@ skip_details:
 			continue;
 		if (i != 1)
 			printf(", ");
-		need = int_log10(group_block) + 2;
+		need = ext2fs_log10_u64(group_block) + 3;
 		if (need > col_left) {
 			printf("\n\t");
 			col_left = 72;
@@ -836,10 +818,9 @@ static int set_os(struct ext2_super_block *sb, char *os)
 static void parse_extended_opts(struct ext2_super_block *param,
 				const char *opts)
 {
+	unsigned long ulong;
 	char	*buf, *token, *next, *p, *arg, *badopt = 0;
-	int	len;
-	int	r_usage = 0;
-	int	ret;
+	int	len, ret, r_usage = 0;
 	int	encoding = -1;
 	char 	*encoding_flags = NULL;
 
@@ -865,8 +846,6 @@ static void parse_extended_opts(struct ext2_super_block *param,
 		}
 		if (strcmp(token, "desc-size") == 0 ||
 		    strcmp(token, "desc_size") == 0) {
-			int desc_size;
-
 			if (!ext2fs_has_feature_64bit(&fs_param)) {
 				fprintf(stderr,
 					_("%s requires '-O 64bit'\n"), token);
@@ -885,14 +864,17 @@ static void parse_extended_opts(struct ext2_super_block *param,
 				badopt = token;
 				continue;
 			}
-			desc_size = strtoul(arg, &p, 0);
-			if (*p || (desc_size & (desc_size - 1))) {
+			ulong = strtoul(arg, &p, 0);
+			if (*p ||
+			    (ulong < EXT2_MIN_DESC_SIZE_64BIT) ||
+			    (ulong > EXT2_MAX_DESC_SIZE) ||
+			    (ulong & (ulong - 1))) {
 				fprintf(stderr,
 					_("Invalid desc_size: '%s'\n"), arg);
 				r_usage++;
 				continue;
 			}
-			param->s_desc_size = desc_size;
+			param->s_desc_size = ulong;
 		} else if (strcmp(token, "hash_seed") == 0) {
 			if (!arg) {
 				r_usage++;
@@ -934,7 +916,7 @@ static void parse_extended_opts(struct ext2_super_block *param,
 				continue;
 			}
 		} else if (strcmp(token, "no_copy_xattrs") == 0) {
-			no_copy_xattrs = 1;
+			populate_flags |= POPULATE_FS_NO_COPY_XATTRS;
 			continue;
 		} else if (strcmp(token, "num_backup_sb") == 0) {
 			if (!arg) {
@@ -1043,6 +1025,24 @@ static void parse_extended_opts(struct ext2_super_block *param,
 				ext2fs_set_feature_resize_inode(param);
 
 				param->s_reserved_gdt_blocks = rsv_gdb;
+			}
+		} else if (!strcmp(token, "revision")) {
+			if (!arg) {
+				r_usage++;
+				badopt = token;
+				continue;
+			}
+			param->s_rev_level = strtoul(arg, &p, 0);
+			if (*p) {
+				com_err(program_name, 0,
+					_("bad revision level - %s"), arg);
+				exit(1);
+			}
+			if (param->s_rev_level > EXT2_MAX_SUPP_REV) {
+				com_err(program_name, EXT2_ET_REV_TOO_HIGH,
+					_("while trying to create revision %d"),
+					param->s_rev_level);
+				exit(1);
 			}
 		} else if (!strcmp(token, "test_fs")) {
 			param->s_flags |= EXT2_FLAGS_TEST_FILESYS;
@@ -1177,6 +1177,7 @@ static void parse_extended_opts(struct ext2_super_block *param,
 			"\ttest_fs\n"
 			"\tdiscard\n"
 			"\tnodiscard\n"
+			"\trevision=<revision>\n"
 			"\tencoding=<encoding>\n"
 			"\tencoding_flags=<flags>\n"
 			"\tquotatype=<quota type(s) to be enabled>\n"
@@ -1555,6 +1556,36 @@ struct device_param {
 };
 
 #ifdef HAVE_BLKID_PROBE_GET_TOPOLOGY
+static int is_rotational (const char *device_name EXT2FS_ATTR((unused)))
+{
+	int		rotational = -1;
+#ifdef __linux__
+	char		path[1024];
+	struct stat	st;
+	FILE		*f;
+
+	if ((stat(device_name, &st) < 0) || !S_ISBLK(st.st_mode))
+		return -1;
+
+	snprintf(path, sizeof(path), "/sys/dev/block/%d:%d/queue/rotational",
+		major(st.st_rdev), minor(st.st_rdev));
+	f = fopen(path, "r");
+	if (!f) {
+		snprintf(path, sizeof(path),
+			"/sys/dev/block/%d:%d/../queue/rotational",
+			major(st.st_rdev), minor(st.st_rdev));
+		f = fopen(path, "r");
+	}
+	if (f) {
+		if (fscanf(f, "%d", &rotational) != 1)
+			rotational = -1;
+		fclose(f);
+	}
+#endif
+	return rotational;
+}
+
+
 /*
  * Sets the geometry of a device (stripe/stride), and returns the
  * device's alignment offset, if any, or a negative error.
@@ -1640,7 +1671,7 @@ static void PRS(int argc, char *argv[])
 	 * Finally, we complain about fs_blocks_count > 2^32 on a non-64bit fs.
 	 */
 	blk64_t		fs_blocks_count = 0;
-	int		s_opt = -1, r_opt = -1;
+	int		r_opt = -1;
 	char		*fs_features = 0;
 	int		fs_features_size = 0;
 	int		use_bsize;
@@ -1737,8 +1768,8 @@ profile_error:
 					blocksize);
 			if (blocksize > 0)
 				fs_param.s_log_block_size =
-					int_log2(blocksize >>
-						 EXT2_MIN_BLOCK_LOG_SIZE);
+					ext2fs_log2_u32(blocksize >>
+						       EXT2_MIN_BLOCK_LOG_SIZE);
 			break;
 		case 'c':	/* Check for bad blocks */
 			cflag++;
@@ -1928,11 +1959,20 @@ profile_error:
 					_("while trying to create revision %d"), r_opt);
 				exit(1);
 			}
+			if (r_opt != EXT2_DYNAMIC_REV) {
+				com_err(program_name, 0,
+	_("the -r option has been removed.\n\n"
+	"If you really need compatibility with pre-1995 Linux systems, use the\n"
+	"command-line option \"-E revision=0\".\n"));
+				exit(1);
+			}
 			fs_param.s_rev_level = r_opt;
 			break;
-		case 's':	/* deprecated */
-			s_opt = atoi(optarg);
-			break;
+		case 's':
+			com_err(program_name, 0,
+				_("the -s option has been removed.\n\n"
+	"Use the -O option to set or clear the sparse_super feature.\n"));
+			exit(1);
 		case 'S':
 			super_only = 1;
 			break;
@@ -2017,7 +2057,7 @@ profile_error:
 		blocksize = jfs->blocksize;
 		printf(_("Using journal device's blocksize: %d\n"), blocksize);
 		fs_param.s_log_block_size =
-			int_log2(blocksize >> EXT2_MIN_BLOCK_LOG_SIZE);
+			ext2fs_log2_u32(blocksize >> EXT2_MIN_BLOCK_LOG_SIZE);
 		ext2fs_close_free(&jfs);
 	}
 
@@ -2073,7 +2113,8 @@ profile_error:
 			dev_size = 0;
 			retval = 0;
 			close(fd);
-			printf(_("Creating regular file %s\n"), device_name);
+			if (!quiet)
+				printf(_("Creating regular file %s\n"), device_name);
 		}
 	}
 	if (retval && (retval != EXT2_ET_UNIMPLEMENTED)) {
@@ -2191,7 +2232,6 @@ profile_error:
 		ext2fs_clear_feature_csum_seed(&fs_param);
 	if (tmp)
 		free(tmp);
-	(void) ext2fs_free_mem(&fs_features);
 	/*
 	 * If the user specified features incompatible with the Hurd, complain
 	 */
@@ -2272,7 +2312,7 @@ profile_error:
 	}
 
 	fs_param.s_log_block_size =
-		int_log2(blocksize >> EXT2_MIN_BLOCK_LOG_SIZE);
+		ext2fs_log2_u32(blocksize >> EXT2_MIN_BLOCK_LOG_SIZE);
 
 	/*
 	 * We now need to do a sanity check of fs_blocks_count for
@@ -2329,33 +2369,8 @@ profile_error:
 		print_str_list(fs_types);
 	}
 
-	if (r_opt == EXT2_GOOD_OLD_REV &&
-	    (fs_param.s_feature_compat || fs_param.s_feature_incompat ||
-	     fs_param.s_feature_ro_compat)) {
-		fprintf(stderr, "%s", _("Filesystem features not supported "
-					"with revision 0 filesystems\n"));
-		exit(1);
-	}
-
-	if (s_opt > 0) {
-		if (r_opt == EXT2_GOOD_OLD_REV) {
-			fprintf(stderr, "%s",
-				_("Sparse superblocks not supported "
-				  "with revision 0 filesystems\n"));
-			exit(1);
-		}
-		ext2fs_set_feature_sparse_super(&fs_param);
-	} else if (s_opt == 0)
-		ext2fs_clear_feature_sparse_super(&fs_param);
-
-	if (journal_size != 0) {
-		if (r_opt == EXT2_GOOD_OLD_REV) {
-			fprintf(stderr, "%s", _("Journals not supported with "
-						"revision 0 filesystems\n"));
-			exit(1);
-		}
+	if (journal_size != 0)
 		ext2fs_set_feature_journal(&fs_param);
-	}
 
 	/* Get reserved_ratio from profile if not specified on cmd line. */
 	if (reserved_ratio < 0.0) {
@@ -2385,6 +2400,14 @@ profile_error:
 		exit(1);
 	}
 
+	/* fs-verity support requires extents */
+	if (ext2fs_has_feature_verity(&fs_param) &&
+	    !ext2fs_has_feature_extents(&fs_param)) {
+		printf("%s", _("Extents MUST be enabled for fs-verity "
+			       "support.  Pass -O extents to rectify.\n"));
+		exit(1);
+	}
+
 	/* Set first meta blockgroup via an environment variable */
 	/* (this is mostly for debugging purposes) */
 	if (ext2fs_has_feature_meta_bg(&fs_param) &&
@@ -2396,7 +2419,8 @@ profile_error:
 							    "cluster_size",
 							    blocksize*16);
 		fs_param.s_log_cluster_size =
-			int_log2(cluster_size >> EXT2_MIN_CLUSTER_LOG_SIZE);
+			ext2fs_log2_u32(cluster_size >>
+					EXT2_MIN_CLUSTER_LOG_SIZE);
 		if (fs_param.s_log_cluster_size &&
 		    fs_param.s_log_cluster_size < fs_param.s_log_block_size) {
 			com_err(program_name, 0, "%s",
@@ -2429,13 +2453,47 @@ profile_error:
 			_("warning: Unable to get device geometry for %s\n"),
 			device_name);
 	} else {
+		int set_stripe, set_stride, rotational;
+
 		/* setting stripe/stride to blocksize is pointless */
-		if (dev_param.min_io > (unsigned) blocksize)
+		set_stride = dev_param.min_io > (unsigned) blocksize;
+		set_stripe = dev_param.opt_io > (unsigned) blocksize;
+		rotational = is_rotational(device_name) != 0;
+
+		/*
+		 * allow mke2fs.conf settings to control whether the
+		 * raid stripe/stride is set.  The default is to
+		 * always set the stride regardless of whether the
+		 * storage device is using HDD's or SSD's.  But only
+		 * set the stripe size if the storage device is
+		 * HDD-based by default because the ext4's block
+		 * allocator is very inefficient and especially for
+		 * SSD-based RAID arrays, trying to do raid-aligned
+		 * allocations is not worth it.
+		 */
+		tmp = get_string_from_profile(fs_types, "set_raid_stride",
+					      "always");
+		if (tmp && *tmp) {
+			if ((strcmp(tmp, "never") == 0) ||
+			    ((strcmp(tmp, "always") != 0) && !rotational))
+				set_stride = 0;
+		}
+		free(tmp);
+
+		tmp = get_string_from_profile(fs_types, "set_raid_stripe",
+					      "disk");
+		if (tmp && *tmp) {
+			if ((strcmp(tmp, "never") == 0) ||
+			    ((strcmp(tmp, "always") != 0) && !rotational))
+				set_stripe = 0;
+		}
+		free(tmp);
+
+		if (set_stride)
 			fs_param.s_raid_stride = dev_param.min_io / blocksize;
-		if (dev_param.opt_io > (unsigned) blocksize) {
+		if (set_stripe)
 			fs_param.s_raid_stripe_width =
 						dev_param.opt_io / blocksize;
-		}
 
 		if (dev_param.alignment_offset) {
 			printf(_("%s alignment is offset by %lu bytes.\n"),
@@ -2560,6 +2618,28 @@ profile_error:
 	if (extended_opts)
 		parse_extended_opts(&fs_param, extended_opts);
 
+	if (fs_param.s_rev_level == EXT2_GOOD_OLD_REV) {
+		if (fs_features) {
+			fprintf(stderr, "%s",
+				_("Filesystem features not supported "
+				  "with revision 0 filesystems\n"));
+			exit(1);
+		}
+		if (journal_size != 0) {
+			fprintf(stderr, "%s", _("Journals not supported with "
+						"revision 0 filesystems\n"));
+			exit(1);
+		}
+		if (fs_param.s_inode_size > EXT2_GOOD_OLD_INODE_SIZE) {
+			fprintf(stderr, "%s", _("Inode size incompatible with "
+						"revision 0 filesystems\n"));
+			exit(1);
+		}
+		fs_param.s_feature_compat = fs_param.s_feature_ro_compat =
+			fs_param.s_feature_incompat = 0;
+		fs_param.s_default_mount_opts = 0;
+	}
+
 	if (explicit_fssize == 0 && offset > 0) {
 		fs_blocks_count -= offset / EXT2_BLOCK_SIZE(&fs_param);
 		ext2fs_blocks_count_set(&fs_param, fs_blocks_count);
@@ -2664,7 +2744,7 @@ profile_error:
 				  "flex_bg size may not be specified"));
 			exit(1);
 		}
-		fs_param.s_log_groups_per_flex = int_log2(flex_bg_size);
+		fs_param.s_log_groups_per_flex = ext2fs_log2_u32(flex_bg_size);
 	}
 
 	if (inode_size && fs_param.s_rev_level >= EXT2_DYNAMIC_REV) {
@@ -2761,6 +2841,7 @@ _("128-byte inodes cannot handle dates beyond 2038 and are deprecated\n"));
 
 	free(fs_type);
 	free(usage_types);
+	(void) ext2fs_free_mem(&fs_features);
 
 	/* The isatty() test is so we don't break existing scripts */
 	flags = CREATE_FILE;
@@ -3598,8 +3679,8 @@ no_journal:
 		if (!quiet)
 			printf("%s", _("Copying files into the device: "));
 
-		retval = populate_fs(fs, EXT2_ROOT_INO, src_root,
-				     EXT2_ROOT_INO);
+		retval = populate_fs3(fs, EXT2_ROOT_INO, src_root,
+				      EXT2_ROOT_INO, populate_flags, NULL);
 		if (retval) {
 			com_err(program_name, retval, "%s",
 				_("while populating file system"));

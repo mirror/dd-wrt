@@ -258,7 +258,6 @@ libext2fs.so.2 libext2fs2t64 #MINVER#
  ext2fs_file_get_lsize@Base 1.37
  ext2fs_file_get_size@Base 1.37
  ext2fs_file_llseek@Base 1.37
- ext2fs_load_nls_table@Base 1.45.1
  ext2fs_file_lseek@Base 1.37
  ext2fs_file_open2@Base 1.37
  ext2fs_file_open@Base 1.37
@@ -416,6 +415,11 @@ libext2fs.so.2 libext2fs2t64 #MINVER#
  ext2fs_link@Base 1.37
  ext2fs_list_backups@Base 1.47.1~rc1
  ext2fs_llseek@Base 1.37
+ ext2fs_load_nls_table@Base 1.45.1
+ ext2fs_log10_u32@Base 1.47.3~rc1
+ ext2fs_log10_u64@Base 1.47.3~rc1
+ ext2fs_log2_u32@Base 1.47.3~rc1
+ ext2fs_log2_u64@Base 1.47.3~rc1
  ext2fs_lookup@Base 1.37
  ext2fs_make_generic_bitmap@Base 1.41.0
  ext2fs_map_cluster_block@Base 1.42.9
@@ -434,6 +438,7 @@ libext2fs.so.2 libext2fs2t64 #MINVER#
  ext2fs_mark_valid@Base 1.37
  ext2fs_max_extent_depth@Base 1.43
  ext2fs_mem_is_zero@Base 1.42
+ ext2fs_mkdir2@Base 1.47.3~rc1
  ext2fs_mkdir@Base 1.37
  ext2fs_mmp_clear@Base 1.42
  ext2fs_mmp_csum_set@Base 1.43
@@ -510,8 +515,8 @@ libext2fs.so.2 libext2fs2t64 #MINVER#
  ext2fs_resize_mem@Base 1.37
  ext2fs_rewrite_to_io@Base 1.37
  ext2fs_rw_bitmaps@Base 1.46.0
- ext2fs_set_alloc_block_callback@Base 1.41.0
  ext2fs_safe_getenv@Base 1.47.1~rc1
+ ext2fs_set_alloc_block_callback@Base 1.41.0
  ext2fs_set_bit64@Base 1.42
  ext2fs_set_bit@Base 1.37
  ext2fs_set_bitmap_padding@Base 1.37
@@ -670,6 +675,7 @@ libext2fs.so.2 libext2fs2t64 #MINVER#
  ext2fs_xattr_get@Base 1.43
  ext2fs_xattr_inode_max_size@Base 1.43
  ext2fs_xattr_remove@Base 1.43
+ ext2fs_xattr_remove_all@Base 1.47.3~rc1
  ext2fs_xattr_set@Base 1.43
  ext2fs_xattrs_close@Base 1.43
  ext2fs_xattrs_count@Base 1.43

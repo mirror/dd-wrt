@@ -49,6 +49,7 @@ static errcode_t inode_scan_and_fix(ext2_resize_t rfs);
 static errcode_t inode_ref_fix(ext2_resize_t rfs);
 static errcode_t move_itables(ext2_resize_t rfs);
 static errcode_t fix_resize_inode(ext2_filsys fs);
+static errcode_t fix_orphan_file_inode(ext2_filsys fs);
 static errcode_t resize2fs_calculate_summary_stats(ext2_filsys fs);
 static errcode_t fix_sb_journal_backup(ext2_filsys fs);
 static errcode_t mark_table_blocks(ext2_filsys fs,
@@ -218,6 +219,12 @@ errcode_t resize_fs(ext2_filsys fs, blk64_t *new_size, int flags,
 
 	init_resource_track(&rtrack, "fix_resize_inode", fs->io);
 	retval = fix_resize_inode(rfs->new_fs);
+	if (retval)
+		goto errout;
+	print_resource_track(rfs, &rtrack, fs->io);
+
+	init_resource_track(&rtrack, "fix_orphan_file_inode", fs->io);
+	retval = fix_orphan_file_inode(rfs->new_fs);
 	if (retval)
 		goto errout;
 	print_resource_track(rfs, &rtrack, fs->io);
@@ -2835,6 +2842,75 @@ static errcode_t fix_resize_inode(ext2_filsys fs)
 
 errout:
 	return retval;
+}
+
+struct process_orphan_block_data {
+	char 		*buf;
+	errcode_t	errcode;
+	ext2_ino_t	ino;
+	__u32		generation;
+};
+
+static int process_orphan_block(ext2_filsys fs,
+			       blk64_t	*block_nr,
+			       e2_blkcnt_t blockcnt EXT2FS_ATTR((unused)),
+			       blk64_t	ref_blk EXT2FS_ATTR((unused)),
+			       int	ref_offset EXT2FS_ATTR((unused)),
+			       void *priv_data)
+{
+	struct process_orphan_block_data *pd = priv_data;
+	struct ext4_orphan_block_tail *tail;
+	blk64_t			blk = *block_nr;
+	__le32			new_crc;
+
+	pd->errcode = io_channel_read_blk64(fs->io, blk, 1, pd->buf);
+	if (pd->errcode)
+		return BLOCK_ABORT;
+	tail = ext2fs_orphan_block_tail(fs, pd->buf);
+	new_crc = ext2fs_cpu_to_le32(ext2fs_do_orphan_file_block_csum(fs,
+			pd->ino, pd->generation, blk, pd->buf));
+	if (new_crc == tail->ob_checksum)
+		return 0;
+	tail->ob_checksum = new_crc;
+	pd->errcode = io_channel_write_blk64(fs->io, blk, 1, pd->buf);
+	if (pd->errcode)
+		return BLOCK_ABORT;
+	return 0;
+}
+
+/*
+ * Fix the checksums in orphan_file inode
+ */
+static errcode_t fix_orphan_file_inode(ext2_filsys fs)
+{
+	struct process_orphan_block_data pd;
+	struct ext2_inode	inode;
+	errcode_t		retval;
+	ext2_ino_t		orphan_inum;
+	char			*orphan_buf;
+
+	if (!ext2fs_has_feature_orphan_file(fs->super) ||
+	    !ext2fs_has_feature_metadata_csum(fs->super))
+		return 0;
+
+	orphan_inum = fs->super->s_orphan_file_inum;
+	retval = ext2fs_read_inode(fs, orphan_inum, &inode);
+	if (retval)
+		return retval;
+	orphan_buf = malloc(fs->blocksize * 4);
+	if (!orphan_buf)
+		return ENOMEM;
+
+	pd.errcode = 0;
+	pd.buf = orphan_buf + 3 * fs->blocksize;
+	pd.ino = orphan_inum;
+	pd.generation = inode.i_generation;
+
+	retval = ext2fs_block_iterate3(fs, fs->super->s_orphan_file_inum,
+				       BLOCK_FLAG_DATA_ONLY,
+				       orphan_buf, process_orphan_block, &pd);
+	free(orphan_buf);
+	return (retval ? retval : pd.errcode);
 }
 
 /*

@@ -371,6 +371,10 @@ static void check_if_skip(e2fsck_t ctx)
 	if (ctx->options & E2F_OPT_JOURNAL_ONLY)
 		goto skip;
 
+	if (ext2fs_has_feature_orphan_file(fs->super) &&
+	    ext2fs_has_feature_orphan_present(fs->super))
+		return;
+
 	lastcheck = ext2fs_get_tstamp(sb, s_lastcheck);
 	if (lastcheck > ctx->now)
 		lastcheck -= ctx->time_fudge;

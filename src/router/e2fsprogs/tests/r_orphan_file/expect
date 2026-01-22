@@ -1,0 +1,12 @@
+mke2fs -q -F -t ext4 -O orphan_file,metadata_csum,^64bit,^resize_inode -o Linux -m 0 test.img 32M
+resize2fs test.img 1536M
+Resizing the filesystem on test.img to 1572864 (1k) blocks.
+The filesystem on test.img is now 1572864 (1k) blocks long.
+
+Pass 1: Checking inodes, blocks, and sizes
+Pass 2: Checking directory structure
+Pass 3: Checking directory connectivity
+Pass 4: Checking reference counts
+Pass 5: Checking group summary information
+test_filesys: 12/393216 files (16.7% non-contiguous), 102907/1572864 blocks
+Exit status is 0

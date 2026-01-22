@@ -13,22 +13,58 @@
 #define _GNU_SOURCE 1
 
 #include "config.h"
-#include <ext2fs/ext2_types.h>
 #include "create_inode.h"
 #include "create_inode_libarchive.h"
 #include "support/nls-enable.h"
 
-#ifdef HAVE_ARCHIVE_H
+extern int link_append_flag;
+
+#if (!(defined(CONFIG_DLOPEN_LIBARCHIVE) || defined(HAVE_ARCHIVE_H)) || \
+     defined(CONFIG_DISABLE_LIBARCHIVE))
+
+/* If ./configure was run with --without-libarchive, then only
+ * __populate_fs_from_tar() remains in this file and will return an error. */
+errcode_t __populate_fs_from_tar(ext2_filsys fs EXT2FS_ATTR((unused)),
+				 ext2_ino_t root_ino EXT2FS_ATTR((unused)),
+				 const char *source_tar EXT2FS_ATTR((unused)),
+				 ext2_ino_t root EXT2FS_ATTR((unused)),
+				 struct hdlinks_s *hdlinks EXT2FS_ATTR((unused)),
+				 struct file_info *target EXT2FS_ATTR((unused)),
+				 int flags EXT2FS_ATTR((unused)),
+				 struct fs_ops_callbacks *fs_callbacks EXT2FS_ATTR((unused))) {
+  com_err(__func__, 0,
+          _("you need to compile e2fsprogs without --without-libarchive"
+            "be able to process tarballs"));
+  return ENOTSUP;
+}
+
+#else
+
+/* If ./configure was NOT run with --without-libarchive, then build with
+ * support for dlopen()-ing libarchive at runtime. This will also work even
+ * if archive.h is not available at compile-time. See the comment below. */
 
 /* 64KiB is the minimum blksize to best minimize system call overhead. */
 //#define COPY_FILE_BUFLEN 65536
 //#define COPY_FILE_BUFLEN 1048576
 #define COPY_FILE_BUFLEN 16777216
 
+/* If archive.h was found, include it as usual. To support easier
+ * bootstrapping, also allow compilation without archive.h present by
+ * declaring the necessary opaque structs and preprocessor definitions. */
+#ifdef HAVE_ARCHIVE_H
 #include <archive.h>
 #include <archive_entry.h>
+#else
+struct archive;
+struct archive_entry;
+#define	ARCHIVE_EOF	  1	/* Found end of archive. */
+#define	ARCHIVE_OK	  0	/* Operation was successful. */
+#include <unistd.h>  /* ssize_t */
+typedef ssize_t la_ssize_t;
+#endif /* HAVE_ARCHIVE_H */
+
 #include <libgen.h>
-#include <locale.h>
 
 static const char *(*dl_archive_entry_hardlink)(struct archive_entry *);
 static const char *(*dl_archive_entry_pathname)(struct archive_entry *);
@@ -57,6 +93,8 @@ static void *libarchive_handle;
 
 #if defined(__FreeBSD__)
 #define LIBARCHIVE_SO "libarchive.so.7"
+#elif defined(__APPLE__)
+#define LIBARCHIVE_SO "libarchive.13.dylib"
 #else
 #define LIBARCHIVE_SO "libarchive.so.13"
 #endif
@@ -175,7 +213,7 @@ static int libarchive_available(void)
 
 	return 1;
 }
-#endif
+#endif /* CONFIG_DLOPEN_LIBARCHIVE */
 
 static errcode_t __find_path(ext2_filsys fs, ext2_ino_t root, const char *name,
 			     ext2_ino_t *inode)
@@ -262,8 +300,6 @@ static int remove_inode(ext2_filsys fs, ext2_ino_t ino)
 write_out:
 	ret = ext2fs_write_inode_full(fs, ino, (struct ext2_inode *)&inode,
 				      sizeof(inode));
-	if (ret)
-		goto out;
 out:
 	return ret;
 }
@@ -358,13 +394,8 @@ static errcode_t do_write_internal_tar(ext2_filsys fs, ext2_ino_t cwd,
 #ifdef DEBUGFS
 	printf("Allocated inode: %u\n", newfile);
 #endif
-	retval = ext2fs_link(fs, cwd, dest, newfile, EXT2_FT_REG_FILE);
-	if (retval == EXT2_ET_DIR_NO_SPACE) {
-		retval = ext2fs_expand_dir(fs, cwd);
-		if (retval)
-			goto out;
-		retval = ext2fs_link(fs, cwd, dest, newfile, EXT2_FT_REG_FILE);
-	}
+	retval = ext2fs_link(fs, cwd, dest, newfile,
+			     EXT2_FT_REG_FILE | link_append_flag);
 	if (retval)
 		goto out;
 	if (ext2fs_test_inode_bitmap2(fs->inode_map, newfile))
@@ -417,9 +448,6 @@ static errcode_t set_inode_xattr_tar(ext2_filsys fs, ext2_ino_t ino,
 	const void *value;
 	size_t value_size;
 
-	if (no_copy_xattrs)
-		return 0;
-
 	size = dl_archive_entry_xattr_count(entry);
 	if (size == 0)
 		return 0;
@@ -442,7 +470,7 @@ static errcode_t set_inode_xattr_tar(ext2_filsys fs, ext2_ino_t ino,
 	dl_archive_entry_xattr_reset(entry);
 	while (dl_archive_entry_xattr_next(entry, &name, &value, &value_size) ==
 	       ARCHIVE_OK) {
-		if (strcmp(name, "security.capability") != 0)
+		if (strcmp(name, "security.capability") != 0 && strcmp(name, "gnu.translator"))
 			continue;
 
 		retval = ext2fs_xattr_set(handle, name, value, value_size);
@@ -509,7 +537,7 @@ static errcode_t handle_entry(ext2_filsys fs, ext2_ino_t root_ino,
 		}
 		break;
 	case S_IFDIR:
-		retval = do_mkdir_internal(fs, dirinode, name, root);
+		retval = do_mkdir_internal(fs, dirinode, name, 0, root);
 		if (retval) {
 			com_err(__func__, retval, _("while making dir \"%s\""),
 				name);
@@ -541,27 +569,19 @@ static errcode_t handle_entry(ext2_filsys fs, ext2_ino_t root_ino,
 	}
 	return 0;
 }
-#endif
 
 errcode_t __populate_fs_from_tar(ext2_filsys fs, ext2_ino_t root_ino,
 				 const char *source_tar, ext2_ino_t root,
 				 struct hdlinks_s *hdlinks EXT2FS_ATTR((unused)),
 				 struct file_info *target,
+				 int flags,
 				 struct fs_ops_callbacks *fs_callbacks)
 {
-#ifndef HAVE_ARCHIVE_H
-	com_err(__func__, 0,
-		_("you need to compile e2fsprogs with libarchive to "
-		  "be able to process tarballs"));
-	return 1;
-#else
-	char *path2, *path3, *dir, *name;
+	char *path2=NULL, *path3=NULL, *dir, *name;
 	unsigned int dir_exists;
 	struct archive *a;
 	struct archive_entry *entry;
 	errcode_t retval = 0;
-	locale_t archive_locale;
-	locale_t old_locale;
 	ext2_ino_t dirinode, tmpino;
 	const struct stat *st;
 
@@ -571,8 +591,6 @@ errcode_t __populate_fs_from_tar(ext2_filsys fs, ext2_ino_t root_ino,
 		return 1;
 	}
 
-	archive_locale = newlocale(LC_CTYPE_MASK, "", (locale_t)0);
-	old_locale = uselocale(archive_locale);
 	a = dl_archive_read_new();
 	if (a == NULL) {
 		retval = 1;
@@ -610,6 +628,10 @@ errcode_t __populate_fs_from_tar(ext2_filsys fs, ext2_ino_t root_ino,
 		}
 		path2 = strdup(dl_archive_entry_pathname(entry));
 		path3 = strdup(dl_archive_entry_pathname(entry));
+		if (!path2 || !path3) {
+			retval = ENOMEM;
+			goto out;
+		}
 		name = basename(path2);
 		dir = dirname(path3);
 		if ((retval = __find_path(fs, root_ino, dir, &dirinode))) {
@@ -675,11 +697,14 @@ errcode_t __populate_fs_from_tar(ext2_filsys fs, ext2_ino_t root_ino,
 			goto out;
 		}
 
-		retval = set_inode_xattr_tar(fs, tmpino, entry);
-		if (retval) {
-			com_err(__func__, retval,
-				_("while setting xattrs for \"%s\""), name);
-			goto out;
+		if ((flags & POPULATE_FS_NO_COPY_XATTRS) == 0) {
+			retval = set_inode_xattr_tar(fs, tmpino, entry);
+			if (retval) {
+				com_err(__func__, retval,
+					_("while setting xattrs for \"%s\""),
+					name);
+				goto out;
+			}
 		}
 
 		if (fs_callbacks && fs_callbacks->end_create_new_inode) {
@@ -690,15 +715,16 @@ errcode_t __populate_fs_from_tar(ext2_filsys fs, ext2_ino_t root_ino,
 				goto out;
 		}
 
-		free(path2);
-		free(path3);
+		free(path2); path2 = NULL;
+		free(path3); path3 = NULL;
 	}
 
 out:
+	free(path2);
+	free(path3);
 	dl_archive_read_close(a);
 	dl_archive_read_free(a);
-	uselocale(old_locale);
-	freelocale(archive_locale);
 	return retval;
-#endif
 }
+
+#endif /* CONFIG_DISABLE_LIBARCHIVE */

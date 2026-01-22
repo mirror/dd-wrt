@@ -9,16 +9,16 @@ rm -f $OUT
 # Test command line option
 echo "create fs with csum_seed" >> $OUT
 $MKE2FS -o Linux -O metadata_csum,metadata_csum_seed -U 6b33f586-a183-4383-921d-30da3fef2e5c -F $TMPFILE > /dev/null 2>&1
-$DUMPE2FS $TMPFILE 2>&1 | egrep '(Checksum seed:|UUID)' >> $OUT
+$DUMPE2FS $TMPFILE 2>&1 | $EGREP '(Checksum seed:|UUID)' >> $OUT
 
 echo "change uuid" >> $OUT
 $TUNE2FS -U 1dd136c6-e47a-4833-9bf5-519f8aacabe4 $TMPFILE > /dev/null 2>&1
-$DUMPE2FS $TMPFILE 2>&1 | egrep '(Checksum seed:|UUID)' >> $OUT
+$DUMPE2FS $TMPFILE 2>&1 | $EGREP '(Checksum seed:|UUID)' >> $OUT
 
 echo "check filesystem" >> $OUT
 $FSCK $FSCK_OPT -fy $TMPFILE > /dev/null 2>&1
 echo "fsck returns $?" >> $OUT
-$DUMPE2FS $TMPFILE 2>&1 | egrep '(Checksum seed:|UUID)' >> $OUT
+$DUMPE2FS $TMPFILE 2>&1 | $EGREP '(Checksum seed:|UUID)' >> $OUT
 
 cmp -s $OUT $EXP
 status=$?

@@ -19,6 +19,7 @@ fi
 MKFS_DIR=$(mktemp -d ./$test_name-XXXXXX.tmp)
 OUT=$test_name.log
 EXP=$test_dir/expect
+EXP2=$test_dir/expect2  # work around btrfs ordering, https://github.com/tytso/e2fsprogs/issues/158
 
 touch $MKFS_DIR/emptyfile
 dd if=/dev/zero bs=1024 count=32 2> /dev/null | tr '\0' 'a' > $MKFS_DIR/bigfile
@@ -80,7 +81,7 @@ stat /dir/file
 stat /acl_dir
 stat /acl_dir/file
 ENDL
-$DEBUGFS -f $TMPFILE.cmd $TMPFILE 2>&1 | egrep "(stat|Size:|Type:)" >> $OUT
+$DEBUGFS -f $TMPFILE.cmd $TMPFILE 2>&1 | $EGREP "(stat|Size:|Type:)" >> $OUT
 
 cat > $TMPFILE.cmd << ENDL
 ea_list dir/file
@@ -95,7 +96,7 @@ sed -f $cmd_dir/filter.sed -f $test_dir/output.sed -e "s;$TMPFILE;test.img;" < $
 mv $OUT.tmp $OUT
 
 # Do the verification
-cmp -s $OUT $EXP
+cmp -s $OUT $EXP || cmp -s $OUT $EXP2
 status=$?
 
 if [ "$status" = 0 ] ; then
@@ -104,7 +105,9 @@ if [ "$status" = 0 ] ; then
 else
         echo "$test_name: $test_description: failed"
         diff $DIFF_OPTS $EXP $OUT > $test_name.failed
+	echo " --- alternate $EXP2 ---" >> $test_name.failed
+        diff $DIFF_OPTS $EXP2 $OUT >> $test_name.failed
 fi
 
 rm -rf $TMPFILE.cmd $MKFS_DIR
-unset MKFS_DIR OUT EXP
+unset MKFS_DIR OUT EXP EXP2

@@ -21,7 +21,7 @@ cat > $TMPFILE.cmd << ENDL
 stat /file
 ea_list /file
 ENDL
-$DEBUGFS -f $TMPFILE.cmd $TMPFILE 2>&1 | egrep -v '^(crtime|Inode checksum):' >> $OUT
+$DEBUGFS -f $TMPFILE.cmd $TMPFILE 2>&1 | $EGREP -v '^(crtime|Inode checksum):' >> $OUT
 
 $FSCK -f -n $TMPFILE >> $OUT 2>&1
 

@@ -142,7 +142,7 @@ jobs:
     # dependencies: all libraries except libss.  The build system doesn't want
     # to build just those parts, though, so do it one step at a time...
     - run: ./configure CFLAGS="$DEF_CFLAGS"
-    - run: make -j8 subs V=1 CFLAGS_WARN="-Werror"
+    - run: make -j8 top-deps V=1 CFLAGS_WARN="-Werror"
     - run: make -j8 -C lib/et/ all V=1 CFLAGS_WARN="-Werror"
     - run: make -j8 -C lib/uuid/ all V=1 CFLAGS_WARN="-Werror"
     - run: make -j8 -C lib/blkid/ all V=1 CFLAGS_WARN="-Werror"

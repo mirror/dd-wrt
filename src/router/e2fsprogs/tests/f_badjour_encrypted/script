@@ -3,9 +3,13 @@ if ! test -x $DEBUGFS_EXE; then
 	return 0
 fi
 
-touch $TMPFILE
-$MKE2FS -t ext4 -b 1024 $TMPFILE 2M
-$DEBUGFS -w -R 'set_inode_field <8> flags 0x80800' $TMPFILE
+LOG=$test_name.log
+
+touch $TMPFILE >> $LOG 2>&1
+$MKE2FS -t ext4 -b 1024 $TMPFILE 2M >> $LOG 2>&1
+$DEBUGFS -w -R 'set_inode_field <8> flags 0x80800' $TMPFILE >> $LOG 2>&1
 
 SKIP_GUNZIP="true"
 . $cmd_dir/run_e2fsck
+
+unset LOG

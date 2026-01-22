@@ -16,6 +16,7 @@
 #include <string.h>
 #include <time.h>
 #include <libgen.h>
+#include <locale.h>
 #ifdef HAVE_GETOPT_H
 #include <getopt.h>
 #else
@@ -61,7 +62,6 @@ int ss_sci_idx;
 ext2_filsys	current_fs;
 quota_ctx_t	current_qctx;
 ext2_ino_t	root, cwd;
-int		no_copy_xattrs;
 
 static int debugfs_setup_tdb(const char *device_name, char *undo_file,
 			     io_manager *io_ptr)
@@ -652,18 +652,6 @@ static void dump_blocks(FILE *f, const char *prefix, ext2_ino_t inode)
 	fprintf(f,"\n");
 }
 
-static int int_log10(unsigned long long arg)
-{
-	int     l = 0;
-
-	arg = arg / 10;
-	while (arg) {
-		l++;
-		arg = arg / 10;
-	}
-	return l;
-}
-
 #define DUMP_LEAF_EXTENTS	0x01
 #define DUMP_NODE_EXTENTS	0x02
 #define DUMP_EXTENT_TABLE	0x04
@@ -1075,11 +1063,12 @@ void do_dump_extents(int argc, ss_argv_t argv, int sci_idx EXT2FS_ATTR((unused))
 		return;
 	}
 
-	logical_width = int_log10((EXT2_I_SIZE(&inode)+current_fs->blocksize-1)/
-				  current_fs->blocksize) + 1;
+	logical_width = ext2fs_log10_u32((EXT2_I_SIZE(&inode) +
+					  current_fs->blocksize - 1) /
+					 current_fs->blocksize) + 1;
 	if (logical_width < 5)
 		logical_width = 5;
-	physical_width = int_log10(ext2fs_blocks_count(current_fs->super)) + 1;
+	physical_width = ext2fs_log10_u64(ext2fs_blocks_count(current_fs->super)) + 1;
 	if (physical_width < 5)
 		physical_width = 5;
 
@@ -1777,7 +1766,7 @@ void do_write(int argc, ss_argv_t argv, int sci_idx EXT2FS_ATTR((unused)),
 				"<native file> <new file>", CHECK_FS_RW))
 		return;
 
-	retval = do_write_internal(current_fs, cwd, argv[1], argv[2], root);
+	retval = do_write_internal(current_fs, cwd, argv[1], argv[2], 0, root);
 	if (retval)
 		com_err(argv[0], retval, 0);
 }
@@ -1845,7 +1834,7 @@ void do_mkdir(int argc, ss_argv_t argv, int sci_idx EXT2FS_ATTR((unused)),
 				"<filename>", CHECK_FS_RW))
 		return;
 
-	retval = do_mkdir_internal(current_fs, cwd, argv[1], root);
+	retval = do_mkdir_internal(current_fs, cwd, argv[1], 0, root);
 	if (retval)
 		com_err(argv[0], retval, 0);
 
@@ -2570,6 +2559,8 @@ int main(int argc, char **argv)
 #ifdef CONFIG_JBD_DEBUG
 	char		*jbd_debug;
 #endif
+
+	setlocale(LC_CTYPE, "");
 
 	if (debug_prog_name == 0)
 #ifdef READ_ONLY

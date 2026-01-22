@@ -183,12 +183,12 @@ static void expand_logfn(e2fsck_t ctx, const char *log_fn, struct string *s)
 	}
 }
 
-static int	outbufsize;
+static size_t	outbufsize;
 static void	*outbuf;
 
 static int do_read(int fd)
 {
-	int	c;
+	ssize_t		c;
 	char		*n;
 	char	buffer[4096];
 

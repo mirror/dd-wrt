@@ -1,0 +1,174 @@
+E2fsprogs 1.47.3 (July 8, 2025)
+===============================
+
+Updates/Fixes since v1.47.2:
+
+UI and Features
+---------------
+
+Mke2fs -d can now copy the fs-verity metadata and chattr flags into
+newly created file system.
+
+Add fuse2fs's support for the XATTR_CREATE and XATTR_REPLACE flags in
+setxattr.
+
+Add support for FALLOC_FL_ZERO_RANGE in fuse2fs.
+
+Add support to fuse2fs for the setting file attributes via fsxattr,
+including support for nanosecond timestamps.
+
+Add support to fuse2fs to set newer chattr flags.
+
+Add a lockfile command-line option to fuse2fs which is useful for
+scripts that need to know when fuse2fs is done modifying the file system
+after it is unmounted.
+
+Add mke2fs.conf knobs to control whether the RAID stripe or stride sizes
+from the storage device information depending on whether the storage
+device is a rotational or non-rotational device.  By default don't set
+the RAID stripe size for non-rotational devices.
+
+E2scrub no longer runs fstrim by default, since util-linux ships with a
+fstrim.timer systemd file which will run fstrim on all mounted file
+systems.  This can be re-enabled in /etc/e2scrub.conf if for some reason
+it is desireable to run the fstrim out of e2scrub.
+
+
+Fixes
+-----
+
+Fix "e2fsck -E unshare_blocks" to clear the shared_blocks flag when
+there are no shared blocks to clear
+
+Fix "e2fsck -n" to not abort when it trips across an EA inode which
+is not referenced by any inodes in the file system.
+
+Fix debugfs's dump and rdump commands to avoid looping forever when
+it runs across an I/O error or corupt filesystem metadata.
+
+Fix debugfs's dirsearch command on big-endian systems.
+
+Fix many fuse2fs bugs found by running fstests, including fixing
+support for O_APPEND, O_TRUNC, POSIX ACLs, and the immutable flag.  Also
+fix fuse2fs to correctly remove ea_inodes if the last reference to an
+ea_inode is removed when an inode is removed, and to update timestmps
+correctly after the mkdir(2) and symlink(2) operations.
+
+Fix fuse2fs's error code handling for fallocate(), truncate() and
+removexattr().
+
+Fix an integer overflow bug which resulted in fuse2fs failing to delete
+very large files.  (Addresses Debian Bug: #1106241)
+
+Fix a (hard to reproduce) extent tree corruption bug which could be
+triggered by resize2fs or fuse2fs if the extent tree was especially
+complex
+
+Improve fuse2fs's handling of corrupted file systems.
+
+Fuse2fs doesn't support renameat2()'s RENAME_EXCHANGE or RENAME_WHITEOUT
+flags, so return ENOSYS instead of incorrectly handling the renameat2()
+request.
+
+Fuse2fs will avoid clearning the setgid bit in op_chmod if the file's
+group ownership is one of the calling process's group list (instead of
+just the primary group id).
+
+Change fuse2fs to align with kernel's behaviors by (a) clearing
+post-EOF on truncation, (b) validating FITRIM's parameters consistently
+with how the kernel does things, (c) how the "ro" mount option will
+replay the journal, (d) only supporting the xattr namespaces supported
+by the kernel, (e) clamping timestamps to the minimum and maximum value
+supported by the on-disk format, and (e) optionally delegating access
+control decisions to the kernel.
+
+Prevent fuse2fs from mounting file systems which have features that
+fuse2fs can't deal with.
+
+Fix error path handling in fuse2fs when servicing an op_create request.
+
+Fix spurious warnings from fuse2fs while servicing an op_fallocate request.
+
+Fix fuse2fs to correctly translate system errors from libext2fs to the
+negative error codes expected by the FUSE kernel driver.  There aren't
+many; but in some cases, when the file system is corrupted, libext2fs
+will return EOVERFLOW and we sent a nonsense error to the kernel.
+
+Optimize ext2fs_extent_set_bmap() to avoid fragmenting the extent tree.
+This fixes a problem where resize2fs is trying to relocate all of the
+blocks in a file leading to the extent tree doubling in size, and
+potentially leading to a corrupted extent tree.
+
+Fix a bounding error in ext2fs_fallocate() which could cause it to
+allocate far more blocks than was requested.  This caused a failure in
+fuse2fs while formatting a loopback file system stored in a large sparse
+file.
+
+Fix potential livelock bug in the unix_io manager.
+
+Fix invaidation support in the unix_io manager.
+
+Various man page cleanups.
+
+
+Performance, Internal Implementation, Development Support etc.
+--------------------------------------------------------------
+
+Improve performance in e2fsck when replaying a journal with a large
+number of revoke blocks (which can be the case on Lustre servers).
+
+Improve tune2fs's performance by avoiding scanning the file system to
+update quota inodes in cases when it's not necessary.
+
+Improve fuse2fs's performance by returning inode and type information in
+readdir() and to use the actal inode numbers instead of asking fuse
+to make up inode numbers.
+
+Fix various Coverity and compiler warnings.
+
+Add two new flags for ext2fs_link().  The EXT2FS_LINK_APPEND flag
+causes ext2fs_link() to only search the last block in the directory,
+which imrpoves the scalability of creating a large number of files in a
+directory.  The EXT2FS_LINK_EXPAND() causes ext2fs_link() to
+automatically expand the directory if there is no free space found to
+create the requested directory entry.
+
+Add a new function, ext2fs_mkdir2() which allows the flags parameter
+to be passed to ext2fs_link(), allows the chattr flags to be set in the
+newly created directory, and return the inode number for the newly
+created directory.
+
+Add new functions ext2fs_log2_u{32,64}() and ext2fs_log10_u{32,64}() so
+we don't have multiple copies of these functions in various e2fsprogs
+programs.
+        
+Improve debugging and logging in fuse2fs.
+
+General code cleaups in fuse2fs.
+
+Improve fuse2fs's performance by allowing a larger cache in unix_io and
+using O_DIRECT to read and write the block device.
+
+Fixed Windows portability problems intrduced in 1.47.2.
+
+Fix various FreeBSD compile warnings and test issues.
+
+Fix MacOS build issues when compiling with libarchive and FUSE support.
+
+To avoid warning messages on newer versions of GNU grep, use "grep -E"
+instead of "egrep" when possible.
+
+Fix test failure for m_rootdir_acl when the build tree is hosted on
+btrfs.  (This was caused by btrfs returning extended attributes relating
+to Posix ACL's in a different order than ext4 or xfs.)
+
+Fixed potention races in the Makefiles which could show up when using
+"make -j install".
+
+Fixed build failures when libarchive is not available.
+
+Fixed various Debian packaging issues.  (Addresses Debian Bugs:
+#1106799, #1107595)
+
+Update Czech, Chinese, Dutch, French, Malay, Portuguese, Polish,
+Romainian, Serbian, Spanish, Swedish, and Ukrainian translations.

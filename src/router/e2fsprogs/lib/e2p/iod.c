@@ -24,30 +24,32 @@
 #include <stdlib.h>
 #include <string.h>
 
+#define max_long(a,b) ((((long) (a)) > ((long) (b))) ? (a) : (b))
+
 int iterate_on_dir (const char * dir_name,
 		    int (*func) (const char *, struct dirent *, void *),
 		    void * private)
 {
 	DIR * dir;
 	struct dirent *de, *dep;
-	int	max_len = -1, len, ret = 0;
+	long	name_max = -1;
+	int	max_len, len, ret = 0;
 
 #if HAVE_PATHCONF && defined(_PC_NAME_MAX)
-	max_len = pathconf(dir_name, _PC_NAME_MAX);
+	name_max = pathconf(dir_name, _PC_NAME_MAX);
 #endif
-	if (max_len == -1) {
 #ifdef _POSIX_NAME_MAX
-		max_len = _POSIX_NAME_MAX;
-#else
+	name_max = max_long(name_max, _POSIX_NAME_MAX);
+#endif
 #ifdef NAME_MAX
-		max_len = NAME_MAX;
-#else
-		max_len = 256;
-#endif /* NAME_MAX */
-#endif /* _POSIX_NAME_MAX */
-	}
-	max_len += sizeof(struct dirent);
+	name_max = max_long(name_max, NAME_MAX);
+#endif
+	name_max = max_long(name_max, 256);
+	/* clamp name_max in case the OS returns something crazy */
+	if (name_max > 65536)
+		name_max = 65536;
 
+	max_len = name_max + sizeof(struct dirent);
 	de = malloc(max_len+1);
 	if (!de)
 		return -1;

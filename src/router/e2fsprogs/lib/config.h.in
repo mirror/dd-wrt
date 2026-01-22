@@ -12,6 +12,9 @@
 /* Define to 1 for features for use by ext4 developers */
 #undef CONFIG_DEVELOPER_FEATURES
 
+/* Define to 1 to completely disable libarchive */
+#undef CONFIG_DISABLE_LIBARCHIVE
+
 /* Define to 1 if using dlopen to access libarchive */
 #undef CONFIG_DLOPEN_LIBARCHIVE
 
@@ -195,6 +198,9 @@
 
 /* Define to 1 if you have the <linux/fsmap.h> header file. */
 #undef HAVE_LINUX_FSMAP_H
+
+/* Define to 1 if you have the <linux/fsverity.h> header file. */
+#undef HAVE_LINUX_FSVERITY_H
 
 /* Define to 1 if you have the <linux/loop.h> header file. */
 #undef HAVE_LINUX_LOOP_H
@@ -550,6 +556,9 @@
 
 /* The size of `time_t', as computed by sizeof. */
 #undef SIZEOF_TIME_T
+
+/* The size of `void *', as computed by sizeof. */
+#undef SIZEOF_VOID_P
 
 /* Define to 1 if all of the C90 standard headers exist (not just the ones
    required in a freestanding environment). This macro is provided for

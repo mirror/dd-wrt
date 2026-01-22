@@ -1119,13 +1119,13 @@ int main (int argc, char ** argv)
 			v_flag++;
 			break;
 		case 'w':
-			if (w_flag)
+			if (w_flag && w_flag != 1)
 				exclusive_usage();
 			test_func = test_rw;
 			w_flag = 1;
 			break;
 		case 'n':
-			if (w_flag)
+			if (w_flag && w_flag != 2)
 				exclusive_usage();
 			test_func = test_nd;
 			w_flag = 2;

@@ -1632,6 +1632,7 @@ static errcode_t recover_ext3_journal(e2fsck_t ctx)
 	struct problem_context	pctx;
 	journal_t *journal;
 	errcode_t retval;
+	long hash_size;
 
 	clear_problem_context(&pctx);
 
@@ -1651,7 +1652,16 @@ static errcode_t recover_ext3_journal(e2fsck_t ctx)
 	if (retval)
 		goto errout;
 
-	retval = jbd2_journal_init_revoke(journal, 1024);
+	/* The hash table defaults to 2 bytes per journal block (average of
+	 * 8 entries in a hash chain in absolute worst case), but the total
+	 * memory usage depends on the number of revoke blocks.  The system
+	 * should be able to handle this much RAM usage, since it uses at
+	 * least this much memory for the journal when running.  The max limit
+	 * check is to avoid problems if the journal size is wrong somehow. */
+	hash_size = roundup_power_of_two(journal->j_superblock->s_maxlen / 16);
+	if (hash_size > JBD2_MAX_JOURNAL_BLOCKS / 16)
+		hash_size = roundup_power_of_two(JBD2_MAX_JOURNAL_BLOCKS / 16);
+	retval = jbd2_journal_init_revoke(journal, hash_size);
 	if (retval)
 		goto errout;
 

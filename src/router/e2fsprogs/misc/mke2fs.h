@@ -21,7 +21,6 @@ extern char *get_string_from_profile(char **types, const char *opt,
 				     const char *def_val);
 extern int get_int_from_profile(char **types, const char *opt, int def_val);
 extern int get_bool_from_profile(char **types, const char *opt, int def_val);
-extern int int_log10(unsigned long long arg);
 
 /* mk_hugefiles.c */
 extern errcode_t mk_hugefiles(ext2_filsys fs, const char *device_name);

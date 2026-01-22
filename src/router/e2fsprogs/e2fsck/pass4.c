@@ -120,7 +120,7 @@ static void check_ea_inode(e2fsck_t ctx, ext2_ino_t i, ext2_ino_t *last_ino,
 		 * will get attached to lost+found so clear EA_INODE_FL.
 		 * Otherwise this is likely a spuriously set flag so clear it.
 		 */
-		if (*link_counted == 0 ||
+		if (*link_counted == 0 &&
 		    fix_problem(ctx, PR_4_EA_INODE_SPURIOUS_FLAG, &pctx)) {
 			/* Clear EA_INODE_FL (likely a normal file) */
 			inode->i_flags &= ~EXT4_EA_INODE_FL;

@@ -76,30 +76,6 @@ const char *hex_fmt = "%4d: %*llx..%*llx: %*llx..%*llx: %6llx: %s\n";
 #define	EXT4_EXTENTS_FL			0x00080000 /* Inode uses extents */
 #define	EXT3_IOC_GETFLAGS		_IOR('f', 1, long)
 
-static int ulong_log2(unsigned long arg)
-{
-	int     l = 0;
-
-	arg >>= 1;
-	while (arg) {
-		l++;
-		arg >>= 1;
-	}
-	return l;
-}
-
-static int ulong_log10(unsigned long long arg)
-{
-	int     l = 0;
-
-	arg = arg / 10;
-	while (arg) {
-		l++;
-		arg = arg / 10;
-	}
-	return l;
-}
-
 static unsigned int div_ceil(unsigned int a, unsigned int b)
 {
 	if (!a)
@@ -483,20 +459,20 @@ static int frag_report(const char *filename)
 	}
 	last_device = st.st_dev;
 
-	width = ulong_log10(fsinfo.f_blocks);
+	width = ext2fs_log10_u64(fsinfo.f_blocks);
 	if (width > physical_width)
 		physical_width = width;
 
 	numblocks = (st.st_size + blksize - 1) / blksize;
 	if (blocksize != 0)
-		blk_shift = ulong_log2(blocksize);
+		blk_shift = ext2fs_log2_u32(blocksize);
 	else
-		blk_shift = ulong_log2(blksize);
+		blk_shift = ext2fs_log2_u32(blksize);
 
 	if (use_extent_cache)
 		width = 10;
 	else
-		width = ulong_log10(numblocks);
+		width = ext2fs_log10_u64(numblocks);
 	if (width > logical_width)
 		logical_width = width;
 	if (verbose) {

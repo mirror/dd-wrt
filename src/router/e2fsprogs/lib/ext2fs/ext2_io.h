@@ -71,6 +71,8 @@ struct struct_io_stats {
 	int			reserved;
 	unsigned long long	bytes_read;
 	unsigned long long	bytes_written;
+	unsigned long long	cache_hits;
+	unsigned long long	cache_misses;
 };
 
 struct struct_io_manager {

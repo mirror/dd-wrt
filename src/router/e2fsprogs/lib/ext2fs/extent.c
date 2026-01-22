@@ -1444,8 +1444,31 @@ errcode_t ext2fs_extent_set_bmap(ext2_extent_handle_t handle,
 		printf("(re/un)mapping only block in extent\n");
 #endif
 		if (physical) {
-			retval = ext2fs_extent_replace(handle, 0, &newextent);
+			if (has_prev &&
+			    (logical == (prev_extent.e_lblk +
+					 prev_extent.e_len)) &&
+			    (physical == (prev_extent.e_pblk +
+					  prev_extent.e_len)) &&
+			    (new_uninit == prev_uninit) &&
+			    ((int) prev_extent.e_len < max_len-1)) {
+				retval = ext2fs_extent_get(handle,
+					EXT2_EXTENT_PREV_LEAF, &prev_extent);
+				if (retval)
+					goto done;
+				prev_extent.e_len++;
+				retval = ext2fs_extent_replace(handle, 0,
+							       &prev_extent);
+				retval = ext2fs_extent_get(handle,
+							   EXT2_EXTENT_NEXT_LEAF,
+							   &extent);
+				if (retval)
+					goto done;
+				goto delete_node;
+
+			} else
+				retval = ext2fs_extent_replace(handle, 0, &newextent);
 		} else {
+		delete_node:
 			retval = ext2fs_extent_delete(handle, 0);
 			if (retval)
 				goto done;
@@ -1508,6 +1531,15 @@ errcode_t ext2fs_extent_set_bmap(ext2_extent_handle_t handle,
 #ifdef DEBUG
 		printf("(re/un)mapping first block in extent\n");
 #endif
+		extent.e_pblk++;
+		extent.e_lblk++;
+		extent.e_len--;
+		retval = ext2fs_extent_replace(handle, 0, &extent);
+		if (retval)
+			goto done;
+		retval = ext2fs_extent_fix_parents(handle);
+		if (retval)
+			goto done;
 		if (physical) {
 			if (has_prev &&
 			    (logical == (prev_extent.e_lblk +
@@ -1537,15 +1569,6 @@ errcode_t ext2fs_extent_set_bmap(ext2_extent_handle_t handle,
 			if (retval)
 				goto done;
 		}
-		extent.e_pblk++;
-		extent.e_lblk++;
-		extent.e_len--;
-		retval = ext2fs_extent_replace(handle, 0, &extent);
-		if (retval)
-			goto done;
-		retval = ext2fs_extent_fix_parents(handle);
-		if (retval)
-			goto done;
 	} else {
 		__u32	save_length;
 		blk64_t	save_lblk;
@@ -1720,18 +1743,6 @@ errcode_t ext2fs_extent_get_info(ext2_extent_handle_t handle,
 	return 0;
 }
 
-static int ul_log2(unsigned long arg)
-{
-	int	l = 0;
-
-	arg >>= 1;
-	while (arg) {
-		l++;
-		arg >>= 1;
-	}
-	return l;
-}
-
 size_t ext2fs_max_extent_depth(ext2_extent_handle_t handle)
 {
 	size_t iblock_sz = sizeof(((struct ext2_inode *)NULL)->i_block);
@@ -1746,8 +1757,9 @@ size_t ext2fs_max_extent_depth(ext2_extent_handle_t handle)
 	if (last_blocksize && last_blocksize == handle->fs->blocksize)
 		return last_result;
 
-	last_result = 1 + ((ul_log2(EXT_MAX_EXTENT_LBLK) - ul_log2(iblock_extents)) /
-		    ul_log2(extents_per_block));
+	last_result = 1 + ((ext2fs_log2_u64(EXT_MAX_EXTENT_LBLK) -
+			    ext2fs_log2_u64(iblock_extents)) /
+			   ext2fs_log2_u32(extents_per_block));
 	last_blocksize = handle->fs->blocksize;
 	return last_result;
 }

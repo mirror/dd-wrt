@@ -107,7 +107,7 @@ installdirs: $(INSTALLDIRS_TGT)
 	$(Q) $(MKDIR_P) $(DESTDIR)$(root_sbindir) \
 		$(DESTDIR)$(man8dir) $(DESTDIR)$(root_sysconfdir)
 
-install-udev: installdirs-udev
+install-udev: $(UDEV_RULES) $(UDISKS_RULES) installdirs-udev
 	$(Q) for i in $(UDEV_RULES); do \
 		$(ES) "	INSTALL $(UDEV_RULES_DIR)/$$i"; \
 		$(INSTALL_DATA) $$i $(DESTDIR)$(UDEV_RULES_DIR)/96-$$i; \
@@ -117,7 +117,7 @@ install-udev: installdirs-udev
 		$(INSTALL_DATA) $$i $(DESTDIR)$(UDEV_RULES_DIR)/64-$$i; \
 	done
 
-install-crond: installdirs-crond
+install-crond: $(CRONTABS) installdirs-crond
 	$(Q) if test -n "$(CRONTABS)" ; then \
 		$(ES) "	INSTALL $(CROND_DIR)/e2scrub_all" ; \
 		$(INSTALL_DATA) e2scrub_all.cron $(DESTDIR)$(CROND_DIR)/e2scrub_all ; \
@@ -137,7 +137,7 @@ install-systemd: $(SERVICE_FILES) installdirs-systemd
 
 install-strip: install
 
-install: $(PROGS) $(MANPAGES) $(FMANPAGES) installdirs $(INSTALL_TGT)
+install: $(PROGS) $(MANPAGES) $(CONFFILES) $(MANPAGES) installdirs $(INSTALL_TGT)
 	$(Q) for i in $(PROGS); do \
 		$(ES) "	INSTALL $(root_sbindir)/$$i"; \
 		$(INSTALL_PROGRAM) $$i $(DESTDIR)$(root_sbindir)/$$i; \

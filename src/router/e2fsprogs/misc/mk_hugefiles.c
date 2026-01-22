@@ -269,15 +269,8 @@ static errcode_t mk_hugefile(ext2_filsys fs, blk64_t num,
 	else if (num_files > 1)
 		sprintf(fn_numbuf, "%lu", idx);
 
-retry:
-	retval = ext2fs_link(fs, dir, fn_buf, *ino, EXT2_FT_REG_FILE);
-	if (retval == EXT2_ET_DIR_NO_SPACE) {
-		retval = ext2fs_expand_dir(fs, dir);
-		if (retval)
-			goto errout;
-		goto retry;
-	}
-
+	retval = ext2fs_link(fs, dir, fn_buf, *ino,
+			     EXT2_FT_REG_FILE | EXT2FS_LINK_EXPAND);
 	if (retval)
 		goto errout;
 
@@ -417,7 +410,7 @@ errcode_t mk_hugefiles(ext2_filsys fs, const char *device_name)
 	fn_prefix = get_string_from_profile(fs_types, "hugefiles_name",
 					    "hugefile");
 	idx_digits = get_int_from_profile(fs_types, "hugefiles_digits", 5);
-	d = int_log10(num_files) + 1;
+	d = ext2fs_log10_u32(num_files) + 1;
 	if (idx_digits > d)
 		d = idx_digits;
 	dsize = strlen(fn_prefix) + d + 16;

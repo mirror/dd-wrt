@@ -32,7 +32,7 @@ SUBS= util/subst.conf lib/config.h $(top_builddir)/lib/dirpaths.h \
 
 TAR=tar
 
-all:: subs
+all:: top-deps
 	$(MAKE) libs
 @ALL_CMT@	$(MAKE) progs
 @ALL_CMT@	$(MAKE) docs
@@ -41,7 +41,7 @@ all-static::
 	$(MAKE) libs
 @ALL_CMT@	$(MAKE) static-progs
 
-subs: $(DEP_SUBSTITUTE)
+top-deps: $(DEP_SUBSTITUTE) $(DEP_INSTALL_SYMLINK)
 	@for i in $(SUBS) ; do if test -d `dirname $$i` ; \
 		then $(MAKE) $$i || exit $$? ; fi ; done
 	@(if test -d lib/et ; then cd lib/et && $(MAKE) compile_et; fi)
@@ -51,7 +51,7 @@ subs: $(DEP_SUBSTITUTE)
 progs: all-progs-recursive
 static-progs: all-static-progs-recursive
 libs: all-libs-recursive
-all-progs-recursive all-libs-recursive:: subs
+all-progs-recursive all-libs-recursive:: top-deps
 
 rpm:
 	sh contrib/build-rpm
@@ -71,11 +71,11 @@ clean-doc:
 distclean-doc:
 	-test -d doc && cd doc && $(MAKE) distclean
 
-install: subs all-libs-recursive install-progs-recursive \
+install: top-deps all-libs-recursive install-progs-recursive \
   install-shlibs-libs-recursive install-doc-libs
 @SUBSET_CMT@	$(MAKE) install-libs
 
-install-strip: subs all-libs-recursive install-strip-progs-recursive \
+install-strip: top-deps all-libs-recursive install-strip-progs-recursive \
   install-shlibs-strip-libs-recursive install-doc-libs
 
 uninstall: uninstall-progs-recursive uninstall-shlibs-libs-recursive uninstall-doc-libs

@@ -2169,6 +2169,11 @@ void e2fsck_pass1(e2fsck_t ctx)
 			fix_problem(ctx, PR_1_DUP_BLOCKS_PREENSTOP, &pctx);
 		}
 		e2fsck_pass1_dupblocks(ctx, block_buf);
+	} else if ((ctx->options & E2F_OPT_UNSHARE_BLOCKS) &&
+		   ext2fs_has_feature_shared_blocks(fs->super) &&
+		   !(ctx->options & E2F_OPT_NO)) {
+		ext2fs_clear_feature_shared_blocks(fs->super);
+		ext2fs_mark_super_dirty(fs);
 	}
 	ctx->flags |= E2F_FLAG_ALLOC_OK;
 endit:

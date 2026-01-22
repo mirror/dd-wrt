@@ -25,15 +25,6 @@ struct ext2fs_progress_ops ext2fs_numeric_progress_ops = {
 	.close		= ext2fs_numeric_progress_close,
 };
 
-static int int_log10(unsigned int arg)
-{
-	int	l;
-
-	for (l=0; arg ; l++)
-		arg = arg / 10;
-	return l;
-}
-
 void ext2fs_numeric_progress_init(ext2_filsys fs,
 				  struct ext2fs_numeric_progress_struct * progress,
 				  const char *label, __u64 max)
@@ -58,10 +49,10 @@ void ext2fs_numeric_progress_init(ext2_filsys fs,
 
 
 	/*
-	 * Figure out how many digits we need
+	 * Figure out how many digits we need (always at least one)
 	 */
 	progress->max = max;
-	progress->log_max = int_log10(max);
+	progress->log_max = ext2fs_log10_u64(max) + 1;
 
 	if (label) {
 		fputs(label, stdout);

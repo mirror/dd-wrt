@@ -114,18 +114,6 @@ static const size_t hexchars_size = 16;
 #define EXT4_IOC_SET_ENCRYPTION_POLICY      _IOR('f', 19, struct ext4_encryption_policy)
 #define EXT4_IOC_GET_ENCRYPTION_POLICY      _IOW('f', 21, struct ext4_encryption_policy)
 
-static int int_log2(int arg)
-{
-	int     l = 0;
-
-	arg >>= 1;
-	while (arg) {
-		l++;
-		arg >>= 1;
-	}
-	return l;
-}
-
 static void validate_paths(int argc, char *argv[], int path_start_index)
 {
 	int x;
@@ -386,7 +374,7 @@ static void set_policy(struct salt *set_salt, int pad,
 			EXT4_ENCRYPTION_MODE_AES_256_XTS;
 		policy.filenames_encryption_mode =
 			EXT4_ENCRYPTION_MODE_AES_256_CTS;
-		policy.flags = int_log2(pad >> 2);
+		policy.flags = ext2fs_log2_u32(pad >> 2);
 		memcpy(policy.master_key_descriptor, salt->key_desc,
 		       EXT4_KEY_DESCRIPTOR_SIZE);
 		rc = ioctl(fd, EXT4_IOC_SET_ENCRYPTION_POLICY, &policy);

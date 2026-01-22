@@ -1,3 +1,216 @@
+e2fsprogs (1.47.3-1) unstable; urgency=medium
+
+  * New upstream version
+  * Update Malay translation
+
+ -- Theodore Y. Ts'o <tytso@mit.edu>  Tue, 08 Jul 2025 17:29:53 -0400
+
+e2fsprogs (1.47.3~rc3-1) experimental; urgency=medium
+
+  * fix missing dependency in libext2fs2t64 for libcom-err2
+    (Closes: #1108010)
+  * e2scrub no longer runs fstrim by default, since util-linux ships
+    with a fstrim.timer systemd file which will run fstrim on all
+    mounted file systems.
+  * Fix a bounding error in ext2fs_fallocate() which could cause it to
+    allocate far more blocks than was requested.  This caused a
+    failure in fuse2fs while formatting a loopback file system stored
+    in a large sparse file.
+  * update to debian policy 4.7.2
+
+ -- Theodore Y. Ts'o <tytso@mit.edu>  Wed, 02 Jul 2025 13:57:20 -0400
+
+e2fsprogs (1.47.3~rc2-1) experimental; urgency=medium
+
+  * Add a lockfile command-line option to fuse2fs which is useful for
+    scripts that need to know when fuse2fs is done modifying the file system
+    after it is unmounted.
+  * Fix mke2fs -d when importing large directories (Closes: #1106854)
+  * Fix indention problem in the man page for mke2fs
+  * Fix a (hard to reproduce) extent tree corruption bug which could be
+    triggered by resize2fs or fuse2fs if the extent tree was especially complex
+  * Fix error path handling in fuse2fs when servicing an op_create request.
+  * Fix spurious warnings from fuse2fs while servicing an op_fallocate request.
+  * Fix fuse2fs to correctly translate system errors from libext2fs to the
+    negative error codes expected by the FUSE kernel driver.
+  * Update Czech, Chinese, Dutch, French, Portuguese, Polish, Romainian,
+    Serbian, Spanish, Swedish, and Ukrainian translations.
+
+ -- Theodore Y. Ts'o <tytso@mit.edu>  Wed, 02 Jul 2025 13:55:59 -0400
+
+e2fsprogs (1.47.3~rc1-1) experimental; urgency=medium
+
+  * Mke2fs -d can now copy the fs-verity metadata and chattr flags
+    into newly created file system.
+  * Many fuse2fs improvements and bug fixes
+      - Add support for XATTR_CREATE and XATTR_REPLACE flags in setxattr()
+      - Add support for FALLOC_FL_ZERO_RANGE.
+      - Add support to fuse2fs for the setting file attributes via fsxattr,
+        including support for nanosecond timestamps.
+      - Add support to set newer chattr flags.
+      - Fix fuse2fs support for O_APPEND, O_TRUNC, POSIX ACLs, and
+        the immutable flag
+      - Remove the ea_inode when deleting the last file using the ea_inode
+      - Update timestamps after mkdir() and symlink() operations
+      - Fix error code handling for fallocate(), truncate() and
+        removexattr().
+      - Improve handling of corrupted file systems
+      - Refuse to handle renameat2's RENAME_EXCHA?NGE or RENAME_WHITEOUT
+        flags instead of doing something random
+      - Avoid clearing the setgid bit in op_chmod when file's group
+        ownership the calling process's group list (instead of just the
+        primary group id).
+      - Align with the kernel's behaviors:
+          + clearing post-EOF on truncation
+          + validating FITRIM's parameters consistently with how the kernel
+            does things
+          + how the "ro" mount option will replay the journal
+          + only supporting the xattr namespaces supported by the kernel
+          + clamping timestamps to the minimum and maximum value supported
+            by the on-disk format
+          + optionally delegating access control decisions to the kernel
+      - Don't mount file systems which have features that fuse2fs can't
+        deal with.
+      - Return inode and type information in readdir()
+      - Use the actal inode numbers instead of asking fuse to make
+        up inode numbers
+      - Use a larger disk cache to improve performance and optionally
+        use Direct I/O.
+  * Add mke2fs.conf knobs to control whether the RAID stripe or stride
+    sizes from the storage device information depending on whether the
+    storage device is a rotational or non-rotational device.  By default
+    don't set the RAID stripe size for non-rotational devices.
+  * Fix "e2fsck -E unshare_blocks" to clear the shared_blocks flag when
+    there are no shared blocks to clear
+  * Fix "e2fsck -n" to not abort when it trips across an EA inode which
+    is not referenced by any inodes in the file system.
+  * Fix debugfs's dump and rdump commands to avoid looping forever when
+    it runs across an I/O error or corupt filesystem metadata.
+  * Fix debugfs's dirsearch command on big-endian systems.
+  * Optimize ext2fs_extent_set_bmap() to avoid fragmenting the extent
+    tree.  This fixes a problem where resize2fs is trying to relocate
+    all of the blocks in a file leading to the extent tree doubling in
+    size, and potentially leading to a corrupted extent tree.
+  * Fix potential livelock bug in the unix_io manager.
+  * Fix invaidation support in the unix_io manager.
+  * Various man page cleanups.
+  * Improve performance in e2fsck when replaying a journal with a large
+    number of revoke blocks (which can be the case on Lustre servers).
+  * Improve tune2fs's performance by avoiding scanning the file system to
+    update quota inodes in cases when it's not necessary.
+  * Update Dutch, Malay, Portuguese, and Serbian translations.
+
+ -- Theodore Y. Ts'o <tytso@mit.edu>  Wed, 28 May 2025 08:50:19 -0400
+
+e2fsprogs (1.47.2-3) unstable; urgency=medium
+
+  * Fix a typo in fuse2fs.postrm which breaks /usr-move mitigation
+    (Closes: #1107595)
+
+ -- Theodore Y. Ts'o <tytso@mit.edu>  Tue, 10 Jun 2025 14:59:29 -0400
+
+e2fsprogs (1.47.2-2) unstable; urgency=medium
+
+  * Fix integer overflow bug which resulted in fuse2fs failing to delete
+    very large files (Closes: #1106241)
+  * Fix an extent corruption bug which in very rare cases could result in
+    data loss when resizing a file system or when fuse2fs is operating on
+    that file system
+  * Various man page cleanups
+  * Add a Built-Using field to the e2fsck-static man page to honor a LGPL
+    requirement documenting which version of glibc was used to build the
+    e2fsck.static binary (Closes: #1106799)
+  * Remove the physical address of the FSF from the debian/copyright
+    file, addressing a Lintian warning.
+  * Fix bug in debugfs when user passes invalid arguments to the
+    e2freefrag command
+  * Add range checks to "mke2fs -E <desc_size>"
+  * Check to make the invalid value of 0 is not passed to "e2freefrag -c"
+  * Fix "e2fsck -E unshare_blocks" to clear the shared_blocks flag when
+    there are no shared blocks to clear
+  * Fix mke2fs to disallow the verity feature without extents
+  * Fix fuse2fs to reject renameat2 RENAME_EXCHANGE/RENAME_WHITEOUT
+    instead of treating the request (wrongly) as a normal rename
+  * Fix fuse2fs to set the timestamps for the new inode created by a mkdir
+    or symlink request
+  * Fix fuse2fs to clamp the timestamps written to the file system to fix
+    a Y2038 bug as tested by fstests generic/402
+  * Fix fuse2fs to handle the encoding of POSIX acl's correctly
+  * Fix fuse2fs to return EOPNOTSUPP when a fallocate(2) mode is not supported
+  * Fix fuse2fs to refuse mounting a file system with file system features
+    that it doesn't know how to handle
+  * Fix debugfs's dump and rdump commands to avoid looping forever when
+    it runs across an I/O error or corupt filesystem metadata.
+  * Fix debugfs's dirsearch command on big-endian systems.
+  * Optimize ext2fs_extent_set_bmap() to avoid fragmenting the extent
+    tree.  This fixes a problem where resize2fs is trying to relocate
+    all of the blocks in a file leading to the extent tree doubling in
+    size, and potentially leading to a corrupted extent tree.
+  * Fix "e2fsck -n" to not abort when it trips across an EA inode which
+    is not referenced by any inodes in the file system.
+
+ -- Theodore Y. Ts'o <tytso@mit.edu>  Mon, 09 Jun 2025 20:49:10 -0400
+
+e2fsprogs (1.47.2-1) unstable; urgency=medium
+
+  * New upstream version
+  * Update Chinese, Czech, French, Malay, Polish, Romainian, Spanish,
+    Swedish, and Ukrainian translations.
+  * Teach dumpe2fs and e2mmpstatus to support LABEL= and UUID= specifiers
+    since the e2mmpstatus man page claims those specifiers are supported.
+  * Suppress mke2fs's "Creating regular file" message when the -q option
+    is in force.
+  * Add Suggests: libarchive13t64 to e2fsprogs (Closes: #1089085)
+  * Decrease priority of e2fsprogs from required to important (Closes: 897277)
+  * Fix resize2fs to update the checksums in blocks belonging to the
+    orphan file if it needs to move them.
+  * Fix e2fsck to clear the orphan file after processing it so that "e2fsck
+    -E journal_only" doesn't leave the file system in a corrupted state.
+
+ -- Theodore Y. Ts'o <tytso@mit.edu>  Wed, 01 Jan 2025 00:30:02 -0500
+
+e2fsprogs (1.47.2~rc1-2) unstable; urgency=medium
+
+  * Fix fuseext2 transition to account for /usr-move (Closes: #1088838)
+  * Fix orphan_file support on big endian systems.
+  * Mke2fs will allow "-r 1" since fsarchiver uses it rather pointlessly
+  * Allow building e2fsprogs without libarchive-dev installed to make life
+    easier for bootstrapping for new Debian ports (Closes: #1078693)
+
+ -- Theodore Y. Ts'o <tytso@mit.edu>  Tue, 03 Dec 2024 23:40:01 -0500
+
+e2fsprogs (1.47.2~rc1-1) unstable; urgency=medium
+
+  * New upstream version
+  * Remove the -r option from tune2fs and replace it with an extended
+    option since most users will never need to request a file system
+    suitable for pre-1995 1.2 version kernels and a typo will just end up
+    confusing the user and leaving them with a file system missing most
+    modern ext4 features, including no support for on-line resizing and no
+    support for post-2038 timestamps.   (Closes: #1086603)
+  * Add support for gnu.translator extended attrbutes in tar files fed to
+    mke2fs -d.
+  * Avoid a spurious failure in badblocks when -n or -w is specified
+    twice.  (Closes: #1087341)
+  * Fix a bug which caused e2fsck to skip checking a file system with the
+    orphan_file feature if there are orphaned files which need to be
+    cleaned up.
+  * Fix a bug which caused tune2fs to corrupt a revision 0 file system
+    when changing the inode size by updating the revision to the current
+    standard revision supported by all Linux kernels since 1995.
+  * Fix fuse2fs --helpfull so that it displays the full help message.
+  * Allow resize2fs to perform an offline resize past the 256 TiB boundary
+  * Fix unused parameter warnings for packages which including ext2fs.h.
+    (Closes: #1082500)
+  * Provide fuseext2 to replace the debian package src:fuse-umfuse-ext2.
+    (Closes: #1085590)
+  * Clean up groff warnings in man pages.  (Closes: #1086892, #1082787,
+    #1072866, #1087898)
+  * Document the orphan_file feature in the ext4(5) and tune2fs(8) man
+    pages.  (Closes: #1073062)
+
+ -- Theodore Y. Ts'o <tytso@mit.edu>  Thu, 28 Nov 2024 23:35:35 -0500
+
 e2fsprogs (1.47.1-1) unstable; urgency=medium
 
   * New upstream version

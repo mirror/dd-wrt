@@ -30,6 +30,10 @@ struct file_info {
 
 #define HDLINK_CNT	(4)
 
+/* flags for populate_fs3 */
+#define POPULATE_FS_NO_COPY_XATTRS	0x0001
+#define POPULATE_FS_LINK_APPEND		0x0002
+
 struct fs_ops_callbacks {
 	errcode_t (* create_new_inode)(ext2_filsys fs, const char *target_path,
 		const char *name, ext2_ino_t parent_ino, ext2_ino_t root,
@@ -39,14 +43,15 @@ struct fs_ops_callbacks {
 		ext2_ino_t parent_ino, ext2_ino_t root, mode_t mode);
 };
 
-extern int no_copy_xattrs; 	/* this should eventually be a flag
-				   passed to populate_fs3() */
-
 /* For populating the filesystem */
 extern errcode_t populate_fs(ext2_filsys fs, ext2_ino_t parent_ino,
 			     const char *source_dir, ext2_ino_t root);
 extern errcode_t populate_fs2(ext2_filsys fs, ext2_ino_t parent_ino,
 			      const char *source_dir, ext2_ino_t root,
+			      struct fs_ops_callbacks *fs_callbacks);
+extern errcode_t populate_fs3(ext2_filsys fs, ext2_ino_t parent_ino,
+			      const char *source_dir, ext2_ino_t root,
+			      int flags,
 			      struct fs_ops_callbacks *fs_callbacks);
 extern errcode_t do_mknod_internal(ext2_filsys fs, ext2_ino_t cwd,
 				   const char *name, unsigned int st_mode,
@@ -55,10 +60,11 @@ extern errcode_t do_symlink_internal(ext2_filsys fs, ext2_ino_t cwd,
 				     const char *name, char *target,
 				     ext2_ino_t root);
 extern errcode_t do_mkdir_internal(ext2_filsys fs, ext2_ino_t cwd,
-				   const char *name, ext2_ino_t root);
+				   const char *name, unsigned long flags,
+				   ext2_ino_t root);
 extern errcode_t do_write_internal(ext2_filsys fs, ext2_ino_t cwd,
 				   const char *src, const char *dest,
-				   ext2_ino_t root);
+				   unsigned long flags, ext2_ino_t root);
 extern errcode_t add_link(ext2_filsys fs, ext2_ino_t parent_ino,
 			  ext2_ino_t ino, const char *name);
 extern errcode_t set_inode_extra(ext2_filsys fs, ext2_ino_t ino,

@@ -1,0 +1,14 @@
+#!/bin/sh
+
+set -e
+
+# begin-remove-after: released:trixie
+if test "$1" = install -o "$1" = upgrade && dpkg --compare-versions "$2" lt 1.47.2~rc1-1~; then
+    # DEP17 P1 mitigation.
+    for cmd in /sbin/mount.fuse-ext2 /sbin/mount.fuseext2; do
+        dpkg-divert --package fuse2fs --no-rename --divert "$cmd.usr-is-merged" --add "$cmd"
+    done
+fi
+# end-remove-after: released:trixie
+
+#DEBHELPER#

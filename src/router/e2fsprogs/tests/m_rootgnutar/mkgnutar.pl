@@ -59,7 +59,7 @@ foreach my $fname (@entries) {
     my $content = "";
     my $type;
     my $linkname = "";
-    my $username = $ENV{LOGNAME} || $ENV{USER} || getpwuid($<);
+    my $username = $ENV{LOGNAME} || $ENV{USER} || getpwuid($<) || "";
     if (S_ISLNK($mode)) {
         $type     = 2;
         $linkname = readlink $fname;

@@ -570,16 +570,9 @@ skip_new_block:
 	/*
 	 * Finally, create the directory link
 	 */
-	pctx.errcode = ext2fs_link(fs, EXT2_ROOT_INO, name, ino, EXT2_FT_DIR);
-	if (pctx.errcode == EXT2_ET_DIR_NO_SPACE) {
-		pctx.errcode = ext2fs_expand_dir(fs, EXT2_ROOT_INO);
-		if (pctx.errcode)
-			goto link_error;
-		pctx.errcode = ext2fs_link(fs, EXT2_ROOT_INO, name, ino,
-					   EXT2_FT_DIR);
-	}
+	pctx.errcode = ext2fs_link(fs, EXT2_ROOT_INO, name, ino,
+				   EXT2_FT_DIR | EXT2FS_LINK_EXPAND);
 	if (pctx.errcode) {
-link_error:
 		pctx.str = "ext2fs_link";
 		fix_problem(ctx, PR_3_CREATE_LPF_ERROR, &pctx);
 		return 0;

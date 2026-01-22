@@ -193,10 +193,10 @@ static void dbg_print_extent(char *desc, struct ext2fs_extent *extent)
 static errcode_t punch_extent_blocks(ext2_filsys fs, ext2_ino_t ino,
 				     struct ext2_inode *inode,
 				     blk64_t lfree_start, blk64_t free_start,
-				     __u32 free_count, int *freed)
+				     __u32 free_count, blk64_t *freed)
 {
 	blk64_t		pblk;
-	int		freed_now = 0;
+	__u32		freed_now = 0;
 	__u32		cluster_freed;
 	errcode_t	retval = 0;
 
@@ -271,7 +271,7 @@ static errcode_t ext2fs_punch_extent(ext2_filsys fs, ext2_ino_t ino,
 	errcode_t		retval;
 	blk64_t			free_start, next, lfree_start;
 	__u32			free_count, newlen;
-	int			freed = 0;
+	blk64_t			freed = 0;
 	int			op;
 
 	retval = ext2fs_extent_open2(fs, ino, inode, &handle);
@@ -442,7 +442,7 @@ static errcode_t ext2fs_punch_extent(ext2_filsys fs, ext2_ino_t ino,
 		if (retval)
 			goto errout;
 	}
-	dbg_printf("Freed %d blocks\n", freed);
+	dbg_printf("Freed %llu blocks\n", freed);
 	retval = ext2fs_iblk_sub_blocks(fs, inode, freed);
 errout:
 	ext2fs_extent_free(handle);

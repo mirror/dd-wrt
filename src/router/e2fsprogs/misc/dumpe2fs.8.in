@@ -23,6 +23,12 @@ prints the super block and blocks group information for the file system
 present on
 .I device.
 .PP
+The
+.I device
+specifier can either be a filename (i.e., /dev/sda1), or a LABEL or UUID
+specifier: "\fBLABEL=\fIvolume-label\fR" or "\fBUUID=\fIuuid\fR".  (i.e.,
+LABEL=home or UUID=e40486c6-84d5-4f2f-b99c-032281799c9d).
+.PP
 .B Note:
 When used with a mounted file system, the printed
 information may be old or inconsistent.

@@ -1355,6 +1355,7 @@ static errcode_t xattr_inode_dec_ref(ext2_filsys fs, ext2_ino_t ino)
 			goto out;
 	}
 
+	inode.i_flags &= ~EXT4_EA_INODE_FL;
 	ext2fs_inode_alloc_stats2(fs, ino, -1 /* inuse */, 0 /* is_dir */);
 
 write_out:
@@ -1723,6 +1724,24 @@ errcode_t ext2fs_xattr_remove(struct ext2_xattr_handle *handle,
 
 	/* no key found, success! */
 	return 0;
+}
+
+errcode_t ext2fs_xattr_remove_all(struct ext2_xattr_handle *handle)
+{
+	struct ext2_xattr *x;
+	struct ext2_xattr *end = handle->attrs + handle->count;
+
+	EXT2_CHECK_MAGIC(handle, EXT2_ET_MAGIC_EA_HANDLE);
+	for (x = handle->attrs; x < end; x++) {
+		ext2fs_free_mem(&x->name);
+		ext2fs_free_mem(&x->value);
+		if (x->ea_ino)
+			xattr_inode_dec_ref(handle->fs, x->ea_ino);
+	}
+
+	handle->ibody_count = 0;
+	handle->count = 0;
+	return ext2fs_xattrs_write(handle);
 }
 
 errcode_t ext2fs_xattrs_open(ext2_filsys fs, ext2_ino_t ino,

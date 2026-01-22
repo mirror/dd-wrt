@@ -24,7 +24,7 @@ create_file_with_xtime_and_extra() {
 get_file_xtime_and_extra() {
 	name=$1
 	echo "times for $name =" >> $TIMESTAMPS
-	$DEBUGFS -R "stat $name" $TMPFILE 2>&1 | egrep '^( a| c| m|cr)time:' |
+	$DEBUGFS -R "stat $name" $TMPFILE 2>&1 | $EGREP '^( a| c| m|cr)time:' |
 		sed 's/ --.*//' >> $TIMESTAMPS
 }
 

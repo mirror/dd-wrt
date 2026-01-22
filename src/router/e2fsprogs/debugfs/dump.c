@@ -122,8 +122,10 @@ static void dump_file(const char *cmdname, ext2_ino_t ino, int fd,
 	}
 	while (1) {
 		retval = ext2fs_file_read(e2_file, buf, blocksize, &got);
-		if (retval)
+		if (retval) {
 			com_err(cmdname, retval, "while reading ext2 file");
+			return;
+		}
 		if (got == 0)
 			break;
 		nbytes = write(fd, buf, got);

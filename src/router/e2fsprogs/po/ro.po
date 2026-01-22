@@ -2,16 +2,19 @@
 # Mesajele în limba română pentru pachetul e2fsprogs.
 # Copyright © 1993, 1994, 1995, 1996, 1997, 1998, 1999, 2000, 2001,
 #     2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012,
-#     2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2024 by Theodore Ts'o
+#     2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2024,
+#     2025 by Theodore Ts'o
 # This file is distributed under the same license as the e2fsprogs package.
-# Theodore Ts'o <tytso@mit.edu>, 2024.
+# Theodore Ts'o <tytso@mit.edu>, 2024, 2025.
 #
-# Remus-Gabriel Chelu <remusgabriel.chelu@disroot.org>, 2023-2024.
+# Remus-Gabriel Chelu <remusgabriel.chelu@disroot.org>, 2023-2025.
 #
 # Cronologia traducerii fișierului „e2fsprogs”:
 # Traducerea inițială, făcută de R-GC, pentru versiunea e2fsprogs 1.46.6-rc1, oct-2023.
 # Corectări făcute de R-GC, pentru versiunea e2fsprogs 1.46.6-rc1, noi-2023.
 # Actualizare a traducerii pentru versiunea 1.47.1-rc1, făcută de R-GC, apr-2024.
+# Actualizare a traducerii pentru versiunea 1.47.2-rc1, făcută de R-GC, noi-2024.
+# Actualizare a traducerii pentru versiunea 1.47.3-rc1, făcută de R-GC, mai-2025.
 # Actualizare a traducerii pentru versiunea Y, făcută de X, Z(luna-anul).
 #. The strings in e2fsck's problem.c can be very hard to translate,
 #. since the strings are expanded in two different ways.  First of all,
@@ -84,10 +87,10 @@
 #.
 msgid ""
 msgstr ""
-"Project-Id-Version: e2fsprogs 1.47.1-rc1\n"
+"Project-Id-Version: e2fsprogs 1.47.3-rc1\n"
 "Report-Msgid-Bugs-To: tytso@alum.mit.edu\n"
-"POT-Creation-Date: 2024-04-24 13:22-0400\n"
-"PO-Revision-Date: 2024-04-29 14:27+0200\n"
+"POT-Creation-Date: 2025-05-28 08:29-0400\n"
+"PO-Revision-Date: 2025-05-30 19:30+0200\n"
 "Last-Translator: Remus-Gabriel Chelu <remusgabriel.chelu@disroot.org>\n"
 "Language-Team: Romanian <translation-team-ro@lists.sourceforge.net>\n"
 "Language: ro\n"
@@ -96,9 +99,9 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=4; plural=((n==1) ? 0 : (n==2) ? 1 : (n==0 || (n%100 > 0 && n%100 < 20)) ? 2 : 3);\n"
 "X-Bugs: Report translation errors to the Language-Team address.\n"
-"X-Generator: Poedit 3.2.2\n"
+"X-Generator: Poedit 3.5\n"
 
-#: e2fsck/badblocks.c:23 misc/mke2fs.c:223
+#: e2fsck/badblocks.c:23 misc/mke2fs.c:206
 #, c-format
 msgid "Bad block %u out of range; ignored.\n"
 msgstr "Blocul defectuos %u este în afara intervalului; se ignoră.\n"
@@ -111,12 +114,12 @@ msgstr "la verificarea integrității nodului-i al blocurilor defectuoase"
 msgid "while reading the bad blocks inode"
 msgstr "în timp ce se citea nodul-i al blocurilor defectuoase"
 
-#: e2fsck/badblocks.c:72 e2fsck/scantest.c:107 e2fsck/unix.c:1595
-#: e2fsck/unix.c:1710 misc/badblocks.c:1273 misc/badblocks.c:1281
-#: misc/badblocks.c:1295 misc/badblocks.c:1307 misc/dumpe2fs.c:438
-#: misc/dumpe2fs.c:704 misc/dumpe2fs.c:708 misc/e2image.c:1441
-#: misc/e2image.c:1641 misc/e2image.c:1662 misc/mke2fs.c:239
-#: misc/tune2fs.c:3043 misc/tune2fs.c:3232 resize/main.c:424
+#: e2fsck/badblocks.c:72 e2fsck/scantest.c:107 e2fsck/unix.c:1599
+#: e2fsck/unix.c:1714 misc/badblocks.c:1273 misc/badblocks.c:1281
+#: misc/badblocks.c:1295 misc/badblocks.c:1307 misc/dumpe2fs.c:439
+#: misc/dumpe2fs.c:710 misc/dumpe2fs.c:714 misc/e2image.c:1447
+#: misc/e2image.c:1647 misc/e2image.c:1668 misc/mke2fs.c:222
+#: misc/tune2fs.c:3060 misc/tune2fs.c:3249 resize/main.c:422
 #, c-format
 msgid "while trying to open %s"
 msgstr "în timp ce se încerca să se deschidă %s"
@@ -126,7 +129,7 @@ msgstr "în timp ce se încerca să se deschidă %s"
 msgid "while trying popen '%s'"
 msgstr "în timp ce se încerca să se deschidă via popen() „%s”"
 
-#: e2fsck/badblocks.c:95 misc/mke2fs.c:246
+#: e2fsck/badblocks.c:95 misc/mke2fs.c:229
 msgid "while reading in list of bad blocks from file"
 msgstr "în timp ce se citea lista de blocuri defectuoase din fișier"
 
@@ -143,30 +146,35 @@ msgstr "Avertizare: blocul ilegal %u a fost găsit în nodul-i de blocuri defect
 msgid "while freeing dir_info tdb file"
 msgstr "în timp ce se elibera fișierul tdb dir_info"
 
-#: e2fsck/ehandler.c:55
+#: e2fsck/ehandler.c:56
 #, c-format
 msgid "Error reading block %lu (%s) while %s.  "
 msgstr "Eroare la citirea blocului %lu (%s) în timp ce %s.  "
 
-#: e2fsck/ehandler.c:58
+#: e2fsck/ehandler.c:59
 #, c-format
 msgid "Error reading block %lu (%s).  "
 msgstr "Eroare la citirea blocului %lu (%s).  "
 
-#: e2fsck/ehandler.c:66 e2fsck/ehandler.c:115
+#: e2fsck/ehandler.c:67 e2fsck/ehandler.c:121
 msgid "Ignore error"
 msgstr "Ignoră eroarea"
 
-#: e2fsck/ehandler.c:67
+#: e2fsck/ehandler.c:68
 msgid "Force rewrite"
 msgstr "Forțează rescrierea"
 
-#: e2fsck/ehandler.c:109
+#: e2fsck/ehandler.c:72
+#, c-format
+msgid "Error rewriting block %lu (%s)\n"
+msgstr "Eroare la scrierea blocului %lu (%s).\n"
+
+#: e2fsck/ehandler.c:115
 #, c-format
 msgid "Error writing block %lu (%s) while %s.  "
 msgstr "Eroare la scrierea blocului %lu (%s) în timp ce %s.  "
 
-#: e2fsck/ehandler.c:112
+#: e2fsck/ehandler.c:118
 #, c-format
 msgid "Error writing block %lu (%s).  "
 msgstr "Eroare la scrierea blocului %lu (%s).  "
@@ -232,17 +240,17 @@ msgstr "%s: jurnalul este prea scurt\n"
 msgid "%s: incorrect fast commit blocks\n"
 msgstr "%s: blocuri de fast-commit incorecte\n"
 
-#: e2fsck/journal.c:1688 misc/fuse2fs.c:3857
+#: e2fsck/journal.c:1698
 #, c-format
 msgid "%s: recovering journal\n"
 msgstr "%s: se recuperează jurnalul\n"
 
-#: e2fsck/journal.c:1690
+#: e2fsck/journal.c:1700
 #, c-format
 msgid "%s: won't do journal recovery while read-only\n"
 msgstr "%s: nu se poate face recuperarea jurnalului în timp ce este numai-pentru-citire\n"
 
-#: e2fsck/journal.c:1718
+#: e2fsck/journal.c:1728
 #, c-format
 msgid "while trying to re-open %s"
 msgstr "în timp ce se încerca să se re-deschidă %s"
@@ -512,39 +520,39 @@ msgstr "eroare internă: nu s-a putut căuta înregistrarea nodului-i EA pentru 
 msgid "while hashing entry with e_value_inum = %u"
 msgstr "în timp ce se calcula suma de control a intrării cu e_value_inum = %u"
 
-#: e2fsck/pass1.c:774 e2fsck/pass2.c:1155
+#: e2fsck/pass1.c:817 e2fsck/pass2.c:1155
 msgid "reading directory block"
 msgstr "se citește blocul de directoare"
 
-#: e2fsck/pass1.c:1175
+#: e2fsck/pass1.c:1218
 msgid "getting next inode from scan"
 msgstr "obținând următorul nod-i din scanare"
 
-#: e2fsck/pass1.c:1228
+#: e2fsck/pass1.c:1271
 msgid "in-use inode map"
 msgstr "harta de noduri-i în uz"
 
-#: e2fsck/pass1.c:1239
+#: e2fsck/pass1.c:1282
 msgid "directory inode map"
 msgstr "harta de noduri-i de directoare"
 
-#: e2fsck/pass1.c:1249
+#: e2fsck/pass1.c:1292
 msgid "regular file inode map"
 msgstr "harta de noduri-i de fișiere obișnuite"
 
-#: e2fsck/pass1.c:1258 misc/e2image.c:1290
+#: e2fsck/pass1.c:1301 misc/e2image.c:1296
 msgid "in-use block map"
 msgstr "harta de blocuri în uz"
 
-#: e2fsck/pass1.c:1267
+#: e2fsck/pass1.c:1310
 msgid "metadata block map"
 msgstr "harta de blocuri de metadate"
 
-#: e2fsck/pass1.c:1278
+#: e2fsck/pass1.c:1321
 msgid "inode casefold map"
 msgstr "harta „casefold” de noduri-i"
 
-#: e2fsck/pass1.c:1343
+#: e2fsck/pass1.c:1386
 msgid "opening inode scan"
 msgstr "se inițiază scanarea nodurilor-i"
 
@@ -553,49 +561,49 @@ msgstr "se inițiază scanarea nodurilor-i"
 # cred că la fel de bine putea să fie
 # „X-a Trecere” sau de ce nu,
 # „X-a Periere”.
-#: e2fsck/pass1.c:2139
+#: e2fsck/pass1.c:2198
 msgid "Pass 1"
 msgstr "Pasul 1"
 
-#: e2fsck/pass1.c:2200
+#: e2fsck/pass1.c:2259
 #, c-format
 msgid "reading indirect blocks of inode %u"
 msgstr "se citesc blocurile indirecte din nodul-i %u"
 
-#: e2fsck/pass1.c:2251
+#: e2fsck/pass1.c:2310
 msgid "bad inode map"
 msgstr "harta de noduri-i defectuoase"
 
-#: e2fsck/pass1.c:2291
+#: e2fsck/pass1.c:2350
 msgid "inode in bad block map"
 msgstr "nod-i în harta de blocuri defectuoase"
 
-#: e2fsck/pass1.c:2311
+#: e2fsck/pass1.c:2370
 msgid "imagic inode map"
 msgstr "harta de noduri-i cu „imagic”"
 
-#: e2fsck/pass1.c:2342
+#: e2fsck/pass1.c:2401
 msgid "multiply claimed block map"
 msgstr "harta de blocuri revendicate de mai multe ori"
 
-#: e2fsck/pass1.c:2467
+#: e2fsck/pass1.c:2526
 msgid "ext attr block map"
 msgstr "harta de blocuri de atribute extinse"
 
-#: e2fsck/pass1.c:3768
+#: e2fsck/pass1.c:3833
 #, c-format
 msgid "%6lu(%c): expecting %6lu got phys %6lu (blkcnt %lld)\n"
 msgstr "%6lu(%c): se așteptau %6lu, s-au primit fizic %6lu (număr de blocuri %lld)\n"
 
-#: e2fsck/pass1.c:4189
+#: e2fsck/pass1.c:4254
 msgid "block bitmap"
 msgstr "harta de biți de blocuri"
 
-#: e2fsck/pass1.c:4195
+#: e2fsck/pass1.c:4260
 msgid "inode bitmap"
 msgstr "harta de biți de noduri-i"
 
-#: e2fsck/pass1.c:4201
+#: e2fsck/pass1.c:4266
 msgid "inode table"
 msgstr "tabelul de noduri-i"
 
@@ -627,7 +635,7 @@ msgstr "Pasul 3"
 msgid "inode loop detection bitmap"
 msgstr "harta de biți de detectare a buclelor de noduri-i"
 
-#: e2fsck/pass4.c:300
+#: e2fsck/pass4.c:317
 msgid "Pass 4"
 msgstr "Pasul 4"
 
@@ -821,17 +829,20 @@ msgstr "FANION ȘTERS"
 
 #. @-expanded: block bitmap for group %g is not in group.  (block %b)\n
 #: e2fsck/problem.c:118
+#, c-format
 msgid "@b @B for @g %g is not in @g.  (@b %b)\n"
 msgstr "harta de biți a blocului pentru grupul %g nu este în grup.  (blocul %b)\n"
 
 #. @-expanded: inode bitmap for group %g is not in group.  (block %b)\n
 #: e2fsck/problem.c:122
+#, c-format
 msgid "@i @B for @g %g is not in @g.  (@b %b)\n"
 msgstr "harta de biți a nodului-i pentru grupul %g nu este în grup. (blocul %b)\n"
 
 #. @-expanded: inode table for group %g is not in group.  (block %b)\n
 #. @-expanded: WARNING: SEVERE DATA LOSS POSSIBLE.\n
 #: e2fsck/problem.c:127
+#, c-format
 msgid ""
 "@i table for @g %g is not in @g.  (@b %b)\n"
 "WARNING: SEVERE DATA LOSS POSSIBLE.\n"
@@ -877,6 +888,7 @@ msgstr ""
 #. @-expanded: The physical size of the device is %c blocks\n
 #. @-expanded: Either the superblock or the partition table is likely to be corrupt!\n
 #: e2fsck/problem.c:144
+#, c-format
 msgid ""
 "The @f size (according to the @S) is %b @bs\n"
 "The physical size of the @v is %c @bs\n"
@@ -890,6 +902,7 @@ msgstr ""
 #. @-expanded: This version of e2fsck does not support fragment sizes different\n
 #. @-expanded: from the block size.\n
 #: e2fsck/problem.c:151
+#, c-format
 msgid ""
 "@S @b_size = %b, fragsize = %c.\n"
 "This version of e2fsck does not support fragment sizes different\n"
@@ -901,11 +914,13 @@ msgstr ""
 
 #. @-expanded: superblock blocks_per_group = %b, should have been %c\n
 #: e2fsck/problem.c:158
+#, c-format
 msgid "@S @bs_per_group = %b, should have been %c\n"
 msgstr "super-blocul blocks_per_group = %b, ar fi trebuit să fie %c\n"
 
 #. @-expanded: superblock first_data_block = %b, should have been %c\n
 #: e2fsck/problem.c:163
+#, c-format
 msgid "@S first_data_@b = %b, should have been %c\n"
 msgstr "super-blocul first_data_block = %b, ar fi trebuit să fie %c\n"
 
@@ -1190,6 +1205,7 @@ msgstr "descriptorul de grup %g a fost marcat ca neinițializat fără a avea ac
 
 #. @-expanded: group descriptor %g has invalid unused inodes count %b.  
 #: e2fsck/problem.c:392
+#, c-format
 msgid "@g descriptor %g has invalid unused inodes count %b.  "
 msgstr "descriptorul de grup %g are un număr nevalid de noduri-i neutilizate %b.  "
 
@@ -1241,6 +1257,7 @@ msgstr "Se stabilește numărul de noduri-i libere la %j (era %i)\n"
 
 #. @-expanded: Setting free blocks count to %c (was %b)\n
 #: e2fsck/problem.c:435
+#, c-format
 msgid "Setting free @bs count to %c (was %b)\n"
 msgstr "Se stabilește numărul de blocuri libere la %c (era %b)\n"
 
@@ -1337,18 +1354,21 @@ msgstr ""
 #. @-expanded: Orphan file (inode %i) contains hole at block %b. Terminating orphan file 
 #. @-expanded: recovery.\n
 #: e2fsck/problem.c:531
+#, c-format
 msgid "Orphan file (@i %i) contains hole at @b %b. Terminating orphan file recovery.\n"
 msgstr "Fișierul orfan (nodul-i %i) conține o gaură în blocul %b. Se întrerupe recuperarea fișierului orfan.\n"
 
 #. @-expanded: Orphan file (inode %i) block %b contains wrong magic. Terminating orphan file 
 #. @-expanded: recovery.\n
 #: e2fsck/problem.c:536
+#, c-format
 msgid "Orphan file (@i %i) @b %b contains wrong magic. Terminating orphan file recovery.\n"
 msgstr "Fișierul orfan (nodul-i %i) blocul %b conține un număr magic greșit. Se întrerupe recuperarea fișierului orfan.\n"
 
 #. @-expanded: Orphan file (inode %i) block %b contains wrong checksum. Terminating orphan file 
 #. @-expanded: recovery.\n
 #: e2fsck/problem.c:541
+#, c-format
 msgid "Orphan file (@i %i) @b %b contains wrong checksum. Terminating orphan file recovery.\n"
 msgstr "Fișierul orfan (nodul-i %i) blocul %b conține o sumă de control greșită. Se întrerupe recuperarea fișierului orfan.\n"
 
@@ -1399,26 +1419,31 @@ msgstr "nodul-i %i este un director cu lungimea zero.  "
 
 #. @-expanded: group %g's block bitmap at %b conflicts with some other fs block.\n
 #: e2fsck/problem.c:590
+#, c-format
 msgid "@g %g's @b @B at %b @C.\n"
 msgstr "harta de biți a blocurilor din grupul %g la adresa %b intră în conflict cu un alt bloc din sistemul de fișiere.\n"
 
 #. @-expanded: group %g's inode bitmap at %b conflicts with some other fs block.\n
 #: e2fsck/problem.c:595
+#, c-format
 msgid "@g %g's @i @B at %b @C.\n"
 msgstr "harta de biți a nodului-i al grupului %g la adresa %b intră în conflict cu un alt bloc al sistemului de fișiere.\n"
 
 #. @-expanded: group %g's inode table at %b conflicts with some other fs block.\n
 #: e2fsck/problem.c:600
+#, c-format
 msgid "@g %g's @i table at %b @C.\n"
 msgstr "tabelul de noduri-i al grupului %g la adresa %b intră în conflict cu un alt bloc al sistemului de fișiere.\n"
 
 #. @-expanded: group %g's block bitmap (%b) is bad.  
 #: e2fsck/problem.c:605
+#, c-format
 msgid "@g %g's @b @B (%b) is bad.  "
 msgstr "harta de biți a blocului grupului %g (%b) este incorectă.  "
 
 #. @-expanded: group %g's inode bitmap (%b) is bad.  
 #: e2fsck/problem.c:610
+#, c-format
 msgid "@g %g's @i @B (%b) is bad.  "
 msgstr "harta de biți a nodului-i al grupului %g (%b) este incorectă.  "
 
@@ -1471,6 +1496,7 @@ msgstr "Bloc duplicat sau defectuos în uz!\n"
 
 #. @-expanded: Bad block %b used as bad block inode indirect block.  
 #: e2fsck/problem.c:662
+#, c-format
 msgid "Bad @b %b used as bad @b @i indirect @b.  "
 msgstr "Blocul defectuos %b utilizat ca bloc indirect de nod-i de bloc defectuos.  "
 
@@ -1515,26 +1541,31 @@ msgstr ""
 
 #. @-expanded: The primary superblock (%b) is on the bad block list.\n
 #: e2fsck/problem.c:685
+#, c-format
 msgid "The primary @S (%b) is on the bad @b list.\n"
 msgstr "Super-blocul primar (%b) se află în lista de blocuri defectuoase.\n"
 
 #. @-expanded: Block %b in the primary group descriptors is on the bad block list\n
 #: e2fsck/problem.c:690
+#, c-format
 msgid "Block %b in the primary @g descriptors is on the bad @b list\n"
 msgstr "Blocul %b din descriptorii grupului primar se află în lista de blocuri defectuoase\n"
 
 #. @-expanded: Warning: Group %g's superblock (%b) is bad.\n
 #: e2fsck/problem.c:696
+#, c-format
 msgid "Warning: Group %g's @S (%b) is bad.\n"
-msgstr "Avertisment: Super-blocul (%b) al grupului %g este defectuos.\n"
+msgstr "Avertisment: Super-blocul (%2$b) al grupului %1$g este defectuos.\n"
 
 #. @-expanded: Warning: Group %g's copy of the group descriptors has a bad block (%b).\n
 #: e2fsck/problem.c:702
+#, c-format
 msgid "Warning: Group %g's copy of the @g descriptors has a bad @b (%b).\n"
 msgstr "Avertisment: Copia grupului %g a descriptorilor de grup are un bloc defectuos (%b).\n"
 
 #. @-expanded: Programming error?  block #%b claimed for no reason in process_bad_block.\n
 #: e2fsck/problem.c:708
+#, c-format
 msgid "Programming error?  @b #%b claimed for no reason in process_bad_@b.\n"
 msgstr "Eroare de programare? blocul #%b a fost revendicat fără motiv în process_bad_block.\n"
 
@@ -1551,6 +1582,7 @@ msgstr "eroare la alocarea memoriei tampon de bloc pentru realocarea %s\n"
 
 #. @-expanded: Relocating group %g's %s from %b to %c...\n
 #: e2fsck/problem.c:725
+#, c-format
 msgid "Relocating @g %g's %s from %b to %c...\n"
 msgstr "Se realocă grupul %g %s de la %b la %c...\n"
 
@@ -1562,16 +1594,18 @@ msgstr "Se realocă grupul %g %s la %c...\n"
 
 #. @-expanded: Warning: could not read block %b of %s: %m\n
 #: e2fsck/problem.c:736
+#, c-format
 msgid "Warning: could not read @b %b of %s: %m\n"
 msgstr "Avertisment: nu s-a putut citi blocul %b din %s: %m\n"
 
 #. @-expanded: Warning: could not write block %b for %s: %m\n
 #: e2fsck/problem.c:741
+#, c-format
 msgid "Warning: could not write @b %b for %s: %m\n"
 msgstr "Avertisment: nu s-a putut scrie blocul %b pentru %s: %m\n"
 
 #. @-expanded: error allocating inode bitmap (%N): %m\n
-#: e2fsck/problem.c:746 e2fsck/problem.c:1965
+#: e2fsck/problem.c:746 e2fsck/problem.c:1979
 msgid "@A @i @B (%N): %m\n"
 msgstr "eroare la alocarea hărții de biți a nodului-i (%N): %m\n"
 
@@ -1681,16 +1715,19 @@ msgstr "eroare de alocare a structurii de numărare a referințelor (%N): %m\n"
 
 #. @-expanded: Error reading extended attribute block %b for inode %i.  
 #: e2fsck/problem.c:851
+#, c-format
 msgid "Error reading @a @b %b for @i %i.  "
 msgstr "Eroare la citirea blocului de atribute extinse %b pentru nodul-i %i.  "
 
 #. @-expanded: inode %i has a bad extended attribute block %b.  
 #: e2fsck/problem.c:856
+#, c-format
 msgid "@i %i has a bad @a @b %b.  "
 msgstr "nodul-i %i are un bloc de atribute extinse defectuos %b. "
 
 #. @-expanded: Error reading extended attribute block %b (%m).  
 #: e2fsck/problem.c:861
+#, c-format
 msgid "Error reading @a @b %b (%m).  "
 msgstr "Eroare la citirea blocului de atribute extinse %b (%m).  "
 
@@ -1701,11 +1738,13 @@ msgstr "blocul de atribute extinse %b are un număr de %r referințe, ar trebui 
 
 #. @-expanded: Error writing extended attribute block %b (%m).  
 #: e2fsck/problem.c:871
+#, c-format
 msgid "Error writing @a @b %b (%m).  "
 msgstr "Eroare la scrierea blocului de atribute extinse %b (%m).  "
 
 #. @-expanded: extended attribute block %b has h_blocks > 1.  
 #: e2fsck/problem.c:876
+#, c-format
 msgid "@a @b %b has h_@bs > 1.  "
 msgstr "blocul de atribute extinse %b are h_blocks > 1.  "
 
@@ -1716,16 +1755,19 @@ msgstr "eroare la alocarea structurii de alocare a regiunii de atribuire a atrib
 
 #. @-expanded: extended attribute block %b is corrupt (allocation collision).  
 #: e2fsck/problem.c:886
+#, c-format
 msgid "@a @b %b is corrupt (allocation collision).  "
 msgstr "blocul de atribute extinse %b este corupt (coliziune de alocare).  "
 
 #. @-expanded: extended attribute block %b is corrupt (invalid name).  
 #: e2fsck/problem.c:891
+#, c-format
 msgid "@a @b %b is corrupt (@n name).  "
 msgstr "blocul de atribute extinse %b este corupt (nume nevalid).  "
 
 #. @-expanded: extended attribute block %b is corrupt (invalid value).  
 #: e2fsck/problem.c:896
+#, c-format
 msgid "@a @b %b is corrupt (@n value).  "
 msgstr "blocul de atribute extinse %b este corupt (valoare nevalidă).  "
 
@@ -1785,6 +1827,7 @@ msgstr "nodul-i al directorului HTREE %i are o adâncime a arborelui (%N) care e
 #. @-expanded: Bad block inode has an indirect block (%b) that conflicts with\n
 #. @-expanded: filesystem metadata.  
 #: e2fsck/problem.c:956
+#, c-format
 msgid ""
 "Bad @b @i has an indirect @b (%b) that conflicts with\n"
 "@f metadata.  "
@@ -1842,6 +1885,7 @@ msgstr "Eroare la citirea arborelui de „extent” în nodul-i %i: %m\n"
 #. @-expanded: Failed to iterate extents in inode %i\n
 #. @-expanded: \t(op %s, blk %b, lblk %c): %m\n
 #: e2fsck/problem.c:1009
+#, c-format
 msgid ""
 "Failed to iterate extents in @i %i\n"
 "\t(op %s, blk %b, lblk %c): %m\n"
@@ -1904,6 +1948,7 @@ msgstr ""
 
 #. @-expanded: inode %i has an invalid extent node (blk %b, lblk %c)\n
 #: e2fsck/problem.c:1053
+#, c-format
 msgid "@i %i has an invalid extent node (blk %b, lblk %c)\n"
 msgstr "nodul-i %i are un nod „extent” nevalid (blk %b, lblk %c)\n"
 
@@ -1936,6 +1981,7 @@ msgstr "Nodul-i al blocului defectuos pare a fi nevalid.  "
 #. @-expanded: inode %i has zero length extent\n
 #. @-expanded: \t(invalid logical block %c, physical block %b)\n
 #: e2fsck/problem.c:1084
+#, c-format
 msgid ""
 "@i %i has zero length extent\n"
 "\t(@n logical @b %c, physical @b %b)\n"
@@ -1973,6 +2019,7 @@ msgstr ""
 
 #. @-expanded: inode %i extended attribute block %b passes checks, but checksum does not match block.  
 #: e2fsck/problem.c:1119
+#, c-format
 msgid "@i %i @a @b %b passes checks, but checksum does not match @b.  "
 msgstr "blocul de atribute extinse al nodului-i %i, %b trece verificările, dar suma de control nu corespunde blocului.  "
 
@@ -2016,6 +2063,7 @@ msgstr "blocul %b din nodul-i %i intră în conflict cu metadatele critice; veri
 
 #. @-expanded: directory inode %i block %b should be at block %c.  
 #: e2fsck/problem.c:1155
+#, c-format
 msgid "@d @i %i @b %b should be at @b %c.  "
 msgstr "în nodul-i al directorului %i, blocul %b ar trebui să fie la blocul %c.  "
 
@@ -2028,6 +2076,7 @@ msgstr "nodul-i al directorului %i are extinderea „extent” marcată ca neini
 #. @-expanded: inode %i logical block %b (physical block %c) violates cluster allocation rules.\n
 #. @-expanded: Will fix in pass 1B.\n
 #: e2fsck/problem.c:1166
+#, c-format
 msgid ""
 "@i %i logical @b %b (physical @b %c) violates cluster allocation rules.\n"
 "Will fix in pass 1B.\n"
@@ -2103,6 +2152,7 @@ msgstr "eroare de alocare a %N octeți de memorie pentru lista de noduri-i cript
 
 #. @-expanded: inode %i extent tree could be more shallow (%b; could be <= %c)\n
 #: e2fsck/problem.c:1229
+#, c-format
 msgid "@i %i @x tree could be more shallow (%b; could be <= %c)\n"
 msgstr "arborele „extents” al nodului-i %i ar putea fi mai puțin adânc (%b; ar putea fi <= %c)\n"
 
@@ -2202,10 +2252,22 @@ msgstr "Fișierul orfan din nodul-i %i nu este un fișier obișnuit.  "
 msgid "Orphan file @i %i is not in use, but contains data.  "
 msgstr "Fișierul orfan din nodul-i %i nu este în uz, dar conține date.  "
 
+#. @-expanded: inode %i has the ea_inode flag set but is not a regular file.  
+#: e2fsck/problem.c:1314
+#, c-format
+msgid "@i %i has the ea_inode flag set but is not a regular file.  "
+msgstr "nodul-i %i are activat fanionul „casefold”, dar nu este un fișier obișnuit.  "
+
+#. @-expanded: inode %i references EA inode but superblock is missing EA_INODE feature\n
+#: e2fsck/problem.c:1319
+#, c-format
+msgid "@i %i references EA inode but @S is missing EA_INODE feature\n"
+msgstr "nodul-i %i face trimitere la nodul-i EA, dar super-blocului îi lipsește caracteristica EA_INODE\n"
+
 #. @-expanded: \n
 #. @-expanded: Running additional passes to resolve blocks claimed by more than one inode...\n
 #. @-expanded: Pass 1B: Rescanning for multiply-claimed blocks\n
-#: e2fsck/problem.c:1316
+#: e2fsck/problem.c:1326
 msgid ""
 "\n"
 "Running additional passes to resolve @bs claimed by more than one @i...\n"
@@ -2216,46 +2278,47 @@ msgstr ""
 "Pasul 1B: Rescanare pentru blocuri cu revendicări multiple\n"
 
 #. @-expanded: multiply-claimed block(s) in inode %i:
-#: e2fsck/problem.c:1323
+#: e2fsck/problem.c:1333
 #, no-c-format
 msgid "@m @b(s) in @i %i:"
 msgstr "blocuri revendicate de mai multe ori în nodul-i %i:"
 
-#: e2fsck/problem.c:1339
+#: e2fsck/problem.c:1349
 #, no-c-format
 msgid "Error while scanning inodes (%i): %m\n"
 msgstr "Eroare la scanarea nodurilor-i (%i): %m\n"
 
 #. @-expanded: error allocating inode bitmap (inode_dup_map): %m\n
-#: e2fsck/problem.c:1345
+#: e2fsck/problem.c:1355
 #, no-c-format
 msgid "@A @i @B (@i_dup_map): %m\n"
 msgstr "eroare la alocarea hărții de biți a nodului-i (inode_dup_map): %m\n"
 
 #. @-expanded: Error while iterating over blocks in inode %i (%s): %m\n
-#: e2fsck/problem.c:1351
+#: e2fsck/problem.c:1361
 #, no-c-format
 msgid "Error while iterating over @bs in @i %i (%s): %m\n"
 msgstr "Eroare în timpul iterației peste blocurile din nodul-i %i (%s): %m\n"
 
 #. @-expanded: Error adjusting refcount for extended attribute block %b (inode %i): %m\n
-#: e2fsck/problem.c:1356 e2fsck/problem.c:1736
+#: e2fsck/problem.c:1366 e2fsck/problem.c:1746
+#, c-format
 msgid "Error adjusting refcount for @a @b %b (@i %i): %m\n"
 msgstr "Eroare la ajustarea numărului de referințe pentru blocul de atribute extinse %b (nodul-i %i): %m\n"
 
 #. @-expanded: Pass 1C: Scanning directories for inodes with multiply-claimed blocks\n
-#: e2fsck/problem.c:1366
+#: e2fsck/problem.c:1376
 msgid "Pass 1C: Scanning directories for @is with @m @bs\n"
 msgstr "Pasul 1C: Se scanează directoarele pentru noduri-i cu blocuri revendicate de mai multe ori\n"
 
 #. @-expanded: Pass 1D: Reconciling multiply-claimed blocks\n
-#: e2fsck/problem.c:1372
+#: e2fsck/problem.c:1382
 msgid "Pass 1D: Reconciling @m @bs\n"
 msgstr "Pasul 1D: Se reconciliază blocurile cu revendicări multiple\n"
 
 #. @-expanded: File %Q (inode #%i, mod time %IM) \n
 #. @-expanded:   has %r multiply-claimed block(s), shared with %N file(s):\n
-#: e2fsck/problem.c:1377
+#: e2fsck/problem.c:1387
 msgid ""
 "File %Q (@i #%i, mod time %IM) \n"
 "  has %r @m @b(s), shared with %N file(s):\n"
@@ -2264,18 +2327,18 @@ msgstr ""
 "  are %r bloc(uri) revendicat(e) de mai multe ori, partajat(e) cu %N fișier(e):\n"
 
 #. @-expanded: \t%Q (inode #%i, mod time %IM)\n
-#: e2fsck/problem.c:1383
+#: e2fsck/problem.c:1393
 msgid "\t%Q (@i #%i, mod time %IM)\n"
 msgstr "\t%Q (nodul-i nr. %i, data de modificare %IM)\n"
 
 #. @-expanded: \t<filesystem metadata>\n
-#: e2fsck/problem.c:1388
+#: e2fsck/problem.c:1398
 msgid "\t<@f metadata>\n"
 msgstr "\t<metadate ale sistemului de fișiere>\n"
 
 #. @-expanded: (There are %N inodes containing multiply-claimed blocks.)\n
 #. @-expanded: \n
-#: e2fsck/problem.c:1393
+#: e2fsck/problem.c:1403
 msgid ""
 "(There are %N @is containing @m @bs.)\n"
 "\n"
@@ -2285,7 +2348,7 @@ msgstr ""
 
 #. @-expanded: multiply-claimed blocks already reassigned or cloned.\n
 #. @-expanded: \n
-#: e2fsck/problem.c:1398
+#: e2fsck/problem.c:1408
 msgid ""
 "@m @bs already reassigned or cloned.\n"
 "\n"
@@ -2293,350 +2356,355 @@ msgstr ""
 "blocuri cu revendicări multiple deja realocați sau clonați.\n"
 "\n"
 
-#: e2fsck/problem.c:1412
+#: e2fsck/problem.c:1422
 #, no-c-format
 msgid "Couldn't clone file: %m\n"
 msgstr "Nu s-a putut clona fișierul: %m\n"
 
 #. @-expanded: Pass 1E: Optimizing extent trees\n
-#: e2fsck/problem.c:1418
+#: e2fsck/problem.c:1428
 msgid "Pass 1E: Optimizing @x trees\n"
 msgstr "Pasul 1E: Optimizarea arborilor de „extents”\n"
 
 #. @-expanded: Failed to optimize extent tree %p (%i): %m\n
-#: e2fsck/problem.c:1424
+#: e2fsck/problem.c:1434
 #, no-c-format
 msgid "Failed to optimize @x tree %p (%i): %m\n"
 msgstr "Nu s-a reușit optimizarea arborelui „extent” %p (%i): %m\n"
 
 #. @-expanded: Optimizing extent trees: 
-#: e2fsck/problem.c:1429
+#: e2fsck/problem.c:1439
 msgid "Optimizing @x trees: "
 msgstr "Se optimizează arborii „extents”: "
 
-#: e2fsck/problem.c:1444
+#: e2fsck/problem.c:1454
+#, c-format
 msgid "Internal error: max extent tree depth too large (%b; expected=%c).\n"
 msgstr "Eroare internă: adâncimea maximă a arborelui „extent” este prea mare (%b; se aștepta=%c).\n"
 
 #. @-expanded: inode %i extent tree (at level %b) could be shorter.  
-#: e2fsck/problem.c:1449
+#: e2fsck/problem.c:1459
+#, c-format
 msgid "@i %i @x tree (at level %b) could be shorter.  "
 msgstr "în nodul-i %i, arborele „extent” (la nivelul %b) ar putea fi mai scurt.  "
 
 #. @-expanded: inode %i extent tree (at level %b) could be narrower.  
-#: e2fsck/problem.c:1454
+#: e2fsck/problem.c:1464
+#, c-format
 msgid "@i %i @x tree (at level %b) could be narrower.  "
 msgstr "arborele de „extents” al nodului-i %i (la nivelul %b) ar putea fi mai îngust.  "
 
 #. @-expanded: Pass 2: Checking directory structure\n
-#: e2fsck/problem.c:1461
+#: e2fsck/problem.c:1471
 msgid "Pass 2: Checking @d structure\n"
 msgstr "Pasul 2: Se verifică structura directoarelor\n"
 
 #. @-expanded: invalid inode number for '.' in directory inode %i.\n
-#: e2fsck/problem.c:1467
+#: e2fsck/problem.c:1477
 #, no-c-format
 msgid "@n @i number for '.' in @d @i %i.\n"
 msgstr "număr de nod-i incorect pentru „.” în nodul-i de director %i.\n"
 
 #. @-expanded: entry '%Dn' in %p (%i) has invalid inode #: %Di.\n
-#: e2fsck/problem.c:1472
+#: e2fsck/problem.c:1482
 msgid "@E has @n @i #: %Di.\n"
 msgstr "intrarea „%Dn” în %p (%i) are un nod-i nevalid nr.: %Di.\n"
 
 #. @-expanded: entry '%Dn' in %p (%i) has deleted/unused inode %Di.  
-#: e2fsck/problem.c:1477
+#: e2fsck/problem.c:1487
 msgid "@E has @D/unused @i %Di.  "
 msgstr "intrarea „%Dn” din %p (%i) conține nodul-i șters/neutilizat %Di.  "
 
 #. @-expanded: entry '%Dn' in %p (%i) is a link to '.'  
-#: e2fsck/problem.c:1482
+#: e2fsck/problem.c:1492
 msgid "@E @L to '.'  "
 msgstr "intrarea „%Dn” din %p (%i) este o legătură către „.”.  "
 
 #. @-expanded: entry '%Dn' in %p (%i) points to inode (%Di) located in a bad block.\n
-#: e2fsck/problem.c:1487
+#: e2fsck/problem.c:1497
 msgid "@E points to @i (%Di) located in a bad @b.\n"
 msgstr "intrarea „%Dn” din %p (%i) indică spre nodul-i (%Di) situat într-un bloc greșit.\n"
 
 #. @-expanded: entry '%Dn' in %p (%i) is a link to directory %P (%Di).\n
-#: e2fsck/problem.c:1492
+#: e2fsck/problem.c:1502
 msgid "@E @L to @d %P (%Di).\n"
 msgstr "intrarea „%Dn” din %p (%i) este o legătură către directorul %P (%Di).\n"
 
 #. @-expanded: entry '%Dn' in %p (%i) is a link to the root inode.\n
-#: e2fsck/problem.c:1497
+#: e2fsck/problem.c:1507
 msgid "@E @L to the @r.\n"
 msgstr "intrarea „%Dn” din %p (%i) este o legătură către nodul-i rădăcină.\n"
 
 #. @-expanded: entry '%Dn' in %p (%i) has illegal characters in its name.\n
-#: e2fsck/problem.c:1502
+#: e2fsck/problem.c:1512
 msgid "@E has illegal characters in its name.\n"
 msgstr "intrarea „%Dn” din %p (%i) are caractere ilegale în nume.\n"
 
 #. @-expanded: Missing '.' in directory inode %i.\n
-#: e2fsck/problem.c:1508
+#: e2fsck/problem.c:1518
 #, no-c-format
 msgid "Missing '.' in @d @i %i.\n"
 msgstr "Lipsește „.” în nodul-i al directorului %i.\n"
 
 #. @-expanded: Missing '..' in directory inode %i.\n
-#: e2fsck/problem.c:1514
+#: e2fsck/problem.c:1524
 #, no-c-format
 msgid "Missing '..' in @d @i %i.\n"
 msgstr "Lipsește „..” în nodul-i al directorului %i.\n"
 
 #. @-expanded: First entry '%Dn' (inode=%Di) in directory inode %i (%p) should be '.'\n
-#: e2fsck/problem.c:1519
+#: e2fsck/problem.c:1529
 msgid "First @e '%Dn' (@i=%Di) in @d @i %i (%p) @s '.'\n"
 msgstr "Prima intrare „%Dn” (nodul-i=%Di) din nodul-i al directorului %i (%p) ar trebui să fie „.”\n"
 
 #. @-expanded: Second entry '%Dn' (inode=%Di) in directory inode %i should be '..'\n
-#: e2fsck/problem.c:1524
+#: e2fsck/problem.c:1534
 msgid "Second @e '%Dn' (@i=%Di) in @d @i %i @s '..'\n"
 msgstr "A doua intrare „%Dn” (nodul-i=%Di) din nodul-i al directorului %i (%p) ar trebui să fie „..”\n"
 
 #. @-expanded: i_faddr for inode %i (%Q) is %IF, should be zero.\n
-#: e2fsck/problem.c:1529
+#: e2fsck/problem.c:1539
 msgid "i_faddr @F %IF, @s zero.\n"
 msgstr "i_faddr pentru nodul-i %i (%Q) este %IF, ar trebui să fie zero.\n"
 
 #. @-expanded: i_file_acl for inode %i (%Q) is %If, should be zero.\n
-#: e2fsck/problem.c:1534
+#: e2fsck/problem.c:1544
 msgid "i_file_acl @F %If, @s zero.\n"
 msgstr "i_file_acl pentru nodul-i %i (%Q) este %If, ar trebui să fie zero.\n"
 
 #. @-expanded: i_size_high for inode %i (%Q) is %Id, should be zero.\n
-#: e2fsck/problem.c:1539
+#: e2fsck/problem.c:1549
 msgid "i_size_high @F %Id, @s zero.\n"
 msgstr "i_size_high pentru nodul-i %i (%Q) este %Id, ar trebui să fie zero.\n"
 
 #. @-expanded: i_frag for inode %i (%Q) is %N, should be zero.\n
-#: e2fsck/problem.c:1544
+#: e2fsck/problem.c:1554
 msgid "i_frag @F %N, @s zero.\n"
 msgstr "i_frag pentru nodul-i %i (%Q) este %N, ar trebui să fie zero.\n"
 
 #. @-expanded: i_fsize for inode %i (%Q) is %N, should be zero.\n
-#: e2fsck/problem.c:1549
+#: e2fsck/problem.c:1559
 msgid "i_fsize @F %N, @s zero.\n"
 msgstr "i_fsize pentru nodul-i %i (%Q) este %N, ar trebui să fie zero.\n"
 
 #. @-expanded: inode %i (%Q) has invalid mode (%Im).\n
-#: e2fsck/problem.c:1554
+#: e2fsck/problem.c:1564
 msgid "@i %i (%Q) has @n mode (%Im).\n"
 msgstr "nodul-i %i (%Q) are modul nevalid (%Im).\n"
 
 #. @-expanded: directory inode %i, %B, offset %N: directory corrupted\n
-#: e2fsck/problem.c:1559
+#: e2fsck/problem.c:1569
 msgid "@d @i %i, %B, offset %N: @d corrupted\n"
 msgstr "nodul-i al directorului %i, %B, poziția %N: director corupt\n"
 
 #. @-expanded: directory inode %i, %B, offset %N: filename too long\n
-#: e2fsck/problem.c:1564
+#: e2fsck/problem.c:1574
 msgid "@d @i %i, %B, offset %N: filename too long\n"
 msgstr "nodul-i al directorului %i, %B, poziția %N: numele fișierului este prea lung\n"
 
 #. @-expanded: directory inode %i has an unallocated %B.  
-#: e2fsck/problem.c:1569
+#: e2fsck/problem.c:1579
 msgid "@d @i %i has an unallocated %B.  "
 msgstr "nodul-i al directorului %i are un %B nealocat.  "
 
 #. @-expanded: '.' directory entry in directory inode %i is not NULL terminated\n
-#: e2fsck/problem.c:1575
+#: e2fsck/problem.c:1585
 #, no-c-format
 msgid "'.' @d @e in @d @i %i is not NULL terminated\n"
 msgstr "Intrarea de director „.” în nodul-i de director %i nu se termină cu NULL\n"
 
 #. @-expanded: '..' directory entry in directory inode %i is not NULL terminated\n
-#: e2fsck/problem.c:1581
+#: e2fsck/problem.c:1591
 #, no-c-format
 msgid "'..' @d @e in @d @i %i is not NULL terminated\n"
 msgstr "Intrarea de director „..” în nodul-i de director %i nu se termină cu NULL\n"
 
 #. @-expanded: inode %i (%Q) is an illegal character device.\n
-#: e2fsck/problem.c:1586
+#: e2fsck/problem.c:1596
 msgid "@i %i (%Q) is an @I character @v.\n"
 msgstr "nodul-i %i (%Q) este un dispozitiv de caractere ilegal.\n"
 
 #. @-expanded: inode %i (%Q) is an illegal block device.\n
-#: e2fsck/problem.c:1591
+#: e2fsck/problem.c:1601
 msgid "@i %i (%Q) is an @I @b @v.\n"
 msgstr "nodul-i %i (%Q) este un dispozitiv de bloc ilegal.\n"
 
 #. @-expanded: entry '%Dn' in %p (%i) is duplicate '.' entry.\n
-#: e2fsck/problem.c:1596
+#: e2fsck/problem.c:1606
 msgid "@E is duplicate '.' @e.\n"
 msgstr "intrarea „%Dn” din %p (%i) este o intrare „.” duplicată.\n"
 
 #. @-expanded: entry '%Dn' in %p (%i) is duplicate '..' entry.\n
-#: e2fsck/problem.c:1601
+#: e2fsck/problem.c:1611
 msgid "@E is duplicate '..' @e.\n"
 msgstr "intrarea „%Dn” din %p (%i) este o intrare „..” duplicată.\n"
 
-#: e2fsck/problem.c:1607 e2fsck/problem.c:1992
+#: e2fsck/problem.c:1617 e2fsck/problem.c:2006
 #, no-c-format
 msgid "Internal error: couldn't find dir_info for %i.\n"
 msgstr "Eroare internă: nu s-a putut găsi dir_info pentru %i.\n"
 
 #. @-expanded: entry '%Dn' in %p (%i) has rec_len of %Dr, should be %N.\n
-#: e2fsck/problem.c:1612
+#: e2fsck/problem.c:1622
 msgid "@E has rec_len of %Dr, @s %N.\n"
 msgstr "intrarea „%Dn” din %p (%i) are rec_len de %Dr, ar trebui să fie %N.\n"
 
 #. @-expanded: error allocating icount structure: %m\n
-#: e2fsck/problem.c:1618
+#: e2fsck/problem.c:1628
 #, no-c-format
 msgid "@A icount structure: %m\n"
 msgstr "eroare la alocarea structurii icount: %m\n"
 
 #. @-expanded: Error iterating over directory blocks: %m\n
-#: e2fsck/problem.c:1624
+#: e2fsck/problem.c:1634
 #, no-c-format
 msgid "Error iterating over @d @bs: %m\n"
 msgstr "Eroare la iterarea peste blocurile de directoare: %m\n"
 
 #. @-expanded: Error reading directory block %b (inode %i): %m\n
-#: e2fsck/problem.c:1629
+#: e2fsck/problem.c:1639
+#, c-format
 msgid "Error reading @d @b %b (@i %i): %m\n"
 msgstr "Eroare la citirea blocului de directoare %b (nodul-i %i): %m\n"
 
 #. @-expanded: Error writing directory block %b (inode %i): %m\n
-#: e2fsck/problem.c:1634
+#: e2fsck/problem.c:1644
+#, c-format
 msgid "Error writing @d @b %b (@i %i): %m\n"
 msgstr "Eroare la scrierea blocului de directoare %b (nod-i %i): %m\n"
 
 #. @-expanded: error allocating new directory block for inode %i (%s): %m\n
-#: e2fsck/problem.c:1640
+#: e2fsck/problem.c:1650
 #, no-c-format
 msgid "@A new @d @b for @i %i (%s): %m\n"
 msgstr "eroare la alocarea unui nou bloc de directoare pentru nodul-i %i (%s): %m\n"
 
 #. @-expanded: Error deallocating inode %i: %m\n
-#: e2fsck/problem.c:1646
+#: e2fsck/problem.c:1656
 #, no-c-format
 msgid "Error deallocating @i %i: %m\n"
 msgstr "Eroare la eliberarea nodului-i %i: %m\n"
 
 #. @-expanded: directory entry for '.' in %p (%i) is big.\n
-#: e2fsck/problem.c:1652
+#: e2fsck/problem.c:1662
 #, no-c-format
 msgid "@d @e for '.' in %p (%i) is big.\n"
 msgstr "intrarea de director pentru „.” în %p (%i) este mare.\n"
 
 #. @-expanded: inode %i (%Q) is an illegal FIFO.\n
-#: e2fsck/problem.c:1657
+#: e2fsck/problem.c:1667
 msgid "@i %i (%Q) is an @I FIFO.\n"
 msgstr "nodul-i %i (%Q) este o conductă cu nume (FIFO) ilegală.\n"
 
 #. @-expanded: inode %i (%Q) is an illegal socket.\n
-#: e2fsck/problem.c:1662
+#: e2fsck/problem.c:1672
 msgid "@i %i (%Q) is an @I socket.\n"
 msgstr "nodul-i %i (%Q) este un soclu ilegal.\n"
 
 #. @-expanded: Setting filetype for entry '%Dn' in %p (%i) to %N.\n
-#: e2fsck/problem.c:1667
+#: e2fsck/problem.c:1677
 msgid "Setting filetype for @E to %N.\n"
 msgstr "Se stabilește tipul de fișier pentru intrarea „%Dn” din %p (%i) la %N.\n"
 
 #. @-expanded: entry '%Dn' in %p (%i) has an incorrect filetype (was %Dt, should be %N).\n
-#: e2fsck/problem.c:1672
+#: e2fsck/problem.c:1682
 msgid "@E has an incorrect filetype (was %Dt, @s %N).\n"
 msgstr "intrarea „%Dn” din %p (%i) are un tip de fișier incorect (era %Dt, ar trebui să fie %N).\n"
 
 #. @-expanded: entry '%Dn' in %p (%i) has filetype set.\n
-#: e2fsck/problem.c:1677
+#: e2fsck/problem.c:1687
 msgid "@E has filetype set.\n"
 msgstr "intrarea „%Dn” din %p (%i) are definit tipul de fișier.\n"
 
 #. @-expanded: entry '%Dn' in %p (%i) has a zero-length name.\n
-#: e2fsck/problem.c:1682
+#: e2fsck/problem.c:1692
 msgid "@E has a @z name.\n"
 msgstr "intrarea „%Dn” din %p (%i) are un nume de lungime zero.\n"
 
 #. @-expanded: Symlink %Q (inode #%i) is invalid.\n
-#: e2fsck/problem.c:1687
+#: e2fsck/problem.c:1697
 msgid "Symlink %Q (@i #%i) is @n.\n"
 msgstr "Legătura simbolică %Q (nodul-i #%i) nu este validă.\n"
 
 #. @-expanded: extended attribute block for inode %i (%Q) is invalid (%If).\n
-#: e2fsck/problem.c:1692
+#: e2fsck/problem.c:1702
 msgid "@a @b @F @n (%If).\n"
 msgstr "blocul de atribut extins pentru nodul-i %i (%Q) nu este valid (%If).\n"
 
 #. @-expanded: filesystem contains large files, but lacks LARGE_FILE flag in superblock.\n
-#: e2fsck/problem.c:1697
+#: e2fsck/problem.c:1707
 msgid "@f contains large files, but lacks LARGE_FILE flag in @S.\n"
 msgstr "sistemul de fișiere conține fișiere mari, dar nu are fanionul LARGE_FILE în super-bloc.\n"
 
 #. @-expanded: problem in HTREE directory inode %d: %B not referenced\n
-#: e2fsck/problem.c:1702
+#: e2fsck/problem.c:1712
 msgid "@p @h %d: %B not referenced\n"
 msgstr "problemă în nodul-i al directorului HTREE %d: %B nu are referință\n"
 
 #. @-expanded: problem in HTREE directory inode %d: %B referenced twice\n
-#: e2fsck/problem.c:1707
+#: e2fsck/problem.c:1717
 msgid "@p @h %d: %B referenced twice\n"
 msgstr "problemă în nodul-i al directorului HTREE %d: %B menționat de două ori\n"
 
 #. @-expanded: problem in HTREE directory inode %d: %B has bad min hash\n
-#: e2fsck/problem.c:1712
+#: e2fsck/problem.c:1722
 msgid "@p @h %d: %B has bad min hash\n"
 msgstr "problemă în nodul-i al directorului HTREE %d: %B are o sumă de control(hash) minimă incorectă\n"
 
 #. @-expanded: problem in HTREE directory inode %d: %B has bad max hash\n
-#: e2fsck/problem.c:1717
+#: e2fsck/problem.c:1727
 msgid "@p @h %d: %B has bad max hash\n"
 msgstr "problemă în nodul-i al directorului HTREE %d: %B are o sumă de control(hash) maximă incorectă\n"
 
 #. @-expanded: invalid HTREE directory inode %d (%q).  
-#: e2fsck/problem.c:1722
+#: e2fsck/problem.c:1732
 msgid "@n @h %d (%q).  "
 msgstr "nodul-i al directorului HTREE nu este valid %d (%q).  "
 
 #. @-expanded: filesystem has large directories, but lacks LARGE_DIR flag in superblock.\n
-#: e2fsck/problem.c:1726
+#: e2fsck/problem.c:1736
 msgid "@f has large directories, but lacks LARGE_DIR flag in @S.\n"
 msgstr "sistemul de fișiere are directoare mari, dar nu are fanionul LARGE_DIR în super-bloc.\n"
 
 #. @-expanded: problem in HTREE directory inode %d (%q): bad block number %b.\n
-#: e2fsck/problem.c:1731
+#: e2fsck/problem.c:1741
 msgid "@p @h %d (%q): bad @b number %b.\n"
 msgstr "problemă în nodul-i al directorului HTREE %d (%q): număr de bloc greșit %b.\n"
 
 #. @-expanded: problem in HTREE directory inode %d: root node is invalid\n
-#: e2fsck/problem.c:1742
+#: e2fsck/problem.c:1752
 #, no-c-format
 msgid "@p @h %d: root node is @n\n"
 msgstr "problemă în nodul-i al directorului HTREE %d: nodul rădăcină nu este valid\n"
 
 #. @-expanded: problem in HTREE directory inode %d: %B has invalid limit (%N)\n
-#: e2fsck/problem.c:1747
+#: e2fsck/problem.c:1757
 msgid "@p @h %d: %B has @n limit (%N)\n"
 msgstr "problemă în nodul-i al directorului HTREE %d: %B are limita nevalidă (%N)\n"
 
 #. @-expanded: problem in HTREE directory inode %d: %B has invalid count (%N)\n
-#: e2fsck/problem.c:1752
+#: e2fsck/problem.c:1762
 msgid "@p @h %d: %B has @n count (%N)\n"
 msgstr "problemă în nodul-i al directorului HTREE %d: %B are un număr nevalid (%N)\n"
 
 #. @-expanded: problem in HTREE directory inode %d: %B has an unordered hash table\n
-#: e2fsck/problem.c:1757
+#: e2fsck/problem.c:1767
 msgid "@p @h %d: %B has an unordered hash table\n"
 msgstr "problemă în nodul-i al directorului HTREE %d: %B are o sumă de control(hash) maximă incorectă\n"
 
 #. @-expanded: problem in HTREE directory inode %d: %B has invalid depth (%N)\n
-#: e2fsck/problem.c:1762
+#: e2fsck/problem.c:1772
 msgid "@p @h %d: %B has @n depth (%N)\n"
 msgstr "problemă în nodul-i al directorului HTREE %d: %B are o adâncime nevalidă (%N)\n"
 
 #. @-expanded: Duplicate entry '%Dn' in %p (%i) found.  
-#: e2fsck/problem.c:1767
+#: e2fsck/problem.c:1777
 msgid "Duplicate @E found.  "
 msgstr "S-a găsit o intrare duplicată „%Dn” în %p (%i).  "
 
 #. @-expanded: entry '%Dn' in %p (%i) has a non-unique filename.\n
 #. @-expanded: Rename to %s
-#: e2fsck/problem.c:1772
+#: e2fsck/problem.c:1782
 #, no-c-format
 msgid ""
 "@E has a non-unique filename.\n"
@@ -2648,7 +2716,7 @@ msgstr ""
 #. @-expanded: Duplicate entry '%Dn' found.\n
 #. @-expanded: \tMarking %p (%i) to be rebuilt.\n
 #. @-expanded: \n
-#: e2fsck/problem.c:1777
+#: e2fsck/problem.c:1787
 msgid ""
 "Duplicate @e '%Dn' found.\n"
 "\tMarking %p (%i) to be rebuilt.\n"
@@ -2659,175 +2727,180 @@ msgstr ""
 "\n"
 
 #. @-expanded: i_blocks_hi for inode %i (%Q) is %N, should be zero.\n
-#: e2fsck/problem.c:1782
+#: e2fsck/problem.c:1792
 msgid "i_blocks_hi @F %N, @s zero.\n"
 msgstr "i_blocks_hi pentru nodul-i %i (%Q) este %N, ar trebui să fie zero.\n"
 
 #. @-expanded: Unexpected block in HTREE directory inode %d (%q).\n
-#: e2fsck/problem.c:1787
+#: e2fsck/problem.c:1797
 msgid "Unexpected @b in @h %d (%q).\n"
 msgstr "Bloc neașteptat în nodul-i al directorului HTREE %d (%q).\n"
 
 #. @-expanded: entry '%Dn' in %p (%i) references inode %Di in group %g where _INODE_UNINIT is set.\n
-#: e2fsck/problem.c:1792
+#: e2fsck/problem.c:1802
 msgid "@E references @i %Di in @g %g where _INODE_UNINIT is set.\n"
 msgstr "intrarea „%Dn” din %p (%i) se referă la nodul-i %Di din grupul %g în care este activat _INODE_UNINIT.\n"
 
 #. @-expanded: entry '%Dn' in %p (%i) references inode %Di found in group %g's unused inodes area.\n
-#: e2fsck/problem.c:1797
+#: e2fsck/problem.c:1807
 msgid "@E references @i %Di found in @g %g's unused inodes area.\n"
 msgstr "intrarea „%Dn” din %p (%i) face trimitere la nodul-i %Di găsit în zona de noduri neutilizate a grupului %g.\n"
 
 #. @-expanded: i_file_acl_hi for inode %i (%Q) is %N, should be zero.\n
-#: e2fsck/problem.c:1802
+#: e2fsck/problem.c:1812
 msgid "i_file_acl_hi @F %N, @s zero.\n"
 msgstr "i_file_acl_hi pentru nodul-i %i (%Q) este %N, ar trebui să fie zero.\n"
 
 #. @-expanded: problem in HTREE directory inode %d: root node fails checksum.\n
-#: e2fsck/problem.c:1808
+#: e2fsck/problem.c:1818
 #, no-c-format
 msgid "@p @h %d: root node fails checksum.\n"
 msgstr "problemă în nodul-i de director HTREE %d: nodul rădăcină nu reușește să facă verificarea sumei de control.\n"
 
 #. @-expanded: problem in HTREE directory inode %d: internal node fails checksum.\n
-#: e2fsck/problem.c:1814
+#: e2fsck/problem.c:1824
 #, no-c-format
 msgid "@p @h %d: internal node fails checksum.\n"
 msgstr "problemă în nodul-i de director HTREE %d: nodul intern nu reușește să facă verificarea sumei de control.\n"
 
 #. @-expanded: directory inode %i, %B, offset %N: directory has no checksum.\n
-#: e2fsck/problem.c:1819
+#: e2fsck/problem.c:1829
 msgid "@d @i %i, %B, offset %N: @d has no checksum.\n"
 msgstr "nodul-i al directorului %i, %B, poziția %N: directorul nu are o sumă de control.\n"
 
 #. @-expanded: directory inode %i, %B: directory passes checks but fails checksum.\n
-#: e2fsck/problem.c:1824
+#: e2fsck/problem.c:1834
 msgid "@d @i %i, %B: @d passes checks but fails checksum.\n"
 msgstr "nodul-i al directorului %i, %B: directorul trece verificările, dar eșuează la verificarea sumei de control.\n"
 
 #. @-expanded: Inline directory inode %i size (%N) must be a multiple of 4.\n
-#: e2fsck/problem.c:1829
+#: e2fsck/problem.c:1839
 msgid "Inline @d @i %i size (%N) must be a multiple of 4.\n"
 msgstr "Dimensiunea nodului-i al directorului în linie %i (%N) trebuie să fie un multiplu de 4.\n"
 
 #. @-expanded: Fixing size of inline directory inode %i failed.\n
-#: e2fsck/problem.c:1835
+#: e2fsck/problem.c:1845
 #, no-c-format
 msgid "Fixing size of inline @d @i %i failed.\n"
 msgstr "Fixarea dimensiunii nodului-i al directorului „inline” %i a eșuat.\n"
 
 #. @-expanded: Encrypted entry '%Dn' in %p (%i) is too short.\n
-#: e2fsck/problem.c:1840
+#: e2fsck/problem.c:1850
 msgid "Encrypted @E is too short.\n"
 msgstr "Intrarea criptată „%Dn” din %p (%i) este prea scurtă.\n"
 
 #. @-expanded: Encrypted entry '%Dn' in %p (%i) references unencrypted inode %Di.\n
-#: e2fsck/problem.c:1845
+#: e2fsck/problem.c:1855
 msgid "Encrypted @E references unencrypted @i %Di.\n"
 msgstr "Intrarea criptată „%Dn” din %p (%i) face trimitere la nodul-i necriptat %Di.\n"
 
 #. @-expanded: Encrypted entry '%Dn' in %p (%i) references inode %Di, which has a different encryption policy.\n
-#: e2fsck/problem.c:1850
+#: e2fsck/problem.c:1860
 msgid "Encrypted @E references @i %Di, which has a different encryption policy.\n"
 msgstr "Intrarea criptată „%Dn” din %p (%i) face referire la nodul-i %Di, care are o politică de criptare diferită.\n"
 
 #. @-expanded: entry '%Dn' in %p (%i) has illegal UTF-8 characters in its name.\n
-#: e2fsck/problem.c:1855
+#: e2fsck/problem.c:1865
 msgid "@E has illegal UTF-8 characters in its name.\n"
 msgstr "intrarea „%Dn” din %p (%i) are caractere UTF-8 ilegale în nume.\n"
 
 #. @-expanded: Duplicate filename entry '%Dn' in %p (%i) found.  
-#: e2fsck/problem.c:1860
+#: e2fsck/problem.c:1870
 msgid "Duplicate filename @E found.  "
 msgstr "S-a găsit o intrare duplicată a numelui de fișier „%Dn” în %p (%i).  "
 
+#. @-expanded: entry '%Dn' in %p (%i) references EA inode %Di.\n
+#: e2fsck/problem.c:1875
+msgid "@E references EA @i %Di.\n"
+msgstr "intrarea „%Dn” din %p (%i) face trimitere la nodul-i EA %Di.\n"
+
 #. @-expanded: Pass 3: Checking directory connectivity\n
-#: e2fsck/problem.c:1868
+#: e2fsck/problem.c:1882
 msgid "Pass 3: Checking @d connectivity\n"
 msgstr "Pasul 3: Se verifică conectivitatea directoarelor\n"
 
 #. @-expanded: root inode not allocated.  
-#: e2fsck/problem.c:1873
+#: e2fsck/problem.c:1887
 msgid "@r not allocated.  "
 msgstr "nodul-i rădăcină nu este alocat.  "
 
 #. @-expanded: No room in lost+found directory.  
-#: e2fsck/problem.c:1878
+#: e2fsck/problem.c:1892
 msgid "No room in @l @d.  "
 msgstr "Nu există loc în directorul de obiecte pierdute și găsite „lost+found”.  "
 
 #. @-expanded: Unconnected directory inode %i (was in %q)\n
-#: e2fsck/problem.c:1884
+#: e2fsck/problem.c:1898
 #, no-c-format
 msgid "Unconnected @d @i %i (was in %q)\n"
 msgstr "Nodul-i al directorului neconectat %i (era în %q)\n"
 
 #. @-expanded: /lost+found not found.  
-#: e2fsck/problem.c:1889
+#: e2fsck/problem.c:1903
 msgid "/@l not found.  "
 msgstr "/lost+found nu a fost găsit.  "
 
 #. @-expanded: '..' in %Q (%i) is %P (%j), should be %q (%d).\n
-#: e2fsck/problem.c:1894
+#: e2fsck/problem.c:1908
 msgid "'..' in %Q (%i) is %P (%j), @s %q (%d).\n"
 msgstr "„..” din %Q (%i) este %P (%j), ar trebui să fie %q (%d).\n"
 
 #. @-expanded: Bad or non-existent /lost+found.  Cannot reconnect.\n
-#: e2fsck/problem.c:1900
+#: e2fsck/problem.c:1914
 #, no-c-format
 msgid "Bad or non-existent /@l.  Cannot reconnect.\n"
 msgstr "/lost+found (pierdut+găsit) defectuos sau inexistent. Nu se poate reconecta.\n"
 
 #. @-expanded: Could not expand /lost+found: %m\n
-#: e2fsck/problem.c:1906
+#: e2fsck/problem.c:1920
 #, no-c-format
 msgid "Could not expand /@l: %m\n"
 msgstr "Nu s-a putut expanda /lost+found: %m\n"
 
-#: e2fsck/problem.c:1912
+#: e2fsck/problem.c:1926
 #, no-c-format
 msgid "Could not reconnect %i: %m\n"
 msgstr "Nu s-a putut reconecta %i: %m\n"
 
 #. @-expanded: Error while trying to find /lost+found: %m\n
-#: e2fsck/problem.c:1918
+#: e2fsck/problem.c:1932
 #, no-c-format
 msgid "Error while trying to find /@l: %m\n"
 msgstr "Eroare în timpul încercării de a găsi /lost+found: %m\n"
 
 #. @-expanded: ext2fs_new_block: %m while trying to create /lost+found directory\n
-#: e2fsck/problem.c:1924
+#: e2fsck/problem.c:1938
 #, no-c-format
 msgid "ext2fs_new_@b: %m while trying to create /@l @d\n"
 msgstr "ext2fs_new_block: %m în timp ce se încerca crearea directorului /lost+found\n"
 
 #. @-expanded: ext2fs_new_inode: %m while trying to create /lost+found directory\n
-#: e2fsck/problem.c:1930
+#: e2fsck/problem.c:1944
 #, no-c-format
 msgid "ext2fs_new_@i: %m while trying to create /@l @d\n"
 msgstr "ext2fs_new_inode: %m în timp ce se încerca crearea directorului /lost+found\n"
 
 #. @-expanded: ext2fs_new_dir_block: %m while creating new directory block\n
-#: e2fsck/problem.c:1936
+#: e2fsck/problem.c:1950
 #, no-c-format
 msgid "ext2fs_new_dir_@b: %m while creating new @d @b\n"
 msgstr "ext2fs_new_dir_block: %m în timp ce se creea un nou bloc de directoare\n"
 
 #. @-expanded: ext2fs_write_dir_block: %m while writing the directory block for /lost+found\n
-#: e2fsck/problem.c:1942
+#: e2fsck/problem.c:1956
 #, no-c-format
 msgid "ext2fs_write_dir_@b: %m while writing the @d @b for /@l\n"
 msgstr "ext2fs_write_dir_block: %m în timpul scrierii blocului de director pentru /lost+found\n"
 
 #. @-expanded: Error while adjusting inode count on inode %i\n
-#: e2fsck/problem.c:1948
+#: e2fsck/problem.c:1962
 #, no-c-format
 msgid "Error while adjusting @i count on @i %i\n"
 msgstr "Eroare la ajustarea numărului de noduri-i în nodul-i %i\n"
 
 #. @-expanded: Couldn't fix parent of inode %i: %m\n
 #. @-expanded: \n
-#: e2fsck/problem.c:1954
+#: e2fsck/problem.c:1968
 #, no-c-format
 msgid ""
 "Couldn't fix parent of @i %i: %m\n"
@@ -2838,7 +2911,7 @@ msgstr ""
 
 #. @-expanded: Couldn't fix parent of inode %i: Couldn't find parent directory entry\n
 #. @-expanded: \n
-#: e2fsck/problem.c:1960
+#: e2fsck/problem.c:1974
 #, no-c-format
 msgid ""
 "Couldn't fix parent of @i %i: Couldn't find parent @d @e\n"
@@ -2848,41 +2921,41 @@ msgstr ""
 "\n"
 
 #. @-expanded: Error creating root directory (%s): %m\n
-#: e2fsck/problem.c:1971
+#: e2fsck/problem.c:1985
 #, no-c-format
 msgid "Error creating root @d (%s): %m\n"
 msgstr "Eroare la crearea directorului rădăcină (%s): %m\n"
 
 #. @-expanded: Error creating /lost+found directory (%s): %m\n
-#: e2fsck/problem.c:1977
+#: e2fsck/problem.c:1991
 #, no-c-format
 msgid "Error creating /@l @d (%s): %m\n"
 msgstr "Eroare la crearea directorului /lost+found (%s): %m\n"
 
 #. @-expanded: root inode is not a directory; aborting.\n
-#: e2fsck/problem.c:1982
+#: e2fsck/problem.c:1996
 msgid "@r is not a @d; aborting.\n"
 msgstr "nodul-i rădăcină nu este un director; se întrerupe.\n"
 
 #. @-expanded: Cannot proceed without a root inode.\n
-#: e2fsck/problem.c:1987
+#: e2fsck/problem.c:2001
 msgid "Cannot proceed without a @r.\n"
 msgstr "Nu se poate continua fără un nod-i rădăcină.\n"
 
 #. @-expanded: /lost+found is not a directory (ino=%i)\n
-#: e2fsck/problem.c:1998
+#: e2fsck/problem.c:2012
 #, no-c-format
 msgid "/@l is not a @d (ino=%i)\n"
 msgstr "/lost+found nu este un director (ino=%i)\n"
 
 #. @-expanded: /lost+found has inline data\n
-#: e2fsck/problem.c:2003
+#: e2fsck/problem.c:2017
 msgid "/@l has inline data\n"
 msgstr "/@l are date disponibile în linie\n"
 
 #. @-expanded: Cannot allocate space for /lost+found.\n
 #. @-expanded: Place lost files in root directory instead
-#: e2fsck/problem.c:2008
+#: e2fsck/problem.c:2022
 msgid ""
 "Cannot allocate space for /@l.\n"
 "Place lost files in root directory instead"
@@ -2893,7 +2966,7 @@ msgstr ""
 #. @-expanded: Insufficient space to recover lost files!\n
 #. @-expanded: Move data off the filesystem and re-run e2fsck.\n
 #. @-expanded: \n
-#: e2fsck/problem.c:2013
+#: e2fsck/problem.c:2027
 msgid ""
 "Insufficient space to recover lost files!\n"
 "Move data off the @f and re-run e2fsck.\n"
@@ -2904,58 +2977,58 @@ msgstr ""
 "\n"
 
 #. @-expanded: /lost+found is encrypted\n
-#: e2fsck/problem.c:2018
+#: e2fsck/problem.c:2032
 msgid "/@l is encrypted\n"
 msgstr "/@l este criptat\n"
 
 #. @-expanded: Recursively looped directory inode %i (%p)\n
-#: e2fsck/problem.c:2024
+#: e2fsck/problem.c:2038
 #, no-c-format
 msgid "Recursively looped @d @i %i (%p)\n"
 msgstr "Nodul-i de director în buclă recurentă %i (%p)\n"
 
-#: e2fsck/problem.c:2031
+#: e2fsck/problem.c:2045
 msgid "Pass 3A: Optimizing directories\n"
 msgstr "Pasul 3A: Se optimizează directoarele\n"
 
-#: e2fsck/problem.c:2037
+#: e2fsck/problem.c:2051
 #, no-c-format
 msgid "Failed to create dirs_to_hash iterator: %m\n"
 msgstr "Nu s-a reușit să se creeze iteratorul dirs_to_hash: %m\n"
 
-#: e2fsck/problem.c:2042
+#: e2fsck/problem.c:2056
 msgid "Failed to optimize directory %q (%d): %m\n"
 msgstr "Nu s-a reușit să se optimizeze directorul %q (%d): %m\n"
 
-#: e2fsck/problem.c:2047
+#: e2fsck/problem.c:2061
 msgid "Optimizing directories: "
 msgstr "Se optimizează directoarele: "
 
-#: e2fsck/problem.c:2064
+#: e2fsck/problem.c:2078
 msgid "Pass 4: Checking reference counts\n"
 msgstr "Pasul 4: Se verifică numărul de referințe\n"
 
 #. @-expanded: unattached zero-length inode %i.  
-#: e2fsck/problem.c:2070
+#: e2fsck/problem.c:2084
 #, no-c-format
 msgid "@u @z @i %i.  "
 msgstr "nodul-i de lungime zero neatașat %i.  "
 
 #. @-expanded: unattached inode %i\n
-#: e2fsck/problem.c:2076
+#: e2fsck/problem.c:2090
 #, no-c-format
 msgid "@u @i %i\n"
 msgstr "nodul-i neatașat %i\n"
 
 #. @-expanded: inode %i ref count is %Il, should be %N.  
-#: e2fsck/problem.c:2081
+#: e2fsck/problem.c:2095
 msgid "@i %i ref count is %Il, @s %N.  "
 msgstr "numărul de referință al nodului-i %i este %Il, ar trebui să fie %N.  "
 
 #. @-expanded: WARNING: PROGRAMMING BUG IN E2FSCK!\n
 #. @-expanded: \tOR SOME BONEHEAD (YOU) IS CHECKING A MOUNTED (LIVE) FILESYSTEM.\n
 #. @-expanded: inode_link_info[%i] is %N, inode.i_links_count is %Il.  They should be the same!\n
-#: e2fsck/problem.c:2085
+#: e2fsck/problem.c:2099
 msgid ""
 "WARNING: PROGRAMMING BUG IN E2FSCK!\n"
 "\tOR SOME BONEHEAD (YOU) IS CHECKING A MOUNTED (LIVE) FILESYSTEM.\n"
@@ -2966,200 +3039,210 @@ msgstr ""
 "@i_link_info[%i] este %N, @i.i_links_count este %Il.  Ar trebui să fie la fel!\n"
 
 #. @-expanded: extended attribute inode %i ref count is %N, should be %n. 
-#: e2fsck/problem.c:2092
+#: e2fsck/problem.c:2106
 msgid "@a @i %i ref count is %N, @s %n. "
 msgstr "numărul de referință al nodului-i de atribute extinse %i este %N, ar trebui să fie %n. "
 
 #. @-expanded: directory exceeds max links, but no DIR_NLINK feature in superblock.\n
-#: e2fsck/problem.c:2097
+#: e2fsck/problem.c:2111
 msgid "@d exceeds max links, but no DIR_NLINK feature in @S.\n"
 msgstr "@dul depășește numărul maxim de legături, dar nu există caracteristica DIR_NLINK în @S.\n"
 
 #. @-expanded: directory inode %i ref count set to overflow but could be exact value %N.  
-#: e2fsck/problem.c:2102
+#: e2fsck/problem.c:2116
 msgid "@d @i %i ref count set to overflow but could be exact value %N.  "
 msgstr "numărul de referință al nodului-i de director %i este stabilit pentru depășire, dar ar putea fi valoarea exactă %N.  "
 
+#. @-expanded: Regular filesystem inode %i has EA_INODE flag set. 
+#: e2fsck/problem.c:2120
+#, c-format
+msgid "Regular @f @i %i has EA_INODE flag set. "
+msgstr "Nodul-i %i al sistemului de fișiere obișnuit are activat fanionul EA_INODE. "
+
 #. @-expanded: Pass 5: Checking group summary information\n
-#: e2fsck/problem.c:2109
+#: e2fsck/problem.c:2127
 msgid "Pass 5: Checking @g summary information\n"
 msgstr "Pasul 5: Se verifică informațiile rezumatului grupului\n"
 
 #. @-expanded: Padding at end of inode bitmap is not set. 
-#: e2fsck/problem.c:2114
+#: e2fsck/problem.c:2132
 msgid "Padding at end of @i @B is not set. "
 msgstr "Spațiul de umplere la sfârșitul hărții de biți a nodului-i nu este definit. "
 
 #. @-expanded: Padding at end of block bitmap is not set. 
-#: e2fsck/problem.c:2119
+#: e2fsck/problem.c:2137
 msgid "Padding at end of @b @B is not set. "
 msgstr "Spațiul de umplere la sfârșitul hărții de biți a blocului nu este definit. "
 
 #. @-expanded: block bitmap differences: 
-#: e2fsck/problem.c:2124
+#: e2fsck/problem.c:2142
 msgid "@b @B differences: "
 msgstr "diferențele dintre hărțile de biți ale blocurilor: "
 
 #. @-expanded: inode bitmap differences: 
-#: e2fsck/problem.c:2146
+#: e2fsck/problem.c:2164
 msgid "@i @B differences: "
 msgstr "diferențele dintre hărțile de biți ale nodurilor-i: "
 
 #. @-expanded: Free inodes count wrong for group #%g (%i, counted=%j).\n
-#: e2fsck/problem.c:2168
+#: e2fsck/problem.c:2186
 msgid "Free @is count wrong for @g #%g (%i, counted=%j).\n"
 msgstr "Numărul de noduri-i libere este greșit pentru grupul #%g (%i, numărate=%j).\n"
 
 #. @-expanded: Directories count wrong for group #%g (%i, counted=%j).\n
-#: e2fsck/problem.c:2173
+#: e2fsck/problem.c:2191
 msgid "Directories count wrong for @g #%g (%i, counted=%j).\n"
 msgstr "Numărătoarea directoarelor este greșită pentru grupul #%g (%i, numărate=%j).\n"
 
 #. @-expanded: Free inodes count wrong (%i, counted=%j).\n
-#: e2fsck/problem.c:2178
+#: e2fsck/problem.c:2196
 msgid "Free @is count wrong (%i, counted=%j).\n"
 msgstr "Numărul de noduri-i libere este greșit (%i, numărate=%j).\n"
 
 #. @-expanded: Free blocks count wrong for group #%g (%b, counted=%c).\n
-#: e2fsck/problem.c:2183
+#: e2fsck/problem.c:2201
+#, c-format
 msgid "Free @bs count wrong for @g #%g (%b, counted=%c).\n"
 msgstr "Numărătoarea blocurilor libere este greșită pentru grupul #%g (%b, numărate=%c).\n"
 
 #. @-expanded: Free blocks count wrong (%b, counted=%c).\n
-#: e2fsck/problem.c:2188
+#: e2fsck/problem.c:2206
+#, c-format
 msgid "Free @bs count wrong (%b, counted=%c).\n"
 msgstr "Numărătoarea blocurilor libere este greșită (%b, numărate=%c).\n"
 
 #. @-expanded: PROGRAMMING ERROR: filesystem (#%N) bitmap endpoints (%b, %c) don't match calculated bitmap 
 #. @-expanded: endpoints (%i, %j)\n
-#: e2fsck/problem.c:2193
+#: e2fsck/problem.c:2211
 msgid "PROGRAMMING ERROR: @f (#%N) @B endpoints (%b, %c) don't match calculated @B endpoints (%i, %j)\n"
 msgstr ""
 "ERROR DE PROGRAMARE: punctele finale ale hărții de biți din sistemul de fișiere (#%N) (%b, %c)\n"
 "nu se potrivesc cu punctele finale calculate ale hărții de biți (%i, %j)\n"
 
-#: e2fsck/problem.c:2199
+#: e2fsck/problem.c:2217
 msgid "Internal error: fudging end of bitmap (%N)\n"
 msgstr "Eroare internă: se manipulează sfârșitul hărții de biți (%N)\n"
 
 #. @-expanded: Error copying in replacement inode bitmap: %m\n
-#: e2fsck/problem.c:2205
+#: e2fsck/problem.c:2223
 #, no-c-format
 msgid "Error copying in replacement @i @B: %m\n"
 msgstr "Eroare la copierea în harta de biți a blocului de înlocuire: %m\n"
 
 #. @-expanded: Error copying in replacement block bitmap: %m\n
-#: e2fsck/problem.c:2211
+#: e2fsck/problem.c:2229
 #, no-c-format
 msgid "Error copying in replacement @b @B: %m\n"
 msgstr "Eroare la copierea în harta de biți a nodului-i de înlocuire: %m\n"
 
 #. @-expanded: group %g block(s) in use but group is marked BLOCK_UNINIT\n
-#: e2fsck/problem.c:2241
+#: e2fsck/problem.c:2259
 #, no-c-format
 msgid "@g %g @b(s) in use but @g is marked BLOCK_UNINIT\n"
 msgstr "grupul %g are bloc(uri) în uz, dar grupul este marcat ca BLOCK_UNINIT\n"
 
 #. @-expanded: group %g inode(s) in use but group is marked INODE_UNINIT\n
-#: e2fsck/problem.c:2247
+#: e2fsck/problem.c:2265
 #, no-c-format
 msgid "@g %g @i(s) in use but @g is marked INODE_UNINIT\n"
 msgstr "grupul %g are noduri-i în uz, dar grupul este marcat INODE_UNINIT\n"
 
 #. @-expanded: group %g inode bitmap does not match checksum.\n
-#: e2fsck/problem.c:2253
+#: e2fsck/problem.c:2271
 #, no-c-format
 msgid "@g %g @i @B does not match checksum.\n"
 msgstr "Harta de biți a nodului-i al grupului %g nu se potrivește cu suma de control.\n"
 
 #. @-expanded: group %g block bitmap does not match checksum.\n
-#: e2fsck/problem.c:2259
+#: e2fsck/problem.c:2277
 #, no-c-format
 msgid "@g %g @b @B does not match checksum.\n"
 msgstr "Harta de biți a blocului al grupului %g nu se potrivește cu suma de control.\n"
 
 #. @-expanded: Recreate journal
-#: e2fsck/problem.c:2266
+#: e2fsck/problem.c:2284
 msgid "Recreate @j"
 msgstr "Recrearea jurnalului"
 
-#: e2fsck/problem.c:2271
+#: e2fsck/problem.c:2289
 msgid "Update quota info for quota type %N"
 msgstr "Actualizarea informațiilor privind cotele pentru tipul de cotă %N"
 
 #. @-expanded: Error setting block group checksum info: %m\n
-#: e2fsck/problem.c:2277
+#: e2fsck/problem.c:2295
 #, no-c-format
 msgid "Error setting @b @g checksum info: %m\n"
 msgstr "Eroare la stabilirea informațiilor privind suma de control a grupului de blocuri: %m\n"
 
-#: e2fsck/problem.c:2283
+#: e2fsck/problem.c:2301
 #, no-c-format
 msgid "Error writing file system info: %m\n"
 msgstr "Eroare la scrierea informațiilor despre sistemul de fișiere: %m\n"
 
-#: e2fsck/problem.c:2289
+#: e2fsck/problem.c:2307
 #, no-c-format
 msgid "Error flushing writes to storage device: %m\n"
 msgstr "Eroare de eliminare a scrierilor de pe dispozitivul de stocare: %m\n"
 
-#: e2fsck/problem.c:2294
+#: e2fsck/problem.c:2312
 msgid "Error writing quota info for quota type %N: %m\n"
 msgstr "Eroare la scrierea informațiilor privind cota pentru tipul de cotă %N: %m\n"
 
 #. @-expanded: superblock has orphan file without journal.\n
-#: e2fsck/problem.c:2299
+#: e2fsck/problem.c:2317
 msgid "@S has orphan file without @j.\n"
 msgstr "super-blocul are un fișier orfan fără jurnal.\n"
 
-#: e2fsck/problem.c:2304
+#: e2fsck/problem.c:2322
 msgid "Failed to truncate orphan file.\n"
 msgstr "Nu s-a reușit să se trunchieze fișierul orfan.\n"
 
-#: e2fsck/problem.c:2309
+#: e2fsck/problem.c:2327
 msgid "Failed to initialize orphan file.\n"
 msgstr "A eșuat inițializarea fișierului orfan.\n"
 
-#: e2fsck/problem.c:2314
+#: e2fsck/problem.c:2332
 msgid "Cannot fix corrupted orphan file with invalid bitmaps.\n"
 msgstr "Nu se poate repara fișierul orfan corupt cu hărți de biți nevalide.\n"
 
 #. @-expanded: Failed to truncate orphan file (inode %i).\n
-#: e2fsck/problem.c:2319
+#: e2fsck/problem.c:2337
 #, c-format
 msgid "Failed to truncate orphan file (@i %i).\n"
 msgstr "Nu s-a putut trunchia fișierul orfan (nodul-i %i).\n"
 
 #. @-expanded: Orphan file (inode %i) block %b is not clean.\n
-#: e2fsck/problem.c:2324
+#: e2fsck/problem.c:2342
+#, c-format
 msgid "Orphan file (@i %i) @b %b is not clean.\n"
 msgstr "Fișierul orfan (nodul-i %i) blocul %b nu este curat.\n"
 
-#: e2fsck/problem.c:2329
+#: e2fsck/problem.c:2347
 msgid "Feature orphan_present is set but orphan file is clean.\n"
 msgstr "Caracteristica orphan_present este activată, dar fișierul orfan este curat.\n"
 
-#: e2fsck/problem.c:2334
+#: e2fsck/problem.c:2352
 msgid "Feature orphan_present is set but feature orphan_file is not.\n"
 msgstr "Caracteristica orphan_present este activată, dar caracteristica orphan_file nu este activată.\n"
 
 #. @-expanded: Orphan file (inode %i) size is not multiple of block size.\n
-#: e2fsck/problem.c:2339
+#: e2fsck/problem.c:2357
 #, c-format
 msgid "Orphan file (@i %i) size is not multiple of block size.\n"
 msgstr "Dimensiunea fișierului orfan (nodul-i %i) nu este un multiplu al dimensiunii blocului.\n"
 
 #. @-expanded: Orphan file (inode %i) contains hole at block %b.\n
-#: e2fsck/problem.c:2344
+#: e2fsck/problem.c:2362
+#, c-format
 msgid "Orphan file (@i %i) contains hole at @b %b.\n"
 msgstr "Fișierul orfan (nodul-i %i) conține o gaură în blocul %b.\n"
 
-#: e2fsck/problem.c:2509
+#: e2fsck/problem.c:2527
 #, c-format
 msgid "Unhandled error code (0x%x)!\n"
 msgstr "Cod de eroare necunoscut (0x%x)!\n"
 
-#: e2fsck/problem.c:2637 e2fsck/problem.c:2641
+#: e2fsck/problem.c:2655 e2fsck/problem.c:2659
 msgid "IGNORED"
 msgstr "IGNORAT"
 
@@ -3177,7 +3260,7 @@ msgstr "Memorie utilizată: %lu, timp scurs: %6.3f/%6.3f/%6.3f\n"
 msgid "size of inode=%d\n"
 msgstr "dimensiunea nodului-i=%d\n"
 
-#: e2fsck/scantest.c:114 misc/e2image.c:1331
+#: e2fsck/scantest.c:114 misc/e2image.c:1337
 msgid "while opening inode scan"
 msgstr "în timp ce se deschide scanarea nodurilor-i"
 
@@ -3207,17 +3290,17 @@ msgstr "Se trunchiază"
 msgid "Clearing"
 msgstr "Se șterge"
 
-#: e2fsck/super.c:453
+#: e2fsck/super.c:462
 #, c-format
 msgid "while reading inode %d"
 msgstr "în timp ce se citea nodul-i %d"
 
-#: e2fsck/super.c:473 e2fsck/super.c:677
+#: e2fsck/super.c:484 e2fsck/super.c:692
 #, c-format
 msgid "while calling ext2fs_block_iterate for inode %d"
 msgstr "în timp ce se apelează ext2fs_block_iterate pentru nodul-i %d"
 
-#: e2fsck/super.c:481 e2fsck/super.c:685
+#: e2fsck/super.c:492 e2fsck/super.c:700
 #, c-format
 msgid "while reading blocks of inode %d"
 msgstr "în timp ce se citeau blocurile din nodul-i %d"
@@ -3465,8 +3548,8 @@ msgstr[1] "%12u fișiere\n"
 msgstr[2] "%12u fișiere\n"
 msgstr[3] "%12u de fișiere\n"
 
-#: e2fsck/unix.c:241 misc/badblocks.c:1001 misc/tune2fs.c:3325 misc/util.c:135
-#: resize/main.c:359
+#: e2fsck/unix.c:241 misc/badblocks.c:1001 misc/tune2fs.c:3342 misc/util.c:136
+#: resize/main.c:357
 #, c-format
 msgid "while determining whether %s is mounted."
 msgstr "în timp ce se determina dacă %s este montat."
@@ -3521,77 +3604,77 @@ msgstr "Doriți cu adevărat să continuați"
 msgid "check aborted.\n"
 msgstr "verificarea a fost anulată.\n"
 
-#: e2fsck/unix.c:379
+#: e2fsck/unix.c:383
 msgid " contains a file system with errors"
 msgstr " conține un sistem de fișiere cu erori"
 
-#: e2fsck/unix.c:381
+#: e2fsck/unix.c:385
 msgid " was not cleanly unmounted"
 msgstr " nu a fost demontat în mod corect"
 
-#: e2fsck/unix.c:383
+#: e2fsck/unix.c:387
 msgid " primary superblock features different from backup"
 msgstr " caracteristicile super-blocului primar sunt diferite de cele ale blocului de rezervă"
 
-#: e2fsck/unix.c:387
+#: e2fsck/unix.c:391
 #, c-format
 msgid " has been mounted %u times without being checked"
 msgstr " a fost montat de %u ori fără a fi verificat"
 
-#: e2fsck/unix.c:394
+#: e2fsck/unix.c:398
 msgid " has filesystem last checked time in the future"
 msgstr " are ultima dată de verificare a sistemului de fișiere în viitor"
 
-#: e2fsck/unix.c:400
+#: e2fsck/unix.c:404
 #, c-format
 msgid " has gone %u days without being checked"
 msgstr " au trecut %u zile fără să fie verificat"
 
-#: e2fsck/unix.c:409
+#: e2fsck/unix.c:413
 msgid "ignoring check interval, broken_system_clock set\n"
 msgstr "se ignoră intervalul de verificare, broken_system_clock activat\n"
 
-#: e2fsck/unix.c:415
+#: e2fsck/unix.c:419
 msgid ", check forced.\n"
 msgstr ", verificare forțată.\n"
 
-#: e2fsck/unix.c:448
+#: e2fsck/unix.c:452
 #, c-format
 msgid "%s: clean, %u/%u files, %llu/%llu blocks"
 msgstr "%s: curat, %u/%u fișiere, %llu/%llu blocuri"
 
-#: e2fsck/unix.c:469
+#: e2fsck/unix.c:473
 msgid " (check deferred; on battery)"
 msgstr " (verificare amânată; pe baterie)"
 
-#: e2fsck/unix.c:472
+#: e2fsck/unix.c:476
 msgid " (check after next mount)"
 msgstr " (se verifică după următoarea montare)"
 
-#: e2fsck/unix.c:474
+#: e2fsck/unix.c:478
 #, c-format
 msgid " (check in %ld mounts)"
 msgstr " (se verifică după %ld montări)"
 
-#: e2fsck/unix.c:624
+#: e2fsck/unix.c:628
 #, c-format
 msgid "ERROR: Couldn't open /dev/null (%s)\n"
 msgstr "EROARE: Nu s-a putut deschide /dev/null (%s)\n"
 
-#: e2fsck/unix.c:695
+#: e2fsck/unix.c:699
 msgid "Invalid EA version.\n"
 msgstr "Versiune nevalidă a atributelor extinse.\n"
 
-#: e2fsck/unix.c:708
+#: e2fsck/unix.c:712
 msgid "Invalid readahead buffer size.\n"
 msgstr "Dimensiunea memoriei tampon pentru citirea anticipată nu este validă.\n"
 
-#: e2fsck/unix.c:771
+#: e2fsck/unix.c:775
 #, c-format
 msgid "Unknown extended option: %s\n"
 msgstr "Opțiune extinsă necunoscută: %s\n"
 
-#: e2fsck/unix.c:779
+#: e2fsck/unix.c:783
 msgid ""
 "\n"
 "Extended options are separated by commas, and may take an argument which\n"
@@ -3603,15 +3686,15 @@ msgstr ""
 "este definit de un semn egal („=”).  Opțiunile extinse valide sunt:\n"
 "\n"
 
-#: e2fsck/unix.c:783
+#: e2fsck/unix.c:787
 msgid "\tea_ver=<ea_version (1 or 2)>\n"
 msgstr "\tea_ver=<ea_version (1 sau 2)>\n"
 
-#: e2fsck/unix.c:792
+#: e2fsck/unix.c:796
 msgid "\treadahead_kb=<buffer size>\n"
 msgstr "\treadahead_kb=<dimensiunea-memoriei-tampon>\n"
 
-#: e2fsck/unix.c:805
+#: e2fsck/unix.c:809
 #, c-format
 msgid ""
 "Syntax error in e2fsck config file (%s, line #%d)\n"
@@ -3620,7 +3703,7 @@ msgstr ""
 "Eroare de sintaxă în fișierul de configurare al «e2fsck» (%s, linia nr. %d)\n"
 "\t%s\n"
 
-#: e2fsck/unix.c:878
+#: e2fsck/unix.c:882
 #, c-format
 msgid "Error validating file descriptor %d: %s\n"
 msgstr "Eroare la validarea descriptorului de fișier %d: %s\n"
@@ -3629,60 +3712,61 @@ msgstr "Eroare la validarea descriptorului de fișier %d: %s\n"
 # s-ar putea ca traducerea corectă
 # a acestui mesaj, să fie:
 # „Informații de completare a descriptorului de fișier nevalide”
-#: e2fsck/unix.c:882
+#: e2fsck/unix.c:886
 msgid "Invalid completion information file descriptor"
 msgstr "Descriptor de fișier de informații de completare (progres) nevalid"
 
-#: e2fsck/unix.c:897
+#: e2fsck/unix.c:901
 msgid "Only one of the options -p/-a, -n or -y may be specified."
 msgstr "Doar una dintre opțiunile „-p”/„-a”, „-n” sau „-y” poate fi specificată."
 
-#: e2fsck/unix.c:918
+#: e2fsck/unix.c:922
 #, c-format
 msgid "The -t option is not supported on this version of e2fsck.\n"
 msgstr "Opțiunea „-t” nu este disponibilă în această versiune de «e2fsck».\n"
 
-#: e2fsck/unix.c:950 e2fsck/unix.c:1028 misc/e2initrd_helper.c:331
-#: misc/tune2fs.c:1920 misc/tune2fs.c:2220 misc/tune2fs.c:2238
+#: e2fsck/unix.c:954 e2fsck/unix.c:1032 misc/dumpe2fs.c:679
+#: misc/e2initrd_helper.c:331 misc/tune2fs.c:1936 misc/tune2fs.c:2236
+#: misc/tune2fs.c:2254
 #, c-format
 msgid "Unable to resolve '%s'"
 msgstr "Nu se poate rezolva „%s”"
 
-#: e2fsck/unix.c:1007
+#: e2fsck/unix.c:1011
 msgid "The -n and -D options are incompatible."
 msgstr "Opțiunile „-n” și „-D” sunt incompatibile."
 
-#: e2fsck/unix.c:1012
+#: e2fsck/unix.c:1016
 msgid "The -n and -c options are incompatible."
 msgstr "Opțiunile „-n” și „-c” sunt incompatibile."
 
-#: e2fsck/unix.c:1017
+#: e2fsck/unix.c:1021
 msgid "The -n and -l/-L options are incompatible."
 msgstr "Opțiunile „-n” și „-l/-L” sunt incompatibile."
 
-#: e2fsck/unix.c:1041
+#: e2fsck/unix.c:1045
 msgid "The -D and -E fixes_only options are incompatible."
 msgstr "Opțiunile „-D” și „-E fixes_only” sunt incompatibile."
 
-#: e2fsck/unix.c:1047
+#: e2fsck/unix.c:1051
 msgid "The -E bmap2extent and fixes_only options are incompatible."
 msgstr "Opțiunile „-E bmap2extent și fixes_only” sunt incompatibile."
 
-#: e2fsck/unix.c:1098
+#: e2fsck/unix.c:1102
 #, c-format
 msgid "while opening %s for flushing"
 msgstr "în timp ce se deschidea %s pentru golire"
 
-#: e2fsck/unix.c:1104 resize/main.c:391
+#: e2fsck/unix.c:1108 resize/main.c:389
 #, c-format
 msgid "while trying to flush %s"
 msgstr "în timp ce se încerca să se golească %s"
 
-#: e2fsck/unix.c:1111
+#: e2fsck/unix.c:1115
 msgid "The -c and the -l/-L options may not be both used at the same time.\n"
 msgstr "Opțiunile „-c” și „-l/-L” nu pot fi utilizate în același timp.\n"
 
-#: e2fsck/unix.c:1158
+#: e2fsck/unix.c:1162
 #, c-format
 msgid ""
 "E2FSCK_JBD_DEBUG \"%s\" not an integer\n"
@@ -3691,7 +3775,7 @@ msgstr ""
 "E2FSCK_JBD_DEBUG „%s” nu este un număr întreg\n"
 "\n"
 
-#: e2fsck/unix.c:1167
+#: e2fsck/unix.c:1171
 #, c-format
 msgid ""
 "\n"
@@ -3702,16 +3786,16 @@ msgstr ""
 "Argument nenumeric nevalid pentru -%c („%s”)\n"
 "\n"
 
-#: e2fsck/unix.c:1265
+#: e2fsck/unix.c:1269
 #, c-format
 msgid "MMP interval is %u seconds and total wait time is %u seconds. Please wait...\n"
 msgstr "Intervalul MMP este de %u secunde, iar timpul total de așteptare este de %u secunde. Vă rugăm să așteptați...\n"
 
-#: e2fsck/unix.c:1282 e2fsck/unix.c:1287
+#: e2fsck/unix.c:1286 e2fsck/unix.c:1291
 msgid "while checking MMP block"
 msgstr "în timp ce se verifica blocul MMP"
 
-#: e2fsck/unix.c:1289
+#: e2fsck/unix.c:1293
 #, c-format
 msgid ""
 "If you are sure the filesystem is not in use on any node, run:\n"
@@ -3720,13 +3804,13 @@ msgstr ""
 "Dacă sunteți sigur că sistemul de fișiere nu este utilizat pe niciun nod (mașină din rețea),\n"
 "rulați comanda: «tune2fs -f -E clear_mmp %s»\n"
 
-#: e2fsck/unix.c:1305
+#: e2fsck/unix.c:1309
 msgid "while reading MMP block"
 msgstr "în timpul citirii blocului MMP"
 
-#: e2fsck/unix.c:1325 e2fsck/unix.c:1377 misc/e2undo.c:242 misc/e2undo.c:287
-#: misc/mke2fs.c:2826 misc/mke2fs.c:2877 misc/tune2fs.c:2960
-#: misc/tune2fs.c:3005 resize/main.c:188 resize/main.c:233
+#: e2fsck/unix.c:1329 e2fsck/unix.c:1381 misc/e2undo.c:242 misc/e2undo.c:287
+#: misc/mke2fs.c:2925 misc/mke2fs.c:2976 misc/tune2fs.c:2977
+#: misc/tune2fs.c:3022 resize/main.c:188 resize/main.c:233
 #, c-format
 msgid ""
 "Overwriting existing filesystem; this can be undone using the command:\n"
@@ -3737,30 +3821,30 @@ msgstr ""
 "   «e2undo %s %s»\n"
 "\n"
 
-#: e2fsck/unix.c:1366 misc/e2undo.c:276 misc/mke2fs.c:2866 misc/tune2fs.c:2994
+#: e2fsck/unix.c:1370 misc/e2undo.c:276 misc/mke2fs.c:2965 misc/tune2fs.c:3011
 #: resize/main.c:222
 #, c-format
 msgid "while trying to delete %s"
 msgstr "în timp ce se încerca să se șteargă %s"
 
-#: e2fsck/unix.c:1392 misc/mke2fs.c:2892 resize/main.c:243
+#: e2fsck/unix.c:1396 misc/mke2fs.c:2991 resize/main.c:243
 msgid "while trying to setup undo file\n"
 msgstr "în timp ce se încerca configurarea fișierului de anulare „undo”\n"
 
-#: e2fsck/unix.c:1436
+#: e2fsck/unix.c:1440
 msgid "Error: ext2fs library version out of date!\n"
 msgstr "Eroare: versiunea bibliotecii „ext2fs” este învechită!\n"
 
-#: e2fsck/unix.c:1443
+#: e2fsck/unix.c:1447
 msgid "while trying to initialize program"
 msgstr "în timp ce încerca să inițializeze programul"
 
-#: e2fsck/unix.c:1480
+#: e2fsck/unix.c:1484
 #, c-format
 msgid "\tUsing %s, %s\n"
 msgstr "\tFolosind %s, %s\n"
 
-#: e2fsck/unix.c:1492
+#: e2fsck/unix.c:1496
 msgid "need terminal for interactive repairs"
 msgstr "este nevoie de un terminal pentru reparații interactive"
 
@@ -3778,30 +3862,30 @@ msgstr "este nevoie de un terminal pentru reparații interactive"
 # Am făcut-o, dacă am înțeles bine codul sursă,
 # mesajul acesta este tradus corect:
 # «se încearcă citirea/utilizarea blocurilor...»
-#: e2fsck/unix.c:1553
+#: e2fsck/unix.c:1557
 #, c-format
 msgid "%s: %s trying backup blocks...\n"
 msgstr "%s: %s se încearcă citirea blocurilor de rezervă...\n"
 
-#: e2fsck/unix.c:1555
+#: e2fsck/unix.c:1559
 msgid "Superblock invalid,"
 msgstr "Superblock invalid,"
 
-#: e2fsck/unix.c:1556
+#: e2fsck/unix.c:1560
 msgid "Group descriptors look bad..."
 msgstr "Descriptorii de grup nu par să fie în bună stare..."
 
-#: e2fsck/unix.c:1566
+#: e2fsck/unix.c:1570
 #, c-format
 msgid "%s: %s while using the backup blocks"
 msgstr "%s: %s în timpul utilizării blocurilor de rezervă"
 
-#: e2fsck/unix.c:1570
+#: e2fsck/unix.c:1574
 #, c-format
 msgid "%s: going back to original superblock\n"
 msgstr "%s: se revine la super-blocul original\n"
 
-#: e2fsck/unix.c:1599
+#: e2fsck/unix.c:1603
 msgid ""
 "The filesystem revision is apparently too high for this version of e2fsck.\n"
 "(Or the filesystem superblock is corrupt)\n"
@@ -3811,28 +3895,28 @@ msgstr ""
 "(Sau super-blocul sistemului de fișiere este corupt)\n"
 "\n"
 
-#: e2fsck/unix.c:1606
+#: e2fsck/unix.c:1610
 msgid "Could this be a zero-length partition?\n"
 msgstr "Ar putea aceasta să fie o partiție de lungime zero?\n"
 
-#: e2fsck/unix.c:1608
+#: e2fsck/unix.c:1612
 #, c-format
 msgid "You must have %s access to the filesystem or be root\n"
 msgstr "Trebuie să aveți acces %s la sistemul de fișiere sau să fiți root\n"
 
-#: e2fsck/unix.c:1614
+#: e2fsck/unix.c:1618
 msgid "Possibly non-existent or swap device?\n"
 msgstr "Este posibil să nu existe sau să fie un dispozitiv de interschimb (swap)?\n"
 
-#: e2fsck/unix.c:1616
+#: e2fsck/unix.c:1620
 msgid "Filesystem mounted or opened exclusively by another program?\n"
 msgstr "Sistemul de fișiere este montat sau deschis exclusiv de un alt program?\n"
 
-#: e2fsck/unix.c:1620
+#: e2fsck/unix.c:1624
 msgid "Possibly non-existent device?\n"
 msgstr "Este posibil să fie un dispozitiv inexistent?\n"
 
-#: e2fsck/unix.c:1623
+#: e2fsck/unix.c:1627
 msgid ""
 "Disk write-protected; use the -n option to do a read-only\n"
 "check of the device.\n"
@@ -3840,77 +3924,77 @@ msgstr ""
 "Discul este protejat la scriere. Utilizați opțiunea „-n” pentru a efectua\n"
 "o verificare în regim de „doar-citire” a dispozitivului.\n"
 
-#: e2fsck/unix.c:1638
+#: e2fsck/unix.c:1642
 #, c-format
 msgid "%s: Trying to load superblock despite errors...\n"
 msgstr "%s: Se încearcă încărcarea super-blocului în ciuda erorilor...\n"
 
-#: e2fsck/unix.c:1713
+#: e2fsck/unix.c:1717
 msgid "Get a newer version of e2fsck!"
 msgstr "Obțineți o versiune mai nouă de «e2fsck»!"
 
-#: e2fsck/unix.c:1773
+#: e2fsck/unix.c:1777
 #, c-format
 msgid "while checking journal for %s"
 msgstr "în timp ce se verifica jurnalul pentru %s"
 
-#: e2fsck/unix.c:1776
+#: e2fsck/unix.c:1780
 msgid "Cannot proceed with file system check"
 msgstr "Nu se poate continua cu verificarea sistemului de fișiere"
 
-#: e2fsck/unix.c:1787
+#: e2fsck/unix.c:1791
 msgid "Warning: skipping journal recovery because doing a read-only filesystem check.\n"
 msgstr "Atenție: se omite recuperarea jurnalului deoarece se face o verificare a sistemului de fișiere în regim de „doar-citire”.\n"
 
-#: e2fsck/unix.c:1799
+#: e2fsck/unix.c:1803
 #, c-format
 msgid "unable to set superblock flags on %s\n"
 msgstr "nu se pot activa fanioanele de super-bloc pe %s\n"
 
-#: e2fsck/unix.c:1805
+#: e2fsck/unix.c:1809
 #, c-format
 msgid "Journal checksum error found in %s\n"
 msgstr "S-a găsit o eroare la verificarea sumei de control a jurnalului în %s\n"
 
-#: e2fsck/unix.c:1809
+#: e2fsck/unix.c:1813
 #, c-format
 msgid "Journal corrupted in %s\n"
 msgstr "Jurnal corupt în %s\n"
 
-#: e2fsck/unix.c:1813
+#: e2fsck/unix.c:1817
 #, c-format
 msgid "while recovering journal of %s"
 msgstr "în timp ce se recupera jurnalul din %s"
 
-#: e2fsck/unix.c:1835
+#: e2fsck/unix.c:1839
 #, c-format
 msgid "%s has unsupported feature(s):"
 msgstr "%s are caracteristici neacceptate:"
 
-#: e2fsck/unix.c:1850
+#: e2fsck/unix.c:1854
 #, c-format
 msgid "%s has unsupported encoding: %0x\n"
 msgstr "%s are codificarea neacceptată: %0x\n"
 
-#: e2fsck/unix.c:1900
+#: e2fsck/unix.c:1904
 #, c-format
 msgid "%s: %s while reading bad blocks inode\n"
 msgstr "%s: %s în timp ce se citea nodul-i al blocurilor defectuoase\n"
 
-#: e2fsck/unix.c:1903
+#: e2fsck/unix.c:1907
 msgid "This doesn't bode well, but we'll try to go on...\n"
 msgstr "Acest lucru nu este de bun augur, dar se va încerca să se meargă mai departe...\n"
 
-#: e2fsck/unix.c:1946
+#: e2fsck/unix.c:1950
 #, c-format
 msgid "Creating journal (%d blocks): "
 msgstr "Se creează jurnalul (%d blocuri): "
 
-#: e2fsck/unix.c:1955 e2fsck/unix.c:2027
+#: e2fsck/unix.c:1959 e2fsck/unix.c:2031
 msgid " Done.\n"
 msgstr " Gata, s-a făcut..\n"
 
-#: e2fsck/unix.c:1957
+#: e2fsck/unix.c:1961
 msgid ""
 "\n"
 "*** journal has been regenerated ***\n"
@@ -3918,29 +4002,29 @@ msgstr ""
 "\n"
 "*** jurnalul a fost regenerat ***\n"
 
-#: e2fsck/unix.c:1963
+#: e2fsck/unix.c:1967
 msgid "aborted"
 msgstr "abandonare"
 
-#: e2fsck/unix.c:1965
+#: e2fsck/unix.c:1969
 #, c-format
 msgid "%s: e2fsck canceled.\n"
 msgstr "%s: rularea «e2fsck» a fost anulată.\n"
 
-#: e2fsck/unix.c:2015
+#: e2fsck/unix.c:2019
 #, c-format
 msgid "Creating orphan file (%d blocks): "
 msgstr "Se creează fișierul orfan (%d blocuri): "
 
-#: e2fsck/unix.c:2059
+#: e2fsck/unix.c:2063
 msgid "Restarting e2fsck from the beginning...\n"
 msgstr "Se repornește (reia) «e2fsck» de la început...\n"
 
-#: e2fsck/unix.c:2063
+#: e2fsck/unix.c:2067
 msgid "while resetting context"
 msgstr "în timpul reinițializării contextului"
 
-#: e2fsck/unix.c:2123
+#: e2fsck/unix.c:2127
 #, c-format
 msgid ""
 "\n"
@@ -3949,12 +4033,12 @@ msgstr ""
 "\n"
 "%s: ***** ERORILE SISTEMULUI DE FIȘIERE AU FOST CORECTATE *****\n"
 
-#: e2fsck/unix.c:2125
+#: e2fsck/unix.c:2129
 #, c-format
 msgid "%s: File system was modified.\n"
 msgstr "%s: Sistemul de fișiere a fost modificat.\n"
 
-#: e2fsck/unix.c:2129 e2fsck/util.c:67
+#: e2fsck/unix.c:2133 e2fsck/util.c:67
 #, c-format
 msgid ""
 "\n"
@@ -3963,12 +4047,12 @@ msgstr ""
 "\n"
 "%s: ***** SISTEMUL DE FIȘIERE A FOST MODIFICAT *****\n"
 
-#: e2fsck/unix.c:2134
+#: e2fsck/unix.c:2138
 #, c-format
 msgid "%s: ***** REBOOT SYSTEM *****\n"
 msgstr "%s: ***** SE REPORNEȘTE SISTEMUL *****\n"
 
-#: e2fsck/unix.c:2144 e2fsck/util.c:73
+#: e2fsck/unix.c:2148 e2fsck/util.c:73
 #, c-format
 msgid ""
 "\n"
@@ -3979,11 +4063,11 @@ msgstr ""
 "%s: ********** AVERTISMENT: Sistemul de fișiere are încă erori **********\n"
 "\n"
 
-#: e2fsck/util.c:191 misc/util.c:99
+#: e2fsck/util.c:191 misc/util.c:100
 msgid "yY"
 msgstr "dD"
 
-#: e2fsck/util.c:192 misc/util.c:118
+#: e2fsck/util.c:192 misc/util.c:119
 msgid "nN"
 msgstr "nN"
 
@@ -4232,7 +4316,7 @@ msgstr ""
 msgid "during test data write, block %lu"
 msgstr "în timpul scrierii datelor de test, bloc %lu"
 
-#: misc/badblocks.c:1006 misc/util.c:140
+#: misc/badblocks.c:1006 misc/util.c:141
 #, c-format
 msgid "%s is mounted; "
 msgstr "%s este montat; "
@@ -4245,7 +4329,7 @@ msgstr "blocuri defectuoase, se forțează oricum.  Se speră că fișierul „/
 msgid "it's not safe to run badblocks!\n"
 msgstr "nu este sigur de a rula blocurile defectuoase!\n"
 
-#: misc/badblocks.c:1018 misc/util.c:151
+#: misc/badblocks.c:1018 misc/util.c:152
 #, c-format
 msgid "%s is apparently in use by the system; "
 msgstr "%s este aparent utilizat de către sistem; "
@@ -4411,168 +4495,167 @@ msgstr "„=” este incompatibil cu „-” și „+”\n"
 msgid "Must use '-v', =, - or +\n"
 msgstr "Trebuie să utilizați „-v”, „=”, „-” sau „+”.\n"
 
-#: misc/create_inode.c:82 misc/create_inode.c:121
+#: misc/create_inode.c:95 misc/create_inode.c:131
 #, c-format
 msgid "while reading inode %u"
 msgstr "în timp ce se citea nodul-i %u"
 
-#: misc/create_inode.c:92 misc/create_inode.c:301 misc/create_inode.c:368
-#: misc/create_inode.c:406
-msgid "while expanding directory"
-msgstr "în timp ce se expanda directorul"
-
-#: misc/create_inode.c:99
+#: misc/create_inode.c:102
 #, c-format
 msgid "while linking \"%s\""
 msgstr "în timp ce se făcea legătura „%s”"
 
-#: misc/create_inode.c:107 misc/create_inode.c:136 misc/create_inode.c:337
+#: misc/create_inode.c:110 misc/create_inode.c:146 misc/create_inode.c:335
 #, c-format
 msgid "while writing inode %u"
 msgstr "în timp ce se scria nodul-i %u"
 
-#: misc/create_inode.c:158 misc/create_inode.c:189
+#: misc/create_inode.c:165 misc/create_inode.c:196
 #, c-format
 msgid "while listing attributes of \"%s\""
 msgstr "în timp ce se listau atributele lui „%s”"
 
-#: misc/create_inode.c:169
+#: misc/create_inode.c:176
 #, c-format
 msgid "while opening inode %u"
 msgstr "în timp ce se deschidea nodul-i %u"
 
-#: misc/create_inode.c:176
+#: misc/create_inode.c:183
 #, c-format
 msgid "while reading xattrs for inode %u"
 msgstr "în timp ce se citeau atributele extinse „xattrs” pentru nodul-i %u"
 
-#: misc/create_inode.c:182 misc/create_inode.c:209 misc/create_inode.c:1066
+#: misc/create_inode.c:189 misc/create_inode.c:216 misc/create_inode.c:1207
 #: misc/e2undo.c:188 misc/e2undo.c:485 misc/e2undo.c:491 misc/e2undo.c:497
-#: misc/mke2fs.c:363
+#: misc/mke2fs.c:346
 msgid "while allocating memory"
 msgstr "în timp ce se aloca memoria"
 
-#: misc/create_inode.c:202 misc/create_inode.c:218
+#: misc/create_inode.c:209 misc/create_inode.c:225
 #, c-format
 msgid "while reading attribute \"%s\" of \"%s\""
 msgstr "în timp ce se citea atributul „%s” din „%s”"
 
-#: misc/create_inode.c:227
+#: misc/create_inode.c:234
 #, c-format
 msgid "while writing attribute \"%s\" to inode %u"
 msgstr "în timp ce se scria atributul „%s” în nodul-i %u"
 
-#: misc/create_inode.c:237
+#: misc/create_inode.c:244
 #, c-format
 msgid "while closing inode %u"
 msgstr "în timp ce se închidea nodul-i %u"
 
-#: misc/create_inode.c:288
+#: misc/create_inode.c:295
 #, c-format
 msgid "while allocating inode \"%s\""
 msgstr "în timp ce se aloca nodul-i „%s”"
 
-#: misc/create_inode.c:307
+#: misc/create_inode.c:305
 #, c-format
 msgid "while creating inode \"%s\""
 msgstr "în timp ce se crea nodul-i „%s”"
 
-#: misc/create_inode.c:375
+#: misc/create_inode.c:366
+msgid "while expanding directory"
+msgstr "în timp ce se expanda directorul"
+
+#: misc/create_inode.c:373
 #, c-format
 msgid "while creating symlink \"%s\""
 msgstr "în timp ce se crea legătura simbolică „%s”"
 
-#: misc/create_inode.c:393 misc/create_inode.c:658 misc/create_inode.c:986
+#: misc/create_inode.c:391 misc/create_inode.c:797 misc/create_inode.c:1124
 #, c-format
 msgid "while looking up \"%s\""
 msgstr "în timp ce se căuta „%s”"
 
-#: misc/create_inode.c:413
+#: misc/create_inode.c:403
 #, c-format
 msgid "while creating directory \"%s\""
 msgstr "în timp ce se crea directorul „%s”"
 
-#: misc/create_inode.c:644
+#: misc/create_inode.c:783
 #, c-format
 msgid "while opening \"%s\" to copy"
 msgstr "în timp ce se deschidea „%s” pentru copiere"
 
-#: misc/create_inode.c:824
+#: misc/create_inode.c:960
 #, c-format
 msgid "while changing working directory to \"%s\""
 msgstr "în timp ce se schimba directorul de lucru la „%s”"
 
-#: misc/create_inode.c:834
+#: misc/create_inode.c:970
 #, c-format
 msgid "while scanning directory \"%s\""
 msgstr "în timp ce se scana directorul „%s”"
 
-#: misc/create_inode.c:844
+#: misc/create_inode.c:980
 #, c-format
 msgid "while lstat \"%s\""
 msgstr "în timp ce se executa lstat() asupra „%s”"
 
-#: misc/create_inode.c:894
+#: misc/create_inode.c:1032
 #, c-format
 msgid "while creating special file \"%s\""
 msgstr "în timp ce se crea fișierul special „%s”"
 
-#: misc/create_inode.c:906
+#: misc/create_inode.c:1044
 msgid "malloc failed"
 msgstr "malloc a eșuat"
 
-#: misc/create_inode.c:914
+#: misc/create_inode.c:1052
 #, c-format
 msgid "while trying to read link \"%s\""
 msgstr "în timp ce se încerca să se citească legătura „%s”"
 
-#: misc/create_inode.c:921
+#: misc/create_inode.c:1059
 msgid "symlink increased in size between lstat() and readlink()"
 msgstr "legătura simbolică a crescut în dimensiune între execuția lstat() și cea a readlink()"
 
-#: misc/create_inode.c:932
+#: misc/create_inode.c:1070
 #, c-format
 msgid "while writing symlink\"%s\""
 msgstr "în timp ce se scria legătura simbolică „%s”"
 
-#: misc/create_inode.c:944
+#: misc/create_inode.c:1082
 #, c-format
 msgid "while writing file \"%s\""
 msgstr "în timp ce se scria fișierul „%s”"
 
-#: misc/create_inode.c:957
+#: misc/create_inode.c:1095
 #, c-format
 msgid "while making dir \"%s\""
 msgstr "în timp ce se crea directorul „%s”"
 
-#: misc/create_inode.c:975
+#: misc/create_inode.c:1113
 msgid "while changing directory"
 msgstr "în timp ce se schimba directorul"
 
-#: misc/create_inode.c:981
+#: misc/create_inode.c:1119
 #, c-format
 msgid "ignoring entry \"%s\""
 msgstr "se ignoră intrarea „%s”"
 
-#: misc/create_inode.c:994
+#: misc/create_inode.c:1132
 #, c-format
 msgid "while setting inode for \"%s\""
 msgstr "în timp ce se stabilea nodul-i pentru „%s”"
 
-#: misc/create_inode.c:1001
+#: misc/create_inode.c:1140
 #, c-format
 msgid "while setting xattrs for \"%s\""
 msgstr "în timp ce se defineau atributele extinse „xattrs” pentru „%s”"
 
-#: misc/create_inode.c:1027
+#: misc/create_inode.c:1168
 msgid "while saving inode data"
 msgstr "în timp ce se salvau datele nodului-i"
 
-#: misc/create_inode.c:1086
+#: misc/create_inode.c:1232
 msgid "while calling stat"
 msgstr "în timp ce se apela stat()"
 
-#: misc/create_inode.c:1098
+#: misc/create_inode.c:1246
 msgid "while copying xattrs on root directory"
 msgstr "în timp ce se copiau atributele extinse „xattrs” în directorul rădăcină"
 
@@ -4580,16 +4663,16 @@ msgstr "în timp ce se copiau atributele extinse „xattrs” în directorul ră
 # acest mesaj și următoarele, apar
 # larularea comenzii:
 # «dumpe2fs»
-#: misc/dumpe2fs.c:56
+#: misc/dumpe2fs.c:57
 #, c-format
 msgid "Usage: %s [-bfghimxV] [-o superblock=<num>] [-o blocksize=<num>] device\n"
 msgstr "Utilizare: %s [-bfghimxV] [-o superbloc=<număr>] [-o dimens-bloc=<număr>] dispozitiv\n"
 
-#: misc/dumpe2fs.c:159
+#: misc/dumpe2fs.c:160
 msgid "blocks"
 msgstr "blocuri"
 
-#: misc/dumpe2fs.c:168
+#: misc/dumpe2fs.c:169
 msgid "clusters"
 msgstr "clustere"
 
@@ -4603,17 +4686,17 @@ msgstr "clustere"
 # Grup 1: (Blocuri 32768-65535) suma de control 0xf4be [ITABLE_ZEROED]
 # ...
 # ș.a.ș.m.d.
-#: misc/dumpe2fs.c:219
+#: misc/dumpe2fs.c:220
 #, c-format
 msgid "Group %lu: (Blocks "
 msgstr "Grupul %lu: (Blocuri "
 
-#: misc/dumpe2fs.c:226
+#: misc/dumpe2fs.c:227
 #, c-format
 msgid " csum 0x%04x"
 msgstr " suma de control 0x%04x"
 
-#: misc/dumpe2fs.c:228
+#: misc/dumpe2fs.c:229
 #, c-format
 msgid " (EXPECTED 0x%04x)"
 msgstr " (SE AȘTEPTA 0x%04x)"
@@ -4627,7 +4710,7 @@ msgstr " (SE AȘTEPTA 0x%04x)"
 # - «Super-bloc de rezervă la X»
 # *****
 # Așa că s-a făcut „rocada”.
-#: misc/dumpe2fs.c:233
+#: misc/dumpe2fs.c:234
 #, c-format
 msgid "  %s superblock at "
 msgstr "  Super-bloc %s la "
@@ -4638,7 +4721,7 @@ msgstr "  Super-bloc %s la "
 # „intră” în mesajul anterior, adică:
 # .
 # «Super-bloc primar la X»
-#: misc/dumpe2fs.c:234
+#: misc/dumpe2fs.c:235
 msgid "Primary"
 msgstr "primar"
 
@@ -4648,7 +4731,7 @@ msgstr "primar"
 # „intră” în mesajul anterior, adică:
 # .
 # «Super-bloc de rezervă la X»
-#: misc/dumpe2fs.c:234
+#: misc/dumpe2fs.c:235
 msgid "Backup"
 msgstr "de rezervă"
 
@@ -4658,11 +4741,11 @@ msgstr "de rezervă"
 # pentru că la rulare, este alipit
 # mesajului anterior, adică:
 # „Super-bloc %s la X, descriptori de grup la Y”
-#: misc/dumpe2fs.c:238
+#: misc/dumpe2fs.c:239
 msgid ", Group descriptors at "
 msgstr ", descriptori de grup la "
 
-#: misc/dumpe2fs.c:242
+#: misc/dumpe2fs.c:243
 msgid ""
 "\n"
 "  Reserved GDT blocks at "
@@ -4670,24 +4753,24 @@ msgstr ""
 "\n"
 "Blocuri pentru tabelul de descriptori de grup rezervate (GDT) la "
 
-#: misc/dumpe2fs.c:249
+#: misc/dumpe2fs.c:250
 msgid " Group descriptor at "
 msgstr " Descriptor de grup la "
 
-#: misc/dumpe2fs.c:255
+#: misc/dumpe2fs.c:256
 msgid "  Block bitmap at "
 msgstr "  Harta de biți a blocurilor la "
 
-#: misc/dumpe2fs.c:260 misc/dumpe2fs.c:271
+#: misc/dumpe2fs.c:261 misc/dumpe2fs.c:272
 #, c-format
 msgid ", csum 0x%08x"
 msgstr ", suma de control 0x%08x"
 
-#: misc/dumpe2fs.c:263
+#: misc/dumpe2fs.c:264
 msgid ","
 msgstr ","
 
-#: misc/dumpe2fs.c:265
+#: misc/dumpe2fs.c:266
 msgid ""
 "\n"
 " "
@@ -4695,11 +4778,11 @@ msgstr ""
 "\n"
 " "
 
-#: misc/dumpe2fs.c:266
+#: misc/dumpe2fs.c:267
 msgid " Inode bitmap at "
 msgstr " Harta de biți a nodurilor-i la "
 
-#: misc/dumpe2fs.c:273
+#: misc/dumpe2fs.c:274
 msgid ""
 "\n"
 "  Inode table at "
@@ -4720,7 +4803,7 @@ msgstr ""
 # Am scris acest comentariu, pentru ca să
 # se știe de ce-a fost tradus așa; că
 # NU este o greșeală a traducătorului.
-#: misc/dumpe2fs.c:279
+#: misc/dumpe2fs.c:280
 #, c-format
 msgid ""
 "\n"
@@ -4729,76 +4812,76 @@ msgstr ""
 "\n"
 "  %u %s libere, %u noduri-i libere, %u directoare%s"
 
-#: misc/dumpe2fs.c:286
+#: misc/dumpe2fs.c:287
 #, c-format
 msgid ", %u unused inodes\n"
 msgstr ", %u noduri-i neutilizate\n"
 
-#: misc/dumpe2fs.c:289
+#: misc/dumpe2fs.c:290
 msgid "  Free blocks: "
 msgstr "  Blocuri libere: "
 
-#: misc/dumpe2fs.c:304
+#: misc/dumpe2fs.c:305
 msgid "  Free inodes: "
 msgstr "  Noduri-i libere: "
 
-#: misc/dumpe2fs.c:340
+#: misc/dumpe2fs.c:341
 msgid "while printing bad block list"
 msgstr "în timp ce se imprima o listă de blocuri defectuoase"
 
-#: misc/dumpe2fs.c:347
+#: misc/dumpe2fs.c:348
 #, c-format
 msgid "Bad blocks: %u"
 msgstr "Blocuri defectuoase: %u"
 
-#: misc/dumpe2fs.c:375 misc/tune2fs.c:413
+#: misc/dumpe2fs.c:376 misc/tune2fs.c:413
 msgid "while reading journal inode"
 msgstr "în timp ce se citea nodul-i al jurnalului"
 
-#: misc/dumpe2fs.c:381
+#: misc/dumpe2fs.c:382
 msgid "while opening journal inode"
 msgstr "în timp ce se deschidea nodul-i al jurnalului"
 
-#: misc/dumpe2fs.c:387
+#: misc/dumpe2fs.c:388
 msgid "while reading journal super block"
 msgstr "în timp ce se citea super-blocul jurnalului"
 
-#: misc/dumpe2fs.c:394
+#: misc/dumpe2fs.c:395
 msgid "Journal superblock magic number invalid!\n"
 msgstr "Numărul magic al super-blocului jurnalului nu este valid!\n"
 
-#: misc/dumpe2fs.c:414 misc/tune2fs.c:256
+#: misc/dumpe2fs.c:415 misc/tune2fs.c:256
 msgid "while reading journal superblock"
 msgstr "în timp ce se citea super-blocul jurnalului"
 
-#: misc/dumpe2fs.c:422
+#: misc/dumpe2fs.c:423
 msgid "Couldn't find journal superblock magic numbers"
 msgstr "Nu s-au putut găsi numerele magice ale super-blocului de jurnal"
 
-#: misc/dumpe2fs.c:477
+#: misc/dumpe2fs.c:478
 msgid "failed to alloc MMP buffer\n"
 msgstr "nu s-a reușit să se aloce memoria tampon MMP\n"
 
-#: misc/dumpe2fs.c:488
+#: misc/dumpe2fs.c:489
 #, c-format
 msgid "reading MMP block %llu from '%s'\n"
 msgstr "se citește blocul MMP %llu din „%s”\n"
 
-#: misc/dumpe2fs.c:520 misc/mke2fs.c:837 misc/tune2fs.c:2260
+#: misc/dumpe2fs.c:521 misc/mke2fs.c:831 misc/tune2fs.c:2276
 msgid "Couldn't allocate memory to parse options!\n"
 msgstr "Nu s-a putut aloca memorie pentru a analiza opțiunile!\n"
 
-#: misc/dumpe2fs.c:546
+#: misc/dumpe2fs.c:547
 #, c-format
 msgid "Invalid superblock parameter: %s\n"
 msgstr "Parametru de super-bloc nevalid: %s\n"
 
-#: misc/dumpe2fs.c:561
+#: misc/dumpe2fs.c:562
 #, c-format
 msgid "Invalid blocksize parameter: %s\n"
 msgstr "Parametru de dimensiune a blocurilor nevalid: %s\n"
 
-#: misc/dumpe2fs.c:572
+#: misc/dumpe2fs.c:573
 #, c-format
 msgid ""
 "\n"
@@ -4821,27 +4904,27 @@ msgstr ""
 "\tsuperblock=<numărul super-blocului>.\n"
 "\tblocksize=<dimensiunea blocului>.\n"
 
-#: misc/dumpe2fs.c:663 misc/mke2fs.c:1963
+#: misc/dumpe2fs.c:664 misc/mke2fs.c:2021
 #, c-format
 msgid "\tUsing %s\n"
 msgstr "\tSe utilizează %s\n"
 
-#: misc/dumpe2fs.c:710 misc/e2image.c:1643 misc/tune2fs.c:3250
-#: resize/main.c:426
+#: misc/dumpe2fs.c:716 misc/e2image.c:1649 misc/tune2fs.c:3267
+#: resize/main.c:424
 msgid "Couldn't find valid filesystem superblock.\n"
 msgstr "Nu s-a putut găsi un super-bloc valid pentru sistemul de fișiere.\n"
 
-#: misc/dumpe2fs.c:732
+#: misc/dumpe2fs.c:738
 #, c-format
 msgid "%s: MMP feature not enabled.\n"
 msgstr "%s: caracteristica MMP nu este activată.\n"
 
-#: misc/dumpe2fs.c:763
+#: misc/dumpe2fs.c:769
 #, c-format
 msgid "while trying to read '%s' bitmaps\n"
 msgstr "în timp ce se încerca să se citească hărțile de biți „%s”.\n"
 
-#: misc/dumpe2fs.c:772
+#: misc/dumpe2fs.c:778
 msgid ""
 "*** Run e2fsck now!\n"
 "\n"
@@ -4864,7 +4947,7 @@ msgstr "       %s -I dispozitiv fișier-imagine\n"
 msgid "       %s -ra [ -cfnp ] [ -o src_offset ] [ -O dest_offset ] src_fs [ dest_fs ]\n"
 msgstr "       %s -ra [ -cfnp ] [ -o poz-sursă ] [ -O poz-dest ] sistemf-sursă [ sistemf-dest]\n"
 
-#: misc/e2image.c:177 misc/e2image.c:593 misc/e2image.c:599 misc/e2image.c:1201
+#: misc/e2image.c:177 misc/e2image.c:599 misc/e2image.c:605 misc/e2image.c:1207
 msgid "while allocating buffer"
 msgstr "în timp ce se aloca memoria tampon"
 
@@ -4890,155 +4973,155 @@ msgstr "Eroare: dimensiunea antetului este mai mare decât wrt_size\n"
 msgid "Couldn't allocate header buffer\n"
 msgstr "Nu s-a putut aloca memorie tampon antetului\n"
 
-#: misc/e2image.c:250
+#: misc/e2image.c:251
 msgid "while writing superblock"
 msgstr "în timp ce se scria super-blocul"
 
-#: misc/e2image.c:259
+#: misc/e2image.c:260
 msgid "while writing inode table"
 msgstr "în timp ce se scria tabelul de noduri-i"
 
-#: misc/e2image.c:267
+#: misc/e2image.c:268
 msgid "while writing block bitmap"
 msgstr "în timp ce se scria harta de biți a blocurilor"
 
-#: misc/e2image.c:275
+#: misc/e2image.c:276
 msgid "while writing inode bitmap"
 msgstr "în timp ce se scria harta de biți de noduri-i"
 
-#: misc/e2image.c:517
+#: misc/e2image.c:523
 #, c-format
 msgid "Corrupt directory block %llu: bad rec_len (%d)\n"
 msgstr "Blocul directorului %llueste corupt: rec_len (%d) incorectă\n"
 
-#: misc/e2image.c:529
+#: misc/e2image.c:535
 #, c-format
 msgid "Corrupt directory block %llu: bad name_len (%d)\n"
 msgstr "Blocul directorului %llueste corupt: name_len (%d) incorectă\n"
 
-#: misc/e2image.c:570
+#: misc/e2image.c:576
 #, c-format
 msgid "%llu / %llu blocks (%d%%)"
 msgstr "%llu / %llu blocuri (%d%%)"
 
-#: misc/e2image.c:603 misc/e2image.c:643
+#: misc/e2image.c:609 misc/e2image.c:649
 msgid "Copying "
 msgstr "Se copiază "
 
-#: misc/e2image.c:640
+#: misc/e2image.c:646
 msgid "Stopping now will destroy the filesystem, interrupt again if you are sure\n"
 msgstr "Oprirea acum a acestei acțiuni, va distruge sistemul de fișiere; întrerupeți din nou dacă sunteți sigur că trebuie oprită\n"
 
-#: misc/e2image.c:666
+#: misc/e2image.c:672
 #, c-format
 msgid " %s remaining at %.2f MB/s"
 msgstr " mai rămân(e) %s la %.2f Mo/s"
 
-#: misc/e2image.c:678 misc/e2image.c:1211
+#: misc/e2image.c:684 misc/e2image.c:1217
 #, c-format
 msgid "error reading block %llu"
 msgstr "eroare la citirea blocului %llu"
 
-#: misc/e2image.c:733
+#: misc/e2image.c:739
 #, c-format
 msgid "Copied %llu / %llu blocks (%d%%) in %s "
 msgstr "Copiate %llu / %llu blocuri (%d%%) în %s "
 
-#: misc/e2image.c:738
+#: misc/e2image.c:744
 #, c-format
 msgid "at %.2f MB/s"
 msgstr "la %.2f Mo/s"
 
-#: misc/e2image.c:774
+#: misc/e2image.c:780
 msgid "while allocating l1 table"
 msgstr "în timp ce se aloca tabelul l1"
 
-#: misc/e2image.c:819
+#: misc/e2image.c:825
 msgid "while allocating l2 cache"
 msgstr "în timp ce se aloca zona de prestocare (cache) l2"
 
-#: misc/e2image.c:842
+#: misc/e2image.c:848
 msgid "Warning: There are still tables in the cache while putting the cache, data will be lost so the image may not be valid.\n"
 msgstr "Avertisment: Există încă tabele în zona de stocare (cache) în timp ce stocați zona de stocare (cache), datele vor fi pierdute, astfel încât este posibil ca imaginea să nu fie valabilă.\n"
 
-#: misc/e2image.c:1168
+#: misc/e2image.c:1174
 msgid "while allocating ext2_qcow2_image"
 msgstr "în timp ce se aloca ext2_qcow2_image"
 
-#: misc/e2image.c:1175
+#: misc/e2image.c:1181
 msgid "while initializing ext2_qcow2_image"
 msgstr "în timp ce se inițializa ext2_qcow2_image"
 
-#: misc/e2image.c:1235 misc/e2image.c:1253
+#: misc/e2image.c:1241 misc/e2image.c:1259
 msgid "Programming error: multiple sequential refcount blocks created!\n"
 msgstr "Eroare de programare: au fost create mai multe blocuri „refcount” (cu numere de referință) secvențiale!\n"
 
-#: misc/e2image.c:1294
+#: misc/e2image.c:1300
 msgid "while allocating block bitmap"
 msgstr "în timp ce se aloca harta de biți de blocuri"
 
-#: misc/e2image.c:1303
+#: misc/e2image.c:1309
 msgid "while allocating scramble block bitmap"
 msgstr "în timp ce se aloca harta de biți de blocuri amestecate"
 
-#: misc/e2image.c:1326
+#: misc/e2image.c:1332
 msgid "Scanning inodes...\n"
 msgstr "Se scanează nodurile-i...\n"
 
-#: misc/e2image.c:1338
+#: misc/e2image.c:1344
 msgid "Can't allocate block buffer"
 msgstr "Nu se poate aloca memorie tampon blocului"
 
-#: misc/e2image.c:1350
+#: misc/e2image.c:1356
 msgid "while getting next inode"
 msgstr "în timp ce se obținea nodul-i următor"
 
-#: misc/e2image.c:1380 misc/e2image.c:1394
+#: misc/e2image.c:1386 misc/e2image.c:1400
 #, c-format
 msgid "while iterating over inode %u"
 msgstr "în timp ce se itera peste nodul-i %u"
 
-#: misc/e2image.c:1426
+#: misc/e2image.c:1432
 msgid "Raw and qcow2 images cannot be installed"
 msgstr "Imaginile raw și qcow2 nu pot fi instalate"
 
-#: misc/e2image.c:1448
+#: misc/e2image.c:1454
 msgid "error reading bitmaps"
 msgstr "eroare la citirea hărților de biți"
 
-#: misc/e2image.c:1460
+#: misc/e2image.c:1466
 msgid "while opening device file"
 msgstr "în timp ce se deschidea fișierul dispozitivului"
 
-#: misc/e2image.c:1471
+#: misc/e2image.c:1477
 msgid "while restoring the image table"
 msgstr "în timp ce se restaura tabelul imaginii"
 
-#: misc/e2image.c:1579
+#: misc/e2image.c:1585
 msgid "-a option can only be used with raw or QCOW2 images."
 msgstr "opțiunea „-a” poate fi utilizată doar cu imagini brute (raw) sau QCOW2."
 
-#: misc/e2image.c:1584
+#: misc/e2image.c:1590
 msgid "-b option can only be used with raw or QCOW2 images."
 msgstr "opțiunea „-b” poate fi utilizată doar cu imagini brute (raw) sau QCOW2."
 
-#: misc/e2image.c:1590
+#: misc/e2image.c:1596
 msgid "Offsets are only allowed with raw images."
 msgstr "Pozițiile sunt permise numai cu imagini brute (raw)."
 
-#: misc/e2image.c:1595
+#: misc/e2image.c:1601
 msgid "Move mode is only allowed with raw images."
 msgstr "Modul de deplasare este permis numai cu imagini brute (raw)."
 
-#: misc/e2image.c:1600
+#: misc/e2image.c:1606
 msgid "Move mode requires all data mode."
 msgstr "Modul de deplasare necesită modul „toate-datele”."
 
-#: misc/e2image.c:1610
+#: misc/e2image.c:1616
 msgid "checking if mounted"
 msgstr "se verifică dacă este montat"
 
-#: misc/e2image.c:1617
+#: misc/e2image.c:1623
 msgid ""
 "\n"
 "Running e2image on a R/W mounted filesystem can result in an\n"
@@ -5051,51 +5134,51 @@ msgstr ""
 "scopuri de depanare.\n"
 "Utilizați opțiunea „-f” dacă doriți cu adevărat să faceți acest lucru.\n"
 
-#: misc/e2image.c:1671
+#: misc/e2image.c:1677
 msgid "QCOW2 image can not be written to the stdout!\n"
 msgstr "Imaginea QCOW2 nu poate fi scrisă la ieșirea standard!\n"
 
-#: misc/e2image.c:1677
+#: misc/e2image.c:1683
 msgid "Can not stat output\n"
 msgstr "Nu se poate obține starea ieșirii\n"
 
-#: misc/e2image.c:1687
+#: misc/e2image.c:1693
 #, c-format
 msgid "Image (%s) is compressed\n"
 msgstr "Imaginea (%s) este comprimată\n"
 
-#: misc/e2image.c:1690
+#: misc/e2image.c:1696
 #, c-format
 msgid "Image (%s) is encrypted\n"
 msgstr "Imaginea (%s) este criptată\n"
 
-#: misc/e2image.c:1693
+#: misc/e2image.c:1699
 #, c-format
 msgid "Image (%s) is corrupted\n"
 msgstr "Imaginea (%s) este coruptă\n"
 
-#: misc/e2image.c:1697
+#: misc/e2image.c:1703
 #, c-format
 msgid "while trying to convert qcow2 image (%s) into raw image (%s)"
 msgstr "în timp ce se încerca conversia imaginii qcow2 (%s) în imaginea raw (%s)"
 
-#: misc/e2image.c:1707
+#: misc/e2image.c:1713
 msgid "The -c option only supported in raw mode\n"
 msgstr "Opțiunea „-c” este acceptată numai în modul brut (raw)\n"
 
-#: misc/e2image.c:1712
+#: misc/e2image.c:1718
 msgid "The -c option not supported when writing to stdout\n"
 msgstr "Opțiunea „-c” nu este acceptată când se scrie la ieșirea standard\n"
 
-#: misc/e2image.c:1719
+#: misc/e2image.c:1725
 msgid "while allocating check_buf"
 msgstr "în timp ce se aloca check_buf"
 
-#: misc/e2image.c:1725
+#: misc/e2image.c:1731
 msgid "The -p option only supported in raw mode\n"
 msgstr "Opțiunea „-p” este acceptată numai în modul brut (raw)\n"
 
-#: misc/e2image.c:1735
+#: misc/e2image.c:1741
 #, c-format
 msgid "%d blocks already contained the data to be copied\n"
 msgstr "%d blocuri conțineau deja datele care urmează să fie copiate\n"
@@ -5125,7 +5208,7 @@ msgstr "e2label: eroare la citirea super-blocului\n"
 msgid "e2label: not an ext2 filesystem\n"
 msgstr "e2label: nu este un sistem de fișiere ext2\n"
 
-#: misc/e2label.c:97 misc/tune2fs.c:3137 misc/tune2fs.c:3460
+#: misc/e2label.c:97 misc/tune2fs.c:3154 misc/tune2fs.c:3481
 #, c-format
 msgid "Warning: label too long, truncating.\n"
 msgstr "Avertisment: etichetă prea lungă, se trunchiază\n"
@@ -5140,7 +5223,7 @@ msgstr "e2label: nu se poate examina din nou pentru super-bloc\n"
 msgid "e2label: error writing superblock\n"
 msgstr "e2label: eroare la scrierea super-blocului\n"
 
-#: misc/e2label.c:117 misc/tune2fs.c:1912
+#: misc/e2label.c:117 misc/tune2fs.c:1928
 #, c-format
 msgid "Usage: e2label device [newlabel]\n"
 msgstr "Utilizare: e2label dispozitiv [etichetă-nouă]\n"
@@ -5299,37 +5382,37 @@ msgstr "Eroare de In/Ieș în timpul reluării execuției din fișierul de anula
 msgid "Incomplete undo record; run e2fsck.\n"
 msgstr "Înregistrare de anulare incompletă; rulați «e2fsck».\n"
 
-#: misc/findsuper.c:110
+#: misc/findsuper.c:108
 #, c-format
 msgid "Usage:  findsuper device [skipbytes [startkb]]\n"
 msgstr "Utilizare:  findsuper dispozitiv [octeți-omiși [start_la-kocteți]]\n"
 
-#: misc/findsuper.c:155
+#: misc/findsuper.c:153
 #, c-format
 msgid "skipbytes should be a number, not %s\n"
 msgstr "octeți-omiși trebuie să fie un număr, nu %s\n"
 
-#: misc/findsuper.c:162
+#: misc/findsuper.c:160
 #, c-format
 msgid "skipbytes must be a multiple of the sector size\n"
 msgstr "octeți-omiși trebuie să fie un multiplu al dimensiunii sectorului\n"
 
-#: misc/findsuper.c:169
+#: misc/findsuper.c:167
 #, c-format
 msgid "startkb should be a number, not %s\n"
 msgstr "start_la-kocteți trebuie să fie un număr, nu %s\n"
 
-#: misc/findsuper.c:175
+#: misc/findsuper.c:173
 #, c-format
 msgid "startkb should be positive, not %llu\n"
 msgstr "start_la-kocteți trebuie să fie un număr pozitiv, nu %llu\n"
 
-#: misc/findsuper.c:186
+#: misc/findsuper.c:184
 #, c-format
 msgid "starting at %llu, with %u byte increments\n"
 msgstr "se începe de la %llu, cu incrementări de %u octeți\n"
 
-#: misc/findsuper.c:188
+#: misc/findsuper.c:186
 #, c-format
 msgid ""
 "[*] probably superblock written in the ext3 journal superblock,\n"
@@ -5338,12 +5421,12 @@ msgstr ""
 "[*] probabil super-blocul este scris în super-blocul de jurnal ext3,\n"
 "\tașa că început/final/grup este greșit\n"
 
-#: misc/findsuper.c:190
+#: misc/findsuper.c:188
 #, c-format
 msgid "byte_offset  byte_start     byte_end  fs_blocks blksz  grp  mkfs/mount_time           sb_uuid label\n"
 msgstr "decalaj_oct  început_oct    final_oct blocuriSF dimbloc grp mkfs/oră_montare          sb_uuid eticheta\n"
 
-#: misc/findsuper.c:264
+#: misc/findsuper.c:262
 #, c-format
 msgid ""
 "\n"
@@ -5417,91 +5500,125 @@ msgstr ""
 msgid "Couldn't allocate memory for filesystem types\n"
 msgstr "Nu s-a putut aloca memorie pentru tipurile de sisteme de fișiere\n"
 
-#: misc/fsck.c:894
+#: misc/fsck.c:895
 #, c-format
 msgid "%s: skipping bad line in /etc/fstab: bind mount with nonzero fsck pass number\n"
 msgstr "%s: se omite linia greșită din „/etc/fstab”: montare asociată cu un număr „pass” (ordinea de verificare a discului/partiției) «fsck» diferit de zero\n"
 
-#: misc/fsck.c:921
+#: misc/fsck.c:922
 #, c-format
 msgid "fsck: cannot check %s: fsck.%s not found\n"
 msgstr "nu se poate verifica %s: «fsck.%s» nu a fost găsit\n"
 
-#: misc/fsck.c:977
+#: misc/fsck.c:978
 msgid "Checking all file systems.\n"
 msgstr "Se verifică toate sistemele de fișiere.\n"
 
-#: misc/fsck.c:1068
+#: misc/fsck.c:1069
 #, c-format
 msgid "--waiting-- (pass %d)\n"
 msgstr "--se așteaptă-- (pasul %d)\n"
 
-#: misc/fsck.c:1088
+#: misc/fsck.c:1089
 msgid "Usage: fsck [-AMNPRTV] [ -C [ fd ] ] [-t fstype] [fs-options] [filesys ...]\n"
 msgstr "Utilizare: fsck [-AMNPRTV] [ -C [ descript.fiș ] ] [-t tip-sist.fiș] [opțiuni-sist.fiș] [sist.fiș ...]\n"
 
-#: misc/fsck.c:1130
+#: misc/fsck.c:1131
 #, c-format
 msgid "%s: too many devices\n"
 msgstr "%s: prea multe dispozitive\n"
 
-#: misc/fsck.c:1163 misc/fsck.c:1249
+#: misc/fsck.c:1164 misc/fsck.c:1250
 #, c-format
 msgid "%s: too many arguments\n"
 msgstr "%s: prea multe argumente\n"
 
-#: misc/fuse2fs.c:3804
-msgid "Mounting read-only.\n"
-msgstr "Se montează doar-pentru-citire.\n"
+#: misc/fuse2fs.c:731
+msgid "unmounting filesystem"
+msgstr "se demontează sistemul de fișiere"
 
-#: misc/fuse2fs.c:3828
-#, c-format
-msgid "%s: Allowing users to allocate all blocks. This is dangerous!\n"
-msgstr "%s: Se permite utilizatorilor să aloce toate blocurile. Acest lucru este periculos!\n"
+#: misc/fuse2fs.c:779
+msgid "mounted filesystem"
+msgstr "sistem de fișiere montat"
 
-#: misc/fuse2fs.c:3842 misc/fuse2fs.c:3860
-#, c-format
-msgid "%s: %s.\n"
-msgstr "%s: %s.\n"
+#: misc/fuse2fs.c:4238
+msgid "cache size must be between 1 block and 2GB."
+msgstr "dimensiunea spațiului de pre-stocare (cache) trebuie să fie între 1 bloc și 2Go."
 
-#: misc/fuse2fs.c:3843 misc/fuse2fs.c:3862 misc/tune2fs.c:3351
-#, c-format
-msgid "Please run e2fsck -fy %s.\n"
-msgstr "Vă rugăm să rulați «e2fsck -fy %s».\n"
+#: misc/fuse2fs.c:4388
+msgid "Allowing users to allocate all blocks. This is dangerous!"
+msgstr "Se permite utilizatorilor să aloce toate blocurile. Acest lucru este periculos!"
 
-#: misc/fuse2fs.c:3853
-#, c-format
-msgid "%s: mounting read-only without recovering journal\n"
-msgstr "%s: se montează doar-pentru-citire fără jurnal de recuperare\n"
+#: misc/fuse2fs.c:4402 misc/fuse2fs.c:4461
+msgid "Please run e2fsck -fy."
+msgstr "Vă rugăm să rulați «e2fsck -fy»."
 
-#: misc/fuse2fs.c:3869
-msgid "Journal needs recovery; running `e2fsck -E journal_only' is required.\n"
-msgstr "Jurnalul trebuie să fie recuperat; este necesară rularea comenzii «e2fsck -E journal_only».\n"
+#: misc/fuse2fs.c:4420
+msgid "cannot set disk cache size to"
+msgstr "nu se poate stabili dimensiunea spațiului de pre-stocare (cache) pe disc la"
 
-#: misc/fuse2fs.c:3877
-#, c-format
-msgid "%s: Writing to the journal is not supported.\n"
-msgstr "%s: Scrierea în jurnal nu este admisă.\n"
+#: misc/fuse2fs.c:4430
+msgid "quotas not supported."
+msgstr "cotele nu sunt acceptate."
 
-#: misc/fuse2fs.c:3892
-msgid "Warning: Mounting unchecked fs, running e2fsck is recommended.\n"
-msgstr "Avertisment: Se montează sistemul de fișiere fără verificare, se recomandă rularea «e2fsck».\n"
+#: misc/fuse2fs.c:4434
+msgid "verity not supported."
+msgstr "verity nu este acceptată."
 
-#: misc/fuse2fs.c:3896
-msgid "Warning: Maximal mount count reached, running e2fsck is recommended.\n"
-msgstr "Avertisment: A fost atins numărul maxim de montări, se recomandă rularea «e2fsck».\n"
+#: misc/fuse2fs.c:4438
+msgid "encryption not supported."
+msgstr "criptarea nu este acceptată."
 
-#: misc/fuse2fs.c:3901
-msgid "Warning: Check time reached; running e2fsck is recommended.\n"
-msgstr "Avertisment: Data limită de verificare a fost atinsă; se recomandă rularea «e2fsck».\n"
+#: misc/fuse2fs.c:4442
+msgid "casefolding not supported."
+msgstr "casefolding nu este acceptat."
 
-#: misc/fuse2fs.c:3905
-msgid "Orphans detected; running e2fsck is recommended.\n"
-msgstr "Au fost detectate blocuri orfane; se recomandă rularea «e2fsck».\n"
+#: misc/fuse2fs.c:4452
+msgid "Mounting read-only without recovering journal."
+msgstr "Se montează doar-pentru-citire fără jurnal de recuperare."
 
-#: misc/fuse2fs.c:3909
-msgid "Errors detected; running e2fsck is required.\n"
-msgstr "Au fost detectate erori; este necesară rularea «e2fsck».\n"
+#: misc/fuse2fs.c:4456
+msgid "Recovering journal."
+msgstr "Se recuperează jurnalul."
+
+#: misc/fuse2fs.c:4472
+msgid ""
+"Warning: fuse2fs does not support using the journal.\n"
+"There may be file system corruption or data loss if\n"
+"the file system is not gracefully unmounted.\n"
+msgstr ""
+"Avertisment: fuse2fs nu acceptă utilizarea jurnalului.\n"
+"Este posibil ca sistemul de fișiere să fie corupt sau\n"
+"să se piardă date dacă sistemul de fișiere nu este\n"
+"demontat în mod corespunzător.\n"
+
+#: misc/fuse2fs.c:4489
+msgid "Warning: Mounting unchecked fs, running e2fsck is recommended."
+msgstr "Avertisment: Se montează sistemul de fișiere fără verificare, se recomandă rularea «e2fsck»."
+
+#: misc/fuse2fs.c:4493
+msgid "Warning: Maximal mount count reached, running e2fsck is recommended."
+msgstr "Avertisment: A fost atins numărul maxim de montări, se recomandă rularea «e2fsck»."
+
+#: misc/fuse2fs.c:4498
+msgid "Warning: Check time reached; running e2fsck is recommended."
+msgstr "Avertisment: Data limită de verificare a fost atinsă; se recomandă rularea «e2fsck»."
+
+#: misc/fuse2fs.c:4501
+msgid "Orphans detected; running e2fsck is recommended."
+msgstr "Au fost detectate blocuri orfane; se recomandă rularea «e2fsck»."
+
+#: misc/fuse2fs.c:4505
+msgid "Errors detected; running e2fsck is required."
+msgstr "Au fost detectate erori; este necesară rularea «e2fsck»."
+
+#: misc/fuse2fs.c:4582
+msgid "Mount failed due to unrecognized options.  Check dmesg(1) for details."
+msgstr "Montarea a eșuat din cauza opțiunilor nerecunoscute. Verificați dmesg(1) pentru detalii."
+
+#: misc/fuse2fs.c:4587
+msgid "Mount failed while opening filesystem.  Check dmesg(1) for details."
+msgstr "Montarea a eșuat în timpul deschiderii sistemului de fișiere. Verificați dmesg(1) pentru detalii."
 
 #: misc/lsattr.c:75
 #, c-format
@@ -5523,11 +5640,11 @@ msgstr "În timp ce se citea proiectul de pe %s"
 msgid "While reading version on %s"
 msgstr "În timp ce se citea versiunea de pe %s"
 
-#: misc/lsattr.c:148
+#: misc/lsattr.c:152
 msgid "Couldn't allocate path variable in lsattr_dir_proc\n"
 msgstr "Nu s-a putut aloca variabila de rută în lsattr_dir_proc\n"
 
-#: misc/mke2fs.c:133
+#: misc/mke2fs.c:137
 #, c-format
 msgid ""
 "Usage: %s [-c|-l filename] [-b block-size] [-C cluster-size]\n"
@@ -5535,8 +5652,8 @@ msgid ""
 "\t[-G flex-group-size] [-N number-of-inodes] [-d root-directory|tarball]\n"
 "\t[-m reserved-blocks-percentage] [-o creator-os]\n"
 "\t[-g blocks-per-group] [-L volume-label] [-M last-mounted-directory]\n"
-"\t[-O feature[,...]] [-r fs-revision] [-E extended-option[,...]]\n"
-"\t[-t fs-type] [-T usage-type ] [-U UUID] [-e errors_behavior][-z undo_file]\n"
+"\t[-O feature[,...]] [-E extended-option[,...]] [-t fs-type]\n"
+"\t[-T usage-type ] [-U UUID] [-e errors_behavior][-z undo_file]\n"
 "\t[-jnqvDFSV] device [blocks-count]\n"
 msgstr ""
 "Utilizare: %s [-c|-l nume-fișier] [-b dimens-bloc] [-C dimens-cluster]\n"
@@ -5544,39 +5661,39 @@ msgstr ""
 "        [-G dimens-grup-flex] [-N număr_de_noduri-i] [-d director-rădăcină|tarball]\n"
 "        [-m procentaj-blocuri-rezervate] [-o creator-SO]\n"
 "        [-g blocuri-per-grup] [-L etichetă-volum] [-M ultimul-director-montat]\n"
-"        [-O caracteristică[,...]] [-r versiune-SF] [-E opțiune-extinsă[,...]]\n"
-"        [-t tip-SF] [-T tip-utilizare ] [-U UUID] [-e comportament_erori]\n"
-"        [-z fișier_anulări] [-jnqvDFSV] dispozitiv [număr-blocuri]\n"
+"        [-O caracteristică[,...]] [-E opțiune-extinsă[,...]] [-t tip-sist-fișiere]\n"
+"        [-T tip-utilizare ] [-U UUID] [-e comportament_erori] [-z fișier_anulări] \n"
+"        [-jnqvDFSV] dispozitiv [număr-blocuri]\n"
 
-#: misc/mke2fs.c:265
+#: misc/mke2fs.c:248
 #, c-format
 msgid "Running command: %s\n"
 msgstr "Se execută comanda: %s\n"
 
-#: misc/mke2fs.c:269
+#: misc/mke2fs.c:252
 #, c-format
 msgid "while trying to run '%s'"
 msgstr "în timp ce se încerca să se execute „%s”"
 
-#: misc/mke2fs.c:276
+#: misc/mke2fs.c:259
 msgid "while processing list of bad blocks from program"
 msgstr "în timp ce se procesa lista de blocuri defectuoase din program"
 
-#: misc/mke2fs.c:303
+#: misc/mke2fs.c:286
 #, c-format
 msgid "Block %d in primary superblock/group descriptor area bad.\n"
 msgstr "Blocul %d din zona descriptorului primar al super-blocului/grupului este defectuos.\n"
 
-#: misc/mke2fs.c:305
+#: misc/mke2fs.c:288
 #, c-format
 msgid "Blocks %u through %u must be good in order to build a filesystem.\n"
 msgstr "Blocurile de la %u la %u trebuie să fie bune pentru a construi un sistem de fișiere.\n"
 
-#: misc/mke2fs.c:308
+#: misc/mke2fs.c:291
 msgid "Aborting....\n"
 msgstr "Se abandonează...\n"
 
-#: misc/mke2fs.c:328
+#: misc/mke2fs.c:311
 #, c-format
 msgid ""
 "Warning: the backup superblock/group descriptors at block %u contain\n"
@@ -5586,19 +5703,19 @@ msgstr ""
 "Avertisment: descriptorii super-blocului/grupului de rezervă din blocul %u\n"
 "             conțin blocuri defectuoase.\n"
 
-#: misc/mke2fs.c:347 misc/mke2fs.c:3398
+#: misc/mke2fs.c:330 misc/mke2fs.c:3497
 msgid "while marking bad blocks as used"
 msgstr "în timp ce se marcau blocurile defectuoase ca fiind utilizate"
 
-#: misc/mke2fs.c:372
+#: misc/mke2fs.c:355
 msgid "while writing reserved inodes"
 msgstr "în timp ce se scriau nodurile-i rezervate"
 
-#: misc/mke2fs.c:424
+#: misc/mke2fs.c:407
 msgid "Writing inode tables: "
 msgstr "Se scriu tabelele de noduri-i: "
 
-#: misc/mke2fs.c:456 misc/mke2fs.c:475
+#: misc/mke2fs.c:439 misc/mke2fs.c:458
 #, c-format
 msgid ""
 "\n"
@@ -5607,80 +5724,80 @@ msgstr ""
 "\n"
 "Nu s-au putut scrie %d blocuri în tabelul de noduri-i care începe la %llu: %s\n"
 
-#: misc/mke2fs.c:485 misc/mke2fs.c:2938 misc/mke2fs.c:3358
+#: misc/mke2fs.c:468 misc/mke2fs.c:3037 misc/mke2fs.c:3457
 msgid "done                            \n"
 msgstr "gata, s-a făcut                      \n"
 
-#: misc/mke2fs.c:500
+#: misc/mke2fs.c:484
 msgid "while creating root dir"
 msgstr "în timp ce se crea directorul rădăcină"
 
-#: misc/mke2fs.c:507
+#: misc/mke2fs.c:494
 msgid "while reading root inode"
 msgstr "în timp ce se citea nodul-i rădăcină"
 
-#: misc/mke2fs.c:519
+#: misc/mke2fs.c:514
 msgid "while setting root inode ownership"
 msgstr "în timp ce se stabilea proprietarul nodul-i rădăcină"
 
-#: misc/mke2fs.c:537
+#: misc/mke2fs.c:532
 msgid "while creating /lost+found"
 msgstr "în timp ce se crea directorul /lost+found"
 
-#: misc/mke2fs.c:544
+#: misc/mke2fs.c:539
 msgid "while looking up /lost+found"
 msgstr "în timp ce se căuta directorul /lost+found"
 
-#: misc/mke2fs.c:557
+#: misc/mke2fs.c:552
 msgid "while expanding /lost+found"
 msgstr "în timp ce se expanda directorul /lost+found"
 
-#: misc/mke2fs.c:572
+#: misc/mke2fs.c:567
 msgid "while setting bad block inode"
 msgstr "în timp ce se stabilea nodul-i al blocurilor defectuoase"
 
-#: misc/mke2fs.c:599
+#: misc/mke2fs.c:594
 #, c-format
 msgid "Out of memory erasing sectors %d-%d\n"
 msgstr "Memorie insuficientă în timpul ștergerii sectoarelor %d-%d.\n"
 
-#: misc/mke2fs.c:609
+#: misc/mke2fs.c:604
 #, c-format
 msgid "Warning: could not read block 0: %s\n"
 msgstr "Avertisment: nu s-a putut citi blocul 0: %s\n"
 
-#: misc/mke2fs.c:627
+#: misc/mke2fs.c:622
 #, c-format
 msgid "Warning: could not erase sector %d: %s\n"
 msgstr "Avertisment: nu s-a putut șterge sectorul %d: %s\n"
 
-#: misc/mke2fs.c:643
+#: misc/mke2fs.c:638
 msgid "while splitting the journal size"
 msgstr "în timp ce se împărțea dimensiunea jurnalului"
 
-#: misc/mke2fs.c:650
+#: misc/mke2fs.c:645
 msgid "while initializing journal superblock"
 msgstr "în timp ce se inițializa super-blocul jurnalului"
 
-#: misc/mke2fs.c:658
+#: misc/mke2fs.c:653
 msgid "Zeroing journal device: "
 msgstr "Se umple cu zerouri dispozitivul jurnalului: "
 
-#: misc/mke2fs.c:670
+#: misc/mke2fs.c:665
 #, c-format
 msgid "while zeroing journal device (block %llu, count %d)"
 msgstr "în timp ce se umplea cu zerouri dispozitivul jurnalului (bloc %llu, număr %d)"
 
-#: misc/mke2fs.c:688
+#: misc/mke2fs.c:683
 msgid "while writing journal superblock"
 msgstr "în timp ce se scria super-blocul jurnalului"
 
-#: misc/mke2fs.c:702
+#: misc/mke2fs.c:697
 #, c-format
 msgid "Creating filesystem with %llu %dk blocks and %u inodes\n"
 msgstr "Se creează sistemul de fișiere cu %llu %dk blocuri și %u noduri-i\n"
 
-#: misc/mke2fs.c:710
+#: misc/mke2fs.c:705
 #, c-format
 msgid ""
 "warning: %llu blocks unused.\n"
@@ -5689,169 +5806,179 @@ msgstr ""
 "avertisment: %llu blocuri neutilizate.\n"
 "\n"
 
-#: misc/mke2fs.c:714
+#: misc/mke2fs.c:709
 #, c-format
 msgid "Filesystem label=%.*s\n"
 msgstr "Eticheta sistemului de fișiere=%.*s\n"
 
-#: misc/mke2fs.c:718
+#: misc/mke2fs.c:713
 #, c-format
 msgid "OS type: %s\n"
 msgstr "Tipul SO: %s\n"
 
-#: misc/mke2fs.c:720
+#: misc/mke2fs.c:715
 #, c-format
 msgid "Block size=%u (log=%u)\n"
 msgstr "Dimensiune bloc=%u (jurnal=%u)\n"
 
-#: misc/mke2fs.c:723
+#: misc/mke2fs.c:718
 #, c-format
 msgid "Cluster size=%u (log=%u)\n"
 msgstr "Dimensiune cluster=%u (jurnal=%u)\n"
 
-#: misc/mke2fs.c:727
+#: misc/mke2fs.c:722
 #, c-format
 msgid "Fragment size=%u (log=%u)\n"
 msgstr "Dimensiune fragment=%u (jurnal=%u)\n"
 
-#: misc/mke2fs.c:729
+#: misc/mke2fs.c:724
 #, c-format
 msgid "Stride=%u blocks, Stripe width=%u blocks\n"
 msgstr "Lungime dungă (stride)=%u blocuri, Lățime dungă (stripe width)=%u blocuri\n"
 
-#: misc/mke2fs.c:731
+#: misc/mke2fs.c:726
 #, c-format
 msgid "%u inodes, %llu blocks\n"
 msgstr "%u noduri-i, %llu blocuri\n"
 
-#: misc/mke2fs.c:733
+#: misc/mke2fs.c:728
 #, c-format
 msgid "%llu blocks (%2.2f%%) reserved for the super user\n"
 msgstr "%llu blocuri (%2.2f%%) rezervate pentru super-utilizator\n"
 
-#: misc/mke2fs.c:736
+#: misc/mke2fs.c:731
 #, c-format
 msgid "First data block=%u\n"
 msgstr "Primul bloc de date=%u\n"
 
-#: misc/mke2fs.c:738
+#: misc/mke2fs.c:733
 #, c-format
 msgid "Root directory owner=%u:%u\n"
 msgstr "Proprietarul directorului rădăcină=%u:%u\n"
 
-#: misc/mke2fs.c:740
+#: misc/mke2fs.c:735
 #, c-format
 msgid "Maximum filesystem blocks=%lu\n"
 msgstr "Numărul maxim de blocuri al sistemului de fișiere=%lu\n"
 
-#: misc/mke2fs.c:744
+#: misc/mke2fs.c:739
 #, c-format
 msgid "%u block groups\n"
 msgstr "%u (de) grupuri de blocuri\n"
 
-#: misc/mke2fs.c:746
+#: misc/mke2fs.c:741
 #, c-format
 msgid "%u block group\n"
 msgstr "%u grup de blocuri\n"
 
-#: misc/mke2fs.c:748
+#: misc/mke2fs.c:743
 #, c-format
 msgid "%u blocks per group, %u clusters per group\n"
 msgstr "%u blocuri per grup, %u clusteri per grup\n"
 
-#: misc/mke2fs.c:751
+#: misc/mke2fs.c:746
 #, c-format
 msgid "%u blocks per group, %u fragments per group\n"
 msgstr "%u blocuri per grup, %u fragmente per grup\n"
 
-#: misc/mke2fs.c:753
+#: misc/mke2fs.c:748
 #, c-format
 msgid "%u inodes per group\n"
 msgstr "%u noduri-i per grup\n"
 
-#: misc/mke2fs.c:762
+#: misc/mke2fs.c:757
 #, c-format
 msgid "Filesystem UUID: %s\n"
 msgstr "UUID-ul sistemului de fișiere: %s\n"
 
-#: misc/mke2fs.c:763
+#: misc/mke2fs.c:758
 msgid "Superblock backups stored on blocks: "
 msgstr "Copii de rezervă ale super-blocului stocate în blocuri: "
 
-#: misc/mke2fs.c:859
+#: misc/mke2fs.c:851
 #, c-format
 msgid "%s requires '-O 64bit'\n"
 msgstr "%s necesită opțiunea „-O 64bit”\n"
 
-#: misc/mke2fs.c:865
+#: misc/mke2fs.c:857
 #, c-format
 msgid "'%s' must be before 'resize=%u'\n"
 msgstr "„%s” trebuie să fie înainte de „resize=%u”\n"
 
-#: misc/mke2fs.c:878
+#: misc/mke2fs.c:873
 #, c-format
 msgid "Invalid desc_size: '%s'\n"
 msgstr "«desc_size» nevalid: „%s”\n"
 
-#: misc/mke2fs.c:892
+#: misc/mke2fs.c:887
 #, c-format
 msgid "Invalid hash seed: %s\n"
 msgstr "Sămânță „hash” nevalidă: %s\n"
 
-#: misc/mke2fs.c:904
+#: misc/mke2fs.c:899
 #, c-format
 msgid "Invalid offset: %s\n"
 msgstr "Decalaj nevalid: %s\n"
 
-#: misc/mke2fs.c:918 misc/tune2fs.c:2288
+#: misc/mke2fs.c:913 misc/tune2fs.c:2304
 #, c-format
 msgid "Invalid mmp_update_interval: %s\n"
 msgstr "«mmp_update_interval» nevalid: %s\n"
 
-#: misc/mke2fs.c:935
+#: misc/mke2fs.c:930
 #, c-format
 msgid "Invalid # of backup superblocks: %s\n"
 msgstr "Număr nevalid de super-blocuri de rezervă: %s\n"
 
-#: misc/mke2fs.c:957
+#: misc/mke2fs.c:952
 #, c-format
 msgid "Invalid stride parameter: %s\n"
 msgstr "Parametru de lungime de dungă „stride” nevalid: %s\n"
 
-#: misc/mke2fs.c:972
+#: misc/mke2fs.c:967
 #, c-format
 msgid "Invalid stripe-width parameter: %s\n"
 msgstr "Parametru de lățime de dungă „stripe-width” nevalid: %s\n"
 
-#: misc/mke2fs.c:995
+#: misc/mke2fs.c:990
 #, c-format
 msgid "Invalid resize parameter: %s\n"
 msgstr "Parametru de redimensionare nevalid: %s\n"
 
-#: misc/mke2fs.c:1002
+#: misc/mke2fs.c:997
 msgid "The resize maximum must be greater than the filesystem size.\n"
 msgstr "Valoarea maximă de redimensionare trebuie să fie mai mare decât dimensiunea sistemului de fișiere.\n"
 
-#: misc/mke2fs.c:1026
+#: misc/mke2fs.c:1021
 msgid "On-line resizing not supported with revision 0 filesystems\n"
 msgstr "Redimensionarea în linie nu este admisă cu sistemele de fișiere cu versiunea 0\n"
 
-#: misc/mke2fs.c:1057 misc/mke2fs.c:1066
+#: misc/mke2fs.c:1038 misc/mke2fs.c:1954
+#, c-format
+msgid "bad revision level - %s"
+msgstr "nivel de revizuire a versiunii greșit - %s"
+
+#: misc/mke2fs.c:1043 misc/mke2fs.c:1959
+#, c-format
+msgid "while trying to create revision %d"
+msgstr "în timp ce se încerca crearea revizuirii %d"
+
+#: misc/mke2fs.c:1070 misc/mke2fs.c:1079
 #, c-format
 msgid "Invalid root_owner: '%s'\n"
 msgstr "Proprietar-rădăcină nevalid: „%s”\n"
 
-#: misc/mke2fs.c:1111
+#: misc/mke2fs.c:1128
 #, c-format
 msgid "Invalid encoding: %s"
 msgstr "Codificare nevalidă: %s"
 
-#: misc/mke2fs.c:1133 misc/tune2fs.c:2423
+#: misc/mke2fs.c:1150 misc/tune2fs.c:2439
 #, c-format
 msgid "Invalid size of orphan file %s\n"
 msgstr "Dimensiune nevalidă a fișierului orfan %s\n"
 
-#: misc/mke2fs.c:1144
+#: misc/mke2fs.c:1161
 #, c-format
 msgid ""
 "\n"
@@ -5871,9 +5998,11 @@ msgid ""
 "\tlazy_itable_init=<0 to disable, 1 to enable>\n"
 "\tlazy_journal_init=<0 to disable, 1 to enable>\n"
 "\troot_owner=<uid of root dir>:<gid of root dir>\n"
+"\troot_perms=<octal root directory permissions>\n"
 "\ttest_fs\n"
 "\tdiscard\n"
 "\tnodiscard\n"
+"\trevision=<revision>\n"
 "\tencoding=<encoding>\n"
 "\tencoding_flags=<flags>\n"
 "\tquotatype=<quota type(s) to be enabled>\n"
@@ -5897,16 +6026,18 @@ msgstr ""
 "\tlazy_itable_init=<0 pentru dezactivare, 1 pentru activare>\n"
 "\tlazy_journal_init=<0 pentru dezactivare, 1 pentru activare>\n"
 "\troot_owner=<uid-ul directorului rădăcină>:<gid-ul directorului rădăcină>\n"
+"\troot_perms=<permisiuni octale pentru directorul rădăcină>\n"
 "\ttest_fs\n"
 "\tdiscard\n"
 "\tnodiscard\n"
+"\trevision=<reviziunea>\n"
 "\tencoding=<codificarea>\n"
 "\tencoding_flags=<fanioane-codificare>\n"
 "\tquotatype=<tipurile de cote care urmează să fie activate>\n"
 "\tassume_storage_prezeroed=<0 pentru dezactivare, 1 pentru activare>\n"
 "\n"
 
-#: misc/mke2fs.c:1172
+#: misc/mke2fs.c:1191
 #, c-format
 msgid ""
 "\n"
@@ -5917,17 +6048,17 @@ msgstr ""
 "Avertisment: parametrul „stripe-width” %u de RAID nu este un multiplu par al parametrului „stride” %u.\n"
 "\n"
 
-#: misc/mke2fs.c:1183 misc/tune2fs.c:2439
+#: misc/mke2fs.c:1202 misc/tune2fs.c:2455
 #, c-format
 msgid "error: Invalid encoding flag: %s\n"
 msgstr "eroare: Fanion de codificare nevalid: %s\n"
 
-#: misc/mke2fs.c:1189 misc/tune2fs.c:2448
+#: misc/mke2fs.c:1208 misc/tune2fs.c:2464
 #, c-format
 msgid "error: An encoding must be explicitly specified when passing encoding-flags\n"
 msgstr "eroare: O codificare trebuie să fie specificată în mod explicit atunci când se pasează opțiunea extinsă „encoding-flags”\n"
 
-#: misc/mke2fs.c:1240
+#: misc/mke2fs.c:1259
 #, c-format
 msgid ""
 "Syntax error in mke2fs config file (%s, line #%d)\n"
@@ -5936,17 +6067,17 @@ msgstr ""
 "Eroare de sintaxă în fișierul de configurare al «mke2fs» (%s, linia nr.%d)\n"
 "\t%s\n"
 
-#: misc/mke2fs.c:1253 misc/tune2fs.c:1182
+#: misc/mke2fs.c:1272 misc/tune2fs.c:1182
 #, c-format
 msgid "Invalid filesystem option set: %s\n"
 msgstr "Set de opțiuni al sistemului de fișiere nevalid: %s\n"
 
-#: misc/mke2fs.c:1265 misc/tune2fs.c:459
+#: misc/mke2fs.c:1284 misc/tune2fs.c:459
 #, c-format
 msgid "Invalid mount option set: %s\n"
 msgstr "Set de opțiuni de montare nevalid: %s\n"
 
-#: misc/mke2fs.c:1401
+#: misc/mke2fs.c:1420
 #, c-format
 msgid ""
 "\n"
@@ -5955,7 +6086,7 @@ msgstr ""
 "\n"
 "Fișierul dvs. „mke2fs.conf” nu definește tipul de sistem de fișiere %s.\n"
 
-#: misc/mke2fs.c:1405
+#: misc/mke2fs.c:1424
 msgid ""
 "You probably need to install an updated mke2fs.conf file.\n"
 "\n"
@@ -5963,11 +6094,11 @@ msgstr ""
 "Probabil că trebuie să instalați un fișier „mke2fs.conf” actualizat.\n"
 "\n"
 
-#: misc/mke2fs.c:1409
+#: misc/mke2fs.c:1428
 msgid "Aborting...\n"
 msgstr "Se abandonează...\n"
 
-#: misc/mke2fs.c:1450
+#: misc/mke2fs.c:1469
 #, c-format
 msgid ""
 "\n"
@@ -5978,156 +6109,169 @@ msgstr ""
 "Avertizare: fs_type %s nu este definit în „mke2fs.conf”\n"
 "\n"
 
-#: misc/mke2fs.c:1640
+#: misc/mke2fs.c:1689
 msgid "Couldn't allocate memory for new PATH.\n"
 msgstr "Nu s-a putut aloca memorie pentru noua RUTĂ.\n"
 
-#: misc/mke2fs.c:1680
+#: misc/mke2fs.c:1729
 #, c-format
 msgid "Couldn't init profile successfully (error: %ld).\n"
 msgstr "Nu s-a putut iniția profilul cu succes (eroare: %ld).\n"
 
-#: misc/mke2fs.c:1713
+#: misc/mke2fs.c:1762
 #, c-format
 msgid "invalid block size - %s"
 msgstr "dimensiune a blocului nevalidă - %s"
 
-#: misc/mke2fs.c:1717
+#: misc/mke2fs.c:1766
 #, c-format
 msgid "Warning: blocksize %d not usable on most systems.\n"
 msgstr "Avertisment: dimensiunea blocului %d nu este utilizabilă pe majoritatea sistemelor.\n"
 
-#: misc/mke2fs.c:1733
+#: misc/mke2fs.c:1782
 #, c-format
 msgid "invalid cluster size - %s"
 msgstr "dimensiune a clusteruluii nevalidă - %s"
 
-#: misc/mke2fs.c:1746
+#: misc/mke2fs.c:1795
 msgid "'-R' is deprecated, use '-E' instead"
 msgstr "opțiunea „-R” este depășită, utilizați în schimb opțiunea „-E”"
 
-#: misc/mke2fs.c:1760 misc/tune2fs.c:2014
+#: misc/mke2fs.c:1809 misc/tune2fs.c:2030
 #, c-format
 msgid "bad error behavior - %s"
 msgstr "comportament de eroare greșit - %s"
 
-#: misc/mke2fs.c:1772
+#: misc/mke2fs.c:1821
 msgid "Illegal number for blocks per group"
 msgstr "Număr ilegal de blocuri pe grup"
 
-#: misc/mke2fs.c:1777
+#: misc/mke2fs.c:1826
 msgid "blocks per group must be multiple of 8"
 msgstr "blocurile pe grup trebuie să fie un multiplu de 8"
 
-#: misc/mke2fs.c:1785
+#: misc/mke2fs.c:1834
 msgid "Illegal number for flex_bg size"
 msgstr "Număr ilegal pentru dimensiunea „flex_bg”"
 
-#: misc/mke2fs.c:1791
+#: misc/mke2fs.c:1840
 msgid "flex_bg size must be a power of 2"
 msgstr "dimensiunea „flex_bg” trebuie să fie o putere de 2"
 
-#: misc/mke2fs.c:1796
+#: misc/mke2fs.c:1845
 #, c-format
 msgid "flex_bg size (%lu) must be less than or equal to 2^31"
 msgstr "dimensiunea „flex_bg” (%lu) trebuie să fie mai mică sau egală cu 2^31"
 
-#: misc/mke2fs.c:1806
+#: misc/mke2fs.c:1855
 #, c-format
 msgid "invalid inode ratio %s (min %d/max %d)"
 msgstr "raport de noduri-i nevalid %s (min %d/max %d)"
 
-#: misc/mke2fs.c:1816
+#: misc/mke2fs.c:1865
 #, c-format
 msgid "invalid inode size - %s"
 msgstr "dimensiune a nodului-i nevalidă - %s"
 
-#: misc/mke2fs.c:1831
+#: misc/mke2fs.c:1880
 msgid "Warning: -K option is deprecated and should not be used anymore. Use '-E nodiscard' extended option instead!\n"
 msgstr "Avertisment: opțiunea „-K” este depășită și nu ar trebui să mai fie utilizată. Utilizați în schimb opțiunea extinsă „-E nodiscard”!\n"
 
-#: misc/mke2fs.c:1842
+#: misc/mke2fs.c:1891
 msgid "in malloc for bad_blocks_filename"
 msgstr "în malloc pentru bad_blocks_filename"
 
-#: misc/mke2fs.c:1851
+#: misc/mke2fs.c:1900
 #, c-format
 msgid ""
 "Warning: label too long; will be truncated to '%s'\n"
 "\n"
 msgstr "Avertisment: etichetă prea lungă; va fi trunchiată la „%s”\n"
 
-#: misc/mke2fs.c:1860
+#: misc/mke2fs.c:1909
 #, c-format
 msgid "invalid reserved blocks percent - %s"
 msgstr "procent de blocuri rezervate nevalid - %s"
 
-#: misc/mke2fs.c:1875
+#: misc/mke2fs.c:1924
 #, c-format
 msgid "bad num inodes - %s"
 msgstr "număr de noduri-i incorect - %s"
 
-#: misc/mke2fs.c:1888
+#: misc/mke2fs.c:1937
 msgid "while allocating fs_feature string"
 msgstr "în timp ce se aloca șirul fs_feature"
 
-#: misc/mke2fs.c:1905
-#, c-format
-msgid "bad revision level - %s"
-msgstr "nivel de revizuire a versiunii greșit - %s"
+#: misc/mke2fs.c:1964
+msgid ""
+"the -r option has been removed.\n"
+"\n"
+"If you really need compatibility with pre-1995 Linux systems, use the\n"
+"command-line option \"-E revision=0\".\n"
+msgstr ""
+"opțiunea „-r” a fost eliminată.\n"
+"\n"
+"Dacă într-adevăr aveți nevoie de compatibilitate cu sistemele Linux\n"
+"anterioare anului 1995, utilizați opțiunea din linia de comandă\n"
+"„-E revision=0”.\n"
 
-#: misc/mke2fs.c:1910
-#, c-format
-msgid "while trying to create revision %d"
-msgstr "în timp ce se încerca crearea revizuirii %d"
+#: misc/mke2fs.c:1973
+msgid ""
+"the -s option has been removed.\n"
+"\n"
+"Use the -O option to set or clear the sparse_super feature.\n"
+msgstr ""
+"opțiunea „-s” a fost eliminată.\n"
+"\n"
+"Utilizați opțiunea „-O” pentru a defini sau șterge caracteristica sparse_super.\n"
 
-#: misc/mke2fs.c:1924
+#: misc/mke2fs.c:1982
 msgid "The -t option may only be used once"
 msgstr "Opțiunea „-t” poate fi utilizată doar o singură dată"
 
-#: misc/mke2fs.c:1932
+#: misc/mke2fs.c:1990
 msgid "The -T option may only be used once"
 msgstr "Opțiunea „-T” poate fi utilizată doar o singură dată"
 
-#: misc/mke2fs.c:1988 misc/mke2fs.c:3481
+#: misc/mke2fs.c:2046 misc/mke2fs.c:3580
 #, c-format
 msgid "while trying to open journal device %s\n"
 msgstr "în timp ce se încerca deschiderea dispozitivului de jurnal %s\n"
 
-#: misc/mke2fs.c:1994
+#: misc/mke2fs.c:2052
 #, c-format
 msgid "Journal dev blocksize (%d) smaller than minimum blocksize %d\n"
 msgstr "Dimensiunea blocului dispozitivului de jurnal (%d) este mai mică decât dimensiunea minimă a blocului %d\n"
 
-#: misc/mke2fs.c:2000
+#: misc/mke2fs.c:2058
 #, c-format
 msgid "Using journal device's blocksize: %d\n"
 msgstr "Se utilizează dimensiunea de bloc a dispozitivului de jurnal: %d\n"
 
-#: misc/mke2fs.c:2011
+#: misc/mke2fs.c:2069
 #, c-format
 msgid "invalid blocks '%s' on device '%s'"
 msgstr "blocuri nevalide „%s” pe dispozitivul „%s”"
 
-#: misc/mke2fs.c:2031
+#: misc/mke2fs.c:2089
 msgid "filesystem"
 msgstr "sistem de fișiere"
 
-#: misc/mke2fs.c:2046 lib/support/plausible.c:184
+#: misc/mke2fs.c:2104 lib/support/plausible.c:184
 #, c-format
 msgid "The file %s does not exist and no size was specified.\n"
 msgstr "Fișierul „%s” nu există și nu a fost specificată nicio dimensiune.\n"
 
-#: misc/mke2fs.c:2058 lib/support/plausible.c:192
+#: misc/mke2fs.c:2117 lib/support/plausible.c:192
 #, c-format
 msgid "Creating regular file %s\n"
 msgstr "Se creează fișierul obișnuit %s\n"
 
-#: misc/mke2fs.c:2063 resize/main.c:514
+#: misc/mke2fs.c:2122 resize/main.c:512
 msgid "while trying to determine filesystem size"
 msgstr "în timp ce se încerca să se determine dimensiunea sistemului de fișiere"
 
-#: misc/mke2fs.c:2069
+#: misc/mke2fs.c:2128
 msgid ""
 "Couldn't determine device size; you must specify\n"
 "the size of the filesystem\n"
@@ -6135,7 +6279,7 @@ msgstr ""
 "Nu s-a putut determina dimensiunea dispozitivului; trebuie să specificați\n"
 "dimensiunea sistemului de fișiere\n"
 
-#: misc/mke2fs.c:2076
+#: misc/mke2fs.c:2135
 msgid ""
 "Device size reported to be zero.  Invalid partition specified, or\n"
 "\tpartition table wasn't reread after running fdisk, due to\n"
@@ -6147,48 +6291,48 @@ msgstr ""
 "din cauza unei partiții modificate care este ocupată și în curs de utilizare.\n"
 "Este posibil să fie nevoie să reporniți pentru a citi din nou tabela de partiții.\n"
 
-#: misc/mke2fs.c:2093
+#: misc/mke2fs.c:2152
 msgid "Filesystem larger than apparent device size."
 msgstr "Sistemul de fișiere este mai mare decât dimensiunea aparentă a dispozitivului."
 
-#: misc/mke2fs.c:2116
+#: misc/mke2fs.c:2175
 msgid "Failed to parse fs types list\n"
 msgstr "Nu s-a reușit să se analizeze lista de tipuri de sisteme de fișiere\n"
 
-#: misc/mke2fs.c:2182
+#: misc/mke2fs.c:2240
 msgid "The HURD does not support the filetype feature.\n"
 msgstr "HURD nu are implementată caracteristica de determinare a tipului de fișier „filetype”.\n"
 
-#: misc/mke2fs.c:2187
+#: misc/mke2fs.c:2245
 msgid "The HURD does not support the huge_file feature.\n"
 msgstr "HURD nu are implementată caracteristica „huge_file”.\n"
 
-#: misc/mke2fs.c:2192
+#: misc/mke2fs.c:2250
 msgid "The HURD does not support the metadata_csum feature.\n"
 msgstr "HURD nu are implementată caracteristica „metadata_csum”.\n"
 
-#: misc/mke2fs.c:2197
+#: misc/mke2fs.c:2255
 msgid "The HURD does not support the ea_inode feature.\n"
 msgstr "HURD nu are implementată caracteristica „ea_inode”.\n"
 
-#: misc/mke2fs.c:2207
+#: misc/mke2fs.c:2265
 msgid "while trying to determine hardware sector size"
 msgstr "în timp ce se încerca să se determine dimensiunea sectorului hardware"
 
-#: misc/mke2fs.c:2213
+#: misc/mke2fs.c:2271
 msgid "while trying to determine physical sector size"
 msgstr "în timp ce se încerca să se determine dimensiunea sectorului fizic"
 
-#: misc/mke2fs.c:2245
+#: misc/mke2fs.c:2303
 msgid "while setting blocksize; too small for device\n"
 msgstr "în timp ce se stabilea dimensiunea blocului; prea mică pentru dispozitiv\n"
 
-#: misc/mke2fs.c:2250
+#: misc/mke2fs.c:2308
 #, c-format
 msgid "Warning: specified blocksize %d is less than device physical sectorsize %d\n"
 msgstr "Avertizare: dimensiunea blocurilor specificate %d este mai mică decât dimensiunea sectorului fizic al dispozitivului %d\n"
 
-#: misc/mke2fs.c:2274
+#: misc/mke2fs.c:2332
 #, c-format
 msgid ""
 "%s: Size of device (0x%llx blocks) %s too big to be expressed\n"
@@ -6197,7 +6341,7 @@ msgstr ""
 "%s: Dimensiunea dispozitivului (0x%llx blocuri) %s este prea mare pentru a fi exprimată\n"
 "\tpe 32 de biți folosind o dimensiune a blocurilor de %d.\n"
 
-#: misc/mke2fs.c:2288
+#: misc/mke2fs.c:2346
 #, c-format
 msgid ""
 "%s: Size of device (0x%llx blocks) %s too big to create\n"
@@ -6206,85 +6350,88 @@ msgstr ""
 "%s: Dimensiunea dispozitivului (0x%llx blocuri) %s este prea mare pentru a fi creat\n"
 "\tun sistem de fișiere folosind o dimensiune a blocurilor de %d.\n"
 
-#: misc/mke2fs.c:2310
+#: misc/mke2fs.c:2368
 msgid "fs_types for mke2fs.conf resolution: "
 msgstr "rezoluția fs_types pentru configurația din „mke2fs.conf”: "
 
-#: misc/mke2fs.c:2317
-msgid "Filesystem features not supported with revision 0 filesystems\n"
-msgstr "Caracteristicile sistemului de fișiere care nu sunt acceptate cu sistemele de fișiere de revizuire 0\n"
-
-#: misc/mke2fs.c:2325
-msgid "Sparse superblocks not supported with revision 0 filesystems\n"
-msgstr "Super-blocurile disperse nu sunt acceptate cu sistemele de fișiere cu revizuire 0\n"
-
-#: misc/mke2fs.c:2335
-msgid "Journals not supported with revision 0 filesystems\n"
-msgstr "Jurnalele nu sunt acceptate cu sistemele de fișiere cu revizuirea 0\n"
-
-#: misc/mke2fs.c:2348
-#, c-format
+#: misc/mke2fs.c:2381
 msgid "invalid reserved blocks percent - %lf"
 msgstr "procentaj de blocuri rezervate nevalid - %lf"
 
-#: misc/mke2fs.c:2365
+#: misc/mke2fs.c:2398
 msgid "Extents MUST be enabled for a 64-bit filesystem.  Pass -O extents to rectify.\n"
 msgstr "„Extents” TREBUIE să fie activat pentru un sistem de fișiere pe 64 de biți.  Pasați opțiunea „-O extents” pentru rectificare.\n"
 
-#: misc/mke2fs.c:2385
+#: misc/mke2fs.c:2406
+msgid "Extents MUST be enabled for fs-verity support.  Pass -O extents to rectify.\n"
+msgstr "„Extents” TREBUIE să fie activate pentru a oferi suport pentru „fs-verity”. Pasați opțiunea „-O extents” pentru rectificare.\n"
+
+#: misc/mke2fs.c:2427
 msgid "The cluster size may not be smaller than the block size.\n"
 msgstr "Dimensiunea clusterului nu poate fi mai mică decât dimensiunea blocului.\n"
 
-#: misc/mke2fs.c:2391
+#: misc/mke2fs.c:2433
 msgid "specifying a cluster size requires the bigalloc feature"
 msgstr "specificarea unei dimensiuni a clusterului necesită caracteristica „bigalloc”"
 
-#: misc/mke2fs.c:2411
+#: misc/mke2fs.c:2453
 #, c-format
 msgid "warning: Unable to get device geometry for %s\n"
 msgstr "avertizare: Nu se poate obține geometria dispozitivului pentru %s\n"
 
-#: misc/mke2fs.c:2423
+#: misc/mke2fs.c:2499
 #, c-format
 msgid "%s alignment is offset by %lu bytes.\n"
 msgstr "Alinierea %s este decalată cu %lu octeți.\n"
 
-#: misc/mke2fs.c:2425
+#: misc/mke2fs.c:2501
 #, c-format
 msgid "This may result in very poor performance, (re)-partitioning suggested.\n"
 msgstr "Acest lucru poate avea ca rezultat performanțe foarte slabe, se sugerează (re)-partiționarea.\n"
 
-#: misc/mke2fs.c:2431
+#: misc/mke2fs.c:2507
 #, c-format
 msgid "%s is capable of DAX but current block size %u is different from system page size %u so filesystem will not support DAX.\n"
 msgstr "%s este capabil de DAX, dar dimensiunea actuală a blocului %u este diferită de dimensiunea paginii de sistem %u, astfel încât sistemul de fișiere nu va suporta DAX.\n"
 
-#: misc/mke2fs.c:2455
+#: misc/mke2fs.c:2531
 #, c-format
 msgid "%d-byte blocks too big for system (max %d)"
 msgstr "blocurile de %d-octeți sunt prea mari pentru sistem (max %d)"
 
-#: misc/mke2fs.c:2459
+#: misc/mke2fs.c:2535
 #, c-format
 msgid "Warning: %d-byte blocks too big for system (max %d), forced to continue\n"
 msgstr "Avertisment: blocurile de %d-octeți sunt prea mari pentru sistem (max %d), dar «mke2fs» este forțat să continue\n"
 
-#: misc/mke2fs.c:2467
+#: misc/mke2fs.c:2543
 #, c-format
 msgid "Suggestion: Use Linux kernel >= 3.18 for improved stability of the metadata and journal checksum features.\n"
 msgstr "Sugestie: Folosiți un nucleu Linux >= 3.18 pentru o mai bună stabilitate a funcțiilor de verificare a metadatelor și a sumei de control a jurnalului.\n"
 
-#: misc/mke2fs.c:2513
+#: misc/mke2fs.c:2589
 #, c-format
 msgid "Unknown filename encoding from profile: %s"
 msgstr "Codificare necunoscută a numelui de fișier din profil: %s"
 
-#: misc/mke2fs.c:2524
+#: misc/mke2fs.c:2600
 #, c-format
 msgid "Unknown encoding flags from profile: %s"
 msgstr "Fanioane de codificare necunoscute din profil: %s"
 
-#: misc/mke2fs.c:2549
+#: misc/mke2fs.c:2624
+msgid "Filesystem features not supported with revision 0 filesystems\n"
+msgstr "Caracteristicile sistemului de fișiere care nu sunt acceptate cu sistemele de fișiere de revizuire 0\n"
+
+#: misc/mke2fs.c:2629
+msgid "Journals not supported with revision 0 filesystems\n"
+msgstr "Jurnalele nu sunt acceptate cu sistemele de fișiere cu revizuirea 0\n"
+
+#: misc/mke2fs.c:2634
+msgid "Inode size incompatible with revision 0 filesystems\n"
+msgstr "Dimensiune de nod-i incompatibilă cu sistemele de fișiere cu revizuirea 0\n"
+
+#: misc/mke2fs.c:2647
 #, c-format
 msgid ""
 "\n"
@@ -6299,16 +6446,16 @@ msgstr ""
 "să nu fie ceea ce vă doriți.\n"
 "\n"
 
-#: misc/mke2fs.c:2564
+#: misc/mke2fs.c:2662
 #, c-format
 msgid "%d byte inodes are too small for project quota"
 msgstr "nodurile-i de %d octeți sunt prea mici pentru cota proiectului"
 
-#: misc/mke2fs.c:2586
+#: misc/mke2fs.c:2684
 msgid "Can't support bigalloc feature without extents feature"
 msgstr "Nu se poate aplica caracteristica „bigalloc” fără caracteristica „extents”"
 
-#: misc/mke2fs.c:2593
+#: misc/mke2fs.c:2691
 msgid ""
 "The resize_inode and meta_bg features are not compatible.\n"
 "They can not be both enabled simultaneously.\n"
@@ -6316,7 +6463,7 @@ msgstr ""
 "Caracteristicile „resize_inode” și „meta_bg” nu sunt compatibile.\n"
 "Ele nu pot fi activate simultan.\n"
 
-#: misc/mke2fs.c:2602
+#: misc/mke2fs.c:2700
 msgid ""
 "\n"
 "Warning: bigalloc file systems with a cluster size greater than\n"
@@ -6326,44 +6473,44 @@ msgstr ""
 "Atenție: sistemele de fișiere „bigalloc” cu o dimensiune a clusterului mai mare\n"
 "de 16 ori dimensiunea blocului este considerată experimentală.\n"
 
-#: misc/mke2fs.c:2614
+#: misc/mke2fs.c:2712
 msgid "reserved online resize blocks not supported on non-sparse filesystem"
 msgstr "blocurile de redimensionare online rezervate nu sunt acceptate pe un sistem de fișiere care nu este dispers"
 
-#: misc/mke2fs.c:2623
+#: misc/mke2fs.c:2721
 msgid "blocks per group count out of range"
 msgstr "numărul de blocuri pe grup este în afara limitei"
 
-#: misc/mke2fs.c:2645
+#: misc/mke2fs.c:2743
 msgid "Flex_bg feature not enabled, so flex_bg size may not be specified"
 msgstr "Caracteristica „flex_bg” nu este activată, astfel încât dimensiunea „flex_bg” nu poate fi specificată"
 
-#: misc/mke2fs.c:2657
+#: misc/mke2fs.c:2755
 #, c-format
 msgid "invalid inode size %d (min %d/max %d)"
 msgstr "dimensiune a nodului-i nevalidă %d (min %d/max %d)"
 
-#: misc/mke2fs.c:2672
+#: misc/mke2fs.c:2770
 #, c-format
 msgid "%d byte inodes are too small for inline data; specify larger size"
 msgstr "nodurile-i de %d octeți sunt prea mici pentru datele în linie; specificați o dimensiune mai mare"
 
-#: misc/mke2fs.c:2687
+#: misc/mke2fs.c:2785
 #, c-format
 msgid "128-byte inodes cannot handle dates beyond 2038 and are deprecated\n"
 msgstr "nodurile-i de 128 de octeți nu pot gestiona date după anul 2038 și sunt depreciate\n"
 
-#: misc/mke2fs.c:2698
+#: misc/mke2fs.c:2796
 #, c-format
 msgid "too many inodes (%llu), raise inode ratio?"
 msgstr "prea multe noduri-i (%llu), creșteți raportul de noduri-i?"
 
-#: misc/mke2fs.c:2706
+#: misc/mke2fs.c:2804
 #, c-format
 msgid "too many inodes (%llu), specify < 2^32 inodes"
 msgstr "prea multe noduri-i (%llu), specificați < 2^32 noduri-i"
 
-#: misc/mke2fs.c:2720
+#: misc/mke2fs.c:2818
 #, c-format
 msgid ""
 "inode_size (%u) * inodes_count (%u) too big for a\n"
@@ -6375,73 +6522,73 @@ msgstr ""
 "    specificați un raport de noduri-i mai mare (cu opțiunea „-i”) sau\n"
 "    un număr mai mic de noduri-i (cu opțiunea „-N”).\n"
 
-#: misc/mke2fs.c:2917
+#: misc/mke2fs.c:3016
 msgid "Discarding device blocks: "
 msgstr "Se renunță la blocurile de dispozitive: "
 
-#: misc/mke2fs.c:2933
+#: misc/mke2fs.c:3032
 msgid "failed - "
 msgstr "a eșuat - "
 
-#: misc/mke2fs.c:2992
+#: misc/mke2fs.c:3091
 msgid "while initializing quota context"
 msgstr "în timp ce se inițializa contextul de cotă"
 
-#: misc/mke2fs.c:2999
+#: misc/mke2fs.c:3098
 msgid "while writing quota inodes"
 msgstr "în timp ce se scriau nodurile-i de cotă"
 
-#: misc/mke2fs.c:3024
+#: misc/mke2fs.c:3123
 #, c-format
 msgid "bad error behavior in profile - %s"
 msgstr "comportament greșit de eroare în profil - %s"
 
-#: misc/mke2fs.c:3103
+#: misc/mke2fs.c:3202
 msgid "in malloc for android_sparse_params"
 msgstr "în malloc pentru android_sparse_params"
 
-#: misc/mke2fs.c:3117
+#: misc/mke2fs.c:3216
 msgid "while setting up superblock"
 msgstr "în timp ce se crea super-blocul"
 
-#: misc/mke2fs.c:3133
+#: misc/mke2fs.c:3232
 msgid "Extents are not enabled.  The file extent tree can be checksummed, whereas block maps cannot.  Not enabling extents reduces the coverage of metadata checksumming.  Pass -O extents to rectify.\n"
 msgstr "„Extents” nu sunt activate.  Arborele de „extents” de fișiere poate fi verificat, în timp ce hărțile de blocuri nu pot fi verificate.  Ne activarea „extents” reduce aria de acoperire a verificării sumelor de control ale metadatelor.  Pasați opțiunea „-O extents” pentru a corecta situația.\n"
 
-#: misc/mke2fs.c:3140
+#: misc/mke2fs.c:3239
 msgid "64-bit filesystem support is not enabled.  The larger fields afforded by this feature enable full-strength checksumming.  Pass -O 64bit to rectify.\n"
 msgstr "Suportul pentru sisteme de fișiere pe 64 de biți nu este activat.  Câmpurile mai mari oferite de această caracteristică permit o verificare completă a sumelor de control.  Pasați opțiunea „-O 64bit” pentru a rectifica.\n"
 
-#: misc/mke2fs.c:3148
+#: misc/mke2fs.c:3247
 msgid "The metadata_csum_seed feature requires the metadata_csum feature.\n"
 msgstr "Caracteristica metadata_csum_seed necesită caracteristica metadata_csum.\n"
 
-#: misc/mke2fs.c:3169
+#: misc/mke2fs.c:3268
 msgid "Assuming the storage device is prezeroed - skipping inode table and journal wipe\n"
 msgstr "Presupunând că dispozitivul de stocare este pus la zero - sărind peste tabelul de inode și ștergerea jurnalului\n"
 
-#: misc/mke2fs.c:3184
+#: misc/mke2fs.c:3283
 msgid "Discard succeeded and will return 0s - skipping inode table wipe\n"
 msgstr "Renunțarea a reușit și va returna 0s - se omite ștergerea tabelului de noduri-i\n"
 
-#: misc/mke2fs.c:3283
+#: misc/mke2fs.c:3382
 #, c-format
 msgid "unknown os - %s"
 msgstr "SO necunoscut - %s"
 
-#: misc/mke2fs.c:3346
+#: misc/mke2fs.c:3445
 msgid "Allocating group tables: "
 msgstr "Se alocă tabelele de grupuri: "
 
-#: misc/mke2fs.c:3354
+#: misc/mke2fs.c:3453
 msgid "while trying to allocate filesystem tables"
 msgstr "în timp ce se încerca alocarea tabelelor sistemului de fișiere"
 
-#: misc/mke2fs.c:3369
+#: misc/mke2fs.c:3468
 msgid "while unmarking bad blocks"
 msgstr "în timp ce se demarcau blocurile defectuoase"
 
-#: misc/mke2fs.c:3380
+#: misc/mke2fs.c:3479
 msgid ""
 "\n"
 "\twhile converting subcluster bitmap"
@@ -6449,34 +6596,34 @@ msgstr ""
 "\n"
 "\tîn timpul conversiei hărții de biți a subclusterului"
 
-#: misc/mke2fs.c:3389
+#: misc/mke2fs.c:3488
 msgid "while calculating overhead"
 msgstr "în timp ce se calculau costurile suplimentare"
 
-#: misc/mke2fs.c:3408
+#: misc/mke2fs.c:3507
 #, c-format
 msgid "%s may be further corrupted by superblock rewrite\n"
 msgstr "%s poate fi corupt și mai mult prin rescrierea super-blocului\n"
 
-#: misc/mke2fs.c:3449
+#: misc/mke2fs.c:3548
 #, c-format
 msgid "while zeroing block %llu at end of filesystem"
 msgstr "în timp ce se umplea cu zerouri blocul %llu la sfârșitul sistemului de fișiere"
 
-#: misc/mke2fs.c:3462
+#: misc/mke2fs.c:3561
 msgid "while reserving blocks for online resize"
 msgstr "în timp ce se rezervau blocuri pentru redimensionarea în linie"
 
-#: misc/mke2fs.c:3474 misc/tune2fs.c:1710
+#: misc/mke2fs.c:3573 misc/tune2fs.c:1710
 msgid "journal"
 msgstr "jurnal"
 
-#: misc/mke2fs.c:3486
+#: misc/mke2fs.c:3585
 #, c-format
 msgid "Adding journal to device %s: "
 msgstr "Se adaugă jurnalul la dispozitivul %s: "
 
-#: misc/mke2fs.c:3493
+#: misc/mke2fs.c:3592
 #, c-format
 msgid ""
 "\n"
@@ -6485,21 +6632,21 @@ msgstr ""
 "\n"
 "\tîn timp ce se încerca adăugarea unui jurnal la dispozitivul %s"
 
-#: misc/mke2fs.c:3498 misc/mke2fs.c:3531 misc/mke2fs.c:3590
-#: misc/mk_hugefiles.c:486 misc/tune2fs.c:1739 misc/tune2fs.c:1761
+#: misc/mke2fs.c:3597 misc/mke2fs.c:3630 misc/mke2fs.c:3689
+#: misc/mk_hugefiles.c:479 misc/tune2fs.c:1739 misc/tune2fs.c:1761
 msgid "done\n"
 msgstr "gata, s-a făcut\n"
 
-#: misc/mke2fs.c:3505
+#: misc/mke2fs.c:3604
 msgid "Skipping journal creation in super-only mode\n"
 msgstr "Se omite crearea jurnalului în modul numai-super\n"
 
-#: misc/mke2fs.c:3518
+#: misc/mke2fs.c:3617
 #, c-format
 msgid "Creating journal (%u blocks): "
 msgstr "Se creează jurnalul (%u blocuri): "
 
-#: misc/mke2fs.c:3527
+#: misc/mke2fs.c:3626
 msgid ""
 "\n"
 "\twhile trying to create journal"
@@ -6507,7 +6654,7 @@ msgstr ""
 "\n"
 "\tîn timp ce se încerca să se creeze jurnalul"
 
-#: misc/mke2fs.c:3539 misc/tune2fs.c:1297
+#: misc/mke2fs.c:3638 misc/tune2fs.c:1297
 msgid ""
 "\n"
 "Error while enabling multiple mount protection feature."
@@ -6515,36 +6662,36 @@ msgstr ""
 "\n"
 "Eroare în timpul activării caracteristicii de protecție a montării multiple."
 
-#: misc/mke2fs.c:3544
+#: misc/mke2fs.c:3643
 #, c-format
 msgid "Multiple mount protection is enabled with update interval %d seconds.\n"
 msgstr "Este activată protecția împotriva montării multiple cu un interval de actualizare de %d secunde.\n"
 
-#: misc/mke2fs.c:3559
+#: misc/mke2fs.c:3658
 msgid "cannot set orphan_file feature without a journal."
 msgstr "nu se poate defini caracteristica orphan_file fără un jurnal."
 
-#: misc/mke2fs.c:3570 misc/tune2fs.c:3517
+#: misc/mke2fs.c:3669 misc/tune2fs.c:3538
 msgid "while creating orphan file"
 msgstr "în timp ce se crea fișierul orfan"
 
-#: misc/mke2fs.c:3581
+#: misc/mke2fs.c:3680
 msgid "Copying files into the device: "
 msgstr "Se copiază fișierele în dispozitiv: "
 
-#: misc/mke2fs.c:3587
+#: misc/mke2fs.c:3686
 msgid "while populating file system"
 msgstr "în timp ce se popula sistemul de fișiere"
 
-#: misc/mke2fs.c:3594
+#: misc/mke2fs.c:3693
 msgid "Writing superblocks and filesystem accounting information: "
 msgstr "Se scriu super-blocurile și informațiile de contabilizare ale sistemului de fișiere: "
 
-#: misc/mke2fs.c:3601 misc/tune2fs.c:3765
+#: misc/mke2fs.c:3700 misc/tune2fs.c:3786
 msgid "while writing out and closing file system"
 msgstr "în timp ce se termina de scris și de închis sistemul de fișiere"
 
-#: misc/mke2fs.c:3604
+#: misc/mke2fs.c:3703
 msgid ""
 "done\n"
 "\n"
@@ -6557,26 +6704,26 @@ msgstr ""
 msgid "while zeroing block %llu for hugefile"
 msgstr "în timp ce se umplea cu zerouri blocul %llu pentru fișierul uriaș"
 
-#: misc/mk_hugefiles.c:400
+#: misc/mk_hugefiles.c:393
 #, c-format
 msgid "Partition offset of %llu (%uk) blocks not compatible with cluster size %u.\n"
 msgstr "Poziția blocurilor %llu (%uk) în partiție nu este compatibilă cu dimensiunea clusterului %u.\n"
 
-#: misc/mk_hugefiles.c:468
+#: misc/mk_hugefiles.c:461
 msgid "Huge files will be zero'ed\n"
 msgstr "Fișierele uriașe vor fi umplute cu zerouri\n"
 
-#: misc/mk_hugefiles.c:469
+#: misc/mk_hugefiles.c:462
 #, c-format
 msgid "Creating %lu huge file(s) "
 msgstr "Se creează fișierul(ele) uriaș(e) %lu "
 
-#: misc/mk_hugefiles.c:471
+#: misc/mk_hugefiles.c:464
 #, c-format
 msgid "with %llu blocks each"
 msgstr "cu %llu blocuri fiecare"
 
-#: misc/mk_hugefiles.c:481
+#: misc/mk_hugefiles.c:474
 #, c-format
 msgid "while creating huge file %lu"
 msgstr "în timp ce se creea fișierul uriaș %lu"
@@ -6665,12 +6812,12 @@ msgstr "Super-blocul jurnalului nu a fost găsit!\n"
 msgid "while trying to open external journal"
 msgstr "în timp ce se încerca să se deschidă un jurnal extern"
 
-#: misc/tune2fs.c:327 misc/tune2fs.c:3051
+#: misc/tune2fs.c:327 misc/tune2fs.c:3068
 #, c-format
 msgid "%s is not a journal device.\n"
 msgstr "%s nu este un dispozitiv de jurnal.\n"
 
-#: misc/tune2fs.c:336 misc/tune2fs.c:3060
+#: misc/tune2fs.c:336 misc/tune2fs.c:3077
 #, c-format
 msgid ""
 "Journal superblock is corrupted, nr_users\n"
@@ -6679,7 +6826,7 @@ msgstr ""
 "Super-blocul jurnalului este corupt, nr_utilizatori\n"
 "este prea mare (%d)\n"
 
-#: misc/tune2fs.c:343 misc/tune2fs.c:3067
+#: misc/tune2fs.c:343 misc/tune2fs.c:3084
 msgid "Filesystem's UUID not found on journal device.\n"
 msgstr "UUID-ul sistemului de fișiere nu a fost găsit în dispozitivul de jurnal.\n"
 
@@ -6778,7 +6925,7 @@ msgstr "Caracteristica orphan_file poate fi eliminată numai atunci când sistem
 msgid "The orphan_present feature is set. Please run e2fsck before clearing orphan_file feature.\n"
 msgstr "Caracteristica orphan_present este activată. Vă rugăm să rulați e2fsck înainte de a elimina caracteristica orphan_file.\n"
 
-#: misc/tune2fs.c:1241 misc/tune2fs.c:3510
+#: misc/tune2fs.c:1241 misc/tune2fs.c:3531
 msgid "while loading bitmaps"
 msgstr "în timp ce se încărcau hărțile de biți"
 
@@ -6917,7 +7064,7 @@ msgstr ""
 "\n"
 "Avertisment: opțiunea „^quota” suprascrie argumentele „-Q”.\n"
 
-#: misc/tune2fs.c:1608 misc/tune2fs.c:2386
+#: misc/tune2fs.c:1608 misc/tune2fs.c:2402
 msgid "The casefold feature may only be enabled when the filesystem is unmounted.\n"
 msgstr "Caracteristica „casefold” poate fi activată numai atunci când sistemul de fișiere este demontat.\n"
 
@@ -6989,26 +7136,26 @@ msgstr ""
 msgid "Cannot enable project quota; inode size too small.\n"
 msgstr "Nu se poate activa cota proiectului; dimensiunea nodului-i este prea mică.\n"
 
-#: misc/tune2fs.c:1810
+#: misc/tune2fs.c:1826
 msgid "while initializing quota context in support library"
 msgstr "în timpul inițializării contextului de cote în biblioteca de asistență"
 
-#: misc/tune2fs.c:1826
+#: misc/tune2fs.c:1842
 #, c-format
 msgid "while updating quota limits (%d)"
 msgstr "în timp ce se actualiza limitele cotelor (%d)"
 
-#: misc/tune2fs.c:1836
+#: misc/tune2fs.c:1852
 #, c-format
 msgid "while writing quota file (%d)"
 msgstr "în timp ce se scria fișierul de cote (%d)"
 
-#: misc/tune2fs.c:1854
+#: misc/tune2fs.c:1870
 #, c-format
 msgid "while removing quota file (%d)"
 msgstr "în timp ce se elimina fișierul de cote (%d)"
 
-#: misc/tune2fs.c:1897
+#: misc/tune2fs.c:1913
 msgid ""
 "\n"
 "Bad quota options specified.\n"
@@ -7030,65 +7177,65 @@ msgstr ""
 "\n"
 "\n"
 
-#: misc/tune2fs.c:1955
+#: misc/tune2fs.c:1971
 #, c-format
 msgid "Couldn't parse date/time specifier: %s"
 msgstr "Nu s-a putut analiza specificatorul de dată/oră: %s"
 
-#: misc/tune2fs.c:1987 misc/tune2fs.c:1998
+#: misc/tune2fs.c:2003 misc/tune2fs.c:2014
 #, c-format
 msgid "bad mounts count - %s"
 msgstr "număr de montări incorect - %s"
 
-#: misc/tune2fs.c:2041
+#: misc/tune2fs.c:2057
 #, c-format
 msgid "bad gid/group name - %s"
 msgstr "gid sau nume de grup incorect: %s"
 
-#: misc/tune2fs.c:2074
+#: misc/tune2fs.c:2090
 #, c-format
 msgid "bad interval - %s"
 msgstr "interval eronat - %s"
 
-#: misc/tune2fs.c:2103
+#: misc/tune2fs.c:2119
 #, c-format
 msgid "bad reserved block ratio - %s"
 msgstr "raport de blocuri rezervate incorect - %s"
 
-#: misc/tune2fs.c:2118
+#: misc/tune2fs.c:2134
 msgid "-o may only be specified once"
 msgstr "opțiunea „-o” poate fi specificată doar o dată"
 
-#: misc/tune2fs.c:2127
+#: misc/tune2fs.c:2143
 msgid "-O may only be specified once"
 msgstr "opțiunea „-O” poate fi specificată doar o dată"
 
-#: misc/tune2fs.c:2144
+#: misc/tune2fs.c:2160
 #, c-format
 msgid "bad reserved blocks count - %s"
 msgstr "număr de blocuri rezervate incorect - %s"
 
-#: misc/tune2fs.c:2173
+#: misc/tune2fs.c:2189
 #, c-format
 msgid "bad uid/user name - %s"
 msgstr "uid sau nume de utilizator incorect: %s"
 
-#: misc/tune2fs.c:2190
+#: misc/tune2fs.c:2206
 #, c-format
 msgid "bad inode size - %s"
 msgstr "dimensiunea nodului-i incorectă - %s"
 
-#: misc/tune2fs.c:2197
+#: misc/tune2fs.c:2213
 #, c-format
 msgid "Inode size must be a power of two- %s"
 msgstr "Dimensiunea nodului-i trebuie să fie o putere de doi %s"
 
-#: misc/tune2fs.c:2297
+#: misc/tune2fs.c:2313
 #, c-format
 msgid "mmp_update_interval too big: %lu\n"
 msgstr "mmp_update_interval prea mare: %lu\n"
 
-#: misc/tune2fs.c:2302
+#: misc/tune2fs.c:2318
 #, c-format
 msgid "Setting multiple mount protection update interval to %lu second\n"
 msgid_plural "Setting multiple mount protection update interval to %lu seconds\n"
@@ -7097,52 +7244,52 @@ msgstr[1] "Se fixează intervalul de actualizare a protecției multiple de monta
 msgstr[2] "Se fixează intervalul de actualizare a protecției multiple de montare la %lu secunde\n"
 msgstr[3] "Se fixează intervalul de actualizare a protecției multiple de montare la %lu de secunde\n"
 
-#: misc/tune2fs.c:2311
+#: misc/tune2fs.c:2327
 #, c-format
 msgid "Setting filesystem error flag to force fsck.\n"
 msgstr "Se activează fanionul de eroare a sistemului de fișiere pentru a forța verificarea «fsck».\n"
 
-#: misc/tune2fs.c:2329
+#: misc/tune2fs.c:2345
 #, c-format
 msgid "Invalid RAID stride: %s\n"
 msgstr "Argument nevalid pentru „stride”: %s\n"
 
-#: misc/tune2fs.c:2344
+#: misc/tune2fs.c:2360
 #, c-format
 msgid "Invalid RAID stripe-width: %s\n"
 msgstr "Argument nevalid pentru „stripe-width”: %s\n"
 
-#: misc/tune2fs.c:2359
+#: misc/tune2fs.c:2375
 #, c-format
 msgid "Invalid hash algorithm: %s\n"
 msgstr "Algoritmul sumei de control (hash) nu este valid: %s\n"
 
-#: misc/tune2fs.c:2365
+#: misc/tune2fs.c:2381
 #, c-format
 msgid "Setting default hash algorithm to %s (%d)\n"
 msgstr "Se stabilește algoritmul implicit al sumei de control (hash) la %s (%d)\n"
 
-#: misc/tune2fs.c:2392
+#: misc/tune2fs.c:2408
 #, c-format
 msgid "Cannot alter existing encoding\n"
 msgstr "Nu se poate modifica codificarea existentă\n"
 
-#: misc/tune2fs.c:2398
+#: misc/tune2fs.c:2414
 #, c-format
 msgid "Invalid encoding: %s\n"
 msgstr "Codificare nevalidă: %s\n"
 
-#: misc/tune2fs.c:2404
+#: misc/tune2fs.c:2420
 #, c-format
 msgid "Setting encoding to '%s'\n"
 msgstr "Se stabilește codificarea la „%s”\n"
 
-#: misc/tune2fs.c:2443
+#: misc/tune2fs.c:2459
 #, c-format
 msgid "Setting encoding_flags to '%s'\n"
 msgstr "Se stabilește fanionul „encoding_flags” la „%s”\n"
 
-#: misc/tune2fs.c:2453
+#: misc/tune2fs.c:2469
 msgid ""
 "\n"
 "Bad options specified.\n"
@@ -7182,31 +7329,31 @@ msgstr ""
 "\tencoding=<codificarea>\n"
 "\tencoding_flags=<fanioane>.\n"
 
-#: misc/tune2fs.c:2869
+#: misc/tune2fs.c:2886
 msgid "Failed to read inode bitmap\n"
 msgstr "Nu s-a reușit să se citească harta de biți a nodului-i\n"
 
-#: misc/tune2fs.c:2874
+#: misc/tune2fs.c:2891
 msgid "Failed to read block bitmap\n"
 msgstr "Nu s-a reușit să se citească harta de biți a blocului\n"
 
-#: misc/tune2fs.c:2891 resize/resize2fs.c:1368
+#: misc/tune2fs.c:2908 resize/resize2fs.c:1375
 msgid "blocks to be moved"
 msgstr "blocuri care trebuie mutate"
 
-#: misc/tune2fs.c:2894
+#: misc/tune2fs.c:2911
 msgid "Failed to allocate block bitmap when increasing inode size\n"
 msgstr "Nu s-a reușit să se aloce harta de biți a blocurilor atunci când s-a mărit dimensiunea nodului-i\n"
 
-#: misc/tune2fs.c:2900
+#: misc/tune2fs.c:2917
 msgid "Not enough space to increase inode size \n"
 msgstr "Nu este suficient spațiu pentru a crește dimensiunea nodului-i \n"
 
-#: misc/tune2fs.c:2905
+#: misc/tune2fs.c:2922
 msgid "Failed to relocate blocks during inode resize \n"
 msgstr "A eșuat realocarea blocurilor în timpul redimensionării nodului -i\n"
 
-#: misc/tune2fs.c:2937
+#: misc/tune2fs.c:2954
 msgid ""
 "Error in resizing the inode size.\n"
 "Run e2undo to undo the file system changes. \n"
@@ -7214,23 +7361,23 @@ msgstr ""
 "Eroare la redimensionarea dimensiunii nodului-i.\n"
 "Rulați «e2undo» pentru a anula modificările sistemului de fișiere.\n"
 
-#: misc/tune2fs.c:3125
+#: misc/tune2fs.c:3142
 msgid "while trying to get fs label"
 msgstr "în timp ce se încerca să se obțină eticheta sistemului de fișiere"
 
-#: misc/tune2fs.c:3147
+#: misc/tune2fs.c:3164
 msgid "while trying to set fs label"
 msgstr "în timp ce se încerca să se definească eticheta sistemului de fișiere"
 
-#: misc/tune2fs.c:3237
+#: misc/tune2fs.c:3254
 msgid ""
 "If you are sure the filesystem is not in use on any node, run:\n"
 "'tune2fs -f -E clear_mmp {device}'\n"
 msgstr ""
 "Dacă sunteți sigur că sistemul de fișiere nu este utilizat pe niciun nod, rulați:\n"
-"«tune2fs -f -E clear_mmp {dispozitiv}»\n"
+"«tune2fs -f -E clear_mmp {device}»\n"
 
-#: misc/tune2fs.c:3244
+#: misc/tune2fs.c:3261
 #, c-format
 msgid ""
 "MMP block magic is bad. Try to fix it by running:\n"
@@ -7239,29 +7386,29 @@ msgstr ""
 "Numărul magic al blocului MMP este incorect. Încercați să-l remediați prin rularea comenzii:\n"
 "«e2fsck -f %s»\n"
 
-#: misc/tune2fs.c:3256
+#: misc/tune2fs.c:3273
 msgid "Cannot modify a journal device.\n"
 msgstr "Nu se poate modifica un dispozitiv de jurnal.\n"
 
-#: misc/tune2fs.c:3269
+#: misc/tune2fs.c:3286
 #, c-format
 msgid "The inode size is already %lu\n"
 msgstr "Dimensiunea nodului-i este deja %lu\n"
 
-#: misc/tune2fs.c:3276
+#: misc/tune2fs.c:3293
 msgid "Shrinking inode size is not supported\n"
 msgstr "Micșorarea dimensiunii nodului-i nu este permisă\n"
 
-#: misc/tune2fs.c:3281
+#: misc/tune2fs.c:3298
 #, c-format
 msgid "Invalid inode size %lu (max %d)\n"
 msgstr "Dimensiunea nodului-i nu este validă %lu (max %d)\n"
 
-#: misc/tune2fs.c:3287
+#: misc/tune2fs.c:3304
 msgid "Resizing inodes could take some time."
 msgstr "Redimensionarea nodurilor-i ar putea dura ceva timp."
 
-#: misc/tune2fs.c:3337
+#: misc/tune2fs.c:3354
 #, c-format
 msgid ""
 "Warning: The journal is dirty. You may wish to replay the journal like:\n"
@@ -7279,57 +7426,67 @@ msgstr ""
 "apoi executați din nou această comandă.  În caz contrar, orice modificări efectuate pot fi\n"
 "suprascrise de recuperarea jurnalului.\n"
 
-#: misc/tune2fs.c:3346
+#: misc/tune2fs.c:3363
 #, c-format
 msgid "Recovering journal.\n"
 msgstr "Se recuperează jurnalul.\n"
 
-#: misc/tune2fs.c:3370
+#: misc/tune2fs.c:3368
+#, c-format
+msgid "Please run e2fsck -fy %s.\n"
+msgstr "Vă rugăm să rulați «e2fsck -fy %s».\n"
+
+#: misc/tune2fs.c:3387
 #, c-format
 msgid "Setting maximal mount count to %d\n"
 msgstr "Se fixează numărul maxim de montări la %d\n"
 
-#: misc/tune2fs.c:3376
+#: misc/tune2fs.c:3393
 #, c-format
 msgid "Setting current mount count to %d\n"
 msgstr "Se fixează numărul curent de montări la %d\n"
 
-#: misc/tune2fs.c:3381
+#: misc/tune2fs.c:3398
 #, c-format
 msgid "Setting error behavior to %d\n"
 msgstr "Se stabilește comportamentul de eroare la %d\n"
 
-#: misc/tune2fs.c:3386
+#: misc/tune2fs.c:3404
 #, c-format
 msgid "Setting reserved blocks gid to %lu\n"
 msgstr "Se stabilește gid-ul blocurilor rezervate la %lu\n"
 
-#: misc/tune2fs.c:3391
+#: misc/tune2fs.c:3406
+#, c-format
+msgid "Reserved blocks gid already set to %lu\n"
+msgstr "Gid-ul blocurilor rezervate este deja stabilit la %lu\n"
+
+#: misc/tune2fs.c:3412
 #, c-format
 msgid "interval between checks is too big (%lu)"
 msgstr "intervalul dintre verificări este prea mare (%lu)"
 
-#: misc/tune2fs.c:3398
+#: misc/tune2fs.c:3419
 #, c-format
 msgid "Setting interval between checks to %lu seconds\n"
 msgstr "Se fixează intervalul dintre verificări la %lu secunde\n"
 
-#: misc/tune2fs.c:3405
+#: misc/tune2fs.c:3426
 #, c-format
 msgid "Setting reserved blocks percentage to %g%% (%llu blocks)\n"
 msgstr "Se fixează procentul de blocuri rezervate la %g%% (%llu blocuri)\n"
 
-#: misc/tune2fs.c:3412
+#: misc/tune2fs.c:3433
 #, c-format
 msgid "reserved blocks count is too big (%llu)"
 msgstr "numărul de blocuri rezervate este prea mare (%llu)"
 
-#: misc/tune2fs.c:3419
+#: misc/tune2fs.c:3440
 #, c-format
 msgid "Setting reserved blocks count to %llu\n"
 msgstr "Se fixează numărul de blocuri rezervate la %llu\n"
 
-#: misc/tune2fs.c:3424
+#: misc/tune2fs.c:3445
 msgid ""
 "\n"
 "The filesystem already has sparse superblocks.\n"
@@ -7337,7 +7494,7 @@ msgstr ""
 "\n"
 "Sistemul de fișiere are deja super-blocuri disperse.\n"
 
-#: misc/tune2fs.c:3427
+#: misc/tune2fs.c:3448
 msgid ""
 "\n"
 "Setting the sparse superblock flag not supported\n"
@@ -7347,7 +7504,7 @@ msgstr ""
 "Activarea fanionului de super-bloc dispers nu este acceptată\n"
 "pentru sistemele de fișiere cu caracteristica „meta_bg” activată.\n"
 
-#: misc/tune2fs.c:3437
+#: misc/tune2fs.c:3458
 #, c-format
 msgid ""
 "\n"
@@ -7356,7 +7513,7 @@ msgstr ""
 "\n"
 "Fanionul de super-bloc dispers este activat.  %s"
 
-#: misc/tune2fs.c:3442
+#: misc/tune2fs.c:3463
 msgid ""
 "\n"
 "Clearing the sparse superblock flag not supported.\n"
@@ -7364,53 +7521,53 @@ msgstr ""
 "\n"
 "Nu se acceptă eliminarea steagului de super-bloc dispers.\n"
 
-#: misc/tune2fs.c:3450
+#: misc/tune2fs.c:3471
 #, c-format
 msgid "Setting time filesystem last checked to %s\n"
 msgstr "Se fixează ora ultimei verificări a sistemului de fișiere la %s\n"
 
-#: misc/tune2fs.c:3456
+#: misc/tune2fs.c:3477
 #, c-format
 msgid "Setting reserved blocks uid to %lu\n"
 msgstr "Se stabilește uid-ul blocurilor rezervate la %lu\n"
 
-#: misc/tune2fs.c:3488
+#: misc/tune2fs.c:3509
 msgid "Error in using clear_mmp. It must be used with -f\n"
 msgstr "Eroare în utilizarea clear_mmp. Acesta trebuie utilizat cu opțiunea „-f”\n"
 
-#: misc/tune2fs.c:3525
+#: misc/tune2fs.c:3546
 msgid "The quota feature may only be changed when the filesystem is unmounted and not in use.\n"
 msgstr "Caracteristica de cotă poate fi modificată numai atunci când sistemul de fișiere este demontat și nu este în uz.\n"
 
-#: misc/tune2fs.c:3544
+#: misc/tune2fs.c:3565
 msgid "Cannot change the UUID of this filesystem because it has the stable_inodes feature flag.\n"
 msgstr "Nu se poate modifica UUID-ul acestui sistem de fișiere deoarece acesta are fanionul de caracteristică stable_inodes.\n"
 
-#: misc/tune2fs.c:3554
+#: misc/tune2fs.c:3575
 msgid "Setting the UUID on this filesystem could take some time."
 msgstr "Definirea UUID-ului pe acest sistem de fișiere ar putea dura ceva timp."
 
-#: misc/tune2fs.c:3571
+#: misc/tune2fs.c:3592
 msgid "The UUID may only be changed when the filesystem is unmounted.\n"
 msgstr "UUID-ul poate fi modificat numai atunci când sistemul de fișiere este demontat.\n"
 
-#: misc/tune2fs.c:3574
+#: misc/tune2fs.c:3595
 msgid "If you only use kernels newer than v4.4, run 'tune2fs -O metadata_csum_seed' and re-run this command.\n"
 msgstr "Dacă utilizați numai nuclee mai noi decât v4.4, rulați «tune2fs -O metadata_csum_seed» și reluați această comandă.\n"
 
-#: misc/tune2fs.c:3624
+#: misc/tune2fs.c:3645
 msgid "Invalid UUID format\n"
 msgstr "Format UUID nevalid\n"
 
-#: misc/tune2fs.c:3658
+#: misc/tune2fs.c:3679
 msgid "Need to update journal superblock.\n"
 msgstr "Este necesar să se actualizeze superblocul de jurnal.\n"
 
-#: misc/tune2fs.c:3678
+#: misc/tune2fs.c:3699
 msgid "The inode size may only be changed when the filesystem is unmounted and not in use.\n"
 msgstr "Dimensiunea nodului-i poate fi modificată numai atunci când sistemul de fișiere este demontat și nu este în uz.\n"
 
-#: misc/tune2fs.c:3685
+#: misc/tune2fs.c:3706
 msgid ""
 "Changing the inode size not supported for filesystems with the flex_bg\n"
 "feature enabled.\n"
@@ -7418,61 +7575,61 @@ msgstr ""
 "Modificarea dimensiunii nodului-i nu este acceptată pentru sistemele de fișiere \n"
 "cu caracteristica „flex_bg” activată.\n"
 
-#: misc/tune2fs.c:3703
+#: misc/tune2fs.c:3724
 #, c-format
 msgid "Setting inode size %lu\n"
 msgstr "Se fixează dimensiunea nodului-i la %lu\n"
 
-#: misc/tune2fs.c:3707
+#: misc/tune2fs.c:3728
 msgid "Failed to change inode size\n"
 msgstr "Nu s-a reușit să se schimbe dimensiunea nodului-i\n"
 
-#: misc/tune2fs.c:3727
+#: misc/tune2fs.c:3748
 #, c-format
 msgid "Setting stride size to %d\n"
 msgstr "Se fixează dimensiunea de „stride” la %d\n"
 
-#: misc/tune2fs.c:3732
+#: misc/tune2fs.c:3753
 #, c-format
 msgid "Setting stripe width to %d\n"
 msgstr "Se fixează „stripe-width” la %d\n"
 
-#: misc/tune2fs.c:3739
+#: misc/tune2fs.c:3760
 #, c-format
 msgid "Setting extended default mount options to '%s'\n"
 msgstr "Se stabilesc opțiunile de montare implicite extinse la „%s”\n"
 
-#: misc/util.c:107
+#: misc/util.c:108
 msgid "<proceeding>\n"
 msgstr "<se continuă>\n"
 
-#: misc/util.c:111
+#: misc/util.c:112
 #, c-format
 msgid "Proceed anyway (or wait %d seconds to proceed) ? (y,N) "
 msgstr "Continuați oricum (sau așteptați %d secunde pentru a continua) ? (d,N) "
 
-#: misc/util.c:115
+#: misc/util.c:116
 msgid "Proceed anyway? (y,N) "
 msgstr "Continuați oricum? (d,N) "
 
-#: misc/util.c:142
+#: misc/util.c:143
 msgid "mke2fs forced anyway.  Hope /etc/mtab is incorrect.\n"
 msgstr "«mke2fs» este forțat să lucreze.  Se speră că  fișierul „/etc/mtab” este incorect.\n"
 
-#: misc/util.c:147
+#: misc/util.c:148
 #, c-format
 msgid "will not make a %s here!\n"
 msgstr "nu se va crea un %s aici!\n"
 
-#: misc/util.c:154
+#: misc/util.c:155
 msgid "mke2fs forced anyway.\n"
 msgstr "«mke2fs» este forțat să lucreze.\n"
 
-#: misc/util.c:170
+#: misc/util.c:171
 msgid "Couldn't allocate memory to parse journal options!\n"
 msgstr "Nu s-a putut aloca memorie pentru a analiza opțiunile jurnalului!\n"
 
-#: misc/util.c:195
+#: misc/util.c:196
 #, c-format
 msgid ""
 "\n"
@@ -7481,7 +7638,7 @@ msgstr ""
 "\n"
 "Nu s-a putut găsi dispozitivul de jurnal care să corespundă cu %s\n"
 
-#: misc/util.c:230
+#: misc/util.c:231
 msgid ""
 "\n"
 "Bad journal options specified.\n"
@@ -7510,7 +7667,7 @@ msgstr ""
 "\n"
 "Dimensiunea jurnalului trebuie să fie cuprinsă între 1024 și 10240000 de blocuri din sistemul de fișiere.\n"
 
-#: misc/util.c:273
+#: misc/util.c:274
 msgid ""
 "\n"
 "Filesystem too small for a journal\n"
@@ -7518,18 +7675,18 @@ msgstr ""
 "\n"
 "Sistem de fișiere prea mic pentru un jurnal\n"
 
-#: misc/util.c:290
+#: misc/util.c:295
 #, c-format
 msgid ""
 "\n"
-"The total requested journal size is %d blocks; it must be\n"
-"between 1024 and 10240000 blocks.  Aborting.\n"
+"The total requested journal size is %d blocks;\n"
+"it must be between %d and %u blocks.  Aborting.\n"
 msgstr ""
 "\n"
-"Dimensiunea totală a jurnalului solicitat este de %d blocuri; aceasta trebuie să fie\n"
-"între 1024 și 10240000 de blocuri.  Se abandonează.\n"
+"Dimensiunea totală a jurnalului solicitat este de %d blocuri;\n"
+"aceasta trebuie să fie între %d și %u de blocuri. Se abandonează.\n"
 
-#: misc/util.c:298
+#: misc/util.c:301
 msgid ""
 "\n"
 "Total journal size too big for filesystem.\n"
@@ -7537,7 +7694,7 @@ msgstr ""
 "\n"
 "Dimensiunea totală a jurnalului este prea mare pentru sistemul de fișiere.\n"
 
-#: misc/util.c:311
+#: misc/util.c:314
 #, c-format
 msgid ""
 "This filesystem will be automatically checked every %d mounts or\n"
@@ -7743,17 +7900,17 @@ msgstr ""
 "propriul risc!  Utilizați opțiunea „force” („-f”) dacă doriți să continuați oricum.\n"
 "\n"
 
-#: resize/main.c:374
+#: resize/main.c:372
 #, c-format
 msgid "while opening %s"
 msgstr "în timp ce se deschidea %s"
 
-#: resize/main.c:382
+#: resize/main.c:380
 #, c-format
 msgid "while getting stat information for %s"
 msgstr "în timp ce se primeau informațiile de stare pentru %s"
 
-#: resize/main.c:465
+#: resize/main.c:463
 #, c-format
 msgid ""
 "Please run 'e2fsck -f %s' first.\n"
@@ -7762,34 +7919,34 @@ msgstr ""
 "Rulați mai întâi «e2fsck -f %s».\n"
 "\n"
 
-#: resize/main.c:484
+#: resize/main.c:482
 #, c-format
 msgid "Estimated minimum size of the filesystem: %llu\n"
 msgstr "Dimensiunea minimă estimată a sistemului de fișiere: %llu\n"
 
-#: resize/main.c:524
+#: resize/main.c:522
 #, c-format
 msgid "Invalid new size: %s\n"
 msgstr "Dimensiune nouă nevalidă: %s\n"
 
-#: resize/main.c:543
+#: resize/main.c:541
 msgid "New size too large to be expressed in 32 bits\n"
 msgstr "Noua dimensiune este prea mare pentru a fi exprimată în 32 de biți\n"
 
-#: resize/main.c:562
+#: resize/main.c:564
 msgid "New size results in too many block group descriptors.\n"
 msgstr "Noua dimensiune are ca rezultat un număr prea mare de descriptori de grupuri de blocuri.\n"
 
-#: resize/main.c:569
+#: resize/main.c:572
 #, c-format
 msgid "New size smaller than minimum (%llu)\n"
 msgstr "Noua dimensiune este mai mică decât cea minimă (%llu)\n"
 
-#: resize/main.c:576
+#: resize/main.c:579
 msgid "Invalid stride length"
 msgstr "Lungime „stride” nevalidă"
 
-#: resize/main.c:600
+#: resize/main.c:603
 #, c-format
 msgid ""
 "The containing partition (or device) is only %llu (%dk) blocks.\n"
@@ -7800,27 +7957,27 @@ msgstr ""
 "Ați solicitat o nouă dimensiune de %llu de blocuri.\n"
 "\n"
 
-#: resize/main.c:607
+#: resize/main.c:610
 #, c-format
 msgid "Cannot set and unset 64bit feature.\n"
 msgstr "Nu se poate activa și dezactiva caracteristica 64bit.\n"
 
-#: resize/main.c:611
+#: resize/main.c:614
 #, c-format
 msgid "Cannot change the 64bit feature on a filesystem that is larger than 2^32 blocks.\n"
 msgstr "Nu se poate modifica caracteristica de 64 de biți pe un sistem de fișiere care are o dimensiune mai mare de 2^32 de blocuri.\n"
 
-#: resize/main.c:617
+#: resize/main.c:620
 #, c-format
 msgid "Cannot change the 64bit feature while the filesystem is mounted.\n"
 msgstr "Nu se poate modifica caracteristica de 64 de biți în timp ce sistemul de fișiere este montat.\n"
 
-#: resize/main.c:623
+#: resize/main.c:626
 #, c-format
 msgid "Please enable the extents feature with tune2fs before enabling the 64bit feature.\n"
 msgstr "Vă rugăm să activați caracteristica „extents” cu «tune2fs» înainte de a activa caracteristica de „64 de biți”.\n"
 
-#: resize/main.c:631
+#: resize/main.c:634
 #, c-format
 msgid ""
 "The filesystem is already %llu (%dk) blocks long.  Nothing to do!\n"
@@ -7829,42 +7986,42 @@ msgstr ""
 "Sistemul de fișiere are deja o lungime de %llu (%dk) blocuri.  Nu este nimic de făcut!\n"
 "\n"
 
-#: resize/main.c:641
+#: resize/main.c:644
 #, c-format
 msgid "The filesystem is already 64-bit.\n"
 msgstr "Sistemul de fișiere este deja pe 64 de biți.\n"
 
-#: resize/main.c:646
+#: resize/main.c:649
 #, c-format
 msgid "The filesystem is already 32-bit.\n"
 msgstr "Sistemul de fișiere este deja pe 32 de biți.\n"
 
-#: resize/main.c:651
+#: resize/main.c:654
 #, c-format
 msgid "Cannot shrink this filesystem because it has the stable_inodes feature flag.\n"
 msgstr "Nu se poate micșora acest sistem de fișiere deoarece acesta are fanionul de caracteristică „stable_inodes” activat.\n"
 
-#: resize/main.c:660
+#: resize/main.c:663
 #, c-format
 msgid "Converting the filesystem to 64-bit.\n"
 msgstr "Se convertește sistemul de fișiere la „pe 64 de biți”.\n"
 
-#: resize/main.c:662
+#: resize/main.c:665
 #, c-format
 msgid "Converting the filesystem to 32-bit.\n"
 msgstr "Se convertește sistemul de fișiere la „pe 32 de biți”.\n"
 
-#: resize/main.c:664
+#: resize/main.c:667
 #, c-format
 msgid "Resizing the filesystem on %s to %llu (%dk) blocks.\n"
 msgstr "Se redimensionează sistemul de fișiere de pe %s la %llu (%dk) blocuri.\n"
 
-#: resize/main.c:674
+#: resize/main.c:677
 #, c-format
 msgid "while trying to resize %s"
 msgstr "în timp ce se încerca redimensionarea %s"
 
-#: resize/main.c:677
+#: resize/main.c:680
 #, c-format
 msgid ""
 "Please run 'e2fsck -fy %s' to fix the filesystem\n"
@@ -7873,7 +8030,7 @@ msgstr ""
 "Vă rugăm să rulați «e2fsck -fy %s» pentru a repara sistemul de fișiere\n"
 "după operația de redimensionare nereușită.\n"
 
-#: resize/main.c:682
+#: resize/main.c:685
 #, c-format
 msgid ""
 "The filesystem on %s is now %llu (%dk) blocks long.\n"
@@ -7882,7 +8039,7 @@ msgstr ""
 "Sistemul de fișiere de pe %s are acum o lungime de %llu (%dk) blocuri.\n"
 "\n"
 
-#: resize/main.c:697
+#: resize/main.c:700
 #, c-format
 msgid "while trying to truncate %s"
 msgstr "în timp ce se încerca să se trunchieze %s"
@@ -7953,38 +8110,38 @@ msgstr "În timp ce se încerca adăugarea grupului nr.%d"
 msgid "Filesystem at %s is mounted on %s, and on-line resizing is not supported on this system.\n"
 msgstr "Sistemul de fișiere din %s este montat pe %s, iar redimensionarea în linie nu este acceptată pe acest sistem.\n"
 
-#: resize/resize2fs.c:769
+#: resize/resize2fs.c:776
 #, c-format
 msgid "inodes (%llu) must be less than %u\n"
 msgstr "numărul de noduri-i (%llu) trebuie să fie mai mic de %u\n"
 
-#: resize/resize2fs.c:1126
+#: resize/resize2fs.c:1133
 msgid "reserved blocks"
 msgstr "blocuri rezervate"
 
-#: resize/resize2fs.c:1373
+#: resize/resize2fs.c:1380
 msgid "meta-data blocks"
 msgstr "blocuri de metadate"
 
-#: resize/resize2fs.c:1477 resize/resize2fs.c:2521
+#: resize/resize2fs.c:1484 resize/resize2fs.c:2528
 msgid "new meta blocks"
 msgstr "noi blocuri de metadate"
 
-#: resize/resize2fs.c:2745
+#: resize/resize2fs.c:2752
 msgid "Should never happen!  No sb in last super_sparse bg?\n"
 msgstr "Nu ar fi trebuit să se întâmple niciodată!  Nu este nici un super-bloc în ultimul grup de blocuri „super_sparse”?\n"
 
-#: resize/resize2fs.c:2750
+#: resize/resize2fs.c:2757
 msgid "Should never happen!  Unexpected old_desc in super_sparse bg?\n"
 msgstr "Nu ar fi trebuit să se întâmple niciodată!  „old_desc” neașteptat în grupul de blocuri „super_sparse”?\n"
 
-#: resize/resize2fs.c:2823
+#: resize/resize2fs.c:2830
 msgid "Should never happen: resize inode corrupt!\n"
 msgstr "Nu ar fi trebuit să se întâmple niciodată: nodul-i de redimensionare corupt!\n"
 
 #: lib/ext2fs/ext2_err.c:11
-msgid "EXT2FS Library version 1.47.1-rc1"
-msgstr "Biblioteca EXT2FS versiunea 1.47.1-rc1"
+msgid "EXT2FS Library version 1.47.3-rc1"
+msgstr "Biblioteca EXT2FS versiunea 1.47.3-rc1"
 
 #: lib/ext2fs/ext2_err.c:12
 msgid "Wrong magic number for ext2_filsys structure"
@@ -8895,6 +9052,23 @@ msgstr "%s conține un sistem de fișiere %s\n"
 #, c-format
 msgid "%s contains `%s' data\n"
 msgstr "%s conține date „%s”\n"
+
+#~ msgid "Mounting read-only.\n"
+#~ msgstr "Se montează doar-pentru-citire.\n"
+
+#, c-format
+#~ msgid "%s: %s.\n"
+#~ msgstr "%s: %s.\n"
+
+#~ msgid "Journal needs recovery; running `e2fsck -E journal_only' is required.\n"
+#~ msgstr "Jurnalul trebuie să fie recuperat; este necesară rularea comenzii «e2fsck -E journal_only».\n"
+
+#, c-format
+#~ msgid "%s: Writing to the journal is not supported.\n"
+#~ msgstr "%s: Scrierea în jurnal nu este admisă.\n"
+
+#~ msgid "Sparse superblocks not supported with revision 0 filesystems\n"
+#~ msgstr "Super-blocurile disperse nu sunt acceptate cu sistemele de fișiere cu revizuire 0\n"
 
 #, c-format
 #~ msgid "Invalid blocks_at_once: %d\n"

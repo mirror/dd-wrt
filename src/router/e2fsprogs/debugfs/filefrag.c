@@ -54,18 +54,6 @@ struct filefrag_struct {
 	struct dir_list *dir_list, *dir_last;
 };
 
-static int int_log10(unsigned long long arg)
-{
-	int     l = 0;
-
-	arg = arg / 10;
-	while (arg) {
-		l++;
-		arg = arg / 10;
-	}
-	return l;
-}
-
 static void print_header(struct filefrag_struct *fs)
 {
 	if (fs->options & VERBOSE_OPT) {
@@ -135,8 +123,8 @@ static void filefrag(ext2_ino_t ino, struct ext2_inode *inode,
 	errcode_t	retval;
 	int		blocksize = current_fs->blocksize;
 
-	fs->logical_width = int_log10((EXT2_I_SIZE(inode) + blocksize - 1) /
-				      blocksize) + 1;
+	fs->logical_width = ext2fs_log10_u32((EXT2_I_SIZE(inode) +
+					      blocksize - 1) / blocksize) + 1;
 	if (fs->logical_width < 7)
 		fs->logical_width = 7;
 	fs->ext = 0;
@@ -313,7 +301,7 @@ void do_filefrag(int argc, ss_argv_t argv, int sci_idx EXT2FS_ATTR((unused)),
 		return;
 
 	fs.f = open_pager();
-	fs.physical_width = int_log10(ext2fs_blocks_count(current_fs->super));
+	fs.physical_width = ext2fs_log10_u64(ext2fs_blocks_count(current_fs->super));
 	fs.physical_width++;
 	if (fs.physical_width < 8)
 		fs.physical_width = 8;

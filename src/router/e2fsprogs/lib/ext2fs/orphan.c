@@ -58,7 +58,7 @@ __u32 ext2fs_do_orphan_file_block_csum(ext2_filsys fs, ext2_ino_t ino,
 	crc = ext2fs_crc32c_le(crc, (unsigned char *)buf,
 				inodes_per_ob * sizeof(__u32));
 
-	return ext2fs_cpu_to_le32(crc);
+	return crc;
 }
 
 struct mkorphan_info {
@@ -101,8 +101,9 @@ static int mkorphan_proc(ext2_filsys	fs,
 			struct ext4_orphan_block_tail *tail;
 
 			tail = ext2fs_orphan_block_tail(fs, oi->buf);
-			tail->ob_checksum = ext2fs_do_orphan_file_block_csum(fs,
-				oi->ino, oi->generation, new_blk, oi->buf);
+			tail->ob_checksum =
+		ext2fs_cpu_to_le32(ext2fs_do_orphan_file_block_csum(fs,
+				    oi->ino, oi->generation, new_blk, oi->buf));
 		}
 		err = io_channel_write_blk64(fs->io, new_blk, 1, oi->buf);
 	} else	/* zerobuf is used to initialize new indirect blocks... */
@@ -249,13 +250,18 @@ errcode_t ext2fs_orphan_file_block_csum_set(ext2_filsys fs, ext2_ino_t ino,
 					    blk64_t blk, char *buf)
 {
 	struct ext4_orphan_block_tail *tail;
+	errcode_t ret;
+	__u32 crc = 0;
 
 	if (!ext2fs_has_feature_metadata_csum(fs->super))
 		return 0;
 
 	tail = ext2fs_orphan_block_tail(fs, buf);
-	return ext2fs_orphan_file_block_csum(fs, ino, blk, buf,
-					     &tail->ob_checksum);
+	ret = ext2fs_orphan_file_block_csum(fs, ino, blk, buf, &crc);
+	if (ret)
+		return 0;
+	tail->ob_checksum = ext2fs_cpu_to_le32(crc);
+	return ret;
 }
 
 int ext2fs_orphan_file_block_csum_verify(ext2_filsys fs, ext2_ino_t ino,

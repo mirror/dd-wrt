@@ -1009,6 +1009,7 @@ AC_CHECK_HEADERS(m4_flatten([
 	linux/falloc.h
 	linux/fd.h
 	linux/fsmap.h
+	linux/fsverity.h
 	linux/major.h
 	linux/loop.h
 	linux/types.h
@@ -1125,6 +1126,7 @@ AC_CHECK_SIZEOF(long)
 AC_CHECK_SIZEOF(long long)
 AC_CHECK_SIZEOF(off_t)
 AC_CHECK_SIZEOF(time_t)
+AC_CHECK_SIZEOF(void *)
 SIZEOF_SHORT=$ac_cv_sizeof_short
 SIZEOF_INT=$ac_cv_sizeof_int
 SIZEOF_LONG=$ac_cv_sizeof_long
@@ -1155,6 +1157,11 @@ if grep HAVE_SYS_TYPES_H confdefs.h > tmp_config.$$; then
   uniq tmp_config.$$ >> public_config.h
 else
   echo "#undef HAVE_SYS_TYPES_H" >> public_config.h
+fi
+if grep SIZEOF_TIME_T confdefs.h > tmp_config.$$; then
+  uniq tmp_config.$$ >> public_config.h
+else
+  echo "#undef SIZEOF_TIME_T" >> public_config.h
 fi
 if grep WORDS_BIGENDIAN confdefs.h > tmp_config.$$; then
   uniq tmp_config.$$ >> public_config.h
@@ -1307,6 +1314,8 @@ AS_HELP_STRING([--without-libarchive],[disable use of libarchive]),
 then
 	try_libarchive=""
 	AC_MSG_RESULT([Disabling libarchive support])
+	AC_DEFINE(CONFIG_DISABLE_LIBARCHIVE, 1,
+		[Define to 1 to completely disable libarchive])
 elif test "$withval" = "direct"
 then
 	try_libarchive="direct"
@@ -1316,26 +1325,42 @@ else
 	AC_MSG_RESULT([Testing for libarchive support (with dlopen)])
 fi]
 ,
-try_libarchive="yes"
-AC_MSG_RESULT([Try testing for libarchive support (with dlopen) by default])
-)
-ARCHIVE_LIB=
+[
+case "$host_os" in
+    darwin*)
+	try_libarchive="direct"
+	AC_MSG_RESULT([Try testing for libarchive support (with static linking) by default])
+	 ;;
+    *)
+        try_libarchive="yes"
+	AC_MSG_RESULT([Try testing for libarchive support (with dlopen) by default])
+	;;
+esac
+])
+ARCHIVE_LIBS=
 if test -n "$try_libarchive"
 then
-    AC_CHECK_LIB(archive, archive_read_new, [ARCHIVE_LIB=-larchive
-    AC_CHECK_HEADERS([archive.h])])
-    if test "$ac_cv_func_dlopen" = yes -a "$try_libarchive" != "direct"; then
-        ARCHIVE_LIB=$DLOPEN_LIB
-	AC_DEFINE(CONFIG_DLOPEN_LIBARCHIVE, 1,
+    PKG_CHECK_MODULES([ARCHIVE],[libarchive],
+    [
+	AC_MSG_RESULT([pkg-config found libarchive])
+	CFLAGS="$ARCHIVE_CFLAGS $CFLAGS"
+    ],[
+        AC_CHECK_LIB(archive, archive_read_new, [ARCHIVE_LIBS=-larchive])
+    ])
+    if test -n "$ARCHIVE_LIBS" ; then
+        AC_CHECK_HEADERS([archive.h])
+        if test "$ac_cv_func_dlopen" = yes -a "$try_libarchive" != "direct"; then
+            ARCHIVE_LIBS=$DLOPEN_LIB
+	    AC_DEFINE(CONFIG_DLOPEN_LIBARCHIVE, 1,
 		[Define to 1 if using dlopen to access libarchive])
-
+        fi
     fi
     if test "$ac_cv_header_archive_h" != "yes"
     then
-        ARCHIVE_LIB=
+        ARCHIVE_LIBS=
     fi
 fi
-AC_SUBST(ARCHIVE_LIB)
+AC_SUBST(ARCHIVE_LIBS)
 dnl
 dnl Check to see if librt is required for clock_gettime() (glibc < 2.17)
 dnl
@@ -1407,8 +1432,8 @@ AC_SUBST(FUSE_CMT)
 if test "$FUSE_LIB" = "-lfuse3"
 then
 	FUSE_USE_VERSION=35
-	CFLAGS="$CFLAGS $fuse3_CFLAGS"
-	LDFLAGS="$LDFLAGS $fuse3_LDFLAGS"
+	CFLAGS="$fuse3_CFLAGS $CFLAGS"
+	FUSE_LIB="$fuse3_LIBS"
 	AC_CHECK_HEADERS([pthread.h fuse.h], [],
 		[AC_MSG_FAILURE([Cannot find fuse3 fuse2fs headers.])],
 [#define _FILE_OFFSET_BITS	64

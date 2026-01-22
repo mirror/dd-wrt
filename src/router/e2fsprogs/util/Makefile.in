@@ -20,7 +20,7 @@ SRCS = $(srcdir)/subst.c $(srcdir)/mkutf8data.c
 	$(Q) $(CHECK_CMD) $(ALL_CFLAGS) $<
 	$(Q) $(CPPCHECK_CMD) $(CPPFLAGS) $<
 
-PROGS=		subst symlinks mkutf8data
+PROGS=	copy_sparse gen-tarball install-symlink mkutf8data subst symlinks
 
 all:: $(PROGS) gen-tarball
 
@@ -33,6 +33,10 @@ subst.o: dirpaths.h
 subst: subst.o
 	$(E) "	LD $@"
 	$(Q) $(BUILD_CC) $(BUILD_LDFLAGS) -o subst subst.o
+
+install-symlink: install-symlink.in $(top_builddir)/config.status
+	cd $(top_builddir); CONFIG_FILES=util/install-symlink ./config.status
+	chmod +x $(top_builddir)/util/install-symlink
 
 mkutf8data: mkutf8data.o
 	$(E) "	LD $@"
@@ -57,8 +61,7 @@ tarballs: gen-tarball
 	sh gen-tarball subset
 
 clean::
-	$(RM) -f $(PROGS) \#* *.s *.o *.a *~ core *.tar.gz gen-tarball \
-		copy-sparse dirpaths.h install-symlink mkutf8data
+	$(RM) -f $(PROGS) \#* *.s *.o *.a *~ core *.tar.gz dirpaths.h
 
 mostlyclean: clean
 

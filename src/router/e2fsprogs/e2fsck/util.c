@@ -880,39 +880,20 @@ errcode_t e2fsck_allocate_subcluster_bitmap(ext2_filsys fs, const char *descr,
 unsigned long long get_memory_size(void)
 {
 #if defined(_SC_PHYS_PAGES)
-# if defined(_SC_PAGESIZE)
-	return (unsigned long long)sysconf(_SC_PHYS_PAGES) *
-	       (unsigned long long)sysconf(_SC_PAGESIZE);
-# elif defined(_SC_PAGE_SIZE)
-	return (unsigned long long)sysconf(_SC_PHYS_PAGES) *
-	       (unsigned long long)sysconf(_SC_PAGE_SIZE);
-# endif
-#elif defined(CTL_HW)
-# if (defined(HW_MEMSIZE) || defined(HW_PHYSMEM64))
-#  define CTL_HW_INT64
-# elif (defined(HW_PHYSMEM) || defined(HW_REALMEM))
-#  define CTL_HW_UINT
-# endif
-	int mib[2];
+	long	phys_pages = sysconf(_SC_PHYS_PAGES);
+	long	pagesize = -1;
 
-	mib[0] = CTL_HW;
-# if defined(HW_MEMSIZE)
-	mib[1] = HW_MEMSIZE;
-# elif defined(HW_PHYSMEM64)
-	mib[1] = HW_PHYSMEM64;
-# elif defined(HW_REALMEM)
-	mib[1] = HW_REALMEM;
-# elif defined(HW_PYSMEM)
-	mib[1] = HW_PHYSMEM;
+# if defined(_SC_PAGESIZE)
+	pagesize = sysconf(_SC_PAGESIZE);
+# elif  defined(_SC_PAGE_SIZE)
+	pagesize = sysconf(_SC_PAGE_SIZE);
 # endif
-# if defined(CTL_HW_INT64)
-	unsigned long long size = 0;
-# elif defined(CTL_HW_UINT)
-	unsigned int size = 0;
-# endif
-	return 0;
+	if (pagesize < 0)
+		pagesize = 4096;
+	if (phys_pages > 0)
+		return (unsigned long long) phys_pages * pagesize;
 #else
 # warning "Don't know how to detect memory on your platform?"
-	return 0;
 #endif
+	return 0;
 }

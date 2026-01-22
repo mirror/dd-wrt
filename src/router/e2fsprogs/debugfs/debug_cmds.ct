@@ -229,5 +229,8 @@ request do_journal_write, "Write a transaction to the journal",
 request do_journal_run, "Recover the journal",
 	journal_run, jr;
 
+request do_orphan_inodes, "List the orphan inodes on the file system",
+	orphan_inodes, orphan;
+
 end;
 

@@ -1,0 +1,7 @@
+/usr/bin/fuse-ext2        /usr/bin/fuseext2
+/usr/bin/fuse-ext2        /usr/sbin/mount.fuse-ext2
+/usr/sbin/mount.fuse-ext2 /usr/sbin/mount.fuseext2
+
+/usr/share/man/man1/fuse-ext2.1       /usr/share/man/man1/fuseext2.1
+/usr/share/man/man1/fuse-ext2.1       /usr/share/man/man8/mount.fuse-ext2.8
+/usr/share/man/man8/mount.fuse-ext2.8 /usr/share/man/man8/mount.fuseext2.8

@@ -55,6 +55,7 @@ GMSGFMT = $(GMSGFMT_$(USE_MSGCTXT))
 MSGFMT_ = @MSGFMT@
 MSGFMT_no = @MSGFMT@
 MSGFMT_yes = @MSGFMT_015@
+MSGFMT_OPTS = --check-header --check-domain
 MSGFMT = $(MSGFMT_$(USE_MSGCTXT))
 XGETTEXT_ = @XGETTEXT@
 XGETTEXT_no = @XGETTEXT@
@@ -96,14 +97,14 @@ DISTFILESDEPS = $(DISTFILESDEPS_$(DIST_DEPENDS_ON_UPDATE_PO))
 .SUFFIXES: .po .gmo .mo .sed .sin .nop .po-create .po-update
 
 .po.mo:
-	$(E) "$(MSGFMT) -c -o $@ $<"; \
-	$(Q) $(MSGFMT) -c -o t-$@ $< && mv t-$@ $@
+	$(E) "$(MSGFMT) $(MSGFMT_OPTS) -o $@ $<"; \
+	$(Q) $(MSGFMT) $(MSGFMT_OPTS) -o t-$@ $< && mv t-$@ $@
 
 .po.gmo:
 	@lang=`echo $* | sed -e 's,.*/,,'`; \
 	test "$(srcdir)" = . && cdcmd="" || cdcmd="cd $(srcdir) && "; \
-	echo "$${cdcmd}rm -f $${lang}.gmo && $(GMSGFMT) -c --statistics --verbose -o $${lang}.gmo $${lang}.po"; \
-	cd $(srcdir) && rm -f $${lang}.gmo && $(GMSGFMT) -c --statistics --verbose -o t-$${lang}.gmo $${lang}.po && mv t-$${lang}.gmo $${lang}.gmo
+	echo "$${cdcmd}rm -f $${lang}.gmo && $(GMSGFMT) $(MSGFMT_OPTS) --statistics --verbose -o $${lang}.gmo $${lang}.po"; \
+	cd $(srcdir) && rm -f $${lang}.gmo && $(GMSGFMT) $(MSGFMT_OPTS) --statistics --verbose -o t-$${lang}.gmo $${lang}.po && mv t-$${lang}.gmo $${lang}.gmo
 
 .sin.sed:
 	sed -e '/^#/d' $< > t-$@

@@ -10,6 +10,7 @@
 	e2fsprogs.lsm
 	e2fsprogs.spec
 	doc/libext2fs.texinfo (three places)
+	RELEASE-NOTES
 
 5)  Run "(cd po; make e2fsprogs.pot-update)" to update the translation template.
 

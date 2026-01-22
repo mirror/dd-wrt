@@ -482,6 +482,12 @@ static int search_dir_block(ext2_filsys fs, blk64_t *blocknr,
 		return BLOCK_ABORT;
 	}
 
+#ifdef WORDS_BIGENDIAN
+	errcode = ext2fs_dirent_swab_in(fs, p->buf, 0);
+	if (errcode)
+		return BLOCK_ABORT;
+#endif
+
 	while (offset < fs->blocksize) {
 		dirent = (struct ext2_dir_entry *) (p->buf + offset);
 		errcode = ext2fs_get_rec_len(fs, dirent, &rec_len);

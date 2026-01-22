@@ -25,7 +25,8 @@ DEBUG_OBJS= debug_cmds.o extent_cmds.o tst_cmds.o debugfs.o util.o \
 	ncheck.o icheck.o ls.o lsdel.o dump.o set_fields.o logdump.o \
 	htree.o unused.o e2freefrag.o filefrag.o extent_inode.o zap.o \
 	xattrs.o quota.o tst_libext2fs.o create_inode.o \
-	create_inode_libarchive.o journal.o revoke.o recovery.o do_journal.o
+	create_inode_libarchive.o journal.o revoke.o recovery.o \
+	do_journal.o do_orphan.o
 
 DEBUG_SRCS= debug_cmds.c extent_cmds.c tst_cmds.c \
 	$(top_srcdir)/debugfs/debugfs.c \
@@ -50,7 +51,8 @@ DEBUG_SRCS= debug_cmds.c extent_cmds.c tst_cmds.c \
 	$(top_srcdir)/debugfs/journal.c \
 	$(top_srcdir)/e2fsck/revoke.c \
 	$(top_srcdir)/e2fsck/recovery.c \
-	$(top_srcdir)/debugfs/do_journal.c
+	$(top_srcdir)/debugfs/do_journal.c \
+	$(top_srcdir)/debugfs/do_orphan.c \
 
 @TDB_CMT@TDB_OBJ= tdb.o
 
@@ -450,6 +452,10 @@ recovery.o: $(top_srcdir)/e2fsck/recovery.c
 	$(Q) $(CC) $(DEBUGFS_CFLAGS) -c $< -o $@
 
 do_journal.o: $(top_srcdir)/debugfs/do_journal.c
+	$(E) "	CC $<"
+	$(Q) $(CC) $(DEBUGFS_CFLAGS) -c $< -o $@
+
+do_orphan.o: $(top_srcdir)/debugfs/do_orphan.c
 	$(E) "	CC $<"
 	$(Q) $(CC) $(DEBUGFS_CFLAGS) -c $< -o $@
 
@@ -1439,8 +1445,8 @@ e2freefrag.o: $(top_srcdir)/misc/e2freefrag.c $(top_builddir)/lib/config.h \
  $(top_srcdir)/lib/support/quotaio_tree.h
 create_inode.o: $(top_srcdir)/misc/create_inode.c \
  $(top_builddir)/lib/config.h $(top_builddir)/lib/dirpaths.h \
- $(srcdir)/ext2fs.h $(top_builddir)/lib/ext2fs/ext2_types.h \
- $(srcdir)/ext2_fs.h $(srcdir)/ext3_extents.h $(top_srcdir)/lib/et/com_err.h \
+ $(srcdir)/ext2_fs.h $(top_builddir)/lib/ext2fs/ext2_types.h \
+ $(srcdir)/ext2fs.h $(srcdir)/ext3_extents.h $(top_srcdir)/lib/et/com_err.h \
  $(srcdir)/ext2_io.h $(top_builddir)/lib/ext2fs/ext2_err.h \
  $(srcdir)/ext2_ext_attr.h $(srcdir)/hashmap.h $(srcdir)/bitops.h \
  $(srcdir)/fiemap.h $(top_srcdir)/misc/create_inode.h \
@@ -1448,11 +1454,12 @@ create_inode.o: $(top_srcdir)/misc/create_inode.c \
  $(top_srcdir)/misc/create_inode_libarchive.h
 create_inode_libarchive.o: $(top_srcdir)/misc/create_inode_libarchive.c \
  $(top_builddir)/lib/config.h $(top_builddir)/lib/dirpaths.h \
- $(top_builddir)/lib/ext2fs/ext2_types.h $(top_srcdir)/misc/create_inode.h \
- $(top_srcdir)/lib/et/com_err.h $(top_srcdir)/lib/e2p/e2p.h \
- $(srcdir)/ext2_fs.h $(srcdir)/ext2fs.h $(srcdir)/ext3_extents.h \
- $(srcdir)/ext2_io.h $(top_builddir)/lib/ext2fs/ext2_err.h \
- $(srcdir)/ext2_ext_attr.h $(srcdir)/hashmap.h $(srcdir)/bitops.h \
+ $(top_srcdir)/misc/create_inode.h $(top_srcdir)/lib/et/com_err.h \
+ $(top_srcdir)/lib/e2p/e2p.h $(srcdir)/ext2_fs.h \
+ $(top_builddir)/lib/ext2fs/ext2_types.h $(srcdir)/ext2fs.h \
+ $(srcdir)/ext3_extents.h $(srcdir)/ext2_io.h \
+ $(top_builddir)/lib/ext2fs/ext2_err.h $(srcdir)/ext2_ext_attr.h \
+ $(srcdir)/hashmap.h $(srcdir)/bitops.h \
  $(top_srcdir)/misc/create_inode_libarchive.h \
  $(top_srcdir)/lib/support/nls-enable.h
 journal.o: $(top_srcdir)/debugfs/journal.c $(top_builddir)/lib/config.h \
@@ -1492,3 +1499,14 @@ do_journal.o: $(top_srcdir)/debugfs/do_journal.c $(top_builddir)/lib/config.h \
  $(top_srcdir)/lib/support/quotaio_tree.h $(srcdir)/kernel-jbd.h \
  $(srcdir)/jfs_compat.h $(srcdir)/kernel-list.h $(srcdir)/compiler.h \
  $(top_srcdir)/debugfs/journal.h $(srcdir)/../../e2fsck/jfs_user.h
+do_orphan.o: $(top_srcdir)/debugfs/do_orphan.c $(top_builddir)/lib/config.h \
+ $(top_builddir)/lib/dirpaths.h $(top_srcdir)/debugfs/debugfs.h \
+ $(top_srcdir)/lib/ss/ss.h $(top_builddir)/lib/ss/ss_err.h \
+ $(top_srcdir)/lib/et/com_err.h $(srcdir)/ext2_fs.h \
+ $(top_builddir)/lib/ext2fs/ext2_types.h $(srcdir)/ext2fs.h \
+ $(srcdir)/ext3_extents.h $(srcdir)/ext2_io.h \
+ $(top_builddir)/lib/ext2fs/ext2_err.h $(srcdir)/ext2_ext_attr.h \
+ $(srcdir)/hashmap.h $(srcdir)/bitops.h \
+ $(top_srcdir)/debugfs/../misc/create_inode.h $(top_srcdir)/lib/e2p/e2p.h \
+ $(top_srcdir)/lib/support/quotaio.h $(top_srcdir)/lib/support/dqblk_v2.h \
+ $(top_srcdir)/lib/support/quotaio_tree.h
