@@ -1903,6 +1903,9 @@ static void getledconfig(struct ledconfig *cfg)
 		cfg->connected_gpio = GPIO_LOW | 0x0;
 		cfg->sec0_gpio = GPIO_LOW | 0x3;
 		break;
+	case ROUTER_LUXUL_ABR4400:
+		cfg->diag_gpio = 15;
+		cfg->usb_gpio = GPIO_LOW | 12;
 #endif
 	}
 }

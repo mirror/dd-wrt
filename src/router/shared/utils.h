@@ -854,6 +854,8 @@
 
 #define ROUTER_ZYXEL_GS1920 0x12c138
 
+#define ROUTER_LUXUL_ABR4400 0x12d10e
+
 #define NVROUTER "DD_BOARD"
 #define NVROUTER_ALT "alternate_name"
 

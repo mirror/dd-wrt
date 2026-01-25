@@ -865,7 +865,14 @@ int internal_getRouterBrand()
 			return ROUTER_NETGEAR_R6400;
 		}
 	}
-
+	if (nvram_match("board_id","luxul_abr4400_v1")) {
+			setRouter("Luxul ABR-4400 V1");
+			return ROUTER_LUXUL_ABR4400;
+	}
+	if (nvram_match("board_id","luxul_xbr4400_v1")) {
+			setRouter("Luxul XBR-4400 V1");
+			return ROUTER_LUXUL_ABR4400;
+	}
 	if (boardnum == 32 && nvram_match("boardtype", "0x0665") && nvram_match("boardrev", "0x1101")) {
 		setRouter("Netgear R8000");
 		return ROUTER_NETGEAR_R8000;
