@@ -103,7 +103,7 @@ static int ksmbd_vfs_path_lookup(struct ksmbd_share_config *share_conf,
 #else
 	struct filename *filename = NULL;
 #endif
-	struct path *root_share_path = &share_conf->vfs_path;
+	const struct path *root_share_path = &share_conf->vfs_path;
 	int err, type;
 	struct dentry *d;
 
@@ -427,8 +427,12 @@ int ksmbd_vfs_create(struct ksmbd_work *work, const char *name, umode_t mode)
 	mode |= S_IFREG;
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 12, 0)
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 3, 0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 19, 0)
+	err = vfs_create(mnt_idmap(path.mnt), dentry, mode, NULL);
+#else
 	err = vfs_create(mnt_idmap(path.mnt), d_inode(path.dentry),
 			 dentry, mode, true);
+#endif
 #else
 	err = vfs_create(mnt_user_ns(path.mnt), d_inode(path.dentry),
 			 dentry, mode, true);
@@ -443,7 +447,11 @@ int ksmbd_vfs_create(struct ksmbd_work *work, const char *name, umode_t mode)
 		pr_err("File(%s): creation failed (err:%d)\n", name, err);
 	}
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 18, 0)
+	end_creating_path(&path, dentry);
+#else
 	done_path_create(&path, dentry);
+#endif
 	return err;
 }
 
@@ -490,7 +498,11 @@ int ksmbd_vfs_mkdir(struct ksmbd_work *work, const char *name, umode_t mode)
 	mode |= S_IFDIR;
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 15, 0)
 	d = dentry;
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 19, 0)
+	dentry = vfs_mkdir(idmap, d_inode(path.dentry), dentry, mode, NULL);
+#else
 	dentry = vfs_mkdir(idmap, d_inode(path.dentry), dentry, mode);
+#endif
 	if (IS_ERR(dentry))
 		err = PTR_ERR(dentry);
 	else if (d_is_negative(dentry))
@@ -537,7 +549,11 @@ int ksmbd_vfs_mkdir(struct ksmbd_work *work, const char *name, umode_t mode)
 
 out_err:
 #endif
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 18, 0)
+	end_creating_path(&path, dentry);
+#else
 	done_path_create(&path, dentry);
+#endif
 	if (err)
 		pr_err("mkdir(%s): creation failed (err:%d)\n", name, err);
 	return err;
@@ -638,6 +654,9 @@ static int check_lock_range(struct file *filp, loff_t start, loff_t end,
 	struct file_lock_context *ctx = file_inode(filp)->i_flctx;
 #endif
 	int error = 0;
+
+	if (start == end)
+		return 0;
 
 	if (!ctx || list_empty_careful(&ctx->flc_posix))
 		return 0;
@@ -1075,7 +1094,11 @@ int ksmbd_vfs_symlink(struct ksmbd_work *work, const char *name,
 	if (ksmbd_override_fsids(work))
 		return -ENOMEM;
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 18, 0)
+	dentry = start_creating_path(AT_FDCWD, symname, &path, 0);
+#else
 	dentry = kern_path_create(AT_FDCWD, symname, &path, 0);
+#endif
 	if (IS_ERR(dentry)) {
 		ksmbd_revert_fsids(work);
 		err = PTR_ERR(dentry);
@@ -1095,7 +1118,11 @@ int ksmbd_vfs_symlink(struct ksmbd_work *work, const char *name,
 	if (err && (err != -EEXIST || err != -ENOSPC))
 		ksmbd_debug(VFS, "failed to create symlink, err %d\n", err);
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 18, 0)
+	end_creating_path(&path, dentry);
+#else
 	done_path_create(&path, dentry);
+#endif
 	ksmbd_revert_fsids(work);
 	return err;
 }
@@ -1257,7 +1284,11 @@ int ksmbd_vfs_remove_file(struct ksmbd_work *work, const struct path *path)
 
 	idmap = mnt_idmap(path->mnt);
 	if (S_ISDIR(d_inode(path->dentry)->i_mode)) {
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 19, 0)
+		err = vfs_rmdir(idmap, d_inode(parent), path->dentry, NULL);
+#else
 		err = vfs_rmdir(idmap, d_inode(parent), path->dentry);
+#endif
 		if (err && err != -ENOTEMPTY)
 			ksmbd_debug(VFS, "rmdir failed, err %d\n", err);
 	} else {
@@ -1415,7 +1446,11 @@ int ksmbd_vfs_link(struct ksmbd_work *work, const char *oldname,
 		ksmbd_debug(VFS, "vfs_link failed err %d\n", err);
 
 out3:
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 18, 0)
+	end_creating_path(&newpath, dentry);
+#else
 	done_path_create(&newpath, dentry);
+#endif
 out2:
 	path_put(&oldpath);
 out1:
@@ -1538,14 +1573,20 @@ retry:
 		goto out4;
 	}
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 18, 0)
+	rd.mnt_idmap		= mnt_idmap(old_path->mnt),
+#else
 	rd.old_mnt_idmap	= mnt_idmap(old_path->mnt),
+#endif
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 17, 0)
 	rd.old_parent		= old_parent,
 #else
 	rd.old_dir		= d_inode(old_parent),
 #endif
 	rd.old_dentry		= old_child,
+#if LINUX_VERSION_CODE < KERNEL_VERSION(6, 18, 0)
 	rd.new_mnt_idmap	= mnt_idmap(new_path.mnt),
+#endif
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 17, 0)
 	rd.new_parent		= new_path.dentry,
 #else
@@ -1829,7 +1870,7 @@ int ksmbd_vfs_truncate(struct ksmbd_work *work,
 		if (size < inode->i_size) {
 			err = check_lock_range(filp, size,
 					       inode->i_size - 1, WRITE);
-		} else {
+		} else if (size > inode->i_size) {
 			err = check_lock_range(filp, inode->i_size,
 					       size - 1, WRITE);
 		}
@@ -2060,7 +2101,11 @@ struct dentry *ksmbd_vfs_kern_path_create(struct ksmbd_work *work,
 	if (!abs_name)
 		return ERR_PTR(-ENOMEM);
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 18, 0)
+	dent = start_creating_path(AT_FDCWD, abs_name, path, flags);
+#else
 	dent = kern_path_create(AT_FDCWD, abs_name, path, flags);
+#endif
 	kfree(abs_name);
 	return dent;
 }
@@ -2633,7 +2678,11 @@ int ksmbd_vfs_unlink(struct file *filp)
 	dget(dentry);
 
 	if (S_ISDIR(d_inode(dentry)->i_mode))
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 19, 0)
+		err = vfs_rmdir(idmap, d_inode(dir), dentry, NULL);
+#else
 		err = vfs_rmdir(idmap, d_inode(dir), dentry);
+#endif
 	else
 		err = vfs_unlink(idmap, d_inode(dir), dentry, NULL);
 
@@ -2983,7 +3032,7 @@ int ksmbd_vfs_kern_path_locked(struct ksmbd_work *work, char *filepath,
 				     caseless, true);
 }
 
-void ksmbd_vfs_kern_path_unlock(struct path *path)
+void ksmbd_vfs_kern_path_unlock(const struct path *path)
 {
 	/* While lock is still held, ->d_parent is safe */
 	inode_unlock(d_inode(path->dentry->d_parent));
@@ -3420,10 +3469,10 @@ void ksmbd_vfs_posix_lock_unblock(struct file_lock *flock)
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 3, 0)
 int ksmbd_vfs_set_init_posix_acl(struct mnt_idmap *idmap,
-				 struct path *path)
+				 const struct path *path)
 #else
 int ksmbd_vfs_set_init_posix_acl(struct user_namespace *user_ns,
-				 struct path *path)
+				 const struct path *path)
 #endif
 {
 	struct posix_acl_state acl_state;
@@ -3502,10 +3551,10 @@ int ksmbd_vfs_set_init_posix_acl(struct user_namespace *user_ns,
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 3, 0)
 int ksmbd_vfs_inherit_posix_acl(struct mnt_idmap *idmap,
-				struct path *path, struct inode *parent_inode)
+				const struct path *path, struct inode *parent_inode)
 #else
 int ksmbd_vfs_inherit_posix_acl(struct user_namespace *user_ns,
-				struct path *path, struct inode *parent_inode)
+				const struct path *path, struct inode *parent_inode)
 #endif
 {
 	struct posix_acl *acls;

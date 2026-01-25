@@ -81,7 +81,11 @@ int ksmbd_work_pool_init(void)
 
 int ksmbd_workqueue_init(void)
 {
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 18, 0)
+	ksmbd_wq = alloc_workqueue("ksmbd-io", WQ_PERCPU, 0);
+#else
 	ksmbd_wq = alloc_workqueue("ksmbd-io", 0, 0);
+#endif
 	if (!ksmbd_wq)
 		return -ENOMEM;
 	return 0;

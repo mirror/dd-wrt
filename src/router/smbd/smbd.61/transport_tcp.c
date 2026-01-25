@@ -22,7 +22,6 @@ struct interface {
 	struct socket		*ksmbd_socket;
 	struct list_head	entry;
 	char			*name;
-	struct mutex		sock_release_lock;
 	int			state;
 };
 
@@ -67,35 +66,6 @@ static inline void ksmbd_tcp_reuseaddr(struct socket *sock)
 			  sizeof(val));
 #else
 	sock_set_reuseaddr(sock->sk);
-#endif
-}
-
-static inline void ksmbd_tcp_rcv_timeout(struct socket *sock, s64 secs)
-{
-#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 8, 0)
-	struct __kernel_old_timeval tv = { .tv_sec = secs, .tv_usec = 0 };
-
-	kernel_setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO_OLD, (char *)&tv,
-			  sizeof(tv));
-#else
-	lock_sock(sock->sk);
-	if (secs && secs < MAX_SCHEDULE_TIMEOUT / HZ - 1)
-		sock->sk->sk_rcvtimeo = secs * HZ;
-	else
-		sock->sk->sk_rcvtimeo = MAX_SCHEDULE_TIMEOUT;
-	release_sock(sock->sk);
-#endif
-}
-
-static inline void ksmbd_tcp_snd_timeout(struct socket *sock, s64 secs)
-{
-#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 8, 0)
-	struct __kernel_old_timeval tv = { .tv_sec = secs, .tv_usec = 0 };
-
-	kernel_setsockopt(sock, SOL_SOCKET, SO_SNDTIMEO_OLD, (char *)&tv,
-			  sizeof(tv));
-#else
-	sock_set_sndtimeo(sock->sk, secs);
 #endif
 }
 
@@ -262,20 +232,14 @@ static int ksmbd_kthread_fn(void *p)
 	unsigned int max_ip_conns;
 
 	while (!kthread_should_stop()) {
-		mutex_lock(&iface->sock_release_lock);
 		if (!iface->ksmbd_socket) {
-			mutex_unlock(&iface->sock_release_lock);
 			break;
 		}
-		ret = kernel_accept(iface->ksmbd_socket, &client_sk,
-				    SOCK_NONBLOCK);
-		mutex_unlock(&iface->sock_release_lock);
-		if (ret) {
-			if (ret == -EAGAIN)
-				/* check for new connections every 100 msecs */
-				schedule_timeout_interruptible(HZ / 10);
+		ret = kernel_accept(iface->ksmbd_socket, &client_sk, 0);
+		if (ret == -EINVAL)
+			break;
+		if (ret)
 			continue;
-		}
 
 		if (!server_conf.max_ip_connections)
 			goto skip_max_ip_conns_limit;
@@ -316,8 +280,11 @@ static int ksmbd_kthread_fn(void *p)
 			}
 		}
 		up_read(&conn_list_lock);
-		if (ret == -EAGAIN)
+		if (ret == -EAGAIN) {
+			/* Per-IP limit hit: release the just-accepted socket. */
+			sock_release(client_sk);
 			continue;
+		}
 
 skip_max_ip_conns_limit:
 		if (server_conf.max_connections &&
@@ -481,10 +448,6 @@ static void tcp_destroy_socket(struct socket *ksmbd_socket)
 	if (!ksmbd_socket)
 		return;
 
-	/* set zero to timeout */
-	ksmbd_tcp_rcv_timeout(ksmbd_socket, 0);
-	ksmbd_tcp_snd_timeout(ksmbd_socket, 0);
-
 	ret = kernel_sock_shutdown(ksmbd_socket, SHUT_RDWR);
 	if (ret)
 		pr_err("Failed to shutdown socket: %d\n", ret);
@@ -557,18 +520,23 @@ static int create_socket(struct interface *iface)
 	}
 
 	if (ipv4)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 19, 0)
+		ret = kernel_bind(ksmbd_socket, (struct sockaddr_unsized *)&sin,
+#else
 		ret = kernel_bind(ksmbd_socket, (struct sockaddr *)&sin,
+#endif
 				  sizeof(sin));
 	else
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 19, 0)
+		ret = kernel_bind(ksmbd_socket, (struct sockaddr_unsized *)&sin6,
+#else
 		ret = kernel_bind(ksmbd_socket, (struct sockaddr *)&sin6,
+#endif
 				  sizeof(sin6));
 	if (ret) {
 		pr_err("Failed to bind socket: %d\n", ret);
 		goto out_error;
 	}
-
-	ksmbd_socket->sk->sk_rcvtimeo = KSMBD_TCP_RECV_TIMEOUT;
-	ksmbd_socket->sk->sk_sndtimeo = KSMBD_TCP_SEND_TIMEOUT;
 
 	ret = kernel_listen(ksmbd_socket, KSMBD_SOCKET_BACKLOG);
 	if (ret) {
@@ -639,12 +607,11 @@ static int ksmbd_netdev_event(struct notifier_block *nb, unsigned long event,
 		if (iface && iface->state == IFACE_STATE_CONFIGURED) {
 			ksmbd_debug(CONN, "netdev-down event: netdev(%s) is going down\n",
 					iface->name);
+			kernel_sock_shutdown(iface->ksmbd_socket, SHUT_RDWR);
 			tcp_stop_kthread(iface->ksmbd_kthread);
 			iface->ksmbd_kthread = NULL;
-			mutex_lock(&iface->sock_release_lock);
-			tcp_destroy_socket(iface->ksmbd_socket);
+			sock_release(iface->ksmbd_socket);
 			iface->ksmbd_socket = NULL;
-			mutex_unlock(&iface->sock_release_lock);
 
 			iface->state = IFACE_STATE_DOWN;
 			break;
@@ -707,7 +674,6 @@ static struct interface *alloc_iface(char *ifname)
 	iface->name = ifname;
 	iface->state = IFACE_STATE_DOWN;
 	list_add(&iface->entry, &iface_list);
-	mutex_init(&iface->sock_release_lock);
 	return iface;
 }
 
