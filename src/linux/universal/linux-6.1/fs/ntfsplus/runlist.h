@@ -13,7 +13,7 @@
 
 #include "volume.h"
 
-/**
+/*
  * runlist_element - in memory vcn to lcn mapping array element
  * @vcn:	starting vcn of the current array element
  * @lcn:	starting lcn of the current array element
@@ -23,23 +23,29 @@
  *
  * When lcn == -1 this means that the count vcns starting at vcn are not
  * physically allocated (i.e. this is a hole / data is sparse).
+ *
+ * In memory vcn to lcn mapping structure element.
+ * @vcn: vcn = Starting virtual cluster number.
+ * @lcn: lcn = Starting logical cluster number.
+ * @length: Run length in clusters.
  */
-struct runlist_element { /* In memory vcn to lcn mapping structure element. */
-	s64 vcn;	/* vcn = Starting virtual cluster number. */
-	s64 lcn;	/* lcn = Starting logical cluster number. */
-	s64 length;	/* Run length in clusters. */
+struct runlist_element {
+	s64 vcn;
+	s64 lcn;
+	s64 length;
 };
 
-/**
+/*
  * runlist - in memory vcn to lcn mapping array including a read/write lock
  * @rl:		pointer to an array of runlist elements
  * @lock:	read/write spinlock for serializing access to @rl
- *
+ * @rl_hint:	hint/cache pointing to the last accessed runlist element
  */
 struct runlist {
 	struct runlist_element *rl;
 	struct rw_semaphore lock;
 	size_t count;
+	int rl_hint;
 };
 
 static inline void ntfs_init_runlist(struct runlist *rl)
@@ -47,6 +53,7 @@ static inline void ntfs_init_runlist(struct runlist *rl)
 	rl->rl = NULL;
 	init_rwsem(&rl->lock);
 	rl->count = 0;
+	rl->rl_hint = -1;
 }
 
 enum {

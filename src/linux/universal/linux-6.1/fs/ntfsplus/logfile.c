@@ -10,10 +10,9 @@
 #include "attrib.h"
 #include "aops.h"
 #include "logfile.h"
-#include "misc.h"
 #include "ntfs.h"
 
-/**
+/*
  * ntfs_check_restart_page_header - check the page header for consistency
  * @vi:		LogFile inode to which the restart page header belongs
  * @rp:		restart page header to check
@@ -116,7 +115,7 @@ skip_usa_checks:
 	return true;
 }
 
-/**
+/*
  * ntfs_check_restart_area - check the restart area for consistency
  * @vi:		LogFile inode to which the restart page belongs
  * @rp:		restart page whose restart area to check
@@ -228,7 +227,7 @@ static bool ntfs_check_restart_area(struct inode *vi, struct restart_page_header
 	return true;
 }
 
-/**
+/*
  * ntfs_check_log_client_array - check the log client array for consistency
  * @vi:		LogFile inode to which the restart page belongs
  * @rp:		restart page whose log client array to check
@@ -293,7 +292,7 @@ err_out:
 	return false;
 }
 
-/**
+/*
  * ntfs_check_and_load_restart_page - check the restart page for consistency
  * @vi:		LogFile inode to which the restart page belongs
  * @rp:		restart page to check
@@ -344,7 +343,7 @@ static int ntfs_check_and_load_restart_page(struct inode *vi,
 	 * Allocate a buffer to store the whole restart page so we can multi
 	 * sector transfer deprotect it.
 	 */
-	trp = ntfs_malloc_nofs(le32_to_cpu(rp->system_page_size));
+	trp = kvzalloc(le32_to_cpu(rp->system_page_size), GFP_NOFS);
 	if (!trp) {
 		ntfs_error(vi->i_sb, "Failed to allocate memory for LogFile restart page buffer.");
 		return -ENOMEM;
@@ -359,7 +358,11 @@ static int ntfs_check_and_load_restart_page(struct inode *vi,
 		memcpy(trp, rp, le32_to_cpu(rp->system_page_size));
 	} else {
 		pgoff_t idx;
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 6, 0)
 		struct folio *folio;
+#else
+		struct page *page;
+#endif
 		int have_read, to_read;
 
 		/* First copy what we already have in @rp. */
@@ -369,7 +372,8 @@ static int ntfs_check_and_load_restart_page(struct inode *vi,
 		to_read = le32_to_cpu(rp->system_page_size) - size;
 		idx = (pos + size) >> PAGE_SHIFT;
 		do {
-			folio = ntfs_read_mapping_folio(vi->i_mapping, idx);
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 6, 0)
+			folio = read_mapping_folio(vi->i_mapping, idx, NULL);
 			if (IS_ERR(folio)) {
 				ntfs_error(vi->i_sb, "Error mapping LogFile page (index %lu).",
 						idx);
@@ -381,6 +385,21 @@ static int ntfs_check_and_load_restart_page(struct inode *vi,
 			size = min_t(int, to_read, PAGE_SIZE);
 			memcpy((u8 *)trp + have_read, folio_address(folio), size);
 			folio_put(folio);
+#else
+			page = read_mapping_page(vi->i_mapping, idx, NULL);
+			if (IS_ERR(page)) {
+				ntfs_error(vi->i_sb, "Error mapping LogFile page (index %lu).",
+						idx);
+				err = PTR_ERR(page);
+				if (err != -EIO && err != -ENOMEM)
+					err = -EIO;
+				goto err_out;
+			}
+			size = min_t(int, to_read, PAGE_SIZE);
+			memcpy((u8 *)trp + have_read, page_address(page), size);
+			kunmap(page);
+			put_page(page);
+#endif
 			have_read += size;
 			to_read -= size;
 			idx++;
@@ -430,19 +449,19 @@ static int ntfs_check_and_load_restart_page(struct inode *vi,
 		*wrp = trp;
 	else {
 err_out:
-		ntfs_free(trp);
+		kvfree(trp);
 	}
 	return err;
 }
 
-/**
+/*
  * ntfs_check_logfile - check the journal for consistency
  * @log_vi:	struct inode of loaded journal LogFile to check
  * @rp:		[OUT] on success this is a copy of the current restart page
  *
  * Check the LogFile journal for consistency and return 'true' if it is
  * consistent and 'false' if not.  On success, the current restart page is
- * returned in *@rp.  Caller must call ntfs_free(*@rp) when finished with it.
+ * returned in *@rp.  Caller must call kvfree(*@rp) when finished with it.
  *
  * At present we only check the two restart pages and ignore the log record
  * pages.
@@ -458,7 +477,11 @@ bool ntfs_check_logfile(struct inode *log_vi, struct restart_page_header **rp)
 	s64 rstr1_lsn, rstr2_lsn;
 	struct ntfs_volume *vol = NTFS_SB(log_vi->i_sb);
 	struct address_space *mapping = log_vi->i_mapping;
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 6, 0)
 	struct folio *folio = NULL;
+#else
+	struct page *page = NULL;
+#endif
 	u8 *kaddr = NULL;
 	struct restart_page_header *rstr1_ph = NULL;
 	struct restart_page_header *rstr2_ph = NULL;
@@ -509,12 +532,15 @@ bool ntfs_check_logfile(struct inode *log_vi, struct restart_page_header **rp)
 	 * to be empty.
 	 */
 	for (pos = 0; pos < size; pos <<= 1) {
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 6, 0)
 		pgoff_t idx = pos >> PAGE_SHIFT;
 
 		if (!folio || folio->index != idx) {
-			if (folio)
-				ntfs_unmap_folio(folio, kaddr);
-			folio = ntfs_read_mapping_folio(mapping, idx);
+			if (folio) {
+				kunmap_local(kaddr);
+				folio_put(folio);
+			}
+			folio = read_mapping_folio(mapping, idx, NULL);
 			if (IS_ERR(folio)) {
 				ntfs_error(vol->sb, "Error mapping LogFile page (index %lu).",
 						idx);
@@ -522,6 +548,23 @@ bool ntfs_check_logfile(struct inode *log_vi, struct restart_page_header **rp)
 			}
 		}
 		kaddr = (u8 *)kmap_local_folio(folio, 0) + (pos & ~PAGE_MASK);
+#else
+		pgoff_t idx = pos >> PAGE_SHIFT;
+
+		if (!page || page->index != idx) {
+			if (page) {
+				kunmap(page);
+				put_page(page);
+			}
+			page = read_mapping_page(mapping, idx, NULL);
+			if (IS_ERR(page)) {
+				ntfs_error(vol->sb, "Error mapping LogFile page (index %lu).",
+						idx);
+				goto err_out;
+			}
+		}
+		kaddr = (u8 *)page_address(page) + (pos & ~PAGE_MASK);
+#endif
 		/*
 		 * A non-empty block means the logfile is not empty while an
 		 * empty block after a non-empty block has been encountered
@@ -574,15 +617,30 @@ bool ntfs_check_logfile(struct inode *log_vi, struct restart_page_header **rp)
 		 * find a valid one further in the file.
 		 */
 		if (err != -EINVAL) {
-			ntfs_unmap_folio(folio, kaddr);
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 6, 0)
+			kunmap_local(kaddr);
+			folio_put(folio);
+#else
+			kunmap(page);
+			put_page(page);
+#endif
 			goto err_out;
 		}
 		/* Continue looking. */
 		if (!pos)
 			pos = NTFS_BLOCK_SIZE >> 1;
 	}
-	if (folio)
-		ntfs_unmap_folio(folio, kaddr);
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 6, 0)
+	if (folio) {
+		kunmap_local(kaddr);
+		folio_put(folio);
+	}
+#else
+	if (page) {
+		kunmap(page);
+		put_page(page);
+	}
+#endif
 	if (logfile_is_empty) {
 		NVolSetLogFileEmpty(vol);
 is_empty:
@@ -602,12 +660,12 @@ is_empty:
 		 */
 		if (rstr2_lsn > rstr1_lsn) {
 			ntfs_debug("Using second restart page as it is more recent.");
-			ntfs_free(rstr1_ph);
+			kvfree(rstr1_ph);
 			rstr1_ph = rstr2_ph;
 			/* rstr1_lsn = rstr2_lsn; */
 		} else {
 			ntfs_debug("Using first restart page as it is more recent.");
-			ntfs_free(rstr2_ph);
+			kvfree(rstr2_ph);
 		}
 		rstr2_ph = NULL;
 	}
@@ -615,16 +673,16 @@ is_empty:
 	if (rp)
 		*rp = rstr1_ph;
 	else
-		ntfs_free(rstr1_ph);
+		kvfree(rstr1_ph);
 	ntfs_debug("Done.");
 	return true;
 err_out:
 	if (rstr1_ph)
-		ntfs_free(rstr1_ph);
+		kvfree(rstr1_ph);
 	return false;
 }
 
-/**
+/*
  * ntfs_empty_logfile - empty the contents of the LogFile journal
  * @log_vi:	struct inode of loaded journal LogFile to empty
  *
@@ -683,7 +741,7 @@ map_vcn:
 		rl++;
 
 	err = -ENOMEM;
-	empty_buf = ntfs_malloc_nofs(vol->cluster_size);
+	empty_buf = kvzalloc(vol->cluster_size, GFP_NOFS);
 	if (!empty_buf)
 		goto err;
 
@@ -693,7 +751,11 @@ map_vcn:
 	if (!ra)
 		goto err;
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 11, 0)
+	file_ra_state_init(ra, sb->s_bdev->bd_mapping);
+#else
 	file_ra_state_init(ra, sb->s_bdev->bd_inode->i_mapping);
+#endif
 	do {
 		s64 lcn;
 		loff_t start, end;
@@ -706,7 +768,7 @@ map_vcn:
 		lcn = rl->lcn;
 		if (unlikely(lcn == LCN_RL_NOT_MAPPED)) {
 			vcn = rl->vcn;
-			ntfs_free(empty_buf);
+			kvfree(empty_buf);
 			goto map_vcn;
 		}
 		/* If this run is not valid abort with an error. */
@@ -715,18 +777,23 @@ map_vcn:
 		/* Skip holes. */
 		if (lcn == LCN_HOLE)
 			continue;
-		start = lcn << vol->cluster_size_bits;
+		start = NTFS_CLU_TO_B(vol, lcn);
 		len = rl->length;
 		if (rl[1].vcn > end_vcn)
 			len = end_vcn - rl->vcn;
-		end = (lcn + len) << vol->cluster_size_bits;
+		end = NTFS_CLU_TO_B(vol, lcn + len);
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 11, 0)
+		page_cache_sync_readahead(sb->s_bdev->bd_mapping, ra, NULL,
+			start >> PAGE_SHIFT, (end - start) >> PAGE_SHIFT);
+#else
 		page_cache_sync_readahead(sb->s_bdev->bd_inode->i_mapping, ra, NULL,
 			start >> PAGE_SHIFT, (end - start) >> PAGE_SHIFT);
+#endif
 
 		do {
 			err = ntfs_dev_write(sb, empty_buf, start,
-						  vol->cluster_size, should_wait);
+						  vol->cluster_size);
 			if (err) {
 				ntfs_error(sb, "ntfs_dev_write failed, err : %d\n", err);
 				goto io_err;
@@ -739,8 +806,13 @@ map_vcn:
 			 * completed ignore errors afterwards as we can assume
 			 * that if one buffer worked all of them will work.
 			 */
-			if (should_wait)
+			if (should_wait) {
 				should_wait = false;
+				err = filemap_write_and_wait_range(sb->s_bdev->bd_mapping,
+						start, start + vol->cluster_size);
+				if (err)
+					goto io_err;
+			}
 			start += vol->cluster_size;
 		} while (start < end);
 	} while ((++rl)->vcn < end_vcn);
@@ -761,7 +833,7 @@ dirty_err:
 	NVolSetErrors(vol);
 	err = -EIO;
 err:
-	ntfs_free(empty_buf);
+	kvfree(empty_buf);
 	kfree(ra);
 	up_write(&log_ni->runlist.lock);
 	ntfs_error(sb, "Failed to fill LogFile with 0xff bytes (error %d).",

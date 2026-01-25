@@ -6,7 +6,6 @@
  */
 
 #include "ntfs.h"
-#include "misc.h"
 
 /*
  * IMPORTANT
@@ -34,7 +33,7 @@ static const u8 legal_ansi_char_array[0x40] = {
 	0x17, 0x17, 0x04, 0x16, 0x18, 0x16, 0x18, 0x18,
 };
 
-/**
+/*
  * ntfs_are_names_equal - compare two Unicode names for equality
  * @s1:			name to compare to @s2
  * @s1_len:		length in Unicode characters of @s1
@@ -59,7 +58,7 @@ bool ntfs_are_names_equal(const __le16 *s1, size_t s1_len,
 	return !ntfs_ucsncasecmp(s1, s2, s1_len, upcase, upcase_size);
 }
 
-/**
+/*
  * ntfs_collate_names - collate two Unicode names
  * @name1:	first Unicode name to compare
  * @name1_len:	first Unicode name length
@@ -117,7 +116,7 @@ int ntfs_collate_names(const __le16 *name1, const u32 name1_len,
 	return 1;
 }
 
-/**
+/*
  * ntfs_ucsncmp - compare two little endian Unicode strings
  * @s1:		first string
  * @s2:		second string
@@ -149,7 +148,7 @@ int ntfs_ucsncmp(const __le16 *s1, const __le16 *s2, size_t n)
 	return 0;
 }
 
-/**
+/*
  * ntfs_ucsncasecmp - compare two little endian Unicode strings, ignoring case
  * @s1:			first string
  * @s2:			second string
@@ -202,8 +201,13 @@ int ntfs_file_compare_values(const struct file_name_attr *file_name_attr1,
 			err_val, ic, upcase, upcase_len);
 }
 
-/**
+/*
  * ntfs_nlstoucs - convert NLS string to little endian Unicode string
+ * @vol: ntfs volume containing the NLS mapping
+ * @ins: input NLS string to convert
+ * @ins_len: length of input string in bytes
+ * @outs: on success, pointer to allocated output Unicode string
+ * @max_name_len: maximum length of output string in Unicode characters
  *
  * Convert the input string @ins, which is in whatever format the loaded NLS
  * map dictates, into a little endian, 2-byte Unicode string.
@@ -240,7 +244,7 @@ int ntfs_nlstoucs(const struct ntfs_volume *vol, const char *ins,
 			if (vol->nls_utf8) {
 				o = utf8s_to_utf16s(ins, ins_len,
 						    UTF16_LITTLE_ENDIAN,
-						    ucs,
+						    (wchar_t *)ucs,
 						    max_name_len + 2);
 				if (o < 0 || o > max_name_len) {
 					wc_len = o;
@@ -288,7 +292,7 @@ name_err:
 	return i;
 }
 
-/**
+/*
  * ntfs_ucstonls - convert little endian Unicode string to NLS string
  * @vol:	ntfs volume which we are working with
  * @ins:	input Unicode string buffer
@@ -390,7 +394,7 @@ mem_err_out:
 	return -ENOMEM;
 }
 
-/**
+/*
  * ntfs_ucsnlen - determine the length of a little endian Unicode string
  * @s:		pointer to Unicode string
  * @maxlen:	maximum length of string @s
@@ -413,14 +417,14 @@ static u32 ntfs_ucsnlen(const __le16 *s, u32 maxlen)
 	return i;
 }
 
-/**
+/*
  * ntfs_ucsndup - duplicate little endian Unicode string
  * @s:		pointer to Unicode string
  * @maxlen:	maximum length of string @s
  *
  * Return a pointer to a new little endian Unicode string which is a duplicate
- * of the string s.  Memory for the new string is obtained with ntfs_malloc(3),
- * and can be freed with free(3).
+ * of the string s.  Memory for the new string is obtained with kmalloc,
+ * and can be freed with kfree.
  *
  * A maximum of @maxlen Unicode characters are copied and a terminating
  * (__le16)'\0' little endian Unicode character is added.
@@ -436,7 +440,7 @@ __le16 *ntfs_ucsndup(const __le16 *s, u32 maxlen)
 	u32 len;
 
 	len = ntfs_ucsnlen(s, maxlen);
-	dst = ntfs_malloc_nofs((len + 1) * sizeof(__le16));
+	dst = kmalloc((len + 1) * sizeof(__le16), GFP_NOFS);
 	if (dst) {
 		memcpy(dst, s, len * sizeof(__le16));
 		dst[len] = cpu_to_le16(L'\0');
@@ -444,7 +448,7 @@ __le16 *ntfs_ucsndup(const __le16 *s, u32 maxlen)
 	return dst;
 }
 
-/**
+/*
  * ntfs_names_are_equal - compare two Unicode names for equality
  * @s1:                 name to compare to @s2
  * @s1_len:             length in Unicode characters of @s1

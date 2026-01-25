@@ -16,7 +16,7 @@
 
 extern __le16 AT_UNNAMED[];
 
-/**
+/*
  * ntfs_attr_search_ctx - used in attribute search functions
  * @mrec:	buffer containing mft record to search
  * @attr:	attribute record in @mrec where to begin/continue search
@@ -126,7 +126,7 @@ int ntfs_resident_attr_record_add(struct ntfs_inode *ni, __le32 type,
 int ntfs_attr_update_mapping_pairs(struct ntfs_inode *ni, s64 from_vcn);
 struct runlist_element *ntfs_attr_vcn_to_rl(struct ntfs_inode *ni, s64 vcn, s64 *lcn);
 
-/**
+/*
  * ntfs_attrs_walk - syntactic sugar for walking all attributes in an inode
  * @ctx:	initialised attribute search context
  *
