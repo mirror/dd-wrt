@@ -12,15 +12,16 @@
 
 #include "mft.h"
 #include "attrib.h"
-#include "misc.h"
 #include "attrlist.h"
 
-/**
+/*
  * ntfs_attrlist_need - check whether inode need attribute list
  * @ni:	opened ntfs inode for which perform check
  *
  * Check whether all are attributes belong to one MFT record, in that case
  * attribute list is not needed.
+ *
+ * Return 1 if inode need attribute list, 0 if not, or -errno on error.
  */
 int ntfs_attrlist_need(struct ntfs_inode *ni)
 {
@@ -102,10 +103,12 @@ int ntfs_attrlist_update(struct ntfs_inode *base_ni)
 	return 0;
 }
 
-/**
+/*
  * ntfs_attrlist_entry_add - add an attribute list attribute entry
  * @ni:	opened ntfs inode, which contains that attribute
  * @attr: attribute record to add to attribute list
+ *
+ * Return 0 on success and -errno on error.
  */
 int ntfs_attrlist_entry_add(struct ntfs_inode *ni, struct attr_record *attr)
 {
@@ -146,7 +149,7 @@ int ntfs_attrlist_entry_add(struct ntfs_inode *ni, struct attr_record *attr)
 	/* Determine size and allocate memory for new attribute list. */
 	entry_len = (sizeof(struct attr_list_entry) + sizeof(__le16) *
 			attr->name_length + 7) & ~7;
-	new_al = ntfs_malloc_nofs(ni->attr_list_size + entry_len);
+	new_al = kvzalloc(ni->attr_list_size + entry_len, GFP_NOFS);
 	if (!new_al)
 		return -ENOMEM;
 
@@ -224,18 +227,20 @@ int ntfs_attrlist_entry_add(struct ntfs_inode *ni, struct attr_record *attr)
 		ni->attr_list_size -= entry_len;
 		goto err_out;
 	}
-	ntfs_free(old_al);
+	kvfree(old_al);
 	return 0;
 err_out:
-	ntfs_free(new_al);
+	kvfree(new_al);
 	return err;
 }
 
-/**
+/*
  * ntfs_attrlist_entry_rm - remove an attribute list attribute entry
  * @ctx:	attribute search context describing the attribute list entry
  *
  * Remove the attribute list entry @ctx->al_entry from the attribute list.
+ *
+ * Return 0 on success and -errno on error.
  */
 int ntfs_attrlist_entry_rm(struct ntfs_attr_search_ctx *ctx)
 {
@@ -267,7 +272,7 @@ int ntfs_attrlist_entry_rm(struct ntfs_attr_search_ctx *ctx)
 
 	/* Allocate memory for new attribute list. */
 	new_al_len = base_ni->attr_list_size - le16_to_cpu(ale->length);
-	new_al = ntfs_malloc_nofs(new_al_len);
+	new_al = kvzalloc(new_al_len, GFP_NOFS);
 	if (!new_al)
 		return -ENOMEM;
 
@@ -277,7 +282,7 @@ int ntfs_attrlist_entry_rm(struct ntfs_attr_search_ctx *ctx)
 				ale->length), new_al_len - ((u8 *)ale - base_ni->attr_list));
 
 	/* Set new runlist. */
-	ntfs_free(base_ni->attr_list);
+	kvfree(base_ni->attr_list);
 	base_ni->attr_list = new_al;
 	base_ni->attr_list_size = new_al_len;
 

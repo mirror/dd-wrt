@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
-/**
+/*
  * NTFS kernel compressed attributes handling.
  * Part of the Linux-NTFS project.
  *
@@ -23,15 +23,14 @@
 
 #include "attrib.h"
 #include "inode.h"
-#include "misc.h"
+#include "debug.h"
 #include "ntfs.h"
-#include "misc.h"
 #include "aops.h"
 #include "lcnalloc.h"
 #include "mft.h"
 
-/**
- * enum of constants used in the compression code
+/*
+ * Constants used in the compression code
  */
 enum {
 	/* Token types and access mask. */
@@ -53,17 +52,17 @@ enum {
 	NTFS_MAX_CB_SIZE	= 64 * 1024,
 };
 
-/**
+/*
  * ntfs_compression_buffer - one buffer for the decompression engine
  */
 static u8 *ntfs_compression_buffer;
 
-/**
+/*
  * ntfs_cb_lock - mutex lock which protects ntfs_compression_buffer
  */
 static DEFINE_MUTEX(ntfs_cb_lock);
 
-/**
+/*
  * allocate_compression_buffers - allocate the decompression buffers
  *
  * Caller has to hold the ntfs_lock mutex.
@@ -81,7 +80,7 @@ int allocate_compression_buffers(void)
 	return 0;
 }
 
-/**
+/*
  * free_compression_buffers - free the decompression buffers
  *
  * Caller has to hold the ntfs_lock mutex.
@@ -99,8 +98,10 @@ void free_compression_buffers(void)
 	mutex_unlock(&ntfs_cb_lock);
 }
 
-/**
+/*
  * zero_partial_compressed_page - zero out of bounds compressed page region
+ * @page: page to zero
+ * @initialized_size: initialized size of the attribute
  */
 static void zero_partial_compressed_page(struct page *page,
 		const s64 initialized_size)
@@ -109,26 +110,42 @@ static void zero_partial_compressed_page(struct page *page,
 	unsigned int kp_ofs;
 
 	ntfs_debug("Zeroing page region outside initialized size.");
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 16, 0)
+	if (((s64)page->__folio_index << PAGE_SHIFT) >= initialized_size) {
+		clear_page(kp);
+		return;
+	}
+#else
 	if (((s64)page->index << PAGE_SHIFT) >= initialized_size) {
 		clear_page(kp);
 		return;
 	}
+#endif
 	kp_ofs = initialized_size & ~PAGE_MASK;
 	memset(kp + kp_ofs, 0, PAGE_SIZE - kp_ofs);
 }
 
-/**
+/*
  * handle_bounds_compressed_page - test for&handle out of bounds compressed page
+ * @page: page to check and handle
+ * @i_size: file size
+ * @initialized_size: initialized size of the attribute
  */
 static inline void handle_bounds_compressed_page(struct page *page,
 		const loff_t i_size, const s64 initialized_size)
 {
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 16, 0)
+	if ((page->__folio_index >= (initialized_size >> PAGE_SHIFT)) &&
+			(initialized_size < i_size))
+		zero_partial_compressed_page(page, initialized_size);
+#else
 	if ((page->index >= (initialized_size >> PAGE_SHIFT)) &&
 			(initialized_size < i_size))
 		zero_partial_compressed_page(page, initialized_size);
+#endif
 }
 
-/**
+/*
  * ntfs_decompress - decompress a compression block into an array of pages
  * @dest_pages:		destination array of pages
  * @completed_pages:	scratch space to track completed pages
@@ -440,7 +457,7 @@ return_overflow:
 	goto return_error;
 }
 
-/**
+/*
  * ntfs_read_compressed_block - read a compressed block into the page cache
  * @folio:	locked folio in the compression block(s) we need to read
  *
@@ -458,9 +475,14 @@ return_overflow:
  * have been written to so that we would lose data if we were to just overwrite
  * them with the out-of-date uncompressed data.
  */
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 6, 0)
 int ntfs_read_compressed_block(struct folio *folio)
 {
 	struct page *page = &folio->page;
+#else
+int ntfs_read_compressed_block(struct page *page)
+{
+#endif
 	loff_t i_size;
 	s64 initialized_size;
 	struct address_space *mapping = page->mapping;
@@ -470,7 +492,11 @@ int ntfs_read_compressed_block(struct folio *folio)
 	struct runlist_element *rl;
 	unsigned long flags;
 	u8 *cb, *cb_pos, *cb_end;
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 16, 0)
+	unsigned long offset, index = page->__folio_index;
+#else
 	unsigned long offset, index = page->index;
+#endif
 	u32 cb_size = ni->itype.compressed.block_size;
 	u64 cb_size_mask = cb_size - 1UL;
 	s64 vcn;
@@ -485,15 +511,14 @@ int ntfs_read_compressed_block(struct folio *folio)
 	s64 end_vcn = ((((s64)(index + 1UL) << PAGE_SHIFT) + cb_size - 1)
 			& ~cb_size_mask) >> vol->cluster_size_bits;
 	/* Number of compression blocks (cbs) in the wanted vcn range. */
-	unsigned int nr_cbs = (end_vcn - start_vcn) << vol->cluster_size_bits
-			>> ni->itype.compressed.block_size_bits;
+	unsigned int nr_cbs = ntfs_cluster_to_bytes(vol, end_vcn - start_vcn) >>
+			ni->itype.compressed.block_size_bits;
 	/*
 	 * Number of pages required to store the uncompressed data from all
 	 * compression blocks (cbs) overlapping @page. Due to alignment
 	 * guarantees of start_vcn and end_vcn, no need to round up here.
 	 */
-	unsigned int nr_pages = (end_vcn - start_vcn) <<
-			vol->cluster_size_bits >> PAGE_SHIFT;
+	unsigned int nr_pages = ntfs_cluster_to_pidx(vol, end_vcn - start_vcn);
 	unsigned int xpage, max_page, cur_page, cur_ofs, i, page_ofs, page_index;
 	unsigned int cb_clusters, cb_max_ofs;
 	int cb_max_page, err = 0;
@@ -528,7 +553,7 @@ int ntfs_read_compressed_block(struct folio *folio)
 	 * We have already been given one page, this is the one we must do.
 	 * Once again, the alignment guarantees keep it simple.
 	 */
-	offset = start_vcn << vol->cluster_size_bits >> PAGE_SHIFT;
+	offset = ntfs_cluster_to_pidx(vol, start_vcn);
 	xpage = index - offset;
 	pages[xpage] = page;
 	/*
@@ -545,7 +570,11 @@ int ntfs_read_compressed_block(struct folio *folio)
 	if (xpage >= max_page) {
 		kfree(pages);
 		kfree(completed_pages);
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 17, 0)
 		zero_user_segments(page, 0, PAGE_SIZE, 0, 0);
+#else
+		zero_user(page, 0, PAGE_SIZE);
+#endif
 		ntfs_debug("Compressed read outside i_size - truncated?");
 		SetPageUptodate(page);
 		unlock_page(page);
@@ -639,15 +668,17 @@ lock_retry_remap:
 			goto map_rl_err;
 		}
 
-		page_ofs = (lcn << vol->cluster_size_bits) & ~PAGE_MASK;
-		page_index = (lcn << vol->cluster_size_bits) >> PAGE_SHIFT;
+		page_ofs = ntfs_cluster_to_poff(vol, lcn);
+		page_index = ntfs_cluster_to_pidx(vol, lcn);
 
-retry:
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 11, 0)
 		lpage = read_mapping_page(sb->s_bdev->bd_mapping,
 					  page_index, NULL);
-		if (PTR_ERR(page) == -EINTR)
-			goto retry;
-		else if (IS_ERR(lpage)) {
+#else
+		lpage = read_mapping_page(sb->s_bdev->bd_inode->i_mapping,
+					  page_index, NULL);
+#endif
+		if (IS_ERR(lpage)) {
 			err = PTR_ERR(lpage);
 			mutex_unlock(&ntfs_cb_lock);
 			goto read_err;
@@ -826,7 +857,11 @@ retry:
 		if (page) {
 			ntfs_error(vol->sb,
 				"Still have pages left! Terminating them with extreme prejudice.  Inode 0x%lx, page index 0x%lx.",
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 16, 0)
+				ni->mft_no, page->__folio_index);
+#else
 				ni->mft_no, page->index);
+#endif
 			flush_dcache_page(page);
 			kunmap_local(page_address(page));
 			unlock_page(page);
@@ -1101,7 +1136,7 @@ static unsigned int ntfs_compress_block(const char *inbuf, const int bufsize,
 	int tag;    /* current value of tag */
 	int ntag;   /* count of bits still undefined in tag */
 
-	pctx = ntfs_malloc_nofs(sizeof(struct COMPRESS_CONTEXT));
+	pctx = kvzalloc(sizeof(struct COMPRESS_CONTEXT), GFP_NOFS);
 	if (!pctx)
 		return -ENOMEM;
 
@@ -1264,7 +1299,7 @@ static unsigned int ntfs_compress_block(const char *inbuf, const int bufsize,
 	 * Free the compression context and return the total number of bytes
 	 * written to 'outbuf'.
 	 */
-	ntfs_free(pctx);
+	kvfree(pctx);
 	return xout;
 }
 
@@ -1371,8 +1406,8 @@ static int ntfs_write_cb(struct ntfs_inode *ni, loff_t pos, struct page **pages,
 		bio_size = insz;
 	}
 
-	new_vcn = (pos & ~(ni->itype.compressed.block_size - 1)) >> vol->cluster_size_bits;
-	new_length = round_up(bio_size, vol->cluster_size) >> vol->cluster_size_bits;
+	new_vcn = ntfs_bytes_to_cluster(vol, pos & ~(ni->itype.compressed.block_size - 1));
+	new_length = ntfs_bytes_to_cluster(vol, round_up(bio_size, vol->cluster_size));
 
 	err = ntfs_non_resident_attr_punch_hole(ni, new_vcn, ni->itype.compressed.block_clusters);
 	if (err < 0)
@@ -1394,7 +1429,7 @@ static int ntfs_write_cb(struct ntfs_inode *ni, loff_t pos, struct page **pages,
 		err = PTR_ERR(rl);
 		if (ntfs_cluster_free_from_rl(vol, rlc))
 			ntfs_error(vol->sb, "Failed to free hot clusters.");
-		ntfs_free(rlc);
+		kvfree(rlc);
 		goto out;
 	}
 
@@ -1422,11 +1457,19 @@ static int ntfs_write_cb(struct ntfs_inode *ni, loff_t pos, struct page **pages,
 
 setup_bio:
 		if (!bio) {
-			bio = ntfs_setup_bio(vol, REQ_OP_WRITE, bio_lcn + i, 0);
-			if (!bio) {
-				err = -ENOMEM;
-				goto out;
-			}
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 18, 0)
+			bio = bio_alloc(vol->sb->s_bdev, 1, REQ_OP_WRITE,
+					GFP_NOIO);
+#else
+			bio = bio_alloc(GFP_NOIO, 1);
+			if (!bio)
+				return NULL;
+			bio_set_dev(bio, vol->sb->s_bdev);
+			bio->bi_opf = REQ_OP_WRITE;
+#endif
+			bio->bi_iter.bi_sector =
+				ntfs_bytes_to_sector(vol,
+						ntfs_cluster_to_bytes(vol, bio_lcn + i));
 		}
 
 		if (!bio_add_page(bio, pages[i], page_size, 0)) {
@@ -1494,7 +1537,7 @@ int ntfs_compress_write(struct ntfs_inode *ni, loff_t pos, size_t count,
 		}
 
 		for (i = 0; i < pages_per_cb; i++) {
-			folio = ntfs_read_mapping_folio(mapping, index + i);
+			folio = read_mapping_folio(mapping, index + i, NULL);
 			if (IS_ERR(folio)) {
 				for (ip = 0; ip < i; ip++) {
 					folio_unlock(page_folio(pages[ip]));
@@ -1517,8 +1560,13 @@ int ntfs_compress_write(struct ntfs_inode *ni, loff_t pos, size_t count,
 			size_t cp, tail = PAGE_SIZE - off;
 
 			page = pages[ip];
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 6, 0)
 			cp = copy_folio_from_iter_atomic(page_folio(page), off,
 					min(tail, bytes), from);
+#else
+			cp = copy_page_from_iter_atomic(page, off,
+					min(tail, bytes), from);
+#endif
 			flush_dcache_page(page);
 
 			copied += cp;

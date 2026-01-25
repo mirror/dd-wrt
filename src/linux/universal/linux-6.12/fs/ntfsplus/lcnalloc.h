@@ -29,7 +29,7 @@ struct runlist_element *ntfs_cluster_alloc(struct ntfs_volume *vol,
 s64 __ntfs_cluster_free(struct ntfs_inode *ni, const s64 start_vcn,
 		s64 count, struct ntfs_attr_search_ctx *ctx, const bool is_rollback);
 
-/**
+/*
  * ntfs_cluster_free - free clusters on an ntfs volume
  * @ni:		ntfs inode whose runlist describes the clusters to free
  * @start_vcn:	vcn in the runlist of @ni at which to start freeing clusters
@@ -94,7 +94,7 @@ static inline s64 ntfs_cluster_free(struct ntfs_inode *ni, const s64 start_vcn,
 int ntfs_cluster_free_from_rl_nolock(struct ntfs_volume *vol,
 		const struct runlist_element *rl);
 
-/**
+/*
  * ntfs_cluster_free_from_rl - free clusters from runlist
  * @vol:	mounted ntfs volume on which to free the clusters
  * @rl:		runlist describing the clusters to free

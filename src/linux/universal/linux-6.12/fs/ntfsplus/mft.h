@@ -26,7 +26,7 @@ static inline void unmap_extent_mft_record(struct ntfs_inode *ni)
 
 void __mark_mft_record_dirty(struct ntfs_inode *ni);
 
-/**
+/*
  * mark_mft_record_dirty - set the mft record and the page containing it dirty
  * @ni:		ntfs inode describing the mapped mft record
  *
@@ -47,7 +47,7 @@ int ntfs_sync_mft_mirror(struct ntfs_volume *vol, const unsigned long mft_no,
 		struct mft_record *m);
 int write_mft_record_nolock(struct ntfs_inode *ni, struct mft_record *m, int sync);
 
-/**
+/*
  * write_mft_record - write out a mapped (extent) mft record
  * @ni:		ntfs inode describing the mapped (extent) mft record
  * @m:		mapped (extent) mft record to write
@@ -67,12 +67,22 @@ int write_mft_record_nolock(struct ntfs_inode *ni, struct mft_record *m, int syn
  */
 static inline int write_mft_record(struct ntfs_inode *ni, struct mft_record *m, int sync)
 {
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 6, 0)
 	struct folio *folio = ni->folio;
 	int err;
 
 	folio_lock(folio);
 	err = write_mft_record_nolock(ni, m, sync);
 	folio_unlock(folio);
+#else
+	struct page *page = ni->page;
+	int err;
+
+	BUG_ON(!page);
+	lock_page(page);
+	err = write_mft_record_nolock(ni, m, sync);
+	unlock_page(page);
+#endif
 
 	return err;
 }
