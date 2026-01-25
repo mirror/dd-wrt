@@ -83,8 +83,9 @@ struct ntfs_boot_sector {
 					 * End of bootsector magic. Always is
 					 * 0xaa55 in little endian.
 					 */
-/* sizeof() = 512 (0x200) bytes */
 } __packed;
+
+static_assert(sizeof(struct ntfs_boot_sector) == 512);
 
 /*
  * Magic identifiers present at the beginning of all ntfs record containing
@@ -267,7 +268,7 @@ enum {
 	MFT_RECORD_IS_DIRECTORY		= cpu_to_le16(0x0002),
 	MFT_RECORD_IS_4			= cpu_to_le16(0x0004),
 	MFT_RECORD_IS_VIEW_INDEX	= cpu_to_le16(0x0008),
-	MFT_REC_SPACE_FILLER		= 0xffff, /*Just to make flags 16-bit.*/
+	MFT_REC_SPACE_FILLER		= cpu_to_le16(0xffff), /*Just to make flags 16-bit.*/
 } __packed;
 
 /*
@@ -389,7 +390,6 @@ struct mft_record {
 /* The below fields are specific to NTFS 3.1+ (Windows XP and above): */
 	__le16 reserved;		/* Reserved/alignment. */
 	__le32 mft_record_number;	/* Number of this mft record. */
-/* sizeof() = 48 bytes */
 /*
  * When (re)using the mft record, we place the update sequence array at this
  * offset, i.e. before we start with the attributes.  This also makes sense,
@@ -400,6 +400,8 @@ struct mft_record {
  * When reading we obviously use the data from the ntfs record header.
  */
 } __packed;
+
+static_assert(sizeof(struct mft_record) == 48);
 
 /* This is the version without the NTFS 3.1+ specific fields. */
 struct mft_record_old {
@@ -470,7 +472,6 @@ struct mft_record_old {
 				    * this number is set to zero.  NOTE: The first
 				    * instance number is always 0.
 				    */
-/* sizeof() = 42 bytes */
 /*
  * When (re)using the mft record, we place the update sequence array at this
  * offset, i.e. before we start with the attributes.  This also makes sense,
@@ -481,6 +482,8 @@ struct mft_record_old {
  * When reading we obviously use the data from the ntfs record header.
  */
 } __packed;
+
+static_assert(sizeof(struct mft_record_old) == 42);
 
 /*
  * System defined attributes (32-bit).  Each attribute type has a corresponding
@@ -616,8 +619,9 @@ struct attr_def {
 	__le32 flags;			/* Flags describing the attribute. */
 	__le64 min_size;			/* Optional minimum attribute size. */
 	__le64 max_size;			/* Maximum size of attribute. */
-/* sizeof() = 0xa0 or 160 bytes */
 } __packed;
+
+static_assert(sizeof(struct attr_def) == 160);
 
 /*
  * Attribute flags (16-bit).
@@ -820,7 +824,6 @@ struct attr_record {
 						  * Byte size of initialized portion of
 						  * the attribute value. Usually equals data_size.
 						  */
-/* sizeof(uncompressed attr) = 64*/
 			__le64 compressed_size;	/*
 						 * Byte size of the attribute value after
 						 * compression.  Only present when compressed
@@ -828,7 +831,6 @@ struct attr_record {
 						 * size.  Represents the actual amount of disk
 						 * space being used on the disk.
 						 */
-/* sizeof(compressed attr) = 72*/
 		} __packed non_resident;
 	} __packed data;
 } __packed;
@@ -942,7 +944,6 @@ struct standard_information {
 		struct {
 			u8 reserved12[12];	/* Reserved/alignment to 8-byte boundary. */
 		} __packed v1;
-	/* sizeof() = 48 bytes */
 	/* NTFS 3.x */
 		struct {
 /*
@@ -1004,7 +1005,6 @@ struct standard_information {
 						 * for details.
 						 */
 		} __packed v3;
-	/* sizeof() = 72 bytes (NTFS 3.x) */
 	} __packed ver;
 } __packed;
 
@@ -1079,7 +1079,6 @@ struct attr_list_entry {
 				 * Use when creating only. When reading use
 				 * name_offset to determine the location of the name.
 				 */
-/* sizeof() = 26 + (attribute_name_length * 2) bytes */
 } __packed;
 
 /*
@@ -1206,6 +1205,32 @@ struct guid {
 			 * hexadecimal digits. The remaining six bytes are the
 			 * final 12 hexadecimal digits.
 			 */
+} __packed;
+
+/*
+ * struct OBJECT_ID_ATTR - Attribute: Object id (NTFS 3.0+) (0x40).
+ *
+ * NOTE: Always resident.
+ */
+struct object_id_attr {
+	struct guid object_id;	/* Unique id assigned to the file.*/
+	/*
+	 * The following fields are optional. The attribute value size is 16
+	 * bytes, i.e. sizeof(struct guid), if these are not present at all.
+	 * Note, the entries can be present but one or more (or all) can be
+	 * zero meaning that particular value(s) is(are) not defined. Note,
+	 * when the fields are missing here, it is well possible that they are
+	 * to be found within the $Extend/$ObjId system file indexed under the
+	 * above object_id.
+	 */
+	union {
+		struct {
+			struct guid birth_volume_id;
+			struct guid birth_object_id;
+			struct guid domain_id;
+		} __packed;
+		u8 extended_info[48];
+	} __packed;
 } __packed;
 
 /*
@@ -1581,8 +1606,9 @@ struct ntfs_acl {
 			 */
 	__le16 ace_count;	/* Number of ACEs in the ACL. */
 	__le16 alignment2;
-/* sizeof() = 8 bytes */
 } __packed;
+
+static_assert(sizeof(struct ntfs_acl) == 8);
 
 /*
  * The security descriptor control flags (16-bit).
@@ -1681,8 +1707,9 @@ struct security_descriptor_relative {
 			 * SE_DACL_PRESENT is set but dacl is NULL, a NULL ACL
 			 * (unconditionally granting access) is specified.
 			 */
-/* sizeof() = 0x14 bytes */
 } __packed;
+
+static_assert(sizeof(struct security_descriptor_relative) == 20);
 
 /*
  * On NTFS 3.0+, all security descriptors are stored in FILE_Secure. Only one
@@ -1920,7 +1947,6 @@ struct index_block {
 				 * and in units of sectors otherwise.
 				 */
 	struct index_header index;	/* Describes the following index entries. */
-/* sizeof()= 40 (0x28) bytes */
 /*
  * When creating the index block, we place the update sequence array at this
  * offset, i.e. before we start with the index entries. This also makes sense,
@@ -1931,6 +1957,8 @@ struct index_block {
  * When reading use the data from the ntfs record header.
  */
 } __packed;
+
+static_assert(sizeof(struct index_block) == 40);
 
 /*
  * The system file FILE_Extend/$Reparse contains an index named $R listing
@@ -2079,8 +2107,9 @@ struct index_entry_header {
 				 */
 	__le16 flags; /* Bit field of INDEX_ENTRY_* flags. */
 	__le16 reserved;		 /* Reserved/align to 8-byte boundary. */
-/* sizeof() = 16 bytes */
 } __packed;
+
+static_assert(sizeof(struct index_entry_header) == 16);
 
 /*
  * This is an index entry. A sequence of such entries follows each index_header

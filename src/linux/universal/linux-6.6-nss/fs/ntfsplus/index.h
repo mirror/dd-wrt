@@ -19,7 +19,7 @@
 
 #define MAX_PARENT_VCN	32
 
-/**
+/*
  * @idx_ni:	index inode containing the @entry described by this context
  * @entry:	index entry (points into @ir or @ia)
  * @data:	index entry data (points into @entry)
@@ -54,8 +54,7 @@
  * When finished with the @entry and its @data, call ntfs_index_ctx_put() to
  * free the context and other associated resources.
  *
- * If the index entry was modified, call flush_dcache_index_entry_page()
- * immediately after the modification and either ntfs_index_entry_mark_dirty()
+ * If the index entry was modified, ntfs_index_entry_mark_dirty()
  * or ntfs_index_entry_write() before the call to ntfs_index_ctx_put() to
  * ensure that the changes are written to disk.
  */
@@ -73,7 +72,6 @@ struct ntfs_index_context {
 	struct index_block *ib;
 	struct ntfs_inode *base_ni;
 	struct index_block *ia;
-	struct page *page;
 	struct ntfs_inode *ia_ni;
 	int parent_pos[MAX_PARENT_VCN];  /* parent entries' positions */
 	s64 parent_vcn[MAX_PARENT_VCN]; /* entry's parent nodes */
@@ -89,33 +87,12 @@ int ntfs_index_entry_inconsistent(struct ntfs_index_context *icx, struct ntfs_vo
 struct ntfs_index_context *ntfs_index_ctx_get(struct ntfs_inode *ni, __le16 *name,
 		u32 name_len);
 void ntfs_index_ctx_put(struct ntfs_index_context *ictx);
-int ntfs_index_lookup(const void *key, const int key_len,
+int ntfs_index_lookup(const void *key, const u32 key_len,
 		struct ntfs_index_context *ictx);
-
-/**
- * ntfs_index_entry_flush_dcache_page - flush_dcache_page() for index entries
- * @ictx:	ntfs index context describing the index entry
- *
- * Call flush_dcache_page() for the page in which an index entry resides.
- *
- * This must be called every time an index entry is modified, just after the
- * modification.
- *
- * If the index entry is in the index root attribute, simply flush the page
- * containing the mft record containing the index root attribute.
- *
- * If the index entry is in an index block belonging to the index allocation
- * attribute, simply flush the page cache page containing the index block.
- */
-static inline void ntfs_index_entry_flush_dcache_page(struct ntfs_index_context *ictx)
-{
-	if (!ictx->is_in_root)
-		flush_dcache_page(ictx->page);
-}
 
 void ntfs_index_entry_mark_dirty(struct ntfs_index_context *ictx);
 int ntfs_index_add_filename(struct ntfs_inode *ni, struct file_name_attr *fn, u64 mref);
-int ntfs_index_remove(struct ntfs_inode *ni, const void *key, const int keylen);
+int ntfs_index_remove(struct ntfs_inode *ni, const void *key, const u32 keylen);
 struct ntfs_inode *ntfs_ia_open(struct ntfs_index_context *icx, struct ntfs_inode *ni);
 struct index_entry *ntfs_index_walk_down(struct index_entry *ie, struct ntfs_index_context *ictx);
 struct index_entry *ntfs_index_next(struct index_entry *ie, struct ntfs_index_context *ictx);

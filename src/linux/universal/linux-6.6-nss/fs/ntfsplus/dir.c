@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
-/**
+/*
  * NTFS kernel directory operations. Part of the Linux-NTFS project.
  *
  * Copyright (c) 2001-2007 Anton Altaparmakov
@@ -15,13 +15,13 @@
 #include "index.h"
 #include "reparse.h"
 
-/**
+/*
  * The little endian Unicode string $I30 as a global constant.
  */
 __le16 I30[5] = { cpu_to_le16('$'), cpu_to_le16('I'),
 		cpu_to_le16('3'),	cpu_to_le16('0'), 0 };
 
-/**
+/*
  * ntfs_lookup_inode_by_name - find an inode in a directory given its name
  * @dir_ni:	ntfs inode of the directory in which to search for the name
  * @uname:	Unicode name for which to search in the directory
@@ -78,7 +78,11 @@ u64 ntfs_lookup_inode_by_name(struct ntfs_inode *dir_ni, const __le16 *uname,
 	int err, rc;
 	s64 vcn, old_vcn;
 	struct address_space *ia_mapping;
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 6, 0)
 	struct folio *folio;
+#else
+	struct page *page;
+#endif
 	u8 *kaddr = NULL;
 	struct ntfs_name *name = NULL;
 
@@ -287,7 +291,7 @@ found_it:
 
 	/*
 	 * We are done with the index root and the mft record. Release them,
-	 * otherwise we deadlock with ntfs_read_mapping_folio().
+	 * otherwise we deadlock with read_mapping_folio().
 	 */
 	ntfs_attr_put_search_ctx(ctx);
 	unmap_mft_record(dir_ni);
@@ -307,8 +311,9 @@ descend_into_child_node:
 	 * of PAGE_SIZE and map the page cache page, reading it from
 	 * disk if necessary.
 	 */
-	folio = ntfs_read_mapping_folio(ia_mapping, vcn <<
-			dir_ni->itype.index.vcn_size_bits >> PAGE_SHIFT);
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 6, 0)
+	folio = read_mapping_folio(ia_mapping, vcn <<
+			dir_ni->itype.index.vcn_size_bits >> PAGE_SHIFT, NULL);
 	if (IS_ERR(folio)) {
 		ntfs_error(sb, "Failed to map directory index page, error %ld.",
 				-PTR_ERR(folio));
@@ -329,6 +334,27 @@ descend_into_child_node:
 	post_read_mst_fixup((struct ntfs_record *)kaddr, PAGE_SIZE);
 	folio_unlock(folio);
 	folio_put(folio);
+#else
+	page = read_mapping_page(ia_mapping, vcn <<
+			dir_ni->itype.index.vcn_size_bits >> PAGE_SHIFT, NULL);
+	if (IS_ERR(page)) {
+		ntfs_error(sb, "Failed to map directory index page, error %ld.",
+				-PTR_ERR(page));
+		err = PTR_ERR(page);
+		goto err_out;
+	}
+	lock_page(page);
+	kaddr = kmalloc(PAGE_SIZE, GFP_NOFS);
+	if (!kaddr) {
+		err = -ENOMEM;
+		goto unm_err_out;
+	}
+	memcpy(kaddr, (u8 *)page_address(page), PAGE_SIZE);
+	post_read_mst_fixup((struct ntfs_record *)kaddr, PAGE_SIZE);
+	unlock_page(page);
+	kunmap(page);
+	put_page(page);
+#endif
 fast_descend_into_child_node:
 	/* Get to the index allocation block. */
 	ia = (struct index_block *)(kaddr + ((vcn <<
@@ -557,8 +583,8 @@ found_it2:
 			 * If vcn is in the same page cache page as old_vcn we
 			 * recycle the mapped page.
 			 */
-			if ((old_vcn << vol->cluster_size_bits >> PAGE_SHIFT) ==
-			    (vcn << vol->cluster_size_bits >> PAGE_SHIFT))
+			if (ntfs_cluster_to_pidx(vol, old_vcn) ==
+			    ntfs_cluster_to_pidx(vol, vcn))
 				goto fast_descend_into_child_node;
 			kfree(kaddr);
 			kaddr = NULL;
@@ -599,7 +625,7 @@ dir_err_out:
 	goto err_out;
 }
 
-/**
+/*
  * ntfs_filldir - ntfs specific filldir method
  * @vol:	current ntfs volume
  * @ndir:	ntfs inode of current directory
@@ -928,14 +954,14 @@ nextdir:
 		}
 
 		if (ie_pos < actor->pos) {
-			ie_pos += next->length;
+			ie_pos += le16_to_cpu(next->length);
 			continue;
 		}
 
 		actor->pos = ie_pos;
 
-		index = (MREF_LE(next->data.dir.indexed_file) <<
-				vol->mft_record_size_bits) >> PAGE_SHIFT;
+		index = ntfs_mft_no_to_pidx(vol,
+				MREF_LE(next->data.dir.indexed_file));
 		if (nir) {
 			struct ntfs_index_ra *cnir;
 			struct rb_node *node = ra_root.rb_node;
@@ -1006,7 +1032,7 @@ filldir:
 			private->key_length = next->key_length;
 			break;
 		}
-		ie_pos += next->length;
+		ie_pos += le16_to_cpu(next->length);
 	}
 
 	if (!err)
@@ -1067,7 +1093,7 @@ int ntfs_check_empty_dir(struct ntfs_inode *ni, struct mft_record *ni_mrec)
 	}
 
 	/* Non-empty directory? */
-	if (ctx->attr->data.resident.value_length !=
+	if (le32_to_cpu(ctx->attr->data.resident.value_length) !=
 	    sizeof(struct index_root) + sizeof(struct index_entry_header)) {
 		/* Both ENOTEMPTY and EEXIST are ok. We use the more common. */
 		ret = -ENOTEMPTY;
@@ -1079,7 +1105,7 @@ int ntfs_check_empty_dir(struct ntfs_inode *ni, struct mft_record *ni_mrec)
 	return ret;
 }
 
-/**
+/*
  * ntfs_dir_open - called when an inode is about to be opened
  * @vi:		inode to be opened
  * @filp:	file structure describing the inode
@@ -1114,7 +1140,7 @@ static int ntfs_dir_release(struct inode *vi, struct file *filp)
 	return 0;
 }
 
-/**
+/*
  * ntfs_dir_fsync - sync a directory to disk
  * @filp:	file describing the directory to be synced
  * @start:	start offset to be synced
@@ -1155,15 +1181,18 @@ static int ntfs_dir_fsync(struct file *filp, loff_t start, loff_t end,
 	if (!ctx)
 		return -ENOMEM;
 
-	mutex_lock_nested(&ni->mrec_lock, NTFS_INODE_MUTEX_NORMAL_2);
+	mutex_lock_nested(&ni->mrec_lock, NTFS_INODE_MUTEX_NORMAL_CHILD);
 	while (!(err = ntfs_attr_lookup(AT_FILE_NAME, NULL, 0, 0, 0, NULL, 0, ctx))) {
 		struct file_name_attr *fn = (struct file_name_attr *)((u8 *)ctx->attr +
 				le16_to_cpu(ctx->attr->data.resident.value_offset));
 
+		if (MREF_LE(fn->parent_directory) == ni->mft_no)
+			continue;
+
 		parent_vi = ntfs_iget(vi->i_sb, MREF_LE(fn->parent_directory));
 		if (IS_ERR(parent_vi))
 			continue;
-		mutex_lock_nested(&NTFS_I(parent_vi)->mrec_lock, NTFS_INODE_MUTEX_PARENT_2);
+		mutex_lock_nested(&NTFS_I(parent_vi)->mrec_lock, NTFS_INODE_MUTEX_NORMAL);
 		ia_vi = ntfs_index_iget(parent_vi, I30, 4);
 		mutex_unlock(&NTFS_I(parent_vi)->mrec_lock);
 		if (IS_ERR(ia_vi)) {
@@ -1223,8 +1252,10 @@ const struct file_operations ntfs_dir_ops = {
 	.fsync		= ntfs_dir_fsync,	/* Sync a directory to disk. */
 	.open		= ntfs_dir_open,	/* Open directory. */
 	.release	= ntfs_dir_release,
-	.unlocked_ioctl	= ntfsp_ioctl,
+#if LINUX_VERSION_CODE > KERNEL_VERSION(5, 16, 0)
+	.unlocked_ioctl	= ntfs_ioctl,
 #ifdef CONFIG_COMPAT
-	.compat_ioctl	= ntfsp_compat_ioctl,
+	.compat_ioctl	= ntfs_compat_ioctl,
+#endif
 #endif
 };

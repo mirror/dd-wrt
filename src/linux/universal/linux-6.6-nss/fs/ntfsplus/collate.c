@@ -11,16 +11,21 @@
  */
 
 #include "collate.h"
-#include "misc.h"
+#include "debug.h"
 #include "ntfs.h"
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 16, 0)
+#include <linux/sort.h>
+#else
+#define cmp_int(l, r) (((l) > (r)) - ((l) < (r)))
+#endif
+
 static int ntfs_collate_binary(struct ntfs_volume *vol,
-		const void *data1, const int data1_len,
-		const void *data2, const int data2_len)
+		const void *data1, const u32 data1_len,
+		const void *data2, const u32 data2_len)
 {
 	int rc;
 
-	ntfs_debug("Entering.");
 	rc = memcmp(data1, data2, min(data1_len, data2_len));
 	if (!rc && (data1_len != data2_len)) {
 		if (data1_len < data2_len)
@@ -28,24 +33,19 @@ static int ntfs_collate_binary(struct ntfs_volume *vol,
 		else
 			rc = 1;
 	}
-	ntfs_debug("Done, returning %i", rc);
 	return rc;
 }
 
 static int ntfs_collate_ntofs_ulong(struct ntfs_volume *vol,
-		const void *data1, const int data1_len,
-		const void *data2, const int data2_len)
+		const void *data1, const u32 data1_len,
+		const void *data2, const u32 data2_len)
 {
 	int rc;
-	u32 d1, d2;
-
-	ntfs_debug("Entering.");
+	u32 d1 = le32_to_cpup(data1), d2 = le32_to_cpup(data2);
 
 	if (data1_len != data2_len || data1_len != 4)
 		return -EINVAL;
 
-	d1 = le32_to_cpup(data1);
-	d2 = le32_to_cpup(data2);
 	if (d1 < d2)
 		rc = -1;
 	else {
@@ -54,87 +54,65 @@ static int ntfs_collate_ntofs_ulong(struct ntfs_volume *vol,
 		else
 			rc = 1;
 	}
-	ntfs_debug("Done, returning %i", rc);
 	return rc;
 }
 
-/**
+/*
  * ntfs_collate_ntofs_ulongs - Which of two le32 arrays should be listed first
+ * @vol: ntfs volume
+ * @data1: first ulong array to collate
+ * @data1_len: length in bytes of @data1
+ * @data2: second ulong array to collate
+ * @data2_len: length in bytes of @data2
  *
  * Returns: -1, 0 or 1 depending of how the arrays compare
  */
 static int ntfs_collate_ntofs_ulongs(struct ntfs_volume *vol,
-		const void *data1, const int data1_len,
-		const void *data2, const int data2_len)
+		const void *data1, const u32 data1_len,
+		const void *data2, const u32 data2_len)
 {
-	int rc;
 	int len;
-	const __le32 *p1, *p2;
+	const __le32 *p1 = data1, *p2 = data2;
 	u32 d1, d2;
 
-	ntfs_debug("Entering.");
-	if ((data1_len != data2_len) || (data1_len <= 0) || (data1_len & 3)) {
+	if (data1_len != data2_len || data1_len & 3) {
 		ntfs_error(vol->sb, "data1_len or data2_len not valid\n");
 		return -1;
 	}
 
-	p1 = (const __le32 *)data1;
-	p2 = (const __le32 *)data2;
 	len = data1_len;
 	do {
 		d1 = le32_to_cpup(p1);
 		p1++;
 		d2 = le32_to_cpup(p2);
 		p2++;
-	} while ((d1 == d2) && ((len -= 4) > 0));
-	if (d1 < d2)
-		rc = -1;
-	else {
-		if (d1 == d2)
-			rc = 0;
-		else
-			rc = 1;
-	}
-	ntfs_debug("Done, returning %i.", rc);
-	return rc;
+	} while (d1 == d2 && (len -= 4) > 0);
+	return cmp_int(d1, d2);
 }
 
-/**
+/*
  * ntfs_collate_file_name - Which of two filenames should be listed first
+ * @vol: ntfs volume
+ * @data1: first filename to collate
+ * @data1_len: length in bytes of @data1(unused)
+ * @data2: second filename to collate
+ * @data2_len: length in bytes of @data2(unused)
  */
 static int ntfs_collate_file_name(struct ntfs_volume *vol,
-		const void *data1, const int __always_unused data1_len,
-		const void *data2, const int __always_unused data2_len)
+		const void *data1, const u32 data1_len,
+		const void *data2, const u32 data2_len)
 {
 	int rc;
 
-	ntfs_debug("Entering.\n");
-	rc = ntfs_file_compare_values(data1, data2, -2,
+	rc = ntfs_file_compare_values(data1, data2, -EINVAL,
 			IGNORE_CASE, vol->upcase, vol->upcase_len);
 	if (!rc)
 		rc = ntfs_file_compare_values(data1, data2,
-			-2, CASE_SENSITIVE, vol->upcase, vol->upcase_len);
-	ntfs_debug("Done, returning %i.\n", rc);
+			-EINVAL, CASE_SENSITIVE, vol->upcase, vol->upcase_len);
 	return rc;
 }
 
-typedef int (*ntfs_collate_func_t)(struct ntfs_volume *, const void *, const int,
-		const void *, const int);
-
-static ntfs_collate_func_t ntfs_do_collate0x0[3] = {
-	ntfs_collate_binary,
-	ntfs_collate_file_name,
-	NULL/*ntfs_collate_unicode_string*/,
-};
-
-static ntfs_collate_func_t ntfs_do_collate0x1[4] = {
-	ntfs_collate_ntofs_ulong,
-	NULL/*ntfs_collate_ntofs_sid*/,
-	NULL/*ntfs_collate_ntofs_security_hash*/,
-	ntfs_collate_ntofs_ulongs,
-};
-
-/**
+/*
  * ntfs_collate - collate two data items using a specified collation rule
  * @vol:	ntfs volume to which the data items belong
  * @cr:		collation rule to use when comparing the items
@@ -145,34 +123,28 @@ static ntfs_collate_func_t ntfs_do_collate0x1[4] = {
  *
  * Collate the two data items @data1 and @data2 using the collation rule @cr
  * and return -1, 0, ir 1 if @data1 is found, respectively, to collate before,
- * to match, or to collate after @data2.
- *
- * For speed we use the collation rule @cr as an index into two tables of
- * function pointers to call the appropriate collation function.
+ * to match, or to collate after @data2. return -EINVAL if an error occurred.
  */
 int ntfs_collate(struct ntfs_volume *vol, __le32 cr,
-		const void *data1, const int data1_len,
-		const void *data2, const int data2_len)
+		const void *data1, const u32 data1_len,
+		const void *data2, const u32 data2_len)
 {
-	int i;
-
-	ntfs_debug("Entering.");
-
-	if (cr != COLLATION_BINARY && cr != COLLATION_NTOFS_ULONG &&
-	    cr != COLLATION_FILE_NAME && cr != COLLATION_NTOFS_ULONGS)
+	switch (le32_to_cpu(cr)) {
+	case le32_to_cpu(COLLATION_BINARY):
+		return ntfs_collate_binary(vol, data1, data1_len,
+					   data2, data2_len);
+	case le32_to_cpu(COLLATION_FILE_NAME):
+		return ntfs_collate_file_name(vol, data1, data1_len,
+					      data2, data2_len);
+	case le32_to_cpu(COLLATION_NTOFS_ULONG):
+		return ntfs_collate_ntofs_ulong(vol, data1, data1_len,
+						data2, data2_len);
+	case le32_to_cpu(COLLATION_NTOFS_ULONGS):
+		return ntfs_collate_ntofs_ulongs(vol, data1, data1_len,
+						 data2, data2_len);
+	default:
+		ntfs_error(vol->sb, "Unknown collation rule 0x%x",
+			   le32_to_cpu(cr));
 		return -EINVAL;
-
-	i = le32_to_cpu(cr);
-	if (i < 0)
-		return -1;
-	if (i <= 0x02)
-		return ntfs_do_collate0x0[i](vol, data1, data1_len,
-				data2, data2_len);
-	if (i < 0x10)
-		return -1;
-	i -= 0x10;
-	if (likely(i <= 3))
-		return ntfs_do_collate0x1[i](vol, data1, data1_len,
-				data2, data2_len);
-	return 0;
+	}
 }

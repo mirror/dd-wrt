@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
-/**
+/*
  * NTFS runlist handling code.
  * Part of the Linux-NTFS project.
  *
@@ -16,12 +16,15 @@
  * Copyright (c) 2007-2022 Jean-Pierre Andre
  */
 
-#include "misc.h"
 #include "ntfs.h"
 #include "attrib.h"
 
-/**
+/*
  * ntfs_rl_mm - runlist memmove
+ * @base: base runlist array
+ * @dst: destination index in @base
+ * @src: source index in @base
+ * @size: number of elements to move
  *
  * It is up to the caller to serialize access to the runlist @base.
  */
@@ -31,8 +34,13 @@ static inline void ntfs_rl_mm(struct runlist_element *base, int dst, int src, in
 		memmove(base + dst, base + src, size * sizeof(*base));
 }
 
-/**
+/*
  * ntfs_rl_mc - runlist memory copy
+ * @dstbase: destination runlist array
+ * @dst: destination index in @dstbase
+ * @srcbase: source runlist array
+ * @src: source index in @srcbase
+ * @size: number of elements to copy
  *
  * It is up to the caller to serialize access to the runlists @dstbase and
  * @srcbase.
@@ -44,7 +52,7 @@ static inline void ntfs_rl_mc(struct runlist_element *dstbase, int dst,
 		memcpy(dstbase + dst, srcbase + src, size * sizeof(*dstbase));
 }
 
-/**
+/*
  * ntfs_rl_realloc - Reallocate memory for runlists
  * @rl:		original runlist
  * @old_size:	number of runlist elements in the original runlist @rl
@@ -58,18 +66,21 @@ static inline void ntfs_rl_mc(struct runlist_element *dstbase, int dst,
  *
  * N.B.  If the new allocation doesn't require a different number of pages in
  *       memory, the function will return the original pointer.
+ *
+ * On success, return a pointer to the newly allocated, or recycled, memory.
+ * On error, return -errno.
  */
 struct runlist_element *ntfs_rl_realloc(struct runlist_element *rl,
 		int old_size, int new_size)
 {
 	struct runlist_element *new_rl;
 
-	old_size = PAGE_ALIGN(old_size * sizeof(*rl));
-	new_size = PAGE_ALIGN(new_size * sizeof(*rl));
+	old_size = old_size * sizeof(*rl);
+	new_size = new_size * sizeof(*rl);
 	if (old_size == new_size)
 		return rl;
 
-	new_rl = ntfs_malloc_nofs(new_size);
+	new_rl = kvzalloc(new_size, GFP_NOFS);
 	if (unlikely(!new_rl))
 		return ERR_PTR(-ENOMEM);
 
@@ -77,12 +88,12 @@ struct runlist_element *ntfs_rl_realloc(struct runlist_element *rl,
 		if (unlikely(old_size > new_size))
 			old_size = new_size;
 		memcpy(new_rl, rl, old_size);
-		ntfs_free(rl);
+		kvfree(rl);
 	}
 	return new_rl;
 }
 
-/**
+/*
  * ntfs_rl_realloc_nofail - Reallocate memory for runlists
  * @rl:		original runlist
  * @old_size:	number of runlist elements in the original runlist @rl
@@ -99,29 +110,31 @@ struct runlist_element *ntfs_rl_realloc(struct runlist_element *rl,
  *
  * N.B.  If the new allocation doesn't require a different number of pages in
  *       memory, the function will return the original pointer.
+ *
+ * On success, return a pointer to the newly allocated, or recycled, memory.
+ * On error, return -errno.
  */
 static inline struct runlist_element *ntfs_rl_realloc_nofail(struct runlist_element *rl,
 		int old_size, int new_size)
 {
 	struct runlist_element *new_rl;
 
-	old_size = PAGE_ALIGN(old_size * sizeof(*rl));
-	new_size = PAGE_ALIGN(new_size * sizeof(*rl));
+	old_size = old_size * sizeof(*rl);
+	new_size = new_size * sizeof(*rl);
 	if (old_size == new_size)
 		return rl;
 
-	new_rl = ntfs_malloc_nofs_nofail(new_size);
-
+	new_rl = kvmalloc(new_size, GFP_NOFS | __GFP_NOFAIL);
 	if (likely(rl != NULL)) {
 		if (unlikely(old_size > new_size))
 			old_size = new_size;
 		memcpy(new_rl, rl, old_size);
-		ntfs_free(rl);
+		kvfree(rl);
 	}
 	return new_rl;
 }
 
-/**
+/*
  * ntfs_are_rl_mergeable - test if two runlists can be joined together
  * @dst:	original runlist
  * @src:	new runlist to test for mergeability with @dst
@@ -157,7 +170,7 @@ static inline bool ntfs_are_rl_mergeable(struct runlist_element *dst,
 	return false;
 }
 
-/**
+/*
  * __ntfs_rl_merge - merge two runlists without testing if they can be merged
  * @dst:	original, destination runlist
  * @src:	new runlist to merge with @dst
@@ -173,8 +186,14 @@ static inline void __ntfs_rl_merge(struct runlist_element *dst, struct runlist_e
 	dst->length += src->length;
 }
 
-/**
+/*
  * ntfs_rl_append - append a runlist after a given element
+ * @dst: destination runlist to append to
+ * @dsize: number of elements in @dst
+ * @src: source runlist to append from
+ * @ssize: number of elements in @src
+ * @loc: index in @dst after which to append @src
+ * @new_size: on success, set to the new combined size
  *
  * Append the runlist @src after element @loc in @dst.  Merge the right end of
  * the new runlist, if necessary. Adjust the size of the hole before the
@@ -186,6 +205,8 @@ static inline void __ntfs_rl_merge(struct runlist_element *dst, struct runlist_e
  * runlists @dst and @src are deallocated before returning so you cannot use
  * the pointers for anything any more. (Strictly speaking the returned runlist
  * may be the same as @dst but this is irrelevant.)
+ *
+ * On error, return -errno. Both runlists are left unmodified.
  */
 static inline struct runlist_element *ntfs_rl_append(struct runlist_element *dst,
 		int dsize, struct runlist_element *src, int ssize, int loc,
@@ -230,8 +251,14 @@ static inline struct runlist_element *ntfs_rl_append(struct runlist_element *dst
 	return dst;
 }
 
-/**
+/*
  * ntfs_rl_insert - insert a runlist into another
+ * @dst: destination runlist to insert into
+ * @dsize: number of elements in @dst
+ * @src: source runlist to insert from
+ * @ssize: number of elements in @src
+ * @loc: index in @dst at which to insert @src
+ * @new_size: on success, set to the new combined size
  *
  * Insert the runlist @src before element @loc in the runlist @dst. Merge the
  * left end of the new runlist, if necessary. Adjust the size of the hole
@@ -243,6 +270,8 @@ static inline struct runlist_element *ntfs_rl_append(struct runlist_element *dst
  * runlists @dst and @src are deallocated before returning so you cannot use
  * the pointers for anything any more. (Strictly speaking the returned runlist
  * may be the same as @dst but this is irrelevant.)
+ *
+ * On error, return -errno. Both runlists are left unmodified.
  */
 static inline struct runlist_element *ntfs_rl_insert(struct runlist_element *dst,
 		int dsize, struct runlist_element *src, int ssize, int loc,
@@ -318,8 +347,14 @@ static inline struct runlist_element *ntfs_rl_insert(struct runlist_element *dst
 	return dst;
 }
 
-/**
+/*
  * ntfs_rl_replace - overwrite a runlist element with another runlist
+ * @dst: destination runlist to replace in
+ * @dsize: number of elements in @dst
+ * @src: source runlist to replace with
+ * @ssize: number of elements in @src
+ * @loc: index in @dst to replace
+ * @new_size: on success, set to the new combined size
  *
  * Replace the runlist element @dst at @loc with @src. Merge the left and
  * right ends of the inserted runlist, if necessary.
@@ -330,6 +365,8 @@ static inline struct runlist_element *ntfs_rl_insert(struct runlist_element *dst
  * runlists @dst and @src are deallocated before returning so you cannot use
  * the pointers for anything any more. (Strictly speaking the returned runlist
  * may be the same as @dst but this is irrelevant.)
+ *
+ * On error, return -errno. Both runlists are left unmodified.
  */
 static inline struct runlist_element *ntfs_rl_replace(struct runlist_element *dst,
 		int dsize, struct runlist_element *src, int ssize, int loc,
@@ -396,8 +433,14 @@ static inline struct runlist_element *ntfs_rl_replace(struct runlist_element *ds
 	return dst;
 }
 
-/**
+/*
  * ntfs_rl_split - insert a runlist into the centre of a hole
+ * @dst: destination runlist with a hole
+ * @dsize: number of elements in @dst
+ * @src: source runlist to insert
+ * @ssize: number of elements in @src
+ * @loc: index in @dst of the hole to split
+ * @new_size: on success, set to the new combined size
  *
  * Split the runlist @dst at @loc into two and insert @new in between the two
  * fragments. No merging of runlists is necessary. Adjust the size of the
@@ -409,6 +452,8 @@ static inline struct runlist_element *ntfs_rl_replace(struct runlist_element *ds
  * runlists @dst and @src are deallocated before returning so you cannot use
  * the pointers for anything any more. (Strictly speaking the returned runlist
  * may be the same as @dst but this is irrelevant.)
+ *
+ * On error, return -errno. Both runlists are left unmodified.
  */
 static inline struct runlist_element *ntfs_rl_split(struct runlist_element *dst, int dsize,
 		struct runlist_element *src, int ssize, int loc,
@@ -437,8 +482,12 @@ static inline struct runlist_element *ntfs_rl_split(struct runlist_element *dst,
 	return dst;
 }
 
-/**
+/*
  * ntfs_runlists_merge - merge two runlists into one
+ * @d_runlist: destination runlist structure to merge into
+ * @srl: source runlist to merge from
+ * @s_rl_count: number of elements in @srl (0 to auto-detect)
+ * @new_rl_count: on success, set to the new combined runlist size
  *
  * First we sanity check the two runlists @srl and @drl to make sure that they
  * are sensible and can be merged. The runlist @srl must be either after the
@@ -462,6 +511,8 @@ static inline struct runlist_element *ntfs_rl_split(struct runlist_element *dst,
  * runlists @drl and @srl are deallocated before returning so you cannot use
  * the pointers for anything any more. (Strictly speaking the returned runlist
  * may be the same as @dst but this is irrelevant.)
+ *
+ * On error, return -errno. Both runlists are left unmodified.
  */
 struct runlist_element *ntfs_runlists_merge(struct runlist *d_runlist,
 				     struct runlist_element *srl, size_t s_rl_count,
@@ -596,7 +647,7 @@ struct runlist_element *ntfs_runlists_merge(struct runlist *d_runlist,
 		ntfs_error(NULL, "Merge failed.");
 		return drl;
 	}
-	ntfs_free(srl);
+	kvfree(srl);
 	if (marker) {
 		ntfs_debug("Triggering marker code.");
 		for (ds = dend; drl[ds].length; ds++)
@@ -658,8 +709,12 @@ finished:
 	return drl;
 }
 
-/**
+/*
  * ntfs_mapping_pairs_decompress - convert mapping pairs array to runlist
+ * @vol: ntfs volume
+ * @attr: attribute record whose mapping pairs to decompress
+ * @old_runlist: optional runlist to merge the decompressed runlist into
+ * @new_rl_count: on success, set to the new runlist size
  *
  * It is up to the caller to serialize access to the runlist @old_rl.
  *
@@ -709,7 +764,7 @@ struct runlist_element *ntfs_mapping_pairs_decompress(const struct ntfs_volume *
 	/* Current position in runlist array. */
 	rlpos = 0;
 	/* Allocate first page and set current runlist size to one page. */
-	rl = ntfs_malloc_nofs(rlsize = PAGE_SIZE);
+	rl = kvzalloc(rlsize = PAGE_SIZE, GFP_NOFS);
 	if (unlikely(!rl))
 		return ERR_PTR(-ENOMEM);
 	/* Insert unmapped starting element if necessary. */
@@ -722,19 +777,19 @@ struct runlist_element *ntfs_mapping_pairs_decompress(const struct ntfs_volume *
 	while (buf < attr_end && *buf) {
 		/*
 		 * Allocate more memory if needed, including space for the
-		 * not-mapped and terminator elements. ntfs_malloc_nofs()
+		 * not-mapped and terminator elements. kvzalloc()
 		 * operates on whole pages only.
 		 */
 		if (((rlpos + 3) * sizeof(*rl)) > rlsize) {
 			struct runlist_element *rl2;
 
-			rl2 = ntfs_malloc_nofs(rlsize + (int)PAGE_SIZE);
+			rl2 = kvzalloc(rlsize + PAGE_SIZE, GFP_NOFS);
 			if (unlikely(!rl2)) {
-				ntfs_free(rl);
+				kvfree(rl);
 				return ERR_PTR(-ENOMEM);
 			}
 			memcpy(rl2, rl, rlsize);
-			ntfs_free(rl);
+			kvfree(rl);
 			rl = rl2;
 			rlsize += PAGE_SIZE;
 		}
@@ -889,17 +944,17 @@ mpa_err:
 	new_rl = ntfs_runlists_merge(old_runlist, rl, rlpos + 1, new_rl_count);
 	if (!IS_ERR(new_rl))
 		return new_rl;
-	ntfs_free(rl);
+	kvfree(rl);
 	ntfs_error(vol->sb, "Failed to merge runlists.");
 	return new_rl;
 io_error:
 	ntfs_error(vol->sb, "Corrupt attribute.");
 err_out:
-	ntfs_free(rl);
+	kvfree(rl);
 	return ERR_PTR(-EIO);
 }
 
-/**
+/*
  * ntfs_rl_vcn_to_lcn - convert a vcn into a lcn given a runlist
  * @rl:		runlist to use for conversion
  * @vcn:	vcn to convert
@@ -956,7 +1011,7 @@ s64 ntfs_rl_vcn_to_lcn(const struct runlist_element *rl, const s64 vcn)
 	return LCN_ENOENT;
 }
 
-/**
+/*
  * ntfs_rl_find_vcn_nolock - find a vcn in a runlist
  * @rl:		runlist to search
  * @vcn:	vcn to find
@@ -986,7 +1041,7 @@ struct runlist_element *ntfs_rl_find_vcn_nolock(struct runlist_element *rl, cons
 	return NULL;
 }
 
-/**
+/*
  * ntfs_get_nr_significant_bytes - get number of bytes needed to store a number
  * @n:		number for which to get the number of bytes for
  *
@@ -1017,8 +1072,13 @@ static inline int ntfs_get_nr_significant_bytes(const s64 n)
 	return i;
 }
 
-/**
+/*
  * ntfs_get_size_for_mapping_pairs - get bytes needed for mapping pairs array
+ * @vol: ntfs volume
+ * @rl: runlist to calculate the mapping pairs array size for
+ * @first_vcn: first vcn which to include in the mapping pairs array
+ * @last_vcn: last vcn which to include in the mapping pairs array
+ * @max_mp_size: maximum size to return (0 or less means unlimited)
  *
  * Walk the locked runlist @rl and calculate the size in bytes of the mapping
  * pairs array corresponding to the runlist @rl, starting at vcn @first_vcn and
@@ -1148,7 +1208,7 @@ err_out:
 	return rls;
 }
 
-/**
+/*
  * ntfs_write_significant_bytes - write the significant bytes of a number
  * @dst:	destination buffer to write to
  * @dst_max:	pointer to last byte of destination buffer for bounds checking
@@ -1199,8 +1259,17 @@ err_out:
 	return -ENOSPC;
 }
 
-/**
+/*
  * ntfs_mapping_pairs_build - build the mapping pairs array from a runlist
+ * @vol: ntfs volume
+ * @dst: destination buffer to build mapping pairs array into
+ * @dst_len: size of @dst in bytes
+ * @rl: runlist to build the mapping pairs array from
+ * @first_vcn: first vcn which to include in the mapping pairs array
+ * @last_vcn: last vcn which to include in the mapping pairs array
+ * @stop_vcn: on return, set to the first vcn outside the destination buffer
+ * @stop_rl: on return, set to the runlist element where encoding stopped
+ * @de_cluster_count: on return, set to the number of clusters encoded
  *
  * Create the mapping pairs array from the locked runlist @rl, starting at vcn
  * @first_vcn and finishing with vcn @last_vcn and save the array in @dst.
@@ -1219,6 +1288,16 @@ err_out:
  * as partial success, in that a new attribute extent needs to be created or
  * the next extent has to be used and the mapping pairs build has to be
  * continued with @first_vcn set to *@stop_vcn.
+ *
+ * Return 0 on success and -errno on error.  The following error codes are
+ * defined:
+ *	-EINVAL	- Run list contains unmapped elements.  Make sure to only pass
+ *		  fully mapped runlists to this function.
+ *	-EIO	- The runlist is corrupt.
+ *	-ENOSPC	- The destination buffer is too small.
+ *
+ * Locking: @rl must be locked on entry (either for reading or writing), it
+ *	    remains locked throughout, and is left locked upon return.
  */
 int ntfs_mapping_pairs_build(const struct ntfs_volume *vol, s8 *dst,
 		const int dst_len, const struct runlist_element *rl,
@@ -1377,7 +1456,7 @@ err_out:
 	return err;
 }
 
-/**
+/*
  * ntfs_rl_truncate_nolock - truncate a runlist starting at a specified vcn
  * @vol:	ntfs volume (needed for error output)
  * @runlist:	runlist to truncate
@@ -1398,6 +1477,8 @@ err_out:
  * the caller has mapped any elements that need to be mapped already.
  *
  * Return 0 on success and -errno on error.
+ *
+ * Locking: The caller must hold @runlist->lock for writing.
  */
 int ntfs_rl_truncate_nolock(const struct ntfs_volume *vol, struct runlist *const runlist,
 		const s64 new_length)
@@ -1501,7 +1582,7 @@ int ntfs_rl_truncate_nolock(const struct ntfs_volume *vol, struct runlist *const
 	return 0;
 }
 
-/**
+/*
  * ntfs_rl_sparse - check whether runlist have sparse regions or not.
  * @rl:         runlist to check
  *
@@ -1525,7 +1606,7 @@ int ntfs_rl_sparse(struct runlist_element *rl)
 	return 0;
 }
 
-/**
+/*
  * ntfs_rl_get_compressed_size - calculate length of non sparse regions
  * @vol:        ntfs volume (need for cluster size)
  * @rl:         runlist to calculate for
@@ -1550,7 +1631,7 @@ s64 ntfs_rl_get_compressed_size(struct ntfs_volume *vol, struct runlist_element 
 		} else
 			ret += rlc->length;
 	}
-	return ret << vol->cluster_size_bits;
+	return NTFS_CLU_TO_B(vol, ret);
 }
 
 static inline bool ntfs_rle_lcn_contiguous(struct runlist_element *left_rle,
@@ -1649,7 +1730,7 @@ merge_src_rle:
 	new_2nd_cnt = src_cnt;
 	new_cnt = new_1st_cnt + new_2nd_cnt + new_3rd_cnt;
 	new_cnt += dst_rl_split.lcn >= LCN_HOLE ? 1 : 0;
-	new_rl = ntfs_malloc_nofs(new_cnt * sizeof(*new_rl));
+	new_rl = kvzalloc(new_cnt * sizeof(*new_rl), GFP_NOFS);
 	if (!new_rl)
 		return ERR_PTR(-ENOMEM);
 
@@ -1689,8 +1770,8 @@ merge_src_rle:
 	}
 	*new_rl_cnt = new_1st_cnt + new_2nd_cnt + new_3rd_cnt;
 
-	ntfs_free(dst_rl);
-	ntfs_free(src_rl_origin);
+	kvfree(dst_rl);
+	kvfree(src_rl_origin);
 	return new_rl;
 }
 
@@ -1733,14 +1814,15 @@ struct runlist_element *ntfs_rl_punch_hole(struct runlist_element *dst_rl, int d
 
 	punch_cnt = (int)(e_rl - s_rl) + 1;
 
-	*punch_rl = ntfs_malloc_nofs((punch_cnt + 1) * sizeof(struct runlist_element));
+	*punch_rl = kvzalloc((punch_cnt + 1) * sizeof(struct runlist_element),
+			GFP_NOFS);
 	if (!*punch_rl)
 		return ERR_PTR(-ENOMEM);
 
 	new_cnt = dst_cnt - (int)(e_rl - s_rl + 1) + 3;
-	new_rl = ntfs_malloc_nofs(new_cnt * sizeof(struct runlist_element));
+	new_rl = kvzalloc(new_cnt * sizeof(struct runlist_element), GFP_NOFS);
 	if (!new_rl) {
-		ntfs_free(*punch_rl);
+		kvfree(*punch_rl);
 		*punch_rl = NULL;
 		return ERR_PTR(-ENOMEM);
 	}
@@ -1840,7 +1922,7 @@ struct runlist_element *ntfs_rl_punch_hole(struct runlist_element *dst_rl, int d
 	/* punch_cnt elements of dst are replaced with one hole */
 	*new_rl_cnt = dst_cnt - (punch_cnt - (int)begin_split - (int)end_split) +
 		1 - merge_cnt;
-	ntfs_free(dst_rl);
+	kvfree(dst_rl);
 	return new_rl;
 }
 
@@ -1882,14 +1964,15 @@ struct runlist_element *ntfs_rl_collapse_range(struct runlist_element *dst_rl, i
 	one_split_3 = e_rl == s_rl && begin_split && end_split ? true : false;
 
 	punch_cnt = (int)(e_rl - s_rl) + 1;
-	*punch_rl = ntfs_malloc_nofs((punch_cnt + 1) * sizeof(struct runlist_element));
+	*punch_rl = kvzalloc((punch_cnt + 1) * sizeof(struct runlist_element),
+			GFP_NOFS);
 	if (!*punch_rl)
 		return ERR_PTR(-ENOMEM);
 
 	new_cnt = dst_cnt - (int)(e_rl - s_rl + 1) + 3;
-	new_rl = ntfs_malloc_nofs(new_cnt * sizeof(struct runlist_element));
+	new_rl = kvzalloc(new_cnt * sizeof(struct runlist_element), GFP_NOFS);
 	if (!new_rl) {
-		ntfs_free(*punch_rl);
+		kvfree(*punch_rl);
 		*punch_rl = NULL;
 		return ERR_PTR(-ENOMEM);
 	}
@@ -1978,6 +2061,6 @@ struct runlist_element *ntfs_rl_collapse_range(struct runlist_element *dst_rl, i
 	*new_rl_cnt = dst_cnt - (punch_cnt - (int)begin_split - (int)end_split) -
 		merge_cnt;
 
-	ntfs_free(dst_rl);
+	kvfree(dst_rl);
 	return new_rl;
 }

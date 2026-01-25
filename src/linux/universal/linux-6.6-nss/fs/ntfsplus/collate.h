@@ -31,7 +31,7 @@ static inline bool ntfs_is_collation_rule_supported(__le32 cr)
 }
 
 int ntfs_collate(struct ntfs_volume *vol, __le32 cr,
-		const void *data1, const int data1_len,
-		const void *data2, const int data2_len);
+		const void *data1, const u32 data1_len,
+		const void *data2, const u32 data2_len);
 
 #endif /* _LINUX_NTFS_COLLATE_H */

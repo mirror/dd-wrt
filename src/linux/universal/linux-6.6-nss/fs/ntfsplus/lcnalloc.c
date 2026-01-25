@@ -15,11 +15,10 @@
 
 #include "lcnalloc.h"
 #include "bitmap.h"
-#include "misc.h"
 #include "aops.h"
 #include "ntfs.h"
 
-/**
+/*
  * ntfs_cluster_free_from_rl_nolock - free clusters from runlist
  * @vol:	mounted ntfs volume on which to free the clusters
  * @rl:		runlist describing the clusters to free
@@ -116,8 +115,16 @@ static s64 max_empty_bit_range(unsigned char *buf, int size)
 	return start_pos;
 }
 
-/**
+/*
  * ntfs_cluster_alloc - allocate clusters on an ntfs volume
+ * @vol:		mounted ntfs volume on which to allocate clusters
+ * @start_vcn:		vcn of the first allocated cluster
+ * @count:		number of clusters to allocate
+ * @start_lcn:		starting lcn at which to allocate the clusters or -1 if none
+ * @zone:		zone from which to allocate (MFT_ZONE or DATA_ZONE)
+ * @is_extension:	if true, the caller is extending an attribute
+ * @is_contig:		if true, require contiguous allocation
+ * @is_dealloc:		if true, the allocation is for deallocation purposes
  *
  * Allocate @count clusters preferably starting at cluster @start_lcn or at the
  * current allocator position if @start_lcn is -1, on the mounted ntfs volume
@@ -168,6 +175,9 @@ static s64 max_empty_bit_range(unsigned char *buf, int size)
  *	      on return.
  *	    - This function takes the volume lcn bitmap lock for writing and
  *	      modifies the bitmap contents.
+ *
+ * Return: Runlist describing the allocated cluster(s) on success, error pointer
+ *         on failure.
  */
 struct runlist_element *ntfs_cluster_alloc(struct ntfs_volume *vol, const s64 start_vcn,
 		const s64 count, const s64 start_lcn,
@@ -183,12 +193,16 @@ struct runlist_element *ntfs_cluster_alloc(struct ntfs_volume *vol, const s64 st
 	struct inode *lcnbmp_vi;
 	struct runlist_element *rl = NULL;
 	struct address_space *mapping;
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 6, 0)
 	struct folio *folio = NULL;
+#else
+	struct page *page = NULL;
+#endif
 	u8 *buf = NULL, *byte;
 	int err = 0, rlpos, rlsize, buf_size, pg_off;
 	u8 pass, done_zones, search_zone, need_writeback = 0, bit;
 	unsigned int memalloc_flags;
-	u8 has_guess;
+	u8 has_guess, used_zone_pos;
 	pgoff_t index;
 
 	ntfs_debug("Entering for start_vcn 0x%llx, count 0x%llx, start_lcn 0x%llx, zone %s_ZONE.",
@@ -256,6 +270,8 @@ struct runlist_element *ntfs_cluster_alloc(struct ntfs_volume *vol, const s64 st
 		has_guess = 0;
 	}
 
+	used_zone_pos = has_guess ? 0 : 1;
+
 	if (!zone_start || zone_start == vol->mft_zone_start ||
 			zone_start == vol->mft_zone_end)
 		pass = 2;
@@ -298,17 +314,31 @@ struct runlist_element *ntfs_cluster_alloc(struct ntfs_volume *vol, const s64 st
 			ntfs_debug("End of attribute reached. Skipping to zone_pass_done.");
 			goto zone_pass_done;
 		}
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 6, 0)
 		if (likely(folio)) {
 			if (need_writeback) {
 				ntfs_debug("Marking page dirty.");
-				flush_dcache_folio(folio);
 				folio_mark_dirty(folio);
 				need_writeback = 0;
 			}
 			folio_unlock(folio);
-			ntfs_unmap_folio(folio, buf);
+			kunmap_local(buf);
+			folio_put(folio);
 			folio = NULL;
 		}
+#else
+		if (likely(page)) {
+			if (need_writeback) {
+				ntfs_debug("Marking page dirty.");
+				set_page_dirty(page);
+				need_writeback = 0;
+			}
+			unlock_page(page);
+			kunmap(page);
+			put_page(page);
+			page = NULL;
+		}
+#endif
 
 		index = last_read_pos >> PAGE_SHIFT;
 		pg_off = last_read_pos & ~PAGE_MASK;
@@ -322,7 +352,8 @@ struct runlist_element *ntfs_cluster_alloc(struct ntfs_volume *vol, const s64 st
 		if (vol->lcn_empty_bits_per_page[index] == 0)
 			goto next_bmp_pos;
 
-		folio = ntfs_read_mapping_folio(mapping, index);
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 6, 0)
+		folio = read_mapping_folio(mapping, index, NULL);
 		if (IS_ERR(folio)) {
 			err = PTR_ERR(folio);
 			ntfs_error(vol->sb, "Failed to map page.");
@@ -331,6 +362,17 @@ struct runlist_element *ntfs_cluster_alloc(struct ntfs_volume *vol, const s64 st
 
 		folio_lock(folio);
 		buf = kmap_local_folio(folio, 0) + pg_off;
+#else
+		page = read_mapping_page(mapping, index, NULL);
+		if (IS_ERR(page)) {
+			err = PTR_ERR(page);
+			ntfs_error(vol->sb, "Failed to map page.");
+			goto out;
+		}
+
+		lock_page(page);
+		buf = page_address(page) + pg_off;
+#endif
 		ntfs_debug("Before inner while loop: buf_size %i, lcn 0x%llx, bmp_pos 0x%llx, need_writeback %i.",
 				buf_size, lcn, bmp_pos, need_writeback);
 		while (lcn < buf_size && lcn + bmp_pos < zone_end) {
@@ -360,7 +402,7 @@ struct runlist_element *ntfs_cluster_alloc(struct ntfs_volume *vol, const s64 st
 			/*
 			 * Allocate more memory if needed, including space for
 			 * the terminator element.
-			 * ntfs_malloc_nofs() operates on whole pages only.
+			 * kvzalloc() operates on whole pages only.
 			 */
 			if ((rlpos + 2) * sizeof(*rl) > rlsize) {
 				struct runlist_element *rl2;
@@ -369,14 +411,14 @@ struct runlist_element *ntfs_cluster_alloc(struct ntfs_volume *vol, const s64 st
 				if (!rl)
 					ntfs_debug("First free bit is at s64 0x%llx.",
 							lcn + bmp_pos);
-				rl2 = ntfs_malloc_nofs(rlsize + (int)PAGE_SIZE);
+				rl2 = kvzalloc(rlsize + PAGE_SIZE, GFP_NOFS);
 				if (unlikely(!rl2)) {
 					err = -ENOMEM;
 					ntfs_error(vol->sb, "Failed to allocate memory.");
 					goto out;
 				}
 				memcpy(rl2, rl, rlsize);
-				ntfs_free(rl);
+				kvfree(rl);
 				rl = rl2;
 				rlsize += PAGE_SIZE;
 				ntfs_debug("Reallocated memory, rlsize 0x%x.",
@@ -425,6 +467,8 @@ struct runlist_element *ntfs_cluster_alloc(struct ntfs_volume *vol, const s64 st
 			if (!--clusters) {
 				s64 tc;
 done:
+				if (!used_zone_pos)
+					goto out;
 				/*
 				 * Update the current zone position.  Positions
 				 * of already scanned zones have been updated
@@ -484,8 +528,25 @@ done:
 			}
 			lcn++;
 		}
+
+		if (!used_zone_pos) {
+			used_zone_pos = 1;
+			if (search_zone == 1)
+				zone_start = vol->mft_zone_pos;
+			else if (search_zone == 2)
+				zone_start = vol->data1_zone_pos;
+			else
+				zone_start = vol->data2_zone_pos;
+
+			if (!zone_start || zone_start == vol->mft_zone_start ||
+			    zone_start == vol->mft_zone_end)
+				pass = 2;
+			bmp_pos = zone_start;
+		} else {
 next_bmp_pos:
-		bmp_pos += buf_size;
+			bmp_pos += buf_size;
+		}
+
 		ntfs_debug("After inner while loop: buf_size 0x%x, lcn 0x%llx, bmp_pos 0x%llx, need_writeback %i.",
 				buf_size, lcn, bmp_pos, need_writeback);
 		if (bmp_pos < zone_end) {
@@ -536,7 +597,7 @@ done_zones_check:
 			case 1:
 				ntfs_debug("Switching from mft zone to data1 zone.");
 				/* Update mft zone position. */
-				if (rlpos) {
+				if (rlpos && used_zone_pos) {
 					s64 tc;
 
 					ntfs_debug("Before checks, vol->mft_zone_pos 0x%llx.",
@@ -572,7 +633,7 @@ switch_to_data1_zone:		search_zone = 2;
 			case 2:
 				ntfs_debug("Switching from data1 zone to data2 zone.");
 				/* Update data1 zone position. */
-				if (rlpos) {
+				if (rlpos && used_zone_pos) {
 					s64 tc;
 
 					ntfs_debug("Before checks, vol->data1_zone_pos 0x%llx.",
@@ -606,7 +667,7 @@ switch_to_data1_zone:		search_zone = 2;
 			case 4:
 				ntfs_debug("Switching from data2 zone to data1 zone.");
 				/* Update data2 zone position. */
-				if (rlpos) {
+				if (rlpos && used_zone_pos) {
 					s64 tc;
 
 					ntfs_debug("Before checks, vol->data2_zone_pos 0x%llx.",
@@ -689,16 +750,29 @@ out:
 		rl[rlpos].lcn = is_extension ? LCN_ENOENT : LCN_RL_NOT_MAPPED;
 		rl[rlpos].length = 0;
 	}
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 6, 0)
 	if (likely(folio && !IS_ERR(folio))) {
 		if (need_writeback) {
 			ntfs_debug("Marking page dirty.");
-			flush_dcache_folio(folio);
 			folio_mark_dirty(folio);
 			need_writeback = 0;
 		}
 		folio_unlock(folio);
-		ntfs_unmap_folio(folio, buf);
+		kunmap_local(buf);
+		folio_put(folio);
 	}
+#else
+	if (likely(page && !IS_ERR(page))) {
+		if (need_writeback) {
+			ntfs_debug("Marking page dirty.");
+			set_page_dirty(page);
+			need_writeback = 0;
+		}
+		unlock_page(page);
+		kunmap(page);
+		put_page(page);
+	}
+#endif
 	if (likely(!err)) {
 		if (is_dealloc == true)
 			ntfs_release_dirty_clusters(vol, rl->length);
@@ -727,7 +801,7 @@ out:
 			NVolSetErrors(vol);
 		}
 		/* Free the runlist. */
-		ntfs_free(rl);
+		kvfree(rl);
 	} else if (err == -ENOSPC)
 		ntfs_debug("No space left at all, err = -ENOSPC, first free lcn = 0x%llx.",
 				vol->data1_zone_pos);
@@ -737,7 +811,7 @@ out:
 	return ERR_PTR(err);
 }
 
-/**
+/*
  * __ntfs_cluster_free - free clusters on an ntfs volume
  * @ni:		ntfs inode whose runlist describes the clusters to free
  * @start_vcn:	vcn in the runlist of @ni at which to start freeing clusters
@@ -960,11 +1034,11 @@ s64 __ntfs_cluster_free(struct ntfs_inode *ni, const s64 start_vcn, s64 count,
 				sector_t start_sector, end_sector;
 				int ret;
 
-				start_sector = ALIGN((rl->lcn + rl_off) << vol->cluster_size_bits,
+				start_sector = ALIGN(NTFS_CLU_TO_B(vol, rl->lcn + rl_off),
 						     gran) >> SECTOR_SHIFT;
-				end_sector = ALIGN_DOWN((rl->lcn + rl_off + to_discard) <<
-							vol->cluster_size_bits, gran) >>
-							SECTOR_SHIFT;
+				end_sector = ALIGN_DOWN(NTFS_CLU_TO_B(vol,
+							rl->lcn + rl_off + to_discard),
+							gran) >> SECTOR_SHIFT;
 				if (start_sector < end_sector) {
 					ret = blkdev_issue_discard(vol->sb->s_bdev, start_sector,
 								   end_sector - start_sector,
