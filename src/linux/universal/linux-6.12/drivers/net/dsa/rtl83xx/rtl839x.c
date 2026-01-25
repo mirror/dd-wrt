@@ -1717,4 +1717,5 @@ const struct rtl838x_reg rtl839x_reg = {
 	.l3_setup = rtl839x_l3_setup,
 	.set_distribution_algorithm = rtl839x_set_distribution_algorithm,
 	.set_receive_management_action = rtl839x_set_receive_management_action,
+	.qos_init = rtldsa_839x_qos_init,
 };
