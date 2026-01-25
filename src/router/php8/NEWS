@@ -1,5 +1,72 @@
 PHP                                                                        NEWS
 |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+15 Jan 2026, PHP 8.5.2
+
+- Core:
+  . Fix OSS-Fuzz #465488618 (Wrong assumptions when dumping function signature
+    with dynamic class const lookup default argument). (ilutov)
+  . Fixed bug GH-20695 (Assertion failure in normalize_value() when parsing
+    malformed INI input via parse_ini_string()). (ndossche)
+  . Fixed bug GH-20714 (Uncatchable exception thrown in generator). (ilutov)
+  . Fixed bug GH-20352 (UAF in php_output_handler_free via re-entrant
+    ob_start() during error deactivation). (ndossche)
+  . Fixed bug GH-20745 ("Casting out of range floats to int" applies to
+    strings). (Bob)
+
+- DOM:
+  . Fixed bug GH-20722 (Null pointer dereference in DOM namespace node cloning
+    via clone on malformed objects). (ndossche)
+  . Fixed bug GH-20444 (Dom\XMLDocument::C14N() seems broken compared
+    to DOMDocument::C14N()). (ndossche)
+
+- EXIF:
+  . Fixed bug GH-20631 (Integer underflow in exif HEIF parsing
+    when pos.size < 2). (Oblivionsage)
+
+- Intl:
+  . Fix leak in umsg_format_helper(). (ndossche)
+
+- LDAP:
+  . Fix memory leak in ldap_set_options(). (ndossche)
+
+- Lexbor:
+  . Fixed bug GH-20668 (\Uri\WhatWg\Url::withHost() crashes (SEGV) for URLs
+    using the file: scheme). (lexborisov)
+
+- Mbstring:
+  . Fixed bug GH-20674 (mb_decode_mimeheader does not handle separator).
+    (Yuya Hamada)
+
+- PCNTL:
+  . Fixed bug with pcntl_getcpuaffinity() on solaris regarding invalid
+    process ids handling. (David Carlier)
+
+- Phar:
+  . Fixed bug GH-20732 (Phar::LoadPhar undefined behavior when reading fails).
+    (ndossche)
+  . Fix SplFileInfo::openFile() in write mode. (ndossche)
+  . Fix build on legacy OpenSSL 1.1.0 systems. (Giovanni Giacobbi)
+  . Fixed bug #74154 (Phar extractTo creates empty files). (ndossche)
+
+- Session:
+  . Fix support for MM module. (Michael Orlitzky)
+
+- Sqlite3:
+  . Fixed bug GH-20699 (SQLite3Result fetchArray return array|false,
+    null returned). (ndossche, plusminmax)
+
+- Standard:
+  . Fix error check for proc_open() command. (ndossche)
+  . Fix memory leak in mail() when header key is numeric. (Girgias)
+  . Fixed bug GH-20582 (Heap Buffer Overflow in iptcembed). (ndossche)
+
+- URI:
+  . Fixed bug GH-20771 (Assertion failure when getUnicodeHost() returns
+    empty string). (ndossche)
+
+- Zlib:
+  . Fix OOB gzseek() causing assertion failure. (ndossche)
+
 18 Dec 2025, PHP 8.5.1
 
 - Core:
@@ -40,6 +107,9 @@ PHP                                                                        NEWS
   . Fix some deprecations on newer libxml versions regarding input
     buffer/parser handling. (ndossche)
 
+- mysqli:
+  . Make mysqli_begin_transaction() report errors properly. (Kamil Tekiela)
+
 - MySQLnd:
   . Fixed bug GH-20528 (Regression breaks mysql connexion using an IPv6 address
     enclosed in square brackets). (Remi)
@@ -78,6 +148,10 @@ PHP                                                                        NEWS
     (CVE-2025-14178) (ndossche)
   . Fixed GHSA-3237-qqm7-mfv7 (Information Leak of Memory in getimagesize).
     (CVE-2025-14177) (ndossche)
+
+- Streams:
+  . Fixed bug GH-20370 (User stream filters could violate typed property
+    constraints). (alexandre-daubois)
 
 - URI:
   . Fixed bug GH-20366 (ext/uri incorrectly throws ValueError when encountering

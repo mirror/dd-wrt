@@ -601,7 +601,7 @@ function main(): void
                     $show_progress = false;
                     break;
                 case '--version':
-                    echo '$Id: d0befa3738df12f6dc8ffa4dc7da654b7f003027 $' . "\n";
+                    echo '$Id: d7cd07f7c6637477ca3f4d99e4edae7831e48dcc $' . "\n";
                     exit(1);
 
                 default:
@@ -1821,8 +1821,8 @@ function run_test(string $php, $file, array $env): string
         $skipCache = new SkipCache($enableSkipCache, $cfg['keep']['skip']);
     }
 
-    $orig_php = $php;
     $php = escapeshellarg($php);
+    $orig_php = $php;
 
     $retried = false;
 retry:
