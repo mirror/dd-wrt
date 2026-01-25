@@ -720,25 +720,21 @@ int mopt_main(int argc, char **argv) {
   syslog(LOG_DEBUG, "DHCP Listen: %s", inet_ntoa(_options.dhcplisten));
   syslog(LOG_DEBUG, "UAM Listen: %s", inet_ntoa(_options.uamlisten));
 
-  if (args_info.rfc7710uri_given) {
-    /*
-     * When given, but set to an empty string, the feature is disabled.
-     */
-    if (strlen(args_info.rfc7710uri_arg) > 255) {
+  if (args_info.captiveportalapi_uri_given) {
+    if (strlen(args_info.captiveportalapi_uri_arg) > 255) {
       syslog(LOG_ERR, "Captive portal URI is too long for DHCP option.");
-      if (!args_info.forgiving_flag)
-	goto end_processing;
+      if (!args_info.forgiving_flag) {
+	      goto end_processing;
+      }
     } else {
-      _options.rfc7710uri = STRDUP(args_info.rfc7710uri_arg);
+      _options.captiveportalapi_uri = STRDUP(args_info.captiveportalapi_uri_arg);
     }
-  } else {
-    /*
-     * When not explicitly set, default to the /prelogin routine.
-     */
-    char uri[128];
-    snprintf(uri, sizeof(uri), "http://%s:%d/prelogin",
-	     inet_ntoa(_options.uamlisten), _options.uamport);
-    _options.rfc7710uri = STRDUP(uri);
+  }
+
+  if (args_info.captiveportalvenue_info_url_given) {
+    if (args_info.captiveportalvenue_info_url_arg) {
+      _options.captiveportalvenue_info_url = STRDUP(args_info.captiveportalvenue_info_url_arg);
+    }
   }
 
   if (!args_info.uamserver_arg) {

@@ -289,7 +289,8 @@ option "forcedns1port"   - "Force all DNS to a specific port" int default="0" no
 option "forcedns2"   - "Force all secondary DNS to a specific address" string no 
 option "forcedns2port"   - "Force all secondary DNS to a specific port" int default="0" no 
 
-option "rfc7710uri" - "DHCP Captive Portal URI. Defaults to http://uamlisten:uamport/prelogin." string no
+option "captiveportalapi_uri" - "DHCP Captive Portal API URI (RFC 8910). Use HTTPS and valid certificate. Default Coova API: https://<my_domain><:my_uamuiport>/captive-portal-identification." string no
+option "captiveportalvenue_info_url"  - "Venue info URL (RFC 8908)" string no
 
 option "ipv6" - "Enable IPv6 support" flag off
 option "ipv6mode" - "IPv6 mode is either 6and4 (default), 4to6, or 6to4" string no

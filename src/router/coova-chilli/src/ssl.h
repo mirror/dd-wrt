@@ -31,7 +31,7 @@ typedef struct {
 } openssl_env;
 #endif
 
-#if defined(HAVE_OPENSSL) || defined(HAVE_CYASSL)
+#if defined(HAVE_OPENSSL) || defined(HAVE_WOLFSSL)
 
 #ifdef HAVE_OPENSSL
 #include <openssl/buffer.h>
@@ -42,7 +42,7 @@ typedef struct {
 #include <openssl/pem.h>
 #include <openssl/engine.h>
 #include <openssl/err.h>
-#elif HAVE_CYASSL
+#elif HAVE_WOLFSSL
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>

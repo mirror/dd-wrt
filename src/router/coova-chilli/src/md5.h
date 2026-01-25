@@ -28,7 +28,7 @@
 #define MD5Update MD5_Update
 #define MD5Final MD5_Final
 
-#elif HAVE_CYASSL
+#elif HAVE_WOLFSSL
 #include <wolfssl/openssl/md5.h>
 
 #define MD5Init MD5_Init

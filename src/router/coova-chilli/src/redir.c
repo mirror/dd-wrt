@@ -1270,6 +1270,76 @@ void redir_wispr2_reply (struct redir_t *redir, struct redir_conn_t *conn,
   bdestroy(bt);
 }
 
+static int redir_captive_portal_identification(struct redir_t *redir, struct redir_socket_t *sock, struct redir_conn_t *conn) {
+  // Implementation of RFC8908 - https://www.rfc-editor.org/rfc/rfc8908.html
+  syslog(LOG_DEBUG, "%s(%d): CPI: Client request ", __FUNCTION__, __LINE__);
+
+  bstring tmp = bfromcstr("");
+  bstring json = bfromcstr("");
+  bstring buffer;
+  buffer = bfromcstralloc(1024, "");
+  bcatcstr(json, "{");
+
+  int state = conn->s_state.authenticated;
+  bcatcstr(json, "\"captive\":");
+  bcatcstr(json, state ? "false" : "true");
+
+  bcatcstr(json, ", \"user-portal-url\":\"");
+  bassignformat(tmp , "%s", redir->homepage);
+  bconcat(json, tmp);
+  bcatcstr(json, "\"");
+  if (state) {
+    if (_options.captiveportalvenue_info_url) {
+      bcatcstr(json, ", \"venue-info-url\": \"");
+      bassignformat(tmp, "%s", _options.captiveportalvenue_info_url);
+      bconcat(json, tmp);
+      bcatcstr(json, "\"");
+    }
+    bcatcstr(json, ", \"can-extend-session\": true");
+
+    uint32_t sessiontime = mainclock_now() - conn->s_state.start_time;
+    uint32_t timeleft = 0;
+    if (conn->s_params.sessiontimeout > sessiontime)
+      timeleft = conn->s_params.sessiontimeout - sessiontime;
+    else
+      timeleft = 0;
+    if (timeleft > 0) {
+      bcatcstr(json, ", \"seconds-remaining\":");
+      bassignformat(tmp, "%d", timeleft);
+      bconcat(json, tmp);
+    }
+  }
+
+  bcatcstr(json, "}");
+
+  redir_http(buffer, "200 OK");
+  bcatcstr(buffer, "Content-Length: ");
+  bassignformat(tmp , "%d", blength(json));
+  bconcat(buffer, tmp);
+  bcatcstr(buffer, "\r\nCache-Control: no-store");
+  bcatcstr(buffer, "\r\nContent-Type: application/captive+json");
+  bcatcstr(buffer, "\r\n\r\n");
+
+  bconcat(buffer, json);
+
+#if(_debug_ > 1)
+  if (_options.debug)
+    syslog(LOG_DEBUG, "%s(%d): CPI: Return JSON data: %s\n", __FUNCTION__, __LINE__, json->data);
+#endif
+
+  bdestroy(json);
+  bdestroy(tmp);
+
+  if (redir_write(sock, (char*)buffer->data, buffer->slen) < 0) {
+    syslog(LOG_ERR, "%s: redir_write()", strerror(errno));
+    bdestroy(buffer);
+    return -1;
+  }
+
+  bdestroy(buffer);
+  return 0;
+}
+
 #ifdef ENABLE_JSON
 static int redir_json_reply(struct redir_t *redir, int res, struct redir_conn_t *conn,
 			    char *hexchal, char *userurl, char *redirurl,
@@ -1565,10 +1635,8 @@ int redir_reply(struct redir_t *redir, struct redir_socket_t *sock,
 
 #ifdef ENABLE_JSON
   if (conn->format == REDIR_FMT_JSON) {
-
     redir_json_reply(redir, res, conn, hexchal, userurl, redirurl,
 		     hismac, hisip, reply, qs, buffer);
-
   } else
 #endif
     if (resp) {
@@ -2154,7 +2222,7 @@ static int redir_getreq(struct redir_t *redir, struct redir_socket_t *sock,
 	/* TODO: Should also check the Host: to make sure we are talking directly to uamlisten */
 
 #ifdef ENABLE_JSON
-	if (!strncmp(path, "json/", 5) && strlen(path) > 6) {
+  if (!strncmp(path, "json/", 5) && strlen(path) > 6) {
 	  int i, last=strlen(path)-5;
 
 	  conn->format = REDIR_FMT_JSON;
@@ -2177,6 +2245,8 @@ static int redir_getreq(struct redir_t *redir, struct redir_socket_t *sock,
 	  conn->type = REDIR_WWW;
 	else if (!strcmp(path, "status"))
 	  conn->type = REDIR_STATUS;
+  else if (!strcmp(path, "captive-portal-identification"))
+        { conn->type = REDIR_CAPTIVE_PORTAL_IDENTIFICATION; return 0; }
 	else if (!strncmp(path, "msdownload", 10))
         { conn->type = REDIR_MSDOWNLOAD; return 0; }
 	else if (!strcmp(path, "prelogin"))
@@ -2297,7 +2367,6 @@ static int redir_getreq(struct redir_t *redir, struct redir_socket_t *sock,
   }
 
   switch(conn->type) {
-
     case REDIR_STATUS:
       return 0;
 
@@ -4125,6 +4194,10 @@ int redir_main(struct redir_t *redir,
     case REDIR_ABOUT:
       redir_reply(redir, &socket, &conn, REDIR_ABOUT, NULL,
                   0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, httpreq.qs);
+      return redir_main_exit(&socket, forked, rreq);
+    
+    case REDIR_CAPTIVE_PORTAL_IDENTIFICATION:
+      redir_captive_portal_identification(redir, &socket, &conn);
       return redir_main_exit(&socket, forked, rreq);
 
     case REDIR_STATUS:

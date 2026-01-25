@@ -76,7 +76,7 @@ libchilli_la_LIBADD += ${LIBSSL}
 LDADD += ${LIBSSL}
 endif
 
-if WITH_CYASSL
+if WITH_WOLFSSL
 libchilli_la_LIBADD += ${LIBSSL}
 LDADD += ${LIBSSL}
 endif

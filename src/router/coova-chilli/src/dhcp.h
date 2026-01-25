@@ -47,7 +47,7 @@
 #define DHCP_OPTION_CLIENT_IDENTIFIER 61
 #define DHCP_OPTION_CLIENT_FQDN    81
 #define DHCP_OPTION_82    82
-#define DHCP_OPTION_CAPTIVE_PORTAL_URI 160
+#define DHCP_OPTION_CAPTIVE_PORTAL_URI 114 /* RFC 8910: Captive Portal API URI (replace RFC 7710, option 160) */
 
 /* !!highly experimental!! */
 #define DHCP_OPTION_CALLED_STATION_ID  197

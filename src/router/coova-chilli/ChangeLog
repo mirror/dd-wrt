@@ -1,3 +1,10 @@
+== ChangeLog (CoovaChilli-v1.8) ==
+* RFC8910 - Captive Portal Identification (#593)
+* rename cyassl to wolfssl (#599)
+* fix compilation with kernel > 5.6 and PROC_FS (#600)
+* get rid of coova_old_fops (#600)
+* Implementation of RFC8910 a RFC8908 (#603)
+
 == ChangeLog (CoovaChilli-v1.7) ==
 * Update xt_coova.c (#545) update position index earlier to fix #544
 * src/dns.c: fix misleading indentation warning (#569)

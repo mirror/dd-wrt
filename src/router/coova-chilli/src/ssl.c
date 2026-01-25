@@ -24,7 +24,7 @@ static int openssl_init = 0;
 static openssl_env * sslenv_svr = 0;
 static openssl_env * sslenv_cli = 0;
 
-#ifdef HAVE_CYASSL
+#ifdef HAVE_WOLFSSL
 #define HAVE_OPENSSL 1
 #else
 #define HAVE_OPENSSL_ENGINE 1

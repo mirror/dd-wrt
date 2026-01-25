@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.59])
-AC_INIT([coova-chilli],[1.7],[https://github.com/coova/coova-chilli/issues])
+AC_INIT([coova-chilli],[1.8],[https://github.com/coova/coova-chilli/issues])
 AC_CONFIG_SRCDIR([src/chilli.c])
 
 AM_INIT_AUTOMAKE
@@ -393,25 +393,25 @@ AS_IF([test x"$with_matrixssl" != xno],
 
 AM_CONDITIONAL(WITH_MATRIXSSL, [test x"$with_matrixssl" != xno])
 
-AC_ARG_WITH([cyassl],
- [AS_HELP_STRING([--with-cyassl], [enable support for cyassl])],[],[with_cyassl=no])
+AC_ARG_WITH([wolfssl],
+ [AS_HELP_STRING([--with-wolfssl], [enable support for wolfssl])],[],[with_wolfssl=no])
 
-AS_IF([test x"$with_cyassl" != xno],
-  [AC_CHECK_LIB([cyassl], [wolfSSL_Init],
-              [AC_SUBST([LIBSSL], ["-lcyassl"])
-               AC_DEFINE([HAVE_CYASSL], [1],
-                         [Define if you have cyassl])
+AS_IF([test x"$with_wolfssl" != xno],
+  [AC_CHECK_LIB([wolfssl], [wolfSSL_Init],
+              [AC_SUBST([LIBSSL], ["-lwolfssl"])
+               AC_DEFINE([HAVE_WOLFSSL], [1],
+                         [Define if you have wolfssl])
               ],
               [AC_MSG_FAILURE(
-                 [--with-cyassl was given, but test for cyassl failed])],
-              [-lcyassl])])
+                 [--with-wolfssl was given, but test for wolfssl failed])],
+              [-lwolfssl])])
 
-AS_IF([test x"$with_cyassl" != xno],
-  [AC_CHECK_HEADERS([cyassl/ssl.h ssh.h])])
+AS_IF([test x"$with_wolfssl" != xno],
+  [AC_CHECK_HEADERS([wolfssl/ssl.h ssh.h])])
 
-AM_CONDITIONAL(WITH_CYASSL, [test x"$with_cyassl" != xno])
+AM_CONDITIONAL(WITH_WOLFSSL, [test x"$with_wolfssl" != xno])
 
-AM_CONDITIONAL(WITH_SSL, [test x"$with_openssl" != xno || test x"$with_matrixssl" != xno || test x"$with_cyassl" != xno])
+AM_CONDITIONAL(WITH_SSL, [test x"$with_openssl" != xno || test x"$with_matrixssl" != xno || test x"$with_wolfssl" != xno])
 
 AC_ARG_WITH([matrixssl-cli],
  [AS_HELP_STRING([--with-matrixssl-cli], [enable matrixssl client use])],[],[with_matrixssl_cli=no])

@@ -3207,13 +3207,13 @@ static int dhcp_accept_opt(struct dhcp_conn_t *conn, uint8_t *o, int pos) {
   }
 #endif
 
-  if (_options.rfc7710uri) {
+  if (_options.captiveportalapi_uri) {
     o[pos++] = DHCP_OPTION_CAPTIVE_PORTAL_URI;
-    o[pos++] = strlen(_options.rfc7710uri);
-    memcpy(&o[pos], _options.rfc7710uri, strlen(_options.rfc7710uri));
-    pos += strlen(_options.rfc7710uri);
+    o[pos++] = strlen(_options.captiveportalapi_uri);
+    memcpy(&o[pos], _options.captiveportalapi_uri, strlen(_options.captiveportalapi_uri));
+    pos += strlen(_options.captiveportalapi_uri);
     if (_options.debug)
-      syslog(LOG_DEBUG, "%s(%d): DHCP Captive Portal URI %s\n", __FUNCTION__, __LINE__, _options.rfc7710uri);
+      syslog(LOG_DEBUG, "%s(%d): DHCP Captive Portal API URI %s\n", __FUNCTION__, __LINE__, _options.captiveportalapi_uri);
   }
 
   o[pos++] = DHCP_OPTION_END;
