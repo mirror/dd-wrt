@@ -102,7 +102,7 @@ ifeq ($(ARCH),mips)
 export COPTS:=$(BASEOPT) -pipe -mips32 -mtune=mips32 -funit-at-a-time 
 endif
 ifeq ($(ARCH),i386)
-export COPTS:=$(BASEOPT) -pipe -march=i486 -mtune=i486 -fno-caller-saves -D_FILE_OFFSET_BITS=64 -fno-plt
+export COPTS:=$(BASEOPT) -pipe -march=i486 -mtune=i486 -fno-caller-saves -D_FILE_OFFSET_BITS=64 -fno-plt -fcommon
 endif
 
 export CC := ccache $(CROSS_COMPILE)gcc
@@ -333,6 +333,8 @@ endif
 	export STRIP="$(TOP)/sstrip/sstrip -z" && \
 	$(LINUXDIR)/scripts/rstrip.sh $(TARGETDIR)
 
+	cd make_ext4fs && make CC="gcc" CFLAGS="-Os -DNEED_PRINTF -Iinclude -Ilibsparse/include"
+
 	cd grub && ./configure --host=i386-linux --target=i386-linux CC="/xfs/toolchains/staging_dir_i386.4.2.1/bin/i386-linux-gcc" LDFLAGS="-static" CFLAGS="-Os -DNEED_PRINTF"
 	make -C grub clean DESTDIR=$(INSTALLDIR)/grub	
 	make -C grub DESTDIR=$(INSTALLDIR)/grub	
@@ -341,6 +343,9 @@ endif
 	$(LINUXDIR)/scripts/squashfs/mksquashfs4 $(ARCH)-uclibc/target $(ARCH)-uclibc/root.fs -comp xz -sort tools/sort.txt -root-owned -noappend -Xbcj x86 -b 262144
 # $(LINUXDIR)/scripts/squashfs/mksquashfs-lzma $(ARCH)-uclibc/target $(ARCH)-uclibc/root.fs -noappend -le
 #	$(LINUXDIR)/scripts/squashfs/mksquashfs-lzma $(ARCH)-uclibc/target $(ARCH)-uclibc/root.fs -noappend -root-owned -le -b 262144 -nopad
+	./make_ext4fs/make_ext4fs \
+		-l 2147483647 -b 4096 \
+		$(ARCH)-uclibc/root.ext4 $(ARCH)-uclibc/target
 	mkfs.jffs2 --pad --big-endian --squash -e 0x20000 -o $(ARCH)-uclibc/dd-wrt.jffs2 -d $(ARCH)-uclibc/target
 	mkdir -p $(ARCH)-uclibc/root.grub/boot/grub
 	cp \
@@ -348,10 +353,14 @@ endif
 		$(INSTALLDIR)/grub/usr/local/lib/grub/i386-pc/stage2 \
 		$(INSTALLDIR)/grub/usr/local/lib/grub/i386-pc/e2fs_stage1_5 \
 		$(ARCH)-uclibc/root.grub/boot/grub/
-	cp grub/menu_serial.lst $(ARCH)-uclibc/root.grub/boot/grub/menu.lst
 	cp $(LINUXDIR)/arch/i386/boot/bzImage $(ARCH)-uclibc/root.grub/boot/vmlinuz
 
 ifeq ($(CONFIG_FULL),y)
+	cp grub/menu_vga_ext4.lst $(ARCH)-uclibc/root.grub/boot/grub/menu.lst
+	-PATH="$(INSTALLDIR)/grub/usr/local/sbin:$(INSTALLDIR)/grub/usr/local/bin:$(PATH)" ./gen_image.sh $(ARCH)-uclibc/dd-wrt_vga.image.ext4.src 32 $(ARCH)-uclibc/root.grub 2048 $(ARCH)-uclibc/root.ext4 128
+	cp grub/menu_serial_ext4.lst $(ARCH)-uclibc/root.grub/boot/grub/menu.lst
+	-PATH="$(INSTALLDIR)/grub/usr/local/sbin:$(INSTALLDIR)/grub/usr/local/bin:$(PATH)" ./gen_image.sh $(ARCH)-uclibc/dd-wrt_serial.image.ext4.src 32 $(ARCH)-uclibc/root.grub 2048 $(ARCH)-uclibc/root.ext4 128
+	cp grub/menu_serial.lst $(ARCH)-uclibc/root.grub/boot/grub/menu.lst
 	-PATH="$(INSTALLDIR)/grub/usr/local/sbin:$(INSTALLDIR)/grub/usr/local/bin:$(PATH)" ./gen_image.sh $(ARCH)-uclibc/dd-wrt_serial.image.src 32 $(ARCH)-uclibc/root.grub 500 $(ARCH)-uclibc/root.fs 128
 	cp grub/menu_vga.lst $(ARCH)-uclibc/root.grub/boot/grub/menu.lst
 	-PATH="$(INSTALLDIR)/grub/usr/local/sbin:$(INSTALLDIR)/grub/usr/local/bin:$(PATH)" ./gen_image.sh $(ARCH)-uclibc/dd-wrt_vga.image.src 32 $(ARCH)-uclibc/root.grub 500 $(ARCH)-uclibc/root.fs 128
@@ -360,14 +369,52 @@ ifeq ($(CONFIG_FULL),y)
 	cp grub/menu_vga.lst $(ARCH)-uclibc/root.grub/boot/grub/menu.lst
 	-PATH="$(INSTALLDIR)/grub/usr/local/sbin:$(INSTALLDIR)/grub/usr/local/bin:$(PATH)" ./gen_image.sh $(ARCH)-uclibc/dd-wrt_vga_2GB.image.src 32 $(ARCH)-uclibc/root.grub 500 $(ARCH)-uclibc/root.fs 1780
 else
+	cp grub/menu_vga_ext4.lst $(ARCH)-uclibc/root.grub/boot/grub/menu.lst
+	-PATH="$(INSTALLDIR)/grub/usr/local/sbin:$(INSTALLDIR)/grub/usr/local/bin:$(PATH)" ./gen_image.sh $(ARCH)-uclibc/dd-wrt_vga.image.ext4.src 32 $(ARCH)-uclibc/root.grub 2048 $(ARCH)-uclibc/root.ext4 128
+	cp grub/menu_serial_ext4.lst $(ARCH)-uclibc/root.grub/boot/grub/menu.lst
+	-PATH="$(INSTALLDIR)/grub/usr/local/sbin:$(INSTALLDIR)/grub/usr/local/bin:$(PATH)" ./gen_image.sh $(ARCH)-uclibc/dd-wrt_serial.image.ext4.src 32 $(ARCH)-uclibc/root.grub 2048 $(ARCH)-uclibc/root.ext4 128
+
+	cp grub/menu_serial.lst $(ARCH)-uclibc/root.grub/boot/grub/menu.lst
 	-PATH="$(INSTALLDIR)/grub/usr/local/sbin:$(INSTALLDIR)/grub/usr/local/bin:$(PATH)" ./gen_image.sh $(ARCH)-uclibc/dd-wrt_serial.image.src 32 $(ARCH)-uclibc/root.grub 500 $(ARCH)-uclibc/root.fs 128
 	cp grub/menu_vga.lst $(ARCH)-uclibc/root.grub/boot/grub/menu.lst
 	-PATH="$(INSTALLDIR)/grub/usr/local/sbin:$(INSTALLDIR)/grub/usr/local/bin:$(PATH)" ./gen_image.sh $(ARCH)-uclibc/dd-wrt_vga.image.src 32 $(ARCH)-uclibc/root.grub 500 $(ARCH)-uclibc/root.fs 128
 endif
+	dd if=$(ARCH)-uclibc/dd-wrt_vga.image.ext4.src of=$(ARCH)-uclibc/dd-wrt_vga_ext4.image bs=1048576 conv=sync
+	dd if=$(ARCH)-uclibc/dd-wrt_serial.image.ext4.src of=$(ARCH)-uclibc/dd-wrt_serial_ext4.image bs=1048576 conv=sync
 	dd if=$(ARCH)-uclibc/dd-wrt_vga.image.src of=$(ARCH)-uclibc/dd-wrt_vga.image bs=1048576 conv=sync
 	dd if=$(ARCH)-uclibc/dd-wrt_serial.image.src of=$(ARCH)-uclibc/dd-wrt_serial.image bs=1048576 conv=sync
 	dd if=$(ARCH)-uclibc/dd-wrt_vga_2GB.image.src of=$(ARCH)-uclibc/dd-wrt_vga_2GB.image bs=1048576 conv=sync
 	dd if=$(ARCH)-uclibc/dd-wrt_serial_2GB.image.src of=$(ARCH)-uclibc/dd-wrt_serial_2GB.image bs=1048576 conv=sync
+	rm $(ARCH)-uclibc/*.src
+
+	qemu-img convert -f raw -O vdi $(ARCH)-uclibc/dd-wrt_vga_ext4.image $(ARCH)-uclibc/dd-wrt_vga_ext4.vdi
+	qemu-img convert -f raw -O vdi $(ARCH)-uclibc/dd-wrt_serial_ext4.image $(ARCH)-uclibc/dd-wrt_serial_ext4.vdi
+	qemu-img convert -f raw -O vdi $(ARCH)-uclibc/dd-wrt_vga.image $(ARCH)-uclibc/dd-wrt_vga.vdi
+	qemu-img convert -f raw -O vdi $(ARCH)-uclibc/dd-wrt_serial.image $(ARCH)-uclibc/dd-wrt_serial.vdi
+	qemu-img convert -f raw -O vdi $(ARCH)-uclibc/dd-wrt_vga_2GB.image $(ARCH)-uclibc/dd-wrt_vga_2GB.vdi
+	qemu-img convert -f raw -O vdi $(ARCH)-uclibc/dd-wrt_serial_2GB.image $(ARCH)-uclibc/dd-wrt_serial_2GB.vdi
+
+	qemu-img convert -f raw -O vmdk $(ARCH)-uclibc/dd-wrt_vga.image $(ARCH)-uclibc/dd-wrt_vga.vmdk
+	qemu-img convert -f raw -O vmdk $(ARCH)-uclibc/dd-wrt_serial.image $(ARCH)-uclibc/dd-wrt_serial.vmdk
+	qemu-img convert -f raw -O vmdk $(ARCH)-uclibc/dd-wrt_vga_ext4.image $(ARCH)-uclibc/dd-wrt_vga_ext4.vmdk
+	qemu-img convert -f raw -O vmdk $(ARCH)-uclibc/dd-wrt_serial_ext4.image $(ARCH)-uclibc/dd-wrt_serial_ext4.vmdk
+	qemu-img convert -f raw -O vmdk $(ARCH)-uclibc/dd-wrt_vga_2GB.image $(ARCH)-uclibc/dd-wrt_vga_2GB.vmdk
+	qemu-img convert -f raw -O vmdk $(ARCH)-uclibc/dd-wrt_serial_2GB.image $(ARCH)-uclibc/dd-wrt_serial_2GB.vmdk
+
+	qemu-img convert -f raw -O vhdx $(ARCH)-uclibc/dd-wrt_vga.image $(ARCH)-uclibc/dd-wrt_vga.vhdx
+	qemu-img convert -f raw -O vhdx $(ARCH)-uclibc/dd-wrt_serial.image $(ARCH)-uclibc/dd-wrt_serial.vhdx
+	qemu-img convert -f raw -O vhdx $(ARCH)-uclibc/dd-wrt_vga_ext4.image $(ARCH)-uclibc/dd-wrt_vga_ext4.vhdx
+	qemu-img convert -f raw -O vhdx $(ARCH)-uclibc/dd-wrt_serial_ext4.image $(ARCH)-uclibc/dd-wrt_serial_ext4.vhdx
+	qemu-img convert -f raw -O vhdx $(ARCH)-uclibc/dd-wrt_vga_2GB.image $(ARCH)-uclibc/dd-wrt_vga_2GB.vhdx
+	qemu-img convert -f raw -O vhdx $(ARCH)-uclibc/dd-wrt_serial_2GB.image $(ARCH)-uclibc/dd-wrt_serial_2GB.vhdx
+
+	libdeflate-gzip -9 $(ARCH)-uclibc/dd-wrt_vga_ext4.image
+	libdeflate-gzip -9 $(ARCH)-uclibc/dd-wrt_serial_ext4.image
+	libdeflate-gzip -9 $(ARCH)-uclibc/*.vhdx
+	libdeflate-gzip -9 $(ARCH)-uclibc/*.vdi
+	libdeflate-gzip -9 $(ARCH)-uclibc/*.vmdk
+
+
 
 	./tools/wrap $(ARCH)-uclibc/dd-wrt_vga.image $(ARCH)-uclibc/dd-wrt-vga-webupgrade.bin
 	./tools/wrap $(ARCH)-uclibc/dd-wrt_serial.image $(ARCH)-uclibc/dd-wrt-serial-webupgrade.bin
