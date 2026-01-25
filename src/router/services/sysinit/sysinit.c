@@ -2043,7 +2043,7 @@ void start_restore_defaults(void)
 	case ROUTER_NETGEAR_WNR3500LV2:
 		linux_overrides = wnr3500vlan;
 		break;
-	case ROUTER_LUXUR_ABR4400:
+	case ROUTER_LUXUL_ABR4400:
 		linux_overrides = abr4400;
 		break;
 	case ROUTER_ASUS_RTN16:
@@ -2333,7 +2333,7 @@ void start_restore_defaults(void)
 	case ROUTER_D1800H:
 	case ROUTER_LINKSYS_E4200:
 	case ROUTER_ASUS_AC66U:
-	case ROUTER_LUXUR_ABR4400:
+	case ROUTER_LUXUL_ABR4400:
 		nvram_unset("vlan0ports");
 		if (!nvram_exists("vlan1ports") || nvram_match("vlan1ports", "") || !nvram_exists("vlan2ports") ||
 		    nvram_match("vlan2ports", "")) {
