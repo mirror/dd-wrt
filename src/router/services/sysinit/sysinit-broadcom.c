@@ -304,6 +304,7 @@ static void loadWlModule(void) // set wled params, get boardflags,
 	case ROUTER_D1800H:
 	case ROUTER_UBNT_UNIFIAC:
 	case ROUTER_DLINK_DIR865:
+	case ROUTER_LUXUL_ABR4400: // i dont think there is wifi on board
 		insmod("wl"); // load module
 		break;
 	case ROUTER_LINKSYS_EA6500:
@@ -3021,6 +3022,7 @@ void start_sysinit(void)
 			case ROUTER_DLINK_DIR865:
 			case ROUTER_UBNT_UNIFIAC:
 			case ROUTER_NETGEAR_R6200:
+			case ROUTER_LUXUL_ABR4400:
 				modules = "ctf et switch-core switch-robo";
 				break;
 			case ROUTER_LINKSYS_WRT55AG:
@@ -3119,6 +3121,7 @@ void start_sysinit(void)
 			case ROUTER_DLINK_DIR865:
 			case ROUTER_UBNT_UNIFIAC:
 			case ROUTER_NETGEAR_R6200:
+			case ROUTER_LUXUL_ABR4400:
 				modules = "ctf et switch-core switch-robo";
 				break;
 			case ROUTER_LINKSYS_WRT55AG:

@@ -1889,6 +1889,14 @@ void start_restore_defaults(void)
 					      { "wan_default", "vlan1" },
 					      { 0, 0 } };
 
+	struct nvram_param abr4400[] = { { "lan_ifname", "br0" },
+					      { "lan_ifnames", "vlan2 eth1" },
+					      { "wan_ifname", "vlan1" },
+					      { "wan_ifname2", "vlan1" },
+					      { "wan_ifnames", "vlan1" },
+					      { "wan_default", "vlan1" },
+					      { 0, 0 } };
+
 	struct nvram_param generic_2[] = { { "lan_ifname", "br0" },
 					   { "lan_ifnames", "eth1 eth2" },
 					   { "wan_ifname", "eth0" },
@@ -2034,6 +2042,9 @@ void start_restore_defaults(void)
 	case ROUTER_NETGEAR_WNR3500L:
 	case ROUTER_NETGEAR_WNR3500LV2:
 		linux_overrides = wnr3500vlan;
+		break;
+	case ROUTER_LUXUR_ABR4400:
+		linux_overrides = abr4400;
 		break;
 	case ROUTER_ASUS_RTN16:
 	case ROUTER_WRT160NV3:
@@ -2322,6 +2333,7 @@ void start_restore_defaults(void)
 	case ROUTER_D1800H:
 	case ROUTER_LINKSYS_E4200:
 	case ROUTER_ASUS_AC66U:
+	case ROUTER_LUXUR_ABR4400:
 		nvram_unset("vlan0ports");
 		if (!nvram_exists("vlan1ports") || nvram_match("vlan1ports", "") || !nvram_exists("vlan2ports") ||
 		    nvram_match("vlan2ports", "")) {
