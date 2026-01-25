@@ -808,8 +808,13 @@ map_vcn:
 			 */
 			if (should_wait) {
 				should_wait = false;
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 11, 0)
 				err = filemap_write_and_wait_range(sb->s_bdev->bd_mapping,
 						start, start + vol->cluster_size);
+#else
+				err = filemap_write_and_wait_range(sb->s_bdev->bd_inode->i_mapping,
+						start, start + vol->cluster_size);
+#endif
 				if (err)
 					goto io_err;
 			}
