@@ -73,8 +73,11 @@ void stop_raid(void)
 	// cannot be unloaded
 }
 
-void start_raid(void)
+void start_raid_internal(void)
 {
+	if (nvram_match("raid_running", "1"))
+		return;
+	nvram_set("raid_running", "1");
 	int i = 0;
 	int zfs = 0;
 	int md = 0;
@@ -122,9 +125,10 @@ void start_raid(void)
 		todo = 1;
 		i++;
 	}
-	if (i == 0)
+	if (i == 0) {
+		nvram_set("raid_running", "0");
 		return;
-
+	}
 	writeprocsys("vm/min_free_kbytes", nvram_default_get("vm.min_free_kbytes", "65536"));
 	writeprocsys("vm/vfs_cache_pressure", nvram_default_get("vm.vfs_cache_pressure", "10000"));
 	writeprocsys("vm/dirty_expire_centisecs", nvram_default_get("vm.dirty_expire_centisecs", "100"));
@@ -464,6 +468,12 @@ void start_raid(void)
 		eval("service", "plex", "start");
 #endif
 	}
+	nvram_set("raid_running", "0");
+}
+
+void start_raid(void)
+{
+	sysprintf("sleep 5; service raid start");
 }
 
 #endif
