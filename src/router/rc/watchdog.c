@@ -188,6 +188,7 @@ static void check_wifi(void)
 			if (mac80211_info)
 				free(mac80211_info);
 			char vifs[32];
+			char var[32];
 			const char *next;
 			sprintf(vifs, "wlan%d_vifs", c);
 			char *vaps = nvram_safe_get(vifs);
