@@ -746,11 +746,6 @@ public:
         return settings().peer_congestion_algorithm;
     }
 
-    void setPeerCongestionAlgorithm(std::string_view algorithm)
-    {
-        settings_.peer_congestion_algorithm = algorithm;
-    }
-
     void setSocketDiffServ(tr_socket_t sock, tr_address_type type) const
     {
         tr_netSetDiffServ(sock, settings_.peer_socket_diffserv, type);
@@ -806,11 +801,6 @@ public:
     [[nodiscard]] constexpr std::string const& announceIP() const noexcept
     {
         return settings().announce_ip;
-    }
-
-    void setAnnounceIP(std::string_view ip)
-    {
-        settings_.announce_ip = ip;
     }
 
     [[nodiscard]] constexpr bool useAnnounceIP() const noexcept
@@ -1088,7 +1078,7 @@ public:
     [[nodiscard]] bool has_ip_protocol(tr_address_type type) const noexcept
     {
         TR_ASSERT(tr_address::is_valid(type));
-        return ip_cache_.has_ip_protocol(type);
+        return ip_cache_->has_ip_protocol(type);
     }
 
     [[nodiscard]] tr_address bind_address(tr_address_type type) const noexcept;
@@ -1096,18 +1086,18 @@ public:
     [[nodiscard]] std::optional<tr_address> global_address(tr_address_type type) const noexcept
     {
         TR_ASSERT(tr_address::is_valid(type));
-        return ip_cache_.global_addr(type);
+        return ip_cache_->global_addr(type);
     }
 
     bool set_global_address(tr_address const& addr) noexcept
     {
-        return ip_cache_.set_global_addr(addr);
+        return ip_cache_->set_global_addr(addr);
     }
 
     [[nodiscard]] std::optional<tr_address> source_address(tr_address_type type) const noexcept
     {
         TR_ASSERT(tr_address::is_valid(type));
-        return ip_cache_.source_addr(type);
+        return ip_cache_->source_addr(type);
     }
 
     [[nodiscard]] auto speed_limit(tr_direction const dir) const noexcept
@@ -1433,7 +1423,7 @@ private:
 
     // depends-on: settings_, session_thread_, timer_maker_, web_
     IPCacheMediator ip_cache_mediator_{ *this };
-    tr_ip_cache ip_cache_{ ip_cache_mediator_ };
+    std::shared_ptr<tr_ip_cache> ip_cache_ = tr_ip_cache::create(ip_cache_mediator_);
 
     // depends-on: settings_, session_thread_, torrents_, global_ip_cache (via tr_session::bind_address())
     WebMediator web_mediator_{ this };
