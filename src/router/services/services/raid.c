@@ -75,9 +75,17 @@ void stop_raid(void)
 
 void start_raid_internal(void)
 {
-	if (nvram_match("raid_running", "1"))
+	static int raid_running = 0;
+	if (raid_running)
 		return;
-	nvram_set("raid_running", "1");
+	nvram_set("raid_interrupt", "0");
+	raid_running = 1;
+again:;
+	sleep(5);
+	if (nvram_match("raid_interrupt","1") {
+		nvram_set("raid_interrupt", "0");
+		goto again;
+	}
 	int i = 0;
 	int zfs = 0;
 	int md = 0;
@@ -126,7 +134,7 @@ void start_raid_internal(void)
 		i++;
 	}
 	if (i == 0) {
-		nvram_set("raid_running", "0");
+		raid_running = 1;
 		return;
 	}
 	writeprocsys("vm/min_free_kbytes", nvram_default_get("vm.min_free_kbytes", "65536"));
@@ -468,12 +476,12 @@ void start_raid_internal(void)
 		eval("service", "plex", "start");
 #endif
 	}
-	nvram_set("raid_running", "0");
+	raid_running = 0;
 }
 
 void start_raid(void)
 {
-	sysprintf("sleep 5; service raid start&");
+	sysprintf("service raid_internal start&");
 }
 
 #endif

@@ -93,7 +93,8 @@ void start_zabbix(void)
 			fprintf(fp, "\n%s\n", nvram_safe_get("zabbix_usrpara"));
 		fclose(fp);
 		char path[128];
-		dd_logstart("zabbix", eval("zabbix_agentd", "-c", getdefaultconfig("zabbix", path, sizeof(path), "zabbix/zabbix.conf")));
+		dd_logstart("zabbix",
+			    eval("zabbix_agentd", "-c", getdefaultconfig("zabbix", path, sizeof(path), "zabbix/zabbix.conf")));
 	}
 
 	return;

@@ -553,8 +553,12 @@ static int usb_process_path(char *path, int host, char *part, char *devpath)
 #endif
 #ifdef HAVE_RAID
 				else if (strstr(line, "ZFS")) {
+					if (nvram_match("raid_interrupt", "0"))
+						nvram_set("raid_interrupt", "1");
 					start_raid();
 				} else if (strstr(line, "MD Raid")) {
+					if (nvram_match("raid_interrupt", "0"))
+						nvram_set("raid_interrupt", "1");
 					start_raid();
 				}
 #endif
