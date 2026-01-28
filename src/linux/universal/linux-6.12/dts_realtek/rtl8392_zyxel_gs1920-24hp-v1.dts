@@ -27,7 +27,7 @@
 	};
 
 
-/*	leds {
+	leds {
 		pinctrl-names = "default";
 		pinctrl-0 = <&pinmux_disable_sys_led>;
 		compatible = "gpio-leds";
@@ -50,7 +50,7 @@
 			color = <LED_COLOR_ID_BLUE>;
 		};
 	};
-
+/*
 	keys {
 		compatible = "gpio-keys-polled";
 		poll-interval = <20>;

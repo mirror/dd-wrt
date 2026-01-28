@@ -29,7 +29,7 @@
 			debounce-interval = <100>;
 		};
 	};
-
+*/
 	leds {
 		pinctrl-names = "default";
 		pinctrl-0 = <&pinmux_disable_sys_led>;
@@ -39,7 +39,7 @@
 			label = "green:sys";
 			gpios = <&gpio0 0 GPIO_ACTIVE_HIGH>;
 		};
-	};*/
+	};
 };
 
 &spi0 {
