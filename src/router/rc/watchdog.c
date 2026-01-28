@@ -153,7 +153,7 @@ static void check_fan(int brand)
 static void check_wifi(void)
 {
 #ifdef HAVE_ATH11K
-	static int zerocount=0;
+	static int zerocount[8] = { 0, 0, 0, 0, 0, 0, 0, 0 };
 	int ifcount = getdevicecount();
 	int c = 0;
 	for (c = 0; c < ifcount; c++) {
@@ -168,12 +168,14 @@ static void check_wifi(void)
 					if (wc) {
 						if (is_ath11k(wc->ifname)) {
 							if (!(wc->signal - wc->noise)) {
-								zerocount++;
+								zerocount[c]++;
 								dd_logerror("ath11k_watchdog",
 									    "zero signal issue detected on interface %s\n",
 									    wc->ifname);
-								if (zerocount == 10)
+								if (zerocount[c] == 10)
 									sys_reboot();
+							} else {
+								zerocount[c] = 0;
 							}
 						}
 					}
