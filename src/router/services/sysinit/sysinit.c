@@ -2736,6 +2736,9 @@ void start_restore_defaults(void)
 	 */
 	nvram_set("os_version", SVN_REVISION);
 	nvram_set("os_date", __DATE__);
+#ifdef HAVE_RAID
+	nvram_unset("raid_interrupt");
+#endif
 
 	nvram_unset("shutdown");
 #ifdef HAVE_SPUTNIK_APD
