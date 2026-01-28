@@ -175,7 +175,7 @@ int load_ath11k(void)
 		insmod("qrtr");
 		insmod("mhi");
 		insmod("qrtr-mhi");
-		if (!detect_change("ath11k_pci")) {
+		if (!detectchange("ath11k_pci")) {
 			rmmod("qrtr-mhi");
 			rmmod("mhi");
 			rmmod("qrtr");
@@ -198,30 +198,30 @@ int load_mt76(void)
 	insmod("mt76-connac-lib");
 	insmod("mt7615-common");
 	insmod("mt7663-usb-sdio-common");
-	detect_change("mt7615e");
-	detect_change("mt7663u");
-	detect_change("mt7663s");
+	detectchange("mt7615e");
+	detectchange("mt7663u");
+	detectchange("mt7663s");
 	insmod("mt76x02-lib");
 	insmod("mt76x02-usb");
 	insmod("mt76x2-common");
-	detect_change("mt76x2e");
-	detect_change("mt76x2u");
+	detectchange("mt76x2e");
+	detectchange("mt76x2u");
 	insmod("mt76x0-common");
-	detect_change("mt76x0e");
-	detect_change("mt76x0u");
-	detect_change("mt7603e");
-	detect_change("mt7915e");
+	detectchange("mt76x0e");
+	detectchange("mt76x0u");
+	detectchange("mt7603e");
+	detectchange("mt7915e");
 	insmod("mt792x-lib");
 	insmod("mt7921-common");
 	insmod("mt76-sdio");
-	detect_change("mt7921e");
-	detect_change("mt7921s");
-	detect_change("mt7996e");
+	detectchange("mt7921e");
+	detectchange("mt7921s");
+	detectchange("mt7996e");
 	insmod("rt2x00lib");
 	insmod("rt2x00mmio");
-	detect_change("rt2x00pci");
+	detectchange("rt2x00pci");
 	insmod("rt2800lib");
-	detect_change("rt2800mmio");
+	detectchange("rt2800mmio");
 
 	rmmod("rt2800lib");
 	rmmod("rt2x00mmio");
