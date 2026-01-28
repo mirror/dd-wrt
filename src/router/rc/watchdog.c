@@ -151,6 +151,36 @@ static void check_fan(int brand)
 }
 
 static unsigned char zerocount[8 * 16];
+static void check_signal(const char *var, int *vap)
+{
+	struct mac80211_info *mac80211_info;
+
+	mac80211_info = mac80211_assoclist(var);
+	if (mac80211_info && mac80211_info->wci) {
+		struct wifi_client_info *wc;
+		for (wc = mac80211_info->wci; wc; wc = wc->next) {
+			if (wc) {
+				if (!(wc->signal - wc->noise)) {
+					zerocount[*vap]++;
+					dd_logerror("ath11k_watchdog", "zero signal issue detected on interface %s\n", wc->ifname);
+					if (zerocount[vap] == 10) {
+						dd_logerror("ath11k_watchdog", "10 consecutive signal fails detected on %s\n",
+							    wc->ifname);
+						sys_reboot();
+					}
+				} else {
+					dd_logerror("ath11k_watchdog", "signal measurement received. reset failcount %s\n",
+						    wc->ifname);
+					zerocount[*vap] = 0;
+				}
+				*vap++;
+			}
+		}
+		free_wifi_clients(mac80211_info->wci);
+	}
+	if (mac80211_info)
+		free(mac80211_info);
+}
 static void check_wifi(void)
 {
 #ifdef HAVE_ATH11K
@@ -166,28 +196,7 @@ static void check_wifi(void)
 			continue;
 
 		if (is_ath11k(interface)) {
-			struct mac80211_info *mac80211_info;
-			struct wifi_client_info *wc;
-			mac80211_info = mac80211_assoclist(interface);
-			if (mac80211_info && mac80211_info->wci) {
-				for (wc = mac80211_info->wci; wc; wc = wc->next) {
-					if (wc) {
-						if (!(wc->signal - wc->noise)) {
-							zerocount[vap]++;
-							dd_logerror("ath11k_watchdog",
-								    "zero signal issue detected on interface %s\n", wc->ifname);
-							if (zerocount[vap] == 10)
-								sys_reboot();
-						} else {
-							zerocount[vap] = 0;
-						}
-						vap++;
-					}
-				}
-				free_wifi_clients(mac80211_info->wci);
-			}
-			if (mac80211_info)
-				free(mac80211_info);
+			check_signal(interface, &vap);
 			char vifs[32];
 			char var[32];
 			const char *next;
@@ -198,27 +207,7 @@ static void check_wifi(void)
 					continue;
 				if (nvram_nmatch("disabled", "%s_mode", var))
 					continue;
-				mac80211_info = mac80211_assoclist(var);
-				if (mac80211_info && mac80211_info->wci) {
-					for (wc = mac80211_info->wci; wc; wc = wc->next) {
-						if (wc) {
-							if (!(wc->signal - wc->noise)) {
-								zerocount[vap]++;
-								dd_logerror("ath11k_watchdog",
-									    "zero signal issue detected on interface %s\n",
-									    wc->ifname);
-								if (zerocount[vap] == 10)
-									sys_reboot();
-							} else {
-								zerocount[vap] = 0;
-							}
-							vap++;
-						}
-					}
-					free_wifi_clients(mac80211_info->wci);
-				}
-				if (mac80211_info)
-					free(mac80211_info);
+				check_signal(var, &vap);
 			}
 		}
 	}
@@ -339,7 +328,7 @@ static void watchdog(void)
 
 int main(int argc, char *argv[])
 {
-	memset(zerocount, 0 ,sizeof(zerocount));
+	memset(zerocount, 0, sizeof(zerocount));
 	dd_daemon();
 	watchdog();
 	return 0;
