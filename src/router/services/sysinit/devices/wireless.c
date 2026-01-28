@@ -122,6 +122,8 @@ int detectchange(char *mod)
 
 int load_mac80211(void)
 {
+	if (nvram_match("nowifi", "1"))
+		return -1;
 	int notloaded = 0;
 	insmod("xxhash");
 	insmod("zstd_common");
@@ -173,7 +175,13 @@ int load_ath11k(void)
 		insmod("qrtr");
 		insmod("mhi");
 		insmod("qrtr-mhi");
-		insmod("ath11k_pci");
+		if (!detect_change("ath11k_pci")) {
+			rmmod("qrtr-mhi");
+			rmmod("mhi");
+			rmmod("qrtr");
+			rmmod("ath11k");
+			rmmod("qmi_helpers");
+		}
 	}
 	return 0;
 }
@@ -190,30 +198,49 @@ int load_mt76(void)
 	insmod("mt76-connac-lib");
 	insmod("mt7615-common");
 	insmod("mt7663-usb-sdio-common");
-	insmod("mt7615e");
-	insmod("mt7663u");
-	insmod("mt7663s");
+	detect_change("mt7615e");
+	detect_change("mt7663u");
+	detect_change("mt7663s");
 	insmod("mt76x02-lib");
 	insmod("mt76x02-usb");
 	insmod("mt76x2-common");
-	insmod("mt76x2e");
-	insmod("mt76x2u");
+	detect_change("mt76x2e");
+	detect_change("mt76x2u");
 	insmod("mt76x0-common");
-	insmod("mt76x0e");
-	insmod("mt76x0u");
-	insmod("mt7603e");
-	insmod("mt7915e");
+	detect_change("mt76x0e");
+	detect_change("mt76x0u");
+	detect_change("mt7603e");
+	detect_change("mt7915e");
 	insmod("mt792x-lib");
 	insmod("mt7921-common");
 	insmod("mt76-sdio");
-	insmod("mt7921e");
-	insmod("mt7921s");
-	insmod("mt7996e");
+	detect_change("mt7921e");
+	detect_change("mt7921s");
+	detect_change("mt7996e");
 	insmod("rt2x00lib");
 	insmod("rt2x00mmio");
-	insmod("rt2x00pci");
+	detect_change("rt2x00pci");
 	insmod("rt2800lib");
-	insmod("rt2800mmio");
+	detect_change("rt2800mmio");
+
+	rmmod("rt2800lib");
+	rmmod("rt2x00mmio");
+	rmmod("rt2x0lib");
+	rmmod("mt76-sdio");
+	rmmod("mt7921-common");
+	rmmod("mt792x-lib");
+
+	rmmod("mt76x0-common");
+	rmmod("mt76x2-common");
+	rmmod("mt76x02-usb");
+	rmmod("mt76x02-lib");
+	rmmod("mt7663-usb-sdio-common");
+	rmmod("mt7615-common");
+	rmmod("mt76-connac-lib");
+	rmmod("mt76-sdio");
+	rmmod("mt76-usb");
+
+	rmmod("mt76");
 
 	return 0;
 }
@@ -335,6 +362,13 @@ int load_rtlwifi(void)
 	if (!wificnt) {
 		eval("modprobe", "-r", "rtw89_pci");
 		eval("modprobe", "-r", "rtw89_core");
+
+		rmmod("rtw89_8851b");
+		rmmod("rtw89_8852a");
+		rmmod("rtw89_8852b");
+		rmmod("rtw89_8852c");
+		rmmod("rtw89_pci");
+		rmmod("rtw89_core");
 	}
 	return 0;
 }
