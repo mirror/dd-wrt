@@ -1,54 +1,54 @@
 export OPENSSL_TARGET := linux-generic32
 ifeq ($(ARCH),armeb)
 export OPENSSL_TARGET := linux-arm-openwrt
-export OPENSSL_CMAKEFLAGS := -DASMAES512   -ffunction-sections -fdata-sections -Wl,--gc-sections 
+export OPENSSL_CMAKEFLAGS := -DASMAES512   -ffunction-sections -fdata-sections -Wl,--gc-sections -Os
 endif
 
 
 ifeq ($(ARCHITECTURE),ventana)
 ifeq ($(ARCH),arm)
 export OPENSSL_TARGET := linux-arm-openwrt
-export OPENSSL_CMAKEFLAGS := -DASMAES512 -ffunction-sections -fdata-sections -Wl,--gc-sections 
+export OPENSSL_CMAKEFLAGS := -DASMAES512 -ffunction-sections -fdata-sections -Wl,--gc-sections  -Os
 endif
 else
 ifeq ($(ARCH),arm)
 ifeq ($(CONFIG_STORM),y)
 export OPENSSL_TARGET := linux-arm-openwrt
-export OPENSSL_CMAKEFLAGS := -ffunction-sections -fdata-sections -Wl,--gc-sections 
+export OPENSSL_CMAKEFLAGS := -ffunction-sections -fdata-sections -Wl,--gc-sections  -Os
 
 else
 export OPENSSL_TARGET := linux-arm-openwrt
-export OPENSSL_CMAKEFLAGS := -DASMAES512 -ffunction-sections -fdata-sections -Wl,--gc-sections 
+export OPENSSL_CMAKEFLAGS := -DASMAES512 -ffunction-sections -fdata-sections -Wl,--gc-sections  -Os
 endif
 endif
 endif
 ifeq ($(ARCH),mips)
 export OPENSSL_TARGET := linux-mips-openwrt
-export OPENSSL_CMAKEFLAGS := -DASMAES512 -ffunction-sections -fdata-sections -Wl,--gc-sections 
+export OPENSSL_CMAKEFLAGS := -DASMAES512 -ffunction-sections -fdata-sections -Wl,--gc-sections  -Os
 endif
 ifeq ($(ARCH),mips64)
 export OPENSSL_TARGET := linux-mips64-openwrt
-export OPENSSL_CMAKEFLAGS := -ffunction-sections -fdata-sections -Wl,--gc-sections -DOCTEON -DOCTEON_OPENSSL -I$(SSLPATH)/include/executive 
+export OPENSSL_CMAKEFLAGS := -ffunction-sections -fdata-sections -Wl,--gc-sections -DOCTEON -DOCTEON_OPENSSL -I$(SSLPATH)/include/executive  -O3
 endif
 ifeq ($(ARCH),mipsel)
 export OPENSSL_TARGET := linux-mips-openwrt
-export OPENSSL_CMAKEFLAGS := -ffunction-sections -fdata-sections -Wl,--gc-sections 
+export OPENSSL_CMAKEFLAGS := -ffunction-sections -fdata-sections -Wl,--gc-sections  -Os
 endif
 ifeq ($(ARCH),powerpc)
 export OPENSSL_TARGET := linux-generic32-openwrt
-export OPENSSL_CMAKEFLAGS := -ffunction-sections -fdata-sections -Wl,--gc-sections 
+export OPENSSL_CMAKEFLAGS := -ffunction-sections -fdata-sections -Wl,--gc-sections  -Os
 endif
 ifeq ($(ARCH),i386)
 export OPENSSL_TARGET := linux-i386-openwrt
-export OPENSSL_CMAKEFLAGS :=   -ffunction-sections -fdata-sections -Wl,--gc-sections -latomic
+export OPENSSL_CMAKEFLAGS :=   -ffunction-sections -fdata-sections -Wl,--gc-sections -latomic -O3
 endif
 ifeq ($(ARCH),x86_64)
 export OPENSSL_TARGET := linux-x86_64-openwrt
-export OPENSSL_CMAKEFLAGS :=   -ffunction-sections -fdata-sections -Wl,--gc-sections 
+export OPENSSL_CMAKEFLAGS :=   -ffunction-sections -fdata-sections -Wl,--gc-sections -O3
 endif
 ifeq ($(ARCH),aarch64)
 export OPENSSL_TARGET := linux-aarch64-openwrt
-export OPENSSL_CMAKEFLAGS := -ffunction-sections -fdata-sections -Wl,--gc-sections
+export OPENSSL_CMAKEFLAGS := -ffunction-sections -fdata-sections -Wl,--gc-sections -O3
 endif
 ifeq ($(KERNELVERSION),6.1)
 export ENABLE_TLS := enable-ktls
@@ -160,7 +160,7 @@ openssl-configure:
 			--prefix=/usr \
 			--libdir=/usr/lib \
 			--openssldir=/etc/ssl \
-			$(COPTS) $(OPENSSL_CMAKEFLAGS) -Os -DNDEBUG \
+			$(COPTS) $(OPENSSL_CMAKEFLAGS) -DNDEBUG \
 			$(TARGET_LDFLAGS) -ldl -lrt -L$(TOP)/libucontext -lucontext \
 			$(OPENSSL_NO_CIPHERS) \
 			$(OPENSSL_OPTIONS)
