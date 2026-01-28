@@ -150,10 +150,10 @@ static void check_fan(int brand)
 #endif
 }
 
+static unsigned char zerocount[8 * 16];
 static void check_wifi(void)
 {
 #ifdef HAVE_ATH11K
-	static int zerocount[8 * 16] = { 0, 0, 0, 0, 0, 0, 0, 0 };
 	int ifcount = getdevicecount();
 	int c = 0;
 	int vap = 0;
@@ -339,6 +339,7 @@ static void watchdog(void)
 
 int main(int argc, char *argv[])
 {
+	memset(zerocount, 0 ,sizeof(zerocount));
 	dd_daemon();
 	watchdog();
 	return 0;
