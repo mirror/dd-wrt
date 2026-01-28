@@ -4,7 +4,7 @@ space:= $(empty) $(empty)
 comma:=,
 pound:=\#
 
-export MAKE := make -j 4
+export MAKE := make -j 8
 export LTO := -flto -fwhole-program -flto-partition=none
 export LTOAUTO := -flto=auto -fno-fat-lto-objects
 export LDLTOAUTO := -fuse-ld=bfd -flto=auto -fuse-linker-plugin
@@ -470,18 +470,18 @@ endif
 	touch $(LINUXDIR)/include/asm-generic/exports.h
 #	rm -f $(LINUXDIR)/vmlinux
 #	rm -f $(LINUXDIR)/vmlinux.o
-	-make -j 4 -C $(LINUXDIR) modules MAKE=make EXTRA_LDSFLAGS="-I$(LINUXDIR) -include symtab.h" ARCH=$(KERNEL_HEADER_ARCH) CROSS_COMPILE="ccache $(ARCH)-openwrt-linux-"
-	make -j 4 -C $(LINUXDIR) $(KBUILD_TARGETS) MAKE=make EXTRA_LDSFLAGS="-I$(LINUXDIR) -include symtab.h" ARCH=$(KERNEL_HEADER_ARCH) CROSS_COMPILE="ccache $(ARCH)-openwrt-linux-"
+	-make -j 16 -C $(LINUXDIR) modules MAKE=make EXTRA_LDSFLAGS="-I$(LINUXDIR) -include symtab.h" ARCH=$(KERNEL_HEADER_ARCH) CROSS_COMPILE="ccache $(ARCH)-openwrt-linux-"
+	make -j 16 -C $(LINUXDIR) $(KBUILD_TARGETS) MAKE=make EXTRA_LDSFLAGS="-I$(LINUXDIR) -include symtab.h" ARCH=$(KERNEL_HEADER_ARCH) CROSS_COMPILE="ccache $(ARCH)-openwrt-linux-"
 
 kernel-relink:
 	touch $(LINUXDIR)/include/generated/autoksyms.h
 	touch $(LINUXDIR)/include/linux/exports.h
 	touch $(LINUXDIR)/include/asm-generic/exports.h
 	if ! grep -q "CONFIG_EMBEDDED_RAMDISK=y" $(LINUXDIR)/.config ; then \
-	    make -j 4 -C $(LINUXDIR) $(KBUILD_TARGETS) MAKE=make CFLAGS= ARCH=$(KERNEL_HEADER_ARCH) CROSS_COMPILE="ccache $(ARCH)-openwrt-linux-"; \
+	    make -j 16 -C $(LINUXDIR) $(KBUILD_TARGETS) MAKE=make CFLAGS= ARCH=$(KERNEL_HEADER_ARCH) CROSS_COMPILE="ccache $(ARCH)-openwrt-linux-"; \
 	fi
 	if grep -q "CONFIG_MODULES=y" $(LINUXDIR)/.config ; then \
-	    make -j 4 -C $(LINUXDIR) modules MAKE=make ARCH=$(KERNEL_HEADER_ARCH) CROSS_COMPILE="ccache $(ARCH)-openwrt-linux-"  CFLAGS=; \
+	    make -j 16 -C $(LINUXDIR) modules MAKE=make ARCH=$(KERNEL_HEADER_ARCH) CROSS_COMPILE="ccache $(ARCH)-openwrt-linux-"  CFLAGS=; \
 	fi
 ifneq ($(KERNELVERSION),4.9)
 	$(MAKE) -f Makefile.$(MAKEEXT) kernel-relink-phase
@@ -521,6 +521,6 @@ endif
 	cp $(LINUXDIR)/vmlinux $(LINUXDIR)/vmlinux-noinitramfs
 	rm -f $(ARCH)-uclibc/target/init && cd $(ARCH)-uclibc/target && ln -s sbin/init init
 #	cp -f $(TOP)/tools/initramfs/init $(ARCH)-uclibc/target
-	make -j 4 -C $(LINUXDIR) $(KBUILD_TARGETS) MAKE=make EXTRA_LDSFLAGS="-I$(LINUXDIR) -include symtab.h" ARCH=$(KERNEL_HEADER_ARCH) CROSS_COMPILE="ccache $(ARCH)-openwrt-linux-"
+	make -j 16 -C $(LINUXDIR) $(KBUILD_TARGETS) MAKE=make EXTRA_LDSFLAGS="-I$(LINUXDIR) -include symtab.h" ARCH=$(KERNEL_HEADER_ARCH) CROSS_COMPILE="ccache $(ARCH)-openwrt-linux-"
 	cp $(LINUXDIR)/vmlinux $(LINUXDIR)/vmlinux-initramfs
 	cp $(LINUXDIR)/vmlinux-noinitramfs $(LINUXDIR)/vmlinux
