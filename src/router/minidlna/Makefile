@@ -23,7 +23,7 @@ SUBDIRS += libogg-1.3.5
 SUBDIRS += libexif-0.6.24
 SUBDIRS += flac-1.4.2
 SUBDIRS += libvorbis-1.3.7
-SUBDIRS += libjpeg-turbo-2.1.4
+SUBDIRS += libjpeg-turbo-3.1.3
 SUBDIRS += sqlite-3.6.22
 SUBDIRS += libid3tag-0.15.1b
 #/projects/hnd/tools/linux/hndtools-mipsel-linux-uclibc-4.2.3
@@ -113,12 +113,12 @@ libexif:
 	fi
 
 libjpeg:
-	if [ ! -f ./libjpeg-turbo-2.1.4/CMakeCache.txt ];then \
-	echo "$(ARCH)-linux-uclibc-gcc-ar \$$@" > libjpeg-turbo-2.1.4/$(ARCH)-linux-uclibc-gcc-ar; \
-	chmod 777 libjpeg-turbo-2.1.4/$(ARCH)-linux-uclibc-gcc-ar; \
-	echo "$(ARCH)-linux-uclibc-gcc-ranlib \$$@" > libjpeg-turbo-2.1.4/$(ARCH)-linux-uclibc-gcc-ranlib; \
-	chmod 777 libjpeg-turbo-2.1.4/$(ARCH)-linux-uclibc-gcc-ranlib; \
-	(cd libjpeg-turbo-2.1.4; \
+	if [ ! -f ./libjpeg-turbo-3.1.3/CMakeCache.txt ];then \
+	echo "$(ARCH)-linux-uclibc-gcc-ar \$$@" > libjpeg-turbo-3.1.3/$(ARCH)-linux-uclibc-gcc-ar; \
+	chmod 777 libjpeg-turbo-3.1.3/$(ARCH)-linux-uclibc-gcc-ar; \
+	echo "$(ARCH)-linux-uclibc-gcc-ranlib \$$@" > libjpeg-turbo-3.1.3/$(ARCH)-linux-uclibc-gcc-ranlib; \
+	chmod 777 libjpeg-turbo-3.1.3/$(ARCH)-linux-uclibc-gcc-ranlib; \
+	(cd libjpeg-turbo-3.1.3; \
 		CFLAGS="$(COPTS) $(MIPS16_OPT) $(THUMB) $(LTO) -ffunction-sections -fdata-sections -Wl,--gc-sections" \
 		LDFLAGS="$(COPTS) $(MIPS16_OPT) $(THUMB) $(LTO) -ffunction-sections -fdata-sections -Wl,--gc-sections" \
 		CXXFLAGS="$(COPTS) $(MIPS16_OPT) $(THUMB) $(LTO) -ffunction-sections -fdata-sections -Wl,--gc-sections" \
@@ -145,12 +145,12 @@ libjpeg:
 			-DCMAKE_EXE_LINKER_FLAGS="$(COPTS) $(MIPS16_OPT) $(THUMB) $(LTO) -ffunction-sections -fdata-sections -Wl,--gc-sections" \
 			-DCMAKE_MODULE_LINKER_FLAGS="$(COPTS) $(MIPS16_OPT) $(THUMB) $(LTO) -ffunction-sections -fdata-sections -Wl,--gc-sections" \
 			-DCMAKE_SHARED_LINKER_FLAGS="$(COPTS) $(MIPS16_OPT) $(THUMB) $(LTO) -ffunction-sections -fdata-sections -Wl,--gc-sections" \
-			-DCMAKE_FIND_ROOT_PATH=$(TOP)/minidlna/libjpeg-turbo-2.1.4 \
+			-DCMAKE_FIND_ROOT_PATH=$(TOP)/minidlna/libjpeg-turbo-3.1.3 \
 			-DCMAKE_FIND_ROOT_PATH_MODE_PROGRAM=BOTH \
 			-DCMAKE_FIND_ROOT_PATH_MODE_LIBRARY=ONLY \
 			-DCMAKE_FIND_ROOT_PATH_MODE_INCLUDE=ONLY \
-			-DDL_LIBRARY=$(TOP)/minidlna/libjpeg-turbo-2.1.4 \
-			-DCMAKE_PREFIX_PATH=$(TOP)/minidlna/libjpeg-turbo-2.1.4 \
+			-DDL_LIBRARY=$(TOP)/minidlna/libjpeg-turbo-3.1.3 \
+			-DCMAKE_PREFIX_PATH=$(TOP)/minidlna/libjpeg-turbo-3.1.3 \
 			-DCMAKE_STRIP=: \
 			-DCMAKE_INSTALL_PREFIX=/usr \
 			. \
@@ -233,7 +233,7 @@ copy:
 	cp ./ffmpeg-$(FFMPEG_VER)/libavformat/libavformat.a		./lib/libavformat.a && \
 	cp ./ffmpeg-$(FFMPEG_VER)/libavcodec/libavcodec.a		./lib/libavcodec.a && \
 	cp ./sqlite-3.6.22/.libs/libsqlite3.a 		./lib/libsqlite3.a && \
-	cp ./libjpeg-turbo-2.1.4/libturbojpeg.a			./lib/libjpeg.a && \
+	cp ./libjpeg-turbo-3.1.3/libturbojpeg.a			./lib/libjpeg.a && \
 	cp ./libid3tag-0.15.1b/.libs/libid3tag.a 	./lib/libid3tag.a
 
 distclean:
@@ -246,7 +246,7 @@ distclean:
 	-cd ./flac-1.4.2/	&& make distclean
 	-rm -f ./flac-1.4.2/Makefile
 	-cd ./ffmpeg-$(FFMPEG_VER)/	&& make distclean
-	-cd ./libjpeg-turbo-2.1.4/	&& make clean && rm -f CMakeCache.txt
+	-cd ./libjpeg-turbo-3.1.3/	&& make clean && rm -f CMakeCache.txt
 	-cd ./minidlna/		&& make clean
 	-rm ./lib/*.so.*
 	-rm ./lib/minidlna
