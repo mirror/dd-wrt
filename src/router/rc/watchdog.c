@@ -160,6 +160,10 @@ static void check_wifi(void)
 	for (c = 0; c < ifcount; c++) {
 		char interface[32];
 		sprintf(interface, "wlan%d", c);
+		if (nvram_nmatch("disabled", "%s_net_mode", interface))
+			continue;
+		if (nvram_nmatch("disabled", "%s_mode", interface))
+			continue;
 
 		if (is_mac80211(interface)) {
 			struct mac80211_info *mac80211_info;
@@ -193,6 +197,10 @@ static void check_wifi(void)
 			sprintf(vifs, "wlan%d_vifs", c);
 			char *vaps = nvram_safe_get(vifs);
 			foreach(var, vaps, next) {
+				if (nvram_nmatch("disabled", "%s_net_mode", var))
+					continue;
+				if (nvram_nmatch("disabled", "%s_mode", var))
+					continue;
 				mac80211_info = mac80211_assoclist(var);
 				if (mac80211_info && mac80211_info->wci) {
 					for (wc = mac80211_info->wci; wc; wc = wc->next) {
