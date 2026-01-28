@@ -7,6 +7,7 @@ SOFTETHER_CMAKE_OPTIONS=-DCURSES_LIBRARY=$(TOP)/ncurses/lib \
 		    -DCURSES_INCLUDE_PATH=$(TOP)/ncurses/include \
 		    -DSODIUM_INCLUDE_DIRS=$(TOP)/libsodium/src/libsodium/include \
 		    -DOPENSSL_CRYPTO_LIBRARY=$(SSLPATH)/libcrypto.so \
+		    -DCMAKE_POLICY_VERSION_MINIMUM=3.5 \
 		    -DOPENSSL_SSL_LIBRARY=$(SSLPATH)/libssl.so \
 		    -DOPENSSL_INCLUDE_DIR=$(SSLPATH)/include \
 		    -DZLIB_LIBRARY=$(TOP)/zlib/libz.so \
