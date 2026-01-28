@@ -30,7 +30,8 @@
 
 void start_smartd(void)
 {
-	log_eval("smartd");
+	if (pidof("smartd") <= 0)
+		log_eval("smartd");
 	return;
 }
 
