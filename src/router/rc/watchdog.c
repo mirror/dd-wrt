@@ -165,26 +165,23 @@ static void check_wifi(void)
 		if (nvram_nmatch("disabled", "%s_mode", interface))
 			continue;
 
-		if (is_mac80211(interface)) {
+		if (is_ath11k(interface)) {
 			struct mac80211_info *mac80211_info;
 			struct wifi_client_info *wc;
 			mac80211_info = mac80211_assoclist(interface);
 			if (mac80211_info && mac80211_info->wci) {
 				for (wc = mac80211_info->wci; wc; wc = wc->next) {
 					if (wc) {
-						if (is_ath11k(wc->ifname)) {
-							if (!(wc->signal - wc->noise)) {
-								zerocount[vap]++;
-								dd_logerror("ath11k_watchdog",
-									    "zero signal issue detected on interface %s\n",
-									    wc->ifname);
-								if (zerocount[vap] == 10)
-									sys_reboot();
-							} else {
-								zerocount[vap] = 0;
-							}
-							vap++;
+						if (!(wc->signal - wc->noise)) {
+							zerocount[vap]++;
+							dd_logerror("ath11k_watchdog",
+								    "zero signal issue detected on interface %s\n", wc->ifname);
+							if (zerocount[vap] == 10)
+								sys_reboot();
+						} else {
+							zerocount[vap] = 0;
 						}
+						vap++;
 					}
 				}
 				free_wifi_clients(mac80211_info->wci);
