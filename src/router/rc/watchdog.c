@@ -153,12 +153,14 @@ static void check_fan(int brand)
 static void check_wifi(void)
 {
 #ifdef HAVE_ATH11K
-	static int zerocount[8] = { 0, 0, 0, 0, 0, 0, 0, 0 };
+	static int zerocount[8 * 16] = { 0, 0, 0, 0, 0, 0, 0, 0 };
 	int ifcount = getdevicecount();
 	int c = 0;
+	int vap = 0;
 	for (c = 0; c < ifcount; c++) {
 		char interface[32];
 		sprintf(interface, "wlan%d", c);
+
 		if (is_mac80211(interface)) {
 			struct mac80211_info *mac80211_info;
 			struct wifi_client_info *wc;
@@ -168,15 +170,16 @@ static void check_wifi(void)
 					if (wc) {
 						if (is_ath11k(wc->ifname)) {
 							if (!(wc->signal - wc->noise)) {
-								zerocount[c]++;
+								zerocount[vap]++;
 								dd_logerror("ath11k_watchdog",
 									    "zero signal issue detected on interface %s\n",
 									    wc->ifname);
-								if (zerocount[c] == 10)
+								if (zerocount[vap] == 10)
 									sys_reboot();
 							} else {
-								zerocount[c] = 0;
+								zerocount[vap] = 0;
 							}
+							vap++;
 						}
 					}
 				}
@@ -184,6 +187,33 @@ static void check_wifi(void)
 			}
 			if (mac80211_info)
 				free(mac80211_info);
+			char vifs[32];
+			const char *next;
+			sprintf(vifs, "wlan%d_vifs", c);
+			char *vaps = nvram_safe_get(vifs);
+			foreach(var, vaps, next) {
+				mac80211_info = mac80211_assoclist(var);
+				if (mac80211_info && mac80211_info->wci) {
+					for (wc = mac80211_info->wci; wc; wc = wc->next) {
+						if (wc) {
+							if (!(wc->signal - wc->noise)) {
+								zerocount[vap]++;
+								dd_logerror("ath11k_watchdog",
+									    "zero signal issue detected on interface %s\n",
+									    wc->ifname);
+								if (zerocount[vap] == 10)
+									sys_reboot();
+							} else {
+								zerocount[vap] = 0;
+							}
+							vap++;
+						}
+					}
+					free_wifi_clients(mac80211_info->wci);
+				}
+				if (mac80211_info)
+					free(mac80211_info);
+			}
 		}
 	}
 #endif
