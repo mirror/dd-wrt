@@ -473,7 +473,7 @@ void start_raid_internal(void)
 
 void start_raid(void)
 {
-	sysprintf("sleep 5; service raid start");
+	sysprintf("sleep 5; service raid start&");
 }
 
 #endif
