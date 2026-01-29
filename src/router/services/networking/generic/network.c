@@ -2048,13 +2048,13 @@ void start_lan(void)
 
 	if (nvram_matchi("mac_clone_enable", 1) && nvram_invmatch("def_whwaddr", "00:00:00:00:00:00") &&
 	    nvram_invmatch("def_whwaddr", "")) {
-		ether_atoe(nvram_safe_get("def_whwaddr"), ifr.ifr_hwaddr.sa_data);
+		ether_atoe(nvram_safe_get("def_whwaddr"), (unsigned char *)ifr.ifr_hwaddr.sa_data);
 
 	} else {
 		int instance = get_wl_instance(wl_face);
 		getWirelessMac(mac, instance, sizeof(mac));
 
-		ether_atoe(mac, ifr.ifr_hwaddr.sa_data);
+		ether_atoe(mac, (unsigned char *)ifr.ifr_hwaddr.sa_data);
 
 		if (nvram_match("wl0_hwaddr", "") || !nvram_exists("wl0_hwaddr")) {
 			nvram_set("wl0_hwaddr", mac);
@@ -2094,7 +2094,7 @@ void start_lan(void)
 
 #endif
 	char *wanstate = NULL;
-	if (getSTA() || getWET() || CANBRIDGE() && !nvram_match("vlans", "1")) {
+	if ((getSTA() || getWET() || CANBRIDGE()) && !nvram_match("vlans", "1")) {
 		wanstate = set_wan_state(0);
 	} else {
 		if (!nvram_match("vlans", "1"))
@@ -2196,13 +2196,13 @@ void start_lan(void)
 #if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880) && !defined(HAVE_RT61)
 				if (nvram_matchi("mac_clone_enable", 1) && nvram_invmatch("def_whwaddr", "00:00:00:00:00:00") &&
 				    nvram_invmatch("def_whwaddr", "")) {
-					ether_atoe(nvram_safe_get("def_whwaddr"), ifr.ifr_hwaddr.sa_data);
+					ether_atoe(nvram_safe_get("def_whwaddr"), (unsigned char *)ifr.ifr_hwaddr.sa_data);
 
 				} else {
 					int instance = get_wl_instance(name);
 					getWirelessMac(mac, instance, sizeof(mac));
 
-					ether_atoe(mac, ifr.ifr_hwaddr.sa_data);
+					ether_atoe(mac, (unsigned char *)ifr.ifr_hwaddr.sa_data);
 
 					if (instance == -1)
 						continue; // no wireless device
@@ -3002,7 +3002,7 @@ void run_wan(int status)
 
 		if (nvram_matchi("mac_clone_enable", 1) && nvram_invmatch("def_hwaddr", "00:00:00:00:00:00") &&
 		    nvram_invmatch("def_hwaddr", "")) {
-			ether_atoe(nvram_safe_get("def_hwaddr"), ifr.ifr_hwaddr.sa_data);
+			ether_atoe(nvram_safe_get("def_hwaddr"), (unsigned char *)ifr.ifr_hwaddr.sa_data);
 		} else {
 			if (wlifname &&
 			    (!strcmp(ethname, wlifname) || nvram_match("wan_proto", "l2tp") || nvram_match("wan_proto", "pppoe") ||
@@ -3014,13 +3014,13 @@ void run_wan(int status)
 #else
 				getWirelessMac(mac, 0, sizeof(mac));
 #endif
-				ether_atoe(mac, ifr.ifr_hwaddr.sa_data);
+				ether_atoe(mac, (unsigned char *)ifr.ifr_hwaddr.sa_data);
 			} else {
 #ifdef HAVE_X86
 				ioctl(s, SIOCGIFHWADDR, &ifr);
 #else
 				getWANMac(mac, sizeof(mac));
-				ether_atoe(mac, ifr.ifr_hwaddr.sa_data);
+				ether_atoe(mac, (unsigned char *)ifr.ifr_hwaddr.sa_data);
 #endif
 			}
 		}
@@ -3150,8 +3150,7 @@ void run_wan(int status)
 		char *controldevice = nvram_safe_get("3gcontrol");
 		int timeout = 5;
 		char wsel[16];
-		char wsbuf[30];
-		sprintf(wsel, "");
+		char wsbuf[30] = {0};
 
 		// #if defined(HAVE_CAMBRIA) || defined(HAVE_LAGUNA)
 		int wan_select = 1;

@@ -267,7 +267,7 @@ int ipdown_main(int argc, char **argv)
 		if ((stamp = time(NULL)) < 1087818160) // clock is not set
 			// properly
 			stamp = 0;
-		snprintf(buffer, sizeof(buffer), "%ld", stamp);
+		snprintf(buffer, sizeof(buffer), "%lld", (unsigned long long)stamp);
 		nvram_set("ppp_byte_stamp", buffer);
 		nvram_async_commit();
 	}

@@ -943,7 +943,7 @@ void do_hostapd(char **fstr, const char *prefix)
 	int pid;
 
 	if (!prefix)
-		sprintf(fname, "/var/run/global_hostapd.pid", prefix);
+		sprintf(fname, "/var/run/global_hostapd.pid");
 	else
 		sprintf(fname, "/var/run/%s_hostapd.pid", prefix);
 
@@ -957,7 +957,7 @@ void do_hostapd(char **fstr, const char *prefix)
 	char *argv[] = { "hostapd", "-B", "-P", fname, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL };
 	int argc = 4;
 	if (!prefix)
-		debug = nvram_ngeti("wpa_debug", prefix);
+		debug = nvram_geti("wpa_debug");
 	else
 		debug = nvram_ngeti("%s_wpa_debug", prefix);
 	char file[64];
