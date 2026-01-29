@@ -169,9 +169,11 @@ static void check_signal(const char *var, int *vap)
 						sys_reboot();
 					}
 				} else {
-					dd_logerror("ath11k_watchdog", "signal measurement received. reset failcount %s\n",
-						    wc->ifname);
-					zerocount[*vap] = 0;
+					if (zerocount[*vap]) {
+						dd_logerror("ath11k_watchdog", "signal measurement received. reset failcount %s\n",
+							    wc->ifname);
+						zerocount[*vap] = 0;
+					}
 				}
 				(*vap)++;
 			}
