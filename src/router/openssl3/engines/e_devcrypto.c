@@ -211,8 +211,8 @@ static int cipher_init(EVP_CIPHER_CTX *ctx, const unsigned char *key,
     int ret;
 
     /* cleanup a previous session */
-    if (cipher_ctx->sess.ses != 0 && clean_devcrypto_session(&cipher_ctx->sess) == 0)
-        return 0;
+    if (cipher_ctx->sess.ses != 0)
+        clean_devcrypto_session(&cipher_ctx->sess);
 
     cipher_ctx->sess.cipher = cipher_d->devcryptoid;
     cipher_ctx->sess.keylen = cipher_d->keylen;
