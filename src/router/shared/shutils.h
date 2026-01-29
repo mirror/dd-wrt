@@ -139,7 +139,7 @@ extern FILE *fopencreate(const char *name, const char *mode);
  * @param       e       binary data
  * @return      TRUE if conversion was successful and FALSE otherwise
  */
-extern int ether_atoe(const char *a, char *e);
+extern int ether_atoe(const char *a, unsigned char *e);
 
 int indexof(char *str, char c);
 
@@ -149,7 +149,7 @@ int indexof(char *str, char c);
  * @param       a       string in xx:xx:xx:xx:xx:xx notation
  * @return      a
  */
-extern char *ether_etoa(const char *e, char *a);
+extern char *ether_etoa(const unsigned char *e, char *a);
 
 extern int nvifname_to_osifname(const char *nvifname, char *osifname_buf, int osifname_buf_len);
 extern int osifname_to_nvifname(const char *osifname, char *nvifname_buf, int nvifname_buf_len);

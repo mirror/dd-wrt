@@ -496,7 +496,7 @@ FILE *fopencreate(const char *name, const char *mode)
  * @param       e       binary data
  * @return      TRUE if conversion was successful and FALSE otherwise
  */
-int ether_atoe(const char *a, char *e)
+int ether_atoe(const char *a, unsigned char *e)
 {
 	char *c = (char *)a;
 	int i = 0;
@@ -516,7 +516,7 @@ int ether_atoe(const char *a, char *e)
  * @param       a       string in xx:xx:xx:xx:xx:xx notation
  * @return      a
  */
-char *ether_etoa(const char *e, char *a)
+char *ether_etoa(const unsigned char *e, char *a)
 {
 	char *c = a;
 	int i;
@@ -1544,7 +1544,7 @@ int set_ether_hwaddr(const char *name, unsigned char *hwaddr)
 int set_hwaddr(const char *name, const char *hwaddr)
 {
 	unsigned char mac[6];
-	if (ether_atoe(hwaddr, (char *)mac)) {
+	if (ether_atoe(hwaddr, mac)) {
 		return set_ether_hwaddr(name, mac);
 	}
 	return -1;
@@ -1555,7 +1555,7 @@ char *get_hwaddr(const char *name, char *eabuf)
 	unsigned char buf[6] = { 0 };
 	unsigned char *mac = get_ether_hwaddr(name, buf);
 	if (mac) {
-		if (ether_etoa((char *)mac, eabuf)) {
+		if (ether_etoa(mac, eabuf)) {
 			return eabuf;
 		}
 	} else {

@@ -1706,8 +1706,7 @@ void get3GControlDevice(void)
 	//      nvram_set("3gdata", "/dev/usb/tts/0");  // crap
 	int wan_select = 1;
 	char checkforce[30];
-	char wsel[16];
-	sprintf(wsel, "");
+	char wsel[16]={0};
 	if (*(nvram_safe_get("wan_select"))) {
 		wan_select = atoi(nvram_safe_get("wan_select"));
 		if (wan_select != 1) {
