@@ -233,7 +233,7 @@ static void netlink_callback(AvahiNetlink *nl, struct nlmsghdr *n, void* userdat
 
                     break;
 
-                case IFA_FLAGS:
+                case IFA_MULTICAST + 1:
                     if (RTA_PAYLOAD(a) != sizeof(flags))
                         return;
 
