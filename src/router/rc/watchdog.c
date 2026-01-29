@@ -163,8 +163,8 @@ static void check_signal(const char *var, int *vap)
 				if (!(wc->signal - wc->noise)) {
 					zerocount[*vap]++;
 					dd_logerror("ath11k_watchdog", "zero signal issue detected on interface %s\n", wc->ifname);
-					if (zerocount[*vap] == 10) {
-						dd_logerror("ath11k_watchdog", "10 consecutive signal fails detected on %s\n",
+					if (zerocount[*vap] == 20) {
+						dd_logerror("ath11k_watchdog", "20 consecutive signal fails detected on %s\n",
 							    wc->ifname);
 						sys_reboot();
 					}
