@@ -285,7 +285,7 @@ MD5_Init (MD5_CTX * c)
   return 1;
 }
 
-#ifndef md5_block_host_order
+#if 0 //ndef md5_block_host_order
 void
 md5_block_host_order (MD5_CTX * c, const void *data, size_t num)
 {
