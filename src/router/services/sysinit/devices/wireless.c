@@ -434,6 +434,8 @@ int load_ath9k(void)
 	if (!totalwifi)
 		rmmod("ath");
 	delete_ath9k_devices(NULL);
+	rmmod("ath9k_common");
+	rmmod("ath9k_hw");
 	return 0;
 }
 
