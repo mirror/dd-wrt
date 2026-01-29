@@ -40,6 +40,13 @@
 #include "addr-util.h"
 #include "rr-util.h"
 
+#ifdef HAVE_SYS_RANDOM_H
+#include <sys/random.h>
+#endif
+#ifndef HAVE_GETRANDOM
+#  define getrandom(d, len, flags) (-1)
+#endif
+
 #define CACHE_ENTRIES_MAX 500
 
 typedef struct AvahiWideAreaCacheEntry AvahiWideAreaCacheEntry;
@@ -74,17 +81,16 @@ struct AvahiWideAreaLookup {
 
     AvahiAddress dns_server_used;
 
+    int fd;
+    AvahiWatch *watch;
+    AvahiProtocol proto;
+
     AVAHI_LLIST_FIELDS(AvahiWideAreaLookup, lookups);
     AVAHI_LLIST_FIELDS(AvahiWideAreaLookup, by_key);
 };
 
 struct AvahiWideAreaLookupEngine {
     AvahiServer *server;
-
-    int fd_ipv4, fd_ipv6;
-    AvahiWatch *watch_ipv4, *watch_ipv6;
-
-    uint16_t next_id;
 
     /* Cache */
     AVAHI_LLIST_HEAD(AvahiWideAreaCacheEntry, cache);
@@ -120,35 +126,67 @@ static AvahiWideAreaLookup* find_lookup(AvahiWideAreaLookupEngine *e, uint16_t i
     return l;
 }
 
+static void socket_event(AVAHI_GCC_UNUSED AvahiWatch *w, int fd, AVAHI_GCC_UNUSED AvahiWatchEvent events, void *userdata);
+
 static int send_to_dns_server(AvahiWideAreaLookup *l, AvahiDnsPacket *p) {
+    AvahiWideAreaLookupEngine *e;
     AvahiAddress *a;
+    AvahiServer *s;
+    AvahiWatch *w;
+    int r;
 
     assert(l);
     assert(p);
 
-    if (l->engine->n_dns_servers <= 0)
+    e = l->engine;
+    assert(e);
+
+    s = e->server;
+    assert(s);
+
+    if (e->n_dns_servers <= 0)
         return -1;
 
-    assert(l->engine->current_dns_server < l->engine->n_dns_servers);
+    assert(e->current_dns_server < e->n_dns_servers);
 
-    a = &l->engine->dns_servers[l->engine->current_dns_server];
+    a = &e->dns_servers[e->current_dns_server];
     l->dns_server_used = *a;
 
-    if (a->proto == AVAHI_PROTO_INET) {
+    if (l->fd >= 0) {
+        /* We are reusing lookup object and sending packet to another server so let's cleanup before we establish connection to new server. */
+        s->poll_api->watch_free(l->watch);
+        l->watch = NULL;
 
-        if (l->engine->fd_ipv4 < 0)
-            return -1;
-
-        return avahi_send_dns_packet_ipv4(l->engine->fd_ipv4, AVAHI_IF_UNSPEC, p, NULL, &a->data.ipv4, AVAHI_DNS_PORT);
-
-    } else {
-        assert(a->proto == AVAHI_PROTO_INET6);
-
-        if (l->engine->fd_ipv6 < 0)
-            return -1;
-
-        return avahi_send_dns_packet_ipv6(l->engine->fd_ipv6, AVAHI_IF_UNSPEC, p, NULL, &a->data.ipv6, AVAHI_DNS_PORT);
+        close(l->fd);
+        l->fd = -EBADF;
     }
+
+    assert(a->proto == AVAHI_PROTO_INET || a->proto == AVAHI_PROTO_INET6);
+
+    if (a->proto == AVAHI_PROTO_INET)
+        r = s->config.use_ipv4 ? avahi_open_unicast_socket_ipv4() : -1;
+    else
+        r = s->config.use_ipv6 ? avahi_open_unicast_socket_ipv6() : -1;
+
+    if (r < 0) {
+        avahi_log_error(__FILE__ ": Failed to create socket for wide area lookup");
+        return -1;
+    }
+
+    w = s->poll_api->watch_new(s->poll_api, r, AVAHI_WATCH_IN, socket_event, l);
+    if (!w) {
+        close(r);
+        avahi_log_error(__FILE__ ": Failed to create socket watch for wide area lookup");
+        return -1;
+    }
+
+    l->fd = r;
+    l->watch = w;
+    l->proto = a->proto;
+
+    return a->proto == AVAHI_PROTO_INET ?
+                avahi_send_dns_packet_ipv4(l->fd, AVAHI_IF_UNSPEC, p, NULL, &a->data.ipv4, AVAHI_DNS_PORT):
+                avahi_send_dns_packet_ipv6(l->fd, AVAHI_IF_UNSPEC, p, NULL, &a->data.ipv6, AVAHI_DNS_PORT);
 }
 
 static void next_dns_server(AvahiWideAreaLookupEngine *e) {
@@ -201,6 +239,26 @@ static void sender_timeout_callback(AvahiTimeEvent *e, void *userdata) {
     avahi_time_event_update(e, avahi_elapse_time(&tv, 1000, 0));
 }
 
+static uint16_t get_random_uint16(void) {
+    uint16_t next_id;
+
+    if (getrandom(&next_id, sizeof(next_id), 0) == -1)
+        next_id = (uint16_t) rand();
+    return next_id;
+}
+
+static uint16_t avahi_wide_area_next_id(AvahiWideAreaLookupEngine *e) {
+    uint16_t next_id;
+
+    next_id = get_random_uint16();
+    while (find_lookup(e, next_id)) {
+        /* This ID is already used, get new. */
+        next_id = get_random_uint16();
+    }
+    return next_id;
+}
+
+
 AvahiWideAreaLookup *avahi_wide_area_lookup_new(
     AvahiWideAreaLookupEngine *e,
     AvahiKey *key,
@@ -221,17 +279,16 @@ AvahiWideAreaLookup *avahi_wide_area_lookup_new(
     l->dead = 0;
     l->key = avahi_key_ref(key);
     l->cname_key = avahi_key_new_cname(l->key);
+    l->fd = -EBADF;
+    l->watch = NULL;
+    l->proto = AVAHI_PROTO_UNSPEC;
     l->callback = callback;
     l->userdata = userdata;
 
     /* If more than 65K wide area quries are issued simultaneously,
      * this will break. This should be limited by some higher level */
 
-    for (;; e->next_id++)
-        if (!find_lookup(e, e->next_id))
-            break; /* This ID is not yet used. */
-
-    l->id = e->next_id++;
+    l->id = avahi_wide_area_next_id(e);
 
     /* We keep the packet around in case we need to repeat our query */
     l->packet = avahi_dns_packet_new(0);
@@ -292,6 +349,12 @@ static void lookup_destroy(AvahiWideAreaLookup *l) {
 
     if (l->cname_key)
         avahi_key_unref(l->cname_key);
+
+    if (l->watch)
+            l->engine->server->poll_api->watch_free(l->watch);
+
+    if (l->fd >= 0)
+        close(l->fd);
 
     avahi_free(l);
 }
@@ -551,14 +614,20 @@ finish:
 }
 
 static void socket_event(AVAHI_GCC_UNUSED AvahiWatch *w, int fd, AVAHI_GCC_UNUSED AvahiWatchEvent events, void *userdata) {
-    AvahiWideAreaLookupEngine *e = userdata;
+    AvahiWideAreaLookup *l = userdata;
+    AvahiWideAreaLookupEngine *e = l->engine;
     AvahiDnsPacket *p = NULL;
 
-    if (fd == e->fd_ipv4)
-        p = avahi_recv_dns_packet_ipv4(e->fd_ipv4, NULL, NULL, NULL, NULL, NULL);
+    assert(l);
+    assert(e);
+    assert(l->fd == fd);
+
+    if (l->proto == AVAHI_PROTO_INET)
+        p = avahi_recv_dns_packet_ipv4(l->fd, NULL, NULL, NULL, NULL, NULL);
     else {
-        assert(fd == e->fd_ipv6);
-        p = avahi_recv_dns_packet_ipv6(e->fd_ipv6, NULL, NULL, NULL, NULL, NULL);
+        assert(l->proto == AVAHI_PROTO_INET6);
+
+        p = avahi_recv_dns_packet_ipv6(l->fd, NULL, NULL, NULL, NULL, NULL);
     }
 
     if (p) {
@@ -577,34 +646,7 @@ AvahiWideAreaLookupEngine *avahi_wide_area_engine_new(AvahiServer *s) {
     e->server = s;
     e->cleanup_dead = 0;
 
-    /* Create sockets */
-    e->fd_ipv4 = s->config.use_ipv4 ? avahi_open_unicast_socket_ipv4() : -1;
-    e->fd_ipv6 = s->config.use_ipv6 ? avahi_open_unicast_socket_ipv6() : -1;
-
-    if (e->fd_ipv4 < 0 && e->fd_ipv6 < 0) {
-        avahi_log_error(__FILE__": Failed to create wide area sockets: %s", strerror(errno));
-
-        if (e->fd_ipv6 >= 0)
-            close(e->fd_ipv6);
-
-        if (e->fd_ipv4 >= 0)
-            close(e->fd_ipv4);
-
-        avahi_free(e);
-        return NULL;
-    }
-
-    /* Create watches */
-
-    e->watch_ipv4 = e->watch_ipv6 = NULL;
-
-    if (e->fd_ipv4 >= 0)
-        e->watch_ipv4 = s->poll_api->watch_new(e->server->poll_api, e->fd_ipv4, AVAHI_WATCH_IN, socket_event, e);
-    if (e->fd_ipv6 >= 0)
-        e->watch_ipv6 = s->poll_api->watch_new(e->server->poll_api, e->fd_ipv6, AVAHI_WATCH_IN, socket_event, e);
-
     e->n_dns_servers = e->current_dns_server = 0;
-    e->next_id = (uint16_t) rand();
 
     /* Initialize cache */
     AVAHI_LLIST_HEAD_INIT(AvahiWideAreaCacheEntry, e->cache);
@@ -631,18 +673,6 @@ void avahi_wide_area_engine_free(AvahiWideAreaLookupEngine *e) {
     avahi_hashmap_free(e->lookups_by_id);
     avahi_hashmap_free(e->lookups_by_key);
 
-    if (e->watch_ipv4)
-        e->server->poll_api->watch_free(e->watch_ipv4);
-
-    if (e->watch_ipv6)
-        e->server->poll_api->watch_free(e->watch_ipv6);
-
-    if (e->fd_ipv6 >= 0)
-        close(e->fd_ipv6);
-
-    if (e->fd_ipv4 >= 0)
-        close(e->fd_ipv4);
-
     avahi_free(e);
 }
 
@@ -660,7 +690,7 @@ void avahi_wide_area_set_servers(AvahiWideAreaLookupEngine *e, const AvahiAddres
 
     if (a) {
         for (e->n_dns_servers = 0; n > 0 && e->n_dns_servers < AVAHI_WIDE_AREA_SERVERS_MAX; a++, n--)
-            if ((a->proto == AVAHI_PROTO_INET && e->fd_ipv4 >= 0) || (a->proto == AVAHI_PROTO_INET6 && e->fd_ipv6 >= 0))
+            if (a->proto == AVAHI_PROTO_INET || a->proto == AVAHI_PROTO_INET6)
                 e->dns_servers[e->n_dns_servers++] = *a;
     } else {
         assert(n == 0);

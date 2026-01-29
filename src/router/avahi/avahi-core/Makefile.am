@@ -43,7 +43,8 @@ noinst_PROGRAMS = \
 	timeeventq-test \
 	hashmap-test \
 	querier-test \
-	update-test
+	update-test \
+	cname-test
 
 TESTS = \
 	dns-spin-test \
@@ -124,6 +125,11 @@ querier_test_SOURCES = \
 querier_test_CFLAGS = $(AM_CFLAGS)
 querier_test_LDADD = $(AM_LDADD) ../avahi-common/libavahi-common.la libavahi-core.la
 
+cname_test_SOURCES = \
+	cname-test.c
+cname_test_CFLAGS = $(AM_CFLAGS)
+cname_test_LDADD = $(AM_LDADD) ../avahi-common/libavahi-common.la libavahi-core.la
+
 conformance_test_SOURCES = \
 	conformance-test.c
 conformance_test_CFLAGS = $(AM_CFLAGS)
@@ -167,7 +173,7 @@ hashmap_test_CFLAGS = $(AM_CFLAGS)
 hashmap_test_LDADD = $(AM_LDADD) ../avahi-common/libavahi-common.la
 
 valgrind: avahi-test
-	libtool --mode=execute valgrind ./avahi-test
+	$(LIBTOOL) --mode=execute valgrind --leak-check=full --track-origins=yes --track-fds=yes --error-exitcode=1 ./avahi-test
 
 gdb: avahi-test
 	libtool --mode=execute gdb ./avahi-test

@@ -1,0 +1,41 @@
+---
+specfile_path: .packit_rpm/avahi.spec
+files_to_sync:
+  - .packit.yml
+  - src: .packit_rpm/avahi.spec
+    dest: avahi.spec
+upstream_package_name: avahi
+downstream_package_name: avahi
+upstream_tag_template: "v{version}"
+srpm_build_deps: []
+csmock_args: --cppcheck-add-flag=--enable=style -t clang
+
+actions:
+  post-upstream-clone:
+    # Use the Fedora Rawhide specfile
+    - "git clone https://src.fedoraproject.org/rpms/avahi .packit_rpm --depth=1"
+    # Drop the "sources" file so rebase-helper doesn't think it's a dist-git
+    - "rm -fv .packit_rpm/sources"
+    # Drop all patches apart from avahi-0.6.30-mono-libdir.patch
+    - "sed -ri '/^Patch[0-9]+\\:.+\\.patch/d' .packit_rpm/avahi.spec"
+    - "sed -ri '/^## downstream patches/aPatch100: avahi-0.6.30-mono-libdir.patch' .packit_rpm/avahi.spec"
+    # The bug where the empty directory was created when Python was disabled is fixed upstream
+    - "sed -i '/libdir}\\/avahi$/d' .packit_rpm/avahi.spec"
+
+jobs:
+- job: copr_build
+  trigger: pull_request
+  targets:
+  - fedora-all-aarch64
+  - fedora-all-i386
+  - fedora-all-ppc64le
+  - fedora-all-s390x
+  - fedora-all-x86_64
+- job: copr_build
+  trigger: commit
+  targets:
+  - fedora-all-aarch64
+  - fedora-all-i386
+  - fedora-all-ppc64le
+  - fedora-all-s390x
+  - fedora-all-x86_64

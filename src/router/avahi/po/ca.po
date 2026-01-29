@@ -4,20 +4,23 @@
 #
 # Translators:
 # Robert Antoni Buj i Gelonch <rbuj@fedoraproject.org>, 2015
+# Weblate Translation Memory <noreply-mt-weblate-translation-memory@weblate.org>, 2024.
+# naly zzwd <xeanhort007@gmail.com>, 2025.
 msgid ""
 msgstr ""
 "Project-Id-Version: Avahi\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2015-10-10 13:24+0200\n"
-"PO-Revision-Date: 2015-10-10 10:10+0000\n"
-"Last-Translator: Robert Antoni Buj i Gelonch <rbuj@fedoraproject.org>\n"
-"Language-Team: Catalan (http://www.transifex.com/lennart/avahi/language/"
-"ca/)\n"
+"PO-Revision-Date: 2025-09-12 08:10+0000\n"
+"Last-Translator: naly zzwd <xeanhort007@gmail.com>\n"
+"Language-Team: Catalan <https://translate.fedoraproject.org/projects/avahi/"
+"master/ca/>\n"
 "Language: ca\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"Plural-Forms: nplurals=2; plural=n != 1;\n"
+"X-Generator: Weblate 5.13.2\n"
 
 #: ../avahi-common/error.c:30
 msgid "OK"
@@ -455,14 +458,12 @@ msgstr "Exploració..."
 
 #: ../avahi-ui/avahi-ui.c:1047 ../avahi-ui/bssh.c:149 ../avahi-ui/bssh.c:156
 #: ../avahi-ui/bssh.c:161
-#, fuzzy
 msgid "_Cancel"
-msgstr "Cancel·lat.\n"
+msgstr "_Cancel·la"
 
 #: ../avahi-ui/avahi-ui.c:1048
-#, fuzzy
 msgid "_OK"
-msgstr "D'acord"
+msgstr "D'ac_ord"
 
 #: ../avahi-ui/avahi-ui.c:1134
 msgid "Initializing..."
@@ -514,7 +515,7 @@ msgstr "Trieu el servidor de Shell"
 
 #: ../avahi-ui/bssh.c:149 ../avahi-ui/bssh.c:156 ../avahi-ui/bssh.c:161
 msgid "C_onnect"
-msgstr ""
+msgstr "C_onnecta"
 
 #: ../avahi-ui/bssh.c:151
 msgid "Desktop"
@@ -776,12 +777,13 @@ msgstr ""
 "    -V --version         Mostra la versió\n"
 "    -s --service         Publica el servei\n"
 "    -a --address         Publica l'adreça\n"
-"    -v --verbose         Habilita el mode verbós\n"
-"    -d --domain=DOMINI   El domini per publicar-hi el servei\n"
+"    -v --verbose         Habilita el mode detallat (verbose)\n"
+"    -d --domain=DOMINI   El domini on publicar-hi el servei\n"
 "    -H --host=DOMINI     L'amfitrió on resideix el servei\n"
 "       --subtype=SUBTIPUS Un subtipus addicional amb què registrar el "
 "servei\n"
-"    -f --no-fail         No fracassis si el dimoni no està disponible\n"
+"    -R --no-reverse      No publiqueu l'entrada inversa amb l'adreça\n"
+"    -f --no-fail         No fallis si el dimoni no està disponible\n"
 
 #: ../avahi-utils/avahi-publish.c:303 ../avahi-utils/avahi-publish.c:318
 #, c-format

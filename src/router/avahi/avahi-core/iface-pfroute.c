@@ -495,6 +495,7 @@ void avahi_interface_monitor_sync(AvahiInterfaceMonitor *m) {
   avahi_interface_monitor_check_relevant(m);
   avahi_interface_monitor_update_rrs(m, 0);
   avahi_log_info("Network interface enumeration completed.");
+  avahi_free(buf);
 #elif defined (SIOCGLIFNUM) && defined(HAVE_STRUCT_LIFCONF) /* Solaris 8 and later; Sol 7? */
     int sockfd;
     int ret;
@@ -519,7 +520,7 @@ void avahi_interface_monitor_sync(AvahiInterfaceMonitor *m) {
             avahi_log_error("malloc failed in avahi_interface_monitor_sync");
             goto end;
     }
-    lifc.lifc_family = NULL;
+    lifc.lifc_family = AF_UNSPEC;
     lifc.lifc_flags = 0;
     if(ioctl(sockfd, SIOCGLIFCONF, &lifc) < 0) {
         avahi_log_error(__FILE__": ioctl(SIOCGLIFCONF): %s", strerror(errno));

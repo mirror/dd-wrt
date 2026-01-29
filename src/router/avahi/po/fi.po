@@ -3,24 +3,28 @@
 # This file is distributed under the same license as the PACKAGE package.
 #
 # Translators:
+# Weblate Translation Memory <noreply-mt-weblate-translation-memory@weblate.org>, 2024.
+# Jan Kuparinen <copper_fin@hotmail.com>, 2024.
+# Ricky Tigg <ricky.tigg@gmail.com>, 2024, 2025.
 msgid ""
 msgstr ""
 "Project-Id-Version: Avahi\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2015-10-10 13:24+0200\n"
-"PO-Revision-Date: 2013-11-20 09:58+0000\n"
-"Last-Translator: Ville Skyttä <ville.skytta@iki.fi>\n"
-"Language-Team: Finnish (http://www.transifex.com/lennart/avahi/language/"
-"fi/)\n"
+"PO-Revision-Date: 2025-01-08 10:38+0000\n"
+"Last-Translator: Ricky Tigg <ricky.tigg@gmail.com>\n"
+"Language-Team: Finnish <https://translate.fedoraproject.org/projects/avahi/"
+"master/fi/>\n"
 "Language: fi\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"Plural-Forms: nplurals=2; plural=n != 1;\n"
+"X-Generator: Weblate 5.9.2\n"
 
 #: ../avahi-common/error.c:30
 msgid "OK"
-msgstr "OK"
+msgstr "Hyvä on"
 
 #: ../avahi-common/error.c:31
 msgid "Operation failed"
@@ -409,7 +413,7 @@ msgstr "Avahi-verkkoaluetta ei voi lukea: %s"
 
 #: ../avahi-ui/avahi-ui.c:706
 msgid "Browse service type list is empty!"
-msgstr "Selattavien palvelutyyppien luettelo on tyhjä."
+msgstr "Selattavien palvelutyyppien luettelo on tyhjä!"
 
 #: ../avahi-ui/avahi-ui.c:717
 #, c-format
@@ -450,14 +454,12 @@ msgstr "Selataan..."
 
 #: ../avahi-ui/avahi-ui.c:1047 ../avahi-ui/bssh.c:149 ../avahi-ui/bssh.c:156
 #: ../avahi-ui/bssh.c:161
-#, fuzzy
 msgid "_Cancel"
-msgstr "Peruttu.\n"
+msgstr "_Peru"
 
 #: ../avahi-ui/avahi-ui.c:1048
-#, fuzzy
 msgid "_OK"
-msgstr "OK"
+msgstr "_OK"
 
 #: ../avahi-ui/avahi-ui.c:1134
 msgid "Initializing..."
@@ -509,7 +511,7 @@ msgstr "Valitse päätepalvelin"
 
 #: ../avahi-ui/bssh.c:149 ../avahi-ui/bssh.c:156 ../avahi-ui/bssh.c:161
 msgid "C_onnect"
-msgstr ""
+msgstr "_Yhdistä"
 
 #: ../avahi-ui/bssh.c:151
 msgid "Desktop"
@@ -764,6 +766,19 @@ msgid ""
 "    -R --no-reverse      Do not publish reverse entry with address\n"
 "    -f --no-fail         Don't fail if the daemon is not available\n"
 msgstr ""
+"%s [asetukset] %s <nimi> <tyyppi> <portti> [<txt ...>]\n"
+"%s [asetukset] %s <isäntänimi> <osoite>\n"
+"\n"
+" -h --help Näytä tämä ohje\n"
+" -V --versio Näytä versio\n"
+" -s --service Julkaise palvelu\n"
+" -a --address Julkaise osoite\n"
+" -v --verbose Ota monisanainen tila käyttöön\n"
+" -d --domain=DOMAINI Verkkotunnus, jossa palvelu julkaistaan\n"
+" -H --host=DOMAINI Isäntä, jossa palvelu sijaitsee\n"
+" --subtype=ALATYYPPI Lisäalatyyppi tämän palvelun rekisteröimiseksi\n"
+" -R --no-reverse Älä julkaise käänteistä merkintää osoitteen kanssa\n"
+" -f --no-fail Älä epäonnistu, jos demonia ei ole saatavilla\n"
 
 #: ../avahi-utils/avahi-publish.c:303 ../avahi-utils/avahi-publish.c:318
 #, c-format

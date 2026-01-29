@@ -30,7 +30,7 @@ desktop_DATA_in_in = bssh.desktop.in.in bvnc.desktop.in.in
 EXTRA_DIST = $(desktop_DATA_in_in)
 
 if HAVE_GTK2OR3
-AM_CFLAGS += -DGNOMELOCALEDIR=\"$(datadir)/locale\"
+AM_CFLAGS += -DGNOMELOCALEDIR=\"$(localedir)\"
 if HAVE_DBUS
 if HAVE_GLIB
 
@@ -69,13 +69,6 @@ libavahi_ui_la_LIBADD += -lgdbm
 
 libavahi_ui_gtk3_la_CFLAGS += -DDATABASE_FILE=\"$(pkglibdatadir)/service-types.db\"
 libavahi_ui_gtk3_la_LIBADD += -lgdbm
-endif
-
-if HAVE_DBM
-libavahi_ui_la_SOURCES += ../avahi-utils/stdb.h ../avahi-utils/stdb.c
-libavahi_ui_la_CFLAGS += -DDATABASE_FILE=\"$(pkglibdatadir)/service-types.db\"
-
-libavahi_ui_gtk3_la_CFLAGS += -DDATABASE_FILE=\"$(pkglibdatadir)/service-types.db\"
 endif
 
 bin_PROGRAMS = bssh

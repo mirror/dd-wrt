@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # This file is part of avahi.
 #
@@ -69,6 +69,7 @@ else
     test -f configure.ac~ && mv configure.ac~ configure.ac
 
     test "x$LIBTOOLIZE" = "x" && LIBTOOLIZE=libtoolize
+    test "x$MAKE" = "x" && MAKE=make
 
     "$LIBTOOLIZE" -c --force
     run_versioned aclocal "$AM_VERSION" -I common

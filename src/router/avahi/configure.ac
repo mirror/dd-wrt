@@ -19,7 +19,7 @@
 # USA.
 
 AC_PREREQ(2.63)
-AC_INIT([avahi],[0.8],[avahi (at) lists (dot) freedesktop (dot) org])
+AC_INIT([avahi],[0.9-rc3],[avahi (at) lists (dot) freedesktop (dot) org])
 AC_CONFIG_SRCDIR([avahi-core/server.c])
 AC_CONFIG_MACRO_DIR([common])
 AC_CONFIG_HEADERS([config.h])
@@ -367,7 +367,8 @@ AC_FUNC_SELECT_ARGTYPES
 # whether libc's malloc does too. (Same for realloc.)
 #AC_FUNC_MALLOC
 #AC_FUNC_REALLOC
-AC_CHECK_FUNCS([gethostname memchr memmove memset mkdir select socket strchr strcspn strdup strerror strrchr strspn strstr uname setresuid setreuid setresgid setregid strcasecmp gettimeofday putenv strncasecmp strlcpy gethostbyname seteuid setegid setproctitle getprogname])
+AC_CHECK_FUNCS([gethostname memchr memmove memset mkdir select socket strchr strcspn strdup strerror strrchr strspn strstr uname setresuid setreuid setresgid setregid strcasecmp gettimeofday putenv strncasecmp strlcpy gethostbyname seteuid setegid setproctitle getprogname getrandom])
+AC_CHECK_HEADERS([sys/random.h])
 
 AC_FUNC_CHOWN
 AC_FUNC_STAT
@@ -397,21 +398,28 @@ fi
 AM_CONDITIONAL(HAVE_DLOPEN, test "x$HAVE_DLOPEN" = "xyes")
 
 have_inotify=no
-AC_CHECK_HEADERS([sys/inotify.h], [have_inotify=yes])
-
-AM_CONDITIONAL(HAVE_INOTIFY, test "x$have_inotify" = "xyes")
-
-if test "x$have_inotify" = "xyes" ; then
-   AC_DEFINE([HAVE_INOTIFY], 1, [Enable Linux inotify() usage])
-fi
+AC_MSG_CHECKING(for inotify)
+AC_LINK_IFELSE(
+        [AC_LANG_SOURCE([
+#include <sys/inotify.h>
+int main () {
+    return (-1 == inotify_init());
+}])],
+        [AC_MSG_RESULT([yes]); have_inotify=yes],
+        [AC_MSG_RESULT([no])]
+    )
 
 have_kqueue=yes
 AC_CHECK_FUNCS([kqueue],,have_kqueue=no)
 
-AM_CONDITIONAL(HAVE_KQUEUE, test "x$have_kqueue" = "xyes")
-
+# FreeBSD 15 has both kqueue and inotify. The build system defaults
+# to kqueue because it's better integrated with Valgrind. The default
+# can probably be revisited once issues like https://github.com/avahi/avahi/issues/788
+# no longer pop up.
 if test "x$have_kqueue" = "xyes" ; then
     AC_DEFINE([HAVE_KQUEUE], 1, [Enable BSD kqueue() usage])
+elif test "x$have_inotify" = "xyes" ; then
+    AC_DEFINE([HAVE_INOTIFY], 1, [Enable Linux inotify() usage])
 fi
 
 GETTEXT_PACKAGE=avahi
@@ -419,9 +427,6 @@ AC_SUBST([GETTEXT_PACKAGE])
 AC_DEFINE_UNQUOTED([GETTEXT_PACKAGE],["$GETTEXT_PACKAGE"],[Gettext package])
 AM_GNU_GETTEXT_VERSION([0.19.8])
 AM_GNU_GETTEXT([external])
-
-avahilocaledir='${prefix}/${DATADIRNAME}/locale'
-AC_SUBST(avahilocaledir)
 
 # Check for pkg-config manually first, as if its not installed the
 # PKG_PROG_PKG_CONFIG macro won't be defined.
@@ -760,18 +765,6 @@ AM_CONDITIONAL(HAVE_XML, test "x$HAVE_XML" = "xyes")
 #
 # GDBM
 #
-#
-# Check for dbm
-#
-AC_ARG_ENABLE(dbm,
-        AS_HELP_STRING([--enable-dbm],[Enable use of DBM]),
-        [case "${enableval}" in
-                yes) HAVE_DBM=yes ;;
-                no)  HAVE_DBM=no ;;
-                *) AC_MSG_ERROR(bad value ${enableval} for --enable-dbm) ;;
-        esac],
-        [HAVE_DBM=no])
-
 AC_ARG_ENABLE(gdbm,
         AS_HELP_STRING([--disable-gdbm],[Disable use of GDBM]),
         [case "${enableval}" in
@@ -782,27 +775,23 @@ AC_ARG_ENABLE(gdbm,
         [HAVE_GDBM=yes])
 
 if test "x$HAVE_GDBM" = "xyes" ; then
-    if test "x$HAVE_DBM" = "xyes" ; then
-        AC_MSG_ERROR([*** --enable-gdbm and --enable-dbm both specified ***])
-    fi
     AC_CHECK_LIB(gdbm, gdbm_open, [ AC_CHECK_HEADERS(gdbm.h, have_gdbm=true, have_gdbm=false) ], have_gdbm=false)
 
     if ! $have_gdbm ; then
         AC_MSG_ERROR([*** libgdbm not found ***])
     fi
     AC_DEFINE([HAVE_GDBM],[],[Support for GDBM])
-else
-    if test "x$HAVE_DBM" = "xyes" ; then
-        AC_CHECK_HEADERS(ndbm.h, have_dbm=true, have_dbm=false)
-
-        if ! $have_dbm ; then
-            AC_MSG_ERROR([*** dbm not found ***])
-        fi
-        AC_DEFINE([HAVE_DBM],[],[Support for DBM])
-    fi
 fi
 AM_CONDITIONAL(HAVE_GDBM, test "x$HAVE_GDBM" = "xyes")
-AM_CONDITIONAL(HAVE_DBM, test "x$HAVE_DBM" = "xyes")
+
+# It's a compat option to prevent scripts where dbm is disabled explicitly
+# with --disable-dbm from breaking. --enable-dbm just fails loudly.
+AC_ARG_ENABLE(dbm,
+        AS_HELP_STRING([--enable-dbm],[--enable-dbm is no longer supported]),
+        [case "${enableval}" in
+                no) AC_MSG_NOTICE(--disable-dbm can be omitted because dbm is no longer supported) ;;
+                *) AC_MSG_ERROR(dbm is no longer supported) ;;
+        esac])
 
 #
 # libdaemon
@@ -822,6 +811,26 @@ if test "x$HAVE_LIBDAEMON" = "xyes" ; then
     AC_SUBST(LIBDAEMON_LIBS)
 fi
 AM_CONDITIONAL(HAVE_LIBDAEMON, test "x$HAVE_LIBDAEMON" = "xyes")
+
+#
+# libsystemd
+#
+AC_ARG_ENABLE(libsystemd,
+        AS_HELP_STRING([--disable-libsystemd],[Disable use of libsystemd]),
+        [case "${enableval}" in
+                yes) HAVE_LIBSYSTEMD=yes ;;
+                no)  HAVE_LIBSYSTEMD=no ;;
+                *) AC_MSG_ERROR(bad value ${enableval} for --enable-libsystemd) ;;
+        esac],
+        [HAVE_LIBSYSTEMD=yes])
+
+if test "x$HAVE_LIBSYSTEMD" = "xyes" ; then
+    PKG_CHECK_MODULES(LIBSYSTEMD, [ libsystemd ])
+    AC_DEFINE([HAVE_LIBSYSTEMD], 1, [Support for libsystemd])
+    AC_SUBST(LIBSYSTEMD_CFLAGS)
+    AC_SUBST(LIBSYSTEMD_LIBS)
+fi
+AM_CONDITIONAL(HAVE_LIBSYSTEMD, test "x$HAVE_LIBSYSTEMD" = "xyes")
 
 #
 # Python stuff
@@ -870,9 +879,9 @@ if test "x$HAVE_PYTHON" = "xyes" ; then
         fi
 
         AM_CHECK_PYMOD(socket,,,[AC_MSG_ERROR(Could not find Python module socket)])
-        if test "x$HAVE_GDBM" = "xyes" || test "x$HAVE_DBM" = "xyes"; then
-            AM_CHECK_PYMOD(anydbm,,,[
-                AM_CHECK_PYMOD(dbm,,,[AC_MSG_ERROR(Could not find Python module dbm)])
+        if test "x$HAVE_GDBM" = "xyes"; then
+            AM_CHECK_PYMOD([dbm.gnu], [], [], [
+                AM_CHECK_PYMOD([gdbm], [], [], [AC_MSG_ERROR(Could not find Python module dbm.gnu or gdbm)])
             ])
         fi
     fi
@@ -1000,12 +1009,14 @@ fi
 AC_SUBST(AVAHI_AUTOIPD_GROUP)
 AC_DEFINE_UNQUOTED(AVAHI_AUTOIPD_GROUP,"$AVAHI_AUTOIPD_GROUP", [Group for running the avahi-autoipd daemon])
 
+# Autoconf 2.70 supports this natively but it is not yet universally available.
+AS_IF([test -z "${runstatedir}"], [runstatedir='${localstatedir}/run'])
+AC_SUBST([runstatedir])
+
 #
 # Avahi runtime dir
 #
-avahi_runtime_dir="${localstatedir}/run"
-avahi_socket="${avahi_runtime_dir}/avahi-daemon/socket"
-AC_SUBST(avahi_runtime_dir)
+avahi_socket="${runstatedir}/avahi-daemon/socket"
 AC_SUBST(avahi_socket)
 
 #
@@ -1145,14 +1156,9 @@ avahi-daemon/avahi-dbus.conf
 avahi-discover-standalone/Makefile
 avahi-client/Makefile
 initscript/Makefile
-initscript/debian/Makefile
 initscript/gentoo/Makefile
-initscript/suse/Makefile
-initscript/fedora/Makefile
 initscript/lfs/Makefile
-initscript/mandriva/Makefile
 initscript/darwin/Makefile
-initscript/freebsd/Makefile
 initscript/slackware/Makefile
 avahi-dnsconfd/Makefile
 avahi-utils/Makefile
@@ -1197,8 +1203,8 @@ echo "
     Enable D-Bus:                              ${HAVE_DBUS}
     With XML:                                  ${with_xml}
     Enable GDBM:                               ${HAVE_GDBM}
-    Enable DBM:                                ${HAVE_DBM}
     Enable libdaemon:                          ${HAVE_LIBDAEMON}
+    Enable libsystemd:                         ${HAVE_LIBSYSTEMD}
     Enable Python:                             ${HAVE_PYTHON}
     Enable pygobject:                          ${HAVE_PYGOBJECT}
     Enable python-dbus:                        ${HAVE_PYTHON_DBUS}
