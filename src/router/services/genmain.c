@@ -70,7 +70,7 @@ void readsymbols(void)
 		if (valid) {
 			fscanf(fp, "%s", sym);
 			syms[cnt++] = strdup(sym);
-			fprintf(stdout, "%s\n", sym);
+//			fprintf(stdout, "%s\n", sym);
 			valid = 0;
 		}
 	}
