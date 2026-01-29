@@ -160,7 +160,7 @@ openssl-configure:
 			--prefix=/usr \
 			--libdir=/usr/lib \
 			--openssldir=/etc/ssl \
-			$(COPTS) $(OPENSSL_CMAKEFLAGS) -DNDEBUG \
+			$(COPTS) $(OPENSSL_CMAKEFLAGS) -DOPENSSL_PREFER_CHACHA_OVER_GCM -DNDEBUG \
 			$(TARGET_LDFLAGS) -ldl -lrt -L$(TOP)/libucontext -lucontext \
 			$(OPENSSL_NO_CIPHERS) \
 			$(OPENSSL_OPTIONS)
