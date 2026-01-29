@@ -639,13 +639,11 @@ static int detect_wireless_devices(int mask)
 		load_iwlwifi();
 	}
 #endif
-/*	if (!totalwifi) {
-		rmmod("mac80211");
-		rmmod("cfg80211");
-		rmmod("compat_firmware_class");
-		rmmod("compat");
+	rmmod("mac80211");
+	rmmod("cfg80211");
+	rmmod("compat_firmware_class");
+	rmmod("compat");
 
-	}*/
 #endif
 #endif
 	wait_for_wifi(1);
