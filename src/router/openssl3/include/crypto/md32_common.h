@@ -154,6 +154,7 @@
  * Time for some action :-)
  */
 
+#ifndef OCTEON_HASH
 int HASH_UPDATE(HASH_CTX *c, const void *data_, size_t len)
 {
     const unsigned char *data = data_;
@@ -211,12 +212,14 @@ int HASH_UPDATE(HASH_CTX *c, const void *data_, size_t len)
     }
     return 1;
 }
+#endif
 
 void HASH_TRANSFORM(HASH_CTX *c, const unsigned char *data)
 {
     HASH_BLOCK_DATA_ORDER(c, data, 1);
 }
 
+#ifndef OCTEON_HASH
 int HASH_FINAL(unsigned char *md, HASH_CTX *c)
 {
     unsigned char *p = (unsigned char *)c->data;
@@ -253,6 +256,7 @@ int HASH_FINAL(unsigned char *md, HASH_CTX *c)
 
     return 1;
 }
+#endif
 
 #ifndef MD32_REG_T
 #if defined(__alpha) || defined(__sparcv9) || defined(__mips)
