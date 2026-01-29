@@ -17,6 +17,7 @@ avahi-configure: expat-configure expat dbus-configure dbus libdaemon-configure l
 		--disable-qt3 --disable-qt4 --disable-qt5 --disable-gtk --disable-gtk3 \
 		--disable-gdbm --disable-python --disable-python-dbus \
 		--disable-mono --disable-monodoc --disable-autoipd \
+		--disable-libsystemd \
 		--disable-doxygen-doc --disable-manpages --disable-xmltoman \
 		--with-xml=expat \
 		--with-avahi-user="nobody" --with-avahi-group="nobody" \
@@ -48,6 +49,7 @@ avahi-configure: expat-configure expat dbus-configure dbus libdaemon-configure l
 		--disable-gdbm --disable-python --disable-python-dbus \
 		--disable-mono --disable-monodoc --disable-autoipd \
 		--disable-doxygen-doc --disable-manpages --disable-xmltoman \
+		--disable-libsystemd \
 		--with-xml=expat \
 		--with-avahi-user="nobody" --with-avahi-group="nobody" \
 		--disable-stack-protector \
