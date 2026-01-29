@@ -162,6 +162,10 @@ int load_iwlwifi(void)
 	if (!detectchange("iwldvm") && !detectchange("iwlmvm")) {
 		rmmod("iwlwifi");
 	}
+	rmmod("lib80211_crypt_wep");
+	rmmod("lib80211_crypt_tkip");
+	rmmod("lib80211_crypt_ccmp");
+	rmmod("lib80211");
 	return 0;
 }
 
