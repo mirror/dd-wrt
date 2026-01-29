@@ -18,6 +18,13 @@
 
 #include <openssl/opensslconf.h>
 
+#ifdef OCTEON_OPENSSL
+#include "../../include/executive/cvmx-address.h"
+#include "../../include/executive/cvmx-asm.h"
+#include "../../include/executive/cvmx-key.h"
+#include "../../include/executive/cvmx-swap.h"
+#endif
+
 #ifndef OPENSSL_NO_DES
 #ifdef __cplusplus
 extern "C" {
