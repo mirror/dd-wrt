@@ -75,7 +75,7 @@ void recover(void)
 			fprintf(stderr, "error while validating\n");
 			exit(1);
 		}
-		fprintf(stderr, "check: %s=%s\n", temp,values[index[i]]);
+//		fprintf(stderr, "check: %s=%s\n", temp,values[index[i]]);
 	}
 	for (i = 0; i < stores; i++) {
 		free(values[i]);
@@ -105,7 +105,7 @@ int main(int argc, char *argv[])
 		if (!strlen(srouter_defaults[i].value)) {
 			srouter_defaults[i].value = NULL;
 			int a = 0;
-			fprintf(stderr, "name %s is empty\n", srouter_defaults[i].name);
+//			fprintf(stderr, "name %s is empty\n", srouter_defaults[i].name);
 			for (a = i; a < len-1; a++) {
 				srouter_defaults[a].value = srouter_defaults[a + 1].value;
 				srouter_defaults[a].name = srouter_defaults[a + 1].name;
