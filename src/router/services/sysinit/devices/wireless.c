@@ -229,7 +229,7 @@ int load_mt76(void)
 
 	rmmod("rt2800lib");
 	rmmod("rt2x00mmio");
-	rmmod("rt2x0lib");
+	rmmod("rt2x00lib");
 	rmmod("mt76-sdio");
 	rmmod("mt7921-common");
 	rmmod("mt792x-lib");
