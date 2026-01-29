@@ -78,8 +78,8 @@ void start_raid_internal(void)
 	static int raid_running = 0;
 	if (raid_running)
 		return;
-	nvram_set("raid_interrupt", "0");
 	raid_running = 1;
+	nvram_set("raid_interrupt", "0");
 again:;
 	sleep(5);
 	if (nvram_match("raid_interrupt","1")) {

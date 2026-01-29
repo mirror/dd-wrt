@@ -234,6 +234,8 @@ void start_transmission(void)
 	stop_transmission(); // write config if present
 	if (!nvram_matchi("transmission_enable", 1))
 		return;
+	if (pidof("transmissiond") > 0)
+		return;
 	parse_config(); // read it back and parse it
 
 	eval("mkdir", "-p", nvram_safe_get("transmission_dir"));
