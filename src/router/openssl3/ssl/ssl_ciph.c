@@ -1483,12 +1483,18 @@ STACK_OF(SSL_CIPHER) *ssl_create_cipher_list(SSL_CTX *ctx,
     ssl_cipher_apply_rule(0, SSL_kECDHE, 0, 0, 0, 0, 0, CIPHER_DEL, -1, &head,
         &tail);
 
+#ifdef OPENSSL_PREFER_CHACHA_OVER_GCM
+    ssl_cipher_apply_rule(0, 0, 0, SSL_CHACHA20, 0, 0, 0, CIPHER_ADD, -1,
+                          &head, &tail);
+    ssl_cipher_apply_rule(0, 0, 0, SSL_AESGCM, 0, 0, 0, CIPHER_ADD, -1,
+                          &head, &tail);
+#else
     /* Within each strength group, we prefer GCM over CHACHA... */
     ssl_cipher_apply_rule(0, 0, 0, SSL_AESGCM, 0, 0, 0, CIPHER_ADD, -1,
         &head, &tail);
     ssl_cipher_apply_rule(0, 0, 0, SSL_CHACHA20, 0, 0, 0, CIPHER_ADD, -1,
         &head, &tail);
-
+#endif
     /*
      * ...and generally, our preferred cipher is AES.
      * Note that AEADs will be bumped to take preference after sorting by
@@ -2244,7 +2250,13 @@ const char *OSSL_default_cipher_list(void)
  */
 const char *OSSL_default_ciphersuites(void)
 {
+#ifdef OPENSSL_PREFER_CHACHA_OVER_GCM
+    return "TLS_CHACHA20_POLY1305_SHA256:"
+           "TLS_AES_256_GCM_SHA384:"
+           "TLS_AES_128_GCM_SHA256";
+#else
     return "TLS_AES_256_GCM_SHA384:"
            "TLS_CHACHA20_POLY1305_SHA256:"
            "TLS_AES_128_GCM_SHA256";
+#endif
 }
