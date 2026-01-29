@@ -150,8 +150,8 @@ static void check_fan(int brand)
 #endif
 }
 
-static unsigned char zerocount[8 * 16];
-static void check_signal(const char *var, int *vap)
+static unsigned char zerocount[8][17];
+static void check_signal(const char *var, int interface, int vap)
 {
 	struct mac80211_info *mac80211_info;
 
@@ -161,21 +161,22 @@ static void check_signal(const char *var, int *vap)
 		for (wc = mac80211_info->wci; wc; wc = wc->next) {
 			if (wc) {
 				if (!(wc->signal - wc->noise)) {
-					zerocount[*vap]++;
+					zerocount[interface][vap]++;
 					dd_logerror("ath11k_watchdog", "zero signal issue detected on interface %s\n", wc->ifname);
-					if (zerocount[*vap] == 20) {
+					if (zerocount[interface][vap] == 20) {
 						dd_logerror("ath11k_watchdog", "20 consecutive signal fails detected on %s\n",
 							    wc->ifname);
 						sys_reboot();
 					}
 				} else {
-					if (zerocount[*vap]) {
+					if (zerocount[interface][vap]) {
 						dd_logerror("ath11k_watchdog", "signal measurement received. reset failcount %s\n",
 							    wc->ifname);
-						zerocount[*vap] = 0;
+						int i;
+						for (i = 0; i < 17; i++)
+							zerocount[interface][i] = 0;
 					}
 				}
-				(*vap)++;
 			}
 		}
 		free_wifi_clients(mac80211_info->wci);
@@ -198,18 +199,19 @@ static void check_wifi(void)
 			continue;
 
 		if (is_ath11k(interface)) {
-			check_signal(interface, &vap);
+			check_signal(interface, c, 0);
 			char vifs[32];
 			char var[32];
 			const char *next;
 			sprintf(vifs, "wlan%d_vifs", c);
 			char *vaps = nvram_safe_get(vifs);
+			int vap = 1;
 			foreach(var, vaps, next) {
 				if (nvram_nmatch("disabled", "%s_net_mode", var))
 					continue;
 				if (nvram_nmatch("disabled", "%s_mode", var))
 					continue;
-				check_signal(var, &vap);
+				check_signal(var, c, vap++);
 			}
 		}
 	}
