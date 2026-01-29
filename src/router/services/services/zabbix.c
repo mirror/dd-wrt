@@ -85,7 +85,7 @@ void start_zabbix(void)
 			    " | grep -v '^[#:]' | md5sum | tr -cd 0-9 | cut -b1-10\n");
 		fprintf(fp, "UserParameter=net.ipv4.cksum,ifconfig | grep -B1 ' inet ' | md5sum | tr -cd 0-9 | cut -b1-10\n");
 		fprintf(fp,
-			"UserParameter=net.ipv4,ifconfig | grep -B1 ' inet ' | grep -o -e 'addr:[0-9]*\.[0-9]*\.[0-9]*\.[0-9]*' -e '^[a-z0-9:]*'\n");
+			"UserParameter=net.ipv4,ifconfig | grep -B1 ' inet ' | grep -o -e 'addr:[0-9]*\\.[0-9]*\\.[0-9]*\.[0-9]*' -e '^[a-z0-9:]*'\n");
 		fprintf(fp,
 			"UserParameter=nvram.cksum, /usr/sbin/nvram show 2>/dev/null | grep -vE '^(forward_|traff|dnsmasq_lease_|http_client_)' | sort | md5sum | tr -cd '0-9' | cut -b1-10\n");
 		fprintf(fp, "UserParameter=nvram.free, /usr/sbin/nvram show 2>&1 1>/dev/null | grep -o '(.*' | tr -cd '0-9'\n");
