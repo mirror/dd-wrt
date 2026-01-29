@@ -173,7 +173,7 @@ static void check_signal(const char *var, int *vap)
 						    wc->ifname);
 					zerocount[*vap] = 0;
 				}
-				*vap++;
+				(*vap)++;
 			}
 		}
 		free_wifi_clients(mac80211_info->wci);
