@@ -647,5 +647,16 @@ static int detect_wireless_devices(int mask)
 	rmmod("cfg80211");
 	rmmod("compat_firmware_class");
 	rmmod("compat");
+
+	rmmod("zstd_common");
+	rmmod("zstd_compress");
+	rmmod("zstd_decompress");
+	rmmod("lzo_compress");
+	rmmod("lzo_decompress");
+	rmmod("lz4_compress");
+	rmmod("lz4_decompress");
+	rmmod("lzma_compress");
+	rmmod("lzma_decompress");
+
 	return 0;
 }
