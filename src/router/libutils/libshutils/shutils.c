@@ -1613,6 +1613,8 @@ struct blocklist {
 	time_t end;
 	int count;
 	int attempts;
+	int blocked;
+	int ver; // future
 	struct blocklist *next;
 } __attribute__((packed));
 
@@ -1624,7 +1626,11 @@ static void dump_blocklist(void)
 {
 	struct blocklist *entry = blocklist_root.next;
 	FILE *fp = NULL;
-	fp = fopen("/tmp/blocklist", "wb");
+	if (jffs_mounted()) {
+		fp = fopen("/jffs/blocklist", "wb");
+	}
+	if (!fp)
+		fp = fopen("/tmp/blocklist", "wb");
 	if (fp) {
 		while (entry) {
 			fwrite(entry, sizeof(struct blocklist) - sizeof(void *), 1, fp);
@@ -1649,7 +1655,12 @@ static void init_blocklist(void)
 		last = &blocklist_root;
 	}
 
-	FILE *fp = fopen("/tmp/blocklist", "rb");
+	FILE *fp = NULL;
+	if (jffs_mounted()) {
+		fp = fopen("/jffs/blocklist", "rb");
+	}
+	if (!fp)
+		fp = fopen("/tmp/blocklist", "rb");
 	if (fp) {
 		while (!feof(fp)) {
 			last->next = malloc(sizeof(*entry));
@@ -1678,9 +1689,17 @@ void add_blocklist(const char *service, char *ip)
 			entry->count++;
 			if (entry->count > 4) {
 				entry->end = time(NULL) + BLOCKTIME * 60;
-				entry->attempts = 1;
+				if (blocked == -1) {
+					entry->attempts++;
+					entry->end = time(NULL) + (BLOCKTIME * entry->attempts) * 60;
+					dd_loginfo(service, "client %s was blocked before, set new blocktime to %d minutes", ip,
+						   (BLOCKTIME * entry->attempts));
+				} else {
+					entry->attempts = 1;
+				}
+				entry->blocked = 1;
 				dd_loginfo(service, "5 failed login attempts reached. block client %s for %d minutes", ip,
-					   BLOCKTIME);
+					   BLOCKTIME * entry->attempts);
 #ifdef HAVE_PORTSCAN
 				char check[INET6_ADDRSTRLEN];
 				int ipv6 = getipv4fromipv6(check, ip);
@@ -1704,6 +1723,7 @@ void add_blocklist(const char *service, char *ip)
 	last->next->end = 0;
 	last->next->count = 0;
 	last->next->attempts = 0;
+	last->next->blocked = 0;
 	last->next->next = NULL;
 end:;
 	dump_blocklist();
@@ -1729,7 +1749,7 @@ int check_blocklist(const char *service, char *ip)
 	struct blocklist *entry = blocklist_root.next;
 	struct blocklist *last = &blocklist_root;
 	while (entry) {
-		if (ip && !strcmp(ip, &entry->ip[0])) {
+		if (ip && entry->blocked == 1 && !strcmp(ip, &entry->ip[0])) {
 			if (entry->end > cur) {
 				// each try from a blocked client is extended by another 5 minutes;
 				entry->attempts++;
@@ -1752,8 +1772,9 @@ int check_blocklist(const char *service, char *ip)
 					eval(IP6TABLES, "-D", "SECURITY", "-p", "tcp", "-s", &entry->ip[0], "-j", "TARPIT");
 #endif
 				dd_loginfo(service, "time is over for client %s, so free it", &entry->ip[0]);
-				last->next = entry->next;
-				free(entry);
+				entry->blocked = -1;
+				//				last->next = entry->next;
+				//				free(entry);
 				change = 1;
 			}
 			goto end;
@@ -1761,7 +1782,7 @@ int check_blocklist(const char *service, char *ip)
 		if (entry->end)
 			dd_logdebug(service, "blocklist: entry %s ends at %lld, current %lld\n", &entry->ip[0], entry->end, cur);
 		//time over, free entry
-		if (entry->end && entry->end < cur) {
+		if (entry->blocked && entry->end && entry->end < cur) {
 			char check[INET6_ADDRSTRLEN];
 			int ipv6 = getipv4fromipv6(check, &entry->ip[0]);
 			if (!ipv6)
@@ -1769,10 +1790,17 @@ int check_blocklist(const char *service, char *ip)
 			else
 				eval(IP6TABLES, "-D", "SECURITY", "-p", "tcp", "-s", &entry->ip[0], "-j", "TARPIT");
 			dd_loginfo(service, "time is over for client %s, so free it", &entry->ip[0]);
+			entry->blocked = -1;
+			//			last->next = entry->next;
+			//			free(entry);
+			//			entry = last->next;
+			change = 1;
+		} else if (entry->blocked == -1 && entry->end && entry->end + (7 * 24 * 60 * 60) < cur) {
 			last->next = entry->next;
 			free(entry);
 			entry = last->next;
 			change = 1;
+			dd_loginfo(service, "remove %s from blocklist (1 week delay)", &entry->ip[0]);
 			continue;
 		}
 		last = entry;
