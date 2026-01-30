@@ -1688,13 +1688,13 @@ void add_blocklist(const char *service, char *ip)
 		if (!strcmp(ip, &entry->ip[0])) {
 			entry->count++;
 			if (entry->count > 4) {
-				entry->end = time(NULL) + BLOCKTIME * 60;
-				if (blocked == -1) {
+				if (entry->blocked == -1) {
 					entry->attempts++;
 					entry->end = time(NULL) + (BLOCKTIME * entry->attempts) * 60;
 					dd_loginfo(service, "client %s was blocked before, set new blocktime to %d minutes", ip,
 						   (BLOCKTIME * entry->attempts));
 				} else {
+					entry->end = time(NULL) + BLOCKTIME * 60;
 					entry->attempts = 1;
 				}
 				entry->blocked = 1;
