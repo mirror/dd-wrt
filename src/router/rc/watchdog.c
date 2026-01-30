@@ -150,6 +150,7 @@ static void check_fan(int brand)
 #endif
 }
 
+#ifdef HAVE_ATH11K
 static unsigned char zerocount[8][17];
 static void check_signal(const char *var, int interface, int vap)
 {
@@ -184,6 +185,7 @@ static void check_signal(const char *var, int interface, int vap)
 	if (mac80211_info)
 		free(mac80211_info);
 }
+#endif
 static void check_wifi(void)
 {
 #ifdef HAVE_ATH11K
@@ -332,7 +334,9 @@ static void watchdog(void)
 
 int main(int argc, char *argv[])
 {
+#ifdef HAVE_ATH11K
 	memset(zerocount, 0, sizeof(zerocount));
+#endif
 	dd_daemon();
 	watchdog();
 	return 0;
