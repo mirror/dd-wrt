@@ -1350,10 +1350,6 @@ void xtables_register_target(struct xtables_target *me)
 	if (me->extra_opts != NULL)
 		xtables_check_options(me->name, me->extra_opts);
 
-	/* ignore not interested target */
-	if (me->family != afinfo->family && me->family != AF_UNSPEC)
-		return;
-
 	/* order into linked list of targets pending full registration */
 	for (pos = &xtables_pending_targets; *pos; pos = &(*pos)->next) {
 		/* group by name */
