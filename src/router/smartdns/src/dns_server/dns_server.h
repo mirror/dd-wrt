@@ -317,7 +317,9 @@ struct dns_request {
 	struct dns_opt_ecs ecs;
 	int edns0_do;
 
+#ifdef HAVE_OPENSSL
 	struct list_head https_svcb_list;
+#endif
 
 	dns_result_callback result_callback;
 	void *user_ptr;

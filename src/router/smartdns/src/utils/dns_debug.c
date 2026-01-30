@@ -264,6 +264,7 @@ static int _dns_debug_display(struct dns_packet *packet)
 				printf("domain: %s SRV: %s TTL: %d priority: %d weight: %d port: %d\n", name, target, ttl, priority,
 					   weight, port);
 			} break;
+#ifdef HAVE_OPENSSL
 			case DNS_T_SVCB:
 			case DNS_T_HTTPS: {
 				char name[DNS_MAX_CNAME_LEN] = {0};
@@ -337,6 +338,7 @@ static int _dns_debug_display(struct dns_packet *packet)
 					}
 				}
 			} break;
+#endif
 			case DNS_T_NS: {
 				char cname[DNS_MAX_CNAME_LEN];
 				char name[DNS_MAX_CNAME_LEN] = {0};

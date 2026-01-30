@@ -192,6 +192,7 @@ void _dns_rule_get(struct dns_rule *rule)
 
 static void _dns_rule_free(struct dns_rule *rule)
 {
+#ifdef HAVE_OPENSSL
 	if (rule->rule == DOMAIN_RULE_HTTPS) {
 		struct dns_https_record_rule *https_rule = (struct dns_https_record_rule *)rule;
 		struct dns_https_record *record, *tmp;
@@ -202,7 +203,9 @@ static void _dns_rule_free(struct dns_rule *rule)
 				free(record);
 			}
 		}
-	} else if (rule->rule == DOMAIN_RULE_SRV) {
+	} else
+#endif
+	if (rule->rule == DOMAIN_RULE_SRV) {
 		struct dns_srv_record_rule *srv_rule = (struct dns_srv_record_rule *)rule;
 		struct dns_srv_record *record, *tmp;
 		if (srv_rule->record_list.next != NULL && srv_rule->record_list.prev != NULL) {

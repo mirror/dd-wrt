@@ -1253,7 +1253,7 @@ int dns_get_SRV(struct dns_rrs *rrs, char *domain, int maxsize, int *ttl, unsign
 
 	return 0;
 }
-
+#ifdef HAVE_OPENSSL
 static int _dns_add_SVCB_HTTPS_start(struct dns_rr_nested *svcparam_buffer, struct dns_packet *packet, dns_rr_type type,
 									 dns_type_t rtype, const char *domain, int ttl, int priority, const char *target)
 {
@@ -1293,7 +1293,6 @@ int dns_add_HTTPS_start(struct dns_rr_nested *svcparam_buffer, struct dns_packet
 {
 	return _dns_add_SVCB_HTTPS_start(svcparam_buffer, packet, type, DNS_T_HTTPS, domain, ttl, priority, target);
 }
-
 int dns_add_SVCB_start(struct dns_rr_nested *svcparam_buffer, struct dns_packet *packet, dns_rr_type type,
 					   const char *domain, int ttl, int priority, const char *target)
 {
@@ -1505,6 +1504,7 @@ int dns_HTTPS_add_ipv6hint(struct dns_rr_nested *svcparam, unsigned char *addr[]
 {
 	return dns_SVCB_add_ipv6hint(svcparam, addr, addr_num);
 }
+#endif
 
 int dns_svcparm_start(struct dns_rrs *rrs, struct dns_svcparam **https_param, char *domain, int maxsize,
 								int *ttl, int *priority, char *target, int target_size)

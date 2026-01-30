@@ -154,12 +154,14 @@ static void _dns_server_delete_request(struct dns_request *request)
 
 	pthread_mutex_destroy(&request->ip_map_lock);
 
+#ifdef HAVE_OPENSSL
 	struct dns_request_https *https_svcb, *tmp_https;
 	list_for_each_entry_safe(https_svcb, tmp_https, &request->https_svcb_list, list)
 	{
 		list_del(&https_svcb->list);
 		free(https_svcb);
 	}
+#endif
 
 	struct dns_request_srv *srv, *tmp_srv;
 	list_for_each_entry_safe(srv, tmp_srv, &request->srv_list, list)
@@ -488,7 +490,9 @@ struct dns_request *_dns_server_new_request(void)
 	INIT_LIST_HEAD(&request->list);
 	INIT_LIST_HEAD(&request->pending_list);
 	INIT_LIST_HEAD(&request->check_list);
+#ifdef HAVE_OPENSSL
 	INIT_LIST_HEAD(&request->https_svcb_list);
+#endif
 	INIT_LIST_HEAD(&request->srv_list);
 	hash_init(request->ip_map);
 	_dns_server_request_get(request);
@@ -705,6 +709,7 @@ int _dns_server_process_srv(struct dns_request *request)
 	return 0;
 }
 
+#ifdef HAVE_OPENSSL
 int _dns_server_process_svcb(struct dns_request *request)
 {
 	if (strncasecmp("_dns.resolver.arpa", request->domain, DNS_MAX_CNAME_LEN) == 0) {
@@ -713,7 +718,7 @@ int _dns_server_process_svcb(struct dns_request *request)
 
 	return -1;
 }
-
+#endif
 int _dns_server_pre_process_server_flags(struct dns_request *request)
 {
 	if (_dns_server_has_bind_flag(request, BIND_FLAG_NO_CACHE) == 0) {
@@ -732,11 +737,12 @@ int _dns_server_pre_process_server_flags(struct dns_request *request)
 		request->no_serve_expired = 1;
 	}
 
+#ifdef HAVE_OPENSSL
 	if (request->qtype == DNS_T_HTTPS && _dns_server_has_bind_flag(request, BIND_FLAG_FORCE_HTTPS_SOA) == 0) {
 		_dns_server_reply_SOA(DNS_RC_NOERROR, request);
 		return 0;
 	}
-
+#endif
 	return -1;
 }
 
@@ -1029,6 +1035,7 @@ int _dns_server_process_special_query(struct dns_request *request)
 			/* pass to upstream server */
 			request->passthrough = 1;
 		}
+#ifdef HAVE_OPENSSL
 	case DNS_T_HTTPS:
 		break;
 	case DNS_T_SVCB:
@@ -1040,6 +1047,7 @@ int _dns_server_process_special_query(struct dns_request *request)
 			request->passthrough = 1;
 		}
 		break;
+#endif
 	case DNS_T_A:
 		break;
 	case DNS_T_AAAA:

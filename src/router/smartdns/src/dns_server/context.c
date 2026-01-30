@@ -253,7 +253,7 @@ static int _dns_add_rrs_ip_hint(struct dns_server_post_context *context, struct 
 
 	return ret;
 }
-
+#ifdef HAVE_OPENSSL
 static int _dns_add_rrs_HTTPS(struct dns_server_post_context *context)
 {
 	struct dns_request *request = context->request;
@@ -319,6 +319,7 @@ static int _dns_add_rrs_HTTPS(struct dns_server_post_context *context)
 	}
 	return 0;
 }
+#endif
 
 static int _dns_add_rrs(struct dns_server_post_context *context)
 {
@@ -337,9 +338,11 @@ static int _dns_add_rrs(struct dns_server_post_context *context)
 		domain = request->cname;
 	}
 
+#ifdef HAVE_OPENSSL
 	if (!list_empty(&request->https_svcb_list)) {
 		ret = _dns_add_rrs_HTTPS(context);
 	}
+#endif
 
 	/* add A record */
 	if (request->has_ip && context->do_force_soa == 0) {

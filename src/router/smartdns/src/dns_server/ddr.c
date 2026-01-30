@@ -68,7 +68,7 @@ static void _ddr_extract_local_addresses(const struct sockaddr_storage *addr, un
 		break;
 	}
 }
-
+#ifdef HAVE_OPENSSL
 static int _ddr_build_svcb_record(struct dns_packet *packet, const char *domain, int ttl, int priority,
 								  const char *alpn, int port, unsigned char *ipv4_addr, int ipv4_num,
 								  unsigned char *ipv6_addr, int ipv6_num)
@@ -108,7 +108,6 @@ static int _ddr_build_svcb_record(struct dns_packet *packet, const char *domain,
 	dns_add_SVCB_end(&svcparam_buffer);
 	return 0;
 }
-
 int _dns_server_process_DDR(struct dns_request *request)
 {
 	struct dns_server_post_context context;
@@ -207,3 +206,4 @@ int _dns_server_process_DDR(struct dns_request *request)
 	_dns_server_reply_passthrough(&context);
 	return 0;
 }
+#endif
