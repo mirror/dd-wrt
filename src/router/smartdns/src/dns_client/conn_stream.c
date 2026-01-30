@@ -69,6 +69,7 @@ void _dns_client_conn_stream_put(struct dns_conn_stream *stream)
 		struct http2_stream *http2_stream = stream->http2_stream;
 		stream->http2_stream = NULL;
 		http2_stream_close(http2_stream);
+		stream->server_info = NULL;
 	}
 #endif
 	if (stream->query) {

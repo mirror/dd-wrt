@@ -95,6 +95,7 @@ enum domain_rule {
 	DOMAIN_RULE_IPSET_IPV6, /* IPv6 IPSet */
 
 	DOMAIN_RULE_HTTPS,         /* HTTPS record */
+	DOMAIN_RULE_SRV,           /* SRV record */
 	DOMAIN_RULE_RESPONSE_MODE, /* Response mode */
 	DOMAIN_RULE_CNAME,         /* CNAME rule */
 	DOMAIN_RULE_TTL,           /* TTL control */
@@ -154,6 +155,7 @@ typedef enum {
 #define DOMAIN_FLAG_ENABLE_CACHE (1 << 20)
 #define DOMAIN_FLAG_ADDR_HTTPS_SOA (1 << 21)
 #define DOMAIN_FLAG_ADDR_HTTPS_IGN (1 << 22)
+#define DOMAIN_FLAG_NO_IGNORE_IP (1 << 23)
 
 #define IP_RULE_FLAG_BLACKLIST (1 << 0)
 #define IP_RULE_FLAG_WHITELIST (1 << 1)
@@ -310,6 +312,7 @@ struct dns_response_mode_rule {
 
 #ifdef HAVE_OPENSSL
 struct dns_https_record {
+	struct list_head list;
 	int enable;
 	char target[DNS_MAX_CNAME_LEN];
 	int priority;
@@ -332,10 +335,15 @@ struct dns_https_filter {
 
 struct dns_https_record_rule {
 	struct dns_rule head;
-	struct dns_https_record record;
+	struct list_head record_list;
 	struct dns_https_filter filter;
 };
 #endif
+
+struct dns_srv_record_rule {
+	struct dns_rule head;
+	struct list_head record_list;
+};
 struct dns_group_table {
 	DECLARE_HASHTABLE(group, 8);
 };
@@ -663,16 +671,6 @@ struct dns_srv_record {
 	unsigned short port;
 };
 
-struct dns_srv_records {
-	char domain[DNS_MAX_CNAME_LEN];
-	struct hlist_node node;
-	struct list_head list;
-};
-
-struct dns_srv_record_table {
-	DECLARE_HASHTABLE(srv, 4);
-};
-extern struct dns_srv_record_table dns_conf_srv_record_table;
 
 struct dns_conf_plugin {
 	struct hlist_node node;
@@ -785,7 +783,6 @@ int dns_server_check_update_hosts(void);
 
 struct dns_proxy_names *dns_server_get_proxy_names(const char *proxyname);
 
-struct dns_srv_records *dns_server_get_srv_record(const char *domain);
 
 struct dns_conf_group *dns_server_get_rule_group(const char *group_name);
 
