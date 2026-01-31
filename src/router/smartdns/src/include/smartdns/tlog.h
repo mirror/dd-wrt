@@ -236,7 +236,11 @@ archive: archive file permission, default is 440
 
 static void tlog_set_permission(struct tlog_log *log, mode_t file, mode_t archive){return ;}
 
+#ifdef NDEBUG
+#define tlog_debug(...) { } do { } while(0)
+#else
 #define tlog_debug(...) { if (tlog_getlevel() <= TLOG_DEBUG) syslog(LOG_DEBUG, ##__VA_ARGS__); }
+#endif
 #define tlog_info(...) {if (tlog_getlevel() <= TLOG_INFO) syslog(LOG_INFO, ##__VA_ARGS__);}
 #define tlog_notice(...) {if (tlog_getlevel() <= TLOG_NOTICE) syslog(LOG_NOTICE, ##__VA_ARGS__);}
 #define tlog_warn(...) {if (tlog_getlevel() <= TLOG_WARN) syslog(LOG_WARNING, ##__VA_ARGS__);}
