@@ -29,7 +29,7 @@ MAKEFLAGS += -j$(shell nproc)
 endif
 
 # cflags
-override CFLAGS +=$(COPTS) -O0 -g3 -Wall -Wstrict-prototypes -fno-omit-frame-pointer -Wstrict-aliasing -funwind-tables -Wmissing-prototypes -Wshadow -Wextra -Wno-unused-parameter -Wno-implicit-fallthrough
+override CFLAGS +=$(COPTS) $(LTO) -Wall -Wstrict-prototypes -fno-omit-frame-pointer -Wstrict-aliasing -funwind-tables -Wmissing-prototypes -Wshadow -Wextra -Wno-unused-parameter -Wno-implicit-fallthrough
 override CFLAGS += -Iinclude
 override CFLAGS += -DBASE_FILE_NAME='"$(notdir $<)"'
 ifdef VER
@@ -52,12 +52,12 @@ ifeq ($(USE_ATOMIC), 0)
 endif
 
 # ldflags
-override LDFLAGS += -L$(TOP)/libutils -lshutils -L$(TOP)/nvram -lnvram
+override LDFLAGS +=  $(LDLTO) -L$(TOP)/libutils -lshutils -L$(TOP)/nvram -lnvram
 ifeq ($(STATIC), yes)
 override CFLAGS += -DBUILD_STATIC
 override LDFLAGS += -Wl,--whole-archive -lpthread -Wl,--no-whole-archive -ldl -lm -static -rdynamic
 else
-override LDFLAGS += -lpthread 
+override LDFLAGS += -lpthread
 endif
 ifeq ($(SSL), yes)
 override LDFLAGS += -lssl -lcrypto -rdynamic
