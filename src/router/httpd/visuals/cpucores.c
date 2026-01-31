@@ -130,7 +130,7 @@ static void get_clkfreq(int *clk1, int *clk2, int *calculated)
 		int freq;
 		fscanf(fp, "%d", &freq);
 		fclose(fp);
-		*clk1 = freq / 1000;
+		*clk1 = freq / 1000 / 1000;
 		*calculated = nvram_geti("cpu_speed");
 		return;
 	}
