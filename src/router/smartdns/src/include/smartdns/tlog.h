@@ -138,7 +138,7 @@ maxlogcount: Number of archived logs.
 buffsize: Buffer size, zero for default (128K)
 flag: read tlog flags
  */
-static inline int tlog_init(const char *logfile, int maxlogsize, int maxlogcount, int buffsize, unsigned int flag) {}
+static inline int tlog_init(const char *logfile, int maxlogsize, int maxlogcount, int buffsize, unsigned int flag) { return 0;}
 
 /* flush pending log message, and exit tlog */
 static inline void tlog_exit(void) {}
@@ -157,7 +157,7 @@ extern int tlog_reg_format_func(tlog_format_func func);
  Note: info is invalid when flag TLOG_SEGMENT is not set.
  */
 typedef int (*tlog_log_output_func)(struct tlog_loginfo *info, const char *buff, int bufflen, void *private_data);
-extern int tlog_reg_log_output_func(tlog_log_output_func output, void *private_data);
+static inline int tlog_reg_log_output_func(tlog_log_output_func output, void *private_data) { return 0; }
 
 /* enable early log to screen */
 #define tlog_set_early_printf(enable, no_prefix, color)  do { } while(0)
@@ -184,7 +184,7 @@ return: log stream handler.
 static inline tlog_log *tlog_open(const char *logfile, int maxlogsize, int maxlogcount, int buffsize, unsigned int flag) { return 0;}
 
 /* write buff to log file */
-extern int tlog_write(struct tlog_log *log, const char *buff, int bufflen);
+static inline int tlog_write(struct tlog_log *log, const char *buff, int bufflen) { return 0; }
 
 /* close log stream */
 extern void tlog_close(tlog_log *log);
@@ -209,7 +209,7 @@ static void tlog_logscreen(tlog_log *log, int enable) {return;}
 
 /* register output callback */
 typedef int (*tlog_output_func)(struct tlog_log *log, const char *buff, int bufflen);
-extern int tlog_reg_output_func(tlog_log *log, tlog_output_func output);
+static inline int tlog_reg_output_func(tlog_log *log, tlog_output_func output) { return 0;}
 
 /* set private data */
 extern void tlog_set_private(tlog_log *log, void *private_data);
@@ -266,6 +266,9 @@ static void tlog_set_permission(struct tlog_log *log, mode_t file, mode_t archiv
 	case TLOG_FATAL: \
 	    tlog_fatal(format,##__VA_ARGS__); \
 	break;  \
+	case TLOG_DEBUG: \
+	    tlog_debug(format,##__VA_ARGS__); \
+	break; \
 	} }while(0)
 
 #else
@@ -288,6 +291,9 @@ static void tlog_set_permission(struct tlog_log *log, mode_t file, mode_t archiv
 	case TLOG_FATAL: \
 	    tlog_fatal(format,##__VA_ARGS__); \
 	break;  \
+	case TLOG_DEBUG: \
+	    tlog_debug(format,##__VA_ARGS__); \
+	break; \
 	} }while(0)
 
 #endif

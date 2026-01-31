@@ -1265,6 +1265,8 @@ int smartdns_main(int argc, char *argv[])
 
 	if (signal_ignore == 0) {
 		_reg_signal();
+		int airbag_init(void);
+		airbag_init();
 	}
 
 	if (is_pid_file_set == 0) {

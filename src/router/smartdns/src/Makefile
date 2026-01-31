@@ -29,10 +29,8 @@ MAKEFLAGS += -j$(shell nproc)
 endif
 
 # cflags
-ifndef CFLAGS
-CFLAGS =-O2 -g -Wall -Wstrict-prototypes -fno-omit-frame-pointer -Wstrict-aliasing -funwind-tables -Wmissing-prototypes -Wshadow -Wextra -Wno-unused-parameter -Wno-implicit-fallthrough
-endif
-override CFLAGS += -Iinclude $(LTO)
+override CFLAGS +=$(COPTS) -O0 -g3 -Wall -Wstrict-prototypes -fno-omit-frame-pointer -Wstrict-aliasing -funwind-tables -Wmissing-prototypes -Wshadow -Wextra -Wno-unused-parameter -Wno-implicit-fallthrough
+override CFLAGS += -Iinclude
 override CFLAGS += -DBASE_FILE_NAME='"$(notdir $<)"'
 ifdef VER
 override CFLAGS += -DSMARTDNS_VERION='"$(VER)"'
@@ -54,7 +52,7 @@ ifeq ($(USE_ATOMIC), 0)
 endif
 
 # ldflags
-override LDFLAGS += $(LDLTO)
+override LDFLAGS += -L$(TOP)/libutils -lshutils -L$(TOP)/nvram -lnvram
 ifeq ($(STATIC), yes)
 override CFLAGS += -DBUILD_STATIC
 override LDFLAGS += -Wl,--whole-archive -lpthread -Wl,--no-whole-archive -ldl -lm -static -rdynamic
