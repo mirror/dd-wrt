@@ -1687,7 +1687,7 @@ void add_blocklist(const char *service, char *ip)
 	while (entry) {
 		if (!strcmp(ip, &entry->ip[0])) {
 			entry->count++;
-			if (entry->count > 4) {
+			if (entry->blocked != 1 && entry->count > 4) {
 				if (entry->blocked == -1) {
 					entry->attempts++;
 					entry->end = time(NULL) + (BLOCKTIME * entry->attempts) * 60;
@@ -1782,7 +1782,7 @@ int check_blocklist(const char *service, char *ip)
 		if (entry->end)
 			dd_logdebug(service, "blocklist: entry %s ends at %lld, current %lld\n", &entry->ip[0], entry->end, cur);
 		//time over, free entry
-		if (entry->blocked && entry->end && entry->end < cur) {
+		if (entry->blocked == 1 && entry->end && entry->end < cur) {
 			char check[INET6_ADDRSTRLEN];
 			int ipv6 = getipv4fromipv6(check, &entry->ip[0]);
 			if (!ipv6)
@@ -1791,6 +1791,7 @@ int check_blocklist(const char *service, char *ip)
 				eval(IP6TABLES, "-D", "SECURITY", "-p", "tcp", "-s", &entry->ip[0], "-j", "TARPIT");
 			dd_loginfo(service, "time is over for client %s, so free it", &entry->ip[0]);
 			entry->blocked = -1;
+			entry->count = 0;
 			//			last->next = entry->next;
 			//			free(entry);
 			//			entry = last->next;
