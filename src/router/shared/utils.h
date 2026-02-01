@@ -1666,6 +1666,9 @@ char *getRADev(const char *prefix);
 #define dd_loginfo(a, fmt, args...) \
 	do {                        \
 	} while (0)
+#define dd_loginfoverbose(a, fmt, args...) \
+	do {                        \
+	} while (0)
 #define dd_logdebug(a, fmt, args...) \
 	do {                         \
 	} while (0)
@@ -1678,6 +1681,7 @@ char *getRADev(const char *prefix);
 #else
 #define dd_syslog(a, args...) syslog(a, ##args);
 void dd_loginfo(const char *servicename, const char *fmt, ...) __attribute__((format(printf, 2, 3)));
+void dd_loginfoverbose(const char *servicename, const char *fmt, ...) __attribute__((format(printf, 2, 3)));
 void dd_logdebug(const char *servicename, const char *fmt, ...) __attribute__((format(printf, 2, 3)));
 void dd_logerror(const char *servicename, const char *fmt, ...) __attribute__((format(printf, 2, 3)));
 void dd_logstart(const char *servicename, int ret);

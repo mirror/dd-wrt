@@ -209,9 +209,9 @@ int mtd_erase(const char *mtd)
 	erase_info.length = mtd_info.erasesize;
 	mtdtype = mtd_info.type;
 	if (mtdtype == MTD_NANDFLASH)
-		dd_loginfo("flash", "Flash is NAND");
+		dd_loginfoverbose("flash", "Flash is NAND");
 	for (erase_info.start = 0; erase_info.start < mtd_info.size; erase_info.start += mtd_info.erasesize) {
-		dd_loginfo("flash", "erase[%d]", erase_info.start);
+		dd_loginfoverbose("flash", "erase[%d]", erase_info.start);
 		(void)ioctl(mtd_fd, MEMUNLOCK, &erase_info);
 		if (mtd_block_is_bad(mtd_fd, erase_info.start)) {
 			dd_logerror("flash", "\nSkipping bad block at 0x%08zx", erase_info.start);
@@ -225,7 +225,7 @@ int mtd_erase(const char *mtd)
 	}
 
 	close(mtd_fd);
-	dd_loginfo("flash", "erase[%d]", erase_info.start);
+	dd_loginfoverbose("flash", "erase[%d]", erase_info.start);
 	/* 
 	 * nvram_set("et0macaddr",et0); nvram_set("et1macaddr",et1);
 	 * nvram_commit(); free(et0); free(et1); 
@@ -360,13 +360,13 @@ static int write_main(int argc, char *argv[])
 	case ROUTER_LINKSYS_MX5500:
 		part = getUEnv("boot_part");
 		if (part) {
-			dd_loginfo("flash", "boot partition is %s", part);
+			dd_loginfoverbose("flash", "boot partition is %s", part);
 			if (!strcmp(part, "2")) {
 				mtd = "linux";
 			} else {
 				mtd = "linux2";
 			}
-			dd_loginfo("flash", "flash to partition %s", mtd);
+			dd_loginfoverbose("flash", "flash to partition %s", mtd);
 		} else {
 			dd_logerror("flash", "no boot partition info found", mtd);
 		}
@@ -460,7 +460,7 @@ rewrite:;
 	 * Examine TRX/CHK header 
 	 */
 #ifdef HAVE_WRT160NL
-	dd_loginfo("flash", "size of ETRX header = %d", sizeof(struct etrx_header));
+	dd_loginfoverbose("flash", "size of ETRX header = %d", sizeof(struct etrx_header));
 	if ((fp = fopen(path, "r"))) {
 		count = safe_fread(&etrx, 1, sizeof(struct etrx_header), fp);
 	} else
@@ -477,7 +477,7 @@ rewrite:;
 		count = safe_fread(&trx, 1, sizeof(struct trx_header), fp);
 
 		if (trx.magic == NETGEAR_CHK_MAGIC) {
-			dd_loginfo("flash", "Netgear chk format detected");
+			dd_loginfoverbose("flash", "Netgear chk format detected");
 			char board_id[18];
 			char board_id2[19];
 			safe_fread(&trx, 1, sizeof(struct chk_header) - sizeof(struct trx_header), fp);
@@ -609,12 +609,12 @@ rewrite:;
 	// #endif
 	mtdtype = mtd_info.type;
 	if (mtdtype == MTD_NANDFLASH)
-		dd_loginfo("flash", "Flash is NAND");
+		dd_loginfoverbose("flash", "Flash is NAND");
 
 	/* 
 	 * See if we have enough memory to store the whole file 
 	 */
-	dd_loginfo("flash", "freeram=[%ld] bufferram=[%ld]", info.freeram, info.bufferram);
+	dd_loginfoverbose("flash", "freeram=[%ld] bufferram=[%ld]", info.freeram, info.bufferram);
 	int mul = 1; // temporarily use 1 instead of 4 until we
 #ifdef HAVE_IPQ6018
 #define MINEXTRA 512
@@ -624,7 +624,7 @@ rewrite:;
 
 	// found a a solution
 	if (info.freeram >= (trx.len + MINEXTRA * 1024 * 1024) && brand != ROUTER_ASUS_AC58U) {
-		dd_loginfo("flash", "The free memory is enough, writing image once.");
+		dd_loginfoverbose("flash", "The free memory is enough, writing image once.");
 		/* 
 		 * Begin to write image after all image be downloaded by web upgrade.
 		 * In order to avoid upgrade fail if user unplug the ethernet cable
@@ -635,7 +635,7 @@ rewrite:;
 		erase_info.length = ROUNDUP(trx.len, mtd_info.erasesize);
 	} else {
 		erase_info.length = mtd_info.erasesize * mul;
-		dd_loginfo("flash", "The free memory is not enough, writing image per %d bytes.", erase_info.length);
+		dd_loginfoverbose("flash", "The free memory is not enough, writing image per %d bytes.", erase_info.length);
 	}
 	if (writeubifs) {
 		close(mtd_fd);
@@ -660,7 +660,7 @@ rewrite:;
 	if (!(buf = malloc(erase_info.length))) {
 		mul = 1;
 		erase_info.length = mtd_info.erasesize * mul;
-		dd_loginfo("flash", "The free memory is not enough, writing image per %d bytes.", erase_info.length);
+		dd_loginfoverbose("flash", "The free memory is not enough, writing image per %d bytes.", erase_info.length);
 		if (!(buf = malloc(erase_info.length))) {
 			dd_logerror("flash", "memory allocation of %d bytes failed", erase_info.length);
 			perror("malloc");
@@ -738,8 +738,8 @@ rewrite:;
 				dd_logerror("flash", "%s: Bad CRC (0x%08X expected, but 0x%08X calculated)", path, trx.crc32, crc);
 				goto fail;
 			} else {
-				dd_loginfo("flash", "%s: CRC OK (0x%08X)", mtd, crc);
-				dd_loginfo("flash", "Writing image to flash, waiting a moment...");
+				dd_loginfoverbose("flash", "%s: CRC OK (0x%08X)", mtd, crc);
+				dd_loginfoverbose("flash", "Writing image to flash, waiting a moment...");
 			}
 			printf("\n");
 		}
@@ -763,7 +763,7 @@ rewrite:;
 		for (i = 0; i < (length / mtd_info.erasesize); i++) {
 			int redo = 0;
 again:;
-			dd_loginfo("flash", "write block [%d] at [0x%08X]", (base + (i * mtd_info.erasesize)),
+			dd_loginfoverbose("flash", "write block [%d] at [0x%08X]", (base + (i * mtd_info.erasesize)),
 				   base + (i * mtd_info.erasesize) + badblocks);
 			if (!writeubifs && !writeubiformat) {
 				erase_info.start = base + (i * mtd_info.erasesize);
@@ -776,7 +776,7 @@ again:;
 				}
 				(void)ioctl(mtd_fd, MEMUNLOCK, &tmp_erase_info);
 				if (mtd_block_is_bad(mtd_fd, tmp_erase_info.start)) {
-					dd_loginfo("flash", "\nSkipping bad block at 0x%08zx", erase_info.start);
+					dd_loginfoverbose("flash", "\nSkipping bad block at 0x%08zx", erase_info.start);
 					lseek(mtd_fd, mtd_info.erasesize, SEEK_CUR);
 					badblocks += mtd_info.erasesize;
 					goto again;
@@ -797,7 +797,7 @@ again:;
 #endif
 				}
 				if (write(mtd_fd, buf + (i * mtd_info.erasesize), mtd_info.erasesize) != mtd_info.erasesize) {
-					dd_loginfo("flash", "\nSkipping bad block at 0x%08zx", erase_info.start);
+					dd_loginfoverbose("flash", "\nSkipping bad block at 0x%08zx", erase_info.start);
 					lseek(mtd_fd, mtd_info.erasesize, SEEK_CUR);
 					badblocks += mtd_info.erasesize;
 					goto again;
@@ -809,7 +809,7 @@ again:;
 	}
 	if (writeubifs || writeubiformat)
 		pclose(p);
-	dd_loginfo("flash", "\ndone [%d]", i * mtd_info.erasesize);
+	dd_loginfoverbose("flash", "\ndone [%d]", i * mtd_info.erasesize);
 	/* 
 	 * Netgear: Write len and checksum at the end of mtd1 
 	 */
@@ -885,9 +885,9 @@ again:;
 		}
 		//fprintf( stderr, "TRX LEN = %x , CHECKSUM = %x\n", trx.len, cal_chksum );
 #ifndef NETGEAR_CRC_FAKE
-		dd_loginfo("flash", "Write len/chksum @ 0x%X ...done.", flash_len_chk_addr);
+		dd_loginfoverbose("flash", "Write len/chksum @ 0x%X ...done.", flash_len_chk_addr);
 #else
-		dd_loginfo("flash", "Write fake len/chksum @ 0x%X ...done.", flash_len_chk_addr);
+		dd_loginfoverbose("flash", "Write fake len/chksum @ 0x%X ...done.", flash_len_chk_addr);
 #endif
 	}
 
@@ -940,7 +940,7 @@ again:;
 			goto fail;
 		}
 
-		dd_loginfo("flash", "Write lzma loader...done.");
+		dd_loginfoverbose("flash", "Write lzma loader...done.");
 	} // end
 
 #ifdef HAVE_BCMMODERN
@@ -987,7 +987,7 @@ again:;
 			goto fail;
 		}
 
-		dd_loginfo("flash", "Write Belkin magic...done.");
+		dd_loginfoverbose("flash", "Write Belkin magic...done.");
 	} // end
 #endif
 #if defined(HAVE_MVEBU) || defined(HAVE_IPQ806X) || defined(HAVE_IPQ6018)
@@ -1004,7 +1004,7 @@ again:;
 	case ROUTER_LINKSYS_MX5500:
 		part = getUEnv("boot_part");
 		if (part) {
-			dd_loginfo("flash", "boot partition is %s", part);
+			dd_loginfoverbose("flash", "boot partition is %s", part);
 			if (!strcmp(part, "2")) {
 				eval("fw_setenv", "boot_part", "1");
 			} else {
@@ -1022,7 +1022,7 @@ again:;
 	case ROUTER_LINKSYS_EA8300:
 		part = getUEnv("boot_part");
 		if (part) {
-			dd_loginfo("flash", "boot partition is %s", part);
+			dd_loginfoverbose("flash", "boot partition is %s", part);
 			if (!strcmp(part, "2")) {
 				eval("ubootenv", "set", "boot_part", "1");
 			} else {
@@ -1062,7 +1062,7 @@ again:;
 	in = fopen("/tmp/bdata", "wb");
 	fwrite(buf, 65536, 1, in);
 	fclose(in);
-	dd_loginfo("flash", "fixup CRC %X and LEN %X", crc_data, data_len);
+	dd_loginfoverbose("flash", "fixup CRC %X and LEN %X", crc_data, data_len);
 	eval("mtd", "-f", "write", "/tmp/bdata", "bdata");
 #endif
 #endif
