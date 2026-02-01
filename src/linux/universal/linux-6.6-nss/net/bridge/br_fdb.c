@@ -1353,8 +1353,6 @@ int br_fdb_add(struct ndmsg *ndm, struct nlattr *tb[],
 			if (err)
 				goto out;
 		}
-
-		set_bit(BR_FDB_ADDED_BY_USER, &fdb->flags);
 	}
 
 out:
