@@ -713,7 +713,7 @@ char *sha256_string(char *string, char *hashbuf, size_t len)
 	dd_md5_hash(string, strlen(string), &MD);
 	dd_md5_end((unsigned char *)hash, &MD);
 	calc_sha_256(hash, string, strlen(hashbuf));
-	for (i = 0; i < 16; i++) {
+	for (i = 0; i < 32; i++) {
 		unsigned int k = hash[i];
 		snprintf(hashbuf, len, "%s%02X", hashbuf, k & 0xff);
 	}
