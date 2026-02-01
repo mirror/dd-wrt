@@ -29,7 +29,7 @@ MAKEFLAGS += -j$(shell nproc)
 endif
 
 # cflags
-override CFLAGS +=$(COPTS) $(LTO) -Wall -Wstrict-prototypes -fno-omit-frame-pointer -Wstrict-aliasing -funwind-tables -Wmissing-prototypes -Wshadow -Wextra -Wno-unused-parameter -Wno-implicit-fallthrough
+override CFLAGS +=$(COPTS) $(LTO) -g3 -Wall -Wstrict-prototypes -fno-omit-frame-pointer -Wstrict-aliasing -funwind-tables -Wmissing-prototypes -Wshadow -Wextra -Wno-unused-parameter -Wno-implicit-fallthrough
 override CFLAGS += -Iinclude
 override CFLAGS += -DBASE_FILE_NAME='"$(notdir $<)"'
 ifdef VER
