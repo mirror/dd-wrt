@@ -89,8 +89,8 @@ extern int waitfor(int fd, int timeout);
  * @return      return value of executed command or errno
  */
 
-int _evalpid(char *const argv[], char *path, int timeout, int *ppid);
-int _log_evalpid(char *const argv[], char *path, int timeout, int *ppid);
+int _evalpid(const char *argv[], char *path, int timeout, int *ppid);
+int _log_evalpid(const char *argv[], char *path, int timeout, int *ppid);
 
 //extern int _eval(char *const argv[]);
 extern int eval_va(const char *cmd, ...);
