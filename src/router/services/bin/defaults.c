@@ -29,7 +29,7 @@ typedef struct NV {
 	char *value;
 	int index;
 	struct NV *next;
-};
+} nv;
 
 int hasstored(struct NV *head, char *value)
 {
@@ -41,6 +41,7 @@ int hasstored(struct NV *head, char *value)
 	return -1;
 }
 
+#if 0
 void recover(void)
 {
 	FILE *in = fopen("defaults.bin", "rb");
@@ -52,7 +53,7 @@ void recover(void)
 	int i;
 	fread(index, len, 1, in);
 
-	unsigned char **values = malloc(sizeof(char *) * stores);
+	char **values = malloc(sizeof(char *) * stores);
 	for (i = 0; i < stores; i++) {
 		char temp[4096];
 		int c;
@@ -75,7 +76,7 @@ void recover(void)
 			fprintf(stderr, "error while validating\n");
 			exit(1);
 		}
-//		fprintf(stderr, "check: %s=%s\n", temp,values[index[i]]);
+		fprintf(stderr, "check: %s=%s\n", temp,values[index[i]]);
 	}
 	for (i = 0; i < stores; i++) {
 		free(values[i]);
@@ -84,7 +85,7 @@ void recover(void)
 	free(index);
 
 }
-
+#endif
 int main(int argc, char *argv[])
 {
 	FILE *out;
@@ -169,7 +170,7 @@ int main(int argc, char *argv[])
 	}
 
 	fclose(out);
-	fprintf(stderr, "recover\n");
-	recover();
+//	fprintf(stderr, "recover\n");
+//	recover();
 	return 0;
 }
