@@ -1,5 +1,5 @@
 .\"***************************************************************************
-.\" Copyright 2019,2020 Thomas E. Dickey                                     *
+.\" Copyright 2019-2024,2025 Thomas E. Dickey                                *
 .\" Copyright 2002-2010,2017 Free Software Foundation, Inc.                  *
 .\"                                                                          *
 .\" Permission is hereby granted, free of charge, to any person obtaining a  *
@@ -27,42 +27,119 @@
 .\" authorization.                                                           *
 .\"***************************************************************************
 .\"
-.\" $Id: curs_ins_wch.3x,v 1.10 2020/10/18 00:22:21 tom Exp $
-.TH curs_ins_wch 3X ""
-.ie \n(.g .ds `` \(lq
-.el       .ds `` ``
-.ie \n(.g .ds '' \(rq
-.el       .ds '' ''
+.\" $Id: curs_ins_wch.3x,v 1.52 2025/10/21 00:09:49 tom Exp $
+.TH curs_ins_wch 3X 2025-10-20 "ncurses @NCURSES_MAJOR@.@NCURSES_MINOR@" "Library calls"
+.ie \n(.g \{\
+.ds `` \(lq
+.ds '' \(rq
+.\}
+.el \{\
+.ie t .ds `` ``
+.el   .ds `` ""
+.ie t .ds '' ''
+.el   .ds '' ""
+.\}
+.
+.de bP
+.ie n  .IP \(bu 4
+.el    .IP \(bu 2
+..
 .SH NAME
-\fBins_wch\fR,
-\fBmvins_wch\fR,
-\fBmvwins_wch\fR,
-\fBwins_wch\fR \- insert a complex character and rendition into a window
+\fB\%ins_wch\fP,
+\fB\%wins_wch\fP,
+\fB\%mvins_wch\fP,
+\fB\%mvwins_wch\fP \-
+insert a \fIcurses\fR complex character in a window
 .SH SYNOPSIS
-#include <curses.h>
-.sp
-\fBint ins_wch(const cchar_t *\fR\fIwch\fR\fB);\fR
-.br
-\fBint wins_wch(WINDOW *\fR\fIwin\fP\fB, const cchar_t *\fR\fIwch\fR\fB);\fR
-.sp
-\fBint mvins_wch(int \fR\fIy\fP\fB, int \fR\fIx\fP\fB, const cchar_t *\fR\fIwch\fR\fB);\fR
-.br
-\fBint mvwins_wch(WINDOW *\fR\fIwin\fP\fB, int \fR\fIy\fP\fB, int \fR\fIx\fP\fB, const cchar_t *\fR\fIwch\fR\fB);\fR
-.SH DESCRIPTION
-These routines, insert the complex character \fIwch\fR with rendition
-before the character under the cursor.
-All characters to the right of the cursor are moved one space to the right,
-with the possibility of the rightmost character on the line being lost.
-The insertion operation does not change the cursor position.
-.SH RETURN VALUE
-If successful, these functions return \fBOK\fP.
-If not, they return \fBERR\fP.
+.nf
+\fB#include <curses.h>\fP
 .PP
-Functions with a \*(``mv\*('' prefix first perform a cursor movement using
-\fBwmove\fP, and return an error if the position is outside the window,
-or if the window pointer is null.
-.SH ERRORS
-No errors are defined.
-.SH SEE ALSO
-\fBcurses\fR(3X),
-\fBcurs_insch\fR(3X).
+\fBint ins_wch(const cchar_t * \fIwch\fP);
+\fBint wins_wch(WINDOW * \fIwin\fP, const cchar_t * \fIwch\fP);
+\fBint mvins_wch(int \fIy\fP, int \fIx\fP, const cchar_t * \fIwch\fP);
+\fBint mvwins_wch(WINDOW * \fIwin\fP, int \fIy\fP, int \fIx\fP, const cchar_t * \fIwch\fP);
+.fi
+.SH DESCRIPTION
+.B \%wins_wch
+inserts the
+.I curses
+complex character
+.I wch
+at the cursor position in the window
+.IR win "."
+The character previously at the cursor and any to its right move one
+cell to the right;
+the formerly rightmost character on the line is discarded.
+Unlike \fB\%add_wch\fP(3X),
+.B \%wins_wch
+does not advance the cursor.
+\fB\%ncurses\fP(3X) describes the variants of this function.
+.SH "RETURN VALUE"
+These functions return
+.B OK
+on success and
+.B ERR
+on failure.
+.PP
+In
+.IR \%ncurses ,
+they return
+.B ERR
+if
+.bP
+the
+.I curses
+screen has not been initialized,
+or
+.bP
+(for functions taking a
+.I \%WINDOW
+pointer argument)
+.I win
+is a null pointer.
+.PP
+Functions prefixed with \*(``mv\*('' first perform cursor movement and
+fail if the position
+.RI ( y ,
+.IR x )
+is outside the window boundaries.
+.SH NOTES
+.BR \%ins_wch ","
+.BR \%mvins_wch ","
+and
+.B \%mvwins_wch
+may be implemented as macros.
+.PP
+.I curses
+does not necessarily employ the terminal's
+.B \%insert_character
+.RB ( ich1 )
+capability to achieve insertion.
+.SH PORTABILITY
+X/Open Curses Issue\ 4 describes these functions.
+It specifies no error conditions for them.
+.SH HISTORY
+X/Open Curses Issue\ 4 (1995) initially specified these functions.
+The System\ V Interface Definition Version\ 4
+of the same year
+specified a function named
+.I \%winswch
+(and the usual variants).
+.\" SVID 4, vol 3., p. 512
+This was a later addition to
+.RI SVr4. x ,
+not appearing in the first SVr4 (1989).
+It differed from X/Open's later
+.I \%wins_wch
+in that it took an argument of type
+.I \%chtype
+instead of
+.IR \%cchar_t "."
+.SH "SEE ALSO"
+\fB\%curs_insch\fP(3X) describes comparable functions in the
+non-wide-character
+.I curses
+configuration.
+.PP
+\fB\%curses\fP(3X),
+\fB\%terminfo\fP(5)

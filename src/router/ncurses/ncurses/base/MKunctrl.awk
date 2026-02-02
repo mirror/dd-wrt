@@ -1,6 +1,6 @@
-# $Id: MKunctrl.awk,v 1.29 2020/02/02 23:34:34 tom Exp $
+# $Id: MKunctrl.awk,v 1.31 2024/12/07 21:06:39 tom Exp $
 ##############################################################################
-# Copyright 2020 Thomas E. Dickey                                            #
+# Copyright 2020,2024 Thomas E. Dickey                                       #
 # Copyright 1998-2012,2017 Free Software Foundation, Inc.                    #
 #                                                                            #
 # Permission is hereby granted, free of charge, to any person obtaining a    #
@@ -135,7 +135,7 @@ END	{
 
 		print ""
 		if (bigstrings) {
-			print "static const char unctrl_blob[] = "blob";"
+			print "static const char unctrl_blob[] ="blob";"
 			print ""
 			stringname = "unctrl_blob + unctrl"
 		} else {
@@ -144,10 +144,10 @@ END	{
 		print  "\tint check = (int) ChCharOf(ch);"
 		print  "\tconst char *result;"
 		print  ""
-		print  "(void) sp;"
+		print  "\t(void) sp;"
 		print  "\tif (check >= 0 && check < (int)SIZEOF(unctrl_table)) {"
 		print  "#if NCURSES_EXT_FUNCS"
-		print  "\t\tif ((sp != 0)"
+		print  "\t\tif ((sp != NULL)"
 		print  "\t\t && (sp->_legacy_coding > 1)"
 		print  "\t\t && (check >= 128)"
 		print  "\t\t && (check < 160))"
@@ -155,7 +155,8 @@ END	{
 		print  "\t\telse"
 		print  "\t\tif ((check >= 160)"
 		print  "\t\t && (check < 256)"
-		print  "\t\t && ((sp != 0)"
+		print  "\t\t && !_nc_unicode_locale()"
+		print  "\t\t && ((sp != NULL)"
 		print  "\t\t  && ((sp->_legacy_coding > 0)"
 		print  "\t\t   || (sp->_legacy_coding == 0"
 		print  "\t\t       && isprint(check)))))"
@@ -164,7 +165,7 @@ END	{
 		print  "#endif /* NCURSES_EXT_FUNCS */"
 		printf "\t\t\tresult = %s_table[check];\n", stringname;
 		print  "\t} else {"
-		print  "\t\tresult = 0;"
+		print  "\t\tresult = NULL;"
 		print  "\t}"
 		print  "\treturn (NCURSES_CONST char *)result;"
 		print  "}"

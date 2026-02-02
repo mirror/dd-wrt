@@ -1,5 +1,5 @@
 /****************************************************************************
- * Copyright 2018-2019,2020 Thomas E. Dickey                                *
+ * Copyright 2018-2024,2025 Thomas E. Dickey                                *
  * Copyright 2006-2013,2017 Free Software Foundation, Inc.                  *
  *                                                                          *
  * Permission is hereby granted, free of charge, to any person obtaining a  *
@@ -27,7 +27,7 @@
  * authorization.                                                           *
  ****************************************************************************/
 /*
- * $Id: movewindow.c,v 1.51 2020/02/02 23:34:34 tom Exp $
+ * $Id: movewindow.c,v 1.59 2025/07/05 15:11:35 tom Exp $
  *
  * Demonstrate move functions for windows and derived windows from the curses
  * library.
@@ -53,14 +53,6 @@ TODO:
 
 #ifdef HAVE_XCURSES
 #undef derwin
-#endif
-
-#if defined(NCURSES_CONST)
-#define CONST_FMT NCURSES_CONST
-#elif defined(PDCURSES)
-#define CONST_FMT const
-#else
-#define CONST_FMT		/* nothing */
 #endif
 
 #undef LINE_MAX
@@ -143,7 +135,7 @@ tail_line(CONST_FMT char *fmt, ...)
  */
 static PAIR *
 selectcell(WINDOW *parent,
-	   WINDOW *child,
+	   NCURSES_CONST WINDOW *child,
 	   int uli, int ulj,
 	   int lri, int lrj,
 	   bool relative,
@@ -157,7 +149,7 @@ selectcell(WINDOW *parent,
     res.y = uli;
     res.x = ulj;
 
-    if (child != 0) {
+    if (child != NULL) {
 	if (relative) {
 	    getparyx(child, i, j);
 	} else {
@@ -260,24 +252,24 @@ getwindow(WINDOW *parent, PAIR * ul, PAIR * lr)
     int max_col = (parent == stdscr) ? COL_MAX : getmaxx(parent);
     int min_line = (parent == stdscr) ? LINE_MIN : 0;
     int max_line = (parent == stdscr) ? LINE_MAX : getmaxy(parent);
-    PAIR *tmp;
+    NCURSES_CONST PAIR *tmp;
     bool result = FALSE;
 
     head_line("Use arrows to move cursor, anything else to mark corner 1");
-    if ((tmp = selectcell(parent, 0,
+    if ((tmp = selectcell(parent, NULL,
 			  min_line, min_col,
 			  max_line, max_col,
 			  FALSE,
-			  (bool *) 0)) != 0) {
+			  (bool *) 0)) != NULL) {
 	*ul = *tmp;
 	MvWAddCh(parent, ul->y, ul->x, '*');
 
 	head_line("Use arrows to move cursor, anything else to mark corner 2");
-	if ((tmp = selectcell(parent, 0,
+	if ((tmp = selectcell(parent, NULL,
 			      ul->y, ul->x,
 			      max_line, max_col,
 			      FALSE,
-			      (bool *) 0)) != 0) {
+			      (bool *) 0)) != NULL) {
 	    *lr = *tmp;
 	    MvWAddCh(parent, lr->y, lr->x, '*');
 	    wmove(parent, lr->y, lr->x);
@@ -332,6 +324,7 @@ add_window(WINDOW *parent, WINDOW *child)
 	all_windows = typeRealloc(FRAME, need, all_windows);
 	if (!all_windows)
 	    failed("add_window");
+	have = need;
     }
     all_windows[num_windows].parent = parent;
     all_windows[num_windows].child = child;
@@ -339,7 +332,7 @@ add_window(WINDOW *parent, WINDOW *child)
 }
 
 static int
-window2num(WINDOW *win)
+window2num(const WINDOW *const win)
 {
     int n;
     int result = -1;
@@ -353,9 +346,9 @@ window2num(WINDOW *win)
 }
 
 static WINDOW *
-parent_of(WINDOW *win)
+parent_of(NCURSES_CONST WINDOW *win)
 {
-    WINDOW *result = 0;
+    WINDOW *result = NULL;
     int n = window2num(win);
     if (n >= 0)
 	result = all_windows[n].parent;
@@ -415,7 +408,7 @@ prev_window(WINDOW *win)
 }
 
 static void
-recur_move_window(WINDOW *parent, int dy, int dx)
+recur_move_window(const WINDOW *const parent, int dy, int dx)
 {
     unsigned n;
 
@@ -436,13 +429,13 @@ move_window(WINDOW *win, bool recur)
     WINDOW *parent = parent_of(win);
     bool result = FALSE;
 
-    if (parent != 0) {
+    if (parent != NULL) {
 	bool top = (parent == stdscr);
 	int min_col = top ? COL_MIN : 0;
 	int max_col = top ? COL_MAX : getmaxx(parent);
 	int min_line = top ? LINE_MIN : 0;
 	int max_line = top ? LINE_MAX : getmaxy(parent);
-	PAIR *tmp;
+	NCURSES_CONST PAIR *tmp;
 	bool more;
 
 	head_line("Select new position for %swindow", top ? "" : "sub");
@@ -452,7 +445,7 @@ move_window(WINDOW *win, bool recur)
 				 min_line, min_col,
 				 max_line, max_col,
 				 FALSE,
-				 &more)) != 0) {
+				 &more)) != NULL) {
 	    int y0, x0;
 	    getbegyx(parent, y0, x0);
 	    /*
@@ -481,7 +474,7 @@ move_window(WINDOW *win, bool recur)
 }
 
 static void
-show_derwin(WINDOW *win)
+show_derwin(NCURSES_CONST WINDOW *win)
 {
     int pary, parx, maxy, maxx;
 
@@ -501,13 +494,13 @@ move_derwin(WINDOW *win)
     WINDOW *parent = parent_of(win);
     bool result = FALSE;
 
-    if (parent != 0) {
+    if (parent != NULL) {
 	bool top = (parent == stdscr);
 	int min_col = top ? COL_MIN : 0;
 	int max_col = top ? COL_MAX : getmaxx(parent);
 	int min_line = top ? LINE_MIN : 0;
 	int max_line = top ? LINE_MAX : getmaxy(parent);
-	PAIR *tmp;
+	NCURSES_CONST PAIR *tmp;
 	bool more;
 
 	show_derwin(win);
@@ -516,7 +509,7 @@ move_derwin(WINDOW *win)
 				 min_line, min_col,
 				 max_line, max_col,
 				 TRUE,
-				 &more)) != 0) {
+				 &more)) != NULL) {
 	    if (mvderwin(win, tmp->y, tmp->x) != ERR) {
 		refresh_all(win);
 		doupdate();
@@ -584,16 +577,16 @@ static WINDOW *
 create_my_window(WINDOW *current)
 {
     PAIR ul, lr;
-    WINDOW *result = 0;
+    WINDOW *result = NULL;
 
     if (getwindow(stdscr, &ul, &lr)) {
 	result = newwin(lines_of(ul, lr), cols_of(ul, lr), pair_of(ul));
-	if (result != 0) {
+	if (result != NULL) {
 	    fill_window(result, 'c');
 	    add_window(stdscr, result);
 	}
     }
-    if (result == 0)
+    if (result == NULL)
 	result = current;
     return result;
 }
@@ -602,16 +595,16 @@ static WINDOW *
 create_my_derwin(WINDOW *parent)
 {
     PAIR ul, lr;
-    WINDOW *result = 0;
+    WINDOW *result = NULL;
 
     if (getwindow(parent, &ul, &lr)) {
 	result = derwin(parent, lines_of(ul, lr), cols_of(ul, lr), pair_of(ul));
-	if (result != 0) {
+	if (result != NULL) {
 	    fill_window(result, 'd');
 	    add_window(parent, result);
 	}
     }
-    if (result == 0)
+    if (result == NULL)
 	result = parent;
     return result;
 }
@@ -620,7 +613,7 @@ static WINDOW *
 create_my_subwin(WINDOW *parent)
 {
     PAIR ul, lr;
-    WINDOW *result = 0;
+    WINDOW *result = NULL;
 
     if (getwindow(parent, &ul, &lr)) {
 	result = subwin(parent,
@@ -628,12 +621,12 @@ create_my_subwin(WINDOW *parent)
 			cols_of(ul, lr),
 			ul.y + getbegy(parent),
 			ul.x + getbegx(parent));
-	if (result != 0) {
+	if (result != NULL) {
 	    fill_window(result, 's');
 	    add_window(parent, result);
 	}
     }
-    if (result == 0)
+    if (result == NULL)
 	result = parent;
     return result;
 }
@@ -665,12 +658,16 @@ show_help(WINDOW *current)
 
     char **msgs = typeCalloc(char *, SIZEOF(help) + 1);
     size_t n;
+    size_t used;
 
-    for (n = 0; n < SIZEOF(help); ++n) {
+    for (n = used = 0; n < SIZEOF(help); ++n) {
 	size_t need = (21 + strlen(help[n].msg));
-	msgs[n] = typeMalloc(char, need);
-	_nc_SPRINTF(msgs[n], _nc_SLIMIT(need)
-		    "%-20s%s", keyname(help[n].key), help[n].msg);
+	char *msg = typeMalloc(char, need);
+	if (msg != NULL) {
+	    _nc_SPRINTF(msg, _nc_SLIMIT(need)
+			"%-20s%s", keyname(help[n].key), help[n].msg);
+	    msgs[used++] = msg;
+	}
     }
     popup_msg2(current, msgs);
     for (n = 0; n < SIZEOF(help); ++n) {
@@ -679,12 +676,42 @@ show_help(WINDOW *current)
     free(msgs);
 }
 
+static void
+usage(int ok)
+{
+    static const char *msg[] =
+    {
+	"Usage: movewindow [options]"
+	,""
+	,USAGE_COMMON
+    };
+    size_t n;
+
+    for (n = 0; n < SIZEOF(msg); n++)
+	fprintf(stderr, "%s\n", msg[n]);
+
+    ExitProgram(ok ? EXIT_SUCCESS : EXIT_FAILURE);
+}
+/* *INDENT-OFF* */
+VERSION_COMMON()
+/* *INDENT-ON* */
+
 int
-main(int argc GCC_UNUSED, char *argv[]GCC_UNUSED)
+main(int argc, char *argv[])
 {
     WINDOW *current_win;
     int ch;
     bool done = FALSE;
+
+    while ((ch = getopt(argc, argv, OPTS_COMMON)) != -1) {
+	switch (ch) {
+	default:
+	    CASE_COMMON;
+	    /* NOTREACHED */
+	}
+    }
+    if (optind < argc)
+	usage(FALSE);
 
     initscr();
     cbreak();
@@ -692,7 +719,7 @@ main(int argc GCC_UNUSED, char *argv[]GCC_UNUSED)
     nonl();
     intrflush(stdscr, FALSE);
 
-    add_window(0, current_win = stdscr);
+    add_window(NULL, current_win = stdscr);
 
 #ifdef NCURSES_MOUSE_VERSION
     (void) mousemask(BUTTON1_CLICKED, (mmask_t *) NULL);

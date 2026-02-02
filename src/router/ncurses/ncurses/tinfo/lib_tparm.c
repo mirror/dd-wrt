@@ -1,5 +1,5 @@
 /****************************************************************************
- * Copyright 2018-2020,2021 Thomas E. Dickey                                *
+ * Copyright 2018-2024,2025 Thomas E. Dickey                                *
  * Copyright 1998-2016,2017 Free Software Foundation, Inc.                  *
  *                                                                          *
  * Permission is hereby granted, free of charge, to any person obtaining a  *
@@ -53,7 +53,7 @@
 #include <ctype.h>
 #include <tic.h>
 
-MODULE_ID("$Id: lib_tparm.c,v 1.134 2021/08/21 21:52:08 tom Exp $")
+MODULE_ID("$Id: lib_tparm.c,v 1.157 2025/02/15 15:20:16 tom Exp $")
 
 /*
  *	char *
@@ -87,7 +87,7 @@ MODULE_ID("$Id: lib_tparm.c,v 1.134 2021/08/21 21:52:08 tom Exp $")
  *                     The ':' is used to avoid making %+ or %-
  *                     patterns (see below).
  *
- *	     %p[1-9]   push ith parm
+ *	     %p[1-9]   push ith param
  *	     %P[a-z]   set dynamic variable [a-z] to pop()
  *	     %g[a-z]   get dynamic variable [a-z] and push it
  *	     %P[A-Z]   set static variable [A-Z] to pop()
@@ -102,7 +102,7 @@ MODULE_ID("$Id: lib_tparm.c,v 1.134 2021/08/21 21:52:08 tom Exp $")
  *	     %= %> %<  logical operations: push(pop() op pop())
  *	     %A %O     logical and & or operations for conditionals
  *	     %! %~     unary operations push(op pop())
- *	     %i        add 1 to first two parms (for ANSI terminals)
+ *	     %i        add 1 to first two params (for ANSI terminals)
  *
  *	     %? expr %t thenpart %e elsepart %;
  *	               if-then-else, %e elsepart is optional.
@@ -142,10 +142,8 @@ typedef struct {
 #if HAVE_TSEARCH
 #define MyCache _nc_globals.cached_tparm
 #define MyCount _nc_globals.count_tparm
-#if NO_LEAKS
 static int which_tparm;
 static TPARM_DATA **delete_tparm;
-#endif
 #endif /* HAVE_TSEARCH */
 
 static char dummy[] = "";	/* avoid const-cast */
@@ -160,10 +158,9 @@ cmp_format(const void *p, const void *q)
 }
 #endif
 
-#if NO_LEAKS
 #if HAVE_TSEARCH
 static void
-visit_nodes(const void *nodep, const VISIT which, const int depth)
+visit_nodes(const void *nodep, VISIT which, int depth)
 {
     (void) depth;
     if (which == preorder || which == leaf) {
@@ -174,25 +171,27 @@ visit_nodes(const void *nodep, const VISIT which, const int depth)
 #endif
 
 NCURSES_EXPORT(void)
-_nc_free_tparm(void)
+_nc_free_tparm(TERMINAL *termp)
 {
-    TPARM_STATE *tps = get_tparm_state(cur_term);	/* FIXME */
+    TPARM_STATE *tps = get_tparm_state(termp);
 #if HAVE_TSEARCH
     if (MyCount != 0) {
 	delete_tparm = typeCalloc(TPARM_DATA *, MyCount);
-	which_tparm = 0;
-	twalk(MyCache, visit_nodes);
-	for (which_tparm = 0; which_tparm < MyCount; ++which_tparm) {
-	    TPARM_DATA *ptr = delete_tparm[which_tparm];
-	    if (ptr != NULL) {
-		tdelete(ptr, &MyCache, cmp_format);
-		free((char *) ptr->format);
-		free(ptr);
+	if (delete_tparm != NULL) {
+	    which_tparm = 0;
+	    twalk(MyCache, visit_nodes);
+	    for (which_tparm = 0; which_tparm < MyCount; ++which_tparm) {
+		TPARM_DATA *ptr = delete_tparm[which_tparm];
+		if (ptr != NULL) {
+		    tdelete(ptr, &MyCache, cmp_format);
+		    free((char *) ptr->format);
+		    free(ptr);
+		}
 	    }
+	    which_tparm = 0;
+	    twalk(MyCache, visit_nodes);
+	    FreeAndNull(delete_tparm);
 	}
-	which_tparm = 0;
-	twalk(MyCache, visit_nodes);
-	FreeAndNull(delete_tparm);
 	MyCount = 0;
 	which_tparm = 0;
     }
@@ -204,11 +203,12 @@ _nc_free_tparm(void)
     FreeAndNull(TPS(fmt_buff));
     TPS(fmt_size) = 0;
 }
-#endif
 
 static int
 tparm_error(TPARM_STATE *tps, const char *message)
 {
+    (void) tps;
+    (void) message;
     DEBUG(2, ("%s: %s", message, _nc_visbuf(TPS(tparam_base))));
     return ++_nc_tparm_err;
 }
@@ -343,7 +343,7 @@ static NCURSES_INLINE int
 #define spop(tps) \
     ((TPS(stack_ptr)-- > 0) \
      ? ((!TPS(stack)[TPS(stack_ptr)].num_type \
-        && TPS(stack)[TPS(stack_ptr)].data.str != 0) \
+        && TPS(stack)[TPS(stack_ptr)].data.str != NULL) \
          ? TPS(stack)[TPS(stack_ptr)].data.str \
          : dummy) \
      : (tparm_error(tps, "spop: stack underflow"), \
@@ -361,7 +361,7 @@ static NCURSES_INLINE const char *
 parse_format(const char *s, char *format, int *len)
 {
     *len = 0;
-    if (format != 0) {
+    if (format != NULL) {
 	bool done = FALSE;
 	bool allowminus = FALSE;
 	bool dot = FALSE;
@@ -475,13 +475,13 @@ _nc_tparm_analyze(TERMINAL *term, const char *string, char **p_is_s, int *popcou
     int level = -1;
     const char *cp = string;
 
-    if (cp == 0)
+    if (cp == NULL)
 	return 0;
 
     if ((len2 = strlen(cp)) + 2 > TPS(fmt_size)) {
 	TPS(fmt_size) += len2 + 2;
 	TPS(fmt_buff) = typeRealloc(char, TPS(fmt_size), TPS(fmt_buff));
-	if (TPS(fmt_buff) == 0)
+	if (TPS(fmt_buff) == NULL)
 	    return 0;
     }
 
@@ -607,8 +607,8 @@ tparm_setup(TERMINAL *term, const char *string, TPARM_DATA *result)
     TPS(out_used) = 0;
     memset(result, 0, sizeof(*result));
 
-    if (string == NULL) {
-	TR(TRACE_CALLS, ("%s: format is null", TPS(tname)));
+    if (!VALID_STRING(string)) {
+	TR(TRACE_CALLS, ("%s: format is invalid", TPS(tname)));
 	rc = ERR;
     } else {
 #if HAVE_TSEARCH
@@ -616,14 +616,14 @@ tparm_setup(TERMINAL *term, const char *string, TPARM_DATA *result)
 	void *ft;
 
 	result->format = string;
-	if ((ft = tfind(result, &MyCache, cmp_format)) != 0) {
+	if ((ft = tfind(result, &MyCache, cmp_format)) != NULL) {
 	    size_t len2;
 	    fs = *(TPARM_DATA **) ft;
 	    *result = *fs;
 	    if ((len2 = strlen(string)) + 2 > TPS(fmt_size)) {
 		TPS(fmt_size) += len2 + 2;
 		TPS(fmt_buff) = typeRealloc(char, TPS(fmt_size), TPS(fmt_buff));
-		if (TPS(fmt_buff) == 0)
+		if (TPS(fmt_buff) == NULL)
 		    return ERR;
 	    }
 	} else
@@ -637,7 +637,7 @@ tparm_setup(TERMINAL *term, const char *string, TPARM_DATA *result)
 	    result->num_parsed = _nc_tparm_analyze(term, string,
 						   result->p_is_s,
 						   &(result->num_popped));
-	    if (TPS(fmt_buff) == 0) {
+	    if (TPS(fmt_buff) == NULL) {
 		TR(TRACE_CALLS, ("%s: error in analysis", TPS(tname)));
 		rc = ERR;
 	    } else {
@@ -647,17 +647,17 @@ tparm_setup(TERMINAL *term, const char *string, TPARM_DATA *result)
 		    result->num_parsed = NUM_PARM;
 		if (result->num_popped > NUM_PARM)
 		    result->num_popped = NUM_PARM;
-		result->num_actual = max(result->num_popped, result->num_parsed);
+		result->num_actual = Max(result->num_popped, result->num_parsed);
 
 		for (n = 0; n < result->num_actual; ++n) {
 		    if (result->p_is_s[n])
 			result->tparm_type |= (1 << n);
 		}
 #if HAVE_TSEARCH
-		if ((fs = typeCalloc(TPARM_DATA, 1)) != 0) {
+		if ((fs = typeCalloc(TPARM_DATA, 1)) != NULL) {
 		    *fs = *result;
-		    if ((fs->format = strdup(string)) != 0) {
-			if (tsearch(fs, &MyCache, cmp_format) != 0) {
+		    if ((fs->format = strdup(string)) != NULL) {
+			if (tsearch(fs, &MyCache, cmp_format) != NULL) {
 			    ++MyCount;
 			} else {
 			    free(fs);
@@ -690,9 +690,9 @@ tparm_copy_valist(TPARM_DATA *data, int use_TPARM_ARG, va_list ap)
     int i;
 
     for (i = 0; i < data->num_actual; i++) {
-	if (data->p_is_s[i] != 0) {
+	if (data->p_is_s[i] != NULL) {
 	    char *value = va_arg(ap, char *);
-	    if (value == 0)
+	    if (value == NULL)
 		value = dummy;
 	    data->p_is_s[i] = value;
 	    data->param[i] = 0;
@@ -740,7 +740,7 @@ tparm_trace_call(TPARM_STATE *tps, const char *string, TPARM_DATA *data)
     if (USE_TRACEF(TRACE_CALLS)) {
 	int i;
 	for (i = 0; i < data->num_actual; i++) {
-	    if (data->p_is_s[i] != 0) {
+	    if (data->p_is_s[i] != NULL) {
 		save_text(tps, ", %s", _nc_visbuf(data->p_is_s[i]), 0);
 	    } else if ((long) data->param[i] > MAX_OF_TYPE(NCURSES_INT2) ||
 		       (long) data->param[i] < 0) {
@@ -797,6 +797,11 @@ tparam_internal(TPARM_STATE *tps, const char *string, TPARM_DATA *data)
     int dynamic_vars[NUM_VARS];
 
     tparm_trace_call(tps, string, data);
+
+    if (TPS(fmt_buff) == NULL) {
+	T((T_RETURN("<null>")));
+	return NULL;
+    }
 
     while ((cp - string) < (int) len2) {
 	if (*cp != '%') {
@@ -998,12 +1003,12 @@ tparam_internal(TPARM_STATE *tps, const char *string, TPARM_DATA *data)
 		 */
 		if (!incremented_two) {
 		    incremented_two = TRUE;
-		    if (data->p_is_s[0] == 0) {
+		    if (data->p_is_s[0] == NULL) {
 			data->param[0]++;
 			if (termcap_hack)
 			    TPS(stack)[0].data.num = (int) data->param[0];
 		    }
-		    if (data->p_is_s[1] == 0) {
+		    if (data->p_is_s[1] == NULL) {
 			data->param[1]++;
 			if (termcap_hack)
 			    TPS(stack)[1].data.num = (int) data->param[1];
@@ -1088,6 +1093,67 @@ tparam_internal(TPARM_STATE *tps, const char *string, TPARM_DATA *data)
     return (TPS(out_buff));
 }
 
+#ifdef CUR
+/*
+ * Only a few standard capabilities accept string parameters.  The others that
+ * are parameterized accept only numeric parameters.
+ */
+static bool
+check_string_caps(const TPARM_DATA *data, const char *string)
+{
+    bool result = FALSE;
+
+#define CHECK_CAP(name) (VALID_STRING(name) && !strcmp(name, string))
+
+    /*
+     * Disallow string parameters unless we can check them against a terminal
+     * description.
+     */
+    if (cur_term != NULL) {
+	int want_type = 0;
+
+	if (CHECK_CAP(pkey_key))
+	    want_type = 2;	/* function key #1, type string #2 */
+	else if (CHECK_CAP(pkey_local))
+	    want_type = 2;	/* function key #1, execute string #2 */
+	else if (CHECK_CAP(pkey_xmit))
+	    want_type = 2;	/* function key #1, transmit string #2 */
+	else if (CHECK_CAP(plab_norm))
+	    want_type = 2;	/* label #1, show string #2 */
+#ifdef pkey_plab
+	else if (CHECK_CAP(pkey_plab))
+	    want_type = 6;	/* function key #1, type string #2, show string #3 */
+#endif
+#if NCURSES_XNAMES
+	else {
+	    const char *check;
+
+	    check = tigetstr(UserCap(Cs));
+	    if (CHECK_CAP(check))
+		want_type = 1;	/* style #1 */
+
+	    check = tigetstr(UserCap(Ms));
+	    if (CHECK_CAP(check))
+		want_type = 3;	/* storage unit #1, content #2 */
+	}
+#endif
+
+	if (want_type == data->tparm_type) {
+	    result = TRUE;
+	} else {
+	    T(("unexpected string-parameter"));
+	}
+    }
+    return result;
+}
+
+#define ValidCap(allow_strings) (myData.tparm_type == 0 || \
+				 (allow_strings && \
+				  check_string_caps(&myData, string)))
+#else
+#define ValidCap(allow_strings) 1
+#endif
+
 #if NCURSES_TPARM_VARARGS
 
 NCURSES_EXPORT(char *)
@@ -1102,7 +1168,7 @@ tparm(const char *string, ...)
     tps->tname = "tparm";
 #endif /* TRACE */
 
-    if (tparm_setup(cur_term, string, &myData) == OK) {
+    if (tparm_setup(cur_term, string, &myData) == OK && ValidCap(TRUE)) {
 	va_list ap;
 
 	va_start(ap, string);
@@ -1137,7 +1203,9 @@ tparm(const char *string,
     tps->tname = "tparm";
 #endif /* TRACE */
 
-    if (tparm_setup(cur_term, string, &myData) == OK) {
+#define string_ok (sizeof(char*) <= sizeof(TPARM_ARG))
+
+    if (tparm_setup(cur_term, string, &myData) == OK && ValidCap(string_ok)) {
 
 	myData.param[0] = a1;
 	myData.param[1] = a2;
@@ -1168,7 +1236,7 @@ tiparm(const char *string, ...)
     tps->tname = "tiparm";
 #endif /* TRACE */
 
-    if (tparm_setup(cur_term, string, &myData) == OK) {
+    if (tparm_setup(cur_term, string, &myData) == OK && ValidCap(TRUE)) {
 	va_list ap;
 
 	va_start(ap, string);
@@ -1181,10 +1249,11 @@ tiparm(const char *string, ...)
 }
 
 /*
- * The internal-use flavor ensures that the parameters are numbers, not strings
+ * Use tparm if the formatting string matches the expected number of parameters
+ * counting string-parameters.
  */
 NCURSES_EXPORT(char *)
-_nc_tiparm(int expected, const char *string, ...)
+tiparm_s(int num_expected, int tparm_type, const char *string, ...)
 {
     TPARM_STATE *tps = get_tparm_state(cur_term);
     TPARM_DATA myData;
@@ -1192,12 +1261,15 @@ _nc_tiparm(int expected, const char *string, ...)
 
     _nc_tparm_err = 0;
 #ifdef TRACE
-    tps->tname = "_nc_tiparm";
+    tps->tname = "tiparm_s";
 #endif /* TRACE */
-
-    if (tparm_setup(cur_term, string, &myData) == OK
-	&& myData.num_actual <= expected
-	&& myData.tparm_type == 0) {
+    if (num_expected >= 0 &&
+	num_expected <= 9 &&
+	tparm_type >= 0 &&
+	tparm_type < 7 &&	/* limit to 2 string parameters */
+	tparm_setup(cur_term, string, &myData) == OK &&
+	myData.tparm_type == tparm_type &&
+	myData.num_actual == num_expected) {
 	va_list ap;
 
 	va_start(ap, string);
@@ -1207,6 +1279,121 @@ _nc_tiparm(int expected, const char *string, ...)
 	result = tparam_internal(tps, string, &myData);
     }
     return result;
+}
+
+/*
+ * Analyze the formatting string, return the analysis.
+ */
+NCURSES_EXPORT(int)
+tiscan_s(int *num_expected, int *tparm_type, const char *string)
+{
+    TPARM_DATA myData;
+    int result = ERR;
+
+#ifdef TRACE
+    TPARM_STATE *tps = get_tparm_state(cur_term);
+    tps->tname = "tiscan_s";
+#endif /* TRACE */
+
+    if (tparm_setup(cur_term, string, &myData) == OK) {
+	*num_expected = myData.num_actual;
+	*tparm_type = myData.tparm_type;
+	result = OK;
+    }
+    return result;
+}
+
+/*
+ * The internal-use flavor ensures that parameters are numbers, not strings.
+ * In addition to ensuring that they are numbers, it ensures that the parameter
+ * count is consistent with intended usage.
+ *
+ * Unlike the general-purpose tparm/tiparm, these internal calls are fairly
+ * well defined:
+ *
+ * expected == 0 - not applicable
+ * expected == 1 - set color, or vertical/horizontal addressing
+ * expected == 2 - cursor addressing
+ * expected == 4 - initialize color or color pair
+ * expected == 9 - set attributes
+ *
+ * Only for the last case (set attributes) should a parameter be optional.
+ * Also, a capability which calls for more parameters than expected should be
+ * ignored.
+ *
+ * Return a null if the parameter-checks fail.  Otherwise, return a pointer to
+ * the formatted capability string.
+ */
+NCURSES_EXPORT(char *)
+_nc_tiparm(int expected, const char *string, ...)
+{
+    TPARM_STATE *tps = get_tparm_state(cur_term);
+    TPARM_DATA myData;
+    char *result = NULL;
+
+    _nc_tparm_err = 0;
+    T((T_CALLED("_nc_tiparm(%d, %s, ...)"), expected, _nc_visbuf(string)));
+#ifdef TRACE
+    tps->tname = "_nc_tiparm";
+#endif /* TRACE */
+
+    if (tparm_setup(cur_term, string, &myData) == OK && ValidCap(FALSE)) {
+#ifdef CUR
+	if (myData.num_actual != expected && cur_term != NULL) {
+	    int needed = expected;
+	    if (CHECK_CAP(to_status_line)) {
+		needed = 0;	/* allow for xterm's status line */
+	    } else if (CHECK_CAP(set_a_background)) {
+		needed = 0;	/* allow for monochrome fakers */
+	    } else if (CHECK_CAP(set_a_foreground)) {
+		needed = 0;
+	    } else if (CHECK_CAP(set_background)) {
+		needed = 0;
+	    } else if (CHECK_CAP(set_foreground)) {
+		needed = 0;
+	    }
+#if NCURSES_XNAMES
+	    else {
+		const char *check;
+
+		check = tigetstr(UserCap(xm));
+		if (CHECK_CAP(check)) {
+		    needed = 3;
+		}
+		check = tigetstr(UserCap(S0));
+		if (CHECK_CAP(check)) {
+		    needed = 0;	/* used in screen-base */
+		}
+	    }
+#endif
+	    if (myData.num_actual >= needed && myData.num_actual <= expected)
+		expected = myData.num_actual;
+	}
+#endif
+	if (myData.num_actual == 0 && expected) {
+	    T(("missing parameter%s, expected %s%d",
+	       expected > 1 ? "s" : "",
+	       expected == 9 ? "up to " : "",
+	       expected));
+	} else if (myData.num_actual > expected) {
+	    T(("too many parameters, have %d, expected %d",
+	       myData.num_actual,
+	       expected));
+	} else if (expected != 9 && myData.num_actual != expected) {
+	    T(("expected %d parameters, have %d",
+	       myData.num_actual,
+	       expected));
+	} else {
+	    va_list ap;
+
+	    va_start(ap, string);
+	    tparm_copy_valist(&myData, FALSE, ap);
+	    va_end(ap);
+
+	    result = tparam_internal(tps, string, &myData);
+	}
+    }
+    returnPtr(result);
 }
 
 /*

@@ -1,5 +1,5 @@
 /****************************************************************************
- * Copyright 2019,2020 Thomas E. Dickey                                     *
+ * Copyright 2019-2024,2025 Thomas E. Dickey                                *
  * Copyright 2006-2014,2017 Free Software Foundation, Inc.                  *
  *                                                                          *
  * Permission is hereby granted, free of charge, to any person obtaining a  *
@@ -27,7 +27,7 @@
  * authorization.                                                           *
  ****************************************************************************/
 /*
- * $Id: echochar.c,v 1.21 2020/02/02 23:34:34 tom Exp $
+ * $Id: echochar.c,v 1.28 2025/07/05 15:21:56 tom Exp $
  *
  * Demonstrate the echochar function (compare to dots.c).
  * Thomas Dickey - 2006/11/4
@@ -65,7 +65,7 @@ ranf(void)
 }
 
 static void
-set_color(char *my_pairs, int fg, int bg)
+set_color(const char *const my_pairs, int fg, int bg)
 {
     int pair = (fg * COLORS) + bg;
     if (pair < COLOR_PAIRS) {
@@ -78,27 +78,48 @@ set_color(char *my_pairs, int fg, int bg)
     }
 }
 
+static void
+usage(int ok)
+{
+    static const char *msg[] =
+    {
+	"Usage: echochar"
+	,""
+	,USAGE_COMMON
+	,"Options:"
+	," -r       use addch/refresh rather than echochar()"
+    };
+    size_t n;
+
+    for (n = 0; n < SIZEOF(msg); n++)
+	fprintf(stderr, "%s\n", msg[n]);
+
+    ExitProgram(ok ? EXIT_SUCCESS : EXIT_FAILURE);
+}
+/* *INDENT-OFF* */
+VERSION_COMMON()
+/* *INDENT-ON* */
+
 int
-main(int argc GCC_UNUSED,
-     char *argv[]GCC_UNUSED)
+main(int argc, char *argv[])
 {
     int ch;
     double r;
     double c;
     bool use_colors;
     bool opt_r = FALSE;
-    char *my_pairs = 0;
+    char *my_pairs = NULL;
     int last_fg = 0;
     int last_bg = 0;
 
-    while ((ch = getopt(argc, argv, "r")) != -1) {
+    while ((ch = getopt(argc, argv, OPTS_COMMON "r")) != -1) {
 	switch (ch) {
 	case 'r':
 	    opt_r = TRUE;
 	    break;
 	default:
-	    fprintf(stderr, "Usage: echochar [-r]\n");
-	    ExitProgram(EXIT_FAILURE);
+	    CASE_COMMON;
+	    /* NOTREACHED */
 	}
     }
 
@@ -110,10 +131,10 @@ main(int argc GCC_UNUSED,
 	if (COLOR_PAIRS > 0) {
 	    my_pairs = typeCalloc(char, (size_t) COLOR_PAIRS);
 	}
-	use_colors = (my_pairs != 0);
+	use_colors = (my_pairs != NULL);
     }
 
-    srand((unsigned) time(0));
+    srand((unsigned) time(NULL));
 
     curs_set(0);
 

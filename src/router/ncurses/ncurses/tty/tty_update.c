@@ -1,5 +1,5 @@
 /****************************************************************************
- * Copyright 2018-2020,2021 Thomas E. Dickey                                *
+ * Copyright 2018-2024,2025 Thomas E. Dickey                                *
  * Copyright 1998-2016,2017 Free Software Foundation, Inc.                  *
  *                                                                          *
  * Permission is hereby granted, free of charge, to any person obtaining a  *
@@ -85,7 +85,13 @@
 
 #include <ctype.h>
 
-MODULE_ID("$Id: tty_update.c,v 1.312 2021/09/04 10:29:59 tom Exp $")
+#if USE_WIDEC_SUPPORT
+#if HAVE_WCTYPE_H
+#include <wctype.h>
+#endif
+#endif
+
+MODULE_ID("$Id: tty_update.c,v 1.323 2025/12/27 12:34:03 tom Exp $")
 
 /*
  * This define controls the line-breakout optimization.  Every once in a
@@ -211,7 +217,7 @@ GoTo(NCURSES_SP_DCLx int const row, int const col)
 }
 
 #if !NCURSES_WCWIDTH_GRAPHICS
-#define is_wacs_value(ch) (_nc_wacs_width(ch) == 1 && wcwidth(ch) > 1)
+#define is_wacs_value(ch) (_nc_wacs_width((wchar_t) ch) == 1 && wcwidth(ch) > 1)
 #endif /* !NCURSES_WCWIDTH_GRAPHICS */
 
 static NCURSES_INLINE void
@@ -257,11 +263,14 @@ PutAttrChar(NCURSES_SP_DCLx CARG_CH_T ch)
 	 */
 	if (is8bits(CharOf(CHDEREF(ch)))
 	    && (isprint(CharOf(CHDEREF(ch)))
+#if USE_WIDEC_SUPPORT
+		|| iswprint((wint_t) CharOf(CHDEREF(ch)))
+#endif
 		|| (SP_PARM->_legacy_coding > 0 && CharOf(CHDEREF(ch)) >= 160)
 		|| (SP_PARM->_legacy_coding > 1 && CharOf(CHDEREF(ch)) >= 128)
 		|| (AttrOf(attr) & A_ALTCHARSET
 		    && ((CharOfD(ch) < ACS_LEN
-			 && SP_PARM->_acs_map != 0
+			 && SP_PARM->_acs_map != NULL
 			 && SP_PARM->_acs_map[CharOfD(ch)] != 0)
 			|| (CharOfD(ch) >= 128))))) {
 	    ;
@@ -274,7 +283,7 @@ PutAttrChar(NCURSES_SP_DCLx CARG_CH_T ch)
 #endif
 
     if ((AttrOf(attr) & A_ALTCHARSET)
-	&& SP_PARM->_acs_map != 0
+	&& SP_PARM->_acs_map != NULL
 	&& ((CharOfD(ch) < ACS_LEN)
 #if !NCURSES_WCWIDTH_GRAPHICS
 	    || is_wacs_value(CharOfD(ch))
@@ -282,7 +291,7 @@ PutAttrChar(NCURSES_SP_DCLx CARG_CH_T ch)
 	)) {
 	int c8;
 	my_ch = CHDEREF(ch);	/* work around const param */
-	c8 = CharOf(my_ch);
+	c8 = (int) CharOf(my_ch);
 #if USE_WIDEC_SUPPORT
 	/*
 	 * This is crude & ugly, but works most of the time.  It checks if the
@@ -330,7 +339,7 @@ PutAttrChar(NCURSES_SP_DCLx CARG_CH_T ch)
 	 * drawing flavors are integrated.
 	 */
 	if (AttrOf(attr) & A_ALTCHARSET) {
-	    int j = CharOfD(ch);
+	    int j = (int) CharOfD(ch);
 	    chtype temp = UChar(SP_PARM->_acs_map[j]);
 
 	    if (temp != 0) {
@@ -620,7 +629,7 @@ EmitRange(NCURSES_SP_DCLx const NCURSES_CH_T *ntext, int num)
 		} else {
 		    return 1;	/* cursor stays in the middle */
 		}
-	    } else if (repeat_char != 0 &&
+	    } else if (repeat_char != NULL &&
 #if BSD_TPUTS
 		       !isdigit(UChar(CharOf(ntext0))) &&
 #endif
@@ -642,7 +651,7 @@ EmitRange(NCURSES_SP_DCLx const NCURSES_CH_T *ntext, int num)
 		UpdateAttrs(SP_PARM, ntext0);
 		temp = ntext0;
 		if ((AttrOf(temp) & A_ALTCHARSET) &&
-		    SP_PARM->_acs_map != 0 &&
+		    SP_PARM->_acs_map != NULL &&
 		    (SP_PARM->_acs_map[CharOf(temp)] & A_CHARTEXT) != 0) {
 		    SetChar(temp,
 			    (SP_PARM->_acs_map[CharOf(ntext0)] & A_CHARTEXT),
@@ -744,7 +753,7 @@ TINFO_DOUPDATE(NCURSES_SP_DCL0)
 
     _nc_lock_global(update);
 
-    if (SP_PARM == 0) {
+    if (SP_PARM == NULL) {
 	_nc_unlock_global(update);
 	returnCode(ERR);
     }
@@ -757,18 +766,24 @@ TINFO_DOUPDATE(NCURSES_SP_DCL0)
      * We do not allow applications to assign new values in the reentrant
      * model.
      */
+#if NCURSES_SP_FUNCS
+    if (SP_PARM == CURRENT_SCREEN) {
+#endif
 #define SyncScreens(internal,exported) \
-	if (internal == 0) internal = exported; \
+	if (internal == NULL) internal = exported; \
 	if (internal != exported) exported = internal
 
-    SyncScreens(CurScreen(SP_PARM), curscr);
-    SyncScreens(NewScreen(SP_PARM), newscr);
-    SyncScreens(StdScreen(SP_PARM), stdscr);
+	SyncScreens(CurScreen(SP_PARM), curscr);
+	SyncScreens(NewScreen(SP_PARM), newscr);
+	SyncScreens(StdScreen(SP_PARM), stdscr);
+#if NCURSES_SP_FUNCS
+    }
 #endif
+#endif /* !USE_REENTRANT */
 
-    if (CurScreen(SP_PARM) == 0
-	|| NewScreen(SP_PARM) == 0
-	|| StdScreen(SP_PARM) == 0) {
+    if (CurScreen(SP_PARM) == NULL
+	|| NewScreen(SP_PARM) == NULL
+	|| StdScreen(SP_PARM) == NULL) {
 	_nc_unlock_global(update);
 	returnCode(ERR);
     }
@@ -998,7 +1013,7 @@ TINFO_DOUPDATE(NCURSES_SP_DCL0)
 	if (check_pending(NCURSES_SP_ARG))
 	    goto cleanup;
 
-	nonempty = min(screen_lines(SP_PARM), NewScreen(SP_PARM)->_maxy + 1);
+	nonempty = Min(screen_lines(SP_PARM), NewScreen(SP_PARM)->_maxy + 1);
 
 	if (SP_PARM->_scrolling) {
 	    NCURSES_SP_NAME(_nc_scroll_optimize) (NCURSES_SP_ARG);
@@ -1084,7 +1099,7 @@ TINFO_DOUPDATE(NCURSES_SP_DCL0)
     returnCode(OK);
 }
 
-#if NCURSES_SP_FUNCS && !defined(USE_TERM_DRIVER)
+#if NCURSES_SP_FUNCS && !USE_TERM_DRIVER
 NCURSES_EXPORT(int)
 doupdate(void)
 {
@@ -1125,10 +1140,10 @@ static void
 ClrUpdate(NCURSES_SP_DCL0)
 {
     TR(TRACE_UPDATE, (T_CALLED("ClrUpdate")));
-    if (0 != SP_PARM) {
+    if (NULL != SP_PARM) {
 	int i;
 	NCURSES_CH_T blank = ClrBlank(NCURSES_SP_ARGx StdScreen(SP_PARM));
-	int nonempty = min(screen_lines(SP_PARM),
+	int nonempty = Min(screen_lines(SP_PARM),
 			   NewScreen(SP_PARM)->_maxy + 1);
 
 	ClearScreen(NCURSES_SP_ARGx blank);
@@ -1152,7 +1167,7 @@ ClrUpdate(NCURSES_SP_DCL0)
 static void
 ClrToEOL(NCURSES_SP_DCLx NCURSES_CH_T blank, int needclear)
 {
-    if (CurScreen(SP_PARM) != 0
+    if (CurScreen(SP_PARM) != NULL
 	&& SP_PARM->_cursrow >= 0) {
 	int j;
 
@@ -1227,7 +1242,7 @@ static int
 ClrBottom(NCURSES_SP_DCLx int total)
 {
     int top = total;
-    int last = min(screen_columns(SP_PARM), NewScreen(SP_PARM)->_maxx + 1);
+    int last = Min(screen_columns(SP_PARM), NewScreen(SP_PARM)->_maxx + 1);
     NCURSES_CH_T blank = NewScreen(SP_PARM)->_line[total - 1].text[last - 1];
 
     if (clr_eos && can_clear_with(NCURSES_SP_ARGx CHREF(blank))) {
@@ -1287,7 +1302,7 @@ ClrBottom(NCURSES_SP_DCLx int total)
 **		nLastChar = position of last different character in new line
 **
 **		move to firstChar
-**		overwrite chars up to min(oLastChar, nLastChar)
+**		overwrite chars up to Min(oLastChar, nLastChar)
 **		if oLastChar < nLastChar
 **			insert newLine[oLastChar+1..nLastChar]
 **		else
@@ -1525,7 +1540,7 @@ TransformLine(NCURSES_SP_DCLx int const lineno)
 		}
 		ClrToEOL(NCURSES_SP_ARGx blank, FALSE);
 	    } else {
-		n = max(nLastChar, oLastChar);
+		n = Max(nLastChar, oLastChar);
 		PutRange(NCURSES_SP_ARGx
 			 oldLine,
 			 newLine,
@@ -1550,7 +1565,7 @@ TransformLine(NCURSES_SP_DCLx int const lineno)
 		    break;
 	    }
 
-	    n = min(oLastChar, nLastChar);
+	    n = Min(oLastChar, nLastChar);
 	    if (n >= firstChar) {
 		GoTo(NCURSES_SP_ARGx lineno, firstChar);
 		PutRange(NCURSES_SP_ARGx
@@ -1562,7 +1577,7 @@ TransformLine(NCURSES_SP_DCLx int const lineno)
 	    }
 
 	    if (oLastChar < nLastChar) {
-		int m = max(nLastNonblank, oLastNonblank);
+		int m = Max(nLastNonblank, oLastNonblank);
 #if USE_WIDEC_SUPPORT
 		if (n) {
 		    while (isWidecExt(newLine[n + 1]) && n) {
@@ -2216,7 +2231,7 @@ _nc_screen_init(void)
 NCURSES_EXPORT(void)
 NCURSES_SP_NAME(_nc_screen_wrap) (NCURSES_SP_DCL0)
 {
-    if (SP_PARM != 0) {
+    if (SP_PARM != NULL) {
 
 	UpdateAttrs(SP_PARM, normal);
 #if NCURSES_EXT_FUNCS
@@ -2258,7 +2273,7 @@ _nc_screen_wrap(void)
 NCURSES_EXPORT(void)
 NCURSES_SP_NAME(_nc_do_xmc_glitch) (NCURSES_SP_DCLx attr_t previous)
 {
-    if (SP_PARM != 0) {
+    if (SP_PARM != NULL) {
 	attr_t chg = XMC_CHANGES(previous ^ AttrOf(SCREEN_ATTRS(SP_PARM)));
 
 	while (chg != 0) {

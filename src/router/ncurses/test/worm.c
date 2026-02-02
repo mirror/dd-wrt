@@ -1,5 +1,5 @@
 /****************************************************************************
- * Copyright 2018-2019,2020 Thomas E. Dickey                                *
+ * Copyright 2018-2024,2025 Thomas E. Dickey                                *
  * Copyright 1998-2016,2017 Free Software Foundation, Inc.                  *
  *                                                                          *
  * Permission is hereby granted, free of charge, to any person obtaining a  *
@@ -53,7 +53,7 @@
   traces will be dumped.  The program stops and waits for one character of
   input at the beginning and end of the interval.
 
-  $Id: worm.c,v 1.82 2020/02/02 23:34:34 tom Exp $
+  $Id: worm.c,v 1.95 2025/07/05 15:11:35 tom Exp $
 */
 
 #include <test.priv.h>
@@ -97,7 +97,7 @@ typedef struct worm {
 static unsigned long sequence = 0;
 static bool quitting = FALSE;
 
-static WORM worm[MAX_WORMS];
+static WORM *worm;
 static int max_refs;
 static int **refs;
 static int last_x, last_y;
@@ -105,11 +105,21 @@ static int last_x, last_y;
 static const char *field;
 static int length = 16, number = 3;
 static chtype trail = ' ';
+static bool from_center = FALSE;
+static int max_iterations = -1;
 
 static unsigned pending;
-#ifdef TRACE
-static int generation, trace_start, trace_end;
-#endif /* TRACE */
+
+#ifdef USE_PTHREADS
+#define Locked(statement) { \
+	pthread_mutex_lock(&pending_mutex); \
+	statement; \
+	pthread_mutex_unlock(&pending_mutex); \
+    }
+pthread_mutex_t pending_mutex;
+#else
+#define Locked(statement) statement
+#endif
 /* *INDENT-OFF* */
 static const struct options {
     int nopts;
@@ -248,16 +258,23 @@ draw_worm(WINDOW *win, void *data)
     WORM *w = (WORM *) data;
     const struct options *op;
     unsigned mask = (unsigned) (~(1 << (w - worm)));
-    chtype attrs = w->attrs | ((mask & pending) ? A_REVERSE : 0);
+    chtype attrs;
 
     int x;
     int y;
     int h;
 
     bool done = FALSE;
+    bool is_pending;
+
+    Locked(is_pending = ((mask & pending) != 0));
+
+    attrs = w->attrs | (is_pending ? A_REVERSE : 0);
 
     if ((x = w->xpos[h = w->head]) < 0) {
-	wmove(win, y = w->ypos[h] = last_y, x = w->xpos[h] = 0);
+	y = w->ypos[h] = (from_center ? (LINES / 2) : last_y);
+	x = w->xpos[h] = (from_center ? (COLS / 2) : 0);
+	wmove(win, y, x);
 	waddch(win, attrs);
 	refs[y][x]++;
     } else {
@@ -336,9 +353,12 @@ draw_worm(WINDOW *win, void *data)
 static bool
 quit_worm(int bitnum)
 {
-    pending = (pending | (unsigned) (1 << bitnum));
+    Locked(pending = (pending | (unsigned) (1 << bitnum)));
+
     napms(10);			/* let the other thread(s) have a chance */
-    pending = (pending & (unsigned) ~(1 << bitnum));
+
+    Locked(pending = (pending & (unsigned) ~(1 << bitnum)));
+
     return quitting;
 }
 
@@ -348,13 +368,13 @@ start_worm(void *arg)
     unsigned long compare = 0;
     Trace(("start_worm"));
     while (!quit_worm((int) (((struct worm *) arg) - worm))) {
-	while (compare < sequence) {
+	for (;;) {
+	    bool done = FALSE;
+	    Locked(done = (compare >= sequence));
+	    if (done)
+		break;
 	    ++compare;
-#if HAVE_USE_WINDOW
-	    use_window(stdscr, draw_worm, arg);
-#else
-	    draw_worm(stdscr, arg);
-#endif
+	    USING_WINDOW2(stdscr, draw_worm, arg);
 	}
     }
     Trace(("...start_worm (done)"));
@@ -379,13 +399,7 @@ draw_all_worms(void)
     }
 #else
     for (n = 0, w = &worm[0]; n < number; n++, w++) {
-	if (
-#if HAVE_USE_WINDOW
-	       USING_WINDOW2(stdscr, draw_worm, w)
-#else
-	       draw_worm(stdscr, w)
-#endif
-	    )
+	if (USING_WINDOW2(stdscr, draw_worm, w))
 	    done = TRUE;
     }
 #endif
@@ -437,22 +451,24 @@ update_refs(WINDOW *win, void *data)
 #endif
 
 static void
-usage(void)
+usage(int ok)
 {
     static const char *msg[] =
     {
 	"Usage: worm [options]"
 	,""
+	,USAGE_COMMON
 	,"Options:"
 #if HAVE_USE_DEFAULT_COLORS
 	," -d       invoke use_default_colors"
 #endif
 	," -f       fill screen with copies of \"WORM\" at start"
-	," -l <n>   set length of worms"
-	," -n <n>   set number of worms"
+	," -i NUM   maximum iterations before exiting"
+	," -M NUM   set length of worms"
+	," -m       start worms from the middle of the screen"
+	," -n NUM   set number of worms"
 	," -t       leave trail of \".\""
 #ifdef TRACE
-	," -T <start>,<end> set trace interval"
 	," -N       suppress cursor-movement optimization"
 #endif
     };
@@ -461,8 +477,11 @@ usage(void)
     for (n = 0; n < SIZEOF(msg); n++)
 	fprintf(stderr, "%s\n", msg[n]);
 
-    ExitProgram(EXIT_FAILURE);
+    ExitProgram(ok ? EXIT_SUCCESS : EXIT_FAILURE);
 }
+/* *INDENT-OFF* */
+VERSION_COMMON()
+/* *INDENT-ON* */
 
 int
 main(int argc, char *argv[])
@@ -473,13 +492,14 @@ main(int argc, char *argv[])
     struct worm *w;
     int *ip;
     bool done = FALSE;
+    int iteration_count = 0;
 #if HAVE_USE_DEFAULT_COLORS
     bool opt_d = FALSE;
 #endif
 
     setlocale(LC_ALL, "");
 
-    while ((ch = getopt(argc, argv, "dfl:n:tT:N")) != -1) {
+    while ((ch = getopt(argc, argv, OPTS_COMMON "M:Ndfi:mn:t")) != -1) {
 	switch (ch) {
 #if HAVE_USE_DEFAULT_COLORS
 	case 'd':
@@ -489,37 +509,43 @@ main(int argc, char *argv[])
 	case 'f':
 	    field = "WORM";
 	    break;
-	case 'l':
-	    if ((length = atoi(optarg)) < 2 || length > MAX_LENGTH) {
-		fprintf(stderr, "%s: Invalid length\n", *argv);
-		usage();
+	case 'i':
+	    if ((max_iterations = atoi(optarg)) < 1) {
+		fprintf(stderr, "%s: Invalid maximum iterations %d\n", *argv,
+			max_iterations);
+		usage(FALSE);
 	    }
 	    break;
+	case 'M':
+	    if ((length = atoi(optarg)) < 2 || length > MAX_LENGTH) {
+		fprintf(stderr, "%s: Invalid length\n", *argv);
+		usage(FALSE);
+	    }
+	    break;
+	case 'm':
+	    from_center = !from_center;
+	    break;
 	case 'n':
-	    if ((number = atoi(optarg)) < 1 || number > MAX_WORMS) {
+	    if ((number = atoi(optarg)) < 1) {
 		fprintf(stderr, "%s: Invalid number of worms\n", *argv);
-		usage();
+		usage(FALSE);
 	    }
 	    break;
 	case 't':
 	    trail = '.';
 	    break;
 #ifdef TRACE
-	case 'T':
-	    if (sscanf(optarg, "%d,%d", &trace_start, &trace_end) != 2)
-		usage();
-	    break;
 	case 'N':
 	    _nc_optimize_enable ^= OPTIMIZE_ALL;	/* declared by ncurses */
 	    break;
 #endif /* TRACE */
 	default:
-	    usage();
+	    CASE_COMMON;
 	    /* NOTREACHED */
 	}
     }
     if (optind < argc)
-	usage();
+	usage(FALSE);
 
     signal(SIGINT, onsig);
     initscr();
@@ -532,6 +558,11 @@ main(int argc, char *argv[])
     last_y = LINES - 1;
     last_x = COLS - 1;
 
+    worm = typeMalloc(WORM, (size_t) number);
+    if (worm == NULL) {
+	fprintf(stderr, "%s: not enough memory for %d worms\n", *argv, number);
+	ExitProgram(EXIT_FAILURE);
+    }
 #ifdef A_COLOR
     if (has_colors()) {
 	int bg = COLOR_BLACK;
@@ -603,22 +634,13 @@ main(int argc, char *argv[])
     USING_WINDOW1(stdscr, wrefresh, safe_wrefresh);
     nodelay(stdscr, TRUE);
 
-    while (!done) {
-	++sequence;
-	if ((ch = get_input()) > 0) {
-#ifdef TRACE
-	    if (trace_start || trace_end) {
-		if (generation == trace_start) {
-		    curses_trace(TRACE_CALLS);
-		    get_input();
-		} else if (generation == trace_end) {
-		    curses_trace(0);
-		    get_input();
-		}
-
-		generation++;
-	    }
+#ifdef USE_PTHREADS
+    pthread_mutex_init(&pending_mutex, NULL);
 #endif
+
+    while (!done) {
+	Locked(++sequence);
+	if ((ch = get_input()) > 0) {
 
 #ifdef KEY_RESIZE
 	    if (ch == KEY_RESIZE) {
@@ -643,12 +665,25 @@ main(int argc, char *argv[])
 	}
 
 	done = draw_all_worms();
-	napms(10);
+	if (max_iterations < 0) {
+	    napms(10);
+	} else if (iteration_count++ > max_iterations) {
+	    done = TRUE;
+	}
 	USING_WINDOW1(stdscr, wrefresh, safe_wrefresh);
     }
 
     Trace(("Cleanup"));
     cleanup();
+#ifdef USE_PTHREADS
+    /*
+     * Do this just in case one of the threads did not really exit.
+     */
+    Trace(("join all threads"));
+    for (n = 0; n < number; n++) {
+	pthread_join(worm[n].thread, NULL);
+    }
+#endif
 #if NO_LEAKS
     for (y = 0; y < max_refs; y++) {
 	free(refs[y]);
@@ -657,15 +692,6 @@ main(int argc, char *argv[])
     for (n = number, w = &worm[0]; --n >= 0; w++) {
 	free(w->xpos);
 	free(w->ypos);
-    }
-#endif
-#ifdef USE_PTHREADS
-    /*
-     * Do this just in case one of the threads did not really exit.
-     */
-    Trace(("join all threads"));
-    for (n = 0; n < number; n++) {
-	pthread_join(worm[n].thread, NULL);
     }
 #endif
     ExitProgram(EXIT_SUCCESS);

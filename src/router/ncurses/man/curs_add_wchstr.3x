@@ -1,5 +1,5 @@
 .\"***************************************************************************
-.\" Copyright 2019,2020 Thomas E. Dickey                                     *
+.\" Copyright 2019-2024,2025 Thomas E. Dickey                                *
 .\" Copyright 2002-2012,2017 Free Software Foundation, Inc.                  *
 .\"                                                                          *
 .\" Permission is hereby granted, free of charge, to any person obtaining a  *
@@ -27,97 +27,149 @@
 .\" authorization.                                                           *
 .\"***************************************************************************
 .\"
-.\" $Id: curs_add_wchstr.3x,v 1.15 2020/12/19 21:39:06 tom Exp $
-.TH curs_add_wchstr 3X ""
-.ie \n(.g .ds `` \(lq
-.el       .ds `` ``
-.ie \n(.g .ds '' \(rq
-.el       .ds '' ''
+.\" $Id: curs_add_wchstr.3x,v 1.61 2025/10/21 00:06:34 tom Exp $
+.TH curs_add_wchstr 3X 2025-10-20 "ncurses @NCURSES_MAJOR@.@NCURSES_MINOR@" "Library calls"
+.ie \n(.g \{\
+.ds `` \(lq
+.ds '' \(rq
+.\}
+.el \{\
+.ie t .ds `` ``
+.el   .ds `` ""
+.ie t .ds '' ''
+.el   .ds '' ""
+.\}
+.
 .de bP
 .ie n  .IP \(bu 4
 .el    .IP \(bu 2
 ..
-.na
-.hy 0
 .SH NAME
-\fBadd_wchstr\fR,
-\fBadd_wchnstr\fR,
-\fBwadd_wchstr\fR,
-\fBwadd_wchnstr\fR,
-\fBmvadd_wchstr\fR,
-\fBmvadd_wchnstr\fR,
-\fBmvwadd_wchstr\fR,
-\fBmvwadd_wchnstr\fR \- add an array of complex characters (and attributes) to a curses window
-.ad
-.hy
+\fB\%add_wchstr\fP,
+\fB\%wadd_wchstr\fP,
+\fB\%mvadd_wchstr\fP,
+\fB\%mvwadd_wchstr\fP,
+\fB\%add_wchnstr\fP,
+\fB\%wadd_wchnstr\fP,
+\fB\%mvadd_wchnstr\fP,
+\fB\%mvwadd_wchnstr\fP \-
+add a \fIcurses\fR complex character string to a window
 .SH SYNOPSIS
 .nf
-\fB#include <curses.h>\fR
+\fB#include <curses.h>
 .PP
-\fBint add_wchstr(const cchar_t *\fR\fIwchstr\fR\fB);\fR
-.br
-\fBint add_wchnstr(const cchar_t *\fR\fIwchstr\fR\fB, int \fR\fIn\fR\fB);\fR
-.br
-\fBint wadd_wchstr(WINDOW *\fR \fIwin\fR\fB, const cchar_t *\fR\fIwchstr\fR\fB);\fR
-.br
-\fBint wadd_wchnstr(WINDOW *\fR \fIwin\fR\fB, const cchar_t *\fR\fIwchstr\fR\fB, int \fR\fIn\fR\fB);\fR
-.sp
-\fBint mvadd_wchstr(int \fR\fIy\fR\fB, int \fR\fIx\fR\fB, const cchar_t *\fR\fIwchstr\fR\fB);\fR
-.br
-\fBint mvadd_wchnstr(int \fR\fIy\fR\fB, int \fR\fIx\fR\fB, const cchar_t *\fR\fIwchstr\fR\fB, int \fR\fIn\fR\fB);\fR
-.br
-\fBint mvwadd_wchstr(WINDOW *\fR\fIwin\fR\fB, int \fR\fIy\fR\fB, int \fR\fIx\fR\fB, const cchar_t *\fR\fIwchstr\fR\fB);\fR
-.br
-\fBint mvwadd_wchnstr(WINDOW *\fR\fIwin\fR\fB, int \fR\fIy\fR\fB, int \fR\fIx\fR\fB, const cchar_t *\fR\fIwchstr\fR\fB, int \fR\fIn\fR\fB);\fR
+\fBint add_wchstr(const cchar_t * \fIwchstr\fP);
+\fBint wadd_wchstr(WINDOW *  \fIwin\fP, const cchar_t * \fIwchstr\fP);
+\fBint mvadd_wchstr(int \fIy\fP, int \fIx\fP, const cchar_t * \fIwchstr\fP);
+\fBint mvwadd_wchstr(WINDOW * \fIwin\fP, int \fIy\fP, int \fIx\fP, const cchar_t * \fIwchstr\fP);
+.PP
+\fBint add_wchnstr(const cchar_t * \fIwchstr\fP, int \fIn\fP);
+\fBint wadd_wchnstr(WINDOW *  \fIwin\fP, const cchar_t * \fIwchstr\fP, int \fIn\fP);
+\fBint mvadd_wchnstr(int \fIy\fP, int \fIx\fP, const cchar_t * \fIwchstr\fP, int \fIn\fP);
+\fBint mvwadd_wchnstr(WINDOW * \fIwin\fP, int \fIy\fP, int \fIx\fP,
+      const cchar_t * \fIwchstr\fP, int \fIn\fP);
 .fi
 .SH DESCRIPTION
-These functions copy the (null-terminated)
-array of complex characters \fIwchstr\fR
-into the window image structure
-starting at the current cursor position.
-The four functions with \fIn\fR as the last
-argument copy at most \fIn\fR elements,
-but no more than will fit on the line.
-If \fBn\fR=\fB\-1\fR then the whole array is copied,
-to the maximum number of characters that will fit on the line.
+.B \%wadd_wchstr
+copies the string of complex characters
+.I \%wchstr
+to the window
+.IR win "."
+A null complex character terminates the string.
+If a complex character does not completely fit at the end of the line,
+.I curses
+fills its remaining cells with the window's background character;
+see \fB\%bkgrnd\fP(3X).
+.B \%wadd_wchnstr
+does the same,
+but copies at most
+.I n
+characters,
+or as many as possible if
+.I n
+is
+.BR \-1 "."
+\fB\%ncurses\fP(3X) describes the variants of these functions.
 .PP
-The window cursor is \fInot\fR advanced.
-These functions work faster than \fBwaddnstr\fR.
-On the other hand:
+Because these functions do not call \fB\%wadd_wch\fP(3X) internally,
+they are faster than \fB\%waddwstr\fP(3X) and \fB\%waddnwstr\fP(3X).
+On the other hand,
+they
 .bP
-they do not perform checking
-(such as for the newline, backspace, or carriage return characters),
+do not treat the backspace,
+carriage return,
+or line feed characters specially;
 .bP
-they do not advance the current cursor position,
+do not represent unprintable characters with \fB\%wunctrl\fP(3X);
 .bP
-they do not expand other control characters to ^-escapes, and
+do not update the cursor position to follow the last character written;
+and
 .bP
-they truncate the string if it crosses the right margin,
-rather than wrapping it around to the new line.
-.PP
-These functions end successfully
-on encountering a null \fIcchar_t\fR, or
-when they have filled the current line.
-If a complex character cannot completely fit at the end of the current line,
-the remaining columns are filled with the background character and rendition.
+truncate the string at the window's right margin,
+rather than wrapping it to the next line and potentially scrolling.
 .SH RETURN VALUE
-All functions return the integer \fBERR\fR upon failure and \fBOK\fR on success.
+These functions return
+.B OK
+on success and
+.B ERR
+on failure.
 .PP
-X/Open does not define any error conditions.
-This implementation returns an error
-if the window pointer is null.
+In
+.IR \%ncurses ","
+these functions fail if
+.bP
+the
+.I curses
+screen has not been initialized,
+.bP
+.I wchstr
+is a null pointer,
+or
+.bP
+(for functions taking a
+.I \%WINDOW
+pointer argument)
+.I win
+is a null pointer.
 .PP
-Functions with a \*(``mv\*('' prefix first perform a cursor movement using
-\fBwmove\fP, and return an error if the position is outside the window,
-or if the window pointer is null.
+Functions prefixed with \*(``mv\*('' first perform cursor movement and
+fail if the position
+.RI ( y ,
+.IR x )
+is outside the window boundaries.
 .SH NOTES
-All functions except \fBwadd_wchnstr\fR may be macros.
+All of these functions except
+.B \%wadd_wchnstr
+may be implemented as macros.
 .SH PORTABILITY
-These entry points are described in the XSI Curses standard, Issue 4.
+X/Open Curses Issue\ 4 describes these functions.
+It specifies no error conditions for them.
+.SH HISTORY
+X/Open Curses Issue\ 4 (1995) initially specified these functions.
+The System\ V Interface Definition Version\ 4
+of the same year
+specified functions named
+.I \%waddwchstr
+and
+.I \%waddwchnstr
+(and the usual variants).
+.\" SVID 4, vol 3., p. 477
+These were later additions to
+.RI SVr4. x ,
+not appearing in the first SVr4 (1989).
+They differed from X/Open's later
+.I \%wadd_wchstr
+and
+.I \%wadd_wchnstr
+in that they each took an argument of type
+.I \%wchar_t
+instead of
+.IR \%cchar_t "."
 .SH SEE ALSO
-\fBcurses\fR(3X),
-\fBcurs_addwstr\fR(3X).
+\fB\%curs_addchstr\fP(3X) describes comparable functions of the
+.I \%ncurses
+library in its non-wide-character configuration.
 .PP
-Comparable functions in the narrow-character (ncurses) library are
-described in
-\fBcurs_addchstr\fR(3X).
+\fB\%curses\fP(3X),
+\fB\%curs_addwstr\fP(3X),
+\fB\%curs_add_wch\fP(3X)

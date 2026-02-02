@@ -1,5 +1,5 @@
 /****************************************************************************
- * Copyright 2018-2019,2020 Thomas E. Dickey                                *
+ * Copyright 2018-2024,2025 Thomas E. Dickey                                *
  * Copyright 2014,2017 Free Software Foundation, Inc.                       *
  *                                                                          *
  * Permission is hereby granted, free of charge, to any person obtaining a  *
@@ -30,7 +30,7 @@
 /*
  * Author: Thomas E. Dickey
  *
- * $Id: dots_curses.c,v 1.21 2020/08/29 16:22:03 juergen Exp $
+ * $Id: dots_curses.c,v 1.28 2025/07/05 15:21:56 tom Exp $
  *
  * A simple demo of the curses interface used for comparison with termcap.
  */
@@ -87,16 +87,17 @@ set_colors(int fg, int bg)
 }
 
 static void
-usage(void)
+usage(int ok)
 {
     static const char *msg[] =
     {
 	"Usage: dots_curses [options]"
 	,""
+	,USAGE_COMMON
 	,"Options:"
 	," -T TERM  override $TERM"
 #if HAVE_USE_DEFAULT_COLORS
-	," -d       invoke use_default_colors()"
+	," -d       invoke use_default_colors"
 #endif
 #if HAVE_USE_ENV
 	," -e       allow environment $LINES / $COLUMNS"
@@ -110,8 +111,11 @@ usage(void)
     for (n = 0; n < SIZEOF(msg); n++)
 	fprintf(stderr, "%s\n", msg[n]);
 
-    ExitProgram(EXIT_FAILURE);
+    ExitProgram(ok ? EXIT_SUCCESS : EXIT_FAILURE);
 }
+/* *INDENT-OFF* */
+VERSION_COMMON()
+/* *INDENT-ON* */
 
 int
 main(int argc, char *argv[])
@@ -129,13 +133,14 @@ main(int argc, char *argv[])
     size_t need;
     char *my_env;
 
-    while ((ch = getopt(argc, argv, "T:dem:r:s:")) != -1) {
+    while ((ch = getopt(argc, argv, OPTS_COMMON "T:dem:r:s:")) != -1) {
 	switch (ch) {
 	case 'T':
 	    need = 6 + strlen(optarg);
-	    my_env = malloc(need);
-	    _nc_SPRINTF(my_env, _nc_SLIMIT(need) "TERM=%s", optarg);
-	    putenv(my_env);
+	    if ((my_env = malloc(need)) != NULL) {
+		_nc_SPRINTF(my_env, _nc_SLIMIT(need) "TERM=%s", optarg);
+		putenv(my_env);
+	    }
 	    break;
 #if HAVE_USE_DEFAULT_COLORS
 	case 'd':
@@ -157,12 +162,12 @@ main(int argc, char *argv[])
 	    s_option = atoi(optarg);
 	    break;
 	default:
-	    usage();
-	    break;
+	    CASE_COMMON;
+	    /* NOTREACHED */
 	}
     }
 
-    srand((unsigned) time(0));
+    srand((unsigned) time(NULL));
 
     SetupAlarm(r_option);
     InitAndCatch(initscr(), onsig);

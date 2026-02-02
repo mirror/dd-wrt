@@ -1,5 +1,5 @@
 /****************************************************************************
- * Copyright 2020 Thomas E. Dickey                                          *
+ * Copyright 2020,2024 Thomas E. Dickey                                     *
  * Copyright 1998-2009,2012 Free Software Foundation, Inc.                  *
  *                                                                          *
  * Permission is hereby granted, free of charge, to any person obtaining a  *
@@ -40,7 +40,7 @@
 
 #include <ctype.h>
 
-MODULE_ID("$Id: lib_tracechr.c,v 1.23 2020/02/02 23:34:34 tom Exp $")
+MODULE_ID("$Id: lib_tracechr.c,v 1.26 2024/12/07 21:02:00 tom Exp $")
 
 #ifdef TRACE
 
@@ -50,30 +50,32 @@ NCURSES_EXPORT(char *)
 _nc_tracechar(SCREEN *sp, int ch)
 {
     NCURSES_CONST char *name;
-    char *MyBuffer = ((sp != 0)
+    char *MyBuffer = ((sp != NULL)
 		      ? sp->tracechr_buf
 		      : _nc_globals.tracechr_buf);
 
-    if (ch > KEY_MIN || ch < 0) {
+    if ((ch > KEY_MIN && !_nc_unicode_locale()) || ch < 0) {
 	name = safe_keyname(SP_PARM, ch);
-	if (name == 0 || *name == '\0')
+	if (name == NULL || *name == '\0')
 	    name = "NULL";
 	_nc_SPRINTF(MyBuffer, _nc_SLIMIT(MyBufSize)
-		    "'%.30s' = %#03o", name, ch);
-    } else if (!is8bits(ch) || !isprint(UChar(ch))) {
+		    "'%.30s' = \\x%02x", name, UChar(ch));
+    } else if (!is8bits(ch)
+	       || (_nc_unicode_locale() && !is7bits(ch))
+	       || !isprint(UChar(ch))) {
 	/*
 	 * workaround for glibc bug:
 	 * sprintf changes the result from unctrl() to an empty string if it
 	 * does not correspond to a valid multibyte sequence.
 	 */
 	_nc_SPRINTF(MyBuffer, _nc_SLIMIT(MyBufSize)
-		    "%#03o", ch);
+		    "\\x%02x", ch);
     } else {
 	name = safe_unctrl(SP_PARM, (chtype) ch);
-	if (name == 0 || *name == 0)
+	if (name == NULL || *name == 0)
 	    name = "null";	/* shouldn't happen */
 	_nc_SPRINTF(MyBuffer, _nc_SLIMIT(MyBufSize)
-		    "'%.30s' = %#03o", name, ch);
+		    "'%.30s' = \\x%02x", name, ch);
     }
     return (MyBuffer);
 }

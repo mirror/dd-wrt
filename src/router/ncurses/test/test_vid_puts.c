@@ -1,5 +1,5 @@
 /****************************************************************************
- * Copyright 2020,2021 Thomas E. Dickey                                     *
+ * Copyright 2020-2024,2025 Thomas E. Dickey                                *
  * Copyright 2013-2014,2017 Free Software Foundation, Inc.                  *
  *                                                                          *
  * Permission is hereby granted, free of charge, to any person obtaining a  *
@@ -27,7 +27,7 @@
  * authorization.                                                           *
  ****************************************************************************/
 /*
- * $Id: test_vid_puts.c,v 1.12 2021/04/25 00:10:43 tom Exp $
+ * $Id: test_vid_puts.c,v 1.19 2025/07/05 15:22:23 tom Exp $
  *
  * Demonstrate the vid_puts and vid_attr functions.
  * Thomas Dickey - 2013/01/12
@@ -63,7 +63,7 @@ outs(const char *s)
 static void
 cleanup(void)
 {
-    if (cur_term != 0) {
+    if (cur_term != NULL) {
 	outs(exit_attribute_mode);
 	if (!outs(orig_colors))
 	    outs(orig_pair);
@@ -94,32 +94,36 @@ test_vid_puts(void)
 }
 
 static void
-usage(void)
+usage(int ok)
 {
     static const char *tbl[] =
     {
 	"Usage: test_vid_puts [options]"
 	,""
+	,USAGE_COMMON
 	,"Options:"
-	,"  -e      use stderr (default stdout)"
-	,"  -n      do not initialize terminal"
-	,"  -p      use vid_puts (default vid_attr)"
+	," -e       use stderr (default stdout)"
+	," -n       do not initialize terminal"
+	," -p       use vid_puts (default vid_attr)"
     };
     unsigned n;
     for (n = 0; n < SIZEOF(tbl); ++n)
 	fprintf(stderr, "%s\n", tbl[n]);
-    ExitProgram(EXIT_FAILURE);
+    ExitProgram(ok ? EXIT_SUCCESS : EXIT_FAILURE);
 }
+/* *INDENT-OFF* */
+VERSION_COMMON()
+/* *INDENT-ON* */
 
 int
-main(int argc GCC_UNUSED, char *argv[]GCC_UNUSED)
+main(int argc, char *argv[])
 {
     int ch;
     bool no_init = FALSE;
 
     my_fp = stdout;
 
-    while ((ch = getopt(argc, argv, "enp")) != -1) {
+    while ((ch = getopt(argc, argv, OPTS_COMMON "enp")) != -1) {
 	switch (ch) {
 	case 'e':
 	    my_fp = stderr;
@@ -131,13 +135,14 @@ main(int argc GCC_UNUSED, char *argv[]GCC_UNUSED)
 	    p_opt = TRUE;
 	    break;
 	default:
-	    usage();
-	    break;
+	    CASE_COMMON;
+	    /* NOTREACHED */
 	}
     }
     if (optind < argc)
-	usage();
+	usage(FALSE);
 
+    setlocale(LC_ALL, "");
     if (no_init) {
 	START_TRACE();
     } else {

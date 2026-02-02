@@ -1,5 +1,5 @@
 /****************************************************************************
- * Copyright 2020 Thomas E. Dickey                                          *
+ * Copyright 2020-2024,2025 Thomas E. Dickey                                *
  * Copyright 2007-2010,2017 Free Software Foundation, Inc.                  *
  *                                                                          *
  * Permission is hereby granted, free of charge, to any person obtaining a  *
@@ -27,7 +27,7 @@
  * authorization.                                                           *
  ****************************************************************************/
 /*
- * $Id: test_arrays.c,v 1.9 2020/02/02 23:34:34 tom Exp $
+ * $Id: test_arrays.c,v 1.16 2025/07/05 15:21:56 tom Exp $
  *
  * Author: Thomas E Dickey
  *
@@ -53,7 +53,7 @@ extern NCURSES_EXPORT_VAR(NCURSES_CONST char * const ) strfnames[];
 
 static bool opt_C;
 static bool opt_T;
-static bool opt_c;
+static bool opt_s;
 static bool opt_f;
 static bool opt_n;
 static bool opt_t;
@@ -66,7 +66,7 @@ dump_array(const char *name, NCURSES_CONST char *const *list)
     int n;
 
     printf("%s:\n", name);
-    for (n = 0; list[n] != 0; ++n) {
+    for (n = 0; list[n] != NULL; ++n) {
 	printf("%5d:%s\n", n, list[n]);
     }
 }
@@ -75,15 +75,15 @@ static void
 dump_plain(void)
 {
     PLAIN(opt_T && opt_n, boolnames);
-    PLAIN(opt_C && opt_c, boolcodes);
+    PLAIN(opt_C && opt_s, boolcodes);
     PLAIN(opt_T && opt_f, boolfnames);
 
     PLAIN(opt_T && opt_n, numnames);
-    PLAIN(opt_C && opt_c, numcodes);
+    PLAIN(opt_C && opt_s, numcodes);
     PLAIN(opt_T && opt_f, numfnames);
 
     PLAIN(opt_T && opt_n, strnames);
-    PLAIN(opt_C && opt_c, strcodes);
+    PLAIN(opt_C && opt_s, strcodes);
     PLAIN(opt_T && opt_f, strfnames);
 }
 
@@ -99,7 +99,7 @@ dump_table(void)
     STRING(opt_t, "Index");
     STRING(opt_t, "Type");
     STRING(opt_n, "Name");
-    STRING(opt_c, "Code");
+    STRING(opt_s, "Code");
     STRING(opt_f, "FName");
     printf("\n");
 
@@ -108,7 +108,7 @@ dump_table(void)
 	NUMBER(opt_t, r);
 	STRING(opt_t, "bool");
 	STRING(opt_T && opt_n, boolnames[r]);
-	STRING(opt_C && opt_c, boolcodes[r]);
+	STRING(opt_C && opt_s, boolcodes[r]);
 	STRING(opt_T && opt_f, boolfnames[r]);
 	printf("\n");
     }
@@ -118,7 +118,7 @@ dump_table(void)
 	NUMBER(opt_t, r);
 	STRING(opt_t, "num");
 	STRING(opt_T && opt_n, numnames[r]);
-	STRING(opt_C && opt_c, numcodes[r]);
+	STRING(opt_C && opt_s, numcodes[r]);
 	STRING(opt_T && opt_f, numfnames[r]);
 	printf("\n");
     }
@@ -128,52 +128,56 @@ dump_table(void)
 	NUMBER(opt_t, r);
 	STRING(opt_t, "str");
 	STRING(opt_T && opt_n, strnames[r]);
-	STRING(opt_C && opt_c, strcodes[r]);
+	STRING(opt_C && opt_s, strcodes[r]);
 	STRING(opt_T && opt_f, strfnames[r]);
 	printf("\n");
     }
 }
 
 static void
-usage(void)
+usage(int ok)
 {
     static const char *msg[] =
     {
-	"Usage: test_arrays [options]",
-	"",
-	"If no options are given, print all (boolean, numeric, string)",
-	"capability names showing their index within the tables.",
-	"",
-	"Options:",
-	" -C       print termcap names",
-	" -T       print terminfo names",
-	" -c       print termcap names",
-	" -f       print full terminfo names",
-	" -n       print short terminfo names",
-	" -t       print the result as CSV table",
+	"Usage: test_arrays [options]"
+	,""
+	,"If no options are given, print all (boolean, numeric, string)"
+	,"capability names showing their index within the tables."
+	,""
+	,USAGE_COMMON
+	,"Options:"
+	," -C       print termcap names"
+	," -T       print terminfo names"
+	," -s       print short termcap names"
+	," -f       print full terminfo names"
+	," -n       print short terminfo names"
+	," -t       print the result as CSV table"
     };
     unsigned n;
     for (n = 0; n < SIZEOF(msg); ++n) {
 	fprintf(stderr, "%s\n", msg[n]);
     }
-    ExitProgram(EXIT_FAILURE);
+    ExitProgram(ok ? EXIT_SUCCESS : EXIT_FAILURE);
 }
+/* *INDENT-OFF* */
+VERSION_COMMON()
+/* *INDENT-ON* */
 
 int
 main(int argc, char *argv[])
 {
-    int n;
+    int ch;
 
-    while ((n = getopt(argc, argv, "CTcfnt")) != -1) {
-	switch (n) {
+    while ((ch = getopt(argc, argv, OPTS_COMMON "CTsfnt")) != -1) {
+	switch (ch) {
 	case 'C':
 	    opt_C = TRUE;
 	    break;
 	case 'T':
 	    opt_T = TRUE;
 	    break;
-	case 'c':
-	    opt_c = TRUE;
+	case 's':
+	    opt_s = TRUE;
 	    break;
 	case 'f':
 	    opt_f = TRUE;
@@ -185,18 +189,18 @@ main(int argc, char *argv[])
 	    opt_t = TRUE;
 	    break;
 	default:
-	    usage();
+	    CASE_COMMON;
 	    /* NOTREACHED */
 	}
     }
     if (optind < argc)
-	usage();
+	usage(FALSE);
 
     if (!(opt_T || opt_C)) {
 	opt_T = opt_C = TRUE;
     }
-    if (!(opt_c || opt_f || opt_n)) {
-	opt_c = opt_f = opt_n = TRUE;
+    if (!(opt_s || opt_f || opt_n)) {
+	opt_s = opt_f = opt_n = TRUE;
     }
 
     if (opt_t) {
@@ -210,7 +214,7 @@ main(int argc, char *argv[])
 
 #else
 int
-main(int argc GCC_UNUSED, char *argv[]GCC_UNUSED)
+main(void)
 {
     printf("This program requires the terminfo arrays\n");
     ExitProgram(EXIT_FAILURE);
@@ -218,7 +222,7 @@ main(int argc GCC_UNUSED, char *argv[]GCC_UNUSED)
 #endif
 #else /* !HAVE_TIGETSTR */
 int
-main(int argc GCC_UNUSED, char *argv[]GCC_UNUSED)
+main(void)
 {
     printf("This program requires the terminfo functions such as tigetstr\n");
     ExitProgram(EXIT_FAILURE);

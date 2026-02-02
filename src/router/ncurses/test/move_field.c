@@ -1,5 +1,5 @@
 /****************************************************************************
- * Copyright 2020,2021 Thomas E. Dickey                                     *
+ * Copyright 2020-2024,2025 Thomas E. Dickey                                *
  *                                                                          *
  * Permission is hereby granted, free of charge, to any person obtaining a  *
  * copy of this software and associated documentation files (the            *
@@ -26,7 +26,7 @@
  * authorization.                                                           *
  ****************************************************************************/
 /*
- * $Id: move_field.c,v 1.9 2021/06/12 21:30:34 tom Exp $
+ * $Id: move_field.c,v 1.22 2025/07/05 15:11:35 tom Exp $
  *
  * Demonstrate move_field().
  */
@@ -37,14 +37,6 @@
 
 #include <edit_field.h>
 #include <popup_msg.h>
-
-#ifdef HAVE_NETBSD_FORM_H
-#define form_field_row(field) (field)->form_row
-#define form_field_col(field) (field)->form_col
-#else /* e.g., SVr4, ncurses */
-#define form_field_row(field) (field)->frow
-#define form_field_col(field) (field)->fcol
-#endif
 
 #define DO_DEMO	CTRL('F')	/* actual key for toggling demo-mode */
 #define MY_DEMO	EDIT_FIELD('f')	/* internal request-code */
@@ -70,7 +62,7 @@ static struct {
     { CTRL('W'),     REQ_NEXT_WORD,   "go to next word" },
     { CTRL('X'),     REQ_CLR_FIELD,   "clear field" },
     { CTRL('['),     MY_QUIT,         "exit form" },
-    { KEY_F(1),      MY_HELP,         "show this screen", },
+    { HELP_KEY_2,    MY_HELP,         "show this screen", },
     { KEY_BACKSPACE, REQ_DEL_PREV,    "delete previous character" },
     { KEY_BTAB,      REQ_PREV_FIELD,  "go to previous field" },
     { KEY_DOWN,      REQ_DOWN_CHAR,   "move down 1 character" },
@@ -99,19 +91,21 @@ my_help_edit_field(void)
 	const char *code = keyname(commands[n].code);
 	size_t need = 5;
 #ifdef NCURSES_VERSION
-	if ((name = form_request_name(commands[n].result)) == 0)
+	if ((name = form_request_name(commands[n].result)) == NULL)
 #endif
 	    name = commands[n].help;
 	need = 5 + strlen(code) + strlen(name);
 	msg = typeMalloc(char, need);
-	_nc_SPRINTF(msg, _nc_SLIMIT(need) "%s -- %s", code, name);
-	msgs[used++] = msg;
+	if (msg != NULL) {
+	    _nc_SPRINTF(msg, _nc_SLIMIT(need) "%s -- %s", code, name);
+	    msgs[used++] = msg;
+	}
     }
     msgs[used++] =
 	strdup("Arrow keys move within a field as you would expect.");
-    msgs[used] = 0;
+    msgs[used] = NULL;
     popup_msg2(stdscr, msgs);
-    for (n = 0; msgs[n] != 0; ++n) {
+    for (n = 0; msgs[n] != NULL; ++n) {
 	free(msgs[n]);
     }
     free(msgs);
@@ -124,7 +118,7 @@ make_label(const char *label, int frow, int fcol)
 
     if (f) {
 	set_field_buffer(f, 0, label);
-	set_field_opts(f, (int) ((unsigned) field_opts(f) & ~O_ACTIVE));
+	set_field_opts(f, (int) ((unsigned) field_opts(f) & (unsigned) ~O_ACTIVE));
     }
     return (f);
 }
@@ -151,31 +145,30 @@ erase_form(FORM *f)
     werase(w);
     wrefresh(w);
     delwin(s);
-    delwin(w);
 }
 
 static FieldAttrs *
-my_field_attrs(FIELD *f)
+my_field_attrs(NCURSES_CONST FIELD *f)
 {
     return (FieldAttrs *) field_userptr(f);
 }
 
 static int
-buffer_length(FIELD *f)
+buffer_length(NCURSES_CONST FIELD *f)
 {
     return my_field_attrs(f)->row_lengths[0];
 }
 
 static void
-set_buffer_length(FIELD *f, int length)
+set_buffer_length(NCURSES_CONST FIELD *f, int length)
 {
     my_field_attrs(f)->row_lengths[0] = length;
 }
 
 static int
-offset_in_field(FORM *form)
+offset_in_field(NCURSES_CONST FORM *form)
 {
-    FIELD *field = current_field(form);
+    NCURSES_CONST FIELD *field = current_field(form);
     int currow, curcol;
 
     form_getyx(form, currow, curcol);
@@ -254,7 +247,7 @@ my_edit_field(FORM *form, int *result)
 
 	default:
 	    modified = (ch < MIN_FORM_COMMAND
-			&& isprint(ch));
+			&& isprint(UChar(ch)));
 	    break;
 	}
 
@@ -277,16 +270,16 @@ my_edit_field(FORM *form, int *result)
 static FIELD **
 copy_fields(FIELD **source, size_t length)
 {
-    FIELD **target = calloc(length + 1, sizeof(FIELD *));
+    FIELD **target = typeCalloc(FIELD *, length + 1);
     memcpy(target, source, length * sizeof(FIELD *));
     return target;
 }
 
 /* display a status message to show what's happening */
 static void
-show_status(FORM *form, FIELD *field)
+show_status(NCURSES_CONST FORM *form, NCURSES_CONST FIELD *field)
 {
-    WINDOW *sub = form_sub(form);
+    NCURSES_CONST WINDOW *sub = form_sub(form);
     int currow, curcol;
 
     getyx(stdscr, currow, curcol);
@@ -309,13 +302,13 @@ do_demo(FORM *form)
 {
     int count = field_count(form);
     FIELD *my_field = current_field(form);
+    FIELD **old_fields = form_fields(form);
 
-    if (count > 0 && my_field != NULL) {
+    if (count > 0 && old_fields != NULL && my_field != NULL) {
 	size_t needed = (size_t) count;
-	FIELD **old_fields = copy_fields(form_fields(form), needed);
-	FIELD **new_fields = copy_fields(form_fields(form), needed);
+	FIELD **new_fields = copy_fields(old_fields, needed);
 
-	if (old_fields != NULL && new_fields != NULL) {
+	if (new_fields != NULL) {
 	    bool found = FALSE;
 	    int ch;
 
@@ -395,7 +388,6 @@ do_demo(FORM *form)
 		refresh();
 	    }
 	}
-	free(old_fields);
 	free(new_fields);
     }
 }
@@ -454,7 +446,7 @@ demo_forms(void)
 
     all_fields[n] = (FIELD *) 0;
 
-    if ((form = new_form(all_fields)) != 0) {
+    if ((form = new_form(all_fields)) != NULL) {
 	int finished = 0;
 
 	post_form(form);
@@ -476,7 +468,7 @@ demo_forms(void)
 
 	free_form(form);
     }
-    for (c = 0; all_fields[c] != 0; c++) {
+    for (c = 0; all_fields[c] != NULL; c++) {
 	free_edit_field(all_fields[c]);
 	free_field(all_fields[c]);
     }
@@ -484,9 +476,41 @@ demo_forms(void)
     nl();
 }
 
-int
-main(void)
+static void
+usage(int ok)
 {
+    static const char *msg[] =
+    {
+	"Usage: move_field [options]"
+	,""
+	,USAGE_COMMON
+    };
+    size_t n;
+
+    for (n = 0; n < SIZEOF(msg); n++)
+	fprintf(stderr, "%s\n", msg[n]);
+
+    ExitProgram(ok ? EXIT_SUCCESS : EXIT_FAILURE);
+}
+/* *INDENT-OFF* */
+VERSION_COMMON()
+/* *INDENT-ON* */
+
+int
+main(int argc, char *argv[])
+{
+    int ch;
+
+    while ((ch = getopt(argc, argv, OPTS_COMMON)) != -1) {
+	switch (ch) {
+	default:
+	    CASE_COMMON;
+	    /* NOTREACHED */
+	}
+    }
+    if (optind < argc)
+	usage(FALSE);
+
     setlocale(LC_ALL, "");
 
     initscr();

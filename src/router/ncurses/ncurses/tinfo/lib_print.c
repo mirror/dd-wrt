@@ -1,5 +1,5 @@
 /****************************************************************************
- * Copyright 2018-2020,2021 Thomas E. Dickey                                *
+ * Copyright 2018-2024,2025 Thomas E. Dickey                                *
  * Copyright 1998-2011,2012 Free Software Foundation, Inc.                  *
  *                                                                          *
  * Permission is hereby granted, free of charge, to any person obtaining a  *
@@ -40,14 +40,15 @@
 #define CUR SP_TERMTYPE
 #endif
 
-MODULE_ID("$Id: lib_print.c,v 1.30 2021/04/18 14:58:57 tom Exp $")
+MODULE_ID("$Id: lib_print.c,v 1.35 2025/12/27 12:41:23 tom Exp $")
 
 NCURSES_EXPORT(int)
 NCURSES_SP_NAME(mcprint) (NCURSES_SP_DCLx char *data, int len)
 /* ship binary character data to the printer via mc4/mc5/mc5p */
 {
     int result;
-    char *mybuf = NULL, *switchon;
+    char *mybuf = NULL;
+    const char *switchon;
     size_t onsize, offsize;
     size_t need;
 
@@ -71,8 +72,8 @@ NCURSES_SP_NAME(mcprint) (NCURSES_SP_DCLx char *data, int len)
 
     need = onsize + (size_t) len + offsize;
 
-    if (switchon == 0
-	|| (mybuf = typeMalloc(char, need + 1)) == 0) {
+    if (switchon == NULL
+	|| (mybuf = typeMalloc(char, need + 1)) == NULL) {
 	free(mybuf);
 	errno = ENOMEM;
 	return (ERR);
@@ -90,21 +91,21 @@ NCURSES_SP_NAME(mcprint) (NCURSES_SP_DCLx char *data, int len)
      * data has actually been shipped to the terminal.  If the write(2)
      * operation is truly atomic we're protected from this.
      */
-    result = (int) write(TerminalOf(SP_PARM)->Filedes, mybuf, need);
+    result = (int) write(SP_PARM->_ofd, mybuf, need);
 
     /*
      * By giving up our scheduler slot here we increase the odds that the
      * kernel will ship the contiguous clist items from the last write
      * immediately.
      */
-#ifndef _NC_WINDOWS
+#ifndef _NC_WINDOWS_NATIVE
     (void) sleep(0);
 #endif
     free(mybuf);
     return (result);
 }
 
-#if NCURSES_SP_FUNCS && !defined(USE_TERM_DRIVER)
+#if NCURSES_SP_FUNCS && !USE_TERM_DRIVER
 NCURSES_EXPORT(int)
 mcprint(char *data, int len)
 {

@@ -1,5 +1,5 @@
 /****************************************************************************
- * Copyright 2020 Thomas E. Dickey                                          *
+ * Copyright 2020-2024,2025 Thomas E. Dickey                                *
  * Copyright 2013-2014,2016 Free Software Foundation, Inc.                  *
  *                                                                          *
  * Permission is hereby granted, free of charge, to any person obtaining a  *
@@ -37,7 +37,7 @@
 
 #include <curses.priv.h>
 
-MODULE_ID("$Id: obsolete.c,v 1.6 2020/02/02 23:34:34 tom Exp $")
+MODULE_ID("$Id: obsolete.c,v 1.13 2025/02/20 01:12:11 tom Exp $")
 
 /*
  * Obsolete entrypoint retained for binary compatibility.
@@ -64,11 +64,11 @@ _nc_set_buffer(FILE *ofp, int buffered)
 NCURSES_EXPORT(char *)
 _nc_strdup(const char *s)
 {
-    char *result = 0;
-    if (s != 0) {
+    char *result = NULL;
+    if (s != NULL) {
 	size_t need = strlen(s);
 	result = malloc(need + 1);
-	if (result != 0) {
+	if (result != NULL) {
 	    _nc_STRCPY(result, s, need);
 	}
     }
@@ -126,7 +126,7 @@ _nc_conv_to_utf8(unsigned char *target, unsigned source, unsigned limit)
 	rc = 0;
     }
 
-    if (target != 0) {
+    if (target != NULL) {
 	switch (rc) {
 	case 1:
 	    target[0] = CH(0);
@@ -225,7 +225,7 @@ _nc_conv_to_utf32(unsigned *target, const char *source, unsigned limit)
 	}
     }
 
-    if (target != 0) {
+    if (target != NULL) {
 	int shift = 0;
 	*target = 0;
 	for (j = 1; j < rc; j++) {
@@ -238,3 +238,98 @@ _nc_conv_to_utf32(unsigned *target, const char *source, unsigned limit)
 #undef CH
 }
 #endif /* EXP_XTERM_1005 */
+
+#ifdef EXP_OOM_TESTING
+/*
+ * Out-of-memory testing, suitable for checking if initialization (and limited
+ * running) recovers from errors due to insufficient memory.  In practice, this
+ * is unlikely except with artificially constructed tests (or poorly behaved
+ * applications).
+ */
+#undef malloc
+#undef calloc
+#undef realloc
+#undef free
+#undef strdup
+
+#define TR_OOM(stmt) T(stmt)
+
+static long oom_limit = -1;
+static long oom_count = 0;
+
+static bool
+oom_check(void)
+{
+    static bool initialized = FALSE;
+    static bool triggered = FALSE;
+    bool result = FALSE;
+
+    if (!initialized) {
+	char *env = getenv("NCURSES_OOM_TESTING");
+	initialized = TRUE;
+	if (env != NULL) {
+	    char *check;
+	    oom_limit = strtol(env, &check, 0);
+	    if (check != NULL && *check != '\0')
+		oom_limit = 0;
+	}
+    }
+    ++oom_count;
+    if (oom_limit >= 0) {
+	result = (oom_count > oom_limit);
+	if (result && !triggered) {
+	    triggered = TRUE;
+	    TR_OOM(("out-of-memory"));
+	}
+    }
+    return result;
+}
+
+NCURSES_EXPORT(void *)
+_nc_oom_malloc(size_t size)
+{
+    char *result = (oom_check()
+		    ? NULL
+		    : malloc(size));
+    TR_OOM(("oom #%ld malloc(%ld) %p", oom_count, size, result));
+    return result;
+}
+
+NCURSES_EXPORT(void *)
+_nc_oom_calloc(size_t nmemb, size_t size)
+{
+    char *result = (oom_check()
+		    ? NULL
+		    : calloc(nmemb, size));
+    TR_OOM(("oom #%ld calloc(%ld, %ld) %p", oom_count, nmemb, size, result));
+    return result;
+}
+
+NCURSES_EXPORT(void *)
+_nc_oom_realloc(void *ptr, size_t size)
+{
+    char *result = (oom_check()
+		    ? NULL
+		    : realloc(ptr, size));
+    TR_OOM(("oom #%ld realloc(%p, %ld) %p", oom_count, ptr, size, result));
+    return result;
+}
+
+NCURSES_EXPORT(void)
+_nc_oom_free(void *ptr)
+{
+    ++oom_count;
+    TR_OOM(("oom #%ld free(%p)", oom_count, ptr));
+    free(ptr);
+}
+
+NCURSES_EXPORT(char *)
+_nc_oom_strdup(const char *ptr)
+{
+    char *result = (oom_check()
+		    ? NULL
+		    : strdup(ptr));
+    TR_OOM(("oom #%ld strdup(%p) %p", oom_count, ptr, result));
+    return result;
+}
+#endif /* EXP_OOM_TESTING */

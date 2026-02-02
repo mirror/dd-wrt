@@ -1,5 +1,5 @@
 ##############################################################################
-# Copyright 2018-2020,2021 Thomas E. Dickey                                  #
+# Copyright 2018-2024,2025 Thomas E. Dickey                                  #
 # Copyright 1998-2017,2018 Free Software Foundation, Inc.                    #
 #                                                                            #
 # Permission is hereby granted, free of charge, to any person obtaining a    #
@@ -26,7 +26,7 @@
 # use or other dealings in this Software without prior written               #
 # authorization.                                                             #
 ##############################################################################
-# $Id: dist.mk,v 1.1444 2021/10/20 22:43:08 tom Exp $
+# $Id: dist.mk,v 1.1709 2025/12/30 20:31:32 tom Exp $
 # Makefile for creating ncurses distributions.
 #
 # This only needs to be used directly as a makefile by developers, but
@@ -37,8 +37,8 @@ SHELL = /bin/sh
 
 # These define the major/minor/patch versions of ncurses.
 NCURSES_MAJOR = 6
-NCURSES_MINOR = 3
-NCURSES_PATCH = 20211021
+NCURSES_MINOR = 6
+NCURSES_PATCH = 20251230
 
 # We don't append the patch to the version, since this only applies to releases
 VERSION = $(NCURSES_MAJOR).$(NCURSES_MINOR)
@@ -63,7 +63,7 @@ GNATHTML= gnathtml
 # would remove some text.  The man program on Redhat 6.1 appears to work with
 # man2html if we set the top/bottom margins to 6 (the default is 7).  Newer
 # versions of 'man' leave no margin (and make it harder to sync with pages).
-MAN2HTML= man2html -botm=0 -topm=0 -cgiurl '$$title.$$section$$subsection.html' -index
+MAN2HTML= man2html -botm=0 -topm=0 -cgiurl '$$title.$$section$$subsection.html' -index -mixsecs
 
 ALL	= ANNOUNCE doc/html/announce.html doc/ncurses-intro.doc doc/hackguide.doc manhtml adahtml
 
@@ -93,11 +93,11 @@ doc/hackguide.doc: doc/html/hackguide.html
 # The distributed html files are formatted using
 #	configure --without-manpage-renames
 #
-# The edit_man.sed script is built as a side-effect of installing the manpages.
+# The edit_man.sed script is built as a side effect of installing the man pages.
 # If that conflicts with the --without-manpage-renames, you can install those
 # in a different location using the --with-install-prefix option of the
 # configure script.
-MANPROG	= tbl | nroff -mandoc -rHY=0 -rLL=78n -rLT=78n -Tascii
+MANPROG	= tbl | nroff -c -mandoc -rHY=0 -rLL=78n -rLT=78n -Tascii
 
 manhtml:
 	@for f in doc/html/man/*.html; do \
@@ -124,19 +124,20 @@ manhtml:
 	@echo 's/<I>/<EM>/g'         >> subst.tmp
 	@echo 's/<\/I>/<\/EM>/g'     >> subst.tmp
 	@misc/csort < subst.tmp | uniq > subst.sed
-	@echo '/<\/TITLE>/a\' >> subst.sed
-	@echo '<link rel="author" href="mailto:bug-ncurses@gnu.org">\' >> subst.sed
-	@echo '<meta http-equiv="Content-Type" content="text\/html; charset=iso-8859-1">' >> subst.sed
+	@echo 's%[_-]*_-[_-]*%_%g'   >> subst.sed
+	@echo '/<\/TITLE>/a\\'       >> subst.sed
+	@echo '<link rel="author" href="mailto:bug-ncurses@gnu.org">\\' >> subst.sed
 	@rm -f subst.tmp
 	@for f in man/*.[0-9]* ; do \
 	   m=`basename $$f` ;\
-	   T=`egrep '^.TH' $$f|sed -e 's/^.TH //' -e s'/"//g' -e 's/[ 	]\+$$//'` ; \
+	   T=`$${EGREP-grep -E} '^.TH' $$f|sed -e 's/^.TH //' -e s'/"//g' -e 's/[ 	]\+$$//'` ; \
 	   g=$${m}.html ;\
 	   if [ -f doc/html/$$g ]; then chmod +w doc/html/$$g; fi;\
 	   echo "Converting $$m to HTML" ;\
 	   echo '<!--' > doc/html/man/$$g ;\
-	   egrep '^.\\"[^#]' $$f | \
-	   	sed	-e 's/\$$/@/g' \
+		sed	-e '/^\.[a-zA-Z]/,99999d' $$f | \
+		$${EGREP-grep -E} '^.\\"[^#]' | \
+		sed	-e 's/\$$/@/g' \
 			-e 's/^.../  */' \
 			-e 's/</\&lt;/g' \
 			-e 's/>/\&gt;/g' \

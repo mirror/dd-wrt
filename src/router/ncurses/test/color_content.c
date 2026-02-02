@@ -1,5 +1,5 @@
 /****************************************************************************
- * Copyright 2018-2019,2020 Thomas E. Dickey                                *
+ * Copyright 2018-2024,2025 Thomas E. Dickey                                *
  *                                                                          *
  * Permission is hereby granted, free of charge, to any person obtaining a  *
  * copy of this software and associated documentation files (the            *
@@ -26,7 +26,7 @@
  * authorization.                                                           *
  ****************************************************************************/
 /*
- * $Id: color_content.c,v 1.12 2020/02/02 23:34:34 tom Exp $
+ * $Id: color_content.c,v 1.23 2025/07/05 15:21:56 tom Exp $
  */
 
 #define NEED_TIME_H
@@ -58,10 +58,8 @@ static int x_opt;
 
 static MYCOLOR *expected;
 
-#if HAVE_GETTIMEOFDAY
-static struct timeval initial_time;
-static struct timeval finish_time;
-#endif
+static TimeType initial_time;
+static TimeType finish_time;
 
 static void
 failed(const char *msg)
@@ -118,6 +116,7 @@ random_color(void)
 static void
 setup_test(void)
 {
+    setlocale(LC_ALL, "");
     initscr();
     cbreak();
     noecho();
@@ -174,9 +173,7 @@ setup_test(void)
     } else {
 	failed("This demo requires a color terminal");
     }
-#if HAVE_GETTIMEOFDAY
-    gettimeofday(&initial_time, 0);
-#endif
+    GetClockTime(&initial_time);
 }
 
 static void
@@ -189,7 +186,7 @@ run_test(void)
 	my_color_t g;
 	my_color_t b;
 	if (ColorContent(color, &r, &g, &b) == OK) {
-	    if (expected != 0) {
+	    if (expected != NULL) {
 		if (r != expected[color].r)
 		    success = FALSE;
 		if (g != expected[color].g)
@@ -212,30 +209,21 @@ finish_test(void)
     endwin();
 }
 
-#if HAVE_GETTIMEOFDAY
-static double
-seconds(struct timeval *mark)
-{
-    double result = (double) mark->tv_sec;
-    result += ((double) mark->tv_usec / 1e6);
-    return result;
-}
-#endif
-
 static void
-usage(void)
+usage(int ok)
 {
     static const char *msg[] =
     {
 	"Usage: color_content [options]"
 	,""
+	,USAGE_COMMON
 	,"Options:"
 	," -f COLOR first color value to test (default: 0)"
 	," -i       interactive, showing test-progress"
-	," -l COLOR last color value to test (default: max_colors-1)"
+	," -F COLOR last color value to test (default: max_colors-1)"
 	," -n       do not initialize color pairs"
 	," -p       print data for color content instead of testing"
-	," -r COUNT repeat for given count"
+	," -r NUM   repeat tests NUM times"
 	," -s       initialize pairs sequentially rather than random"
 #if USE_EXTENDED_COLOR
 	," -x       use extended color pairs/values"
@@ -244,26 +232,29 @@ usage(void)
     size_t n;
     for (n = 0; n < SIZEOF(msg); n++)
 	fprintf(stderr, "%s\n", msg[n]);
-    ExitProgram(EXIT_FAILURE);
+    ExitProgram(ok ? EXIT_SUCCESS : EXIT_FAILURE);
 }
+/* *INDENT-OFF* */
+VERSION_COMMON()
+/* *INDENT-ON* */
 
 int
-main(int argc GCC_UNUSED, char *argv[]GCC_UNUSED)
+main(int argc, char *argv[])
 {
-    int i;
+    int ch;
 
-    while ((i = getopt(argc, argv, "f:il:npr:sx")) != -1) {
-	switch (i) {
+    while ((ch = getopt(argc, argv, OPTS_COMMON "f:iF:npr:sx")) != -1) {
+	switch (ch) {
 	case 'f':
 	    if ((f_opt = atoi(optarg)) <= 0)
-		usage();
+		usage(FALSE);
 	    break;
 	case 'i':
 	    i_opt = 1;
 	    break;
-	case 'l':
+	case 'F':
 	    if ((l_opt = atoi(optarg)) <= 0)
-		usage();
+		usage(FALSE);
 	    break;
 	case 'n':
 	    n_opt = 1;
@@ -273,7 +264,7 @@ main(int argc GCC_UNUSED, char *argv[]GCC_UNUSED)
 	    break;
 	case 'r':
 	    if ((r_opt = atoi(optarg)) <= 0)
-		usage();
+		usage(FALSE);
 	    break;
 	case 's':
 	    s_opt = 1;
@@ -284,16 +275,18 @@ main(int argc GCC_UNUSED, char *argv[]GCC_UNUSED)
 	    break;
 #endif
 	default:
-	    usage();
+	    CASE_COMMON;
+	    /* NOTREACHED */
 	}
     }
     if (optind < argc)
-	usage();
+	usage(FALSE);
     if (r_opt <= 0)
 	r_opt = 1;
 
     setup_test();
     if (p_opt) {
+	int i;
 	endwin();
 	for (i = 0; i < COLORS; ++i) {
 	    my_color_t r, g, b;
@@ -318,14 +311,11 @@ main(int argc GCC_UNUSED, char *argv[]GCC_UNUSED)
 	    addch('\n');
 	}
 	printw("DONE: ");
-#if HAVE_GETTIMEOFDAY
-	gettimeofday(&finish_time, 0);
-	printw("%.03f seconds",
-	       seconds(&finish_time)
-	       - seconds(&initial_time));
-#endif
+	GetClockTime(&finish_time);
+	printw("%.03f seconds", ElapsedSeconds(&finish_time, &initial_time));
 	finish_test();
     }
 
+    free(expected);
     ExitProgram(EXIT_SUCCESS);
 }

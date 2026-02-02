@@ -1,5 +1,5 @@
 /****************************************************************************
- * Copyright 2018-2020,2021 Thomas E. Dickey                                *
+ * Copyright 2018-2024,2025 Thomas E. Dickey                                *
  * Copyright 1998-2013,2017 Free Software Foundation, Inc.                  *
  *                                                                          *
  * Permission is hereby granted, free of charge, to any person obtaining a  *
@@ -34,7 +34,7 @@
  * Eric S. Raymond <esr@snark.thyrsus.com> July 22 1995.  Mouse support
  * added September 20th 1995.
  *
- * $Id: knight.c,v 1.49 2021/05/08 19:32:15 tom Exp $
+ * $Id: knight.c,v 1.54 2025/07/05 15:21:56 tom Exp $
  */
 
 #include <test.priv.h>
@@ -450,7 +450,8 @@ iabs(int num)
 }
 
 static bool
-evaluate_move(SQUARES squares, HISTORY * doneData, int doneSize, int row, int column)
+evaluate_move(SQUARES squares, const HISTORY * doneData, int doneSize,
+	      int row, int column)
 {
     if (doneSize <= 1)
 	return (TRUE);
@@ -899,12 +900,13 @@ play(void)
 }
 
 static void
-usage(void)
+usage(int ok)
 {
     static const char *msg[] =
     {
 	"Usage: knight [options]"
 	,""
+	,USAGE_COMMON
 	,"Options:"
 #if HAVE_USE_DEFAULT_COLORS
 	," -d       invoke use_default_colors"
@@ -916,15 +918,18 @@ usage(void)
     for (n = 0; n < SIZEOF(msg); n++)
 	fprintf(stderr, "%s\n", msg[n]);
 
-    ExitProgram(EXIT_FAILURE);
+    ExitProgram(ok ? EXIT_SUCCESS : EXIT_FAILURE);
 }
+/* *INDENT-OFF* */
+VERSION_COMMON()
+/* *INDENT-ON* */
 
 int
 main(int argc, char *argv[])
 {
     int ch;
 
-    while ((ch = getopt(argc, argv, "dn:")) != -1) {
+    while ((ch = getopt(argc, argv, OPTS_COMMON "dn:")) != -1) {
 	switch (ch) {
 #if HAVE_USE_DEFAULT_COLORS
 	case 'd':
@@ -935,17 +940,17 @@ main(int argc, char *argv[])
 	    ch = atoi(optarg);
 	    if (ch < 3 || ch > 8) {
 		fprintf(stderr, "board size %d is outside [3..8]\n", ch);
-		usage();
+		usage(FALSE);
 	    }
 	    xlimit = ylimit = ch;
 	    break;
 	default:
-	    usage();
+	    CASE_COMMON;
 	    /* NOTREACHED */
 	}
     }
     if (optind < argc)
-	usage();
+	usage(FALSE);
 
     init_program();
 

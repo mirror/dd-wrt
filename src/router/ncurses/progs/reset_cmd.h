@@ -1,5 +1,5 @@
 /****************************************************************************
- * Copyright 2020,2021 Thomas E. Dickey                                     *
+ * Copyright 2020-2021,2024 Thomas E. Dickey                                *
  * Copyright 2016 Free Software Foundation, Inc.                            *
  *                                                                          *
  * Permission is hereby granted, free of charge, to any person obtaining a  *
@@ -32,7 +32,7 @@
  ****************************************************************************/
 
 /*
- * $Id: reset_cmd.h,v 1.9 2021/10/02 20:58:58 tom Exp $
+ * $Id: reset_cmd.h,v 1.11 2024/04/08 17:29:34 tom Exp $
  *
  * Utility functions for resetting terminal.
  */
@@ -56,7 +56,7 @@ extern void set_control_chars(TTY * /* tty_settings */, int /* erase */, int /* 
 extern void set_conversions(TTY * /* tty_settings */);
 
 #if HAVE_SIZECHANGE
-extern void set_window_size(int /* fd */, short * /* high */, short * /* wide */);
+extern void set_window_size(int /* fd */, NCURSES_INT2 * /* high */, NCURSES_INT2 * /* wide */);
 #endif
 
 extern const char *_nc_progname;

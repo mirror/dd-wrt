@@ -1,5 +1,5 @@
 /****************************************************************************
- * Copyright 2020 Thomas E. Dickey                                          *
+ * Copyright 2020-2024,2025 Thomas E. Dickey                                *
  * Copyright 1998-2000,2009 Free Software Foundation, Inc.                  *
  *                                                                          *
  * Permission is hereby granted, free of charge, to any person obtaining a  *
@@ -45,19 +45,15 @@
 
 #include <curses.priv.h>
 
-MODULE_ID("$Id: lib_nl.c,v 1.13 2020/02/02 23:34:34 tom Exp $")
-
-#ifdef __EMX__
-#include <io.h>
-#endif
+MODULE_ID("$Id: lib_nl.c,v 1.16 2025/06/21 14:27:02 tom Exp $")
 
 NCURSES_EXPORT(int)
 NCURSES_SP_NAME(nl) (NCURSES_SP_DCL0)
 {
     T((T_CALLED("nl(%p)"), (void *) SP_PARM));
-    if (0 == SP_PARM)
+    if (NULL == SP_PARM)
 	returnCode(ERR);
-    SP_PARM->_nl = TRUE;
+    IsNl(SP_PARM) = TRUE;
 #ifdef __EMX__
     _nc_flush();
     _fsetmode(NC_OUTPUT(SP_PARM), "t");
@@ -77,9 +73,9 @@ NCURSES_EXPORT(int)
 NCURSES_SP_NAME(nonl) (NCURSES_SP_DCL0)
 {
     T((T_CALLED("nonl(%p)"), (void *) SP_PARM));
-    if (0 == SP_PARM)
+    if (NULL == SP_PARM)
 	returnCode(ERR);
-    SP_PARM->_nl = FALSE;
+    IsNl(SP_PARM) = FALSE;
 #ifdef __EMX__
     _nc_flush();
     _fsetmode(NC_OUTPUT(SP_PARM), "b");

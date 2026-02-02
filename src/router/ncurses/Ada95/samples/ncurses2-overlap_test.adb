@@ -7,7 +7,7 @@
 --                                 B O D Y                                  --
 --                                                                          --
 ------------------------------------------------------------------------------
--- Copyright 2020,2021 Thomas E. Dickey                                     --
+-- Copyright 2020-2021,2024 Thomas E. Dickey                                --
 -- Copyright 2000-2014,2015 Free Software Foundation, Inc.                  --
 --                                                                          --
 -- Permission is hereby granted, free of charge, to any person obtaining a  --
@@ -36,8 +36,8 @@
 ------------------------------------------------------------------------------
 --  Author: Eugene V. Melaragno <aldomel@ix.netcom.com> 2000
 --  Version Control
---  $Revision: 1.9 $
---  $Date: 2021/09/04 10:52:55 $
+--  $Revision: 1.10 $
+--  $Date: 2024/03/30 13:21:15 $
 --  Binding Version 01.00
 ------------------------------------------------------------------------------
 with ncurses2.util; use ncurses2.util;
@@ -73,8 +73,8 @@ procedure ncurses2.overlap_test is
       Get_Size (win, y1, x1);
       for y in 0 .. y1 - 1 loop
          for x in 0 .. x1 - 1 loop
-            if ((x > (x1 - 1) / 3) and (x <= (2 * (x1 - 1)) / 3)) or
-               (((y > (y1 - 1) / 3) and (y <= (2 * (y1 - 1)) / 3)))
+            if (x > (x1 - 1) / 3 and x <= (2 * (x1 - 1)) / 3) or
+               (y > (y1 - 1) / 3 and y <= (2 * (y1 - 1)) / 3)
             then
                Move_Cursor (win, y, x);
                Add (win, Ch => ch);

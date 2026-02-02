@@ -1,5 +1,5 @@
 /****************************************************************************
- * Copyright 2019,2020 Thomas E. Dickey                                     *
+ * Copyright 2019-2024,2025 Thomas E. Dickey                                *
  *                                                                          *
  * Permission is hereby granted, free of charge, to any person obtaining a  *
  * copy of this software and associated documentation files (the            *
@@ -29,52 +29,57 @@
 /*
  * Author: Thomas E. Dickey
  *
- * $Id: demo_tabs.c,v 1.5 2020/02/02 23:34:34 tom Exp $
+ * $Id: demo_tabs.c,v 1.13 2025/07/05 15:21:56 tom Exp $
  *
  * A simple demo of tabs in curses.
  */
+#define USE_CURSES
 #define USE_TINFO
-#include "test.priv.h"
+#include <test.priv.h>
 
 static void
-usage(void)
+usage(int ok)
 {
     static const char *msg[] =
     {
-	"Usage: demo_tabs [options]",
-	"",
-	"Print a grid to test tab-stops with the curses interface",
-	"",
-	"Options:",
-	" -l COUNT total number of lines to show",
-	" -t NUM   set TABSIZE variable to the given value",
+	"Usage: demo_tabs [options]"
+	,""
+	,"Print a grid to test tab-stops with the curses interface"
+	,""
+	,USAGE_COMMON
+	,"Options:"
+	," -m NUM   total number of lines to show"
+	," -t NUM   set TABSIZE variable to the given value"
     };
     unsigned n;
     for (n = 0; n < SIZEOF(msg); ++n) {
 	fprintf(stderr, "%s\n", msg[n]);
     }
-    ExitProgram(EXIT_FAILURE);
+    ExitProgram(ok ? EXIT_SUCCESS : EXIT_FAILURE);
 }
+/* *INDENT-OFF* */
+VERSION_COMMON()
+/* *INDENT-ON* */
 
 int
 main(int argc, char *argv[])
 {
     int tabstop;
-    int n, col, row, step;
+    int ch, col, row, step;
     int line_limit = -1;
     int curses_stops = -1;
 
-    while ((n = getopt(argc, argv, "l:t:")) != -1) {
-	switch (n) {
-	case 'l':
+    while ((ch = getopt(argc, argv, OPTS_COMMON "m:t:")) != -1) {
+	switch (ch) {
+	case 'm':
 	    line_limit = atoi(optarg);
 	    break;
 	case 't':
 	    curses_stops = atoi(optarg);
 	    break;
 	default:
-	    usage();
-	    break;
+	    CASE_COMMON;
+	    /* NOTREACHED */
 	}
     }
 
@@ -92,10 +97,10 @@ main(int argc, char *argv[])
 	move(row, 0);
 	for (col = step = 0; col < COLS - 1; ++col) {
 	    if (row == 0) {
-		chtype ch = '-';
+		chtype ct = '-';
 		if ((col % tabstop) == 0)
-		    ch = '+';
-		addch(ch);
+		    ct = '+';
+		addch(ct);
 	    } else if (col + 1 < row) {
 		addch('*');
 	    } else {

@@ -1,7 +1,7 @@
 #!/bin/sh
-# $Id: make_sed.sh,v 1.12 2021/06/17 21:20:30 tom Exp $
+# $Id: make_sed.sh,v 1.22 2025/11/12 00:52:57 Branden.Robinson Exp $
 ##############################################################################
-# Copyright 2020,2021 Thomas E. Dickey                                       #
+# Copyright 2020-2023,2025 Thomas E. Dickey                                  #
 # Copyright 1998-2005,2017 Free Software Foundation, Inc.                    #
 #                                                                            #
 # Permission is hereby granted, free of charge, to any person obtaining a    #
@@ -29,11 +29,11 @@
 # authorization.                                                             #
 ##############################################################################
 #
-# Author: Thomas E. Dickey 1997-2005
+# Author: Thomas E. Dickey 1997
 #
-# Construct a sed-script to perform renaming within man-pages.  Originally
+# Construct a sed script to perform renaming within man pages.  Originally
 # written in much simpler form, this one accounts for the common cases of
-# section-names in man-pages.
+# section names in man pages.
 
 if test $# != 1 ; then
 	echo '? expected a single filename'
@@ -46,8 +46,9 @@ UPPER=upper$$
 SCRIPT=script$$
 RESULT=result$$
 rm -f $UPPER $SCRIPT $RESULT
-trap "rm -f $COL.* $INPUT $UPPER $SCRIPT $RESULT" 0 1 2 3 15
-fgrep -v \# $1 | \
+trap "rm -f $COL.* $INPUT $UPPER $SCRIPT $RESULT; exit 1" 1 2 3 15
+trap "rm -f $COL.* $INPUT $UPPER $SCRIPT $RESULT" 0
+${FGREP-grep -F} -v \# "$1" | \
 sed	-e 's/[	][	]*/	/g' >$INPUT
 
 for F in 1 2 3 4
@@ -64,27 +65,31 @@ paste $COL.* | \
 sed	-e 's/^/s\/\\</' \
 	-e 's/$/\//' >$UPPER
 
-echo "# Do the TH lines" >>$RESULT
+{
+echo "# This script was generated from '$1' by man/make_sed.sh."
+echo "# Do the TH lines"
 sed	-e 's/\//\/TH /' \
 	-e 's/	/ /' \
-	-e 's/	/ ""\/TH /' \
+	-e 's/	/ \/TH /' \
 	-e 's/	/ /' \
-	-e 's/\/$/ ""\//' \
-	$UPPER >>$RESULT
+	-e 's/\/$/ \//' \
+	$UPPER
 
-echo "# Do the embedded references" >>$RESULT
-sed	-e 's/</<fB/' \
-	-e 's/	/\\\\fR(/' \
-	-e 's/	/)\/fB/' \
-	-e 's/	/\\\\fR(/' \
+echo "# Do the embedded references"
+sed	-e 's/</<fB\\(\\\\%\\)\\?/' \
+	-e 's/\\%</\\%/' \
+	-e 's/	/\\\\fP(/' \
+	-e 's/	/)\/fB\\1/' \
+	-e 's/	/\\\\fP(/' \
 	-e 's/\/$/)\//' \
-	$UPPER >>$RESULT
+	$UPPER
 
-echo "# Do the \fBxxx\fR references in the .NAME section" >>$RESULT
+echo '# Do the \\fBxxx\\fP references in the .NAME section'
 sed	-e 's/\\</^\\\\fB/' \
 	-e 's/	[^	]*	/\\\\f[RP] -\/\\\\fB/' \
-	-e 's/	.*$/\\\\fR -\//' \
-	$UPPER >>$RESULT
+	-e 's/	.*$/\\\\fP -\//' \
+	$UPPER
+} >>$RESULT
 
 # Finally, send the result to standard output
 cat $RESULT

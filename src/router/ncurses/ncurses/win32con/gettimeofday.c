@@ -1,5 +1,5 @@
 /****************************************************************************
- * Copyright 2020 Thomas E. Dickey                                          *
+ * Copyright 2020-2023,2025 Thomas E. Dickey                                *
  * Copyright 2008-2010,2014 Free Software Foundation, Inc.                  *
  *                                                                          *
  * Permission is hereby granted, free of charge, to any person obtaining a  *
@@ -27,17 +27,13 @@
  * authorization.                                                           *
  ****************************************************************************/
 
-#ifdef WINVER
-#  undef WINVER
-#endif
-#define WINVER 0x0501
-
 #include <curses.priv.h>
 
 #include <windows.h>
 
-MODULE_ID("$Id: gettimeofday.c,v 1.6 2020/07/11 21:03:53 tom Exp $")
+MODULE_ID("$Id: gettimeofday.c,v 1.8 2025/08/30 17:59:42 tom Exp $")
 
+#if HAVE_GETTIMEOFDAY == 2
 #define JAN1970 116444736000000000LL	/* the value for 01/01/1970 00:00 */
 
 NCURSES_EXPORT(int)
@@ -53,3 +49,4 @@ gettimeofday(struct timeval *tv, void *tz GCC_UNUSED)
     tv->tv_sec = (long) ((data.since1601 - JAN1970) / 10000000LL);
     return (0);
 }
+#endif // HAVE_GETTIMEOFDAY == 2

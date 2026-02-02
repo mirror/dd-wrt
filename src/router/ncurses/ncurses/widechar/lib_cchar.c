@@ -1,5 +1,5 @@
 /****************************************************************************
- * Copyright 2019-2020,2021 Thomas E. Dickey                                *
+ * Copyright 2019-2022,2024 Thomas E. Dickey                                *
  * Copyright 2001-2016,2017 Free Software Foundation, Inc.                  *
  *                                                                          *
  * Permission is hereby granted, free of charge, to any person obtaining a  *
@@ -37,7 +37,7 @@
 #include <curses.priv.h>
 #include <wchar.h>
 
-MODULE_ID("$Id: lib_cchar.c,v 1.37 2021/06/17 21:11:08 tom Exp $")
+MODULE_ID("$Id: lib_cchar.c,v 1.40 2024/12/07 18:07:52 tom Exp $")
 
 /*
  * The SuSv2 description leaves some room for interpretation.  We'll assume wch
@@ -119,20 +119,23 @@ getcchar(const cchar_t *wcval,
     } else
 #endif
     if (wcval != NULL) {
-	wchar_t *wp;
+	const wchar_t *wp;
 	int len;
 
+#if HAVE_WMEMCHR
 	len = ((wp = wmemchr(wcval->chars, L'\0', (size_t) CCHARW_MAX))
 	       ? (int) (wp - wcval->chars)
 	       : CCHARW_MAX);
-
+#else
+	len = wcsnlen(wcval->chars, CCHARW_MAX);
+#endif
 	if (wch == NULL) {
 	    /*
 	     * If the value is a null, set the length to 1.
 	     * If the value is not a null, return the length plus 1 for null.
 	     */
 	    code = (len < CCHARW_MAX) ? (len + 1) : CCHARW_MAX;
-	} else if (attrs == 0 || pair_arg == 0) {
+	} else if (attrs == NULL || pair_arg == NULL) {
 	    code = ERR;
 	} else if (len >= 0) {
 	    int color_pair;

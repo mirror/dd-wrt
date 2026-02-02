@@ -1,5 +1,5 @@
 /****************************************************************************
- * Copyright 2020,2021 Thomas E. Dickey                                     *
+ * Copyright 2020-2021,2023 Thomas E. Dickey                                *
  * Copyright 2013-2016,2017 Free Software Foundation, Inc.                  *
  *                                                                          *
  * Permission is hereby granted, free of charge, to any person obtaining a  *
@@ -150,7 +150,7 @@ int	_nc_get_token(
 #undef _nc_trans_string
 int	_nc_trans_string(
 		char	*ptr,
-		char	*last)
+		const char *const last)
 		{ return(*(int *)0); }
 
 #undef _nc_push_token

@@ -1,5 +1,5 @@
 /****************************************************************************
- * Copyright 2019-2020,2021 Thomas E. Dickey                                *
+ * Copyright 2019-2024,2025 Thomas E. Dickey                                *
  * Copyright 1998-2016,2017 Free Software Foundation, Inc.                  *
  *                                                                          *
  * Permission is hereby granted, free of charge, to any person obtaining a  *
@@ -37,7 +37,7 @@
  *****************************************************************************/
 
 /*
- * $Id: blue.c,v 1.54 2021/03/20 16:06:15 tom Exp $
+ * $Id: blue.c,v 1.58 2025/07/05 15:21:56 tom Exp $
  */
 
 #include <test.priv.h>
@@ -437,7 +437,7 @@ game_finished(int deal)
 static void
 use_pc_display(void)
 {
-    char *check = nl_langinfo(CODESET);
+    const char *check = nl_langinfo(CODESET);
     if (!strcmp(check, "UTF-8")) {
 #if USE_WIDEC_SUPPORT
 	suits = uglyphs;
@@ -448,13 +448,13 @@ use_pc_display(void)
 	    !strcmp(check, "CP437") ||
 	    !strcmp(check, "IBM850") ||
 	    !strcmp(check, "CP850")) {
-	    char *smacs = tigetstr("smacs");
-	    char *smpch = tigetstr("smpch");
+	    const char *smacs = tigetstr("smacs");
+	    const char *smpch = tigetstr("smpch");
 	    /*
 	     * The ncurses library makes this check to decide whether to allow
 	     * the alternate character set for the (normally) nonprinting codes.
 	     */
-	    if (smacs != 0 && smpch != 0 && !strcmp(smacs, smpch)) {
+	    if (smacs != NULL && smpch != NULL && !strcmp(smacs, smpch)) {
 		suits = glyphs;
 	    }
 	}
@@ -465,9 +465,41 @@ use_pc_display(void)
 #define use_pc_display()	/* nothing */
 #endif /* HAVE_LANGINFO_CODESET */
 
+static void
+usage(int ok)
+{
+    static const char *msg[] =
+    {
+	"Usage: blue [options]"
+	,""
+	,USAGE_COMMON
+    };
+    size_t n;
+
+    for (n = 0; n < SIZEOF(msg); n++)
+	fprintf(stderr, "%s\n", msg[n]);
+
+    ExitProgram(ok ? EXIT_SUCCESS : EXIT_FAILURE);
+}
+/* *INDENT-OFF* */
+VERSION_COMMON()
+/* *INDENT-ON* */
+
 int
 main(int argc, char *argv[])
 {
+    int ch;
+
+    while ((ch = getopt(argc, argv, OPTS_COMMON)) != -1) {
+	switch (ch) {
+	default:
+	    CASE_COMMON;
+	    /* NOTREACHED */
+	}
+    }
+    if (optind < argc)
+	usage(FALSE);
+
     setlocale(LC_ALL, "");
 
     use_pc_display();

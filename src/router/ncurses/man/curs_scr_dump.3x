@@ -1,5 +1,5 @@
 .\"***************************************************************************
-.\" Copyright 2018-2020,2021 Thomas E. Dickey                                *
+.\" Copyright 2018-2024,2025 Thomas E. Dickey                                *
 .\" Copyright 1998-2010,2017 Free Software Foundation, Inc.                  *
 .\"                                                                          *
 .\" Permission is hereby granted, free of charge, to any person obtaining a  *
@@ -27,94 +27,226 @@
 .\" authorization.                                                           *
 .\"***************************************************************************
 .\"
-.\" $Id: curs_scr_dump.3x,v 1.17 2021/10/20 22:37:48 tom Exp $
-.TH curs_scr_dump 3X ""
-.ie \n(.g .ds `` \(lq
-.el       .ds `` ``
-.ie \n(.g .ds '' \(rq
-.el       .ds '' ''
+.\" $Id: curs_scr_dump.3x,v 1.55 2025/01/19 00:51:10 tom Exp $
+.TH curs_scr_dump 3X 2025-01-18 "ncurses @NCURSES_MAJOR@.@NCURSES_MINOR@" "Library calls"
+.ie \n(.g \{\
+.ds `` \(lq
+.ds '' \(rq
+.\}
+.el \{\
+.ie t .ds `` ``
+.el   .ds `` ""
+.ie t .ds '' ''
+.el   .ds '' ""
+.\}
+.
 .de bP
 .ie n  .IP \(bu 4
 .el    .IP \(bu 2
 ..
-.na
-.hy 0
 .SH NAME
-\fBscr_dump\fR,
-\fBscr_restore\fR,
-\fBscr_init\fR,
-\fBscr_set\fR \- read (write) a \fBcurses\fR screen from (to) a file
-.ad
-.hy
+\fB\%scr_dump\fP,
+\fB\%scr_restore\fP,
+\fB\%scr_init\fP,
+\fB\%scr_set\fP \-
+read/write a \fIcurses\fR screen from/to a file
 .SH SYNOPSIS
-\fB#include <curses.h>\fR
-.sp
-\fBint scr_dump(const char *\fP\fIfilename\fP\fB);\fR
-.br
-\fBint scr_restore(const char *\fP\fIfilename\fP\fB);\fR
-.br
-\fBint scr_init(const char *\fP\fIfilename\fP\fB);\fR
-.br
-\fBint scr_set(const char *\fP\fIfilename\fP\fB);\fR
-.br
+.nf
+\fB#include <curses.h>
+.PP
+\fBint scr_dump(const char * \fIfilename\fP);
+\fBint scr_restore(const char * \fIfilename\fP);
+\fBint scr_init(const char * \fIfilename\fP);
+\fBint scr_set(const char * \fIfilename\fP);
+.fi
 .SH DESCRIPTION
+.I curses
+provides applications the ability to write the contents of the screen
+to a file and read them back.
+To read/write a window
+(rather than the whole screen)
+from/to a file,
+use \fB\%getwin\fP(3X) and
+\fB\%putwin\fP(3X),
+respectively.
 .SS scr_dump
-.PP
-The \fBscr_dump\fR routine dumps the current contents
-of the \fIvirtual screen\fP
-to the file \fIfilename\fR.
+.B \%scr_dump
+writes to
+.I filename
+the contents of the virtual screen;
+see \fB\%curscr\fP(3X).
 .SS scr_restore
-.PP
-The \fBscr_restore\fR routine sets the \fIvirtual screen\fP to the contents
-of \fIfilename\fR, which must have been written using \fBscr_dump\fR.
-The next call to \fBdoupdate\fR restores
-the \fIphysical screen\fP to the way it looked in the dump file.
+.B \%scr_restore
+updates the virtual screen to match the contents of
+.I filename
+(if validly written with
+.BR \%scr_dump ")."
+.I curses
+does not perform a refresh;
+after making any desired changes,
+call \fB\%doupdate\fP(3X) or similar.
 .SS scr_init
+.B \%scr_init
+reads
+.IR filename ","
+using it to initialize
+.I curses
+data structures describing the state of the terminal screen.
+.I curses
+then,
+if it decides the terminal state is valid,
+bases its next update of the screen on this information rather than
+clearing it and starting from scratch.
 .PP
-The \fBscr_init\fR routine reads in the contents of \fIfilename\fR and uses
-them to initialize the \fBcurses\fR data structures about what the terminal
-currently has on its screen.
-If the data is determined to be valid,
-\fBcurses\fR bases its next update of the screen on this information rather
-than clearing the screen and starting from scratch.
-\fBscr_init\fR is used
-after \fBinitscr\fR or a \fBsystem\fR call to share
-the screen with another process which has done a \fBscr_dump\fR after its
-\fBendwin\fR(3X) call.
-The data is declared invalid
+.I curses
+regards the terminal as in an invalid state for computation of updates
+based on the contents of
+.I filename
+if
 .bP
-if the terminfo capabilities \fBrmcup\fR and \fBnrrmc\fR exist, also
+.I curses
+knows that the terminal has been written to since the preceding
+.B \%scr_dump
+call,
+or
 .bP
-if the terminal has been written to since the preceding \fBscr_dump\fR call.
+the terminal type supports the
+.I \%term\%info
+capabilities
+.B \%exit_ca_mode
+.RB \%( rmcup )
+or
+.B \%non_rev_rmcup
+.RB \%( nrrmc ).
+.PP
+Either of the foregoing conditions means that
+.I curses
+cannot assume that the terminal's contents
+match their representation in
+.IR filename "."
+The former is due to terminal features
+(such as \fI\%xterm\fP(1)'s \*(``alternate screen\*('')
+that couple cursor-positioning mode with a local cache of screen
+contents.
+.I curses
+cannot know whether the terminal is displaying from that local cache
+at the time the application calls
+.BR \%scr_init ","
+so it makes a pessimistic assumption that a full redraw is required;
+see subsection \*(``Cursor Motions\*('' of \fB\%terminfo\fP(5).
+.PP
+.B \%scr_init
+could be used after \fB\%initscr\fP(3X) or \fI\%system\fP(3) to share
+the screen with another process that has done a
+.B \%scr_dump
+after \fB\%endwin\fP(3X).
+An application that supports suspending its state on exit and subsequent
+resumption upon later execution might use
+.B \%scr_dump
+and
+.B \%scr_init
+thus.
 .SS scr_set
-.PP
-The \fBscr_set\fR routine is a combination of \fBscr_restore\fR and
-\fBscr_init\fR.  It tells the program that the information in \fIfilename\fR is
-what is currently on the screen, and also what the program wants on the screen.
-This can be thought of as a screen inheritance function.
-.PP
-To read (write) a window from (to) a file, use the \fBgetwin\fR and
-\fBputwin\fR routines [see \fBcurs_util\fR(3X)].
+.B \%scr_set
+combines
+.B \%scr_restore
+and
+.BR \%scr_init ","
+synchronizing the contents of
+.I filename
+with the virtual screen.
+It can be regarded as a screen inheritance function;
+consider a real-time screen-sharing application.
 .SH RETURN VALUE
-All routines return the integer \fBERR\fR upon failure and \fBOK\fR
-upon success.
+These functions return
+.B OK
+on success and
+.B ERR
+on failure.
 .PP
-X/Open defines no error conditions.
-In this implementation,
-each will return an error if the file cannot be opened.
+In
+.IR \%ncurses ","
+each function returns
+.B ERR
+if it cannot open
+.IR filename "."
+.BR \%scr_init ","
+.BR \%scr_restore ","
+and
+.B \%scr_set
+return
+.B ERR
+if the contents of
+.I filename
+are invalid.
 .SH NOTES
-Note that \fBscr_init\fR, \fBscr_set\fR, and \fBscr_restore\fR may be macros.
+.BR \%scr_init ","
+.BR \%scr_restore ","
+and
+.B \%scr_set
+may be implemented as macros.
 .SH PORTABILITY
-The XSI Curses standard, Issue 4, describes these functions (adding the const
-qualifiers).
+X/Open Curses Issue\ 4 describes these functions.
+It specifies no error conditions for them.
+.\" Unusually, SVID 4 explicitly indicated "OK" as a possible return
+.\" value, rather than the "integer other than ERR" refrain (p. 529).
 .PP
-The SVr4 docs merely say under \fBscr_init\fR that the dump data is also
-considered invalid "if the time-stamp of the tty is old" but do not define
-\*(``old\*(''.
+.\" SVID 4, p. 529
+SVr4 omitted the
+.I \%const
+qualifiers.
+.PP
+SVr4 documentation describes
+.I \%scr_init
+such that the dump data is also considered invalid
+\*(``if the time-stamp of the tty is old\*(''
+but does not define \*(``old\*(''.
+.PP
+As of 2024,
+.I \%PDCurses
+provides these functions.
+NetBSD
+.I curses
+does not.
+.PP
+Other implementations of
+.I curses
+store the window in binary form,
+which makes the dump dependent
+upon the
+.I curses
+library's internal data structures.
+.I \%ncurses
+avoids this drawback by storing the dump in textual form,
+allowing more flexible use of the data.
+For instance,
+the
+.I \%scr_restore
+of SVr4
+.I curses
+requires that the dumped window have the same dimensions
+as the restored window.
+.I \%ncurses
+uses its
+\fB\%wresize\fP(3X)
+extension
+to adjust the restored window size.
+.SH HISTORY
+SVr3 (1987) introduced
+.IR \%scr_dump ","
+.IR \%scr_init ","
+and
+.IR \%scr_restore "."
+SVr3.1 added
+.IR \%scr_set "."
 .SH SEE ALSO
-\fBcurses\fR(3X),
-\fBcurs_initscr\fR(3X),
-\fBcurs_refresh\fR(3X),
-\fBcurs_util\fR(3X),
-\fBscr_dump\fR(5),
-\fBsystem\fR(3)
+.na
+\fB\%curses\fP(3X),
+\fB\%curs_initscr\fP(3X),
+\fB\%curs_refresh\fP(3X),
+\fB\%curs_util\fP(3X),
+\fB\%system\fP(3),
+\fB\%scr_dump\fP(5),
+\fB\%terminfo\fP(5),
+\fB\%wresize\fP(3X)
+.ad

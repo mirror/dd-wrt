@@ -1,5 +1,5 @@
 /****************************************************************************
- * Copyright 2021 Thomas E. Dickey                                          *
+ * Copyright 2021,2023 Thomas E. Dickey                                     *
  *                                                                          *
  * Permission is hereby granted, free of charge, to any person obtaining a  *
  * copy of this software and associated documentation files (the            *
@@ -26,7 +26,7 @@
  * authorization.                                                           *
  ****************************************************************************/
 
-/* $Id: nc_access.h,v 1.2 2021/07/10 22:07:06 tom Exp $ */
+/* $Id: nc_access.h,v 1.6 2023/05/06 10:54:55 tom Exp $ */
 
 #ifndef NC_ACCESS_included
 #define NC_ACCESS_included 1
@@ -41,33 +41,33 @@ extern "C" {
 #endif
 
 /*
- * Turn off this symbol to limit access to environment variables when root.
+ * Turn off the 'use_terminfo_vars()' symbol to limit access to environment
+ * variables when running with privileges.
  */
-#ifdef USE_ROOT_ENVIRON
-
+#if defined(USE_ROOT_ENVIRON) && defined(USE_SETUID_ENVIRON)
 #define use_terminfo_vars() 1
-
 #else
-
 #define use_terminfo_vars() _nc_env_access()
-extern NCURSES_EXPORT(int) _nc_env_access (void);
-
 #endif
+
+extern NCURSES_EXPORT(int) _nc_env_access (void);
 
 /*
  * Turn off this symbol to limit access to files when running setuid.
  */
 #ifdef USE_ROOT_ACCESS
 
-#define safe_fopen(name,mode) fopen(name,mode)
+#define safe_fopen(name,mode)       fopen(name,mode)
+#define safe_open2(name,flags)      open(name,flags)
 #define safe_open3(name,flags,mode) open(name,flags,mode)
 
 #else
 
-#define safe_fopen(name,mode) fopen(name,mode)
-#define safe_open3(name,flags,mode) open(name,flags,mode)
-extern NCURSES_EXPORT(FILE *) _nc_safe_fopen (const char *, const char *);
-extern NCURSES_EXPORT(int) _nc_safe_open3 (const char *, int, mode_t);
+#define safe_fopen(name,mode)       _nc_safe_fopen(name,mode)
+#define safe_open2(name,flags)      _nc_safe_open3(name,flags,0)
+#define safe_open3(name,flags,mode) _nc_safe_open3(name,flags,mode)
+extern NCURSES_EXPORT(FILE *)       _nc_safe_fopen (const char *, const char *);
+extern NCURSES_EXPORT(int)          _nc_safe_open3 (const char *, int, mode_t);
 
 #endif
 

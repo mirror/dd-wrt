@@ -1,6 +1,6 @@
 // * this is for making emacs happy: -*-Mode: C++;-*-
 /****************************************************************************
- * Copyright 2019,2020 Thomas E. Dickey                                     *
+ * Copyright 2019-2023,2024 Thomas E. Dickey                                *
  * Copyright 1998-2005,2012 Free Software Foundation, Inc.                  *
  *                                                                          *
  * Permission is hereby granted, free of charge, to any person obtaining a  *
@@ -33,13 +33,12 @@
  ****************************************************************************/
 
 #include "internal.h"
-#include "cursslk.h"
 #include "cursesapp.h"
 
-MODULE_ID("$Id: cursslk.cc,v 1.19 2020/07/18 19:57:11 anonymous.maarten Exp $")
+MODULE_ID("$Id: cursslk.cc,v 1.23 2024/10/05 19:36:22 tom Exp $")
 
 Soft_Label_Key_Set::Soft_Label_Key&
-  Soft_Label_Key_Set::Soft_Label_Key::operator=(char *text)
+  Soft_Label_Key_Set::Soft_Label_Key::operator=(const char *text)
 {
   delete[] label;
   size_t need = 1 + ::strlen(text);
@@ -56,7 +55,11 @@ Soft_Label_Key_Set::Label_Layout
 
 void Soft_Label_Key_Set::init()
 {
-  slk_array = new Soft_Label_Key[num_labels];
+  if (num_labels > 12)
+      num_labels = 12;
+  if (num_labels < 0)
+      num_labels = 0;
+  slk_array = new Soft_Label_Key[num_labels + 1];
   for(int i=0; i < num_labels; i++) {
     slk_array[i].num = i+1;
   }
@@ -108,11 +111,11 @@ int Soft_Label_Key_Set::labels() const {
 
 void Soft_Label_Key_Set::activate_label(int i, bool bf) {
   if (!b_attrInit) {
-    NCursesApplication* A = NCursesApplication::getApplication();
+    const NCursesApplication* A = NCursesApplication::getApplication();
     if (A) attrset(A->labels());
     b_attrInit = TRUE;
   }
-  Soft_Label_Key& K = (*this)[i];
+  const Soft_Label_Key& K = (*this)[i];
   if (ERR==::slk_set(K.num,bf?K.label:"",K.format))
     Error("slk_set");
   noutrefresh();
@@ -121,12 +124,12 @@ void Soft_Label_Key_Set::activate_label(int i, bool bf) {
 void Soft_Label_Key_Set::activate_labels(bool bf)
 {
   if (!b_attrInit) {
-    NCursesApplication* A = NCursesApplication::getApplication();
+    const NCursesApplication* A = NCursesApplication::getApplication();
     if (A) attrset(A->labels());
     b_attrInit = TRUE;
   }
   for(int i=1; i <= num_labels; i++) {
-    Soft_Label_Key& K = (*this)[i];
+    const Soft_Label_Key& K = (*this)[i];
     if (ERR==::slk_set(K.num,bf?K.label:"",K.format))
       Error("slk_set");
   }

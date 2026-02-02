@@ -1,5 +1,5 @@
 /****************************************************************************
- * Copyright 2020 Thomas E. Dickey                                          *
+ * Copyright 2020-2024,2025 Thomas E. Dickey                                *
  * Copyright 2002-2006,2017 Free Software Foundation, Inc.                  *
  *                                                                          *
  * Permission is hereby granted, free of charge, to any person obtaining a  *
@@ -27,7 +27,7 @@
  * authorization.                                                           *
  ****************************************************************************/
 /*
- * $Id: demo_keyok.c,v 1.7 2020/02/02 23:34:34 tom Exp $
+ * $Id: demo_keyok.c,v 1.12 2025/07/05 15:21:56 tom Exp $
  *
  * Demonstrate the keyok() function.
  * Thomas Dickey - 2002/11/23
@@ -36,14 +36,45 @@
 #include <test.priv.h>
 
 #if defined(NCURSES_VERSION) && NCURSES_EXT_FUNCS
+static void
+usage(int ok)
+{
+    static const char *msg[] =
+    {
+	"Usage: demo_keyok [options]"
+	,""
+	,USAGE_COMMON
+    };
+    size_t n;
+
+    for (n = 0; n < SIZEOF(msg); n++)
+	fprintf(stderr, "%s\n", msg[n]);
+
+    ExitProgram(ok ? EXIT_SUCCESS : EXIT_FAILURE);
+}
+/* *INDENT-OFF* */
+VERSION_COMMON()
+/* *INDENT-ON* */
+
 int
-main(int argc GCC_UNUSED, char *argv[]GCC_UNUSED)
+main(int argc, char *argv[])
 {
     int lastch = ERR;
     int prior = ERR;
     int ch;
     WINDOW *win;
 
+    while ((ch = getopt(argc, argv, OPTS_COMMON)) != -1) {
+	switch (ch) {
+	default:
+	    CASE_COMMON;
+	    /* NOTREACHED */
+	}
+    }
+    if (optind < argc)
+	usage(FALSE);
+
+    setlocale(LC_ALL, "");
     initscr();
     (void) cbreak();		/* take input chars one at a time, no wait for \n */
     (void) noecho();		/* don't echo input */
@@ -59,12 +90,14 @@ main(int argc GCC_UNUSED, char *argv[]GCC_UNUSED)
 
     while ((ch = wgetch(win)) != ERR) {
 	const char *name = keyname(ch);
+	if (ch == QUIT)
+	    break;
 	if (ch == ESCAPE && prior == ch)
 	    break;
 	prior = ch;
 	wprintw(win, "Keycode %d, name %s\n",
 		ch,
-		name != 0 ? name : "<null>");
+		name != NULL ? name : "<null>");
 	wclrtoeol(win);
 	wrefresh(win);
 	if (ch >= KEY_MIN) {

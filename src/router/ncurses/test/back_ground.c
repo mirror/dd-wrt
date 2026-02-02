@@ -1,5 +1,5 @@
 /****************************************************************************
- * Copyright 2021 Thomas E. Dickey                                          *
+ * Copyright 2021-2024,2025 Thomas E. Dickey                                *
  *                                                                          *
  * Permission is hereby granted, free of charge, to any person obtaining a  *
  * copy of this software and associated documentation files (the            *
@@ -26,7 +26,7 @@
  * authorization.                                                           *
  ****************************************************************************/
 /*
- * $Id: back_ground.c,v 1.5 2021/02/20 12:23:21 tom Exp $
+ * $Id: back_ground.c,v 1.15 2025/07/05 15:18:31 tom Exp $
  */
 
 #include <test.priv.h>
@@ -40,7 +40,7 @@
 
 static int default_bg = COLOR_BLACK;
 static int default_fg = COLOR_WHITE;
-static wchar_t wide_fill = L' ';
+static wchar_t fill_char = L' ';
 
 static wchar_t
 decode_wchar(const char *value)
@@ -78,7 +78,7 @@ test_background(void)
     }
     dump_window(stdscr);
 
-    blank[0] = wide_fill;
+    blank[0] = fill_char;
     blank[1] = L'\0';
 
     printw("Initializing pair 1 to red/%s\n", color_name(default_bg));
@@ -170,22 +170,24 @@ test_background(void)
 }
 
 static void
-usage(void)
+usage(int ok)
 {
     static const char *msg[] =
     {
 	"Usage: background [options]"
 	,""
+	,USAGE_COMMON
 	,"Options:"
 #if HAVE_ASSUME_DEFAULT_COLORS
 	," -a       invoke assume_default_colors, repeat to use in init_pair"
 #endif
 	," -b XXX   specify background color"
+	," -B XXX   specify background character"
 #if HAVE_USE_DEFAULT_COLORS
 	," -d       invoke use_default_colors, repeat to use in init_pair"
 #endif
 	," -f XXX   specify foreground color"
-	," -l FILE  log window-dumps to this file"
+	," -L FILE  log window-dumps to this file"
 	," -w       fill background with stipple pattern"
 	," -W CODE  fill background with this Unicode value"
     };
@@ -194,11 +196,14 @@ usage(void)
     for (n = 0; n < SIZEOF(msg); n++)
 	fprintf(stderr, "%s\n", msg[n]);
 
-    ExitProgram(EXIT_FAILURE);
+    ExitProgram(ok ? EXIT_SUCCESS : EXIT_FAILURE);
 }
+/* *INDENT-OFF* */
+VERSION_COMMON()
+/* *INDENT-ON* */
 
 int
-main(int argc GCC_UNUSED, char *argv[]GCC_UNUSED)
+main(int argc, char *argv[])
 {
 #if HAVE_ASSUME_DEFAULT_COLORS
     int a_option = 0;
@@ -206,12 +211,12 @@ main(int argc GCC_UNUSED, char *argv[]GCC_UNUSED)
 #if HAVE_USE_DEFAULT_COLORS
     int d_option = 0;
 #endif
-    int n;
+    int ch;
 
     setlocale(LC_ALL, "");
 
-    while ((n = getopt(argc, argv, "ab:df:l:wW:")) != -1) {
-	switch (n) {
+    while ((ch = getopt(argc, argv, OPTS_COMMON "B:L:W:ab:df:w")) != -1) {
+	switch (ch) {
 #if HAVE_ASSUME_DEFAULT_COLORS
 	case 'a':
 	    ++a_option;
@@ -219,6 +224,17 @@ main(int argc GCC_UNUSED, char *argv[]GCC_UNUSED)
 #endif
 	case 'b':
 	    default_bg = color_code(optarg);
+	    break;
+	case 'B':
+	    if (strlen(optarg) > 1) {
+		char *check = NULL;
+		long value = strtol(optarg, &check, 0);
+		if (*check != '\0')
+		    usage(FALSE);
+		fill_char = (wchar_t) value;
+	    } else {
+		fill_char = (wchar_t) *optarg;
+	    }
 	    break;
 #if HAVE_USE_DEFAULT_COLORS
 	case 'd':
@@ -228,18 +244,19 @@ main(int argc GCC_UNUSED, char *argv[]GCC_UNUSED)
 	case 'f':
 	    default_fg = color_code(optarg);
 	    break;
-	case 'l':
+	case 'L':
 	    if (!open_dump(optarg))
-		usage();
+		usage(FALSE);
 	    break;
 	case 'w':
-	    wide_fill = L'\u2591';
+	    fill_char = L'\u2591';
 	    break;
 	case 'W':
-	    wide_fill = decode_wchar(optarg);
+	    fill_char = decode_wchar(optarg);
 	    break;
 	default:
-	    usage();
+	    CASE_COMMON;
+	    /* NOTREACHED */
 	}
     }
 #if HAVE_USE_DEFAULT_COLORS && HAVE_ASSUME_DEFAULT_COLORS

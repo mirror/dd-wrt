@@ -1,5 +1,5 @@
 /****************************************************************************
- * Copyright 2019,2020 Thomas E. Dickey                                     *
+ * Copyright 2019-2024,2025 Thomas E. Dickey                                *
  * Copyright 1998-2016,2017 Free Software Foundation, Inc.                  *
  *                                                                          *
  * Permission is hereby granted, free of charge, to any person obtaining a  *
@@ -30,7 +30,7 @@
 /*
  * Author:  Thomas E. Dickey 1998
  *
- * $Id: filter.c,v 1.35 2020/07/25 22:40:57 tom Exp $
+ * $Id: filter.c,v 1.43 2025/07/05 15:11:35 tom Exp $
  *
  * An example of the 'filter()' function in ncurses, this program prompts
  * for commands and executes them (like a command shell).  It illustrates
@@ -65,7 +65,7 @@ show_prompt(int underline, bool clocked)
     if (clocked) {
 	if (limit >= 3) {
 	    time_t now = time((time_t *) 0);
-	    struct tm *my = localtime(&now);
+	    const struct tm *my = localtime(&now);
 	    char buffer[80];
 	    int skip, y, x;
 	    int margin;
@@ -123,7 +123,7 @@ new_command(char *buffer, int length, int underline, bool clocked, bool polled)
 	    if (first) {
 		getyx(stdscr, y, x);
 		first = FALSE;
-	    } else {
+	    } else if (limit > 0) {
 		int left = 0;
 
 		/*
@@ -264,12 +264,12 @@ new_command(char *buffer, int length, int underline, bool clocked, bool polled)
 /*
  * Cancel xterm's alternate-screen mode (from dialog -TD)
  */
-#define isprivate(s) ((s) != 0 && strstr(s, "\033[?") != 0)
+#define isprivate(s) ((s) != NULL && strstr(s, "\033[?") != NULL)
 static void
 cancel_altscreen(void)
 {
     if (isatty(fileno(stdout))
-	&& key_mouse != 0	/* xterm and kindred */
+	&& key_mouse != NULL	/* xterm and kindred */
 	&& isprivate(enter_ca_mode)
 	&& isprivate(exit_ca_mode)) {
 	/*
@@ -292,35 +292,39 @@ cancel_altscreen(void)
 	 * implementation of alternate-screen in rxvt, etc., which clear more
 	 * of the display than they should.
 	 */
-	enter_ca_mode = 0;
-	exit_ca_mode = 0;
+	enter_ca_mode = NULL;
+	exit_ca_mode = NULL;
     }
 }
 #endif
 
 static void
-usage(void)
+usage(int ok)
 {
     static const char *msg[] =
     {
 	"Usage: filter [options]"
 	,""
+	,USAGE_COMMON
 	,"Options:"
 #ifdef NCURSES_VERSION
-	,"  -a   suppress xterm alternate-screen by amending smcup/rmcup"
+	," -a       suppress xterm alternate-screen by amending smcup/rmcup"
 #endif
-	,"  -c   show current time on prompt line with \"Command\""
+	," -t       show current time on prompt line with \"Command\""
 #if HAVE_USE_DEFAULT_COLORS
-	,"  -d   invoke use_default_colors"
+	," -d       invoke use_default_colors"
 #endif
-	,"  -i   use initscr() rather than newterm()"
-	,"  -p   poll for individual characters rather than using getnstr"
+	," -i       use initscr() rather than newterm()"
+	," -p       poll for individual characters rather than using getnstr"
     };
     unsigned n;
     for (n = 0; n < SIZEOF(msg); n++)
 	fprintf(stderr, "%s\n", msg[n]);
-    ExitProgram(EXIT_FAILURE);
+    ExitProgram(ok ? EXIT_SUCCESS : EXIT_FAILURE);
 }
+/* *INDENT-OFF* */
+VERSION_COMMON()
+/* *INDENT-ON* */
 
 int
 main(int argc, char *argv[])
@@ -331,7 +335,7 @@ main(int argc, char *argv[])
 #ifdef NCURSES_VERSION
     bool a_option = FALSE;
 #endif
-    bool c_option = FALSE;
+    bool t_option = FALSE;
 #if HAVE_USE_DEFAULT_COLORS
     bool d_option = FALSE;
 #endif
@@ -340,15 +344,15 @@ main(int argc, char *argv[])
 
     setlocale(LC_ALL, "");
 
-    while ((ch = getopt(argc, argv, "adcip")) != -1) {
+    while ((ch = getopt(argc, argv, OPTS_COMMON "adtip")) != -1) {
 	switch (ch) {
 #ifdef NCURSES_VERSION
 	case 'a':
 	    a_option = TRUE;
 	    break;
 #endif
-	case 'c':
-	    c_option = TRUE;
+	case 't':
+	    t_option = TRUE;
 	    break;
 #if HAVE_USE_DEFAULT_COLORS
 	case 'd':
@@ -362,7 +366,8 @@ main(int argc, char *argv[])
 	    p_option = TRUE;
 	    break;
 	default:
-	    usage();
+	    CASE_COMMON;
+	    /* NOTREACHED */
 	}
     }
 
@@ -372,7 +377,7 @@ main(int argc, char *argv[])
     if (i_option) {
 	initscr();
     } else {
-	if (newterm((char *) 0, stdout, stdin) == 0) {
+	if (newterm((char *) 0, stdout, stdin) == NULL) {
 	    fprintf(stderr, "cannot initialize terminal\n");
 	    ExitProgram(EXIT_FAILURE);
 	}
@@ -400,7 +405,7 @@ main(int argc, char *argv[])
 
     for (;;) {
 	int code = new_command(buffer, sizeof(buffer) - 1,
-			       underline, c_option, p_option);
+			       underline, t_option, p_option);
 	if (code == ERR || *buffer == '\0')
 	    break;
 	reset_shell_mode();

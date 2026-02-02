@@ -1,5 +1,5 @@
 /****************************************************************************
- * Copyright 2019,2020 Thomas E. Dickey                                     *
+ * Copyright 2019-2024,2025 Thomas E. Dickey                                *
  * Copyright 2017 Free Software Foundation, Inc.                            *
  *                                                                          *
  * Permission is hereby granted, free of charge, to any person obtaining a  *
@@ -28,7 +28,7 @@
  ****************************************************************************/
 
 /*
- * $Id: sp_tinfo.c,v 1.23 2020/02/02 23:34:34 tom Exp $
+ * $Id: sp_tinfo.c,v 1.31 2025/07/05 15:21:56 tom Exp $
  *
  * TOTO: add option for non-sp-funcs interface
  */
@@ -138,7 +138,7 @@ static void
 show_string(MYDATA * data, const char *name, const char *value)
 {
     fprintf(data->fp, " %s = ", name);
-    if (value == 0) {
+    if (value == NULL) {
 	fprintf(data->fp, "(missing)");
     } else if (value == (char *) -1) {
 	fprintf(data->fp, "(canceled)");
@@ -218,7 +218,7 @@ do_stuff(MYDATA * data)
     define_key_sp(sp, my_text, my_code);
     has_key_sp(sp, 0);
     key_defined_sp(sp, my_text);
-    if ((s = keybound_sp(sp, my_code, 0)) != 0)
+    if ((s = keybound_sp(sp, my_code, 0)) != NULL)
 	free(s);
 #endif
     keyname_sp(sp, '?');
@@ -240,7 +240,7 @@ do_stuff(MYDATA * data)
     typeahead_sp(sp, FALSE);	/* waddch */
     use_env_sp(sp, FALSE);	/* newterm */
     use_tioctl_sp(sp, FALSE);	/* newterm */
-    intrflush_sp(sp, 0, 0);	/* wgetch */
+    intrflush_sp(sp, NULL, 0);	/* wgetch */
     flushinp_sp(sp);		/* waddch */
     halfdelay_sp(sp, 5);	/* wgetch */
 
@@ -279,40 +279,40 @@ cleanup(MYDATA * data)
 {
     set_curterm(data->term);
     del_curterm(data->term);
-#if !NO_LEAKS
-    free(data->sp);		/* cannot use delscreen in tinfo */
-#endif
     free(data);
 }
 
 static void
-usage(void)
+usage(int ok)
 {
     static const char *tbl[] =
     {
-	"Usage: sp_tinfo [output] [error]",
-	"",
-	"Options:",
-	" -n   suppress call to new_prescr()",
-	" -t   use termcap functions rather than terminfo",
-	NULL
+	"Usage: sp_tinfo [output] [error]"
+	,""
+	,USAGE_COMMON
+	,"Options:"
+	," -n       suppress call to new_prescr()"
+	," -t       use termcap functions rather than terminfo"
     };
     size_t n;
     for (n = 0; n < SIZEOF(tbl); ++n) {
 	fprintf(stderr, "%s\n", tbl[n]);
     }
-    ExitProgram(EXIT_FAILURE);
+    ExitProgram(ok ? EXIT_SUCCESS : EXIT_FAILURE);
 }
+/* *INDENT-OFF* */
+VERSION_COMMON()
+/* *INDENT-ON* */
 
 int
 main(int argc, char *argv[])
 {
     MYDATA *my_out;
     MYDATA *my_err;
-    int n;
+    int ch;
 
-    while ((n = getopt(argc, argv, "nt")) != -1) {
-	switch (n) {
+    while ((ch = getopt(argc, argv, OPTS_COMMON "nt")) != -1) {
+	switch (ch) {
 	case 'n':
 	    opt_n = TRUE;
 	    break;
@@ -320,7 +320,7 @@ main(int argc, char *argv[])
 	    opt_t = TRUE;
 	    break;
 	default:
-	    usage();
+	    CASE_COMMON;
 	    /* NOTREACHED */
 	}
     }
@@ -328,7 +328,7 @@ main(int argc, char *argv[])
     argc -= (optind - 1);
 
     if (argc > 3)
-	usage();
+	usage(FALSE);
 
     my_out = initialize((argc > 1) ? argv[1] : "vt100", stdout);
     my_err = initialize((argc > 2) ? argv[2] : "ansi", stderr);
@@ -336,14 +336,18 @@ main(int argc, char *argv[])
     do_stuff(my_out);
     do_stuff(my_err);
 
-    cleanup(my_out);
-    cleanup(my_err);
+    if (my_out != my_err) {
+	cleanup(my_out);
+	cleanup(my_err);
+    } else {
+	cleanup(my_out);
+    }
 
     ExitProgram(EXIT_SUCCESS);
 }
 #else
 int
-main(int argc GCC_UNUSED, char *argv[]GCC_UNUSED)
+main(void)
 {
     fprintf(stderr,
 	    "This program requires the low-level ncurses sp-funcs tputs_sp\n");

@@ -1,5 +1,5 @@
 ##############################################################################
-# Copyright 2019-2020,2021 Thomas E. Dickey                                  #
+# Copyright 2019-2024,2025 Thomas E. Dickey                                  #
 # Copyright 1998-2015,2018 Free Software Foundation, Inc.                    #
 #                                                                            #
 # Permission is hereby granted, free of charge, to any person obtaining a    #
@@ -30,7 +30,7 @@
 #  Author:  Juergen Pfeifer, 1996
 #     and:  Thomas E. Dickey, 1997
 #
-#  $Id: Makefile.in,v 1.97 2021/07/03 15:45:33 tom Exp $
+#  $Id: Makefile.in,v 1.109 2025/10/18 22:11:58 tom Exp $
 #
 .SUFFIXES:
 
@@ -38,15 +38,18 @@ SHELL		= @SHELL@
 VPATH		= @srcdir@
 THIS		= Makefile
 
+@SET_DESTDIR@
+
 x		= @EXEEXT@
 
 top_srcdir	= @top_srcdir@
-DESTDIR		= @DESTDIR@
 srcdir		= @srcdir@
 prefix		= @prefix@
 exec_prefix	= @exec_prefix@
 bindir		= @bindir@
 includedir	= @includedir@
+
+BINDIR		= $(DESTDIR)$(bindir@MERGE_PREFIX@)
 
 INSTALL		= @INSTALL@ @INSTALL_OPT_O@
 INSTALL_SCRIPT	= @INSTALL_SCRIPT@
@@ -103,8 +106,7 @@ PROG_GENERATE	= ./generate$x
 GENERATE	= $(PROG_GENERATE) '@USE_ARG_SUFFIX@'
 DEL_ADAMODE	= sed -e '/^\-\-\ \ \-\*\-\ ada\ \-\*\-.*/d'
 
-GNATHTML	= `type -p gnathtml || type -p gnathtml.pl 2>/dev/null`
-GNATHP          = www.gnat.com
+GNATHTML	= `command -v gnathtml || command -v gnathtml.pl`
 
 ################################################################################
 ALIB            = @cf_ada_package@
@@ -112,36 +114,37 @@ ABASE		= $(ALIB)-curses
 
 ADA_SRCDIR	= ../src
 
-GEN_TARGETS     = $(ADA_SRCDIR)/$(ABASE).ads         			\
-		  $(ADA_SRCDIR)/$(ABASE).adb         			\
-	          $(ADA_SRCDIR)/$(ABASE)-aux.ads   			\
-	          $(ADA_SRCDIR)/$(ABASE)-trace.ads   			\
-	          $(ADA_SRCDIR)/$(ABASE)-menus.ads   			\
-	          $(ADA_SRCDIR)/$(ABASE)-forms.ads   			\
-	          $(ADA_SRCDIR)/$(ABASE)-mouse.ads 			\
-	          $(ADA_SRCDIR)/$(ABASE)-panels.ads			\
-	          $(ADA_SRCDIR)/$(ABASE)-menus-menu_user_data.ads	\
-	          $(ADA_SRCDIR)/$(ABASE)-menus-item_user_data.ads	\
-	          $(ADA_SRCDIR)/$(ABASE)-forms-form_user_data.ads	\
-	          $(ADA_SRCDIR)/$(ABASE)-forms-field_types.ads		\
-	          $(ADA_SRCDIR)/$(ABASE)-forms-field_user_data.ads	\
-	          $(ADA_SRCDIR)/$(ABASE)-panels-user_data.ads           \
-                  $(ADA_SRCDIR)/$(ABASE)_constants.ads
+GEN_TARGETS     = options.m4						\
+		  $(ADA_SRCDIR)/$(ABASE).ads				\
+		  $(ADA_SRCDIR)/$(ABASE).adb				\
+		  $(ADA_SRCDIR)/$(ABASE)-aux.ads			\
+		  $(ADA_SRCDIR)/$(ABASE)-trace.ads			\
+		  $(ADA_SRCDIR)/$(ABASE)-menus.ads			\
+		  $(ADA_SRCDIR)/$(ABASE)-forms.ads			\
+		  $(ADA_SRCDIR)/$(ABASE)-mouse.ads			\
+		  $(ADA_SRCDIR)/$(ABASE)-panels.ads			\
+		  $(ADA_SRCDIR)/$(ABASE)-menus-menu_user_data.ads	\
+		  $(ADA_SRCDIR)/$(ABASE)-menus-item_user_data.ads	\
+		  $(ADA_SRCDIR)/$(ABASE)-forms-form_user_data.ads	\
+		  $(ADA_SRCDIR)/$(ABASE)-forms-field_types.ads		\
+		  $(ADA_SRCDIR)/$(ABASE)-forms-field_user_data.ads	\
+		  $(ADA_SRCDIR)/$(ABASE)-panels-user_data.ads		\
+		  $(ADA_SRCDIR)/$(ABASE)_constants.ads
 
 GEN_SRC		= $(srcdir)/$(ABASE).ads.m4				\
 		  $(srcdir)/$(ABASE).adb.m4				\
-	          $(srcdir)/$(ABASE)-aux.ads.m4 	  		\
-	          $(srcdir)/$(ABASE)-trace.ads.m4 	  		\
-	          $(srcdir)/$(ABASE)-menus.ads.m4 	  		\
-	          $(srcdir)/$(ABASE)-forms.ads.m4   			\
-	          $(srcdir)/$(ABASE)-mouse.ads.m4			\
-	          $(srcdir)/$(ABASE)-panels.ads.m4			\
-	          $(srcdir)/$(ABASE)-menus-menu_user_data.ads.m4	\
-	          $(srcdir)/$(ABASE)-menus-item_user_data.ads.m4	\
-	          $(srcdir)/$(ABASE)-forms-form_user_data.ads.m4	\
-	          $(srcdir)/$(ABASE)-forms-field_types.ads.m4		\
-	          $(srcdir)/$(ABASE)-forms-field_user_data.ads.m4	\
-	          $(srcdir)/$(ABASE)-panels-user_data.ads.m4
+		  $(srcdir)/$(ABASE)-aux.ads.m4				\
+		  $(srcdir)/$(ABASE)-trace.ads.m4			\
+		  $(srcdir)/$(ABASE)-menus.ads.m4			\
+		  $(srcdir)/$(ABASE)-forms.ads.m4			\
+		  $(srcdir)/$(ABASE)-mouse.ads.m4			\
+		  $(srcdir)/$(ABASE)-panels.ads.m4			\
+		  $(srcdir)/$(ABASE)-menus-menu_user_data.ads.m4	\
+		  $(srcdir)/$(ABASE)-menus-item_user_data.ads.m4	\
+		  $(srcdir)/$(ABASE)-forms-form_user_data.ads.m4	\
+		  $(srcdir)/$(ABASE)-forms-field_types.ads.m4		\
+		  $(srcdir)/$(ABASE)-forms-field_user_data.ads.m4	\
+		  $(srcdir)/$(ABASE)-panels-user_data.ads.m4
 
 ################################################################################
 
@@ -163,19 +166,24 @@ libs :	$(GEN_TARGETS)
 
 sources:
 
-$(DESTDIR)$(bindir) :
+$(BINDIR) :
 	mkdir -p $@
 
 install \
-install.libs :: $(DESTDIR)$(bindir) $(ADACURSES_CONFIG)
-	$(INSTALL_SCRIPT) $(ADACURSES_CONFIG) $(DESTDIR)$(bindir)/$(ADACURSES_CONFIG)
+install.libs :: \
+		$(GEN_TARGETS) \
+		$(BINDIR) \
+		$(ADACURSES_CONFIG)
+	$(INSTALL_SCRIPT) $(ADACURSES_CONFIG) $(BINDIR)/$(ADACURSES_CONFIG)
 
 uninstall \
 uninstall.libs ::
-	-rm -f $(DESTDIR)$(bindir)/$(ADACURSES_CONFIG)
+	-rm -f $(BINDIR)/$(ADACURSES_CONFIG)
 
 $(PROG_GENERATE):  gen.o
 	@ECHO_LD@ $(LINK) $(CFLAGS_NORMAL) gen.o $(ACTUAL_LDFLAGS) -o $@
+	@$(PROG_GENERATE) "-?"
+	@echo "... made $@"
 
 gen.o:	$(srcdir)/gen.c
 	$(HOST_CC) $(CFLAGS_NORMAL) -c -o $@ $(srcdir)/gen.c
@@ -184,7 +192,8 @@ $(ADA_SRCDIR)/$(ABASE)_constants.ads: $(PROG_GENERATE)
 	$(WRAPPER) "$(GENERATE) $@"
 ################################################################################
 $(ADA_SRCDIR)/$(ABASE).ads: 	$(srcdir)/$(ABASE).ads.m4 \
-				$(srcdir)/normal.m4
+				$(srcdir)/normal.m4 \
+				options.m4
 	$(M4) $(M4FLAGS) -DM4MACRO=$(srcdir)/normal.m4 \
 	$(srcdir)/$(ABASE).ads.m4 |\
 	$(DEL_ADAMODE) >$@
@@ -285,6 +294,7 @@ mostlyclean ::
 	-rm -f a.out core $(PROG_GENERATE) *.o
 
 clean :: mostlyclean
+	-rm -f options.m4
 	-rm -f $(GEN_TARGETS) instab.tmp *.ad[bs] *.html *.ali *.tmp
 
 distclean :: clean
@@ -295,29 +305,39 @@ realclean :: distclean
 
 HTML_DIR = @ADAHTML_DIR@
 
+options.m4 :
+	$(SHELL) -c "if [ @cf_cv_enable_sigwinch@ = 0 ]; \
+		then \
+			dashes='   --'; \
+		else \
+			dashes='';\
+		fi; \
+		echo \"define(OPT_KEY_RESIZE,\\\`\$$dashes')dnl\" > $@"
+
 instab.tmp : table.m4 $(GEN_SRC)
 	@rm -f $@
 	@for f in $(GEN_SRC) ; do \
 	  $(M4) $(M4FLAGS) -DM4MACRO=table.m4 $$f | $(DEL_ADAMODE) >> $@ ;\
 	done;
 
+TABLE_TITLE=Correspondence between ncurses C and Ada functions
+
 $(HTML_DIR)/table.html : instab.tmp
 	@-touch $@
 	@-chmod +w $@
-	@echo '<!DOCTYPE HTML'  > $@
-	@echo 'PUBLIC "-//IETF//DTD HTML 3.0//EN">' >> $@
-	@echo '<HTML>' >> $@
-	@echo '<HEAD>' >> $@
-	@echo '<TITLE>Correspondence between ncurses C and Ada functions</TITLE>' >>$@
-	@echo '</HEAD>' >> $@
-	@echo '<BODY>' >> $@
-	@echo '<H1>Correspondence between ncurses C and Ada functions</H1>' >>$@
-	@echo '<H2>Sorted by C function name</H2>' >>$@
-	@echo '<TABLE ALIGN=CENTER BORDER>' >>$@
-	@echo '<TR ALIGN=LEFT>' >>$@
-	@echo '<TH>C name</TH><TH>Ada name</TH><TH>man page</TH></TR>' >>$@
+	@echo '<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN">' > $@
+	@echo '<html>' >> $@
+	@echo '<head>' >> $@
+	@echo '<title>$(TABLE_TITLE)</title>' >>$@
+	@echo '</head>' >> $@
+	@echo '<body>' >> $@
+	@echo '<h1>$(TABLE_TITLE)</h1>' >>$@
+	@echo '<h2>Sorted by C function name</h2>' >>$@
+	@echo '<table align="center" border summary="$(TABLE_TITLE)">' >>$@
+	@echo '<tr align="left">' >>$@
+	@echo '<th>C name</th><th>Ada name</th><th>man page</th></tr>' >>$@
 	@sort < instab.tmp >> $@
-	@echo '</TABLE></BODY></HTML>' >>$@
+	@echo '</table></body></html>' >>$@
 	@rm -f instab.tmp
 
 adahtml:
@@ -341,7 +361,7 @@ adahtml:
 	for f in html/$(ALIB)*.htm*; do \
 	   a=`basename $$f` ; \
 	   sed -e 's/You may also.*body.*//' <$$f |\
-	   sed -e 's%GNAT%<A HREF="http://$(GNATHP)">GNAT</A>%g' |\
+	   sed -e 's%\<GNAT\>%<strong>GNAT</strong>%g' |\
 	   sed -e 's%&lt;A HREF%<A HREF%g' |\
 	   sed -e 's%"&gt;%">%g' |\
 	   sed -e 's%#1A\([[:space:]]*NAME="[^"]*"\)#2%<A\1>%' |\

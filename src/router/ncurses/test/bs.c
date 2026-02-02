@@ -1,5 +1,5 @@
 /****************************************************************************
- * Copyright 2018-2020,2021 Thomas E. Dickey                                *
+ * Copyright 2018-2024,2025 Thomas E. Dickey                                *
  * Copyright 1998-2016,2017 Free Software Foundation, Inc.                  *
  *                                                                          *
  * Permission is hereby granted, free of charge, to any person obtaining a  *
@@ -35,7 +35,7 @@
  * v2.0 featuring strict ANSI/POSIX conformance, November 1993.
  * v2.1 with ncurses mouse support, September 1995
  *
- * $Id: bs.c,v 1.77 2021/06/17 21:11:08 tom Exp $
+ * $Id: bs.c,v 1.83 2025/07/05 15:21:56 tom Exp $
  */
 
 #include <test.priv.h>
@@ -147,7 +147,7 @@ typedef struct {
     bool placed;		/* has it been placed on the board? */
 } ship_t;
 
-static bool checkplace(int b, ship_t * ss, int vis);
+static bool checkplace(int b, const ship_t * ss, int vis);
 
 #define SHIPIT(name, symbol, length) { name, 0, symbol, length, 0,0, 0, FALSE }
 
@@ -224,12 +224,12 @@ intro(void)
 {
     const char *tmpname;
 
-    srand((unsigned) (time(0L) + getpid()));	/* Kick the random number generator */
+    srand((unsigned) (time(NULL) + getpid()));	/* Kick the random number generator */
 
     InitAndCatch(initscr(), uninitgame);
 
-    if ((tmpname = getlogin()) != 0 &&
-	(your_name = strdup(tmpname)) != 0) {
+    if ((tmpname = getlogin()) != NULL &&
+	(your_name = strdup(tmpname)) != NULL) {
 	your_name[0] = (char) toupper(UChar(your_name[0]));
     } else {
 	your_name = strdup(dftname);
@@ -475,7 +475,7 @@ initgame(void)
 	} else if (c == FF) {
 	    (void) clearok(stdscr, TRUE);
 	    (void) refresh();
-	} else if (ss == 0) {
+	} else if (ss == NULL) {
 	    beep();		/* simple to verify, unlikely to happen */
 	} else if (c == 'r') {
 	    prompt(1, "Random-placing your %s", ss->name);
@@ -686,7 +686,7 @@ collidecheck(int b, int y, int x)
 }
 
 static bool
-checkplace(int b, ship_t * ss, int vis)
+checkplace(int b, const ship_t * ss, int vis)
 {
     int l, xend, yend;
 
@@ -877,7 +877,7 @@ plyturn(void)
 	    m = " You'll pick up survivors from my %s, I hope...!";
 	    break;
 	}
-	if (m != 0) {
+	if (m != NULL) {
 	    (void) printw(m, ss->name);
 	}
 	(void) beep();
@@ -898,8 +898,9 @@ sgetc(const char *s)
 	    ch = toupper(ch);
 	if (is_QUIT(ch))
 	    uninitgame(0);
-	for (s1 = s; *s1 && ch != *s1; ++s1)
-	    continue;
+	for (s1 = s; *s1 && ch != *s1; ++s1) {
+	    /* EMPTY */ ;
+	}
 	if (*s1) {
 	    AddCh(ch);
 	    (void) refresh();
@@ -1162,55 +1163,6 @@ playagain(void)
     return (sgetc("YN") == 'Y');
 }
 
-static void
-do_options(int c, char *op[])
-{
-    if (c > 1) {
-	int i;
-
-	for (i = 1; i < c; i++) {
-	    switch (op[i][0]) {
-	    default:
-	    case '?':
-		(void) fprintf(stderr, "Usage: bs [-s | -b] [-c]\n");
-		(void) fprintf(stderr, "\tWhere the options are:\n");
-		(void) fprintf(stderr, "\t-s : play a salvo game\n");
-		(void) fprintf(stderr, "\t-b : play a blitz game\n");
-		(void) fprintf(stderr, "\t-c : ships may be adjacent\n");
-		ExitProgram(EXIT_FAILURE);
-		break;
-	    case '-':
-		switch (op[i][1]) {
-		case 'b':
-		    blitz = 1;
-		    if (salvo == 1) {
-			(void) fprintf(stderr,
-				       "Bad Arg: -b and -s are mutually exclusive\n");
-			ExitProgram(EXIT_FAILURE);
-		    }
-		    break;
-		case 's':
-		    salvo = 1;
-		    if (blitz == 1) {
-			(void) fprintf(stderr,
-				       "Bad Arg: -s and -b are mutually exclusive\n");
-			ExitProgram(EXIT_FAILURE);
-		    }
-		    break;
-		case 'c':
-		    closepack = 1;
-		    break;
-		default:
-		    (void) fprintf(stderr,
-				   "Bad arg: type \"%s ?\" for usage message\n",
-				   op[0]);
-		    ExitProgram(EXIT_FAILURE);
-		}
-	    }
-	}
-    }
-}
-
 static int
 scount(int who)
 {
@@ -1231,12 +1183,65 @@ scount(int who)
     return (shots);
 }
 
+static void
+usage(int ok)
+{
+    static const char *msg[] =
+    {
+	"Usage: bs [options]"
+	,""
+	,USAGE_COMMON
+	,"Options:"
+	," -b       play a blitz game"
+	," -p       ships may be packed/adjacent"
+	," -s       play a salvo game"
+    };
+    size_t n;
+
+    for (n = 0; n < SIZEOF(msg); n++)
+	fprintf(stderr, "%s\n", msg[n]);
+
+    ExitProgram(ok ? EXIT_SUCCESS : EXIT_FAILURE);
+}
+/* *INDENT-OFF* */
+VERSION_COMMON()
+/* *INDENT-ON* */
+
 int
 main(int argc, char *argv[])
 {
-    setlocale(LC_ALL, "");
+    int ch;
 
-    do_options(argc, argv);
+    while ((ch = getopt(argc, argv, OPTS_COMMON "bps")) != -1) {
+	switch (ch) {
+	case 'b':
+	    blitz = 1;
+	    if (salvo == 1) {
+		(void) fprintf(stderr,
+			       "Bad Arg: -b and -s are mutually exclusive\n");
+		ExitProgram(EXIT_FAILURE);
+	    }
+	    break;
+	case 's':
+	    salvo = 1;
+	    if (blitz == 1) {
+		(void) fprintf(stderr,
+			       "Bad Arg: -s and -b are mutually exclusive\n");
+		ExitProgram(EXIT_FAILURE);
+	    }
+	    break;
+	case 'p':
+	    closepack = 1;
+	    break;
+	default:
+	    CASE_COMMON;
+	    /* NOTREACHED */
+	}
+    }
+    if (optind < argc)
+	usage(FALSE);
+
+    setlocale(LC_ALL, "");
 
     intro();
     do {
@@ -1263,8 +1268,9 @@ main(int argc, char *argv[])
 		    }
 		}
 	    } else
-		while ((turn ? cputurn() : plyturn()) && awinna() == -1)
-		    continue;
+		while ((turn ? cputurn() : plyturn()) && awinna() == -1) {
+		    /* EMPTY */ ;
+		}
 	    turn = OTHER;
 	}
     } while

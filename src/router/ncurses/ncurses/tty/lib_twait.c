@@ -1,5 +1,5 @@
 /****************************************************************************
- * Copyright 2018,2020 Thomas E. Dickey                                     *
+ * Copyright 2018-2024,2025 Thomas E. Dickey                                *
  * Copyright 1998-2015,2016 Free Software Foundation, Inc.                  *
  *                                                                          *
  * Permission is hereby granted, free of charge, to any person obtaining a  *
@@ -76,8 +76,11 @@
 #endif
 #undef CUR
 
-MODULE_ID("$Id: lib_twait.c,v 1.75 2020/02/29 15:46:00 anonymous.maarten Exp $")
+MODULE_ID("$Id: lib_twait.c,v 1.85 2025/03/01 17:07:19 tom Exp $")
 
+/*
+ * Returns an elapsed time, in milliseconds (if possible).
+ */
 static long
 _nc_gettime(TimeType * t0, int first)
 {
@@ -85,18 +88,20 @@ _nc_gettime(TimeType * t0, int first)
 
 #if PRECISE_GETTIME
     TimeType t1;
-    gettimeofday(&t1, (struct timezone *) 0);
-    if (first) {
+    if (GetClockTime(&t1) == -1) {
+	*t0 = t1;
+	res = first ? 0 : 1;
+    } else if (first) {
 	*t0 = t1;
 	res = 0;
     } else {
 	/* .tv_sec and .tv_usec are unsigned, be careful when subtracting */
-	if (t0->tv_usec > t1.tv_usec) {
-	    t1.tv_usec += 1000000;	/* Convert 1s in 1e6 microsecs */
+	if (t0->sub_secs > t1.sub_secs) {
+	    t1.sub_secs += TimeScale;
 	    t1.tv_sec--;
 	}
-	res = (t1.tv_sec - t0->tv_sec) * 1000
-	    + (t1.tv_usec - t0->tv_usec) / 1000;
+	res = (long) ((t1.tv_sec - t0->tv_sec) * 1000L
+		      + (t1.sub_secs - t0->sub_secs) / (TimeScale / 1000L));
     }
 #else
     time_t t1 = time((time_t *) 0);
@@ -115,7 +120,7 @@ _nc_eventlist_timeout(_nc_eventlist * evl)
 {
     int event_delay = -1;
 
-    if (evl != 0) {
+    if (evl != NULL) {
 	int n;
 
 	for (n = 0; n < evl->count; ++n) {
@@ -163,7 +168,7 @@ _nc_eventlist_timeout(_nc_eventlist * evl)
  * descriptors.
  */
 NCURSES_EXPORT(int)
-_nc_timed_wait(SCREEN *sp MAYBE_UNUSED,
+_nc_timed_wait(const SCREEN *sp MAYBE_UNUSED,
 	       int mode MAYBE_UNUSED,
 	       int milliseconds,
 	       int *timeleft
@@ -237,7 +242,7 @@ _nc_timed_wait(SCREEN *sp MAYBE_UNUSED,
     if ((mode & TW_EVENT) && evl) {
 	if (fds == fd_list)
 	    fds = typeMalloc(struct pollfd, MIN_FDS + evl->count);
-	if (fds == 0)
+	if (fds == NULL)
 	    return TW_NONE;
     }
 #endif
@@ -268,7 +273,7 @@ _nc_timed_wait(SCREEN *sp MAYBE_UNUSED,
     }
 #endif
 
-    result = poll(fds, (size_t) count, milliseconds);
+    result = (int) poll(fds, (size_t) count, milliseconds);
 
 #ifdef NCURSES_WGETCH_EVENTS
     if ((mode & TW_EVENT) && evl) {
@@ -355,7 +360,7 @@ _nc_timed_wait(SCREEN *sp MAYBE_UNUSED,
     if ((mode & TW_MOUSE)
 	&& (fd = sp->_mouse_fd) >= 0) {
 	FD_SET(fd, &set);
-	count = max(fd, count) + 1;
+	count = Max(fd, count) + 1;
     }
 #ifdef NCURSES_WGETCH_EVENTS
     if ((mode & TW_EVENT) && evl) {
@@ -365,7 +370,7 @@ _nc_timed_wait(SCREEN *sp MAYBE_UNUSED,
 	    if (ev->type == _NC_EVENT_FILE
 		&& (ev->data.fev.flags & _NC_EVENT_FILE_READABLE)) {
 		FD_SET(ev->data.fev.fd, &set);
-		count = max(ev->data.fev.fd + 1, count);
+		count = Max(ev->data.fev.fd + 1, count);
 	    }
 	}
     }

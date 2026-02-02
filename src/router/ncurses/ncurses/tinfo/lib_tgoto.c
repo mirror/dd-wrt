@@ -1,5 +1,5 @@
 /****************************************************************************
- * Copyright 2018-2019,2020 Thomas E. Dickey                                *
+ * Copyright 2018-2023,2025 Thomas E. Dickey                                *
  * Copyright 2000-2008,2012 Free Software Foundation, Inc.                  *
  *                                                                          *
  * Permission is hereby granted, free of charge, to any person obtaining a  *
@@ -36,7 +36,7 @@
 #include <ctype.h>
 #include <termcap.h>
 
-MODULE_ID("$Id: lib_tgoto.c,v 1.21 2020/05/27 23:55:56 tom Exp $")
+MODULE_ID("$Id: lib_tgoto.c,v 1.24 2025/01/12 00:41:56 tom Exp $")
 
 #if !PURE_TERMINFO
 static bool
@@ -44,7 +44,7 @@ is_termcap(const char *string)
 {
     bool result = TRUE;
 
-    if (string == 0 || *string == '\0') {
+    if (string == NULL || *string == '\0') {
 	result = FALSE;		/* tparm() handles empty strings */
     } else {
 	while ((*string != '\0') && result) {
@@ -89,13 +89,13 @@ tgoto_internal(const char *string, int x, int y)
     while (*string != 0) {
 	if ((used + need) > length) {
 	    length += (used + need);
-	    if ((result = typeRealloc(char, length, result)) == 0) {
+	    if ((result = typeRealloc(char, length, result)) == NULL) {
 		length = 0;
 		break;
 	    }
 	}
 	if (*string == '%') {
-	    const char *fmt = 0;
+	    const char *fmt = NULL;
 
 	    switch (*++string) {
 	    case '\0':
@@ -122,7 +122,7 @@ tgoto_internal(const char *string, int x, int y)
 		 * and \r, but I don't see that it could work -TD
 		 */
 		if (*value == 0) {
-		    if (BC != 0) {
+		    if (BC != NULL) {
 			*value += 1;
 			need_BC = TRUE;
 		    } else {
@@ -166,11 +166,11 @@ tgoto_internal(const char *string, int x, int y)
 		*value -= 2 * (*value % 16);
 		break;
 	    }
-	    if (fmt != 0) {
+	    if (fmt != NULL) {
 		_nc_SPRINTF(result + used, _nc_SLIMIT(length - used)
 			    fmt, *value++);
 		used += strlen(result + used);
-		fmt = 0;
+		fmt = NULL;
 	    }
 	    if (value - param > 2) {
 		value = param + 2;
@@ -181,7 +181,7 @@ tgoto_internal(const char *string, int x, int y)
 	}
 	string++;
     }
-    if (result != 0) {
+    if (result != NULL) {
 	if (need_BC) {
 	    _nc_STRCPY(result + used, BC, length - used);
 	    used += strlen(BC);
@@ -207,6 +207,16 @@ tgoto(const char *string, int x, int y)
 	result = tgoto_internal(string, x, y);
     else
 #endif
-	result = TIPARM_2(string, y, x);
+    if ((result = TIPARM_2(string, y, x)) == NULL) {
+	/*
+	 * Because termcap did not provide a more general solution such as
+	 * tparm(), it was necessary to handle single-parameter capabilities
+	 * using tgoto().  The internal _nc_tiparm() function returns a NULL
+	 * for that case; retry for the single-parameter case.
+	 */
+	if ((result = TIPARM_1(string, y)) == NULL) {
+	    result = TIPARM_0(string);
+	}
+    }
     returnPtr(result);
 }

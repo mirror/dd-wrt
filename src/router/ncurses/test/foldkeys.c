@@ -1,5 +1,5 @@
 /****************************************************************************
- * Copyright 2018-2020,2021 Thomas E. Dickey                                *
+ * Copyright 2018-2024,2025 Thomas E. Dickey                                *
  * Copyright 2006-2016,2017 Free Software Foundation, Inc.                  *
  *                                                                          *
  * Permission is hereby granted, free of charge, to any person obtaining a  *
@@ -30,7 +30,7 @@
 /*
  * Author: Thomas E. Dickey, 2006
  *
- * $Id: foldkeys.c,v 1.10 2021/08/08 00:41:57 tom Exp $
+ * $Id: foldkeys.c,v 1.16 2025/07/05 15:11:35 tom Exp $
  *
  * Demonstrate a method for altering key definitions at runtime.
  *
@@ -55,7 +55,7 @@ log_last_line(WINDOW *win)
 {
     FILE *fp;
 
-    if ((fp = fopen(MY_LOGFILE, "a")) != 0) {
+    if ((fp = fopen(MY_LOGFILE, "a")) != NULL) {
 	char temp[256];
 	int y, x, n;
 	int need = sizeof(temp) - 1;
@@ -112,7 +112,7 @@ demo_foldkeys(void)
     for (code = 0; code < STRCOUNT; ++code) {
 	NCURSES_CONST char *name = strnames[code];
 	NCURSES_CONST char *value = tigetstr(name);
-	if (value != 0 && value != (NCURSES_CONST char *) -1) {
+	if (value != NULL && value != (NCURSES_CONST char *) -1) {
 	    info[info_len].name = strnames[code];
 	    info[info_len].code = key_defined(value);
 	    info[info_len].value = value;
@@ -129,7 +129,7 @@ demo_foldkeys(void)
      */
     for (code = KEY_MAX; code < MAX_KEYS; ++code) {
 	NCURSES_CONST char *name = keyname(code);
-	if (name != 0) {
+	if (name != NULL) {
 	    info[info_len].name = name;
 	    info[info_len].code = code;
 	    info[info_len].value = tigetstr(name);
@@ -155,8 +155,10 @@ demo_foldkeys(void)
 		      &second,
 		      final) == 3
 	    && *final != ';'
+	    && first >= 0
+	    && first < 1024
 	    && (need = strlen(info[j].value)) != 0
-	    && (value = strdup(info[j].value)) != 0) {
+	    && (value = malloc(need + 8)) != NULL) {
 	    (void) need;	/* _nc_SLIMIT is normally nothing  */
 	    _nc_SPRINTF(value, _nc_SLIMIT(need) "\033[%d%c", first, *final);
 	    for (k = 0; k < info_len; ++k) {
@@ -193,15 +195,43 @@ demo_foldkeys(void)
     printw("Merged to %d key definitions\n", info_len - merged);
 }
 
+static void
+usage(int ok)
+{
+    static const char *msg[] =
+    {
+	"Usage: foldkeys [options]"
+	,""
+	,USAGE_COMMON
+    };
+    size_t n;
+
+    for (n = 0; n < SIZEOF(msg); n++)
+	fprintf(stderr, "%s\n", msg[n]);
+
+    ExitProgram(ok ? EXIT_SUCCESS : EXIT_FAILURE);
+}
+/* *INDENT-OFF* */
+VERSION_COMMON()
+/* *INDENT-ON* */
+
 int
-main(int argc GCC_UNUSED, char *argv[]GCC_UNUSED)
+main(int argc, char *argv[])
 {
     int ch;
-#if HAVE_GETTIMEOFDAY
-    struct timeval previous;
-#endif
+    TimeType previous;
 
-    if (newterm(0, stdout, stdin) == 0) {
+    while ((ch = getopt(argc, argv, OPTS_COMMON)) != -1) {
+	switch (ch) {
+	default:
+	    CASE_COMMON;
+	    /* NOTREACHED */
+	}
+    }
+    if (optind < argc)
+	usage(FALSE);
+
+    if (newterm(NULL, stdout, stdin) == NULL) {
 	fprintf(stderr, "Cannot initialize terminal\n");
 	ExitProgram(EXIT_FAILURE);
     }
@@ -217,36 +247,21 @@ main(int argc GCC_UNUSED, char *argv[]GCC_UNUSED)
 
     demo_foldkeys();
 
-#if HAVE_GETTIMEOFDAY
-    gettimeofday(&previous, 0);
-#endif
+    GetClockTime(&previous);
 
     while ((ch = getch()) != ERR) {
 	bool escaped = (ch >= MY_KEYS);
 	const char *name = keyname(escaped ? (ch - MY_KEYS) : ch);
+	TimeType current;
 
-#if HAVE_GETTIMEOFDAY
-	int secs, msecs;
-	struct timeval current;
-
-	gettimeofday(&current, 0);
-	secs = (int) (current.tv_sec - previous.tv_sec);
-	msecs = (int) ((current.tv_usec - previous.tv_usec) / 1000);
-	if (msecs < 0) {
-	    msecs += 1000;
-	    --secs;
-	}
-	if (msecs >= 1000) {
-	    secs += msecs / 1000;
-	    msecs %= 1000;
-	}
-	printw("%6d.%03d ", secs, msecs);
+	GetClockTime(&current);
+	printw("%6.03f ", ElapsedSeconds(&previous, &current));
 	previous = current;
-#endif
+
 	printw("Keycode %d, name %s%s\n",
 	       ch,
 	       escaped ? "ESC-" : "",
-	       name != 0 ? name : "<null>");
+	       name != NULL ? name : "<null>");
 	log_last_line(stdscr);
 	clrtoeol();
 	if (ch == 'q')

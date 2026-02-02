@@ -1,5 +1,5 @@
 /****************************************************************************
- * Copyright 2020 Thomas E. Dickey                                          *
+ * Copyright 2020-2024,2025 Thomas E. Dickey                                *
  * Copyright 2007-2012,2017 Free Software Foundation, Inc.                  *
  *                                                                          *
  * Permission is hereby granted, free of charge, to any person obtaining a  *
@@ -27,7 +27,7 @@
  * authorization.                                                           *
  ****************************************************************************/
 /*
- * $Id: test_getstr.c,v 1.14 2020/02/02 23:34:34 tom Exp $
+ * $Id: test_getstr.c,v 1.21 2025/07/05 15:21:56 tom Exp $
  *
  * Author: Thomas E Dickey
  *
@@ -76,7 +76,7 @@ Quit(int ch)
 }
 
 static int
-Remainder(WINDOW *txtwin)
+Remainder(NCURSES_CONST WINDOW *txtwin)
 {
     int result = getmaxx(txtwin) - getcurx(txtwin);
     return (result > 0) ? result : 0;
@@ -145,7 +145,7 @@ ShowFlavor(WINDOW *strwin, WINDOW *txtwin, int flavor, int limit)
 static int
 recursive_test(int level, char **argv, WINDOW *strwin)
 {
-    static const char *help[] =
+    static NCURSES_CONST char *help[] =
     {
 	"Commands:",
 	"  q,^Q,ESC       - quit this program",
@@ -165,10 +165,10 @@ recursive_test(int level, char **argv, WINDOW *strwin)
 	"",
 	"  w              - recur to subwindow",
 	"  ?,<F1>         - show help-screen",
-	0
+	NULL
     };
-    WINDOW *txtbox = 0;
-    WINDOW *txtwin = 0;
+    WINDOW *txtbox = NULL;
+    WINDOW *txtwin = NULL;
     FILE *fp;
     int ch;
     int rc;
@@ -180,7 +180,7 @@ recursive_test(int level, char **argv, WINDOW *strwin)
 
     char buffer[MAX_COLS];
 
-    if (argv[level] == 0) {
+    if (argv[level] == NULL) {
 	beep();
 	return FALSE;
     }
@@ -208,7 +208,7 @@ recursive_test(int level, char **argv, WINDOW *strwin)
     txt_x = 0;
     wmove(txtwin, txt_y, txt_x);
 
-    if ((fp = fopen(argv[level], "r")) != 0) {
+    if ((fp = fopen(argv[level], "r")) != NULL) {
 	while ((ch = fgetc(fp)) != EOF) {
 	    if (waddch(txtwin, UChar(ch)) != OK) {
 		break;
@@ -258,7 +258,7 @@ recursive_test(int level, char **argv, WINDOW *strwin)
 
 	case 'w':
 	    recursive_test(level + 1, argv, strwin);
-	    if (txtbox != 0) {
+	    if (txtbox != NULL) {
 		touchwin(txtbox);
 		wnoutrefresh(txtbox);
 	    } else {
@@ -362,18 +362,45 @@ recursive_test(int level, char **argv, WINDOW *strwin)
     return TRUE;
 }
 
+static void
+usage(int ok)
+{
+    static const char *msg[] =
+    {
+	"Usage: test_getstr [options] [file1 [...]]"
+	,""
+	,USAGE_COMMON
+    };
+    size_t n;
+
+    for (n = 0; n < SIZEOF(msg); n++)
+	fprintf(stderr, "%s\n", msg[n]);
+
+    ExitProgram(ok ? EXIT_SUCCESS : EXIT_FAILURE);
+}
+/* *INDENT-OFF* */
+VERSION_COMMON()
+/* *INDENT-ON* */
+
 int
 main(int argc, char *argv[])
 {
     WINDOW *chrbox;
     WINDOW *strwin;
+    int ch;
+
+    while ((ch = getopt(argc, argv, OPTS_COMMON)) != -1) {
+	switch (ch) {
+	default:
+	    CASE_COMMON;
+	    /* NOTREACHED */
+	}
+    }
 
     setlocale(LC_ALL, "");
 
-    if (argc < 2) {
-	fprintf(stderr, "usage: %s file\n", argv[0]);
-	return EXIT_FAILURE;
-    }
+    if (optind + 1 > argc)
+	usage(FALSE);
 
     initscr();
 
@@ -383,7 +410,7 @@ main(int argc, char *argv[])
 
     strwin = derwin(chrbox, 4, COLS - 2, 1, 1);
 
-    recursive_test(1, argv, strwin);
+    recursive_test(optind, argv, strwin);
 
     endwin();
     ExitProgram(EXIT_SUCCESS);

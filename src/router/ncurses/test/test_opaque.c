@@ -1,5 +1,5 @@
 /****************************************************************************
- * Copyright 2020,2021 Thomas E. Dickey                                     *
+ * Copyright 2020-2024,2025 Thomas E. Dickey                                *
  * Copyright 2007-2008,2009 Free Software Foundation, Inc.                  *
  *                                                                          *
  * Permission is hereby granted, free of charge, to any person obtaining a  *
@@ -27,7 +27,7 @@
  * authorization.                                                           *
  ****************************************************************************/
 /*
- * $Id: test_opaque.c,v 1.14 2021/09/11 23:44:07 tom Exp $
+ * $Id: test_opaque.c,v 1.20 2025/07/05 15:11:35 tom Exp $
  *
  * Author: Thomas E Dickey
  *
@@ -79,7 +79,7 @@ static bool
 test_opaque_idcok(WINDOW *win, int mode)
 {
     if (mode >= 0) {
-	idcok(win, mode);
+	idcok(win, (bool) mode);
     }
     return is_idcok(win);
 }
@@ -88,7 +88,7 @@ static bool
 test_opaque_idlok(WINDOW *win, int mode)
 {
     if (mode >= 0) {
-	idlok(win, mode);
+	idlok(win, (bool) mode);
     }
     return is_idlok(win);
 }
@@ -97,7 +97,7 @@ static bool
 test_opaque_immedok(WINDOW *win, int mode)
 {
     if (mode >= 0) {
-	immedok(win, mode);
+	immedok(win, (bool) mode);
     }
     return is_immedok(win);
 }
@@ -106,7 +106,7 @@ static bool
 test_opaque_keypad(WINDOW *win, int mode)
 {
     if (mode >= 0) {
-	keypad(win, mode);
+	keypad(win, (bool) mode);
     }
     return is_keypad(win);
 }
@@ -115,7 +115,7 @@ static bool
 test_opaque_leaveok(WINDOW *win, int mode)
 {
     if (mode >= 0) {
-	leaveok(win, mode);
+	leaveok(win, (bool) mode);
     }
     return is_leaveok(win);
 }
@@ -124,7 +124,7 @@ static bool
 test_opaque_nodelay(WINDOW *win, int mode)
 {
     if (mode >= 0) {
-	nodelay(win, mode);
+	nodelay(win, (bool) mode);
     }
     return is_nodelay(win);
 }
@@ -133,7 +133,7 @@ static bool
 test_opaque_notimeout(WINDOW *win, int mode)
 {
     if (mode >= 0) {
-	notimeout(win, mode);
+	notimeout(win, (bool) mode);
     }
     return is_notimeout(win);
 }
@@ -142,7 +142,7 @@ static bool
 test_opaque_scrollok(WINDOW *win, int mode)
 {
     if (mode >= 0) {
-	scrollok(win, mode);
+	scrollok(win, (bool) mode);
     }
     return is_scrollok(win);
 }
@@ -151,21 +151,39 @@ static bool
 test_opaque_syncok(WINDOW *win, int mode)
 {
     if (mode >= 0) {
-	syncok(win, mode);
+	syncok(win, (bool) mode);
     }
     return is_syncok(win);
 }
 
 static int
-status_y(WINDOW *stswin, int cell)
+height_of(const WINDOW *win)
 {
-    return (cell % getmaxy(stswin));
+    int result = getmaxy(win);
+    if (result <= 0)
+	result = 1;
+    return result;
 }
 
 static int
-status_x(WINDOW *stswin, int cell)
+width_of(const WINDOW *win)
 {
-    return (15 * (cell / getmaxy(stswin)));
+    int result = getmaxx(win);
+    if (result <= 0)
+	result = 1;
+    return result;
+}
+
+static int
+status_y(const WINDOW *stswin, int cell)
+{
+    return (cell % height_of(stswin));
+}
+
+static int
+status_x(const WINDOW *stswin, int cell)
+{
+    return (15 * (cell / height_of(stswin)));
 }
 
 static void
@@ -269,8 +287,8 @@ show_opaque(WINDOW *stswin, WINDOW *txtwin, bool before, int active)
 static int
 test_opaque(int level, char **argv, WINDOW *stswin)
 {
-    WINDOW *txtbox = 0;
-    WINDOW *txtwin = 0;
+    WINDOW *txtbox = NULL;
+    WINDOW *txtwin = NULL;
     FILE *fp;
     int ch;
     int txt_x = 0, txt_y = 0;
@@ -278,7 +296,7 @@ test_opaque(int level, char **argv, WINDOW *stswin)
     bool in_status = FALSE;
     int active = 0;
 
-    if (argv[level] == 0) {
+    if (argv[level] == NULL) {
 	beep();
 	return FALSE;
     }
@@ -289,8 +307,8 @@ test_opaque(int level, char **argv, WINDOW *stswin)
 	wnoutrefresh(txtbox);
 
 	txtwin = derwin(txtbox,
-			getmaxy(txtbox) - 2,
-			getmaxx(txtbox) - 2,
+			height_of(txtbox) - 2,
+			width_of(txtbox) - 2,
 			1, 1);
 	base_y = 0;
     } else {
@@ -306,7 +324,7 @@ test_opaque(int level, char **argv, WINDOW *stswin)
     txt_x = 0;
     wmove(txtwin, txt_y, txt_x);
 
-    if ((fp = fopen(argv[level], "r")) != 0) {
+    if ((fp = fopen(argv[level], "r")) != NULL) {
 	while ((ch = fgetc(fp)) != EOF) {
 	    if (waddch(txtwin, UChar(ch)) != OK) {
 		break;
@@ -365,7 +383,7 @@ test_opaque(int level, char **argv, WINDOW *stswin)
 		break;
 	    case KEY_DOWN:
 	    case 'j':
-		if (txt_y < getmaxy(txtwin) - 1)
+		if (txt_y < height_of(txtwin) - 1)
 		    txt_y++;
 		else
 		    beep();
@@ -386,14 +404,14 @@ test_opaque(int level, char **argv, WINDOW *stswin)
 		break;
 	    case KEY_RIGHT:
 	    case 'l':
-		if (txt_x < getmaxx(txtwin) - 1)
+		if (txt_x < width_of(txtwin) - 1)
 		    txt_x++;
 		else
 		    beep();
 		break;
 	    case 'w':
 		test_opaque(level + 1, argv, stswin);
-		if (txtbox != 0) {
+		if (txtbox != NULL) {
 		    touchwin(txtbox);
 		    wnoutrefresh(txtbox);
 		} else {
@@ -454,18 +472,45 @@ test_set_tabsize(void)
     set_tabsize(save_tabsize);
 }
 
+static void
+usage(int ok)
+{
+    static const char *msg[] =
+    {
+	"Usage: test_opaque [options] file1 [file2 [...]]"
+	,""
+	,USAGE_COMMON
+    };
+    size_t n;
+
+    for (n = 0; n < SIZEOF(msg); n++)
+	fprintf(stderr, "%s\n", msg[n]);
+
+    ExitProgram(ok ? EXIT_SUCCESS : EXIT_FAILURE);
+}
+/* *INDENT-OFF* */
+VERSION_COMMON()
+/* *INDENT-ON* */
+
 int
 main(int argc, char *argv[])
 {
     WINDOW *stsbox;
     WINDOW *stswin;
+    int ch;
+
+    while ((ch = getopt(argc, argv, OPTS_COMMON)) != -1) {
+	switch (ch) {
+	default:
+	    CASE_COMMON;
+	    /* NOTREACHED */
+	}
+    }
 
     setlocale(LC_ALL, "");
 
-    if (argc < 2) {
-	fprintf(stderr, "usage: %s file\n", argv[0]);
-	return EXIT_FAILURE;
-    }
+    if (optind + 1 > argc)
+	usage(FALSE);
 
     initscr();
 
@@ -479,7 +524,7 @@ main(int argc, char *argv[])
     stswin = derwin(stsbox, BASE_Y - 2, COLS - 2, 1, 1);
     keypad(stswin, TRUE);
 
-    test_opaque(1, argv, stswin);
+    test_opaque(optind, argv, stswin);
 
     endwin();
     ExitProgram(EXIT_SUCCESS);

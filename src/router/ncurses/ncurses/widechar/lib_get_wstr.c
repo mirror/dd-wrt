@@ -1,5 +1,5 @@
 /****************************************************************************
- * Copyright 2018-2020,2021 Thomas E. Dickey                                *
+ * Copyright 2018-2023,2024 Thomas E. Dickey                                *
  * Copyright 2002-2009,2011 Free Software Foundation, Inc.                  *
  *                                                                          *
  * Permission is hereby granted, free of charge, to any person obtaining a  *
@@ -40,10 +40,10 @@
 
 #include <curses.priv.h>
 
-MODULE_ID("$Id: lib_get_wstr.c,v 1.19 2021/09/04 10:29:59 tom Exp $")
+MODULE_ID("$Id: lib_get_wstr.c,v 1.22 2024/07/27 19:22:23 tom Exp $")
 
 static int
-wadd_wint(WINDOW *win, wint_t *src)
+wadd_wint(WINDOW *win, const wint_t *src)
 {
     cchar_t tmp;
     wchar_t wch[2];
@@ -59,7 +59,7 @@ wadd_wint(WINDOW *win, wint_t *src)
  * or other character, and handles reverse wraparound.
  */
 static wint_t *
-WipeOut(WINDOW *win, int y, int x, wint_t *first, wint_t *last, int echoed)
+WipeOut(WINDOW *win, int y, int x, const wint_t *first, wint_t *last, int echoed)
 {
     if (last > first) {
 	*--last = '\0';
@@ -88,7 +88,7 @@ wgetn_wstr(WINDOW *win, wint_t *str, int maxlen)
 {
     SCREEN *sp = _nc_screen_of(win);
     TTY buf;
-    bool oldnl, oldecho, oldraw, oldcbreak;
+    TTY_FLAGS save_flags;
     wchar_t erasec = 0;
     wchar_t killc = 0;
     wint_t *oldstr = str;
@@ -105,13 +105,11 @@ wgetn_wstr(WINDOW *win, wint_t *str, int maxlen)
 
     _nc_get_tty_mode(&buf);
 
-    oldnl = sp->_nl;
-    oldecho = sp->_echo;
-    oldraw = sp->_raw;
-    oldcbreak = sp->_cbreak;
+    save_flags = sp->_tty_flags;
     NCURSES_SP_NAME(nl) (NCURSES_SP_ARG);
     NCURSES_SP_NAME(noecho) (NCURSES_SP_ARG);
-    NCURSES_SP_NAME(raw) (NCURSES_SP_ARG);
+    if (!save_flags._raw)
+	NCURSES_SP_NAME(cbreak) (NCURSES_SP_ARG);
 
     NCURSES_SP_NAME(erasewchar) (NCURSES_SP_ARGx &erasec);
     NCURSES_SP_NAME(killwchar) (NCURSES_SP_ARGx &killc);
@@ -149,7 +147,7 @@ wgetn_wstr(WINDOW *win, wint_t *str, int maxlen)
 	     * *getn_wstr() with \n should work either way.
 	     */
 	    if (ch == KEY_DOWN || ch == KEY_ENTER) {
-		if (oldecho == TRUE
+		if (save_flags._echo == TRUE
 		    && win->_cury == win->_maxy
 		    && win->_scroll)
 		    wechochar(win, (chtype) '\n');
@@ -157,11 +155,11 @@ wgetn_wstr(WINDOW *win, wint_t *str, int maxlen)
 	    }
 	    if (ch == KEY_LEFT || ch == KEY_BACKSPACE) {
 		if (tmpstr > oldstr) {
-		    tmpstr = WipeOut(win, y, x, oldstr, tmpstr, oldecho);
+		    tmpstr = WipeOut(win, y, x, oldstr, tmpstr, save_flags._echo);
 		}
 	    } else if (ch == KEY_EOL) {
 		while (tmpstr > oldstr) {
-		    tmpstr = WipeOut(win, y, x, oldstr, tmpstr, oldecho);
+		    tmpstr = WipeOut(win, y, x, oldstr, tmpstr, save_flags._echo);
 		}
 	    } else {
 		beep();
@@ -171,7 +169,7 @@ wgetn_wstr(WINDOW *win, wint_t *str, int maxlen)
 	} else {
 	    *tmpstr++ = ch;
 	    *tmpstr = 0;
-	    if (oldecho == TRUE) {
+	    if (save_flags._echo == TRUE) {
 		int oldy = win->_cury;
 
 		if (wadd_wint(win, tmpstr - 1) == ERR) {
@@ -181,9 +179,9 @@ wgetn_wstr(WINDOW *win, wint_t *str, int maxlen)
 		     */
 		    win->_flags &= ~_WRAPPED;
 		    waddch(win, (chtype) ' ');
-		    tmpstr = WipeOut(win, y, x, oldstr, tmpstr, oldecho);
+		    tmpstr = WipeOut(win, y, x, oldstr, tmpstr, save_flags._echo);
 		    continue;
-		} else if (win->_flags & _WRAPPED) {
+		} else if (IS_WRAPPED(win)) {
 		    /*
 		     * If the last waddch forced a wrap & scroll, adjust our
 		     * reference point for erasures.
@@ -211,11 +209,7 @@ wgetn_wstr(WINDOW *win, wint_t *str, int maxlen)
     /* Restore with a single I/O call, to fix minor asymmetry between
      * raw/noraw, etc.
      */
-    sp->_nl = oldnl;
-    sp->_echo = oldecho;
-    sp->_raw = oldraw;
-    sp->_cbreak = oldcbreak;
-
+    sp->_tty_flags = save_flags;
     (void) _nc_set_tty_mode(&buf);
 
     *tmpstr = 0;

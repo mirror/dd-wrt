@@ -1,5 +1,5 @@
 /****************************************************************************
- * Copyright 2020 Thomas E. Dickey                                          *
+ * Copyright 2020-2024,2025 Thomas E. Dickey                                *
  * Copyright 1998-2012,2015 Free Software Foundation, Inc.                  *
  *                                                                          *
  * Permission is hereby granted, free of charge, to any person obtaining a  *
@@ -42,7 +42,7 @@
 
 #include <curses.priv.h>
 
-MODULE_ID("$Id: lib_restart.c,v 1.17 2020/02/02 23:34:34 tom Exp $")
+MODULE_ID("$Id: lib_restart.c,v 1.21 2025/12/27 12:41:23 tom Exp $")
 
 NCURSES_EXPORT(int)
 NCURSES_SP_NAME(restartterm) (NCURSES_SP_DCLx
@@ -51,8 +51,8 @@ NCURSES_SP_NAME(restartterm) (NCURSES_SP_DCLx
 			      int *errret)
 {
     int result;
-#ifdef USE_TERM_DRIVER
-    TERMINAL *new_term = 0;
+#if USE_TERM_DRIVER
+    TERMINAL *new_term = NULL;
 #endif
 
     START_TRACE();
@@ -64,32 +64,29 @@ NCURSES_SP_NAME(restartterm) (NCURSES_SP_DCLx
 
     if (TINFO_SETUP_TERM(&new_term, termp, filenum, errret, FALSE) != OK) {
 	result = ERR;
-    } else if (SP_PARM != 0) {
-	int saveecho = SP_PARM->_echo;
-	int savecbreak = SP_PARM->_cbreak;
-	int saveraw = SP_PARM->_raw;
-	int savenl = SP_PARM->_nl;
+    } else if (SP_PARM != NULL) {
+	TTY_FLAGS save_flags = SP_PARM->_tty_flags;
 
-#ifdef USE_TERM_DRIVER
+#if USE_TERM_DRIVER
 	SP_PARM->_term = new_term;
 #endif
-	if (saveecho) {
+	if (save_flags._echo) {
 	    NCURSES_SP_NAME(echo) (NCURSES_SP_ARG);
 	} else {
 	    NCURSES_SP_NAME(noecho) (NCURSES_SP_ARG);
 	}
 
-	if (savecbreak) {
+	if (save_flags._cbreak) {
 	    NCURSES_SP_NAME(cbreak) (NCURSES_SP_ARG);
 	    NCURSES_SP_NAME(noraw) (NCURSES_SP_ARG);
-	} else if (saveraw) {
+	} else if (save_flags._raw) {
 	    NCURSES_SP_NAME(nocbreak) (NCURSES_SP_ARG);
 	    NCURSES_SP_NAME(raw) (NCURSES_SP_ARG);
 	} else {
 	    NCURSES_SP_NAME(nocbreak) (NCURSES_SP_ARG);
 	    NCURSES_SP_NAME(noraw) (NCURSES_SP_ARG);
 	}
-	if (savenl) {
+	if (save_flags._nl) {
 	    NCURSES_SP_NAME(nl) (NCURSES_SP_ARG);
 	} else {
 	    NCURSES_SP_NAME(nonl) (NCURSES_SP_ARG);

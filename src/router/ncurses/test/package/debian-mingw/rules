@@ -43,7 +43,7 @@ configure-stamp:
 		--prefix=$(MINGW_TOP) \
 		--bindir=\$${prefix}/bin/$(NCURSES_PKG) \
 		--datadir=\$${prefix}/share/$(NCURSES_PKG) \
-		--with-screen=ncursesw6 \
+		--with-screen=ncursesw6td \
 		--with-pkg-config-libdir=/usr/$(TARGET)/lib/pkgconfig
 
 	touch configure-stamp
@@ -70,7 +70,7 @@ install: install-stamp
 install-stamp: build-stamp
 	dh_testdir
 	dh_testroot
-	dh_clean -k
+	dh_prep
 	dh_installdirs
 
 	$(MAKE) install DESTDIR=$(MINGW_TMP)

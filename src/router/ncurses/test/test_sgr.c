@@ -1,5 +1,5 @@
 /****************************************************************************
- * Copyright 2019-2020,2021 Thomas E. Dickey                                *
+ * Copyright 2019-2024,2025 Thomas E. Dickey                                *
  * Copyright 2015-2016,2017 Free Software Foundation, Inc.                  *
  *                                                                          *
  * Permission is hereby granted, free of charge, to any person obtaining a  *
@@ -30,7 +30,7 @@
 /*
  * Author: Thomas E. Dickey
  *
- * $Id: test_sgr.c,v 1.17 2021/03/27 22:43:36 tom Exp $
+ * $Id: test_sgr.c,v 1.28 2025/07/05 15:11:35 tom Exp $
  *
  * A simple demo of the sgr/sgr0 terminal capabilities.
  */
@@ -61,11 +61,14 @@ static int db_item;
 static long total_values;
 
 static char *
-make_dbitem(char *p, char *q)
+make_dbitem(const char *const p, const char *const q)
 {
-    size_t need = strlen(e_opt) + 2 + (size_t) (p - q);
+    size_t diff = (size_t) (p - q);
+    size_t need = strlen(e_opt) + 2 + diff;
     char *result = malloc(need);
-    _nc_SPRINTF(result, _nc_SLIMIT(need) "%s=%.*s", e_opt, (int) (p - q), q);
+    if (result != NULL) {
+	_nc_SPRINTF(result, _nc_SLIMIT(need) "%s=%.*s", e_opt, (int) diff, q);
+    }
     return result;
 }
 
@@ -106,10 +109,10 @@ make_dblist(void)
 static char *
 next_dbitem(void)
 {
-    char *result = 0;
+    char *result = NULL;
 
     if (db_list) {
-	if ((result = db_list[db_item]) == 0) {
+	if ((result = db_list[db_item]) == NULL) {
 	    db_item = 0;
 	    result = db_list[0];
 	} else {
@@ -129,7 +132,7 @@ free_dblist(void)
 	for (n = 0; db_list[n]; ++n)
 	    free(db_list[n]);
 	free(db_list);
-	db_list = 0;
+	db_list = NULL;
     }
 }
 #endif
@@ -142,10 +145,10 @@ free_dblist(void)
 #define MASK_REV  (1 << 2)
 
 static void
-dumpit(unsigned bits, unsigned ignore, const char *sgr, const char *sgr0)
+dumpit(unsigned bits, unsigned ignore, NCURSES_CONST char *sgr, NCURSES_CONST char *sgr0)
 {
-    static const char sample[] = "abcdefghijklm";
-    static char params[] = "SURBDBIPA";
+    static NCURSES_CONST char sample[] = "abcdefghijklm";
+    static NCURSES_CONST char params[] = "SURBDBIPA";
     unsigned n;
 
     printf("%4u ", bits);
@@ -177,12 +180,11 @@ one_bit(unsigned a, unsigned b)
 static void
 brute_force(const char *name)
 {
-    unsigned count;
-    char *my_sgr;
-    char *my_sgr0;
-    char *my_bold;
-    char *my_revs;
-    char *my_smso;
+    NCURSES_CONST char *my_sgr;
+    NCURSES_CONST char *my_sgr0;
+    NCURSES_CONST char *my_bold;
+    NCURSES_CONST char *my_revs;
+    NCURSES_CONST char *my_smso;
     char *my_name = strdup(name);
 
     if (db_list) {
@@ -219,6 +221,7 @@ brute_force(const char *name)
 	unsigned ignore = 0;
 	unsigned reason = 0;
 	unsigned repeat = 0;
+	unsigned count;
 	for (count = 0; count < MAXSGR; ++count) {
 	    values[count] = tparm(my_sgr,
 				  BITS2P(1),
@@ -230,20 +233,20 @@ brute_force(const char *name)
 				  BITS2P(7),
 				  BITS2P(8),
 				  BITS2P(9));
-	    if (values[count] != 0) {
+	    if (values[count] != NULL) {
 		values[count] = strdup(values[count]);
 	    }
 	}
 	for (count = 0; count < MAXSGR; ++count) {
-	    if (values[count] != 0) {
+	    if (values[count] != NULL) {
 		for (j = count + 1; j < MAXSGR; ++j) {
-		    if (values[j] == 0)
+		    if (values[j] == NULL)
 			continue;
 		    if (strcmp(values[count], values[j]))
 			continue;
 		    if (one_bit(count, j)) {
 			free(values[j]);
-			values[j] = 0;
+			values[j] = NULL;
 		    }
 		}
 	    }
@@ -253,7 +256,7 @@ brute_force(const char *name)
 	    for (count = 0; count < MAXSGR; ++count) {
 		if ((count & mask) != 0)
 		    continue;
-		if (values[count] != 0 && values[count + mask] != 0) {
+		if (values[count] != NULL && values[count + mask] != NULL) {
 		    mask = 0;
 		    break;
 		}
@@ -272,14 +275,14 @@ brute_force(const char *name)
 	    }
 	}
 	for (count = 0; count < MAXSGR; ++count) {
-	    if (values[count] != 0) {
+	    if (values[count] != NULL) {
 		bool found = FALSE;
 		if ((repeat & MASK_SMSO) != 0
 		    && (count & MASK_SMSO) != 0) {
 		    found = TRUE;
 		} else {
 		    for (j = 0; j < count; ++j) {
-			if (values[j] != 0 && !strcmp(values[j], values[count])) {
+			if (values[j] != NULL && !strcmp(values[j], values[count])) {
 			    if ((repeat & MASK_SMSO) != 0
 				&& (j & MASK_SMSO) != 0
 				&& (count & reason) != 0) {
@@ -305,35 +308,39 @@ brute_force(const char *name)
 }
 
 static void
-usage(void)
+usage(int ok)
 {
     static const char *msg[] =
     {
-	"Usage: test_sgr [options] [terminal]",
-	"",
-	"Print all distinct combinations of sgr capability.",
-	"",
-	"Options:",
-	" -d LIST  colon-separated list of databases to use",
-	" -e NAME  environment variable to set with -d option",
-	" -n       do not initialize terminal, to test error-checking",
-	" -q       quiet (prints only counts)",
+	"Usage: test_sgr [options] [terminal]"
+	,""
+	,"Print all distinct combinations of sgr capability."
+	,""
+	,USAGE_COMMON
+	,"Options:"
+	," -d LIST  colon-separated list of databases to use"
+	," -e NAME  environment variable to set with -d option"
+	," -n       do not initialize terminal, to test error-checking"
+	," -q       quiet (prints only counts)"
     };
     unsigned n;
     for (n = 0; n < SIZEOF(msg); ++n) {
 	fprintf(stderr, "%s\n", msg[n]);
     }
-    ExitProgram(EXIT_FAILURE);
+    ExitProgram(ok ? EXIT_SUCCESS : EXIT_FAILURE);
 }
+/* *INDENT-OFF* */
+VERSION_COMMON()
+/* *INDENT-ON* */
 
 int
 main(int argc, char *argv[])
 {
-    int n;
-    char *name;
+    int ch;
+    const char *name;
 
-    while ((n = getopt(argc, argv, "d:e:nq")) != -1) {
-	switch (n) {
+    while ((ch = getopt(argc, argv, OPTS_COMMON "d:e:nq")) != -1) {
+	switch (ch) {
 	case 'd':
 	    d_opt = optarg;
 	    break;
@@ -347,21 +354,22 @@ main(int argc, char *argv[])
 	    q_opt = TRUE;
 	    break;
 	default:
-	    usage();
-	    break;
+	    CASE_COMMON;
+	    /* NOTREACHED */
 	}
     }
 
     make_dblist();
 
     if (optind < argc) {
+	int n;
 	for (n = optind; n < argc; ++n) {
 	    brute_force(argv[n]);
 	}
-    } else if ((name = getenv("TERM")) != 0) {
+    } else if ((name = getenv("TERM")) != NULL) {
 	brute_force(name);
     } else {
-	static char dumb[] = "dumb";
+	static const char dumb[] = "dumb";
 	brute_force(dumb);
     }
 
@@ -376,7 +384,7 @@ main(int argc, char *argv[])
 
 #else /* !HAVE_TIGETSTR */
 int
-main(int argc GCC_UNUSED, char *argv[]GCC_UNUSED)
+main(void)
 {
     failed("This program requires the terminfo functions such as tigetstr");
     ExitProgram(EXIT_FAILURE);

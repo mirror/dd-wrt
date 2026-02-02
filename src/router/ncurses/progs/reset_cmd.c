@@ -1,5 +1,5 @@
 /****************************************************************************
- * Copyright 2019-2020,2021 Thomas E. Dickey                                *
+ * Copyright 2019-2024,2025 Thomas E. Dickey                                *
  * Copyright 2016,2017 Free Software Foundation, Inc.                       *
  *                                                                          *
  * Permission is hereby granted, free of charge, to any person obtaining a  *
@@ -53,7 +53,7 @@
 #include <sys/ptem.h>
 #endif
 
-MODULE_ID("$Id: reset_cmd.c,v 1.28 2021/10/02 18:08:44 tom Exp $")
+MODULE_ID("$Id: reset_cmd.c,v 1.42 2025/11/22 21:38:31 tom Exp $")
 
 /*
  * SCO defines TIOCGSIZE and the corresponding struct.  Other systems (SunOS,
@@ -74,6 +74,9 @@ MODULE_ID("$Id: reset_cmd.c,v 1.28 2021/10/02 18:08:44 tom Exp $")
 #  define WINSIZE_COLS(n) n.ws_col
 # endif
 #endif
+
+#define set_flags(target, mask)    target |= mask
+#define clear_flags(target, mask)  target &= ~((unsigned)(mask))
 
 static FILE *my_file;
 
@@ -101,8 +104,8 @@ cat_file(char *file)
     char buf[BUFSIZ];
     bool sent = FALSE;
 
-    if (file != 0) {
-	if ((fp = safe_fopen(file, "r")) == 0)
+    if (file != NULL) {
+	if ((fp = safe_fopen(file, "r")) == NULL)
 	    failed(file);
 
 	while ((nr = fread(buf, sizeof(char), sizeof(buf), fp)) != 0) {
@@ -189,20 +192,101 @@ out_char(int c)
     tty_settings->c_cc[item] = CHK(tty_settings->c_cc[item], value)
 
 /*
+ * Simplify ifdefs
+ */
+#ifndef BSDLY
+#define BSDLY 0
+#endif
+#ifndef CRDLY
+#define CRDLY 0
+#endif
+#ifndef ECHOCTL
+#define ECHOCTL 0
+#endif
+#ifndef ECHOKE
+#define ECHOKE 0
+#endif
+#ifndef ECHOPRT
+#define ECHOPRT 0
+#endif
+#ifndef FFDLY
+#define FFDLY 0
+#endif
+#ifndef IMAXBEL
+#define IMAXBEL 0
+#endif
+#ifndef IUCLC
+#define IUCLC 0
+#endif
+#ifndef IXANY
+#define IXANY 0
+#endif
+#ifndef NLDLY
+#define NLDLY 0
+#endif
+#ifndef OCRNL
+#define OCRNL 0
+#endif
+#ifndef OFDEL
+#define OFDEL 0
+#endif
+#ifndef OFILL
+#define OFILL 0
+#endif
+#ifndef OLCUC
+#define OLCUC 0
+#endif
+#ifndef ONLCR
+#define ONLCR 0
+#endif
+#ifndef ONLRET
+#define ONLRET 0
+#endif
+#ifndef ONOCR
+#define ONOCR 0
+#endif
+#ifndef OXTABS
+#define OXTABS 0
+#endif
+#ifndef TAB3
+#define TAB3 0
+#endif
+#ifndef TABDLY
+#define TABDLY 0
+#endif
+#ifndef TOSTOP
+#define TOSTOP 0
+#endif
+#ifndef VTDLY
+#define VTDLY 0
+#endif
+#ifndef XCASE
+#define XCASE 0
+#endif
+
+/*
  * Reset the terminal mode bits to a sensible state.  Very useful after
  * a child program dies in raw mode.
  */
 void
 reset_tty_settings(int fd, TTY * tty_settings, int noset)
 {
+#ifdef TERMIOS
+    unsigned mask;
+#ifdef TIOCMGET
+    int modem_bits;
+#endif
+
     GET_TTY(fd, tty_settings);
 
-#ifdef TERMIOS
 #if defined(VDISCARD) && defined(CDISCARD)
     reset_char(VDISCARD, CDISCARD);
 #endif
     reset_char(VEOF, CEOF);
     reset_char(VERASE, CERASE);
+#if defined(VERASE2) && defined(CERASE2)
+    reset_char(VERASE2, CERASE2);
+#endif
 #if defined(VFLUSH) && defined(CFLUSH)
     reset_char(VFLUSH, CFLUSH);
 #endif
@@ -228,106 +312,87 @@ reset_tty_settings(int fd, TTY * tty_settings, int noset)
     reset_char(VWERASE, CWERASE);
 #endif
 
-    tty_settings->c_iflag &= ~((unsigned) (IGNBRK
-					   | PARMRK
-					   | INPCK
-					   | ISTRIP
-					   | INLCR
-					   | IGNCR
-#ifdef IUCLC
-					   | IUCLC
-#endif
-#ifdef IXANY
-					   | IXANY
-#endif
-					   | IXOFF));
+    clear_flags(tty_settings->c_iflag, (IGNBRK
+					| PARMRK
+					| INPCK
+					| ISTRIP
+					| INLCR
+					| IGNCR
+					| IUCLC
+					| IXANY
+					| IXOFF));
 
-    tty_settings->c_iflag |= (BRKINT
-			      | IGNPAR
-			      | ICRNL
-			      | IXON
-#ifdef IMAXBEL
-			      | IMAXBEL
+    set_flags(tty_settings->c_iflag, (BRKINT
+				      | IGNPAR
+				      | ICRNL
+				      | IXON
+				      | IMAXBEL));
+
+    clear_flags(tty_settings->c_oflag, (0
+					| OLCUC
+					| OCRNL
+					| ONOCR
+					| ONLRET
+					| OFILL
+					| OFDEL
+					| NLDLY
+					| CRDLY
+					| TABDLY
+					| BSDLY
+					| VTDLY
+					| FFDLY));
+
+    set_flags(tty_settings->c_oflag, (OPOST
+				      | ONLCR));
+
+    mask = (CSIZE | CSTOPB | PARENB | PARODD);
+#ifdef TIOCMGET
+    /* leave clocal alone if this appears to use a modem */
+    if (ioctl(fd, TIOCMGET, &modem_bits) == -1)
+	mask |= CLOCAL;
+#else
+    /* cannot check - use the behavior from tset */
+    mask |= CLOCAL;
 #endif
+    clear_flags(tty_settings->c_cflag, mask);
+
+    set_flags(tty_settings->c_cflag, (CS8 | CREAD));
+    clear_flags(tty_settings->c_lflag, (ECHONL
+					| NOFLSH
+					| TOSTOP
+					| ECHOPRT
+					| XCASE));
+
+    set_flags(tty_settings->c_lflag, (ISIG
+				      | ICANON
+				      | ECHO
+				      | ECHOE
+				      | ECHOK
+				      | ECHOCTL
+				      | ECHOKE));
+#elif defined(_NC_WINDOWS)
+    /* reference:
+       https://learn.microsoft.com/en-us/windows/console/setconsolemode
+       https://learn.microsoft.com/en-us/windows/console/high-level-console-modes
+     */
+    GET_TTY(fd, tty_settings);
+    /* do not change ENABLE_VIRTUAL_TERMINAL_INPUT */
+    /* do not change ENABLE_WINDOW_INPUT */
+    tty_settings->dwFlagIn &= ~(
+				   ENABLE_INSERT_MODE |
+				   ENABLE_QUICK_EDIT_MODE);
+    tty_settings->dwFlagIn |= (
+				  ENABLE_EXTENDED_FLAGS |
+				  ENABLE_MOUSE_INPUT |
+				  ENABLE_LINE_INPUT |	/* like ICANON */
+				  ENABLE_ECHO_INPUT |	/* like ECHO */
+				  ENABLE_PROCESSED_INPUT	/* like BRKINT */
 	);
-
-    tty_settings->c_oflag &= ~((unsigned) (0
-#ifdef OLCUC
-					   | OLCUC
+#ifdef ENABLED_PROCESSED_OUTPUT
+    tty_settings->dwFlagOut |= ENABLED_PROCESSED_OUTPUT;
 #endif
-#ifdef OCRNL
-					   | OCRNL
-#endif
-#ifdef ONOCR
-					   | ONOCR
-#endif
-#ifdef ONLRET
-					   | ONLRET
-#endif
-#ifdef OFILL
-					   | OFILL
-#endif
-#ifdef OFDEL
-					   | OFDEL
-#endif
-#ifdef NLDLY
-					   | NLDLY
-#endif
-#ifdef CRDLY
-					   | CRDLY
-#endif
-#ifdef TABDLY
-					   | TABDLY
-#endif
-#ifdef BSDLY
-					   | BSDLY
-#endif
-#ifdef VTDLY
-					   | VTDLY
-#endif
-#ifdef FFDLY
-					   | FFDLY
-#endif
-			       ));
-
-    tty_settings->c_oflag |= (OPOST
-#ifdef ONLCR
-			      | ONLCR
-#endif
-	);
-
-    tty_settings->c_cflag &= ~((unsigned) (CSIZE
-					   | CSTOPB
-					   | PARENB
-					   | PARODD
-					   | CLOCAL));
-    tty_settings->c_cflag |= (CS8 | CREAD);
-    tty_settings->c_lflag &= ~((unsigned) (ECHONL
-					   | NOFLSH
-#ifdef TOSTOP
-					   | TOSTOP
-#endif
-#ifdef ECHOPTR
-					   | ECHOPRT
-#endif
-#ifdef XCASE
-					   | XCASE
-#endif
-			       ));
-
-    tty_settings->c_lflag |= (ISIG
-			      | ICANON
-			      | ECHO
-			      | ECHOE
-			      | ECHOK
-#ifdef ECHOCTL
-			      | ECHOCTL
-#endif
-#ifdef ECHOKE
-			      | ECHOKE
-#endif
-	);
-#endif
+    tty_settings->dwFlagOut |= ENABLE_WRAP_AT_EOL_OUTPUT;
+#endif /* TERMIOS */
 
     if (!noset) {
 	SET_TTY(fd, tty_settings);
@@ -338,6 +403,7 @@ reset_tty_settings(int fd, TTY * tty_settings, int noset)
  * Returns a "good" value for the erase character.  This is loosely based on
  * the BSD4.4 logic.
  */
+#ifdef TERMIOS
 static int
 default_erase(void)
 {
@@ -353,6 +419,7 @@ default_erase(void)
 
     return result;
 }
+#endif
 
 /*
  * Update the values of the erase, interrupt, and kill characters in the TTY
@@ -365,13 +432,7 @@ default_erase(void)
 void
 set_control_chars(TTY * tty_settings, int my_erase, int my_intr, int my_kill)
 {
-#if defined(EXP_WIN32_DRIVER)
-    /* noop */
-    (void) tty_settings;
-    (void) my_erase;
-    (void) my_intr;
-    (void) my_kill;
-#else
+#ifdef TERMIOS
     if (DISABLED(tty_settings->c_cc[VERASE]) || my_erase >= 0) {
 	tty_settings->c_cc[VERASE] = UChar((my_erase >= 0)
 					   ? my_erase
@@ -389,7 +450,13 @@ set_control_chars(TTY * tty_settings, int my_erase, int my_intr, int my_kill)
 					  ? my_kill
 					  : CKILL);
     }
-#endif
+#elif defined(_NC_WINDOWS)
+    /* noop */
+    (void) tty_settings;
+    (void) my_erase;
+    (void) my_intr;
+    (void) my_kill;
+#endif /* TERMIOS */
 }
 
 /*
@@ -399,33 +466,27 @@ set_control_chars(TTY * tty_settings, int my_erase, int my_intr, int my_kill)
 void
 set_conversions(TTY * tty_settings)
 {
-#if defined(EXP_WIN32_DRIVER)
-    /* FIXME */
-#else
-#ifdef ONLCR
-    tty_settings->c_oflag |= ONLCR;
-#endif
-    tty_settings->c_iflag |= ICRNL;
-    tty_settings->c_lflag |= ECHO;
-#ifdef OXTABS
-    tty_settings->c_oflag |= OXTABS;
-#endif /* OXTABS */
+#ifdef TERMIOS
+    set_flags(tty_settings->c_oflag, ONLCR);
+    set_flags(tty_settings->c_iflag, ICRNL);
+    set_flags(tty_settings->c_lflag, ECHO);
+    set_flags(tty_settings->c_oflag, OXTABS);
 
     /* test used to be tgetflag("NL") */
     if (VALID_STRING(newline) && newline[0] == '\n' && !newline[1]) {
 	/* Newline, not linefeed. */
-#ifdef ONLCR
-	tty_settings->c_oflag &= ~((unsigned) ONLCR);
-#endif
-	tty_settings->c_iflag &= ~((unsigned) ICRNL);
+	clear_flags(tty_settings->c_oflag, ONLCR);
+	clear_flags(tty_settings->c_iflag, ICRNL);
     }
-#ifdef OXTABS
+#if OXTABS
     /* test used to be tgetflag("pt") */
     if (VALID_STRING(set_tab) && VALID_STRING(clear_all_tabs))
-	tty_settings->c_oflag &= ~OXTABS;
+	clear_flags(tty_settings->c_oflag, OXTABS);
 #endif /* OXTABS */
-    tty_settings->c_lflag |= (ECHOE | ECHOK);
-#endif
+    set_flags(tty_settings->c_lflag, (ECHOE | ECHOK));
+#elif defined(_NC_WINDOWS)
+    (void) tty_settings;
+#endif /* TERMIOS */
 }
 
 static bool
@@ -490,8 +551,8 @@ send_init_strings(int fd GCC_UNUSED, TTY * old_settings)
     bool need_flush = FALSE;
 
     (void) old_settings;
-#ifdef TAB3
-    if (old_settings != 0 &&
+#if TAB3
+    if (old_settings != NULL &&
 	old_settings->c_oflag & (TAB3 | ONLCR | OCRNL | ONLRET)) {
 	old_settings->c_oflag &= (TAB3 | ONLCR | OCRNL | ONLRET);
 	SET_TTY(fd, old_settings);
@@ -502,32 +563,32 @@ send_init_strings(int fd GCC_UNUSED, TTY * old_settings)
 	    IGNORE_RC(system(init_prog));
 	}
 
-	need_flush |= sent_string((use_reset && (reset_1string != 0))
+	need_flush |= sent_string((use_reset && (reset_1string != NULL))
 				  ? reset_1string
 				  : init_1string);
 
-	need_flush |= sent_string((use_reset && (reset_2string != 0))
+	need_flush |= sent_string((use_reset && (reset_2string != NULL))
 				  ? reset_2string
 				  : init_2string);
 
 	if (VALID_STRING(clear_margins)) {
 	    need_flush |= sent_string(clear_margins);
-	} else
+	}
 #if defined(set_lr_margin)
-	if (VALID_STRING(set_lr_margin)) {
+	else if (VALID_STRING(set_lr_margin)) {
 	    need_flush |= sent_string(TIPARM_2(set_lr_margin, 0, columns - 1));
-	} else
+	}
 #endif
 #if defined(set_left_margin_parm) && defined(set_right_margin_parm)
-	    if (VALID_STRING(set_left_margin_parm)
-		&& VALID_STRING(set_right_margin_parm)) {
+	else if (VALID_STRING(set_left_margin_parm)
+		 && VALID_STRING(set_right_margin_parm)) {
 	    need_flush |= sent_string(TIPARM_1(set_left_margin_parm, 0));
 	    need_flush |= sent_string(TIPARM_1(set_right_margin_parm,
 					       columns - 1));
-	} else
+	}
 #endif
-	    if (VALID_STRING(set_left_margin)
-		&& VALID_STRING(set_right_margin)) {
+	else if (VALID_STRING(set_left_margin)
+		 && VALID_STRING(set_right_margin)) {
 	    need_flush |= to_left_margin();
 	    need_flush |= sent_string(set_left_margin);
 	    if (VALID_STRING(parm_right_cursor)) {
@@ -547,7 +608,7 @@ send_init_strings(int fd GCC_UNUSED, TTY * old_settings)
 
 	need_flush |= cat_file((use_reset && reset_file) ? reset_file : init_file);
 
-	need_flush |= sent_string((use_reset && (reset_3string != 0))
+	need_flush |= sent_string((use_reset && (reset_3string != NULL))
 				  ? reset_3string
 				  : init_3string);
     }
@@ -555,6 +616,7 @@ send_init_strings(int fd GCC_UNUSED, TTY * old_settings)
     return need_flush;
 }
 
+#ifdef TERMIOS
 /*
  * Tell the user if a control key has been changed from the default value.
  */
@@ -568,20 +630,11 @@ show_tty_change(TTY * old_settings,
     unsigned older = 0, newer = 0;
     char *p;
 
-#if defined(EXP_WIN32_DRIVER)
-    /* noop */
-    (void) old_settings;
-    (void) new_settings;
-    (void) name;
-    (void) which;
-    (void) def;
-#else
     newer = new_settings->c_cc[which];
     older = old_settings->c_cc[which];
 
     if (older == newer && older == def)
 	return;
-#endif
     (void) fprintf(stderr, "%s %s ", name, older == newer ? "is" : "set to");
 
     if (DISABLED(newer)) {
@@ -592,7 +645,7 @@ show_tty_change(TTY * old_settings,
 	 */
     } else if (newer == 0177) {
 	(void) fprintf(stderr, "delete.\n");
-    } else if ((p = key_backspace) != 0
+    } else if ((p = key_backspace) != NULL
 	       && newer == (unsigned char) p[0]
 	       && p[1] == '\0') {
 	(void) fprintf(stderr, "backspace.\n");
@@ -602,6 +655,7 @@ show_tty_change(TTY * old_settings,
     } else
 	(void) fprintf(stderr, "%c.\n", UChar(newer));
 }
+#endif /* TERMIOS */
 
 /**************************************************************************
  * Miscellaneous.
@@ -618,20 +672,21 @@ reset_start(FILE *fp, bool is_reset, bool is_init)
 void
 reset_flush(void)
 {
-    if (my_file != 0)
+    if (my_file != NULL)
 	fflush(my_file);
 }
 
 void
 print_tty_chars(TTY * old_settings, TTY * new_settings)
 {
-#if defined(EXP_WIN32_DRIVER)
-    /* noop */
-#else
+#ifdef TERMIOS
     show_tty_change(old_settings, new_settings, "Erase", VERASE, CERASE);
     show_tty_change(old_settings, new_settings, "Kill", VKILL, CKILL);
     show_tty_change(old_settings, new_settings, "Interrupt", VINTR, CINTR);
-#endif
+#elif defined(_NC_WINDOWS)
+    (void) old_settings;
+    (void) new_settings;
+#endif /* TERMIOS */
 }
 
 #if HAVE_SIZECHANGE
@@ -640,7 +695,7 @@ print_tty_chars(TTY * old_settings, TTY * new_settings)
  * size was set.
  */
 void
-set_window_size(int fd, short *high, short *wide)
+set_window_size(int fd, NCURSES_INT2 *high, NCURSES_INT2 *wide)
 {
     STRUCT_WINSIZE win;
     (void) ioctl(fd, IOCTL_GET_WINSIZE, &win);

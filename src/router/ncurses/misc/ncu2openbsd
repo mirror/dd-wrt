@@ -1,7 +1,7 @@
 #!/usr/bin/env perl
-# $Id: ncu2openbsd,v 1.65 2021/10/03 18:52:22 tom Exp $
+# $Id: ncu2openbsd,v 1.67 2023/09/09 15:59:17 tom Exp $
 # -----------------------------------------------------------------------------
-# Copyright 2021 by Thomas E. Dickey
+# Copyright 2021,2023 by Thomas E. Dickey
 #
 #                         All Rights Reserved
 #
@@ -44,7 +44,7 @@ use File::Temp qw/ tempdir /;
 
 $| = 1;
 
-our ( $opt_d, $opt_n, $opt_r, $opt_t, $opt_v, $opt_x );
+our ( $opt_d, $opt_n, $opt_r, $opt_t, $opt_v, $opt_x, $opt_6 );
 our $source_dir;
 our $target_dir;
 our $update_dir;
@@ -1177,12 +1177,12 @@ sub configure_tree() {
     my @search = ( "/usr/share/terminfo", "/usr/local/share/terminfo" );
     my @prefix = ("./configure");
     $prefix[ ++$#prefix ] = "--with-abi-version=5"
-      if ( &patchdate >= 20150502 );
+      if ( &patchdate >= 20150502 && !$opt_6 );
     my @options = (
-        "--with-ospeed=int",    #
-        "--with-shared",        #
-        "--without-normal",     #
-        "--without-debug",      #
+        "--with-ospeed=int",                               #
+        "--with-shared",                                   #
+        "--without-normal",                                #
+        "--without-debug",                                 #
         "--with-terminfo-dirs=" . join( ':', @search ),    #
         "--without-ada",                                   #
         "--disable-hard-tabs",                             #
@@ -1191,7 +1191,8 @@ sub configure_tree() {
         "--enable-bsdpad",                                 #
         "--enable-signed-char",                            #
         "--enable-termcap",                                #
-        "--enable-widec"
+        "--enable-widec",                                  #
+        "--disable-setuid-environ"
     );
     $options[ ++$#options ] = "--with-trace" if ($opt_t);
     $options[ ++$#options ] = "--enable-string-hacks"
@@ -1250,6 +1251,7 @@ sub usage() {
 Usage: ncu2openbsd [options] [sourcetree]
 
 Options:
+  -6       use ABI 6 rather than 5 if available
   -d DST   specify destination (default: /usr/src)
   -n       no-op, do not update destination
   -r       remove update, restore sources from ".orig"
@@ -1261,7 +1263,7 @@ EOF
 }
 
 $Getopt::Std::STANDARD_HELP_VERSION = 1;
-&getopts('d:nrtvx') || &usage();
+&getopts('6d:nrtvx') || &usage();
 $opt_d = "/usr/src" unless ($opt_d);
 &usage() unless ( $#ARGV <= 0 );
 

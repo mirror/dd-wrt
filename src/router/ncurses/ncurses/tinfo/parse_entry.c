@@ -1,5 +1,5 @@
 /****************************************************************************
- * Copyright 2018-2020,2021 Thomas E. Dickey                                *
+ * Copyright 2018-2024,2025 Thomas E. Dickey                                *
  * Copyright 1998-2016,2017 Free Software Foundation, Inc.                  *
  *                                                                          *
  * Permission is hereby granted, free of charge, to any person obtaining a  *
@@ -48,7 +48,7 @@
 #include <ctype.h>
 #include <tic.h>
 
-MODULE_ID("$Id: parse_entry.c,v 1.102 2021/09/04 10:54:35 tom Exp $")
+MODULE_ID("$Id: parse_entry.c,v 1.117 2025/11/23 20:25:15 tom Exp $")
 
 #ifdef LINT
 static short const parametrized[] =
@@ -110,7 +110,7 @@ _nc_extend_names(ENTRY * entryp, const char *name, int token_type)
 	/* Well, we are given a cancel for a name that we don't recognize */
 	return _nc_extend_names(entryp, name, STRING);
     default:
-	return 0;
+	return NULL;
     }
 
     /* Adjust the 'offset' (insertion-point) to keep the lists of extended
@@ -142,6 +142,11 @@ _nc_extend_names(ENTRY * entryp, const char *name, int token_type)
 	for (last = (unsigned) (max - 1); last > tindex; last--)
 
     if (!found) {
+	char *saved;
+
+	if ((saved = _nc_save_str(name)) == NULL)
+	    return NULL;
+
 	switch (token_type) {
 	case BOOLEAN:
 	    tp->ext_Booleans++;
@@ -169,7 +174,7 @@ _nc_extend_names(ENTRY * entryp, const char *name, int token_type)
 	TYPE_REALLOC(char *, actual, tp->ext_Names);
 	while (--actual > offset)
 	    tp->ext_Names[actual] = tp->ext_Names[actual - 1];
-	tp->ext_Names[offset] = _nc_save_str(name);
+	tp->ext_Names[offset] = saved;
     }
 
     temp.nte_name = tp->ext_Names[offset];
@@ -199,7 +204,7 @@ expected_type(const char *name, int token_type, bool silent)
 {
     struct user_table_entry const *entry = _nc_find_user_entry(name);
     bool result = TRUE;
-    if ((entry != 0) && (token_type != CANCEL)) {
+    if ((entry != NULL) && (token_type != CANCEL)) {
 	int have_type = (1 << token_type);
 	if (!(entry->ute_type & have_type)) {
 	    if (!silent)
@@ -214,16 +219,39 @@ expected_type(const char *name, int token_type, bool silent)
 }
 #endif /* NCURSES_XNAMES */
 
+/*
+ * A valid entry name uses characters from the "portable character set"
+ * (more commonly referred to as US-ASCII), and disallows some of the
+ * punctuation characters:
+ *
+ * '/' is a pathname separator
+ * '\' may be a pathname separator, but more important, is an escape
+ * '|' delimits names and description
+ * '#' denotes a numeric value
+ * '=' denotes a string value
+ * '@' denotes a cancelled symbol
+ * ',' separates terminfo capabilities
+ * ':' separates termcap capabilities
+ *
+ * Termcap capability names may begin with a '#' or '@' (since they have
+ * exactly two characters).
+ */
 static bool
 valid_entryname(const char *name)
 {
     bool result = TRUE;
+    bool first = TRUE;
     int ch;
     while ((ch = UChar(*name++)) != '\0') {
-	if (ch <= ' ' || ch > '~' || ch == '/') {
+	if (ch <= ' ' || ch > '~' || strchr("/\\|=,:", ch) != NULL) {
 	    result = FALSE;
 	    break;
 	}
+	if (!first && strchr("#@", ch) != NULL) {
+	    result = FALSE;
+	    break;
+	}
+	first = FALSE;
     }
     return result;
 }
@@ -262,10 +290,14 @@ _nc_parse_entry(ENTRY * entryp, int literal, bool silent)
     const char *name;
     bool bad_tc_usage = FALSE;
 
+    TR(TRACE_DATABASE,
+       (T_CALLED("_nc_parse_entry(entry=%p, literal=%d, silent=%d)"),
+	(void *) entryp, literal, silent));
+
     token_type = _nc_get_token(silent);
 
     if (token_type == EOF)
-	return (EOF);
+	returnDB(EOF);
     if (token_type != NAMES)
 	_nc_err_abort("Entry does not start with terminal names in column one");
 
@@ -300,10 +332,10 @@ _nc_parse_entry(ENTRY * entryp, int literal, bool silent)
 
     entryp->tterm.str_table = entryp->tterm.term_names = _nc_save_str(ptr);
 
-    if (entryp->tterm.str_table == 0)
-	return (ERR);
+    if (entryp->tterm.str_table == NULL)
+	returnDB(ERR);
 
-    DEBUG(1, ("Starting '%s'", ptr));
+    DEBUG(2, ("Starting '%s'", ptr));
 
     /*
      * We do this because the one-token lookahead in the parse loop
@@ -318,7 +350,7 @@ _nc_parse_entry(ENTRY * entryp, int literal, bool silent)
     _nc_set_type(name);
 
     /* check for overly-long names and aliases */
-    for (base = entryp->tterm.term_names; (ptr = strchr(base, '|')) != 0;
+    for (base = entryp->tterm.term_names; (ptr = strchr(base, '|')) != NULL;
 	 base = ptr + 1) {
 	if (ptr - base > MAX_ALIAS) {
 	    _nc_warning("%s `%.*s' may be too long",
@@ -337,6 +369,8 @@ _nc_parse_entry(ENTRY * entryp, int literal, bool silent)
 	bool is_use = (strcmp(_nc_curr_token.tk_name, "use") == 0);
 	bool is_tc = !is_use && (strcmp(_nc_curr_token.tk_name, "tc") == 0);
 	if (is_use || is_tc) {
+	    char *saved;
+
 	    if (!VALID_STRING(_nc_curr_token.tk_valstring)
 		|| _nc_curr_token.tk_valstring[0] == '\0') {
 		_nc_warning("missing name for use-clause");
@@ -345,21 +379,28 @@ _nc_parse_entry(ENTRY * entryp, int literal, bool silent)
 		_nc_warning("invalid name for use-clause \"%s\"",
 			    _nc_curr_token.tk_valstring);
 		continue;
-	    } else if (entryp->nuses >= MAX_USES) {
+	    } else if (entryp->nuses >= HARD_MAX_USES) {
 		_nc_warning("too many use-clauses, ignored \"%s\"",
 			    _nc_curr_token.tk_valstring);
 		continue;
+	    } else if (entryp->nuses >= WARN_MAX_USES) {
+		_nc_warning("possibly too many use-clauses (%d vs %d), \"%s\"",
+			    entryp->nuses,
+			    WARN_MAX_USES,
+			    _nc_curr_token.tk_valstring);
 	    }
-	    entryp->uses[entryp->nuses].name = _nc_save_str(_nc_curr_token.tk_valstring);
-	    entryp->uses[entryp->nuses].line = _nc_curr_line;
-	    entryp->nuses++;
-	    if (entryp->nuses > 1 && is_tc) {
-		BAD_TC_USAGE
+	    if ((saved = _nc_save_str(_nc_curr_token.tk_valstring)) != NULL) {
+		entryp->uses[entryp->nuses].name = saved;
+		entryp->uses[entryp->nuses].line = _nc_curr_line;
+		entryp->nuses++;
+		if (entryp->nuses > 1 && is_tc) {
+		    BAD_TC_USAGE
+		}
 	    }
 	} else {
 	    /* normal token lookup */
 	    entry_ptr = _nc_find_entry(_nc_curr_token.tk_name,
-				       _nc_get_hash_table(_nc_syntax));
+				       _nc_get_hash_table(_nc_syntax == SYN_TERMCAP));
 
 	    /*
 	     * Our kluge to handle aliasing.  The reason it is done
@@ -423,7 +464,7 @@ _nc_parse_entry(ENTRY * entryp, int literal, bool silent)
 		if (expected_type(_nc_curr_token.tk_name, token_type, silent)) {
 		    if ((entry_ptr = _nc_extend_names(entryp,
 						      _nc_curr_token.tk_name,
-						      token_type)) != 0) {
+						      token_type)) != NULL) {
 			if (_nc_tracing >= DEBUG_LEVEL(1)) {
 			    _nc_warning("extended capability '%s'",
 					_nc_curr_token.tk_name);
@@ -451,8 +492,8 @@ _nc_parse_entry(ENTRY * entryp, int literal, bool silent)
 		 */
 		if (!strcmp("ma", _nc_curr_token.tk_name)) {
 		    entry_ptr = _nc_find_type_entry("ma", NUMBER,
-						    _nc_syntax != 0);
-		    assert(entry_ptr != 0);
+						    _nc_syntax != SYN_TERMINFO);
+		    assert(entry_ptr != NULL);
 		}
 	    } else if (entry_ptr->nte_type != token_type) {
 		/*
@@ -469,15 +510,15 @@ _nc_parse_entry(ENTRY * entryp, int literal, bool silent)
 		    && !strcmp("ma", _nc_curr_token.tk_name)) {
 		    /* tell max_attributes from arrow_key_map */
 		    entry_ptr = _nc_find_type_entry("ma", NUMBER,
-						    _nc_syntax != 0);
-		    assert(entry_ptr != 0);
+						    _nc_syntax != SYN_TERMINFO);
+		    assert(entry_ptr != NULL);
 
 		} else if (token_type == STRING
 			   && !strcmp("MT", _nc_curr_token.tk_name)) {
 		    /* map terminfo's string MT to MT */
 		    entry_ptr = _nc_find_type_entry("MT", STRING,
-						    _nc_syntax != 0);
-		    assert(entry_ptr != 0);
+						    _nc_syntax != SYN_TERMINFO);
+		    assert(entry_ptr != NULL);
 
 		} else if (token_type == BOOLEAN
 			   && entry_ptr->nte_type == STRING) {
@@ -513,7 +554,8 @@ _nc_parse_entry(ENTRY * entryp, int literal, bool silent)
 	    case CANCEL:
 		switch (entry_ptr->nte_type) {
 		case BOOLEAN:
-		    entryp->tterm.Booleans[entry_ptr->nte_index] = CANCELLED_BOOLEAN;
+		    entryp->tterm.Booleans[entry_ptr->nte_index] =
+			(NCURSES_SBOOL) CANCELLED_BOOLEAN;
 		    break;
 
 		case NUMBER:
@@ -593,7 +635,7 @@ _nc_parse_entry(ENTRY * entryp, int literal, bool silent)
 		 * have picked up defaults via translation.
 		 */
 		for (i = 0; i < entryp->nuses; i++) {
-		    if (entryp->uses[i].name != 0
+		    if (entryp->uses[i].name != NULL
 			&& !strchr(entryp->uses[i].name, '+'))
 			has_base_entry = TRUE;
 		}
@@ -605,7 +647,7 @@ _nc_parse_entry(ENTRY * entryp, int literal, bool silent)
     }
     _nc_wrap_entry(entryp, FALSE);
 
-    return (OK);
+    returnDB(OK);
 }
 
 NCURSES_EXPORT(int)
@@ -659,9 +701,9 @@ _nc_capcmp(const char *s, const char *t)
 }
 
 static void
-append_acs0(string_desc * dst, int code, char *src, size_t off)
+append_acs0(string_desc * dst, int code, const char *src, size_t off)
 {
-    if (src != 0 && off < strlen(src)) {
+    if (src != NULL && off < strlen(src)) {
 	char temp[3];
 	temp[0] = (char) code;
 	temp[1] = src[off];
@@ -671,7 +713,7 @@ append_acs0(string_desc * dst, int code, char *src, size_t off)
 }
 
 static void
-append_acs(string_desc * dst, int code, char *src)
+append_acs(string_desc * dst, int code, const char *src)
 {
     if (VALID_STRING(src) && strlen(src) == 1) {
 	append_acs0(dst, code, src, 0);
@@ -736,6 +778,10 @@ postprocess_termcap(TERMTYPE2 *tp, bool has_base)
 {
     char buf[MAX_LINE * 2 + 2];
     string_desc result;
+
+    TR(TRACE_DATABASE,
+       (T_CALLED("postprocess_termcap(tp=%p, has_base=%d)"),
+	(void *) tp, has_base));
 
     /*
      * TERMCAP DEFAULTS AND OBSOLETE-CAPABILITY TRANSLATIONS
@@ -889,15 +935,15 @@ postprocess_termcap(TERMTYPE2 *tp, bool has_base)
 
 	/* we're going to use this for a special case later */
 	dp = strchr(other_non_function_keys, 'i');
-	foundim = (dp != 0) && (dp[1] == 'm');
+	foundim = (dp != NULL) && (dp[1] == 'm');
 
 	/* look at each comma-separated capability in the ko string... */
 	for (base = other_non_function_keys;
-	     (cp = strchr(base, ',')) != 0;
+	     (cp = strchr(base, ',')) != NULL;
 	     base = cp + 1) {
 	    size_t len = (unsigned) (cp - base);
 	    size_t n;
-	    assoc const *ap = 0;
+	    assoc const *ap = NULL;
 
 	    for (n = 0; n < SIZEOF(ko_xlate); ++n) {
 		if (len == strlen(ko_xlate[n].from)
@@ -906,7 +952,7 @@ postprocess_termcap(TERMTYPE2 *tp, bool has_base)
 		    break;
 		}
 	    }
-	    if (ap == 0) {
+	    if (ap == NULL) {
 		_nc_warning("unknown capability `%.*s' in ko string",
 			    (int) len, base);
 		continue;
@@ -945,6 +991,8 @@ postprocess_termcap(TERMTYPE2 *tp, bool has_base)
 	    bp = tp->Strings[from_ptr->nte_index];
 	    if (VALID_STRING(bp)) {
 		for (dp = buf2; *bp; bp++) {
+		    if ((size_t) (dp - buf2) >= (sizeof(buf2) - sizeof(TERMTYPE2)))
+			  break;
 		    if (bp[0] == '$' && bp[1] == '<') {
 			while (*bp && *bp != '>') {
 			    ++bp;
@@ -1023,11 +1071,16 @@ postprocess_termcap(TERMTYPE2 *tp, bool has_base)
 	       && PRESENT(exit_alt_charset_mode)) {
 	acs_chars = _nc_save_str(VT_ACSC);
     }
+    returnVoidDB;
 }
 
 static void
 postprocess_terminfo(TERMTYPE2 *tp)
 {
+    TR(TRACE_DATABASE,
+       (T_CALLED("postprocess_terminfo(tp=%p)"),
+	(void *) tp));
+
     /*
      * TERMINFO-TO-TERMINFO MAPPINGS FOR SOURCE TRANSLATION
      * ----------------------------------------------------------------------
@@ -1064,6 +1117,7 @@ postprocess_terminfo(TERMTYPE2 *tp)
     /*
      * ----------------------------------------------------------------------
      */
+    returnVoidDB;
 }
 
 /*
@@ -1097,7 +1151,7 @@ lookup_fullname(const char *find)
 	    return NOTFOUND;
 	}
 
-	for (count = 0; names[count] != 0; count++) {
+	for (count = 0; names[count] != NULL; count++) {
 	    if (!strcmp(names[count], find)) {
 		struct name_table_entry const *entry_ptr = _nc_get_table(FALSE);
 		while (entry_ptr->nte_type != state

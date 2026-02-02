@@ -1,5 +1,5 @@
 /****************************************************************************
- * Copyright 2020 Thomas E. Dickey                                          *
+ * Copyright 2020-2024,2025 Thomas E. Dickey                                *
  * Copyright 2007-2014,2017 Free Software Foundation, Inc.                  *
  *                                                                          *
  * Permission is hereby granted, free of charge, to any person obtaining a  *
@@ -27,7 +27,7 @@
  * authorization.                                                           *
  ****************************************************************************/
 /*
- * $Id: key_names.c,v 1.8 2020/02/02 23:34:34 tom Exp $
+ * $Id: key_names.c,v 1.13 2025/07/05 15:21:56 tom Exp $
  */
 
 #include <test.priv.h>
@@ -35,15 +35,32 @@
 #if USE_WIDEC_SUPPORT
 
 static void
-usage(void)
+usage(int ok)
 {
-    fprintf(stderr, "Usage: key_names [-m] [-s]\n");
-    ExitProgram(EXIT_FAILURE);
+    static const char *msg[] =
+    {
+	"Usage: key_names"
+	,""
+	,USAGE_COMMON
+	,"Options:"
+	," -m       call meta(TRUE) in initialization"
+	," -s       call newterm, etc., to complete initialization"
+    };
+    size_t n;
+
+    for (n = 0; n < SIZEOF(msg); n++)
+	fprintf(stderr, "%s\n", msg[n]);
+
+    ExitProgram(ok ? EXIT_SUCCESS : EXIT_FAILURE);
 }
+/* *INDENT-OFF* */
+VERSION_COMMON()
+/* *INDENT-ON* */
 
 int
 main(int argc, char *argv[])
 {
+    int ch;
     int n;
 
     bool do_setup = FALSE;
@@ -51,8 +68,8 @@ main(int argc, char *argv[])
 
     setlocale(LC_ALL, "");
 
-    while ((n = getopt(argc, argv, "ms")) != -1) {
-	switch (n) {
+    while ((ch = getopt(argc, argv, OPTS_COMMON "ms")) != -1) {
+	switch (ch) {
 	case 'm':
 	    do_meta = TRUE;
 	    break;
@@ -60,7 +77,7 @@ main(int argc, char *argv[])
 	    do_setup = TRUE;
 	    break;
 	default:
-	    usage();
+	    CASE_COMMON;
 	    /* NOTREACHED */
 	}
     }
@@ -80,7 +97,7 @@ main(int argc, char *argv[])
     for (n = -1; n < KEY_MAX + 512; n++) {
 	int check = wcwidth((wchar_t) n);
 	const char *result = check >= 0 ? key_name((wchar_t) n) : "?";
-	if (result != 0)
+	if (result != NULL)
 	    printf("%d(%5o):%s\n", n, n, result);
     }
     ExitProgram(EXIT_SUCCESS);

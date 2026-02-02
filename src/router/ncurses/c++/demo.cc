@@ -1,6 +1,6 @@
 // * This makes emacs happy -*-Mode: C++;-*-
 /****************************************************************************
- * Copyright 2018-2020,2021 Thomas E. Dickey                                *
+ * Copyright 2018-2023,2025 Thomas E. Dickey                                *
  * Copyright 1998-2012,2017 Free Software Foundation, Inc.                  *
  *                                                                          *
  * Permission is hereby granted, free of charge, to any person obtaining a  *
@@ -36,7 +36,7 @@
  *   Demo code for NCursesMenu and NCursesForm written by
  *   Juergen Pfeifer
  *
- * $Id: demo.cc,v 1.50 2021/09/04 10:52:55 tom Exp $
+ * $Id: demo.cc,v 1.53 2025/01/25 21:21:05 tom Exp $
  */
 
 #include "internal.h"
@@ -46,6 +46,7 @@
 
 #if (defined(_WIN32) || defined(_WIN64))
 #undef KEY_EVENT
+#undef sleep
 #define sleep(n) Sleep(n)
 #else
 extern "C" unsigned int sleep(unsigned int);
@@ -168,12 +169,12 @@ public:
 //
 // -------------------------------------------------------------------------
 //
-template<class T> class MyAction : public NCursesUserItem<T>
+template<class T> class NCURSES_CXX_IMPEXP MyAction : public NCursesUserItem<UserData>
 {
 public:
   MyAction (const char* p_name,
             const T* p_UserData)
-    : NCursesUserItem<T>(p_name, static_cast<const char*>(0), p_UserData)
+    : NCursesUserItem<T>(p_name, static_cast<const char*>(NULL), p_UserData)
   {}
 
   virtual ~MyAction() THROWS(NCursesException) {}
@@ -184,9 +185,6 @@ public:
     return FALSE;
   }
 };
-
-template class MyAction<UserData>;
-template class NCURSES_CXX_IMPEXP NCursesUserItem<UserData>;
 
 class QuitItem : public NCursesMenuItem
 {
@@ -246,10 +244,10 @@ private:
 public:
   TestForm()
     : NCursesForm(13, 51, (lines() - 15)/2, (cols() - 53)/2),
-      F(0),
-      mft(0),
-      ift(0),
-      eft(0)
+      F(NULL),
+      mft(NULL),
+      ift(NULL),
+      eft(NULL)
   {
 
     F     = new NCursesFormField*[10];
@@ -291,7 +289,7 @@ public:
   }
 
   TestForm(const TestForm& rhs)
-    : NCursesForm(rhs), F(0), mft(0), ift(0), eft(0)
+    : NCursesForm(rhs), F(NULL), mft(NULL), ift(NULL), eft(NULL)
   {
   }
 
@@ -440,7 +438,7 @@ private:
 public:
   MyMenu ()
     : NCursesMenu (n_items+2, 8, (lines()-10)/2, (cols()-10)/2),
-      P(0), I(0), u(0)
+      P(NULL), I(NULL), u(NULL)
   {
     u = new UserData(1);
     I = new NCursesMenuItem*[1+n_items];
@@ -469,7 +467,7 @@ public:
   }
 
   MyMenu(const MyMenu& rhs)
-    : NCursesMenu(rhs), P(0), I(0), u(0)
+    : NCursesMenu(rhs), P(NULL), I(NULL), u(NULL)
   {
   }
 

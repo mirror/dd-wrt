@@ -1,5 +1,5 @@
 /****************************************************************************
- * Copyright 2020,2021 Thomas E. Dickey                                     *
+ * Copyright 2020-2024,2025 Thomas E. Dickey                                *
  *                                                                          *
  * Permission is hereby granted, free of charge, to any person obtaining a  *
  * copy of this software and associated documentation files (the            *
@@ -26,9 +26,9 @@
  * authorization.                                                           *
  ****************************************************************************/
 /*
- * $Id: dup_field.c,v 1.2 2021/03/27 23:41:57 tom Exp $
+ * $Id: dup_field.c,v 1.14 2025/07/05 15:11:35 tom Exp $
  *
- * Demonstrate move_field().
+ * Demonstrate dup_field().
  */
 
 #include <test.priv.h>
@@ -38,7 +38,8 @@
 #include <edit_field.h>
 #include <popup_msg.h>
 
-#define MY_DEMO		EDIT_FIELD('f')
+#define DO_DEMO	CTRL('F')	/* actual key for toggling demo-mode */
+#define MY_DEMO	EDIT_FIELD('f')	/* internal request-code */
 
 static char empty[] = "";
 static FIELD *all_fields[100];
@@ -51,7 +52,6 @@ static struct {
     { CTRL('A'),     REQ_BEG_FIELD,   "go to beginning of field" },
     { CTRL('D'),     REQ_DOWN_FIELD,  "move downward to field" },
     { CTRL('E'),     REQ_END_FIELD,   "go to end of field" },
-    { CTRL('G'),     MY_DEMO,         "move current field with cursor keys" },
     { CTRL('H'),     REQ_DEL_PREV,    "delete previous character" },
     { CTRL('I'),     REQ_NEXT_FIELD,  "go to next field" },
     { CTRL('K'),     REQ_CLR_EOF,     "clear to end of field" },
@@ -62,7 +62,7 @@ static struct {
     { CTRL('W'),     REQ_NEXT_WORD,   "go to next word" },
     { CTRL('X'),     REQ_CLR_FIELD,   "clear field" },
     { CTRL('['),     MY_QUIT,         "exit form" },
-    { KEY_F(1),      MY_HELP,         "show this screen", },
+    { HELP_KEY_2,    MY_HELP,         "show this screen", },
     { KEY_BACKSPACE, REQ_DEL_PREV,    "delete previous character" },
     { KEY_BTAB,      REQ_PREV_FIELD,  "go to previous field" },
     { KEY_DOWN,      REQ_DOWN_CHAR,   "move down 1 character" },
@@ -72,7 +72,8 @@ static struct {
     { KEY_NEXT,      REQ_NEXT_FIELD,  "go to next field" },
     { KEY_PREVIOUS,  REQ_PREV_FIELD,  "go to previous field" },
     { KEY_RIGHT,     REQ_RIGHT_CHAR,  "move right 1 character" },
-    { KEY_UP,        REQ_UP_CHAR,     "move up 1 character" }
+    { KEY_UP,        REQ_UP_CHAR,     "move up 1 character" },
+    { DO_DEMO,       MY_DEMO,         "duplicate current field" }
 };
 /* *INDENT-ON* */
 
@@ -90,27 +91,24 @@ my_help_edit_field(void)
 	const char *code = keyname(commands[n].code);
 	size_t need = 5;
 #ifdef NCURSES_VERSION
-	if ((name = form_request_name(commands[n].result)) == 0)
+	if ((name = form_request_name(commands[n].result)) == NULL)
 #endif
 	    name = commands[n].help;
 	need = 5 + strlen(code) + strlen(name);
 	msg = typeMalloc(char, need);
-	_nc_SPRINTF(msg, _nc_SLIMIT(need) "%s -- %s", code, name);
-	msgs[used++] = msg;
+	if (msg != NULL) {
+	    _nc_SPRINTF(msg, _nc_SLIMIT(need) "%s -- %s", code, name);
+	    msgs[used++] = msg;
+	}
     }
     msgs[used++] =
 	strdup("Arrow keys move within a field as you would expect.");
-    msgs[used] = 0;
+    msgs[used] = NULL;
     popup_msg2(stdscr, msgs);
-    for (n = 0; msgs[n] != 0; ++n) {
+    for (n = 0; msgs[n] != NULL; ++n) {
 	free(msgs[n]);
     }
     free(msgs);
-}
-
-static void
-do_demo(FORM *form)
-{
 }
 
 static FIELD *
@@ -120,7 +118,7 @@ make_label(const char *label, int frow, int fcol)
 
     if (f) {
 	set_field_buffer(f, 0, label);
-	set_field_opts(f, (int) ((unsigned) field_opts(f) & ~O_ACTIVE));
+	set_field_opts(f, (int) ((unsigned) field_opts(f) & (unsigned) ~O_ACTIVE));
     }
     return (f);
 }
@@ -147,52 +145,30 @@ erase_form(FORM *f)
     werase(w);
     wrefresh(w);
     delwin(s);
-    delwin(w);
-}
-
-static int
-my_form_driver(FORM *form, int c)
-{
-    switch (c) {
-    case MY_QUIT:
-	if (form_driver(form, REQ_VALIDATION) == E_OK)
-	    return (TRUE);
-	break;
-    case MY_HELP:
-	my_help_edit_field();
-	break;
-    case MY_DEMO:
-	do_demo(form);
-	break;
-    default:
-	beep();
-	break;
-    }
-    return (FALSE);
 }
 
 static FieldAttrs *
-my_field_attrs(FIELD *f)
+my_field_attrs(NCURSES_CONST FIELD *f)
 {
     return (FieldAttrs *) field_userptr(f);
 }
 
 static int
-buffer_length(FIELD *f)
+buffer_length(NCURSES_CONST FIELD *f)
 {
     return my_field_attrs(f)->row_lengths[0];
 }
 
 static void
-set_buffer_length(FIELD *f, int length)
+set_buffer_length(NCURSES_CONST FIELD *f, int length)
 {
     my_field_attrs(f)->row_lengths[0] = length;
 }
 
 static int
-offset_in_field(FORM *form)
+offset_in_field(NCURSES_CONST FORM *form)
 {
-    FIELD *field = current_field(form);
+    NCURSES_CONST FIELD *field = current_field(form);
     int currow, curcol;
 
     form_getyx(form, currow, curcol);
@@ -271,7 +247,7 @@ my_edit_field(FORM *form, int *result)
 
 	default:
 	    modified = (ch < MIN_FORM_COMMAND
-			&& isprint(ch));
+			&& isprint(UChar(ch)));
 	    break;
 	}
 
@@ -289,6 +265,55 @@ my_edit_field(FORM *form, int *result)
     if (current_field(form) != before)
 	inactive_field(before);
     return status;
+}
+
+static FIELD **
+copy_fields(FIELD **source, FIELD *extra, size_t length)
+{
+    FIELD **target = typeCalloc(FIELD *, length + 1);
+    memcpy(target, source, length * sizeof(FIELD *));
+    target[length] = extra;
+    return target;
+}
+
+static void
+do_demo(FORM *form)
+{
+    int count = field_count(form);
+    FIELD *my_field = current_field(form);
+    FIELD **old_fields = form_fields(form);
+
+    if (count > 0 && old_fields != NULL && my_field != NULL) {
+	FIELD **new_fields = copy_fields(old_fields,
+					 dup_field(my_field,
+						   form_field_row(my_field)
+						   + 1,
+						   form_field_col(my_field)),
+					 (size_t) count);
+	if (new_fields != NULL)
+	    set_form_fields(form, new_fields);
+    }
+}
+
+static int
+my_form_driver(FORM *form, int c)
+{
+    switch (c) {
+    case MY_QUIT:
+	if (form_driver(form, REQ_VALIDATION) == E_OK)
+	    return (TRUE);
+	break;
+    case MY_HELP:
+	my_help_edit_field();
+	break;
+    case MY_DEMO:
+	do_demo(form);
+	break;
+    default:
+	beep();
+	break;
+    }
+    return (FALSE);
 }
 
 static void
@@ -324,7 +349,7 @@ demo_forms(void)
 
     all_fields[n] = (FIELD *) 0;
 
-    if ((form = new_form(all_fields)) != 0) {
+    if ((form = new_form(all_fields)) != NULL) {
 	int finished = 0;
 
 	post_form(form);
@@ -346,7 +371,7 @@ demo_forms(void)
 
 	free_form(form);
     }
-    for (c = 0; all_fields[c] != 0; c++) {
+    for (c = 0; all_fields[c] != NULL; c++) {
 	free_edit_field(all_fields[c]);
 	free_field(all_fields[c]);
     }
@@ -354,9 +379,41 @@ demo_forms(void)
     nl();
 }
 
-int
-main(void)
+static void
+usage(int ok)
 {
+    static const char *msg[] =
+    {
+	"Usage: dup_field [options]"
+	,""
+	,USAGE_COMMON
+    };
+    size_t n;
+
+    for (n = 0; n < SIZEOF(msg); n++)
+	fprintf(stderr, "%s\n", msg[n]);
+
+    ExitProgram(ok ? EXIT_SUCCESS : EXIT_FAILURE);
+}
+/* *INDENT-OFF* */
+VERSION_COMMON()
+/* *INDENT-ON* */
+
+int
+main(int argc, char *argv[])
+{
+    int ch;
+
+    while ((ch = getopt(argc, argv, OPTS_COMMON)) != -1) {
+	switch (ch) {
+	default:
+	    CASE_COMMON;
+	    /* NOTREACHED */
+	}
+    }
+    if (optind < argc)
+	usage(FALSE);
+
     setlocale(LC_ALL, "");
 
     initscr();

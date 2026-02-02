@@ -1,6 +1,6 @@
-# $Id: Makefile.in,v 1.129 2021/07/03 15:45:33 tom Exp $
+# $Id: Makefile.in,v 1.133 2025/10/18 16:08:41 tom Exp $
 ##############################################################################
-# Copyright 2020,2021 Thomas E. Dickey                                       #
+# Copyright 2020-2024,2025 Thomas E. Dickey                                  #
 # Copyright 1998-2017,2018 Free Software Foundation, Inc.                    #
 #                                                                            #
 # Permission is hereby granted, free of charge, to any person obtaining a    #
@@ -39,10 +39,14 @@ SHELL		= @SHELL@
 VPATH		= @srcdir@
 
 @SET_MAKE@
+@SET_DESTDIR@
+TOP_MFLAGS	= DESTDIR="$(DESTDIR)" RPATH_LIST="$(RPATH_LIST)"
 
 destdir		=
 x		= @EXEEXT@
 o		= .@OBJEXT@
+
+PACKAGE		= @PACKAGE@
 
 MODEL		= ../@DFT_OBJ_SUBDIR@
 top_srcdir	= @top_srcdir@
@@ -52,18 +56,19 @@ exec_prefix	= @exec_prefix@
 datarootdir	= @datarootdir@
 
 bindir		= @bindir@
+libexecdir	= @libexecdir@
 libdir		= @libdir@
-includedir	= @includedir@
-includesubdir	= @includesubdir@
 datarootdir	= @datarootdir@
 datadir		= @datadir@
 
-BINDIR		= $(DESTDIR)$(bindir)
-LIBDIR		= $(DESTDIR)$(libdir)
-INCLUDEDIR	= $(DESTDIR)$(includedir)$(includesubdir)
-DATADIR		= $(DESTDIR)$(datadir)
+real_bindir	= $(libexecdir)/$(PACKAGE)
 
-PACKAGE		= @PACKAGE@
+BINDIR		= $(DESTDIR)$(bindir@MERGE_PREFIX@)
+LIBEXECDIR	= $(DESTDIR)$(libexecdir@MERGE_PREFIX@)
+LIBDIR		= $(DESTDIR)$(libdir@MERGE_PREFIX@)
+DATADIR		= $(DESTDIR)$(datadir@MERGE_PREFIX@)
+
+REAL_BINDIR	= $(LIBEXECDIR)/$(PACKAGE)
 
 LIBTOOL		= @LIBTOOL@
 LIBTOOL_OPTS	= @LIBTOOL_OPTS@
@@ -170,5 +175,11 @@ check::
 			$(CC) -c $(CFLAGS) $(CPPFLAGS) headers.c; \
 		done"
 	-@rm -f headers.*
+
+# These rules are used to allow "make -n" to work on a clean directory-tree
+../include/curses.h \
+../include/ncurses_def.h \
+../include/term.h :
+	( cd ../include && $(MAKE) $(TOP_MFLAGS) )
 
 # The rest is generated from the "programs" and "modules" files...

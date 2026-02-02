@@ -1,5 +1,5 @@
 /****************************************************************************
- * Copyright 2019-2020,2021 Thomas E. Dickey                                *
+ * Copyright 2019-2022,2024 Thomas E. Dickey                                *
  * Copyright 1998-2016,2017 Free Software Foundation, Inc.                  *
  *                                                                          *
  * Permission is hereby granted, free of charge, to any person obtaining a  *
@@ -37,7 +37,7 @@
 #include <curses.priv.h>
 #include <ctype.h>
 
-MODULE_ID("$Id: lib_addch.c,v 1.138 2021/06/17 21:11:08 tom Exp $")
+MODULE_ID("$Id: lib_addch.c,v 1.144 2024/12/07 17:18:07 tom Exp $")
 
 static const NCURSES_CH_T blankchar = NewChar(BLANK_TEXT);
 
@@ -118,7 +118,7 @@ _nc_render(WINDOW *win, NCURSES_CH_T ch)
 #endif
 
 static bool
-newline_forces_scroll(WINDOW *win, NCURSES_SIZE_T *ypos)
+newline_forces_scroll(const WINDOW *win, NCURSES_SIZE_T *ypos)
 {
     bool result = FALSE;
 
@@ -321,20 +321,29 @@ waddch_literal(WINDOW *win, NCURSES_CH_T ch)
 	int len = _nc_wacs_width(CharOf(ch));
 	int i;
 	int j;
-	wchar_t *chars;
 
 	if (len == 0) {		/* non-spacing */
 	    if ((x > 0 && y >= 0)
 		|| (win->_maxx >= 0 && win->_cury >= 1)) {
-		if (x > 0 && y >= 0)
-		    chars = (win->_line[y].text[x - 1].chars);
-		else
-		    chars = (win->_line[y - 1].text[win->_maxx].chars);
+		NCURSES_CH_T *dst;
+		wchar_t *chars;
+		if (x > 0 && y >= 0) {
+		    for (j = x - 1; j >= 0; --j) {
+			if (!isWidecExt(win->_line[y].text[j])) {
+			    win->_curx = (NCURSES_SIZE_T) j;
+			    break;
+			}
+		    }
+		    dst = &(win->_line[y].text[j]);
+		} else {
+		    dst = &(win->_line[y - 1].text[win->_maxx]);
+		}
+		chars = dst->chars;
 		for (i = 0; i < CCHARW_MAX; ++i) {
 		    if (chars[i] == 0) {
 			TR(TRACE_VIRTPUT,
-			   ("added non-spacing %d: %x",
-			    x, (int) CharOf(ch)));
+			   ("adding non-spacing %s (level %d)",
+			    _tracech_t(CHREF(ch)), i));
 			chars[i] = CharOf(ch);
 			break;
 		    }
@@ -410,9 +419,9 @@ waddch_literal(WINDOW *win, NCURSES_CH_T ch)
   testwrapping:
     );
 
-    TR(TRACE_VIRTPUT, ("cell (%ld, %ld..%d) = %s",
-		       (long) win->_cury, (long) win->_curx, x - 1,
-		       _tracech_t(CHREF(ch))));
+    TR(TRACE_VIRTPUT, ("cell (%d, %d..%d) = %s",
+		       win->_cury, win->_curx, x - 1,
+		       _tracech_t(CHREF(line->text[win->_curx]))));
 
     if (x > win->_maxx) {
 	return wrap_to_next_line(win);
@@ -442,14 +451,14 @@ waddch_nosync(WINDOW *win, const NCURSES_CH_T ch)
     if ((AttrOf(ch) & A_ALTCHARSET)
 	|| (
 #if USE_WIDEC_SUPPORT
-	       (sp != 0 && sp->_legacy_coding) &&
+	       (sp != NULL && sp->_legacy_coding) &&
 #endif
 	       s[1] == 0
 	)
 	|| (
-	       (isprint((int) t) && !iscntrl((int) t))
+	       (isprint(UChar(t)) && !iscntrl(UChar(t)))
 #if USE_WIDEC_SUPPORT
-	       || ((sp == 0 || !sp->_legacy_coding) &&
+	       || ((sp == NULL || !sp->_legacy_coding) &&
 		   (WINDOW_EXT(win, addch_used)
 		    || !_nc_is_charable(CharOf(ch))))
 #endif

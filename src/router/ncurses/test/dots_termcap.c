@@ -1,5 +1,5 @@
 /****************************************************************************
- * Copyright 2018-2019,2020 Thomas E. Dickey                                *
+ * Copyright 2018-2024,2025 Thomas E. Dickey                                *
  * Copyright 2013-2014,2017 Free Software Foundation, Inc.                  *
  *                                                                          *
  * Permission is hereby granted, free of charge, to any person obtaining a  *
@@ -30,14 +30,14 @@
 /*
  * Author: Thomas E. Dickey
  *
- * $Id: dots_termcap.c,v 1.26 2020/09/05 17:58:47 juergen Exp $
+ * $Id: dots_termcap.c,v 1.38 2025/07/05 15:21:56 tom Exp $
  *
  * A simple demo of the termcap interface.
  */
 #define USE_TINFO
 #include <test.priv.h>
 
-#if !defined(_NC_WINDOWS)
+#if !defined(_NC_WINDOWS_NATIVE)
 #include <sys/time.h>
 #endif
 
@@ -113,7 +113,7 @@ TPUTS_PROTO(outc, c)
 }
 
 static bool
-outs(char *s)
+outs(NCURSES_CONST char *s)
 {
     if (VALID_STRING(s)) {
 	tputs(s, 1, outc);
@@ -150,11 +150,19 @@ ranf(void)
     return ((double) r / 32768.);
 }
 
+/*
+ * napms is a curses function which happens to be usable without initializing
+ * the screen, but if this program happened to be build with a "real" termcap
+ * library, there is nothing like napms.
+ */
+#if HAVE_NAPMS
+#define my_napms(ms) napms(ms)
+#else
 static void
 my_napms(int ms)
 {
     if (ms > 0) {
-#if defined(_NC_WINDOWS) || !HAVE_GETTIMEOFDAY
+#if defined(_NC_WINDOWS_NATIVE)
 	Sleep((unsigned int) ms);
 #else
 	struct timeval data;
@@ -164,14 +172,15 @@ my_napms(int ms)
 #endif
     }
 }
+#endif
 
 static int
 get_number(NCURSES_CONST char *cap, const char *env)
 {
     int result = tgetnum(cap);
-    char *value = env ? getenv(env) : 0;
-    if (value != 0 && *value != 0) {
-	char *next = 0;
+    const char *value = env ? getenv(env) : NULL;
+    if (value != NULL && *value != 0) {
+	char *next = NULL;
 	long check = strtol(value, &next, 10);
 	if (check > 0 && *next == '\0')
 	    result = (int) check;
@@ -180,12 +189,13 @@ get_number(NCURSES_CONST char *cap, const char *env)
 }
 
 static void
-usage(void)
+usage(int ok)
 {
     static const char *msg[] =
     {
 	"Usage: dots_termcap [options]"
 	,""
+	,USAGE_COMMON
 	,"Options:"
 	," -T TERM  override $TERM"
 	," -e       allow environment $LINES / $COLUMNS"
@@ -198,8 +208,11 @@ usage(void)
     for (n = 0; n < SIZEOF(msg); n++)
 	fprintf(stderr, "%s\n", msg[n]);
 
-    ExitProgram(EXIT_FAILURE);
+    ExitProgram(ok ? EXIT_SUCCESS : EXIT_FAILURE);
 }
+/* *INDENT-OFF* */
+VERSION_COMMON()
+/* *INDENT-ON* */
 
 int
 main(int argc, char *argv[])
@@ -216,17 +229,18 @@ main(int argc, char *argv[])
     double c;
     char buffer[1024];
     char area[1024];
-    char *name;
+    NCURSES_CONST char *name;
     size_t need;
     char *my_env;
 
-    while ((ch = getopt(argc, argv, "T:em:r:s:")) != -1) {
+    while ((ch = getopt(argc, argv, OPTS_COMMON "T:em:r:s:")) != -1) {
 	switch (ch) {
 	case 'T':
 	    need = 6 + strlen(optarg);
-	    my_env = malloc(need);
-	    _nc_SPRINTF(my_env, _nc_SLIMIT(need) "TERM=%s", optarg);
-	    putenv(my_env);
+	    if ((my_env = malloc(need)) != NULL) {
+		_nc_SPRINTF(my_env, _nc_SLIMIT(need) "TERM=%s", optarg);
+		putenv(my_env);
+	    }
 	    break;
 	case 'e':
 	    e_option = 1;
@@ -241,17 +255,17 @@ main(int argc, char *argv[])
 	    s_option = atoi(optarg);
 	    break;
 	default:
-	    usage();
-	    break;
+	    CASE_COMMON;
+	    /* NOTREACHED */
 	}
     }
 
-    if ((name = getenv("TERM")) == 0) {
+    if ((name = getenv("TERM")) == NULL) {
 	fprintf(stderr, "TERM is not set\n");
 	ExitProgram(EXIT_FAILURE);
     }
 
-    srand((unsigned) time(0));
+    srand((unsigned) time(NULL));
 
     SetupAlarm((unsigned) r_option);
     InitAndCatch(ch = tgetent(buffer, name), onsig);
@@ -268,7 +282,7 @@ main(int argc, char *argv[])
     }
 
     num_colors = tgetnum("Co");
-#define GetNumber(cap,env) get_number(cap, e_option ? env : 0)
+#define GetNumber(cap,env) get_number(cap, e_option ? env : NULL)
     num_lines = GetNumber("li", "LINES");
     num_columns = GetNumber("co", "COLUMNS");
 
@@ -319,8 +333,7 @@ main(int argc, char *argv[])
 }
 #else
 int
-main(int argc GCC_UNUSED,
-     char *argv[]GCC_UNUSED)
+main(void)
 {
     fprintf(stderr, "This program requires termcap\n");
     exit(EXIT_FAILURE);

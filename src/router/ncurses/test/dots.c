@@ -1,5 +1,5 @@
 /****************************************************************************
- * Copyright 2019,2020 Thomas E. Dickey                                     *
+ * Copyright 2019-2024,2025 Thomas E. Dickey                                *
  * Copyright 1999-2013,2017 Free Software Foundation, Inc.                  *
  *                                                                          *
  * Permission is hereby granted, free of charge, to any person obtaining a  *
@@ -30,7 +30,7 @@
 /*
  * Author: Thomas E. Dickey <dickey@clark.net> 1999
  *
- * $Id: dots.c,v 1.40 2020/05/29 23:04:02 tom Exp $
+ * $Id: dots.c,v 1.48 2025/07/05 15:21:56 tom Exp $
  *
  * A simple demo of the terminfo interface.
  */
@@ -61,7 +61,7 @@ TPUTS_PROTO(outc, c)
 }
 
 static bool
-outs(const char *s)
+outs(NCURSES_CONST char *s)
 {
     if (VALID_STRING(s)) {
 	tputs(s, 1, outc);
@@ -102,7 +102,7 @@ static int
 get_number(NCURSES_CONST char *cap, int map)
 {
     int result = map;
-    if (cap != 0) {
+    if (cap != NULL) {
 	int check = tigetnum(cap);
 	if (check > 0)
 	    result = check;
@@ -111,12 +111,13 @@ get_number(NCURSES_CONST char *cap, int map)
 }
 
 static void
-usage(void)
+usage(int ok)
 {
     static const char *msg[] =
     {
 	"Usage: dots [options]"
 	,""
+	,USAGE_COMMON
 	,"Options:"
 	," -T TERM  override $TERM"
 #if HAVE_USE_ENV
@@ -132,12 +133,14 @@ usage(void)
     for (n = 0; n < SIZEOF(msg); n++)
 	fprintf(stderr, "%s\n", msg[n]);
 
-    ExitProgram(EXIT_FAILURE);
+    ExitProgram(ok ? EXIT_SUCCESS : EXIT_FAILURE);
 }
+/* *INDENT-OFF* */
+VERSION_COMMON()
+/* *INDENT-ON* */
 
 int
-main(int argc,
-     char *argv[])
+main(int argc, char *argv[])
 {
     int ch;
     double r;
@@ -150,13 +153,14 @@ main(int argc,
     size_t need;
     char *my_env;
 
-    while ((ch = getopt(argc, argv, "T:efm:r:s:")) != -1) {
+    while ((ch = getopt(argc, argv, OPTS_COMMON "T:efm:r:s:")) != -1) {
 	switch (ch) {
 	case 'T':
 	    need = 6 + strlen(optarg);
-	    my_env = malloc(need);
-	    _nc_SPRINTF(my_env, _nc_SLIMIT(need) "TERM=%s", optarg);
-	    putenv(my_env);
+	    if ((my_env = malloc(need)) != NULL) {
+		_nc_SPRINTF(my_env, _nc_SLIMIT(need) "TERM=%s", optarg);
+		putenv(my_env);
+	    }
 	    break;
 #if HAVE_USE_ENV
 	case 'e':
@@ -176,20 +180,20 @@ main(int argc,
 	    s_option = atoi(optarg);
 	    break;
 	default:
-	    usage();
-	    break;
+	    CASE_COMMON;
+	    /* NOTREACHED */
 	}
     }
 
     SetupAlarm(r_option);
     InitAndCatch(setupterm((char *) 0, 1, (int *) 0), onsig);
 
-    srand((unsigned) time(0));
+    srand((unsigned) time(NULL));
 
     outs(clear_screen);
     outs(cursor_invisible);
 
-#define GetNumber(ln,sn) get_number(f_option ? #sn : 0, ln)
+#define GetNumber(ln,sn) get_number(f_option ? #sn : NULL, ln)
     my_colors = GetNumber(max_colors, colors);
     if (my_colors > 1) {
 	if (!VALID_STRING(set_a_foreground)
@@ -236,8 +240,7 @@ main(int argc,
 }
 #else
 int
-main(int argc GCC_UNUSED,
-     char *argv[]GCC_UNUSED)
+main(void)
 {
     fprintf(stderr, "This program requires terminfo\n");
     exit(EXIT_FAILURE);

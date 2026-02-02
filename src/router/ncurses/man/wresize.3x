@@ -1,5 +1,5 @@
 .\"***************************************************************************
-.\" Copyright 2018,2020 Thomas E. Dickey                                     *
+.\" Copyright 2018-2024,2025 Thomas E. Dickey                                *
 .\" Copyright 1998-2010,2015 Free Software Foundation, Inc.                  *
 .\"                                                                          *
 .\" Permission is hereby granted, free of charge, to any person obtaining a  *
@@ -29,38 +29,103 @@
 .\"
 .\" Author: Thomas E. Dickey 1996
 .\"
-.\" $Id: wresize.3x,v 1.17 2020/10/17 23:56:38 tom Exp $
-.TH wresize 3X ""
+.\" $Id: wresize.3x,v 1.47 2025/01/19 00:51:54 tom Exp $
+.TH wresize 3X 2025-01-18 "ncurses @NCURSES_MAJOR@.@NCURSES_MINOR@" "Library calls"
 .SH NAME
-\fBwresize\fR \- resize a curses window
+\fB\%wresize\fP \-
+resize a \fIcurses\fR window
 .SH SYNOPSIS
-\fB#include <curses.h>\fR
-.sp
-\fBint wresize(WINDOW *\fP\fIwin\fP\fB, int \fP\fIlines\fP\fB, int \fP\fIcolumns\fP\fB);\fR
+.nf
+\fB#include <curses.h>
+.PP
+\fBint wresize(WINDOW * \fIwin\fP, int \fIlines\fP, int \fIcolumns\fP);
+.fi
 .SH DESCRIPTION
-This is an extension to the curses library.
-It reallocates storage for an \fBncurses\fR
-window to adjust its dimensions to the specified values.
-If either dimension is larger than the current values, the
-window's data is filled with blanks that have the current background rendition
-(as set by \fBwbkgdset\fR) merged into them.
+.BR \%wresize ","
+an
+.I \%ncurses
+extension to the
+.I curses
+library,
+reallocates storage for
+.IR win ,
+adjusting its dimensions to
+.I lines
+and
+.IR columns "."
+If either dimension is larger than its current value,
+.I \%ncurses
+fills the expanded part of the window
+with the window's background character as configured by
+\fB\%wbkgdset\fP(3X)
+(wide-character API: \fB\%wbkgrndset\fP(3X)).
 .SH RETURN VALUE
-The function returns the integer \fBERR\fR upon failure and \fBOK\fR on success.
-It will fail if either of the dimensions less than or equal to zero,
-or if an error occurs while (re)allocating memory for the window.
+.B \%wresize
+returns
+.B OK
+on success and
+.B ERR
+on failure.
+It fails if either
+.I lines
+or
+.I columns
+is less than or equal to zero,
+or if an error occurs while (re)allocating memory for
+.IR win "."
 .SH NOTES
-The only restriction placed on the dimensions is that they be greater than zero.
-The dimensions are not compared to \fBcurses\fR screen dimensions to
-simplify the logic of \fBresizeterm\fR.
-The caller must ensure that the window's dimensions fit within the
-actual screen dimensions.
+The only restriction placed on the values of
+.I lines
+and
+.I columns
+is that they be greater than zero.
+They are
+.I not
+compared to the dimensions of the
+.I curses
+screen;
+this keeps the logic of \fB\%resizeterm\fP(3X) simple.
+The caller must ensure that
+.IR win 's
+dimensions fit within those of the screen.
+.SH EXTENSIONS
+.B \%wresize
+is an \fB\%ncurses\fP(3X) extension,
+and is not found in SVr4
+.IR curses ","
+4.4BSD
+.IR curses ","
+or any other previous
+.I curses
+implementation.
 .SH PORTABILITY
+Applications employing
+.I \%ncurses
+extensions should condition their use on the visibility of the
+.B \%NCURSES_VERSION
+preprocessor macro.
 .PP
-It is not possible to resize windows with SVr4 curses.
+NetBSD
+.I curses
+adopted
+.I \%wresize
+in 2001 (release 1.5.3),
+and
+.I \%PDCurses
+in 2004 (version 2.7).
 .PP
-This extension of ncurses was introduced in mid-1995.
-It was adopted in NetBSD curses (2001) and PDCurses (2003).
+It is not possible to resize windows with SVr4
+.IR curses "."
+.SH HISTORY
+Thomas Dickey developed
+.I \%wresize
+as an extension to BSD
+.I curses
+in 1988,
+and brought it to
+.I \%ncurses
+in mid-1995.
+.SH AUTHORS
+Thomas Dickey
 .SH SEE ALSO
-\fBresizeterm\fR(3X).
-.SH AUTHOR
-Thomas Dickey (from an equivalent function written in 1988 for BSD curses).
+\fB\%resizeterm\fP(3X)

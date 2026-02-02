@@ -1,5 +1,5 @@
 /****************************************************************************
- * Copyright 2018-2020,2021 Thomas E. Dickey                                *
+ * Copyright 2018-2024,2025 Thomas E. Dickey                                *
  * Copyright 2017 Free Software Foundation, Inc.                            *
  *                                                                          *
  * Permission is hereby granted, free of charge, to any person obtaining a  *
@@ -27,7 +27,7 @@
  * authorization.                                                           *
  ****************************************************************************/
 /*
- * $Id: demo_new_pair.c,v 1.24 2021/02/21 01:24:06 tom Exp $
+ * $Id: demo_new_pair.c,v 1.34 2025/08/08 15:47:32 tom Exp $
  *
  * Demonstrate the alloc_pair() function.
  */
@@ -36,6 +36,7 @@
 #include <time.h>
 #include <popup_msg.h>
 
+#if HAVE_TIGETSTR
 #if HAVE_ALLOC_PAIR && USE_WIDEC_SUPPORT
 
 #include <sys/types.h>
@@ -48,8 +49,8 @@
 static bool
 valid_cap(NCURSES_CONST char *name)
 {
-    char *value = tigetstr(name);
-    return (value != 0 && value != (char *) -1) ? TRUE : FALSE;
+    const char *value = tigetstr(name);
+    return (value != NULL && value != (char *) -1) ? TRUE : FALSE;
 }
 
 static attr_t
@@ -127,26 +128,27 @@ now(void)
 }
 
 static void
-usage(void)
+usage(int ok)
 {
     static const char *msg[] =
     {
-	"Usage: demo_new_pair [options]",
-	"",
-	"Repeatedly print using all possible color combinations.",
-	"",
-	"Options:",
-	" -g       use getcchar to check setcchar",
-	" -i       use init_pair rather than alloc_pair",
-	" -p       start in paged-mode",
-	" -s       start in single-step mode",
-	" -w       print a wide-character cell",
+	"Usage: demo_new_pair [options]"
+	,""
+	,"Repeatedly print using all possible color combinations."
+	,""
+	,USAGE_COMMON
+	,"Options:"
+	," -g       use getcchar to check setcchar"
+	," -i       use init_pair rather than alloc_pair"
+	," -p       start in paged-mode"
+	," -s       start in single-step mode"
+	," -w       print a wide-character cell"
     };
     unsigned n;
     for (n = 0; n < SIZEOF(msg); ++n) {
 	fprintf(stderr, "%s\n", msg[n]);
     }
-    ExitProgram(EXIT_FAILURE);
+    ExitProgram(ok ? EXIT_SUCCESS : EXIT_FAILURE);
 }
 
 #define use_pages() \
@@ -158,6 +160,9 @@ usage(void)
 #define update_modes() \
 	    scrollok(stdscr, !paged_mode); \
 	    nodelay(stdscr, !single_mode || paged_mode)
+/* *INDENT-OFF* */
+VERSION_COMMON()
+/* *INDENT-ON* */
 
 int
 main(int argc, char *argv[])
@@ -183,7 +188,7 @@ main(int argc, char *argv[])
 	"  ?      print this screen (exit on any character).",
 	"",
 	"To exit this program, press ^Q, ^[ or \"q\".",
-	0
+	NULL
     };
 
     bool done = FALSE;
@@ -200,11 +205,11 @@ main(int argc, char *argv[])
     wchar_t wch[2];
     time_t start = now();
     long total_cells = 0;
-    FILE *output = 0;
+    FILE *output = NULL;
 
     setlocale(LC_ALL, "");
 
-    while ((ch = getopt(argc, argv, "gipsw")) != -1) {
+    while ((ch = getopt(argc, argv, OPTS_COMMON "gipsw")) != -1) {
 	switch (ch) {
 	case 'g':
 	    check_set = TRUE;
@@ -222,8 +227,8 @@ main(int argc, char *argv[])
 	    use_wide = TRUE;
 	    break;
 	default:
-	    usage();
-	    break;
+	    CASE_COMMON;
+	    /* NOTREACHED */
 	}
     }
 
@@ -235,9 +240,10 @@ main(int argc, char *argv[])
 	fprintf(stderr, "cannot open terminal for output\n");
 	ExitProgram(EXIT_FAILURE);
     }
-    if (newterm(NULL, output, stdin) == 0) {
+    if (newterm(NULL, output, stdin) == NULL) {
 	fprintf(stderr, "Cannot initialize terminal\n");
-	fclose(output);
+	if (output != NULL)
+	    fclose(output);
 	ExitProgram(EXIT_FAILURE);
     }
     (void) cbreak();		/* read chars without wait for \n */
@@ -320,6 +326,7 @@ main(int argc, char *argv[])
 		my_pair = (use_init
 			   ? next_color(current)
 			   : make_color(current));
+		assert(my_pair < COLOR_PAIRS);
 	    }
 	} else {
 	    my_attrs = next_attr(current);
@@ -376,7 +383,8 @@ main(int argc, char *argv[])
 	++current;
     }
     stop_curses();
-    fclose(output);
+    if (output != NULL)
+	fclose(output);
 
     printf("%.1f cells/second\n",
 	   (double) (total_cells) / (double) (now() - start));
@@ -384,11 +392,19 @@ main(int argc, char *argv[])
     ExitProgram(EXIT_SUCCESS);
 }
 
-#else
+#else /* !(HAVE_ALLOC_PAIR && USE_WIDEC_SUPPORT) */
 int
 main(void)
 {
     printf("This program requires the ncurses alloc_pair function\n");
     ExitProgram(EXIT_FAILURE);
 }
-#endif
+#endif /* HAVE_ALLOC_PAIR && USE_WIDEC_SUPPORT */
+#else /* !HAVE_TIGETSTR */
+int
+main(void)
+{
+    printf("This program requires the terminfo functions such as tigetstr\n");
+    ExitProgram(EXIT_FAILURE);
+}
+#endif /* HAVE_TIGETSTR */

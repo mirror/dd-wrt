@@ -1,5 +1,5 @@
 /****************************************************************************
- * Copyright 2019,2020 Thomas E. Dickey                                     *
+ * Copyright 2019-2023,2024 Thomas E. Dickey                                *
  * Copyright 1998-2009,2010 Free Software Foundation, Inc.                  *
  *                                                                          *
  * Permission is hereby granted, free of charge, to any person obtaining a  *
@@ -39,8 +39,9 @@
 */
 
 #include <curses.priv.h>
+#include <tic.h>
 
-MODULE_ID("$Id: add_tries.c,v 1.12 2020/02/02 23:34:34 tom Exp $")
+MODULE_ID("$Id: add_tries.c,v 1.14 2024/12/07 20:04:23 tom Exp $")
 
 #define SET_TRY(dst,src) if ((dst->ch = *src++) == 128) dst->ch = '\0'
 #define CMP_TRY(a,b) ((a)? (a == b) : (b == 128))
@@ -53,17 +54,17 @@ _nc_add_to_try(TRIES ** tree, const char *str, unsigned code)
 
     T((T_CALLED("_nc_add_to_try(%p, %s, %u)"),
        (void *) *tree, _nc_visbuf(str), code));
-    if (txt == 0 || *txt == '\0' || code == 0)
+    if (!VALID_STRING(str) || *txt == '\0' || code == 0)
 	returnCode(ERR);
 
-    if ((*tree) != 0) {
+    if ((*tree) != NULL) {
 	ptr = savedptr = (*tree);
 
 	for (;;) {
 	    unsigned char cmp = *txt;
 
 	    while (!CMP_TRY(ptr->ch, cmp)
-		   && ptr->sibling != 0)
+		   && ptr->sibling != NULL)
 		ptr = ptr->sibling;
 
 	    if (CMP_TRY(ptr->ch, cmp)) {
@@ -71,12 +72,12 @@ _nc_add_to_try(TRIES ** tree, const char *str, unsigned code)
 		    ptr->value = (unsigned short) code;
 		    returnCode(OK);
 		}
-		if (ptr->child != 0)
+		if (ptr->child != NULL)
 		    ptr = ptr->child;
 		else
 		    break;
 	    } else {
-		if ((ptr->sibling = typeCalloc(TRIES, 1)) == 0) {
+		if ((ptr->sibling = typeCalloc(TRIES, 1)) == NULL) {
 		    returnCode(ERR);
 		}
 
@@ -90,7 +91,7 @@ _nc_add_to_try(TRIES ** tree, const char *str, unsigned code)
     } else {			/* (*tree) == 0 :: First sequence to be added */
 	savedptr = ptr = (*tree) = typeCalloc(TRIES, 1);
 
-	if (ptr == 0) {
+	if (ptr == NULL) {
 	    returnCode(ERR);
 	}
 
@@ -105,8 +106,8 @@ _nc_add_to_try(TRIES ** tree, const char *str, unsigned code)
 
 	ptr = ptr->child;
 
-	if (ptr == 0) {
-	    while ((ptr = savedptr) != 0) {
+	if (ptr == NULL) {
+	    while ((ptr = savedptr) != NULL) {
 		savedptr = ptr->child;
 		free(ptr);
 	    }

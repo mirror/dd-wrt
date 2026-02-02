@@ -1,5 +1,5 @@
 /****************************************************************************
- * Copyright 2020 Thomas E. Dickey                                          *
+ * Copyright 2020-2024,2025 Thomas E. Dickey                                *
  * Copyright 2009-2016,2017 Free Software Foundation, Inc.                  *
  *                                                                          *
  * Permission is hereby granted, free of charge, to any person obtaining a  *
@@ -27,7 +27,7 @@
  * authorization.                                                           *
  ****************************************************************************/
 /*
- * $Id: test_addchstr.c,v 1.25 2020/02/02 23:34:34 tom Exp $
+ * $Id: test_addchstr.c,v 1.32 2025/07/05 15:21:56 tom Exp $
  *
  * Demonstrate the waddchstr() and waddch functions.
  * Thomas Dickey - 2009/9/12
@@ -82,7 +82,7 @@ ChLen(const char *source)
 
 	for (n = 0; n < result; ++n) {
 	    const char *s = unctrl(UChar(source[n]));
-	    if (s != 0) {
+	    if (s != NULL) {
 		adjust += (strlen(s) - 1);
 	    }
 	}
@@ -94,7 +94,7 @@ ChLen(const char *source)
 static chtype *
 ChStr(const char *source)
 {
-    if (source != 0) {
+    if (source != NULL) {
 	size_t need = ChLen(source) + 1;
 	int n = 0;
 
@@ -107,7 +107,7 @@ ChStr(const char *source)
 	do {
 	    const char *s;
 	    chtype ch = UChar(*source++);
-	    if (!pass_ctls && (s = unctrl(ch)) != 0) {
+	    if (!pass_ctls && (s = unctrl(ch)) != NULL) {
 		while (*s != '\0') {
 		    temp_buffer[n++] = UChar(*s++);
 		}
@@ -116,9 +116,9 @@ ChStr(const char *source)
 	    }
 	} while (source[0] != 0);
 	temp_buffer[n] = 0;
-    } else if (temp_buffer != 0) {
+    } else if (temp_buffer != NULL) {
 	free(temp_buffer);
-	temp_buffer = 0;
+	temp_buffer = NULL;
 	temp_length = 0;
     }
     return temp_buffer;
@@ -169,7 +169,7 @@ legend(WINDOW *win, int level, Options state, char *buffer, int length)
 }
 
 static int
-ColOf(char *buffer, int length, int margin)
+ColOf(const char *buffer, int length, int margin)
 {
     int n;
     int result;
@@ -218,9 +218,9 @@ recursive_test(int level)
     int row2, col2;
     int length;
     char buffer[BUFSIZ];
-    WINDOW *look = 0;
-    WINDOW *work = 0;
-    WINDOW *show = 0;
+    WINDOW *look = NULL;
+    WINDOW *work = NULL;
+    WINDOW *show = NULL;
     int margin = (2 * MY_TABSIZE) - 1;
     Options option = (Options) ((unsigned) (m_opt
 					    ? oMove
@@ -460,33 +460,37 @@ recursive_test(int level)
 }
 
 static void
-usage(void)
+usage(int ok)
 {
     static const char *tbl[] =
     {
 	"Usage: test_addchstr [options]"
 	,""
+	,USAGE_COMMON
 	,"Options:"
-	,"  -f FILE read data from given file"
-	,"  -n NUM  limit string-adds to NUM bytes on ^N replay"
-	,"  -m      perform wmove/move separately from add-functions"
-	,"  -p      pass-thru control characters without using unctrl()"
-	,"  -w      use window-parameter even when stdscr would be implied"
+	," -f FILE  read data from given file"
+	," -n NUM   limit string-adds to NUM bytes on ^N replay"
+	," -m       perform wmove/move separately from add-functions"
+	," -p       pass-thru control characters without using unctrl()"
+	," -w       use window-parameter even when stdscr would be implied"
     };
     unsigned n;
     for (n = 0; n < SIZEOF(tbl); ++n)
 	fprintf(stderr, "%s\n", tbl[n]);
-    ExitProgram(EXIT_FAILURE);
+    ExitProgram(ok ? EXIT_SUCCESS : EXIT_FAILURE);
 }
+/* *INDENT-OFF* */
+VERSION_COMMON()
+/* *INDENT-ON* */
 
 int
-main(int argc GCC_UNUSED, char *argv[]GCC_UNUSED)
+main(int argc, char *argv[])
 {
     int ch;
 
     setlocale(LC_ALL, "");
 
-    while ((ch = getopt(argc, argv, "f:mn:pw")) != -1) {
+    while ((ch = getopt(argc, argv, OPTS_COMMON "f:mn:pw")) != -1) {
 	switch (ch) {
 	case 'f':
 	    init_linedata(optarg);
@@ -506,12 +510,12 @@ main(int argc GCC_UNUSED, char *argv[]GCC_UNUSED)
 	    w_opt = TRUE;
 	    break;
 	default:
-	    usage();
-	    break;
+	    CASE_COMMON;
+	    /* NOTREACHED */
 	}
     }
     if (optind < argc)
-	usage();
+	usage(FALSE);
 
     recursive_test(0);
     endwin();

@@ -1,5 +1,5 @@
 .\"***************************************************************************
-.\" Copyright 2018,2020 Thomas E. Dickey                                     *
+.\" Copyright 2018-2024,2025 Thomas E. Dickey                                *
 .\" Copyright 2003-2006,2010 Free Software Foundation, Inc.                  *
 .\"                                                                          *
 .\" Permission is hereby granted, free of charge, to any person obtaining a  *
@@ -29,30 +29,57 @@
 .\"
 .\" Author: Thomas E. Dickey 2003
 .\"
-.\" $Id: key_defined.3x,v 1.10 2020/10/17 23:39:03 tom Exp $
-.TH key_defined 3X ""
+.\" $Id: key_defined.3x,v 1.44 2025/10/04 20:11:22 tom Exp $
+.TH key_defined 3X 2025-10-04 "ncurses @NCURSES_MAJOR@.@NCURSES_MINOR@" "Library calls"
 .SH NAME
-\fBkey_defined\fP \- check if a keycode is defined
+\fB\%key_defined\fP \-
+obtain key code for an \fIncurses\fP function key definition
 .SH SYNOPSIS
-\fB#include <curses.h>\fP
-.sp
-\fBint key_defined(const char *\fP\fIdefinition\fP\fB);\fP
+.nf
+\fB#include <curses.h>
+.PP
+\fBint key_defined(const char * \fIdefinition\fP);
+.fi
 .SH DESCRIPTION
-This is an extension to the curses library.
-It permits an application to determine if a string is currently bound
-to any keycode.
+The
+.B \%key_defined
+.I \%ncurses
+extension permits a
+.I curses
+application to determine the function key code,
+if any,
+to which the string
+.I definition
+is bound.
 .SH RETURN VALUE
-If the string is bound to a keycode, its value (greater than zero) is returned.
-If no keycode is bound, zero is returned.
-If the string conflicts with longer strings
-which are bound to keys, \-1 is returned.
+.B \%key_defined
+returns the first key code to which
+.I definition
+is bound if any exists.
+If none does,
+it returns
+.BR 0 "."
+If
+.I definition
+is a prefix of another bound definition,
+.B \%key_defined
+returns
+.BR \-1 "."
+.SH EXTENSIONS
+.B \%key_defined
+is an
+.I \%ncurses
+extension.
 .SH PORTABILITY
-These routines are specific to ncurses.
-They were not supported on
-Version 7, BSD or System V implementations.
-It is recommended that
-any code depending on them be conditioned using NCURSES_VERSION.
+Applications employing
+.I \%ncurses
+extensions should condition their use on the visibility of the
+.B \%NCURSES_VERSION
+preprocessor macro.
+.SH AUTHORS
+Thomas Dickey
 .SH SEE ALSO
-\fBdefine_key\fR(3X).
-.SH AUTHOR
-Thomas Dickey.
+\fB\%curses\fP(3X),
+\fB\%define_key\fP(3X),
+\fB\%keybound\fP(3X),
+\fB\%keyok\fP(3X)

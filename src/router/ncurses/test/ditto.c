@@ -1,5 +1,5 @@
 /****************************************************************************
- * Copyright 2018-2020,2021 Thomas E. Dickey                                *
+ * Copyright 2018-2024,2025 Thomas E. Dickey                                *
  * Copyright 1998-2016,2017 Free Software Foundation, Inc.                  *
  *                                                                          *
  * Permission is hereby granted, free of charge, to any person obtaining a  *
@@ -30,7 +30,7 @@
 /*
  * Author: Thomas E. Dickey (1998-on)
  *
- * $Id: ditto.c,v 1.52 2021/08/15 20:07:11 tom Exp $
+ * $Id: ditto.c,v 1.62 2025/07/05 15:11:35 tom Exp $
  *
  * The program illustrates how to set up multiple screens from a single
  * program.
@@ -92,6 +92,15 @@ typedef struct {
 #endif
 } DITTO;
 
+#ifdef USE_PTHREADS
+#define LockIt()                pthread_mutex_lock(&pending_mutex)
+#define UnlockIt()              pthread_mutex_unlock(&pending_mutex)
+pthread_mutex_t pending_mutex;
+#else
+#define LockIt()		/* nothing */
+#define UnlockIt()		/* nothing */
+#endif
+
 /*
  * Structure used to pass multiple parameters via the use_screen()
  * single-parameter interface.
@@ -102,20 +111,10 @@ typedef struct {
     DITTO *ditto;		/* data for all screens */
 } DDATA;
 
-static GCC_NORETURN void failed(const char *);
-static GCC_NORETURN void usage(void);
-
 static void
 failed(const char *s)
 {
     perror(s);
-    ExitProgram(EXIT_FAILURE);
-}
-
-static void
-usage(void)
-{
-    fprintf(stderr, "Usage: ditto [terminal1 ...]\n");
     ExitProgram(EXIT_FAILURE);
 }
 
@@ -158,15 +157,15 @@ open_tty(char *path)
     int aslave;
     char slave_name[1024];
     char s_option[sizeof(slave_name) + 80];
-    const char *xterm_prog = 0;
+    const char *xterm_prog = NULL;
 
-    if ((xterm_prog = getenv("XTERM_PROG")) == 0)
+    if ((xterm_prog = getenv("XTERM_PROG")) == NULL)
 	xterm_prog = "xterm";
 
-    if (openpty(&amaster, &aslave, slave_name, 0, 0) != 0
+    if (openpty(&amaster, &aslave, slave_name, NULL, NULL) != 0
 	|| strlen(slave_name) > sizeof(slave_name) - 1)
 	failed("openpty");
-    if (strrchr(slave_name, '/') == 0) {
+    if (strrchr(slave_name, '/') == NULL) {
 	errno = EISDIR;
 	failed(slave_name);
     }
@@ -177,7 +176,7 @@ open_tty(char *path)
 	_exit(0);
     }
     fp = fdopen(amaster, "r+");
-    if (fp == 0)
+    if (fp == NULL)
 	failed(path);
 #else
     struct stat sb;
@@ -193,7 +192,7 @@ open_tty(char *path)
 	failed(path);
     printf("opened %s\n", path);
 #endif
-    assert(fp != 0);
+    assert(fp != NULL);
     return fp;
 }
 
@@ -241,6 +240,14 @@ init_screen(
 }
 
 static void
+free_screen(DITTO * target)
+{
+    free(target->parents);
+    free(target->windows);
+    free(target->peeks);
+}
+
+static void
 open_screen(DITTO * target, char **source, int length, int which1)
 {
     if (which1 != 0) {
@@ -259,7 +266,7 @@ open_screen(DITTO * target, char **source, int length, int which1)
 			     target->output,
 			     target->input);
 
-    if (target->screen == 0)
+    if (target->screen == NULL)
 	failed("newterm");
 
     (void) USING_SCREEN(target->screen, init_screen, target);
@@ -381,35 +388,63 @@ handle_screen(void *arg)
 }
 #endif
 
+static void
+usage(int ok)
+{
+    static const char *msg[] =
+    {
+	"Usage: ditto [terminal [terminal2 ...]]"
+	,""
+	,USAGE_COMMON
+    };
+    size_t n;
+
+    for (n = 0; n < SIZEOF(msg); n++)
+	fprintf(stderr, "%s\n", msg[n]);
+
+    ExitProgram(ok ? EXIT_SUCCESS : EXIT_FAILURE);
+}
+/* *INDENT-OFF* */
+VERSION_COMMON()
+/* *INDENT-ON* */
+
 int
 main(int argc, char *argv[])
 {
     int j;
+    int ch;
     DITTO *data;
 #ifndef USE_PTHREADS
     int count;
 #endif
 
-    if (argc <= 1)
-	usage();
+    while ((ch = getopt(argc, argv, OPTS_COMMON)) != -1) {
+	switch (ch) {
+	default:
+	    CASE_COMMON;
+	    /* NOTREACHED */
+	}
+    }
 
-    if ((data = typeCalloc(DITTO, (size_t) argc)) == 0)
+    if ((data = typeCalloc(DITTO, (size_t) argc)) == NULL)
 	failed("calloc data");
 
-    assert(data != 0);
+    assert(data != NULL);
 
     for (j = 0; j < argc; j++) {
 	open_screen(&data[j], argv, argc, j);
     }
 
 #ifdef USE_PTHREADS
+    pthread_mutex_init(&pending_mutex, NULL);
     /*
      * For multi-threaded operation, set up a reader for each of the screens.
      * That uses blocking I/O rather than polling for input, so no calls to
      * napms() are needed.
      */
     for (j = 0; j < argc; j++) {
-	(void) pthread_create(&(data[j].thread), NULL, handle_screen, &data[j]);
+	(void) pthread_create(&(data[j].thread), NULL, handle_screen,
+			      &data[j]);
     }
     pthread_join(data[1].thread, NULL);
 #else
@@ -419,7 +454,6 @@ main(int argc, char *argv[])
      */
     for (count = 0;; ++count) {
 	DDATA ddata;
-	int ch;
 	int which = (count % argc);
 
 	napms(20);
@@ -440,7 +474,8 @@ main(int argc, char *argv[])
      * Cleanup and exit
      */
     for (j = argc - 1; j >= 0; j--) {
-	USING_SCREEN(data[j].screen, close_screen, 0);
+	LockIt();
+	USING_SCREEN(data[j].screen, close_screen, NULL);
 	fprintf(data[j].output, "**Closed\r\n");
 
 	/*
@@ -450,7 +485,10 @@ main(int argc, char *argv[])
 	fflush(data[j].output);
 	fclose(data[j].output);
 	delscreen(data[j].screen);
+	free_screen(&data[j]);
+	UnlockIt();
     }
+    free(data);
     ExitProgram(EXIT_SUCCESS);
 }
 #else

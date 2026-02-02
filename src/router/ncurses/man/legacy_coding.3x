@@ -1,5 +1,5 @@
 .\"***************************************************************************
-.\" Copyright 2020,2021 Thomas E. Dickey                                     *
+.\" Copyright 2020-2023,2024 Thomas E. Dickey                                *
 .\" Copyright 2005-2016,2017 Free Software Foundation, Inc.                  *
 .\"                                                                          *
 .\" Permission is hereby granted, free of charge, to any person obtaining a  *
@@ -29,47 +29,81 @@
 .\"
 .\" Author: Thomas E. Dickey
 .\"
-.\" $Id: legacy_coding.3x,v 1.9 2021/08/15 19:32:05 tom Exp $
-.TH legacy_coding 3X ""
+.\" $Id: legacy_coding.3x,v 1.32 2024/09/14 20:06:50 tom Exp $
+.TH legacy_coding 3X 2024-09-14 "ncurses @NCURSES_MAJOR@.@NCURSES_MINOR@" "Library calls"
 .SH NAME
-\fBuse_legacy_coding\fR \- override locale-encoding checks
+\fB\%use_legacy_coding\fP \-
+override \fIcurses\fR locale encoding checks
 .SH SYNOPSIS
-\fB#include <curses.h>\fP
-.sp
-\fBint use_legacy_coding(int \fP\fIlevel\fP\fB);\fP
-.SH DESCRIPTION
-The \fBuse_legacy_coding\fP function is an extension to the curses library.
-It allows the caller to change the result of \fBunctrl\fP,
-and suppress related checks within the library that would normally
-cause nonprinting characters to be rendered in visible form.
-This affects only 8-bit characters.
+.nf
+\fB#include <curses.h>
 .PP
-The \fIlevel\fP parameter controls the result:
+\fBint use_legacy_coding(int \fIlevel\fP);
+.fi
+.SH DESCRIPTION
+.BR \%use_legacy_coding ","
+an
+.I \%ncurses
+extension to the
+.I curses
+library,
+permits customiztion of \fB\%unctrl\fP(3X) behavior,
+suppressing \fI\%isprint\fP(3)-based checks within the library that
+would normally cause nonprinting characters to be rendered in visible
+form.
+The alteration affects only byte-wide characters with the most
+significant bit set.
+.PP
+The
+.I level
+parameter controls the result.
 .RS
 .TP 5
-0
-the library functions normally,
-rendering nonprinting characters as described in \fBunctrl\fP.
+.B 0
+The library functions normally,
+rendering nonprinting characters as described in \fB\%unctrl\fP(3X),
 .TP
-1
-the library ignores \fBisprintf\fP for codes in the range 160-255.
+.B 1
+the library ignores
+.I \%isprint
+for codes in the range 160-255.
 .TP
-2
-the library ignores \fBisprintf\fP for codes in the range 128-255.
-It also modifies the output of \fBunctrl\fP, showing codes in the
-range 128-159 as is.
+.B 2
+the library ignores
+.I \%isprint
+for codes in the range 128-255.
+It also modifies the output of \fB\%unctrl\fP(3X),
+showing codes in the range 128-159 as is.
 .RE
 .SH RETURN VALUE
-If the screen has not been initialized,
-or the \fIlevel\fP parameter is out of range,
-the function returns \fBERR\fP.
-Otherwise, it returns the previous level: \fB0\fP, \fB1\fP or \fB2\fP.
+If the
+.I curses
+screen has not been initialized,
+or the
+.I level
+parameter is out of range,
+.B \%use_legacy_coding
+returns
+.BR ERR .
+Otherwise,
+it returns the previous level.
+.SH EXTENSIONS
+.B \%use_legacy_coding
+is an
+.I \%ncurses
+extension.
 .SH PORTABILITY
-This routine is specific to ncurses.
-It was not supported on Version 7, BSD or System V implementations.
-It is recommended that any code depending on ncurses extensions
-be conditioned using NCURSES_VERSION.
+Applications employing
+.I \%ncurses
+extensions should condition their use on the visibility of the
+.B \%NCURSES_VERSION
+preprocessor macro.
+.SH HISTORY
+.I \%ncurses
+5.6 (2006) introduced
+.I \%use_legacy_coding
+to support \fI\%lynx\fP(1)'s font-switching feature.
+.SH AUTHORS
+Thomas Dickey
 .SH SEE ALSO
-\fBunctrl\fR(3X).
-.SH AUTHOR
-Thomas Dickey (to support lynx's font-switching feature).
+\fB\%unctrl\fP(3X)

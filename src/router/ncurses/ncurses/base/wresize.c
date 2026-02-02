@@ -1,5 +1,5 @@
 /****************************************************************************
- * Copyright 2019,2020 Thomas E. Dickey                                     *
+ * Copyright 2019-2023,2024 Thomas E. Dickey                                *
  * Copyright 1998-2010,2011 Free Software Foundation, Inc.                  *
  *                                                                          *
  * Permission is hereby granted, free of charge, to any person obtaining a  *
@@ -34,7 +34,7 @@
 
 #include <curses.priv.h>
 
-MODULE_ID("$Id: wresize.c,v 1.41 2020/04/18 21:01:00 tom Exp $")
+MODULE_ID("$Id: wresize.c,v 1.45 2024/12/07 18:08:56 tom Exp $")
 
 static int
 cleanup_lines(struct ldat *data, int length)
@@ -55,7 +55,7 @@ repair_subwindows(WINDOW *cmp)
     WINDOWLIST *wp;
     struct ldat *pline = cmp->_line;
     int row;
-#ifdef USE_SP_WINDOWLIST
+#if NCURSES_SP_FUNCS && defined(USE_SP_WINDOWLIST)
     SCREEN *sp = _nc_screen_of(cmp);
 #endif
 
@@ -109,7 +109,7 @@ wresize(WINDOW *win, int ToLines, int ToCols)
 {
     int col, row, size_x, size_y;
     struct ldat *pline;
-    struct ldat *new_lines = 0;
+    struct ldat *new_lines = NULL;
 
 #ifdef TRACE
     T((T_CALLED("wresize(%p,%d,%d)"), (void *) win, ToLines, ToCols));
@@ -125,9 +125,11 @@ wresize(WINDOW *win, int ToLines, int ToCols)
     }
 #endif
 
-    if (!win || --ToLines < 0 || --ToCols < 0)
+    if (!win || !OK_DIMENSION(ToLines) || !OK_DIMENSION(ToCols))
 	returnCode(ERR);
 
+    ToLines--;
+    ToCols--;
     size_x = win->_maxx;
     size_y = win->_maxy;
 
@@ -135,7 +137,7 @@ wresize(WINDOW *win, int ToLines, int ToCols)
 	&& ToCols == size_x)
 	returnCode(OK);
 
-    if ((win->_flags & _SUBWIN)) {
+    if (IS_SUBWIN(win)) {
 	/*
 	 * Check if the new limits will fit into the parent window's size.  If
 	 * not, do not resize.  We could adjust the location of the subwindow,
@@ -147,7 +149,7 @@ wresize(WINDOW *win, int ToLines, int ToCols)
 	}
 	pline = win->_parent->_line;
     } else {
-	pline = 0;
+	pline = NULL;
     }
 
     /*
@@ -156,7 +158,7 @@ wresize(WINDOW *win, int ToLines, int ToCols)
      * (at least temporarily) the array pointing to the individual lines.
      */
     new_lines = typeCalloc(struct ldat, (unsigned) (ToLines + 1));
-    if (new_lines == 0)
+    if (new_lines == NULL)
 	returnCode(ERR);
 
     /*
@@ -169,11 +171,11 @@ wresize(WINDOW *win, int ToLines, int ToCols)
 	int end = ToCols;
 	NCURSES_CH_T *s;
 
-	if (!(win->_flags & _SUBWIN)) {
+	if (!IS_SUBWIN(win)) {
 	    if (row <= size_y) {
 		if (ToCols != size_x) {
 		    s = typeMalloc(NCURSES_CH_T, (unsigned) ToCols + 1);
-		    if (s == 0)
+		    if (s == NULL)
 			returnCode(cleanup_lines(new_lines, row));
 		    for (col = 0; col <= ToCols; ++col) {
 			bool valid = (col <= size_x);
@@ -193,15 +195,15 @@ wresize(WINDOW *win, int ToLines, int ToCols)
 		}
 	    } else {
 		s = typeMalloc(NCURSES_CH_T, (unsigned) ToCols + 1);
-		if (s == 0)
+		if (s == NULL)
 		    returnCode(cleanup_lines(new_lines, row));
 		for (col = 0; col <= ToCols; ++col)
 		    s[col] = win->_nc_bkgd;
 	    }
-	} else if (pline != 0 && pline[win->_pary + row].text != 0) {
+	} else if (pline != NULL && pline[win->_pary + row].text != NULL) {
 	    s = &pline[win->_pary + row].text[win->_parx];
 	} else {
-	    s = 0;
+	    s = NULL;
 	}
 
 	if_USE_SCROLL_HINTS(new_lines[row].oldindex = row);

@@ -1,5 +1,5 @@
 /****************************************************************************
- * Copyright 2019,2020 Thomas E. Dickey                                     *
+ * Copyright 2019-2024,2025 Thomas E. Dickey                                *
  * Copyright 2007-2012,2017 Free Software Foundation, Inc.                  *
  *                                                                          *
  * Permission is hereby granted, free of charge, to any person obtaining a  *
@@ -27,7 +27,7 @@
  * authorization.                                                           *
  ****************************************************************************/
 /*
- * $Id: inchs.c,v 1.18 2020/02/02 23:34:34 tom Exp $
+ * $Id: inchs.c,v 1.22 2025/07/05 15:21:56 tom Exp $
  *
  * Author: Thomas E Dickey
  */
@@ -71,7 +71,7 @@ Quit(int ch)
 static int
 test_inchs(int level, char **argv, WINDOW *chrwin, WINDOW *strwin)
 {
-    static const char *help[] =
+    static NCURSES_CONST char *help[] =
     {
 	"Test input from screen using inch(), etc., in a moveable viewport.",
 	"",
@@ -80,17 +80,17 @@ test_inchs(int level, char **argv, WINDOW *chrwin, WINDOW *strwin)
 	" h,j,k,l (and arrow-keys) - move viewport",
 	" w                        - recur to new window",
 	"                            for next input file",
-	0
+	NULL
     };
-    WINDOW *txtbox = 0;
-    WINDOW *txtwin = 0;
+    WINDOW *txtbox = NULL;
+    WINDOW *txtwin = NULL;
     FILE *fp;
     int ch, j;
     int txt_x = 0, txt_y = 0;
     int base_y;
     chtype text[MAX_COLS];
 
-    if (argv[level] == 0) {
+    if (argv[level] == NULL) {
 	beep();
 	return FALSE;
     }
@@ -109,7 +109,7 @@ test_inchs(int level, char **argv, WINDOW *chrwin, WINDOW *strwin)
 	txtwin = stdscr;
 	base_y = BASE_Y;
     }
-    if (txtwin == 0)
+    if (txtwin == NULL)
 	failed("cannot create txtwin");
 
     keypad(txtwin, TRUE);	/* enable keyboard mapping */
@@ -120,7 +120,7 @@ test_inchs(int level, char **argv, WINDOW *chrwin, WINDOW *strwin)
     txt_x = 0;
     wmove(txtwin, txt_y, txt_x);
 
-    if ((fp = fopen(argv[level], "r")) != 0) {
+    if ((fp = fopen(argv[level], "r")) != NULL) {
 	while ((j = fgetc(fp)) != EOF) {
 	    if (waddch(txtwin, UChar(j)) != OK) {
 		break;
@@ -165,7 +165,7 @@ test_inchs(int level, char **argv, WINDOW *chrwin, WINDOW *strwin)
 	    break;
 	case 'w':
 	    test_inchs(level + 1, argv, chrwin, strwin);
-	    if (txtbox != 0) {
+	    if (txtbox != NULL) {
 		touchwin(txtbox);
 		wnoutrefresh(txtbox);
 	    } else {
@@ -271,19 +271,46 @@ test_inchs(int level, char **argv, WINDOW *chrwin, WINDOW *strwin)
     return TRUE;
 }
 
+static void
+usage(int ok)
+{
+    static const char *msg[] =
+    {
+	"Usage: inchs [options] file1 [file2 [...]]"
+	,""
+	,USAGE_COMMON
+    };
+    size_t n;
+
+    for (n = 0; n < SIZEOF(msg); n++)
+	fprintf(stderr, "%s\n", msg[n]);
+
+    ExitProgram(ok ? EXIT_SUCCESS : EXIT_FAILURE);
+}
+/* *INDENT-OFF* */
+VERSION_COMMON()
+/* *INDENT-ON* */
+
 int
 main(int argc, char *argv[])
 {
     WINDOW *chrbox;
     WINDOW *chrwin;
     WINDOW *strwin;
+    int ch;
+
+    while ((ch = getopt(argc, argv, OPTS_COMMON)) != -1) {
+	switch (ch) {
+	default:
+	    CASE_COMMON;
+	    /* NOTREACHED */
+	}
+    }
 
     setlocale(LC_ALL, "");
 
-    if (argc < 2) {
-	fprintf(stderr, "usage: %s file1 [file2 [...]]\n", argv[0]);
-	return EXIT_FAILURE;
-    }
+    if (optind + 1 > argc)
+	usage(FALSE);
 
     initscr();
 
@@ -294,7 +321,7 @@ main(int argc, char *argv[])
     chrwin = derwin(chrbox, 1, COLS - 2, 1, 1);
     strwin = derwin(chrbox, 4, COLS - 2, 2, 1);
 
-    test_inchs(1, argv, chrwin, strwin);
+    test_inchs(optind, argv, chrwin, strwin);
 
     endwin();
     ExitProgram(EXIT_SUCCESS);

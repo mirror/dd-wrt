@@ -1,5 +1,5 @@
 /****************************************************************************
- * Copyright 2018-2020,2021 Thomas E. Dickey                                *
+ * Copyright 2018-2024,2025 Thomas E. Dickey                                *
  * Copyright 1998-2011,2017 Free Software Foundation, Inc.                  *
  *                                                                          *
  * Permission is hereby granted, free of charge, to any person obtaining a  *
@@ -42,14 +42,14 @@
 #define NEED_KEY_EVENT
 #include <curses.priv.h>
 
-MODULE_ID("$Id: lib_getstr.c,v 1.37 2021/09/04 10:29:15 tom Exp $")
+MODULE_ID("$Id: lib_getstr.c,v 1.42 2025/01/19 00:51:54 tom Exp $")
 
 /*
  * This wipes out the last character, no matter whether it was a tab, control
  * or other character, and handles reverse wraparound.
  */
 static char *
-WipeOut(WINDOW *win, int y, int x, char *first, char *last, int echoed)
+WipeOut(WINDOW *win, int y, int x, const char *first, char *last, int echoed)
 {
     if (last > first) {
 	*--last = '\0';
@@ -78,14 +78,14 @@ wgetnstr_events(WINDOW *win,
 {
     SCREEN *sp = _nc_screen_of(win);
     TTY buf;
-    bool oldnl, oldecho, oldraw, oldcbreak;
+    TTY_FLAGS save_flags;
     char erasec;
     char killc;
-    char *oldstr;
+    const char *oldstr;
     int ch;
     int y, x;
 
-    T((T_CALLED("wgetnstr(%p,%p,%d)"), (void *) win, (void *) str, maxlen));
+    T((T_CALLED("wgetnstr_events(%p,%p,%d)"), (void *) win, (void *) str, maxlen));
 
     if (!win || !str)
 	returnCode(ERR);
@@ -94,13 +94,11 @@ wgetnstr_events(WINDOW *win,
 
     NCURSES_SP_NAME(_nc_get_tty_mode) (NCURSES_SP_ARGx &buf);
 
-    oldnl = sp->_nl;
-    oldecho = sp->_echo;
-    oldraw = sp->_raw;
-    oldcbreak = sp->_cbreak;
+    save_flags = sp->_tty_flags;
     NCURSES_SP_NAME(nl) (NCURSES_SP_ARG);
     NCURSES_SP_NAME(noecho) (NCURSES_SP_ARG);
-    NCURSES_SP_NAME(raw) (NCURSES_SP_ARG);
+    if (!save_flags._raw)
+	NCURSES_SP_NAME(cbreak) (NCURSES_SP_ARG);
 
     erasec = NCURSES_SP_NAME(erasechar) (NCURSES_SP_ARG);
     killc = NCURSES_SP_NAME(killchar) (NCURSES_SP_ARG);
@@ -122,7 +120,7 @@ wgetnstr_events(WINDOW *win,
 	    || ch == '\r'
 	    || ch == KEY_DOWN
 	    || ch == KEY_ENTER) {
-	    if (oldecho == TRUE
+	    if (save_flags._echo == TRUE
 		&& win->_cury == win->_maxy
 		&& win->_scroll)
 		wechochar(win, (chtype) '\n');
@@ -138,18 +136,18 @@ wgetnstr_events(WINDOW *win,
 #endif
 	if (ch == erasec || ch == KEY_LEFT || ch == KEY_BACKSPACE) {
 	    if (str > oldstr) {
-		str = WipeOut(win, y, x, oldstr, str, oldecho);
+		str = WipeOut(win, y, x, oldstr, str, save_flags._echo);
 	    }
 	} else if (ch == killc) {
 	    while (str > oldstr) {
-		str = WipeOut(win, y, x, oldstr, str, oldecho);
+		str = WipeOut(win, y, x, oldstr, str, save_flags._echo);
 	    }
 	} else if (ch >= KEY_MIN
 		   || (str - oldstr >= maxlen)) {
 	    NCURSES_SP_NAME(beep) (NCURSES_SP_ARG);
 	} else {
 	    *str++ = (char) ch;
-	    if (oldecho == TRUE) {
+	    if (save_flags._echo == TRUE) {
 		int oldy = win->_cury;
 		if (waddch(win, (chtype) ch) == ERR) {
 		    /*
@@ -159,9 +157,9 @@ wgetnstr_events(WINDOW *win,
 		     */
 		    win->_flags &= ~_WRAPPED;
 		    waddch(win, (chtype) ' ');
-		    str = WipeOut(win, y, x, oldstr, str, oldecho);
+		    str = WipeOut(win, y, x, oldstr, str, save_flags._echo);
 		    continue;
-		} else if (win->_flags & _WRAPPED) {
+		} else if (IS_WRAPPED(win)) {
 		    /*
 		     * If the last waddch forced a wrap &
 		     * scroll, adjust our reference point
@@ -190,18 +188,14 @@ wgetnstr_events(WINDOW *win,
     /* Restore with a single I/O call, to fix minor asymmetry between
      * raw/noraw, etc.
      */
-    sp->_nl = oldnl;
-    sp->_echo = oldecho;
-    sp->_raw = oldraw;
-    sp->_cbreak = oldcbreak;
-
+    sp->_tty_flags = save_flags;
     NCURSES_SP_NAME(_nc_set_tty_mode) (NCURSES_SP_ARGx &buf);
 
     *str = '\0';
     if (ch == ERR)
 	returnCode(ch);
 
-    T(("wgetnstr returns %s", _nc_visbuf(oldstr)));
+    T(("wgetnstr_events returns %s", _nc_visbuf(oldstr)));
 
 #ifdef KEY_EVENT
     if (ch == KEY_EVENT)

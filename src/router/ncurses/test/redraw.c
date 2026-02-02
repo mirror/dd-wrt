@@ -1,5 +1,5 @@
 /****************************************************************************
- * Copyright 2020,2021 Thomas E. Dickey                                     *
+ * Copyright 2020-2024,2025 Thomas E. Dickey                                *
  * Copyright 2006-2012,2017 Free Software Foundation, Inc.                  *
  *                                                                          *
  * Permission is hereby granted, free of charge, to any person obtaining a  *
@@ -27,7 +27,7 @@
  * authorization.                                                           *
  ****************************************************************************/
 /*
- * $Id: redraw.c,v 1.13 2021/06/17 21:26:02 tom Exp $
+ * $Id: redraw.c,v 1.21 2025/07/05 15:11:35 tom Exp $
  *
  * Demonstrate the redrawwin() and wredrawln() functions.
  * Thomas Dickey - 2006/11/4
@@ -61,7 +61,7 @@ trash(int beg_x, int max_x, int cur_x)
 static void
 test_redraw(WINDOW *win)
 {
-    static const char *help[] =
+    static NCURSES_CONST char *help[] =
     {
 	"Commands:",
 	"  ^Q/ESC/q   - quit",
@@ -76,7 +76,7 @@ test_redraw(WINDOW *win)
 	"",
 	"Other control characters are added to the screen in printable form.",
 	"Other printable characters are added to the screen as is.",
-	0
+	NULL
     };
 
     WINDOW *win1;
@@ -85,7 +85,7 @@ test_redraw(WINDOW *win)
     int max_y, max_x;
     int beg_y, beg_x;
 
-    assert(win != 0);
+    assert(win != NULL);
 
     scrollok(win, TRUE);
     keypad(win, TRUE);
@@ -189,30 +189,34 @@ test_redraw(WINDOW *win)
 }
 
 static void
-usage(void)
+usage(int ok)
 {
     static const char *tbl[] =
     {
 	"Usage: redraw [options]"
 	,""
+	,USAGE_COMMON
 	,"Options:"
-	,"  -e      use stderr (default stdout)"
-	,"  -n      do not initialize terminal"
+	," -e       use stderr (default stdout)"
+	," -n       do not initialize terminal"
     };
     unsigned n;
     for (n = 0; n < SIZEOF(tbl); ++n)
 	fprintf(stderr, "%s\n", tbl[n]);
-    ExitProgram(EXIT_FAILURE);
+    ExitProgram(ok ? EXIT_SUCCESS : EXIT_FAILURE);
 }
+/* *INDENT-OFF* */
+VERSION_COMMON()
+/* *INDENT-ON* */
 
 int
-main(int argc GCC_UNUSED, char *argv[]GCC_UNUSED)
+main(int argc, char *argv[])
 {
     int ch;
     bool no_init = FALSE;
     FILE *my_fp = stdout;
 
-    while ((ch = getopt(argc, argv, "en")) != -1) {
+    while ((ch = getopt(argc, argv, OPTS_COMMON "en")) != -1) {
 	switch (ch) {
 	case 'e':
 	    my_fp = stderr;
@@ -221,12 +225,12 @@ main(int argc GCC_UNUSED, char *argv[]GCC_UNUSED)
 	    no_init = TRUE;
 	    break;
 	default:
-	    usage();
-	    break;
+	    CASE_COMMON;
+	    /* NOTREACHED */
 	}
     }
     if (optind < argc)
-	usage();
+	usage(FALSE);
 
     if (no_init) {
 	START_TRACE();
