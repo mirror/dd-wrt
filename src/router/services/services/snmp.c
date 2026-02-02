@@ -47,7 +47,7 @@ char *snmp_proc(void)
 void start_snmp(void)
 {
 	char path[64];
-	const char *snmpd_argv[] = { "snmpd", "-c", getdefaultconfig("snmp", path, sizeof(path), "snmpd/snmpd.conf"), NULL };
+	char *const snmpd_argv[] = { "snmpd", "-c", getdefaultconfig("snmp", path, sizeof(path), "snmpd/snmpd.conf"), NULL };
 	FILE *fp = NULL;
 
 	if (!nvram_invmatchi("snmpd_enable", 0)) {

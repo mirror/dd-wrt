@@ -552,7 +552,7 @@ static void aqos_tables(void)
 			int count = 0;
 			while (s_filters[count].name != NULL) {
 				if (!strcmp(s_filters[count].name, proto)) {
-					char *protos[7] = { "tcp", "udp", "both", "l7", "dpi", "p2p", "risk", "custom" };
+					char *protos[8] = { "tcp", "udp", "both", "l7", "dpi", "p2p", "risk", "custom" };
 					strcpy(proto2, protos[s_filters[count].proto - 1]);
 					strcpy(proto1, s_filters[count].name);
 					sprintf(proto3, "%d:%d", s_filters[count].portfrom, s_filters[count].portto);
@@ -1008,8 +1008,7 @@ static int svqos_iptables(void)
 			evalip6(IP6TABLES, "-t", "mangle", "-A", "SVQOS_SVCS", "-p", "tcp", "-m", "tcp", "--sport", data, "-j",
 				"MARK", "--set-mark", qos_nfmark(buffer, sizeof(buffer), level));
 		}
-		if (name &&
-		    (!strcmp(name, "windows-telemetry") || !strcmp(name, "ubnt-telemetry") || !strcmp(name, "ad-telemetry")))
+		if ((!strcmp(name, "windows-telemetry") || !strcmp(name, "ubnt-telemetry") || !strcmp(name, "ad-telemetry")))
 			continue;
 #ifndef HAVE_OPENDPI
 		if (strstr(type, "l7")) {
