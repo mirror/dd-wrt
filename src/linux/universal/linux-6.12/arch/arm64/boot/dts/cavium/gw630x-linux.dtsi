@@ -1,0 +1,471 @@
+/*
+ * Copyright 2017 Gateworks Corporation
+ *
+ * This file is dual-licensed: you can use it either under the terms
+ * of the GPL or the X11 license, at your option. Note that this dual
+ * licensing only applies to this file, and not this project as a
+ * whole.
+ *
+ *  a) This library is free software; you can redistribute it and/or
+ *     modify it under the terms of the GNU General Public License as
+ *     published by the Free Software Foundation; either version 2 of the
+ *     License, or (at your option) any later version.
+ *
+ *     This library is distributed in the hope that it will be useful,
+ *     but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *     GNU General Public License for more details.
+ *
+ *     You should have received a copy of the GNU General Public
+ *     License along with this library; if not, write to the Free
+ *     Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston,
+ *     MA 02110-1301 USA
+ *
+ * Or, alternatively,
+ *
+ *  b) Permission is hereby granted, free of charge, to any person
+ *     obtaining a copy of this software and associated documentation
+ *     files (the "Software"), to deal in the Software without
+ *     restriction, including without limitation the rights to use,
+ *     copy, modify, merge, publish, distribute, sublicense, and/or
+ *     sell copies of the Software, and to permit persons to whom the
+ *     Software is furnished to do so, subject to the following
+ *     conditions:
+ *
+ *     The above copyright notice and this permission notice shall be
+ *     included in all copies or substantial portions of the Software.
+ *
+ *     THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+ *     EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
+ *     OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+ *     NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
+ *     HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
+ *     WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+ *     FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+ *     OTHER DEALINGS IN THE SOFTWARE.
+ */
+
+/include/ "cn81xx-linux.dtsi"
+
+/ {
+	aliases {
+		ethernet0 = &eth0;
+		ethernet1 = &eth1;
+	};
+
+	chosen {
+		stdout-path = "serial0:115200n8";
+	};
+
+	config {
+		u-boot,mmc-env-offset = <0xff0000>;
+		u-boot,mmc-env-offset-redundant = <0xff8000>;
+		u-boot,mmc-env-partition = <0>;
+	};
+
+	gpio-keys {
+		compatible = "gpio-keys";
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		user_pb {
+			label = "user_pb";
+			gpios = <&gsc_gpio 2 1>; /* GPIO_ACTIVE_LOW */
+			linux,code = <256>; /* BTN_0 */
+		};
+
+		user_pb1x {
+			label = "user_pb1x";
+			linux,code = <257>; /* BTN_1 */
+			interrupt-parent = <&gsc>;
+			interrupts = <0>;
+		};
+
+		key_erased {
+			label = "key-erased";
+			linux,code = <258>; /* BTN_2 */
+			interrupt-parent = <&gsc>;
+			interrupts = <1>;
+		};
+
+		eeprom_wp {
+			label = "eeprom_wp";
+			linux,code = <259>; /* BTN_3 */
+			interrupt-parent = <&gsc>;
+			interrupts = <2>;
+		};
+
+		tamper {
+			label = "tamper";
+			linux,code = <260>; /* BTN_4 */
+			interrupt-parent = <&gsc>;
+			interrupts = <5>;
+		};
+
+		switch_hold {
+			label = "switch_hold";
+			linux,code = <261>; /* BTN_5 */
+			interrupt-parent = <&gsc>;
+			interrupts = <7>;
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		/* Bi-Color LED */
+		led0: user1 {
+			label = "user1"; /* GREEN */
+			gpios = <&gpio_6_0 31 0>;
+			default-state = "on";
+			linux,default-trigger = "heartbeat";
+		};
+
+		led1: user2 {
+			label = "user2"; /* RED */
+			gpios = <&gpio_6_0 14 0>;
+			default-state = "off";
+		};
+	};
+
+	pps {
+		compatible = "pps-gpio";
+		gpios = <&gpio_6_0 30 0>;
+	};
+};
+
+&gpio_6_0 {
+	/* name gpios in Linux that are not associated with a driver */
+	gpio-line-names =
+		"", "", "", "",
+		"", "", "", "",
+		"", "", "", "",
+		"", "", "", "",
+		"", "", "", "",
+		"", "", "", "",
+		"dio0", "dio1", "dio2", "dio3",
+		"mezz_dio0", "mezz_dio1", "", "",
+		"", "", "", "",
+		"", "", "", "",
+		"", "", "", "",
+		"", "", "", "";
+
+	dio_0 {
+		gpio-hog;
+		input;
+		gpios = <24 0>; /* GPIO_ACTIVE_HIGH */
+		line-name = "dio0";
+	};
+
+	dio_1 {
+		gpio-hog;
+		input;
+		gpios = <25 0>; /* GPIO_ACTIVE_HIGH */
+		line-name = "dio1";
+	};
+
+	dio_2 {
+		gpio-hog;
+		input;
+		gpios = <26 0>; /* GPIO_ACTIVE_HIGH */
+		line-name = "dio2";
+	};
+
+	dio_3 {
+		gpio-hog;
+		input;
+		gpios = <27 0>; /* GPIO_ACTIVE_HIGH */
+		line-name = "dio3";
+	};
+
+	pcie_0 {
+		gpio-hog;
+		input;
+		gpios = <28 0>; /* GPIO_ACTIVE_HIGH */
+		line-name = "mezz_dio0";
+	};
+
+	pcie_1 {
+		gpio-hog;
+		input;
+		gpios = <29 0>; /* GPIO_ACTIVE_HIGH */
+		line-name = "mezz_dio1";
+	};
+};
+
+&mrml_bridge {
+	/* CN8xxx MDIO */
+	mdio-nexus@1,3 {
+		/* MDIO0 */
+		mdio0@87e005003800 {
+			rgmii00: rgmii00 {
+				reg = <0>; /* phy address */
+				compatible = "ti,dp83867", "ethernet-phy-ieee802.3-c22";
+				ti,clk-output-sel = <0xb>; /* CHD TX CLK */
+				ti,rx-internal-delay = <0x7>; /* 2ns */
+				ti,tx-internal-delay = <0x7>; /* 20ps */
+				ti,fifo-depth = <3>; /* 0=3 1=4 2=6 3=8 */
+			};
+		};
+		/* MDIO1 */
+		mdio1@87e005003880 {
+			sgmii00: sgmii@0 {
+				qlm-mode = "0x000,sgmii";
+				reg = <0>; /* phy address */
+				compatible = "ti,dp83867", "ethernet-phy-ieee802.3-c22";
+				ti,fifo-depth = <3>; /* 0=3 1=4 2=6 3=8 */
+			};
+		};
+	};
+
+	rgx0 {
+		eth0: rgmii00 {
+			reg = <0>;
+			local-mac-address = [00 00 00 00 00 00];
+			phy-handle = <&rgmii00>;
+		};
+	};
+
+	/* DLM1 => SGMII (dp83867) */
+	bgx0 {
+		/* BGX0.0 */
+		eth1: sgmii@0 {
+			reg = <0>;
+			qlm-mode = "0x000,sgmii";
+			local-mac-address = [00 00 00 00 00 00];
+			phy-handle = <&sgmii00>;
+		};
+	};
+};
+
+&mmc_1_4 {
+	/* CMD0 placeholder */
+	mmc-slot@0 {
+		compatible = "mmc-slot";
+		reg = <0>;
+		vmmc-supply = <&mmc_supply_3v3>;
+		max-frequency = <35000000>;
+		/* 1.8v is not supported */
+		no-1-8-v;
+		/* No write-protect switch is present */
+		disable-wp;
+		/* no card detection available; polling must be used. */
+		broken-cd;
+		/* speed up device probing */
+		no-sdio;
+	};
+
+	/* CMD1 placeholder */
+	mmc-slot@1 {
+		compatible = "mmc-slot";
+		reg = <1>;
+		vmmc-supply = <&mmc_supply_3v3>;
+		max-frequency = <35000000>;
+		/* 1.8v is not supported */
+		no-1-8-v;
+		/* No write-protect switch is present */
+		disable-wp;
+		/* no card detection available; polling must be used. */
+		broken-cd;
+		/* speed up device probing */
+		no-sdio;
+	};
+};
+
+/* TWSI0 */
+&i2c_9_0 {
+	lis2de12@19 {
+		compatible = "st,lis2de12";
+		reg = <0x19>;
+		st,drdy-int-pin = <1>;
+		interrupt-parent = <&gpio_6_0>;
+		interrupts = <29 1>;
+		interrupt-names = "INT1";
+	};
+
+	gsc: gsc@20 {
+		compatible = "gw,gsc";
+		reg = <0x20>;
+		interrupt-parent = <&gpio_6_0>;
+		interrupts = <4 8>;
+		interrupt-controller;
+		#address-cells = <1>;
+		#interrupt-cells = <1>;
+		#size-cells = <0>;
+
+		adc {
+			compatible = "gw,gsc-adc";
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			channel@6 {
+				gw,mode = <0>;
+				reg = <0x06>;
+				label = "temp";
+			};
+
+			channel@8 {
+				gw,mode = <3>;
+				reg = <0x08>;
+				label = "vdd_bat";
+			};
+
+			channel@16 {
+				gw,mode = <4>;
+				reg = <0x16>;
+				label = "fan_tach";
+			};
+
+			channel@82 {
+				gw,mode = <2>;
+				reg = <0x82>;
+				label = "vdd_vin";
+				gw,voltage-divider-ohms = <22100 1000>;
+				gw,voltage-offset-microvolt = <800000>;
+			};
+
+			channel@84 {
+				gw,mode = <2>;
+				reg = <0x84>;
+				label = "vdd_5p0";
+				gw,voltage-divider-ohms = <22100 10000>;
+			};
+
+			channel@86 {
+				gw,mode = <2>;
+				reg = <0x86>;
+				label = "vdd_3p3";
+				gw,voltage-divider-ohms = <10000 10000>;
+			};
+
+			channel@88 {
+				gw,mode = <2>;
+				reg = <0x88>;
+				label = "vdd_2p5";
+				gw,voltage-divider-ohms = <10000 10000>;
+			};
+
+			channel@8c {
+				gw,mode = <2>;
+				reg = <0x8c>;
+				label = "vdd_core";
+			};
+
+			channel@8e {
+				gw,mode = <2>;
+				reg = <0x8e>;
+				label = "vdd_0p9";
+			};
+
+			channel@90 {
+				gw,mode = <2>;
+				reg = <0x90>;
+				label = "vdd_1p0";
+			};
+
+			channel@92 {
+				gw,mode = <2>;
+				reg = <0x92>;
+				label = "vdd_1p2";
+			};
+
+			channel@98 {
+				gw,mode = <2>;
+				reg = <0x98>;
+				label = "vdd_1p5";
+			};
+
+			channel@9a {
+				gw,mode = <2>;
+				reg = <0x9a>;
+				label = "vdd_an1";
+				gw,voltage-divider-ohms = <10000 10000>;
+			};
+
+			channel@a2 {
+				gw,mode = <2>;
+				reg = <0xa2>;
+				label = "vdd_gsc";
+				gw,voltage-divider-ohms = <10000 10000>;
+			};
+		};
+
+		fan-controller@0a {
+			#size-cells = <0>;
+			compatible = "gw,gsc-fan";
+			reg = <0x0a>;
+		};
+	};
+
+	/* regulator */
+	regulator_core: max20730-i2c@56 {
+		compatible = "max,max20730";
+		reg = <0x56>;
+	};
+
+	eeprom1: eeprom@50 {
+		compatible = "atmel,24c02";
+		reg = <0x50>;
+		pagesize = <16>;
+	};
+
+	eeprom2: eeprom@51 {
+		compatible = "atmel,24c02";
+		reg = <0x51>;
+		pagesize = <16>;
+	};
+
+	eeprom3: eeprom@52 {
+		compatible = "atmel,24c02";
+		reg = <0x52>;
+		pagesize = <16>;
+	};
+
+	eeprom4: eeprom@53 {
+		compatible = "atmel,24c02";
+		reg = <0x53>;
+		pagesize = <16>;
+	};
+
+	gsc_gpio: pca9555@23 {
+		compatible = "nxp,pca9555";
+		reg = <0x23>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		interrupt-parent = <&gsc>;
+		interrupts = <4>;
+		gpio-line-names =
+			"pci_wdis#", "", "", "", "", "", "", "",
+			"", "", "", "", "", "", "", "";
+
+		/* NB: this can only be used as an output */
+		pci_wdis {
+			gpio-hog;
+			output-high;
+			gpios = <0 0>; /* GPIO_ACTIVE_HIGH */
+			line-name = "pci_wdis#";
+		};
+	};
+
+	max6642: max6642@4a {
+		compatible = "maxim,max6642";
+		reg = <0x4a>;
+	};
+
+	rtc: ds1672@68 {
+		compatible = "dallas,ds1672";
+		reg = <0x68>;
+	};
+};
+
+&spi_7_0 {
+	can0: can@1 {
+		compatible = "microchip,mcp2515","linux,spidev";
+		reg = <1>;
+		clocks = <&can20m>;
+		oscillator-frequency = <20000000>;
+		interrupt-parent = <&gpio_6_0>;
+		interrupts = <5 0x8>; /* IRQ_TYPE_LEVEL_LOW */
+		spi-max-frequency = <10000000>;
+	};
+};
