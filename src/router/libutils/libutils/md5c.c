@@ -703,7 +703,7 @@ void calc_sha_256(uint8_t hash[32], const void * input, size_t len)
 
 char *sha256_string(char *string, char *hashbuf, size_t len)
 {
-	char hash[32];
+	uint8_t hash[32];
 	int i;
 	if (!strlen(string)) {
 		return NULL;
