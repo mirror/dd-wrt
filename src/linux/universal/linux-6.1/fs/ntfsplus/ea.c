@@ -2,7 +2,7 @@
 /*
  * Pocessing of EA's
  *
- * Part of this file is based on code from the NTFS-3G project.
+ * Part of this file is based on code from the NTFS-3G.
  *
  * Copyright (c) 2014-2021 Jean-Pierre Andre
  * Copyright (c) 2025 LG Electronics Co., Ltd.

@@ -1,11 +1,10 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
 /*
  * Defines for NTFS kernel collation handling.
- * Part of the Linux-NTFS project.
  *
  * Copyright (c) 2004 Anton Altaparmakov
  *
- * Part of this file is based on code from the NTFS-3G project.
+ * Part of this file is based on code from the NTFS-3G.
  * and is copyrighted by the respective authors below:
  * Copyright (c) 2004 Anton Altaparmakov
  * Copyright (c) 2005 Yura Pakhuchiy

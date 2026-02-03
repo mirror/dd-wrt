@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 /*
- * NTFS kernel super block handling. Part of the Linux-NTFS project.
+ * NTFS kernel super block handling.
  *
  * Copyright (c) 2001-2012 Anton Altaparmakov and Tuxera Inc.
  * Copyright (c) 2001,2002 Richard Russon
@@ -563,7 +563,11 @@ static char *read_ntfs_boot_sector(struct super_block *sb,
 	if (!boot_sector)
 		return NULL;
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 16, 0)
+	if (ntfs_bdev_read(sb->s_bdev, 0, PAGE_SIZE, boot_sector)) {
+#else
 	if (ntfs_dev_read(sb, boot_sector, 0, PAGE_SIZE)) {
+#endif
 		if (!silent)
 			ntfs_error(sb, "Unable to read primary boot sector.");
 		kfree(boot_sector);
@@ -1328,7 +1332,7 @@ static bool load_and_init_attrdef(struct ntfs_volume *vol)
 	i_size = i_size_read(ino);
 	if (i_size <= 0 || i_size > 0x7fffffff)
 		goto iput_failed;
-	vol->attrdef = (struct attr_def *)kvzalloc(i_size, GFP_NOFS);
+	vol->attrdef = kvzalloc(i_size, GFP_NOFS);
 	if (!vol->attrdef)
 		goto iput_failed;
 	index = 0;
@@ -1412,7 +1416,7 @@ static bool load_and_init_upcase(struct ntfs_volume *vol)
 	if (!i_size || i_size & (sizeof(__le16) - 1) ||
 			i_size > 64ULL * 1024 * sizeof(__le16))
 		goto iput_upcase_failed;
-	vol->upcase = (__le16 *)kvzalloc(i_size, GFP_NOFS);
+	vol->upcase = kvzalloc(i_size, GFP_NOFS);
 	if (!vol->upcase)
 		goto iput_upcase_failed;
 	index = 0;
