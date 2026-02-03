@@ -1,7 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
 /*
  * Defines for mft record handling in NTFS Linux kernel driver.
- * Part of the Linux-NTFS project.
  *
  * Copyright (c) 2001-2004 Anton Altaparmakov
  */
@@ -89,7 +88,7 @@ static inline int write_mft_record(struct ntfs_inode *ni, struct mft_record *m, 
 
 bool ntfs_may_write_mft_record(struct ntfs_volume *vol,
 		const unsigned long mft_no, const struct mft_record *m,
-		struct ntfs_inode **locked_ni);
+		struct ntfs_inode **locked_ni, struct inode **ref_vi);
 int ntfs_mft_record_alloc(struct ntfs_volume *vol, const int mode,
 		struct ntfs_inode **ni, struct ntfs_inode *base_ni,
 		struct mft_record **ni_mrec);
@@ -98,5 +97,6 @@ int ntfs_mft_records_write(const struct ntfs_volume *vol, const u64 mref,
 		const s64 count, struct mft_record *b);
 int ntfs_mft_record_check(const struct ntfs_volume *vol, struct mft_record *m,
 			  unsigned long mft_no);
-
+int ntfs_mft_writepages(struct address_space *mapping,
+		struct writeback_control *wbc);
 #endif /* _LINUX_NTFS_MFT_H */

@@ -1,7 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
 /*
  * Exports for NTFS kernel cluster (de)allocation.
- * Part of the Linux-NTFS project.
  *
  * Copyright (c) 2004-2005 Anton Altaparmakov
  */
@@ -13,11 +12,19 @@
 
 #include "attrib.h"
 
+/*
+ * enum zone_type - Zone identifiers for cluster allocation policy
+ *
+ * FIRST_ZONE		For sanity checking.
+ * MFT_ZONE		Allocate from $MFT zone.
+ * DATA_ZONE		Allocate from $DATA zone.
+ * LAST_ZONE		For sanity checking.
+ */
 enum {
-	FIRST_ZONE	= 0,	/* For sanity checking. */
-	MFT_ZONE	= 0,	/* Allocate from $MFT zone. */
-	DATA_ZONE	= 1,	/* Allocate from $DATA zone. */
-	LAST_ZONE	= 1,	/* For sanity checking. */
+	FIRST_ZONE	= 0,
+	MFT_ZONE	= 0,
+	DATA_ZONE	= 1,
+	LAST_ZONE	= 1,
 };
 
 struct runlist_element *ntfs_cluster_alloc(struct ntfs_volume *vol,

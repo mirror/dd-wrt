@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 /*
- * Attribute list attribute handling code.  Originated from the Linux-NTFS
- * project.
- * Part of this file is based on code from the NTFS-3G project.
+ * Attribute list attribute handling code.
+ * Part of this file is based on code from the NTFS-3G.
  *
  * Copyright (c) 2004-2005 Anton Altaparmakov
  * Copyright (c) 2004-2005 Yura Pakhuchiy
