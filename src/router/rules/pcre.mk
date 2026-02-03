@@ -1,4 +1,5 @@
 pcre-configure:
+	cd pcre && autoreconf -fi
 	cd pcre && ./configure --host=$(ARCH)-linux-uclibc CFLAGS="$(COPTS)  $(MIPS16_OPT)" --prefix=/usr --disable-xmldoc --enable-utf8 --enable-unicode-properties --disable-pcretest-libreadline --libdir=$(TOP)/pcre/.libs
 	touch $(TOP)/pcre/*   
 
