@@ -1,13 +1,12 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 /*
  * NTFS kernel compressed attributes handling.
- * Part of the Linux-NTFS project.
  *
  * Copyright (c) 2001-2004 Anton Altaparmakov
  * Copyright (c) 2002 Richard Russon
  * Copyright (c) 2025 LG Electronics Co., Ltd.
  *
- * Part of this file is based on code from the NTFS-3G project.
+ * Part of this file is based on code from the NTFS-3G.
  * and is copyrighted by the respective authors below:
  * Copyright (c) 2004-2005 Anton Altaparmakov
  * Copyright (c) 2004-2006 Szabolcs Szakacsits
@@ -927,10 +926,15 @@ err_out:
 /* log base 2 of the number of entries in the hash table for match-finding.  */
 #define HASH_SHIFT		14
 
-/* Constant for the multiplicative hash function.  */
+/*
+ * Constant for the multiplicative hash function. These hashing constants
+ * are used solely for the match-finding algorithm during compression.
+ * They are NOT part of the on-disk format. The decompressor does not
+ * utilize this hash.
+ */
 #define HASH_MULTIPLIER		0x1E35A7BD
 
-struct COMPRESS_CONTEXT {
+struct compress_context {
 	const unsigned char *inbuf;
 	int bufsize;
 	int size;
@@ -988,7 +992,7 @@ static inline unsigned int ntfs_hash(const u8 *p)
  *          position, it ends early and returns the longest match found so far.
  *          This saves a lot of time on degenerate inputs.
  */
-static void ntfs_best_match(struct COMPRESS_CONTEXT *pctx, const int i,
+static void ntfs_best_match(struct compress_context *pctx, const int i,
 		int best_len)
 {
 	const u8 * const inbuf = pctx->inbuf;
@@ -1091,7 +1095,7 @@ out:
 /*
  * Advance the match-finder, but don't search for matches.
  */
-static void ntfs_skip_position(struct COMPRESS_CONTEXT *pctx, const int i)
+static void ntfs_skip_position(struct compress_context *pctx, const int i)
 {
 	unsigned int hash;
 
@@ -1121,7 +1125,7 @@ static void ntfs_skip_position(struct COMPRESS_CONTEXT *pctx, const int i)
 static unsigned int ntfs_compress_block(const char *inbuf, const int bufsize,
 		char *outbuf)
 {
-	struct COMPRESS_CONTEXT *pctx;
+	struct compress_context *pctx;
 	int i; /* current position */
 	int j; /* end of best match from current position */
 	int k; /* end of best match from next position */
@@ -1136,7 +1140,7 @@ static unsigned int ntfs_compress_block(const char *inbuf, const int bufsize,
 	int tag;    /* current value of tag */
 	int ntag;   /* count of bits still undefined in tag */
 
-	pctx = kvzalloc(sizeof(struct COMPRESS_CONTEXT), GFP_NOFS);
+	pctx = kvzalloc(sizeof(struct compress_context), GFP_NOFS);
 	if (!pctx)
 		return -ENOMEM;
 
@@ -1513,6 +1517,16 @@ int ntfs_compress_write(struct ntfs_inode *ni, loff_t pos, size_t count,
 	int i, ip;
 	size_t written = 0;
 	struct address_space *mapping = VFS_I(ni)->i_mapping;
+
+	if (NInoCompressed(ni) && pos + count > ni->allocated_size) {
+		int err;
+		loff_t end = pos + count;
+
+		err = ntfs_attr_expand(ni, end,
+				round_up(end, ni->itype.compressed.block_size));
+		if (err)
+			return err;
+	}
 
 	pages = kmalloc_array(pages_per_cb, sizeof(struct page *), GFP_NOFS);
 	if (!pages)

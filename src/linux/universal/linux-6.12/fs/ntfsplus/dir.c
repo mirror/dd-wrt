@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 /*
- * NTFS kernel directory operations. Part of the Linux-NTFS project.
+ * NTFS kernel directory operations.
  *
  * Copyright (c) 2001-2007 Anton Altaparmakov
  * Copyright (c) 2002 Richard Russon

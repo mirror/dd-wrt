@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 /*
- * NTFS kernel bitmap handling. Part of the Linux-NTFS project.
+ * NTFS kernel bitmap handling.
  *
  * Copyright (c) 2004-2005 Anton Altaparmakov
  * Copyright (c) 2025 LG Electronics Co., Ltd.

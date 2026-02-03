@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 /*
  * Generate the full NTFS Unicode upcase table in little endian.
- * Part of the Linux-NTFS project.
  *
  * Copyright (c) 2001 Richard Russon <ntfs@flatcap.org>
  * Copyright (c) 2001-2006 Anton Altaparmakov
@@ -53,7 +52,7 @@ __le16 *generate_default_upcase(void)
 	int i, r;
 	__le16 *uc;
 
-	uc = kvzalloc(default_upcase_len * sizeof(__le16), GFP_NOFS);
+	uc = kvcalloc(default_upcase_len, sizeof(__le16), GFP_NOFS);
 	if (!uc)
 		return uc;
 	/* Generate the little endian Unicode upcase table used by ntfs. */

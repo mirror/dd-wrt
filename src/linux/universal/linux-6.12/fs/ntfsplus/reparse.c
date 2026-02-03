@@ -2,7 +2,7 @@
 /*
  * Processing of reparse points
  *
- * Part of this file is based on code from the NTFS-3G project.
+ * Part of this file is based on code from the NTFS-3G.
  *
  * Copyright (c) 2008-2021 Jean-Pierre Andre
  * Copyright (c) 2025 LG Electronics Co., Ltd.
@@ -486,7 +486,7 @@ int ntfs_reparse_set_wsl_symlink(struct ntfs_inode *ni,
 		return -EINVAL;
 
 	reparse_len = sizeof(struct reparse_point) + sizeof(data->type) + len;
-	reparse = (struct reparse_point *)kvzalloc(reparse_len, GFP_NOFS);
+	reparse = kvzalloc(reparse_len, GFP_NOFS);
 	if (!reparse) {
 		err = -ENOMEM;
 		kvfree(utarget);
@@ -532,7 +532,7 @@ int ntfs_reparse_set_wsl_not_symlink(struct ntfs_inode *ni, mode_t mode)
 		return -EOPNOTSUPP;
 
 	reparse_len = sizeof(struct reparse_point) + len;
-	reparse = (struct reparse_point *)kvzalloc(reparse_len, GFP_NOFS);
+	reparse = kvzalloc(reparse_len, GFP_NOFS);
 	if (!reparse)
 		err = -ENOMEM;
 	else {

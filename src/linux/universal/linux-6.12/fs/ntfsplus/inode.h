@@ -1,7 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
 /*
- * Defines for inode structures NTFS Linux kernel driver. Part of
- * the Linux-NTFS project.
+ * Defines for inode structures NTFS Linux kernel driver.
  *
  * Copyright (c) 2001-2007 Anton Altaparmakov
  * Copyright (c) 2002 Richard Russon
@@ -65,8 +64,8 @@ enum ntfs_inode_mutex_lock_class {
  * @folio: The folio containing the mft record of the inode.
  * @folio_ofs: Offset into the folio at which the mft record begins.
  * @mft_lcn: Number containing the mft record.
- * @mft_lcn_count: Number of clusters per mft record. 
- * 
+ * @mft_lcn_count: Number of clusters per mft record.
+ *
  * Attribute list support (only for use by the attribute lookup
  * functions). Setup during read_inode for all inodes with attribute
  * lists. Only valid if NI_AttrList is set in state.
@@ -98,7 +97,7 @@ enum ntfs_inode_mutex_lock_class {
  *   record. For fake inodes, the real (base) inode to which the attribute
  *   belongs.
  * @i_dealloc_clusters: delayed allocated clusters.
- * @target: symlink buffer. 
+ * @target: symlink buffer.
  */
 struct ntfs_inode {
 	rwlock_t size_lock;
@@ -163,22 +162,22 @@ struct ntfs_inode {
  * NI_AttrListDirty		Mft record contains an attribute list.
  * NI_AttrList			Mft record contains an attribute list.
  * NI_AttrListNonResident	Attribute list is non-resident. Implies
- * 				NI_AttrList is set.
+ *				NI_AttrList is set.
  * NI_Attr			1: Fake inode for attribute i/o.
- * 				0: Real inode or extent inode.
+ *				0: Real inode or extent inode.
  * NI_MstProtected		Attribute is protected by MST fixups.
  * NI_NonResident		Unnamed data attr is non-resident (f)
- * 				Attribute is non-resident (a).
+ *				Attribute is non-resident (a).
  * NI_IndexAllocPresent		$I30 index alloc attr is present (d).
  * NI_Compressed		Unnamed data attr is compressed (f).
- * 				Create compressed files by default (d).
- * 				Attribute is compressed (a).
+ *				Create compressed files by default (d).
+ *				Attribute is compressed (a).
  * NI_Encrypted			Unnamed data attr is encrypted (f).
- * 				Create encrypted files by default (d).
- * 				Attribute is encrypted (a).
+ *				Create encrypted files by default (d).
+ *				Attribute is encrypted (a).
  * NI_Sparse			Unnamed data attr is sparse (f).
- * 				Create sparse files by default (d).
- * 				Attribute is sparse (a).
+ *				Create sparse files by default (d).
+ *				Attribute is sparse (a).
  * NI_SparseDisabled		May not create sparse regions.
  * NI_FullyMapped		Runlist is fully mapped.
  * NI_FileNameDirty		FILE_NAME attributes need to be updated.
@@ -381,7 +380,7 @@ static inline void ntfs_commit_inode(struct inode *vi)
 
 int ntfs_inode_sync_filename(struct ntfs_inode *ni);
 int ntfs_extend_initialized_size(struct inode *vi, const loff_t offset,
-		const loff_t new_size);
+		const loff_t new_size, bool bsync);
 void ntfs_set_vfs_operations(struct inode *inode, mode_t mode, dev_t dev);
 struct folio *ntfs_get_locked_folio(struct address_space *mapping,
 		pgoff_t index, pgoff_t end_index, struct file_ra_state *ra);

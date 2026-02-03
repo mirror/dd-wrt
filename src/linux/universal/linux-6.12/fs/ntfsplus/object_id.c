@@ -2,7 +2,7 @@
 /*
  * Pocessing of object ids
  *
- * Part of this file is based on code from the NTFS-3G project.
+ * Part of this file is based on code from the NTFS-3G.
  *
  * Copyright (c) 2009-2019 Jean-Pierre Andre
  * Copyright (c) 2026 LG Electronics Co., Ltd.

@@ -1,7 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
 /*
- * All NTFS associated on-disk structures. Part of the Linux-NTFS
- * project.
+ * All NTFS associated on-disk structures.
  *
  * Copyright (c) 2001-2005 Anton Altaparmakov
  * Copyright (c) 2002 Richard Russon
@@ -31,58 +30,102 @@
 
 /*
  * BIOS parameter block (bpb) structure.
+ *
+ * @bytes_per_sector:       Size of a sector in bytes (usually 512).
+ *                          Matches the logical sector size of the underlying device.
+ * @sectors_per_cluster:    Size of a cluster in sectors (NTFS cluster size / sector size).
+ * @reserved_sectors:       Number of reserved sectors at the beginning of the volume.
+ *                          Always set to 0 in NTFS.
+ * @fats:                   Number of FAT tables.
+ *                          Always 0 in NTFS (no FAT tables exist).
+ * @root_entries:           Number of entries in the root directory.
+ *                          Always 0 in NTFS.
+ * @sectors:                Total number of sectors on the volume.
+ *                          Always 0 in NTFS (use @large_sectors instead).
+ * @media_type:             Media descriptor byte.
+ *                          0xF8 for hard disk (fixed media) in NTFS.
+ * @sectors_per_fat:        Number of sectors per FAT table.
+ *                          Always 0 in NTFS.
+ * @sectors_per_track:      Number of sectors per track.
+ *                          Irrelevant for NTFS.
+ * @heads:                  Number of heads (CHS geometry).
+ *                          Irrelevant for NTFS.
+ * @hidden_sectors:         Number of hidden sectors before the start of the partition.
+ *                          Always 0 in NTFS boot sector.
+ * @large_sectors:          Total number of sectors on the volume.
  */
 struct bios_parameter_block {
-	__le16 bytes_per_sector;	/* Size of a sector in bytes. */
-	u8  sectors_per_cluster;	/* Size of a cluster in sectors. */
-	__le16 reserved_sectors;	/* zero */
-	u8  fats;			/* zero */
-	__le16 root_entries;		/* zero */
-	__le16 sectors;			/* zero */
-	u8  media_type;			/* 0xf8 = hard disk */
-	__le16 sectors_per_fat;		/* zero */
-	__le16 sectors_per_track;		/* irrelevant */
-	__le16 heads;			/* irrelevant */
-	__le32 hidden_sectors;		/* zero */
-	__le32 large_sectors;		/* zero */
+	__le16 bytes_per_sector;
+	u8 sectors_per_cluster;
+	__le16 reserved_sectors;
+	u8 fats;
+	__le16 root_entries;
+	__le16 sectors;
+	u8 media_type;
+	__le16 sectors_per_fat;
+	__le16 sectors_per_track;
+	__le16 heads;
+	__le32 hidden_sectors;
+	__le32 large_sectors;
 } __packed;
 
 /*
  * NTFS boot sector structure.
+ *
+ * @jump:               3-byte jump instruction to boot code (irrelevant for NTFS).
+ *                      Typically 0xEB 0x52 0x90 or similar.
+ * @oem_id:             OEM identifier string (8 bytes).
+ *                      Always "NTFS    " (with trailing spaces) in NTFS volumes.
+ * @bpb:                Legacy BIOS Parameter Block (see struct bios_parameter_block).
+ *                      Mostly zeroed or set to fixed values for NTFS compatibility.
+ * @unused:             4 bytes, reserved/unused.
+ *                      NTFS disk editors show it as:
+ *                        - physical_drive (0x80 for fixed disk)
+ *                        - current_head (0)
+ *                        - extended_boot_signature (0x80 or 0x28)
+ *                        - unused (0)
+ *                      Always zero in practice for NTFS.
+ * @number_of_sectors:  Number of sectors in volume. Gives maximum volume
+ *                      size of 2^63 sectors. Assuming standard sector
+ *                      size of 512 bytes, the maximum byte size is
+ *                      approx. 4.7x10^21 bytes. (-;
+ * @mft_lcn:            Logical cluster number (LCN) of the $MFT data attribute.
+ *                      Location of the Master File Table.
+ * @mftmirr_lcn:        LCN of the $MFTMirr (first 3-4 MFT records copy).
+ *                      Mirror for boot-time recovery.
+ * @clusters_per_mft_record:
+ *                      Size of each MFT record in clusters.
+ * @reserved0:          3 bytes, reserved/zero.
+ * @clusters_per_index_record:
+ *                      Size of each index block/record in clusters.
+ * @reserved1:          3 bytes, reserved/zero.
+ * @volume_serial_number:
+ *                      64-bit volume serial number.
+ *                      Used for identification (irrelevant for NTFS operation).
+ * @checksum:           32-bit checksum of the boot sector (excluding this field).
+ *                      Used to detect boot sector corruption.
+ * @bootstrap:          426 bytes of bootstrap code.
+ *                      Irrelevant for NTFS (contains x86 boot loader stub).
+ * @end_of_sector_marker:
+ *                      2-byte end-of-sector signature.
+ *                      Always 0xAA55 (little-endian magic number).
  */
 struct ntfs_boot_sector {
-	u8  jump[3];			/* Irrelevant (jump to boot up code).*/
-	__le64 oem_id;			/* Magic "NTFS    ". */
-	struct bios_parameter_block bpb;	/* See BIOS_PARAMETER_BLOCK. */
-	u8  unused[4];			/*
-					 * zero, NTFS diskedit.exe states that
-					 * this is actually:
-					 *	__u8 physical_drive;	// 0x80
-					 *	__u8 current_head;	// zero
-					 *	__u8 extended_boot_signature;
-					 *				// 0x80
-					 *	__u8 unused;		// zero
-					 */
-	__le64 number_of_sectors;	/*
-					 * Number of sectors in volume. Gives
-					 * maximum volume size of 2^63 sectors.
-					 * Assuming standard sector size of 512
-					 * bytes, the maximum byte size is
-					 * approx. 4.7x10^21 bytes. (-;
-					 */
-	__le64 mft_lcn;			/* Cluster location of mft data. */
-	__le64 mftmirr_lcn;		/* Cluster location of copy of mft. */
-	s8  clusters_per_mft_record;	/* Mft record size in clusters. */
-	u8  reserved0[3];		/* zero */
-	s8  clusters_per_index_record;	/* Index block size in clusters. */
-	u8  reserved1[3];		/* zero */
-	__le64 volume_serial_number;	/* Irrelevant (serial number). */
-	__le32 checksum;			/* Boot sector checksum. */
-	u8  bootstrap[426];		/* Irrelevant (boot up code). */
-	__le16 end_of_sector_marker;	/*
-					 * End of bootsector magic. Always is
-					 * 0xaa55 in little endian.
-					 */
+	u8 jump[3];
+	__le64 oem_id;
+	struct bios_parameter_block bpb;
+	u8 unused[4];
+	__le64 number_of_sectors;
+	__le64 mft_lcn;
+	__le64 mftmirr_lcn;
+	s8 clusters_per_mft_record;
+	u8 reserved0[3];
+	s8 clusters_per_index_record;
+	u8 reserved1[3];
+	__le64 volume_serial_number;
+	__le32 checksum;
+	u8 bootstrap[426];
+	__le16 end_of_sector_marker;
 } __packed;
 
 static_assert(sizeof(struct ntfs_boot_sector) == 512);
@@ -90,30 +133,35 @@ static_assert(sizeof(struct ntfs_boot_sector) == 512);
 /*
  * Magic identifiers present at the beginning of all ntfs record containing
  * records (like mft records for example).
+ *
+ * magic_FILE:      MFT entry header ("FILE" in ASCII).
+ *                  Used in $MFT/$DATA for all master file table records.
+ * magic_INDX:      Index buffer header ("INDX" in ASCII).
+ *                  Used in $INDEX_ALLOCATION attributes (directories, $I30 indexes).
+ * magic_HOLE:      Hole marker ("HOLE" in ASCII).
+ *                  Introduced in NTFS 3.0+, used for sparse/hole regions in some contexts.
+ * magic_RSTR:      Restart page header ("RSTR" in ASCII).
+ *                  Used in LogFile for restart pages (transaction log recovery).
+ * magic_RCRD:      Log record page header ("RCRD" in ASCII).
+ *                  Used in LogFile for individual log record pages.
+ * magic_CHKD:      Chkdsk modified marker ("CHKD" in ASCII).
+ *                  Set by chkdsk when it modifies a record; indicates repair was done.
+ * magic_BAAD:      Bad record marker ("BAAD" in ASCII).
+ *                  Indicates a multi-sector transfer failure was detected.
+ *                  The record is corrupted/unusable; often set during I/O errors.
+ * magic_empty:     Empty/uninitialized page marker (0xffffffff).
+ *                  Used in LogFile when a page is filled with 0xff bytes
+ *                  and has not yet been initialized. Must be formatted before use.
  */
 enum {
-	/* Found in $MFT/$DATA. */
-	magic_FILE = cpu_to_le32(0x454c4946), /* Mft entry. */
-	magic_INDX = cpu_to_le32(0x58444e49), /* Index buffer. */
-	magic_HOLE = cpu_to_le32(0x454c4f48), /* ? (NTFS 3.0+?) */
-
-	/* Found in LogFile/DATA. */
-	magic_RSTR = cpu_to_le32(0x52545352), /* Restart page. */
-	magic_RCRD = cpu_to_le32(0x44524352), /* Log record page. */
-
-	/* Found in LogFile/DATA.  (May be found in $MFT/$DATA, also?) */
-	magic_CHKD = cpu_to_le32(0x444b4843), /* Modified by chkdsk. */
-
-	/* Found in all ntfs record containing records. */
-	magic_BAAD = cpu_to_le32(0x44414142), /*
-					       * Failed multi sector
-					       * transfer was detected.
-					       */
-	/*
-	 * Found in LogFile/DATA when a page is full of 0xff bytes and is
-	 * thus not initialized.  Page must be initialized before using it.
-	 */
-	magic_empty = cpu_to_le32(0xffffffff) /* Record is empty. */
+	magic_FILE = cpu_to_le32(0x454c4946),
+	magic_INDX = cpu_to_le32(0x58444e49),
+	magic_HOLE = cpu_to_le32(0x454c4f48),
+	magic_RSTR = cpu_to_le32(0x52545352),
+	magic_RCRD = cpu_to_le32(0x44524352),
+	magic_CHKD = cpu_to_le32(0x444b4843),
+	magic_BAAD = cpu_to_le32(0x44414142),
+	magic_empty = cpu_to_le32(0xffffffff)
 };
 
 /*
@@ -160,6 +208,24 @@ static inline bool __ntfs_is_magicp(__le32 *p, __le32 r)
 #define ntfs_is_empty_recordp(p)	(ntfs_is_magicp(p, empty))
 
 /*
+ * struct ntfs_record - Common header for all multi-sector protected NTFS records
+ *
+ * @magic:      4-byte magic identifier for the record type and/or status.
+ *              Common values are defined in the magic_* enum (FILE, INDX, RSTR,
+ *              RCRD, CHKD, BAAD, HOLE, empty).
+ *              - "FILE" = MFT record
+ *              - "INDX" = Index allocation block
+ *              - "BAAD" = Record corrupted (multi-sector fixup failed)
+ *              - 0xffffffff = Uninitialized/empty page
+ * @usa_ofs:    Offset (in bytes) from the start of this record to the Update
+ *              Sequence Array (USA).
+ *              The USA is located at record + usa_ofs.
+ * @usa_count:  Number of 16-bit entries in the USA array (including the Update
+ *              Sequence Number itself).
+ *              - Number of fixup locations = usa_count - 1
+ *              - Each fixup location is a 16-bit value in the record that needs
+ *                protection against torn writes.
+ *
  * The Update Sequence Array (usa) is an array of the __le16 values which belong
  * to the end of each sector protected by the update sequence record in which
  * this array is contained. Note that the first entry is the Update Sequence
@@ -176,20 +242,9 @@ static inline bool __ntfs_is_magicp(__le32 *p, __le32 r)
  * (usa_count * 2) has to be less than or equal to 510.
  */
 struct ntfs_record {
-	__le32 magic;		/*
-				 * A four-byte magic identifying the record
-				 * type and/or status.
-				 */
-	__le16 usa_ofs;		/*
-				 * Offset to the Update Sequence Array (usa)
-				 * from the start of the ntfs record.
-				 */
-	__le16 usa_count;	/*
-				 * Number of __le16 sized entries in the usa
-				 * including the Update Sequence Number (usn),
-				 * thus the number of fixups is the usa_count
-				 * minus 1.
-				 */
+	__le32 magic;
+	__le16 usa_ofs;
+	__le16 usa_count;
 } __packed;
 
 /*
@@ -198,70 +253,83 @@ struct ntfs_record {
  * allocation for random other mft records. Also, the sequence number for each
  * of the system files is always equal to their mft record number and it is
  * never modified.
+ *
+ * FILE_MFT:        Master File Table (MFT) itself.
+ *                  Data attribute contains all MFT entries;
+ *                  Bitmap attribute tracks which records are in use (bit==1).
+ * FILE_MFTMirr:    MFT mirror: copy of the first four (or more) MFT records
+ *                  in its data attribute.
+ *                  If cluster size > 4 KiB, copies first N records where
+ *                  N = cluster_size / mft_record_size.
+ * FILE_LogFile:    Journaling log (LogFile) in data attribute.
+ *                  Used for transaction logging and recovery.
+ * FILE_Volume:     Volume information and name.
+ *                  Contains $VolumeName (label) and $VolumeInformation
+ *                  (flags, NTFS version). Windows calls this the volume DASD.
+ * FILE_AttrDef:    Attribute definitions array in data attribute.
+ *                  Defines all possible attribute types and their properties.
+ * FILE_root:       Root directory ($Root).
+ *                  The top-level directory of the filesystem.
+ * FILE_Bitmap:     Cluster allocation bitmap ($Bitmap) in data attribute.
+ *                  Tracks free/used clusters (LCNs) on the volume.
+ * FILE_Boot:       Boot sector ($Boot) in data attribute.
+ *                  Always located at cluster 0; contains BPB and NTFS parameters.
+ * FILE_BadClus:    Bad cluster list ($BadClus) in non-resident data attribute.
+ *                  Marks all known bad clusters.
+ * FILE_Secure:     Security descriptors ($Secure).
+ *                  Contains shared $SDS (security descriptors) and two indexes
+ *                  ($SDH, $SII). Introduced in Windows 2000.
+ *                  Before that, it was called $Quota but was unused.
+ * FILE_UpCase:     Uppercase table ($UpCase) in data attribute.
+ *                  Maps all 65536 Unicode characters to their uppercase forms.
+ * FILE_Extend:     System directory ($Extend).
+ *                  Contains additional system files ($ObjId, $Quota, $Reparse,
+ *                  $UsnJrnl, etc.). Introduced in NTFS 3.0 (Windows 2000).
+ * FILE_reserved12: Reserved for future use (MFT records 12–15).
+ * FILE_reserved13: Reserved.
+ * FILE_reserved14: Reserved.
+ * FILE_reserved15: Reserved.
+ * FILE_first_user: First possible user-created file MFT record number.
+ *                  Used as a boundary to distinguish system files from user files.
  */
 enum {
-	FILE_MFT       = 0,	/*
-				 * Master file table (mft). Data attribute
-				 * contains the entries and bitmap attribute
-				 * records which ones are in use (bit==1).
-				 */
-	FILE_MFTMirr   = 1,	/* Mft mirror: copy of first four mft records
-				 * in data attribute. If cluster size > 4kiB,
-				 * copy of first N mft records, with
-				 *     N = cluster_size / mft_record_size.
-				 */
-	FILE_LogFile   = 2,	/* Journalling log in data attribute. */
-	FILE_Volume    = 3,	/*
-				 * Volume name attribute and volume information
-				 * attribute (flags and ntfs version). Windows
-				 * refers to this file as volume DASD (Direct
-				 * Access Storage Device).
-				 */
-	FILE_AttrDef   = 4,	/*
-				 * Array of attribute definitions in data
-				 * attribute.
-				 */
-	FILE_root      = 5,	/* Root directory. */
-	FILE_Bitmap    = 6,	/*
-				 * Allocation bitmap of all clusters (lcns) in
-				 * data attribute.
-				 */
-	FILE_Boot      = 7,	/*
-				 * Boot sector (always at cluster 0) in data
-				 * attribute.
-				 */
-	FILE_BadClus   = 8,	/*
-				 * Contains all bad clusters in the non-resident
-				 * data attribute.
-				 */
-	FILE_Secure    = 9,	/*
-				 * Shared security descriptors in data attribute
-				 * and two indexes into the descriptors.
-				 * Appeared in Windows 2000. Before that, this
-				 * file was named $Quota but was unused.
-				 */
-	FILE_UpCase    = 10,	/*
-				 * Uppercase equivalents of all 65536 Unicode
-				 * characters in data attribute.
-				 */
-	FILE_Extend    = 11,	/*
-				 * Directory containing other system files (eg.
-				 * $ObjId, $Quota, $Reparse and $UsnJrnl). This
-				 * is new to NTFS3.0.
-				 */
-	FILE_reserved12 = 12,	/* Reserved for future use (records 12-15). */
+	FILE_MFT       = 0,
+	FILE_MFTMirr   = 1,
+	FILE_LogFile   = 2,
+	FILE_Volume    = 3,
+	FILE_AttrDef   = 4,
+	FILE_root      = 5,
+	FILE_Bitmap    = 6,
+	FILE_Boot      = 7,
+	FILE_BadClus   = 8,
+	FILE_Secure    = 9,
+	FILE_UpCase    = 10,
+	FILE_Extend    = 11,
+	FILE_reserved12 = 12,
 	FILE_reserved13 = 13,
 	FILE_reserved14 = 14,
 	FILE_reserved15 = 15,
-	FILE_first_user = 16,	/*
-				 * First user file, used as test limit for
-				 * whether to allow opening a file or not.
-				 */
+	FILE_first_user = 16,
 };
 
 /*
+ * enum - Flags for MFT record header
+ *
  * These are the so far known MFT_RECORD_* flags (16-bit) which contain
  * information about the mft record in which they are present.
+ *
+ * MFT_RECORD_IN_USE:        This MFT record is allocated and in use.
+ *                           (bit set = record is valid/used; clear = free)
+ * MFT_RECORD_IS_DIRECTORY:  This MFT record represents a directory.
+ *                           (Used to quickly distinguish files from directories)
+ * MFT_RECORD_IS_4:          Indicates the record is a special "record 4" type.
+ *                           (Rarely used; related to NTFS internal special cases,
+ *                           often for $AttrDef or early system files)
+ * MFT_RECORD_IS_VIEW_INDEX: This MFT record is used as a view index.
+ *                           (Specific to NTFS indexed views or object ID indexes)
+ * MFT_REC_SPACE_FILLER:     Dummy value to force the enum to be 16-bit wide.
+ *                           (Not a real flag; just a sentinel to ensure the type
+ *                           is __le16 and no higher bits are accidentally used)
  */
 enum {
 	MFT_RECORD_IN_USE		= cpu_to_le16(0x0001),
@@ -313,174 +381,124 @@ enum {
 #define MREF_ERR(x)	((int)((s64)(x)))
 
 /*
+ * struct mft_record - NTFS Master File Table (MFT) record header
+ *
  * The mft record header present at the beginning of every record in the mft.
  * This is followed by a sequence of variable length attribute records which
  * is terminated by an attribute of type AT_END which is a truncated attribute
  * in that it only consists of the attribute type code AT_END and none of the
  * other members of the attribute structure are present.
+ *
+ * magic:               Record magic ("FILE" for valid MFT entries).
+ *                      See ntfs_record magic enum for other values.
+ * usa_ofs:             Offset to Update Sequence Array (see ntfs_record).
+ * usa_count:           Number of entries in USA (see ntfs_record).
+ * lsn:                 Log sequence number (LSN) from LogFile.
+ *                      Incremented on every modification to this record.
+ * sequence_number:     Reuse count of this MFT record slot.
+ *                      Incremented (skipping zero) when the file is deleted.
+ *                      Zero means never reused or special case.
+ *                      Part of MFT reference (together with record number).
+ * link_count:          Number of hard links (directory entries) to this file.
+ *                      Only meaningful in base MFT records.
+ *                      When deleting a directory entry:
+ *                        - If link_count == 1, delete the whole file
+ *                        - Else remove only the $FILE_NAME attribute and decrement
+ * attrs_offset:        Byte offset from start of MFT record to first attribute.
+ *                      Must be 8-byte aligned.
+ * flags:               Bit array of MFT_RECORD_* flags (see MFT_RECORD_IN_USE enum).
+ *                      MFT_RECORD_IN_USE cleared when record is freed/deleted.
+ * bytes_in_use:        Number of bytes actually used in this MFT record.
+ *                      Must be 8-byte aligned.
+ *                      Includes header + all attributes + padding.
+ * bytes_allocated:     Total allocated size of this MFT record.
+ *                      Usually equal to MFT record size (1024 bytes or cluster size).
+ * base_mft_record:     MFT reference to the base record.
+ *                      0 for base records.
+ *                      Non-zero for extension records → points to base record
+ *                      containing the $ATTRIBUTE_LIST that describes this extension.
+ * next_attr_instance:  Next attribute instance number to assign.
+ *                      Incremented after each use.
+ *                      Reset to 0 when MFT record is reused.
+ *                      First instance is always 0.
+ * reserved:            Reserved for alignment (NTFS 3.1+).
+ * mft_record_number:   This MFT record's number (index in $MFT).
+ *                      Only present in NTFS 3.1+ (Windows XP and above).
  */
 struct mft_record {
-	__le32 magic;		/* Usually the magic is "FILE". */
-	__le16 usa_ofs;		/* See ntfs_record struct definition above. */
-	__le16 usa_count;		/* See ntfs_record struct  definition above. */
+	__le32 magic;
+	__le16 usa_ofs;
+	__le16 usa_count;
 
-	__le64 lsn;		/*
-				 * LogFile sequence number for this record.
-				 * Changed every time the record is modified.
-				 */
-	__le16 sequence_number;	/*
-				 * Number of times this mft record has been
-				 * reused. (See description for MFT_REF
-				 * above.) NOTE: The increment (skipping zero)
-				 * is done when the file is deleted. NOTE: If
-				 * this is zero it is left zero.
-				 */
-	__le16 link_count;	/*
-				 * Number of hard links, i.e. the number of
-				 * directory entries referencing this record.
-				 * NOTE: Only used in mft base records.
-				 * NOTE: When deleting a directory entry we
-				 * check the link_count and if it is 1 we
-				 * delete the file. Otherwise we delete the
-				 * struct file_name_attr being referenced by the
-				 * directory entry from the mft record and
-				 * decrement the link_count.
-				 */
-	__le16 attrs_offset;	/*
-				 * Byte offset to the first attribute in this
-				 * mft record from the start of the mft record.
-				 * NOTE: Must be aligned to 8-byte boundary.
-				 */
-	__le16 flags;		/*
-				 * Bit array of MFT_RECORD_FLAGS. When a file
-				 * is deleted, the MFT_RECORD_IN_USE flag is
-				 * set to zero.
-				 */
-	__le32 bytes_in_use;	/*
-				 * Number of bytes used in this mft record.
-				 * NOTE: Must be aligned to 8-byte boundary.
-				 */
-	__le32 bytes_allocated;	/*
-				 * Number of bytes allocated for this mft
-				 * record. This should be equal to the mft
-				 * record size.
-				 */
-	__le64 base_mft_record;	  /*
-				   * This is zero for base mft records.
-				   * When it is not zero it is a mft reference
-				   * pointing to the base mft record to which
-				   * this record belongs (this is then used to
-				   * locate the attribute list attribute present
-				   * in the base record which describes this
-				   * extension record and hence might need
-				   * modification when the extension record
-				   * itself is modified, also locating the
-				   * attribute list also means finding the other
-				   * potential extents, belonging to the non-base
-				   * mft record).
-				   */
-	__le16 next_attr_instance; /*
-				    * The instance number that will be assigned to
-				    * the next attribute added to this mft record.
-				    * NOTE: Incremented each time after it is used.
-				    * NOTE: Every time the mft record is reused
-				    * this number is set to zero.  NOTE: The first
-				    * instance number is always 0.
-				    */
-/* The below fields are specific to NTFS 3.1+ (Windows XP and above): */
-	__le16 reserved;		/* Reserved/alignment. */
-	__le32 mft_record_number;	/* Number of this mft record. */
-/*
- * When (re)using the mft record, we place the update sequence array at this
- * offset, i.e. before we start with the attributes.  This also makes sense,
- * otherwise we could run into problems with the update sequence array
- * containing in itself the last two bytes of a sector which would mean that
- * multi sector transfer protection wouldn't work.  As you can't protect data
- * by overwriting it since you then can't get it back...
- * When reading we obviously use the data from the ntfs record header.
- */
+	__le64 lsn;
+	__le16 sequence_number;
+	__le16 link_count;
+	__le16 attrs_offset;
+	__le16 flags;
+	__le32 bytes_in_use;
+	__le32 bytes_allocated;
+	__le64 base_mft_record;
+	__le16 next_attr_instance;
+	__le16 reserved;
+	__le32 mft_record_number;
 } __packed;
 
 static_assert(sizeof(struct mft_record) == 48);
 
-/* This is the version without the NTFS 3.1+ specific fields. */
-struct mft_record_old {
-	__le32 magic;		/* Usually the magic is "FILE". */
-	__le16 usa_ofs;		/* See ntfs_record struct definition above. */
-	__le16 usa_count;	/* See ntfs_record struct  definition above. */
-
-	__le64 lsn;		/*
-				 * LogFile sequence number for this record.
-				 * Changed every time the record is modified.
-				 */
-	__le16 sequence_number;	/*
-				 * Number of times this mft record has been
-				 * reused. (See description for MFT_REF
-				 * above.) NOTE: The increment (skipping zero)
-				 * is done when the file is deleted. NOTE: If
-				 * this is zero it is left zero.
-				 */
-	__le16 link_count;	/*
-				 * Number of hard links, i.e. the number of
-				 * directory entries referencing this record.
-				 * NOTE: Only used in mft base records.
-				 * NOTE: When deleting a directory entry we
-				 * check the link_count and if it is 1 we
-				 * delete the file. Otherwise we delete the
-				 * struct file_name_attr being referenced by the
-				 * directory entry from the mft record and
-				 * decrement the link_count.
-				 */
-	__le16 attrs_offset;	/*
-				 * Byte offset to the first attribute in this
-				 * mft record from the start of the mft record.
-				 * NOTE: Must be aligned to 8-byte boundary.
-				 */
-	__le16 flags;		/*
-				 * Bit array of MFT_RECORD_FLAGS. When a file
-				 * is deleted, the MFT_RECORD_IN_USE flag is
-				 * set to zero.
-				 */
-	__le32 bytes_in_use;	/*
-				 * Number of bytes used in this mft record.
-				 * NOTE: Must be aligned to 8-byte boundary.
-				 */
-	__le32 bytes_allocated;	/*
-				 * Number of bytes allocated for this mft
-				 * record. This should be equal to the mft
-				 * record size.
-				 */
-	__le64 base_mft_record;	  /*
-				   * This is zero for base mft records.
-				   * When it is not zero it is a mft reference
-				   * pointing to the base mft record to which
-				   * this record belongs (this is then used to
-				   * locate the attribute list attribute present
-				   * in the base record which describes this
-				   * extension record and hence might need
-				   * modification when the extension record
-				   * itself is modified, also locating the
-				   * attribute list also means finding the other
-				   * potential extents, belonging to the non-base
-				   * mft record).
-				   */
-	__le16 next_attr_instance; /*
-				    * The instance number that will be assigned to
-				    * the next attribute added to this mft record.
-				    * NOTE: Incremented each time after it is used.
-				    * NOTE: Every time the mft record is reused
-				    * this number is set to zero.  NOTE: The first
-				    * instance number is always 0.
-				    */
-/*
- * When (re)using the mft record, we place the update sequence array at this
- * offset, i.e. before we start with the attributes.  This also makes sense,
- * otherwise we could run into problems with the update sequence array
- * containing in itself the last two bytes of a sector which would mean that
- * multi sector transfer protection wouldn't work.  As you can't protect data
- * by overwriting it since you then can't get it back...
- * When reading we obviously use the data from the ntfs record header.
+/**x
+ * struct mft_record_old - Old NTFS MFT record header (pre-NTFS 3.1 / Windows XP)
+ *
+ * This is the older version of the MFT record header used in NTFS versions
+ * prior to 3.1 (Windows XP and later). It lacks the additional fields
+ * @reserved and @mft_record_number that were added in NTFS 3.1+.
+ *
+ * @magic:              Record magic ("FILE" for valid MFT entries).
+ *                      See ntfs_record magic enum for other values.
+ * @usa_ofs:            Offset to Update Sequence Array (see ntfs_record).
+ * @usa_count:          Number of entries in USA (see ntfs_record).
+ * @lsn:                Log sequence number (LSN) from LogFile.
+ *                      Incremented on every modification to this record.
+ * @sequence_number:    Reuse count of this MFT record slot.
+ *                      Incremented (skipping zero) when the file is deleted.
+ *                      Zero means never reused or special case.
+ *                      Part of MFT reference (together with record number).
+ * @link_count:         Number of hard links (directory entries) to this file.
+ *                      Only meaningful in base MFT records.
+ *                      When deleting a directory entry:
+ *                        - If link_count == 1, delete the whole file
+ *                        - Else remove only the $FILE_NAME attribute and decrement
+ * @attrs_offset:       Byte offset from start of MFT record to first attribute.
+ *                      Must be 8-byte aligned.
+ * @flags:              Bit array of MFT_RECORD_* flags (see MFT_RECORD_IN_USE enum).
+ *                      MFT_RECORD_IN_USE cleared when record is freed/deleted.
+ * @bytes_in_use:       Number of bytes actually used in this MFT record.
+ *                      Must be 8-byte aligned.
+ *                      Includes header + all attributes + padding.
+ * @bytes_allocated:    Total allocated size of this MFT record.
+ *                      Usually equal to MFT record size (1024 bytes or cluster size).
+ * @base_mft_record:    MFT reference to the base record.
+ *                      0 for base records.
+ *                      Non-zero for extension records → points to base record
+ *                      containing the $ATTRIBUTE_LIST that describes this extension.
+ * @next_attr_instance: Next attribute instance number to assign.
+ *                      Incremented after each use.
+ *                      Reset to 0 when MFT record is reused.
+ *                      First instance is always 0.
  */
+struct mft_record_old {
+	__le32 magic;
+	__le16 usa_ofs;
+	__le16 usa_count;
+
+	__le64 lsn;
+	__le16 sequence_number;
+	__le16 link_count;
+	__le16 attrs_offset;
+	__le16 flags;
+	__le32 bytes_in_use;
+	__le32 bytes_allocated;
+	__le64 base_mft_record;
+	__le16 next_attr_instance;
 } __packed;
 
 static_assert(sizeof(struct mft_record_old) == 42);
@@ -564,45 +582,47 @@ enum {
 };
 
 /*
+ * enum - Attribute definition flags
+ *
  * The flags (32-bit) describing attribute properties in the attribute
  * definition structure.
  * The INDEXABLE flag is fairly certainly correct as only the file
  * name attribute has this flag set and this is the only attribute indexed in
  * NT4.
+ *
+ * ATTR_DEF_INDEXABLE:      Attribute can be indexed.
+ *                          (Used for creating indexes like $I30, $SDH, etc.)
+ * ATTR_DEF_MULTIPLE:       Attribute type can be present multiple times
+ *                          in the MFT record of an inode.
+ *                          (e.g., multiple $FILE_NAME, $DATA streams)
+ * ATTR_DEF_NOT_ZERO:       Attribute value must contain at least one non-zero byte.
+ *                          (Prevents empty or all-zero values)
+ * ATTR_DEF_INDEXED_UNIQUE: Attribute must be indexed and the value must be unique
+ *                          for this attribute type across all MFT records of an inode.
+ *                          (e.g., security descriptor IDs in $Secure)
+ * ATTR_DEF_NAMED_UNIQUE:   Attribute must be named and the name must be unique
+ *                          for this attribute type across all MFT records of an inode.
+ *                          (e.g., named $DATA streams or alternate data streams)
+ * ATTR_DEF_RESIDENT:       Attribute must be resident (stored in MFT record).
+ *                          (Cannot be non-resident/sparse/compressed)
+ * ATTR_DEF_ALWAYS_LOG:     Always log modifications to this attribute in LogFile,
+ *                          regardless of whether it is resident or non-resident.
+ *                          Without this flag, modifications are logged only if resident.
+ *                          (Used for critical metadata attributes)
  */
 enum {
-	ATTR_DEF_INDEXABLE	= cpu_to_le32(0x02), /* Attribute can be indexed. */
-	ATTR_DEF_MULTIPLE	= cpu_to_le32(0x04), /*
-						      * Attribute type can be present
-						      * multiple times in the mft records
-						      * of an inode.
-						      */
-	ATTR_DEF_NOT_ZERO	= cpu_to_le32(0x08), /*
-						      * Attribute value must contain
-						      * at least one non-zero byte.
-						      */
-	ATTR_DEF_INDEXED_UNIQUE	= cpu_to_le32(0x10), /*
-						      * Attribute must be indexed and
-						      * the attribute value must be unique
-						      * for the attribute type in all of
-						      * the mft records of an inode.
-						      */
-	ATTR_DEF_NAMED_UNIQUE	= cpu_to_le32(0x20), /*
-						      * Attribute must be named and
-						      * the name must be unique for
-						      * the attribute type in all of the mft
-						      * records of an inode.
-						      */
-	ATTR_DEF_RESIDENT	= cpu_to_le32(0x40), /* Attribute must be resident. */
-	ATTR_DEF_ALWAYS_LOG	= cpu_to_le32(0x80), /*
-						      * Always log modifications to this attribute,
-						      * regardless of whether it is resident or
-						      * non-resident.  Without this, only log
-						      * modifications if the attribute is resident.
-						      */
+	ATTR_DEF_INDEXABLE	= cpu_to_le32(0x02),
+	ATTR_DEF_MULTIPLE	= cpu_to_le32(0x04),
+	ATTR_DEF_NOT_ZERO	= cpu_to_le32(0x08),
+	ATTR_DEF_INDEXED_UNIQUE	= cpu_to_le32(0x10),
+	ATTR_DEF_NAMED_UNIQUE	= cpu_to_le32(0x20),
+	ATTR_DEF_RESIDENT	= cpu_to_le32(0x40),
+	ATTR_DEF_ALWAYS_LOG	= cpu_to_le32(0x80),
 };
 
 /*
+ * struct attr_def - Attribute definition entry ($AttrDef array)
+ *
  * The data attribute of FILE_AttrDef contains a sequence of attribute
  * definitions for the NTFS volume. With this, it is supposed to be safe for an
  * older NTFS driver to mount a volume containing a newer NTFS version without
@@ -610,28 +630,54 @@ enum {
  * Entries are sorted by attribute type. The flags describe whether the
  * attribute can be resident/non-resident and possibly other things, but the
  * actual bits are unknown.
+ *
+ * @name:           Unicode (UTF-16LE) name of the attribute (e.g. "$DATA", "$FILE_NAME").
+ *                  Zero-terminated string, maximum 0x40 characters (128 bytes).
+ *                  Used for human-readable display and debugging.
+ * @type:           Attribute type code (ATTR_TYPE_* constants).
+ *                  Defines which attribute this entry describes.
+ * @display_rule:   Default display rule (usually 0; rarely used in modern NTFS).
+ *                  Controls how the attribute is displayed in tools (legacy).
+ * @collation_rule: Default collation rule for indexing this attribute.
+ *                  Determines sort order when indexed (e.g. CASE_SENSITIVE, UNICODE).
+ *                  Used in $I30, $SDH, $SII, etc.
+ * @flags:          Bit array of attribute constraints (ATTR_DEF_* flags).
+ *                  See ATTR_DEF_INDEXABLE, ATTR_DEF_MULTIPLE, etc.
+ *                  Defines whether the attribute can be indexed, multiple, resident-only, etc.
+ * @min_size:       Optional minimum size of the attribute value (in bytes).
+ *                  0 means no minimum enforced.
+ * @max_size:       Maximum allowed size of the attribute value (in bytes).
  */
 struct attr_def {
-	__le16 name[0x40];		/* Unicode name of the attribute. Zero terminated. */
-	__le32 type;			/* Type of the attribute. */
-	__le32 display_rule;		/* Default display rule. */
-	__le32 collation_rule;		/* Default collation rule. */
-	__le32 flags;			/* Flags describing the attribute. */
-	__le64 min_size;			/* Optional minimum attribute size. */
-	__le64 max_size;			/* Maximum size of attribute. */
+	__le16 name[0x40];
+	__le32 type;
+	__le32 display_rule;
+	__le32 collation_rule;
+	__le32 flags;
+	__le64 min_size;
+	__le64 max_size;
 } __packed;
 
 static_assert(sizeof(struct attr_def) == 160);
 
 /*
- * Attribute flags (16-bit).
+ * enum - Attribute flags (16-bit) for non-resident attributes
+ *
+ * ATTR_IS_COMPRESSED:      Attribute is compressed.
+ *                          If set, data is compressed using the method in
+ *                          ATTR_COMPRESSION_MASK.
+ * ATTR_COMPRESSION_MASK:   Mask for compression method.
+ *                          Valid values are defined in NTFS compression types
+ *                          (e.g., 0x02 = LZNT1, etc.).
+ *                          Also serves as the first illegal value for method.
+ * ATTR_IS_ENCRYPTED:       Attribute is encrypted.
+ *                          Data is encrypted using EFS (Encrypting File System).
+ * ATTR_IS_SPARSE:          Attribute is sparse.
+ *                          Contains holes (unallocated regions) that read as zeros.
  */
 enum {
 	ATTR_IS_COMPRESSED    = cpu_to_le16(0x0001),
-	ATTR_COMPRESSION_MASK = cpu_to_le16(0x00ff), /*
-						      * Compression method mask.
-						      * Also, first illegal value.
-						      */
+	ATTR_COMPRESSION_MASK = cpu_to_le16(0x00ff),
 	ATTR_IS_ENCRYPTED     = cpu_to_le16(0x4000),
 	ATTR_IS_SPARSE	      = cpu_to_le16(0x8000),
 } __packed;
@@ -704,138 +750,112 @@ enum {
  */
 
 /*
- * Flags of resident attributes (8-bit).
+ * enum - Flags for resident attributes (8-bit)
+ *
+ * RESIDENT_ATTR_IS_INDEXED: Attribute is referenced in an index.
+ *                           (e.g., part of an index key or entry)
+ *                           Has implications for deletion and modification:
+ *                            - Cannot be freely removed if indexed
+ *                            - Index must be updated when value changes
+ *                            - Used for attributes like $FILE_NAME in directories
  */
 enum {
-	RESIDENT_ATTR_IS_INDEXED = 0x01, /*
-					  * Attribute is referenced in an index
-					  * (has implications for deleting and
-					  * modifying the attribute).
-					  */
+	RESIDENT_ATTR_IS_INDEXED = 0x01,
 } __packed;
 
 /*
- * Attribute record header. Always aligned to 8-byte boundary.
+ * struct attr_record - NTFS attribute record header
+ *
+ * Common header for both resident and non-resident attributes.
+ * Always aligned to an 8-byte boundary on disk.
+ * Located at attrs_offset in the MFT record (see struct mft_record).
+ *
+ * @type:           32-bit attribute type (ATTR_TYPE_* constants).
+ *                  Identifies the attribute
+ *                  (e.g. 0x10 = $STANDARD_INFORMATION).
+ * @length:         Total byte size of this attribute record (resident).
+ *                  8-byte aligned; used to locate the next attribute.
+ * @non_resident:   0 = resident attribute
+ *                  1 = non-resident attribute
+ * @name_length:    Number of Unicode characters in the attribute name.
+ *                  0 if unnamed (most system attributes are unnamed).
+ * @name_offset:    Byte offset from start of attribute record to the name.
+ *                  8-byte aligned; when creating, place at end of header.
+ * @flags:          Attribute flags (see ATTR_IS_COMPRESSED,
+ *                  ATTR_IS_ENCRYPTED, etc.).
+ *                  For resident: see RESIDENT_ATTR_* flags.
+ * @instance:       Unique instance number within this MFT record.
+ *                  Incremented via next_attr_instance; unique per record.
+ *
+ * Resident attributes (when @non_resident == 0):
+ * @data.resident.value_length:     Byte size of the attribute value.
+ * @data.resident.value_offset:     Byte offset from start of attribute
+ *                                  record to the value data.
+ *                                  8-byte aligned if name present.
+ * @data.resident.flags:            Resident-specific flags
+ * @data.resident.reserved:         Reserved/alignment to 8 bytes.
+ *
+ * Non-resident attributes (when @non_resident == 1):
+ * @data.non_resident.lowest_vcn:   Lowest valid VCN in this extent.
+ *                                  Usually 0 unless attribute list is used.
+ * @data.non_resident.highest_vcn:  Highest valid VCN in this extent.
+ *                                  -1 for zero-length, 0 for single extent.
+ * @data.non_resident.mapping_pairs_offset:
+ *                                  Byte offset to mapping pairs array
+ *                                  (VCN → LCN mappings).
+ *                                  8-byte aligned when creating.
+ * @data.non_resident.compression_unit:
+ *                                  Log2 of clusters per compression unit.
+ *                                  0 = not compressed.
+ *                                  WinNT4 used 4; sparse files use 0
+ *                                  on XP SP2+.
+ * @data.non_resident.reserved:     5 bytes for 8-byte alignment.
+ * @data.non_resident.allocated_size:
+ *                                  Allocated disk space in bytes.
+ *                                  For compressed: logical allocated size.
+ * @data.non_resident.data_size:    Logical attribute value size in bytes.
+ *                                  Can be larger than allocated_size if
+ *                                  compressed/sparse.
+ * @data.non_resident.initialized_size:
+ *                                  Initialized portion size in bytes.
+ *                                  Usually equals data_size.
+ * @data.non_resident.compressed_size:
+ *                                  Compressed on-disk size in bytes.
+ *                                  Only present when compressed or sparse.
+ *                                  Actual disk usage.
  */
 struct attr_record {
-	__le32 type;		/* The (32-bit) type of the attribute. */
-	__le32 length;		/*
-				 * Byte size of the resident part of the
-				 * attribute (aligned to 8-byte boundary).
-				 * Used to get to the next attribute.
-				 */
-	u8 non_resident;	/*
-				 * If 0, attribute is resident.
-				 * If 1, attribute is non-resident.
-				 */
-	u8 name_length;		/* Unicode character size of name of attribute. 0 if unnamed. */
-	__le16 name_offset;	/*
-				 * If name_length != 0, the byte offset to the
-				 * beginning of the name from the attribute
-				 * record. Note that the name is stored as a
-				 * Unicode string. When creating, place offset
-				 * just at the end of the record header. Then,
-				 * follow with attribute value or mapping pairs
-				 * array, resident and non-resident attributes
-				 * respectively, aligning to an 8-byte
-				 * boundary.
-				 */
-	__le16 flags;	/* Flags describing the attribute. */
-	__le16 instance;	/*
-				 * The instance of this attribute record. This
-				 * number is unique within this mft record (see
-				 * MFT_RECORD/next_attribute_instance notes in
-				 * mft.h for more details).
-				 */
+	__le32 type;
+	__le32 length;
+	u8 non_resident;
+	u8 name_length;
+	__le16 name_offset;
+	__le16 flags;
+	__le16 instance;
 	union {
-		/* Resident attributes. */
 		struct {
-			__le32 value_length; /* Byte size of attribute value. */
-			__le16 value_offset; /*
-					      * Byte offset of the attribute
-					      * value from the start of the
-					      * attribute record. When creating,
-					      * align to 8-byte boundary if we
-					      * have a name present as this might
-					      * not have a length of a multiple
-					      * of 8-bytes.
-					      */
-			u8 flags;	/* See above. */
-			s8 reserved;	  /* Reserved/alignment to 8-byte boundary. */
+			__le32 value_length;
+			__le16 value_offset;
+			u8 flags;
+			s8 reserved;
 		} __packed resident;
-		/* Non-resident attributes. */
 		struct {
-			__le64 lowest_vcn; /*
-					    * Lowest valid virtual cluster number
-					    * for this portion of the attribute value or
-					    * 0 if this is the only extent (usually the
-					    * case). - Only when an attribute list is used
-					    * does lowest_vcn != 0 ever occur.
-					    */
-			__le64 highest_vcn; /*
-					     * Highest valid vcn of this extent of
-					     * the attribute value. - Usually there is only one
-					     * portion, so this usually equals the attribute
-					     * value size in clusters minus 1. Can be -1 for
-					     * zero length files. Can be 0 for "single extent"
-					     * attributes.
-					     */
-			__le16 mapping_pairs_offset; /*
-						      * Byte offset from the beginning of
-						      * the structure to the mapping pairs
-						      * array which contains the mappings
-						      * between the vcns and the logical cluster
-						      * numbers (lcns).
-						      * When creating, place this at the end of
-						      * this record header aligned to 8-byte
-						      * boundary.
-						      */
-			u8 compression_unit; /*
-					      * The compression unit expressed as the log
-					      * to the base 2 of the number of
-					      * clusters in a compression unit.  0 means not
-					      * compressed.  (This effectively limits the
-					      * compression unit size to be a power of two
-					      * clusters.)  WinNT4 only uses a value of 4.
-					      * Sparse files have this set to 0 on XPSP2.
-					      */
-			u8 reserved[5];		/* Align to 8-byte boundary. */
-/*
- * The sizes below are only used when lowest_vcn is zero, as otherwise it would
- * be difficult to keep them up-to-date.
- */
-			__le64 allocated_size;	/*
-						 * Byte size of disk space allocated
-						 * to hold the attribute value. Always
-						 * is a multiple of the cluster size.
-						 * When a file is compressed, this field
-						 * is a multiple of the compression block
-						 * size (2^compression_unit) and it represents
-						 * the logically allocated space rather than
-						 * the actual on disk usage. For this use
-						 * the compressed_size (see below).
-						 */
-			__le64 data_size;	/*
-						 * Byte size of the attribute value. Can be
-						 * larger than allocated_size if attribute value
-						 * is compressed or sparse.
-						 */
-			__le64 initialized_size; /*
-						  * Byte size of initialized portion of
-						  * the attribute value. Usually equals data_size.
-						  */
-			__le64 compressed_size;	/*
-						 * Byte size of the attribute value after
-						 * compression.  Only present when compressed
-						 * or sparse.  Always is a multiple of the cluster
-						 * size.  Represents the actual amount of disk
-						 * space being used on the disk.
-						 */
+			__le64 lowest_vcn;
+			__le64 highest_vcn;
+			__le16 mapping_pairs_offset;
+			u8 compression_unit;
+			u8 reserved[5];
+			__le64 allocated_size;
+			__le64 data_size;
+			__le64 initialized_size;
+			__le64 compressed_size;
 		} __packed non_resident;
 	} __packed data;
 } __packed;
 
 /*
+ * enum - NTFS file attribute flags (32-bit)
+ *
  * File attribute flags (32-bit) appearing in the file_attributes fields of the
  * STANDARD_INFORMATION attribute of MFT_RECORDs and the FILENAME_ATTR
  * attributes of MFT_RECORDs and directory index entries.
@@ -844,18 +864,37 @@ struct attr_record {
  * appear in the STANDARD_INFORMATION attribute whilst only some others appear
  * in the FILENAME_ATTR attribute of MFT_RECORDs.  Unless otherwise stated the
  * flags appear in all of the above.
+ *
+ * FILE_ATTR_READONLY:         File is read-only.
+ * FILE_ATTR_HIDDEN:           File is hidden (not shown by default).
+ * FILE_ATTR_SYSTEM:           System file (protected by OS).
+ * FILE_ATTR_DIRECTORY:        Directory flag (reserved in NT; use MFT flag instead).
+ * FILE_ATTR_ARCHIVE:          File needs archiving (backup flag).
+ * FILE_ATTR_DEVICE:           Device file (rarely used).
+ * FILE_ATTR_NORMAL:           Normal file (no special attributes).
+ * FILE_ATTR_TEMPORARY:        Temporary file (delete on close).
+ * FILE_ATTR_SPARSE_FILE:      Sparse file (contains holes).
+ * FILE_ATTR_REPARSE_POINT:    Reparse point (junction, symlink, mount point).
+ * FILE_ATTR_COMPRESSED:       File is compressed.
+ * FILE_ATTR_OFFLINE:          File data is offline (not locally available).
+ * FILE_ATTR_NOT_CONTENT_INDEXED:
+ *                              File is excluded from content indexing.
+ * FILE_ATTR_ENCRYPTED:        File is encrypted (EFS).
+ * FILE_ATTR_VALID_FLAGS:      Mask of all valid flags for reading.
+ * FILE_ATTR_VALID_SET_FLAGS:  Mask of flags that can be set by user.
+ * FILE_ATTRIBUTE_RECALL_ON_OPEN:
+ *                              Recall data on open (cloud/HSM related).
+ * FILE_ATTR_DUP_FILE_NAME_INDEX_PRESENT:
+ *                              $FILE_NAME has duplicate index entry.
+ * FILE_ATTR_DUP_VIEW_INDEX_PRESENT:
+ *                              Duplicate view index present (object ID, quota, etc.).
  */
 enum {
 	FILE_ATTR_READONLY		= cpu_to_le32(0x00000001),
 	FILE_ATTR_HIDDEN		= cpu_to_le32(0x00000002),
 	FILE_ATTR_SYSTEM		= cpu_to_le32(0x00000004),
 	/* Old DOS volid. Unused in NT.	= cpu_to_le32(0x00000008), */
-
 	FILE_ATTR_DIRECTORY		= cpu_to_le32(0x00000010),
-	/*
-	 * Note, FILE_ATTR_DIRECTORY is not considered valid in NT.  It is
-	 * reserved for the DOS SUBDIRECTORY flag.
-	 */
 	FILE_ATTR_ARCHIVE		= cpu_to_le32(0x00000020),
 	FILE_ATTR_DEVICE		= cpu_to_le32(0x00000040),
 	FILE_ATTR_NORMAL		= cpu_to_le32(0x00000080),
@@ -870,38 +909,10 @@ enum {
 	FILE_ATTR_ENCRYPTED		= cpu_to_le32(0x00004000),
 
 	FILE_ATTR_VALID_FLAGS		= cpu_to_le32(0x00007fb7),
-	/*
-	 * Note, FILE_ATTR_VALID_FLAGS masks out the old DOS VolId and the
-	 * FILE_ATTR_DEVICE and preserves everything else.  This mask is used
-	 * to obtain all flags that are valid for reading.
-	 */
 	FILE_ATTR_VALID_SET_FLAGS	= cpu_to_le32(0x000031a7),
-	/*
-	 * Note, FILE_ATTR_VALID_SET_FLAGS masks out the old DOS VolId, the
-	 * F_A_DEVICE, F_A_DIRECTORY, F_A_SPARSE_FILE, F_A_REPARSE_POINT,
-	 * F_A_COMPRESSED, and F_A_ENCRYPTED and preserves the rest.  This mask
-	 * is used to obtain all flags that are valid for setting.
-	 */
-	/* Supposed to mean no data locally, possibly repurposed */
 	FILE_ATTRIBUTE_RECALL_ON_OPEN	= cpu_to_le32(0x00040000),
-	/*
-	 * The flag FILE_ATTR_DUP_FILENAME_INDEX_PRESENT is present in all
-	 * FILENAME_ATTR attributes but not in the STANDARD_INFORMATION
-	 * attribute of an mft record.
-	 */
 	FILE_ATTR_DUP_FILE_NAME_INDEX_PRESENT	= cpu_to_le32(0x10000000),
-	/*
-	 * Note, this is a copy of the corresponding bit from the mft record,
-	 * telling us whether this is a directory or not, i.e. whether it has
-	 * an index root attribute or not.
-	 */
 	FILE_ATTR_DUP_VIEW_INDEX_PRESENT	= cpu_to_le32(0x20000000),
-	/*
-	 * Note, this is a copy of the corresponding bit from the mft record,
-	 * telling us whether this file has a view index present (eg. object id
-	 * index, quota index, one of the security indexes or the encrypting
-	 * filesystem related indexes).
-	 */
 };
 
 /*
@@ -912,7 +923,7 @@ enum {
  */
 
 /*
- * Attribute: Standard information (0x10).
+ * struct standard_information - $STANDARD_INFORMATION attribute content
  *
  * NOTE: Always resident.
  * NOTE: Present in all base file records on a volume.
@@ -920,96 +931,61 @@ enum {
  *	 fields but the meaning as defined below has been verified to be
  *	 correct by practical experimentation on Windows NT4 SP6a and is hence
  *	 assumed to be the one and only correct interpretation.
+ *
+ * @creation_time:          File creation time (NTFS timestamp).
+ *                          Updated on filename change(?).
+ * @last_data_change_time:  Last modification time of data streams.
+ * @last_mft_change_time:   Last modification time of this MFT record.
+ * @last_access_time:       Last access time (approximate).
+ *                          Not updated on read-only volumes; can be disabled.
+ * @file_attributes:        File attribute flags (FILE_ATTR_* bits).
+ *
+ * Union (version-specific fields):
+ * @ver.v1.reserved12:      12 bytes reserved/alignment (NTFS 1.2 only).
+ *
+ * @ver.v3 (NTFS 3.x / Windows 2000+):
+ * @maximum_versions:       Max allowed file versions (0 = disabled).
+ * @version_number:         Current version number (0 if disabled).
+ * @class_id:               Class ID (from bidirectional index?).
+ * @owner_id:               Owner ID (maps to $Quota via $Q index).
+ * @security_id:            Security ID (maps to $Secure $SII/$SDS).
+ * @quota_charged:          Quota charge in bytes (0 if quotas disabled).
+ * @usn:                    Last USN from $UsnJrnl (0 if disabled).
  */
 struct standard_information {
-	__le64 creation_time;		/*
-					 * Time file was created. Updated when
-					 * a filename is changed(?).
-					 */
-	__le64 last_data_change_time;	/* Time the data attribute was last modified. */
-	__le64 last_mft_change_time;	/* Time this mft record was last modified. */
-	__le64 last_access_time;	/*
-					 * Approximate time when the file was
-					 * last accessed (obviously this is not
-					 * updated on read-only volumes). In
-					 * Windows this is only updated when
-					 * accessed if some time delta has
-					 * passed since the last update. Also,
-					 * last access time updates can be
-					 * disabled altogether for speed.
-					 */
-	__le32 file_attributes; /* Flags describing the file. */
+	__le64 creation_time;
+	__le64 last_data_change_time;
+	__le64 last_mft_change_time;
+	__le64 last_access_time;
+	__le32 file_attributes;
 	union {
-	/* NTFS 1.2 */
 		struct {
-			u8 reserved12[12];	/* Reserved/alignment to 8-byte boundary. */
+			u8 reserved12[12];
 		} __packed v1;
-	/* NTFS 3.x */
 		struct {
-/*
- * If a volume has been upgraded from a previous NTFS version, then these
- * fields are present only if the file has been accessed since the upgrade.
- * Recognize the difference by comparing the length of the resident attribute
- * value. If it is 48, then the following fields are missing. If it is 72 then
- * the fields are present. Maybe just check like this:
- *	if (resident.ValueLength < sizeof(struct standard_information)) {
- *		Assume NTFS 1.2- format.
- *		If (volume version is 3.x)
- *			Upgrade attribute to NTFS 3.x format.
- *		else
- *			Use NTFS 1.2- format for access.
- *	} else
- *		Use NTFS 3.x format for access.
- * Only problem is that it might be legal to set the length of the value to
- * arbitrarily large values thus spoiling this check. - But chkdsk probably
- * views that as a corruption, assuming that it behaves like this for all
- * attributes.
- */
-			__le32 maximum_versions; /*
-						  * Maximum allowed versions for
-						  * file. Zero if version numbering
-						  * is disabled.
-						  */
-			__le32 version_number;	/*
-						 * This file's version (if any).
-						 * Set to zero if maximum_versions
-						 * is zero.
-						 */
-			__le32 class_id;	/*
-						 * Class id from bidirectional
-						 * class id index (?).
-						 */
-			__le32 owner_id;	/*
-						 * Owner_id of the user owning
-						 * the file. Translate via $Q index
-						 * in FILE_Extend /$Quota to the quota
-						 * control entry for the user owning
-						 * the file. Zero if quotas are disabled.
-						 */
-			__le32 security_id;	/*
-						 * Security_id for the file. Translate via
-						 * $SII index and $SDS data stream in
-						 * FILE_Secure to the security descriptor.
-						 */
-			__le64 quota_charged;	/*
-						 * Byte size of the charge to the quota for
-						 * all streams of the file. Note: Is zero
-						 * if quotas are disabled.
-						 */
-			__le64 usn;		/*
-						 * Last update sequence number of the file.
-						 * This is a direct index into the transaction
-						 * log file ($UsnJrnl).  It is zero if the usn
-						 * journal is disabled or this file has not been
-						 * subject to logging yet.  See usnjrnl.h
-						 * for details.
-						 */
+			__le32 maximum_versions;
+			__le32 version_number;
+			__le32 class_id;
+			__le32 owner_id;
+			__le32 security_id;
+			__le64 quota_charged;
+			__le64 usn;
 		} __packed v3;
 	} __packed ver;
 } __packed;
 
 /*
- * Attribute: Attribute list (0x20).
+ * struct attr_list_entry - Entry in $ATTRIBUTE_LIST attribute.
+ *
+ * @type:           Attribute type code (ATTR_TYPE_*).
+ * @length:         Byte size of this entry (8-byte aligned).
+ * @name_length:    Unicode char count of attribute name (0 if unnamed).
+ * @name_offset:    Byte offset from start of entry to name (always set).
+ * @lowest_vcn:     Lowest VCN of this attribute extent (usually 0).
+ *                  Signed value; non-zero when attribute spans extents.
+ * @mft_reference:  MFT record reference holding this attribute extent.
+ * @instance:       Attribute instance number (if lowest_vcn == 0); else 0.
+ * @name:           Variable Unicode name (use @name_offset when reading).
  *
  * - Can be either resident or non-resident.
  * - Value consists of a sequence of variable length, 8-byte aligned,
@@ -1041,44 +1017,14 @@ struct standard_information {
  *	- There are many named streams.
  */
 struct attr_list_entry {
-	__le32 type;		/* Type of referenced attribute. */
-	__le16 length;		/* Byte size of this entry (8-byte aligned). */
-	u8 name_length;		/*
-				 * Size in Unicode chars of the name of the
-				 * attribute or 0 if unnamed.
-				 */
-	u8 name_offset;		/*
-				 * Byte offset to beginning of attribute name
-				 * (always set this to where the name would
-				 * start even if unnamed).
-				 */
-	__le64 lowest_vcn;	/*
-				 * Lowest virtual cluster number of this portion
-				 * of the attribute value. This is usually 0. It
-				 * is non-zero for the case where one attribute
-				 * does not fit into one mft record and thus
-				 * several mft records are allocated to hold
-				 * this attribute. In the latter case, each mft
-				 * record holds one extent of the attribute and
-				 * there is one attribute list entry for each
-				 * extent. NOTE: This is DEFINITELY a signed
-				 * value! The windows driver uses cmp, followed
-				 * by jg when comparing this, thus it treats it
-				 * as signed.
-				 */
-	__le64 mft_reference;	/*
-				 * The reference of the mft record holding
-				 * the attr record for this portion of the
-				 * attribute value.
-				 */
-	__le16 instance;	/*
-				 * If lowest_vcn = 0, the instance of the
-				 * attribute being referenced; otherwise 0.
-				 */
-	__le16 name[];		/*
-				 * Use when creating only. When reading use
-				 * name_offset to determine the location of the name.
-				 */
+	__le32 type;
+	__le16 length;
+	u8 name_length;
+	u8 name_offset;
+	__le64 lowest_vcn;
+	__le64 mft_reference;
+	__le16 instance;
+	__le16 name[];
 } __packed;
 
 /*
@@ -1087,46 +1033,34 @@ struct attr_list_entry {
 #define MAXIMUM_FILE_NAME_LENGTH	255
 
 /*
- * Possible namespaces for filenames in ntfs (8-bit).
+ * enum - Possible namespaces for filenames in ntfs (8-bit).
+ *
+ * FILE_NAME_POSIX        POSIX namespace (case sensitive, most permissive).
+ *                        Allows all Unicode except '\0' and '/'.
+ *                        WinNT/2k/2003 default utilities ignore case
+ *                        differences. SFU (Services For Unix) enables true
+ *                        case sensitivity.
+ *                        SFU restricts some chars: '"', '/', '<', '>', '\'.
+ * FILE_NAME_WIN32        Standard WinNT/2k long filename namespace
+ *                        (case insensitive).
+ *                        Disallows '\0', '"', '*', '/', ':', '<', '>', '?',
+ *                        '\', '|'. Names cannot end with '.' or space.
+ * FILE_NAME_DOS          DOS 8.3 namespace (uppercase only).
+ *                        Allows 8-bit chars > space except '"', '*', '+',
+ *                        ',', '/', ':', ';', '<', '=', '>', '?', '\'.
+ * FILE_NAME_WIN32_AND_DOS
+ *                        Win32 and DOS names are identical (single record).
+ *                        Value 0x03 indicates both are stored in one entry.
  */
 enum {
 	FILE_NAME_POSIX		= 0x00,
-	/*
-	 * This is the largest namespace. It is case sensitive and allows all
-	 * Unicode characters except for: '\0' and '/'.  Beware that in
-	 * WinNT/2k/2003 by default files which eg have the same name except
-	 * for their case will not be distinguished by the standard utilities
-	 * and thus a "del filename" will delete both "filename" and "fileName"
-	 * without warning.  However if for example Services For Unix (SFU) are
-	 * installed and the case sensitive option was enabled at installation
-	 * time, then you can create/access/delete such files.
-	 * Note that even SFU places restrictions on the filenames beyond the
-	 * '\0' and '/' and in particular the following set of characters is
-	 * not allowed: '"', '/', '<', '>', '\'.  All other characters,
-	 * including the ones no allowed in WIN32 namespace are allowed.
-	 * Tested with SFU 3.5 (this is now free) running on Windows XP.
-	 */
 	FILE_NAME_WIN32		= 0x01,
-	/*
-	 * The standard WinNT/2k NTFS long filenames. Case insensitive.  All
-	 * Unicode chars except: '\0', '"', '*', '/', ':', '<', '>', '?', '\',
-	 * and '|'.  Further, names cannot end with a '.' or a space.
-	 */
 	FILE_NAME_DOS		= 0x02,
-	/*
-	 * The standard DOS filenames (8.3 format). Uppercase only.  All 8-bit
-	 * characters greater space, except: '"', '*', '+', ',', '/', ':', ';',
-	 * '<', '=', '>', '?', and '\'.\
-	 */
 	FILE_NAME_WIN32_AND_DOS	= 0x03,
-	/*
-	 * 3 means that both the Win32 and the DOS filenames are identical and
-	 * hence have been saved in this single filename record.
-	 */
 } __packed;
 
 /*
- * Attribute: Filename (0x30).
+ * struct file_name_attr - $FILE_NAME attribute content
  *
  * NOTE: Always resident.
  * NOTE: All fields, except the parent_directory, are only updated when the
@@ -1137,57 +1071,57 @@ enum {
  *	 fields but the meaning as defined below has been verified to be
  *	 correct by practical experimentation on Windows NT4 SP6a and is hence
  *	 assumed to be the one and only correct interpretation.
+ *
+ * @parent_directory:   MFT reference to parent directory.
+ * @creation_time:      File creation time (NTFS timestamp).
+ * @last_data_change_time:
+ *                      Last data modification time.
+ * @last_mft_change_time:
+ *                      Last MFT record modification time.
+ * @last_access_time:   Last access time (approximate; may not
+ *                      update always).
+ * @allocated_size:     On-disk allocated size for unnamed $DATA.
+ *                      Equals compressed_size if compressed/sparse.
+ *                      0 for directories or no $DATA.
+ *                      Multiple of cluster size.
+ * @data_size:          Logical size of unnamed $DATA.
+ *                      0 for directories or no $DATA.
+ * @file_attributes:    File attribute flags (FILE_ATTR_* bits).
+ * @type.ea.packed_ea_size:
+ *                      Size needed to pack EAs (if present).
+ * @type.ea.reserved:   Alignment padding.
+ * @type.rp.reparse_point_tag:
+ *                      Reparse point type (if reparse point, no EAs).
+ * @file_name_length:   Length of filename in Unicode characters.
+ * @file_name_type:     Namespace (FILE_NAME_POSIX, WIN32, DOS, etc.).
+ * @file_name:          Variable-length Unicode filename.
  */
 struct file_name_attr {
-/*hex ofs*/
-	__le64 parent_directory;		/* Directory this filename is referenced from. */
-	__le64 creation_time;		/* Time file was created. */
-	__le64 last_data_change_time;	/* Time the data attribute was last modified. */
-	__le64 last_mft_change_time;	/* Time this mft record was last modified. */
-	__le64 last_access_time;		/* Time this mft record was last accessed. */
-	__le64 allocated_size;		/*
-					 * Byte size of on-disk allocated space
-					 * for the unnamed data attribute.  So for normal
-					 * $DATA, this is the allocated_size from
-					 * the unnamed $DATA attribute and for compressed
-					 * and/or sparse $DATA, this is the
-					 * compressed_size from the unnamed
-					 * $DATA attribute.  For a directory or
-					 * other inode without an unnamed $DATA attribute,
-					 * this is always 0.  NOTE: This is a multiple of
-					 * the cluster size.
-					 */
-	__le64 data_size;		/*
-					 * Byte size of actual data in unnamed
-					 * data attribute.  For a directory or
-					 * other inode without an unnamed $DATA
-					 * attribute, this is always 0.
-					 */
-	__le32 file_attributes;		/* Flags describing the file. */
+	__le64 parent_directory;
+	__le64 creation_time;
+	__le64 last_data_change_time;
+	__le64 last_mft_change_time;
+	__le64 last_access_time;
+	__le64 allocated_size;
+	__le64 data_size;
+	__le32 file_attributes;
 	union {
 		struct {
-			__le16 packed_ea_size;	/*
-						 * Size of the buffer needed to
-						 * pack the extended attributes
-						 * (EAs), if such are present.
-						 */
-			__le16 reserved;	/* Reserved for alignment. */
+			__le16 packed_ea_size;
+			__le16 reserved;
 		} __packed ea;
 		struct {
-			__le32 reparse_point_tag; /*
-						   * Type of reparse point,
-						   * present only in reparse
-						   * points and only if there are
-						   * no EAs.
-						   */
+			__le32 reparse_point_tag;
 		} __packed rp;
 	} __packed type;
-	u8 file_name_length;			/* Length of file name in (Unicode) characters. */
-	u8 file_name_type;			/* Namespace of the file name.*/
-	__le16 file_name[];			/* File name in Unicode. */
+	u8 file_name_length;
+	u8 file_name_type;
+	__le16 file_name[];
 } __packed;
 
 /*
+ * struct guid - Globally Unique Identifier (GUID) structure
+ *
  * GUID structures store globally unique identifiers (GUID). A GUID is a
  * 128-bit value consisting of one group of eight hexadecimal digits, followed
  * by three groups of four hexadecimal digits each, followed by one group of
@@ -1195,34 +1129,38 @@ struct file_name_attr {
  * distributed computing environment (DCE) universally unique identifier (UUID).
  * Example of a GUID:
  *	1F010768-5A73-BC91-0010A52216A7
+ *
+ * @data1:      First 32 bits (first 8 hex digits).
+ * @data2:      Next 16 bits (first group of 4 hex digits).
+ * @data3:      Next 16 bits (second group of 4 hex digits).
+ * @data4:      Final 64 bits (third group of 4 + last 12 hex digits).
+ *              data4[0-1]: third group; data4[2-7]: remaining part.
  */
 struct guid {
-	__le32 data1;	/* The first eight hexadecimal digits of the GUID. */
-	__le16 data2;	/* The first group of four hexadecimal digits. */
-	__le16 data3;	/* The second group of four hexadecimal digits. */
-	u8 data4[8];	/*
-			 * The first two bytes are the third group of four
-			 * hexadecimal digits. The remaining six bytes are the
-			 * final 12 hexadecimal digits.
-			 */
+	__le32 data1;
+	__le16 data2;
+	__le16 data3;
+	u8 data4[8];
 } __packed;
 
 /*
- * struct OBJECT_ID_ATTR - Attribute: Object id (NTFS 3.0+) (0x40).
+ * struct object_id_attr - $OBJECT_ID attribute content (NTFS 3.0+)
  *
  * NOTE: Always resident.
+ *
+ * @object_id:          Unique 128-bit GUID assigned to the file.
+ *                      Core identifier; always present.
+ *
+ * Optional extended info (union; total value size 16–64 bytes):
+ * @extended_info.birth_volume_id:
+ *                      Birth volume GUID (where file was first created).
+ * @extended_info.birth_object_id:
+ *                      Birth object GUID (original ID before copy/move).
+ * @extended_info.domain_id:
+ *                      Domain GUID (usually zero; reserved).
  */
 struct object_id_attr {
-	struct guid object_id;	/* Unique id assigned to the file.*/
-	/*
-	 * The following fields are optional. The attribute value size is 16
-	 * bytes, i.e. sizeof(struct guid), if these are not present at all.
-	 * Note, the entries can be present but one or more (or all) can be
-	 * zero meaning that particular value(s) is(are) not defined. Note,
-	 * when the fields are missing here, it is well possible that they are
-	 * to be found within the $Extend/$ObjId system file indexed under the
-	 * above object_id.
-	 */
+	struct guid object_id;
 	union {
 		struct {
 			struct guid birth_volume_id;
@@ -1234,8 +1172,65 @@ struct object_id_attr {
 } __packed;
 
 /*
+ * enum - RIDs (Relative Identifiers) in Windows/NTFS security
+ *
  * These relative identifiers (RIDs) are used with the above identifier
  * authorities to make up universal well-known SIDs.
+ *
+ * SECURITY_NULL_RID              S-1-0 (Null authority)
+ * SECURITY_WORLD_RID             S-1-1 (World/Everyone)
+ * SECURITY_LOCAL_RID             S-1-2 (Local)
+ * SECURITY_CREATOR_OWNER_RID     S-1-3-0 (Creator Owner)
+ * SECURITY_CREATOR_GROUP_RID     S-1-3-1 (Creator Group)
+ * SECURITY_CREATOR_OWNER_SERVER_RID S-1-3-2 (Server Creator Owner)
+ * SECURITY_CREATOR_GROUP_SERVER_RID S-1-3-3 (Server Creator Group)
+ * SECURITY_DIALUP_RID            S-1-5-1 (Dialup)
+ * SECURITY_NETWORK_RID           S-1-5-2 (Network)
+ * SECURITY_BATCH_RID             S-1-5-3 (Batch)
+ * SECURITY_INTERACTIVE_RID       S-1-5-4 (Interactive)
+ * SECURITY_SERVICE_RID           S-1-5-6 (Service)
+ * SECURITY_ANONYMOUS_LOGON_RID   S-1-5-7 (Anonymous Logon)
+ * SECURITY_PROXY_RID             S-1-5-8 (Proxy)
+ * SECURITY_ENTERPRISE_CONTROLLERS_RID S-1-5-9 (Enterprise DCs)
+ * SECURITY_SERVER_LOGON_RID      S-1-5-9 (Server Logon alias)
+ * SECURITY_PRINCIPAL_SELF_RID    S-1-5-10 (Self/PrincipalSelf)
+ * SECURITY_AUTHENTICATED_USER_RID S-1-5-11 (Authenticated Users)
+ * SECURITY_RESTRICTED_CODE_RID   S-1-5-12 (Restricted Code)
+ * SECURITY_TERMINAL_SERVER_RID   S-1-5-13 (Terminal Server)
+ * SECURITY_LOGON_IDS_RID         S-1-5-5 (Logon session IDs base)
+ * SECURITY_LOCAL_SYSTEM_RID      S-1-5-18 (Local System)
+ * SECURITY_NT_NON_UNIQUE         S-1-5-21 (NT non-unique authority)
+ * SECURITY_BUILTIN_DOMAIN_RID    S-1-5-32 (Built-in domain)
+ *
+ * Built-in domain relative RIDs (S-1-5-32-...):
+ * Users:
+ * DOMAIN_USER_RID_ADMIN          Administrator
+ * DOMAIN_USER_RID_GUEST          Guest
+ * DOMAIN_USER_RID_KRBTGT         krbtgt (Kerberos ticket-granting)
+ *
+ * Groups:
+ * DOMAIN_GROUP_RID_ADMINS        Administrators
+ * DOMAIN_GROUP_RID_USERS         Users
+ * DOMAIN_GROUP_RID_GUESTS        Guests
+ * DOMAIN_GROUP_RID_COMPUTERS     Computers
+ * DOMAIN_GROUP_RID_CONTROLLERS   Domain Controllers
+ * DOMAIN_GROUP_RID_CERT_ADMINS   Cert Publishers
+ * DOMAIN_GROUP_RID_SCHEMA_ADMINS Schema Admins
+ * DOMAIN_GROUP_RID_ENTERPRISE_ADMINS Enterprise Admins
+ * DOMAIN_GROUP_RID_POLICY_ADMINS Policy Admins (if present)
+ *
+ * Aliases:
+ * DOMAIN_ALIAS_RID_ADMINS        Administrators alias
+ * DOMAIN_ALIAS_RID_USERS         Users alias
+ * DOMAIN_ALIAS_RID_GUESTS        Guests alias
+ * DOMAIN_ALIAS_RID_POWER_USERS   Power Users
+ * DOMAIN_ALIAS_RID_ACCOUNT_OPS   Account Operators
+ * DOMAIN_ALIAS_RID_SYSTEM_OPS    Server Operators
+ * DOMAIN_ALIAS_RID_PRINT_OPS     Print Operators
+ * DOMAIN_ALIAS_RID_BACKUP_OPS    Backup Operators
+ * DOMAIN_ALIAS_RID_REPLICATOR    Replicator
+ * DOMAIN_ALIAS_RID_RAS_SERVERS   RAS Servers
+ * DOMAIN_ALIAS_RID_PREW2KCOMPACCESS Pre-Windows 2000 Compatible Access
  *
  * Note: The relative identifier (RID) refers to the portion of a SID, which
  * identifies a user or group in relation to the authority that issued the SID.
@@ -1351,6 +1346,18 @@ enum {					/* Identifier authority. */
  */
 
 /*
+ * struct ntfs_sid - Security Identifier (SID) structure
+ *
+ * @revision:            SID revision level (usually 1).
+ * @sub_authority_count: Number of sub-authorities (1 or more).
+ * @identifier_authority:
+ *                       48-bit identifier authority (S-1-x-...).
+ *                       @parts.high_part: high 16 bits.
+ *                       @parts.low_part: low 32 bits.
+ *                       @value: raw 6-byte array.
+ * @sub_authority:       Variable array of 32-bit RIDs.
+ *                       At least one; defines the SID relative to authority.
+ *
  * The SID structure is a variable-length structure used to uniquely identify
  * users or groups. SID stands for security identifier.
  *
@@ -1379,29 +1386,45 @@ struct ntfs_sid {
 	u8 sub_authority_count;
 	union {
 		struct {
-			u16 high_part;  /* High 16-bits. */
-			u32 low_part;   /* Low 32-bits. */
+			u16 high_part;
+			u32 low_part;
 		} __packed parts;
-		u8 value[6];            /* Value as individual bytes. */
+		u8 value[6];
 	} identifier_authority;
-	__le32 sub_authority[];		/* At least one sub_authority. */
+	__le32 sub_authority[];
 } __packed;
 
 /*
- * The predefined ACE types (8-bit, see below).
+ * enum - Predefined ACE types (8-bit) for NTFS security descriptors
+ *
+ * ACCESS_MIN_MS_ACE_TYPE:         Minimum MS ACE type (0).
+ * ACCESS_ALLOWED_ACE_TYPE:        Allow access (standard ACE).
+ * ACCESS_DENIED_ACE_TYPE:         Deny access (standard ACE).
+ * SYSTEM_AUDIT_ACE_TYPE:          Audit successful/failed access.
+ * SYSTEM_ALARM_ACE_TYPE:          Alarm on access (not in Win2k+).
+ * ACCESS_MAX_MS_V2_ACE_TYPE:      Max for V2 ACE types.
+ * ACCESS_ALLOWED_COMPOUND_ACE_TYPE:
+ *                                 Compound ACE (legacy).
+ * ACCESS_MAX_MS_V3_ACE_TYPE:      Max for V3 ACE types.
+ * ACCESS_MIN_MS_OBJECT_ACE_TYPE:  Min for object ACE types (Win2k+).
+ * ACCESS_ALLOWED_OBJECT_ACE_TYPE: Allow with object-specific rights.
+ * ACCESS_DENIED_OBJECT_ACE_TYPE:  Deny with object-specific rights.
+ * SYSTEM_AUDIT_OBJECT_ACE_TYPE:   Audit with object-specific rights.
+ * SYSTEM_ALARM_OBJECT_ACE_TYPE:   Alarm with object-specific rights.
+ * ACCESS_MAX_MS_OBJECT_ACE_TYPE:  Max for object ACE types.
+ * ACCESS_MAX_MS_V4_ACE_TYPE:      Max for V4 ACE types.
+ * ACCESS_MAX_MS_ACE_TYPE:         Overall max ACE type (WinNT/2k).
  */
 enum {
 	ACCESS_MIN_MS_ACE_TYPE			= 0,
 	ACCESS_ALLOWED_ACE_TYPE			= 0,
 	ACCESS_DENIED_ACE_TYPE			= 1,
 	SYSTEM_AUDIT_ACE_TYPE			= 2,
-	SYSTEM_ALARM_ACE_TYPE			= 3, /* Not implemented as of Win2k. */
+	SYSTEM_ALARM_ACE_TYPE			= 3,
 	ACCESS_MAX_MS_V2_ACE_TYPE		= 3,
 
 	ACCESS_ALLOWED_COMPOUND_ACE_TYPE	= 4,
 	ACCESS_MAX_MS_V3_ACE_TYPE		= 4,
-
-	/* The following are Win2k only. */
 	ACCESS_MIN_MS_OBJECT_ACE_TYPE		= 5,
 	ACCESS_ALLOWED_OBJECT_ACE_TYPE		= 5,
 	ACCESS_DENIED_OBJECT_ACE_TYPE		= 6,
@@ -1410,13 +1433,20 @@ enum {
 	ACCESS_MAX_MS_OBJECT_ACE_TYPE		= 8,
 
 	ACCESS_MAX_MS_V4_ACE_TYPE		= 8,
-
-	/* This one is for WinNT/2k. */
 	ACCESS_MAX_MS_ACE_TYPE			= 8,
 } __packed;
 
 /*
- * The ACE flags (8-bit) for audit and inheritance (see below).
+ * enum - ACE inheritance and audit flags (8-bit)
+ *
+ * OBJECT_INHERIT_ACE:         Object inherit (files inherit this ACE).
+ * CONTAINER_INHERIT_ACE:      Container inherit (subdirectories inherit).
+ * NO_PROPAGATE_INHERIT_ACE:   No propagation (stop inheritance after this level).
+ * INHERIT_ONLY_ACE:           Inherit only (not applied to current object).
+ * INHERITED_ACE:              ACE was inherited (Win2k+ only).
+ * VALID_INHERIT_FLAGS:        Mask of all valid inheritance flags (0x1f).
+ * SUCCESSFUL_ACCESS_ACE_FLAG: Audit successful access (system audit ACE).
+ * FAILED_ACCESS_ACE_FLAG:     Audit failed access (system audit ACE).
  *
  * SUCCESSFUL_ACCESS_ACE_FLAG is only used with system audit and alarm ACE
  * types to indicate that a message is generated (in Windows!) for successful
@@ -1426,160 +1456,102 @@ enum {
  * to indicate that a message is generated (in Windows!) for failed accesses.
  */
 enum {
-	/* The inheritance flags. */
 	OBJECT_INHERIT_ACE		= 0x01,
 	CONTAINER_INHERIT_ACE		= 0x02,
 	NO_PROPAGATE_INHERIT_ACE	= 0x04,
 	INHERIT_ONLY_ACE		= 0x08,
-	INHERITED_ACE			= 0x10,	/* Win2k only. */
+	INHERITED_ACE			= 0x10,
 	VALID_INHERIT_FLAGS		= 0x1f,
-
-	/* The audit flags. */
 	SUCCESSFUL_ACCESS_ACE_FLAG	= 0x40,
 	FAILED_ACCESS_ACE_FLAG		= 0x80,
 } __packed;
 
 /*
- * The access mask (32-bit). Defines the access rights.
+ * enum - NTFS access rights masks (32-bit)
+ *
+ * FILE_READ_DATA / FILE_LIST_DIRECTORY:  Read file data / list dir contents.
+ * FILE_WRITE_DATA / FILE_ADD_FILE:       Write file data / create file in dir.
+ * FILE_APPEND_DATA / FILE_ADD_SUBDIRECTORY: Append data / create subdir.
+ * FILE_READ_EA:                          Read extended attributes.
+ * FILE_WRITE_EA:                         Write extended attributes.
+ * FILE_EXECUTE / FILE_TRAVERSE:          Execute file / traverse dir.
+ * FILE_DELETE_CHILD:                     Delete children in dir.
+ * FILE_READ_ATTRIBUTES:                  Read attributes.
+ * FILE_WRITE_ATTRIBUTES:                 Write attributes.
+ *
+ * Standard rights (object-independent):
+ * DELETE:                                Delete object.
+ * READ_CONTROL:                          Read security descriptor/owner.
+ * WRITE_DAC:                             Modify DACL.
+ * WRITE_OWNER:                           Change owner.
+ * SYNCHRONIZE:                           Wait on object signal state.
+ *
+ * Combinations:
+ * STANDARD_RIGHTS_READ / WRITE / EXECUTE: Aliases for READ_CONTROL.
+ * STANDARD_RIGHTS_REQUIRED:              DELETE + READ_CONTROL +
+ *                                        WRITE_DAC + WRITE_OWNER.
+ * STANDARD_RIGHTS_ALL:                   Above + SYNCHRONIZE.
+ *
+ * System/access types:
+ * ACCESS_SYSTEM_SECURITY:                Access system ACL.
+ * MAXIMUM_ALLOWED:                       Maximum allowed access.
+ *
+ * Generic rights (high bits, map to specific/standard):
+ * GENERIC_ALL:                           Full access.
+ * GENERIC_EXECUTE:                       Execute/traverse.
+ * GENERIC_WRITE:                         Write (append, attrs, data, EA, etc.).
+ * GENERIC_READ:                          Read (attrs, data, EA, etc.).
  *
  * The specific rights (bits 0 to 15).  These depend on the type of the object
  * being secured by the ACE.
  */
 enum {
-	/* Specific rights for files and directories are as follows: */
-
-	/* Right to read data from the file. (FILE) */
 	FILE_READ_DATA			= cpu_to_le32(0x00000001),
-	/* Right to list contents of a directory. (DIRECTORY) */
 	FILE_LIST_DIRECTORY		= cpu_to_le32(0x00000001),
-
-	/* Right to write data to the file. (FILE) */
 	FILE_WRITE_DATA			= cpu_to_le32(0x00000002),
-	/* Right to create a file in the directory. (DIRECTORY) */
 	FILE_ADD_FILE			= cpu_to_le32(0x00000002),
-
-	/* Right to append data to the file. (FILE) */
 	FILE_APPEND_DATA		= cpu_to_le32(0x00000004),
-	/* Right to create a subdirectory. (DIRECTORY) */
 	FILE_ADD_SUBDIRECTORY		= cpu_to_le32(0x00000004),
-
-	/* Right to read extended attributes. (FILE/DIRECTORY) */
 	FILE_READ_EA			= cpu_to_le32(0x00000008),
-
-	/* Right to write extended attributes. (FILE/DIRECTORY) */
 	FILE_WRITE_EA			= cpu_to_le32(0x00000010),
-
-	/* Right to execute a file. (FILE) */
 	FILE_EXECUTE			= cpu_to_le32(0x00000020),
-	/* Right to traverse the directory. (DIRECTORY) */
 	FILE_TRAVERSE			= cpu_to_le32(0x00000020),
-
-	/*
-	 * Right to delete a directory and all the files it contains (its
-	 * children), even if the files are read-only. (DIRECTORY)
-	 */
 	FILE_DELETE_CHILD		= cpu_to_le32(0x00000040),
-
-	/* Right to read file attributes. (FILE/DIRECTORY) */
 	FILE_READ_ATTRIBUTES		= cpu_to_le32(0x00000080),
-
-	/* Right to change file attributes. (FILE/DIRECTORY) */
 	FILE_WRITE_ATTRIBUTES		= cpu_to_le32(0x00000100),
-
-	/*
-	 * The standard rights (bits 16 to 23).  These are independent of the
-	 * type of object being secured.
-	 */
-
-	/* Right to delete the object. */
 	DELETE				= cpu_to_le32(0x00010000),
-
-	/*
-	 * Right to read the information in the object's security descriptor,
-	 * not including the information in the SACL, i.e. right to read the
-	 * security descriptor and owner.
-	 */
 	READ_CONTROL			= cpu_to_le32(0x00020000),
-
-	/* Right to modify the DACL in the object's security descriptor. */
 	WRITE_DAC			= cpu_to_le32(0x00040000),
-
-	/* Right to change the owner in the object's security descriptor. */
 	WRITE_OWNER			= cpu_to_le32(0x00080000),
-
-	/*
-	 * Right to use the object for synchronization.  Enables a process to
-	 * wait until the object is in the signalled state.  Some object types
-	 * do not support this access right.
-	 */
 	SYNCHRONIZE			= cpu_to_le32(0x00100000),
-
-	/*
-	 * The following STANDARD_RIGHTS_* are combinations of the above for
-	 * convenience and are defined by the Win32 API.
-	 */
-
-	/* These are currently defined to READ_CONTROL. */
 	STANDARD_RIGHTS_READ		= cpu_to_le32(0x00020000),
 	STANDARD_RIGHTS_WRITE		= cpu_to_le32(0x00020000),
 	STANDARD_RIGHTS_EXECUTE		= cpu_to_le32(0x00020000),
-
-	/* Combines DELETE, READ_CONTROL, WRITE_DAC, and WRITE_OWNER access. */
 	STANDARD_RIGHTS_REQUIRED	= cpu_to_le32(0x000f0000),
-
-	/*
-	 * Combines DELETE, READ_CONTROL, WRITE_DAC, WRITE_OWNER, and
-	 * SYNCHRONIZE access.
-	 */
 	STANDARD_RIGHTS_ALL		= cpu_to_le32(0x001f0000),
-
-	/*
-	 * The access system ACL and maximum allowed access types (bits 24 to
-	 * 25, bits 26 to 27 are reserved).
-	 */
 	ACCESS_SYSTEM_SECURITY		= cpu_to_le32(0x01000000),
 	MAXIMUM_ALLOWED			= cpu_to_le32(0x02000000),
-
-	/*
-	 * The generic rights (bits 28 to 31).  These map onto the standard and
-	 * specific rights.
-	 */
-
-	/* Read, write, and execute access. */
 	GENERIC_ALL			= cpu_to_le32(0x10000000),
-
-	/* Execute access. */
 	GENERIC_EXECUTE			= cpu_to_le32(0x20000000),
-
-	/*
-	 * Write access.  For files, this maps onto:
-	 *	FILE_APPEND_DATA | FILE_WRITE_ATTRIBUTES | FILE_WRITE_DATA |
-	 *	FILE_WRITE_EA | STANDARD_RIGHTS_WRITE | SYNCHRONIZE
-	 * For directories, the mapping has the same numerical value.  See
-	 * above for the descriptions of the rights granted.
-	 */
 	GENERIC_WRITE			= cpu_to_le32(0x40000000),
-
-	/*
-	 * Read access.  For files, this maps onto:
-	 *	FILE_READ_ATTRIBUTES | FILE_READ_DATA | FILE_READ_EA |
-	 *	STANDARD_RIGHTS_READ | SYNCHRONIZE
-	 * For directories, the mapping has the same numberical value.  See
-	 * above for the descriptions of the rights granted.
-	 */
 	GENERIC_READ			= cpu_to_le32(0x80000000),
 };
 
 /*
- * The predefined ACE type structures are as defined below.
+ * struct ntfs_ace - Access Control Entry (ACE) structure
+ *
+ * @type: ACE type (ACCESS_ALLOWED_ACE_TYPE, ACCESS_DENIED_ACE_TYPE, etc.).
+ * @flags: Inheritance and audit flags (OBJECT_INHERIT_ACE, etc.).
+ * @size: Total byte size of this ACE (header + SID + variable data).
+ * @mask: Access rights mask (FILE_READ_DATA, DELETE, GENERIC_ALL, etc.).
+ * @sid: Security Identifier (SID) this ACE applies to.
  */
-
 struct ntfs_ace {
-	u8 type;		/* Type of the ACE. */
-	u8 flags;		/* Flags describing the ACE. */
-	__le16 size;		/* Size in bytes of the ACE. */
-	__le32 mask;	/* Access mask associated with the ACE. */
-	struct ntfs_sid sid;	/* The SID associated with the ACE. */
+	u8 type;
+	u8 flags;
+	__le16 size;
+	__le32 mask;
+	struct ntfs_sid sid;
 } __packed;
 
 /*
@@ -1591,20 +1563,26 @@ enum {
 };
 
 /*
+ * struct ntfs_acl - NTFS Access Control List (ACL) header
+ *
  * An ACL is an access-control list (ACL).
  * An ACL starts with an ACL header structure, which specifies the size of
  * the ACL and the number of ACEs it contains. The ACL header is followed by
  * zero or more access control entries (ACEs). The ACL as well as each ACE
  * are aligned on 4-byte boundaries.
+ *
+ * @revision:           ACL revision level (usually 2 or 4).
+ * @alignment1:         Padding/alignment byte (zero).
+ * @size:               Total allocated size in bytes (header + all ACEs +
+ *                      free space).
+ * @ace_count:          Number of ACE entries following the header.
+ * @alignment2:         Padding/alignment (zero).
  */
 struct ntfs_acl {
-	u8 revision;	/* Revision of this ACL. */
+	u8 revision;
 	u8 alignment1;
-	__le16 size;	/*
-			 * Allocated space in bytes for ACL. Includes this
-			 * header, the ACEs and the remaining free space.
-			 */
-	__le16 ace_count;	/* Number of ACEs in the ACL. */
+	__le16 size;
+	__le16 ace_count;
 	__le16 alignment2;
 } __packed;
 
@@ -1675,38 +1653,34 @@ enum {
 } __packed;
 
 /*
+ * struct security_descriptor_relative - Relative security descriptor
+ *
  * Self-relative security descriptor. Contains the owner and group SIDs as well
  * as the sacl and dacl ACLs inside the security descriptor itself.
+ *
+ * @revision:          Security descriptor revision (usually 1).
+ * @alignment:         Padding/alignment byte (zero).
+ * @control:           Control flags (SE_OWNER_DEFAULTED, SE_DACL_PRESENT,
+ *                     SE_SACL_PRESENT, SE_SACL_AUTO_INHERITED, etc.).
+ * @owner:             Byte offset to owner SID (from start of descriptor).
+ *                     0 if no owner SID present.
+ * @group:             Byte offset to primary group SID.
+ *                     0 if no group SID present.
+ * @sacl:              Byte offset to System ACL (SACL).
+ *                     Valid only if SE_SACL_PRESENT in @control.
+ *                     0 means NULL SACL.
+ * @dacl:              Byte offset to Discretionary ACL (DACL).
+ *                     Valid only if SE_DACL_PRESENT in @control.
+ *                     0 means NULL DACL (full access granted).
  */
 struct security_descriptor_relative {
-	u8 revision;	/* Revision level of the security descriptor. */
+	u8 revision;
 	u8 alignment;
-	__le16 control;	/*
-			 * Flags qualifying the type of * the descriptor as well as
-			 * the following fields.
-			 */
-	__le32 owner;	/*
-			 * Byte offset to a SID representing an object's
-			 * owner. If this is NULL, no owner SID is present in
-			 * the descriptor.
-			 */
-	__le32 group;	/*
-			 * Byte offset to a SID representing an object's
-			 * primary group. If this is NULL, no primary group
-			 * SID is present in the descriptor.
-			 */
-	__le32 sacl;	/*
-			 * Byte offset to a system ACL. Only valid, if
-			 * SE_SACL_PRESENT is set in the control field. If
-			 * SE_SACL_PRESENT is set but sacl is NULL, a NULL ACL
-			 * is specified.
-			 */
-	__le32 dacl;	/*
-			 * Byte offset to a discretionary ACL. Only valid, if
-			 * SE_DACL_PRESENT is set in the control field. If
-			 * SE_DACL_PRESENT is set but dacl is NULL, a NULL ACL
-			 * (unconditionally granting access) is specified.
-			 */
+	__le16 control;
+	__le32 owner;
+	__le32 group;
+	__le32 sacl;
+	__le32 dacl;
 } __packed;
 
 static_assert(sizeof(struct security_descriptor_relative) == 20);
@@ -1751,25 +1725,52 @@ static_assert(sizeof(struct security_descriptor_relative) == 20);
  */
 
 /*
+ * struct sii_index_key - Key for $SII index in $Secure file
+ *
  * The index entry key used in the $SII index. The collation type is
  * COLLATION_NTOFS_ULONG.
+ *
+ * @security_id:    32-bit security identifier.
+ *                  Unique ID assigned to a security descriptor.
  */
 struct sii_index_key {
-	__le32 security_id; /* The security_id assigned to the descriptor. */
+	__le32 security_id;
 } __packed;
 
 /*
+ * struct sdh_index_key - Key for $SDH index in $Secure file
+ *
  * The index entry key used in the $SDH index. The keys are sorted first by
  * hash and then by security_id. The collation rule is
  * COLLATION_NTOFS_SECURITY_HASH.
+ *
+ * @hash:           32-bit hash of the security descriptor.
+ *                  Used for quick collision checks and indexing.
+ * @security_id:    32-bit security identifier.
+ *                  Unique ID assigned to the descriptor.
  */
 struct sdh_index_key {
-	__le32 hash;	  /* Hash of the security descriptor. */
-	__le32 security_id; /* The security_id assigned to the descriptor. */
+	__le32 hash;
+	__le32 security_id;
 } __packed;
 
 /*
- * Possible flags for the volume (16-bit).
+ * enum - NTFS volume flags (16-bit)
+ *
+ * These flags are stored in $VolumeInformation attribute.
+ * They indicate volume state and required actions.
+ *
+ * VOLUME_IS_DIRTY:                Volume is dirty (needs chkdsk).
+ * VOLUME_RESIZE_LOG_FILE:         Resize LogFile on next mount.
+ * VOLUME_UPGRADE_ON_MOUNT:        Upgrade volume on mount (old NTFS).
+ * VOLUME_MOUNTED_ON_NT4:          Mounted on NT4 (compatibility flag).
+ * VOLUME_DELETE_USN_UNDERWAY:     USN journal deletion in progress.
+ * VOLUME_REPAIR_OBJECT_ID:        Repair $ObjId on next mount.
+ * VOLUME_CHKDSK_UNDERWAY:         Chkdsk is running.
+ * VOLUME_MODIFIED_BY_CHKDSK:      Modified by chkdsk.
+ * VOLUME_FLAGS_MASK:              Mask of all valid flags (0xc03f).
+ * VOLUME_MUST_MOUNT_RO_MASK:      Flags forcing read-only mount (0xc027).
+ *                                 If any set, mount read-only.
  */
 enum {
 	VOLUME_IS_DIRTY			= cpu_to_le16(0x0001),
@@ -1785,12 +1786,17 @@ enum {
 
 	VOLUME_FLAGS_MASK		= cpu_to_le16(0xc03f),
 
-	/* To make our life easier when checking if we must mount read-only. */
 	VOLUME_MUST_MOUNT_RO_MASK	= cpu_to_le16(0xc027),
 } __packed;
 
 /*
- * Attribute: Volume information (0x70).
+ * struct volume_information - $VOLUME_INFORMATION (0x70)
+ *
+ * @reserved:       Reserved 64-bit field (currently unused).
+ * @major_ver:      Major NTFS version number (e.g., 3 for NTFS 3.1).
+ * @minor_ver:      Minor NTFS version number (e.g., 1 for NTFS 3.1).
+ * @flags:          Volume flags (VOLUME_IS_DIRTY, VOLUME_CHKDSK_UNDERWAY, etc.).
+ *                  See volume flags enum for details.
  *
  * NOTE: Always resident.
  * NOTE: Present only in FILE_Volume.
@@ -1798,45 +1804,48 @@ enum {
  *	 NTFS 1.2. I haven't personally seen other values yet.
  */
 struct volume_information {
-	__le64 reserved;		/* Not used (yet?). */
-	u8 major_ver;		/* Major version of the ntfs format. */
-	u8 minor_ver;		/* Minor version of the ntfs format. */
-	__le16 flags;		/* Bit array of VOLUME_* flags. */
+	__le64 reserved;
+	u8 major_ver;
+	u8 minor_ver;
+	__le16 flags;
 } __packed;
 
 /*
- * Index header flags (8-bit).
+ * enum - Index header flags
+ *
+ * These flags are stored in the index header (INDEX_HEADER.flags) for both
+ * index root ($INDEX_ROOT) and index allocation blocks ($INDEX_ALLOCATION).
+ *
+ * For index root ($INDEX_ROOT attribute):
+ * SMALL_INDEX: Index fits entirely in root attribute (no $INDEX_ALLOCATION).
+ * LARGE_INDEX: Index too large for root; $INDEX_ALLOCATION present.
+ *
+ * For index blocks ($INDEX_ALLOCATION):
+ * LEAF_NODE:   Leaf node (no child nodes; contains actual entries).
+ * INDEX_NODE:  Internal node (indexes other nodes; contains keys/pointers).
+ *
+ * NODE_MASK:   Mask to extract node type bits (0x01).
  */
 enum {
-	/*
-	 * When index header is in an index root attribute:
-	 */
-	SMALL_INDEX = 0, /*
-			  * The index is small enough to fit inside the index
-			  * root attribute and there is no index allocation
-			  * attribute present.
-			  */
-	LARGE_INDEX = 1, /*
-			  * The index is too large to fit in the index root
-			  * attribute and/or an index allocation attribute is
-			  * present.
-			  */
-	/*
-	 * When index header is in an index block, i.e. is part of index
-	 * allocation attribute:
-	 */
-	LEAF_NODE  = 0, /*
-			 * This is a leaf node, i.e. there are no more nodes
-			 * branching off it.
-			 */
-	INDEX_NODE = 1, /*
-			 * This node indexes other nodes, i.e. it is not a leaf
-			 * node.
-			 */
-	NODE_MASK  = 1, /* Mask for accessing the *_NODE bits. */
+	SMALL_INDEX = 0,
+	LARGE_INDEX = 1,
+	LEAF_NODE  = 0,
+	INDEX_NODE = 1,
+	NODE_MASK  = 1,
 } __packed;
 
 /*
+ * struct index_header - Common header for index root and index blocks
+ *
+ * entries_offset:     Byte offset to first INDEX_ENTRY (8-byte aligned).
+ * index_length:       Bytes used by index entries (8-byte aligned).
+ *                     From entries_offset to end of used data.
+ * allocated_size:     Total allocated bytes for this index block.
+ *                     Fixed size in index allocation; dynamic in root.
+ * flags:              Index flags (SMALL_INDEX, LARGE_INDEX, LEAF_NODE, etc.).
+ *                     See INDEX_HEADER_FLAGS enum.
+ * reserved:           3 bytes reserved/padding (zero, 8-byte aligned).
+ *
  * This is the header for indexes, describing the INDEX_ENTRY records, which
  * follow the index_header. Together the index header and the index entries
  * make up a complete index.
@@ -1844,36 +1853,39 @@ enum {
  * IMPORTANT NOTE: The offset, length and size structure members are counted
  * relative to the start of the index header structure and not relative to the
  * start of the index root or index allocation structures themselves.
+ *
+ * For the index root attribute, the above two numbers are always
+ * equal, as the attribute is resident and it is resized as needed. In
+ * the case of the index allocation attribute the attribute is not
+ * resident and hence the allocated_size is a fixed value and must
+ * equal the index_block_size specified by the INDEX_ROOT attribute
+ * corresponding to the INDEX_ALLOCATION attribute this INDEX_BLOCK
+ * belongs to.
  */
 struct index_header {
-	__le32 entries_offset;		/*
-					 * Byte offset to first INDEX_ENTRY
-					 * aligned to 8-byte boundary.
-					 */
-	__le32 index_length;		/*
-					 * Data size of the index in bytes,
-					 * i.e. bytes used from allocated
-					 * size, aligned to 8-byte boundary.
-					 */
-	__le32 allocated_size;		/*
-					 * Byte size of this index (block),
-					 * multiple of 8 bytes.
-					 */
-	/*
-	 * NOTE: For the index root attribute, the above two numbers are always
-	 * equal, as the attribute is resident and it is resized as needed. In
-	 * the case of the index allocation attribute the attribute is not
-	 * resident and hence the allocated_size is a fixed value and must
-	 * equal the index_block_size specified by the INDEX_ROOT attribute
-	 * corresponding to the INDEX_ALLOCATION attribute this INDEX_BLOCK
-	 * belongs to.
-	 */
-	u8 flags;			/* Bit field of INDEX_HEADER_FLAGS. */
-	u8 reserved[3];			/* Reserved/align to 8-byte boundary. */
+	__le32 entries_offset;
+	__le32 index_length;
+	__le32 allocated_size;
+	u8 flags;
+	u8 reserved[3];
 } __packed;
 
 /*
- * Attribute: Index root (0x90).
+ * struct index_root - $INDEX_ROOT attribute (0x90).
+ *
+ * @type:               Indexed attribute type ($FILE_NAME for dirs,
+ *                      0 for view indexes).
+ * @collation_rule:     Collation rule for sorting entries
+ *                      (COLLATION_FILE_NAME for $FILE_NAME).
+ * @index_block_size:   Size of each index block in bytes
+ *                      (in $INDEX_ALLOCATION).
+ * @clusters_per_index_block:
+ *                      Clusters per index block (or log2(bytes)
+ *                      if < cluster).
+ *                      Power of 2; used for encoding block size.
+ * @reserved:           3 bytes reserved/alignment (zero).
+ * @index:              Index header for root entries (entries follow
+ *                      immediately).
  *
  * NOTE: Always resident.
  *
@@ -1892,37 +1904,33 @@ struct index_header {
  * directories do not contain entries for themselves, though.
  */
 struct index_root {
-	__le32 type;			/*
-					 * Type of the indexed attribute. Is
-					 * $FILE_NAME for directories, zero
-					 * for view indexes. No other values
-					 * allowed.
-					 */
-	__le32 collation_rule;		/*
-					 * Collation rule used to sort the index
-					 * entries. If type is $FILE_NAME, this
-					 * must be COLLATION_FILE_NAME.
-					 */
-	__le32 index_block_size;	/*
-					 * Size of each index block in bytes (in
-					 * the index allocation attribute).
-					 */
-	u8 clusters_per_index_block;	/*
-					 * Cluster size of each index block (in
-					 * the index allocation attribute), when
-					 * an index block is >= than a cluster,
-					 * otherwise this will be the log of
-					 * the size (like how the encoding of
-					 * the mft record size and the index
-					 * record size found in the boot sector
-					 * work). Has to be a power of 2.
-					 */
-	u8 reserved[3];			/* Reserved/align to 8-byte boundary. */
-	struct index_header index;	/* Index header describing the following index entries. */
+	__le32 type;
+	__le32 collation_rule;
+	__le32 index_block_size;
+	u8 clusters_per_index_block;
+	u8 reserved[3];
+	struct index_header index;
 } __packed;
 
 /*
- * Attribute: Index allocation (0xa0).
+ * struct index_block - Index allocation (0xa0).
+ *
+ * @magic:              Magic value "INDX" (see magic_INDX).
+ * @usa_ofs:            Offset to Update Sequence Array (see ntfs_record).
+ * @usa_count:          Number of USA entries (see ntfs_record).
+ * @lsn:                Log sequence number of last modification.
+ * @index_block_vcn:    VCN of this index block.
+ *                      Units: clusters if cluster_size <= index_block_size;
+ *                      sectors otherwise.
+ * @index:              Index header describing entries in this block.
+ *
+ * When creating the index block, we place the update sequence array at this
+ * offset, i.e. before we start with the index entries. This also makes sense,
+ * otherwise we could run into problems with the update sequence array
+ * containing in itself the last two bytes of a sector which would mean that
+ * multi sector transfer protection wouldn't work. As you can't protect data
+ * by overwriting it since you then can't get it back...
+ * When reading use the data from the ntfs record header.
  *
  * NOTE: Always non-resident (doesn't make sense to be resident anyway!).
  *
@@ -1931,36 +1939,23 @@ struct index_root {
  * index entries (INDEX_ENTRY structures), as described by the struct index_header.
  */
 struct index_block {
-	__le32 magic;		/* Magic is "INDX". */
-	__le16 usa_ofs;		/* See ntfs_record struct definition. */
-	__le16 usa_count;	/* See ntfs_record struct  definition. */
-
-	__le64 lsn;		/*
-				 * LogFile sequence number of the last
-				 * modification of this index block.
-				 */
-	__le64 index_block_vcn;	/*
-				 * Virtual cluster number of the index block.
-				 * If the cluster_size on the volume is <= the
-				 * index_block_size of the directory,
-				 * index_block_vcn counts in units of clusters,
-				 * and in units of sectors otherwise.
-				 */
-	struct index_header index;	/* Describes the following index entries. */
-/*
- * When creating the index block, we place the update sequence array at this
- * offset, i.e. before we start with the index entries. This also makes sense,
- * otherwise we could run into problems with the update sequence array
- * containing in itself the last two bytes of a sector which would mean that
- * multi sector transfer protection wouldn't work. As you can't protect data
- * by overwriting it since you then can't get it back...
- * When reading use the data from the ntfs record header.
- */
+	__le32 magic;
+	__le16 usa_ofs;
+	__le16 usa_count;
+	__le64 lsn;
+	__le64 index_block_vcn;
+	struct index_header index;
 } __packed;
 
 static_assert(sizeof(struct index_block) == 40);
 
 /*
+ * struct reparse_index_key - Key for $R reparse index in $Extend/$Reparse
+ *
+ * @reparse_tag:    Reparse point type (including flags, REPARSE_TAG_*).
+ * @file_id:        MFT record number of the file with $REPARSE_POINT
+ *                  attribute.
+ *
  * The system file FILE_Extend/$Reparse contains an index named $R listing
  * all reparse points on the volume. The index entry keys are as defined
  * below. Note, that there is no index data associated with the index entries.
@@ -1969,17 +1964,32 @@ static_assert(sizeof(struct index_block) == 40);
  * COLLATION_NTOFS_ULONGS.
  */
 struct reparse_index_key {
-	__le32 reparse_tag;	/* Reparse point type (inc. flags). */
-	__le64 file_id;		/*
-				 * Mft record of the file containing
-				 * the reparse point attribute.
-				 */
+	__le32 reparse_tag;
+	__le64 file_id;
 } __packed;
 
 /*
- * Quota flags (32-bit).
+ * enum - Quota entry flags (32-bit) in $Quota/$Q
  *
- * The user quota flags.  Names explain meaning.
+ * These flags are stored in quota control entries ($Quota file).
+ * They control quota tracking, limits, and state.
+ *
+ * User quota flags (mask 0x00000007):
+ * @QUOTA_FLAG_DEFAULT_LIMITS:   Use default limits.
+ * @QUOTA_FLAG_LIMIT_REACHED:    Quota limit reached.
+ * @QUOTA_FLAG_ID_DELETED:       Quota ID deleted.
+ * @QUOTA_FLAG_USER_MASK:        Mask for user quota flags (0x00000007).
+ *
+ * Default entry flags (owner_id = QUOTA_DEFAULTS_ID):
+ * @QUOTA_FLAG_TRACKING_ENABLED:    Quota tracking enabled.
+ * @QUOTA_FLAG_ENFORCEMENT_ENABLED: Quota enforcement enabled.
+ * @QUOTA_FLAG_TRACKING_REQUESTED:  Tracking requested (pending).
+ * @QUOTA_FLAG_LOG_THRESHOLD:       Log when threshold reached.
+ * @QUOTA_FLAG_LOG_LIMIT:           Log when limit reached.
+ * @QUOTA_FLAG_OUT_OF_DATE:         Quota data out of date.
+ * @QUOTA_FLAG_CORRUPT:             Quota entry corrupt.
+ * @QUOTA_FLAG_PENDING_DELETES:     Pending quota deletes.
+ *
  */
 enum {
 	QUOTA_FLAG_DEFAULT_LIMITS	= cpu_to_le32(0x00000001),
@@ -1987,12 +1997,6 @@ enum {
 	QUOTA_FLAG_ID_DELETED		= cpu_to_le32(0x00000004),
 
 	QUOTA_FLAG_USER_MASK		= cpu_to_le32(0x00000007),
-	/* This is a bit mask for the user quota flags. */
-
-	/*
-	 * These flags are only present in the quota defaults index entry, i.e.
-	 * in the entry where owner_id = QUOTA_DEFAULTS_ID.
-	 */
 	QUOTA_FLAG_TRACKING_ENABLED	= cpu_to_le32(0x00000010),
 	QUOTA_FLAG_ENFORCEMENT_ENABLED	= cpu_to_le32(0x00000020),
 	QUOTA_FLAG_TRACKING_REQUESTED	= cpu_to_le32(0x00000040),
@@ -2005,6 +2009,17 @@ enum {
 };
 
 /*
+ * struct quota_control_entry - Quota entry in $Quota/$Q
+ *
+ * @version:        Currently 2.
+ * @flags:          Quota flags (QUOTA_FLAG_* bits).
+ * @bytes_used:     Current quota usage in bytes.
+ * @change_time:    Last modification time (NTFS timestamp).
+ * @threshold:      Soft quota limit (-1 = unlimited).
+ * @limit:          Hard quota limit (-1 = unlimited).
+ * @exceeded_time:  Time soft quota has been exceeded.
+ * @sid:            SID of user/object (zero for defaults entry).
+ *
  * The system file FILE_Extend/$Quota contains two indexes $O and $Q. Quotas
  * are on a per volume and per user basis.
  *
@@ -2026,19 +2041,14 @@ enum {
  * The $Q index entry data is the quota control entry and is defined below.
  */
 struct quota_control_entry {
-	__le32 version;		/* Currently equals 2. */
-	__le32 flags;		/* Flags describing this quota entry. */
-	__le64 bytes_used;	/* How many bytes of the quota are in use. */
-	__le64 change_time;	/* Last time this quota entry was changed. */
-	__le64 threshold;	/* Soft quota (-1 if not limited). */
-	__le64 limit;		/* Hard quota (-1 if not limited). */
-	__le64 exceeded_time;	/* How long the soft quota has been exceeded. */
-	struct ntfs_sid sid;	/*
-				 * The SID of the user/object associated with
-				 * this quota entry.  Equals zero for the quota
-				 * defaults entry (and in fact on a WinXP
-				 * volume, it is not present at all).
-				 */
+	__le32 version;
+	__le32 flags;
+	__le64 bytes_used;
+	__le64 change_time;
+	__le64 threshold;
+	__le64 limit;
+	__le64 exceeded_time;
+	struct ntfs_sid sid;
 } __packed;
 
 /*
@@ -2059,134 +2069,142 @@ enum {
 };
 
 /*
- * Index entry flags (16-bit).
+ * enum - Index entry flags (16-bit)
+ *
+ * These flags are in INDEX_ENTRY.flags (after key data).
+ * They describe entry type and status in index blocks/root.
+ *
+ * @INDEX_ENTRY_NODE:     Entry points to a sub-node (index block VCN).
+ *                        (Not a leaf entry; internal node reference.)
+ *                        i.e. a reference to an index block in form of
+ *                        a virtual cluster number
+ * @INDEX_ENTRY_END:      Last entry in index block/root.
+ *                        Does not represent a real file; can point to sub-node.
+ * @INDEX_ENTRY_SPACE_FILLER:
+ *                        Dummy value to force enum to 16-bit width.
  */
 enum {
-	INDEX_ENTRY_NODE = cpu_to_le16(1), /*
-					    * This entry contains a sub-node,
-					    * i.e. a reference to an index block
-					    * in form of a virtual cluster number
-					    * (see below).
-					    */
-	INDEX_ENTRY_END  = cpu_to_le16(2), /*
-					    * This signifies the last entry in an
-					    * index block.  The index entry does not
-					    * represent a file but it can point
-					    * to a sub-node.
-					    */
-
-	INDEX_ENTRY_SPACE_FILLER = cpu_to_le16(0xffff), /* gcc: Force enum bit width to 16-bit. */
+	INDEX_ENTRY_NODE = cpu_to_le16(1),
+	INDEX_ENTRY_END  = cpu_to_le16(2),
+	INDEX_ENTRY_SPACE_FILLER = cpu_to_le16(0xffff),
 } __packed;
 
 /*
- * This the index entry header (see below).
+ * struct index_entry_header - Common header for all NTFS index entries
+ *
+ * This is the fixed header at the start of every INDEX_ENTRY in index
+ * blocks or index root. It is followed by the variable key, data, and
+ * sub-node VCN.
+ *
+ * Union @data:
+ * - When INDEX_ENTRY_END is not set:
+ *   @data.dir.indexed_file: MFT reference of the file described by
+ *                           this entry. Used in directory indexes ($I30).
+ * - When INDEX_ENTRY_END is set or for view indexes:
+ *   @data.vi.data_offset: Byte offset from end of this header to
+ *                         entry data.
+ *   @data.vi.data_length: Length of data in bytes.
+ *   @data.vi.reservedV:   Reserved (zero).
+ *
+ * @length:         Total byte size of this index entry
+ *                  (multiple of 8 bytes).
+ * @key_length:     Byte size of the key (not multiple of 8 bytes).
+ *                  Key follows the header immediately.
+ * @flags:          Bit field of INDEX_ENTRY_* flags (INDEX_ENTRY_NODE, etc.).
+ * @reserved:       Reserved/padding (zero; align to 8 bytes).
  */
 struct index_entry_header {
-/*  0*/	union {
-		struct { /* Only valid when INDEX_ENTRY_END is not set. */
-			__le64 indexed_file;	/*
-						 * The mft reference of the file
-						 * described by this index entry.
-						 * Used for directory indexes.
-						 */
+	union {
+		struct {
+			__le64 indexed_file;
 		} __packed dir;
 		struct {
-			/* Used for views/indexes to find the entry's data. */
-			__le16 data_offset;	/*
-						 * Data byte offset from this
-						 * INDEX_ENTRY. Follows the index key.
-						 */
-			__le16 data_length;	/* Data length in bytes. */
-			__le32 reservedV;		/* Reserved (zero). */
+			__le16 data_offset;
+			__le16 data_length;
+			__le32 reservedV;
 		} __packed vi;
 	} __packed data;
-	__le16 length;		/* Byte size of this index entry, multiple of 8-bytes. */
-	__le16 key_length;	/*
-				 * Byte size of the key value, which is in the index entry.
-				 * It follows field reserved. Not multiple of 8-bytes.
-				 */
-	__le16 flags; /* Bit field of INDEX_ENTRY_* flags. */
-	__le16 reserved;		 /* Reserved/align to 8-byte boundary. */
+	__le16 length;
+	__le16 key_length;
+	__le16 flags;
+	__le16 reserved;
 } __packed;
 
 static_assert(sizeof(struct index_entry_header) == 16);
 
 /*
+ * struct index_entry - NTFS index entry structure
+ *
  * This is an index entry. A sequence of such entries follows each index_header
  * structure. Together they make up a complete index. The index follows either
  * an index root attribute or an index allocation attribute.
+ *
+ * Union @data (valid when INDEX_ENTRY_END not set):
+ * @data.dir.indexed_file: MFT ref of file (for directory indexes).
+ * @data.vi.data_offset:   Offset to data after key.
+ * @data.vi.data_length:   Length of data in bytes.
+ * @data.vi.reservedV:     Reserved (zero).
+ *
+ * Fields:
+ * @length:         Total byte size of entry (multiple of 8 bytes).
+ * @key_length:     Byte size of key (not multiple of 8).
+ * @flags:          INDEX_ENTRY_* flags (NODE, END, etc.).
+ * @reserved:       Reserved/padding (zero).
+ *
+ * Union @key (valid when INDEX_ENTRY_END not set)
+ * The key of the indexed attribute. NOTE: Only present
+ * if INDEX_ENTRY_END bit in flags is not set. NOTE: On
+ * NTFS versions before 3.0 the only valid key is the
+ * struct file_name_attr. On NTFS 3.0+ the following
+ * additional index keys are defined:
+ * @key.file_name:  $FILE_NAME attr (for $I30 directory indexes).
+ * @key.sii:        $SII key (for $Secure $SII index).
+ * @key.sdh:        $SDH key (for $Secure $SDH index).
+ * @key.object_id:  GUID (for $ObjId $O index).
+ * @key.reparse:    Reparse tag + file ID (for $Reparse $R).
+ * @key.sid:        SID (for $Quota $O index).
+ * @key.owner_id:   User ID (for $Quota $Q index).
+ *
+ * The (optional) index data is inserted here when creating.
+ * __le64 vcn;     If INDEX_ENTRY_NODE bit in flags is set, the last
+ *                 eight bytes of this index entry contain the virtual
+ *                 cluster number of the index block that holds the
+ *                 entries immediately preceding the current entry (the
+ *                 vcn references the corresponding cluster in the data
+ *                 of the non-resident index allocation attribute). If
+ *                 the key_length is zero, then the vcn immediately
+ *                 follows the INDEX_ENTRY_HEADER. Regardless of
+ *                 key_length, the address of the 8-byte boundary
+ *                 aligned vcn of INDEX_ENTRY{_HEADER} *ie is given by
+ *                 (char*)ie + le16_to_cpu(ie*)->length) - sizeof(VCN),
+ *                 where sizeof(VCN) can be hardcoded as 8 if wanted.
  *
  * NOTE: Before NTFS 3.0 only filename attributes were indexed.
  */
 struct index_entry {
 	union {
-		struct { /* Only valid when INDEX_ENTRY_END is not set. */
-			__le64 indexed_file;	/*
-						 * The mft reference of the file
-						 * described by this index entry.
-						 * Used for directory indexes.
-						 */
+		struct {
+			__le64 indexed_file;
 		} __packed dir;
-		struct { /* Used for views/indexes to find the entry's data. */
-			__le16 data_offset;	/*
-						 * Data byte offset from this INDEX_ENTRY.
-						 * Follows the index key.
-						 */
-			__le16 data_length;	/* Data length in bytes. */
-			__le32 reservedV;		/* Reserved (zero). */
+		struct {
+			__le16 data_offset;
+			__le16 data_length;
+			__le32 reservedV;
 		} __packed vi;
 	} __packed data;
-	__le16 length;		 /* Byte size of this index entry, multiple of 8-bytes. */
-	__le16 key_length;	 /*
-				  * Byte size of the key value, which is in the index entry.
-				  * It follows field reserved. Not multiple of 8-bytes.
-				  */
-	__le16 flags;		/* Bit field of INDEX_ENTRY_* flags. */
-	__le16 reserved;		 /* Reserved/align to 8-byte boundary. */
-
+	__le16 length;
+	__le16 key_length;
+	__le16 flags;
+	__le16 reserved;
 	union {
-		/*
-		 * The key of the indexed attribute. NOTE: Only present
-		 * if INDEX_ENTRY_END bit in flags is not set. NOTE: On
-		 * NTFS versions before 3.0 the only valid key is the
-		 * struct file_name_attr. On NTFS 3.0+ the following
-		 * additional index keys are defined:
-		 */
-		struct file_name_attr file_name;	/* $I30 index in directories. */
-		struct sii_index_key sii;	/* $SII index in $Secure. */
-		struct sdh_index_key sdh;	/* $SDH index in $Secure. */
-		struct guid object_id;	/*
-					 * $O index in FILE_Extend/$ObjId: The object_id
-					 * of the mft record found in the data part of
-					 * the index.
-					 */
-		struct reparse_index_key reparse;	/* $R index in FILE_Extend/$Reparse. */
-		struct ntfs_sid sid;	/*
-					 * $O index in FILE_Extend/$Quota:
-					 * SID of the owner of the user_id.
-					 */
-		__le32 owner_id;	/*
-					 * $Q index in FILE_Extend/$Quota:
-					 * user_id of the owner of the quota
-					 * control entry in the data part of
-					 * the index.
-					 */
+		struct file_name_attr file_name;
+		struct sii_index_key sii;
+		struct sdh_index_key sdh;
+		struct guid object_id;
+		struct reparse_index_key reparse;
+		struct ntfs_sid sid;
+		__le32 owner_id;
 	} __packed key;
-	/*
-	 * The (optional) index data is inserted here when creating.
-	 * __le64 vcn;	   If INDEX_ENTRY_NODE bit in flags is set, the last
-	 *		   eight bytes of this index entry contain the virtual
-	 *		   cluster number of the index block that holds the
-	 *		   entries immediately preceding the current entry (the
-	 *		   vcn references the corresponding cluster in the data
-	 *		   of the non-resident index allocation attribute). If
-	 *		   the key_length is zero, then the vcn immediately
-	 *		   follows the INDEX_ENTRY_HEADER. Regardless of
-	 *		   key_length, the address of the 8-byte boundary
-	 *		   aligned vcn of INDEX_ENTRY{_HEADER} *ie is given by
-	 *		   (char*)ie + le16_to_cpu(ie*)->length) - sizeof(VCN),
-	 *		   where sizeof(VCN) can be hardcoded as 8 if wanted.
-	 */
 } __packed;
 
 /*
@@ -2250,68 +2268,79 @@ enum {
 };
 
 /*
- * Attribute: Reparse point (0xc0).
+ * struct reparse_point - $REPARSE_POINT attribute content (0xc0)\
+ *
+ * @reparse_tag:        Reparse point type (with flags; REPARSE_TAG_*).
+ * @reparse_data_length: Byte size of @reparse_data.
+ * @reserved:           Reserved/padding (zero; 8-byte alignment).
+ * @reparse_data:       Variable reparse data (meaning depends on @reparse_tag).
+ *                      - Symbolic link/junction: struct reparse_symlink
+ *                      - Mount point: similar symlink structure
+ *                      - Other tags: vendor-specific or extended data
  *
  * NOTE: Can be resident or non-resident.
  */
 struct reparse_point {
-	__le32 reparse_tag;		/* Reparse point type (inc. flags). */
-	__le16 reparse_data_length;	/* Byte size of reparse data. */
-	__le16 reserved;			/* Align to 8-byte boundary. */
-	u8 reparse_data[0];		/* Meaning depends on reparse_tag. */
+	__le32 reparse_tag;
+	__le16 reparse_data_length;
+	__le16 reserved;
+	u8 reparse_data[];
 } __packed;
 
 /*
- * Attribute: Extended attribute (EA) information (0xd0).
+ * struct ea_information - $EA_INFORMATION attribute content (0xd0)
+ *
+ * @ea_length:      Byte size of packed EAs.
+ * @need_ea_count:  Number of EAs with NEED_EA bit set.
+ * @ea_query_length: Byte size needed to unpack/query EAs via ZwQueryEaFile().
+ *                   (Unpacked format size.)
  *
  * NOTE: Always resident. (Is this true???)
  */
 struct ea_information {
-	__le16 ea_length;		/* Byte size of the packed extended attributes. */
-	__le16 need_ea_count;	/*
-				 * The number of extended attributes which have
-				 * the NEED_EA bit set.
-				 */
-	__le32 ea_query_length;	/*
-				 * Byte size of the buffer required to query
-				 * the extended attributes when calling
-				 * ZwQueryEaFile() in Windows NT/2k. I.e.
-				 * the byte size of the unpacked extended attributes.
-				 */
+	__le16 ea_length;
+	__le16 need_ea_count;
+	__le32 ea_query_length;
 } __packed;
 
 /*
- * Extended attribute flags (8-bit).
+ * enum - Extended attribute flags (8-bit)
+ *
+ * These flags are stored in the EA header of each extended attribute
+ * (in $EA attribute, type 0xe0).
+ *
+ * @NEED_EA:        If set, the file cannot be properly interpreted
+ *                  without understanding its associated EAs.
+ *                  (Critical EA; applications must process it.)
  */
 enum {
-	NEED_EA	= 0x80		/*
-				 * If set the file to which the EA belongs
-				 * cannot be interpreted without understanding
-				 * the associates extended attributes.
-				 */
+	NEED_EA	= 0x80
 } __packed;
 
 /*
- * Attribute: Extended attribute (EA) (0xe0).
+ * struct ea_attr - Extended attribute (EA) entry (0xe0)
+ *
+ * @next_entry_offset:  Byte offset to the next EA_ATTR entry.
+ *                      (From start of current entry.)
+ * @flags:              EA flags (NEED_EA = 0x80 if critical).
+ * @ea_name_length:     Length of @ea_name in bytes (excluding '\0').
+ * @ea_value_length:    Byte size of the EA value.
+ * @ea_name:            ASCII name of the EA (zero-terminated).
+ *                      Value immediately follows the name.
+ * u8 ea_value[];       The value of the EA.  Immediately follows the name.
+ *
+ * This is one variable-length record in the $EA attribute value.
+ * The attribute can be resident or non-resident.
+ * Sequence of these entries forms the packed EA list.
  *
  * NOTE: Can be resident or non-resident.
- *
- * Like the attribute list and the index buffer list, the EA attribute value is
- * a sequence of EA_ATTR variable length records.
  */
 struct ea_attr {
-	__le32 next_entry_offset;	/* Offset to the next EA_ATTR. */
-	u8 flags;		/* Flags describing the EA. */
-	u8 ea_name_length;	/*
-				 * Length of the name of the EA in bytes
-				 * excluding the '\0' byte terminator.
-				 */
-	__le16 ea_value_length;	/* Byte size of the EA's value. */
-	u8 ea_name[];		/*
-				 * Name of the EA.  Note this is ASCII, not
-				 * Unicode and it is zero terminated.
-				 */
-	/* u8 ea_value[]; */	/* The value of the EA.  Immediately follows the name. */
+	__le32 next_entry_offset;
+	u8 flags;
+	u8 ea_name_length;
+	__le16 ea_value_length;
+	u8 ea_name[];
 } __packed;
 
 #endif /* _LINUX_NTFS_LAYOUT_H */

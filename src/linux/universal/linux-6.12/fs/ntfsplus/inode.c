@@ -424,9 +424,8 @@ int ntfs_drop_big_inode(struct inode *inode)
 				spin_lock(&inode->i_lock);
 				atomic_dec(&inode->i_count);
 			}
-			return 0;
-		} else if (ni->type == AT_INDEX_ROOT)
-			return 0;
+		}
+		return 0;
 	}
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 18, 0)
@@ -677,7 +676,10 @@ void ntfs_set_vfs_operations(struct inode *inode, mode_t mode, dev_t dev)
 			inode->i_op = &ntfs_file_inode_ops;
 			inode->i_fop = &ntfs_file_ops;
 		}
-		inode->i_mapping->a_ops = &ntfs_aops;
+		if (inode->i_ino == FILE_MFT)
+			inode->i_mapping->a_ops = &ntfs_mft_aops;
+		else
+			inode->i_mapping->a_ops = &ntfs_aops;
 	}
 }
 
@@ -1846,7 +1848,13 @@ static int load_attribute_list_mount(struct ntfs_volume *vol,
 		if (al + rl_byte_len > al_end)
 			rl_byte_len = al_end - al;
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 16, 0)
+		err = ntfs_bdev_read(sb->s_bdev, rl_byte_off,
+				   round_up(rl_byte_len, SECTOR_SIZE),
+				   al);
+#else
 		err = ntfs_dev_read(sb, al, rl_byte_off, rl_byte_len);
+#endif
 		if (err) {
 			ntfs_error(sb, "Cannot read attribute list.");
 			goto err_out;
@@ -1956,7 +1964,7 @@ int ntfs_read_inode_mount(struct inode *vi)
 	if (i < sb->s_blocksize)
 		i = sb->s_blocksize;
 
-	m = (struct mft_record *)kzalloc(i, GFP_NOFS);
+	m = kzalloc(i, GFP_NOFS);
 	if (!m) {
 		ntfs_error(sb, "Failed to allocate buffer for $MFT record 0.");
 		goto err_out;
@@ -1968,7 +1976,12 @@ int ntfs_read_inode_mount(struct inode *vi)
 		nr_blocks = 1;
 
 	/* Load $MFT/$DATA's first mft record. */
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 16, 0)
+	err = ntfs_bdev_read(sb->s_bdev, ntfs_cluster_to_bytes(vol, vol->mft_lcn) >>
+			   SECTOR_SHIFT, i, (char *)m);
+#else
 	err = ntfs_dev_read(sb, m, ntfs_cluster_to_bytes(vol, vol->mft_lcn), i);
+#endif
 	if (err) {
 		ntfs_error(sb, "Device read failed.");
 		goto err_out;
@@ -1995,10 +2008,7 @@ int ntfs_read_inode_mount(struct inode *vi)
 	vi->i_generation = ni->seq_no = le16_to_cpu(m->sequence_number);
 
 	/* Provides read_folio() for map_mft_record(). */
-	if (vi->i_ino == FILE_MFT)
-		vi->i_mapping->a_ops = &ntfs_mft_aops;
-	else
-		vi->i_mapping->a_ops = &ntfs_aops;
+	vi->i_mapping->a_ops = &ntfs_mft_aops;
 
 	ctx = ntfs_attr_get_search_ctx(ni, m);
 	if (!ctx) {
@@ -2045,7 +2055,8 @@ int ntfs_read_inode_mount(struct inode *vi)
 			ntfs_error(sb, "Attr_list_size is zero");
 			goto put_err_out;
 		}
-		ni->attr_list = kvzalloc(ni->attr_list_size, GFP_NOFS);
+		ni->attr_list = kvzalloc(round_up(ni->attr_list_size, SECTOR_SIZE),
+					 GFP_NOFS);
 		if (!ni->attr_list) {
 			ntfs_error(sb, "Not enough memory to allocate buffer for attribute list.");
 			goto put_err_out;
@@ -2489,7 +2500,7 @@ int ntfs_show_options(struct seq_file *sf, struct dentry *root)
 }
 
 int ntfs_extend_initialized_size(struct inode *vi, const loff_t offset,
-		const loff_t new_size)
+				 const loff_t new_size, bool bsync)
 {
 	struct ntfs_inode *ni = NTFS_I(vi);
 	loff_t old_init_size;
@@ -2517,7 +2528,7 @@ int ntfs_extend_initialized_size(struct inode *vi, const loff_t offset,
 				       &ntfs_iomap_folio_ops, NULL);
 #else
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 15, 0)
-                :cn
+                err = iomap_zero_range(vi, old_init_size,
 				       offset - old_init_size,
 				       NULL, &ntfs_seek_iomap_ops, NULL);
 #else
@@ -2528,6 +2539,10 @@ int ntfs_extend_initialized_size(struct inode *vi, const loff_t offset,
 #endif
 		if (err)
 			return err;
+		if (bsync)
+			err = filemap_write_and_wait_range(vi->i_mapping,
+							   old_init_size,
+							   offset - 1);
 	}
 
 

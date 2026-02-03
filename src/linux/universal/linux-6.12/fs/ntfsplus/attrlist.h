@@ -1,7 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
 /*
  * Exports for attribute list attribute handling.
- * Originated from Linux-NTFS project.
  *
  * Copyright (c) 2004 Anton Altaparmakov
  * Copyright (c) 2004 Yura Pakhuchiy

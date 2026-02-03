@@ -1,7 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
 /*
- * Defines for NTFS kernel bitmap handling.  Part of the Linux-NTFS
- * project.
+ * Defines for NTFS kernel bitmap handling.
  *
  * Copyright (c) 2004 Anton Altaparmakov
  */
