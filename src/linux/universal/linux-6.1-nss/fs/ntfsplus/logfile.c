@@ -1,11 +1,9 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 /*
- * NTFS kernel journal handling. Part of the Linux-NTFS project.
+ * NTFS kernel journal handling.
  *
  * Copyright (c) 2002-2007 Anton Altaparmakov
  */
-
-#include <linux/bio.h>
 
 #include "attrib.h"
 #include "aops.h"
@@ -792,10 +790,10 @@ map_vcn:
 #endif
 
 		do {
-			err = ntfs_dev_write(sb, empty_buf, start,
+			err = ntfs_bdev_write(sb, empty_buf, start,
 						  vol->cluster_size);
 			if (err) {
-				ntfs_error(sb, "ntfs_dev_write failed, err : %d\n", err);
+				ntfs_error(sb, "ntfs_bdev_write failed, err : %d\n", err);
 				goto io_err;
 			}
 

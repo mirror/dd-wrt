@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
 /*
- * NTFS kernel debug support. Part of the Linux-NTFS project.
+ * NTFS kernel debug support.
  *
  * Copyright (c) 2001-2004 Anton Altaparmakov
  */

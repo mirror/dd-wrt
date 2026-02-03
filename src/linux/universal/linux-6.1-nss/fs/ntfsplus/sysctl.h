@@ -1,7 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
 /*
- * Defines for sysctl handling in NTFS Linux kernel driver. Part of
- * the Linux-NTFS project. Adapted from the old NTFS driver.
+ * Defines for sysctl handling in NTFS Linux kernel driver.
  *
  * Copyright (C) 1997 Martin von Löwis, Régis Duchesne
  * Copyright (c) 2002-2004 Anton Altaparmakov

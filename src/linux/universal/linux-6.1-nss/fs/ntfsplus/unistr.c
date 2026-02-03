@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 /*
- * NTFS Unicode string handling. Part of the Linux-NTFS project.
+ * NTFS Unicode string handling.
  *
  * Copyright (c) 2001-2006 Anton Altaparmakov
  */
@@ -203,11 +203,11 @@ int ntfs_file_compare_values(const struct file_name_attr *file_name_attr1,
 
 /*
  * ntfs_nlstoucs - convert NLS string to little endian Unicode string
- * @vol: ntfs volume containing the NLS mapping
- * @ins: input NLS string to convert
- * @ins_len: length of input string in bytes
- * @outs: on success, pointer to allocated output Unicode string
- * @max_name_len: maximum length of output string in Unicode characters
+ * @vol:	ntfs volume which we are working with
+ * @ins:	input NLS string buffer
+ * @ins_len:	length of input string in bytes
+ * @outs:	on return contains the allocated output Unicode string buffer
+ * @max_name_len: maximum number of Unicode characters allowed for the output name
  *
  * Convert the input string @ins, which is in whatever format the loaded NLS
  * map dictates, into a little endian, 2-byte Unicode string.

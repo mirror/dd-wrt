@@ -1,7 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
 /*
  * Defines for volume structures in NTFS Linux kernel driver.
- * Part of the Linux-NTFS project.
  *
  * Copyright (c) 2001-2006 Anton Altaparmakov
  * Copyright (c) 2002 Richard Russon
@@ -25,105 +24,130 @@
 
 /*
  * The NTFS in memory super block structure.
+ *
+ * @sb: Pointer back to the super_block.
+ * @nr_blocks: Number of sb->s_blocksize bytes sized blocks on the device.
+ * @flags: Miscellaneous flags, see below.
+ * @uid: uid that files will be mounted as.
+ * @gid: gid that files will be mounted as.
+ * @fmask: The mask for file permissions.
+ * @dmask: The mask for directory permissions.
+ * @mft_zone_multiplier: Initial mft zone multiplier.
+ * @on_errors: What to do on filesystem errors.
+ * @wb_err: Writeback error tracking.
+ * @sector_size: in bytes
+ * @sector_size_bits: log2(sector_size)
+ * @cluster_size: in bytes
+ * @cluster_size_mask: cluster_size - 1
+ * @cluster_size_bits: log2(cluster_size)
+ * @mft_record_size: in bytes
+ * @mft_record_size_mask: mft_record_size - 1
+ * @mft_record_size_bits: log2(mft_record_size)
+ * @index_record_size: in bytes
+ * @index_record_size_mask: index_record_size - 1
+ * @index_record_size_bits: log2(index_record_size)
+ * @nr_clusters: Volume size in clusters == number of bits in lcn bitmap.
+ * @mft_lcn: Cluster location of mft data.
+ * @mftmirr_lcn: Cluster location of copy of mft.
+ * @serial_no: The volume serial number.
+ * @upcase_len: Number of entries in upcase[].
+ * @upcase: The upcase table.
+ * @attrdef_size: Size of the attribute definition table in bytes.
+ * @attrdef: Table of attribute definitions. Obtained from FILE_AttrDef.
+ * @mft_data_pos: Mft record number at which to allocate the next mft record.
+ * @mft_zone_start: First cluster of the mft zone.
+ * @mft_zone_end: First cluster beyond the mft zone.
+ * @mft_zone_pos: Current position in the mft zone.
+ * @data1_zone_pos: Current position in the first data zone.
+ * @data2_zone_pos: Current position in the second data zone.
+ * @mft_ino: The VFS inode of $MFT.
+ * @mftbmp_ino: Attribute inode for $MFT/$BITMAP.
+ * @mftbmp_lock: Lock for serializing accesses to the mft record bitmap.
+ * @mftmirr_ino: The VFS inode of $MFTMirr.
+ * @mftmirr_size: Size of mft mirror in mft records.
+ * @logfile_ino: The VFS inode of LogFile.
+ * @lcnbmp_ino: The VFS inode of $Bitmap.
+ * @lcnbmp_lock: Lock for serializing accesses to the cluster bitmap
+ * @vol_ino: The VFS inode of $Volume.
+ * @vol_flags: Volume flags.
+ * @major_ver: Ntfs major version of volume.
+ * @minor_ver: Ntfs minor version of volume.
+ * @volume_label: volume label.
+ * @root_ino: The VFS inode of the root directory.
+ * @secure_ino: The VFS inode of $Secure (NTFS3.0+ only, otherwise NULL).
+ * @extend_ino: The VFS inode of $Extend (NTFS3.0+ only, otherwise NULL).
+ * @quota_ino: The VFS inode of $Quota.
+ * @quota_q_ino: Attribute inode for $Quota/$Q.
+ * @nls_map: NLS (National Language Support) table.
+ * @nls_utf8: NLS table for UTF-8.
+ * @free_waitq: Wait queue for threads waiting for free clusters or MFT records.
+ * @free_clusters: Track the number of free clusters.
+ * @free_mft_records: Track the free mft records.
+ * @dirty_clusters: Number of clusters that are dirty.
+ * @sparse_compression_unit: Size of compression/sparse unit in clusters.
+ * @lcn_empty_bits_per_page: Number of empty bits per page in the LCN bitmap.
+ * @precalc_work: Work structure for background pre-calculation tasks.
+ * @preallocated_size: reallocation size (in bytes).
  */
 struct ntfs_volume {
-	/* Device specifics. */
-	struct super_block *sb;		/* Pointer back to the super_block. */
-	s64 nr_blocks;			/*
-					 * Number of sb->s_blocksize bytes
-					 * sized blocks on the device.
-					 */
-	/* Configuration provided by user at mount time. */
-	unsigned long flags;		/* Miscellaneous flags, see below. */
-	kuid_t uid;			/* uid that files will be mounted as. */
-	kgid_t gid;			/* gid that files will be mounted as. */
-	umode_t fmask;			/* The mask for file permissions. */
-	umode_t dmask;			/* The mask for directory permissions. */
-	u8 mft_zone_multiplier;		/* Initial mft zone multiplier. */
-	u8 on_errors;			/* What to do on filesystem errors. */
+	struct super_block *sb;
+	s64 nr_blocks;
+	unsigned long flags;
+	kuid_t uid;
+	kgid_t gid;
+	umode_t fmask;
+	umode_t dmask;
+	u8 mft_zone_multiplier;
+	u8 on_errors;
 	errseq_t wb_err;
-	/* NTFS bootsector provided information. */
-	u16 sector_size;		/* in bytes */
-	u8 sector_size_bits;		/* log2(sector_size) */
-	u32 cluster_size;		/* in bytes */
-	u32 cluster_size_mask;		/* cluster_size - 1 */
-	u8 cluster_size_bits;		/* log2(cluster_size) */
-	u32 mft_record_size;		/* in bytes */
-	u32 mft_record_size_mask;	/* mft_record_size - 1 */
-	u8 mft_record_size_bits;	/* log2(mft_record_size) */
-	u32 index_record_size;		/* in bytes */
-	u32 index_record_size_mask;	/* index_record_size - 1 */
-	u8 index_record_size_bits;	/* log2(index_record_size) */
-	s64 nr_clusters;		/*
-					 * Volume size in clusters == number of
-					 * bits in lcn bitmap.
-					 */
-	s64 mft_lcn;			/* Cluster location of mft data. */
-	s64 mftmirr_lcn;		/* Cluster location of copy of mft. */
-	u64 serial_no;			/* The volume serial number. */
-	/* Mount specific NTFS information. */
-	u32 upcase_len;			/* Number of entries in upcase[]. */
-	__le16 *upcase;		/* The upcase table. */
-
-	s32 attrdef_size;		/* Size of the attribute definition table in bytes. */
-	struct attr_def *attrdef;	/*
-					 * Table of attribute definitions.
-					 * Obtained from FILE_AttrDef.
-					 */
-
-	/* Variables used by the cluster and mft allocators. */
-	s64 mft_data_pos;		/*
-					 * Mft record number at which to
-					 * allocate the next mft record.
-					 */
-	s64 mft_zone_start;		/* First cluster of the mft zone. */
-	s64 mft_zone_end;		/* First cluster beyond the mft zone. */
-	s64 mft_zone_pos;		/* Current position in the mft zone. */
-	s64 data1_zone_pos;		/* Current position in the first data zone. */
-	s64 data2_zone_pos;		/* Current position in the second data zone. */
-
-	struct inode *mft_ino;		/* The VFS inode of $MFT. */
-
-	struct inode *mftbmp_ino;	/* Attribute inode for $MFT/$BITMAP. */
-	struct rw_semaphore mftbmp_lock; /*
-					  *  Lock for serializing accesses to the
-					  * mft record bitmap ($MFT/$BITMAP).
-					  */
-	struct inode *mftmirr_ino;	/* The VFS inode of $MFTMirr. */
-	int mftmirr_size;		/* Size of mft mirror in mft records. */
-
-	struct inode *logfile_ino;	/* The VFS inode of LogFile. */
-
-	struct inode *lcnbmp_ino;	/* The VFS inode of $Bitmap. */
-	struct rw_semaphore lcnbmp_lock; /*
-					  * Lock for serializing accesses to the
-					  * cluster bitmap ($Bitmap/$DATA).
-					  */
-
-	struct inode *vol_ino;		/* The VFS inode of $Volume. */
-	__le16 vol_flags;			/* Volume flags. */
-	u8 major_ver;			/* Ntfs major version of volume. */
-	u8 minor_ver;			/* Ntfs minor version of volume. */
+	u16 sector_size;
+	u8 sector_size_bits;
+	u32 cluster_size;
+	u32 cluster_size_mask;
+	u8 cluster_size_bits;
+	u32 mft_record_size;
+	u32 mft_record_size_mask;
+	u8 mft_record_size_bits;
+	u32 index_record_size;
+	u32 index_record_size_mask;
+	u8 index_record_size_bits;
+	s64 nr_clusters;
+	s64 mft_lcn;
+	s64 mftmirr_lcn;
+	u64 serial_no;
+	u32 upcase_len;
+	__le16 *upcase;
+	s32 attrdef_size;
+	struct attr_def *attrdef;
+	s64 mft_data_pos;
+	s64 mft_zone_start;
+	s64 mft_zone_end;
+	s64 mft_zone_pos;
+	s64 data1_zone_pos;
+	s64 data2_zone_pos;
+	struct inode *mft_ino;
+	struct inode *mftbmp_ino;
+	struct rw_semaphore mftbmp_lock;
+	struct inode *mftmirr_ino;
+	int mftmirr_size;
+	struct inode *logfile_ino;
+	struct inode *lcnbmp_ino;
+	struct rw_semaphore lcnbmp_lock;
+	struct inode *vol_ino;
+	__le16 vol_flags;
+	u8 major_ver;
+	u8 minor_ver;
 	unsigned char *volume_label;
-
-	struct inode *root_ino;		/* The VFS inode of the root directory. */
-	struct inode *secure_ino;	/*
-					 * The VFS inode of $Secure (NTFS3.0+
-					 * only, otherwise NULL).
-					 */
-	struct inode *extend_ino;	/*
-					 * The VFS inode of $Extend (NTFS3.0+
-					 * only, otherwise NULL).
-					 */
-	/* $Quota stuff is NTFS3.0+ specific.  Unused/NULL otherwise. */
-	struct inode *quota_ino;	/* The VFS inode of $Quota. */
-	struct inode *quota_q_ino;	/* Attribute inode for $Quota/$Q. */
+	struct inode *root_ino;
+	struct inode *secure_ino;
+	struct inode *extend_ino;
+	struct inode *quota_ino;
+	struct inode *quota_q_ino;
 	struct nls_table *nls_map;
 	bool nls_utf8;
 	wait_queue_head_t free_waitq;
-
-	atomic64_t free_clusters;	/* Track the number of free clusters */
-	atomic64_t free_mft_records;		/* Track the free mft records */
+	atomic64_t free_clusters;
+	atomic64_t free_mft_records;
 	atomic64_t dirty_clusters;
 	u8 sparse_compression_unit;
 	unsigned int *lcn_empty_bits_per_page;
@@ -133,25 +157,43 @@ struct ntfs_volume {
 
 /*
  * Defined bits for the flags field in the ntfs_volume structure.
+ *
+ * NV_Errors			Volume has errors, prevent remount rw.
+ * NV_ShowSystemFiles		Return system files in ntfs_readdir().
+ * NV_CaseSensitive		Treat file names as case sensitive and
+ *				create filenames in the POSIX namespace.
+ *				Otherwise be case insensitive but still
+ *				create file names in POSIX namespace.
+ * NV_LogFileEmpty		LogFile journal is empty.
+ * NV_QuotaOutOfDate		Quota is out of date.
+ * NV_UsnJrnlStamped		UsnJrnl has been stamped.
+ * NV_ReadOnly			Volume is mounted read-only.
+ * NV_Compression		Volume supports compression.
+ * NV_FreeClusterKnown		Free cluster count is known and up-to-date.
+ * NV_Shutdown			Volume is in shutdown state
+ * NV_SysImmutable		Protect system files from deletion.
+ * NV_ShowHiddenFiles		Return hidden files in ntfs_readdir().
+ * NV_HideDotFiles		Hide names beginning with a dot (".").
+ * NV_CheckWindowsNames		Refuse creation/rename of files with
+ *				Windows-reserved names (CON, AUX, NUL, COM1,
+ *				LPT1, etc.) or invalid characters.
+ *
+ * NV_Discard			Issue discard/TRIM commands for freed clusters.
+ * NV_DisableSparse		Disable creation of sparse regions.
  */
 enum {
-	NV_Errors,		/* 1: Volume has errors, prevent remount rw. */
-	NV_ShowSystemFiles,	/* 1: Return system files in ntfs_readdir(). */
-	NV_CaseSensitive,	/*
-				 * 1: Treat file names as case sensitive and
-				 *    create filenames in the POSIX namespace.
-				 *    Otherwise be case insensitive but still
-				 *    create file names in POSIX namespace.
-				 */
-	NV_LogFileEmpty,	/* 1: LogFile journal is empty. */
-	NV_QuotaOutOfDate,	/* 1: Quota is out of date. */
-	NV_UsnJrnlStamped,	/* 1: UsnJrnl has been stamped. */
+	NV_Errors,
+	NV_ShowSystemFiles,
+	NV_CaseSensitive,
+	NV_LogFileEmpty,
+	NV_QuotaOutOfDate,
+	NV_UsnJrnlStamped,
 	NV_ReadOnly,
 	NV_Compression,
 	NV_FreeClusterKnown,
 	NV_Shutdown,
-	NV_SysImmutable,	/* 1: Protect system files from deletion. */
-	NV_ShowHiddenFiles,	/* 1: Return hidden files in ntfs_readdir(). */
+	NV_SysImmutable,
+	NV_ShowHiddenFiles,
 	NV_HideDotFiles,
 	NV_CheckWindowsNames,
 	NV_Discard,

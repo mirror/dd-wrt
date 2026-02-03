@@ -291,4 +291,14 @@ static inline int ntfs_ffs(int x)
 	return r;
 }
 
+/* From fs/ntfs/bdev-io.c */
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 16, 0)
+int ntfs_bdev_read(struct block_device *bdev, sector_t sector, unsigned int count,
+		 char *data);
+#else
+int ntfs_dev_read(struct super_block *sb, void *buf, loff_t start, loff_t size);
+#endif
+
+int ntfs_bdev_write(struct super_block *sb, void *buf, loff_t start, loff_t size);
+
 #endif /* _LINUX_NTFS_H */

@@ -1,13 +1,14 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 /*
- * NTFS kernel mft record operations. Part of the Linux-NTFS project.
- * Part of this file is based on code from the NTFS-3G project.
+ * NTFS kernel mft record operations.
+ * Part of this file is based on code from the NTFS-3G.
  *
  * Copyright (c) 2001-2012 Anton Altaparmakov and Tuxera Inc.
  * Copyright (c) 2002 Richard Russon
  * Copyright (c) 2025 LG Electronics Co., Ltd.
  */
 
+#include <linux/writeback.h>
 #include <linux/bio.h>
 
 #include "aops.h"
@@ -491,6 +492,26 @@ void __mark_mft_record_dirty(struct ntfs_inode *ni)
 }
 
 /*
+ * ntfs_bio_end_io - bio completion callback for MFT record writes
+ *
+ * Decrements the folio reference count that was incremented before
+ * submit_bio(). This prevents a race condition where umount could
+ * evict the inode and release the folio while I/O is still in flight,
+ * potentially causing data corruption or use-after-free.
+ */
+static void ntfs_bio_end_io(struct bio *bio)
+{
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 6, 0)
+	if (bio->bi_private)
+		folio_put((struct folio *)bio->bi_private);
+#else
+	if (bio->bi_private)
+		put_page((struct page *)bio->bi_private);
+#endif
+	bio_put(bio);
+}
+
+/*
  * ntfs_sync_mft_mirror - synchronize an mft record to the mft mirror
  * @vol:	ntfs volume on which the mft record to synchronize resides
  * @mft_no:	mft record number of mft record to synchronize
@@ -839,6 +860,7 @@ static int ntfs_test_inode_wb(struct inode *vi, unsigned long ino, void *data)
  * @mft_no:	[IN]  mft record number of the mft record to check
  * @m:		[IN]  mapped mft record to check
  * @locked_ni:	[OUT] caller has to unlock this ntfs inode if one is returned
+ * @ref_vi:	[OUT] caller has to drop this vfs inode if one is returned
  *
  * Check if the mapped (base or extent) mft record @m with mft record number
  * @mft_no belonging to the ntfs volume @vol may be written out.  If necessary
@@ -846,6 +868,11 @@ static int ntfs_test_inode_wb(struct inode *vi, unsigned long ino, void *data)
  * inode is pinned.  The locked ntfs inode is then returned in @locked_ni.  The
  * caller is responsible for unlocking the ntfs inode and unpinning the base
  * vfs inode.
+ *
+ * To avoid deadlock when the caller holds a folio lock, if the function
+ * returns @ref_vi it defers dropping the vfs inode reference by returning
+ * it in @ref_vi instead of calling iput() directly.  The caller must call
+ * iput() on @ref_vi after releasing the folio lock.
  *
  * Return 'true' if the mft record may be written out and 'false' if not.
  *
@@ -894,7 +921,8 @@ static int ntfs_test_inode_wb(struct inode *vi, unsigned long ino, void *data)
  * record. We set @locked_ni to the now locked ntfs inode and return 'true'.
  */
 bool ntfs_may_write_mft_record(struct ntfs_volume *vol, const unsigned long mft_no,
-		const struct mft_record *m, struct ntfs_inode **locked_ni)
+		const struct mft_record *m, struct ntfs_inode **locked_ni,
+		struct inode **ref_vi)
 {
 	struct super_block *sb = vol->sb;
 	struct inode *mft_vi = vol->mft_ino;
@@ -908,6 +936,8 @@ bool ntfs_may_write_mft_record(struct ntfs_volume *vol, const unsigned long mft_
 	 * Normally we do not return a locked inode so set @locked_ni to NULL.
 	 */
 	*locked_ni = NULL;
+	*ref_vi = NULL;
+
 	/*
 	 * Check if the inode corresponding to this mft record is in the VFS
 	 * inode cache and obtain a reference to it if it is.
@@ -944,7 +974,7 @@ bool ntfs_may_write_mft_record(struct ntfs_volume *vol, const unsigned long mft_
 			ntfs_debug("Inode 0x%lx is dirty, do not write it.",
 					mft_no);
 			atomic_dec(&ni->count);
-			iput(vi);
+			*ref_vi = vi;
 			return false;
 		}
 		ntfs_debug("Inode 0x%lx is not dirty.", mft_no);
@@ -952,7 +982,7 @@ bool ntfs_may_write_mft_record(struct ntfs_volume *vol, const unsigned long mft_
 		if (unlikely(!mutex_trylock(&ni->mrec_lock))) {
 			ntfs_debug("Mft record 0x%lx is already locked, do not write it.", mft_no);
 			atomic_dec(&ni->count);
-			iput(vi);
+			*ref_vi = vi;
 			return false;
 		}
 		ntfs_debug("Managed to lock mft record 0x%lx, write it.",
@@ -1012,7 +1042,7 @@ bool ntfs_may_write_mft_record(struct ntfs_volume *vol, const unsigned long mft_
 		 * extent mft record.
 		 */
 		mutex_unlock(&ni->extent_lock);
-		iput(vi);
+		*ref_vi = vi;
 		ntfs_debug("Base inode 0x%lx has no attached extent inodes, write the extent record.",
 				na.mft_no);
 		return true;
@@ -1035,7 +1065,7 @@ bool ntfs_may_write_mft_record(struct ntfs_volume *vol, const unsigned long mft_
 	 */
 	if (!eni) {
 		mutex_unlock(&ni->extent_lock);
-		iput(vi);
+		*ref_vi = vi;
 		ntfs_debug("Extent inode 0x%lx is not attached to its base inode 0x%lx, write the extent record.",
 				mft_no, na.mft_no);
 		return true;
@@ -1049,7 +1079,7 @@ bool ntfs_may_write_mft_record(struct ntfs_volume *vol, const unsigned long mft_
 	/* if extent inode is dirty, write_inode will write it */
 	if (NInoDirty(eni)) {
 		atomic_dec(&eni->count);
-		iput(vi);
+		*ref_vi = vi;
 		return false;
 	}
 
@@ -1059,7 +1089,7 @@ bool ntfs_may_write_mft_record(struct ntfs_volume *vol, const unsigned long mft_
 	 */
 	if (unlikely(!mutex_trylock(&eni->mrec_lock))) {
 		atomic_dec(&eni->count);
-		iput(vi);
+		*ref_vi = vi;
 		ntfs_debug("Extent mft record 0x%lx is already locked, do not write it.",
 				mft_no);
 		return false;
@@ -2272,7 +2302,7 @@ static int ntfs_mft_record_format(const struct ntfs_volume *vol, const s64 mft_n
  * ntfs_mft_record_alloc - allocate an mft record on an ntfs volume
  * @vol:	[IN]  volume on which to allocate the mft record
  * @mode:	[IN]  mode if want a file or directory, i.e. base inode or 0
- * @ni: 	[OUT] on success, set to the allocated ntfs inode
+ * @ni:		[OUT] on success, set to the allocated ntfs inode
  * @base_ni:	[IN]  open base inode if allocating an extent mft record or NULL
  * @ni_mrec:	[OUT] on successful return this is the mapped mft record
  *
@@ -3004,4 +3034,477 @@ sync_rollback:
 	write_mft_record(ni, ni_mrec, 0);
 	unmap_mft_record(ni);
 	return err;
+}
+
+static s64 lcn_from_index(struct ntfs_volume *vol, struct ntfs_inode *ni,
+			  unsigned long index)
+{
+	s64 vcn;
+	s64 lcn;
+
+	vcn = ntfs_pidx_to_cluster(vol, index);
+
+	down_read(&ni->runlist.lock);
+	lcn = ntfs_attr_vcn_to_lcn_nolock(ni, vcn, false);
+	up_read(&ni->runlist.lock);
+
+	return lcn;
+}
+
+/*
+ * ntfs_write_mft_block - Write back a folio containing MFT records
+ * @folio:	The folio to write back (contains one or more MFT records)
+ * @wbc:	Writeback control structure
+ *
+ * This function is called as part of the address_space_operations
+ * .writepages implementation for the $MFT inode (or $MFTMirr).
+ * It handles writing one folio (normally 4KiB page) worth of MFT records
+ * to the underlying block device.
+ *
+ * Return: 0 on success, or -errno on error.
+ */
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 6, 0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 10, 0)
+static int ntfs_write_mft_block(struct folio *folio, struct writeback_control *wbc)
+{
+#else
+static int ntfs_write_mft_block(struct folio *folio, struct writeback_control *wbc,
+		void *data)
+#endif
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 10, 0)
+	struct address_space *mapping = folio->mapping;
+#else
+	struct address_space *mapping = data;
+#endif
+	struct inode *vi = mapping->host;
+	struct ntfs_inode *ni = NTFS_I(vi);
+	struct ntfs_volume *vol = ni->vol;
+	u8 *kaddr;
+	struct ntfs_inode *locked_nis[PAGE_SIZE / NTFS_BLOCK_SIZE];
+	int nr_locked_nis = 0, err = 0, mft_ofs, prev_mft_ofs;
+	struct inode *ref_inos[PAGE_SIZE / NTFS_BLOCK_SIZE];
+	int nr_ref_inos = 0;
+	struct bio *bio = NULL;
+	unsigned long mft_no;
+	struct ntfs_inode *tni;
+	s64 lcn;
+	s64 vcn = ntfs_pidx_to_cluster(vol, folio->index);
+	s64 end_vcn = ntfs_bytes_to_cluster(vol, ni->allocated_size);
+	unsigned int folio_sz;
+	struct runlist_element *rl;
+	loff_t i_size = i_size_read(vi);
+
+	ntfs_debug("Entering for inode 0x%lx, attribute type 0x%x, folio index 0x%lx.",
+			vi->i_ino, ni->type, folio->index);
+
+	/* We have to zero every time due to mmap-at-end-of-file. */
+	if (folio->index >= (i_size >> folio_shift(folio)))
+		/* The page straddles i_size. */
+		folio_zero_segment(folio,
+				   offset_in_folio(folio, i_size),
+				   folio_size(folio));
+
+	lcn = lcn_from_index(vol, ni, folio->index);
+	if (lcn <= LCN_HOLE) {
+		folio_start_writeback(folio);
+		folio_unlock(folio);
+		folio_end_writeback(folio);
+		return -EIO;
+	}
+
+	/* Map folio so we can access its contents. */
+	kaddr = kmap_local_folio(folio, 0);
+	/* Clear the page uptodate flag whilst the mst fixups are applied. */
+	folio_clear_uptodate(folio);
+
+	for (mft_ofs = 0; mft_ofs < PAGE_SIZE && vcn < end_vcn;
+	     mft_ofs += vol->mft_record_size) {
+		/* Get the mft record number. */
+		mft_no = (((s64)folio->index << PAGE_SHIFT) + mft_ofs) >>
+			vol->mft_record_size_bits;
+		vcn = ntfs_mft_no_to_cluster(vol, mft_no);
+		/* Check whether to write this mft record. */
+		tni = NULL;
+		if (ntfs_may_write_mft_record(vol, mft_no,
+					(struct mft_record *)(kaddr + mft_ofs),
+					&tni, &ref_inos[nr_ref_inos])) {
+			unsigned int mft_record_off = 0;
+			s64 vcn_off = vcn;
+
+			/*
+			 * Skip $MFT extent mft records and let them being written
+			 * by writeback to avioid deadlocks. the $MFT runlist
+			 * lock must be taken before $MFT extent mrec_lock is taken.
+			 */
+			if (tni && tni->nr_extents < 0 &&
+				tni->ext.base_ntfs_ino == NTFS_I(vol->mft_ino)) {
+				mutex_unlock(&tni->mrec_lock);
+				atomic_dec(&tni->count);
+				iput(vol->mft_ino);
+				continue;
+			}
+
+			/*
+			 * The record should be written.  If a locked ntfs
+			 * inode was returned, add it to the array of locked
+			 * ntfs inodes.
+			 */
+			if (tni)
+				locked_nis[nr_locked_nis++] = tni;
+			else if (ref_inos[nr_ref_inos])
+				nr_ref_inos++;
+
+			if (bio && (mft_ofs != prev_mft_ofs + vol->mft_record_size)) {
+flush_bio:
+				bio->bi_end_io = ntfs_bio_end_io;
+				submit_bio(bio);
+				bio = NULL;
+			}
+
+			if (vol->cluster_size < folio_size(folio)) {
+				down_write(&ni->runlist.lock);
+				rl = ntfs_attr_vcn_to_rl(ni, vcn_off, &lcn);
+				up_write(&ni->runlist.lock);
+				if (IS_ERR(rl) || lcn < 0) {
+					err = -EIO;
+					goto unm_done;
+				}
+
+				if (bio &&
+				   (bio_end_sector(bio) >> (vol->cluster_size_bits - 9)) !=
+				    lcn) {
+					bio->bi_end_io = ntfs_bio_end_io;
+					submit_bio(bio);
+					bio = NULL;
+				}
+			}
+
+			if (!bio) {
+				unsigned int off;
+
+				off = ((mft_no << vol->mft_record_size_bits) +
+				       mft_record_off) & vol->cluster_size_mask;
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 18, 0)
+				bio = bio_alloc(vol->sb->s_bdev, 1, REQ_OP_WRITE,
+						GFP_NOIO);
+#else
+				bio = bio_alloc(GFP_NOIO, 1);
+				if (!bio)
+					return -ENOMEM;
+				bio_set_dev(bio, vol->sb->s_bdev);
+				bio->bi_opf = REQ_OP_WRITE;
+#endif
+				bio->bi_iter.bi_sector =
+					ntfs_bytes_to_sector(vol,
+							ntfs_cluster_to_bytes(vol, lcn) + off);
+			}
+
+			if (vol->cluster_size == NTFS_BLOCK_SIZE &&
+			    (mft_record_off ||
+			     rl->length - (vcn_off - rl->vcn) == 1 ||
+			     mft_ofs + NTFS_BLOCK_SIZE >= PAGE_SIZE))
+				folio_sz = NTFS_BLOCK_SIZE;
+			else
+				folio_sz = vol->mft_record_size;
+			if (!bio_add_folio(bio, folio, folio_sz,
+					   mft_ofs + mft_record_off)) {
+				err = -EIO;
+				bio_put(bio);
+				goto unm_done;
+			}
+			mft_record_off += folio_sz;
+
+			if (mft_record_off != vol->mft_record_size) {
+				vcn_off++;
+				goto flush_bio;
+			}
+			prev_mft_ofs = mft_ofs;
+
+			if (mft_no < vol->mftmirr_size)
+				ntfs_sync_mft_mirror(vol, mft_no,
+						(struct mft_record *)(kaddr + mft_ofs));
+		} else if (ref_inos[nr_ref_inos])
+			nr_ref_inos++;
+	}
+
+	if (bio) {
+		bio->bi_end_io = ntfs_bio_end_io;
+		submit_bio(bio);
+	}
+unm_done:
+	folio_mark_uptodate(folio);
+	kunmap_local(kaddr);
+
+	folio_start_writeback(folio);
+	folio_unlock(folio);
+	folio_end_writeback(folio);
+
+	/* Unlock any locked inodes. */
+	while (nr_locked_nis-- > 0) {
+		struct ntfs_inode *base_tni;
+
+		tni = locked_nis[nr_locked_nis];
+		mutex_unlock(&tni->mrec_lock);
+
+		/* Get the base inode. */
+		mutex_lock(&tni->extent_lock);
+		if (tni->nr_extents >= 0)
+			base_tni = tni;
+		else
+			base_tni = tni->ext.base_ntfs_ino;
+		mutex_unlock(&tni->extent_lock);
+		ntfs_debug("Unlocking %s inode 0x%lx.",
+				tni == base_tni ? "base" : "extent",
+				tni->mft_no);
+		atomic_dec(&tni->count);
+		iput(VFS_I(base_tni));
+	}
+
+	/* Dropping deferred references */
+	while (nr_ref_inos-- > 0) {
+		if (ref_inos[nr_ref_inos])
+			iput(ref_inos[nr_ref_inos]);
+	}
+
+	if (unlikely(err && err != -ENOMEM))
+		NVolSetErrors(vol);
+	if (likely(!err))
+		ntfs_debug("Done.");
+	return err;
+}
+#else
+static int ntfs_write_mft_block(struct page *page, struct writeback_control *wbc,
+		void *data)
+{
+	struct address_space *mapping = data;
+	struct inode *vi = mapping->host;
+	struct ntfs_inode *ni= NTFS_I(vi);
+	struct ntfs_volume *vol = ni->vol;
+	u8 *kaddr;
+	struct ntfs_inode *locked_nis[PAGE_SIZE / NTFS_BLOCK_SIZE];
+	int nr_locked_nis = 0, err = 0, mft_ofs, prev_mft_ofs;
+	struct bio *bio = NULL;
+	unsigned long mft_no;
+	struct ntfs_inode *tni;
+	s64 lcn;
+	s64 vcn = (s64)page->index << PAGE_SHIFT >> vol->cluster_size_bits;
+	s64 end_vcn = ni->allocated_size >> vol->cluster_size_bits;
+	unsigned int page_sz;
+	struct runlist_element *rl;
+	loff_t i_size = i_size_read(vi);
+
+	ntfs_debug("Entering for inode 0x%lx, attribute type 0x%x, page index 0x%lx.",
+			vi->i_ino, ni->type, page->index);
+
+	/* We have to zero every time due to mmap-at-end-of-file. */
+	if (page->index >= (i_size >> PAGE_SHIFT))
+		/* The page straddles i_size. */
+		zero_user_segment(page, i_size & ~PAGE_MASK, PAGE_SIZE);
+
+	BUG_ON(!NInoNonResident(ni));
+	BUG_ON(!NInoMstProtected(ni));
+
+	/*
+	 * NOTE: ntfs_write_mft_block() would be called for $MFTMirr if a page
+	 * in its page cache were to be marked dirty.  However this should
+	 * never happen with the current driver and considering we do not
+	 * handle this case here we do want to BUG(), at least for now.
+	 */
+
+	BUG_ON(!((S_ISREG(vi->i_mode) && !vi->i_ino) || S_ISDIR(vi->i_mode) ||
+		(NInoAttr(ni) && ni->type == AT_INDEX_ALLOCATION)));
+
+	lcn = lcn_from_index(vol, ni, page->index);
+	if (lcn <= LCN_HOLE) {
+		set_page_writeback(page);
+		unlock_page(page);
+		end_page_writeback(page);
+		return -EIO;
+	}
+
+	/* Map the page so we can access its contents. */
+	kaddr = kmap(page);
+	/* Clear the page uptodate flag whilst the mst fixups are applied. */
+	BUG_ON(!PageUptodate(page));
+	ClearPageUptodate(page);
+
+	for (mft_ofs = 0; mft_ofs < PAGE_SIZE && vcn < end_vcn;
+	     mft_ofs += vol->mft_record_size) {
+		/* Get the mft record number. */
+		mft_no = (((s64)page->index << PAGE_SHIFT) + mft_ofs) >>
+			vol->mft_record_size_bits;
+		vcn = mft_no << vol->mft_record_size_bits >> vol->cluster_size_bits;
+		/* Check whether to write this mft record. */
+		tni = NULL;
+		if (ntfs_may_write_mft_record(vol, mft_no,
+					(struct mft_record *)(kaddr + mft_ofs), &tni)) {
+			unsigned int mft_record_off = 0;
+			s64 vcn_off = vcn;
+
+			/*
+			 * Skip $MFT extent mft records and let them being written
+			 * by writeback to avioid deadlocks. the $MFT runlist
+			 * lock must be taken before $MFT extent mrec_lock is taken.
+			 */
+			if (tni && tni->nr_extents < 0 &&
+				tni->ext.base_ntfs_ino == NTFS_I(vol->mft_ino)) {
+				mutex_unlock(&tni->mrec_lock);
+				atomic_dec(&tni->count);
+				iput(vol->mft_ino);
+				continue;
+			}
+
+			/*
+			 * The record should be written.  If a locked ntfs
+			 * inode was returned, add it to the array of locked
+			 * ntfs inodes.
+			 */
+			if (tni)
+				locked_nis[nr_locked_nis++] = tni;
+
+			if (bio && (mft_ofs != prev_mft_ofs + vol->mft_record_size)) {
+flush_bio:
+				bio->bi_end_io = ntfs_bio_end_io;
+				submit_bio(bio);
+				bio = NULL;
+			}
+
+			if (vol->cluster_size < PAGE_SIZE) {
+				down_write(&ni->runlist.lock);
+				rl = ntfs_attr_vcn_to_rl(ni, vcn_off, &lcn);
+				up_write(&ni->runlist.lock);
+				if (IS_ERR(rl) || lcn < 0) {
+					err = -EIO;
+					goto unm_done;
+				}
+				if (bio &&
+				   (bio_end_sector(bio) >> (vol->cluster_size_bits - 9)) !=
+				    lcn) {
+					bio->bi_end_io = ntfs_bio_end_io;
+					submit_bio(bio);
+					bio = NULL;
+				}
+			}
+
+			if (!bio) {
+				unsigned int off;
+
+				off = ((mft_no << vol->mft_record_size_bits) +
+				       mft_record_off) & vol->cluster_size_mask;
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 18, 0)
+				bio = bio_alloc(vol->sb->s_bdev, 1, REQ_OP_WRITE,
+						GFP_NOIO);
+#else
+				bio = bio_alloc(GFP_NOIO, 1);
+				if (!bio)
+					return NULL;
+				bio_set_dev(bio, vol->sb->s_bdev);
+				bio->bi_opf = REQ_OP_WRITE;
+#endif
+				bio->bi_iter.bi_sector =
+					ntfs_bytes_to_sector(vol,
+							ntfs_cluster_to_bytes(vol, lcn) + off);
+			}
+
+			if (vol->cluster_size == NTFS_BLOCK_SIZE &&
+			    (mft_record_off ||
+			     rl->length - (vcn_off - rl->vcn) == 1 ||
+			     mft_ofs + NTFS_BLOCK_SIZE >= PAGE_SIZE))
+				page_sz = NTFS_BLOCK_SIZE;
+			else
+				page_sz = vol->mft_record_size;
+			if (!bio_add_page(bio, page, page_sz,
+					  mft_ofs + mft_record_off)) {
+				err = -EIO;
+				bio_put(bio);
+				goto unm_done;
+			}
+			mft_record_off += page_sz;
+
+			if (mft_record_off != vol->mft_record_size) {
+				vcn_off++;
+				goto flush_bio;
+			}
+			prev_mft_ofs = mft_ofs;
+
+			if (mft_no < vol->mftmirr_size)
+				ntfs_sync_mft_mirror(vol, mft_no,
+						(struct mft_record *)(kaddr + mft_ofs));
+		}
+	}
+
+	if (bio) {
+		bio->bi_end_io = ntfs_bio_end_io;
+		submit_bio(bio);
+	}
+unm_done:
+	SetPageUptodate(page);
+	kunmap(page);
+
+	set_page_writeback(page);
+	unlock_page(page);
+	end_page_writeback(page);
+
+	/* Unlock any locked inodes. */
+	while (nr_locked_nis-- > 0) {
+		struct ntfs_inode *base_tni;
+
+		tni = locked_nis[nr_locked_nis];
+		mutex_unlock(&tni->mrec_lock);
+
+		/* Get the base inode. */
+		mutex_lock(&tni->extent_lock);
+		if (tni->nr_extents >= 0)
+			base_tni = tni;
+		else {
+			base_tni = tni->ext.base_ntfs_ino;
+			BUG_ON(!base_tni);
+		}
+		mutex_unlock(&tni->extent_lock);
+		ntfs_debug("Unlocking %s inode 0x%lx.",
+				tni == base_tni ? "base" : "extent",
+				tni->mft_no);
+		atomic_dec(&tni->count);
+		iput(VFS_I(base_tni));
+	}
+
+	if (unlikely(err && err != -ENOMEM))
+		NVolSetErrors(vol);
+	if (likely(!err))
+		ntfs_debug("Done.");
+	return err;
+}
+#endif
+
+/*
+ * ntfs_mft_writepages - Write back dirty folios for the $MFT inode
+ * @mapping:	address space of the $MFT inode
+ * @wbc:	writeback control
+ *
+ * Writeback iterator for MFT records. Iterates over dirty folios and
+ * delegates actual writing to ntfs_write_mft_block() for each folio.
+ * Called from the address_space_operations .writepages vector of the
+ * $MFT inode.
+ *
+ * Returns 0 on success, or the first error encountered.
+ */
+int ntfs_mft_writepages(struct address_space *mapping,
+		struct writeback_control *wbc)
+{
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 10, 0)
+	struct folio *folio = NULL;
+	int error;
+#endif
+
+	if (NVolShutdown(NTFS_I(mapping->host)->vol))
+		return -EIO;
+
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 10, 0)
+	while ((folio = writeback_iter(mapping, wbc, folio, &error)))
+		error = ntfs_write_mft_block(folio, wbc);
+	return error;
+#else
+	return write_cache_pages(mapping, wbc,
+				 ntfs_write_mft_block, mapping);
+#endif
 }
