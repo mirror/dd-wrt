@@ -653,8 +653,7 @@ static u32 nicvf_get_rxfh_indir_size(struct net_device *dev)
 	return nic->rss_info.rss_size;
 }
 
-static int nicvf_get_rxfh(struct net_device *dev,
-			  struct ethtool_rxfh_param *rxfh)
+static int nicvf_get_rxfh(struct net_device *dev, struct ethtool_rxfh_param *rxfh)
 {
 	struct nicvf *nic = netdev_priv(dev);
 	struct nicvf_rss_info *rss = &nic->rss_info;
@@ -673,16 +672,13 @@ static int nicvf_get_rxfh(struct net_device *dev,
 	return 0;
 }
 
-static int nicvf_set_rxfh(struct net_device *dev,
-			  struct ethtool_rxfh_param *rxfh,
-			  struct netlink_ext_ack *extack)
+static int nicvf_set_rxfh(struct net_device *dev, struct ethtool_rxfh_param *rxfh, struct netlink_ext_ack *ack)
 {
 	struct nicvf *nic = netdev_priv(dev);
 	struct nicvf_rss_info *rss = &nic->rss_info;
 	int idx;
 
-	if (rxfh->hfunc != ETH_RSS_HASH_NO_CHANGE &&
-	    rxfh->hfunc != ETH_RSS_HASH_TOP)
+	if (rxfh->hfunc != ETH_RSS_HASH_NO_CHANGE && rxfh->hfunc != ETH_RSS_HASH_TOP)
 		return -EOPNOTSUPP;
 
 	if (!rss->enable) {
