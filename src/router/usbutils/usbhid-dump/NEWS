@@ -1,0 +1,38 @@
+# SPDX-License-Identifier: GPL-2.0-or-later
+# Copyright (c) 2010 Nikolai Kondrashov
+
+2014-11-11: 1.4
+    * Request report descriptor with size specified in the interface descriptor
+      to fix retrieval with some devices (e.g. Waltop Vega Tablet) which
+      would produce ERROR_PIPE otherwise.
+    * Add missing stdint.h includes to fix Gentoo/FreeBSD build issues.
+    * Add README.md
+
+2011-02-05: 1.3
+    * Add manual page.
+    * Fix several build issues.
+    * Fix infinite loop in command-line option parsing on unsigned char
+      platforms.
+
+2010-11-20: 1.2
+    * Command line parameters are removed, now all HID interfaces
+      of all USB devices are dumped by default. This may include the
+      keyboard controlling the terminal, for example, please be careful.
+    * Added device selection limiting options: -s, -a, --address=bus[:dev]
+      to limit by bus number and/or device address and -d, -m,
+      --model=vid[:pid] to limit by vendor and/or product.
+    * Added interface number limiting option -i, --interface=NUMBER.
+    * Added stream interrupt transfer timeout option -t,
+      --stream-timeout=NUMBER, which is set to 1 minute by default to
+      allow recovery of accidentally captured terminal input device.
+      This timeout is printed on the start of stream dumping.
+
+2010-08-24: 1.1
+    * Renamed to usbhid-dump
+    * Fix handling of responses to unsupported HID requests
+    * Renamed dump entity "both" to "all"
+
+2010-07-25: 1.0
+    * Report descriptor dumping support
+    * Report stream dumping support
+    * Report stream dumping feedback and output pausing support

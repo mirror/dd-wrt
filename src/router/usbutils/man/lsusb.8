@@ -1,0 +1,66 @@
+.\"SPDX-License-Identifier: GPL-2.0-only
+.\"Copyright (c) 1999 Thomas Sailer <sailer@ife.ee.ethz.ch>
+.TH lsusb 8 "11 February 2019" "usbutils" "Linux USB Utilities"
+.IX lsusb
+.SH NAME
+lsusb \- list USB devices
+.SH SYNOPSIS
+.B lsusb
+[
+.I options
+]
+.SH DESCRIPTION
+.B lsusb
+is a utility for displaying information about USB buses in the system and
+the devices connected to them. It uses udev's hardware database to
+associate a full human-readable name to the vendor ID and the product ID.
+
+.SH OPTIONS
+.TP
+.BR \-v ", " \-\-verbose
+Tells
+.I lsusb
+to be verbose and display detailed information about the devices shown.
+This includes configuration descriptors for the device's current speed.
+Class descriptors will be shown, when available, for USB device classes
+including hub, audio, HID, communications, and chipcard. Can be used with the
+\fB-t\fP option.
+.TP
+\fB\-s\fP [[\fIbus\fP]\fB:\fP][\fIdevnum\fP]
+Show only devices in specified
+.I bus
+and/or
+.IR devnum .
+Both IDs are given in decimal and may be omitted.
+.TP
+\fB\-d\fP [\fIvendor\fP]\fB:\fP[\fIproduct\fP]
+Show only devices with the specified vendor and product ID.
+Both IDs are given in hexadecimal.
+.TP
+.B \-D \fIdevice\fP
+Do not scan the /dev/bus/usb directory,
+instead display only information
+about the device whose device file is given.
+The device file should be something like /dev/bus/usb/001/001.
+This option displays detailed information like the \fB-v\fP option;
+you must be root to do this.
+.TP
+.BR \-t ", " \-\-tree
+Tells
+.I lsusb
+to dump the physical USB device hierarchy as a tree. Verbosity can be increased twice with the
+\fB-v\fP option.
+.TP
+.BR \-V ", " \-\-version
+Print version information on standard output,
+then exit successfully.
+
+.SH RETURN VALUE
+If the specified device is not found, a non-zero exit code is returned.
+
+.SH SEE ALSO
+.BR lspci (8),
+.BR usbview (8).
+
+.SH AUTHOR
+Thomas Sailer, <sailer@ife.ee.ethz.ch>.

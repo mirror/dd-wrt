@@ -1,0 +1,67 @@
+.\"SPDX-License-Identifier: GPL-2.0-only
+.\"Copyright (c) 1999 Thomas Sailer <sailer@ife.ee.ethz.ch>
+.\"Copyright (c) 2020 Sam Morris <sam@robots.org.uk>
+.TH lsusb.py 1 "03 January 2024" "usbutils" "Linux USB Utilities"
+.IX lsusb.py
+.SH NAME
+lsusb.py \- list USB devices
+.SH SYNOPSIS
+.B lsusb.py
+[
+.I options
+]
+.SH DESCRIPTION
+.B lsusb.py
+is a utility for displaying information about USB buses in the system and the
+devices connected to them. It uses the
+.B usb.ids
+file to associate a human-readable name to the vendor and product IDs.
+.PP
+In comparison with
+.BR lsusb (8),
+this program can display additional information such as the interface speed of
+a device, and details of a device's interfaces including the driver bound to
+them and Linux devices provided by the driver, and the details of device and
+interface endpoints.
+.SH OPTIONS
+.TP
+.BR \-h ", " \-\-help
+Displays options supported by
+.BR lsusb (1).
+.TP
+.BR \-i ", " \-\-interfaces
+Display information about the interfaces of each device, excluding hubs.
+.TP
+.BR \-I ", " \-\-hub\-interfaces
+Display information about the interfaces of each device, including hubs., excluding hubs.
+.TP
+.BR \-u ", " \-\-hide\-empty\-hubs
+Suppress information about hubs that have no devices connected.
+.TP
+.BR \-U ", " \-\-hide\-hubs
+Suppress information about hubs, even if they have devices connected.
+.TP
+.BR \-c ", " \-\-color
+Use color
+.TP
+.BR \-C ", " \-\-no\-color
+Don't use color
+.TP
+.BR \-e ", " \-\-endpoints
+Include information about device (and interface, with
+.BR -i )
+endpoints.
+.TP
+.BR \-f ", " \-\-usbids\-path
+Overrides the path of the
+.B usb.ids
+file.
+
+.SH SEE ALSO
+.BR lspci (8),
+.BR lsusb (8),
+.BR usbview (8).
+
+.SH AUTHOR
+Thomas Sailer, <sailer@ife.ee.ethz.ch>,
+Sam Morris <sam@robots.org.uk>.

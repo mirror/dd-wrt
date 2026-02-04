@@ -1,0 +1,28 @@
+# SPDX-FileCopyrightText: 2024 Emil Velikov <emil.l.velikov@gmail.com>
+#
+# SPDX-License-Identifier: LGPL-2.1-or-later
+
+# To use this config on you editor, follow the instructions at:
+# http://editorconfig.org
+
+root = true
+
+[*]
+charset = utf-8
+insert_final_newline = true
+tab_width = 8
+
+[*.{c,h}]
+indent_style = tab
+max_line_length = 120
+
+[*.yml]
+indent_style = space
+indent_size = 2
+
+[*.patch]
+trim_trailing_whitespace = false
+
+[{meson.build,meson_options.txt}]
+indent_style = space
+indent_size = 2

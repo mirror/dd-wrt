@@ -1,0 +1,984 @@
+# usbutils old-style "NEWS" file
+# SPDX-License-Identifier: GPL-2.0-only
+#
+# Copyright (c) 2018-2025 Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+#
+# This file is here for people who do not have access to the git commit
+# history (i.e. packaged versions of the software).
+#
+
+usbutils 019
+============
+
+Alban Browaeys (1):
+      usbreset.1: fix typo in the busnum/devicenum example
+
+Aurelien Jarno (2):
+      lsusb.py: add usb.ids path for Debian
+      usbreset: fix swapped vendor and product ID in help/manpage
+
+Bjarni Ingi Gislason (1):
+      usbreset.1: fix groff warnings and small fixes
+
+Emil Velikov (1):
+      ci: stop manually creating build/
+
+Enrico Joerns (1):
+      ci/codeql: use filter-sarif to filter meson-private
+
+Greg Kroah-Hartman (8):
+      Remove commented out code in usbreset.c and list.h and container_of.h
+      lsusb: turn a FIXME comment for dump_comm_descriptor() into something real
+      lsusb: remove FIXME about wireless usb device
+      lsusb: change FIXME for bmEthernetStatistics into a TODO
+      lsusb.c: change TODO into a fixme in do_dualspeed()
+      usbreset: move the serial number forward in the output
+      usb-devices: fix up bash warning for $altset
+      usb-devices: fix up some minor shellcheck warning messages
+
+Guillaume G. (1):
+      usb-spec: remove vendor specific entry
+
+Jörg Hofrichter (2):
+      usbreset: apply clang-format
+      usbreset: support resetting device by serial number
+
+Lucas De Marchi (1):
+      ci: Fix debian/ubuntu installation
+
+Michal Pecio (1):
+      lsusb: Show wBytesPerInterval field of the SS EP companion descriptor
+
+Sahil Siddiq (2):
+      usb-devices: Make devcount 'local' to handle recursion
+      usb-devices: Make devnum 'local' to handle recursion
+
+Stefan Becker (1):
+      lsusb-t: add verblevel 3 to print_usbdevice()
+
+Torleiv Sundre (1):
+      lsusb: improve usb2 device capability descriptor
+
+Waffle Lapkin (1):
+      Fix display of HID descriptors
+
+dependabot[bot] (9):
+      ci: bump the all-actions group with 4 updates
+      ci: bump github/codeql-action in the all-actions group
+      ci: bump github/codeql-action in the all-actions group
+      ci: bump the all-actions group with 2 updates
+      ci: bump github/codeql-action in the all-actions group
+      ci: bump the all-actions group with 2 updates
+      ci: bump the all-actions group with 2 updates
+      ci: bump github/codeql-action in the all-actions group
+      ci: bump the all-actions group across 1 directory with 3 updates
+
+usbutils 018
+============
+
+Aurelien Jarno (3):
+      Add a manpage for lsusb.py
+      Add lsusb.py.1 to DISTCLEANFILES
+      Add a manpage for usbreset
+
+Dominique Leuenberger (1):
+      usb-devices: fix bashism
+
+Emil Velikov (50):
+      autogen.sh: use valid email for 2024 copyright
+      README: list libudev as a requirement
+      meson: bump to libusb-1.0.22, reinstate libusb_set_option()
+      meson: set project details
+      meson: always include config.h first, use -include
+      meson: add compiler warnings to the build
+      meson: add all* CFLAGS from travis-autogen.sh
+      meson: temporary disable extra noisy warning
+      man: remove version from the manual pages
+      lsusb.py: remove inline lsusb-VERSION.py note
+      lsusb.py: remove @DATADIR@ instance
+      README: add Contributing section
+      lsusb.py: mention both usb.ids paths
+      Rename .in files to their final state
+      Update .gitignore files
+      meson: convert Wswitch-enum to Wswitch and enable
+      meson: enable commented out warnings
+      meson: add a bunch more warnings to the mix
+      travis: remove travis-ci files
+      ci: add build ci (Alpline) based on kmod's
+      ci: add Arch permutation
+      ci: add Debian permutation
+      ci: add Fedora permutation
+      ci: add Ubuntu permutation
+      ci: add codeql (static analysis) based on main.yml
+      ci: add SPDX copyright/licence identifiers
+      README: fix link, add DCO and SPDX details
+      lsusb: make internal API const-aware
+      lsusb: const annotate most data, re-enable -Wdiscarded-qualifiers
+      ci: run monthly checks by dependabot
+      meson: fold usbhid-dump/meson.build in
+      .gitmodules: remove no longer needed file
+      ci: add/update the final SPDX identifiers
+      man: move manual pages in designated sub-folder
+      ci: add reuse lint stage
+      lsusb: drop the audioterminal hash table
+      lsusb: drop the videoterminal hash table
+      lsusb: drop the genericstrtable hash tables
+      meson: re-enable some warnings
+      editorconfig: add initial config file
+      .clang-format: import from Linux kernel as of v6.11.-rc6
+      .clang-format: update for_each pattern and list
+      ci: add clang-format action
+      clang-format: bump column limit to 120
+      ci: directly use archlinux:multilib-devel
+      ci: drop the mkdir && cd dance
+      ci: add clang permutation, for 64bit only
+      lsusb: reformat and add trailing commas for multi-line arrays
+      usb-spec: move the opening curly brackets to end of line
+      ci: add codespell action, fix all typos
+
+Fabien Sanglard (1):
+      Include "negotiated speed" in device dump
+
+Greg Kroah-Hartman (31):
+      lsusb: remove autotools checks for iconv
+      lsusb: remove byteswap.h check
+      lsusb: always include config.h
+      usbutils: remove usbutils.pc
+      usbutils: convert build system to use meson
+      usbutils.spdx: update file based on recent file movements
+      lsusb: fix memory leak in libusb
+      lsusb: billboard alternate mode is in little endian format
+      README: update based on build tool changes
+      lsusb: add support to show superspeed++
+      usbhid-dump: clean up meson.build a bit
+      justfile: add one
+      meson: disable -Wswitch-enum
+      usbutils.spdx: update the SPDX file
+      README.md: update the SPDX wording a bit
+      README.md: add the linux-usb mailing list to the README.
+      LICENSE: add LGPL-2.1 license text
+      usbutils.spdx: update the data
+      update usbutils.spdx file
+      editorconfig: make the line length 120
+      clang-format: add proper copyright information
+      clang-format: fix SPDX license
+      lsusb-t: get rid of custom list.h logic
+      LICENSES: add CC0 and MIT licenses
+      lsusb-t: fix memory leak
+      justfile: add some more targets
+      usbutils.spdx: update based on file additions
+      usbutils.spdx: update due to new file and checksums
+      usbreset: replace some unbounded strcpy() calls
+      sysfs.c: fix an theoretical issue with snprintf()
+      usbutils.spdx: update checksums
+
+Kirill Furman (1):
+      usbmisc: fix possible stack-buffer-overflow Running lsusb with -D argument and path, which len is more than PATH_MAX + 1, cause stack-buffer-overflow because of copy to the buf a string without null-terminator Force setting 0 byte to the end of the buf fixes this error Fix #190
+
+Ronald (3):
+      update ccid descriptor dumping to V1.1 spec
+      V1.1 is actually V1.10..
+      remove one space
+
+Teresa Remmet (1):
+      usb-devices: Fix usb-devices with busybox
+
+Tomasz Moń (1):
+      Do not warn about missing LPM bit when not required
+
+Torleiv Sundre (1):
+      lsusb: add VideoControl Endpoint Descriptor
+
+dependabot[bot] (2):
+      ci: bump github/codeql-action in the all-actions group
+      ci: bump the all-actions group with 2 updates
+
+usbutils 017
+============
+
+Greg Kroah-Hartman (4):
+      lsusb: fix up [unknown] vendor and product strings.
+      lsusb: fix build warning for dump_billboard_alt_mode_capability_desc()
+      lsusb: add fallback names for 'lsusb -v' output
+      names: simplify get_vendor_product_with_fallback() a bit
+
+rezso (1):
+      Honor system libdir and includedir
+
+usbutils 016
+============
+
+Alan Stern (1):
+      usbutils: lsusb-t: print entries for devices with no interfaces
+
+Aurelien Jarno (1):
+      Fix a typo in usb-spec.h
+
+Bob Hyman (1):
+      lsusb.py.in: Display (device) power/wakeup via -w option.
+
+Dingyan Li (3):
+      Fix an incorrect length value in hid descriptor.
+      Fix misalignments in hid device descripptor.
+      Use bigger buffer to place speed value string
+
+Greg Kroah-Hartman (19):
+      lsusb -h returns an error
+      lsusb -h fixups
+      lsusb -t: sort in bus order, not reverse order
+      lsusb -t: print ports and busses and devices with same width
+      lsusb -t: assign_interface_to_parent() fixups
+      lsusb.8.in: fix up missing '-' in text
+      README.md: add source location
+      lsusb.py: fix up wakeup logic for devices that do not support it
+      lsusb.py.in: add another default path for usb.ids
+      names.c: if a string can not be found in the usb.ids file, return [unknown]
+      lsusb-t: if a driver is not bound to an interface, report "[none]"
+
+Hannes Weisbach (1):
+      Generate usbutils.pc pkgconfig file
+
+Kristoffer Ellersgaard Koch (1):
+      usbreset: Allow idProduct and idVendor to be 0
+
+Lukas Nykryn (1):
+      usb-devices: make shellcheck happy
+
+Tan Li Boon (3):
+      lsusb: Add function that sorts the output by device ID.
+      lsusb: Additional sorting by bus number.
+      lsusb: This is a more compact implementation of the device list sort implemented within this pull request. The output remains the same as the one demonstrated in the previous commit.
+
+usbutils 015
+============
+
+Greg Kroah-Hartman (6):
+      usb-devices: list the root devices in numerical order
+      usb-devices: use 'local' variable type to handle recursion
+      lsusb: remove unused wireless check
+      lsusb: remove wireless descriptor information
+      usb-devices: fix field width on device speed field
+      lsusb: fix up Midi Device specification devices
+
+Han Han (1):
+      Fix an runtime error reported by undefind sanitizer
+
+Robert Hancock (1):
+      lsusb: Improve status display for SuperSpeedPlus hubs
+
+Tan Li Boon (1):
+      lsusb-t: Fix recursive sorting on child devices.
+
+
+usbutils 014
+============
+
+Adrian Kalazi (1):
+      Add Tx+Rx lanes to tree mode
+
+Aurelien Jarno (1):
+      lsusb(8): mention the udev's hardware database
+
+Benson Leung (1):
+      lsusb: Fix typo in string output for iAdditionalInfoURL
+
+Bui Quang Minh (1):
+      lsusb-t: Add lower bound checks in read_sysfs_file_string
+
+Grant Grundler (2):
+      lsusb: remove unused RETRIES constant
+      lsusb: don't complain on EAGAIN
+
+Greg Kroah-Hartman (10):
+      sysfs: add copyright notice taken from name.*
+      LICENSES: add symlink to handle "or-later" issue for GPL-2.0
+      LICENSES: put spdx headers on the license files
+      rename "GPL-2.0+" to "GPL-2.0-or-later"
+      LICENSE: rename GPL-3.0.txt -> GPL-3.0-only.txt
+      usbhid-dump.8.in: add copyright information
+      .gitignore: add copyright and SPDX info
+      usbhid-dump: add copyright and SPDX info
+      SPDX header cleanups from GPL-2.0 -> GPL-2.0-only
+      usbutils.spdx: update with output of latest reuse tool
+
+Jonathan Neuschäfer (2):
+      lsusb: Fix spelling of bEndpointAddress in UVC
+      lsusb: Decode endpoint addresses in UVC
+
+Lukas Zaoral (3):
+      lsusb.c: fix leak in dump_printer_device
+      usb-devices: do not use `local` in a POSIX shell script
+      desc-defs.c: fix possible out-of-bound read
+
+Matthias Braun (1):
+      Fix typos in lsusb.8.in
+
+Ruslan Kabatsayev (5):
+      Fix locating endpoint when it's a directory rather than a symlink
+      Fix formatting of interface descriptors to match /sys/kernel/debug/usb/devices
+      Fix formatting of endpoint direction to match /sys/kernel/debug/usb/devices
+      Fix formatting of endpoint type to match /sys/kernel/debug/usb/devices
+      Fix formatting of max endpoint packet size to match /sys/kernel/debug/usb/devices
+
+Thomas Hebb (1):
+      lsusb: Fix buffer size copy/paste error
+
+Tormod Volden (1):
+      Makefile.am: Remove unused DATADIR
+
+
+usbutils 013
+============
+
+Aurelien Jarno (1):
+      lsusb.8.in: do not mention usb.ids
+
+Baruch Siach (1):
+      usb-devices.1: don't mention bash
+
+Greg Kroah-Hartman (15):
+      usbhid-dump: move manpage to main directory out of subdir
+      usbhid-dump.8: add SPDX header
+      usbhid-dump.8: autogenerate it with the usbutils version number
+      .gitignore: add usbhid-dump.8
+      usbhid-dump: add SPDX identifiers to all files.
+      usbhid-dump: remove libusb.h libusb_strerror() implementation
+      usbhid-dump: remove lib directory
+      usbhid-dump: move .h files into src/ directory
+      Makefile.am: add usbhid-dump.8 to distclean list
+      usbhid-dump: some autoconf cleanup
+      usbhid-dump: remove some dev_list functions that were never used
+      dump_audiostreaming_interface(): remove unused variable
+      usbmisc: initialize string buffer before reading from device.
+      lsusb.py: drop trailing space on non-hub devices
+      lsusb.py: strip whitespace from device strings
+
+Jakub Wilk (2):
+      lsusb(8): fix formatting
+      lsusb(8): document --tree
+
+Pino Toscano (1):
+      lsusb.py: remove private paths for usb.ids
+
+Rob Gill (1):
+      Additional device classes for usb-devices script
+
+Rosen Penev (1):
+      usbhid-dump: Do not use rindex
+
+Thomas Hebb (4):
+      Move read_sysfs_prop() from names.c to its own file
+      sysfs: Don't return bogus data for devices under a hub
+      lsusb: Use vendor and product name fallback logic in -D mode too
+      lsusb: Get manufacturer, product, and serial from sysfs
+
+Timothy Robert Bednarzyk (1):
+      bootstrap: change /bin/bash to /bin/sh
+
+Torleiv Sundre (1):
+      lsusb: fix two typos in UVC Extension Unit descriptor
+
+Tormod Volden (1):
+      usbhid-dump: Put back autoconf check for libusb_set_option()
+
+
+usbutils 012
+============
+
+Greg Kroah-Hartman:
+	Merge usbhid-dump into main usbutils repository
+
+
+usbutils 011
+============
+
+Clemens Fruhwirth (1):
+      Add usbreset.c as noinst_PROGRAMS target.
+
+Daniel Schaefer (1):
+      lsusb: Read unkown names from sysfs device desc.
+
+Darsey Litzenberger (3):
+      Remove a small hack that no longer has any effect.
+      Cleanup grammar
+      lsusb-t: Emit USB IDs and other handy info when verbosity is increased
+
+Emmanuele Bassi (1):
+      Require newer version of libusb
+
+Georg Brandl (1):
+      lsusb.py: fix up Python 3 conversion
+
+Greg Kroah-Hartman (10):
+      SPDX bill-of-material is supposed to be project_name.spdx
+      usbutils.spdx: rerun report, it is properly sorted.
+      desc-dump.c: fix compiler warning about unused variable
+      add usbreset to .gitignore
+      usbreset: fix some build warnings
+      usbhid-dump: update to latest version
+      fix up standard int types
+      update usbhid-dump git id
+      usbhid-dump: update to a newer version of usbhid-dump again.
+      usbutils.spdx: update with latest information
+
+Kurt Garloff (4):
+      lsusb.py: Search multiple paths for usb.ids.
+      lsusb.py: Usb enum for parser state machine.
+      lsusb.py: Add driver names for usbhid.
+      lsusb.py: python2 compatibility
+
+Lukas Nykryn (1):
+      Makefile.am: add files with licenses to archive
+
+Mantas Mikulėnas (33):
+      lsusb.py: sort devices and interfaces numerically
+      lsusb.py: sort toplevel entries
+      lsusb.py: improve usage text
+      lsusb.py: replace fake deepcopy()
+      lsusb.py: remove -w (warn if usb.ids not sorted) option
+      lsusb.py: ensure all error messages are written to stderr
+      lsusb.py: support long options
+      lsusb.py: use regular print() instead of hand-rolling the same thing
+      lsusb.py: avoid shadowing Python's built-in 'str'
+      lsusb.py: replace usb.ids binary search with dict lookup
+      lsusb.py: remove now-unused bin_search()
+      lsusb.py: avoid manual calls to __foo__()
+      lsusb.py: replace __repr__() for USB IDs with __str__()
+      lsusb.py: insert class FF:FF:FF into usbclasses to avoid special casing
+      lsusb.py: entirely remove Usb* classes
+      lsusb.py: cosmetic - replace tuples-as-"immutable lists" with regular lists
+      lsusb.py: use 'elif' where suitable
+      lsusb.py: remove dead code
+      lsusb.py: move unrelated code out of try..except
+      lsusb.py: allow - as well as _ when matching hci module names
+      lsusb.py: use a constant for the magic class number 9
+      lsusb.py: Usb* classes: call read() automatically from constructor
+      lsusb.py: UsbEndpoint: indent is a class implementation detail
+      lsusb.py: a few cosmetic changes
+      lsusb.py: shorten find_usb_class()
+      lsusb.py: give all Usb* objects a .path attribute
+      lsusb.py: add an actual __repr__() to classes
+      lsusb.py: give all Usb* classes a superclass
+      lsusb.py: convert readattr() and readlink() to methods of the container
+      lsusb.py: use color by default
+      lsusb.py: rework output for more consistent indent of both columns
+      lsusb.py: fix endpoint interval spacing
+      lsusb.py: visually group USB-version-related fields
+
+Michael Drake (4):
+      lsusb: Split out routine that fetches value for given field.
+      lsusb: Split out field name rendering.
+      lsusb: Add support for descriptor extensions.
+      lsusb: Add support for audio processing unit type-specific fields.
+
+Philip Langdale (2):
+      lsusb: Added support for Billboard Alternate Mode Capability descriptor
+      lsusb.py: Fix formatting of 10Gbps speeds
+
+Ross Burton (1):
+      usb-devices: use /bin/sh hashbang
+
+Solomon Peachy (1):
+      lsusb:  Add support for decoding IPP printer descriptors
+
+Stefan Tauner (1):
+      Depend on libusb 1.0.14
+
+Valerii Zapodovnikov (1):
+      man pages: add information on verbosity levels of -t option
+
+junjie (1):
+      fix typo
+
+
+usbutils 010
+============
+
+Aurelien Jarno (2):
+      usbreset.c: add missing <stdlib.h> include
+      Do not create and install usbutils.pc
+
+Greg Kroah-Hartman (32):
+      fix dump_videocontrol_interface for unitialized variable usage
+      Add correct SPDX license identifiers to all files
+      Add SPDX identifiers on files that did not have a specific license.
+      wTotalLength should be printed as a hex number
+      usbmisc: fix up some strncpy() issues
+      lsusb-t: fix up error with readlink()
+      lsusb.py.in: add proper SPDX license identifier
+      usb-devices: reword the copyright identifier
+      LICENSES: move the GPL 2 license to the LICENSES directory
+      LICENSES/GPL-3.0.txt: add the file
+      lsusb.h: add copyright notice
+      lsusb-t: add copyright info
+      bom.spdx: Add bill of materials file in SPDX format.
+      ChangeLog: remove it.
+      AUTHORS: remove file
+      do_release: drop file
+      NEWS: add SPDX header and comment
+      autogen.sh: add SPDX and copyright header
+      list.h: add copyright information
+      travis-autogen.sh: add SPDX and copyright information.
+      INSTALL: remove the file, it's boiler-plate
+      configure.ac: add SPDX and copyright
+      man pages: add SPDX and copyright information
+      Makefile.am: add SPDX and copyright information
+      .gitmodules: add SPDX and copyright lines
+      lsusb.py.in: fix up Copyright strings
+      usbreset.c: add Alan's copyright
+      .travis.yml: add correct SPDX and copyright notices
+      bom.spdx: update with latest copyright and SPDX identifier additions
+      README.md: move the README file to markdown
+      README.md: fix fomatting
+      bom.spdx: upate with README -> README.md change
+
+Lukas Nykryn (1):
+      lsusb.py: convert to python3
+
+Michael Drake (11):
+      lsusb: Split subtype mapping out of AudioControl interface handling.
+      lsusb: Add declarative definitions for UAC1 and UAC2 descriptors.
+      lsusb: Add code to dump descriptor data using descriptor definition.
+      lsusb: Switch to descriptor-definition based dump for UAC1 and UAC2.
+      lsusb: Add descriptor definitions for UAC3.
+      lsusb: Add initial support for USB Audio Device Class 3.
+      lsusb: Add descriptor definition for USB3 BOS Configuration Summary.
+      lsusb: Dump USB3 BOS Configuration Summary Descriptor.
+      lsusb: Squash Wpointer-compare warning.
+      lsusb: Remove unused function.
+      lsusb: Fix array entry count for variable sized entries.
+
+Robby Workman (1):
+      Makefile.am: Include usbreset.c in the release tarball
+
+Torleiv Sundre (1):
+      lsusb: Dump UVC Stream based payload descriptor.
+
+
+usbutils 009
+============
+
+Bjørn Mork (1):
+      usbreset: coding style
+
+Emmanuele Bassi (1):
+      Don't use C99-ism
+
+Greg Kroah-Hartman (22):
+      usbhid-dump: update submodule to latest version
+      add usbreset.c example program
+      update usbhid-dump to latest
+      lsusb.py: Don't dump a trace dump if usb.ids is not present
+
+Grueninger, Tobias (1):
+      USB: usb-devices: Interface number can be a string
+
+Heinrich Schuchardt (1):
+      autogen.sh: checkout usbhid-dump
+
+Jaejoong Kim (4):
+      lsusb : add support for the Encoding Unit Desc for uvc 1.5 device
+      lsusb: fix alignment for Video Streaming interface desc
+      lsusb: parse additional control fileds in USB video control interfaces for UVC1.5
+      lsusb: proper display hexadecimal value for UVC control interface
+
+Jakub Wilk (1):
+      Fix typos
+
+Jo-Philipp Wich (1):
+      usbreset.c: import usability improvements from OpenWrt
+
+Justin McBride (2):
+      Update lsusb.c
+      Un-indent bVariableSize for Frame-Based Format descriptors
+
+Kylie McClain (1):
+      Makefile: install pkgconfig file to arch-dependent location
+
+Mathias Nyman (2):
+      lsusb: Allocate the BOS descriptor buffer dynamically
+      lsusb: Add support for the USB 3.1 SuperSpeedPlus device capability desc
+
+Muthu M (2):
+      lsusb: Fix issue with lengthy string descriptors
+      lsusb: Added support for Billboard Capability descriptor
+
+Nikolai Kondrashov (2):
+      Update usbhid-dump repo URL
+      Update usbhid-dump to v1.4
+
+Stephan Linz (7):
+      travis-ci: add control files borrowed from libusb
+      configure: remove summary about unused USE_ZLIB
+      drop unused input file for usb.ids update script
+      substitute usb.id location in lsusb Python script
+      travis-ci: cleanup before second run
+      travis-ci: rework travis-autogen.sh
+      lsusb: remove unused variable procbususb
+
+Tobias Klauser (4):
+      lsusb: Report correct MaxPower for USB 3.0 devices
+      lsusb: Request proper descriptor type for USB 3.1
+      lsusb: Store link state descriptions without preceding space
+      build: Request at least libusb 1.0.9
+
+Torleiv Sundre (2):
+      Added support for Platform Device Capability descriptor
+      lsusb: change endianness of first three fields when printing UUID/GUIDs.
+
+Vianney le Clément de Saint-Marcq (3):
+      lsusb: Fix UVC STILL_IMAGE_FRAME descriptor
+      lsusb: Fix UVC VideoStreaming interface header descriptor
+      lsusb: Fix UVC OUTPUT_TERMINAL descriptor
+
+Vincent Palatin (1):
+      lsusb: print WebUSB platform descriptor
+
+
+usbutils 008
+============
+
+Alexandra Yates (2):
+      lsusb: Reports if USB2.0 port is on L1 state
+      lsusb: Reports devices that support BESL on USB2.0
+
+Aurelien Jarno (1):
+      dump_ccid_device: fix a typo
+
+Ben Chan (1):
+      lsusb: decode CDC MBIM extended functional descriptor
+
+Greg Kroah-Hartman (8):
+      lsusb: fix incorrect printf() for CAPS
+      lsusb-t: handle problem if there is no usb bus list
+      .gitignore: add compile to the list of things we need to ignore
+
+John Freed (1):
+      Fix logic error
+
+Kurt Garloff (1):
+      Update lsusb.py in usbutils
+
+Lukas Nykryn (2):
+      update COPYING file
+      lsusb-t: don't segfault when usbbuslist is empty
+
+Peter Wu (1):
+      Ignore invalid string descriptors
+
+Raphaël Droz (1):
+      usb-devices: hexadecimal bInterfaceNumber handling
+
+Tom Gundersen (2):
+      lsusb: port to hwdb
+      drop dependency on usb.ids
+
+Vadim Rutkovsky (1):
+      New path for usbhid-dump submodule
+
+
+usbutils 007
+============
+
+Aurelien Jarno (1):
+      usb-devices: correctly quote driver path
+
+Bjørn Mork (4):
+      lsusb: decode CDC MBIM descriptor
+      lsusb: decode CDC NCM functional descriptor
+      lsusb: decode CDC Command Set descriptor
+      usb-devices: avoid numbers being seen as octal by printf
+
+Daniel Mack (1):
+      lsusb: parse bmFormats inside UAC2 interface headers as hex
+
+Greg Kroah-Hartman (12):
+      do_release notes
+      update of usb.ids file from upstream
+      remove devtree logic
+      usb.ids update
+      usb.ids add BlueZ Host stack device id.
+
+Jethro Beekman (1):
+      Fix lsusb -t potentially not listing all devices
+
+Lukas Nykryn (1):
+      lsusb-t: make sure that interfaces are added to lists only once
+
+Sarah Sharp (2):
+      lsusb: Fix USB 3.0 link state reporting.
+      lsusb: Fix bug in USB 2.0 extended caps descriptor.
+
+Torstein Hegge (1):
+      lsusb: Parse misplaced UAC1 AudioControl Endpoint Descriptor
+
+Роман Донченко (1):
+      lsusb: Support non-ASCII string descriptors.
+
+
+usbutils 006
+============
+
+Aurelien Jarno (1):
+      usb-devices(1): fix a typo
+
+Diego Elio Pettenò (1):
+      build: add a --disable-usbids option to avoid installing usb.ids
+
+Greg Kroah-Hartman (7):
+      update usbhid-dump to 1.3
+      lsusb.c: remove unused variables and the unused -x command line option
+      Make 'lsusb -t' use the correct device class string names
+      Update usb.ids file with latest version.
+
+Lukas Nykryn (7):
+      Possible buffer overflow when using SYSFS_STR
+      Reading 26 item in array with size 12.
+      Using uninitialized value as index
+      Possible resource leak
+      Wrong shifting of bmMPEGFeatures byte
+      Buffer overrun
+      lsusb-t: don't show error when driver link is missing
+
+Mark Veltzer (1):
+      --tree, --help, and better build documentation
+
+Nikolai Kondrashov (1):
+      Update usbhid-dump to complete 1.3 release
+
+Roger Tseng (1):
+      Option -V(version) doesn't require an argument.
+
+Sarah Sharp (3):
+      usbutils: Dump BOS descriptor for USB 2.01 devices.
+      lsusb: Show USB 3.0 U1, U2, and LTM status.
+      lsusb: Fix LTM capabilities reporting.
+
+Thierry Vignaud (3):
+      set arrays to NULL when freeing them.
+      simplify get_string()
+      make treedump() work if the database isn't there.
+
+
+usbutils 005
+============
+
+Greg Kroah-Hartman (7):
+      usb.ids: updated version of the file
+      Remove the FSF address from the source files.
+      update usbhid-dump to release 1.2
+      add another Linux kernel usb id.
+      updated usb.ids file
+      lsusb-t.c: fix up some compiler warnings
+      add lsusb.h to fix some compiler warnings.
+
+Lukáš Nykrýn (1):
+      Add more space to lsusb.py output
+
+Sarah Sharp (2):
+      lsusb: wSpeedsSupported is 2 bytes, not one.
+      lsusb: bU2DevExitLat is little endian, not big endian.
+
+
+usbutils 004
+============
+
+Carl-Daniel Hailfinger (2):
+      Fix lsusb out-of-bounds write
+      Fix lsusb double-free
+
+Dafydd Crosby (2):
+      Verbose flag in tree mode shows vendor and product name.     When running `lsusb -tv`, devices should have the vendor and     product name appended to the row.
+      Fix compiler warning
+
+Greg Kroah-Hartman (2):
+      Merge pull request #2 from nphilipp/master--nphilipp
+      Merge pull request #3 from dafyddcrosby/lsusb-tv
+
+Nils Philippsen (1):
+      don't use invalid config descriptors
+
+
+usbutils 003
+============
+
+Diego Elio Pettenò (1):
+      build-sys: properly enable support for zlib in lsusb
+
+
+usbutils 002
+============
+
+Diego Elio Pettenò (2):
+      Simplify the configure script.
+      Print device class descriptors like it's done for interface descriptors.
+
+Greg Kroah-Hartman (2):
+      Updated version of lsusb.py from Kurt Garloff.
+      add lsusb.py to the bin files
+
+
+usbutils 001
+============
+
+Greg Kroah-Hartman (2):
+      usb.ids update from linux-usb.org
+      updated usbhid-dump subproject
+
+Laurent Pinchart (2):
+      usbutils: Support UVC frame-based descriptors
+      usbutils: Support UVC MPEG2-TS format descriptor
+
+Luben Tuikov (3):
+      lsusb: Fix getting BOS and DEVQUAL descriptors
+      lsusb: Dump the Pipe Usage descriptor
+      lsusb: Fix bMaxBurst reporting
+
+Mike Frysinger (5):
+      lsusb: install into /usr/bin
+      usbmisc: pull in unistd.h for readlink()
+      lsusb: pull in stdlib.h for exit()
+      lsusb: constify!
+      usbutils: convert to libusb-1.0
+
+Nikolai Kondrashov (1):
+      Update usbhid-dump to release 1.2
+
+Sarah Sharp (2):
+      usbutils: Fix compile error on Ubuntu 9.04.
+      usbutils: Make lsusb -t show USB 3.0 devices.
+
+
+usbutils 0.91
+=============
+
+Greg Kroah-Hartman (3):
+      add usbhid-dump to the autogen.sh script
+      usb.ids: add new device id for qemu audio device
+      Minor fixes
+
+Laurent Pinchart (1):
+      usbutils: Fix the UVC bmInterlaceFlags field decoding
+
+Mike Frysinger (2):
+      usbutils.pc: use datarootdir
+      fix building on non-Linux systems (e.g. BSD)
+
+Nikolai Kondrashov (1):
+      Integrate usbhid-dump
+
+Sarah Sharp (5):
+      usbutils: Fix Wireless USB descriptor fetching.
+      usbutils: Support USB 3.0 hub descriptor output.
+      usbutils: Print MaxStreams and Mult for USB 3.0 devices.
+      usbutils: Print Binary Object Store descriptor.
+      usbutils: Fix bug in link state description printing.
+
+
+usbutils 0.90
+=============
+Aurelien Jarno (1):
+      fix bcdDFUVersion endianness
+
+Chris Clayton (1):
+      Patch to add additional devices to usb.ids
+
+Daniel Mack (7):
+      dump_audiostreaming_interface(): fix ac-3 decoder
+      parse USB audio class 2 control interface types
+      parse USB audio class 2 streaming interfaces
+      parse USB audio class 2 endpoints
+      dump_audio_bmcontrols(): tell users about faulty bmControl bits
+      dump_audiostreaming_interface(): drop audio class 2 FORMAT_TYPE length check
+      lsusb: fix iFeature position calculation for UAC2 feature units
+
+Greg Kroah-Hartman (8):
+      reserve a USB Ethernet Gadget driver device id.
+      fix up wording of NCM Ethernet gadget device id
+      fix up some signed/unsigned warnings in lsusb.c
+      move #defines around a bit to make it more orderly.
+      Merge git://github.com/zonque/usbutils into work
+      more gadget device ids reserved for the Linux Foundation vendor id
+      Merge branch 'master' of git://github.com/zonque/usbutils into test
+      Fix up a lot of memory leaks
+
+Ludovic Rousseau (1):
+      Update Gemplus id
+
+Matthew Wilcox (1):
+      Decode USB 3 Endpoint Companion Descriptors
+
+Nix (1):
+      Include config.h before everything else.
+
+
+usbutils 0.87
+=============
+Aurelien Jarno (1):
+      lsusb.c: correctly dump ccid devices
+
+Greg Kroah-Hartman (11):
+      lots of trailing whitespace removed.
+      add autogen.sh script
+      coding style cleanups for .h files.
+      names.c: fix up some compiler warnings
+      coding style cleanups for usbmisc.c
+      names.c: fix lots of coding style issues
+      devtree.c: coding style cleanups
+      lsusb.c: coding style fixes
+      lsusb.c: fix some build warnings.
+      usb.ids: Reserve EEM Gadget id for the Linux Foundation
+      add lsusb.py from Kurt Garloff <garloff@suse.de>
+
+Philip A. Prindeville (1):
+      Fix build issue with libusb location
+
+
+usbutils 0.86
+=============
+HID device robust fix
+
+usbutils 0.85
+=============
+usb-devices bugfixes
+build fixes
+
+usbutils 0.84
+=============
+Sync up usb.ids file from upstream
+
+usbutils 0.83
+=============
+HID descriptor bugfixes
+usb-devices script to emulate the /proc/bus/usb/devices file
+new device ids
+
+usbutils 0.82
+=============
+Wireless USB device support
+better autoconf support.
+automatic handling for usb.ids
+bugfixes
+
+usbutils 0.81
+=============
+fixed '-t' option if usbfs is not mounted
+added DFU parsing
+updated the man page
+
+usbutils 0.80
+=============
+Updated usb.ids.
+Updated autotools logic.
+Removed obsolete usbmodules.
+
+usbutils 0.73 (and older)
+=============
+Thanks to a patch from Aurelien Jarno, usbutils now uses the system's
+libusb to access USB devices, not a private (old) copy of that library.
+
+The "usbmodules" program is now deprecated, and no longer built by default.
+If your Linux 2.4 based system needs it to handle the "coldplug" processing
+(handling devices that exist before the OS is fully operational), you
+can "configure --enable-usbmodules".
+
