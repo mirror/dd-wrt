@@ -223,7 +223,7 @@ alternative_endif
 
 #include <linux/types.h>
 
-static __always_inline bool
+static inline __attribute__((__always_inline__)) bool
 alternative_has_cap_likely(const unsigned long cpucap)
 {
 	if (!cpucap_is_possible(cpucap))
@@ -245,7 +245,7 @@ l_no:
 	return false;
 }
 
-static __always_inline bool
+static inline __attribute__((__always_inline__)) bool
 alternative_has_cap_unlikely(const unsigned long cpucap)
 {
 	if (!cpucap_is_possible(cpucap))
