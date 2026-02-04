@@ -2,6 +2,66 @@ This document summarizes new features and bugfixes in each stable
 release of Tor. If you want to see more detailed descriptions of the
 changes in each development snapshot, see the ChangeLog file.
 
+Changes in version 0.4.8.22 - 2026-01-28
+  This is likely the very last release of the 0.4.8.x series. Three major
+  bugfixes detailled below including two affecting directory servers (basically
+  all relays). We strongly recommend upgrading as soon as possible.
+
+  o Major bugfixes (security):
+    - Avoid an out-of-bounds read error that could occur with
+      V1-formatted cells. Fixes bug 41180; bugfix on 0.4.8.1-alpha. This
+      is tracked as TROVE-2025-016.
+
+  o Major bugfixes (directory servers):
+    - Allow old clients to fetch the consensus even if they use version
+      0 of the SENDME protocol. In mid 2025 we changed the required
+      minimum version of the "FlowCtrl" protocol to 1, meaning directory
+      caches hang up on clients that send a version 0 SENDME cell. Since
+      old clients were no longer able to retrieve the consensus, they
+      couldn't learn about this required minimum version -- meaning
+      we've had many many old clients loading down directory servers for
+      the past months. Fixes bug 41191; bugfix on 0.4.1.1-alpha.
+    - Don't count networkstatus serves until they finish. When we
+      started serving a consensus document but the client didn't receive
+      all of it, we were still counting that as a success in our stats.
+      This mistake, which can be triggered for example by obsolete
+      clients or by DPI-based censorship, led to wildly inflated user
+      counts because we estimate total users in the world based on
+      successful consensus fetches. Fixes bug 41192; bugfix
+      on 0.2.1.1-alpha.
+
+  o Minor feature (testing, CI):
+    - Bump the CI version of chutney to the current version as of
+      2026-01-21 (3338f5c).
+
+  o Minor features (debugging, compression):
+    - Do not check for compression bombs for buffers smaller than 5MB
+      (increased from 64 KB). Fixes ticket 40739; bugfix on 0.2.1.29.
+    - Log the input and output buffer sizes when we detect a potential
+      compression bomb. Diagnostic for ticket 40739.
+
+  o Minor features (directory servers):
+    - Track how many times directory servers begin serving networkstatus
+      documents, so we can compare it to the number of times we finish
+      serving them. Motivated by the fixes in ticket 41192.
+
+  o Minor features (fallbackdir):
+    - Regenerate fallback directories generated on January 28, 2026.
+
+  o Minor features (geoip data):
+    - Update the geoip files to match the IPFire Location Database, as
+      retrieved on 2026/01/28.
+
+  o Minor bugfixes (relay):
+    - Downgrade log warn to info as the error condition is possible under
+      normal circumstances. Fixes bug 40951; bugfix on 0.3.5.1-alpha.
+
+  o Code simplification and refactoring:
+    - Simplify SOCKS4a parsing to avoid the (false) appearance of
+      integer underflows, and to make the logic more obvious. Fixes bug
+      41190; bugfix on 0.3.5.1-alpha.
+
+
 Changes in version 0.4.8.21 - 2025-11-17
   This release is a continuation of the previous one and addresses additional
   Conflux-related issues identified through further testing and feedback from
@@ -9,7 +69,7 @@ Changes in version 0.4.8.21 - 2025-11-17
 
   o Major bugfixes (conflux, exit):
     - When dequeuing out-of-order conflux cells, the circuit could be
-      close in between two dequeue which could lead to a mishandling of
+      closed in between two dequeues, which could lead to mishandling
       a NULL pointer. Fixes bug 41162; bugfix on 0.4.8.4.
 
   o Minor feature (compiler flag):
@@ -23,27 +83,23 @@ Changes in version 0.4.8.21 - 2025-11-17
       retrieved on 2025/11/17.
 
   o Minor bugfixes (bridges, pluggable transport):
-    - Fix a bug causing the initial tor process to hang intead of
+    - Fix a bug causing the initial tor process to hang instead of
       exiting with RunAsDaemon, when pluggable transports are used.
       Fixes bug 41088; bugfix on 0.4.8.1-alpha.
 
 
 Changes in version 0.4.8.20 - 2025-11-10
-  This release fixes several bugfixes related to Conflux edge cases as well as
-  adding a new hardening compiler flag if supported. We strongly recommend to
-  upgrade as soon as possible.
+  This release fixes several bugs related to Conflux edge cases as well as
+  adding a new hardening compiler flag if supported.
 
   o Minor feature (compiler flag):
     - Add -fcf-protection=full if supported by the compiler.
-      Fixes 41139.
+      Implements ticket 41139.
 
   o Minor features (fallbackdir):
     - Regenerate fallback directories generated on November 10, 2025.
-    - Regenerate fallback directories generated on October 06, 2025.
 
   o Minor features (geoip data):
-    - Update the geoip files to match the IPFire Location Database, as
-      retrieved on 2025/10/06.
     - Update the geoip files to match the IPFire Location Database, as
       retrieved on 2025/11/10.
 
@@ -58,21 +114,20 @@ Changes in version 0.4.8.20 - 2025-11-10
 
 
 Changes in version 0.4.8.19 - 2025-10-06
-  This release fixes two major bugfixes for a LibreSSL issue and a flow control
+  This release provides major bugfixes for a LibreSSL issue and a flow control
   C-tor specific problem (not protocol). We strongly recommend you upgrade as
   soon as possible.
 
   o Major bugfixes (client, TLS):
     - Fix some clients not being able to connect to LibreSSL relays.
-      Fixes bug 41134; bugfix on 0.4.8.17
+      Fixes bug 41134; bugfix on 0.4.8.17.
 
   o Minor bugfixes (stream flow control performance):
     - Use a 5 ms grace period to allow an edge connection to flush its
       stream data to the socket before sending an XOFF. This
       significantly reduces the number of XON/XOFF messages sent when
       (1) the application is reading stream data at a fast rate, and (2)
-      when conflux is enabled. Fixes part of bug 41130; bugfix
-      on 0.4.7.2-alpha
+      conflux is enabled. Fixes part of bug 41130; bugfix on 0.4.7.2-alpha.
 
   o Minor features (fallbackdir):
     - Regenerate fallback directories generated on October 06, 2025.
@@ -99,7 +154,7 @@ Changes in version 0.4.8.18 - 2025-09-16
       Additionally, create a separate torrc option MaxHSDirCacheBytes
       that defaults to the former 20% of MaxMemInQueues threshold, but
       can be controlled by relay operators under DoS. Also enforce this
-      theshold during HSDir uploads. Fixes bug 41006; bugfix
+      threshold during HSDir uploads. Fixes bug 41006; bugfix
       on 0.4.8.14.
 
   o Minor feature (padding, logging):
@@ -122,11 +177,7 @@ Changes in version 0.4.8.18 - 2025-09-16
   o Minor bugfixes (circuit handling):
     - Prevent circuit_mark_for_close() from being called twice on the
       same circuit. Second fix attempt Fixes bug 41106; bugfix
-      on 0.4.8.17
-
-  o Minor bugfixes (threads):
-    - Make thread control POSIX compliant. Fixes bug 41109; bugfix
-      on 0.4.8.17-dev.
+      on 0.4.8.17.
 
 
 Changes in version 0.4.8.17 - 2025-06-30
@@ -200,9 +251,8 @@ Changes in version 0.4.8.17 - 2025-06-30
 
 
 Changes in version 0.4.8.16 - 2025-03-24
-  This is quick second release since 0.4.8.15 due to a typo in a directory
-  authority rule file. This only affects directory authorities. Regardless,
-  upgrading to latest stable is always desired.
+  This is a quick second release since 0.4.8.15 due to a typo in a directory
+  authority rule file. This only affects directory authorities.
 
   o Minor features (geoip data):
     - Update the geoip files to match the IPFire Location Database, as
@@ -210,13 +260,13 @@ Changes in version 0.4.8.16 - 2025-03-24
 
   o Minor bugfix (dirauth):
     - Fix typo in flag assignment approved-routers file. Fixes bug
-      41035; bugfix on 0.4.8.15
+      41035; bugfix on 0.4.8.15.
 
 
 Changes in version 0.4.8.15 - 2025-03-20
   This is a minor release fixing a sandbox issue for bandwidth authority and a
   conflux issue on the control port. It also has a client fix about relay flag
-  usage. We strongly recommend to update as soon as possible as usual.
+  usage.
 
   o Minor feature (testing, CI):
     - Use a fixed version of chutney (be881a1e) instead of its current
@@ -234,18 +284,18 @@ Changes in version 0.4.8.15 - 2025-03-20
       retrieved on 2025/03/20.
 
   o Minor bugfixes (control port):
-    - Correctly report conflux pair information to controller fields
-      Fixes bug 40872; bugfix on 0.4.8.1-alpha
+    - Correctly report conflux pair information to controller fields.
+      Fixes bug 40872; bugfix on 0.4.8.1-alpha.
 
   o Minor bugfixes (relay flag usage):
     - Fix client usage of the MiddleOnly flag so that MiddleOnly relays
       are not used as HS IP or RP by clients or services. Additionally,
       give dirauths the ability to remove specific flags, as an
-      alternative to MiddleOnly. Fixes bug 41023; bugfix on 0.4.7.2-alpha
+      alternative to MiddleOnly. Fixes bug 41023; bugfix on 0.4.7.2-alpha.
 
   o Minor bugfixes (sandbox, bwauth):
     - Fix sandbox to work for bandwidth authority. Fixes bug 40933;
-      bugfix on 0.2.2.1-alpha
+      bugfix on 0.2.2.1-alpha.
 
 
 Changes in version 0.4.8.14 - 2025-02-05
@@ -277,8 +327,8 @@ Changes in version 0.4.8.14 - 2025-02-05
 
 
 Changes in version 0.4.8.13 - 2024-10-24
-  This is minor release fixing an important client circuit building (Conflux
-  related) bug which lead to performance degradation and extra load on the
+  This is minor release fixing an important client circuit building (conflux
+  related) bug which led to performance degradation and extra load on the
   network. Some minor memory leaks fixes as well as an important minor feature
   for pluggable transports. We strongly recommend to update as soon as possible
   for clients in order to neutralize this conflux bug.
@@ -291,7 +341,7 @@ Changes in version 0.4.8.13 - 2024-10-24
       which added overall load to the network, used bandwidth and
       battery from clients that weren't actively using their Tor, and
       kept sockets open on guards which added connection padding
-      essentially forever. Fixes bug 40981; bugfix on 0.4.8.1-alpha;
+      essentially forever. Fixes bug 40981; bugfix on 0.4.8.1-alpha.
 
   o Minor feature (bridges, pluggable transport):
     - Add STATUS TYPE=version handler for Pluggable Transport. This
@@ -395,7 +445,7 @@ Changes in version 0.4.8.10 - 2023-12-08
 
   o Minor bugfixes (bridges, statistics):
     - Correctly report statistics for client count over Pluggable
-      transport. Fixes bug 40871; bugfix on 0.4.8.4
+      transport. Fixes bug 40871; bugfix on 0.4.8.4.
 
 
 Changes in version 0.4.8.9 - 2023-11-09
@@ -417,7 +467,7 @@ Changes in version 0.4.8.9 - 2023-11-09
   o Major bugfixes (onion service, TROVE-2023-006):
     - Fix a possible hard assert on a NULL pointer when recording a
       failed rendezvous circuit on the service side for the MetricsPort.
-      Fixes bug 40883; bugfix on 0.4.8.1-alpha
+      Fixes bug 40883; bugfix on 0.4.8.1-alpha.
 
   o Minor features (fallbackdir):
     - Regenerate fallback directories generated on November 09, 2023.
@@ -473,6 +523,11 @@ Changes in version 0.4.8.7 - 2023-09-25
 
 
 Changes in version 0.4.8.6 - 2023-09-18
+  This version contains an important fix for onion services regarding
+  congestion control and its reliability. Apart from that, unneeded BUG
+  warnings have been suppressed especially about a compression bomb seen
+  on relays.
+
   o Major bugfixes (onion service):
     - Fix a reliability issue where services were expiring their
       introduction points every consensus update. This caused
@@ -617,8 +672,8 @@ Changes in version 0.4.8.4 - 2023-08-23
 
   o Minor features (testing):
     - All Rust code is now linted (cargo clippy) as part of GitLab CI, and
-      existing warnings have been fixed. - Any unit tests written in Rust now
-      run as part of GitLab CI.
+      existing warnings have been fixed.
+    - Any unit tests written in Rust now run as part of GitLab CI.
 
   o Minor feature (CI):
     - Update CI to use Debian Bullseye for runners.
@@ -1419,7 +1474,7 @@ Changes in version 0.4.7.7 - 2022-04-27
       Exit, Guard, HSDir, and V2Dir; and in favor of BadExit. Implements
       part of proposal 335. Based on a patch from Neel Chauhan.
 
-  o Major features (Proposal 332, onion services, guard selection algorithm):
+  o Major features (Proposal 333, onion services, guard selection algorithm):
     - Clients and onion services now choose four long-lived "layer 2"
       guard relays for use as the middle hop in all onion circuits.
       These relays are kept in place for a randomized duration averaging

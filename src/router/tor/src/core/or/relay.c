@@ -336,7 +336,7 @@ circuit_receive_relay_cell(cell_t *cell, circuit_t *circ,
       cell->command = CELL_RELAY; /* can't be relay_early anyway */
       if ((reason = circuit_receive_relay_cell(cell, TO_CIRCUIT(splice_),
                                                CELL_DIRECTION_IN)) < 0) {
-        log_warn(LD_REND, "Error relaying cell across rendezvous; closing "
+        log_info(LD_REND, "Error relaying cell across rendezvous; closing "
                  "circuits");
         return reason;
       }

@@ -264,6 +264,38 @@ connection_dir_is_anonymous(const dir_connection_t *dir_conn)
   return !channel_is_client(CONST_TO_OR_CIRCUIT(circ)->p_chan);
 }
 
+/** Did <b>conn</b> ever send us a version 0 sendme cell and we allowed
+ * it? Used to decide whether to count consensus fetches from it in our
+ * geoip stats.
+ *
+ * Note that this function might have false negatives in some cases, i.e.
+ * it could tell us that the conn never sent a v0 sendme when actually it
+ * did but its linked edge connection or OR connection got broken before
+ * we called this function. For our geoip stats these false negatives
+ * would mean overcounting users by including some of the v0-using
+ * clients.
+ *
+ * We think these false positives should be unlikely or maybe even
+ * impossible when called from connection_dirserv_flushed_some(), but
+ * be careful calling it from elsewhere.
+ * */
+bool
+connection_dir_used_obsolete_sendme(const dir_connection_t *conn)
+{
+  const edge_connection_t *edge_conn = NULL;
+  const circuit_t *circ = NULL;
+  bool used_obsolete_sendme = 0;
+  const connection_t *linked_conn = TO_CONN(conn)->linked_conn;
+  if (linked_conn)
+    edge_conn = CONST_TO_EDGE_CONN(linked_conn);
+  if (edge_conn)
+    circ = edge_conn->on_circuit;
+  if (circ && CIRCUIT_IS_ORCIRC(circ))
+    used_obsolete_sendme = CONST_TO_OR_CIRCUIT(circ)->used_obsolete_sendme;
+
+  return used_obsolete_sendme;
+}
+
 /** Parse an HTTP request line at the start of a headers string.  On failure,
  * return -1.  On success, set *<b>command_out</b> to a copy of the HTTP
  * command ("get", "post", etc), set *<b>url_out</b> to a copy of the URL, and

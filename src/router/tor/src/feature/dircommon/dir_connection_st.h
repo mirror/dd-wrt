@@ -61,6 +61,10 @@ struct dir_connection_t {
    * needs this for the incoming side, so it's moved here. */
   uint64_t dirreq_id;
 
+  /** 0 normally, 1 if we're serving a consensus and we're delaying counting
+   * geoip until we've served the final bytes. */
+  bool should_count_geoip_when_finished;
+
 #ifdef MEASUREMENTS_21206
   /** Number of RELAY_DATA cells received. */
   uint32_t data_cells_received;

@@ -4816,11 +4816,12 @@ am__noinst_HEADERS_DIST = src/ext/ht.h src/ext/byteorder.h \
 	src/app/config/fallback_dirs.inc src/app/config/testnet.inc \
 	src/app/main/main.h src/app/main/ntmain.h \
 	src/app/main/risky_options.h src/app/main/shutdown.h \
-	src/app/main/subsysmgr.h src/test/fakechans.h \
-	src/test/fakecircs.h src/test/hs_test_helpers.h \
-	src/test/log_test_helpers.h src/test/opts_test_helpers.h \
-	src/test/resolve_test_helpers.h src/test/rng_test_helpers.h \
-	src/test/test.h src/test/ptr_helpers.h src/test/test_helpers.h \
+	src/app/main/subsysmgr.h src/test/compression_bomb.h \
+	src/test/fakechans.h src/test/fakecircs.h \
+	src/test/hs_test_helpers.h src/test/log_test_helpers.h \
+	src/test/opts_test_helpers.h src/test/resolve_test_helpers.h \
+	src/test/rng_test_helpers.h src/test/test.h \
+	src/test/ptr_helpers.h src/test/test_helpers.h \
 	src/test/test_dir_common.h src/test/test_connection.h \
 	src/test/test_tortls.h src/test/test_descriptors.inc \
 	src/test/example_extrainfo.inc \
@@ -5837,11 +5838,11 @@ noinst_HEADERS = $(EXTHEADERS) $(ED25519_REF10_HDRS) \
 	src/app/main/main.h src/app/main/ntmain.h \
 	src/app/main/risky_options.h src/app/main/shutdown.h \
 	src/app/main/subsysmgr.h src/app/main/ntmain.h \
-	src/test/fakechans.h src/test/fakecircs.h \
-	src/test/hs_test_helpers.h src/test/log_test_helpers.h \
-	src/test/opts_test_helpers.h src/test/resolve_test_helpers.h \
-	src/test/rng_test_helpers.h src/test/test.h \
-	src/test/ptr_helpers.h src/test/test_helpers.h \
+	src/test/compression_bomb.h src/test/fakechans.h \
+	src/test/fakecircs.h src/test/hs_test_helpers.h \
+	src/test/log_test_helpers.h src/test/opts_test_helpers.h \
+	src/test/resolve_test_helpers.h src/test/rng_test_helpers.h \
+	src/test/test.h src/test/ptr_helpers.h src/test/test_helpers.h \
 	src/test/test_dir_common.h src/test/test_connection.h \
 	src/test/test_tortls.h src/test/test_descriptors.inc \
 	src/test/example_extrainfo.inc \

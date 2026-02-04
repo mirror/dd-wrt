@@ -968,12 +968,12 @@ handle_get_current_consensus(dir_connection_t *conn,
     goto done;
   }
 
+  /* Success: we are going to try serving it. */
+  geoip_note_ns_response(GEOIP_SERVED);
+  conn->should_count_geoip_when_finished = 1;
+
   tor_addr_t addr;
   if (tor_addr_parse(&addr, (TO_CONN(conn))->address) >= 0) {
-    geoip_note_client_seen(GEOIP_CLIENT_NETWORKSTATUS,
-                           &addr, NULL,
-                           time(NULL));
-    geoip_note_ns_response(GEOIP_SUCCESS);
     /* Note that a request for a network status has started, so that we
      * can measure the download time later on. */
     if (conn->dirreq_id)
