@@ -14,7 +14,7 @@ else
 		setenv rootdev /dev/sda${rootpart}
 	fi
 fi
-setenv bootargs ${bootargs} root=${rootdev} rootfstype=${rootfstype} rootwait
+setenv bootargs ${bootargs} root=${rootdev} rootfstype=${rootfstype} rootwait pci=pcie_bus_perf mitigations=off
 
 # add console= option to bootargs, if any
 if test -n "${console}"; then
