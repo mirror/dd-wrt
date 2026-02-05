@@ -18,9 +18,4 @@
 #include "volume.h"
 #include "inode.h"
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 6, 0)
-void mark_ntfs_record_dirty(struct folio *folio);
-#else
-void mark_ntfs_record_dirty(struct page *page);
-#endif
 #endif /* _LINUX_NTFS_AOPS_H */

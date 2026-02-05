@@ -25,7 +25,6 @@
 #include "debug.h"
 #include "mft.h"
 #include "ntfs.h"
-#include "aops.h"
 #include "iomap.h"
 
 __le16 AT_UNNAMED[] = { cpu_to_le16('\0') };
@@ -4982,11 +4981,6 @@ int ntfs_attr_map_cluster(struct ntfs_inode *ni, s64 vcn_start, s64 *lcn_start,
 		}
 	}
 
-	if (lcn_seek_from == -1 && ni->lcn_seek_trunc != LCN_RL_NOT_MAPPED) {
-		lcn_seek_from = ni->lcn_seek_trunc;
-		ni->lcn_seek_trunc = LCN_RL_NOT_MAPPED;
-	}
-
 	rlc = ntfs_cluster_alloc(vol, vcn, clu_count, lcn_seek_from, DATA_ZONE,
 			false, true, true);
 	if (IS_ERR(rlc)) {
@@ -5564,10 +5558,9 @@ int ntfs_attr_fallocate(struct ntfs_inode *ni, loff_t start, loff_t byte_len, bo
 				if (err)
 					goto out;
 
-				err = ntfs_zero_range(VFS_I(ni),
-						      lcn << vol->cluster_size_bits,
-						      alloc_cnt << vol->cluster_size_bits,
-						      true);
+				err = ntfs_dio_zero_range(VFS_I(ni),
+							  lcn << vol->cluster_size_bits,
+							  alloc_cnt << vol->cluster_size_bits);
 				if (err > 0)
 					goto out;
 

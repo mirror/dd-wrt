@@ -10,8 +10,8 @@
 
 #include <linux/writeback.h>
 #include <linux/bio.h>
+#include <linux/iomap.h>
 
-#include "aops.h"
 #include "bitmap.h"
 #include "lcnalloc.h"
 #include "mft.h"
@@ -2278,7 +2278,7 @@ static int ntfs_mft_record_format(const struct ntfs_volume *vol, const s64 mft_n
 	 * ilookup5() to check if an inode is in icache and so on but this is
 	 * unnecessary as ntfs_writepage() will write the dirty record anyway.
 	 */
-	mark_ntfs_record_dirty(folio);
+	ntfs_mft_mark_dirty(folio);
 	folio_unlock(folio);
 	kunmap_local(m);
 	folio_put(folio);
@@ -2289,7 +2289,7 @@ static int ntfs_mft_record_format(const struct ntfs_volume *vol, const s64 mft_n
 	 * ilookup5() to check if an inode is in icache and so on but this is
 	 * unnecessary as ntfs_writepage() will write the dirty record anyway.
 	 */
-	mark_ntfs_record_dirty(page);
+	ntfs_mft_mark_dirty(page);
 	unlock_page(page);
 	kunmap(page);
 	put_page(page);
@@ -2798,13 +2798,13 @@ mft_rec_already_initialized:
 					~le16_to_cpu(MFT_RECORD_IN_USE));
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 6, 0)
 			/* Make sure the mft record is written out to disk. */
-			mark_ntfs_record_dirty(folio);
+			ntfs_mft_mark_dirty(folio);
 			folio_unlock(folio);
 			kunmap_local(m);
 			folio_put(folio);
 #else
 			/* Make sure the mft record is written out to disk. */
-			mark_ntfs_record_dirty(page);
+			ntfs_mft_mark_dirty(page);
 			unlock_page(page);
 			kunmap(page);
 			put_page(page);
@@ -2820,10 +2820,10 @@ mft_rec_already_initialized:
 		 * the mft record.
 		 */
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 6, 0)
-		mark_ntfs_record_dirty(folio);
+		ntfs_mft_mark_dirty(folio);
 		folio_unlock(folio);
 #else
-		mark_ntfs_record_dirty(page);
+		ntfs_mft_mark_dirty(page);
 		unlock_page(page);
 #endif
 		/*
@@ -2871,12 +2871,12 @@ mft_rec_already_initialized:
 		memcpy((*ni)->mrec, m, vol->mft_record_size);
 		post_read_mst_fixup((struct ntfs_record *)(*ni)->mrec, vol->mft_record_size);
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 6, 0)
-		mark_ntfs_record_dirty(folio);
+		ntfs_mft_mark_dirty(folio);
 		folio_unlock(folio);
 		(*ni)->folio = folio;
 		(*ni)->folio_ofs = ofs;
 #else
-		mark_ntfs_record_dirty(page);
+		ntfs_mft_mark_dirty(page);
 		unlock_page(page);
 		(*ni)->page = page;
 		(*ni)->page_ofs = ofs;
@@ -3506,5 +3506,20 @@ int ntfs_mft_writepages(struct address_space *mapping,
 #else
 	return write_cache_pages(mapping, wbc,
 				 ntfs_write_mft_block, mapping);
+#endif
+}
+
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 6, 0)
+void ntfs_mft_mark_dirty(struct folio *folio)
+{
+	iomap_dirty_folio(folio->mapping, folio);
+#else
+void ntfs_mft_mark_dirty(struct page *page)
+{
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 18, 0)
+	filemap_dirty_folio(page->mapping, page_folio(page));
+#else
+	__set_page_dirty_nobuffers(page);
+#endif
 #endif
 }
