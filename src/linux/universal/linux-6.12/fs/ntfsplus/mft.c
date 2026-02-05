@@ -3283,6 +3283,8 @@ static int ntfs_write_mft_block(struct page *page, struct writeback_control *wbc
 	u8 *kaddr;
 	struct ntfs_inode *locked_nis[PAGE_SIZE / NTFS_BLOCK_SIZE];
 	int nr_locked_nis = 0, err = 0, mft_ofs, prev_mft_ofs;
+	struct inode *ref_inos[PAGE_SIZE / NTFS_BLOCK_SIZE];
+	int nr_ref_inos = 0;
 	struct bio *bio = NULL;
 	unsigned long mft_no;
 	struct ntfs_inode *tni;
@@ -3337,7 +3339,8 @@ static int ntfs_write_mft_block(struct page *page, struct writeback_control *wbc
 		/* Check whether to write this mft record. */
 		tni = NULL;
 		if (ntfs_may_write_mft_record(vol, mft_no,
-					(struct mft_record *)(kaddr + mft_ofs), &tni)) {
+					(struct mft_record *)(kaddr + mft_ofs),
+					&tni, &ref_inos[nr_ref_inos])) {
 			unsigned int mft_record_off = 0;
 			s64 vcn_off = vcn;
 
@@ -3361,6 +3364,8 @@ static int ntfs_write_mft_block(struct page *page, struct writeback_control *wbc
 			 */
 			if (tni)
 				locked_nis[nr_locked_nis++] = tni;
+			else if (ref_inos[nr_ref_inos])
+				nr_ref_inos++;
 
 			if (bio && (mft_ofs != prev_mft_ofs + vol->mft_record_size)) {
 flush_bio:
@@ -3430,7 +3435,8 @@ flush_bio:
 			if (mft_no < vol->mftmirr_size)
 				ntfs_sync_mft_mirror(vol, mft_no,
 						(struct mft_record *)(kaddr + mft_ofs));
-		}
+		} else if (ref_inos[nr_ref_inos])
+			nr_ref_inos++;
 	}
 
 	if (bio) {
@@ -3466,6 +3472,12 @@ unm_done:
 				tni->mft_no);
 		atomic_dec(&tni->count);
 		iput(VFS_I(base_tni));
+	}
+
+	/* Dropping deferred references */
+	while (nr_ref_inos-- > 0) {
+		if (ref_inos[nr_ref_inos])
+			iput(ref_inos[nr_ref_inos]);
 	}
 
 	if (unlikely(err && err != -ENOMEM))
