@@ -5,8 +5,9 @@
  * Copyright (c) 2002-2007 Anton Altaparmakov
  */
 
+#include <linux/blkdev.h>
+
 #include "attrib.h"
-#include "aops.h"
 #include "logfile.h"
 #include "ntfs.h"
 

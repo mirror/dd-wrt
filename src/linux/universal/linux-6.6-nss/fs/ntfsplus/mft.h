@@ -99,4 +99,9 @@ int ntfs_mft_record_check(const struct ntfs_volume *vol, struct mft_record *m,
 			  unsigned long mft_no);
 int ntfs_mft_writepages(struct address_space *mapping,
 		struct writeback_control *wbc);
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 6, 0)
+void ntfs_mft_mark_dirty(struct folio *folio);
+#else
+void ntfs_mft_mark_dirty(struct page *page);
+#endif
 #endif /* _LINUX_NTFS_MFT_H */

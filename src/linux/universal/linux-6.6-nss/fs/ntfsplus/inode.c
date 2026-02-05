@@ -496,7 +496,6 @@ void __ntfs_init_inode(struct super_block *sb, struct ntfs_inode *ni)
 	atomic_set(&ni->count, 1);
 	ni->vol = NTFS_SB(sb);
 	ntfs_init_runlist(&ni->runlist);
-	ni->lcn_seek_trunc = LCN_RL_NOT_MAPPED;
 	mutex_init(&ni->mrec_lock);
 	if (ni->type == AT_ATTRIBUTE_LIST) {
 		lockdep_set_class(&ni->mrec_lock,
@@ -2670,7 +2669,7 @@ static int ntfs_inode_sync_standard_information(struct inode *vi, struct mft_rec
 	 * and the base mft record may actually not have been modified so it
 	 * might not need to be written out.
 	 * NOTE: It is not a problem when the inode for $MFT itself is being
-	 * written out as mark_ntfs_record_dirty() will only set I_DIRTY_PAGES
+	 * written out as ntfs_mft_mark_dirty() will only set I_DIRTY_PAGES
 	 * on the $MFT inode and hence ntfs_write_inode() will not be
 	 * re-invoked because of it which in turn is ok since the dirtied mft
 	 * record will be cleaned and written out to disk below, i.e. before
