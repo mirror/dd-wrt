@@ -7,9 +7,9 @@
  */
 
 #include <linux/bitops.h>
+#include <linux/blkdev.h>
 
 #include "bitmap.h"
-#include "aops.h"
 #include "ntfs.h"
 
 int ntfs_trim_fs(struct ntfs_volume *vol, struct fstrim_range *range)

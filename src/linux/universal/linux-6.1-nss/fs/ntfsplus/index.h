@@ -12,7 +12,6 @@
 
 #include "attrib.h"
 #include "mft.h"
-#include "aops.h"
 
 #define  VCN_INDEX_ROOT_PARENT  ((s64)-2)
 
