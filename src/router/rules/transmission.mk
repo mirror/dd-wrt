@@ -6,7 +6,8 @@ TRANSMISSION_CMAKE_OPTIONS=-DOPENSSL_CRYPTO_LIBRARY=$(SSLPATH)/libcrypto.so \
 		    -DCURL_LIBRARY=$(TOP)/curl/build/lib/.libs/libcurl.so \
 		    -DCMAKE_BUILD_TYPE=release \
 		    -DCMAKE_AR=${shell which $(ARCH)-linux-gcc-ar} \
-		    -DCMAKE_RANLIB=${shell which $(ARCH)-linux-gcc-ranlib}
+		    -DCMAKE_RANLIB=${shell which $(ARCH)-linux-gcc-ranlib} \
+		    -DCMAKE_INSTALL_PREFIX=$(INSTALLDIR)/transmission/usr
 
 TRANSMISSION_STAGING_DIR=$(TOP)/_staging/usr
 TRANSMISSION_EXTRA_CFLAGS=$(COPTS) $(MIPS16_OPT) $(THUMB) $(LTO) -O3 -I$(TOP) -I $(SSLPATH)/include -L $(SSLPATH) -lcrypto -DNEED_PRINTF -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64 -ffunction-sections -fdata-sections -Wl,--gc-sections 
@@ -19,7 +20,7 @@ transmission: curl zlib
 
 transmission-install:
 	rm -rf $(INSTALLDIR)/transmission/
-	$(MAKE) -C transmission/build install DESTDIR=$(INSTALLDIR)/transmission
+	$(MAKE) -C transmission/build install
 	mv $(INSTALLDIR)/transmission/usr/bin/transmission-daemon $(INSTALLDIR)/transmission/usr/bin/transmissiond
 	rm -rf $(INSTALLDIR)/transmission/usr/share/man
 	rm -f $(INSTALLDIR)/transmission/usr/lib/*.la
