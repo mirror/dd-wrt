@@ -1,6 +1,6 @@
 #! /bin/sh
 # check script for GNU ddrescue - Data recovery tool
-# Copyright (C) 2009-2025 Antonio Diaz Diaz.
+# Copyright (C) 2009-2026 Antonio Diaz Diaz.
 #
 # This script is free software: you have unlimited permission
 # to copy, distribute, and modify it.
@@ -133,11 +133,11 @@ done
 [ $? = 1 ] || test_failed $LINENO
 "${DDRESCUE}" -q --cpass=1- "${in}" out
 [ $? = 1 ] || test_failed $LINENO
-"${DDRESCUE}" -q --cpass=6 "${in}" out
+"${DDRESCUE}" -q --cpass=5 "${in}" out
 [ $? = 1 ] || test_failed $LINENO
-"${DDRESCUE}" -q --cpass=1,6 "${in}" out
+"${DDRESCUE}" -q --cpass=1,5 "${in}" out
 [ $? = 1 ] || test_failed $LINENO
-"${DDRESCUE}" -q --cpass=1-6 "${in}" out
+"${DDRESCUE}" -q --cpass=1-5 "${in}" out
 [ $? = 1 ] || test_failed $LINENO
 "${DDRESCUE}" -q --cpass=3-2 "${in}" out
 [ $? = 1 ] || test_failed $LINENO
@@ -176,9 +176,19 @@ rm -f out mapfile || framework_failure
 cmp "${in}" out || test_failed $LINENO
 
 rm -f out mapfile || framework_failure
-"${DDRESCUE}" -q -R -i15000 -a 1ks -E 1Kis "${in}" out mapfile ||
+"${DDRESCUE}" -q -R -i15_000 -a 1ks -E 1Kis "${in}" out mapfile ||
 	test_failed $LINENO
-"${DDRESCUE}" -q -R -s15000 --cpass=5 "${in}" out mapfile || test_failed $LINENO
+"${DDRESCUE}" -q -R -s15000 --cpass=0 "${in}" out mapfile || test_failed $LINENO
+cmp "${in}" out || test_failed $LINENO
+
+rm -f out mapfile || framework_failure
+"${DDRESCUE}" -q -s8000 -x0 "${in}" out mapfile || test_failed $LINENO
+sizei=`cat "${in}" | wc -c` || test_failed $LINENO
+sizeo=`cat out | wc -c` || test_failed $LINENO
+[ "${sizei}" = "${sizeo}" ] ||
+  { printf "%s != %s\n" "${sizei}" "${sizeo}" ; test_failed $LINENO ; }
+cmp -s "${in}" out && test_failed $LINENO
+"${DDRESCUE}" -q "${in}" out mapfile || test_failed $LINENO
 cmp "${in}" out || test_failed $LINENO
 
 rm -f out || framework_failure
@@ -187,7 +197,7 @@ rm -f out || framework_failure
 cmp "${in}" out || test_failed $LINENO
 
 printf "garbage" >> out || framework_failure
-"${DDRESCUE}" -q -N -R -t -i15000 -o0 --cpass=1-5 --pause-on-pass=0 out2 out ||
+"${DDRESCUE}" -q -N -R -t -i15000 -o0 --cpass=1-4 --pause-on-pass=0 out2 out ||
 	test_failed $LINENO
 cmp "${in}" out || test_failed $LINENO
 rm -f out2 || framework_failure
@@ -204,7 +214,7 @@ rm -f out mapfile || framework_failure
 "${DDRESCUE}" -q -c1 -H "${map3}" --delay-slow=0 "${in3}" out mapfile ||
 	test_failed $LINENO
 "${DDRESCUE}" -q -c1 -M -H "${map4}" "${in4}" out mapfile || test_failed $LINENO
-"${DDRESCUE}" -q -c1 -A -M --cpass=0 -H "${map5}" "${in5}" out mapfile ||
+"${DDRESCUE}" -q -c1 -A -M -N --cpass=0 -H "${map5}" "${in5}" out mapfile ||
 	test_failed $LINENO
 cmp -s "${in}" out && test_failed $LINENO
 "${DDRESCUE}" -q -c1 -n -N -H "${map5}" "${in5}" out mapfile || test_failed $LINENO
@@ -233,14 +243,14 @@ cmp "${in}" out || test_failed $LINENO
 
 rm -f out || framework_failure
 cp "${map1}" mapfile || framework_failure
-"${DDRESCUE}" -q -I --cpass=1,2,5 "${in2}" out mapfile || test_failed $LINENO
+"${DDRESCUE}" -q -I --cpass=1,2 "${in2}" out mapfile || test_failed $LINENO
 cp "${map2}" mapfile || framework_failure
 "${DDRESCUE}" -q -I "${in}" out mapfile || test_failed $LINENO
 cmp "${in}" out || test_failed $LINENO
 
 rm -f out || framework_failure
 cp "${map1}" mapfile || framework_failure
-"${DDRESCUE}" -q -R --cpass=1,2-5 "${in2}" out mapfile || test_failed $LINENO
+"${DDRESCUE}" -q -R --cpass=1,2-4 "${in2}" out mapfile || test_failed $LINENO
 cp "${map2}" mapfile || framework_failure
 "${DDRESCUE}" -q -R -C "${in1}" out mapfile || test_failed $LINENO
 cmp "${in}" out || test_failed $LINENO
@@ -248,7 +258,7 @@ cmp "${in}" out || test_failed $LINENO
 # test joining non-finished subsectors
 rm -f out || framework_failure
 cp "${map2}" mapfile || framework_failure
-"${DDRESCUE}" -q --cpass=1-2,5 "${in}" out mapfile || test_failed $LINENO
+"${DDRESCUE}" -q --cpass=1-2,4 "${in}" out mapfile || test_failed $LINENO
 cmp "${in1}" out || test_failed $LINENO
 cp "${map6}" mapfile || framework_failure
 "${DDRESCUE}" -q -s0x800 "${in2}" out mapfile || test_failed $LINENO
@@ -266,7 +276,7 @@ cp "${map6}" mapfile || framework_failure
 "${DDRESCUE}" -q -b0x80 "${in2}" out mapfile || test_failed $LINENO
 cmp -s "${in}" out && test_failed $LINENO
 "${DDRESCUELOG}" -d mapfile && test_failed $LINENO
-"${DDRESCUE}" -q -b0x80 -r1 "${in2}" out mapfile || test_failed $LINENO
+"${DDRESCUE}" -q -b0200 -r1 "${in2}" out mapfile || test_failed $LINENO
 cmp "${in}" out || test_failed $LINENO
 "${DDRESCUELOG}" -d mapfile || test_failed $LINENO
 
@@ -314,7 +324,7 @@ printf "garbage" >> copy || framework_failure
 cp "${in2}" out || framework_failure
 "${DDRESCUE}" -q -t -x 72602 "${in1}" copy || test_failed $LINENO
 "${DDRESCUE}" -q -G "${in}" out mapfile || test_failed $LINENO
-"${DDRESCUE}" -q -R -T1.5d copy out mapfile || test_failed $LINENO
+"${DDRESCUE}" -q -R -T2_160.500_0m copy out mapfile || test_failed $LINENO
 cmp "${in}" out || test_failed $LINENO
 
 "${DDRESCUE}" -q --same-file out out || test_failed $LINENO
@@ -425,7 +435,7 @@ cmp out copy || test_failed $LINENO
 "${DDRESCUELOG}" -b2048 -s72602 -f '-c?+' mapfile < out || test_failed $LINENO
 "${DDRESCUELOG}" -p "${map2}" - < mapfile || test_failed $LINENO
 "${DDRESCUELOG}" -b2048 -f '-c?+' mapfile < out || test_failed $LINENO
-"${DDRESCUELOG}" -s72602 -p "${map2}" mapfile || test_failed $LINENO
+"${DDRESCUELOG}" -s72_602 -p "${map2}" mapfile || test_failed $LINENO
 "${DDRESCUELOG}" -q -s72603 -p "${map2}" mapfile
 [ $? = 1 ] || test_failed $LINENO
 
@@ -695,7 +705,7 @@ done
 "${DDRESCUELOG}" -p "${map2}" out || test_failed $LINENO
 
 "${DDRESCUELOG}" --shift -o0x400 "${map1}" > out || test_failed $LINENO
-"${DDRESCUELOG}" --shift -o0x400 -s0x1179A out > copy || test_failed $LINENO
+"${DDRESCUELOG}" --shift -o0x400 -s0x11_79A out > copy || test_failed $LINENO
 "${DDRESCUELOG}" -p "${map2}" copy || test_failed $LINENO
 
 "${DDRESCUELOG}" --shift -o0x400 "${map2}" > out || test_failed $LINENO

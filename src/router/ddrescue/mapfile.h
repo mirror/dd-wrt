@@ -1,5 +1,5 @@
 /* GNU ddrescue - Data recovery tool
-   Copyright (C) 2004-2025 Antonio Diaz Diaz.
+   Copyright (C) 2004-2026 Antonio Diaz Diaz.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -63,7 +63,8 @@ public:
   Block & assign( const long long p, const long long s )
     {
     pos_ = p; size_ = s;
-    if( p < 0 ) { pos_ = 0; if( s > 0 ) size_ -= std::min( s, -p ); }
+    if( p < 0 )
+      { pos_ = 0; if( s > 0 ) size_ -= std::min( s, -p ); }	// keep end
     fix_size(); return *this;
     }
 
@@ -229,8 +230,8 @@ class Mapfile
   {
 public:
   enum Status
-    { copying = '?', trimming = '*', scraping = '/', retrying = '-',
-      filling = 'F', generating = 'G', finished = '+' };
+    { copying = '?', trimming = '*', sweeping = '%', scraping = '/',
+      retrying = '-', filling = 'F', generating = 'G', finished = '+' };
 
 private:
   long long current_pos_;
@@ -284,6 +285,14 @@ public:
   long sblocks() const { return sblock_vector.size(); }
   void change_sblock_status( const long i, const Sblock::Status st )
     { sblock_vector[i].status( st ); }
+  void append_sblock( long long size, const Sblock::Status st )
+    {
+    if( !sblock_vector.empty() && sblock_vector.back().status() == st )
+      { sblock_vector.back().enlarge( size ); return; }
+    const long long pos = sblock_vector.empty() ? 0 : sblock_vector.back().end();
+    if( size > LLONG_MAX - pos ) size = LLONG_MAX - pos;
+    sblock_vector.push_back( Sblock( pos, size, st ) );
+    }
 
   void split_by_domain_borders( const Domain & domain );
   void split_by_mapfile_borders( const Mapfile & mapfile );
@@ -307,15 +316,17 @@ public:
                            Sblock::Status * const old_stp = 0 );
 
   static bool isstatus( const int st )
-    { return ( st == copying || st == trimming || st == scraping ||
-               st == retrying || st == filling || st == generating ||
-               st == finished ); }
+    { return ( st == copying || st == trimming || st == sweeping ||
+               st == scraping || st == retrying || st == filling ||
+               st == generating || st == finished ); }
   static const char * status_name( const Status st );
   };
 
 
 // Defined in main_common.cc
 extern int verbosity;
+void show_option_error( const char * const arg, const char * const msg,
+                        const char * const option_name );
 void show_error( const char * const msg, const int errcode = 0,
                  const bool help = false );
 void show_file_error( const char * const filename, const char * const msg,
@@ -332,9 +343,10 @@ const char * format_num( long long num, int limit = 999999,
                          const int set_prefix = 0 );
 const char * format_num3p( long long num, const bool space = false );
 const char * format_num3( unsigned long long num, const bool negative = false );
+long long getnum( const char * const arg, const char * const option_name,
+                  const int hardbs, const long long llimit = -LLONG_MAX,
+                  const long long ulimit = LLONG_MAX,
+                  const char ** const tailp = 0 );
 const char * format_percentage( long long num, long long den,
                                 const int iwidth = 3, int prec = -2,
                                 const bool rounding = true );
-
-// Defined in mapbook.cc
-bool safe_fflush( FILE * const f );

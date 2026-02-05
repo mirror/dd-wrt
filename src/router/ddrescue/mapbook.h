@@ -1,5 +1,5 @@
 /* GNU ddrescue - Data recovery tool
-   Copyright (C) 2004-2025 Antonio Diaz Diaz.
+   Copyright (C) 2004-2026 Antonio Diaz Diaz.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -175,6 +175,8 @@ const char * const ctrlc_msg = "Press Ctrl-C to interrupt\n";
 const char * const early_eof_msg = "EOF found below the size calculated from mapfile.";
 const char * const initial_msg = "Initial status (read from mapfile)\n";
 const char * const wr_err_msg = "Write error";
+
+bool safe_fflush( FILE * const f );
 
 // Defined in genbook.cc
 const char * format_time( const long long t, const bool low_prec = false );

@@ -1,5 +1,5 @@
 /* GNU ddrescue - Data recovery tool
-   Copyright (C) 2004-2025 Antonio Diaz Diaz.
+   Copyright (C) 2004-2026 Antonio Diaz Diaz.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -17,29 +17,26 @@
 
 class Sliding_average		// Calculates the average of the last N terms
   {
-  unsigned index;		// either index or data.size() contain N
-  std::vector< long long > data;
+  unsigned long long sum;
+  unsigned index;		// one of index or data.size() contains N
+  std::vector< unsigned long long > data;
 
 public:
-  explicit Sliding_average( const unsigned terms ) : index( terms )
+  explicit Sliding_average( const unsigned terms ) : sum( 0 ), index( terms )
     { data.reserve( terms ); }
 
-  void reset() { if( index < data.size() ) index = data.size(); data.clear(); }
+//  void reset()
+//    { sum = 0; if( index < data.size() ) index = data.size(); data.clear(); }
 
-  void add_term( const long long term )
+  void add_term( const unsigned long long term )
     {
-    if( index < data.size() ) data[index++] = term;
+    if( index < data.size() ) { sum -= data[index]; data[index++] = term; }
     else if( index > data.size() ) data.push_back( term );
-    if( index == data.size() ) index = 0;
+    sum += term; if( index == data.size() ) index = 0;
     }
 
-  long long operator()() const
-    {
-    long long avg = 0;
-    for( unsigned i = 0; i < data.size(); ++i ) avg += data[i];
-    if( data.size() ) avg /= data.size();
-    return avg;
-    }
+  unsigned long long operator()() const
+    { return data.size() ? sum / data.size() : 0; }
   };
 
 
@@ -58,7 +55,7 @@ struct Rb_options
   unsigned long max_bad_areas;
   unsigned long max_read_errors;
   unsigned long max_slow_reads;
-  int cpass_bitset;		// 1 << ( pass - 1 ) for passes 1 to 5
+  int cpass_bitset;		// 1 << ( pass - 1 ) for passes 1 to 4
   int delay_slow;
   int max_retries;
   int o_direct_in;		// O_DIRECT or 0
@@ -70,6 +67,7 @@ struct Rb_options
   bool complete_only;
   bool new_bad_areas_only;
   bool noscrape;
+  bool nosweep;
   bool notrim;
   bool reopen_on_error;
   bool reset_slow;
@@ -87,14 +85,14 @@ struct Rb_options
       max_read_rate( 0 ), min_read_rate( -2 ), skipbs( -1 ),
       max_skipbs( max_max_skipbs ), max_bad_areas( ULONG_MAX ),
       max_read_errors( ULONG_MAX ), max_slow_reads( ULONG_MAX ),
-      cpass_bitset( 31 ), delay_slow( 30 ), max_retries( 0 ), o_direct_in( 0 ),
+      cpass_bitset( 15 ), delay_slow( 30 ), max_retries( 0 ), o_direct_in( 0 ),
       pause_on_error( 0 ), pause_on_pass( 0 ), preview_lines( 0 ),
       timeout( -1 ), compare_before_write( false ), complete_only( false ),
-      new_bad_areas_only( false ), noscrape( false ), notrim( false ),
-      reopen_on_error( false ), reset_slow( false ), retrim( false ),
-      reverse( false ), same_file( false ), simulated_poe( false ),
-      sparse( false ), try_again( false ), unidirectional( false ),
-      check_on_error( false )
+      new_bad_areas_only( false ), noscrape( false ), nosweep( false ),
+      notrim( false ), reopen_on_error( false ), reset_slow( false ),
+      retrim( false ), reverse( false ), same_file( false ),
+      simulated_poe( false ), sparse( false ), try_again( false ),
+      unidirectional( false ), check_on_error( false )
       {}
 
   bool operator==( const Rb_options & o ) const
@@ -117,8 +115,8 @@ struct Rb_options
                compare_before_write == o.compare_before_write &&
                complete_only == o.complete_only &&
                new_bad_areas_only == o.new_bad_areas_only &&
-               noscrape == o.noscrape && notrim == o.notrim &&
-               reopen_on_error == o.reopen_on_error &&
+               noscrape == o.noscrape && nosweep == o.nosweep &&
+               notrim == o.notrim && reopen_on_error == o.reopen_on_error &&
                reset_slow == o.reset_slow &&
                retrim == o.retrim && reverse == o.reverse &&
                same_file == o.same_file &&
@@ -190,7 +188,8 @@ class Rescuebook : public Mapbook, public Rb_options
                        const bool resume );
   int rcopy_non_tried( const char * const msg, const int pass,
                        const bool resume );
-  int trim_errors();
+  int trim_errors( const char * msg = 0 );
+  int sweep_non_tried();
   int scrape_errors();
   int copy_errors();
   int fcopy_errors( const char * const msg, const int pass, const bool resume );

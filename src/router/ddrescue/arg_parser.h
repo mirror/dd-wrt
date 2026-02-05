@@ -1,5 +1,5 @@
 /* Arg_parser - POSIX/GNU command-line argument parser. (C++ version)
-   Copyright (C) 2006-2025 Antonio Diaz Diaz.
+   Copyright (C) 2006-2026 Antonio Diaz Diaz.
 
    This library is free software. Redistribution and use in source and
    binary forms, with or without modification, are permitted provided
@@ -27,11 +27,11 @@
    option. A code value outside the unsigned char range means a long-only
    option.
 
-   Arg_parser normally makes it appear as if all the option arguments
-   were specified before all the non-option arguments for the purposes
-   of parsing, even if the user of your program intermixed option and
-   non-option arguments. If you want the arguments in the exact order
-   the user typed them, call 'Arg_parser' with 'in_order' = true.
+   Arg_parser normally makes it appear as if all the options were specified
+   before all the non-option arguments for the purposes of parsing, even if
+   the user of your program intermixed options and non-option arguments. If
+   you want the arguments in the exact order the user typed them, call
+   'Arg_parser' with 'flags' = 'in_order'.
 
    The argument '--' terminates all options; any following arguments are
    treated as non-option arguments, even if they begin with a hyphen.
@@ -47,7 +47,9 @@
 class Arg_parser
   {
 public:
-  enum Has_arg { no, yes, maybe, yme };		// yme = yes but maybe empty
+  enum Flags { in_order = 1, in_order_stop = 2, in_order_skip = 4,
+               neg_non_opt = 8 };		// negative is non-option
+  enum Has_arg { no, yes, maybe, yesme };	// yesme = yes but maybe empty
 
   struct Option
     {
@@ -72,6 +74,7 @@ private:
   const std::string empty_arg;
   std::string error_;
   std::vector< Record > data;
+  int argv_index_;
 
   bool parse_long_option( const char * const opt, const char * const arg,
                           const Option options[], int & argind );
@@ -80,13 +83,14 @@ private:
 
 public:
   Arg_parser( const int argc, const char * const argv[],
-              const Option options[], const bool in_order = false );
+              const Option options[], const int flags = 0 );
 
   // Restricted constructor. Parses a single token and argument (if any).
   Arg_parser( const char * const opt, const char * const arg,
               const Option options[] );
 
   const std::string & error() const { return error_; }
+  int argv_index() const { return argv_index_; }
 
   // The number of arguments parsed. May be different from argc.
   int arguments() const { return data.size(); }

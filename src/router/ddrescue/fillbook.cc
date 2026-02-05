@@ -1,5 +1,5 @@
 /* GNU ddrescue - Data recovery tool
-   Copyright (C) 2004-2025 Antonio Diaz Diaz.
+   Copyright (C) 2004-2026 Antonio Diaz Diaz.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -183,7 +183,7 @@ int Fillbook::do_fill( const int odes )
       }
     }
   int retval = fill_areas();
-  const bool signaled = ( retval == -1 );
+  const bool signaled = retval == -1;
   if( signaled ) retval = 0;
   if( verbosity >= 0 )
     {

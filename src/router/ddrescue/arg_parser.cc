@@ -1,5 +1,5 @@
 /* Arg_parser - POSIX/GNU command-line argument parser. (C++ version)
-   Copyright (C) 2006-2025 Antonio Diaz Diaz.
+   Copyright (C) 2006-2026 Antonio Diaz Diaz.
 
    This library is free software. Redistribution and use in source and
    binary forms, with or without modification, are permitted provided
@@ -17,11 +17,23 @@
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 */
 
+#include <cctype>
 #include <cstring>
 #include <string>
 #include <vector>
 
 #include "arg_parser.h"
+
+namespace {
+
+bool is_number( const char * const p )
+  {
+  return std::isdigit( *p ) || ( *p == '.' && std::isdigit( p[1] ) ) ||
+         std::strcmp( p, "inf" ) == 0 || std::strcmp( p, "Inf" ) == 0 ||
+         std::strcmp( p, "INF" ) == 0;
+  }
+
+} // end namespace
 
 
 bool Arg_parser::parse_long_option( const char * const opt, const char * const arg,
@@ -79,7 +91,7 @@ bool Arg_parser::parse_long_option( const char * const opt, const char * const a
     return true;
     }
 
-  if( options[index].has_arg == yes || options[index].has_arg == yme )
+  if( options[index].has_arg == yes || options[index].has_arg == yesme )
     {
     if( !arg || ( options[index].has_arg == yes && !arg[0] ) )
       {
@@ -123,7 +135,7 @@ bool Arg_parser::parse_short_option( const char * const opt, const char * const 
       {
       data.back().argument = &opt[cind]; ++argind; cind = 0;
       }
-    else if( options[index].has_arg == yes || options[index].has_arg == yme )
+    else if( options[index].has_arg == yes || options[index].has_arg == yesme )
       {
       if( !arg || ( options[index].has_arg == yes && !arg[0] ) )
         {
@@ -140,7 +152,8 @@ bool Arg_parser::parse_short_option( const char * const opt, const char * const 
 
 
 Arg_parser::Arg_parser( const int argc, const char * const argv[],
-                        const Option options[], const bool in_order )
+                        const Option options[], const int flags )
+  : argv_index_( argc )
   {
   if( argc < 2 || !argv || !options ) return;
 
@@ -152,9 +165,10 @@ Arg_parser::Arg_parser( const int argc, const char * const argv[],
     const unsigned char ch1 = argv[argind][0];
     const unsigned char ch2 = ch1 ? argv[argind][1] : 0;
 
-    if( ch1 == '-' && ch2 )		// we found an option
+    if( ch1 == '-' && ch2 && ( ch2 == '-' || (flags & neg_non_opt) == 0 ||
+                               !is_number( argv[argind] + 1 ) ) )
       {
-      const char * const opt = argv[argind];
+      const char * const opt = argv[argind];	// we found an option
       const char * const arg = ( argind + 1 < argc ) ? argv[argind+1] : 0;
       if( ch2 == '-' )
         {
@@ -163,14 +177,13 @@ Arg_parser::Arg_parser( const int argc, const char * const argv[],
         }
       else if( !parse_short_option( opt, arg, options, argind ) ) break;
       }
-    else
-      {
-      if( in_order ) data.push_back( Record( argv[argind++] ) );
-      else non_options.push_back( argv[argind++] );
-      }
+    else if( flags & (in_order_stop | in_order_skip) ) break;
+    else if( flags & in_order ) data.push_back( Record( argv[argind++] ) );
+    else non_options.push_back( argv[argind++] );
     }
   if( !error_.empty() ) data.clear();
-  else
+  else if( flags & in_order_skip ) argv_index_ = argind;
+  else						// copy non-option arguments
     {
     for( unsigned i = 0; i < non_options.size(); ++i )
       data.push_back( Record( non_options[i] ) );
@@ -182,6 +195,7 @@ Arg_parser::Arg_parser( const int argc, const char * const argv[],
 
 Arg_parser::Arg_parser( const char * const opt, const char * const arg,
                         const Option options[] )
+  : argv_index_( 0 )
   {
   if( !opt || !opt[0] || !options ) return;
 

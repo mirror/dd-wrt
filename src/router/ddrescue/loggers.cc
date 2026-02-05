@@ -1,5 +1,5 @@
 /* GNU ddrescue - Data recovery tool
-   Copyright (C) 2013-2025 Antonio Diaz Diaz.
+   Copyright (C) 2013-2026 Antonio Diaz Diaz.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -34,9 +34,11 @@ const char * format_time_dhms( const long long t )
   const int s = t % 60;
   const int m = ( t / 60 ) % 60;
   const int h = ( t / 3600 ) % 24;
-  const long long d = t / 86400;
+  const int d = ( t / 86400 ) % 365;
+  const long long y = t / 31536000;
 
-  if( d ) snprintf( buf, sizeof buf, "%lldd:%02dh:%02dm:%02ds", d, h, m, s );
+  if( y ) snprintf( buf, sizeof buf, "%lldy:%dd:%02dh:%02dm:%02ds", y, d, h, m, s );
+  else if( d ) snprintf( buf, sizeof buf, "%dd:%02dh:%02dm:%02ds", d, h, m, s );
   else if( h ) snprintf( buf, sizeof buf, "%dh:%02dm:%02ds", h, m, s );
   else if( m ) snprintf( buf, sizeof buf, "%dm:%02ds", m, s );
   else snprintf( buf, sizeof buf, "%ds", s );
@@ -80,11 +82,11 @@ bool Event_logger::open_file()
   if( !f )
     {
     struct stat st;
-    const bool file_exists = ( stat( filename_, &st ) == 0 );
+    const bool file_exists = stat( filename_, &st ) == 0;
     f = std::fopen( filename_, "a" );
     error = !f || ( file_exists && std::fputc( '\n', f ) == EOF ) ||
             !write_file_header( f, "Events Logfile" ) ||
-            std::fputs( "#         Time  Rescued  Event\n", f ) == EOF;
+            std::fputs( "#          Time     Rescued  Event\n", f ) == EOF;
     }
   return !error;
   }
@@ -99,28 +101,36 @@ bool Event_logger::echo_msg( const char * const msg )
   }
 
 
-bool Event_logger::print_msg( const long long time,
-                              const char * const percent_rescued,
-                              const char * const msg )
+bool Event_logger::print_msg(
+                  const long long time, const long long finished_size,
+                  const char * const percent_rescued, const char * const msg,
+                  const char * const a_rate, const unsigned long read_errors )
   {
-  if( f && !error &&
-      std::fprintf( f, "%14s  %s  %s\n", format_time_dhms( time ),
-                    percent_rescued, msg ) < 0 )
-    error = true;
+  if( f && !error )
+    { if( std::fprintf( f, "%15s  %7sB/s  %s\n%27s  %s  %7s read errors\n",
+                        format_time_dhms( time ), a_rate, msg,
+                        format_num3( finished_size ), percent_rescued,
+                        format_num3( read_errors ) ) < 0 ) error = true;
+      else std::fflush( f ); }
   return !error;
   }
 
 
-bool Event_logger::print_eor( const long long time,
-                              const char * const percent_rescued,
-                              const long long current_pos,
-                              const char * const current_status_name )
+bool Event_logger::print_eor(
+                  const long long time, const long long finished_size,
+                  const char * const percent_rescued,
+                  const long long current_pos,
+                  const char * const current_status_name,
+                  const char * const a_rate, const unsigned long read_errors )
   {
-  if( f && !error &&
-      std::fprintf( f, "%14s  %s  End of run (0x%08llX  %s)\n",
-                    format_time_dhms( time ), percent_rescued,
-                    current_pos, current_status_name ) < 0 )
-    error = true;
+  if( f && !error )
+    { if( std::fprintf( f, "%15s  %7sB/s  End of run (0x%08llX  %s)\n"
+                        "%27s  %s  %7s read errors\n",
+                        format_time_dhms( time ), a_rate, current_pos,
+                        current_status_name, format_num3( finished_size ),
+                        percent_rescued, format_num3( read_errors ) ) < 0 )
+        error = true;
+      else std::fflush( f ); }
   return !error;
   }
 

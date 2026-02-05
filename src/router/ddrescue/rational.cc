@@ -1,5 +1,5 @@
 /* Rational - Rational number class with overflow detection
-   Copyright (C) 2005-2025 Antonio Diaz Diaz.
+   Copyright (C) 2005-2026 Antonio Diaz Diaz.
 
    This library is free software. Redistribution and use in source and
    binary forms, with or without modification, are permitted provided
@@ -155,17 +155,17 @@ int Rational::parse( const char * const s )
   if( !s || !s[0] ) return 0;
   long long n = 0, d = 1;		// restrain intermediate overflow
   int c = 0;
-  bool minus = false;
 
   while( std::isspace( s[c] ) ) ++c;
-  if( s[c] == '+' ) ++c;
-  else if( s[c] == '-' ) { ++c; minus = true; }
+  const bool minus = s[c] == '-';
+  if( minus || s[c] == '+' ) ++c;
   if( !std::isdigit( s[c] ) && s[c] != '.' ) return 0;
 
   while( std::isdigit( s[c] ) )		// integer part or numerator
     {
     if( ( LLONG_MAX - (s[c] - '0') ) / 10 < n ) return 0;
     n = (n * 10) + (s[c] - '0'); ++c;
+    if( s[c] == '_' && std::isdigit( s[c+1] ) ) ++c;
     }
 
   if( s[c] == '.' )
@@ -176,6 +176,7 @@ int Rational::parse( const char * const s )
       if( ( LLONG_MAX - (s[c] - '0') ) / 10 < n || LLONG_MAX / 10 < d )
         return 0;
       n = (n * 10) + (s[c] - '0'); d *= 10; ++c;
+      if( s[c] == '_' && std::isdigit( s[c+1] ) ) ++c;
       }
     }
   else if( s[c] == '/' )
@@ -185,6 +186,7 @@ int Rational::parse( const char * const s )
       {
       if( ( LLONG_MAX - (s[c] - '0') ) / 10 < d ) return 0;
       d = (d * 10) + (s[c] - '0'); ++c;
+      if( s[c] == '_' && std::isdigit( s[c+1] ) ) ++c;
       }
     if( d == 0 ) return 0;
     }
@@ -197,11 +199,12 @@ int Rational::parse( const char * const s )
     else if( LLONG_MAX / 100 >= d ) d *= 100;
     else return 0;
     }
+  if( s[c] == '_' ) return 0;			// trailing underscore
 
   if( minus ) n = -n;
   Rational tmp; tmp.normalize( n, d );
-  if( !tmp.error() ) { *this = tmp; return c; }
-  return 0;
+  if( tmp.error() ) return 0;
+  *this = tmp; return c;
   }
 
 

@@ -1,5 +1,5 @@
 /* GNU ddrescue - Data recovery tool
-   Copyright (C) 2004-2025 Antonio Diaz Diaz.
+   Copyright (C) 2004-2026 Antonio Diaz Diaz.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -238,7 +238,8 @@ int Rescuebook::copy_and_update( const Block & b, int & copied_size,
       }
     current_status( curr_st, msg );
     current_pass( curr_pass );
-    event_logger.print_msg( t1 - t0, percent_rescued(), msg );
+    event_logger.print_msg( t1 - t0, finished_size, percent_rescued(), msg,
+                            format_num( a_rate, 99999 ), read_errors );
     read_logger.print_msg( t1 - t0, msg );
     }
   current_pos( forward ? b.pos() : b.end() );
@@ -281,22 +282,23 @@ int Rescuebook::copy_non_tried()
   {
   char msgbuf[80] = "Copying non-tried blocks... Pass ";
   const int msglen = std::strlen( msgbuf );
-  const bool cpass_given = ( cpass_bitset != 31 );
-  bool resume = ( !cpass_given && current_status() == copying );
-  if( !resume || current_pass() > 5 ) current_pass( 1 );	// reset pass
+  const bool cpass_given = cpass_bitset != 15;
+  bool resume =
+    !cpass_given && current_status() == copying && current_pass() <= 4;
+  if( !resume ) current_pass( 1 );			// reset pass
   const int first_pass = current_pass();
   bool forward = !reverse;
 
-  for( int pass = 1; pass <= 5; ++pass )
+  for( int pass = 1; pass <= 4; ++pass )
     {
     if( pass >= first_pass && cpass_bitset & ( 1 << ( pass - 1 ) ) )
       {
       if( pass != first_pass ) resume = false;
       first_post = true;
-      snprintf( msgbuf + msglen, ( sizeof msgbuf ) - msglen, "%d %s",
+      snprintf( msgbuf + msglen, ( sizeof msgbuf ) - msglen, "%u %s",
                 pass, forward ? "(forwards)" : "(backwards)" );
-      int retval = forward ? fcopy_non_tried( msgbuf, pass, resume ) :
-                             rcopy_non_tried( msgbuf, pass, resume );
+      const int retval = forward ? fcopy_non_tried( msgbuf, pass, resume ) :
+                                   rcopy_non_tried( msgbuf, pass, resume );
       if( retval != -3 ) return retval;
       }
     if( pass >= 2 && min_read_rate >= 0 ) min_read_rate = -1;	// reset rate
@@ -316,7 +318,6 @@ int Rescuebook::fcopy_non_tried( const char * const msg, const int pass,
   long long pos = 0;
   long long eskip_size = skipbs;	// size to skip on error if skipbs > 0
   long long sskip_size = 0;		// size to skip on slow if skipbs > 0
-  const bool after_finished = pass == 3 || pass == 4;
   bool block_found = false;
   bool block_processed = false;
 
@@ -330,7 +331,7 @@ int Rescuebook::fcopy_non_tried( const char * const msg, const int pass,
   while( pos >= 0 )
     {
     Block b( pos, softbs() );
-    if( find_chunk( b, Sblock::non_tried, domain(), softbs(), after_finished ) )
+    if( find_chunk( b, Sblock::non_tried, domain(), softbs(), pass >= 2 ) )
       block_found = true;
     if( b.size() <= 0 ) break;
     block_processed = true;
@@ -339,28 +340,26 @@ int Rescuebook::fcopy_non_tried( const char * const msg, const int pass,
     pos = b.end();
     int copied_size = 0, error_size = 0;
     const int retval = copy_and_update( b, copied_size, error_size, msg,
-                                        copying, pass, true, Sblock::non_trimmed );
+                                copying, pass, true, Sblock::non_trimmed );
     if( retval ) return retval;
     const bool slow = update_rates();
-    if( slow )
-      { ++slow_reads;
-        if( slow_reads > max_slow_reads ) { e_code |= 32; return 1; } }
+    if( slow && ++slow_reads > max_slow_reads ) { e_code |= 32; return 1; }
     if( ( error_size > 0 || ( slow && pass <= 2 ) ) && pos >= 0 )
       {
       if( reopen_on_error && !reopen_infile() ) return 1;
       if( pause_on_error > 0 ) do_pause_on_error();
-      if( skipbs > 0 && pass <= 4 )		// don't skip if skipbs == 0
+      if( skipbs > 0 )			// don't skip if skipbs == 0
         {
         b.pos( pos );
-        if( pass >= 2 )	// skip rest of block at first error or slow read
-          b.size( -1 );
-        else if( error_size > 0 )
+        if( error_size > 0 )
           {
-          b.size( eskip_size );
-          if( eskip_size <= max_skipbs / 2 ) eskip_size *= 2;
-          else eskip_size = max_skipbs;
+          if( pass == 1 )
+            { b.size( eskip_size );
+              if( eskip_size <= max_skipbs / 2 ) eskip_size *= 2;
+              else eskip_size = max_skipbs; }
+          else b.size( -1 );	// (max size) skip rest of block at first error
           }
-        else				// slow read on pass 1
+        else				// slow read
           {
           if( !prev_slow )
             sskip_size = std::max( skipbs, std::min( c_rate, max_skipbs ) );
@@ -391,7 +390,6 @@ int Rescuebook::rcopy_non_tried( const char * const msg, const int pass,
   long long end = LLONG_MAX;
   long long eskip_size = skipbs;	// size to skip on error if skipbs > 0
   long long sskip_size = 0;		// size to skip on slow if skipbs > 0
-  const bool before_finished = pass == 3 || pass == 4;
   bool block_found = false;
   bool block_processed = false;
 
@@ -405,7 +403,7 @@ int Rescuebook::rcopy_non_tried( const char * const msg, const int pass,
   while( end > 0 )
     {
     Block b( end - softbs(), softbs() );
-    if( rfind_chunk( b, Sblock::non_tried, domain(), softbs(), before_finished ) )
+    if( rfind_chunk( b, Sblock::non_tried, domain(), softbs(), pass >= 2 ) )
       block_found = true;
     if( b.size() <= 0 ) break;
     block_processed = true;
@@ -414,27 +412,25 @@ int Rescuebook::rcopy_non_tried( const char * const msg, const int pass,
     end = b.pos();
     int copied_size = 0, error_size = 0;
     const int retval = copy_and_update( b, copied_size, error_size, msg,
-                                        copying, pass, false, Sblock::non_trimmed );
+                                copying, pass, false, Sblock::non_trimmed );
     if( retval ) return retval;
     const bool slow = update_rates();
-    if( slow )
-      { ++slow_reads;
-        if( slow_reads > max_slow_reads ) { e_code |= 32; return 1; } }
+    if( slow && ++slow_reads > max_slow_reads ) { e_code |= 32; return 1; }
     if( ( error_size > 0 || ( slow && pass <= 2 ) ) && end > 0 )
       {
       if( reopen_on_error && !reopen_infile() ) return 1;
       if( pause_on_error > 0 ) do_pause_on_error();
-      if( skipbs > 0 && pass <= 4 )		// don't skip if skipbs == 0
+      if( skipbs > 0 )			// don't skip if skipbs == 0
         {
-        if( pass >= 2 )	// skip rest of block at first error or slow read
-          b.assign( 0, end );
-        else if( error_size > 0 )
+        if( error_size > 0 )
           {
-          b.assign( end - eskip_size, eskip_size );
-          if( eskip_size <= max_skipbs / 2 ) eskip_size *= 2;
-          else eskip_size = max_skipbs;
+          if( pass == 1 )
+            { b.assign( end - eskip_size, eskip_size );
+              if( eskip_size <= max_skipbs / 2 ) eskip_size *= 2;
+              else eskip_size = max_skipbs; }
+          else b.assign( 0, end );	// skip rest of block at first error
           }
-        else				// slow read on pass 1
+        else				// slow read
           {
           if( !prev_slow )
             sskip_size = std::max( skipbs, std::min( c_rate, max_skipbs ) );
@@ -456,13 +452,92 @@ int Rescuebook::rcopy_non_tried( const char * const msg, const int pass,
 
 
 /* Return values: 1 error, 0 OK, -1 interrupted, -2 mapfile error.
-   Trim both edges of each damaged area sequentially. If any edge is
-   adjacent to a bad sector, leave it for the scraping phase.
+   Trim each non_trimmed block from the edge(s) adjacent to a finished block.
+   Leave untrimmed the edge(s) adjacent to a non-tried block.
+   If both edges touch tried blocks, mark the rest of the block as non-scraped.
 */
-int Rescuebook::trim_errors()
+int Rescuebook::trim_errors( const char * msg )
   {
-  const char * const msg = reverse ? "Trimming failed blocks... (backwards)" :
-                                     "Trimming failed blocks... (forwards)";
+  if( !msg ) msg = reverse ? "Trimming failed blocks... (backwards)" :
+                             "Trimming failed blocks... (forwards)";
+  const bool sweep = current_status() == sweeping;
+  if( !sweep ) first_post = true;
+
+  for( long i = 0; i < sblocks(); )
+    {
+    const long idx = reverse ? sblocks() - 1 - i : i;
+    const Sblock sb( sblock( idx ) );
+    if( !domain().includes( sb ) )
+      { if( ( !reverse && domain() < sb ) || ( reverse && domain() > sb ) )
+          break;
+        ++i; continue; }
+    if( sb.status() != sb.non_trimmed ) { ++i; continue; }
+    const bool lgood = idx <= 0 || sblock( idx - 1 ).status() == sb.finished;
+    const bool rgood =
+      idx + 1 >= sblocks() || sblock( idx + 1 ).status() == sb.finished;
+    const bool untried =
+      idx <= 0 || sblock( idx - 1 ).status() == sb.non_tried ||
+        sblock( idx - 1 ).status() == sb.non_trimmed ||
+      idx + 1 >= sblocks() || sblock( idx + 1 ).status() == sb.non_tried ||
+        sblock( idx + 1 ).status() == sb.non_trimmed;
+    if( !lgood && !rgood )	// leave block for sweeping or scraping
+      { if( !untried ) change_chunk_status( sb, sb.non_scraped );
+        ++i; continue; }
+    bool error_found = !lgood;
+    long long pos = sb.pos();
+    long long end = sb.end();
+    while( pos < end && !error_found )		// trim leading edge
+      {
+      Block b( pos, std::min( (long long)hardbs(), end - pos ) );
+      if( b.end() != end ) b.align_end( hardbs() );
+      pos = b.end();
+      int copied_size = 0, error_size = 0;
+      const int retval = copy_and_update( b, copied_size, error_size, msg,
+                                  sweep ? sweeping : trimming, 1, true );
+      if( retval ) return retval;
+      update_rates();
+      if( error_size > 0 ) { error_found = true;
+        if( reopen_on_error && !reopen_infile() ) return 1;
+        if( pause_on_error > 0 ) do_pause_on_error(); }
+      if( !update_mapfile( odes_ ) ) return -2;
+      }
+    error_found = !rgood;
+    while( pos < end && !error_found )		// trim trailing edge
+      {
+      const int size = std::min( (long long)hardbs(), end - pos );
+      Block b( end - size, size );
+      if( b.pos() != pos ) b.align_pos( hardbs() );
+      end = b.pos();
+      int copied_size = 0, error_size = 0;
+      const int retval = copy_and_update( b, copied_size, error_size, msg,
+                                  sweep ? sweeping : trimming, 1, false );
+      if( retval ) return retval;
+      update_rates();
+      if( error_size > 0 ) { error_found = true;
+        if( reopen_on_error && !reopen_infile() ) return 1;
+        if( pause_on_error > 0 ) do_pause_on_error(); }
+      if( !update_mapfile( odes_ ) ) return -2;
+      }
+    if( pos < end && !untried )
+      {
+      const long index = find_index( end - 1 );
+      if( index >= 0 && domain().includes( sblock( index ) ) &&
+          sblock( index ).status() == sb.non_trimmed )
+        change_chunk_status( sblock( index ), sb.non_scraped );
+      }
+    }
+  if( !sweep ) show_status( -1, msg, true );	// update at end of pass
+  return 0;
+  }
+
+
+/* Return values: 1 error, 0 OK, -1 interrupted, -2 mapfile error.
+   Read the remaining non-tried part of the domain skipped during copying.
+*/
+int Rescuebook::sweep_non_tried()
+  {
+  const char * const msg = reverse ? "Sweeping non-tried blocks... (backwards)" :
+                                     "Sweeping non-tried blocks... (forwards)";
   first_post = true;
 
   for( long i = 0; i < sblocks(); )
@@ -473,55 +548,26 @@ int Rescuebook::trim_errors()
       { if( ( !reverse && domain() < sb ) || ( reverse && domain() > sb ) )
           break;
         ++i; continue; }
-    if( sb.status() != Sblock::non_trimmed ) { ++i; continue; }
-    const bool lbad = ( idx > 0 &&
-                        sblock( idx - 1 ).status() == Sblock::bad_sector );
-    const bool rbad = ( idx + 1 < sblocks() &&
-                        sblock( idx + 1 ).status() == Sblock::bad_sector );
-    if( lbad && rbad )		// leave block for the scraping phase
-      { change_sblock_status( idx, Sblock::non_scraped ); ++i; continue; }
-    bool error_found = lbad;
-    long long pos = sb.pos();
-    long long end = sb.end();
-    while( pos < end && !error_found )		// trim leading edge
+    if( sb.status() != sb.non_tried ) { ++i; continue; }
+    long long pos = (!reverse || sb.size() <= softbs()) ? sb.pos() :
+                    sb.end() - 1 - ( sb.size() - 1 ) % softbs();
+    while( pos >= sb.pos() && pos < sb.end() )
       {
-      Block b( pos, std::min( (long long)hardbs(), end - pos ) );
-      if( b.end() != end ) b.align_end( hardbs() );
-      pos = b.end();
+      const Block b( pos, std::min( (long long)softbs(), sb.end() - pos ) );
+      if( reverse ) pos -= softbs(); else pos += softbs();
       int copied_size = 0, error_size = 0;
       const int retval = copy_and_update( b, copied_size, error_size, msg,
-                                          trimming, 1, true );
+                                  sweeping, 1, !reverse, Sblock::non_trimmed );
       if( retval ) return retval;
       update_rates();
-      if( error_size > 0 ) { error_found = true;
+      if( error_size > 0 && pos >= sb.pos() && pos < sb.end() )
+        {
         if( reopen_on_error && !reopen_infile() ) return 1;
-        if( pause_on_error > 0 ) do_pause_on_error(); }
+        if( pause_on_error > 0 ) do_pause_on_error();
+        }
       if( !update_mapfile( odes_ ) ) return -2;
       }
-    error_found = rbad;
-    while( pos < end && !error_found )		// trim trailing edge
-      {
-      const int size = std::min( (long long)hardbs(), end - pos );
-      Block b( end - size, size );
-      if( b.pos() != pos ) b.align_pos( hardbs() );
-      end = b.pos();
-      int copied_size = 0, error_size = 0;
-      const int retval = copy_and_update( b, copied_size, error_size, msg,
-                                          trimming, 1, false );
-      if( retval ) return retval;
-      update_rates();
-      if( error_size > 0 ) { error_found = true;
-        if( reopen_on_error && !reopen_infile() ) return 1;
-        if( pause_on_error > 0 ) do_pause_on_error(); }
-      if( !update_mapfile( odes_ ) ) return -2;
-      }
-    if( pos < end )
-      {
-      const long index = find_index( end - 1 );
-      if( index >= 0 && domain().includes( sblock( index ) ) &&
-          sblock( index ).status() == Sblock::non_trimmed )
-        change_chunk_status( sblock( index ), Sblock::non_scraped );
-      }
+    const int retval = trim_errors( msg ); if( retval ) return retval;
     }
   show_status( -1, msg, true );			// update at end of pass
   return 0;
@@ -544,7 +590,7 @@ int Rescuebook::scrape_errors()
       { if( ( !reverse && domain() < sb ) || ( reverse && domain() > sb ) )
           break;
         ++i; continue; }
-    if( sb.status() != Sblock::non_scraped ) { ++i; continue; }
+    if( sb.status() != sb.non_scraped ) { ++i; continue; }
     long long pos = sb.pos();
     const long long end = sb.end();
     while( pos < end )
@@ -570,29 +616,29 @@ int Rescuebook::scrape_errors()
 
 /* Return values: 1 error, 0 OK, -1 interrupted, -2 mapfile error.
    Try to read the damaged areas, one sector at a time.
+   Retry starts at 1, but pass starts at 1 or 2 to resume in the same direction.
 */
 int Rescuebook::copy_errors()
   {
   char msgbuf[80] = "Retrying bad sectors... Retry ";
   const int msglen = std::strlen( msgbuf );
-  bool resume = ( current_status() == retrying );
+  bool resume = current_status() == retrying;
   const int first_pass =
-    ( !resume || unidirectional || current_pass() & 1 ) ? 1 : 2;  // odd:even
-  bool forward = !reverse;
-  if( !unidirectional && first_pass == 2 ) forward = !forward;
+    (!resume || unidirectional || current_pass() & 1) ? 1 : 2;	// odd:even
+  bool forward = (unidirectional || first_pass == 1) ? !reverse : reverse;
 
-  for( int pass = first_pass;
-       max_retries < 0 || pass - first_pass + 1 <= max_retries; ++pass )
+  for( int pass = first_pass; pass < INT_MAX / 2; ++pass )
     {
+    if( max_retries >= 0 && pass - first_pass + 1 > max_retries ) break;
     first_post = true;
-    snprintf( msgbuf + msglen, ( sizeof msgbuf ) - msglen, "%d %s",
-              pass - first_pass + 1, forward ? "(forwards)" : "(backwards)" );
-    int retval = forward ? fcopy_errors( msgbuf, pass, resume ) :
-                           rcopy_errors( msgbuf, pass, resume );
+    snprintf( msgbuf + msglen, ( sizeof msgbuf ) - msglen, "%s %s",
+              format_num3( pass - first_pass + 1 ),
+              forward ? "(forwards)" : "(backwards)" );
+    const int retval = forward ? fcopy_errors( msgbuf, pass, resume ) :
+                                 rcopy_errors( msgbuf, pass, resume );
     if( retval != -3 ) return retval;
     resume = false;
     if( !unidirectional ) forward = !forward;
-    if( pass >= INT_MAX / 2 ) break;
     }
   return 0;
   }
@@ -703,7 +749,7 @@ bool Rescuebook::update_rates( const bool force )
     ts -= delta;
     t1 = t2;
     }
-  const bool force_update = ( force && t2 <= t1 );
+  const bool force_update = force && t2 <= t1;
   if( force_update ) t2 = t1 + 1;		// force update of e_code
   if( t2 > t1 )
     {
@@ -715,11 +761,14 @@ bool Rescuebook::update_rates( const bool force )
       ts -= delta;
       tp = 0;
       }
-    a_rate = ( finished_size - first_size ) / ( t2 - t0 );
-    c_rate = ( finished_size - last_size ) / ( t2 - t1 );
+    if( !force_update || a_rate <= 0 )
+      a_rate = ( finished_size - first_size ) / ( t2 - t0 );
+    if( !force_update || c_rate <= 0 )
+      c_rate = ( finished_size - last_size ) / ( t2 - t1 );
     if( !( e_code & 4 ) )
       {
-      if( finished_size != last_size ) { last_size = finished_size; ts = t2; }
+      if( finished_size != last_size )
+        { last_size = finished_size; if( !force_update ) ts = t2; }
       else if( !force_update && timeout >= 0 && t2 - ts > timeout && t1 > t0 )
         e_code |= 4;
       }
@@ -734,9 +783,9 @@ bool Rescuebook::update_rates( const bool force )
       {
       t1 = t2;
       prev_slow = current_slow;
-      current_slow = ( t1 - t0 > delay_slow &&	// delay checking slow reads
-                       ( ( min_read_rate > 0 && c_rate < min_read_rate ) ||
-                         ( min_read_rate == 0 && c_rate < a_rate / 10 ) ) );
+      current_slow = t1 - t0 > delay_slow &&	// delay checking slow reads
+                     ( ( min_read_rate > 0 && c_rate < min_read_rate ) ||
+                       ( min_read_rate == 0 && c_rate < a_rate / 10 ) );
       if( !current_slow && reset_slow ) slow_reads = 0;
       return current_slow;
       }
@@ -796,9 +845,9 @@ void Rescuebook::show_status( const long long ipos, const char * const msg,
       std::printf( "  rescued: %9sB,   bad areas:%11s,       run time: %11s\n",
                    format_num( finished_size ), format_num3( bad_areas ),
                    format_time( t1 - t0 ) );
-      if( first_post ) sliding_avg.reset();
-      else sliding_avg.add_term( c_rate );
+      if( t1 - t0 > 1 ) sliding_avg.add_term( c_rate );
       const long long s_rate = domain().full() ? 0 : sliding_avg();
+      // 315_359_999_968_464_000 = seconds in 999_999_999 years
       const long remaining_time = ( s_rate <= 0 ) ? -1 :
         std::min( std::min( (long long)LONG_MAX, 315359999968464000LL ),
                   ( non_tried_size + non_trimmed_size + non_scraped_size +
@@ -810,7 +859,7 @@ void Rescuebook::show_status( const long long ipos, const char * const msg,
         std::printf( "slow reads:%10s,", format_num3( slow_reads ) );
       else std::fputs( "                      ", stdout );
       std::printf( "         time since last successful read: %11s\n",
-                   format_time( ( ts > t0 ) ? t1 - ts : -1 ) );
+                   format_time( (ts > t0 || finished_size > 0) ? t1 - ts : -1 ) );
       if( msg && *msg && !errors_or_timeout() )
         {
         const int len = std::strlen( msg ); std::printf( "\r%s", msg );
@@ -847,13 +896,12 @@ Rescuebook::Rescuebook( const long long offset, const long long insize,
     a_rate( 0 ), c_rate( 0 ), first_size( 0 ), last_size( 0 ),
     iobuf_ipos( -1 ), last_ipos( 0 ), t0( 0 ), t1( 0 ), ts( 0 ), tp( 0 ),
     oldlen( 0 ), rates_updated( false ), current_slow( false ),
-    prev_slow( false ), sliding_avg( 30 ), first_post( true ),
+    prev_slow( false ), sliding_avg( 60 ), first_post( true ),
     first_read( true )
   {
   if( preview_lines > softbs() / 16 ) preview_lines = softbs() / 16;
-  if( skipbs < 0 )
-    skipbs = round_up( std::max( insize / 100000, (long long)min_skipbs ),
-                       min_skipbs );
+  if( skipbs < 0 ) skipbs =
+    round_up( std::max( insize / 32768, (long long)min_skipbs ), min_skipbs );
   const long long csize = insize / 100;
   if( insize > 0 && skipbs > 0 && max_skipbs == max_max_skipbs &&
       csize < max_skipbs )
@@ -867,9 +915,13 @@ Rescuebook::Rescuebook( const long long offset, const long long insize,
       const Sblock & sb = sblock( index );
       if( !domain().includes( sb ) )
         { if( domain() < sb ) break; else continue; }
-      if( sb.status() == Sblock::non_scraped ||
-          sb.status() == Sblock::bad_sector )
-        change_sblock_status( index, Sblock::non_trimmed );
+      if( ( sb.status() == sb.non_scraped || sb.status() == sb.bad_sector ) &&
+          ( index <= 0 || sblock( index - 1 ).status() == sb.non_tried ||
+            sblock( index - 1 ).status() == sb.finished ||
+            index + 1 >= sblocks() ||
+            sblock( index + 1 ).status() == sb.non_tried ||
+            sblock( index + 1 ).status() == sb.finished ) )
+        change_sblock_status( index, sb.non_trimmed );
       }
   if( try_again )
     for( long index = 0; index < sblocks(); ++index )
@@ -877,9 +929,8 @@ Rescuebook::Rescuebook( const long long offset, const long long insize,
       const Sblock & sb = sblock( index );
       if( !domain().includes( sb ) )
         { if( domain() < sb ) break; else continue; }
-      if( sb.status() == Sblock::non_scraped ||
-          sb.status() == Sblock::non_trimmed )
-        change_sblock_status( index, Sblock::non_tried );
+      if( sb.status() == sb.non_scraped || sb.status() == sb.non_trimmed )
+        change_sblock_status( index, sb.non_tried );
       }
   initialize_sizes();				// counts bad_areas
   if( new_bad_areas_only ) max_bad_areas += bad_areas;
@@ -931,10 +982,13 @@ int Rescuebook::do_rescue( const int ides, const int odes )
     }
   int retval = 0;
   update_rates();				// first call
-  if( non_tried_size && !errors_or_timeout() )
+  // resume a sweeping pass by skipping copying and trimming
+  if( non_tried_size && current_status() != sweeping && !errors_or_timeout() )
     retval = copy_non_tried();
-  if( retval == 0 && non_trimmed_size && !notrim && !errors_or_timeout() )
-    retval = trim_errors();
+  if( retval == 0 && non_trimmed_size && current_status() != sweeping &&
+      !notrim && !errors_or_timeout() ) retval = trim_errors();
+  if( retval == 0 && non_tried_size && !nosweep && !errors_or_timeout() )
+    retval = sweep_non_tried();
   if( retval == 0 && non_scraped_size && !noscrape && !errors_or_timeout() )
     retval = scrape_errors();
   if( retval == 0 && bad_size && max_retries != 0 && !errors_or_timeout() )
@@ -943,7 +997,7 @@ int Rescuebook::do_rescue( const int ides, const int odes )
   if( !rates_updated ) update_rates( true );	// force update of e_code
   show_status( -1, retval ? 0 : "\nFinished", true );
 
-  const bool signaled = ( retval == -1 );
+  const bool signaled = retval == -1;
   if( signaled ) retval = 0;
   if( retval == 0 && errors_or_timeout() ) retval = 1;
   if( verbosity >= 0 || event_logger.active() )
@@ -984,8 +1038,9 @@ int Rescuebook::do_rescue( const int ides, const int odes )
   if( close( odes_ ) != 0 )
     { show_file_error( oname_, "Error closing outfile", errno );
       if( retval == 0 ) retval = 1; }
-  event_logger.print_eor( t1 - t0, percent_rescued(), current_pos(),
-                          status_name( current_status() ) );
+  event_logger.print_eor( t1 - t0, finished_size, percent_rescued(),
+                          current_pos(), status_name( current_status() ),
+                          format_num( a_rate, 99999 ), read_errors );
   if( !event_logger.close_file() )
     show_file_error( event_logger.filename(),
                      "warning: error closing the events logging file." );

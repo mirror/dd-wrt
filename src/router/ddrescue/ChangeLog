@@ -1,3 +1,26 @@
+2026-01-01  Antonio Diaz Diaz  <antonio@gnu.org>
+
+	* Version 1.30 released.
+	* Replace pass 5 of copying with a sweeping phase after trimming.
+	* New option '-N, --no-sweep' to disable reading of skipped areas.
+	  Reassign short name '-N' from option '--no-trim' to '--no-sweep'.
+	* main.cc. Make '--size=output' use the size of outfile.
+	  (Suggested by Stefan Monnier).
+	  (do_rescue): Make '-x 0' extend outfile to size of infile.
+	* main_common.cc (strtoll_): New function accepting underscores.
+	* rescuebook.cc (fcopy_non_tried, rcopy_non_tried): Limit pass 2 to
+	  blocks adjacent to a finished block. (Delimit bad area as a whole).
+	  (trim_errors): Trim only edges adjacent to a finished block.
+	  Initial skip size now defaults to (infile_size / 32_768).
+	  Only retrim blocks adjacent to a non-tried or finished block.
+	  (update_rates): Don't force update of a_rate, c_rate, ts.
+	  (Rescuebook): Estimate remaining time from last 60 seconds.
+	  (Suggested by Stefan Monnier).
+	* genbook.cc (format_time), loggers.cc (format_time_dhms): Add years.
+	* loggers.cc (Event_logger): Add finished_size, a_rate, read errors.
+	* ddrescuelog.cc: New option '-H, --make-test'.
+	* ddrescue.texi: Document rescue with lziprecover's recovery record.
+
 2025-03-21  Antonio Diaz Diaz  <antonio@gnu.org>
 
 	* Version 1.29.1 released.
@@ -36,7 +59,7 @@
 	  Issue a final fsync to prevent early exit if kernel caches writes.
 	* ddrescuelog.cc (show_status): Show mapfile names at verbosity == 0.
 	* ddrescue.texi: Document how to create a compressed image.
-	 (Suggested by Detlef Bieritz).
+	  (Suggested by Detlef Bieritz).
 	* configure, Makefile.in: New variable 'MAKEINFO'.
 
 2023-01-23  Antonio Diaz Diaz  <antonio@gnu.org>
@@ -45,7 +68,7 @@
 	* command_mode.cc (do_commands): Fix flush stdout after each command.
 	  (Reported by Jeffrey Bosboom).
 	* New option '-W, --compare-before-write'.
-	 (Suggested by Kajetan Harald Hinner and Petr Slansky).
+	  (Suggested by Kajetan Harald Hinner and Petr Slansky).
 	* main_common.cc (show_option_error):
 	  New function showing argument and option name.
 	* main.cc: Remove synonym '--direct'.
@@ -218,7 +241,7 @@
 	* New option '-N, --no-trim' to disable trimming of damaged areas.
 	* New option '-O, --reopen-on-error'. (Suggested by Paul L Daniels).
 	* New options '-1, --log-rates' and '-2, --log-reads'.
-	 (Suggested by Alexander Sashnov and Paul L Daniels).
+	  (Suggested by Alexander Sashnov and Paul L Daniels).
 	* Extend '-K, --skip-size' with maximum and disable values.
 	* Change long name of option '-r' to '--retry-passes'.
 	* Change short name of option '--generate-mode' to '-G'.
@@ -303,6 +326,7 @@
 	* New option '-I, --verify-input-size'.
 	* New option '-x, --extend-outfile'.
 	* main.cc: Check that infile, outfile, and logfile are all different.
+	  (do_fill, do_generate, do_rescue): Show PROGVERSION.
 	* Non-tried blocks are now read aligned to cluster-size sectors.
 	* rescuebook.cc: Improve skip algorithm for the split pass.
 	* main.cc: Remove spurious warning about '-D' ignored in fill mode.
@@ -351,10 +375,10 @@
 	* Version 1.11 released.
 	* logbook.cc (update_logfile): Ask user in case of write error.
 	* rescuebook.cc (split_errors): Modify the split threshold.
-	* rescuebook.cc (copy_and_update): Check after every read error
-	  that the input file does still exist.
-	* ddrescue.cc (Rescuebook::show_status): Show the time elapsed
-	  since last successful read.
+	* rescuebook.cc (copy_and_update):
+	  Check after every read error that the input file does still exist.
+	* ddrescue.cc (Rescuebook::show_status):
+	  Show the time elapsed since the last successful read.
 	* ddrescue.cc (set_signals): Ignore SIGUSR1 and SIGUSR2.
 	* ddrescue.texinfo: Improve descriptions of '-d', '-D', and '-S'.
 	  Improve description of algorithm.
@@ -453,7 +477,7 @@
 2005-06-07  Antonio Diaz Diaz  <ant_diaz@teleline.es>
 
 	* Version 1.0 released.
-	* A new logfile format makes multi-part rescue possible.
+	* A new logfile format makes multipart rescue possible.
 	* Logfile is saved every 30 seconds.
 	* Logfile is now also saved in case of write error on outfile.
 	* Fix a race condition that could result in data not written to
@@ -518,7 +542,7 @@
 	* Version 0.1 released.
 
 
-Copyright (C) 2004-2025 Antonio Diaz Diaz.
+Copyright (C) 2004-2026 Antonio Diaz Diaz.
 
 This file is a collection of facts, and thus it is not copyrightable, but just
 in case, you have unlimited permission to copy, distribute, and modify it.

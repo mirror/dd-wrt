@@ -1,5 +1,5 @@
-/* GNU ddrescue - Data recovery tool
-   Copyright (C) 2014-2026 Antonio Diaz Diaz.
+/* GNU ddrescuelog - Tool for ddrescue mapfiles
+   Copyright (C) 2011-2026 Antonio Diaz Diaz.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -15,4 +15,7 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-bool device_id( const int fd, std::string & id_str );
+
+void parse_chs( const char * const arg, const char * const pn );
+int make_test( const char * const mapname, const int hardbs,
+               const bool force );

@@ -6,8 +6,8 @@
 @finalout
 @c %**end of header
 
-@set UPDATED 21 March 2025
-@set VERSION 1.29.1
+@set UPDATED 1 January 2026
+@set VERSION 1.30
 
 @dircategory GNU Packages
 @direntry
@@ -58,7 +58,7 @@ This manual is for GNU ddrescue (version @value{VERSION}, @value{UPDATED}).
 @end menu
 
 @sp 1
-Copyright @copyright{} 2004-2025 Antonio Diaz Diaz.
+Copyright @copyright{} 2004-2026 Antonio Diaz Diaz.
 
 This manual is free documentation: you have unlimited permission to copy,
 distribute, and modify it.
@@ -95,23 +95,27 @@ This is so because the probability of having the same area damaged in all
 copies is low (if the errors are randomly located). Using the mapfile, only
 the blocks needed are read from the second and successive copies.
 
+@cindex lzip
 Ddrescue recommends @uref{http://www.nongnu.org/lzip/lzip.html,,lzip} for
 compression of backups because the lzip format
 is designed for long-term archiving and provides data recovery capabilities
 which nicely complement those of ddrescue. (Ddrescue reads as many sectors
 as it can, while lziprecover uses other data to repair the sectors that
-ddrescue was not able to read). If the cause of file corruption is a damaged
-medium, the combination @w{ddrescue + lziprecover} is the recommended option
-for recovering data from damaged files. @xref{lziprecover-example},
-@ref{lziprecover-example2}, and @ref{lziprecover-example3}, for examples.
+ddrescue was not able to read). Lziprecover's FEC algorithm can repair
+any kind of file, but its ability to repair lzip files is greater than for
+other kinds of files. Lziprecover can use the statistical properties of lzip
+data to repair a lzip file rescued with ddrescue, even if the fec file is so
+damaged that it has lost both CRC arrays. Lziprecover
+@uref{http://www.nongnu.org/lzip/manual/lziprecover_manual.html#Fec-files,,
+fec files} can be used as recovery record for tar.lz archives. If the cause
+of file corruption is a damaged medium, the combination
+@w{ddrescue + @uref{http://www.nongnu.org/lzip/lziprecover.html,,lziprecover}}
+is the recommended option for recovering data from damaged files.
+@xref{lziprecover example1}, @ref{lziprecover example2},
+@ref{lziprecover example3}, and @ref{lziprecover example4}, for examples.
 @ifnothtml
-@xref{Top,lziprecover manual,,lziprecover},
+@xref{Top,lziprecover manual,,lziprecover}, for details about lziprecover.
 @end ifnothtml
-@ifhtml
-See the
-@uref{http://www.nongnu.org/lzip/manual/lziprecover_manual.html,,lziprecover manual}
-@end ifhtml
-for details about lziprecover.
 
 Because ddrescue needs to read and write at random places, it only works on
 seekable (random access) input and output files. Therefore, the only way of
@@ -261,69 +265,78 @@ time at error areas, damaging the surface, the heads, and the drive
 mechanics, instead of getting out of them as fast as possible. This behavior
 reduces the chances of rescuing the remaining good data.
 
-The algorithm of ddrescue is divided in four phases: copying, trimming,
-scraping, and retrying. Each phase is described below. Disc sectors are
-marked successively as non-tried, non-trimmed, non-scraped, and bad-sector
-until they are successfully read and marked as finished. The user may
-interrupt the process at any point, but a bad drive can block ddrescue for a
-long time until the kernel gives up.
+The algorithm of ddrescue is divided in five phases: copying, trimming,
+sweeping, scraping, and retrying. Each phase is described below. Disc
+sectors are marked successively as non-tried, non-trimmed, non-scraped, and
+bad-sector until they are successfully read and marked as finished. The user
+may interrupt the process at any point, but a bad drive can block ddrescue
+for a long time until the kernel gives up.
 
 The amount of work remaining for a given phase can be calculated by
 comparing the current size of the corresponding areas with their size at the
-end of the previous pass. Namely the size of non-tried while copying, the
-size of non-trimmed while trimming, the size of non-scraped while scraping,
-and the size of bad-sector while retrying. @xref{Output}.
+end of the previous pass. Namely the size of non-tried while copying or
+sweeping, the size of non-trimmed while trimming, the size of non-scraped
+while scraping, and the size of bad-sector while retrying. @xref{Output}.
 
 The steps of the algorithm are:
 
-1) Optionally read a mapfile describing the status of a multi-part or
+1) Optionally read a mapfile describing the status of a multipart or
 previously interrupted rescue. If no mapfile is specified, or is empty, or
 does not exist, mark all the rescue domain as non-tried.
 
-2) (First phase; Copying) Copying is done in up to five passes. The first
+2) (First phase; Copying) Copying is done in up to four passes. The first
 pass reads the non-tried parts of the input file, marking the failed blocks
 as non-trimmed and skipping beyond them. The second pass runs in the
 opposite direction as the first pass and delimits the blocks skipped by the
-first pass. The first two passes also skip beyond slow areas. The areas
-skipped are tried later in one or three additional passes (before trimming).
-The copying direction is reversed after each pass until all the rescue
-domain is tried.
+first pass. The first two passes also skip beyond slow areas. The slow areas
+skipped are tried later in two additional passes (before trimming). The
+copying direction is reversed after each pass until all the rescue domain is
+tried.
 
 The third and fourth passes read the blocks skipped due to slow areas
 (if any) by the first two passes, in the same direction that each block was
 skipped. For each block, passes 2 to 4 skip the rest of the block after
-finding the first error in the block. The last pass is a sweeping pass, with
-skipping disabled. The purpose of the multiple passes is to delimit large
-bad areas fast, recover the most promising areas first, keep the mapfile
-small, and produce good starting points for trimming.
+finding the first error in the block. The purpose of the multiple passes is
+to delimit large bad areas fast, recover the most promising areas first,
+keep the mapfile small, and produce good starting points for trimming.
 
 Only non-tried areas are read in large blocks. Trimming, scraping, and
 retrying are done sector by sector. Each sector is tried at most two times:
-the first in the copying phase as part of a large block read, the second in
-one of the phases below as a single sector read.
+the first in the copying or sweeping phases as part of a large block read,
+the second during trimming, scraping, or retrying as a single sector read.
 
-3) (Second phase; Trimming) Trimming retries sector by sector the edges of
-the large block reads failed during the copying phase. Trimming is done in
-one pass as follows. For each non-trimmed block, read forwards one sector at
-a time from the leading edge of the block until a bad sector is found. Then
-read backwards one sector at a time from the trailing edge of the block
-until a bad sector is found. Then mark the bad sectors found (if any) as
-bad-sector, and mark the rest of the block as non-scraped without trying to
-read it. If any edge is already adjacent to a bad sector, it is considered
-as already trimmed and is not trimmed again.
+3) (Second phase; Trimming) Try again sector by sector the edges of the
+large block reads failed during the copying phase. Trimming is done in one
+pass as follows. For each non-trimmed block, if the preceding block is a
+finished block, read forwards one sector at a time from the leading edge of
+the block until a bad sector is found. Then, if the following block is a
+finished block, read backwards one sector at a time from the trailing edge
+of the block until a bad sector is found. Then mark the bad sectors found
+(if any) as bad-sector, and mark the rest of the block as non-scraped unless
+it is adjacent to a non-tried block.
 
-4) (Third phase; Scraping) Scrape together, sector by sector, the data not
-recovered by the copying or trimming phases. Scraping is done in one pass.
-Each non-scraped block is read forwards, one sector at a time. Any bad
-sectors found are marked as bad-sector.
+4) (Third phase; Sweeping) Copy the non-tried areas skipped during the
+copying phase because of read errors. Sweeping may have a low probability of
+finding good data if the bad areas are large and have been well delimited by
+the copying phase. Therefore, sweeping is run after trimming the blocks
+adjacent to finished blocks, which has a high probability of finding good
+data. Sweeping is done in one pass with skipping disabled. It tries to copy
+each non-tried block and trim it if needed. Then it marks the bad sectors
+found (if any) as bad-sector, and marks the rest of the block as non-scraped.
 
-5) (Fourth phase; Retrying) Optionally try to read again the bad sectors
+5) (Fourth phase; Scraping) Scrape together, sector by sector, the data not
+recovered nor marked as bad-sector by the copying, trimming, or sweeping
+phases. Scraping is done in one pass. Each non-scraped block is read
+forwards, one sector at a time. Any bad sectors found are marked as
+bad-sector.
+
+6) (Fifth phase; Retrying) Optionally try to read again the bad sectors
 until the number of retry passes specified is reached. The direction is
 reversed after each pass. Every bad sector is tried only once in each pass.
 Ddrescue can't know if a bad sector is unrecoverable or if it will be
 eventually read after some retries.
 
-6) Optionally write a mapfile for later use.
+7) Optionally write a mapfile for later use.
 
 @sp 1
 When ddrescue finishes the steps above, any areas marked as bad-sector will
@@ -434,13 +447,13 @@ of the sizes of all the non-scraped blocks.
 @item bad-sector
 Total error size. This is the size of the part of the rescue domain formed
 by known bad sectors. The total error size is the sum of the sizes of all
-the bad-sector blocks. It increases during the trimming and scraping phases,
-and may decrease during the retrying phase. A sector is not marked as
-bad-sector and considered part of a bad area until it has been tried
-individually instead of as part of a large block read. Note that as ddrescue
-retries the bad-sector blocks, the good data found may divide them into
-smaller blocks, decreasing the total error size but increasing the number of
-bad areas.
+the bad-sector blocks. It increases during the trimming, sweeping, and
+scraping phases, and may decrease during the retrying phase. A sector is not
+marked as bad-sector and considered part of a bad area until it has been
+tried individually instead of as part of a large block read. Note that as
+ddrescue retries the bad-sector blocks, the good data found may divide them
+into smaller blocks, decreasing the total error size but increasing the
+number of bad areas.
 
 @item bad areas
 Number of separate bad-sector blocks inside the rescue domain. Non-trimmed
@@ -462,11 +475,10 @@ The read error rate measured during the last second.
 Time elapsed since the beginning of the current run.
 
 @item remaining time
-
 Estimated remaining time to rescue all the data in the rescue domain. The
-remaining time is calculated using the average rate of the last 30 seconds
+remaining time is calculated using the average rate of the last 60 seconds
 and does not take into account that some parts of the rescue domain may be
-excluded from the rescue (for example with @option{--no-trim}), or that some
+excluded from the rescue (for example with @option{--no-sweep}), or that some
 areas may be unrecoverable. Therefore it may be imprecise, may vary widely
 during the rescue, and may show a nonzero value at the end of the rescue. In
 particular it may go down to a few seconds at the end of the first pass,
@@ -535,8 +547,8 @@ second as @w{(average_rate / 10)}.
 Mark all non-trimmed and non-scraped blocks inside the rescue domain as
 non-tried before beginning the rescue. Try this if the drive stops
 responding and ddrescue immediately starts scraping failed blocks when
-restarted. If @option{--retrim} is also specified, mark all failed blocks
-inside the rescue domain as non-tried. @xref{--retrim}.
+restarted. If @option{--retrim} is also specified, mark also the most
+promising bad sectors inside the rescue domain as non-tried. @xref{--retrim}.
 
 @item -b @var{bytes}
 @itemx --sector-size=@var{bytes}
@@ -691,7 +703,7 @@ sector size. The skip size is doubled for each read error or slow read until
 it reaches @var{max} or, if @var{max} is omitted, 1% of the size of
 @var{infile}, and is reset to @var{initial} when good data are found. Valid
 values range from @w{64 KiB} to @w{1 EiB}. @var{initial} defaults to
-@w{@var{infile_size} / 100_000} with a minimum value of @w{64 KiB}. An
+@w{@var{infile_size} / 32_768} with a minimum value of @w{64 KiB}. An
 @var{initial} value of 0 disables skipping entirely.
 
 If ddrescue is having difficulties skipping away from a large area with
@@ -725,19 +737,19 @@ Specialized tools like ddrutility or partclone can produce a domain mapfile
 listing all the used blocks in a partition, making the rescue more efficient.
 Trailing empty space in the partition is not copied to @var{outfile}. If you
 need @var{outfile} to be the same size as the partition (to mount it, for
-example), you may use @option{--extend-outfile=<partition_size>} or
-@option{--preallocate}. @option{--extend-outfile} increases the size without
-writing data to @var{outfile}, and may therefore be more efficient than
+example), you may use @option{--extend-outfile=0},
+@option{--extend-outfile=<partition_size>}, or @option{--preallocate}.
+@option{--extend-outfile} increases the size without writing data to
+@var{outfile}, and may therefore be more efficient than
 @option{--preallocate}. Partclone saves the size of the partition as the
 value of @samp{current_pos} in the domain mapfile.
 
 @anchor{--retrim}
 @item -M
 @itemx --retrim
-Mark all failed blocks inside the rescue domain as non-trimmed before
-beginning the rescue. The effect is similar to @option{--retry-passes=1},
-but the bad sectors are tried in a different order, making perhaps possible
-to rescue some of them.
+Mark the failed blocks inside the rescue domain adjacent to a non-tried or
+finished block as non-trimmed before beginning the rescue. This might make
+perhaps possible to rescue some of them.
 
 @item -n
 @itemx --no-scrape
@@ -745,9 +757,12 @@ Skip the scraping phase. Avoids spending a lot of time trying to rescue the
 most difficult parts of the file.
 
 @item -N
+@itemx --no-sweep
+Skip the sweeping phase. May be useful when the drive has a dead head.
+
 @itemx --no-trim
-Skip the trimming phase. Especially useful in the first parts of a
-multi-part rescue.
+Skip the trimming phase. This option is not recommended because trimming has
+a high probability of finding good data.
 
 @item -o @var{bytes}
 @itemx --output-position=@var{bytes}
@@ -801,19 +816,22 @@ the bad sectors internally.
 
 @item -R
 @itemx --reverse
-Reverse the direction of all passes (copying, trimming, scraping, and
-retrying). Every pass that is normally run forwards is now run backwards,
-and vice versa. @option{-R} does not modify the size of the blocks copied
-during each phase, just the order in which they are tried.
+Reverse the direction of all passes (copying, trimming, sweeping, scraping,
+and retrying). Every pass that is normally run forwards is now run
+backwards, and vice versa. @option{-R} does not modify the size of the
+blocks copied during each phase, just the order in which they are tried.
 
 @item -s @var{bytes}
 @itemx --size=@var{bytes}
 Maximum size of the rescue domain in bytes. It limits the amount of input
-data to be copied. -1 removes any previous size limit. If ddrescue can't
-determine the size of the input file, you may need to specify it with this
-option. Note that this option does not specify the size of the resulting
-@var{outfile}. For example, the following command creates an @var{outfile}
-300 bytes long, but only writes data on the last 200 bytes:
+data to be copied. -1 removes any previous size limit. In rescue mode,
+@option{--size=output} uses the size of the output file or device (for
+example to overwrite it). By default, ddrescue limits the amount of data to
+be copied to the size of the input file, but if ddrescue can't determine the
+size of the input file, you may need to specify it with this option. Note
+that this option does not specify the size of the resulting @var{outfile}.
+For example, the following command creates an @var{outfile} 300 bytes long,
+but only writes data on the last 200 bytes:
 
 @example
 ddrescue -i 100 -s 200 infile outfile mapfile
@@ -877,9 +895,11 @@ writing to a solid state device.
 @item -x @var{bytes}
 @itemx --extend-outfile=@var{bytes}
 Extend the size of @var{outfile} to make it at least @var{bytes} long. If
-the size of @var{outfile} is already equal or longer than @var{bytes}, then
-this option does nothing. Use this option to guarantee a minimum size for
-@var{outfile}. Only regular files can be extended.
+@var{bytes} is 0, extend the size of @var{outfile} to that of @var{infile}.
+If the size of @var{outfile} is already equal or longer than @var{bytes} or
+the size of @var{infile}, then this option does nothing. Use this option to
+guarantee a minimum size for @var{outfile}. Only regular files can be
+extended.
 
 @anchor{--max-read-errors}
 @item -X @var{n}
@@ -949,17 +969,15 @@ option. @xref{--reopen-on-error}.
 
 @item --cpass=@var{range}
 Select what pass(es) to run during the copying phase. Valid pass values
-range from 1 to 5. To run only the given pass(es), specify also
-@option{--no-trim} and @option{--no-scrape}. @option{--cpass=0} skips the
-copying phase entirely.
+range from 1 to 4. To run only the given pass(es), specify also
+@option{--no-trim}, @option{--no-sweep}, and @option{--no-scrape}.
+@option{--cpass=0} skips the copying phase entirely.
 
-@multitable {Examples of @var{range}} {1, 2, 3, 5}
+@multitable {Examples of @var{range}} {Passes run}
 @headitem Examples of @var{range} @tab Passes run
 @item 1     @tab 1
 @item 1,2,3 @tab 1, 2, 3
 @item 2-4   @tab 2, 3, 4
-@item 1,3-5 @tab 1, 3, 4, 5
-@item 1-3,5 @tab 1, 2, 3, 5
 @end multitable
 
 @item --delay-slow=@var{interval}
@@ -970,10 +988,11 @@ above. @xref{--timeout}.
 @item --log-events=@var{file}
 Log all significant events (start of each pass and end of run) in
 @var{file}. If @var{file} already exists, the new events are appended at the
-end of @var{file}. For each event a line is printed containing a time stamp,
-the percentage rescued, and a message describing the event. The @samp{end of
-run} line also contains the current position and status. If ddrescue exits
-because of an error or interruption, the cause is also logged in @var{file}.
+end of @var{file}. For each event two lines are printed containing a time
+stamp, the amount of data rescued, and a message describing the event. The
+@samp{end of run} line also contains the current position and status. If
+ddrescue exits because of an error or interruption, the cause is also logged
+in @var{file}.
 
 @item --log-rates=@var{file}
 Log rates and error sizes every second in @var{file}. If @var{file} already
@@ -990,10 +1009,10 @@ overwritten. Every read attempt and its result (position, size, copied size,
 error size, and errno (if different from EIO)) is written to @var{file}.
 (The position written is always the beginning of the block tried, even if
 reading backwards). A line is also written at the beginning of each phase
-(copying, trimming, scraping, and retrying). Finally, a line with a time
-mark is written every second (unless the read takes more time). Use this
-option with caution because @var{file} may become very large very quickly.
-Use lzip to compress @var{file} if you need to store or transmit it.
+(copying, trimming, sweeping, scraping, and retrying). Finally, a line with
+a time mark is written every second (unless the read takes more time). Use
+this option with caution because @var{file} may become very large very
+quickly. Use lzip to compress @var{file} if you need to store or transmit it.
 
 @anchor{--mapfile-interval}
 @item --mapfile-interval=[@var{save_interval}][,@var{sync_interval}]
@@ -1056,9 +1075,11 @@ the overlapping part before it is copied.
 
 Numbers given as arguments to options (positions, sizes, rates, etc) may be
 expressed as decimal, hexadecimal, or octal values (using the same syntax as
-integer constants in C++), and may be followed by a multiplier and an
-optional @samp{B} for "byte". The @samp{s} multiplier may be appended to any
-of the other multipliers. For example, @samp{ks} means kilosectors
+integer constants in C++), may contain underscore separators between groups
+of 3 or more digits (2 or more digits for hexadecimal), and may be followed
+by a multiplier and an optional @samp{B} for "byte". (1_234_567kB, 4Kis,
+0x1234_5678, 07_777_777). The @samp{s} multiplier may be appended to any of
+the other multipliers. For example, @samp{ks} means kilosectors
 @w{(1000 * sector_size)}, and @samp{Kis} means kibisectors
 @w{(1024 * sector_size)}.
 
@@ -1170,6 +1191,7 @@ pass). The status character is one of these:
 @headitem Character @tab Meaning
 @item '?' @tab copying non-tried blocks
 @item '*' @tab trimming non-trimmed blocks
+@item '%' @tab sweeping non-tried blocks
 @item '/' @tab scraping non-scraped blocks
 @item '-' @tab retrying bad sectors
 @item 'F' @tab filling the blocks specified
@@ -1335,7 +1357,7 @@ ddrescue -m mapfile3 dvdimage3 dvdimage mapfile
 @end example
 
 @sp 1
-@anchor{lziprecover-example}
+@anchor{lziprecover example1}
 @noindent
 Example 5: Recover a lzip compressed backup from two copies on CD-ROM with
 error-checked merging of copies.
@@ -1350,7 +1372,7 @@ ddrescue -d -r1 -b2048 /dev/cdrom cdimage2 mapfile2
 mount -t iso9660 -o loop,ro cdimage2 /mnt/cdimage
 cp /mnt/cdimage/backup.tar.lz rescued2.tar.lz
 umount /mnt/cdimage
-lziprecover -m -v -o backup.tar.lz rescued1.tar.lz rescued2.tar.lz
+lziprecover -v -m -o backup.tar.lz rescued1.tar.lz rescued2.tar.lz
   Input files merged successfully.
 lziprecover -tv backup.tar.lz
   backup.tar.lz: ok
@@ -1426,7 +1448,7 @@ mount -t ext2 -o ro /dev/sdb2 /mnt
 @sp 1
 @noindent
 Example 3: While rescuing the whole drive @file{/dev/sda} to
-@file{/dev/sdb}, @file{/dev/sda} freezes up at position 12345678.
+@file{/dev/sdb}, @file{/dev/sda} freezes up at position 12_345_678.
 
 @example
 ddrescue -f /dev/sda /dev/sdb mapfile         # /dev/sda freezes here
@@ -1512,7 +1534,7 @@ ddrescue /dev/sda hdimage shifted_mapfile      # rescue rest of drive
 @end example
 
 @sp 1
-@anchor{lziprecover-example2}
+@anchor{lziprecover example2}
 @noindent
 Example 9: Recover a collection of photos from a damaged external drive
 (@file{/dev/sdc1}). The photos are protected with forward error correction
@@ -1530,11 +1552,11 @@ lziprecover -v -Fr --fec-file=photos-fec/ photos/*
 @end example
 
 @sp 1
-@anchor{lziprecover-example3}
+@anchor{lziprecover example3}
 @noindent
-Example 10: Recover a damaged backup with a zeroed sector of 4096 bytes at
-file position 1019904, using as reference a previous backup. The damaged
-backup comes from a damaged partition copied with ddrescue.
+Example 10: Recover a damaged tar.lz backup using the recovery record
+appended to the backup itself. The damaged backup comes from a damaged
+partition copied with ddrescue.
 
 @example
 ddrescue -b4096 -r10 /dev/sdc1 hdimage mapfile
@@ -1542,15 +1564,33 @@ mount -o loop,ro hdimage /mnt/hdimage
 cp /mnt/hdimage/backup.tar.lz backup.tar.lz
 umount /mnt/hdimage
 lzip -t backup.tar.lz
-  backup.tar.lz: Decoder error at pos 1020530
+  backup.tar.lz: Decoder error at pos 1_020_530
+lziprecover --dump=tdata backup.tar.lz | \
+  lziprecover -v -Fr --fec-file=- backup.tar.lz
+@end example
+
+@sp 1
+@anchor{lziprecover example4}
+@noindent
+Example 11: Recover a damaged tar.lz backup with a zeroed sector of 4096
+bytes at file position 1_019_904, using as reference a previous backup. The
+damaged backup comes from a damaged partition copied with ddrescue.
+
+@example
+ddrescue -b4096 -r10 /dev/sdc1 hdimage mapfile
+mount -o loop,ro hdimage /mnt/hdimage
+cp /mnt/hdimage/backup.tar.lz backup.tar.lz
+umount /mnt/hdimage
+lzip -t backup.tar.lz
+  backup.tar.lz: Decoder error at pos 1_020_530
 lziprecover -vv -e --reference-file=old_backup.tar backup.tar.lz
 Reproducing bad area in member 1 of 1
-  (begin = 1019904, size = 4096, value = 0x00)
-  (master mpos = 1019903, dpos = 5857954)
-warning: old_backup.tar: Partial match found at offset 5743778, len 9546.
+  (begin = 1_019_904, size = 4096, value = 0x00)
+  (master mpos = 1_019_903, dpos = 5_857_954)
+warning: old_backup.tar: Partial match found at offset 5_743_778, len 9546
 Reference data may be mixed with other data.
 Trying level -9
-  Reproducing position 1015808
+  Reproducing position 1_015_808
 Member reproduced successfully.
 Copy of input file reproduced successfully.
 @end example
@@ -1735,7 +1775,7 @@ ddrescue --fill-mode='?*/-' <(printf "NON-RESCUED-SECTOR ") outfile mapfile
 
 @noindent
 Example 2: Wipe only the good sectors, leaving the bad sectors alone.
-This way, the drive will still test bad (i.e., with unreadable sectors).
+This way, the drive still tests bad (i.e., with unreadable sectors).
 This is the fastest way of wiping a failing drive, and is especially useful
 when sending the drive back to the manufacturer for warranty replacement.
 
@@ -1771,7 +1811,7 @@ string not present in any file, for example "DEADBEEF". Use
 
 4) Grep for the fill string in all the files. Those files containing the
 string reside (at least partially) in damaged disc areas. Note that if all
-the damaged areas are in unused space, grep will not find the string in any
+the damaged areas are in unused space, grep does not find the string in any
 file, which means that no files are damaged.
 
 5) Take note of the location data of any important files that you want to
@@ -1795,9 +1835,9 @@ ddrescue --fill-mode=l- tmpfile cdimage mapfile
 rm tmpfile
 mount -t iso9660 -o loop,ro cdimage /mnt/cdimage
 find /mnt/cdimage -type f -exec grep -l "DEADBEEF" '@{@}' ';'
-  (note that my_thesis.txt has a bad sector at pos 0x12345000)
+  (note that my_thesis.txt has a bad sector at pos 0x1234_5000)
 umount /mnt/cdimage
-ddrescue -b2048 -i0x12345000 -s2048 -dr9 /dev/cdrom cdimage mapfile
+ddrescue -b2048 -i0x1234_5000 -s2048 -dr9 /dev/cdrom cdimage mapfile
 ddrescue --fill-mode=- /dev/zero cdimage mapfile
 mount -t iso9660 -o loop,ro cdimage /mnt/cdimage
 cp -a /mnt/cdimage/my_thesis.txt /safe/place/my_thesis.txt
@@ -2030,6 +2070,16 @@ for @option{--list-blocks}. The valid names are @samp{list}, @samp{bitmap},
 block is represented by the most significant bit of the first byte. In a
 little endian bitmap the first block is represented by the least significant
 bit of the first byte.
+
+@item -H @var{C}:@var{H}:@var{S}:@var{track_order}:@var{bad_head}
+@itemx --make-test=@var{C}:@var{H}:@var{S}:@var{track_order}:@var{bad_head}
+Create a domain mapfile simulating a failing head for the test mode of
+ddrescue. @var{C}:@var{H}:@var{S} means
+@var{cylinders}:@var{heads}:@var{sectors}. For discs with variable number of
+sectors per track, @var{S} is specified as
+@samp{@var{sectors_first_track}-@var{sectors_last_track}[,@var{tracks_per_zone}]}.
+@var{track_order} is one of @samp{F} (forward), or @samp{FF} (hybrid
+serpentine). @var{bad_head} is a number in the range 0 to @w{@var{heads} - 1}.
 
 @item -i @var{bytes}
 @itemx --input-position=@var{bytes}

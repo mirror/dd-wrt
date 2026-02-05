@@ -1,5 +1,5 @@
 /* GNU ddrescue - Data recovery tool
-   Copyright (C) 2004-2025 Antonio Diaz Diaz.
+   Copyright (C) 2004-2026 Antonio Diaz Diaz.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -40,7 +40,7 @@ int my_fgetc( FILE * const f, const bool allow_comment = true )
 /* Read a line discarding comments, leading whitespace, and blank lines.
    Return 0 if at EOF.
 */
-const char * my_fgets( FILE * const f, int & linenum )
+const char * my_fgets( FILE * const f, unsigned & linenum )
   {
   const int maxlen = 127;
   static char buf[maxlen+1];
@@ -65,10 +65,10 @@ const char * my_fgets( FILE * const f, int & linenum )
 
 
 void show_mapfile_error( const char * const pname, const char * const msg,
-                          const int linenum )
+                          const unsigned linenum )
   {
   char buf[80];
-  snprintf( buf, sizeof buf, "Error in mapfile, line %d: %s", linenum, msg );
+  snprintf( buf, sizeof buf, "Error in mapfile, line %u: %s", linenum, msg );
   show_file_error( pname, buf );
   }
 
@@ -115,7 +115,7 @@ void fill_gaps_in_sblock_vector( std::vector< Sblock > & sblock_vector,
   {
   if( sblock_vector.empty() ) return;
   std::vector< Sblock > new_vector;
-  bool gap = ( sblock_vector[0].pos() > 0 );
+  bool gap = sblock_vector[0].pos() > 0;
   if( gap ) new_vector.push_back( Sblock( 0, sblock_vector[0].pos(), st ) );
   else for( unsigned long i = 1; i < sblock_vector.size(); ++i )
          if( sblock_vector[i-1].end() != sblock_vector[i].pos() )
@@ -137,7 +137,7 @@ void fill_gaps_in_sblock_vector( std::vector< Sblock > & sblock_vector,
   if( !sblock_vector.back().full() )
     {
     Sblock & back = sblock_vector.back();
-    if( back.status() == st ) back.size( -1 );
+    if( back.status() == st ) back.size( -1 );	// set size to max
 //    else sblock_vector.push_back( Sblock( back.end(), -1, st ) );
     }
   }
@@ -177,7 +177,7 @@ void Mapfile::join_subsectors( const int hardbs )
     Sblock & sb2 = sblock_vector[i+1];
     const Sblock::Status st1 = sb1.status();
     const Sblock::Status st2 = sb2.status();
-    if( st1 == Sblock::finished || st2 == Sblock::finished ) { ++i; continue; }
+    if( st1 == sb1.finished || st2 == sb1.finished ) { ++i; continue; }
     // move subsector to the block with the less processed state
     if( Sblock::processed_state( st1 ) <= Sblock::processed_state( st2 ) )
       {
@@ -214,7 +214,7 @@ void Mapfile::extend_sblock_vector( const long long insize )
     {
     if( back.pos() >= insize )
       {
-      if( back.pos() == insize && back.status() != Sblock::finished )
+      if( back.pos() == insize && back.status() != back.finished )
         { sblock_vector.pop_back(); return; }
       show_error( "Last block in mapfile begins past end of input file.\n"
                   "          Use '-C' if you are reading from a partial copy.",
@@ -223,7 +223,7 @@ void Mapfile::extend_sblock_vector( const long long insize )
       }
     if( end > insize )
       {
-      if( back.status() != Sblock::finished )
+      if( back.status() != back.finished )
         { back.size( insize - back.pos() ); return; }
       show_error( "Rescued data in mapfile goes past end of input file.\n"
                   "          Use '-C' if you are reading from a partial copy.",
@@ -293,7 +293,7 @@ bool Mapfile::truncate_vector( const long long end, const bool force )
     Sblock & sb = sblock_vector[i-1];
     if( sb.includes( end ) )
       {
-      if( !force && sb.status() == Sblock::finished ) return false;
+      if( !force && sb.status() == sb.finished ) return false;
       sb.size( end - sb.pos() );
       }
     if( i < sblock_vector.size() )
@@ -316,7 +316,7 @@ bool Mapfile::read_mapfile( const int default_sblock_status, const bool ro )
   else if( ro || ( !(f = std::fopen( filename_, "r+" )) && errno != ENOENT ) )
     { f = std::fopen( filename_, "r" ); read_only_ = true; }
   if( !f ) return false;
-  int linenum = 0;
+  unsigned linenum = 0;
   const bool loose = Sblock::isstatus( default_sblock_status );
   sblock_vector.clear();
 
@@ -371,7 +371,7 @@ bool Mapfile::write_mapfile( FILE * f, const bool timestamp,
                              const bool mf_sync,
                              const Domain * const annotate_domainp ) const
   {
-  const bool f_given = ( f != 0 );
+  const bool f_given = f != 0;
   bool error = false;
 
   if( !f && !filename_ ) return false;
@@ -393,9 +393,9 @@ bool Mapfile::write_mapfile( FILE * f, const bool timestamp,
     {
     const Sblock & sb = sblock_vector[i];
     if( !annotate_domainp || !annotate_domainp->includes( sb ) ) buf[0] = 0;
-    else if( snprintf( buf, sizeof buf, "\t#  %9sB  %9s%c", format_num( sb.pos() ),
-             format_num( sb.size() ), ( sb.size() > 999999 ) ? 'B' : ' ' ) < 0 )
-      error = true;
+    else if( snprintf( buf, sizeof buf, "\t#  %9sB  %9s%s",
+                       format_num( sb.pos() ), format_num( sb.size() ),
+                       ( sb.size() > 999999 ) ? "B" : "" ) < 0 ) error = true;
     if( std::fprintf( f, "0x%08llX  0x%08llX  %c%s\n",
                       sb.pos(), sb.size(), sb.status(), buf ) < 0 ) error = true;
     }
@@ -495,7 +495,7 @@ long Mapfile::find_index( const long long pos ) const
 /* Find chunk from b.pos forwards of size <= b.size and status st.
    if unfinished is true, find also any chunk not marked as finished.
    If not found, or if after_finished is true and none of the blocks found
-   follows a finished block, put b.size to 0.
+   follows a finished block, set b.size to 0.
    If at least one block of status st is found, return true.
 */
 bool Mapfile::find_chunk( Block & b, const Sblock::Status st,
@@ -534,7 +534,7 @@ bool Mapfile::find_chunk( Block & b, const Sblock::Status st,
 
 /* Find chunk from b.end backwards of size <= b.size and status st.
    If not found, or if before_finished is true and none of the blocks found
-   precedes a finished block, put b.size to 0.
+   precedes a finished block, set b.size to 0.
    If at least one block of status st is found, return true.
 */
 bool Mapfile::rfind_chunk( Block & b, const Sblock::Status st,
@@ -591,12 +591,12 @@ int Mapfile::change_chunk_status( const Block & b, const Sblock::Status st,
   if( st == old_st ) return 0;
   const bool old_st_good = Sblock::is_good_status( old_st );
   const bool new_st_good = Sblock::is_good_status( st );
-  bool bl_st_good = ( index_ <= 0 ||
-                      Sblock::is_good_status( sblock_vector[index_-1].status() ) ||
-                      !domain.includes( sblock_vector[index_-1] ) );
-  bool br_st_good = ( index_ + 1 >= sblocks() ||
-                      Sblock::is_good_status( sblock_vector[index_+1].status() ) ||
-                      !domain.includes( sblock_vector[index_+1] ) );
+  bool bl_st_good = index_ <= 0 ||
+                    Sblock::is_good_status( sblock_vector[index_-1].status() ) ||
+                    !domain.includes( sblock_vector[index_-1] );
+  bool br_st_good = index_ + 1 >= sblocks() ||
+                    Sblock::is_good_status( sblock_vector[index_+1].status() ) ||
+                    !domain.includes( sblock_vector[index_+1] );
 
   if( sblock_vector[index_].pos() < b.pos() )
     {
@@ -624,12 +624,12 @@ int Mapfile::change_chunk_status( const Block & b, const Sblock::Status st,
   else
     {
     sblock_vector[index_].status( st );
-    const bool bl_join = ( index_ > 0 &&
-                           sblock_vector[index_-1].status() == st &&
-                           domain.includes( sblock_vector[index_-1] ) );
-    const bool br_join = ( index_ + 1 < sblocks() &&
-                           sblock_vector[index_+1].status() == st &&
-                           domain.includes( sblock_vector[index_+1] ) );
+    const bool bl_join = index_ > 0 &&
+                         sblock_vector[index_-1].status() == st &&
+                         domain.includes( sblock_vector[index_-1] );
+    const bool br_join = index_ + 1 < sblocks() &&
+                         sblock_vector[index_+1].status() == st &&
+                         domain.includes( sblock_vector[index_+1] );
     if( bl_join || br_join )
       {
       if( br_join ) sblock_vector[index_].join( sblock_vector[index_+1] );
@@ -652,6 +652,7 @@ const char * Mapfile::status_name( const Mapfile::Status st )
     {
     case copying:    return "copying";
     case trimming:   return "trimming";
+    case sweeping:   return "sweeping";
     case scraping:   return "scraping";
     case retrying:   return "retrying";
     case filling:    return "filling";

@@ -8,8 +8,9 @@ SHELL = /bin/sh
 CAN_RUN_INSTALLINFO = $(SHELL) -c "install-info --version" > /dev/null 2>&1
 
 ddobjs = mapbook.o fillbook.o genbook.o io.o rescuebook.o command_mode.o main.o
+logobjs = make_test.o ddrescuelog.o
 objs = arg_parser.o rational.o non_posix.o loggers.o block.o mapfile.o $(ddobjs)
-logobjs = arg_parser.o block.o mapfile.o ddrescuelog.o
+lobjs = arg_parser.o block.o mapfile.o $(logobjs)
 
 
 .PHONY : all install install-bin install-info install-man \
@@ -23,8 +24,8 @@ all : $(progname) ddrescuelog
 $(progname) : $(objs)
 	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $@ $(objs)
 
-ddrescuelog : $(logobjs)
-	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $@ $(logobjs)
+ddrescuelog : $(lobjs)
+	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $@ $(lobjs)
 
 static_$(progname) : $(objs)
 	$(CXX) $(CXXFLAGS) $(LDFLAGS) -static -o $@ $(objs)
@@ -48,16 +49,18 @@ MAKEFLAGS += -r
 
 $(objs)        : Makefile
 $(ddobjs)      : mapfile.h mapbook.h
+$(logobjs)     : Makefile mapfile.h ddrescuelog.h
 arg_parser.o   : arg_parser.h
 block.o        : mapfile.h
 command_mode.o : rational.h rescuebook.h
+ddrescuelog.o  : arg_parser.h main_common.cc
 loggers.o      : mapfile.h loggers.h
+main.o         : arg_parser.h loggers.h non_posix.h rational.h rescuebook.h \
+                 main_common.cc
 mapfile.o      : mapfile.h
 non_posix.o    : non_posix.h
 rational.o     : rational.h
 rescuebook.o   : loggers.h rational.h rescuebook.h
-main.o         : arg_parser.h loggers.h non_posix.h rational.h rescuebook.h main_common.cc
-ddrescuelog.o  : Makefile mapfile.h arg_parser.h main_common.cc
 
 doc : info man
 
@@ -72,7 +75,8 @@ $(VPATH)/doc/$(progname).1 : $(progname)
 	help2man -n 'data recovery tool' -o $@ ./$(progname)
 
 $(VPATH)/doc/ddrescuelog.1 : ddrescuelog
-	help2man -n 'tool for ddrescue mapfiles' -o $@ --info-page=$(pkgname) ./ddrescuelog
+	help2man -n 'tool for ddrescue mapfiles' \
+	  -o $@ --info-page=$(pkgname) ./ddrescuelog
 
 Makefile : $(VPATH)/configure $(VPATH)/Makefile.in
 	./config.status
@@ -159,7 +163,7 @@ dist : doc
 
 clean :
 	-rm -f $(progname) $(objs)
-	-rm -f static_$(progname) ddrescuelog ddrescuelog.o
+	-rm -f static_$(progname) ddrescuelog $(logobjs)
 
 distclean : clean
 	-rm -f Makefile config.status *.tar *.tar.lz

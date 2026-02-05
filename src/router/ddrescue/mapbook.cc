@@ -1,5 +1,5 @@
 /* GNU ddrescue - Data recovery tool
-   Copyright (C) 2004-2025 Antonio Diaz Diaz.
+   Copyright (C) 2004-2026 Antonio Diaz Diaz.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -151,7 +151,7 @@ bool Mapbook::update_mapfile( const int odes, const bool force )
   const long long t2 = std::time( 0 );
   if( um_t1 == 0 || um_t1 > t2 ) um_t1 = um_t1s = t2;	// initialize
   if( !force && t2 - um_t1 < interval ) return true;
-  const bool mf_sync = ( force || t2 - um_t1s >= mapfile_sync_interval );
+  const bool mf_sync = force || t2 - um_t1s >= mapfile_sync_interval;
   if( odes >= 0 ) fsync( odes );
   if( um_prev_mf_sync )
     {

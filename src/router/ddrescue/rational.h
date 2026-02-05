@@ -1,5 +1,5 @@
 /* Rational - Rational number class with overflow detection
-   Copyright (C) 2005-2025 Antonio Diaz Diaz.
+   Copyright (C) 2005-2026 Antonio Diaz Diaz.
 
    This library is free software. Redistribution and use in source and
    binary forms, with or without modification, are permitted provided
@@ -128,7 +128,7 @@ public:
   int trunc() const		// integer part;    -x.y ==> -x,  x.y ==> x
     { if( den > 0 ) return ( num / den ); else return num; }
 
-  int parse( const char * const s );		// returns parsed size
+  int parse( const char * const s );		// return parsed length
   std::string to_decimal( const unsigned iwidth = 1, int prec = -2,
                           const bool rounding = false ) const;
   std::string to_fraction( const unsigned width = 1 ) const;

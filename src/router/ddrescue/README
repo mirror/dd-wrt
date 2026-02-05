@@ -45,9 +45,14 @@ Ddrescue recommends lzip for compression of backups because the lzip format
 is designed for long-term archiving and provides data recovery capabilities
 which nicely complement those of ddrescue. (Ddrescue reads as many sectors
 as it can, while lziprecover uses other data to repair the sectors that
-ddrescue was not able to read). If the cause of file corruption is a damaged
-medium, the combination ddrescue + lziprecover is the recommended option for
-recovering data from damaged files.
+ddrescue was not able to read). Lziprecover's FEC algorithm can repair any
+kind of file, but its ability to repair lzip files is greater than for other
+kinds of files. Lziprecover can use the statistical properties of lzip data
+to repair a lzip file rescued with ddrescue, even if the fec file is so
+damaged that it has lost both CRC arrays. Lziprecover fec files can be used
+as recovery record for tar.lz archives. If the cause of file corruption is a
+damaged medium, the combination ddrescue + lziprecover is the recommended
+option for recovering data from damaged files.
 
 Because ddrescue needs to read and write at random places, it only works on
 seekable (random access) input and output files. Therefore, the only way of
@@ -83,7 +88,7 @@ Ddrescue uses Rational to parse small fractions from the command line:
 http://www.nongnu.org/arg-parser/rational.html
 
 
-Copyright (C) 2004-2025 Antonio Diaz Diaz.
+Copyright (C) 2004-2026 Antonio Diaz Diaz.
 
 This file is free documentation: you have unlimited permission to copy,
 distribute, and modify it.

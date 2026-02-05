@@ -1,5 +1,5 @@
 /* GNU ddrescuelog - Tool for ddrescue mapfiles
-   Copyright (C) 2011-2025 Antonio Diaz Diaz.
+   Copyright (C) 2011-2026 Antonio Diaz Diaz.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -28,6 +28,7 @@
 #include <unistd.h>
 
 #include "mapfile.h"
+#include "ddrescuelog.h"
 #include "arg_parser.h"
 
 
@@ -40,61 +41,68 @@ const char * invocation_name = program_name;		// default value
 enum Format { f_list, f_bitmap_be, f_bitmap_le };
 
 enum Mode { m_none, m_and, m_annotate, m_change, m_compare, m_complete,
-            m_create, m_delete, m_done_st, m_invert, m_list, m_or,
-            m_shift, m_status, m_xor };
+            m_create, m_delete, m_done_st, m_invert, m_list, m_make_test,
+            m_or, m_shift, m_status, m_xor };
 
 
 void show_help( const int hardbs )
   {
-  std::printf( "GNU ddrescuelog is a tool that manipulates ddrescue mapfiles, shows mapfile\n"
-               "contents, converts mapfiles to/from other formats, compares mapfiles, tests\n"
-               "rescue status, and can delete a mapfile if the rescue is done. Ddrescuelog\n"
-               "operations can be restricted to one or several parts of the mapfile if the\n"
-               "domain setting options are used.\n"
-               "\nUse a hyphen '-' as mapfile to read the mapfile from standard input\n"
-               "(also in the options taking a mapfile argument) or to write the mapfile\n"
-               "created by '--create-mapfile' to standard output.\n"
-               "\nNOTE: In versions of ddrescue prior to 1.20 the mapfile was called\n"
-               "'logfile'. The format is the same; only the name has changed.\n"
-               "\nUsage: %s [options] mapfile\n", invocation_name );
+  std::fputs(
+    "GNU ddrescuelog is a tool that manipulates ddrescue mapfiles, shows mapfile\n"
+    "contents, converts mapfiles to/from other formats, compares mapfiles, tests\n"
+    "rescue status, and can delete a mapfile if the rescue is done. Ddrescuelog\n"
+    "operations can be restricted to one or several parts of the mapfile if the\n"
+    "domain setting options are used.\n"
+    "\nUse a hyphen '-' as mapfile to read the mapfile from standard input\n"
+    "(also in the options taking a mapfile argument) or to write the mapfile\n"
+    "created by '--create-mapfile' to standard output.\n"
+    "\nNOTE: In versions of ddrescue prior to 1.20 the mapfile was called\n"
+    "'logfile'. The format is the same; only the name has changed.\n", stdout );
+  std::printf( "\nUsage: %s [options] mapfile\n", invocation_name );
   std::printf( "\nOptions:\n"
-               "  -h, --help                      display this help and exit\n"
-               "  -V, --version                   output version information and exit\n"
-               "  -a, --change-types=<ot>,<nt>    change the block types of mapfile\n"
-               "  -A, --annotate-mapfile          add comments with human-readable pos/sizes\n"
-               "  -b, --block-size=<bytes>        block (sector) size in bytes [default %d]\n", hardbs );
-  std::printf( "  -B, --binary-prefixes           show binary multipliers in numbers [SI]\n"
-               "  -c, --create-mapfile[=<tt>]     create mapfile from list of blocks [+-]\n"
-               "  -C, --complete-mapfile[=<t>]    complete mapfile adding blocks of type t [?]\n"
-               "  -d, --delete-if-done            delete the mapfile if rescue is finished\n"
-               "  -D, --done-status               return 0 if rescue is finished\n"
-               "  -f, --force                     overwrite existing output files\n"
-               "  -F, --format=<name>             format for -c and -l (list, bitmap-[bl]e)\n"
-               "  -i, --input-position=<bytes>    starting position of rescue domain [0]\n"
-               "  -l, --list-blocks=<types>       print block numbers of given types (?*/-+)\n"
-               "  -L, --loose-domain              accept unordered domain mapfile with gaps\n"
-               "  -m, --domain-mapfile=<file>     restrict domain to finished blocks in <file>\n"
-               "  -n, --invert-mapfile            invert block types (finished <--> others)\n"
-               "  -o, --output-position=<bytes>   starting position in output file [ipos]\n"
-               "  -p, --compare-mapfile=<file>    compare block types in domain of both files\n"
-               "  -P, --compare-as-domain=<file>  like -p but compare finished blocks only\n"
-               "  -q, --quiet                     suppress all messages\n"
-               "  -s, --size=<bytes>              maximum size of rescue domain to be processed\n"
-               "  -t, --show-status               show a summary of mapfile contents\n"
-               "  -v, --verbose                   be verbose (a 2nd -v gives more)\n"
-               "  -x, --xor-mapfile=<file>        XOR the finished blocks in file with mapfile\n"
-               "  -y, --and-mapfile=<file>        AND the finished blocks in file with mapfile\n"
-               "  -z, --or-mapfile=<file>         OR the finished blocks in file with mapfile\n"
-               "      --shift                     shift all block positions by (opos - ipos)\n"
-               "\nNumbers may be in decimal, hexadecimal, or octal, and may be followed by a\n"
-               "multiplier: s = sectors, k = 1000, Ki = 1024, M = 10^6, Mi = 2^20, etc...\n"
-               "\nExit status: 0 for a normal exit, 1 for environmental problems\n"
-               "(file not found, invalid command-line options, I/O errors, etc), 2 to\n"
-               "indicate a corrupt or invalid input file, 3 for an internal consistency\n"
-               "error (e.g., bug) which caused ddrescuelog to panic.\n"
-               "\nReport bugs to bug-ddrescue@gnu.org\n"
-               "Ddrescue home page: http://www.gnu.org/software/ddrescue/ddrescue.html\n"
-               "General help using GNU software: http://www.gnu.org/gethelp\n" );
+    "  -h, --help                      display this help and exit\n"
+    "  -V, --version                   output version information and exit\n"
+    "  -a, --change-types=<ot>,<nt>    change the block types of mapfile\n"
+    "  -A, --annotate-mapfile          add comments with human-readable pos/sizes\n"
+    "  -b, --block-size=<bytes>        block (sector) size in bytes [default %d]\n", hardbs );
+  std::fputs(
+    "  -B, --binary-prefixes           show binary multipliers in numbers [SI]\n"
+    "  -c, --create-mapfile[=<tt>]     create mapfile from list of blocks [+-]\n"
+    "  -C, --complete-mapfile[=<t>]    complete mapfile adding blocks of type t [?]\n"
+    "  -d, --delete-if-done            delete the mapfile if rescue is finished\n"
+    "  -D, --done-status               return 0 if rescue is finished\n"
+    "  -f, --force                     overwrite existing output files\n"
+    "  -F, --format=<name>             format for -c and -l (list, bitmap-[bl]e)\n"
+    "  -H, --make-test=<C:H:S:to:bh>   create mapfile for test mode of ddrescue\n"
+    "  -i, --input-position=<bytes>    starting position of rescue domain [0]\n"
+    "  -l, --list-blocks=<types>       print block numbers of given types (?*/-+)\n"
+    "  -L, --loose-domain              accept unordered domain mapfile with gaps\n"
+    "  -m, --domain-mapfile=<file>     restrict domain to finished blocks in <file>\n"
+    "  -n, --invert-mapfile            invert block types (finished <--> others)\n"
+    "  -o, --output-position=<bytes>   starting position in output file [ipos]\n"
+    "  -p, --compare-mapfile=<file>    compare block types in domain of both files\n"
+    "  -P, --compare-as-domain=<file>  like -p but compare finished blocks only\n"
+    "  -q, --quiet                     suppress all messages\n"
+    "  -s, --size=<bytes>              maximum size of rescue domain to be processed\n"
+    "  -t, --show-status               show a summary of mapfile contents\n"
+    "  -v, --verbose                   be verbose (a 2nd -v gives more)\n"
+    "  -x, --xor-mapfile=<file>        XOR the finished blocks in file with mapfile\n"
+    "  -y, --and-mapfile=<file>        AND the finished blocks in file with mapfile\n"
+    "  -z, --or-mapfile=<file>         OR the finished blocks in file with mapfile\n"
+    "      --shift                     shift all block positions by (opos - ipos)\n"
+    "\nNumbers may be in decimal, hexadecimal, or octal, may contain underscore\n"
+    "separators between groups of digits, and may be followed by a SI or binary\n"
+    "multiplier and 's' for 'sectors': 1_234_567kB, 4Kis, 0x1234_5678, 07_777.\n"
+    "The syntax of the argument of option '-H' is\n"
+    "<cylinders:heads:sectors1[-sectors2[,tracks_per_zone]]:track_order:bad_head>\n"
+    "\n*Exit status*\n"
+    "0 for a normal exit, 1 for environmental problems (file not found, invalid\n"
+    "command-line options, I/O errors, etc), 2 to indicate a corrupt or invalid\n"
+    "input file, 3 for an internal consistency error (e.g., bug) which caused\n"
+    "ddrescuelog to panic.\n"
+    "\nReport bugs to bug-ddrescue@gnu.org\n"
+    "Ddrescue home page: http://www.gnu.org/software/ddrescue/ddrescue.html\n"
+    "General help using GNU software: http://www.gnu.org/gethelp\n", stdout );
   }
 
 } // end namespace
@@ -206,19 +214,19 @@ int do_logic_ops( Domain & domain, const char * const mapname,
     const Sblock & sb2 = mapfile2.sblock( j );
     if( sb1.pos() != sb2.pos() || sb1.size() != sb2.size() )
       internal_error( "blocks got out of sync." );
-    const bool f1 = ( sb1.status() == Sblock::finished );
-    const bool f2 = ( sb2.status() == Sblock::finished );
+    const bool f1 = sb1.status() == sb1.finished;
+    const bool f2 = sb2.status() == sb2.finished;
     switch( program_mode )
       {
       case m_and:
-        if( f1 && !f2 ) mapfile.change_sblock_status( i, Sblock::bad_sector );
+        if( f1 && !f2 ) mapfile.change_sblock_status( i, sb1.bad_sector );
         break;
       case m_or:
-        if( !f1 && f2 ) mapfile.change_sblock_status( i, Sblock::finished );
+        if( !f1 && f2 ) mapfile.change_sblock_status( i, sb1.finished );
         break;
       case m_xor:
         if( f2 )
-          mapfile.change_sblock_status( i, f1 ? Sblock::bad_sector : Sblock::finished );
+          mapfile.change_sblock_status( i, f1 ? sb1.bad_sector : sb1.finished );
         break;
       default: internal_error( "invalid program_mode." );
       }
@@ -401,7 +409,7 @@ bool change_status_from_bitmap( const Domain & domain, Mapfile & mapfile,
 bool change_status_from_list( const Domain & domain, Mapfile & mapfile,
                               const int hardbs, const Sblock::Status type1 )
   {
-  for( long linenum = 1; ; ++linenum )
+  for( unsigned long linenum = 1; ; ++linenum )
     {
     long long block;
     const int n = std::scanf( "%lli\n", &block );
@@ -410,7 +418,7 @@ bool change_status_from_list( const Domain & domain, Mapfile & mapfile,
       {
       if( verbosity >= 0 )
         std::fprintf( stderr, "%s: (stdin): Error reading block number "
-                      "at line %ld\n", program_name, linenum );
+                      "at line %lu\n", program_name, linenum );
       return false;
       }
     const Block b( block * hardbs, hardbs );
@@ -431,7 +439,7 @@ int create_mapfile( const long long offset, const Domain & domain,
     { show_file_error( "(stdin)", "I won't read bitmap data from a terminal." );
       std::exit( 1 ); }
   Mapfile mapfile( mapname );
-  const bool to_stdout = ( std::strcmp( mapname, "-" ) == 0 );
+  const bool to_stdout = std::strcmp( mapname, "-" ) == 0;
   if( !to_stdout && !force && mapfile.read_mapfile( 0, false ) )
     {
     show_file_error( mapname, "Mapfile exists. Use '--force' to overwrite it." );
@@ -473,7 +481,7 @@ int test_if_done( Domain & domain, const char * const mapname, const bool del )
     const Sblock & sb = mapfile.sblock( i );
     if( !domain.includes( sb ) )
       { if( domain < sb ) break; else continue; }
-    if( sb.status() != Sblock::finished )
+    if( sb.status() != sb.finished )
       {
       if( verbosity >= 1 )
         show_file_error( mapfile.pname(), "Mapfile not done." );
@@ -752,6 +760,7 @@ int main( const int argc, const char * const argv[] )
     { 'f', "force",             Arg_parser::no  },
     { 'F', "format",            Arg_parser::yes },
     { 'h', "help",              Arg_parser::no  },
+    { 'H', "make-test",         Arg_parser::yes },
     { 'i', "input-position",    Arg_parser::yes },
     { 'l', "list-blocks",       Arg_parser::yes },
     { 'L', "loose-domain",      Arg_parser::no  },
@@ -800,6 +809,8 @@ int main( const int argc, const char * const argv[] )
       case 'f': force = true; break;
       case 'F': parse_format( sarg, pn, format ); break;
       case 'h': show_help( default_hardbs ); return 0;
+      case 'H': set_mode( program_mode, m_make_test );
+                parse_chs( arg, pn ); break;
       case 'i': ipos = getnum( arg, pn, hardbs, 0 ); break;
       case 'l': set_mode( program_mode, m_list ); types1 = sarg;
                 check_types( arg, types1, pn, false ); break;
@@ -809,7 +820,7 @@ int main( const int argc, const char * const argv[] )
       case 'o': opos = getnum( arg, pn, hardbs, 0 ); break;
       case 'p':
       case 'P': set_mode( program_mode, m_compare );
-                second_mapname = arg; as_domain = ( code == 'P' ); break;
+                second_mapname = arg; as_domain = code == 'P'; break;
       case 'q': verbosity = -1; break;
       case 's': max_size = getnum( arg, pn, hardbs, -1 ); break;
       case 't': set_mode( program_mode, m_status ); break;
@@ -875,8 +886,8 @@ int main( const int argc, const char * const argv[] )
       case m_invert: return change_types( domain, mapname, "?*/-+", "++++-" );
       case m_list:
         return list_blocks( opos - ipos, domain, mapname, hardbs, format, types1 );
-      case m_shift:
-        return shift_blocks( ipos, opos, domain, mapname );
+      case m_make_test: return make_test( mapname, hardbs, force );
+      case m_shift: return shift_blocks( ipos, opos, domain, mapname );
       case m_status:
         retval = std::max( retval, show_status( domain, mapname, loose ) );
       }

@@ -1,5 +1,5 @@
 /* GNU ddrescue - Data recovery tool
-   Copyright (C) 2004-2025 Antonio Diaz Diaz.
+   Copyright (C) 2004-2026 Antonio Diaz Diaz.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -111,7 +111,7 @@ int Rescuebook::do_commands( const int ides, const int odes )
       }
     if( command == "q" ) break;
     int tmp = 0;		// -1 finish, 0 OK, 1 error, 2 fatal error
-    const bool finish = ( command == "f" );
+    const bool finish = command == "f";
     if( finish || command == "u" )
       {
       if( finish ) compact_sblock_vector();
