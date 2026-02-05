@@ -24,7 +24,6 @@
 #include "inode.h"
 #include "debug.h"
 #include "ntfs.h"
-#include "aops.h"
 #include "lcnalloc.h"
 #include "mft.h"
 
