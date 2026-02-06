@@ -742,8 +742,7 @@ struct runlist_element *ntfs_mapping_pairs_decompress(const struct ntfs_volume *
 
 #ifdef DEBUG
 	/* Make sure attr exists and is non-resident. */
-	if (!attr || !attr->non_resident ||
-	    le64_to_cpu(attr->data.non_resident.lowest_vcn) < 0) {
+	if (!attr || !attr->non_resident) {
 		ntfs_error(vol->sb, "Invalid arguments.");
 		return ERR_PTR(-EINVAL);
 	}
@@ -866,8 +865,10 @@ struct runlist_element *ntfs_mapping_pairs_decompress(const struct ntfs_volume *
 			}
 
 			/* chkdsk accepts zero-sized runs only for holes */
-			if ((lcn != -1) && !rl[rlpos].length) {
-				ntfs_error(vol->sb, "Invalid zero-sized data run.\n");
+			if ((lcn != LCN_HOLE) && !rl[rlpos].length) {
+				ntfs_error(vol->sb,
+					   "Invalid zero-sized data run(lcn : %lld).\n",
+					   lcn);
 				goto err_out;
 			}
 
