@@ -151,6 +151,12 @@ config NET_DSA_TAG_LAN9303
 	  Say Y or M if you want to enable support for tagging frames for the
 	  SMSC/Microchip LAN9303 family of switches.
 
+config NET_DSA_TAG_RTL_OTTO
+	tristate "Tag driver for Realtek Otto switches (RTL83xx/RTL93xx)"
+	help
+	  Say Y or M if you want to enable support for tagging frames for the
+	  Realtek Otto family of switches.
+ 
 config NET_DSA_TAG_SJA1105
 	tristate "Tag driver for NXP SJA1105 switches"
 	select PACKING
