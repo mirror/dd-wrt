@@ -3066,11 +3066,11 @@ static s64 lcn_from_index(struct ntfs_volume *vol, struct ntfs_inode *ni,
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 6, 0)
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 10, 0)
 static int ntfs_write_mft_block(struct folio *folio, struct writeback_control *wbc)
-{
 #else
 static int ntfs_write_mft_block(struct folio *folio, struct writeback_control *wbc,
 		void *data)
 #endif
+{
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 10, 0)
 	struct address_space *mapping = folio->mapping;
 #else
