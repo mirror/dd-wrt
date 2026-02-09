@@ -73,12 +73,10 @@ static inline bool can_change_pte_writable(struct vm_area_struct *vma,
 }
 
 static long change_pte_range(struct mmu_gather *tlb,
-		struct vm_area_struct *vma, pmd_t *pmd, pmd_t pmd_old,
-		unsigned long addr, unsigned long end, pgprot_t newprot,
-		unsigned long cp_flags)
+		struct vm_area_struct *vma, pmd_t *pmd, unsigned long addr,
+		unsigned long end, pgprot_t newprot, unsigned long cp_flags)
 {
 	pte_t *pte, oldpte;
-	pmd_t _pmd;
 	spinlock_t *ptl;
 	long pages = 0;
 	int target_node = NUMA_NO_NODE;
@@ -88,15 +86,21 @@ static long change_pte_range(struct mmu_gather *tlb,
 
 	tlb_change_page_size(tlb, PAGE_SIZE);
 
+	/*
+	 * Can be called with only the mmap_lock for reading by
+	 * prot_numa so we must check the pmd isn't constantly
+	 * changing from under us from pmd_none to pmd_trans_huge
+	 * and/or the other way around.
+	 */
+	if (pmd_trans_unstable(pmd))
+		return 0;
+
+	/*
+	 * The pmd points to a regular pte so the pmd can't change
+	 * from under us even if the mmap_lock is only hold for
+	 * reading.
+	 */
 	pte = pte_offset_map_lock(vma->vm_mm, pmd, addr, &ptl);
-	/* Make sure pmd didn't change after acquiring ptl */
-	_pmd = pmd_read_atomic(pmd);
-	/* See pmd_none_or_trans_huge_or_clear_bad for info on barrier */
-	barrier();
-	if (!pmd_same(pmd_old, _pmd)) {
-		pte_unmap_unlock(pte, ptl);
-		return -EAGAIN;
-	}
 
 	/* Get target node for single threaded private VMAs */
 	if (prot_numa && !(vma->vm_flags & VM_SHARED) &&
@@ -284,6 +288,31 @@ static long change_pte_range(struct mmu_gather *tlb,
 	return pages;
 }
 
+/*
+ * Used when setting automatic NUMA hinting protection where it is
+ * critical that a numa hinting PMD is not confused with a bad PMD.
+ */
+static inline int pmd_none_or_clear_bad_unless_trans_huge(pmd_t *pmd)
+{
+	pmd_t pmdval = pmd_read_atomic(pmd);
+
+	/* See pmd_none_or_trans_huge_or_clear_bad for info on barrier */
+#ifdef CONFIG_TRANSPARENT_HUGEPAGE
+	barrier();
+#endif
+
+	if (pmd_none(pmdval))
+		return 1;
+	if (pmd_trans_huge(pmdval))
+		return 0;
+	if (unlikely(pmd_bad(pmdval))) {
+		pmd_clear_bad(pmd);
+		return 1;
+	}
+
+	return 0;
+}
+
 /* Return true if we're uffd wr-protecting file-backed memory, or false */
 static inline bool
 uffd_wp_protect_file(struct vm_area_struct *vma, unsigned long cp_flags)
@@ -331,34 +360,22 @@ static inline long change_pmd_range(struct mmu_gather *tlb,
 
 	pmd = pmd_offset(pud, addr);
 	do {
-		long ret;
-		pmd_t _pmd;
-again:
+		long this_pages;
+
 		next = pmd_addr_end(addr, end);
-		_pmd = pmd_read_atomic(pmd);
-		/* See pmd_none_or_trans_huge_or_clear_bad for info on barrier */
-#ifdef CONFIG_TRANSPARENT_HUGEPAGE
-		barrier();
-#endif
 
 		change_pmd_prepare(vma, pmd, cp_flags);
 		/*
 		 * Automatic NUMA balancing walks the tables with mmap_lock
 		 * held for read. It's possible a parallel update to occur
-		 * between pmd_trans_huge(), is_swap_pmd(), and
-		 * a pmd_none_or_clear_bad() check leading to a false positive
-		 * and clearing. Hence, it's necessary to atomically read
-		 * the PMD value for all the checks.
+		 * between pmd_trans_huge() and a pmd_none_or_clear_bad()
+		 * check leading to a false positive and clearing.
+		 * Hence, it's necessary to atomically read the PMD value
+		 * for all the checks.
 		 */
-		if (!is_swap_pmd(_pmd) && !pmd_devmap(_pmd) && !pmd_trans_huge(_pmd)) {
-			if (pmd_none(_pmd))
-				goto next;
-
-			if (pmd_bad(_pmd)) {
-				pmd_clear_bad(pmd);
-				goto next;
-			}
-		}
+		if (!is_swap_pmd(*pmd) && !pmd_devmap(*pmd) &&
+		     pmd_none_or_clear_bad_unless_trans_huge(pmd))
+			goto next;
 
 		/* invoke the mmu notifier if the pmd is populated */
 		if (!range.start) {
@@ -368,7 +385,7 @@ again:
 			mmu_notifier_invalidate_range_start(&range);
 		}
 
-		if (is_swap_pmd(_pmd) || pmd_trans_huge(_pmd) || pmd_devmap(_pmd)) {
+		if (is_swap_pmd(*pmd) || pmd_trans_huge(*pmd) || pmd_devmap(*pmd)) {
 			if ((next - addr != HPAGE_PMD_SIZE) ||
 			    uffd_wp_protect_file(vma, cp_flags)) {
 				__split_huge_pmd(vma, pmd, addr, false, NULL);
@@ -383,11 +400,11 @@ again:
 				 * change_huge_pmd() does not defer TLB flushes,
 				 * so no need to propagate the tlb argument.
 				 */
-				ret = change_huge_pmd(tlb, vma, pmd,
-						      addr, newprot, cp_flags);
+				int nr_ptes = change_huge_pmd(tlb, vma, pmd,
+						addr, newprot, cp_flags);
 
-				if (ret) {
-					if (ret == HPAGE_PMD_NR) {
+				if (nr_ptes) {
+					if (nr_ptes == HPAGE_PMD_NR) {
 						pages += HPAGE_PMD_NR;
 						nr_huge_updates++;
 					}
@@ -398,11 +415,9 @@ again:
 			}
 			/* fall through, the trans huge pmd just split */
 		}
-		ret = change_pte_range(tlb, vma, pmd, _pmd, addr, next,
-				       newprot, cp_flags);
-		if (ret < 0)
-			goto again;
-		pages += ret;
+		this_pages = change_pte_range(tlb, vma, pmd, addr, next,
+					      newprot, cp_flags);
+		pages += this_pages;
 next:
 		cond_resched();
 	} while (pmd++, addr = next, addr != end);

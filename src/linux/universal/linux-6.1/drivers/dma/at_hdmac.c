@@ -1586,6 +1586,7 @@ static void atc_free_chan_resources(struct dma_chan *chan)
 {
 	struct at_dma_chan	*atchan = to_at_dma_chan(chan);
 	struct at_dma		*atdma = to_at_dma(chan->device);
+	struct at_dma_slave	*atslave;
 	struct at_desc		*desc, *_desc;
 	LIST_HEAD(list);
 
@@ -1606,8 +1607,12 @@ static void atc_free_chan_resources(struct dma_chan *chan)
 	/*
 	 * Free atslave allocated in at_dma_xlate()
 	 */
-	kfree(chan->private);
-	chan->private = NULL;
+	atslave = chan->private;
+	if (atslave) {
+		put_device(atslave->dma_dev);
+		kfree(atslave);
+		chan->private = NULL;
+	}
 
 	dev_vdbg(chan2dev(chan), "free_chan_resources: done\n");
 }
