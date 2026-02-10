@@ -521,7 +521,7 @@ CONFIG_ARM_QCOM_CPUFREQ_NVMEM=y
 
 CONFIG_HAVE_KVM=y
 # CONFIG_VIRTUALIZATION is not set
-CONFIG_CPU_MITIGATIONS=y
+# CONFIG_CPU_MITIGATIONS is not set
 
 #
 # General architecture-dependent options
