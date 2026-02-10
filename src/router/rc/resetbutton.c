@@ -367,6 +367,11 @@ static int getbuttonstate()
 {
 	return !get_gpio(2);
 }
+#elif defined(HAVE_RUCKUSR500)
+static int getbuttonstate()
+{
+	return !get_gpio(0);
+}
 #elif defined(HAVE_WR1043V2)
 static int getbuttonstate()
 {

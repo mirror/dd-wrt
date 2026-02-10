@@ -346,6 +346,26 @@ void start_sysinit(void)
 	eval("swconfig", "dev", "eth0", "set", "enable_vlan", "0");
 	eval("swconfig", "dev", "eth0", "set", "igmp_snooping", "0");
 	eval("swconfig", "dev", "eth0", "set", "igmp_v3", "1");
+#elif defined(HAVE_RUCKUSR500)
+	eval("swconfig", "dev", "eth0", "set", "reset", "1");
+	eval("swconfig", "dev", "eth0", "set", "enable_vlan", "0");
+	eval("swconfig", "dev", "eth0", "set", "igmp_snooping", "0");
+	eval("swconfig", "dev", "eth0", "set", "igmp_v3", "1");
+	eval("swconfig", "dev", "eth0", "vlan", "1", "set", "ports", "6 5");
+	eval("swconfig", "dev", "eth0", "vlan", "2", "set", "ports", "0 3");
+	nvram_set("switchphy", "eth1");
+	nvram_seti("sw_lancpuport", 0);
+	nvram_seti("sw_wancpuport", 6);
+	nvram_seti("sw_wan", 5);
+	nvram_seti("sw_lan1", 3);
+
+	nvram_default_geti("port0vlans", 2);
+	nvram_default_geti("port1vlans", 1);
+	nvram_default_geti("port2vlans", 1);
+	nvram_default_geti("port3vlans", 1);
+	nvram_default_geti("port4vlans", 1);
+	nvram_default_get("port5vlans", "2 18000 19000 20000");
+	nvram_default_get("port6vlans", "1 18000 19000 20000");
 #elif defined(HAVE_ARCHERC7)
 	eval("swconfig", "dev", "eth0", "set", "reset", "1");
 	eval("swconfig", "dev", "eth0", "set", "enable_vlan", "0");
@@ -708,6 +728,32 @@ out:;
 		fclose(fp);
 		fclose(out);
 	}
+#elif defined(HAVE_RUCKUSR500)
+//				reg = <0x0140000 0x80000>;
+	fp = fopen("/dev/mtdblock/0", "rb");
+	FILE *out = fopen("/tmp/archerc7-board.bin", "wb");
+	if (fp) {
+		fseek(fp, 0x0140000 + 0x45000, SEEK_SET);
+		int i;
+		for (i = 0; i < 6; i++)
+			putc(getc(fp), out);
+		char eabuf[32];
+		char macaddr[32];
+		get_hwaddr("eth0", macaddr);
+		MAC_ADD(macaddr);
+		MAC_ADD(macaddr);
+		ether_atoe(macaddr, mac);
+
+		for (i = 0; i < 6; i++)
+			putc(mac[i], out);
+		fseek(fp, 0x0140000 + 0x45000 + 12, SEEK_SET);
+		for (i = 0; i < 2104; i++)
+			putc(getc(fp), out);
+		fclose(fp);
+		eval("rm", "-f", "/tmp/ath10k-board.bin");
+		eval("ln", "-s", "/tmp/archerc7-board.bin", "/tmp/ath10k-board.bin");
+	}
+	fclose(out);
 #elif defined(HAVE_ARCHERC7) || defined(HAVE_DIR859) || defined(HAVE_DAP3662)
 	fp = fopen("/dev/mtdblock/5", "rb");
 	FILE *out = fopen("/tmp/archerc7-board.bin", "wb");
@@ -1021,7 +1067,10 @@ void start_wifi_drivers(void)
 #ifndef HAVE_ONNET
 		setWirelessLed(0, 12);
 #endif
-#ifdef HAVE_WDR4900V2
+#if defined(HAVE_RUCKUSR500)
+		setWirelessLed(0, 22);
+		setWirelessLed(1, 2);
+#elif defined(HAVE_WDR4900V2)
 		setWirelessLed(1, 17);
 #endif
 #ifdef HAVE_WR1043V4
