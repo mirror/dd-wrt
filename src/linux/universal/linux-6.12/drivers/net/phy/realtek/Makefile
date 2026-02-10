@@ -2,3 +2,4 @@
 realtek-y			+= realtek_main.o
 realtek-$(CONFIG_REALTEK_PHY_HWMON) += realtek_hwmon.o
 obj-$(CONFIG_REALTEK_PHY)	+= realtek.o
+obj-$(CONFIG_REALTEK_PHY_MULTIPORT) += realtek_multiport.o

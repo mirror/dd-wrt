@@ -4,6 +4,11 @@ config REALTEK_PHY
 	help
 	  Currently supports RTL821x/RTL822x and fast ethernet PHYs
 
+config REALTEK_PHY_MULTIPORT
+	tristate "Realtek multiport PHYs"
+	help
+	  Currently supports RTL8214x/RTL8218x gigabit multiport PHYs
+
 if REALTEK_PHY
 
 config REALTEK_PHY_HWMON
