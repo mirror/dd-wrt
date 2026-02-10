@@ -2127,7 +2127,7 @@ endif
 endif
 #	$(CC) $(CFLAGS) $(LDFLAGS) -DNEED_PRINTF -DTEST -o tools/site_survey_test tools/site_survey_broadcom.c -lnvram
 	@echo "[MAKEDEFAULTS] bin/defaults"
-	@gcc -o bin/defaults $(HCFLAGS) bin/defaults.c
+	@gcc -std=gnu17 -o bin/defaults $(HCFLAGS) bin/defaults.c
 	@cd bin && ./defaults
 
     
