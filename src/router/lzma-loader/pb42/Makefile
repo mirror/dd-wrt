@@ -81,7 +81,7 @@ data.o: $(LOADER_DATA)
 	$(LD) -r -b binary --oformat $(O_FORMAT) -T lzma-data.lds -o $@ $<
 
 loader.bin.gz: loader.bin
-	gzip -9 loader.bin
+	gzip -9 -k loader.bin
 
 loader.bin: loader.elf
 	$(ARCH)-linux-objcopy $(BIN_FLAGS) $< $@
