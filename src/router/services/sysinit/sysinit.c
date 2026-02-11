@@ -3804,7 +3804,7 @@ void start_overclocking(void)
 	if (!nvram_match("prev_overclocking", newsetting)) {
 		nvram_unset("cpu_rating");
 		nvram_set("prev_overclocking", newsetting);
+		start_benchmark();
 	}
 	sys_overclocking();
-	start_benchmark();
 }

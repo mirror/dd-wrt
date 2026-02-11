@@ -713,8 +713,15 @@ endif
 	$(MAKE) -f Makefile.pb42 kernel-relink-prep MAKEEXT=pb42 KBUILD_TARGETS=vmlinux
 	$(MAKE) -f Makefile.pb42 kernel-relink MAKEEXT=pb42 KBUILD_TARGETS=vmlinux
 
+	cp $(LINUXDIR)/vmlinux $(ARCH)-uclibc/vmlinux
 	$(ARCH)-linux-objcopy -O binary $(LINUXDIR)/vmlinux $(ARCH)-uclibc/vmlinus_old 
 	$(ARCH)-linux-objcopy -O binary $(LINUXDIR)/vmlinux $(ARCH)-uclibc/vmlinus 
+	cp $(ARCH)-uclibc/vmlinux $(ARCH)-uclibc/vmlinux.bak 
+	mips-linux-uclibc-objcopy -O binary $(strip-flags) -g $(ARCH)-uclibc/vmlinux $(ARCH)-uclibc/vmlinux.bin
+	lzma e -lc1 -lp2 -pb2 $(ARCH)-uclibc/vmlinux.bin $(ARCH)-uclibc/vmlinux.lzma
+
+	make -C lzma-loader/pb42 clean
+	make -C lzma-loader/pb42
 
 
 validate: $(eval FILE_SIZE = $(shell stat -c %s $(EX_PATH)))
@@ -941,8 +948,11 @@ endif
 	
 	cp $(LINUXDIR)/vmlinux $(ARCH)-uclibc/vmlinux
 
+	$(ARCH)-linux-objcopy -O binary $(LINUXDIR)/vmlinux $(ARCH)-uclibc/vmlinus_old 
+	$(ARCH)-linux-objcopy -O binary $(LINUXDIR)/vmlinux $(ARCH)-uclibc/vmlinus 
 	cp $(ARCH)-uclibc/vmlinux $(ARCH)-uclibc/vmlinux.bak 
 	mips-linux-uclibc-objcopy -O binary $(strip-flags) -g $(ARCH)-uclibc/vmlinux $(ARCH)-uclibc/vmlinux.bin
+
 	lzma e -lc1 -lp2 -pb2 $(ARCH)-uclibc/vmlinux.bin $(ARCH)-uclibc/vmlinux.lzma
 	lzma e $(ARCH)-uclibc/vmlinux.bin $(ARCH)-uclibc/vmlinux.tpl
 #	gzip -9 $(ARCH)-uclibc/vmlinux.bin $(ARCH)-uclibc/vmlinux.gz
@@ -1908,6 +1918,11 @@ endif
 ifeq ($(CONFIG_WRT400),y)
 	dd if=$(ARCH)-uclibc/root.uimage of=$(ARCH)-uclibc/root.wrt400 bs=1048576 conv=sync
 	./tools/wrt400/wrt400 $(ARCH)-uclibc/root.wrt400 $(ARCH)-uclibc/root.fs $(ARCH)-uclibc/wrt400-firmware.bin
+endif
+ifeq ($(CONFIG_RUCKUSR500),y)
+	dd if=$(ARCH)-uclibc/root-loader.uimage of=$(ARCH)-uclibc/aligned-loader.uimage bs=4096 conv=sync
+	cat $(ARCH)-uclibc/root.fs  >> $(ARCH)-uclibc/aligned-loader.uimage
+	./tools/trx_n  -m 40000000 -o $(ARCH)-uclibc/r500-firmware.bin $(ARCH)-uclibc/aligned-loader.uimage
 endif
 ifeq ($(CONFIG_RB2011),y)
 	rm -f $(LINUXDIR)/usr/initramfs_data.cpio.lzma
