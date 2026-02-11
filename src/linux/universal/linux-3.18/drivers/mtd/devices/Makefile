@@ -26,13 +26,7 @@ ifeq ($(CONFIG_WASP_SUPPORT),y)
 ifeq ($(CONFIG_UBNTFIX),y)
 obj-$(CONFIG_MTD_AR7240_SPI_FLASH)	+= ar7240_flash_old.o
 else
-
-
-ifeq ($(CONFIG_RUCKUSR500),y)
-obj-$(CONFIG_MTD_AR7240_SPI_FLASH)	+= ar7240_flash_old.o
-else
 obj-$(CONFIG_MTD_AR7240_SPI_FLASH)	+= ar7240_flash.o qca-sf.o
-endif
 endif
 else
 obj-$(CONFIG_MTD_AR7240_SPI_FLASH)	+= ar7240_flash_old.o
