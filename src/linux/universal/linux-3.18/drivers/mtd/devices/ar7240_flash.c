@@ -113,17 +113,16 @@ int guessbootsize(void *offset, unsigned int maxscan)
 			}
 			printk(KERN_INFO "uboot detected\n");
 			if (i * 4 == 0x1c0000) {
-			printk(KERN_INFO "ruckus r500 detected\n");
-			add_memory_region(0xfff0000, 0x10000, BOOT_MEM_RAM);
+				printk(KERN_INFO "ruckus r500 detected\n");
+				add_memory_region(0xfff0000, 0x10000, BOOT_MEM_RAM);
 			}
 			return i * 4; // uboot, lzma image
 		}
 		if (ofs[i] == 0x19852003) {
 			printk(KERN_INFO "uboot detected (ruckus r500?)\n");
 			if (i * 4 == 0x1c0000) {
-			printk(KERN_INFO "ruckus r500 detected\n");
-			add_memory_region(0xfff0000, 0x10000, BOOT_MEM_RAM);
-			
+				printk(KERN_INFO "ruckus r500 detected\n");
+				add_memory_region(0xfff0000, 0x10000, BOOT_MEM_RAM);
 			}
 			return i * 4; // uboot, lzma image
 		}
@@ -514,7 +513,7 @@ static int __init ar7240_flash_init(void)
 			numparts = 10;
 		} else
 			dir_parts[OOPS].name = NULL;
-		
+
 #endif
 		result = add_mtd_partitions(mtd, dir_parts, numparts);
 	}

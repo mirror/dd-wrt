@@ -150,19 +150,18 @@ int guessbootsize(void *offset, unsigned int maxscan)
 			}
 			printk(KERN_INFO "uboot detected\n");
 			if (i * 4 == 0x1c0000) {
-			printk(KERN_INFO "ruckus r500 detected\n");
-			add_memory_region(0xfff0000, 0x10000, BOOT_MEM_RAM);
-			r500 = 1;
+				printk(KERN_INFO "ruckus r500 detected\n");
+				add_memory_region(0xfff0000, 0x10000, BOOT_MEM_RAM);
+				r500 = 1;
 			}
 			return i * 4; // uboot, lzma image
 		}
 		if (ofs[i] == 0x19852003) {
 			printk(KERN_INFO "uboot detected (ruckus r500?)\n");
 			if (i * 4 == 0x1c0000) {
-			printk(KERN_INFO "ruckus r500 detected\n");
-			add_memory_region(0xfff0000, 0x10000, BOOT_MEM_RAM);
-			r500 = 1;
-			
+				printk(KERN_INFO "ruckus r500 detected\n");
+				add_memory_region(0xfff0000, 0x10000, BOOT_MEM_RAM);
+				r500 = 1;
 			}
 			return i * 4; // uboot, lzma image
 		}
@@ -228,16 +227,16 @@ static unsigned int guessflashsize(void *base)
 	if (r500)
 		size = 64 << 20;
 	else {
-	for (size = 2 << 20; size <= (max >> 1); size <<= 1) {
-		unsigned int ofs = size / 4;
-		c1 = guess[ofs];
-		c2 = guess[ofs + 4096];
-		c3 = guess[ofs + 8192];
-		if (p1 == c1 && p2 == c2 && p3 == c3) // mirror found
-		{
-			break;
+		for (size = 2 << 20; size <= (max >> 1); size <<= 1) {
+			unsigned int ofs = size / 4;
+			c1 = guess[ofs];
+			c2 = guess[ofs + 4096];
+			c3 = guess[ofs + 8192];
+			if (p1 == c1 && p2 == c2 && p3 == c3) // mirror found
+			{
+				break;
+			}
 		}
-	}
 	}
 	printk(KERN_INFO "guessed flashsize = %dM\n", size >> 20);
 	return size;

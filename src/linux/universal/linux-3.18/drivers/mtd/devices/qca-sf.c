@@ -127,7 +127,7 @@ void qca_sf_write_reg(u8 cmd, u8 data)
 	qca_sf_write_di();
 }
 
-static void qca_sf_set_addressing(flash_info_t * info, u32 enable)
+static void qca_sf_set_addressing(flash_info_t *info, u32 enable)
 {
 	if (info->need_4byte_enable_op) {
 		if (enable)
@@ -183,7 +183,7 @@ void qca_sf_bulk_erase(u32 bank)
 }
 
 /* Erase one sector at provided address */
-u32 qca_sf_sect_erase(flash_info_t * info, u32 address)
+u32 qca_sf_sect_erase(flash_info_t *info, u32 address)
 {
 	u32 data_out[2];
 	qca_sf_bank_to_cs_mask(info->bank);
@@ -212,7 +212,7 @@ u32 qca_sf_sect_erase(flash_info_t * info, u32 address)
 }
 
 /* Writes 'length' bytes at 'address' using page program command */
-void qca_sf_write_page(flash_info_t * info, u32 bank, u32 address, u32 length, const u8 *data)
+void qca_sf_write_page(flash_info_t *info, u32 bank, u32 address, u32 length, const u8 *data)
 {
 	int i;
 	u32 data_out[2];
@@ -249,7 +249,7 @@ void qca_sf_write_page(flash_info_t * info, u32 bank, u32 address, u32 length, c
 }
 
 /* Reads 'length' bytes at 'address' to 'data' using read command */
-int qca_sf_read(flash_info_t * info, u32 bank, u32 address, u32 length, u8 *data)
+int qca_sf_read(flash_info_t *info, u32 bank, u32 address, u32 length, u8 *data)
 {
 	int i;
 	u32 data_out[2];
@@ -393,7 +393,7 @@ u32 qca_sf_jedec_id(u32 bank)
 	return (data_in & 0x00FFFFFF);
 }
 
-int qca_sf_flash_erase(flash_info_t * info, u32 address, u32 length, u8 *buf)
+int qca_sf_flash_erase(flash_info_t *info, u32 address, u32 length, u8 *buf)
 {
 	int ret;
 	int sector_size = info->size / info->sector_count;
@@ -428,7 +428,7 @@ int qca_sf_flash_erase(flash_info_t * info, u32 address, u32 length, u8 *buf)
 	return ret;
 }
 
-int qca_sf_write_buf(flash_info_t * info, u32 bank, u32 address, u32 length, const u8 *buf)
+int qca_sf_write_buf(flash_info_t *info, u32 bank, u32 address, u32 length, const u8 *buf)
 {
 	const u8 *src;
 	u32 dst;
@@ -458,7 +458,7 @@ int qca_sf_write_buf(flash_info_t * info, u32 bank, u32 address, u32 length, con
 	return 0;
 }
 
-#define JEDEC_MFR(info)	(((info)->flash_id >> 16) & 0xff )
+#define JEDEC_MFR(info) (((info)->flash_id >> 16) & 0xff)
 #define MFR_ID_SPANSION 0x01
 #define MFR_ID_WINBOND 0xef
 
@@ -487,7 +487,7 @@ static unsigned int guessflashsize(void *base)
 	unsigned int size;
 	unsigned int *guess = (unsigned int *)base;
 	unsigned int max = 16 << 20;
-//check 3 patterns since we can't write. 
+	//check 3 patterns since we can't write.
 	unsigned int p1 = guess[0];
 	unsigned int p2 = guess[4096];
 	unsigned int p3 = guess[8192];
@@ -499,17 +499,16 @@ static unsigned int guessflashsize(void *base)
 		c1 = guess[ofs];
 		c2 = guess[ofs + 4096];
 		c3 = guess[ofs + 8192];
-		if (p1 == c1 && p2 == c2 && p3 == c3)	// mirror found
+		if (p1 == c1 && p2 == c2 && p3 == c3) // mirror found
 		{
 			break;
 		}
 	}
 	printk(KERN_INFO "guessed flashsize = %dM\n", size >> 20);
 	return size;
-
 }
 
-unsigned long flash_get_geom(flash_info_t * flash_info)
+unsigned long flash_get_geom(flash_info_t *flash_info)
 {
 	int i;
 	int ret;
@@ -517,7 +516,7 @@ unsigned long flash_get_geom(flash_info_t * flash_info)
 	u8 erase_cmd;
 	ret = qca_sf_sfdp_info(0, &flash_size, &sect_size, &erase_cmd);
 	flash_id = qca_sf_jedec_id(0);
-	printk(KERN_INFO "jedec ID 0x%08X\n",flash_id);
+	printk(KERN_INFO "jedec ID 0x%08X\n", flash_id);
 	flash_info->use_4byte_addr = 0;
 	flash_info->need_4byte_enable_op = 0;
 	flash_info->read_cmd = SPI_FLASH_CMD_READ;
@@ -525,7 +524,7 @@ unsigned long flash_get_geom(flash_info_t * flash_info)
 
 	if (ret == 0) {
 		flash_info->flash_id = flash_id;
-		flash_info->size = flash_size;	/* bytes */
+		flash_info->size = flash_size; /* bytes */
 		flash_info->sector_size = sect_size;
 		flash_info->sector_count = flash_size / sect_size;
 		flash_info->erase_cmd = erase_cmd;
@@ -549,7 +548,7 @@ unsigned long flash_get_geom(flash_info_t * flash_info)
 		}
 	} else {
 		flash_info->flash_id = FLASH_M25P64;
-		flash_info->size = guessflashsize((void *)0xbf000000);	/* bytes */
+		flash_info->size = guessflashsize((void *)0xbf000000); /* bytes */
 		flash_info->sector_size = CFG_DEFAULT_FLASH_SECTOR_SIZE;
 		flash_info->sector_count = flash_info->size / CFG_DEFAULT_FLASH_SECTOR_SIZE;
 		flash_info->erase_cmd = ATH_SPI_CMD_SECTOR_ERASE;
