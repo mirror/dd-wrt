@@ -3,6 +3,7 @@
  * Primitives are ar7100_spi_*
  * mtd flash implements are ar7100_flash_*
  */
+#include <asm/bootinfo.h>
 #include <linux/kernel.h>
 #include <linux/module.h>
 #include <linux/types.h>
@@ -111,6 +112,19 @@ int guessbootsize(void *offset, unsigned int maxscan)
 				//				return 0x50000;	// uboot, lzma image
 			}
 			printk(KERN_INFO "uboot detected\n");
+			if (i * 4 == 0x1c0000) {
+			printk(KERN_INFO "ruckus r500 detected\n");
+			add_memory_region(0xfff0000, 0x10000, BOOT_MEM_RAM);
+			}
+			return i * 4; // uboot, lzma image
+		}
+		if (ofs[i] == 0x19852003) {
+			printk(KERN_INFO "uboot detected (ruckus r500?)\n");
+			if (i * 4 == 0x1c0000) {
+			printk(KERN_INFO "ruckus r500 detected\n");
+			add_memory_region(0xfff0000, 0x10000, BOOT_MEM_RAM);
+			
+			}
 			return i * 4; // uboot, lzma image
 		}
 		if (ofs[i] == 0x77617061) {
@@ -142,6 +156,7 @@ int guessbootsize(void *offset, unsigned int maxscan)
 			return i * 4; // uboot, lzma image
 		}
 #ifndef CONFIG_ARCHERC25
+#ifndef CONFIG_RUCKUSR500
 		if (ofs[i] == SQUASHFS_MAGIC_SWAP) {
 			printk(KERN_INFO "ZCom quirk found\n");
 			zcom = 1;
@@ -153,6 +168,7 @@ int guessbootsize(void *offset, unsigned int maxscan)
 			}
 			return i * 4; // filesys starts earlier
 		}
+#endif
 #endif
 	}
 	return -1;

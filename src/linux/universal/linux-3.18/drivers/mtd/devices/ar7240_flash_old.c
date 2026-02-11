@@ -3,6 +3,7 @@
  * Primitives are ar7100_spi_*
  * mtd flash implements are ar7100_flash_*
  */
+#include <asm/bootinfo.h>
 #include <linux/kernel.h>
 #include <linux/module.h>
 #include <linux/types.h>
@@ -106,6 +107,7 @@ static int ar7240_flash_probe(void)
 }
 
 static int zcom = 0;
+static int r500 = 0;
 static int nocalibration = 0;
 static unsigned int zcomoffset = 0;
 int guessbootsize(void *offset, unsigned int maxscan)
@@ -118,6 +120,9 @@ int guessbootsize(void *offset, unsigned int maxscan)
 	zcom = 0;
 #ifdef CONFIG_WILLY
 	return 0x50000;
+#endif
+#ifdef CONFIG_ARCHERC25
+	return 0x30000;
 #endif
 	if (!strncmp((char *)(ofsb + 0x29da), "myloram.bin", 11) || !strncmp((char *)(ofsb + 0x2aba), "myloram.bin", 11)) {
 		printk(KERN_INFO "compex WP72E detected\n");
@@ -135,7 +140,30 @@ int guessbootsize(void *offset, unsigned int maxscan)
 			return i * 4; // redboot, lzma image
 		}
 		if (ofs[i] == 0x27051956) {
+			if (ofs[i + 0x8000] == 0x27051956) {
+				printk(KERN_INFO "uboot detected (MMS344 Quirk)\n");
+				return (i * 4) + 0x20000; // uboot, lzma image
+			}
+			if (!memcmp(&ofs[i + 9], "ISQ-4000", 8)) {
+				printk(KERN_INFO "KT412H detected\n");
+				//				return 0x50000;	// uboot, lzma image
+			}
 			printk(KERN_INFO "uboot detected\n");
+			if (i * 4 == 0x1c0000) {
+			printk(KERN_INFO "ruckus r500 detected\n");
+			add_memory_region(0xfff0000, 0x10000, BOOT_MEM_RAM);
+			r500 = 1;
+			}
+			return i * 4; // uboot, lzma image
+		}
+		if (ofs[i] == 0x19852003) {
+			printk(KERN_INFO "uboot detected (ruckus r500?)\n");
+			if (i * 4 == 0x1c0000) {
+			printk(KERN_INFO "ruckus r500 detected\n");
+			add_memory_region(0xfff0000, 0x10000, BOOT_MEM_RAM);
+			r500 = 1;
+			
+			}
 			return i * 4; // uboot, lzma image
 		}
 		if (ofs[i] == 0x77617061) {
@@ -166,6 +194,8 @@ int guessbootsize(void *offset, unsigned int maxscan)
 			printk(KERN_INFO "WRT160NL uboot detected\n");
 			return i * 4; // uboot, lzma image
 		}
+#ifndef CONFIG_ARCHERC25
+#ifndef CONFIG_RUCKUSR500
 		if (ofs[i] == SQUASHFS_MAGIC_SWAP) {
 			printk(KERN_INFO "ZCom quirk found\n");
 			zcom = 1;
@@ -177,6 +207,8 @@ int guessbootsize(void *offset, unsigned int maxscan)
 			}
 			return i * 4; // filesys starts earlier
 		}
+#endif
+#endif
 	}
 	return -1;
 }
@@ -193,6 +225,9 @@ static unsigned int guessflashsize(void *base)
 	unsigned int c1;
 	unsigned int c2;
 	unsigned int c3;
+	if (r500)
+		size = 64 << 20;
+	else {
 	for (size = 2 << 20; size <= (max >> 1); size <<= 1) {
 		unsigned int ofs = size / 4;
 		c1 = guess[ofs];
@@ -202,6 +237,7 @@ static unsigned int guessflashsize(void *base)
 		{
 			break;
 		}
+	}
 	}
 	printk(KERN_INFO "guessed flashsize = %dM\n", size >> 20);
 	return size;
@@ -505,6 +541,7 @@ static int __init ar7240_flash_init(void)
 	size_t rootsize;
 	size_t len;
 	int fsize;
+	int guess;
 	int inc = 0;
 	int numparts = 9;
 	init_MUTEX(&ar7240_flash_sem);
@@ -523,6 +560,8 @@ static int __init ar7240_flash_init(void)
 #else
 	buf = (char *)0xbf000000;
 #endif
+	fsize = guessflashsize(buf);
+	guess = guessbootsize(buf, fsize);
 	fsize = guessflashsize(buf);
 	for (i = 0; i < AR7240_FLASH_MAX_BANKS; i++) {
 		index = ar7240_flash_probe();

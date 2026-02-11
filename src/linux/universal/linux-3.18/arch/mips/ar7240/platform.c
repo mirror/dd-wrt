@@ -1344,6 +1344,10 @@ int __init ar7240_platform_init(void)
 	mac = (u8 *)KSEG1ADDR(0x1f080000);
 	ee = (u8 *)KSEG1ADDR(0x1f081000);
 #endif
+#ifdef CONFIG_RUCKUSR500
+	mac = (u8 *)KSEG1ADDR(0x1f140060);
+	ee = (u8 *)KSEG1ADDR(0x1f140000 + 0x41000);
+#endif
 
 #ifdef CONFIG_WASP_SUPPORT
 #define DB120_MAC0_OFFSET	0
@@ -1354,6 +1358,8 @@ int __init ar7240_platform_init(void)
     #elif defined(CONFIG_ARCHERC7V5) && !defined(CONFIG_ARCHERA7V5)
 	u8 *art = (u8 *)KSEG1ADDR(0x1f050000);
 	ee = (u8 *)KSEG1ADDR(0x1f051000);
+    #elif defined(CONFIG_RUCKUSR500)
+	u8 *art = (u8 *)KSEG1ADDR(0x1f140000 + 0x41000);
     #elif defined(CONFIG_DIR825C1)
 	u8 *art = (u8 *)KSEG1ADDR(0x1fff1000);
     #elif defined(CONFIG_DW02_412H)
@@ -1376,6 +1382,10 @@ int __init ar7240_platform_init(void)
 	mac = (u8 *)KSEG1ADDR(0x1fff0000);
 	ath79_init_mac(mac0, mac, -1);
 	ath79_init_mac(mac1, mac, 0);
+    #elif CONFIG_RUCKUSR500
+	mac = (u8 *)KSEG1ADDR(0x1f140060);
+	ath79_init_mac(mac0, mac, -1);
+	ath79_init_mac(mac1, mac, 0);	
     #elif CONFIG_XD3200
 	mac = (u8 *)KSEG1ADDR(0x1fff0000);
 	ath79_init_mac(mac0, mac, -1);
@@ -2198,6 +2208,47 @@ int __init ar7240_platform_init(void)
 	ar71xx_add_device_eth(1);
 	#endif
 	#else
+
+#if CONFIG_RUCKUSR500
+	/* GMAC0 of the AR8327 switch is connected to GMAC1 via SGMII */
+	ap136_ar8327_pad0_cfg.mode = AR8327_PAD_MAC_SGMII;
+//	ap136_ar8327_pad0_cfg.sgmii_delay_en = true;
+	ar71xx_add_device_mdio(0, 0x0);
+	ar71xx_eth0_pll_data.pll_1000 = 0x96000000;
+	ar71xx_eth0_pll_data.pll_100 = 0x00000101;
+	ar71xx_eth0_pll_data.pll_10 = 0x00001616;
+
+	ar71xx_eth1_pll_data.pll_1000 = 0x03000101;
+	ar71xx_eth1_pll_data.pll_100 = 0x00000101;
+	ar71xx_eth1_pll_data.pll_10 = 0x00001616;
+
+
+
+	/* GMAC6 of the AR8327 switch is connected to GMAC0 via RGMII */
+	ap136_ar8327_pad6_cfg.mode = AR8327_PAD_MAC_RGMII;
+//	ap136_ar8327_pad6_cfg.txclk_delay_en = true;
+//	ap136_ar8327_pad6_cfg.rxclk_delay_en = true;
+//	ap136_ar8327_pad6_cfg.txclk_delay_sel = AR8327_CLK_DELAY_SEL1;
+//	ap136_ar8327_pad6_cfg.rxclk_delay_sel = AR8327_CLK_DELAY_SEL2;
+
+
+	mdiobus_register_board_info(ap136_mdio0_info,
+				    ARRAY_SIZE(ap136_mdio0_info));
+
+	/* GMAC0 is connected to the RMGII interface */
+	ar71xx_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_RGMII;
+	ar71xx_eth0_data.phy_mask = BIT(0);
+	ar71xx_eth0_data.mii_bus_dev = &ar71xx_mdio0_device.dev;
+
+	ar71xx_add_device_eth(0);
+	/* GMAC1 is connected tot eh SGMII interface */
+	ar71xx_eth1_data.phy_if_mode = PHY_INTERFACE_MODE_SGMII;
+	ar71xx_eth1_data.speed = SPEED_1000;
+	ar71xx_eth1_data.duplex = DUPLEX_FULL;
+	ar71xx_add_device_eth(1);
+
+
+#else
 	/* GMAC0 of the AR8327 switch is connected to GMAC1 via SGMII */
 	ap136_ar8327_pad0_cfg.mode = AR8327_PAD_MAC_SGMII;
 	ap136_ar8327_pad0_cfg.sgmii_delay_en = true;
@@ -2230,7 +2281,7 @@ int __init ar7240_platform_init(void)
 
 	ar71xx_eth1_pll_data.pll_1000 = 0x03000101;
 	ar71xx_add_device_eth(1);
-	
+#endif	
 	#endif
 	#endif
 	    
@@ -2381,7 +2432,10 @@ int __init ar7240_platform_init(void)
 #if !defined(CONFIG_MTD_NAND_ATH) || defined(CONFIG_DW02_412H)
 	if (!ee)
 	    ee = (u8 *)KSEG1ADDR(0x1fff1000);
-#if defined(CONFIG_DIR862)
+#if defined(CONFIG_RUCKUSR500)
+	printk(KERN_INFO "add ee %p and mac %p\n", ee, mac);
+	ar9xxx_add_device_wmac(ee, mac);
+#elif defined(CONFIG_DIR862)
 	ar9xxx_add_device_wmac(ee, mac0);
 #elif defined(CONFIG_XD9531)
 	ar9xxx_add_device_wmac(ee, ee + 2);
@@ -2410,6 +2464,8 @@ int __init ar7240_platform_init(void)
 	ap91_pci_init(NULL, mac0);
 	ap91_set_eeprom();
 
+#elif defined(CONFIG_RUCKUSR500)
+	ap91_pci_init(NULL, NULL);
 #elif defined(CONFIG_DIR825C1)
 	ap91_pci_init(ee + 0x4000, mac1);
 #elif defined(CONFIG_ARCHERC25)
