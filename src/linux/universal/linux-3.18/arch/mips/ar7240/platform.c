@@ -1499,7 +1499,7 @@ int __init ar7240_platform_init(void)
 #endif
 #ifdef CONFIG_RUCKUSR500
 	mac = (u8 *)KSEG1ADDR(0x1f140060);
-	ee = (u8 *)KSEG1ADDR(0x1f140000 + 0x41000);
+	ee = (u8 *)KSEG1ADDR (0x1f181000);
 #endif
 
 #ifdef CONFIG_WASP_SUPPORT
@@ -1508,11 +1508,11 @@ int __init ar7240_platform_init(void)
     #if defined(CONFIG_ARCHERC25)
 //	u8 art = (u8 *)KSEG1ADDR(0x1fff0000);	
 	mac = (u8 *)KSEG1ADDR(0x1f7e0008);
+    #elif defined(CONFIG_RUCKUSR500)
+	u8 *art = (u8 *)KSEG1ADDR(0x1f181000);
     #elif defined(CONFIG_ARCHERC7V5) && !defined(CONFIG_ARCHERA7V5)
 	u8 *art = (u8 *)KSEG1ADDR(0x1f050000);
 	ee = (u8 *)KSEG1ADDR(0x1f051000);
-    #elif defined(CONFIG_RUCKUSR500)
-	u8 *art = (u8 *)KSEG1ADDR(0x1f140000 + 0x41000);
     #elif defined(CONFIG_DIR825C1)
 	u8 *art = (u8 *)KSEG1ADDR(0x1fff1000);
     #elif defined(CONFIG_DW02_412H)
@@ -1537,7 +1537,8 @@ int __init ar7240_platform_init(void)
 	ath79_init_mac(mac1, mac, 0);
     #elif CONFIG_RUCKUSR500
 	mac = (u8 *)KSEG1ADDR(0x1f140060);
-	ath79_init_mac(mac0, mac, -1);
+	ath79_init_mac(mac0, mac, 0);
+	mac = (u8 *)KSEG1ADDR(0x1f140060+6);
 	ath79_init_mac(mac1, mac, 0);	
     #elif CONFIG_XD3200
 	mac = (u8 *)KSEG1ADDR(0x1fff0000);
@@ -2586,7 +2587,8 @@ int __init ar7240_platform_init(void)
 	if (!ee)
 	    ee = (u8 *)KSEG1ADDR(0x1fff1000);
 #if defined(CONFIG_RUCKUSR500)
-	printk(KERN_INFO "add ee %p and mac %p\n", ee, mac);
+	mac = (u8 *)KSEG1ADDR(0x1f140060+12);
+	printk(KERN_INFO "add ee %p and mac %pM\n", ee, mac);
 	ar9xxx_add_device_wmac(ee, mac);
 #elif defined(CONFIG_DIR862)
 	ar9xxx_add_device_wmac(ee, mac0);

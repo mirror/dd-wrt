@@ -277,7 +277,7 @@ static void qca956x_wmac_init(void)
 
 void __init ar9xxx_add_device_wmac(u8 *cal_data, u8 *mac_addr)
 {
-	printk(KERN_INFO "add wmac %p and mac %p\n", cal_data, mac_addr);
+	printk(KERN_INFO "add wmac %p and mac %pM\n", cal_data, mac_addr);
 	switch (ar71xx_soc) {
 	case AR71XX_SOC_AR9130:
 	case AR71XX_SOC_AR9132:
