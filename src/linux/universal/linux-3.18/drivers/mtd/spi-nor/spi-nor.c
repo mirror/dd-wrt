@@ -1403,7 +1403,7 @@ int spi_nor_scan(struct spi_nor *nor, const char *name, enum read_mode mode)
 			printk(KERN_INFO "adjusted length %X, original length %X\n", len, origlen);
 			if ((len - (inc + 4096)) < origlen)
 				len += mtd->erasesize;
-			dir_parts[ROOTFS].size = (len & 0x1ffffff) - dir_parts[ROOTFS].offset;
+			dir_parts[ROOTFS].size = (len & 0x3ffffff) - dir_parts[ROOTFS].offset;
 
 			dir_parts[DDWRT].offset = dir_parts[ROOTFS].offset + dir_parts[ROOTFS].size;
 
