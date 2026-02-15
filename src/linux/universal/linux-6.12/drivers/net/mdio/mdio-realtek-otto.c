@@ -37,6 +37,7 @@
 #define RTMDIO_838X_CMD_WRITE_C22		BIT(2)
 #define RTMDIO_838X_CMD_WRITE_C45		BIT(1) | BIT(2)
 #define RTMDIO_838X_CMD_MASK			GENMASK(2, 0)
+#define RTMDIO_838X_PHY_PATCH_DONE		BIT(15)
 #define RTMDIO_838X_SMI_GLB_CTRL		(0xa100)
 #define RTMDIO_838X_SMI_ACCESS_PHY_CTRL_0	(0xa1b8)
 #define RTMDIO_838X_SMI_ACCESS_PHY_CTRL_1	(0xa1bc)
@@ -176,7 +177,6 @@ struct rtmdio_ctrl {
 	bool raw[RTMDIO_MAX_PORT];
 	int smi_bus[RTMDIO_MAX_PORT];
 	int smi_addr[RTMDIO_MAX_PORT];
-	struct device_node *dn[RTMDIO_MAX_PORT];
 	bool smi_bus_isc45[RTMDIO_MAX_SMI_BUS];
 };
 
@@ -503,6 +503,10 @@ static int rtmdio_read(struct mii_bus *bus, int addr, int regnum)
 	if (addr >= ctrl->cfg->cpu_port)
 		return -ENODEV;
 
+	/* prevent WARN_ONCE() during scan */
+	if (ctrl->smi_bus[addr] >=0 && ctrl->smi_bus_isc45[ctrl->smi_bus[addr]] && regnum == 2)
+		return -EIO;
+
 	if (regnum == RTMDIO_PAGE_SELECT && ctrl->page[addr] != ctrl->cfg->raw_page)
 		return ctrl->page[addr];
 
@@ -554,55 +558,27 @@ static int rtmdio_write(struct mii_bus *bus, int addr, int regnum, u16 val)
 	return 0;
 }
 
-static int rtmdio_read_phy_id(struct mii_bus *bus, u8 addr, unsigned int *phy_id)
+static u32 rtmdio_get_phy_id(struct phy_device *phydev)
 {
-	static const int common_mmds[] = {
-		MDIO_MMD_PMAPMD, MDIO_MMD_PCS, MDIO_MMD_AN,
-		MDIO_MMD_VEND1, MDIO_MMD_VEND2
-	};
-	struct rtmdio_ctrl *ctrl = bus->priv;
-	int devid1 = 0, devid2 = 0;
-	unsigned int id = 0;
-
-	/* Clause 22 */
-	if (!ctrl->smi_bus_isc45[ctrl->smi_bus[addr]]) {
-		devid1 = rtmdio_read(bus, addr, MDIO_DEVID1);
-		devid2 = rtmdio_read(bus, addr, MDIO_DEVID2);
-		if (devid1 < 0 || devid2 < 0)
-			return -EIO;
-
-		id = (devid1 << 16) | devid2;
-		if (!id || (id & 0x1fffffff) == 0x1fffffff)
-			return -ENODEV;
-
-		*phy_id = id;
+	if (!phydev)
 		return 0;
-	}
 
+	if (phydev->is_c45) {
+		for (int devad = 0; devad < MDIO_MMD_NUM; devad++) {
+			u32 phyid = phydev->c45_ids.device_ids[devad];
 
-	/* Clause 45
-	 * only scan some MMDs which can be considered as common i.e.
-	 * implemented by most PHYs.
-	 */
-	for (int i = 0; i < ARRAY_SIZE(common_mmds); i++) {
-		devid1 = rtmdio_read_c45(bus, addr, common_mmds[i], MDIO_DEVID1);
-		devid2 = rtmdio_read_c45(bus, addr, common_mmds[i], MDIO_DEVID2);
-		if (devid1 < 0 || devid2 < 0)
-			continue;
-
-		id = (devid1 << 16) | devid2;
-		if (id && id != 0xffffffff) {
-			*phy_id = id;
-			return 0;
+			if (phyid && phyid != 0xffffffff)
+				return phyid;
 		}
 	}
 
-	return -ENODEV;
+	return phydev->phy_id;
 }
 
 static void rtmdio_get_phy_info(struct mii_bus *bus, int addr, struct rtmdio_phy_info *phyinfo)
 {
-	struct rtmdio_ctrl *ctrl = bus->priv;
+	struct phy_device *phydev = mdiobus_get_phy(bus, addr);
+	u32 phyid = rtmdio_get_phy_id(phydev);
 
 	/*
 	 * Depending on the attached PHY the polling mechanism must be fine tuned. Basically
@@ -610,17 +586,8 @@ static void rtmdio_get_phy_info(struct mii_bus *bus, int addr, struct rtmdio_phy
 	 * features.
 	 */
 	memset(phyinfo, 0, sizeof(*phyinfo));
-	if (ctrl->smi_bus[addr] < 0) {
-		phyinfo->phy_unknown = true;
-		return;
-	}
 
-	if (rtmdio_read_phy_id(bus, addr, &phyinfo->phy_id) < 0) {
-		phyinfo->phy_unknown = true;
-		return;
-	}
-
-	switch(phyinfo->phy_id) {
+	switch(phyid) {
 	case RTMDIO_PHY_AQR113C_A:
 	case RTMDIO_PHY_AQR113C_B:
 	case RTMDIO_PHY_AQR813:
@@ -653,6 +620,20 @@ static void rtmdio_get_phy_info(struct mii_bus *bus, int addr, struct rtmdio_phy
 static int rtmdio_838x_reset(struct mii_bus *bus)
 {
 	struct rtmdio_ctrl *ctrl = bus->priv;
+
+	/*
+	 * PHY_PATCH_DONE enables phy control via SoC. This is required for phy access,
+	 * including patching. Must always be set before the phys are probed.
+	 */
+	regmap_update_bits(ctrl->map, RTMDIO_838X_SMI_GLB_CTRL,
+			   RTMDIO_838X_PHY_PATCH_DONE, RTMDIO_838X_PHY_PATCH_DONE);
+
+	return 0;
+}
+
+static void rtmdio_838x_setup_polling(struct mii_bus *bus)
+{
+	struct rtmdio_ctrl *ctrl = bus->priv;
 	int combo_phy;
 
 	/* Disable MAC polling for PHY config. It will be activated later in the DSA driver */
@@ -666,13 +647,6 @@ static int rtmdio_838x_reset(struct mii_bus *bus)
 	 */
 	combo_phy = ctrl->smi_bus[24] < 0 ? 0 : BIT(7);
 	regmap_update_bits(ctrl->map, RTMDIO_838X_SMI_GLB_CTRL, BIT(7), combo_phy);
-
-	/*
-	 * Bit 15, PHY_PATCH_DONE, enables phy control via SoC. This is required for phy
-	 * access, including patching. Must always be set before the phys are probed.
-	 */
-	regmap_update_bits(ctrl->map, RTMDIO_838X_SMI_GLB_CTRL, BIT(15), BIT(15));
-	return 0;
 }
 
 static int rtmdio_839x_reset(struct mii_bus *bus)
@@ -714,7 +688,7 @@ static int rtmdio_930x_reset(struct mii_bus *bus)
 		regmap_update_bits(ctrl->map, RTMDIO_930X_SMI_PORT0_15_POLLING_SEL + reg, mask, val);
 	}
 
-	/* Define c22/c45 bus polling */
+	/* Define C22/C45 bus feature set */
 	for (int addr = 0; addr < RTMDIO_MAX_SMI_BUS; addr++) {
 		mask = BIT(16 + addr);
 		val = ctrl->smi_bus_isc45[addr] ? mask : 0;
@@ -729,6 +703,8 @@ static void rtmdio_930x_setup_polling(struct mii_bus *bus)
 	struct rtmdio_ctrl *ctrl = bus->priv;
 	struct rtmdio_phy_info phyinfo;
 	unsigned int mask, val;
+
+	regmap_write(ctrl->map, RTMDIO_930X_SMI_MAC_TYPE_CTRL, 0);
 
 	/* Define PHY specific polling parameters */
 	for (int addr = 0; addr < ctrl->cfg->cpu_port; addr++) {
@@ -817,14 +793,8 @@ static int rtmdio_931x_reset(struct mii_bus *bus)
 		regmap_write(ctrl->map, RTMDIO_931X_SMI_PORT_POLLING_SEL + (i * 4), poll_sel[i]);
 	}
 
-	/* Configure c22/c45 polling (bit 1 of SMI_SETX_FMT_SEL)
-	 *
-	 * NOTE: this seems to be needed before accessing the bus though
-	 * it should only apply to the SMI polling. Not setting c22/c45 here
-	 * apparently causes garbage being read below.
-	 */
+	/* Define C22/C45 bus feature set */
 	for (int i = 0; i < RTMDIO_MAX_SMI_BUS; i++) {
-		/* bus is polled in c45 */
 		if (ctrl->smi_bus_isc45[i])
 			c45_mask |= 0x2 << (i * 2);  /* Std. C45, non-standard is 0x3 */
 	}
@@ -925,6 +895,7 @@ static int rtmdio_probe(struct platform_device *pdev)
 	struct rtmdio_ctrl *ctrl;
 	struct device_node *dn;
 	struct mii_bus *bus;
+	u64 mask = 0ULL;
 	int ret, addr;
 
 	bus = devm_mdiobus_alloc_size(dev, sizeof(*ctrl));
@@ -944,24 +915,26 @@ static int rtmdio_probe(struct platform_device *pdev)
 		if (of_property_read_u32(dn, "reg", &addr))
 			continue;
 
-		if (addr >= ctrl->cfg->cpu_port) {
-			pr_err("%s: illegal port number %d\n", __func__, addr);
-			return -ENODEV;
+		if (addr < 0 || addr >= ctrl->cfg->cpu_port) {
+			dev_err(dev, "illegal port number %d\n", addr);
+			of_node_put(dn);
+			return -EINVAL;
 		}
 
 		of_property_read_u32(dn->parent, "reg", &ctrl->smi_bus[addr]);
 		if (of_property_read_u32(dn, "realtek,smi-address", &ctrl->smi_addr[addr]))
 			ctrl->smi_addr[addr] = addr;
 		
-		if (ctrl->smi_bus[addr] >= RTMDIO_MAX_SMI_BUS) {
-			pr_err("%s: illegal SMI bus number %d\n", __func__, ctrl->smi_bus[addr]);
-			return -ENODEV;
+		if (ctrl->smi_bus[addr] < 0 || ctrl->smi_bus[addr] >= RTMDIO_MAX_SMI_BUS) {
+			dev_err(dev, "illegal SMI bus number %d\n", ctrl->smi_bus[addr]);
+			of_node_put(dn);
+			return -EINVAL;
 		}
 
 		if (of_device_is_compatible(dn, "ethernet-phy-ieee802.3-c45"))
 			ctrl->smi_bus_isc45[ctrl->smi_bus[addr]] = true;
 
-		ctrl->dn[addr] = dn;
+		mask |= BIT_ULL(addr);
 	}
 
 	bus->name = "Realtek MDIO bus";
@@ -971,7 +944,7 @@ static int rtmdio_probe(struct platform_device *pdev)
 	bus->read_c45 = rtmdio_read_c45;
 	bus->write_c45 = rtmdio_write_c45;
 	bus->parent = dev;
-	bus->phy_mask = ~0;
+	bus->phy_mask = ~mask;
 	snprintf(bus->id, MII_BUS_ID_SIZE, "realtek-mdio");
 
 	device_set_node(&bus->dev, of_fwnode_handle(dev->of_node));
@@ -982,14 +955,6 @@ static int rtmdio_probe(struct platform_device *pdev)
 	if (ctrl->cfg->setup_polling)
 		ctrl->cfg->setup_polling(bus);
 
-	for (addr = 0; addr < ctrl->cfg->cpu_port; addr++) {
-		if (ctrl->dn[addr]) {
-			ret = fwnode_mdiobus_register_phy(bus, of_fwnode_handle(ctrl->dn[addr]), addr);
-			if (ret)
-				return ret;
-		}
-	}
-
 	return 0;
 }
 
@@ -999,6 +964,7 @@ static const struct rtmdio_config rtmdio_838x_cfg = {
 	.read_mmd_phy	= rtmdio_838x_read_mmd_phy,
 	.read_phy	= rtmdio_838x_read_phy,
 	.reset		= rtmdio_838x_reset,
+	.setup_polling	= rtmdio_838x_setup_polling,
 	.write_mmd_phy	= rtmdio_838x_write_mmd_phy,
 	.write_phy	= rtmdio_838x_write_phy,
 };
