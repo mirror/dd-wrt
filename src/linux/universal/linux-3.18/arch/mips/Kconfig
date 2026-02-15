@@ -930,6 +930,9 @@ config  MACH_AR7240
     bool "Support for Atheros ar7240 based board"
 	select CEVT_R4K
 	select CSRC_R4K
+	select HAVE_CLK
+	select CLKDEV_LOOKUP
+#	select COMMON_CLK
 	select DMA_NONCOHERENT
 	select HW_HAS_PCI
 	select IRQ_CPU

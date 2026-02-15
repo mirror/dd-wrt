@@ -16,17 +16,23 @@
 #include <linux/device.h>
 #include <linux/mutex.h>
 #include <linux/math64.h>
+#include <linux/vmalloc.h>
+#include <asm/bootinfo.h>
 
 #include <linux/mtd/cfi.h>
 #include <linux/mtd/mtd.h>
 #include <linux/of_platform.h>
 #include <linux/spi/flash.h>
 #include <linux/mtd/spi-nor.h>
+#include <linux/mtd/mtd.h>
+#include <linux/mtd/partitions.h>
+#include "../mtdcore.h"
+#include <linux/squashfs_fs.h>
 
 /* Define max times to check status register before we give up. */
-#define	MAX_READY_WAIT_JIFFIES	(40 * HZ) /* M25P16 specs 40s max chip erase */
+#define MAX_READY_WAIT_JIFFIES (40 * HZ) /* M25P16 specs 40s max chip erase */
 
-#define JEDEC_MFR(_jedec_id)	((_jedec_id) >> 16)
+#define JEDEC_MFR(_jedec_id) ((_jedec_id) >> 16)
 
 static const struct spi_device_id *spi_nor_match_id(const char *name);
 
@@ -42,7 +48,7 @@ static int read_sr(struct spi_nor *nor)
 
 	ret = nor->read_reg(nor, SPINOR_OP_RDSR, &val, 1);
 	if (ret < 0) {
-		pr_err("error %d reading SR\n", (int) ret);
+		pr_err("error %d reading SR\n", (int)ret);
 		return ret;
 	}
 
@@ -278,8 +284,7 @@ static int spi_nor_erase(struct mtd_info *mtd, struct erase_info *instr)
 	uint32_t rem;
 	int ret;
 
-	dev_dbg(nor->dev, "at 0x%llx, len %lld\n", (long long)instr->addr,
-			(long long)instr->len);
+	dev_dbg(nor->dev, "at 0x%llx, len %lld\n", (long long)instr->addr, (long long)instr->len);
 
 	div_u64_rem(instr->len, mtd->erasesize, &rem);
 	if (rem)
@@ -299,12 +304,12 @@ static int spi_nor_erase(struct mtd_info *mtd, struct erase_info *instr)
 			goto erase_err;
 		}
 
-	/* REVISIT in some cases we could speed up erasing large regions
+		/* REVISIT in some cases we could speed up erasing large regions
 	 * by using SPINOR_OP_SE instead of SPINOR_OP_BE_4K.  We may have set up
 	 * to use "small sector erase", but that's not always optimal.
 	 */
 
-	/* "sector"-at-a-time erase */
+		/* "sector"-at-a-time erase */
 	} else {
 		while (len) {
 			if (nor->erase(nor, addr)) {
@@ -364,8 +369,7 @@ static int spi_nor_lock(struct mtd_info *mtd, loff_t ofs, uint64_t len)
 		status_new = (status_old & ~(SR_BP2 | SR_BP1)) | SR_BP0;
 
 	/* Only modify protection if it will not unlock other areas */
-	if ((status_new & (SR_BP2 | SR_BP1 | SR_BP0)) >
-				(status_old & (SR_BP2 | SR_BP1 | SR_BP0))) {
+	if ((status_new & (SR_BP2 | SR_BP1 | SR_BP0)) > (status_old & (SR_BP2 | SR_BP1 | SR_BP0))) {
 		write_enable(nor);
 		ret = write_sr(nor, status_new);
 		if (ret)
@@ -395,24 +399,23 @@ static int spi_nor_unlock(struct mtd_info *mtd, loff_t ofs, uint64_t len)
 
 	status_old = read_sr(nor);
 
-	if (offset+len > mtd->size - (mtd->size / 64))
+	if (offset + len > mtd->size - (mtd->size / 64))
 		status_new = status_old & ~(SR_BP2 | SR_BP1 | SR_BP0);
-	else if (offset+len > mtd->size - (mtd->size / 32))
+	else if (offset + len > mtd->size - (mtd->size / 32))
 		status_new = (status_old & ~(SR_BP2 | SR_BP1)) | SR_BP0;
-	else if (offset+len > mtd->size - (mtd->size / 16))
+	else if (offset + len > mtd->size - (mtd->size / 16))
 		status_new = (status_old & ~(SR_BP2 | SR_BP0)) | SR_BP1;
-	else if (offset+len > mtd->size - (mtd->size / 8))
+	else if (offset + len > mtd->size - (mtd->size / 8))
 		status_new = (status_old & ~SR_BP2) | SR_BP1 | SR_BP0;
-	else if (offset+len > mtd->size - (mtd->size / 4))
+	else if (offset + len > mtd->size - (mtd->size / 4))
 		status_new = (status_old & ~(SR_BP0 | SR_BP1)) | SR_BP2;
-	else if (offset+len > mtd->size - (mtd->size / 2))
+	else if (offset + len > mtd->size - (mtd->size / 2))
 		status_new = (status_old & ~SR_BP1) | SR_BP2 | SR_BP0;
 	else
 		status_new = (status_old & ~SR_BP0) | SR_BP2 | SR_BP1;
 
 	/* Only modify protection if it will not lock other areas */
-	if ((status_new & (SR_BP2 | SR_BP1 | SR_BP0)) <
-				(status_old & (SR_BP2 | SR_BP1 | SR_BP0))) {
+	if ((status_new & (SR_BP2 | SR_BP1 | SR_BP0)) < (status_old & (SR_BP2 | SR_BP1 | SR_BP0))) {
 		write_enable(nor);
 		ret = write_sr(nor, status_new);
 		if (ret)
@@ -429,47 +432,47 @@ struct flash_info {
 	 * a high byte of zero plus three data bytes: the manufacturer id,
 	 * then a two byte device id.
 	 */
-	u32		jedec_id;
-	u16             ext_id;
+	u32 jedec_id;
+	u16 ext_id;
 
 	/* The size listed here is what works with SPINOR_OP_SE, which isn't
 	 * necessarily called a "sector" by the vendor.
 	 */
-	unsigned	sector_size;
-	u16		n_sectors;
+	unsigned sector_size;
+	u16 n_sectors;
 
-	u16		page_size;
-	u16		addr_width;
+	u16 page_size;
+	u16 addr_width;
 
-	u16		flags;
-#define	SECT_4K			0x01	/* SPINOR_OP_BE_4K works uniformly */
-#define	SPI_NOR_NO_ERASE	0x02	/* No erase command needed */
-#define	SST_WRITE		0x04	/* use SST byte programming */
-#define	SPI_NOR_NO_FR		0x08	/* Can't do fastread */
-#define	SECT_4K_PMC		0x10	/* SPINOR_OP_BE_4K_PMC works uniformly */
-#define	SPI_NOR_DUAL_READ	0x20    /* Flash supports Dual Read */
-#define	SPI_NOR_QUAD_READ	0x40    /* Flash supports Quad Read */
-#define	USE_FSR			0x80	/* use flag status register */
+	u16 flags;
+#define SECT_4K 0x01 /* SPINOR_OP_BE_4K works uniformly */
+#define SPI_NOR_NO_ERASE 0x02 /* No erase command needed */
+#define SST_WRITE 0x04 /* use SST byte programming */
+#define SPI_NOR_NO_FR 0x08 /* Can't do fastread */
+#define SECT_4K_PMC 0x10 /* SPINOR_OP_BE_4K_PMC works uniformly */
+#define SPI_NOR_DUAL_READ 0x20 /* Flash supports Dual Read */
+#define SPI_NOR_QUAD_READ 0x40 /* Flash supports Quad Read */
+#define USE_FSR 0x80 /* use flag status register */
 };
 
-#define INFO(_jedec_id, _ext_id, _sector_size, _n_sectors, _flags)	\
-	((kernel_ulong_t)&(struct flash_info) {				\
-		.jedec_id = (_jedec_id),				\
-		.ext_id = (_ext_id),					\
-		.sector_size = (_sector_size),				\
-		.n_sectors = (_n_sectors),				\
-		.page_size = 256,					\
-		.flags = (_flags),					\
-	})
+#define INFO(_jedec_id, _ext_id, _sector_size, _n_sectors, _flags) \
+	((kernel_ulong_t) & (struct flash_info){                   \
+				    .jedec_id = (_jedec_id),       \
+				    .ext_id = (_ext_id),           \
+				    .sector_size = (_sector_size), \
+				    .n_sectors = (_n_sectors),     \
+				    .page_size = 256,              \
+				    .flags = (_flags),             \
+			    })
 
-#define CAT25_INFO(_sector_size, _n_sectors, _page_size, _addr_width, _flags)	\
-	((kernel_ulong_t)&(struct flash_info) {				\
-		.sector_size = (_sector_size),				\
-		.n_sectors = (_n_sectors),				\
-		.page_size = (_page_size),				\
-		.addr_width = (_addr_width),				\
-		.flags = (_flags),					\
-	})
+#define CAT25_INFO(_sector_size, _n_sectors, _page_size, _addr_width, _flags) \
+	((kernel_ulong_t) & (struct flash_info){                              \
+				    .sector_size = (_sector_size),            \
+				    .n_sectors = (_n_sectors),                \
+				    .page_size = (_page_size),                \
+				    .addr_width = (_addr_width),              \
+				    .flags = (_flags),                        \
+			    })
 
 /* NOTE: double check command sets and memory organization when you add
  * more nor chips.  This current list focusses on newer chips, which
@@ -477,179 +480,179 @@ struct flash_info {
  */
 static const struct spi_device_id spi_nor_ids[] = {
 	/* Atmel -- some are (confusingly) marketed as "DataFlash" */
-	{ "at25fs010",  INFO(0x1f6601, 0, 32 * 1024,   4, SECT_4K) },
-	{ "at25fs040",  INFO(0x1f6604, 0, 64 * 1024,   8, SECT_4K) },
+	{ "at25fs010", INFO(0x1f6601, 0, 32 * 1024, 4, SECT_4K) },
+	{ "at25fs040", INFO(0x1f6604, 0, 64 * 1024, 8, SECT_4K) },
 
-	{ "at25df041a", INFO(0x1f4401, 0, 64 * 1024,   8, SECT_4K) },
-	{ "at25df321a", INFO(0x1f4701, 0, 64 * 1024,  64, SECT_4K) },
-	{ "at25df641",  INFO(0x1f4800, 0, 64 * 1024, 128, SECT_4K) },
+	{ "at25df041a", INFO(0x1f4401, 0, 64 * 1024, 8, SECT_4K) },
+	{ "at25df321a", INFO(0x1f4701, 0, 64 * 1024, 64, SECT_4K) },
+	{ "at25df641", INFO(0x1f4800, 0, 64 * 1024, 128, SECT_4K) },
 
-	{ "at26f004",   INFO(0x1f0400, 0, 64 * 1024,  8, SECT_4K) },
+	{ "at26f004", INFO(0x1f0400, 0, 64 * 1024, 8, SECT_4K) },
 	{ "at26df081a", INFO(0x1f4501, 0, 64 * 1024, 16, SECT_4K) },
 	{ "at26df161a", INFO(0x1f4601, 0, 64 * 1024, 32, SECT_4K) },
-	{ "at26df321",  INFO(0x1f4700, 0, 64 * 1024, 64, SECT_4K) },
+	{ "at26df321", INFO(0x1f4700, 0, 64 * 1024, 64, SECT_4K) },
 
 	{ "at45db081d", INFO(0x1f2500, 0, 64 * 1024, 16, SECT_4K) },
 
 	/* EON -- en25xxx */
-	{ "en25f32",    INFO(0x1c3116, 0, 64 * 1024,   64, SECT_4K) },
-	{ "en25p32",    INFO(0x1c2016, 0, 64 * 1024,   64, 0) },
-	{ "en25q32b",   INFO(0x1c3016, 0, 64 * 1024,   64, 0) },
-	{ "en25p64",    INFO(0x1c2017, 0, 64 * 1024,  128, 0) },
-	{ "en25q64",    INFO(0x1c3017, 0, 64 * 1024,  128, SECT_4K) },
-	{ "en25qh128",  INFO(0x1c7018, 0, 64 * 1024,  256, 0) },
-	{ "en25qh256",  INFO(0x1c7019, 0, 64 * 1024,  512, 0) },
+	{ "en25f32", INFO(0x1c3116, 0, 64 * 1024, 64, SECT_4K) },
+	{ "en25p32", INFO(0x1c2016, 0, 64 * 1024, 64, 0) },
+	{ "en25q32b", INFO(0x1c3016, 0, 64 * 1024, 64, 0) },
+	{ "en25p64", INFO(0x1c2017, 0, 64 * 1024, 128, 0) },
+	{ "en25q64", INFO(0x1c3017, 0, 64 * 1024, 128, SECT_4K) },
+	{ "en25qh128", INFO(0x1c7018, 0, 64 * 1024, 256, 0) },
+	{ "en25qh256", INFO(0x1c7019, 0, 64 * 1024, 512, 0) },
 
 	/* ESMT */
 	{ "f25l32pa", INFO(0x8c2016, 0, 64 * 1024, 64, SECT_4K) },
 
 	/* Everspin */
-	{ "mr25h256", CAT25_INFO( 32 * 1024, 1, 256, 2, SPI_NOR_NO_ERASE | SPI_NOR_NO_FR) },
-	{ "mr25h10",  CAT25_INFO(128 * 1024, 1, 256, 3, SPI_NOR_NO_ERASE | SPI_NOR_NO_FR) },
+	{ "mr25h256", CAT25_INFO(32 * 1024, 1, 256, 2, SPI_NOR_NO_ERASE | SPI_NOR_NO_FR) },
+	{ "mr25h10", CAT25_INFO(128 * 1024, 1, 256, 3, SPI_NOR_NO_ERASE | SPI_NOR_NO_FR) },
 
 	/* GigaDevice */
-	{ "gd25q32", INFO(0xc84016, 0, 64 * 1024,  64, SECT_4K) },
+	{ "gd25q32", INFO(0xc84016, 0, 64 * 1024, 64, SECT_4K) },
 	{ "gd25q64", INFO(0xc84017, 0, 64 * 1024, 128, SECT_4K) },
 
 	/* Intel/Numonyx -- xxxs33b */
-	{ "160s33b",  INFO(0x898911, 0, 64 * 1024,  32, 0) },
-	{ "320s33b",  INFO(0x898912, 0, 64 * 1024,  64, 0) },
-	{ "640s33b",  INFO(0x898913, 0, 64 * 1024, 128, 0) },
+	{ "160s33b", INFO(0x898911, 0, 64 * 1024, 32, 0) },
+	{ "320s33b", INFO(0x898912, 0, 64 * 1024, 64, 0) },
+	{ "640s33b", INFO(0x898913, 0, 64 * 1024, 128, 0) },
 
 	/* Macronix */
-	{ "mx25l2005a",  INFO(0xc22012, 0, 64 * 1024,   4, SECT_4K) },
-	{ "mx25l4005a",  INFO(0xc22013, 0, 64 * 1024,   8, SECT_4K) },
-	{ "mx25l8005",   INFO(0xc22014, 0, 64 * 1024,  16, 0) },
-	{ "mx25l1606e",  INFO(0xc22015, 0, 64 * 1024,  32, SECT_4K) },
-	{ "mx25l3205d",  INFO(0xc22016, 0, 64 * 1024,  64, 0) },
-	{ "mx25l3255e",  INFO(0xc29e16, 0, 64 * 1024,  64, SECT_4K) },
-	{ "mx25l6405d",  INFO(0xc22017, 0, 64 * 1024, 128, 0) },
+	{ "mx25l2005a", INFO(0xc22012, 0, 64 * 1024, 4, SECT_4K) },
+	{ "mx25l4005a", INFO(0xc22013, 0, 64 * 1024, 8, SECT_4K) },
+	{ "mx25l8005", INFO(0xc22014, 0, 64 * 1024, 16, 0) },
+	{ "mx25l1606e", INFO(0xc22015, 0, 64 * 1024, 32, SECT_4K) },
+	{ "mx25l3205d", INFO(0xc22016, 0, 64 * 1024, 64, 0) },
+	{ "mx25l3255e", INFO(0xc29e16, 0, 64 * 1024, 64, SECT_4K) },
+	{ "mx25l6405d", INFO(0xc22017, 0, 64 * 1024, 128, 0) },
 	{ "mx25l12805d", INFO(0xc22018, 0, 64 * 1024, 256, 0) },
 	{ "mx25l12855e", INFO(0xc22618, 0, 64 * 1024, 256, 0) },
 	{ "mx25l25635e", INFO(0xc22019, 0, 64 * 1024, 512, 0) },
 	{ "mx25l25655e", INFO(0xc22619, 0, 64 * 1024, 512, 0) },
 	{ "mx66l51235l", INFO(0xc2201a, 0, 64 * 1024, 1024, SPI_NOR_QUAD_READ) },
-	{ "mx66l1g55g",  INFO(0xc2261b, 0, 64 * 1024, 2048, SPI_NOR_QUAD_READ) },
+	{ "mx66l1g55g", INFO(0xc2261b, 0, 64 * 1024, 2048, SPI_NOR_QUAD_READ) },
 
 	/* Micron */
-	{ "n25q064",     INFO(0x20ba17, 0, 64 * 1024,  128, 0) },
-	{ "n25q128a11",  INFO(0x20bb18, 0, 64 * 1024,  256, 0) },
-	{ "n25q128a13",  INFO(0x20ba18, 0, 64 * 1024,  256, 0) },
-	{ "n25q256a",    INFO(0x20ba19, 0, 64 * 1024,  512, SECT_4K) },
-	{ "n25q512a",    INFO(0x20bb20, 0, 64 * 1024, 1024, SECT_4K) },
-	{ "n25q512ax3",  INFO(0x20ba20, 0, 64 * 1024, 1024, USE_FSR) },
-	{ "n25q00",      INFO(0x20ba21, 0, 64 * 1024, 2048, USE_FSR) },
+	{ "n25q064", INFO(0x20ba17, 0, 64 * 1024, 128, 0) },
+	{ "n25q128a11", INFO(0x20bb18, 0, 64 * 1024, 256, 0) },
+	{ "n25q128a13", INFO(0x20ba18, 0, 64 * 1024, 256, 0) },
+	{ "n25q256a", INFO(0x20ba19, 0, 64 * 1024, 512, SECT_4K) },
+	{ "n25q512a", INFO(0x20bb20, 0, 64 * 1024, 1024, SECT_4K) },
+	{ "n25q512ax3", INFO(0x20ba20, 0, 64 * 1024, 1024, USE_FSR) },
+	{ "n25q00", INFO(0x20ba21, 0, 64 * 1024, 2048, USE_FSR) },
 
 	/* PMC */
-	{ "pm25lv512",   INFO(0,        0, 32 * 1024,    2, SECT_4K_PMC) },
-	{ "pm25lv010",   INFO(0,        0, 32 * 1024,    4, SECT_4K_PMC) },
-	{ "pm25lq032",   INFO(0x7f9d46, 0, 64 * 1024,   64, SECT_4K) },
+	{ "pm25lv512", INFO(0, 0, 32 * 1024, 2, SECT_4K_PMC) },
+	{ "pm25lv010", INFO(0, 0, 32 * 1024, 4, SECT_4K_PMC) },
+	{ "pm25lq032", INFO(0x7f9d46, 0, 64 * 1024, 64, SECT_4K) },
 
 	/* Spansion -- single (large) sector size only, at least
 	 * for the chips listed here (without boot sectors).
 	 */
-	{ "s25sl032p",  INFO(0x010215, 0x4d00,  64 * 1024,  64, SPI_NOR_DUAL_READ | SPI_NOR_QUAD_READ) },
-	{ "s25sl064p",  INFO(0x010216, 0x4d00,  64 * 1024, 128, 0) },
+	{ "s25sl032p", INFO(0x010215, 0x4d00, 64 * 1024, 64, SPI_NOR_DUAL_READ | SPI_NOR_QUAD_READ) },
+	{ "s25sl064p", INFO(0x010216, 0x4d00, 64 * 1024, 128, 0) },
 	{ "s25fl256s0", INFO(0x010219, 0x4d00, 256 * 1024, 128, 0) },
-	{ "s25fl256s1", INFO(0x010219, 0x4d01,  64 * 1024, 512, SPI_NOR_DUAL_READ | SPI_NOR_QUAD_READ) },
-	{ "s25fl512s",  INFO(0x010220, 0x4d00, 256 * 1024, 256, SPI_NOR_DUAL_READ | SPI_NOR_QUAD_READ) },
-	{ "s70fl01gs",  INFO(0x010221, 0x4d00, 256 * 1024, 256, 0) },
-	{ "s25sl12800", INFO(0x012018, 0x0300, 256 * 1024,  64, 0) },
-	{ "s25sl12801", INFO(0x012018, 0x0301,  64 * 1024, 256, 0) },
-	{ "s25fl129p0", INFO(0x012018, 0x4d00, 256 * 1024,  64, 0) },
-	{ "s25fl129p1", INFO(0x012018, 0x4d01,  64 * 1024, 256, 0) },
-	{ "s25sl004a",  INFO(0x010212,      0,  64 * 1024,   8, 0) },
-	{ "s25sl008a",  INFO(0x010213,      0,  64 * 1024,  16, 0) },
-	{ "s25sl016a",  INFO(0x010214,      0,  64 * 1024,  32, 0) },
-	{ "s25sl032a",  INFO(0x010215,      0,  64 * 1024,  64, 0) },
-	{ "s25sl064a",  INFO(0x010216,      0,  64 * 1024, 128, 0) },
-	{ "s25fl164k1", INFO(0x014017,      0,  64 * 1024, 128, SECT_4K) },
-	{ "s25fl008k",  INFO(0xef4014,      0,  64 * 1024,  16, SECT_4K) },
-	{ "s25fl016k",  INFO(0xef4015,      0,  64 * 1024,  32, SECT_4K) },
-	{ "s25fl064k",  INFO(0xef4017,      0,  64 * 1024, 128, SECT_4K) },
-	{ "s25fl164k",  INFO(0x014017,      0,  64 * 1024, 128, SECT_4K) },
+	{ "s25fl256s1", INFO(0x010219, 0x4d01, 64 * 1024, 512, SPI_NOR_DUAL_READ | SPI_NOR_QUAD_READ) },
+	{ "s25fl512s", INFO(0x010220, 0x4d00, 256 * 1024, 256, SPI_NOR_DUAL_READ | SPI_NOR_QUAD_READ) },
+	{ "s70fl01gs", INFO(0x010221, 0x4d00, 256 * 1024, 256, 0) },
+	{ "s25sl12800", INFO(0x012018, 0x0300, 256 * 1024, 64, 0) },
+	{ "s25sl12801", INFO(0x012018, 0x0301, 64 * 1024, 256, 0) },
+	{ "s25fl129p0", INFO(0x012018, 0x4d00, 256 * 1024, 64, 0) },
+	{ "s25fl129p1", INFO(0x012018, 0x4d01, 64 * 1024, 256, 0) },
+	{ "s25sl004a", INFO(0x010212, 0, 64 * 1024, 8, 0) },
+	{ "s25sl008a", INFO(0x010213, 0, 64 * 1024, 16, 0) },
+	{ "s25sl016a", INFO(0x010214, 0, 64 * 1024, 32, 0) },
+	{ "s25sl032a", INFO(0x010215, 0, 64 * 1024, 64, 0) },
+	{ "s25sl064a", INFO(0x010216, 0, 64 * 1024, 128, 0) },
+	{ "s25fl164k1", INFO(0x014017, 0, 64 * 1024, 128, SECT_4K) },
+	{ "s25fl008k", INFO(0xef4014, 0, 64 * 1024, 16, SECT_4K) },
+	{ "s25fl016k", INFO(0xef4015, 0, 64 * 1024, 32, SECT_4K) },
+	{ "s25fl064k", INFO(0xef4017, 0, 64 * 1024, 128, SECT_4K) },
+	{ "s25fl164k", INFO(0x014017, 0, 64 * 1024, 128, SECT_4K) },
 
 	/* SST -- large erase sizes are "overlays", "sectors" are 4K */
-	{ "sst25vf040b", INFO(0xbf258d, 0, 64 * 1024,  8, SECT_4K | SST_WRITE) },
+	{ "sst25vf040b", INFO(0xbf258d, 0, 64 * 1024, 8, SECT_4K | SST_WRITE) },
 	{ "sst25vf080b", INFO(0xbf258e, 0, 64 * 1024, 16, SECT_4K | SST_WRITE) },
 	{ "sst25vf016b", INFO(0xbf2541, 0, 64 * 1024, 32, SECT_4K | SST_WRITE) },
 	{ "sst25vf032b", INFO(0xbf254a, 0, 64 * 1024, 64, SECT_4K | SST_WRITE) },
 	{ "sst25vf064c", INFO(0xbf254b, 0, 64 * 1024, 128, SECT_4K) },
-	{ "sst25wf512",  INFO(0xbf2501, 0, 64 * 1024,  1, SECT_4K | SST_WRITE) },
-	{ "sst25wf010",  INFO(0xbf2502, 0, 64 * 1024,  2, SECT_4K | SST_WRITE) },
-	{ "sst25wf020",  INFO(0xbf2503, 0, 64 * 1024,  4, SECT_4K | SST_WRITE) },
-	{ "sst25wf040",  INFO(0xbf2504, 0, 64 * 1024,  8, SECT_4K | SST_WRITE) },
+	{ "sst25wf512", INFO(0xbf2501, 0, 64 * 1024, 1, SECT_4K | SST_WRITE) },
+	{ "sst25wf010", INFO(0xbf2502, 0, 64 * 1024, 2, SECT_4K | SST_WRITE) },
+	{ "sst25wf020", INFO(0xbf2503, 0, 64 * 1024, 4, SECT_4K | SST_WRITE) },
+	{ "sst25wf040", INFO(0xbf2504, 0, 64 * 1024, 8, SECT_4K | SST_WRITE) },
 
 	/* ST Microelectronics -- newer production may have feature updates */
-	{ "m25p05",  INFO(0x202010,  0,  32 * 1024,   2, 0) },
-	{ "m25p10",  INFO(0x202011,  0,  32 * 1024,   4, 0) },
-	{ "m25p20",  INFO(0x202012,  0,  64 * 1024,   4, 0) },
-	{ "m25p40",  INFO(0x202013,  0,  64 * 1024,   8, 0) },
-	{ "m25p80",  INFO(0x202014,  0,  64 * 1024,  16, 0) },
-	{ "m25p16",  INFO(0x202015,  0,  64 * 1024,  32, 0) },
-	{ "m25p32",  INFO(0x202016,  0,  64 * 1024,  64, 0) },
-	{ "m25p64",  INFO(0x202017,  0,  64 * 1024, 128, 0) },
-	{ "m25p128", INFO(0x202018,  0, 256 * 1024,  64, 0) },
-	{ "n25q032", INFO(0x20ba16,  0,  64 * 1024,  64, 0) },
+	{ "m25p05", INFO(0x202010, 0, 32 * 1024, 2, 0) },
+	{ "m25p10", INFO(0x202011, 0, 32 * 1024, 4, 0) },
+	{ "m25p20", INFO(0x202012, 0, 64 * 1024, 4, 0) },
+	{ "m25p40", INFO(0x202013, 0, 64 * 1024, 8, 0) },
+	{ "m25p80", INFO(0x202014, 0, 64 * 1024, 16, 0) },
+	{ "m25p16", INFO(0x202015, 0, 64 * 1024, 32, 0) },
+	{ "m25p32", INFO(0x202016, 0, 64 * 1024, 64, 0) },
+	{ "m25p64", INFO(0x202017, 0, 64 * 1024, 128, 0) },
+	{ "m25p128", INFO(0x202018, 0, 256 * 1024, 64, 0) },
+	{ "n25q032", INFO(0x20ba16, 0, 64 * 1024, 64, 0) },
 
-	{ "m25p05-nonjedec",  INFO(0, 0,  32 * 1024,   2, 0) },
-	{ "m25p10-nonjedec",  INFO(0, 0,  32 * 1024,   4, 0) },
-	{ "m25p20-nonjedec",  INFO(0, 0,  64 * 1024,   4, 0) },
-	{ "m25p40-nonjedec",  INFO(0, 0,  64 * 1024,   8, 0) },
-	{ "m25p80-nonjedec",  INFO(0, 0,  64 * 1024,  16, 0) },
-	{ "m25p16-nonjedec",  INFO(0, 0,  64 * 1024,  32, 0) },
-	{ "m25p32-nonjedec",  INFO(0, 0,  64 * 1024,  64, 0) },
-	{ "m25p64-nonjedec",  INFO(0, 0,  64 * 1024, 128, 0) },
-	{ "m25p128-nonjedec", INFO(0, 0, 256 * 1024,  64, 0) },
+	{ "m25p05-nonjedec", INFO(0, 0, 32 * 1024, 2, 0) },
+	{ "m25p10-nonjedec", INFO(0, 0, 32 * 1024, 4, 0) },
+	{ "m25p20-nonjedec", INFO(0, 0, 64 * 1024, 4, 0) },
+	{ "m25p40-nonjedec", INFO(0, 0, 64 * 1024, 8, 0) },
+	{ "m25p80-nonjedec", INFO(0, 0, 64 * 1024, 16, 0) },
+	{ "m25p16-nonjedec", INFO(0, 0, 64 * 1024, 32, 0) },
+	{ "m25p32-nonjedec", INFO(0, 0, 64 * 1024, 64, 0) },
+	{ "m25p64-nonjedec", INFO(0, 0, 64 * 1024, 128, 0) },
+	{ "m25p128-nonjedec", INFO(0, 0, 256 * 1024, 64, 0) },
 
-	{ "m45pe10", INFO(0x204011,  0, 64 * 1024,    2, 0) },
-	{ "m45pe80", INFO(0x204014,  0, 64 * 1024,   16, 0) },
-	{ "m45pe16", INFO(0x204015,  0, 64 * 1024,   32, 0) },
+	{ "m45pe10", INFO(0x204011, 0, 64 * 1024, 2, 0) },
+	{ "m45pe80", INFO(0x204014, 0, 64 * 1024, 16, 0) },
+	{ "m45pe16", INFO(0x204015, 0, 64 * 1024, 32, 0) },
 
-	{ "m25pe20", INFO(0x208012,  0, 64 * 1024,  4,       0) },
-	{ "m25pe80", INFO(0x208014,  0, 64 * 1024, 16,       0) },
-	{ "m25pe16", INFO(0x208015,  0, 64 * 1024, 32, SECT_4K) },
+	{ "m25pe20", INFO(0x208012, 0, 64 * 1024, 4, 0) },
+	{ "m25pe80", INFO(0x208014, 0, 64 * 1024, 16, 0) },
+	{ "m25pe16", INFO(0x208015, 0, 64 * 1024, 32, SECT_4K) },
 
-	{ "m25px16",    INFO(0x207115,  0, 64 * 1024, 32, SECT_4K) },
-	{ "m25px32",    INFO(0x207116,  0, 64 * 1024, 64, SECT_4K) },
-	{ "m25px32-s0", INFO(0x207316,  0, 64 * 1024, 64, SECT_4K) },
-	{ "m25px32-s1", INFO(0x206316,  0, 64 * 1024, 64, SECT_4K) },
-	{ "m25px64",    INFO(0x207117,  0, 64 * 1024, 128, 0) },
-	{ "m25px80",    INFO(0x207114,  0, 64 * 1024, 16, 0) },
+	{ "m25px16", INFO(0x207115, 0, 64 * 1024, 32, SECT_4K) },
+	{ "m25px32", INFO(0x207116, 0, 64 * 1024, 64, SECT_4K) },
+	{ "m25px32-s0", INFO(0x207316, 0, 64 * 1024, 64, SECT_4K) },
+	{ "m25px32-s1", INFO(0x206316, 0, 64 * 1024, 64, SECT_4K) },
+	{ "m25px64", INFO(0x207117, 0, 64 * 1024, 128, 0) },
+	{ "m25px80", INFO(0x207114, 0, 64 * 1024, 16, 0) },
 
 	/* Winbond -- w25x "blocks" are 64K, "sectors" are 4KiB */
-	{ "w25x05", INFO(0xef3010, 0, 64 * 1024,  1,  SECT_4K) },
-	{ "w25x10", INFO(0xef3011, 0, 64 * 1024,  2,  SECT_4K) },
-	{ "w25x20", INFO(0xef3012, 0, 64 * 1024,  4,  SECT_4K) },
-	{ "w25x40", INFO(0xef3013, 0, 64 * 1024,  8,  SECT_4K) },
-	{ "w25x80", INFO(0xef3014, 0, 64 * 1024,  16, SECT_4K) },
-	{ "w25x16", INFO(0xef3015, 0, 64 * 1024,  32, SECT_4K) },
-	{ "w25x32", INFO(0xef3016, 0, 64 * 1024,  64, SECT_4K) },
-	{ "w25q32", INFO(0xef4016, 0, 64 * 1024,  64, SECT_4K) },
-	{ "w25q32dw", INFO(0xef6016, 0, 64 * 1024,  64, SECT_4K) },
+	{ "w25x05", INFO(0xef3010, 0, 64 * 1024, 1, SECT_4K) },
+	{ "w25x10", INFO(0xef3011, 0, 64 * 1024, 2, SECT_4K) },
+	{ "w25x20", INFO(0xef3012, 0, 64 * 1024, 4, SECT_4K) },
+	{ "w25x40", INFO(0xef3013, 0, 64 * 1024, 8, SECT_4K) },
+	{ "w25x80", INFO(0xef3014, 0, 64 * 1024, 16, SECT_4K) },
+	{ "w25x16", INFO(0xef3015, 0, 64 * 1024, 32, SECT_4K) },
+	{ "w25x32", INFO(0xef3016, 0, 64 * 1024, 64, SECT_4K) },
+	{ "w25q32", INFO(0xef4016, 0, 64 * 1024, 64, SECT_4K) },
+	{ "w25q32dw", INFO(0xef6016, 0, 64 * 1024, 64, SECT_4K) },
 	{ "w25x64", INFO(0xef3017, 0, 64 * 1024, 128, SECT_4K) },
 	{ "w25q64", INFO(0xef4017, 0, 64 * 1024, 128, SECT_4K) },
-	{ "w25q80", INFO(0xef5014, 0, 64 * 1024,  16, SECT_4K) },
-	{ "w25q80bl", INFO(0xef4014, 0, 64 * 1024,  16, SECT_4K) },
+	{ "w25q80", INFO(0xef5014, 0, 64 * 1024, 16, SECT_4K) },
+	{ "w25q80bl", INFO(0xef4014, 0, 64 * 1024, 16, SECT_4K) },
 	{ "w25q128", INFO(0xef4018, 0, 64 * 1024, 256, SECT_4K) },
 	{ "w25q256", INFO(0xef4019, 0, 64 * 1024, 512, SECT_4K) },
 
 	/* Catalyst / On Semiconductor -- non-JEDEC */
-	{ "cat25c11", CAT25_INFO(  16, 8, 16, 1, SPI_NOR_NO_ERASE | SPI_NOR_NO_FR) },
-	{ "cat25c03", CAT25_INFO(  32, 8, 16, 2, SPI_NOR_NO_ERASE | SPI_NOR_NO_FR) },
-	{ "cat25c09", CAT25_INFO( 128, 8, 32, 2, SPI_NOR_NO_ERASE | SPI_NOR_NO_FR) },
-	{ "cat25c17", CAT25_INFO( 256, 8, 32, 2, SPI_NOR_NO_ERASE | SPI_NOR_NO_FR) },
+	{ "cat25c11", CAT25_INFO(16, 8, 16, 1, SPI_NOR_NO_ERASE | SPI_NOR_NO_FR) },
+	{ "cat25c03", CAT25_INFO(32, 8, 16, 2, SPI_NOR_NO_ERASE | SPI_NOR_NO_FR) },
+	{ "cat25c09", CAT25_INFO(128, 8, 32, 2, SPI_NOR_NO_ERASE | SPI_NOR_NO_FR) },
+	{ "cat25c17", CAT25_INFO(256, 8, 32, 2, SPI_NOR_NO_ERASE | SPI_NOR_NO_FR) },
 	{ "cat25128", CAT25_INFO(2048, 8, 64, 2, SPI_NOR_NO_ERASE | SPI_NOR_NO_FR) },
-	{ },
+	{},
 };
 
 static const struct spi_device_id *spi_nor_read_id(struct spi_nor *nor)
 {
-	int			tmp;
-	u8			id[5];
-	u32			jedec;
-	u16                     ext_jedec;
-	struct flash_info	*info;
+	int tmp;
+	u8 id[5];
+	u32 jedec;
+	u16 ext_jedec;
+	struct flash_info *info;
 
 	tmp = nor->read_reg(nor, SPINOR_OP_RDID, id, 5);
 	if (tmp < 0) {
@@ -675,8 +678,7 @@ static const struct spi_device_id *spi_nor_read_id(struct spi_nor *nor)
 	return ERR_PTR(-ENODEV);
 }
 
-static int spi_nor_read(struct mtd_info *mtd, loff_t from, size_t len,
-			size_t *retlen, u_char *buf)
+static int spi_nor_read(struct mtd_info *mtd, loff_t from, size_t len, size_t *retlen, u_char *buf)
 {
 	struct spi_nor *nor = mtd_to_spi_nor(mtd);
 	int ret;
@@ -693,8 +695,7 @@ static int spi_nor_read(struct mtd_info *mtd, loff_t from, size_t len,
 	return ret;
 }
 
-static int sst_write(struct mtd_info *mtd, loff_t to, size_t len,
-		size_t *retlen, const u_char *buf)
+static int sst_write(struct mtd_info *mtd, loff_t to, size_t len, size_t *retlen, const u_char *buf)
 {
 	struct spi_nor *nor = mtd_to_spi_nor(mtd);
 	size_t actual;
@@ -769,8 +770,7 @@ time_out:
  * FLASH_PAGESIZE chunks.  The address range may be any size provided
  * it is within the physical boundaries.
  */
-static int spi_nor_write(struct mtd_info *mtd, loff_t to, size_t len,
-	size_t *retlen, const u_char *buf)
+static int spi_nor_write(struct mtd_info *mtd, loff_t to, size_t len, size_t *retlen, const u_char *buf)
 {
 	struct spi_nor *nor = mtd_to_spi_nor(mtd);
 	u32 page_offset, page_size, i;
@@ -862,15 +862,13 @@ static int spansion_quad_enable(struct spi_nor *nor)
 
 	ret = write_sr_cr(nor, quad_en);
 	if (ret < 0) {
-		dev_err(nor->dev,
-			"error while writing configuration register\n");
+		dev_err(nor->dev, "error while writing configuration register\n");
 		return -EINVAL;
 	}
 
 	ret = spi_nor_wait_till_ready(nor);
 	if (ret) {
-		dev_err(nor->dev,
-			"timeout while writing configuration register\n");
+		dev_err(nor->dev, "timeout while writing configuration register\n");
 		return ret;
 	}
 
@@ -908,8 +906,7 @@ static int set_quad_mode(struct spi_nor *nor, u32 jedec_id)
 
 static int spi_nor_check(struct spi_nor *nor)
 {
-	if (!nor->dev || !nor->read || !nor->write ||
-		!nor->read_reg || !nor->write_reg || !nor->erase) {
+	if (!nor->dev || !nor->read || !nor->write || !nor->read_reg || !nor->write_reg || !nor->erase) {
 		pr_err("spi-nor: please fill all the necessary fields!\n");
 		return -EINVAL;
 	}
@@ -922,15 +919,249 @@ static int spi_nor_check(struct spi_nor *nor)
 	return 0;
 }
 
+static int zcom = 0;
+static int nocalibration = 0;
+static unsigned int zcomoffset = 0;
+int guessbootsize(struct mtd_info *mtd, void *offset, unsigned int maxscan)
+{
+	unsigned int i, a;
+	int retlen;
+	unsigned char *ofsb = (unsigned char *)offset;
+	maxscan -= 0x20000;
+	zcom = 0;
+	unsigned int *ofs;
+#ifdef CONFIG_WILLY
+	return 0x50000;
+#endif
+#ifdef CONFIG_ARCHERC25
+	return 0x30000;
+#endif
+	ofsb = ofs = vmalloc(0x20000+4);
+	mtd_read(mtd, 0, 65536, &retlen, &ofs[0]);
+	if (!strncmp((char *)(&ofsb[0x29da]), "myloram.bin", 11) || !strncmp((char *)(&ofsb[0x2aba]), "myloram.bin", 11)) {
+		printk(KERN_INFO "compex WP72E detected\n");
+		nocalibration = 1;
+		vfree(ofs);
+		return 0x30000; // compex, lzma image
+	}
+
+	for (i = 0; i < maxscan - 65536; i += 65536) {
+
+		if (ofs[0] == 0x6d000080) {
+			printk(KERN_INFO "redboot or compatible detected\n");
+			vfree(ofs);
+			return 0x70000; // redboot, lzma image
+		}
+		if (ofs[0] == 0x5ea3a417) {
+			printk(KERN_INFO "alpha SEAMA found\n");
+			vfree(ofs);
+			return i; // redboot, lzma image
+		}
+		if (ofs[0] == 0x27051956) {
+			printk(KERN_INFO "uboot detected\n");
+			if (i == 0x1c0000) {
+				printk(KERN_INFO "ruckus r500 detected\n");
+				add_memory_region(0xfff0000, 0x10000, BOOT_MEM_RAM);
+				vfree(ofs);
+				return i; // uboot, lzma image
+			}
+			mtd_read(mtd, i, 0x20000+4, &retlen, &ofs[0]);
+			if (ofs[0x8000] == 0x27051956) {
+				printk(KERN_INFO "uboot detected (MMS344 Quirk)\n");
+				vfree(ofs);
+				return i + 0x20000; // uboot, lzma image
+			}
+			if (!memcmp(&ofs[9], "ISQ-4000", 8)) {
+				printk(KERN_INFO "KT412H detected\n");
+				//				return 0x50000;	// uboot, lzma image
+			}
+			vfree(ofs);
+			return i; // uboot, lzma image
+		}
+		if (ofs[0] == 0x19852003) {
+			printk(KERN_INFO "uboot detected (ruckus r500?)\n");
+			if (i == 0x1c0000) {
+				printk(KERN_INFO "ruckus r500 detected\n");
+				add_memory_region(0xfff0000, 0x10000, BOOT_MEM_RAM);
+			}
+			vfree(ofs);
+			return i; // uboot, lzma image
+		}
+		if (ofs[0] == 0x77617061) {
+			printk(KERN_INFO "DAP3662 bootloader\n");
+			vfree(ofs);
+			return 0x70000; // uboot, lzma image
+		}
+		if (ofs[0] == 0x7761706e) {
+			printk(KERN_INFO "DAP2230 bootloader\n");
+			vfree(ofs);
+			return 0x70000; // uboot, lzma image
+		}
+		if (ofs[0] == 0x32303033) {
+			printk(KERN_INFO "WNR2000 uboot detected\n");
+			vfree(ofs);
+			return 0x50000; // uboot, lzma image
+		}
+		if (ofs[0] == 0x32323030) {
+			printk(KERN_INFO "WNR2200 uboot detected\n");
+			vfree(ofs);
+			return 0x50000; // uboot, lzma image
+		}
+		if (ofs[0] == 0x01000000 && ofs[1] == 0x44442d57) {
+			printk(KERN_INFO "tplink uboot detected\n");
+			vfree(ofs);
+			return i; // uboot, lzma image
+		}
+		if (ofs[0] == 0x01000000 && ofs[1] == 0x54502D4C) {
+			printk(KERN_INFO "tplink uboot detected\n");
+			vfree(ofs);
+			return i; // uboot, lzma image
+		}
+		if (ofs[15] == 0x27051956) {
+			printk(KERN_INFO "WRT160NL uboot detected\n");
+			vfree(ofs);
+			return i; // uboot, lzma image
+		}
+#ifndef CONFIG_ARCHERC25
+#ifndef CONFIG_RUCKUSR500
+		if (ofs[0] == SQUASHFS_MAGIC_SWAP) {
+			printk(KERN_INFO "ZCom quirk found\n");
+			zcom = 1;
+			for (a = i; a < maxscan; a += 65536) {
+				mtd_read(mtd, i + a, 65536, &retlen, &ofs[0]);
+
+				if (ofs[0] == 0x27051956) {
+					printk(KERN_INFO "ZCom quirk kernel offset %d\n", a);
+					zcomoffset = a;
+				}
+			}
+			vfree(ofs);
+			return i; // filesys starts earlier
+		}
+#endif
+#endif
+		mtd_read(mtd, i + 65536, 65536, &retlen, &ofs[0]);
+	}
+	return -1;
+}
+
+static struct mtd_partition dir_parts[] = {
+#if defined(CONFIG_MTD_FLASH_16MB)
+	{
+		name: "RedBoot",
+		offset: 0x30000,
+		size: 0x10000,
+	},
+	//, mask_flags: MTD_WRITEABLE, },
+	{
+		name: "linux",
+		offset: 0x50000,
+		size: 0xf90000,
+	},
+#elif defined(CONFIG_MTD_FLASH_8MB)
+	{
+		name: "RedBoot",
+		offset: 0x30000,
+		size: 0x10000,
+	},
+	//, mask_flags: MTD_WRITEABLE, },
+	{
+		name: "linux",
+		offset: 0x50000,
+		size: 0x790000,
+	},
+#else
+	{
+		name: "RedBoot",
+		offset: 0,
+		size: 0x40000,
+	},
+	//, mask_flags: MTD_WRITEABLE, },
+	{
+		name: "linux",
+		offset: 0x40000,
+		size: 0x3a0000,
+	},
+#endif
+	{
+		name: "rootfs",
+		offset: 0x0,
+		size: 0x2b0000,
+	},
+	//must be detected
+	{
+		name: "ddwrt",
+		offset: 0x0,
+		size: 0x2b0000,
+	},
+	//must be detected
+	{
+		name: "nvram",
+		offset: 0x3d0000,
+		size: 0x10000,
+	},
+	{
+		name: "board_config",
+		offset: 0x3f0000,
+		size: 0x10000,
+	},
+	{
+		name: "fullflash",
+		offset: 0x3f0000,
+		size: 0x10000,
+	},
+	{
+		name: "fullboot",
+		offset: 0,
+		size: 0x30000,
+	},
+	{
+		name: "uboot-env",
+		offset: 0x40000,
+		size: 0x10000,
+	},
+#if IS_ENABLED(CONFIG_MTD_OOPS)
+	{
+		name: "oops",
+	}, // reserved for oops
+#endif
+	{
+		name: NULL,
+	},
+};
+
+#define BOOT 0
+#define LINUX 1
+#define ROOTFS 2
+#define DDWRT 3
+#define NVRAM 4
+#define BOARD_CONFIG 5
+#define FULLFLASH 6
+#define FULLBOOT 7
+#define ENV 8
+#define OOPS 9
+
 int spi_nor_scan(struct spi_nor *nor, const char *name, enum read_mode mode)
 {
-	const struct spi_device_id	*id = NULL;
-	struct flash_info		*info;
+	const struct spi_device_id *id = NULL;
+	struct flash_info *info;
 	struct device *dev = nor->dev;
 	struct mtd_info *mtd = nor->mtd;
 	struct device_node *np = dev->of_node;
 	int ret;
 	int i;
+	int result = -1;
+	char buf[512];
+	int retlen;
+	int offset = 0;
+	struct squashfs_super_block *sb;
+	size_t rootsize;
+	size_t len;
+	int fsize;
+	int inc = 0;
+	int guess;
+	int numparts = 9;
+	size_t origlen;
 
 	ret = spi_nor_check(nor);
 	if (ret)
@@ -956,8 +1187,7 @@ int spi_nor_scan(struct spi_nor *nor, const char *name, enum read_mode mode)
 			 * marked read-only, and we don't want to lose that
 			 * information, even if it's not 100% accurate.
 			 */
-			dev_warn(dev, "found %s, expected %s\n",
-				 jid->name, id->name);
+			dev_warn(dev, "found %s, expected %s\n", jid->name, id->name);
 			id = jid;
 			info = (void *)jid->driver_data;
 		}
@@ -970,8 +1200,7 @@ int spi_nor_scan(struct spi_nor *nor, const char *name, enum read_mode mode)
 	 * up with the software protection bits set
 	 */
 
-	if (JEDEC_MFR(info->jedec_id) == CFI_MFR_ATMEL ||
-	    JEDEC_MFR(info->jedec_id) == CFI_MFR_INTEL ||
+	if (JEDEC_MFR(info->jedec_id) == CFI_MFR_ATMEL || JEDEC_MFR(info->jedec_id) == CFI_MFR_INTEL ||
 	    JEDEC_MFR(info->jedec_id) == CFI_MFR_SST) {
 		write_enable(nor);
 		write_sr(nor, 0);
@@ -998,8 +1227,7 @@ int spi_nor_scan(struct spi_nor *nor, const char *name, enum read_mode mode)
 	else
 		mtd->_write = spi_nor_write;
 
-	if ((info->flags & USE_FSR) &&
-	    nor->wait_till_ready == spi_nor_wait_till_ready)
+	if ((info->flags & USE_FSR) && nor->wait_till_ready == spi_nor_wait_till_ready)
 		nor->wait_till_ready = spi_nor_wait_till_fsr_ready;
 
 #ifdef CONFIG_MTD_SPI_NOR_USE_4K_SECTORS
@@ -1105,25 +1333,133 @@ int spi_nor_scan(struct spi_nor *nor, const char *name, enum read_mode mode)
 
 	nor->read_dummy = spi_nor_read_dummy_cycles(nor);
 
-	dev_info(dev, "%s (%lld Kbytes)\n", id->name,
-			(long long)mtd->size >> 10);
+	dev_info(dev, "%s (%lld Kbytes)\n", id->name, (long long)mtd->size >> 10);
 
-	dev_dbg(dev,
-		"mtd .name = %s, .size = 0x%llx (%lldMiB), "
-		".erasesize = 0x%.8x (%uKiB) .numeraseregions = %d\n",
-		mtd->name, (long long)mtd->size, (long long)(mtd->size >> 20),
-		mtd->erasesize, mtd->erasesize / 1024, mtd->numeraseregions);
+	dev_info(dev,
+		 "mtd .name = %s, .size = 0x%llx (%lldMiB), "
+		 ".erasesize = 0x%.8x (%uKiB) .numeraseregions = %d\n",
+		 mtd->name, (long long)mtd->size, (long long)(mtd->size >> 20), mtd->erasesize, mtd->erasesize / 1024,
+		 mtd->numeraseregions);
 
 	if (mtd->numeraseregions)
 		for (i = 0; i < mtd->numeraseregions; i++)
-			dev_dbg(dev,
-				"mtd.eraseregions[%d] = { .offset = 0x%llx, "
-				".erasesize = 0x%.8x (%uKiB), "
-				".numblocks = %d }\n",
-				i, (long long)mtd->eraseregions[i].offset,
-				mtd->eraseregions[i].erasesize,
-				mtd->eraseregions[i].erasesize / 1024,
-				mtd->eraseregions[i].numblocks);
+			dev_info(dev,
+				 "mtd.eraseregions[%d] = { .offset = 0x%llx, "
+				 ".erasesize = 0x%.8x (%uKiB), "
+				 ".numblocks = %d }\n",
+				 i, (long long)mtd->eraseregions[i].offset, mtd->eraseregions[i].erasesize,
+				 mtd->eraseregions[i].erasesize / 1024, mtd->eraseregions[i].numblocks);
+
+	printk(KERN_INFO "scanning for root partition\n");
+
+#ifdef CONFIG_ARCHERC25
+	offset = 0x160000;
+#else
+	offset = 0;
+#endif
+	guess = guessbootsize(mtd, buf, mtd->size > (16 << 20) ? (16 << 20) : mtd->size);
+	if (guess > 0) {
+		printk(KERN_INFO "guessed bootloader size = %X\n", guess);
+		dir_parts[BOOT].offset = 0;
+		dir_parts[BOOT].size = guess;
+		dir_parts[FULLBOOT].size = guess;
+		dir_parts[LINUX].offset = guess;
+		dir_parts[LINUX].size = 0;
+		dir_parts[ENV].offset = guess - mtd->erasesize;
+		dir_parts[ENV].size = mtd->erasesize;
+	}
+	int sqsfound = 0;
+	while ((offset + mtd->erasesize) < mtd->size) {
+		//                      printk(KERN_INFO "[0x%08X] = [0x%08X]!=[0x%08X]\n",offset,*((unsigned int *) buf),SQUASHFS_MAGIC);
+		mtd_read(mtd, offset, 512, &retlen, &buf[0]);
+
+		__u32 *check2 = (__u32 *)&buf[0x60];
+		__u32 *check3 = (__u32 *)&buf[0xc0];
+		if (*((__u32 *)buf) == SQUASHFS_MAGIC_SWAP || *check2 == SQUASHFS_MAGIC_SWAP || *check3 == SQUASHFS_MAGIC_SWAP) {
+			printk(KERN_INFO "\nfound squashfs at %X\n", offset);
+			if (*check2 == SQUASHFS_MAGIC_SWAP) {
+				offset += 0x60;
+				inc = 0x60;
+			}
+			if (*check3 == SQUASHFS_MAGIC_SWAP) {
+				offset += 0xC0;
+				inc = 0xc0;
+			}
+			sb = (struct squashfs_super_block *)buf;
+			if (le16_to_cpu(sb->compression) != 4) {
+				printk(KERN_INFO "ignore compression type %d\n", le16_to_cpu(sb->compression));
+				offset += 4096;
+				continue;
+			}
+			sqsfound = 1;
+			dir_parts[ROOTFS].offset = offset;
+
+			dir_parts[ROOTFS].size = le64_to_cpu(sb->bytes_used);
+			origlen = dir_parts[ROOTFS].offset + dir_parts[ROOTFS].size;
+
+			len = dir_parts[ROOTFS].offset + dir_parts[ROOTFS].size;
+			len += (mtd->erasesize - 1);
+			len &= ~(mtd->erasesize - 1);
+			printk(KERN_INFO "adjusted length %X, original length %X\n", len, origlen);
+			if ((len - (inc + 4096)) < origlen)
+				len += mtd->erasesize;
+			dir_parts[ROOTFS].size = (len & 0x1ffffff) - dir_parts[ROOTFS].offset;
+
+			dir_parts[DDWRT].offset = dir_parts[ROOTFS].offset + dir_parts[ROOTFS].size;
+
+			dir_parts[BOARD_CONFIG].offset = mtd->size - mtd->erasesize; //fis config
+			dir_parts[BOARD_CONFIG].size = mtd->erasesize;
+#if defined(CONFIG_ARCHERC25)
+			dir_parts[NVRAM].offset = dir_parts[BOARD_CONFIG].offset - (mtd->erasesize * 3); //nvram
+			dir_parts[NVRAM].size = mtd->erasesize;
+#elif defined(CONFIG_ARCHERC7V4) || defined(CONFIG_WR1043V4) || defined(CONFIG_WR1043V5)
+			dir_parts[NVRAM].offset = dir_parts[BOARD_CONFIG].offset - (mtd->erasesize * 16); //nvram
+			dir_parts[NVRAM].size = mtd->erasesize;
+#elif (defined(CONFIG_DIR825C1) && !defined(CONFIG_WDR4300) && !defined(CONFIG_WR1043V2) && !defined(CONFIG_WR841V8) && \
+       !defined(CONFIG_UBNTXW)) ||                                                                                      \
+	defined(CONFIG_DIR862)
+			dir_parts[NVRAM].offset = dir_parts[BOARD_CONFIG].offset - (mtd->erasesize * 2); //nvram
+			dir_parts[NVRAM].size = mtd->erasesize;
+#else
+			dir_parts[NVRAM].offset =
+				dir_parts[BOARD_CONFIG].offset - (mtd->erasesize - (nocalibration * mtd->erasesize)); //nvram
+			dir_parts[NVRAM].size = mtd->erasesize;
+#endif
+			dir_parts[DDWRT].size = dir_parts[NVRAM].offset - dir_parts[DDWRT].offset;
+			rootsize = dir_parts[NVRAM].offset - offset; //size of rootfs aligned to nvram offset
+			dir_parts[LINUX].size = (dir_parts[ROOTFS].offset - dir_parts[LINUX].offset) + rootsize;
+			//now scan for linux offset
+			break;
+		}
+		offset += 4096;
+	}
+	dir_parts[FULLFLASH].offset = 0; // linux + nvram = phy size
+	dir_parts[FULLFLASH].size = mtd->size; // linux + nvram = phy size
+	if (!sqsfound) {
+		//		dir_parts[BOOT].offset = 0;
+		//		dir_parts[BOOT].size = 0x50000;
+		dir_parts[LINUX].name = "dummy";
+		dir_parts[DDWRT].name = "dummy2";
+		dir_parts[ENV].offset = 0x40000;
+		dir_parts[ENV].size = mtd->erasesize;
+		dir_parts[NVRAM].offset = mtd->size - (mtd->erasesize * 3);
+		dir_parts[NVRAM].size = mtd->erasesize * 2;
+		dir_parts[BOARD_CONFIG].offset = mtd->size - mtd->erasesize;
+		dir_parts[BOARD_CONFIG].size = mtd->erasesize;
+	}
+#if IS_ENABLED(CONFIG_MTD_OOPS)
+	printk(KERN_INFO "dd-wrt partition is %lld\n", dir_parts[DDWRT].size);
+	if (dir_parts[DDWRT].size > 0x20000) {
+		dir_parts[DDWRT].size -= 0x20000;
+		dir_parts[OOPS].offset = dir_parts[DDWRT].offset + dir_parts[DDWRT].size;
+		dir_parts[OOPS].size = 0x20000;
+		numparts = 10;
+	} else
+		dir_parts[OOPS].name = NULL;
+
+#endif
+	result = add_mtd_partitions(mtd, dir_parts, numparts);
+
 	return 0;
 }
 EXPORT_SYMBOL_GPL(spi_nor_scan);

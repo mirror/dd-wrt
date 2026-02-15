@@ -76,6 +76,8 @@ static inline void qca_sf_write_di(void)
 	qca_sf_shift_out(SPI_FLASH_CMD_WRDI, 8, 1);
 }
 
+
+
 /* Poll status register and wait till busy bit is cleared */
 static void qca_sf_busy_wait(void)
 {
@@ -89,6 +91,10 @@ static void qca_sf_busy_wait(void)
 		data_in = qca_sf_shift_in() & 0x1;
 	} while (data_in);
 
+	if (flash_id==0x10220) {
+		qca_sf_shift_out(SPI_FLASH_CMD_CLSR << 8, 16, 1);
+	}
+
 	/* Disable CS chip */
 	qca_sf_shift_out(0x0, 0, 1);
 }
@@ -101,6 +107,7 @@ static inline void qca_mxc_unlock(void)
 	qca_sf_busy_wait();
 }
 
+#endif
 static inline void qca_flash_unlock(void)
 {
 	qca_sf_spi_en();
@@ -108,7 +115,8 @@ static inline void qca_flash_unlock(void)
 	qca_sf_shift_out(SPI_FLASH_CMD_WRSR << 8, 16, 1);
 	qca_sf_busy_wait();
 }
-#endif
+
+
 
 /* Returns flash configuration register that is accessible with command 'cmd' */
 u8 qca_sf_read_reg(u8 cmd)
@@ -116,6 +124,7 @@ u8 qca_sf_read_reg(u8 cmd)
 	qca_sf_shift_out(cmd << 8, 16, 1);
 	return qca_sf_shift_in();
 }
+
 
 /* Writes 'data' to flash configuration register that has wirite command 'cmd' */
 void qca_sf_write_reg(u8 cmd, u8 data)
@@ -125,6 +134,27 @@ void qca_sf_write_reg(u8 cmd, u8 data)
 	qca_sf_shift_out(data, 8, 1);
 	qca_sf_busy_wait();
 	qca_sf_write_di();
+}
+
+static void spansion_quad_enable(void)
+{
+	int ret;
+	int quad_en = CR_QUAD_EN_SPAN << 8;
+	
+	
+	qca_sf_spi_en();
+	qca_sf_write_en();
+	qca_sf_write_reg(SPI_FLASH_CMD_WSR1, 0);
+	qca_sf_write_reg(SPI_FLASH_CMD_WSR2, CR_QUAD_EN_SPAN);
+	qca_sf_busy_wait();
+
+	/* read back and check it */
+	ret = qca_sf_read_reg(SPI_FLASH_CMD_RSR2);
+	if (!(ret > 0 && (ret & CR_QUAD_EN_SPAN))) {
+		printk(KERN_INFO "Spansion Quad bit not set\n");
+	}
+
+	return;
 }
 
 static void qca_sf_set_addressing(flash_info_t *info, u32 enable)
@@ -408,6 +438,9 @@ int qca_sf_flash_erase(flash_info_t *info, u32 address, u32 length, u8 *buf)
 		qca_flash_unlock();
 	}
 #endif
+	if (flash_id==0x10220) {
+		qca_flash_unlock();
+	}
 
 	if (address % sector_size || length % sector_size) {
 		printk(KERN_ERR "SF: Erase offset/length not multiple of erase size\n");
@@ -424,6 +457,7 @@ int qca_sf_flash_erase(flash_info_t *info, u32 address, u32 length, u8 *buf)
 		address += sector_size;
 		length -= sector_size;
 	}
+
 
 	return ret;
 }
@@ -445,6 +479,9 @@ int qca_sf_write_buf(flash_info_t *info, u32 bank, u32 address, u32 length, cons
 		qca_flash_unlock();
 	}
 #endif
+	if (flash_id==0x10220) {
+		qca_flash_unlock();
+	}
 
 	while (total < length) {
 		src = buf + total;
@@ -516,7 +553,11 @@ unsigned long flash_get_geom(flash_info_t *flash_info)
 	u8 erase_cmd;
 	ret = qca_sf_sfdp_info(0, &flash_size, &sect_size, &erase_cmd);
 	flash_id = qca_sf_jedec_id(0);
-	printk(KERN_INFO "jedec ID 0x%08X\n", flash_id);
+	printk(KERN_INFO "jedec ID 0x%08X, ret code %d\n", flash_id, ret);
+	if (ret != 0) {
+	flash_id = qca_sf_jedec_id(0);
+	printk(KERN_INFO "jedec ID 0x%08X, ret code %d\n", flash_id, ret);
+	}
 	flash_info->use_4byte_addr = 0;
 	flash_info->need_4byte_enable_op = 0;
 	flash_info->read_cmd = SPI_FLASH_CMD_READ;
@@ -531,7 +572,15 @@ unsigned long flash_get_geom(flash_info_t *flash_info)
 		if (flash_info->size > 16 * 1024 * 1024) {
 			printk(KERN_INFO "flash: >16MB detected\n");
 			flash_info->use_4byte_addr = 1;
-			if (JEDEC_MFR(flash_info) == MFR_ID_SPANSION) {
+			if (flash_info->flash_id == 0x10220) {
+				printk(KERN_INFO "flash_mfr:Spansion UNLOCK/CLSR\n");
+				flash_info->need_4byte_enable_op = 0;
+				printk(KERN_INFO "erase cmd was %X\n", flash_info->erase_cmd);
+				flash_info->erase_cmd = SPI_FLASH_CMD_4SE;
+				flash_info->read_cmd = SPI_FLASH_CMD_4READ;
+				flash_info->page_program_cmd = SPI_FLASH_CMD_4PP;
+//				spansion_quad_enable();
+			}else if (JEDEC_MFR(flash_info) == MFR_ID_SPANSION) {
 				printk(KERN_INFO "flash_mfr:Spansion\n");
 				flash_info->need_4byte_enable_op = 0;
 				flash_info->erase_cmd = SPI_FLASH_CMD_4SE;

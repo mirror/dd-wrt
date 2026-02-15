@@ -49,6 +49,38 @@
 #include <linux/ar8216_platform.h>
 #include <linux/mtd/mtd.h>
 #include <linux/platform_data/phy-at803x.h>
+#include <linux/spi/spi.h>
+#include <asm/mach-ath79/ath79_spi_platform.h>
+#include <linux/clk.h>
+#include <linux/clkdev.h>
+
+void ath79_register_spi(struct ath79_spi_platform_data *pdata,
+			 struct spi_board_info const *info,
+			 unsigned n);
+
+static struct resource ath79_spi_resources[] = {
+	{
+		.start	= AR71XX_SPI_BASE,
+		.end	= AR71XX_SPI_BASE + AR71XX_SPI_SIZE - 1,
+		.flags	= IORESOURCE_MEM,
+	},
+};
+
+static struct platform_device ath79_spi_device = {
+	.name		= "ath79-spi",
+	.id		= -1,
+	.resource	= ath79_spi_resources,
+	.num_resources	= ARRAY_SIZE(ath79_spi_resources),
+};
+
+void __init ath79_register_spi(struct ath79_spi_platform_data *pdata,
+			       struct spi_board_info const *info,
+			       unsigned n)
+{
+	spi_register_board_info(info, n);
+	ath79_spi_device.dev.platform_data = pdata;
+	platform_device_register(&ath79_spi_device);
+}
 
 void serial_print(char *fmt, ...);
 
@@ -1272,6 +1304,127 @@ void __init ap91_wmac_disable_5ghz(void);
 void ap91_set_tx_gain_buffalo(void);
 void ap91_set_eeprom(void);
 
+static struct spi_board_info ap136_spi_info[] = {
+	{
+		.bus_num	= 0,
+		.chip_select	= 0,
+		.max_speed_hz	= 50000000,
+		.modalias	= "s25fl512s",
+	}
+};
+
+static struct ath79_spi_platform_data ap136_spi_data = {
+	.bus_num	= 0,
+	.num_chipselect	= 1,
+};
+
+
+
+struct clk {
+	unsigned long rate;
+};
+
+static void __init ath79_add_sys_clkdev(const char *id, unsigned long rate)
+{
+	struct clk *clk;
+	int err;
+
+	clk = kzalloc(sizeof(*clk), GFP_KERNEL);
+	if (!clk)
+		panic("failed to allocate %s clock structure", id);
+
+	clk->rate = rate;
+
+	err = clk_register_clkdev(clk, id, NULL);
+	if (err)
+		panic("unable to register %s clock device", id);
+}
+
+static void __init qca955x_clocks_init(void)
+{
+	unsigned long ref_rate;
+	unsigned long cpu_rate;
+	unsigned long ddr_rate;
+	unsigned long ahb_rate;
+	u32 pll, out_div, ref_div, nint, frac, clk_ctrl, postdiv;
+	u32 cpu_pll, ddr_pll;
+	u32 bootstrap;
+
+	bootstrap = ar71xx_reset_rr(QCA955X_RESET_REG_BOOTSTRAP);
+	if (bootstrap &	QCA955X_BOOTSTRAP_REF_CLK_40)
+		ref_rate = 40 * 1000 * 1000;
+	else
+		ref_rate = 25 * 1000 * 1000;
+
+	pll = ar71xx_pll_rr(QCA955X_PLL_CPU_CONFIG_REG);
+	out_div = (pll >> QCA955X_PLL_CPU_CONFIG_OUTDIV_SHIFT) &
+		  QCA955X_PLL_CPU_CONFIG_OUTDIV_MASK;
+	ref_div = (pll >> QCA955X_PLL_CPU_CONFIG_REFDIV_SHIFT) &
+		  QCA955X_PLL_CPU_CONFIG_REFDIV_MASK;
+	nint = (pll >> QCA955X_PLL_CPU_CONFIG_NINT_SHIFT) &
+	       QCA955X_PLL_CPU_CONFIG_NINT_MASK;
+	frac = (pll >> QCA955X_PLL_CPU_CONFIG_NFRAC_SHIFT) &
+	       QCA955X_PLL_CPU_CONFIG_NFRAC_MASK;
+
+	cpu_pll = nint * ref_rate / ref_div;
+	cpu_pll += frac * ref_rate / (ref_div * (1 << 6));
+	cpu_pll /= (1 << out_div);
+
+	pll = ar71xx_pll_rr(QCA955X_PLL_DDR_CONFIG_REG);
+	out_div = (pll >> QCA955X_PLL_DDR_CONFIG_OUTDIV_SHIFT) &
+		  QCA955X_PLL_DDR_CONFIG_OUTDIV_MASK;
+	ref_div = (pll >> QCA955X_PLL_DDR_CONFIG_REFDIV_SHIFT) &
+		  QCA955X_PLL_DDR_CONFIG_REFDIV_MASK;
+	nint = (pll >> QCA955X_PLL_DDR_CONFIG_NINT_SHIFT) &
+	       QCA955X_PLL_DDR_CONFIG_NINT_MASK;
+	frac = (pll >> QCA955X_PLL_DDR_CONFIG_NFRAC_SHIFT) &
+	       QCA955X_PLL_DDR_CONFIG_NFRAC_MASK;
+
+	ddr_pll = nint * ref_rate / ref_div;
+	ddr_pll += frac * ref_rate / (ref_div * (1 << 10));
+	ddr_pll /= (1 << out_div);
+
+	clk_ctrl = ar71xx_pll_rr(QCA955X_PLL_CLK_CTRL_REG);
+
+	postdiv = (clk_ctrl >> QCA955X_PLL_CLK_CTRL_CPU_POST_DIV_SHIFT) &
+		  QCA955X_PLL_CLK_CTRL_CPU_POST_DIV_MASK;
+
+	if (clk_ctrl & QCA955X_PLL_CLK_CTRL_CPU_PLL_BYPASS)
+		cpu_rate = ref_rate;
+	else if (clk_ctrl & QCA955X_PLL_CLK_CTRL_CPUCLK_FROM_CPUPLL)
+		cpu_rate = ddr_pll / (postdiv + 1);
+	else
+		cpu_rate = cpu_pll / (postdiv + 1);
+
+	postdiv = (clk_ctrl >> QCA955X_PLL_CLK_CTRL_DDR_POST_DIV_SHIFT) &
+		  QCA955X_PLL_CLK_CTRL_DDR_POST_DIV_MASK;
+
+	if (clk_ctrl & QCA955X_PLL_CLK_CTRL_DDR_PLL_BYPASS)
+		ddr_rate = ref_rate;
+	else if (clk_ctrl & QCA955X_PLL_CLK_CTRL_DDRCLK_FROM_DDRPLL)
+		ddr_rate = cpu_pll / (postdiv + 1);
+	else
+		ddr_rate = ddr_pll / (postdiv + 1);
+
+	postdiv = (clk_ctrl >> QCA955X_PLL_CLK_CTRL_AHB_POST_DIV_SHIFT) &
+		  QCA955X_PLL_CLK_CTRL_AHB_POST_DIV_MASK;
+
+	if (clk_ctrl & QCA955X_PLL_CLK_CTRL_AHB_PLL_BYPASS)
+		ahb_rate = ref_rate;
+	else if (clk_ctrl & QCA955X_PLL_CLK_CTRL_AHBCLK_FROM_DDRPLL)
+		ahb_rate = ddr_pll / (postdiv + 1);
+	else
+		ahb_rate = cpu_pll / (postdiv + 1);
+
+	ath79_add_sys_clkdev("ref", ref_rate);
+	ath79_add_sys_clkdev("cpu", cpu_rate);
+	ath79_add_sys_clkdev("ddr", ddr_rate);
+	ath79_add_sys_clkdev("ahb", ahb_rate);
+
+	clk_add_alias("wdt", NULL, "ref", NULL);
+	clk_add_alias("uart", NULL, "ref", NULL);
+}
+
 int __init ar7240_platform_init(void)
 {
 	int ret;
@@ -2494,6 +2647,11 @@ int __init ar7240_platform_init(void)
 #if defined(CONFIG_WZRG450NH) && !defined(CONFIG_WZRG300NH2)
 	ap91_set_tx_gain_buffalo();
 #endif
+#ifdef CONFIG_RUCKUSR500
+	qca955x_clocks_init();
+	ath79_register_spi(&ap136_spi_data, ap136_spi_info,
+			   ARRAY_SIZE(ap136_spi_info));
+#endif
 	return ret;
 }
 int pcibios_init(void);
@@ -2518,3 +2676,40 @@ void nand_postinit(struct mtd_info *mtd)
 }
 #endif
 arch_initcall(ar7240_platform_init);
+
+
+unsigned long __init
+ath79_get_sys_clk_rate(const char *id)
+{
+	struct clk *clk;
+	unsigned long rate;
+
+	clk = clk_get(NULL, id);
+	if (IS_ERR(clk))
+		panic("unable to get %s clock, err=%d", id, (int) PTR_ERR(clk));
+
+	rate = clk_get_rate(clk);
+	clk_put(clk);
+
+	return rate;
+}
+
+/*
+ * Linux clock API
+ */
+int clk_enable(struct clk *clk)
+{
+	return 0;
+}
+EXPORT_SYMBOL(clk_enable);
+
+void clk_disable(struct clk *clk)
+{
+}
+EXPORT_SYMBOL(clk_disable);
+
+unsigned long clk_get_rate(struct clk *clk)
+{
+	return clk->rate;
+}
+EXPORT_SYMBOL(clk_get_rate);

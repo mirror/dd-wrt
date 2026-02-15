@@ -19,13 +19,31 @@
 #define SPI_FLASH_CMD_WRDI		0x04
 #define SPI_FLASH_CMD_RDSR		0x05
 #define SPI_FLASH_CMD_WREN		0x06
+#define SPI_FLASH_CMD_RDCR		0x35	/* Read configuration register */
+
+
 /* 4-byte commands */
 #define SPI_FLASH_CMD_4READ		0x13
 #define SPI_FLASH_CMD_4PP		0x12
 #define SPI_FLASH_CMD_4SE		0xDC
 
+#define SPI_FLASH_CMD_READ4_FAST	0x0c	/* Read data bytes (high frequency) */
+#define SPI_FLASH_CMD_READ4_1_1_2	0x3c	/* Read data bytes (Dual SPI) */
+#define SPI_FLASH_CMD_READ4_1_1_4	0x6c	/* Read data bytes (Quad SPI) */
+
+#define CR_QUAD_EN_SPAN		0x2	/* Spansion Quad I/O */
+
+
 #define SPI_FLASH_CMD_EN4B		0xB7
 #define SPI_FLASH_CMD_EX4B		0xE9
+
+#define SPI_FLASH_CMD_READ_FAST	0x0b	/* Read data bytes (high frequency) */
+#define SPI_FLASH_CMD_READ_1_1_2	0x3b	/* Read data bytes (Dual SPI) */
+#define SPI_FLASH_CMD_READ_1_1_4	0x6b	/* Read data bytes (Quad SPI) */
+
+
+#define SPI_FLASH_CMD_CLSR		0x30
+
 
 /* SPI FLASH erase related commands */
 #define SPI_FLASH_CMD_ES_4KB	0x20
@@ -58,6 +76,7 @@
 #define SST_JEDEC_ID        0x20
 #define INTEL_JEDEC_ID        0x89
 #define WINB_JEDEC_ID        0xef
+#define SPANSION_JEDEC_ID        0x01
 
 #define qca_soc_reg_read(_addr)			*(volatile unsigned int *)(KSEG1ADDR(_addr))
 #define qca_soc_reg_write(_addr, _val)	((*(volatile unsigned int *)KSEG1ADDR(_addr)) = (_val))
