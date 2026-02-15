@@ -2272,7 +2272,7 @@ static noinline int create_smb2_pipe(struct ksmbd_work *work)
 {
 	struct smb2_create_rsp *rsp;
 	struct smb2_create_req *req;
-	int id;
+	int id = -1;
 	int err;
 	char *name;
 
@@ -2328,6 +2328,9 @@ out:
 		rsp->hdr.Status = STATUS_NO_MEMORY;
 		break;
 	}
+
+	if (id >= 0)
+		ksmbd_session_rpc_close(work->sess, id);
 
 	if (!IS_ERR(name))
 		kfree(name);
