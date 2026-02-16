@@ -81,6 +81,7 @@ Interface
 :Service:	org.bluez
 :Interface:	org.bluez.GattManager1
 :Object path:	[variable prefix]/{hci0,hci1,...}
+:Used by:	**bluetoothctl-gatt(1)**
 
 Methods
 -------
@@ -88,27 +89,34 @@ Methods
 void RegisterApplication(object application, dict options)
 ``````````````````````````````````````````````````````````
 
-	Registers a local GATT services hierarchy as described above
-	(GATT Server) and/or GATT profiles (GATT Client).
+Registers a local GATT services hierarchy as described above (GATT Server)
+and/or GATT profiles (GATT Client).
 
-	The application object path together with the D-Bus system bus
-	connection ID define the identification of the application registering
-	a GATT based service (**org.bluez.GattService(5)**) and/or profile
-	(**org.bluez.GattProfile(5)**).
+The application object path together with the D-Bus system bus connection ID
+define the identification of the application registering a GATT based service
+(**org.bluez.GattService(5)**) and/or profile (**org.bluez.GattProfile(5)**).
 
-	Possible errors:
+Possible errors:
 
-	:org.bluez.Error.InvalidArguments:
-	:org.bluez.Error.AlreadyExists:
+:org.bluez.Error.InvalidArguments:
+:org.bluez.Error.AlreadyExists:
+
+Examples:
+
+:bluetoothctl: > gatt.register-application [UUID ...]
 
 void UnregisterApplication(object application)
 ``````````````````````````````````````````````
 
-	This unregisters the services and/or profiles that has been previously
-	registered using **RegisterApplication()**. The object path parameter
-	must match the same value that has been used on registration.
+This unregisters the services and/or profiles that has been previously
+registered using **RegisterApplication()**. The object path parameter must match
+the same value that has been used on registration.
 
-	Possible errors:
+Possible errors:
 
-	:org.bluez.Error.InvalidArguments:
-	:org.bluez.Error.DoesNotExist:
+:org.bluez.Error.InvalidArguments:
+:org.bluez.Error.DoesNotExist:
+
+Examples:
+
+:bluetoothctl: > gatt.unregister-application

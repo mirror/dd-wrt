@@ -1,0 +1,371 @@
+.\" Man page generated from reStructuredText.
+.
+.
+.nr rst2man-indent-level 0
+.
+.de1 rstReportMargin
+\\$1 \\n[an-margin]
+level \\n[rst2man-indent-level]
+level margin: \\n[rst2man-indent\\n[rst2man-indent-level]]
+-
+\\n[rst2man-indent0]
+\\n[rst2man-indent1]
+\\n[rst2man-indent2]
+..
+.de1 INDENT
+.\" .rstReportMargin pre:
+. RS \\$1
+. nr rst2man-indent\\n[rst2man-indent-level] \\n[an-margin]
+. nr rst2man-indent-level +1
+.\" .rstReportMargin post:
+..
+.de UNINDENT
+. RE
+.\" indent \\n[an-margin]
+.\" old: \\n[rst2man-indent\\n[rst2man-indent-level]]
+.nr rst2man-indent-level -1
+.\" new: \\n[rst2man-indent\\n[rst2man-indent-level]]
+.in \\n[rst2man-indent\\n[rst2man-indent-level]]u
+..
+.TH "BLUETOOTHCTL-HCI" "1" "December 2024" "BlueZ" "Linux System Administration"
+.SH NAME
+bluetoothctl-hci \- HCI Submenu
+.SH SYNOPSIS
+.sp
+\fBbluetoothctl\fP [\-\-options] [hci.commands]
+.sp
+\fBNOTE:\fP
+.INDENT 0.0
+.INDENT 3.5
+This submenu communicates directly with the Bluetooth controller via HCI
+socket, bypassing the BlueZ D\-Bus API. Commands use the Host Controller
+Interface (HCI) protocol.
+.UNINDENT
+.UNINDENT
+.SH COMMANDS
+.SS open
+.sp
+Open HCI channel.
+.INDENT 0.0
+.TP
+.B Usage
+\fB> open <index> <chan=raw,user>\fP
+.TP
+.B index
+HCI controller index number (e.g., 0, 1, 2)
+.TP
+.B chan
+Channel type (raw or user)
+.TP
+.B Example Open user channel (controller needs to be powered off first)
+.nf
+\fB> power off\fP
+\fB> hci.open 0 user\fP
+\fBHCI index 0 user channel opened\fP
+.fi
+.sp
+.TP
+.B Example Open user channel for HCI controller 0
+.nf
+\fB> hci.open 0 user\fP
+.fi
+.sp
+.TP
+.B Example Open user channel for HCI controller 1
+.nf
+\fB> hci.open 1 user\fP
+.fi
+.sp
+.TP
+.B Example Open user channel for HCI controller 2
+.nf
+\fB> hci.open 2 user\fP
+.fi
+.sp
+.TP
+.B Example Open raw channel for HCI controller 0
+.nf
+\fB> hci.open 0 raw\fP
+.fi
+.sp
+.TP
+.B Example Open raw channel for HCI controller 1
+.nf
+\fB> hci.open 1 raw\fP
+.fi
+.sp
+.UNINDENT
+.SS cmd
+.sp
+Send HCI command.
+.INDENT 0.0
+.TP
+.B Usage
+\fB> cmd <opcode> [parameters...]\fP
+.TP
+.B opcode
+HCI command opcode in hexadecimal format (e.g., 0x0c03)
+.TP
+.B parameters
+Optional command parameters as hexadecimal bytes
+.TP
+.B Example Send HCI Reset command
+.nf
+\fB> hci.cmd 0x0c03\fP
+\fBHCI Command complete:\fP
+\fB00\fP
+.fi
+.sp
+.TP
+.B Example Send HCI Reset command (no parameters)
+.nf
+\fB> hci.cmd 0x0c03\fP
+.fi
+.sp
+.TP
+.B Example Send HCI Read Local Version Information
+.nf
+\fB> hci.cmd 0x1003\fP
+.fi
+.sp
+.TP
+.B Example Send HCI Read BD Address
+.nf
+\fB> hci.cmd 0x1009\fP
+.fi
+.sp
+.TP
+.B Example Send HCI Set Event Filter with parameter 0x01
+.nf
+\fB> hci.cmd 0x0c01 0x01\fP
+.fi
+.sp
+.TP
+.B Example Send LE Set Advertising Parameters with 2 parameters
+.nf
+\fB> hci.cmd 0x200f 0x00 0x08\fP
+.fi
+.sp
+.TP
+.B Example Send LE Set Advertising Data with length and data bytes
+.nf
+\fB> hci.cmd 0x2008 0x20 0x01 0x02 0x03 0x04 0x05 0x06 0x07 0x08\fP
+.fi
+.sp
+.TP
+.B Example Send HCI Set Event Mask command
+.nf
+\fB> hci.cmd 0x0c05 0x02\fP
+.fi
+.sp
+.TP
+.B Example Send HCI Write Scan Enable
+.nf
+\fB> hci.cmd 0x0c2a 0x01\fP
+.fi
+.sp
+.TP
+.B Example Send HCI Write Class of Device
+.nf
+\fB> hci.cmd 0x0c23 0x00 0x08\fP
+.fi
+.sp
+.UNINDENT
+.SS send
+.sp
+Send HCI data packet.
+.INDENT 0.0
+.TP
+.B Usage
+\fB> send <type=acl,sco,iso> <handle> [data...]\fP
+.TP
+.B type
+Packet type (acl, sco, or iso)
+.TP
+.B handle
+Connection handle in hexadecimal format (e.g., 0x0000)
+.TP
+.B data
+Optional data bytes in hexadecimal format
+.TP
+.B Example Send ACL data packet to connection handle 0x0000
+.nf
+\fB> hci.send acl 0x0000\fP
+.fi
+.sp
+.TP
+.B Example Send empty ACL packet to handle 0x0000
+.nf
+\fB> hci.send acl 0x0000\fP
+.fi
+.sp
+.TP
+.B Example Send ACL packet with \(dqHello\(dq data to handle 0x0001
+.nf
+\fB> hci.send acl 0x0001 0x48 0x65 0x6c 0x6c 0x6f\fP
+.fi
+.sp
+.TP
+.B Example Send ACL packet with custom data to handle 0x0010
+.nf
+\fB> hci.send acl 0x0010 0x01 0x02 0x03 0x04\fP
+.fi
+.sp
+.TP
+.B Example Send empty SCO packet to handle 0x0000
+.nf
+\fB> hci.send sco 0x0000\fP
+.fi
+.sp
+.TP
+.B Example Send SCO packet with audio data
+.nf
+\fB> hci.send sco 0x0001 0xaa 0xbb 0xcc\fP
+.fi
+.sp
+.TP
+.B Example Send SCO packet with sine wave pattern
+.nf
+\fB> hci.send sco 0x0002 0x80 0x00 0x80 0x00\fP
+.fi
+.sp
+.TP
+.B Example Send empty ISO packet to handle 0x0000
+.nf
+\fB> hci.send iso 0x0000\fP
+.fi
+.sp
+.TP
+.B Example Send ISO packet with sample data
+.nf
+\fB> hci.send iso 0x0001 0x12 0x34 0x56 0x78\fP
+.fi
+.sp
+.TP
+.B Example Send ISO packet for LE Audio stream
+.nf
+\fB> hci.send iso 0x0020 0xa0 0xa1 0xa2 0xa3\fP
+.fi
+.sp
+.UNINDENT
+.SS register
+.sp
+Register HCI event handler.
+.INDENT 0.0
+.TP
+.B Usage
+\fB> register <event>\fP
+.TP
+.B event
+HCI event code in hexadecimal format (e.g., 0x0e)
+.TP
+.B Example Register handler for Command Complete event
+.nf
+\fB> register 0x0e\fP
+.fi
+.sp
+.TP
+.B Example Register handler for Command Status event
+.nf
+\fB> register 0x0f\fP
+.fi
+.sp
+.TP
+.B Example Register handler for Connection Complete event
+.nf
+\fB> register 0x03\fP
+.fi
+.sp
+.TP
+.B Example Register handler for Disconnection Complete event
+.nf
+\fB> register 0x05\fP
+.fi
+.sp
+.TP
+.B Example Register handler for LE Meta events
+.nf
+\fB> register 0x3e\fP
+.fi
+.sp
+.TP
+.B Example Register handler for Inquiry Complete event
+.nf
+\fB> register 0x02\fP
+.fi
+.sp
+.TP
+.B Example Register handler for Role Change event
+.nf
+\fB> register 0x22\fP
+.fi
+.sp
+.UNINDENT
+.SS unregister
+.sp
+Unregister HCI event handler.
+.INDENT 0.0
+.TP
+.B Usage
+\fB> unregister <event>\fP
+.TP
+.B event
+HCI event code in hexadecimal format (e.g., 0x0e)
+.TP
+.B Example Unregister Command Complete event handler
+.nf
+\fB> unregister 0x0e\fP
+.fi
+.sp
+.TP
+.B Example Unregister Command Status event handler
+.nf
+\fB> unregister 0x0f\fP
+.fi
+.sp
+.TP
+.B Example Unregister Connection Complete event handler
+.nf
+\fB> unregister 0x03\fP
+.fi
+.sp
+.TP
+.B Example Unregister Disconnection Complete event handler
+.nf
+\fB> unregister 0x05\fP
+.fi
+.sp
+.TP
+.B Example Unregister LE Meta event handler
+.nf
+\fB> unregister 0x3e\fP
+.fi
+.sp
+.UNINDENT
+.SS close
+.sp
+Close HCI channel.
+.sp
+Closes the currently open HCI channel.
+.INDENT 0.0
+.TP
+.B Usage
+\fB> close\fP
+.TP
+.B Example Close the current HCI channel
+.nf
+\fB> close\fP
+.fi
+.sp
+.UNINDENT
+.SH RESOURCES
+.sp
+ <http://www.bluez.org> 
+.SH REPORTING BUGS
+.sp
+ <linux\-bluetooth@vger.kernel.org> 
+.SH COPYRIGHT
+Free use of this software is granted under the terms of the GNU
+Lesser General Public Licenses (LGPL).
+.\" Generated by docutils manpage writer.
+.

@@ -29,8 +29,6 @@
  * Utility functions
  */
 
-#define STRLOC __FILE__ ":" L_STRINGIFY(__LINE__)
-
 /**
  * l_malloc:
  * @size: memory size to allocate

@@ -24,11 +24,11 @@
 
 #include <glib.h>
 
-#include "lib/bluetooth.h"
-#include "lib/hci.h"
-#include "lib/hci_lib.h"
-#include "lib/mgmt.h"
-#include "lib/l2cap.h"
+#include "bluetooth/bluetooth.h"
+#include "bluetooth/hci.h"
+#include "bluetooth/hci_lib.h"
+#include "bluetooth/mgmt.h"
+#include "bluetooth/l2cap.h"
 
 #include "monitor/bt.h"
 #include "emulator/vhci.h"
@@ -343,6 +343,7 @@ struct generic_data {
 	const void * (*expect_func)(uint16_t *len);
 	uint32_t expect_settings_set;
 	uint32_t expect_settings_unset;
+	uint32_t expect_settings_spontaneous;
 	uint16_t expect_alt_ev;
 	const void *expect_alt_ev_param;
 	bool (*verify_alt_ev_func)(const void *param, uint16_t length);
@@ -575,6 +576,20 @@ static void test_condition_complete(struct test_data *data)
 
 #define test_bredrle50(name, data, setup, func) \
 	test_bredrle50_full(name, data, setup, func, 2)
+
+#define test_bredrle52_full(name, data, setup, func, timeout) \
+	test_full(name, data, setup, func, timeout, HCIEMU_TYPE_BREDRLE52, \
+					0x0b, 0x0001beff, 0x00000080)
+
+#define test_bredrle52(name, data, setup, func) \
+	test_bredrle52_full(name, data, setup, func, 2)
+
+#define test_bredrle60_full(name, data, setup, func, timeout) \
+	test_full(name, data, setup, func, timeout, HCIEMU_TYPE_BREDRLE60, \
+					0x0e, 0x0001beff, 0x00000080)
+
+#define test_bredrle60(name, data, setup, func) \
+	test_bredrle60_full(name, data, setup, func, 2)
 
 #define test_hs_full(name, data, setup, func, timeout) \
 	test_full(name, data, setup, func, timeout, HCIEMU_TYPE_BREDRLE, \
@@ -1192,6 +1207,7 @@ static const struct generic_data set_bondable_on_invalid_index_test = {
 
 static const uint8_t set_discoverable_on_param[] = { 0x01, 0x00, 0x00 };
 static const uint8_t set_discoverable_timeout_param[] = { 0x01, 0x0a, 0x00 };
+static const uint8_t set_discoverable_timeout_1_param[] = { 0x01, 0x01, 0x00 };
 static const uint8_t set_discoverable_invalid_param[] = { 0x02, 0x00, 0x00 };
 static const uint8_t set_discoverable_off_param[] = { 0x00, 0x00, 0x00 };
 static const uint8_t set_discoverable_offtimeout_param[] = { 0x00, 0x01, 0x00 };
@@ -1288,6 +1304,36 @@ static const struct generic_data set_discoverable_on_success_test_2 = {
 	.expect_param = set_discoverable_on_settings_param_2,
 	.expect_len = sizeof(set_discoverable_on_settings_param_2),
 	.expect_settings_set = MGMT_SETTING_DISCOVERABLE,
+	.expect_hci_command = BT_HCI_CMD_WRITE_SCAN_ENABLE,
+	.expect_hci_param = set_discoverable_on_scan_enable_param,
+	.expect_hci_len = sizeof(set_discoverable_on_scan_enable_param),
+};
+
+static const struct generic_data set_discoverable_on_timeout_success_test_1 = {
+	.setup_settings = settings_powered_connectable,
+	.send_opcode = MGMT_OP_SET_DISCOVERABLE,
+	.send_param = set_discoverable_timeout_param,
+	.send_len = sizeof(set_discoverable_timeout_param),
+	.expect_status = MGMT_STATUS_SUCCESS,
+	.expect_param = set_discoverable_on_settings_param_2,
+	.expect_len = sizeof(set_discoverable_on_settings_param_2),
+	.expect_hci_command = BT_HCI_CMD_WRITE_SCAN_ENABLE,
+	.expect_hci_param = set_discoverable_on_scan_enable_param,
+	.expect_hci_len = sizeof(set_discoverable_on_scan_enable_param),
+};
+
+static const struct generic_data set_discoverable_on_timeout_success_test_2 = {
+	.setup_settings = settings_powered_connectable,
+	.send_opcode = MGMT_OP_SET_DISCOVERABLE,
+	.send_param = set_discoverable_timeout_1_param,
+	.send_len = sizeof(set_discoverable_timeout_1_param),
+	.expect_status = MGMT_STATUS_SUCCESS,
+	.expect_settings_set = MGMT_SETTING_DISCOVERABLE,
+	.expect_settings_spontaneous = MGMT_SETTING_POWERED |
+					MGMT_SETTING_CONNECTABLE |
+					MGMT_SETTING_BREDR,
+	.expect_param = set_discoverable_on_settings_param_2,
+	.expect_len = sizeof(set_discoverable_on_settings_param_2),
 	.expect_hci_command = BT_HCI_CMD_WRITE_SCAN_ENABLE,
 	.expect_hci_param = set_discoverable_on_scan_enable_param,
 	.expect_hci_len = sizeof(set_discoverable_on_scan_enable_param),
@@ -1509,7 +1555,6 @@ static const char set_ssp_invalid_param[] = { 0x02 };
 static const char set_ssp_garbage_param[] = { 0x01, 0x00 };
 static const char set_ssp_settings_param_1[] = { 0xc0, 0x00, 0x00, 0x00 };
 static const char set_ssp_settings_param_2[] = { 0xc1, 0x00, 0x00, 0x00 };
-static const char set_ssp_settings_param_3[] = { 0xc1, 0x00, 0x40, 0x00 };
 static const char set_ssp_on_write_ssp_mode_param[] = { 0x01 };
 
 static const struct generic_data set_ssp_on_success_test_1 = {
@@ -1697,6 +1742,7 @@ static const char set_le_invalid_param[] = { 0x02 };
 static const char set_le_garbage_param[] = { 0x01, 0x00 };
 static const char set_le_settings_param_1[] = { 0x80, 0x02, 0x00, 0x00 };
 static const char set_le_settings_param_2[] = { 0x81, 0x02, 0x00, 0x00 };
+static const char set_le_settings_param_4[] = { 0x81, 0x02, 0xfc, 0x01 };
 static const char set_le_on_write_le_host_param[] = { 0x01, 0x00 };
 
 static const struct generic_data set_le_on_success_test_1 = {
@@ -1731,6 +1777,20 @@ static const struct generic_data set_le_on_success_test_3 = {
 	.expect_status = MGMT_STATUS_SUCCESS,
 	.expect_param = set_le_settings_param_2,
 	.expect_len = sizeof(set_le_settings_param_2),
+	.expect_settings_set = MGMT_SETTING_LE,
+	.expect_hci_command = BT_HCI_CMD_WRITE_LE_HOST_SUPPORTED,
+	.expect_hci_param = set_le_on_write_le_host_param,
+	.expect_hci_len = sizeof(set_le_on_write_le_host_param),
+};
+
+static const struct generic_data set_le_on_success_test_4 = {
+	.setup_settings = settings_le,
+	.send_opcode = MGMT_OP_SET_POWERED,
+	.send_param = set_powered_on_param,
+	.send_len = sizeof(set_powered_on_param),
+	.expect_status = MGMT_STATUS_SUCCESS,
+	.expect_param = set_le_settings_param_4,
+	.expect_len = sizeof(set_le_settings_param_4),
 	.expect_settings_set = MGMT_SETTING_LE,
 	.expect_hci_command = BT_HCI_CMD_WRITE_LE_HOST_SUPPORTED,
 	.expect_hci_param = set_le_on_write_le_host_param,
@@ -3107,7 +3167,7 @@ static const void *pair_device_expect_param_func(uint16_t *len)
 
 static uint16_t settings_powered_bondable[] = { MGMT_OP_SET_BONDABLE,
 						MGMT_OP_SET_POWERED, 0 };
-static uint8_t auth_req_param[] = { 0x2a, 0x00 };
+static uint8_t auth_req_param[] = { 0x01, 0x00 };
 static uint8_t pair_device_pin[] = { 0x30, 0x30, 0x30, 0x30 }; /* "0000" */
 
 static const struct generic_data pair_device_success_test_1 = {
@@ -6078,8 +6138,8 @@ static const struct generic_data set_dev_id_power_off_on = {
 	.send_param = set_powered_on_param,
 	.send_len = sizeof(set_powered_on_param),
 	.expect_status = MGMT_STATUS_SUCCESS,
-	.expect_param = set_ssp_settings_param_3,
-	.expect_len = sizeof(set_ssp_settings_param_3),
+	.expect_param = set_ssp_settings_param_2,
+	.expect_len = sizeof(set_ssp_settings_param_2),
 	.expect_settings_set = MGMT_SETTING_POWERED,
 	.expect_hci_command = BT_HCI_CMD_WRITE_EXT_INQUIRY_RESPONSE,
 	.expect_hci_param = write_eir_set_dev_id_success_1,
@@ -6095,8 +6155,8 @@ static const struct generic_data set_dev_id_ssp_off_on = {
 	.send_param = set_ssp_on_param,
 	.send_len = sizeof(set_ssp_on_param),
 	.expect_status = MGMT_STATUS_SUCCESS,
-	.expect_param = set_ssp_settings_param_3,
-	.expect_len = sizeof(set_ssp_settings_param_3),
+	.expect_param = set_ssp_settings_param_2,
+	.expect_len = sizeof(set_ssp_settings_param_2),
 	.expect_hci_command = BT_HCI_CMD_WRITE_EXT_INQUIRY_RESPONSE,
 	.expect_hci_param = write_eir_set_dev_id_success_1,
 	.expect_hci_len = sizeof(write_eir_set_dev_id_success_1),
@@ -6169,7 +6229,7 @@ static void setup_bthost(void)
 	if (data->hciemu_type == HCIEMU_TYPE_LE ||
 		test->client_enable_adv) {
 		if (data->hciemu_type >= HCIEMU_TYPE_BREDRLE50) {
-			bthost_set_ext_adv_params(bthost);
+			bthost_set_ext_adv_params(bthost, 0x00);
 			bthost_set_ext_adv_enable(bthost, 0x01);
 		} else
 			bthost_set_adv_enable(bthost, 0x01);
@@ -6192,7 +6252,7 @@ static void setup_pairing_acceptor(const void *test_data)
 	setup_bthost();
 }
 
-/* Generic callback for checking the mgmt evnet status
+/* Generic callback for checking the mgmt event status
  */
 static void generic_mgmt_status_callback(uint8_t status, uint16_t length,
 					const void *param, void *user_data)
@@ -7305,12 +7365,27 @@ static void command_generic_new_settings(uint16_t index, uint16_t length,
 					const void *param, void *user_data)
 {
 	struct test_data *data = tester_get_data();
+	const struct generic_data *test = data->test_data;
+	uint32_t settings;
 
-	tester_print("New settings event received");
+	if (length != 4) {
+		tester_warn("Invalid parameter size for new settings event");
+		tester_test_failed();
+		return;
+	}
+
+	settings = get_le32(param);
+	tester_print("New settings 0x%08x received (local)", settings);
 
 	mgmt_unregister(data->mgmt, data->mgmt_settings_id);
 
-	tester_test_failed();
+	if (!test->expect_settings_spontaneous) {
+		tester_test_failed();
+		return;
+	}
+
+	if (settings == test->expect_settings_spontaneous)
+		test_condition_complete(data);
 }
 
 static void command_generic_new_settings_alt(uint16_t index, uint16_t length,
@@ -8599,15 +8674,13 @@ static const struct generic_data add_ext_advertising_success_17 = {
 	.expect_hci_len = sizeof(preset_connectable_off_ext_adv_param),
 };
 
-static const char set_le_settings_param_off_1[] = { 0x81, 0x00, 0x40, 0x00 };
-
 static const struct generic_data add_ext_advertising_le_off = {
 	.send_opcode = MGMT_OP_SET_LE,
 	.send_param = set_le_off_param,
 	.send_len = sizeof(set_le_off_param),
 	.expect_status = MGMT_STATUS_SUCCESS,
-	.expect_param = set_le_settings_param_off_1,
-	.expect_len = sizeof(set_le_settings_param_off_1),
+	.expect_param = set_le_settings_param_off,
+	.expect_len = sizeof(set_le_settings_param_off),
 	.expect_alt_ev = MGMT_EV_ADVERTISING_REMOVED,
 	.expect_alt_ev_param = advertising_instance1_param,
 	.expect_alt_ev_len = sizeof(advertising_instance1_param),
@@ -10045,8 +10118,8 @@ static void setup_set_exp_feature_alt(const void *test_data)
 {
 	struct test_data *data = tester_get_data();
 
-	/* Send the Read Experiemental Features Information command to receive
-	 * the Experiemental Feature Changed event
+	/* Send the Read Experimental Features Information command to receive
+	 * the Experimental Feature Changed event
 	 */
 	mgmt_send(data->mgmt_alt, MGMT_OP_READ_EXP_FEATURES_INFO,
 			data->mgmt_index, 0, NULL,
@@ -11566,7 +11639,8 @@ static void test_command_generic(const void *test_data)
 
 	index = test->send_index_none ? MGMT_INDEX_NONE : data->mgmt_index;
 
-	if (test->expect_settings_set || test->expect_settings_unset) {
+	if (test->expect_settings_set || test->expect_settings_unset ||
+					test->expect_settings_spontaneous) {
 		tester_print("Registering new settings notification");
 
 		id = mgmt_register(data->mgmt, MGMT_EV_NEW_SETTINGS, index,
@@ -11577,6 +11651,9 @@ static void test_command_generic(const void *test_data)
 				command_generic_new_settings_alt, NULL, NULL);
 		data->mgmt_alt_settings_id = id;
 		test_add_condition(data);
+
+		if (test->expect_settings_spontaneous)
+			test_add_condition(data);
 	}
 
 	if (test->expect_alt_ev) {
@@ -11724,7 +11801,7 @@ static void trigger_device_found(void *user_data)
 
 		bthost_set_adv_enable(bthost, 0x01);
 	} else if (data->hciemu_type >= HCIEMU_TYPE_BREDRLE50) {
-		bthost_set_ext_adv_params(bthost);
+		bthost_set_ext_adv_params(bthost, 0x00);
 		if (test->set_adv)
 			bthost_set_ext_adv_data(bthost, test->adv_data,
 							test->adv_data_len);
@@ -13120,6 +13197,12 @@ int main(int argc, char *argv[])
 	test_bredrle("Set discoverable on - Success 2",
 				&set_discoverable_on_success_test_2,
 				NULL, test_command_generic);
+	test_bredrle("Set discoverable on timeout - Success 1",
+				&set_discoverable_on_timeout_success_test_1,
+				NULL, test_command_generic);
+	test_bredrle_full("Set discoverable on timeout - Success 2 (Timeout)",
+				&set_discoverable_on_timeout_success_test_2,
+				NULL, test_command_generic, 8);
 	test_le("Set discoverable on (LE) - Success 1",
 				&set_discov_on_le_success_1,
 				NULL, test_command_generic);
@@ -13233,6 +13316,12 @@ int main(int argc, char *argv[])
 				NULL, test_command_generic);
 	test_bredrle("Set Low Energy on - Success 3",
 				&set_le_on_success_test_3,
+				NULL, test_command_generic);
+	test_bredrle52("Set Low Energy on 5.2 - Success 4",
+				&set_le_on_success_test_4,
+				NULL, test_command_generic);
+	test_bredrle60("Set Low Energy on 6.0 - Success 5",
+				&set_le_on_success_test_4,
 				NULL, test_command_generic);
 	test_bredrle("Set Low Energy on - Invalid parameters 1",
 				&set_le_on_invalid_param_test_1,
@@ -14396,7 +14485,7 @@ int main(int argc, char *argv[])
 	test_bredrle50("Set PHY 2m Success", &set_phy_2m_success,
 					NULL, test_command_generic);
 
-	test_bredrle50("Set PHY coded Succcess", &set_phy_coded_success,
+	test_bredrle50("Set PHY coded Success", &set_phy_coded_success,
 					NULL, test_command_generic);
 
 	test_bredrle50("Set PHY 2m tx success", &set_phy_2m_tx_success,
@@ -15001,7 +15090,7 @@ int main(int argc, char *argv[])
 	 * Setup: Enable Privacy, LL Privacy
 	 * Run: Pair device, disconnect, add device, add 2nd device, and
 	 *      remove the client, then unpair.
-	 * Expect: Expect the clinet is removed from the Accept List.
+	 * Expect: Expect the client is removed from the Accept List.
 	 */
 	test_bredrle50_full("LL Privacy - Unpair 2 (Remove from AL)",
 				&ll_privacy_unpair_2,

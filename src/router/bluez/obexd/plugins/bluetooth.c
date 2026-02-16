@@ -22,8 +22,8 @@
 
 #include <glib.h>
 
-#include "lib/bluetooth.h"
-#include "lib/uuid.h"
+#include "bluetooth/bluetooth.h"
+#include "bluetooth/uuid.h"
 
 #include "gdbus/gdbus.h"
 
@@ -35,6 +35,7 @@
 #include "obexd/src/transport.h"
 #include "obexd/src/service.h"
 #include "obexd/src/log.h"
+#include "obexd/src/logind.h"
 
 #define BT_RX_MTU 32767
 #define BT_TX_MTU 32767
@@ -426,8 +427,9 @@ static const struct obex_transport_driver driver = {
 
 static unsigned int listener_id = 0;
 
-static int bluetooth_init(void)
+static int bluetooth_init_cb(gboolean at_register)
 {
+	(void)at_register;
 	connection = g_dbus_setup_private(DBUS_BUS_SYSTEM, NULL, NULL);
 	if (connection == NULL)
 		return -EPERM;
@@ -438,16 +440,38 @@ static int bluetooth_init(void)
 	return obex_transport_driver_register(&driver);
 }
 
-static void bluetooth_exit(void)
+static void bluetooth_exit_cb(gboolean at_unregister)
 {
+	GSList *l;
+	(void)at_unregister;
+
 	g_dbus_remove_watch(connection, listener_id);
 
-	g_slist_free_full(profiles, profile_free);
+	for (l = profiles; l; l = l->next) {
+		struct bluetooth_profile *profile = l->data;
 
-	if (connection)
+		if (profile->path == NULL)
+			continue;
+
+		unregister_profile(profile);
+	}
+
+	if (connection) {
+		dbus_connection_close(connection);
 		dbus_connection_unref(connection);
+		connection = NULL;
+	}
 
 	obex_transport_driver_unregister(&driver);
+}
+
+static int bluetooth_init(void)
+{
+	return logind_register(bluetooth_init_cb, bluetooth_exit_cb);
+}
+static void bluetooth_exit(void)
+{
+	return logind_unregister(bluetooth_init_cb, bluetooth_exit_cb);
 }
 
 OBEX_PLUGIN_DEFINE(bluetooth, bluetooth_init, bluetooth_exit)

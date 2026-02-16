@@ -594,17 +594,18 @@ LIB_EXPORT struct l_dbus_client *l_dbus_client_new(struct l_dbus *dbus,
 
 	client->dbus = dbus;
 
+	client->service = l_strdup(service);
 	client->watch = l_dbus_add_service_watch(dbus, service,
 						service_appeared_callback,
 						service_disappeared_callback,
 						client, NULL);
 
 	if (!client->watch) {
+		l_free(client->service);
 		l_free(client);
 		return NULL;
 	}
 
-	client->service = l_strdup(service);
 	client->proxies = l_queue_new();
 
 	return client;
@@ -616,7 +617,7 @@ LIB_EXPORT void l_dbus_client_destroy(struct l_dbus_client *client)
 		return;
 
 	if (client->watch)
-		l_dbus_remove_signal_watch(client->dbus, client->watch);
+		l_dbus_remove_watch(client->dbus, client->watch);
 
 	if (client->added_watch)
 		l_dbus_remove_signal_watch(client->dbus, client->added_watch);

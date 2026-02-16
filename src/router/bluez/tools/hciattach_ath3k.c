@@ -23,9 +23,9 @@
 #include <sys/param.h>
 #include <sys/ioctl.h>
 
-#include "lib/bluetooth.h"
-#include "lib/hci.h"
-#include "lib/hci_lib.h"
+#include "bluetooth/bluetooth.h"
+#include "bluetooth/hci.h"
+#include "bluetooth/hci_lib.h"
 
 #include "hciattach.h"
 
@@ -806,7 +806,7 @@ static int ath_ps_download(int fd)
 	FILE *stream;
 
 	/*
-	 * Verfiy firmware version. depending on it select the PS
+	 * Verify firmware version. depending on it select the PS
 	 * config file to download.
 	 */
 	if (get_device_type(fd, &dev_type) < 0) {

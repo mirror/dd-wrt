@@ -22,14 +22,6 @@ builtin_modules += neard
 builtin_sources += plugins/neard.c
 endif
 
-if SAP
-builtin_modules += sap
-builtin_sources += profiles/sap/main.c profiles/sap/manager.h \
-			profiles/sap/manager.c profiles/sap/server.h \
-			profiles/sap/server.c profiles/sap/sap.h \
-			profiles/sap/sap-dummy.c
-endif
-
 if A2DP
 builtin_modules += a2dp
 builtin_sources += profiles/audio/source.h profiles/audio/source.c \
@@ -44,7 +36,8 @@ if AVRCP
 builtin_modules += avrcp
 builtin_sources += profiles/audio/control.h profiles/audio/control.c \
 			profiles/audio/avctp.h profiles/audio/avctp.c \
-			profiles/audio/avrcp.h profiles/audio/avrcp.c
+			profiles/audio/avrcp.h profiles/audio/avrcp.c \
+			profiles/audio/avrcp-player.c
 endif
 
 if NETWORK
@@ -74,16 +67,6 @@ builtin_sources += profiles/input/hog.c \
 			profiles/input/suspend.h profiles/input/suspend-none.c
 endif
 
-if HEALTH
-builtin_modules += health
-builtin_sources += profiles/health/mcap.h profiles/health/mcap.c \
-			profiles/health/hdp_main.c profiles/health/hdp_types.h \
-			profiles/health/hdp_manager.h \
-			profiles/health/hdp_manager.c \
-			profiles/health/hdp.h profiles/health/hdp.c \
-			profiles/health/hdp_util.h profiles/health/hdp_util.c
-endif
-
 builtin_modules += gap
 builtin_sources += profiles/gap/gas.c
 
@@ -104,6 +87,9 @@ endif
 
 builtin_modules += battery
 builtin_sources += profiles/battery/battery.c
+
+builtin_modules += rap
+builtin_sources += profiles/ranging/rap.c
 
 if SIXAXIS
 builtin_modules += sixaxis
@@ -146,7 +132,22 @@ builtin_modules += csip
 builtin_sources += profiles/audio/csip.c
 endif
 
+if TMAP
+builtin_modules += tmap
+builtin_sources += profiles/audio/tmap.c
+endif
+
+if GMAP
+builtin_modules += gmap
+builtin_sources += profiles/audio/gmap.c
+endif
+
 if ASHA
 builtin_modules += asha
 builtin_sources += profiles/audio/asha.h profiles/audio/asha.c
+endif
+
+if HFP
+builtin_modules += hfp
+builtin_sources += profiles/audio/telephony.h profiles/audio/telephony.c profiles/audio/hfp-hf.c
 endif

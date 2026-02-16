@@ -242,7 +242,7 @@ For a working system, certain configuration options need to be enabled:
 
 		Enable deprecated tools
 
-		By defauld all tools that are no longer maintained are
+		By default all tools that are no longer maintained are
 		disabled. This option can be used to enable them.
 
 		It is not recommended to enable this option for production
@@ -268,26 +268,6 @@ For a working system, certain configuration options need to be enabled:
 
 		By default the integration with neard is disabled, this gives
 		the option to enable it in system where neard is supported.
-
-		The plugin is built into bluetoothd therefore it does not need
-		to be package separately.
-
-	--enable-sap
-
-		This option enable SAP profile using sap plugin.
-
-		By default sap plugin is disabled since it requires tight
-		integration with systems and is very rarely required.
-
-		The plugin is built into bluetoothd therefore it does not need
-		to be package separately.
-
-	--enable-health
-
-		This option enable health profiles.
-
-		By default health plugin is disabled since its profiles are
-		target for the health industry.
 
 		The plugin is built into bluetoothd therefore it does not need
 		to be package separately.

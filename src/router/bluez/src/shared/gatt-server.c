@@ -17,8 +17,8 @@
 #include <errno.h>
 
 #include "src/shared/att.h"
-#include "lib/bluetooth.h"
-#include "lib/uuid.h"
+#include "bluetooth/bluetooth.h"
+#include "bluetooth/uuid.h"
 #include "src/shared/queue.h"
 #include "src/shared/gatt-db.h"
 #include "src/shared/gatt-server.h"
@@ -887,7 +887,7 @@ static uint8_t get_read_rsp_opcode(uint8_t opcode)
 		 * Should never happen
 		 *
 		 * TODO: It would be nice to have a debug-mode assert macro
-		 * for development builds. This way bugs could be easily catched
+		 * for development builds. This way bugs could be easily caught
 		 * during development and there would be self documenting code
 		 * that wouldn't be crash release builds.
 		 */

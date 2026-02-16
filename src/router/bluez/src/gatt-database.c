@@ -18,11 +18,11 @@
 #include <unistd.h>
 #include <limits.h>
 
-#include "lib/bluetooth.h"
-#include "lib/sdp.h"
-#include "lib/sdp_lib.h"
-#include "lib/uuid.h"
-#include "lib/mgmt.h"
+#include "bluetooth/bluetooth.h"
+#include "bluetooth/sdp.h"
+#include "bluetooth/sdp_lib.h"
+#include "bluetooth/uuid.h"
+#include "bluetooth/mgmt.h"
 #include "btio/btio.h"
 #include "gdbus/gdbus.h"
 #include "src/shared/util.h"
@@ -208,6 +208,8 @@ struct device_info {
 	bdaddr_t bdaddr;
 	uint8_t bdaddr_type;
 };
+
+static struct queue *dbs = NULL;
 
 static void ccc_cb_free(void *data)
 {
@@ -546,7 +548,7 @@ static void profile_remove(void *data)
 
 	DBG("Removed \"%s\"", p->name);
 
-	adapter_foreach(adapter_remove_profile, p);
+	btd_adapter_foreach(adapter_remove_profile, p);
 	btd_profile_unregister(p);
 
 	g_free((void *) p->name);
@@ -4093,16 +4095,18 @@ struct btd_gatt_database *btd_gatt_database_new(struct btd_adapter *adapter)
 
 bredr:
 	/* BR/EDR socket */
-	database->bredr_io = bt_io_listen(connect_cb, NULL, NULL, NULL, &gerr,
-					BT_IO_OPT_SOURCE_BDADDR, addr,
+	if (btd_adapter_get_bredr(adapter)) {
+		database->bredr_io = bt_io_listen(connect_cb, NULL, NULL, NULL,
+					&gerr, BT_IO_OPT_SOURCE_BDADDR, addr,
 					BT_IO_OPT_PSM, BT_ATT_PSM,
 					BT_IO_OPT_SEC_LEVEL, BT_IO_SEC_MEDIUM,
 					BT_IO_OPT_MTU, btd_opts.gatt_mtu,
 					BT_IO_OPT_INVALID);
-	if (database->bredr_io == NULL) {
-		error("Failed to start listening: %s", gerr->message);
-		g_error_free(gerr);
-		goto fail;
+		if (database->bredr_io == NULL) {
+			error("Failed to start listening: %s", gerr->message);
+			g_error_free(gerr);
+			goto fail;
+		}
 	}
 
 	if (g_dbus_register_interface(btd_get_dbus_connection(),
@@ -4120,6 +4124,11 @@ bredr:
 							database, NULL);
 	if (!database->db_id)
 		goto fail;
+
+	if (!dbs)
+		dbs = queue_new();
+
+	queue_push_tail(dbs, database);
 
 	return database;
 
@@ -4139,6 +4148,34 @@ void btd_gatt_database_destroy(struct btd_gatt_database *database)
 					GATT_MANAGER_IFACE);
 
 	gatt_database_free(database);
+}
+
+static bool match_db(const void *data, const void *user_data)
+{
+	const struct btd_gatt_database *database = data;
+	const struct gatt_db *db = user_data;
+
+	return database->db == db;
+}
+
+struct btd_gatt_database *btd_gatt_database_get(struct gatt_db *db)
+{
+	struct btd_gatt_database *database;
+
+	database = queue_find(dbs, match_db, db);
+	if (!database)
+		return NULL;
+
+	return database;
+}
+
+struct btd_adapter *
+btd_gatt_database_get_adapter(struct btd_gatt_database *database)
+{
+	if (!database)
+		return NULL;
+
+	return database->adapter;
 }
 
 struct gatt_db *btd_gatt_database_get_db(struct btd_gatt_database *database)

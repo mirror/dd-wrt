@@ -20,9 +20,9 @@
 #include "src/shared/queue.h"
 #include "src/shared/util.h"
 #include "src/shared/timeout.h"
-#include "lib/bluetooth.h"
-#include "lib/l2cap.h"
-#include "lib/uuid.h"
+#include "bluetooth/bluetooth.h"
+#include "bluetooth/l2cap.h"
+#include "bluetooth/uuid.h"
 #include "src/shared/att.h"
 #include "src/shared/crypto.h"
 
@@ -669,7 +669,7 @@ static bool disconnect_cb(struct io *io, void *user_data)
 
 	DBG(att, "Channel %p disconnected: %s", chan, strerror(err));
 
-	/* Dettach channel */
+	/* Detach channel */
 	queue_remove(att->chans, chan);
 
 	if (chan->pending_req) {

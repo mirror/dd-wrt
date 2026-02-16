@@ -28,14 +28,14 @@
 
 #include <glib.h>
 
-#include "lib/bluetooth.h"
-#include "lib/hci.h"
-#include "lib/hci_lib.h"
+#include "bluetooth/bluetooth.h"
+#include "bluetooth/hci.h"
+#include "bluetooth/hci_lib.h"
 
 #include "src/log.h"
 #include "src/shared/util.h"
 #include "btio/btio.h"
-#include "lib/bnep.h"
+#include "bluetooth/bnep.h"
 #include "profiles/network/bnep.h"
 
 enum {
@@ -502,7 +502,7 @@ static void usage(void)
 	printf("Connect Mode:\n"
 		"\t-c connect <dst_addr>\n"
 		"\t-r remote role <16 bit svc value>\n"
-		"\t-l local role <16 bit svc valu>\n");
+		"\t-l local role <16 bit svc value>\n");
 	printf("Listen Mode:\n"
 		"\t-s start server listening\n");
 	printf("Send control command:\n"

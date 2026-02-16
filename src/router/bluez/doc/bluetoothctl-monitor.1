@@ -1,0 +1,322 @@
+.\" Man page generated from reStructuredText.
+.
+.
+.nr rst2man-indent-level 0
+.
+.de1 rstReportMargin
+\\$1 \\n[an-margin]
+level \\n[rst2man-indent-level]
+level margin: \\n[rst2man-indent\\n[rst2man-indent-level]]
+-
+\\n[rst2man-indent0]
+\\n[rst2man-indent1]
+\\n[rst2man-indent2]
+..
+.de1 INDENT
+.\" .rstReportMargin pre:
+. RS \\$1
+. nr rst2man-indent\\n[rst2man-indent-level] \\n[an-margin]
+. nr rst2man-indent-level +1
+.\" .rstReportMargin post:
+..
+.de UNINDENT
+. RE
+.\" indent \\n[an-margin]
+.\" old: \\n[rst2man-indent\\n[rst2man-indent-level]]
+.nr rst2man-indent-level -1
+.\" new: \\n[rst2man-indent\\n[rst2man-indent-level]]
+.in \\n[rst2man-indent\\n[rst2man-indent-level]]u
+..
+.TH "BLUETOOTHCTL-MONITOR" "1" "July 2023" "BlueZ" "Linux System Administration"
+.SH NAME
+bluetoothctl-monitor \- Monitor Submenu
+.SH SYNOPSIS
+.sp
+\fBbluetoothctl\fP [\-\-options] [monitor.commands]
+.sp
+This submenu configures advertisement monitors using the
+\fBorg.bluez.AdvertisementMonitor(5)\fP and
+\fBorg.bluez.AdvertisementMonitorManager(5)\fP interfaces.
+.SH MONITOR COMMANDS
+.SS set\-rssi\-threshold
+.sp
+Set RSSI threshold parameter
+.INDENT 0.0
+.TP
+.B Usage
+\fB> set\-rssi\-threshold <low_threshold> <high_threshold>\fP
+.TP
+.B <low_threshold>
+Lower RSSI threshold value in dBm for monitoring
+.TP
+.B <high_threshold>
+Higher RSSI threshold value in dBm for monitoring
+.TP
+.B Example Set low threshold to \-80 dBm and high threshold to \-40 dBm
+.nf
+\fB> set\-rssi\-threshold \-80 \-40\fP
+.fi
+.sp
+.TP
+.B Example Set low threshold to \-70 dBm and high threshold to \-30 dBm
+.nf
+\fB> set\-rssi\-threshold \-70 \-30\fP
+.fi
+.sp
+.TP
+.B Example Set very sensitive low threshold and moderate high threshold
+.nf
+\fB> set\-rssi\-threshold \-90 \-50\fP
+.fi
+.sp
+.TP
+.B Example Set less sensitive thresholds for close range monitoring
+.nf
+\fB> set\-rssi\-threshold \-60 \-20\fP
+.fi
+.sp
+.UNINDENT
+.SS set\-rssi\-timeout
+.sp
+Set RSSI timeout parameter
+.INDENT 0.0
+.TP
+.B Usage
+\fB> set\-rssi\-timeout <low_timeout> <high_timeout>\fP
+.TP
+.B <low_timeout>
+Timeout value in seconds for low RSSI threshold
+.TP
+.B <high_timeout>
+Timeout value in seconds for high RSSI threshold
+.TP
+.B Example Set low timeout to 5 seconds, high timeout to 10 seconds
+.nf
+\fB> set\-rssi\-timeout 5 10\fP
+.fi
+.sp
+.TP
+.B Example Set quick timeout response for both thresholds
+.nf
+\fB> set\-rssi\-timeout 1 5\fP
+.fi
+.sp
+.TP
+.B Example Set longer timeout periods for stable monitoring
+.nf
+\fB> set\-rssi\-timeout 10 30\fP
+.fi
+.sp
+.TP
+.B Example Set asymmetric timeout values
+.nf
+\fB> set\-rssi\-timeout 3 15\fP
+.fi
+.sp
+.UNINDENT
+.SS set\-rssi\-sampling\-period
+.sp
+Set RSSI sampling period parameter
+.INDENT 0.0
+.TP
+.B Usage
+\fB> set\-rssi\-sampling\-period <sampling_period>\fP
+.TP
+.B <sampling_period>
+Sampling period in 100ms units (0\-255, where 0 means report all, 255 means report only first)
+.TP
+.B Example Set sampling period to 100ms (1 unit)
+.nf
+\fB> set\-rssi\-sampling\-period 1\fP
+.fi
+.sp
+.TP
+.B Example Set sampling period to 500ms (5 units)
+.nf
+\fB> set\-rssi\-sampling\-period 5\fP
+.fi
+.sp
+.TP
+.B Example Set sampling period to 1 second (10 units)
+.nf
+\fB> set\-rssi\-sampling\-period 10\fP
+.fi
+.sp
+.TP
+.B Example Report all advertisements (no sampling)
+.nf
+\fB> set\-rssi\-sampling\-period 0\fP
+.fi
+.sp
+.TP
+.B Example Report only first advertisement
+.nf
+\fB> set\-rssi\-sampling\-period 255\fP
+.fi
+.sp
+.UNINDENT
+.SS add\-or\-pattern
+.sp
+Register \(aqor pattern\(aq type monitor with the specified RSSI parameters
+.sp
+Each pattern requires 3 arguments: <start_position> <ad_data_type> <content_of_pattern>
+Multiple patterns can be specified to create an OR condition.
+.INDENT 0.0
+.TP
+.B Usage
+\fB> add\-or\-pattern <start_pos> <ad_type> <content> [start_pos ad_type content ...]\fP
+.TP
+.B Uses
+\fBorg.bluez.AdvertisementMonitorManager(5)\fP method \fBRegisterMonitor\fP
+.TP
+.B <start_pos>
+Byte position in advertisement data where pattern matching starts (0\-based)
+.TP
+.B <ad_type>
+Advertisement data type (e.g., 9 for Complete Local Name, 1 for Flags)
+.TP
+.B <content>
+Hexadecimal pattern content to match
+.TP
+.B Example Monitor for \(dqSamsung\(dq in Complete Local Name (type 9)
+.nf
+\fB> add\-or\-pattern 0 9 53616d73756e67\fP
+.fi
+.sp
+.TP
+.B Example Monitor for devices with Flags type (type 1) containing 0x06
+.nf
+\fB> add\-or\-pattern 0 1 06\fP
+.fi
+.sp
+.TP
+.B Example Monitor for two different patterns (OR condition)
+.nf
+\fB> add\-or\-pattern 0 9 53616d73756e67 0 9 4170706c65\fP
+.fi
+.sp
+.TP
+.B Example Monitor for specific manufacturer data (type 255)
+.nf
+\fB> add\-or\-pattern 0 255 4c000215\fP
+.fi
+.sp
+.UNINDENT
+.SS get\-pattern
+.sp
+Get advertisement monitor
+.INDENT 0.0
+.TP
+.B Usage
+\fB> get\-pattern <monitor\-id/all>\fP
+.TP
+.B <monitor\-id/all>
+Monitor ID number to retrieve details for, or \(dqall\(dq for all active monitors
+.TP
+.B Example Get details of monitor ID 0
+.nf
+\fB> get\-pattern 0\fP
+.fi
+.sp
+.TP
+.B Example Get details of monitor ID 1
+.nf
+\fB> get\-pattern 1\fP
+.fi
+.sp
+.TP
+.B Example Get details of monitor ID 5
+.nf
+\fB> get\-pattern 5\fP
+.fi
+.sp
+.TP
+.B Example Get details of all active monitors
+.nf
+\fB> get\-pattern all\fP
+.fi
+.sp
+.UNINDENT
+.SS remove\-pattern
+.sp
+Remove advertisement monitor
+.INDENT 0.0
+.TP
+.B Usage
+\fB> remove\-pattern <monitor\-id/all>\fP
+.TP
+.B Uses
+\fBorg.bluez.AdvertisementMonitorManager(5)\fP method \fBUnregisterMonitor\fP
+.TP
+.B <monitor\-id/all>
+Monitor ID number to remove, or \(dqall\(dq to remove all active monitors
+.TP
+.B Example Remove monitor with ID 0
+.nf
+\fB> remove\-pattern 0\fP
+.fi
+.sp
+.TP
+.B Example Remove monitor with ID 1
+.nf
+\fB> remove\-pattern 1\fP
+.fi
+.sp
+.TP
+.B Example Remove monitor with ID 3
+.nf
+\fB> remove\-pattern 3\fP
+.fi
+.sp
+.TP
+.B Example Remove all active advertisement monitors
+.nf
+\fB> remove\-pattern all\fP
+.fi
+.sp
+.UNINDENT
+.SS get\-supported\-info
+.sp
+Get advertisement manager supported features and supported monitor types
+.INDENT 0.0
+.TP
+.B Usage
+\fB> get\-supported\-info\fP
+.TP
+.B Uses
+\fBorg.bluez.AdvertisementMonitorManager(5)\fP properties
+.TP
+.B Example Display supported monitor features and types
+.nf
+\fB> get\-supported\-info\fP
+.fi
+.sp
+.UNINDENT
+.SS print\-usage
+.sp
+Print the command usage
+.INDENT 0.0
+.TP
+.B Usage
+\fB> print\-usage <add\-or\-pattern>\fP
+.TP
+.B <add\-or\-pattern>
+Command name to display detailed usage information for
+.TP
+.B Example Show detailed usage for add\-or\-pattern command
+.nf
+\fB> print\-usage add\-or\-pattern\fP
+.fi
+.sp
+.UNINDENT
+.SH RESOURCES
+.sp
+ <http://www.bluez.org> 
+.SH REPORTING BUGS
+.sp
+ <linux\-bluetooth@vger.kernel.org> 
+.SH COPYRIGHT
+Free use of this software is granted under the terms of the GNU
+Lesser General Public Licenses (LGPL).
+.\" Generated by docutils manpage writer.
+.

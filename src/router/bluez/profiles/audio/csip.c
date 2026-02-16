@@ -27,10 +27,10 @@
 
 #include "gdbus/gdbus.h"
 
-#include "lib/bluetooth.h"
-#include "lib/hci.h"
-#include "lib/sdp.h"
-#include "lib/uuid.h"
+#include "bluetooth/bluetooth.h"
+#include "bluetooth/hci.h"
+#include "bluetooth/sdp.h"
+#include "bluetooth/uuid.h"
 
 #include "src/dbus-common.h"
 #include "src/shared/util.h"
@@ -303,6 +303,7 @@ static void csip_remove(struct btd_service *service)
 static struct btd_profile csip_profile = {
 	.name		= "csip",
 	.priority	= BTD_PROFILE_PRIORITY_MEDIUM,
+	.bearer		= BTD_PROFILE_BEARER_LE,
 	.remote_uuid	= CSIS_UUID_STR,
 
 	.device_probe	= csip_probe,
@@ -442,6 +443,7 @@ static void csis_server_remove(struct btd_profile *p,
 static struct btd_profile csis_profile = {
 	.name		= "csis",
 	.priority	= BTD_PROFILE_PRIORITY_MEDIUM,
+	.bearer		= BTD_PROFILE_BEARER_LE,
 	.local_uuid	= CSIS_UUID_STR,
 
 	.adapter_probe	= csis_server_probe,

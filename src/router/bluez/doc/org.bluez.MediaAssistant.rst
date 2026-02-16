@@ -16,7 +16,8 @@ Interface
 
 :Service:	org.bluez
 :Interface:	org.bluez.MediaAssistant1
-:Object path:	/org/bluez/{hci0,hci1,...}/src_XX_XX_XX_XX_XX_XX/dev_YY_YY_YY_YY_YY_YY/bisZ
+:Object path:	/org/bluez/{hci0,hci1,...}/dev_{BDADDR}/src_{BDADDR}/sid#/bis#
+:Used by:	**bluetoothctl-assistant(1)**
 
 Methods
 -------
@@ -24,21 +25,30 @@ Methods
 void Push(dict properties)
 ````````````````````````````````````````````````````````
 
-	Send stream information to the remote device.
+Send stream information to the remote device.
 
-	:dict properties:
+:dict properties:
 
-	Indicate stream properties that will be sent to the peer.
+Indicate stream properties that will be sent to the peer.
 
-	Values:
+Values:
 
-		:array{byte} Metadata [ISO only]:
+	:array{byte} Metadata [ISO only]:
 
-			See Metadata property.
+		See Metadata property.
 
-		:dict QoS [ISO only]:
+	:dict QoS [ISO only]:
 
-			See QoS property.
+		See QoS property.
+
+	:object Device [ISO only, State=local only]:
+
+		Push to a specific device. Device must be connected and with
+		an active BASS session.
+
+Examples:
+
+:bluetoothctl: > assistant.push <assistant>
 
 Properties
 ----------
@@ -46,29 +56,30 @@ Properties
 string State [readonly]
 ```````````````````````
 
-	Indicates the state of the assistant object. Possible values are:
+Indicates the state of the assistant object. Possible values are:
 
-	:"idle": assistant object was created for the stream
-	:"pending": assistant object was pushed (stream information was sent to the peer)
-	:"requesting": remote device requires Broadcast_Code
-	:"active": remote device started receiving stream
+:"idle": assistant object was created for the stream
+:"pending": assistant object was pushed (stream information was sent to the peer)
+:"requesting": remote device requires Broadcast_Code
+:"active": remote device started receiving stream
+:"local": assistant object was created for a local stream
 
 array{byte} Metadata [readwrite, ISO Only, experimental]
 ````````````````````````````````````````````````````````
 
-	Indicates stream Metadata.
+Indicates stream Metadata.
 
 dict QoS [readwrite, ISO only, experimental]
-`````````````````````````````````````````````````````
+````````````````````````````````````````````
 
-	Indicates stream QoS capabilities.
+Indicates stream QoS capabilities.
 
-	Values:
+Values:
 
-	:byte Encryption:
+:byte Encryption:
 
-		Indicates whether the stream is encrypted.
+	Indicates whether the stream is encrypted.
 
-	:array{byte} BCode
+:array{byte} BCode
 
-		Indicates Broadcast_Code to decrypt stream.
+	Indicates Broadcast_Code to decrypt stream.

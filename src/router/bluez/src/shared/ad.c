@@ -16,8 +16,8 @@
 
 #include <ctype.h>
 
-#include "lib/bluetooth.h"
-#include "lib/hci.h"
+#include "bluetooth/bluetooth.h"
+#include "bluetooth/hci.h"
 
 #include "src/shared/ad.h"
 
@@ -276,7 +276,6 @@ static bool ad_replace_uuid128(struct bt_ad *ad, struct iovec *iov)
 static bool ad_replace_name(struct bt_ad *ad, struct iovec *iov)
 {
 	char utf8_name[HCI_MAX_NAME_LENGTH + 2];
-	int i;
 
 	memset(utf8_name, 0, sizeof(utf8_name));
 	strncpy(utf8_name, (const char *)iov->iov_base, iov->iov_len);
@@ -284,11 +283,7 @@ static bool ad_replace_name(struct bt_ad *ad, struct iovec *iov)
 	if (strisutf8(utf8_name, iov->iov_len))
 		goto done;
 
-	/* Assume ASCII, and replace all non-ASCII with spaces */
-	for (i = 0; utf8_name[i] != '\0'; i++) {
-		if (!isascii(utf8_name[i]))
-			utf8_name[i] = ' ';
-	}
+	strtoutf8(utf8_name, iov->iov_len);
 
 	/* Remove leading and trailing whitespace characters */
 	strstrip(utf8_name);
@@ -1234,6 +1229,9 @@ static bool data_match(const void *data, const void *user_data)
 	const struct bt_ad_data *d1 = data;
 	const struct bt_ad_data *d2 = user_data;
 
+	if (!d2)
+		return true;
+
 	if (d1->type != d2->type)
 		return false;
 
@@ -1246,13 +1244,11 @@ static bool data_match(const void *data, const void *user_data)
 	return !memcmp(d1->data, d2->data, d1->len);
 }
 
-bool bt_ad_has_data(struct bt_ad *ad, const struct bt_ad_data *data)
+struct bt_ad_data *bt_ad_has_data(struct bt_ad *ad,
+					const struct bt_ad_data *data)
 {
 	if (!ad)
 		return false;
-
-	if (!data)
-		return !queue_isempty(ad->data);
 
 	return queue_find(ad->data, data_match, data);
 }
@@ -1334,7 +1330,7 @@ static bool match_manufacturer(const void *data, const void *user_data)
 	const struct bt_ad_manufacturer_data *manufacturer_data = data;
 	const struct pattern_match_info *info = user_data;
 	const struct bt_ad_pattern *pattern;
-	uint8_t all_data[BT_AD_MAX_DATA_LEN];
+	uint8_t all_data[BT_EA_MAX_DATA_LEN];
 
 	if (!manufacturer_data || !info)
 		return false;

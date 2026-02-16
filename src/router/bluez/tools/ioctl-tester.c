@@ -22,10 +22,10 @@
 
 #include <glib.h>
 
-#include "lib/bluetooth.h"
-#include "lib/mgmt.h"
-#include "lib/hci.h"
-#include "lib/hci_lib.h"
+#include "bluetooth/bluetooth.h"
+#include "bluetooth/mgmt.h"
+#include "bluetooth/hci.h"
+#include "bluetooth/hci_lib.h"
 
 #include "monitor/bt.h"
 #include "emulator/bthost.h"
@@ -550,7 +550,7 @@ static const struct hci_conn_list_req conn_list_req_1 = {
 	.dev_id = 0x00,
 	.conn_num = 0x01,
 	.conn_info = {{
-		.handle = 0x002a,
+		.handle = 0x0001,
 		.bdaddr = {{ 0x00, 0x00, 0x01, 0x01, 0xaa, 0x00 }},
 		.type = 0x01,
 		.out = 0x00,
@@ -568,7 +568,7 @@ static const struct hci_conn_info_req conn_info_req = {
 	.bdaddr = {{ 0x00, 0x00, 0x01, 0x01, 0xaa, 0x00 }},
 	.type = ACL_LINK,
 	.conn_info = {{
-		.handle = 0x002a,
+		.handle = 0x0001,
 		.bdaddr = {{ 0x00, 0x00, 0x01, 0x01, 0xaa, 0x00 }},
 		.type = 0x01,
 		.out = 0x00,

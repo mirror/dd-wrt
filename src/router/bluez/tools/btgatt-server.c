@@ -21,11 +21,11 @@
 #include <unistd.h>
 #include <errno.h>
 
-#include "lib/bluetooth.h"
-#include "lib/hci.h"
-#include "lib/hci_lib.h"
-#include "lib/l2cap.h"
-#include "lib/uuid.h"
+#include "bluetooth/bluetooth.h"
+#include "bluetooth/hci.h"
+#include "bluetooth/hci_lib.h"
+#include "bluetooth/l2cap.h"
+#include "bluetooth/uuid.h"
 
 #include "src/shared/mainloop.h"
 #include "src/shared/util.h"
@@ -547,7 +547,7 @@ static struct server *server_create(int fd, uint16_t mtu, bool hr_visible)
 
 	server->att = bt_att_new(fd, false);
 	if (!server->att) {
-		fprintf(stderr, "Failed to initialze ATT transport layer\n");
+		fprintf(stderr, "Failed to initialize ATT transport layer\n");
 		goto fail;
 	}
 

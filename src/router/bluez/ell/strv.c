@@ -261,7 +261,7 @@ LIB_EXPORT bool l_strv_contains(char **str_array, const char *item)
 /**
  * l_strv_append:
  * @str_array: a %NULL terminated array of strings or %NULL
- * @str: A string to be appened at the end of @str_array
+ * @str: A string to be appended at the end of @str_array
  *
  * Returns: New %NULL terminated array of strings with @str added
  */

@@ -19,10 +19,10 @@
 
 #include <glib.h>
 
-#include "lib/bluetooth.h"
-#include "lib/sdp.h"
-#include "lib/uuid.h"
-#include "lib/mgmt.h"
+#include "bluetooth/bluetooth.h"
+#include "bluetooth/sdp.h"
+#include "bluetooth/uuid.h"
+#include "bluetooth/mgmt.h"
 
 #include "src/log.h"
 #include "src/plugin.h"
@@ -311,25 +311,24 @@ static void sink_cb(struct btd_service *service, btd_service_state_t old_state,
 			timeout_remove(data->sink_timer);
 			data->sink_timer = 0;
 		}
+		data->sink_retries = 0;
+
+		/* Try connecting HSP/HFP if it is not connected */
+		hs = btd_device_get_service(dev, HFP_HS_UUID);
+		if (hs == NULL)
+			hs = btd_device_get_service(data->dev, HSP_HS_UUID);
+		if (hs && btd_service_get_state(hs) !=
+						BTD_SERVICE_STATE_CONNECTED)
+			policy_set_hs_timer(data);
 
 		/* Check if service initiate the connection then proceed
-		 * immediatelly otherwise set timer
+		 * immediately otherwise set timer
 		 */
 		if (btd_service_is_initiator(service))
 			policy_connect(data, controller);
 		else if (btd_service_get_state(controller) !=
 						BTD_SERVICE_STATE_CONNECTED)
 			policy_set_ct_timer(data, CONTROL_CONNECT_TIMEOUT);
-
-		/* Also try connecting HSP/HFP if it is not connected */
-		hs = btd_device_get_service(dev, HFP_HS_UUID);
-		if (hs) {
-			if (btd_service_is_initiator(service))
-				policy_connect(data, hs);
-			else if (btd_service_get_state(hs) !=
-						BTD_SERVICE_STATE_CONNECTED)
-				policy_set_hs_timer(data);
-		}
 
 		break;
 	case BTD_SERVICE_STATE_DISCONNECTING:
@@ -377,6 +376,11 @@ static void hs_cb(struct btd_service *service, btd_service_state_t old_state,
 	case BTD_SERVICE_STATE_CONNECTING:
 		break;
 	case BTD_SERVICE_STATE_CONNECTED:
+		if (data->hs_timer > 0) {
+			timeout_remove(data->hs_timer);
+			data->hs_timer = 0;
+		}
+		data->hs_retries = 0;
 		/* Check if service initiate the connection then proceed
 		 * immediately otherwise set timer
 		 */
@@ -491,9 +495,10 @@ static void source_cb(struct btd_service *service,
 			timeout_remove(data->source_timer);
 			data->source_timer = 0;
 		}
+		data->source_retries = 0;
 
 		/* Check if service initiate the connection then proceed
-		 * immediatelly otherwise set timer
+		 * immediately otherwise set timer
 		 */
 		if (btd_service_is_initiator(service))
 			policy_connect(data, target);
@@ -539,8 +544,6 @@ static void controller_cb(struct btd_service *service,
 				timeout_remove(data->ct_timer);
 				data->ct_timer = 0;
 			}
-		} else if (old_state == BTD_SERVICE_STATE_CONNECTED) {
-			data->ct_retries = 0;
 		}
 		break;
 	case BTD_SERVICE_STATE_CONNECTING:
@@ -550,6 +553,7 @@ static void controller_cb(struct btd_service *service,
 			timeout_remove(data->ct_timer);
 			data->ct_timer = 0;
 		}
+		data->ct_retries = 0;
 		break;
 	case BTD_SERVICE_STATE_DISCONNECTING:
 		break;
@@ -589,8 +593,6 @@ static void target_cb(struct btd_service *service,
 				timeout_remove(data->tg_timer);
 				data->tg_timer = 0;
 			}
-		} else if (old_state == BTD_SERVICE_STATE_CONNECTED) {
-			data->tg_retries = 0;
 		}
 		break;
 	case BTD_SERVICE_STATE_CONNECTING:
@@ -600,6 +602,7 @@ static void target_cb(struct btd_service *service,
 			timeout_remove(data->tg_timer);
 			data->tg_timer = 0;
 		}
+		data->tg_retries = 0;
 		break;
 	case BTD_SERVICE_STATE_DISCONNECTING:
 		break;

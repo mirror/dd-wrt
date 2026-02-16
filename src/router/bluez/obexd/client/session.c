@@ -373,7 +373,7 @@ static void transport_func(GIOChannel *io, GError *err, gpointer user_data)
 	else
 		type = G_OBEX_TRANSPORT_STREAM;
 
-	obex = g_obex_new(io, type, tx_mtu, rx_mtu);
+	obex = g_obex_new(io, type, rx_mtu, tx_mtu);
 	if (obex == NULL)
 		goto done;
 
@@ -845,7 +845,7 @@ static int session_process_transfer(struct pending_request *p, GError **err)
 	if (!obc_transfer_start(p->transfer, p->session->obex, err))
 		return -1;
 
-	DBG("Tranfer(%p) started", p->transfer);
+	DBG("Transfer(%p) started", p->transfer);
 	p->session->p = p;
 	return 0;
 }

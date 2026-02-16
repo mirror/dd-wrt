@@ -22,11 +22,11 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 
-#include "lib/bluetooth.h"
-#include "lib/hci.h"
-#include "lib/hci_lib.h"
-#include "lib/l2cap.h"
-#include "lib/sdp.h"
+#include "bluetooth/bluetooth.h"
+#include "bluetooth/hci.h"
+#include "bluetooth/hci_lib.h"
+#include "bluetooth/l2cap.h"
+#include "bluetooth/sdp.h"
 
 #define AVDTP_PKT_TYPE_SINGLE		0x00
 #define AVDTP_PKT_TYPE_START		0x01
@@ -258,7 +258,7 @@ static void process_avdtp(int srv_sk, int sk, unsigned char reject,
 			if (reject == AVDTP_GET_CAPABILITIES) {
 				hdr->message_type = AVDTP_MSG_TYPE_REJECT;
 				buf[2] = 0x29; /* Unsupported configuration */
-				printf("Rejecting get capabilties command\n");
+				printf("Rejecting get capabilities command\n");
 				len = write(sk, buf, 3);
 			} else if (fragment) {
 				struct avdtp_start_header *start = (void *) buf;

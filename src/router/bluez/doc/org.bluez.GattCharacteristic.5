@@ -50,7 +50,10 @@ org.bluez
 org.bluez.GattCharacteristic1
 .TP
 .B Object path
-[variable prefix]/{hci0,hci1,...}/dev_XX_XX_XX_XX_XX_XX/serviceXX/charYYYY
+[variable prefix]/{hci0,hci1,...}/dev_{BDADDR}/service#/char#
+.TP
+.B Used by
+\fBbluetoothctl\-gatt(1)\fP
 .UNINDENT
 .SS Server
 .INDENT 0.0
@@ -66,18 +69,17 @@ freely definable
 .UNINDENT
 .SS Methods
 .SS array{byte} ReadValue(dict options)
-.INDENT 0.0
-.INDENT 3.5
-Issues a request to read the value of the characteristic and returns the
-value if the operation was successful.
+.sp
+Issues a request to read the value of the characteristic and returns the value
+if the operation was successful.
 .sp
 Possible options:
 .INDENT 0.0
 .TP
-.B uint16_t offset
+.B uint16 offset
 Read start offset in bytes.
 .TP
-.B uint16_t mtu (server only)
+.B uint16 mtu (server only)
 Exchange MTU in bytes.
 .TP
 .B object device (server only)
@@ -111,11 +113,15 @@ Possible values: string 0x80 \- 0x9f
 .TP
 .B org.bluez.Error.NotSupported
 .UNINDENT
-.UNINDENT
+.sp
+Examples:
+.INDENT 0.0
+.TP
+.B bluetoothctl
+> gatt.read [offset]
 .UNINDENT
 .SS void WriteValue(array{byte} value, dict options)
-.INDENT 0.0
-.INDENT 3.5
+.sp
 Issues a request to write the value of the characteristic.
 .sp
 Possible options:
@@ -177,28 +183,30 @@ Possible values: string 0x80 \- 0x9f
 .TP
 .B org.bluez.Error.ImproperlyConfigured
 .UNINDENT
-.UNINDENT
+.sp
+Examples:
+.INDENT 0.0
+.TP
+.B bluetoothctl
+> gatt.write <data=xx xx ...> [offset] [type]
 .UNINDENT
 .SS fd, uint16 AcquireWrite(dict options) [optional]
-.INDENT 0.0
-.INDENT 3.5
-Acquire file descriptor and MTU for writing. Only sockets are supported.
-Usage of WriteValue will be locked causing it to return NotPermitted
-error.
 .sp
-For server the MTU returned shall be equal or smaller than the
-negotiated MTU.
+Acquire file descriptor and MTU for writing. Only sockets are supported. Usage
+of WriteValue will be locked causing it to return NotPermitted error.
 .sp
-For client it only works with characteristic that has \fBWriteAcquired\fP
-property which relies on write\-without\-response \fBFlag\fP\&.
+For server the MTU returned shall be equal or smaller than the negotiated MTU.
 .sp
-To release the lock the client shall close the file descriptor, a HUP
-is generated in case the device is disconnected.
+For client it only works with characteristic that has \fBWriteAcquired\fP property
+which relies on write\-without\-response \fBFlag\fP\&.
 .sp
-Note: the MTU can only be negotiated once and is symmetric therefore
-this method may be delayed in order to have the exchange MTU completed,
-because of that the file descriptor is closed during reconnections as
-the MTU has to be renegotiated.
+To release the lock the client shall close the file descriptor, a HUP is
+generated in case the device is disconnected.
+.sp
+Note: the MTU can only be negotiated once and is symmetric therefore this method
+may be delayed in order to have the exchange MTU completed, because of that the
+file descriptor is closed during reconnections as the MTU has to be
+renegotiated.
 .sp
 Possible options:
 .INDENT 0.0
@@ -228,40 +236,42 @@ Possible Errors:
 .TP
 .B org.bluez.Error.NotSupported
 .UNINDENT
-.UNINDENT
+.sp
+Examples:
+.INDENT 0.0
+.TP
+.B bluetoothctl
+> gatt.acquire\-write
 .UNINDENT
 .SS fd, uint16 AcquireNotify(dict options) [optional]
-.INDENT 0.0
-.INDENT 3.5
+.sp
 Acquire file descriptor and MTU for notify. Only sockets are support.
 .sp
 Usage of StartNotify will be locked causing it to return
 \fBorg.bluez.Error.NotPermitted\fP\&.
 .sp
-For server the MTU returned shall be equal or smaller than the
-negotiated MTU.
+For server the MTU returned shall be equal or smaller than the negotiated MTU.
 .sp
-Only works with characteristic that has \fBNotifyAcquired\fP property
-which relies on presence of \fB\(dqnotify\(dq or \(dqindicate\(dq\fP \fBFlag\fP and no
-other client have called \fBStartNotify()\fP\&.
+Only works with characteristic that has \fBNotifyAcquired\fP property which relies
+on presence of \fB\(dqnotify\(dq or \(dqindicate\(dq\fP \fBFlag\fP and no other client have
+called \fBStartNotify()\fP\&.
 .sp
-Notification are enabled during this procedure so \fBStartNotify()\fP
-shall not be called, any notification will be dispatched via file
-descriptor therefore the Value property is not affected during the time
-where notify has been acquired.
+Notification are enabled during this procedure so \fBStartNotify()\fP shall not be
+called, any notification will be dispatched via file descriptor therefore the
+Value property is not affected during the time where notify has been acquired.
 .sp
 To release the lock the client shall close the file descriptor, a HUP is
 generated in case the device is disconnected.
 .sp
-As a client if indication procedure is used the confirmation is
-generated automatically once received, for a server if the file
-descriptor is writable (POLLOUT) then upon receiving a confirmation from
-the client one byte (0x01) is written to the file descriptor.
+As a client if indication procedure is used the confirmation is generated
+automatically once received, for a server if the file descriptor is writable
+(POLLOUT) then upon receiving a confirmation from the client one byte (0x01) is
+written to the file descriptor.
 .sp
-Note: the MTU can only be negotiated once and is symmetric therefore
-this method may be delayed in order to have the exchange MTU completed,
-because of that the file descriptor is closed during reconnections as
-the MTU has to be renegotiated.
+Note: the MTU can only be negotiated once and is symmetric therefore this method
+may be delayed in order to have the exchange MTU completed, because of that the
+file descriptor is closed during reconnections as the MTU has to be
+renegotiated.
 .sp
 Possible options:
 .INDENT 0.0
@@ -293,13 +303,17 @@ Possible Errors:
 .TP
 .B org.bluez.Error.NotPermitted
 .UNINDENT
-.UNINDENT
+.sp
+Examples:
+.INDENT 0.0
+.TP
+.B bluetoothctl
+> gatt.acquire\-notify
 .UNINDENT
 .SS void StartNotify()
-.INDENT 0.0
-.INDENT 3.5
-Starts a notification session from this characteristic if it supports
-value notifications or indications.
+.sp
+Starts a notification session from this characteristic if it supports value
+notifications or indications.
 .sp
 Possible Errors:
 .INDENT 0.0
@@ -314,96 +328,75 @@ Possible Errors:
 .TP
 .B org.bluez.Error.NotSupported
 .UNINDENT
-.UNINDENT
+.sp
+Examples:
+.INDENT 0.0
+.TP
+.B bluetoothctl
+> gatt.notify <on/off>
 .UNINDENT
 .SS void StopNotify()
-.INDENT 0.0
-.INDENT 3.5
+.sp
 Stops or cancel session previously created by \fBStartNotify()\fP\&.
 .sp
-Note that notifications from a characteristic are shared between
-sessions thus calling StopNotify will release a single session.
+Note that notifications from a characteristic are shared between sessions thus
+calling StopNotify will release a single session.
 .sp
 Possible Errors:
 .INDENT 0.0
 .TP
 .B org.bluez.Error.Failed
 .UNINDENT
-.UNINDENT
-.UNINDENT
 .SS void Confirm() [noreply, optional] (Server only)
-.INDENT 0.0
-.INDENT 3.5
+.sp
 Confirms value was received.
 .sp
 Possible Errors:
 .sp
 org.bluez.Error.Failed
-.UNINDENT
-.UNINDENT
 .SS Properties
 .SS string UUID [read\-only]
-.INDENT 0.0
-.INDENT 3.5
-128\-bit characteristic UUID.
-.UNINDENT
-.UNINDENT
-.SS object Service [read\-only]
-.INDENT 0.0
-.INDENT 3.5
-Object path of the GATT service the characteristic belongs to.
-.UNINDENT
-.UNINDENT
-.SS array{byte} Value [read\-only, optional]
-.INDENT 0.0
-.INDENT 3.5
-The cached value of the characteristic. This property gets updated only
-after a successful read request and when a notification or indication
-is received, upon which a PropertiesChanged signal will be emitted.
-.UNINDENT
-.UNINDENT
-.SS boolean WriteAcquired [read\-only, optional]
-.INDENT 0.0
-.INDENT 3.5
-True, if this characteristic has been acquired by any client using
-AcquireWrite.
 .sp
-For client properties is ommited in case \(aqwrite\-without\-response\(aq flag
-is not set.
+128\-bit characteristic UUID.
+.SS object Service [read\-only]
+.sp
+Object path of the GATT service the characteristic belongs to.
+.SS array{byte} Value [read\-only, optional]
+.sp
+The cached value of the characteristic. This property gets updated only after a
+successful read request and when a notification or indication is received, upon
+which a PropertiesChanged signal will be emitted.
+.SS boolean WriteAcquired [read\-only, optional]
+.sp
+True, if this characteristic has been acquired by any client using AcquireWrite.
+.sp
+For client properties is omitted in case \(aqwrite\-without\-response\(aq flag is not
+set.
 .sp
 For server the presence of this property indicates that AcquireWrite is
 supported.
-.UNINDENT
-.UNINDENT
 .SS boolean NotifyAcquired [read\-only, optional]
-.INDENT 0.0
-.INDENT 3.5
+.sp
 True, if this characteristic has been acquired by any client using
 AcquireNotify.
 .sp
-For client this properties is ommited in case \(aqnotify\(aq flag is not set.
+For client this properties is omitted in case \(aqnotify\(aq flag is not set.
 .sp
-For server the presence of this property indicates that AcquireNotify
-is supported.
-.UNINDENT
-.UNINDENT
+For server the presence of this property indicates that AcquireNotify is
+supported.
 .SS boolean Notifying [read\-only, optional]
-.INDENT 0.0
-.INDENT 3.5
-True, if notifications or indications on this characteristic are
-currently enabled.
-.UNINDENT
-.UNINDENT
+.sp
+True, if notifications or indications on this characteristic are currently
+enabled.
 .SS array{string} Flags [read\-only]
-.INDENT 0.0
-.INDENT 3.5
+.sp
 Defines how the characteristic value can be used. See Core spec
 \(dqTable 3.5: Characteristic Properties bit field\(dq, and
 \(dqTable 3.8: Characteristic Extended Properties bit field\(dq.
 .sp
-The \(dqx\-notify\(dq and \(dqx\-indicate\(dq flags restrict access to notifications
-and indications by imposing write restrictions on a characteristic\(aqs
-client characteristic configuration descriptor.
+The \(dqx\-notify\(dq and \(dqx\-indicate\(dq flags restrict access to notifications and
+indications by imposing write restrictions on a characteristic\(aqs client
+characteristic configuration descriptor.
 .sp
 Possible values:
 .INDENT 0.0
@@ -454,30 +447,17 @@ Possible values:
 .TP
 .B \(dqauthorize\(dq
 .UNINDENT
-.UNINDENT
-.UNINDENT
 .SS uint16 Handle [read\-only] (Client Only)
-.INDENT 0.0
-.INDENT 3.5
+.sp
 Characteristic handle.
-.UNINDENT
-.UNINDENT
 .SS uint16 Handle [read\-write, optional] (Server Only)
-.INDENT 0.0
-.INDENT 3.5
-Characteristic handle. When available in the server it would attempt to
-use to allocate into the database which may fail, to auto allocate the
-value 0x0000 shall be used which will cause the allocated handle to be
-set once registered.
-.UNINDENT
-.UNINDENT
+.sp
+Characteristic handle. When available in the server it would attempt to use to
+allocate into the database which may fail, to auto allocate the value 0x0000
+shall be used which will cause the allocated handle to be set once registered.
 .SS uint16 MTU [read\-only]
-.INDENT 0.0
-.INDENT 3.5
-Characteristic MTU, this is valid both for \fBReadValue()\fP and
-\fBWriteValue()\fP but either method can use long procedures when
-supported.
-.UNINDENT
-.UNINDENT
+.sp
+Characteristic MTU, this is valid both for \fBReadValue()\fP and \fBWriteValue()\fP
+but either method can use long procedures when supported.
 .\" Generated by docutils manpage writer.
 .

@@ -20,13 +20,14 @@
 
 #include <glib.h>
 
-#include "lib/bluetooth.h"
-#include "lib/sdp.h"
+#include "bluetooth/bluetooth.h"
+#include "bluetooth/sdp.h"
 
 #include "gobex/gobex-apparam.h"
 #include "gdbus/gdbus.h"
 
 #include "obexd/src/log.h"
+#include "obexd/src/logind.h"
 #include "obexd/src/obexd.h"
 
 #include "transfer.h"
@@ -1454,9 +1455,10 @@ static struct obc_driver pbap = {
 	.remove = pbap_remove
 };
 
-int pbap_init(void)
+static int pbap_init_cb(gboolean at_register)
 {
 	int err;
+	(void)at_register;
 
 	DBG("");
 
@@ -1481,12 +1483,53 @@ int pbap_init(void)
 	return 0;
 }
 
-void pbap_exit(void)
+static void pbap_exit_cb(gboolean at_unregister)
 {
+	DBusMessage *msg;
+	DBusMessageIter iter;
+	char *uuid = PBAP_CLIENT_UUID;
+
 	DBG("");
 
-	dbus_connection_unref(conn);
-	conn = NULL;
+	if (!at_unregister) {
+		client_path = g_strconcat("/org/bluez/obex/", uuid, NULL);
+		g_strdelimit(client_path, "-", '_');
+
+		msg = dbus_message_new_method_call("org.bluez", "/org/bluez",
+							"org.bluez.ProfileManager1",
+							"UnregisterProfile");
+
+		dbus_message_iter_init_append(msg, &iter);
+
+		dbus_message_iter_append_basic(&iter, DBUS_TYPE_OBJECT_PATH,
+								&client_path);
+
+		g_dbus_send_message(system_conn, msg);
+	}
+
+	g_dbus_remove_watch(system_conn, listener_id);
+
+	unregister_profile();
+
+	if (system_conn) {
+		dbus_connection_close(system_conn);
+		dbus_connection_unref(system_conn);
+		system_conn = NULL;
+	}
+
+	if (conn) {
+		dbus_connection_unref(conn);
+		conn = NULL;
+	}
 
 	obc_driver_unregister(&pbap);
+}
+
+int pbap_init(void)
+{
+	return logind_register(pbap_init_cb, pbap_exit_cb);
+}
+void pbap_exit(void)
+{
+	return logind_unregister(pbap_init_cb, pbap_exit_cb);
 }

@@ -19,8 +19,7 @@
 #include <fcntl.h>
 #include <sys/utsname.h>
 
-#include "lib/bluetooth.h"
-#include "lib/sdp.h"
+#include "bluetooth/bluetooth.h"
 
 #include "gdbus/gdbus.h"
 
@@ -83,7 +82,7 @@ static void update_name(struct btd_adapter *adapter, gpointer user_data)
 	if (btd_adapter_is_default(adapter)) {
 		DBG("name: %s", hostname);
 
-		adapter_set_name(adapter, hostname);
+		btd_adapter_set_name(adapter, hostname);
 	} else {
 		uint16_t index = btd_adapter_get_index(adapter);
 		char *str;
@@ -93,7 +92,7 @@ static void update_name(struct btd_adapter *adapter, gpointer user_data)
 
 		DBG("name: %s", str);
 
-		adapter_set_name(adapter, str);
+		btd_adapter_set_name(adapter, str);
 
 		g_free(str);
 	}
@@ -141,7 +140,7 @@ static void property_changed(GDBusProxy *proxy, const char *name,
 			g_free(pretty_hostname);
 			pretty_hostname = g_strdup(str);
 
-			adapter_foreach(update_name, NULL);
+			btd_adapter_foreach(update_name, NULL);
 		}
 	} else if (g_str_equal(name, "StaticHostname") == TRUE) {
 		if (iter == NULL) {
@@ -159,7 +158,7 @@ static void property_changed(GDBusProxy *proxy, const char *name,
 			g_free(static_hostname);
 			static_hostname = g_strdup(str);
 
-			adapter_foreach(update_name, NULL);
+			btd_adapter_foreach(update_name, NULL);
 		}
 	} else if (g_str_equal(name, "Chassis") == TRUE) {
 		if (iter == NULL) {
@@ -182,7 +181,7 @@ static void property_changed(GDBusProxy *proxy, const char *name,
 				major_class = chassis_table[i].major_class;
 				minor_class = chassis_table[i].minor_class;
 
-				adapter_foreach(update_class, NULL);
+				btd_adapter_foreach(update_class, NULL);
 				break;
 			}
 		}
@@ -211,7 +210,7 @@ static gboolean hostname_cb(GIOChannel *io, GIOCondition cond,
 {
 	DBG("transient hostname changed");
 	read_transient_hostname();
-	adapter_foreach(update_class, NULL);
+	btd_adapter_foreach(update_class, NULL);
 	return TRUE;
 }
 

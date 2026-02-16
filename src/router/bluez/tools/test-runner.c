@@ -31,9 +31,9 @@
 #include <sys/param.h>
 #include <sys/reboot.h>
 
-#include "lib/bluetooth.h"
-#include "lib/hci.h"
-#include "lib/hci_lib.h"
+#include "bluetooth/bluetooth.h"
+#include "bluetooth/hci.h"
+#include "bluetooth/hci_lib.h"
 #include "tools/hciattach.h"
 
 #ifndef WAIT_ANY
@@ -50,13 +50,14 @@ static bool run_auto = false;
 static bool start_dbus = false;
 static bool start_dbus_session;
 static bool start_daemon = false;
-static bool start_emulator = false;
 static bool start_monitor = false;
 static bool qemu_host_cpu = false;
 static int num_devs = 0;
+static int num_emulator = 0;
 static const char *qemu_binary = NULL;
 static const char *kernel_image = NULL;
 static char *audio_server;
+static char *usb_dev;
 
 static const char *qemu_table[] = {
 	"qemu-system-x86_64",
@@ -261,7 +262,15 @@ static void start_qemu(void)
 
 	for (i = 1; i < test_argc; i++) {
 		int len = sizeof(testargs) - pos;
-		pos += snprintf(testargs + pos, len, " %s", test_argv[i]);
+		int n = snprintf(testargs + pos, len, " %s", test_argv[i]);
+
+		if (n < 0 || n >= len) {
+			fprintf(stderr, "Buffer overflow detected in "
+					"testargs\n");
+			exit(EXIT_FAILURE);
+		}
+
+		pos += n;
 	}
 
 	snprintf(cmdline, sizeof(cmdline),
@@ -275,12 +284,13 @@ static void start_qemu(void)
 				"TESTAUTO=%u TESTAUDIO='%s' TESTARGS=\'%s\'",
 				initcmd, cwd, start_dbus, start_daemon,
 				start_dbus_session,
-				start_monitor, start_emulator, num_devs,
+				start_monitor, num_emulator, num_devs,
 				run_auto, audio_server ? audio_server : "",
 				testargs);
 
 	argv = alloca(sizeof(qemu_argv) +
-				(sizeof(char *) * (6 + (num_devs * 4))));
+			(sizeof(char *) * (6 + (num_devs * 4))) +
+			(sizeof(char *) * (usb_dev ? 4 : 0)));
 	memcpy(argv, qemu_argv, sizeof(qemu_argv));
 
 	pos = (sizeof(qemu_argv) / sizeof(char *)) - 1;
@@ -316,6 +326,13 @@ static void start_qemu(void)
 		argv[pos++] = chrdev;
 		argv[pos++] = "-device";
 		argv[pos++] = serdev;
+	}
+
+	if (usb_dev) {
+		argv[pos++] = "-device";
+		argv[pos++] = "qemu-xhci";
+		argv[pos++] = "-device";
+		argv[pos++] = usb_dev;
 	}
 
 	argv[pos] = NULL;
@@ -699,10 +716,11 @@ static const char *btvirt_table[] = {
 	NULL
 };
 
-static pid_t start_btvirt(const char *home)
+static pid_t start_btvirt(const char *home, int num)
 {
 	const char *btvirt = NULL;
 	char *argv[3];
+	char strnum[16];
 	pid_t pid;
 	int i;
 
@@ -725,10 +743,12 @@ static pid_t start_btvirt(const char *home)
 		return -1;
 	}
 
+	snprintf(strnum, sizeof(strnum), "-l%d", num);
+
 	printf("Using %s\n", btvirt);
 
 	argv[0] = (char *) btvirt;
-	argv[1] = "-l";
+	argv[1] = strnum;
 	argv[2] = NULL;
 
 	printf("Starting Emulator\n");
@@ -905,8 +925,8 @@ static void run_command(char *cmdname, char *home)
 	else
 		monitor_pid = -1;
 
-	if (start_emulator)
-		emulator_pid = start_btvirt(home);
+	if (num_emulator)
+		emulator_pid = start_btvirt(home, num_emulator);
 	else
 		emulator_pid = -1;
 
@@ -1133,10 +1153,14 @@ static void run_tests(void)
 		start_monitor = true;
 	}
 
-	ptr = strstr(cmdline, "TESTEMULATOR=1");
+	ptr = strstr(cmdline, "TESTEMULATOR=");
 	if (ptr) {
-		printf("Emulator requested\n");
-		start_emulator = true;
+		const char *strnum = ptr + 13;
+		char *endptr = NULL;
+
+		num_emulator = strtol(strnum, &endptr, 0);
+		if (num_emulator > 0)
+			printf("Emulator %u requested\n", num_emulator);
 	}
 
 	ptr = strstr(cmdline, "TESTAUDIO='");
@@ -1172,9 +1196,10 @@ static void usage(void)
 		"\t-s, --dbus-session     Start D-Bus session daemon\n"
 		"\t-d, --daemon           Start bluetoothd\n"
 		"\t-m, --monitor          Start btmon\n"
-		"\t-l, --emulator         Start btvirt\n"
+		"\t-l, --emulator[=num]   Start btvirt\n"
 		"\t-A, --audio[=path]     Start audio server\n"
 		"\t-u, --unix [path]      Provide serial device\n"
+		"\t-U, --usb [qemu_args]  Provide USB device\n"
 		"\t-q, --qemu <path>      QEMU binary\n"
 		"\t-H, --qemu-host-cpu    Use host CPU (requires KVM support)\n"
 		"\t-k, --kernel <image>   Kernel image (bzImage)\n"
@@ -1194,6 +1219,7 @@ static const struct option main_options[] = {
 	{ "qemu-host-cpu", no_argument, NULL, 'H' },
 	{ "kernel",  required_argument, NULL, 'k' },
 	{ "audio",   optional_argument, NULL, 'A' },
+	{ "usb",     required_argument, NULL, 'U' },
 	{ "version", no_argument,       NULL, 'v' },
 	{ "help",    no_argument,       NULL, 'h' },
 	{ }
@@ -1213,8 +1239,8 @@ int main(int argc, char *argv[])
 	for (;;) {
 		int opt;
 
-		opt = getopt_long(argc, argv, "aubdslmq:Hk:A::vh", main_options,
-								NULL);
+		opt = getopt_long(argc, argv, "aubdsl::mq:Hk:A::U:vh",
+						main_options, NULL);
 		if (opt < 0)
 			break;
 
@@ -1236,7 +1262,7 @@ int main(int argc, char *argv[])
 			start_daemon = true;
 			break;
 		case 'l':
-			start_emulator = true;
+			num_emulator = optarg ? atoi(optarg) : 1;
 			break;
 		case 'm':
 			start_monitor = true;
@@ -1252,6 +1278,9 @@ int main(int argc, char *argv[])
 			break;
 		case 'A':
 			audio_server = optarg ? optarg : "/usr/bin/pipewire";
+			break;
+		case 'U':
+			usb_dev = optarg;
 			break;
 		case 'v':
 			printf("%s\n", VERSION);

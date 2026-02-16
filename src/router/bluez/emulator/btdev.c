@@ -25,8 +25,10 @@
 #include <fcntl.h>
 #include <unistd.h>
 
-#include "lib/bluetooth.h"
-#include "lib/hci.h"
+#include <glib.h>
+
+#include "bluetooth/bluetooth.h"
+#include "bluetooth/hci.h"
 
 #include "src/shared/util.h"
 #include "src/shared/timeout.h"
@@ -45,15 +47,21 @@
 #define CIG_SIZE		3
 
 #define MAX_PA_DATA_LEN	252
+#define MAX_EXT_ADV_LEN 252
 
 #define has_bredr(btdev)	(!((btdev)->features[4] & 0x20))
 #define has_le(btdev)		(!!((btdev)->features[4] & 0x40))
 
-#define ACL_HANDLE 42
-#define ISO_HANDLE 257
-#define SCO_HANDLE 257
+#define ACL_HANDLE BIT(0)
+#define SCO_HANDLE BIT(8)
+#define CIS_HANDLE SCO_HANDLE
+#define BIS_HANDLE BIT(9)
 #define SYNC_HANDLE 1
 #define INV_HANDLE 0xffff
+
+#define SCO_AIRMODE_MASK       0x0003
+#define SCO_AIRMODE_CVSD       0x0000
+#define SCO_AIRMODE_TRANSP     0x0003
 
 struct hook {
 	btdev_hook_func handler;
@@ -69,8 +77,10 @@ struct hook {
 struct btdev_conn {
 	uint16_t handle;
 	uint8_t  type;
+	uint8_t  past_mode;
 	struct btdev *dev;
 	struct btdev_conn *link;
+	struct queue *links;
 	void *data;
 };
 
@@ -99,19 +109,23 @@ struct le_ext_adv {
 	uint8_t filter_policy;		/* filter_policy */
 	uint8_t random_addr[6];
 	bool rpa;
-	uint8_t adv_data[252];
+	uint8_t adv_data[MAX_EXT_ADV_LEN];
 	uint8_t adv_data_len;
-	uint8_t scan_data[252];
+	uint8_t scan_data[MAX_EXT_ADV_LEN];
 	uint8_t scan_data_len;
 	unsigned int broadcast_id;
 	unsigned int timeout_id;
+	uint8_t sid;
 };
 
 struct le_per_adv {
 	struct btdev *dev;
+	struct btdev *remote;
 	uint8_t addr_type;
 	uint8_t addr[6];
+	uint8_t sid;
 	uint16_t sync_handle;
+	struct queue *syncs;
 };
 
 struct le_big {
@@ -125,6 +139,11 @@ struct le_cig {
 	struct bt_hci_cis_params cis[CIS_SIZE];
 	bool activated;
 } __attribute__ ((packed));
+
+struct pending_conn {
+	struct btdev *dev;
+	uint8_t link_type;
+};
 
 struct btdev {
 	enum btdev_type type;
@@ -170,7 +189,7 @@ struct btdev {
 	uint8_t  country_code;
 	uint8_t  bdaddr[6];
 	uint8_t  random_addr[6];
-	uint8_t  le_features[8];
+	uint8_t  le_features[248];
 	uint8_t  le_states[8];
 	const struct btdev_cmd *cmds;
 	uint16_t msft_opcode;
@@ -241,7 +260,7 @@ struct btdev {
 	uint8_t  le_rl_enable;
 	uint16_t le_rl_timeout;
 
-	struct btdev *pending_conn[MAX_PENDING_CONN];
+	struct pending_conn pending_conn[MAX_PENDING_CONN];
 
 	uint8_t le_local_sk256[32];
 
@@ -268,7 +287,7 @@ struct inquiry_data {
 	int iter;
 };
 
-#define DEFAULT_INQUIRY_INTERVAL 100 /* 100 miliseconds */
+#define DEFAULT_INQUIRY_INTERVAL 100 /* 100 milliseconds */
 
 #define MAX_BTDEV_ENTRIES 16
 
@@ -381,7 +400,7 @@ static inline struct btdev *find_btdev_by_bdaddr_type(const uint8_t *bdaddr,
 		if (!dev)
 			continue;
 
-		if (bdaddr_type == 0x01)
+		if (bdaddr_type == 0x01 || bdaddr_type == 0x03)
 			cmp = memcmp(dev->random_addr, bdaddr, 6);
 		else
 			cmp = memcmp(dev->bdaddr, bdaddr, 6);
@@ -390,7 +409,7 @@ static inline struct btdev *find_btdev_by_bdaddr_type(const uint8_t *bdaddr,
 			return dev;
 
 		/* Check for instance own Random addresses */
-		if (bdaddr_type == 0x01) {
+		if (bdaddr_type == 0x01 || bdaddr_type == 0x03) {
 			adv = queue_find(dev->le_ext_adv, match_adv_addr,
 								bdaddr);
 			if (adv)
@@ -561,9 +580,14 @@ static void conn_remove(void *data)
 	if (conn->link) {
 		struct btdev_conn *link = conn->link;
 
-		conn_unlink(conn, conn->link);
-		conn_remove(link);
+		if (link->link == conn) {
+			conn_unlink(conn, conn->link);
+			conn_remove(link);
+		} else
+			queue_remove(link->links, conn);
 	}
+
+	queue_destroy(conn->links, conn_remove);
 
 	queue_remove(conn->dev->conns, conn);
 
@@ -1220,7 +1244,7 @@ static struct btdev_conn *find_bis_index(const struct btdev *remote,
 		conn = entry->data;
 
 		/* Skip if not a broadcast */
-		if (conn->type != HCI_ISODATA_PKT || conn->link)
+		if (conn->type != HCI_ISODATA_PKT && conn->handle < BIS_HANDLE)
 			continue;
 
 		if (!index)
@@ -1242,11 +1266,22 @@ static struct btdev_conn *conn_link_bis(struct btdev *dev, struct btdev *remote,
 	if (!bis)
 		return NULL;
 
-	conn = conn_add_bis(dev, ISO_HANDLE, bis->data);
+	conn = conn_add_bis(dev, BIS_HANDLE, bis->data);
 	if (!conn)
 		return NULL;
 
-	bis->link = conn;
+	if (!bis->link) {
+		bis->link = conn;
+	} else {
+		if (!bis->links)
+			bis->links = queue_new();
+
+		if (!queue_push_tail(bis->links, conn)) {
+			conn_remove(conn);
+			return NULL;
+		}
+	}
+
 	conn->link = bis;
 
 	util_debug(dev->debug_callback, dev->debug_data,
@@ -1257,29 +1292,49 @@ static struct btdev_conn *conn_link_bis(struct btdev *dev, struct btdev *remote,
 	return conn;
 }
 
-static void pending_conn_add(struct btdev *btdev, struct btdev *remote)
+static void pending_conn_add(struct btdev *btdev, struct btdev *remote,
+							uint8_t link_type)
 {
 	unsigned int i;
 
 	for (i = 0; i < ARRAY_SIZE(btdev->pending_conn); ++i) {
-		if (!btdev->pending_conn[i]) {
-			btdev->pending_conn[i] = remote;
+		if (!btdev->pending_conn[i].dev) {
+			btdev->pending_conn[i].dev = remote;
+			btdev->pending_conn[i].link_type = link_type;
 			return;
 		}
 	}
 }
 
-static bool pending_conn_del(struct btdev *btdev, struct btdev *remote)
+static int pending_conn_del(struct btdev *btdev, struct btdev *remote)
 {
 	unsigned int i;
 
 	for (i = 0; i < ARRAY_SIZE(btdev->pending_conn); ++i) {
-		if (btdev->pending_conn[i] == remote) {
-			btdev->pending_conn[i] = NULL;
-			return true;
+		if (btdev->pending_conn[i].dev == remote) {
+			btdev->pending_conn[i].dev = NULL;
+			return btdev->pending_conn[i].link_type;
 		}
 	}
-	return false;
+	return -ENOENT;
+}
+
+static void sync_conn_init_complete(struct btdev_conn *conn,
+		uint8_t link_type, struct bt_hci_evt_sync_conn_complete *cc)
+{
+	struct bt_hci_cmd_enhanced_setup_sync_conn *cmd = conn->data;
+
+	memset(cc, 0, sizeof(*cc));
+
+	cc->status = 0x00;
+	memcpy(cc->bdaddr, conn->link->dev->bdaddr, 6);
+	cc->link_type = link_type;
+	cc->tx_interval = 0x0c;
+	cc->retrans_window = 0x06;
+	cc->rx_pkt_len = cpu_to_le16(60);
+	cc->tx_pkt_len = cpu_to_le16(60);
+	cc->air_mode = cmd->tx_coding_format[0];
+	cc->handle = cpu_to_le16(conn->handle);
 }
 
 static void conn_complete(struct btdev *btdev,
@@ -1287,16 +1342,39 @@ static void conn_complete(struct btdev *btdev,
 {
 	struct bt_hci_evt_conn_complete cc;
 	struct btdev *remote = find_btdev_by_bdaddr(bdaddr);
+	int link_type;
 
 	if (!remote)
 		return;
 
+	link_type = pending_conn_del(btdev, remote);
+	switch (link_type) {
+	case 0x00:
+	case 0x01:
+		break;
+	default:
+		if (!status)
+			status = BT_HCI_ERR_UNKNOWN_CONN_ID;
+		link_type = 0x01;
+		break;
+	}
+
+	cc.link_type = link_type;
+
 	if (!status) {
+		struct bt_hci_evt_sync_conn_complete scc;
 		struct btdev_conn *conn;
 
-		conn = conn_add_acl(btdev, bdaddr, BDADDR_BREDR);
-		if (!conn)
-			return;
+		if (link_type == 0x01) {
+			conn = conn_add_acl(btdev, bdaddr, BDADDR_BREDR);
+			if (!conn)
+				return;
+		} else {
+			conn = queue_find(btdev->conns, match_handle,
+						UINT_TO_PTR(SCO_HANDLE));
+			if (!conn)
+				return;
+		}
 
 		pending_conn_del(conn->link->dev, btdev);
 
@@ -1305,25 +1383,79 @@ static void conn_complete(struct btdev *btdev,
 		cc.encr_mode = 0x00;
 
 		cc.handle = cpu_to_le16(conn->link->handle);
-		cc.link_type = 0x01;
 
 		send_event(conn->link->dev, BT_HCI_EVT_CONN_COMPLETE, &cc,
 						sizeof(cc));
 
+		if (link_type != 0x01) {
+			/* Initiating controller gets Sync Conn Complete */
+			sync_conn_init_complete(conn, link_type, &scc);
+			send_event(btdev, BT_HCI_EVT_SYNC_CONN_COMPLETE, &scc,
+						sizeof(scc));
+			return;
+		}
+
 		cc.handle = cpu_to_le16(conn->handle);
-		cc.link_type = 0x01;
 	} else {
 		cc.handle = cpu_to_le16(0x0000);
-		cc.link_type = 0x01;
 	}
-
-	pending_conn_del(btdev, remote);
 
 	cc.status = status;
 	memcpy(cc.bdaddr, bdaddr, 6);
 	cc.encr_mode = 0x00;
 
 	send_event(btdev, BT_HCI_EVT_CONN_COMPLETE, &cc, sizeof(cc));
+}
+
+static void sync_conn_complete(struct btdev *btdev,
+					const uint8_t *bdaddr, uint8_t status)
+{
+	struct bt_hci_evt_sync_conn_complete cc;
+	struct btdev *remote = find_btdev_by_bdaddr(bdaddr);
+	struct btdev_conn *conn;
+	int link_type;
+
+	if (!remote)
+		return;
+
+	link_type = pending_conn_del(btdev, remote);
+
+	switch (link_type) {
+	case 0x00: /* SCO */
+	case 0x02: /* eSCO */
+		break;
+	default:
+		status = BT_HCI_ERR_UNKNOWN_CONN_ID;
+		goto done;
+	}
+
+	conn = queue_find(btdev->conns, match_handle, UINT_TO_PTR(SCO_HANDLE));
+	if (!conn) {
+		status = BT_HCI_ERR_UNKNOWN_CONN_ID;
+		goto done;
+	}
+
+	if (!status) {
+		pending_conn_del(conn->link->dev, btdev);
+
+		sync_conn_init_complete(conn->link, link_type, &cc);
+		send_event(conn->link->dev, BT_HCI_EVT_SYNC_CONN_COMPLETE,
+							&cc, sizeof(cc));
+
+		sync_conn_init_complete(conn, link_type, &cc);
+	} else {
+		conn_remove(conn);
+
+		memset(&cc, 0, sizeof(cc));
+		cc.handle = cpu_to_le16(0x0000);
+		cc.link_type = 0x02;
+	}
+
+done:
+	cc.status = status;
+	memcpy(cc.bdaddr, bdaddr, 6);
+
+	send_event(btdev, BT_HCI_EVT_SYNC_CONN_COMPLETE, &cc, sizeof(cc));
 }
 
 struct page_timeout_data {
@@ -1361,7 +1493,7 @@ static int cmd_create_conn_complete(struct btdev *dev, const void *data,
 		memcpy(cr.dev_class, dev->dev_class, 3);
 		cr.link_type = 0x01;
 
-		pending_conn_add(dev, remote);
+		pending_conn_add(dev, remote, cr.link_type);
 
 		send_event(remote, BT_HCI_EVT_CONN_REQUEST, &cr, sizeof(cr));
 	} else {
@@ -1387,6 +1519,7 @@ static int cmd_add_sco_conn(struct btdev *dev, const void *data, uint8_t len)
 	const struct bt_hci_cmd_add_sco_conn *cmd = data;
 	struct bt_hci_evt_conn_complete cc;
 	struct btdev_conn *conn;
+	struct bt_hci_cmd_enhanced_setup_sync_conn enh = { 0 };
 
 	memset(&cc, 0, sizeof(cc));
 
@@ -1402,6 +1535,8 @@ static int cmd_add_sco_conn(struct btdev *dev, const void *data, uint8_t len)
 		cc.status = BT_HCI_ERR_MEM_CAPACITY_EXCEEDED;
 		goto done;
 	}
+
+	conn->data = util_memdup(&enh, sizeof(enh));
 
 	cc.status = BT_HCI_ERR_SUCCESS;
 	memcpy(cc.bdaddr, conn->link->dev->bdaddr, 6);
@@ -1452,7 +1587,7 @@ static int cmd_create_conn_cancel_complete(struct btdev *dev, const void *data,
 	 * Controller shall return an HCI_Command_Complete event with the error
 	 * code Unknown Connection Identifier (0x02).
 	 */
-	if (pending_conn_del(dev, remote)) {
+	if (pending_conn_del(dev, remote) >= 0) {
 		rp.status = BT_HCI_ERR_SUCCESS;
 	} else {
 		conn = queue_find(dev->conns, match_bdaddr, cmd->bdaddr);
@@ -1491,7 +1626,7 @@ static int cmd_accept_conn_complete(struct btdev *dev, const void *data,
 	if (dev->auth_enable || remote->auth_enable)
 		send_event(remote, BT_HCI_EVT_LINK_KEY_REQUEST, dev->bdaddr, 6);
 	else
-		conn_complete(dev, cmd->bdaddr, BT_HCI_ERR_SUCCESS);
+		conn_complete(remote, dev->bdaddr, BT_HCI_ERR_SUCCESS);
 
 	return 0;
 }
@@ -1507,8 +1642,12 @@ static int cmd_reject_conn_complete(struct btdev *dev, const void *data,
 							uint8_t len)
 {
 	const struct bt_hci_cmd_reject_conn_request *cmd = data;
+	struct btdev *remote = find_btdev_by_bdaddr(cmd->bdaddr);
 
-	conn_complete(dev, cmd->bdaddr, BT_HCI_ERR_UNKNOWN_CONN_ID);
+	if (!remote)
+		return 0;
+
+	conn_complete(remote, dev->bdaddr, cmd->reason);
 
 	return 0;
 }
@@ -1785,6 +1924,45 @@ static int cmd_pin_code_neg_reply_complete(struct btdev *dev, const void *data,
 		conn_complete(remote, dev->bdaddr,
 					BT_HCI_ERR_PIN_OR_KEY_MISSING);
 	}
+
+	return 0;
+}
+
+static int cmd_change_conn_pkt_type(struct btdev *dev, const void *data,
+							uint8_t len)
+{
+	const struct bt_hci_cmd_change_conn_pkt_type *cmd = data;
+	struct btdev_conn *conn;
+	uint8_t status = BT_HCI_ERR_SUCCESS;
+
+	conn = queue_find(dev->conns, match_handle,
+				UINT_TO_PTR(cpu_to_le16(cmd->handle)));
+	if (!conn)
+		status = BT_HCI_ERR_UNKNOWN_CONN_ID;
+
+	cmd_status(dev, status, BT_HCI_CMD_CHANGE_CONN_PKT_TYPE);
+
+	return 0;
+}
+
+static int cmd_change_conn_pkt_type_complete(struct btdev *dev,
+						const void *data, uint8_t len)
+{
+	const struct bt_hci_cmd_change_conn_pkt_type *cmd = data;
+	struct bt_hci_evt_conn_pkt_type_changed ev;
+	struct btdev_conn *conn;
+
+	conn = queue_find(dev->conns, match_handle,
+				UINT_TO_PTR(cpu_to_le16(cmd->handle)));
+	if (!conn)
+		return 0;
+
+	memset(&ev, 0, sizeof(ev));
+	ev.status = BT_HCI_ERR_SUCCESS;
+	ev.handle = cmd->handle;
+	ev.pkt_type = cmd->pkt_type;
+
+	send_event(dev, BT_HCI_EVT_CONN_PKT_TYPE_CHANGED, &ev, sizeof(ev));
 
 	return 0;
 }
@@ -2650,6 +2828,9 @@ static int cmd_enable_dut_mode(struct btdev *dev, const void *data,
 	CMD(BT_HCI_CMD_PIN_CODE_REQUEST_NEG_REPLY, \
 					cmd_pin_code_neg_reply, \
 					cmd_pin_code_neg_reply_complete), \
+	CMD(BT_HCI_CMD_CHANGE_CONN_PKT_TYPE, \
+					cmd_change_conn_pkt_type, \
+					cmd_change_conn_pkt_type_complete), \
 	CMD(BT_HCI_CMD_AUTH_REQUESTED, cmd_auth_requested, \
 					cmd_auth_requested_complete), \
 	CMD(BT_HCI_CMD_SET_CONN_ENCRYPT, cmd_set_conn_encrypt, \
@@ -2795,43 +2976,38 @@ static int cmd_enhanced_setup_sync_conn_complete(struct btdev *dev,
 {
 	const struct bt_hci_cmd_enhanced_setup_sync_conn *cmd = data;
 	struct bt_hci_evt_sync_conn_complete cc;
+	struct bt_hci_evt_conn_request cr;
 	struct btdev_conn *conn;
 
 	memset(&cc, 0, sizeof(cc));
 
 	conn = queue_find(dev->conns, match_handle,
 				UINT_TO_PTR(le16_to_cpu(cmd->handle)));
-	if (!conn) {
+	if (!conn || conn->type != HCI_ACLDATA_PKT) {
 		cc.status = BT_HCI_ERR_UNKNOWN_CONN_ID;
-		goto done;
+		goto fail;
 	}
 
 	conn = conn_add_sco(conn);
 	if (!conn) {
 		cc.status = BT_HCI_ERR_MEM_CAPACITY_EXCEEDED;
-		goto done;
+		goto fail;
 	}
 
-	/* TODO: HCI_Connection_Request connection flow */
+	conn->data = util_memdup(cmd, sizeof(*cmd));
+	conn->link->data = util_memdup(cmd, sizeof(*cmd));
 
-	cc.status = BT_HCI_ERR_SUCCESS;
-	memcpy(cc.bdaddr, conn->link->dev->bdaddr, 6);
+	memcpy(cr.bdaddr, dev->bdaddr, 6);
+	memcpy(cr.dev_class, dev->dev_class, 3);
+	cr.link_type = 0x02;
 
-	cc.handle = cpu_to_le16(conn->handle);
-	cc.link_type = 0x02;
-	cc.tx_interval = 0x000c;
-	cc.retrans_window = 0x06;
-	cc.rx_pkt_len = 60;
-	cc.tx_pkt_len = 60;
-	cc.air_mode = cmd->tx_coding_format[0];
+	pending_conn_add(dev, conn->link->dev, cr.link_type);
 
-done:
+	send_event(conn->link->dev, BT_HCI_EVT_CONN_REQUEST, &cr, sizeof(cr));
+	return 0;
+
+fail:
 	send_event(dev, BT_HCI_EVT_SYNC_CONN_COMPLETE, &cc, sizeof(cc));
-
-	if (conn)
-		send_event(conn->link->dev, BT_HCI_EVT_SYNC_CONN_COMPLETE,
-							&cc, sizeof(cc));
-
 	return 0;
 }
 
@@ -2846,42 +3022,94 @@ static int cmd_setup_sync_conn_complete(struct btdev *dev, const void *data,
 							uint8_t len)
 {
 	const struct bt_hci_cmd_setup_sync_conn *cmd = data;
-	struct bt_hci_evt_sync_conn_complete cc;
+	struct bt_hci_cmd_enhanced_setup_sync_conn enh;
 	struct btdev_conn *conn;
-
-	memset(&cc, 0, sizeof(cc));
 
 	conn = queue_find(dev->conns, match_handle,
 				UINT_TO_PTR(le16_to_cpu(cmd->handle)));
-	if (!conn) {
-		cc.status = BT_HCI_ERR_UNKNOWN_CONN_ID;
-		goto done;
+	if (conn && conn->type == HCI_SCODATA_PKT) {
+		struct bt_hci_evt_sync_conn_changed cc;
+
+		/* TODO: actually modify connection parameters */
+		memset(&cc, 0, sizeof(cc));
+		cc.status = BT_HCI_ERR_UNSUPPORTED_FEATURE;
+		send_event(dev, BT_HCI_EVT_SYNC_CONN_CHANGED, &cc, sizeof(cc));
+		return 0;
 	}
 
-	conn = conn_add_sco(conn);
-	if (!conn) {
-		cc.status = BT_HCI_ERR_MEM_CAPACITY_EXCEEDED;
-		goto done;
+	memset(&enh, 0, sizeof(enh));
+
+	enh.handle = cmd->handle;
+
+	/* TODO: emulate also this properly? */
+	enh.tx_bandwidth = cmd->tx_bandwidth;
+	enh.rx_bandwidth = cmd->rx_bandwidth;
+	enh.max_latency = cmd->max_latency;
+	enh.retrans_effort = cmd->retrans_effort;
+	enh.pkt_type = cmd->pkt_type;
+
+	switch (le16_to_cpu(cmd->voice_setting) & SCO_AIRMODE_MASK) {
+	case SCO_AIRMODE_TRANSP:
+		enh.tx_coding_format[0] = 0x03;
+		break;
+	case SCO_AIRMODE_CVSD:
+	default:
+		enh.tx_coding_format[0] = 0x02;
+		break;
 	}
 
-	cc.status = BT_HCI_ERR_SUCCESS;
-	memcpy(cc.bdaddr, conn->link->dev->bdaddr, 6);
+	return cmd_enhanced_setup_sync_conn_complete(dev, &enh, sizeof(enh));
+}
 
-	cc.handle = cpu_to_le16(conn->handle);
-	cc.link_type = 0x02;
-	cc.tx_interval = 0x000c;
-	cc.retrans_window = 0x06;
-	cc.rx_pkt_len = 60;
-	cc.tx_pkt_len = 60;
-	cc.air_mode = (cmd->voice_setting == 0x0060) ? 0x02 : 0x03;
+static int cmd_accept_sync_conn_request(struct btdev *dev, const void *data,
+								uint8_t len)
+{
+	const struct bt_hci_cmd_accept_sync_conn_request *cmd = data;
 
-done:
-	send_event(dev, BT_HCI_EVT_SYNC_CONN_COMPLETE, &cc, sizeof(cc));
+	if (!find_btdev_by_bdaddr(cmd->bdaddr))
+		return -EPERM;
 
-	if (conn)
-		send_event(conn->link->dev, BT_HCI_EVT_SYNC_CONN_COMPLETE,
-							&cc, sizeof(cc));
+	cmd_status(dev, BT_HCI_ERR_SUCCESS,
+					BT_HCI_CMD_ACCEPT_SYNC_CONN_REQUEST);
+	return 0;
+}
 
+static int cmd_accept_sync_conn_request_complete(struct btdev *dev,
+						const void *data, uint8_t len)
+{
+	const struct bt_hci_cmd_accept_sync_conn_request *cmd = data;
+	struct btdev *remote = find_btdev_by_bdaddr(cmd->bdaddr);
+
+	if (!remote)
+		return 0;
+
+	sync_conn_complete(remote, dev->bdaddr, BT_HCI_ERR_SUCCESS);
+	return 0;
+}
+
+static int cmd_reject_sync_conn_request(struct btdev *dev, const void *data,
+								uint8_t len)
+{
+	const struct bt_hci_cmd_accept_sync_conn_request *cmd = data;
+
+	if (!find_btdev_by_bdaddr(cmd->bdaddr))
+		return -EPERM;
+
+	cmd_status(dev, BT_HCI_ERR_SUCCESS,
+					BT_HCI_CMD_REJECT_SYNC_CONN_REQUEST);
+	return 0;
+}
+
+static int cmd_reject_sync_conn_request_complete(struct btdev *dev,
+						const void *data, uint8_t len)
+{
+	const struct bt_hci_cmd_reject_sync_conn_request *cmd = data;
+	struct btdev *remote = find_btdev_by_bdaddr(cmd->bdaddr);
+
+	if (!remote)
+		return 0;
+
+	sync_conn_complete(remote, dev->bdaddr, cmd->reason);
 	return 0;
 }
 
@@ -3209,6 +3437,10 @@ static int cmd_get_mws_transport_config(struct btdev *dev, const void *data,
 #define CMD_BREDR \
 	CMD(BT_HCI_CMD_SETUP_SYNC_CONN, cmd_setup_sync_conn, \
 					cmd_setup_sync_conn_complete), \
+	CMD(BT_HCI_CMD_ACCEPT_SYNC_CONN_REQUEST, cmd_accept_sync_conn_request, \
+				cmd_accept_sync_conn_request_complete), \
+	CMD(BT_HCI_CMD_REJECT_SYNC_CONN_REQUEST, cmd_reject_sync_conn_request, \
+				cmd_reject_sync_conn_request_complete), \
 	CMD(BT_HCI_CMD_READ_EXT_INQUIRY_RESPONSE, cmd_read_ext_inquiry, NULL), \
 	CMD(BT_HCI_CMD_WRITE_EXT_INQUIRY_RESPONSE, cmd_write_ext_inquiry, \
 					NULL), \
@@ -3241,6 +3473,103 @@ static int cmd_get_mws_transport_config(struct btdev *dev, const void *data,
 	CMD(BT_HCI_CMD_ENHANCED_SETUP_SYNC_CONN, cmd_enhanced_setup_sync_conn, \
 					cmd_enhanced_setup_sync_conn_complete)
 
+static int cmd_set_event_mask_2(struct btdev *dev, const void *data,
+							uint8_t len)
+{
+	const struct bt_hci_cmd_set_event_mask_page2 *cmd = data;
+	uint8_t status = BT_HCI_ERR_SUCCESS;
+
+	memcpy(dev->event_mask_page2, cmd->mask, 8);
+	cmd_complete(dev, BT_HCI_CMD_SET_EVENT_MASK_PAGE2, &status,
+						sizeof(status));
+
+	return 0;
+}
+
+static int cmd_read_sync_train_params(struct btdev *dev, const void *data,
+							uint8_t len)
+{
+	struct bt_hci_rsp_read_sync_train_params rsp;
+
+	memset(&rsp, 0, sizeof(rsp));
+
+	rsp.status = BT_HCI_ERR_SUCCESS;
+	rsp.interval = cpu_to_le16(dev->sync_train_interval);
+	rsp.timeout = cpu_to_le32(dev->sync_train_timeout);
+	rsp.service_data = dev->sync_train_service_data;
+	cmd_complete(dev, BT_HCI_CMD_READ_SYNC_TRAIN_PARAMS, &rsp, sizeof(rsp));
+
+	return 0;
+}
+
+static int cmd_read_sc_support(struct btdev *dev, const void *data, uint8_t len)
+{
+	struct bt_hci_rsp_read_secure_conn_support rsp;
+
+	memset(&rsp, 0, sizeof(rsp));
+
+	rsp.status = BT_HCI_ERR_SUCCESS;
+	rsp.support = dev->secure_conn_support;
+	cmd_complete(dev, BT_HCI_CMD_READ_SECURE_CONN_SUPPORT, &rsp,
+							sizeof(rsp));
+
+	return 0;
+}
+
+static int cmd_write_sc_support(struct btdev *dev, const void *data,
+							uint8_t len)
+{
+	const struct bt_hci_cmd_write_secure_conn_support *cmd = data;
+	uint8_t status = BT_HCI_ERR_SUCCESS;
+
+	dev->secure_conn_support = cmd->support;
+	cmd_complete(dev, BT_HCI_CMD_WRITE_SECURE_CONN_SUPPORT, &status,
+							sizeof(status));
+
+	return 0;
+}
+
+static int cmd_read_auth_payload_timeout(struct btdev *dev, const void *data,
+							uint8_t len)
+{
+	/* TODO */
+	return -ENOTSUP;
+}
+
+static int cmd_write_auth_payload_timeout(struct btdev *dev, const void *data,
+							uint8_t len)
+{
+	/* TODO */
+	return -ENOTSUP;
+}
+
+static int cmd_read_local_oob_ext_data(struct btdev *dev, const void *data,
+							uint8_t len)
+{
+	struct bt_hci_rsp_read_local_oob_ext_data rsp;
+
+	memset(&rsp, 0, sizeof(rsp));
+
+	rsp.status = BT_HCI_ERR_SUCCESS;
+	cmd_complete(dev, BT_HCI_CMD_READ_LOCAL_OOB_EXT_DATA, &rsp,
+							sizeof(rsp));
+
+	return 0;
+}
+
+#define CMD_COMMON_BREDR_LE_40 \
+	CMD(BT_HCI_CMD_SET_EVENT_MASK_PAGE2, cmd_set_event_mask_2, NULL), \
+	CMD(BT_HCI_CMD_READ_SYNC_TRAIN_PARAMS, cmd_read_sync_train_params, \
+					NULL), \
+	CMD(BT_HCI_CMD_READ_SECURE_CONN_SUPPORT, cmd_read_sc_support, NULL), \
+	CMD(BT_HCI_CMD_WRITE_SECURE_CONN_SUPPORT, cmd_write_sc_support, NULL), \
+	CMD(BT_HCI_CMD_READ_AUTH_PAYLOAD_TIMEOUT, \
+					cmd_read_auth_payload_timeout, NULL), \
+	CMD(BT_HCI_CMD_WRITE_AUTH_PAYLOAD_TIMEOUT, \
+					cmd_write_auth_payload_timeout, NULL), \
+	CMD(BT_HCI_CMD_READ_LOCAL_OOB_EXT_DATA, \
+					cmd_read_local_oob_ext_data, NULL)
+
 static const struct btdev_cmd cmd_bredr[] = {
 	CMD_COMMON_ALL,
 	CMD_COMMON_BREDR_LE,
@@ -3256,6 +3585,8 @@ static void set_bredr_commands(struct btdev *btdev)
 	set_common_commands_bredr20(btdev);
 
 	btdev->commands[16] |= 0x08;	/* Setup Synchronous Connection */
+	btdev->commands[16] |= 0x10;	/* Accept Synchronous Connection Req */
+	btdev->commands[16] |= 0x20;	/* Reject Synchronous Connection Req */
 	btdev->commands[17] |= 0x01;	/* Read Extended Inquiry Response */
 	btdev->commands[17] |= 0x02;	/* Write Extended Inquiry Response */
 	btdev->commands[17] |= 0x20;	/* Read Simple Pairing Mode */
@@ -4268,7 +4599,7 @@ static int cmd_set_rl_enable(struct btdev *dev, const void *data, uint8_t len)
 	 * • an HCI_LE_Create_Connection, HCI_LE_Extended_Create_Connection,
 	 * or HCI_LE_Periodic_Advertising_Create_Sync command is outstanding.
 	 */
-	if (dev->le_adv_enable || dev->le_scan_enable)
+	if ((dev->le_adv_enable && !dev->le_pa_enable) || dev->le_scan_enable)
 		return -EPERM;
 
 	/* Valid range for address resolution enable is 0x00 to 0x01 */
@@ -4706,6 +5037,31 @@ static int cmd_gen_dhkey(struct btdev *dev, const void *data, uint8_t len)
 	CMD(BT_HCI_CMD_LE_SET_RESOLV_ENABLE, cmd_set_rl_enable, NULL), \
 	CMD(BT_HCI_CMD_LE_SET_RESOLV_TIMEOUT, cmd_set_rl_timeout, NULL)
 
+static const struct btdev_cmd cmd_bredr_le[] = {
+	CMD_COMMON_ALL,
+	CMD_COMMON_BREDR_LE,
+	CMD_COMMON_BREDR_20,
+	CMD_COMMON_BREDR_LE_40,
+	CMD_BREDR,
+	CMD_LE,
+	{}
+};
+
+static void set_bredrle_40_commands(struct btdev *btdev)
+{
+	/* Extra BR/EDR commands we want to only support for >= 4.0
+	 * adapters.
+	 */
+	btdev->commands[22] |= 0x04;	/* Set Event Mask Page 2 */
+	btdev->commands[31] |= 0x80;	/* Read Sync Train Parameters */
+	btdev->commands[32] |= 0x04;	/* Read Secure Connections Support */
+	btdev->commands[32] |= 0x08;	/* Write Secure Connections Support */
+	btdev->commands[32] |= 0x10;	/* Read Auth Payload Timeout */
+	btdev->commands[32] |= 0x20;	/* Write Auth Payload Timeout */
+	btdev->commands[32] |= 0x40;	/* Read Local OOB Extended Data */
+	btdev->cmds = cmd_bredr_le;
+}
+
 static int cmd_set_default_phy(struct btdev *dev, const void *data,
 							uint8_t len)
 {
@@ -4722,6 +5078,79 @@ static int cmd_set_default_phy(struct btdev *dev, const void *data,
 
 	cmd_complete(dev, BT_HCI_CMD_LE_SET_DEFAULT_PHY, &status,
 					sizeof(status));
+
+	return 0;
+}
+
+static int cmd_le_set_phy(struct btdev *dev, const void *data,
+							uint8_t len)
+{
+	const struct bt_hci_cmd_le_set_phy *cmd = data;
+	struct btdev_conn *conn;
+	uint8_t status;
+
+	conn = queue_find(dev->conns, match_handle,
+				UINT_TO_PTR(cpu_to_le16(cmd->handle)));
+	if (!conn) {
+		status = BT_HCI_ERR_UNKNOWN_CONN_ID;
+		goto done;
+	}
+
+	if (cmd->all_phys > 0x03 || (!(cmd->all_phys & 0x01) &&
+			(!cmd->tx_phys || cmd->tx_phys > 0x07)) ||
+			(!(cmd->all_phys & 0x02) &&
+			(!cmd->rx_phys || cmd->rx_phys > 0x07)))
+		status = BT_HCI_ERR_INVALID_PARAMETERS;
+	else
+		status = BT_HCI_ERR_SUCCESS;
+
+done:
+	cmd_status(dev, status, BT_HCI_CMD_LE_SET_PHY);
+
+	return 0;
+}
+
+static int cmd_le_set_phy_complete(struct btdev *dev, const void *data,
+							uint8_t len)
+{
+	const struct bt_hci_cmd_le_set_phy *cmd = data;
+	struct bt_hci_evt_le_phy_update_complete ev;
+	struct btdev_conn *conn;
+
+	conn = queue_find(dev->conns, match_handle,
+				UINT_TO_PTR(cpu_to_le16(cmd->handle)));
+	if (!conn)
+		return 0;
+
+	if (cmd->all_phys > 0x03 || (!(cmd->all_phys & 0x01) &&
+			(!cmd->tx_phys || cmd->tx_phys > 0x07)) ||
+			(!(cmd->all_phys & 0x02) &&
+			(!cmd->rx_phys || cmd->rx_phys > 0x07)))
+		return 0;
+
+	memset(&ev, 0, sizeof(ev));
+	ev.handle = cmd->handle;
+
+	/* Use the highest PHY possible */
+	if (cmd->tx_phys & BIT(0))
+		ev.tx_phy = 0x01; /* LE 1M PHY */
+
+	if (cmd->rx_phys & BIT(0))
+		ev.rx_phy = 0x01; /* LE 1M PHY */
+
+	if (cmd->tx_phys & BIT(1))
+		ev.tx_phy |= 0x02; /* LE 2M PHY */
+
+	if (cmd->rx_phys & BIT(1))
+		ev.rx_phy |= 0x02; /* LE 2M PHY */
+
+	if (cmd->tx_phys & BIT(2))
+		ev.tx_phy |= 0x03; /* LE CODED PHY */
+
+	if (cmd->rx_phys & BIT(2))
+		ev.rx_phy |= 0x03; /* LE CODED PHY */
+
+	le_meta_event(dev, BT_HCI_EVT_LE_PHY_UPDATE_COMPLETE, &ev, sizeof(ev));
 
 	return 0;
 }
@@ -4784,9 +5213,17 @@ static bool match_ext_adv_handle(const void *data, const void *match_data)
 	return ext_adv->handle == handle;
 }
 
+static bool match_ext_adv_enable(const void *data, const void *match_data)
+{
+	const struct le_ext_adv *ext_adv = data;
+
+	return ext_adv->enable;
+}
+
 static void ext_adv_disable(void *data, void *user_data)
 {
 	struct le_ext_adv *ext_adv = data;
+	struct btdev *btdev = ext_adv->dev;
 	uint8_t handle = PTR_TO_UINT(user_data);
 
 	if (handle && ext_adv->handle != handle)
@@ -4802,6 +5239,13 @@ static void ext_adv_disable(void *data, void *user_data)
 	}
 
 	ext_adv->enable = 0x00;
+
+	/* Consider le_adv_enable disabled if all advertising sets are
+	 * disabled.
+	 */
+	ext_adv = queue_find(btdev->le_ext_adv, match_ext_adv_enable, NULL);
+	if (!ext_adv)
+		btdev->le_adv_enable = 0x00;
 }
 
 static bool ext_adv_is_connectable(struct le_ext_adv *ext_adv)
@@ -4923,6 +5367,7 @@ static int cmd_set_ext_adv_params(struct btdev *dev, const void *data,
 	ext_adv->direct_addr_type = cmd->peer_addr_type;
 	memcpy(ext_adv->direct_addr, cmd->peer_addr, 6);
 	ext_adv->filter_policy = cmd->filter_policy;
+	ext_adv->sid = cmd->sid;
 
 	rsp.status = BT_HCI_ERR_SUCCESS;
 	rsp.tx_power = 0;
@@ -4947,7 +5392,7 @@ static int cmd_set_ext_adv_data(struct btdev *dev, const void *data,
 		return 0;
 	}
 
-	ext_adv->adv_data_len = cmd->data_len;
+	ext_adv->adv_data_len = MIN(cmd->data_len, MAX_EXT_ADV_LEN);
 	memcpy(ext_adv->adv_data, cmd->data, cmd->data_len);
 	cmd_complete(dev, BT_HCI_CMD_LE_SET_EXT_ADV_DATA, &status,
 						sizeof(status));
@@ -4971,7 +5416,7 @@ static int cmd_set_ext_scan_rsp_data(struct btdev *dev, const void *data,
 		return 0;
 	}
 
-	ext_adv->scan_data_len = cmd->data_len;
+	ext_adv->scan_data_len = MIN(cmd->data_len, MAX_EXT_ADV_LEN);
 	memcpy(ext_adv->scan_data, cmd->data, cmd->data_len);
 	cmd_complete(dev, BT_HCI_CMD_LE_SET_EXT_SCAN_RSP_DATA, &status,
 						sizeof(status));
@@ -5005,7 +5450,7 @@ static void send_ext_adv(struct btdev *btdev, const struct btdev *remote,
 		uint8_t num_reports;
 		union {
 			struct bt_hci_le_ext_adv_report lear;
-			uint8_t raw[24 + 31];
+			uint8_t raw[24 + MAX_EXT_ADV_LEN];
 		};
 	} meta_event;
 
@@ -5019,6 +5464,7 @@ static void send_ext_adv(struct btdev *btdev, const struct btdev *remote,
 	/* Right now we dont care about phy in adv report */
 	meta_event.lear.primary_phy = 0x01;
 	meta_event.lear.secondary_phy = 0x01;
+	meta_event.lear.sid = ext_adv->sid;
 
 	/* Scan or advertising response */
 	if (is_scan_rsp) {
@@ -5209,8 +5655,16 @@ exit_complete:
 static int cmd_read_max_adv_data_len(struct btdev *dev, const void *data,
 							uint8_t len)
 {
-	/* TODO */
-	return -ENOTSUP;
+	struct bt_hci_rsp_le_read_max_adv_data_len rsp;
+
+	memset(&rsp, 0, sizeof(rsp));
+
+	rsp.status = BT_HCI_ERR_SUCCESS;
+	rsp.max_len = MAX_EXT_ADV_LEN;
+	cmd_complete(dev, BT_HCI_CMD_LE_READ_MAX_ADV_DATA_LEN, &rsp,
+							sizeof(rsp));
+
+	return 0;
 }
 
 static int cmd_read_num_adv_sets(struct btdev *dev, const void *data,
@@ -5324,6 +5778,23 @@ static int cmd_set_pa_data(struct btdev *dev, const void *data,
 	return 0;
 }
 
+static uint8_t bits_to_phy(uint8_t bits)
+{
+	uint8_t phy = 0x00;
+
+	/* Convert PHY bits to PHY values on a ascending order. */
+	if (bits & BIT(0))
+		phy = 0x01; /* LE 1M */
+
+	if (bits & BIT(1))
+		phy = 0x02; /* LE 2M */
+
+	if (bits & BIT(2))
+		phy = 0x03; /* LE Coded */
+
+	return phy;
+}
+
 static void send_biginfo(struct btdev *dev, const struct btdev *remote,
 							uint16_t sync_handle)
 {
@@ -5352,7 +5823,7 @@ static void send_biginfo(struct btdev *dev, const struct btdev *remote,
 	ev.max_pdu = bis->sdu;
 	memcpy(ev.sdu_interval, bis->sdu_interval, sizeof(ev.sdu_interval));
 	ev.max_sdu = bis->sdu;
-	ev.phy = bis->phy;
+	ev.phy = bits_to_phy(bis->phys);
 	ev.framing = bis->framing;
 	ev.encryption = bis->encryption;
 
@@ -5420,15 +5891,33 @@ static bool match_dev(const void *data, const void *match_data)
 						per_adv->addr_type);
 }
 
+static bool match_sid(const void *data, const void *match_data)
+{
+	const struct le_ext_adv *ext_adv = data;
+	uint8_t sid = PTR_TO_UINT(match_data);
+
+	return ext_adv->sid == sid;
+}
+
 static void le_pa_sync_estabilished(struct btdev *dev, struct btdev *remote,
 						uint8_t status)
 {
 	struct bt_hci_evt_le_per_sync_established ev;
 	struct le_per_adv *per_adv;
+	struct le_ext_adv *ext_adv;
 	uint16_t sync_handle = SYNC_HANDLE;
+
+	if (!remote)
+		return;
 
 	per_adv = queue_find(dev->le_per_adv, match_dev, remote);
 	if (!per_adv)
+		return;
+
+	/* Match SID */
+	ext_adv = queue_find(remote->le_ext_adv, match_sid,
+					UINT_TO_PTR(per_adv->sid));
+	if (!ext_adv)
 		return;
 
 	memset(&ev, 0, sizeof(ev));
@@ -5447,8 +5936,10 @@ static void le_pa_sync_estabilished(struct btdev *dev, struct btdev *remote,
 		sync_handle++;
 
 	per_adv->sync_handle = sync_handle;
+	per_adv->remote = remote;
 
 	ev.handle = cpu_to_le16(per_adv->sync_handle);
+	ev.sid = per_adv->sid;
 	ev.addr_type = per_adv->addr_type;
 	memcpy(ev.addr, per_adv->addr, sizeof(ev.addr));
 	ev.phy = 0x01;
@@ -5457,6 +5948,24 @@ static void le_pa_sync_estabilished(struct btdev *dev, struct btdev *remote,
 
 	le_meta_event(dev, BT_HCI_EVT_LE_PA_SYNC_ESTABLISHED, &ev, sizeof(ev));
 	send_pa(dev, remote, 0, per_adv->sync_handle);
+}
+
+static void le_pa_sync_lost(struct le_per_adv *pa)
+{
+	struct bt_hci_evt_le_per_sync_lost ev;
+
+	memset(&ev, 0, sizeof(ev));
+	ev.handle = cpu_to_le16(pa->sync_handle);
+	le_meta_event(pa->dev, BT_HCI_EVT_LE_PA_SYNC_LOST, &ev, sizeof(ev));
+	free(pa);
+}
+
+static bool match_remote(const void *data, const void *match_data)
+{
+	const struct le_per_adv *pa = data;
+	const struct btdev *remote = match_data;
+
+	return pa->remote == remote;
 }
 
 static int cmd_set_pa_enable(struct btdev *dev, const void *data, uint8_t len)
@@ -5481,11 +5990,19 @@ static int cmd_set_pa_enable(struct btdev *dev, const void *data, uint8_t len)
 		if (!remote || remote == dev)
 			continue;
 
-		if (remote->le_scan_enable &&
+		if (dev->le_scan_enable &&
 			queue_find(remote->le_per_adv, match_sync_handle,
 			UINT_TO_PTR(INV_HANDLE)))
 			le_pa_sync_estabilished(remote, dev,
 							BT_HCI_ERR_SUCCESS);
+		else if (!dev->le_pa_enable) {
+			struct le_per_adv *pa;
+
+			pa = queue_remove_if(remote->le_per_adv, match_remote,
+						dev);
+			if (pa)
+				le_pa_sync_lost(pa);
+		}
 	}
 
 	return 0;
@@ -5701,8 +6218,8 @@ static int cmd_ext_create_conn_complete(struct btdev *dev, const void *data,
 	return 0;
 }
 
-static struct le_per_adv *le_per_adv_new(struct btdev *btdev,
-			uint8_t  addr_type, const uint8_t *addr)
+static struct le_per_adv *le_per_adv_new(struct btdev *btdev, uint8_t addr_type,
+					 const uint8_t *addr, uint8_t sid)
 {
 	struct le_per_adv *per_adv;
 
@@ -5711,6 +6228,7 @@ static struct le_per_adv *le_per_adv_new(struct btdev *btdev,
 	per_adv->dev = btdev;
 	per_adv->addr_type = addr_type;
 	memcpy(per_adv->addr, addr, 6);
+	per_adv->sid = sid;
 	per_adv->sync_handle = INV_HANDLE;
 
 	/* Add to queue */
@@ -5728,8 +6246,14 @@ static int cmd_pa_create_sync(struct btdev *dev, const void *data, uint8_t len)
 	uint8_t status = BT_HCI_ERR_SUCCESS;
 	struct le_per_adv *per_adv;
 
+	if (cmd->sid > 0x0f) {
+		cmd_status(dev, BT_HCI_ERR_INVALID_PARAMETERS,
+			   BT_HCI_CMD_LE_PA_CREATE_SYNC);
+		return 0;
+	}
+
 	/* Create new train */
-	per_adv = le_per_adv_new(dev, cmd->addr_type, cmd->addr);
+	per_adv = le_per_adv_new(dev, cmd->addr_type, cmd->addr, cmd->sid);
 	if (!per_adv)
 		status = BT_HCI_ERR_MEM_CAPACITY_EXCEEDED;
 
@@ -5750,7 +6274,7 @@ static int cmd_pa_create_sync_complete(struct btdev *dev, const void *data,
 	 * synchronization can only occur when scanning is enabled. While
 	 * scanning is disabled, no attempt to synchronize will take place.
 	 */
-	if (!dev->scan_enable)
+	if (!dev->le_scan_enable)
 		return 0;
 
 	remote = find_btdev_by_bdaddr_type(cmd->addr, cmd->addr_type);
@@ -5901,6 +6425,7 @@ done:
 
 #define CMD_LE_50 \
 	CMD(BT_HCI_CMD_LE_SET_DEFAULT_PHY, cmd_set_default_phy,	NULL), \
+	CMD(BT_HCI_CMD_LE_SET_PHY, cmd_le_set_phy, cmd_le_set_phy_complete), \
 	CMD(BT_HCI_CMD_LE_SET_ADV_SET_RAND_ADDR, cmd_set_adv_rand_addr, NULL), \
 	CMD(BT_HCI_CMD_LE_SET_EXT_ADV_PARAMS, cmd_set_ext_adv_params, NULL), \
 	CMD(BT_HCI_CMD_LE_SET_EXT_ADV_DATA, cmd_set_ext_adv_data, NULL), \
@@ -5937,6 +6462,9 @@ done:
 static const struct btdev_cmd cmd_le_5_0[] = {
 	CMD_COMMON_ALL,
 	CMD_COMMON_BREDR_LE,
+	CMD_COMMON_BREDR_20,
+	CMD_COMMON_BREDR_LE_40,
+	CMD_BREDR,
 	CMD_LE,
 	CMD_LE_50,
 	{}
@@ -5970,6 +6498,258 @@ static void set_le_50_commands(struct btdev *btdev)
 	btdev->commands[38] |= 0x80;	/* LE Read Transmit Power */
 	btdev->commands[39] |= 0x04;	/* LE Set Privacy Mode */
 	btdev->cmds = cmd_le_5_0;
+}
+
+static void le_past_received_event(struct btdev_conn *acl,
+					struct bt_hci_evt_le_past_recv *ev,
+					struct le_per_adv *pa)
+{
+	struct btdev *remote;
+
+	le_meta_event(acl->dev, BT_HCI_EVT_LE_PAST_RECEIVED, ev, sizeof(*ev));
+
+	if (ev->status != BT_HCI_ERR_SUCCESS)
+		return;
+
+	remote = find_btdev_by_bdaddr_type(pa->addr, pa->addr_type);
+	if (!remote)
+		return;
+
+	switch (acl->past_mode) {
+	case 0x01:
+		/* HCI_LE_Periodic_Advertising_Report events will be
+		 * disabled.
+		 */
+		break;
+	case 0x02:
+		/* HCI_LE_Periodic_Advertising_Report events will be enabled
+		 * with duplicate filtering disabled.
+		 */
+	case 0x03:
+		/* HCI_LE_Periodic_Advertising_Report events will be enabled
+		 * with duplicate filtering enabled.
+		 */
+		send_pa(acl->dev, remote, 0, pa->sync_handle);
+		break;
+	}
+}
+
+static void le_past_received(struct btdev_conn *acl, struct le_per_adv *pa)
+{
+	struct btdev *dev = acl->dev;
+	struct bt_hci_evt_le_past_recv ev;
+	struct le_per_adv *cp;
+	uint16_t sync_handle = SYNC_HANDLE;
+
+	/* 0x00:
+	 * No attempt is made to synchronize to the periodic advertising and no
+	 * HCI_LE_Periodic_Advertising_Sync_Transfer_Received event is sent to
+	 * the Host.
+	 */
+	if (!acl->past_mode)
+		return;
+
+	memset(&ev, 0, sizeof(ev));
+	ev.status = BT_HCI_ERR_SUCCESS;
+
+	/* Create a copy of the PA sync */
+	cp = le_per_adv_new(dev, pa->addr_type, pa->addr, pa->sid);
+	if (!cp) {
+		ev.status = BT_HCI_ERR_MEM_CAPACITY_EXCEEDED;
+		goto done;
+	}
+
+	/* Find the next available sync handle */
+	while (queue_find(dev->le_per_adv, match_sync_handle,
+					UINT_TO_PTR(sync_handle)))
+		sync_handle++;
+
+	cp->sync_handle = sync_handle;
+
+	ev.handle = cpu_to_le16(acl->handle);
+	ev.sync_handle = cpu_to_le16(cp->sync_handle);
+	ev.sid = cpu_to_le16(cp->sid);
+	ev.addr_type = cp->addr_type;
+	memcpy(ev.addr, cp->addr, sizeof(ev.addr));
+	ev.phy = 0x01;
+	ev.interval = acl->dev->le_pa_min_interval;
+	ev.clock_accuracy = 0x07;
+
+done:
+	le_past_received_event(acl, &ev, pa);
+}
+
+static int cmd_past(struct btdev *dev, const void *data, uint8_t len)
+{
+	const struct bt_hci_cmd_le_past *cmd = data;
+	struct bt_hci_rsp_le_past rsp;
+	struct le_per_adv *pa;
+	struct btdev_conn *acl = NULL;
+
+	memset(&rsp, 0, sizeof(rsp));
+
+	rsp.status = BT_HCI_ERR_SUCCESS;
+	rsp.handle = cmd->handle;
+
+	pa = queue_find(dev->le_per_adv, match_sync_handle,
+				UINT_TO_PTR(le16_to_cpu(cmd->sync_handle)));
+	if (!pa) {
+		/* If the periodic advertising train corresponding to the
+		 * Sync_Handle parameter does not exist, the Controller shall
+		 * return the error code Unknown Advertising Identifier (0x42).
+		 */
+		rsp.status = BT_HCI_ERR_UNKNOWN_ADVERTISING_ID;
+		goto done;
+	}
+
+	acl = queue_find(dev->conns, match_handle,
+				UINT_TO_PTR(le16_to_cpu(cmd->handle)));
+	if (!acl) {
+		/* If the Connection_Handle parameter does not identify a
+		 * current connection, the Controller shall return the error
+		 * code Unknown Connection Identifier (0x02).
+		 */
+		rsp.status = BT_HCI_ERR_UNKNOWN_CONN_ID;
+		goto done;
+	}
+
+done:
+	cmd_complete(dev, BT_HCI_CMD_LE_PAST, &rsp, sizeof(rsp));
+
+	if (rsp.status == BT_HCI_ERR_SUCCESS)
+		le_past_received(acl->link, pa);
+
+	return 0;
+}
+
+static void le_past_info_received(struct btdev_conn *acl, struct le_ext_adv *ea)
+{
+	struct btdev *dev = acl->dev;
+	struct bt_hci_evt_le_past_recv ev;
+	struct le_per_adv *pa;
+	uint16_t sync_handle = SYNC_HANDLE;
+
+	/* 0x00:
+	 * No attempt is made to synchronize to the periodic advertising and no
+	 * HCI_LE_Periodic_Advertising_Sync_Transfer_Received event is sent to
+	 * the Host.
+	 */
+	if (!acl->past_mode)
+		return;
+
+	memset(&ev, 0, sizeof(ev));
+	ev.status = BT_HCI_ERR_SUCCESS;
+
+	/* Create a copy using EA parameters */
+	pa = le_per_adv_new(dev, ea->own_addr_type,
+			    ea->own_addr_type ? ea->random_addr :
+			    acl->link->dev->bdaddr, ea->sid);
+	if (!pa) {
+		ev.status = BT_HCI_ERR_MEM_CAPACITY_EXCEEDED;
+		goto done;
+	}
+
+	/* Find the next available sync handle */
+	while (queue_find(dev->le_per_adv, match_sync_handle,
+					UINT_TO_PTR(sync_handle)))
+		sync_handle++;
+
+	pa->sync_handle = sync_handle;
+
+	ev.handle = cpu_to_le16(acl->handle);
+	ev.sync_handle = cpu_to_le16(pa->sync_handle);
+	ev.sid = cpu_to_le16(pa->sid);
+	ev.addr_type = pa->addr_type;
+	memcpy(ev.addr, pa->addr, sizeof(ev.addr));
+	ev.phy = 0x01;
+	ev.interval = acl->dev->le_pa_min_interval;
+	ev.clock_accuracy = 0x07;
+
+done:
+	le_past_received_event(acl, &ev, pa);
+}
+
+static int cmd_past_set_info(struct btdev *dev, const void *data, uint8_t len)
+{
+	const struct bt_hci_cmd_le_past_set_info *cmd = data;
+	struct bt_hci_rsp_le_past_set_info rsp;
+	struct le_ext_adv *ea;
+	struct btdev_conn *acl = NULL;
+
+	memset(&rsp, 0, sizeof(rsp));
+
+	rsp.status = BT_HCI_ERR_SUCCESS;
+	rsp.handle = cmd->handle;
+
+	ea = queue_find(dev->le_ext_adv, match_ext_adv_handle,
+					UINT_TO_PTR(cmd->adv_handle));
+	if (!ea) {
+		/* If the advertising set corresponding to the
+		 * Advertising_Handle parameter does not exist, the Controller
+		 * shall return the error code Unknown Advertising Identifier
+		 * (0x42).
+		 */
+		rsp.status = BT_HCI_ERR_UNKNOWN_ADVERTISING_ID;
+		goto done;
+	}
+
+	if (!dev->le_pa_enable) {
+		/* If periodic advertising is not currently in progress for the
+		 * advertising set, the Controller shall return the error code
+		 * Command Disallowed (0x0C).
+		 */
+		rsp.status = BT_HCI_ERR_COMMAND_DISALLOWED;
+		goto done;
+	}
+
+	acl = queue_find(dev->conns, match_handle,
+				UINT_TO_PTR(le16_to_cpu(cmd->handle)));
+	if (!acl) {
+		/* If the Connection_Handle parameter does not identify a
+		 * current connection, the Controller shall return the error
+		 * code Unknown Connection Identifier (0x02).
+		 */
+		rsp.status = BT_HCI_ERR_UNKNOWN_CONN_ID;
+		goto done;
+	}
+
+done:
+	cmd_complete(dev, BT_HCI_CMD_LE_PAST_SET_INFO, &rsp, sizeof(rsp));
+
+	if (rsp.status == BT_HCI_ERR_SUCCESS)
+		le_past_info_received(acl->link, ea);
+
+	return 0;
+}
+
+static int cmd_past_params(struct btdev *dev, const void *data, uint8_t len)
+{
+	const struct bt_hci_cmd_le_past_params *cmd = data;
+	struct bt_hci_rsp_le_past_set_info rsp;
+	struct btdev_conn *acl = NULL;
+
+	memset(&rsp, 0, sizeof(rsp));
+
+	rsp.status = BT_HCI_ERR_SUCCESS;
+	rsp.handle = cmd->handle;
+
+	acl = queue_find(dev->conns, match_handle,
+				UINT_TO_PTR(le16_to_cpu(cmd->handle)));
+	if (!acl) {
+		/* If the Connection_Handle parameter does not identify a
+		 * current connection, the Controller shall return the error
+		 * code Unknown Connection Identifier (0x02).
+		 */
+		rsp.status = BT_HCI_ERR_UNKNOWN_CONN_ID;
+		goto done;
+	}
+
+	acl->past_mode = cmd->mode;
+
+done:
+	cmd_complete(dev, BT_HCI_CMD_LE_PAST_PARAMS, &rsp, sizeof(rsp));
+
+	return 0;
 }
 
 static int cmd_read_size_v2(struct btdev *dev, const void *data,
@@ -6009,19 +6789,19 @@ static int find_cig(struct btdev *dev, uint8_t cig_id)
 static uint16_t make_cis_handle(uint8_t cig_idx, uint8_t cis_idx)
 {
 	/* Put CIG+CIS idxs to handle so don't need to track separately */
-	return ISO_HANDLE + cig_idx*CIS_SIZE + cis_idx;
+	return CIS_HANDLE + cig_idx*CIS_SIZE + cis_idx;
 }
 
 static int parse_cis_handle(uint16_t handle, int *cis_idx)
 {
 	int cig_idx;
 
-	if (handle < ISO_HANDLE || handle >= ISO_HANDLE + CIS_SIZE*CIG_SIZE)
+	if (handle < CIS_HANDLE || handle >= CIS_HANDLE + CIS_SIZE*CIG_SIZE)
 		return -1;
 
-	cig_idx = (handle - ISO_HANDLE) / CIS_SIZE;
+	cig_idx = (handle - CIS_HANDLE) / CIS_SIZE;
 	if (cis_idx)
-		*cis_idx = (handle - ISO_HANDLE) % CIS_SIZE;
+		*cis_idx = (handle - CIS_HANDLE) % CIS_SIZE;
 
 	return cig_idx;
 }
@@ -6214,8 +6994,8 @@ static void le_cis_estabilished(struct btdev *dev, struct btdev_conn *conn,
 		memset(evt.cig_sync_delay, 0, sizeof(evt.cig_sync_delay));
 		memset(evt.cis_sync_delay, 0, sizeof(evt.cis_sync_delay));
 
-		evt.c_phy = le_cig->cis[cis_idx].c_phy;
-		evt.p_phy = le_cig->cis[cis_idx].p_phy;
+		evt.c_phy = bits_to_phy(le_cig->cis[cis_idx].c_phys);
+		evt.p_phy = bits_to_phy(le_cig->cis[cis_idx].p_phys);
 		evt.nse = 0x01;
 		evt.c_bn = 0x01;
 		evt.p_bn = 0x01;
@@ -6379,9 +7159,51 @@ static int cmd_reject_cis(struct btdev *dev, const void *data, uint8_t len)
 
 static int cmd_create_big(struct btdev *dev, const void *data, uint8_t len)
 {
-	cmd_status(dev, BT_HCI_ERR_SUCCESS, BT_HCI_CMD_LE_CREATE_BIG);
+	const struct bt_hci_cmd_le_big_create_sync *cmd = data;
+	uint8_t status = BT_HCI_ERR_SUCCESS;
+
+	/* If the Advertising_Handle does not identify a periodic advertising
+	 * train,, the Controller shall return the error code Unknown
+	 * Advertising Identifier (0x42).
+	 */
+	if (!dev->le_pa_enable) {
+		status = BT_HCI_ERR_UNKNOWN_ADVERTISING_ID;
+		goto done;
+	}
+
+	/* If the Host sends this command with a BIG_Handle that is already
+	 * allocated, the Controller shall return the error code Command
+	 * Disallowed (0x0C).
+	 */
+	if (queue_find(dev->le_big, match_big_handle,
+				UINT_TO_PTR(cmd->handle))) {
+		status = BT_HCI_ERR_COMMAND_DISALLOWED;
+		goto done;
+	}
+
+done:
+	cmd_status(dev, status, BT_HCI_CMD_LE_CREATE_BIG);
 
 	return 0;
+}
+
+static struct le_big *le_big_new(struct btdev *btdev, uint8_t handle)
+{
+	struct le_big *big;
+
+	big = new0(struct le_big, 1);
+
+	big->dev = btdev;
+	big->handle = handle;
+	big->bis = queue_new();
+
+	/* Add to queue */
+	if (!queue_push_tail(btdev->le_big, big)) {
+		le_big_free(big);
+		return NULL;
+	}
+
+	return big;
 }
 
 static int cmd_create_big_complete(struct btdev *dev, const void *data,
@@ -6389,6 +7211,7 @@ static int cmd_create_big_complete(struct btdev *dev, const void *data,
 {
 	const struct bt_hci_cmd_le_create_big *cmd = data;
 	const struct bt_hci_bis *bis = &cmd->bis;
+	struct le_big *big;
 	int i;
 	struct bt_hci_evt_le_big_complete evt;
 	uint16_t *bis_handle;
@@ -6401,6 +7224,16 @@ static int cmd_create_big_complete(struct btdev *dev, const void *data,
 	if (!pdu)
 		return -ENOMEM;
 
+	/* If the Controller cannot create all BISes of the BIG or if Num_BIS
+	 * exceeds the maximum value supported by the Controller, then it shall
+	 * return the error code Rejected due to Limited Resources (0x0D).
+	 */
+	big = le_big_new(dev, cmd->handle);
+	if (!big) {
+		evt.status = BT_HCI_ERR_MEM_CAPACITY_EXCEEDED;
+		goto done;
+	}
+
 	bis_handle = (uint16_t *)(pdu + sizeof(evt));
 
 	memset(&evt, 0, sizeof(evt));
@@ -6408,18 +7241,21 @@ static int cmd_create_big_complete(struct btdev *dev, const void *data,
 	for (i = 0; i < cmd->num_bis; i++) {
 		struct btdev_conn *conn;
 
-		conn = conn_add_bis(dev, ISO_HANDLE + i, bis);
+		conn = conn_add_bis(dev, BIS_HANDLE + i, bis);
 		if (!conn) {
+			queue_remove(dev->le_big, big);
+			le_big_free(big);
 			evt.status = BT_HCI_ERR_MEM_CAPACITY_EXCEEDED;
 			goto done;
 		}
 
+		queue_push_tail(big->bis, conn);
 		*bis_handle = cpu_to_le16(conn->handle);
 		bis_handle++;
 	}
 
 	evt.handle = cmd->handle;
-	evt.phy = bis->phy;
+	evt.phy = bits_to_phy(bis->phys);
 	evt.max_pdu = bis->sdu;
 	memcpy(evt.sync_delay, bis->sdu_interval, 3);
 	memcpy(evt.latency, bis->sdu_interval, 3);
@@ -6444,9 +7280,35 @@ static int cmd_create_big_test(struct btdev *dev, const void *data, uint8_t len)
 
 static int cmd_term_big(struct btdev *dev, const void *data, uint8_t len)
 {
-	cmd_status(dev, BT_HCI_ERR_SUCCESS, BT_HCI_CMD_LE_TERM_BIG);
+	const struct bt_hci_cmd_le_term_big *cmd = data;
+	struct le_big *big;
+	uint8_t status = BT_HCI_ERR_SUCCESS;
+
+	/* If the BIG_Handle does not identify a BIG, the Controller shall
+	 * return the error code Unknown Advertising Identifier (0x42).
+	 */
+	big = queue_find(dev->le_big, match_big_handle,
+			UINT_TO_PTR(cmd->handle));
+	if (!big) {
+		status = BT_HCI_ERR_UNKNOWN_ADVERTISING_ID;
+		goto done;
+	}
+
+done:
+	cmd_status(dev, status, BT_HCI_CMD_LE_TERM_BIG);
+
+	if (status)
+		return -EALREADY;
 
 	return 0;
+}
+
+static bool match_bis(const void *data, const void *match_data)
+{
+	const struct le_big *big = data;
+	const struct btdev_conn *conn = match_data;
+
+	return queue_find(big->bis, NULL, conn);
 }
 
 static int cmd_term_big_complete(struct btdev *dev, const void *data,
@@ -6454,12 +7316,55 @@ static int cmd_term_big_complete(struct btdev *dev, const void *data,
 {
 	const struct bt_hci_cmd_le_term_big *cmd = data;
 	struct bt_hci_evt_le_big_terminate rsp;
+	struct le_big *big, *rbig;
+	struct btdev_conn *conn;
+	struct btdev *remote = NULL;
 
 	memset(&rsp, 0, sizeof(rsp));
 	rsp.reason = cmd->reason;
 	rsp.handle = cmd->handle;
 
 	le_meta_event(dev, BT_HCI_EVT_LE_BIG_TERMINATE, &rsp, sizeof(rsp));
+
+	big = queue_find(dev->le_big, match_big_handle,
+			UINT_TO_PTR(cmd->handle));
+	if (!big)
+		return 0;
+
+	/* Cleanup existing connections */
+	while ((conn = queue_pop_head(big->bis))) {
+		if (!conn->link) {
+			conn_remove(conn);
+			continue;
+		}
+
+		/* Send BIG Sync Lost event once per remote device */
+		if (conn->link->dev != remote) {
+			struct bt_hci_evt_le_big_sync_lost evt;
+
+			remote = conn->link->dev;
+
+			rbig = queue_find(remote->le_big, match_bis,
+							conn->link);
+			if (rbig) {
+				memset(&evt, 0, sizeof(evt));
+				evt.big_handle = rbig->handle;
+				evt.reason = cmd->reason;
+				le_meta_event(remote,
+						BT_HCI_EVT_LE_BIG_SYNC_LOST,
+						&evt, sizeof(evt));
+				queue_remove(remote->le_big, rbig);
+				le_big_free(rbig);
+			}
+		}
+
+		/* Unlink conn from remote BIS */
+		conn_unlink(conn, conn->link);
+		conn_remove(conn);
+	}
+
+	queue_remove(dev->le_big, big);
+	le_big_free(big);
 
 	return 0;
 }
@@ -6502,25 +7407,6 @@ done:
 	return 0;
 }
 
-static struct le_big *le_big_new(struct btdev *btdev, uint8_t handle)
-{
-	struct le_big *big;
-
-	big = new0(struct le_big, 1);
-
-	big->dev = btdev;
-	big->handle = handle;
-	big->bis = queue_new();
-
-	/* Add to queue */
-	if (!queue_push_tail(btdev->le_big, big)) {
-		le_big_free(big);
-		return NULL;
-	}
-
-	return big;
-}
-
 static int cmd_big_create_sync_complete(struct btdev *dev, const void *data,
 							uint8_t len)
 {
@@ -6534,17 +7420,28 @@ static int cmd_big_create_sync_complete(struct btdev *dev, const void *data,
 	struct bt_hci_bis *bis;
 	int i;
 	uint16_t sync_handle = le16_to_cpu(cmd->sync_handle);
-	struct le_per_adv *per_adv = queue_find(dev->le_per_adv,
-			match_sync_handle, UINT_TO_PTR(sync_handle));
+	struct le_per_adv *per_adv;
 	struct le_big *big;
 
-	if  (!per_adv)
+	memset(&pdu.ev, 0, sizeof(pdu.ev));
+
+	per_adv = queue_find(dev->le_per_adv, match_sync_handle,
+					UINT_TO_PTR(sync_handle));
+	if  (!per_adv) {
+		pdu.ev.status = BT_HCI_ERR_UNKNOWN_ADVERTISING_ID;
+		le_meta_event(dev, BT_HCI_EVT_LE_BIG_SYNC_ESTABILISHED, &pdu,
+					sizeof(pdu.ev));
 		return 0;
+	}
 
 	remote = find_btdev_by_bdaddr_type(per_adv->addr,
 						per_adv->addr_type);
-	if (!remote)
+	if (!remote) {
+		pdu.ev.status = BT_HCI_ERR_UNKNOWN_ADVERTISING_ID;
+		le_meta_event(dev, BT_HCI_EVT_LE_BIG_SYNC_ESTABILISHED, &pdu,
+					sizeof(pdu.ev));
 		return 0;
+	}
 
 	big = le_big_new(dev, cmd->handle);
 	if (!big) {
@@ -6553,8 +7450,6 @@ static int cmd_big_create_sync_complete(struct btdev *dev, const void *data,
 					sizeof(pdu.ev));
 		return 0;
 	}
-
-	memset(&pdu.ev, 0, sizeof(pdu.ev));
 
 	for (i = 0; i < cmd->num_bis; i++) {
 		conn = conn_link_bis(dev, remote, i);
@@ -6689,30 +7584,34 @@ done:
 static int cmd_remove_iso_path(struct btdev *dev, const void *data, uint8_t len)
 {
 	const struct bt_hci_cmd_le_remove_iso_path *cmd = data;
-	uint8_t status = BT_HCI_ERR_SUCCESS;
+	struct bt_hci_rsp_le_remove_iso_path rsp;
 	struct btdev_conn *conn;
+
+	memset(&rsp, 0, sizeof(rsp));
+
+	rsp.handle = cmd->handle;
 
 	conn = queue_find(dev->conns, match_handle,
 				UINT_TO_PTR(cpu_to_le16(cmd->handle)));
 	if (!conn) {
-		status = BT_HCI_ERR_UNKNOWN_CONN_ID;
+		rsp.status = BT_HCI_ERR_UNKNOWN_CONN_ID;
 		goto done;
 	}
 
-	switch (cmd->direction) {
-	case 0x00:
-		dev->le_iso_path[0] = 0x00;
-		break;
-	case 0x01:
-		dev->le_iso_path[1] = 0x00;
-		break;
-	default:
-		status = BT_HCI_ERR_INVALID_PARAMETERS;
+	if (cmd->direction > 0x3) {
+		rsp.status = BT_HCI_ERR_INVALID_PARAMETERS;
+		goto done;
 	}
 
+	if (cmd->direction & 0x1)
+		dev->le_iso_path[0] = 0x00;
+
+	if (cmd->direction & 0x2)
+		dev->le_iso_path[1] = 0x00;
+
 done:
-	cmd_complete(dev, BT_HCI_CMD_LE_REMOVE_ISO_PATH, &status,
-							sizeof(status));
+	cmd_complete(dev, BT_HCI_CMD_LE_REMOVE_ISO_PATH, &rsp,
+							sizeof(rsp));
 
 	return 0;
 }
@@ -6831,6 +7730,9 @@ static int cmd_config_data_path(struct btdev *dev, const void *data,
 }
 
 #define CMD_LE_52 \
+	CMD(BT_HCI_CMD_LE_PAST, cmd_past, NULL), \
+	CMD(BT_HCI_CMD_LE_PAST_SET_INFO, cmd_past_set_info, NULL), \
+	CMD(BT_HCI_CMD_LE_PAST_PARAMS, cmd_past_params, NULL), \
 	CMD(BT_HCI_CMD_LE_READ_BUFFER_SIZE_V2, cmd_read_size_v2, NULL), \
 	CMD(BT_HCI_CMD_LE_READ_ISO_TX_SYNC, cmd_read_iso_tx_sync, NULL), \
 	CMD(BT_HCI_CMD_LE_SET_EVENT_MASK, cmd_le_set_event_mask, NULL), \
@@ -6867,6 +7769,9 @@ static int cmd_config_data_path(struct btdev *dev, const void *data,
 static const struct btdev_cmd cmd_le_5_2[] = {
 	CMD_COMMON_ALL,
 	CMD_COMMON_BREDR_LE,
+	CMD_COMMON_BREDR_20,
+	CMD_COMMON_BREDR_LE_40,
+	CMD_BREDR,
 	CMD_LE,
 	CMD_LE_50,
 	CMD_LE_52,
@@ -6875,6 +7780,9 @@ static const struct btdev_cmd cmd_le_5_2[] = {
 
 static void set_le_52_commands(struct btdev *btdev)
 {
+	btdev->commands[40] |= BIT(6);	/* LE PAST */
+	btdev->commands[40] |= BIT(7);	/* LE PA Set Info Transfer */
+	btdev->commands[41] |= BIT(1);	/* LE PAST Parameters */
 	btdev->commands[41] |= 0x20;	/* LE Read Buffer Size v2 */
 	btdev->commands[41] |= 0x40;	/* LE Read ISO TX Sync */
 	btdev->commands[41] |= 0x80;	/* LE Set CIG Parameters */
@@ -6909,6 +7817,79 @@ static const struct btdev_cmd cmd_le[] = {
 	CMD_LE,
 	{}
 };
+
+static int cmd_le_read_all_local_features(struct btdev *dev, const void *data,
+					uint8_t len)
+{
+	struct bt_hci_rsp_le_read_all_local_features rsp;
+
+	memset(&rsp, 0, sizeof(rsp));
+	rsp.status = BT_HCI_ERR_SUCCESS;
+	rsp.page = 10;
+	memcpy(rsp.features, dev->le_features, 248);
+
+	cmd_complete(dev, BT_HCI_CMD_LE_READ_ALL_LOCAL_FEATURES, &rsp,
+				sizeof(rsp));
+
+	return 0;
+}
+
+static int cmd_le_read_all_remote_features(struct btdev *dev, const void *data,
+					uint8_t len)
+{
+	const struct bt_hci_cmd_le_read_all_remote_features *cmd = data;
+	struct bt_hci_evt_le_read_all_remote_features_complete ev;
+	struct btdev_conn *conn;
+	uint8_t status = BT_HCI_ERR_SUCCESS;
+
+	conn = queue_find(dev->conns, match_handle,
+				UINT_TO_PTR(le16_to_cpu(cmd->handle)));
+	if (!conn)
+		status = BT_HCI_ERR_UNKNOWN_CONN_ID;
+
+	cmd_status(dev, status, BT_HCI_CMD_LE_READ_ALL_REMOTE_FEATURES);
+
+	if (status)
+		return 0;
+
+	memset(&ev, 0, sizeof(ev));
+	ev.status = BT_HCI_ERR_SUCCESS;
+	ev.handle = cpu_to_le16(conn->handle);
+	ev.max_pages = 1;
+	ev.valid_pages = 1;
+	memcpy(ev.features, conn->link->dev->le_features, 248);
+
+	le_meta_event(dev, BT_HCI_EVT_LE_READ_ALL_REMOTE_FEATURES_COMPLETE, &ev,
+						sizeof(ev));
+
+	return 0;
+}
+
+#define CMD_LE_60 \
+	CMD(BT_HCI_CMD_LE_READ_ALL_LOCAL_FEATURES, \
+			cmd_le_read_all_local_features, NULL), \
+	CMD(BT_HCI_CMD_LE_READ_ALL_REMOTE_FEATURES, \
+			cmd_le_read_all_remote_features, NULL)
+
+static const struct btdev_cmd cmd_le_6_0[] = {
+	CMD_COMMON_ALL,
+	CMD_COMMON_BREDR_LE,
+	CMD_COMMON_BREDR_20,
+	CMD_COMMON_BREDR_LE_40,
+	CMD_BREDR,
+	CMD_LE,
+	CMD_LE_50,
+	CMD_LE_52,
+	CMD_LE_60,
+	{}
+};
+
+static void set_le_60_commands(struct btdev *btdev)
+{
+	btdev->commands[47] |= BIT(2);	/* LE Read All Local Features */
+	btdev->commands[47] |= BIT(3);	/* LE Read All Remote Features */
+	btdev->cmds = cmd_le_6_0;
+}
 
 static void set_le_commands(struct btdev *btdev)
 {
@@ -6964,6 +7945,9 @@ static void set_le_commands(struct btdev *btdev)
 
 	btdev->cmds = cmd_le;
 
+	if (btdev->type >= BTDEV_TYPE_BREDRLE)
+		set_bredrle_40_commands(btdev);
+
 	/* Extra LE commands for >= 5.0 adapters */
 	if (btdev->type >= BTDEV_TYPE_BREDRLE50) {
 		set_le_50_commands(btdev);
@@ -6975,133 +7959,18 @@ static void set_le_commands(struct btdev *btdev)
 		set_le_52_commands(btdev);
 		btdev->cmds = cmd_le_5_2;
 	}
+
+	/* Extra LE commands for >= 6.0 adapters */
+	if (btdev->type >= BTDEV_TYPE_BREDRLE60) {
+		set_le_60_commands(btdev);
+		btdev->cmds = cmd_le_6_0;
+	}
 }
-
-static int cmd_set_event_mask_2(struct btdev *dev, const void *data,
-							uint8_t len)
-{
-	const struct bt_hci_cmd_set_event_mask_page2 *cmd = data;
-	uint8_t status = BT_HCI_ERR_SUCCESS;
-
-	memcpy(dev->event_mask_page2, cmd->mask, 8);
-	cmd_complete(dev, BT_HCI_CMD_SET_EVENT_MASK_PAGE2, &status,
-						sizeof(status));
-
-	return 0;
-}
-
-static int cmd_read_sync_train_params(struct btdev *dev, const void *data,
-							uint8_t len)
-{
-	struct bt_hci_rsp_read_sync_train_params rsp;
-
-	memset(&rsp, 0, sizeof(rsp));
-
-	rsp.status = BT_HCI_ERR_SUCCESS;
-	rsp.interval = cpu_to_le16(dev->sync_train_interval);
-	rsp.timeout = cpu_to_le32(dev->sync_train_timeout);
-	rsp.service_data = dev->sync_train_service_data;
-	cmd_complete(dev, BT_HCI_CMD_READ_SYNC_TRAIN_PARAMS, &rsp, sizeof(rsp));
-
-	return 0;
-}
-
-static int cmd_read_sc_support(struct btdev *dev, const void *data, uint8_t len)
-{
-	struct bt_hci_rsp_read_secure_conn_support rsp;
-
-	memset(&rsp, 0, sizeof(rsp));
-
-	rsp.status = BT_HCI_ERR_SUCCESS;
-	rsp.support = dev->secure_conn_support;
-	cmd_complete(dev, BT_HCI_CMD_READ_SECURE_CONN_SUPPORT, &rsp,
-							sizeof(rsp));
-
-	return 0;
-}
-
-static int cmd_write_sc_support(struct btdev *dev, const void *data,
-							uint8_t len)
-{
-	const struct bt_hci_cmd_write_secure_conn_support *cmd = data;
-	uint8_t status = BT_HCI_ERR_SUCCESS;
-
-	dev->secure_conn_support = cmd->support;
-	cmd_complete(dev, BT_HCI_CMD_WRITE_SECURE_CONN_SUPPORT, &status,
-							sizeof(status));
-
-	return 0;
-}
-
-static int cmd_read_auth_payload_timeout(struct btdev *dev, const void *data,
-							uint8_t len)
-{
-	/* TODO */
-	return -ENOTSUP;
-}
-
-static int cmd_write_auth_payload_timeout(struct btdev *dev, const void *data,
-							uint8_t len)
-{
-	/* TODO */
-	return -ENOTSUP;
-}
-
-static int cmd_read_local_oob_ext_data(struct btdev *dev, const void *data,
-							uint8_t len)
-{
-	struct bt_hci_rsp_read_local_oob_ext_data rsp;
-
-	memset(&rsp, 0, sizeof(rsp));
-
-	rsp.status = BT_HCI_ERR_SUCCESS;
-	cmd_complete(dev, BT_HCI_CMD_READ_LOCAL_OOB_EXT_DATA, &rsp,
-							sizeof(rsp));
-
-	return 0;
-}
-
-#define BT_BREDR_LE \
-	CMD(BT_HCI_CMD_SET_EVENT_MASK_PAGE2, cmd_set_event_mask_2, NULL), \
-	CMD(BT_HCI_CMD_READ_SYNC_TRAIN_PARAMS, cmd_read_sync_train_params, \
-					NULL), \
-	CMD(BT_HCI_CMD_READ_SECURE_CONN_SUPPORT, cmd_read_sc_support, NULL), \
-	CMD(BT_HCI_CMD_WRITE_SECURE_CONN_SUPPORT, cmd_write_sc_support, NULL), \
-	CMD(BT_HCI_CMD_READ_AUTH_PAYLOAD_TIMEOUT, \
-					cmd_read_auth_payload_timeout, NULL), \
-	CMD(BT_HCI_CMD_WRITE_AUTH_PAYLOAD_TIMEOUT, \
-					cmd_write_auth_payload_timeout, NULL), \
-	CMD(BT_HCI_CMD_READ_LOCAL_OOB_EXT_DATA, \
-					cmd_read_local_oob_ext_data, NULL)
-
-static const struct btdev_cmd cmd_bredr_le[] = {
-	CMD_COMMON_ALL,
-	CMD_COMMON_BREDR_LE,
-	CMD_COMMON_BREDR_20,
-	CMD_BREDR,
-	CMD_LE,
-	CMD_LE_50,
-	CMD_LE_52,
-	BT_BREDR_LE,
-	{}
-};
 
 static void set_bredrle_commands(struct btdev *btdev)
 {
 	set_bredr_commands(btdev);
 	set_le_commands(btdev);
-
-	/* Extra BR/EDR commands we want to only support for >= 4.0
-	 * adapters.
-	 */
-	btdev->commands[22] |= 0x04;	/* Set Event Mask Page 2 */
-	btdev->commands[31] |= 0x80;	/* Read Sync Train Parameters */
-	btdev->commands[32] |= 0x04;	/* Read Secure Connections Support */
-	btdev->commands[32] |= 0x08;	/* Write Secure Connections Support */
-	btdev->commands[32] |= 0x10;	/* Read Auth Payload Timeout */
-	btdev->commands[32] |= 0x20;	/* Write Auth Payload Timeout */
-	btdev->commands[32] |= 0x40;	/* Read Local OOB Extended Data */
-	btdev->cmds = cmd_bredr_le;
 }
 
 static void set_amp_commands(struct btdev *btdev)
@@ -7155,12 +8024,20 @@ static void set_bredrle_features(struct btdev *btdev)
 	}
 
 	if (btdev->type >= BTDEV_TYPE_BREDRLE52) {
+		btdev->version = 0x0b;
 		btdev->le_features[1] |= 0x20;  /* LE PER ADV */
+		btdev->le_features[3] |= BIT(0);  /* LE PAST Sender */
+		btdev->le_features[3] |= BIT(1);  /* LE PAST Receiver */
 		btdev->le_features[3] |= 0x10;  /* LE CIS Central */
 		btdev->le_features[3] |= 0x20;  /* LE CIS Peripheral */
 		btdev->le_features[3] |= 0x40;  /* LE ISO Broadcaster */
 		btdev->le_features[3] |= 0x80;  /* LE Synchronized Receiver */
 		btdev->le_features[4] |= 0x01;  /* LE ISO channels */
+	}
+
+	if (btdev->type >= BTDEV_TYPE_BREDRLE60) {
+		btdev->version = 0x0e;
+		btdev->le_features[7] |= BIT(7); /* LL Extended Features */
 	}
 
 	btdev->feat_page_2[0] |= 0x01;	/* CPB - Central Operation */
@@ -7263,14 +8140,23 @@ struct btdev *btdev_create(enum btdev_type type, uint16_t id)
 
 	memset(btdev, 0, sizeof(*btdev));
 
-	if (type == BTDEV_TYPE_BREDRLE || type == BTDEV_TYPE_LE ||
-			type == BTDEV_TYPE_BREDRLE50 ||
-			type == BTDEV_TYPE_BREDRLE52) {
+	switch (type) {
+	case BTDEV_TYPE_BREDRLE:
+	case BTDEV_TYPE_LE:
+	case BTDEV_TYPE_BREDRLE50:
+	case BTDEV_TYPE_BREDRLE52:
+	case BTDEV_TYPE_BREDRLE60:
 		btdev->crypto = bt_crypto_new();
 		if (!btdev->crypto) {
 			free(btdev);
 			return NULL;
 		}
+		break;
+	case BTDEV_TYPE_BREDR:
+	case BTDEV_TYPE_BREDR20:
+	case BTDEV_TYPE_AMP:
+	default:
+		break;
 	}
 
 	btdev->type = type;
@@ -7282,6 +8168,7 @@ struct btdev *btdev_create(enum btdev_type type, uint16_t id)
 	case BTDEV_TYPE_BREDRLE:
 	case BTDEV_TYPE_BREDRLE50:
 	case BTDEV_TYPE_BREDRLE52:
+	case BTDEV_TYPE_BREDRLE60:
 		btdev->version = 0x09;
 		set_bredrle_features(btdev);
 		set_bredrle_commands(btdev);
@@ -7434,6 +8321,17 @@ const uint8_t *btdev_get_adv_addr(struct btdev *btdev, uint8_t handle)
 	return ext_adv_addr(btdev, ext_adv);
 }
 
+void btdev_get_mtu(struct btdev *btdev, uint16_t *acl, uint16_t *sco,
+								uint16_t *iso)
+{
+	if (acl)
+		*acl = btdev->acl_mtu;
+	if (sco)
+		*sco = btdev->sco_mtu;
+	if (iso)
+		*iso = btdev->iso_mtu;
+}
+
 void btdev_set_le_states(struct btdev *btdev, const uint8_t *le_states)
 {
 	memcpy(btdev->le_states, le_states, sizeof(btdev->le_states));
@@ -7497,6 +8395,8 @@ static const struct btdev_cmd *run_cmd(struct btdev *btdev,
 	case -ENOENT:
 		status = BT_HCI_ERR_UNKNOWN_CONN_ID;
 		break;
+	case -EALREADY:
+		return NULL;
 	default:
 		status = BT_HCI_ERR_UNSPECIFIED_ERROR;
 		break;
@@ -7981,6 +8881,7 @@ int btdev_set_msft_opcode(struct btdev *btdev, uint16_t opcode)
 	case BTDEV_TYPE_BREDRLE:
 	case BTDEV_TYPE_BREDRLE50:
 	case BTDEV_TYPE_BREDRLE52:
+	case BTDEV_TYPE_BREDRLE60:
 		btdev->msft_opcode = opcode;
 		btdev->msft_cmds = cmd_msft;
 		return 0;
@@ -8038,6 +8939,7 @@ int btdev_set_emu_opcode(struct btdev *btdev, uint16_t opcode)
 	case BTDEV_TYPE_BREDRLE:
 	case BTDEV_TYPE_BREDRLE50:
 	case BTDEV_TYPE_BREDRLE52:
+	case BTDEV_TYPE_BREDRLE60:
 		btdev->emu_opcode = opcode;
 		btdev->emu_cmds = cmd_emu;
 		return 0;

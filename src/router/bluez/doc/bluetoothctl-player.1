@@ -1,0 +1,547 @@
+.\" Man page generated from reStructuredText.
+.
+.
+.nr rst2man-indent-level 0
+.
+.de1 rstReportMargin
+\\$1 \\n[an-margin]
+level \\n[rst2man-indent-level]
+level margin: \\n[rst2man-indent\\n[rst2man-indent-level]]
+-
+\\n[rst2man-indent0]
+\\n[rst2man-indent1]
+\\n[rst2man-indent2]
+..
+.de1 INDENT
+.\" .rstReportMargin pre:
+. RS \\$1
+. nr rst2man-indent\\n[rst2man-indent-level] \\n[an-margin]
+. nr rst2man-indent-level +1
+.\" .rstReportMargin post:
+..
+.de UNINDENT
+. RE
+.\" indent \\n[an-margin]
+.\" old: \\n[rst2man-indent\\n[rst2man-indent-level]]
+.nr rst2man-indent-level -1
+.\" new: \\n[rst2man-indent\\n[rst2man-indent-level]]
+.in \\n[rst2man-indent\\n[rst2man-indent-level]]u
+..
+.TH "BLUETOOTHCTL-PLAYER" "1" "November 2022" "BlueZ" "Linux System Administration"
+.SH NAME
+bluetoothctl-player \- Media Player Submenu
+.SH SYNOPSIS
+.sp
+\fBbluetoothctl\fP [\-\-options] [player.commands]
+.sp
+This submenu controls media playback using the \fBorg.bluez.MediaPlayer(5)\fP
+interface.
+.SH MEDIA PLAYER COMMANDS
+.SS list
+.sp
+List available players.
+.INDENT 0.0
+.TP
+.B Usage
+\fB> list\fP
+.TP
+.B Example Display all available media players (local and remote)
+.nf
+\fB> list\fP
+.fi
+.sp
+.UNINDENT
+.SS show
+.sp
+Show player information.
+.INDENT 0.0
+.TP
+.B Usage
+\fB> show [player]\fP
+.TP
+.B Uses
+\fBorg.bluez.MediaPlayer(5)\fP properties
+.TP
+.B [player]
+Media player path or identifier (optional, shows currently selected player if omitted)
+.TP
+.B Example Show information for currently selected player
+.nf
+\fB> show\fP
+.fi
+.sp
+.TP
+.B Example Show remote player information
+.nf
+\fB> show /org/bluez/hci0/dev_00_11_22_33_44_55/player0\fP
+.fi
+.sp
+.UNINDENT
+.SS select
+.sp
+Select default player.
+.INDENT 0.0
+.TP
+.B Usage
+\fB> select <player>\fP
+.TP
+.B <player>
+Media player path or identifier to select as default
+.TP
+.B Example Select remote Bluetooth media player
+.nf
+\fB> select /org/bluez/hci0/dev_00_11_22_33_44_55/player0\fP
+.fi
+.sp
+.UNINDENT
+.SS play
+.sp
+Start playback.
+.INDENT 0.0
+.TP
+.B Usage
+\fB> play [item]\fP
+.TP
+.B Uses
+\fBorg.bluez.MediaPlayer(5)\fP method \fBPlay\fP
+.TP
+.B [item]
+Media item path to play (optional, starts playback of current item if omitted)
+.TP
+.B Example Start playback on current player
+.nf
+\fB> play\fP
+.fi
+.sp
+.TP
+.B Example Play specific item from media browser
+.nf
+\fB> play /org/bluez/item/1\fP
+.fi
+.sp
+.TP
+.B Example Play named track item
+.nf
+\fB> play /org/bluez/item/track_001\fP
+.fi
+.sp
+.TP
+.B Example Play track from specific album folder
+.nf
+\fB> play /org/bluez/item/album_rock/track_05\fP
+.fi
+.sp
+.UNINDENT
+.SS pause
+.sp
+Pause playback.
+.INDENT 0.0
+.TP
+.B Usage
+\fB> pause\fP
+.TP
+.B Uses
+\fBorg.bluez.MediaPlayer(5)\fP method \fBPause\fP
+.TP
+.B Example Pause current playback
+.nf
+\fB> pause\fP
+.fi
+.sp
+.UNINDENT
+.SS stop
+.sp
+Stop playback.
+.INDENT 0.0
+.TP
+.B Usage
+\fB> stop\fP
+.TP
+.B Uses
+\fBorg.bluez.MediaPlayer(5)\fP method \fBStop\fP
+.TP
+.B Example Stop current playback
+.nf
+\fB> stop\fP
+.fi
+.sp
+.UNINDENT
+.SS next
+.sp
+Jump to next item.
+.INDENT 0.0
+.TP
+.B Usage
+\fB> next\fP
+.TP
+.B Uses
+\fBorg.bluez.MediaPlayer(5)\fP method \fBNext\fP
+.TP
+.B Example Skip to next track
+.nf
+\fB> next\fP
+.fi
+.sp
+.UNINDENT
+.SS previous
+.sp
+Jump to previous item.
+.INDENT 0.0
+.TP
+.B Usage
+\fB> previous\fP
+.TP
+.B Uses
+\fBorg.bluez.MediaPlayer(5)\fP method \fBPrevious\fP
+.TP
+.B Example Go back to previous track
+.nf
+\fB> previous\fP
+.fi
+.sp
+.UNINDENT
+.SS fast\-forward
+.sp
+Fast forward playback.
+.INDENT 0.0
+.TP
+.B Usage
+\fB> fast\-forward\fP
+.TP
+.B Uses
+\fBorg.bluez.MediaPlayer(5)\fP method \fBFastForward\fP
+.TP
+.B Example Enable fast forward mode
+.nf
+\fB> fast\-forward\fP
+.fi
+.sp
+.UNINDENT
+.SS rewind
+.sp
+Rewind playback.
+.INDENT 0.0
+.TP
+.B Usage
+\fB> rewind\fP
+.TP
+.B Uses
+\fBorg.bluez.MediaPlayer(5)\fP method \fBRewind\fP
+.TP
+.B Example Enable rewind mode
+.nf
+\fB> rewind\fP
+.fi
+.sp
+.UNINDENT
+.SS equalizer
+.sp
+Enable/Disable equalizer.
+.INDENT 0.0
+.TP
+.B Usage
+\fB> equalizer <on/off>\fP
+.TP
+.B Uses
+\fBorg.bluez.MediaPlayer(5)\fP property \fBEqualizer\fP
+.TP
+.B <on/off>
+Enable (on) or disable (off) the equalizer
+.TP
+.B Example Enable equalizer
+.nf
+\fB> equalizer on\fP
+.fi
+.sp
+.TP
+.B Example Disable equalizer
+.nf
+\fB> equalizer off\fP
+.fi
+.sp
+.UNINDENT
+.SS repeat
+.sp
+Set repeat mode.
+.INDENT 0.0
+.TP
+.B Usage
+\fB> repeat <singletrack/alltrack/group/off>\fP
+.TP
+.B Uses
+\fBorg.bluez.MediaPlayer(5)\fP property \fBRepeat\fP
+.TP
+.B <singletrack/alltrack/group/off>
+Set repeat mode \- singletrack (current track), alltrack (all tracks), group (current group/album), or off (no repeat)
+.TP
+.B Example Disable repeat mode
+.nf
+\fB> repeat off\fP
+.fi
+.sp
+.TP
+.B Example Repeat current track
+.nf
+\fB> repeat singletrack\fP
+.fi
+.sp
+.TP
+.B Example Repeat entire playlist/queue
+.nf
+\fB> repeat alltrack\fP
+.fi
+.sp
+.TP
+.B Example Repeat current group/album
+.nf
+\fB> repeat group\fP
+.fi
+.sp
+.UNINDENT
+.SS shuffle
+.sp
+Set shuffle mode.
+.INDENT 0.0
+.TP
+.B Usage
+\fB> shuffle <alltracks/group/off>\fP
+.TP
+.B Uses
+\fBorg.bluez.MediaPlayer(5)\fP property \fBShuffle\fP
+.TP
+.B <alltracks/group/off>
+Set shuffle mode \- alltracks (shuffle all tracks), group (shuffle within current group), or off (no shuffle)
+.TP
+.B Example Disable shuffle mode
+.nf
+\fB> shuffle off\fP
+.fi
+.sp
+.TP
+.B Example Shuffle all tracks in playlist
+.nf
+\fB> shuffle alltracks\fP
+.fi
+.sp
+.TP
+.B Example Shuffle tracks within current group
+.nf
+\fB> shuffle group\fP
+.fi
+.sp
+.UNINDENT
+.SS scan
+.sp
+Set scan mode.
+.INDENT 0.0
+.TP
+.B Usage
+\fB> scan <alltracks/group/off>\fP
+.TP
+.B Uses
+\fBorg.bluez.MediaPlayer(5)\fP property \fBScan\fP
+.TP
+.B <alltracks/group/off>
+Set scan mode \- alltracks (scan through all tracks), group (scan within current group), or off (no scan)
+.TP
+.B Example Disable scan mode
+.nf
+\fB> scan off\fP
+.fi
+.sp
+.TP
+.B Example Scan through all tracks
+.nf
+\fB> scan alltracks\fP
+.fi
+.sp
+.TP
+.B Example Scan through current group only
+.nf
+\fB> scan group\fP
+.fi
+.sp
+.UNINDENT
+.SS change\-folder
+.sp
+Change current folder.
+.INDENT 0.0
+.TP
+.B Usage
+\fB> change\-folder <item>\fP
+.TP
+.B <item>
+Folder path to navigate to, or \(dq..\(dq to go up one directory level
+.TP
+.B Example Navigate to Albums folder
+.nf
+\fB> change\-folder /org/bluez/item/Albums\fP
+.fi
+.sp
+.TP
+.B Example Navigate to Artists folder
+.nf
+\fB> change\-folder /org/bluez/item/Artists\fP
+.fi
+.sp
+.TP
+.B Example Navigate to Playlists folder
+.nf
+\fB> change\-folder /org/bluez/item/Playlists\fP
+.fi
+.sp
+.TP
+.B Example Go up one directory level
+.nf
+\fB> change\-folder ..\fP
+.fi
+.sp
+.UNINDENT
+.SS list\-items
+.sp
+List items of current folder.
+.INDENT 0.0
+.TP
+.B Usage
+\fB> list\-items [start] [end]\fP
+.TP
+.B [start]
+Starting index for item list (optional, defaults to 0)
+.TP
+.B [end]
+Ending index for item list (optional, lists all items from start if omitted)
+.TP
+.B Example List all items in current folder
+.nf
+\fB> list\-items\fP
+.fi
+.sp
+.TP
+.B Example List first 10 items (0\-10)
+.nf
+\fB> list\-items 0 10\fP
+.fi
+.sp
+.TP
+.B Example List items 5 through 15
+.nf
+\fB> list\-items 5 15\fP
+.fi
+.sp
+.TP
+.B Example List items 10 through 20
+.nf
+\fB> list\-items 10 20\fP
+.fi
+.sp
+.TP
+.B Example List first 50 items
+.nf
+\fB> list\-items 0 50\fP
+.fi
+.sp
+.UNINDENT
+.SS search
+.sp
+Search items containing string.
+.INDENT 0.0
+.TP
+.B Usage
+\fB> search <string>\fP
+.TP
+.B <string>
+Search term to find matching items (songs, albums, artists, etc.)
+.TP
+.B Example Search for Beatles songs/albums
+.nf
+\fB> search \(dqThe Beatles\(dq\fP
+.fi
+.sp
+.TP
+.B Example Search for items containing \(dqrock\(dq
+.nf
+\fB> search \(dqrock\(dq\fP
+.fi
+.sp
+.TP
+.B Example Search for items from 2023
+.nf
+\fB> search \(dq2023\(dq\fP
+.fi
+.sp
+.TP
+.B Example Search for playlists
+.nf
+\fB> search \(dqplaylist\(dq\fP
+.fi
+.sp
+.UNINDENT
+.SS queue
+.sp
+Add item to playlist queue.
+.INDENT 0.0
+.TP
+.B Usage
+\fB> queue <item>\fP
+.TP
+.B <item>
+Media item path to add to the playback queue
+.TP
+.B Example Add specific track to queue
+.nf
+\fB> queue /org/bluez/item/track_001\fP
+.fi
+.sp
+.TP
+.B Example Add entire album to queue
+.nf
+\fB> queue /org/bluez/item/album_rock\fP
+.fi
+.sp
+.TP
+.B Example Add playlist to queue
+.nf
+\fB> queue /org/bluez/item/playlist_favorites\fP
+.fi
+.sp
+.UNINDENT
+.SS show\-item
+.sp
+Show item information.
+.INDENT 0.0
+.TP
+.B Usage
+\fB> show\-item <item>\fP
+.TP
+.B <item>
+Media item path to display detailed information for
+.TP
+.B Example Show details of specific track
+.nf
+\fB> show\-item /org/bluez/item/track_001\fP
+.fi
+.sp
+.TP
+.B Example Show details of album
+.nf
+\fB> show\-item /org/bluez/item/album_rock\fP
+.fi
+.sp
+.TP
+.B Example Show details of artist
+.nf
+\fB> show\-item /org/bluez/item/artist_beatles\fP
+.fi
+.sp
+.UNINDENT
+.SH RESOURCES
+.sp
+ <http://www.bluez.org> 
+.SH REPORTING BUGS
+.sp
+ <linux\-bluetooth@vger.kernel.org> 
+.SH COPYRIGHT
+Free use of this software is granted under the terms of the GNU
+Lesser General Public Licenses (LGPL).
+.\" Generated by docutils manpage writer.
+.

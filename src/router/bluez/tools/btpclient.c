@@ -21,7 +21,7 @@
 
 #include <ell/ell.h>
 
-#include "lib/bluetooth.h"
+#include "bluetooth/bluetooth.h"
 #include "src/shared/btp.h"
 
 #define AD_PATH "/org/bluez/advertising"
@@ -29,10 +29,11 @@
 #define AD_IFACE "org.bluez.LEAdvertisement1"
 #define AG_IFACE "org.bluez.Agent1"
 
-/* List of assigned numbers for advetising data and scan response */
+/* List of assigned numbers for advertising data and scan response */
 #define AD_TYPE_FLAGS				0x01
 #define AD_TYPE_INCOMPLETE_UUID16_SERVICE_LIST	0x02
 #define AD_TYPE_SHORT_NAME			0x08
+#define AD_TYPE_COMPLETE_NAME			0x09
 #define AD_TYPE_TX_POWER			0x0a
 #define AD_TYPE_SOLICIT_UUID16_SERVICE_LIST	0x14
 #define AD_TYPE_SERVICE_DATA_UUID16		0x16
@@ -287,7 +288,7 @@ static void btp_gap_read_commands(uint8_t index, const void *param,
 
 	commands |= (1 << BTP_OP_GAP_READ_SUPPORTED_COMMANDS);
 	commands |= (1 << BTP_OP_GAP_READ_CONTROLLER_INDEX_LIST);
-	commands |= (1 << BTP_OP_GAP_READ_COTROLLER_INFO);
+	commands |= (1 << BTP_OP_GAP_READ_CONTROLLER_INFO);
 	commands |= (1 << BTP_OP_GAP_RESET);
 	commands |= (1 << BTP_OP_GAP_SET_POWERED);
 	commands |= (1 << BTP_OP_GAP_SET_CONNECTABLE);
@@ -370,7 +371,7 @@ static void btp_gap_read_info(uint8_t index, const void *param, uint16_t length,
 	rp.supported_settings = L_CPU_TO_LE32(adapter->supported_settings);
 	rp.current_settings = L_CPU_TO_LE32(adapter->current_settings);
 
-	btp_send(btp, BTP_GAP_SERVICE, BTP_OP_GAP_READ_COTROLLER_INFO, index,
+	btp_send(btp, BTP_GAP_SERVICE, BTP_OP_GAP_READ_CONTROLLER_INFO, index,
 							sizeof(rp), &rp);
 
 	return;
@@ -465,7 +466,7 @@ static void unreg_advertising_reply(struct l_dbus_proxy *proxy,
 		l_info("Unable to remove ad instance");
 	if (!l_dbus_object_remove_interface(dbus, AD_PATH,
 						L_DBUS_INTERFACE_PROPERTIES))
-		l_info("Unable to remove propety instance");
+		l_info("Unable to remove property instance");
 	if (!l_dbus_unregister_interface(dbus, AD_IFACE))
 		l_info("Unable to unregister ad interface");
 
@@ -500,7 +501,7 @@ static void reset_unreg_agent_reply(struct l_dbus_proxy *proxy,
 
 	if (!l_dbus_object_remove_interface(dbus, AG_PATH,
 						L_DBUS_INTERFACE_PROPERTIES))
-		l_info("Unable to remove propety instance");
+		l_info("Unable to remove property instance");
 	if (!l_dbus_object_remove_interface(dbus, AG_PATH, AG_IFACE))
 		l_info("Unable to remove agent instance");
 	if (!l_dbus_unregister_interface(dbus, AG_IFACE))
@@ -1066,6 +1067,7 @@ static void create_advertising_data(uint8_t adv_data_len, const uint8_t *data)
 			break;
 		}
 		case AD_TYPE_SHORT_NAME:
+		case AD_TYPE_COMPLETE_NAME:
 			ad.local_name = malloc(ad_len + 1);
 			memcpy(ad.local_name, ad_data, ad_len);
 			ad.local_name[ad_len] = '\0';
@@ -1074,7 +1076,7 @@ static void create_advertising_data(uint8_t adv_data_len, const uint8_t *data)
 		case AD_TYPE_TX_POWER:
 			ad.tx_power = true;
 
-			/* XXX Value is ommited cause, stack fills it */
+			/* XXX Value is omitted cause, stack fills it */
 
 			break;
 		case AD_TYPE_SERVICE_DATA_UUID16:
@@ -1254,7 +1256,7 @@ static void stop_advertising_reply(struct l_dbus_proxy *proxy,
 		l_info("Unable to remove ad instance");
 	if (!l_dbus_object_remove_interface(dbus, AD_PATH,
 						L_DBUS_INTERFACE_PROPERTIES))
-		l_info("Unable to remove propety instance");
+		l_info("Unable to remove property instance");
 	if (!l_dbus_unregister_interface(dbus, AD_IFACE))
 		l_info("Unable to unregister ad interface");
 
@@ -1340,15 +1342,17 @@ static void set_discovery_filter_setup(struct l_dbus_message *message,
 	builder = l_dbus_message_builder_new(message);
 
 	l_dbus_message_builder_enter_array(builder, "{sv}");
-	l_dbus_message_builder_enter_dict(builder, "sv");
 
 	/* Be in observer mode or in general mode (default in Bluez) */
 	if (flags & BTP_GAP_DISCOVERY_FLAG_OBSERVATION) {
+		l_dbus_message_builder_enter_dict(builder, "sv");
 		l_dbus_message_builder_append_basic(builder, 's', "Transport");
 		l_dbus_message_builder_enter_variant(builder, "s");
 
-		if (flags & (BTP_GAP_DISCOVERY_FLAG_LE |
-						BTP_GAP_DISCOVERY_FLAG_BREDR))
+		if ((flags & (BTP_GAP_DISCOVERY_FLAG_LE |
+					BTP_GAP_DISCOVERY_FLAG_BREDR)) ==
+				(BTP_GAP_DISCOVERY_FLAG_LE |
+					BTP_GAP_DISCOVERY_FLAG_BREDR))
 			l_dbus_message_builder_append_basic(builder, 's',
 									"auto");
 		else if (flags & BTP_GAP_DISCOVERY_FLAG_LE)
@@ -1358,9 +1362,17 @@ static void set_discovery_filter_setup(struct l_dbus_message *message,
 								"bredr");
 
 		l_dbus_message_builder_leave_variant(builder);
+		l_dbus_message_builder_leave_dict(builder);
+
+		/* Add empty pattern to discover all devices */
+		l_dbus_message_builder_enter_dict(builder, "sv");
+		l_dbus_message_builder_append_basic(builder, 's', "Pattern");
+		l_dbus_message_builder_enter_variant(builder, "s");
+		l_dbus_message_builder_append_basic(builder, 's', "");
+		l_dbus_message_builder_leave_variant(builder);
+		l_dbus_message_builder_leave_dict(builder);
 	}
 
-	l_dbus_message_builder_leave_dict(builder);
 	l_dbus_message_builder_leave_array(builder);
 
 	/* TODO add passive, limited discovery */
@@ -2179,7 +2191,7 @@ static void rereg_unreg_agent_reply(struct l_dbus_proxy *proxy,
 
 	if (!l_dbus_object_remove_interface(dbus, AG_PATH,
 						L_DBUS_INTERFACE_PROPERTIES))
-		l_info("Unable to remove propety instance");
+		l_info("Unable to remove property instance");
 	if (!l_dbus_object_remove_interface(dbus, AG_PATH, AG_IFACE))
 		l_info("Unable to remove agent instance");
 	if (!l_dbus_unregister_interface(dbus, AG_IFACE))
@@ -2298,7 +2310,7 @@ static void btp_gap_pair(uint8_t index, const void *param, uint16_t length,
 	if (!device)
 		goto failed;
 
-	/* This command is asynchronous, send reply immediatelly to not block
+	/* This command is asynchronous, send reply immediately to not block
 	 * pairing process eg. passkey request.
 	 */
 	btp_send(btp, BTP_GAP_SERVICE, BTP_OP_GAP_PAIR, adapter->index, 0,
@@ -2494,7 +2506,7 @@ static void btp_gap_confirm_entry_rsp(uint8_t index, const void *param,
 	} else {
 		reply = l_dbus_message_new_error(ag.pending_req,
 						"org.bluez.Error.Rejected",
-						"Passkey missmatch");
+						"Passkey mismatch");
 	}
 
 	l_dbus_send_with_reply(dbus, ag.pending_req, passkey_confirm_rsp_reply,
@@ -2510,15 +2522,18 @@ static void btp_gap_device_found_ev(struct l_dbus_proxy *proxy)
 {
 	struct btp_device *device = find_device_by_proxy(proxy);
 	struct btp_adapter *adapter = find_adapter_by_device(device);
-	struct btp_device_found_ev ev;
+	struct btp_device_found_ev *ev;
 	struct btp_gap_device_connected_ev ev_conn;
 	const char *str, *addr_str;
 	int16_t rssi;
 	uint8_t address_type;
 	bool connected;
+	struct l_dbus_message_iter iter, var;
+
+	ev = l_malloc(sizeof(struct btp_device_found_ev));
 
 	if (!l_dbus_proxy_get_property(proxy, "Address", "s", &addr_str) ||
-					str2ba(addr_str, &ev.address) < 0)
+					str2ba(addr_str, &ev->address) < 0)
 		return;
 
 	if (!l_dbus_proxy_get_property(proxy, "AddressType", "s", &str))
@@ -2526,23 +2541,91 @@ static void btp_gap_device_found_ev(struct l_dbus_proxy *proxy)
 
 	address_type = strcmp(str, "public") ? BTP_GAP_ADDR_RANDOM :
 							BTP_GAP_ADDR_PUBLIC;
-	ev.address_type = address_type;
+	ev->address_type = address_type;
 
 	if (!l_dbus_proxy_get_property(proxy, "RSSI", "n", &rssi))
-		ev.rssi = 0x81;
+		ev->rssi = 0x81;
 	else
-		ev.rssi = rssi;
+		ev->rssi = rssi;
 
 	/* TODO Temporary set all flags */
-	ev.flags = (BTP_EV_GAP_DEVICE_FOUND_FLAG_RSSI |
+	ev->flags = (BTP_EV_GAP_DEVICE_FOUND_FLAG_RSSI |
 					BTP_EV_GAP_DEVICE_FOUND_FLAG_AD |
 					BTP_EV_GAP_DEVICE_FOUND_FLAG_SR);
 
-	/* TODO Add eir to device found event */
-	ev.eir_len = 0;
+	ev->eir_len = 0;
+	if (l_dbus_proxy_get_property(proxy, "ManufacturerData", "a{qv}",
+				&iter)) {
+		uint16_t key;
+
+		while (l_dbus_message_iter_next_entry(&iter, &key, &var)) {
+			struct l_dbus_message_iter var_2;
+			uint8_t *data;
+			uint32_t n;
+			uint8_t *eir;
+
+			if (!l_dbus_message_iter_get_variant(&var, "ay",
+								&var_2)) {
+				l_debug("Failed to get data variant");
+				continue;
+			}
+
+			if (!l_dbus_message_iter_get_fixed_array(&var_2,
+								&data,
+								&n)) {
+				l_debug("Cannot get ManufacturerData");
+				continue;
+			}
+
+			ev->eir_len += n + 4;
+			ev = l_realloc(ev,
+				sizeof(struct btp_device_found_ev) +
+				ev->eir_len);
+			eir = &ev->eir[ev->eir_len - n - 4];
+			eir[0] = n + 3;
+			eir[1] = AD_TYPE_MANUFACTURER_DATA;
+			eir[2] = key >> 8;
+			eir[3] = key & 0xFF;
+			memcpy(&eir[4], data, n);
+		}
+	}
+
+	if (l_dbus_proxy_get_property(proxy, "AdvertisingData", "a{yv}",
+					&iter)) {
+		uint8_t key;
+
+		while (l_dbus_message_iter_next_entry(&iter, &key, &var)) {
+			struct l_dbus_message_iter var_2;
+			uint8_t *data;
+			uint32_t n;
+			uint8_t *eir;
+
+			if (!l_dbus_message_iter_get_variant(&var, "ay",
+								&var_2)) {
+				l_debug("Failed to get data variant");
+				continue;
+			}
+
+			if (!l_dbus_message_iter_get_fixed_array(&var_2,
+								&data,
+								&n)) {
+				l_debug("Cannot get AdvertisingData");
+				continue;
+			}
+
+			ev->eir_len += n + 2;
+			ev = l_realloc(ev,
+				sizeof(struct btp_device_found_ev) +
+				ev->eir_len);
+			eir = &ev->eir[ev->eir_len - n - 2];
+			eir[0] = n + 1;
+			eir[1] = key;
+			memcpy(&eir[2], data, n);
+		}
+	}
 
 	btp_send(btp, BTP_GAP_SERVICE, BTP_EV_GAP_DEVICE_FOUND, adapter->index,
-						sizeof(ev) + ev.eir_len, &ev);
+						sizeof(*ev) + ev->eir_len, ev);
 
 	if (l_dbus_proxy_get_property(proxy, "Connected", "b", &connected) &&
 								connected) {
@@ -2634,7 +2717,7 @@ static void register_gap_service(void)
 				BTP_OP_GAP_READ_CONTROLLER_INDEX_LIST,
 				btp_gap_read_controller_index, NULL, NULL);
 
-	btp_register(btp, BTP_GAP_SERVICE, BTP_OP_GAP_READ_COTROLLER_INFO,
+	btp_register(btp, BTP_GAP_SERVICE, BTP_OP_GAP_READ_CONTROLLER_INFO,
 						btp_gap_read_info, NULL, NULL);
 
 	btp_register(btp, BTP_GAP_SERVICE, BTP_OP_GAP_RESET,
@@ -2864,8 +2947,8 @@ static void extract_settings(struct l_dbus_proxy *proxy, uint32_t *current,
 	*supported |=  BTP_GAP_SETTING_PRIVACY;
 	/* *supported |=  BTP_GAP_SETTING_STATIC_ADDRESS; */
 
-	/* TODO not all info is availbe via D-Bus API so some are assumed to be
-	 * enabled by bluetoothd or simply hardcoded until API is extended
+	/* TODO not all info is available via D-Bus API so some are assumed to
+	 * be enabled by bluetoothd or simply hardcoded until API is extended
 	 */
 	*current |=  BTP_GAP_SETTING_CONNECTABLE;
 	*current |=  BTP_GAP_SETTING_SSP;
@@ -3075,7 +3158,7 @@ static void property_changed(struct l_dbus_proxy *proxy, const char *name,
 
 			btp_gap_device_connection_ev(proxy, prop);
 		} else if (!strcmp(name, "AddressType")) {
-			/* Addres property change came first along with address
+			/* Address property change came first along with address
 			 * type.
 			 */
 			btp_identity_resolved_ev(proxy);

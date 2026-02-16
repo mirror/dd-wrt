@@ -24,9 +24,9 @@
 
 #include <glib.h>
 
-#include "lib/bluetooth.h"
-#include "lib/sdp.h"
-#include "lib/uuid.h"
+#include "bluetooth/bluetooth.h"
+#include "bluetooth/sdp.h"
+#include "bluetooth/uuid.h"
 
 #include "src/log.h"
 #include "src/adapter.h"
@@ -40,7 +40,6 @@
 #include "src/shared/gatt-client.h"
 #include "src/plugin.h"
 
-#include "device.h"
 #include "suspend.h"
 #include "attrib/att.h"
 #include "attrib/gattrib.h"
@@ -55,12 +54,8 @@ struct hog_device {
 
 static gboolean suspend_supported = FALSE;
 static bool auto_sec = true;
+static bool uhid_state_persist = false;
 static struct queue *devices = NULL;
-
-void input_set_auto_sec(bool state)
-{
-	auto_sec = state;
-}
 
 static void hog_device_accept(struct hog_device *dev, struct gatt_db *db)
 {
@@ -208,7 +203,7 @@ static int hog_disconnect(struct btd_service *service)
 {
 	struct hog_device *dev = btd_service_get_user_data(service);
 
-	if (input_get_userspace_hid() == UHID_PERSIST)
+	if (uhid_state_persist)
 		bt_hog_detach(dev->hog, false);
 	else
 		bt_hog_detach(dev->hog, true);
@@ -220,6 +215,7 @@ static int hog_disconnect(struct btd_service *service)
 
 static struct btd_profile hog_profile = {
 	.name		= "input-hog",
+	.bearer		= BTD_PROFILE_BEARER_LE,
 	.remote_uuid	= HOG_UUID,
 	.device_probe	= hog_probe,
 	.device_remove	= hog_remove,
@@ -228,9 +224,54 @@ static struct btd_profile hog_profile = {
 	.auto_connect	= true,
 };
 
+static void hog_read_config(void)
+{
+	const char filename[] = CONFIGDIR "/input.conf";
+	GKeyFile *config;
+	GError *err = NULL;
+	bool config_auto_sec;
+	char *uhid_enabled;
+
+	config = g_key_file_new();
+	if (!config) {
+		error("Failed to allocate memory for config");
+		return;
+	}
+
+	if (!g_key_file_load_from_file(config, filename, 0, &err)) {
+		if (!g_error_matches(err, G_FILE_ERROR, G_FILE_ERROR_NOENT))
+			error("Parsing %s failed: %s", filename, err->message);
+		g_error_free(err);
+		g_key_file_free(config);
+		return;
+	}
+
+	config_auto_sec = g_key_file_get_boolean(config, "General",
+					"LEAutoSecurity", &err);
+	if (!err) {
+		DBG("input.conf: LEAutoSecurity=%s",
+				config_auto_sec ? "true" : "false");
+		auto_sec = config_auto_sec;
+	} else
+		g_clear_error(&err);
+
+	uhid_enabled = g_key_file_get_string(config, "General",
+					"UserspaceHID", &err);
+	if (!err) {
+		DBG("input.conf: UserspaceHID=%s", uhid_enabled);
+		uhid_state_persist = strcasecmp(uhid_enabled, "persist") == 0;
+		g_free(uhid_enabled);
+	} else
+		g_clear_error(&err);
+
+	g_key_file_free(config);
+}
+
 static int hog_init(void)
 {
 	int err;
+
+	hog_read_config();
 
 	err = suspend_init(suspend_callback, resume_callback);
 	if (err < 0)

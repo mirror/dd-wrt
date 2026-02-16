@@ -40,12 +40,14 @@ org.bluez (Controller role)
 org.bluez.MediaPlayer1
 .TP
 .B Object path
-[variable prefix]/{hci0,hci1,...}/dev_XX_XX_XX_XX_XX_XX/playerX
+[variable prefix]/{hci0,hci1,...}/dev_{BDADDR}/player#
+.TP
+.B Used by
+\fBbluetoothctl\-player(1)\fP
 .UNINDENT
 .SS Methods
 .SS void Play()
-.INDENT 0.0
-.INDENT 3.5
+.sp
 Resume playback.
 .sp
 Possible Errors:
@@ -55,11 +57,15 @@ Possible Errors:
 .TP
 .B org.bluez.Error.Failed
 .UNINDENT
-.UNINDENT
+.sp
+Examples:
+.INDENT 0.0
+.TP
+.B bluetoothctl
+> player.play [item]
 .UNINDENT
 .SS void Pause()
-.INDENT 0.0
-.INDENT 3.5
+.sp
 Pause playback.
 .sp
 Possible Errors:
@@ -69,11 +75,15 @@ Possible Errors:
 .TP
 .B org.bluez.Error.Failed
 .UNINDENT
-.UNINDENT
+.sp
+Examples:
+.INDENT 0.0
+.TP
+.B bluetoothctl
+> player.pause
 .UNINDENT
 .SS void Stop()
-.INDENT 0.0
-.INDENT 3.5
+.sp
 Stop playback.
 .sp
 Possible Errors:
@@ -83,11 +93,15 @@ Possible Errors:
 .TP
 .B org.bluez.Error.Failed
 .UNINDENT
-.UNINDENT
+.sp
+Examples:
+.INDENT 0.0
+.TP
+.B bluetoothctl
+> player.stop
 .UNINDENT
 .SS void Next()
-.INDENT 0.0
-.INDENT 3.5
+.sp
 Next item.
 .sp
 Possible Errors:
@@ -97,11 +111,15 @@ Possible Errors:
 .TP
 .B org.bluez.Error.Failed
 .UNINDENT
-.UNINDENT
+.sp
+Examples:
+.INDENT 0.0
+.TP
+.B bluetoothctl
+> player.next
 .UNINDENT
 .SS void Previous()
-.INDENT 0.0
-.INDENT 3.5
+.sp
 Previous item.
 .sp
 Possible Errors:
@@ -111,13 +129,17 @@ Possible Errors:
 .TP
 .B org.bluez.Error.Failed
 .UNINDENT
-.UNINDENT
+.sp
+Examples:
+.INDENT 0.0
+.TP
+.B bluetoothctl
+> player.previous
 .UNINDENT
 .SS void FastForward()
-.INDENT 0.0
-.INDENT 3.5
-Fast forward playback, this action is only stopped when another method
-in this interface is called.
+.sp
+Fast forward playback, this action is only stopped when another method in this
+interface is called.
 .sp
 Possible Errors:
 .INDENT 0.0
@@ -126,13 +148,17 @@ Possible Errors:
 .TP
 .B org.bluez.Error.Failed
 .UNINDENT
-.UNINDENT
+.sp
+Examples:
+.INDENT 0.0
+.TP
+.B bluetoothctl
+> player.fast\-forward
 .UNINDENT
 .SS void Rewind()
-.INDENT 0.0
-.INDENT 3.5
-Rewind playback, this action is only stopped when another method in
-this interface is called.
+.sp
+Rewind playback, this action is only stopped when another method in this
+interface is called.
 .sp
 Possible Errors:
 .INDENT 0.0
@@ -141,14 +167,19 @@ Possible Errors:
 .TP
 .B org.bluez.Error.Failed
 .UNINDENT
-.UNINDENT
+.sp
+Examples:
+.INDENT 0.0
+.TP
+.B bluetoothctl
+> player.rewind
 .UNINDENT
 .SS void Press(byte avc_key)
-.INDENT 0.0
-.INDENT 3.5
-Press a specific key to send as passthrough command. The key will be
-released automatically. Use Hold() instead if the intention is to hold
-down the key.
+.sp
+Press a specific key to send as passthrough command.
+.sp
+The key will be released automatically. Use Hold() instead if the intention is
+to hold down the key.
 .sp
 Possible Errors:
 .INDENT 0.0
@@ -158,16 +189,15 @@ Possible Errors:
 .B org.bluez.Error.NotSupported
 .TP
 .B org.bluez.Error.Failed
-.UNINDENT
-.UNINDENT
 .UNINDENT
 .SS void Hold(byte avc_key)
-.INDENT 0.0
-.INDENT 3.5
-Press and hold a specific key to send as passthrough command. It is
-your responsibility to make sure that Release() is called after calling
-this method. The held key will also be released when any other method
-in this interface is called.
+.sp
+Press and hold a specific key to send as passthrough command. It is the
+responsibility of the caller to make sure that Release() is called after calling
+this method.
+.sp
+The held key will also be released when any other method in this interface is
+called.
 .sp
 Possible Errors:
 .INDENT 0.0
@@ -178,11 +208,8 @@ Possible Errors:
 .TP
 .B org.bluez.Error.Failed
 .UNINDENT
-.UNINDENT
-.UNINDENT
 .SS void Release()
-.INDENT 0.0
-.INDENT 3.5
+.sp
 Release the previously held key invoked using Hold().
 .sp
 Possible Errors:
@@ -192,12 +219,9 @@ Possible Errors:
 .TP
 .B org.bluez.Error.Failed
 .UNINDENT
-.UNINDENT
-.UNINDENT
 .SS Properties
 .SS string Equalizer [readwrite]
-.INDENT 0.0
-.INDENT 3.5
+.sp
 Indicates Player Equalizer setting.
 .sp
 Possible values:
@@ -207,11 +231,15 @@ Possible values:
 .TP
 .B \(dqon\(dq
 .UNINDENT
-.UNINDENT
+.sp
+Examples:
+.INDENT 0.0
+.TP
+.B bluetoothctl
+[player] > equalizer <on/off>
 .UNINDENT
 .SS string Repeat [readwrite]
-.INDENT 0.0
-.INDENT 3.5
+.sp
 Indicates Player Repeat setting.
 .sp
 Possible values:
@@ -225,11 +253,15 @@ Possible values:
 .TP
 .B \(dqgroup\(dq
 .UNINDENT
-.UNINDENT
+.sp
+Examples:
+.INDENT 0.0
+.TP
+.B bluetoothctl
+[player] > repeat <singletrack/alltracks/group/off>
 .UNINDENT
 .SS string Shuffle [readwrite]
-.INDENT 0.0
-.INDENT 3.5
+.sp
 Indicates Player Suffle setting.
 .sp
 Possible values:
@@ -241,11 +273,15 @@ Possible values:
 .TP
 .B \(dqgroup\(dq
 .UNINDENT
-.UNINDENT
+.sp
+Examples:
+.INDENT 0.0
+.TP
+.B bluetoothctl
+[player] > shuffle <alltracks/group/off>
 .UNINDENT
 .SS string Scan [readwrite]
-.INDENT 0.0
-.INDENT 3.5
+.sp
 Indicates Player Scan setting.
 .sp
 Possible values:
@@ -257,11 +293,15 @@ Possible values:
 .TP
 .B \(dqgroup\(dq
 .UNINDENT
-.UNINDENT
+.sp
+Examples:
+.INDENT 0.0
+.TP
+.B bluetoothctl
+[player] > scan <alltracks/group/off>
 .UNINDENT
 .SS string Status [readonly]
-.INDENT 0.0
-.INDENT 3.5
+.sp
 Indicates Player Status setting.
 .sp
 Possible status:
@@ -279,23 +319,18 @@ Possible status:
 .TP
 .B \(dqerror\(dq
 .UNINDENT
-.UNINDENT
-.UNINDENT
 .SS uint32 Position [readonly]
-.INDENT 0.0
-.INDENT 3.5
-Playback position in milliseconds. Changing the position may generate
-additional events that will be sent to the remote device. When position
-is 0 it means the track is starting and when it\(aqs greater than or equal
-to track\(aqs duration the track has ended.
 .sp
-Note that even if duration is not available in metadata it\(aqs possible
-to signal its end by setting position to the maximum uint32 value.
-.UNINDENT
-.UNINDENT
+Playback position in milliseconds.
+.sp
+Changing the position may generate additional events that will be sent to the
+remote device. When position is 0 it means the track is starting and when it\(aqs
+greater than or equal to track\(aqs duration the track has ended.
+.sp
+Note that even if duration is not available in metadata it\(aqs possible to signal
+its end by setting position to the maximum uint32 value.
 .SS dict Track [readonly]
-.INDENT 0.0
-.INDENT 3.5
+.sp
 Track metadata.
 .sp
 Possible values:
@@ -328,55 +363,41 @@ Track duration in milliseconds
 Track image handle, available and valid only during the lifetime of an
 OBEX BIP connection to the ObexPort.
 .UNINDENT
-.UNINDENT
-.UNINDENT
 .SS object Device [readonly]
-.INDENT 0.0
-.INDENT 3.5
+.sp
 Device object path.
-.UNINDENT
-.UNINDENT
 .SS string Name [readonly]
-.INDENT 0.0
-.INDENT 3.5
-Player name
-.UNINDENT
-.UNINDENT
+.sp
+Player name.
 .SS string Type [readonly]
-.INDENT 0.0
-.INDENT 3.5
-Player type
+.sp
+Player type.
 .sp
 Possible values:
 .INDENT 0.0
-.INDENT 3.5
-\(dqAudio\(dq
-\(dqVideo\(dq
-\(dqAudio Broadcasting\(dq
-\(dqVideo Broadcasting\(dq
-.UNINDENT
-.UNINDENT
-.UNINDENT
+.TP
+.B \(dqAudio\(dq
+.TP
+.B \(dqVideo\(dq
+.TP
+.B \(dqAudio Broadcasting\(dq
+.TP
+.B \(dqVideo Broadcasting\(dq
 .UNINDENT
 .SS string Subtype [readonly]
-.INDENT 0.0
-.INDENT 3.5
-Player subtype
+.sp
+Player subtype.
 .sp
 Possible values:
 .INDENT 0.0
-.INDENT 3.5
-\(dqAudio Book\(dq
-\(dqPodcast\(dq
-.UNINDENT
-.UNINDENT
-.UNINDENT
+.TP
+.B \(dqAudio Book\(dq
+.TP
+.B \(dqPodcast\(dq
 .UNINDENT
 .SS boolean Browsable [readonly]
-.INDENT 0.0
-.INDENT 3.5
-If present indicates the player can be browsed using MediaFolder
-interface.
+.sp
+If present indicates the player can be browsed using MediaFolder interface.
 .sp
 Possible values:
 .INDENT 0.0
@@ -389,15 +410,11 @@ Supported but inactive
 .UNINDENT
 .sp
 Note: If supported but inactive clients can enable it by using
-MediaFolder interface but it might interfere in the playback of other
-players.
-.UNINDENT
-.UNINDENT
+\fBorg.bluez.MediaFolder(5)\fP interface but it might interfere in the playback of
+other players.
 .SS boolean Searchable [readonly]
-.INDENT 0.0
-.INDENT 3.5
-If present indicates the player can be searched using MediaFolder
-interface.
+.sp
+If present indicates the player can be searched using MediaFolder interface.
 .sp
 Possible values:
 .INDENT 0.0
@@ -410,22 +427,14 @@ Supported but inactive
 .UNINDENT
 .sp
 Note: If supported but inactive clients can enable it by using
-MediaFolder interface but it might interfere in the playback of other
-players.
-.UNINDENT
-.UNINDENT
+\fBorg.bluez.MediaFolder(5)\fP interface but it might interfere in the playback of
+other players.
 .SS object Playlist
-.INDENT 0.0
-.INDENT 3.5
+.sp
 Playlist object path.
-.UNINDENT
-.UNINDENT
 .SS uint16 ObexPort [readonly, experimental]
-.INDENT 0.0
-.INDENT 3.5
-If present indicates the player can get cover art using BIP over OBEX
-on this PSM port.
-.UNINDENT
-.UNINDENT
+.sp
+If present indicates the player can get cover art using BIP over OBEX on this
+PSM port.
 .\" Generated by docutils manpage writer.
 .

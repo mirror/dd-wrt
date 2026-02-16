@@ -1,0 +1,957 @@
+.\" Man page generated from reStructuredText.
+.
+.
+.nr rst2man-indent-level 0
+.
+.de1 rstReportMargin
+\\$1 \\n[an-margin]
+level \\n[rst2man-indent-level]
+level margin: \\n[rst2man-indent\\n[rst2man-indent-level]]
+-
+\\n[rst2man-indent0]
+\\n[rst2man-indent1]
+\\n[rst2man-indent2]
+..
+.de1 INDENT
+.\" .rstReportMargin pre:
+. RS \\$1
+. nr rst2man-indent\\n[rst2man-indent-level] \\n[an-margin]
+. nr rst2man-indent-level +1
+.\" .rstReportMargin post:
+..
+.de UNINDENT
+. RE
+.\" indent \\n[an-margin]
+.\" old: \\n[rst2man-indent\\n[rst2man-indent-level]]
+.nr rst2man-indent-level -1
+.\" new: \\n[rst2man-indent\\n[rst2man-indent-level]]
+.in \\n[rst2man-indent\\n[rst2man-indent-level]]u
+..
+.TH "BLUETOOTHCTL-GATT" "1" "November 2022" "BlueZ" "Linux System Administration"
+.SH NAME
+bluetoothctl-gatt \- Generic Attribute Submenu
+.SH SYNOPSIS
+.sp
+\fBbluetoothctl\fP [\-\-options] [gatt.commands]
+.sp
+This submenu interacts with GATT services, characteristics, and descriptors
+using the \fBorg.bluez.GattService(5)\fP, \fBorg.bluez.GattCharacteristic(5)\fP,
+\fBorg.bluez.GattDescriptor(5)\fP, and \fBorg.bluez.GattManager(5)\fP interfaces.
+.SH GENERIC ATTRIBUTE COMMANDS
+.SS list\-attributes
+.sp
+Lists the attributes of either the local device or a remote device,
+encompassing services, characteristics, and handles. This command provides
+a comprehensive overview of the available Bluetooth attributes, which can
+be further interacted with using other commands.
+.INDENT 0.0
+.TP
+.B Usage
+\fB> list\-attributes [dev/local]\fP
+.TP
+.B [dev/local]
+Device MAC address, object path, or \(dqlocal\(dq to list locally registered attributes (optional, lists all if omitted)
+.TP
+.B Example List attributes for specific service
+.nf
+\fB> list\-attributes /org/bluez/hci0/dev_00_11_22_33_44_55/service001a\fP
+.fi
+.sp
+.TP
+.B Example List attributes for specific characteristic
+.nf
+\fB> list\-attributes /org/bluez/hci0/dev_00_11_22_33_44_55/service001a/char001c\fP
+.fi
+.sp
+.TP
+.B Example List attributes for service on different device
+.nf
+\fB> list\-attributes /org/bluez/hci0/dev_AA_BB_CC_DD_EE_FF/service0020\fP
+.fi
+.sp
+.TP
+.B Example List all Generic Access service attributes
+.nf
+\fB> list\-attributes 0x1800\fP
+.fi
+.sp
+.TP
+.B Example List all Battery Service attributes
+.nf
+\fB> list\-attributes 0x180F\fP
+.fi
+.sp
+.TP
+.B Example List all Device Name characteristic attributes
+.nf
+\fB> list\-attributes 0x2A00\fP
+.fi
+.sp
+.TP
+.B Example List attributes using full UUID
+.nf
+\fB> list\-attributes 00001801\-0000\-1000\-8000\-00805f9b34fb\fP
+.fi
+.sp
+.TP
+.B Example List attributes for custom service UUID
+.nf
+\fB> list\-attributes 12345678\-1234\-5678\-9abc\-123456789abc\fP
+.fi
+.sp
+.UNINDENT
+.SS select\-attribute
+.sp
+Selects a specific attribute on either the local or remote device for
+subsequent operations. Before you can read or write to an attribute, you
+must select it with this command. This establishes a context for many
+other commands (read, write, notify, etc.), specifying the attribute
+they should operate on.
+.INDENT 0.0
+.TP
+.B Usage
+\fB> select\-attribute <attribute/UUID/local> [attribute/UUID]\fP
+.TP
+.B <attribute/UUID/local>
+GATT attribute path, UUID, or \(dqlocal\(dq to select from local attributes
+.TP
+.B [attribute/UUID]
+Additional attribute path or UUID when using \(dqlocal\(dq (optional)
+.TP
+.B Example Select specific characteristic
+.nf
+\fB> select\-attribute /org/bluez/hci0/dev_00_11_22_33_44_55/service001a/char001c\fP
+.fi
+.sp
+.TP
+.B Example Select specific descriptor
+.nf
+\fB> select\-attribute /org/bluez/hci0/dev_00_11_22_33_44_55/service0020/char0022/desc0024\fP
+.fi
+.sp
+.TP
+.B Example Select service on different device
+.nf
+\fB> select\-attribute /org/bluez/hci0/dev_AA_BB_CC_DD_EE_FF/service001a\fP
+.fi
+.sp
+.TP
+.B Example Select Device Name characteristic
+.nf
+\fB> select\-attribute 0x2A00\fP
+.fi
+.sp
+.TP
+.B Example Select Battery Level characteristic
+.nf
+\fB> select\-attribute 0x2A19\fP
+.fi
+.sp
+.TP
+.B Example Select Client Characteristic Configuration descriptor
+.nf
+\fB> select\-attribute 0x2902\fP
+.fi
+.sp
+.TP
+.B Example Select Temperature characteristic using full UUID
+.nf
+\fB> select\-attribute 00002a6e\-0000\-1000\-8000\-00805f9b34fb\fP
+.fi
+.sp
+.TP
+.B Example Select custom characteristic
+.nf
+\fB> select\-attribute 12345678\-1234\-5678\-9abc\-123456789abc\fP
+.fi
+.sp
+.UNINDENT
+.SS attribute\-info
+.sp
+Displays detailed information about an attribute. If no attribute or
+UUID is specified, it shows information about the currently selected
+attribute. This command is useful for understanding the properties and
+capabilities of an attribute.
+.INDENT 0.0
+.TP
+.B Usage
+\fB> attribute\-info [attribute/UUID]\fP
+.TP
+.B [attribute/UUID]
+GATT attribute path or UUID to get info for (optional, uses current if omitted)
+.TP
+.B Example Show information for currently selected attribute
+.nf
+\fB> attribute\-info\fP
+.fi
+.sp
+.TP
+.B Example Show info for specific characteristic
+.nf
+\fB> attribute\-info /org/bluez/hci0/dev_00_11_22_33_44_55/service001a/char001c\fP
+.fi
+.sp
+.TP
+.B Example Show info for Battery Level characteristic
+.nf
+\fB> attribute\-info 0x2A19\fP
+.fi
+.sp
+.TP
+.B Example Show info for Device Name characteristic
+.nf
+\fB> attribute\-info 0x2A00\fP
+.fi
+.sp
+.TP
+.B Example Show info for Temperature characteristic
+.nf
+\fB> attribute\-info 00002a6e\-0000\-1000\-8000\-00805f9b34fb\fP
+.fi
+.sp
+.UNINDENT
+.SS read
+.sp
+Reads the value of an attribute. Requires that an attribute be selected
+beforehand with select\-attribute. The optional offset parameter can be
+used for attributes that allow partial reads.
+.INDENT 0.0
+.TP
+.B Usage
+\fB> read [offset]\fP
+.TP
+.B Uses
+\fBorg.bluez.GattCharacteristic(5)\fP method \fBReadValue\fP
+.TP
+.B [offset]
+Byte offset to start reading from (optional, defaults to 0)
+.TP
+.B Example Read attribute value from offset 0
+.nf
+\fB> read\fP
+.fi
+.sp
+.TP
+.B Example Read attribute value from offset 0 (explicit)
+.nf
+\fB> read 0\fP
+.fi
+.sp
+.TP
+.B Example Read attribute value starting from offset 4
+.nf
+\fB> read 4\fP
+.fi
+.sp
+.TP
+.B Example Read attribute value starting from offset 10
+.nf
+\fB> read 10\fP
+.fi
+.sp
+.TP
+.B Example Read attribute value starting from offset 16
+.nf
+\fB> read 16\fP
+.fi
+.sp
+.UNINDENT
+.SS write
+.sp
+Writes a value to an attribute. This command necessitates that an attribute
+be selected in advance using select\-attribute. Data must be provided in
+hexadecimal format. Optional offset and type parameters can accommodate
+specific write requirements.
+.INDENT 0.0
+.TP
+.B Usage
+\fB> write <data=\(dqxx xx ...\(dq> [offset] [type]\fP
+.TP
+.B Uses
+\fBorg.bluez.GattCharacteristic(5)\fP method \fBWriteValue\fP
+.TP
+.B <xx xx ...>
+Hexadecimal data bytes to write to the attribute
+.TP
+.B [offset]
+Byte offset to start writing at (optional, defaults to 0)
+.TP
+.B [type]
+Write type \- request, command, or reliable (optional, defaults to request)
+.TP
+.B Example Write \(dqHello\(dq to attribute (ASCII bytes)
+.nf
+\fB> write \(dq48 65 6C 6C 6F\(dq\fP
+.fi
+.sp
+.TP
+.B Example Write binary data to attribute
+.nf
+\fB> write \(dq01 02 03 04\(dq\fP
+.fi
+.sp
+.TP
+.B Example Write single byte value
+.nf
+\fB> write \(dqFF\(dq\fP
+.fi
+.sp
+.TP
+.B Example Write 2 bytes starting at offset 4
+.nf
+\fB> write \(dq01 02\(dq 4\fP
+.fi
+.sp
+.TP
+.B Example Write with write request (default)
+.nf
+\fB> write \(dq48 65 6C 6C 6F\(dq 0 request\fP
+.fi
+.sp
+.TP
+.B Example Write with write command (no response)
+.nf
+\fB> write \(dq01 02 03\(dq 0 command\fP
+.fi
+.sp
+.TP
+.B Example Write with reliable write
+.nf
+\fB> write \(dqFF EE DD\(dq 0 reliable\fP
+.fi
+.sp
+.UNINDENT
+.SS acquire\-write
+.sp
+Acquires a Write file descriptor for a previously selected attribute. This
+is useful for applications that need a file descriptor to perform
+write operations.
+.INDENT 0.0
+.TP
+.B Usage
+\fB> acquire\-write\fP
+.TP
+.B Uses
+\fBorg.bluez.GattCharacteristic(5)\fP method \fBAcquireWrite\fP
+.TP
+.B Example Acquire write file descriptor for current attribute
+.nf
+\fB> acquire\-write\fP
+.fi
+.sp
+.UNINDENT
+.SS release\-write
+.sp
+Releases the Write file descriptor acquired with acquire\-write. This
+command is necessary to clean up resources after you\(aqre done with the
+write operation.
+.INDENT 0.0
+.TP
+.B Usage
+\fB> release\-write\fP
+.TP
+.B Example Release write file descriptor for current attribute
+.nf
+\fB> release\-write\fP
+.fi
+.sp
+.UNINDENT
+.SS acquire\-notify
+.sp
+Acquires a Notify file descriptor for a previously selected attribute.
+This enables applications to listen for notifications on attribute
+value changes.
+.INDENT 0.0
+.TP
+.B Usage
+\fB> acquire\-notify\fP
+.TP
+.B Uses
+\fBorg.bluez.GattCharacteristic(5)\fP method \fBAcquireNotify\fP
+.TP
+.B Example Acquire notify file descriptor for current attribute
+.nf
+\fB> acquire\-notify\fP
+.fi
+.sp
+.UNINDENT
+.SS release\-notify
+.sp
+Releases the Notify file descriptor obtained with acquire\-notify. Ensures
+resources are freed once notification listening is no longer needed.
+.INDENT 0.0
+.TP
+.B Usage
+\fB> release\-notify\fP
+.TP
+.B Example Release notify file descriptor for current attribute
+.nf
+\fB> release\-notify\fP
+.fi
+.sp
+.UNINDENT
+.SS notify
+.sp
+Enables or disables notifications for attribute value changes. Before
+this command can be used, the relevant attribute must be selected. This
+command allows applications to be notified of attribute changes without
+polling.
+.INDENT 0.0
+.TP
+.B Usage
+\fB> notify <on/off>\fP
+.TP
+.B Uses
+\fBorg.bluez.GattCharacteristic(5)\fP methods \fBStartNotify\fP, \fBStopNotify\fP
+.TP
+.B <on/off>
+Enable or disable notifications for the current attribute
+.TP
+.B Example Enable notifications for current attribute
+.nf
+\fB> notify on\fP
+.fi
+.sp
+.TP
+.B Example Disable notifications for current attribute
+.nf
+\fB> notify off\fP
+.fi
+.sp
+.UNINDENT
+.SS clone
+.sp
+Creates a clone of a device or attribute. This can be useful for creating
+a backup or working with a copy for testing purposes.
+.INDENT 0.0
+.TP
+.B Usage
+\fB> clone [dev/attribute/UUID]\fP
+.TP
+.B [dev/attribute/UUID]
+Device MAC address, attribute path, or UUID to clone (optional, clones current if omitted)
+.TP
+.B Example Clone entire device GATT database
+.nf
+\fB> clone 00:11:22:33:44:55\fP
+.fi
+.sp
+.TP
+.B Example Clone another device
+.nf
+\fB> clone AA:BB:CC:DD:EE:FF\fP
+.fi
+.sp
+.TP
+.B Example Clone specific service
+.nf
+\fB> clone /org/bluez/hci0/dev_00_11_22_33_44_55/service001a\fP
+.fi
+.sp
+.TP
+.B Example Clone specific characteristic
+.nf
+\fB> clone /org/bluez/hci0/dev_00_11_22_33_44_55/service001a/char001c\fP
+.fi
+.sp
+.TP
+.B Example Clone Generic Access service
+.nf
+\fB> clone 0x1800\fP
+.fi
+.sp
+.TP
+.B Example Clone Battery Service
+.nf
+\fB> clone 0x180F\fP
+.fi
+.sp
+.TP
+.B Example Clone Battery Level characteristic
+.nf
+\fB> clone 0x2A19\fP
+.fi
+.sp
+.UNINDENT
+.SS register\-application
+.sp
+Registers a new application with the Bluetooth system, allowing for the
+management of services, characteristics, and descriptors under this
+application.
+.INDENT 0.0
+.TP
+.B Usage
+\fB> register\-application [UUID ...]\fP
+.TP
+.B Uses
+\fBorg.bluez.GattManager(5)\fP method \fBRegisterApplication\fP
+.TP
+.B [UUID ...]
+Optional list of service UUIDs to register with the application
+.TP
+.B Example Register GATT application without specific UUIDs
+.nf
+\fB> register\-application\fP
+.fi
+.sp
+.TP
+.B Example Register application with Battery Service
+.nf
+\fB> register\-application 0x180F\fP
+.fi
+.sp
+.TP
+.B Example Register with Generic Access and Battery Service
+.nf
+\fB> register\-application 0x1800 0x180F\fP
+.fi
+.sp
+.TP
+.B Example Register application with custom service UUID
+.nf
+\fB> register\-application 12345678\-1234\-5678\-9abc\-123456789abc\fP
+.fi
+.sp
+.TP
+.B Example Register with multiple standard services
+.nf
+\fB> register\-application 0x1800 0x180F 0x180A\fP
+.fi
+.sp
+.UNINDENT
+.SS unregister\-application
+.sp
+Removes a previously registered application from the Bluetooth system.
+.INDENT 0.0
+.TP
+.B Usage
+\fB> unregister\-application\fP
+.TP
+.B Uses
+\fBorg.bluez.GattManager(5)\fP method \fBUnregisterApplication\fP
+.TP
+.B Example Unregister current GATT application
+.nf
+\fB> unregister\-application\fP
+.fi
+.sp
+.UNINDENT
+.SS register\-service
+.sp
+Adds a new service under a registered application. This command is
+crucial for defining new services that devices can offer.
+.INDENT 0.0
+.TP
+.B Usage
+\fB> register\-service <UUID> [handle]\fP
+.TP
+.B <UUID>
+Service UUID to register (16\-bit, 32\-bit, or 128\-bit format)
+.TP
+.B [handle]
+Specific attribute handle to assign (optional, auto\-assigned if omitted)
+.TP
+.B Example Register Generic Access service (auto handle)
+.nf
+\fB> register\-service 0x1800\fP
+.fi
+.sp
+.TP
+.B Example Register Battery Service (auto handle)
+.nf
+\fB> register\-service 0x180F\fP
+.fi
+.sp
+.TP
+.B Example Register Device Information service (auto handle)
+.nf
+\fB> register\-service 0x180A\fP
+.fi
+.sp
+.TP
+.B Example Register Generic Access service at handle 1
+.nf
+\fB> register\-service 0x1800 0x0001\fP
+.fi
+.sp
+.TP
+.B Example Register Battery Service at handle 16
+.nf
+\fB> register\-service 0x180F 0x0010\fP
+.fi
+.sp
+.TP
+.B Example Register Device Info service at handle 32
+.nf
+\fB> register\-service 0x180A 0x0020\fP
+.fi
+.sp
+.TP
+.B Example Register custom service (auto handle)
+.nf
+\fB> register\-service 12345678\-1234\-5678\-9abc\-123456789abc\fP
+.fi
+.sp
+.TP
+.B Example Register custom service at specific handle
+.nf
+\fB> register\-service 12345678\-1234\-5678\-9abc\-123456789abc 0x0050\fP
+.fi
+.sp
+.UNINDENT
+.SS unregister\-service
+.sp
+Removes a service from a registered application, effectively ceasing
+its availability.
+.INDENT 0.0
+.TP
+.B Usage
+\fB> unregister\-service <UUID/object>\fP
+.TP
+.B <UUID/object>
+Service UUID or object path of the service to unregister
+.TP
+.B Example Unregister Generic Access service
+.nf
+\fB> unregister\-service 0x1800\fP
+.fi
+.sp
+.TP
+.B Example Unregister Battery Service
+.nf
+\fB> unregister\-service 0x180F\fP
+.fi
+.sp
+.TP
+.B Example Unregister custom service
+.nf
+\fB> unregister\-service 12345678\-1234\-5678\-9abc\-123456789abc\fP
+.fi
+.sp
+.TP
+.B Example Unregister service by object path
+.nf
+\fB> unregister\-service /org/bluez/example/service0\fP
+.fi
+.sp
+.TP
+.B Example Unregister another service
+.nf
+\fB> unregister\-service /org/bluez/example/service1\fP
+.fi
+.sp
+.UNINDENT
+.SS register\-includes
+.sp
+Marks a service as included within another service, allowing for
+service hierarchies and complex service structures.
+.INDENT 0.0
+.TP
+.B Usage
+\fB> register\-includes <UUID> [handle]\fP
+.TP
+.B <UUID>
+Service UUID to register as included service
+.TP
+.B [handle]
+Specific attribute handle to assign (optional, auto\-assigned if omitted)
+.TP
+.B Example Register Generic Access as included service
+.nf
+\fB> register\-includes 0x1800\fP
+.fi
+.sp
+.TP
+.B Example Register Battery Service as included at handle 21
+.nf
+\fB> register\-includes 0x180F 0x0015\fP
+.fi
+.sp
+.TP
+.B Example Register custom service as included
+.nf
+\fB> register\-includes 12345678\-1234\-5678\-9abc\-123456789abc\fP
+.fi
+.sp
+.UNINDENT
+.SS unregister\-includes
+.sp
+Removes an included service relationship, simplifying the service structure.
+.INDENT 0.0
+.TP
+.B Usage
+\fB> unregister\-includes <Service\-UUID> <Inc\-UUID>\fP
+.TP
+.B <Service\-UUID>
+Parent service UUID that contains the included service
+.TP
+.B <Inc\-UUID>
+Included service UUID to remove from the parent service
+.TP
+.B Example Unregister Battery Service inclusion from Generic Access
+.nf
+\fB> unregister\-includes 0x1800 0x180F\fP
+.fi
+.sp
+.TP
+.B Example Unregister Device Info inclusion from custom service
+.nf
+\fB> unregister\-includes 12345678\-1234\-5678\-9abc\-123456789abc 0x180A\fP
+.fi
+.sp
+.UNINDENT
+.SS register\-characteristic
+.sp
+Introduces a new characteristic under a service, specifying its properties
+and access permissions with flags.
+.INDENT 0.0
+.TP
+.B Usage
+\fB> register\-characteristic <UUID> <Flags=read,write,notify...> [handle]\fP
+.TP
+.B <UUID>
+Characteristic UUID to register (16\-bit, 32\-bit, or 128\-bit format)
+.TP
+.B <Flags=read,write,notify...>
+Comma\-separated list of characteristic properties and permissions
+.TP
+.B [handle]
+Specific attribute handle to assign (optional, auto\-assigned if omitted)
+.TP
+.B Example Register Device Name (read\-only)
+.nf
+\fB> register\-characteristic 0x2A00 read\fP
+.fi
+.sp
+.TP
+.B Example Register Battery Level (read + notifications)
+.nf
+\fB> register\-characteristic 0x2A19 read,notify\fP
+.fi
+.sp
+.TP
+.B Example Register Heart Rate Measurement (notify\-only)
+.nf
+\fB> register\-characteristic 0x2A37 notify\fP
+.fi
+.sp
+.TP
+.B Example Register Device Name (read + write)
+.nf
+\fB> register\-characteristic 0x2A00 read,write\fP
+.fi
+.sp
+.TP
+.B Example Register Battery Level (read + write + notify)
+.nf
+\fB> register\-characteristic 0x2A19 read,write,notify\fP
+.fi
+.sp
+.TP
+.B Example Register Temperature (read + indications)
+.nf
+\fB> register\-characteristic 0x2A6E read,indicate\fP
+.fi
+.sp
+.TP
+.B Example Register Device Name at handle 3
+.nf
+\fB> register\-characteristic 0x2A00 read 0x0003\fP
+.fi
+.sp
+.TP
+.B Example Register Battery Level at handle 19
+.nf
+\fB> register\-characteristic 0x2A19 read,notify 0x0013\fP
+.fi
+.sp
+.TP
+.B Example Register custom characteristic with full capabilities
+.nf
+\fB> register\-characteristic 12345678\-1234\-5678\-9abc\-123456789abc read,write,notify\fP
+.fi
+.sp
+.TP
+.B Example Register custom write\-only characteristic
+.nf
+\fB> register\-characteristic ABCD1234\-ABCD\-1234\-ABCD\-123456789ABC write\-without\-response\fP
+.fi
+.sp
+.TP
+.B Example Register with all flags
+.nf
+\fB> register\-characteristic 0x2A00 read,write,write\-without\-response,notify,indicate\fP
+.fi
+.sp
+.UNINDENT
+.SS unregister\-characteristic
+.sp
+Eliminates a characteristic from a service, removing its functionality.
+.INDENT 0.0
+.TP
+.B Usage
+\fB> unregister\-characteristic <UUID/object>\fP
+.TP
+.B <UUID/object>
+Characteristic UUID or object path of the characteristic to unregister
+.TP
+.B Example Unregister Device Name characteristic
+.nf
+\fB> unregister\-characteristic 0x2A00\fP
+.fi
+.sp
+.TP
+.B Example Unregister Battery Level characteristic
+.nf
+\fB> unregister\-characteristic 0x2A19\fP
+.fi
+.sp
+.TP
+.B Example Unregister custom characteristic
+.nf
+\fB> unregister\-characteristic 12345678\-1234\-5678\-9abc\-123456789abc\fP
+.fi
+.sp
+.TP
+.B Example Unregister characteristic by object path
+.nf
+\fB> unregister\-characteristic /org/bluez/example/service0/char0\fP
+.fi
+.sp
+.TP
+.B Example Unregister another characteristic
+.nf
+\fB> unregister\-characteristic /org/bluez/example/service1/char1\fP
+.fi
+.sp
+.UNINDENT
+.SS register\-descriptor
+.sp
+Adds a descriptor to a characteristic, further defining its behavior and
+access controls.
+.INDENT 0.0
+.TP
+.B Usage
+\fB> register\-descriptor <UUID> <Flags=read,write...> [handle]\fP
+.TP
+.B <UUID>
+Descriptor UUID to register (16\-bit, 32\-bit, or 128\-bit format)
+.TP
+.B <Flags=read,write...>
+Comma\-separated list of descriptor properties and permissions
+.TP
+.B [handle]
+Specific attribute handle to assign (optional, auto\-assigned if omitted)
+.TP
+.B Example Register Client Characteristic Configuration
+.nf
+\fB> register\-descriptor 0x2902 read,write\fP
+.fi
+.sp
+.TP
+.B Example Register Characteristic User Description
+.nf
+\fB> register\-descriptor 0x2901 read\fP
+.fi
+.sp
+.TP
+.B Example Register Characteristic Presentation Format
+.nf
+\fB> register\-descriptor 0x2904 read\fP
+.fi
+.sp
+.TP
+.B Example Register CCCD at handle 5
+.nf
+\fB> register\-descriptor 0x2902 read,write 0x0005\fP
+.fi
+.sp
+.TP
+.B Example Register User Description at handle 21
+.nf
+\fB> register\-descriptor 0x2901 read 0x0015\fP
+.fi
+.sp
+.TP
+.B Example Register custom descriptor
+.nf
+\fB> register\-descriptor 12345678\-1234\-5678\-9abc\-123456789abc read,write\fP
+.fi
+.sp
+.TP
+.B Example Register custom read\-only descriptor
+.nf
+\fB> register\-descriptor ABCD1234\-ABCD\-1234\-ABCD\-123456789ABC read\fP
+.fi
+.sp
+.TP
+.B Example Register Valid Range descriptor
+.nf
+\fB> register\-descriptor 0x2906 read\fP
+.fi
+.sp
+.TP
+.B Example Register External Report Reference
+.nf
+\fB> register\-descriptor 0x2907 read\fP
+.fi
+.sp
+.TP
+.B Example Register Report Reference
+.nf
+\fB> register\-descriptor 0x2908 read\fP
+.fi
+.sp
+.UNINDENT
+.SS unregister\-descriptor
+.sp
+Removes a descriptor from a characteristic, simplifying its behavior.
+.INDENT 0.0
+.TP
+.B Usage
+\fB> unregister\-descriptor <UUID/object>\fP
+.TP
+.B <UUID/object>
+Descriptor UUID or object path of the descriptor to unregister
+.TP
+.B Example Unregister Client Characteristic Configuration
+.nf
+\fB> unregister\-descriptor 0x2902\fP
+.fi
+.sp
+.TP
+.B Example Unregister Characteristic User Description
+.nf
+\fB> unregister\-descriptor 0x2901\fP
+.fi
+.sp
+.TP
+.B Example Unregister custom descriptor
+.nf
+\fB> unregister\-descriptor 12345678\-1234\-5678\-9abc\-123456789abc\fP
+.fi
+.sp
+.TP
+.B Example Unregister descriptor by object path
+.nf
+\fB> unregister\-descriptor /org/bluez/example/service0/char0/desc0\fP
+.fi
+.sp
+.TP
+.B Example Unregister another descriptor
+.nf
+\fB> unregister\-descriptor /org/bluez/example/service1/char1/desc1\fP
+.fi
+.sp
+.UNINDENT
+.SH RESOURCES
+.sp
+ <http://www.bluez.org> 
+.SH REPORTING BUGS
+.sp
+ <linux\-bluetooth@vger.kernel.org> 
+.SH COPYRIGHT
+Free use of this software is granted under the terms of the GNU
+Lesser General Public Licenses (LGPL).
+.\" Generated by docutils manpage writer.
+.

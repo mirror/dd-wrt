@@ -141,7 +141,8 @@ void _dbus_filter_dispatch(struct l_dbus_message *message, void *user_data)
 {
 	struct _dbus_filter *filter = user_data;
 
-	filter_dispatch_match_recurse(filter, filter->root, message);
+	if (filter->root)
+		filter_dispatch_match_recurse(filter, filter->root, message);
 }
 
 struct _dbus_filter *_dbus_filter_new(struct l_dbus *dbus,

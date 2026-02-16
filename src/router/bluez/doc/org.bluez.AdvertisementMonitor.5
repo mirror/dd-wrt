@@ -51,11 +51,13 @@ org.bluez.AdvertisementMonitor1 [experimental]
 .TP
 .B Object path
 freely definable
+.TP
+.B Used by
+\fBbluetoothctl\-monitor(1)\fP
 .UNINDENT
 .SS Methods
 .SS void Release() [noreply]
-.INDENT 0.0
-.INDENT 3.5
+.sp
 This gets called as a signal for a client to perform clean\-up when:
 .INDENT 0.0
 .IP \(bu 2
@@ -63,82 +65,58 @@ Monitor cannot be activated after it was exposed
 .IP \(bu 2
 Monitor has been deactivated.
 .UNINDENT
-.UNINDENT
-.UNINDENT
 .SS void Activate() [noreply]
-.INDENT 0.0
-.INDENT 3.5
-After a monitor was exposed, this gets called as a signal for client to
-get acknowledged when a monitor has been activated, so the client can
-expect to receive calls on \fBDeviceFound()\fP or \fBDeviceLost()\fP\&.
-.UNINDENT
-.UNINDENT
+.sp
+After a monitor was exposed, this gets called as a signal for client to get
+acknowledged when a monitor has been activated, so the client can expect to
+receive calls on \fBDeviceFound()\fP or \fBDeviceLost()\fP\&.
 .SS void DeviceFound(object device) [noreply]
-.INDENT 0.0
-.INDENT 3.5
+.sp
 This gets called to notify the client of finding the targeted device.
-Once receiving the call, the client should start to monitor the
-corresponding device to retrieve the changes on RSSI and advertisement
-content.
-.UNINDENT
-.UNINDENT
+.sp
+Once receiving the call, the client should start to monitor the corresponding
+device to retrieve the changes on RSSI and advertisement content.
 .SS void DeviceLost(object device) [noreply]
-.INDENT 0.0
-.INDENT 3.5
+.sp
 This gets called to notify the client of losing the targeted device.
-Once receiving this call, the client should stop monitoring the
-corresponding device.
-.UNINDENT
-.UNINDENT
+.sp
+Once receiving this call, the client should stop monitoring the corresponding
+device.
 .SS Properties
 .SS string Type [read\-only]
-.INDENT 0.0
-.INDENT 3.5
+.sp
 The type of the monitor. See \fBSupportedMonitorTypes\fP in
 \fBorg.bluez.AdvertisementMonitorManager(5)\fP for the available options.
-.UNINDENT
-.UNINDENT
 .SS int16 RSSILowThreshold [read\-only, optional]
-.INDENT 0.0
-.INDENT 3.5
-Used in conjunction with \fBRSSILowTimeout\fP to determine whether a
-device becomes out\-of\-range. Valid range is \-127 to 20 (dBm), while 127
-indicates unset.
-.UNINDENT
-.UNINDENT
+.sp
+Used in conjunction with \fBRSSILowTimeout\fP to determine whether a device
+becomes out\-of\-range.
+.sp
+Valid range is \-127 to 20 (dBm), while 127 indicates unset.
 .SS int16 RSSIHighThreshold [read\-only, optional]
-.INDENT 0.0
-.INDENT 3.5
-Used in conjunction with RSSIHighTimeout to determine whether a device
-becomes in\-range. Valid range is \-127 to 20 (dBm), while 127 indicates
-unset.
-.UNINDENT
-.UNINDENT
+.sp
+Used in conjunction with RSSIHighTimeout to determine whether a device becomes
+in\-range.
+.sp
+Valid range is \-127 to 20 (dBm), while 127 indicates unset.
 .SS uint16 RSSILowTimeout [read\-only, optional]
-.INDENT 0.0
-.INDENT 3.5
-The time it takes to consider a device as out\-of\-range. If this many
-seconds elapses without receiving any signal at least as strong as
-\fBRSSILowThreshold\fP, a currently in\-range device will be considered as
-out\-of\-range (lost). Valid range is 1 to 300 (seconds), while 0
-indicates unset.
-.UNINDENT
-.UNINDENT
+.sp
+The time it takes to consider a device as out\-of\-range. If this many seconds
+elapses without receiving any signal at least as strong as \fBRSSILowThreshold\fP,
+a currently in\-range device will be considered as out\-of\-range (lost). Valid
+range is 1 to 300 (seconds), while 0 indicates unset.
 .SS uint16 RSSIHighTimeout [read\-only, optional]
-.INDENT 0.0
-.INDENT 3.5
-The time it takes to consider a device as in\-range. If this many
-seconds elapses while we continuouslyreceive signals at least as strong
-as \fBRSSIHighThreshold\fP, a currently out\-of\-range device will be
-considered as in\-range (found). Valid range is 1 to 300 (seconds),
-while 0 indicates unset.
-.UNINDENT
-.UNINDENT
+.sp
+The time it takes to consider a device as in\-range. If this many seconds elapses
+while we continuously receive signals at least as strong as
+\fBRSSIHighThreshold\fP, a currently out\-of\-range device will be considered as
+in\-range (found).
+.sp
+Valid range is 1 to 300 (seconds), while 0 indicates unset.
 .SS uint16 RSSISamplingPeriod [read\-only, optional]
-.INDENT 0.0
-.INDENT 3.5
-Grouping rules on how to propagate the received advertisement packets
-to the client.
+.sp
+Grouping rules on how to propagate the received advertisement packets to the
+client.
 .sp
 Possible values:
 .INDENT 0.0
@@ -148,31 +126,28 @@ All advertisement packets from in\-range devices would be
 propagated.
 .TP
 .B 255
-Only the first advertisement packet of in\-range devices would
-be propagated. If the device becomes lost, then the first
-packet when it is found again will also be propagated.
+Only the first advertisement packet of in\-range devices would be
+propagated. If the device becomes lost, then the first packet when it is
+found again will also be propagated.
 .TP
 .B 1 to 254
-Advertisement packets would be grouped into 100ms * N time
-period. Packets in the same group will only be reported once,
-with the RSSI value being averaged out.
-.UNINDENT
+Advertisement packets would be grouped into 100ms * N time period.
+Packets in the same group will only be reported once, with the RSSI
+value being averaged out.
 .sp
 Currently this is unimplemented in user space, so the value is only
 used to be forwarded to the kernel.
 .UNINDENT
-.UNINDENT
 .SS array{(uint8, uint8, array{byte})} Patterns [read\-only, optional]
-.INDENT 0.0
-.INDENT 3.5
-If the \fBType\fP property is set to \fB\(dqor_patterns\(dq\fP, then this
-property must exist and have at least one entry in the array.
+.sp
+If the \fBType\fP property is set to \fB\(dqor_patterns\(dq\fP, then this property must
+exist and have at least one entry in the array.
 .sp
 The structure of a pattern contains the following:
 .INDENT 0.0
 .TP
 .B uint8 start_position
-The index in an AD data field where the search hould start. The
+The index in an AD data field where the search should start. The
 beginning of an AD data field is index 0.
 .TP
 .B uint8 AD_data_type
@@ -180,10 +155,7 @@ See  <https://www.bluetooth.com/specifications/assigned\-numbers/>
 generic\-access\-profile/ for the possible allowed value.
 .TP
 .B array{byte} content_of_pattern
-This is the value of the pattern. The maximum length of the
-bytes is 31.
-.UNINDENT
-.UNINDENT
+This is the value of the pattern. The maximum length of the bytes is 31.
 .UNINDENT
 .\" Generated by docutils manpage writer.
 .

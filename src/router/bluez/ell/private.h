@@ -8,3 +8,5 @@
 #include <ell/util.h>
 
 #define LIB_EXPORT __attribute__ ((visibility("default")))
+
+#define STRLOC __FILE__ ":" L_STRINGIFY(__LINE__)

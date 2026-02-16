@@ -19,9 +19,9 @@
 
 #include <glib.h>
 
-#include "lib/bluetooth.h"
-#include "lib/sdp.h"
-#include "lib/uuid.h"
+#include "bluetooth/bluetooth.h"
+#include "bluetooth/sdp.h"
+#include "bluetooth/uuid.h"
 
 #include "gdbus/gdbus.h"
 #include "btio/btio.h"
@@ -107,6 +107,8 @@ struct bap_transport {
 	bool			linked;
 	struct bt_bap_qos	qos;
 	guint			resume_id;
+	struct iovec		*meta;
+	guint			chan_id;
 };
 
 struct media_transport_ops {
@@ -398,12 +400,13 @@ static gboolean media_transport_set_fd(struct media_transport *transport,
 #ifdef HAVE_A2DP
 static void *transport_a2dp_get_stream(struct media_transport *transport)
 {
+	struct a2dp_transport *a2dp = transport->data;
 	struct a2dp_sep *sep = media_endpoint_get_sep(transport->endpoint);
 
 	if (!sep)
 		return NULL;
 
-	return a2dp_sep_get_stream(sep);
+	return a2dp_sep_get_stream(sep, a2dp->session);
 }
 
 static void a2dp_suspend_complete(struct avdtp *session, int err,
@@ -1008,7 +1011,12 @@ static gboolean delay_reporting_exists(const GDBusPropertyTable *property,
 							void *data)
 {
 	struct media_transport *transport = data;
+	struct media_endpoint *endpoint = transport->endpoint;
 	struct avdtp_stream *stream;
+
+	/* Local A2DP sink decides itself if it has delay reporting */
+	if (!strcmp(media_endpoint_get_uuid(endpoint), A2DP_SINK_UUID))
+		return media_endpoint_get_delay_reporting(endpoint);
 
 	stream = media_transport_get_stream(transport);
 	if (stream == NULL)
@@ -1086,6 +1094,22 @@ static void set_delay_report(const GDBusPropertyTable *property,
 }
 #endif /* HAVE_A2DP */
 
+static int media_transport_get_volume(struct media_transport *transport,
+								int *volume)
+{
+	if (transport->ops && transport->ops->get_volume) {
+		int ret = transport->ops->get_volume(transport);
+
+		if (ret < 0)
+			return ret;
+
+		*volume = ret;
+		return 0;
+	}
+
+	return -EINVAL;
+}
+
 static gboolean volume_exists(const GDBusPropertyTable *property, void *data)
 {
 	struct media_transport *transport = data;
@@ -1095,16 +1119,6 @@ static gboolean volume_exists(const GDBusPropertyTable *property, void *data)
 		return FALSE;
 
 	return volume >= 0;
-}
-
-int media_transport_get_volume(struct media_transport *transport, int *volume)
-{
-	if (transport->ops && transport->ops->get_volume) {
-		*volume = transport->ops->get_volume(transport);
-		return 0;
-	}
-
-	return -EINVAL;
 }
 
 static gboolean get_volume(const GDBusPropertyTable *property,
@@ -1233,7 +1247,7 @@ static void append_io_qos(DBusMessageIter *dict, struct bt_bap_io_qos *qos)
 	dict_append_entry(dict, "Interval", DBUS_TYPE_UINT32, &qos->interval);
 	dict_append_entry(dict, "Latency", DBUS_TYPE_UINT16, &qos->latency);
 	dict_append_entry(dict, "SDU", DBUS_TYPE_UINT16, &qos->sdu);
-	dict_append_entry(dict, "PHY", DBUS_TYPE_BYTE, &qos->phy);
+	dict_append_entry(dict, "PHY", DBUS_TYPE_BYTE, &qos->phys);
 	dict_append_entry(dict, "Retransmissions", DBUS_TYPE_BYTE, &qos->rtn);
 }
 
@@ -1298,6 +1312,49 @@ static gboolean get_metadata(const GDBusPropertyTable *property,
 	dbus_message_iter_close_container(iter, &array);
 
 	return TRUE;
+}
+
+static void bap_metadata_complete(struct bt_bap_stream *stream,
+					uint8_t code, uint8_t reason,
+					void *user_data)
+{
+	GDBusPendingPropertySet id = PTR_TO_UINT(user_data);
+
+	if (code)
+		g_dbus_pending_property_error(id,
+				ERROR_INTERFACE ".Failed",
+				"Unable to set metadata");
+	else
+		g_dbus_pending_property_success(id);
+}
+
+static void set_metadata(const GDBusPropertyTable *property,
+			DBusMessageIter *iter, GDBusPendingPropertySet id,
+			void *data)
+{
+	struct media_transport *transport = data;
+	struct bap_transport *bap = transport->data;
+	DBusMessageIter array;
+	struct iovec iov;
+	int ret;
+
+	if (dbus_message_iter_get_arg_type(iter) != DBUS_TYPE_ARRAY) {
+		g_dbus_pending_property_error(id,
+				ERROR_INTERFACE ".InvalidArguments",
+				"Expected ARRAY");
+		return;
+	}
+
+	dbus_message_iter_recurse(iter, &array);
+	dbus_message_iter_get_fixed_array(&array, &iov.iov_base,
+					(int *)&iov.iov_len);
+
+	ret = bt_bap_stream_metadata(bap->stream, &iov, bap_metadata_complete,
+				     UINT_TO_PTR(id));
+	if (!ret)
+		g_dbus_pending_property_error(id,
+				ERROR_INTERFACE ".InvalidArguments",
+				"Invalid metadata");
 }
 
 static gboolean links_exists(const GDBusPropertyTable *property, void *data)
@@ -1409,7 +1466,7 @@ static gboolean qos_ucast_exists(const GDBusPropertyTable *property, void *data)
 	struct media_transport *transport = data;
 	struct bap_transport *bap = transport->data;
 
-	return bap->qos.ucast.io_qos.phy != 0x00;
+	return bap->qos.ucast.io_qos.phys != 0x00;
 }
 
 static const GDBusPropertyTable transport_bap_uc_properties[] = {
@@ -1421,7 +1478,7 @@ static const GDBusPropertyTable transport_bap_uc_properties[] = {
 	{ "QoS", "a{sv}", get_ucast_qos, NULL, qos_ucast_exists },
 	{ "Endpoint", "o", get_endpoint, NULL, endpoint_exists },
 	{ "Location", "u", get_location },
-	{ "Metadata", "ay", get_metadata },
+	{ "Metadata", "ay", get_metadata, set_metadata },
 	{ "Links", "ao", get_links, NULL, links_exists },
 	{ "Volume", "q", get_volume, set_volume, volume_exists },
 	{ }
@@ -1482,7 +1539,7 @@ static gboolean qos_bcast_exists(const GDBusPropertyTable *property, void *data)
 	struct media_transport *transport = data;
 	struct bap_transport *bap = transport->data;
 
-	return bap->qos.bcast.io_qos.phy != 0x00;
+	return bap->qos.bcast.io_qos.phys != 0x00;
 }
 
 static void bcast_qos_set(void *user_data, int err)
@@ -1956,7 +2013,6 @@ static guint transport_bap_resume(struct media_transport *transport,
 				struct media_owner *owner)
 {
 	struct bap_transport *bap = transport->data;
-	struct iovec *meta;
 	guint id;
 
 	if (!bap->stream)
@@ -1976,8 +2032,7 @@ static guint transport_bap_resume(struct media_transport *transport,
 		return bap->resume_id;
 	}
 
-	meta = bt_bap_stream_get_metadata(bap->stream);
-	id = bt_bap_stream_enable(bap->stream, bap->linked, meta,
+	id = bt_bap_stream_enable(bap->stream, bap->linked, NULL,
 					bap_enable_complete, owner);
 	if (!id)
 		return 0;
@@ -2055,9 +2110,19 @@ static guint transport_bap_suspend(struct media_transport *transport,
 	return id;
 }
 
+static void bap_clear_chan(struct bap_transport *bap)
+{
+	if (bap->chan_id) {
+		g_source_remove(bap->chan_id);
+		bap->chan_id = 0;
+	}
+}
+
 static void transport_bap_cancel(struct media_transport *transport, guint id)
 {
 	struct bap_transport *bap = transport->data;
+
+	bap_clear_chan(bap);
 
 	if (id == bap->resume_id && bap->resume_id) {
 		g_source_remove(bap->resume_id);
@@ -2099,6 +2164,58 @@ static void transport_bap_set_state(struct media_transport *transport,
 							UINT_TO_PTR(state));
 }
 
+static void bap_metadata_changed(struct media_transport *transport)
+{
+	struct bap_transport *bap = transport->data;
+	struct iovec *meta;
+
+	/* Update metadata if it has changed */
+	meta = bt_bap_stream_get_metadata(bap->stream);
+
+	DBG("stream %p: metadata %p old %p", bap->stream, meta, bap->meta);
+
+	if (util_iov_memcmp(meta, bap->meta)) {
+		util_iov_free(bap->meta, 1);
+		bap->meta = util_iov_dup(meta, 1);
+		g_dbus_emit_property_changed(btd_get_dbus_connection(),
+						transport->path,
+						MEDIA_TRANSPORT_INTERFACE,
+						"Metadata");
+	}
+}
+
+static gboolean bap_transport_fd_ready(GIOChannel *chan, GIOCondition cond,
+								gpointer data)
+{
+	struct media_transport *transport = data;
+	struct bap_transport *bap = transport->data;
+	int fd;
+	uint16_t imtu, omtu;
+	GError *err = NULL;
+
+	if (cond & (G_IO_HUP | G_IO_ERR | G_IO_NVAL)) {
+		error("Transport connection failed");
+		goto done;
+	}
+
+	if (!bt_io_get(chan, &err, BT_IO_OPT_OMTU, &omtu,
+					BT_IO_OPT_IMTU, &imtu,
+					BT_IO_OPT_INVALID)) {
+		error("%s", err->message);
+		goto done;
+	}
+
+	fd = g_io_channel_unix_get_fd(chan);
+	media_transport_set_fd(transport, fd, imtu, omtu);
+	transport_update_playing(transport, TRUE);
+
+done:
+	bap->chan_id = 0;
+	bap_resume_complete(transport);
+
+	return FALSE;
+}
+
 static void bap_state_changed(struct bt_bap_stream *stream, uint8_t old_state,
 				uint8_t new_state, void *user_data)
 {
@@ -2107,9 +2224,7 @@ static void bap_state_changed(struct bt_bap_stream *stream, uint8_t old_state,
 	struct media_owner *owner = transport->owner;
 	struct io *io;
 	GIOChannel *chan;
-	GError *err = NULL;
 	int fd;
-	uint16_t imtu, omtu;
 
 	if (bap->stream != stream)
 		return;
@@ -2137,16 +2252,21 @@ static void bap_state_changed(struct bt_bap_stream *stream, uint8_t old_state,
 	case BT_BAP_STREAM_STATE_ENABLING:
 		if (!bt_bap_stream_get_io(stream))
 			return;
+
+		bap_metadata_changed(transport);
 		break;
 	case BT_BAP_STREAM_STATE_STREAMING:
 		if ((bt_bap_stream_io_dir(stream) == BT_BAP_BCAST_SOURCE) ||
 			(bt_bap_stream_io_dir(stream) == BT_BAP_BCAST_SINK))
 			bap_update_bcast_qos(transport);
+
+		bap_metadata_changed(transport);
 		break;
 	case BT_BAP_STREAM_STATE_RELEASING:
 		if (bt_bap_stream_io_dir(stream) == BT_BAP_BCAST_SINK)
 			return;
-		break;
+		transport_update_playing(transport, FALSE);
+		goto done;
 	}
 
 	io = bt_bap_stream_get_io(stream);
@@ -2162,21 +2282,20 @@ static void bap_state_changed(struct bt_bap_stream *stream, uint8_t old_state,
 		goto done;
 	}
 
+	/* Wait for FD to become ready */
+	bap_clear_chan(bap);
+
 	chan = g_io_channel_unix_new(fd);
-
-	if (!bt_io_get(chan, &err, BT_IO_OPT_OMTU, &omtu,
-					BT_IO_OPT_IMTU, &imtu,
-					BT_IO_OPT_INVALID)) {
-		error("%s", err->message);
-		goto done;
-	}
-
+	bap->chan_id = g_io_add_watch(chan,
+				G_IO_OUT | G_IO_IN |
+				G_IO_HUP | G_IO_ERR | G_IO_NVAL,
+				bap_transport_fd_ready, transport);
 	g_io_channel_unref(chan);
-
-	media_transport_set_fd(transport, fd, imtu, omtu);
-	transport_update_playing(transport, TRUE);
+	if (bap->chan_id)
+		return;
 
 done:
+	bap_clear_chan(bap);
 	bap_resume_complete(transport);
 }
 
@@ -2192,9 +2311,21 @@ static void bap_connecting(struct bt_bap_stream *stream, bool state, int fd,
 	bap_update_links(transport);
 }
 
+static bool transport_bap_is_playback(struct media_transport *transport)
+{
+	struct bap_transport *bap = transport->data;
+	uint8_t dir = bt_bap_stream_get_dir(bap->stream);
+
+	/* Unicast to local/remote Server Sink, or Broadcast */
+	return dir & (BT_BAP_SINK | BT_BAP_BCAST_SINK | BT_BAP_BCAST_SOURCE);
+}
+
 static int transport_bap_get_volume(struct media_transport *transport)
 {
-	return bt_audio_vcp_get_volume(transport->device);
+	if (transport_bap_is_playback(transport))
+		return bt_audio_vcp_get_volume(transport->device);
+	else
+		return -ENOTSUP; /* TODO: MICP */
 }
 
 static int transport_bap_set_volume(struct media_transport *transport,
@@ -2203,13 +2334,19 @@ static int transport_bap_set_volume(struct media_transport *transport,
 	if (volume < 0 || volume > 255)
 		return -EINVAL;
 
-	return bt_audio_vcp_set_volume(transport->device, volume) ? 0 : -EIO;
+	if (transport_bap_is_playback(transport))
+		return bt_audio_vcp_set_volume(transport->device, volume);
+	else
+		return -ENOTSUP; /* TODO: MICP */
 }
 
 static void transport_bap_destroy(void *data)
 {
 	struct bap_transport *bap = data;
 
+	bap_clear_chan(bap);
+
+	util_iov_free(bap->meta, 1);
 	bt_bap_state_unregister(bt_bap_stream_get_session(bap->stream),
 							bap->state_id);
 	free(bap);
@@ -2246,9 +2383,6 @@ static void asha_transport_sync_state(struct media_transport *transport,
 		break;
 	case ASHA_STARTED:
 		transport_set_state(transport, TRANSPORT_STATE_ACTIVE);
-		break;
-	case ASHA_STOPPING:
-		transport_set_state(transport, TRANSPORT_STATE_SUSPENDING);
 		break;
 	}
 }
@@ -2305,6 +2439,13 @@ static void asha_transport_state_cb(int status, void *user_data)
 	asha_transport_sync_state(transport, asha_dev);
 }
 
+static gboolean asha_transport_suspend_cb(void *user_data)
+{
+	asha_transport_state_cb(-1, user_data);
+
+	return FALSE;
+}
+
 static guint transport_asha_resume(struct media_transport *transport,
 						struct media_owner *owner)
 {
@@ -2324,11 +2465,11 @@ static guint transport_asha_suspend(struct media_transport *transport,
 	guint ret = 0;
 
 	if (owner) {
-		ret = bt_asha_device_stop(asha_dev, asha_transport_state_cb,
-									owner);
+		ret = bt_asha_device_stop(asha_dev);
 		asha_transport_sync_state(transport, asha_dev);
+		g_idle_add(asha_transport_suspend_cb, owner);
 	} else {
-		ret = bt_asha_device_stop(asha_dev, NULL, NULL);
+		ret = bt_asha_device_stop(asha_dev);
 		/* We won't have a callback to set the final state */
 		transport_set_state(transport, TRANSPORT_STATE_IDLE);
 	}
@@ -2349,13 +2490,8 @@ static void transport_asha_cancel(struct media_transport *transport, guint id)
 
 	if (state == ASHA_STARTING || state == ASHA_STARTED) {
 		DBG("Cancel requested, stopping");
-		bt_asha_device_stop(asha_dev, NULL, NULL);
+		bt_asha_device_stop(asha_dev);
 		/* We won't have a callback to set the final state */
-		transport_set_state(transport, TRANSPORT_STATE_IDLE);
-	} else if (state == ASHA_STOPPING) {
-		DBG("Cancel requested, resetting transport state");
-		/* We already dispatched a stop, just reset our state */
-		bt_asha_device_state_reset(asha_dev);
 		transport_set_state(transport, TRANSPORT_STATE_IDLE);
 	}
 }
@@ -2505,7 +2641,7 @@ struct media_transport *media_transport_create(struct btd_device *device,
 	struct media_endpoint *endpoint = data;
 	struct media_transport *transport;
 	const struct media_transport_ops *ops;
-	static int fd = 0;
+	int fd;
 
 	transport = g_new0(struct media_transport, 1);
 	if (device)
@@ -2518,15 +2654,34 @@ struct media_transport *media_transport_create(struct btd_device *device,
 	transport->size = size;
 	transport->remote_endpoint = g_strdup(remote_endpoint);
 
-	if (device)
-		transport->path = g_strdup_printf("%s/fd%d",
+	for (fd = g_slist_length(transports); fd < UINT8_MAX; fd++) {
+		char *path;
+
+		if (device)
+			path = g_strdup_printf("%s/fd%d",
 					remote_endpoint ? remote_endpoint :
-					device_get_path(device), fd++);
-	else
-		transport->path = g_strdup_printf("%s/fd%d",
+					device_get_path(device),
+					fd);
+		else
+			path = g_strdup_printf("%s/fd%d",
 					remote_endpoint ? remote_endpoint :
 					adapter_get_path(transport->adapter),
-					fd++);
+					fd);
+
+		/* Check if transport already exists */
+		if (!find_transport_by_path(path)) {
+			transport->path = path;
+			break;
+		}
+
+		g_free(path);
+	}
+
+	if (!transport->path) {
+		error("Unable to allocate transport path");
+		goto fail;
+	}
+
 	transport->fd = -1;
 
 	ops = media_transport_find_ops(media_endpoint_get_uuid(endpoint));
@@ -2574,17 +2729,22 @@ void *media_transport_get_stream(struct media_transport *transport)
 void media_transport_update_delay(struct media_transport *transport,
 							uint16_t delay)
 {
+#ifdef HAVE_A2DP
 	struct a2dp_transport *a2dp = transport->data;
 
 	/* Check if delay really changed */
 	if (a2dp->delay == delay)
 		return;
 
+	if (a2dp->session == NULL)
+		a2dp->session = a2dp_avdtp_get(transport->device);
+
 	a2dp->delay = delay;
 
 	g_dbus_emit_property_changed(btd_get_dbus_connection(),
 					transport->path,
 					MEDIA_TRANSPORT_INTERFACE, "Delay");
+#endif /* HAVE_A2DP */
 }
 
 struct btd_device *media_transport_get_dev(struct media_transport *transport)
@@ -2592,30 +2752,19 @@ struct btd_device *media_transport_get_dev(struct media_transport *transport)
 	return transport->device;
 }
 
-void media_transport_update_volume(struct media_transport *transport,
-								int volume)
+static void media_transport_emit_volume(struct media_transport *transport)
 {
-	if (volume < 0)
+	int volume;
+
+	if (media_transport_get_volume(transport, &volume))
 		return;
 
-	if (media_endpoint_get_sep(transport->endpoint)) {
-		struct a2dp_transport *a2dp = transport->data;
-
-		if (volume > 127)
-			return;
-
-		/* Check if volume really changed */
-		if (a2dp->volume == volume)
-			return;
-
-		a2dp->volume = volume;
-	}
 	g_dbus_emit_property_changed(btd_get_dbus_connection(),
 					transport->path,
 					MEDIA_TRANSPORT_INTERFACE, "Volume");
 }
 
-int media_transport_get_device_volume(struct btd_device *dev)
+int media_transport_get_a2dp_volume(struct btd_device *dev)
 {
 	GSList *l;
 
@@ -2625,10 +2774,11 @@ int media_transport_get_device_volume(struct btd_device *dev)
 	/* Attempt to locate the transport to get its volume */
 	for (l = transports; l; l = l->next) {
 		struct media_transport *transport = l->data;
+
 		if (transport->device != dev)
 			continue;
 
-		/* Volume is A2DP only */
+		/* A2DP only */
 		if (media_endpoint_get_sep(transport->endpoint)) {
 			int volume;
 
@@ -2639,34 +2789,71 @@ int media_transport_get_device_volume(struct btd_device *dev)
 		}
 	}
 
-	/* If transport volume doesn't exists use device_volume */
+	/* If no transport, use device volume. This is a workaround for the lack
+	 * of ordering between AVRCP and A2DP session start. (Note BAP+VCP do
+	 * not have this issue.)
+	 */
 	return btd_device_get_volume(dev);
 }
 
-void media_transport_update_device_volume(struct btd_device *dev,
-								int volume)
+void media_transport_set_a2dp_volume(struct btd_device *dev, int volume)
 {
 	GSList *l;
 
-	if (dev == NULL || volume < 0)
+	if (dev == NULL || volume < 0 || volume > 127)
 		return;
 
 	/* Attempt to locate the transport to set its volume */
 	for (l = transports; l; l = l->next) {
 		struct media_transport *transport = l->data;
-		const char *uuid = media_endpoint_get_uuid(transport->endpoint);
+		struct a2dp_transport *a2dp;
+
 		if (transport->device != dev)
 			continue;
+		if (!media_endpoint_get_sep(transport->endpoint))
+			continue;
 
-		/* Volume is A2DP and BAP only */
-		if (media_endpoint_get_sep(transport->endpoint) ||
-				strcasecmp(uuid, PAC_SINK_UUID) ||
-				strcasecmp(uuid, PAC_SOURCE_UUID) ||
-				strcasecmp(uuid, BAA_SERVICE_UUID)) {
-			media_transport_update_volume(transport, volume);
-			break;
+		a2dp = transport->data;
+		if (a2dp->volume != volume) {
+			a2dp->volume = volume;
+			media_transport_emit_volume(transport);
 		}
+		break;
 	}
 
 	btd_device_set_volume(dev, volume);
+}
+
+void media_transport_volume_changed(struct btd_device *dev)
+{
+	GSList *l;
+
+	if (dev == NULL)
+		return;
+
+	for (l = transports; l; l = l->next) {
+		struct media_transport *transport = l->data;
+
+		if (transport->device != dev)
+			continue;
+
+		media_transport_emit_volume(transport);
+	}
+}
+
+const char *media_transport_stream_path(void *stream)
+{
+	GSList *l;
+
+	if (!stream)
+		return NULL;
+
+	for (l = transports; l; l = l->next) {
+		struct media_transport *transport = l->data;
+
+		if (media_transport_get_stream(transport) == stream)
+			return transport->path;
+	}
+
+	return NULL;
 }

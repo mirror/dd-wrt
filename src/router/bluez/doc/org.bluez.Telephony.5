@@ -1,0 +1,230 @@
+.\" Man page generated from reStructuredText.
+.
+.
+.nr rst2man-indent-level 0
+.
+.de1 rstReportMargin
+\\$1 \\n[an-margin]
+level \\n[rst2man-indent-level]
+level margin: \\n[rst2man-indent\\n[rst2man-indent-level]]
+-
+\\n[rst2man-indent0]
+\\n[rst2man-indent1]
+\\n[rst2man-indent2]
+..
+.de1 INDENT
+.\" .rstReportMargin pre:
+. RS \\$1
+. nr rst2man-indent\\n[rst2man-indent-level] \\n[an-margin]
+. nr rst2man-indent-level +1
+.\" .rstReportMargin post:
+..
+.de UNINDENT
+. RE
+.\" indent \\n[an-margin]
+.\" old: \\n[rst2man-indent\\n[rst2man-indent-level]]
+.nr rst2man-indent-level -1
+.\" new: \\n[rst2man-indent\\n[rst2man-indent-level]]
+.in \\n[rst2man-indent\\n[rst2man-indent-level]]u
+..
+.TH "ORG.BLUEZ.TELEPHONY1" "5" "May 2025" "BlueZ" "Linux System Administration"
+.SH NAME
+org.bluez.Telephony1 \- BlueZ D-Bus Telephony Audio Gateway API documentation
+.SH INTERFACE
+.INDENT 0.0
+.TP
+.B Service
+org.bluez
+.TP
+.B Interface
+org.bluez.Telephony1 [experimental]
+.TP
+.B Object path
+[variable prefix]/{hci0,hci1,...}/dev_{BDADDR}/telephony#
+.TP
+.B Used by
+\fBbluetoothctl\-telephony(1)\fP
+.UNINDENT
+.SS Methods
+.SS object Dial(string uri)
+.sp
+The uri is comprised of the URI scheme followed by the Caller ID (this could
+be a telephone number or username), separated by a colon.
+.sp
+Examples of common URI schemes can be found in Internet Assigned Numbers
+Authority (IANA) URI Schemes:
+ <https://iana.org/assignments/uri\-schemes/uri\-schemes.xhtml> 
+.sp
+This initiates a new outgoing call. Returns the object path to the newly
+created call.
+.sp
+For HFP the URI is \(dqtel:\(dq followed by the telephone number.
+.sp
+The telephone number must be a string containing the following characters:
+\fI[0\-9+*#,ABCD]{1,80}\fP The character set can contain numbers, \fI+\fP, \fI*\fP, \fI#\fP,
+\fI,\fP and the letters \fIA\fP to \fID\fP\&. Besides this sanity checking no further number
+validation is performed. It is assumed that the gateway and/or the network
+will perform further validation.
+.sp
+If telephone number is an empty string, it will try to call last dialed number.
+.sp
+NOTE: If an active call (single or multiparty) exists, then it is
+automatically put on hold if the dial procedure is successful.
+.sp
+Possible Errors:
+.INDENT 0.0
+.TP
+.B org.bluez.Error.InvalidState
+.TP
+.B org.bluez.Error.InvalidArguments
+.TP
+.B org.bluez.Error.NotSupported
+.TP
+.B org.bluez.Error.Failed
+.UNINDENT
+.sp
+Examples:
+.INDENT 0.0
+.TP
+.B bluetoothctl
+> telephony.dial <number> [telephony]
+.UNINDENT
+.SS void SwapCalls()
+.sp
+Swaps Active and Held calls. The effect of this is that all calls (0 or more
+including calls in a multi\-party conversation) that were Active are now Held,
+and all calls (0 or more) that were Held are now Active.
+.sp
+GSM specification does not allow calls to be swapped in the case where Held,
+Active and Waiting calls exist. Some modems implement this anyway, thus it is
+manufacturer specific whether this method will succeed in the case of Held,
+Active and Waiting calls.
+.sp
+Possible Errors:
+:org.bluez.Error.InvalidState
+:org.bluez.Error.Failed
+.SS void ReleaseAndAnswer()
+.sp
+Releases currently active call (0 or more) and answers the currently waiting
+call. Please note that if the current call is a multiparty call, then all
+parties in the multi\-party call will be released.
+.sp
+Possible Errors:
+:org.bluez.Error.InvalidState
+:org.bluez.Error.Failed
+.SS void ReleaseAndSwap()
+.sp
+Releases currently active call (0 or more) and activates any currently held
+calls. Please note that if the current call is a multiparty call, then all
+parties in the multi\-party call will be released.
+.sp
+Possible Errors:
+:org.bluez.Error.InvalidState
+:org.bluez.Error.Failed
+.SS void HoldAndAnswer()
+.sp
+Puts the current call (including multi\-party calls) on hold and answers the
+currently waiting call. Calling this function when a user already has a both
+Active and Held calls is invalid, since in GSM a user can have only a single
+Held call at a time.
+.sp
+Possible Errors:
+:org.bluez.Error.InvalidState
+:org.bluez.Error.Failed
+.SS void HangupAll()
+.sp
+Releases all calls except waiting calls. This includes multiparty calls.
+.sp
+Possible Errors:
+:org.bluez.Error.InvalidState
+:org.bluez.Error.Failed
+.sp
+Examples:
+.INDENT 0.0
+.TP
+.B bluetoothctl
+> telephony.hangup\-all [telephony]
+.UNINDENT
+.SS void HangupActive()
+.sp
+Releases active calls. This includes multiparty active calls.
+.sp
+Possible Errors:
+:org.bluez.Error.InvalidState
+:org.bluez.Error.Failed
+.SS void HangupHeld()
+.sp
+Releases held calls except waiting calls. This includes multiparty held calls.
+.sp
+Possible Errors:
+:org.bluez.Error.InvalidState
+:org.bluez.Error.Failed
+.SS array{object} CreateMultiparty()
+.sp
+Joins active and held calls together into a multi\-party call. If one of the
+calls is already a multi\-party call, then the other call is added to the
+multiparty conversation. Returns the new list of calls participating in the
+multiparty call.
+.sp
+There can only be one subscriber controlled multi\-party call according to the
+GSM specification.
+.sp
+Possible Errors:
+:org.bluez.Error.InvalidState
+:org.bluez.Error.Failed
+.SS void SendTones(string tones)
+.sp
+Sends the DTMF tones to the network. The tones have a fixed duration.
+Tones can be one of: \(aq0\(aq \- \(aq9\(aq, \(aq*\(aq, \(aq#\(aq, \(aqA\(aq, \(aqB\(aq, \(aqC\(aq, \(aqD\(aq. The last four
+are typically not used in normal circumstances.
+.sp
+Possible Errors:
+:org.bluez.Error.InvalidState
+:org.bluez.Error.InvalidArgs
+:org.bluez.Error.Failed
+.SS Properties
+.SS string UUID [readonly]
+.sp
+UUID of the profile which the Telephony Audio Gateway is for.
+.SS array{string} SupportedURISchemes [readonly]
+.sp
+Contains the list of supported URI schemes.
+.SS string State [readonly]
+.sp
+Contains the state of the current connection.
+.sp
+Possible values:
+.INDENT 0.0
+.TP
+.B \(dqconnecting\(dq
+RFComm connection in progress
+.TP
+.B \(dqslc_connecting\(dq
+Service Level Connection in progress
+.TP
+.B \(dqconnected\(dq
+RFComm and Service Level Connection are connected
+.TP
+.B \(dqdisconnecting\(dq
+No further use of this object is allowed, it will be destroyed shortly
+.UNINDENT
+.SS boolean Service [readonly]
+.sp
+Network service availability.
+.SS byte Signal [readonly]
+.sp
+Network level signal from 0 to 5.
+.SS boolean Roaming [readonly]
+.sp
+Network roaming usage.
+.SS byte BattChg [readonly]
+.sp
+Battery level from 0 to 5.
+.SS string OperatorName [readonly, optional]
+.sp
+Operator name
+.SS boolean InbandRingtone [readonly]
+.sp
+In\-band Ringtone availability.
+.\" Generated by docutils manpage writer.
+.

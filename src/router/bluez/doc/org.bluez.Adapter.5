@@ -41,18 +41,19 @@ org.bluez.Adapter1
 .TP
 .B Object path
 [variable prefix]/{hci0,hci1,...}
+.TP
+.B Used by
+\fBbluetoothctl(1)\fP, \fBbluetoothctl\-scan(1)\fP
 .UNINDENT
 .SS Methods
 .SS void StartDiscovery()
-.INDENT 0.0
-.INDENT 3.5
-Starts device discovery session which may include starting an inquiry
-and/or scanning procedures and remote device name resolving.
+.sp
+Starts device discovery session which may include starting an inquiry and/or
+scanning procedures and remote device name resolving.
 .sp
 Use \fBStopDiscovery\fP to release the sessions acquired.
 .sp
-This process will start creating Device objects as new devices are
-discovered.
+This process will start creating Device objects as new devices are discovered.
 .sp
 During discovery RSSI delta\-threshold is imposed.
 .sp
@@ -67,16 +68,20 @@ Possible errors:
 .TP
 .B org.bluez.Error.InProgress
 .UNINDENT
-.UNINDENT
+.sp
+Examples:
+.INDENT 0.0
+.TP
+.B bluetoothctl
+> scan <on/off/bredr/le>
 .UNINDENT
 .SS void StopDiscovery()
-.INDENT 0.0
-.INDENT 3.5
+.sp
 Stops device discovery session started by \fBStartDiscovery\fP\&.
 .sp
-Note that a discovery procedure is shared between all discovery sessions
-thus calling StopDiscovery will only release a single session and
-discovery will stop when all sessions from all clients have finished.
+Note that a discovery procedure is shared between all discovery sessions thus
+calling StopDiscovery will only release a single session and discovery will stop
+when all sessions from all clients have finished.
 .sp
 Possible errors:
 .INDENT 0.0
@@ -87,13 +92,10 @@ Possible errors:
 .TP
 .B org.bluez.Error.NotAuthorized
 .UNINDENT
-.UNINDENT
-.UNINDENT
 .SS void RemoveDevice(object device)
-.INDENT 0.0
-.INDENT 3.5
-Removes the remote device object at the given path including cahed
-information such as bonding information.
+.sp
+Removes the remote device object at the given path including cached information
+such as bonding information.
 .sp
 Possible errors:
 .INDENT 0.0
@@ -102,13 +104,17 @@ Possible errors:
 .TP
 .B org.bluez.Error.Failed
 .UNINDENT
-.UNINDENT
+.sp
+Examples:
+.INDENT 0.0
+.TP
+.B bluetoothctl
+> remove <dev>
 .UNINDENT
 .SS void SetDiscoveryFilter(dict filter)
-.INDENT 0.0
-.INDENT 3.5
-Sets the device discovery filter for the caller. When this method is
-called with no filter parameter, filter is removed.
+.sp
+Sets the device discovery filter for the caller. When this method is called with
+no filter parameter, filter is removed.
 .sp
 Possible filter values:
 .INDENT 0.0
@@ -132,16 +138,16 @@ than RSSI param.
 .B int16 RSSI
 RSSI threshold value.
 .sp
-PropertiesChanged signals will be emitted for already existing
-Device objects, with updated RSSI value. If one or more
-discovery filters have been set, the RSSI delta\-threshold, that
-is imposed by StartDiscovery by default, will not be applied.
+PropertiesChanged signals will be emitted for already existing Device
+objects, with updated RSSI value. If one or more discovery filters have
+been set, the RSSI delta\-threshold, that is imposed by StartDiscovery by
+default, will not be applied.
 .TP
 .B uint16 Pathloss
 Pathloss threshold value.
 .sp
-PropertiesChanged signals will be emitted for already existing
-Device objects, with updated Pathloss value.
+PropertiesChanged signals will be emitted for already existing Device
+objects, with updated Pathloss value.
 .TP
 .B string Transport (Default \(dqauto\(dq)
 Transport parameter determines the type of scan.
@@ -163,45 +169,48 @@ LE scan only.
 .B bool DuplicateData (Default false)
 Disables duplicate detection of advertisement data.
 .sp
-When enabled PropertiesChanged signals will be generated for
-either ManufacturerData and ServiceData everytime they are
-discovered.
+When enabled PropertiesChanged signals will be generated for either
+ManufacturerData and ServiceData every time they are discovered.
 .TP
 .B bool Discoverable (Default false)
-Make adapter discoverable while discovering, if the adapter is
-already discoverable setting this filter won\(aqt do anything.
+Make adapter discoverable while discovering, if the adapter is already
+discoverable setting this filter won\(aqt do anything.
 .TP
 .B string Pattern (Default none)
-Discover devices where the pattern matches either the prefix of
-the address or device name which is convenient way to limited
-the number of device objects created during a discovery.
+Discover devices where the pattern matches either the prefix of the
+address or device name which is convenient way to limited the number of
+device objects created during a discovery.
 .sp
 When set disregards device discoverable flags.
 .sp
-Note: The pattern matching is ignored if there are other client
-that don\(aqt set any pattern as it work as a logical OR, also
-setting empty string \(dq\(dq pattern will match any device found.
+Note: The pattern matching is ignored if there are other client that
+don\(aqt set any pattern as it work as a logical OR, also setting empty
+string \(dq\(dq pattern will match any device found.
+.TP
+.B bool AutoConnect (Default false)
+Connect to discovered devices automatically if a Pattern has
+been set and it matches the device address or name and it is
+connectable.
+.UNINDENT
 .sp
-When discovery filter is set, Device objects will be created as
-new devices with matching criteria are discovered regardless of
-they are connectable or discoverable which enables listening to
-non\-connectable and non\-discoverable devices.
+When discovery filter is set, Device objects will be created as new devices with
+matching criteria are discovered regardless of they are connectable or
+discoverable which enables listening to non\-connectable and non\-discoverable
+devices.
 .sp
-When multiple clients call SetDiscoveryFilter, their filters are
-internally merged, and notifications about new devices are sent
-to all clients. Therefore, each client must check that device
-updates actually match its filter.
+When multiple clients call SetDiscoveryFilter, their filters are internally
+merged, and notifications about new devices are sent to all clients. Therefore,
+each client must check that device updates actually match its filter.
 .sp
-When SetDiscoveryFilter is called multiple times by the same
-client, last filter passed will be active for given client.
+When SetDiscoveryFilter is called multiple times by the same client, last filter
+passed will be active for given client.
 .sp
 SetDiscoveryFilter can be called before StartDiscovery.
-It is useful when client will create first discovery session,
-to ensure that proper scan will be started right after call to
-StartDiscovery.
+It is useful when client will create first discovery session, to ensure that
+proper scan will be started right after call to StartDiscovery.
 .sp
 Possible errors:
-.INDENT 7.0
+.INDENT 0.0
 .TP
 .B org.bluez.Error.NotReady
 .TP
@@ -209,28 +218,50 @@ Possible errors:
 .TP
 .B org.bluez.Error.Failed
 .UNINDENT
-.UNINDENT
-.UNINDENT
+.sp
+Examples:
+.INDENT 0.0
+.TP
+.B bluetoothctl
+[scan] > uuids [all/uuid1 uuid2 ...]
+.TP
+.B bluetoothctl
+[scan] > rssi [rssi]
+.TP
+.B bluetoothctl
+[scan] > pathloss [pathloss]
+.TP
+.B bluetoothctl
+[scan] > transport [auto/bredr/le]
+.TP
+.B bluetoothctl
+[scan] > duplicate\-data [on/off]
+.TP
+.B bluetoothctl
+[scan] > discoverable [on/off]
+.TP
+.B bluetoothctl
+[scan] > pattern [value]
+.TP
+.B bluetoothctl
+[scan] > clear [filter]
 .UNINDENT
 .SS array{string} GetDiscoveryFilters()
-.INDENT 0.0
-.INDENT 3.5
+.sp
 Returns available filters that can be given to \fBSetDiscoveryFilter\fP\&.
 .sp
 Possible errors: None
-.UNINDENT
-.UNINDENT
 .SS object ConnectDevice(dict properties) [experimental]
-.INDENT 0.0
-.INDENT 3.5
-connects to device without need of performing General Discovery.
-Connection mechanism is similar to Connect method on
-\fBorg.bluez.Device1(5)\fP interface with exception that this method
-returns success when physical connection is established and you can
-specify bearer to connect with parameter. After this method returns,
-services discovery will continue and any supported profile will be
-connected. There is no need for calling Connect on Device1 after this
-call. If connection was successful this method returns object path to
+.sp
+Connects to device without need of performing General Discovery.
+.sp
+Connection mechanism is similar to Connect method on \fBorg.bluez.Device1(5)\fP
+interface with exception that this method returns success when physical
+connection is established and you can specify bearer to connect with parameter.
+.sp
+After this method returns, services discovery will continue and any supported
+profile will be connected. There is no need for calling Connect on Device1 after
+this call. If connection was successful this method returns object path to
 created device object or device that already exist.
 .sp
 Possible properties values:
@@ -240,8 +271,8 @@ Possible properties values:
 The Bluetooth device address of the remote device.
 .TP
 .B string AddressType (Default \(dqBR/EDR\(dq)
-The Bluetooth device Address Type. This is address type that
-should be used for initial connection.
+The Bluetooth device Address Type. This is address type that should be
+used for initial connection.
 .sp
 Possible values:
 .INDENT 7.0
@@ -267,22 +298,16 @@ Possible errors:
 .TP
 .B org.bluez.Error.Failed
 .UNINDENT
-.UNINDENT
-.UNINDENT
 .SS Properties
 .SS string Address [readonly]
-.INDENT 0.0
-.INDENT 3.5
+.sp
 The Bluetooth device address.
-.UNINDENT
-.UNINDENT
 .SS string AddressType [readonly]
-.INDENT 0.0
-.INDENT 3.5
-The Bluetooth Address Type. For dual\-mode and BR/EDR only adapter this
-defaults to \(dqpublic\(dq. Single mode LE adapters may have either value.
-With privacy enabled this contains type of Identity Address and not
-type of address used for connection.
+.sp
+The Bluetooth Address Type. For dual\-mode and BR/EDR only adapter this defaults
+to \(dqpublic\(dq. Single mode LE adapters may have either value. With privacy enabled
+this contains type of Identity Address and not type of address used for
+connection.
 .sp
 Possible values:
 .INDENT 0.0
@@ -290,78 +315,77 @@ Possible values:
 .B \(dqpublic\(dq
 Public address.
 .TP
-.B \(dqrandom
+.B \(dqrandom\(dq
 Random address.
 .UNINDENT
-.UNINDENT
-.UNINDENT
 .SS string Name [readonly]
-.INDENT 0.0
-.INDENT 3.5
+.sp
 The Bluetooth system name (pretty hostname).
 .sp
-This property is either a static system default or controlled by an
-external daemon providing access to the pretty hostname configuration.
-.UNINDENT
-.UNINDENT
+This property is either a static system default or controlled by an external
+daemon providing access to the pretty hostname configuration.
 .SS string Alias [readwrite]
-.INDENT 0.0
-.INDENT 3.5
+.sp
 The Bluetooth friendly name. This value can be changed.
 .sp
-In case no alias is set, it will return the system provided name.
-Setting an empty string as alias will convert it back to the system
-provided name.
+In case no alias is set, it will return the system provided name. Setting an
+empty string as alias will convert it back to the system provided name.
 .sp
-When resetting the alias with an empty string, the property will default
-back to system name.
+When resetting the alias with an empty string, the property will default back to
+system name.
 .sp
-On a well configured system, this property never needs to be changed
-since it defaults to the system name and provides the pretty hostname.
-Only if the local name needs to be different from the pretty hostname,
-this property should be used as last resort.
-.UNINDENT
+On a well configured system, this property never needs to be changed since it
+defaults to the system name and provides the pretty hostname.
+.sp
+Only if the local name needs to be different from the pretty hostname, this
+property should be used as last resort.
+.sp
+Examples:
+.INDENT 0.0
+.TP
+.B bluetoothctl
+> system\-alias <name>
+.TP
+.B bluetoothctl
+> reset\-alias
 .UNINDENT
 .SS uint32 Class [readonly]
-.INDENT 0.0
-.INDENT 3.5
+.sp
 The Bluetooth class of device.
 .sp
-This property represents the value that is either automatically
-configured by DMI/ACPI information or provided as static configuration.
-.UNINDENT
-.UNINDENT
+This property represents the value that is either automatically configured by
+DMI/ACPI information or provided as static configuration.
 .SS boolean Connectable [readwrite]
-.INDENT 0.0
-.INDENT 3.5
-Set an adapter to connectable or non\-connectable. This is a global
-setting and should only be used by the settings application.
 .sp
-Setting this property to false will set the Discoverable property
-of the adapter to false as well, which will not be reverted if
-if Connectable is set back to true. If required, the application
-will need to manually set Discoverable to true.
+Set an adapter to connectable or non\-connectable. This is a global setting and
+should only be used by the settings application.
+.sp
+Setting this property to false will set the Discoverable property of the adapter
+to false as well, which will not be reverted if Connectable is set back to true.
+.sp
+If required, the application will need to manually set Discoverable to true.
 .sp
 Note that this property only affects incoming connections.
-.UNINDENT
-.UNINDENT
 .SS boolean Powered [readwrite]
-.INDENT 0.0
-.INDENT 3.5
-Switch an adapter on or off. This will also set the appropriate
-connectable state of the controller.
 .sp
-The value of this property is not persistent. After restart or
-unplugging of the adapter it will reset back to false.
-.UNINDENT
+Switch an adapter on or off. This will also set the appropriate connectable
+state of the controller.
+.sp
+The value of this property is not persistent. After restart or unplugging of the
+adapter it will reset back to false.
+.sp
+Examples:
+.INDENT 0.0
+.TP
+.B bluetoothctl
+> power <on/off>
 .UNINDENT
 .SS string PowerState [readonly, experimental]
-.INDENT 0.0
-.INDENT 3.5
+.sp
 The power state of an adapter.
 .sp
-The power state will show whether the adapter is turning off, or turning
-on, as well as being on or off.
+The power state will show whether the adapter is turning off, or turning on, as
+well as being on or off.
 .sp
 Possible values:
 .INDENT 0.0
@@ -381,70 +405,65 @@ Transitioning from \(dqon\(dq to \(dqoff\(dq.
 .B \(dqoff\-blocked\(dq
 Blocked by rfkill.
 .UNINDENT
-.UNINDENT
-.UNINDENT
 .SS boolean Discoverable [readwrite] (Default: false)
-.INDENT 0.0
-.INDENT 3.5
-Switch an adapter to discoverable or non\-discoverable to either make it
-visible or hide it. This is a global setting and should only be used by
-the settings application.
 .sp
-If the DiscoverableTimeout is set to a non\-zero value then the system
-will set this value back to false after the timer expired.
+Switch an adapter to discoverable or non\-discoverable to either make it visible
+or hide it. This is a global setting and should only be used by the settings
+application.
+.sp
+If the DiscoverableTimeout is set to a non\-zero value then the system will set
+this value back to false after the timer expired.
 .sp
 In case the adapter is switched off, setting this value will fail.
 .sp
-When changing the Powered property the new state of this property will
-be updated via a PropertiesChanged signal.
-.UNINDENT
+When changing the Powered property the new state of this property will be
+updated via a PropertiesChanged signal.
+.sp
+Examples:
+.INDENT 0.0
+.TP
+.B bluetoothctl
+> discoverable <on/off>
 .UNINDENT
 .SS boolean Pairable [readwrite] (Default: true)
-.INDENT 0.0
-.INDENT 3.5
-Switch an adapter to pairable or non\-pairable. This is a global setting
-and should only be used by the settings application.
+.sp
+Switch an adapter to pairable or non\-pairable. This is a global setting and
+should only be used by the settings application.
 .sp
 Note that this property only affects incoming pairing requests.
-.UNINDENT
+.sp
+Examples:
+.INDENT 0.0
+.TP
+.B bluetoothctl
+> pairable <on/off>
 .UNINDENT
 .SS uint32 PairableTimeout [readwrite] (Default: 0)
-.INDENT 0.0
-.INDENT 3.5
-The pairable timeout in seconds. A value of zero means that the timeout
-is disabled and it will stay in pairable mode forever.
-.UNINDENT
-.UNINDENT
+.sp
+The pairable timeout in seconds. A value of zero means that the timeout is
+disabled and it will stay in pairable mode forever.
 .SS uint32 DiscoverableTimeout [readwrite] (Default: 180)
+.sp
+The discoverable timeout in seconds. A value of zero means that the timeout is
+disabled and it will stay in discoverable/limited mode forever.
+.sp
+Examples:
 .INDENT 0.0
-.INDENT 3.5
-The discoverable timeout in seconds. A value of zero means that the
-timeout is disabled and it will stay in discoverable/limited mode
-forever.
-.UNINDENT
+.TP
+.B bluetoothctl
+> discoverable\-timeout [value]
 .UNINDENT
 .SS boolean Discovering [readonly]
-.INDENT 0.0
-.INDENT 3.5
+.sp
 Indicates that a device discovery procedure is active.
-.UNINDENT
-.UNINDENT
 .SS array{string} UUIDs [readonly]
-.INDENT 0.0
-.INDENT 3.5
+.sp
 List of 128\-bit UUIDs that represents the available local services.
-.UNINDENT
-.UNINDENT
 .SS string Modalias [readonly, optional]
-.INDENT 0.0
-.INDENT 3.5
-Local Device ID information in modalias format used by the kernel and
-udev.
-.UNINDENT
-.UNINDENT
+.sp
+Local Device ID information in modalias format used by the kernel and udev.
 .SS array{string} Roles [readonly]
-.INDENT 0.0
-.INDENT 3.5
+.sp
 List of supported roles.
 .sp
 Possible values:
@@ -459,28 +478,17 @@ Supports the peripheral role.
 .B \(dqcentral\-peripheral\(dq
 Supports both roles concurrently.
 .UNINDENT
-.UNINDENT
-.UNINDENT
 .SS array{string} ExperimentalFeatures [readonly, optional]
-.INDENT 0.0
-.INDENT 3.5
-List of 128\-bit UUIDs that represents the experimental features
-currently enabled.
-.UNINDENT
-.UNINDENT
+.sp
+List of 128\-bit UUIDs that represents the experimental features currently
+enabled.
 .SS uint16 Manufacturer [readonly]
-.INDENT 0.0
-.INDENT 3.5
-The manufacturer of the device, as a uint16 company identifier defined
-by the Core Bluetooth Specification.
-.UNINDENT
-.UNINDENT
+.sp
+The manufacturer of the device, as a uint16 company identifier defined by the
+Core Bluetooth Specification.
 .SS byte Version [readonly]
-.INDENT 0.0
-.INDENT 3.5
-The Bluetooth version supported by the device, as a core version code
-defined by the Core Bluetooth Specification.
-.UNINDENT
-.UNINDENT
+.sp
+The Bluetooth version supported by the device, as a core version code defined by
+the Core Bluetooth Specification.
 .\" Generated by docutils manpage writer.
 .

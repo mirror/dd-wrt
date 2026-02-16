@@ -27,10 +27,10 @@
 
 #include "gdbus/gdbus.h"
 
-#include "lib/bluetooth.h"
-#include "lib/hci.h"
-#include "lib/sdp.h"
-#include "lib/uuid.h"
+#include "bluetooth/bluetooth.h"
+#include "bluetooth/hci.h"
+#include "bluetooth/sdp.h"
+#include "bluetooth/uuid.h"
 
 #include "src/dbus-common.h"
 #include "src/shared/util.h"
@@ -54,7 +54,6 @@
 #include "vcp.h"
 #include "transport.h"
 
-#define VCS_UUID_STR "00001844-0000-1000-8000-00805f9b34fb"
 #define MEDIA_ENDPOINT_INTERFACE "org.bluez.MediaEndpoint1"
 
 struct vcp_data {
@@ -108,7 +107,7 @@ static void vcp_volume_changed(struct bt_vcp *vcp, uint8_t volume)
 	struct vcp_data *data = queue_find(sessions, match_data, vcp);
 
 	if (data)
-		media_transport_update_device_volume(data->device, volume);
+		media_transport_volume_changed(data->device);
 }
 
 static void vcp_data_add(struct vcp_data *data)
@@ -166,24 +165,24 @@ static void vcp_data_remove(struct vcp_data *data)
 	}
 }
 
-uint8_t bt_audio_vcp_get_volume(struct btd_device *device)
+int bt_audio_vcp_get_volume(struct btd_device *device)
 {
 	struct vcp_data *data = queue_find(sessions, match_device, device);
 
 	if (data)
 		return bt_vcp_get_volume(data->vcp);
 
-	return 0;
+	return -ENODEV;
 }
 
-bool bt_audio_vcp_set_volume(struct btd_device *device, uint8_t volume)
+int bt_audio_vcp_set_volume(struct btd_device *device, uint8_t volume)
 {
 	struct vcp_data *data = queue_find(sessions, match_device, device);
 
 	if (data)
-		return bt_vcp_set_volume(data->vcp, volume);
+		return bt_vcp_set_volume(data->vcp, volume) ? 0 : -EIO;
 
-	return FALSE;
+	return -ENODEV;
 }
 
 static void vcp_remote_client_detached(struct bt_vcp *vcp, void *user_data)
@@ -282,6 +281,13 @@ static void vcp_remove(struct btd_service *service)
 	vcp_data_remove(data);
 }
 
+static void vcp_ready(struct bt_vcp *vcp, void *user_data)
+{
+	struct btd_service *service = user_data;
+
+	btd_service_connecting_complete(service, 0);
+}
+
 static int vcp_accept(struct btd_service *service)
 {
 	struct btd_device *device = btd_service_get_device(service);
@@ -297,12 +303,10 @@ static int vcp_accept(struct btd_service *service)
 		return -EINVAL;
 	}
 
-	if (!bt_vcp_attach(data->vcp, client)) {
+	if (!bt_vcp_attach(data->vcp, client, vcp_ready, service)) {
 		error("VCP unable to attach");
 		return -EINVAL;
 	}
-
-	btd_service_connecting_complete(service, 0);
 
 	return 0;
 }
@@ -328,6 +332,7 @@ static void vcp_server_remove(struct btd_profile *p,
 static struct btd_profile vcp_profile = {
 	.name		= "vcp",
 	.priority	= BTD_PROFILE_PRIORITY_MEDIUM,
+	.bearer		= BTD_PROFILE_BEARER_LE,
 	.remote_uuid	= VCS_UUID_STR,
 
 	.device_probe	= vcp_probe,

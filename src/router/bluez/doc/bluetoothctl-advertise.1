@@ -1,0 +1,1271 @@
+.\" Man page generated from reStructuredText.
+.
+.
+.nr rst2man-indent-level 0
+.
+.de1 rstReportMargin
+\\$1 \\n[an-margin]
+level \\n[rst2man-indent-level]
+level margin: \\n[rst2man-indent\\n[rst2man-indent-level]]
+-
+\\n[rst2man-indent0]
+\\n[rst2man-indent1]
+\\n[rst2man-indent2]
+..
+.de1 INDENT
+.\" .rstReportMargin pre:
+. RS \\$1
+. nr rst2man-indent\\n[rst2man-indent-level] \\n[an-margin]
+. nr rst2man-indent-level +1
+.\" .rstReportMargin post:
+..
+.de UNINDENT
+. RE
+.\" indent \\n[an-margin]
+.\" old: \\n[rst2man-indent\\n[rst2man-indent-level]]
+.nr rst2man-indent-level -1
+.\" new: \\n[rst2man-indent\\n[rst2man-indent-level]]
+.in \\n[rst2man-indent\\n[rst2man-indent-level]]u
+..
+.TH "BLUETOOTHCTL-ADVERTISE" "1" "November 2022" "BlueZ" "Linux System Administration"
+.SH NAME
+bluetoothctl-advertise \- Advertise Submenu
+.SH SYNOPSIS
+.sp
+\fBbluetoothctl\fP [\-\-options] [advertise.commands]
+.sp
+This submenu configures LE advertising data and parameters using the
+\fBorg.bluez.LEAdvertisement(5)\fP and \fBorg.bluez.LEAdvertisingManager(5)\fP
+interfaces.
+.SH ADVERTISE OPTIONS COMMANDS
+.SS uuids
+.sp
+Set/Get advertise uuids.
+.INDENT 0.0
+.TP
+.B Usage
+\fB> uuids [uuid1 uuid2 ...]\fP
+.TP
+.B Uses
+\fBorg.bluez.LEAdvertisement(5)\fP property \fBServiceUUIDs\fP
+.TP
+.B [uuid1 uuid2 ...]
+List of UUIDs to advertise (default: none)
+.TP
+.B Example Show current advertised UUIDs
+.nf
+\fB> uuids\fP
+.fi
+.sp
+.TP
+.B Example Advertise custom 16\-bit service UUID
+.nf
+\fB> uuids 0x1234\fP
+.fi
+.sp
+.TP
+.B Example Advertise custom 32\-bit service UUID
+.nf
+\fB> uuids 0x12345678\fP
+.fi
+.sp
+.TP
+.B Example Advertise custom 128\-bit service UUID
+.nf
+\fB> uuids 90f95193\-35de\-4306\-a6e9\-699328f15059\fP
+.fi
+.sp
+.TP
+.B Example Advertise Battery and Generic Attribute services
+.nf
+\fB> uuids 0x180F 0x1801\fP
+.fi
+.sp
+.TP
+.B Example Advertise Device Information, Battery, and HID services
+.nf
+\fB> uuids 0x180A 0x180F 0x1812\fP
+.fi
+.sp
+.TP
+.B Example Advertise Generic Access service
+.nf
+\fB> uuids 0x1800\fP
+.fi
+.sp
+.TP
+.B Example Advertise Environmental Sensing service
+.nf
+\fB> uuids 0x181A\fP
+.fi
+.sp
+.TP
+.B Example Advertise Pulse Oximeter service
+.nf
+\fB> uuids 0x183B\fP
+.fi
+.sp
+.TP
+.B Example Mix short and full UUID formats
+.nf
+\fB> uuids 0x180F 12345678\-1234\-5678\-9abc\-123456789abc\fP
+.fi
+.sp
+.UNINDENT
+.SS solicit
+.sp
+Set/Get advertise solicit uuids.
+.INDENT 0.0
+.TP
+.B Usage
+\fB> solicit [uuid1 uuid2 ...]\fP
+.TP
+.B Uses
+\fBorg.bluez.LEAdvertisement(5)\fP property \fBSolicitUUIDs\fP
+.TP
+.B [uuid1 uuid2 ...]
+List of UUIDs to advertise (default: none)
+.TP
+.B Example Show current solicited service UUIDs
+.nf
+\fB> solicit\fP
+.fi
+.sp
+.TP
+.B Example Solicit Generic Access service
+.nf
+\fB> solicit 0x1800\fP
+.fi
+.sp
+.TP
+.B Example Solicit Device Information service
+.nf
+\fB> solicit 0x180A\fP
+.fi
+.sp
+.TP
+.B Example Solicit User Data service
+.nf
+\fB> solicit 0x181C\fP
+.fi
+.sp
+.TP
+.B Example Solicit Battery and Generic Attribute services
+.nf
+\fB> solicit 0x180F 0x1801\fP
+.fi
+.sp
+.TP
+.B Example Solicit Device Info, Environmental Sensing, and Pulse Oximeter
+.nf
+\fB> solicit 0x180A 0x181A 0x183B\fP
+.fi
+.sp
+.UNINDENT
+.SS service
+.sp
+Set/Get advertise service data.
+.INDENT 0.0
+.TP
+.B Usage
+\fB> service [uuid] [data=xx xx ...]\fP
+.TP
+.B Uses
+\fBorg.bluez.LEAdvertisement(5)\fP property \fBServiceData\fP
+.TP
+.B [uuid]
+Service UUID
+.TP
+.B [data=xx xx ...]
+Service data
+.TP
+.B Example Show current service data
+.nf
+\fB> service\fP
+.fi
+.sp
+.TP
+.B Example Set battery level to 100 (0x64)
+.nf
+\fB> service 0x180F 64\fP
+.fi
+.sp
+.TP
+.B Example Set battery level to 50 (0x32)
+.nf
+\fB> service 0x180F 32\fP
+.fi
+.sp
+.TP
+.B Example Set battery level to 0 (0x00)
+.nf
+\fB> service 0x180F 00\fP
+.fi
+.sp
+.TP
+.B Example Set environmental data (temperature, humidity, pressure)
+.nf
+\fB> service 0x181A 20 15 C8 07\fP
+.fi
+.sp
+.TP
+.B Example Set device information data
+.nf
+\fB> service 0x180A 01 02 03 04\fP
+.fi
+.sp
+.TP
+.B Example Set custom service data with 128\-bit UUID
+.nf
+\fB> service 12345678\-1234\-5678\-9abc\-123456789abc FF EE DD CC\fP
+.fi
+.sp
+.UNINDENT
+.SS manufacturer
+.sp
+Set/Get advertise manufacturer data.
+.sp
+Updating is in real time while advertising. This is currently limited to 25
+bytes and will return an error message of \(dqToo much data\(dq if that maximum has
+been exceeded. However, this does not check if the advertising payload length
+maximum has been exceeded so you  may receive an error from bluetoothd that it
+\(dqFailed to register advertisement\(dq which means you need to reduce your
+manufacturer data length.
+.INDENT 0.0
+.TP
+.B Usage
+\fB> manufacturer [id] [data=xx xx ...]\fP
+.TP
+.B Uses
+\fBorg.bluez.LEAdvertisement(5)\fP property \fBManufacturerData\fP
+.TP
+.B [id]
+Manufacturer ID (default: 0x004C for Apple Inc.)
+.TP
+.B [data=xx xx ...]
+Manufacturer data
+.TP
+.B Example Show current manufacturer data
+.nf
+\fB> manufacturer\fP
+.fi
+.sp
+.TP
+.B Example Set Apple Inc. manufacturer data
+.nf
+\fB> manufacturer 0x004C 01 02 03 04\fP
+.fi
+.sp
+.TP
+.B Example Set Apple manufacturer data with 8 bytes
+.nf
+\fB> manufacturer 0x004C FF FE FD FC FB FA F9 F8\fP
+.fi
+.sp
+.TP
+.B Example Set Microsoft Corp. manufacturer data
+.nf
+\fB> manufacturer 0x0006 10 11 12 13\fP
+.fi
+.sp
+.TP
+.B Example Set Samsung Electronics manufacturer data
+.nf
+\fB> manufacturer 0x0075 AA BB CC DD EE\fP
+.fi
+.sp
+.TP
+.B Example Set Google LLC manufacturer data
+.nf
+\fB> manufacturer 0x00E0 01 23 45 67 89 AB CD EF\fP
+.fi
+.sp
+.TP
+.B Example Set custom manufacturer ID with test data
+.nf
+\fB> manufacturer 0xFFFF DE AD BE EF\fP
+.fi
+.sp
+.UNINDENT
+.SS data
+.sp
+Set/Get advertise data.
+.sp
+This allows you to advertise data with a given type. You cannot use a registered
+data type value {1} with  this command. For LE the advertising shows up in the
+primary advertisements.
+.sp
+If you set only the type of the data without any data (data 0x0c) this will
+cause a parse error when turning advertise on.
+.sp
+You can modify the advertising data while it is advertising.
+.sp
+To get the currently set data use the command data without any arguments.
+.INDENT 0.0
+.TP
+.B Usage
+\fB> data [type] [data=xx xx ...]\fP
+.TP
+.B Uses
+\fBorg.bluez.LEAdvertisement(5)\fP property \fBData\fP
+.TP
+.B [type]
+Advertising data type
+.TP
+.B [data=xx xx ...]
+Advertising data (default: none)
+.TP
+.B Example Show current advertising data
+.nf
+\fB> data\fP
+.fi
+.sp
+.TP
+.B Example Set slave connection interval range data
+.nf
+\fB> data 0x0C 01 0x0F 13\fP
+.fi
+.sp
+.TP
+.B Example Set complete local name to \(dqHello\(dq
+.nf
+\fB> data 0x09 48 65 6C 6C 6F\fP
+.fi
+.sp
+.TP
+.B Example Set shortened local name to \(dqTest\(dq
+.nf
+\fB> data 0x08 54 65 73 74\fP
+.fi
+.sp
+.TP
+.B Example Set flags (LE General Discoverable + BR/EDR not supported)
+.nf
+\fB> data 0x01 06\fP
+.fi
+.sp
+.TP
+.B Example Set appearance (keyboard, 0x0341)
+.nf
+\fB> data 0x19 41 03\fP
+.fi
+.sp
+.TP
+.B Example Set TX power level to +4 dBm
+.nf
+\fB> data 0x0A 04\fP
+.fi
+.sp
+.TP
+.B Example Set TX power level to \-4 dBm
+.nf
+\fB> data 0x0A FC\fP
+.fi
+.sp
+.TP
+.B Example Set URI \(dq//google.com\(dq
+.nf
+\fB> data 0x24 17 2F 2F 67 6F 6F 67 6C 65 2E 63 6F 6D\fP
+.fi
+.sp
+.TP
+.B Example Set service data for Battery Service (UUID 0x180F, level 100)
+.nf
+\fB> data 0x16 0F 18 64\fP
+.fi
+.sp
+.UNINDENT
+.SS sr\-uuids
+.sp
+Set/Get scan response uuids.
+.INDENT 0.0
+.TP
+.B Usage
+\fB> sr\-uuids [uuid1 uuid2 ...]\fP
+.TP
+.B [uuid1 uuid2 ...]
+List of UUIDs to advertise in scan response
+.TP
+.B Example Show current scan response UUIDs
+.nf
+\fB> sr\-uuids\fP
+.fi
+.sp
+.TP
+.B Example Set Generic Access in scan response
+.nf
+\fB> sr\-uuids 0x1800\fP
+.fi
+.sp
+.TP
+.B Example Set Device Info and Battery services in scan response
+.nf
+\fB> sr\-uuids 0x180A 0x180F\fP
+.fi
+.sp
+.TP
+.B Example Set custom UUID in scan response
+.nf
+\fB> sr\-uuids 12345678\-1234\-5678\-9abc\-123456789abc\fP
+.fi
+.sp
+.UNINDENT
+.SS sr\-solicit
+.sp
+Set/Get scan response solicit uuids.
+.INDENT 0.0
+.TP
+.B Usage
+\fB> sr\-solicit [uuid1 uuid2 ...]\fP
+.TP
+.B [uuid1 uuid2 ...]
+List of UUIDs to advertise in scan response
+.TP
+.B Example Show current scan response solicited UUIDs
+.nf
+\fB> sr\-solicit\fP
+.fi
+.sp
+.TP
+.B Example Solicit Generic Attribute service in scan response
+.nf
+\fB> sr\-solicit 0x1801\fP
+.fi
+.sp
+.TP
+.B Example Solicit Device Info and Environmental Sensing in scan response
+.nf
+\fB> sr\-solicit 0x180A 0x181A\fP
+.fi
+.sp
+.UNINDENT
+.SS sr\-service
+.sp
+Set/Get scan response service data.
+.INDENT 0.0
+.TP
+.B Usage
+\fB> sr\-service [uuid] [data=xx xx ...]\fP
+.TP
+.B [uuid]
+Service UUID
+.TP
+.B [data=xx xx ...]
+Service data
+.TP
+.B Example Show current scan response service data
+.nf
+\fB> sr\-service\fP
+.fi
+.sp
+.TP
+.B Example Set battery level to 128 in scan response
+.nf
+\fB> sr\-service 0x180F 80\fP
+.fi
+.sp
+.TP
+.B Example Set environmental data in scan response
+.nf
+\fB> sr\-service 0x181A 22 18 C0 05\fP
+.fi
+.sp
+.TP
+.B Example Set device info \(dqHello\(dq in scan response
+.nf
+\fB> sr\-service 0x180A 48 65 6C 6C 6F\fP
+.fi
+.sp
+.UNINDENT
+.SS sr\-manufacturer
+.sp
+Set/Get scan response manufacturer data.
+.INDENT 0.0
+.TP
+.B Usage
+\fB> sr\-manufacturer [id] [data=xx xx ...]\fP
+.TP
+.B [id]
+Manufacturer ID (default: 0x004C for Apple Inc.)
+.TP
+.B [data=xx xx ...]
+Manufacturer data
+.TP
+.B Example Show current scan response manufacturer data
+.nf
+\fB> sr\-manufacturer\fP
+.fi
+.sp
+.TP
+.B Example Set Apple manufacturer data in scan response
+.nf
+\fB> sr\-manufacturer 0x004C 05 06 07 08\fP
+.fi
+.sp
+.TP
+.B Example Set Microsoft manufacturer data in scan response
+.nf
+\fB> sr\-manufacturer 0x0006 20 21 22 23\fP
+.fi
+.sp
+.TP
+.B Example Set custom manufacturer data in scan response
+.nf
+\fB> sr\-manufacturer 0xFFFF CA FE BA BE\fP
+.fi
+.sp
+.UNINDENT
+.SS sr\-data
+.sp
+Set/Get scan response data.
+.INDENT 0.0
+.TP
+.B Usage
+\fB> sr\-data [type] [data=xx xx ...]\fP
+.TP
+.B [type]
+Scan Response data type
+.TP
+.B [data=xx xx ...]
+Scan Response data
+.TP
+.B Example Show current scan response data
+.nf
+\fB> sr\-data\fP
+.fi
+.sp
+.TP
+.B Example Set complete local name \(dqScanResp\(dq in scan response
+.nf
+\fB> sr\-data 0x09 53 63 61 6E 52 65 73 70\fP
+.fi
+.sp
+.TP
+.B Example Set TX power level +8 dBm in scan response
+.nf
+\fB> sr\-data 0x0A 08\fP
+.fi
+.sp
+.TP
+.B Example Set Battery service data (level 50) in scan response
+.nf
+\fB> sr\-data 0x16 0F 18 32\fP
+.fi
+.sp
+.UNINDENT
+.SS discoverable
+.sp
+Set/Get advertise discoverable.
+.sp
+For LE discoverable on will set the LE General Discoverable Mode flag to true in
+the primary advertisement if on.
+.sp
+This feature can be changed during advertising, but will only trigger LE General
+Discoverable Mode even if you had previously selected discoverable\-timeout this
+will be ignored.
+.sp
+Entering the command by itself will show the status of the setting
+.INDENT 0.0
+.TP
+.B Usage
+\fB> discoverable [on/off]\fP
+.TP
+.B Uses
+\fBorg.bluez.LEAdvertisement(5)\fP property \fBDiscoverable\fP
+.TP
+.B [on/off]
+Enable/Disable LE General Discoverable Mode
+.TP
+.B Example Show current discoverable setting
+.nf
+\fB> discoverable\fP
+.fi
+.sp
+.TP
+.B Example Enable LE General Discoverable Mode
+.nf
+\fB> discoverable on\fP
+.fi
+.sp
+.TP
+.B Example Disable discoverable mode
+.nf
+\fB> discoverable off\fP
+.fi
+.sp
+.UNINDENT
+.SS discoverable\-timeout
+.sp
+Set/Get advertise discoverable timeout.
+.sp
+Using this feature in LE will cause the LE Limited Discoverable Mode flag to be
+set in the primary advertisement and   The LE General Discoverable Mode flag
+will not be set.
+.sp
+The LE Limited Discoverable Mode flag will automatically turn off after [seconds]
+discoverable [on] must be set to use this feature.
+.sp
+Entering the command by itself will show the current value set.
+.INDENT 0.0
+.TP
+.B Usage
+\fB> discoverable\-timeout [seconds]\fP
+.TP
+.B Uses
+\fBorg.bluez.LEAdvertisement(5)\fP property \fBDiscoverableTimeout\fP
+.TP
+.B [seconds]
+Timeout duration in seconds for LE Limited Discoverable Mode
+.TP
+.B Example Show current discoverable timeout
+.nf
+\fB> discoverable\-timeout\fP
+.fi
+.sp
+.TP
+.B Example Set LE Limited Discoverable for 30 seconds
+.nf
+\fB> discoverable\-timeout 30\fP
+.fi
+.sp
+.TP
+.B Example Set LE Limited Discoverable for 2 minutes
+.nf
+\fB> discoverable\-timeout 120\fP
+.fi
+.sp
+.TP
+.B Example Set LE Limited Discoverable for 5 minutes
+.nf
+\fB> discoverable\-timeout 300\fP
+.fi
+.sp
+.TP
+.B Example Disable discoverable timeout (unlimited)
+.nf
+\fB> discoverable\-timeout 0\fP
+.fi
+.sp
+.UNINDENT
+.SS tx\-power
+.sp
+Show/Enable/Disable TX power to be advertised.
+.sp
+This sets the TX Power Level field in the advertising packet.
+.sp
+The value is in dBm and can be between \-127 and 127.
+.sp
+When this feature is turned on the LE device will advertise its transmit power
+in the primary advertisement.
+.sp
+This feature can be modified while advertising.
+.sp
+Entering the command by itself will show the current value set.
+.INDENT 0.0
+.TP
+.B Usage
+\fB> tx\-power [on/off]\fP
+.TP
+.B Uses
+\fBorg.bluez.LEAdvertisement(5)\fP property \fBIncludes\fP
+.TP
+.B [on/off]
+Enable or disable TX power advertisement (optional, shows current if omitted)
+.TP
+.B Example Show current TX power advertisement setting
+.nf
+\fB> tx\-power\fP
+.fi
+.sp
+.TP
+.B Example Enable TX power advertisement with default power
+.nf
+\fB> tx\-power on\fP
+.fi
+.sp
+.TP
+.B Example Disable TX power advertisement
+.nf
+\fB> tx\-power off\fP
+.fi
+.sp
+.UNINDENT
+.SS name
+.sp
+Configure local name to be advertised.
+.sp
+Local name to be used in the advertising report.
+.sp
+If the string is too big to fit into the packet it will be truncated.
+.sp
+It will either advertise as a complete local name or if it has to be truncated
+then a shortened local name.
+.INDENT 0.0
+.TP
+.B Usage
+\fB> name [on/off/name]\fP
+.TP
+.B Uses
+\fBorg.bluez.LEAdvertisement(5)\fP property \fBLocalName\fP
+.TP
+.B [name]
+Local name (optional, shows current if omitted)
+.TP
+.B Example Show current advertised name setting
+.nf
+\fB> name\fP
+.fi
+.sp
+.TP
+.B Example Enable advertising the system hostname
+.nf
+\fB> name on\fP
+.fi
+.sp
+.TP
+.B Example Disable name advertisement
+.nf
+\fB> name off\fP
+.fi
+.sp
+.TP
+.B Example Advertise \(dqMy Device\(dq as local name
+.nf
+\fB> name \(dqMy Device\(dq\fP
+.fi
+.sp
+.TP
+.B Example Advertise \(dqSmart Sensor\(dq as local name
+.nf
+\fB> name \(dqSmart Sensor\(dq\fP
+.fi
+.sp
+.TP
+.B Example Advertise device with ID suffix
+.nf
+\fB> name \(dqBLE\-Peripheral\-001\(dq\fP
+.fi
+.sp
+.TP
+.B Example Advertise long name (will be truncated to fit)
+.nf
+\fB> name \(dq0123456789abcdef0123456789abcdef\(dq\fP
+.fi
+.sp
+.TP
+.B Example Long descriptive name (automatically truncated)
+.nf
+\fB> name \(dqThis is a very long device name that will be truncated\(dq\fP
+.fi
+.sp
+.TP
+.B Example Name with special characters
+.nf
+\fB> name \(dqDevice™\(dq\fP
+.fi
+.sp
+.TP
+.B Example Name with accented characters
+.nf
+\fB> name \(dqTëst\-Dëvicë\(dq\fP
+.fi
+.sp
+.UNINDENT
+.SS appearance
+.sp
+Configure custom appearance to be advertised.
+.INDENT 0.0
+.TP
+.B Usage
+\fB> appearance [on/off/value]\fP
+.TP
+.B Uses
+\fBorg.bluez.LEAdvertisement(5)\fP property \fBAppearance\fP
+.TP
+.B [value]
+Appearance value (optional, shows current if omitted)
+.TP
+.B Example Show current appearance setting
+.nf
+\fB> appearance\fP
+.fi
+.sp
+.TP
+.B Example Enable appearance advertisement with default value
+.nf
+\fB> appearance on\fP
+.fi
+.sp
+.TP
+.B Example Disable appearance advertisement
+.nf
+\fB> appearance off\fP
+.fi
+.sp
+.TP
+.B Example Set appearance to keyboard (0x03C1)
+.nf
+\fB> appearance 961\fP
+.fi
+.sp
+.TP
+.B Example Set appearance to mouse (0x03C2)
+.nf
+\fB> appearance 962\fP
+.fi
+.sp
+.TP
+.B Example Set appearance to joystick (0x03C3)
+.nf
+\fB> appearance 963\fP
+.fi
+.sp
+.TP
+.B Example Set appearance to gamepad (0x03C4)
+.nf
+\fB> appearance 964\fP
+.fi
+.sp
+.TP
+.B Example Set appearance to generic audio sink (0x0340)
+.nf
+\fB> appearance 832\fP
+.fi
+.sp
+.TP
+.B Example Set appearance to speaker (0x0341)
+.nf
+\fB> appearance 833\fP
+.fi
+.sp
+.TP
+.B Example Set appearance to microphone (0x0342)
+.nf
+\fB> appearance 834\fP
+.fi
+.sp
+.TP
+.B Example Set appearance to headset (0x0343)
+.nf
+\fB> appearance 835\fP
+.fi
+.sp
+.TP
+.B Example Set appearance to headphones (0x0344)
+.nf
+\fB> appearance 836\fP
+.fi
+.sp
+.TP
+.B Example Set appearance to heart rate sensor (0x0540)
+.nf
+\fB> appearance 1344\fP
+.fi
+.sp
+.TP
+.B Example Set appearance to thermometer (0x05C0)
+.nf
+\fB> appearance 1472\fP
+.fi
+.sp
+.TP
+.B Example Set appearance to glucose meter (0x0640)
+.nf
+\fB> appearance 1600\fP
+.fi
+.sp
+.TP
+.B Example Set appearance to generic phone (0x0040)
+.nf
+\fB> appearance 64\fP
+.fi
+.sp
+.TP
+.B Example Set appearance to generic computer (0x0080)
+.nf
+\fB> appearance 128\fP
+.fi
+.sp
+.TP
+.B Example Set appearance to generic watch (0x00C0)
+.nf
+\fB> appearance 192\fP
+.fi
+.sp
+.UNINDENT
+.SS duration
+.sp
+Set/Get advertise duration.
+.sp
+The Duration parameter configures the length of an Instance.
+.sp
+The value is in seconds.
+.sp
+A value of 0 indicates a default value is chosen for the Duration.
+.sp
+The default is 2 seconds.
+.sp
+If only one advertising Instance has been added, then the Duration value will be
+ignored.
+.sp
+If multiple advertising Instances have been added, then the Duration value will
+be used to determine the length of time each Instance is advertised for.
+.sp
+The Duration value is used to calculate the number of advertising events that
+will be used to advertise each Instance.
+.sp
+The number of advertising events is calculated by dividing the Duration value by
+the advertising interval.
+.sp
+The advertising interval is determined by the advertising parameters that are
+set for each Instance. The advertising interval is the maximum of the
+advertising intervals set for each Instance.
+.INDENT 0.0
+.TP
+.B Usage
+\fB> duration [seconds]\fP
+.TP
+.B Uses
+\fBorg.bluez.LEAdvertisement(5)\fP property \fBDuration\fP
+.TP
+.B [seconds]
+Duration in seconds (optional, shows current if omitted)
+.TP
+.B Example Show current advertising duration setting
+.nf
+\fB> duration\fP
+.fi
+.sp
+.TP
+.B Example Use default duration (2 seconds)
+.nf
+\fB> duration 0\fP
+.fi
+.sp
+.TP
+.B Example Set duration to 1 second
+.nf
+\fB> duration 1\fP
+.fi
+.sp
+.TP
+.B Example Set duration to 5 seconds
+.nf
+\fB> duration 5\fP
+.fi
+.sp
+.TP
+.B Example Set duration to 10 seconds
+.nf
+\fB> duration 10\fP
+.fi
+.sp
+.TP
+.B Example Set duration to 30 seconds
+.nf
+\fB> duration 30\fP
+.fi
+.sp
+.TP
+.B Example Set duration to 1 minute
+.nf
+\fB> duration 60\fP
+.fi
+.sp
+.TP
+.B Example Set duration to 5 minutes
+.nf
+\fB> duration 300\fP
+.fi
+.sp
+.UNINDENT
+.SS timeout
+.sp
+Set/Get advertise timeout.
+.INDENT 0.0
+.TP
+.B Usage
+\fB> timeout [seconds]\fP
+.TP
+.B Uses
+\fBorg.bluez.LEAdvertisement(5)\fP property \fBTimeout\fP
+.TP
+.B [seconds]
+Timeout in seconds (optional, shows current if omitted)
+.TP
+.B Example Show current advertising timeout setting
+.nf
+\fB> timeout\fP
+.fi
+.sp
+.TP
+.B Example Unlimited advertising (no timeout)
+.nf
+\fB> timeout 0\fP
+.fi
+.sp
+.TP
+.B Example Stop advertising after 30 seconds
+.nf
+\fB> timeout 30\fP
+.fi
+.sp
+.TP
+.B Example Stop advertising after 2 minutes
+.nf
+\fB> timeout 120\fP
+.fi
+.sp
+.TP
+.B Example Stop advertising after 1 hour
+.nf
+\fB> timeout 3600\fP
+.fi
+.sp
+.UNINDENT
+.SS secondary
+.sp
+Set/Get advertise secondary channel.
+.INDENT 0.0
+.TP
+.B Usage
+\fB> secondary [1M/2M/Coded]\fP
+.TP
+.B Uses
+\fBorg.bluez.LEAdvertisement(5)\fP property \fBSecondaryChannel\fP
+.TP
+.B [1M/2M/Coded]
+Secondary channel (optional, shows current if omitted)
+.TP
+.B Example Show current secondary channel setting
+.nf
+\fB> secondary\fP
+.fi
+.sp
+.TP
+.B Example Use LE 1M PHY for secondary advertising channel
+.nf
+\fB> secondary 1M\fP
+.fi
+.sp
+.TP
+.B Example Use LE 2M PHY for secondary advertising channel
+.nf
+\fB> secondary 2M\fP
+.fi
+.sp
+.TP
+.B Example Use LE Coded PHY for secondary advertising channel
+.nf
+\fB> secondary Coded\fP
+.fi
+.sp
+.UNINDENT
+.SS rsi
+.sp
+Show/Enable/Disable RSI to be advertised.
+.sp
+RSI (Resolvable Set Identifier) is used to advertise a resolvable identifier
+for Coordinated Set Identification.
+.INDENT 0.0
+.TP
+.B Usage
+\fB> rsi [on/off]\fP
+.TP
+.B [on/off]
+Enable or disable RSI advertisement (optional, shows current if omitted)
+.TP
+.B Example Show current RSI setting
+.nf
+\fB> rsi\fP
+.fi
+.sp
+.TP
+.B Example Enable RSI advertisement
+.nf
+\fB> rsi on\fP
+.fi
+.sp
+.TP
+.B Example Disable RSI advertisement
+.nf
+\fB> rsi off\fP
+.fi
+.sp
+.UNINDENT
+.SS interval
+.sp
+Set/Get advertise interval.
+.sp
+The Interval parameter configures the advertising interval of an Instance.
+.sp
+The value is in milliseconds.
+.sp
+A value of 0 indicates a default value is chosen for the Interval.
+.sp
+The default is 100 milliseconds.
+.sp
+The Interval value is used to calculate the number of advertising events that
+will be used to advertise each Instance.
+.sp
+The number of advertising events is calculated by dividing the Duration value by
+the advertising interval.
+.sp
+The advertising interval is determined by the advertising parameters that are
+set for each Instance.
+.sp
+The advertising interval is the maximum of the advertising intervals set for
+each Instance.
+.INDENT 0.0
+.TP
+.B Usage
+\fB> interval [min] [max]\fP
+.TP
+.B [min]
+Minimum advertising interval in milliseconds (optional, shows current if omitted)
+.TP
+.B [max]
+Maximum advertising interval in milliseconds (optional, defaults to min value)
+.TP
+.B Example Show current advertising interval setting
+.nf
+\fB> interval\fP
+.fi
+.sp
+.TP
+.B Example Set minimum advertising interval (20ms)
+.nf
+\fB> interval 20\fP
+.fi
+.sp
+.TP
+.B Example Set advertising interval range (50\-100ms)
+.nf
+\fB> interval 50 100\fP
+.fi
+.sp
+.TP
+.B Example Set normal advertising interval (100ms)
+.nf
+\fB> interval 100\fP
+.fi
+.sp
+.TP
+.B Example Set moderate advertising interval (200ms)
+.nf
+\fB> interval 200\fP
+.fi
+.sp
+.TP
+.B Example Set slow advertising interval (500ms)
+.nf
+\fB> interval 500\fP
+.fi
+.sp
+.TP
+.B Example Set very slow advertising interval (1 second)
+.nf
+\fB> interval 1000\fP
+.fi
+.sp
+.TP
+.B Example Set maximum advertising interval (10.24 seconds)
+.nf
+\fB> interval 10240\fP
+.fi
+.sp
+.UNINDENT
+.SS clear
+.sp
+Clear advertise config.
+.sp
+This will stop advertising if it is currently advertising.
+.sp
+If you want to change the advertise configuration while advertising you must
+first clear the advertise configuration and then set the new advertise
+configuration.
+.INDENT 0.0
+.TP
+.B Usage
+\fB> clear [uuids/service/manufacturer/config\-name...]\fP
+.TP
+.B [uuids/service/manufacturer/config\-name...]
+List of configuration to clear
+.TP
+.B Example Clear all advertising configuration
+.nf
+\fB> clear\fP
+.fi
+.sp
+.TP
+.B Example Clear only advertised UUIDs
+.nf
+\fB> clear uuids\fP
+.fi
+.sp
+.TP
+.B Example Clear only service data
+.nf
+\fB> clear service\fP
+.fi
+.sp
+.TP
+.B Example Clear only manufacturer data
+.nf
+\fB> clear manufacturer\fP
+.fi
+.sp
+.TP
+.B Example Clear only advertised name
+.nf
+\fB> clear name\fP
+.fi
+.sp
+.TP
+.B Example Clear only appearance data
+.nf
+\fB> clear appearance\fP
+.fi
+.sp
+.TP
+.B Example Clear only TX power advertisement
+.nf
+\fB> clear tx\-power\fP
+.fi
+.sp
+.TP
+.B Example Clear UUIDs and service data
+.nf
+\fB> clear uuids service\fP
+.fi
+.sp
+.TP
+.B Example Clear manufacturer data and name
+.nf
+\fB> clear manufacturer name\fP
+.fi
+.sp
+.TP
+.B Example Clear UUIDs, service data, and manufacturer data
+.nf
+\fB> clear uuids service manufacturer\fP
+.fi
+.sp
+.TP
+.B Example Clear discoverable mode and TX power
+.nf
+\fB> clear discoverable tx\-power\fP
+.fi
+.sp
+.UNINDENT
+.SH RESOURCES
+.sp
+ <http://www.bluez.org> 
+.SH REPORTING BUGS
+.sp
+ <linux\-bluetooth@vger.kernel.org> 
+.SH COPYRIGHT
+Free use of this software is granted under the terms of the GNU
+Lesser General Public Licenses (LGPL).
+.\" Generated by docutils manpage writer.
+.

@@ -62,6 +62,7 @@ struct btd_br_defaults {
 
 	uint16_t	min_sniff_interval;
 	uint16_t	max_sniff_interval;
+	uint32_t	idle_timeout;
 };
 
 struct btd_le_defaults {
@@ -142,6 +143,7 @@ struct btd_opts {
 	bool		refresh_discovery;
 	bool		experimental;
 	bool		testing;
+	bool		filter_discoverable;
 	struct queue	*kernel;
 
 	uint16_t	did_source;

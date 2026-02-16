@@ -12,11 +12,34 @@
 #define BTD_PROFILE_PRIORITY_MEDIUM	1
 #define BTD_PROFILE_PRIORITY_HIGH	2
 
+#define BTD_PROFILE_BEARER_ANY		0
+#define BTD_PROFILE_BEARER_LE		1
+#define BTD_PROFILE_BEARER_BREDR	2
+
 struct btd_service;
+
+#define BTD_PROFILE_UUID_CB(func_, ...) \
+	{ \
+		.func = (func_), \
+		.count = ARRAY_SIZE(((const char *[]) { __VA_ARGS__ })), \
+		.uuids = ((const char *[]) { __VA_ARGS__ }), \
+	}
+
+struct btd_profile_uuid_cb {
+	void (*func)(struct btd_service *service);
+	unsigned int count;
+	const char **uuids;
+};
 
 struct btd_profile {
 	const char *name;
 	int priority;
+
+	/* Indicates which bearer type this profile belongs to. Some profiles
+	 * may exist in both BR/EDR and LE, in which case they should be
+	 * registered with BTD_PROFILE_BEARER_ANY.
+	 */
+	int bearer;
 
 	const char *local_uuid;
 	const char *remote_uuid;
@@ -37,6 +60,12 @@ struct btd_profile {
 	 * when testing has been enabled (see: main.conf:Testing).
 	 */
 	bool testing;
+
+	/* Indicates the profile should be ordered after profiles providing
+	 * these remote uuids when connecting. The callback function is called
+	 * when all uuids have finished connecting (successfully or not).
+	 */
+	struct btd_profile_uuid_cb after_services;
 
 	int (*device_probe) (struct btd_service *service);
 	void (*device_remove) (struct btd_service *service);
@@ -76,3 +105,10 @@ bool btd_profile_remove_custom_prop(const char *uuid, const char *name);
 
 void btd_profile_init(void);
 void btd_profile_cleanup(void);
+
+struct btd_profile *btd_profile_find_remote_uuid(const char *uuid);
+
+typedef const struct btd_profile *(*btd_profile_list_get)(void *item,
+							void *user_data);
+GSList *btd_profile_sort_list(GSList *list, btd_profile_list_get get,
+							void *user_data);

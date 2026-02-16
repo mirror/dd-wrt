@@ -1,0 +1,229 @@
+.\" Man page generated from reStructuredText.
+.
+.
+.nr rst2man-indent-level 0
+.
+.de1 rstReportMargin
+\\$1 \\n[an-margin]
+level \\n[rst2man-indent-level]
+level margin: \\n[rst2man-indent\\n[rst2man-indent-level]]
+-
+\\n[rst2man-indent0]
+\\n[rst2man-indent1]
+\\n[rst2man-indent2]
+..
+.de1 INDENT
+.\" .rstReportMargin pre:
+. RS \\$1
+. nr rst2man-indent\\n[rst2man-indent-level] \\n[an-margin]
+. nr rst2man-indent-level +1
+.\" .rstReportMargin post:
+..
+.de UNINDENT
+. RE
+.\" indent \\n[an-margin]
+.\" old: \\n[rst2man-indent\\n[rst2man-indent-level]]
+.nr rst2man-indent-level -1
+.\" new: \\n[rst2man-indent\\n[rst2man-indent-level]]
+.in \\n[rst2man-indent\\n[rst2man-indent-level]]u
+..
+.TH "HCITOOL" "1" "Nov 12, 2002" "BlueZ" "Linux System Administration"
+.SH NAME
+hcitool \- Configure Bluetooth connections
+.SH SYNOPSIS
+.sp
+\fBhcitool\fP \-h
+.sp
+\fBhcitool\fP \fICOMMAND\fP \-\-help
+.sp
+\fBhcitool\fP [\-i \fIhciX\fP] [\fICOMMAND\fP [\fIPARAMETERS\fP]]
+.SH DESCRIPTION
+.sp
+\fBhcitool(1)\fP is used to configure Bluetooth connections and send some special
+command to Bluetooth devices. If no \fBcommand\fP is given, or if the option
+\fB\-h\fP is used, \fIhcitool\fP prints some usage information and exits.
+.SH OPTIONS
+.INDENT 0.0
+.TP
+.BI \-i \ <hciX>
+The command is applied to device \fIhciX\fP, which must be the name of
+an installed Bluetooth device. If not specified, the command will
+be sent to the first available Bluetooth device.
+.TP
+.B  \-h
+Gives a list of possible commands
+.UNINDENT
+.SH COMMANDS
+.INDENT 0.0
+.TP
+.B dev
+Display local devices
+.TP
+.B inq
+Inquire remote devices. For each discovered device, Bluetooth device
+address, clock offset and class are printed.
+.TP
+.B scan
+Inquire remote devices. For each discovered device, device name are printed.
+.TP
+.B name <\fIbdaddr\fP>
+Print device name of remote device with Bluetooth address \fIbdaddr\fP\&.
+.TP
+.B info <\fIbdaddr\fP>
+Print device name, version and supported features of remote device with
+Bluetooth address \fIbdaddr\fP\&.
+.TP
+.B spinq
+Start periodic inquiry process. No inquiry results are printed.
+.TP
+.B epinq
+Exit periodic inquiry process.
+.TP
+.B cmd <\fIogf\fP> <\fIocf\fP> [\fIparameters\fP]
+Submit an arbitrary HCI command to local device. \fIogf\fP, \fIocf\fP and
+parameters are hexadecimal bytes.
+.TP
+.B con
+Display active baseband connections
+.TP
+.B cc [\-\-\fIrole\fP=c|p] [\-\-\fIpkt\-type\fP=<\fIptype\fP>] <\fIbdaddr\fP>
+Create baseband connection to remote device with Bluetooth address \fIbdaddr\fP\&.
+.sp
+Option \fB\-\-pkt\-type\fP specifies a list  of  allowed packet types.
+<\fIptype\fP> is a comma\-separated list of packet types, where the possible
+packet types are \fBDM1\fP, \fBDM3\fP, \fBDM5\fP, \fBDH1\fP, \fBDH3\fP, \fBDH5\fP,
+\fBHV1\fP, \fBHV2\fP, \fBHV3\fP\&. Default is to allow all packet types.
+.sp
+Option  \fB\-\-role\fP can have value \fBc\fP (do not allow role switch, stay
+central) or \fBp\fP (allow role switch, become peripheral if the peer asks to
+become central). Default is \fBc\fP\&.
+.TP
+.B dc <\fIbdaddr\fP> [\fIreason\fP]
+Delete baseband connection from remote device with Bluetooth address
+\fIbdaddr\fP\&.
+.sp
+The reason can be one of the Bluetooth HCI error codes.
+Default is \fB19\fP for user ended connections. The value must be given in
+decimal.
+.TP
+.B sr <\fIbdaddr\fP> <\fIrole\fP>
+Switch role for the baseband connection from the remote device to
+\fBcentral\fP or \fBperipheral\fP\&.
+.TP
+.B cpt <\fIbdaddr\fP> <\fIptypes\fP>
+Change packet types for baseband connection to device with Bluetooth
+address \fIbdaddr\fP\&. \fIptypes\fP is a comma\-separated list of packet types,
+where the possible packet types are \fBDM1\fP, \fBDM3\fP, \fBDM5\fP, \fBDH1\fP,
+\fBDH3\fP, \fBDH5\fP, \fBHV1\fP, \fBHV2\fP, \fBHV3\fP\&.
+.TP
+.B rssi <\fIbdaddr\fP>
+Display received signal strength information for the connection to the
+device with Bluetooth address \fIbdaddr\fP\&.
+.TP
+.B lq <\fIbdaddr\fP>
+Display link quality for the connection to the device with Bluetooth
+address \fIbdaddr\fP\&.
+.TP
+.B tpl <\fIbdaddr\fP> [\fItype\fP]
+Display transmit power level for the connection to the device with
+Bluetooth address \fIbdaddr\fP\&.
+.sp
+The \fItype\fP can be \fB0\fP for the current transmit power level (which is
+default) or \fB1\fP for the maximum transmit power level.
+.TP
+.B afh <\fIbdaddr\fP>
+Display AFH channel map for the connection to the device with Bluetooth
+address \fIbdaddr\fP\&.
+.TP
+.B lp <\fIbdaddr\fP> [\fIvalue\fP]
+With no value, displays link policy settings for the connection to the
+device with Bluetooth address \fIbdaddr\fP\&.
+.sp
+If \fIvalue\fP is given, sets the link policy settings for that connection to
+\fIvalue\fP\&. Possible values are \fBRSWITCH\fP, \fBHOLD\fP, \fBSNIFF\fP and \fBPARK\fP\&.
+.TP
+.B lst <\fIbdaddr\fP> [\fIvalue\fP]
+With no value, displays link supervision timeout for the connection to
+the device with Bluetooth address \fIbdaddr\fP\&.
+.sp
+If \fIvalue\fP is given, sets the link supervision timeout for that connection
+to \fIvalue\fP slots, or to infinite if value is 0.
+.TP
+.B auth <\fIbdaddr\fP>
+Request authentication for the device with Bluetooth address \fIbdaddr\fP\&.
+.TP
+.B enc <\fIbdaddr\fP> [\fIencrypt\fP]
+\fBenable\fP or \fBdisable\fP the encryption for the device with Bluetooth
+address \fIbdaddr\fP\&.
+.TP
+.B key <\fIbdaddr\fP>
+Change the connection link key for the device with Bluetooth address
+\fIbdaddr\fP\&.
+.TP
+.B clkoff <\fIbdaddr\fP>
+Read the clock offset for the device with Bluetooth address \fIbdaddr\fP\&.
+.TP
+.B clock [\fIbdaddr\fP] [\fIclock\fP]
+Read the clock for the device with Bluetooth address \fIbdaddr\fP\&.
+.sp
+The \fIclock\fP can be \fB0\fP for the local clock or \fB1\fP for the piconet
+clock (which is default).
+.TP
+.B lescan [\-\-\fIprivacy\fP] [\-\-\fIpassive\fP] [\-\-\fIacceptlist\fP] [\-\-\fIdiscovery\fP=g|l] [\-\-\fIduplicates\fP]
+Start LE scan
+.TP
+.B leinfo [\-\-\fIstatic\fP] [\-\-\fIrandom\fP] <\fIbdaddr\fP>
+Get LE remote information
+.TP
+.B lealadd [\-\-\fIrandom\fP] <\fIbdaddr\fP>
+Add device to LE Accept List
+.TP
+.B lealrm <\fIbdaddr\fP>
+Remove device from LE Accept List
+.TP
+.B lealsz
+Read size of LE Accept List
+.TP
+.B lealclr
+Clear LE Accept List
+.TP
+.B lerladd [\-\-\fIlocal_irk\fP] [\-\-\fIpeer_irk\fP] [\-\-\fIrandom\fP] <\fIbdaddr\fP>
+Add device to LE Resolving List
+.TP
+.B lerlrm <\fIbdaddr\fP>
+Remove device from LE Resolving List
+.TP
+.B lerlclr
+Clear LE Resolving List
+.TP
+.B lerlsz
+Read size of LE Resolving List
+.TP
+.B lerlon
+Enable LE Address Resolution
+.TP
+.B lerloff
+Disable LE Address Resolution
+.TP
+.B lecc [\-\-\fIstatic\fP] [\-\-\fIrandom\fP] <\fIbdaddr\fP> | [\-\-\fIacceptlist\fP]
+Create a LE Connection
+.TP
+.B ledc <\fIhandle\fP> [\fIreason\fP]
+Disconnect a LE Connection
+.TP
+.B lecup <\fIhandle\fP> <\fImin\fP> <\fImax\fP> <\fIlatency\fP> <\fItimeout\fP>
+LE Connection Update
+.UNINDENT
+.SH RESOURCES
+.sp
+ <http://www.bluez.org> 
+.SH REPORTING BUGS
+.sp
+ <linux\-bluetooth@vger.kernel.org> 
+.SH AUTHOR
+Maxim Krasnyansky <maxk@qualcomm.com>, Marcel Holtmann <marcel@holtmann.org>, Fabrizio Gennari <fabrizio.gennari@philips.com>
+.SH COPYRIGHT
+Free use of this software is granted under the terms of the GNU
+Lesser General Public Licenses (LGPL).
+.\" Generated by docutils manpage writer.
+.

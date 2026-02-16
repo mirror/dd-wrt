@@ -30,10 +30,10 @@
 #include <sys/ioctl.h>
 #include <sys/socket.h>
 
-#include "lib/bluetooth.h"
-#include "lib/hci.h"
-#include "lib/hci_lib.h"
-#include "lib/l2cap.h"
+#include "bluetooth/bluetooth.h"
+#include "bluetooth/hci.h"
+#include "bluetooth/hci_lib.h"
+#include "bluetooth/l2cap.h"
 
 #include "src/shared/util.h"
 #include "monitor/display.h"
@@ -289,7 +289,7 @@ static int getopts(int sk, struct l2cap_options *opts, bool connected)
 
 	memset(opts, 0, sizeof(*opts));
 
-	if (bdaddr_type == BDADDR_BREDR || rfcmode) {
+	if (bdaddr_type == BDADDR_BREDR) {
 		optlen = sizeof(*opts);
 		return getsockopt(sk, SOL_L2CAP, L2CAP_OPTIONS, opts, &optlen);
 	}
@@ -922,7 +922,8 @@ static void recv_mode(int sk)
 			/* Check sequence */
 			sq = get_le32(buf);
 			if (seq != sq) {
-				syslog(LOG_INFO, "seq missmatch: %d -> %d", seq, sq);
+				syslog(LOG_INFO, "seq mismatch: %d -> %d", seq,
+					sq);
 				seq = sq;
 			}
 			seq++;
@@ -930,14 +931,17 @@ static void recv_mode(int sk)
 			/* Check length */
 			l = get_le16(buf + 4);
 			if (len != l) {
-				syslog(LOG_INFO, "size missmatch: %d -> %d", len, l);
+				syslog(LOG_INFO, "size mismatch: %d -> %d", len,
+					l);
 				continue;
 			}
 
 			/* Verify data */
 			for (i = 6; i < len; i++) {
 				if (buf[i] != 0x7f)
-					syslog(LOG_INFO, "data missmatch: byte %d 0x%2.2x", i, buf[i]);
+					syslog(LOG_INFO,
+					"data mismatch: byte %d 0x%2.2x",
+					i, buf[i]);
 			}
 
 			total += len;

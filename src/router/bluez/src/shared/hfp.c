@@ -18,12 +18,25 @@
 #include <string.h>
 #include <stdarg.h>
 #include <ctype.h>
+#include <limits.h>
 
 #include "src/shared/util.h"
 #include "src/shared/ringbuf.h"
 #include "src/shared/queue.h"
 #include "src/shared/io.h"
 #include "src/shared/hfp.h"
+
+#define DBG(_hfp, fmt, arg...) \
+	hfp_debug(_hfp->debug_callback, _hfp->debug_data, "%s:%s() " fmt, \
+						__FILE__, __func__, ## arg)
+
+#define HFP_HF_FEATURES	( \
+	HFP_HF_FEAT_ECNR | \
+	HFP_HF_FEAT_3WAY | \
+	HFP_HF_FEAT_CLIP | \
+	HFP_HF_FEAT_ENHANCED_CALL_STATUS | \
+	HFP_HF_FEAT_ESCO_S4_T2 \
+)
 
 struct hfp_gw {
 	int ref_count;
@@ -50,6 +63,16 @@ struct hfp_gw {
 	bool destroyed;
 };
 
+typedef void (*ciev_func_t)(uint8_t val, void *user_data);
+
+struct indicator {
+	uint8_t index;
+	uint32_t min;
+	uint32_t max;
+	uint32_t val;
+	ciev_func_t cb;
+};
+
 struct hfp_hf {
 	int ref_count;
 	int fd;
@@ -73,6 +96,24 @@ struct hfp_hf {
 
 	bool in_disconnect;
 	bool destroyed;
+
+	struct hfp_hf_callbacks *callbacks;
+	void *callbacks_data;
+
+	uint32_t features;
+	struct indicator ag_ind[HFP_INDICATOR_LAST];
+	bool service;
+	uint8_t signal;
+	bool roaming;
+	uint8_t battchg;
+	uint8_t chlds;
+
+	bool session;
+	bool clcc_in_progress;
+
+	struct queue *calls;
+	struct queue *updated_calls;
+	char *dialing_number;
 };
 
 struct cmd_handler {
@@ -100,6 +141,29 @@ struct event_handler {
 	hfp_destroy_func_t destroy;
 	hfp_hf_result_func_t callback;
 };
+
+struct hf_call {
+	uint id;
+	enum hfp_call_status status;
+	char *line_id;
+	uint type;
+	bool mpty;
+
+	struct hfp_hf *hfp;
+};
+
+static void hfp_debug(hfp_debug_func_t debug_func, void *debug_data,
+						const char *format, ...)
+{
+	va_list ap;
+
+	if (!debug_func || !format)
+		return;
+
+	va_start(ap, format);
+	util_debug_va(debug_func, debug_data, format, ap);
+	va_end(ap);
+}
 
 static void destroy_cmd_handler(void *data)
 {
@@ -333,6 +397,12 @@ bool hfp_context_close_container(struct hfp_context *context)
 
 	return true;
 }
+
+bool hfp_context_is_container_close(struct hfp_context *context)
+{
+	return context->data[context->offset] == ')';
+}
+
 
 bool hfp_context_get_string(struct hfp_context *context, char *buf,
 								uint8_t len)
@@ -1263,6 +1333,8 @@ struct hfp_hf *hfp_hf_new(int fd)
 
 	hfp->event_handlers = queue_new();
 	hfp->cmd_queue = queue_new();
+	hfp->calls = queue_new();
+	hfp->updated_calls = queue_new();
 	hfp->writer_active = false;
 
 	if (!io_set_read_handler(hfp->io, hf_can_read_data, hfp,
@@ -1287,6 +1359,18 @@ struct hfp_hf *hfp_hf_ref(struct hfp_hf *hfp)
 	__sync_fetch_and_add(&hfp->ref_count, 1);
 
 	return hfp;
+}
+
+static void remove_call_cb(void *user_data)
+{
+	struct hf_call *call = user_data;
+	struct hfp_hf *hfp = call->hfp;
+
+	if (hfp->callbacks && hfp->callbacks->call_removed)
+		hfp->callbacks->call_removed(call->id, hfp->callbacks_data);
+
+	free(call->line_id);
+	free(call);
 }
 
 void hfp_hf_unref(struct hfp_hf *hfp)
@@ -1320,6 +1404,17 @@ void hfp_hf_unref(struct hfp_hf *hfp)
 
 	queue_destroy(hfp->cmd_queue, free);
 	hfp->cmd_queue = NULL;
+
+	queue_destroy(hfp->calls, remove_call_cb);
+	hfp->calls = NULL;
+
+	queue_destroy(hfp->updated_calls, NULL);
+	hfp->updated_calls = NULL;
+
+	if (hfp->dialing_number) {
+		free(hfp->dialing_number);
+		hfp->dialing_number = NULL;
+	}
 
 	if (!hfp->in_disconnect) {
 		free(hfp);
@@ -1526,4 +1621,1407 @@ bool hfp_hf_disconnect(struct hfp_hf *hfp)
 		return false;
 
 	return io_shutdown(hfp->io);
+}
+
+static bool call_id_match(const void *data, const void *match_data)
+{
+	const struct hf_call *call = data;
+	uint id = PTR_TO_UINT(match_data);
+
+	return (call->id == id);
+}
+
+static uint next_call_index(struct hfp_hf *hfp)
+{
+	for (uint i = 1; i < UINT_MAX; i++) {
+		if (!queue_find(hfp->calls, call_id_match, UINT_TO_PTR(i)))
+			return i;
+	}
+
+	return 0;
+}
+
+static struct hf_call *call_new(struct hfp_hf *hfp, unsigned int id,
+						enum hfp_call_status status,
+						char *number, unsigned int type,
+						bool mpty)
+{
+	struct hf_call *call;
+
+	call = new0(struct hf_call, 1);
+	call->id = id;
+	call->status = status;
+	if (number)
+		call->line_id = strdup(number);
+	call->type = type;
+	call->mpty = mpty;
+	call->hfp = hfp;
+	queue_push_tail(hfp->calls, call);
+
+	if (hfp->callbacks && hfp->callbacks->call_added)
+		hfp->callbacks->call_added(call->id, call->status,
+						hfp->callbacks_data);
+
+	return call;
+}
+
+static void ciev_service_cb(uint8_t val, void *user_data)
+{
+	struct hfp_hf *hfp = user_data;
+
+	DBG(hfp, "%u", val);
+
+	if (val < hfp->ag_ind[HFP_INDICATOR_SERVICE].min ||
+			val > hfp->ag_ind[HFP_INDICATOR_SERVICE].max) {
+		DBG(hfp, "hf: Incorrect state: %u", val);
+		return;
+	}
+
+	hfp->service = val;
+	if (hfp->callbacks && hfp->callbacks->update_indicator)
+		hfp->callbacks->update_indicator(HFP_INDICATOR_SERVICE, val,
+							hfp->callbacks_data);
+}
+
+static void clcc_resp(enum hfp_result result, enum hfp_error cme_err,
+	void *user_data)
+{
+	struct hfp_hf *hfp = user_data;
+	const struct queue_entry *call_entry, *id_entry;
+	struct hf_call *call;
+	uint id;
+	bool found;
+	struct queue *to_remove;
+
+	DBG(hfp, "");
+
+	hfp->clcc_in_progress = false;
+
+	if (result != HFP_RESULT_OK) {
+		DBG(hfp, "hf: CLCC error: %d", result);
+		goto failed;
+	}
+
+	/* Removed disconnected calls */
+	to_remove = queue_new();
+	for (call_entry = queue_get_entries(hfp->calls); call_entry;
+		call_entry = call_entry->next) {
+		call = call_entry->data;
+		found = false;
+
+		for (id_entry = queue_get_entries(hfp->updated_calls);
+			id_entry; id_entry = id_entry->next) {
+			id = PTR_TO_UINT(id_entry->data);
+			if (call->id == id) {
+				found = true;
+				break;
+			}
+		}
+		DBG(hfp, "hf: call %d -> %s", call->id,
+			found ? "updated" : "disconnected");
+
+		if (!found)
+			queue_push_tail(to_remove, UINT_TO_PTR(call->id));
+	}
+
+	for (id_entry = queue_get_entries(to_remove);
+		id_entry; id_entry = id_entry->next) {
+		id = PTR_TO_UINT(id_entry->data);
+		call = queue_find(hfp->calls, call_id_match, UINT_TO_PTR(id));
+		if (!call) {
+			DBG(hfp, "hf: Unknown call to remove: %u", id);
+			continue;
+		}
+		queue_remove(hfp->calls, call);
+		remove_call_cb(call);
+	}
+
+	queue_remove_all(hfp->updated_calls, NULL, NULL, NULL);
+	queue_destroy(to_remove, NULL);
+	return;
+
+failed:
+	if (!hfp->session && hfp->callbacks->session_ready)
+		hfp->callbacks->session_ready(result, cme_err,
+						hfp->callbacks_data);
+}
+
+static bool send_clcc(struct hfp_hf *hfp)
+{
+	if (!hfp->session || hfp->clcc_in_progress)
+		return true;
+
+	if (!hfp_hf_send_command(hfp, clcc_resp, hfp, "AT+CLCC")) {
+		DBG(hfp, "hf: Could not send AT+CLCC");
+		return false;
+	}
+
+	hfp->clcc_in_progress = true;
+
+	return true;
+}
+
+static bool update_call_to_active(struct hfp_hf *hfp)
+{
+	const struct queue_entry *entry;
+	struct hf_call *call;
+
+	for (entry = queue_get_entries(hfp->calls); entry;
+					entry = entry->next) {
+		call = entry->data;
+
+		if (call->status == CALL_STATUS_DIALING ||
+			call->status == CALL_STATUS_ALERTING ||
+			call->status == CALL_STATUS_INCOMING) {
+			call->status = CALL_STATUS_ACTIVE;
+			if (hfp->callbacks &&
+				hfp->callbacks->call_status_updated)
+				hfp->callbacks->call_status_updated(
+					call->id,
+					call->status,
+					hfp->callbacks_data);
+			return true;
+		}
+	}
+
+	return false;
+}
+
+static void ciev_call_cb(uint8_t val, void *user_data)
+{
+	struct hfp_hf *hfp = user_data;
+	uint id;
+
+	DBG(hfp, "%u", val);
+
+	if (hfp->features & HFP_AG_FEAT_ENHANCED_CALL_STATUS) {
+		send_clcc(hfp);
+		return;
+	}
+
+	if (val < hfp->ag_ind[HFP_INDICATOR_CALL].min ||
+			val > hfp->ag_ind[HFP_INDICATOR_CALL].max) {
+		DBG(hfp, "hf: Incorrect call state: %u", val);
+		return;
+	}
+
+	switch (val) {
+	case CIND_CALL_NONE:
+		/* Remove all calls */
+		queue_remove_all(hfp->calls, NULL, hfp, remove_call_cb);
+		break;
+	case CIND_CALL_IN_PROGRESS:
+		{
+			/* Find incoming, dialing or alerting call to change
+			 * it to active
+			 */
+			if (update_call_to_active(hfp))
+				return;
+
+			/* else create new already active call */
+			id = next_call_index(hfp);
+			if (id == 0) {
+				DBG(hfp, "hf: No new call index available");
+				return;
+			}
+			call_new(hfp, id, CALL_STATUS_ACTIVE, NULL, 0, false);
+		}
+		break;
+	default:
+		DBG(hfp, "hf: Unsupported call state: %u", val);
+	}
+}
+
+static bool call_outgoing_match(const void *data, const void *match_data)
+{
+	const struct hf_call *call = data;
+
+	return (call->status == CALL_STATUS_DIALING ||
+				    call->status == CALL_STATUS_ALERTING);
+}
+
+static bool call_incoming_match(const void *data, const void *match_data)
+{
+	const struct hf_call *call = data;
+
+	return (call->status == CALL_STATUS_INCOMING);
+}
+
+static bool call_setup_match(const void *data, const void *match_data)
+{
+	return (call_outgoing_match(data, match_data) ||
+				    call_incoming_match(data, match_data));
+}
+
+static bool call_active_match(const void *data, const void *match_data)
+{
+	const struct hf_call *call = data;
+
+	return (call->status == CALL_STATUS_ACTIVE);
+}
+
+static bool call_waiting_match(const void *data, const void *match_data)
+{
+	const struct hf_call *call = data;
+
+	return (call->status == CALL_STATUS_WAITING);
+}
+
+static bool call_held_match(const void *data, const void *match_data)
+{
+	const struct hf_call *call = data;
+
+	return (call->status == CALL_STATUS_HELD);
+}
+
+static void bsir_cb(struct hfp_context *context, void *user_data)
+{
+	struct hfp_hf *hfp = user_data;
+	unsigned int val;
+
+	DBG(hfp, "");
+
+	if (!hfp_context_get_number(context, &val))
+		return;
+
+	if (hfp->callbacks && hfp->callbacks->update_inband_ring)
+		hfp->callbacks->update_inband_ring(!!val, hfp->callbacks_data);
+}
+
+static void ccwa_cb(struct hfp_context *context, void *user_data)
+{
+	struct hfp_hf *hfp = user_data;
+	char number[255];
+	unsigned int type;
+	struct hf_call *call;
+	uint id;
+
+	DBG(hfp, "");
+
+	if (hfp->features & HFP_AG_FEAT_ENHANCED_CALL_STATUS) {
+		send_clcc(hfp);
+		return;
+	}
+
+	if (!hfp_context_get_string(context, number, sizeof(number))) {
+		DBG(hfp, "hf: Could not get string");
+		return;
+	}
+
+	if (!hfp_context_get_number(context, &type))
+		return;
+
+	call = queue_find(hfp->calls, call_waiting_match, NULL);
+	if (call) {
+		DBG(hfp, "hf: waiting call already in progress");
+		return;
+	}
+
+	id = next_call_index(hfp);
+	if (id == 0) {
+		DBG(hfp, "hf: No new call index available");
+		return;
+	}
+	call_new(hfp, id, CALL_STATUS_WAITING, number, type, false);
+}
+
+static void ciev_callsetup_cb(uint8_t val, void *user_data)
+{
+	struct hfp_hf *hfp = user_data;
+	struct hf_call *call;
+	uint id;
+	enum hfp_call_status status;
+
+	DBG(hfp, "%u", val);
+
+	if (hfp->features & HFP_AG_FEAT_ENHANCED_CALL_STATUS) {
+		send_clcc(hfp);
+		return;
+	}
+
+	if (val < hfp->ag_ind[HFP_INDICATOR_CALLSETUP].min ||
+			val > hfp->ag_ind[HFP_INDICATOR_CALLSETUP].max) {
+		DBG(hfp, "hf: Incorrect call setup state: %u", val);
+		return;
+	}
+
+	switch (val) {
+	case CIND_CALLSETUP_NONE:
+		/* remove call in setup phase */
+		queue_remove_all(hfp->calls, call_setup_match, hfp,
+							remove_call_cb);
+		break;
+	case CIND_CALLSETUP_INCOMING:
+		if (queue_length(hfp->calls) != 0) {
+			DBG(hfp, "hf: Call already exists");
+			return;
+		}
+
+		id = next_call_index(hfp);
+		if (id == 0) {
+			DBG(hfp, "hf: No new call index available");
+			return;
+		}
+		call_new(hfp, id, CALL_STATUS_INCOMING, NULL, 0, false);
+		break;
+	case CIND_CALLSETUP_DIALING:
+	case CIND_CALLSETUP_ALERTING:
+		if (val == CIND_CALLSETUP_DIALING)
+			status = CALL_STATUS_DIALING;
+		else
+			status = CALL_STATUS_ALERTING;
+
+		if (queue_find(hfp->calls, call_active_match, NULL)) {
+			DBG(hfp, "hf: Error: active call");
+			return;
+		}
+
+		call = queue_find(hfp->calls, call_outgoing_match, NULL);
+		if (call && call->status != status) {
+			call->status = status;
+			if (hfp->callbacks &&
+				hfp->callbacks->call_status_updated)
+				hfp->callbacks->call_status_updated(call->id,
+							call->status,
+							hfp->callbacks_data);
+			return;
+		}
+
+		id = next_call_index(hfp);
+		if (id == 0) {
+			DBG(hfp, "hf: No new call index available");
+			return;
+		}
+		call_new(hfp, id, status, hfp->dialing_number, 0, false);
+		if (hfp->dialing_number) {
+			free(hfp->dialing_number);
+			hfp->dialing_number = NULL;
+		}
+		break;
+	}
+}
+
+static void ciev_callheld_cb(uint8_t val, void *user_data)
+{
+	struct hfp_hf *hfp = user_data;
+
+	DBG(hfp, "%u", val);
+
+	if (hfp->features & HFP_AG_FEAT_ENHANCED_CALL_STATUS) {
+		send_clcc(hfp);
+		return;
+	}
+
+	if (val < hfp->ag_ind[HFP_INDICATOR_CALLHELD].min ||
+			val > hfp->ag_ind[HFP_INDICATOR_CALLHELD].max) {
+		DBG(hfp, "hf: Incorrect call held state: %u", val);
+		return;
+	}
+}
+
+static void ciev_signal_cb(uint8_t val, void *user_data)
+{
+	struct hfp_hf *hfp = user_data;
+
+	DBG(hfp, "%u", val);
+
+	if (val < hfp->ag_ind[HFP_INDICATOR_SIGNAL].min ||
+			val > hfp->ag_ind[HFP_INDICATOR_SIGNAL].max) {
+		DBG(hfp, "hf: Incorrect signal value: %u", val);
+		return;
+	}
+
+	hfp->signal = val;
+	if (hfp->callbacks && hfp->callbacks->update_indicator)
+		hfp->callbacks->update_indicator(HFP_INDICATOR_SIGNAL, val,
+							hfp->callbacks_data);
+}
+
+static void ciev_roam_cb(uint8_t val, void *user_data)
+{
+	struct hfp_hf *hfp = user_data;
+
+	DBG(hfp, "%u", val);
+
+	if (val < hfp->ag_ind[HFP_INDICATOR_ROAM].min ||
+			val > hfp->ag_ind[HFP_INDICATOR_ROAM].max) {
+		DBG(hfp, "hf: Incorrect roaming state: %u", val);
+		return;
+	}
+
+	hfp->roaming = val;
+	if (hfp->callbacks && hfp->callbacks->update_indicator)
+		hfp->callbacks->update_indicator(HFP_INDICATOR_ROAM, val,
+							hfp->callbacks_data);
+}
+
+static void ciev_battchg_cb(uint8_t val, void *user_data)
+{
+	struct hfp_hf *hfp = user_data;
+
+	DBG(hfp, "%u", val);
+
+	if (val < hfp->ag_ind[HFP_INDICATOR_BATTCHG].min ||
+			val > hfp->ag_ind[HFP_INDICATOR_BATTCHG].max) {
+		DBG(hfp, "hf: Incorrect battery charge value: %u", val);
+		return;
+	}
+
+	hfp->battchg = val;
+	if (hfp->callbacks && hfp->callbacks->update_indicator)
+		hfp->callbacks->update_indicator(HFP_INDICATOR_BATTCHG, val,
+							hfp->callbacks_data);
+}
+
+static void set_indicator_value(uint8_t index, unsigned int val,
+	struct indicator *ag_ind, struct hfp_hf *hfp)
+{
+	int i;
+
+	for (i = 0; i < HFP_INDICATOR_LAST; i++) {
+		if (index != ag_ind[i].index)
+			continue;
+
+		ag_ind[i].val = val;
+		ag_ind[i].cb(val, hfp);
+		return;
+	}
+}
+
+static void ciev_cb(struct hfp_context *context, void *user_data)
+{
+	struct hfp_hf *hfp = user_data;
+	unsigned int index, val;
+
+	DBG(hfp, "");
+
+	if (!hfp_context_get_number(context, &index))
+		return;
+
+	if (!hfp_context_get_number(context, &val))
+		return;
+
+	set_indicator_value(index, val, hfp->ag_ind, hfp);
+}
+
+static void cops_cb(struct hfp_context *context, void *user_data)
+{
+	struct hfp_hf *hfp = user_data;
+	unsigned int mode, val;
+	char name[255];
+
+	DBG(hfp, "");
+
+	if (!hfp_context_get_number(context, &mode))
+		return;
+
+	if (!hfp_context_get_number(context, &val))
+		return;
+
+	if (!hfp_context_get_string(context, name, sizeof(name))) {
+		DBG(hfp, "hf: Could not get string");
+		return;
+	}
+
+	if (hfp->callbacks && hfp->callbacks->update_operator)
+		hfp->callbacks->update_operator(name, hfp->callbacks_data);
+}
+
+static void clcc_cb(struct hfp_context *context, void *user_data)
+{
+	struct hfp_hf *hfp = user_data;
+	unsigned int id, status, mpty, type;
+	char number[255];
+	struct hf_call *call;
+
+	DBG(hfp, "");
+
+	if (!hfp_context_get_number(context, &id))
+		return;
+
+	/* Skip direction */
+	hfp_context_skip_field(context);
+
+	if (!hfp_context_get_number(context, &status))
+		return;
+
+	/* Skip mode */
+	hfp_context_skip_field(context);
+
+	if (!hfp_context_get_number(context, &mpty))
+		return;
+
+	if (!hfp_context_get_string(context, number, sizeof(number))) {
+		DBG(hfp, "hf: Could not get string");
+		return;
+	}
+
+	if (!hfp_context_get_number(context, &type))
+		return;
+
+	queue_push_tail(hfp->updated_calls, UINT_TO_PTR(id));
+
+	call = queue_find(hfp->calls, call_id_match, UINT_TO_PTR(id));
+	if (!call) {
+		call_new(hfp, id, status, number, type, !!mpty);
+		return;
+	}
+
+	if (call->status != status) {
+		call->status = status;
+		if (hfp->callbacks && hfp->callbacks->call_status_updated)
+			hfp->callbacks->call_status_updated(call->id,
+					call->status, hfp->callbacks_data);
+	}
+
+	if (call->mpty != mpty) {
+		call->mpty = mpty;
+		if (hfp->callbacks && hfp->callbacks->call_mpty_updated)
+			hfp->callbacks->call_mpty_updated(call->id,
+					call->mpty, hfp->callbacks_data);
+	}
+
+	if (call->line_id && strcmp(call->line_id, number) == 0 &&
+		call->type == type)
+		return;
+
+	if (call->line_id)
+		free(call->line_id);
+	call->line_id = strdup(number);
+	call->type = type;
+
+	if (hfp->callbacks && hfp->callbacks->call_line_id_updated)
+		hfp->callbacks->call_line_id_updated(call->id,
+						call->line_id,
+						call->type,
+						hfp->callbacks_data);
+}
+
+static void clip_cb(struct hfp_context *context, void *user_data)
+{
+	struct hfp_hf *hfp = user_data;
+	char number[255];
+	unsigned int type;
+	struct hf_call *call;
+
+	DBG(hfp, "");
+
+	if (!hfp_context_get_string(context, number, sizeof(number))) {
+		DBG(hfp, "hf: Could not get string");
+		return;
+	}
+
+	if (!hfp_context_get_number(context, &type))
+		return;
+
+	call = queue_find(hfp->calls, call_incoming_match, NULL);
+	if (!call) {
+		DBG(hfp, "hf: no incoming call");
+		return;
+	}
+
+	if (call->line_id && strcmp(call->line_id, number) == 0 &&
+		call->type == type)
+		return;
+
+	if (call->line_id)
+		free(call->line_id);
+	call->line_id = strdup(number);
+	call->type = type;
+
+	if (hfp->callbacks && hfp->callbacks->call_line_id_updated)
+		hfp->callbacks->call_line_id_updated(call->id, call->line_id,
+							call->type,
+							hfp->callbacks_data);
+}
+
+static void nrec_resp(enum hfp_result result, enum hfp_error cme_err,
+	void *user_data)
+{
+	struct hfp_hf *hfp = user_data;
+
+	DBG(hfp, "");
+
+	if (result != HFP_RESULT_OK) {
+		DBG(hfp, "hf: NREC error: %d", result);
+		goto failed;
+	}
+
+	hfp->session = true;
+	if (hfp->callbacks->session_ready)
+		hfp->callbacks->session_ready(HFP_RESULT_OK, 0,
+						hfp->callbacks_data);
+
+	if (hfp->features & HFP_AG_FEAT_ENHANCED_CALL_STATUS) {
+		if (!send_clcc(hfp)) {
+			result = HFP_RESULT_ERROR;
+			goto failed;
+		}
+	}
+
+	return;
+
+failed:
+	if (hfp->callbacks->session_ready)
+		hfp->callbacks->session_ready(result, cme_err,
+						hfp->callbacks_data);
+}
+
+static void cmee_resp(enum hfp_result result, enum hfp_error cme_err,
+	void *user_data)
+{
+	struct hfp_hf *hfp = user_data;
+
+	DBG(hfp, "");
+
+	if (result != HFP_RESULT_OK) {
+		DBG(hfp, "hf: CMEE error: %d", result);
+		goto failed;
+	}
+
+	if (!(hfp->features & HFP_AG_FEAT_ECNR)) {
+		/* Jump to next setup state */
+		nrec_resp(HFP_RESULT_OK, cme_err, user_data);
+		return;
+	}
+
+	if (!hfp_hf_send_command(hfp, nrec_resp, hfp, "AT+NREC=0")) {
+		DBG(hfp, "hf: Could not send AT+NREC=0");
+		result = HFP_RESULT_ERROR;
+		goto failed;
+	}
+
+	return;
+
+failed:
+	if (hfp->callbacks->session_ready)
+		hfp->callbacks->session_ready(result, cme_err,
+						hfp->callbacks_data);
+}
+
+static void ccwa_resp(enum hfp_result result, enum hfp_error cme_err,
+	void *user_data)
+{
+	struct hfp_hf *hfp = user_data;
+
+	DBG(hfp, "");
+
+	if (result != HFP_RESULT_OK) {
+		DBG(hfp, "hf: CCWA error: %d", result);
+		goto failed;
+	}
+
+	if (!(hfp->features & HFP_AG_FEAT_EXTENDED_RES_CODE)) {
+		/* Jump to next setup state */
+		cmee_resp(HFP_RESULT_OK, cme_err, user_data);
+		return;
+	}
+
+	if (!hfp_hf_send_command(hfp, cmee_resp, hfp, "AT+CMEE=1")) {
+		DBG(hfp, "hf: Could not send AT+CMEE=1");
+		result = HFP_RESULT_ERROR;
+		goto failed;
+	}
+
+	return;
+
+failed:
+	if (hfp->callbacks->session_ready)
+		hfp->callbacks->session_ready(result, cme_err,
+						hfp->callbacks_data);
+}
+
+static void clip_resp(enum hfp_result result, enum hfp_error cme_err,
+	void *user_data)
+{
+	struct hfp_hf *hfp = user_data;
+
+	DBG(hfp, "");
+
+	if (result != HFP_RESULT_OK) {
+		DBG(hfp, "hf: CLIP error: %d", result);
+		goto failed;
+	}
+
+	if (!(hfp->features & HFP_AG_FEAT_3WAY)) {
+		/* Jump to next setup state */
+		ccwa_resp(HFP_RESULT_OK, cme_err, user_data);
+		return;
+	}
+
+	if (!hfp_hf_send_command(hfp, ccwa_resp, hfp,
+		"AT+CCWA=1")) {
+		DBG(hfp, "hf: Could not send AT+CCWA=1");
+		result = HFP_RESULT_ERROR;
+		goto failed;
+	}
+
+	return;
+
+failed:
+	if (hfp->callbacks->session_ready)
+		hfp->callbacks->session_ready(result, cme_err,
+						hfp->callbacks_data);
+}
+
+static void cops_resp(enum hfp_result result, enum hfp_error cme_err,
+	void *user_data)
+{
+	struct hfp_hf *hfp = user_data;
+
+	DBG(hfp, "");
+
+	if (result != HFP_RESULT_OK) {
+		DBG(hfp, "hf: COPS? error: %d", result);
+		goto failed;
+	}
+
+	/* SLC creation done, continue with default setup */
+	if (!hfp_hf_send_command(hfp, clip_resp, hfp,
+		"AT+CLIP=1")) {
+		DBG(hfp, "hf: Could not send AT+CLIP=1");
+		result = HFP_RESULT_ERROR;
+		goto failed;
+	}
+
+	return;
+
+failed:
+	if (hfp->callbacks->session_ready)
+		hfp->callbacks->session_ready(result, cme_err,
+						hfp->callbacks_data);
+}
+
+static void cops_conf_resp(enum hfp_result result, enum hfp_error cme_err,
+	void *user_data)
+{
+	struct hfp_hf *hfp = user_data;
+
+	DBG(hfp, "");
+
+	if (result != HFP_RESULT_OK) {
+		DBG(hfp, "hf: COPS= error: %d", result);
+		goto failed;
+	}
+
+	/* SLC creation done, continue with default setup */
+	if (!hfp_hf_send_command(hfp, cops_resp, hfp,
+		"AT+COPS?")) {
+		DBG(hfp, "hf: Could not send AT+COPS?");
+		result = HFP_RESULT_ERROR;
+		goto failed;
+	}
+
+	return;
+
+failed:
+	if (hfp->callbacks->session_ready)
+		hfp->callbacks->session_ready(result, cme_err,
+						hfp->callbacks_data);
+}
+
+static void slc_chld_cb(struct hfp_context *context, void *user_data)
+{
+	struct hfp_hf *hfp = user_data;
+
+	if (!hfp_context_open_container(context)) {
+		DBG(hfp, "hf: Could not open container for CHLD");
+		return;
+	}
+
+	while (hfp_context_has_next(context) &&
+		!hfp_context_is_container_close(context)) {
+		char val[3];
+
+		if (!hfp_context_get_unquoted_string(context, val,
+							sizeof(val))) {
+			DBG(hfp, "hf: Could not get string");
+			goto failed;
+		}
+
+		if (strcmp(val, "0") == 0)
+			hfp->chlds |= HFP_CHLD_0;
+		else if (strcmp(val, "1") == 0)
+			hfp->chlds |= HFP_CHLD_1;
+		else if (strcmp(val, "2") == 0)
+			hfp->chlds |= HFP_CHLD_2;
+		else
+			DBG(hfp, "CHLD not supported: %s", val);
+	}
+
+	if (!hfp_context_close_container(context)) {
+		DBG(hfp, "hf: Could not close container");
+		goto failed;
+	}
+
+	return;
+failed:
+	DBG(hfp, "hf: Error on CHLD response");
+}
+
+static void slc_chld_resp(enum hfp_result result, enum hfp_error cme_err,
+	void *user_data)
+{
+	struct hfp_hf *hfp = user_data;
+
+	DBG(hfp, "");
+
+	hfp_hf_unregister(hfp, "+CHLD");
+
+	if (result != HFP_RESULT_OK) {
+		DBG(hfp, "hf: CHLD=? error: %d", result);
+		goto failed;
+	}
+
+	/* SLC creation done, continue with default setup */
+	if (!hfp_hf_send_command(hfp, cops_conf_resp, hfp,
+		"AT+COPS=3,0")) {
+		DBG(hfp, "hf: Could not send AT+COPS=3,0");
+		result = HFP_RESULT_ERROR;
+		goto failed;
+	}
+
+	/* Register unsolicited results handlers */
+	if (hfp->features & HFP_AG_FEAT_IN_BAND_RING_TONE)
+		hfp_hf_register(hfp, bsir_cb, "+BSIR", hfp, NULL);
+	if (hfp->features & HFP_AG_FEAT_3WAY)
+		hfp_hf_register(hfp, ccwa_cb, "+CCWA", hfp, NULL);
+	hfp_hf_register(hfp, ciev_cb, "+CIEV", hfp, NULL);
+	hfp_hf_register(hfp, clcc_cb, "+CLCC", hfp, NULL);
+	hfp_hf_register(hfp, clip_cb, "+CLIP", hfp, NULL);
+	hfp_hf_register(hfp, cops_cb, "+COPS", hfp, NULL);
+
+	return;
+
+failed:
+	if (hfp->callbacks->session_ready)
+		hfp->callbacks->session_ready(result, cme_err,
+						hfp->callbacks_data);
+}
+
+static void slc_cmer_resp(enum hfp_result result, enum hfp_error cme_err,
+	void *user_data)
+{
+	struct hfp_hf *hfp = user_data;
+
+	DBG(hfp, "");
+
+	if (result != HFP_RESULT_OK) {
+		DBG(hfp, "hf: CMER error: %d", result);
+		goto failed;
+	}
+
+	if (!(hfp->features & HFP_AG_FEAT_3WAY)) {
+		/* Jump to next setup state */
+		slc_chld_resp(HFP_RESULT_OK, cme_err, user_data);
+		return;
+	}
+
+	if (!hfp_hf_register(hfp, slc_chld_cb, "+CHLD", hfp, NULL)) {
+		DBG(hfp, "hf: Could not register +CHLD");
+		result = HFP_RESULT_ERROR;
+		goto failed;
+	}
+
+	if (!hfp_hf_send_command(hfp, slc_chld_resp, hfp, "AT+CHLD=?")) {
+		DBG(hfp, "hf: Could not send AT+CHLD=?");
+		result = HFP_RESULT_ERROR;
+		goto failed;
+	}
+
+	return;
+
+failed:
+	if (hfp->callbacks->session_ready)
+		hfp->callbacks->session_ready(result, cme_err,
+						hfp->callbacks_data);
+}
+
+static void slc_cind_status_cb(struct hfp_context *context,
+	void *user_data)
+{
+	struct hfp_hf *hfp = user_data;
+	uint8_t index = 1;
+
+	while (hfp_context_has_next(context)) {
+		uint32_t val;
+
+		if (!hfp_context_get_number(context, &val)) {
+			DBG(hfp, "hf: Error on CIND status response");
+			return;
+		}
+
+		set_indicator_value(index++, val, hfp->ag_ind, hfp);
+	}
+}
+
+static void slc_cind_status_resp(enum hfp_result result,
+	enum hfp_error cme_err,
+	void *user_data)
+{
+	struct hfp_hf *hfp = user_data;
+
+	DBG(hfp, "");
+
+	hfp_hf_unregister(hfp, "+CIND");
+
+	if (result != HFP_RESULT_OK) {
+		DBG(hfp, "hf: CIND error: %d", result);
+		goto failed;
+	}
+
+	/* Continue with SLC creation */
+	if (!hfp_hf_send_command(hfp, slc_cmer_resp, hfp,
+		"AT+CMER=3,0,0,1")) {
+		DBG(hfp, "hf: Could not send AT+CMER");
+		result = HFP_RESULT_ERROR;
+		goto failed;
+	}
+
+	return;
+
+failed:
+	if (hfp->callbacks->session_ready)
+		hfp->callbacks->session_ready(result, cme_err,
+						hfp->callbacks_data);
+}
+
+static void set_indicator_parameters(struct hfp_hf *hfp, uint8_t index,
+	const char *indicator,
+	unsigned int min,
+	unsigned int max)
+{
+	struct indicator *ag_ind = hfp->ag_ind;
+
+	DBG(hfp, "%s, %i", indicator, index);
+
+	if (strcmp("service", indicator) == 0) {
+		if (min != 0 || max != 1) {
+			DBG(hfp, "hf: Invalid min/max values for service,"
+				" expected (0,1) got (%u,%u)", min, max);
+			return;
+		}
+		ag_ind[HFP_INDICATOR_SERVICE].index = index;
+		ag_ind[HFP_INDICATOR_SERVICE].min = min;
+		ag_ind[HFP_INDICATOR_SERVICE].max = max;
+		ag_ind[HFP_INDICATOR_SERVICE].cb = ciev_service_cb;
+		return;
+	}
+
+	if (strcmp("call", indicator) == 0) {
+		if (min != 0 || max != 1) {
+			DBG(hfp, "hf: Invalid min/max values for call,"
+				" expected (0,1) got (%u,%u)", min, max);
+			return;
+		}
+		ag_ind[HFP_INDICATOR_CALL].index = index;
+		ag_ind[HFP_INDICATOR_CALL].min = min;
+		ag_ind[HFP_INDICATOR_CALL].max = max;
+		ag_ind[HFP_INDICATOR_CALL].cb = ciev_call_cb;
+		return;
+	}
+
+	if (strcmp("callsetup", indicator) == 0) {
+		if (min != 0 || max != 3) {
+			DBG(hfp, "hf: Invalid min/max values for callsetup,"
+				" expected (0,3) got (%u,%u)", min, max);
+			return;
+		}
+		ag_ind[HFP_INDICATOR_CALLSETUP].index = index;
+		ag_ind[HFP_INDICATOR_CALLSETUP].min = min;
+		ag_ind[HFP_INDICATOR_CALLSETUP].max = max;
+		ag_ind[HFP_INDICATOR_CALLSETUP].cb = ciev_callsetup_cb;
+		return;
+	}
+
+	if (strcmp("callheld", indicator) == 0) {
+		if (min != 0 || max != 2) {
+			DBG(hfp, "hf: Invalid min/max values for callheld,"
+				" expected (0,2) got (%u,%u)", min, max);
+			return;
+		}
+		ag_ind[HFP_INDICATOR_CALLHELD].index = index;
+		ag_ind[HFP_INDICATOR_CALLHELD].min = min;
+		ag_ind[HFP_INDICATOR_CALLHELD].max = max;
+		ag_ind[HFP_INDICATOR_CALLHELD].cb = ciev_callheld_cb;
+		return;
+	}
+
+	if (strcmp("signal", indicator) == 0) {
+		if (min != 0 || max != 5) {
+			DBG(hfp, "hf: Invalid min/max values for signal,"
+				" expected (0,5) got (%u,%u)", min, max);
+			return;
+		}
+		ag_ind[HFP_INDICATOR_SIGNAL].index = index;
+		ag_ind[HFP_INDICATOR_SIGNAL].min = min;
+		ag_ind[HFP_INDICATOR_SIGNAL].max = max;
+		ag_ind[HFP_INDICATOR_SIGNAL].cb = ciev_signal_cb;
+		return;
+	}
+
+	if (strcmp("roam", indicator) == 0) {
+		if (min != 0 || max != 1) {
+			DBG(hfp, "hf: Invalid min/max values for roam,"
+				" expected (0,1) got (%u,%u)", min, max);
+			return;
+		}
+		ag_ind[HFP_INDICATOR_ROAM].index = index;
+		ag_ind[HFP_INDICATOR_ROAM].min = min;
+		ag_ind[HFP_INDICATOR_ROAM].max = max;
+		ag_ind[HFP_INDICATOR_ROAM].cb = ciev_roam_cb;
+		return;
+	}
+
+	if (strcmp("battchg", indicator) == 0) {
+		if (min != 0 || max != 5) {
+			DBG(hfp, "hf: Invalid min/max values for battchg,"
+				" expected (0,5) got (%u,%u)", min, max);
+			return;
+		}
+		ag_ind[HFP_INDICATOR_BATTCHG].index = index;
+		ag_ind[HFP_INDICATOR_BATTCHG].min = min;
+		ag_ind[HFP_INDICATOR_BATTCHG].max = max;
+		ag_ind[HFP_INDICATOR_BATTCHG].cb = ciev_battchg_cb;
+		return;
+	}
+
+	DBG(hfp, "hf: Unknown indicator: %s", indicator);
+}
+
+static void slc_cind_cb(struct hfp_context *context, void *user_data)
+{
+	struct hfp_hf *hfp = user_data;
+	int index = 1;
+
+	DBG(hfp, "");
+
+	while (hfp_context_has_next(context)) {
+		char name[255];
+		unsigned int min, max;
+
+		/* e.g ("callsetup",(0-3)) */
+		if (!hfp_context_open_container(context))
+			break;
+
+		if (!hfp_context_get_string(context, name, sizeof(name))) {
+			DBG(hfp, "hf: Could not get string");
+			goto failed;
+		}
+
+		if (!hfp_context_open_container(context)) {
+			DBG(hfp, "hf: Could not open container");
+			goto failed;
+		}
+
+		if (!hfp_context_get_range(context, &min, &max)) {
+			if (!hfp_context_get_number(context, &min)) {
+				DBG(hfp, "hf: Could not get number");
+				goto failed;
+			}
+
+			if (!hfp_context_get_number(context, &max)) {
+				DBG(hfp, "hf: Could not get number");
+				goto failed;
+			}
+		}
+
+		if (!hfp_context_close_container(context)) {
+			DBG(hfp, "hf: Could not close container");
+			goto failed;
+		}
+
+		if (!hfp_context_close_container(context)) {
+			DBG(hfp, "hf: Could not close container");
+			goto failed;
+		}
+
+		set_indicator_parameters(hfp, index, name, min, max);
+		index++;
+	}
+
+	return;
+
+failed:
+	DBG(hfp, "hf: Error on CIND response");
+}
+
+static void slc_cind_resp(enum hfp_result result, enum hfp_error cme_err,
+	void *user_data)
+{
+	struct hfp_hf *hfp = user_data;
+
+	DBG(hfp, "");
+
+	hfp_hf_unregister(hfp, "+CIND");
+
+	if (result != HFP_RESULT_OK) {
+		DBG(hfp, "hf: CIND error: %d", result);
+		goto failed;
+	}
+
+	/* Continue with SLC creation */
+	if (!hfp_hf_register(hfp, slc_cind_status_cb, "+CIND", hfp,
+			NULL)) {
+		DBG(hfp, "hf: Could not register +CIND");
+		result = HFP_RESULT_ERROR;
+		goto failed;
+	}
+
+	if (!hfp_hf_send_command(hfp, slc_cind_status_resp, hfp,
+			"AT+CIND?")) {
+		DBG(hfp, "hf: Could not send AT+CIND?");
+		result = HFP_RESULT_ERROR;
+		goto failed;
+	}
+
+	return;
+
+failed:
+	if (hfp->callbacks->session_ready)
+		hfp->callbacks->session_ready(result, cme_err,
+						hfp->callbacks_data);
+}
+
+static void slc_brsf_cb(struct hfp_context *context, void *user_data)
+{
+	struct hfp_hf *hfp = user_data;
+	unsigned int feat;
+
+	DBG(hfp, "");
+
+	if (hfp_context_get_number(context, &feat))
+		hfp->features = feat;
+}
+
+static void slc_brsf_resp(enum hfp_result result, enum hfp_error cme_err,
+	void *user_data)
+{
+	struct hfp_hf *hfp = user_data;
+
+	DBG(hfp, "");
+
+	hfp_hf_unregister(hfp, "+BRSF");
+
+	if (result != HFP_RESULT_OK) {
+		DBG(hfp, "BRSF error: %d", result);
+		goto failed;
+	}
+
+	/* Continue with SLC creation */
+	if (!hfp_hf_register(hfp, slc_cind_cb, "+CIND", hfp, NULL)) {
+		DBG(hfp, "hf: Could not register for +CIND");
+		result = HFP_RESULT_ERROR;
+		goto failed;
+	}
+
+	if (!hfp_hf_send_command(hfp, slc_cind_resp, hfp, "AT+CIND=?")) {
+		DBG(hfp, "hf: Could not send AT+CIND command");
+		result = HFP_RESULT_ERROR;
+		goto failed;
+	}
+
+	return;
+
+failed:
+	if (hfp->callbacks->session_ready)
+		hfp->callbacks->session_ready(result, cme_err,
+						hfp->callbacks_data);
+}
+
+bool hfp_hf_session_register(struct hfp_hf *hfp,
+				struct hfp_hf_callbacks *callbacks,
+				void *callbacks_data)
+{
+	if (!hfp)
+		return false;
+
+	hfp->callbacks = callbacks;
+	hfp->callbacks_data = callbacks_data;
+
+	return true;
+}
+
+bool hfp_hf_session(struct hfp_hf *hfp)
+{
+	if (!hfp)
+		return false;
+
+	DBG(hfp, "");
+
+	if (!hfp_hf_register(hfp, slc_brsf_cb, "+BRSF", hfp, NULL))
+		return false;
+
+	return hfp_hf_send_command(hfp, slc_brsf_resp, hfp,
+					"AT+BRSF=%u", HFP_HF_FEATURES);
+}
+
+const char *hfp_hf_call_get_number(struct hfp_hf *hfp, uint id)
+{
+	struct hf_call *call;
+
+	if (!hfp)
+		return NULL;
+
+	DBG(hfp, "");
+
+	call = queue_find(hfp->calls, call_id_match, UINT_TO_PTR(id));
+	if (!call) {
+		DBG(hfp, "hf: no call with id: %u", id);
+		return NULL;
+	}
+
+	return call->line_id;
+}
+
+bool hfp_hf_call_get_multiparty(struct hfp_hf *hfp, uint id, bool *mpty)
+{
+	struct hf_call *call;
+
+	if (!hfp)
+		return false;
+
+	DBG(hfp, "");
+
+	call = queue_find(hfp->calls, call_id_match, UINT_TO_PTR(id));
+	if (!call) {
+		DBG(hfp, "hf: no call with id: %u", id);
+		return false;
+	}
+
+	*mpty = call->mpty;
+
+	return true;
+}
+
+bool hfp_hf_dial(struct hfp_hf *hfp, const char *number,
+				hfp_response_func_t resp_cb,
+				void *user_data)
+{
+	const char *c;
+	int count = 0;
+
+	if (!hfp)
+		return false;
+
+	DBG(hfp, "");
+
+	if (number == NULL || strlen(number) == 0)
+		return hfp_hf_send_command(hfp, resp_cb, user_data,
+								"AT+BLDN");
+
+	if (number[0] == '>') {
+		for (c = number + 1; *c != '\0'; c++) {
+			if (!(*c >= '0' && *c <= '9'))
+				return false;
+			count++;
+		}
+		if (count < 1 || count > 10)
+			return false;
+	} else {
+		for (c = number; *c != '\0'; c++) {
+			if (!(*c >= '0' && *c <= '9') &&
+				!(*c >= 'A' && *c <= 'D') &&
+				*c != '#' && *c != '*' &&
+				*c != '+' && *c != ',')
+				return false;
+			count++;
+		}
+		if (count < 1 || count > 80)
+			return false;
+	}
+
+	if (hfp->dialing_number)
+		free(hfp->dialing_number);
+	hfp->dialing_number = strdup(number);
+
+	return hfp_hf_send_command(hfp, resp_cb, user_data, "ATD%s;", number);
+}
+
+bool hfp_hf_release_and_accept(struct hfp_hf *hfp,
+				hfp_response_func_t resp_cb,
+				void *user_data)
+{
+	if (!hfp)
+		return false;
+
+	DBG(hfp, "");
+
+	if (!(hfp->chlds & HFP_CHLD_1) ||
+		(!queue_find(hfp->calls, call_waiting_match, NULL) &&
+		!queue_find(hfp->calls, call_held_match, NULL)))
+		return false;
+
+	return hfp_hf_send_command(hfp, resp_cb, user_data, "AT+CHLD=1");
+}
+
+bool hfp_hf_swap_calls(struct hfp_hf *hfp,
+				hfp_response_func_t resp_cb,
+				void *user_data)
+{
+	if (!hfp)
+		return false;
+
+	DBG(hfp, "");
+
+	if (!(hfp->chlds & HFP_CHLD_2))
+		return false;
+
+	return hfp_hf_send_command(hfp, resp_cb, user_data, "AT+CHLD=2");
+}
+
+bool hfp_hf_call_answer(struct hfp_hf *hfp, uint id,
+				hfp_response_func_t resp_cb,
+				void *user_data)
+{
+	struct hf_call *call;
+
+	if (!hfp)
+		return false;
+
+	DBG(hfp, "");
+
+	call = queue_find(hfp->calls, call_id_match, UINT_TO_PTR(id));
+	if (!call) {
+		DBG(hfp, "hf: no call with id: %u", id);
+		return false;
+	}
+
+	if (call->status != CALL_STATUS_INCOMING) {
+		DBG(hfp, "hf: %d not in incoming call state: %u",
+							id, call->status);
+		return false;
+	}
+
+	return hfp_hf_send_command(hfp, resp_cb, user_data, "ATA");
+}
+
+bool hfp_hf_call_hangup(struct hfp_hf *hfp, uint id,
+				hfp_response_func_t resp_cb,
+				void *user_data)
+{
+	struct hf_call *call;
+
+	if (!hfp)
+		return false;
+
+	DBG(hfp, "");
+
+	call = queue_find(hfp->calls, call_id_match, UINT_TO_PTR(id));
+	if (!call) {
+		DBG(hfp, "hf: no call with id: %u", id);
+		return false;
+	}
+
+	if (call_setup_match(call, NULL) || call_active_match(call, NULL)) {
+		return hfp_hf_send_command(hfp, resp_cb, user_data,
+								"AT+CHUP");
+	} else if ((call_waiting_match(call, NULL) ||
+		call_held_match(call, NULL)) &&
+		(hfp->chlds & HFP_CHLD_0)) {
+		return hfp_hf_send_command(hfp, resp_cb, user_data,
+								"AT+CHLD=0");
+	}
+
+	return false;
 }

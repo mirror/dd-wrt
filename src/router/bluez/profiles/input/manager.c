@@ -16,10 +16,10 @@
 #include <stdbool.h>
 #include <stdlib.h>
 
-#include "lib/bluetooth.h"
-#include "lib/sdp.h"
-#include "lib/sdp_lib.h"
-#include "lib/uuid.h"
+#include "bluetooth/bluetooth.h"
+#include "bluetooth/sdp.h"
+#include "bluetooth/sdp_lib.h"
+#include "bluetooth/uuid.h"
 
 #include "src/log.h"
 #include "src/plugin.h"
@@ -33,7 +33,8 @@
 
 static int hid_server_probe(struct btd_profile *p, struct btd_adapter *adapter)
 {
-	return server_start(btd_adapter_get_address(adapter));
+	return server_start(btd_adapter_get_address(adapter),
+				btd_adapter_has_cable_pairing_devices(adapter));
 }
 
 static void hid_server_remove(struct btd_profile *p,
@@ -44,6 +45,7 @@ static void hid_server_remove(struct btd_profile *p,
 
 static struct btd_profile input_profile = {
 	.name		= "input-hid",
+	.bearer		= BTD_PROFILE_BEARER_BREDR,
 	.local_uuid	= HID_UUID,
 	.remote_uuid	= HID_UUID,
 
@@ -84,7 +86,7 @@ static int input_init(void)
 	config = load_config_file(CONFIGDIR "/input.conf");
 	if (config) {
 		int idle_timeout;
-		gboolean classic_bonded_only, auto_sec;
+		gboolean classic_bonded_only;
 		char *uhid_enabled;
 
 		idle_timeout = g_key_file_get_integer(config, "General",
@@ -100,7 +102,7 @@ static int input_init(void)
 		if (!err) {
 			DBG("input.conf: UserspaceHID=%s", uhid_enabled);
 			input_set_userspace_hid(uhid_enabled);
-			free(uhid_enabled);
+			g_free(uhid_enabled);
 		} else
 			g_clear_error(&err);
 
@@ -111,15 +113,6 @@ static int input_init(void)
 			DBG("input.conf: ClassicBondedOnly=%s",
 					classic_bonded_only ? "true" : "false");
 			input_set_classic_bonded_only(classic_bonded_only);
-		} else
-			g_clear_error(&err);
-
-		auto_sec = g_key_file_get_boolean(config, "General",
-						"LEAutoSecurity", &err);
-		if (!err) {
-			DBG("input.conf: LEAutoSecurity=%s",
-					auto_sec ? "true" : "false");
-			input_set_auto_sec(auto_sec);
 		} else
 			g_clear_error(&err);
 

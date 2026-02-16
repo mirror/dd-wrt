@@ -1,0 +1,314 @@
+.\" Man page generated from reStructuredText.
+.
+.
+.nr rst2man-indent-level 0
+.
+.de1 rstReportMargin
+\\$1 \\n[an-margin]
+level \\n[rst2man-indent-level]
+level margin: \\n[rst2man-indent\\n[rst2man-indent-level]]
+-
+\\n[rst2man-indent0]
+\\n[rst2man-indent1]
+\\n[rst2man-indent2]
+..
+.de1 INDENT
+.\" .rstReportMargin pre:
+. RS \\$1
+. nr rst2man-indent\\n[rst2man-indent-level] \\n[an-margin]
+. nr rst2man-indent-level +1
+.\" .rstReportMargin post:
+..
+.de UNINDENT
+. RE
+.\" indent \\n[an-margin]
+.\" old: \\n[rst2man-indent\\n[rst2man-indent-level]]
+.nr rst2man-indent-level -1
+.\" new: \\n[rst2man-indent\\n[rst2man-indent-level]]
+.in \\n[rst2man-indent\\n[rst2man-indent-level]]u
+..
+.TH "BLUETOOTHCTL-TELEPHONY" "1" "May 2025" "BlueZ" "Linux System Administration"
+.SH NAME
+bluetoothctl-telephony \- Telephony Submenu
+.SH SYNOPSIS
+.sp
+\fBbluetoothctl\fP [\-\-options] [telephony.commands]
+.sp
+This submenu manages telephony features using the \fBorg.bluez.Telephony(5)\fP
+and \fBorg.bluez.Call(5)\fP interfaces.
+.SH TELEPHONY COMMANDS
+.SS list
+.sp
+List available audio gateways.
+.INDENT 0.0
+.TP
+.B Usage
+\fB> list\fP
+.TP
+.B Example Display all available HFP audio gateways
+.nf
+\fB> list\fP
+.fi
+.sp
+.UNINDENT
+.SS show
+.sp
+Show audio gateway information.
+.INDENT 0.0
+.TP
+.B Usage
+\fB> show [telephony]\fP
+.TP
+.B Uses
+\fBorg.bluez.Telephony(5)\fP properties
+.TP
+.B [telephony]
+Audio gateway device path (optional, shows current if omitted)
+.TP
+.B Example Show information for currently selected audio gateway
+.nf
+\fB> show\fP
+.fi
+.sp
+.TP
+.B Example Show information for specific audio gateway device
+.nf
+\fB> show /org/bluez/hci0/dev_00_11_22_33_44_55\fP
+.fi
+.sp
+.TP
+.B Example Show information for another audio gateway
+.nf
+\fB> show /org/bluez/hci0/dev_AA_BB_CC_DD_EE_FF\fP
+.fi
+.sp
+.UNINDENT
+.SS select
+.sp
+Select default audio gateway.
+.INDENT 0.0
+.TP
+.B Usage
+\fB> select <telephony>\fP
+.TP
+.B <telephony>
+Audio gateway device path to set as default
+.TP
+.B Example Select specific audio gateway as default
+.nf
+\fB> select /org/bluez/hci0/dev_00_11_22_33_44_55\fP
+.fi
+.sp
+.TP
+.B Example Select different audio gateway as default
+.nf
+\fB> select /org/bluez/hci0/dev_AA_BB_CC_DD_EE_FF\fP
+.fi
+.sp
+.UNINDENT
+.SS dial
+.sp
+Dial number.
+.INDENT 0.0
+.TP
+.B Usage
+\fB> dial <number> [telephony]\fP
+.TP
+.B Uses
+\fBorg.bluez.Telephony(5)\fP method \fBDial\fP
+.TP
+.B <number>
+Phone number to dial
+.TP
+.B [telephony]
+Audio gateway device path (optional, uses current if omitted)
+.TP
+.B Example Dial number using currently selected audio gateway
+.nf
+\fB> dial 555\-1234\fP
+.fi
+.sp
+.TP
+.B Example Dial international number using current audio gateway
+.nf
+\fB> dial +1\-555\-123\-4567\fP
+.fi
+.sp
+.TP
+.B Example Dial emergency number using current audio gateway
+.nf
+\fB> dial 911\fP
+.fi
+.sp
+.TP
+.B Example Dial number using specific audio gateway
+.nf
+\fB> dial 555\-1234 /org/bluez/hci0/dev_00_11_22_33_44_55\fP
+.fi
+.sp
+.TP
+.B Example Dial UK number using specific audio gateway
+.nf
+\fB> dial +44\-20\-7946\-0958 /org/bluez/hci0/dev_AA_BB_CC_DD_EE_FF\fP
+.fi
+.sp
+.TP
+.B Example Dial with caller ID blocking
+.nf
+\fB> dial *67\-555\-1234\fP
+.fi
+.sp
+.TP
+.B Example Dial with caller ID hiding (GSM format)
+.nf
+\fB> dial #31#555\-1234\fP
+.fi
+.sp
+.UNINDENT
+.SS hangup\-all
+.sp
+Hangup all calls.
+.INDENT 0.0
+.TP
+.B Usage
+\fB> hangup\-all [telephony]\fP
+.TP
+.B Uses
+\fBorg.bluez.Telephony(5)\fP method \fBHangupAll\fP
+.TP
+.B [telephony]
+Audio gateway device path (optional, uses current if omitted)
+.TP
+.B Example Terminate all active and waiting calls on current gateway
+.nf
+\fB> hangup\-all\fP
+.fi
+.sp
+.TP
+.B Example Terminate all calls on specific audio gateway
+.nf
+\fB> hangup\-all /org/bluez/hci0/dev_00_11_22_33_44_55\fP
+.fi
+.sp
+.UNINDENT
+.SS list\-calls
+.sp
+List available calls.
+.INDENT 0.0
+.TP
+.B Usage
+\fB> list\-calls\fP
+.TP
+.B Example Display all active, waiting, and held calls
+.nf
+\fB> list\-calls\fP
+.fi
+.sp
+.UNINDENT
+.SS show\-call
+.sp
+Show call information.
+.INDENT 0.0
+.TP
+.B Usage
+\fB> show\-call <call>\fP
+.TP
+.B Uses
+\fBorg.bluez.Call(5)\fP properties
+.TP
+.B <call>
+Call object path to display information for
+.TP
+.B Example Show information for specific call
+.nf
+\fB> show\-call /org/bluez/hci0/dev_00_11_22_33_44_55/call1\fP
+.fi
+.sp
+.TP
+.B Example Show information for another call
+.nf
+\fB> show\-call /org/bluez/hci0/dev_00_11_22_33_44_55/call2\fP
+.fi
+.sp
+.TP
+.B Example Show call information from different device
+.nf
+\fB> show\-call /org/bluez/hci0/dev_AA_BB_CC_DD_EE_FF/call1\fP
+.fi
+.sp
+.UNINDENT
+.SS answer
+.sp
+Answer call.
+.INDENT 0.0
+.TP
+.B Usage
+\fB> answer <call>\fP
+.TP
+.B Uses
+\fBorg.bluez.Call(5)\fP method \fBAnswer\fP
+.TP
+.B <call>
+Call object path to answer
+.TP
+.B Example Answer incoming call
+.nf
+\fB> answer /org/bluez/hci0/dev_00_11_22_33_44_55/call1\fP
+.fi
+.sp
+.TP
+.B Example Answer waiting call
+.nf
+\fB> answer /org/bluez/hci0/dev_00_11_22_33_44_55/call2\fP
+.fi
+.sp
+.TP
+.B Example Answer call from different device
+.nf
+\fB> answer /org/bluez/hci0/dev_AA_BB_CC_DD_EE_FF/call1\fP
+.fi
+.sp
+.UNINDENT
+.SS hangup
+.sp
+Hangup call.
+.INDENT 0.0
+.TP
+.B Usage
+\fB> hangup <call>\fP
+.TP
+.B Uses
+\fBorg.bluez.Call(5)\fP method \fBHangup\fP
+.TP
+.B <call>
+Call object path to terminate
+.TP
+.B Example Terminate specific active call
+.nf
+\fB> hangup /org/bluez/hci0/dev_00_11_22_33_44_55/call1\fP
+.fi
+.sp
+.TP
+.B Example Terminate waiting or held call
+.nf
+\fB> hangup /org/bluez/hci0/dev_00_11_22_33_44_55/call2\fP
+.fi
+.sp
+.TP
+.B Example Terminate call from different device
+.nf
+\fB> hangup /org/bluez/hci0/dev_AA_BB_CC_DD_EE_FF/call1\fP
+.fi
+.sp
+.UNINDENT
+.SH RESOURCES
+.sp
+ <http://www.bluez.org> 
+.SH REPORTING BUGS
+.sp
+ <linux\-bluetooth@vger.kernel.org> 
+.SH COPYRIGHT
+Free use of this software is granted under the terms of the GNU
+Lesser General Public Licenses (LGPL).
+.\" Generated by docutils manpage writer.
+.

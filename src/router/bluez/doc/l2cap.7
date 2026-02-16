@@ -91,7 +91,7 @@ addr.l2_bdaddr_type = bdaddr_type;
 .EE
 .UNINDENT
 .UNINDENT
-.SH SOCKET OPTIONS
+.SH SOCKET OPTIONS (SOL_BLUETOOTH)
 .sp
 The socket options listed below can be set by using \fBsetsockopt(2)\fP and read
 with \fBgetsockopt(2)\fP with the socket level set to SOL_BLUETOOTH.
@@ -311,7 +311,7 @@ _
 T{
 \fBBT_POWER_FORCE_ACTIVE_OFF\fP
 T}	T{
-0x00 (default)
+0x00
 T}	T{
 Don\(aqt force exit of sniff mode
 T}
@@ -319,7 +319,7 @@ _
 T{
 \fBBT_POWER_FORCE_ACTIVE_ON\fP
 T}	T{
-0x01
+0x01 (default)
 T}	T{
 Force exit of sniff mode
 T}
@@ -562,6 +562,178 @@ T}	T{
 Any
 T}
 .TE
+.SH SOCKET OPTIONS (SOL_SOCKET)
+.sp
+\fBSOL_SOCKET\fP level socket options that modify generic socket
+features (\fBSO_SNDBUF\fP, \fBSO_RCVBUF\fP, etc.) have their usual
+meaning, see \fBsocket(7)\fP\&.
+.sp
+The \fBSOL_SOCKET\fP level L2CAP socket options that have
+Bluetooth\-specific handling in kernel are listed below.
+.SS SO_TIMESTAMPING, SO_TIMESTAMP, SO_TIMESTAMPNS
+.sp
+See  <https://docs.kernel.org/networking/timestamping.html> 
+.sp
+For L2CAP sockets, software RX timestamps are supported.  Software TX
+timestamps (SOF_TIMESTAMPING_TX_SOFTWARE,
+SOF_TIMESTAMPING_TX_COMPLETION) are supported since Linux 6.15.
+.sp
+The software RX timestamp is the time when the kernel received the
+packet from the controller driver.
+.sp
+The \fBSCM_TSTAMP_SND\fP timestamp is emitted when packet is sent to the
+controller driver.  The \fBSCM_TSTAMP_COMPLETION\fP timestamp is emitted
+when controller reports the packet completed.  Other TX timestamp
+types are not supported.
+.sp
+You can use \fBSIOCETHTOOL\fP to query supported flags.
+.sp
+The timestamps are in \fBCLOCK_REALTIME\fP time.
+.sp
+Example (Enable RX timestamping):
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+int flags = SOF_TIMESTAMPING_SOFTWARE |
+    SOF_TIMESTAMPING_RX_SOFTWARE;
+setsockopt(fd, SOL_SOCKET, SO_TIMESTAMPING, &flags, sizeof(flags));
+.EE
+.UNINDENT
+.UNINDENT
+.sp
+Example (Read packet and its RX timestamp):
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+char data_buf[256];
+union {
+    char buf[CMSG_SPACE(sizeof(struct scm_timestamping))];
+    struct cmsghdr align;
+} control;
+struct iovec data = {
+    .iov_base = data_buf,
+    .iov_len = sizeof(data_buf),
+};
+struct msghdr msg = {
+    .msg_iov = &data,
+    .msg_iovlen = 1,
+    .msg_control = control.buf,
+    .msg_controllen = sizeof(control.buf),
+};
+struct scm_timestamping tss;
+
+res = recvmsg(fd, &msg, MSG_ERRQUEUE | MSG_DONTWAIT);
+if (res < 0)
+    goto error;
+
+for (cmsg = CMSG_FIRSTHDR(&msg); cmsg; cmsg = CMSG_NXTHDR(&msg, cmsg)) {
+    if (cmsg\->cmsg_level == SOL_SOCKET && cmsg\->cmsg_type == SCM_TIMESTAMPING)
+        memcpy(&tss, CMSG_DATA(cmsg), sizeof(tss));
+}
+
+tstamp_clock_realtime = tss.ts[0];
+.EE
+.UNINDENT
+.UNINDENT
+.sp
+Example (Enable TX timestamping):
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+int flags = SOF_TIMESTAMPING_SOFTWARE |
+    SOF_TIMESTAMPING_TX_SOFTWARE |
+    SOF_TIMESTAMPING_TX_COMPLETION |
+    SOF_TIMESTAMPING_OPT_ID;
+setsockopt(fd, SOL_SOCKET, SO_TIMESTAMPING, &flags, sizeof(flags));
+.EE
+.UNINDENT
+.UNINDENT
+.sp
+Example (Read TX timestamps):
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+union {
+    char buf[2 * CMSG_SPACE(sizeof(struct scm_timestamping))];
+    struct cmsghdr align;
+} control;
+struct iovec data = {
+    .iov_base = NULL,
+    .iov_len = 0
+};
+struct msghdr msg = {
+    .msg_iov = &data,
+    .msg_iovlen = 1,
+    .msg_control = control.buf,
+    .msg_controllen = sizeof(control.buf),
+};
+struct cmsghdr *cmsg;
+struct scm_timestamping tss;
+struct sock_extended_err serr;
+int res;
+
+res = recvmsg(fd, &msg, MSG_ERRQUEUE | MSG_DONTWAIT);
+if (res < 0)
+    goto error;
+
+for (cmsg = CMSG_FIRSTHDR(&msg); cmsg; cmsg = CMSG_NXTHDR(&msg, cmsg)) {
+    if (cmsg\->cmsg_level == SOL_SOCKET && cmsg\->cmsg_type == SCM_TIMESTAMPING)
+        memcpy(&tss, CMSG_DATA(cmsg), sizeof(tss));
+    else if (cmsg\->cmsg_level == SOL_BLUETOOTH && cmsg\->cmsg_type == BT_SCM_ERROR)
+        memcpy(&serr, CMSG_DATA(cmsg), sizeof(serr));
+}
+
+tstamp_clock_realtime = tss.ts[0];
+tstamp_type = serr\->ee_info;      /* SCM_TSTAMP_SND or SCM_TSTAMP_COMPLETION */
+tstamp_seqnum = serr\->ee_data;
+.EE
+.UNINDENT
+.UNINDENT
+.SH IOCTLS
+.sp
+The following ioctls with operation specific for L2CAP sockets are
+available.
+.SS SIOCETHTOOL (since Linux 6.16\-rc1)
+.sp
+Supports only command \fIETHTOOL_GET_TS_INFO\fP, which may be used to
+query supported \fISOF_TIMESTAMPING_*\fP flags.  The
+\fISOF_TIMESTAMPING_OPT_*\fP flags are always available as applicable.
+.sp
+Example:
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+#include <linux/ethtool.h>
+#include <linux/sockios.h>
+#include <net/if.h>
+#include <sys/socket.h>
+#include <sys/ioctl.h>
+
+\&...
+
+struct ifreq ifr = {};
+struct ethtool_ts_info cmd = {};
+int sk;
+
+snprintf(ifr.ifr_name, sizeof(ifr.ifr_name), \(dqhci0\(dq);
+ifr.ifr_data = (void *)&cmd;
+cmd.cmd = ETHTOOL_GET_TS_INFO;
+
+sk = socket(PF_BLUETOOTH, SOCK_SEQPACKET, BTPROTO_L2CAP);
+if (sk < 0)
+    goto error;
+if (ioctl(sk, SIOCETHTOOL, &ifr))
+    goto error;
+
+sof_available = cmd.so_timestamping;
+.EE
+.UNINDENT
+.UNINDENT
 .SH RESOURCES
 .sp
  <http://www.bluez.org> 

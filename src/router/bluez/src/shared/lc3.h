@@ -48,7 +48,7 @@
 #define LC3_FRAME_COUNT		(LC3_TYPE_BASE + 4)
 
 #define LC3_CAPABILITIES(_freq, _duration, _chan_count, _len_min, _len_max) \
-	UTIL_IOV_INIT(0x02, LC3_FREQ, _freq, _freq >> 8, \
+	UTIL_IOV_INIT(0x03, LC3_FREQ, _freq, _freq >> 8, \
 			0x02, LC3_DURATION, _duration, \
 			0x02, LC3_CHAN_COUNT, _chan_count, \
 			0x05, LC3_FRAME_LEN, _len_min, _len_min >> 8, \
@@ -206,7 +206,7 @@
 #define LC3_CONFIG_32_2_AC(_ac) \
 	LC3_CONFIG_32_AC(LC3_CONFIG_DURATION_10, LC3_CONFIG_FRAME_LEN_32_2, _ac)
 
-#define LC3_CONFIG_FRAME_LEN_44_1 98u
+#define LC3_CONFIG_FRAME_LEN_44_1 97u
 
 #define LC3_CONFIG_44_1 \
 	LC3_CONFIG_44(LC3_CONFIG_DURATION_7_5, LC3_CONFIG_FRAME_LEN_44_1)
@@ -491,7 +491,7 @@
 	.ucast.io_qos.interval = _interval, \
 	.ucast.io_qos.latency = _lat, \
 	.ucast.io_qos.sdu = _sdu, \
-	.ucast.io_qos.phy = BT_BAP_CONFIG_PHY_2M, \
+	.ucast.io_qos.phys = BT_BAP_CONFIG_PHY_2M, \
 	.ucast.io_qos.rtn = _rtn, \
 }
 
@@ -947,7 +947,7 @@
 	.bcast.io_qos.interval = _interval, \
 	.bcast.io_qos.latency = _lat, \
 	.bcast.io_qos.sdu = _sdu, \
-	.bcast.io_qos.phy = BT_BAP_CONFIG_PHY_2M, \
+	.bcast.io_qos.phys = BT_BAP_CONFIG_PHY_2M, \
 	.bcast.io_qos.rtn = _rtn, \
 }
 

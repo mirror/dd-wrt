@@ -1,0 +1,10392 @@
+'\" t
+.\" Man page generated from reStructuredText.
+.
+.
+.nr rst2man-indent-level 0
+.
+.de1 rstReportMargin
+\\$1 \\n[an-margin]
+level \\n[rst2man-indent-level]
+level margin: \\n[rst2man-indent\\n[rst2man-indent-level]]
+-
+\\n[rst2man-indent0]
+\\n[rst2man-indent1]
+\\n[rst2man-indent2]
+..
+.de1 INDENT
+.\" .rstReportMargin pre:
+. RS \\$1
+. nr rst2man-indent\\n[rst2man-indent-level] \\n[an-margin]
+. nr rst2man-indent-level +1
+.\" .rstReportMargin post:
+..
+.de UNINDENT
+. RE
+.\" indent \\n[an-margin]
+.\" old: \\n[rst2man-indent\\n[rst2man-indent-level]]
+.nr rst2man-indent-level -1
+.\" new: \\n[rst2man-indent\\n[rst2man-indent-level]]
+.in \\n[rst2man-indent\\n[rst2man-indent-level]]u
+..
+.TH "MGMT" "7" "April 2025" "BlueZ" "Linux System Administration"
+.SH NAME
+mgmt \- Bluetooth Management Protocol documentation
+.SH SYNOPSIS
+.sp
+The Bluetooth management sockets can be created by setting the hci_channel
+member of struct sockaddr_hci to HCI_CHANNEL_CONTROL (see hci(7)) when creating
+a raw HCI socket:
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+ int mgmt_create(void)
+ {
+     struct sockaddr_hci addr;
+     int fd;
+
+     fd = socket(PF_BLUETOOTH, SOCK_RAW | SOCK_CLOEXEC | SOCK_NONBLOCK,
+                                                             BTPROTO_HCI);
+     if (fd < 0)
+         return \-errno;
+
+     memset(&addr, 0, sizeof(addr));
+     addr.hci_family = AF_BLUETOOTH;
+     addr.hci_dev = HCI_DEV_NONE;
+     addr.hci_channel = HCI_CHANNEL_CONTROL;
+
+     if (bind(fd, (struct sockaddr *) &addr, sizeof(addr)) < 0) {
+         int err = \-errno;
+         close(fd);
+         return err;
+     }
+
+     return fd;
+}
+.EE
+.UNINDENT
+.UNINDENT
+.sp
+The process creating the mgmt socket is required to have the
+CAP_NET_ADMIN capability (e.g. root would have this).
+.SH DESCRIPTION
+.sp
+This document describes the format of data used for communicating with
+the kernel using a so\-called Bluetooth Management sockets. These sockets
+are available starting with Linux kernel version 3.4
+.sp
+The following kernel versions introduced new commands, new events or
+important fixes to the Bluetooth Management API:
+.TS
+box center;
+l|l|l|l.
+T{
+Version
+T}	T{
+Kernel Version
+T}	T{
+Commands
+T}	T{
+Events
+T}
+_
+T{
+1.1
+T}	T{
+3.4
+T}	T{
+Set Device ID
+T}	T{
+T}
+_
+T{
+1.2
+T}	T{
+3.7
+T}	T{
+T}	T{
+Passkey Notify
+T}
+_
+T{
+1.3
+T}	T{
+3.9
+T}	T{
+T}	T{
+T}
+_
+T{
+1.4
+T}	T{
+3.13
+T}	T{
+Set Advertising
+T}	T{
+T}
+_
+T{
+T}	T{
+T}	T{
+Set BR/EDR
+T}	T{
+T}
+_
+T{
+T}	T{
+T}	T{
+Set Static Address
+T}	T{
+T}
+_
+T{
+T}	T{
+T}	T{
+Set Scan Parameters
+T}	T{
+T}
+_
+T{
+1.5
+T}	T{
+3.15
+T}	T{
+Set Secure Connections
+T}	T{
+New Identity Resolving Key
+T}
+_
+T{
+T}	T{
+T}	T{
+Set Debug Keys
+T}	T{
+New Signature Resolving Key
+T}
+_
+T{
+T}	T{
+T}	T{
+Set Privacy
+T}	T{
+T}
+_
+T{
+T}	T{
+T}	T{
+Load Identity Resolving Keys
+T}	T{
+T}
+_
+T{
+1.6
+T}	T{
+3.16
+T}	T{
+Get Connection Information
+T}	T{
+T}
+_
+T{
+1.7
+T}	T{
+3.17
+T}	T{
+Get Clock Information
+T}	T{
+T}
+_
+T{
+T}	T{
+T}	T{
+Add Device
+T}	T{
+Device Added
+T}
+_
+T{
+T}	T{
+T}	T{
+Remove Device
+T}	T{
+Device Removed
+T}
+_
+T{
+T}	T{
+T}	T{
+Load Connection Parameters
+T}	T{
+New Connection Parameter
+T}
+_
+T{
+T}	T{
+T}	T{
+Read Unconfigured Index List
+T}	T{
+Unconfigured Index Added
+T}
+_
+T{
+T}	T{
+T}	T{
+Read Controller Configuration Information
+T}	T{
+Unconfigured Index Removed
+T}
+_
+T{
+T}	T{
+T}	T{
+Set External Configuration
+T}	T{
+New Configuration Options
+T}
+_
+T{
+T}	T{
+T}	T{
+Set Public Address commands
+T}	T{
+T}
+_
+T{
+1.8
+T}	T{
+3.19
+T}	T{
+Start Service Discovery
+T}	T{
+T}
+_
+T{
+1.9
+T}	T{
+4.1
+T}	T{
+Read Local Out Of Band Extended Data
+T}	T{
+Extended Index Added
+T}
+_
+T{
+T}	T{
+T}	T{
+Read Extended Controller Index List
+T}	T{
+Extended Index Removed
+T}
+_
+T{
+T}	T{
+T}	T{
+Read Advertising Features
+T}	T{
+Local Out Of Band Extended Data Updated
+T}
+_
+T{
+T}	T{
+T}	T{
+Add Advertising
+T}	T{
+Advertising Added
+T}
+_
+T{
+T}	T{
+T}	T{
+Remove Advertising
+T}	T{
+Advertising Removed
+T}
+_
+T{
+1.10
+T}	T{
+4.2
+T}	T{
+T}	T{
+T}
+_
+T{
+1.11
+T}	T{
+4.5
+T}	T{
+Get Advertising Size Information
+T}	T{
+T}
+_
+T{
+T}	T{
+T}	T{
+Start Limited Discovery
+T}	T{
+T}
+_
+T{
+1.12
+T}	T{
+4.6
+T}	T{
+T}	T{
+T}
+_
+T{
+1.13
+T}	T{
+4.8
+T}	T{
+T}	T{
+T}
+_
+T{
+1.14
+T}	T{
+4.9
+T}	T{
+Read Extended Controller Information
+T}	T{
+Extended Controller Information Changed
+T}
+_
+T{
+T}	T{
+T}	T{
+Set Appearance
+T}	T{
+T}
+_
+T{
+1.15
+T}	T{
+5.5
+T}	T{
+Get PHY Configuration
+T}	T{
+PHY Configuration Changed
+T}
+_
+T{
+T}	T{
+T}	T{
+Set PHY Configuration
+T}	T{
+T}
+_
+T{
+T}	T{
+T}	T{
+Load Blocked Keys
+T}	T{
+T}
+_
+T{
+1.16
+T}	T{
+5.6
+T}	T{
+Set Wideband Speech
+T}	T{
+T}
+_
+T{
+1.17
+T}	T{
+5.7
+T}	T{
+Read Controller Capabilities
+T}	T{
+Experimental Feature Changed
+T}
+_
+T{
+T}	T{
+T}	T{
+Read Experimental Features Information
+T}	T{
+T}
+_
+T{
+T}	T{
+T}	T{
+Set Experimental Feature
+T}	T{
+T}
+_
+T{
+1.18
+T}	T{
+5.8
+T}	T{
+Read Default System Configuration
+T}	T{
+Default System Configuration Changed
+T}
+_
+T{
+T}	T{
+T}	T{
+Set Default System Configuration
+T}	T{
+Default Runtime Configuration Changed
+T}
+_
+T{
+T}	T{
+T}	T{
+Read Default Runtime Configuration
+T}	T{
+Default Runtime Configuration Changed
+T}
+_
+T{
+T}	T{
+T}	T{
+Set Default Runtime Configuration
+T}	T{
+Device Flags Changed
+T}
+_
+T{
+T}	T{
+T}	T{
+Get Device Flags
+T}	T{
+Advertisement Monitor Added
+T}
+_
+T{
+T}	T{
+T}	T{
+Set Device Flags
+T}	T{
+Advertisement Monitor Removed
+T}
+_
+T{
+T}	T{
+T}	T{
+Read Advertisement Monitor Features
+T}	T{
+Controller Suspend
+T}
+_
+T{
+T}	T{
+T}	T{
+Add Advertisement Patterns Monitor
+T}	T{
+Controller Resume
+T}
+_
+T{
+T}	T{
+T}	T{
+Remove Advertisement Monitor
+T}	T{
+Advertisement Monitor Device Found
+T}
+_
+T{
+T}	T{
+T}	T{
+T}	T{
+Advertisement Monitor Device Lost
+T}
+_
+T{
+1.19
+T}	T{
+5.10
+T}	T{
+Add Extended Advertising Parameters
+T}	T{
+T}
+_
+T{
+T}	T{
+T}	T{
+Add Extended Advertising Data
+T}	T{
+T}
+_
+T{
+1.20
+T}	T{
+5.11
+T}	T{
+Add Advertisement Patterns Monitor With RSSI Threshold
+T}	T{
+T}
+_
+T{
+1.21
+T}	T{
+6.0
+T}	T{
+Set Mesh Receiver
+T}	T{
+Mesh Device Found
+T}
+_
+T{
+T}	T{
+T}	T{
+Read Mesh Features
+T}	T{
+Mesh Packet Transmit Complete
+T}
+_
+T{
+T}	T{
+T}	T{
+Transmit Mesh Packet
+T}	T{
+T}
+_
+T{
+T}	T{
+T}	T{
+Cancel Transmit Mesh Packet
+T}	T{
+T}
+.TE
+.SH PACKET STRUCTURES
+.sp
+Commands:
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+0    4    8   12   16   22   24   28   31   35   39   43   47
++\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-+\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-+\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-+
+|  Command Code     |  Controller Index |  Parameter Length |
++\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-+\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-+\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-+
+|                                                           |
+.EE
+.UNINDENT
+.UNINDENT
+.sp
+Events:
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+0    4    8   12   16   22   24   28   31   35   39   43   47
++\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-+\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-+\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-+
+|  Event Code       |  Controller Index |  Parameter Length |
++\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-+\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-+\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-+
+|                                                           |
+.EE
+.UNINDENT
+.UNINDENT
+.sp
+All fields are in little\-endian byte order (least significant byte first).
+.sp
+Controller Index can have a special value <non\-controller> to indicate that
+command or event is not related to any controller. Possible values:
+.TS
+box center;
+l|l.
+T{
+Value
+T}	T{
+Description
+T}
+_
+T{
+0x0000\-0xFFFE
+T}	T{
+<controller id>
+T}
+_
+T{
+0xFFFF
+T}	T{
+<non\-controller>
+T}
+.TE
+.SH ERROR CODES
+.sp
+The following values have been defined for use with the Command Status
+and Command Complete events:
+.TS
+box center;
+l|l.
+T{
+Value
+T}	T{
+Description
+T}
+_
+T{
+0x00
+T}	T{
+Success
+T}
+_
+T{
+0x01
+T}	T{
+Unknown Command
+T}
+_
+T{
+0x02
+T}	T{
+Not Connected
+T}
+_
+T{
+0x03
+T}	T{
+Failed
+T}
+_
+T{
+0x04
+T}	T{
+Connect Failed
+T}
+_
+T{
+0x05
+T}	T{
+Authentication Failed
+T}
+_
+T{
+0x06
+T}	T{
+Not Paired
+T}
+_
+T{
+0x07
+T}	T{
+No Resources
+T}
+_
+T{
+0x08
+T}	T{
+Timeout
+T}
+_
+T{
+0x09
+T}	T{
+Already Connected
+T}
+_
+T{
+0x0A
+T}	T{
+Busy
+T}
+_
+T{
+0x0B
+T}	T{
+Rejected
+T}
+_
+T{
+0x0C
+T}	T{
+Not Supported
+T}
+_
+T{
+0x0D
+T}	T{
+Invalid Parameters
+T}
+_
+T{
+0x0E
+T}	T{
+Disconnected
+T}
+_
+T{
+0x0F
+T}	T{
+Not Powered
+T}
+_
+T{
+0x10
+T}	T{
+Cancelled
+T}
+_
+T{
+0x11
+T}	T{
+Invalid Index
+T}
+_
+T{
+0x12
+T}	T{
+RFKilled
+T}
+_
+T{
+0x13
+T}	T{
+Already Paired
+T}
+_
+T{
+0x14
+T}	T{
+Permission Denied
+T}
+.TE
+.sp
+As a general rule all commands generate the events as specified below,
+however invalid lengths or unknown commands will always generate a
+Command Status response (with Unknown Command or Invalid Parameters
+status). Sending a command with an invalid Controller Index value will
+also always generate a Command Status event with the Invalid Index
+status code.
+.SS Commands
+.SS Read Management Version Information
+.INDENT 0.0
+.TP
+.B Command Code
+0x0001
+.TP
+.B Controller Index
+<non\-controller>
+.TP
+.B Command Parameters
+.TP
+.B Return Parameters
+Version (1 Octets)
+.TP
+.B \&...
+Revision (2 Octets)
+.UNINDENT
+.sp
+This command returns the Management version and revision.
+Besides, being informational the information can be used to determine whether
+certain behavior has changed or bugs fixed when interacting with the kernel.
+.sp
+This command generates a Command Complete event on success or a Command Status
+event on failure.
+.SS Read Management Supported Commands
+.INDENT 0.0
+.TP
+.B Command Code
+0x0002
+.TP
+.B Controller Index
+<non\-controller>
+.TP
+.B Command Parameters
+.TP
+.B Return Parameters
+Num_Of_Commands (2 Octets)
+.TP
+.B \&...
+Num_Of_Events (2 Octets)
+.TP
+.B \&...
+Command[] (2 Octets)
+.TP
+.B \&...
+\&...[]
+.TP
+.B \&...
+Event[] (2 Octets)
+.TP
+.B \&...
+\&...[]
+.UNINDENT
+.sp
+This command returns the list of supported Management commands and events.
+.sp
+The commands Read Management Version Information and Read management Supported
+Commands are not included in this list.
+Both commands are always supported and mandatory.
+.sp
+The events Command Status and Command Complete are not included in this list.
+Both are implicit and mandatory.
+.sp
+This command generates a Command Complete event on success or a Command Status
+event on failure.
+.SS Read Controller Index List
+.INDENT 0.0
+.TP
+.B Command Code
+0x0003
+.TP
+.B Controller Index
+<non\-controller>
+.TP
+.B Command Parameters
+.TP
+.B Return Parameters
+Num_Controllers (2 Octets)
+.TP
+.B \&...
+Controller_Index[] (2 Octets)
+.UNINDENT
+.sp
+This command returns the list of currently known controllers.
+Controllers added or removed after calling this command can be monitored using
+the Index Added and Index Removed events.
+.sp
+This command generates a Command Complete event on success or a Command Status
+event on failure.
+.SS Read Controller Information
+.INDENT 0.0
+.TP
+.B Command Code
+0x0004
+.TP
+.B Controller Index
+<controller id>
+.TP
+.B Command Parameters
+.TP
+.B Return Parameters
+Address (6 Octets)
+.TP
+.B \&...
+Bluetooth_Version (1 Octet)
+.TP
+.B \&...
+Manufacturer (2 Octets)
+.TP
+.B \&...
+Supported_Settings (4 Octets)
+.TP
+.B \&...
+Current_Settings (4 Octets)
+.TP
+.B \&...
+Class_Of_Device (3 Octets)
+.TP
+.B \&...
+Name (249 Octets)
+.TP
+.B \&...
+Short_Name (11 Octets)
+.UNINDENT
+.sp
+This command is used to retrieve the current state and basic information of a
+controller. It is typically used right after getting the response to the Read
+Controller Index List command or an Index Added event.
+.sp
+The Address parameter describes the controllers public address and it can be
+expected that it is set. However in case of single mode Low Energy only
+controllers it can be 00:00:00:00:00:00. To power on the controller in this
+case, it is required to configure a static address using Set Static Address
+command first.
+.sp
+If the public address is set, then it will be used as identity address for the
+controller. If no public address is available, then the configured static
+address will be used as identity address.
+.sp
+In the case of a dual\-mode controller with public address that is configured as
+Low Energy only device (BR/EDR switched off), the static address is used when
+set and public address otherwise.
+.sp
+If no short name is set the Short_Name parameter will be empty (begin with a nul
+byte).
+.sp
+Current_Settings and Supported_Settings is a bitmask with currently the
+following available bits:
+.TS
+box center;
+l|l.
+T{
+Bit
+T}	T{
+Description
+T}
+_
+T{
+0
+T}	T{
+Powered
+T}
+_
+T{
+1
+T}	T{
+Connectable
+T}
+_
+T{
+2
+T}	T{
+Fast Connectable
+T}
+_
+T{
+3
+T}	T{
+Discoverable
+T}
+_
+T{
+4
+T}	T{
+Bondable
+T}
+_
+T{
+5
+T}	T{
+Link Level Security (Sec. mode 3)
+T}
+_
+T{
+6
+T}	T{
+Secure Simple Pairing
+T}
+_
+T{
+7
+T}	T{
+Basic Rate/Enhanced Data Rate
+T}
+_
+T{
+8
+T}	T{
+High Speed
+T}
+_
+T{
+9
+T}	T{
+Low Energy
+T}
+_
+T{
+10
+T}	T{
+Advertising
+T}
+_
+T{
+11
+T}	T{
+Secure Connections
+T}
+_
+T{
+12
+T}	T{
+Debug Keys
+T}
+_
+T{
+13
+T}	T{
+Privacy
+T}
+_
+T{
+14
+T}	T{
+Controller Configuration
+T}
+_
+T{
+15
+T}	T{
+Static Address
+T}
+_
+T{
+16
+T}	T{
+PHY Configuration
+T}
+_
+T{
+17
+T}	T{
+Wideband Speech
+T}
+_
+T{
+18
+T}	T{
+Connected Isochronous Stream \- Central
+T}
+_
+T{
+19
+T}	T{
+Connected Isochronous Stream \- Peripheral
+T}
+_
+T{
+20
+T}	T{
+Isochronous Broadcaster
+T}
+_
+T{
+21
+T}	T{
+Synchronized Receiver
+T}
+_
+T{
+22
+T}	T{
+LL Privacy
+T}
+_
+T{
+23
+T}	T{
+PAST Sender
+T}
+_
+T{
+24
+T}	T{
+PAST Receiver
+T}
+.TE
+.sp
+This command generates a Command Complete event on success or a Command Status
+event on failure.
+.sp
+Possible errors:
+.INDENT 0.0
+.TP
+.B Invalid Parameters
+.TP
+.B Invalid Index
+.UNINDENT
+.SS Set Powered
+.INDENT 0.0
+.TP
+.B Command Code
+0x0005
+.TP
+.B Controller Index
+<controller id>
+.TP
+.B Command Parameters
+Powered (1 Octet)
+.TP
+.B Return Parameters
+Current_Settings (4 Octets)
+.UNINDENT
+.sp
+This command is used to power on or off a controller. The allowed Powered
+command parameter values are 0x00 and 0x01. All other values will return Invalid
+Parameters.
+.sp
+If discoverable setting is activated with a timeout, then switching the
+controller off will expire this timeout and disable discoverable.
+.sp
+Settings programmed via Set Advertising and Add/Remove Advertising while the
+controller was powered off will be activated when powering the controller on.
+.sp
+Switching the controller off will permanently cancel and remove all advertising
+instances with a timeout set, i.e. time limited advertising instances are not
+being remembered across power cycles.
+Advertising Removed events will be issued accordingly.
+.sp
+This command generates a Command Complete event on success or a Command Status
+event on failure.
+.sp
+Possible errors:
+.INDENT 0.0
+.TP
+.B Busy
+.TP
+.B Invalid Parameters
+.TP
+.B Invalid Index
+.UNINDENT
+.SS Set Discoverable
+.INDENT 0.0
+.TP
+.B Command Code
+0x0006
+.TP
+.B Controller Index
+<controller id>
+.TP
+.B Command Parameters
+Discoverable (1 Octet)
+.TP
+.B \&...
+Timeout (2 Octets)
+.TP
+.B Return Parameters
+Current_Settings (4 Octets)
+.UNINDENT
+.sp
+This command is used to set the discoverable property of a controller. The
+allowed Discoverable command parameter values are:
+.TS
+box center;
+l|l.
+T{
+Value
+T}	T{
+Description
+T}
+_
+T{
+0x00
+T}	T{
+Not Discoverable
+T}
+_
+T{
+0x01
+T}	T{
+General Discoverable
+T}
+_
+T{
+0x02 (since 1.4)
+T}	T{
+Limited Discoverable
+T}
+.TE
+.sp
+Timeout is the time in seconds and is only meaningful when Discoverable is set
+to 0x01 or 0x02. Providing a timeout with 0x00 return Invalid Parameters. For
+0x02, the timeout value is required.
+.sp
+This command is only available for BR/EDR capable controllers (e.g. not for
+single\-mode LE ones). It will return Not Supported otherwise.
+.sp
+This command can be used when the controller is not powered and all settings
+will be programmed once powered.
+.sp
+However using a timeout when the controller is not powered will return Not
+Powered error.
+.sp
+When switching discoverable on and the connectable setting is off it will return
+Rejected error.
+.sp
+This command generates a Command Complete event on success or a Command Status
+event on failure.
+.sp
+Possible errors:
+.INDENT 0.0
+.TP
+.B Busy
+.TP
+.B Rejected
+.TP
+.B Not Supported
+.TP
+.B Invalid Parameters
+.TP
+.B Not Powered
+.TP
+.B Invalid Index
+.UNINDENT
+.SS Set Connectable
+.INDENT 0.0
+.TP
+.B Command Code
+0x0007
+.TP
+.B Controller Index
+<controller id>
+.TP
+.B Command Parameters
+Connectable (1 Octet)
+.TP
+.B Return Parameters
+Current_Settings (4 Octets)
+.UNINDENT
+.sp
+This command is used to set the connectable property of a controller. The
+allowed Connectable command parameter values are 0x00 and 0x01. All other values
+will return Invalid Parameters.
+.sp
+This command is available for BR/EDR, LE\-only and also dual mode controllers.
+For BR/EDR is changes the page scan setting and for LE controllers it changes
+the advertising type. For dual mode controllers it affects both settings.
+.sp
+For LE capable controllers the connectable setting takes effect when advertising
+is enabled (peripheral) or when directed advertising events are received
+(central).
+.sp
+This command can be used when the controller is not powered and all settings
+will be programmed once powered.
+.sp
+When switching connectable off, it will also switch off the discoverable
+setting. Switching connectable back on will not restore a previous discoverable.
+It will stay off and needs to be manually switched back on.
+.sp
+When switching connectable off, it will expire a discoverable setting with a
+timeout.
+.sp
+This setting does not affect known devices from Add Device command. These
+devices are always allowed to connect.
+.sp
+This command generates a Command Complete event on success or a Command Status
+event on failure.
+.sp
+Possible errors:
+.INDENT 0.0
+.TP
+.B Busy
+.TP
+.B Not Supported
+.TP
+.B Invalid Parameters
+.TP
+.B Invalid Index
+.UNINDENT
+.SS Set Fast Connectable
+.INDENT 0.0
+.TP
+.B Command Code
+0x0008
+.TP
+.B Controller Index
+<controller id>
+.TP
+.B Command Parameters
+Enable (1 Octet)
+.TP
+.B Return Parameters
+Current_Settings (4 Octets)
+.UNINDENT
+.sp
+This command is used to set the controller into a connectable state where the
+page scan parameters have been set in a way to favor faster connect times with
+the expense of higher power consumption.
+.sp
+The allowed values of the Enable command parameter are 0x00 and 0x01. All other
+values will return Invalid Parameters.
+.sp
+This command is only available for BR/EDR capable controllers (e.g. not for
+single\-mode LE ones). It will return Not Supported otherwise.
+.sp
+This command can be used when the controller is not powered and all settings
+will be programmed once powered.
+.sp
+The setting will be remembered during power down/up toggles.
+.sp
+This command generates a Command Complete event on success or a Command Status
+event on failure.
+.sp
+Possible errors:
+.INDENT 0.0
+.TP
+.B Failed
+.TP
+.B Busy
+.TP
+.B Not Supported
+.TP
+.B Invalid Parameters
+.TP
+.B Invalid Index
+.UNINDENT
+.SS Set Bondable
+.INDENT 0.0
+.TP
+.B Command Code
+0x0009
+.TP
+.B Controller Index
+<controller id>
+.TP
+.B Command Parameters
+Bondable (1 Octet)
+.TP
+.B Return Parameters
+Current_Settings (4 Octets)
+.UNINDENT
+.sp
+This command is used to set the bondable property of an controller. The allowed
+values for the Bondable command parameter are 0x00 and 0x01. All other values
+will return Invalid Parameters.
+.sp
+This command can be used when the controller is not powered and all settings
+will be programmed once powered.
+.sp
+Turning bondable on will not automatically switch the controller into
+connectable mode. That needs to be done separately.
+.sp
+The setting will be remembered during power down/up toggles.
+.sp
+This command generates a Command Complete event on success or a Command Status
+event on failure.
+.sp
+Possible errors:
+.INDENT 0.0
+.TP
+.B Invalid Parameters
+.TP
+.B Invalid Index
+.UNINDENT
+.SS Set Link Security
+.INDENT 0.0
+.TP
+.B Command Code
+0x000A
+.TP
+.B Controller Index
+<controller id>
+.TP
+.B Command Parameters
+Link_Security (1 Octet)
+.TP
+.B Return Parameters
+Current_Settings (4 Octets)
+.UNINDENT
+.sp
+This command is used to either enable or disable link level
+security for an controller (also known as Security Mode 3). The allowed values
+for the Link_Security command parameter are 0x00 and 0x01. All other values will
+return Invalid Parameters.
+.sp
+This command is only available for BR/EDR capable controllers (e.g. not for
+single\-mode LE ones). It will return Not Supported otherwise.
+.sp
+This command can be used when the controller is not powered and all settings
+will be programmed once powered.
+.sp
+This command generates a Command Complete event on success or a Command Status
+event on failure.
+.sp
+Possible errors:
+.INDENT 0.0
+.TP
+.B Busy
+.TP
+.B Not Supported
+.TP
+.B Invalid Parameters
+.TP
+.B Invalid Index
+.UNINDENT
+.SS Set Secure Simple Pairing
+.INDENT 0.0
+.TP
+.B Command Code
+0x000B
+.TP
+.B Controller Index
+<controller id>
+.TP
+.B Command Parameters
+Secure_Simple_Pairing (1 Octet)
+.TP
+.B Return Parameters
+Current_Settings (4 Octets)
+.UNINDENT
+.sp
+This command is used to enable/disable Secure Simple Pairing support for a
+controller. The allowed values for the Secure_Simple_Pairing command parameter
+are 0x00 and 0x01. All other values will return Invalid Parameters.
+.sp
+This command is only available for BR/EDR capable controllers supporting the
+core specification version 2.1 or greater (e.g. not for single\-mode LE
+controllers or pre\-2.1 ones).
+.sp
+This command can be used when the controller is not powered and all settings
+will be programmed once powered.
+.sp
+In case the controller does not support Secure Simple Pairing, the command will
+fail regardless with Not Supported error.
+.sp
+This command generates a Command Complete event on success or a Command Status
+event on failure.
+.sp
+Possible errors:
+.INDENT 0.0
+.TP
+.B Busy
+.TP
+.B Not Supported
+.TP
+.B Invalid Parameters
+.TP
+.B Invalid Index
+.UNINDENT
+.SS Set High Speed
+.INDENT 0.0
+.TP
+.B Command Code
+0x000C
+.TP
+.B Controller Index
+<controller id>
+.TP
+.B Command Parameters
+High_Speed (1 Octet)
+.TP
+.B Return Parameters
+Current_Settings (4 Octets)
+.UNINDENT
+.sp
+This command is used to enable/disable Bluetooth High Speed support for a
+controller. The allowed values for the High_Speed command parameter are 0x00 and
+0x01. All other values will return Invalid Parameters.
+.sp
+This command is only available for BR/EDR capable controllers (e.g. not for
+single\-mode LE ones).
+.sp
+This command can be used when the controller is not powered and all settings
+will be programmed once powered.
+.sp
+To enable High Speed support, it is required that Secure Simple Pairing support
+is enabled first. High Speed support is not possible for connections without
+Secure Simple Pairing.
+.sp
+When switching Secure Simple Pairing off, the support for High Speed will be
+switched off as well. Switching Secure Simple Pairing back on, will not
+re\-enable High Speed support. That needs to be done manually.
+.sp
+This command generates a Command Complete event on success or a Command Status
+event on failure.
+.sp
+Possible errors:
+.INDENT 0.0
+.TP
+.B Not Supported
+.TP
+.B Invalid Parameters
+.TP
+.B Invalid Index
+.UNINDENT
+.SS Set Low Energy
+.INDENT 0.0
+.TP
+.B Command Code
+0x000D
+.TP
+.B Controller Index
+<controller id>
+.TP
+.B Command Parameters
+Low_Energy (1 Octet)
+.TP
+.B Return Parameters
+Current_Settings (4 Octets)
+.UNINDENT
+.sp
+This command is used to enable/disable Low Energy support for a controller. The
+allowed values of the Low_Energy command parameter are 0x00 and 0x01. All other
+values will return Invalid Parameters.
+.sp
+This command is only available for LE capable controllers and will yield in a
+Not Supported error otherwise.
+.sp
+This command can be used when the controller is not powered and all settings
+will be programmed once powered.
+.sp
+In case the kernel subsystem does not support Low Energy or the controller does
+not either, the command will fail regardless.
+.sp
+Disabling LE support will permanently disable and remove all advertising
+instances configured with the Add Advertising command. Advertising Removed
+events will be issued accordingly.
+.sp
+This command generates a Command Complete event on success or a Command Status
+event on failure.
+.sp
+Possible errors:
+.INDENT 0.0
+.TP
+.B Busy
+.TP
+.B Not Supported
+.TP
+.B Invalid Parameters
+.TP
+.B Invalid Index
+.UNINDENT
+.SS Set Device Class
+.INDENT 0.0
+.TP
+.B Command Code
+0x000E
+.TP
+.B Controller Index
+<controller id>
+.TP
+.B Command Parameters
+Major_Class (1 Octet)
+.TP
+.B \&...
+Minor_Class (1 Octet)
+.TP
+.B Return Parameters
+Class_Of_Device (3 Octets)
+.UNINDENT
+.sp
+This command is used to set the major and minor device class for BR/EDR capable
+controllers.
+.sp
+This command will also implicitly disable caching of pending CoD and EIR
+updates.
+.sp
+This command is only available for BR/EDR capable controllers (e.g. not for
+single\-mode LE ones).
+.sp
+This command can be used when the controller is not powered and all settings
+will be programmed once powered.
+.sp
+In case the controller is powered off, 0x000000 will be returned for the class
+of device parameter. And after power on the new value will be announced via
+class of device changed event.
+.sp
+This command generates a Command Complete event on success or a Command Status
+event on failure.
+.sp
+Possible errors:
+.INDENT 0.0
+.TP
+.B Busy
+.TP
+.B Not Supported
+.TP
+.B Invalid Parameters
+.TP
+.B Invalid Index
+.UNINDENT
+.SS Set Local Name
+.INDENT 0.0
+.TP
+.B Command Code
+0x000F
+.TP
+.B Controller Index
+<controller id>
+.TP
+.B Command Parameters
+Name (249 Octets)
+.TP
+.B \&...
+Short_Name (11 Octets)
+.TP
+.B Return Parameters
+Name (249 Octets)
+.TP
+.B \&...
+Short_Name (11 Octets)
+.UNINDENT
+.sp
+This command is used to set the local name of a controller. The command
+parameters also include a short name which will be used in case the full name
+doesn\(aqt fit within EIR/AD data.
+.sp
+The name parameters need to always end with a null byte (failure to do so will
+cause the command to fail).
+.sp
+This command can be used when the controller is not powered and all settings
+will be programmed once powered.
+.sp
+The values of name and short name will be remembered when switching the
+controller off and back on again. So the name and short name only have to be set
+once when a new controller is found and will stay until removed.
+.sp
+This command generates a Command Complete event on success or a Command Status
+event on failure.
+.sp
+Possible errors:
+.INDENT 0.0
+.TP
+.B Invalid Parameters
+.TP
+.B Invalid Index
+.UNINDENT
+.SS Add UUID
+.INDENT 0.0
+.TP
+.B Command Code
+0x0010
+.TP
+.B Controller Index
+<controller id>
+.TP
+.B Command Parameters
+UUID (16 Octets)
+.TP
+.B \&...
+SVC_Hint (1 Octet)
+.TP
+.B Return Parameters
+Class_Of_Device (3 Octets)
+.UNINDENT
+.sp
+This command is used to add a UUID to be published in EIR data.
+The accompanied SVC_Hint parameter is used to tell the kernel whether the
+service class bits of the Class of Device value need modifying due to this UUID.
+.sp
+This command can be used when the controller is not powered and all settings
+will be programmed once powered.
+.sp
+In case the controller is powered off, 0x000000 will be returned for the class
+of device parameter. And after power on the new value will be announced via
+class of device changed event.
+.sp
+This command generates a Command Complete event on success or a Command Status
+event on failure.
+.sp
+Possible errors:
+.INDENT 0.0
+.TP
+.B Busy
+.TP
+.B Invalid Parameters
+.TP
+.B Invalid Index
+.UNINDENT
+.SS Remove UUID
+.INDENT 0.0
+.TP
+.B Command Code
+0x0011
+.TP
+.B Controller Index
+<controller id>
+.TP
+.B Command Parameters
+UUID (16 Octets)
+.TP
+.B Return Parameters
+Class_Of_Device (3 Octets)
+.UNINDENT
+.sp
+This command is used to remove a UUID previously added using the Add UUID
+command.
+.sp
+When the UUID parameter is an empty UUID (16 x 0x00), then all previously loaded
+UUIDs will be removed.
+.sp
+This command can be used when the controller is not powered and all settings
+will be programmed once powered.
+.sp
+In case the controller is powered off, 0x000000 will be returned for the class
+of device parameter. And after power on the new value will be announced via
+class of device changed event.
+.sp
+This command generates a Command Complete event on success or a Command Status
+event on failure.
+.sp
+Possible errors:
+.INDENT 0.0
+.TP
+.B Busy
+.TP
+.B Invalid Parameters
+.TP
+.B Invalid Index
+.UNINDENT
+.SS Load Link Keys
+.INDENT 0.0
+.TP
+.B Command Code
+0x0012
+.TP
+.B Controller Index
+<controller id>
+.TP
+.B Command Parameters
+Debug_Keys (1 Octet)
+.TP
+.B \&...
+Key_Count (2 Octets)
+.TP
+.B \&...
+Address[] (6 Octets)
+.TP
+.B \&...
+Address_Type[] (1 Octet)
+.TP
+.B \&...
+Key_Type[] (1 Octet)
+.TP
+.B \&...
+Value[] (16 Octets)
+.TP
+.B \&...
+PIN_Length[] (1 Octet)
+.TP
+.B \&...
+\&...[]
+.TP
+.B Return Parameters
+.UNINDENT
+.sp
+This command is used to feed the kernel with currently known link keys. The
+command does not need to be called again upon the receipt of New Link Key events
+since the kernel updates its list automatically.
+.sp
+The Debug_Keys parameter is used to tell the kernel whether to accept the usage
+of debug keys or not. The allowed values for this parameter are 0x00 and 0x01.
+All other values will return an Invalid Parameters response.
+.sp
+Usage of the Debug_Keys parameter is deprecated and has been replaced with the
+Set Debug Keys command. When setting the Debug_Keys option via Load Link Keys
+command it has the same affect as setting it via Set Debug Keys and applies to
+all keys in the system.
+.sp
+Possible values for the Address_Type parameter:
+.TS
+box center;
+l|l.
+T{
+Value
+T}	T{
+Description
+T}
+_
+T{
+0
+T}	T{
+BR/EDR
+T}
+_
+T{
+1
+T}	T{
+Reserved (not in use)
+T}
+_
+T{
+2
+T}	T{
+Reserved (not in use)
+T}
+.TE
+.sp
+Public and random LE addresses are not valid and will be rejected.
+.sp
+Currently defined Key_Type values are:
+.TS
+box center;
+l|l.
+T{
+Value
+T}	T{
+Description
+T}
+_
+T{
+0x00
+T}	T{
+Combination key
+T}
+_
+T{
+0x01
+T}	T{
+Local Unit key
+T}
+_
+T{
+0x02
+T}	T{
+Remote Unit key
+T}
+_
+T{
+0x03
+T}	T{
+Debug Combination key
+T}
+_
+T{
+0x04
+T}	T{
+Unauthenticated Combination key from P\-192
+T}
+_
+T{
+0x05
+T}	T{
+Authenticated Combination key from P\-192
+T}
+_
+T{
+0x06
+T}	T{
+Changed Combination key
+T}
+_
+T{
+0x07
+T}	T{
+Unauthenticated Combination key from P\-256
+T}
+_
+T{
+0x08
+T}	T{
+Authenticated Combination key from P\-256
+T}
+.TE
+.sp
+This command can be used when the controller is not powered.
+.sp
+This command generates a Command Complete event on success or a Command Status
+event on failure.
+.sp
+Possible errors:
+.INDENT 0.0
+.TP
+.B Invalid Parameters
+.TP
+.B Invalid Index
+.UNINDENT
+.SS Load Long Term Keys
+.INDENT 0.0
+.TP
+.B Command Code
+0x0013
+.TP
+.B Controller Index
+<controller id>
+.TP
+.B Command Parameters
+Key_Count (2 Octets)
+.TP
+.B \&...
+Address[] (6 Octets)
+.TP
+.B \&...
+Address_Type[] (1 Octet)
+.TP
+.B \&...
+Key_Type[] (1 Octet)
+.TP
+.B \&...
+Central[] (1 Octet)
+.TP
+.B \&...
+Encryption_Size[] (1 Octet)
+.TP
+.B \&...
+Encryption_Diversifier[] (2 Octets)
+.TP
+.B \&...
+Random_Number[] (8 Octets)
+.TP
+.B \&...
+Value[] (16 Octets)
+.TP
+.B \&...
+\&...[]
+.TP
+.B Return Parameters
+.UNINDENT
+.sp
+This command is used to feed the kernel with currently known (SMP) Long Term
+Keys. The command does not need to be called again upon the receipt of New Long
+Term Key events since the kernel updates its list automatically.
+.sp
+Possible values for the Address_Type parameter:
+.TS
+box center;
+l|l.
+T{
+Value
+T}	T{
+Description
+T}
+_
+T{
+0x00
+T}	T{
+Reserved (not in use)
+T}
+_
+T{
+0x01
+T}	T{
+LE Public
+T}
+_
+T{
+0x02
+T}	T{
+LE Random
+T}
+.TE
+.sp
+The provided Address and Address_Type are the identity of a device. So either
+its public address or static random address.
+.sp
+Unresolvable random addresses and resolvable random addresses are not valid and
+will be rejected.
+.sp
+Currently defined Key_Type values are:
+.TS
+box center;
+l|l.
+T{
+Value
+T}	T{
+Description
+T}
+_
+T{
+0x00
+T}	T{
+Unauthenticated key
+T}
+_
+T{
+0x01
+T}	T{
+Authenticated key
+T}
+.TE
+.sp
+This command can be used when the controller is not powered.
+.sp
+This command generates a Command Complete event on success or a Command Status
+event on failure.
+.sp
+Possible errors:
+.INDENT 0.0
+.TP
+.B Invalid Parameters
+.TP
+.B Invalid Index
+.UNINDENT
+.SS Disconnect
+.INDENT 0.0
+.TP
+.B Command Code
+0x0014
+.TP
+.B Controller Index
+<controller id>
+.TP
+.B Command Parameters
+Address (6 Octets)
+.TP
+.B \&...
+Address_Type (1 Octet)
+.TP
+.B Return Parameters
+Address (6 Octets)
+.TP
+.B \&...
+Address_Type (1 Octet)
+.UNINDENT
+.sp
+This command is used to force the disconnection of a currently
+connected device.
+.sp
+Possible values for the Address_Type parameter:
+.TS
+box center;
+l|l.
+T{
+Value
+T}	T{
+Description
+T}
+_
+T{
+0x00
+T}	T{
+BR/EDR
+T}
+_
+T{
+0x01
+T}	T{
+LE Public
+T}
+_
+T{
+0x02
+T}	T{
+LE Random
+T}
+.TE
+.sp
+This command can only be used when the controller is powered.
+.sp
+This command generates a Command Complete event on success or failure.
+.sp
+Possible errors:
+.INDENT 0.0
+.TP
+.B Not Connected
+.TP
+.B Busy
+.TP
+.B Invalid Parameters
+.TP
+.B Not Powered
+.TP
+.B Invalid Index
+.UNINDENT
+.SS Get Connections
+.INDENT 0.0
+.TP
+.B Command Code
+0x0015
+.TP
+.B Controller Index
+<controller id>
+.TP
+.B Command Parameters
+.TP
+.B Return Parameters
+Connection_Count (2 Octets)
+.TP
+.B \&...
+Address[] (6 Octets)
+.TP
+.B \&...
+Address_Type[] (1 Octet)
+.TP
+.B \&...
+\&...[]
+.UNINDENT
+.sp
+This command is used to retrieve a list of currently connected devices.
+.sp
+Possible values for the Address_Type parameter:
+.TS
+box center;
+l|l.
+T{
+Value
+T}	T{
+Description
+T}
+_
+T{
+0x00
+T}	T{
+BR/EDR
+T}
+_
+T{
+0x01
+T}	T{
+LE Public
+T}
+_
+T{
+0x02
+T}	T{
+LE Random
+T}
+.TE
+.sp
+For devices using resolvable random addresses with a known identity resolving
+key, the Address and Address_Type will contain the identity information.
+.sp
+This command can only be used when the controller is powered.
+.sp
+This command generates a Command Complete event on success or a Command Status
+event on failure.
+.sp
+Possible errors:
+.INDENT 0.0
+.TP
+.B Invalid Parameters
+.TP
+.B Not Powered
+.TP
+.B Invalid Index
+.UNINDENT
+.SS PIN Code Reply
+.INDENT 0.0
+.TP
+.B Command Code
+0x0016
+.TP
+.B Controller Index
+<controller id>
+.TP
+.B Command Parameters
+Address (6 Octets)
+.TP
+.B \&...
+Address_Type (1 Octet)
+.TP
+.B \&...
+PIN_Length (1 Octet)
+.TP
+.B \&...
+PIN_Code (16 Octets)
+.TP
+.B Return Parameters
+Address (6 Octets)
+.TP
+.B \&...
+Address_Type (1 Octet)
+.UNINDENT
+.sp
+This command is used to respond to a PIN Code request event.
+.sp
+Possible values for the Address_Type parameter:
+.TS
+box center;
+l|l.
+T{
+Value
+T}	T{
+Description
+T}
+_
+T{
+0x00
+T}	T{
+BR/EDR
+T}
+_
+T{
+0x01
+T}	T{
+LE Public
+T}
+_
+T{
+0x02
+T}	T{
+LE Random
+T}
+.TE
+.sp
+This command can only be used when the controller is powered.
+.sp
+This command generates a Command Complete event on success or failure.
+.sp
+Possible errors:
+.INDENT 0.0
+.TP
+.B Not Connected
+.TP
+.B Invalid Parameters
+.TP
+.B Not Powered
+.TP
+.B Invalid Index
+.UNINDENT
+.SS PIN Code Negative Reply
+.INDENT 0.0
+.TP
+.B Command Code
+0x0017
+.TP
+.B Controller Index
+<controller id>
+.TP
+.B Command Parameters
+Address (6 Octets)
+.TP
+.B \&...
+Address_Type (1 Octet)
+.TP
+.B Return Parameters
+Address (6 Octets)
+.TP
+.B \&...
+Address_Type (1 Octet)
+.UNINDENT
+.sp
+This command is used to return a negative response to a PIN Code Request event.
+.sp
+Possible values for the Address_Type parameter:
+.TS
+box center;
+l|l.
+T{
+Value
+T}	T{
+Description
+T}
+_
+T{
+0x00
+T}	T{
+BR/EDR
+T}
+_
+T{
+0x01
+T}	T{
+LE Public
+T}
+_
+T{
+0x02
+T}	T{
+LE Random
+T}
+.TE
+.sp
+This command can only be used when the controller is powered.
+.sp
+This command generates a Command Complete event on success or failure.
+.sp
+Possible errors:
+.INDENT 0.0
+.TP
+.B Not Connected
+.TP
+.B Invalid Parameters
+.TP
+.B Not Powered
+.TP
+.B Invalid Index
+.UNINDENT
+.SS Set IO Capability
+.INDENT 0.0
+.TP
+.B Command Code
+0x0018
+.TP
+.B Controller Index
+<controller id>
+.TP
+.B Command Parameters
+IO_Capability (1 Octet)
+.TP
+.B Return Parameters
+.UNINDENT
+.sp
+This command is used to set the IO Capability used for pairing.
+The command accepts both SSP and SMP values.
+.sp
+Possible values for the IO_Capability parameter:
+.TS
+box center;
+l|l.
+T{
+Value
+T}	T{
+Description
+T}
+_
+T{
+0x00
+T}	T{
+DisplayOnly
+T}
+_
+T{
+0x01
+T}	T{
+DisplayYesNo
+T}
+_
+T{
+0x02
+T}	T{
+KeyboardOnly
+T}
+_
+T{
+0x03
+T}	T{
+NoInputNoOutput
+T}
+_
+T{
+0x04
+T}	T{
+KeyboardDisplay
+T}
+.TE
+.sp
+Passing a value 0x04 (KeyboardDisplay) will cause the kernel to convert it to
+0x01 (DisplayYesNo) in the case of a BR/EDR connection (as KeyboardDisplay is
+specific to SMP).
+.sp
+This command can be used when the controller is not powered.
+.sp
+This command generates a Command Complete event on success or a Command Status
+event on failure.
+.sp
+Possible errors:
+.INDENT 0.0
+.TP
+.B Invalid Parameters
+.TP
+.B Invalid Index
+.UNINDENT
+.SS Pair Device
+.INDENT 0.0
+.TP
+.B Command Code
+0x0019
+.TP
+.B Controller Index
+<controller id>
+.TP
+.B Command Parameters
+Address (6 Octets)
+.TP
+.B \&...
+Address_Type (1 Octet)
+.TP
+.B \&...
+IO_Capability (1 Octet)
+.TP
+.B Return Parameters
+Address (6 Octets)
+.TP
+.B \&...
+Address_Type (1 Octet)
+.UNINDENT
+.sp
+This command is used to trigger pairing with a remote device.
+The IO_Capability command parameter is used to temporarily (for this pairing
+event only) override the global IO Capability (set using the Set IO Capability
+command).
+.sp
+Possible values for the Address_Type parameter:
+.TS
+box center;
+l|l.
+T{
+Value
+T}	T{
+Description
+T}
+_
+T{
+0x00
+T}	T{
+BR/EDR
+T}
+_
+T{
+0x01
+T}	T{
+LE Public
+T}
+_
+T{
+0x02
+T}	T{
+LE Random
+T}
+.TE
+.sp
+Possible values for the IO_Capability parameter:
+.TS
+box center;
+l|l.
+T{
+Value
+T}	T{
+Description
+T}
+_
+T{
+0x00
+T}	T{
+DisplayOnly
+T}
+_
+T{
+0x01
+T}	T{
+DisplayYesNo
+T}
+_
+T{
+0x02
+T}	T{
+KeyboardOnly
+T}
+_
+T{
+0x03
+T}	T{
+NoInputNoOutput
+T}
+_
+T{
+0x04
+T}	T{
+KeyboardDisplay
+T}
+.TE
+.sp
+Passing a value 0x04 (KeyboardDisplay) will cause the kernel to convert it to
+0x01 (DisplayYesNo) in the case of a BR/EDR connection (as KeyboardDisplay is
+specific to SMP).
+.sp
+The Address and Address_Type of the return parameters will return the identity
+address if known. In case of resolvable random address given as command
+parameters and the remote provides an identity resolving key, the return
+parameters will provide the resolved address.
+.sp
+To allow tracking of which resolvable random address changed into which identity
+address, the New Identity Resolving Key event will be sent before receiving
+Command Complete event for this command.
+.sp
+This command can only be used when the controller is powered.
+.sp
+This command generates a Command Complete event on success or failure.
+.sp
+Reject status is used when requested transport is not enabled.
+.sp
+Not Supported status is used if controller is not capable with requested
+transport.
+.sp
+Possible errors:
+.INDENT 0.0
+.TP
+.B Rejected
+.TP
+.B Not Supported
+.TP
+.B Connect Failed
+.TP
+.B Busy
+.TP
+.B Invalid Parameters
+.TP
+.B Not Powered
+.TP
+.B Invalid Index
+.TP
+.B Already Paired
+.UNINDENT
+.SS Cancel Pair Device
+.INDENT 0.0
+.TP
+.B Command Code
+0x001A
+.TP
+.B Controller Index
+<controller id>
+.TP
+.B Command Parameters
+Address (6 Octets)
+.TP
+.B \&...
+Address_Type (1 Octet)
+.TP
+.B Return Parameters
+Address (6 Octets)
+.TP
+.B \&...
+Address_Type (1 Octet)
+.UNINDENT
+.sp
+The Address and Address_Type parameters should match what was given to a
+preceding Pair Device command.
+.sp
+Possible values for the Address_Type parameter:
+.TS
+box center;
+l|l.
+T{
+Value
+T}	T{
+Description
+T}
+_
+T{
+0x00
+T}	T{
+BR/EDR
+T}
+_
+T{
+0x01
+T}	T{
+LE Public
+T}
+_
+T{
+0x02
+T}	T{
+LE Random
+T}
+.TE
+.sp
+This command can only be used when the controller is powered.
+.sp
+This command generates a Command Complete event on success or failure.
+.sp
+Possible errors:
+.INDENT 0.0
+.TP
+.B Invalid Parameters
+.TP
+.B Not Powered
+.TP
+.B Invalid Index
+.UNINDENT
+.SS Unpair Device
+.INDENT 0.0
+.TP
+.B Command Code
+0x001B
+.TP
+.B Controller Index
+<controller id>
+.TP
+.B Command Parameters
+Address (6 Octets)
+.TP
+.B \&...
+Address_Type (1 Octet)
+.TP
+.B \&...
+Disconnect (1 Octet)
+.TP
+.B Return Parameters
+Address (6 Octets)
+.TP
+.B \&...
+Address_Type (1 Octet)
+.UNINDENT
+.sp
+Removes all keys associated with the remote device.
+.sp
+Possible values for the Address_Type parameter:
+.TS
+box center;
+l|l.
+T{
+Value
+T}	T{
+Description
+T}
+_
+T{
+0x00
+T}	T{
+BR/EDR
+T}
+_
+T{
+0x01
+T}	T{
+LE Public
+T}
+_
+T{
+0x02
+T}	T{
+LE Random
+T}
+.TE
+.sp
+The Disconnect parameter tells the kernel whether to forcefully disconnect any
+existing connections to the device. It should in practice always be 1 except for
+some special GAP qualification test\-cases where a key removal without
+disconnecting is needed.
+.sp
+When unpairing a device its link key, long term key and if provided identity
+resolving key will be purged.
+.sp
+For devices using resolvable random addresses where the identity resolving key
+was available, after this command they will now no longer be resolved. The
+device will essentially become private again.
+.sp
+This command can only be used when the controller is powered.
+.sp
+This command generates a Command Complete event on success or failure.
+.sp
+Possible errors:
+.INDENT 0.0
+.TP
+.B Not Paired
+.TP
+.B Invalid Parameters
+.TP
+.B Not Powered
+.TP
+.B Invalid Index
+.UNINDENT
+.SS User Confirmation Reply
+.INDENT 0.0
+.TP
+.B Command Code
+0x001C
+.TP
+.B Controller Index
+<controller id>
+.TP
+.B Command Parameters
+Address (6 Octets)
+.TP
+.B \&...
+Address_Type (1 Octet)
+.TP
+.B Return Parameters
+Address (6 Octets)
+.TP
+.B \&...
+Address_Type (1 Octet)
+.UNINDENT
+.sp
+This command is used to respond to a User Confirmation Request event.
+.sp
+Possible values for the Address_Type parameter:
+.TS
+box center;
+l|l.
+T{
+Value
+T}	T{
+Description
+T}
+_
+T{
+0x00
+T}	T{
+BR/EDR
+T}
+_
+T{
+0x01
+T}	T{
+LE Public
+T}
+_
+T{
+0x02
+T}	T{
+LE Random
+T}
+.TE
+.sp
+This command can only be used when the controller is powered.
+.sp
+This command generates a Command Complete event on success or failure.
+.sp
+Possible errors:
+.INDENT 0.0
+.TP
+.B Not Connected
+.TP
+.B Invalid Parameters
+.TP
+.B Not Powered
+.TP
+.B Invalid Index
+.UNINDENT
+.SS User Confirmation Negative Reply
+.INDENT 0.0
+.TP
+.B Command Code
+0x001D
+.TP
+.B Controller Index
+<controller id>
+.TP
+.B Command Parameters
+Address (6 Octets)
+.TP
+.B \&...
+Address_Type (1 Octet)
+.TP
+.B Return Parameters
+Address (6 Octets)
+.TP
+.B \&...
+Address_Type (1 Octet)
+.UNINDENT
+.sp
+This command is used to return a negative response to a User Confirmation
+Request event.
+.sp
+Possible values for the Address_Type parameter:
+.TS
+box center;
+l|l.
+T{
+Value
+T}	T{
+Description
+T}
+_
+T{
+0x00
+T}	T{
+BR/EDR
+T}
+_
+T{
+0x01
+T}	T{
+LE Public
+T}
+_
+T{
+0x02
+T}	T{
+LE Random
+T}
+.TE
+.sp
+This command can only be used when the controller is powered.
+.sp
+This command generates a Command Complete event on success or failure.
+.sp
+Possible errors:
+.INDENT 0.0
+.TP
+.B Not Connected
+.TP
+.B Invalid Parameters
+.TP
+.B Not Powered
+.TP
+.B Invalid Index
+.UNINDENT
+.SS User Passkey Reply
+.INDENT 0.0
+.TP
+.B Command Code
+0x001E
+.TP
+.B Controller Index
+<controller id>
+.TP
+.B Command Parameters
+Address (6 Octets)
+.TP
+.B \&...
+Address_Type (1 Octet)
+.TP
+.B \&...
+Passkey (4 Octets)
+.TP
+.B Return Parameters
+Address (6 Octets)
+.TP
+.B \&...
+Address_Type (1 Octet)
+.UNINDENT
+.sp
+This command is used to respond to a User Confirmation Passkey Request event.
+.sp
+Possible values for the Address_Type parameter:
+.TS
+box center;
+l|l.
+T{
+Value
+T}	T{
+Description
+T}
+_
+T{
+.INDENT 0.0
+.TP
+.B widths
+auto
+.UNINDENT
+T}	T{
+T}
+_
+T{
+0x00
+T}	T{
+BR/EDR
+T}
+_
+T{
+0x01
+T}	T{
+LE Public
+T}
+_
+T{
+0x02
+T}	T{
+LE Random
+T}
+.TE
+.sp
+This command can only be used when the controller is powered.
+.sp
+This command generates a Command Complete event on success or failure.
+.sp
+Possible errors:
+.INDENT 0.0
+.TP
+.B Not Connected
+.TP
+.B Invalid Parameters
+.TP
+.B Not Powered
+.TP
+.B Invalid Index
+.UNINDENT
+.SS User Passkey Negative Reply
+.INDENT 0.0
+.TP
+.B Command Code
+0x001F
+.TP
+.B Controller Index
+<controller id>
+.TP
+.B Command Parameters
+Address (6 Octets)
+.TP
+.B \&...
+Address_Type (1 Octet)
+.TP
+.B Return Parameters
+Address (6 Octets)
+.TP
+.B \&...
+Address_Type (1 Octet)
+.UNINDENT
+.sp
+This command is used to return a negative response to a User Passkey Request
+event.
+.sp
+Possible values for the Address_Type parameter:
+.TS
+box center;
+l|l.
+T{
+Value
+T}	T{
+Description
+T}
+_
+T{
+0x00
+T}	T{
+BR/EDR
+T}
+_
+T{
+0x01
+T}	T{
+LE Public
+T}
+_
+T{
+0x02
+T}	T{
+LE Random
+T}
+.TE
+.sp
+This command can only be used when the controller is powered.
+.sp
+This command generates a Command Complete event on success or failure.
+.sp
+Possible errors:
+.INDENT 0.0
+.TP
+.B Not Connected
+.TP
+.B Invalid Parameters
+.TP
+.B Not Powered
+.TP
+.B Invalid Index
+.UNINDENT
+.SS Read Local Out Of Band Data
+.INDENT 0.0
+.TP
+.B Command Code
+0x0020
+.TP
+.B Controller Index
+<controller id>
+.TP
+.B Command Parameters
+.TP
+.B Return Parameters
+Hash_192 (16 Octets)
+.TP
+.B \&...
+Randomizer_192 (16 Octets)
+.TP
+.B \&...
+Hash_256 (16 Octets, Optional)
+.TP
+.B \&...
+Randomizer_256 (16 Octets, Optional)
+.UNINDENT
+.sp
+This command is used to read the local Out of Band data.
+.sp
+This command can only be used when the controller is powered.
+.sp
+If Secure Connections support is enabled, then this command will return P\-192
+versions of hash and randomizer as well as P\-256 versions of both.
+.sp
+Values returned by this command become invalid when the controller is powered
+down. After each power\-cycle it is required to call this command again to get
+updated values.
+.sp
+This command generates a Command Complete event on success or a Command Status
+event on failure.
+.sp
+Possible errors:
+.INDENT 0.0
+.TP
+.B Not Supported
+.TP
+.B Busy
+.TP
+.B Invalid Parameters
+.TP
+.B Not Powered
+.TP
+.B Invalid Index
+.UNINDENT
+.SS Add Remote Out Of Band Data
+.INDENT 0.0
+.TP
+.B Command Code
+0x0021
+.TP
+.B Controller Index
+<controller id>
+.TP
+.B Command Parameters
+Address (6 Octets)
+.TP
+.B \&...
+Address_Type (1 Octet)
+.TP
+.B \&...
+Hash_192 (16 Octets)
+.TP
+.B \&...
+Randomizer_192 (16 Octets)
+.TP
+.B \&...
+Hash_256 (16 Octets, Optional)
+.TP
+.B \&...
+Randomizer_256 (16 Octets, Optional)
+.TP
+.B Return Parameters
+Address (6 Octets)
+.TP
+.B \&...
+Address_Type (1 Octet)
+.UNINDENT
+.sp
+This command is used to provide Out of Band data for a remote device.
+.sp
+Possible values for the Address_Type parameter:
+.TS
+box center;
+l|l.
+T{
+Value
+T}	T{
+Description
+T}
+_
+T{
+0x00
+T}	T{
+BR/EDR
+T}
+_
+T{
+0x01
+T}	T{
+LE Public
+T}
+_
+T{
+0x02
+T}	T{
+LE Random
+T}
+.TE
+.sp
+Provided Out Of Band data is persistent over power down/up toggles.
+.sp
+This command also accept optional P\-256 versions of hash and randomizer. If they
+are not provided, then they are set to zero value.
+.sp
+The P\-256 versions of both can also be provided when the support for Secure
+Connections is not enabled. However in that case they will never be used.
+.sp
+To only provide the P\-256 versions of hash and randomizer, it is valid to leave
+both P\-192 fields as zero values. If Secure Connections is disabled, then of
+course this is the same as not providing any data at all.
+.sp
+When providing data for remote LE devices, then the Hash_192 and Randomizer_192
+fields are not used and shell be set to zero.
+.sp
+The Hash_256 and Randomizer_256 fields can be used for LE secure connections Out
+Of Band data. If only LE secure connections data is provided the Hash_P192 and
+Randomizer_P192 fields can be set to zero. Currently there is no support for
+providing the Security Manager TK Value for LE legacy pairing.
+.sp
+If Secure Connections Only mode has been enabled, then providing Hash_P192 and
+Randomizer_P192 is not allowed. They are required to be set to zero values.
+.sp
+This command can be used when the controller is not powered and all settings
+will be programmed once powered.
+.sp
+This command generates a Command Complete event on success or failure.
+.sp
+Possible errors:
+.INDENT 0.0
+.TP
+.B Failed
+.TP
+.B Invalid Parameters
+.TP
+.B Not Powered
+.TP
+.B Invalid Index
+.UNINDENT
+.SS Remove Remote Out Of Band Data
+.INDENT 0.0
+.TP
+.B Command Code
+0x0022
+.TP
+.B Controller Index
+<controller id>
+.TP
+.B Command Parameters
+Address (6 Octets)
+.TP
+.B \&...
+Address_Type (1 Octet)
+.TP
+.B Return Parameters
+Address (6 Octets)
+.TP
+.B \&...
+Address_Type (1 Octet)
+.UNINDENT
+.sp
+This command is used to remove data added using the Add Remote Out Of Band Data
+command.
+.sp
+Possible values for the Address_Type parameter:
+.TS
+box center;
+l|l.
+T{
+Value
+T}	T{
+Description
+T}
+_
+T{
+0x00
+T}	T{
+BR/EDR
+T}
+_
+T{
+0x01
+T}	T{
+LE Public
+T}
+_
+T{
+0x02
+T}	T{
+LE Random
+T}
+.TE
+.sp
+When the Address parameter is 00:00:00:00:00:00, then all previously added data
+will be removed.
+.sp
+This command can be used when the controller is not powered and all settings
+will be programmed once powered.
+.sp
+This command generates a Command Complete event on success or failure.
+.sp
+Possible errors:
+.INDENT 0.0
+.TP
+.B Invalid Parameters
+.TP
+.B Not Powered
+.TP
+.B Invalid Index
+.UNINDENT
+.SS Start Discovery
+.INDENT 0.0
+.TP
+.B Command Code
+0x0023
+.TP
+.B Controller Index
+<controller id>
+.TP
+.B Command Parameters
+Address_Type (1 Octet)
+.TP
+.B Return Parameters
+Address_Type (1 Octet)
+.UNINDENT
+.sp
+This command is used to start the process of discovering remote devices. A
+Device Found event will be sent for each discovered device.
+.sp
+Possible values for the Address_Type parameter are a bit\-wise or of the
+following bits:
+.TS
+box center;
+l|l.
+T{
+Bit
+T}	T{
+Description
+T}
+_
+T{
+0
+T}	T{
+BR/EDR
+T}
+_
+T{
+1
+T}	T{
+LE Public
+T}
+_
+T{
+2
+T}	T{
+LE Random
+T}
+.TE
+.sp
+By combining these e.g. the following values are possible:
+.TS
+box center;
+l|l.
+T{
+Value
+T}	T{
+Description
+T}
+_
+T{
+0x01
+T}	T{
+BR/EDR
+T}
+_
+T{
+0x06
+T}	T{
+LE (public & random)
+T}
+_
+T{
+0x07
+T}	T{
+BR/EDR/LE (interleaved discovery)
+T}
+.TE
+.sp
+This command can only be used when the controller is powered.
+.sp
+This command generates a Command Complete event on success or failure.
+.sp
+Possible errors:
+.INDENT 0.0
+.TP
+.B Busy
+.TP
+.B Not Supported
+.TP
+.B Invalid Parameters
+.TP
+.B Not Powered
+.TP
+.B Invalid Index
+.UNINDENT
+.SS Stop Discovery
+.INDENT 0.0
+.TP
+.B Command Code
+0x0024
+.TP
+.B Controller Index
+<controller id>
+.TP
+.B Command Parameters
+Address_Type (1 Octet)
+.TP
+.B Return Parameters
+Address_Type (1 Octet)
+.UNINDENT
+.sp
+This command is used to stop the discovery process started using the Start
+Discovery command.
+.sp
+This command can only be used when the controller is powered.
+.sp
+This command generates a Command Complete event on success or failure.
+.sp
+Possible errors:
+.INDENT 0.0
+.TP
+.B Rejected
+.TP
+.B Invalid Parameters
+.TP
+.B Invalid Index
+.UNINDENT
+.SS Confirm Name
+.INDENT 0.0
+.TP
+.B Command Code
+0x0025
+.TP
+.B Controller Index
+<controller id>
+.TP
+.B Command Parameters
+Address (6 Octets)
+.TP
+.B \&...
+Address_Type (1 Octet)
+.TP
+.B \&...
+Name_Known (1 Octet)
+.TP
+.B Return Parameters
+Address (6 Octets)
+.TP
+.B \&...
+Address_Type (1 Octet)
+.UNINDENT
+.sp
+This command is only valid during device discovery and is expected for each
+Device Found event with the Confirm Name flag set.
+.sp
+Possible values for the Address_Type parameter:
+.TS
+box center;
+l|l.
+T{
+Value
+T}	T{
+Description
+T}
+_
+T{
+0x00
+T}	T{
+BR/EDR
+T}
+_
+T{
+0x01
+T}	T{
+LE Public
+T}
+_
+T{
+0x02
+T}	T{
+LE Random
+T}
+.TE
+.sp
+The Name_Known parameter should be set to 0x01 if user space knows the name for
+the device and 0x00 if it doesn\(aqt. If set to 0x00 the kernel will perform a name
+resolving procedure for the device in question.
+.sp
+This command can only be used when the controller is powered.
+.sp
+This command generates a Command Complete event on success or failure.
+.sp
+Possible errors:
+.INDENT 0.0
+.TP
+.B Failed
+.TP
+.B Invalid Parameters
+.TP
+.B Invalid Index
+.UNINDENT
+.SS Block Device
+.INDENT 0.0
+.TP
+.B Command Code
+0x0026
+.TP
+.B Controller Index
+<controller id>
+.TP
+.B Command Parameters
+Address (6 Octets)
+.TP
+.B \&...
+Address_Type (1 Octet)
+.TP
+.B Return Parameters
+Address (6 Octets)
+.TP
+.B \&...
+Address_Type (1 Octet)
+.UNINDENT
+.sp
+This command is used to add a device to the list of devices which should be
+blocked from being connected to the local controller.
+.sp
+Possible values for the Address_Type parameter:
+.TS
+box center;
+l|l.
+T{
+Value
+T}	T{
+Description
+T}
+_
+T{
+0x00
+T}	T{
+BR/EDR
+T}
+_
+T{
+0x01
+T}	T{
+LE Public
+T}
+_
+T{
+0x02
+T}	T{
+LE Random
+T}
+.TE
+.sp
+For Low Energy devices, the blocking of a device takes precedence over
+auto\-connection actions provided by Add Device. Blocked devices will not be
+auto\-connected or even reported when found during background scanning. If the
+controller is connectable direct advertising from blocked devices will also be
+ignored.
+.sp
+Connections created from advertising of the controller will be dropped if the
+device is blocked.
+.sp
+This command can be used when the controller is not powered.
+.sp
+This command generates a Command Complete event on success or failure.
+.sp
+Possible errors:
+.INDENT 0.0
+.TP
+.B Failed
+.TP
+.B Invalid Parameters
+.TP
+.B Invalid Index
+.UNINDENT
+.SS Unblock Device
+.INDENT 0.0
+.TP
+.B Command Code
+0x0027
+.TP
+.B Controller Index
+<controller id>
+.TP
+.B Command Parameters
+Address (6 Octets)
+.TP
+.B \&...
+Address_Type (1 Octet)
+.TP
+.B Return Parameters
+Address (6 Octets)
+.TP
+.B \&...
+Address_Type (1 Octet)
+.UNINDENT
+.sp
+This command is used to remove a device from the list of blocked devices (where
+it was added to using the Block Device command).
+.sp
+Possible values for the Address_Type parameter:
+.TS
+box center;
+l|l.
+T{
+Value
+T}	T{
+Description
+T}
+_
+T{
+0x00
+T}	T{
+BR/EDR
+T}
+_
+T{
+0x01
+T}	T{
+LE Public
+T}
+_
+T{
+0x02
+T}	T{
+LE Random
+T}
+.TE
+.sp
+When the Address parameter is 00:00:00:00:00:00, then all previously blocked
+devices will be unblocked.
+.sp
+This command can be used when the controller is not powered.
+.sp
+This command generates a Command Complete event on success or failure.
+.sp
+Possible errors:
+.INDENT 0.0
+.TP
+.B Invalid Parameters
+.TP
+.B Invalid Index
+.UNINDENT
+.SS Set Device ID
+.INDENT 0.0
+.TP
+.B Command Code
+0x0028
+.TP
+.B Controller Index
+<controller id>
+.TP
+.B Command Parameters
+Source (2 Octets)
+.TP
+.B \&...
+Vendor (2 Octets)
+.TP
+.B \&...
+Product (2 Octets)
+.TP
+.B \&...
+Version (2 Octets)
+.TP
+.B Return Parameters
+.UNINDENT
+.sp
+This command can be used when the controller is not powered and all settings
+will be programmed once powered.
+.sp
+The Source parameter selects the organization that assigned the Vendor
+parameter:
+.TS
+box center;
+l|l.
+T{
+Value
+T}	T{
+Description
+T}
+_
+T{
+0x0000
+T}	T{
+Disable Device ID
+T}
+_
+T{
+0x0001
+T}	T{
+Bluetooth SIG
+T}
+_
+T{
+0x0002
+T}	T{
+USB Implementer\(aqs Forum
+T}
+.TE
+.sp
+The information is put into the EIR data. If the controller does not support EIR
+or if SSP is disabled, this command will still succeed. The information is
+stored for later use and will survive toggling SSP on and off.
+.sp
+This command generates a Command Complete event on success or a Command Status
+event on failure.
+.sp
+Possible errors:
+.INDENT 0.0
+.TP
+.B Invalid Parameters
+.TP
+.B Invalid Index
+.UNINDENT
+.SS Set Advertising (since 1.4)
+.INDENT 0.0
+.TP
+.B Command Code
+0x0029
+.TP
+.B Controller Index
+<controller id>
+.TP
+.B Command Parameters
+Advertising (1 Octet)
+.TP
+.B Return Parameters
+Current_Settings (4 Octets)
+.UNINDENT
+.sp
+This command is used to enable LE advertising on a controller that supports it.
+The allowed values for the Advertising command parameter are:
+.TS
+box center;
+l|l.
+T{
+Value
+T}	T{
+Description
+T}
+_
+T{
+0x00
+T}	T{
+Disable advertising
+T}
+_
+T{
+0x01
+T}	T{
+Enables advertising
+T}
+_
+T{
+0x02 (since 1.9)
+T}	T{
+Enabled advertising in connectable mode
+T}
+.TE
+.sp
+Using value 0x01 means that when connectable setting is disabled, the
+advertising happens with undirected non\-connectable advertising packets and a
+non\-resolvable random address is used. If connectable setting is enabled, then
+undirected connectable advertising packets and the identity address or
+resolvable private address are used.
+.sp
+LE Devices configured via Add Device command with Action 0x01 have no effect
+when using Advertising value 0x01 since only the connectable setting is taken
+into account.
+.sp
+To utilize undirected connectable advertising without changing the connectable
+setting, the value 0x02 can be utilized. It makes the device connectable via LE
+without the requirement for being connectable on BR/EDR (and/or LE).
+.sp
+The value 0x02 should be the preferred mode of operation when implementing
+peripheral mode.
+.sp
+Using this command will temporarily deactivate any configuration made by the Add
+Advertising command. This command takes precedence. Once a Set Advertising
+command with value 0x00 is issued any previously made configurations via
+Add/Remove Advertising, including such changes made while Set Advertising was
+active, will be re\-enabled.
+.sp
+A pre\-requisite is that LE is already enabled, otherwise this command will
+return a \(dqrejected\(dq response.
+.sp
+This command generates a Command Complete event on success or a Command Status
+event on failure.
+.sp
+Possible errors:
+.INDENT 0.0
+.TP
+.B Busy
+.TP
+.B Rejected
+.TP
+.B Not Supported
+.TP
+.B Invalid Parameters
+.TP
+.B Invalid Index
+.UNINDENT
+.SS Set BR/EDR (since 1.4)
+.INDENT 0.0
+.TP
+.B Command Code
+0x002A
+.TP
+.B Controller Index
+<controller id>
+.TP
+.B Command Parameters
+BR/EDR (1 Octet)
+.TP
+.B Return Parameters
+Current_Settings (4 Octets)
+.UNINDENT
+.sp
+This command is used to enable or disable BR/EDR support on a dual\-mode
+controller. The allowed values for the Advertising command parameter are 0x00
+and 0x01. All other values will return Invalid Parameters.
+.sp
+A pre\-requisite is that LE is already enabled, otherwise this command will
+return a \(dqrejected\(dq response. Enabling BR/EDR can be done both when powered on
+and powered off, however disabling it can only be done when powered off
+(otherwise the command will again return \(dqrejected\(dq). Disabling BR/EDR will
+automatically disable all other BR/EDR related settings.
+.sp
+This command generates a Command Complete event on success or a Command Status
+event on failure.
+.sp
+Possible errors:
+.INDENT 0.0
+.TP
+.B Busy
+.TP
+.B Rejected
+.TP
+.B Not Supported
+.TP
+.B Invalid Parameters
+.TP
+.B Invalid Index
+.UNINDENT
+.SS Set Static Address (since 1.4)
+.INDENT 0.0
+.TP
+.B Command Code
+0x002B
+.TP
+.B Controller Index
+<controller id>
+.TP
+.B Command Parameters
+Address (6 Octets)
+.TP
+.B Return Parameters
+Current_Settings (4 Octets)
+.UNINDENT
+.sp
+This command allows for setting the static random address. It is only supported
+on controllers with LE support. The static random address is suppose to be valid
+for the lifetime of the controller or at least until the next power cycle. To
+ensure such behavior, setting of the address is limited to when the controller
+is powered off.
+.sp
+The special BDADDR_ANY address (00:00:00:00:00:00) can be used to disable the
+static address.
+.sp
+When a controller has a public address (which is required for all dual\-mode
+controllers), this address is not used. If a dual\-mode controller is configured
+as Low Energy only devices (BR/EDR has been switched off), then the static
+address is used. Only when the controller information reports BDADDR_ANY
+(00:00:00:00:00:00), it is required to configure a static address first.
+.sp
+If privacy mode is enabled and the controller is single mode LE only without a
+public address, the static random address is used as identity address.
+.sp
+The Static Address flag from the current settings can also be used to determine
+if the configured static address is in use or not.
+.sp
+This command generates a Command Complete event on success or a Command Status
+event on failure.
+.sp
+Possible errors:
+.INDENT 0.0
+.TP
+.B Rejected
+.TP
+.B Not Supported
+.TP
+.B Invalid Parameters
+.TP
+.B Invalid Index
+.UNINDENT
+.SS Set Scan Parameters (since 1.4)
+.INDENT 0.0
+.TP
+.B Command Code
+0x002C
+.TP
+.B Controller Index
+<controller id>
+.TP
+.B Command Parameters
+Interval (2 Octets)
+Window (2 Octets)
+.TP
+.B Return Parameters
+.UNINDENT
+.sp
+This command allows for setting the Low Energy scan parameters used for
+connection establishment and passive scanning. It is only supported on
+controllers with LE support.
+.sp
+This command generates a Command Complete event on success or a Command Status
+event on failure.
+.sp
+Possible errors:
+.INDENT 0.0
+.TP
+.B Rejected
+.TP
+.B Not Supported
+.TP
+.B Invalid Parameters
+.TP
+.B Invalid Index
+.UNINDENT
+.SS Set Secure Connections (since 1.5)
+.INDENT 0.0
+.TP
+.B Command Code
+0x002D
+.TP
+.B Controller Index
+<controller id>
+.TP
+.B Command Parameters
+Secure_Connections (1 Octet)
+.TP
+.B Return Parameters
+Current_Settings (4 Octets)
+.UNINDENT
+.sp
+This command is used to enable/disable Secure Connections support for a
+controller. The allowed values for the Secure_Connections command parameter are
+0x00, 0x01 and 0x02. All other values will return Invalid Parameters.
+.sp
+The value 0x00 disables Secure Connections, the value 0x01 enables Secure
+Connections and the value 0x02 enables Secure Connections Only mode.
+.sp
+This command is only available for LE capable controllers as well as controllers
+supporting the core specification version 4.1 or greater.
+.sp
+This command can be used when the controller is not powered and all settings
+will be programmed once powered.
+.sp
+In case the controller does not support Secure Connections the command will fail
+regardless with Not Supported error.
+.sp
+This command generates a Command Complete event on success or a Command Status
+event on failure.
+.sp
+Possible errors:
+.INDENT 0.0
+.TP
+.B Busy
+.TP
+.B Not Supported
+.TP
+.B Invalid Parameters
+.TP
+.B Invalid Index
+.UNINDENT
+.SS Set Debug Keys (since 1.5)
+.INDENT 0.0
+.TP
+.B Command Code
+0x002E
+.TP
+.B Controller Index
+<controller id>
+.TP
+.B Command Parameters
+Debug_Keys (1 Octet)
+.TP
+.B Return Parameters
+Current_Settings (4 Octets)
+.UNINDENT
+.sp
+This command is used to tell the kernel whether to accept the usage of debug
+keys or not. The allowed values for this parameter are:
+.TS
+box center;
+l|l.
+T{
+Value
+T}	T{
+Description
+T}
+_
+T{
+0x00
+T}	T{
+Discard keys on disconnect
+T}
+_
+T{
+0x01
+T}	T{
+Discard keys on reboot
+T}
+_
+T{
+0x02 (since 1.7)
+T}	T{
+Discard keys on reboot (SSP debug mode)
+T}
+.TE
+.sp
+With a value of 0x00 any generated debug key will be discarded as soon as the
+connection terminates.
+.sp
+With a value of 0x01 generated debug keys will be kept and can be used for
+future connections. However debug keys are always marked as non persistent and
+should not be stored. This means a reboot or changing the value back to 0x00
+will delete them.
+.sp
+With a value of 0x02 generated debug keys will be kept and can be used for
+future connections. This has the same affect as with value 0x01. However in
+addition this value will also enter the controller mode to generate debug keys
+for each new pairing. Changing the value back to 0x01 or 0x00 will disable the
+controller mode for generating debug keys.
+.sp
+This command generates a Command Complete event on success or a Command Status
+event on failure.
+.sp
+Possible errors:
+.INDENT 0.0
+.TP
+.B Busy
+.TP
+.B Not Supported
+.TP
+.B Invalid Parameters
+.TP
+.B Invalid Index
+.UNINDENT
+.SS Set Privacy (since 1.5)
+.INDENT 0.0
+.TP
+.B Command Code
+0x002F
+.TP
+.B Controller Index
+<controller id>
+.TP
+.B Command Parameters
+Privacy (1 Octet)
+.TP
+.B \&...
+Identity_Resolving_Key (16 Octets)
+.TP
+.B Return Parameters
+Current_Settings (4 Octets)
+.UNINDENT
+.sp
+This command is used to enable Low Energy Privacy feature using resolvable
+private addresses.
+.sp
+The value 0x00 disables privacy mode, the values 0x01 and 0x02 enable privacy
+mode.
+.sp
+With value 0x01 the kernel will always use the privacy mode. This means
+resolvable private address is used when the controller is discoverable and also
+when pairing is initiated.
+.sp
+With value 0x02 the kernel will use a limited privacy mode with a resolvable
+private address except when the controller is bondable and discoverable, in
+which case the identity address is used.
+.sp
+Exposing the identity address when bondable and discoverable or during initiated
+pairing can be a privacy issue. For dual\-mode controllers this can be neglected
+since its public address will be exposed over BR/EDR anyway. The benefit of
+exposing the identity address for pairing purposes is that it makes matching up
+devices with dual\-mode topology during device discovery now possible.
+.sp
+If the privacy value 0x02 is used, then also the GATT database should expose the
+Privacy Characteristic so that remote devices can determine if the privacy
+feature is in use or not.
+.sp
+When the controller has a public address (mandatory for dual\-mode controllers)
+it is used as identity address. In case the controller is single mode LE only
+without a public address, it is required to configure a static random address
+first. The privacy mode can only be enabled when an identity address is
+available.
+.sp
+The Identity_Resolving_Key is the local key assigned for the local resolvable
+private address.
+.sp
+Possible errors:
+.INDENT 0.0
+.TP
+.B Busy
+.TP
+.B Not Supported
+.TP
+.B Invalid Parameters
+.TP
+.B Invalid Index
+.UNINDENT
+.SS Load Identity Resolving Keys (since 1.5)
+.INDENT 0.0
+.TP
+.B Command Code
+0x0030
+.TP
+.B Controller Index
+<controller id>
+.TP
+.B Command Parameters
+Key_Count (2 Octets)
+.TP
+.B \&...
+Address[] (6 Octets)
+.TP
+.B \&...
+Address_Type[] (1 Octet)
+.TP
+.B \&...
+Value[] (16 Octets)
+.TP
+.B \&...
+\&...[]
+.TP
+.B Return Parameters
+.UNINDENT
+.sp
+This command is used to feed the kernel with currently known identity resolving
+keys. The command does not need to be called again upon the receipt of New
+Identity Resolving Key events since the kernel updates its list automatically.
+.sp
+Possible values for the Address_Type parameter:
+.TS
+box center;
+l|l.
+T{
+Value
+T}	T{
+Description
+T}
+_
+T{
+0x00
+T}	T{
+Reserved (not in use)
+T}
+_
+T{
+0x01
+T}	T{
+LE Public
+T}
+_
+T{
+0x02
+T}	T{
+LE Random
+T}
+.TE
+.sp
+The provided Address and Address_Type are the identity of a device. So either
+its public address or static random address.
+.sp
+Unresolvable random addresses and resolvable random addresses are not valid and
+will be rejected.
+.sp
+This command can be used when the controller is not powered.
+.sp
+This command generates a Command Complete event on success or a Command Status
+event on failure.
+.sp
+Possible errors:
+.INDENT 0.0
+.TP
+.B Invalid Parameters
+.TP
+.B Invalid Index
+.UNINDENT
+.SS Get Connection Information (since 1.6)
+.INDENT 0.0
+.TP
+.B Command Code
+0x0031
+.TP
+.B Controller Index
+<controller id>
+.TP
+.B Command Parameters
+Address (6 Octets)
+.TP
+.B \&...
+Address_Type (1 Octet)
+.TP
+.B Return Parameters
+Address (6 Octets)
+.TP
+.B \&...
+Address_Type (1 Octet)
+.TP
+.B \&...
+RSSI (1 Octet)
+.TP
+.B \&...
+TX_Power (1 Octet)
+.TP
+.B \&...
+Max_TX_Power (1 Octet)
+.UNINDENT
+.sp
+This command is used to get connection information.
+.sp
+Possible values for the Address_Type parameter:
+.TS
+box center;
+l|l.
+T{
+Value
+T}	T{
+Description
+T}
+_
+T{
+0x00
+T}	T{
+Reserved (not in use)
+T}
+_
+T{
+0x01
+T}	T{
+LE Public
+T}
+_
+T{
+0x02
+T}	T{
+LE Random
+T}
+.TE
+.sp
+TX_Power and Max_TX_Power can be set to 127 if values are invalid or unknown. A
+value of 127 for RSSI indicates that it is not available.
+.sp
+This command generates a Command Complete event on success and on failure. In
+case of failure only Address and Address_Type fields are valid and values of
+remaining parameters are considered invalid and shall be ignored.
+.sp
+Possible errors:
+.INDENT 0.0
+.TP
+.B Not Connected
+.TP
+.B Not Powered
+.TP
+.B Invalid Parameters
+.TP
+.B Invalid Index
+.UNINDENT
+.SS Get Clock Information (since 1.7)
+.INDENT 0.0
+.TP
+.B Command Code
+0x0032
+.TP
+.B Controller Index
+<controller id>
+.TP
+.B Command Parameters
+Address (6 Octets)
+.TP
+.B \&...
+Address_Type (1 Octet)
+.TP
+.B Return Parameters
+Address (6 Octets)
+.TP
+.B \&...
+Address_Type (1 Octet)
+.TP
+.B \&...
+Local_Clock (4 Octets)
+.TP
+.B \&...
+Piconet_Clock (4 Octets)
+.TP
+.B \&...
+Accuracy (2 Octets)
+.UNINDENT
+.sp
+This command is used to get local and piconet clock information.
+.sp
+Possible values for the Address_Type parameter:
+.TS
+box center;
+l|l.
+T{
+Value
+T}	T{
+Description
+T}
+_
+T{
+0x00
+T}	T{
+BR/EDR
+T}
+_
+T{
+0x01
+T}	T{
+Reserved (not in use)
+T}
+_
+T{
+0x02
+T}	T{
+Reserved (not in use)
+T}
+.TE
+.sp
+The Accuracy can be set to 0xffff which means the value is unknown.
+.sp
+If the Address is set to 00:00:00:00:00:00, then only the Local_Clock field has
+a valid value. The Piconet_Clock and Accuracy fields are invalid and shall be
+ignored.
+.sp
+This command generates a Command Complete event on success and on failure. In
+case of failure only Address and Address_Type fields are valid and values of
+remaining parameters are considered invalid and shall be ignored.
+.sp
+Possible errors:
+.INDENT 0.0
+.TP
+.B Not Connected
+.TP
+.B Not Powered
+.TP
+.B Invalid Parameters
+.TP
+.B Invalid Index
+.UNINDENT
+.SS Add Device (since 1.7)
+.INDENT 0.0
+.TP
+.B Command Code
+0x0033
+.TP
+.B Controller Index
+<controller id>
+.TP
+.B Command Parameters
+Address (6 Octets)
+.TP
+.B \&...
+Address_Type (1 Octet)
+.TP
+.B \&...
+Action (1 Octet)
+.TP
+.B Return Parameters
+Address (6 Octets)
+.TP
+.B \&...
+Address_Type (1 Octet)
+.UNINDENT
+.sp
+This command is used to add a device to the action list. The action list allows
+scanning for devices and enables incoming connections from known devices.
+.sp
+Possible values for the Address_Type parameter:
+.TS
+box center;
+l|l.
+T{
+Value
+T}	T{
+Description
+T}
+_
+T{
+0x00
+T}	T{
+BR/EDR
+T}
+_
+T{
+0x01
+T}	T{
+LE Public
+T}
+_
+T{
+0x02
+T}	T{
+LE Random
+T}
+.TE
+.sp
+Possible values for the Action parameter:
+.TS
+box center;
+l|l.
+T{
+Value
+T}	T{
+Description
+T}
+_
+T{
+0x00
+T}	T{
+Background scan for device
+T}
+_
+T{
+0x01
+T}	T{
+Allow incoming connection
+T}
+_
+T{
+0x02
+T}	T{
+Auto\-connect remote device
+T}
+.TE
+.sp
+With the Action 0x00, when the device is found, a new Device Found event will be
+sent indicating this device is available. This action is only valid for LE
+Public and LE Random address types.
+.sp
+With the Action 0x01, the device is allowed to connect. For BR/EDR address type
+this means an incoming connection. For LE Public and LE Random address types, a
+connection will be established to devices using directed advertising. If
+successful a Device Connected event will be sent.
+.sp
+With the Action 2, when the device is found, it will be connected and if
+successful a Device Connected event will be sent. This action is only valid for
+LE Public and LE Random address types.
+.sp
+When a device is blocked using Block Device command, then it is valid to add the
+device here, but all actions will be ignored until the device is unblocked.
+.sp
+Devices added with Action 1 are allowed to connect even if the connectable
+setting is off. This acts as list of known trusted devices.
+.sp
+This command can be used when the controller is not powered and all settings
+will be programmed once powered.
+.sp
+This command generates a Command Complete event on success or failure.
+.sp
+Possible errors:
+.INDENT 0.0
+.TP
+.B Failed
+.TP
+.B Invalid Parameters
+.TP
+.B Invalid Index
+.UNINDENT
+.SS Remove Device (since 1.7)
+.INDENT 0.0
+.TP
+.B Command Code
+0x0034
+.TP
+.B Controller Index
+<controller id>
+.TP
+.B Command Parameters
+Address (6 Octets)
+.TP
+.B \&...
+Address_Type (1 Octet)
+.TP
+.B Return Parameters
+Address (6 Octets)
+.TP
+.B \&...
+Address_Type (1 Octet)
+.UNINDENT
+.sp
+This command is used to remove a device from the action list previously added by
+using the Add Device command.
+.sp
+Possible values for the Address_Type parameter:
+.TS
+box center;
+l|l.
+T{
+Value
+T}	T{
+Description
+T}
+_
+T{
+0x00
+T}	T{
+BR/EDR
+T}
+_
+T{
+0x01
+T}	T{
+LE Public
+T}
+_
+T{
+0x02
+T}	T{
+LE Random
+T}
+.TE
+.sp
+When the Address parameter is 00:00:00:00:00:00, then all previously added
+devices will be removed.
+.sp
+This command can be used when the controller is not powered and all settings
+will be programmed once powered.
+.sp
+This command generates a Command Complete event on success or failure.
+.sp
+Possible errors:
+.INDENT 0.0
+.TP
+.B Invalid Parameters
+.TP
+.B Invalid Index
+.UNINDENT
+.SS Load Connection Parameters (since 1.7)
+.INDENT 0.0
+.TP
+.B Command Code
+0x0035
+.TP
+.B Controller Index
+<controller id>
+.TP
+.B Command Parameters
+Param_Count (2 Octets)
+.TP
+.B \&...
+Address[] (6 Octets)
+.TP
+.B \&...
+Address_Type[] (1 Octet)
+.TP
+.B \&...
+Min_Connection_Interval[] (2 Octets)
+.TP
+.B \&...
+Max_Connection_Interval[] (2 Octets)
+.TP
+.B \&...
+Connection_Latency[] (2 Octets)
+.TP
+.B \&...
+Supervision_Timeout[] (2 Octets)
+.TP
+.B \&...
+\&...[]
+.TP
+.B Return Parameters
+.UNINDENT
+.sp
+This command is used to load connection parameters from several devices into
+kernel. Currently this is only supported on controllers with Low Energy support.
+.sp
+Possible values for the Address_Type parameter:
+.TS
+box center;
+l|l.
+T{
+Value
+T}	T{
+Description
+T}
+_
+T{
+0x00
+T}	T{
+BR/EDR
+T}
+_
+T{
+0x01
+T}	T{
+LE Public
+T}
+_
+T{
+0x02
+T}	T{
+LE Random
+T}
+.TE
+.sp
+The provided Address and Address_Type are the identity of a device. So either
+its public address or static random address.
+.sp
+The Min_Connection_Interval, Max_Connection_Interval, Connection_Latency and
+Supervision_Timeout parameters should be configured as described in Core 4.1
+spec, Vol 2, 7.8.12.
+.sp
+This command can be used when the controller is not powered.
+.sp
+This command generates a Command Complete event on success or a Command Status
+event on failure.
+.sp
+Possible errors:
+.INDENT 0.0
+.TP
+.B Invalid Parameters
+.TP
+.B Invalid Index
+.TP
+.B Not Supported
+.UNINDENT
+.SS Read Unconfigured Controller Index List (since 1.7)
+.INDENT 0.0
+.TP
+.B Command Code
+0x0036
+.TP
+.B Controller Index
+<non\-controller>
+.TP
+.B Command Parameters
+.TP
+.B Return Parameters
+Num_Controllers (2 Octets)
+.TP
+.B \&...
+Controller_Index[i] (2 Octets)
+.UNINDENT
+.sp
+This command returns the list of currently unconfigured controllers.
+Unconfigured controllers added after calling this command can be monitored using
+the Unconfigured Index Added event.
+.sp
+An unconfigured controller can either move to a configured state by indicating
+Unconfigured Index Removed event followed by an Index Added event; or it can be
+removed from the system which would be indicated by the Unconfigured Index
+Removed event.
+.sp
+Only controllers that require configuration will be listed with this command. A
+controller that is fully configured will not be listed even if it supports
+configuration changes.
+.sp
+This command generates a Command Complete event on success or a Command Status
+event on failure.
+.SS Read Controller Configuration Information (since 1.7)
+.INDENT 0.0
+.TP
+.B Command Code
+0x0037
+.TP
+.B Controller Index
+<controller id>
+.TP
+.B Command Parameters
+.TP
+.B Return Parameters
+Manufacturer (2 Octets)
+.TP
+.B \&...
+Supported_Options (4 Octets)
+.TP
+.B \&...
+Missing_Options (4 Octets)
+.UNINDENT
+.sp
+This command is used to retrieve the supported configuration options of a
+controller and the missing configuration options.
+.sp
+The missing options are required to be configured before the controller is
+considered fully configured and ready for standard operation. The command is
+typically used right after getting the response to Read Unconfigured Controller
+Index List command or Unconfigured Index Added event.
+.sp
+Supported_Options and Missing_Options is a bitmask with currently
+the following available bits:
+.TS
+box center;
+l|l.
+T{
+Bit
+T}	T{
+Description
+T}
+_
+T{
+0
+T}	T{
+External configuration
+T}
+_
+T{
+1
+T}	T{
+Bluetooth public address configuration
+T}
+.TE
+.sp
+It is valid to call this command on controllers that do not require any
+configuration. It is possible that a fully configured controller offers
+additional support for configuration.
+.sp
+For example a controller may contain a valid Bluetooth public device address,
+but also allows to configure it from the host stack. In this case the general
+support for configurations will be indicated by the Controller Configuration
+settings. For controllers where no configuration options are available that
+setting option will not be present.
+.sp
+When all configurations have been completed and as a result the Missing_Options
+mask would become empty, then the now ready controller will be announced via
+Index Added event.
+.sp
+This command generates a Command Complete event on success or a Command Status
+event on failure.
+.sp
+Possible errors:
+.INDENT 0.0
+.TP
+.B Invalid Parameters
+.TP
+.B Invalid Index
+.UNINDENT
+.SS Set External Configuration (since 1.7)
+.INDENT 0.0
+.TP
+.B Command Code
+0x0038
+.TP
+.B Controller Index
+<controller id>
+.TP
+.B Command Parameters
+Configuration (1 Octet)
+.TP
+.B Return Parameters
+Missing_Options (4 Octets)
+.UNINDENT
+.sp
+This command allows to change external configuration option to indicate that a
+controller is now configured or unconfigured.
+.sp
+The value 0x00 sets unconfigured state and the value 0x01 sets configured state
+of the controller.
+.sp
+It is not mandatory that this configuration option is provided by a controller.
+If it is provided, the configuration has to happen externally using user channel
+operation or via vendor specific methods.
+.sp
+Setting this option and when Missing_Options returns zero, this means that the
+controller will switch to configured state and it can be expected that it will
+be announced via Index Added event.
+.sp
+Wrongly configured controllers might still cause an error when trying to power
+them via Set Powered command.
+.sp
+This command generates a Command Complete event on success or a Command Status
+event on failure.
+.sp
+Possible errors:
+.INDENT 0.0
+.TP
+.B Rejected
+.TP
+.B Not Supported
+.TP
+.B Invalid Parameters
+.TP
+.B Invalid Index
+.UNINDENT
+.SS Set Public Address (since 1.7)
+.INDENT 0.0
+.TP
+.B Command Code
+0x0039
+.TP
+.B Controller Index
+<controller id>
+.TP
+.B Command Parameters
+Address (6 Octets)
+.TP
+.B Return Parameters
+Missing_Options (4 Octets)
+.UNINDENT
+.sp
+This command allows configuration of public address. Since a vendor specific
+procedure is required, this command might not be supported by all controllers.
+Actually most likely only a handful embedded controllers will offer support for
+this command.
+.sp
+When the support for Bluetooth public address configuration is indicated in the
+supported options mask, then this command can be used to configure the public
+address.
+.sp
+It is only possible to configure the public address when the controller is
+powered off.
+.sp
+For an unconfigured controller and when Missing_Options returns an empty mask,
+this means that a Index Added event for the now fully configured controller can
+be expected.
+.sp
+For a fully configured controller, the current controller index will become
+invalid and an Unconfigured Index Removed event will be sent. Once the address
+has been successfully changed an Index Added event will be sent. There is no
+guarantee that the controller index stays the same.
+.sp
+All previous configured parameters and settings are lost when this command
+succeeds. The controller has to be treated as new one. Use this command for a
+fully configured controller only when you really know what you are doing.
+.sp
+This command generates a Command Complete event on success or a Command Status
+event on failure.
+.sp
+Possible errors:
+.INDENT 0.0
+.TP
+.B Rejected
+.TP
+.B Not Supported
+.TP
+.B Invalid Parameters
+.TP
+.B Invalid Index
+.UNINDENT
+.SS Start Service Discovery (since 1.8)
+.INDENT 0.0
+.TP
+.B Command Code
+0x003a
+.TP
+.B Controller Index
+<controller id>
+.TP
+.B Command Parameters
+Address_Type (1 Octet)
+.TP
+.B \&...
+RSSI_Threshold (1 Octet)
+.TP
+.B \&...
+UUID_Count (2 Octets)
+.TP
+.B \&...
+UUID[i] (16 Octets)
+.TP
+.B Return Parameters
+Address_Type (1 Octet)
+.UNINDENT
+.sp
+This command is used to start the process of discovering remote devices with a
+specific UUID. A Device Found event will be sent for each discovered device.
+.sp
+Possible values for the Address_Type parameter are a bit\-wise or of the
+following bits:
+.TS
+box center;
+l|l.
+T{
+Bit
+T}	T{
+Description
+T}
+_
+T{
+0
+T}	T{
+BR/EDR
+T}
+_
+T{
+1
+T}	T{
+LE Public
+T}
+_
+T{
+2
+T}	T{
+LE Random
+T}
+.TE
+.sp
+By combining these e.g. the following values are possible:
+.TS
+box center;
+l|l.
+T{
+Value
+T}	T{
+Description
+T}
+_
+T{
+0x01
+T}	T{
+BR/EDR
+T}
+_
+T{
+0x06
+T}	T{
+LE (public & random)
+T}
+_
+T{
+0x07
+T}	T{
+BR/EDR/LE (interleaved discovery)
+T}
+.TE
+.sp
+The service discovery uses active scanning for Low Energy scanning and will
+search for UUID in both advertising data and scan response data.
+.sp
+Found devices that have a RSSI value smaller than RSSI_Threshold are not
+reported via DeviceFound event. Setting a value of 127 will cause all devices to
+be reported.
+.sp
+The list of UUIDs identifies a logical OR. Only one of the UUIDs have to match
+to cause a DeviceFound event. Providing an empty list of UUIDs with Num_UUID set
+to 0 which means that DeviceFound events are send out for all devices above the
+RSSI_Threshold.
+.sp
+In case RSSI_Threshold is set to 127 and UUID_Count is 0, then this command
+behaves exactly the same as Start Discovery.
+.sp
+When the discovery procedure starts the Discovery event will notify this similar
+to Start Discovery.
+.sp
+This command can only be used when the controller is powered.
+.sp
+This command generates a Command Complete event on success or failure.
+.sp
+Possible errors:
+.INDENT 0.0
+.TP
+.B Busy
+.TP
+.B Not Supported
+.TP
+.B Invalid Parameters
+.TP
+.B Not Powered
+.TP
+.B Invalid Index
+.UNINDENT
+.SS Read Local Out Of Band Extended Data (since 1.9)
+.INDENT 0.0
+.TP
+.B Command Code
+0x003b
+.TP
+.B Controller Index
+<controller id>
+.TP
+.B Command Parameters
+Address_Type (1 Octet)
+.TP
+.B Return Parameters
+Address_Type (1 Octet)
+.TP
+.B \&...
+EIR_Data_Length (2 Octets)
+.TP
+.B \&...
+EIR_Data (0\-65535 Octets)
+.UNINDENT
+.sp
+This command is used to read the local Out of Band data information and provide
+them encoded as extended inquiry response information or advertising data.
+.sp
+Possible values for the Address_Type parameter are a bit\-wise or of the
+following bits:
+.TS
+box center;
+l|l.
+T{
+Bit
+T}	T{
+Description
+T}
+_
+T{
+0
+T}	T{
+BR/EDR
+T}
+_
+T{
+1
+T}	T{
+LE Public
+T}
+_
+T{
+2
+T}	T{
+LE Random
+T}
+.TE
+.sp
+By combining these e.g. the following values are possible:
+.TS
+box center;
+l|l.
+T{
+Value
+T}	T{
+Description
+T}
+_
+T{
+0x01
+T}	T{
+BR/EDR
+T}
+_
+T{
+0x06
+T}	T{
+LE (public & random)
+T}
+_
+T{
+0x07
+T}	T{
+Reserved (not in use)
+T}
+.TE
+.sp
+For BR/EDR controller (Address_Type 1) the returned information will contain the
+following information:
+.INDENT 0.0
+.INDENT 3.5
+Class of Device
+Simple Pairing Hash C\-192 (optional)
+Simple Pairing Randomizer R\-192 (optional)
+Simple Pairing Hash C\-256 (optional)
+Simple Pairing Randomizer R\-256 (optional)
+Service Class UUID (optional)
+Bluetooth Local Name (optional)
+.UNINDENT
+.UNINDENT
+.sp
+The Simple Pairing Hash C\-256 and Simple Pairing Randomizer R\-256 fields are
+only included when secure connections has been enabled.
+.sp
+The Device Address (BD_ADDR) is not included in the EIR_Data and needs to be
+taken from controller information.
+.sp
+For LE controller (Address_Type 6) the returned information will contain the
+following information:
+.INDENT 0.0
+.INDENT 3.5
+LE Bluetooth Device Address
+LE Role
+LE Secure Connections Confirmation Value (optional)
+LE Secure Connections Random Value (optional)
+Appearance (optional)
+Local Name (optional)
+Flags
+.UNINDENT
+.UNINDENT
+.sp
+The LE Secure Connections Confirmation Value and LE Secure Connections Random
+Value fields are only included when secure connections has been enabled.
+.sp
+The Security Manager TK Value from the Bluetooth specification can not be
+provided by this command. The Out Of Band information here are for asymmetric
+exchanges based on Diffie\-Hellman key exchange. The Security Manager TK Value is
+a symmetric random number that has to be acquired and agreed upon differently.
+.sp
+The returned information from BR/EDR controller and LE controller types are not
+related to each other. Once they have been used over an Out Of Band link, a new
+set of information shall be requested.
+.sp
+When Secure Connections Only mode has been enabled, then the fields for Simple
+Pairing Hash C\-192 and Simple Pairing Randomizer R\-192 are not returned. Only
+the fields for the strong secure connections pairing are included.
+.sp
+This command can only be used when the controller is powered.
+.sp
+Values returned by this command become invalid when the controller is powered
+down. After each power\-cycle it is required to call this command again to get
+updated information.
+.sp
+This command generates a Command Complete event on success or a Command Status
+event on failure.
+.sp
+Possible errors:
+.INDENT 0.0
+.TP
+.B Not Supported
+.TP
+.B Busy
+.TP
+.B Invalid Parameters
+.TP
+.B Not Powered
+.TP
+.B Invalid Index
+.UNINDENT
+.SS Read Extended Controller Index List (since 1.9)
+.INDENT 0.0
+.TP
+.B Command Code
+0x003c
+.TP
+.B Controller Index
+<non\-controller>
+.TP
+.B Command Parameters
+.TP
+.B Return Parameters
+Num_Controllers (2 Octets)
+.TP
+.B \&...
+Controller_Index[i] (2 Octets)
+.TP
+.B \&...
+Controller_Type[i] (1 Octet)
+.TP
+.B \&...
+Controller_Bus[i] (1 Octet)
+.UNINDENT
+.sp
+This command returns the list of currently known controllers. It includes
+configured, unconfigured and alternate controllers.
+.sp
+Controllers added or removed after calling this command can be monitored using
+the Extended Index Added and Extended Index Removed events.
+.sp
+The existing Index Added, Index Removed, Unconfigured Index Added and
+Unconfigured Index Removed are no longer sent after this command has been used
+at least once.
+.sp
+Instead of calling Read Controller Index List and Read Unconfigured Controller
+Index List, this command combines all the information and can be used to
+retrieve the controller list.
+.sp
+The Controller_Type parameter has these values:
+.TS
+box center;
+l|l.
+T{
+Value
+T}	T{
+Description
+T}
+_
+T{
+0x00
+T}	T{
+Primary Controller (BR/EDR and/or LE)
+T}
+_
+T{
+0x01
+T}	T{
+Unconfigured Controller (BR/EDR and/or LE)
+T}
+_
+T{
+0x02
+T}	T{
+Alternate MAC/PHY Controller (AMP)
+T}
+.TE
+.sp
+The 0x00 and 0x01 types indicate a primary BR/EDR and/or LE controller. The
+difference is just if they need extra configuration or if they are fully
+configured.
+.sp
+Controllers in configured state will be listed as 0x00 and controllers in
+unconfigured state will be listed as 0x01. A controller that is fully configured
+and supports configuration changes will be listed as 0x00.
+.sp
+Alternate MAC/PHY controllers will be listed as 0x02. They do not support the
+difference between configured and unconfigured state.
+.sp
+The Controller_Bus parameter has these values:
+.TS
+box center;
+l|l.
+T{
+Value
+T}	T{
+Description
+T}
+_
+T{
+0x00
+T}	T{
+Virtual
+T}
+_
+T{
+0x01
+T}	T{
+USB
+T}
+_
+T{
+0x02
+T}	T{
+PCMCIA
+T}
+_
+T{
+0x03
+T}	T{
+UART
+T}
+_
+T{
+0x04
+T}	T{
+RS232
+T}
+_
+T{
+0x05
+T}	T{
+PCI
+T}
+_
+T{
+0x06
+T}	T{
+SDIO
+T}
+_
+T{
+0x07
+T}	T{
+SPI
+T}
+_
+T{
+0x08
+T}	T{
+I2C
+T}
+_
+T{
+0x09
+T}	T{
+SMD
+T}
+_
+T{
+0x0A
+T}	T{
+VIRTIO
+T}
+_
+T{
+0x0B
+T}	T{
+IPC
+T}
+.TE
+.sp
+Controllers marked as RAW only operation are currently not listed by this
+command.
+.sp
+This command generates a Command Complete event on success or a Command Status
+event on failure.
+.SS Read Advertising Features (since 1.9)
+.INDENT 0.0
+.TP
+.B Command Code
+0x003d
+.TP
+.B Controller Index
+<controller id>
+.TP
+.B Command Parameters
+.TP
+.B Return Parameters
+Supported_Flags (4 Octets)
+.TP
+.B \&...
+Max_Adv_Data_Len (1 Octet)
+.TP
+.B \&...
+Max_Scan_Rsp_Len (1 Octet)
+.TP
+.B \&...
+Max_Instances (1 Octet)
+.TP
+.B \&...
+Num_Instances (1 Octet)
+.TP
+.B \&...
+Instance[] (1 Octet)
+.TP
+.B \&...
+\&...[]
+.UNINDENT
+.sp
+This command is used to read the advertising features supported
+by the controller and stack.
+.sp
+With the Supported_Flags field the possible values for the Flags
+field in Add Advertising command provided:
+.TS
+box center;
+l|l.
+T{
+Bit
+T}	T{
+Description
+T}
+_
+T{
+0
+T}	T{
+Switch into Connectable mode
+T}
+_
+T{
+1
+T}	T{
+Advertise as Discoverable
+T}
+_
+T{
+2
+T}	T{
+Advertise as Limited Discoverable
+T}
+_
+T{
+3
+T}	T{
+Add Flags field to Adv_Data
+T}
+_
+T{
+4
+T}	T{
+Add TX Power field to Adv_Data
+T}
+_
+T{
+5 (since 1.14)
+T}	T{
+Add Appearance field to Scan_Rsp
+T}
+_
+T{
+6 (since 1.14)
+T}	T{
+Add Local Name in Scan_Rsp
+T}
+_
+T{
+7 (since 1.15)
+T}	T{
+Secondary Channel with LE 1M
+T}
+_
+T{
+8 (since 1.15)
+T}	T{
+Secondary Channel with LE 2M
+T}
+_
+T{
+9 (since 1.15)
+T}	T{
+Secondary Channel with LE Coded
+T}
+.TE
+.sp
+The Flags bit 0 indicates support for connectable advertising and for switching
+to connectable advertising independent of the connectable global setting. When
+this flag is not supported, then the global connectable setting determines if
+undirected connectable, undirected scannable or undirected non\-connectable
+advertising is used. It also determines the use of non\-resolvable random address
+versus identity address or resolvable private address.
+.sp
+The Flags bit 1 indicates support for advertising with discoverable mode
+enabled. Users of this flag will decrease the Max_Adv_Data_Len by 3 octets. In
+this case the advertising data flags are managed and added in front of the
+provided advertising data.
+.sp
+The Flags bit 2 indicates support for advertising with limited discoverable mode
+enabled. Users of this flag will decrease the Max_Adv_Data_Len by 3 octets. In
+this case the advertising data flags are managed and added in front of the
+provided advertising data.
+.sp
+The Flags bit 3 indicates support for automatically keeping the Flags field of
+the advertising data updated. Users of this flag will decrease the
+Max_Adv_Data_Len by 3 octets and need to keep that in mind. The Flags field will
+be added in front of the advertising data provided by the user. Note that with
+Flags bit 1 and Flags bit 2, this one will be implicitly used even if it is not
+marked as supported.
+.sp
+The Flags bit 4 indicates support for automatically adding the TX Power value to
+the advertising data. Users of this flag will decrease the Max_Adv_Data_Len by 3
+octets. The TX Power field will be added at the end of the user provided
+advertising data. If the controller does not support TX Power information, then
+this bit will not be set.
+.sp
+The Flags bit 5 indicates support for automatically adding the Appearance value
+to the scan response data. Users of this flag will decrease the Max_Scan_Rsp_len
+by 4 octets. The Appearance field will be added in front of the scan response
+data provided by the user. If the appearance value is not supported, then this
+bit will not be set.
+.sp
+The Flags bit 6 indicates support for automatically adding the Local Name value
+to the scan response data. This flag indicates an opportunistic approach for the
+Local Name. If enough space in the scan response data is available, it will be
+added. If the space is limited a short version or no name information. The Local
+Name will be added at the end of the scan response data.
+.sp
+The Flags bit 7 indicates support for advertising in secondary channel in LE 1M
+PHY.
+.sp
+The Flags bit 8 indicates support for advertising in secondary channel in LE 2M
+PHY. Primary channel would be on 1M.
+.sp
+The Flags bit 9 indicates support for advertising in secondary channel in LE
+CODED PHY.
+.sp
+The valid range for Instance identifiers is 1\-254. The value 0 is reserved for
+internal use and the value 255 is reserved for future extensions. However the
+Max_Instances value for indicating the number of supported Instances can be also
+0 if the controller does not support any advertising.
+.sp
+The Max_Adv_Data_Len and Max_Scan_Rsp_Len provides extra information about the
+maximum length of the data fields. For now this will always return the value 31.
+Different flags however might decrease the actual available length in these data
+fields.
+.sp
+With Num_Instances and Instance array the currently occupied Instance
+identifiers can be retrieved.
+.sp
+This command generates a Command Complete event on success or a Command Status
+event on failure.
+.sp
+Possible errors:
+.INDENT 0.0
+.TP
+.B Invalid Parameters
+.TP
+.B Invalid Index
+.UNINDENT
+.SS Add Advertising (since 1.9)
+.INDENT 0.0
+.TP
+.B Command Code
+0x003e
+.TP
+.B Controller Index
+<controller id>
+.TP
+.B Command Parameters
+Instance (1 Octet)
+.TP
+.B \&...
+Flags (4 Octets)
+.TP
+.B \&...
+Duration (2 Octets)
+.TP
+.B \&...
+Timeout (2 Octets)
+.TP
+.B \&...
+Adv_Data_Len (1 Octet)
+.TP
+.B \&...
+Scan_Rsp_Len (1 Octet)
+.TP
+.B \&...
+Adv_Data (0\-255 Octets)
+.TP
+.B \&...
+Scan_Rsp (0\-255 Octets)
+.TP
+.B Return Parameters
+Instance (1 Octet)
+.UNINDENT
+.sp
+This command is used to configure an advertising instance that can be used to
+switch a Bluetooth Low Energy controller into advertising mode.
+.sp
+Added advertising information with this command will not be visible immediately
+if advertising is enabled via the Set Advertising command. The usage of the Set
+Advertising command takes precedence over this command. Instance information is
+stored and will be advertised once advertising via Set Advertising has been
+disabled.
+.sp
+The Instance identifier is a value between 1 and the number of supported
+instances. The value 0 is reserved.
+.sp
+With the Flags value the type of advertising is controlled and the following
+flags are defined:
+.TS
+box center;
+l|l.
+T{
+Bit
+T}	T{
+Description
+T}
+_
+T{
+0
+T}	T{
+Switch into Connectable mode
+T}
+_
+T{
+1
+T}	T{
+Advertise as Discoverable
+T}
+_
+T{
+2
+T}	T{
+Advertise as Limited Discoverable
+T}
+_
+T{
+3
+T}	T{
+Add Flags field to Adv_Data
+T}
+_
+T{
+4
+T}	T{
+Add TX Power field to Adv_Data
+T}
+_
+T{
+5 (since 1.14)
+T}	T{
+Add Appearance field to Scan_Rsp
+T}
+_
+T{
+6 (since 1.14)
+T}	T{
+Add Local Name in Scan_Rsp
+T}
+_
+T{
+7 (since 1.15)
+T}	T{
+Secondary Channel with LE 1M
+T}
+_
+T{
+8 (since 1.15)
+T}	T{
+Secondary Channel with LE 2M
+T}
+_
+T{
+9 (since 1.15)
+T}	T{
+Secondary Channel with LE Coded
+T}
+.TE
+.sp
+When the connectable flag is set, then the controller will use undirected
+connectable advertising. The value of the connectable setting can be overwritten
+this way. This is useful to switch a controller into connectable mode only for
+LE operation. This is similar to the mode 0x02 from the Set Advertising command.
+.sp
+When the connectable flag is not set, then the controller will use advertising
+based on the connectable setting. When using non\-connectable or scannable
+advertising, the controller will be programmed with a non\-resolvable random
+address. When the system is connectable, then the identity address or resolvable
+private address will be used.
+.sp
+Using the connectable flag is useful for peripheral mode support where BR/EDR
+(and/or LE) is controlled by Add Device. This allows making the peripheral
+connectable without having to interfere with the global connectable setting.
+.sp
+If Scan_Rsp_Len is zero and connectable flag is not set and the global
+connectable setting is off, then non\-connectable advertising is used. If
+Scan_Rsp_Len is larger than zero and connectable flag is not set and the global
+advertising is off, then scannable advertising is used. This small difference is
+supported to provide less air traffic for devices implementing broadcaster role.
+.sp
+Secondary channel flags can be used to advertise in secondary channel with the
+corresponding PHYs. These flag bits are mutually exclusive and setting multiple
+will result in Invalid Parameter error. Choosing either LE 1M or LE 2M will
+result in using extended advertising on the primary channel with LE 1M and the
+respectively LE 1M or LE 2M on the secondary channel. Choosing LE Coded will
+result in using extended advertising on the primary and secondary channels with
+LE Coded. Choosing none of these flags will result in legacy advertising.
+.sp
+The Duration parameter configures the length of an Instance. The value is in
+seconds.
+.sp
+A value of 0 indicates a default value is chosen for the Duration. The default
+is 2 seconds.
+.sp
+If only one advertising Instance has been added, then the Duration value will be
+ignored. It only applies for the case where multiple Instances are configured.
+In that case every Instance will be available for the Duration time and after
+that it switches to the next one. This is a simple round\-robin based approach.
+.sp
+The Timeout parameter configures the life\-time of an Instance. In case the value
+0 is used it indicates no expiration time. If a timeout value is provided, then
+the advertising Instance will be automatically removed when the timeout passes.
+The value for the timeout is in seconds. Powering down a controller will
+invalidate all advertising Instances and it is not possible to add a new
+Instance with a timeout when the controller is powered down.
+.sp
+When a Timeout is provided, then the Duration subtracts from the actual Timeout
+value of that Instance. For example an Instance with Timeout of 5 and Duration
+of 2 will be scheduled exactly 3 times, twice with 2 seconds and once with one
+second. Other Instances have no influence on the Timeout.
+.sp
+Re\-adding an already existing instance (i.e. issuing the Add Advertising command
+with an Instance identifier of an existing instance) will update that instance\(aqs
+configuration.
+.sp
+An instance being added or changed while another instance is being advertised
+will not be visible immediately but only when the new/changed instance is being
+scheduled by the round robin advertising algorithm.
+.sp
+Changes to an instance that is currently being advertised will cancel that
+instance and switch to the next instance. The changes will be visible the next
+time the instance is scheduled for advertising. In case a single instance is
+active, this means that changes will be visible right away.
+.sp
+A pre\-requisite is that LE is already enabled, otherwise this command will
+return a \(dqrejected\(dq response.
+.sp
+This command can be used when the controller is not powered and all settings
+will be programmed once powered.
+.sp
+This command generates a Command Complete event on success or a Command Status
+event on failure.
+.sp
+Possible errors:
+.INDENT 0.0
+.TP
+.B Failed
+.TP
+.B Rejected
+.TP
+.B Not Supported
+.TP
+.B Invalid Parameters
+.TP
+.B Invalid Index
+.UNINDENT
+.SS Remove Advertising (since 1.9)
+.INDENT 0.0
+.TP
+.B Command Code
+0x003f
+.TP
+.B Controller Index
+<controller id>
+.TP
+.B Command Parameters
+Instance (1 Octet)
+.TP
+.B Return Parameters
+Instance (1 Octet)
+.UNINDENT
+.sp
+This command is used to remove an advertising instance that can be used to
+switch a Bluetooth Low Energy controller into advertising mode.
+.sp
+When the Instance parameter is zero, then all previously added advertising
+Instances will be removed.
+.sp
+Removing advertising information with this command will not be visible as long
+as advertising is enabled via the Set Advertising command. The usage of the Set
+Advertising command takes precedence over this command. Changes to Instance
+information are stored and will be advertised once advertising via Set
+Advertising has been disabled.
+.sp
+Removing an instance while it is being advertised will immediately cancel the
+instance, even when it has been advertised less then its configured Timeout or
+Duration.
+.sp
+This command can be used when the controller is not powered and all settings
+will be programmed once powered.
+.sp
+This command generates a Command Complete event on success or a Command Status
+event on failure.
+.sp
+Possible errors:
+.INDENT 0.0
+.TP
+.B Invalid Parameters
+.TP
+.B Invalid Index
+.UNINDENT
+.SS Get Advertising Size Information (since 1.11)
+.INDENT 0.0
+.TP
+.B Command Code
+0x0040
+.TP
+.B Controller Index
+<controller id>
+.TP
+.B Command Parameters
+Instance (1 Octet)
+.TP
+.B \&...
+Flags (4 Octets)
+.TP
+.B Return Parameters
+Instance (1 Octet)
+.TP
+.B \&...
+Flags (4 Octets)
+.TP
+.B \&...
+Max_Adv_Data_Len (1 Octet)
+.TP
+.B \&...
+Max_Scan_Rsp_Len (1 Octet)
+.UNINDENT
+.sp
+The Read Advertising Features command returns the overall maximum size of
+advertising data and scan response data fields. That size is valid when no Flags
+are used. However when certain Flags are used, then the size might decrease.
+This command can be used to request detailed information about the maximum
+available size.
+.sp
+The following Flags values are defined:
+.TS
+box center;
+l|l.
+T{
+Value
+T}	T{
+Description
+T}
+_
+T{
+0
+T}	T{
+Switch into Connectable mode
+T}
+_
+T{
+1
+T}	T{
+Advertise as Discoverable
+T}
+_
+T{
+2
+T}	T{
+Advertise as Limited Discoverable
+T}
+_
+T{
+3
+T}	T{
+Add Flags field to Adv_Data
+T}
+_
+T{
+4
+T}	T{
+Add TX Power field to Adv_Data
+T}
+_
+T{
+5
+T}	T{
+Add Appearance field to Scan_Rsp
+T}
+_
+T{
+6
+T}	T{
+Add Local Name in Scan_Rsp
+T}
+.TE
+.sp
+To get accurate information about the available size, the same Flags values
+should be used with the Add Advertising command.
+.sp
+The Max_Adv_Data_Len and Max_Scan_Rsp_Len fields provide information about the
+maximum length of the data fields for the given Flags values. When the Flags
+field is zero, then these fields would contain the same values as Read
+Advertising Features.
+.sp
+Possible errors:
+.INDENT 0.0
+.TP
+.B Invalid Parameters
+.TP
+.B Invalid Index
+.UNINDENT
+.SS Start Limited Discovery (since 1.11)
+.INDENT 0.0
+.TP
+.B Command Code
+0x0041
+.TP
+.B Controller Index
+<controller id>
+.TP
+.B Command Parameters
+Address_Type (1 Octet)
+.TP
+.B Return Parameters
+Address_Type (1 Octet)
+.UNINDENT
+.sp
+This command is used to start the process of discovering remote devices using
+the limited discovery procedure. A Device Found event will be sent for each
+discovered device.
+.sp
+Possible values for the Address_Type parameter are a bit\-wise or
+of the following bits:
+.TS
+box center;
+l|l.
+T{
+Bit
+T}	T{
+Description
+T}
+_
+T{
+0
+T}	T{
+BR/EDR
+T}
+_
+T{
+1
+T}	T{
+LE Public
+T}
+_
+T{
+2
+T}	T{
+LE Random
+T}
+.TE
+.sp
+By combining these e.g. the following values are possible:
+.TS
+box center;
+l|l.
+T{
+Value
+T}	T{
+Description
+T}
+_
+T{
+0x01
+T}	T{
+BR/EDR
+T}
+_
+T{
+0x06
+T}	T{
+LE (public & random)
+T}
+_
+T{
+0x07
+T}	T{
+BR/EDR/LE (interleaved discovery)
+T}
+.TE
+.sp
+The limited discovery uses active scanning for Low Energy scanning and will
+search for devices with the limited discoverability flag configured. On BR/EDR
+it uses LIAC and filters on the limited discoverability flag of the class of
+device.
+.sp
+When the discovery procedure starts the Discovery event will notify this similar
+to Start Discovery.
+.sp
+This command can only be used when the controller is powered.
+.sp
+This command generates a Command Complete event on success or failure.
+.sp
+Possible errors:
+.INDENT 0.0
+.TP
+.B Busy
+.TP
+.B Not Supported
+.TP
+.B Invalid Parameters
+.TP
+.B Not Powered
+.TP
+.B Invalid Index
+.UNINDENT
+.SS Read Extended Controller Information (since 1.14)
+.INDENT 0.0
+.TP
+.B Command Code
+0x0042
+.TP
+.B Controller Index
+<controller id>
+.TP
+.B Command Parameters
+.TP
+.B Return Parameters
+Address (6 Octets)
+.TP
+.B \&...
+Bluetooth_Version (1 Octet)
+.TP
+.B \&...
+Manufacturer (2 Octets)
+.TP
+.B \&...
+Supported_Settings (4 Octets)
+.TP
+.B \&...
+Current_Settings (4 Octets)
+.TP
+.B \&...
+EIR_Data_Length (2 Octets)
+.TP
+.B \&...
+EIR_Data (0\-65535 Octets)
+.UNINDENT
+.sp
+This command is used to retrieve the current state and basic information of a
+controller. It is typically used right after getting the response to the Read
+Controller Index List command or an Index Added event (or its extended
+counterparts).
+.sp
+The Address parameter describes the controllers public address and it can be
+expected that it is set. However in case of single mode Low Energy only
+controllers it can be 00:00:00:00:00:00. To power on the controller in this
+case, it is required to configure a static address using Set Static Address
+command first.
+.sp
+If the public address is set, then it will be used as identity address for the
+controller. If no public address is available, then the configured static
+address will be used as identity address.
+.sp
+In the case of a dual\-mode controller with public address that is configured as
+Low Energy only device (BR/EDR switched off), the static address is used when
+set and public address otherwise.
+.sp
+Current_Settings and Supported_Settings is a bitmask with
+currently the following available bits:
+.TS
+box center;
+l|l.
+T{
+Bit
+T}	T{
+Description
+T}
+_
+T{
+0
+T}	T{
+Powered
+T}
+_
+T{
+1
+T}	T{
+Connectable
+T}
+_
+T{
+2
+T}	T{
+Fast Connectable
+T}
+_
+T{
+3
+T}	T{
+Discoverable
+T}
+_
+T{
+4
+T}	T{
+Bondable
+T}
+_
+T{
+5
+T}	T{
+Link Level Security (Sec. mode 3)
+T}
+_
+T{
+6
+T}	T{
+Secure Simple Pairing
+T}
+_
+T{
+7
+T}	T{
+Basic Rate/Enhanced Data Rate
+T}
+_
+T{
+8
+T}	T{
+High Speed
+T}
+_
+T{
+9
+T}	T{
+Low Energy
+T}
+_
+T{
+10
+T}	T{
+Advertising
+T}
+_
+T{
+11
+T}	T{
+Secure Connections
+T}
+_
+T{
+12
+T}	T{
+Debug Keys
+T}
+_
+T{
+13
+T}	T{
+Privacy
+T}
+_
+T{
+14
+T}	T{
+Controller Configuration
+T}
+_
+T{
+15
+T}	T{
+Static Address
+T}
+_
+T{
+16
+T}	T{
+PHY Configuration
+T}
+_
+T{
+17
+T}	T{
+Wideband Speech
+T}
+_
+T{
+18
+T}	T{
+Connected Isochronous Stream \- Central
+T}
+_
+T{
+19
+T}	T{
+Connected Isochronous Stream \- Peripheral
+T}
+.TE
+.sp
+The EIR_Data field contains information about class of device, local name and
+other values. Not all of them might be present. For example a Low Energy only
+device does not contain class of device information.
+.sp
+When any of the values in the EIR_Data field changes, the event Extended
+Controller Information Changed will be used to inform clients about the updated
+information.
+.sp
+This command generates a Command Complete event on success or a Command Status
+event on failure.
+.sp
+Possible errors:
+.INDENT 0.0
+.TP
+.B Invalid Parameters
+.TP
+.B Invalid Index
+.UNINDENT
+.SS Set Appearance (since 1.14)
+.INDENT 0.0
+.TP
+.B Command Code
+0x0043
+.TP
+.B Controller Index
+<controller id>
+.TP
+.B Command Parameters
+Appearance (2 Octets)
+.TP
+.B Return Parameters
+.UNINDENT
+.sp
+This command is used to set the appearance value of a controller.
+.sp
+This command can be used when the controller is not powered and all settings
+will be programmed once powered.
+.sp
+The value of appearance will be remembered when switching the controller off and
+back on again. So the appearance only have to be set once when a new controller
+is found and will stay until removed.
+.sp
+This command generates a Command Complete event on success or a Command Status
+event on failure.
+.sp
+This command is only available for LE capable controllers.
+.sp
+It will return Not Supported otherwise.
+.sp
+Possible errors:
+.INDENT 0.0
+.TP
+.B Not Supported
+.TP
+.B Invalid Parameters
+.TP
+.B Invalid Index
+.UNINDENT
+.SS Get PHY Configuration (since 1.15)
+.INDENT 0.0
+.TP
+.B Command Code
+0x0044
+.TP
+.B Controller Index
+<controller id>
+.TP
+.B Command Parameters
+.TP
+.B Return Parameters
+Supported_PHYs (4 Octet)
+.TP
+.B \&...
+Configurable_PHYs (4 Octets)
+.TP
+.B \&...
+Selected_PHYs (4 Octet)
+.UNINDENT
+.sp
+The PHYs parameters are a bitmask with currently the following available bits:
+.TS
+box center;
+l|l.
+T{
+Bit
+T}	T{
+Description
+T}
+_
+T{
+0
+T}	T{
+BR 1M 1\-Slot
+T}
+_
+T{
+1
+T}	T{
+BR 1M 3\-Slot
+T}
+_
+T{
+2
+T}	T{
+BR 1M 5\-Slot
+T}
+_
+T{
+3
+T}	T{
+EDR 2M 1\-Slot
+T}
+_
+T{
+4
+T}	T{
+EDR 2M 3\-Slot
+T}
+_
+T{
+5
+T}	T{
+EDR 2M 5\-Slot
+T}
+_
+T{
+6
+T}	T{
+ERDR 3M 1\-Slot
+T}
+_
+T{
+7
+T}	T{
+EDR 3M 3\-Slot
+T}
+_
+T{
+8
+T}	T{
+EDR 3M 5\-Slot
+T}
+_
+T{
+9
+T}	T{
+LE 1M TX
+T}
+_
+T{
+10
+T}	T{
+LE 1M RX
+T}
+_
+T{
+11
+T}	T{
+LE 2M TX
+T}
+_
+T{
+12
+T}	T{
+LE 2M RX
+T}
+_
+T{
+13
+T}	T{
+LE Coded TX
+T}
+_
+T{
+14
+T}	T{
+LE Coded RX
+T}
+.TE
+.sp
+If BR/EDR is supported, then BR 1M 1\-Slot is supported by default and can also
+not be deselected. If LE is supported, then LE 1M TX and LE 1M RX are supported
+by default.
+.sp
+Disabling BR/EDR completely or respectively LE has no impact on the PHY
+configuration. It is remembered over power cycles.
+.sp
+This command generates a Command Complete event on success or a Command Status
+event on failure.
+.sp
+Possible errors:
+.INDENT 0.0
+.TP
+.B Invalid Parameters
+.TP
+.B Invalid Index
+.UNINDENT
+.SS Set PHY Configuration (since 1.15)
+.INDENT 0.0
+.TP
+.B Command Code
+0x0045
+.TP
+.B Controller Index
+<controller id>
+.TP
+.B Command Parameters
+Selected_PHYs (4 Octet)
+.TP
+.B Return Parameters
+.UNINDENT
+.sp
+This command is used to set the default PHY to the controller.
+.sp
+This will be stored and used for all the subsequent scanning and connection
+initiation.
+.sp
+The list of supported PHYs can be retrieved via the Get PHY Configuration
+command. Selecting unsupported or deselecting default PHYs will result in an
+Invalid Parameter error.
+.sp
+This can be called at any point to change the Selected PHYs.
+.sp
+Refer Get PHY Configuration command for PHYs parameter.
+.sp
+This command generates a Command Complete event on success or a Command Status
+event on failure.
+.sp
+Possible errors:
+.INDENT 0.0
+.TP
+.B Invalid Parameters
+.TP
+.B Invalid Index
+.UNINDENT
+.SS Load Blocked Keys (since 1.15)
+.INDENT 0.0
+.TP
+.B Command Code
+0x0046
+.TP
+.B Controller Index
+<controller id>
+.TP
+.B Command Parameters
+Key_Count (2 Octets)
+.TP
+.B \&...
+Key_Type[] (1 Octet)
+.TP
+.B \&...
+Value[] (16 Octets)
+.TP
+.B \&...
+\&...[]
+.TP
+.B Return Parameters
+.UNINDENT
+.sp
+This command is used to feed the kernel a list of keys that are known to be
+vulnerable.
+.sp
+If the pairing procedure produces any of these keys, they will be silently
+dropped and any attempt to enable encryption rejected.
+.sp
+Currently defined Key_Type values are:
+.TS
+box center;
+l|l.
+T{
+Value
+T}	T{
+Description
+T}
+_
+T{
+0x00
+T}	T{
+Link Key (BR/EDR)
+T}
+_
+T{
+0x01
+T}	T{
+Long Term Key (LE)
+T}
+_
+T{
+0x02
+T}	T{
+Identity Resolving Key (LE)
+T}
+.TE
+.sp
+This command can be used when the controller is not powered.
+.sp
+This command generates a Command Complete event on success or a Command Status
+event on failure.
+.sp
+Possible errors:
+.INDENT 0.0
+.TP
+.B Invalid Parameters
+.TP
+.B Invalid Index
+.UNINDENT
+.SS Set Wideband Speech (since 1.16)
+.INDENT 0.0
+.TP
+.B Command Code
+0x0047
+.TP
+.B Controller Index
+<controller id>
+.TP
+.B Command Parameters
+Wideband_Speech (1 Octet)
+.TP
+.B Return Parameters
+Current_Settings (4 Octets)
+.UNINDENT
+.sp
+This command is used to enable/disable Wideband Speech support for a controller.
+The allowed values for the Wideband_Speech command parameter are 0x00 and 0x01.
+All other values will return Invalid Parameters.
+.sp
+The value 0x00 disables Wideband Speech, the value 0x01 enables Wideband Speech.
+.sp
+This command is only available for BR/EDR capable controllers and require
+controller specific support.
+.sp
+This command can be used when the controller is not powered and all settings
+will be programmed once powered.
+.sp
+In case the controller does not support Wideband Speech the command will fail
+regardless with Not Supported error.
+.sp
+This command generates a Command Complete event on success or a Command Status
+event on failure.
+.sp
+Possible errors:
+.INDENT 0.0
+.TP
+.B Busy
+.TP
+.B Not Supported
+.TP
+.B Invalid Parameters
+.TP
+.B Invalid Index
+.UNINDENT
+.SS Read Controller Capabilities (since 1.17)
+.INDENT 0.0
+.TP
+.B Command Code
+0x0048
+.TP
+.B Controller Index
+<controller id>
+.TP
+.B Command Parameters
+.TP
+.B Return Parameters
+Capabilities_Data_Length (2 Octets)
+.TP
+.B \&...
+Capabilities_Data[] (0\-65535 Octets)
+.UNINDENT
+.sp
+This command is used to retrieve the supported capabilities by the controller
+or the host stack.
+.sp
+The Capabilities_Data_Length and Capabilities_Data parameters provide a list of
+security settings, features and information. It uses the same format as
+EIR_Data, but with the namespace defined here.
+.TS
+box center;
+l|l.
+T{
+Data Type
+T}	T{
+Name
+T}
+_
+T{
+0x01
+T}	T{
+Flags
+T}
+_
+T{
+0x02
+T}	T{
+Max Encryption Key Size (BR/EDR)
+T}
+_
+T{
+0x03
+T}	T{
+Max Encryption Key Size (LE)
+T}
+_
+T{
+0x04
+T}	T{
+Supported Tx Power (LE)
+T}
+.TE
+.sp
+Flags (data type 0x01)
+.TS
+box center;
+l|l.
+T{
+Bit
+T}	T{
+Description
+T}
+_
+T{
+0
+T}	T{
+Remote public key validation (BR/EDR)
+T}
+_
+T{
+1
+T}	T{
+Remote public key validation (LE)
+T}
+_
+T{
+2
+T}	T{
+Encryption key size enforcement (BR/EDR)
+T}
+_
+T{
+3
+T}	T{
+Encryption key size enforcement (LE)
+T}
+.TE
+.sp
+Max Encryption Key Size (data types 0x02 and 0x03)
+.INDENT 0.0
+.INDENT 3.5
+When the field is present, then it provides 1 Octet value indicating the
+max encryption key size. If the field is not present, then it is unknown
+what the max encryption key size of the controller or host is in use.
+.UNINDENT
+.UNINDENT
+.sp
+Supported LE Tx Power (data type 0x04)
+.INDENT 0.0
+.INDENT 3.5
+When present, this 2\-octet field provides the min and max LE Tx power
+supported by the controller, respectively, as reported by the LE Read
+Transmit Power HCI command. If this field is not available, it indicates
+that the LE Read Transmit Power HCI command was not available.
+.UNINDENT
+.UNINDENT
+.sp
+This command generates a Command Complete event on success or
+a Command Status event on failure.
+.sp
+Possible errors:
+.INDENT 0.0
+.TP
+.B Invalid Parameters
+.TP
+.B Invalid Index
+.UNINDENT
+.SS Read Experimental Features Information (since 1.17)
+.INDENT 0.0
+.TP
+.B Command Code
+0x0049
+.TP
+.B Controller Index
+<controller id> or <non\-controller>
+.TP
+.B Command Parameters
+.TP
+.B Return Parameters
+Feature_Count (2 Octets)
+.TP
+.B \&...
+UUID[] (16 Octets)
+.TP
+.B \&...
+Flags[] (4 Octets)
+.TP
+.B \&...
+\&...[]
+.UNINDENT
+.sp
+This command is used to retrieve the supported experimental features by the host
+stack.
+.sp
+The UUID values are not defined here. They can change over time and are on
+purpose not stable. Features that mature will be removed at some point. The
+mapping of feature UUID to the actual functionality of a given feature is out of
+scope here.
+.sp
+The following bits are defined for the Flags parameter:
+.TS
+box center;
+l|l.
+T{
+Bit
+T}	T{
+Description
+T}
+_
+T{
+0
+T}	T{
+Feature active
+T}
+_
+T{
+1
+T}	T{
+Causes change in supported settings
+T}
+.TE
+.sp
+This command generates a Command Complete event on success or a Command Status
+event on failure.
+.sp
+Possible errors:
+.INDENT 0.0
+.TP
+.B Invalid Parameters
+.TP
+.B Invalid Index
+.UNINDENT
+.SS Set Experimental Feature (since 1.17)
+.INDENT 0.0
+.TP
+.B Command Code
+0x004a
+.TP
+.B Controller Index
+<controller id> or <non\-controller>
+.TP
+.B Command Parameters
+UUID (16 Octets)
+.TP
+.B \&...
+Action (1 Octet)
+.TP
+.B Return Parameters
+UUID (16 Octets)
+.TP
+.B \&...
+Flags (4 Octets)
+.UNINDENT
+.sp
+This command is used to change the setting of an experimental feature of the
+host stack.
+.sp
+The UUID value must be a supported value returned from the Read Experimental
+Features Information command.
+.sp
+The Action parameter is UUID specific, but in most cases it will be just a
+simple on/off toggle with these values:
+.TS
+box center;
+l|l.
+T{
+Bit
+T}	T{
+Description
+T}
+_
+T{
+0x00
+T}	T{
+Disable feature
+T}
+_
+T{
+0x01
+T}	T{
+Enable feature
+T}
+.TE
+.sp
+It depends on the feature if the command can be used when the controller is
+powered up. See Flags parameter of Read Experimental Features Information
+command for details if the controller has to be powered down first.
+.sp
+The following bits are defined for the Flags return parameter:
+.TS
+box center;
+l|l.
+T{
+Bit
+T}	T{
+Description
+T}
+_
+T{
+0
+T}	T{
+Feature active
+T}
+_
+T{
+1
+T}	T{
+Supported settings changed
+T}
+.TE
+.sp
+When a feature causes the change of supported settings, then it is a good idea
+to re\-read the controller information.
+.sp
+When the UUID parameter is an empty UUID (16 x 0x00), then all experimental
+features will be deactivated.
+.sp
+This command generates a Command Complete event on success or a Command Status
+event on failure.
+.sp
+Possible errors:
+.INDENT 0.0
+.TP
+.B Invalid Parameters
+.TP
+.B Not Powered
+.TP
+.B Invalid Index
+.UNINDENT
+.SS Read Default System Configuration (since 1.18)
+.INDENT 0.0
+.TP
+.B Command Code
+0x004b
+.TP
+.B Controller Index
+<controller id>
+.TP
+.B Command Parameters
+.TP
+.B Return Parameters
+Parameter_Type[] (2 Octet)
+.TP
+.B \&...
+Value_Length[] (1 Octet)
+.TP
+.B \&...
+Value (0\-255[] Octets)
+.TP
+.B \&...
+\&...[]
+.UNINDENT
+.sp
+This command is used to read a list of default controller parameters.
+.sp
+Currently defined Parameter_Type values are:
+.TS
+box center;
+l|l.
+T{
+Value
+T}	T{
+Description
+T}
+_
+T{
+0x0000
+T}	T{
+BR/EDR Page Scan Type
+T}
+_
+T{
+0x0001
+T}	T{
+BR/EDR Page Scan Interval
+T}
+_
+T{
+0x0002
+T}	T{
+BR/EDR Page Scan Window
+T}
+_
+T{
+0x0003
+T}	T{
+BR/EDR Inquiry Scan Type
+T}
+_
+T{
+0x0004
+T}	T{
+BR/EDR Inquiry Scan Interval
+T}
+_
+T{
+0x0005
+T}	T{
+BR/EDR Inquiry Scan Window
+T}
+_
+T{
+0x0006
+T}	T{
+BR/EDR Link Supervision Timeout
+T}
+_
+T{
+0x0007
+T}	T{
+BR/EDR Page Timeout
+T}
+_
+T{
+0x0008
+T}	T{
+BR/EDR Min Sniff Interval
+T}
+_
+T{
+0x0009
+T}	T{
+BR/EDR Max Sniff Interval
+T}
+_
+T{
+0x000a
+T}	T{
+LE Advertisement Min Interval
+T}
+_
+T{
+0x000b
+T}	T{
+LE Advertisement Max Interval
+T}
+_
+T{
+0x000c
+T}	T{
+LE Multi Advertisement Rotation Interval
+T}
+_
+T{
+0x000d
+T}	T{
+LE Scanning Interval for auto connect
+T}
+_
+T{
+0x000e
+T}	T{
+LE Scanning Window for auto connect
+T}
+_
+T{
+0x000f
+T}	T{
+LE Scanning Interval for wake scenarios
+T}
+_
+T{
+0x0010
+T}	T{
+LE Scanning Window for wake scenarios
+T}
+_
+T{
+0x0011
+T}	T{
+LE Scanning Interval for discovery
+T}
+_
+T{
+0x0012
+T}	T{
+LE Scanning Window for discovery
+T}
+_
+T{
+0x0013
+T}	T{
+LE Scanning Interval for adv monitoring
+T}
+_
+T{
+0x0014
+T}	T{
+LE Scanning Window for adv monitoring
+T}
+_
+T{
+0x0015
+T}	T{
+LE Scanning Interval for connect
+T}
+_
+T{
+0x0016
+T}	T{
+LE Scanning Window for connect
+T}
+_
+T{
+0x0017
+T}	T{
+LE Min Connection Interval
+T}
+_
+T{
+0x0018
+T}	T{
+LE Max Connection Interval
+T}
+_
+T{
+0x0019
+T}	T{
+LE Connection Latency
+T}
+_
+T{
+0x001a
+T}	T{
+LE Connection Supervision Timeout
+T}
+_
+T{
+0x001b
+T}	T{
+LE Autoconnect Timeout
+T}
+_
+T{
+0x001d
+T}	T{
+LE Allow List Scanning Duration for adv monitoring
+T}
+_
+T{
+0x001e
+T}	T{
+LE No Filter Scanning Duration for adv monitoring
+T}
+_
+T{
+0x001f
+T}	T{
+LE Enable Interleave Scan for adv monitoring
+T}
+_
+T{
+0x0020
+T}	T{
+BR/EDR Connection Idle Timeout
+T}
+.TE
+.sp
+This command can be used at any time and will return a list of supported default
+parameters as well as their current value.
+.sp
+This command generates a Command Complete event on success or a Command Status
+event on failure.
+.sp
+Possible errors:
+.INDENT 0.0
+.TP
+.B Invalid Parameters
+.TP
+.B Invalid Index
+.UNINDENT
+.SS Set Default System Configuration (since 1.18)
+.INDENT 0.0
+.TP
+.B Command Code
+0x004c
+.TP
+.B Controller Index
+<controller id>
+.TP
+.B Command Parameters
+Parameter_Type[] (2 Octet)
+.TP
+.B \&...
+Value_Length[] (1 Octet)
+.TP
+.B \&...
+Value[] (0\-255 Octets)
+.TP
+.B \&...
+\&...[]
+.TP
+.B Return Parameters
+.UNINDENT
+.sp
+This command is used to set a list of default controller parameters.
+.sp
+See Read Default System Configuration command for list of supported
+Parameter_Type values.
+.sp
+This command can be used when the controller is not powered and all supported
+parameters will be programmed once powered.
+.sp
+When providing unsupported values or invalid values, no parameter value will be
+changed and all values discarded.
+.sp
+This command generates a Command Complete event on success or a Command Status
+event on failure.
+.sp
+Possible errors:
+.INDENT 0.0
+.TP
+.B Rejected
+.TP
+.B Not Supported
+.TP
+.B Invalid Parameters
+.TP
+.B Invalid Index
+.UNINDENT
+.SS Read Default Runtime Configuration (since 1.18)
+.INDENT 0.0
+.TP
+.B Command Code
+0x004d
+.TP
+.B Controller Index
+<controller id>
+.TP
+.B Command Parameters
+.TP
+.B Return Parameters
+Parameter_Type[] (2 Octet)
+.TP
+.B \&...
+Value_Length[] (1 Octet)
+.TP
+.B \&...
+Value[] (0\-255 Octets)
+.TP
+.B \&...
+\&...[]
+.UNINDENT
+.sp
+This command is used to read a list of default runtime parameters.
+.sp
+Currently no Parameter_Type values are defined and an empty list will be
+returned.
+.sp
+This command can be used at any time and will return a list of supported default
+parameters as well as their current value.
+.sp
+This command generates a Command Complete event on success or a Command Status
+event on failure.
+.sp
+Possible errors:
+.INDENT 0.0
+.TP
+.B Invalid Parameters
+.TP
+.B Invalid Index
+.UNINDENT
+.SS Set Default Runtime Configuration (since 1.18)
+.INDENT 0.0
+.TP
+.B Command Code
+0x004e
+.TP
+.B Controller Index
+<controller id>
+.TP
+.B Command Parameters
+Parameter_Type[] (2 Octet)
+.TP
+.B \&...
+Value_Length[] (1 Octet)
+.TP
+.B \&...
+Value[] (0\-255 Octets)
+.TP
+.B \&...
+\&...[]
+.TP
+.B Return Parameters
+.UNINDENT
+.sp
+This command is used to set a list of default runtime parameters.
+.sp
+See Read Default Runtime Configuration command for list of supported
+Parameter_Type values.
+.sp
+This command can be used at any time and will change the runtime default.
+Changes however will not apply to existing connections or currently active
+operations.
+.sp
+When providing unsupported values or invalid values, no parameter value will be
+changed and all values discarded.
+.sp
+This command generates a Command Complete event on success or a Command Status
+event on failure.
+.sp
+Possible errors:
+.INDENT 0.0
+.TP
+.B Rejected
+.TP
+.B Not Supported
+.TP
+.B Invalid Parameters
+.TP
+.B Invalid Index
+.UNINDENT
+.SS Get Device Flags (since 1.18)
+.INDENT 0.0
+.TP
+.B Command Code
+0x004f
+.TP
+.B Controller Index
+<controller id>
+.TP
+.B Command Parameters
+Address (6 Octets)
+.TP
+.B \&...
+Address_Type (1 Octet)
+.TP
+.B Return Parameters
+Address (6 Octets)
+.TP
+.B \&...
+Address_Type (1 Octet)
+.TP
+.B \&...
+Supported_Flags (4 Octets)
+.TP
+.B \&...
+Current_Flags (4 Octets)
+.UNINDENT
+.sp
+This command is used to retrieve additional flags and settings for devices that
+are added via Add Device command.
+.sp
+Possible values for the Address_Type parameter:
+.TS
+box center;
+l|l.
+T{
+Value
+T}	T{
+Description
+T}
+_
+T{
+0x00
+T}	T{
+BR/EDR
+T}
+_
+T{
+0x01
+T}	T{
+LE Public
+T}
+_
+T{
+0x02
+T}	T{
+LE Random
+T}
+.TE
+.sp
+The Flags parameters are a bitmask with currently the following
+available bits:
+.TS
+box center;
+l|l.
+T{
+Bit
+T}	T{
+Description
+T}
+_
+T{
+0
+T}	T{
+Remote Wakeup enabled
+T}
+_
+T{
+1
+T}	T{
+Device Privacy Mode enabled
+T}
+_
+T{
+2
+T}	T{
+Address Resolution enabled
+T}
+_
+T{
+3
+T}	T{
+PAST enabled
+T}
+.TE
+.sp
+This command generates a Command Complete event on success or a Command Status
+event on failure.
+.sp
+Possible errors:
+.INDENT 0.0
+.TP
+.B Invalid Parameters
+.TP
+.B Invalid Index
+.UNINDENT
+.SS Set Device Flags (since 1.18)
+.INDENT 0.0
+.TP
+.B Command Code
+0x0050
+.TP
+.B Controller Index
+<controller id>
+.TP
+.B Command Parameters
+Address (6 Octets)
+.TP
+.B \&...
+Address_Type (1 Octet)
+.TP
+.B \&...
+Current_Flags (4 Octets)
+.TP
+.B Return Parameters
+Address (6 Octets)
+.TP
+.B \&...
+Address_Type (1 Octet)
+.UNINDENT
+.sp
+This command is used to configure additional flags and settings for devices that
+are added via Add Device command.
+.sp
+Possible values for the Address_Type parameter:
+.TS
+box center;
+l|l.
+T{
+Value
+T}	T{
+Description
+T}
+_
+T{
+0x00
+T}	T{
+BR/EDR
+T}
+_
+T{
+0x01
+T}	T{
+LE Public
+T}
+_
+T{
+0x02
+T}	T{
+LE Random
+T}
+.TE
+.sp
+The list of supported Flags can be retrieved via the Get Device Flags or Device
+Flags Changed command. Selecting unsupported flags will result in an Invalid
+Parameter error;
+.sp
+Refer to the Get Device Flags command for a detailed description of the Flags
+parameters.
+.sp
+This command can be used when the controller is not powered and all settings
+will be programmed once powered.
+.sp
+This command generates a Command Complete event on success or a Command Status
+event on failure.
+.sp
+Possible errors:
+.INDENT 0.0
+.TP
+.B Invalid Parameters
+.TP
+.B Invalid Index
+.UNINDENT
+.SS Read Advertisement Monitor Features (since 1.18)
+.INDENT 0.0
+.TP
+.B Command Code
+0x0051
+.TP
+.B Controller Index
+<controller id>
+.TP
+.B Command Parameters
+.TP
+.B Return Parameters
+Supported_Features (4 Octets)
+.TP
+.B \&...
+Enabled_Features (4 Octets)
+.TP
+.B \&...
+Max_Num_Handles (2 Octets)
+.TP
+.B \&...
+Max_Num_Patterns (1 Octet)
+.TP
+.B \&...
+Num_Handles (2 Octets)
+.TP
+.B \&...
+Handle[] (2 Octets)
+.TP
+.B \&...
+\&...[]
+.UNINDENT
+.sp
+This command is used to read the advertisement monitor features supported by the
+controller and stack. Supported_Features lists all related features supported by
+the controller while Enabled_Features lists the ones currently used by the
+kernel.
+.sp
+Supported_Features and Enabled_Features are bitmasks with currently the
+following available bits:
+.TS
+box center;
+l|l.
+T{
+Bit
+T}	T{
+Description
+T}
+_
+T{
+0
+T}	T{
+Advertisement content monitoring based on patterns with logic OR.
+T}
+.TE
+.sp
+Max_Num_Handles indicates the maximum number of supported advertisement
+monitors. Note that the actual number of supported ones might be less depending
+on the limitation of the controller.
+.sp
+Max_Num_Pattern indicates the maximum number of supported patterns in an
+advertisement patterns monitor. Note that the actual number of supported ones
+might be less depending on the limitation of the controller.
+.sp
+Num_Handles indicates the number of added advertisement monitors, and it is
+followed by a list of handles.
+.sp
+This command can be used when the controller is not powered.
+.SS Add Advertisement Patterns Monitor (since 1.18)
+.INDENT 0.0
+.TP
+.B Command Code
+0x0052
+.TP
+.B Controller Index
+<controller id>
+.TP
+.B Command Parameters
+Pattern_Count (1 Octet)
+.TP
+.B \&...
+AD_Type[] (1 Octet)
+.TP
+.B \&...
+Offset[] (1 Octet)
+.TP
+.B \&...
+Length[] (1 Octet)
+.TP
+.B \&...
+Value[] (31 Octets)
+.TP
+.B \&...
+\&...[]
+.TP
+.B Return Parameters
+Monitor_Handle (2 Octets)
+.UNINDENT
+.sp
+This command is used to add an advertisement monitor whose filtering conditions
+are patterns. The kernel will trigger scanning if there is at least one monitor
+added. If the controller supports advertisement filtering, the kernel would
+offload the content filtering to the controller in order to reduce power
+consumption; otherwise the kernel ignores the content of the monitor. Note that
+if the there are more than one patterns, OR logic would applied among patterns
+during filtering. In other words, any advertisement matching at least one
+pattern in a given monitor would be considered as a match.
+.sp
+A pattern contains the following fields:
+.INDENT 0.0
+.TP
+.B AD_Data_Type
+Advertising Data Type. The possible values are defined in Core
+.TP
+.B \&...
+Specification Supplement.
+.TP
+.B Offset
+The start index where pattern matching shall be performed with
+.TP
+.B \&...
+in the AD data.
+.TP
+.B Length
+The length of the pattern value in bytes.
+.TP
+.B Value
+The value of the pattern in bytes.
+.UNINDENT
+.sp
+Here is an example of a pattern.
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+{
+        0x16, // Service Data \- 16\-bit UUID
+        0x02, // Skip the UUID part.
+        0x04, // Length of the value
+        {0x11, 0x22, 0x33, 0x44},
+}
+.EE
+.UNINDENT
+.UNINDENT
+.sp
+This command can be used when the controller is not powered and all settings
+will be programmed once powered.
+.sp
+Possible errors:
+.INDENT 0.0
+.TP
+.B Failed
+.TP
+.B Busy
+.TP
+.B No Resources
+.TP
+.B Invalid Parameters
+.UNINDENT
+.SS Remove Advertisement Monitor (since 1.18)
+.INDENT 0.0
+.TP
+.B Command Code
+0x0053
+.TP
+.B Controller Index
+<controller id>
+.TP
+.B Command Parameters
+Monitor_Handle (2 Octets)
+.TP
+.B Return Parameters
+Monitor_Handle (2 Octets)
+.UNINDENT
+.sp
+This command is used to remove advertisement monitor(s). The kernel would remove
+the monitor(s) with Monitor_Handle and update the LE scanning.
+.sp
+When the Monitor_Handle is set to zero, then all previously added handles will
+be removed.
+.sp
+Removing a monitor while it is being added will be ignored.
+.sp
+This command can be used when the controller is not powered and all settings
+will be programmed once powered.
+.sp
+Possible errors:
+.INDENT 0.0
+.TP
+.B Failed
+.TP
+.B Busy
+.UNINDENT
+.SS Add Extended Advertising Parameters (since 1.19)
+.INDENT 0.0
+.TP
+.B Command Code
+0x0054
+.TP
+.B Controller Index
+<controller id>
+.TP
+.B Command Parameters
+Instance (1 Octet)
+.TP
+.B \&...
+Flags (4 Octets)
+.TP
+.B \&...
+Duration (2 Octets)
+.TP
+.B \&...
+Timeout (2 Octets)
+.TP
+.B \&...
+MinInterval (4 Octets)
+.TP
+.B \&...
+MaxInterval (4 Octets)
+.TP
+.B \&...
+TxPower (1 Octet)
+.TP
+.B Return Parameters
+Instance (1 Octet)
+.TP
+.B \&...
+TxPower (1 Octet)
+.TP
+.B \&...
+MaxAdvDataLen (1 Octet)
+.TP
+.B \&...
+MaxScanRspLen (1 Octet)
+.UNINDENT
+.sp
+This command is used to configure the parameters for Bluetooth Low Energy
+advertising instance. This command is expected to be followed by an Add Extended
+Advertising Data command to complete and enable the advertising instance.
+.sp
+Added advertising information with this command will not be visible immediately
+if advertising is enabled via the Set Advertising command. The usage of the Set
+Advertising command takes precedence over this command. Instance information is
+stored and will be advertised once advertising via Set Advertising has been
+disabled.
+.sp
+The Instance identifier is a value between 1 and the number of supported
+instances. The value 0 is reserved.
+.sp
+With the Flags value the type of advertising is controlled and the following
+flags are defined:
+.TS
+box center;
+l|l.
+T{
+Bit
+T}	T{
+Description
+T}
+_
+T{
+0
+T}	T{
+Switch into Connectable mode
+T}
+_
+T{
+1
+T}	T{
+Advertise as Discoverable
+T}
+_
+T{
+2
+T}	T{
+Advertise as Limited Discoverable
+T}
+_
+T{
+3
+T}	T{
+Add Flags field to Adv_Data
+T}
+_
+T{
+4
+T}	T{
+Add TX Power field to Adv_Data
+T}
+_
+T{
+5
+T}	T{
+Add Appearance field to Scan_Rsp
+T}
+_
+T{
+6
+T}	T{
+Add Local Name in Scan_Rsp
+T}
+_
+T{
+7
+T}	T{
+Secondary Channel with LE 1M
+T}
+_
+T{
+8
+T}	T{
+Secondary Channel with LE 2M
+T}
+_
+T{
+9
+T}	T{
+Secondary Channel with LE Coded
+T}
+_
+T{
+10
+T}	T{
+Indicate tx power can be specified
+T}
+_
+T{
+11
+T}	T{
+Indicate HW supports the advertising offload
+T}
+_
+T{
+12
+T}	T{
+The Duration parameter should be used
+T}
+_
+T{
+13
+T}	T{
+The Timeout parameter should be used
+T}
+_
+T{
+14
+T}	T{
+The Interval parameters should be used
+T}
+_
+T{
+15
+T}	T{
+The Tx Power parameter should be used
+T}
+_
+T{
+16
+T}	T{
+The advertisement will contain a scan response
+T}
+.TE
+.sp
+When the connectable flag is set, then the controller will use undirected
+connectable advertising. The value of the connectable setting can be overwritten
+this way. This is useful to switch a controller into connectable mode only for
+LE operation. This is similar to the mode 0x02 from the Set Advertising command.
+.sp
+When the connectable flag is not set, then the controller will use advertising
+based on the connectable setting. When using non\-connectable or scannable
+advertising, the controller will be programmed with a non\-resolvable random
+address. When the system is connectable, then the identity address or resolvable
+private address will be used.
+.sp
+Using the connectable flag is useful for peripheral mode support where BR/EDR
+(and/or LE) is controlled by Add Device. This allows making the peripheral
+connectable without having to interfere with the global connectable setting.
+.sp
+Secondary channel flags can be used to advertise in secondary channel with the
+corresponding PHYs. These flag bits are mutually exclusive and setting multiple
+will result in Invalid Parameter error. Choosing either LE 1M or LE 2M will
+result in using extended advertising on the primary channel with LE 1M and the
+respectively LE 1M or LE 2M on the secondary channel. Choosing LE Coded will
+result in using extended advertising on the primary and secondary channels with
+LE Coded. Choosing none of these flags will result in legacy advertising.
+.sp
+To allow future parameters to be optionally extended in this structure, the
+flags member has been used to specify which of the structure fields were
+purposefully set by the caller. Unspecified parameters will be given sensible
+defaults by the kernel before the advertisement is registered.
+.sp
+The Duration parameter configures the length of an Instance. The value is in
+seconds. The default is 2 seconds.
+.sp
+If only one advertising Instance has been added, then the Duration value will be
+ignored. It only applies for the case where multiple Instances are configured.
+In that case every Instance will be available for the Duration time and after
+that it switches to the next one. This is a simple round\-robin based approach.
+.sp
+The Timeout parameter configures the life\-time of an Instance. In case the value
+0 is used it indicates no expiration time. If a timeout value is provided, then
+the advertising Instance will be automatically removed when the timeout passes.
+The value for the timeout is in seconds. Powering down a controller will
+invalidate all advertising Instances and it is not possible to add a new
+Instance with a timeout when the controller is powered down.
+.sp
+When a Timeout is provided, then the Duration subtracts from the actual Timeout
+value of that Instance. For example an Instance with Timeout of 5 and Duration
+of 2 will be scheduled exactly 3 times, twice with 2 seconds and once with one
+second. Other Instances have no influence on the Timeout.
+.sp
+MinInterval and MaxInterval define the minimum and maximum advertising
+intervals, with units as number of .625ms advertising slots. The Max interval is
+expected to be greater than or equal to the Min interval, and both must have
+values in the range [0x000020, 0xFFFFFF]. If either condition is not met, the
+registration will fail.
+.sp
+The provided Tx Power parameter will only be used if the controller supports it,
+which can be determined by the presence of the CanSetTxPower member of the Read
+Advertising Features command.
+.sp
+The acceptable range for requested Tx Power is defined in the spec (Version 5.2
+| Vol 4, Part E, page 2585) to be [\-127, +20] dBm, and the controller will
+select a power value up to the requested one. The transmission power selected by
+the controller is not guaranteed to match the requested one, so the reply will
+contain the power chosen by the controller. If the requested Tx Power is outside
+the valid range, the registration will fail.
+.sp
+When flag bit 16 is enabled, it indicates that the subsequent request to set
+advertising data will contain a scan response, and that the parameters should
+set a PDU type that is scannable.
+.sp
+Re\-adding an already existing instance (i.e. issuing the Add Extended
+Advertising Parameters command with an Instance identifier of an existing
+instance) will update that instance\(aqs configuration. In this case where no new
+instance is added, no Advertising Added event will be generated. However, if the
+update of the instance fails, the instance will be removed, and an Advertising
+Removed event will be generated.
+.sp
+An instance being added or changed while another instance is being advertised
+will not be visible immediately but only when the new/changed instance is being
+scheduled by the round robin advertising algorithm.
+.sp
+Changes to an instance that is currently being advertised will cancel that
+instance and switch to the next instance. The changes will be visible the next
+time the instance is scheduled for advertising. In case a single instance is
+active, this means that changes will be visible right away.
+.sp
+The MaxAdvDataLen return parameter indicates how large the data payload can be
+in the subsequent Add Extended Advertising Data Command, as it accounts for the
+data required for the selected flags. Similarly, the MaxScanRspLen return
+parameter indicates how large the scan response can be.
+.sp
+LE must already be enabled, and the controller must be powered, otherwise a
+\(dqrejected\(dq status will be returned.
+.sp
+This command generates a Command Complete event on success or a Command Status
+event on failure.
+.sp
+Possible errors:
+.INDENT 0.0
+.TP
+.B Failed
+.TP
+.B Rejected
+.TP
+.B Not Supported
+.TP
+.B Invalid Parameters
+.TP
+.B Busy
+.UNINDENT
+.SS Add Extended Advertising Data (since 1.19)
+.INDENT 0.0
+.TP
+.B Command Code
+0x0055
+.TP
+.B Controller Index
+<controller id>
+.TP
+.B Command Parameters
+Instance (1 Octet)
+.TP
+.B \&...
+Advertising Data Length (1 Octet)
+.TP
+.B \&...
+Scan Response Length (1 Octet)
+.TP
+.B \&...
+Advertising Data (0\-255 Octets)
+.TP
+.B \&...
+Scan Response (0\-255 Octets)
+.TP
+.B Return Parameters
+Instance (1 Octet)
+.UNINDENT
+.sp
+The Add Extended Advertising Data command is used to update the advertising data
+of an existing advertising instance known to the kernel. It is expected to be
+called after an Add Extended Advertising Parameters command, as part of the
+advertisement registration process.
+.sp
+If extended advertising is available, this call will initiate HCI commands to
+set the instance\(aqs advertising data, set scan response data, and then enable the
+instance. If extended advertising is unavailable, the advertising instance
+structure maintained in kernel will have its advertising data and scan response
+updated, and the instance will either be scheduled immediately or left in the
+queue for later advertisement as part of round\-robin advertisement rotation in
+software.
+.sp
+If Scan_Rsp_Len is zero and the flags defined in Add Extended Advertising
+Parameters command do not have connectable flag set and the global connectable
+setting is off, then non\-connectable advertising is used. If Scan_Rsp_Len is
+larger than zero and connectable flag is not set and the global advertising is
+off, then scannable advertising is used. This small difference is supported to
+provide less air traffic for devices implementing broadcaster role.
+.sp
+If the Instance provided does not match a known instance, or if the provided
+advertising data or scan response are in an unrecognized format, an
+\(dqInvalid Parameters\(dq status will be returned.
+.sp
+If a \(dqSet LE\(dq or Advertising command is still in progress, a \(dqBusy\(dq status will
+be returned.
+.sp
+If the controller is not powered, a \(dqrejected\(dq status will be returned.
+.sp
+This command generates a Command Complete event on success or a Command Status
+event on failure.
+.sp
+Possible errors:
+.INDENT 0.0
+.TP
+.B Failed
+.TP
+.B Rejected
+.TP
+.B Invalid Parameters
+.TP
+.B Busy
+.UNINDENT
+.SS Add Advertisement Patterns Monitor With RSSI Threshold (since 1.20)
+.INDENT 0.0
+.TP
+.B Command Code
+0x0056
+.TP
+.B Controller Index
+<controller id>
+.TP
+.B Command Parameters
+High_Threshold (1 Octet)
+.TP
+.B \&...
+High_Threshold_Timer (2 Octets)
+.TP
+.B \&...
+Low_Threshold (1 Octet)
+.TP
+.B \&...
+Low_Threshold_Timer (2 Octets)
+.TP
+.B \&...
+Sampling_Period (1 Octet)
+.TP
+.B \&...
+Pattern_Count (1 Octet)
+.TP
+.B \&...
+AD_Type[] (1 Octet)
+.TP
+.B \&...
+Offset[] (1 Octet)
+.TP
+.B \&...
+Length[] (1 Octet)
+.TP
+.B \&...
+Value[] (31 Octets)
+.TP
+.B \&...
+\&...[]
+.TP
+.B Return Parameters
+Monitor_Handle (2 Octets)
+.UNINDENT
+.sp
+This command is essentially the same as Add Advertisement Patterns Monitor
+Command (0x0052), but with an additional RSSI parameters.
+As such, if the kernel supports advertisement filtering, then the advertisement
+data will be filtered in accordance with the set RSSI parameters. Otherwise, it
+would behave exactly the same as the Add Advertisement Patterns Monitor Command.
+.sp
+Devices would be considered \(dqin\-range\(dq if the RSSI of the received adv packets
+are greater than High_Threshold dBm for High_Threshold_Timer seconds. Similarly,
+devices would be considered lost if no received adv have RSSI greater than
+Low_Threshold dBm for Low_Threshold_Timer seconds. Only adv packets of
+\(dqin\-range\(dq device would be propagated.
+.sp
+The meaning of Sampling_Period is as follows:
+.INDENT 0.0
+.TP
+.B 0x00
+All adv packets from \(dqin\-range\(dq devices would be propagated.
+.TP
+.B 0xFF
+Only the first adv data of \(dqin\-range\(dq devices would be
+.TP
+.B \&...
+propagated. If the device becomes lost, then the first data when
+.TP
+.B \&...
+it is found again will also be propagated.
+.TP
+.B other
+Advertisement data would be grouped into 100ms * N time period.
+Data in the same group will only be reported once, with the RSSI
+value being averaged out.
+.UNINDENT
+.sp
+Possible errors:
+.INDENT 0.0
+.TP
+.B Failed
+.TP
+.B Busy
+.TP
+.B No Resources
+.TP
+.B Invalid Parameters
+.UNINDENT
+.SS Set Mesh Receiver (since 1.21)
+.INDENT 0.0
+.TP
+.B Command Code
+0x0057
+.TP
+.B Controller Index
+<controller id>
+.TP
+.B Command Parameters
+Enable (1 Octets)
+.TP
+.B \&...
+Window (2 Octets)
+.TP
+.B \&...
+Period (2 Octets)
+.TP
+.B \&...
+Num AD Types (1 Octets)
+.TP
+.B \&...
+AD Types[]
+.UNINDENT
+.sp
+This command Enables or Disables Mesh Receiving. When enabled passive scanning
+remains enabled for this controller.
+.sp
+The Window/Period values are used to set the Scan Parameters when no other
+scanning is being done.
+.sp
+Num AD Types and AD Types parameter, filter Advertising and Scan responses by AD
+type. Responses that do not contain at least one of the requested AD types will
+be ignored. Otherwise they will be delivered with the Mesh Device Found event.
+.sp
+Possible errors:
+.INDENT 0.0
+.TP
+.B Failed
+.TP
+.B No Resources
+.TP
+.B Invalid Parameters
+.UNINDENT
+.SS Read Mesh Features (since 1.21)
+.INDENT 0.0
+.TP
+.B Command Code
+0x0058
+.TP
+.B Controller Index
+<controller id>
+.TP
+.B Command Parameters
+.TP
+.B Return Parameters
+Index (2 Octets)
+.TP
+.B \&...
+Max Handles (1 Octets)
+.TP
+.B \&...
+Used Handles (1 Octets)
+.TP
+.B \&...
+Handle[]
+.UNINDENT
+.sp
+This command is used to both verify that Outbound Mesh packet support is
+enabled, and to indicate the number of packets that can and are simultaneously
+queued.
+.sp
+Index identifies the HCI Controller that this information is valid for.
+.sp
+Max Handles indicates the maximum number of packets that may be queued.
+.sp
+Used Handles indicates the number of packets awaiting transmission.
+.sp
+Handle is an array of the currently outstanding packets.
+.sp
+Possible errors:
+.INDENT 0.0
+.TP
+.B Failed
+.TP
+.B No Resources
+.TP
+.B Invalid Parameters
+.UNINDENT
+.SS Transmit Mesh Packet (since 1.21)
+.INDENT 0.0
+.TP
+.B Command Code
+0x0059
+.TP
+.B Controller Index
+<controller id>
+.TP
+.B Command Parameters
+Addr (6 octets)
+.TP
+.B \&...
+Addr Type (1 Octets)
+.TP
+.B \&...
+Instant (8 Octets)
+.TP
+.B \&...
+Delay (2 Octets)
+.TP
+.B \&...
+Count (1 Octets)
+.TP
+.B \&...
+Data Length (1 Octets)
+.TP
+.B \&...
+Data[] (variable)
+.TP
+.B Return Parameters
+Handle (1 Octets)
+.UNINDENT
+.sp
+This command sends a Mesh Packet as a NONCONN LE Advertisement.
+.sp
+The Addr + Addr Type parameters specify the address to use in the outbound
+advertising packet. If BD_ADDR_ANY and LE_RANDOM is set, the kernel will create
+a single use non\-resolvable address.
+.sp
+The Instant parameter is used in combination with the Delay parameter, to finely
+time the sending of the Advertising packet. It should be set to the Instant
+value tag of a received incoming Mesh Device Found Event. It is only useful in
+POLL\-RESPONSE situations where a response must be sent within a negotiated time
+window. The value of the Instant parameter should not be interpreted by the
+host, and only has meaning to the controller.
+.sp
+The Delay parameter, if 0x0000, will cause the packet to be sent at the earliest
+opportunity. If non\-Zero, and the controller supports delayed delivery, the
+Instant and Delay parameters will be used to delay the outbound packet. While
+the Instant is not defined, the Delay is specified in milliseconds.
+.sp
+The Count parameter must be sent to a non\-Zero value indicating the number of
+times this packet will be sent before transmission completes. If the Delay
+parameter is non\-Zero, then Count must be 1 only.
+.sp
+The Data parameter is an octet array of the AD Type and Mesh Packet.
+.sp
+This command will return immediately, and if it succeeds, will generate a Mesh
+Packet Transmission Complete event when after the packet has been sent.
+.sp
+Possible errors:
+.INDENT 0.0
+.TP
+.B Failed
+.TP
+.B Busy
+.TP
+.B No Resources
+.TP
+.B Invalid Parameters
+.UNINDENT
+.SS Cancel Transmit Mesh Packet (since 1.21)
+.INDENT 0.0
+.TP
+.B Command Code
+0x005A
+.TP
+.B Controller Index
+<controller id>
+.TP
+.B Command Parameters
+Handle (1 Octets)
+.UNINDENT
+.sp
+This command may be used to cancel an outbound transmission request.
+.sp
+The Handle parameter is the returned handle from a successful Transmit Mesh
+Packet request. If Zero is specified as the handle, all outstanding send
+requests are canceled.
+.sp
+For each mesh packet canceled, the Mesh Packet Transmission Complete event will
+be generated, regardless of whether the packet was sent successfully.
+.sp
+Possible errors:
+.INDENT 0.0
+.TP
+.B Failed
+.TP
+.B Invalid Parameters
+.UNINDENT
+.SS Send HCI command and wait for event
+.INDENT 0.0
+.TP
+.B Command Code
+0x005B
+.TP
+.B Controller Index
+<controller id>
+.TP
+.B Command Parameters
+Opcode (2 Octets)
+.TP
+.B \&...
+Event (1 Octet)
+.TP
+.B \&...
+Timeout (1 Octet)
+.TP
+.B \&...
+Parameter Length (2 Octets)
+.TP
+.B \&...
+Parameter[] (variable)
+.TP
+.B Return Parameters
+Response (1\-variable Octets)
+.UNINDENT
+.sp
+This command may be used to send a HCI command and wait for an (optional) event.
+.sp
+The HCI command is specified by the Opcode, any arbitrary is supported including
+vendor commands, but contrary to the like of Raw/User channel it is run as an
+HCI command send by the kernel since it uses its command synchronization thus it
+is possible to wait for a specific event as a response.
+.sp
+Setting event to 0x00 will cause the command to wait for either HCI Command
+Status or HCI Command Complete.
+.sp
+Timeout is specified in seconds, setting it to 0 will cause the default timeout
+to be used.
+.sp
+Possible errors:
+.INDENT 0.0
+.TP
+.B Failed
+.TP
+.B Invalid Parameters
+.UNINDENT
+.SS Events
+.SS Command Complete
+.INDENT 0.0
+.TP
+.B Event Code
+0x0001
+.TP
+.B Controller Index
+<controller id> or <non\-controller>
+.TP
+.B Event Parameters
+Command_Opcode (2 Octets)
+.TP
+.B \&...
+Status (1 Octet)
+.TP
+.B \&...
+Return_Parameters[] (variable)
+.UNINDENT
+.sp
+This event is an indication that a command has completed. The fixed set of
+parameters includes the opcode to identify the command that completed as well as
+a status value to indicate success or failure. The rest of the parameters are
+command specific and documented in the section for each command separately.
+.SS Command Status
+.INDENT 0.0
+.TP
+.B Event Code
+0x0002
+.TP
+.B Controller Index
+<controller id> or <non\-controller>
+.TP
+.B Event Parameters
+Command_Opcode (2 Octets)
+.TP
+.B \&...
+Status (1 Octet)
+.UNINDENT
+.sp
+The command status event is used to indicate an early status for a pending
+command. In the case that the status indicates failure (anything else except
+success status) this also means that the command has finished executing.
+.SS Controller Error
+.INDENT 0.0
+.TP
+.B Event Code
+0x0003
+.TP
+.B Controller Index
+<controller id>
+.TP
+.B Event Parameters
+Error_Code (1 Octet)
+.UNINDENT
+.sp
+This event maps straight to the HCI Hardware Error event and is used to indicate
+something wrong with the controller hardware.
+.SS Index Added
+.INDENT 0.0
+.TP
+.B Event Code
+0x0004
+.TP
+.B Controller Index
+<controller id>
+.TP
+.B Event Parameters
+.UNINDENT
+.sp
+This event indicates that a new controller has been added to the system. It is
+usually followed by a Read Controller Information command.
+.sp
+Once the Read Extended Controller Index List command has been used at least
+once, the Extended Index Added event will be send instead of this one.
+.SS Index Removed
+.INDENT 0.0
+.TP
+.B Event Code
+0x0005
+.TP
+.B Controller Index
+<controller id>
+.TP
+.B Event Parameters
+.UNINDENT
+.sp
+This event indicates that a controller has been removed from the system.
+.sp
+Once the Read Extended Controller Index List command has been used at least
+once, the Extended Index Removed event will be send instead of this one.
+.SS New Settings
+.INDENT 0.0
+.TP
+.B Event Code
+0x0006
+.TP
+.B Controller Index
+<controller id>
+.TP
+.B Event Parameters
+Current_Settings (4 Octets)
+.UNINDENT
+.sp
+This event indicates that one or more of the settings for a controller has
+changed.
+.SS Class Of Device Changed
+.INDENT 0.0
+.TP
+.B Event Code
+0x0007
+.TP
+.B Controller Index
+<controller id>
+.TP
+.B Event Parameters
+Class_Of_Device (3 Octets)
+.UNINDENT
+.sp
+This event indicates that the Class of Device value for the controller has
+changed. When the controller is powered off the Class of Device value will
+always be reported as zero.
+.SS Local Name Changed
+.INDENT 0.0
+.TP
+.B Event Code
+0x0008
+.TP
+.B Controller Index
+<controller id>
+.TP
+.B Event Parameters
+Name (249 Octets)
+.TP
+.B \&...
+Short_Name (11 Octets)
+.UNINDENT
+.sp
+This event indicates that the local name of the controller has changed.
+.SS New Link Key
+.INDENT 0.0
+.TP
+.B Event Code
+0x0009
+.TP
+.B Controller Index
+<controller id>
+.TP
+.B Event Parameters
+Store_Hint (1 Octet)
+.TP
+.B \&...
+Address (6 Octets)
+.TP
+.B \&...
+Address_Type (1 Octet)
+.TP
+.B \&...
+Key_Type (1 Octet)
+.TP
+.B \&...
+Value (16 Octets)
+.TP
+.B \&...
+PIN_Length (1 Octet)
+.UNINDENT
+.sp
+This event indicates that a new link key has been generated for a remote device.
+.sp
+The Store_Hint parameter indicates whether the host is expected to store the key
+persistently or not (e.g. this would not be set if the authentication
+requirement was \(dqNo Bonding\(dq).
+.sp
+Possible values for the Address_Type parameter:
+.TS
+box center;
+l|l.
+T{
+Value
+T}	T{
+Description
+T}
+_
+T{
+0
+T}	T{
+BR/EDR
+T}
+_
+T{
+1
+T}	T{
+Reserved (not in use)
+T}
+_
+T{
+2
+T}	T{
+Reserved (not in use)
+T}
+.TE
+.sp
+Public and random LE addresses are not valid and will be rejected.
+.sp
+Currently defined Key_Type values are:
+.TS
+box center;
+l|l.
+T{
+Value
+T}	T{
+Description
+T}
+_
+T{
+0x00
+T}	T{
+Combination key
+T}
+_
+T{
+0x01
+T}	T{
+Local Unit key
+T}
+_
+T{
+0x02
+T}	T{
+Remote Unit key
+T}
+_
+T{
+0x03
+T}	T{
+Debug Combination key
+T}
+_
+T{
+0x04
+T}	T{
+Unauthenticated Combination key from P\-192
+T}
+_
+T{
+0x05
+T}	T{
+Authenticated Combination key from P\-192
+T}
+_
+T{
+0x06
+T}	T{
+Changed Combination key
+T}
+_
+T{
+0x07
+T}	T{
+Unauthenticated Combination key from P\-256
+T}
+_
+T{
+0x08
+T}	T{
+Authenticated Combination key from P\-256
+T}
+.TE
+.sp
+Receiving this event indicates that a pairing procedure has been completed.
+.SS New Long Term Key
+.INDENT 0.0
+.TP
+.B Event Code
+0x000A
+.TP
+.B Controller Index
+<controller id>
+.TP
+.B Event Parameters
+Store_Hint (1 Octet)
+.TP
+.B \&...
+Address (6 Octets)
+.TP
+.B \&...
+Address_Type (1 Octet)
+.TP
+.B \&...
+Key_Type (1 Octet)
+.TP
+.B \&...
+Central (1 Octet)
+.TP
+.B \&...
+Encryption Size (1 Octet)
+.TP
+.B \&...
+Enc. Diversifier (2 Octets)
+.TP
+.B \&...
+Random Number (8 Octets)
+.TP
+.B \&...
+Value (16 Octets)
+.UNINDENT
+.sp
+This event indicates that a new long term key has been generated for a remote
+device.
+.sp
+The Store_Hint parameter indicates whether the host is expected to store the key
+persistently or not (e.g. this would not be set if the authentication
+requirement was \(dqNo Bonding\(dq).
+.sp
+Possible values for the Address_Type parameter:
+.TS
+box center;
+l|l.
+T{
+Value
+T}	T{
+Description
+T}
+_
+T{
+0
+T}	T{
+Reserved (not in use)
+T}
+_
+T{
+1
+T}	T{
+LE Public
+T}
+_
+T{
+2
+T}	T{
+LE Random
+T}
+.TE
+.sp
+The provided Address and Address_Type are the identity of a device. So either
+its public address or static random address.
+.sp
+For unresolvable random addresses and resolvable random addresses without
+identity information and identity resolving key, the Store_Hint will be set to
+not store the long term key.
+.sp
+Currently defined Key_Type values are:
+.TS
+box center;
+l|l.
+T{
+Value
+T}	T{
+Description
+T}
+_
+T{
+0x00
+T}	T{
+Unauthenticated legacy key
+T}
+_
+T{
+0x01
+T}	T{
+Authenticated legacy key
+T}
+_
+T{
+0x02
+T}	T{
+Unauthenticated key from P\-256
+T}
+_
+T{
+0x03
+T}	T{
+Authenticated key from P\-256
+T}
+_
+T{
+0x04
+T}	T{
+Debug key from P\-256
+T}
+.TE
+.sp
+Receiving this event indicates that a pairing procedure has been completed.
+.SS Device Connected
+.INDENT 0.0
+.TP
+.B Event Code
+0x000B
+.TP
+.B Controller Index
+<controller id>
+.TP
+.B Event Parameters
+Address (6 Octets)
+.TP
+.B \&...
+Address_Type (1 Octet)
+.TP
+.B \&...
+Flags (4 Octets)
+.TP
+.B \&...
+EIR_Data_Length (2 Octets)
+.TP
+.B \&...
+EIR_Data (0\-65535 Octets)
+.UNINDENT
+.sp
+This event indicates that a successful baseband connection has been created to
+the remote device.
+.sp
+Possible values for the Address_Type parameter:
+.TS
+box center;
+l|l.
+T{
+Value
+T}	T{
+Description
+T}
+_
+T{
+0
+T}	T{
+BR/EDR
+T}
+_
+T{
+1
+T}	T{
+LE Public
+T}
+_
+T{
+2
+T}	T{
+LE Random
+T}
+.TE
+.sp
+For devices using resolvable random addresses with a known identity resolving
+key, the Address and Address_Type will contain the identity information.
+.sp
+It is possible that devices get connected via its resolvable random address and
+after New Identity Resolving Key event start using its identity.
+.sp
+The following bits are defined for the Flags parameter:
+.TS
+box center;
+l|l.
+T{
+Value
+T}	T{
+Description
+T}
+_
+T{
+0
+T}	T{
+Reserved (not in use)
+T}
+_
+T{
+1
+T}	T{
+Legacy Pairing
+T}
+_
+T{
+2
+T}	T{
+Reserved (not in use)
+T}
+_
+T{
+3
+T}	T{
+Initiated Connection
+T}
+_
+T{
+4
+T}	T{
+Reserved (not in use)
+T}
+.TE
+.SS Device Disconnected
+.INDENT 0.0
+.TP
+.B Event Code
+0x000C
+.TP
+.B Controller Index
+<controller id>
+.TP
+.B Event Parameters
+Address (6 Octets)
+.TP
+.B \&...
+Address_Type (1 Octet)
+.TP
+.B \&...
+Reason (1 Octet)
+.UNINDENT
+.sp
+This event indicates that the baseband connection was lost to a remote device.
+.sp
+Possible values for the Address_Type parameter:
+.TS
+box center;
+l|l.
+T{
+Value
+T}	T{
+Description
+T}
+_
+T{
+0x00
+T}	T{
+BR/EDR
+T}
+_
+T{
+0x01
+T}	T{
+LE Public
+T}
+_
+T{
+0x02
+T}	T{
+LE Random
+T}
+.TE
+.sp
+For devices using resolvable random addresses with a known identity resolving
+key, the Address and Address_Type will contain the identity information.
+.sp
+Possible values for the Reason parameter:
+.TS
+box center;
+l|l.
+T{
+Value
+T}	T{
+Description
+T}
+_
+T{
+0x00
+T}	T{
+Unspecified
+T}
+_
+T{
+0x01
+T}	T{
+Connection timeout
+T}
+_
+T{
+0x02
+T}	T{
+Connection terminated by local host
+T}
+_
+T{
+0x03
+T}	T{
+Connection terminated by remote host
+T}
+_
+T{
+0x04
+T}	T{
+Connection terminated due to authentication failure
+T}
+_
+T{
+0x05
+T}	T{
+Connection terminated by local host for suspend
+T}
+.TE
+.sp
+Note that the local/remote distinction just determines which side terminated the
+low\-level connection, regardless of the disconnection of the higher\-level
+profiles.
+.sp
+This can sometimes be misleading and thus must be used with care.
+For example, some hardware combinations would report a locally initiated
+disconnection even if the user turned Bluetooth off in the remote side.
+.SS Connect Failed
+.INDENT 0.0
+.TP
+.B Event Code
+0x000D
+.TP
+.B Controller Index
+<controller id>
+.TP
+.B Event Parameters
+Address (6 Octets)
+.TP
+.B \&...
+Address_Type (1 Octet)
+.TP
+.B \&...
+Status (1 Octet)
+.UNINDENT
+.sp
+This event indicates that a connection attempt failed to a remote device.
+.sp
+Possible values for the Address_Type parameter:
+.TS
+box center;
+l|l.
+T{
+Value
+T}	T{
+Description
+T}
+_
+T{
+0x00
+T}	T{
+BR/EDR
+T}
+_
+T{
+0x01
+T}	T{
+LE Public
+T}
+_
+T{
+0x02
+T}	T{
+LE Random
+T}
+.TE
+.sp
+For devices using resolvable random addresses with a known identity resolving
+key, the Address and Address_Type will contain the identity information.
+.SS PIN Code Request
+.INDENT 0.0
+.TP
+.B Event Code
+0x000E
+.TP
+.B Controller Index
+<controller id>
+.TP
+.B Event Parameters
+Address (6 Octets)
+.TP
+.B \&...
+Address_Type (1 Octet)
+.TP
+.B \&...
+Secure (1 Octet)
+.UNINDENT
+.sp
+This event is used to request a PIN Code reply from user space.
+The reply should either be returned using the PIN Code Reply or the PIN Code
+Negative Reply command.
+.sp
+Possible values for the Address_Type parameter:
+.TS
+box center;
+l|l.
+T{
+Value
+T}	T{
+Description
+T}
+_
+T{
+0x00
+T}	T{
+BR/EDR
+T}
+_
+T{
+0x01
+T}	T{
+LE Public
+T}
+_
+T{
+0x02
+T}	T{
+LE Random
+T}
+.TE
+.INDENT 0.0
+.TP
+.B Secure
+0x01  secure PIN code required
+0x00  secure PIN code not required
+.UNINDENT
+.SS User Confirmation Request
+.INDENT 0.0
+.TP
+.B Event Code
+0x000F
+.TP
+.B Controller Index
+<controller id>
+.TP
+.B Event Parameters
+Address (6 Octets)
+.TP
+.B \&...
+Address_Type (1 Octet)
+.TP
+.B \&...
+Confirm_Hint (1 Octet)
+.TP
+.B \&...
+Value (4 Octets)
+.UNINDENT
+.sp
+This event is used to request a user confirmation request from user space.
+.TS
+box center;
+l|l.
+T{
+Value
+T}	T{
+Description
+T}
+_
+T{
+0x00
+T}	T{
+BR/EDR
+T}
+_
+T{
+0x01
+T}	T{
+LE Public
+T}
+_
+T{
+0x02
+T}	T{
+LE Random
+T}
+.TE
+.sp
+If the Confirm_Hint parameter value is 0x01 this means that a simple \(dqYes/No\(dq
+confirmation should be presented to the user instead of a full numerical
+confirmation (in which case the parameter value will be 0x00).
+.sp
+User space should respond to this command either using the User Confirmation
+Reply or the User Confirmation Negative Reply command.
+.SS User Passkey Request
+.INDENT 0.0
+.TP
+.B Event Code
+0x0010
+.TP
+.B Controller Index
+<controller id>
+.TP
+.B Event Parameters
+Address (6 Octets)
+.TP
+.B \&...
+Address_Type (1 Octet)
+.UNINDENT
+.sp
+This event is used to request a passkey from user space. The response to this
+event should either be the User Passkey Reply command or the User Passkey
+Negative Reply command.
+.sp
+Possible values for the Address_Type parameter:
+.TS
+box center;
+l|l.
+T{
+Value
+T}	T{
+Description
+T}
+_
+T{
+0x00
+T}	T{
+BR/EDR
+T}
+_
+T{
+0x01
+T}	T{
+LE Public
+T}
+_
+T{
+0x02
+T}	T{
+LE Random
+T}
+.TE
+.SS Authentication Failed
+.INDENT 0.0
+.TP
+.B Event Code
+0x0011
+.TP
+.B Controller Index
+<controller id>
+.TP
+.B Event Parameters
+Address (6 Octets)
+.TP
+.B \&...
+Address_Type (1 Octet)
+.TP
+.B \&...
+Status (1 Octet)
+.UNINDENT
+.sp
+This event indicates that there was an authentication failure with a remote
+device.
+.sp
+Possible values for the Address_Type parameter:
+.TS
+box center;
+l|l.
+T{
+Value
+T}	T{
+Description
+T}
+_
+T{
+0x00
+T}	T{
+BR/EDR
+T}
+_
+T{
+0x01
+T}	T{
+LE Public
+T}
+_
+T{
+0x02
+T}	T{
+LE Random
+T}
+.TE
+.SS Device Found
+.INDENT 0.0
+.TP
+.B Event Code
+0x0012
+.TP
+.B Controller Index
+<controller id>
+.TP
+.B Event Parameters
+Address (6 Octets)
+.TP
+.B \&...
+Address_Type (1 Octet)
+.TP
+.B \&...
+RSSI (1 Octet)
+.TP
+.B \&...
+Flags (4 Octets)
+.TP
+.B \&...
+EIR_Data_Length (2 Octets)
+.TP
+.B \&...
+EIR_Data (0\-65535 Octets)
+.UNINDENT
+.sp
+This event indicates that a device was found during device discovery.
+.sp
+Possible values for the Address_Type parameter:
+.TS
+box center;
+l|l.
+T{
+Value
+T}	T{
+Description
+T}
+_
+T{
+0x00
+T}	T{
+BR/EDR
+T}
+_
+T{
+0x01
+T}	T{
+LE Public
+T}
+_
+T{
+0x02
+T}	T{
+LE Random
+T}
+.TE
+.sp
+The following bits are defined for the Flags parameter:
+.TS
+box center;
+l|l.
+T{
+Bit
+T}	T{
+Description
+T}
+_
+T{
+0
+T}	T{
+Confirm name
+T}
+_
+T{
+1
+T}	T{
+Legacy Pairing
+T}
+_
+T{
+2
+T}	T{
+Not Connectable
+T}
+_
+T{
+3
+T}	T{
+Reserved (not in use)
+T}
+_
+T{
+4
+T}	T{
+Name Request Failed
+T}
+_
+T{
+5
+T}	T{
+Scan Response
+T}
+.TE
+.sp
+For the RSSI field a value of 127 indicates that the RSSI is not available. That
+can happen with Bluetooth 1.1 and earlier controllers or with bad radio
+conditions.
+.sp
+The Confirm name flag indicates that the kernel wants to know whether user space
+knows the name for this device or not. If this flag is set user space should
+respond to it using the Confirm Name command.
+.sp
+The Legacy Pairing flag indicates that Legacy Pairing is likely to occur when
+pairing with this device. An application could use this information to optimize
+the pairing process by locally pre\-generating a PIN code and thereby eliminate
+the risk of local input timeout when pairing. Note that there is a risk of
+false\-positives for this flag so user space should be able to handle getting
+something else as a PIN Request when pairing.
+.sp
+The Not Connectable flag indicates that the device will not accept any
+connections. This can be indicated by Low Energy devices that are in broadcaster
+role.
+.sp
+The Name Request Failed flag indicates that name resolving procedure has ended
+with failure for this device. The user space should use this information to
+determine when is a good time to retry the name resolving procedure.
+.SS Discovering
+.INDENT 0.0
+.TP
+.B Event Code
+0x0013
+.TP
+.B Controller Index
+<controller id>
+.TP
+.B Event Parameters
+Address_Type (1 Octet)
+.TP
+.B \&...
+Discovering (1 Octet)
+.UNINDENT
+.sp
+This event indicates that the controller has started discovering devices. This
+discovering state can come and go multiple times between a Start Discovery and a
+Stop Discovery commands.
+.sp
+The Start Service Discovery command will also trigger this event.
+.sp
+The valid values for the Discovering parameter are 0x01 (enabled) and 0x00
+(disabled).
+.SS Device Blocked
+.INDENT 0.0
+.TP
+.B Event Code
+0x0014
+.TP
+.B Controller Index
+<controller id>
+.TP
+.B Event Parameters
+Address (6 Octets)
+.TP
+.B \&...
+Address_Type (1 Octet)
+.UNINDENT
+.sp
+This event indicates that a device has been blocked using the Block Device
+command.
+.sp
+Possible values for the Address_Type parameter:
+.TS
+box center;
+l|l.
+T{
+Value
+T}	T{
+Description
+T}
+_
+T{
+0x00
+T}	T{
+BR/EDR
+T}
+_
+T{
+0x01
+T}	T{
+LE Public
+T}
+_
+T{
+0x02
+T}	T{
+LE Random
+T}
+.TE
+.sp
+The event will only be sent to Management sockets other than the one through
+which the command was sent.
+.SS Device Unblocked
+.INDENT 0.0
+.TP
+.B Event Code
+0x0015
+.TP
+.B Controller Index
+<controller id>
+.TP
+.B Event Parameters
+Address (6 Octets)
+.TP
+.B \&...
+Address_Type (1 Octet)
+.UNINDENT
+.sp
+This event indicates that a device has been unblocked using the Unblock Device
+command.
+.sp
+Possible values for the Address_Type parameter:
+.TS
+box center;
+l|l.
+T{
+Value
+T}	T{
+Description
+T}
+_
+T{
+0x00
+T}	T{
+BR/EDR
+T}
+_
+T{
+0x01
+T}	T{
+LE Public
+T}
+_
+T{
+0x02
+T}	T{
+LE Random
+T}
+.TE
+.sp
+The event will only be sent to Management sockets other than the one through
+which the command was sent.
+.SS Device Unpaired
+.INDENT 0.0
+.TP
+.B Event Code
+0x0016
+.TP
+.B Controller Index
+<controller id>
+.TP
+.B Event Parameters
+Address (6 Octets)
+.TP
+.B \&...
+Address_Type (1 Octet)
+.UNINDENT
+.sp
+This event indicates that a device has been unpaired (i.e. all its keys have
+been removed from the kernel) using the Unpair Device command.
+.sp
+Possible values for the Address_Type parameter:
+.TS
+box center;
+l|l.
+T{
+Value
+T}	T{
+Description
+T}
+_
+T{
+0x00
+T}	T{
+BR/EDR
+T}
+_
+T{
+0x01
+T}	T{
+LE Public
+T}
+_
+T{
+0x02
+T}	T{
+LE Random
+T}
+.TE
+.sp
+For devices using resolvable random addresses with a known identity resolving
+key, the event parameters will contain the identity. After receiving this event,
+the device will become essentially private again.
+.sp
+The event will only be sent to Management sockets other than the one through
+which the Unpair Device command was sent.
+.SS Passkey Notify
+.INDENT 0.0
+.TP
+.B Event Code
+0x0017
+.TP
+.B Controller Index
+<controller id>
+.TP
+.B Event Parameters
+Address (6 Octets)
+.TP
+.B \&...
+Address_Type (1 Octet)
+.TP
+.B \&...
+Passkey (4 Octets)
+.TP
+.B \&...
+Entered (1 Octet)
+.UNINDENT
+.sp
+This event is used to request passkey notification to the user.
+Unlike the other authentication events it does not need responding to using any
+Management command.
+.sp
+Possible values for the Address_Type parameter:
+.TS
+box center;
+l|l.
+T{
+Value
+T}	T{
+Description
+T}
+_
+T{
+0x00
+T}	T{
+BR/EDR
+T}
+_
+T{
+0x01
+T}	T{
+LE Public
+T}
+_
+T{
+0x02
+T}	T{
+LE Random
+T}
+.TE
+.sp
+The Passkey parameter indicates the passkey to be shown to the user whereas the
+Entered parameter indicates how many characters the user has entered on the
+remote side.
+.SS New Identity Resolving Key (since 1.5)
+.INDENT 0.0
+.TP
+.B Event Code
+0x0018
+.TP
+.B Controller Index
+<controller id>
+.TP
+.B Event Parameters
+Store_Hint (1 Octet)
+.TP
+.B \&...
+Random_Address (6 Octets)
+.TP
+.B \&...
+Address (6 Octets)
+.TP
+.B \&...
+Address_Type (1 Octet)
+.TP
+.B \&...
+Value (16 Octets)
+.UNINDENT
+.sp
+This event indicates that a new identity resolving key has been generated for a
+remote device.
+.sp
+The Store_Hint parameter indicates whether the host is expected to store the key
+persistently or not.
+.sp
+The Random_Address provides the resolvable random address that was resolved into
+an identity. A value of 00:00:00:00:00:00 indicates that the identity resolving
+key was provided for a public address or static random address.
+.sp
+Once this event has been send for a resolvable random address, all further
+events mapping this device will send out using the identity address information.
+.sp
+This event also indicates that now the identity address should be used for
+commands instead of the resolvable random address.
+.sp
+It is possible that some devices allow discovering via its identity address, but
+after pairing using resolvable private address only. In such a case Store_Hint
+will be 0x00 and the Random_Address will indicate 00:00:00:00:00:00. For these
+devices, the Privacy Characteristic of the remote GATT database should be
+consulted to decide if the identity resolving key must be stored persistently or
+not.
+.sp
+Devices using Set Privacy command with the option 0x02 would be such type of
+device.
+.sp
+Possible values for the Address_Type parameter:
+.TS
+box center;
+l|l.
+T{
+Value
+T}	T{
+Description
+T}
+_
+T{
+0
+T}	T{
+Reserved (not in use)
+T}
+_
+T{
+1
+T}	T{
+LE Public
+T}
+_
+T{
+2
+T}	T{
+LE Random
+T}
+.TE
+.sp
+The provided Address and Address_Type are the identity of a device. So either
+its public address or static random address.
+.SS New Signature Resolving Key (since 1.5)
+.INDENT 0.0
+.TP
+.B Event Code
+0x0019
+.TP
+.B Controller Index
+<controller id>
+.TP
+.B Event Parameters
+Store_Hint (1 Octet)
+.TP
+.B \&...
+Address (6 Octets)
+.TP
+.B \&...
+Address_Type (1 Octet)
+.TP
+.B \&...
+Type (1 Octet)
+.TP
+.B \&...
+Value (16 Octets)
+.UNINDENT
+.sp
+This event indicates that a new signature resolving key has been generated for
+either the central or peripheral device.
+.sp
+The Store_Hint parameter indicates whether the host is expected to store the key
+persistently or not.
+.sp
+The Type parameter has the following possible values:
+.TS
+box center;
+l|l.
+T{
+Value
+T}	T{
+Description
+T}
+_
+T{
+0x00
+T}	T{
+Unauthenticated local CSRK
+T}
+_
+T{
+0x01
+T}	T{
+Unauthenticated remote CSRK
+T}
+_
+T{
+0x02
+T}	T{
+Authenticated local CSRK
+T}
+_
+T{
+0x03
+T}	T{
+Authenticated remote CSRK
+T}
+.TE
+.sp
+The local keys are used for signing data to be sent to the remote device,
+whereas the remote keys are used to verify signatures received from the remote
+device.
+.sp
+The local signature resolving key will be generated with each pairing request.
+Only after receiving this event with the Type indicating a local key is it
+possible to use ATT Signed Write procedures.
+.sp
+Possible values for the Address_Type parameter:
+.TS
+box center;
+l|l.
+T{
+Value
+T}	T{
+Description
+T}
+_
+T{
+0x00
+T}	T{
+Reserved (not in use)
+T}
+_
+T{
+0x01
+T}	T{
+LE Public
+T}
+_
+T{
+0x02
+T}	T{
+LE Random
+T}
+.TE
+.sp
+The provided Address and Address_Type are the identity of a device. So either
+its public address or static random address.
+.SS Device Added (since 1.7)
+.INDENT 0.0
+.TP
+.B Event Code
+0x001a
+.TP
+.B Controller Index
+<controller id>
+.TP
+.B Event Parameters
+Address (6 Octets)
+.TP
+.B \&...
+Address_Type (1 Octet)
+.TP
+.B \&...
+Action (1 Octet)
+.UNINDENT
+.sp
+This event indicates that a device has been added using the Add Device command.
+.sp
+Possible values for the Address_Type parameter:
+.TS
+box center;
+l|l.
+T{
+Value
+T}	T{
+Description
+T}
+_
+T{
+0x00
+T}	T{
+BR/EDR
+T}
+_
+T{
+0x01
+T}	T{
+LE Public
+T}
+_
+T{
+0x02
+T}	T{
+LE Random
+T}
+.TE
+.sp
+The event will only be sent to management sockets other than the one through
+which the command was sent.
+.SS Device Removed (since 1.7)
+.INDENT 0.0
+.TP
+.B Event Code
+0x001b
+.TP
+.B Controller Index
+<controller id>
+.TP
+.B Event Parameters
+Address (6 Octets)
+.TP
+.B \&...
+Address_Type (1 Octet)
+.UNINDENT
+.sp
+This event indicates that a device has been removed using the Remove Device
+command.
+.sp
+Possible values for the Address_Type parameter:
+.TS
+box center;
+l|l.
+T{
+Value
+T}	T{
+Description
+T}
+_
+T{
+0x00
+T}	T{
+BR/EDR
+T}
+_
+T{
+0x01
+T}	T{
+LE Public
+T}
+_
+T{
+0x02
+T}	T{
+LE Random
+T}
+.TE
+.sp
+The event will only be sent to management sockets other than the one through
+which the command was sent.
+.SS New Connection Parameter (since 1.7)
+.INDENT 0.0
+.TP
+.B Event Code
+0x001c
+.TP
+.B Controller Index
+<controller id>
+.TP
+.B Event Parameters
+Store_Hint (1 Octet)
+.TP
+.B \&...
+Address (6 Octets)
+.TP
+.B \&...
+Address_Type (1 Octet)
+.TP
+.B \&...
+Min_Connection_Interval (2 Octets)
+.TP
+.B \&...
+Max_Connection_Interval (2 Octets)
+.TP
+.B \&...
+Connection_Latency (2 Octets)
+.TP
+.B \&...
+Supervision_Timeout (2 Octets)
+.UNINDENT
+.sp
+This event indicates a new set of connection parameters from a peripheral
+device.
+.sp
+The Store_Hint parameter indicates whether the host is expected to store this
+information persistently or not.
+.sp
+Possible values for the Address_Type parameter:
+.TS
+box center;
+l|l.
+T{
+Value
+T}	T{
+Description
+T}
+_
+T{
+0x00
+T}	T{
+Reserved (not in use)
+T}
+_
+T{
+0x01
+T}	T{
+LE Public
+T}
+_
+T{
+0x02
+T}	T{
+LE Random
+T}
+.TE
+.sp
+The Min_Connection_Interval, Max_Connection_Interval, Connection_Latency and
+Supervision_Timeout parameters are encoded as described in Core 4.1 spec, Vol 2,
+7.7.65.3.
+.SS Unconfigured Index Added (since 1.7)
+.INDENT 0.0
+.TP
+.B Event Code
+0x001d
+.TP
+.B Controller Index
+<controller id>
+.TP
+.B Event Parameters
+.UNINDENT
+.sp
+This event indicates that a new unconfigured controller has been added to the
+system. It is usually followed by a Read Controller Configuration Information
+command.
+.sp
+Only when a controller requires further configuration, it will be announced with
+this event. If it supports configuration, but does not require it, then an Index
+Added event will be used.
+.sp
+Once the Read Extended Controller Index List command has been used at least
+once, the Extended Index Added event will be send instead of this one.
+.SS Unconfigured Index Removed (since 1.7)
+.INDENT 0.0
+.TP
+.B Event Code
+0x001e
+.TP
+.B Controller Index
+<controller id>
+.TP
+.B Event Parameters
+.UNINDENT
+.sp
+This event indicates that an unconfigured controller has been removed from the
+system.
+.sp
+Once the Read Extended Controller Index List command has been used at least
+once, the Extended Index Removed event will be send instead of this one.
+.SS New Configuration Options (since 1.7)
+.INDENT 0.0
+.TP
+.B Event Code
+0x001f
+.TP
+.B Controller Index
+<controller id>
+.TP
+.B Event Parameters
+Missing_Options (4 Octets)
+.UNINDENT
+.sp
+This event indicates that one or more of the options for the controller
+configuration has changed.
+.SS Extended Index Added (since 1.9)
+.INDENT 0.0
+.TP
+.B Event Code
+0x0020
+.TP
+.B Controller Index
+<controller id>
+.TP
+.B Event Parameters
+Controller_Type (1 Octet)
+.TP
+.B \&...
+Controller_Bus (1 Octet)
+.UNINDENT
+.sp
+This event indicates that a new controller index has been added to the system.
+.sp
+This event will only be used after Read Extended Controller Index List has been
+used at least once. If it has not been used, then Index Added and Unconfigured
+Index Added are sent instead.
+.SS Extended Index Removed (since 1.9)
+.INDENT 0.0
+.TP
+.B Event Code
+0x0021
+.TP
+.B Controller Index
+<controller id>
+.TP
+.B Event Parameters
+Controller_Type (1 Octet)
+.TP
+.B \&...
+Controller_Bus (1 Octet)
+.UNINDENT
+.sp
+This event indicates that an existing controller index has been removed from the
+system.
+.sp
+This event will only be used after Read Extended Controller Index List has been
+used at least once. If it has not been used, then Index Removed and Unconfigured
+Index Removed are sent instead.
+.SS Local Out Of Band Extended Data Updated (since 1.9)
+.INDENT 0.0
+.TP
+.B Event Code
+0x0022
+.TP
+.B Controller Index
+<controller id>
+.TP
+.B Event Parameters
+Address_Type (1 Octet)
+.TP
+.B \&...
+EIR_Data_Length (2 Octets)
+.TP
+.B \&...
+EIR_Data (0\-65535 Octets)
+.UNINDENT
+.sp
+This event is used when the Read Local Out Of Band Extended Data command has
+been used and some other user requested a new set of local out\-of\-band data.
+This allows for the original caller to adjust the data.
+.sp
+Possible values for the Address_Type parameter are a bit\-wise or of the
+following bits:
+.TS
+box center;
+l|l.
+T{
+Bit
+T}	T{
+Description
+T}
+_
+T{
+0
+T}	T{
+BR/EDR
+T}
+_
+T{
+1
+T}	T{
+LE Public
+T}
+_
+T{
+2
+T}	T{
+LE Random
+T}
+.TE
+.sp
+By combining these e.g. the following values are possible:
+.TS
+box center;
+l|l.
+T{
+Value
+T}	T{
+Description
+T}
+_
+T{
+0x01
+T}	T{
+BR/EDR
+T}
+_
+T{
+0x06
+T}	T{
+LE (public & random)
+T}
+_
+T{
+0x07
+T}	T{
+Reserved (not in use)
+T}
+.TE
+.sp
+The value for EIR_Data_Length and content for EIR_Data is the same as described
+in Read Local Out Of Band Extended Data command.
+.sp
+When LE Privacy is used and LE Secure Connections out\-of\-band data has been
+requested, then this event will be emitted every time the Resolvable Private
+Address (RPA) gets changed. The new RPA will be included in the EIR_Data.
+.sp
+The event will only be sent to management sockets other than the one through
+which the command was sent. It will additionally also only be sent to sockets
+that have used the command at least once.
+.SS Advertising Added (since 1.9)
+.INDENT 0.0
+.TP
+.B Event Code
+0x0023
+.TP
+.B Controller Index
+<controller id>
+.TP
+.B Event Parameters
+Instance (1 Octet)
+.UNINDENT
+.sp
+This event indicates that an advertising instance has been added using the Add
+Advertising command.
+.sp
+The event will only be sent to management sockets other than the one through
+which the command was sent.
+.SS Advertising Removed (since 1.9)
+.INDENT 0.0
+.TP
+.B Event Code
+0x0024
+.TP
+.B Controller Index
+<controller id>
+.TP
+.B Event Parameters
+Instance (1 Octet)
+.UNINDENT
+.sp
+This event indicates that an advertising instance has been removed using the
+Remove Advertising command.
+.sp
+The event will only be sent to management sockets other than the one through
+which the command was sent.
+.SS Extended Controller Information Changed (since 1.14)
+.INDENT 0.0
+.TP
+.B Event Code
+0x0025
+.TP
+.B Controller Index
+<controller id>
+.TP
+.B Event Parameters
+EIR_Data_Length (2 Octets)
+.TP
+.B \&...
+EIR_Data (0\-65535 Octets)
+.UNINDENT
+.sp
+This event indicates that controller information has been updated and new values
+are used. This includes the local name, class of device, device id and LE
+address information.
+.sp
+This event will only be used after Read Extended Controller Information command
+has been used at least once. If it has not been used the legacy events are used.
+.sp
+The event will only be sent to management sockets other than the one through
+which the change was triggered.
+.SS PHY Configuration Changed (since 1.14)
+.INDENT 0.0
+.TP
+.B Event Code
+0x0026
+.TP
+.B Controller Index
+<controller id>
+.TP
+.B Event Parameters
+Selected_PHYs (4 Octets)
+.UNINDENT
+.sp
+This event indicates that default PHYs have been updated.
+.sp
+This event will only be used after Set PHY Configuration command has been used
+at least once.
+.sp
+The event will only be sent to management sockets other than the one through
+which the change was triggered.
+.sp
+Refer Get PHY Configuration command for PHYs parameter.
+.SS Experimental Feature Changed (since 1.17)
+.INDENT 0.0
+.TP
+.B Event Code
+0x0027
+.TP
+.B Controller Index
+<controller id>
+.TP
+.B Event Parameters
+UUID (16 Octets)
+.TP
+.B \&...
+Flags (4 Octets)
+.UNINDENT
+.sp
+This event indicates that the status of an experimental feature has been
+changed.
+.sp
+The event will only be sent to management sockets other than the one through
+which the change was triggered.
+.sp
+Refer to Set Experimental Feature command for the Flags parameter.
+.SS Default System Configuration Changed (since 1.18)
+.INDENT 0.0
+.TP
+.B Event Code
+0x0028
+.TP
+.B Controller Index
+<controller id>
+.TP
+.B Event Parameters
+Parameter_Type[] (2 Octet)
+.TP
+.B \&...
+Value_Length[] (1 Octet)
+.TP
+.B \&...
+Value[] (0\-255 Octets)
+.UNINDENT
+.sp
+This event indicates the change of default system parameter values.
+.sp
+The event will only be sent to management sockets other than the one through
+which the change was triggered. In addition it will only be sent to sockets that
+have issues the Read Default System Configuration command.
+.sp
+Refer to Read Default System configuration command for the supported
+Parameter_Type values.
+.SS Default Runtime Configuration Changed (since 1.18)
+.INDENT 0.0
+.TP
+.B Event Code
+0x0029
+.TP
+.B Controller Index
+<controller id>
+.TP
+.B Event Parameters
+Parameter_Type[] (2 Octet)
+.TP
+.B \&...
+Value_Length[] (1 Octet)
+.TP
+.B \&...
+Value[] (0\-255 Octets)
+.UNINDENT
+.sp
+This event indicates the change of default runtime parameter values.
+.sp
+The event will only be sent to management sockets other than the one through
+which the change was triggered. In addition it will only be sent to sockets that
+have issues the Read Default Runtime Configuration command.
+.sp
+Refer to Read Default Runtime configuration command for the supported
+Parameter_Type values.
+.SS Device Flags Changed (since 1.18)
+.INDENT 0.0
+.TP
+.B Event Code
+0x002a
+.TP
+.B Controller Index
+<controller id>
+.TP
+.B Event Parameters
+Address (6 Octets)
+.TP
+.B \&...
+Address_Type (1 Octet)
+.TP
+.B \&...
+Supported_Flags (4 Octets)
+.TP
+.B \&...
+Current_Flags (4 Octets)
+.UNINDENT
+.sp
+This event indicates that the device flags have been changed via the Set Device
+Flags command or that a new device has been added via the Add Device command. In
+the latter case it is send right after the Device Added event.
+.sp
+Possible values for the Address_Type parameter:
+.TS
+box center;
+l|l.
+T{
+Value
+T}	T{
+Description
+T}
+_
+T{
+0x00
+T}	T{
+BR/EDR
+T}
+_
+T{
+0x01
+T}	T{
+LE Public
+T}
+_
+T{
+0x02
+T}	T{
+LE Random
+T}
+.TE
+.sp
+The event will only be sent to management sockets other than the one through
+which the command was sent.
+.sp
+In case this event is triggered by Add Device then it is sent to all management
+sockets.
+.SS Advertisement Monitor Added (since 1.18)
+.INDENT 0.0
+.TP
+.B Event Code
+0x002b
+.TP
+.B Controller Index
+<controller id>
+.TP
+.B Event Parameters
+Monitor_Handle (2 Octets)
+.UNINDENT
+.sp
+This event indicates that an advertisement monitor has been added using the Add
+Advertisement Patterns Monitor command.
+.sp
+The event will only be sent to management sockets other than the one through
+which the command was sent.
+.SS Advertisement Monitor Removed (since 1.18)
+.INDENT 0.0
+.TP
+.B Event Code
+0x002c
+.TP
+.B Controller Index
+<controller id>
+.TP
+.B Event Parameters
+Monitor_Handle (2 Octets)
+.UNINDENT
+.sp
+This event indicates that an advertisement monitor has been removed using the
+Remove Advertisement Monitor command.
+.sp
+The event will only be sent to management sockets other than the one through
+which the command was sent.
+.SS Controller Suspend (since 1.18)
+.INDENT 0.0
+.TP
+.B Event Code
+0x002d
+.TP
+.B Controller Index
+<controller_id>
+.TP
+.B Event Parameters
+Suspend_State (1 octet)
+.UNINDENT
+.sp
+This event indicates that the controller is suspended for host suspend.
+.sp
+Possible values for the Suspend_State parameter:
+.TS
+box center;
+l|l.
+T{
+Value
+T}	T{
+Description
+T}
+_
+T{
+0x00
+T}	T{
+Running (not disconnected)
+T}
+_
+T{
+0x01
+T}	T{
+Disconnected and not scanning
+T}
+_
+T{
+0x02
+T}	T{
+Page scanning and/or passive scanning.
+T}
+.TE
+.sp
+The value 0x00 is used for the running state and may be sent if the controller
+could not be configured to suspend properly.
+.sp
+This event will be sent to all management sockets.
+.SS Controller Resume (since 1.18)
+.INDENT 0.0
+.TP
+.B Event Code
+0x002e
+.TP
+.B Controller Index
+<controller_id>
+.TP
+.B Event Parameters
+Wake_Reason (1 octet)
+.TP
+.B \&...
+Address (6 octets)
+.TP
+.B \&...
+Address_Type (1 octet)
+.UNINDENT
+.sp
+This event indicates that the controller has resumed from suspend.
+.sp
+Possible values for the Wake_Reason parameter:
+.TS
+box center;
+l|l.
+T{
+Value
+T}	T{
+Description
+T}
+_
+T{
+0x00
+T}	T{
+Resume from non\-Bluetooth wake source
+T}
+_
+T{
+0x01
+T}	T{
+Wake due to unexpected event
+T}
+_
+T{
+0x02
+T}	T{
+Remote wake due to peer device connection
+T}
+.TE
+.sp
+Currently, we expect that only peer reconnections should wake us from the
+suspended state. Any other events that occurred while the system should have
+been suspended results in wake due to unexpected event.
+.sp
+If the Wake_Reason is Remote wake due to connection, the address of the peer
+device that caused the event will be shared in Address and Address_Type.
+Otherwise, Address and Address_Type will both be zero.
+.sp
+This event will be sent to all management sockets.
+.SS Advertisement Monitor Device Found (since 1.18)
+.INDENT 0.0
+.TP
+.B Event Code
+0x002f
+.TP
+.B Controller Index
+<controller_id>
+.TP
+.B Event Parameters
+Monitor_Handle (2 Octets)
+.TP
+.B \&...
+Address (6 Octets)
+.TP
+.B \&...
+Address_Type (1 Octet)
+.TP
+.B \&...
+RSSI (1 Octet)
+.TP
+.B \&...
+Flags (4 Octets)
+.TP
+.B \&...
+AD_Data_Length (2 Octets)
+.TP
+.B \&...
+AD_Data (0\-65535 Octets)
+.UNINDENT
+.sp
+This event indicates that the controller has started tracking a device matching
+an Advertisement Monitor with handle Monitor_Handle.
+.sp
+Monitor_Handle 0 indicates that we are not active scanning and this is a
+subsequent advertisement report for already matched Advertisement Monitor or the
+controller offloading support is not available so need to report all
+advertisements for software based filtering.
+.sp
+The address of the device being tracked will be shared in Address and
+Address_Type.
+.sp
+Possible values for the Address_Type parameter:
+.TS
+box center;
+l|l.
+T{
+Value
+T}	T{
+Description
+T}
+_
+T{
+0x00
+T}	T{
+BR/EDR
+T}
+_
+T{
+0x01
+T}	T{
+LE Public
+T}
+_
+T{
+0x02
+T}	T{
+LE Random
+T}
+.TE
+.sp
+For the RSSI field a value of 127 indicates that the RSSI is not available. That
+can happen with Bluetooth 1.1 and earlier controllers or with bad radio
+conditions.
+.sp
+This event will be sent to all management sockets.
+.SS Advertisement Monitor Device Lost (since 1.18)
+.INDENT 0.0
+.TP
+.B Event Code
+0x0030
+.TP
+.B Controller Index
+<controller_id>
+.TP
+.B Event Parameters
+Monitor_Handle (2 Octets)
+.TP
+.B \&...
+Address (6 Octets)
+.TP
+.B \&...
+Address_Type (1 Octet)
+.UNINDENT
+.sp
+This event indicates that the controller has stopped tracking a device that was
+being tracked by an Advertisement Monitor with the handle Monitor_Handle.
+.sp
+The address of the device being tracked will be shared in Address and
+Address_Type.
+.sp
+Possible values for the Address_Type parameter:
+.TS
+box center;
+l|l.
+T{
+Value
+T}	T{
+Description
+T}
+_
+T{
+0
+T}	T{
+Reserved (not in use)
+T}
+_
+T{
+1
+T}	T{
+LE Public
+T}
+_
+T{
+2
+T}	T{
+LE Random
+T}
+.TE
+.sp
+This event will be sent to all management sockets.
+.SS Mesh Device Found (since 1.21)
+.INDENT 0.0
+.TP
+.B Event Code
+0x0031
+.TP
+.B Controller Index
+<controller_id>
+.TP
+.B Event Parameters
+Address (6 Octets)
+.TP
+.B \&...
+Address_Type (1 Octet)
+.TP
+.B \&...
+RSSI (1 Octet)
+.TP
+.B \&...
+Instant (8 Octets)
+.TP
+.B \&...
+Flags (4 Octets)
+.TP
+.B \&...
+AD_Data_Length (2 Octets)
+.TP
+.B \&...
+AD_Data (0\-65535 Octets)
+.UNINDENT
+.sp
+This event indicates that the controller has received an Advertisement or Scan
+Result containing an AD Type matching the Mesh scan set.
+.sp
+The address of the sending device is returned, and must be a valid LE
+Address_Type.
+.sp
+Possible values for the Address_Type parameter:
+.TS
+box center;
+l|l.
+T{
+Value
+T}	T{
+Description
+T}
+_
+T{
+0
+T}	T{
+Reserved (not in use)
+T}
+_
+T{
+1
+T}	T{
+LE Public
+T}
+_
+T{
+2
+T}	T{
+LE Random
+T}
+.TE
+.sp
+The RSSI field is a signed octet, and is the RSSI reported by the receiving
+controller.
+.sp
+The Instant field is 64 bit value that represents the instant in time the packet
+was received. It\(aqs value is not intended to be interpreted by the host, and is
+only useful if the host wants to make a timed response to the received packet
+(i.e. a Poll/Response).
+.sp
+AD_Length and AD_Data contains the Info structure of Advertising and Scan
+rsults. To receive this event, AD filters must be requested with the Set Mesh
+Receiver command, specifying which AD Types to return. All AD structures
+will be received in this event if any of the filtered AD Types are present.
+.sp
+This event will be sent to all management sockets.
+.SS Mesh Packet Transmit Complete (since 1.21)
+.INDENT 0.0
+.TP
+.B Event Code
+0x0032
+.TP
+.B Controller Index
+<controller_id>
+.TP
+.B Event Parameters
+Handle (1 Octets)
+.UNINDENT
+.sp
+This event indicates that a requested outbound Mesh packet has completed and no
+longer occupies a transmit slot.
+.sp
+This event will be sent to all management sockets.
+.SH COPYRIGHT
+Free use of this software is granted under the terms of the GNU
+Lesser General Public Licenses (LGPL).
+.\" Generated by docutils manpage writer.
+.

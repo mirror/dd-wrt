@@ -19,8 +19,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "lib/bluetooth.h"
-#include "lib/uuid.h"
+#include "bluetooth/bluetooth.h"
+#include "bluetooth/uuid.h"
 
 #include "src/shared/util.h"
 #include "src/shared/att.h"
@@ -174,7 +174,13 @@ void bt_asha_reset(struct bt_asha *asha)
 	bt_gatt_client_unref(asha->client);
 	asha->client = NULL;
 
+	bt_asha_state_reset(asha);
+
 	asha->psm = 0;
+	memset(asha->hisyncid, 0, sizeof(asha->hisyncid));
+
+	asha->attach_cb = NULL;
+	asha->attach_cb_data = NULL;
 
 	update_asha_set(asha, false);
 }
@@ -183,8 +189,8 @@ void bt_asha_state_reset(struct bt_asha *asha)
 {
 	asha->state = ASHA_STOPPED;
 
-	asha->cb = NULL;
-	asha->cb_user_data = NULL;
+	asha->state_cb = NULL;
+	asha->state_cb_data = NULL;
 }
 
 void bt_asha_free(struct bt_asha *asha)
@@ -204,8 +210,8 @@ static void asha_acp_sent(bool success, uint8_t err, void *user_data)
 	} else {
 		error("Failed to send AudioControlPoint command: %d", err);
 
-		if (asha->cb)
-			asha->cb(-1, asha->cb_user_data);
+		if (asha->state_cb)
+			asha->state_cb(-1, asha->state_cb_data);
 
 		bt_asha_state_reset(asha);
 	}
@@ -220,8 +226,8 @@ static int asha_send_acp(struct bt_asha *asha, uint8_t *cmd,
 		return -1;
 	}
 
-	asha->cb = cb;
-	asha->cb_user_data = user_data;
+	asha->state_cb = cb;
+	asha->state_cb_data = user_data;
 
 	return 0;
 }
@@ -266,8 +272,7 @@ unsigned int bt_asha_start(struct bt_asha *asha, bt_asha_cb_t cb,
 	return 0;
 }
 
-unsigned int bt_asha_stop(struct bt_asha *asha, bt_asha_cb_t cb,
-								void *user_data)
+unsigned int bt_asha_stop(struct bt_asha *asha)
 {
 	uint8_t acp_stop_cmd[] = {
 		0x02, /* STOP */
@@ -277,11 +282,15 @@ unsigned int bt_asha_stop(struct bt_asha *asha, bt_asha_cb_t cb,
 	if (asha->state != ASHA_STARTED)
 		return 0;
 
-	asha->state = ASHA_STOPPING;
+	asha->state = ASHA_STOPPED;
 
-	ret = asha_send_acp(asha, acp_stop_cmd, sizeof(acp_stop_cmd),
-			cb, user_data);
+	ret = asha_send_acp(asha, acp_stop_cmd, sizeof(acp_stop_cmd), NULL,
+			NULL);
 	asha_set_send_status(asha, false);
+
+	/* We reset our state without waiting for a response */
+	bt_asha_state_reset(asha);
+	DBG("ASHA stop done");
 
 	return ret;
 }
@@ -333,6 +342,22 @@ static bool uuid_cmp(const char *uuid1, const bt_uuid_t *uuid2)
 	return bt_uuid_cmp(&lhs, uuid2) == 0;
 }
 
+static void check_probe_done(struct bt_asha *asha)
+{
+	uint8_t zeroes[8] = { 0, };
+
+	/* Once we have ROPs & PSM, we should be good to go */
+	if (asha->psm == 0 || memcmp(asha->hisyncid, zeroes,
+					sizeof(zeroes)) == 0)
+		return;
+
+	if (asha->attach_cb) {
+		asha->attach_cb(asha->attach_cb_data);
+		asha->attach_cb = NULL;
+		asha->attach_cb_data = NULL;
+	}
+}
+
 static void read_psm(bool success,
 			uint8_t att_ecode,
 			const uint8_t *value,
@@ -354,6 +379,8 @@ static void read_psm(bool success,
 	asha->psm = get_le16(value);
 
 	DBG("Got PSM: %u", asha->psm);
+
+	check_probe_done(asha);
 }
 
 static void read_rops(bool success,
@@ -397,7 +424,7 @@ static void read_rops(bool success,
 			asha->right_side, asha->binaural, asha->csis_supported,
 			asha->render_delay, asha->codec_ids);
 
-	update_asha_set(asha, true);
+	check_probe_done(asha);
 }
 
 static void audio_status_register(uint16_t att_ecode, void *user_data)
@@ -414,28 +441,27 @@ static void audio_status_notify(uint16_t value_handle, const uint8_t *value,
 	struct bt_asha *asha = user_data;
 	uint8_t status = *value;
 	/* Back these up to survive the reset paths */
-	bt_asha_cb_t cb = asha->cb;
-	bt_asha_cb_t cb_user_data = asha->cb_user_data;
+	bt_asha_cb_t state_cb = asha->state_cb;
+	bt_asha_cb_t state_cb_data = asha->state_cb_data;
+
+	DBG("ASHA status %u", status);
 
 	if (asha->state == ASHA_STARTING) {
 		if (status == 0) {
 			asha->state = ASHA_STARTED;
 			DBG("ASHA start complete");
+			update_asha_set(asha, true);
 			asha_set_send_status(asha, true);
 		} else {
 			bt_asha_state_reset(asha);
 			DBG("ASHA start failed");
 		}
-	} else if (asha->state == ASHA_STOPPING) {
-		/* We reset our state, regardless */
-		bt_asha_state_reset(asha);
-		DBG("ASHA stop %s", status == 0 ? "complete" : "failed");
 	}
 
-	if (cb) {
-		cb(status, cb_user_data);
-		asha->cb = NULL;
-		asha->cb_user_data = NULL;
+	if (state_cb) {
+		state_cb(status, state_cb_data);
+		asha->state_cb = NULL;
+		asha->state_cb_data = NULL;
 	}
 }
 
@@ -499,13 +525,17 @@ static void foreach_asha_service(struct gatt_db_attribute *attr,
 	gatt_db_service_foreach_char(asha->attr, handle_characteristic, asha);
 }
 
-bool bt_asha_probe(struct bt_asha *asha, struct gatt_db *db,
-						struct bt_gatt_client *client)
+bool bt_asha_attach(struct bt_asha *asha, struct gatt_db *db,
+		struct bt_gatt_client *client, bt_asha_attach_cb_t attach_cb,
+							void *cb_user_data)
 {
 	bt_uuid_t asha_uuid;
 
 	asha->db = gatt_db_ref(db);
 	asha->client = bt_gatt_client_clone(client);
+
+	asha->attach_cb = attach_cb;
+	asha->attach_cb_data = cb_user_data;
 
 	bt_uuid16_create(&asha_uuid, ASHA_SERVICE);
 	gatt_db_foreach_service(db, &asha_uuid, foreach_asha_service, asha);

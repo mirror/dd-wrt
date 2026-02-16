@@ -1,0 +1,2837 @@
+.\" Man page generated from reStructuredText.
+.
+.
+.nr rst2man-indent-level 0
+.
+.de1 rstReportMargin
+\\$1 \\n[an-margin]
+level \\n[rst2man-indent-level]
+level margin: \\n[rst2man-indent\\n[rst2man-indent-level]]
+-
+\\n[rst2man-indent0]
+\\n[rst2man-indent1]
+\\n[rst2man-indent2]
+..
+.de1 INDENT
+.\" .rstReportMargin pre:
+. RS \\$1
+. nr rst2man-indent\\n[rst2man-indent-level] \\n[an-margin]
+. nr rst2man-indent-level +1
+.\" .rstReportMargin post:
+..
+.de UNINDENT
+. RE
+.\" indent \\n[an-margin]
+.\" old: \\n[rst2man-indent\\n[rst2man-indent-level]]
+.nr rst2man-indent-level -1
+.\" new: \\n[rst2man-indent\\n[rst2man-indent-level]]
+.in \\n[rst2man-indent\\n[rst2man-indent-level]]u
+..
+.TH "BLUETOOTHCTL-MGMT" "1" "July 2023" "BlueZ" "Linux System Administration"
+.SH NAME
+bluetoothctl-mgmt \- Management Submenu
+.SH SYNOPSIS
+.sp
+\fBbluetoothctl\fP [\-\-options] [mgmt.commands]
+.sp
+\fBNOTE:\fP
+.INDENT 0.0
+.INDENT 3.5
+This submenu communicates directly with the kernel via the Bluetooth
+Management socket (mgmt), bypassing the BlueZ D\-Bus API. Commands use the
+Bluetooth Management API defined in the kernel documentation.
+.UNINDENT
+.UNINDENT
+.SH MGMT COMMANDS
+.SS select
+.sp
+Select a different index
+.INDENT 0.0
+.TP
+.B Usage
+\fB> select <index>\fP
+.TP
+.B <index>
+Controller index number (0\-based) to select
+.TP
+.B Example Select controller index 0 (hci0)
+.nf
+\fB> select 0\fP
+.fi
+.sp
+.TP
+.B Example Select controller index 1 (hci1)
+.nf
+\fB> select 1\fP
+.fi
+.sp
+.TP
+.B Example Select controller index 2 (hci2)
+.nf
+\fB> select 2\fP
+.fi
+.sp
+.UNINDENT
+.SS revision
+.sp
+Get the MGMT Revision
+.INDENT 0.0
+.TP
+.B Usage
+\fB> revision\fP
+.TP
+.B Example Display MGMT API revision information
+.nf
+\fB> revision\fP
+.fi
+.sp
+.UNINDENT
+.SS commands
+.sp
+List supported commands
+.INDENT 0.0
+.TP
+.B Usage
+\fB> commands\fP
+.TP
+.B Example List all supported management commands
+.nf
+\fB> commands\fP
+.fi
+.sp
+.UNINDENT
+.SS config
+.sp
+Show configuration info
+.INDENT 0.0
+.TP
+.B Usage
+\fB> config\fP
+.TP
+.B Example Show current controller configuration
+.nf
+\fB> config\fP
+.fi
+.sp
+.UNINDENT
+.SS info
+.sp
+Show controller info
+.INDENT 0.0
+.TP
+.B Usage
+\fB> info\fP
+.TP
+.B Example Show detailed controller information
+.nf
+\fB> info\fP
+.fi
+.sp
+.UNINDENT
+.SS extinfo
+.sp
+Show extended controller info
+.INDENT 0.0
+.TP
+.B Usage
+\fB> extinfo\fP
+.TP
+.B Example Show extended controller information
+.nf
+\fB> extinfo\fP
+.fi
+.sp
+.UNINDENT
+.SS auto\-power
+.sp
+Power all available features
+.INDENT 0.0
+.TP
+.B Usage
+\fB> auto\-power\fP
+.TP
+.B Example Automatically power on all available controller features
+.nf
+\fB> auto\-power\fP
+.fi
+.sp
+.UNINDENT
+.SS power
+.sp
+Toggle powered state
+.INDENT 0.0
+.TP
+.B Usage
+\fB> power <on/off>\fP
+.TP
+.B <on/off>
+Power state \- \(dqon\(dq to enable controller, \(dqoff\(dq to disable
+.TP
+.B Example Power on the controller
+.nf
+\fB> power on\fP
+.fi
+.sp
+.TP
+.B Example Power off the controller
+.nf
+\fB> power off\fP
+.fi
+.sp
+.UNINDENT
+.SS discov
+.sp
+Toggle discoverable state
+.INDENT 0.0
+.TP
+.B Usage
+\fB> discov <yes/no/limited> [timeout]\fP
+.TP
+.B <yes/no/limited>
+Discoverable mode \- \(dqyes\(dq for general, \(dqno\(dq to disable, \(dqlimited\(dq for limited discoverable
+.TP
+.B [timeout]
+Optional timeout in seconds for discoverable mode duration
+.TP
+.B Example Make controller discoverable indefinitely
+.nf
+\fB> discov yes\fP
+.fi
+.sp
+.TP
+.B Example Make controller non\-discoverable
+.nf
+\fB> discov no\fP
+.fi
+.sp
+.TP
+.B Example Enable limited discoverable mode
+.nf
+\fB> discov limited\fP
+.fi
+.sp
+.TP
+.B Example Make discoverable for 30 seconds
+.nf
+\fB> discov yes 30\fP
+.fi
+.sp
+.TP
+.B Example Make discoverable for 2 minutes
+.nf
+\fB> discov yes 120\fP
+.fi
+.sp
+.TP
+.B Example Make discoverable for 5 minutes
+.nf
+\fB> discov yes 300\fP
+.fi
+.sp
+.TP
+.B Example Limited discoverable for 60 seconds
+.nf
+\fB> discov limited 60\fP
+.fi
+.sp
+.UNINDENT
+.SS connectable
+.sp
+Toggle connectable state
+.INDENT 0.0
+.TP
+.B Usage
+\fB> connectable <on/off>\fP
+.TP
+.B <on/off>
+Connectable state \- \(dqon\(dq to allow connections, \(dqoff\(dq to reject
+.TP
+.B Example Make controller connectable
+.nf
+\fB> connectable on\fP
+.fi
+.sp
+.TP
+.B Example Make controller non\-connectable
+.nf
+\fB> connectable off\fP
+.fi
+.sp
+.UNINDENT
+.SS fast\-conn
+.sp
+Toggle fast connectable state
+.INDENT 0.0
+.TP
+.B Usage
+\fB> fast\-conn <on/off>\fP
+.TP
+.B <on/off>
+Fast connectable state \- \(dqon\(dq to enable fast connection mode, \(dqoff\(dq to disable
+.TP
+.B Example Enable fast connectable mode
+.nf
+\fB> fast\-conn on\fP
+.fi
+.sp
+.TP
+.B Example Disable fast connectable mode
+.nf
+\fB> fast\-conn off\fP
+.fi
+.sp
+.UNINDENT
+.SS bondable
+.sp
+Toggle bondable state
+.INDENT 0.0
+.TP
+.B Usage
+\fB> bondable <on/off>\fP
+.TP
+.B <on/off>
+Bondable state \- \(dqon\(dq to enable bonding capability, \(dqoff\(dq to disable
+.TP
+.B Example Enable bonding capability
+.nf
+\fB> bondable on\fP
+.fi
+.sp
+.TP
+.B Example Disable bonding capability
+.nf
+\fB> bondable off\fP
+.fi
+.sp
+.UNINDENT
+.SS pairable
+.sp
+Toggle bondable state
+.INDENT 0.0
+.TP
+.B Usage
+\fB> pairable <on/off>\fP
+.TP
+.B <on/off>
+Pairable state \- \(dqon\(dq to enable pairing capability, \(dqoff\(dq to disable
+.TP
+.B Example Enable pairing capability
+.nf
+\fB> pairable on\fP
+.fi
+.sp
+.TP
+.B Example Disable pairing capability
+.nf
+\fB> pairable off\fP
+.fi
+.sp
+.UNINDENT
+.SS linksec
+.sp
+Toggle link level security
+.INDENT 0.0
+.TP
+.B Usage
+\fB> linksec <on/off>\fP
+.TP
+.B <on/off>
+Link level security \- \(dqon\(dq to enable, \(dqoff\(dq to disable
+.TP
+.B Example Enable link level security
+.nf
+\fB> linksec on\fP
+.fi
+.sp
+.TP
+.B Example Disable link level security
+.nf
+\fB> linksec off\fP
+.fi
+.sp
+.UNINDENT
+.SS ssp
+.sp
+Toggle SSP mode
+.INDENT 0.0
+.TP
+.B Usage
+\fB> ssp <on/off>\fP
+.TP
+.B <on/off>
+Secure Simple Pairing mode \- \(dqon\(dq to enable SSP, \(dqoff\(dq to disable
+.TP
+.B Example Enable Secure Simple Pairing
+.nf
+\fB> ssp on\fP
+.fi
+.sp
+.TP
+.B Example Disable Secure Simple Pairing
+.nf
+\fB> ssp off\fP
+.fi
+.sp
+.UNINDENT
+.SS sc
+.sp
+Toggle SC support
+.INDENT 0.0
+.TP
+.B Usage
+\fB> sc <on/off/only>\fP
+.TP
+.B <on/off/only>
+Secure Connections support \- \(dqon\(dq to enable, \(dqoff\(dq to disable, \(dqonly\(dq for exclusive use
+.TP
+.B Example Enable Secure Connections support
+.nf
+\fB> sc on\fP
+.fi
+.sp
+.TP
+.B Example Disable Secure Connections support
+.nf
+\fB> sc off\fP
+.fi
+.sp
+.TP
+.B Example Use Secure Connections exclusively
+.nf
+\fB> sc only\fP
+.fi
+.sp
+.UNINDENT
+.SS hs
+.sp
+Toggle HS support
+.INDENT 0.0
+.TP
+.B Usage
+\fB> hs <on/off>\fP
+.TP
+.B <on/off>
+High Speed support \- \(dqon\(dq to enable 802.11 High Speed, \(dqoff\(dq to disable
+.TP
+.B Example Enable High Speed support
+.nf
+\fB> hs on\fP
+.fi
+.sp
+.TP
+.B Example Disable High Speed support
+.nf
+\fB> hs off\fP
+.fi
+.sp
+.UNINDENT
+.SS le
+.sp
+Toggle LE support
+.INDENT 0.0
+.TP
+.B Usage
+\fB> le <on/off>\fP
+.TP
+.B <on/off>
+Low Energy support \- \(dqon\(dq to enable LE functionality, \(dqoff\(dq to disable
+.TP
+.B Example Enable Low Energy support
+.nf
+\fB> le on\fP
+.fi
+.sp
+.TP
+.B Example Disable Low Energy support
+.nf
+\fB> le off\fP
+.fi
+.sp
+.UNINDENT
+.SS advertising
+.sp
+Toggle LE advertising
+.INDENT 0.0
+.TP
+.B Usage
+\fB> advertising <on/off>\fP
+.TP
+.B <on/off>
+LE advertising state \- \(dqon\(dq to enable advertising, \(dqoff\(dq to disable
+.TP
+.B Example Enable LE advertising
+.nf
+\fB> advertising on\fP
+.fi
+.sp
+.TP
+.B Example Disable LE advertising
+.nf
+\fB> advertising off\fP
+.fi
+.sp
+.UNINDENT
+.SS bredr
+.sp
+Toggle BR/EDR support
+.INDENT 0.0
+.TP
+.B Usage
+\fB> bredr <on/off>\fP
+.TP
+.B <on/off>
+BR/EDR support \- \(dqon\(dq to enable Classic Bluetooth, \(dqoff\(dq to disable
+.TP
+.B Example Enable BR/EDR (Classic Bluetooth) support
+.nf
+\fB> bredr on\fP
+.fi
+.sp
+.TP
+.B Example Disable BR/EDR support
+.nf
+\fB> bredr off\fP
+.fi
+.sp
+.UNINDENT
+.SS privacy
+.sp
+Toggle privacy support
+.INDENT 0.0
+.TP
+.B Usage
+\fB> privacy <on/off> [irk]\fP
+.TP
+.B <on/off>
+Privacy support \- \(dqon\(dq to enable privacy features, \(dqoff\(dq to disable
+.TP
+.B [irk]
+Optional 32\-character hexadecimal Identity Resolving Key
+.TP
+.B Example Enable privacy with auto\-generated IRK
+.nf
+\fB> privacy on\fP
+.fi
+.sp
+.TP
+.B Example Disable privacy
+.nf
+\fB> privacy off\fP
+.fi
+.sp
+.TP
+.B Example Enable privacy with specific IRK
+.nf
+\fB> privacy on 0123456789abcdef0123456789abcdef\fP
+.fi
+.sp
+.TP
+.B Example Enable privacy with different IRK
+.nf
+\fB> privacy on 1234567890abcdef1234567890abcdef\fP
+.fi
+.sp
+.UNINDENT
+.SS class
+.sp
+Set device major/minor class
+.INDENT 0.0
+.TP
+.B Usage
+\fB> class <major> <minor>\fP
+.TP
+.B <major>
+Major device class code (hexadecimal)
+.TP
+.B <minor>
+Minor device class code (hexadecimal)
+.TP
+.B Example Set class to Audio/Video \- Wearable Headset
+.nf
+\fB> class 0x04 0x01\fP
+.fi
+.sp
+.TP
+.B Example Set class to Audio/Video \- Hands\-free
+.nf
+\fB> class 0x04 0x02\fP
+.fi
+.sp
+.TP
+.B Example Set class to Audio/Video \- Headphones
+.nf
+\fB> class 0x04 0x06\fP
+.fi
+.sp
+.TP
+.B Example Set class to Audio/Video \- VCR
+.nf
+\fB> class 0x04 0x0B\fP
+.fi
+.sp
+.TP
+.B Example Set class to Computer \- Desktop workstation
+.nf
+\fB> class 0x01 0x01\fP
+.fi
+.sp
+.TP
+.B Example Set class to Computer \- Server
+.nf
+\fB> class 0x01 0x02\fP
+.fi
+.sp
+.TP
+.B Example Set class to Computer \- Laptop
+.nf
+\fB> class 0x01 0x03\fP
+.fi
+.sp
+.TP
+.B Example Set class to Computer \- Handheld PC/PDA
+.nf
+\fB> class 0x01 0x04\fP
+.fi
+.sp
+.TP
+.B Example Set class to Phone \- Cellular
+.nf
+\fB> class 0x02 0x01\fP
+.fi
+.sp
+.TP
+.B Example Set class to Phone \- Cordless
+.nf
+\fB> class 0x02 0x02\fP
+.fi
+.sp
+.TP
+.B Example Set class to Phone \- Smart phone
+.nf
+\fB> class 0x02 0x03\fP
+.fi
+.sp
+.UNINDENT
+.SS disconnect
+.sp
+Disconnect device
+.INDENT 0.0
+.TP
+.B Usage
+\fB> disconnect [\-t type] <remote address>\fP
+.TP
+.B [\-t type]
+Optional address type (public, random, le_public, le_random)
+.TP
+.B <remote address>
+Bluetooth address of device to disconnect
+.TP
+.B Example Disconnect device using public address
+.nf
+\fB> disconnect 00:11:22:33:44:55\fP
+.fi
+.sp
+.TP
+.B Example Disconnect another device
+.nf
+\fB> disconnect AA:BB:CC:DD:EE:FF\fP
+.fi
+.sp
+.TP
+.B Example Disconnect device with public address type
+.nf
+\fB> disconnect \-t public 00:11:22:33:44:55\fP
+.fi
+.sp
+.TP
+.B Example Disconnect device with random address type
+.nf
+\fB> disconnect \-t random AA:BB:CC:DD:EE:FF\fP
+.fi
+.sp
+.TP
+.B Example Disconnect LE device with public address
+.nf
+\fB> disconnect \-t le_public 11:22:33:44:55:66\fP
+.fi
+.sp
+.TP
+.B Example Disconnect LE device with random address
+.nf
+\fB> disconnect \-t le_random CC:DD:EE:FF:00:11\fP
+.fi
+.sp
+.UNINDENT
+.SS con
+.sp
+List connections
+.INDENT 0.0
+.TP
+.B Usage
+\fB> con\fP
+.TP
+.B Example List all active connections
+.nf
+\fB> con\fP
+.fi
+.sp
+.UNINDENT
+.SS find
+.sp
+Discover nearby devices
+.INDENT 0.0
+.TP
+.B Usage
+\fB> find [\-l|\-b] [\-L]\fP
+.TP
+.B [\-l|\-b]
+Discovery type \- \(dq\-l\(dq for LE only, \(dq\-b\(dq for BR/EDR only (default: both)
+.TP
+.B [\-L]
+Limited discovery mode flag
+.TP
+.B Example Discover both LE and BR/EDR devices
+.nf
+\fB> find\fP
+.fi
+.sp
+.TP
+.B Example Discover LE devices only
+.nf
+\fB> find \-l\fP
+.fi
+.sp
+.TP
+.B Example Discover BR/EDR devices only
+.nf
+\fB> find \-b\fP
+.fi
+.sp
+.TP
+.B Example Discover devices in limited mode
+.nf
+\fB> find \-L\fP
+.fi
+.sp
+.TP
+.B Example Discover LE devices in limited mode
+.nf
+\fB> find \-l \-L\fP
+.fi
+.sp
+.TP
+.B Example Discover BR/EDR devices in limited mode
+.nf
+\fB> find \-b \-L\fP
+.fi
+.sp
+.UNINDENT
+.SS find\-service
+.sp
+Discover nearby service
+.INDENT 0.0
+.TP
+.B Usage
+\fB> find\-service [\-u UUID] [\-r RSSI_Threshold] [\-l|\-b]\fP
+.TP
+.B [\-u UUID]
+Service UUID to search for (16\-bit, 32\-bit, or 128\-bit)
+.TP
+.B [\-r RSSI_Threshold]
+Minimum RSSI value in dBm for device filtering
+.TP
+.B [\-l|\-b]
+Discovery type \- \(dq\-l\(dq for LE only, \(dq\-b\(dq for BR/EDR only
+.TP
+.B Example Find devices with Generic Access service
+.nf
+\fB> find\-service \-u 0x1800\fP
+.fi
+.sp
+.TP
+.B Example Find devices with Battery Service
+.nf
+\fB> find\-service \-u 0x180F\fP
+.fi
+.sp
+.TP
+.B Example Find devices with custom service
+.nf
+\fB> find\-service \-u 12345678\-1234\-5678\-9abc\-123456789abc\fP
+.fi
+.sp
+.TP
+.B Example Find devices with RSSI ≥ \-60 dBm
+.nf
+\fB> find\-service \-r \-60\fP
+.fi
+.sp
+.TP
+.B Example Find devices with RSSI ≥ \-80 dBm
+.nf
+\fB> find\-service \-r \-80\fP
+.fi
+.sp
+.TP
+.B Example Find Battery Service devices with RSSI ≥ \-70 dBm
+.nf
+\fB> find\-service \-u 0x180F \-r \-70\fP
+.fi
+.sp
+.TP
+.B Example Find Generic Access on LE devices with strong signal
+.nf
+\fB> find\-service \-u 0x1800 \-r \-50 \-l\fP
+.fi
+.sp
+.TP
+.B Example Find Serial Port Profile on BR/EDR devices
+.nf
+\fB> find\-service \-u 0x1101 \-b\fP
+.fi
+.sp
+.TP
+.B Example Find Battery Service on LE devices
+.nf
+\fB> find\-service \-u 0x180F \-l\fP
+.fi
+.sp
+.UNINDENT
+.SS stop\-find
+.sp
+Stop discovery
+.INDENT 0.0
+.TP
+.B Usage
+\fB> stop\-find [\-l|\-b]\fP
+.TP
+.B [\-l|\-b]
+Discovery type to stop \- \(dq\-l\(dq for LE only, \(dq\-b\(dq for BR/EDR only (default: all)
+.TP
+.B Example Stop all discovery
+.nf
+\fB> stop\-find\fP
+.fi
+.sp
+.TP
+.B Example Stop LE discovery only
+.nf
+\fB> stop\-find \-l\fP
+.fi
+.sp
+.TP
+.B Example Stop BR/EDR discovery only
+.nf
+\fB> stop\-find \-b\fP
+.fi
+.sp
+.UNINDENT
+.SS name
+.sp
+Set local name
+.INDENT 0.0
+.TP
+.B Usage
+\fB> name <name> [shortname]\fP
+.TP
+.B <name>
+Complete local name for the controller
+.TP
+.B [shortname]
+Optional shortened local name
+.TP
+.B Example Set complete local name
+.nf
+\fB> name \(dqMy Bluetooth Device\(dq\fP
+.fi
+.sp
+.TP
+.B Example Set name without spaces
+.nf
+\fB> name MyComputer\fP
+.fi
+.sp
+.TP
+.B Example Set name with hyphens
+.nf
+\fB> name \(dqHome\-Office\-PC\(dq\fP
+.fi
+.sp
+.TP
+.B Example Set both complete and shortened names
+.nf
+\fB> name \(dqMy Long Device Name\(dq MyDevice\fP
+.fi
+.sp
+.TP
+.B Example Set descriptive and short names
+.nf
+\fB> name \(dqProfessional Workstation\(dq ProWork\fP
+.fi
+.sp
+.TP
+.B Example Set audio device names
+.nf
+\fB> name \(dqBluetooth Audio Headset\(dq BT\-Audio\fP
+.fi
+.sp
+.UNINDENT
+.SS pair
+.sp
+Pair with a remote device
+.INDENT 0.0
+.TP
+.B Usage
+\fB> pair [\-c cap] [\-t type] <remote address>\fP
+.TP
+.B [\-c cap]
+IO capability (DisplayOnly, DisplayYesNo, KeyboardOnly, NoInputNoOutput, KeyboardDisplay)
+.TP
+.B [\-t type]
+Address type (public, random, le_public, le_random)
+.TP
+.B <remote address>
+Bluetooth address of device to pair with
+.TP
+.B Example Pair with device using default settings
+.nf
+\fB> pair 00:11:22:33:44:55\fP
+.fi
+.sp
+.TP
+.B Example Pair with another device
+.nf
+\fB> pair AA:BB:CC:DD:EE:FF\fP
+.fi
+.sp
+.TP
+.B Example Pair with display\-only IO capability
+.nf
+\fB> pair \-c DisplayOnly 00:11:22:33:44:55\fP
+.fi
+.sp
+.TP
+.B Example Pair with display and yes/no capability
+.nf
+\fB> pair \-c DisplayYesNo AA:BB:CC:DD:EE:FF\fP
+.fi
+.sp
+.TP
+.B Example Pair with keyboard\-only capability
+.nf
+\fB> pair \-c KeyboardOnly 11:22:33:44:55:66\fP
+.fi
+.sp
+.TP
+.B Example Pair with no I/O capability
+.nf
+\fB> pair \-c NoInputNoOutput CC:DD:EE:FF:00:11\fP
+.fi
+.sp
+.TP
+.B Example Pair with keyboard and display capability
+.nf
+\fB> pair \-c KeyboardDisplay 22:33:44:55:66:77\fP
+.fi
+.sp
+.TP
+.B Example Pair with public address device
+.nf
+\fB> pair \-t public 00:11:22:33:44:55\fP
+.fi
+.sp
+.TP
+.B Example Pair with random address device
+.nf
+\fB> pair \-t random AA:BB:CC:DD:EE:FF\fP
+.fi
+.sp
+.TP
+.B Example Pair with LE public address device
+.nf
+\fB> pair \-t le_public 11:22:33:44:55:66\fP
+.fi
+.sp
+.TP
+.B Example Pair with LE random address device
+.nf
+\fB> pair \-t le_random CC:DD:EE:FF:00:11\fP
+.fi
+.sp
+.TP
+.B Example Pair LE device with keyboard/display capability
+.nf
+\fB> pair \-c KeyboardDisplay \-t le_public 00:11:22:33:44:55\fP
+.fi
+.sp
+.TP
+.B Example Pair random address device with display/yes\-no capability
+.nf
+\fB> pair \-c DisplayYesNo \-t random AA:BB:CC:DD:EE:FF\fP
+.fi
+.sp
+.UNINDENT
+.SS cancelpair
+.sp
+Cancel pairing
+.INDENT 0.0
+.TP
+.B Usage
+\fB> cancelpair [\-t type] <remote address>\fP
+.TP
+.B [\-t type]
+Address type (public, random, le_public, le_random)
+.TP
+.B <remote address>
+Bluetooth address of device to cancel pairing with
+.TP
+.B Example Cancel ongoing pairing with device
+.nf
+\fB> cancelpair 00:11:22:33:44:55\fP
+.fi
+.sp
+.TP
+.B Example Cancel pairing with another device
+.nf
+\fB> cancelpair AA:BB:CC:DD:EE:FF\fP
+.fi
+.sp
+.TP
+.B Example Cancel pairing with public address device
+.nf
+\fB> cancelpair \-t public 00:11:22:33:44:55\fP
+.fi
+.sp
+.TP
+.B Example Cancel pairing with LE random address device
+.nf
+\fB> cancelpair \-t le_random AA:BB:CC:DD:EE:FF\fP
+.fi
+.sp
+.UNINDENT
+.SS unpair
+.sp
+Unpair device
+.INDENT 0.0
+.TP
+.B Usage
+\fB> unpair [\-t type] <remote address>\fP
+.TP
+.B [\-t type]
+Address type (public, random, le_public, le_random)
+.TP
+.B <remote address>
+Bluetooth address of device to unpair
+.TP
+.B Example Remove pairing with device
+.nf
+\fB> unpair 00:11:22:33:44:55\fP
+.fi
+.sp
+.TP
+.B Example Remove pairing with another device
+.nf
+\fB> unpair AA:BB:CC:DD:EE:FF\fP
+.fi
+.sp
+.TP
+.B Example Unpair public address device
+.nf
+\fB> unpair \-t public 00:11:22:33:44:55\fP
+.fi
+.sp
+.TP
+.B Example Unpair LE public address device
+.nf
+\fB> unpair \-t le_public 11:22:33:44:55:66\fP
+.fi
+.sp
+.TP
+.B Example Unpair LE random address device
+.nf
+\fB> unpair \-t le_random CC:DD:EE:FF:00:11\fP
+.fi
+.sp
+.UNINDENT
+.SS keys
+.sp
+Load Link Keys
+.INDENT 0.0
+.TP
+.B Usage
+\fB> keys\fP
+.TP
+.B Example Load stored link keys
+.nf
+\fB> keys\fP
+.fi
+.sp
+.UNINDENT
+.SS ltks
+.sp
+Load Long Term Keys
+.INDENT 0.0
+.TP
+.B Usage
+\fB> ltks\fP
+.TP
+.B Example Load stored LE long term keys
+.nf
+\fB> ltks\fP
+.fi
+.sp
+.UNINDENT
+.SS irks
+.sp
+Load Identity Resolving Keys
+.INDENT 0.0
+.TP
+.B Usage
+\fB> irks [\-\-local index] [\-\-file file path]\fP
+.TP
+.B [\-\-local index]
+Local controller index to use
+.TP
+.B [\-\-file file path]
+Custom IRK configuration file path
+.TP
+.B Example Load IRKs with default local index and file
+.nf
+\fB> irks\fP
+.fi
+.sp
+.TP
+.B Example Load IRKs for controller index 0
+.nf
+\fB> irks \-\-local 0\fP
+.fi
+.sp
+.TP
+.B Example Load IRKs for controller index 1
+.nf
+\fB> irks \-\-local 1\fP
+.fi
+.sp
+.TP
+.B Example Load IRKs from custom configuration file
+.nf
+\fB> irks \-\-file /etc/bluetooth/irks.conf\fP
+.fi
+.sp
+.TP
+.B Example Load IRKs from user file
+.nf
+\fB> irks \-\-file /home/user/bluetooth_irks.txt\fP
+.fi
+.sp
+.TP
+.B Example Load IRKs for hci0 from specific file
+.nf
+\fB> irks \-\-local 0 \-\-file /etc/bluetooth/hci0_irks.conf\fP
+.fi
+.sp
+.UNINDENT
+.SS block
+.sp
+Block Device
+.INDENT 0.0
+.TP
+.B Usage
+\fB> block [\-t type] <remote address>\fP
+.TP
+.B [\-t type]
+Address type (public, random, le_public, le_random)
+.TP
+.B <remote address>
+Bluetooth address of device to block
+.TP
+.B Example Block device using default address type
+.nf
+\fB> block 00:11:22:33:44:55\fP
+.fi
+.sp
+.TP
+.B Example Block another device
+.nf
+\fB> block AA:BB:CC:DD:EE:FF\fP
+.fi
+.sp
+.TP
+.B Example Block device with public address
+.nf
+\fB> block \-t public 00:11:22:33:44:55\fP
+.fi
+.sp
+.TP
+.B Example Block device with random address
+.nf
+\fB> block \-t random AA:BB:CC:DD:EE:FF\fP
+.fi
+.sp
+.TP
+.B Example Block LE device with public address
+.nf
+\fB> block \-t le_public 11:22:33:44:55:66\fP
+.fi
+.sp
+.TP
+.B Example Block LE device with random address
+.nf
+\fB> block \-t le_random CC:DD:EE:FF:00:11\fP
+.fi
+.sp
+.UNINDENT
+.SS unblock
+.sp
+Unblock Device
+.INDENT 0.0
+.TP
+.B Usage
+\fB> unblock [\-t type] <remote address>\fP
+.TP
+.B [\-t type]
+Address type (public, random, le_public, le_random)
+.TP
+.B <remote address>
+Bluetooth address of device to unblock
+.TP
+.B Example Unblock device using default address type
+.nf
+\fB> unblock 00:11:22:33:44:55\fP
+.fi
+.sp
+.TP
+.B Example Unblock another device
+.nf
+\fB> unblock AA:BB:CC:DD:EE:FF\fP
+.fi
+.sp
+.TP
+.B Example Unblock device with public address
+.nf
+\fB> unblock \-t public 00:11:22:33:44:55\fP
+.fi
+.sp
+.TP
+.B Example Unblock device with random address
+.nf
+\fB> unblock \-t random AA:BB:CC:DD:EE:FF\fP
+.fi
+.sp
+.TP
+.B Example Unblock LE device with public address
+.nf
+\fB> unblock \-t le_public 11:22:33:44:55:66\fP
+.fi
+.sp
+.TP
+.B Example Unblock LE device with random address
+.nf
+\fB> unblock \-t le_random CC:DD:EE:FF:00:11\fP
+.fi
+.sp
+.UNINDENT
+.SS add\-uuid
+.sp
+Add UUID
+.INDENT 0.0
+.TP
+.B Usage
+\fB> add\-uuid <UUID> <service class hint>\fP
+.TP
+.B <UUID>
+Service UUID (16\-bit, 32\-bit, or 128\-bit format)
+.TP
+.B <service class hint>
+Service class hint bitmask (hexadecimal)
+.TP
+.B Example Add Serial Port Profile with object transfer hint
+.nf
+\fB> add\-uuid 0x1101 0x100000\fP
+.fi
+.sp
+.TP
+.B Example Add A2DP with audio hint
+.nf
+\fB> add\-uuid 0x110E 0x200000\fP
+.fi
+.sp
+.TP
+.B Example Add HFP with audio hint
+.nf
+\fB> add\-uuid 0x111E 0x200000\fP
+.fi
+.sp
+.TP
+.B Example Add custom service UUID with no hint
+.nf
+\fB> add\-uuid 12345678\-1234\-5678\-9abc\-123456789abc 0x000000\fP
+.fi
+.sp
+.TP
+.B Example Add custom UUID with object transfer hint
+.nf
+\fB> add\-uuid ABCD1234\-ABCD\-1234\-ABCD\-123456789ABC 0x100000\fP
+.fi
+.sp
+.TP
+.B Example Add Generic Access with no specific hint
+.nf
+\fB> add\-uuid 0x1800 0x000000\fP
+.fi
+.sp
+.TP
+.B Example Add Battery Service with no hint
+.nf
+\fB> add\-uuid 0x180F 0x000000\fP
+.fi
+.sp
+.UNINDENT
+.SS rm\-uuid
+.sp
+Remove UUID
+.INDENT 0.0
+.TP
+.B Usage
+\fB> rm\-uuid <UUID>\fP
+.TP
+.B <UUID>
+Service UUID to remove (16\-bit, 32\-bit, or 128\-bit format)
+.TP
+.B Example Remove Serial Port Profile UUID
+.nf
+\fB> rm\-uuid 0x1101\fP
+.fi
+.sp
+.TP
+.B Example Remove A2DP UUID
+.nf
+\fB> rm\-uuid 0x110E\fP
+.fi
+.sp
+.TP
+.B Example Remove custom service UUID
+.nf
+\fB> rm\-uuid 12345678\-1234\-5678\-9abc\-123456789abc\fP
+.fi
+.sp
+.UNINDENT
+.SS clr\-uuids
+.sp
+Clear UUIDs
+.INDENT 0.0
+.TP
+.B Usage
+\fB> clr\-uuids\fP
+.TP
+.B Example Clear all registered UUIDs
+.nf
+\fB> clr\-uuids\fP
+.fi
+.sp
+.UNINDENT
+.SS local\-oob
+.sp
+Local OOB data
+.INDENT 0.0
+.TP
+.B Usage
+\fB> local\-oob\fP
+.TP
+.B Example Generate and display local OOB authentication data
+.nf
+\fB> local\-oob\fP
+.fi
+.sp
+.UNINDENT
+.SS remote\-oob
+.sp
+Remote OOB data
+.INDENT 0.0
+.TP
+.B Usage
+\fB> remote\-oob [\-t <addr_type>] [\-r <rand192>] [\-h <hash192>]
+[\-R <rand256>] [\-H <hash256>] <addr>\fP
+.TP
+.B [\-t <addr_type>]
+Address type (public, random, le_public, le_random)
+.TP
+.B [\-r <rand192>]
+P\-192 random value (32 hexadecimal characters)
+.TP
+.B [\-h <hash192>]
+P\-192 hash value (32 hexadecimal characters)
+.TP
+.B [\-R <rand256>]
+P\-256 random value (64 hexadecimal characters)
+.TP
+.B [\-H <hash256>]
+P\-256 hash value (64 hexadecimal characters)
+.TP
+.B <addr>
+Remote device Bluetooth address
+.TP
+.B Example Set remote OOB data for device (minimal)
+.nf
+\fB> remote\-oob 00:11:22:33:44:55\fP
+.fi
+.sp
+.TP
+.B Example Set P\-192 random and hash values
+.nf
+\fB> remote\-oob \-r 0123456789abcdef0123456789abcdef \-h fedcba9876543210fedcba9876543210 00:11:22:33:44:55\fP
+.fi
+.sp
+.TP
+.B Example Set P\-256 random and hash values
+.nf
+\fB> remote\-oob \-R 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef \-H fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210 AA:BB:CC:DD:EE:FF\fP
+.fi
+.sp
+.TP
+.B Example Set OOB data for LE public address device
+.nf
+\fB> remote\-oob \-t le_public 11:22:33:44:55:66\fP
+.fi
+.sp
+.TP
+.B Example Set OOB data for LE random address device
+.nf
+\fB> remote\-oob \-t le_random CC:DD:EE:FF:00:11\fP
+.fi
+.sp
+.TP
+.B Example Set complete OOB data with both P\-192 and P\-256 values
+.nf
+\fB> remote\-oob \-t public \-r 0123456789abcdef0123456789abcdef \-h fedcba9876543210fedcba9876543210 \-R 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef \-H fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210 00:11:22:33:44:55\fP
+.fi
+.sp
+.UNINDENT
+.SS did
+.sp
+Set Device ID
+.INDENT 0.0
+.TP
+.B Usage
+\fB> did <source>:<vendor>:<product>:<version>\fP
+.TP
+.B <source>:<vendor>:<product>:<version>
+Device ID in format source:vendor:product:version (all hexadecimal)
+.TP
+.B Example Set USB source with Linux Foundation vendor ID
+.nf
+\fB> did 0x0002:0x1D6B:0x0001:0x0100\fP
+.fi
+.sp
+.TP
+.B Example Set USB device with Cypress vendor ID
+.nf
+\fB> did 0x0002:0x04B4:0x1234:0x0200\fP
+.fi
+.sp
+.TP
+.B Example Set Bluetooth SIG source with Broadcom vendor
+.nf
+\fB> did 0x0001:0x000F:0x0001:0x0100\fP
+.fi
+.sp
+.TP
+.B Example Set Bluetooth SIG source with Apple vendor
+.nf
+\fB> did 0x0001:0x004C:0x0001:0x0100\fP
+.fi
+.sp
+.TP
+.B Example Set custom USB device ID
+.nf
+\fB> did 0x0002:0xFFFF:0x1234:0x5678\fP
+.fi
+.sp
+.TP
+.B Example Set Qualcomm Bluetooth device
+.nf
+\fB> did 0x0001:0x05F1:0xABCD:0x0001\fP
+.fi
+.sp
+.UNINDENT
+.SS static\-addr
+.sp
+Set static address
+.INDENT 0.0
+.TP
+.B Usage
+\fB> static\-addr <address>\fP
+.TP
+.B <address>
+Static random Bluetooth address (must have bits 47\-46 set to 11)
+.TP
+.B Example Set static random address (bit 47=1, bit 46=1)
+.nf
+\fB> static\-addr C0:00:00:00:00:01\fP
+.fi
+.sp
+.TP
+.B Example Set another static random address
+.nf
+\fB> static\-addr D0:11:22:33:44:55\fP
+.fi
+.sp
+.TP
+.B Example Set different static address
+.nf
+\fB> static\-addr E0:AA:BB:CC:DD:EE\fP
+.fi
+.sp
+.UNINDENT
+.SS public\-addr
+.sp
+Set public address
+.INDENT 0.0
+.TP
+.B Usage
+\fB> public\-addr <address>\fP
+.TP
+.B <address>
+Public Bluetooth address to set for the controller
+.TP
+.B Example Set public Bluetooth address
+.nf
+\fB> public\-addr 00:11:22:33:44:55\fP
+.fi
+.sp
+.TP
+.B Example Set different public address
+.nf
+\fB> public\-addr AA:BB:CC:DD:EE:FF\fP
+.fi
+.sp
+.TP
+.B Example Set custom public address
+.nf
+\fB> public\-addr 12:34:56:78:9A:BC\fP
+.fi
+.sp
+.UNINDENT
+.SS ext\-config
+.sp
+External configuration
+.INDENT 0.0
+.TP
+.B Usage
+\fB> ext\-config <on/off>\fP
+.TP
+.B <on/off>
+External configuration \- \(dqon\(dq to enable external config, \(dqoff\(dq to disable
+.TP
+.B Example Enable external configuration
+.nf
+\fB> ext\-config on\fP
+.fi
+.sp
+.TP
+.B Example Disable external configuration
+.nf
+\fB> ext\-config off\fP
+.fi
+.sp
+.UNINDENT
+.SS debug\-keys
+.sp
+Toggle debug keys
+.INDENT 0.0
+.TP
+.B Usage
+\fB> debug\-keys <on/off>\fP
+.TP
+.B <on/off>
+Debug keys support \- \(dqon\(dq to enable debug keys, \(dqoff\(dq to disable
+.TP
+.B Example Enable debug key support
+.nf
+\fB> debug\-keys on\fP
+.fi
+.sp
+.TP
+.B Example Disable debug key support
+.nf
+\fB> debug\-keys off\fP
+.fi
+.sp
+.UNINDENT
+.SS conn\-info
+.sp
+Get connection information
+.INDENT 0.0
+.TP
+.B Usage
+\fB> conn\-info [\-t type] <remote address>\fP
+.TP
+.B [\-t type]
+Address type (public, random, le_public, le_random)
+.TP
+.B <remote address>
+Bluetooth address of connected device
+.TP
+.B Example Get connection information for device
+.nf
+\fB> conn\-info 00:11:22:33:44:55\fP
+.fi
+.sp
+.TP
+.B Example Get info for another device
+.nf
+\fB> conn\-info AA:BB:CC:DD:EE:FF\fP
+.fi
+.sp
+.TP
+.B Example Get info for public address device
+.nf
+\fB> conn\-info \-t public 00:11:22:33:44:55\fP
+.fi
+.sp
+.TP
+.B Example Get info for LE public address device
+.nf
+\fB> conn\-info \-t le_public 11:22:33:44:55:66\fP
+.fi
+.sp
+.TP
+.B Example Get info for LE random address device
+.nf
+\fB> conn\-info \-t le_random CC:DD:EE:FF:00:11\fP
+.fi
+.sp
+.UNINDENT
+.SS io\-cap
+.sp
+Set IO Capability
+.INDENT 0.0
+.TP
+.B Usage
+\fB> io\-cap <cap>\fP
+.TP
+.B <cap>
+IO capability (DisplayOnly, DisplayYesNo, KeyboardOnly, NoInputNoOutput, KeyboardDisplay)
+.TP
+.B Example Set IO capability to display only
+.nf
+\fB> io\-cap DisplayOnly\fP
+.fi
+.sp
+.TP
+.B Example Set IO capability to display with yes/no
+.nf
+\fB> io\-cap DisplayYesNo\fP
+.fi
+.sp
+.TP
+.B Example Set IO capability to keyboard only
+.nf
+\fB> io\-cap KeyboardOnly\fP
+.fi
+.sp
+.TP
+.B Example Set IO capability to no input/output
+.nf
+\fB> io\-cap NoInputNoOutput\fP
+.fi
+.sp
+.TP
+.B Example Set IO capability to keyboard and display
+.nf
+\fB> io\-cap KeyboardDisplay\fP
+.fi
+.sp
+.UNINDENT
+.SS scan\-params
+.sp
+Set Scan Parameters
+.INDENT 0.0
+.TP
+.B Usage
+\fB> scan\-params <interval> <window>\fP
+.TP
+.B <interval>
+Scan interval in hexadecimal (0x0004 to 0x4000, units of 0.625ms)
+.TP
+.B <window>
+Scan window in hexadecimal (0x0004 to 0x4000, units of 0.625ms)
+.TP
+.B Example Set fast scan (16ms interval, 16ms window)
+.nf
+\fB> scan\-params 0x0010 0x0010\fP
+.fi
+.sp
+.TP
+.B Example Set moderate fast scan (32ms interval, 32ms window)
+.nf
+\fB> scan\-params 0x0020 0x0020\fP
+.fi
+.sp
+.TP
+.B Example Set balanced scan (96ms interval, 48ms window)
+.nf
+\fB> scan\-params 0x0060 0x0030\fP
+.fi
+.sp
+.TP
+.B Example Set slow scan (256ms interval, 80ms window)
+.nf
+\fB> scan\-params 0x0100 0x0050\fP
+.fi
+.sp
+.TP
+.B Example Set background scan (2.56s interval, 18ms window)
+.nf
+\fB> scan\-params 0x0800 0x0012\fP
+.fi
+.sp
+.TP
+.B Example Set very slow background scan
+.nf
+\fB> scan\-params 0x1000 0x0020\fP
+.fi
+.sp
+.UNINDENT
+.SS get\-clock
+.sp
+Get Clock Information
+.INDENT 0.0
+.TP
+.B Usage
+\fB> get\-clock [address]\fP
+.TP
+.B [address]
+Optional remote device Bluetooth address (omit for local clock)
+.TP
+.B Example Get local Bluetooth clock information
+.nf
+\fB> get\-clock\fP
+.fi
+.sp
+.TP
+.B Example Get clock information for remote device
+.nf
+\fB> get\-clock 00:11:22:33:44:55\fP
+.fi
+.sp
+.TP
+.B Example Get clock for another remote device
+.nf
+\fB> get\-clock AA:BB:CC:DD:EE:FF\fP
+.fi
+.sp
+.UNINDENT
+.SS add\-device
+.sp
+Add Device
+.INDENT 0.0
+.TP
+.B Usage
+\fB> add\-device [\-a action] [\-t type] <address>\fP
+.TP
+.B [\-a action]
+Device action (auto, allow, deny) \- \(dqauto\(dq for auto\-connect, \(dqallow\(dq for allow\-only, \(dqdeny\(dq to block
+.TP
+.B [\-t type]
+Address type (public, random, le_public, le_random)
+.TP
+.B <address>
+Bluetooth address of device to add
+.TP
+.B Example Add device with auto\-connect action and default type
+.nf
+\fB> add\-device 00:11:22:33:44:55\fP
+.fi
+.sp
+.TP
+.B Example Add another device with defaults
+.nf
+\fB> add\-device AA:BB:CC:DD:EE:FF\fP
+.fi
+.sp
+.TP
+.B Example Add device with auto\-connect action
+.nf
+\fB> add\-device \-a auto 00:11:22:33:44:55\fP
+.fi
+.sp
+.TP
+.B Example Add device with allow\-only action (no auto\-connect)
+.nf
+\fB> add\-device \-a allow 11:22:33:44:55:66\fP
+.fi
+.sp
+.TP
+.B Example Add device with deny action (blocked)
+.nf
+\fB> add\-device \-a deny CC:DD:EE:FF:00:11\fP
+.fi
+.sp
+.TP
+.B Example Add device with public address type
+.nf
+\fB> add\-device \-t public 00:11:22:33:44:55\fP
+.fi
+.sp
+.TP
+.B Example Add device with random address type
+.nf
+\fB> add\-device \-t random AA:BB:CC:DD:EE:FF\fP
+.fi
+.sp
+.TP
+.B Example Add LE device with public address
+.nf
+\fB> add\-device \-t le_public 11:22:33:44:55:66\fP
+.fi
+.sp
+.TP
+.B Example Add LE device with random address
+.nf
+\fB> add\-device \-t le_random CC:DD:EE:FF:00:11\fP
+.fi
+.sp
+.TP
+.B Example Add LE public device with auto\-connect
+.nf
+\fB> add\-device \-a auto \-t le_public 00:11:22:33:44:55\fP
+.fi
+.sp
+.TP
+.B Example Add random address device with allow action
+.nf
+\fB> add\-device \-a allow \-t random AA:BB:CC:DD:EE:FF\fP
+.fi
+.sp
+.TP
+.B Example Add LE random device with deny action
+.nf
+\fB> add\-device \-a deny \-t le_random CC:DD:EE:FF:00:11\fP
+.fi
+.sp
+.UNINDENT
+.SS del\-device
+.sp
+Remove Device
+.INDENT 0.0
+.TP
+.B Usage
+\fB> del\-device [\-t type] <address>\fP
+.TP
+.B [\-t type]
+Address type (public, random, le_public, le_random)
+.TP
+.B <address>
+Bluetooth address of device to remove
+.TP
+.B Example Remove device using default address type
+.nf
+\fB> del\-device 00:11:22:33:44:55\fP
+.fi
+.sp
+.TP
+.B Example Remove another device
+.nf
+\fB> del\-device AA:BB:CC:DD:EE:FF\fP
+.fi
+.sp
+.TP
+.B Example Remove device with public address type
+.nf
+\fB> del\-device \-t public 00:11:22:33:44:55\fP
+.fi
+.sp
+.TP
+.B Example Remove device with random address type
+.nf
+\fB> del\-device \-t random AA:BB:CC:DD:EE:FF\fP
+.fi
+.sp
+.TP
+.B Example Remove LE device with public address
+.nf
+\fB> del\-device \-t le_public 11:22:33:44:55:66\fP
+.fi
+.sp
+.TP
+.B Example Remove LE device with random address
+.nf
+\fB> del\-device \-t le_random CC:DD:EE:FF:00:11\fP
+.fi
+.sp
+.UNINDENT
+.SS clr\-devices
+.sp
+Clear Devices
+.INDENT 0.0
+.TP
+.B Usage
+\fB> clr\-devices\fP
+.TP
+.B Example Clear all devices from the device list
+.nf
+\fB> clr\-devices\fP
+.fi
+.sp
+.UNINDENT
+.SS bredr\-oob
+.sp
+Local OOB data (BR/EDR)
+.INDENT 0.0
+.TP
+.B Usage
+\fB> bredr\-oob\fP
+.TP
+.B Example Generate and display local BR/EDR OOB authentication data
+.nf
+\fB> bredr\-oob\fP
+.fi
+.sp
+.UNINDENT
+.SS le\-oob
+.sp
+Local OOB data (LE)
+.INDENT 0.0
+.TP
+.B Usage
+\fB> le\-oob\fP
+.TP
+.B Example Generate and display local LE OOB authentication data
+.nf
+\fB> le\-oob\fP
+.fi
+.sp
+.UNINDENT
+.SS advinfo
+.sp
+Show advertising features
+.INDENT 0.0
+.TP
+.B Usage
+\fB> advinfo\fP
+.TP
+.B Example Display advertising capabilities and supported features
+.nf
+\fB> advinfo\fP
+.fi
+.sp
+.UNINDENT
+.SS advsize
+.sp
+Show advertising size info
+.INDENT 0.0
+.TP
+.B Usage
+\fB> advsize [options] <instance_id>\fP
+.TP
+.B [options]
+Advertising options flags
+.TP
+.B <instance_id>
+Advertising instance identifier (0\-based)
+.TP
+.B Example Show advertising data size information for instance 0
+.nf
+\fB> advsize 0\fP
+.fi
+.sp
+.TP
+.B Example Show size information for advertising instance 1
+.nf
+\fB> advsize 1\fP
+.fi
+.sp
+.TP
+.B Example Show size information for advertising instance 5
+.nf
+\fB> advsize 5\fP
+.fi
+.sp
+.UNINDENT
+.SS add\-adv
+.sp
+Add advertising instance
+.INDENT 0.0
+.TP
+.B Usage
+\fB> add\-adv [options] <instance_id>\fP
+.TP
+.B [options]
+Advertising options (\-c connectable, \-s scannable, \-g general discoverable, \-l limited discoverable, \-m managed flags, \-p TX power)
+.TP
+.B <instance_id>
+Advertising instance identifier (0\-based)
+.TP
+.B Example Add advertising instance 0 with default settings
+.nf
+\fB> add\-adv 0\fP
+.fi
+.sp
+.TP
+.B Example Add advertising instance 1
+.nf
+\fB> add\-adv 1\fP
+.fi
+.sp
+.TP
+.B Example Add advertising instance 5
+.nf
+\fB> add\-adv 5\fP
+.fi
+.sp
+.TP
+.B Example Add connectable advertising instance 0
+.nf
+\fB> add\-adv \-c 0\fP
+.fi
+.sp
+.TP
+.B Example Add scannable advertising instance 1
+.nf
+\fB> add\-adv \-s 1\fP
+.fi
+.sp
+.TP
+.B Example Add general discoverable advertising instance 2
+.nf
+\fB> add\-adv \-g 2\fP
+.fi
+.sp
+.TP
+.B Example Add limited discoverable advertising instance 3
+.nf
+\fB> add\-adv \-l 3\fP
+.fi
+.sp
+.TP
+.B Example Add managed flags advertising instance 4
+.nf
+\fB> add\-adv \-m 4\fP
+.fi
+.sp
+.TP
+.B Example Add TX power advertising instance 5
+.nf
+\fB> add\-adv \-p 5\fP
+.fi
+.sp
+.TP
+.B Example Add connectable and scannable advertising instance
+.nf
+\fB> add\-adv \-c \-s 0\fP
+.fi
+.sp
+.TP
+.B Example Add general discoverable with TX power
+.nf
+\fB> add\-adv \-g \-p 1\fP
+.fi
+.sp
+.TP
+.B Example Add connectable, general discoverable, and scannable
+.nf
+\fB> add\-adv \-c \-g \-s 2\fP
+.fi
+.sp
+.UNINDENT
+.SS rm\-adv
+.sp
+Remove advertising instance
+.INDENT 0.0
+.TP
+.B Usage
+\fB> rm\-adv <instance_id>\fP
+.TP
+.B <instance_id>
+Advertising instance identifier (0\-based) to remove
+.TP
+.B Example Remove advertising instance 0
+.nf
+\fB> rm\-adv 0\fP
+.fi
+.sp
+.TP
+.B Example Remove advertising instance 1
+.nf
+\fB> rm\-adv 1\fP
+.fi
+.sp
+.TP
+.B Example Remove advertising instance 5
+.nf
+\fB> rm\-adv 5\fP
+.fi
+.sp
+.UNINDENT
+.SS clr\-adv
+.sp
+Clear advertising instances
+.INDENT 0.0
+.TP
+.B Usage
+\fB> clr\-adv\fP
+.TP
+.B Example Clear all advertising instances
+.nf
+\fB> clr\-adv\fP
+.fi
+.sp
+.UNINDENT
+.SS add\-ext\-adv\-params
+.sp
+Add extended advertising params
+.INDENT 0.0
+.TP
+.B Usage
+\fB> add\-ext\-adv\-params [options] <instance_id>\fP
+.TP
+.B [options]
+Extended advertising options (\-c connectable, \-s scannable, \-d directed, \-h high duty cycle, \-l legacy PDU, \-a anonymous, \-i include TX power)
+.TP
+.B <instance_id>
+Extended advertising instance identifier (0\-based)
+.TP
+.B Example Add extended advertising parameters for instance 0
+.nf
+\fB> add\-ext\-adv\-params 0\fP
+.fi
+.sp
+.TP
+.B Example Add extended advertising parameters for instance 1
+.nf
+\fB> add\-ext\-adv\-params 1\fP
+.fi
+.sp
+.TP
+.B Example Add connectable extended advertising for instance 0
+.nf
+\fB> add\-ext\-adv\-params \-c 0\fP
+.fi
+.sp
+.TP
+.B Example Add scannable extended advertising for instance 1
+.nf
+\fB> add\-ext\-adv\-params \-s 1\fP
+.fi
+.sp
+.TP
+.B Example Add directed extended advertising for instance 2
+.nf
+\fB> add\-ext\-adv\-params \-d 2\fP
+.fi
+.sp
+.TP
+.B Example Add high duty cycle extended advertising for instance 3
+.nf
+\fB> add\-ext\-adv\-params \-h 3\fP
+.fi
+.sp
+.TP
+.B Example Add legacy PDU extended advertising for instance 4
+.nf
+\fB> add\-ext\-adv\-params \-l 4\fP
+.fi
+.sp
+.TP
+.B Example Add anonymous extended advertising for instance 5
+.nf
+\fB> add\-ext\-adv\-params \-a 5\fP
+.fi
+.sp
+.TP
+.B Example Add include TX power extended advertising for instance 6
+.nf
+\fB> add\-ext\-adv\-params \-i 6\fP
+.fi
+.sp
+.TP
+.B Example Add connectable and scannable extended advertising
+.nf
+\fB> add\-ext\-adv\-params \-c \-s 0\fP
+.fi
+.sp
+.TP
+.B Example Add connectable extended advertising with TX power
+.nf
+\fB> add\-ext\-adv\-params \-c \-i 1\fP
+.fi
+.sp
+.TP
+.B Example Add scannable legacy PDU extended advertising
+.nf
+\fB> add\-ext\-adv\-params \-s \-l 2\fP
+.fi
+.sp
+.UNINDENT
+.SS add\-ext\-adv\-data
+.sp
+Add extended advertising data
+.INDENT 0.0
+.TP
+.B Usage
+\fB> add\-ext\-adv\-data [options] <instance_id>\fP
+.TP
+.B [options]
+Data options (\-s for scan response data, \-c for complete data)
+.TP
+.B <instance_id>
+Extended advertising instance identifier (0\-based)
+.TP
+.B Example Add advertising data to extended instance 0
+.nf
+\fB> add\-ext\-adv\-data 0\fP
+.fi
+.sp
+.TP
+.B Example Add advertising data to extended instance 1
+.nf
+\fB> add\-ext\-adv\-data 1\fP
+.fi
+.sp
+.TP
+.B Example Add scan response data to extended instance 0
+.nf
+\fB> add\-ext\-adv\-data \-s 0\fP
+.fi
+.sp
+.TP
+.B Example Add scan response data to extended instance 1
+.nf
+\fB> add\-ext\-adv\-data \-s 1\fP
+.fi
+.sp
+.TP
+.B Example Add complete advertising data to instance 0
+.nf
+\fB> add\-ext\-adv\-data \-c 0\fP
+.fi
+.sp
+.TP
+.B Example Add complete scan response data to instance 1
+.nf
+\fB> add\-ext\-adv\-data \-c \-s 1\fP
+.fi
+.sp
+.UNINDENT
+.SS appearance
+.sp
+Set appearance
+.INDENT 0.0
+.TP
+.B Usage
+\fB> appearance <appearance>\fP
+.TP
+.B <appearance>
+Appearance value (16\-bit integer) representing device type
+.TP
+.B Example Set appearance to Unknown
+.nf
+\fB> appearance 0\fP
+.fi
+.sp
+.TP
+.B Example Set appearance to Generic Phone
+.nf
+\fB> appearance 64\fP
+.fi
+.sp
+.TP
+.B Example Set appearance to Generic Computer
+.nf
+\fB> appearance 128\fP
+.fi
+.sp
+.TP
+.B Example Set appearance to Generic Audio/Video device
+.nf
+\fB> appearance 832\fP
+.fi
+.sp
+.TP
+.B Example Set appearance to Speaker
+.nf
+\fB> appearance 833\fP
+.fi
+.sp
+.TP
+.B Example Set appearance to Microphone
+.nf
+\fB> appearance 834\fP
+.fi
+.sp
+.TP
+.B Example Set appearance to Headset
+.nf
+\fB> appearance 835\fP
+.fi
+.sp
+.TP
+.B Example Set appearance to Headphones
+.nf
+\fB> appearance 836\fP
+.fi
+.sp
+.TP
+.B Example Set appearance to Generic HID
+.nf
+\fB> appearance 960\fP
+.fi
+.sp
+.TP
+.B Example Set appearance to Keyboard
+.nf
+\fB> appearance 961\fP
+.fi
+.sp
+.TP
+.B Example Set appearance to Mouse
+.nf
+\fB> appearance 962\fP
+.fi
+.sp
+.TP
+.B Example Set appearance to Joystick
+.nf
+\fB> appearance 963\fP
+.fi
+.sp
+.TP
+.B Example Set appearance to Generic Health Sensor
+.nf
+\fB> appearance 1344\fP
+.fi
+.sp
+.TP
+.B Example Set appearance to Heart Rate Sensor
+.nf
+\fB> appearance 1345\fP
+.fi
+.sp
+.TP
+.B Example Set appearance to Blood Pressure Monitor
+.nf
+\fB> appearance 1346\fP
+.fi
+.sp
+.TP
+.B Example Set appearance to Generic Sports and Fitness
+.nf
+\fB> appearance 1472\fP
+.fi
+.sp
+.TP
+.B Example Set appearance to Location Display
+.nf
+\fB> appearance 1473\fP
+.fi
+.sp
+.TP
+.B Example Set appearance to Location Navigation Display
+.nf
+\fB> appearance 1474\fP
+.fi
+.sp
+.UNINDENT
+.SS phy
+.sp
+Get/Set PHY Configuration
+.INDENT 0.0
+.TP
+.B Usage
+\fB> phy [LE1MTX] [LE1MRX] [LE2MTX] [LE2MRX] [LECODEDTX] [LECODEDRX]
+[BR1M1SLOT] [BR1M3SLOT] [BR1M5SLOT][EDR2M1SLOT] [EDR2M3SLOT]
+[EDR2M5SLOT][EDR3M1SLOT] [EDR3M3SLOT] [EDR3M5SLOT]\fP
+.TP
+.B [PHY flags]
+PHY configuration flags to enable (LE1MTX, LE1MRX, LE2MTX, LE2MRX, LECODEDTX, LECODEDRX, BR1M1SLOT, etc.)
+.TP
+.B Example Display current PHY configuration
+.nf
+\fB> phy\fP
+.fi
+.sp
+.TP
+.B Example Enable LE 1M TX PHY
+.nf
+\fB> phy LE1MTX\fP
+.fi
+.sp
+.TP
+.B Example Enable LE 1M RX PHY
+.nf
+\fB> phy LE1MRX\fP
+.fi
+.sp
+.TP
+.B Example Enable LE 2M TX PHY
+.nf
+\fB> phy LE2MTX\fP
+.fi
+.sp
+.TP
+.B Example Enable LE 2M RX PHY
+.nf
+\fB> phy LE2MRX\fP
+.fi
+.sp
+.TP
+.B Example Enable LE Coded TX PHY
+.nf
+\fB> phy LECODEDTX\fP
+.fi
+.sp
+.TP
+.B Example Enable LE Coded RX PHY
+.nf
+\fB> phy LECODEDRX\fP
+.fi
+.sp
+.TP
+.B Example Enable BR 1M 1\-slot packets
+.nf
+\fB> phy BR1M1SLOT\fP
+.fi
+.sp
+.TP
+.B Example Enable BR 1M 3\-slot packets
+.nf
+\fB> phy BR1M3SLOT\fP
+.fi
+.sp
+.TP
+.B Example Enable BR 1M 5\-slot packets
+.nf
+\fB> phy BR1M5SLOT\fP
+.fi
+.sp
+.TP
+.B Example Enable EDR 2M 1\-slot packets
+.nf
+\fB> phy EDR2M1SLOT\fP
+.fi
+.sp
+.TP
+.B Example Enable EDR 2M 3\-slot packets
+.nf
+\fB> phy EDR2M3SLOT\fP
+.fi
+.sp
+.TP
+.B Example Enable EDR 2M 5\-slot packets
+.nf
+\fB> phy EDR2M5SLOT\fP
+.fi
+.sp
+.TP
+.B Example Enable EDR 3M 1\-slot packets
+.nf
+\fB> phy EDR3M1SLOT\fP
+.fi
+.sp
+.TP
+.B Example Enable EDR 3M 3\-slot packets
+.nf
+\fB> phy EDR3M3SLOT\fP
+.fi
+.sp
+.TP
+.B Example Enable EDR 3M 5\-slot packets
+.nf
+\fB> phy EDR3M5SLOT\fP
+.fi
+.sp
+.TP
+.B Example Enable LE 1M TX and RX PHYs
+.nf
+\fB> phy LE1MTX LE1MRX\fP
+.fi
+.sp
+.TP
+.B Example Enable LE 1M and 2M TX/RX PHYs
+.nf
+\fB> phy LE1MTX LE1MRX LE2MTX LE2MRX\fP
+.fi
+.sp
+.TP
+.B Example Enable 1\-slot packets for all BR/EDR PHYs
+.nf
+\fB> phy BR1M1SLOT EDR2M1SLOT EDR3M1SLOT\fP
+.fi
+.sp
+.UNINDENT
+.SS wbs
+.sp
+Toggle Wideband\-Speech support
+.INDENT 0.0
+.TP
+.B Usage
+\fB> wbs <on/off>\fP
+.TP
+.B <on/off>
+Wideband Speech support \- \(dqon\(dq to enable for audio profiles, \(dqoff\(dq to disable
+.TP
+.B Example Enable Wideband Speech support for audio profiles
+.nf
+\fB> wbs on\fP
+.fi
+.sp
+.TP
+.B Example Disable Wideband Speech support
+.nf
+\fB> wbs off\fP
+.fi
+.sp
+.UNINDENT
+.SS secinfo
+.sp
+Show security information
+.INDENT 0.0
+.TP
+.B Usage
+\fB> secinfo\fP
+.TP
+.B Example Display security features and capabilities
+.nf
+\fB> secinfo\fP
+.fi
+.sp
+.UNINDENT
+.SS expinfo
+.sp
+Show experimental features
+.INDENT 0.0
+.TP
+.B Usage
+\fB> expinfo\fP
+.TP
+.B Example Display available experimental features and their status
+.nf
+\fB> expinfo\fP
+.fi
+.sp
+.UNINDENT
+.SS exp\-debug
+.sp
+Set debug feature
+.INDENT 0.0
+.TP
+.B Usage
+\fB> exp\-debug <on/off>\fP
+.TP
+.B <on/off>
+Experimental debug features \- \(dqon\(dq to enable, \(dqoff\(dq to disable
+.TP
+.B Example Enable experimental debug features
+.nf
+\fB> exp\-debug on\fP
+.fi
+.sp
+.TP
+.B Example Disable experimental debug features
+.nf
+\fB> exp\-debug off\fP
+.fi
+.sp
+.UNINDENT
+.SS exp\-privacy
+.sp
+Set LL privacy feature
+.INDENT 0.0
+.TP
+.B Usage
+\fB> exp\-privacy <on/off>\fP
+.TP
+.B <on/off>
+Experimental Link Layer privacy \- \(dqon\(dq to enable LL privacy features, \(dqoff\(dq to disable
+.TP
+.B Example Enable experimental Link Layer privacy features
+.nf
+\fB> exp\-privacy on\fP
+.fi
+.sp
+.TP
+.B Example Disable experimental Link Layer privacy features
+.nf
+\fB> exp\-privacy off\fP
+.fi
+.sp
+.UNINDENT
+.SS exp\-quality
+.sp
+Set bluetooth quality report feature
+.INDENT 0.0
+.TP
+.B Usage
+\fB> exp\-quality <on/off>\fP
+.TP
+.B <on/off>
+Experimental quality reporting \- \(dqon\(dq to enable Bluetooth quality reports, \(dqoff\(dq to disable
+.TP
+.B Example Enable experimental Bluetooth quality reporting
+.nf
+\fB> exp\-quality on\fP
+.fi
+.sp
+.TP
+.B Example Disable experimental Bluetooth quality reporting
+.nf
+\fB> exp\-quality off\fP
+.fi
+.sp
+.UNINDENT
+.SS exp\-offload
+.sp
+Toggle codec support
+.INDENT 0.0
+.TP
+.B Usage
+\fB> exp\-offload <on/off>\fP
+.TP
+.B <on/off>
+Experimental codec offload \- \(dqon\(dq to enable codec offload support, \(dqoff\(dq to disable
+.TP
+.B Example Enable experimental codec offload support
+.nf
+\fB> exp\-offload on\fP
+.fi
+.sp
+.TP
+.B Example Disable experimental codec offload support
+.nf
+\fB> exp\-offload off\fP
+.fi
+.sp
+.UNINDENT
+.SS read\-sysconfig
+.sp
+Read System Configuration
+.INDENT 0.0
+.TP
+.B Usage
+\fB> read\-sysconfig\fP
+.TP
+.B Example Read current system configuration parameters
+.nf
+\fB> read\-sysconfig\fP
+.fi
+.sp
+.UNINDENT
+.SS set\-sysconfig
+.sp
+Set System Configuration
+.INDENT 0.0
+.TP
+.B Usage
+\fB> set\-sysconfig <\-v|\-h> [options...]\fP
+.TP
+.B <\-v|\-h>
+Verbose output or help flag
+.TP
+.B [options...]
+System configuration options (\-\-br\-page\-scan\-type, \-\-br\-page\-scan\-interval, etc.)
+.TP
+.B Example Show help for system configuration options
+.nf
+\fB> set\-sysconfig \-h\fP
+.fi
+.sp
+.TP
+.B Example Set system configuration with verbose output
+.nf
+\fB> set\-sysconfig \-v\fP
+.fi
+.sp
+.TP
+.B Example Set BR/EDR page scan type with verbose output
+.nf
+\fB> set\-sysconfig \-v \-\-br\-page\-scan\-type=0\fP
+.fi
+.sp
+.TP
+.B Example Set BR/EDR page scan interval
+.nf
+\fB> set\-sysconfig \-v \-\-br\-page\-scan\-interval=0x800\fP
+.fi
+.sp
+.TP
+.B Example Set BR/EDR page scan window
+.nf
+\fB> set\-sysconfig \-v \-\-br\-page\-scan\-window=0x12\fP
+.fi
+.sp
+.TP
+.B Example Set BR/EDR inquiry scan type
+.nf
+\fB> set\-sysconfig \-v \-\-br\-inquiry\-scan\-type=0\fP
+.fi
+.sp
+.TP
+.B Example Set BR/EDR link supervision timeout
+.nf
+\fB> set\-sysconfig \-v \-\-br\-link\-supervision\-timeout=0x2000\fP
+.fi
+.sp
+.TP
+.B Example Set LE minimum connection interval
+.nf
+\fB> set\-sysconfig \-v \-\-le\-min\-connection\-interval=0x18\fP
+.fi
+.sp
+.TP
+.B Example Set LE maximum connection interval
+.nf
+\fB> set\-sysconfig \-v \-\-le\-max\-connection\-interval=0x28\fP
+.fi
+.sp
+.TP
+.B Example Set multiple BR/EDR scan parameters
+.nf
+\fB> set\-sysconfig \-v \-\-br\-page\-scan\-type=0 \-\-br\-page\-scan\-interval=0x800 \-\-br\-page\-scan\-window=0x12\fP
+.fi
+.sp
+.TP
+.B Example Set multiple LE connection parameters
+.nf
+\fB> set\-sysconfig \-v \-\-le\-min\-connection\-interval=0x18 \-\-le\-max\-connection\-interval=0x28 \-\-le\-connection\-latency=0\fP
+.fi
+.sp
+.UNINDENT
+.SS get\-flags
+.sp
+Get device flags
+.INDENT 0.0
+.TP
+.B Usage
+\fB> get\-flags [\-t type] <address>\fP
+.TP
+.B [\-t type]
+Address type (public, random, le_public, le_random)
+.TP
+.B <address>
+Bluetooth address of device to query flags for
+.TP
+.B Example Get device flags for device using default type
+.nf
+\fB> get\-flags 00:11:22:33:44:55\fP
+.fi
+.sp
+.TP
+.B Example Get flags for another device
+.nf
+\fB> get\-flags AA:BB:CC:DD:EE:FF\fP
+.fi
+.sp
+.TP
+.B Example Get flags for public address device
+.nf
+\fB> get\-flags \-t public 00:11:22:33:44:55\fP
+.fi
+.sp
+.TP
+.B Example Get flags for random address device
+.nf
+\fB> get\-flags \-t random AA:BB:CC:DD:EE:FF\fP
+.fi
+.sp
+.TP
+.B Example Get flags for LE public address device
+.nf
+\fB> get\-flags \-t le_public 11:22:33:44:55:66\fP
+.fi
+.sp
+.TP
+.B Example Get flags for LE random address device
+.nf
+\fB> get\-flags \-t le_random CC:DD:EE:FF:00:11\fP
+.fi
+.sp
+.UNINDENT
+.SS set\-flags
+.sp
+Set device flags
+.INDENT 0.0
+.TP
+.B Usage
+\fB> set\-flags [\-f flags] [\-t type] <address>\fP
+.TP
+.B [\-f flags]
+Device flags bitmask in hexadecimal (0x01=remote wake, 0x02=privacy)
+.TP
+.B [\-t type]
+Address type (public, random, le_public, le_random)
+.TP
+.B <address>
+Bluetooth address of device to set flags for
+.TP
+.B Example Set default flags for device
+.nf
+\fB> set\-flags 00:11:22:33:44:55\fP
+.fi
+.sp
+.TP
+.B Example Set default flags for another device
+.nf
+\fB> set\-flags AA:BB:CC:DD:EE:FF\fP
+.fi
+.sp
+.TP
+.B Example Set remote wake flag for device
+.nf
+\fB> set\-flags \-f 0x01 00:11:22:33:44:55\fP
+.fi
+.sp
+.TP
+.B Example Set device privacy flag
+.nf
+\fB> set\-flags \-f 0x02 AA:BB:CC:DD:EE:FF\fP
+.fi
+.sp
+.TP
+.B Example Set both remote wake and privacy flags
+.nf
+\fB> set\-flags \-f 0x03 11:22:33:44:55:66\fP
+.fi
+.sp
+.TP
+.B Example Set remote wake for public address device
+.nf
+\fB> set\-flags \-f 0x01 \-t public 00:11:22:33:44:55\fP
+.fi
+.sp
+.TP
+.B Example Set privacy flag for LE public device
+.nf
+\fB> set\-flags \-f 0x02 \-t le_public 11:22:33:44:55:66\fP
+.fi
+.sp
+.TP
+.B Example Set multiple flags for LE random device
+.nf
+\fB> set\-flags \-f 0x03 \-t le_random CC:DD:EE:FF:00:11\fP
+.fi
+.sp
+.TP
+.B Example Clear all flags for device
+.nf
+\fB> set\-flags \-f 0x00 00:11:22:33:44:55\fP
+.fi
+.sp
+.TP
+.B Example Clear all flags for LE public device
+.nf
+\fB> set\-flags \-f 0x00 \-t le_public 11:22:33:44:55:66\fP
+.fi
+.sp
+.UNINDENT
+.SH RESOURCES
+.sp
+ <http://www.bluez.org> 
+.SH REPORTING BUGS
+.sp
+ <linux\-bluetooth@vger.kernel.org> 
+.SH COPYRIGHT
+Free use of this software is granted under the terms of the GNU
+Lesser General Public Licenses (LGPL).
+.\" Generated by docutils manpage writer.
+.

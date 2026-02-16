@@ -19,9 +19,10 @@ OPTIONS
 :-s/--dbus-session: Start D-Bus session daemon
 :-d/--daemon: Start bluetoothd
 :-m/--monitor: Start btmon
-:-l/--emulator: Start btvirt
+:-l/--emulator[=num]: Start btvirt
 :-A/-audio[=path]: Start audio server
 :-u/--unix[=path]: Provide serial device
+:-U/--usb=<qemu_args>: Provide USB device
 :-q/--qemu=<path>: QEMU binary
 :-k/--kernel=<image>: Kernel image (bzImage)
 :-h/--help: Show help options
@@ -91,8 +92,18 @@ Bluetooth
 
 	CONFIG_UHID=y
 
-Lock debuging
--------------
+For 6lowpan-tester, the following are required:
+
+.. code-block::
+
+   CONFIG_6LOWPAN=y
+   CONFIG_6LOWPAN_DEBUGFS=y
+   CONFIG_BT_6LOWPAN=y
+   CONFIG_PACKET=y
+
+
+Lock debugging
+--------------
 
 To catch locking related issues the following set of kernel config
 options may be useful:
@@ -136,6 +147,16 @@ Running bluetoothctl with emulated controller
 	[CHG] Controller 00:AA:01:00:00:00 Pairable: yes
 	[bluetooth]#
 
+Running bluetoothctl with 2 emulated controller
+------------------------------------------------
+
+.. code-block::
+
+	$ tools/test-runner -l2 -d -k /pathto/bzImage -- client/bluetoothctl
+	[CHG] Controller 00:AA:01:01:00:01 Pairable: yes
+	[CHG] Controller 00:AA:01:00:00:00 Pairable: yes
+	[bluetooth]#
+
 Running bluetoothctl with emulated controller and audio support
 ---------------------------------------------------------------
 
@@ -176,3 +197,18 @@ Running shell with host controller using btproxy
 	$ tools/btproxy -u [1]
 	$ tools/test-runner -u -d -k /pathto/bzImage -- /bin/bash [2]
 
+Running shell with host controller USB-passthrough
+--------------------------------------------------
+
+In addition the above kernel config option the following is required:
+
+.. code-block::
+
+	CONFIG_USB=y
+	CONFIG_USB_XHCI_HCD=y
+	CONFIG_USB_XHCI_PLATFORM=y
+
+.. code-block::
+
+	$ tools/test-runner -U "usb-host,vendorid=<0xxxxx>,productid=<0xxxxx>" \
+	-d -k /pathto/bzImage -- /bin/bash

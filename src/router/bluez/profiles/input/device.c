@@ -22,11 +22,11 @@
 #include <sys/ioctl.h>
 #include <sys/uio.h>
 
-#include "lib/bluetooth.h"
-#include "lib/hidp.h"
-#include "lib/sdp.h"
-#include "lib/sdp_lib.h"
-#include "lib/uuid.h"
+#include "bluetooth/bluetooth.h"
+#include "bluetooth/hidp.h"
+#include "bluetooth/sdp.h"
+#include "bluetooth/sdp_lib.h"
+#include "bluetooth/uuid.h"
 
 #include "gdbus/gdbus.h"
 
@@ -47,6 +47,7 @@
 
 #include "device.h"
 #include "hidp_defs.h"
+#include "server.h"
 
 #define INPUT_INTERFACE "org.bluez.Input1"
 
@@ -109,11 +110,6 @@ void input_set_userspace_hid(char *state)
 		uhid_state = UHID_PERSIST;
 	else
 		error("Unknown value '%s'", state);
-}
-
-uint8_t input_get_userspace_hid(void)
-{
-	return uhid_state;
 }
 
 void input_set_classic_bonded_only(bool state)
@@ -867,10 +863,17 @@ static int extract_hid_desc_data(const sdp_record_t *rec,
 	if (!d || !SDP_IS_TEXT_STR(d->dtd))
 		goto invalid_desc;
 
-	req->rd_data = g_try_malloc0(d->unitSize);
+	/*
+	 * Report descriptor data is parsed by extract_str() which
+	 * will allocate N + 1 bytes for the incoming string to
+	 * include a zero delimiter. Since that zero delimiter isn't a
+	 * part of a report descriptor we adjust the size here to
+	 * account for that.
+	 */
+	req->rd_size = d->unitSize - 1;
+	req->rd_data = g_try_malloc0(req->rd_size);
 	if (req->rd_data) {
-		memcpy(req->rd_data, d->val.str, d->unitSize);
-		req->rd_size = d->unitSize;
+		memcpy(req->rd_data, d->val.str, req->rd_size);
 		epox_endian_quirk(req->rd_data, req->rd_size);
 	}
 
@@ -1065,6 +1068,7 @@ static gboolean encrypt_notify(GIOChannel *io, GIOCondition condition,
 static int hidp_add_connection(struct input_device *idev)
 {
 	struct hidp_connadd_req *req;
+	bool cable_pairing;
 	GError *gerr = NULL;
 	int err;
 
@@ -1088,8 +1092,11 @@ static int hidp_add_connection(struct input_device *idev)
 	if (device_name_known(idev->device))
 		device_get_name(idev->device, req->name, sizeof(req->name));
 
+	cable_pairing = device_is_cable_pairing(idev->device);
+
 	/* Make sure the device is bonded if required */
-	if (classic_bonded_only && !input_device_bonded(idev)) {
+	if (!cable_pairing && classic_bonded_only &&
+			!input_device_bonded(idev)) {
 		error("Rejected connection from !bonded device %s", idev->path);
 		goto cleanup;
 	}
@@ -1098,7 +1105,10 @@ static int hidp_add_connection(struct input_device *idev)
 	/* Some platforms may choose to require encryption for all devices */
 	/* Note that this only matters for pre 2.1 devices as otherwise the */
 	/* device is encrypted by default by the lower layers */
-	if (classic_bonded_only || idev->type == BT_UHID_KEYBOARD) {
+	/* Don't enforce encryption for cable paired devices because they */
+	/* don't support it */
+	if (!cable_pairing && (classic_bonded_only ||
+				idev->type == BT_UHID_KEYBOARD)) {
 		if (!bt_io_set(idev->intr_io, &gerr,
 					BT_IO_OPT_SEC_LEVEL, BT_IO_SEC_MEDIUM,
 					BT_IO_OPT_INVALID)) {
@@ -1151,8 +1161,13 @@ static int connection_disconnect(struct input_device *idev, uint32_t flags)
 		shutdown(sock, SHUT_WR);
 	}
 
-	if (flags & (1 << HIDP_VIRTUAL_CABLE_UNPLUG))
+	if (flags & (1 << HIDP_VIRTUAL_CABLE_UNPLUG)) {
 		idev->virtual_cable_unplug = true;
+		if (idev->uhid)
+			hidp_send_ctrl_message(idev, HIDP_TRANS_HID_CONTROL |
+						HIDP_CTRL_VIRTUAL_CABLE_UNPLUG,
+						NULL, 0);
+	}
 
 	if (idev->uhid)
 		return uhid_disconnect(idev, false);
@@ -1545,6 +1560,13 @@ int input_device_register(struct btd_service *service)
 
 	btd_service_set_user_data(service, idev);
 	device_set_wake_support(device, true);
+
+	if (device_is_cable_pairing(device)) {
+		struct btd_adapter *adapter = device_get_adapter(device);
+		const bdaddr_t *bdaddr = btd_adapter_get_address(adapter);
+
+		server_set_cable_pairing(bdaddr, true);
+	}
 
 	return 0;
 }

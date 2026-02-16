@@ -26,13 +26,14 @@ Adapter
 :Service:	org.bluez
 :Interface:	org.bluez.AdminPolicyStatus1 [experimental]
 :Object path:	[variable prefix]/{hci0,hci1,...}
+:Used by:	**bluetoothctl-admin(1)**
 
 Device
 ------
 
 :Service:	org.bluez
 :Interface:	org.bluez.AdminPolicyStatus1 [experimental]
-:Object path:	[variable prefix]/{hci0,hci1,...}/dev_XX_XX_XX_XX_XX_XX
+:Object path:	[variable prefix]/{hci0,hci1,...}/dev_{BDADDR}
 
 Properties
 ----------
@@ -40,10 +41,10 @@ Properties
 array{string} ServiceAllowList [readonly, adapter-only]
 ```````````````````````````````````````````````````````
 
-	Current value of service allow list.
+Current value of service allow list.
 
 bool IsAffectedByPolicy [readonly, device-only]
 ```````````````````````````````````````````````
 
-	Indicate if there is any auto-connect profile in this device is not
-	allowed by admin policy.
+Indicate if there is any auto-connect profile in this device is not allowed by
+admin policy.

@@ -40,14 +40,15 @@ org.bluez
 org.bluez.MediaTransport1
 .TP
 .B Object path
-[variable prefix]/{hci0,hci1,...}/dev_XX_XX_XX_XX_XX_XX/fdX
+[variable prefix]/{hci0,hci1,...}/dev_{BDADDR}/fd#
+.TP
+.B Used by
+\fBbluetoothctl\-transport(1)\fP
 .UNINDENT
 .SS Methods
 .SS fd, uint16, uint16 Acquire()
-.INDENT 0.0
-.INDENT 3.5
-Acquire transport file descriptor and the MTU for read and write
-respectively.
+.sp
+Acquire transport file descriptor and the MTU for read and write respectively.
 .sp
 Possible Errors:
 .INDENT 0.0
@@ -56,15 +57,19 @@ Possible Errors:
 .TP
 .B org.bluez.Error.Failed
 .UNINDENT
-.UNINDENT
+.sp
+Examples:
+.INDENT 0.0
+.TP
+.B bluetoothctl
+> transport.acquire <transport> [transport1...]
 .UNINDENT
 .SS fd, uint16, uint16 TryAcquire()
-.INDENT 0.0
-.INDENT 3.5
-Acquire transport file descriptor only if the transport is in \(dqpending\(dq
-state at the time the message is received by BlueZ. Otherwise no request
-will be sent to the remote device and the function will just fail with
-org.bluez.Error.NotAvailable.
+.sp
+Acquire transport file descriptor only if the transport is in \(dqpending\(dq state at
+the time the message is received by BlueZ. Otherwise no request will be sent to
+the remote device and the function will just fail with
+\fBorg.bluez.Error.NotAvailable\fP\&.
 .sp
 Possible Errors:
 .INDENT 0.0
@@ -75,78 +80,86 @@ Possible Errors:
 .TP
 .B org.bluez.Error.NotAvailable
 .UNINDENT
-.UNINDENT
-.UNINDENT
 .SS void Release()
-.INDENT 0.0
-.INDENT 3.5
+.sp
 Releases file descriptor.
-.UNINDENT
+.sp
+Examples:
+.INDENT 0.0
+.TP
+.B bluetoothctl
+> transport.release <transport> [transport1...]
 .UNINDENT
 .SS void Select()
+.sp
+Applicable only for transports created by a broadcast sink. This moves the
+transport from \(dqidle\(dq to \(dqbroadcasting\(dq.
+.sp
+This allows callers to select which BISes he wishes to sync to via a 2 step
+process:
 .INDENT 0.0
-.INDENT 3.5
-Applicable only for transports created by a broadcast sink. This moves
-the transport from \(aqidle\(aq to \(aqbroadcasting\(aq. This allows the user to
-select which BISes he wishes to sync to via a 2 step process:
-1) the user calls the method, changing the transport\(aqs state to broadcasting
-2) the audio server detects that the transport is in the \(aqbroadcasting\(aq
-state and automatically acquires it
+.IP 1. 3
+the user calls the method, changing the transport\(aqs state to broadcasting
+.IP 2. 3
+the audio server detects that the transport is in the \(aqbroadcasting\(aq state
+and automatically acquires it
+.UNINDENT
 .sp
 Possible Errors:
 .INDENT 0.0
 .TP
 .B org.bluez.Error.NotAuthorized
 .UNINDENT
-.UNINDENT
+.sp
+Examples:
+.INDENT 0.0
+.TP
+.B bluetoothctl
+> transport.select <transport> [transport1...]
 .UNINDENT
 .SS void Unselect()
+.sp
+Applicable only for transports created by a broadcast sink. This moves the
+transport from \(dqbroadcasting\(dq or \(dqactive\(dq to \(dqidle\(dq.
+.sp
+This allows callers to terminate the sync to a BIS to via a 2 step process:
 .INDENT 0.0
-.INDENT 3.5
-Applicable only for transports created by a broadcast sink. This moves
-the transport from \(aqbroadcasting\(aq or \(aqactive\(aq to \(aqidle\(aq. This allows the
-user to terminate the sync to a BIS to via a 2 step process:
-1) the user calls this method, changing the transport\(aqs state to idle
-2) the audio server detects this event and releases the transport
+.IP 1. 3
+the user calls this method, changing the transport\(aqs state to idle
+.IP 2. 3
+the audio server detects this event and releases the transport
+.UNINDENT
 .sp
 Possible Errors:
 .INDENT 0.0
 .TP
 .B org.bluez.Error.NotAuthorized
 .UNINDENT
-.UNINDENT
+.sp
+Examples:
+.INDENT 0.0
+.TP
+.B bluetoothctl
+> transport.unselect <transport> [transport1...]
 .UNINDENT
 .SS Properties
 .SS object Device [readonly]
-.INDENT 0.0
-.INDENT 3.5
+.sp
 Device object which the transport is connected to.
-.UNINDENT
-.UNINDENT
 .SS string UUID [readonly]
-.INDENT 0.0
-.INDENT 3.5
+.sp
 UUID of the profile which the transport is for.
-.UNINDENT
-.UNINDENT
 .SS byte Codec [readonly]
-.INDENT 0.0
-.INDENT 3.5
+.sp
 Assigned number of codec that the transport support.
-The values should match the profile specification which is indicated by
-the UUID.
-.UNINDENT
-.UNINDENT
+.sp
+The values should match the profile specification which is indicated by the
+UUID.
 .SS array{byte} Configuration [readonly]
-.INDENT 0.0
-.INDENT 3.5
-Configuration blob, it is used as it is so the size and byte order must
-match.
-.UNINDENT
-.UNINDENT
+.sp
+Configuration blob, it is used as it is so the size and byte order must match.
 .SS string State [readonly]
-.INDENT 0.0
-.INDENT 3.5
+.sp
 Indicates the state of the transport. Possible values are:
 .INDENT 0.0
 .TP
@@ -157,77 +170,64 @@ not streaming
 streaming but not acquired
 .TP
 .B \(dqbroadcasting\(dq
-streaming but not acquired, applicable only for transports
-created by a broadcast sink
+streaming but not acquired, applicable only for transports created by a
+broadcast sink
 .TP
 .B \(dqactive\(dq
 streaming and acquired
 .UNINDENT
-.UNINDENT
-.UNINDENT
 .SS uint16 Delay [readwrite, optional]
-.INDENT 0.0
-.INDENT 3.5
-Transport delay in 1/10 of millisecond, this property is only writeable
-when the transport corresponds to a sink endpoint and it was acquired by
-the sender.
-.UNINDENT
-.UNINDENT
+.sp
+Transport delay in 1/10 of millisecond, this property is only writeable when the
+transport corresponds to a sink endpoint and it was acquired by the sender.
 .SS uint16 Volume [readwrite, optional]
-.INDENT 0.0
-.INDENT 3.5
+.sp
 Indicates volume level of the transport, this property is only writeable
 when the transport was acquired by the sender.
+.sp
+Possible Values:
 .INDENT 0.0
 .TP
-.B Possible Values: 0\-127 (A2DP)
-0\-255 (BAP)
+.B 0\-127 (A2DP)
+.TP
+.B 0\-255 (BAP)
 .UNINDENT
-.UNINDENT
+.sp
+Examples:
+.INDENT 0.0
+.TP
+.B bluetoothctl
+> transport.volume <transport> [value]
 .UNINDENT
 .SS object Endpoint [readonly, optional, experimental]
-.INDENT 0.0
-.INDENT 3.5
+.sp
 Endpoint object which the transport is associated with.
-.UNINDENT
-.UNINDENT
 .SS uint32 Location [readonly, ISO only, experimental]
-.INDENT 0.0
-.INDENT 3.5
+.sp
 Indicates transport Audio Location.
-.UNINDENT
-.UNINDENT
 .SS array{byte} Metadata [readwrite, ISO Only, experimental]
-.INDENT 0.0
-.INDENT 3.5
+.sp
 Indicates transport Metadata.
-.UNINDENT
-.UNINDENT
 .SS array{object} Links [readonly, optional, CIS only, experimental]
-.INDENT 0.0
-.INDENT 3.5
+.sp
 Linked transport objects which the transport is associated with.
-.UNINDENT
-.UNINDENT
 .SS array{object} Links [readwrite, BIS only, experimental]
-.INDENT 0.0
-.INDENT 3.5
-For a Broadcast Sink, the BIG sync procedure requires all
-desired streams to be enumerated from the start and it cannot
-be later reconfigured by adding or removing BISes. To avoid
-terminating and recreating the BIG sync everytime a new
-transport is selected for acquire, all transports selected via
-Transport.Select need to be linked together. When the first
-transport is acquired via Transport.Acquire, all links are
-included in the BIG sync command. An acquired transport will
-create and set fds for all its links. Then, each link needs
-to be acquired separately, to get the fd and start receiving
-audio.
-.UNINDENT
-.UNINDENT
+.sp
+For a Broadcast Sink, the BIG sync procedure requires all desired streams to be
+enumerated from the start and it cannot be later reconfigured by adding or
+removing BISes.
+.sp
+To avoid terminating and recreating the BIG sync every time a new transport is
+selected for acquire, all transports selected via \fBSelect\fP need to be linked
+together.
+.sp
+When the first transport is acquired via Transport.Acquire, all links are
+included in the BIG sync command.
+.sp
+An acquired transport will create and set fds for all its links. Then, each link
+needs to be acquired separately, to get the fd and start receiving audio.
 .SS dict QoS [readwrite, optional, ISO only, experimental]
-.INDENT 0.0
-.INDENT 3.5
+.sp
 Only present when QoS is configured.
 .sp
 Possible values for Unicast:
@@ -253,7 +253,10 @@ Possible values:
 .INDENT 7.0
 .TP
 .B 0x00 \- 0xef
+.UNINDENT
+.sp
 Valid ID range.
+.INDENT 7.0
 .TP
 .B 0xff
 Auto allocate.
@@ -365,8 +368,6 @@ LE Coded
 .TP
 .B byte Retransmissions
 Indicates configured retransmissions.
-.UNINDENT
-.UNINDENT
 .UNINDENT
 .\" Generated by docutils manpage writer.
 .

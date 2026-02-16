@@ -181,7 +181,7 @@ done:
 	if (l_queue_isempty(dbus->message_queue))
 		return false;
 
-	/* Only continue sending messges if the connection is ready */
+	/* Only continue sending messages if the connection is ready */
 	return dbus->is_ready;
 }
 

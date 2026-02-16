@@ -1,3 +1,36 @@
+ver 5.86:
+	Fix issue with number of retries on authentication failures.
+	Fix issue with G.722 @ 16 kHz codec ID value reported by transport.
+	Add support for Telephony interface.
+	Add support for Ranging profile.
+	Add support for GMAP service.
+	Add support for TMAP service.
+
+ver 5.85:
+	Fix issue with handling display of battery charge level.
+	Fix issue with BASS permissions not requiring encryption.
+	Fix issue with handling abort for OBEX SRM operation.
+	Fix issue with handling device privacy.
+	Add support for HFP call answer support.
+	Add support for HFP simple 3-way call support.
+
+ver 5.84:
+	Fix issue with AVRCP and handling invalid UTF-8 item name.
+	Fix issue with exposing coordinate sets if LE Audio is disabled.
+	Fix issue with BAP and not responding to SetConfiguration.
+	Add support for BAP unicast endpoint reconfiguration.
+	Add support for BASS and encrypted broadcast source.
+	Add support for HFP and Call Line Identification.
+
+ver 5.83:
+	Fix issue with handling BAP and removal of PAC.
+	Fix issue with handling SID for broadcast receiver.
+	Fix issue with handling HSP/HFP reconnection policy.
+	Fix issue with handling cable pairing and Sixaxis controllers.
+	Fix issue with handling virtual cable unplug for HID devices.
+	Fix issue with handling service records for HID devices.
+	Add support for AVDTP and TX timestamps.
+
 ver 5.82:
 	Fix issue with handling BAP state transitions.
 	Fix issue with handling D-Bus interface removal.

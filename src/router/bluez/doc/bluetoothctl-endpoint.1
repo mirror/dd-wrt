@@ -1,0 +1,437 @@
+.\" Man page generated from reStructuredText.
+.
+.
+.nr rst2man-indent-level 0
+.
+.de1 rstReportMargin
+\\$1 \\n[an-margin]
+level \\n[rst2man-indent-level]
+level margin: \\n[rst2man-indent\\n[rst2man-indent-level]]
+-
+\\n[rst2man-indent0]
+\\n[rst2man-indent1]
+\\n[rst2man-indent2]
+..
+.de1 INDENT
+.\" .rstReportMargin pre:
+. RS \\$1
+. nr rst2man-indent\\n[rst2man-indent-level] \\n[an-margin]
+. nr rst2man-indent-level +1
+.\" .rstReportMargin post:
+..
+.de UNINDENT
+. RE
+.\" indent \\n[an-margin]
+.\" old: \\n[rst2man-indent\\n[rst2man-indent-level]]
+.nr rst2man-indent-level -1
+.\" new: \\n[rst2man-indent\\n[rst2man-indent-level]]
+.in \\n[rst2man-indent\\n[rst2man-indent-level]]u
+..
+.TH "BLUETOOTHCTL-ENDPOINT" "1" "November 2022" "BlueZ" "Linux System Administration"
+.SH NAME
+bluetoothctl-endpoint \- Endpoint Submenu
+.SH SYNOPSIS
+.sp
+\fBbluetoothctl\fP [\-\-options] [endpoint.commands]
+.sp
+This submenu manages media endpoints for audio streaming using the
+\fBorg.bluez.MediaEndpoint(5)\fP and \fBorg.bluez.Media(5)\fP interfaces.
+.SH ENDPOINT COMMANDS
+.SS list
+.sp
+List available endpoints.
+.INDENT 0.0
+.TP
+.B Usage
+\fB> list [local]\fP
+.TP
+.B [local]
+Only show locally registered endpoints (optional, shows all if omitted)
+.TP
+.B Example List all available endpoints (local and remote)
+.nf
+\fB> list\fP
+.fi
+.sp
+.TP
+.B Example List only locally registered endpoints
+.nf
+\fB> list local\fP
+.fi
+.sp
+.UNINDENT
+.SS show
+.sp
+Endpoint information.
+.INDENT 0.0
+.TP
+.B Usage
+\fB> show [endpoint]\fP
+.TP
+.B Uses
+\fBorg.bluez.MediaEndpoint(5)\fP properties
+.TP
+.B [endpoint]
+Path to specific endpoint to display (optional, shows current selection if omitted)
+.TP
+.B Example Show information for currently selected endpoint
+.nf
+\fB> show\fP
+.fi
+.sp
+.TP
+.B Example Show local endpoint information
+.nf
+\fB> show /local/endpoint/ep0\fP
+.fi
+.sp
+.TP
+.B Example Show remote endpoint information
+.nf
+\fB> show /org/bluez/hci0/dev_00_11_22_33_44_55/ep1\fP
+.fi
+.sp
+.TP
+.B Example Show another local endpoint
+.nf
+\fB> show /local/endpoint/ep1\fP
+.fi
+.sp
+.UNINDENT
+.SS register
+.sp
+Register Endpoint.
+.INDENT 0.0
+.TP
+.B Usage
+\fB> register <UUID> <codec[:company]> [capabilities...]\fP
+.TP
+.B Uses
+\fBorg.bluez.Media(5)\fP method \fBRegisterEndpoint\fP
+.TP
+.B <UUID>
+Bluetooth service UUID for the endpoint type (required)
+.TP
+.B <codec[:company]>
+Codec ID in hex format, optionally with company ID (required)
+.TP
+.B [capabilities...]
+Optional codec\-specific capability data in hex format
+.TP
+.B Example LC3 BAP source
+.nf
+\fB>endpoint.register 00002bcb\-0000\-1000\-8000\-00805f9b34fb 0x06\fP
+\fB>Auto Accept (yes/no):\fP y
+\fB>Max Transports (auto/value):\fP a
+\fB>Locations:\fP a
+\fB>Supported Context (value):\fP 3
+\fB>Context (value):\fP 3
+\fB>CIG (auto/value):\fP a
+\fB>CIS (auto/value):\fP a
+.fi
+.sp
+.TP
+.B Example LC3 BAP sink with extra capabilities
+.nf
+\fB>endpoint.register 00002bc9\-0000\-1000\-8000\-00805f9b34fb 0x06 \(dq0x03 0xe5 0x03 0x00 0x02 0xe6 0x07\(dq\fP
+\fB>Enter Metadata (value/no):\fP n
+\fB>Auto Accept (yes/no):\fP y
+\fB>Max Transports (auto/value):\fP a
+\fB>Locations:\fP a
+\fB>Supported Context (value):\fP 3
+\fB>Context (value):\fP 3
+\fB>CIG (auto/value):\fP a
+\fB>CIS (auto/value):\fP a
+.fi
+.sp
+.TP
+.B Example LC3 BAP Broadcast source
+.nf
+\fB>endpoint.register 00001852\-0000\-1000\-8000\-00805f9b34fb 0x06\fP
+\fB>Auto Accept (yes/no):\fP y
+\fB>Max Transports (auto/value):\fP a
+\fB>Locations:\fP 3
+\fB>Supported Context (value):\fP 1
+.fi
+.sp
+.TP
+.B Example LC3 BAP Broadcast sink
+.nf
+\fB>endpoint.register 00001851\-0000\-1000\-8000\-00805f9b34fb 0x06\fP
+\fB>Auto Accept (yes/no):\fP y
+\fB>Max Transports (auto/value):\fP a
+\fB>Locations:\fP 3
+\fB>Supported Context (value):\fP 1
+.fi
+.sp
+.UNINDENT
+.sp
+Note:
+.sp
+If running the setup with an audio server that has LE Audio support (such as PipeWire) it will
+automatically register endpoints according to the configured roles. For more details
+about configuring a Broadcast Source with PipeWire check:
+ <https://gitlab.freedesktop.org/pipewire/pipewire/\-/blob/master/doc/dox/config/pipewire\-props.7.md> 
+.SS unregister
+.sp
+Unregister Endpoint.
+.INDENT 0.0
+.TP
+.B Usage
+\fB> unregister <UUID/object>\fP
+.TP
+.B Uses
+\fBorg.bluez.Media(5)\fP method \fBUnregisterEndpoint\fP
+.TP
+.B <UUID/object>
+Either the service UUID or the object path of the endpoint to unregister
+.TP
+.B Example Unregister LC3 source endpoint by UUID
+.nf
+\fB> unregister 00002bcb\-0000\-1000\-8000\-00805f9b34fb\fP
+.fi
+.sp
+.TP
+.B Example Unregister LC3 sink endpoint by UUID
+.nf
+\fB> unregister 00002bc9\-0000\-1000\-8000\-00805f9b34fb\fP
+.fi
+.sp
+.TP
+.B Example Unregister broadcast source endpoint by UUID
+.nf
+\fB> unregister 00001852\-0000\-1000\-8000\-00805f9b34fb\fP
+.fi
+.sp
+.TP
+.B Example Unregister broadcast sink endpoint by UUID
+.nf
+\fB> unregister 00001851\-0000\-1000\-8000\-00805f9b34fb\fP
+.fi
+.sp
+.TP
+.B Example Unregister endpoint by object path
+.nf
+\fB> unregister /local/endpoint/ep0\fP
+.fi
+.sp
+.TP
+.B Example Unregister another endpoint by object path
+.nf
+\fB> unregister /local/endpoint/ep1\fP
+.fi
+.sp
+.TP
+.B Example Unregister source endpoint by path
+.nf
+\fB> unregister /local/endpoint/source0\fP
+.fi
+.sp
+.TP
+.B Example Unregister sink endpoint by path
+.nf
+\fB> unregister /local/endpoint/sink0\fP
+.fi
+.sp
+.UNINDENT
+.sp
+Note:
+.sp
+If the endpoint was registered by an audio server, it can\(aqt be unregistered from bluetoothctl.
+This must be done by the audio server as well.
+.SS config
+.sp
+Configure Endpoint.
+.INDENT 0.0
+.TP
+.B Usage
+\fB> config <endpoint> <local endpoint> [preset]\fP
+.TP
+.B Uses
+\fBorg.bluez.MediaEndpoint(5)\fP method \fBSetConfiguration\fP
+.TP
+.B <endpoint>
+Path to the remote endpoint to configure
+.TP
+.B <local endpoint>
+Path to the local endpoint to use for the configuration
+.TP
+.B [preset]
+Audio quality preset name (optional, auto\-detected if omitted)
+.TP
+.B Example Configure remote endpoint with local endpoint (auto preset)
+.nf
+\fB> config /org/bluez/hci0/dev_00_11_22_33_44_55/ep0 /local/endpoint/ep0\fP
+.fi
+.sp
+.TP
+.B Example Configure LE Audio Unicast with BAP setting 32_1_1
+.nf
+\fB> config /org/bluez/hci0/dev_00_11_22_33_44_55/ep0 /local/endpoint/ep0 32_1_1\fP
+.fi
+.sp
+.TP
+.B Example Configure LE Audio Broadcast Source
+.nf
+\fB> config /org/bluez/hci0/dev_00_11_22_33_44_55/bis0 /local/endpoint/broadcast0\fP
+.fi
+.sp
+.UNINDENT
+.sp
+Note:
+.sp
+If the endpoint was registered by an audio server, it can\(aqt be configured from bluetoothctl.
+This must be done by the audio server as well.
+.SS presets
+.sp
+List available presets.
+.INDENT 0.0
+.TP
+.B Usage
+\fB> presets <endpoint>/<UUID> [codec[:company]] [preset] [codec config] [metadata]\fP
+.TP
+.B <endpoint>/<UUID>
+Either endpoint path or service UUID to work with presets
+.TP
+.B [codec[:company]]
+Codec ID with optional company identifier
+.TP
+.B [preset]
+Preset name to display details or create custom preset
+.TP
+.B [codec config]
+Custom codec configuration data in hex format
+.TP
+.B [metadata]
+Additional metadata for the preset
+.TP
+.B Example using endpoint
+.nf
+\fB>presets /local/endpoint/ep0 32_1_1\fP
+\fB>presets /local/endpoint/ep0\fP
+Preset 32_1_1
+Configuration.**>0: len 0x02 type 0x01
+Configuration.Sampling Frequency: 32 Khz (0x06)
+Configuration.**>1: len 0x02 type 0x02
+Configuration.Frame Duration: 7.5 ms (0x00)
+Configuration.**>2: len 0x03 type 0x04
+Configuration.Frame Length: 60 (0x003c)
+.fi
+.sp
+.TP
+.B Example List all available presets for local endpoint
+.nf
+\fB>presets /local/endpoint/ep0\fP
+.fi
+.sp
+.TP
+.B Example List all presets for another endpoint
+.nf
+\fB>presets /local/endpoint/ep1\fP
+.fi
+.sp
+.TP
+.B Example using UUID
+.nf
+\fB>presets 00002bc9\-0000\-1000\-8000\-00805f9b34fb 0x06 32_1_1\fP
+\fB>presets 00002bc9\-0000\-1000\-8000\-00805f9b34fb 0x06\fP
+\&...
+\fB*32_1_1\fP
+.fi
+.sp
+.TP
+.B Example List all LC3 sink presets
+.nf
+\fB>presets 00002bc9\-0000\-1000\-8000\-00805f9b34fb 0x06\fP
+.fi
+.sp
+.TP
+.B Example List all LC3 source presets
+.nf
+\fB>presets 00002bcb\-0000\-1000\-8000\-00805f9b34fb 0x06\fP
+.fi
+.sp
+.TP
+.B Example List all broadcast source presets
+.nf
+\fB>presets 00001852\-0000\-1000\-8000\-00805f9b34fb 0x06\fP
+.fi
+.sp
+.TP
+.B Example List all broadcast sink presets
+.nf
+\fB>presets 00001851\-0000\-1000\-8000\-00805f9b34fb 0x06\fP
+.fi
+.sp
+.TP
+.B Example Show details for 48kHz stereo preset
+.nf
+\fB>presets 00002bc9\-0000\-1000\-8000\-00805f9b34fb 0x06 48_2_1\fP
+.fi
+.sp
+.TP
+.B Example Show details for 24kHz mono high\-quality preset
+.nf
+\fB>presets 00002bc9\-0000\-1000\-8000\-00805f9b34fb 0x06 24_1_2\fP
+.fi
+.sp
+.TP
+.B Example Show details for 16kHz mono preset
+.nf
+\fB>presets 00002bc9\-0000\-1000\-8000\-00805f9b34fb 0x06 16_1_1\fP
+.fi
+.sp
+.TP
+.B Example setting up LC3 custom preset
+.nf
+\fB>presets 00002bc9\-0000\-1000\-8000\-00805f9b34fb 0x06 custom\fP
+\fB>[Codec] Enter frequency (Khz):\fP 48
+\fB>[Codec] Enter frame duration (ms):\fP 10
+\fB>[Codec] Enter channel allocation:\fP 3
+\fB>[Codec] Enter frame length:\fP 100
+\fB>[QoS] Enter Target Latency (Low, Balance, High):\fP Low
+\fB>[QoS] Enter SDU Interval (us):\fP 1000
+\fB>[QoS] Enter Framing (Unframed, Framed):\fP Unframed
+\fB>[QoS] Enter PHY (1M, 2M):\fP 2M
+\fB>[QoS] Enter Max SDU:\fP 200
+\fB>[QoS] Enter RTN:\fP 3
+\fB>[QoS] Enter Max Transport Latency (ms):\fP 10
+\fB>[QoS] Enter Presentation Delay (us):\fP 20000
+\fB>presets 00002bc9\-0000\-1000\-8000\-00805f9b34fb 0x06\fP
+\&...
+\fB*custom\fP
+.fi
+.sp
+.TP
+.B Example setting up LC3 custom preset with extra configuration
+.nf
+\fB>presets 00002bc9\-0000\-1000\-8000\-00805f9b34fb 0x06 custom \(dq0x03 0xe8 0x00 0x00 0x02 0xe9 0x00\(dq\fP
+\fB>[Codec] Enter frequency (Khz):\fP 48
+\fB>[Codec] Enter frame duration (ms):\fP 10
+\fB>[Codec] Enter channel allocation:\fP 3
+\fB>[Codec] Enter frame length:\fP 100
+\fB>[QoS] Enter Target Latency (Low, Balance, High):\fP Low
+\fB>[QoS] Enter SDU Interval (us):\fP 1000
+\fB>[QoS] Enter Framing (Unframed, Framed):\fP Unframed
+\fB>[QoS] Enter PHY (1M, 2M):\fP 2M
+\fB>[QoS] Enter Max SDU:\fP 200
+\fB>[QoS] Enter RTN:\fP 3
+\fB>[QoS] Enter Max Transport Latency (ms):\fP 10
+\fB>[QoS] Enter Presentation Delay (us):\fP 20000
+\fB>presets 00002bc9\-0000\-1000\-8000\-00805f9b34fb 0x06\fP
+\&...
+\fB*custom\fP
+.fi
+.sp
+.UNINDENT
+.SH RESOURCES
+.sp
+ <http://www.bluez.org> 
+.SH REPORTING BUGS
+.sp
+ <linux\-bluetooth@vger.kernel.org> 
+.SH COPYRIGHT
+Free use of this software is granted under the terms of the GNU
+Lesser General Public Licenses (LGPL).
+.\" Generated by docutils manpage writer.
+.

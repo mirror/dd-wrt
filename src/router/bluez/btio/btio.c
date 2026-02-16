@@ -25,11 +25,11 @@
 
 #include <glib.h>
 
-#include "lib/bluetooth.h"
-#include "lib/l2cap.h"
-#include "lib/rfcomm.h"
-#include "lib/sco.h"
-#include "lib/iso.h"
+#include "bluetooth/bluetooth.h"
+#include "bluetooth/l2cap.h"
+#include "bluetooth/rfcomm.h"
+#include "bluetooth/sco.h"
+#include "bluetooth/iso.h"
 
 #include "btio.h"
 
@@ -253,8 +253,11 @@ static gboolean server_cb(GIOChannel *io, GIOCondition cond,
 	srv_sock = g_io_channel_unix_get_fd(io);
 
 	cli_sock = accept(srv_sock, NULL, NULL);
-	if (cli_sock < 0)
+	if (cli_sock < 0) {
+		if (errno == EBADFD)
+			return FALSE;
 		return TRUE;
+	}
 
 	cli_io = g_io_channel_unix_new(cli_sock);
 
@@ -455,7 +458,7 @@ static gboolean set_sec_level(int sock, BtIOType type, int level, GError **err)
 	struct bt_security sec;
 	int ret;
 
-	if (level < BT_SECURITY_LOW || level > BT_SECURITY_HIGH) {
+	if (level < BT_SECURITY_LOW || level > BT_SECURITY_FIPS) {
 		g_set_error(err, BT_IO_ERROR, EINVAL,
 				"Valid security level range is %d-%d",
 				BT_SECURITY_LOW, BT_SECURITY_HIGH);
@@ -471,6 +474,12 @@ static gboolean set_sec_level(int sock, BtIOType type, int level, GError **err)
 
 	if (errno != ENOPROTOOPT) {
 		ERROR_FAILED(err, "setsockopt(BT_SECURITY)", errno);
+		return FALSE;
+	}
+
+	if (level == BT_SECURITY_FIPS) {
+		g_set_error(err, BT_IO_ERROR, EINVAL, "setsockopt(LM): "
+				"FIPS security level is not supported");
 		return FALSE;
 	}
 
@@ -1649,6 +1658,31 @@ static gboolean sco_get(int sock, GError **err, BtIOOption opt1, va_list args)
 	return TRUE;
 }
 
+static bool get_bc_sid(int sock, uint8_t *sid, GError **err)
+{
+	struct {
+		struct sockaddr_iso iso;
+		struct sockaddr_iso_bc bc;
+	} addr;
+	socklen_t olen;
+
+	olen = sizeof(addr);
+	memset(&addr, 0, olen);
+	if (getpeername(sock, (void *)&addr, &olen) < 0) {
+		ERROR_FAILED(err, "getpeername", errno);
+		return false;
+	}
+
+	if (olen != sizeof(addr)) {
+		ERROR_FAILED(err, "getpeername: size mismatch", EINVAL);
+		return false;
+	}
+
+	*sid = addr.iso.iso_bc->bc_sid;
+
+	return true;
+}
+
 static gboolean iso_get(int sock, GError **err, BtIOOption opt1, va_list args)
 {
 	BtIOOption opt = opt1;
@@ -1657,6 +1691,7 @@ static gboolean iso_get(int sock, GError **err, BtIOOption opt1, va_list args)
 	struct bt_iso_base base;
 	socklen_t len;
 	uint32_t phy;
+	uint8_t bc_sid;
 
 	len = sizeof(qos);
 	memset(&qos, 0, len);
@@ -1721,6 +1756,12 @@ static gboolean iso_get(int sock, GError **err, BtIOOption opt1, va_list args)
 		case BT_IO_OPT_BASE:
 			*(va_arg(args, struct bt_iso_base *)) = base;
 			break;
+		case BT_IO_OPT_ISO_BC_SID:
+			if (!get_bc_sid(sock, &bc_sid, err))
+				return FALSE;
+
+			*(va_arg(args, uint8_t *)) = bc_sid;
+			break;
 		case BT_IO_OPT_HANDLE:
 		case BT_IO_OPT_CLASS:
 		case BT_IO_OPT_DEFER_TIMEOUT:
@@ -1736,7 +1777,6 @@ static gboolean iso_get(int sock, GError **err, BtIOOption opt1, va_list args)
 		case BT_IO_OPT_FLUSHABLE:
 		case BT_IO_OPT_PRIORITY:
 		case BT_IO_OPT_VOICE:
-		case BT_IO_OPT_ISO_BC_SID:
 		case BT_IO_OPT_ISO_BC_NUM_BIS:
 		case BT_IO_OPT_ISO_BC_BIS:
 		case BT_IO_OPT_INVALID:

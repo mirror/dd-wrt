@@ -27,7 +27,7 @@ level margin: \\n[rst2man-indent\\n[rst2man-indent-level]]
 .\" new: \\n[rst2man-indent\\n[rst2man-indent-level]]
 .in \\n[rst2man-indent\\n[rst2man-indent-level]]u
 ..
-.TH "ORG.BLUEZ.MEDIA" "5" "September 2023" "BlueZ" "Linux System Administration"
+.TH "ORG.BLUEZ.MEDIA" "5" "April 2025" "BlueZ" "Linux System Administration"
 .SH NAME
 org.bluez.Media \- BlueZ D-Bus Media API documentation
 .SH INTERFACE
@@ -41,16 +41,17 @@ org.bluez.Media1
 .TP
 .B Object path
 [variable prefix]/{hci0,hci1,...}
+.TP
+.B Used by
+\fBbluetoothctl\-endpoint(1)\fP
 .UNINDENT
 .SS Methods
 .SS void RegisterEndpoint(object endpoint, dict properties)
-.INDENT 0.0
-.INDENT 3.5
-Register a local end point to sender, the sender can register as many
-end points as it likes.
 .sp
-Note: If the sender disconnects the end points are automatically
-unregistered.
+Register a local end point to sender, the sender can register as many end points
+as it likes.
+.sp
+Note: If the sender disconnects the end points are automatically unregistered.
 .sp
 possible properties:
 .INDENT 0.0
@@ -66,19 +67,18 @@ values should match the profile specification which is
 indicated by the UUID.
 .TP
 .B uint32_t Vendor [Optional]
-Vendor\-specific Company ID, Codec ID tuple that the endpoint
-implements.
+Vendor\-specific Company ID, Codec ID tuple that the endpoint implements.
 .sp
-It shall be set to appropriate value when Vendor Specific Codec
-(0xff) is used.
+It shall be set to appropriate value when Vendor Specific Codec (0xff)
+is used.
 .TP
 .B array{byte} Capabilities
-Capabilities blob, it is used as it is so the size and byte
-order must match.
+Capabilities blob, it is used as it is so the size and byte order must
+match.
 .TP
 .B array{byte} Metadata [Optional]
-Metadata blob, it is used as it is so the size and byte order
-must match.
+Metadata blob, it is used as it is so the size and byte order must
+match.
 .UNINDENT
 .sp
 Possible Errors:
@@ -89,30 +89,34 @@ Possible Errors:
 .B org.bluez.Error.NotSupported
 emitted when interface for the end\-point is disabled
 .UNINDENT
-.UNINDENT
+.sp
+Examples:
+.INDENT 0.0
+.TP
+.B bluetoothctl
+> endpoint.register <UUID> <codec[:company]> [capabilities...]
 .UNINDENT
 .SS void UnregisterEndpoint(object endpoint)
-.INDENT 0.0
-.INDENT 3.5
+.sp
 Unregister sender end point.
-.UNINDENT
+.sp
+Examples:
+.INDENT 0.0
+.TP
+.B bluetoothctl
+> endpoint.unregister <UUID/object>
 .UNINDENT
 .SS void RegisterPlayer(object player, dict properties)
-.INDENT 0.0
-.INDENT 3.5
-Register a media player object to sender, the sender can register as
-many objects as it likes.
 .sp
-Object must implement at least org.mpris.MediaPlayer2.Player as defined
-in MPRIS 2.2 spec:
-.INDENT 0.0
-.INDENT 3.5
+Register a media player object to sender, the sender can register as many
+objects as it likes.
+.sp
+Object must implement at least \fBorg.mpris.MediaPlayer2.Player\fP as defined in
+MPRIS 2.2 spec:
+.sp
  <http://specifications.freedesktop.org/mpris\-spec/latest/> 
-.UNINDENT
-.UNINDENT
 .sp
-Note: If the sender disconnects its objects are automatically
-unregistered.
+Note: If the sender disconnects its objects are automatically unregistered.
 .sp
 Possible Errors:
 .INDENT 0.0
@@ -121,22 +125,16 @@ Possible Errors:
 .TP
 .B org.bluez.Error.NotSupported
 .UNINDENT
-.UNINDENT
-.UNINDENT
 .SS void UnregisterPlayer(object player)
-.INDENT 0.0
-.INDENT 3.5
-Unregister sender media player.
-.UNINDENT
-.UNINDENT
-.SS void RegisterApplication(object root, dict options)
-.INDENT 0.0
-.INDENT 3.5
-Register endpoints an player objects within root object which must
-implement ObjectManager.
 .sp
-The application object path together with the D\-Bus system bus
-connection ID define the identification of the application.
+Unregister sender media player.
+.SS void RegisterApplication(object root, dict options)
+.sp
+Register endpoints an player objects within root object which must implement
+\fBorg.freedesktop.DBus.ObjectManager\fP\&.
+.sp
+The application object path together with the D\-Bus system bus connection ID
+define the identification of the application.
 .sp
 Possible errors:
 .INDENT 0.0
@@ -145,13 +143,11 @@ Possible errors:
 .TP
 .B org.bluez.Error.AlreadyExists
 .UNINDENT
-.UNINDENT
-.UNINDENT
 .SS void UnregisterApplication(object application)
-.INDENT 0.0
-.INDENT 3.5
-This unregisters the services that has been previously registered. The
-object path parameter must match the same value that has been used on
+.sp
+This unregisters the services that has been previously registered.
+.sp
+The object path parameter must match the same value that has been used on
 registration.
 .sp
 Possible errors:
@@ -161,15 +157,21 @@ Possible errors:
 .TP
 .B org.bluez.Error.DoesNotExist
 .UNINDENT
-.UNINDENT
-.UNINDENT
 .SS Properties
 .SS array{string} SupportedUUIDs [readonly]
+.sp
+List of 128\-bit UUIDs that represents the supported Endpoint registration.
+.SS array{string} SupportedFeatures [readonly]
+.sp
+List of strings that represent supported special features.
+.sp
+Possible values:
 .INDENT 0.0
-.INDENT 3.5
-List of 128\-bit UUIDs that represents the supported Endpoint
-registration.
-.UNINDENT
+.TP
+.B \(dqtx\-timestamping\(dq
+Bluetooth TX timestamping in media stream sockets is supported by BlueZ
+and kernel.  Applications may check kernel support for specific
+timestamp types via SIOCETHTOOL.
 .UNINDENT
 .\" Generated by docutils manpage writer.
 .

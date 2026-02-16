@@ -22,7 +22,7 @@
 #include <fcntl.h>
 #include <poll.h>
 
-#include "lib/bluetooth.h"
+#include "bluetooth/bluetooth.h"
 
 #include "src/shared/ad.h"
 #include "src/shared/btp.h"
@@ -328,7 +328,7 @@ static void null_evt(const void *data, uint16_t size)
 }
 
 static const struct indexstr_data error_table[] = {
-	{ 0x01, "Faile" },
+	{ 0x01, "Failed" },
 	{ 0x02, "Unknown Command" },
 	{ 0x03, "Not Ready" },
 	{ 0x04, "Invalid Index" },
@@ -1488,7 +1488,7 @@ static void cmd_gap_read_info(int argc, char **argv)
 
 	index = atoi(argv[1]);
 
-	if (!send_cmd(BTP_GAP_SERVICE, BTP_OP_GAP_READ_COTROLLER_INFO,
+	if (!send_cmd(BTP_GAP_SERVICE, BTP_OP_GAP_READ_CONTROLLER_INFO,
 						index, 0, NULL))
 		return bt_shell_noninteractive_quit(EXIT_FAILURE);
 

@@ -22,8 +22,8 @@
 
 #include <glib.h>
 
-#include "lib/sdp.h"
-#include "lib/sdp_lib.h"
+#include "bluetooth/sdp.h"
+#include "bluetooth/sdp_lib.h"
 
 #include "sdp-xml.h"
 
@@ -125,9 +125,15 @@ static sdp_data_t *sdp_xml_parse_uuid128(const char *data)
 		buf[0] = data[i];
 		buf[1] = data[i + 1];
 
+		if (j >= sizeof(val.data))
+			return NULL;
+
 		val.data[j++] = strtoul(buf, 0, 16);
 		i += 2;
 	}
+
+	if (j != sizeof(val.data))
+		return NULL;
 
 	return sdp_data_alloc(SDP_UUID128, &val);
 }
@@ -539,8 +545,15 @@ static void element_end(GMarkupParseContext *context,
 		return;
 	}
 
-	if (!ctx_data->stack_head || !ctx_data->stack_head->data) {
+	if (!ctx_data->stack_head)
+		return;
+
+	if (!ctx_data->stack_head->data) {
 		DBG("No data for %s", element_name);
+
+		elem = ctx_data->stack_head;
+		ctx_data->stack_head = ctx_data->stack_head->next;
+		sdp_xml_data_free(elem);
 		return;
 	}
 

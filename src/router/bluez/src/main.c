@@ -31,8 +31,8 @@
 
 #include <dbus/dbus.h>
 
-#include "lib/bluetooth.h"
-#include "lib/sdp.h"
+#include "bluetooth/bluetooth.h"
+#include "bluetooth/sdp.h"
 
 #include "gdbus/gdbus.h"
 #include "btio/btio.h"
@@ -45,7 +45,7 @@
 #include "shared/timeout.h"
 #include "shared/queue.h"
 #include "shared/crypto.h"
-#include "lib/uuid.h"
+#include "bluetooth/uuid.h"
 #include "shared/util.h"
 #include "btd.h"
 #include "sdpd.h"
@@ -91,6 +91,7 @@ static const char *supported_options[] = {
 	"Testing",
 	"KernelExperimental",
 	"RemoteNameRequestRetryDelay",
+	"FilterDiscoverable",
 	NULL
 };
 
@@ -103,6 +104,7 @@ static const char *br_options[] = {
 	"InquiryScanWindow",
 	"LinkSupervisionTimeout",
 	"PageTimeout",
+	"IdleTimeout",
 	"MinSniffInterval",
 	"MaxSniffInterval",
 	NULL
@@ -119,8 +121,8 @@ static const char *le_options[] = {
 	"ScanWindowSuspend",
 	"ScanIntervalDiscovery",
 	"ScanWindowDiscovery",
-	"ScanIntervalAdvMonitoring",
-	"ScanWindowAdvMonitoring",
+	"ScanIntervalAdvMonitor",
+	"ScanWindowAdvMonitor",
 	"ScanIntervalConnect",
 	"ScanWindowConnect",
 	"MinConnectionInterval",
@@ -493,15 +495,15 @@ struct config_param {
 	const char * const val_name;
 	void * const val;
 	const size_t size;
-	const uint16_t min;
-	const uint16_t max;
+	const uint32_t min;
+	const uint32_t max;
 };
 
 static void parse_mode_config(GKeyFile *config, const char *group,
 				const struct config_param *params,
 				size_t params_len)
 {
-	uint16_t i;
+	size_t i;
 
 	if (!config)
 		return;
@@ -572,6 +574,11 @@ static void parse_br_config(GKeyFile *config)
 		  sizeof(btd_opts.defaults.br.max_sniff_interval),
 		  0x0001,
 		  0xFFFE},
+		{ "IdleTimeout",
+		  &btd_opts.defaults.br.idle_timeout,
+		  sizeof(btd_opts.defaults.br.idle_timeout),
+		  500,
+		  3600000},
 	};
 
 	if (btd_opts.mode == BT_MODE_LE)
@@ -1062,6 +1069,8 @@ static void parse_general(GKeyFile *config)
 	parse_config_u32(config, "General", "RemoteNameRequestRetryDelay",
 					&btd_opts.name_request_retry_delay,
 					0, UINT32_MAX);
+	parse_config_bool(config, "General", "FilterDiscoverable",
+						&btd_opts.filter_discoverable);
 }
 
 static void parse_gatt_cache(GKeyFile *config)
@@ -1239,6 +1248,7 @@ static void init_defaults(void)
 	btd_opts.refresh_discovery = TRUE;
 	btd_opts.name_request_retry_delay = DEFAULT_NAME_REQUEST_RETRY_DELAY;
 	btd_opts.secure_conn = SC_ON;
+	btd_opts.filter_discoverable = true;
 
 	btd_opts.defaults.num_entries = 0;
 	btd_opts.defaults.br.page_scan_type = 0xFFFF;
@@ -1326,6 +1336,8 @@ static char *option_noplugin = NULL;
 static char *option_configfile = NULL;
 static gboolean option_compat = FALSE;
 static gboolean option_detach = TRUE;
+static gboolean option_experimental = FALSE;
+static gboolean option_testing = FALSE;
 static gboolean option_version = FALSE;
 
 static void free_options(void)
@@ -1416,9 +1428,9 @@ static GOptionEntry options[] = {
 			"Specify an explicit path to the config file", "FILE"},
 	{ "compat", 'C', 0, G_OPTION_ARG_NONE, &option_compat,
 				"Provide deprecated command line interfaces" },
-	{ "experimental", 'E', 0, G_OPTION_ARG_NONE, &btd_opts.experimental,
+	{ "experimental", 'E', 0, G_OPTION_ARG_NONE, &option_experimental,
 				"Enable experimental D-Bus interfaces" },
-	{ "testing", 'T', 0, G_OPTION_ARG_NONE, &btd_opts.testing,
+	{ "testing", 'T', 0, G_OPTION_ARG_NONE, &option_testing,
 				"Enable testing D-Bus interfaces" },
 	{ "kernel", 'K', G_OPTION_FLAG_OPTIONAL_ARG, G_OPTION_ARG_CALLBACK,
 				parse_kernel_experimental,
@@ -1459,6 +1471,9 @@ int main(int argc, char *argv[])
 		printf("%s\n", VERSION);
 		exit(0);
 	}
+
+	btd_opts.experimental = option_experimental;
+	btd_opts.testing = option_testing;
 
 	umask(0077);
 

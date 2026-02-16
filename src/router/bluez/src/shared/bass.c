@@ -15,8 +15,8 @@
 #include <unistd.h>
 #include <errno.h>
 
-#include "lib/bluetooth.h"
-#include "lib/uuid.h"
+#include "bluetooth/bluetooth.h"
+#include "bluetooth/uuid.h"
 
 #include "src/shared/queue.h"
 #include "src/shared/util.h"
@@ -964,6 +964,20 @@ static void bass_handle_set_bcast_code_op(struct bt_bass *bass,
 
 	gatt_db_attribute_write_result(attrib, id, 0x00);
 
+	for (entry = queue_get_entries(bass->cp_handlers); entry;
+						entry = entry->next) {
+		struct bt_bass_cp_handler *cb = entry->data;
+
+		if (cb->handler) {
+			ret = cb->handler(bcast_src,
+					BT_BASS_SET_BCAST_CODE,
+					params, cb->data);
+			if (ret)
+				DBG(bass, "Unable to handle Set "
+						"Broadcast Code operation");
+		}
+	}
+
 	if (!bass_trigger_big_sync(bcast_src)) {
 		bcast_src->enc = BT_BASS_BIG_ENC_STATE_DEC;
 
@@ -977,21 +991,6 @@ static void bass_handle_set_bcast_code_op(struct bt_bass *bass,
 
 		free(notif->iov_base);
 		free(notif);
-		return;
-	}
-
-	for (entry = queue_get_entries(bass->cp_handlers); entry;
-						entry = entry->next) {
-		struct bt_bass_cp_handler *cb = entry->data;
-
-		if (cb->handler) {
-			ret = cb->handler(bcast_src,
-					BT_BASS_SET_BCAST_CODE,
-					params, cb->data);
-			if (ret)
-				DBG(bass, "Unable to handle Set "
-						"Broadcast Code operation");
-		}
 	}
 }
 
@@ -1224,7 +1223,7 @@ static void bcast_recv_new(struct bt_bass_db *bdb, int i)
 	bt_uuid16_create(&uuid, BCAST_RECV_STATE_UUID);
 	bcast_recv_state->attr =
 		gatt_db_service_add_characteristic(bdb->service, &uuid,
-				BT_ATT_PERM_READ,
+				BT_ATT_PERM_READ | BT_ATT_PERM_READ_ENCRYPT,
 				BT_GATT_CHRC_PROP_READ |
 				BT_GATT_CHRC_PROP_NOTIFY,
 				bass_bcast_recv_state_read, NULL,
@@ -1253,7 +1252,7 @@ static void bass_new(struct bt_bass_db *bdb)
 	bdb->bcast_audio_scan_cp =
 		gatt_db_service_add_characteristic(bdb->service,
 				&uuid,
-				BT_ATT_PERM_WRITE,
+				BT_ATT_PERM_WRITE | BT_ATT_PERM_WRITE_ENCRYPT,
 				BT_GATT_CHRC_PROP_WRITE |
 				BT_GATT_CHRC_PROP_WRITE_WITHOUT_RESP,
 				NULL, bass_bcast_audio_scan_cp_write,
@@ -1320,8 +1319,9 @@ static void notify_src_changed(void *data, void *user_data)
 	}
 
 	if (changed->cb)
-		changed->cb(bcast_src->id, bcast_src->bid, bcast_src->enc,
-					bis_sync, changed->data);
+		changed->cb(bcast_src->id, bcast_src->bid,
+			    bcast_src->sync_state, bcast_src->enc,
+			    bis_sync, changed->data);
 }
 
 static void bcast_recv_state_notify(struct bt_bass *bass, uint16_t value_handle,
@@ -1682,7 +1682,7 @@ static struct bt_bass_db *bass_get_db(struct gatt_db *db,
 	return bass_db_new(db, adapter_bdaddr);
 }
 
-static struct bt_bass *bt_bass_ref(struct bt_bass *bass)
+struct bt_bass *bt_bass_ref(struct bt_bass *bass)
 {
 	if (!bass)
 		return NULL;

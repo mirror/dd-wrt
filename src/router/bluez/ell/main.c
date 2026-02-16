@@ -350,6 +350,7 @@ static void create_sd_notify_socket(void)
 	const char *sock;
 	struct sockaddr_un addr;
 	const char *watchdog_usec;
+	socklen_t len;
 	int msec;
 
 	/* check if NOTIFY_SOCKET has been set */
@@ -370,11 +371,12 @@ static void create_sd_notify_socket(void)
 	memset(&addr, 0, sizeof(addr));
 	addr.sun_family = AF_UNIX;
 	strncpy(addr.sun_path, sock, sizeof(addr.sun_path) - 1);
+	len = offsetof(struct sockaddr_un, sun_path) + strlen(sock);
 
 	if (addr.sun_path[0] == '@')
 		addr.sun_path[0] = '\0';
 
-	if (bind(notify_fd, (struct sockaddr *) &addr, sizeof(addr)) < 0) {
+	if (connect(notify_fd, (struct sockaddr *) &addr, len) < 0) {
 		close(notify_fd);
 		notify_fd = 0;
 		return;
@@ -498,6 +500,7 @@ LIB_EXPORT int l_main_run(void)
 	if (unlikely(epoll_running))
 		return EXIT_FAILURE;
 
+	sd_notify("READY=1");
 	epoll_running = true;
 
 	for (;;) {

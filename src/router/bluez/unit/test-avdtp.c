@@ -27,7 +27,7 @@
 #include "src/shared/tester.h"
 #include "src/log.h"
 
-#include "android/avdtp.h"
+#include "unit/avdtp.h"
 
 #define MAX_SEID 0x3E
 
@@ -148,7 +148,7 @@ static gboolean send_pdu(gpointer user_data)
 	g_assert_cmpint(len, ==, pdu->size);
 
 	if (g_str_equal(context->data->test_name, "/TP/SIG/SMG/BI-02-C"))
-		g_timeout_add_seconds(1, context_quit, context);
+		g_timeout_add(100, context_quit, context);
 
 	if (pdu->fragmented)
 		return send_pdu(user_data);

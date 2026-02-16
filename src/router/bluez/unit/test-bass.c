@@ -20,8 +20,8 @@
 
 #include <glib.h>
 
-#include "lib/bluetooth.h"
-#include "lib/uuid.h"
+#include "bluetooth/bluetooth.h"
+#include "bluetooth/uuid.h"
 #include "src/shared/util.h"
 #include "src/shared/io.h"
 #include "src/shared/tester.h"
@@ -491,8 +491,8 @@ struct ccc_state {
 	do {							\
 		const struct iovec iov[] = { args };		\
 		static struct test_data data;			\
-		data.iovcnt = ARRAY_SIZE(iov_data(args));	\
-		data.iov = util_iov_dup(iov, ARRAY_SIZE(iov_data(args))); \
+		data.iovcnt = ARRAY_SIZE(iov);			\
+		data.iov = util_iov_dup(iov, ARRAY_SIZE(iov));	\
 		tester_add(name, &data, NULL, function,	\
 				test_teardown);			\
 	} while (0)
@@ -653,6 +653,7 @@ static void test_server(const void *user_data)
 	att = bt_att_new(io_get_fd(io), false);
 	g_assert(att);
 
+	bt_att_set_security(att, BT_ATT_SECURITY_MEDIUM);
 	bt_att_set_debug(att, BT_ATT_DEBUG, print_debug, "bt_att:", NULL);
 
 	data->db = gatt_db_new();

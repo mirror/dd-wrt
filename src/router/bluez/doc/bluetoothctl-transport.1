@@ -1,0 +1,355 @@
+.\" Man page generated from reStructuredText.
+.
+.
+.nr rst2man-indent-level 0
+.
+.de1 rstReportMargin
+\\$1 \\n[an-margin]
+level \\n[rst2man-indent-level]
+level margin: \\n[rst2man-indent\\n[rst2man-indent-level]]
+-
+\\n[rst2man-indent0]
+\\n[rst2man-indent1]
+\\n[rst2man-indent2]
+..
+.de1 INDENT
+.\" .rstReportMargin pre:
+. RS \\$1
+. nr rst2man-indent\\n[rst2man-indent-level] \\n[an-margin]
+. nr rst2man-indent-level +1
+.\" .rstReportMargin post:
+..
+.de UNINDENT
+. RE
+.\" indent \\n[an-margin]
+.\" old: \\n[rst2man-indent\\n[rst2man-indent-level]]
+.nr rst2man-indent-level -1
+.\" new: \\n[rst2man-indent\\n[rst2man-indent-level]]
+.in \\n[rst2man-indent\\n[rst2man-indent-level]]u
+..
+.TH "BLUETOOTHCTL-TRANSPORT" "1" "November 2022" "BlueZ" "Linux System Administration"
+.SH NAME
+bluetoothctl-transport \- Media Transport Submenu
+.SH SYNOPSIS
+.sp
+\fBbluetoothctl\fP [\-\-options] [transport.commands]
+.sp
+This submenu manages media transports for audio streaming using the
+\fBorg.bluez.MediaTransport(5)\fP interface.
+.SH MEDIA TRANSPORT COMMANDS
+.SS list
+.sp
+List available transports.
+.INDENT 0.0
+.TP
+.B Usage
+\fB> list\fP
+.TP
+.B Example Display all available media transports (A2DP, LE Audio, etc.)
+.nf
+\fB> list\fP
+.fi
+.sp
+.UNINDENT
+.SS show
+.sp
+Show transport information.
+.INDENT 0.0
+.TP
+.B Usage
+\fB> show [transport]\fP
+.TP
+.B Uses
+\fBorg.bluez.MediaTransport(5)\fP properties
+.TP
+.B [transport]
+Specific transport object path (optional, shows current if omitted)
+.TP
+.B Example Show information for currently selected transport
+.nf
+\fB> show\fP
+.fi
+.sp
+.TP
+.B Example Show transport information
+.nf
+\fB> show /org/bluez/hci0/dev_00_11_22_33_44_55/fd0\fP
+.fi
+.sp
+.TP
+.B Example Show Broadcast Isochronous Stream transport
+.nf
+\fB> show /org/bluez/hci0/dev_11_22_33_44_55_66/bis1\fP
+.fi
+.sp
+.UNINDENT
+.SS acquire
+.sp
+Acquire transport.
+.INDENT 0.0
+.TP
+.B Usage
+\fB> acquire <transport> [transport1...]\fP
+.TP
+.B Uses
+\fBorg.bluez.MediaTransport(5)\fP method \fBAcquire\fP
+.TP
+.B <transport>
+Media transport object path to acquire for audio streaming
+.TP
+.B [transport1...]
+Additional transport paths for multi\-stream acquisition (optional)
+.TP
+.B Example Acquire transport
+.nf
+\fB> acquire /org/bluez/hci0/dev_00_11_22_33_44_55/fd0\fP
+.fi
+.sp
+.TP
+.B Example Acquire multiple transports
+.nf
+\fB> acquire /org/bluez/hci0/dev_00_11_22_33_44_55/fd0 /org/bluez/hci0/dev_00_11_22_33_44_55/fd1\fP
+.fi
+.sp
+.UNINDENT
+.sp
+Note:
+.sp
+If running the setup with an audio server that has LE Audio support (such as PipeWire) it will
+automatically acquire transports according to the configured roles.
+.SS select
+.sp
+Select transport. For transports created on a Broadcast Sink device only. This moves
+the transport to the \(dqbroadcasting\(dq state, pending acquire.
+.INDENT 0.0
+.TP
+.B Usage
+\fB> select <transport> [transport1...]\fP
+.TP
+.B Uses
+\fBorg.bluez.MediaTransport(5)\fP method \fBSelect\fP
+.TP
+.B <transport>
+Broadcast sink transport path to move to broadcasting state
+.TP
+.B [transport1...]
+Additional transport paths for multi\-stream selection (optional)
+.TP
+.B Example Select single Broadcast Isochronous Stream
+.nf
+\fB> select /org/bluez/hci0/dev_00_11_22_33_44_55/bis1\fP
+.fi
+.sp
+.TP
+.B Example Select stereo broadcast streams
+.nf
+\fB> select /org/bluez/hci0/dev_00_11_22_33_44_55/bis1 /org/bluez/hci0/dev_00_11_22_33_44_55/bis2\fP
+.fi
+.sp
+.UNINDENT
+.sp
+Note:
+.sp
+If the select command receives a list of transports, they will first be linked using the
+\(dqLinks\(dq MediaTransport property. They will then be selected one by one, by calling
+the \(dqSelect\(dq MediaTransport method. After the first transport is acquired, the Broadcast
+Sink will create fds for the associated stream and all its links. Each link can then be
+acquired one by one, setting the fd for the transport and starting to receive audio.
+.sp
+The select command does not require a local endpoint to be registered beforehand. This is
+because if the setup runs with an audio server that has LE Audio support (such as PipeWire),
+the audio server is the one to register endpoints and the transports are created as a result.
+Once a transport is selected, the audio server will automatically acquire.
+.SS unselect
+.sp
+Unselect transport. For transports created on a Broadcast Sink device only. This moves
+the transport to the \(dqidle\(dq state, pending release by the audio server. If the transport
+was acquired by bluetoothctl it can be released straight away, without having to be
+unselected.
+.INDENT 0.0
+.TP
+.B Usage
+\fB> unselect <transport> [transport1...]\fP
+.TP
+.B <transport>
+Broadcast sink transport path to move to idle state
+.TP
+.B [transport1...]
+Additional transport paths for multi\-stream unselection (optional)
+.TP
+.B Example Unselect broadcast stream transport
+.nf
+\fB> unselect /org/bluez/hci0/dev_00_11_22_33_44_55/bis1\fP
+.fi
+.sp
+.TP
+.B Example Unselect multiple broadcast streams
+.nf
+\fB> unselect /org/bluez/hci0/dev_00_11_22_33_44_55/bis1 /org/bluez/hci0/dev_00_11_22_33_44_55/bis2\fP
+.fi
+.sp
+.UNINDENT
+.sp
+Note:
+If running the setup with an audio server that has LE Audio support (such as PipeWire), it will
+prompt it to automatically release the transport.
+.SS release
+.sp
+Release transport.
+.INDENT 0.0
+.TP
+.B Usage
+\fB> release <transport> [transport1...]\fP
+.TP
+.B Uses
+\fBorg.bluez.MediaTransport(5)\fP method \fBRelease\fP
+.TP
+.B <transport>
+Media transport object path to release from audio streaming
+.TP
+.B [transport1...]
+Additional transport paths for multi\-stream release (optional)
+.TP
+.B Example Release transport
+.nf
+\fB> release /org/bluez/hci0/dev_00_11_22_33_44_55/fd0\fP
+.fi
+.sp
+.TP
+.B Example Release multiple transports
+.nf
+\fB> release /org/bluez/hci0/dev_00_11_22_33_44_55/fd0 /org/bluez/hci0/dev_00_11_22_33_44_55/fd1\fP
+.fi
+.sp
+.UNINDENT
+.sp
+Note:
+.sp
+Transports acquired by an audio server, can only be released by said audio server.
+.SS send
+.sp
+Send contents of a file.
+.INDENT 0.0
+.TP
+.B Usage
+\fB> send <transport> <filename> [transport1...]\fP
+.TP
+.B <transport>
+Media transport object path to send audio data through
+.TP
+.B <filename>
+Path to audio file to transmit (supports WAV, MP3, PCM formats)
+.TP
+.B [transport1...]
+Additional transport paths for multi\-stream sending (optional)
+.TP
+.B Example Send encoded audio file via transport
+.nf
+\fB> send /org/bluez/hci0/dev_00_11_22_33_44_55/fd0 /home/user/music.<format>\fP
+.fi
+.sp
+.TP
+.B Example Send to multiple transports simultaneously
+.nf
+\fB> send /org/bluez/hci0/dev_00_11_22_33_44_55/fd0 /home/user/stereo\-left.<format> /org/bluez/hci0/dev_00_11_22_33_44_55/fd1 /home/user/stereo\-rigth.<format>\fP
+.fi
+.sp
+.UNINDENT
+.SS receive
+.sp
+Get/Set file to receive.
+.INDENT 0.0
+.TP
+.B Usage
+\fB> receive <transport> [filename]\fP
+.TP
+.B <transport>
+Media transport object path to receive audio data from
+.TP
+.B [filename]
+Path to save received audio data (optional, shows current if omitted)
+.TP
+.B Example Show current receive file for transport
+.nf
+\fB> receive /org/bluez/hci0/dev_00_11_22_33_44_55/fd0\fP
+.fi
+.sp
+.TP
+.B Example Set file to receive audio data
+.nf
+\fB> receive /org/bluez/hci0/dev_00_11_22_33_44_55/fd0 /tmp/recorded_audio.wav\fP
+.fi
+.sp
+.TP
+.B Example Set file for broadcast audio capture (note quotes)
+.nf
+\fB> receive /org/bluez/hci0/dev_11_22_33_44_55_66/bis1 \(dq/home/user/My Recordings/broadcast.wav\(dq\fP
+.fi
+.sp
+.UNINDENT
+.SS volume
+.sp
+Get/Set transport volume.
+.INDENT 0.0
+.TP
+.B Usage
+\fB> volume <transport> [value]\fP
+.TP
+.B Uses
+\fBorg.bluez.MediaTransport(5)\fP property \fBVolume\fP
+.TP
+.B <transport>
+Media transport object path to control volume for
+.TP
+.B [value]
+Volume level (0\-127, optional, shows current if omitted)
+.TP
+.B Example Show current volume level
+.nf
+\fB> volume /org/bluez/hci0/dev_00_11_22_33_44_55/fd0\fP
+.fi
+.sp
+.TP
+.B Example Set volume to 100
+.nf
+\fB> volume /org/bluez/hci0/dev_00_11_22_33_44_55/fd0 100\fP
+.fi
+.sp
+.UNINDENT
+.SS metadata
+.sp
+Get/Set Transport Metadata.
+.INDENT 0.0
+.TP
+.B Usage
+\fB> metadata <transport> [value...]\fP
+.TP
+.B <transport>
+Media transport object path
+.TP
+.B [value...]
+Metadata value as hex string (optional, shows current if omitted)
+.TP
+.B Example Show current metadata for transport
+.nf
+\fB> metadata /org/bluez/hci0/dev_00_11_22_33_44_55/fd0\fP
+.fi
+.sp
+.TP
+.B Example Set metadata value
+.nf
+\fB> metadata /org/bluez/hci0/dev_00_11_22_33_44_55/fd0 0x03020100\fP
+.fi
+.sp
+.UNINDENT
+.SH RESOURCES
+.sp
+ <http://www.bluez.org> 
+.SH REPORTING BUGS
+.sp
+ <linux\-bluetooth@vger.kernel.org> 
+.SH COPYRIGHT
+Free use of this software is granted under the terms of the GNU
+Lesser General Public Licenses (LGPL).
+.\" Generated by docutils manpage writer.
+.

@@ -17,9 +17,9 @@
 #include <string.h>
 #include <errno.h>
 
-#include "lib/bluetooth.h"
-#include "lib/mgmt.h"
-#include "lib/hci.h"
+#include "bluetooth/bluetooth.h"
+#include "bluetooth/mgmt.h"
+#include "bluetooth/hci.h"
 
 #include "src/shared/io.h"
 #include "src/shared/queue.h"
@@ -684,6 +684,11 @@ void mgmt_tlv_list_free(struct mgmt_tlv_list *tlv_list)
 {
 	queue_destroy(tlv_list->tlv_queue, free);
 	free(tlv_list);
+}
+
+uint16_t mgmt_tlv_list_size(struct mgmt_tlv_list *tlv_list)
+{
+	return tlv_list->size;
 }
 
 bool mgmt_tlv_add(struct mgmt_tlv_list *tlv_list, uint16_t type, uint8_t length,

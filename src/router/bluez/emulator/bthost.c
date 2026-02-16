@@ -20,9 +20,10 @@
 #include <stdlib.h>
 #include <string.h>
 #include <endian.h>
+#include <errno.h>
 #include <stdbool.h>
 
-#include "lib/bluetooth.h"
+#include "bluetooth/bluetooth.h"
 
 #include "src/shared/util.h"
 #include "src/shared/tester.h"
@@ -40,6 +41,7 @@
 #define acl_flags(h)		(h >> 12)
 
 #define sco_flags_status(f)	(f & 0x03)
+#define sco_flags_pack(status)	(status & 0x03)
 
 #define iso_flags_pb(f)		(f & 0x0003)
 #define iso_flags_ts(f)		((f >> 2) & 0x0001)
@@ -183,6 +185,8 @@ struct l2conn {
 	uint16_t scid;
 	uint16_t dcid;
 	uint16_t psm;
+	uint16_t rx_credits;
+	uint16_t tx_credits;
 	enum l2cap_mode mode;
 	uint16_t data_len;
 	uint16_t recv_len;
@@ -255,6 +259,8 @@ struct bthost {
 	bthost_accept_conn_cb accept_iso_cb;
 	bthost_new_conn_cb new_iso_cb;
 	void *new_iso_data;
+	uint16_t acl_mtu;
+	uint16_t iso_mtu;
 	struct rfcomm_connection_data *rfcomm_conn_data;
 	struct l2cap_conn_cb_data *new_l2cap_conn_data;
 	struct rfcomm_conn_cb_data *new_rfcomm_conn_data;
@@ -294,6 +300,8 @@ struct bthost *bthost_create(void)
 
 	/* Set defaults */
 	bthost->io_capability = 0x03;
+	bthost->acl_mtu = UINT16_MAX;
+	bthost->iso_mtu = UINT16_MAX;
 
 	return bthost;
 }
@@ -396,6 +404,25 @@ static struct l2conn *bthost_add_l2cap_conn(struct bthost *bthost,
 	conn->l2conns = l2conn;
 
 	return l2conn;
+}
+
+static void btconn_detach_l2cap_conn(struct btconn *conn, struct l2conn *l2conn)
+{
+	struct l2conn *c;
+
+	if (conn->l2conns == l2conn) {
+		conn->l2conns = l2conn->next;
+		l2conn->next = NULL;
+		return;
+	}
+
+	for (c = conn->l2conns; c != NULL; c = c->next) {
+		if (c->next == l2conn) {
+			c->next = l2conn->next;
+			l2conn->next = NULL;
+			return;
+		}
+	}
 }
 
 static struct rcconn *bthost_add_rfcomm_conn(struct bthost *bthost,
@@ -572,6 +599,22 @@ void bthost_set_send_handler(struct bthost *bthost, bthost_send_func handler,
 	bthost->send_data = user_data;
 }
 
+void bthost_set_acl_mtu(struct bthost *bthost, uint16_t mtu)
+{
+	if (!bthost)
+		return;
+
+	bthost->acl_mtu = mtu;
+}
+
+void bthost_set_iso_mtu(struct bthost *bthost, uint16_t mtu)
+{
+	if (!bthost)
+		return;
+
+	bthost->iso_mtu = mtu;
+}
+
 static void queue_command(struct bthost *bthost, const struct iovec *iov,
 								int iovlen)
 {
@@ -619,37 +662,89 @@ static void send_packet(struct bthost *bthost, const struct iovec *iov,
 	bthost->send_handler(iov, iovlen, bthost->send_data);
 }
 
+static void iov_pull_n(struct iovec *src, unsigned int *src_cnt,
+		struct iovec *dst, unsigned int *dst_cnt, unsigned int max_dst,
+		size_t len)
+{
+	unsigned int i;
+	size_t count;
+
+	*dst_cnt = 0;
+
+	while (len && *dst_cnt < max_dst && *src_cnt) {
+		count = len;
+		if (count > src[0].iov_len)
+			count = src[0].iov_len;
+
+		dst[*dst_cnt].iov_base = src[0].iov_base;
+		dst[*dst_cnt].iov_len = count;
+		*dst_cnt += 1;
+
+		util_iov_pull(&src[0], count);
+		len -= count;
+
+		if (!src[0].iov_len) {
+			for (i = 1; i < *src_cnt; ++i)
+				src[i - 1] = src[i];
+			*src_cnt -= 1;
+		}
+	}
+}
+
 static void send_iov(struct bthost *bthost, uint16_t handle, uint16_t cid,
-					const struct iovec *iov, int iovcnt)
+				const struct iovec *iov, unsigned int iovcnt)
 {
 	struct bt_hci_acl_hdr acl_hdr;
 	struct bt_l2cap_hdr l2_hdr;
 	uint8_t pkt = BT_H4_ACL_PKT;
 	struct iovec pdu[3 + iovcnt];
-	int i, len = 0;
+	struct iovec payload[1 + iovcnt];
+	size_t payload_mtu, len;
+	int flag;
+	unsigned int i;
 
+	len = 0;
 	for (i = 0; i < iovcnt; i++) {
-		pdu[3 + i].iov_base = iov[i].iov_base;
-		pdu[3 + i].iov_len = iov[i].iov_len;
+		payload[1 + i].iov_base = iov[i].iov_base;
+		payload[1 + i].iov_len = iov[i].iov_len;
 		len += iov[i].iov_len;
 	}
 
-	pdu[0].iov_base = &pkt;
-	pdu[0].iov_len = sizeof(pkt);
-
-	acl_hdr.handle = acl_handle_pack(handle, 0);
-	acl_hdr.dlen = cpu_to_le16(len + sizeof(l2_hdr));
-
-	pdu[1].iov_base = &acl_hdr;
-	pdu[1].iov_len = sizeof(acl_hdr);
-
 	l2_hdr.cid = cpu_to_le16(cid);
 	l2_hdr.len = cpu_to_le16(len);
+	payload[0].iov_base = &l2_hdr;
+	payload[0].iov_len = sizeof(l2_hdr);
 
-	pdu[2].iov_base = &l2_hdr;
-	pdu[2].iov_len = sizeof(l2_hdr);
+	len += sizeof(l2_hdr);
+	iovcnt++;
 
-	send_packet(bthost, pdu, 3 + iovcnt);
+	/* Fragment to ACL MTU */
+
+	payload_mtu = bthost->acl_mtu - sizeof(pkt) - sizeof(acl_hdr);
+
+	flag = 0x00;
+	do {
+		size_t count = (len > payload_mtu) ? payload_mtu : len;
+		unsigned int pdu_iovcnt;
+
+		pdu[0].iov_base = &pkt;
+		pdu[0].iov_len = sizeof(pkt);
+
+		acl_hdr.dlen = cpu_to_le16(count);
+		acl_hdr.handle = acl_handle_pack(handle, flag);
+
+		pdu[1].iov_base = &acl_hdr;
+		pdu[1].iov_len = sizeof(acl_hdr);
+
+		iov_pull_n(payload, &iovcnt, &pdu[2], &pdu_iovcnt,
+						ARRAY_SIZE(pdu) - 2, count);
+		pdu_iovcnt += 2;
+
+		send_packet(bthost, pdu, pdu_iovcnt);
+
+		len -= count;
+		flag = 0x01;
+	} while (len);
 }
 
 static void send_acl(struct bthost *bthost, uint16_t handle, uint16_t cid,
@@ -816,54 +911,113 @@ void bthost_send_cid_v(struct bthost *bthost, uint16_t handle, uint16_t cid,
 	send_iov(bthost, handle, cid, iov, iovcnt);
 }
 
-static void send_iso(struct bthost *bthost, uint16_t handle, bool ts,
-			uint16_t sn, uint32_t timestamp, uint8_t pkt_status,
-			const struct iovec *iov, int iovcnt)
+void bthost_send_sco(struct bthost *bthost, uint16_t handle, uint8_t pkt_status,
+					const struct iovec *iov, int iovcnt)
 {
-	struct bt_hci_iso_hdr iso_hdr;
-	struct bt_hci_iso_data_start data_hdr;
-	uint8_t pkt = BT_H4_ISO_PKT;
-	struct iovec pdu[4 + iovcnt];
-	uint16_t flags, dlen;
+	uint8_t pkt = BT_H4_SCO_PKT;
+	struct iovec pdu[2 + iovcnt];
+	struct bt_hci_sco_hdr sco_hdr;
+	struct btconn *conn;
 	int i, len = 0;
 
+	conn = bthost_find_conn(bthost, handle);
+	if (!conn)
+		return;
+
 	for (i = 0; i < iovcnt; i++) {
-		pdu[4 + i].iov_base = iov[i].iov_base;
-		pdu[4 + i].iov_len = iov[i].iov_len;
+		pdu[2 + i].iov_base = iov[i].iov_base;
+		pdu[2 + i].iov_len = iov[i].iov_len;
 		len += iov[i].iov_len;
 	}
 
 	pdu[0].iov_base = &pkt;
 	pdu[0].iov_len = sizeof(pkt);
 
-	flags = iso_flags_pack(0x02, ts);
-	dlen = len + sizeof(data_hdr);
-	if (ts)
-		dlen += sizeof(timestamp);
+	sco_hdr.handle = acl_handle_pack(handle, sco_flags_pack(pkt_status));
+	sco_hdr.dlen = len;
 
-	iso_hdr.handle = acl_handle_pack(handle, flags);
-	iso_hdr.dlen = cpu_to_le16(dlen);
+	pdu[1].iov_base = &sco_hdr;
+	pdu[1].iov_len = sizeof(sco_hdr);
 
-	pdu[1].iov_base = &iso_hdr;
-	pdu[1].iov_len = sizeof(iso_hdr);
+	send_packet(bthost, pdu, 2 + iovcnt);
+}
 
-	if (ts) {
-		timestamp = cpu_to_le32(timestamp);
+static void send_iso(struct bthost *bthost, uint16_t handle, bool ts,
+			uint16_t sn, uint32_t timestamp, uint8_t pkt_status,
+			const struct iovec *iov, unsigned int iovcnt)
+{
+	struct bt_hci_iso_hdr iso_hdr;
+	struct bt_hci_iso_data_start data_hdr;
+	uint8_t pkt = BT_H4_ISO_PKT;
+	struct iovec pdu[4 + iovcnt];
+	struct iovec payload[2 + iovcnt];
+	uint16_t payload_mtu = bthost->iso_mtu - sizeof(iso_hdr);
+	int len = 0, packet = 0;
+	unsigned int i;
 
-		pdu[2].iov_base = &timestamp;
-		pdu[2].iov_len = sizeof(timestamp);
-	} else {
-		pdu[2].iov_base = NULL;
-		pdu[2].iov_len = 0;
+	for (i = 0; i < iovcnt; i++) {
+		payload[2 + i].iov_base = iov[i].iov_base;
+		payload[2 + i].iov_len = iov[i].iov_len;
+		len += iov[i].iov_len;
 	}
 
 	data_hdr.sn = cpu_to_le16(sn);
 	data_hdr.slen = cpu_to_le16(iso_data_len_pack(len, pkt_status));
 
-	pdu[3].iov_base = &data_hdr;
-	pdu[3].iov_len = sizeof(data_hdr);
+	if (ts) {
+		timestamp = cpu_to_le32(timestamp);
 
-	send_packet(bthost, pdu, 4 + iovcnt);
+		payload[0].iov_base = &timestamp;
+		payload[0].iov_len = sizeof(timestamp);
+		len += sizeof(timestamp);
+	} else {
+		payload[0].iov_base = NULL;
+		payload[0].iov_len = 0;
+	}
+	iovcnt++;
+
+	payload[1].iov_base = &data_hdr;
+	payload[1].iov_len = sizeof(data_hdr);
+	len += sizeof(data_hdr);
+	iovcnt++;
+
+	/* ISO fragmentation */
+
+	do {
+		unsigned int pdu_iovcnt;
+		uint16_t iso_len, pb, flags;
+
+		if (packet == 0 && len <= payload_mtu)
+			pb = 0x02;
+		else if (packet == 0)
+			pb = 0x00;
+		else if (len <= payload_mtu)
+			pb = 0x03;
+		else
+			pb = 0x01;
+
+		flags = iso_flags_pack(pb, ts);
+		iso_len = len <= payload_mtu ? len : payload_mtu;
+
+		iso_hdr.handle = acl_handle_pack(handle, flags);
+		iso_hdr.dlen = cpu_to_le16(iso_len);
+
+		pdu[0].iov_base = &pkt;
+		pdu[0].iov_len = sizeof(pkt);
+
+		pdu[1].iov_base = &iso_hdr;
+		pdu[1].iov_len = sizeof(iso_hdr);
+
+		iov_pull_n(payload, &iovcnt, &pdu[2], &pdu_iovcnt,
+						ARRAY_SIZE(pdu) - 2, iso_len);
+		pdu_iovcnt += 2;
+
+		send_packet(bthost, pdu, pdu_iovcnt);
+
+		packet++;
+		ts = false;
+		len -= iso_len;
+	} while (len);
 }
 
 void bthost_send_iso(struct bthost *bthost, uint16_t handle, bool ts,
@@ -1164,11 +1318,29 @@ static void evt_conn_request(struct bthost *bthost, const void *data,
 	if (len < sizeof(*ev))
 		return;
 
-	memset(&cmd, 0, sizeof(cmd));
-	memcpy(cmd.bdaddr, ev->bdaddr, sizeof(ev->bdaddr));
+	if (ev->link_type == 0x01 || ev->link_type == 0x00) {
+		memset(&cmd, 0, sizeof(cmd));
+		memcpy(cmd.bdaddr, ev->bdaddr, sizeof(ev->bdaddr));
 
-	send_command(bthost, BT_HCI_CMD_ACCEPT_CONN_REQUEST, &cmd,
+		send_command(bthost, BT_HCI_CMD_ACCEPT_CONN_REQUEST, &cmd,
 								sizeof(cmd));
+	} else if (ev->link_type == 0x02) {
+		struct bt_hci_cmd_accept_sync_conn_request cmd;
+
+		memset(&cmd, 0, sizeof(cmd));
+		memcpy(cmd.bdaddr, ev->bdaddr, sizeof(ev->bdaddr));
+
+		/* TODO: emulate these properly? */
+		cmd.tx_bandwidth = cpu_to_le32(0x00001f40);
+		cmd.rx_bandwidth = cpu_to_le32(0x00001f40);
+		cmd.max_latency = cpu_to_le16(0xffff);
+		cmd.voice_setting = 0x00;
+		cmd.retrans_effort = 0x02;
+		cmd.pkt_type = 0xff;
+
+		send_command(bthost, BT_HCI_CMD_ACCEPT_SYNC_CONN_REQUEST, &cmd,
+								sizeof(cmd));
+	}
 }
 
 static void init_conn(struct bthost *bthost, uint16_t handle,
@@ -1702,6 +1874,24 @@ static void evt_le_big_sync_established(struct bthost *bthost,
 	}
 }
 
+static void evt_le_big_info_adv_report(struct bthost *bthost,
+						const void *data, uint8_t size)
+{
+	const struct bt_hci_evt_le_big_info_adv_report *ev = data;
+	struct {
+		struct bt_hci_cmd_le_big_create_sync cp;
+		struct bt_hci_bis_sync index[1];
+	} cmd;
+
+	memset(&cmd, 0, sizeof(cmd));
+	cmd.cp.handle = 0x01;
+	cmd.cp.sync_handle = ev->sync_handle;
+	cmd.cp.encryption = ev->encryption;
+	cmd.cp.num_bis = 1;
+
+	send_command(bthost, BT_HCI_CMD_LE_BIG_CREATE_SYNC, &cmd, sizeof(cmd));
+}
+
 static void evt_le_meta_event(struct bthost *bthost, const void *data,
 								uint8_t len)
 {
@@ -1743,6 +1933,9 @@ static void evt_le_meta_event(struct bthost *bthost, const void *data,
 		break;
 	case BT_HCI_EVT_LE_BIG_SYNC_ESTABILISHED:
 		evt_le_big_sync_established(bthost, evt_data, len - 1);
+		break;
+	case BT_HCI_EVT_LE_BIG_INFO_ADV_REPORT:
+		evt_le_big_info_adv_report(bthost, evt_data, len - 1);
 		break;
 	default:
 		bthost_debug(bthost, "Unsupported LE Meta event 0x%2.2x",
@@ -2010,11 +2203,41 @@ static bool l2cap_disconn_req(struct bthost *bthost, struct btconn *conn,
 	if (!l2conn)
 		return true;
 
+	btconn_detach_l2cap_conn(conn, l2conn);
+
 	cb_data = bthost_find_l2cap_cb_by_psm(bthost, l2conn->psm);
 
 	if (cb_data && cb_data->disconn_func)
-		cb_data->disconn_func(cb_data->user_data);
+		cb_data->disconn_func(conn->handle, l2conn->dcid,
+							cb_data->user_data);
 
+	l2conn_free(l2conn);
+	return true;
+}
+
+static bool l2cap_disconn_rsp(struct bthost *bthost, struct btconn *conn,
+				uint8_t ident, const void *data, uint16_t len)
+{
+	const struct bt_l2cap_pdu_disconn_rsp *rsp = data;
+	struct l2cap_conn_cb_data *cb_data;
+	struct l2conn *l2conn;
+
+	if (len < sizeof(*rsp))
+		return false;
+
+	l2conn = btconn_find_l2cap_conn_by_scid(conn, rsp->dcid);
+	if (!l2conn)
+		return true;
+
+	btconn_detach_l2cap_conn(conn, l2conn);
+
+	cb_data = bthost_find_l2cap_cb_by_psm(bthost, l2conn->psm);
+
+	if (cb_data && cb_data->disconn_func)
+		cb_data->disconn_func(conn->handle, l2conn->dcid,
+							cb_data->user_data);
+
+	l2conn_free(l2conn);
 	return true;
 }
 
@@ -2170,6 +2393,11 @@ static void l2cap_sig(struct bthost *bthost, struct btconn *conn,
 						data + sizeof(*hdr), hdr_len);
 		break;
 
+	case BT_L2CAP_PDU_DISCONN_RSP:
+		ret = l2cap_disconn_rsp(bthost, conn, hdr->ident,
+						data + sizeof(*hdr), hdr_len);
+		break;
+
 	case BT_L2CAP_PDU_INFO_REQ:
 		ret = l2cap_info_req(bthost, conn, hdr->ident,
 						data + sizeof(*hdr), hdr_len);
@@ -2273,6 +2501,8 @@ static bool l2cap_le_conn_req(struct bthost *bthost, struct btconn *conn,
 							le16_to_cpu(req->scid),
 							le16_to_cpu(psm));
 		l2conn->mode = L2CAP_MODE_LE_CRED;
+		l2conn->rx_credits = le16_to_cpu(rsp.credits);
+		l2conn->tx_credits = le16_to_cpu(req->credits);
 
 		if (cb_data && l2conn->psm == cb_data->psm && cb_data->func)
 			cb_data->func(conn->handle, l2conn->dcid,
@@ -2290,10 +2520,13 @@ static bool l2cap_le_conn_rsp(struct bthost *bthost, struct btconn *conn,
 
 	if (len < sizeof(*rsp))
 		return false;
+
 	/* TODO add L2CAP connection before with proper PSM */
 	l2conn = bthost_add_l2cap_conn(bthost, conn, 0,
 						le16_to_cpu(rsp->dcid), 0);
 	l2conn->mode = L2CAP_MODE_LE_CRED;
+	l2conn->rx_credits = 1;
+	l2conn->tx_credits = le16_to_cpu(rsp->credits);
 
 	return true;
 }
@@ -2342,7 +2575,7 @@ static bool l2cap_ecred_conn_rsp(struct bthost *bthost, struct btconn *conn,
 				uint8_t ident, const void *data, uint16_t len)
 {
 	const struct  {
-		const struct bt_l2cap_pdu_ecred_conn_rsp *pdu;
+		const struct bt_l2cap_pdu_ecred_conn_rsp pdu;
 		uint16_t scid[5];
 	} __attribute__ ((packed)) *rsp = data;
 	int num_scid, i;
@@ -2358,8 +2591,28 @@ static bool l2cap_ecred_conn_rsp(struct bthost *bthost, struct btconn *conn,
 		l2conn = bthost_add_l2cap_conn(bthost, conn, 0,
 				      le16_to_cpu(rsp->scid[i]), 0);
 		l2conn->mode = L2CAP_MODE_LE_ENH_CRED;
+		l2conn->tx_credits = rsp->pdu.credits;
+		l2conn->rx_credits = 1;
 	}
 
+
+	return true;
+}
+
+static bool l2cap_le_flowctl_creds(struct bthost *bthost, struct btconn *conn,
+				uint8_t ident, const void *data, uint16_t len)
+{
+	const struct bt_l2cap_pdu_le_flowctl_creds *ind = data;
+	struct l2conn *l2conn;
+
+	if (len < sizeof(*ind))
+		return false;
+
+	l2conn = btconn_find_l2cap_conn_by_dcid(conn, ind->cid);
+	if (!l2conn)
+		return true;
+
+	l2conn->tx_credits += ind->credits;
 
 	return true;
 }
@@ -2404,6 +2657,11 @@ static void l2cap_le_sig(struct bthost *bthost, struct btconn *conn,
 						data + sizeof(*hdr), hdr_len);
 		break;
 
+	case BT_L2CAP_PDU_DISCONN_RSP:
+		ret = l2cap_disconn_rsp(bthost, conn, hdr->ident,
+						data + sizeof(*hdr), hdr_len);
+		break;
+
 	case BT_L2CAP_PDU_CONN_PARAM_REQ:
 		ret = l2cap_conn_param_req(bthost, conn, hdr->ident,
 						data + sizeof(*hdr), hdr_len);
@@ -2430,6 +2688,11 @@ static void l2cap_le_sig(struct bthost *bthost, struct btconn *conn,
 
 	case BT_L2CAP_PDU_ECRED_CONN_RSP:
 		ret = l2cap_ecred_conn_rsp(bthost, conn, hdr->ident,
+						data + sizeof(*hdr), hdr_len);
+		break;
+
+	case BT_L2CAP_PDU_LE_FLOWCTL_CREDS:
+		ret = l2cap_le_flowctl_creds(bthost, conn, hdr->ident,
 						data + sizeof(*hdr), hdr_len);
 		break;
 
@@ -3294,6 +3557,44 @@ void bthost_hci_disconnect(struct bthost *bthost, uint16_t handle,
 	send_command(bthost, BT_HCI_CMD_DISCONNECT, &disc, sizeof(disc));
 }
 
+int bthost_setup_sco(struct bthost *bthost, uint16_t acl_handle,
+							uint16_t setting)
+{
+	static const struct bt_hci_cmd_setup_sync_conn settings[] = {
+		{
+			.tx_bandwidth = cpu_to_le32(0x00001f40),
+			.rx_bandwidth = cpu_to_le32(0x00001f40),
+			.max_latency = cpu_to_le16(0x000a),
+			.retrans_effort = 0x01,
+			.voice_setting = cpu_to_le16(BT_VOICE_CVSD_16BIT),
+		},
+		{
+			.tx_bandwidth = cpu_to_le32(0x00001f40),
+			.rx_bandwidth = cpu_to_le32(0x00001f40),
+			.max_latency = cpu_to_le16(0x000d),
+			.retrans_effort = 0x02,
+			.voice_setting = cpu_to_le16(BT_VOICE_TRANSPARENT),
+		}
+	};
+	struct bt_hci_cmd_setup_sync_conn cmd;
+	unsigned int i;
+
+	memset(&cmd, 0, sizeof(cmd));
+
+	for (i = 0; i < ARRAY_SIZE(settings); ++i) {
+		if (settings[i].voice_setting == cpu_to_le16(setting)) {
+			memcpy(&cmd, &settings[i], sizeof(cmd));
+			break;
+		}
+	}
+	if (!cmd.voice_setting)
+		return -EINVAL;
+
+	cmd.handle = cpu_to_le16(acl_handle);
+	send_command(bthost, BT_HCI_CMD_SETUP_SYNC_CONN, &cmd, sizeof(cmd));
+	return 0;
+}
+
 void bthost_write_scan_enable(struct bthost *bthost, uint8_t scan)
 {
 	send_command(bthost, BT_HCI_CMD_WRITE_SCAN_ENABLE, &scan, 1);
@@ -3373,7 +3674,7 @@ void bthost_set_scan_enable(struct bthost *bthost, uint8_t enable)
 							&cp, sizeof(cp));
 }
 
-void bthost_set_ext_adv_params(struct bthost *bthost)
+void bthost_set_ext_adv_params(struct bthost *bthost, uint8_t sid)
 {
 	const uint8_t interval_20ms[] = { 0x20, 0x00, 0x00 };
 	struct bt_hci_cmd_le_set_ext_adv_params cp;
@@ -3383,6 +3684,7 @@ void bthost_set_ext_adv_params(struct bthost *bthost)
 	cp.evt_properties = cpu_to_le16(0x0013);
 	memcpy(cp.min_interval, interval_20ms, sizeof(cp.min_interval));
 	memcpy(cp.max_interval, interval_20ms, sizeof(cp.max_interval));
+	cp.sid = sid;
 	send_command(bthost, BT_HCI_CMD_LE_SET_EXT_ADV_PARAMS,
 							&cp, sizeof(cp));
 }
@@ -3491,6 +3793,31 @@ void bthost_set_pa_enable(struct bthost *bthost, uint8_t enable)
 	send_command(bthost, BT_HCI_CMD_LE_SET_PA_ENABLE, &cp, sizeof(cp));
 }
 
+void bthost_set_past_mode(struct bthost *bthost, uint16_t handle, uint8_t mode)
+{
+	struct bt_hci_cmd_le_past_params cp;
+
+	memset(&cp, 0, sizeof(cp));
+	cp.handle = cpu_to_le16(handle);
+	cp.mode = mode;
+
+	send_command(bthost, BT_HCI_CMD_LE_PAST_PARAMS, &cp, sizeof(cp));
+}
+
+void bthost_past_set_info(struct bthost *bthost, uint16_t handle)
+{
+	struct bt_hci_cmd_le_past_set_info cp;
+
+	if (!bthost)
+		return;
+
+	memset(&cp, 0, sizeof(cp));
+	cp.handle = cpu_to_le16(handle);
+	cp.adv_handle = 0x01;
+
+	send_command(bthost, BT_HCI_CMD_LE_PAST_SET_INFO, &cp, sizeof(cp));
+}
+
 void bthost_create_big(struct bthost *bthost, uint8_t num_bis,
 				uint8_t enc, const uint8_t *bcode)
 {
@@ -3504,10 +3831,21 @@ void bthost_create_big(struct bthost *bthost, uint8_t num_bis,
 	cp.bis.sdu = 40;
 	cp.bis.latency = cpu_to_le16(10);
 	cp.bis.rtn = 0x02;
-	cp.bis.phy = 0x02;
+	cp.bis.phys = BIT(2);
 	cp.bis.encryption = enc;
 	memcpy(cp.bis.bcode, bcode, sizeof(cp.bis.bcode));
 	send_command(bthost, BT_HCI_CMD_LE_CREATE_BIG, &cp, sizeof(cp));
+}
+
+void bthost_terminate_big(struct bthost *bthost, uint8_t reason)
+{
+	struct bt_hci_cmd_le_term_big cp;
+
+	memset(&cp, 0, sizeof(cp));
+	cp.handle = 0x01;
+	cp.reason = reason;
+
+	send_command(bthost, BT_HCI_CMD_LE_TERM_BIG, &cp, sizeof(cp));
 }
 
 bool bthost_search_ext_adv_addr(struct bthost *bthost, const uint8_t *addr)
@@ -3548,10 +3886,10 @@ void bthost_set_cig_params(struct bthost *bthost, uint8_t cig_id,
 	cp->cis[0].cis_id = cis_id;
 	cp->cis[0].c_sdu = qos->ucast.in.sdu;
 	cp->cis[0].p_sdu = qos->ucast.out.sdu;
-	cp->cis[0].c_phy = qos->ucast.in.phy ? qos->ucast.in.phy :
-							qos->ucast.out.phy;
-	cp->cis[0].p_phy = qos->ucast.out.phy ? qos->ucast.out.phy :
-							qos->ucast.in.phy;
+	cp->cis[0].c_phys = qos->ucast.in.phys ? qos->ucast.in.phys :
+							qos->ucast.out.phys;
+	cp->cis[0].p_phys = qos->ucast.out.phys ? qos->ucast.out.phys :
+							qos->ucast.in.phys;
 	cp->cis[0].c_rtn = qos->ucast.in.rtn;
 	cp->cis[0].p_rtn = qos->ucast.out.rtn;
 

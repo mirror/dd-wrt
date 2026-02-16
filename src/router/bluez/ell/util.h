@@ -44,7 +44,7 @@ _Pragma("GCC diagnostic pop")						\
 	})
 
 /*
- * If ELL headers and iterfaces end up getting compiled in a C++
+ * If ELL headers and interfaces end up getting compiled in a C++
  * environment, even though ELL itself is a C source based and is
  * compiled as such, certain assignments may be flagged by the C++
  * compiler as errors or warnings. The following portable casts should
@@ -210,7 +210,7 @@ static inline void l_put_le16(uint16_t val, void *ptr)
 	L_PUT_UNALIGNED(L_CPU_TO_LE16(val), (uint16_t *) ptr);
 }
 
-static inline void l_put_be16(uint16_t val, const void *ptr)
+static inline void l_put_be16(uint16_t val, void *ptr)
 {
 	L_PUT_UNALIGNED(L_CPU_TO_BE16(val), (uint16_t *) ptr);
 }

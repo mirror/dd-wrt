@@ -23,10 +23,10 @@
 
 #include <glib.h>
 
-#include "lib/bluetooth.h"
-#include "lib/hci.h"
-#include "lib/sdp.h"
-#include "lib/uuid.h"
+#include "bluetooth/bluetooth.h"
+#include "bluetooth/hci.h"
+#include "bluetooth/sdp.h"
+#include "bluetooth/uuid.h"
 
 #include "src/shared/util.h"
 #include "src/shared/att.h"
@@ -91,16 +91,19 @@ static void batt_reset(struct batt *batt)
 static void parse_battery_level(struct batt *batt,
 				const uint8_t *value)
 {
-	uint8_t percentage;
+	uint8_t percentage = value[0];
 
-	percentage = value[0];
+	DBG("Battery Level updated: %d%%", percentage);
+
+	if (!batt->battery) {
+		free(batt->initial_value);
+		batt->initial_value = util_memdup(value, 1);
+		DBG("Battery not yet registered");
+		return;
+	}
+
 	if (batt->percentage != percentage) {
 		batt->percentage = percentage;
-		DBG("Battery Level updated: %d%%", percentage);
-		if (!batt->battery) {
-			warn("Trying to update an unregistered battery");
-			return;
-		}
 		btd_battery_update(batt->battery, batt->percentage);
 	}
 }
@@ -111,6 +114,8 @@ static void batt_io_value_cb(uint16_t value_handle, const uint8_t *value,
 	struct batt *batt = user_data;
 
 	if (value_handle == batt->batt_level_io_handle) {
+		if (!length)
+			return;
 		parse_battery_level(batt, value);
 	} else {
 		g_assert_not_reached();
@@ -151,7 +156,7 @@ static void read_initial_battery_level_cb(bool success,
 	struct batt *batt = user_data;
 
 	if (!success) {
-		DBG("Reading battery level failed with ATT errror: %u",
+		DBG("Reading battery level failed with ATT error: %u",
 								att_ecode);
 		return;
 	}
@@ -322,6 +327,7 @@ static int batt_disconnect(struct btd_service *service)
 
 static struct btd_profile batt_profile = {
 	.name		= "batt-profile",
+	.bearer		= BTD_PROFILE_BEARER_LE,
 	.remote_uuid	= BATTERY_UUID,
 	.device_probe	= batt_probe,
 	.device_remove	= batt_remove,

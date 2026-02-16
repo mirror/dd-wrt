@@ -27,9 +27,9 @@
 
 #include <glib.h>
 
-#include "lib/bluetooth.h"
-#include "lib/sdp.h"
-#include "lib/uuid.h"
+#include "bluetooth/bluetooth.h"
+#include "bluetooth/sdp.h"
+#include "bluetooth/uuid.h"
 
 #include "src/shared/util.h"
 #include "src/shared/uhid.h"
@@ -87,9 +87,9 @@ struct bt_hog {
 	uint16_t		ctrlpt_handle;
 	uint8_t			flags;
 	unsigned int		getrep_att;
-	uint16_t		getrep_id;
+	uint32_t		getrep_id;
 	unsigned int		setrep_att;
-	uint16_t		setrep_id;
+	uint32_t		setrep_id;
 	unsigned int		report_map_id;
 	struct bt_scpp		*scpp;
 	struct bt_dis		*dis;
@@ -1132,7 +1132,7 @@ static void proto_mode_read_cb(guint8 status, const guint8 *pdu, guint16 plen,
 	if (value == HOG_PROTO_MODE_BOOT) {
 		uint8_t nval = HOG_PROTO_MODE_REPORT;
 
-		DBG("HoG is operating in Boot Procotol Mode");
+		DBG("HoG is operating in Boot Protocol Mode");
 
 		gatt_write_cmd(hog->attrib, hog->proto_mode_handle, &nval,
 						sizeof(nval), NULL, NULL);

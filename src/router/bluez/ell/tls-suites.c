@@ -781,6 +781,7 @@ static void tls_handle_ecdhe_client_key_xchg(struct l_tls *tls,
 						&secret)) {
 		TLS_DISCONNECT(TLS_ALERT_INTERNAL_ERROR, 0,
 				"Generating ECDH shared-secret failed");
+		l_ecc_point_free(other_public);
 		return;
 	}
 

@@ -35,6 +35,7 @@
 #include "../client/manager.h"
 
 #include "log.h"
+#include "logind.h"
 #include "obexd.h"
 #include "server.h"
 
@@ -275,18 +276,14 @@ int main(int argc, char *argv[])
 
 	__obex_log_init(option_debug, option_detach);
 
+	if (option_system_bus)
+		logind_set(FALSE);
+
 	DBG("Entering main loop");
 
 	main_loop = g_main_loop_new(NULL, FALSE);
 
 	signal = setup_signalfd();
-
-#ifdef NEED_THREADS
-	if (dbus_threads_init_default() == FALSE) {
-		fprintf(stderr, "Can't init usage of threads\n");
-		exit(EXIT_FAILURE);
-	}
-#endif
 
 	if (manager_init() == FALSE) {
 		error("manager_init failed");

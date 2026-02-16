@@ -80,7 +80,7 @@ bacpy(&addr.sco_bdaddr, bdaddr);
 .EE
 .UNINDENT
 .UNINDENT
-.SH SOCKET OPTIONS
+.SH SOCKET OPTIONS (SOL_BLUETOOTH)
 .sp
 The socket options listed below can be set by using \fBsetsockopt(2)\fP and read
 with \fBgetsockopt(2)\fP with the socket level set to SOL_BLUETOOTH.
@@ -318,9 +318,83 @@ if (err == \-1) {
 .EE
 .UNINDENT
 .UNINDENT
+.SS BT_PKT_STATUS (since Linux 5.9)
+.sp
+Enable reporting packet status via \fIBT_SCM_PKT_STATUS\fP CMSG on
+received packets.  Possible values:
+.TS
+box center;
+l|l.
+T{
+Value
+T}	T{
+Description
+T}
+_
+T{
+\fB0\fP
+T}	T{
+Disable (default)
+T}
+_
+T{
+\fB1\fP
+T}	T{
+Enable
+T}
+.TE
+.INDENT 0.0
+.TP
+.B BT_SCM_PKT_STATUS
+Level \fBSOL_BLUETOOTH\fP CMSG with data:
+.INDENT 7.0
+.INDENT 3.5
+.sp
+.EX
+uint8_t pkt_status;
+.EE
+.UNINDENT
+.UNINDENT
+.sp
+The values are equal to the \(dqPacket_Status_Flag\(dq defined in
+Core Specification v6.0 Sec. 5.4.3 pp. 1877:
+.TS
+box center;
+l|l.
+T{
+pkt_status
+T}	T{
+Description
+T}
+_
+T{
+\fB0x0\fP
+T}	T{
+Correctly received data
+T}
+_
+T{
+\fB0x1\fP
+T}	T{
+Possibly invalid data
+T}
+_
+T{
+\fB0x2\fP
+T}	T{
+No data received
+T}
+_
+T{
+\fB0x3\fP
+T}	T{
+Data partially lost
+T}
+.TE
+.UNINDENT
 .SS BT_PHY (since Linux 5.10)
 .sp
-Transport supported PHY(s), possible values:
+Transport supported PHY(s), read\-only (no setsockopt support). Possible values:
 .TS
 box center;
 l|l|l.
@@ -426,6 +500,180 @@ if (err == \-1) {
     perror(\(dqsetsockopt\(dq);
     return 1;
 }
+.EE
+.UNINDENT
+.UNINDENT
+.SH SOCKET OPTIONS (SOL_SOCKET)
+.sp
+\fBSOL_SOCKET\fP level socket options that modify generic socket
+features (\fBSO_SNDBUF\fP, \fBSO_RCVBUF\fP, etc.) have their usual
+meaning, see \fBsocket(7)\fP\&.
+.sp
+The \fBSOL_SOCKET\fP level SCO socket options that have
+Bluetooth\-specific handling in kernel are listed below.
+.SS SO_TIMESTAMPING, SO_TIMESTAMP, SO_TIMESTAMPNS
+.sp
+See  <https://docs.kernel.org/networking/timestamping.html> 
+.sp
+For SCO sockets, software RX timestamps are supported.  Software TX
+timestamps (SOF_TIMESTAMPING_TX_SOFTWARE) are supported since
+Linux 6.15.
+.sp
+The software RX timestamp is the time when the kernel received the
+packet from the controller driver.
+.sp
+The \fBSCM_TSTAMP_SND\fP timestamp is emitted when packet is sent to the
+controller driver.
+.sp
+The \fBSCM_TSTAMP_COMPLETION\fP timestamp is emitted when controller
+reports the packet completed.  Completion timestamps are only
+supported on controllers that have SCO flow control.  Other TX
+timestamp types are not supported.
+.sp
+You can use \fBSIOCETHTOOL\fP to query supported flags.
+.sp
+The timestamps are in \fBCLOCK_REALTIME\fP time.
+.sp
+Example (Enable RX timestamping):
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+int flags = SOF_TIMESTAMPING_SOFTWARE |
+    SOF_TIMESTAMPING_RX_SOFTWARE;
+setsockopt(fd, SOL_SOCKET, SO_TIMESTAMPING, &flags, sizeof(flags));
+.EE
+.UNINDENT
+.UNINDENT
+.sp
+Example (Read packet and its RX timestamp):
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+char data_buf[256];
+union {
+    char buf[CMSG_SPACE(sizeof(struct scm_timestamping))];
+    struct cmsghdr align;
+} control;
+struct iovec data = {
+    .iov_base = data_buf,
+    .iov_len = sizeof(data_buf),
+};
+struct msghdr msg = {
+    .msg_iov = &data,
+    .msg_iovlen = 1,
+    .msg_control = control.buf,
+    .msg_controllen = sizeof(control.buf),
+};
+struct scm_timestamping tss;
+
+res = recvmsg(fd, &msg, MSG_ERRQUEUE | MSG_DONTWAIT);
+if (res < 0)
+    goto error;
+
+for (cmsg = CMSG_FIRSTHDR(&msg); cmsg; cmsg = CMSG_NXTHDR(&msg, cmsg)) {
+    if (cmsg\->cmsg_level == SOL_SOCKET && cmsg\->cmsg_type == SCM_TIMESTAMPING)
+        memcpy(&tss, CMSG_DATA(cmsg), sizeof(tss));
+}
+
+tstamp_clock_realtime = tss.ts[0];
+.EE
+.UNINDENT
+.UNINDENT
+.sp
+Example (Enable TX timestamping):
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+int flags = SOF_TIMESTAMPING_SOFTWARE |
+    SOF_TIMESTAMPING_TX_SOFTWARE |
+    SOF_TIMESTAMPING_OPT_ID;
+setsockopt(fd, SOL_SOCKET, SO_TIMESTAMPING, &flags, sizeof(flags));
+.EE
+.UNINDENT
+.UNINDENT
+.sp
+Example (Read TX timestamps):
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+union {
+    char buf[CMSG_SPACE(sizeof(struct scm_timestamping))];
+    struct cmsghdr align;
+} control;
+struct iovec data = {
+    .iov_base = NULL,
+    .iov_len = 0
+};
+struct msghdr msg = {
+    .msg_iov = &data,
+    .msg_iovlen = 1,
+    .msg_control = control.buf,
+    .msg_controllen = sizeof(control.buf),
+};
+struct cmsghdr *cmsg;
+struct scm_timestamping tss;
+struct sock_extended_err serr;
+int res;
+
+res = recvmsg(fd, &msg, MSG_ERRQUEUE | MSG_DONTWAIT);
+if (res < 0)
+    goto error;
+
+for (cmsg = CMSG_FIRSTHDR(&msg); cmsg; cmsg = CMSG_NXTHDR(&msg, cmsg)) {
+    if (cmsg\->cmsg_level == SOL_SOCKET && cmsg\->cmsg_type == SCM_TIMESTAMPING)
+        memcpy(&tss, CMSG_DATA(cmsg), sizeof(tss));
+    else if (cmsg\->cmsg_level == SOL_BLUETOOTH && cmsg\->cmsg_type == BT_SCM_ERROR)
+        memcpy(&serr, CMSG_DATA(cmsg), sizeof(serr));
+}
+
+tstamp_clock_realtime = tss.ts[0];
+tstamp_type = serr\->ee_info;      /* SCM_TSTAMP_SND or SCM_TSTAMP_COMPLETION */
+tstamp_seqnum = serr\->ee_data;
+.EE
+.UNINDENT
+.UNINDENT
+.SH IOCTLS
+.sp
+The following ioctls with operation specific for SCO sockets are
+available.
+.SS SIOCETHTOOL (since Linux 6.16\-rc1)
+.sp
+Supports only command \fIETHTOOL_GET_TS_INFO\fP, which may be used to
+query supported \fISOF_TIMESTAMPING_*\fP flags.  The
+\fISOF_TIMESTAMPING_OPT_*\fP flags are always available as applicable.
+.sp
+Example:
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+#include <linux/ethtool.h>
+#include <linux/sockios.h>
+#include <net/if.h>
+#include <sys/socket.h>
+#include <sys/ioctl.h>
+
+\&...
+
+struct ifreq ifr = {};
+struct ethtool_ts_info cmd = {};
+int sk;
+
+snprintf(ifr.ifr_name, sizeof(ifr.ifr_name), \(dqhci0\(dq);
+ifr.ifr_data = (void *)&cmd;
+cmd.cmd = ETHTOOL_GET_TS_INFO;
+
+sk = socket(PF_BLUETOOTH, SOCK_SEQPACKET, BTPROTO_SCO);
+if (sk < 0)
+    goto error;
+if (ioctl(sk, SIOCETHTOOL, &ifr))
+    goto error;
+
+sof_available = cmd.so_timestamping;
 .EE
 .UNINDENT
 .UNINDENT

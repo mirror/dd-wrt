@@ -19,8 +19,8 @@
 #include <string.h>
 #include <inttypes.h>
 
-#include "lib/bluetooth.h"
-#include "lib/uuid.h"
+#include "bluetooth/bluetooth.h"
+#include "bluetooth/uuid.h"
 
 #include "src/shared/util.h"
 #include "src/shared/queue.h"
@@ -733,6 +733,41 @@ static const struct {
         { }
 };
 
+static void lookup_option_by_type(uint8_t type, const char **str,
+				  uint8_t *expect_len)
+{
+	int i;
+
+	for (i = 0; options_table[i].str; i++) {
+		if (options_table[i].type == type) {
+			*str = options_table[i].str;
+			if (expect_len)
+				*expect_len = options_table[i].len;
+			return;
+		}
+	}
+
+	*str = "Unknown";
+	if (expect_len)
+		*expect_len = 0;
+}
+
+static void print_unknown_options(const struct l2cap_frame *source,
+				  uint8_t offset)
+{
+	struct l2cap_frame frame;
+	uint8_t type;
+
+	l2cap_frame_pull(&frame, source, offset);
+
+	while (l2cap_frame_get_u8(&frame, &type)) {
+		const char *str;
+
+		lookup_option_by_type(type, &str, NULL);
+		print_field("Option: %s (0x%2.2x)", str, type);
+	}
+}
+
 static void print_config_options(const struct l2cap_frame *frame,
 				uint8_t offset, uint16_t cid, bool response)
 {
@@ -741,20 +776,13 @@ static void print_config_options(const struct l2cap_frame *frame,
 	uint16_t consumed = 0;
 
 	while (consumed < size - 2) {
-		const char *str = "Unknown";
+		const char *str;
 		uint8_t type = data[consumed] & 0x7f;
 		uint8_t hint = data[consumed] & 0x80;
 		uint8_t len = data[consumed + 1];
 		uint8_t expect_len = 0;
-		int i;
 
-		for (i = 0; options_table[i].str; i++) {
-			if (options_table[i].type == type) {
-				str = options_table[i].str;
-				expect_len = options_table[i].len;
-				break;
-			}
-		}
+		lookup_option_by_type(type, &str, &expect_len);
 
 		print_field("Option: %s (0x%2.2x) [%s]", str, type,
 						hint ? "hint" : "mandatory");
@@ -1132,7 +1160,10 @@ static void sig_config_rsp(const struct l2cap_frame *frame)
 	print_cid("Source", pdu->scid);
 	print_config_flags(pdu->flags);
 	print_config_result(pdu->result);
-	print_config_options(frame, 6, le16_to_cpu(pdu->scid), true);
+	if (pdu->result == 0x0003)
+		print_unknown_options(frame, 6);
+	else
+		print_config_options(frame, 6, le16_to_cpu(pdu->scid), true);
 }
 
 static void sig_disconn_req(const struct l2cap_frame *frame)
@@ -1439,6 +1470,13 @@ static void print_ecred_reconf_result(uint16_t result)
 	case 0x0002:
 		str = "Reconfiguration failed - reduction in size of MPS not "
 			"allowed for more than one channel at a time";
+		break;
+	case 0x0003:
+		str = "Reconfiguration failed - one or more Destination CIDs "
+			"invalid ";
+		break;
+	case 0x0004:
+		str = "Reconfiguration failed - other unacceptable parameters";
 		break;
 	default:
 		str = "Reserved";
@@ -2283,7 +2321,7 @@ static void smp_pairing_confirm(const struct l2cap_frame *frame)
 {
 	const struct bt_l2cap_smp_pairing_confirm *pdu = frame->data;
 
-	print_hex_field("Confim value", pdu->value, 16);
+	print_hex_field("Confirm value", pdu->value, 16);
 }
 
 static void smp_pairing_random(const struct l2cap_frame *frame)

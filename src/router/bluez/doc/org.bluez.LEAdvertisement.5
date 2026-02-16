@@ -37,7 +37,7 @@ channels and available for all devices in range.  Because of the limited space
 available in LE Advertising packets, each packet\(aqs contents must be carefully
 controlled.
 .sp
-The service daemon acts as a store for the Advertisement Data which is meant to
+\fBbluetoothd(8)\fP acts as a store for the Advertisement Data which is meant to
 be sent. It constructs the correct Advertisement Data from the structured
 data and configured the kernel to send the correct advertisement.
 .SH INTERFACE
@@ -57,21 +57,21 @@ org.bluez.LEAdvertisement1
 .TP
 .B Object path
 freely definable
+.TP
+.B Used by
+\fBbluetoothctl\-advertise(1)\fP
 .UNINDENT
 .SS Methods
 .SS void Release() [noreply]
-.INDENT 0.0
-.INDENT 3.5
-This method gets called when the service daemon removes the
-Advertisement. A client can use it to do cleanup tasks. There is no
-need to call \fBUnregisterAdvertisement()\fP because when this method
-gets called it has already been unregistered.
-.UNINDENT
-.UNINDENT
+.sp
+This method gets called when the \fBbluetoothd(8)\fP removes the Advertisement.
+.sp
+A client can use it to do cleanup tasks. There is no need to call
+\fBUnregisterAdvertisement()\fP because when this method gets called it has
+already been unregistered.
 .SS Properties
 .SS string Type [readonly]
-.INDENT 0.0
-.INDENT 3.5
+.sp
 Determines the type of advertising packet requested.
 .sp
 Possible values:
@@ -81,41 +81,28 @@ Possible values:
 .TP
 .B \(dqperipheral\(dq
 .UNINDENT
-.UNINDENT
-.UNINDENT
 .SS array{string} ServiceUUIDs [readonly, optional]
-.INDENT 0.0
-.INDENT 3.5
-List of UUIDs to include in the \(dqService UUID\(dq field of the Advertising
-Data.
-.UNINDENT
-.UNINDENT
+.sp
+List of UUIDs to include in the \(dqService UUID\(dq field of the Advertising Data.
 .SS dict ManufacturerData [readonly, optional]
-.INDENT 0.0
-.INDENT 3.5
-Manufacturer Data fields to include in the Advertising Data.  Keys are
-the Manufacturer ID to associate with the data.
-.UNINDENT
-.UNINDENT
+.sp
+Manufacturer Data fields to include in the Advertising Data.
+.sp
+Keys are the Manufacturer ID to associate with the data.
 .SS array{string} SolicitUUIDs [readonly, optional]
-.INDENT 0.0
-.INDENT 3.5
-List of UUIDs to include in the \(dqService Solicitation\(dq field of the
-Advertising Data.
-.UNINDENT
-.UNINDENT
+.sp
+List of UUIDs to include in the \(dqService Solicitation\(dq field of the Advertising
+Data.
 .SS dict ServiceData [readonly, optional]
-.INDENT 0.0
-.INDENT 3.5
-Service Data elements to include in the Advertising Data. The keys
-are the UUID to associate with the data.
-.UNINDENT
-.UNINDENT
+.sp
+Service Data elements to include in the Advertising Data.
+.sp
+The keys are the UUID to associate with the data.
 .SS dict Data [readonly, optional]
-.INDENT 0.0
-.INDENT 3.5
-Advertising Data to include. Key is the advertising type and value is
-the data as byte array.
+.sp
+Advertising Data to include.
+.sp
+Key is the advertising type and value is the data as byte array.
 .sp
 Note: Types already handled by other properties shall not be used.
 .sp
@@ -131,112 +118,74 @@ Possible values:
 <Transport Discovery> <Organization Flags...>
 0x26                   0x01         0x01...
 .UNINDENT
-.UNINDENT
-.UNINDENT
 .SS array{string} ScanResponseServiceUUIDs [readonly, optional, experimental]
-.INDENT 0.0
-.INDENT 3.5
-List of UUIDs to include in the \(dqService UUID\(dq field of the Scan
-Response Data.
-.UNINDENT
-.UNINDENT
+.sp
+List of UUIDs to include in the \(dqService UUID\(dq field of the Scan Response Data.
 .SS dict ScanResponseManufacturerData [readonly, optional, experimental]
-.INDENT 0.0
-.INDENT 3.5
-Manufacturer Data fields to include in the Scan Response Data. Keys
-are the Manufacturer ID to associate with the data.
-.UNINDENT
-.UNINDENT
+.sp
+Manufacturer Data fields to include in the Scan Response Data.
+.sp
+Keys are the Manufacturer ID to associate with the data.
 .SS array{string} ScanResponseSolicitUUIDs [readonly, optional, experimental]
-.INDENT 0.0
-.INDENT 3.5
-List of UUIDs to include in the \(dqService Solicitation\(dq field of the
-Scan Response Data.
-.UNINDENT
-.UNINDENT
+.sp
+List of UUIDs to include in the \(dqService Solicitation\(dq field of the Scan
+Response Data.
 .SS dict ScanResponseServiceData [readonly, optional, experimental]
-.INDENT 0.0
-.INDENT 3.5
-Service Data elements to include in the Scan Response Data. The keys
-are the UUID to associate with the data.
-.UNINDENT
-.UNINDENT
+.sp
+Service Data elements to include in the Scan Response Data.
+.sp
+The keys are the UUID to associate with the data.
 .SS dict ScanResponseData [readonly, optional, experimental]
-.INDENT 0.0
-.INDENT 3.5
-Scan Response Data to include. Key is the advertising type and value is
-the data as byte array.
-.UNINDENT
-.UNINDENT
+.sp
+Scan Response Data to include.
+.sp
+Key is the advertising type and value is the data as byte array.
 .SS bool Discoverable [readonly, optional]
-.INDENT 0.0
-.INDENT 3.5
-Advertise as general discoverable. When present this will override
-adapter Discoverable property.
 .sp
-Note: This property shall not be set when \fBType\fP is set to
-\(dqbroadcast\(dq.
-.UNINDENT
-.UNINDENT
+Advertise as general discoverable. When present this will override adapter
+Discoverable property.
+.sp
+Note: This property shall not be set when \fBType\fP is set to \(dqbroadcast\(dq.
 .SS uint16 DiscoverableTimeout [readonly, optional]
-.INDENT 0.0
-.INDENT 3.5
-The discoverable timeout in seconds. A value of zero means that the
-timeout is disabled and it will stay in discoverable/limited mode
-forever.
 .sp
-Note: This property shall not be set when \fBType\fP is set to
-\(dqbroadcast\(dq.
-.UNINDENT
-.UNINDENT
+The discoverable timeout in seconds. A value of zero means that the timeout is
+disabled and it will stay in discoverable/limited mode forever.
+.sp
+Note: This property shall not be set when \fBType\fP is set to \(dqbroadcast\(dq.
 .SS array{string} Includes [readonly, optional]
-.INDENT 0.0
-.INDENT 3.5
+.sp
 List of features to be included in the advertising packet.
 .sp
 Possible values:
 .sp
-See \fBorg.bluez.LEAdvertisingManager(5)\fP \fBSupportedIncludes\fP
-property.
-.UNINDENT
-.UNINDENT
+See \fBorg.bluez.LEAdvertisingManager(5)\fP \fBSupportedIncludes\fP property.
 .SS string LocalName [readonly, optional]
-.INDENT 0.0
-.INDENT 3.5
-Local name to be used in the advertising report. If the string is too
-big to fit into the packet it will be truncated.
+.sp
+Local name to be used in the advertising report. If the string is too big to
+fit into the packet it will be truncated.
 .sp
 If this property is available \(aqlocal\-name\(aq cannot be present in the
 \fBIncludes\fP\&.
-.UNINDENT
-.UNINDENT
 .SS uint16 Appearance [readonly, optional]
-.INDENT 0.0
-.INDENT 3.5
+.sp
 Appearance to be used in the advertising report.
 .sp
 Possible values: as found on GAP Service.
-.UNINDENT
-.UNINDENT
-.SS uint16_t Duration [readonly, optional]
-.INDENT 0.0
-.INDENT 3.5
-Rotation duration of the advertisement in seconds. If there are other
-applications advertising no duration is set the default is 2 seconds.
-.UNINDENT
-.UNINDENT
-.SS uint16_t Timeout [readonly, optional]
-.INDENT 0.0
-.INDENT 3.5
-Timeout of the advertisement in seconds. This defines the lifetime of
-the advertisement.
-.UNINDENT
-.UNINDENT
+.SS uint16 Duration [readonly, optional]
+.sp
+Rotation duration of the advertisement in seconds.
+.sp
+If there are other applications advertising no duration is set the default is
+2 seconds.
+.SS uint16 Timeout [readonly, optional]
+.sp
+Timeout of the advertisement in seconds. This defines the lifetime of the
+advertisement.
 .SS string SecondaryChannel [readonly, optional]
-.INDENT 0.0
-.INDENT 3.5
-Secondary channel to be used. Primary channel is always set to \(dq1M\(dq
-except when \(dqCoded\(dq is set.
+.sp
+Secondary channel to be used.
+.sp
+Primary channel is always set to \(dq1M\(dq except when \(dqCoded\(dq is set.
 .sp
 Possible value:
 .INDENT 0.0
@@ -247,34 +196,29 @@ Possible value:
 .TP
 .B \(dqCoded\(dq
 .UNINDENT
-.UNINDENT
-.UNINDENT
 .SS uint32 MinInterval [readonly, optional]
-.INDENT 0.0
-.INDENT 3.5
-Minimum advertising interval to be used by the advertising set, in
-milliseconds. Acceptable values are in the range [20ms, 10,485s].
-If the provided MinInterval is larger than the provided MaxInterval,
-the registration will return failure.
-.UNINDENT
-.UNINDENT
-.SS uint32 MaxInterval [readonly, optional]
-.INDENT 0.0
-.INDENT 3.5
-Maximum advertising interval to be used by the advertising set, in
-milliseconds. Acceptable values are in the range [20ms, 10,485s]. If the
-provided MinInterval is larger than the provided MaxInterval, the
+.sp
+Minimum advertising interval to be used by the advertising set, in milliseconds.
+.sp
+Acceptable values are in the range [20ms, 10,485s].
+.sp
+If the provided MinInterval is larger than the provided MaxInterval, the
 registration will return failure.
-.UNINDENT
-.UNINDENT
+.SS uint32 MaxInterval [readonly, optional]
+.sp
+Maximum advertising interval to be used by the advertising set, in milliseconds.
+.sp
+Acceptable values are in the range [20ms, 10,485s].
+.sp
+If the provided MinInterval is larger than the provided MaxInterval, the
+registration will return failure.
 .SS int16 TxPower [readonly, optional]
-.INDENT 0.0
-.INDENT 3.5
-Requested transmission power of this advertising set. The provided value
-is used only if the \(dqCanSetTxPower\(dq feature is enabled on the
-\fBorg.bluez.LEAdvertisingManager(5)\fP\&. The provided value must be in
-range [\-127 to +20], where units are in dBm.
-.UNINDENT
-.UNINDENT
+.sp
+Requested transmission power of this advertising set.
+.sp
+The provided value is used only if the \(dqCanSetTxPower\(dq feature is enabled on the
+\fBorg.bluez.LEAdvertisingManager(5)\fP\&.
+.sp
+Values must be in range [\-127 to +20], where units are in dBm.
 .\" Generated by docutils manpage writer.
 .

@@ -42,17 +42,18 @@ org.bluez.MediaFolder1
 .TP
 .B Object path
 freely definable (Target role)
-[variable prefix]/{hci0,hci1,...}/dev_XX_XX_XX_XX_XX_XX/playerX
-(Controller role)
+[variable prefix]/{hci0,hci1,...}/dev_{BDRADDR}/player# (Controller role)
+.TP
+.B Used by
+\fBbluetoothctl\-player(1)\fP
 .UNINDENT
 .SS Methods
 .SS object Search(string value, dict filter)
-.INDENT 0.0
-.INDENT 3.5
+.sp
 Return a folder object containing the search result.
 .sp
 To list the items found use the folder object returned and pass to
-ChangeFolder.
+\fBChangeFolder\fP\&.
 .sp
 Possible Errors:
 .INDENT 0.0
@@ -61,11 +62,15 @@ Possible Errors:
 .TP
 .B org.bluez.Error.Failed
 .UNINDENT
-.UNINDENT
+.sp
+Examples:
+.INDENT 0.0
+.TP
+.B bluetoothctl
+[player] > search <string>
 .UNINDENT
 .SS array{objects, properties} ListItems(dict filter)
-.INDENT 0.0
-.INDENT 3.5
+.sp
 Return a list of items found
 .sp
 Possible Errors:
@@ -77,16 +82,20 @@ Possible Errors:
 .TP
 .B org.bluez.Error.Failed
 .UNINDENT
-.UNINDENT
+.sp
+Examples:
+.INDENT 0.0
+.TP
+.B bluetoothctl
+[player] > list\-items [start] [end]
 .UNINDENT
 .SS void ChangeFolder(object folder)
-.INDENT 0.0
-.INDENT 3.5
+.sp
 Change current folder.
 .sp
-Note: By changing folder the items of previous folder might be destroyed
-and have to be listed again, the exception is NowPlaying folder which
-should be always present while the player is active.
+Note: By changing folder the items of previous folder might be destroyed and
+have to be listed again, the exception is NowPlaying folder which should be
+always present while the player is active.
 .sp
 Possible Errors:
 .INDENT 0.0
@@ -97,18 +106,19 @@ Possible Errors:
 .TP
 .B org.bluez.Error.Failed
 .UNINDENT
-.UNINDENT
+.sp
+Examples:
+.INDENT 0.0
+.TP
+.B bluetoothctl
+[player] > change\-folder <item>
 .UNINDENT
 .SS Properties
 .SS uint32 NumberOfItems [readonly]
-.INDENT 0.0
-.INDENT 3.5
+.sp
 Number of items in the folder
-.UNINDENT
-.UNINDENT
 .SS string Name [readonly]
-.INDENT 0.0
-.INDENT 3.5
+.sp
 Folder name:
 .sp
 Possible values:
@@ -121,11 +131,9 @@ Filesystem scope
 NowPlaying scope
 .UNINDENT
 .sp
-Note: /NowPlaying folder might not be listed if player is stopped,
-folders created by Search are virtual so once another Search is perform
-or the folder is changed using ChangeFolder it will no longer be listed.
-.UNINDENT
-.UNINDENT
+Note: /NowPlaying folder might not be listed if player is stopped, folders
+created by Search are virtual so once another Search is perform or the folder is
+changed using ChangeFolder it will no longer be listed.
 .SS Filters
 .INDENT 0.0
 .TP

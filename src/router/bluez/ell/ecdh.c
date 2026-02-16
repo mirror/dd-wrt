@@ -50,9 +50,8 @@ LIB_EXPORT bool l_ecdh_generate_key_pair(const struct l_ecc_curve *curve,
 	*out_public = l_ecc_point_new(curve);
 
 	while (!compliant && iter++ < ECDH_MAX_ITERATIONS) {
+		/* aborts if no valid private key can be generated */
 		*out_private = l_ecc_scalar_new_random(curve);
-		if (!*out_private)
-			continue;
 
 		_ecc_point_mult(*out_public, &curve->g, (*out_private)->c,
 					NULL, curve->p);
@@ -88,9 +87,8 @@ LIB_EXPORT bool l_ecdh_generate_shared_secret(
 	if (unlikely(!private_key || !other_public || !secret))
 		return false;
 
+	/* aborts if no valid scalar can be generated */
 	z = l_ecc_scalar_new_random(curve);
-	if (!z)
-		return false;
 
 	product = l_ecc_point_new(curve);
 

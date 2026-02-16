@@ -29,15 +29,15 @@
 #include <wordexp.h>
 #include <ctype.h>
 
-#include "lib/bluetooth.h"
-#include "lib/hci.h"
-#include "lib/hci_lib.h"
-#include "lib/sdp.h"
-#include "lib/sdp_lib.h"
-#include "lib/uuid.h"
+#include "bluetooth/bluetooth.h"
+#include "bluetooth/hci.h"
+#include "bluetooth/hci_lib.h"
+#include "bluetooth/sdp.h"
+#include "bluetooth/sdp_lib.h"
+#include "bluetooth/uuid.h"
 
 #include "src/uuid-helper.h"
-#include "lib/mgmt.h"
+#include "bluetooth/mgmt.h"
 
 #include "src/shared/mainloop.h"
 #include "src/shared/io.h"
@@ -70,6 +70,8 @@ static int pending_index = 0;
 #ifndef MIN
 #define MIN(x, y) ((x) < (y) ? (x) : (y))
 #endif
+
+static void mgmt_menu_pre_run(const struct bt_shell_menu *menu);
 
 #define PROMPT_ON	COLOR_BLUE "[mgmt]" COLOR_OFF "> "
 
@@ -316,9 +318,17 @@ static const char *options2str(uint32_t options)
 	str[0] = '\0';
 
 	for (i = 0; i < NELEM(options_str); i++) {
-		if ((options & (1 << i)) != 0)
-			off += snprintf(str + off, sizeof(str) - off, "%s ",
+		if ((options & (1 << i)) != 0) {
+			int n = snprintf(str + off, sizeof(str) - off, "%s ",
 							options_str[i]);
+
+			if (n < 0 || n >= (int)(sizeof(str) - off)) {
+				str[off] = '\0';
+				break;
+			}
+
+			off += n;
+		}
 	}
 
 	return str;
@@ -359,7 +369,10 @@ static const char *settings_str[] = {
 				"cis-central",
 				"cis-peripheral",
 				"iso-broadcaster",
-				"sync-receiver"
+				"sync-receiver",
+				"ll-privacy",
+				"past-sender",
+				"past-receiver"
 };
 
 static const char *settings2str(uint32_t settings)
@@ -372,9 +385,17 @@ static const char *settings2str(uint32_t settings)
 	str[0] = '\0';
 
 	for (i = 0; i < NELEM(settings_str); i++) {
-		if ((settings & (1 << i)) != 0)
-			off += snprintf(str + off, sizeof(str) - off, "%s ",
+		if ((settings & (1 << i)) != 0) {
+			int n = snprintf(str + off, sizeof(str) - off, "%s ",
 							settings_str[i]);
+
+			if (n < 0 || n >= (int)(sizeof(str) - off)) {
+				str[off] = '\0';
+				break;
+			}
+
+			off += n;
+		}
 	}
 
 	return str;
@@ -571,7 +592,7 @@ static void confirm_name_rsp(uint8_t status, uint16_t len,
 
 static char *eir_get_name(const uint8_t *eir, uint16_t eir_len)
 {
-	uint8_t parsed = 0;
+	uint16_t parsed = 0;
 
 	if (eir_len < 2)
 		return NULL;
@@ -599,7 +620,7 @@ static char *eir_get_name(const uint8_t *eir, uint16_t eir_len)
 
 static unsigned int eir_get_flags(const uint8_t *eir, uint16_t eir_len)
 {
-	uint8_t parsed = 0;
+	uint16_t parsed = 0;
 
 	if (eir_len < 2)
 		return 0;
@@ -1681,7 +1702,10 @@ static void exp_info_rsp(uint8_t status, uint16_t len, const void *param,
 							void *user_data)
 {
 	const struct mgmt_rp_read_exp_features_info *rp = param;
-	uint16_t index = PTR_TO_UINT(user_data);
+	uint16_t index = PTR_TO_UINT(user_data), i;
+	uint128_t uuid_be;
+	char uuidstr[40];
+	bt_uuid_t uuid;
 
 	if (status != 0) {
 		error("Reading hci%u exp features failed with status 0x%02x (%s)",
@@ -1702,6 +1726,14 @@ static void exp_info_rsp(uint8_t status, uint16_t len, const void *param,
 	print("\tNumber of experimental features: %u",
 					le16_to_cpu(rp->feature_count));
 
+	uuid.type = BT_UUID128;
+	for (i = 0; i < le16_to_cpu(rp->feature_count); i++) {
+		memcpy(&uuid_be, &rp->features[i].uuid, sizeof(uint128_t));
+		ntoh128(&uuid_be, &uuid.value.u128);
+		bt_uuid_to_string(&uuid, uuidstr, sizeof(uuidstr));
+
+		print("\t%s (flags 0x%04x)", uuidstr, rp->features[i].flags);
+	}
 done:
 	pending_index--;
 
@@ -4225,7 +4257,7 @@ static void clock_info_rsp(uint8_t status, uint16_t len, const void *param,
 
 	print("Local Clock:   %u", le32_to_cpu(rp->local_clock));
 	print("Piconet Clock: %u", le32_to_cpu(rp->piconet_clock));
-	print("Accurary:      %u", le16_to_cpu(rp->accuracy));
+	print("Accuracy:      %u", le16_to_cpu(rp->accuracy));
 
 	bt_shell_noninteractive_quit(EXIT_SUCCESS);
 }
@@ -4490,9 +4522,17 @@ static const char *adv_flags2str(uint32_t flags)
 	str[0] = '\0';
 
 	for (i = 0; i < NELEM(adv_flags_str); i++) {
-		if ((flags & (1 << i)) != 0)
-			off += snprintf(str + off, sizeof(str) - off, "%s ",
+		if ((flags & (1 << i)) != 0) {
+			int n = snprintf(str + off, sizeof(str) - off, "%s ",
 							adv_flags_str[i]);
+
+			if (n < 0 || n >= (int)(sizeof(str) - off)) {
+				str[off] = '\0';
+				break;
+			}
+
+			off += n;
+		}
 	}
 
 	return str;
@@ -5429,9 +5469,17 @@ static const char *phys2str(uint32_t phys)
 	str[0] = '\0';
 
 	for (i = 0; i < NELEM(phys_str); i++) {
-		if ((phys & (1 << i)) != 0)
-			off += snprintf(str + off, sizeof(str) - off, "%s ",
+		if ((phys & (1 << i)) != 0) {
+			int n = snprintf(str + off, sizeof(str) - off, "%s ",
 							phys_str[i]);
+
+			if (n < 0 || n >= (int)(sizeof(str) - off)) {
+				str[off] = '\0';
+				break;
+			}
+
+			off += n;
+		}
 	}
 
 	return str;
@@ -5966,6 +6014,7 @@ static const struct bt_shell_menu monitor_menu = {
 static const struct bt_shell_menu mgmt_menu = {
 	.name = "mgmt",
 	.desc = "Management Submenu",
+	.pre_run = mgmt_menu_pre_run,
 	.entries = {
 	{ "select",		"<index>",
 		cmd_select,		"Select a different index"	},
@@ -5998,7 +6047,7 @@ static const struct bt_shell_menu mgmt_menu = {
 	{ "ssp",		"<on/off>",
 		cmd_ssp,		"Toggle SSP mode"		},
 	{ "sc",			"<on/off/only>",
-		cmd_sc,			"Toogle SC support"		},
+		cmd_sc,			"Toggle SC support"		},
 	{ "hs",			"<on/off>",
 		cmd_hs,			"Toggle HS support"		},
 	{ "le",			"<on/off>",
@@ -6060,7 +6109,7 @@ static const struct bt_shell_menu mgmt_menu = {
 	{ "ext-config",		"<on/off>",
 		cmd_ext_config,		"External configuration"	},
 	{ "debug-keys",		"<on/off>",
-		cmd_debug_keys,		"Toogle debug keys"		},
+		cmd_debug_keys,		"Toggle debug keys"		},
 	{ "conn-info",		"[-t type] <remote address>",
 		cmd_conn_info,		"Get connection information"	},
 	{ "io-cap",		"<cap>",
@@ -6137,23 +6186,24 @@ static void mgmt_debug(const char *str, void *user_data)
 	print("%s%s", prefix, str);
 }
 
-bool mgmt_add_submenu(void)
+void mgmt_add_submenu(void)
+{
+	bt_shell_add_submenu(&mgmt_menu);
+	bt_shell_add_submenu(&monitor_menu);
+}
+
+static void mgmt_menu_pre_run(const struct bt_shell_menu *menu)
 {
 	mgmt = mgmt_new_default();
 	if (!mgmt) {
 		fprintf(stderr, "Unable to open mgmt_socket\n");
-		return false;
+		return;
 	}
-
-	bt_shell_add_submenu(&mgmt_menu);
-	bt_shell_add_submenu(&monitor_menu);
 
 	if (getenv("MGMT_DEBUG"))
 		mgmt_set_debug(mgmt, mgmt_debug, "mgmt: ", NULL);
 
 	register_mgmt_callbacks(mgmt, mgmt_index);
-
-	return true;
 }
 
 void mgmt_remove_submenu(void)

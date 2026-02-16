@@ -27,9 +27,9 @@
 
 #include "btio/btio.h"
 #include "gdbus/gdbus.h"
-#include "lib/bluetooth.h"
-#include "lib/l2cap.h"
-#include "lib/uuid.h"
+#include "bluetooth/bluetooth.h"
+#include "bluetooth/l2cap.h"
+#include "bluetooth/uuid.h"
 
 #include "src/dbus-common.h"
 #include "src/adapter.h"
@@ -89,6 +89,11 @@ static void connect_cb(GIOChannel *io, GError *err, gpointer user_data)
 	struct bt_asha_device *asha_dev = conn_data->asha_dev;
 	GError *gerr = NULL;
 
+	if (err) {
+		error("%s", err->message);
+		return;
+	}
+
 	if (!bt_io_get(io, &gerr,
 				BT_IO_OPT_IMTU, &asha_dev->imtu,
 				BT_IO_OPT_OMTU, &asha_dev->omtu,
@@ -96,7 +101,7 @@ static void connect_cb(GIOChannel *io, GError *err, gpointer user_data)
 		/* Let this be non-fatal? */
 		asha_dev->omtu = ASHA_MIN_MTU;
 		asha_dev->imtu = ASHA_CONNECTION_MTU;
-		error("Could not get L2CAP CoC socket MTU: %s", err->message);
+		error("Could not get L2CAP CoC socket MTU: %s", gerr->message);
 		g_error_free(gerr);
 	}
 
@@ -170,10 +175,9 @@ unsigned int bt_asha_device_start(struct bt_asha_device *asha_dev,
 		return (++asha_dev->resume_id);
 }
 
-unsigned int bt_asha_device_stop(struct bt_asha_device *asha_dev,
-					bt_asha_cb_t cb, void *user_data)
+unsigned int bt_asha_device_stop(struct bt_asha_device *asha_dev)
 {
-	bt_asha_stop(asha_dev->asha, cb, user_data);
+	bt_asha_stop(asha_dev->asha);
 
 	if (asha_dev->io) {
 		g_io_channel_shutdown(asha_dev->io, TRUE, NULL);
@@ -363,7 +367,7 @@ static void asha_source_device_remove(struct btd_service *service)
 	asha_dev = btd_service_get_user_data(service);
 	if (!asha_dev) {
 		/* Can this actually happen? */
-		DBG("Not handlihng ASHA profile");
+		DBG("Not handling ASHA profile");
 		return;
 	}
 
@@ -458,10 +462,11 @@ static int asha_source_accept(struct btd_service *service)
 		return -1;
 	}
 
-	if (!bt_asha_probe(asha_dev->asha, db, client))
+	if (!bt_asha_attach(asha_dev->asha, db, client,
+			(bt_asha_attach_cb_t) asha_source_endpoint_register,
+			asha_dev)) {
 		return -1;
-
-	asha_source_endpoint_register(asha_dev);
+	}
 
 	btd_service_connecting_complete(service, 0);
 
@@ -479,7 +484,7 @@ static int asha_source_disconnect(struct btd_service *service)
 
 	if (!asha_dev) {
 		/* Can this actually happen? */
-		DBG("Not handlihng ASHA profile");
+		DBG("Not handling ASHA profile");
 		return -1;
 	}
 
@@ -494,6 +499,7 @@ static int asha_source_disconnect(struct btd_service *service)
 static struct btd_profile asha_source_profile = {
 	.name		= "asha-source",
 	.priority	= BTD_PROFILE_PRIORITY_MEDIUM,
+	.bearer		= BTD_PROFILE_BEARER_LE,
 	.remote_uuid	= ASHA_PROFILE_UUID,
 	.experimental	= true,
 

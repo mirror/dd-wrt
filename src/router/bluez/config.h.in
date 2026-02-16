@@ -1,8 +1,5 @@
 /* config.h.in.  Generated from configure.ac by autoheader.  */
 
-/* Directory for the Android daemon storage files */
-#undef ANDROID_STORAGEDIR
-
 /* Directory for the configuration files */
 #undef CONFIGDIR
 
@@ -42,6 +39,12 @@
 /* Define to 1 if you have the 'getrandom' function. */
 #undef HAVE_GETRANDOM
 
+/* Define to 1 if you have GMAP support. */
+#undef HAVE_GMAP
+
+/* Define to 1 if you have HFP support. */
+#undef HAVE_HFP
+
 /* Define to 1 if you have the <inttypes.h> header file. */
 #undef HAVE_INTTYPES_H
 
@@ -72,6 +75,9 @@
 /* Define to 1 if you have the <readline/readline.h> header file. */
 #undef HAVE_READLINE_READLINE_H
 
+/* Define to 1 if you have the <stdarg.h> header file. */
+#undef HAVE_STDARG_H
+
 /* Define to 1 if you have the <stdint.h> header file. */
 #undef HAVE_STDINT_H
 
@@ -96,6 +102,9 @@
 /* Define to 1 if you have the <sys/types.h> header file. */
 #undef HAVE_SYS_TYPES_H
 
+/* Define to 1 if you have TMAP support. */
+#undef HAVE_TMAP
+
 /* Define to 1 if udev is required */
 #undef HAVE_UDEV
 
@@ -105,14 +114,14 @@
 /* Define to 1 if you have the <valgrind/memcheck.h> header file. */
 #undef HAVE_VALGRIND_MEMCHECK_H
 
+/* Define to 1 if you have VCP support. */
+#undef HAVE_VCP
+
 /* Define to the sub-directory where libtool stores uninstalled libraries. */
 #undef LT_OBJDIR
 
 /* Directory for the mesh daemon storage files */
 #undef MESH_STORAGEDIR
-
-/* Define if threading support is required */
-#undef NEED_THREADS
 
 /* Name of package */
 #undef PACKAGE

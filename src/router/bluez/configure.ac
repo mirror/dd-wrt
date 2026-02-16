@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: GPL-2.0
 AC_PREREQ(2.60)
-AC_INIT(bluez, 5.82)
+AC_INIT(bluez, 5.86)
 
 AM_INIT_AUTOMAKE([foreign subdir-objects color-tests silent-rules
 					tar-pax no-dist-gzip dist-xz])
@@ -70,7 +70,8 @@ AC_CHECK_LIB(pthread, pthread_create, dummy=yes,
 AC_CHECK_LIB(dl, dlopen, dummy=yes,
 			AC_MSG_ERROR(dynamic linking loader is required))
 
-AC_CHECK_HEADERS(stdio.h string.h linux/types.h linux/if_alg.h linux/uinput.h linux/uhid.h sys/random.h)
+AC_CHECK_HEADERS(stdarg.h stdio.h string.h linux/types.h linux/if_alg.h \
+			linux/uinput.h linux/uhid.h sys/random.h)
 
 # basename may be only available in libgen.h with the POSIX behavior,
 # not desired here
@@ -81,15 +82,7 @@ AC_CHECK_DECLS([basename], [],
 				 ])
 
 
-PKG_CHECK_MODULES(GLIB, glib-2.0 >= 2.28)
-
-if (test "${enable_threads}" = "yes"); then
-	AC_DEFINE(NEED_THREADS, 1, [Define if threading support is required])
-	PKG_CHECK_MODULES(GTHREAD, gthread-2.0 >= 2.16)
-	GLIB_CFLAGS="$GLIB_CFLAGS $GTHREAD_CFLAGS"
-	GLIB_LIBS="$GLIB_LIBS $GTHREAD_LIBS"
-fi
-
+PKG_CHECK_MODULES(GLIB, glib-2.0 >= 2.36)
 PKG_CHECK_MODULES(DBUS, dbus-1 >= 1.10)
 
 AC_ARG_WITH([dbusconfdir], AS_HELP_STRING([--with-dbusconfdir=DIR],
@@ -166,12 +159,8 @@ AC_ARG_ENABLE(test, AS_HELP_STRING([--enable-test],
 AM_CONDITIONAL(TEST, test "${enable_test}" = "yes")
 
 AC_ARG_ENABLE(nfc, AS_HELP_STRING([--enable-nfc],
-		[enable NFC paring]), [enable_nfc=${enableval}])
+		[enable NFC pairing]), [enable_nfc=${enableval}])
 AM_CONDITIONAL(NFC, test "${enable_nfc}" = "yes")
-
-AC_ARG_ENABLE(sap, AS_HELP_STRING([--enable-sap],
-		[enable SAP profile]), [enable_sap=${enableval}])
-AM_CONDITIONAL(SAP, test "${enable_sap}" = "yes")
 
 AC_ARG_ENABLE(a2dp, AS_HELP_STRING([--disable-a2dp],
 		[disable A2DP profile]), [enable_a2dp=${enableval}])
@@ -199,10 +188,6 @@ AC_ARG_ENABLE(hog, AS_HELP_STRING([--disable-hog],
 		[disable HoG profile]), [enable_hog=${enableval}])
 AM_CONDITIONAL(HOG, test "${enable_hog}" != "no")
 
-AC_ARG_ENABLE(health, AS_HELP_STRING([--enable-health],
-		[enable health profiles]), [enable_health=${enableval}])
-AM_CONDITIONAL(HEALTH, test "${enable_health}" = "yes")
-
 AC_ARG_ENABLE(bap, AS_HELP_STRING([--disable-bap],
 		[disable BAP profile]), [enable_bap=${enableval}])
 AM_CONDITIONAL(BAP, test "${enable_bap}" != "no")
@@ -222,6 +207,9 @@ AM_CONDITIONAL(CCP, test "${enable_ccp}" != "no")
 AC_ARG_ENABLE(vcp, AS_HELP_STRING([--disable-vcp],
 		[disable VCP profile]), [enable_vcp=${enableval}])
 AM_CONDITIONAL(VCP, test "${enable_vcp}" != "no")
+if test "${enable_vcp}" != "no"; then
+	AC_DEFINE(HAVE_VCP, 1, [Define to 1 if you have VCP support.])
+fi
 
 AC_ARG_ENABLE(micp, AS_HELP_STRING([--disable-micp],
 		[disable MICP profile]), [enable_micp=${enableval}])
@@ -231,11 +219,32 @@ AC_ARG_ENABLE(csip, AS_HELP_STRING([--disable-csip],
 		[disable CSIP profile]), [enable_csip=${enableval}])
 AM_CONDITIONAL(CSIP, test "${enable_csip}" != "no")
 
+AC_ARG_ENABLE(tmap, AS_HELP_STRING([--disable-tmap],
+		[disable TMAP profile]), [enable_tmap=${enableval}])
+AM_CONDITIONAL(TMAP, test "${enable_tmap}" != "no")
+if test "${enable_tmap}" != "no"; then
+	AC_DEFINE(HAVE_TMAP, 1, [Define to 1 if you have TMAP support.])
+fi
+
+AC_ARG_ENABLE(gmap, AS_HELP_STRING([--disable-gmap],
+		[disable GMAP profile]), [enable_gmap=${enableval}])
+AM_CONDITIONAL(GMAP, test "${enable_gmap}" != "no")
+if test "${enable_gmap}" != "no"; then
+	AC_DEFINE(HAVE_GMAP, 1, [Define to 1 if you have GMAP support.])
+fi
+
 AC_ARG_ENABLE(asha, AS_HELP_STRING([--disable-asha],
 		[disable ASHA support]), [enable_asha=${enableval}])
 AM_CONDITIONAL(ASHA, test "${enable_asha}" != "no")
 if test "${enable_asha}" != "no"; then
 	AC_DEFINE(HAVE_ASHA, 1, [Define to 1 if you have ASHA support.])
+fi
+
+AC_ARG_ENABLE(hfp, AS_HELP_STRING([--disable-hfp],
+		[disable HFP support]), [enable_hfp=${enableval}])
+AM_CONDITIONAL(HFP, test "${enable_hfp}" != "no")
+if test "${enable_hfp}" != "no"; then
+	AC_DEFINE(HAVE_HFP, 1, [Define to 1 if you have HFP support.])
 fi
 
 AC_ARG_ENABLE(tools, AS_HELP_STRING([--disable-tools],
@@ -486,22 +495,6 @@ AC_DEFINE_UNQUOTED(MESH_STORAGEDIR, "${storagedir}/mesh",
 			[Directory for the mesh daemon storage files])
 AC_SUBST(MESH_STORAGEDIR, "${storagedir}/mesh")
 
-AC_ARG_ENABLE(android, AS_HELP_STRING([--enable-android],
-			[enable BlueZ for Android]),
-					[enable_android=${enableval}])
-AM_CONDITIONAL(ANDROID, test "${enable_android}" = "yes")
-
-if (test "${enable_android}" = "yes"); then
-	PKG_CHECK_MODULES(SBC, sbc >= 1.2)
-fi
-
-if (test "${enable_android}" = "yes"); then
-	PKG_CHECK_MODULES(SPEEXDSP, speexdsp >= 1.2)
-fi
-
-AC_DEFINE_UNQUOTED(ANDROID_STORAGEDIR, "${storagedir}/android",
-			[Directory for the Android daemon storage files])
-
 AC_ARG_WITH([phonebook], AS_HELP_STRING([--with-phonebook=PLUGIN],
 			[obexd phonebook plugin (default=dummy)]),
 			[plugin_phonebook=${withval}])
@@ -518,11 +511,11 @@ AC_SUBST(PLUGIN_PHONEBOOK, [${plugin_phonebook}])
 AC_CONFIG_FILES(
 	lib/bluez.pc
 	Makefile
-	mesh/bluetooth-meshd.rst
+	doc/bluetooth-meshd.rst
 	mesh/bluetooth-mesh.service
 	obexd/src/obex.service
 	obexd/src/org.bluez.obex.service
-	src/bluetoothd.rst
+	doc/bluetoothd.rst
 	src/bluetooth.service
 	tools/bluetooth-logger.service
 	tools/mpris-proxy.service

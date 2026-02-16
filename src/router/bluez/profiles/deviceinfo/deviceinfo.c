@@ -17,9 +17,9 @@
 
 #include <glib.h>
 
-#include "lib/bluetooth.h"
-#include "lib/sdp.h"
-#include "lib/uuid.h"
+#include "bluetooth/bluetooth.h"
+#include "bluetooth/sdp.h"
+#include "bluetooth/uuid.h"
 
 #include "src/plugin.h"
 #include "src/adapter.h"
@@ -137,6 +137,7 @@ static int deviceinfo_disconnect(struct btd_service *service)
 
 static struct btd_profile deviceinfo_profile = {
 	.name		= "deviceinfo",
+	.bearer		= BTD_PROFILE_BEARER_LE,
 	.remote_uuid	= DEVICE_INFORMATION_UUID,
 	.device_probe	= deviceinfo_probe,
 	.device_remove	= deviceinfo_remove,

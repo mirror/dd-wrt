@@ -33,7 +33,7 @@
 #include "bluetooth/bluetooth.h"
 #include "bluetooth/sdp.h"
 #include "bluetooth/sdp_lib.h"
-#include "lib/uuid.h"
+#include "bluetooth/uuid.h"
 
 #include "gdbus/gdbus.h"
 
@@ -1324,7 +1324,7 @@ static uint8_t avrcp_handle_get_current_player_value(struct avrcp *session,
 	len = 0;
 
 	/*
-	 * From sec. 5.7 of AVRCP 1.3 spec, we should igore non-existent IDs
+	 * From sec. 5.7 of AVRCP 1.3 spec, we should ignore non-existent IDs
 	 * and send a response with the existent ones. Only if all IDs are
 	 * non-existent we should send an error.
 	 */
@@ -1376,7 +1376,7 @@ static uint8_t avrcp_handle_set_player_value(struct avrcp *session,
 		goto err;
 
 	/*
-	 * From sec. 5.7 of AVRCP 1.3 spec, we should igore non-existent IDs
+	 * From sec. 5.7 of AVRCP 1.3 spec, we should ignore non-existent IDs
 	 * and set the existent ones. Sec. 5.2.4 is not clear however how to
 	 * indicate that a certain ID was not accepted. If at least one
 	 * attribute is valid, we respond with no parameters. Otherwise an
@@ -1672,7 +1672,7 @@ static uint8_t avrcp_handle_register_notification(struct avrcp *session,
 		len = 1;
 		break;
 	case AVRCP_EVENT_VOLUME_CHANGED:
-		volume = media_transport_get_device_volume(dev);
+		volume = media_transport_get_a2dp_volume(dev);
 		if (volume < 0)
 			goto err;
 
@@ -1795,7 +1795,7 @@ static uint8_t avrcp_handle_set_absolute_volume(struct avrcp *session,
 
 	volume = pdu->params[0] = pdu->params[0] & 0x7F;
 
-	media_transport_update_device_volume(session->dev, volume);
+	media_transport_set_a2dp_volume(session->dev, volume);
 
 	return AVC_CTYPE_ACCEPTED;
 
@@ -2595,8 +2595,10 @@ static struct media_item *parse_media_element(struct avrcp *session,
 	memset(name, 0, sizeof(name));
 	namesize = get_be16(&operands[11]);
 	namelen = MIN(namesize, sizeof(name) - 1);
-	if (namelen > 0)
+	if (namelen > 0) {
 		memcpy(name, &operands[13], namelen);
+		strtoutf8(name, namelen);
+	}
 
 	count = operands[13 + namesize];
 
@@ -2659,6 +2661,7 @@ static gboolean avrcp_list_items_rsp(struct avctp *conn, uint8_t *operands,
 	struct pending_list_items *p = player->p;
 	uint16_t count;
 	uint64_t items;
+	uint64_t new_items = 0;
 	size_t i;
 	int err = 0;
 
@@ -2713,8 +2716,10 @@ static gboolean avrcp_list_items_rsp(struct avctp *conn, uint8_t *operands,
 		else
 			item = parse_media_folder(session, &operands[i], len);
 
-		if (item)
+		if (item) {
 			p->items = g_slist_append(p->items, item);
+			new_items++;
+		}
 
 		i += len;
 	}
@@ -2724,7 +2729,7 @@ static gboolean avrcp_list_items_rsp(struct avctp *conn, uint8_t *operands,
 	DBG("start %u end %u items %" PRIu64 " total %" PRIu64 "", p->start,
 						p->end, items, p->total);
 
-	if (items < p->total) {
+	if (new_items > 0 && items < p->total) {
 		avrcp_list_items(session, p->start + items, p->end);
 		return FALSE;
 	}
@@ -3060,8 +3065,14 @@ static void set_ct_player(struct avrcp *session, struct avrcp_player *player)
 	if (session->controller->player == player)
 		goto done;
 
-	session->controller->player = player;
 	service = btd_device_get_service(session->dev, AVRCP_TARGET_UUID);
+
+	if (service == NULL) {
+		error("Unable to find btd service");
+		return;
+	}
+
+	session->controller->player = player;
 	control_set_player(service, player ?
 			media_player_get_path(player->user_data) : NULL);
 
@@ -3577,7 +3588,7 @@ static struct avrcp_player *create_ct_player(struct avrcp *session,
 
 	path = device_get_path(session->dev);
 
-	mp = media_player_controller_create(path, id);
+	mp = media_player_controller_create(path, "avrcp", id);
 	if (mp == NULL) {
 		g_free(player);
 		return NULL;
@@ -3788,7 +3799,6 @@ static void avrcp_get_media_player_list(struct avrcp *session)
 static void avrcp_volume_changed(struct avrcp *session,
 						struct avrcp_header *pdu)
 {
-	struct avrcp_player *player = target_get_player(session);
 	int8_t volume;
 
 	if (!avrcp_volume_supported(session->controller)) {
@@ -3799,10 +3809,7 @@ static void avrcp_volume_changed(struct avrcp *session,
 	volume = pdu->params[1] & 0x7F;
 
 	/* Always attempt to update the transport volume */
-	media_transport_update_device_volume(session->dev, volume);
-
-	if (player)
-		player->cb->set_volume(volume, session->dev, player->user_data);
+	media_transport_set_a2dp_volume(session->dev, volume);
 }
 
 static void avrcp_status_changed(struct avrcp *session,
@@ -3878,6 +3885,15 @@ static void avrcp_now_playing_changed(struct avrcp *session,
 	struct media_player *mp = player->user_data;
 
 	DBG("NowPlaying changed");
+
+	/* reset the list_items operation, if it is in progress or else we will
+	 * crash because _clear_playlist() frees the items
+	 */
+	if (player->p) {
+		g_slist_free(player->p->items);
+		g_free(player->p);
+		player->p = NULL;
+	}
 
 	media_player_clear_playlist(mp);
 }
@@ -4247,12 +4263,18 @@ static void target_init(struct avrcp *session)
 	if (session->target != NULL)
 		return;
 
+	service = btd_device_get_service(session->dev, AVRCP_REMOTE_UUID);
+
+	if (service == NULL) {
+		error("Unable to find btd service");
+		return;
+	}
+
 	target = data_init(session, AVRCP_REMOTE_UUID);
 	session->target = target;
 
 	DBG("%p version 0x%04x", target, target->version);
 
-	service = btd_device_get_service(session->dev, AVRCP_REMOTE_UUID);
 	btd_service_connecting_complete(service, 0);
 
 	player = g_slist_nth_data(server->players, 0);
@@ -4261,8 +4283,8 @@ static void target_init(struct avrcp *session)
 		target->player = player;
 		player->sessions = g_slist_prepend(player->sessions, session);
 
-		init_volume = media_player_get_device_volume(session->dev);
-		media_transport_update_device_volume(session->dev, init_volume);
+		init_volume = btd_device_get_volume(session->dev);
+		media_transport_set_a2dp_volume(session->dev, init_volume);
 	}
 
 	session->supported_events |= (1 << AVRCP_EVENT_STATUS_CHANGED) |
@@ -4301,6 +4323,13 @@ static void controller_init(struct avrcp *session)
 	if (session->controller != NULL)
 		return;
 
+	service = btd_device_get_service(session->dev, AVRCP_TARGET_UUID);
+
+	if (service == NULL) {
+		error("Unable to find btd service");
+		return;
+	}
+
 	controller = data_init(session, AVRCP_TARGET_UUID);
 	session->controller = controller;
 
@@ -4308,7 +4337,6 @@ static void controller_init(struct avrcp *session)
 	if (controller->obex_port)
 		DBG("%p OBEX PSM 0x%04x", controller, controller->obex_port);
 
-	service = btd_device_get_service(session->dev, AVRCP_TARGET_UUID);
 	btd_service_connecting_complete(service, 0);
 
 	/* Only create player if category 1 is supported */
@@ -4608,7 +4636,6 @@ static gboolean avrcp_handle_set_volume(struct avctp *conn, uint8_t code,
 					void *user_data)
 {
 	struct avrcp *session = user_data;
-	struct avrcp_player *player = target_get_player(session);
 	struct avrcp_header *pdu = (void *) operands;
 	int8_t volume;
 
@@ -4619,10 +4646,7 @@ static gboolean avrcp_handle_set_volume(struct avctp *conn, uint8_t code,
 	volume = pdu->params[0] & 0x7F;
 
 	/* Always attempt to update the transport volume */
-	media_transport_update_device_volume(session->dev, volume);
-
-	if (player != NULL)
-		player->cb->set_volume(volume, session->dev, player->user_data);
+	media_transport_set_a2dp_volume(session->dev, volume);
 
 	return FALSE;
 }
@@ -4844,6 +4868,7 @@ done:
 
 static struct btd_profile avrcp_target_profile = {
 	.name		= "audio-avrcp-target",
+	.bearer		= BTD_PROFILE_BEARER_BREDR,
 
 	.remote_uuid	= AVRCP_TARGET_UUID,
 	.device_probe	= avrcp_target_probe,
@@ -4927,6 +4952,7 @@ done:
 
 static struct btd_profile avrcp_controller_profile = {
 	.name		= "avrcp-controller",
+	.bearer		= BTD_PROFILE_BEARER_BREDR,
 
 	.remote_uuid	= AVRCP_REMOTE_UUID,
 	.device_probe	= avrcp_controller_probe,
@@ -4946,11 +4972,15 @@ static int avrcp_init(void)
 
 	populate_default_features();
 
+	avrcp_player_init();
+
 	return 0;
 }
 
 static void avrcp_exit(void)
 {
+	avrcp_player_exit();
+
 	btd_profile_unregister(&avrcp_controller_profile);
 	btd_profile_unregister(&avrcp_target_profile);
 }

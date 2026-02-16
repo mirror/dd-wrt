@@ -26,8 +26,8 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
-#include "lib/bluetooth.h"
-#include "lib/hci.h"
+#include "bluetooth/bluetooth.h"
+#include "bluetooth/hci.h"
 
 #include "src/shared/mainloop.h"
 #include "btdev.h"
@@ -118,6 +118,7 @@ again:
 	while (count > 0) {
 		hci_command_hdr *cmd_hdr;
 		hci_acl_hdr *acl_hdr;
+		hci_iso_hdr *iso_hdr;
 
 		if (!client->pkt_data) {
 			client->pkt_type = ptr[0];
@@ -140,8 +141,16 @@ again:
 				client->pkt_data = malloc(client->pkt_expect);
 				client->pkt_len = 0;
 				break;
+			case HCI_ISODATA_PKT:
+				iso_hdr = (hci_iso_hdr *)(ptr + 1);
+				client->pkt_expect = HCI_ISO_HDR_SIZE +
+							iso_hdr->dlen + 1;
+				client->pkt_data = malloc(client->pkt_expect);
+				client->pkt_len = 0;
+				break;
 			default:
-				printf("packet error\n");
+				printf("packet error, unknown type: %d\n",
+					client->pkt_type);
 				return;
 			}
 
@@ -218,7 +227,7 @@ static void server_accept_callback(int fd, uint32_t events, void *user_data)
 
 	switch (server->type) {
 	case SERVER_TYPE_BREDRLE:
-		type = BTDEV_TYPE_BREDRLE;
+		type = BTDEV_TYPE_BREDRLE52;
 		break;
 	case SERVER_TYPE_BREDR:
 		type = BTDEV_TYPE_BREDR;
@@ -311,7 +320,7 @@ struct server *server_open_unix(enum server_type type, const char *path)
 	return server;
 }
 
-static int open_tcp(void)
+static int open_tcp(uint16_t port)
 {
 	struct sockaddr_in addr;
 	int fd, opt = 1;
@@ -332,7 +341,7 @@ static int open_tcp(void)
 	addr.sin_family = AF_INET;
 	addr.sin_addr.s_addr = INADDR_ANY;
 	addr.sin_addr.s_addr = inet_addr("127.0.0.1");
-	addr.sin_port = htons(45550);
+	addr.sin_port = htons(port);
 
 	if (bind(fd, (struct sockaddr *) &addr, sizeof(addr)) < 0) {
 		perror("Failed to bind server socket");
@@ -349,7 +358,7 @@ static int open_tcp(void)
 	return fd;
 }
 
-struct server *server_open_tcp(enum server_type type)
+struct server *server_open_tcp(enum server_type type, uint16_t port)
 {
 	struct server *server;
 
@@ -361,7 +370,7 @@ struct server *server_open_tcp(enum server_type type)
 	server->type = type;
 	server->id = 0x43;
 
-	server->fd = open_tcp();
+	server->fd = open_tcp(port);
 	if (server->fd < 0) {
 		free(server);
 		return NULL;

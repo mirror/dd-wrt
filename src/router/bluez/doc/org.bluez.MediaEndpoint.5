@@ -42,13 +42,14 @@ org.bluez.MediaEndpoint1
 .TP
 .B Object path
 freely definable (Server role)
-[variable prefix]/{hci0,hci1,...}/dev_XX_XX_XX_XX_XX_XX/sepX
-(Client role)
+[variable prefix]/{hci0,hci1,...}/dev_{BDADDR}/sep# (Client role)
+.TP
+.B Used by
+\fBbluetoothctl\-endpoint(1)\fP
 .UNINDENT
 .SS Methods
 .SS void SetConfiguration(object transport, dict properties)
-.INDENT 0.0
-.INDENT 3.5
+.sp
 Set configuration for the transport.
 .INDENT 0.0
 .TP
@@ -59,9 +60,8 @@ Configured transport object.
 Configured \fBorg.bluez.MediaTransport(5)\fP properties.
 .UNINDENT
 .sp
-For client role transport must be set with a server endpoint
-object which will be configured and the properties must
-contain the following properties:
+For client role transport must be set with a server endpoint object which will
+be configured and the properties must contain the following properties:
 .INDENT 0.0
 .TP
 .B array{byte} Capabilities [Mandatory]
@@ -73,23 +73,100 @@ See Metadata property.
 .B dict QoS [ISO only]
 See \fBorg.bluez.MediaTransport(5)\fP QoS property.
 .UNINDENT
+.INDENT 0.0
+.TP
+.B Possible errors for A2DP endpoints:
+.INDENT 7.0
+.TP
+.B org.bluez.Error.A2DP.InvalidCodecType
+.TP
+.B org.bluez.Error.A2DP.NotSupportedCodecType
+.TP
+.B org.bluez.Error.A2DP.InvalidSamplingFrequency
+.TP
+.B org.bluez.Error.A2DP.NotSupportedSamplingFrequency
+.TP
+.B org.bluez.Error.A2DP.InvalidChannelMode
+.TP
+.B org.bluez.Error.A2DP.NotSupportedChannelMode
+.TP
+.B org.bluez.Error.A2DP.InvalidSubbands
+.TP
+.B org.bluez.Error.A2DP.NotSupportedSubbands
+.TP
+.B org.bluez.Error.A2DP.InvalidAllocationMethod
+.TP
+.B org.bluez.Error.A2DP.NotSupportedAllocationMethod
+.TP
+.B org.bluez.Error.A2DP.InvalidMinimumBitpoolValue
+.TP
+.B org.bluez.Error.A2DP.NotSupportedMinimumBitpoolValue
+.TP
+.B org.bluez.Error.A2DP.InvalidMaximumBitpoolValue
+.TP
+.B org.bluez.Error.A2DP.NotSupportedMaximumBitpoolValue
+.TP
+.B org.bluez.Error.A2DP.InvalidLayer
+.TP
+.B org.bluez.Error.A2DP.NotSupportedLayer
+.TP
+.B org.bluez.Error.A2DP.NotSupportedCRC
+.TP
+.B org.bluez.Error.A2DP.NotSupportedMPF
+.TP
+.B org.bluez.Error.A2DP.NotSupportedVBR
+.TP
+.B org.bluez.Error.A2DP.InvalidBitRate
+.TP
+.B org.bluez.Error.A2DP.NotSupportedBitRate
+.TP
+.B org.bluez.Error.A2DP.InvalidObjectType
+.TP
+.B org.bluez.Error.A2DP.NotSupportedObjectType
+.TP
+.B org.bluez.Error.A2DP.InvalidChannels
+.TP
+.B org.bluez.Error.A2DP.NotSupportedChannels
+.TP
+.B org.bluez.Error.A2DP.InvalidVersion
+.TP
+.B org.bluez.Error.A2DP.NotSupportedVersion
+.TP
+.B org.bluez.Error.A2DP.NotSupportedMaximumSUL
+.TP
+.B org.bluez.Error.A2DP.InvalidBlockLength
+.TP
+.B org.bluez.Error.A2DP.InvalidCPType
+.TP
+.B org.bluez.Error.A2DP.InvalidCPFormat
+.TP
+.B org.bluez.Error.A2DP.InvalidCodecParameter
+.TP
+.B org.bluez.Error.A2DP.NotSupportedCodecParameter
+.TP
+.B org.bluez.Error.A2DP.InvalidDRC
+.TP
+.B org.bluez.Error.A2DP.NotSupportedDRC
 .UNINDENT
+.UNINDENT
+.sp
+Examples:
+.INDENT 0.0
+.TP
+.B bluetoothctl
+> endpoint.config <endpoint> <local endpoint> [preset]
 .UNINDENT
 .SS array{byte} SelectConfiguration(array{byte} capabilities)
-.INDENT 0.0
-.INDENT 3.5
+.sp
 Select preferable configuration from the supported capabilities.
 .sp
 Returns a configuration which can be used to setup a transport, see
 \fBorg.bluez.MediaTransport(5)\fP for possible values.
 .sp
-Note: There is no need to cache the selected configuration since on
-success the configuration is send back as parameter of SetConfiguration.
-.UNINDENT
-.UNINDENT
+Note: There is no need to cache the selected configuration since on success the
+configuration is send back as parameter of SetConfiguration.
 .SS dict SelectProperties(dict capabilities)
-.INDENT 0.0
-.INDENT 3.5
+.sp
 Select BAP unicast configuration from the supported capabilities:
 .INDENT 0.0
 .TP
@@ -136,96 +213,81 @@ Returns a configuration which can be used to setup a transport:
 .sp
 See SetConfiguration for their possible values.
 .sp
-Note: There is no need to cache the selected properties since on
-success the configuration is send back as parameter of SetConfiguration.
-.UNINDENT
-.UNINDENT
+Note: There is no need to cache the selected properties since on success the
+configuration is send back as parameter of SetConfiguration.
 .SS void ClearConfiguration(object transport)
-.INDENT 0.0
-.INDENT 3.5
+.sp
 Clear transport configuration.
-.UNINDENT
+.sp
+\fBServer role:\fP [ISO only]
+.sp
+Close the stream associated with the given transport. If the path given is the
+path of this endpoint, all its streams are closed.
+.SS void Reconfigure(dict properties)
+.sp
+[ISO only]
+.sp
+Reconfigure a BAP unicast endpoint. This closes all existing streams of the
+endpoint, and restarts the configuration selection flow which e.g. triggers
+calls to \fISelectProperties\fP allowing the sound server to modify the
+configuration.
+.sp
+The following arguments are taken in \fIproperties\fP:
+.INDENT 0.0
+.TP
+.B boolean Defer [optional]
+If True, mark endpoint for reconfiguration, but postpone it until a
+non\-deferred \fIReconfigure()\fP operation is made on an endpoint of the
+same device.
+.sp
+This is necessary to use when reconfiguring source and sink streams with
+the intention that they be combined into the same CIG, possibly forming
+bidirectional CIS.
 .UNINDENT
 .SS void Release()
-.INDENT 0.0
-.INDENT 3.5
-This method gets called when the service daemon unregisters the
-endpoint. An endpoint can use it to do cleanup tasks. There is no need
-to unregister the endpoint, because when this method gets called it has
-already been unregistered.
-.UNINDENT
-.UNINDENT
+.sp
+This method gets called when \fBbluetoothd(8)\fP unregisters the endpoint.
+.sp
+An endpoint can use it to do cleanup tasks. There is no need to unregister the
+endpoint, because when this method gets called it has already been unregistered.
 .SS MediaEndpoint Properties
 .SS string UUID [readonly, optional]
-.INDENT 0.0
-.INDENT 3.5
+.sp
 UUID of the profile which the endpoint is for.
-.UNINDENT
-.UNINDENT
 .SS byte Codec [readonly, optional]
-.INDENT 0.0
-.INDENT 3.5
+.sp
 Assigned number of codec that the endpoint implements.
-The values should match the profile specification which is indicated by
-the UUID.
-.UNINDENT
-.UNINDENT
+.sp
+The values should match the profile specification which is indicated by the
+UUID.
 .SS uint32_t Vendor [readonly, Optional]
-.INDENT 0.0
-.INDENT 3.5
+.sp
 Vendor\-specific Company ID, Codec ID tuple that the endpoint implements.
 .sp
-It shall be set to appropriate value when Vendor Specific Codec (0xff)
-is used.
-.UNINDENT
-.UNINDENT
+It shall be set to appropriate value when Vendor Specific Codec (0xff) is used.
 .SS array{byte} Capabilities [readonly, optional]
-.INDENT 0.0
-.INDENT 3.5
-Capabilities blob, it is used as it is so the size and byte order must
-match.
-.UNINDENT
-.UNINDENT
+.sp
+Capabilities blob, it is used as it is so the size and byte order must match.
 .SS array{byte} Metadata [readonly, Optional]
-.INDENT 0.0
-.INDENT 3.5
-Metadata blob, it is used as it is so the size and byte order must
-match.
-.UNINDENT
-.UNINDENT
+.sp
+Metadata blob, it is used as it is so the size and byte order must match.
 .SS object Device [readonly, optional]
-.INDENT 0.0
-.INDENT 3.5
+.sp
 Device object which the endpoint is belongs to.
-.UNINDENT
-.UNINDENT
 .SS bool DelayReporting [readonly, optional]
-.INDENT 0.0
-.INDENT 3.5
+.sp
 Indicates if endpoint supports Delay Reporting.
-.UNINDENT
-.UNINDENT
 .SS uint32 Locations [readonly, optional, ISO only, experimental]
-.INDENT 0.0
-.INDENT 3.5
+.sp
 Indicates endpoint supported locations.
-.UNINDENT
-.UNINDENT
 .SS uint16 SupportedContext [readonly, optional, ISO only, experimental]
-.INDENT 0.0
-.INDENT 3.5
+.sp
 Indicates endpoint supported audio context.
-.UNINDENT
-.UNINDENT
 .SS uint16 Context [readonly, optional, ISO only, experimental]
-.INDENT 0.0
-.INDENT 3.5
+.sp
 Indicates endpoint available audio context.
-.UNINDENT
-.UNINDENT
 .SS dict QoS [readonly, optional, ISO only, experimental]
-.INDENT 0.0
-.INDENT 3.5
+.sp
 Indicates QoS capabilities.
 .INDENT 0.0
 .TP
@@ -276,6 +338,91 @@ Indicates endpoint preferred minimum presentation delay.
 .B uint32 PreferredMaximumDelay
 Indicates endpoint preferred maximum presentation delay.
 .UNINDENT
+.SS dict SupportedFeatures [readonly, ISO only, experimental]
+.sp
+Dictionary representing supported features for different
+services. Keys are service UUIDs, values arrays of strings.
+.sp
+Services:
+.INDENT 0.0
+.TP
+.B array{string} 00001855\-0000\-1000\-8000\-00805f9b34fb
+TMAP Features. Possible items:
+.INDENT 7.0
+.TP
+.B \(dqcg\(dq
+Call Gateway
+.TP
+.B \(dqct\(dq
+Call Terminal
+.TP
+.B \(dqums\(dq
+Unicast Media Sender
+.TP
+.B \(dqumr\(dq
+Unicast Media Receiver
+.TP
+.B \(dqbms\(dq
+Broadcast Media Sender
+.TP
+.B \(dqbmr\(dq
+Broadcast Media Receiver
+.UNINDENT
+.TP
+.B array{string} 00001858\-0000\-1000\-8000\-00805f9b34fb
+GMAP Features. Possible items:
+.INDENT 7.0
+.TP
+.B \(dqugg\(dq
+Unicast Game Gateway
+.TP
+.B \(dqugt\(dq
+Unicast Game Terminal
+.TP
+.B \(dqbgs\(dq
+Broadcast Game Sender
+.TP
+.B \(dqbgr\(dq
+Broadcast Game Receiver
+.TP
+.B \(dqugg\-multiplex\(dq
+UGG Multiplex feature support
+.TP
+.B \(dqugg\-96kbps\-source\(dq
+UGG 96 kbps Source feature support
+.TP
+.B \(dqugg\-multisink\(dq
+UGG Multisink feature support
+.TP
+.B \(dqugt\-source\(dq
+UGT Source feature support
+.TP
+.B \(dqugt\-80kbps\-source\(dq
+UGT 80 kbps Source feature support
+.TP
+.B \(dqugt\-sink\(dq
+UGT Sink feature support
+.TP
+.B \(dqugt\-64kbps\-sink\(dq
+UGT 64 kbps Sink feature support
+.TP
+.B \(dqugt\-multiplex\(dq
+UGT Multiplex feature support
+.TP
+.B \(dqugt\-multisink\(dq
+UGT Multisink feature support
+.TP
+.B \(dqugt\-multisource\(dq
+UGT Multisource feature support
+.TP
+.B \(dqbgs\-96kbps\(dq
+BGS 96 kbps feature support
+.TP
+.B \(dqbgr\-multisink\(dq
+BGR Multisink feature support
+.TP
+.B \(dqbgr\-multiplex\(dq
+BGR Multiplex feature support
 .UNINDENT
 .UNINDENT
 .\" Generated by docutils manpage writer.

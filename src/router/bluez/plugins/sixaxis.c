@@ -26,9 +26,9 @@
 #include <glib.h>
 #include <libudev.h>
 
-#include "lib/bluetooth.h"
-#include "lib/sdp.h"
-#include "lib/uuid.h"
+#include "bluetooth/bluetooth.h"
+#include "bluetooth/sdp.h"
+#include "bluetooth/uuid.h"
 
 #include "src/adapter.h"
 #include "src/device.h"
@@ -36,6 +36,7 @@
 #include "src/plugin.h"
 #include "src/log.h"
 #include "src/shared/util.h"
+#include "profiles/input/server.h"
 #include "profiles/input/sixaxis.h"
 
 struct authentication_closure {
@@ -296,9 +297,14 @@ static void agent_auth_cb(DBusError *derr, void *user_data)
 	remove_device = false;
 	btd_device_set_temporary(closure->device, false);
 
-	if (closure->type == CABLE_PAIRING_SIXAXIS)
+	if (closure->type == CABLE_PAIRING_SIXAXIS) {
 		btd_device_set_record(closure->device, HID_UUID,
 						 SIXAXIS_HID_SDP_RECORD);
+	}
+
+	device_set_cable_pairing(closure->device, true);
+
+	server_set_cable_pairing(adapter_bdaddr, true);
 
 	ba2str(&closure->bdaddr, device_addr);
 	ba2str(&central_bdaddr, central_addr);

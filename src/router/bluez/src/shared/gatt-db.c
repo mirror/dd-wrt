@@ -15,8 +15,8 @@
 #include <stdbool.h>
 #include <errno.h>
 
-#include "lib/bluetooth.h"
-#include "lib/uuid.h"
+#include "bluetooth/bluetooth.h"
+#include "bluetooth/uuid.h"
 #include "src/shared/util.h"
 #include "src/shared/queue.h"
 #include "src/shared/timeout.h"
@@ -493,7 +493,7 @@ static void notify_service_changed(struct gatt_db *db,
 
 	queue_foreach(db->notify_list, handle_notify, &data);
 
-	/* Tigger hash update */
+	/* Trigger hash update */
 	if (!db->hash_id && db->crypto)
 		db->hash_id = timeout_add(HASH_UPDATE_TIMEOUT, db_hash_update,
 								db, NULL);
@@ -966,7 +966,8 @@ service_insert_characteristic(struct gatt_db_service *service,
 	 * declaration. All characteristic definitions shall have a
 	 * Characteristic Value declaration.
 	 */
-	if (handle == UINT16_MAX)
+	if ((handle == UINT16_MAX) || (value_handle && handle &&
+					value_handle <= handle))
 		return NULL;
 
 	i = service_get_attribute_index(service, &handle, 1);
@@ -1009,8 +1010,11 @@ service_insert_characteristic(struct gatt_db_service *service,
 	/* Update handle of characteristic value_handle if it has changed */
 	put_le16(value_handle, &value[1]);
 
-	if (!(*chrc) || !(*chrc)->value)
+	if (!(*chrc)->value) {
+		free(*chrc);
+		*chrc = NULL;
 		return NULL;
+	}
 
 	if (memcmp((*chrc)->value, value, len))
 		memcpy((*chrc)->value, value, len);
@@ -1391,12 +1395,15 @@ static void find_by_type(struct gatt_db_attribute *attribute, void *user_data)
 {
 	struct find_by_type_value_data *search_data = user_data;
 
+	if (!attribute)
+		return;
+
 	/* TODO: fix for read-callback based attributes */
 	if (search_data->value) {
 		if (search_data->value_len != attribute->value_len)
 			return;
 
-		if (!attribute || !attribute->value)
+		if (!attribute->value)
 			return;
 
 		if (memcmp(attribute->value, search_data->value,
@@ -1980,8 +1987,8 @@ bool gatt_db_attribute_get_char_data(const struct gatt_db_attribute *attrib,
 
 		/* Check if Characteristic Value was passed instead */
 		index = gatt_db_attribute_get_index(attrib);
-		if (index < 0)
-			return NULL;
+		if (index <= 0)
+			return false;
 
 		attrib = attrib->service->attributes[index - 1];
 		if (bt_uuid_cmp(&characteristic_uuid, &attrib->uuid))
@@ -2099,7 +2106,7 @@ bool gatt_db_attribute_set_fixed_length(struct gatt_db_attribute *attrib,
 	if (attrib->service->attributes[0] == attrib)
 		return false;
 
-	/* If attribute is a characteristic declaration ajust to its value */
+	/* If attribute is a characteristic declaration adjust to its value */
 	if (!bt_uuid_cmp(&characteristic_uuid, &attrib->uuid)) {
 		int i;
 

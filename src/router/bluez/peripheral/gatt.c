@@ -18,9 +18,9 @@
 #include <string.h>
 #include <sys/epoll.h>
 
-#include "lib/bluetooth.h"
-#include "lib/l2cap.h"
-#include "lib/uuid.h"
+#include "bluetooth/bluetooth.h"
+#include "bluetooth/l2cap.h"
+#include "bluetooth/uuid.h"
 #include "src/shared/mainloop.h"
 #include "src/shared/util.h"
 #include "src/shared/queue.h"
@@ -105,7 +105,7 @@ static struct gatt_conn *gatt_conn_new(int fd)
 
 	conn->att = bt_att_new(fd, false);
 	if (!conn->att) {
-		fprintf(stderr, "Failed to initialze ATT transport layer\n");
+		fprintf(stderr, "Failed to initialize ATT transport layer\n");
 		free(conn);
 		return NULL;
 	}
