@@ -45,6 +45,7 @@ bluez-install:
 	rm -f $(INSTALLDIR)/bluez/usr/lib/*.la
 	rm -f $(INSTALLDIR)/bluez/usr/lib/*.a
 	rm -rf $(INSTALLDIR)/bluez/usr/lib/pkgconfig
+	rm -rf $(INSTALLDIR)/bluez/usr/libexec
 	rm -rf $(INSTALLDIR)/bluez/usr/share
 	rm -rf $(INSTALLDIR)/bluez/usr/var
 	rm -rf $(INSTALLDIR)/bluez/tmp
