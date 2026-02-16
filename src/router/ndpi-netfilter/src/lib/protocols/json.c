@@ -47,7 +47,6 @@ static void ndpi_search_json(struct ndpi_detection_module_struct *ndpi_struct,
   struct ndpi_packet_struct const * const packet = ndpi_get_packet_struct(ndpi_struct);
   size_t offset = 0, i;
   size_t bytes_checked = 0;
-  size_t i;
 
   NDPI_LOG_DBG(ndpi_struct, "search JSON\n");
 

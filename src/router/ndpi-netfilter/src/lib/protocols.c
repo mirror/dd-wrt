@@ -23,8 +23,6 @@
 #undef NDPI_CURRENT_PROTO
 #include "protocols/amqp.c"
 #undef NDPI_CURRENT_PROTO
-#include "protocols/apple_push.c"
-#undef NDPI_CURRENT_PROTO
 #include "protocols/armagetron.c"
 #undef NDPI_CURRENT_PROTO
 #include "protocols/avast_securedns.c"
