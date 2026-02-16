@@ -2234,7 +2234,7 @@ static bool is_grease_version(u_int16_t version) {
 
 /* **************************************** */
 
-bool skipTLSextension(struct ndpi_detection_module_struct *ndpi_struct,
+static bool skipTLSextension(struct ndpi_detection_module_struct *ndpi_struct,
 		      u_int16_t extension_id)  {
   if((extension_id == 0x0 /* SNI */) && ndpi_struct->cfg.tls_ndpifp_ignore_sni_extension)
     return(true);

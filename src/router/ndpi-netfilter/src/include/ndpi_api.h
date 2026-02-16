@@ -1077,8 +1077,8 @@ NDPI_STATIC  int ndpi_load_tcp_fingerprint_file(struct ndpi_detection_module_str
 
   NDPI_STATIC char *ndpi_stack2str(struct ndpi_detection_module_struct *ndpi_str,
                        struct ndpi_proto_stack *stack, char *buf, u_int buf_len);
-  ndpi_tls_block_type ndpi_encode_tls_block_type(u_int8_t block_type, u_int8_t handshake_type);
-  const char* ndpi_print_encoded_tls_block_type(ndpi_tls_block_type block_type, bool numeric_mode);
+  NDPI_STATIC ndpi_tls_block_type ndpi_encode_tls_block_type(u_int8_t block_type, u_int8_t handshake_type);
+  NDPI_STATIC const char* ndpi_print_encoded_tls_block_type(ndpi_tls_block_type block_type, bool numeric_mode);
 
   NDPI_STATIC ndpi_proto_defaults_t* ndpi_get_proto_defaults(struct ndpi_detection_module_struct *ndpi_mod);
   NDPI_STATIC u_int ndpi_get_ndpi_detection_module_size(void);
@@ -1152,7 +1152,7 @@ NDPI_STATIC  int ndpi_load_tcp_fingerprint_file(struct ndpi_detection_module_str
   NDPI_STATIC int ndpi_load_ipv4_ptree(struct ndpi_detection_module_struct *ndpi_str,
 			   const char *path, u_int16_t protocol_id);
   NDPI_STATIC const char* ndpi_cipher2str(u_int32_t cipher, char unknown_cipher[8]);
-#ifndef __KERNEL__    
+#if 1 //ndef __KERNEL__    
 NDPI_STATIC  const char* ndpi_cipher2str(u_int32_t cipher, char unknown_cipher[8]);
 NDPI_STATIC  const char* ndpi_tls_extension2str(u_int16_t extension_id, char unknown_extn[8]);
 NDPI_STATIC  const char* ndpi_tls_elliptic_curve2str(u_int16_t curve_id, char unknown_curve[8]);
