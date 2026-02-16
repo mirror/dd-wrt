@@ -1,7 +1,7 @@
 /*
  * steam.c
  *
- * Copyright (C) 2011-25 - ntop.org
+ * Copyright (C) 2011-26 - ntop.org
  * Copyright (C) 2014 Tomasz Bujlow <tomasz@skatnet.dk>
  *
  * This file is part of nDPI, an open source deep packet inspection
@@ -55,7 +55,7 @@ static void ndpi_search_steam(struct ndpi_detection_module_struct *ndpi_struct,
 
 void init_steam_dissector(struct ndpi_detection_module_struct *ndpi_struct)
 {
-  register_dissector("Steam", ndpi_struct,
+  ndpi_register_dissector("Steam", ndpi_struct,
                      ndpi_search_steam,
                      NDPI_SELECTION_BITMASK_PROTOCOL_V4_V6_UDP_WITH_PAYLOAD,
                      1, NDPI_PROTOCOL_STEAM);

@@ -2,7 +2,7 @@
  * non_tcp_udp.c
  *
  * Copyright (C) 2009-11 - ipoque GmbH
- * Copyright (C) 2011-25 - ntop.org
+ * Copyright (C) 2011-26 - ntop.org
  *
  * This file is part of nDPI, an open source deep packet inspection
  * library based on the OpenDPI and PACE technology by ipoque GmbH
@@ -165,7 +165,7 @@ static void ndpi_search_in_non_tcp_udp(struct ndpi_detection_module_struct
 
 void init_non_tcp_udp_dissector(struct ndpi_detection_module_struct *ndpi_struct)
 {
-  register_dissector("Non_TCP_UDP", ndpi_struct,
+  ndpi_register_dissector("Non_TCP_UDP", ndpi_struct,
                      ndpi_search_in_non_tcp_udp,
                      NDPI_SELECTION_BITMASK_PROTOCOL_IPV4_OR_IPV6,
                      13,

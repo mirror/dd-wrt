@@ -1,7 +1,7 @@
 /*
  * netflow.c
  *
- * Copyright (C) 2011-25 - ntop.org
+ * Copyright (C) 2011-26 - ntop.org
  *
  * nDPI is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -180,7 +180,7 @@ static void ndpi_search_netflow(struct ndpi_detection_module_struct *ndpi_struct
 
 void init_netflow_dissector(struct ndpi_detection_module_struct *ndpi_struct)
 {
-  register_dissector("NetFlow", ndpi_struct,
+  ndpi_register_dissector("NetFlow", ndpi_struct,
                      ndpi_search_netflow,
                      NDPI_SELECTION_BITMASK_PROTOCOL_V4_V6_UDP_WITH_PAYLOAD,
                      1, NDPI_PROTOCOL_NETFLOW);

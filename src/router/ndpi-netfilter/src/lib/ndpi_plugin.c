@@ -1,7 +1,7 @@
 /*
  * ndpi_plugin.c
  *
- * Copyright (C) 2011-25 - ntop.org and contributors
+ * Copyright (C) 2011-26 - ntop.org and contributors
  *
  * nDPI is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -38,8 +38,9 @@
 
 /* ************************************** */
 
-/* Load a single protocol plugin */
 #ifdef HAVE_PLUGINS
+
+/* Load a single protocol plugin */
 static bool ndpi_load_protocol_plugin(struct ndpi_detection_module_struct *ndpi_struct,
 				      char *plugin_path) {
   void *pluginEntryFctnPtr;
@@ -49,7 +50,7 @@ static bool ndpi_load_protocol_plugin(struct ndpi_detection_module_struct *ndpi_
 
   if(ndpi_struct->proto_plugins.num_loaded_plugins == (NDPI_MAX_NUM_PLUGINS-1)) {
 #ifdef NDPI_PLUGIN_DEBUG
-    printf("WARNING: too many plugins loadeded %u\n", ndpi_struct->proto_plugins.num_loaded_plugins);
+    printf("WARNING: too many plugins loaded %u\n", ndpi_struct->proto_plugins.num_loaded_plugins);
 #endif
     return(false);
   }
@@ -100,7 +101,7 @@ static bool ndpi_load_protocol_plugin(struct ndpi_detection_module_struct *ndpi_
 /* ************************************** */
 
 u_int ndpi_load_protocol_plugins(struct ndpi_detection_module_struct *ndpi_struct,
-				char *dir_path) {
+				 char *dir_path) {
 #ifdef HAVE_PLUGINS
   DIR *dirp;
   struct dirent *dp;

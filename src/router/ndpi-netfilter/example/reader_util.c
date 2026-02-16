@@ -1,7 +1,7 @@
 /*
  * reader_util.c
  *
- * Copyright (C) 2011-25 - ntop.org
+ * Copyright (C) 2011-26 - ntop.org
  *
  * This file is part of nDPI, an open source deep packet inspection
  * library based on the OpenDPI and PACE technology by ipoque GmbH
@@ -464,6 +464,9 @@ void ndpi_flow_info_freer(void *node) {
 /* ***************************************************** */
 
 static void ndpi_free_flow_tls_data(struct ndpi_flow_info *flow) {
+  if(flow->tls.blocks)
+    ndpi_free(flow->tls.blocks);
+
   if(flow->dhcp_fingerprint) {
     ndpi_free(flow->dhcp_fingerprint);
     flow->dhcp_fingerprint = NULL;
@@ -574,7 +577,6 @@ static void ndpi_free_flow_data_analysis(struct ndpi_flow_info *flow) {
 /* ***************************************************** */
 
 void ndpi_flow_info_free_data(struct ndpi_flow_info *flow) {
-
   ndpi_free_flow_info_half(flow);
   ndpi_term_serializer(&flow->ndpi_flow_serializer);
   ndpi_free_flow_data_analysis(flow);
@@ -1284,7 +1286,7 @@ static void serialize_monitoring_metadata(struct ndpi_flow_info *flow)
 
 void process_ndpi_collected_info(struct ndpi_workflow * workflow, struct ndpi_flow_info *flow) {
   u_int i;
-  char out[128], *s;
+  char out[512], *s;
 
   if(!flow->ndpi_flow) return;
 
@@ -1533,10 +1535,19 @@ void process_ndpi_collected_info(struct ndpi_workflow * workflow, struct ndpi_fl
 	     flow->ndpi_flow->protos.ssh.client_signature);
     ndpi_snprintf(flow->ssh_tls.server_info, sizeof(flow->ssh_tls.server_info), "%s",
 	     flow->ndpi_flow->protos.ssh.server_signature);
-    ndpi_snprintf(flow->ssh_tls.client_hassh, sizeof(flow->ssh_tls.client_hassh), "%s",
-	     flow->ndpi_flow->protos.ssh.hassh_client);
-    ndpi_snprintf(flow->ssh_tls.server_hassh, sizeof(flow->ssh_tls.server_hassh), "%s",
-	     flow->ndpi_flow->protos.ssh.hassh_server);
+
+    if(flow->ndpi_flow->protos.ssh.hassh_client[0] != '\0')
+      ndpi_snprintf(flow->ssh_tls.client_hassh, sizeof(flow->ssh_tls.client_hassh), "%s",
+		    flow->ndpi_flow->protos.ssh.hassh_client);
+
+    if(flow->ndpi_flow->protos.ssh.hassh_server[0] != '\0')
+      ndpi_snprintf(flow->ssh_tls.server_hassh, sizeof(flow->ssh_tls.server_hassh), "%s",
+		    flow->ndpi_flow->protos.ssh.hassh_server);
+
+    if(flow->ndpi_flow->protos.ssh.key_exchange_method)
+      ndpi_snprintf(flow->ssh_tls.ssh_key_exchange_method,
+		    sizeof(flow->ssh_tls.ssh_key_exchange_method), "%s",
+		    flow->ndpi_flow->protos.ssh.key_exchange_method);
   }
   /* TLS/QUIC/DTLS/MAIL_S/FTPS */
   else if(ndpi_stack_is_tls_like(&flow->detected_protocol.protocol_stack)) {
@@ -1600,17 +1611,25 @@ void process_ndpi_collected_info(struct ndpi_workflow * workflow, struct ndpi_fl
       if(enable_doh_dot_detection) {
 	/* For TLS we use TLS block lenght instead of payload lenght */
 	ndpi_reset_bin(&flow->payload_len_bin);
-	
+
 	for(i=0; i<flow->ndpi_flow->l4.tcp.tls.num_tls_blocks; i++) {
 	  u_int16_t len = abs(flow->ndpi_flow->l4.tcp.tls.tls_blocks[i].len);
-	  
+
 	  /* printf("[TLS_LEN] %u\n", len); */
 	  ndpi_inc_bin(&flow->payload_len_bin, plen2slot(len), 1);
 	}
       }
-      
-      flow->ssh_tls.num_blocks = flow->ndpi_flow->l4.tcp.tls.num_tls_blocks;
-      memcpy(flow->ssh_tls.blocks, flow->ndpi_flow->l4.tcp.tls.tls_blocks, sizeof(flow->ndpi_flow->l4.tcp.tls.tls_blocks));
+
+      flow->tls.num_blocks = flow->ndpi_flow->l4.tcp.tls.num_tls_blocks;
+      if(flow->tls.num_blocks > 0) {
+	u_int len = sizeof(struct ndpi_tls_block)*flow->tls.num_blocks;
+
+	flow->tls.blocks = (struct ndpi_tls_block*)malloc(len);
+	if(flow->tls.blocks != NULL)
+	  memcpy(flow->tls.blocks, flow->ndpi_flow->l4.tcp.tls.tls_blocks, len);
+	else
+	  flow->tls.num_blocks = 0;
+      }
     }
   }
   /* FASTCGI */

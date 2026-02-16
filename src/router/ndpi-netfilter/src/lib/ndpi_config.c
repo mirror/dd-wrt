@@ -1,7 +1,7 @@
 /*
  * ndpi_config.c
  *
- * Copyright (C) 2011-25 - ntop.org
+ * Copyright (C) 2011-26 - ntop.org
  *
  * nDPI is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -50,22 +50,12 @@
 #endif
 #endif
 
-enum cfg_param_type {
-  CFG_PARAM_ENABLE_DISABLE = 0,
-  CFG_PARAM_INT,
-  CFG_PARAM_PROTOCOL_ENABLE_DISABLE,
-  CFG_PARAM_FILENAME_CONFIG, /* We call ndpi_set_config() immediately for each row in it */
-  CFG_PARAM_CONST_INT,
-  CFG_PARAM_CONST_FLAG,
-  CFG_PARAM_FLOWRISK_ENABLE_DISABLE,
-};
-
 typedef ndpi_cfg_error (*cfg_set)(struct ndpi_detection_module_struct *ndpi_str,
                                   void *_variable, const char *value,
                                   const char *min_value, const char *max_value,
                                   const char *proto, const char *param);
 typedef char *(*cfg_get)(struct ndpi_detection_module_struct *ndpi_str, void *_variable, const char *proto, char *buf, int buf_len);
-typedef int (*cfg_calback)(struct ndpi_detection_module_struct *ndpi_str, void *_variable, const char *proto, const char *param);
+
 
 static ndpi_cfg_error _set_param_enable_disable(struct ndpi_detection_module_struct *ndpi_str,
 						void *_variable, const char *value,
@@ -135,17 +125,10 @@ static const struct cfg_op {
 
 #define __OFF(a)	offsetof(struct ndpi_detection_module_config_struct, a)
 
-static const struct cfg_param {
-  char *proto;
-  char *param;
-  char *default_value;
-  char *min_value;
-  char *max_value;
-  enum cfg_param_type type;
-  int offset;
-  cfg_calback fn_callback;
-  int locked;
-} cfg_params[] = {
+#ifndef FUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION
+static
+#endif
+const struct cfg_param cfg_params[] = {
   /* Per-protocol parameters */
 
   { "http",          "metadata.req.content_type",               "enable", NULL, NULL, CFG_PARAM_ENABLE_DISABLE, __OFF(http_request_content_type_enabled), NULL },
@@ -169,15 +152,19 @@ static const struct cfg_param {
   { "tls",           "metadata.cert_issuer",                    "enable", NULL, NULL, CFG_PARAM_ENABLE_DISABLE, __OFF(tls_cert_issuer_enabled), NULL },
   { "tls",           "metadata.cert_subject",                   "enable", NULL, NULL, CFG_PARAM_ENABLE_DISABLE, __OFF(tls_cert_subject_enabled), NULL },
   { "tls",           "metadata.cert_first_only",                "enable", NULL, NULL, CFG_PARAM_ENABLE_DISABLE, __OFF(tls_cert_first_only), NULL, 1 },
-  { "tls",           "metadata.browser",                        "enable", NULL, NULL, CFG_PARAM_ENABLE_DISABLE, __OFF(tls_broswer_enabled), NULL },
+  { "tls",           "metadata.browser",                        "enable", NULL, NULL, CFG_PARAM_ENABLE_DISABLE, __OFF(tls_browser_enabled), NULL },
   { "tls",           "metadata.ja3s_fingerprint",               "enable", NULL, NULL, CFG_PARAM_ENABLE_DISABLE, __OFF(tls_ja3s_fingerprint_enabled), NULL },
   { "tls",           "metadata.ja4c_fingerprint",               "enable", NULL, NULL, CFG_PARAM_ENABLE_DISABLE, __OFF(tls_ja4c_fingerprint_enabled), NULL },
   { "tls",           "metadata.ja4r_fingerprint",               "disable", NULL, NULL, CFG_PARAM_ENABLE_DISABLE, __OFF(tls_ja4r_fingerprint_enabled), NULL },
+  { "tls",           "metadata.ja_data",                        "disable", NULL, NULL, CFG_PARAM_ENABLE_DISABLE, __OFF(tls_ja_data_enabled), NULL },
+  { "tls",           "metadata.ja_ignore_ephemeral_tls_extn",   "disable", NULL, NULL, CFG_PARAM_ENABLE_DISABLE, __OFF(tls_ja_ignore_ephemeral_extensions), NULL },
+  { "tls",           "metadata.ndpifp_ignore_sni_tls_extn",     "disable", NULL, NULL, CFG_PARAM_ENABLE_DISABLE, __OFF(tls_ndpifp_ignore_sni_extension), NULL },
   { "tls",           "subclassification",                       "enable", NULL, NULL, CFG_PARAM_ENABLE_DISABLE, __OFF(tls_subclassification_enabled), NULL },
   { "tls",           "blocks_analysis",                         "disable", NULL, NULL, CFG_PARAM_ENABLE_DISABLE, __OFF(tls_blocks_analysis_enabled), NULL },
   { "tls",           "subclassification_cert",                  "enable", NULL, NULL, CFG_PARAM_ENABLE_DISABLE, __OFF(tls_subclassification_cert_enabled), NULL, },
   { "tls",           "mem_buf_size_limit",                      "16384", "0", "32768", CFG_PARAM_INT, __OFF(tls_buf_size_limit), NULL, 1 },
-
+  { "tls",           "max_num_blocks_to_analyze",               "0", "0", "256", CFG_PARAM_INT, __OFF(tls_max_num_blocks_to_analyze), NULL },  /* 0 = tls blocks are not analyzed */
+  { "tls",           "tls_blocks_show_timing",                  "disable", NULL, NULL, CFG_PARAM_ENABLE_DISABLE, __OFF(tls_blocks_show_timing), NULL },
   { "quic",          "subclassification",                       "enable", NULL, NULL, CFG_PARAM_ENABLE_DISABLE, __OFF(quic_subclassification_enabled), NULL },
 
   { "smtp",          "tls_dissection",                          "enable", NULL, NULL, CFG_PARAM_ENABLE_DISABLE, __OFF(smtp_opportunistic_tls_enabled), NULL },
@@ -193,6 +180,9 @@ static const struct cfg_param {
   { "sip",           "metadata.attribute.to",                   "enable", NULL, NULL, CFG_PARAM_ENABLE_DISABLE, __OFF(sip_attribute_to_enabled), NULL },
   { "sip",           "metadata.attribute.to_imsi",              "enable", NULL, NULL, CFG_PARAM_ENABLE_DISABLE, __OFF(sip_attribute_to_imsi_enabled), NULL },
 
+  { "ssh",           "metadata.hassh_fingerprint",              "enable",  NULL, NULL, CFG_PARAM_ENABLE_DISABLE, __OFF(ssh_hassh_fingerprint_enabled), NULL },
+  { "ssh",           "metadata.ssh_data",                       "disable", NULL, NULL, CFG_PARAM_ENABLE_DISABLE, __OFF(ssh_hassh_data_enabled), NULL },
+
   { "stun",          "tls_dissection",                          "enable", NULL, NULL, CFG_PARAM_ENABLE_DISABLE, __OFF(stun_opportunistic_tls_enabled), NULL },
   { "stun",          "max_packets_extra_dissection",            "6", "0", "255", CFG_PARAM_INT, __OFF(stun_max_packets_extra_dissection), NULL },
   { "stun",          "metadata.attribute.mapped_address",       "enable", NULL, NULL, CFG_PARAM_ENABLE_DISABLE, __OFF(stun_mapped_address_enabled), NULL },
@@ -204,6 +194,8 @@ static const struct cfg_param {
   { "bittorrent",    "metadata.hash",                           "enable", NULL, NULL, CFG_PARAM_ENABLE_DISABLE, __OFF(bittorrent_hash_enabled), NULL },
 
   { "ssdp",          "metadata",                                "enable", NULL, NULL, CFG_PARAM_ENABLE_DISABLE, __OFF(ssdp_metadata_enabled), NULL },
+
+  { "ntp",           "metadata",                                "enable", NULL, NULL, CFG_PARAM_ENABLE_DISABLE, __OFF(ntp_metadata_enabled), NULL },
 
   { "dns",           "subclassification",                       "disable", NULL, NULL, CFG_PARAM_ENABLE_DISABLE, __OFF(dns_subclassification_enabled), NULL },
   { "dns",           "process_response",                        "enable", NULL, NULL, CFG_PARAM_ENABLE_DISABLE, __OFF(dns_parse_response_enabled), NULL },
@@ -252,7 +244,7 @@ static const struct cfg_param {
 
   { NULL,            "metadata.ndpi_fingerprint",               "enable", NULL, NULL, CFG_PARAM_ENABLE_DISABLE, __OFF(ndpi_fingerprint_enabled), NULL },
   { NULL,            "metadata.ndpi_fingerprint_format",         "0", "0" /* client-only */, "1" /* client+server only */, CFG_PARAM_INT, __OFF(ndpi_fingerprint_format), NULL },
-
+  { NULL,            "metadata.ndpi_fingerprint_ignore_tcp_fp", "disable", NULL, NULL, CFG_PARAM_ENABLE_DISABLE, __OFF(tls_ndpifp_ignore_tcp_fingerprint), NULL },
   { NULL,            "flow_risk_lists.load",                    "1", NULL, NULL, CFG_PARAM_ENABLE_DISABLE, __OFF(flow_risk_lists_enabled), NULL, 1 },
 
   { NULL,            "flow_risk.$FLOWRISK_NAME_OR_ID",          "enable", NULL, NULL, CFG_PARAM_FLOWRISK_ENABLE_DISABLE, __OFF(flowrisk_bitmask), NULL, 1 },
@@ -1050,6 +1042,9 @@ static void _dump_host_based_protocol(struct ndpi_detection_module_struct *ndpi_
 				      void *data) {
   ndpi_str_hash *h;
 
+  if(!ndpi_str->host_automa.ac_automa)
+    return;
+
   ndpi_hash_init(&h);
   ac_automata_walk((AC_AUTOMATA_t *)ndpi_str->host_automa.ac_automa,
 		   walk_proto_id ? ac_walk_proto_id : ac_walk_category_id, NULL, h);
@@ -1061,6 +1056,8 @@ static void _dump_host_based_protocol(struct ndpi_detection_module_struct *ndpi_
 
 NDPI_STATIC void ndpi_dump_host_based_protocol_id(struct ndpi_detection_module_struct *ndpi_str,
 				      ndpi_hash_walk_iter walker, void *data) {
+  if(!ndpi_str)
+    return;
   _dump_host_based_protocol(ndpi_str, walker, true /* protocol id */, data);
 }
 
@@ -1068,5 +1065,7 @@ NDPI_STATIC void ndpi_dump_host_based_protocol_id(struct ndpi_detection_module_s
 
 NDPI_STATIC void ndpi_dump_host_based_category_id(struct ndpi_detection_module_struct *ndpi_str,
 				      ndpi_hash_walk_iter walker, void *data) {
+  if(!ndpi_str)
+    return;
   _dump_host_based_protocol(ndpi_str, walker, false /* category */, data);
 }

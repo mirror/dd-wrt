@@ -903,7 +903,9 @@ static void search_dns(struct ndpi_detection_module_struct *ndpi_struct, struct 
     if(ndpi_struct->cfg.dns_subclassification_enabled)
       ndpi_set_detected_protocol(ndpi_struct, flow, proto.app_protocol, proto.master_protocol, NDPI_CONFIDENCE_DPI);
     else
-      ndpi_set_detected_protocol(ndpi_struct, flow, proto.master_protocol, NDPI_PROTOCOL_UNKNOWN, NDPI_CONFIDENCE_DPI);
+      ndpi_set_detected_protocol(ndpi_struct, flow,
+				 (proto.master_protocol == NDPI_PROTOCOL_UNKNOWN) ? NDPI_PROTOCOL_DNS : proto.master_protocol,
+				 NDPI_PROTOCOL_UNKNOWN, NDPI_CONFIDENCE_DPI);
   }
   /* Category is always NDPI_PROTOCOL_CATEGORY_NETWORK, regardless of the subprotocol. Same for the breed */
   flow->category = NDPI_PROTOCOL_CATEGORY_NETWORK;
@@ -1002,7 +1004,7 @@ static void ndpi_search_dns(struct ndpi_detection_module_struct *ndpi_struct, st
 /* *********************************************** */
 
 void init_dns_dissector(struct ndpi_detection_module_struct *ndpi_struct) {
-  register_dissector("DNS", ndpi_struct,
+  ndpi_register_dissector("DNS", ndpi_struct,
                      ndpi_search_dns,
                      NDPI_SELECTION_BITMASK_PROTOCOL_V4_V6_TCP_OR_UDP_WITH_PAYLOAD_WITHOUT_RETRANSMISSION,
                      1, NDPI_PROTOCOL_DNS);

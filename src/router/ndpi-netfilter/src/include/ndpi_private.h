@@ -1,6 +1,6 @@
 /*
  *
- * Copyright (C) 2011-25 - ntop.org
+ * Copyright (C) 2011-26 - ntop.org
  *
  * This file is part of nDPI, an open source deep packet inspection
  * library based on the OpenDPI and PACE technology by ipoque GmbH
@@ -301,14 +301,20 @@ struct ndpi_detection_module_config_struct {
   int tls_cert_issuer_enabled;
   int tls_cert_subject_enabled;
   int tls_cert_first_only;
-  int tls_broswer_enabled;
+  int tls_browser_enabled;
   int tls_ja3s_fingerprint_enabled;
   int tls_ja4c_fingerprint_enabled;
   int tls_ja4r_fingerprint_enabled;
+  int tls_ja_data_enabled;
+  int tls_ja_ignore_ephemeral_extensions;
+  int tls_ndpifp_ignore_sni_extension;
+  int tls_ndpifp_ignore_tcp_fingerprint;
   int tls_subclassification_enabled;
   int tls_subclassification_cert_enabled;
-
   int tls_blocks_analysis_enabled;
+  int tls_max_num_blocks_to_analyze;
+  int tls_blocks_show_timing;
+
   int quic_subclassification_enabled;
 
   int smtp_opportunistic_tls_enabled;
@@ -324,6 +330,9 @@ struct ndpi_detection_module_config_struct {
   int sip_attribute_to_enabled;
   int sip_attribute_to_imsi_enabled;
 
+  int ssh_hassh_fingerprint_enabled;
+  int ssh_hassh_data_enabled;
+  
   int stun_opportunistic_tls_enabled;
   int stun_max_packets_extra_dissection;
   int rtp_max_packets_extra_dissection;
@@ -336,6 +345,8 @@ struct ndpi_detection_module_config_struct {
   int bittorrent_hash_enabled;
 
   int ssdp_metadata_enabled;
+
+  int ntp_metadata_enabled;
 
   int dns_subclassification_enabled;
   int dns_parse_response_enabled;
@@ -374,8 +385,7 @@ struct ndpi_detection_module_struct {
 //  struct ndpi_bitmask *detection_bitmask;
   u_int32_t ticks_per_second;
   u_int64_t current_ts;
-  u_int16_t num_tls_blocks_to_follow;
-  u_int8_t skip_tls_blocks_until_change_cipher:1, finalized:1, _notused:6;
+  u_int8_t finalized:1, _notused:7;
   u_int8_t tls_certificate_expire_in_x_days;
 
   void *user_data;
@@ -690,7 +700,7 @@ struct ndpi_detection_module_struct {
 
 NDPI_STATIC int is_proto_enabled(struct ndpi_detection_module_struct *ndpi_str, int protoId);
 NDPI_STATIC int is_flowrisk_enabled(struct ndpi_detection_module_struct *ndpi_str, ndpi_risk_enum flowrisk_id);
-NDPI_STATIC void register_dissector(char *dissector_name, struct ndpi_detection_module_struct *ndpi_str,
+NDPI_STATIC void ndpi_register_dissector(char *dissector_name, struct ndpi_detection_module_struct *ndpi_str,
                         void (*func)(struct ndpi_detection_module_struct *,
                                      struct ndpi_flow_struct *flow),
                         const NDPI_SELECTION_BITMASK_PROTOCOL_SIZE ndpi_selection_bitmask,
@@ -997,7 +1007,6 @@ NDPI_STATIC void init_nintendo_dissector(struct ndpi_detection_module_struct *nd
 NDPI_STATIC void init_csgo_dissector(struct ndpi_detection_module_struct *ndpi_struct);
 NDPI_STATIC void init_checkmk_dissector(struct ndpi_detection_module_struct *ndpi_struct);
 NDPI_STATIC void init_cpha_dissector(struct ndpi_detection_module_struct *ndpi_struct);
-NDPI_STATIC void init_apple_push_dissector(struct ndpi_detection_module_struct *ndpi_struct);
 NDPI_STATIC void init_amazon_video_dissector(struct ndpi_detection_module_struct *ndpi_struct);
 NDPI_STATIC void init_whatsapp_dissector(struct ndpi_detection_module_struct *ndpi_struct);
 NDPI_STATIC void init_ajp_dissector(struct ndpi_detection_module_struct *ndpi_struct);
@@ -1144,6 +1153,36 @@ NDPI_STATIC void init_msgpack_dissector(struct ndpi_detection_module_struct *ndp
 #ifdef CUSTOM_NDPI_PROTOCOLS
   #include "../../../nDPI-custom/custom_ndpi_private.h"
 #endif
+
+
+enum cfg_param_type {
+  CFG_PARAM_ENABLE_DISABLE = 0,
+  CFG_PARAM_INT,
+  CFG_PARAM_PROTOCOL_ENABLE_DISABLE,
+  CFG_PARAM_FILENAME_CONFIG, /* We call ndpi_set_config() immediately for each row in it */
+  CFG_PARAM_CONST_INT,
+  CFG_PARAM_CONST_FLAG,
+  CFG_PARAM_FLOWRISK_ENABLE_DISABLE,
+};
+
+typedef int (*cfg_calback)(struct ndpi_detection_module_struct *ndpi_str, void *_variable, const char *proto, const char *param);
+
+struct cfg_param {
+  char *proto;
+  char *param;
+  char *default_value;
+  char *min_value;
+  char *max_value;
+  enum cfg_param_type type;
+  int offset;
+  cfg_calback fn_callback;
+  int locked;
+};
+
+#ifdef FUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION
+extern const struct cfg_param cfg_params[];
+#endif
+
 
 #endif
 

@@ -1,7 +1,7 @@
 /*
  * ndpi_util.h
  *
- * Copyright (C) 2011-25 - ntop.org
+ * Copyright (C) 2011-26 - ntop.org
  *
  * nDPI is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -306,7 +306,7 @@ typedef struct ndpi_flow_info {
       *advertised_alpns, *negotiated_alpn, *tls_supported_versions,
       *tls_issuerDN, *tls_subjectDN,
       ja3_server[33], ja4_client[37], *ja4_client_raw,
-      sha1_cert_fingerprint[20];
+      sha1_cert_fingerprint[20], ssh_key_exchange_method[24];
     u_int8_t sha1_cert_fingerprint_set;
     struct tls_heuristics browser_heuristics;
 
@@ -319,11 +319,13 @@ typedef struct ndpi_flow_info {
     ndpi_cipher_weakness client_unsafe_cipher, server_unsafe_cipher;
 
     u_int32_t quic_version;
-
-    u_int8_t num_blocks;
-    struct ndpi_tls_block blocks[NDPI_MAX_NUM_TLS_APPL_BLOCKS];
   } ssh_tls;
 
+  struct {
+    u_int8_t num_blocks;
+    struct ndpi_tls_block *blocks;
+  } tls;
+  
   struct {
     char url[256], request_content_type[64], content_type[64],
       user_agent[256], server[128], nat_ip[32], username[64], password[64], filename[256];

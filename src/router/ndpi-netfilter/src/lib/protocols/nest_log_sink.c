@@ -2,7 +2,7 @@
  * nest_log_sink.c
  *
  * Copyright (C) 2009-11 - ipoque GmbH
- * Copyright (C) 2011-25 - ntop.org
+ * Copyright (C) 2011-26 - ntop.org
  * Copyright (C) 2018 - eGloo Incorporated
  *
  * This file is part of nDPI, an open source deep packet inspection
@@ -65,7 +65,7 @@ static void ndpi_search_nest_log_sink(struct ndpi_detection_module_struct *ndpi_
 
 void init_nest_log_sink_dissector(struct ndpi_detection_module_struct *ndpi_struct)
 {
-  register_dissector("NEST_LOG_SINK", ndpi_struct,
+  ndpi_register_dissector("NEST_LOG_SINK", ndpi_struct,
                      ndpi_search_nest_log_sink,
                      NDPI_SELECTION_BITMASK_PROTOCOL_V4_V6_TCP_WITH_PAYLOAD_WITHOUT_RETRANSMISSION,
                      1, NDPI_PROTOCOL_NEST_LOG_SINK);

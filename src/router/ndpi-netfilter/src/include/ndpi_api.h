@@ -1,7 +1,7 @@
 /*
  * ndpi_api.h
  *
- * Copyright (C) 2011-25 - ntop.org
+ * Copyright (C) 2011-26 - ntop.org
  *
  * This file is part of nDPI, an open source deep packet inspection
  * library based on the OpenDPI and PACE technology by ipoque GmbH
@@ -280,7 +280,7 @@ extern "C" {
    */
   NDPI_STATIC ndpi_port_range *ndpi_build_default_ports(ndpi_port_range *ports, u_int16_t portA, u_int16_t portB, u_int16_t portC,
 					    u_int16_t portD, u_int16_t portE);
-    
+
   /**
    * Set protocol default
    *
@@ -306,7 +306,7 @@ extern "C" {
    * Dynamically load protocol plugins
    *
    *
-   * @par    ndpi_struct    = the detection module 
+   * @par    ndpi_struct    = the detection module
    * @return number of loaded protocols
    *
    */
@@ -1077,6 +1077,8 @@ NDPI_STATIC  int ndpi_load_tcp_fingerprint_file(struct ndpi_detection_module_str
 
   NDPI_STATIC char *ndpi_stack2str(struct ndpi_detection_module_struct *ndpi_str,
                        struct ndpi_proto_stack *stack, char *buf, u_int buf_len);
+  ndpi_tls_block_type ndpi_encode_tls_block_type(u_int8_t block_type, u_int8_t handshake_type);
+  const char* ndpi_print_encoded_tls_block_type(ndpi_tls_block_type block_type, bool numeric_mode);
 
   NDPI_STATIC ndpi_proto_defaults_t* ndpi_get_proto_defaults(struct ndpi_detection_module_struct *ndpi_mod);
   NDPI_STATIC u_int ndpi_get_ndpi_detection_module_size(void);
@@ -1151,6 +1153,14 @@ NDPI_STATIC  int ndpi_load_tcp_fingerprint_file(struct ndpi_detection_module_str
 			   const char *path, u_int16_t protocol_id);
   NDPI_STATIC const char* ndpi_cipher2str(u_int32_t cipher, char unknown_cipher[8]);
 #ifndef __KERNEL__    
+NDPI_STATIC  const char* ndpi_cipher2str(u_int32_t cipher, char unknown_cipher[8]);
+NDPI_STATIC  const char* ndpi_tls_extension2str(u_int16_t extension_id, char unknown_extn[8]);
+NDPI_STATIC  const char* ndpi_tls_elliptic_curve2str(u_int16_t curve_id, char unknown_curve[8]);
+NDPI_STATIC  const char* ndpi_tls_signature_algo2str(u_int16_t algo_id, char unknown_algo[8]);
+NDPI_STATIC  const char* ndpi_tls_elliptic_curve_groups2str(u_int16_t group_id, char unknown_group[8]);
+NDPI_STATIC  const char* ndpi_tls_elliptic_curve_point_format2str(u_int16_t format_id, char unknown_group[8]);
+NDPI_STATIC  const char* ndpi_tls_key_share_group2str(u_int16_t group_id, char unknown_group[8]);
+NDPI_STATIC  const char* ndpi_tls_supported_version2str(u_int16_t version_id, char unknown_version[8]);
   NDPI_STATIC const char* ndpi_tunnel2str(ndpi_packet_tunnel tt);
   NDPI_STATIC int ndpi_has_human_readeable_string(char *buffer, u_int buffer_size,
 				      u_int8_t min_string_match_len, /* Will return 0 if no string > min_string_match_len have been found */
@@ -1739,6 +1749,7 @@ NDPI_STATIC  int ndpi_load_tcp_fingerprint_file(struct ndpi_detection_module_str
   float ndpi_data_variance(struct ndpi_analyze_struct *s);
   float ndpi_data_stddev(struct ndpi_analyze_struct *s);
   float ndpi_data_mean(struct ndpi_analyze_struct *s);
+  float ndpi_data_burstiness(struct ndpi_analyze_struct *s);
   NDPI_STATIC u_int64_t ndpi_data_last(struct ndpi_analyze_struct *s);
   NDPI_STATIC u_int64_t ndpi_data_min(struct ndpi_analyze_struct *s);
   NDPI_STATIC u_int64_t ndpi_data_max(struct ndpi_analyze_struct *s);
@@ -1804,6 +1815,9 @@ NDPI_STATIC  int ndpi_load_tcp_fingerprint_file(struct ndpi_detection_module_str
   NDPI_STATIC void ndpi_data_print_window_values(struct ndpi_analyze_struct *s); /* debug */
 
   NDPI_STATIC u_int8_t ndpi_is_protocol_detected(ndpi_protocol proto);
+  NDPI_STATIC void ndpi_serialize_tls_blocks(struct ndpi_detection_module_struct *ndpi_struct,
+				 ndpi_serializer *serializer,
+				 struct ndpi_flow_struct *flow);
   NDPI_STATIC void ndpi_serialize_risk(ndpi_serializer *serializer, ndpi_risk risk);
   NDPI_STATIC void ndpi_serialize_risk_score(ndpi_serializer *serializer, ndpi_risk_enum risk);
   NDPI_STATIC void ndpi_serialize_confidence(ndpi_serializer *serializer, ndpi_confidence_t confidence);
@@ -2529,6 +2543,12 @@ NDPI_STATIC  u_int16_t ndpi_ranking_add_epoch(ndpi_ranking *rank, u_int32_t epoc
 				   ndpi_ranking_change *curr_ranking,/* Out */
 				   ndpi_ranking_change *prev_ranking /* Out */,
 				   u_int32_t *prev_ranking_epoch /* Out */);
+#ifndef __KERNEL__
+  float ndpi_tls_blocks_len_compare(struct ndpi_tls_block *a,
+				    struct ndpi_tls_block *b,
+				    float *multiplier,
+				    u_int8_t num_tls_blocks);
+#endif
 #ifdef __cplusplus
 }
 #endif

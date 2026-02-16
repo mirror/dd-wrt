@@ -1,7 +1,7 @@
 /*
  * telnet.c
  *
- * Copyright (C) 2011-25 - ntop.org
+ * Copyright (C) 2011-26 - ntop.org
  * Copyright (C) 2009-11 - ipoque GmbH
  *
  * This file is part of nDPI, an open source deep packet inspection
@@ -202,7 +202,7 @@ static void ndpi_search_telnet_tcp(struct ndpi_detection_module_struct *ndpi_str
 
 void init_telnet_dissector(struct ndpi_detection_module_struct *ndpi_struct)
 {
-  register_dissector("Telnet", ndpi_struct,
+  ndpi_register_dissector("Telnet", ndpi_struct,
                      ndpi_search_telnet_tcp,
                      NDPI_SELECTION_BITMASK_PROTOCOL_V4_V6_TCP_WITH_PAYLOAD_WITHOUT_RETRANSMISSION,
                      1, NDPI_PROTOCOL_TELNET);

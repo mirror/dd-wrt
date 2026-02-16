@@ -2,7 +2,7 @@
  * ssdp.c
  *
  * Copyright (C) 2009-11 - ipoque GmbH
- * Copyright (C) 2011-25 - ntop.org
+ * Copyright (C) 2011-26 - ntop.org
  *
  * This file is part of nDPI, an open source deep packet inspection
  * library based on the OpenDPI and PACE technology by ipoque GmbH
@@ -90,67 +90,11 @@ static void ssdp_parse_lines(struct ndpi_detection_module_struct
     }
   }
 
-  if (packet->household_smart_speaker_audio.ptr != NULL && packet->household_smart_speaker_audio.len > 0) {
-    flow->protos.ssdp.household_smart_speaker_audio = ndpi_malloc(packet->household_smart_speaker_audio.len + 1);
-    if (flow->protos.ssdp.household_smart_speaker_audio) {
-      memcpy(flow->protos.ssdp.household_smart_speaker_audio, packet->household_smart_speaker_audio.ptr, packet->household_smart_speaker_audio.len);
-      flow->protos.ssdp.household_smart_speaker_audio[packet->household_smart_speaker_audio.len] = '\0';
-    }
-  }
-
-  if (packet->rincon_household.ptr != NULL && packet->rincon_household.len > 0) {
-    flow->protos.ssdp.rincon_household = ndpi_malloc(packet->rincon_household.len + 1);
-    if (flow->protos.ssdp.rincon_household) {
-      memcpy(flow->protos.ssdp.rincon_household, packet->rincon_household.ptr, packet->rincon_household.len);
-      flow->protos.ssdp.rincon_household[packet->rincon_household.len] = '\0';
-    }
-  }
-
-  if (packet->rincon_bootseq.ptr != NULL && packet->rincon_bootseq.len > 0) {
-    flow->protos.ssdp.rincon_bootseq = ndpi_malloc(packet->rincon_bootseq.len + 1);
-    if (flow->protos.ssdp.rincon_bootseq) {
-      memcpy(flow->protos.ssdp.rincon_bootseq, packet->rincon_bootseq.ptr, packet->rincon_bootseq.len);
-      flow->protos.ssdp.rincon_bootseq[packet->rincon_bootseq.len] = '\0';
-    }
-  }
-
-  if (packet->rincon_wifimode.ptr != NULL && packet->rincon_wifimode.len > 0) {
-    flow->protos.ssdp.rincon_wifimode = ndpi_malloc(packet->rincon_wifimode.len + 1);
-    if (flow->protos.ssdp.rincon_wifimode) {
-      memcpy(flow->protos.ssdp.rincon_wifimode, packet->rincon_wifimode.ptr, packet->rincon_wifimode.len);
-      flow->protos.ssdp.rincon_wifimode[packet->rincon_wifimode.len] = '\0';
-    }
-  }
-
-  if (packet->rincon_variant.ptr != NULL && packet->rincon_variant.len > 0) {
-    flow->protos.ssdp.rincon_variant = ndpi_malloc(packet->rincon_variant.len + 1);
-    if (flow->protos.ssdp.rincon_variant) {
-      memcpy(flow->protos.ssdp.rincon_variant, packet->rincon_variant.ptr, packet->rincon_variant.len);
-      flow->protos.ssdp.rincon_variant[packet->rincon_variant.len] = '\0';
-    }
-  }
-
-  if (packet->sonos_securelocation.ptr != NULL && packet->sonos_securelocation.len > 0) {
-    flow->protos.ssdp.sonos_securelocation = ndpi_malloc(packet->sonos_securelocation.len + 1);
-    if (flow->protos.ssdp.sonos_securelocation) {
-      memcpy(flow->protos.ssdp.sonos_securelocation, packet->sonos_securelocation.ptr, packet->sonos_securelocation.len);
-      flow->protos.ssdp.sonos_securelocation[packet->sonos_securelocation.len] = '\0';
-    }
-  }
-
   if (packet->securelocation_upnp.ptr != NULL && packet->securelocation_upnp.len > 0) {
     flow->protos.ssdp.securelocation_upnp = ndpi_malloc(packet->securelocation_upnp.len + 1);
     if (flow->protos.ssdp.securelocation_upnp) {
       memcpy(flow->protos.ssdp.securelocation_upnp, packet->securelocation_upnp.ptr, packet->securelocation_upnp.len);
       flow->protos.ssdp.securelocation_upnp[packet->securelocation_upnp.len] = '\0';
-    }
-  }
-
-  if (packet->location_smart_speaker_audio.ptr != NULL && packet->location_smart_speaker_audio.len > 0) {
-    flow->protos.ssdp.location_smart_speaker_audio = ndpi_malloc(packet->location_smart_speaker_audio.len + 1);
-    if (flow->protos.ssdp.location_smart_speaker_audio) {
-      memcpy(flow->protos.ssdp.location_smart_speaker_audio, packet->location_smart_speaker_audio.ptr, packet->location_smart_speaker_audio.len);
-      flow->protos.ssdp.location_smart_speaker_audio[packet->location_smart_speaker_audio.len] = '\0';
     }
   }
 
@@ -259,7 +203,7 @@ static void ndpi_search_ssdp(struct ndpi_detection_module_struct *ndpi_struct, s
 
 void init_ssdp_dissector(struct ndpi_detection_module_struct *ndpi_struct)
 {
-  register_dissector("SSDP", ndpi_struct,
+  ndpi_register_dissector("SSDP", ndpi_struct,
                      ndpi_search_ssdp,
                      NDPI_SELECTION_BITMASK_PROTOCOL_V4_V6_UDP_WITH_PAYLOAD,
                      1, NDPI_PROTOCOL_SSDP);

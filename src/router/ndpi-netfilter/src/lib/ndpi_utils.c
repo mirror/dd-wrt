@@ -1,7 +1,7 @@
 /*
  * ndpi_utils.c
  *
- * Copyright (C) 2011-25 - ntop.org and contributors
+ * Copyright (C) 2011-26 - ntop.org and contributors
  *
  * nDPI is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -23,6 +23,7 @@
 #include <errno.h>
 #include <math.h>
 #include <sys/types.h>
+#include <time.h>
 #else
 #include <asm/byteorder.h>
 #include <linux/types.h>
@@ -88,7 +89,37 @@ typedef struct {
   UT_hash_handle hh;
 } ndpi_str_hash_priv;
 
+typedef struct {
+  uint32_t seconds;
+  uint32_t fraction;
+} ntp_t;
+
+#define NTP_DELTA 2208988800UL
+
 /* ****************************************** */
+#ifndef __KERNEL__
+// https://tickelton.gitlab.io/articles/ntp-timestamps/
+void ntp_ts_to_string(uint64_t timestamp, char *buffer, size_t buffer_size) {
+
+  if (timestamp == 0) {
+    buffer[0] = '\0';
+    return;
+  }
+
+  ntp_t ntp;
+
+  memcpy(&ntp, &timestamp, sizeof(uint64_t));
+
+  time_t sec = ntohl(ntp.seconds) - NTP_DELTA;
+  uint32_t usec = (uint32_t)((double)ntohl(ntp.fraction) * 1.0e9 / (double)(1LL << 32));
+
+  struct tm tm;
+
+  (void)ndpi_gmtime_r(&sec, &tm);
+  size_t offset = strftime(buffer, buffer_size, "%Y-%m-%d %H:%M:%S", &tm);
+  snprintf(buffer + offset, buffer_size - offset, ".%d", usec);
+}
+#endif
 
 /* implementation of the punycode check function */
 int ndpi_check_punycode_string(char * buffer , int len) {
@@ -1210,7 +1241,7 @@ void ndpi_serialize_proto(struct ndpi_detection_module_struct *ndpi_struct,
   ndpi_serialize_string_string(serializer, "proto_id", ndpi_protocol2id(l7_protocol.proto, buf, sizeof(buf)));
   ndpi_serialize_string_string(serializer, "proto_by_ip", ndpi_get_proto_name(ndpi_struct,
                                                                               l7_protocol.protocol_by_ip));
-  ndpi_serialize_string_uint32(serializer, "proto_by_ip_id", l7_protocol.protocol_by_ip);
+  if(l7_protocol.protocol_by_ip) ndpi_serialize_string_uint32(serializer, "proto_by_ip_id", l7_protocol.protocol_by_ip);
   ndpi_serialize_string_uint32(serializer, "encrypted", ndpi_is_encrypted_proto(ndpi_struct, l7_protocol.proto));
   ndpi_serialize_string_string(serializer, "breed", ndpi_get_proto_breed_name(l7_protocol.breed));
   ndpi_serialize_string_uint32(serializer, "category_id", l7_protocol.category);
@@ -1222,10 +1253,191 @@ void ndpi_serialize_proto(struct ndpi_detection_module_struct *ndpi_struct,
 
 #ifndef __KERNEL__
 
-static void ndpi_tls2json(ndpi_serializer *serializer, struct ndpi_flow_struct *flow, bool is_tls_proto)
-{
-  if(flow->protos.tls_quic.ssl_version)
-  {
+void ndpi_serialize_tls_blocks(struct ndpi_detection_module_struct *ndpi_struct,
+			       ndpi_serializer *serializer,
+			       struct ndpi_flow_struct *flow) {
+  if((ndpi_struct->cfg.tls_max_num_blocks_to_analyze > 0)
+     && (flow->l4.tcp.tls.tls_blocks != NULL)
+     && (flow->l4.tcp.tls.num_tls_blocks > 0)) {
+    u_int16_t i, idx = 0;
+    int ret;
+    char buf[256];
+
+    ndpi_serialize_start_of_list(serializer, "tls_blocks");
+
+    for(i=0; i< flow->l4.tcp.tls.num_tls_blocks; i++) {
+      if(!flow->l4.tcp.tls.tls_blocks[i].same_pkt) {
+	if(idx > 0) {
+	  ndpi_serialize_string_string(serializer, "", buf);
+	  idx = 0;
+	}
+      }
+
+      if(ndpi_struct->cfg.tls_blocks_show_timing)
+	ret = snprintf(&buf[idx], sizeof(buf)-idx-1, "%s%s=%d@%u",
+		       (idx > 0) ? "," : "",
+		       ndpi_print_encoded_tls_block_type(flow->l4.tcp.tls.tls_blocks[i].block_type, true),
+		       flow->l4.tcp.tls.tls_blocks[i].len,
+		       flow->l4.tcp.tls.tls_blocks[i].msec_delta);
+      else
+	ret = snprintf(&buf[idx], sizeof(buf)-idx-1, "%s%s=%d",
+		       (idx > 0) ? "," : "",
+		       ndpi_print_encoded_tls_block_type(flow->l4.tcp.tls.tls_blocks[i].block_type, true),
+		       flow->l4.tcp.tls.tls_blocks[i].len);
+
+      if(ret > 0) idx += ret; else break;
+    } /* for */
+
+    if(idx > 0)
+      ndpi_serialize_string_string(serializer, "", buf);
+
+    ndpi_serialize_end_of_list(serializer);
+  }
+
+#ifdef TLS_HANDLE_SIGNATURE_ALGORITMS
+  ndpi_serialize_string_uint32(serializer, "sig_algs", flow->protos.tls_quic.num_tls_signature_algorithms);
+#endif
+
+  if(flow->protos.tls_quic.ja_client != NULL) {
+    ndpi_tls_client_info *c = flow->protos.tls_quic.ja_client;
+    u_int16_t i;
+    char unknown_cipher[8];
+
+    ndpi_serialize_start_of_block(serializer, "client_data");
+
+    if(c->num_ciphers > 0) {
+      ndpi_serialize_start_of_list(serializer, "ciphers");
+
+      for(i=0; i<c->num_ciphers; i++)
+	ndpi_serialize_string_string(serializer, "", ndpi_cipher2str(c->cipher[i], unknown_cipher));
+
+      ndpi_serialize_end_of_list(serializer);
+    }
+
+    if(c->num_tls_extensions > 0) {
+      char unknown_extn[8];
+
+      ndpi_serialize_start_of_list(serializer, "tls_extensions");
+
+      for(i=0; i<c->num_tls_extensions; i++)
+	ndpi_serialize_string_string(serializer, "",
+				     ndpi_tls_extension2str(c->tls_extension[i], unknown_extn));
+
+      ndpi_serialize_end_of_list(serializer);
+    }
+
+    if(c->num_elliptic_curve_groups > 0) {
+      char unknown_group[8];
+
+      ndpi_serialize_start_of_list(serializer, "elliptic_curve_groups");
+
+      for(i=0; i<c->num_elliptic_curve_groups; i++)
+	ndpi_serialize_string_string(serializer, "",
+				     ndpi_tls_elliptic_curve_groups2str(c->elliptic_curve_group[i], unknown_group));
+
+      ndpi_serialize_end_of_list(serializer);
+    }
+
+    if(c->num_elliptic_curve_point_format > 0) {
+      char unknown_curve[8];
+
+      ndpi_serialize_start_of_list(serializer, "elliptic_curve_point_format");
+
+      for(i=0; i<c->num_elliptic_curve_point_format; i++)
+	ndpi_serialize_string_string(serializer, "",
+				     ndpi_tls_elliptic_curve2str(c->elliptic_curve_point_format[i], unknown_curve));
+
+      ndpi_serialize_end_of_list(serializer);
+    }
+
+    if(c->num_signature_algorithms > 0) {
+      char unknown_algo[8];
+
+      ndpi_serialize_start_of_list(serializer, "signature_algorithms");
+
+      for(i=0; i<c->num_signature_algorithms; i++)
+	ndpi_serialize_string_string(serializer, "",
+				     ndpi_tls_signature_algo2str(c->signature_algorithm[i], unknown_algo));
+
+      ndpi_serialize_end_of_list(serializer);
+    }
+
+    if(c->num_key_share_groups > 0) {
+      char unknown_group[8];
+
+      ndpi_serialize_start_of_list(serializer, "key_share_groups");
+
+      for(i=0; i<c->num_key_share_groups; i++)
+	ndpi_serialize_string_string(serializer, "",
+				     ndpi_tls_key_share_group2str(c->key_share_group[i], unknown_group));
+
+      ndpi_serialize_end_of_list(serializer);
+    }
+
+    if(c->num_supported_versions > 0) {
+      char unknown_version[8];
+
+      ndpi_serialize_start_of_list(serializer, "supported_versions");
+
+      for(i=0; i<c->num_supported_versions; i++)
+	ndpi_serialize_string_string(serializer, "",
+				     ndpi_tls_supported_version2str(c->supported_version[i], unknown_version));
+
+      ndpi_serialize_end_of_list(serializer);
+    }
+
+    ndpi_serialize_end_of_block(serializer);
+  }
+
+  if(flow->protos.tls_quic.ja_server != NULL) {
+    ndpi_tls_server_info *s = flow->protos.tls_quic.ja_server;
+    u_int16_t i;
+    char unknown_cipher[8];
+
+    ndpi_serialize_start_of_block(serializer, "server_data");
+
+    if(s->num_ciphers > 0) {
+      ndpi_serialize_start_of_list(serializer, "ciphers");
+
+      for(i=0; i<s->num_ciphers; i++)
+	ndpi_serialize_string_string(serializer, "", ndpi_cipher2str(s->cipher[i], unknown_cipher));
+
+      ndpi_serialize_end_of_list(serializer);
+    }
+
+    if(s->num_tls_extensions > 0) {
+      char unknown_extn[8];
+
+      ndpi_serialize_start_of_list(serializer, "tls_extensions");
+
+      for(i=0; i<s->num_tls_extensions; i++)
+	ndpi_serialize_string_string(serializer, "",
+				     ndpi_tls_extension2str(s->tls_extension[i], unknown_extn));
+
+      ndpi_serialize_end_of_list(serializer);
+    }
+
+    if(s->num_elliptic_curve_point_format > 0) {
+      char unknown_curve[8];
+
+      ndpi_serialize_start_of_list(serializer, "elliptic_curve_point_format");
+
+      for(i=0; i<s->num_elliptic_curve_point_format; i++)
+	ndpi_serialize_string_string(serializer, "",
+				     ndpi_tls_elliptic_curve2str(s->elliptic_curve_point_format[i], unknown_curve));
+
+      ndpi_serialize_end_of_list(serializer);
+    }
+
+    ndpi_serialize_end_of_block(serializer);
+  }
+}
+
+/* ********************************** */
+
+static void ndpi_tls2json(struct ndpi_detection_module_struct *ndpi_struct, ndpi_serializer *serializer,
+			  struct ndpi_flow_struct *flow, bool is_tls_proto) {
+  if(flow->protos.tls_quic.ssl_version) {
     char buf[64];
     char notBefore[32], notAfter[32];
     struct tm a, b, *before = NULL, *after = NULL;
@@ -1236,33 +1448,26 @@ static void ndpi_tls2json(ndpi_serializer *serializer, struct ndpi_flow_struct *
     ndpi_ssl_version2str(version, sizeof(version), flow->protos.tls_quic.ssl_version, &unknown_tls_version);
 
     if(flow->protos.tls_quic.notBefore)
-    {
       before = ndpi_gmtime_r((const time_t *)&flow->protos.tls_quic.notBefore, &a);
-    }
-    if(flow->protos.tls_quic.notAfter)
-    {
-      after = ndpi_gmtime_r((const time_t *)&flow->protos.tls_quic.notAfter, &b);
-    }
 
-    if(!unknown_tls_version)
-    {
+    if(flow->protos.tls_quic.notAfter)
+      after = ndpi_gmtime_r((const time_t *)&flow->protos.tls_quic.notAfter, &b);
+
+    if(!unknown_tls_version) {
       ndpi_serialize_start_of_block(serializer, "tls");
       ndpi_serialize_string_string(serializer, "version", version);
 
-      if(flow->protos.tls_quic.server_names)
-      {
+      if(flow->protos.tls_quic.server_names) {
         ndpi_serialize_string_string(serializer, "server_names",
                                      flow->protos.tls_quic.server_names);
       }
 
-      if(before)
-      {
+      if(before) {
         strftime(notBefore, sizeof(notBefore), "%Y-%m-%d %H:%M:%S", before);
         ndpi_serialize_string_string(serializer, "notbefore", notBefore);
       }
 
-      if(after)
-      {
+      if(after) {
         strftime(notAfter, sizeof(notAfter), "%Y-%m-%d %H:%M:%S", after);
         ndpi_serialize_string_string(serializer, "notafter", notAfter);
       }
@@ -1274,32 +1479,24 @@ static void ndpi_tls2json(ndpi_serializer *serializer, struct ndpi_flow_struct *
                                    ndpi_cipher2str(flow->protos.tls_quic.server_cipher, unknown_cipher));
 
       if(flow->protos.tls_quic.issuerDN)
-      {
         ndpi_serialize_string_string(serializer, "issuerDN", flow->protos.tls_quic.issuerDN);
-      }
-      if(flow->protos.tls_quic.subjectDN)
-      {
-        ndpi_serialize_string_string(serializer, "subjectDN", flow->protos.tls_quic.subjectDN);
-      }
-      if(flow->protos.tls_quic.advertised_alpns)
-      {
-        ndpi_serialize_string_string(serializer, "advertised_alpns", flow->protos.tls_quic.advertised_alpns);
-      }
-      if(flow->protos.tls_quic.negotiated_alpn)
-      {
-        ndpi_serialize_string_string(serializer, "negotiated_alpn", flow->protos.tls_quic.negotiated_alpn);
-      }
-      if(flow->protos.tls_quic.tls_supported_versions)
-      {
-        ndpi_serialize_string_string(serializer, "tls_supported_versions", flow->protos.tls_quic.tls_supported_versions);
-      }
 
-      if(flow->protos.tls_quic.sha1_certificate_fingerprint[0] != '\0')
-      {
-        for(i=0, off=0; i<20; i++)
-        {
-          int rc = ndpi_snprintf(&buf[off], sizeof(buf)-off,"%s%02X", (i > 0) ? ":" : "",
-                               flow->protos.tls_quic.sha1_certificate_fingerprint[i] & 0xFF);
+      if(flow->protos.tls_quic.subjectDN)
+        ndpi_serialize_string_string(serializer, "subjectDN", flow->protos.tls_quic.subjectDN);
+
+      if(flow->protos.tls_quic.advertised_alpns)
+        ndpi_serialize_string_string(serializer, "advertised_alpns", flow->protos.tls_quic.advertised_alpns);
+
+      if(flow->protos.tls_quic.negotiated_alpn)
+        ndpi_serialize_string_string(serializer, "negotiated_alpn", flow->protos.tls_quic.negotiated_alpn);
+
+      if(flow->protos.tls_quic.tls_supported_versions)
+        ndpi_serialize_string_string(serializer, "tls_supported_versions", flow->protos.tls_quic.tls_supported_versions);
+
+      if(flow->protos.tls_quic.sha1_certificate_fingerprint[0] != '\0') {
+        for(i=0, off=0; i<20; i++) {
+          int rc = ndpi_snprintf(&buf[off], sizeof(buf)-off-1,"%s%02X", (i > 0) ? ":" : "",
+				 flow->protos.tls_quic.sha1_certificate_fingerprint[i] & 0xFF);
 
           if(rc <= 0) break; else off += rc;
         }
@@ -1308,12 +1505,7 @@ static void ndpi_tls2json(ndpi_serializer *serializer, struct ndpi_flow_struct *
       }
 
       if (is_tls_proto == true)
-      {
-        ndpi_serialize_string_uint32(serializer, "blocks", flow->l4.tcp.tls.num_tls_blocks);
-      }
-#ifdef TLS_HANDLE_SIGNATURE_ALGORITMS
-      ndpi_serialize_string_uint32(serializer, "sig_algs", flow->protos.tls_quic.num_tls_signature_algorithms);
-#endif
+	ndpi_serialize_tls_blocks(ndpi_struct, serializer, flow);
 
       ndpi_serialize_end_of_block(serializer);
     }
@@ -1334,6 +1526,48 @@ char* print_ndpi_address_port(ndpi_address_port *ap, char *buf, u_int buf_len) {
   snprintf(buf, buf_len, "%s:%u", ipbuf, ap->port);
 
   return(buf);
+}
+
+/* ********************************** */
+
+void ndpi_ssh_serialize_csv(ndpi_serializer *serializer,
+			    const char *csv_string,
+			    const char* label) {
+  u_int offset=0;
+
+  if(!csv_string) return;
+
+  ndpi_serialize_start_of_list(serializer, label);
+
+  while(csv_string[offset] != '\0') {
+    u_int len = 0, new_offset = offset;
+    /*
+      ext-info-c is a special keyword used in the Secure Shell (SSH)
+      protocol's initial key exchange (KEXINIT) to signal that the
+      client supports the SSH Extension Negotiation mechanism (RFC 8308),
+      allowing it to send additional information (like
+      supported algorithms) to the server via SSH_MSG_EXT_INFO
+      messages after the KEX starts.
+    */
+    const char *toskip = "ext-info-";
+
+    while((csv_string[new_offset] != ',')
+	  && (csv_string[new_offset] != '\0'))
+      new_offset++, len++;
+
+    if(ndpi_strnstr(&csv_string[offset], toskip, len) == NULL)
+      ndpi_serialize_string_string_len(serializer, "",
+				       &csv_string[offset], len);
+
+    offset += len;
+
+    if(csv_string[offset] == ',')
+      offset++;
+    else
+      break;
+  }
+
+  ndpi_serialize_end_of_list(serializer);
 }
 
 /* ********************************** */
@@ -1439,8 +1673,30 @@ int ndpi_dpi2json(struct ndpi_detection_module_struct *ndpi_struct,
 
   case NDPI_PROTOCOL_NTP:
     ndpi_serialize_start_of_block(serializer, "ntp");
-    ndpi_serialize_string_uint32(serializer, "version", flow->protos.ntp.version);
-    ndpi_serialize_string_uint32(serializer, "mode", flow->protos.ntp.mode);
+    for (i = 0; i < 2; i++) {
+      ndpi_serialize_start_of_block_uint32(serializer,i);
+      ndpi_serialize_string_uint32(serializer, "leap_indicator", flow->protos.ntp[i].leap_indicator);
+      ndpi_serialize_string_uint32(serializer, "version", flow->protos.ntp[i].version);
+      ndpi_serialize_string_uint32(serializer, "mode", flow->protos.ntp[i].mode);
+      ndpi_serialize_string_uint32(serializer, "stratum", flow->protos.ntp[i].stratum);
+      ndpi_serialize_string_int32(serializer, "ppol", flow->protos.ntp[i].ppol);
+      ndpi_serialize_string_int32(serializer, "precision", flow->protos.ntp[i].precision);
+      ndpi_serialize_string_float(serializer, "root_delay", flow->protos.ntp[i].root_delay, "%f");
+      ndpi_serialize_string_float(serializer, "root_dispersion", flow->protos.ntp[i].root_dispersion, "%f");
+      ndpi_serialize_string_string(serializer, "ref_id", flow->protos.ntp[i].ref_id);
+
+
+      char timestamp[64];
+      ntp_ts_to_string(flow->protos.ntp[i].ref_time, timestamp, sizeof timestamp);
+      ndpi_serialize_string_string(serializer, "ref_time", timestamp);
+      ntp_ts_to_string(flow->protos.ntp[i].org_time, timestamp, sizeof timestamp);
+      ndpi_serialize_string_string(serializer, "org_time", timestamp);
+      ntp_ts_to_string(flow->protos.ntp[i].rec_time, timestamp, sizeof timestamp);
+      ndpi_serialize_string_string(serializer, "rec_time", timestamp);
+      ntp_ts_to_string(flow->protos.ntp[i].trans_time, timestamp, sizeof timestamp);
+      ndpi_serialize_string_string(serializer, "trans_time", timestamp);
+      ndpi_serialize_end_of_block(serializer);
+    }
     ndpi_serialize_end_of_block(serializer);
     break;
 
@@ -1554,7 +1810,7 @@ int ndpi_dpi2json(struct ndpi_detection_module_struct *ndpi_struct,
                           flow->protos.tls_quic.quic_version);
     ndpi_serialize_string_string(serializer, "quic_version", quic_version);
 
-    ndpi_tls2json(serializer, flow, false);
+    ndpi_tls2json(ndpi_struct, serializer, flow, false);
 
     ndpi_serialize_end_of_block(serializer);
     break;
@@ -1671,40 +1927,8 @@ int ndpi_dpi2json(struct ndpi_detection_module_struct *ndpi_struct,
       ndpi_serialize_string_string(serializer, "USN", flow->protos.ssdp.usn);
     }
 
-    if (flow->protos.ssdp.rincon_household) {
-      ndpi_serialize_string_string(serializer, "X-RINCON-HOUSEHOLD", flow->protos.ssdp.rincon_household);
-    }
-
-    if (flow->protos.ssdp.rincon_bootseq) {
-      ndpi_serialize_string_string(serializer, "X-RINCON-BOOTSEQ", flow->protos.ssdp.rincon_bootseq);
-    }
-
-    if (flow->protos.ssdp.bootid) {
-      ndpi_serialize_string_string(serializer, "BOOTID.UPNP.ORG", flow->protos.ssdp.bootid);
-    }
-
-    if (flow->protos.ssdp.rincon_wifimode) {
-      ndpi_serialize_string_string(serializer, "X-RINCON-WIFIMODE", flow->protos.ssdp.rincon_wifimode);
-    }
-
-    if (flow->protos.ssdp.rincon_variant) {
-      ndpi_serialize_string_string(serializer, "X-RINCON-VARIANT", flow->protos.ssdp.rincon_variant);
-    }
-
-    if (flow->protos.ssdp.household_smart_speaker_audio) {
-      ndpi_serialize_string_string(serializer, "HOUSEHOLD.SMARTSPEAKER.AUDIO", flow->protos.ssdp.household_smart_speaker_audio);
-    }
-
-    if (flow->protos.ssdp.location_smart_speaker_audio) {
-      ndpi_serialize_string_string(serializer, "LOCATION.SMARTSPEAKER.AUDIO", flow->protos.ssdp.location_smart_speaker_audio);
-    }
-
     if (flow->protos.ssdp.securelocation_upnp) {
       ndpi_serialize_string_string(serializer, "SECURELOCATION.UPNP.ORG", flow->protos.ssdp.securelocation_upnp);
-    }
-
-    if (flow->protos.ssdp.sonos_securelocation) {
-      ndpi_serialize_string_string(serializer, "X-SONOS-HHSECURELOCATION", flow->protos.ssdp.sonos_securelocation);
     }
 
     if (flow->protos.ssdp.man) {
@@ -1738,8 +1962,28 @@ int ndpi_dpi2json(struct ndpi_detection_module_struct *ndpi_struct,
     ndpi_serialize_start_of_block(serializer, "ssh");
     ndpi_serialize_string_string(serializer,  "client_signature", flow->protos.ssh.client_signature);
     ndpi_serialize_string_string(serializer,  "server_signature", flow->protos.ssh.server_signature);
-    ndpi_serialize_string_string(serializer,  "hassh_client", flow->protos.ssh.hassh_client);
-    ndpi_serialize_string_string(serializer,  "hassh_server", flow->protos.ssh.hassh_server);
+
+    if(ndpi_struct->cfg.ssh_hassh_fingerprint_enabled) {
+      ndpi_serialize_string_string(serializer,  "hassh_client", flow->protos.ssh.hassh_client);
+      ndpi_serialize_string_string(serializer,  "hassh_server", flow->protos.ssh.hassh_server);
+    }
+
+    if(ndpi_struct->cfg.ssh_hassh_data_enabled) {
+      ndpi_serialize_start_of_block(serializer, "key_exchange_algorithms");
+
+      if(flow->protos.ssh.client_key_exchange_algorithms)
+	ndpi_ssh_serialize_csv(serializer, flow->protos.ssh.client_key_exchange_algorithms, "client");
+
+      if(flow->protos.ssh.server_key_exchange_algorithms)
+	ndpi_ssh_serialize_csv(serializer, flow->protos.ssh.server_key_exchange_algorithms, "server");
+
+      if(flow->protos.ssh.key_exchange_method)
+	ndpi_serialize_string_string(serializer,
+				     "key_exchange_method",
+				     flow->protos.ssh.key_exchange_method);
+      ndpi_serialize_end_of_block(serializer);
+    }
+
     ndpi_serialize_end_of_block(serializer);
     break;
 
@@ -1785,11 +2029,11 @@ int ndpi_dpi2json(struct ndpi_detection_module_struct *ndpi_struct,
     break;
 
   case NDPI_PROTOCOL_TLS:
-    ndpi_tls2json(serializer, flow, true);
+    ndpi_tls2json(ndpi_struct, serializer, flow, true);
     break;
 
   case NDPI_PROTOCOL_DTLS:
-    ndpi_tls2json(serializer, flow, false);
+    ndpi_tls2json(ndpi_struct, serializer, flow, false);
 #ifdef CUSTOM_NDPI_PROTOCOLS
 #include "../../../nDPI-custom/ndpi_utils_dpi2json_dtls.c"
 #endif
@@ -1802,8 +2046,8 @@ int ndpi_dpi2json(struct ndpi_detection_module_struct *ndpi_struct,
 
   if((flow->custom.plugin != NULL)
      && (flow->custom.plugin->jsonExportFctn != NULL))
-    flow->custom.plugin->jsonExportFctn(ndpi_struct, flow, serializer); 
-  
+    flow->custom.plugin->jsonExportFctn(ndpi_struct, flow, serializer);
+
   ndpi_serialize_end_of_block(serializer); // "ndpi"
 
   return(0);
@@ -2394,6 +2638,9 @@ const char* ndpi_risk2str(ndpi_risk_enum risk) {
   case NDPI_OBFUSCATED_TRAFFIC:
     return("Obfuscated Traffic");
 
+  case NDPI_SLOW_DOS:
+    return("(Possible) Slow DoS");
+
   default:
     ndpi_snprintf(buf, sizeof(buf), "%d", (int)risk);
     return(buf);
@@ -2520,6 +2767,8 @@ const char* ndpi_risk2code(ndpi_risk_enum risk) {
     return STRINGIFY(NDPI_PROBING_ATTEMPT);
   case NDPI_OBFUSCATED_TRAFFIC:
     return STRINGIFY(NDPI_OBFUSCATED_TRAFFIC);
+  case NDPI_SLOW_DOS:
+    return STRINGIFY(NDPI_SLOW_DOS);
 
   default:
     return("Unknown risk");
@@ -2643,6 +2892,8 @@ ndpi_risk_enum ndpi_code2risk(const char* risk) {
     return(NDPI_PROBING_ATTEMPT);
   else if(strcmp(STRINGIFY(NDPI_OBFUSCATED_TRAFFIC), risk) == 0)
     return(NDPI_OBFUSCATED_TRAFFIC);
+  else if(strcmp(STRINGIFY(NDPI_SLOW_DOS), risk) == 0)
+    return(NDPI_SLOW_DOS);
   else
     return(NDPI_MAX_RISK);
 }
@@ -2786,6 +3037,7 @@ static const char *ndpi_risk_shortnames[NDPI_MAX_RISK] = {
   "binary_data_transfer",
   "probing",
   "obfuscated",
+  "slow_DoS"
 };
 
 /* ******************************************************************** */
@@ -3241,7 +3493,8 @@ void ndpi_handle_risk_exceptions(struct ndpi_detection_module_struct *ndpi_str,
 
 /* ******************************************************************** */
 
-void ndpi_set_risk(struct ndpi_detection_module_struct *ndpi_str, struct ndpi_flow_struct *flow,
+void ndpi_set_risk(struct ndpi_detection_module_struct *ndpi_str,
+		   struct ndpi_flow_struct *flow,
                    ndpi_risk_enum r, char *risk_message) {
   if(!flow) return;
 
@@ -3282,9 +3535,26 @@ void ndpi_set_risk(struct ndpi_detection_module_struct *ndpi_str, struct ndpi_fl
     u_int8_t i;
 
     for(i = 0; i < flow->num_risk_infos; i++)
-      if(flow->risk_infos[i].id == r)
-        return;
+      if(flow->risk_infos[i].id == r) {
+	if((flow->risk_infos[i].info != NULL)
+	   && (r != NDPI_SUSPICIOUS_ENTROPY /* Entropy changes when recomputed, so let's keep only one message */)
+	   /* Messages are different */
+	   && strcmp(flow->risk_infos[i].info, risk_message)
+	   && (strstr(flow->risk_infos[i].info, risk_message) == NULL)
+	   ) {
+	  char buf[1024];
 
+	  /* Concatenate risks info */	  
+	  snprintf(buf, sizeof(buf), "%s;%s",
+		   flow->risk_infos[i].info, risk_message);
+
+	  ndpi_free(flow->risk_infos[i].info);
+	  flow->risk_infos[i].info = ndpi_strdup(buf);
+	}
+	
+        return;
+      }
+    
     /* Risk already set without any details, but now we have a specific risk_message
        that we want to save.
        This might happen with NDPI_HTTP_CRAWLER_BOT which might have been set early via
@@ -3342,7 +3612,7 @@ int ndpi_isset_risk(struct ndpi_flow_struct *flow, ndpi_risk_enum r) {
 
 /* ******************************************************************** */
 
-int ndpi_is_printable_buffer(uint8_t const * const buf, size_t len) {
+int ndpi_is_printable_buffer(u_int8_t const * const buf, size_t len) {
   int retval = 1;
   size_t i;
 
@@ -3543,8 +3813,8 @@ reset_risk:
 
 /* ******************************************************************** */
 
-static inline uint16_t get_n16bit(uint8_t const * cbuf) {
-  uint16_t r = ((uint16_t)cbuf[0]) | (((uint16_t)cbuf[1]) << 8);
+static inline u_int16_t get_n16bit(u_int8_t const * cbuf) {
+  u_int16_t r = ((u_int16_t)cbuf[0]) | (((u_int16_t)cbuf[1]) << 8);
   return r;
 }
 
@@ -3770,8 +4040,10 @@ char* ndpi_get_flow_risk_info(struct ndpi_flow_struct *flow,
   ordered_risk_infos = ndpi_malloc(sizeof(flow->risk_infos));
   if(!ordered_risk_infos)
     return(NULL);
+  
   memcpy(ordered_risk_infos, flow->risk_infos, sizeof(flow->risk_infos));
-  qsort(ordered_risk_infos, flow->num_risk_infos, sizeof(struct ndpi_risk_information), risk_infos_pair_cmp);
+  qsort(ordered_risk_infos, flow->num_risk_infos,
+	sizeof(struct ndpi_risk_information), risk_infos_pair_cmp);
 
   if(use_json) {
     ndpi_serializer serializer;
@@ -3806,7 +4078,7 @@ char* ndpi_get_flow_risk_info(struct ndpi_flow_struct *flow,
 
     for(i=0; (i<flow->num_risk_infos) && (out_len > offset); i++) {
       int rc = snprintf(&out[offset], out_len-offset, "%s%s",
-			(i == 0) ? "" : " / ",
+			(i == 0) ? "" : ";",
 			ordered_risk_infos[i].info);
 
       if(rc <= 0)
@@ -4378,7 +4650,7 @@ char* ndpi_quick_encrypt(const char *cleartext_msg,
     encoded_buf[i] = n_padding;
 
   AES_init_ctx_iv(&ctx, binary_encrypt_key, nonce);
-  AES_CBC_encrypt_buffer(&ctx, (uint8_t*)encoded_buf, encoded_len);
+  AES_CBC_encrypt_buffer(&ctx, (u_int8_t*)encoded_buf, encoded_len);
 
   encoded = ndpi_base64_encode((const unsigned char *)encoded_buf, encoded_len);
   ndpi_free(encoded_buf);
@@ -4431,7 +4703,7 @@ char* ndpi_quick_decrypt(const char *encrypted_msg,
   /* AES - https://github.com/kokke/tiny-AES-c */
   AES_init_ctx_iv(&ctx, binary_decrypt_key, nonce);
   memcpy(decoded_string, content, content_len);
-  AES_CBC_decrypt_buffer(&ctx, (uint8_t*)decoded_string, content_len);
+  AES_CBC_decrypt_buffer(&ctx, (u_int8_t*)decoded_string, content_len);
 
   /* Remove PKCS5 padding */
   n_padding = decoded_string[content_len-1];
@@ -4800,74 +5072,6 @@ u_int16_t ndpi_get_master_proto(struct ndpi_detection_module_struct *ndpi_struct
   return ndpi_tls_refine_master_protocol(ndpi_struct, flow);
 }
 
-/* **************************************** */
-
-char* ndpi_compute_ndpi_flow_fingerprint(struct ndpi_detection_module_struct *ndpi_str,
-					 struct ndpi_flow_struct *flow) {
-  if(ndpi_str->cfg.ndpi_fingerprint_enabled &&
-     (flow->ndpi.fingerprint == NULL) &&
-     ndpi_stack_is_tls_like(&flow->protocol_stack) &&
-     /* We need TCP & TLS handshake. What should we do if we don't have them?
-        For the time being, keep calculating the fingerprint if we have at least
-        one of them. That means:
-          * we might have a fingerprint also for DTS/QUIC
-          * no fingerprint for mid-flows
-        TODO: is that what we really want? */
-     (flow->tcp.fingerprint || flow->protos.tls_quic.ja4_client[0] != '\0')) {
-    char *l4_fp = flow->tcp.fingerprint ? flow->tcp.fingerprint : "no_l4_fp";
-    char *l7_pf = "no_app_fp_cli";
-    char *l7_pf_server = "no_app_fp_srv";
-    u_int8_t sha_hash[NDPI_SHA256_BLOCK_SIZE];
-    size_t s;
-    u_int8_t fp_buf[128];
-
-    if(flow->protos.tls_quic.ja4_client[0] != '\0')
-      l7_pf = flow->protos.tls_quic.ja4_client;
-
-    if(ndpi_str->cfg.ndpi_fingerprint_format == NDPI_CLIENT_SERVER_NDPI_FINGERPRINT) {
-      if(flow->protos.tls_quic.sha1_certificate_fingerprint[0] != '\0')
-	l7_pf_server = (char*)flow->protos.tls_quic.sha1_certificate_fingerprint;
-      else {
-	if(flow->protos.tls_quic.ja3_server[0] != '\0')
-	  l7_pf_server = flow->protos.tls_quic.ja3_server;
-      }
-    }
-
-    s = snprintf((char*)fp_buf, sizeof(fp_buf)-1, "%s-%s-%s", l4_fp, l7_pf, l7_pf_server);
-    if(s > 0) {
-      s = ndpi_min(s, sizeof(fp_buf)-1);
-      ndpi_sha256(fp_buf, s, sha_hash);
-
-      ndpi_snprintf((char*)fp_buf, sizeof(fp_buf),
-		    "%02x%02x%02x%02x%02x%02x%02x%02x"
-		    "%02x%02x%02x%02x%02x%02x%02x%02x",
-		    sha_hash[0], sha_hash[1], sha_hash[2],    sha_hash[3],
-		    sha_hash[4], sha_hash[5], sha_hash[6],    sha_hash[7],
-		    sha_hash[8], sha_hash[9], sha_hash[10],   sha_hash[11],
-		    sha_hash[12], sha_hash[13], sha_hash[14], sha_hash[15]
-		    );
-
-      flow->ndpi.fingerprint = ndpi_strdup((char*)fp_buf);
-
-      if(flow->ndpi.fingerprint != NULL &&
-         ndpi_str->ndpifp_custom_protos != NULL) {
-	u_int64_t proto_id;
-
-	/* This protocol has been defined in protos.txt-like files */
-	if(ndpi_hash_find_entry(ndpi_str->ndpifp_custom_protos,
-				flow->ndpi.fingerprint, strlen(flow->ndpi.fingerprint),
-				&proto_id) == 0) {
-	  ndpi_set_detected_protocol(ndpi_str, flow, proto_id,
-				     ndpi_get_master_proto(ndpi_str, flow),
-				     NDPI_CONFIDENCE_CUSTOM_RULE);
-	}
-      }
-    }
-  }
-
-  return(flow->ndpi.fingerprint);
-}
-
 /* ****************************************** */
 
 void* ndpi_memmem(const void* haystack, size_t haystack_len, const void* needle, size_t needle_len) {
@@ -4998,3 +5202,787 @@ char *ndpi_stack2str(struct ndpi_detection_module_struct *ndpi_str,
 
   return buf;
 }
+
+/* ****************************************** */
+
+ndpi_tls_block_type ndpi_encode_tls_block_type(u_int8_t block_type, u_int8_t handshake_type) {
+  switch(block_type) {
+  case 20: /* Change Cipher */
+    return(tls_change_cipher);
+  case 21: /* Alert */
+    return(tls_alert);
+  case 22: /* Handshake */
+    switch(handshake_type) {
+    case 0: /* Encrypted Handshake Message */
+      return(tls_handshake_encrypted_message);
+    case 1: /* Client Hello */
+      return(tls_handshake_client_hello);
+    case 2: /* Server Hello */
+      return(tls_handshake_server_hello);
+    case 4: /* New Session Ticket */
+      return(tls_handshake_new_session_ticket);
+    case 8: /* Encrypted Extn (1.3 only) */
+      return(tls_handshake_encrypted_extn);
+    case 11: /* Certificate */
+      return(tls_handshake_certificate);
+    case 12: /* Server Key Exchange */
+      return(tls_handshake_server_key_exchange);
+    case 13: /* Certificate Request */
+      return(tls_handshake_certificate_request);
+    case 14: /* Server Hello Done */
+      return(tls_handshake_server_hello_done);
+    case 15: /* Certificate Verify */
+      return(tls_handshake_certificate_verify);
+    case 16: /* Client Key Exchange */
+      return(tls_handshake_client_key_exchange);
+    case 20: /* Finished */
+      return(tls_handshake_finished);
+    }
+    break;
+  case 23: /* Application Data */
+    return(tls_application_data);
+  case 24: /* Heartbeat */
+    return(tls_heartbeat);
+  }
+
+  return(tls_unknown);
+}
+
+/* ****************************************** */
+
+const char* ndpi_print_encoded_tls_block_type(ndpi_tls_block_type block_type, bool numeric_mode) {
+  switch(block_type) {
+  case tls_change_cipher:                 return(numeric_mode ? "20"    : "ChangeCipher");
+  case tls_alert:                         return(numeric_mode ? "21"    : "Alert");
+  case tls_handshake_encrypted_message:   return(numeric_mode ? "22:0"  : "Handshake:EncHandshakeMsg");
+  case tls_handshake_client_hello:        return(numeric_mode ? "22:1"  : "Handshake:ClientHello");
+  case tls_handshake_server_hello:        return(numeric_mode ? "22:2"  : "Handshake:ServerHello");
+  case tls_handshake_new_session_ticket:  return(numeric_mode ? "22:4"  : "Handshake:NewSessTicket");
+  case tls_handshake_encrypted_extn:      return(numeric_mode ? "22:8"  : "Handshake:EncryptedExtn");
+  case tls_handshake_certificate:         return(numeric_mode ? "22:11" : "Handshake:Certificate");
+  case tls_handshake_server_key_exchange: return(numeric_mode ? "22:12" : "Handshake:ServerKeyExch");
+  case tls_handshake_certificate_request: return(numeric_mode ? "22:13" : "Handshake:CertRequest");
+  case tls_handshake_server_hello_done:   return(numeric_mode ? "22:14" : "Handshake:ServerHelloDone");
+  case tls_handshake_certificate_verify:  return(numeric_mode ? "22:15" : "Handshake:CertVerify");
+  case tls_handshake_client_key_exchange: return(numeric_mode ? "22:16" : "Handshake:ClientKeyExch");
+  case tls_handshake_finished:            return(numeric_mode ? "22:20" : "Handshake:Finished");
+  case tls_application_data:              return(numeric_mode ? "23"    : "AppData");
+  case tls_heartbeat:                     return(numeric_mode ? "24"    : "Heartbeat");
+  default:                                return(numeric_mode ? "0"     : "Unknown");
+  }
+}
+
+/* ****************************************** */
+
+const char* ndpi_tls_extension2str(u_int16_t extension_id,
+				   char unknown_extn[8]) {
+  switch(extension_id) {
+    /* RFC 6066 - TLS Extensions Definitions */
+  case 0: return "server_name";
+  case 1: return "max_fragment_length";
+  case 2: return "client_certificate_url";
+  case 3: return "trusted_ca_keys";
+  case 4: return "truncated_hmac";
+  case 5: return "status_request";
+
+    /* RFC 4366 - Transport Layer Security (TLS) Extensions */
+  case 6: return "user_mapping";
+  case 7: return "client_authz";
+  case 8: return "server_authz";
+
+    /* RFC 4492 - Elliptic Curve Cryptography (ECC) Cipher Suites */
+  case 10: return "supported_groups";  /* Formerly "elliptic_curves" */
+  case 11: return "ec_point_formats";
+
+    /* RFC 4681 - TLS User Mapping Extension */
+  case 12: return "srp";
+  case 13: return "signature_algorithms";
+  case 14: return "use_srtp";
+  case 15: return "heartbeat";
+
+    /* RFC 7301 - Application-Layer Protocol Negotiation (ALPN) */
+  case 16: return "application_layer_protocol_negotiation";
+
+    /* RFC 7685 - A TLS Extension for Certificate Status Request */
+  case 17: return "status_request_v2";
+  case 18: return "signed_certificate_timestamp";
+  case 19: return "client_certificate_type";
+  case 20: return "server_certificate_type";
+
+    /* RFC 8879 - TLS Certificate Compression */
+  case 22: return "compress_certificate";
+
+    /* RFC 8449 - Record Size Limit Extension */
+  case 28: return "record_size_limit";
+
+    /* RFC 5746 - Transport Layer Security (TLS) Renegotiation Indication */
+  case 65281: return "renegotiation_info";
+
+    /* TLS 1.3 Extensions (RFC 8446) */
+  case 21: return "padding";
+  case 23: return "session_ticket";
+  case 24: return "pre_shared_key";
+  case 25: return "early_data";
+  case 26: return "supported_versions";
+  case 27: return "cookie";
+  case 29: return "preshared_key";  /* Alternate spelling */
+  case 30: return "psk_key_exchange_modes";
+  case 31: return "ticket_early_data_info";
+  case 32: return "certificate_authorities";
+  case 33: return "oid_filters";
+  case 34: return "post_handshake_auth";
+  case 35: return "signature_algorithms_cert";
+  case 36: return "key_share";
+  case 37: return "transparency_info";
+  case 38: return "connection_id";
+  case 39: return "external_id_hash";
+  case 40: return "external_session_id";
+  case 41: return "quic_transport_parameters";
+  case 42: return "ticket_request";
+  case 43: return "dnssec_chain";
+
+    /* RFC 7627 - Extended Master Secret Extension */
+  case 44: return "extended_master_secret";
+
+    /* RFC 8446 - Other TLS 1.3 extensions */
+  case 45: return "token_binding";
+  case 46: return "cached_info";
+  case 47: return "tls_lts";
+
+    /* Drafts and other extensions */
+  case 48: return "compress_certificate_algorithms";
+  case 49: return "record_size_limit";
+  case 50: return "pwd_protect";
+  case 51: return "pwd_clear";
+  case 52: return "password_salt";
+  case 53: return "ticket_pinning";
+  case 54: return "tls_cert_with_extern_psk";
+  case 55: return "delegated_credential";
+  case 56: return "session_ticket_tls";
+  case 57: return "TLD";
+  case 58: return "external_id_hash";
+  case 59: return "external_session_id";
+  case 60: return "quic_transport_parameters";
+  case 61: return "ticket_request";
+  case 62: return "dnssec_chain";
+  case 63: return "sequence_number_encryption_algorithms";
+
+    /* GREASE values (RFC 8701) */
+  case 0x0A0A: return "(GREASE)";
+  case 0x1A1A: return "(GREASE)";
+  case 0x2A2A: return "(GREASE)";
+  case 0x3A3A: return "(GREASE)";
+  case 0x4A4A: return "(GREASE)";
+  case 0x5A5A: return "(GREASE)";
+  case 0x6A6A: return "(GREASE)";
+  case 0x7A7A: return "(GREASE)";
+  case 0x8A8A: return "(GREASE)";
+  case 0x9A9A: return "(GREASE)";
+  case 0xAAAA: return "(GREASE)";
+  case 0xBABA: return "(GREASE)";
+  case 0xCACA: return "(GREASE)";
+  case 0xDADA: return "(GREASE)";
+  case 0xEAEA: return "(GREASE)";
+  case 0xFAFA: return "(GREASE)";
+
+  case 0x44CD: return "application_settings";
+
+    /* Custom/Private extensions (experimental range) */
+  case 65037: return "next_protocol_negotiation";  /*  Google NPN */
+  case 65280: return "extended_random";  /* Used in some implementations */
+  case 65282: return "token_binding";  /* Alternate value */
+
+  default:
+    ndpi_snprintf(unknown_extn, 8, "0X%04X", extension_id);
+    return(unknown_extn);
+  }
+}
+
+/* ****************************************** */
+
+const char* ndpi_tls_elliptic_curve2str(u_int16_t curve_id, char unknown_curve[8]) {
+  if((curve_id >= 0x002B) && (curve_id <= 0x003F))
+    return "(Reserved)";
+
+  switch (curve_id) {
+    /* RFC 4492 / 8422 - Standard Curves */
+  case 0x0001: return "sect163k1";           // deprecated
+  case 0x0002: return "sect163r1";           // deprecated
+  case 0x0003: return "sect163r2";           // deprecated
+  case 0x0004: return "sect193r1";           // deprecated
+  case 0x0005: return "sect193r2";           // deprecated
+  case 0x0006: return "sect233k1";           // deprecated
+  case 0x0007: return "sect233r1";           // deprecated
+  case 0x0008: return "sect239k1";           // deprecated
+  case 0x0009: return "sect283k1";           // deprecated
+  case 0x000A: return "sect283r1";           // deprecated
+  case 0x000B: return "sect409k1";           // deprecated
+  case 0x000C: return "sect409r1";           // deprecated
+  case 0x000D: return "sect571k1";           // deprecated
+  case 0x000E: return "sect571r1";           // deprecated
+  case 0x000F: return "secp160k1";           // deprecated
+  case 0x0010: return "secp160r1";           // deprecated
+  case 0x0011: return "secp160r2";           // deprecated
+  case 0x0012: return "secp192k1";           // deprecated
+  case 0x0013: return "secp192r1";           // P-192, deprecated
+  case 0x0014: return "secp224k1";           // deprecated
+  case 0x0015: return "secp224r1";           // P-224
+  case 0x0016: return "secp256k1";           // deprecated
+  case 0x0017: return "secp256r1";           // P-256
+  case 0x0018: return "secp384r1";           // P-384
+  case 0x0019: return "secp521r1";           // P-521
+
+    /* RFC 7027 - Brainpool Curves */
+  case 0x001A: return "brainpoolP256r1";
+  case 0x001B: return "brainpoolP384r1";
+  case 0x001C: return "brainpoolP512r1";
+
+    /* RFC 8422 - TLS 1.3 Recommended Curves */
+  case 0x001D: return "x25519";              // Curve25519
+  case 0x001E: return "x448";                // Curve448
+
+    /* RFC 8998 - Hybrid Key Exchange in TLS 1.3 */
+  case 0x001F: return "brainpoolP256r1tls13"; // Reserved, not used
+  case 0x0020: return "brainpoolP384r1tls13"; // Reserved, not used
+  case 0x0021: return "brainpoolP512r1tls13"; // Reserved, not used
+
+    /* RFC 9189 - Post-Quantum Hybrid Key Exchange */
+  case 0x0022: return "x25519kyber768";
+  case 0x0023: return "secp256r1kyber768";
+  case 0x0024: return "x25519kyber1024";
+  case 0x0025: return "secp256r1kyber1024";
+  case 0x0026: return "secp384r1kyber768";
+  case 0x0027: return "secp384r1kyber1024";
+  case 0x0028: return "secp521r1kyber1024";
+  case 0x0029: return "x448kyber768";
+  case 0x002A: return "x448kyber1024";
+
+    /* Arbitrary Prime and Characteristic-2 Curves */
+  case 0xFF01: return "arbitrary_explicit_prime_curves";
+  case 0xFF02: return "arbitrary_explicit_char2_curves";
+
+    /* GREASE values for Elliptic Curves (RFC 8701) */
+  case 0x0A0A: return "(GREASE)";
+  case 0x1A1A: return "(GREASE)";
+  case 0x2A2A: return "(GREASE)";
+  case 0x3A3A: return "(GREASE)";
+  case 0x4A4A: return "(GREASE)";
+  case 0x5A5A: return "(GREASE)";
+  case 0x6A6A: return "(GREASE)";
+  case 0x7A7A: return "(GREASE)";
+  case 0x8A8A: return "(GREASE)";
+  case 0x9A9A: return "(GREASE)";
+  case 0xAAAA: return "(GREASE)";
+  case 0xBABA: return "(GREASE)";
+  case 0xCACA: return "(GREASE)";
+  case 0xDADA: return "(GREASE)";
+  case 0xEAEA: return "(GREASE)";
+  case 0xFAFA: return "(GREASE)";
+
+   default:
+    ndpi_snprintf(unknown_curve, 8, "0X%04X", curve_id);
+    return(unknown_curve);
+  }
+}
+
+/* ****************************************** */
+
+const char* ndpi_tls_signature_algo2str(u_int16_t algo_id, char unknown_algo[8]) {
+  if (algo_id >= 0xFE00 && algo_id <= 0xFEFF) {
+    return("(Experimental/Private Use)");
+  }
+
+  switch (algo_id) {
+    // Legacy RSA PKCS#1 schemes (deprecated in TLS 1.3)
+  case 0x0201: return "rsa_pkcs1_sha1";          // Deprecated
+  case 0x0401: return "rsa_pkcs1_sha256";
+  case 0x0501: return "rsa_pkcs1_sha384";
+  case 0x0601: return "rsa_pkcs1_sha512";
+
+    // Legacy DSA schemes (deprecated)
+  case 0x0202: return "dsa_sha1";                // Deprecated
+  case 0x0402: return "dsa_sha256";              // Deprecated
+  case 0x0502: return "dsa_sha384";              // Deprecated
+  case 0x0602: return "dsa_sha512";              // Deprecated
+
+    // Legacy ECDSA schemes (deprecated format)
+  case 0x0203: return "ecdsa_sha1";              // Deprecated
+  case 0x0403: return "ecdsa_sha256";
+  case 0x0503: return "ecdsa_sha384";
+  case 0x0603: return "ecdsa_sha512";
+
+    // Legacy RSASSA-PSS without MGF1 (deprecated)
+  case 0x0804: return "rsa_pss_sha256";          // Old format
+  case 0x0805: return "rsa_pss_sha384";          // Old format
+  case 0x0806: return "rsa_pss_sha512";          // Old format
+
+    // EdDSA schemes (RFC 8422, RFC 8446)
+  case 0x0807: return "ed25519";
+  case 0x0808: return "ed448";
+
+    // RSASSA-PSS with MGF1 (TLS 1.3, RFC 8446)
+  case 0x0809: return "rsa_pss_rsae_sha256";
+  case 0x080A: return "rsa_pss_rsae_sha384";
+  case 0x080B: return "rsa_pss_rsae_sha512";
+
+    // RSASSA-PSS with PSS padding only (RFC 8446)
+  case 0x080C: return "rsa_pss_pss_sha256";
+  case 0x080D: return "rsa_pss_pss_sha384";
+  case 0x080E: return "rsa_pss_pss_sha512";
+
+    // ECDSA_branchy (historical, not in standards)
+  case 0x080F: return "ecdsa_branchy";
+
+    // GOST R 34.10 schemes (RFC 9189)
+  case 0xEE01: return "gostr34102012_256";
+  case 0xEE02: return "gostr34102012_512";
+
+    // SM2 signature scheme (Chinese standard)
+  case 0xEE03: return "sm2sig_sm3";
+
+    // Anonymous schemes (deprecated and insecure)
+  case 0x0200: return "anonymous_sha1";          // Deprecated
+  case 0x0300: return "anonymous_sha224";        // Deprecated
+  case 0x0400: return "anonymous_sha256";        // Deprecated
+  case 0x0500: return "anonymous_sha384";        // Deprecated
+  case 0x0600: return "anonymous_sha512";        // Deprecated
+
+    // GREASE values for signature algorithms (RFC 8701)
+  case 0x0A0A: return "(GREASE)";
+  case 0x1A1A: return "(GREASE)";
+  case 0x2A2A: return "(GREASE)";
+  case 0x3A3A: return "(GREASE)";
+  case 0x4A4A: return "(GREASE)";
+  case 0x5A5A: return "(GREASE)";
+  case 0x6A6A: return "(GREASE)";
+  case 0x7A7A: return "(GREASE)";
+  case 0x8A8A: return "(GREASE)";
+  case 0x9A9A: return "(GREASE)";
+  case 0xAAAA: return "(GREASE)";
+  case 0xBABA: return "(GREASE)";
+  case 0xCACA: return "(GREASE)";
+  case 0xDADA: return "(GREASE)";
+  case 0xEAEA: return "(GREASE)";
+  case 0xFAFA: return "(GREASE)";
+
+  default:
+    ndpi_snprintf(unknown_algo, 8, "0X%04X", algo_id);
+    return(unknown_algo);
+  }
+}
+
+/* ****************************************** */
+
+typedef struct {
+  unsigned short id;
+  const char* name;
+  const char* type;
+  int bits;
+  int deprecated;
+  int tls13_supported;
+} tls_named_group_info;
+
+static const tls_named_group_info named_groups[] = {
+  // ========== Elliptic Curve Groups (ECDHE) ==========
+  // Deprecated binary/sect curves (RFC 4492)
+  {0x0001, "sect163k1", "EC", 163, 1, 0},
+  {0x0002, "sect163r1", "EC", 163, 1, 0},
+  {0x0003, "sect163r2", "EC", 163, 1, 0},
+  {0x0004, "sect193r1", "EC", 193, 1, 0},
+  {0x0005, "sect193r2", "EC", 193, 1, 0},
+  {0x0006, "sect233k1", "EC", 233, 1, 0},
+  {0x0007, "sect233r1", "EC", 233, 1, 0},
+  {0x0008, "sect239k1", "EC", 239, 1, 0},
+  {0x0009, "sect283k1", "EC", 283, 1, 0},
+  {0x000A, "sect283r1", "EC", 283, 1, 0},
+  {0x000B, "sect409k1", "EC", 409, 1, 0},
+  {0x000C, "sect409r1", "EC", 409, 1, 0},
+  {0x000D, "sect571k1", "EC", 571, 1, 0},
+  {0x000E, "sect571r1", "EC", 571, 1, 0},
+
+  // Prime curves (secp*)
+  {0x000F, "secp160k1", "EC", 160, 1, 0},
+  {0x0010, "secp160r1", "EC", 160, 1, 0},
+  {0x0011, "secp160r2", "EC", 160, 1, 0},
+  {0x0012, "secp192k1", "EC", 192, 1, 0},
+  {0x0013, "secp192r1", "EC", 192, 1, 0},  // P-192, deprecated
+  {0x0014, "secp224k1", "EC", 224, 1, 0},
+  {0x0015, "secp224r1", "EC", 224, 0, 1},  // P-224
+  {0x0016, "secp256k1", "EC", 256, 1, 0},  // Bitcoin curve
+  {0x0017, "secp256r1", "EC", 256, 0, 1},  // P-256 (NIST), widely used
+  {0x0018, "secp384r1", "EC", 384, 0, 1},  // P-384
+  {0x0019, "secp521r1", "EC", 521, 0, 1},  // P-521
+
+  // Brainpool curves (RFC 7027)
+  {0x001A, "brainpoolP256r1", "EC", 256, 1, 0},
+  {0x001B, "brainpoolP384r1", "EC", 384, 1, 0},
+  {0x001C, "brainpoolP512r1", "EC", 512, 1, 0},
+
+  // Montgomery curves (RFC 7748, RFC 8446)
+  {0x001D, "x25519", "EC", 255, 0, 1},     // Curve25519, recommended
+  {0x001E, "x448", "EC", 448, 0, 1},       // Curve448
+
+  // Reserved for brainpool in TLS 1.3 (not used)
+  {0x001F, "brainpoolP256r1tls13", "EC", 256, 1, 0},
+  {0x0020, "brainpoolP384r1tls13", "EC", 384, 1, 0},
+  {0x0021, "brainpoolP512r1tls13", "EC", 512, 1, 0},
+
+  // Hybrid post-quantum key exchange (RFC 9189)
+  {0x0022, "x25519kyber768", "PQ", 255, 0, 1},
+  {0x0023, "secp256r1kyber768", "PQ", 256, 0, 1},
+  {0x0024, "x25519kyber1024", "PQ", 255, 0, 1},
+  {0x0025, "secp256r1kyber1024", "PQ", 256, 0, 1},
+  {0x0026, "secp384r1kyber768", "PQ", 384, 0, 1},
+  {0x0027, "secp384r1kyber1024", "PQ", 384, 0, 1},
+  {0x0028, "secp521r1kyber1024", "PQ", 521, 0, 1},
+  {0x0029, "x448kyber768", "PQ", 448, 0, 1},
+  {0x002A, "x448kyber1024", "PQ", 448, 0, 1},
+
+  // ========== Finite Field Groups (FFDHE) ==========
+  {0x0100, "ffdhe2048", "DH", 2048, 0, 1},
+  {0x0101, "ffdhe3072", "DH", 3072, 0, 1},
+  {0x0102, "ffdhe4096", "DH", 4096, 0, 1},
+  {0x0103, "ffdhe6144", "DH", 6144, 0, 1},
+  {0x0104, "ffdhe8192", "DH", 8192, 0, 1},
+
+  // ========== Special Values ==========
+  {0xFF01, "arbitrary_explicit_prime_curves", "SPEC", 0, 1, 0},
+  {0xFF02, "arbitrary_explicit_char2_curves", "SPEC", 0, 1, 0},
+
+  // Terminator
+  {0xFFFF, NULL, NULL, 0, 0, 0}
+};
+
+/* ****************************************** */
+
+const char* ndpi_tls_elliptic_curve_groups2str(u_int16_t group_id, char unknown_group[8]) {
+  u_int16_t i;
+
+  if(((group_id) & 0x0F0F) == 0x0A0A)
+    return("(GREASE)");
+
+  // Check for reserved ranges
+  if ((group_id >= 0x002B && group_id <= 0x003F) ||  // Reserved ECDHE
+      (group_id >= 0x0105 && group_id <= 0x01FF)) {  // Reserved FFDHE
+    return("(Reserved)");
+  }
+
+  // Check for experimental/private use
+  if (group_id >= 0xFE00 && group_id <= 0xFEFF) {
+    return("(Experimental/Private Use)");
+  }
+
+  // Search in the table
+  for (i = 0; named_groups[i].name != NULL; i++) {
+    if (named_groups[i].id == group_id) {
+      return(named_groups[i].name);
+    }
+  }
+
+  ndpi_snprintf(unknown_group, 8, "0X%04X", group_id);
+  return(unknown_group);
+}
+
+/* ****************************************** */
+
+typedef struct {
+  u_int16_t id;
+  const char* name;
+  const char* type;
+  int public_key_size;     // Typical public key size in bytes
+  int shared_secret_size;  // Typical shared secret size in bytes
+  int tls13_supported;
+  int requires_key_share;
+  const char* security_level;
+  const char* rfc;
+  int draft_version;
+} key_share_group_info;
+
+// TLS 1.3 KeyShare groups - Complete and up-to-date
+static const key_share_group_info key_share_groups[] = {
+  // ========== Traditional Elliptic Curve Groups (ECDHE) ==========
+  {0x0017, "secp256r1", "ECDHE", 65, 32, 1, 1, "128-bit", "RFC 8446", 0},
+  {0x0018, "secp384r1", "ECDHE", 97, 48, 1, 1, "192-bit", "RFC 8446", 0},
+  {0x0019, "secp521r1", "ECDHE", 133, 66, 1, 1, "256-bit", "RFC 8446", 0},
+
+  // Montgomery curves (RFC 7748, RFC 8446)
+  {0x001D, "x25519", "ECDHE", 32, 32, 1, 1, "128-bit", "RFC 8446", 0},
+  {0x001E, "x448", "ECDHE", 56, 56, 1, 1, "224-bit", "RFC 8446", 0},
+
+  // ========== Finite Field Groups (FFDHE) ==========
+  {0x0100, "ffdhe2048", "FFDHE", 256, 256, 1, 0, "112-bit", "RFC 7919", 0},
+  {0x0101, "ffdhe3072", "FFDHE", 384, 384, 1, 0, "128-bit", "RFC 7919", 0},
+  {0x0102, "ffdhe4096", "FFDHE", 512, 512, 1, 0, "152-bit", "RFC 7919", 0},
+  {0x0103, "ffdhe6144", "FFDHE", 768, 768, 1, 0, "176-bit", "RFC 7919", 0},
+  {0x0104, "ffdhe8192", "FFDHE", 1024, 1024, 1, 0, "192-bit", "RFC 7919", 0},
+
+  // ========== Kyber-based Hybrid Groups (RFC 9189) ==========
+  {0x0022, "x25519kyber768", "PQ_HYBRID", 32+1184, 32+32, 1, 1, "128-bit + L3", "RFC 9189", 0},
+  {0x0023, "secp256r1kyber768", "PQ_HYBRID", 65+1184, 32+32, 1, 1, "128-bit + L3", "RFC 9189", 0},
+  {0x0024, "x25519kyber1024", "PQ_HYBRID", 32+1568, 32+32, 1, 1, "128-bit + L5", "RFC 9189", 0},
+  {0x0025, "secp256r1kyber1024", "PQ_HYBRID", 65+1568, 32+32, 1, 1, "128-bit + L5", "RFC 9189", 0},
+  {0x0026, "secp384r1kyber768", "PQ_HYBRID", 97+1184, 48+32, 1, 1, "192-bit + L3", "RFC 9189", 0},
+  {0x0027, "secp384r1kyber1024", "PQ_HYBRID", 97+1568, 48+32, 1, 1, "192-bit + L5", "RFC 9189", 0},
+  {0x0028, "secp521r1kyber1024", "PQ_HYBRID", 133+1568, 66+32, 1, 1, "256-bit + L5", "RFC 9189", 0},
+  {0x0029, "x448kyber768", "PQ_HYBRID", 56+1184, 56+32, 1, 1, "224-bit + L3", "RFC 9189", 0},
+  {0x002A, "x448kyber1024", "PQ_HYBRID", 56+1568, 56+32, 1, 1, "224-bit + L5", "RFC 9189", 0},
+
+  // ========== ML-KEM (FIPS 203, formerly Kyber) Hybrid Groups ==========
+  // IANA: https://www.iana.org/assignments/tls-parameters/tls-parameters.xhtml#tls-parameters-18
+  {0x11EC, "X25519MLKEM768", "PQ_HYBRID", 32+1184, 32+32, 1, 1, "128-bit + L3", "draft-ietf-tls-hybrid-design", 10},
+  {0x11ED, "P256MLKEM768", "PQ_HYBRID", 65+1184, 32+32, 1, 1, "128-bit + L3", "draft-ietf-tls-hybrid-design", 10},
+  {0x11EE, "X25519MLKEM1024", "PQ_HYBRID", 32+1568, 32+32, 1, 1, "128-bit + L5", "draft-ietf-tls-hybrid-design", 10},
+  {0x11EF, "P256MLKEM1024", "PQ_HYBRID", 65+1568, 32+32, 1, 1, "128-bit + L5", "draft-ietf-tls-hybrid-design", 10},
+  {0x11F0, "X448MLKEM768", "PQ_HYBRID", 56+1184, 56+32, 1, 1, "224-bit + L3", "draft-ietf-tls-hybrid-design", 10},
+  {0x11F1, "P384MLKEM768", "PQ_HYBRID", 97+1184, 48+32, 1, 1, "192-bit + L3", "draft-ietf-tls-hybrid-design", 10},
+  {0x11F2, "X448MLKEM1024", "PQ_HYBRID", 56+1568, 56+32, 1, 1, "224-bit + L5", "draft-ietf-tls-hybrid-design", 10},
+  {0x11F3, "P384MLKEM1024", "PQ_HYBRID", 97+1568, 48+32, 1, 1, "192-bit + L5", "draft-ietf-tls-hybrid-design", 10},
+  {0x11F4, "P521MLKEM1024", "PQ_HYBRID", 133+1568, 66+32, 1, 1, "256-bit + L5", "draft-ietf-tls-hybrid-design", 10},
+
+  // ========== ML-KEM Only (non-hybrid) ==========
+  {0x11F5, "MLKEM512", "PQ_ONLY", 800, 32, 1, 1, "L1", "draft-ietf-tls-hybrid-design", 10},
+  {0x11F6, "MLKEM768", "PQ_ONLY", 1184, 32, 1, 1, "L3", "draft-ietf-tls-hybrid-design", 10},
+  {0x11F7, "MLKEM1024", "PQ_ONLY", 1568, 32, 1, 1, "L5", "draft-ietf-tls-hybrid-design", 10},
+
+  // ========== NTRU Hybrid Groups ==========
+  {0x11F8, "X25519NTRUHPS2048509", "PQ_HYBRID", 32+699, 32+32, 1, 1, "128-bit + L1", "draft-ietf-tls-hybrid-design", 10},
+  {0x11F9, "P256NTRUHPS2048509", "PQ_HYBRID", 65+699, 32+32, 1, 1, "128-bit + L1", "draft-ietf-tls-hybrid-design", 10},
+  {0x11FA, "X25519NTRUHPS2048677", "PQ_HYBRID", 32+930, 32+32, 1, 1, "128-bit + L3", "draft-ietf-tls-hybrid-design", 10},
+  {0x11FB, "P256NTRUHPS2048677", "PQ_HYBRID", 65+930, 32+32, 1, 1, "128-bit + L3", "draft-ietf-tls-hybrid-design", 10},
+  {0x11FC, "X448NTRUHPS2048677", "PQ_HYBRID", 56+930, 56+32, 1, 1, "224-bit + L3", "draft-ietf-tls-hybrid-design", 10},
+  {0x11FD, "P384NTRUHPS2048677", "PQ_HYBRID", 97+930, 48+32, 1, 1, "192-bit + L3", "draft-ietf-tls-hybrid-design", 10},
+
+  // ========== NTRU Prime Hybrid Groups ==========
+  {0x11FE, "X25519NTRULPR653", "PQ_HYBRID", 32+897, 32+32, 1, 1, "128-bit", "draft-ietf-tls-hybrid-design", 10},
+  {0x11FF, "P256NTRULPR653", "PQ_HYBRID", 65+897, 32+32, 1, 1, "128-bit", "draft-ietf-tls-hybrid-design", 10},
+  {0x1200, "X25519NTRULPR761", "PQ_HYBRID", 32+1039, 32+32, 1, 1, "128-bit", "draft-ietf-tls-hybrid-design", 10},
+  {0x1201, "P256NTRULPR761", "PQ_HYBRID", 65+1039, 32+32, 1, 1, "128-bit", "draft-ietf-tls-hybrid-design", 10},
+  {0x1202, "X448NTRULPR761", "PQ_HYBRID", 56+1039, 56+32, 1, 1, "224-bit", "draft-ietf-tls-hybrid-design", 10},
+  {0x1203, "P384NTRULPR761", "PQ_HYBRID", 97+1039, 48+32, 1, 1, "192-bit", "draft-ietf-tls-hybrid-design", 10},
+  {0x1204, "P521NTRULPR761", "PQ_HYBRID", 133+1039, 66+32, 1, 1, "256-bit", "draft-ietf-tls-hybrid-design", 10},
+
+  // ========== Saber (LightSaber) Hybrid Groups ==========
+  {0x1205, "X25519LightSaber", "PQ_HYBRID", 32+672, 32+32, 1, 1, "128-bit + L1", "draft-ietf-tls-hybrid-design", 10},
+  {0x1206, "P256LightSaber", "PQ_HYBRID", 65+672, 32+32, 1, 1, "128-bit + L1", "draft-ietf-tls-hybrid-design", 10},
+  {0x1207, "X25519Saber", "PQ_HYBRID", 32+992, 32+32, 1, 1, "128-bit + L3", "draft-ietf-tls-hybrid-design", 10},
+  {0x1208, "P256Saber", "PQ_HYBRID", 65+992, 32+32, 1, 1, "128-bit + L3", "draft-ietf-tls-hybrid-design", 10},
+  {0x1209, "X448Saber", "PQ_HYBRID", 56+992, 56+32, 1, 1, "224-bit + L3", "draft-ietf-tls-hybrid-design", 10},
+  {0x120A, "P384Saber", "PQ_HYBRID", 97+992, 48+32, 1, 1, "192-bit + L3", "draft-ietf-tls-hybrid-design", 10},
+
+  // ========== FrodoKEM Hybrid Groups ==========
+  {0x120B, "X25519Frodo640SHAKE", "PQ_HYBRID", 32+9616, 32+16, 1, 1, "128-bit + L1", "draft-ietf-tls-hybrid-design", 10},
+  {0x120C, "P256Frodo640SHAKE", "PQ_HYBRID", 65+9616, 32+16, 1, 1, "128-bit + L1", "draft-ietf-tls-hybrid-design", 10},
+  {0x120D, "X25519Frodo976SHAKE", "PQ_HYBRID", 32+15632, 32+24, 1, 1, "128-bit + L3", "draft-ietf-tls-hybrid-design", 10},
+  {0x120E, "P256Frodo976SHAKE", "PQ_HYBRID", 65+15632, 32+24, 1, 1, "128-bit + L3", "draft-ietf-tls-hybrid-design", 10},
+  {0x120F, "X448Frodo976SHAKE", "PQ_HYBRID", 56+15632, 56+24, 1, 1, "224-bit + L3", "draft-ietf-tls-hybrid-design", 10},
+  {0x1210, "P384Frodo976SHAKE", "PQ_HYBRID", 97+15632, 48+24, 1, 1, "192-bit + L3", "draft-ietf-tls-hybrid-design", 10},
+  {0x1211, "X25519Frodo1344SHAKE", "PQ_HYBRID", 32+21520, 32+32, 1, 1, "128-bit + L5", "draft-ietf-tls-hybrid-design", 10},
+  {0x1212, "P256Frodo1344SHAKE", "PQ_HYBRID", 65+21520, 32+32, 1, 1, "128-bit + L5", "draft-ietf-tls-hybrid-design", 10},
+  {0x1213, "P384Frodo1344SHAKE", "PQ_HYBRID", 97+21520, 48+32, 1, 1, "192-bit + L5", "draft-ietf-tls-hybrid-design", 10},
+  {0x1214, "P521Frodo1344SHAKE", "PQ_HYBRID", 133+21520, 66+32, 1, 1, "256-bit + L5", "draft-ietf-tls-hybrid-design", 10},
+
+  // ========== BIKE Hybrid Groups ==========
+  {0x1215, "X25519BIKE1L1", "PQ_HYBRID", 32+1541, 32+32, 1, 1, "128-bit + L1", "draft-ietf-tls-hybrid-design", 10},
+  {0x1216, "P256BIKE1L1", "PQ_HYBRID", 65+1541, 32+32, 1, 1, "128-bit + L1", "draft-ietf-tls-hybrid-design", 10},
+  {0x1217, "X25519BIKE1L3", "PQ_HYBRID", 32+3083, 32+32, 1, 1, "128-bit + L3", "draft-ietf-tls-hybrid-design", 10},
+  {0x1218, "P256BIKE1L3", "PQ_HYBRID", 65+3083, 32+32, 1, 1, "128-bit + L3", "draft-ietf-tls-hybrid-design", 10},
+  {0x1219, "X448BIKE1L3", "PQ_HYBRID", 56+3083, 56+32, 1, 1, "224-bit + L3", "draft-ietf-tls-hybrid-design", 10},
+  {0x121A, "P384BIKE1L3", "PQ_HYBRID", 97+3083, 48+32, 1, 1, "192-bit + L3", "draft-ietf-tls-hybrid-design", 10},
+
+  // ========== HQC Hybrid Groups ==========
+  {0x121B, "X25519HQCL1", "PQ_HYBRID", 32+2249, 32+64, 1, 1, "128-bit + L1", "draft-ietf-tls-hybrid-design", 10},
+  {0x121C, "P256HQCL1", "PQ_HYBRID", 65+2249, 32+64, 1, 1, "128-bit + L1", "draft-ietf-tls-hybrid-design", 10},
+  {0x121D, "X25519HQCL3", "PQ_HYBRID", 32+4522, 32+64, 1, 1, "128-bit + L3", "draft-ietf-tls-hybrid-design", 10},
+  {0x121E, "P256HQCL3", "PQ_HYBRID", 65+4522, 32+64, 1, 1, "128-bit + L3", "draft-ietf-tls-hybrid-design", 10},
+  {0x121F, "X448HQCL3", "PQ_HYBRID", 56+4522, 56+64, 1, 1, "224-bit + L3", "draft-ietf-tls-hybrid-design", 10},
+  {0x1220, "P384HQCL3", "PQ_HYBRID", 97+4522, 48+64, 1, 1, "192-bit + L3", "draft-ietf-tls-hybrid-design", 10},
+
+  // ========== SIKE Hybrid Groups (NOTE: Broken in 2022, included for completeness) ==========
+  {0x1221, "X25519SIKEp434", "PQ_HYBRID_BROKEN", 32+330, 32+16, 0, 0, "128-bit + L1", "draft-ietf-tls-hybrid-design", 0},
+  {0x1222, "P256SIKEp434", "PQ_HYBRID_BROKEN", 65+330, 32+16, 0, 0, "128-bit + L1", "draft-ietf-tls-hybrid-design", 0},
+  {0x1223, "X25519SIKEp503", "PQ_HYBRID_BROKEN", 32+378, 32+24, 0, 0, "128-bit + L2", "draft-ietf-tls-hybrid-design", 0},
+  {0x1224, "P256SIKEp503", "PQ_HYBRID_BROKEN", 65+378, 32+24, 0, 0, "128-bit + L2", "draft-ietf-tls-hybrid-design", 0},
+  {0x1225, "X25519SIKEp610", "PQ_HYBRID_BROKEN", 32+462, 32+24, 0, 0, "128-bit + L3", "draft-ietf-tls-hybrid-design", 0},
+  {0x1226, "P256SIKEp610", "PQ_HYBRID_BROKEN", 65+462, 32+24, 0, 0, "128-bit + L3", "draft-ietf-tls-hybrid-design", 0},
+  {0x1227, "X448SIKEp610", "PQ_HYBRID_BROKEN", 56+462, 56+24, 0, 0, "224-bit + L3", "draft-ietf-tls-hybrid-design", 0},
+  {0x1228, "P384SIKEp610", "PQ_HYBRID_BROKEN", 97+462, 48+24, 0, 0, "192-bit + L3", "draft-ietf-tls-hybrid-design", 0},
+  {0x1229, "X25519SIKEp751", "PQ_HYBRID_BROKEN", 32+564, 32+32, 0, 0, "128-bit + L5", "draft-ietf-tls-hybrid-design", 0},
+  {0x122A, "P256SIKEp751", "PQ_HYBRID_BROKEN", 65+564, 32+32, 0, 0, "128-bit + L5", "draft-ietf-tls-hybrid-design", 0},
+  {0x122B, "P384SIKEp751", "PQ_HYBRID_BROKEN", 97+564, 48+32, 0, 0, "192-bit + L5", "draft-ietf-tls-hybrid-design", 0},
+  {0x122C, "P521SIKEp751", "PQ_HYBRID_BROKEN", 133+564, 66+32, 0, 0, "256-bit + L5", "draft-ietf-tls-hybrid-design", 0},
+
+  // ========== Classic McEliece Hybrid Groups ==========
+  {0x122D, "X25519ClassicMcEliece348864", "PQ_HYBRID", 32+261120, 32+32, 1, 1, "128-bit + L1", "draft-ietf-tls-hybrid-design", 10},
+  {0x122E, "P256ClassicMcEliece348864", "PQ_HYBRID", 65+261120, 32+32, 1, 1, "128-bit + L1", "draft-ietf-tls-hybrid-design", 10},
+  {0x122F, "X25519ClassicMcEliece460896", "PQ_HYBRID", 32+524160, 32+32, 1, 1, "128-bit + L3", "draft-ietf-tls-hybrid-design", 10},
+  {0x1230, "P256ClassicMcEliece460896", "PQ_HYBRID", 65+524160, 32+32, 1, 1, "128-bit + L3", "draft-ietf-tls-hybrid-design", 10},
+  {0x1231, "X448ClassicMcEliece460896", "PQ_HYBRID", 56+524160, 56+32, 1, 1, "224-bit + L3", "draft-ietf-tls-hybrid-design", 10},
+  {0x1232, "P384ClassicMcEliece460896", "PQ_HYBRID", 97+524160, 48+32, 1, 1, "192-bit + L3", "draft-ietf-tls-hybrid-design", 10},
+  {0x1233, "X25519ClassicMcEliece6688128", "PQ_HYBRID", 32+1044992, 32+32, 1, 1, "128-bit + L5", "draft-ietf-tls-hybrid-design", 10},
+  {0x1234, "P256ClassicMcEliece6688128", "PQ_HYBRID", 65+1044992, 32+32, 1, 1, "128-bit + L5", "draft-ietf-tls-hybrid-design", 10},
+  {0x1235, "P384ClassicMcEliece6688128", "PQ_HYBRID", 97+1044992, 48+32, 1, 1, "192-bit + L5", "draft-ietf-tls-hybrid-design", 10},
+  {0x1236, "P521ClassicMcEliece6688128", "PQ_HYBRID", 133+1044992, 66+32, 1, 1, "256-bit + L5", "draft-ietf-tls-hybrid-design", 10},
+
+  // ========== Other/Experimental Groups ==========
+  // Brainpool curves (not typically used in TLS 1.3)
+  {0x001A, "brainpoolP256r1", "ECDHE", 65, 32, 0, 0, "128-bit", "RFC 7027", 0},
+  {0x001B, "brainpoolP384r1", "ECDHE", 97, 48, 0, 0, "192-bit", "RFC 7027", 0},
+  {0x001C, "brainpoolP512r1", "ECDHE", 133, 64, 0, 0, "256-bit", "RFC 7027", 0},
+
+  // Terminator
+  {0x0000, NULL, NULL, 0, 0, 0, 0, NULL, NULL, 0}
+};
+
+
+const char* ndpi_tls_key_share_group2str(u_int16_t group_id, char unknown_group[8]) {
+  u_int16_t i;
+
+  if(((group_id) & 0x0F0F) == 0x0A0A)
+    return("(GREASE)");
+
+  if ((group_id >= 0x002B && group_id <= 0x003F) ||  // Reserved ECDHE
+      (group_id >= 0x0105 && group_id <= 0x01FF)) {  // Reserved FFDHE
+    return("(Reserved)");
+  }
+
+  if (group_id >= 0xFE00 && group_id <= 0xFEFF) {
+    return("(Experimental/Private Use)");
+  }
+
+  for (i = 0; key_share_groups[i].name != NULL; i++) {
+    if (key_share_groups[i].id == group_id) {
+      return(key_share_groups[i].name);
+    }
+  }
+
+  ndpi_snprintf(unknown_group, 8, "0X%04X", group_id);
+  return(unknown_group);
+}
+
+/* ****************************************** */
+
+typedef struct {
+  u_int16_t version;
+  const char* name;
+  const char* rfc;
+  int is_draft;
+  int deprecated;
+  int recommended;
+  const char* security_status;
+} tls_version_info;
+
+// TLS versions table (RFC 5246, RFC 8446, and drafts)
+static const tls_version_info tls_versions[] = {
+  // ========== SSL/TLS Legacy Versions ==========
+  {0x0200, "SSL 2.0", "Historical", 0, 1, 0, "INSECURE - MUST NOT USE"},
+  {0x0300, "SSL 3.0", "Historical", 0, 1, 0, "INSECURE - MUST NOT USE"},
+
+  // ========== TLS 1.x Series ==========
+  {0x0301, "TLS 1.0", "RFC 2246", 0, 1, 0, "INSECURE - MUST NOT USE"},
+  {0x0302, "TLS 1.1", "RFC 4346", 0, 1, 0, "WEAK - Should not use"},
+  {0x0303, "TLS 1.2", "RFC 5246", 0, 0, 1, "SECURE - Widely supported"},
+  {0x0304, "TLS 1.3", "RFC 8446", 0, 0, 1, "SECURE - Recommended"},
+
+  // ========== TLS 1.4 Drafts ==========
+  {0x7F00, "TLS 1.4 (draft-00)", "draft-ietf-tls-tls13", 1, 0, 0, "EXPERIMENTAL"},
+  {0x7F01, "TLS 1.4 (draft-01)", "draft-ietf-tls-tls13", 1, 0, 0, "EXPERIMENTAL"},
+  {0x7F02, "TLS 1.4 (draft-02)", "draft-ietf-tls-tls13", 1, 0, 0, "EXPERIMENTAL"},
+  {0x7F03, "TLS 1.4 (draft-03)", "draft-ietf-tls-tls13", 1, 0, 0, "EXPERIMENTAL"},
+  {0x7F04, "TLS 1.4 (draft-04)", "draft-ietf-tls-tls13", 1, 0, 0, "EXPERIMENTAL"},
+  {0x7F05, "TLS 1.4 (draft-05)", "draft-ietf-tls-tls13", 1, 0, 0, "EXPERIMENTAL"},
+  {0x7F06, "TLS 1.4 (draft-06)", "draft-ietf-tls-tls13", 1, 0, 0, "EXPERIMENTAL"},
+  {0x7F07, "TLS 1.4 (draft-07)", "draft-ietf-tls-tls13", 1, 0, 0, "EXPERIMENTAL"},
+  {0x7F08, "TLS 1.4 (draft-08)", "draft-ietf-tls-tls13", 1, 0, 0, "EXPERIMENTAL"},
+  {0x7F09, "TLS 1.4 (draft-09)", "draft-ietf-tls-tls13", 1, 0, 0, "EXPERIMENTAL"},
+  {0x7F0A, "TLS 1.4 (draft-10)", "draft-ietf-tls-tls13", 1, 0, 0, "EXPERIMENTAL"},
+  {0x7F0B, "TLS 1.4 (draft-11)", "draft-ietf-tls-tls13", 1, 0, 0, "EXPERIMENTAL"},
+  {0x7F0C, "TLS 1.4 (draft-12)", "draft-ietf-tls-tls13", 1, 0, 0, "EXPERIMENTAL"},
+  {0x7F0D, "TLS 1.4 (draft-13)", "draft-ietf-tls-tls13", 1, 0, 0, "EXPERIMENTAL"},
+  {0x7F0E, "TLS 1.4 (draft-14)", "draft-ietf-tls-tls13", 1, 0, 0, "EXPERIMENTAL"},
+  {0x7F0F, "TLS 1.4 (draft-15)", "draft-ietf-tls-tls13", 1, 0, 0, "EXPERIMENTAL"},
+  {0x7F10, "TLS 1.4 (draft-16)", "draft-ietf-tls-tls13", 1, 0, 0, "EXPERIMENTAL"},
+  {0x7F11, "TLS 1.4 (draft-17)", "draft-ietf-tls-tls13", 1, 0, 0, "EXPERIMENTAL"},
+  {0x7F12, "TLS 1.4 (draft-18)", "draft-ietf-tls-tls13", 1, 0, 0, "EXPERIMENTAL"},
+  {0x7F13, "TLS 1.4 (draft-19)", "draft-ietf-tls-tls13", 1, 0, 0, "EXPERIMENTAL"},
+  {0x7F14, "TLS 1.4 (draft-20)", "draft-ietf-tls-tls13", 1, 0, 0, "EXPERIMENTAL"},
+  {0x7F15, "TLS 1.4 (draft-21)", "draft-ietf-tls-tls13", 1, 0, 0, "EXPERIMENTAL"},
+  {0x7F16, "TLS 1.4 (draft-22)", "draft-ietf-tls-tls13", 1, 0, 0, "EXPERIMENTAL"},
+  {0x7F17, "TLS 1.4 (draft-23)", "draft-ietf-tls-tls13", 1, 0, 0, "EXPERIMENTAL"},
+  {0x7F18, "TLS 1.4 (draft-24)", "draft-ietf-tls-tls13", 1, 0, 0, "EXPERIMENTAL"},
+  {0x7F19, "TLS 1.4 (draft-25)", "draft-ietf-tls-tls13", 1, 0, 0, "EXPERIMENTAL"},
+  {0x7F1A, "TLS 1.4 (draft-26)", "draft-ietf-tls-tls13", 1, 0, 0, "EXPERIMENTAL"},
+  {0x7F1B, "TLS 1.4 (draft-27)", "draft-ietf-tls-tls13", 1, 0, 0, "EXPERIMENTAL"},
+  {0x7F1C, "TLS 1.4 (draft-28)", "draft-ietf-tls-tls13", 1, 0, 0, "EXPERIMENTAL"},
+  {0x7F1D, "TLS 1.4 (draft-29)", "draft-ietf-tls-tls13", 1, 0, 0, "EXPERIMENTAL"},
+  {0x7F1E, "TLS 1.4 (draft-30)", "draft-ietf-tls-tls13", 1, 0, 0, "EXPERIMENTAL"},
+
+  // ========== DTLS Versions ==========
+  {0xFEFF, "DTLS 1.0", "RFC 4347", 0, 1, 0, "WEAK"},
+  {0xFEFD, "DTLS 1.2", "RFC 6347", 0, 0, 1, "SECURE"},
+  {0xFEFC, "DTLS 1.3", "RFC 9147", 0, 0, 1, "SECURE - Recommended"},
+
+  // ========== Experimental/Private Use ==========
+  {0x0A0A, "(GREASE)", "RFC 8701", 0, 0, 0, "TESTING"},
+  {0x1A1A, "(GREASE)", "RFC 8701", 0, 0, 0, "TESTING"},
+  {0x2A2A, "(GREASE)", "RFC 8701", 0, 0, 0, "TESTING"},
+  {0x3A3A, "(GREASE)", "RFC 8701", 0, 0, 0, "TESTING"},
+  {0x4A4A, "(GREASE)", "RFC 8701", 0, 0, 0, "TESTING"},
+  {0x5A5A, "(GREASE)", "RFC 8701", 0, 0, 0, "TESTING"},
+  {0x6A6A, "(GREASE)", "RFC 8701", 0, 0, 0, "TESTING"},
+  {0x7A7A, "(GREASE)", "RFC 8701", 0, 0, 0, "TESTING"},
+  {0x8A8A, "(GREASE)", "RFC 8701", 0, 0, 0, "TESTING"},
+  {0x9A9A, "(GREASE)", "RFC 8701", 0, 0, 0, "TESTING"},
+  {0xAAAA, "(GREASE)", "RFC 8701", 0, 0, 0, "TESTING"},
+  {0xBABA, "(GREASE)", "RFC 8701", 0, 0, 0, "TESTING"},
+  {0xCACA, "(GREASE)", "RFC 8701", 0, 0, 0, "TESTING"},
+  {0xDADA, "(GREASE)", "RFC 8701", 0, 0, 0, "TESTING"},
+  {0xEAEA, "(GREASE)", "RFC 8701", 0, 0, 0, "TESTING"},
+  {0xFAFA, "(GREASE)", "RFC 8701", 0, 0, 0, "TESTING"},
+
+
+  // ========== QUIC Versions (used in TLS over QUIC) ==========
+  {0x00000001, "QUIC v1", "RFC 9000", 0, 0, 1, "TRANSPORT"},
+
+  // Terminator
+  {0x0000, NULL, NULL, 0, 0, 0, NULL}
+};
+
+const char* ndpi_tls_supported_version2str(u_int16_t version_id, char unknown_version[8]) {
+  u_int16_t i;
+
+  if(((version_id) & 0x0F0F) == 0x0A0A)
+    return("(GREASE)");
+
+  for (i = 0; tls_versions[i].name != NULL; i++) {
+    if (tls_versions[i].version == version_id) {
+      return(tls_versions[i].name);
+    }
+  }
+
+  ndpi_snprintf(unknown_version, 8, "0X%04X", version_id);
+  return(unknown_version);
+}
+
+/* ****************************************** */
+
+#ifndef __KERNEL__
+/*
+  Compares two TLS blocks of the same lenght and
+  returns a distance values: 0 = vectors are identical,
+  otherwise a value is returned. The higger is the value
+  the more different are the vectors.
+  
+ */
+float ndpi_tls_blocks_len_compare(struct ndpi_tls_block *a,
+				  struct ndpi_tls_block *b,
+				  float *multiplier, /* length = num_tls_blocks */
+				  u_int8_t num_tls_blocks) {
+  float total = 0;
+  u_int8_t n;
+  
+  for(n=0; n<num_tls_blocks; n++)
+    total += fabs((float)(a[n].len - b[n].len)) * multiplier[n];
+
+  return(total / num_tls_blocks);
+}
+#endif

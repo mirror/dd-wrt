@@ -2,7 +2,7 @@
  * syslog.c
  *
  * Copyright (C) 2009-11 - ipoque GmbH
- * Copyright (C) 2011-25 - ntop.org
+ * Copyright (C) 2011-26 - ntop.org
  *
  * This file is part of nDPI, an open source deep packet inspection
  * library based on the OpenDPI and PACE technology by ipoque GmbH
@@ -106,7 +106,7 @@ static void ndpi_search_syslog(struct ndpi_detection_module_struct *ndpi_struct,
 
 void init_syslog_dissector(struct ndpi_detection_module_struct *ndpi_struct)
 {
-  register_dissector("Syslog", ndpi_struct,
+  ndpi_register_dissector("Syslog", ndpi_struct,
                      ndpi_search_syslog,
                      NDPI_SELECTION_BITMASK_PROTOCOL_V4_V6_TCP_OR_UDP_WITH_PAYLOAD_WITHOUT_RETRANSMISSION,
                      1, NDPI_PROTOCOL_SYSLOG);

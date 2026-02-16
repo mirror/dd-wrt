@@ -48,7 +48,6 @@ libndpi_a_SOURCES = ndpi_content_match.c.inc \
 		     protocols/ajp.c \
 		     protocols/among_us.c \
 		     protocols/amazon_video.c \
-		     protocols/apple_push.c \
 		     protocols/armagetron.c \
 		     protocols/atg.c \
 		     protocols/avast.c \

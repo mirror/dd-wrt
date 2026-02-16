@@ -1,7 +1,7 @@
 /*
  * ndpiReader.c
  *
- * Copyright (C) 2011-25 - ntop.org
+ * Copyright (C) 2011-26 - ntop.org
  *
  * nDPI is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -29,6 +29,8 @@
 #include "../src/lib/third_party/include/ahocorasick.h"
 
 #include <stdio.h>
+#include <sys/types.h>
+#include <inttypes.h> /* Needed by PRIu64 */
 #include <stdlib.h>
 #include <getopt.h>
 #include <float.h> /* FLT_EPSILON */
@@ -60,7 +62,6 @@
 #include <libgen.h>
 #endif
 #include <errno.h>
-
 #include "reader_util.h"
 extern int bt_parse_debug;
 
@@ -476,9 +477,9 @@ static int enable_disable_protocols_list(struct ndpi_detection_module_struct *nd
   ndpi_cfg_error rc;
 
   if(!inverted_logic)
-   op = 1; /* Default action: enable protocol */
+    op = 1; /* Default action: enable protocol */
   else
-   op = 0; /* Default action: disable protocol */
+    op = 0; /* Default action: disable protocol */
 
   for(n = strtok(str,_proto_delim); n && *n; n = strtok(NULL,_proto_delim)) {
     if(*n == '-') {
@@ -599,7 +600,7 @@ static void configure_ndpi(struct ndpi_detection_module_struct *ndpi_struct) {
 
 void ndpiCheckHostStringMatch(char *testChar) {
   ndpi_protocol_match_result match = { NDPI_PROTOCOL_UNKNOWN,
-				       NDPI_PROTOCOL_CATEGORY_UNSPECIFIED, NDPI_PROTOCOL_UNRATED };
+    NDPI_PROTOCOL_CATEGORY_UNSPECIFIED, NDPI_PROTOCOL_UNRATED };
   int  testRes;
   char appBufStr[64];
   ndpi_protocol detected_protocol;
@@ -675,7 +676,7 @@ void ndpiCheckHostsFileStringMatch(const char *domains_file) {
 
   while(1) {
     ndpi_protocol_match_result match = { NDPI_PROTOCOL_UNKNOWN,
-                                         NDPI_PROTOCOL_CATEGORY_UNSPECIFIED, NDPI_PROTOCOL_UNRATED };
+      NDPI_PROTOCOL_CATEGORY_UNSPECIFIED, NDPI_PROTOCOL_UNRATED };
     char appBufStr[64];
     int testRes;
     ndpi_protocol detected_protocol;
@@ -750,20 +751,20 @@ static char const *
 ndpi_cfg_error2string(ndpi_cfg_error const err)
 {
   switch (err)
-    {
-    case NDPI_CFG_INVALID_CONTEXT:
-      return "Invalid context";
-    case NDPI_CFG_NOT_FOUND:
-      return "Configuration not found";
-    case NDPI_CFG_INVALID_PARAM:
-      return "Invalid configuration parameter";
-    case NDPI_CFG_CONTEXT_ALREADY_INITIALIZED:
-      return "Configuration context already initialized";
-    case NDPI_CFG_CALLBACK_ERROR:
-      return "Configuration callback error";
-    case NDPI_CFG_OK:
-      return "Success";
-    }
+  {
+  case NDPI_CFG_INVALID_CONTEXT:
+    return "Invalid context";
+  case NDPI_CFG_NOT_FOUND:
+    return "Configuration not found";
+  case NDPI_CFG_INVALID_PARAM:
+    return "Invalid configuration parameter";
+  case NDPI_CFG_CONTEXT_ALREADY_INITIALIZED:
+    return "Configuration context already initialized";
+  case NDPI_CFG_CALLBACK_ERROR:
+    return "Configuration callback error";
+  case NDPI_CFG_OK:
+    return "Success";
+  }
 
   return "Unknown";
 }
@@ -1031,7 +1032,7 @@ static void help(u_int long_help) {
          "  --extcap-capture-filter <filter>\n"
          "  --fifo <path to file or pipe>\n"
          "  --ndpi-proto-filter <protocol>\n"
-	 );
+    );
 #endif
 
   if(long_help) {
@@ -1501,10 +1502,10 @@ static void parse_parameters(int argc, char **argv)
     case 'C':
       errno = 0;
       if((csv_fp = fopen(optarg, "w")) == NULL)
-        {
-          printf("Unable to write on CSV file %s: %s\n", optarg, strerror(errno));
-          exit(1);
-        }
+      {
+	printf("Unable to write on CSV file %s: %s\n", optarg, strerror(errno));
+	exit(1);
+      }
       break;
 
     case 'r':
@@ -1529,60 +1530,60 @@ static void parse_parameters(int argc, char **argv)
       break;
 
     case 'V':
-      {
-        char buf[12];
-        int log_level;
-        const char *errstrp;
+    {
+      char buf[12];
+      int log_level;
+      const char *errstrp;
 
-        /* (Internals) log levels are 0-3, but ndpiReader allows 0-4, where with 4
-           we also enable all protocols */
-        log_level = ndpi_strtonum(optarg, NDPI_LOG_ERROR, NDPI_LOG_DEBUG_EXTRA + 1, &errstrp, 10);
-        if(errstrp != NULL) {
-          printf("Invalid log level %s: %s\n", optarg, errstrp);
-          exit(1);
-        }
-        if(log_level > NDPI_LOG_DEBUG_EXTRA) {
-          log_level = NDPI_LOG_DEBUG_EXTRA;
-          if(reader_add_cfg("all", "log", "enable", 1) == 1) {
-            printf("Invalid cfg [num:%d/%d]\n", num_cfgs, MAX_NUM_CFGS);
-            exit(1);
-          }
-        }
-        snprintf(buf, sizeof(buf), "%d", log_level);
-        if(reader_add_cfg(NULL, "log.level", buf, 1) == 1) {
-          printf("Invalid log level [%s] [num:%d/%d]\n", buf, num_cfgs, MAX_NUM_CFGS);
-          exit(1);
-        }
-        reader_log_level = log_level;
-        break;
+      /* (Internals) log levels are 0-3, but ndpiReader allows 0-4, where with 4
+	 we also enable all protocols */
+      log_level = ndpi_strtonum(optarg, NDPI_LOG_ERROR, NDPI_LOG_DEBUG_EXTRA + 1, &errstrp, 10);
+      if(errstrp != NULL) {
+	printf("Invalid log level %s: %s\n", optarg, errstrp);
+	exit(1);
       }
+      if(log_level > NDPI_LOG_DEBUG_EXTRA) {
+	log_level = NDPI_LOG_DEBUG_EXTRA;
+	if(reader_add_cfg("all", "log", "enable", 1) == 1) {
+	  printf("Invalid cfg [num:%d/%d]\n", num_cfgs, MAX_NUM_CFGS);
+	  exit(1);
+	}
+      }
+      snprintf(buf, sizeof(buf), "%d", log_level);
+      if(reader_add_cfg(NULL, "log.level", buf, 1) == 1) {
+	printf("Invalid log level [%s] [num:%d/%d]\n", buf, num_cfgs, MAX_NUM_CFGS);
+	exit(1);
+      }
+      reader_log_level = log_level;
+      break;
+    }
 
     case 'u':
-      {
-        char *n;
-        char *str = ndpi_strdup(optarg);
-        int inverted_logic;
+    {
+      char *n;
+      char *str = ndpi_strdup(optarg);
+      int inverted_logic;
 
-        /* Reset any previous call to this knob */
-        if(reader_add_cfg("all", "log", "disable", 1) == 1) {
-          printf("Invalid cfg [num:%d/%d]\n", num_cfgs, MAX_NUM_CFGS);
-          exit(1);
-        }
-
-        for(n = strtok(str, ","); n && *n; n = strtok(NULL, ",")) {
-          inverted_logic = 0;
-          if(*n == '-') {
-            inverted_logic = 1;
-            n++;
-          }
-          if(reader_add_cfg(n, "log", inverted_logic ? "disable" : "enable", 1) == 1) {
-            printf("Invalid parameter [%s] [num:%d/%d]\n", n, num_cfgs, MAX_NUM_CFGS);
-            exit(1);
-          }
-        }
-        ndpi_free(str);
-        break;
+      /* Reset any previous call to this knob */
+      if(reader_add_cfg("all", "log", "disable", 1) == 1) {
+	printf("Invalid cfg [num:%d/%d]\n", num_cfgs, MAX_NUM_CFGS);
+	exit(1);
       }
+
+      for(n = strtok(str, ","); n && *n; n = strtok(NULL, ",")) {
+	inverted_logic = 0;
+	if(*n == '-') {
+	  inverted_logic = 1;
+	  n++;
+	}
+	if(reader_add_cfg(n, "log", inverted_logic ? "disable" : "enable", 1) == 1) {
+	  printf("Invalid parameter [%s] [num:%d/%d]\n", n, num_cfgs, MAX_NUM_CFGS);
+	  exit(1);
+	}
+      }
+      ndpi_free(str);
+      break;
+    }
 
     case 'B':
       ndpi_free(_disabled_protocols);
@@ -1602,31 +1603,31 @@ static void parse_parameters(int argc, char **argv)
       break;
 
     case 'P':
-      {
-        int _min_pattern_len, _max_pattern_len,
-          _max_num_packets_per_flow, _max_packet_payload_dissection,
-          _max_num_reported_top_payloads;
+    {
+      int _min_pattern_len, _max_pattern_len,
+	_max_num_packets_per_flow, _max_packet_payload_dissection,
+	_max_num_reported_top_payloads;
 
-        enable_payload_analyzer = 1;
-        if(sscanf(optarg, "%d:%d:%d:%d:%d", &_min_pattern_len, &_max_pattern_len,
-                  &_max_num_packets_per_flow,
-                  &_max_packet_payload_dissection,
-                  &_max_num_reported_top_payloads) == 5) {
-          min_pattern_len = _min_pattern_len, max_pattern_len = _max_pattern_len;
-          max_num_packets_per_flow = _max_num_packets_per_flow, max_packet_payload_dissection = _max_packet_payload_dissection;
-          max_num_reported_top_payloads = _max_num_reported_top_payloads;
-          if(min_pattern_len > max_pattern_len) min_pattern_len = max_pattern_len;
-          if(min_pattern_len < 2)               min_pattern_len = 2;
-          if(max_pattern_len > 16)              max_pattern_len = 16;
-          if(max_num_packets_per_flow == 0)     max_num_packets_per_flow = 1;
-          if(max_packet_payload_dissection < 4) max_packet_payload_dissection = 4;
-          if(max_num_reported_top_payloads == 0) max_num_reported_top_payloads = 1;
-        } else {
-          printf("Invalid -P format. Ignored\n");
-          help(0);
-        }
+      enable_payload_analyzer = 1;
+      if(sscanf(optarg, "%d:%d:%d:%d:%d", &_min_pattern_len, &_max_pattern_len,
+		&_max_num_packets_per_flow,
+		&_max_packet_payload_dissection,
+		&_max_num_reported_top_payloads) == 5) {
+	min_pattern_len = _min_pattern_len, max_pattern_len = _max_pattern_len;
+	max_num_packets_per_flow = _max_num_packets_per_flow, max_packet_payload_dissection = _max_packet_payload_dissection;
+	max_num_reported_top_payloads = _max_num_reported_top_payloads;
+	if(min_pattern_len > max_pattern_len) min_pattern_len = max_pattern_len;
+	if(min_pattern_len < 2)               min_pattern_len = 2;
+	if(max_pattern_len > 16)              max_pattern_len = 16;
+	if(max_num_packets_per_flow == 0)     max_num_packets_per_flow = 1;
+	if(max_packet_payload_dissection < 4) max_packet_payload_dissection = 4;
+	if(max_num_reported_top_payloads == 0) max_num_reported_top_payloads = 1;
+      } else {
+	printf("Invalid -P format. Ignored\n");
+	help(0);
       }
-      break;
+    }
+    break;
 
     case 'M':
       enable_malloc_bins = 1;
@@ -1645,23 +1646,23 @@ static void parse_parameters(int argc, char **argv)
     case 'k':
       errno = 0;
       if((serialization_fp = fopen(optarg, "w")) == NULL)
-        {
-          printf("Unable to write on serialization file %s: %s\n", optarg, strerror(errno));
-          exit(1);
-        }
+      {
+	printf("Unable to write on serialization file %s: %s\n", optarg, strerror(errno));
+	exit(1);
+      }
       break;
 
     case 'K':
       if (strcasecmp(optarg, "tlv") == 0 && strlen(optarg) == 3)
-        {
-          serialization_format = ndpi_serialization_format_tlv;
-        } else if (strcasecmp(optarg, "csv") == 0 && strlen(optarg) == 3)
-        {
-          serialization_format = ndpi_serialization_format_csv;
-        } else if (strcasecmp(optarg, "json") == 0 && strlen(optarg) == 4)
-        {
-          serialization_format = ndpi_serialization_format_json;
-        } else {
+      {
+	serialization_format = ndpi_serialization_format_tlv;
+      } else if (strcasecmp(optarg, "csv") == 0 && strlen(optarg) == 3)
+      {
+	serialization_format = ndpi_serialization_format_csv;
+      } else if (strcasecmp(optarg, "json") == 0 && strlen(optarg) == 4)
+      {
+	serialization_format = ndpi_serialization_format_json;
+      } else {
         printf("Unknown serialization format. Valid values are: tlv,csv,json\n");
         exit(1);
       }
@@ -1703,58 +1704,58 @@ static void parse_parameters(int argc, char **argv)
       break;
 
     case OPTLONG_VALUE_CONF:
-      {
-        FILE *fd;
-        char buffer[512], *line, *saveptr;
-        int len, saved_optind, initial_fargc;
+    {
+      FILE *fd;
+      char buffer[512], *line, *saveptr;
+      int len, saved_optind, initial_fargc;
 
-        fd = fopen(optarg, "r");
-        if(fd == NULL) {
-          printf("Error opening: %s\n", optarg);
-          exit(1);
-        }
-
-        if(fargc == 0) {
-          fargv[0] = ndpi_strdup(argv[0]);
-          fargc = 1;
-        }
-        initial_fargc = fargc;
-
-        while(1) {
-          line = fgets(buffer, sizeof(buffer), fd);
-
-          if(line == NULL)
-            break;
-
-          len = strlen(line);
-
-          if((len <= 1) || (line[0] == '#'))
-            continue;
-
-          line[len - 1] = '\0';
-
-          fargv[fargc] = ndpi_strdup(strtok_r(line, " \t", &saveptr));
-          while(fargc < MAX_FARGS && fargv[fargc] != NULL) {
-            fargc++;
-            fargv[fargc] = ndpi_strdup(strtok_r(NULL, " \t", &saveptr));
-          }
-          if(fargc == MAX_FARGS) {
-            printf("Too many arguments\n");
-            exit(1);
-          }
-        }
-
-        /* Recursive call to getopt_long() */
-        saved_optind = optind;
-        optind = initial_fargc;
-        parse_parameters(fargc, fargv);
-        optind = saved_optind;
-
-        fclose(fd);
+      fd = fopen(optarg, "r");
+      if(fd == NULL) {
+	printf("Error opening: %s\n", optarg);
+	exit(1);
       }
-      break;
 
-      /* Extcap */
+      if(fargc == 0) {
+	fargv[0] = ndpi_strdup(argv[0]);
+	fargc = 1;
+      }
+      initial_fargc = fargc;
+
+      while(1) {
+	line = fgets(buffer, sizeof(buffer), fd);
+
+	if(line == NULL)
+	  break;
+
+	len = strlen(line);
+
+	if((len <= 1) || (line[0] == '#'))
+	  continue;
+
+	line[len - 1] = '\0';
+
+	fargv[fargc] = ndpi_strdup(strtok_r(line, " \t", &saveptr));
+	while(fargc < MAX_FARGS && fargv[fargc] != NULL) {
+	  fargc++;
+	  fargv[fargc] = ndpi_strdup(strtok_r(NULL, " \t", &saveptr));
+	}
+	if(fargc == MAX_FARGS) {
+	  printf("Too many arguments\n");
+	  exit(1);
+	}
+      }
+
+      /* Recursive call to getopt_long() */
+      saved_optind = optind;
+      optind = initial_fargc;
+      parse_parameters(fargc, fargv);
+      optind = saved_optind;
+
+      fclose(fd);
+    }
+    break;
+
+    /* Extcap */
     case '0':
       extcap_interfaces();
       break;
@@ -1782,17 +1783,17 @@ static void parse_parameters(int argc, char **argv)
       break;
 
     case '9':
-      {
-        struct ndpi_detection_module_struct *ndpi_str = ndpi_init_detection_module(NULL);
+    {
+      struct ndpi_detection_module_struct *ndpi_str = ndpi_init_detection_module(NULL);
 
-        ndpi_finalize_initialization(ndpi_str);
+      ndpi_finalize_initialization(ndpi_str);
 
-        extcap_packet_filter = ndpi_get_proto_by_name(ndpi_str, optarg);
-        if(extcap_packet_filter == NDPI_PROTOCOL_UNKNOWN) extcap_packet_filter = atoi(optarg);
+      extcap_packet_filter = ndpi_get_proto_by_name(ndpi_str, optarg);
+      if(extcap_packet_filter == NDPI_PROTOCOL_UNKNOWN) extcap_packet_filter = atoi(optarg);
 
-        ndpi_exit_detection_module(ndpi_str);
-        break;
-      }
+      ndpi_exit_detection_module(ndpi_str);
+      break;
+    }
 
     case 'T':
       max_num_tcp_dissected_pkts = atoi(optarg);
@@ -1869,14 +1870,14 @@ static void parseOptions(int argc, char **argv) {
   parse_parameters(argc, argv);
 
   if (serialization_fp == NULL && serialization_format != ndpi_serialization_format_unknown)
-    {
-      printf("Serializing detection results to a file requires command line arguments `-k'\n");
-      exit(1);
-    }
+  {
+    printf("Serializing detection results to a file requires command line arguments `-k'\n");
+    exit(1);
+  }
   if (serialization_fp != NULL && serialization_format == ndpi_serialization_format_unknown)
-    {
-      serialization_format = ndpi_serialization_format_json;
-    }
+  {
+    serialization_format = ndpi_serialization_format_json;
+  }
 
   if(extcap_exit)
     exit(0);
@@ -1906,10 +1907,10 @@ static void parseOptions(int argc, char **argv) {
     }
 
     if(num_threads > 1 && enable_malloc_bins == 1)
-      {
-	printf("Memory profiling ('-M') is incompatible with multi-thread enviroment");
-	exit(1);
-      }
+    {
+      printf("Memory profiling ('-M') is incompatible with multi-thread enviroment");
+      exit(1);
+    }
   }
 
 #ifdef __linux__
@@ -1950,31 +1951,57 @@ static char* print_cipher(ndpi_cipher_weakness c) {
 
 /* ********************************** */
 
-void print_bin(FILE *fout, const char *label, struct ndpi_bin *b) {
-  u_int16_t i;
-  const char *sep = label ? "," : ";";
+char* sprint_bin(char *buf, u_int buf_len, struct ndpi_bin *b,
+		 char *sep,  bool normalize) {
+  u_int i, idx = 0;
 
-  ndpi_normalize_bin(b);
-
-  if(label) fprintf(fout, "[%s: ", label);
-
+  if(normalize) ndpi_normalize_bin(b);
+  
   for(i=0; i<b->num_bins; i++) {
+    int l;
+
+    if(i > 0) {
+      l = snprintf(&buf[idx], buf_len-idx,  "%s", sep);
+      if(l < 0) break; else idx += l;
+    }
+    
     switch(b->family) {
     case ndpi_bin_family8:
-      fprintf(fout, "%s%u", (i > 0) ? sep : "", b->u.bins8[i]);
+      l = snprintf(&buf[idx], buf_len-idx,  "%u", b->u.bins8[i]);
       break;
     case ndpi_bin_family16:
-      fprintf(fout, "%s%u", (i > 0) ? sep : "", b->u.bins16[i]);
+      l = snprintf(&buf[idx], buf_len-idx,  "%u", b->u.bins16[i]);
       break;
     case ndpi_bin_family32:
-      fprintf(fout, "%s%u", (i > 0) ? sep : "", b->u.bins32[i]);
+      l = snprintf(&buf[idx], buf_len-idx,  "%u", b->u.bins32[i]);
       break;
     case ndpi_bin_family64:
-      fprintf(fout, "%s%llu", (i > 0) ? sep : "", (unsigned long long)b->u.bins64[i]);
+#ifdef __MINGW64__
+      l = snprintf(&buf[idx], buf_len - idx, "%lu", (unsigned long)b->u.bins64[i]);
+#else
+      l = snprintf(&buf[idx], buf_len - idx, "%" PRIu64, b->u.bins64[i]);
+#endif
+      break;
+    default:
+      l = -1;
       break;
     }
+
+    if(l < 0) break; else idx += l;
   }
 
+  return(buf);
+}
+
+/* ********************************** */
+
+void print_bin(FILE *fout, const char *label, struct ndpi_bin *b) {
+  char buf[512];
+
+  sprint_bin(buf, sizeof(buf), b, label ? "," : ";", true);
+
+  if(label) fprintf(fout, "[%s: ", label);
+  fprintf(fout, "%s", buf);
   if(label) fprintf(fout, "]");
 }
 
@@ -2034,7 +2061,7 @@ static void printFlow(u_int32_t id, struct ndpi_flow_info *flow, u_int16_t threa
             ntohs(flow->src_port),
             flow->dst_name ? flow->dst_name : "",
             ntohs(flow->dst_port)
-            );
+      );
 
     fprintf(csv_fp, "%s|",
             ndpi_protocol2id(flow->detected_protocol.proto, buf, sizeof(buf)));
@@ -2098,19 +2125,19 @@ static void printFlow(u_int32_t id, struct ndpi_flow_info *flow, u_int16_t threa
             flow->ssh_tls.advertised_alpns          ? flow->ssh_tls.advertised_alpns : "",
             flow->ssh_tls.negotiated_alpn           ? flow->ssh_tls.negotiated_alpn : "",
             flow->ssh_tls.tls_supported_versions    ? flow->ssh_tls.tls_supported_versions : ""
-            );
+      );
 
 #if 0
     fprintf(csv_fp, "%s|%s|",
             flow->ssh_tls.tls_issuerDN              ? flow->ssh_tls.tls_issuerDN : "",
             flow->ssh_tls.tls_subjectDN             ? flow->ssh_tls.tls_subjectDN : ""
-            );
+      );
 #endif
 
     fprintf(csv_fp, "%s|%s",
             (flow->ssh_tls.client_hassh[0] != '\0') ? flow->ssh_tls.client_hassh : "",
             (flow->ssh_tls.server_hassh[0] != '\0') ? flow->ssh_tls.server_hassh : ""
-            );
+      );
 
     fprintf(csv_fp, "|%s|", flow->info);
 
@@ -2142,13 +2169,13 @@ static void printFlow(u_int32_t id, struct ndpi_flow_info *flow, u_int16_t threa
 
     fprintf(out, "%s%s%s:%u %s %s%s%s:%u ",
 	    (flow->ip_version == 6) ? "[" : "",
-      flow->src_name ? flow->src_name : "",
-      (flow->ip_version == 6) ? "]" : "", ntohs(flow->src_port),
+	    flow->src_name ? flow->src_name : "",
+	    (flow->ip_version == 6) ? "]" : "", ntohs(flow->src_port),
 	    flow->bidirectional ? "<->" : "->",
 	    (flow->ip_version == 6) ? "[" : "",
-      flow->dst_name ? flow->dst_name : "",
-      (flow->ip_version == 6) ? "]" : "", ntohs(flow->dst_port)
-	    );
+	    flow->dst_name ? flow->dst_name : "",
+	    (flow->ip_version == 6) ? "]" : "", ntohs(flow->dst_port)
+      );
 
     if(flow->vlan_id > 0) fprintf(out, "[VLAN: %u]", flow->vlan_id);
     if(enable_payload_analyzer) fprintf(out, "[flowId: %u]", flow->flow_id);
@@ -2243,23 +2270,23 @@ static void printFlow(u_int32_t id, struct ndpi_flow_info *flow, u_int16_t threa
     }
 
     if((flow->detected_protocol.proto.master_protocol == NDPI_PROTOCOL_RTP) || (flow->detected_protocol.proto.app_protocol == NDPI_PROTOCOL_RTP))
-      {
-	if (flow->rtp[0 /* cli -> srv */].payload_detected || flow->rtp[1].payload_detected) {
-	  fprintf(out, "[Payload Type: ");
+    {
+      if (flow->rtp[0 /* cli -> srv */].payload_detected || flow->rtp[1].payload_detected) {
+	fprintf(out, "[Payload Type: ");
 
-	  if (flow->rtp[0].payload_detected)
-	    fprintf(out, "%s (%u.%u)",
-		    ndpi_rtp_payload_type2str(flow->rtp[0].payload_type, flow->rtp[0].evs_subtype), flow->rtp[0].payload_type, flow->rtp[0].evs_subtype);
+	if (flow->rtp[0].payload_detected)
+	  fprintf(out, "%s (%u.%u)",
+		  ndpi_rtp_payload_type2str(flow->rtp[0].payload_type, flow->rtp[0].evs_subtype), flow->rtp[0].payload_type, flow->rtp[0].evs_subtype);
 
-	  if(flow->rtp[1 /* srv -> cli */].payload_detected) {
-	    if (flow->rtp[0].payload_detected) fprintf(out, " / ");
+	if(flow->rtp[1 /* srv -> cli */].payload_detected) {
+	  if (flow->rtp[0].payload_detected) fprintf(out, " / ");
 
-	    fprintf(out, "%s (%u.%u)]",
-		    ndpi_rtp_payload_type2str(flow->rtp[1].payload_type, flow->rtp[1].evs_subtype), flow->rtp[1].payload_type, flow->rtp[1].evs_subtype);
-	  } else
-	    fprintf(out, "]");
-	}
+	  fprintf(out, "%s (%u.%u)]",
+		  ndpi_rtp_payload_type2str(flow->rtp[1].payload_type, flow->rtp[1].evs_subtype), flow->rtp[1].payload_type, flow->rtp[1].evs_subtype);
+	} else
+	  fprintf(out, "]");
       }
+    }
 
     fprintf(out, "[%s]",
 	    ndpi_is_encrypted_proto(ndpi_thread_info[thread_id].workflow->ndpi_struct,
@@ -2327,126 +2354,126 @@ static void printFlow(u_int32_t id, struct ndpi_flow_info *flow, u_int16_t threa
     if(flow->host_server_name[0] != '\0') fprintf(out, "[Hostname/SNI: %s]", flow->host_server_name);
 
     switch (flow->info_type)
+    {
+    case INFO_INVALID:
+      break;
+
+    case INFO_GENERIC:
+      if (flow->info[0] != '\0')
       {
-      case INFO_INVALID:
-        break;
-
-      case INFO_GENERIC:
-        if (flow->info[0] != '\0')
-	  {
-	    fprintf(out, "[%s]", flow->info);
-	  }
-        break;
-
-      case INFO_KERBEROS:
-        if (flow->kerberos.domain[0] != '\0' ||
-            flow->kerberos.hostname[0] != '\0' ||
-            flow->kerberos.username[0] != '\0')
-	  {
-	    fprintf(out, "[%s%s%s%s]",
-		    flow->kerberos.domain,
-		    (flow->kerberos.hostname[0] != '\0' ||
-		     flow->kerberos.username[0] != '\0' ? "\\" : ""),
-		    flow->kerberos.hostname,
-		    flow->kerberos.username);
-	  }
-        break;
-
-      case INFO_SOFTETHER:
-        if (flow->softether.ip[0] != '\0')
-	  {
-	    fprintf(out, "[Client IP: %s]", flow->softether.ip);
-	  }
-        if (flow->softether.port[0] != '\0')
-	  {
-	    fprintf(out, "[Client Port: %s]", flow->softether.port);
-	  }
-        if (flow->softether.hostname[0] != '\0')
-	  {
-	    fprintf(out, "[Hostname: %s]", flow->softether.hostname);
-	  }
-        if (flow->softether.fqdn[0] != '\0')
-	  {
-	    fprintf(out, "[FQDN: %s]", flow->softether.fqdn);
-	  }
-        break;
-
-      case INFO_TIVOCONNECT:
-        if (flow->tivoconnect.identity_uuid[0] != '\0')
-	  {
-	    fprintf(out, "[UUID: %s]", flow->tivoconnect.identity_uuid);
-	  }
-        if (flow->tivoconnect.machine[0] != '\0')
-	  {
-	    fprintf(out, "[Machine: %s]", flow->tivoconnect.machine);
-	  }
-        if (flow->tivoconnect.platform[0] != '\0')
-	  {
-	    fprintf(out, "[Platform: %s]", flow->tivoconnect.platform);
-	  }
-        if (flow->tivoconnect.services[0] != '\0')
-	  {
-	    fprintf(out, "[Services: %s]", flow->tivoconnect.services);
-	  }
-        break;
-
-      case INFO_SIP:
-        if (flow->sip.from[0] != '\0')
-          {
-            fprintf(out, "[SIP From: %s]", flow->sip.from);
-          }
-        if (flow->sip.from_imsi[0] != '\0')
-          {
-            fprintf(out, "[SIP From IMSI: %s]", flow->sip.from_imsi);
-          }
-        if (flow->sip.to[0] != '\0')
-          {
-            fprintf(out, "[SIP To: %s]", flow->sip.to);
-          }
-        if (flow->sip.to_imsi[0] != '\0')
-          {
-            fprintf(out, "[SIP To IMSI: %s]", flow->sip.to_imsi);
-          }
-        break;
-
-      case INFO_NATPMP:
-        if (flow->natpmp.internal_port != 0 && flow->natpmp.ip[0] != '\0')
-	  {
-            fprintf(out, "[Result: %u][Internal Port: %u][External Port: %u][External Address: %s]",
-                    flow->natpmp.result_code, flow->natpmp.internal_port, flow->natpmp.external_port,
-                    flow->natpmp.ip);
-	  }
-        break;
-
-      case INFO_FTP_IMAP_POP_SMTP:
-        if (flow->ftp_imap_pop_smtp.username[0] != '\0')
-	  {
-	    fprintf(out, "[User: %s][Pwd: %s]",
-		    flow->ftp_imap_pop_smtp.username,
-		    flow->ftp_imap_pop_smtp.password);
-	    if (flow->ftp_imap_pop_smtp.auth_failed != 0)
-	      {
-		fprintf(out, "[%s]", "Auth Failed");
-	      }
-	  }
-        break;
-
-      case INFO_FASTCGI:
-        if (flow->fast_cgi.url[0] != '\0')
-          {
-            fprintf(out, "[Url: %s]", flow->fast_cgi.url);
-          }
-        if (flow->fast_cgi.user_agent[0] != '\0')
-          {
-            fprintf(out, "[User-agent: %s]", flow->fast_cgi.user_agent);
-          }
-        break;
-
-      case INFO_BFCP:
-        fprintf(out, "[Conference Id: %d]", flow->bfcp.conference_id);
-        fprintf(out, "[User Id: %d]", flow->bfcp.user_id);
-        break;
+	fprintf(out, "[%s]", flow->info);
       }
+      break;
+
+    case INFO_KERBEROS:
+      if (flow->kerberos.domain[0] != '\0' ||
+	  flow->kerberos.hostname[0] != '\0' ||
+	  flow->kerberos.username[0] != '\0')
+      {
+	fprintf(out, "[%s%s%s%s]",
+		flow->kerberos.domain,
+		(flow->kerberos.hostname[0] != '\0' ||
+		 flow->kerberos.username[0] != '\0' ? "\\" : ""),
+		flow->kerberos.hostname,
+		flow->kerberos.username);
+      }
+      break;
+
+    case INFO_SOFTETHER:
+      if (flow->softether.ip[0] != '\0')
+      {
+	fprintf(out, "[Client IP: %s]", flow->softether.ip);
+      }
+      if (flow->softether.port[0] != '\0')
+      {
+	fprintf(out, "[Client Port: %s]", flow->softether.port);
+      }
+      if (flow->softether.hostname[0] != '\0')
+      {
+	fprintf(out, "[Hostname: %s]", flow->softether.hostname);
+      }
+      if (flow->softether.fqdn[0] != '\0')
+      {
+	fprintf(out, "[FQDN: %s]", flow->softether.fqdn);
+      }
+      break;
+
+    case INFO_TIVOCONNECT:
+      if (flow->tivoconnect.identity_uuid[0] != '\0')
+      {
+	fprintf(out, "[UUID: %s]", flow->tivoconnect.identity_uuid);
+      }
+      if (flow->tivoconnect.machine[0] != '\0')
+      {
+	fprintf(out, "[Machine: %s]", flow->tivoconnect.machine);
+      }
+      if (flow->tivoconnect.platform[0] != '\0')
+      {
+	fprintf(out, "[Platform: %s]", flow->tivoconnect.platform);
+      }
+      if (flow->tivoconnect.services[0] != '\0')
+      {
+	fprintf(out, "[Services: %s]", flow->tivoconnect.services);
+      }
+      break;
+
+    case INFO_SIP:
+      if (flow->sip.from[0] != '\0')
+      {
+	fprintf(out, "[SIP From: %s]", flow->sip.from);
+      }
+      if (flow->sip.from_imsi[0] != '\0')
+      {
+	fprintf(out, "[SIP From IMSI: %s]", flow->sip.from_imsi);
+      }
+      if (flow->sip.to[0] != '\0')
+      {
+	fprintf(out, "[SIP To: %s]", flow->sip.to);
+      }
+      if (flow->sip.to_imsi[0] != '\0')
+      {
+	fprintf(out, "[SIP To IMSI: %s]", flow->sip.to_imsi);
+      }
+      break;
+
+    case INFO_NATPMP:
+      if (flow->natpmp.internal_port != 0 && flow->natpmp.ip[0] != '\0')
+      {
+	fprintf(out, "[Result: %u][Internal Port: %u][External Port: %u][External Address: %s]",
+		flow->natpmp.result_code, flow->natpmp.internal_port, flow->natpmp.external_port,
+		flow->natpmp.ip);
+      }
+      break;
+
+    case INFO_FTP_IMAP_POP_SMTP:
+      if (flow->ftp_imap_pop_smtp.username[0] != '\0')
+      {
+	fprintf(out, "[User: %s][Pwd: %s]",
+		flow->ftp_imap_pop_smtp.username,
+		flow->ftp_imap_pop_smtp.password);
+	if (flow->ftp_imap_pop_smtp.auth_failed != 0)
+	{
+	  fprintf(out, "[%s]", "Auth Failed");
+	}
+      }
+      break;
+
+    case INFO_FASTCGI:
+      if (flow->fast_cgi.url[0] != '\0')
+      {
+	fprintf(out, "[Url: %s]", flow->fast_cgi.url);
+      }
+      if (flow->fast_cgi.user_agent[0] != '\0')
+      {
+	fprintf(out, "[User-agent: %s]", flow->fast_cgi.user_agent);
+      }
+      break;
+
+    case INFO_BFCP:
+      fprintf(out, "[Conference Id: %d]", flow->bfcp.conference_id);
+      fprintf(out, "[User Id: %d]", flow->bfcp.user_id);
+      break;
+    }
 
     if(flow->ssh_tls.advertised_alpns)
       fprintf(out, "[(Advertised) ALPNs: %s]", flow->ssh_tls.advertised_alpns);
@@ -2564,6 +2591,8 @@ static void printFlow(u_int32_t id, struct ndpi_flow_info *flow, u_int16_t threa
 
     if(flow->ssh_tls.server_names) fprintf(out, "[ServerNames: %s]", flow->ssh_tls.server_names);
     if(flow->ssh_tls.server_hassh[0] != '\0') fprintf(out, "[HASSH-S: %s]", flow->ssh_tls.server_hassh);
+    if(flow->ssh_tls.ssh_key_exchange_method[0] != '\0')
+      fprintf(out, "[Kex Method: %s]", flow->ssh_tls.ssh_key_exchange_method);
 
     if(flow->ssh_tls.ja3_server[0] != '\0') fprintf(out, "[JA3S: %s]", flow->ssh_tls.ja3_server);
 
@@ -2582,7 +2611,7 @@ static void printFlow(u_int32_t id, struct ndpi_flow_info *flow, u_int16_t threa
       fprintf(out, "]");
     }
 
-  if(flow->idle_timeout_sec) fprintf(out, "[Idle Timeout: %d]", flow->idle_timeout_sec);
+    if(flow->idle_timeout_sec) fprintf(out, "[Idle Timeout: %d]", flow->idle_timeout_sec);
 
 #ifdef HEURISTICS_CODE
     if(flow->ssh_tls.browser_heuristics.is_safari_tls)  fprintf(out, "[Safari]");
@@ -2622,13 +2651,15 @@ static void printFlow(u_int32_t id, struct ndpi_flow_info *flow, u_int16_t threa
     print_bin(out, "Plen Bins", &flow->payload_len_bin);
 #endif
 
-    if(flow->ssh_tls.num_blocks > 0) {
+    if((flow->tls.num_blocks > 0) && (flow->tls.blocks != NULL)) {
       int i;
 
       fprintf(out, "[TLS blocks: ");
 
-      for(i=0; i<flow->ssh_tls.num_blocks; i++)
-	fprintf(out, "%s%u/%d", (i > 0) ? "," : "", flow->ssh_tls.blocks[i].block_type, flow->ssh_tls.blocks[i].len);
+      for(i=0; i<flow->tls.num_blocks; i++)
+	fprintf(out, "%s%s=%d", (i > 0) ? "," : "",
+		ndpi_print_encoded_tls_block_type(flow->tls.blocks[i].block_type, true),
+		flow->tls.blocks[i].len);
 
       fprintf(out, "]");
     }
@@ -2656,7 +2687,8 @@ static void printFlowSerialized(struct ndpi_flow_info *flow)
   //float data_ratio = ndpi_data_ratio(flow->src2dst_bytes, flow->dst2src_bytes);
   double f = (double)flow->first_seen_ms, l = (double)flow->last_seen_ms;
   float data_ratio = ndpi_data_ratio(flow->src2dst_bytes, flow->dst2src_bytes);
-
+  char buf[512];
+  
   ndpi_serialize_string_uint32(serializer, "flow_id", flow->flow_id);
   ndpi_serialize_string_double(serializer, "first_seen", f / 1000., "%.3f");
   ndpi_serialize_string_double(serializer, "last_seen", l / 1000., "%.3f");
@@ -2730,39 +2762,49 @@ static void printFlowSerialized(struct ndpi_flow_info *flow)
   ndpi_serialize_end_of_block(serializer);
 
   /* TCP flags */
-  ndpi_serialize_start_of_block(serializer, "tcp_flags");
-  ndpi_serialize_string_int32(serializer, "cwr_count", flow->cwr_count);
-  ndpi_serialize_string_int32(serializer, "ece_count", flow->ece_count);
-  ndpi_serialize_string_int32(serializer, "urg_count", flow->urg_count);
-  ndpi_serialize_string_int32(serializer, "ack_count", flow->ack_count);
-  ndpi_serialize_string_int32(serializer, "psh_count", flow->psh_count);
-  ndpi_serialize_string_int32(serializer, "rst_count", flow->rst_count);
-  ndpi_serialize_string_int32(serializer, "syn_count", flow->syn_count);
-  ndpi_serialize_string_int32(serializer, "fin_count", flow->fin_count);
+  if(flow->protocol == IPPROTO_TCP) {
+    ndpi_serialize_start_of_block(serializer, "tcp_flags");
+    ndpi_serialize_string_int32(serializer, "cwr_count", flow->cwr_count);
+    ndpi_serialize_string_int32(serializer, "ece_count", flow->ece_count);
+    ndpi_serialize_string_int32(serializer, "urg_count", flow->urg_count);
+    ndpi_serialize_string_int32(serializer, "ack_count", flow->ack_count);
+    ndpi_serialize_string_int32(serializer, "psh_count", flow->psh_count);
+    ndpi_serialize_string_int32(serializer, "rst_count", flow->rst_count);
+    ndpi_serialize_string_int32(serializer, "syn_count", flow->syn_count);
+    ndpi_serialize_string_int32(serializer, "fin_count", flow->fin_count);
 
-  ndpi_serialize_string_int32(serializer, "src2dst_cwr_count", flow->src2dst_cwr_count);
-  ndpi_serialize_string_int32(serializer, "src2dst_ece_count", flow->src2dst_ece_count);
-  ndpi_serialize_string_int32(serializer, "src2dst_urg_count", flow->src2dst_urg_count);
-  ndpi_serialize_string_int32(serializer, "src2dst_ack_count", flow->src2dst_ack_count);
-  ndpi_serialize_string_int32(serializer, "src2dst_psh_count", flow->src2dst_psh_count);
-  ndpi_serialize_string_int32(serializer, "src2dst_rst_count", flow->src2dst_rst_count);
-  ndpi_serialize_string_int32(serializer, "src2dst_syn_count", flow->src2dst_syn_count);
-  ndpi_serialize_string_int32(serializer, "src2dst_fin_count", flow->src2dst_fin_count);
+    ndpi_serialize_string_int32(serializer, "src2dst_cwr_count", flow->src2dst_cwr_count);
+    ndpi_serialize_string_int32(serializer, "src2dst_ece_count", flow->src2dst_ece_count);
+    ndpi_serialize_string_int32(serializer, "src2dst_urg_count", flow->src2dst_urg_count);
+    ndpi_serialize_string_int32(serializer, "src2dst_ack_count", flow->src2dst_ack_count);
+    ndpi_serialize_string_int32(serializer, "src2dst_psh_count", flow->src2dst_psh_count);
+    ndpi_serialize_string_int32(serializer, "src2dst_rst_count", flow->src2dst_rst_count);
+    ndpi_serialize_string_int32(serializer, "src2dst_syn_count", flow->src2dst_syn_count);
+    ndpi_serialize_string_int32(serializer, "src2dst_fin_count", flow->src2dst_fin_count);
 
-  ndpi_serialize_string_int32(serializer, "dst2src_cwr_count", flow->dst2src_cwr_count);
-  ndpi_serialize_string_int32(serializer, "dst2src_ece_count", flow->dst2src_ece_count);
-  ndpi_serialize_string_int32(serializer, "dst2src_urg_count", flow->dst2src_urg_count);
-  ndpi_serialize_string_int32(serializer, "dst2src_ack_count", flow->dst2src_ack_count);
-  ndpi_serialize_string_int32(serializer, "dst2src_psh_count", flow->dst2src_psh_count);
-  ndpi_serialize_string_int32(serializer, "dst2src_rst_count", flow->dst2src_rst_count);
-  ndpi_serialize_string_int32(serializer, "dst2src_syn_count", flow->dst2src_syn_count);
-  ndpi_serialize_string_int32(serializer, "dst2src_fin_count", flow->dst2src_fin_count);
+    ndpi_serialize_string_int32(serializer, "dst2src_cwr_count", flow->dst2src_cwr_count);
+    ndpi_serialize_string_int32(serializer, "dst2src_ece_count", flow->dst2src_ece_count);
+    ndpi_serialize_string_int32(serializer, "dst2src_urg_count", flow->dst2src_urg_count);
+    ndpi_serialize_string_int32(serializer, "dst2src_ack_count", flow->dst2src_ack_count);
+    ndpi_serialize_string_int32(serializer, "dst2src_psh_count", flow->dst2src_psh_count);
+    ndpi_serialize_string_int32(serializer, "dst2src_rst_count", flow->dst2src_rst_count);
+    ndpi_serialize_string_int32(serializer, "dst2src_syn_count", flow->dst2src_syn_count);
+    ndpi_serialize_string_int32(serializer, "dst2src_fin_count", flow->dst2src_fin_count);
+    ndpi_serialize_end_of_block(serializer);
+
+    /* TCP window */
+    ndpi_serialize_string_uint32(serializer, "c_to_s_init_win", flow->c_to_s_init_win);
+    ndpi_serialize_string_uint32(serializer, "s_to_c_init_win", flow->s_to_c_init_win);
+  }
+  
+  /* Bins */
+  ndpi_serialize_start_of_block(serializer, "plen_bins");
+  ndpi_serialize_string_string(serializer, "raw",
+			       sprint_bin(buf, sizeof(buf), &flow->payload_len_bin, ",", false));
+  ndpi_serialize_string_string(serializer, "normalized",
+			       sprint_bin(buf, sizeof(buf), &flow->payload_len_bin, ",", true));
   ndpi_serialize_end_of_block(serializer);
-
-  /* TCP window */
-  ndpi_serialize_string_uint32(serializer, "c_to_s_init_win", flow->c_to_s_init_win);
-  ndpi_serialize_string_uint32(serializer, "s_to_c_init_win", flow->s_to_c_init_win);
-
+  
   json_str = ndpi_serializer_get_buffer(serializer, &json_str_len);
   if (json_str == NULL || json_str_len == 0)
     {
@@ -5825,6 +5867,17 @@ void automataDomainsUnitTest() {
 #endif
 
 /* *********************************************** */
+  
+void blocksUnitTest() {
+  struct ndpi_tls_block a[] = { { 4, 1, 0, 1590, 0}, { 5, 1, 0, -1212, 0}, { 1, 1, 0, -1, 0}, { 16, 1, 0, -42, 0}, { 16, 1, 0, -53, 0}  };
+  struct ndpi_tls_block b[] = { { 4, 1, 0, 1591, 0}, { 5, 1, 0, -1212, 0}, { 1, 1, 0, -1, 0}, { 16, 1, 0, -42, 0}, { 16, 1, 0, -53, 0}  };
+  float multiplier[]        = { 100, 100, 80, 40, 20};
+  float ret = ndpi_tls_blocks_len_compare(a, b, multiplier, sizeof(multiplier) / sizeof(float));
+
+  assert(ret == 20.0);
+}
+
+/* *********************************************** */
 
 // #define RUN_DATA_ANALYSIS_THEN_QUIT 1
 
@@ -7363,7 +7416,7 @@ int main(int argc, char **argv) {
   checkRankingUnitTest(true);
   exit(0);
 #endif
-
+ 
 #ifdef DEBUG_TRACE
   trace = fopen("/tmp/ndpiReader.log", "a");
 
@@ -7414,7 +7467,7 @@ int main(int argc, char **argv) {
     zscoreUnitTest();
     sesUnitTest();
     desUnitTest();
-
+    blocksUnitTest();
     /* Internal checks */
     // binUnitTest();
     //hwUnitTest();

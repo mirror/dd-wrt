@@ -2,7 +2,7 @@
  * noe.c (Alcatel new office environment)
  *
  * Copyright (C) 2013 Remy Mudingay <mudingay@ill.fr>
- * Copyright (C) 2011-25 - ntop.org
+ * Copyright (C) 2011-26 - ntop.org
  *
  * This file is part of nDPI, an open source deep packet inspection
  * library based on the OpenDPI and PACE technology by ipoque GmbH
@@ -73,7 +73,7 @@ static void ndpi_search_noe(struct ndpi_detection_module_struct *ndpi_struct,
 
 void init_noe_dissector(struct ndpi_detection_module_struct *ndpi_struct)
 {
-  register_dissector("NOE", ndpi_struct,
+  ndpi_register_dissector("NOE", ndpi_struct,
                      ndpi_search_noe,
                      NDPI_SELECTION_BITMASK_PROTOCOL_V4_V6_UDP_WITH_PAYLOAD,
                      1, NDPI_PROTOCOL_NOE);

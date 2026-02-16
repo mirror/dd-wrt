@@ -1,7 +1,7 @@
 /*
  * mail_smtp.c
  *
- * Copyright (C) 2011-25 - ntop.org
+ * Copyright (C) 2011-26 - ntop.org
  * Copyright (C) 2009-11 - ipoque GmbH
  *
  * This file is part of nDPI, an open source deep packet inspection
@@ -107,7 +107,8 @@ static void get_credentials_auth_plain(struct ndpi_detection_module_struct *ndpi
     if(1 + user_len + 1 < out_len) {
       unsigned int pwd_len;
 
-      pwd_len = ndpi_min(out_len - (1 + user_len + 1), sizeof(flow->l4.tcp.ftp_imap_pop_smtp.password) - 1);
+      pwd_len = ndpi_min(out_len - (1 + user_len + 1),
+			 sizeof(flow->l4.tcp.ftp_imap_pop_smtp.password) - 1);
       memcpy(flow->l4.tcp.ftp_imap_pop_smtp.password, out + 1 + user_len + 1, pwd_len);
       flow->l4.tcp.ftp_imap_pop_smtp.password[pwd_len] = '\0';
     }
@@ -154,9 +155,10 @@ static void ndpi_search_mail_smtp_tcp(struct ndpi_detection_module_struct *ndpi_
 		  ndpi_hostname_sni_set(flow, &packet->line[a].ptr[4], len, NDPI_HOSTNAME_NORM_ALL);
 		  NDPI_LOG_DBG(ndpi_struct, "SMTP: hostname [%s]\n", flow->host_server_name);
 
-		  if (ndpi_match_hostname_protocol(ndpi_struct, flow, NDPI_PROTOCOL_MAIL_SMTP,
+		  ndpi_match_hostname_protocol(ndpi_struct, flow, NDPI_PROTOCOL_MAIL_SMTP,
 						   flow->host_server_name,
-						   strlen(flow->host_server_name))) {
+						   strlen(flow->host_server_name));
+		  if(flow->detected_protocol_stack[0] != NDPI_PROTOCOL_UNKNOWN) {
 		    /* We set the protocols; we need to initialize extra dissection
 		       to search for credentials */
 		    NDPI_LOG_DBG(ndpi_struct, "SMTP: hostname matched\n");
@@ -425,7 +427,7 @@ static void smtpInitExtraPacketProcessing(struct ndpi_flow_struct *flow) {
 /* **************************************** */
 
 void init_mail_smtp_dissector(struct ndpi_detection_module_struct *ndpi_struct) {
-  register_dissector("MAIL_SMTP", ndpi_struct,
+  ndpi_register_dissector("MAIL_SMTP", ndpi_struct,
                      ndpi_search_mail_smtp_tcp,
                      NDPI_SELECTION_BITMASK_PROTOCOL_V4_V6_TCP_WITH_PAYLOAD_WITHOUT_RETRANSMISSION,
                       1, NDPI_PROTOCOL_MAIL_SMTP);

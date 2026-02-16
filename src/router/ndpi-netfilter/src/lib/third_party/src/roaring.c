@@ -5,6 +5,10 @@
 #include "ndpi_config.h"
 #endif
 
+#ifdef WIN32
+#define alignof(a) _Alignof(a)
+#endif
+
 // !!! DO NOT EDIT - THIS IS AN AUTO-GENERATED FILE !!!
 // Created by amalgamation.sh on 2025-10-06T13:58:48Z
 
@@ -9189,7 +9193,9 @@ CROARING_UNTARGET_AVX512
 #endif/* end file src/array_util.c */
 /* begin file src/art/art.c */
 #include <assert.h>
+#if !defined(WIN32)
 #include <stdalign.h>
+#endif
 #include <stdio.h>
 #include <string.h>
 
@@ -11471,6 +11477,7 @@ bool art_internal_validate(const art_t *art, const char **reason,
     return art_internal_validate_at(art, art->root, validator);
 }
 
+#ifndef WIN32
 CROARING_STATIC_ASSERT(alignof(art_leaf_t) == alignof(art_node4_t),
                        "Serialization assumes node type alignment is equal");
 CROARING_STATIC_ASSERT(alignof(art_leaf_t) == alignof(art_node16_t),
@@ -11479,6 +11486,7 @@ CROARING_STATIC_ASSERT(alignof(art_leaf_t) == alignof(art_node48_t),
                        "Serialization assumes node type alignment is equal");
 CROARING_STATIC_ASSERT(alignof(art_leaf_t) == alignof(art_node256_t),
                        "Serialization assumes node type alignment is equal");
+#endif
 
 size_t art_size_in_bytes(const art_t *art) {
     if (!art_is_shrunken(art)) {
@@ -11550,8 +11558,11 @@ size_t art_frozen_view(const char *buf, size_t maxbytes, art_t *art) {
     if (maxbytes < sizeof(art->capacities)) {
         return 0;
     }
+
+#ifndef WIN32
     CROARING_STATIC_ASSERT(sizeof(art->first_free) == sizeof(art->capacities),
                            "first_free is read from capacities");
+#endif
     memcpy(art->first_free, buf, sizeof(art->capacities));
     memcpy(art->capacities, buf, sizeof(art->capacities));
     buf += sizeof(art->capacities);
@@ -24661,7 +24672,9 @@ bool roaring_bitmap_to_bitset(const roaring_bitmap_t *r, bitset_t *bitset) {
 /* end file src/roaring.c */
 /* begin file src/roaring64.c */
 #include <assert.h>
+#ifndef WIN32
 #include <stdalign.h>
+#endif
 #include <stdarg.h>
 #include <stdint.h>
 #include <string.h>

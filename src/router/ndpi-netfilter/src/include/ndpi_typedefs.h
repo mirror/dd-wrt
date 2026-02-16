@@ -1,7 +1,7 @@
 /*
  * ndpi_typedefs.h
  *
- * Copyright (C) 2011-25 - ntop.org
+ * Copyright (C) 2011-26 - ntop.org
  *
  * This file is part of nDPI, an open source deep packet inspection
  * library based on the OpenDPI and PACE technology by ipoque GmbH
@@ -183,6 +183,7 @@ typedef enum {
   NDPI_BINARY_DATA_TRANSFER,   /* Attempt to transfer something in binary format */
   NDPI_PROBING_ATTEMPT,        /* Probing attempt (e.g. TCP connection with no data exchanged or unidirection traffic for bidirectional flows such as SSH) */
   NDPI_OBFUSCATED_TRAFFIC,
+  NDPI_SLOW_DOS,
   /* Before allocating a new risk here, check if there are FREE entries above */
 
   /* Leave this as last member */
@@ -913,12 +914,38 @@ struct ndpi_lru_cache {
 
 /* ************************************************** */
 
+typedef enum {
+  tls_unknown = 0,
+  tls_change_cipher,
+  tls_alert,
+  tls_handshake_encrypted_message,
+  tls_handshake_client_hello,
+  tls_handshake_server_hello,
+  tls_handshake_new_session_ticket,
+  tls_handshake_encrypted_extn,
+  tls_handshake_certificate,
+  tls_handshake_server_key_exchange,
+  tls_handshake_certificate_request,
+  tls_handshake_server_hello_done,
+  tls_handshake_certificate_verify,
+  tls_handshake_client_key_exchange,
+  tls_handshake_finished,
+  tls_application_data,
+  tls_heartbeat,
+} ndpi_tls_block_type;
+
 struct ndpi_tls_block {
-  u_int8_t block_type; /* + = src->dst, - = dst->src */
-  int16_t len;
+  u_int8_t block_type /* ndpi_tls_block_type */;
+  u_int8_t same_pkt:1, _unused:7;
+  int16_t len; /* + = src->dst, - = dst->src */
+  u_int16_t msec_delta;
 };
 
 struct ndpi_flow_tcp_struct {
+  struct {
+    u_int64_t syn_time, syn_ack_time, ack_time;
+  } three_way_handshake;
+
   /* TCP sequence number */
   u_int32_t next_tcp_seq_nr[2];
   u_int16_t last_tcp_pkt_payload_len;
@@ -939,8 +966,9 @@ struct ndpi_flow_tcp_struct {
   struct {
     /* NDPI_PROTOCOL_TLS */
     u_int8_t app_data_seen[2];
-    u_int8_t num_tls_blocks, num_processed_tls_blocks /* used internally for dissection */;
-    struct ndpi_tls_block tls_blocks[NDPI_MAX_NUM_TLS_APPL_BLOCKS];
+    u_int8_t num_tls_blocks /* used internally for dissection */;
+    u_int64_t last_tls_block_time_ms;
+    struct ndpi_tls_block *tls_blocks; /* ndpi_struct->cfg.tls_num_blocks_analyzed */
   } tls;
 
   /* NDPI_PROTOCOL_MAIL_SMTP */
@@ -1107,6 +1135,9 @@ struct ndpi_flow_udp_struct {
   /* NDPI_PROTOCOL_TFTP */
   u_int16_t tftp_data_num;
   u_int16_t tftp_ack_num;
+
+  /* NDPI_PROTOCOL_NTP*/
+  u_int8_t ntp_stage;
 };
 
 /* ************************************************** */
@@ -1435,7 +1466,7 @@ typedef enum {
 } ndpi_cipher_weakness;
 
 #define MAX_NUM_TLS_SIGNATURE_ALGORITHMS 16
-#define MAX_NUM_DNS_RSP_ADDRESSES         4
+#define MAX_NUM_DNS_RSP_ADDRESSES         8
 
 typedef struct {
   union {
@@ -1601,6 +1632,28 @@ typedef struct ndpi_protocol_plugin {
 
 typedef int (*ProcessExtraPacketsFunc) (struct ndpi_detection_module_struct *, struct ndpi_flow_struct *flow);
 
+typedef struct {
+  u_int16_t tls_handshake_version;
+  u_int16_t num_ciphers, cipher[MAX_NUM_JA];
+  u_int16_t num_tls_extensions, tls_extension[MAX_NUM_JA];
+  u_int16_t num_elliptic_curve_groups, elliptic_curve_group[MAX_NUM_JA];
+  u_int16_t num_elliptic_curve_point_format, elliptic_curve_point_format[MAX_NUM_JA];
+  u_int16_t num_signature_algorithms, signature_algorithm[MAX_NUM_JA];
+  u_int16_t num_supported_versions, supported_version[MAX_NUM_JA];
+  u_int16_t num_key_share_groups, key_share_group[MAX_NUM_JA];
+  char signature_algorithms_str[MAX_JA_STRLEN], alpn[MAX_JA_STRLEN];
+  char alpn_original_last;  /* Store original last character before null terminator */
+} ndpi_tls_client_info;
+
+typedef struct {
+  u_int16_t tls_handshake_version;
+  u_int16_t num_ciphers, cipher[MAX_NUM_JA];
+  u_int16_t num_tls_extensions, tls_extension[MAX_NUM_JA];
+  u_int16_t tls_supported_version;
+  u_int16_t num_elliptic_curve_point_format, elliptic_curve_point_format[MAX_NUM_JA];
+  char alpn[MAX_JA_STRLEN];
+} ndpi_tls_server_info;
+
 struct ndpi_flow_struct {
   u_int16_t detected_protocol_stack[NDPI_PROTOCOL_SIZE];
   struct ndpi_proto_stack protocol_stack;
@@ -1737,7 +1790,7 @@ struct ndpi_flow_struct {
 
   struct {
     message_t message[2]; /* Directions */
-    u_int8_t certificate_processed:1, change_cipher_from_client:1, change_cipher_from_server:1, from_opportunistic_tls:1, from_rdp:1, pad:3;
+    u_int8_t certificate_processed:1, change_cipher_from_client:1, change_cipher_from_server:1, from_opportunistic_tls:1, from_rdp:1, alert:1, pad:2;
     struct tls_obfuscated_heuristic_state *obfuscated_heur_state;
   } tls_quic; /* Used also by DTLS and POPS/IMAPS/SMTPS/FTPS */
 
@@ -1756,10 +1809,16 @@ struct ndpi_flow_struct {
       char ptr_domain_name[64 /* large enough but smaller than { } tls */];
     } dns;
 
-    struct {
-      u_int8_t version;
-      u_int8_t mode;
-    } ntp;
+    struct ntp_info {
+      u_int8_t leap_indicator: 2, version: 3, mode: 3;
+      u_int8_t stratum;
+      int8_t ppol, precision;
+#ifndef __KERNEL__
+      float root_delay, root_dispersion;
+#endif
+      char ref_id[20];
+      uint64_t ref_time, org_time, rec_time, trans_time;
+    } ntp[2];
 
     struct {
       char hostname[48], domain[48], username[48];
@@ -1779,12 +1838,11 @@ struct ndpi_flow_struct {
     struct {
       char *server_names, *advertised_alpns, *negotiated_alpn, *tls_supported_versions, *issuerDN, *subjectDN;
       u_int32_t notBefore, notAfter;
-      char ja3_server[33], ja4_client[37], *ja4_client_raw;
+      char ja3_server[33], ja4_client[37], ja4_ndpi_client[37], *ja4_client_raw;
       u_int16_t server_cipher;
       u_int8_t sha1_certificate_fingerprint[20];
       u_int8_t client_hello_processed:1, ch_direction:1, subprotocol_detected:1,
-	server_hello_processed:1, fingerprint_set:1, webrtc:1,
-	pq_key_share:1, pq_supported_groups:1;
+	server_hello_processed:1, fingerprint_set:1, webrtc:1;
 
 #ifdef TLS_HANDLE_SIGNATURE_ALGORITMS
       /* Under #ifdef to save memory for those who do not need them */
@@ -1803,11 +1861,18 @@ struct ndpi_flow_struct {
 
       u_int32_t quic_version;
       u_int32_t quic_idle_timeout_sec;
+
+      /* Optionally allocated based on nDPI configuration */
+      ndpi_tls_client_info *ja_client;
+      ndpi_tls_server_info *ja_server;
     } tls_quic; /* Used also by DTLS and POPS/IMAPS/SMTPS/FTPS */
 
     struct {
       char client_signature[48], server_signature[48];
       char hassh_client[33], hassh_server[33];
+      char *client_key_exchange_algorithms,
+	*server_key_exchange_algorithms,
+	*key_exchange_method;
     } ssh;
 
     struct {
@@ -1946,14 +2011,13 @@ struct ndpi_flow_struct {
       u_int8_t num_plc_stop;        /* PLC Stop (0x29) */
       u_int8_t num_other_funcs;     /* Other function codes */
     } s7comm;
-
   } protos;
 
   struct {
     NDPIProtocolPluginEntryPoint *plugin;
     void *plugin_data;
   } custom;
-  
+
   /* **Packet** metadata for flows where monitoring is enabled. It is reset after each packet! */
   struct ndpi_metadata_monitoring *monit;
 
@@ -2010,11 +2074,11 @@ struct ndpi_flow_struct {
 #if 0
 #if !defined(NDPI_CFFI_PREPROCESSING) && defined(__linux__)
 #if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L
-_Static_assert(sizeof(((struct ndpi_flow_struct *)0)->protos) <= 264,
-               "Size of the struct member protocols increased to more than 264 bytes, "
+_Static_assert(sizeof(((struct ndpi_flow_struct *)0)->protos) <= 328,
+               "Size of the struct member protocols increased to more than 328 bytes, "
                "please check if this change is necessary.");
-_Static_assert(sizeof(struct ndpi_flow_struct) <= 1248,
-               "Size of the flow struct increased to more than 1248 bytes, "
+_Static_assert(sizeof(struct ndpi_flow_struct) <= 1312,
+               "Size of the flow struct increased to more than 1304 bytes, "
                "please check if this change is necessary.");
 #endif
 #endif

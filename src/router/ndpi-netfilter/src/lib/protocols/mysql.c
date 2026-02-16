@@ -2,7 +2,7 @@
  * mysql.c
  * 
  * Copyright (C) 2009-11 - ipoque GmbH
- * Copyright (C) 2011-25 - ntop.org
+ * Copyright (C) 2011-26 - ntop.org
  * Copyright (C) 2024 - V.G <v.gavrilov@securitycode.ru>
  *
  * This file is part of nDPI, an open source deep packet inspection
@@ -64,7 +64,7 @@ static void ndpi_search_mysql_tcp(struct ndpi_detection_module_struct *ndpi_stru
 
 void init_mysql_dissector(struct ndpi_detection_module_struct *ndpi_struct)
 {
-  register_dissector("MySQL", ndpi_struct,
+  ndpi_register_dissector("MySQL", ndpi_struct,
                      ndpi_search_mysql_tcp,
                      NDPI_SELECTION_BITMASK_PROTOCOL_V4_V6_TCP_WITH_PAYLOAD_WITHOUT_RETRANSMISSION,
                       1, NDPI_PROTOCOL_MYSQL);

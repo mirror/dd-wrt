@@ -2,7 +2,7 @@
  * memcached.c
  *
  * Copyright (C) 2009-11 - ipoque GmbH
- * Copyright (C) 2011-25 - ntop.org
+ * Copyright (C) 2011-26 - ntop.org
  * Copyright (C) 2018 - eGloo Incorporated
  *
  * This file is part of nDPI, an open source deep packet inspection
@@ -175,7 +175,7 @@ static void ndpi_search_memcached(struct ndpi_detection_module_struct *ndpi_stru
 
 void init_memcached_dissector(struct ndpi_detection_module_struct *ndpi_struct)
 {
-  register_dissector("MEMCACHED", ndpi_struct,
+  ndpi_register_dissector("MEMCACHED", ndpi_struct,
                      ndpi_search_memcached,
                      NDPI_SELECTION_BITMASK_PROTOCOL_V4_V6_TCP_OR_UDP_WITH_PAYLOAD_WITHOUT_RETRANSMISSION,
                       1, NDPI_PROTOCOL_MEMCACHED);

@@ -1,7 +1,7 @@
 /*
  * imo.c
  *
- * Copyright (C) 2019-24 - ntop.org
+ * Copyright (C) 2019-26 - ntop.org
  *
  * This file is part of nDPI, an open source deep packet inspection
  * library based on the OpenDPI and PACE technology by ipoque GmbH
@@ -69,7 +69,7 @@ static void ndpi_search_imo(struct ndpi_detection_module_struct *ndpi_struct, st
 
 
 void init_imo_dissector(struct ndpi_detection_module_struct *ndpi_struct) {
-  register_dissector("IMO", ndpi_struct,
+  ndpi_register_dissector("IMO", ndpi_struct,
                      ndpi_search_imo,
                      NDPI_SELECTION_BITMASK_PROTOCOL_V4_V6_UDP_WITH_PAYLOAD,
                      1, NDPI_PROTOCOL_IMO);

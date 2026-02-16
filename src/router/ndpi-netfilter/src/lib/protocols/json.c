@@ -1,7 +1,7 @@
 /*
  * json.c
  *
- * Copyright (C) 2011-25 - ntop.org
+ * Copyright (C) 2011-26 - ntop.org
  *
  * nDPI is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -45,7 +45,7 @@ static void ndpi_search_json(struct ndpi_detection_module_struct *ndpi_struct,
                       struct ndpi_flow_struct *flow)
 {
   struct ndpi_packet_struct const * const packet = ndpi_get_packet_struct(ndpi_struct);
-  size_t offset = 0;
+  size_t offset = 0, i;
   size_t bytes_checked = 0;
   size_t i;
 
@@ -117,7 +117,7 @@ static void ndpi_search_json(struct ndpi_detection_module_struct *ndpi_struct,
 
 void init_json_dissector(struct ndpi_detection_module_struct *ndpi_struct)
 {
-  register_dissector("JSON", ndpi_struct,
+  ndpi_register_dissector("JSON", ndpi_struct,
                      ndpi_search_json,
                      NDPI_SELECTION_BITMASK_PROTOCOL_V4_V6_TCP_OR_UDP_WITH_PAYLOAD_WITHOUT_RETRANSMISSION,
                      1, NDPI_PROTOCOL_JSON);
