@@ -1333,7 +1333,17 @@ static void *handle_request(void *arg)
 			conn_fp->post = 1;
 		}
 
+		if (check_connect_type(conn_fp) < 0) {
+			send_error(conn_fp, 0, 401, live_translate(conn_fp, "share.bad_request"), NULL,
+				   live_translate(conn_fp, "share.no_wifi_access"));
+			goto out;
+		}
+
 		if (handler->input) {
+			if (handle->nolock) {
+				PTHREAD_MUTEX_TRYLOCK(&input_mutex);
+				PTHREAD_MUTEX_UNLOCK(&input_mutex);
+			}
 			if (handler->input(file, conn_fp, content_length, boundary)) {
 				goto out;
 			}
@@ -1346,18 +1356,13 @@ static void *handle_request(void *arg)
 			fcntl(fileno(conn_fp->fp), F_SETFL, flags);
 		}
 #endif
-		if (check_connect_type(conn_fp) < 0) {
-			send_error(conn_fp, 0, 401, live_translate(conn_fp, "share.bad_request"), NULL,
-				   live_translate(conn_fp, "share.no_wifi_access"));
-			goto out;
-		}
 		if (handler->send_headers) {
 			send_headers(conn_fp, 200, "OK", handler->extra_header, handler->mime_type, -1, NULL, 1);
 			noheader = 1;
 		}
 		// check for do_file handler and check if file exists
 		if (handler->output) {
-			if (!strstr(file, "MyPage")) {
+			if (handle->nolock) {
 				PTHREAD_MUTEX_TRYLOCK(&input_mutex);
 				PTHREAD_MUTEX_UNLOCK(&input_mutex);
 			}
