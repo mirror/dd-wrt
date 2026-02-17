@@ -1340,7 +1340,7 @@ static void *handle_request(void *arg)
 		}
 
 		if (handler->input) {
-			if (handle->nolock) {
+			if (handler->nolock) {
 				PTHREAD_MUTEX_TRYLOCK(&input_mutex);
 				PTHREAD_MUTEX_UNLOCK(&input_mutex);
 			}
@@ -1362,7 +1362,7 @@ static void *handle_request(void *arg)
 		}
 		// check for do_file handler and check if file exists
 		if (handler->output) {
-			if (handle->nolock) {
+			if (handler->nolock) {
 				PTHREAD_MUTEX_TRYLOCK(&input_mutex);
 				PTHREAD_MUTEX_UNLOCK(&input_mutex);
 			}
@@ -1370,7 +1370,8 @@ static void *handle_request(void *arg)
 			if (!file_error) {
 				goto out;
 			}
-		}
+		} else
+			goto out;
 		break;
 	}
 	send_error(conn_fp, noheader, 404, live_translate(conn_fp, "share.not_found"), NULL,
