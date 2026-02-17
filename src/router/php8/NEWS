@@ -1,5 +1,74 @@
 PHP                                                                        NEWS
 |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+12 Feb 2026, PHP 8.5.3
+
+- Core:
+  . Fixed bug GH-20806 (preserve_none feature compatiblity with LTO).
+    (henderkes)
+  . Fixed bug GH-20767 (build failure with musttail/preserve_none feature
+    on macOs). (David Carlier)
+  . Fixed bug GH-20837 (NULL dereference when calling ob_start() in shutdown
+    function triggered by bailout in php_output_lock_error()). (timwolla)
+  . Fix OSS-Fuzz #471533782 (Infinite loop in GC destructor fiber). (ilutov)
+  . Fix OSS-Fuzz #472563272 (Borked block_pass JMP[N]Z optimization). (ilutov)
+  . Fixed bug GH-20914 (Internal enums can be cloned and compared). (Arnaud)
+  . Fix OSS-Fuzz #474613951 (Leaked parent property default value). (ilutov)
+  . Fixed bug GH-20895 (ReflectionProperty does not return the PHPDoc of a
+    property if it contains an attribute with a Closure). (timwolla)
+  . Fixed bug GH-20766 (Use-after-free in FE_FREE with GC interaction). (Bob)
+  . Fix OSS-Fuzz #471486164 (Broken by-ref assignment to uninitialized hooked
+    backing value). (ilutov)
+  . Fix OSS-Fuzz #438780145 (Nested finally with repeated return type check may
+    uaf). (ilutov)
+  . Fixed bug GH-20905 (Lazy proxy bailing __clone assertion). (ilutov)
+  . Fixed bug GH-20479 (Hooked object properties overflow). (ndossche)
+
+- Date:
+  . Update timelib to 2022.16. (Derick)
+
+- DOM:
+  . Fixed GH-21041 (Dom\HTMLDocument corrupts closing tags within scripts).
+    (lexborisov)
+
+- MbString:
+  . Fixed bug GH-20833 (mb_str_pad() divide by zero if padding string is
+    invalid in the encoding). (ndossche)
+  . Fixed bug GH-20836 (Stack overflow in mb_convert_variables with
+    recursive array references). (alexandre-daubois)
+
+- Opcache:
+  . Fixed bug GH-20818 (Segfault in Tracing JIT with object reference).
+    (khasinski)
+
+- OpenSSL:
+  . Fix memory leaks when sk_X509_new_null() fails. (ndossche)
+  . Fix crash when in openssl_x509_parse() when i2s_ASN1_INTEGER() fails.
+    (ndossche)
+  . Fix crash in openssl_x509_parse() when X509_NAME_oneline() fails.
+    (ndossche)
+
+- Phar:
+  . Fixed bug GH-20882 (buildFromIterator breaks with missing base directory).
+    (ndossche)
+
+- PGSQL:
+  . Fixed INSERT/UPDATE queries building with PQescapeIdentifier() and possible
+    UB. (David Carlier)
+
+- Readline:
+  . Fixed bug GH-18139 (Memory leak when overriding some settings
+    via readline_info()). (ndossche)
+
+- SPL:
+  . Fixed bug GH-20856 (heap-use-after-free in SplDoublyLinkedList iterator
+    when modifying during iteration). (ndossche)
+
+- Standard:
+  . Fixed bug #74357 (lchown fails to change ownership of symlink with ZTS)
+    (Jakub Zelenka)
+  . Fixed bug GH-20843 (var_dump() crash with nested objects)
+    (David Carlier)
+
 15 Jan 2026, PHP 8.5.2
 
 - Core:
@@ -36,6 +105,10 @@ PHP                                                                        NEWS
 - Mbstring:
   . Fixed bug GH-20674 (mb_decode_mimeheader does not handle separator).
     (Yuya Hamada)
+
+- OpenSSL:
+  . Fixed bug GH-20802 (undefined behavior with invalid SNI_server_certs
+    options). (David Carlier)
 
 - PCNTL:
   . Fixed bug with pcntl_getcpuaffinity() on solaris regarding invalid
@@ -296,6 +369,8 @@ PHP                                                                        NEWS
     non-printable characters in string literals). (nielsdos, WangYihang)
   . Fixed bug GH-17442 (Engine UAF with reference assign and dtor). (nielsdos)
   . Do not use RTLD_DEEPBIND if dlmopen is available. (Daniil Gentili)
+  . Added #[\DelayedTargetValidation] attribute. (DanielEScherzer)
+  . Support #[\Deprecated] on traits. (DanielEScherzer)
 
 - BCMath:
   . Simplify `bc_divide()` code. (SakiTakamachi)
@@ -387,6 +462,7 @@ PHP                                                                        NEWS
     (kocsismate)
   . Fixed bug GH-16993 (filter_var_array with FILTER_VALIDATE_INT|FILTER_NULL_ON_FAILURE
     should emit warning for invalid filter usage). (alexandre-daubois)
+  . Added FILTER_THROW_ON_FAILURE flag. (DanielEScherzer)
 
 - FPM:
   . Fixed bug GH-19817 (Decode SCRIPT_FILENAME issue in php 8.5).
