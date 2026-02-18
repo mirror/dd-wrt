@@ -144,7 +144,7 @@ void setupSupplicant(const char *prefix)
 		else
 			log_eval("wpa_supplicant", "-B", "-Dwext", psk, "-c", fstr);
 	} else if (nvram_match(akm, "8021X")) {
-		char fstr[32];
+		char fstr[64];
 		char psk[64];
 		char ath[64];
 

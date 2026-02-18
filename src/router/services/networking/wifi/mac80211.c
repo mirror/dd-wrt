@@ -2258,7 +2258,7 @@ void setupSupplicant_ath9k(const char *prefix, char *ssidoverride, int isadhoc)
 	MAC80211DEBUG();
 	check_cryptomod(prefix);
 	if (ispsk || ispsk2 || ispsk3 || ispsk2sha256) {
-		char fstr[32];
+		char fstr[64];
 		char psk[32];
 		if (!strncmp(prefix, "wlan0", 4))
 			led_control(LED_SEC0, LED_ON);
@@ -2469,7 +2469,7 @@ void setupSupplicant_ath9k(const char *prefix, char *ssidoverride, int isadhoc)
 		fwritenvram(extra, fp);
 		fclose(fp);
 	} else if (ispeap || isleap || istls || isttls) {
-		char fstr[32];
+		char fstr[64];
 		char psk[64];
 		char ath[64];
 		if (!strncmp(prefix, "wlan0", 4))
@@ -2490,7 +2490,7 @@ void setupSupplicant_ath9k(const char *prefix, char *ssidoverride, int isadhoc)
 		fwritenvram(extra, fp);
 		fclose(fp);
 	} else if (nvram_match(akm, "disabled") || nvram_match(akm, "wep")) {
-		char fstr[32];
+		char fstr[64];
 		char psk[32];
 		if (nvram_match(akm, "wep")) {
 			if (!strncmp(prefix, "wlan0", 4))
@@ -2619,7 +2619,7 @@ void ath9k_start_supplicant(int count, char *prefix, char **configs, int *config
 	MAC80211DEBUG();
 	const char *next;
 	char var[80];
-	char fstr[32];
+	char fstr[64];
 	char bridged[32];
 	char mode[80];
 	char dev[10];
@@ -2773,7 +2773,7 @@ void post_hostapd_actions(int count)
 	char var[80];
 	const char *next, *vifs;
 	char mode[80];
-	char fstr[32];
+	char fstr[64];
 	char wif[10];
 	char power[32];
 	char wifivifs[32];

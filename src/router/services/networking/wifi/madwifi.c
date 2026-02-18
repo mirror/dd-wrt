@@ -687,7 +687,7 @@ void setupSupplicant(const char *prefix, char *ssidoverride)
 	sprintf(pid, "/var/run/%s_wpa_supplicant.pid", prefix);
 
 	if (ispsk || ispsk2 || ispsk3 || ispsk2sha256) {
-		char fstr[32];
+		char fstr[64];
 		char psk[16];
 		if (!strncmp(prefix, "wlan0", 4))
 			led_control(LED_SEC0, LED_ON);
@@ -822,7 +822,7 @@ void setupSupplicant(const char *prefix, char *ssidoverride)
 			log_eval("wpa_supplicant", "-P", pid, background, driver, psk, "-c", fstr);
 #endif
 	} else if (ispeap || isleap || istls || isttls) {
-		char fstr[32];
+		char fstr[64];
 		char psk[64];
 		char ath[64];
 		if (!strncmp(prefix, "wlan0", 4))
@@ -862,7 +862,7 @@ void setupSupplicant(const char *prefix, char *ssidoverride)
 
 #endif
 	} else if (nvram_match(akm, "disabled") || nvram_match(akm, "wep")) {
-		char fstr[32];
+		char fstr[64];
 		char psk[16];
 		if (nvram_match(akm, "wep")) {
 			if (!strncmp(prefix, "wlan0", 4))
@@ -1029,7 +1029,7 @@ static void checkhostapd(char *ifname, int force)
 				fclose(fp);
 			}
 			if (needrestart) {
-				char fstr[32];
+				char fstr[64];
 				if (sup)
 					sprintf(fstr, "/tmp/wifi/%s_wpa_supplicant.conf", ifname);
 				else
@@ -1663,7 +1663,7 @@ void setupHostAP(const char *prefix, char *driver, int iswan)
 #endif
 	char psk[32];
 	char akm[16];
-	char fstr[32];
+	char fstr[64];
 	char tmp[256];
 	char *types;
 	char mfp[16];
