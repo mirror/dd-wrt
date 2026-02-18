@@ -113,7 +113,6 @@ obj-y				+= qcom/
 obj-$(CONFIG_QSEMI_PHY)		+= qsemi.o
 obj-y				+= realtek/
 obj-y				+= rtl8261n/
-obj-$(CONFIG_REALTEK_SOC_PHY)	+= rtl83xx-phy.o
 obj-$(CONFIG_RENESAS_PHY)	+= uPD60620.o
 obj-$(CONFIG_ROCKCHIP_PHY)	+= rockchip.o
 obj-$(CONFIG_RTL8367S_GSW)	+= rtk/
