@@ -1998,6 +1998,7 @@ int f2fs_gc_range(struct f2fs_sb_info *sbi,
 	unsigned int segno;
 	unsigned int gc_secs = dry_run_sections;
 
+	stat_inc_gc_call_count(sbi, FOREGROUND);
 	for (segno = start_seg; segno <= end_seg; segno += SEGS_PER_SEC(sbi)) {
 		struct gc_inode_list gc_list = {
 			.ilist = LIST_HEAD_INIT(gc_list.ilist),
