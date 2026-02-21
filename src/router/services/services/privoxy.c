@@ -149,7 +149,7 @@ void stop_privoxy(void)
 	sysprintf("" IPTABLES " -t nat -D PREROUTING -p tcp -s %s/%s -d %s --dport %s -j ACCEPT", ip, mask, ip, webif_port);
 	sysprintf("" IPTABLES " -t nat -D PREROUTING -p tcp -s %s -d %s --dport %s -j DROP", ip, ip, webif_port);
 	if (*transp) {
-		sysprintf("" IPTABLES " -t nat -D PREROUTING -p tcp -s %s --dport 80 -j ACCEPT");
+		sysprintf("" IPTABLES " -t nat -D PREROUTING -p tcp -s %s --dport 80 -j ACCEPT", ip);
 		//		sysprintf("" IPTABLES " -t nat -D PREROUTING -p tcp -s %s --dport 443 -j ACCEPT");
 	}
 	getIfLists(vifs, sizeof(vifs));
