@@ -104,12 +104,12 @@ ffmpeg:
 
 libogg:
 	if [ ! -f ./libogg-1.3.5/Makefile ];then \
-	cd libogg-1.3.5 && aclocal && libtoolize && ./autogen.sh && (./configure --host=$(HOST) --disable-shared  CC="ccache $(CROSS_COMPILE)gcc"  CFLAGS="$(COPTS) $(MIPS16_OPT) $(THUMB) $(LTO)  -ffunction-sections -fdata-sections -Wl,--gc-sections" AR_FLAGS="cru $(LTOPLUGIN)" RANLIB="$(ARCH)-linux-ranlib $(LTOPLUGIN)"); \
+	cd libogg-1.3.5 && aclocal && libtoolize && ./autogen.sh && (./configure --host=$(HOST) --disable-shared  CC="ccache $(CROSS_COMPILE)gcc"  CFLAGS="$(COPTS) $(MIPS16_OPT) $(THUMB) $(LTO)  -ffunction-sections -fdata-sections -Wl,--gc-sections" AR_FLAGS="\"cru $(LTOPLUGIN)\"" RANLIB="$(ARCH)-linux-ranlib $(LTOPLUGIN)"); \
 	fi
 
 libexif:
 	if [ ! -f ./libexif-0.6.24/Makefile ];then \
-	cd libexif-0.6.24 && (./configure --host=$(HOST) --disable-shared  CC="ccache $(CROSS_COMPILE)gcc"  CFLAGS="$(COPTS) $(MIPS16_OPT) $(THUMB) $(LTO)  -ffunction-sections -fdata-sections -Wl,--gc-sections" AR_FLAGS="cru $(LTOPLUGIN)" RANLIB="$(ARCH)-linux-ranlib $(LTOPLUGIN)"); \
+	cd libexif-0.6.24 && autoreconf -vfi && (./configure --host=$(HOST) --disable-shared  CC="ccache $(CROSS_COMPILE)gcc"  CFLAGS="$(COPTS) $(MIPS16_OPT) $(THUMB) $(LTO)  -ffunction-sections -fdata-sections -Wl,--gc-sections" AR_FLAGS="\"cru $(LTOPLUGIN)\"" RANLIB="$(ARCH)-linux-ranlib $(LTOPLUGIN)"); \
 	fi
 
 libjpeg:
@@ -122,7 +122,7 @@ libjpeg:
 		CFLAGS="$(COPTS) $(MIPS16_OPT) $(THUMB) $(LTO) -ffunction-sections -fdata-sections -Wl,--gc-sections" \
 		LDFLAGS="$(COPTS) $(MIPS16_OPT) $(THUMB) $(LTO) -ffunction-sections -fdata-sections -Wl,--gc-sections" \
 		CXXFLAGS="$(COPTS) $(MIPS16_OPT) $(THUMB) $(LTO) -ffunction-sections -fdata-sections -Wl,--gc-sections" \
-		AR_FLAGS="cru $(LTOPLUGIN)" \
+		AR_FLAGS="\"cru $(LTOPLUGIN)\"" \
 		RANLIB="$(ARCH)-linux-gcc-ranlib" \
 		AR="$(ARCH)-linux-gcc-ar" \
 		cmake \
@@ -163,7 +163,7 @@ sqlite3:
 	aclocal; \
 	automake --add-missing; \
 	autoreconf -fi; \
-	(./configure --host=$(HOST) --disable-shared  CC="ccache $(CROSS_COMPILE)gcc" CFLAGS="$(COPTS) $(MIPS16_OPT) $(THUMB) $(LTO) -DSQLITE_OMIT_DEPRECATED -DSQLITE_OMIT_FLOATING_POINT -ffunction-sections -fdata-sections -Wl,--gc-sections -DSQLITE_OMIT_TRIGGERS" AR_FLAGS="cru $(LTOPLUGIN)" RANLIB="$(ARCH)-linux-ranlib $(LTOPLUGIN)" \
+	(./configure --host=$(HOST) --disable-shared  CC="ccache $(CROSS_COMPILE)gcc" CFLAGS="$(COPTS) $(MIPS16_OPT) $(THUMB) $(LTO) -DSQLITE_OMIT_DEPRECATED -DSQLITE_OMIT_FLOATING_POINT -ffunction-sections -fdata-sections -Wl,--gc-sections -DSQLITE_OMIT_TRIGGERS" AR_FLAGS="\"cru $(LTOPLUGIN)\"" RANLIB="$(ARCH)-linux-ranlib $(LTOPLUGIN)" \
 				--enable-threadsafe --enable-dynamic-extensions=no ); \
 	fi
 
@@ -173,10 +173,10 @@ libvorbis:
 				HOST_COMPILE=$(HOST_COMPILE) \
 				MINI_DLNA_PATH=$(MINI_DLNA_PATH)				
 	if [ ! -f ./libvorbis-1.3.7/Makefile ];then \
-	cd libvorbis-1.3.7 && (./configure --host=$(HOST) --disable-shared  CC="ccache $(CROSS_COMPILE)gcc" \
+	cd libvorbis-1.3.7 && autoreconf -vfi && (./configure --host=$(HOST) --disable-shared  CC="ccache $(CROSS_COMPILE)gcc" \
 					CFLAGS="$(COPTS) $(MIPS16_OPT) $(THUMB) -I$(MINI_DLNA_PATH)/libogg-1.3.5/include/  -ffunction-sections -fdata-sections -Wl,--gc-sections" \
 					LDFLAGS="-L$(MINI_DLNA_PATH)/libogg-1.3.5/src/.libs/ $(LDLTO)" \
-					AR_FLAGS="cru $(LTOPLUGIN)" RANLIB="$(ARCH)-linux-ranlib $(LTOPLUGIN)" \
+					AR_FLAGS="\"cru $(LTOPLUGIN)\"" RANLIB="$(ARCH)-linux-ranlib $(LTOPLUGIN)" \
 					); \
 	fi
 flac:
@@ -186,7 +186,7 @@ flac:
 				CPPFLAGS="$(COPTS) $(MIPS16_OPT) $(THUMB) -I$(MINI_DLNA_PATH)/libogg-1.3.5/include/  -ffunction-sections -fdata-sections -Wl,--gc-sections $(LTO)" \
 				CXXFLAGS="$(COPTS) $(MIPS16_OPT) $(THUMB) -I$(MINI_DLNA_PATH)/libogg-1.3.5/include/  -ffunction-sections -fdata-sections -Wl,--gc-sections $(LTO)" \
 				LDFLAGS="-L$(MINI_DLNA_PATH)/libogg-1.3.5/src/.libs/ $(LDLTO)" \
-				AR_FLAGS="cru $(LTOPLUGIN)" RANLIB="$(ARCH)-linux-ranlib $(LTOPLUGIN)" \
+				AR_FLAGS="\"cru $(LTOPLUGIN)\"" RANLIB="$(ARCH)-linux-ranlib $(LTOPLUGIN)" \
 				); \
 	fi
 
@@ -199,7 +199,7 @@ libid3tag:
 	(./configure --disable-shared --disable-dependency-tracking --host=$(HOST)  CC="ccache $(CROSS_COMPILE)gcc" \
 				CPPFLAGS="$(COPTS) $(MIPS16_OPT) $(THUMB)  -I$(TOP)/zlib/  -ffunction-sections -fdata-sections -Wl,--gc-sections $(LTO)" \
 				LDFLAGS="-L$(TOP)/zlib/ $(LDLTO)" \
-				AR_FLAGS="cru $(LTOPLUGIN)" RANLIB="$(ARCH)-linux-ranlib $(LTOPLUGIN)" \
+				AR_FLAGS="\"cru $(LTOPLUGIN)\"" RANLIB="$(ARCH)-linux-ranlib $(LTOPLUGIN)" \
 				); \
 	fi
 clean:
