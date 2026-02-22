@@ -297,7 +297,7 @@ static void qca_mii_reg_convert(a_uint32_t dev_id, a_uint32_t *reg)
 	}
 }
 
-#if IS_ENABLED(CONFIG_MDIO_BITBANG)
+#if 0//IS_ENABLED(CONFIG_MDIO_BITBANG)
 sw_error_t qca_bitbang_mii_raw_read_try(struct mii_bus *bus,
 				     a_uint32_t reg, a_uint32_t *val)
 {
@@ -357,7 +357,7 @@ sw_error_t qca_mii_raw_read(struct mii_bus *bus, a_uint32_t reg, a_uint32_t *val
 {
 	struct qca_mdio_data *mdio_priv = bus->priv;
 
-#if IS_ENABLED(CONFIG_MDIO_BITBANG)
+#if 0 //IS_ENABLED(CONFIG_MDIO_BITBANG)
 	sw_error_t rv = SW_OK;
 
 	rv = qca_bitbang_mii_raw_read_try(bus, reg, val);
@@ -377,7 +377,7 @@ sw_error_t qca_mii_raw_write(struct mii_bus *bus, a_uint32_t reg, a_uint32_t val
 {
 	struct qca_mdio_data *mdio_priv = bus->priv;
 
-#if IS_ENABLED(CONFIG_MDIO_BITBANG)
+#if 0 //IS_ENABLED(CONFIG_MDIO_BITBANG)
 	sw_error_t rv = SW_OK;
 
 	rv = qca_bitbang_mii_raw_write_try(bus, reg, val);
@@ -398,7 +398,7 @@ sw_error_t qca_mii_raw_update(struct mii_bus *bus, a_uint32_t reg,
 {
 	struct qca_mdio_data *mdio_priv = bus->priv;
 
-#if IS_ENABLED(CONFIG_MDIO_BITBANG)
+#if 0 // IS_ENABLED(CONFIG_MDIO_BITBANG)
 	sw_error_t rv = SW_OK;
 
 	rv = qca_bitbang_mii_raw_update_try(bus, reg, clear, set);
