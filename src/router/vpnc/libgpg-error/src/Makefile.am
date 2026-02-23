@@ -134,7 +134,7 @@ code-from-errno.h: mkerrcodes Makefile
 
 errnos-sym.h: Makefile mkstrtable.awk errnos.in
 	$(AWK) -f $(srcdir)/mkstrtable.awk -v textidx=2 -v nogettext=1 \
-		-v prefix=GPG_ERR_ -v namespace=errnos_ \
+		-v prefix=GPG_ERR_ -v fakespace=errnos_ \
 		$(srcdir)/errnos.in >$@
 
 gpg-error.h: Makefile mkheader.awk \
