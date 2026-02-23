@@ -19,6 +19,7 @@ NETTLE_CONFIGURE_ARGS+= --enable-arm-neon
 endif
 
 nettle-configure: pcre zlib gmp
+	$(MAKE) -C zlib
 	cd nettle && rm -f config.cache
 	cd nettle && libtoolize
 	cd nettle && aclocal
