@@ -23,6 +23,7 @@ ntfs-3g-clean:
 	$(MAKE) -C ntfs-3g clean
 
 ntfs-3g-configure:
+	cd ntfs-3g/fuse && autoreconf --install
 	cd ntfs-3g/fuse && ./configure --prefix=/usr \
 			--target=$(ARCH)-linux \
 			--host=$(ARCH) \
@@ -30,8 +31,7 @@ ntfs-3g-configure:
 			CXXFLAGS="$(COPTS) $(LTO) $(MIPS16_OPT) $(THUMB)   -ffunction-sections -fdata-sections -Wl,--gc-sections"  \
 			CFLAGS="$(COPTS) $(LTO) $(MIPS16_OPT) $(THUMB)   -ffunction-sections -fdata-sections -Wl,--gc-sections" \
 			LDFLAGS="$(COPTS) $(LDLTO) $(MIPS16_OPT) $(THUMB) -fPIC -ffunction-sections -fdata-sections -Wl,--gc-sections" \
-			AR_FLAGS="cru $(LTOPLUGIN)" \
-			RANLIB="$(ARCH)-linux-ranlib $(LTOPLUGIN)"
+			RANLIB="$(ARCH)-linux-gcc-ranlib"
 	make -C ntfs-3g/fuse
 	cd ntfs-3g && autoreconf --install
 	cd ntfs-3g && ./configure --prefix=/usr \
@@ -45,5 +45,5 @@ ntfs-3g-configure:
 			CXXFLAGS="$(COPTS) $(LTO) $(MIPS16_OPT) $(THUMB)   -ffunction-sections -fdata-sections -Wl,--gc-sections"  \
 			CFLAGS="$(COPTS) $(LTO) $(MIPS16_OPT) $(THUMB)   -ffunction-sections -fdata-sections -Wl,--gc-sections" \
 			LDFLAGS="$(COPTS) $(LDLTO) $(MIPS16_OPT) $(THUMB) -fPIC -ffunction-sections -fdata-sections -Wl,--gc-sections" \
-			AR_FLAGS="cru $(LTOPLUGIN)" \
+			AR_FLAGS="\"cru $(LTOPLUGIN)\"" \
 			RANLIB="$(ARCH)-linux-ranlib $(LTOPLUGIN)"

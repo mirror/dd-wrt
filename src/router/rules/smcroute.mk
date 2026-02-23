@@ -8,7 +8,7 @@ smcroute-configure:
 	    --without-libcap --build=$(BUILD) --host=$(ARCH)-linux-uclibc \
 	CFLAGS="$(COPTS) $(MIPS16_OPT) $(LTO) -DNEED_PRINTF  -ffunction-sections -fdata-sections -Wl,--gc-sections" \
 	CXXFLAGS="$(COPTS) $(MIPS16_OPT) $(LTO) -DNEED_PRINTF  -ffunction-sections -fdata-sections -Wl,--gc-sections" \
-	LDFLAGS="$(LDLTO)  -ffunction-sections -fdata-sections -Wl,--gc-sections" AR_FLAGS="cru $(LTOPLUGIN)" \
+	LDFLAGS="$(LDLTO)  -ffunction-sections -fdata-sections -Wl,--gc-sections" AR_FLAGS="\"cru $(LTOPLUGIN)\"" \
 	RANLIB="$(ARCH)-linux-ranlib $(LTOPLUGIN)"
 	
 

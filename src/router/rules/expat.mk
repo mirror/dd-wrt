@@ -7,14 +7,14 @@ expat-configure:
 		--without-docbook --without-examples --without-tests --without-getrandom \
 		CFLAGS="$(LTO) $(COPTS) $(MIPS16_OPT) $(THUMB) -DNEED_PRINTF -D_GNU_SOURCE -ffunction-sections -fdata-sections -Wl,--gc-sections -Drpl_malloc=malloc" \
 		LDFLAGS="$(LDLTO) -ffunction-sections -fdata-sections -Wl,--gc-sections" \
-		AR_FLAGS="cru $(LTOPLUGIN)" \
+		AR_FLAGS="\"cru $(LTOPLUGIN)\"" \
 		RANLIB="$(ARCH)-linux-ranlib $(LTOPLUGIN)"
 
 	cd expat/dynamic && ../configure --prefix=/usr --host=$(ARCH)-linux --enable-shared --disable-static --libdir=/usr/lib \
 		--without-docbook --without-examples --without-tests --without-getrandom \
 		CFLAGS="$(COPTS) $(MIPS16_OPT) $(THUMB) -DNEED_PRINTF -D_GNU_SOURCE -ffunction-sections -fdata-sections -Wl,--gc-sections -Drpl_malloc=malloc" \
 		LDFLAGS="-ffunction-sections -fdata-sections -Wl,--gc-sections" \
-		AR_FLAGS="cru $(LTOPLUGIN)" \
+		AR_FLAGS="\"cru $(LTOPLUGIN)\"" \
 		RANLIB="$(ARCH)-linux-ranlib $(LTOPLUGIN)"
 
 	

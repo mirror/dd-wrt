@@ -33,7 +33,7 @@ avahi-configure: expat-configure expat dbus-configure dbus libdaemon-configure l
 		CFLAGS="$(LTO) $(COPTS) $(MIPS16_OPT) $(THUMB) -DNDEBUG -DNEED_PRINTF -D_GNU_SOURCE -ffunction-sections -fdata-sections -I$(TOP)/expat/lib $(UCFLAGS_DBUS) -Wl,--gc-sections -Drpl_malloc=malloc" \
 		CPPFLAGS="$(LTO) $(COPTS) $(MIPS16_OPT) $(THUMB) -DNDEBUG -DNEED_PRINTF -ffunction-sections -fdata-sections -Wl,--gc-sections -Drpl_malloc=malloc" \
 		LDFLAGS="$(LDLTO) -L$(TOP)/expat/dynamic/lib/.libs $(ULDFLAGS_DBUS) -ldl -ffunction-sections -fdata-sections -Wl,--gc-sections" \
-		AR_FLAGS="cru $(LTOPLUGIN)" \
+		AR_FLAGS="\"cru $(LTOPLUGIN)\"" \
 		RANLIB="$(ARCH)-linux-ranlib $(LTOPLUGIN)" 
 
 	cd avahi/build_normal && ../configure --prefix=/usr --host=$(ARCH)-linux \
@@ -64,7 +64,7 @@ avahi-configure: expat-configure expat dbus-configure dbus libdaemon-configure l
 		CFLAGS="$(LTO) $(COPTS) $(MIPS16_OPT) $(THUMB) -DNDEBUG -D_GNU_SOURCE -ffunction-sections -fdata-sections -I$(TOP)/expat/lib -Wl,--gc-sections -Drpl_malloc=malloc" \
 		CPPFLAGS="$(LTO) $(COPTS) $(MIPS16_OPT) $(THUMB) -DNDEBUG -ffunction-sections -fdata-sections -Wl,--gc-sections -Drpl_malloc=malloc" \
 		LDFLAGS="$(LDLTO) -L$(TOP)/expat/static/lib/.libs -ldl -ffunction-sections -fdata-sections -Wl,--gc-sections" \
-		AR_FLAGS="cru $(LTOPLUGIN)" \
+		AR_FLAGS="\"cru $(LTOPLUGIN)\"" \
 		RANLIB="$(ARCH)-linux-ranlib $(LTOPLUGIN)" 
 
 

@@ -22,7 +22,7 @@ libmicrohttpd-configure:
 		--disable-messages \
 		--with-pic \
 		CFLAGS="$(COPTS) $(MIPS16_OPT) $(LTO) -ffunction-sections -fdata-sections" LDFLAGS="$(LDLTO)" \
-		AR_FLAGS="cru $(LTOPLUGIN)" \
+		AR_FLAGS="\"cru $(LTOPLUGIN)\"" \
 		RANLIB="$(ARCH)-linux-ranlib $(LTOPLUGIN)"
 
 libmicrohttpd:

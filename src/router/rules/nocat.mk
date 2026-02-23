@@ -10,7 +10,7 @@ nocat-configure:
 	    --with-glib-prefix=$(TOP)/glib-1.2.10-install \
 	    --disable-glibtest \
 	    --host=$(ARCH)-linux \
-	    AR_FLAGS="cru $(LTOPLUGIN)" \
+	    AR_FLAGS="\"cru $(LTOPLUGIN)\"" \
 	    RANLIB="$(ARCH)-linux-ranlib $(LTOPLUGIN)"
 
 nocat:

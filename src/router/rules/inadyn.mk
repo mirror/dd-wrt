@@ -6,7 +6,7 @@ inadyn-configure: wolfssl openssl
 					--enable-static \
 					--host=$(ARCH)-linux \
 					CFLAGS="$(COPTS) $(MIPS16_OPT) $(LTO) -ffunction-sections -fdata-sections -Wl,--gc-sections" \
-					AR_FLAGS="cru $(LTOPLUGIN)" \
+					AR_FLAGS="\"cru $(LTOPLUGIN)\"" \
 					RANLIB="$(ARCH)-linux-ranlib $(LTOPLUGIN)"
 
 	$(MAKE) -C inadynv2/libconfuse clean
@@ -28,7 +28,7 @@ inadyn-configure: wolfssl openssl
 		CFLAGS="$(COPTS) $(MIPS16_OPT) $(LTO) -ffunction-sections -fdata-sections -Wl,--gc-sections" \
 		confuse_CFLAGS="-I$(TOP)/inadynv2/libconfuse/src" \
 		confuse_LIBS="-L$(TOP)/inadynv2/libconfuse/src/.libs -lconfuse" \
-		AR_FLAGS="cru $(LTOPLUGIN)" \
+		AR_FLAGS="\"cru $(LTOPLUGIN)\"" \
 		RANLIB="$(ARCH)-linux-ranlib $(LTOPLUGIN)"
 
 	-cd inadynv2/build_ssl && ../configure --prefix=/usr \
@@ -44,7 +44,7 @@ inadyn-configure: wolfssl openssl
 		OpenSSL_LIBS="-L$(SSLPATH) -lssl -lcrypto" \
 		confuse_CFLAGS="-I$(TOP)/inadynv2/libconfuse/src" \
 		confuse_LIBS="-L$(TOP)/inadynv2/libconfuse/src/.libs -lconfuse" \
-		AR_FLAGS="cru $(LTOPLUGIN)" \
+		AR_FLAGS="\"cru $(LTOPLUGIN)\"" \
 		RANLIB="$(ARCH)-linux-ranlib $(LTOPLUGIN)"
 
 
@@ -61,7 +61,7 @@ inadyn-configure: wolfssl openssl
 		OpenSSL_LIBS="-L$(WOLFSSL_SSLPATH)/standard/src/.libs -lwolfssl" \
 		confuse_CFLAGS="-I$(TOP)/inadynv2/libconfuse/src" \
 		confuse_LIBS="-L$(TOP)/inadynv2/libconfuse/src/.libs -lconfuse" \
-		AR_FLAGS="cru $(LTOPLUGIN)" \
+		AR_FLAGS="\"cru $(LTOPLUGIN)\"" \
 		RANLIB="$(ARCH)-linux-ranlib $(LTOPLUGIN)"
 
 inadyn: wolfssl openssl

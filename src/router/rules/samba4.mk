@@ -47,7 +47,7 @@ samba4-configure: gnutls icu zlib
 		export CXXFLAGS="$(COPTS) $(MIPS16_OPT) -DLIBREPLACE_NETWORK_CHECKS -DNODEBUG -DNEED_PRINTF -I$(TOP)/libtirpc/tirpc  -I$(TOP)/gnutls/lib/includes -I$(TOP)/zlib/include -I$(TOP)/icu/target_staging/include -L$(TOP)/icu/target_staging/lib -ffunction-sections -fdata-sections -fPIC" && \
 		export CFLAGS="$(COPTS) $(MIPS16_OPT) -DLIBREPLACE_NETWORK_CHECKS -DNODEBUG -DNEED_PRINTF -I$(TOP)/libtirpc/tirpc  -I$(TOP)/gnutls/lib/includes -I$(TOP)/zlib/include -I$(TOP)/icu/target_staging/include -L$(TOP)/icu/target_staging/lib -ffunction-sections -fdata-sections -fPIC" && \
 		export LDFLAGS="-Wl,--gc-sections -L$(TOP)/libtirpc/src/.libs -L$(TOP)/gnutls/lib/.libs -lgnutls -L$(TOP)/nettle -lnettle -lhogweed  -L$(TOP)/gmp/.libs -lgmp -L$(TOP)/icu/target_staging/lib -L$(TOP)/zlib  -fPIC" && \
-		export AR_FLAGS="cru $(LTOPLUGIN)" && \
+		export AR_FLAGS="\"cru $(LTOPLUGIN)\"" && \
 		export RANLIB="$(ARCH)-linux-ranlib $(LTOPLUGIN)" && \
 		cd samba4 && ./buildtools/bin/waf configure \
 		--hostcc="ccache $(ARCH)-linux-uclibc-gcc" \

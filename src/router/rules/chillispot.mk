@@ -59,13 +59,13 @@ chillispot-configure:
 	cd $(CHILLIDIR)/nossl &&  rm -rf config.{cache,status} && ./configure $(CHILLIEXTRAFLAGS) --host=$(ARCH)-linux  --disable-shared --enable-static --without-openssl \
 	    CFLAGS="$(COPTS) $(LTO) $(MIPS16_OPT) $(THUMB) $(CHILLIEXTRA_CFLAGS) -I$(TOP)/$(CHILLIDIR)/bstring -I$(TOP)/$(CHILLIDIR) -fcommon -DHAVE_MALLOC=1 -Drpl_malloc=malloc -ffunction-sections -fdata-sections -Wl,--gc-sections" \
 	    LDFLAGS="$(LDLTO) -ffunction-sections -fdata-sections -Wl,--gc-sections" \
-	    AR_FLAGS="cru $(LTOPLUGIN)" \
+	    AR_FLAGS="\"cru $(LTOPLUGIN)\"" \
 	    RANLIB="$(ARCH)-linux-ranlib $(LTOPLUGIN)"
 
 	-cd $(CHILLIDIR)/openssl &&  rm -rf config.{cache,status} && ./configure $(CHILLIEXTRAFLAGS) --host=$(ARCH)-linux  --disable-shared --enable-static --with-openssl \
 	    CFLAGS="$(COPTS) $(LTO) $(MIPS16_OPT) $(THUMB) $(CHILLIEXTRA_CFLAGS) -I$(SSLPATH)/include  -I$(TOP)/$(CHILLIDIR)/bstring -I$(TOP)/$(CHILLIDIR) -fcommon -DHAVE_MALLOC=1 -Drpl_malloc=malloc -ffunction-sections -fdata-sections -Wl,--gc-sections" \
 	    LDFLAGS="$(LDLTO) -L$(SSLPATH) -ffunction-sections -fdata-sections -Wl,--gc-sections" \
-	    AR_FLAGS="cru $(LTOPLUGIN)" \
+	    AR_FLAGS="\"cru $(LTOPLUGIN)\"" \
 	    RANLIB="$(ARCH)-linux-ranlib $(LTOPLUGIN)"
 
 chillispot:

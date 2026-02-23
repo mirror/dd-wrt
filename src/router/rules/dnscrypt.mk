@@ -10,7 +10,7 @@ dnscrypt-configure: libsodium-configure zlib
 	CFLAGS="-fPIC -DNEED_PRINTF $(COPTS) $(LTO) $(MIPS16_OPT) $(THUMB) -I$(TOP)/libsodium/src/libsodium/include/ -I$(TOP)/gmp -I$(TOP)/zlib -ffunction-sections -fdata-sections -Wl,--gc-sections" \
 	CPPFLAGS="$(COPTS) $(MIPS16_OPT) $(THUMB) $(LTO) -I$(TOP)/libsodium/src/libsodium/include -ffunction-sections -fdata-sections -Wl,--gc-sections" \
 	LDFLAGS="-L$(TOP)/libsodium/src/libsodium/.libs $(LDFLAGS)  $(LDLTO) -ffunction-sections -fdata-sections -Wl,--gc-sections" \
-	AR_FLAGS="cru $(LTOPLUGIN)" \
+	AR_FLAGS="\"cru $(LTOPLUGIN)\"" \
 	RANLIB="$(ARCH)-linux-ranlib $(LTOPLUGIN)"
 
 dnscrypt: libsodium zlib

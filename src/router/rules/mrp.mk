@@ -15,7 +15,7 @@ mrp-configure:
 	cd mrp/ev && . ./autogen.sh
 	cd mrp/ev && ./configure --prefix=/usr --disable-shared --enable-static --host=$(ARCH)-linux \
 		CFLAGS="$(COPTS) $(MIPS16_OPT) $(LTO)" \
-		AR_FLAGS="cru $(LTOPLUGIN)" \
+		AR_FLAGS="\"cru $(LTOPLUGIN)\"" \
 		RANLIB="$(ARCH)-linux-ranlib $(LTOPLUGIN)"
 
 	make -C mrp/ev

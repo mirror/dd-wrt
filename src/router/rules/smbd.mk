@@ -5,7 +5,7 @@ smbd-configure: libnl
 	    LDFLAGS="$(LDLTO) -ffunction-sections -fdata-sections -Wl,--gc-sections" \
 	    LIBNL_CFLAGS="-I$(TOP)/libnl/include" \
 	    LIBNL_LIBS="-L$(TOP)/libnl/lib/.libs -lnl-3 -lnl-genl-3" \
-	    AR_FLAGS="cru $(LTOPLUGIN)" \
+	    AR_FLAGS="\"cru $(LTOPLUGIN)\"" \
 	    RANLIB="$(ARCH)-linux-ranlib $(LTOPLUGIN)"
 
 	cd smbd/tools-glib && ./autogen.sh
@@ -16,7 +16,7 @@ smbd-configure: libnl
 	    LIBNL_LIBS="-L$(TOP)/libnl/lib/.libs -lnl-3 -lnl-genl-3" \
 	    GLIB_CFLAGS="-I$(TOP)/_staging_static/usr/include/glib-2.0 -I$(TOP)/_staging_static/usr/lib/glib-2.0/include" \
 	    GLIB_LIBS="-L$(TOP)/_staging_static/usr/lib -lglib-2.0" \
-	    AR_FLAGS="cru $(LTOPLUGIN)" \
+	    AR_FLAGS="\"cru $(LTOPLUGIN)\"" \
 	    RANLIB="$(ARCH)-linux-ranlib $(LTOPLUGIN)"
 
 	cd smbd/tools-glib.61 && ./autogen.sh
@@ -27,7 +27,7 @@ smbd-configure: libnl
 	    LIBNL_LIBS="-L$(TOP)/libnl/lib/.libs -lnl-3 -lnl-genl-3" \
 	    GLIB_CFLAGS="-I$(TOP)/_staging_static/usr/include/glib-2.0 -I$(TOP)/_staging_static/usr/lib/glib-2.0/include" \
 	    GLIB_LIBS="-L$(TOP)/_staging_static/usr/lib -lglib-2.0" \
-	    AR_FLAGS="cru $(LTOPLUGIN)" \
+	    AR_FLAGS="\"cru $(LTOPLUGIN)\"" \
 	    RANLIB="$(ARCH)-linux-ranlib $(LTOPLUGIN)"
 
 smbd: libnl

@@ -3,7 +3,7 @@ exfat-utils-configure:
 	cd exfat-utils && ./configure --host=$(ARCH)-linux --prefix=/usr --libdir=/usr/lib \
 	    CC="$(CC) $(COPTS) $(MIPS16_OPT) $(THUMB) $(LTO) -fPIC -ffunction-sections -fdata-sections -Wl,--gc-sections -D_GNU_SOURCE  -DNEED_PRINTF -std=gnu89" \
 	    LDFLAGS="$(LDLTO) -ffunction-sections -fdata-sections -Wl,--gc-sections" \
-	    AR_FLAGS="cru $(LTOPLUGIN)" \
+	    AR_FLAGS="\"cru $(LTOPLUGIN)\"" \
 	    RANLIB="$(ARCH)-linux-ranlib $(LTOPLUGIN)"
 
 exfat-utils:

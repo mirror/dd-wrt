@@ -48,7 +48,7 @@ curl-configure: openssl zlib
 	--with-ca-bundle=/etc/ssl/certs/ca-certificates.crt --with-openssl --prefix=/usr ac_cv_host=$(ARCH)-uclibc-linux --libdir=/usr/lib --target=$(ARCH)-linux --host=$(ARCH) CC="ccache $(ARCH)-linux-uclibc-gcc" \
 	CFLAGS="-DNEED_PRINTF $(LTO) $(COPTS) $(MIPS16_OPT) $(THUMB) -I$(TOP)/zlib  -I$(SSLPATH)/include -ffunction-sections -fdata-sections -Wl,--gc-sections" \
 	LDFLAGS="$(LDLTO) $(COPTS) $(MIPS16_OPT) $(THUMB) -L$(TOP)/zlib -L$(SSLPATH) -lcrypto -lssl -ldl" \
-	AR_FLAGS="cru $(LTOPLUGIN)" \
+	AR_FLAGS="\"cru $(LTOPLUGIN)\"" \
 	RANLIB="$(ARCH)-linux-ranlib $(LTOPLUGIN)" \
 	NM="$(ARCH)-linux-nm $(LTOPLUGIN)" \
 	lt_cv_sys_global_symbol_pipe="sed -n -e 's/^.*[	 ]\\([ABCDGIRSTW][ABCDGIRSTW]*\\)[	 ][	 ]*\\([_A-Za-z][_A-Za-z0-9]*\\)\$$/\\1 \\2 \\2/p' | sed '/ __gnu_lto/d'" \
@@ -122,7 +122,7 @@ curl-configure: openssl zlib
 	CC="ccache $(ARCH)-linux-uclibc-gcc" \
 	CFLAGS="$(LTO) $(COPTS) $(MIPS16_OPT) $(THUMB) -I$(TOP)/bearssl/inc -ffunction-sections -fdata-sections -Wl,--gc-sections" \
 	LDFLAGS="$(LDLTO) $(COPTS) $(MIPS16_OPT) $(THUMB) -L$(TOP)/bearssl/build -lbearssl -ldl" \
-	AR_FLAGS="cru $(LTOPLUGIN)" \
+	AR_FLAGS="\"cru $(LTOPLUGIN)\"" \
 	RANLIB="$(ARCH)-linux-ranlib $(LTOPLUGIN)" \
 	NM="$(ARCH)-linux-nm $(LTOPLUGIN)" \
 	lt_cv_sys_global_symbol_pipe="sed -n -e 's/^.*[	 ]\\([ABCDGIRSTW][ABCDGIRSTW]*\\)[	 ][	 ]*\\([_A-Za-z][_A-Za-z0-9]*\\)\$$/\\1 \\2 \\2/p' | sed '/ __gnu_lto/d'" \

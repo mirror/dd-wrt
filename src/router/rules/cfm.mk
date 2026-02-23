@@ -15,7 +15,7 @@ cfm-configure:
 	cd cfm/ev && . ./autogen.sh
 	cd cfm/ev && ./configure --prefix=/usr --disable-shared --enable-static --host=$(ARCH)-linux \
 		CFLAGS="$(COPTS) $(MIPS16_OPT) $(LTO)" \
-		AR_FLAGS="cru $(LTOPLUGIN)" \
+		AR_FLAGS="\"cru $(LTOPLUGIN)\"" \
 		RANLIB="$(ARCH)-linux-ranlib $(LTOPLUGIN)"
 
 	make -C cfm/ev

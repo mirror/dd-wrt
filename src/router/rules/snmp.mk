@@ -152,7 +152,7 @@ snmp-configure: nvram libutils
 				--disable-embedded-perl \
 				--without-perl-modules \
 				--with-opaque-special-types \
-				AR_FLAGS="cru $(LTOPLUGIN)" \
+				AR_FLAGS="\"cru $(LTOPLUGIN)\"" \
 				RANLIB="$(ARCH)-linux-ranlib $(LTOPLUGIN)"
 
 	cd snmp && cd build_standard && ../configure  --quiet \
@@ -198,7 +198,7 @@ snmp-configure: nvram libutils
 				--disable-embedded-perl \
 				--without-perl-modules \
 				--with-opaque-special-types \
-				AR_FLAGS="cru $(LTOPLUGIN)" \
+				AR_FLAGS="\"cru $(LTOPLUGIN)\"" \
 				RANLIB="$(ARCH)-linux-ranlib $(LTOPLUGIN)"
 
 snmp:

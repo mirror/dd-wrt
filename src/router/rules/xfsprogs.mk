@@ -41,7 +41,7 @@ xfsprogs-configure: liburcu-configure liburcu
 		--enable-lib64=no \
 		--prefix=/usr \
 		--libdir=/usr/lib \
-		AR_FLAGS="cru $(LTOPLUGIN)" \
+		AR_FLAGS="\"cru $(LTOPLUGIN)\"" \
 		RANLIB="$(ARCH)-linux-ranlib $(LTOPLUGIN)"
 
 xfsprogs: liburcu

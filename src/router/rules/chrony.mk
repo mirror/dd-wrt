@@ -1,7 +1,7 @@
 chrony-configure:
 	cd chrony && \
 	CFLAGS="$(COPTS) $(MIPS16_OPT) $(LTO) -DNEED_PRINTF  -ffunction-sections -fdata-sections -Wl,--gc-sections" \
-	LDFLAGS="$(LDLTO) -ffunction-sections -fdata-sections -Wl,--gc-sections" AR_FLAGS="cru $(LTOPLUGIN)" \
+	LDFLAGS="$(LDLTO) -ffunction-sections -fdata-sections -Wl,--gc-sections" AR_FLAGS="\"cru $(LTOPLUGIN)\"" \
 	RANLIB="$(ARCH)-linux-ranlib $(LTOPLUGIN)" \
 	./configure --host-machine=$(ARCH)-linux \
 	--host-system=Linux \

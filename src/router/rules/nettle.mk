@@ -19,6 +19,12 @@ NETTLE_CONFIGURE_ARGS+= --enable-arm-neon
 endif
 
 nettle-configure: pcre zlib gmp
+	cd nettle && rm -f config.cache
+	cd nettle && libtoolize
+	cd nettle && aclocal
+	cd nettle && autoconf
+	cd nettle && autoheader
+	cd nettle && autoreconf -vfi
 	cd nettle && ./configure --host=$(ARCH)-linux --disable-shared --enable-static --disable-pic --enable-fat --prefix=/usr --libdir=/usr/lib $(NETTLE_CONFIGURE_ARGS) CFLAGS="$(COPTS) $(LTO) $(MIPS16_OPT) -fPIC -ffunction-sections -fdata-sections -I$(TOP)/pcre -I$(TOP)/gmp -I$(TOP)/zlib  -fPIC" CPPFLAGS="$(COPTS) -fPIC" LDFLAGS="-L$(TOP)/pcre/.libs -L$(TOP)/gmp/.libs -lpthread -lpcre -L$(TOP)/zlib $(LDFLAGS) $(LDLTO) -lz" \
 	AR_FLAGS="cru $(LTOPLUGIN)" \
 	RANLIB="$(ARCH)-linux-ranlib $(LTOPLUGIN)"

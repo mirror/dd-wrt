@@ -49,7 +49,7 @@ strace-configure:
 		CC="$(CC)" \
 		CFLAGS="-I$(TOP)/kernel_headers/$(KERNELRELEASE)/include $(LTO) $(COPTS) $(MIPS16_OPT) -fcommon -ffunction-sections -fdata-sections -Wl,--gc-sections -L$(SSLPATH) -DNEED_PRINTF -I$(TOP)/libunwind/include" \
 		LDFLAGS="-ffunction-sections -fdata-sections -Wl,--gc-sections $(LDLTO) -L$(SSLPATH) -L$(TOP)/libunwind/src/.libs $(LIBUNWIND_LIB)" \
-		AR_FLAGS="cru $(LTOPLUGIN)" \
+		AR_FLAGS="\"cru $(LTOPLUGIN)\"" \
 		RANLIB="$(ARCH)-linux-ranlib $(LTOPLUGIN)"
 
 strace: libunwind

@@ -14,7 +14,7 @@ libsodium-configure:
 	CFLAGS="$(LTO) $(LTOFIXUP) $(COPTS) $(MIPS16_OPT)  -ffunction-sections -fdata-sections -Wl,--gc-sections" \
 	CPPFLAGS="$(LTO) $(LTOFIXUP) $(COPTS) $(MIPS16_OPT) -ffunction-sections -fdata-sections -Wl,--gc-sections" \
 	LDFLAGS="$(LDLTO) $(COPTS) $(MIPS16_OPT) $(LTOFIXUP) -ffunction-sections -fdata-sections -Wl,--gc-sections  -fPIC -v -Wl,--verbose" \
-	AR_FLAGS="cru $(LTOPLUGIN)" \
+	AR_FLAGS="\"cru $(LTOPLUGIN)\"" \
 	RANLIB="$(ARCH)-linux-ranlib $(LTOPLUGIN)"
 	make -C libsodium clean
 	make -C libsodium

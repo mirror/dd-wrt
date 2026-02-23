@@ -15,7 +15,7 @@ powertop-configure:
 	CC="$(CC)" \
 	CFLAGS="$(COPTS) $(MIPS16_OPT) $(LTO) -DNEED_PRINTF -D_GNU_SOURCE -Drpl_malloc=malloc -ffunction-sections -fdata-sections -Wl,--gc-sections" \
 	CXXFLAGS="$(COPTS) $(MIPS16_OPT) $(LTO) -DNEED_PRINTF -D_GNU_SOURCE -Drpl_malloc=malloc -ffunction-sections -fdata-sections -Wl,--gc-sections" \
-	AR_FLAGS="cru $(LTOPLUGIN)" \
+	AR_FLAGS="\"cru $(LTOPLUGIN)\"" \
 	RANLIB="$(ARCH)-linux-ranlib $(LTOPLUGIN)"
 
 powertop: pciutils

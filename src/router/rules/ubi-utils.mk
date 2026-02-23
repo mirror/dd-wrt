@@ -11,7 +11,7 @@ ubi-utils-configure: zlib
 		ZSTD_LIBS="$(LDLTO) -L$(TOP)/zstd/lib -lzstd" \
 		UUID_CFLAGS="-I$(TOP)/$(ARCH)-uclibc/install/util-linux/usr/include/uuid" \
 		UUID_LIBS="$(TOP)/util-linux/.libs/libuuid.a" \
-		AR_FLAGS="cru $(LTOPLUGIN)" \
+		AR_FLAGS="\"cru $(LTOPLUGIN)\"" \
 		RANLIB="$(ARCH)-linux-ranlib $(LTOPLUGIN)"
 
 ubi-utils: zlib

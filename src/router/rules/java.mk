@@ -16,7 +16,7 @@ java-configure: zlib
 	--disable-gjdoc \
 	--disable-examples \
 	--with-antlr-jar=$(TOP)/java/antlr/antlr-3.4-complete.jar \
-	AR_FLAGS="cru $(LTOPLUGIN)" \
+	AR_FLAGS="\"cru $(LTOPLUGIN)\"" \
 	RANLIB="$(ARCH)-linux-ranlib $(LTOPLUGIN)"
 	
 	cd $(TOP)/java/jamvm && ./autogen.sh 
@@ -31,7 +31,7 @@ java-configure: zlib
 	--disable-int-inlining \
 	--disable-shared \
 	--without-pic \
-	AR_FLAGS="cru $(LTOPLUGIN)" \
+	AR_FLAGS="\"cru $(LTOPLUGIN)\"" \
 	RANLIB="$(ARCH)-linux-ranlib $(LTOPLUGIN)"
 
 #	cd $(TOP)/java/cacao && ./configure \
