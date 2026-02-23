@@ -89,13 +89,10 @@ umac64_update (struct umac64_ctx *ctx,
 
 void
 umac64_digest (struct umac64_ctx *ctx,
-	       size_t length, uint8_t *digest)
+	       uint8_t *digest)
 {
   uint32_t tag[2];
   uint32_t *pad;
-
-  assert (length > 0);
-  assert (length <= 8);
 
   if (ctx->index > 0 || ctx->count == 0)
     {
@@ -136,7 +133,7 @@ umac64_digest (struct umac64_ctx *ctx,
 						       ctx->l2_state);
   tag[1] = pad[1] ^ ctx->l3_key2[1] ^ _nettle_umac_l3 (ctx->l3_key1 + 8,
 						       ctx->l2_state + 2);
-  memcpy (digest, tag, length);
+  memcpy (digest, tag, UMAC64_DIGEST_SIZE);
 
   /* Reinitialize */
   ctx->count = ctx->index = 0;

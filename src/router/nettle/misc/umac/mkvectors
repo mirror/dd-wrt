@@ -1,0 +1,90 @@
+#! /bin/bash
+
+set -e
+
+vector () {
+    nonce="$1"
+    length="$2"
+    data="$3"
+    echo "nonce:" $nonce
+    echo "msg length:" $length
+    if [ $length != "`expr length "$data"`" ] ; then
+	echo "data (repeated):" $data
+    else
+	echo "data:" $data
+    fi
+    for tag_len in 32 64 96 128 ; do
+	tag=`python repeat.py "$data" "$length" | python umac.py "$tag_len" "$nonce"`
+	echo "tag$tag_len:" $tag
+    done
+    echo
+}
+
+NONCE=bcdefghi
+
+# RFC 4418 test vectors
+vector $NONCE 0 ""
+vector $NONCE 3 "a"
+vector $NONCE 1024 "a"
+vector $NONCE 32768 "a"
+vector $NONCE 1048576 "a"
+vector $NONCE 33554432 "a"
+vector $NONCE 3 "abc"
+vector $nonce 1500 "abc"
+
+DATA=def
+NONCE=bcdefghijklmnopq
+
+vector ${NONCE:0:1} 0 $DATA
+vector ${NONCE:0:2} 1 $DATA
+vector ${NONCE:0:3} 2 $DATA
+vector ${NONCE:0:4} 3 $DATA
+vector ${NONCE:0:5} 4 $DATA
+
+vector ${NONCE:0:6} 1020 $DATA
+vector ${NONCE:0:7} 1021 $DATA
+vector ${NONCE:0:8} 1022 $DATA
+vector ${NONCE:0:9} 1023 $DATA
+vector ${NONCE:0:10} 1024 $DATA
+vector ${NONCE:0:11} 1025 $DATA
+vector ${NONCE:0:12} 1026 $DATA
+vector ${NONCE:0:13} 1027 $DATA
+
+vector ${NONCE:0:14} 2046 $DATA
+vector ${NONCE:0:15} 2047 $DATA
+vector ${NONCE:0:16} 2048 $DATA
+vector ${NONCE:0:1} 2049 $DATA
+vector ${NONCE:0:2} 2050 $DATA
+
+vector ${NONCE:0:3} 16777212 $DATA
+vector ${NONCE:0:4} 16777213 $DATA
+vector ${NONCE:0:5} 16777214 $DATA
+vector ${NONCE:0:6} 16777215 $DATA
+vector ${NONCE:0:7} 16777216 $DATA
+vector ${NONCE:0:8} 16777217 $DATA
+
+vector ${NONCE:0:9} 16778239 $DATA
+vector ${NONCE:0:10} 16778240 $DATA
+vector ${NONCE:0:11} 16778241 $DATA
+vector ${NONCE:0:12} 16778242 $DATA
+vector ${NONCE:0:13} 16778243 $DATA
+vector ${NONCE:0:14} 16778244 $DATA
+
+vector '#00000000000000000000000000000000' 4 zero
+vector '#00000000000000000000000000000001' 4 zero
+vector '#00000000000000000000000000000002' 4 zero
+vector '#00000000000000000000000000000003' 4 zero
+vector '#00000000000000000000000000000004' 4 zero
+vector '#00000000000000000000000000000005' 4 zero
+
+vector 'a' 7 nonce-a
+vector 'b' 7 nonce-a
+vector 'c' 7 nonce-a
+vector 'd' 7 nonce-a
+vector 'e' 7 nonce-a
+
+vector '#beafcafe' 15 nonce-beaf-cafe
+vector '#beafcaff' 15 nonce-beaf-cafe
+vector '#beafcb00' 15 nonce-beaf-cafe
+vector '#beafcb01' 15 nonce-beaf-cafe
+vector '#beafcb02' 15 nonce-beaf-cafe

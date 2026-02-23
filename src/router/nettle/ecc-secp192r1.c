@@ -65,7 +65,7 @@ ecc_secp192r1_modp (const struct ecc_modulo *m UNUSED, mp_limb_t *rp, mp_limb_t 
   cy = mpn_add_n (xp + 2, xp + 2, xp + 8, 4);
   cy = sec_add_1 (xp + 6, xp + 6, 2, cy);
   cy += mpn_add_n (xp + 4, xp + 4, xp + 8, 4);
-  assert (cy <= 2);
+  assert_maybe (cy <= 2);
 
   xp[8] = cy;
 
@@ -75,9 +75,9 @@ ecc_secp192r1_modp (const struct ecc_modulo *m UNUSED, mp_limb_t *rp, mp_limb_t 
   cy += mpn_add_n (xp + 2, xp + 2, xp + 6, 3);
   cy = sec_add_1 (xp + 5, xp + 5, 1, cy);
   
-  assert (cy <= 1);
+  assert_maybe (cy <= 1);
   cy = mpn_cnd_add_n (cy, rp, xp, ecc_Bmodp, 6);
-  assert (cy == 0);  
+  assert_maybe (cy == 0);
 }
 #elif GMP_NUMB_BITS == 64
 /* p is 3 limbs, p = B^3 - B - 1 */

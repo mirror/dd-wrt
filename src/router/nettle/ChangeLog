@@ -1,27 +1,711 @@
+2026-01-31  Niels Möller  <nisse@lysator.liu.se>
+
+	From Daiki Ueno:
+	* drbg-ctr-aes256.c (drbg_ctr_aes256_update): Change argument list
+	to take use a struct drbg_ctr_aes256_ctx, and make non-static.
+	Update callers.
+	* drbg-ctr.h (drbg_ctr_aes256_update): Declare it.
+	* nettle.texinfo (Randomness): Update documentation.
+
+2026-01-29  Niels Möller  <nisse@lysator.liu.se>
+
+	* testsuite/testutils.h (struct tstring): Change traditional
+	data[1] to C99 flexible array member data[].
+	* testsuite/testutils.c (tstring_alloc): Update allocation
+	accordingly.
+
+2026-01-28  Niels Möller  <nisse@lysator.liu.se>
+
+	* arm64: Add alignment at each function prologue.
+	* powerpc64/p8/sha256-compress-n.asm: Add consistent alignment.
+	* x86/sha1-compress.asm: Likewise.
+	* x86_64: Likewise, several files.
+
+2026-01-24  Niels Möller  <nisse@lysator.liu.se>
+
+	Copy files from https://git.savannah.gnu.org/cgit/config.git/plain/
+	* config.guess: Update to 2025-07-10 version.
+	* config.sub: Update to 2025-07-10 version.
+
+2026-01-22  Niels Möller  <nisse@lysator.liu.se>
+
+	* ed448-shake256-verify.c (ed448_shake256_verify): By RFC 8032,
+	the final octet of an ed448 signature must always be zero. Add
+	missing check that it indeed is zero. Reported by Oren Yomtov.
+	* testsuite/ed448-test.c (test_wycheproof): New testcase.
+
+2026-01-18  Niels Möller  <nisse@lysator.liu.se>
+
+	* nettle.texinfo (Hash functions): Update hash intro.
+	(Authenticated encryption): Revise intro.
+	(Randomness): Recommend using operating system randomness
+	facilities.
+
+2026-01-14  Niels Möller  <nisse@lysator.liu.se>
+
+	* nettle.texinfo (OCB): Update OCB documentation.
+
+	* ocb.h (struct ocb_ctx): New field tag_length, storing the size
+	passed to ocb_set_nonce.
+	* ocb.c (ocb_set_nonce): Store tag length in context.
+	(ocb_digest): Delete length argument. Size of digest was stored in
+	the context by ocb_set_nonce. Updated all callers.
+	* ocb-aes128.c (ocb_aes128_digest): Deleted length argument.
+	* non-nettle.c (ocb_aes128_t96_digest): Deleted.
+
+	* nettle.texinfo (CCM): Update CCM documentation.
+
+	* ccm.h (CCM_MIN_DIGEST_SIZE): New constant.
+	(struct ccm_ctx): New field tag_length, storing the size used for
+	constructing the IV in ccm_set_nonce.
+	* ccm.c (ccm_set_nonce): Check that tag length is according to
+	spec, and store in context.
+	(ccm_digest): Delete length argument. Size of digest was stored in
+	the context by ccm_set_nonce. Updated all callers.
+	* ccm-aes128.c (ccm_aes128_digest): Delete length argument.
+	* ccm-aes192.c (ccm_aes192_digest): Likewise.
+	* ccm-aes256.c: Likewise.
+	* testsuite/ccm-test.c (test_main): Delete test from IEEE
+	802.15.4-2011, C.2.2, since it uses an invalid zero tag length.
+
+2026-01-08  Niels Möller  <nisse@lysator.liu.se>
+
+	* ocb.c (update_offset): Deleted function, replaced with...
+	(ocb_mul_xk): New function.
+	(ocb_fill_n): Use ocb_mul_xk both in main loop and for final block.
+
+	* ocb.h (struct ocb_ctx): Change types of data_count and
+	message_count to uint32_t and uint64_t, respectively, from size_t.
+	Makes the implementation limits on the size of associated data and
+	cleartext be platform independent.
+
+2026-01-02  Niels Möller  <nisse@lysator.liu.se>
+
+	* sexp.c (sexp_iterator_exit_list): Rewrite to not recurse via
+	sexp_iterator_next.
+
+2025-12-17  Niels Möller  <nisse@lysator.liu.se>
+
+	* sexp.c (sexp_iterator_simple): Fix off-by-one error in length
+	check. Reported via oss-fuzz.
+
+2025-12-15  Niels Möller  <nisse@lysator.liu.se>
+
+	* base16-decode.c (base16_decode_update): Fix returned value on
+	failure, should be 0. Previous change accidentally returned -1
+	instead.
+	* base64-decode.c (base64_decode_update): Analogous fix. This
+	regression was reported by Robert Augusteijn.
+
+2025-12-02  Niels Möller  <nisse@lysator.liu.se>
+
+	Copy getopt files from current gnulib, using gnulib-tool.sh --copy-file.
+	* lib/getopt_int.h: New file (replacing old getopt_int.h).
+	* lib/getopt-ext.h: New file.
+	* lib/getopt-core.h: New File.
+	* lib/getopt.c: New file. Only change from gnulib is to wrap the
+	gettext.h usage inside an #ifndef _.
+	* lib/getopt1.c: New file.
+	* getopt.h: Rewritten as a wrapper for lib/getopt-core.h and
+	lib/getopt-ext.h.
+	* getopt.c: Rewritten as a wrapper for lib/getopt.c, including an
+	ELIDE_CODE check.
+	* getopt1.c: Analogous wrapper for lib/getopt1.c.
+	* Makefile.in (PRE_CPPFLAGS): Add -I$(srcdir), needed for #include
+	<getopt.h> from files in lib/.
+	(gnulib_FILES): New variable.
+	(DISTFILES): Drop getopt_int.h, moved to lib/.
+	(distdir): Populate lib/ directory with $(gnulib_FILES).
+
+2025-11-05  Niels Möller  <nisse@lysator.liu.se>
+
+	* testsuite/slh-dsa-test.c (read_hex_file): Simplify, using
+	base16_decode_update.
+
+2025-10-30  Niels Möller  <nisse@lysator.liu.se>
+
+	* base16-decode.c (base16_decode_single): Rewrite as a call to
+	base16_decode_update.
+	(base16_decode_update): Make *dst_length an input argument, should
+	hold size of dst buffer. Fail if decoding would exceed this size.
+	Update all callers.
+	* base64-decode.c (base64_decode_single, base64_decode_update):
+	Analogous changes.
+
+2025-10-29  Niels Möller  <nisse@lysator.liu.se>
+
+	* base64-encode.c (base64_encode_group): Delete unused and
+	undocumented function.
+
+2025-10-16  Niels Möller  <nisse@lysator.liu.se>
+
+	Delete the undocumented nettle_armor abstraction.
+	* nettle-types.h (nettle_armor_length_func)
+	(nettle_armor_init_func, nettle_armor_encode_update_func)
+	(nettle_armor_encode_final_func, nettle_armor_decode_update_func)
+	(nettle_armor_decode_final_func): Deleted typedefs.
+	* nettle-meta.h (struct nettle_armor): Deleted struct.
+	(_NETTLE_ARMOR, _NETTLE_ARMOR_0): Deleted macros.
+	(nettle_get_armors, nettle_armors, nettle_base64)
+	(nettle_base64url, nettle_base16): Deleted declarations.
+	* base16-meta.c: Deleted file.
+	* base64-meta.c: Deleted file.
+	* base64url-meta.c: Deleted file.
+	* nettle-meta-armors.c: Deleted file.
+	* Makefile.in (nettle_SOURCES): Drop deleted files.
+
+	* testsuite/base16-test.c (test_base16): New more concrete test function.
+	(test_main): Updated to use test_base16 rather than test_armor.
+	* testsuite/base64-test.c (test_base64): New more concretetest
+	function, parameterized only by init functions to use.
+	(test_main): Updated to use test_base64 rather than test_armor.
+	* testsuite/testutils.c (test_armor): Deleted function.
+	* testsuite/meta-armor-test.c: Deleted file.
+	* testsuite/Makefile.in (TS_NETTLE_SOURCES): Drop meta-armor-test.c.
+
+2025-10-13  Niels Möller  <nisse@lysator.liu.se>
+
+	* tools/input.h (struct sexp_input): Replace use of struct
+	nette_armor, replaced with...
+	(struct input_coding): New simpler struct.
+	* tools/input.c (sexp_input_start_base64)
+	(sexp_input_start_base16): New functions, replacing...
+	(sexp_input_start_coding, sexp_input_end_coding): Deleted functions.
+
+	* tools/output.h (struct sexp_output): Replace use of struct
+	nettle_armor, instead use just a put_char function pointer.
+	* tools/output.c (sexp_put_base16_start, sexp_put_base16_end)
+	(sexp_put_base64_start, sexp_put_base64_end): New functions,
+	replacing...
+	(sexp_put_code_start, sexp_put_code_end): Deleted functions.
+
+2025-10-08  Niels Möller  <nisse@lysator.liu.se>
+
+	* tools/sexp-conv.c (list_hashes): New function.
+	(parse_options): Make --hash option use nettle_lookup_hash, and
+	change default to sha256. New option --list-hashes. Delete
+	obsolete option --raw-hash.
+
+2025-10-03  Niels Möller  <nisse@lysator.liu.se>
+
+	* tools/output.c (sexp_output_init): Add hash argument, allocate
+	context if non-null.
+	(sexp_output_hash_init): Deleted function.
+	* tools/sexp-conv.c (main): Update call to sexp_output_init. Free
+	context before exiting.
+
+2025-10-02  Niels Möller  <nisse@lysator.liu.se>
+
+	* tools/sexp-conv-test: Improve tests, including --hash feature.
+	(test_hash): New function.
+
+2025-09-27  Niels Möller  <nisse@lysator.liu.se>
+
+	* nettle.texinfo (SLH-DSA): Document SLH-DSA.
+
+2025-09-24  Niels Möller  <nisse@lysator.liu.se>
+
+	* configure.ac (CFLAGS): When using mini-gmp, define
+	MINI_GMP_ENABLE_FLOAT=0.
+
+	* mini-gmp.c, mini-gmp.h: Update from the GMP repository.
+
+2025-09-18  Niels Möller  <nisse@lysator.liu.se>
+
+	* nettle.texinfo (Using Nettle): Group the sections Example,
+	Conventions, Linking, and Compatibility into a new chapter.
+
+	* configure.ac: Delete unusual configure options --with-lib-path
+	and --with-lib-path.
+	(libdir): Delete logic to set the default libdir depending on ABI.
+
+	* aclocal.m4 (LSH_PATH_ADD, LSH_RPATH_ADD, LSH_RPATH_INIT)
+	(LSH_RPATH_FIX): Deleted now unused macros.
+
+2025-09-15  Niels Möller  <nisse@lysator.liu.se>
+
+	* slh-dsa-sha2-128f.c (slh_dsa_sha2_128f_root)
+	(slh_dsa_sha2_128f_generate_keypair, slh_dsa_sha2_128f_sign)
+	(slh_dsa_sha2_128f_verify): New file, new functions.
+	* Makefile.in (nettle_SOURCES): Add slh-dsa-sha2-128f.c.
+
+	* testsuite/slh-dsa-test.c (test_main): Add tests for slh-dsa-sha2-128f.
+	* examples/hogweed-benchmark.c (alg_list): Add benchmarking of slh-dsa-sha2-128f.
+
+2025-09-14  Niels Möller  <nisse@lysator.liu.se>
+
+	* slh-sha256.c: New file.
+	(_slh_hash_sha256): New slh_hash struct, and corresponding functions.
+	* slh-dsa-sha2-128s.c (slh_dsa_sha2_128s_root)
+	(slh_dsa_sha2_128s_generate_keypair, slh_dsa_sha2_128s_sign)
+	(slh_dsa_sha2_128s_verify): New file, new functions.
+	* Makefile.in (nettle_SOURCES): Add slh-sha256.c and
+	slh-dsa-sha2-128s.c.
+
+	* testsuite/slh-dsa-test.c (test_main): Add tests for slh_dsa_sha2_128s.
+	* examples/hogweed-benchmark.c (bench_slh_dsa_init_sha2_s): New
+	function.
+	(alg_list): Add benchmarking of slh-dsa-sha2-128s.
+
+2025-09-12  Niels Möller  <nisse@lysator.liu.se>
+
+	* slh-dsa-internal.h (slh_hash_randomizer_func)
+	(slh_hash_msg_digest_func, slh_hash_init_tree_func)
+	(slh_hash_init_hash_func, slh_hash_secret_func)
+	(slh_hash_node_func): New typedefs, for slh-related hash
+	operations.
+	(struct slh_hash): New struct.
+	(struct slh_merkle_ctx_public): Add slh_hash pointer, and use
+	const void * for context.
+	(struct slh_merkle_ctx_secret): Add scratch_ctx, needed by
+	xmss_leaf.
+
+	* slh-shake.c (slh_shake_init_tree): Renamed and made static.
+	(_slh_shake_init): ... old name.
+	(slh_shake_secret): Renamed and made static.
+	(_slh_shake): ...old name.
+	(slh_shake_init_hash, slh_shake_node)
+	(slh_shake_digest, slh_shake_randomizer)
+	(slh_shake_msg_digest): New functions.
+	( _slh_hash_shake): New slh_hash struct.
+
+	* slh-fors.c: Update for new hash abstraction.
+	* slh-wots.c: Likewise.
+	* slh-xmss.c: Likewise.
+
+	* slh-dsa.c (_slh_dsa_pure_digest, _slh_dsa_pure_rdigest): New functions.
+	(_slh_dsa_sign): Add slh_hash argument, and contexts allocated by caller.
+	(_slh_dsa_verify): Likewise.
+	* slh-dsa-shake-128f.c (slh_dsa_shake_128f_root): Allocate sha3
+	contexts, use _slh_hash_shake.
+	(slh_dsa_shake_128f_sign): Allocate sha3 contexts, call
+	_slh_dsa_pure_rdigest.
+	(slh_dsa_shake_128f_verify): Allocate sha3 contexts, call
+	_slh_dsa_pure_digest.
+	* slh-dsa-shake-128s.c: Analogous changes.
+
+2025-09-09  Niels Möller  <nisse@lysator.liu.se>
+
+	* slh-dsa-internal.h (slh_parse_digest_func): New typedef.
+	(struct slh_dsa_params): New function pointer parse_digest.
+
+	* slh-dsa.c (_slh_dsa_sign): Delete tree_idx and leaf_idx
+	arguments. Instead, call params->parse_digest to get them from the
+	digest. Introduce c99 mid-block declarations, for convenience.
+	(_slh_dsa_verify): Likewise.
+
+	* slh-dsa-128s.c: New file.
+	(_slh_dsa_128s_params): Params struct moved here.
+	(parse_digest): Corresponding function to extract tree and leaf
+	indices from digest.
+	* slh-dsa-shake-128s.c (_slh_dsa_128s_params, parse_digest): ...
+	old location.
+
+	* slh-dsa-128f.c: New file.
+	(_slh_dsa_128f_params): Params struct moved here.
+	(parse_digest): Corresponding function to extract tree and leaf
+	indices from digest.
+	* slh-dsa-shake-128f.c (_slh_dsa_128f_params, parse_digest): ...
+	old location.
+
+	* Makefile.in (nettle_SOURCES): Add slh-dsa-128s.c slh-dsa-128f.c.
+
+2025-09-08  Niels Möller  <nisse@lysator.liu.se>
+
+	* slh-dsa-shake-128s.c (_slh_dsa_128s_params): Renamed, from...
+	(_slh_dsa_shake_128s_params): ... old name.
+	* slh-dsa-shake-128f.c (_slh_dsa_128f_params): Renamed, from...
+	(_slh_dsa_shake_128f_params): ... old name.
+
+2025-09-05  Niels Möller  <nisse@lysator.liu.se>
+
+	* slh-dsa.h (SLH_DSA_128_SEED_SIZE, SLH_DSA_128_KEY_SIZE)
+	(SLH_DSA_128S_SIGNATURE_SIZE, SLH_DSA_128F_SIGNATURE_SIZE):
+	Renamed and updated all uses, from...
+	(SLH_DSA_SHAKE_128_SEED_SIZE, SLH_DSA_SHAKE_128_KEY_SIZE)
+	(SLH_DSA_SHAKE_128S_SIGNATURE_SIZE)
+	(SLH_DSA_SHAKE_128F_SIGNATURE_SIZE): ... old names.
+
+2025-07-07  Niels Möller  <nisse@lysator.liu.se>
+
+	* ecc-secp384r1.c (ecc_secp384r1_modp) [GMP_NUMB_BITS == 32]:
+	Analogous change to use assert_maybe. Report and patch by Taketo
+	Kabe.
+
+2025-07-06  Niels Möller  <nisse@lysator.liu.se>
+
+	* ecc-secp192r1.c (ecc_secp192r1_modp) [GMP_NUMB_BITS == 32]: Use
+	assert_maybe. This version of the function was overlooked in the
+	2023-11-14 change.
+
+2025-07-03  Niels Möller  <nisse@lysator.liu.se>
+
+	* testsuite/slh-dsa-test.c (test_main): Additional test cases,
+	from https://github.com/usnistgov/ACVP-Server.
+
+2025-07-01  Niels Möller  <nisse@lysator.liu.se>
+
+	* slh-dsa-shake-128f.c (slh_dsa_shake_128f_root)
+	(slh_dsa_shake_128f_generate_keypair, slh_dsa_shake_128f_sign)
+	(slh_dsa_shake_128f_verify): New functions.
+
+	* slh-dsa.h: Declare new functions.
+	(SLH_DSA_SHAKE_128F_SIGNATURE_SIZE): New constant.
+	* Makefile.in (nettle_SOURCES): Add slh-dsa-shake-128f.c.
+
+	* testsuite/slh-dsa-test.c (test_main): Add test for slh-dsa-shake-128f.
+	* testsuite/slh-dsa-shake-128f.ref: New Reference signature.
+	* testsuite/Makefile.in (DISTFILES): Add slh-dsa-shake-128f.ref.
+
+	* examples/hogweed-benchmark.c (bench_slh_dsa_sign): New function.
+	(alg_list): Add benchmarking of slh-dsa-shake128f.
+
+2025-06-30  Niels Möller  <nisse@lysator.liu.se>
+
+	Implement slh-dsa-shake128s.
+	* slh-dsa.h: New public header file.
+	* slh-dsa-shake-128s.c (slh_dsa_shake_128s_root)
+	(slh_dsa_shake_128s_generate_keypair, slh_dsa_shake_128s_sign)
+	(slh_dsa_shake_128s_verify): New file, new public functions.
+	(parse_digest): New internal function.
+
+	* slh-dsa-internal.h: New header file with internal declarations.
+	(slh_addr_type): New enum.
+	(slh_address_hash, slh_merkle_ctx_public, slh_merkle_ctx_secret)
+	(slh_xmss_params, slh_fors_params, slh_dsa_params): New structs.
+	(merkle_leaf_hash_func, merkle_node_hash_func): New typedefs.
+	* slh-dsa.c (_slh_dsa_randomizer, _slh_dsa_digest)
+	(_slh_dsa_sign, _slh_dsa_verify): New file, new functions.
+	* slh-fors.c (_fors_gen, fors_leaf, fors_node, fors_sign_one)
+	(_fors_sign, fors_verify_one, _fors_verify): New file, new functions.
+	* slh-merkle.c (_merkle_root, _merkle_sign, _merkle_verify): New
+	file, new functions.
+	* slh-shake.c (_slh_shake_init, _slh_shake): New file, new functions.
+	* slh-wots.c (wots_chain, wots_pk_init, _wots_gen)
+	(wots_sign_one, _wots_sign, wots_verify_one, _wots_verify): New
+	file, new functions.
+	* slh-xmss.c (xmss_leaf, xmss_node, _xmss_gen, _xmss_sign)
+	(_xmss_verify): New file, new functions.
+	* Makefile.in (nettle_SOURCES): Add slh-fors.c, slh-merkle.c,
+	slh-shake.c, slh-wots.c, slh-xmss.c, slh-dsa.c, and
+	slh-dsa-shake-128s.c.
+	(HEADERS): Add slh-dsa.h.
+	(DISTFILES): Add slh-dsa-internal.h.
+
+	* testsuite/slh-dsa-test.c: New tests.
+	* testsuite/slh-dsa-shake-128s.ref: Reference signature.
+	* testsuite/sc-slh-dsa-test: New file.
+	* testsuite/Makefile.in (TS_NETTLE_SOURCES): Add slh-dsa-test.c.
+	(TS_SC_NETTLE): Add sc-slh-dsa-test.
+	(DISTFILES): Add slh-dsa-shake-128s.ref.
+
+	* examples/hogweed-benchmark.c: Add benchmarking of
+	slh-dsa-shake128s.
+	(bench_alg): Change unit to sign/s and verify/s.
+
+2025-06-27  Niels Möller  <nisse@lysator.liu.se>
+
+	* testsuite/testutils.c (open_srcdir_file): New function.
+	* testsuite/yarrow-test.c (open_file): Deleted function.
+	(test_main): Use open_srcdir_file instead.
+
 2025-06-26  Niels Möller  <nisse@lysator.liu.se>
 
- 	* Released Nettle-3.10.2.
-
+	Cherry-picked from branch nettle-3.10-fixes:
 	* config.guess: Update to 2024-07-27 version.
 	* config.sub: Update to 2024-05-27 version.
-
-2025-06-25  Niels Möller  <nisse@lysator.liu.se>
-
-	* configure.ac: Bump package version, to 3.10.2.
-	(LIBNETTLE_MINOR): Bump minor number, to 8.11.
-	(LIBHOGWEED_MINOR): Bump minor number, to 6.11.
-
-2025-06-24  Niels Möller  <nisse@lysator.liu.se>
-
 	Minimal patch for compilers that require prototypes, e.g., gcc-15.
 	* getopt.c (getenv): Delete non-prototype declaration.
 	* getopt.h (getopt): Declare getopt with a prototype, also for
 	non-glibc systems.
 
+2025-06-24  Niels Möller  <nisse@lysator.liu.se>
+
+	* sha-example.c (main): Update to use sha256 rather than sha1, and
+	new use sha256_digest interface.
+
+2025-06-23  Niels Möller  <nisse@lysator.liu.se>
+
+	* blowfish-bcrypt.c (ibcrypt): Simplify salt logic, eliminating a
+	compiler warning.
+
+2025-06-22  Niels Möller  <nisse@lysator.liu.se>
+
+	Delete the old "generic" HMAC API.
+	* hmac.h (HMAC_CTX, HMAC_SET_KEY, HMAC_DIGEST): Deleted macros.
+	* hmac.c (hmac_set_key, hmac_update, hmac_digest): Deleted file
+	and functions.
+	* nettle.texinfo (HMAC): Delete corresponding documentation.
+
+	Refactor HMAC. Reduces the size of HMAC contexts, sha256 reduced
+	from 336 bytes to 192, sha512 from 648 to 376, and sha1 from 312
+	to 168.
+	* hmac.h (_NETTLE_HMAC_CTX): New macro. The outer and inner
+	members no longer include any block buffers. Change all the
+	hmac_*_ctx structs to use the new definition.
+	* hmac-internal.h (_NETTLE_HMAC_DIGEST, _NETTLE_HMAC_DIGEST_U):
+	New file, new macros. Update all hmac_*_digest functions to use
+	one of these macros.
+	* hmac-internal.c (_nettle_hmac_set_key): New file, new function,
+	using the new style of context struct. Update all hmac_*_set_key
+	functions.
+	* Makefile.in (nettle_SOURCES): Add hmac-internal.c.
+	(DISTFILES): Add hmac-internal.h.
+
+2025-06-22  Niels Möller  <nisse@lysator.liu.se>
+
+	* testsuite/testutils.c (test_mac): Print name of mac algorithm on
+	failure.
+
+	* gosthash94.c (gosthash94_init): Trim memset call, no need to
+	clear block buffer.
+	* md2.c (md2_init): Likewise.
+
+	* nettle-types.h (_NETTLE_ALIGN16): New macro, to require 16-byte
+	alignment. Enabled only on platforms where uint64_t needs 8-byte
+	alignment. Intended to improve performance for SIMD load and
+	store, which on some platforms may be faster with proper
+	alignment. Depends on stdalign.h, defined in C11.
+	(union nettle_block16): Use _NETTLE_ALIGN16.
+
+	* ctr16.c (_nettle_ctr_crypt16): Update alignedness check to use
+	alignof(union nettle_block16).
+
+	* aes.h (struct aes128_ctx): Use _NETTLE_ALIGN16 for the array of subkeys.
+	(struct aes192_ctx): Likewise.
+	(struct aes256_ctx): Likewise.
+
+	* umac.h (_UMAC_STATE): Use _NETTLE_ALIGN16 for the l1_key array.
+
+2025-06-02  Niels Möller  <nisse@lysator.liu.se>
+
+	* ctr.c (ctr_fill16) [!WORDS_BIGENDIAN]: Use nettle_bswap64.
+	(ctr_crypt): For block size 16, always use _nettle_ctr_crypt16.
+
+2025-05-13  Niels Möller  <nisse@lysator.liu.se>
+
+	Reduce size of sha3 context size to 216 bytes.
+	* sha3.h (struct sha3_ctx): New struct, replacing all sha3_*_ctx.
+	(struct sha3_128_ctx, struct sha3_224_ctx, struct sha3_256_ctx, struct sha3_384_ctx)
+	(struct sha3_512_ctx): Redefined as aliases to sha3_ctx.
+
+	* sha3-internal.h (_NETTLE_SHA3_HASH): New macro.
+
+	* sha3.c (sha3_xor_block, sha3_absorb): Deleted functions.
+	(sha3_init): New function, replacing all sha3_*_init.
+	(_nettle_sha3_update): Updated to take a struct sha3_ctx *
+	argument, updated all callers.
+	(_nettle_sha3_update) [WORDS_BIGENDIAN]: Use only a single 64-bit
+	word, 8 bytes, for input buffer.
+	(_nettle_sha3_update) [!WORDS_BIGENDIAN]: No buffering, xor input
+	into state directly.
+	(_nettle_sha3_pad): Updated to take a struct sha3_ctx * argument,
+	updated all callers.
+	(_nettle_sha3_digest): New function.
+
+	* sha3-shake.c (_nettle_sha3_shake_output): Updated to take a
+	struct sha3_ctx * argument, updated all callers.
+	(_nettle_sha3_shake_output) [WORDS_BIGENDIAN]: Use only a single
+	64-bit word, 8 bytes, for buffering partial output.
+	(_nettle_sha3_shake_output) [!WORDS_BIGENDIAN]: No buffering, copy
+	output directly from state.
+
+	* shake128.c (sha3_128_init): Deleted (redefined as alias for
+	sha3_init in sha3.h).
+	* sha3-224.c (sha3_224_init): Likewise.
+	* sha3-256.c (sha3_256_init): Likewise.
+	* sha3-384.c (sha3_384_init): Likewise.
+	* sha3-512.c (sha3_512_init): Likewise.
+
+	* nettle-internal.h (NETTLE_MAX_HASH_CONTEXT_SIZE): Lower,
+	streebog512_ctx is now the largest hash context struct.
+
+2025-04-28  Niels Möller  <nisse@lysator.liu.se>
+
+	* bignum-random-prime.c (miller_rabin_pocklington): Adopt
+	mp_bitcnt_t type.
+	* ecc-mod-inv.c (ecc_mod_inv): Likewise.
+	* ecc-mul-a-eh.c (ecc_mul_a_eh): Likewise.
+	* ecc-mul-a.c (ecc_mul_a): Likewise.
+	* ecc-mul-g-eh.c (ecc_mul_g_eh): Likewise.
+	* ecc-mul-g.c (ecc_mul_g): Likewise.
+	* eccdata.c (ecc_mul_binary): Likewise.
+
+	* sha.h: Deleted file.
+	* nettle.texinfo: Delete all mention of sha.h.
+	* Makefile.in (HEADERS): Delete sha.h.
+
+	* ghosthash94.h, md*.h, ripemd160.h, sha*.h, umac.h: Delete all
+	_DATA_SIZE constant, they were backwards compatibility aliases for
+	_BLOCK_SIZE, from 2014 renaming.
+
+	* salsa20.h (salsa20_set_iv, SALSA20_IV_SIZE): Delete backwards
+	compatibility aliases.
+	* testsuite/salsa20-test.c: Update to consistently use "nonce"
+	names.
+
+	* yarrow.h (yarrow256_force_reseed): Deleted backwards
+	compatibility alias.
+
+2025-04-27  Niels Möller  <nisse@lysator.liu.se>
+
+	* powerpc64/p8/sha256-compress-n.asm: Use 64-bit unsigned compare
+	for blocks == 0 check, cmpldi instruction.
+
+2025-04-09  Niels Möller  <nisse@lysator.liu.se>
+
+	* testsuite/testutils.c (test_cipher): Test encrypt and
+	decrypt methods with varying data alignment.
+
+2025-04-08  Niels Möller  <nisse@lysator.liu.se>
+
+	* twofish.c (twofish_encrypt, twofish_decrypt): Avoid copying via
+	a uint32_t words[4] array. Speedup of 15% benchmarked on an x86_64
+	laptop (AMD Ryzen 5).
+
 2025-04-02  Niels Möller  <nisse@lysator.liu.se>
 
+	Cherry-picked from branch nettle-3.10-fixes:
 	* configure.ac: For ppc64, check if __VSX__ is defined, and
 	disable use of assembly if it isn't.
+
+	* .gitlab-ci.yml: Fix native/fat to actually run make
+	check-fat-override. Add an EXTRA_CHECK_TARGET variable also for
+	the .cross-build template, use it for check-fat-override where
+	applicable, and add check-fat-emulate to the powerpc64 builds.
+
+	* Makefile.in (check-fat-override): Renamed target, from...
+	(check-fat): ... old name.
+	(check-fat-emulate): New target, similar to above, but varies the
+	-cpu flag passed to the emulator, instead of using
+	NETTLE_FAT_OVERRIDE.
+
+	* configure.ac (FAT_OVERRIDE_LIST): Renamed variable, from...
+	(FAT_TEST_LIST): ... old name.
+	(FAT_EMULATE_LIST): New substituted variable. Set to "power8
+	power9" for fat ppc64 builds.
+
+2025-03-24  Niels Möller  <nisse@lysator.liu.se>
+
+	* gcm.h (GCM_TABLE_BITS): Delete constant.
+	(struct gcm_key): Halve the allocation size for precomputed
+	values, to 2048 bytes, or 128 16-byte blocks.
+
+2025-03-18  Niels Möller  <nisse@lysator.liu.se>
+
+	Delete the output size argument from almost all digest functions.
+	* chacha-poly1305.h (chacha_poly1305_digest): Delete length argument.
+	* cmac.h (cmac128_digest, cmac64_digest)
+	(CMAC128_DIGEST, cmac_aes128_digest, cmac_aes256_digest)
+	(cmac_des3_digest, CMAC64_DIGEST): Likewise.
+	* eax.h (eax_digest, eax_aes128_digest, EAX_DIGEST): Likewise.
+	* gcm.h (gcm_digest, gcm_aes128_digest, gcm_aes192_digest)
+	(gcm_aes256_digest, gcm_camellia128_digest)
+	(gcm_camellia256_digest, gcm_sm4_digest, GCM_DIGEST): Likewise.
+	* gosthash94.h (gosthash94_digest, gosthash94cp_digest): Likewise.
+	* hkdf.h (hkdf_extract): Likewise.
+	* hmac.h (hmac_digest, hmac_md5_digest, hmac_ripemd160_digest)
+	(hmac_sha1_digest, hmac_sha256_digest, hmac_sha224_digest)
+	(hmac_sha512_digest, hmac_sha384_digest, hmac_gosthash94_digest)
+	(hmac_gosthash94cp_digest, hmac_streebog512_digest)
+	(hmac_streebog256_digest, hmac_sm3_digest, HMAC_DIGEST): Likewise.
+	* md2.h (md2_digest): Likewise.
+	* md4.h (md4_digest): Likewise.
+	* md5.h (md5_digest): Likewise.
+	* poly1305.h (poly1305_aes_digest): Likewise.
+	* ripemd160.h (ripemd160_digest): Likewise.
+	* sha1.h (sha1_digest): Likewise.
+	* sha2.h (sha256_digest, sha224_digest, sha512_digest)
+	(sha384_digest, sha512_224_digest, sha512_256_digest): Likewise.
+	* sha3.h (sha3_224_digest, sha3_256_digest, sha3_384_digest)
+	(sha3_512_digest): Likewise.
+	* sm3.h (sm3_digest): Likewise.
+	* streebog.h (streebog512_digest, streebog256_digest): Likewise
+	* umac.h (umac32_digest, umac64_digest, umac96_digest)
+	(umac128_digest): Likewise.
+	* nettle-types.h (nettle_output_func): New typedef, same signature
+	as nettle_random_func.
+	(nettle_random_func): Redefine as alias to nettle_output_func.
+	(nettle_hash_digest_func): Delete length argument.
+
+2025-03-10  Niels Möller  <nisse@lysator.liu.se>
+
+	Delete the old deprecated DSA functions declared in dsa-compat.h.
+        * dsa-compat-keygen.c: Deleted.
+        * dsa-compat.c: Deleted.
+        * dsa-compat.h: Deleted.
+        * dsa-sha1-sign.c: Deleted.
+        * dsa-sha1-verify.c: Deleted.
+        * dsa-sha256-sign.c: Deleted.
+        * dsa-sha256-verify.c: Deleted.
+	* Makefile.in (hogweed_SOURCES): Delete source files.
+	(HEADERS): Delete dsa-compat.h.
+	* nettle.texinfo (DSA): Delete documentation of the deprecated DSA
+	API.
+	* testsuite/testutils.c (test_dsa160, test_dsa256): Update to not
+	depend on deprecated functions.
+	* testsuite/dsa-test.c (test_main): Likewise.
+	* testsuite/dsa-keygen-test.c (test_main): Likewise.
+
+2025-03-09  Niels Möller  <nisse@lysator.liu.se>
+
+	* ccm-aes128.c (ccm_aes128_encrypt_message)
+	(ccm_aes128_decrypt_message): Change type of ctx argument to const
+	struct aes128_ctx *.
+	* ccm-aes192.c (ccm_aes192_encrypt_message)
+	(ccm_aes192_decrypt_message): Change type of ctx argument to const
+	struct aes192_ctx *.
+	* ccm-aes256.c (ccm_aes256_encrypt_message)
+	(ccm_aes256_decrypt_message): Change type of ctx argument to const
+	struct aes256_ctx *.
+	* testsuite/ccm-test.c (test_cipher_ccm): Add tests for
+	ccm_aes*_message functions,
+	* nettle.texinfo (CCM): Update documentation.
+
+2025-03-06  Niels Möller  <nisse@lysator.liu.se>
+
+	* nettle-types.h (union nettle_block16): Delete deprecated
+	unsigned long member of this union.
+
+	* rsa-blind.c (_rsa_blind, _rsa_unblind): Delete file, delete
+	obsolete functions (current RSA blinding functions are not exported).
+
+2025-03-05  Niels Möller  <nisse@lysator.liu.se>
+
+	Delete old AES interface.
+	* aes.h (struct aes_ctx): Deleted.
+	(AES_MIN_KEY_SIZE, AES_MAX_KEY_SIZE): Deleted constants.
+	* gcm.h (struct gcm_aes_ctx): Deleted.
+	* aes-encrypt.c: Deleted file.
+	* aes-decrypt.c: Deleted file.
+	* aes-set-encrypt-key.c: Deleted file.
+	* aes-set-decrypt-key.c: Deleted file.
+	* gcm-aes.c: Deleted file.
+	* Makefile.in (nettle_SOURCES): Drop above files.
+	* nettle.texinfo: Delete corresponding documentation.
+	* testsuite/aes-test.c (test_invert): Generalize to take a struct
+	nettle_cipher and an invert function.
+	(test_cipher2): Deleted function.
+	(test_main): Delete tests of old AES interface.
+	* testsuite/gcm-test.c (test_main): Delete tests of struct
+	gcm_aes_ctx functions.
+
+	Delete incomplete and old openpgp support.
+	* pgp-encode.c: Deleted file.
+	* pgp.h: Deleted file.
+	* rsa2openpgp.c: Deleted file.
+	* rsa.h (rsa_keypair_to_openpgp): Delete declaration.
+	* Makefile.in (hogweed_SOURCES): Delete pgp-encode.c and rsa2openpgp.c.
+	(HEADERS): Delete pgp.h.
+
+	* md5-compat.c (MD5Init, MD5Update, MD5Final): Delete file and
+	functions. Also delete corresponding header file, tests, and
+	documentation.
+
+	* configure.ac: Bump version numbers, to prepare for changes that
+	break API or ABI. Bump package version to 4.0.
+	(LIBNETTLE_MAJOR, LIBNETTLE_MINOR): Bump, to 9.0.
+	(LIBHOGWEED_MAJOR, LIBHOGWEED_MINOR): Bump, to 7.0.
 
 2025-03-02  Niels Möller  <nisse@lysator.liu.se>
 
@@ -3501,7 +4185,7 @@
 
 	* rsa-sec-decrypt.c (rsa_sec_decrypt): New function.
 	Fixed length side-channel silent version of rsa-decrypt.
-	* testsuite/rsa-encrypt-test.c: add tests for the new fucntion.
+	* testsuite/rsa-encrypt-test.c: add tests for the new function.
 
 	* testsuite/pkcs1-sec-decrypt-test.c: Adds tests for
 	_pkcs1_sec_decrypt.
@@ -13998,7 +14682,7 @@
 	* testsuite/cbc-test.c (test_cbc_bulk): Use aes_set_encrypt_key
 	and aes_set_decrypt_key.
 
-	* sparc/aes.asm (_aes_crypt): Use symbolic names for the fucntion
+	* sparc/aes.asm (_aes_crypt): Use symbolic names for the function
 	arguments.
 
 2002-02-14  Niels Möller  <nisse@cuckoo.hack.org>

@@ -86,7 +86,7 @@ gcm_aes192_decrypt(struct gcm_aes192_ctx *ctx,
 
 void
 gcm_aes192_digest(struct gcm_aes192_ctx *ctx,
-		  size_t length, uint8_t *digest)
+		  uint8_t *digest)
 {
-  GCM_DIGEST(ctx, aes192_encrypt, length, digest);
+  GCM_DIGEST(ctx, aes192_encrypt, digest);
 }

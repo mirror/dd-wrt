@@ -136,6 +136,8 @@ define(`TRANSPOSE',`
 ')
 
 	C _chacha_4core(uint32_t *dst, const uint32_t *src, unsigned rounds)
+	.text
+	ALIGN(16)
 PROLOGUE(_nettle_chacha_4core)
 
 	mov		w3, #1
@@ -225,6 +227,8 @@ C Load state and splat
 	ret
 EPILOGUE(_nettle_chacha_4core)
 
+	.text
+	ALIGN(16)
 PROLOGUE(_nettle_chacha_4core32)
 	eor		TMP2.16b, TMP2.16b, TMP2.16b	C Ignore counter carries
 	b		.Lshared_entry

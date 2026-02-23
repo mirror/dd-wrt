@@ -57,7 +57,7 @@ typedef void nettle_eddsa_dom_func(void *ctx);
 
 struct ecc_eddsa
 {
-  /* Hash function to use */
+  /* Hash function to use, digest size must be 2*key-size. */
   nettle_hash_update_func *update;
   nettle_hash_digest_func *digest;
   nettle_eddsa_dom_func *dom;

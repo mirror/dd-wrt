@@ -182,7 +182,7 @@ process_file(struct rsa_session *ctx,
 	  return 0;
 	}
     }
-  hmac_sha1_digest(&ctx->hmac, SHA1_DIGEST_SIZE, digest);
+  hmac_sha1_digest(&ctx->hmac, digest);
   if (!memeql_sec(digest, buffer + AES_BLOCK_SIZE, SHA1_DIGEST_SIZE))
     {
       werror("Decryption failed: Invalid mac.\n");

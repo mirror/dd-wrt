@@ -37,7 +37,6 @@
 #include "base16.h"
 #include "base64.h"
 #include "buffer.h"
-#include "nettle-meta.h"
 
 #include <stdio.h>
 
@@ -48,6 +47,15 @@ enum sexp_char_type
     SEXP_EOF_CHAR, SEXP_END_CHAR,
   };
 
+typedef int decode_single_func(void *ctx, uint8_t *dst, char src);
+typedef int decode_final_func(void *ctx);
+
+struct input_coding
+{
+  decode_single_func *decode;
+  decode_final_func *final;
+};
+
 struct sexp_input
 {
   FILE *f;
@@ -57,7 +65,7 @@ struct sexp_input
   enum sexp_char_type ctype;
   uint8_t c;
   
-  const struct nettle_armor *coding;
+  const struct input_coding *coding;
 
   union {
     struct base64_decode_ctx base64;

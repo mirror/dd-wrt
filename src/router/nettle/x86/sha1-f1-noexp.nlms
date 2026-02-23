@@ -1,0 +1,76 @@
+/* The f1 phase of sha1, without expansion */
+/* !!! arch x86_32 */
+/* !!! signature n */
+/* !!! count 0 mod 5 */
+
+/* Run with loopmix -f -s -m -i -b sha1-f1-noexpand.nlms */
+
+changequote(<,>)dnl
+
+/* Current version can be loop-mixed down to 29 cycles. */
+define(<SA>,<%eax>)
+define(<SB>,<%ebx>)
+define(<SC>,<%ecx>)
+define(<SD>,<%edx>)
+define(<SE>,<%ebp>)
+define(<DATA>,<%esp>)
+define(<T1>,<%edi>)
+define(<T2>,<%esi>)
+dnl define(<KVALUE>,<%esi>)
+define(<COUNT>, <84(%esp)>)
+
+define(<K1VALUE>, <0x5A827999>) 
+
+dnl Expands to 4*i, or to the empty string if i is zero
+define(<OFFSET>, <ifelse($1,0,,eval(4*$1))>)
+
+dnl The F1 round sets
+dnl
+dnl e += (a <<< 5) + (d ^ (b & (c ^ d))) + k + w
+dnl 
+dnl Access inputs in order d, c, b, a, to give maximum time to
+dnl have values ready.
+
+dnl Current version can be loopmixed down to just over 4 cycles.
+define(<ROUND_F1_NOEXP>, <
+	mov	$4, T2
+	xor	$3, T2
+	and	$2, T2
+	xor	$4, T2
+	rol	<$>30, $2
+	mov	$1, T1
+	rol	<$>5, T1
+	add	OFFSET($6) (DATA), $5
+	add	T2, $5
+	lea	K1VALUE (T1, $5), $5
+>)
+
+.text
+.p2align 4,15
+.globl loop_entry
+loop_entry:
+	push	%ebx		
+	push	%ebp		
+	push	%esi		
+	push	%edi		
+
+	sub	$64, %esp
+
+.align 32
+loop_begin:
+	ROUND_F1_NOEXP(SA, SB, SC, SD, SE, 20)
+	ROUND_F1_NOEXP(SE, SA, SB, SC, SD, 21)
+	ROUND_F1_NOEXP(SD, SE, SA, SB, SC, 22)
+	ROUND_F1_NOEXP(SC, SD, SE, SA, SB, 23)
+	ROUND_F1_NOEXP(SB, SC, SD, SE, SA, 24)
+	sub	  $5, COUNT
+	jnz	  loop_begin
+
+loop_end:
+	add	$64, %esp
+	pop	%edi
+	pop	%esi
+	pop	%ebp
+	pop	%ebx
+	ret
+	

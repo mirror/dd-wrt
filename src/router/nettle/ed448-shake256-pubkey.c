@@ -44,14 +44,14 @@ void
 ed448_shake256_public_key (uint8_t *pub, const uint8_t *priv)
 {
   const struct ecc_curve *ecc = &_nettle_curve448;
-  struct sha3_256_ctx ctx;
+  struct sha3_ctx ctx;
   uint8_t digest[ED448_SIGNATURE_SIZE];
   mp_size_t itch = ecc->q.size + _eddsa_public_key_itch (ecc);
   mp_limb_t *scratch = gmp_alloc_limbs (itch);
 
 #define k scratch
 #define scratch_out (scratch + ecc->q.size)
-  sha3_256_init (&ctx);
+  sha3_init (&ctx);
   _eddsa_expand_key (ecc, &_nettle_ed448_shake256, &ctx, priv, digest, k);
   _eddsa_public_key (ecc, k, pub, scratch_out);
 

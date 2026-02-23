@@ -1,0 +1,337 @@
+\documentclass[a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath}
+\usepackage{url}
+
+\author{Niels Möller}
+\title{Notes on ECC formulas}
+
+\begin{document}
+
+\maketitle
+
+\section{Weierstrass curve}
+
+Consider only the special case
+\begin{equation*}
+  y^2 = x^3 - 3x + b \pmod{p}
+\end{equation*}
+See \url{http://www.hyperelliptic.org/EFD/g1p/auto-shortw.html}.
+
+Affine formulas for duplication, $(x_2, y_2) = 2(x_1, y_1)$:
+\begin{align*}
+  t &=  (2y)^{-1} 3 (x_1^2 - 1) \\
+  x_2 &= t^2 - 2 x_1 \\
+  y_2 &= (x_1 - x_2) * t - y_1
+\end{align*}
+Affine formulas for addition, $(x_3, y_3) = (x_1, y_1) + (x_2,
+y_2)$:
+\begin{align*}
+  t &= (x_2 - x_1)^{-1} (y_2 - y_1) \\
+  x_3 &= t^2 - x_1 - x_2 \\
+  y_3 &= (x_1 - x_3) t - y_1
+\end{align*}
+
+\section{Montgomery curve}
+
+Consider the special case
+\begin{equation*}
+  y^2 = x^3 + b x^2 + x  
+\end{equation*}
+See \url{http://www.hyperelliptic.org/EFD/g1p/auto-montgom.html}.
+
+Affine formulas for duplication, $(x_2, y_2) = 2(x_1, y_1)$:
+\begin{align*}
+  t &= (2 y_1)^{-1} (3 x_1^2 + 2b x_1 + 1) \\
+  x_2 &= t^2 - b - 2 x_1 \\
+  y_2 &= (3 x_1 + b) t - t^3 - y_1 \\
+  &= (3 x_1 + b - t^2) t - y_1 \\
+  &= (x_1 - x_2) t - y_1
+\end{align*}
+So the computation is very similar to the Weierstraß case, differing
+only in the formula for $t$, and the $b$ term in $x_2$.
+
+Affine formulas for addition, $(x_3, y_3) = (x_1, y_1) + (x_2,
+y_2)$:
+\begin{align*}
+  t &= (x_2 - x_1)^{-1} (y_2 - y_1) \\
+  x_3 &= t^2 - b - x_1 - x_2 \\
+  y_3 &= (2 x_1 + x_2 + b) t - t^3 - y_1 \\
+  &= (2 x_1 + x_2 + b - t^2) t - y_1 \\
+  &= (x_1 - x_3) t - y_1
+\end{align*}
+Again, very similar to the Weierstraß formulas, with only an
+additional $b$ term in the formula for $x_3$.
+
+\subsection{Montgomery ladder}
+
+It's possible to do operations on a Montgomery curve in terms of the
+$x$ coordinate only. Or, with homogeneous coordinates, use $X$ and $Z$
+with $x = X/Z$.
+
+For doubling,
+\begin{align*}
+  x' &= (x^2 - z^2)^2 = (x-z)^2 (x+z)^2 \\
+  t &= (x+z)^2 - (x-z)^2 \\
+  z' &= 4 xz (x^2 + bzx + z^2) = t \left((x+z)^2 + b't\right)
+\end{align*}
+with $b' = (b-2)/4$.
+
+Addition is a bit trickier. If we have $x$ and $z$ for points $Q_1$,
+$Q_2$ and $Q_3$, with $Q_3 = Q_1 +  Q_3$, and $x_1, z_1 \neq 0$, we
+get the coordinates for $Q_2 + Q_3$ as
+\begin{align*}
+  x' &= 4 (x_2 x_3 - z_2 z_3)^2 z_1 = \left((x_2 - z_2)(x_3 + z_3) +
+    (x_2 + z_2)(x_3 - z_3)\right)^2 z_1 \\
+  z' &= 4 (x_2 z_3 - z_2 x_3)^2 x_1 = \left((x_2 - z_2)(x_3 + z_3) -
+    (x_2 + z_2)(x_3 - z_3)\right)^2 x_1
+\end{align*}
+Note that the doubling formula is symmetric in $Q_2$ and $Q_3$. Which
+is consistent with negating of $Q_1$, which really is the negatiion of
+the $y$-coordinate, which doesn't appear in the formula.
+
+This can be used for a binary ``Montgomery ladder'' to compute $n Q$
+for any $n$. If we have the points $Q$, $n Q$, and $(n+1) Q$, we can
+compute the three points
+\begin{align*}
+  (2n) Q &= 2 (nQ) && \text{doubling} \\
+  (2n+1) Q &= (nQ) + (n+1)Q && \text{addition} \\
+  (2n+2) Q &= 2((n+1) Q) && \text{doubling}
+\end{align*}
+
+The following algorithm is suggested by dj (see
+\url{http://www.ietf.org/mail-archive/web/cfrg/current/msg05004.html}.
+\begin{verbatim}
+   x2,z2,x3,z3 = 1,0,x1,1
+   for i in reversed(range(255)):
+     bit = 1 & (n >> i)
+     x2,x3 = cswap(x2,x3,bit)
+     z2,z3 = cswap(z2,z3,bit)
+     x3,z3 = ((x2*x3-z2*z3)^2,x1*(x2*z3-z2*x3)^2)
+     x2,z2 = ((x2^2-z2^2)^2,4*x2*z2*(x2^2+A*x2*z2+z2^2))
+     x2,x3 = cswap(x2,x3,bit)
+     z2,z3 = cswap(z2,z3,bit)
+   return x2*z2^(p-2)
+\end{verbatim}
+It's not too hard to decipher this. The update for $x_2, z_2$ is the
+doubling. The update for $x_3, z_3$ is an addition.
+
+If the bit is zero, we get $x_2', z_2'$ representing $Q_2' = 2 Q_2$,
+and $x_3', z_3'$ representing $Q_3' = Q_2 + Q_3 = 2 Q_2 + Q_1$.
+
+What if the bit is set? For the doubling, we get it applied to $Q_3$
+instead, so we get $x_3', z_3'$ representing $Q_3' = 2 Q_3 = 2 Q_2 + 2
+Q_1$. For the add, the initial swap flips the sign of one of the
+intermediate values, but the end result is the same, so we get $x_2',
+z_2'$ representing $Q_2' = Q_2 + Q_3 = 2 Q_2 + Q_1$, as desired.
+
+Note that the initial conditional swap doesn't have to be a full swap;
+if that's convenient in the implementation, a conditional assignment
+should be sufficient to get the duplication formula appplied to the
+right point. It looks like, in all cases, one will start by computing
+$x_2 \pm z_2$ and $x_3 \pm z_3$, so maybe one can apply conditional
+assignment to these values instead.
+
+\section{Edwards curve}
+
+For an Edwards curve, we consider the special case
+\begin{equation*}
+  x^2 + y^2 = 1 + d x^2 y^2
+\end{equation*}
+See \url{http://cr.yp.to/papers.html#newelliptic}. The neutral point is
+$(0, 1)$.
+
+Affine formulas for addition, $(x_3, y_3) = (x_1, y_1) + (x_2,
+y_2)$:
+\begin{align*}
+  t &= d x_1 x_2 y_1 y_2 \\
+  x_3 &= (1 + t)^{-1} (x_1 y_2 + y_1 x_2) \\
+  y_3 &= (1 - t)^{-1} (y_1 y_2 - x_1 x_2)
+\end{align*}
+With homogeneous coordinates $(X_1, Y_1, Z_1)$ etc., D.~J.~Bernstein
+suggests the formulas
+\begin{align*}
+  A &= Z_1 Z_2 \\
+  B &= A^2 \\
+  C &= X_1 X_2 \\
+  D &= Y_1 Y_2 \\
+  E &= d C D \\
+  F &= B - E \\
+  G &= B + E \\
+  X_3 &= A F [(X_1 + Y_1)(X_2 + Y_2) - C - D] \\
+  Y_3 &= A G (D - C) \\
+  Z_3 &= F G
+\end{align*}
+This works also for doubling, but a more efficient variant is
+\begin{align*}
+  B &= (X_1 + Y_1)^2 \\
+  C &= X_1^2 \\
+  D &= Y_1^2 \\
+  E &= C + D \\
+  H &= Z_1^2 \\
+  J &= E - 2H \\
+  X_3 &= (B - E) J \\
+  Y_3 &= E (C - D) \\
+  Z_3 &= E J
+\end{align*}
+
+\section{EdDSA}
+
+The EdDSA paper (\url{http://ed25519.cr.yp.to/ed25519-20110926.pdf})
+suggests using the twisted Edwards curve,
+\begin{equation*}
+  -x^2 + y^2 = 1 + d' x^2 y^2 \pmod{p}
+\end{equation*}
+(For this we use $d' = -d$, with $d = (121665/121666) \bmod p$, where
+$d$ is the same as in the curve25519 equivalence described below).
+Assuming -1 has a square root modulo $p$, a point $(x, y)$ lies on
+this curve if and only if $(\sqrt{-1} x, p)$ lies of the non-twisted
+Edwards curve. The point addition formulas for the twisted Edwards
+curve are
+\begin{align*}
+  t &= d' x_1 x_2 y_1 y_2 \\
+  x_3 &= (1 + t)^{-1} (x_1 y_2 + y_1 x_2) \\
+  y_3 &= (1 - t)^{-1} (y_1 y_2 + x_1 x_2)
+\end{align*}
+or in terms of $d$ rather than $d'$, signs are switched as
+\begin{align*}
+  t &= d x_1 x_2 y_1 y_2 \\
+  x_3 &= (1 - t)^{-1} (x_1 y_2 + y_1 x_2) \\
+  y_3 &= (1 + t)^{-1} (y_1 y_2 + x_1 x_2)
+\end{align*}
+
+For the other formulas, it should be fine to just switch the sign of
+terms involving $x_1 x_2$ or $x_1^2$. The paper suggests further
+optimizations: For precomputed points, use the representation $(x-y,
+x+y, dxy)$. And for temporary points, maintain an additional redundant
+coordinate $T$, with $Z T = X Y$ (see
+\url{http://eprint.iacr.org/2008/522.pdf}).
+
+According to djb, the formulas in Section 3.1 are the once to use,
+because they are complete. See
+\url{http://www.hyperelliptic.org/EFD/g1p/auto-twisted-extended-1.html#addition-add-2008-hwcd-3},
+\begin{align*}
+  A &= (y_1 - x_1)(y_2 - x_2) \\
+  B &= (y_1 + x_1)(y_2 + x_2) \\
+  C &= 2 t_1 d' t_2 \\
+  D &= 2 z_1 z_2 \\
+  E &= B - A \\
+  F &= D - C \\
+  G &= D + C \\
+  H &= B + A \\
+  x_3 &= E F \\
+  y_3 &= G H \\
+  t_3 &= E H \\
+  z_3 &= F G
+\end{align*}
+
+In our notation $a = -1$, and the $d'$ above is $-d$.
+
+\subsection{Decompression}
+
+For EdDSA, points are represented by the $y$ coordinate and only the
+low bit, or ``sign'' bit, of the $x$ coordinate. Then $x^2$ can be
+computed as
+\begin{align*}
+  x^2 &= (1-y^2) (d y^2 - 1)^{-1} \\
+  &= 121666 (1-y^2) (121665 y^2 - 121666)^{-1}
+\end{align*}
+We then get $x$ from a square root, and we can use a trick of djb's to
+avoid the inversion.
+
+\section{Curve25519}
+
+Curve25519 is defined as the Montgomery curve
+\begin{equation*}
+  y^2 = x^3 + b x^2 + x \pmod p
+\end{equation*}
+with $b = 486662$ and $p = 2^{255} -19$. See
+\url{http://cr.yp.to/ecdh/curve25519-20060209.pdf}. It is equivalent
+to the Edwards curve
+\begin{equation*}
+  u^2 + v^2 = 1 + d u^2 v^2 \pmod p
+\end{equation*}
+with $d = (121665/121666) \bmod p$. The equivalence is given by
+mapping $P = (x,y)$ to $P' = (u, v)$, as follows.
+\begin{itemize}
+\item $P = \infty$ corresponds to $P' = (0, 1)$
+\item $P = (0, 0)$ corresponds to $P' = (0, -1)$
+\item Otherwise, for all other points on the curve. First note that $x
+  \neq -1$ (since then the right hand side is a not a quadratic
+  residue), and that $y \neq 0$ (since $y = 0$ and $x \neq 0$ implies
+  that $x^2 + bx + 1 = 0$, or $(x + b/2)^2 = (b/2)^2 - 1$, which also
+  isn't a quadratic residue). The correspondence is then given by
+  \begin{align*}
+    u &= \sqrt{b+2} \, x / y \\
+    v &= (x-1) / (x+1)
+  \end{align*}
+\end{itemize}
+
+The inverse transformation is
+\begin{align*}
+  x &= (1+v) / (1-v) \\
+  y &= \sqrt{b+2} \, x / u 
+\end{align*}
+If the Edwards coordinates are represented using homogeneous
+coordinates, $u = U/W$ and $v = V/W$, then
+\begin{align*}
+  x &= \frac{W+V}{W-V} \\
+  y &= \sqrt{b} \frac{(W+V) W}{(W-V) U} 
+\end{align*}
+so we need to invert the value $(W-V) U$.
+
+\subsection{Transforms for the twisted Edwards Curve}
+
+If we use the twisted Edwards curve instead, let $\alpha = \sqrt{-1}
+\pmod{p}$. Then we work with coordinates $(u', v)$, where $u' = \alpha
+u$. The transform from Montgomery form $(x, y)$ is then
+\begin{align*}
+  u &= (\alpha \sqrt{b+2}) \, x / y\\
+  v &= (x-1) / (x+1)
+\end{align*}
+And the inverse transform is similarly
+\begin{align*}
+  x &= (1+v) / (1-v) \\
+  y &= (\alpha \sqrt{b+2}) \, x / u 
+\end{align*}
+so it's just a change of the transform constant, effectively using
+$\sqrt{-(b+2)}$ instead.
+
+\subsection{Coordinates outside of the base field}
+
+The curve25519 function is defined with an input point represented by
+the $x$-coordinate only, and is specified as allowing any value. The
+corresponding $y$ coordinate is given by 
+\begin{equation*}
+  y = \sqrt{x^3 + b x^2 + x} \pmod p
+\end{equation*}
+whenever this square root exists. But what if it doesn't? Then we work
+with the curve over the extended field $F_{p^2}$. Let $n$ by any
+non-square, then $(x^3 + b x^2 + x) n$ is a square, and we get the
+$y = y' / \sqrt{n}$ with
+\begin{equation*}
+  y' = \sqrt{(x^3 + b x^2 + x) n}
+\end{equation*}
+It happens that for all multiples of such a point, this same factor is
+tacked on to all the $y$-coordinates, while all the $x$-coordinates
+remain in the base field $F_p$. It's the ``twist'' curve $y'^2 / n =
+x^3 + bx^2 + x$. On the corresponding Edwards curve, we
+get $u = \sqrt{n} u'$ with
+\begin{equation*}
+  u' = \sqrt{b+2} \, x / y'
+\end{equation*}
+and the addition formula
+\begin{align*}
+  t &= d n u'_1 u'_2 v_1 v_2 \\
+  u'_3 &= (1+t)^{-1}(u'_1v_2 + v_1 u'_2) \\
+  v_3 &= (1-t)^{-1}(v_1 v_2 - n u'_1 u'_2)
+\end{align*}
+It seems a bit tricky to handle both types of point in a single
+function without speed penalty, due to the conditional factor of $n$
+in the formula for $v_3$.
+\end{document}
+
+%%% Local Variables: 
+%%% mode: latex
+%%% TeX-master: t
+%%% End: 

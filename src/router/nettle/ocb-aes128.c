@@ -86,10 +86,9 @@ ocb_aes128_decrypt(struct ocb_ctx *ctx, const struct ocb_aes128_encrypt_key *key
 
 void
 ocb_aes128_digest(struct ocb_ctx *ctx, const struct ocb_aes128_encrypt_key *key,
-		  size_t length, uint8_t *digest)
+		  uint8_t *digest)
 {
-  ocb_digest (ctx, &key->ocb, &key->encrypt, (nettle_cipher_func *) aes128_encrypt,
-	      length, digest);
+  ocb_digest (ctx, &key->ocb, &key->encrypt, (nettle_cipher_func *) aes128_encrypt, digest);
 }
 
 void

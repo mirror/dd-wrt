@@ -64,6 +64,8 @@ C const uint8_t *
 C _nettle_sha256_compress_n(uint32_t *state, const uint32_t *k,
 C                           size_t blocks, const uint8_t *input)
 
+    .text
+    ALIGN(16)
 PROLOGUE(_nettle_sha256_compress_n)
     cbz            BLOCKS, .Lend
 

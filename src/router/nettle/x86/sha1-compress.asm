@@ -158,7 +158,7 @@ define(`ROUND_F3', `
 	C nettle_sha1_compress(uint32_t *state, uint8_t *data)
 	
 	.text
-
+	ALIGN(16)
 PROLOGUE(nettle_sha1_compress)
 	C save all registers that need to be saved
 	C 			   88(%esp)  data

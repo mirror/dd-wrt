@@ -160,7 +160,7 @@ _oaep_decode_mgf1 (const uint8_t *em,
 
   hash->init (hash_ctx);
   hash->update (hash_ctx, label_length, label);
-  hash->digest (hash_ctx, hash->digest_size, lhash);
+  hash->digest (hash_ctx, lhash);
 
   ok &= memeql_sec (db_mask, lhash, hash->digest_size);
 
@@ -204,7 +204,7 @@ _oaep_encode_mgf1 (mpz_t m, size_t key_size,
   memset (db, 0, db_length);
   hash->init (hash_ctx);
   hash->update (hash_ctx, label_length, label);
-  hash->digest (hash_ctx, hash->digest_size, db);
+  hash->digest (hash_ctx, db);
   memcpy (&db[db_length - message_length], message, message_length);
   db[db_length - message_length - 1] = 0x01;
 

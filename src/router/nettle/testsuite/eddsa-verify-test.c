@@ -142,9 +142,9 @@ test_ed448 (const uint8_t *pub,
 	    const struct tstring *msg,
 	    const uint8_t *signature)
 {
-  struct sha3_256_ctx ctx;
+  struct sha3_ctx ctx;
 
-  sha3_256_init (&ctx);
+  sha3_init (&ctx);
   test_eddsa (&_nettle_curve448, &_nettle_ed448_shake256, &ctx,
 	      pub, msg, signature);
 }

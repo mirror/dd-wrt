@@ -121,6 +121,9 @@ ccm_set_nonce(struct ccm_ctx *ctx, const void *cipher, nettle_cipher_func *f,
 	      size_t length, const uint8_t *nonce,
 	      size_t authlen, size_t msglen, size_t taglen)
 {
+  assert (taglen >= 4 && taglen <= 16 && !(taglen & 1));
+  ctx->tag_length = taglen;
+
   /* Generate the IV for the CTR and CBC-MAC */
   ctx->blength = 0;
   ccm_build_iv(ctx->tag.b, length, nonce, CCM_FLAG_SET_M(taglen), msglen);
@@ -222,13 +225,13 @@ ccm_decrypt(struct ccm_ctx *ctx, const void *cipher, nettle_cipher_func *f,
 
 void
 ccm_digest(struct ccm_ctx *ctx, const void *cipher, nettle_cipher_func *f,
-	   size_t length, uint8_t *digest)
+	   uint8_t *digest)
 {
   int i = CCM_BLOCK_SIZE - CCM_FLAG_GET_L(ctx->ctr.b[CCM_OFFSET_FLAGS]);
-  assert(length <= CCM_BLOCK_SIZE);
   while (i < CCM_BLOCK_SIZE)  ctx->ctr.b[i++] = 0;
   ccm_pad(ctx, cipher, f);
-  ctr_crypt(cipher, f, CCM_BLOCK_SIZE, ctx->ctr.b, length, digest, ctx->tag.b);
+  assert (ctx->tag_length <= CCM_BLOCK_SIZE);
+  ctr_crypt(cipher, f, CCM_BLOCK_SIZE, ctx->ctr.b, ctx->tag_length, digest, ctx->tag.b);
 }
 
 void
@@ -243,7 +246,7 @@ ccm_encrypt_message(const void *cipher, nettle_cipher_func *f,
   ccm_set_nonce(&ctx, cipher, f, nlength, nonce, alength, clength-tlength, tlength);
   ccm_update(&ctx, cipher, f, alength, adata);
   ccm_encrypt(&ctx, cipher, f, clength-tlength, dst, src);
-  ccm_digest(&ctx, cipher, f, tlength, tag);
+  ccm_digest(&ctx, cipher, f, tag);
 }
 
 int
@@ -257,6 +260,6 @@ ccm_decrypt_message(const void *cipher, nettle_cipher_func *f,
   ccm_set_nonce(&ctx, cipher, f, nlength, nonce, alength, mlength, tlength);
   ccm_update(&ctx, cipher, f, alength, adata);
   ccm_decrypt(&ctx, cipher, f, mlength, dst, src);
-  ccm_digest(&ctx, cipher, f, tlength, tag);
+  ccm_digest(&ctx, cipher, f, tag);
   return memeql_sec(tag, src + mlength, tlength);
 }

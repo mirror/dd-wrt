@@ -48,6 +48,8 @@ define(`F1', `%r12')
 C const uint8_t *
 C _nettle_poly1305_blocks (struct poly1305_ctx *ctx, size_t blocks, const uint8_t *m)
 
+	.text
+	ALIGN(16)
 PROLOGUE(_nettle_poly1305_blocks)
 	W64_ENTRY(3, 0)
 	mov	MP_PARAM, MP

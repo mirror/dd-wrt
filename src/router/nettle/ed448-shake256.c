@@ -33,6 +33,7 @@
 # include "config.h"
 #endif
 
+#include "eddsa.h"
 #include "eddsa-internal.h"
 
 #include "nettle-types.h"
@@ -50,10 +51,16 @@ ed448_dom(void *ctx)
   sha3_256_update (ctx, DOM_SIZE, dom);
 }
 
+static void
+ed448_digest(struct sha3_ctx *ctx, uint8_t *digest)
+{
+  sha3_256_shake(ctx, 2*ED448_KEY_SIZE, digest);
+}
+
 const struct ecc_eddsa _nettle_ed448_shake256 =
   {
     (nettle_hash_update_func *) sha3_256_update,
-    (nettle_hash_digest_func *) sha3_256_shake,
+    (nettle_hash_digest_func *) ed448_digest,
     ed448_dom,
     ~(mp_limb_t) 3,
     (mp_limb_t) 1 << (447 % GMP_NUMB_BITS),

@@ -197,12 +197,9 @@ sha512_write_digest(struct sha512_ctx *ctx,
 
 void
 sha512_digest(struct sha512_ctx *ctx,
-	      size_t length,
 	      uint8_t *digest)
 {
-  assert(length <= SHA512_DIGEST_SIZE);
-
-  sha512_write_digest(ctx, length, digest);
+  sha512_write_digest(ctx, SHA512_DIGEST_SIZE, digest);
   sha512_init(ctx);
 }
 
@@ -238,12 +235,9 @@ sha384_init(struct sha512_ctx *ctx)
 
 void
 sha384_digest(struct sha512_ctx *ctx,
-	      size_t length,
 	      uint8_t *digest)
 {
-  assert(length <= SHA384_DIGEST_SIZE);
-
-  sha512_write_digest(ctx, length, digest);
+  sha512_write_digest(ctx, SHA384_DIGEST_SIZE, digest);
   sha384_init(ctx);
 }
 
@@ -271,12 +265,9 @@ sha512_224_init(struct sha512_224_ctx *ctx)
 
 void
 sha512_224_digest(struct sha512_224_ctx *ctx,
-	      size_t length,
 	      uint8_t *digest)
 {
-  assert(length <= SHA224_DIGEST_SIZE);
-
-  sha512_write_digest(ctx, length, digest);
+  sha512_write_digest(ctx, SHA512_224_DIGEST_SIZE, digest);
   sha512_224_init(ctx);
 }
 
@@ -304,12 +295,9 @@ sha512_256_init(struct sha512_256_ctx *ctx)
 
 void
 sha512_256_digest(struct sha512_256_ctx *ctx,
-	      size_t length,
 	      uint8_t *digest)
 {
-  assert(length <= SHA256_DIGEST_SIZE);
-
-  sha512_write_digest(ctx, length, digest);
+  sha512_write_digest(ctx, SHA512_256_DIGEST_SIZE, digest);
   sha512_256_init(ctx);
 }
 

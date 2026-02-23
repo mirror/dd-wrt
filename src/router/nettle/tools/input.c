@@ -72,29 +72,28 @@ sexp_get_char(struct sexp_input *input)
   if (input->coding)
     for (;;)
       {
-	size_t done;
-
 	sexp_get_raw_char(input);
 	if (input->ctype == SEXP_EOF_CHAR)
 	  die("Unexpected end of file in coded data.\n");
 
 	if (input->c == input->terminator)
 	  {
+	    if (!input->coding->final(&input->state))
+	      die("Invalid coded data.\n");
+	    input->coding = NULL;
 	    input->ctype = SEXP_END_CHAR;
 	    return;
 	  }
 
-	done = 1;
-
-	/* Decodes in place. Should always work, when we decode one
-	 * character at a time. */
-	if (!input->coding->decode_update(&input->state,
-					  &done, &input->c,
-					  1, (const char*) &input->c))
-	  die("Invalid coded data.\n");
-	
-	if (done)
-	  return;
+	switch (input->coding->decode (&input->state, &input->c, input->c))
+	  {
+	  case 0:
+	    break;
+	  case 1:
+	    return;
+	  default:
+	    die("Invalid coded data.\n");
+	  }
       }
   else
     sexp_get_raw_char(input);
@@ -121,26 +120,35 @@ sexp_push_char(struct sexp_input *input,
 }
 
 static void
-sexp_input_start_coding(struct sexp_input *input,
-			const struct nettle_armor *coding,
+sexp_input_start_base64(struct sexp_input *input,
 			uint8_t terminator)
 {
+  static const struct input_coding base64 =
+    {
+      (decode_single_func *) base64_decode_single,
+      (decode_final_func *) base64_decode_final,
+    };
   assert(!input->coding);
   
-  input->coding = coding;
-  input->coding->decode_init(&input->state);
+  input->coding = &base64;
+  base64_decode_init (&input->state.base64);
   input->terminator = terminator;
 }
 
 static void
-sexp_input_end_coding(struct sexp_input *input)
+sexp_input_start_base16(struct sexp_input *input,
+			uint8_t terminator)
 {
-  assert(input->coding);
-
-  if (!input->coding->decode_final(&input->state))
-    die("Invalid coded data.\n");
+  static const struct input_coding base16 =
+    {
+      (decode_single_func *) base16_decode_single,
+      (decode_final_func *) base16_decode_final,
+    };
+  assert(!input->coding);
   
-  input->coding = NULL;
+  input->coding = &base16;
+  base16_decode_init (&input->state.hex);
+  input->terminator = terminator;
 }
 
 
@@ -223,11 +231,11 @@ sexp_get_string(struct sexp_input *input,
       break;
       
     case '#':
-      sexp_input_start_coding(input, &nettle_base16, '#');
+      sexp_input_start_base16 (input, '#');
       goto decode;
 
     case '|':
-      sexp_input_start_coding(input, &nettle_base64, '|');
+      sexp_input_start_base64 (input, '|');
 
     decode:
       for (;;)
@@ -241,7 +249,6 @@ sexp_get_string(struct sexp_input *input,
 	    case SEXP_EOF_CHAR:
 	      die("Unexpected end of file in coded string.\n");
 	    case SEXP_END_CHAR:
-	      sexp_input_end_coding(input);
 	      sexp_get_char(input);
 	      return;
 	    }
@@ -313,11 +320,11 @@ sexp_get_string_length(struct sexp_input *input, enum sexp_mode mode,
 	break;
       
       case '#':
-	sexp_input_start_coding(input, &nettle_base16, '#');
+	sexp_input_start_base16(input, '#');
 	goto decode;
 
       case '|':
-	sexp_input_start_coding(input, &nettle_base64, '|');
+	sexp_input_start_base64(input, '|');
 
       decode:
 	for (; length; length--)
@@ -329,8 +336,6 @@ sexp_get_string_length(struct sexp_input *input, enum sexp_mode mode,
 	if (input->ctype != SEXP_END_CHAR)
 	  die("Coded string too long.\n");
 
-	sexp_input_end_coding(input);
-      
 	break;
       
       default:
@@ -377,7 +382,6 @@ sexp_get_token(struct sexp_input *input, enum sexp_mode mode,
 
       case SEXP_END_CHAR:
 	input->token = SEXP_CODING_END;
-	sexp_input_end_coding(input);
 	sexp_get_char(input);
 	return;
 
@@ -413,7 +417,7 @@ sexp_get_token(struct sexp_input *input, enum sexp_mode mode,
 	    if (mode == SEXP_CANONICAL)
 	      die("Unexpected transport data in canonical mode.\n");
 	    
-	    sexp_input_start_coding(input, &nettle_base64, '}');
+	    sexp_input_start_base64 (input, '}');
 	    sexp_get_char(input);
 
 	    input->token = SEXP_TRANSPORT_START;

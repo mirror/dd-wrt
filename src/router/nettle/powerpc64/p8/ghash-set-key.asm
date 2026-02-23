@@ -98,7 +98,6 @@ IF_LE(`
     vxor           LE_MASK,LE_MASK,LE_TEMP       C 0x07060504030201000F0E0D0C0B0A0908
 ')
 
-    C 'H' is assigned by gcm_set_key() to the middle element of the table
     lxvd2x         VSR(H),0,KEY                  C load 'H'
     C byte-reverse of each doubleword permuting on little-endian mode
 IF_LE(`
@@ -188,11 +187,8 @@ IF_LE(`
     xxmrgld        VSR(H2L),VSR(H4),VSR(Hm2)
 
     C store H3M, H3L, H4M, H4L
-    li             r7,4*16
-    li             r8,5*16
-    li             r9,6*16
-    li             r10,7*16
-    stxvd2x        VSR(H1M),r7,CTX
+    addi           CTX, CTX, 0x40
+    stxvd2x        VSR(H1M),0,CTX
     stxvd2x        VSR(H1L),r8,CTX
     stxvd2x        VSR(H2M),r9,CTX
     stxvd2x        VSR(H2L),r10,CTX

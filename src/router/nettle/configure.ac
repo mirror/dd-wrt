@@ -2,7 +2,7 @@ dnl -*- mode: shell-script; sh-indentation: 2; -*-
 
 dnl Process this file with autoconf to produce a configure script.
 
-AC_INIT([nettle], [3.10.2], [nettle-bugs@lists.lysator.liu.se])
+AC_INIT([nettle], [4.0], [nettle-bugs@lists.lysator.liu.se])
 AC_PREREQ([2.69])
 AC_CONFIG_SRCDIR([nettle-types.h])
 # Needed to stop autoconf from looking for files in parent directories.
@@ -10,11 +10,11 @@ AC_CONFIG_AUX_DIR([.])
 
 AC_CONFIG_HEADERS([config.h])
 
-LIBNETTLE_MAJOR=8
-LIBNETTLE_MINOR=11
+LIBNETTLE_MAJOR=9
+LIBNETTLE_MINOR=0
 
-LIBHOGWEED_MAJOR=6
-LIBHOGWEED_MINOR=11
+LIBHOGWEED_MAJOR=7
+LIBHOGWEED_MINOR=0
 
 dnl Note double square brackets, for extra m4 quoting.
 MAJOR_VERSION=`echo $PACKAGE_VERSION | sed 's/^\([[^.]]*\)\..*/\1/'`
@@ -25,22 +25,6 @@ AC_SUBST([MINOR_VERSION])
 AC_CANONICAL_HOST
 
 # Command line options
-AC_ARG_WITH(include-path,
-  AS_HELP_STRING([--with-include-path], [A colon-separated list of directories to search for include files]),,
-  [with_include_path=''])
-
-if test x$with_include_path != x ; then
-  CPPFLAGS="$CPPFLAGS -I`echo $with_include_path | sed 's/:/ -I/g'`"
-fi
-
-AC_ARG_WITH(lib-path,
-  AS_HELP_STRING([--with-lib-path], [A colon-separated list of directories to search for libraries]),,
-  [with_lib_path=''])
-
-if test x$with_lib_path != x ; then
-  LDFLAGS="$LDFLAGS -L`echo $with_lib_path | sed 's/:/ -L/g'`"
-fi
-
 AC_ARG_ENABLE(public-key,
   AS_HELP_STRING([--disable-public-key], [Disable public key algorithms]),,
   [enable_public_key=yes])
@@ -129,6 +113,7 @@ AC_ARG_VAR(ASM_FLAGS, [Extra flags for processing assembly source files])
 if test "x$enable_mini_gmp" = xyes ; then
   NETTLE_USE_MINI_GMP=1
   HOGWEED_EXTRA_SYMBOLS="mpz_*;gmp_*;mpn_*;mp_*;"
+  CFLAGS="$CFLAGS -DMINI_GMP_ENABLE_FLOAT=0"
 else
   NETTLE_USE_MINI_GMP=0
   HOGWEED_EXTRA_SYMBOLS=""
@@ -140,11 +125,6 @@ AH_TEMPLATE([WITH_EXTRA_ASSERTS], [Defined to enable additional asserts])
 if test "$enable_extra_asserts" = yes ; then
   AC_DEFINE(WITH_EXTRA_ASSERTS)
 fi
-
-LSH_RPATH_INIT([`echo $with_lib_path | sed 's/:/ /g'` \
-    `echo $exec_prefix | sed "s@^NONE@$prefix/lib@g" | sed "s@^NONE@$ac_default_prefix/lib@g"` \
-    /usr/local/lib /sw/local/lib /sw/lib \
-    /usr/gnu/lib /opt/gnu/lib /sw/gnu/lib /usr/freeware/lib /usr/pkg/lib])
 
 # Checks for programs.
 AC_PROG_CC
@@ -270,9 +250,6 @@ if test "x$enable_public_key" = "xyes" ; then
     [GNU MP not found, or too old. GMP-6.1.0 or later is needed, see https://gmplib.org/.
     Support for public key algorithms will be unavailable.])]
         enable_public_key=no)
-
-    # Add -R flags needed to run programs linked with gmp
-    LSH_RPATH_FIX
   fi
 fi
 
@@ -405,61 +382,11 @@ esac
 
 if test "x$ABI" != xstandard ; then
   AC_MSG_NOTICE([Compiler uses $ABI-bit ABI. To change, set CC.])
-  if test "$libdir" = '${exec_prefix}/lib' ; then
-    # Try setting a better default
-    case "$host_cpu:$host_os:$ABI" in
-      *:solaris*:32|*:sunos*:32)
-	libdir='${exec_prefix}/lib'
-	;;
-      *:solaris*:64|*:sunos*:64)
-	libdir='${exec_prefix}/lib/64'
-	;;
-      # Linux conventions are a mess... According to the Linux File
-      # Hierarchy Standard, all architectures except IA64 puts 32-bit
-      # libraries in lib, and 64-bit in lib64. Some distributions,
-      # e.g., Fedora and Gentoo, adhere to this standard, while at
-      # least Debian has decided to put 64-bit libraries in lib and
-      # 32-bit libraries in lib32.
-      
-      # We try to figure out the convention, except if we're cross
-      # compiling. We use lib${ABI} if /usr/lib${ABI} exists and
-      # appears to not be a symlink to a different name.
-      *:linux*:32|*:linux*:64)
-	if test "$cross_compiling" = yes ; then
-          AC_MSG_WARN([Cross compiling for linux. Can't guess if libraries go in lib${ABI} or lib.]); dnl '
-	else
-	  # The dash builtin pwd tries to be "helpful" and remember
-	  # symlink names. Use -P option, and hope it's portable enough.
-	  test -d /usr/lib${ABI} \
-	    && (cd /usr/lib${ABI} && pwd -P | grep >/dev/null "/lib${ABI}"'$') \
-	    && libdir='${exec_prefix}/'"lib${ABI}"
-	fi
-	;;
-      # On freebsd, it seems 32-bit libraries are in lib32,
-      # and 64-bit in lib. Don't know about "kfreebsd", does
-      # it follow the Linux fhs conventions?
-      *:freebsd*:32)
-	libdir='${exec_prefix}/lib32'
-	;;
-      *:freebsd*:64)
-	libdir='${exec_prefix}/lib'
-	;;
-      *:irix*:32)
-	libdir='${exec_prefix}/lib32'
-	;;
-      *:irix*:64)
-	libdir='${exec_prefix}/lib64'
-	;;
-      *)
-        AC_MSG_WARN([Don't know where to install $ABI-bit libraries on this system.]); dnl '
-
-    esac
-    AC_MSG_NOTICE([Libraries to be installed in $libdir.])
-  fi
 fi
 
 OPT_NETTLE_SOURCES=""
-FAT_TEST_LIST=""
+FAT_OVERRIDE_LIST=""
+FAT_EMULATE_LIST=""
 ASM_PPC_WANT_R_REGISTERS="n/a"
 
 # Select assembler code
@@ -477,7 +404,7 @@ if test "x$enable_assembler" = xyes ; then
 	  OPT_NETTLE_SOURCES="fat-x86_64.c $OPT_NETTLE_SOURCES"
 	  # For now, not enabling aesni or sha_ni, since at least 
 	  # the latter appears unavailable on the gitlab test machines.
-	  FAT_TEST_LIST="vendor:intel vendor:amd"
+	  FAT_OVERRIDE_LIST="vendor:intel vendor:amd"
 	else
 	  if test "x$enable_x86_aesni" = xyes ; then
 	    asm_path="x86_64/aesni $asm_path"
@@ -503,7 +430,7 @@ if test "x$enable_assembler" = xyes ; then
       if test "x$enable_fat" = xyes ; then
 	asm_path="arm/fat $asm_path"
 	OPT_NETTLE_SOURCES="fat-arm.c $OPT_NETTLE_SOURCES"
-	FAT_TEST_LIST="arch:5 arch:6,neon"
+	FAT_OVERRIDE_LIST="arch:5 arch:6,neon"
       else
 	case "$host_cpu" in
 	  armv6* | armv7*)
@@ -523,7 +450,7 @@ if test "x$enable_assembler" = xyes ; then
         if test "x$enable_fat" = xyes ; then
           asm_path="arm64/fat $asm_path"
           OPT_NETTLE_SOURCES="fat-arm64.c $OPT_NETTLE_SOURCES"
-          FAT_TEST_LIST="none aes pmull sha1 sha2"
+          FAT_OVERRIDE_LIST="none aes pmull sha1 sha2"
         else
           if test "$enable_arm64_crypto" = yes ; then
             asm_path="arm64/crypto $asm_path"
@@ -544,7 +471,9 @@ if test "x$enable_assembler" = xyes ; then
 	if test "x$enable_fat" = xyes ; then
 	  asm_path="powerpc64/fat $asm_path"
 	  OPT_NETTLE_SOURCES="fat-ppc.c $OPT_NETTLE_SOURCES"
-	  FAT_TEST_LIST="none crypto_ext altivec power9"
+	  FAT_OVERRIDE_LIST="none crypto_ext altivec power9"
+	  # No debian support for power7, making it hard to test.
+	  FAT_EMULATE_LIST="power8 power9"
 	else
 	  if test "$enable_power9" = yes ; then
 	    asm_path="powerpc64/p9 $asm_path"
@@ -564,7 +493,7 @@ if test "x$enable_assembler" = xyes ; then
         if test "x$enable_fat" = xyes ; then
 	        asm_path="s390x/fat $asm_path"
 	        OPT_NETTLE_SOURCES="fat-s390x.c $OPT_NETTLE_SOURCES"
-          FAT_TEST_LIST="none vf msa msa_x1 msa_x2 msa_x4"
+          FAT_OVERRIDE_LIST="none vf msa msa_x1 msa_x2 msa_x4"
         else
           if test "$enable_s390x_vf" = yes ; then
             asm_path="s390x/vf $asm_path"
@@ -711,7 +640,8 @@ fi
 AC_SUBST([OPT_NETTLE_OBJS])
 AC_SUBST([OPT_HOGWEED_OBJS])
 AC_SUBST([OPT_NETTLE_SOURCES])
-AC_SUBST([FAT_TEST_LIST])
+AC_SUBST([FAT_OVERRIDE_LIST])
+AC_SUBST([FAT_EMULATE_LIST])
 AC_SUBST([ASM_RODATA])
 if test "x$enable_assembler" = xyes ; then
   IF_ASM=''

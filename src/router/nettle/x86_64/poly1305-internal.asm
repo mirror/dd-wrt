@@ -94,6 +94,8 @@ C     +--+--+--+
 
 	C _poly1305_block (struct poly1305_ctx *ctx, const uint8_t m[16], unsigned hi)
 	
+	.text
+	ALIGN(16)
 PROLOGUE(_nettle_poly1305_block)
 	W64_ENTRY(3, 0)
 	push	%r12
@@ -170,6 +172,8 @@ define(`H1', `%r10')
 define(`F0', `%r11')
 define(`F1', `%rrd')	C Overlaps CTX
 
+	.text
+	ALIGN(16)
 PROLOGUE(_nettle_poly1305_digest)
 	W64_ENTRY(2, 0)
 

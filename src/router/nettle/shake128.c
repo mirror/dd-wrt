@@ -36,41 +36,23 @@
 # include "config.h"
 #endif
 
-#include <string.h>
-
 #include "sha3.h"
 #include "sha3-internal.h"
 
 void
-sha3_128_init (struct sha3_128_ctx *ctx)
+sha3_128_update (struct sha3_ctx *ctx, size_t length, const uint8_t *data)
 {
-  memset (ctx, 0, offsetof (struct sha3_128_ctx, block));
+  _nettle_sha3_update (ctx, SHA3_128_BLOCK_SIZE >> 3, length, data);
 }
 
 void
-sha3_128_update (struct sha3_128_ctx *ctx,
-		 size_t length,
-		 const uint8_t *data)
+sha3_128_shake (struct sha3_ctx *ctx, size_t length, uint8_t *dst)
 {
-  ctx->index = _nettle_sha3_update (&ctx->state,
-				    SHA3_128_BLOCK_SIZE, ctx->block,
-				    ctx->index, length, data);
+  _nettle_sha3_shake (ctx, SHA3_128_BLOCK_SIZE >> 3, length, dst);
 }
 
 void
-sha3_128_shake (struct sha3_128_ctx *ctx,
-		size_t length, uint8_t *dst)
+sha3_128_shake_output (struct sha3_ctx *ctx, size_t length, uint8_t *digest)
 {
-  _nettle_sha3_shake (&ctx->state, sizeof (ctx->block), ctx->block, ctx->index, length, dst);
-  sha3_128_init (ctx);
-}
-
-void
-sha3_128_shake_output (struct sha3_128_ctx *ctx,
-		       size_t length, uint8_t *digest)
-{
-  ctx->index =
-    _nettle_sha3_shake_output (&ctx->state,
-			       sizeof (ctx->block), ctx->block, ctx->index,
-			       length, digest);
+  _nettle_sha3_shake_output (ctx, SHA3_128_BLOCK_SIZE >> 3, length, digest);
 }

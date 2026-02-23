@@ -105,14 +105,6 @@ sexp_iterator_enter_list(struct sexp_iterator *iterator);
 int
 sexp_iterator_exit_list(struct sexp_iterator *iterator);
 
-#if 0
-/* Skips out of as many lists as necessary to get back to the given
- * level. */
-int
-sexp_iterator_exit_lists(struct sexp_iterator *iterator,
-			 unsigned level);
-#endif
-
 /* Gets start and length of the current subexpression. Implies
  * sexp_iterator_next. */
 const uint8_t *

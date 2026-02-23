@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include <nettle/sha1.h>
+#include <nettle/sha2.h>
 
 #define BUF_SIZE 1000
 
@@ -19,23 +19,23 @@ display_hex(unsigned length, uint8_t *data)
 int
 main(int argc, char **argv)
 {
-  struct sha1_ctx ctx;
+  struct sha256_ctx ctx;
   uint8_t buffer[BUF_SIZE];
-  uint8_t digest[SHA1_DIGEST_SIZE];
+  uint8_t digest[SHA256_DIGEST_SIZE];
   
-  sha1_init(&ctx);
+  sha256_init(&ctx);
   for (;;)
   {
     int done = fread(buffer, 1, sizeof(buffer), stdin);
-    sha1_update(&ctx, done, buffer);
+    sha256_update(&ctx, done, buffer);
     if (done < sizeof(buffer))
       break;
   }
   if (ferror(stdin))
     return EXIT_FAILURE;
 
-  sha1_digest(&ctx, SHA1_DIGEST_SIZE, digest);
+  sha256_digest(&ctx, digest);
 
-  display_hex(SHA1_DIGEST_SIZE, digest);
+  display_hex(SHA256_DIGEST_SIZE, digest);
   return EXIT_SUCCESS;  
 }

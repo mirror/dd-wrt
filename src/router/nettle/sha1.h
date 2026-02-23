@@ -50,8 +50,6 @@ extern "C" {
 
 #define SHA1_DIGEST_SIZE 20
 #define SHA1_BLOCK_SIZE 64
-/* For backwards compatibility */
-#define SHA1_DATA_SIZE SHA1_BLOCK_SIZE
 
 /* Digest is kept internally as 5 32-bit words. */
 #define _SHA1_DIGEST_LENGTH 5
@@ -74,16 +72,12 @@ sha1_update(struct sha1_ctx *ctx,
 
 void
 sha1_digest(struct sha1_ctx *ctx,
-	    size_t length,
 	    uint8_t *digest);
 
 /* SHA1 compression function. STATE points to 5 uint32_t words,
    and DATA points to 64 bytes of input data, possibly unaligned. */
 void
 sha1_compress(uint32_t *state, const uint8_t *data);
-
-/* Old name, for backwards compatibility. */
-#define _nettle_sha1_compress nettle_sha1_compress
 
 #ifdef __cplusplus
 }

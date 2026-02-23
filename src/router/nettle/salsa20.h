@@ -50,15 +50,11 @@ extern "C" {
 
 #define salsa20r12_crypt nettle_salsa20r12_crypt
 
-/* Alias for backwards compatibility */
-#define salsa20_set_iv nettle_salsa20_set_nonce
-
 /* In octets.*/
 #define SALSA20_128_KEY_SIZE 16
 #define SALSA20_256_KEY_SIZE 32
 #define SALSA20_BLOCK_SIZE 64
 #define SALSA20_NONCE_SIZE 8
-#define SALSA20_IV_SIZE SALSA20_NONCE_SIZE
 
 /* Aliases */
 #define SALSA20_MIN_KEY_SIZE 16

@@ -79,7 +79,8 @@ sexp_iterator_simple(struct sexp_iterator *iterator,
     do
       {
 	length = length * 10 + (c - '0');
-	if (length > (iterator->length - iterator->pos))
+	/* >= to account for ':' character */
+	if (length >= (iterator->length - iterator->pos))
 	  return 0;
 
 	if (EMPTY(iterator)) return 0;
@@ -213,30 +214,29 @@ sexp_iterator_exit_list(struct sexp_iterator *iterator)
   if (!iterator->level)
     return 0;
 
-  while(iterator->type != SEXP_END)
-    if (!sexp_iterator_next(iterator))
-      return 0;
-      
-  iterator->level--;
-
-  return sexp_iterator_parse(iterator);
+  unsigned start_level = iterator->level;
+  for (;;)
+    switch (iterator->type)
+      {
+      case SEXP_END:
+	iterator->level--;
+	if (!sexp_iterator_parse (iterator))
+	  return 0;
+	if (iterator->level < start_level)
+	  return 1;
+	break;
+      case SEXP_ATOM:
+	if (!sexp_iterator_parse (iterator))
+	  return 0;
+	break;
+      case SEXP_LIST:
+	if (!sexp_iterator_enter_list (iterator))
+	  return 0;
+	break;
+      default:
+	abort ();
+      }
 }
-
-#if 0
-/* What's a reasonable interface for this? */
-int
-sexp_iterator_exit_lists(struct sexp_iterator *iterator,
-			 unsigned level)
-{
-  assert(iterator->level >= level);
-
-  while (iterator->level > level)
-    if (!sexp_iterator_exit_list(iterator))
-      return 0;
-
-  return 1;
-}
-#endif
 
 const uint8_t *
 sexp_iterator_subexpr(struct sexp_iterator *iterator,

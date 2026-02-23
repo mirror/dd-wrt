@@ -35,36 +35,17 @@
 # include "config.h"
 #endif
 
-#include <stddef.h>
-#include <string.h>
-
 #include "sha3.h"
 #include "sha3-internal.h"
 
-#include "nettle-write.h"
-
 void
-sha3_256_init (struct sha3_256_ctx *ctx)
+sha3_256_update (struct sha3_ctx *ctx, size_t length, const uint8_t *data)
 {
-  memset (ctx, 0, offsetof (struct sha3_256_ctx, block));
+  _nettle_sha3_update (ctx, SHA3_256_BLOCK_SIZE >> 3, length, data);
 }
 
 void
-sha3_256_update (struct sha3_256_ctx *ctx,
-		 size_t length,
-		 const uint8_t *data)
+sha3_256_digest(struct sha3_ctx *ctx, uint8_t *digest)
 {
-  ctx->index = _nettle_sha3_update (&ctx->state,
-				    SHA3_256_BLOCK_SIZE, ctx->block,
-				    ctx->index, length, data);
-}
-
-void
-sha3_256_digest(struct sha3_256_ctx *ctx,
-		size_t length,
-		uint8_t *digest)
-{
-  _sha3_pad_hash (&ctx->state, SHA3_256_BLOCK_SIZE, ctx->block, ctx->index);
-  _nettle_write_le64 (length, digest, ctx->state.a);
-  sha3_256_init (ctx);
+  _nettle_sha3_digest (ctx, SHA3_256_BLOCK_SIZE >> 3, SHA3_256_DIGEST_SIZE, digest);
 }

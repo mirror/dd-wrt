@@ -119,9 +119,9 @@ test_ed448_sign (const struct tstring *public,
 		 const struct tstring *msg,
 		 const struct tstring *ref)
 {
-  struct sha3_256_ctx ctx;
+  struct sha3_ctx ctx;
 
-  sha3_256_init (&ctx);
+  sha3_init (&ctx);
   test_eddsa_sign (&_nettle_curve448, &_nettle_ed448_shake256, &ctx,
 		   public, private, msg, ref);
 }

@@ -30,12 +30,12 @@ test_salsa20_stream(const struct tstring *key,
   uint8_t xor[SALSA20_BLOCK_SIZE];
   size_t j;
 
-  ASSERT (iv->length == SALSA20_IV_SIZE);
+  ASSERT (iv->length == SALSA20_NONCE_SIZE);
   ASSERT (ciphertext->length == 4*SALSA20_BLOCK_SIZE);
   ASSERT (xor_ref->length == SALSA20_BLOCK_SIZE);
 
   salsa20_set_key(&ctx, key->length, key->data);
-  salsa20_set_iv(&ctx, iv->data);
+  salsa20_set_nonce(&ctx, iv->data);
   memset(stream, 0, STREAM_LENGTH + 1);
   salsa20_crypt(&ctx, STREAM_LENGTH, stream, stream);
   if (stream[STREAM_LENGTH])
@@ -92,7 +92,7 @@ test_salsa20_stream(const struct tstring *key,
   for (j = 1; j <= STREAM_LENGTH; j++)
     {
       memset(data, 0, STREAM_LENGTH + 1);
-      salsa20_set_iv(&ctx, iv->data);
+      salsa20_set_nonce(&ctx, iv->data);
       salsa20_crypt(&ctx, j, data, data);
 
       if (!MEMEQ(j, data, stream))
@@ -192,7 +192,7 @@ typedef void salsa20_func(struct salsa20_ctx *ctx,
 static void
 _test_salsa20(salsa20_func *crypt,
 	      const struct tstring *key,
-	      const struct tstring *iv,
+	      const struct tstring *nonce,
 	      const struct tstring *cleartext,
 	      const struct tstring *ciphertext)
 {
@@ -203,12 +203,12 @@ _test_salsa20(salsa20_func *crypt,
   ASSERT (cleartext->length == ciphertext->length);
   length = cleartext->length;
 
-  ASSERT (iv->length == SALSA20_IV_SIZE);
+  ASSERT (nonce->length == SALSA20_NONCE_SIZE);
 
   data = xalloc(length + 1);
 
   salsa20_set_key(&ctx, key->length, key->data);
-  salsa20_set_iv(&ctx, iv->data);
+  salsa20_set_nonce(&ctx, nonce->data);
   data[length] = 17;
   crypt(&ctx, length, data, cleartext->data);
   if (data[length] != 17)
@@ -231,7 +231,7 @@ _test_salsa20(salsa20_func *crypt,
       FAIL();
     }
   salsa20_set_key(&ctx, key->length, key->data);
-  salsa20_set_iv(&ctx, iv->data);
+  salsa20_set_nonce(&ctx, nonce->data);
   crypt(&ctx, length, data, data);
 
   if (!MEMEQ(length, data, cleartext->data))
@@ -249,11 +249,11 @@ _test_salsa20(salsa20_func *crypt,
   free(data);
 }
 
-#define test_salsa20(key, iv, cleartext, ciphertext) \
-  _test_salsa20 (salsa20_crypt, (key), (iv), (cleartext), (ciphertext))
+#define test_salsa20(key, nonce, cleartext, ciphertext) \
+  _test_salsa20 (salsa20_crypt, (key), (nonce), (cleartext), (ciphertext))
 
-#define test_salsa20r12(key, iv, cleartext, ciphertext) \
-  _test_salsa20 (salsa20r12_crypt, (key), (iv), (cleartext), (ciphertext))
+#define test_salsa20r12(key, nonce, cleartext, ciphertext) \
+  _test_salsa20 (salsa20r12_crypt, (key), (nonce), (cleartext), (ciphertext))
 
   
 void

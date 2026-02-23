@@ -105,7 +105,7 @@ poly1305_aes_update (struct poly1305_aes_ctx *ctx, size_t length, const uint8_t 
 /* Also increments the nonce */
 void
 poly1305_aes_digest (struct poly1305_aes_ctx *ctx,
-	       	     size_t length, uint8_t *digest);
+		     uint8_t *digest);
 
 #ifdef __cplusplus
 }

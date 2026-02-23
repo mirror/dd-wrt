@@ -39,7 +39,7 @@
 #include <stdlib.h>
 
 /* For definition of NETTLE_MAX_HASH_CONTEXT_SIZE. */
-#include "sha3.h"
+#include "streebog.h"
 
 /* Temporary allocation, for systems that don't support alloca. Note
  * that the allocation requests should always be reasonably small, so
@@ -74,7 +74,7 @@
 /* Limits that apply to systems that don't have alloca */
 #define NETTLE_MAX_HASH_BLOCK_SIZE 144  /* For sha3_224*/
 #define NETTLE_MAX_HASH_DIGEST_SIZE 64
-#define NETTLE_MAX_HASH_CONTEXT_SIZE (sizeof(struct sha3_224_ctx))
+#define NETTLE_MAX_HASH_CONTEXT_SIZE (sizeof(struct streebog512_ctx))
 #define NETTLE_MAX_SEXP_ASSOC 17
 #define NETTLE_MAX_CIPHER_BLOCK_SIZE 32
 #define NETTLE_MAX_CIPHER_KEY_SIZE 32

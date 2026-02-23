@@ -309,25 +309,27 @@ static int ibcrypt(uint8_t *dst,
         scheme += 2;
       if (lenscheme >= CRYPTPLEN && *scheme++ != '$')
 	return 0;
-      if (lenscheme >= HASHOFFSET && !salt) {
-        struct base64_decode_ctx ctx;
-        size_t saltlen = BLOWFISH_BCRYPT_BINSALT_SIZE;
-
-        base64_decode_init(&ctx);
-        ctx.table = radix64_decode_table;
-
-        if (!base64_decode_update(&ctx, &saltlen, (uint8_t *) data.binary.salt,
-                                  SALTLEN, (const char*) scheme)
-         || saltlen != BLOWFISH_BCRYPT_BINSALT_SIZE)
-          return 0;
-      }
     }
   }
 
   if (salt)
     memcpy(data.binary.salt, salt, BLOWFISH_BCRYPT_BINSALT_SIZE);
-  else if (lenscheme < HASHOFFSET)
+  else if (lenscheme >= HASHOFFSET)
+    {
+      struct base64_decode_ctx ctx;
+      size_t saltlen = BLOWFISH_BCRYPT_BINSALT_SIZE;
+
+      base64_decode_init(&ctx);
+      ctx.table = radix64_decode_table;
+
+      if (!base64_decode_update(&ctx, &saltlen, (uint8_t *) data.binary.salt,
+				SALTLEN, (const char*) scheme)
+	  || saltlen != BLOWFISH_BCRYPT_BINSALT_SIZE)
+	return 0;
+    }
+  else
     return 0;
+
   memcpy(psalt, data.binary.salt, BLOWFISH_BCRYPT_BINSALT_SIZE);
   bswap32_n_if_le (4, data.binary.salt);
 

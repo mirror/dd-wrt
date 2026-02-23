@@ -46,6 +46,8 @@ define(`F1', `%r10')
 define(`F2', `%r11')
 
 	C ecc_secp224r1_modp (const struct ecc_modulo *m, mp_limb_t *rp, mp_limb_t *xp)
+	.text
+	ALIGN(16)
 PROLOGUE(_nettle_ecc_secp224r1_modp)
 	W64_ENTRY(3, 0)
 	push	RP

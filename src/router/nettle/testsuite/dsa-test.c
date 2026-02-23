@@ -3,49 +3,50 @@
 void
 test_main(void)
 {
-  struct dsa_public_key pub;
-  struct dsa_private_key key;
+  struct dsa_params params;
+  mpz_t pub;
+  mpz_t key;
   struct dsa_signature signature;
-  struct dsa_params *params = (struct dsa_params *) &pub;
 
-  dsa_public_key_init(&pub);
-  dsa_private_key_init(&key);
+  dsa_params_init(&params);
+  mpz_init(pub);
+  mpz_init(key);
   dsa_signature_init(&signature);
 
-  mpz_set_str(pub.p,
+  mpz_set_str(params.p,
 	      "83d9a7c2ce2a9179f43cdb3bffe7de0f0eef26dd5dfae44d"
 	      "531bc0de45634d2c07cb929b0dbe10da580070e6abfbb841"
 	      "5c44bff570b8ad779df653aad97dc7bdeb815d7e88103e61"
 	      "606ed3d8a295fbfd340d2d49e220833ebace5511e22c4f02"
 	      "97ed351e9948fa848e9c8fadb7b47bcc47def4255b5e1d5e"
 	      "10215b3b55a0b85f", 16);
-  mpz_set_str(pub.q,
+  mpz_set_str(params.q,
 	      "8266e0deaf46020ba48d410ca580f3a978629b5d", 16);
-  mpz_set_str(pub.g,
+  mpz_set_str(params.g,
 	      "30d34bb9f376bec947154afe4076bc7d359c9d32f5471ddb"
 	      "be8d6a941c47fa9dc4f32573151dbb4aa59eb989b74ac36b"
 	      "b6310a5e8b580501655d91f393daa193ae1303049b87febb"
 	      "093dc0404b53b4c5da2463300f9c5b156d788c4ace8ecbb9"
 	      "dd00c18d99537f255ac025d074d894a607cbe3023a1276ef"
 	      "556916a33f7de543", 16);
-  mpz_set_str(pub.y,
+  mpz_set_str(pub,
 	      "64402048b27f39f404a546a84909c9c0e9e2dd153a849946"
 	      "1062892598d30af27ae3cefc2b700fb6d077390a83bdcad7"
 	      "8a1299487c9623bb62af0c85a3df9ef1ee2c0d66658e1fd3"
 	      "283b5407f6cd30ee7e6154fad41a6a8b0f5c86c5accc1127"
 	      "bf7c9a5d6badcb012180cb62a55c5e17d6d3528cdbe002cc"
 	      "ee131c1b86867f7a", 16);
-  mpz_set_str(key.x,
+  mpz_set_str(key,
 	      "56c6efaf878d06eef21dc070fab71da6ec1e30a6", 16);
 
-  test_dsa_key(params, pub.y, key.x, 160);
+  test_dsa_key(&params, pub, key, 160);
 
   mpz_set_str(signature.r, "180342f8d4fb5bd0311ebf205bdee6e556014eaf", 16);
   mpz_set_str(signature.s, "392dc6566b2735531a8460966171464ef7ddfe12", 16);
 
-  test_dsa160(&pub, &key, &signature);
+  test_dsa160(&params, pub, key, &signature);
 
-  mpz_set_str(pub.p,
+  mpz_set_str(params.p,
 	      "fda45d8f1df8f2b84fb3cf9ae69f93b087d98bea282f643e"
 	      "23472c5b57605952010e4c846d711f2783e8ad4e1447698e"
 	      "2e328fdb1d411ccb0f3caef5b8fc0b9dcecfadf022ecc7de"
@@ -57,10 +58,10 @@ test_main(void)
 	      "19cbb0a35242c9e234ebe105ae26cab01ede40aa2869fad8"
 	      "6bff57a19ec87b8de294ca03269c268c10813f18169beac5"
 	      "ac97c0e748ccb244282c50c670e1bccb", 16);
-  mpz_set_str(pub.q,
+  mpz_set_str(params.q,
 	      "bd612630da4d930779a32546dc413efd299111b443c7355d"
 	      "65d991163cc3cd9d", 16);
-  mpz_set_str(pub.g,
+  mpz_set_str(params.g,
 	      "050c56e14adb03e47d3902852f5b21c96c28a2aa89619c8b"
 	      "78a98aa5083700994f99184588d2cefaf2a3ea213dd2d084"
 	      "0e682a52357d5fefaef44520622f021855744d638e792f21"
@@ -72,7 +73,7 @@ test_main(void)
 	      "5cebe5e78cbaf5ad41e815edfc71df3131bd5359c653a224"
 	      "bd3ac6a27bad7efff11b24fad0109ee26e4df76fc99e150d"
 	      "666a9294bab8a03f113d228bfad349f4", 16);
-  mpz_set_str(pub.y,
+  mpz_set_str(pub,
 	      "da7f9abb0b554afaa926c9cffa897239bfdbc58ed9981748"
 	      "edb1e38f42dea0560a407a48b509a5cb460bf31dee9057a0"
 	      "b41d468698fa82ff03c47e8f3f6564c74d6f1daa5f84ad25"
@@ -84,11 +85,11 @@ test_main(void)
 	      "dcd83d6f063f9bce562fdd5b68e18fc2159dbb2457adc7a7"
 	      "ee5bc0796eff370908f866a41b9a8873f89e1904925141f8"
 	      "e574df25bd869f43a184a804e8ce5fcc", 16);
-  mpz_set_str(key.x,
+  mpz_set_str(key,
 	      "39f84f88569da55c6bee7e18175b539ea9b7ee24fabd85a7"
 	      "1fa8c93b7181545b", 16);
 
-  test_dsa_key(params, pub.y, key.x, 256);
+  test_dsa_key(&params, pub, key, 256);
 
   mpz_set_str(signature.r,
 	      "03fe95c9dbbe1be019d7914e45c37c70"
@@ -97,28 +98,28 @@ test_main(void)
 	      "839dbee8d30e6b0cc349528f900f30ee"
 	      "6d4ce9864332d07c87b5a98bd75dbdbb", 16);
 
-  test_dsa256(&pub, &key, &signature);
+  test_dsa256(&params, pub, key, &signature);
 
   /* Some of the test vectors from
      http://csrc.nist.gov/groups/STM/cavp/documents/dss/186-3dsatestvectors.zip
   */
   /* L=1024, N=160, SHA-1 */
-  mpz_set_str(pub.p,
+  mpz_set_str(params.p,
 	      "a8f9cd201e5e35d892f85f80e4db2599a5676a3b1d4f1903"
 	      "30ed3256b26d0e80a0e49a8fffaaad2a24f472d2573241d4"
 	      "d6d6c7480c80b4c67bb4479c15ada7ea8424d2502fa01472"
 	      "e760241713dab025ae1b02e1703a1435f62ddf4ee4c1b664"
 	      "066eb22f2e3bf28bb70a2a76e4fd5ebe2d1229681b5b0643"
 	      "9ac9c7e9d8bde283", 16);
-  mpz_set_str(pub.q, "f85f0f83ac4df7ea0cdf8f469bfeeaea14156495", 16);
-  mpz_set_str(pub.g,
+  mpz_set_str(params.q, "f85f0f83ac4df7ea0cdf8f469bfeeaea14156495", 16);
+  mpz_set_str(params.g,
 	      "2b3152ff6c62f14622b8f48e59f8af46883b38e79b8c74de"
 	      "eae9df131f8b856e3ad6c8455dab87cc0da8ac973417ce4f"
 	      "7878557d6cdf40b35b4a0ca3eb310c6a95d68ce284ad4e25"
 	      "ea28591611ee08b8444bd64b25f3f7c572410ddfb39cc728"
 	      "b9c936f85f419129869929cdb909a6a3a99bbe0892163681"
 	      "71bd0ba81de4fe33", 16);
-  mpz_set_str(pub.y,
+  mpz_set_str(pub,
 	      "313fd9ebca91574e1c2eebe1517c57e0c21b0209872140c5"
 	      "328761bbb2450b33f1b18b409ce9ab7c4cd8fda3391e8e34"
 	      "868357c199e16a6b2eba06d6749def791d79e95d3a4d09b2"
@@ -128,7 +129,7 @@ test_main(void)
   mpz_set_str(signature.r, "50ed0e810e3f1c7cb6ac62332058448bd8b284c0", 16);
   mpz_set_str(signature.s, "c6aded17216b46b7e4b6f2a97c1ad7cc3da83fde", 16);
 
-  test_dsa_verify(params, pub.y, &nettle_sha1,
+  test_dsa_verify(&params, pub, &nettle_sha1,
 		  SHEX("3b46736d559bd4e0c2c1b2553a33ad3c6cf23cac998d3d0c"
 		       "0e8fa4b19bca06f2f386db2dcff9dca4f40ad8f561ffc308"
 		       "b46c5f31a7735b5fa7e0f9e6cb512e63d7eea05538d66a75"
@@ -137,7 +138,7 @@ test_main(void)
 		       "52920c33fa37f4e7"),
 		  &signature);
 
-  mpz_set_str(pub.y,
+  mpz_set_str(pub,
 	      "29bdd759aaa62d4bf16b4861c81cf42eac2e1637b9ecba51"
 	      "2bdbc13ac12a80ae8de2526b899ae5e4a231aef884197c94"
 	      "4c732693a634d7659abc6975a773f8d3cd5a361fe2492386"
@@ -147,7 +148,7 @@ test_main(void)
   mpz_set_str(signature.r, "a26c00b5750a2d27fe7435b93476b35438b4d8ab", 16);
   mpz_set_str(signature.s, "61c9bfcb2938755afa7dad1d1e07c6288617bf70", 16);
 
-  test_dsa_verify(params, pub.y, &nettle_sha1,
+  test_dsa_verify(&params, pub, &nettle_sha1,
 		  SHEX("d2bcb53b044b3e2e4b61ba2f91c0995fb83a6a97525e6644"
 		       "1a3b489d9594238bc740bdeea0f718a769c977e2de003877"
 		       "b5d7dc25b182ae533db33e78f2c3ff0645f2137abc137d4e"
@@ -157,22 +158,22 @@ test_main(void)
 		  &signature);
 
   /* L=1024, N=160, SHA-224 */
-  mpz_set_str(pub.p,
+  mpz_set_str(params.p,
 	      "8b9b32f5ba38faad5e0d506eb555540d0d7963195558ca30"
 	      "8b7466228d92a17b3b14b8e0ab77a9f3b2959a09848aa69f"
 	      "8df92cd9e9edef0adf792ce77bfceccadd9352700ca5faec"
 	      "f181fa0c326db1d6e5d352458011e51bd3248f4e3bd7c820"
 	      "d7e0a81932aca1eba390175e53eada197223674e3900263e"
 	      "90f72d94e7447bff", 16);
-  mpz_set_str(pub.q, "bc550e965647fb3a20f245ec8475624abbb26edd", 16);
-  mpz_set_str(pub.g,
+  mpz_set_str(params.q, "bc550e965647fb3a20f245ec8475624abbb26edd", 16);
+  mpz_set_str(params.g,
 	      "11333a931fba503487777376859fdc12f7c687b0948ae889"
 	      "d287f1b7a712ad220ae4f1ce379d0dbb5c9abf419621f005"
 	      "fc123c327e5055d1850634c36d397e689e111d598c1c3636"
 	      "b940c84f42f436846e8e7fcad9012ceda398720f32fffd1a"
 	      "45ab6136ce417069207ac140675b8f86dd063915ae6f62b0"
 	      "cec729fbd509ac17", 16);
-  mpz_set_str(pub.y,
+  mpz_set_str(pub,
 	      "7e339f3757450390160e02291559f30bed0b2d758c5ccc2d"
 	      "8d456232bb435ae49de7e7957e3aad9bfdcf6fd5d9b6ee3b"
 	      "521bc2229a8421dc2aa59b9952345a8fc1de49b348003a9b"
@@ -181,7 +182,7 @@ test_main(void)
 	      "7011f2285f794557", 16);
   mpz_set_str(signature.r, "afee719e7f848b54349ccc3b4fb26065833a4d8e", 16);
   mpz_set_str(signature.s, "734efe992256f31325e749bc32a24a1f957b3a1b", 16);
-  test_dsa_verify(params, pub.y, &nettle_sha224,
+  test_dsa_verify(&params, pub, &nettle_sha224,
 		  SHEX("fb2128052509488cad0745ed3e6312850dd96ddaf791f1e6"
 		       "24e22a6b9beaa65319c325c78ef59cacba0ccfa722259f24"
 		       "f92c17b77a8f6d8e97c93d880d2d8dbbbedcf6acefa06b0e"
@@ -191,22 +192,22 @@ test_main(void)
 		  &signature);
 
   /* L=1024, N=160, SHA-256 */
-  mpz_set_str(pub.p,
+  mpz_set_str(params.p,
 	      "cba13e533637c37c0e80d9fcd052c1e41a88ac325c4ebe13"
 	      "b7170088d54eef4881f3d35eae47c210385a8485d2423a64"
 	      "da3ffda63a26f92cf5a304f39260384a9b7759d8ac1adc81"
 	      "d3f8bfc5e6cb10efb4e0f75867f4e848d1a338586dd0648f"
 	      "eeb163647ffe7176174370540ee8a8f588da8cc143d939f7"
 	      "0b114a7f981b8483", 16);
-  mpz_set_str(pub.q, "95031b8aa71f29d525b773ef8b7c6701ad8a5d99", 16);
-  mpz_set_str(pub.g,
+  mpz_set_str(params.q, "95031b8aa71f29d525b773ef8b7c6701ad8a5d99", 16);
+  mpz_set_str(params.g,
 	      "45bcaa443d4cd1602d27aaf84126edc73bd773de6ece15e9"
 	      "7e7fef46f13072b7adcaf7b0053cf4706944df8c4568f26c"
 	      "997ee7753000fbe477a37766a4e970ff40008eb900b9de4b"
 	      "5f9ae06e06db6106e78711f3a67feca74dd5bddcdf675ae4"
 	      "014ee9489a42917fbee3bb9f2a24df67512c1c35c97bfbf2"
 	      "308eaacd28368c5c", 16);
-  mpz_set_str(pub.y,
+  mpz_set_str(pub,
 	      "4cd6178637d0f0de1488515c3b12e203a3c0ca652f2fe30d"
 	      "088dc7278a87affa634a727a721932d671994a958a0f8922"
 	      "3c286c3a9b10a96560542e2626b72e0cd28e5133fb57dc23"
@@ -215,7 +216,7 @@ test_main(void)
 	      "85183889205591e8", 16);
   mpz_set_str(signature.r, "76683a085d6742eadf95a61af75f881276cfd26a", 16);
   mpz_set_str(signature.s, "3b9da7f9926eaaad0bebd4845c67fcdb64d12453", 16);
-  test_dsa_verify(params, pub.y, &nettle_sha256,
+  test_dsa_verify(&params, pub, &nettle_sha256,
 		  SHEX("812172f09cbae62517804885754125fc6066e9a902f9db20"
 		       "41eeddd7e8da67e4a2e65d0029c45ecacea6002f9540eb10"
 		       "04c883a8f900fd84a98b5c449ac49c56f3a91d8bed3f08f4"
@@ -225,7 +226,7 @@ test_main(void)
 		  &signature);
 
   /* L=2048, N=224, SHA-1 */
-  mpz_set_str(pub.p,
+  mpz_set_str(params.p,
 	      "f2d39ed3062b13c916273600a0f2a029e86d7a4b9217b4f1"
 	      "815bf2b24d9710a57ab33f997294b014585b8d0198dfdccb"
 	      "cd75314da5ff85aa344b45adaeaa979b51a312a7bfa94472"
@@ -237,9 +238,9 @@ test_main(void)
 	      "d09b8a2cc5f22e66894b5422228b2c234f11f5a771c5b89c"
 	      "f465a2acecbbeeaa1725fe8f9b59422be8991052cb556ddf"
 	      "2c8ce8fa9206dbf39feadc194e00f8e5", 16);
-  mpz_set_str(pub.q,
+  mpz_set_str(params.q,
 	      "8000000000000000c118f49835e4ef733c4d15800fcf059e884d31b1", 16);
-  mpz_set_str(pub.g,
+  mpz_set_str(params.g,
 	      "e3a93c09da6f560e4d483a382a4c546f2335c36a4c35ac14"
 	      "63c08a3e6dd415df56fdc537f25fd5372be63e4f5300780b"
 	      "782f1acd01c8b4eb33414615fd0ea82573acba7ef83f5a94"
@@ -251,7 +252,7 @@ test_main(void)
 	      "e5849a460a56bcb001647885b1433c4f992971746bfe2977"
 	      "ce7259c550b551a6c35761e4a41af764e8d92132fcc0a59d"
 	      "1684eab90d863f29f41cf7578faa908c", 16);
-  mpz_set_str(pub.y,
+  mpz_set_str(pub,
 	      "289ff18c32a56bb0b8839370647683a38a5a7e291410b932"
 	      "07212adc8088d30f93e9e4abc523f3d46936e7d5c90d8874"
 	      "2b36afd37563408f15c8c1a4f7ac24bf05f01008ffee70c8"
@@ -267,7 +268,7 @@ test_main(void)
 	      "45df2f423e94bf155dd4e1d9e63f315ea606dd38527d4cf6328738c8", 16);
   mpz_set_str(signature.s,
 	      "59b3e8efa5bc0ccbf4a3cbb6515c4b9bf784cfacdcc101dc9f81d31f", 16);
-  test_dsa_verify(params, pub.y, &nettle_sha1,
+  test_dsa_verify(&params, pub, &nettle_sha1,
 		  SHEX("edc6fd9b6c6e8a59f283016f7f29ee16deeaa609b5737927"
 		       "162aef34fed985d0bcb550275637ba67831a2d4efccb3529"
 		       "6dfe730f4a0b4f4728d1d7d1bb8f4a36238a5c94311fa113"
@@ -276,7 +277,7 @@ test_main(void)
 		       "b76e58cfb24a9170"),
 		  &signature);
   /* L=2048, N=224, SHA-224 */
-  mpz_set_str(pub.p,
+  mpz_set_str(params.p,
 	      "aa815c9db1c4d3d2773c7d0d4d1da75ecfc4a39e97d5fa19"
 	      "1ffec8b1490a290ce335e5ce87ea620a8a17de0bb64714e2"
 	      "ec840bf00e6ebdb4ffb4e324ca07c3c8717309af1410362a"
@@ -288,9 +289,9 @@ test_main(void)
 	      "332d89dc9603b7bddd0c70b83caa2905631b1c83cabbae6c"
 	      "0c0c2efe8f58131ed8351bf93e875f6a73a93cbad470141a"
 	      "2687fbacf2d71c8ddee971ad660729ad", 16);
-  mpz_set_str(pub.q,
+  mpz_set_str(params.q,
 	      "ea347e90be7c2875d1fe1db622b4763837c5e27a6037310348c1aa11", 16);
-  mpz_set_str(pub.g,
+  mpz_set_str(params.g,
 	      "2042094ccbc8b8723fc928c12fda671b83295e99c743576f"
 	      "44504be1186323319b5002d24f173df909ea241d6ea52899"
 	      "04ee4636204b2fbe94b068fe093f7962579549551d3af219"
@@ -302,7 +303,7 @@ test_main(void)
 	      "bb71e9336890f93243fa6e72d299365ee5b3fe266ebf1110"
 	      "568fee4425c847b50210bd484b97431a42856adca3e7d1a9"
 	      "c9c675c7e266918320dd5a78a48c48a9", 16);
-  mpz_set_str(pub.y,
+  mpz_set_str(pub,
 	      "1ae10c786ad0902c5c685dae5c7121418a377b888b5f2f2b"
 	      "c76623570fd62bcb190b471ad5359c5f062f8819289e956d"
 	      "8aa6f90d1f8cf1ee72d3a1bdfd56c478dc29a19c4569b5a6"
@@ -318,7 +319,7 @@ test_main(void)
 	      "65102e8f64ecb11f06017b1a0c0def3c29897c277c4a948b1f4da6b9", 16);
   mpz_set_str(signature.s,
 	      "21ad0abb27bd3c21166cb96aef70c0dbd5f3079cab0dd543d4125bd1", 16);
-  test_dsa_verify(params, pub.y, &nettle_sha224,
+  test_dsa_verify(&params, pub, &nettle_sha224,
 		  SHEX("e920fc1610718f2b0213d301c0092a51f3c6b0107bbbd824"
 		       "3a9689c044e2d142f202d9d195a5faef4be5acadc9ff6f7d"
 		       "2261e58b517139bcb9489b110423c2e59eb181294ffdae8a"
@@ -328,7 +329,7 @@ test_main(void)
 		  &signature);
 
   /* mod = L=2048, N=224, SHA-256 */
-  mpz_set_str(pub.p,
+  mpz_set_str(params.p,
 	      "a4c7eaab42c4c73b757770916489f17cd50725cd0a4bc4e1"
 	      "cf67f763b8c1de2d6dab9856baafb008f365b18a42e14dc5"
 	      "1f350b88eca0209c5aa4fd71a7a96c765f5901c21e720570"
@@ -340,9 +341,9 @@ test_main(void)
 	      "c1534c49ad380f477f5f7987dc172c161dca38dcaf3fb384"
 	      "6c72c9119a5299adc748951b3dce0d00d4a9013800b20082"
 	      "03b72465bc6a84ae059a30c4522dea57", 16);
-  mpz_set_str(pub.q,
+  mpz_set_str(params.q,
 	      "ce89fe332b8e4eb3d1e8ddcea5d163a5bc13b63f16993755427aef43", 16);
-  mpz_set_str(pub.g,
+  mpz_set_str(params.g,
 	      "8c465edf5a180730291e080dfc5385397a5006450dba2efe"
 	      "0129264fbd897bb5579ca0eab19aa278220424724b4f2a6f"
 	      "6ee6328432abf661380646097233505339c5519d357d7112"
@@ -354,7 +355,7 @@ test_main(void)
 	      "07e30696d90a626816df60d6ca7afd7b482f942f83b45cc8"
 	      "2933731f87faee320900f2aa3e70b1867e1430e40be67c07"
 	      "f9290299ef067b8b24a7515b3f992c07", 16);
-  mpz_set_str(pub.y,
+  mpz_set_str(pub,
 	      "748a40237211a2d9852596e7a891f43d4eb0ee48826c9cfb"
 	      "336bbb68dbe5a5e16b2e1271d4d13de03644bb85ef6be523"
 	      "a4d4d88415bcd596ba8e0a3c4f6439e981ed013d7d9c7033"
@@ -370,7 +371,7 @@ test_main(void)
 	      "9c5fa46879ddaf5c14f07dfb5320715f67a6fec179e3ad53342fb6d1", 16);
   mpz_set_str(signature.s,
 	      "c3e17e7b3c4d0ac8d49f4dd0f04c16a094f42da0afcc6c90f5f1bbc8", 16);
-  test_dsa_verify(params, pub.y, &nettle_sha256,
+  test_dsa_verify(&params, pub, &nettle_sha256,
 		  SHEX("cec8d2843dee7cb5f9119b75562585e05c5ce2f4e6457e9b"
 		       "cc3c1c781ccd2c0442b6282aea610f7161dcede176e77486"
 		       "1f7d2691be6c894ac3ebf80c0fab21e52a3e63ae0b350257"
@@ -380,7 +381,7 @@ test_main(void)
 		  &signature);
   
   /* L=2048, N=256, SHA-1 */
-  mpz_set_str(pub.p,
+  mpz_set_str(params.p,
 	      "c1a59d215573949e0b20a974c2edf2e3137ff2463062f75f"
 	      "1d13df12aba1076bb2d013402b60af6c187fb0fa362167c9"
 	      "76c2617c726f9077f09e18c11b60f65008825bd6c02a1f57"
@@ -392,10 +393,10 @@ test_main(void)
 	      "6ce25847e93cbfa9ad39cc57035d0c7b64b926a9c7f5a7b2"
 	      "bc5abcbfbdc0b0e3fede3c1e02c44afc8aefc7957da07a0e"
 	      "5fd12339db8667616f62286df80d58ab", 16);
-  mpz_set_str(pub.q,
+  mpz_set_str(params.q,
 	      "8000000000000000000000001bd62c65e8b87c89797f8f0c"
 	      "bfa55e4a6810e2c7", 16);
-  mpz_set_str(pub.g,
+  mpz_set_str(params.g,
 	      "aea5878740f1424d3c6ea9c6b4799615d2749298a17e2620"
 	      "7f76cef340ddd390e1b1ad6b6c0010ad015a103342ddd452"
 	      "cac024b36e42d9b8ed52fafae7a1d3ce9e4b21f910d1356e"
@@ -407,7 +408,7 @@ test_main(void)
 	      "8d4cbb92adbbe7d4c47cc30be7f8c37ca81883a1aac68600"
 	      "59ff4640a29ccae73de20b12e63b00a88b2ee9ba94b75eb4"
 	      "0a656e15d9ec83731c85d0effcb9ef9f", 16);
-  mpz_set_str(pub.y,
+  mpz_set_str(pub,
 	      "880e17c4ae8141750609d8251c0bbd7acf6d0b460ed3688e"
 	      "9a5f990e6c4b5b00875da750e0228a04102a35f57e74b8d2"
 	      "f9b6950f0d1db8d302c5c90a5b8786a82c68ff5b17a57a75"
@@ -425,7 +426,7 @@ test_main(void)
   mpz_set_str(signature.s,
 	      "4916d91b2927294e429d537c06dd2463d1845018cca2873e"
 	      "90a6c837b445fdde", 16);
-  test_dsa_verify(params, pub.y, &nettle_sha1,
+  test_dsa_verify(&params, pub, &nettle_sha1,
 		  SHEX("de3605dbefde353cbe05e0d6098647b6d041460dfd4c0003"
 		       "12be1afe7551fd3b93fed76a9763c34e004564b8f7dcacbd"
 		       "99e85030632c94e9b0a032046523b7aacdf934a2dbbdcfce"
@@ -435,7 +436,7 @@ test_main(void)
 		  &signature);
 
   /* L=2048, N=256, SHA-224 */
-  mpz_set_str(pub.p,
+  mpz_set_str(params.p,
 	      "d02276ebf3c22ffd666983183a47ae94c9bccbcbf95ddcb4"
 	      "91d1f7ce643549199992d37c79e7b032d26ed031b6ba4489"
 	      "f3125826fafb2726a98333ebd9abdde592d8693d9859536d"
@@ -447,10 +448,10 @@ test_main(void)
 	      "15209bb0ecc05c767cf2e7943ac9cfb02eee1e9ef5946e8c"
 	      "e88316b5e15fdcf95a132ef2e4bb0817136528cfa5dd9653"
 	      "2f9c3abe5c421620edb6bcbd52234ca9", 16);
-  mpz_set_str(pub.q,
+  mpz_set_str(params.q,
 	      "8000000012997e8285e4089708f528070c6d7af8a0bd0140"
 	      "9e7a079cdb6fc5bb", 16);
-  mpz_set_str(pub.g,
+  mpz_set_str(params.g,
 	      "778453049ef262147fed7b59b0ee6764607c51e7b5b5fc6f"
 	      "ea7a7a7b1dd6bb283f4a9ae98efd3964b1556758cb15b2a5"
 	      "3af8619e74d85898bec77d3b3f382494ae5961a13ffc745d"
@@ -462,7 +463,7 @@ test_main(void)
 	      "847b519c0da699638da40bd736b783d2710b2c2cc26ef912"
 	      "71bf4e2c1929f876e902e2057164223bc78d6a2b9f6c0c7a"
 	      "7cb85922f7d6c4287ae23861f8128848", 16);
-  mpz_set_str(pub.y,
+  mpz_set_str(pub,
 	      "7bb31e98c7a0437f978a73d5dcfbdfbb09cc2499dfaf1eb5"
 	      "256bccd6358cabb5f67d04a42823463b7e957f2b9213f1fa"
 	      "8e5a98d614484701abb8c7d67641fe6ed06fa4527b493dda"
@@ -480,7 +481,7 @@ test_main(void)
   mpz_set_str(signature.s,
 	      "4bd41c84a724cc86e4f0194ec0fbf379e654d0d7f6a1f08b"
 	      "d468139422a5c353", 16);
-  test_dsa_verify(params, pub.y, &nettle_sha224,
+  test_dsa_verify(&params, pub, &nettle_sha224,
 		  SHEX("39f2d8d503aae8cd17854456ecfad49a18900d4375412bc6"
 		       "89181ed9c2ccafea98dca689a72dc75e5367d3d3abfc2169"
 		       "700d5891cff70f69d9aca093b061b9f5057f94636bc27831"
@@ -490,7 +491,7 @@ test_main(void)
 		  &signature);
   
   /* L=2048, N=256, SHA-256 */
-  mpz_set_str(pub.p,
+  mpz_set_str(params.p,
 	      "a8adb6c0b4cf9588012e5deff1a871d383e0e2a85b5e8e03"
 	      "d814fe13a059705e663230a377bf7323a8fa117100200bfd"
 	      "5adf857393b0bbd67906c081e585410e38480ead51684dac"
@@ -502,10 +503,10 @@ test_main(void)
 	      "125dccf64e06c1af33a6190841d223da1513333a7c9d7846"
 	      "2abaab31b9f96d5f34445ceb6309f2f6d2c8dde06441e879"
 	      "80d303ef9a1ff007e8be2f0be06cc15f", 16);
-  mpz_set_str(pub.q,
+  mpz_set_str(params.q,
 	      "e71f8567447f42e75f5ef85ca20fe557ab0343d37ed09edc"
 	      "3f6e68604d6b9dfb", 16);
-  mpz_set_str(pub.g,
+  mpz_set_str(params.g,
 	      "5ba24de9607b8998e66ce6c4f812a314c6935842f7ab54cd"
 	      "82b19fa104abfb5d84579a623b2574b37d22ccae9b3e415e"
 	      "48f5c0f9bcbdff8071d63b9bb956e547af3a8df99e5d3061"
@@ -517,7 +518,7 @@ test_main(void)
 	      "8347937e5a90cec9f41ff2f26b8da9a94a225d1a913717d7"
 	      "3f10397d2183f1ba3b7b45a68f1ff1893caf69a827802f7b"
 	      "6a48d51da6fbefb64fd9a6c5b75c4561", 16);
-  mpz_set_str(pub.y,
+  mpz_set_str(pub,
 	      "5a55dceddd1134ee5f11ed85deb4d634a3643f5f36dc3a70"
 	      "689256469a0b651ad22880f14ab85719434f9c0e407e60ea"
 	      "420e2a0cd29422c4899c416359dbb1e592456f2b3cce2332"
@@ -535,7 +536,7 @@ test_main(void)
   mpz_set_str(signature.s,
 	      "2bbf68317660ec1e4b154915027b0bc00ee19cfc0bf75d01"
 	      "930504f2ce10a8b0", 16);
-  test_dsa_verify(params, pub.y, &nettle_sha256,
+  test_dsa_verify(&params, pub, &nettle_sha256,
 		  SHEX("4e3a28bcf90d1d2e75f075d9fbe55b36c5529b17bc3a9cca"
 		       "ba6935c9e20548255b3dfae0f91db030c12f2c344b3a29c4"
 		       "151c5b209f5e319fdf1c23b190f64f1fe5b330cb7c8fa952"
@@ -545,7 +546,7 @@ test_main(void)
 		  &signature);
   
   /* L=2048, N=256, SHA-384 */
-  mpz_set_str(pub.p,
+  mpz_set_str(params.p,
 	      "a6167c16fff74e29342b8586aed3cd896f7b1635a2286ff1"
 	      "6fdff41a06317ca6b05ca2ba7c060ad6db1561621ccb0c40"
 	      "b86a03619bfff32e204cbd90b79dcb5f86ebb493e3bd1988"
@@ -557,10 +558,10 @@ test_main(void)
 	      "3d705f74d0a57ea872c2bdee9714e0b63906cddfdc28b677"
 	      "7d19325000f8ed5278ec5d912d102109319cba3b6469d467"
 	      "2909b4f0dbeec0bbb634b551ba0cf213", 16);
-  mpz_set_str(pub.q,
+  mpz_set_str(params.q,
 	      "8427529044d214c07574f7b359c2e01c23fd97701b328ac8"
 	      "c1385b81c5373895", 16);
-  mpz_set_str(pub.g,
+  mpz_set_str(params.g,
 	      "6fc232415c31200cf523af3483f8e26ace808d2f1c6a8b86"
 	      "3ab042cc7f6b7144b2d39472c3cb4c7681d0732843503d8f"
 	      "858cbe476e6740324aaa295950105978c335069b919ff9a6"
@@ -572,7 +573,7 @@ test_main(void)
 	      "f80d9b807de415f7e94c5cf9d789992d3bb8336d1d808cb8"
 	      "6b56dde09d934bb527033922de14bf307376ab7d22fbcd61"
 	      "6f9eda479ab214a17850bdd0802a871c", 16);
-  mpz_set_str(pub.y,
+  mpz_set_str(pub,
 	      "5ca7151bca0e457bbc46f59f71d81ab16688dc0eb7e4d17b"
 	      "166c3326c5b12c5bdebb3613224d1a754023c50b83cb5ecc"
 	      "139096cef28933b3b12ca31038e4089383597c59cc27b902"
@@ -590,7 +591,7 @@ test_main(void)
   mpz_set_str(signature.s,
 	      "5f56869cee7bf64fec5d5d6ea15bb1fa1169003a87eccc16"
 	      "21b90a1b892226f2", 16);
-  test_dsa_verify(params, pub.y, &nettle_sha384,
+  test_dsa_verify(&params, pub, &nettle_sha384,
 		  SHEX("8c78cffdcf25d8230b835b30512684c9b252115870b603d1"
 		       "b4ba2eb5d35b33f26d96b684126ec34fff67dfe5c8c856ac"
 		       "fe3a9ff45ae11d415f30449bcdc3bf9a9fb5a7e48afeaba6"
@@ -600,7 +601,7 @@ test_main(void)
 		  &signature);
 
   /* L=3072, N=256, SHA-1 */
-  mpz_set_str(pub.p,
+  mpz_set_str(params.p,
 	      "fd5a6c56dd290f7dd84a29de17126eb4e4487b3eff0a44ab"
 	      "e5c59792d2e1200b9c3db44d528b9f7d2248032e4ba0f7bf"
 	      "c4fafc706be511db2276c0b7ecffd38da2e1c2f237a75390"
@@ -617,10 +618,10 @@ test_main(void)
 	      "61a66af9602c7e4bfc146f4820bdfc092faeac69133e4a08"
 	      "a5b202a12498a22e57bad54674ed4b510109d52b5f74e70e"
 	      "1f6f82161718cd4cf00cc9f1958acc8bddcdfbd1fbe46cd1", 16);
-  mpz_set_str(pub.q,
+  mpz_set_str(params.q,
 	      "800000000000000000000000334a26dd8f49c6811ce81bb1"
 	      "342b06e980f64b75", 16);
-  mpz_set_str(pub.g,
+  mpz_set_str(params.g,
 	      "99ab030a21a5c9818174872167641c81c1e03c9b274cfbc2"
 	      "7bc472542927766de5fa0539b3b73f3f16ac866a9aec8b44"
 	      "5ded97fbff08834ed98c77e7fc89e5dc657bef766ff7fbf8"
@@ -637,7 +638,7 @@ test_main(void)
 	      "4e459fe620a1a2fc72e2f6ca28567d4c2632bbde1b49864c"
 	      "06bb12619f132c1da8f571ef613eac739f66ab3914cb3fa1"
 	      "ab86e05e5082ebaa24ebeea4cf51beefc27df512fe3fee7d", 16);
-  mpz_set_str(pub.y,
+  mpz_set_str(pub,
 	      "e7c2ee18c3aa362c0182c6a56c2584628083c73e045beda8"
 	      "d653690c9c2f6544edf9702c57c455273905336a5f517110"
 	      "7a313cd7d0b0f50f8d3342c60219f22a9023394059d05f46"
@@ -660,7 +661,7 @@ test_main(void)
   mpz_set_str(signature.s,
 	      "73e48b77a3aa44307483c2dd895cb51db2112177c185c59c"
 	      "b1dcff32fda02a4f", 16);
-  test_dsa_verify(params, pub.y, &nettle_sha1,
+  test_dsa_verify(&params, pub, &nettle_sha1,
 		  SHEX("ca84af5c9adbc0044db00d7acfb1b493aab0388ffbad47b3"
 		       "8cd3e9e3111cfe2cda2a45f751c46862f05bdcec4b698adf"
 		       "d2e1606e484c3be4ac0c379d4fbc7c2cda43e922811d7f6c"
@@ -670,7 +671,7 @@ test_main(void)
 		  &signature);
 
   /* L=3072, N=256, SHA-256 */
-  mpz_set_str(pub.p,
+  mpz_set_str(params.p,
 	      "c7b86d7044218e367453d210e76433e4e27a983db1c560bb"
 	      "9755a8fb7d819912c56cfe002ab1ff3f72165b943c0b28ed"
 	      "46039a07de507d7a29f738603decd1270380a41f971f2592"
@@ -687,10 +688,10 @@ test_main(void)
 	      "97d87fcb5e6291bf8b4ee1275ae0eb4383cc753903c8d29f"
 	      "4adb6a547e405decdff288c5f6c7aa30dcb12f84d392493a"
 	      "70933317c0f5e6552601fae18f17e6e5bb6bf396d32d8ab9", 16);
-  mpz_set_str(pub.q,
+  mpz_set_str(params.q,
 	      "876fa09e1dc62b236ce1c3155ba48b0ccfda29f3ac5a97f7"
 	      "ffa1bd87b68d2a4b", 16);
-  mpz_set_str(pub.g,
+  mpz_set_str(params.g,
 	      "110afebb12c7f862b6de03d47fdbc3326e0d4d31b12a8ca9"
 	      "5b2dee2123bcc667d4f72c1e7209767d2721f95fbd9a4d03"
 	      "236d54174fbfaff2c4ff7deae4738b20d9f37bf0a1134c28"
@@ -707,7 +708,7 @@ test_main(void)
 	      "4461c885fb3219d5ad8748a01158f6c7c0df5a8c908ba8c3"
 	      "e536822428886c7b500bbc15b49df746b9de5a78fe3b4f69"
 	      "91d0110c3cbff458039dc36261cf46af4bc2515368f4abb7", 16);
-  mpz_set_str(pub.y,
+  mpz_set_str(pub,
 	      "456a105c713566234838bc070b8a751a0b57767cb75e9911"
 	      "4a1a46641e11da1fa9f22914d808ad7148612c1ea55d2530"
 	      "1781e9ae0c9ae36a69d87ba039ec7cd864c3ad094873e6e5"
@@ -730,7 +731,7 @@ test_main(void)
   mpz_set_str(signature.s,
 	      "49f3a74e953e77a7941af3aefeef4ed499be209976a0edb3"
 	      "fa5e7cb961b0c112", 16);
-  test_dsa_verify(params, pub.y, &nettle_sha256,
+  test_dsa_verify(&params, pub, &nettle_sha256,
 		  SHEX("cb06e02234263c22b80e832d6dc5a1bee5ea8af3bc2da752"
 		       "441c04027f176158bfe68372bd67f84d489c0d49b07d4025"
 		       "962976be60437be1a2d01d3be0992afa5abe0980e26a9da4"
@@ -740,7 +741,7 @@ test_main(void)
 		  &signature);
 
   /* L=3072, N=256, SHA-384 */
-  mpz_set_str(pub.p,
+  mpz_set_str(params.p,
 	      "a410d23ed9ad9964d3e401cb9317a25213f75712acbc5c12"
 	      "191abf3f1c0e723e2333b49eb1f95b0f9748d952f04a5ae3"
 	      "58859d384403ce364aa3f58dd9769909b45048548c55872a"
@@ -757,10 +758,10 @@ test_main(void)
 	      "ac46140965b23c5409ca49026efb2bf95bce025c4183a5f6"
 	      "59bf6aaeef56d7933bb29697d7d541348c871fa01f869678"
 	      "b2e34506f6dc0a4c132b689a0ed27dc3c8d53702aa584877", 16);
-  mpz_set_str(pub.q,
+  mpz_set_str(params.q,
 	      "abc67417725cf28fc7640d5de43825f416ebfa80e191c42e"
 	      "e886303338f56045", 16);
-  mpz_set_str(pub.g,
+  mpz_set_str(params.g,
 	      "867d5fb72f5936d1a14ed3b60499662f3124686ef108c5b3"
 	      "da6663a0e86197ec2cc4c9460193a74ff16028ac9441b0c7"
 	      "d27c2272d483ac7cd794d598416c4ff9099a61679d417d47"
@@ -777,7 +778,7 @@ test_main(void)
 	      "aba72bb23e1df6b66a183edd226c440272dd9b06bec0e57f"
 	      "1a0822d2e00212064b6dba64562085f5a75929afa5fe509e"
 	      "0b78e630aaf12f91e4980c9b0d6f7e059a2ea3e23479d930", 16);
-  mpz_set_str(pub.y,
+  mpz_set_str(pub,
 	      "1f0a5c75e7985d6e70e4fbfda51a10b925f6accb600d7c65"
 	      "10db90ec367b93bb069bd286e8f979b22ef0702f717a8755"
 	      "c18309c87dae3fe82cc3dc8f4b7aa3d5f3876f4d4b3eb68b"
@@ -800,7 +801,7 @@ test_main(void)
   mpz_set_str(signature.s,
 	      "3dae01154ecff7b19007a953f185f0663ef7f2537f0b15e0"
 	      "4fb343c961f36de2", 16);
-  test_dsa_verify(params, pub.y, &nettle_sha384,
+  test_dsa_verify(&params, pub, &nettle_sha384,
 		  SHEX("ed9a64d3109ef8a9292956b946873ca4bd887ce624b81be8"
 		       "1b82c69c67aaddf5655f70fe4768114db2834c71787f858e"
 		       "5165da1a7fa961d855ad7e5bc4b7be31b97dbe770798ef79"
@@ -810,7 +811,7 @@ test_main(void)
 		  &signature);
 
   /* L=3072, N=256, SHA-512 */
-  mpz_set_str(pub.p,
+  mpz_set_str(params.p,
 	      "c1d0a6d0b5ed615dee76ac5a60dd35ecb000a202063018b1"
 	      "ba0a06fe7a00f765db1c59a680cecfe3ad41475badb5ad50"
 	      "b6147e2596b88d34656052aca79486ea6f6ec90b23e363f3"
@@ -827,9 +828,9 @@ test_main(void)
 	      "3071c1f05ee4077b5391e9a404eaffe12d1ea62d06acd6bf"
 	      "19e91a158d2066b4cd20e4c4e52ffb1d5204cd022bc7108f"
 	      "2c799fb468866ef1cb09bce09dfd49e4740ff8140497be61", 16);
-  mpz_set_str(pub.q,
+  mpz_set_str(params.q,
 	      "bf65441c987b7737385eadec158dd01614da6f15386248e59f3cddbefc8e9dd1", 16);
-  mpz_set_str(pub.g,
+  mpz_set_str(params.g,
 	      "c02ac85375fab80ba2a784b94e4d145b3be0f92090eba17b"
 	      "d12358cf3e03f4379584f8742252f76b1ede3fc37281420e"
 	      "74a963e4c088796ff2bab8db6e9a4530fc67d51f88b905ab"
@@ -846,7 +847,7 @@ test_main(void)
 	      "4d6ffc14d16d82d5f781225bff908392a5793b803f9b70b4"
 	      "dfcb394f9ed81c18e391a09eb3f93a032d81ba670cabfd6f"
 	      "64aa5e3374cb7c2029f45200e4f0bfd820c8bd58dc5eeb34", 16);
-  mpz_set_str(pub.y,
+  mpz_set_str(pub,
 	      "6da54f2b0ddb4dcce2da1edfa16ba84953d8429ce60cd111"
 	      "a5c65edcf7ba5b8d9387ab6881c24880b2afbdb437e9ed7f"
 	      "fb8e96beca7ea80d1d90f24d546112629df5c9e9661742cc"
@@ -869,7 +870,7 @@ test_main(void)
   mpz_set_str(signature.s,
 	      "6478050977ec585980454e0a2f26a03037b921ca588a78a4"
 	      "daff7e84d49a8a6c", 16);
-  test_dsa_verify(params, pub.y, &nettle_sha512,
+  test_dsa_verify(&params, pub, &nettle_sha512,
 		  SHEX("494180eed0951371bbaf0a850ef13679df49c1f13fe3770b"
 		       "6c13285bf3ad93dc4ab018aab9139d74200808e9c55bf883"
 		       "00324cc697efeaa641d37f3acf72d8c97bff0182a35b9401"
@@ -878,7 +879,8 @@ test_main(void)
 		       "eab405cbf8c8e77f"),
 		  &signature);
   
-  dsa_public_key_clear(&pub);
-  dsa_private_key_clear(&key);
+  dsa_params_clear(&params);
+  mpz_clear(pub);
+  mpz_clear(key);
   dsa_signature_clear(&signature);
 }

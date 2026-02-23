@@ -16,7 +16,7 @@ TS_NETTLE_SOURCES = aes-test.c aes-keywrap-test.c arcfour-test.c arctwo-test.c \
 		    camellia-test.c chacha-test.c \
 		    cnd-memcpy-test.c \
 		    des-test.c des3-test.c \
-		    md2-test.c md4-test.c md5-test.c md5-compat-test.c \
+		    md2-test.c md4-test.c md5-test.c \
 		    memeql-test.c memxor-test.c gosthash94-test.c \
 		    ripemd160-test.c hkdf-test.c \
 		    salsa20-test.c \
@@ -33,9 +33,10 @@ TS_NETTLE_SOURCES = aes-test.c aes-keywrap-test.c arcfour-test.c arctwo-test.c \
 		    poly1305-test.c chacha-poly1305-test.c \
 		    hmac-test.c umac-test.c \
 		    meta-hash-test.c meta-cipher-test.c\
-		    meta-aead-test.c meta-armor-test.c meta-mac-test.c \
+		    meta-aead-test.c meta-mac-test.c \
 		    buffer-test.c yarrow-test.c xts-test.c pbkdf2-test.c \
-		    x86-ibt-test.c drbg-ctr-aes256-test.c
+		    x86-ibt-test.c drbg-ctr-aes256-test.c \
+		    slh-dsa-test.c
 
 TS_HOGWEED_SOURCES = sexp-test.c sexp-format-test.c \
 		     rsa2sexp-test.c sexp2rsa-test.c \
@@ -73,7 +74,8 @@ TS_SC_HOGWEED = sc-pkcs1-sec-decrypt-test sc-rsa-sec-decrypt-test \
 	sc-rsa-oaep-encrypt-test \
 	sc-ecdsa-sign-test sc-curve25519-dh-test sc-curve448-dh-test \
 	sc-ed25519-test sc-ed448-test
-TS_SC_NETTLE = sc-cnd-memcpy-test sc-gcm-test sc-memeql-test
+
+TS_SC_NETTLE = sc-cnd-memcpy-test sc-gcm-test sc-memeql-test sc-slh-dsa-test
 TS_SC = @IF_VALGRIND@ $(TS_SC_NETTLE) @IF_HOGWEED@ $(TS_SC_HOGWEED)
 
 TS_SH = symbols-test
@@ -92,7 +94,12 @@ EXTRA_TARGETS = $(EXTRA_SOURCES:.c=$(EXEEXT))
 SOURCES = $(TS_SOURCES) $(EXTRA_SOURCES) testutils.c dlopen-test.c
 
 DISTFILES = $(SOURCES) $(CXX_SOURCES) Makefile.in \
-	    $(TS_SH) $(TS_SC_NETTLE) $(TS_SC_HOGWEED) sc-valgrind.sh gold-bug.txt testutils.h sha3.awk
+	    $(TS_SH) $(TS_SC_NETTLE) $(TS_SC_HOGWEED) sc-valgrind.sh testutils.h sha3.awk \
+	    gold-bug.txt slh-dsa-shake-128s.ref slh-dsa-shake-128f.ref \
+	    slh-dsa-shake-128f-tc64.msg slh-dsa-shake-128f-tc64.sig \
+	    slh-dsa-shake-128s-tc215.msg slh-dsa-shake-128s-tc215.sig \
+	    slh-dsa-sha2-128s-tc162.msg slh-dsa-sha2-128s-tc162.sig \
+	    slh-dsa-sha2-128f-tc7.msg slh-dsa-sha2-128f-tc7.sig
 
 all: $(EXTRA_TARGETS)
 

@@ -1,0 +1,16 @@
+#! /bin/sh
+
+# GCC wrapper that passes -std=c89, and rejects all other -std flags
+
+for a in "$@" ; do
+	case "$a" in
+	    -std=*)
+		echo "c89 wrapper: option $a rejected" >&2
+		exit 1
+		;;
+	    *)
+		;;
+	esac
+done
+
+gcc -std=c89 "$@"

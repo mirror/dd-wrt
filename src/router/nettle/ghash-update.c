@@ -44,10 +44,6 @@
 #include "ghash-internal.h"
 #include "block-internal.h"
 
-#if GCM_TABLE_BITS < 7
-# error Unsupported table size.
-#endif
-
 /* For fat builds */
 #if HAVE_NATIVE_ghash_update
 const uint8_t *

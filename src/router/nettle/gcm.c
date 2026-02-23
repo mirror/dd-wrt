@@ -231,17 +231,16 @@ gcm_decrypt(struct gcm_ctx *ctx, const struct gcm_key *key,
 void
 gcm_digest(struct gcm_ctx *ctx, const struct gcm_key *key,
 	   const void *cipher, nettle_cipher_func *f,
-	   size_t length, uint8_t *digest)
+	   uint8_t *digest)
 {
+  /* FIXME: Reuse digest area? */
   union nettle_block16 buffer;
-
-  assert (length <= GCM_BLOCK_SIZE);
 
   gcm_hash_sizes(key, &ctx->x, ctx->auth_size, ctx->data_size);
 
   f (cipher, GCM_BLOCK_SIZE, buffer.b, ctx->iv.b);
   block16_xor (&buffer, &ctx->x);
-  memcpy (digest, buffer.b, length);
+  memcpy (digest, buffer.b, GCM_DIGEST_SIZE);
 
   return;
 }

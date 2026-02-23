@@ -37,7 +37,7 @@ test_rsa_pss_sign_tr(struct rsa_public_key *pub,
 
   hash->init(ctx);
   hash->update(ctx, length, message);
-  hash->digest(ctx, hash->digest_size, digest);
+  hash->digest(ctx, digest);
 
   mpz_init(signature);
 

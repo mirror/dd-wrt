@@ -82,7 +82,7 @@ sexp_transport_iterator_first(struct sexp_iterator *iterator,
 	    return 0;
 	    
 	  base64_decode_init(&ctx);
-	  
+	  coded_length = end - in;
 	  if (base64_decode_update(&ctx, &coded_length, input + out,
 				   end - in, (const char*) (input + in))
 	      && base64_decode_final(&ctx))

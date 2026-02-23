@@ -66,6 +66,8 @@ define(`TMP', `v21')
 
 C void nettle_sha1_compress(uint32_t *state, const uint8_t *input)
 
+    .text
+    ALIGN(16)
 PROLOGUE(nettle_sha1_compress)
     C Initialize constants
     mov            w2,#0x7999

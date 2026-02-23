@@ -44,7 +44,7 @@ static void
 decode_hex (size_t length, uint8_t *dst, const char *src)
 {
   struct base16_decode_ctx ctx;
-  size_t out_size;
+  size_t out_size = length;
   base16_decode_init (&ctx);
   ASSERT (base16_decode_update (&ctx, &out_size, dst, 2*length, src));
   ASSERT (out_size == length);
@@ -121,6 +121,30 @@ test_one (const char *line)
       ASSERT (!ed448_shake256_verify (pk, msg_size, msg, s));
     }
   free (msg);
+}
+
+/* Subset of test vectors from
+   https://github.com/C2SP/wycheproof/blob/master/testvectors_v1/ed448_test.json */
+static void
+test_wycheproof (void)
+{
+  /* tcId: 76 */
+  struct tstring *pub
+    = SHEX ("419610a534af127f583b04818cdb7f0ff300b025f2e01682bcae33fd691cee03"
+	    "9511df0cddc690ee978426e8b38e50ce5af7dcfba50f704c00");
+  struct tstring *msg = SHEX ("54657374");
+  struct tstring *sig /* Final octet should be zero, but isn't. */
+    = SHEX ("5d053ff5b71f6ec3284525d35d77933178c8e19879886d08eccc6c7d27e9e5b5"
+	    "e02537dbc4d4723506e8d171fc1733857573dd02d18f48f280"
+	    "31d67d699a188a9ca46b4eabe2107aef237ca609cb462e24c91d25d286402b6e"
+	    "f7862b78a386950246ff38d6d2f458136d12e3c97fdd982601");
+  ASSERT (pub->length == ED448_KEY_SIZE);
+  ASSERT (sig->length == ED448_SIGNATURE_SIZE);
+
+  ASSERT (!ed448_shake256_verify (pub->data, msg->length, msg->data, sig->data));
+  /* Should verify when last octet is set to zero. */
+  sig->data[ED448_SIGNATURE_SIZE - 1] = 0;
+  ASSERT (ed448_shake256_verify (pub->data, msg->length, msg->data, sig->data));
 }
 
 #ifndef HAVE_GETLINE
@@ -247,5 +271,7 @@ test_main(void)
 		"6ddf802e1aae4986935f7f981ba3f0351d6273c0a0c22c9c0e8339168e675412a3debfaf435ed651558007db4384b650fcc07e3b586a27a4f7a00ac8a6fec2cd86ae4bf1570c41e6a40c931db27b2faa15a8cedd52cff7362c4e6e23daec0fbc3a79b6806e316efcc7b68119bf46bc76a26067a53f296dafdbdc11c77f7777e972660cf4b6a9b369a6665f02e0cc9b6edfad136b4fabe723d2813db3136cfde9b6d044322fee2947952e031b73ab5c603349b307bdc27bc6cb8b8bbd7bd323219b8033a581b59eadebb09b3c4f3d2277d4f0343624acc817804728b25ab797172b4c5c21a22f9c7839d64300232eb66e53f31c723fa37fe387c7d3e50bdf9813a30e5bb12cf4cd930c40cfb4e1fc622592a49588794494d56d24ea4b40c89fc0596cc9ebb961c8cb10adde976a5d602b1c3f85b9b9a001ed3c6a4d3b1437f52096cd1956d042a597d561a596ecd3d1735a8d570ea0ec27225a2c4aaff263"
 		"06d1526c1af3ca6d9cf5a2c98f47e1c46db9a33234cfd4d81f2c98538a09ebe76998d0d8fd25997c7d255c6d66ece6fa56f11144950f027795e653008f4bd7ca2dee85d8e90f3dc315130ce2a00375a318c7c3d97be2c8ce5b6db41a6254ff264fa6155baee3b0773c0f497c573f19bb4f4240281f0b1f4f7be857a4e59d416c06b4c50fa09e1810ddc6b1467baeac5a3668d11b6ecaa901440016f389f80acc4db977025e7f5924388c7e340a732e554440e76570f8dd71b7d640b3450d1fd5f0410a18f9a3494f707c717b79b4bf75c98400b096b21653b5d217cf3565c9597456f70703497a078763829bc01bb1cbc8fa04eadc9a6e3f6699587a9e75c94e5bab0036e0b2e711392cff0047d0d6b05bd2a588bc109718954259f1d86678a579a3120f19cfb2963f177aeb70f2d4844826262e51b80271272068ef5b3856fa8535aa2a88b2d41f2a0e2fda7624c2850272ac4a2f561f8f2f7a318bfd5c"
 		"af9696149e4ac824ad3460538fdc25421beec2cc6818162d06bbed0c40a387192349db67a118bada6cd5ab0140ee273204f628aad1c135f770279a651e24d8c14d75a6059d76b96a6fd857def5e0b354b27ab937a5815d16b5fae407ff18222c6d1ed263be68c95f32d908bd895cd76207ae726487567f9a67dad79abec316f683b17f2d02bf07e0ac8b5bc6162cf94697b3c27cd1fea49b27f23ba2901871962506520c392da8b6ad0d99f7013fbc06c2c17a569500c8a7696481c1cd33e9b14e40b82e79a5f5db82571ba97bae3ad3e0479515bb0e2b0f3bfcd1fd33034efc6245eddd7ee2086ddae2600d8ca73e214e8c2b0bdb2b047c6a464a562ed77b73d2d841c4b34973551257713b753632efba348169abc90a68f42611a40126d7cb21b58695568186f7e569d2ff0f9e745d0487dd2eb997cafc5abf9dd102e62ff66cba87:");
+
+      test_wycheproof ();
     }
 }

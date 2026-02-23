@@ -1,0 +1,46 @@
+strict digraph sbox1i {
+  x0 [shape=box, label="\N"];
+  x1 [shape=box, label="\N"];
+  x2 [shape=box, label="\N"];
+  x3 [shape=box, label="\N"];
+
+  // First get shortest path to t08
+  t02 [label="\N\ny1\n1"];
+  t04 [label="\N\ny1\n2"];
+  t01 [label="\N\ny3\n3"];
+  t05 [label="\N\ny0\n4"];
+  t06 [label="\N\ny0\n5"];
+  t08 [label="\N\nx1\n6"];
+
+  y3  [label="\N\n7", shape=box];
+  t11 [label="\N\nx1\n8"];
+  t03 [label="\N\ny2\n9"];
+  t10 [label="\N\ny1\n10"];
+  t07 [label="\N\ny2\n11"];  
+  t09 [label="\N\ny2\n12"];
+  y2  [label="\N\n13", shape=box];
+  y1  [label="\N\n14", shape=box];
+  t15 [label="\N\ny0\n15"];
+  t17 [label="\N\ny0\n16"];
+  t14 [label="\N\nx0\n17"];
+  y0  [label="\N\n18", shape=box];
+  
+  x0  -> t01; x1  -> t01;  // t01 = x0  ^ x1;
+  x1  -> t02; x3  -> t02;  // t02 = x1  | x3;
+  x0  -> t03; x2  -> t03;  // t03 = x0  & x2;
+  x2  -> t04; t02 -> t04;  // t04 = x2  ^ t02;
+  x0  -> t05; t04 -> t05;  // t05 = x0  | t04;
+  t01 -> t06; t05 -> t06;  // t06 = t01 & t05;
+  x3  -> t07; t03 -> t07;  // t07 = x3  | t03;
+  x1  -> t08; t06 -> t08;  // t08 = x1  ^ t06;
+  t07 -> t09; t06 -> t09;  // t09 = t07 ^ t06;
+  t04 -> t10; t03 -> t10;  // t10 = t04 | t03;
+  x3  -> t11; t08 -> t11;  // t11 = x3  & t08;
+  t09 -> y2;               // y2  =      ~ t09;
+  t10 -> y1;  t11 -> y1;   // y1  = t10 ^ t11;
+  x0  -> t14; y2  -> t14;  // t14 = x0  | y2;
+  t06 -> t15; y1  -> t15;  // t15 = t06 ^ y1;
+  t01 -> y3;  t04 -> y3;   // y3  = t01 ^ t04;
+  x2  -> t17; t15 -> t17;  // t17 = x2  ^ t15;
+  t14 -> y0;  t17 -> y0;   // y0  = t14 ^ t17;
+}

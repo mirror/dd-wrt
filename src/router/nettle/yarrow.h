@@ -53,10 +53,6 @@ extern "C" {
 #define yarrow_key_event_init nettle_yarrow_key_event_init
 #define yarrow_key_event_estimate nettle_yarrow_key_event_estimate
 
-/* Obsolete alias for backwards compatibility. Will be deleted in some
-   later version. */
-#define yarrow256_force_reseed yarrow256_slow_reseed
-  
 enum yarrow_pool_id { YARROW_FAST = 0, YARROW_SLOW = 1 };
 
 struct yarrow_source

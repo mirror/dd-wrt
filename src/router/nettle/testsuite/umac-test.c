@@ -22,7 +22,7 @@ check_digest (const char *name, void *ctx, nettle_hash_digest_func *f,
 	      size_t tag_length, const uint8_t *ref)
 {
   uint8_t tag[16];
-  f(ctx, tag_length, tag);
+  f(ctx, tag);
   if (memcmp (tag, ref, tag_length) != 0)
     {
       printf ("%s failed\n", name);

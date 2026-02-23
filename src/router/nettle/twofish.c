@@ -59,7 +59,7 @@
 /* ------------------------------------------------------------------------- */
 
 /* The permutations q0 and q1.  These are fixed permutations on 8-bit values.
- * The permutations have been computed using the program twofish-data,
+ * The permutations have been computed using the program twofishdata,
  * which is distributed along with this file.
  */
 
@@ -366,21 +366,16 @@ twofish_encrypt(const struct twofish_ctx *context,
   const uint32_t * keys        = context->keys;
   const uint32_t (*s_box)[256] = context->s_box;
 
-  assert( !(length % TWOFISH_BLOCK_SIZE) );
-  for ( ; length; length -= TWOFISH_BLOCK_SIZE)
+  FOR_BLOCKS (length, ciphertext, plaintext, TWOFISH_BLOCK_SIZE)
     {  
-      uint32_t words[4];
       uint32_t r0, r1, r2, r3, t0, t1;
-      int i;
+      unsigned i;
 
-      for (i = 0; i<4; i++, plaintext += 4)
-	words[i] = LE_READ_UINT32(plaintext);
+      r0 = keys[0] ^ LE_READ_UINT32(plaintext);
+      r1 = keys[1] ^ LE_READ_UINT32(plaintext + 4);
+      r2 = keys[2] ^ LE_READ_UINT32(plaintext + 8);
+      r3 = keys[3] ^ LE_READ_UINT32(plaintext + 12);
 
-      r0 = words[0] ^ keys[0];
-      r1 = words[1] ^ keys[1];
-      r2 = words[2] ^ keys[2];
-      r3 = words[3] ^ keys[3];
-  
       for (i = 0; i < 8; i++) {
 	t1 = (  s_box[1][r1 & 0xFF]
 		^ s_box[2][(r1 >> 8) & 0xFF]
@@ -407,13 +402,10 @@ twofish_encrypt(const struct twofish_ctx *context,
 	r0 = ror1(r0);
       }
 
-      words[0] = r2 ^ keys[4];
-      words[1] = r3 ^ keys[5];
-      words[2] = r0 ^ keys[6];
-      words[3] = r1 ^ keys[7];
-
-      for (i = 0; i<4; i++, ciphertext += 4)
-	LE_WRITE_UINT32(ciphertext, words[i]);
+      r2 ^= keys[4]; LE_WRITE_UINT32(ciphertext, r2);
+      r3 ^= keys[5]; LE_WRITE_UINT32(ciphertext + 4, r3);
+      r0 ^= keys[6]; LE_WRITE_UINT32(ciphertext + 8, r0);
+      r1 ^= keys[7]; LE_WRITE_UINT32(ciphertext + 12, r1);
     }
 }
 
@@ -437,20 +429,15 @@ twofish_decrypt(const struct twofish_ctx *context,
   const uint32_t *keys  = context->keys;
   const uint32_t (*s_box)[256] = context->s_box;
 
-  assert( !(length % TWOFISH_BLOCK_SIZE) );
-  for ( ; length; length -= TWOFISH_BLOCK_SIZE)
+  FOR_BLOCKS (length, plaintext, ciphertext, TWOFISH_BLOCK_SIZE)
     {  
-      uint32_t words[4];
       uint32_t r0, r1, r2, r3, t0, t1;
-      int i;
+      unsigned i;
 
-      for (i = 0; i<4; i++, ciphertext += 4)
-	words[i] = LE_READ_UINT32(ciphertext);
-
-      r0 = words[2] ^ keys[6];
-      r1 = words[3] ^ keys[7];
-      r2 = words[0] ^ keys[4];
-      r3 = words[1] ^ keys[5];
+      r2 = keys[4] ^ LE_READ_UINT32(ciphertext);
+      r3 = keys[5] ^ LE_READ_UINT32(ciphertext + 4);
+      r0 = keys[6] ^ LE_READ_UINT32(ciphertext + 8);
+      r1 = keys[7] ^ LE_READ_UINT32(ciphertext + 12);
 
       for (i = 0; i < 8; i++) {
 	t1 = (  s_box[1][r3 & 0xFF]
@@ -478,12 +465,9 @@ twofish_decrypt(const struct twofish_ctx *context,
 	r2 = (t0 + keys[36-4*i]) ^ rol1(r2);
       }
 
-      words[0] = r0 ^ keys[0];
-      words[1] = r1 ^ keys[1];
-      words[2] = r2 ^ keys[2];
-      words[3] = r3 ^ keys[3];
-
-      for (i = 0; i<4; i++, plaintext += 4)
-	LE_WRITE_UINT32(plaintext, words[i]);
+      r0 ^= keys[0]; LE_WRITE_UINT32(plaintext, r0);
+      r1 ^= keys[1]; LE_WRITE_UINT32(plaintext + 4, r1);
+      r2 ^= keys[2]; LE_WRITE_UINT32(plaintext + 8, r2);
+      r3 ^= keys[3]; LE_WRITE_UINT32(plaintext + 12, r3);
     }
 }

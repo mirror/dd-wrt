@@ -135,13 +135,11 @@ eax_decrypt (struct eax_ctx *eax, const struct eax_key *key,
 void
 eax_digest (struct eax_ctx *eax, const struct eax_key *key,
 	    const void *cipher, nettle_cipher_func *f,
-	    size_t length, uint8_t *digest)
+	    uint8_t *digest)
 {
-  assert (length > 0);
-  assert (length <= EAX_BLOCK_SIZE);
   omac_final (&eax->omac_data, key, cipher, f);
   omac_final (&eax->omac_message, key, cipher, f);
 
   block16_xor (&eax->omac_nonce, &eax->omac_data);
-  memxor3 (digest, eax->omac_nonce.b, eax->omac_message.b, length);
+  memxor3 (digest, eax->omac_nonce.b, eax->omac_message.b, EAX_DIGEST_SIZE);
 }

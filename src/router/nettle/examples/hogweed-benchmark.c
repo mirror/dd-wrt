@@ -51,7 +51,7 @@
 #include "gostdsa.h"
 #include "curve25519.h"
 #include "curve448.h"
-
+#include "slh-dsa.h"
 #include "nettle-meta.h"
 #include "sexp.h"
 #include "knuth-lfib.h"
@@ -98,7 +98,7 @@ hash_string (const struct nettle_hash *hash, const char *s)
   uint8_t *digest = xalloc (hash->digest_size);
   hash->init (ctx);
   hash->update (ctx, strlen(s), (const uint8_t *) s);
-  hash->digest (ctx, hash->digest_size, digest);
+  hash->digest (ctx, digest);
   free (ctx);
 
   return digest;
@@ -159,8 +159,12 @@ bench_alg (const struct alg *alg)
 
   alg->clear (ctx);
 
-  printf("%16s %4d %9.4f %9.4f\n",
-	 alg->name, alg->size, 1e-3/sign, 1e-3/verify);
+  if (sign < 0.02)
+    printf ("%16s %4d %9.1f %9.1f\n",
+	    alg->name, alg->size, 1.0/sign, 1.0/verify);
+  else
+    printf ("%16s %4d %9.2f %9.2f\n",
+	    alg->name, alg->size, 1.0/sign, 1.0/verify);
 }
 
 struct rsa_ctx
@@ -851,6 +855,115 @@ bench_curve_clear (void *p)
   free (p);
 }
 
+struct slh_dsa_ctx
+{
+  uint8_t pub[SLH_DSA_128_KEY_SIZE];
+  uint8_t key[SLH_DSA_128_KEY_SIZE];
+  uint8_t msg[10];
+  uint8_t *sig;
+  void (*sign)(const uint8_t *pub, const uint8_t *priv,
+	       size_t length, const uint8_t *msg,
+	       uint8_t *signature);
+  int (*verify)(const uint8_t *pub,
+		size_t length, const uint8_t *msg,
+		const uint8_t *signature);
+};
+
+static void *
+bench_slh_dsa_init_shake_s (unsigned size)
+{
+  struct slh_dsa_ctx *ctx;
+  assert (size == 128);
+
+  ctx = xalloc (sizeof (*ctx));
+  memset (ctx->key, 1, SLH_DSA_128_KEY_SIZE);
+  memset (ctx->pub, 2, SLH_DSA_128_SEED_SIZE);
+  slh_dsa_shake_128s_root (ctx->pub, ctx->key, ctx->pub + SLH_DSA_128_SEED_SIZE);
+  memset (ctx->msg, 3, sizeof (ctx->msg));
+  ctx->sig = xalloc (SLH_DSA_128S_SIGNATURE_SIZE);
+  slh_dsa_shake_128s_sign (ctx->pub, ctx->key, sizeof (ctx->msg), ctx->msg, ctx->sig);
+  ctx->sign = slh_dsa_shake_128s_sign;
+  ctx->verify = slh_dsa_shake_128s_verify;
+  return ctx;
+}
+
+static void *
+bench_slh_dsa_init_shake_f (unsigned size)
+{
+  struct slh_dsa_ctx *ctx;
+  assert (size == 128);
+
+  ctx = xalloc (sizeof (*ctx));
+  memset (ctx->key, 1, SLH_DSA_128_KEY_SIZE);
+  memset (ctx->pub, 2, SLH_DSA_128_SEED_SIZE);
+  slh_dsa_shake_128f_root (ctx->pub, ctx->key, ctx->pub + SLH_DSA_128_SEED_SIZE);
+  memset (ctx->msg, 3, sizeof (ctx->msg));
+  ctx->sig = xalloc (SLH_DSA_128F_SIGNATURE_SIZE);
+  slh_dsa_shake_128f_sign (ctx->pub, ctx->key, sizeof (ctx->msg), ctx->msg, ctx->sig);
+  ctx->sign = slh_dsa_shake_128f_sign;
+  ctx->verify = slh_dsa_shake_128f_verify;
+  return ctx;
+}
+
+static void *
+bench_slh_dsa_init_sha2_s (unsigned size)
+{
+  struct slh_dsa_ctx *ctx;
+  assert (size == 128);
+
+  ctx = xalloc (sizeof (*ctx));
+  memset (ctx->key, 1, SLH_DSA_128_KEY_SIZE);
+  memset (ctx->pub, 2, SLH_DSA_128_SEED_SIZE);
+  slh_dsa_sha2_128s_root (ctx->pub, ctx->key, ctx->pub + SLH_DSA_128_SEED_SIZE);
+  memset (ctx->msg, 3, sizeof (ctx->msg));
+  ctx->sig = xalloc (SLH_DSA_128S_SIGNATURE_SIZE);
+  slh_dsa_sha2_128s_sign (ctx->pub, ctx->key, sizeof (ctx->msg), ctx->msg, ctx->sig);
+  ctx->sign = slh_dsa_sha2_128s_sign;
+  ctx->verify = slh_dsa_sha2_128s_verify;
+  return ctx;
+}
+
+static void *
+bench_slh_dsa_init_sha2_f (unsigned size)
+{
+  struct slh_dsa_ctx *ctx;
+  assert (size == 128);
+
+  ctx = xalloc (sizeof (*ctx));
+  memset (ctx->key, 1, SLH_DSA_128_KEY_SIZE);
+  memset (ctx->pub, 2, SLH_DSA_128_SEED_SIZE);
+  slh_dsa_sha2_128f_root (ctx->pub, ctx->key, ctx->pub + SLH_DSA_128_SEED_SIZE);
+  memset (ctx->msg, 3, sizeof (ctx->msg));
+  ctx->sig = xalloc (SLH_DSA_128F_SIGNATURE_SIZE);
+  slh_dsa_sha2_128f_sign (ctx->pub, ctx->key, sizeof (ctx->msg), ctx->msg, ctx->sig);
+  ctx->sign = slh_dsa_sha2_128f_sign;
+  ctx->verify = slh_dsa_sha2_128f_verify;
+  return ctx;
+}
+
+static void
+bench_slh_dsa_sign (void *p)
+{
+  struct slh_dsa_ctx *ctx = p;
+  ctx->sign (ctx->pub, ctx->key, sizeof (ctx->msg), ctx->msg, ctx->sig);
+}
+
+static void
+bench_slh_dsa_verify (void *p)
+{
+  struct slh_dsa_ctx *ctx = p;
+  if (!ctx->verify (ctx->pub, sizeof (ctx->msg), ctx->msg, ctx->sig))
+    die ("Internal error, slh_dsa_shake_128s_verify failed.\n");
+}
+
+static void
+bench_slh_dsa_clear (void *p)
+{
+  struct slh_dsa_ctx *ctx = p;
+  free (ctx->sig);
+  free (ctx);
+}
+
 struct alg alg_list[] = {
   { "rsa",   1024, bench_rsa_init,   bench_rsa_sign,   bench_rsa_verify,   bench_rsa_clear },
   { "rsa",   2048, bench_rsa_init,   bench_rsa_sign,   bench_rsa_verify,   bench_rsa_clear },
@@ -882,6 +995,10 @@ struct alg alg_list[] = {
   { "curve", 448, bench_curve_init, bench_curve_mul_g, bench_curve_mul, bench_curve_clear },
   { "gostdsa",  256, bench_gostdsa_init, bench_gostdsa_sign, bench_gostdsa_verify, bench_gostdsa_clear },
   { "gostdsa",  512, bench_gostdsa_init, bench_gostdsa_sign, bench_gostdsa_verify, bench_gostdsa_clear },
+  { "slh-dsa-shake-s", 128, bench_slh_dsa_init_shake_s, bench_slh_dsa_sign, bench_slh_dsa_verify, bench_slh_dsa_clear },
+  { "slh-dsa-shake-f", 128, bench_slh_dsa_init_shake_f, bench_slh_dsa_sign, bench_slh_dsa_verify, bench_slh_dsa_clear },
+  { "slh-dsa-sha2-s", 128, bench_slh_dsa_init_sha2_s, bench_slh_dsa_sign, bench_slh_dsa_verify, bench_slh_dsa_clear },
+  { "slh-dsa-sha2-f", 128, bench_slh_dsa_init_sha2_f, bench_slh_dsa_sign, bench_slh_dsa_verify, bench_slh_dsa_clear },
 };
 
 #define numberof(x)  (sizeof (x) / sizeof ((x)[0]))
@@ -897,7 +1014,7 @@ main (int argc, char **argv)
 
   time_init();
   printf ("%16s %4s %9s %9s\n",
-	  "name", "size", "sign/ms", "verify/ms");
+	  "name", "size", "sign/s", "verify/s");
 
   for (i = 0; i < numberof(alg_list); i++)
     if (!filter || strstr (alg_list[i].name, filter))

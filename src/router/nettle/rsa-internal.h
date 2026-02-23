@@ -40,8 +40,6 @@
 #define _rsa_verify _nettle_rsa_verify
 #define _rsa_verify_recover _nettle_rsa_verify_recover
 #define _rsa_check_size _nettle_rsa_check_size
-#define _rsa_blind _nettle_rsa_blind
-#define _rsa_unblind _nettle_rsa_unblind
 #define _rsa_sec_compute_root_itch _nettle_rsa_sec_compute_root_itch
 #define _rsa_sec_compute_root _nettle_rsa_sec_compute_root
 #define _rsa_sec_compute_root_tr _nettle_rsa_sec_compute_root_tr
@@ -61,16 +59,6 @@ _rsa_verify_recover(const struct rsa_public_key *key,
 
 size_t
 _rsa_check_size(mpz_t n);
-
-/* _rsa_blind and _rsa_unblind are deprecated, unused in the library,
-   and will likely be removed with the next ABI break. */
-void
-_rsa_blind (const struct rsa_public_key *pub,
-	    void *random_ctx, nettle_random_func *random,
-	    mpz_t c, mpz_t ri) _NETTLE_ATTRIBUTE_DEPRECATED;
-void
-_rsa_unblind (const struct rsa_public_key *pub, mpz_t c, const mpz_t ri)
-  _NETTLE_ATTRIBUTE_DEPRECATED;
 
 /* side-channel silent root computation */
 mp_size_t

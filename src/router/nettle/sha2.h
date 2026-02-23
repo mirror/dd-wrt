@@ -58,12 +58,6 @@ extern "C" {
 #define sha512_256_init   nettle_sha512_256_init
 #define sha512_256_digest nettle_sha512_256_digest
 
-/* For backwards compatibility */
-#define SHA224_DATA_SIZE SHA256_BLOCK_SIZE
-#define SHA256_DATA_SIZE SHA256_BLOCK_SIZE
-#define SHA512_DATA_SIZE SHA512_BLOCK_SIZE
-#define SHA384_DATA_SIZE SHA512_BLOCK_SIZE
-
 /* SHA256 */
 
 #define SHA256_DIGEST_SIZE 32
@@ -90,7 +84,6 @@ sha256_update(struct sha256_ctx *ctx,
 
 void
 sha256_digest(struct sha256_ctx *ctx,
-	      size_t length,
 	      uint8_t *digest);
 
 void
@@ -109,7 +102,6 @@ sha224_init(struct sha256_ctx *ctx);
 
 void
 sha224_digest(struct sha256_ctx *ctx,
-	      size_t length,
 	      uint8_t *digest);
 
 
@@ -139,7 +131,6 @@ sha512_update(struct sha512_ctx *ctx,
 
 void
 sha512_digest(struct sha512_ctx *ctx,
-	      size_t length,
 	      uint8_t *digest);
 
 void
@@ -158,7 +149,6 @@ sha384_init(struct sha512_ctx *ctx);
 
 void
 sha384_digest(struct sha512_ctx *ctx,
-	      size_t length,
 	      uint8_t *digest);
 
 
@@ -176,7 +166,6 @@ sha512_224_init(struct sha512_224_ctx *ctx);
 
 void
 sha512_224_digest(struct sha512_224_ctx *ctx,
-                  size_t length,
                   uint8_t *digest);
 
 #define SHA512_256_DIGEST_SIZE 32
@@ -190,7 +179,6 @@ sha512_256_init(struct sha512_256_ctx *ctx);
 
 void
 sha512_256_digest(struct sha512_256_ctx *ctx,
-                  size_t length,
                   uint8_t *digest);
 
 #ifdef __cplusplus

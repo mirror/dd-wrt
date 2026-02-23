@@ -41,6 +41,7 @@
 
 #include "ctr.h"
 
+#include "bswap-internal.h"
 #include "ctr-internal.h"
 #include "macros.h"
 #include "memxor.h"
@@ -60,9 +61,9 @@ ctr_fill (size_t block_size, uint8_t *ctr, size_t length, uint8_t *buffer)
   return i;
 }
 
-#if WORDS_BIGENDIAN
-# define USE_CTR_CRYPT16 1
 static nettle_fill16_func ctr_fill16;
+
+#if WORDS_BIGENDIAN
 static void
 ctr_fill16(uint8_t *ctr, size_t blocks, union nettle_block16 *buffer)
 {
@@ -81,9 +82,6 @@ ctr_fill16(uint8_t *ctr, size_t blocks, union nettle_block16 *buffer)
   WRITE_UINT64(ctr + 8, lo);
 }
 #else /* !WORDS_BIGENDIAN */
-# if HAVE_BUILTIN_BSWAP64
-#  define USE_CTR_CRYPT16 1
-static nettle_fill16_func ctr_fill16;
 static void
 ctr_fill16(uint8_t *ctr, size_t blocks, union nettle_block16 *buffer)
 {
@@ -96,16 +94,13 @@ ctr_fill16(uint8_t *ctr, size_t blocks, union nettle_block16 *buffer)
   for (i = 0; i < blocks; i++)
     {
       buffer[i].u64[0] = hi;
-      buffer[i].u64[1] = __builtin_bswap64(lo);
+      buffer[i].u64[1] = nettle_bswap64(lo);
       if (!++lo)
-	hi = __builtin_bswap64(__builtin_bswap64(hi) + 1);
+	hi = nettle_bswap64(nettle_bswap64(hi) + 1);
     }
   LE_WRITE_UINT64(ctr, hi);
   WRITE_UINT64(ctr + 8, lo);
 }
-# else /* ! HAVE_BUILTIN_BSWAP64 */
-#  define USE_CTR_CRYPT16 0
-# endif
 #endif /* !WORDS_BIGENDIAN */
 
 void
@@ -114,13 +109,11 @@ ctr_crypt(const void *ctx, nettle_cipher_func *f,
 	  size_t length, uint8_t *dst,
 	  const uint8_t *src)
 {
-#if USE_CTR_CRYPT16
   if (block_size == 16)
     {
       _nettle_ctr_crypt16(ctx, f, ctr_fill16, ctr, length, dst, src);
       return;
     }
-#endif
 
   if(src != dst)
     {

@@ -2,7 +2,7 @@
 
    HMAC-SHA224 message authentication code.
 
-   Copyright (C) 2003, 2010 Niels Möller
+   Copyright (C) 2003, 2010, 2025 Niels Möller
 
    This file is part of GNU Nettle.
 
@@ -36,17 +36,20 @@
 #endif
 
 #include "hmac.h"
+#include "hmac-internal.h"
 
 void
 hmac_sha224_set_key(struct hmac_sha224_ctx *ctx,
 		    size_t key_length, const uint8_t *key)
 {
-  HMAC_SET_KEY(ctx, &nettle_sha224, key_length, key);
+  _nettle_hmac_set_key (sizeof(ctx->outer), ctx->outer, ctx->inner, &ctx->state,
+			ctx->state.block, &nettle_sha224, key_length, key);
 }
 
 void
 hmac_sha224_digest(struct hmac_sha224_ctx *ctx,
-		   size_t length, uint8_t *digest)
+		   uint8_t *digest)
 {
-  HMAC_DIGEST(ctx, &nettle_sha224, length, digest);
+  _NETTLE_HMAC_DIGEST (ctx->outer, ctx->inner, &ctx->state, sha224_digest,
+		       SHA224_DIGEST_SIZE, digest);
 }

@@ -183,11 +183,9 @@ ripemd160_update(struct ripemd160_ctx *ctx, size_t length, const uint8_t *data)
 }
 
 void
-ripemd160_digest(struct ripemd160_ctx *ctx, size_t length, uint8_t *digest)
+ripemd160_digest(struct ripemd160_ctx *ctx, uint8_t *digest)
 {
   uint64_t bit_count;
-
-  assert(length <= RIPEMD160_DIGEST_SIZE);
 
   MD_PAD(ctx, 8, COMPRESS);
 
@@ -198,6 +196,6 @@ ripemd160_digest(struct ripemd160_ctx *ctx, size_t length, uint8_t *digest)
   LE_WRITE_UINT64(ctx->block + 56, bit_count);
   _nettle_ripemd160_compress(ctx->state, ctx->block);
 
-  _nettle_write_le32(length, digest, ctx->state);
+  _nettle_write_le32(RIPEMD160_DIGEST_SIZE, digest, ctx->state);
   ripemd160_init(ctx);
 }

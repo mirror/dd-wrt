@@ -77,8 +77,6 @@ extern "C" {
 
 #define GOSTHASH94_BLOCK_SIZE 32
 #define GOSTHASH94_DIGEST_SIZE 32
-/* For backwards compatibility */
-#define GOSTHASH94_DATA_SIZE GOSTHASH94_BLOCK_SIZE
 
 #define GOSTHASH94CP_BLOCK_SIZE GOSTHASH94_BLOCK_SIZE
 #define GOSTHASH94CP_DIGEST_SIZE GOSTHASH94_DIGEST_SIZE
@@ -97,13 +95,13 @@ void gosthash94_init(struct gosthash94_ctx *ctx);
 void gosthash94_update(struct gosthash94_ctx *ctx,
 		       size_t length, const uint8_t *msg);
 void gosthash94_digest(struct gosthash94_ctx *ctx,
-		       size_t length, uint8_t *result);
+		       uint8_t *result);
 
 #define gosthash94cp_init gosthash94_init
 void gosthash94cp_update(struct gosthash94_ctx *ctx,
 			 size_t length, const uint8_t *msg);
 void gosthash94cp_digest(struct gosthash94_ctx *ctx,
-			 size_t length, uint8_t *result);
+			 uint8_t *result);
 
 #ifdef __cplusplus
 }

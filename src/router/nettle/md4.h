@@ -47,8 +47,6 @@ extern "C" {
 
 #define MD4_DIGEST_SIZE 16
 #define MD4_BLOCK_SIZE 64
-/* For backwards compatibility */
-#define MD4_DATA_SIZE MD4_BLOCK_SIZE
 
 /* Digest is kept internally as 4 32-bit words. */
 #define _MD4_DIGEST_LENGTH 4
@@ -72,7 +70,6 @@ md4_update(struct md4_ctx *ctx,
 
 void
 md4_digest(struct md4_ctx *ctx,
-	   size_t length,
 	   uint8_t *digest);
 
 

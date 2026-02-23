@@ -85,6 +85,8 @@ C registers left for temporaries.
 	C				union nettle_block16 *x,
 	C				size_t blocks, const uint8_t *data)
 
+	.text
+	ALIGN(16)
 PROLOGUE(_nettle_ghash_update)
 	W64_ENTRY(4, 14)
 	movdqa		.Lpolynomial(%rip), P

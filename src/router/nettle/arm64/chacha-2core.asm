@@ -64,6 +64,8 @@ define(`TMP0', `v30')
 define(`TMP1', `v31')
 
 	C _chacha_2core(uint32_t *dst, const uint32_t *src, unsigned rounds)
+	.text
+	ALIGN(16)
 PROLOGUE(_nettle_chacha_2core)
 
 	eor		X1.16b, X1.16b, X1.16b
@@ -218,6 +220,8 @@ C Y3  A15 B15 A13 B13  X3  A12 B12 A14 B14 (Y3 swapped)
 	ret
 EPILOGUE(_nettle_chacha_2core)
 
+	.text
+	ALIGN(16)
 PROLOGUE(_nettle_chacha_2core32)
 	eor		Y3.16b, Y3.16b, Y3.16b	C {0,0,...,0}
 	mov		w3, #1

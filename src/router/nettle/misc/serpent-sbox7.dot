@@ -1,0 +1,60 @@
+/* Can we get down to 8 registers? Possible strategy:
+ *
+ * Do what's needed to compute y3. At this point, we need to keep
+ * inputs, t01, t04, y3, so we only have one temporary left (and we
+ * discard t02, recomputing it frpm x3 when needed later.
+ *
+ * Compute y1: Discard t04. Use one register to compute t08 and t10.
+ * Use the other to compute t05 (then but t15 in x2), and t09. We can
+ * then get to y1, and have one spare register.
+ *
+ * Put t13 in x1. Use the spare register to compute t04 (again), t11,
+ * t16 and y2. The rest should be easy, y0 can be done in parallel
+ * with y2.
+ */
+strict digraph sbox6 {
+  x0 [shape=box];
+  x1 [shape=box];
+  x2 [shape=box];
+  x3 [shape=box];
+
+  t01 [label="\N\ny0\n1"];
+  t04 [label="\N\ny2\n2"];
+  t06 [label="\N\ny3\n3"];
+  t02 [label="\N\ny1,x3\n4,18"];
+  t03 [label="\N\ny1\n5"];
+  y3  [label="\N\n6", shape=box];
+  t11 [label="\N\ny2\n7"];
+  t08 [label="\N\ny1\n8"];
+  t10 [label="\N\ny1\n9"];
+  t05 [label="\N\nt\n10"];
+  t15 [label="\N\nx2\n11"];
+  t09 [label="\N\nt\n12"];
+  y1  [label="\N\n13", shape=box];
+  t13 [label="\N\nx1\n14"];
+  t16 [label="\N\ny2\n15"];
+  y2  [label="\N\n16", shape=box];
+  t14 [label="\N\ny0\n17"];
+  t17 [label="\N\ny0\n18"];
+  y0  [label="\N\n19", shape=box];
+
+  x0  -> t01; x2  -> t01;  // t01 = x0  & x2;
+  x3  -> t02;              // t02 =     ~ x3;
+  x0  -> t03; t02 -> t03;  // t03 = x0  & t02;
+  x1  -> t04; t01 -> t04;  // t04 = x1  | t01;
+  x0  -> t05; x1  -> t05;  // t05 = x0  & x1;
+  x2  -> t06; t04 -> t06;  // t06 = x2  ^ t04;
+  t03 -> y3;  t06 -> y3;   // y3  = t03 ^ t06;
+  x2  -> t08; y3  -> t08;  // t08 = x2  | y3;
+  x3  -> t09; t05 -> t09;  // t09 = x3  | t05;
+  x0  -> t10; t08 -> t10;  // t10 = x0  ^ t08;
+  t04 -> t11; y3  -> t11;  // t11 = t04 & y3;
+  t09 -> y1;  t10 -> y1;   // y1  = t09 ^ t10;
+  x1  -> t13; y1  -> t13;  // t13 = x1  ^ y1;
+  t01 -> t14; y1  -> t14;  // t14 = t01 ^ y1;
+  x2  -> t15; t05 -> t15;  // t15 = x2  ^ t05;
+  t11 -> t16; t13 -> t16;  // t16 = t11 | t13;
+  t02 -> t17; t14 -> t17;  // t17 = t02 | t14;
+  t15 -> y0;  t17 -> y0;   // y0  = t15 ^ t17;
+  x0  -> y2;  t16 -> y2;   // y2  = x0  ^ t16;
+}

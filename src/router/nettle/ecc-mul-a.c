@@ -125,10 +125,8 @@ ecc_mul_a (const struct ecc_curve *ecc,
   mp_limb_t *scratch_out = table + (3*ecc->p.size << ECC_MUL_A_WBITS);
   int is_zero = 0;
 
-  /* Avoid the mp_bitcnt_t type for compatibility with older GMP
-     versions. */
-  unsigned blocks = (ecc->p.bit_size + ECC_MUL_A_WBITS - 1) / ECC_MUL_A_WBITS;
-  unsigned bit_index = (blocks-1) * ECC_MUL_A_WBITS;
+  mp_bitcnt_t blocks = (ecc->p.bit_size + ECC_MUL_A_WBITS - 1) / ECC_MUL_A_WBITS;
+  mp_bitcnt_t bit_index = (blocks-1) * ECC_MUL_A_WBITS;
 
   mp_size_t limb_index = bit_index / GMP_NUMB_BITS;
   unsigned shift = bit_index % GMP_NUMB_BITS;

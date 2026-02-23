@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="utf-8"?> <!-- -*-mode: xml; sgml-indent-data: t; -*- -->
+<!DOCTYPE html 
+     PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+     "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"> 
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta http-equiv="Content-Type"
+	content="text/html; charset=utf-8"/>
+  <title>Nettle - a low-level crypto library</title>
+</head>
+<body style='bgcolor="white"; text="black"; link="darkblue"; alink="red"; vlink="darkblue"'>
+<h1>Nettle - a low-level cryptographic library</h1>
+
+<blockquote>
+<p>
+  Nettle is a cryptographic library that is designed to fit easily in more
+  or less any context: In crypto toolkits for object-oriented languages
+  (C++, Python, Pike, ...), in applications like LSH or GNUPG, or even in
+  kernel space.
+</p>
+</blockquote>
+
+<h2> Documentation </h2>
+
+<p>
+  A complete manual is included if you download the Nettle source code.
+  You can also <a href="nettle.html">read the manual online</a>.
+</p>
+
+<h2> Download </h2>
+
+<p>
+  Get the latest version by <a
+    href="https://ftp.gnu.org/gnu/nettle/">https</a> or <a
+    href="ftp://ftp.gnu.org/gnu/nettle/">ftp</a>.
+
+  Recent releases are signed with the following PGP key:
+</p>
+<blockquote>
+  <pre>
+pub   2560R/28C67298 2013-01-07
+      Key fingerprint = 343C 2FF0 FBEE 5EC2 EDBE  F399 F359 9FF8 28C6 7298
+uid                  Niels Möller &lt;nisse@lysator.liu.se&gt;
+  
+  </pre>
+</blockquote>
+
+<h2> Language bindings </h2>
+
+<p> I'm aware of nettle-bindings for the following higher-level
+  languages.</p>
+<dl>
+  <dt> <a href='http://hackage.haskell.org/package/bindings-nettle'>Haskell</a> </dt>
+  <dd> Haskell bindings by Clint Adams. </dd>
+  <dt> <a href='http://search.cpan.org/~dkg/Crypt-Nettle-0.3/lib/Crypt/Nettle.pm'>Perl</a></dt>
+  <dd> Crypt::Nettle module, by Daniel Kahn Gillmor.</dd>
+  <dt> <a href="http://pike.lysator.liu.se">Pike</a></dt>
+  <dd> An object-oriented interpreted language with C-like syntax.
+    Nettle bindings are included with the official distribution.</dd>
+  <dt> <a href='https://crates.io/crates/nettle'>Rust</a> </dt>
+  <dd> Rust bindings by Kai Michaelis. </dd>
+  <dt> <a href='https://github.com/rindlow/python-nettle'>Python</a></dt>
+  <dd> Python bindings by Henrik Rindlöw. </dd>
+  <dt> TCL </dt>
+  <dd> Included in the chiark-tcl debian package by Ian Jackson (not
+    sure if/how it's distributed outside of debian). </dd>
+</dl>
+<p>
+  Mail me for corrections or additions to this list.
+</p>
+
+<h2> GIT access </h2>
+
+<p> 
+  The public git repository for Nettle is located at <a
+  href='http://git.lysator.liu.se/nettle/nettle'>git.lysator.liu.se</a>.
+  After checkout, you need to run the <tt>.bootstrap</tt> script
+  before the standard <tt>./configure &amp;&amp; make</tt>.
+</p>
+<p>
+  Earlier, Nettle was version controlled as part of the LSH
+  repository. When converted to the current repository, the history of
+  all files has been maintained as far as practical. But since the
+  directory organization used to be a bit different, building old
+  versions of Nettle from the current git repository does not work out
+  of the box. To do that, you have to check out historic versions from
+  the <a href='http://git.lysator.liu.se/lsh/lsh'>LSH repository</a>
+  instead.
+</p>
+
+<h2> Contact </h2>
+
+<p>
+  Send mail to
+  the <a href='https://lists.lysator.liu.se/mailman3/postorius/lists/nettle-bugs.lists.lysator.liu.se/'><tt>nettle-bugs</tt>
+  mailinglist</a> or directly to me
+  at <a href="mailto:nisse@lysator.liu.se"><tt>Niels Möller
+  &lt;nisse@lysator.liu.se&gt;</tt></a> if you have any questions.
+</p>
+</body>
+</html>

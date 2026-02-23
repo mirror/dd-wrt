@@ -67,12 +67,10 @@ extern "C" {
 #define UMAC_BLOCK_SIZE 1024
 #define UMAC_MIN_NONCE_SIZE 1
 #define UMAC_MAX_NONCE_SIZE AES_BLOCK_SIZE
-/* For backwards compatibility */
-#define UMAC_DATA_SIZE UMAC_BLOCK_SIZE
 
 /* Subkeys and state for UMAC with tag size 32*n bits. */
 #define _UMAC_STATE(n)					\
-  uint32_t l1_key[UMAC_BLOCK_SIZE/4 + 4*((n)-1)];	\
+  _NETTLE_ALIGN16 uint32_t l1_key[UMAC_BLOCK_SIZE/4 + 4*((n)-1)];	\
   /* Keys in 32-bit pieces, high first */		\
   uint32_t l2_key[6*(n)];				\
   uint64_t l3_key1[8*(n)];				\
@@ -169,16 +167,16 @@ umac128_update (struct umac128_ctx *ctx,
 /* The _digest functions increment the nonce */
 void
 umac32_digest (struct umac32_ctx *ctx,
-	       size_t length, uint8_t *digest);
+	       uint8_t *digest);
 void
 umac64_digest (struct umac64_ctx *ctx,
-	       size_t length, uint8_t *digest);
+	       uint8_t *digest);
 void
 umac96_digest (struct umac96_ctx *ctx,
-	       size_t length, uint8_t *digest);
+	       uint8_t *digest);
 void
 umac128_digest (struct umac128_ctx *ctx,
-		size_t length, uint8_t *digest);
+		uint8_t *digest);
 
 
 /* Internal functions */

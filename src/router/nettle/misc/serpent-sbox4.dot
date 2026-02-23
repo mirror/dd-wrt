@@ -1,0 +1,56 @@
+strict digraph sbox4 {
+  x0 [shape=box, label="\N"];
+  x1 [shape=box, label="\N"];
+  x2 [shape=box, label="\N"];
+  x3 [shape=box, label="\N"];
+
+  t02 [label="\N\ny2\n1"];
+  t01 [label="\N\ny3\n2"];
+
+  t03 [label="\N\ny2\n3"];
+  t06 [label="\N\ny3\n4"];
+
+  t04 [label="\N\ny0\n5"];
+  t05 [label="\N\nx3\n6"];
+  t15 [label="\N\nx0\n7"];
+
+  t11 [label="\N\nx1\n8"];
+
+  t10 [label="\N\nx2\n9"];
+
+  y3 [shape=box, label="\N\n10"];
+
+  t13 [label="\N\ny2\n11"];
+
+  t08 [label="\N\ny1\n12"];
+
+  y2 [shape=box, label="\N\n13"];
+
+  t12 [label="\N\ny1\n14"];
+  t16 [label="\N\ny1\n15"];
+  y1 [shape=box, label="\N\n16"];
+
+  t09 [label="\N\ny0\n17"];
+  t14 [label="\N\ny0\n18"];
+  y0 [shape=box, label="\N\n19"];
+  
+  x0  -> t01; x1  -> t01;  // t01 = x0  | x1; 
+  x1  -> t02; x2  -> t02;  // t02 = x1  | x2; 
+  x0  -> t03; t02 -> t03;  // t03 = x0  ^ t02;
+  x1  -> t04; x3  -> t04;  // t04 = x1  ^ x3; 
+  x3  -> t05; t03 -> t05;  // t05 = x3  | t03;
+  x3  -> t06; t01 -> t06;  // t06 = x3  & t01;
+  t03 -> y3;  t06 -> y3;   // y3  = t03 ^ t06;
+  y3  -> t08; t04 -> t08;  // t08 = y3  & t04;
+  t04 -> t09; t05 -> t09;  // t09 = t04 & t05;
+  x2  -> t10; t06 -> t10;  // t10 = x2  ^ t06;
+  x1  -> t11; x2  -> t11;  // t11 = x1  & x2; 
+  t04 -> t12; t08 -> t12;  // t12 = t04 ^ t08;
+  t11 -> t13; t03 -> t13;  // t13 = t11 | t03;
+  t10 -> t14; t09 -> t14;  // t14 = t10 ^ t09;
+  x0  -> t15; t05 -> t15;  // t15 = x0  & t05;
+  t11 -> t16; t12 -> t16;  // t16 = t11 | t12;
+  t13 -> y2;  t08 -> y2;   // y2  = t13 ^ t08;
+  t15 -> y1;  t16 -> y1;   // y1  = t15 ^ t16;
+  t14 -> y0;               // y0  =     ~ t14;
+}

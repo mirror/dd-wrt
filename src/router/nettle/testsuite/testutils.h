@@ -17,7 +17,6 @@
 
 #if WITH_HOGWEED
 # include "rsa.h"
-# include "dsa-compat.h"
 # include "ecc-curve.h"
 # include "ecc.h"
 # include "ecc-internal.h"
@@ -26,10 +25,6 @@
 # if NETTLE_USE_MINI_GMP
 #  include "knuth-lfib.h"
 # endif
-
-/* Undo dsa-compat name mangling */
-#undef dsa_generate_keypair
-#define dsa_generate_keypair nettle_dsa_generate_keypair
 #else /* !WITH_HOGWEED */
 /* Make sure either gmp or mini-gmp is available for tests. */
 #include "mini-gmp.h"
@@ -50,7 +45,7 @@ xalloc(size_t size);
 struct tstring {
   struct tstring *next;
   size_t length;
-  uint8_t data[1];
+  uint8_t data[];
 };
 
 struct tstring *
@@ -72,6 +67,9 @@ tstring_print_hex(const struct tstring *s);
 
 void
 print_hex(size_t length, const uint8_t *data);
+
+FILE *
+open_srcdir_file (const char *name);
 
 /* If side-channel tests are requested, attach valgrind annotations on
    given memory area. */
@@ -119,8 +117,8 @@ struct nettle_xof {
   unsigned block_size;
   nettle_hash_init_func *init;
   nettle_hash_update_func *update;
-  nettle_hash_digest_func *digest;
-  nettle_hash_digest_func *output;
+  nettle_output_func *digest;
+  nettle_output_func *output;
 };
 
 void
@@ -204,12 +202,6 @@ test_mac(const struct nettle_mac *mac,
 	 const struct tstring *msg,
 	 const struct tstring *digest);
 
-void
-test_armor(const struct nettle_armor *armor,
-           size_t data_length,
-           const uint8_t *data,
-           const char *ascii);
-
 #if WITH_HOGWEED
 
 #if NETTLE_USE_MINI_GMP
@@ -272,13 +264,13 @@ test_rsa_key(struct rsa_public_key *pub,
 	     struct rsa_private_key *key);
 
 void
-test_dsa160(const struct dsa_public_key *pub,
-	    const struct dsa_private_key *key,
+test_dsa160(const struct dsa_params *params,
+	    const mpz_t pub, const mpz_t key,
 	    const struct dsa_signature *expected);
 
 void
-test_dsa256(const struct dsa_public_key *pub,
-	    const struct dsa_private_key *key,
+test_dsa256(const struct dsa_params *params,
+	    const mpz_t pub, const mpz_t key,
 	    const struct dsa_signature *expected);
 
 #if 0

@@ -52,7 +52,7 @@
 void
 gosthash94_init (struct gosthash94_ctx *ctx)
 {
-    memset (ctx, 0, sizeof (struct gosthash94_ctx));
+  memset (ctx, 0, offsetof (struct gosthash94_ctx, block));
 }
 
 /**
@@ -341,12 +341,10 @@ gosthash94cp_update (struct gosthash94_ctx *ctx,
  */
 static void
 gosthash94_write_digest (struct gosthash94_ctx *ctx,
-			 size_t length, uint8_t *result,
+			 uint8_t *result,
 			 const uint32_t sbox[4][256])
 {
     uint32_t msg32[GOSTHASH94_BLOCK_SIZE / 4];
-
-    assert(length <= GOSTHASH94_DIGEST_SIZE);
 
     /* pad the last block with zeroes and hash it */
     if (ctx->index > 0)
@@ -364,22 +362,22 @@ gosthash94_write_digest (struct gosthash94_ctx *ctx,
     gost_block_compress (ctx, ctx->sum, sbox);
 
     /* convert hash state to result bytes */
-    _nettle_write_le32(length, result, ctx->hash);
+    _nettle_write_le32(GOSTHASH94_DIGEST_SIZE, result, ctx->hash);
     gosthash94_init (ctx);
 }
 
 void
 gosthash94_digest (struct gosthash94_ctx *ctx,
-		   size_t length, uint8_t *result)
+		   uint8_t *result)
 {
-  gosthash94_write_digest (ctx, length, result,
+  gosthash94_write_digest (ctx, result,
 			   _nettle_gost28147_param_test_3411.sbox);
 }
 
 void
 gosthash94cp_digest (struct gosthash94_ctx *ctx,
-		     size_t length, uint8_t *result)
+		     uint8_t *result)
 {
-  gosthash94_write_digest (ctx, length, result,
+  gosthash94_write_digest (ctx, result,
 			   _nettle_gost28147_param_CryptoPro_3411.sbox);
 }

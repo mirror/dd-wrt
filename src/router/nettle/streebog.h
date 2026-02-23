@@ -74,7 +74,6 @@ streebog512_update(struct streebog512_ctx *ctx,
 
 void
 streebog512_digest(struct streebog512_ctx *ctx,
-	      size_t length,
 	      uint8_t *digest);
 
 
@@ -89,7 +88,6 @@ streebog256_init(struct streebog256_ctx *ctx);
 
 void
 streebog256_digest(struct streebog256_ctx *ctx,
-		  size_t length,
 		  uint8_t *digest);
 
 #ifdef __cplusplus

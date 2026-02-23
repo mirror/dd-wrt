@@ -68,9 +68,7 @@ ecc_mul_g_eh (const struct ecc_curve *ecc, mp_limb_t *r,
       for (j = 0; j * c < bit_rows; j++)
 	{
 	  unsigned bits;
-	  /* Avoid the mp_bitcnt_t type for compatibility with older GMP
-	     versions. */
-	  unsigned bit_index;
+	  mp_bitcnt_t bit_index;
 	  
 	  /* Extract c bits from n, stride k, starting at i + kcj,
 	     ending at i + k (cj + c - 1)*/

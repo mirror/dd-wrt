@@ -52,10 +52,10 @@ ed448_shake256_sign (const uint8_t *pub,
   mp_limb_t *scratch = gmp_alloc_limbs (itch);
 #define k2 scratch
 #define scratch_out (scratch + ecc->q.size)
-  struct sha3_256_ctx ctx;
+  struct sha3_ctx ctx;
   uint8_t digest[ED448_SIGNATURE_SIZE];
 
-  sha3_256_init (&ctx);
+  sha3_init (&ctx);
   _eddsa_expand_key (ecc, eddsa, &ctx, priv, digest, k2);
 
   _eddsa_sign (ecc, eddsa, &ctx,

@@ -143,7 +143,7 @@ IF_BE(`vspltisb    LE_TEMP,0x03')
     lxvd2x         VSR(H4M),r10,HT
     lxvd2x         VSR(H4L),r11,HT
 
-    addi HT, HT,  4048  C Advance to point to the 'CTR' field in the context
+    addi HT, HT,  2000  C Advance to point to the 'CTR' field in the context
 
     lxvd2x         VSR(D),r9,HT		C load 'X' pointer
     C byte-reverse of each doubleword permuting on little-endian mode

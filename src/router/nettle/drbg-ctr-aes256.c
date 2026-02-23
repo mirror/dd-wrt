@@ -59,20 +59,18 @@ drbg_ctr_aes256_output (const struct aes256_ctx *key, union nettle_block16 *V,
     }
 }
 
-/* provided_data is either NULL or a pointer to
-   DRBG_CTR_AES256_SEED_SIZE (= 48) bytes. */
-static void
-drbg_ctr_aes256_update (struct aes256_ctx *key,
-			union nettle_block16 *V, const uint8_t *provided_data)
+void
+drbg_ctr_aes256_update (struct drbg_ctr_aes256_ctx *ctx,
+			const uint8_t *provided_data)
 {
   union nettle_block16 tmp[3];
-  drbg_ctr_aes256_output (key, V, DRBG_CTR_AES256_SEED_SIZE, tmp[0].b);
+  drbg_ctr_aes256_output (&ctx->key, &ctx->V, DRBG_CTR_AES256_SEED_SIZE, tmp[0].b);
 
   if (provided_data)
     memxor (tmp[0].b, provided_data, DRBG_CTR_AES256_SEED_SIZE);
 
-  aes256_set_encrypt_key (key, tmp[0].b);
-  block16_set (V, &tmp[2]);
+  aes256_set_encrypt_key (&ctx->key, tmp[0].b);
+  block16_set (&ctx->V, &tmp[2]);
 }
 
 void
@@ -83,7 +81,7 @@ drbg_ctr_aes256_init (struct drbg_ctr_aes256_ctx *ctx, uint8_t *seed_material)
   aes256_set_encrypt_key (&ctx->key, zero_key);
 
   block16_zero (&ctx->V);
-  drbg_ctr_aes256_update (&ctx->key, &ctx->V, seed_material);
+  drbg_ctr_aes256_update (ctx, seed_material);
 }
 
 void
@@ -91,5 +89,5 @@ drbg_ctr_aes256_random (struct drbg_ctr_aes256_ctx *ctx,
 			size_t n, uint8_t *dst)
 {
   drbg_ctr_aes256_output (&ctx->key, &ctx->V, n, dst);
-  drbg_ctr_aes256_update (&ctx->key, &ctx->V, NULL);
+  drbg_ctr_aes256_update (ctx, NULL);
 }

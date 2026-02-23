@@ -39,35 +39,37 @@
 #define SHA3_HASH_MAGIC 6
 #define SHA3_SHAKE_MAGIC 0x1f
 
-unsigned
-_nettle_sha3_update (struct sha3_state *state,
-		     unsigned block_size, uint8_t *block,
-		     unsigned pos,
+void
+_nettle_sha3_init (struct sha3_ctx *ctx);
+
+/* For all functions, the block_size is in units of uint64_t words. */
+void
+_nettle_sha3_update (struct sha3_ctx *ctx, unsigned block_size,
 		     size_t length, const uint8_t *data);
 
+void
+_nettle_sha3_pad (struct sha3_ctx *ctx, unsigned block_size, uint8_t magic);
 
 void
-_nettle_sha3_pad (struct sha3_state *state,
-		  unsigned block_size, uint8_t *block, unsigned pos, uint8_t magic);
-
-#define _sha3_pad_hash(state, block_size, block, pos) do {		\
-    _nettle_sha3_pad (state, block_size, block, pos, SHA3_HASH_MAGIC);	\
-    sha3_permute (state);						\
-  } while (0)
-
-#define _sha3_pad_shake(state, block_size, block, pos) \
-  _nettle_sha3_pad (state, block_size, block, pos, SHA3_SHAKE_MAGIC)
+_nettle_sha3_digest (struct sha3_ctx *ctx, unsigned block_size,
+		     unsigned digest_size, uint8_t *digest);
 
 void
-_nettle_sha3_shake (struct sha3_state *state,
-		    unsigned block_size, uint8_t *block,
-		    unsigned index,
+_nettle_sha3_shake (struct sha3_ctx *ctx, unsigned block_size,
 		    size_t length, uint8_t *dst);
 
-unsigned
-_nettle_sha3_shake_output (struct sha3_state *state,
-			   unsigned block_size, uint8_t *block,
-			   unsigned index,
+void
+_nettle_sha3_shake_output (struct sha3_ctx *ctx, unsigned block_size,
 			   size_t length, uint8_t *dst);
+
+#define _NETTLE_SHA3_HASH(name, NAME) {		\
+ #name,						\
+ sizeof(struct sha3_ctx),			\
+ NAME##_DIGEST_SIZE,				\
+ NAME##_BLOCK_SIZE,				\
+ (nettle_hash_init_func *) sha3_init,		\
+ (nettle_hash_update_func *) name##_update,	\
+ (nettle_hash_digest_func *) name##_digest	\
+}
 
 #endif

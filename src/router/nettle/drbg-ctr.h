@@ -42,6 +42,7 @@ extern "C"
 /* Namespace mangling */
 #define drbg_ctr_aes256_init nettle_drbg_ctr_aes256_init
 #define drbg_ctr_aes256_random nettle_drbg_ctr_aes256_random
+#define drbg_ctr_aes256_update nettle_drbg_ctr_aes256_update
 
 #define DRBG_CTR_AES256_SEED_SIZE (AES_BLOCK_SIZE + AES256_KEY_SIZE)
 
@@ -61,6 +62,13 @@ drbg_ctr_aes256_init (struct drbg_ctr_aes256_ctx *ctx,
 void
 drbg_ctr_aes256_random (struct drbg_ctr_aes256_ctx *ctx,
 			size_t n, uint8_t *dst);
+
+/* Update the internal state of CTX with PROVIDED_DATA. PROVIDED_DATA
+   is either NULL or a pointer to DRBG_CTR_AES256_SEED_SIZE (= 48)
+   bytes. */
+void
+drbg_ctr_aes256_update (struct drbg_ctr_aes256_ctx *ctx,
+			const uint8_t *provided_data);
 
 #ifdef __cplusplus
 }

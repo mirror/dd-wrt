@@ -72,7 +72,7 @@ eax_aes128_decrypt(struct eax_aes128_ctx *ctx,
 
 void
 eax_aes128_digest(struct eax_aes128_ctx *ctx,
-		  size_t length, uint8_t *digest)
+		  uint8_t *digest)
 {
-  EAX_DIGEST(ctx, aes128_encrypt, length, digest);
+  EAX_DIGEST(ctx, aes128_encrypt, digest);
 }

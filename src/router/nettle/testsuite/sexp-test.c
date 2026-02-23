@@ -73,7 +73,7 @@ test_main(void)
     static const char * const keys[2] = { "n", "e" };
     struct sexp_iterator v[2];
     
-    ASSERT(sexp_iterator_first(&i, LDATA("((1:n2:xx3:foo)0:(1:y)(1:e))")));
+    ASSERT(sexp_iterator_first(&i, LDATA("((1:n2:xx3:foo)((((((1:z))))))0:(1:y)(1:e))")));
     ASSERT(sexp_iterator_enter_list(&i)
 	   && sexp_iterator_assoc(&i, 2, keys, v));
 

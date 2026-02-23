@@ -1,0 +1,145 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html 
+     PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+     "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"> 
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <link rel="stylesheet" title="Default"
+      type="text/css" href="todo.css" media="all"/>
+    <meta http-equiv="Content-Type"
+      content="text/html; charset=utf-8"/>
+<title>TODO for coming releases</title>
+</head>
+<body>
+  <h1> Nettle release plans </h1>
+  <p> This is an attempt at defining a development target for the next
+    release of Nettle, inspired by similar pages for recent GMP
+    releases. [Last updated 2017-11-19]</p>
+  <p class='should'>
+    This really ought to be done before release
+  </p>
+  <p class='wish'>
+    Try to get this done before release
+  </p>
+  <p class='done'>
+    Done!
+  </p>
+  <p class='postponed'>
+    Leave for some later release!
+  </p>
+
+  <h1> Plans for nettle-3.4 </h1>
+
+  <h2> Bug fixes </h2>
+  <p class='done'> Fix issues with sizes of objects like the
+    nettle_hashes array and the ecc_curve structs accidentally leaking
+    into the ABI. Fix by another level of indirection, with a function
+    call to return the start address.
+  </p>
+
+  <h2> New features </h2>
+  <p class='postponed'>
+    Add larger "safe" curves, e.g., M-383, curve41417, curve448 and
+    E-521. (curve448 in progress, on its own branch).
+  </p>
+
+  <p class='postponed'>
+    Add functions for converting ECC points to and from ANSI x9.62.
+  </p>
+
+  <p class='postponed'>
+    Support for the Skein hash function.
+  </p>
+
+  <p class='postponed'>
+    Support for more GOST standard algorithms.
+  </p>
+
+  <p class='done'>
+    Support for CFB mode (patch by Dmitry Eremin-Solenikov posted on
+    the list).
+  </p>
+
+  <h2> Optimizations </h2>
+
+  <p class='postponed'>
+    Assembly optimizations for ARMv8 (64-bit).
+  </p>
+  <p class='postponed'>
+    Further optimizations of curve25519 and EdDSA, in particular,
+
+    <a href='http://www.hyperelliptic.org/EFD/g1p/auto-twisted-extended-1.html#addition-add-2008-hwcd-3'>more
+    efficient point addition</a>, using extended XYZT coordinates.
+  </p>
+  
+  <h2> Miscellaneous </h2>
+  <p class='postponed'>
+    Use more functions from GMP-6 and later, when available:
+    mpn_sec_add_1, mpn_sec_tabselect, mpn_sec_invert, mpn_cnd_swap,
+    ...
+  </p>
+
+  <p class='done'> Change base16 and base64 interfaces to use char
+    for encoded data, and fix remaining pointer-signedness warnings.
+  </p>
+  
+  <h2> Documentation </h2>
+
+  
+  <h2> Build system </h2>
+  <p class='postponed'>
+    Delete AX_CREATE_STDINT_H, use stdint.h unconditionally.
+  </p>
+  
+  <h2> Testing </h2>
+  <p> Since xenofarm isn't up and running, do some manual testing:
+  </p>
+  <ul>
+    <li class='done'> x86_64-linux-gnu</li>
+    <li class='done'> x86-linux-gnu</li>
+    <li class='done'> x86_64-freebsd</li>
+    <li class='done'> x86-w*ndows (using cross compiler and wine)</li>
+    <li class='done'> x86_64-w*ndows (using cross compiler and wine)</li>
+    <li class='done'> x86_64-w*ndows, native</li>
+    <li class='should'> x86-darwin (needs help from Nettle users)</li>
+    <li class='should'> x86_64-darwin (needs help from Nettle users)</li>
+    <li class='wish'> armv5-linux-gnu (qemu)</li>
+    <li class='done'> armv7el-linux-gnu (qemu)</li>
+    <li class='done'> armv7hf-linux-gnu (qemu)</li>
+    <li class='done'> armv8-linux-gnu (qemu)</li>
+    <li class='done'> ppc32-linux-gnu (qemu)</li>
+    <li class='done'> ppc64el-linux-gnu (qemu)</li>
+    <li class='done'> ppc64eb-linux-gnu (qemu)</li>
+    <li class='done'> mips32-linux-gnu</li>
+    <li class='done'> mips64eb-linux-gnu (qemu)</li>
+    <li class='done'> mips64el-linux-gnu (qemu)</li>
+    <li class='done'> s390x-linux-gnu (qemu)</li>
+    <li class='done'> m68k-linux-gnu (aranym)</li>
+    <li class='done'> alpha-linux-gnu (qemu)</li>
+    <li class='done'> hppa-linux-gnu (qemu)</li>
+    <li class='done'> sparc32-linux-gnu</li>
+    <li class='done'> sparc64-linux-gnu</li>
+    <li class='wish'> armv7-android </li>
+  </ul>
+
+  <h1> Changes under consideration for later releases </h1>
+
+  <p> These are some larger changes under consideration. </p>
+
+  <h2> Interface changes </h2>
+  <p class='should'>
+    For Merkle-Damgaard hash functions, separate the state and the
+    buffering. E.g., when using them for HMAC keyed "inner" and
+    "outer" states, we now get three buffers but we only need one.
+  </p>
+  <p class='should'>
+    Reorganize private key operations. Need to support RSA with and
+    without blinding, and DSA according to spec and some deterministic
+    variant (like putty
+    or <a href='http://tools.ietf.org/html/rfc6979'>RFC6979</a>), and
+    possibly also smartcard versions where the private key is not
+    available to the library. And without an explosion of the number
+    of functions.
+  </p>
+</body>
+</html>

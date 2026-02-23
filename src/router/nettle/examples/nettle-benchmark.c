@@ -475,7 +475,6 @@ struct bench_hmac_info
   nettle_hash_update_func *update;
   nettle_hash_digest_func *digest;
   size_t length;
-  size_t digest_length;
   const uint8_t *data;
 };
 
@@ -493,7 +492,7 @@ bench_hmac(void *arg)
 			length :
 			BENCH_BLOCK - pos;
       info->update(info->ctx, single, info->data + pos);
-      info->digest(info->ctx, info->digest_length, digest);
+      info->digest(info->ctx, digest);
     }
 }
 
@@ -525,7 +524,6 @@ time_hmac_md5(void)
   info.ctx = &md5_ctx;
   info.update = (nettle_hash_update_func *) hmac_md5_update;
   info.digest = (nettle_hash_digest_func *) hmac_md5_digest;
-  info.digest_length = MD5_DIGEST_SIZE;
 
   for (pos = 0; hmac_tests[pos].length != 0; pos++)
     {
@@ -550,7 +548,6 @@ time_hmac_sha1(void)
   info.ctx = &sha1_ctx;
   info.update = (nettle_hash_update_func *) hmac_sha1_update;
   info.digest = (nettle_hash_digest_func *) hmac_sha1_digest;
-  info.digest_length = SHA1_DIGEST_SIZE;
 
   for (pos = 0; hmac_tests[pos].length != 0; pos++)
     {
@@ -575,7 +572,6 @@ time_hmac_sha256(void)
   info.ctx = &sha256_ctx;
   info.update = (nettle_hash_update_func *) hmac_sha256_update;
   info.digest = (nettle_hash_digest_func *) hmac_sha256_digest;
-  info.digest_length = SHA256_DIGEST_SIZE;
 
   for (pos = 0; hmac_tests[pos].length != 0; pos++)
     {
@@ -600,7 +596,6 @@ time_hmac_sha512(void)
   info.ctx = &sha512_ctx;
   info.update = (nettle_hash_update_func *) hmac_sha512_update;
   info.digest = (nettle_hash_digest_func *) hmac_sha512_digest;
-  info.digest_length = SHA512_DIGEST_SIZE;
 
   for (pos = 0; hmac_tests[pos].length != 0; pos++)
     {

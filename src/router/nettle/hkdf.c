@@ -38,7 +38,11 @@
 # include "config.h"
 #endif
 
+#include <string.h>
+
 #include "hkdf.h"
+
+#include "nettle-internal.h"
 
 /* hkdf_extract: Outputs a PRK of digest_size
  */
@@ -46,12 +50,11 @@ void
 hkdf_extract(void *mac_ctx,
 	     nettle_hash_update_func *update,
 	     nettle_hash_digest_func *digest,
-	     size_t digest_size,
 	     size_t secret_size, const uint8_t *secret,
 	     uint8_t *dst)
 {
   update(mac_ctx, secret_size, secret);
-  digest(mac_ctx, digest_size, dst);
+  digest(mac_ctx, dst);
 }
 
 /* hkdf_expand: Outputs an arbitrary key of size specified by length
@@ -64,6 +67,7 @@ hkdf_expand(void *mac_ctx,
 	    size_t info_size, const uint8_t *info,
 	    size_t length, uint8_t *dst)
 {
+  TMP_DECL(buf, uint8_t, NETTLE_MAX_HASH_DIGEST_SIZE);
   uint8_t i = 1;
 
   if (!length)
@@ -73,12 +77,15 @@ hkdf_expand(void *mac_ctx,
     {
       update(mac_ctx, info_size, info);
       update(mac_ctx, 1, &i);
-      if (length <= digest_size)
+      if (length < digest_size)
 	break;
 
-      digest(mac_ctx, digest_size, dst);
+      digest(mac_ctx, dst);
+      if (length == digest_size)
+	return;
       update(mac_ctx, digest_size, dst);
     }
-
-  digest(mac_ctx, length, dst);
+  TMP_ALLOC (buf, digest_size);
+  digest(mac_ctx, buf);
+  memcpy (dst, buf, length);
 }

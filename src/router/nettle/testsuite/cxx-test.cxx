@@ -13,7 +13,7 @@ test_main(void)
 
   md5_init (&md5);
   md5_update (&md5, 14, reinterpret_cast<const uint8_t *> ("message digest"));
-  md5_digest (&md5, MD5_DIGEST_SIZE, digest);
+  md5_digest (&md5, digest);
 
   ASSERT (MEMEQ (MD5_DIGEST_SIZE, digest,
 		 H("F96B697D7CB7938D 525A2F31AAF161D0")));

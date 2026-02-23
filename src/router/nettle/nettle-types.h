@@ -34,6 +34,7 @@
 
 /* For size_t */
 #include <stddef.h>
+#include <stdalign.h>
 #include <stdint.h>
 
 /* Attributes we want to use in installed header files, and hence
@@ -57,12 +58,16 @@
 extern "C" {
 #endif
 
+/* On 64-bit platforms where uint64_t requires 8 byte alignment, use
+   twice the alignment. To work for both C and C++, needs to be placed
+   before the type, see example for nettle_block16 below. */
+#define _NETTLE_ALIGN16 alignas(alignof(uint64_t) == 8 ? 16 : 0)
+
 /* An aligned 16-byte block. */
 union nettle_block16
 {
   uint8_t b[16];
-  unsigned long w[16 / sizeof(unsigned long)] _NETTLE_ATTRIBUTE_DEPRECATED;
-  uint64_t u64[2];
+  _NETTLE_ALIGN16 uint64_t u64[2];
 };
 
 union nettle_block8
@@ -71,9 +76,13 @@ union nettle_block8
   uint64_t u64;
 };
 
-/* Randomness. Used by key generation and dsa signature creation. */
-typedef void nettle_random_func(void *ctx,
+
+/* Used for generating randomness, as well as for extendable output
+   functions like shake. */
+typedef void nettle_output_func(void *ctx,
 				size_t length, uint8_t *dst);
+/* Old name used for key generation and (ec)dsa signature creation. */
+typedef nettle_output_func nettle_random_func;
 
 /* Progress report function, mainly for key generation. */
 typedef void nettle_progress_func(void *ctx, int c);
@@ -101,28 +110,7 @@ typedef void nettle_hash_init_func(void *ctx);
 typedef void nettle_hash_update_func(void *ctx,
 				     size_t length,
 				     const uint8_t *src);
-typedef void nettle_hash_digest_func(void *ctx,
-				     size_t length, uint8_t *dst);
-
-/* ASCII armor codecs. NOTE: Experimental and subject to change. */
-
-typedef size_t nettle_armor_length_func(size_t length);
-typedef void nettle_armor_init_func(void *ctx);
-
-typedef size_t nettle_armor_encode_update_func(void *ctx,
-					       char *dst,
-					       size_t src_length,
-					       const uint8_t *src);
-
-typedef size_t nettle_armor_encode_final_func(void *ctx, char *dst);
-
-typedef int nettle_armor_decode_update_func(void *ctx,
-					    size_t *dst_length,
-					    uint8_t *dst,
-					    size_t src_length,
-					    const char *src);
-
-typedef int nettle_armor_decode_final_func(void *ctx);
+typedef void nettle_hash_digest_func(void *ctx, uint8_t *dst);
 
 #ifdef __cplusplus
 }

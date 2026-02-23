@@ -1,0 +1,57 @@
+strict digraph sbox6i {
+  x0 [shape=box];
+  x1 [shape=box];
+  x2 [shape=box];
+  x3 [shape=box];
+
+  y0 [shape=box];
+  y1 [shape=box];
+  y2 [shape=box];
+  y3 [shape=box];
+
+  // Get to y1
+  t01 [label="\N\ny2\n1"];
+  t02 [label="\N\nx2\n2"];
+  t06 [label="\N\ny0\n3"];
+  t08 [label="\N\ny1\n4"];
+  y1  [label="\N\n5"];
+  // Get to t05
+  t03 [label="\N\ny3\n6"];
+  t05 [label="\N\ny3\n7"];
+  // Get to t07
+  t16 [label="\N\nx3\n8"];
+  t04 [label="\N\nx2\n9"];
+  t07 [label="\N\nx2\n10"];  
+  // Get to y0
+  t09 [label="\N\ny0\n11"];
+  y0  [label="\N\n12"];
+  // Get to y3
+  t13 [label="\N\ny3\n13"];
+  t15 [label="\N\ny3\n14"];
+  t17 [label="\N\nx0\n15"];
+  y3  [label="\N\n16"];
+  // Get to y2
+  t12 [label="\N\nx1\n17"];
+  t14 [label="\N\ny2\n18"];
+  y2  [label="\N\n19"];
+    
+  x0  -> t01; x2 -> t01;  // t01 = x0  ^ x2;
+  x2  -> t02;             // t02 =     ~ x2;
+  x1  -> t03; t01-> t03;  // t03 = x1  & t01;
+  x1  -> t04; t02-> t04;  // t04 = x1  | t02;
+  x3  -> t05; t03-> t05;  // t05 = x3  | t03;
+  x1  -> t06; x3 -> t06;  // t06 = x1  ^ x3;
+  x0  -> t07; t04-> t07;  // t07 = x0  & t04;
+  x0  -> t08; t02-> t08;  // t08 = x0  | t02;
+  t07 -> t09; t05-> t09;  // t09 = t07 ^ t05;
+  t06 -> y1;  t08-> y1;   // y1  = t06 ^ t08;
+  t09 -> y0;              // y0  =     ~ t09;
+  x1  -> t12; y0 -> t12;  // t12 = x1  & y0;
+  t01 -> t13; t05-> t13;  // t13 = t01 & t05;
+  t01 -> t14; t12-> t14;  // t14 = t01 ^ t12;
+  t07 -> t15; t13-> t15;  // t15 = t07 ^ t13;
+  x3  -> t16; t02-> t16;  // t16 = x3  | t02;
+  x0  -> t17; y1 -> t17;  // t17 = x0  ^ y1;
+  t17 -> y3;  t15-> y3;   // y3  = t17 ^ t15;
+  t16 -> y2;  t14-> y2;   // y2  = t16 ^ t14;
+}

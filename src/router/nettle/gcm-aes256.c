@@ -86,7 +86,7 @@ gcm_aes256_decrypt(struct gcm_aes256_ctx *ctx,
 
 void
 gcm_aes256_digest(struct gcm_aes256_ctx *ctx,
-		  size_t length, uint8_t *digest)
+		  uint8_t *digest)
 {
-  GCM_DIGEST(ctx, aes256_encrypt, length, digest);
+  GCM_DIGEST(ctx, aes256_encrypt, digest);
 }

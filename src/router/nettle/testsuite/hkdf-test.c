@@ -17,7 +17,6 @@ test_hkdf_sha256(const struct tstring *ikm,
   hkdf_extract(&ctx,
 	       (nettle_hash_update_func*) hmac_sha256_update,
 	       (nettle_hash_digest_func*) hmac_sha256_digest,
-	       SHA256_DIGEST_SIZE,
 	       ikm->length, ikm->data, prk);
 
   if (MEMEQ(SHA256_DIGEST_SIZE, prk, extract_output->data) == 0)
@@ -63,7 +62,6 @@ test_hkdf_sha1(const struct tstring *ikm,
   hkdf_extract(&ctx,
 	       (nettle_hash_update_func*) hmac_sha1_update,
 	       (nettle_hash_digest_func*) hmac_sha1_digest,
-	       SHA1_DIGEST_SIZE,
 	       ikm->length, ikm->data,
 	       prk);
 

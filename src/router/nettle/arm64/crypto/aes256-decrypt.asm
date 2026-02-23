@@ -66,6 +66,8 @@ C aes256_decrypt(const struct aes256_ctx *ctx,
 C                size_t length, uint8_t *dst,
 C                const uint8_t *src)
 
+    .text
+    ALIGN(16)
 PROLOGUE(nettle_aes256_decrypt)
     ld1            {K0.4s,K1.4s,K2.4s,K3.4s},[KEYS],#64
     ld1            {K4.4s,K5.4s,K6.4s,K7.4s},[KEYS],#64

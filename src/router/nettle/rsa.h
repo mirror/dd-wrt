@@ -104,7 +104,6 @@ extern "C" {
 #define rsa_public_key_from_der_iterator nettle_rsa_public_key_from_der_iterator
 #define rsa_private_key_from_der_iterator nettle_rsa_private_key_from_der_iterator
 #define rsa_keypair_from_der nettle_rsa_keypair_from_der
-#define rsa_keypair_to_openpgp nettle_rsa_keypair_to_openpgp
 
 /* This limit is somewhat arbitrary. Technically, the smallest modulo
    which makes sense at all is 15 = 3*5, phi(15) = 8, size 4 bits. But
@@ -572,15 +571,6 @@ rsa_keypair_from_der(struct rsa_public_key *pub,
 		     struct rsa_private_key *priv,
 		     unsigned limit, 
 		     size_t length, const uint8_t *data);
-
-/* OpenPGP format. Experimental interface, subject to change. */
-int
-rsa_keypair_to_openpgp(struct nettle_buffer *buffer,
-		       const struct rsa_public_key *pub,
-		       const struct rsa_private_key *priv,
-		       /* A single user id. NUL-terminated utf8. */
-		       const char *userid);
-
 
 #ifdef __cplusplus
 }

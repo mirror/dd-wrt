@@ -182,8 +182,8 @@ DECLARE_FAT_FUNC_VAR(gcm_aes_decrypt, gcm_aes_crypt_func, c)
 DECLARE_FAT_FUNC_VAR(gcm_aes_decrypt, gcm_aes_crypt_func, ppc64)
 
 DECLARE_FAT_FUNC(_nettle_chacha_core, chacha_core_func)
-DECLARE_FAT_FUNC_VAR(chacha_core, chacha_core_func, c);
-DECLARE_FAT_FUNC_VAR(chacha_core, chacha_core_func, altivec);
+DECLARE_FAT_FUNC_VAR(chacha_core, chacha_core_func, c)
+DECLARE_FAT_FUNC_VAR(chacha_core, chacha_core_func, altivec)
 
 DECLARE_FAT_FUNC(nettle_chacha_crypt, chacha_crypt_func)
 DECLARE_FAT_FUNC_VAR(chacha_crypt, chacha_crypt_func, 1core)

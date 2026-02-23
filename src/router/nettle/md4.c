@@ -83,14 +83,11 @@ md4_update(struct md4_ctx *ctx,
 
 void
 md4_digest(struct md4_ctx *ctx,
-	   size_t length,
 	   uint8_t *digest)
 {
   uint64_t bit_count;
   uint32_t data[MD4_DATA_LENGTH];
   unsigned i;
-
-  assert(length <= MD4_DIGEST_SIZE);
 
   MD_PAD(ctx, 8, md4_compress);
   for (i = 0; i < MD4_DATA_LENGTH - 2; i++)
@@ -103,7 +100,7 @@ md4_digest(struct md4_ctx *ctx,
   data[MD4_DATA_LENGTH-1] = bit_count >> 32;
   md4_transform(ctx->state, data);
 
-  _nettle_write_le32(length, digest, ctx->state);
+  _nettle_write_le32(MD4_DIGEST_SIZE, digest, ctx->state);
   md4_init(ctx);
 }
 

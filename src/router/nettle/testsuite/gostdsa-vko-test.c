@@ -43,7 +43,7 @@ test_vko (const struct ecc_curve *ecc,
       {
 	hash->init (hash_ctx);
 	hash->update (hash_ctx, out_len, out);
-	hash->digest (hash_ctx, hash->digest_size, out);
+	hash->digest (hash_ctx, out);
 
 	ASSERT (hash->digest_size == res->length);
 	ASSERT (MEMEQ (res->length, out, res->data));

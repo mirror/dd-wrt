@@ -3,6 +3,7 @@
    HMAC-GOSTHASH94 message authentication code.
 
    Copyright (C) 2016 Dmitry Eremin-Solenikov
+   Copyright (C) 2025 Niels Möller
 
    This file is part of GNU Nettle.
 
@@ -36,12 +37,14 @@
 #endif
 
 #include "hmac.h"
+#include "hmac-internal.h"
 
 void
 hmac_gosthash94_set_key(struct hmac_gosthash94_ctx *ctx,
-		    size_t key_length, const uint8_t *key)
+			size_t key_length, const uint8_t *key)
 {
-  HMAC_SET_KEY(ctx, &nettle_gosthash94, key_length, key);
+  _nettle_hmac_set_key (sizeof(ctx->outer), ctx->outer, ctx->inner, &ctx->state,
+			ctx->state.block, &nettle_gosthash94, key_length, key);
 }
 
 void
@@ -53,16 +56,20 @@ hmac_gosthash94_update(struct hmac_gosthash94_ctx *ctx,
 
 void
 hmac_gosthash94_digest(struct hmac_gosthash94_ctx *ctx,
-		   size_t length, uint8_t *digest)
+		       uint8_t *digest)
 {
-  HMAC_DIGEST(ctx, &nettle_gosthash94, length, digest);
+  /* Needs a call to gosthash94_update, since
+     GOSTHASH94_DIGEST_SIZE == GOSTHASH94_BLOCK_SIZE. */
+  _NETTLE_HMAC_DIGEST_U (ctx->outer, ctx->inner, &ctx->state, gosthash94_digest,
+			 gosthash94_update, digest);
 }
 
 void
 hmac_gosthash94cp_set_key(struct hmac_gosthash94cp_ctx *ctx,
 		    size_t key_length, const uint8_t *key)
 {
-  HMAC_SET_KEY(ctx, &nettle_gosthash94cp, key_length, key);
+  _nettle_hmac_set_key (sizeof(ctx->outer), ctx->outer, ctx->inner, &ctx->state,
+			ctx->state.block, &nettle_gosthash94cp, key_length, key);
 }
 
 void
@@ -71,9 +78,13 @@ hmac_gosthash94cp_update(struct hmac_gosthash94cp_ctx *ctx,
 {
   gosthash94cp_update(&ctx->state, length, data);
 }
+
 void
 hmac_gosthash94cp_digest(struct hmac_gosthash94cp_ctx *ctx,
-		   size_t length, uint8_t *digest)
+			 uint8_t *digest)
 {
-  HMAC_DIGEST(ctx, &nettle_gosthash94cp, length, digest);
+  /* Needs a call to gosthash94cp_update, since
+     GOSTHASH94CP_DIGEST_SIZE == GOSTHASH94CP_BLOCK_SIZE. */
+  _NETTLE_HMAC_DIGEST_U (ctx->outer, ctx->inner, &ctx->state, gosthash94cp_digest,
+			 gosthash94cp_update, digest);
 }

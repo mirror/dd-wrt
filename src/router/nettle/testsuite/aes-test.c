@@ -1,24 +1,26 @@
-/* This file tests deprecated functions */
-#define _NETTLE_ATTRIBUTE_DEPRECATED
-
 #include "testutils.h"
 #include "aes.h"
 #include "nettle-internal.h"
 
+typedef void invert_func (void *, void *) ;
+
 static void
-test_invert(const struct tstring *key,
+test_invert(const struct nettle_cipher *cipher,
+	    invert_func *invert,
+	    const struct tstring *key,
 	    const struct tstring *cleartext,
 	    const struct tstring *ciphertext)
 {
-  struct aes_ctx encrypt;
-  struct aes_ctx decrypt;
+  void *encrypt = xalloc(cipher->context_size);
+  void *decrypt = xalloc(cipher->context_size);
   uint8_t *data = xalloc(cleartext->length);
   size_t length;
   ASSERT (cleartext->length == ciphertext->length);
+  ASSERT (key->length == cipher->key_size);
   length = cleartext->length;
 
-  aes_set_encrypt_key (&encrypt, key->length, key->data);
-  aes_encrypt (&encrypt, length, data, cleartext->data);
+  cipher->set_encrypt_key (encrypt, key->data);
+  cipher->encrypt (encrypt, length, data, cleartext->data);
   
   if (!MEMEQ(length, data, ciphertext->data))
     {
@@ -32,8 +34,8 @@ test_invert(const struct tstring *key,
       FAIL();
     }
 
-  aes_invert_key (&decrypt, &encrypt);
-  aes_decrypt (&decrypt, length, data, data);
+  invert (decrypt, encrypt);
+  cipher->decrypt (decrypt, length, data, data);
 
   if (!MEMEQ(length, data, cleartext->data))
     {
@@ -46,110 +48,44 @@ test_invert(const struct tstring *key,
       fprintf(stderr, "\n");
       FAIL();
     }
+  free (encrypt);
+  free (decrypt);
   free (data);
-}
-
-/* Old, unified, interface */
-static nettle_set_key_func unified_aes128_set_encrypt_key;
-static nettle_set_key_func unified_aes128_set_encrypt_key;
-static nettle_set_key_func unified_aes192_set_encrypt_key;
-static nettle_set_key_func unified_aes192_set_encrypt_key;
-static nettle_set_key_func unified_aes256_set_encrypt_key;
-static nettle_set_key_func unified_aes256_set_encrypt_key;
-static void
-unified_aes128_set_encrypt_key (void *ctx, const uint8_t *key)
-{
-  aes_set_encrypt_key (ctx, AES128_KEY_SIZE, key);
-}
-static void
-unified_aes128_set_decrypt_key (void *ctx, const uint8_t *key)
-{
-  aes_set_decrypt_key (ctx, AES128_KEY_SIZE, key);
-}
-
-static void
-unified_aes192_set_encrypt_key (void *ctx, const uint8_t *key)
-{
-  aes_set_encrypt_key (ctx, AES192_KEY_SIZE, key);
-}
-static void
-unified_aes192_set_decrypt_key (void *ctx, const uint8_t *key)
-{
-  aes_set_decrypt_key (ctx, AES192_KEY_SIZE, key);
-}
-
-static void
-unified_aes256_set_encrypt_key (void *ctx, const uint8_t *key)
-{
-  aes_set_encrypt_key (ctx, AES256_KEY_SIZE, key);
-}
-static void
-unified_aes256_set_decrypt_key (void *ctx, const uint8_t *key)
-{
-  aes_set_decrypt_key (ctx, AES256_KEY_SIZE, key);
-}
-
-#define UNIFIED_AES(bits) {			\
-  "unified-aes" #bits, sizeof(struct aes_ctx),	\
-  AES_BLOCK_SIZE, AES ## bits ## _KEY_SIZE,	\
-  unified_aes ## bits ##_set_encrypt_key,	\
-  unified_aes ## bits ##_set_decrypt_key,	\
-  (nettle_cipher_func *) aes_encrypt,		\
-  (nettle_cipher_func *) aes_decrypt,		\
-}
-const struct nettle_cipher nettle_unified_aes128
-= UNIFIED_AES(128);
-const struct nettle_cipher nettle_unified_aes192
-= UNIFIED_AES(192);
-const struct nettle_cipher nettle_unified_aes256
-= UNIFIED_AES(256);
-
-static void
-test_cipher2(const struct nettle_cipher *c1,
-	     const struct nettle_cipher *c2,	     
-	     const struct tstring *key,
-	     const struct tstring *cleartext,
-	     const struct tstring *ciphertext)
-{
-  test_cipher (c1, key, cleartext, ciphertext);
-  test_cipher (c2, key, cleartext, ciphertext);
 }
 
 void
 test_main(void)
 {
-  /* Test both the new interface and the older unified interface. */
-
   /* 128 bit keys */
-  test_cipher2(&nettle_aes128, &nettle_unified_aes128,
+  test_cipher(&nettle_aes128,
 	       SHEX("0001020305060708 0A0B0C0D0F101112"),
 	       SHEX("506812A45F08C889 B97F5980038B8359"),
 	       SHEX("D8F532538289EF7D 06B506A4FD5BE9C9"));
   
-  test_cipher2(&nettle_aes128, &nettle_unified_aes128,
+  test_cipher(&nettle_aes128,
 	       SHEX("14151617191A1B1C 1E1F202123242526"),
 	       SHEX("5C6D71CA30DE8B8B 00549984D2EC7D4B"),
 	       SHEX("59AB30F4D4EE6E4F F9907EF65B1FB68C"));
 
-  test_cipher2(&nettle_aes128, &nettle_unified_aes128,
+  test_cipher(&nettle_aes128,
 	       SHEX("28292A2B2D2E2F30 323334353738393A"),
 	       SHEX("53F3F4C64F8616E4 E7C56199F48F21F6"),
 	       SHEX("BF1ED2FCB2AF3FD4 1443B56D85025CB1"));
   
-  test_cipher2(&nettle_aes128, &nettle_unified_aes128,
+  test_cipher(&nettle_aes128,
 	       SHEX("A0A1A2A3A5A6A7A8 AAABACADAFB0B1B2"),
 	       SHEX("F5F4F7F684878689 A6A7A0A1D2CDCCCF"),
 	       SHEX("CE52AF650D088CA5 59425223F4D32694"));
 
   /* 192 bit keys */
-  test_cipher2(&nettle_aes192, &nettle_unified_aes192, 
+  test_cipher(&nettle_aes192,
 	       SHEX("0001020305060708 0A0B0C0D0F101112"
 		    "14151617191A1B1C"),
 	       SHEX("2D33EEF2C0430A8A 9EBF45E809C40BB6"),
 	       SHEX("DFF4945E0336DF4C 1C56BC700EFF837F"));
 
   /* 256 bit keys */
-  test_cipher2(&nettle_aes256, &nettle_unified_aes256,
+  test_cipher(&nettle_aes256,
 	       SHEX("0001020305060708 0A0B0C0D0F101112"
 		    "14151617191A1B1C 1E1F202123242526"),
 	       SHEX("834EADFCCAC7E1B30664B1ABA44815AB"),
@@ -157,7 +93,7 @@ test_main(void)
 
   
   /* This test case has been problematic with the CBC test case */
-  test_cipher2(&nettle_aes256, &nettle_unified_aes256,
+  test_cipher(&nettle_aes256,
 	       SHEX("8d ae 93 ff fc 78 c9 44"
 		    "2a bd 0c 1e 68 bc a6 c7"
 		    "05 c7 84 e3 5a a9 11 8b"
@@ -174,7 +110,7 @@ test_main(void)
    * F.1.1 ECB-AES128-Encrypt
    */
 
-  test_cipher2(&nettle_aes128, &nettle_unified_aes128,
+  test_cipher(&nettle_aes128,
 	       SHEX("2b7e151628aed2a6abf7158809cf4f3c"),
 	       SHEX("6bc1bee22e409f96e93d7e117393172a"
 		    "ae2d8a571e03ac9c9eb76fac45af8e51"
@@ -187,7 +123,7 @@ test_main(void)
 
   /* F.1.3 ECB-AES192-Encrypt */
 
-  test_cipher2(&nettle_aes192, &nettle_unified_aes192, 
+  test_cipher(&nettle_aes192,
 	       SHEX("8e73b0f7da0e6452c810f32b809079e5 62f8ead2522c6b7b"),
 	       SHEX("6bc1bee22e409f96e93d7e117393172a"
 		    "ae2d8a571e03ac9c9eb76fac45af8e51"
@@ -199,7 +135,7 @@ test_main(void)
 		    "9a4b41ba738d6c72fb16691603c18e0e"));
 
   /* F.1.5 ECB-AES256-Encrypt */
-  test_cipher2(&nettle_aes256, &nettle_unified_aes256,
+  test_cipher(&nettle_aes256,
 	       SHEX("603deb1015ca71be2b73aef0857d7781"
 		    "1f352c073b6108d72d9810a30914dff4"),
 	       SHEX("6bc1bee22e409f96e93d7e117393172a"
@@ -212,14 +148,17 @@ test_main(void)
 		    "23304b7a39f9f3ff067d8d8f9e24ecc7"));
 
   /* Test aes_invert_key with src != dst */
-  test_invert(SHEX("0001020305060708 0A0B0C0D0F101112"),
+  test_invert(&nettle_aes128, (invert_func *) aes128_invert_key,
+	      SHEX("0001020305060708 0A0B0C0D0F101112"),
 	      SHEX("506812A45F08C889 B97F5980038B8359"),
 	      SHEX("D8F532538289EF7D 06B506A4FD5BE9C9"));
-  test_invert(SHEX("0001020305060708 0A0B0C0D0F101112"
+  test_invert(&nettle_aes192, (invert_func *) aes192_invert_key,
+	      SHEX("0001020305060708 0A0B0C0D0F101112"
 		   "14151617191A1B1C"),
 	      SHEX("2D33EEF2C0430A8A 9EBF45E809C40BB6"),
 	      SHEX("DFF4945E0336DF4C 1C56BC700EFF837F"));
-  test_invert(SHEX("0001020305060708 0A0B0C0D0F101112"
+  test_invert(&nettle_aes256, (invert_func *) aes256_invert_key,
+	      SHEX("0001020305060708 0A0B0C0D0F101112"
 		   "14151617191A1B1C 1E1F202123242526"),
 	      SHEX("834EADFCCAC7E1B30664B1ABA44815AB"),
 	      SHEX("1946DABF6A03A2A2 C3D0B05080AED6FC"));

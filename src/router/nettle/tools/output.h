@@ -40,13 +40,16 @@
 
 #include <stdio.h>
 
+struct sexp_output;
+typedef void put_char_func (struct sexp_output *output, uint8_t c);
+
 struct sexp_output
 {
   FILE *f;
 
   unsigned line_width;
   
-  const struct nettle_armor *coding;
+  put_char_func *put_char;
   unsigned coding_indent;
 
   int prefer_hex;
@@ -54,9 +57,8 @@ struct sexp_output
   const struct nettle_hash *hash;
   void *ctx;
   
-  /* NOTE: There's no context for hex encoding, the state argument to
-     encode_update is ignored */
-  struct base64_decode_ctx base64;
+  /* NOTE: There's no context needed for hex encoding. */
+  struct base64_encode_ctx base64;
   
   unsigned pos;
   int soft_newline;
@@ -64,11 +66,8 @@ struct sexp_output
 
 void
 sexp_output_init(struct sexp_output *output, FILE *f,
+		 const struct nettle_hash *hash,
 		 unsigned width, int prefer_hex);
-
-void
-sexp_output_hash_init(struct sexp_output *output,
-		      const struct nettle_hash *hash, void *ctx);
 
 void 
 sexp_put_newline(struct sexp_output *output,
@@ -86,11 +85,16 @@ sexp_put_data(struct sexp_output *output,
 	      unsigned length, const uint8_t *data);
 
 void
-sexp_put_code_start(struct sexp_output *output,
-		    const struct nettle_armor *coding);
+sexp_put_base16_start(struct sexp_output *output);
 
 void
-sexp_put_code_end(struct sexp_output *output);
+sexp_put_base16_end(struct sexp_output *output);
+
+void
+sexp_put_base64_start(struct sexp_output *output);
+
+void
+sexp_put_base64_end(struct sexp_output *output);
 
 void
 sexp_put_string(struct sexp_output *output, enum sexp_mode mode,

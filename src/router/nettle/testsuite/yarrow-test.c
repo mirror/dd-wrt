@@ -4,9 +4,6 @@
 
 #include "macros.h"
 
-#include <assert.h>
-#include <errno.h>
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -34,28 +31,6 @@ get_event(FILE *f, struct sha256_ctx *hash,
   *time = t;
 
   return 1;
-}
-
-static FILE *
-open_file(const char *name)
-{
-  /* Tries opening the file in $srcdir, if set, otherwise the current
-   * working directory */
-
-  const char *srcdir = getenv("srcdir");
-  if (srcdir && srcdir[0])
-    {
-      FILE *f;
-      char *buf = xalloc(strlen(name) + strlen(srcdir) + 10);
-      sprintf(buf, "%s/%s", srcdir, name);
-
-      f = fopen(buf, "r");
-      free(buf);
-      return f;
-    }
-
-  /* Opens the file in text mode. */
-  return fopen(name, "r");
 }
 
 void
@@ -112,15 +87,8 @@ test_main(void)
   
   ASSERT(!yarrow256_is_seeded(&yarrow));
 
-  input = open_file("gold-bug.txt");
+  input = open_srcdir_file("gold-bug.txt");
 
-  if (!input)
-    {
-      fprintf(stderr, "Couldn't open `gold-bug.txt', errno = %d\n",
-              errno);
-      FAIL();
-    }
-  
   while (get_event(input, &input_hash, &c, &t))
     {
       uint8_t buf[8];
@@ -174,7 +142,7 @@ test_main(void)
       printf("         sha256:");
     }
 
-  sha256_digest(&input_hash, sizeof(digest), digest);
+  sha256_digest(&input_hash, digest);
 
   if (verbose)
     {
@@ -200,7 +168,7 @@ test_main(void)
       printf("          sha256:");
     }
   
-  sha256_digest(&output_hash, sizeof(digest), digest);
+  sha256_digest(&output_hash, digest);
 
   if (verbose)
     {

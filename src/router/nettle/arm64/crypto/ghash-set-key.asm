@@ -120,6 +120,8 @@ define(`PMUL_PARAM', m4_assert_numargs(3)`
     ext            $2.16b,$2.16b,$2.16b,#8
 ')
 
+    .text
+    ALIGN(16)
 PROLOGUE(_nettle_ghash_set_key)
     ld1            {H.2d},[KEY]
 

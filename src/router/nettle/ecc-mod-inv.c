@@ -73,9 +73,7 @@ ecc_mod_inv (const struct ecc_modulo *m,
 #define up (scratch + 2*n)
 
   mp_size_t n = m->size;
-  /* Avoid the mp_bitcnt_t type for compatibility with older GMP
-     versions. */  
-  unsigned i;
+  mp_bitcnt_t i;
 
   /* Maintain
 

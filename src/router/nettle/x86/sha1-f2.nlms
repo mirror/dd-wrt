@@ -1,0 +1,81 @@
+/* The f2 phase of sha1 */
+/* !!! arch x86_32 */
+/* !!! signature n */
+/* !!! count 0 mod 5 */
+
+/* Run with loopmix -f -s -m -i sha1-f2.nlms */
+
+/* Current version can be loop-mixed down to 31 cycles. */
+define(`SA',`%eax')
+define(`SB',`%ebx')
+define(`SC',`%ecx')
+define(`SD',`%edx')
+define(`SE',`%ebp')
+define(`DATA',`%esp')
+define(`TMP',`%edi')
+define(`TMP2',`%esi')
+dnl define(`KVALUE',`%esi')
+define(`TMP3',`%esi')
+define(`COUNT', `84(%esp)')
+
+define(<K2VALUE>, <<$>0x6ED9EBA1>) 
+
+dnl Expands to 4*i, or to the empty string if i is zero
+define(`OFFSET', `ifelse($1,0,,eval(4*$1))')
+
+dnl The F2 round sets
+dnl
+dnl e += (a <<< 5) + (b ^ c ^ d) + k + w
+dnl 
+dnl Access inputs in order d, c, b, a, to give maximum time to
+dnl have values ready.
+
+dnl ROUND(a, b, c, d, e, i)
+define(`ROUND', `
+	mov	OFFSET(eval($6 % 16)) (DATA), TMP
+	xor	OFFSET(eval(($6 +  2) % 16)) (DATA), TMP
+	mov	$4, TMP2
+	xor	$3, TMP2
+	xor	OFFSET(eval(($6 +  8) % 16)) (DATA), TMP
+	xor	OFFSET(eval(($6 + 13) % 16)) (DATA), TMP
+	rol	`$'1, TMP
+	mov	TMP, OFFSET(eval($6 % 16)) (DATA)
+	xor	$2, TMP2
+	lea	K2VALUE(TMP, $5), TMP
+	add	TMP2, TMP
+	rol	`$'30, $2
+	mov	$1, TMP3
+	rol	`$'5, TMP3
+	add	TMP3, $5
+	add	TMP, $5
+')
+
+.text
+.p2align 4,15
+.globl loop_entry
+loop_entry:
+	push	%ebx		
+	push	%ebp		
+	push	%esi		
+	push	%edi		
+
+	sub	$64, %esp
+
+.align 32
+loop_begin:
+	ROUND(SA, SB, SC, SD, SE, 20)
+	ROUND(SE, SA, SB, SC, SD, 21)
+	ROUND(SD, SE, SA, SB, SC, 22)
+	ROUND(SC, SD, SE, SA, SB, 23)
+	ROUND(SB, SC, SD, SE, SA, 24)
+	sub	  $5, COUNT
+	jnz	  loop_begin
+
+loop_end:
+	add	$64, %esp
+	pop	%edi
+	pop	%esi
+	pop	%ebp
+	pop	%ebx
+	ret
+	

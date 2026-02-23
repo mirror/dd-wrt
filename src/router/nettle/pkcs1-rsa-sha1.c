@@ -84,7 +84,7 @@ pkcs1_rsa_sha1_encode(mpz_t m, size_t key_size, struct sha1_ctx *hash)
 			      SHA1_DIGEST_SIZE);
   if (p)
     {
-      sha1_digest(hash, SHA1_DIGEST_SIZE, p);
+      sha1_digest(hash, p);
       nettle_mpz_set_str_256_u(m, key_size, em);
       TMP_GMP_FREE(em);
       return 1;

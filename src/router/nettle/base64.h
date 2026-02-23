@@ -47,7 +47,6 @@ extern "C" {
 #define base64_encode_update nettle_base64_encode_update
 #define base64_encode_final nettle_base64_encode_final
 #define base64_encode_raw nettle_base64_encode_raw
-#define base64_encode_group nettle_base64_encode_group
 #define base64_decode_init nettle_base64_decode_init
 #define base64url_decode_init nettle_base64url_decode_init
 #define base64_decode_single nettle_base64_decode_single
@@ -111,13 +110,10 @@ base64_encode_final(struct base64_encode_ctx *ctx,
 /* Encodes a string in one go, including any padding at the end.
  * Generates exactly BASE64_ENCODE_RAW_LENGTH(length) bytes of output.
  * Supports overlapped operation, if src <= dst. FIXME: Use of overlap
- * is deprecated, if needed there should be a separate public fucntion
+ * is deprecated, if needed there should be a separate public function
  * to do that.*/
 void
 base64_encode_raw(char *dst, size_t length, const uint8_t *src);
-
-void
-base64_encode_group(char *dst, uint32_t group);
 
 
 /* Base64 decoding */
@@ -152,8 +148,10 @@ base64_decode_single(struct base64_decode_ctx *ctx,
 		     char src);
 
 /* Returns 1 on success, 0 on error. DST should point to an area of
- * size at least BASE64_DECODE_LENGTH(length). The amount of data
- * generated is returned in *DST_LENGTH. */
+ * size *DST_LENGTH. Decoding returns failure it output would exceed
+ * this size. BASE64_DECODE_LENGTH(length) is always sufficient.
+ * *DST_LENGTH is updated to reflect the amount of data actually
+ * generated. */
 int
 base64_decode_update(struct base64_decode_ctx *ctx,
 		     size_t *dst_length,

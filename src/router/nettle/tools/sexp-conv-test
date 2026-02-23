@@ -14,66 +14,47 @@ print_nl () {
 
 test_advanced () {
     print_raw "$1" test.in
-    if $EMULATOR ./sexp-conv$EXEEXT -s advanced <test.in | tr -d '\r' >test1.out ; then
-	true
-    else
-	exit 1
-    fi
+    $EMULATOR ./sexp-conv$EXEEXT -s advanced <test.in | tr -d '\r' >test1.out || exit 1
+
     print_nl "$2" test2.out
 
-    if cmp test1.out test2.out ; then
-	true
-    else
-	exit 1;
-    fi
+    cmp test1.out test2.out || exit 1;
 }
 
 test_advanced_hex () {
     print_raw "$1" test.in
-    if $EMULATOR ./sexp-conv$EXEEXT -s hex <test.in | tr -d '\r' >test1.out ; then
-	true
-    else
-	exit 1
-    fi
+    $EMULATOR ./sexp-conv$EXEEXT -s hex <test.in | tr -d '\r' >test1.out || exit 1
+
     print_nl "$2" test2.out
 
-    if cmp test1.out test2.out ; then
-	true
-    else
-	exit 1;
-    fi
+    cmp test1.out test2.out || exit 1;
 }
 
 test_transport () {
     print_raw "$1" test.in
-    if $EMULATOR ./sexp-conv$EXEEXT -s transport <test.in | tr -d '\r' >test1.out ; then
-	true
-    else
-	exit 1
-    fi
+    $EMULATOR ./sexp-conv$EXEEXT -s transport <test.in | tr -d '\r' >test1.out || exit 1
+
     print_nl "$2" test2.out
 
-    if cmp test1.out test2.out ; then
-	true
-    else
-	exit 1;
-    fi
+    cmp test1.out test2.out || exit 1;
 }
 
 test_canonical () {
     print_raw "$1" test.in
-    if $EMULATOR ./sexp-conv$EXEEXT -s canonical <test.in >test1.out ; then
-	true
-    else
-	exit 1
-    fi
+    $EMULATOR ./sexp-conv$EXEEXT -s canonical <test.in >test1.out || exit 1
+
     print_raw "$2" test2.out
 
-    if cmp test1.out test2.out ; then
-	true
-    else
-	exit 1;
-    fi
+    cmp test1.out test2.out || exit 1;
+}
+
+test_hash () {
+    print_raw "$1" test.in
+    $EMULATOR ./sexp-conv$EXEEXT --hash=sha256 <test.in >test1.out || exit 1
+
+    print_nl "$2" test2.out
+
+    cmp test1.out test2.out || exit 1
 }
 
 test_advanced '0:' '""'
@@ -97,6 +78,8 @@ bar)' '(foo ; gazonk
      bar)'
 
 test_advanced '(foo[bar]foo)' '(foo [bar]foo)'
+test_advanced 'foo bar' 'foo
+bar'
 
 test_advanced '(#aabb#)' '(|qrs=|)'
 test_advanced '(|qrs=|)' '(|qrs=|)'
@@ -110,6 +93,8 @@ test_transport '()' '{KCk=}'
 test_transport '1:A' '{MTpB}'
 test_transport 'foo' '{Mzpmb28=}'
 test_transport '(foo bar baz)' '{KDM6Zm9vMzpiYXIzOmJheik=}'
+test_transport 'foo bar' '{Mzpmb28=}
+{MzpiYXI=}'
 
 test_canonical '""' '0:'
 test_canonical '{MDo=}' '0:'
@@ -119,6 +104,11 @@ test_canonical 'foo' '3:foo'
 test_canonical 'fooooooooooo' '12:fooooooooooo'
 test_canonical 'fooooooooo' '10:fooooooooo'
 test_canonical '(foo bar baz)' '(3:foo3:bar3:baz)'
+test_canonical 'foo bar' '3:foo3:bar'
 test_canonical '{KDM6Zm9vMzpiYXIzOmJheik=}' '(3:foo3:bar3:baz)'
 
+test_hash '""' 'ba768b331fd86cec803be04e56ab2b3d4c0e98ef4ee4fcd4e72ad7cce61a1d1f'
+test_hash '(foo bar baz)' '8f881b925600176cf30cbec63a94087b4e13e6c04dd6f46a7d2481fe2a073c6a'
+test_hash 'foo bar' 'bdf3c778043c2b05b4c6d398ab924e747fee44055cd8048ee237c544945a8cb2
+5dd05adb6d766bdde7a1f612d32e97ee93d2f318b01a90c616c06ff4c0d3fe3b'
 exit 0

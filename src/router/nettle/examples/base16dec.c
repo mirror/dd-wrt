@@ -76,7 +76,7 @@ main(int argc UNUSED, char **argv UNUSED)
   for (;;)
     {
       int nbytes; /* Number of bytes read frmo disk at each iteration */
-      size_t decoded_bytes; /* Bytes actually generated at each iteration */
+      size_t result_size = DECODED_SIZE;
 
       nbytes = fread(buffer, 1, CHUNK_SIZE, stdin);
 
@@ -87,13 +87,13 @@ main(int argc UNUSED, char **argv UNUSED)
 	}
       
       /* Decodes one chunk: */
-      if (!base16_decode_update(&b16_ctx, &decoded_bytes, result, nbytes, buffer))
+      if (!base16_decode_update(&b16_ctx, &result_size, result, nbytes, buffer))
 	{
 	  werror ("Error decoding input (not base16?)\n");
 	  return EXIT_FAILURE;
 	}
 
-      if (!write_data (stdout, decoded_bytes, result))
+      if (!write_data (stdout, result_size, result))
 	{
 	  werror ("Error writing file: %s\n", strerror(errno));
 	  return EXIT_FAILURE;

@@ -41,11 +41,6 @@ extern "C" {
 #endif
 
 /* Name mangling */
-#define aes_set_encrypt_key nettle_aes_set_encrypt_key
-#define aes_set_decrypt_key nettle_aes_set_decrypt_key
-#define aes_invert_key nettle_aes_invert_key
-#define aes_encrypt nettle_aes_encrypt
-#define aes_decrypt nettle_aes_decrypt
 #define aes128_set_encrypt_key nettle_aes128_set_encrypt_key
 #define aes128_set_decrypt_key nettle_aes128_set_decrypt_key
 #define aes128_invert_key nettle_aes128_invert_key
@@ -73,7 +68,7 @@ extern "C" {
 
 struct aes128_ctx
 {
-  uint32_t keys[4 * (_AES128_ROUNDS + 1)];
+  _NETTLE_ALIGN16 uint32_t keys[4 * (_AES128_ROUNDS + 1)];
 };
 
 void
@@ -94,7 +89,7 @@ aes128_decrypt(const struct aes128_ctx *ctx,
 
 struct aes192_ctx
 {
-  uint32_t keys[4 * (_AES192_ROUNDS + 1)];
+  _NETTLE_ALIGN16 uint32_t keys[4 * (_AES192_ROUNDS + 1)];
 };
 
 void
@@ -115,7 +110,7 @@ aes192_decrypt(const struct aes192_ctx *ctx,
 
 struct aes256_ctx
 {
-  uint32_t keys[4 * (_AES256_ROUNDS + 1)];
+  _NETTLE_ALIGN16 uint32_t keys[4 * (_AES256_ROUNDS + 1)];
 };
 
 void
@@ -133,50 +128,6 @@ void
 aes256_decrypt(const struct aes256_ctx *ctx,
 	       size_t length, uint8_t *dst,
 	       const uint8_t *src);
-
-/* The older nettle-2.7 AES interface is deprecated, please migrate to
-   the newer interface where each algorithm has a fixed key size. */
-
-/* Variable key size between 128 and 256 bits. But the only valid
- * values are 16 (128 bits), 24 (192 bits) and 32 (256 bits). */
-#define AES_MIN_KEY_SIZE AES128_KEY_SIZE
-#define AES_MAX_KEY_SIZE AES256_KEY_SIZE
-
-#define AES_KEY_SIZE 32
-
-struct aes_ctx
-{
-  unsigned key_size;  /* In octets */
-  union {
-    struct aes128_ctx ctx128;
-    struct aes192_ctx ctx192;
-    struct aes256_ctx ctx256;
-  } u;
-};
-
-void
-aes_set_encrypt_key(struct aes_ctx *ctx,
-		    size_t length, const uint8_t *key)
-  _NETTLE_ATTRIBUTE_DEPRECATED;
-
-void
-aes_set_decrypt_key(struct aes_ctx *ctx,
-		   size_t length, const uint8_t *key)
-  _NETTLE_ATTRIBUTE_DEPRECATED;
-
-void
-aes_invert_key(struct aes_ctx *dst,
-	       const struct aes_ctx *src)
-  _NETTLE_ATTRIBUTE_DEPRECATED;
-
-void
-aes_encrypt(const struct aes_ctx *ctx,
-	    size_t length, uint8_t *dst,
-	    const uint8_t *src) _NETTLE_ATTRIBUTE_DEPRECATED;
-void
-aes_decrypt(const struct aes_ctx *ctx,
-	    size_t length, uint8_t *dst,
-	    const uint8_t *src) _NETTLE_ATTRIBUTE_DEPRECATED;
 
 #ifdef __cplusplus
 }

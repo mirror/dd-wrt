@@ -112,6 +112,8 @@ define(`PMUL_SUM', m4_assert_numargs(3)`
 	C				union nettle_block16 *x,
 	C				size_t blocks, const uint8_t *data)
 
+    .text
+    ALIGN(16)
 PROLOGUE(_nettle_ghash_update)
     mov            x4,#0xC200000000000000
     mov            POLY.d[0],x4

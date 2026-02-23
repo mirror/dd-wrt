@@ -48,7 +48,6 @@ void
 hkdf_extract(void *mac_ctx,
 	     nettle_hash_update_func *update,
 	     nettle_hash_digest_func *digest,
-	     size_t digest_size,
 	     size_t secret_size, const uint8_t *secret,
 	     uint8_t *dst);
 

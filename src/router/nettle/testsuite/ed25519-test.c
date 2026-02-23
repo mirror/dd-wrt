@@ -43,7 +43,7 @@ static void
 decode_hex (size_t length, uint8_t *dst, const char *src)
 {
   struct base16_decode_ctx ctx;
-  size_t out_size;
+  size_t out_size = length;
   base16_decode_init (&ctx);
   ASSERT (base16_decode_update (&ctx, &out_size, dst, 2*length, src));
   ASSERT (out_size == length);

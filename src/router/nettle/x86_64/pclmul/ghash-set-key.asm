@@ -47,6 +47,8 @@ define(`MASK', `%xmm7')
 
     C void _ghash_set_key (struct gcm_key *ctx, const union nettle_block16 *key)
 
+	.text
+	ALIGN(16)
 PROLOGUE(_nettle_ghash_set_key)
 	W64_ENTRY(2, 8)
 	movdqa	.Lpolynomial(%rip), P

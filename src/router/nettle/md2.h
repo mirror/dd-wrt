@@ -47,8 +47,6 @@ extern "C" {
 
 #define MD2_DIGEST_SIZE 16
 #define MD2_BLOCK_SIZE 16
-/* For backwards compatibility */
-#define MD2_DATA_SIZE MD2_BLOCK_SIZE
 
 struct md2_ctx
 {
@@ -68,7 +66,6 @@ md2_update(struct md2_ctx *ctx,
 
 void
 md2_digest(struct md2_ctx *ctx,
-	   size_t length,
 	   uint8_t *digest);
 
 

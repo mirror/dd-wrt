@@ -9,8 +9,8 @@ check_digest (const char *name, void *ctx, nettle_hash_digest_func *f,
 	      const struct tstring *ref)
 {
   uint8_t tag[16];
-  ASSERT (ref->length <= 16);
-  f(ctx, ref->length, tag);
+  ASSERT (ref->length == POLY1305_AES_DIGEST_SIZE);
+  f(ctx, tag);
   if (!MEMEQ(ref->length, ref->data, tag))
     {
       printf ("%s failed\n", name);

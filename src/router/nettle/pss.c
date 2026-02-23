@@ -87,7 +87,7 @@ pss_encode_mgf1(mpz_t m, size_t bits,
   hash->update(state, salt_length, salt);
 
   /* Store H in EM, right after maskedDB.  */
-  hash->digest(state, hash->digest_size, em + key_size - hash->digest_size - 1);
+  hash->digest(state, em + key_size - hash->digest_size - 1);
 
   /* Compute dbMask.  */
   hash->init(state);
@@ -185,7 +185,7 @@ pss_verify_mgf1(const mpz_t m, size_t bits,
   hash->update(state, sizeof(pss_pad), pss_pad);
   hash->update(state, hash->digest_size, digest);
   hash->update(state, salt_length, salt);
-  hash->digest(state, hash->digest_size, h2);
+  hash->digest(state, h2);
 
   /* Check if H' = H.  */
   if (memcmp(h2, h, hash->digest_size) != 0)

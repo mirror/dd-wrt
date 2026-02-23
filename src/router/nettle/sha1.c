@@ -79,12 +79,9 @@ sha1_update(struct sha1_ctx *ctx,
 	  
 void
 sha1_digest(struct sha1_ctx *ctx,
-	    size_t length,
 	    uint8_t *digest)
 {
   uint64_t bit_count;
-
-  assert(length <= SHA1_DIGEST_SIZE);
 
   MD_PAD(ctx, 8, COMPRESS);
 
@@ -95,6 +92,6 @@ sha1_digest(struct sha1_ctx *ctx,
   WRITE_UINT64(ctx->block + (SHA1_BLOCK_SIZE - 8), bit_count);
   nettle_sha1_compress(ctx->state, ctx->block);
 
-  _nettle_write_be32(length, digest, ctx->state);
+  _nettle_write_be32(SHA1_DIGEST_SIZE, digest, ctx->state);
   sha1_init(ctx);
 }

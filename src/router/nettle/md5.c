@@ -73,13 +73,10 @@ md5_update(struct md5_ctx *ctx,
 
 void
 md5_digest(struct md5_ctx *ctx,
-	   size_t length,
 	   uint8_t *digest)
 {
   uint64_t bit_count;
   
-  assert(length <= MD5_DIGEST_SIZE);
-
   MD_PAD(ctx, 8, COMPRESS);
 
   /* There are 512 = 2^9 bits in one block */
@@ -88,7 +85,7 @@ md5_digest(struct md5_ctx *ctx,
   LE_WRITE_UINT64(ctx->block + (MD5_BLOCK_SIZE - 8), bit_count);
   nettle_md5_compress(ctx->state, ctx->block);
 
-  _nettle_write_le32(length, digest, ctx->state);
+  _nettle_write_le32(MD5_DIGEST_SIZE, digest, ctx->state);
   md5_init(ctx);
 }
 

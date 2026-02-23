@@ -140,7 +140,7 @@ process_file(struct rsa_session *ctx,
 
 	  assert (size + SHA1_DIGEST_SIZE <= sizeof(buffer));
 
-	  hmac_sha1_digest(&ctx->hmac, SHA1_DIGEST_SIZE, buffer + size);
+	  hmac_sha1_digest(&ctx->hmac, buffer + size);
 	  size += SHA1_DIGEST_SIZE;
 
 	  if (!write_data(out, size, buffer))

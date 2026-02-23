@@ -95,6 +95,7 @@ this respect.
 
 Instruction variants:
 
+PowerPC 970 aka G5 supports ISA v2.01
 Power5 supports ISA v2.02
 Power6 supports ISA v2.05
 Power7 (p7 subdirectory) supports ISA v2.06

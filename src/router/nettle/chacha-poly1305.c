@@ -154,7 +154,7 @@ chacha_poly1305_decrypt (struct chacha_poly1305_ctx *ctx,
 			 
 void
 chacha_poly1305_digest (struct chacha_poly1305_ctx *ctx,
-			size_t length, uint8_t *digest)
+			uint8_t *digest)
 {
   uint8_t buf[16];
 
@@ -165,5 +165,5 @@ chacha_poly1305_digest (struct chacha_poly1305_ctx *ctx,
   _nettle_poly1305_block (&ctx->poly1305, buf, 1);
 
   _nettle_poly1305_digest (&ctx->poly1305, &ctx->s);
-  memcpy (digest, &ctx->s.b, length);
+  memcpy (digest, &ctx->s.b, CHACHA_POLY1305_DIGEST_SIZE);
 }

@@ -81,6 +81,8 @@ define(`QROUND', `
 
 	.text
 	C _chacha_core(uint32_t *dst, const uint32_t *src, unsigned rounds)
+	.text
+	ALIGN(16)
 PROLOGUE(_nettle_chacha_core)
 	adr		x3, .Lrot24
 	ld1		{ROT24.4s},[x3]

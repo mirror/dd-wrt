@@ -104,7 +104,7 @@ eax_decrypt (struct eax_ctx *eax, const struct eax_key *key,
 void
 eax_digest (struct eax_ctx *eax, const struct eax_key *key,
 	    const void *cipher, nettle_cipher_func *f,
-	    size_t length, uint8_t *digest);
+	    uint8_t *digest);
 
 /* Put the cipher last, to get cipher-independent offsets for the EAX
  * state. */
@@ -147,12 +147,12 @@ eax_digest (struct eax_ctx *eax, const struct eax_key *key,
 		 &(ctx)->cipher, (nettle_cipher_func *) (encrypt),	\
 		  (length), (dst), (src)))
 
-#define EAX_DIGEST(ctx, encrypt, length, digest)			\
+#define EAX_DIGEST(ctx, encrypt, digest)				\
   (0 ? (encrypt) (&(ctx)->cipher, ~(size_t) 0,				\
 		  (uint8_t *) 0, (const uint8_t *) 0)			\
    : eax_digest (&(ctx)->eax, &(ctx)->key,				\
 		 &(ctx)->cipher, (nettle_cipher_func *) (encrypt),	\
-		 (length), (digest)))
+		 (digest)))
 
 struct eax_aes128_ctx EAX_CTX(struct aes128_ctx);
 
@@ -176,7 +176,7 @@ eax_aes128_decrypt(struct eax_aes128_ctx *ctx,
 		   size_t length, uint8_t *dst, const uint8_t *src);
 
 void
-eax_aes128_digest(struct eax_aes128_ctx *ctx, size_t length, uint8_t *digest);
+eax_aes128_digest(struct eax_aes128_ctx *ctx, uint8_t *digest);
 
 #ifdef __cplusplus
 }

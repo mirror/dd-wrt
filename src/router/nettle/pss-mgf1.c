@@ -55,7 +55,7 @@ pss_mgf1(const void *seed, const struct nettle_hash *hash,
   TMP_ALLOC(h, hash->digest_size);
   TMP_ALLOC_ALIGN(state, hash->context_size);
 
-  for (i = 0;;
+  for (i = 0; length > 0;
        i++, mask += hash->digest_size, length -= hash->digest_size)
     {
       WRITE_UINT32(c, i);
@@ -63,11 +63,12 @@ pss_mgf1(const void *seed, const struct nettle_hash *hash,
       memcpy(state, seed, hash->context_size);
       hash->update(state, 4, c);
 
-      if (length <= hash->digest_size)
+      if (length < hash->digest_size)
 	{
-	  hash->digest(state, length, mask);
+	  hash->digest(state, h);
+	  memcpy(mask, h, length);
 	  return;
 	}
-      hash->digest(state, hash->digest_size, mask);
+      hash->digest(state, mask);
     }
 }

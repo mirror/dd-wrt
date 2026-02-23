@@ -52,7 +52,7 @@ _nettle_ctr_crypt16(const void *ctx, nettle_cipher_func *f,
 		    size_t length, uint8_t *dst,
 		    const uint8_t *src)
 {
-  if (dst != src && !((uintptr_t) dst % sizeof(uint64_t)))
+  if (dst != src && !((uintptr_t) dst % alignof(union nettle_block16)))
     {
       size_t blocks = length / 16u;
       size_t done;

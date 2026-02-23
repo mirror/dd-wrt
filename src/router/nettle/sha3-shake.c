@@ -41,76 +41,109 @@
 #include "sha3.h"
 #include "sha3-internal.h"
 
+#include "bswap-internal.h"
+#include "macros.h"
 #include "nettle-write.h"
 
 void
-_nettle_sha3_shake (struct sha3_state *state,
-		    unsigned block_size, uint8_t *block,
-		    unsigned index,
+_nettle_sha3_shake (struct sha3_ctx *ctx, unsigned block_size,
 		    size_t length, uint8_t *dst)
 {
-  _sha3_pad_shake (state, block_size, block, index);
+  _nettle_sha3_pad (ctx, block_size, SHA3_SHAKE_MAGIC);
+
+  /* Use byte units. */
+  block_size <<= 3;
 
   while (length > block_size)
     {
-      sha3_permute (state);
-      _nettle_write_le64 (block_size, dst, state->a);
-      length -= block_size;
-      dst += block_size;
+      sha3_permute (&ctx->state);
+      _nettle_write_le64 (block_size, dst, ctx->state.a);
+      length -= block_size; dst += block_size;
     }
 
-  sha3_permute (state);
-  _nettle_write_le64 (length, dst, state->a);
+  sha3_permute (&ctx->state);
+  _nettle_write_le64 (length, dst, ctx->state.a);
+  sha3_init (ctx);
 }
 
-unsigned
-_nettle_sha3_shake_output (struct sha3_state *state,
-			   unsigned block_size, uint8_t *block,
-			   unsigned index,
+void
+_nettle_sha3_shake_output (struct sha3_ctx *ctx, unsigned block_size,
 			   size_t length, uint8_t *dst)
 {
-  unsigned left;
+  unsigned index = ctx->index;
+  unsigned block_bytes = block_size << 3;
 
-  /* We use one's complement of the index value to indicate SHAKE is
-     initialized. */
-  if (index < block_size)
+  if (!ctx->shake_flag)
     {
       /* This is the first call of _shake_output.  */
-      _sha3_pad_shake (state, block_size, block, index);
+      _nettle_sha3_pad (ctx, block_size, SHA3_SHAKE_MAGIC);
       /* Point at the end of block to trigger fill in of the buffer.  */
-      index = block_size;
-    }
-  else
-    index = ~index;
-
-  assert (index <= block_size);
-
-  /* Write remaining data from the buffer.  */
-  left = block_size - index;
-  if (length <= left)
-    {
-      memcpy (dst, block + index, length);
-      return ~(index + length);
-    }
-  else
-    {
-      memcpy (dst, block + index, left);
-      length -= left;
-      dst += left;
+      index = block_bytes;
+      ctx->shake_flag = 1;
     }
 
-  /* Write full blocks.  */
-  while (length > block_size)
-    {
-      sha3_permute (state);
-      _nettle_write_le64 (block_size, dst, state->a);
-      length -= block_size;
-      dst += block_size;
-    }
+  assert (index <= block_bytes);
+  {
+#if WORDS_BIGENDIAN
+    unsigned byte_index = index & 7;
 
-  sha3_permute (state);
-  /* Fill in the buffer for next call.  */
-  _nettle_write_le64 (block_size, block, state->a);
-  memcpy (dst, block, length);
-  return ~length;
+    if (byte_index)
+      {
+	unsigned left = 8 - byte_index;
+	if (length <= left)
+	  {
+	    memcpy (dst, ctx->block.b + byte_index, length);
+	    ctx->index = index + length;
+	    return;
+	  }
+	memcpy (dst, ctx->block.b + byte_index, left);
+	dst += left; length -= left; index += left;
+      }
+
+    /* Switch to units of words */
+    index >>= 3;
+
+    for (; length > 0; length -= 8, dst += 8, index++)
+      {
+	if (index == block_size)
+	  {
+	    sha3_permute (&ctx->state);
+	    index = 0;
+	  }
+	if (length < 8)
+	  {
+	    ctx->block.u64 = nettle_bswap64 (ctx->state.a[index]);
+	    memcpy (dst, ctx->block.b, length);
+	    break;
+	  }
+	LE_WRITE_UINT64(dst, ctx->state.a[index]);
+      }
+    ctx->index = (index << 3) + length;
+#else /* !WORDS_BIGENDIAN */
+    size_t left = block_bytes - index;
+    if (length <= left)
+      {
+	memcpy (dst, ((const uint8_t *) ctx->state.a) + index, length);
+	ctx->index = index + length;
+	return;
+      }
+    else
+      {
+	memcpy (dst, ((const uint8_t *) ctx->state.a) + index, left);
+	length -= left;
+	dst += left;
+      }
+
+    /* Write full blocks.  */
+    for (; length > block_bytes; length -= block_bytes, dst += block_bytes)
+      {
+	sha3_permute (&ctx->state);
+	_nettle_write_le64 (block_bytes, dst, ctx->state.a);
+      }
+
+    sha3_permute (&ctx->state);
+    memcpy (dst, ctx->state.a, length);
+    ctx->index = length;
+#endif /* !WORDS_BIGENDIAN */
+  }
 }

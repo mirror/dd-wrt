@@ -89,9 +89,10 @@ base16_decode_single(struct base16_decode_ctx *ctx,
 		     char src);
 
 /* Returns 1 on success, 0 on error. DST should point to an area of
- * size at least BASE16_DECODE_LENGTH(length). The amount of data
- * generated is returned in *DST_LENGTH. */
-
+ * size *DST_LENGTH. Decoding returns failure it output would exceed
+ * this size. BASE16_DECODE_LENGTH(src_length) is always sufficient.
+ * *DST_LENGTH is updated to reflect the amount of data actually
+ * generated. */
 int
 base16_decode_update(struct base16_decode_ctx *ctx,
 		     size_t *dst_length,

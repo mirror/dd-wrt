@@ -166,12 +166,12 @@ DECLARE_FAT_FUNC_VAR(sha3_permute, sha3_permute_func, c)
 DECLARE_FAT_FUNC_VAR(sha3_permute, sha3_permute_func, neon)
 
 DECLARE_FAT_FUNC(_nettle_umac_nh, umac_nh_func)
-DECLARE_FAT_FUNC_VAR(umac_nh, umac_nh_func, c);
-DECLARE_FAT_FUNC_VAR(umac_nh, umac_nh_func, neon);
+DECLARE_FAT_FUNC_VAR(umac_nh, umac_nh_func, c)
+DECLARE_FAT_FUNC_VAR(umac_nh, umac_nh_func, neon)
 
 DECLARE_FAT_FUNC(_nettle_umac_nh_n, umac_nh_n_func)
-DECLARE_FAT_FUNC_VAR(umac_nh_n, umac_nh_n_func, c);
-DECLARE_FAT_FUNC_VAR(umac_nh_n, umac_nh_n_func, neon);
+DECLARE_FAT_FUNC_VAR(umac_nh_n, umac_nh_n_func, c)
+DECLARE_FAT_FUNC_VAR(umac_nh_n, umac_nh_n_func, neon)
 
 DECLARE_FAT_FUNC(nettle_chacha_crypt, chacha_crypt_func)
 DECLARE_FAT_FUNC_VAR(chacha_crypt, chacha_crypt_func, 1core)

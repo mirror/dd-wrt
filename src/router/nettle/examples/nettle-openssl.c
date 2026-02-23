@@ -123,10 +123,10 @@ openssl_evp_update(void *p, size_t length, const uint8_t *src)
 
 /* This will work for encryption only! */
 static void
-openssl_evp_gcm_digest(void *p, size_t length, uint8_t *dst)
+openssl_evp_gcm_digest(void *p, uint8_t *dst)
 {
   const struct openssl_cipher_ctx *ctx = p;
-  int ret = EVP_CIPHER_CTX_ctrl(ctx->evp, EVP_CTRL_GCM_GET_TAG, length, dst);
+  int ret = EVP_CIPHER_CTX_ctrl(ctx->evp, EVP_CTRL_GCM_GET_TAG, 16, dst);
   assert(ret == 1);
 }
 
@@ -303,11 +303,9 @@ openssl_##name##_init(void *p)						\
 }									\
 									\
 static void								\
-openssl_##name##_digest(void *p,					\
-		    size_t length, uint8_t *dst)			\
+openssl_##name##_digest(void *p, uint8_t *dst)				\
 {									\
   struct openssl_hash_ctx *ctx = p;					\
-  assert(length == NAME##_DIGEST_SIZE);					\
 									\
   EVP_DigestFinal(ctx->evp, dst, NULL);					\
   EVP_DigestInit(ctx->evp, EVP_##name());				\

@@ -50,6 +50,8 @@ define(`U9', `%r12')
 define(`T0', `%r13')
 define(`T1', `%r14')
 
+	.text
+	ALIGN(16)
 PROLOGUE(_nettle_ecc_secp521r1_modp)
 	W64_ENTRY(3, 0)
 	push	%rbx

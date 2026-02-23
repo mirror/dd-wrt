@@ -1,0 +1,67 @@
+body {
+    background: rgb(255,255,255);    
+    color: rgb(0,0,0);
+    margin-left: 10%;
+    margin-right: 10%;
+}
+
+a {
+    color: rgb(50, 50, 100);
+}
+
+a:visited {
+    color: rgb(0, 0, 0);
+}
+
+a:hover {
+    color: rgb(140, 30, 30);
+}
+
+h1 {
+    font-size: 200%;
+    font-weight: normal;
+    color: rgb(30, 30, 140);
+    text-align: left;
+}
+
+h2 {
+    font-size: 150%;
+    font-weight: normal;
+    font-style: normal;
+    text-align: left;
+}
+
+p {
+    margin-left: 2em;
+}
+
+dt {
+    padding-top: 1ex;
+}
+
+hr {
+    background: rgb(30, 30, 140);
+    border-style: none;
+    width: 80%;
+}
+
+img {
+    border: thin black solid;
+    float: right;
+}
+
+.done {
+    color: #00a000;
+}
+
+.should {
+    color: red;
+}
+
+.wish {
+    color: #808000;
+}
+
+.postponed {
+    color: blue;
+}

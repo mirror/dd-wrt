@@ -118,7 +118,7 @@ cmac64_update(struct cmac64_ctx *ctx, const void *cipher,
 void
 cmac64_digest(struct cmac64_ctx *ctx, const struct cmac64_key *key,
 	      const void *cipher, nettle_cipher_func *encrypt,
-	      unsigned length, uint8_t *dst)
+	      uint8_t *dst)
 {
   union nettle_block8 Y;
 
@@ -136,17 +136,7 @@ cmac64_digest(struct cmac64_ctx *ctx, const struct cmac64_key *key,
     }
 
   block8_xor3(&Y, &ctx->block, &ctx->X);
-
-  assert(length <= 8);
-  if (length == 8)
-    {
-      encrypt(cipher, 8, dst, Y.b);
-    }
-  else
-    {
-      encrypt(cipher, 8, ctx->block.b, Y.b);
-      memcpy(dst, ctx->block.b, length);
-    }
+  encrypt(cipher, 8, dst, Y.b);
 
   /* reset state for re-use */
   memset(&ctx->X, 0, sizeof(ctx->X));

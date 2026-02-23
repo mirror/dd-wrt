@@ -78,9 +78,10 @@ struct ocb_ctx {
   union nettle_block16 sum;
   /* Authentication for the message */
   union nettle_block16 checksum;
+  unsigned short tag_length;
   /* Count of processed blocks. */
-  size_t data_count;
-  size_t message_count;
+  uint32_t data_count;
+  uint64_t message_count;
 };
 
 void
@@ -110,7 +111,7 @@ ocb_decrypt (struct ocb_ctx *ctx, const struct ocb_key *key,
 void
 ocb_digest (const struct ocb_ctx *ctx, const struct ocb_key *key,
 	    const void *cipher, nettle_cipher_func *f,
-	    size_t length, uint8_t *digest);
+	    uint8_t *digest);
 
 
 void
@@ -165,7 +166,7 @@ ocb_aes128_decrypt(struct ocb_ctx *ctx, const struct ocb_aes128_encrypt_key *key
 
 void
 ocb_aes128_digest(struct ocb_ctx *ctx, const struct ocb_aes128_encrypt_key *key,
-		  size_t length, uint8_t *digest);
+		  uint8_t *digest);
 
 void
 ocb_aes128_encrypt_message (const struct ocb_aes128_encrypt_key *key,

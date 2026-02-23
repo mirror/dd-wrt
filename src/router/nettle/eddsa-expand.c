@@ -55,7 +55,7 @@ _eddsa_expand_key (const struct ecc_curve *ecc,
   size_t nbytes = 1 + ecc->p.bit_size / 8;
 
   eddsa->update (ctx, nbytes, key);
-  eddsa->digest (ctx, 2*nbytes, digest);
+  eddsa->digest (ctx, digest);
 
   /* For ed448, ignores the most significant byte. */
   mpn_set_base256_le (k2, ecc->p.size, digest, (ecc->p.bit_size + 7) / 8);

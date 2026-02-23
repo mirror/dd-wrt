@@ -66,7 +66,7 @@ poly1305_aes_update (struct poly1305_aes_ctx *ctx,
 
 void
 poly1305_aes_digest (struct poly1305_aes_ctx *ctx,
-		     size_t length, uint8_t *digest)
+		     uint8_t *digest)
 {
   union nettle_block16 s;
   /* final bytes */
@@ -83,7 +83,7 @@ poly1305_aes_digest (struct poly1305_aes_ctx *ctx,
   aes128_encrypt(&ctx->aes, POLY1305_BLOCK_SIZE, s.b, ctx->nonce);
   
   _nettle_poly1305_digest (&ctx->pctx, &s);
-  memcpy (digest, s.b, length);
+  memcpy (digest, s.b, POLY1305_AES_DIGEST_SIZE);
 
   INCREMENT (16, ctx->nonce);
   ctx->index = 0;

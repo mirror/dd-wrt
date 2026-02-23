@@ -68,37 +68,9 @@ base16_decode_single(struct base16_decode_ctx *ctx,
 		     uint8_t *dst,
 		     char src)
 {
-  /* Avoid signed char for indexing. */
-  unsigned char usrc = src;
-  int digit;
-
-  if (usrc >= 0x80)
-    return -1;
-
-  digit = hex_decode_table[usrc];
-  switch (digit)
-    {
-    case -1:
-      return -1;
-    case -2:
-      return 0;
-    default:
-      assert(digit >= 0);
-      assert(digit < 0x10);
-
-      if (ctx->bits)
-	{
-	  *dst = (ctx->word << 4) | digit;
-	  ctx->bits = 0;
-	  return 1;
-	}
-      else
-	{
-	  ctx->word = digit;
-	  ctx->bits = 4;
-	  return 0;
-	}
-    }
+  size_t dst_length = 1;
+  return base16_decode_update (ctx, &dst_length, dst, 1, &src)
+    ? dst_length : -1;
 }
 
 int
@@ -112,19 +84,29 @@ base16_decode_update(struct base16_decode_ctx *ctx,
   size_t i;
 
   for (i = done = 0; i<src_length; i++)
-    switch(base16_decode_single(ctx, dst + done, src[i]))
-      {
-      case -1:
+    {
+      unsigned char usrc = src[i];
+      if (usrc >= 0x80)
 	return 0;
-      case 1:
-	done++;
-	/* Fall through */
-      case 0:
-	break;
-      default:
-	abort();
-      }
-  
+
+      int digit = hex_decode_table[usrc];
+      if (digit == HEX_SPACE)
+	continue;
+      if (digit < 0 || done >= *dst_length)
+	return 0;
+
+      assert(digit < 0x10);
+      if (ctx->bits)
+	{
+	  dst[done++] = (ctx->word << 4) | digit;
+	  ctx->bits = 0;
+	}
+      else
+	{
+	  ctx->word = digit;
+	  ctx->bits = 4;
+	}
+    }
   assert(done <= BASE16_DECODE_LENGTH(src_length));
 
   *dst_length = done;

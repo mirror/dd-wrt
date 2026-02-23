@@ -53,7 +53,6 @@ static void
 hash(void *ctx,
      nettle_hash_update_func *update,
      nettle_hash_digest_func *digest,
-     size_t digest_size,
      uint64_t cnt,
      size_t a_len, const uint8_t *a,
      size_t b_len, const uint8_t *b,
@@ -66,14 +65,13 @@ hash(void *ctx,
     update(ctx, a_len, a);
   if (b && b_len)
     update(ctx, b_len, b);
-  digest(ctx, digest_size, dst);
+  digest(ctx, dst);
 }
 
 static void
 hash_ints(void *ctx,
           nettle_hash_update_func *update,
           nettle_hash_digest_func *digest,
-          size_t digest_size,
           uint64_t i, uint64_t j, uint64_t k,
           uint8_t *dst)
 {
@@ -82,7 +80,7 @@ hash_ints(void *ctx,
   LE_WRITE_UINT64(tmp + 8, j);
   LE_WRITE_UINT64(tmp + 16, k);
   update(ctx, sizeof(tmp), tmp);
-  digest(ctx, digest_size, dst);
+  digest(ctx, dst);
 }
 
 /* Takes length bytes long big number stored
@@ -114,25 +112,25 @@ balloon(void *hash_ctx,
   uint8_t *buf = scratch + BS;
   size_t i, j, k, cnt = 0;
 
-  hash(hash_ctx, update, digest, digest_size,
+  hash(hash_ctx, update, digest,
        cnt++, passwd_length, passwd, salt_length, salt, buf);
   for (i = 1; i < s_cost; ++i)
-    hash(hash_ctx, update, digest, digest_size,
+    hash(hash_ctx, update, digest,
          cnt++, BS, buf + (i - 1) * BS, 0, NULL, buf + i * BS);
 
   for (i = 0; i < t_cost; ++i)
     {
       for (j = 0; j < s_cost; ++j)
         {
-          hash(hash_ctx, update, digest, digest_size,
+          hash(hash_ctx, update, digest,
                cnt++, BS, buf + (j ? j - 1 : s_cost - 1) * BS,
                BS, buf + j * BS, buf + j * BS);
           for (k = 0; k < DELTA; ++k)
             {
-              hash_ints(hash_ctx, update, digest, digest_size, i, j, k, block);
-              hash(hash_ctx, update, digest, digest_size,
+              hash_ints(hash_ctx, update, digest, i, j, k, block);
+              hash(hash_ctx, update, digest,
                    cnt++, salt_length, salt, BS, block, block);
-              hash(hash_ctx, update, digest, digest_size,
+              hash(hash_ctx, update, digest,
                    cnt++, BS, buf + j * BS,
                    BS, buf + block_to_int(BS, block, s_cost) * BS,
                    buf + j * BS);

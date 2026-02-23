@@ -77,9 +77,9 @@ sexp_convert_item(struct sexp_parser *parser,
   if (mode_out == SEXP_TRANSPORT)
     {
       sexp_put_char(output, '{');
-      sexp_put_code_start(output, &nettle_base64);
+      sexp_put_base64_start(output);
       sexp_convert_item(parser, token, output, SEXP_CANONICAL, 0);
-      sexp_put_code_end(output);
+      sexp_put_base64_end(output);
       sexp_put_char(output, '}');
     }
   else switch(token->type)
@@ -211,7 +211,7 @@ struct conv_options
   const struct nettle_hash *hash;
 };
 
-enum { OPT_ONCE = 300, OPT_HASH, OPT_LOCK, OPT_HELP };
+enum { OPT_ONCE = 300, OPT_HASH, OPT_LIST, OPT_LOCK, OPT_HELP };
 
 static int
 match_argument(const char *given, const char *name)
@@ -222,9 +222,37 @@ match_argument(const char *given, const char *name)
 }
 
 static void
+list_hashes (void)
+{
+  unsigned i;
+  const struct nettle_hash *alg;
+  printf ("Available hash algorithms:\n");
+
+  for (i = 0; (alg = nettle_hashes[i]); i++)
+    printf ("  %s\n", alg->name);
+};
+
+static void
 parse_options(struct conv_options *o,
 	      int argc, char **argv)
-{  
+{
+  static const struct option options[] =
+    {
+      /* Name, args, flag, val */
+      { "help", no_argument, NULL, OPT_HELP },
+      { "version", no_argument, NULL, 'V' },
+      { "once", no_argument, NULL, OPT_ONCE },
+      { "syntax", required_argument, NULL, 's' },
+      { "hash", optional_argument, NULL, OPT_HASH },
+      { "list-hashes", no_argument, NULL, OPT_LIST },
+      { "width", required_argument, NULL, 'w' },
+#if HAVE_FCNTL_LOCKING
+      { "lock", no_argument, NULL, OPT_LOCK },
+#endif
+      { NULL, 0, NULL, 0 }
+    };
+  int c;
+
   o->mode = SEXP_ADVANCED;
   o->prefer_hex = 0;
   o->once = 0;
@@ -232,142 +260,100 @@ parse_options(struct conv_options *o,
   o->hash = NULL;
   o->width = 72;
   
-  for (;;)
-    {
-      static const struct nettle_hash *hashes[] =
-	{ &nettle_md5, &nettle_sha1, &nettle_sha256, NULL };
-  
-      static const struct option options[] =
-	{
-	  /* Name, args, flag, val */
-	  { "help", no_argument, NULL, OPT_HELP },
-	  { "version", no_argument, NULL, 'V' },
-	  { "once", no_argument, NULL, OPT_ONCE },
-	  { "syntax", required_argument, NULL, 's' },
-	  { "hash", optional_argument, NULL, OPT_HASH },
-	  { "raw-hash", optional_argument, NULL, OPT_HASH },
-	  { "width", required_argument, NULL, 'w' },
-#if HAVE_FCNTL_LOCKING
-	  { "lock", no_argument, NULL, OPT_LOCK },
-#endif
-#if 0
-	  /* Not yet implemented */
-	  { "replace", required_argument, NULL, OPT_REPLACE },
-	  { "select", required_argument, NULL, OPT_SELECT },
-	  { "spki-hash", optional_argument, NULL, OPT_SPKI_HASH },
-#endif
-	  { NULL, 0, NULL, 0 }
-	};
-      int c;
-      int option_index = 0;
-      unsigned i;
-     
-      c = getopt_long(argc, argv, "Vs:w:", options, &option_index);
-
-      switch (c)
-	{
-	default:
-	  abort();
+  while ((c = getopt_long(argc, argv, "Vs:w:", options, NULL)) != -1)
+    switch (c)
+      {
+      default:
+	abort();
 	  
-	case -1:
-	  if (optind != argc)
-	    die("sexp-conv: Command line takes no arguments, only options.\n");
-	  return;
+      case -1:
+	break;
 
-	case '?':
-	  exit(EXIT_FAILURE);
+      case '?':
+	exit(EXIT_FAILURE);
 	  
-	case 'w':
-	  {
-	    char *end;
-	    int width;
-	    assert(optarg != NULL);
+      case 'w':
+	{
+	  char *end;
+	  int width;
+	  assert(optarg != NULL);
 
-	    width = strtol(optarg, &end , 0);
-	    if (!*optarg || *end || width < 0)
-	      die("sexp-conv: Invalid width `%s'.\n", optarg);
+	  width = strtol(optarg, &end , 0);
+	  if (!*optarg || *end || width < 0)
+	    die("sexp-conv: Invalid width `%s'.\n", optarg);
 
-	    o->width = width;
-	    break;
-	  }
-	case 's':
-	  if (o->hash)
-	    werror("sexp-conv: Combining --hash and -s usually makes no sense.\n");
-	  if (match_argument(optarg, "advanced"))
-	    o->mode = SEXP_ADVANCED;
-	  else if (match_argument(optarg, "transport"))
-	    o->mode = SEXP_TRANSPORT;
-	  else if (match_argument(optarg, "canonical"))
-	    o->mode = SEXP_CANONICAL;
-	  else if (match_argument(optarg, "hex"))
-	    {
-	      o->mode = SEXP_ADVANCED;
-	      o->prefer_hex = 1;
-	    }
-	  else
-	    die("Available syntax variants: advanced, transport, canonical\n");
+	  o->width = width;
 	  break;
-
-	case OPT_ONCE:
-	  o->once = 1;
-	  break;
-	
-	case OPT_HASH:
-	  o->mode = SEXP_CANONICAL;
-	  if (!optarg)
-	    o->hash = &nettle_sha1;
-	  else
-	    for (i = 0;; i++)
-	      {
-		if (!hashes[i])
-		  die("sexp_conv: Unknown hash algorithm `%s'\n",
-		      optarg);
-	      
-		if (match_argument(optarg, hashes[i]->name))
-		  {
-		    o->hash = hashes[i];
-		    break;
-		  }
-	      }
-	  break;
-#if HAVE_FCNTL_LOCKING
-	case OPT_LOCK:
-	  o->lock = 1;
-	  break;
-#endif
-	case OPT_HELP:
-	  printf("Usage: sexp-conv [OPTION...]\n"
-		 "  Conversion:     sexp-conv [OPTION...] <INPUT-SEXP\n"
-		 "  Fingerprinting: sexp-conv --hash=HASH <INPUT-SEXP\n\n"
-		 "Reads an s-expression on stdin, and outputs the same\n"
-		 "sexp on stdout, possibly with a different syntax.\n\n"
-		 "       --hash[=ALGORITHM]   Outputs only the hash of the expression.\n"
-		 "                            Available hash algorithms:\n"
-		 "                            ");
-	  for(i = 0; hashes[i]; i++)
-	    {
-	      if (i) printf(", ");
-	      printf("%s", hashes[i]->name);
-	    }
-	  printf(" (default is sha1).\n"
-		 "   -s, --syntax=SYNTAX      The syntax used for the output. Available\n"
-		 "                            variants: advanced, hex, transport, canonical\n"
-		 "       --once               Process only the first s-expression.\n"
-		 "   -w, --width=WIDTH        Linewidth for base64 encoded data.\n"
-		 "                            Zero means no limit.\n"
-#if HAVE_FCNTL_LOCKING
-		 "       --lock               Lock output file.\n"
-#endif
-		 "       --raw-hash           Alias for --hash, for compatibility\n"
-		 "                            with lsh-1.x.\n\n"
-		 "Report bugs to " BUG_ADDRESS ".\n");
-	  exit(EXIT_SUCCESS);
-
-	case 'V':
-	  printf("sexp-conv (" PACKAGE_STRING ")\n");
-	  exit (EXIT_SUCCESS);
 	}
-    }
+      case 's':
+	if (match_argument(optarg, "advanced"))
+	  o->mode = SEXP_ADVANCED;
+	else if (match_argument(optarg, "transport"))
+	  o->mode = SEXP_TRANSPORT;
+	else if (match_argument(optarg, "canonical"))
+	  o->mode = SEXP_CANONICAL;
+	else if (match_argument(optarg, "hex"))
+	  {
+	    o->mode = SEXP_ADVANCED;
+	    o->prefer_hex = 1;
+	  }
+	else
+	  die("Available syntax variants: advanced, hex (also advanced), transport, canonical\n");
+	break;
+
+      case OPT_ONCE:
+	o->once = 1;
+	break;
+	
+      case OPT_HASH:
+	if (!optarg)
+	  o->hash = &nettle_sha256;
+	else
+	  {
+	    o->hash = nettle_lookup_hash (optarg);
+	    if (!o->hash)
+	      die("sexp_conv: Unknown hash algorithm `%s'\n", optarg);
+	  }
+	break;
+      case OPT_LIST:
+	list_hashes ();
+	exit (EXIT_SUCCESS);
+
+#if HAVE_FCNTL_LOCKING
+      case OPT_LOCK:
+	o->lock = 1;
+	break;
+#endif
+      case OPT_HELP:
+	printf("Usage: sexp-conv [OPTION...]\n"
+	       "  Conversion:     sexp-conv [OPTION...] <INPUT-SEXP\n"
+	       "  Fingerprinting: sexp-conv --hash=HASH <INPUT-SEXP\n\n"
+	       "Reads an s-expression on stdin, and outputs the same\n"
+	       "sexp on stdout, possibly with a different syntax.\n\n"
+	       "       --hash[=ALGORITHM]   Outputs only the hash of the expression (default is sha256)\n"
+	       "       --list-hashes        List available algorithms for --hash.\n"
+	       "   -s, --syntax=SYNTAX      The syntax used for the output. Available\n"
+	       "                            variants: advanced, hex, transport, canonical\n"
+	       "       --once               Process only the first s-expression.\n"
+	       "   -w, --width=WIDTH        Linewidth for base64 encoded data.\n"
+	       "                            Zero means no limit.\n"
+#if HAVE_FCNTL_LOCKING
+	       "       --lock               Lock output file.\n"
+#endif
+	       "   -V, --version            Display version.\n"
+	       "       --help               Display this help.\n"
+	       "Report bugs to " BUG_ADDRESS ".\n");
+	exit(EXIT_SUCCESS);
+
+      case 'V':
+	printf("sexp-conv (" PACKAGE_STRING ")\n");
+	exit (EXIT_SUCCESS);
+      }
+  if (optind != argc)
+    die("sexp-conv: Command line takes no arguments, only options.\n");
+  if (o->hash)
+    /* Always use canonical mode when hashing. */
+    o->mode = SEXP_CANONICAL;
 }
 
 int
@@ -384,7 +370,7 @@ main(int argc, char **argv)
   sexp_input_init(&input, stdin);
   sexp_parse_init(&parser, &input, SEXP_ADVANCED);
   sexp_compound_token_init(&token);
-  sexp_output_init(&output, stdout,
+  sexp_output_init(&output, stdout, options.hash,
 		   options.width, options.prefer_hex);
 
 #if HAVE_FCNTL_LOCKING
@@ -402,12 +388,6 @@ main(int argc, char **argv)
 	die("Locking output file failed: %s\n", strerror(errno));
     }
 #endif /* HAVE_FCNTL_LOCKING */
-  if (options.hash)
-    {
-      /* Leaks the context, but that doesn't matter */
-      void *ctx = xalloc(options.hash->context_size);
-      sexp_output_hash_init(&output, options.hash, ctx);
-    }
   
   sexp_get_char(&input);
   
@@ -439,6 +419,8 @@ main(int argc, char **argv)
   
   if (fflush(output.f) < 0)
     die("Final fflush failed: %s.\n", strerror(errno));
-  
+
+  free (output.ctx);
+
   return EXIT_SUCCESS;
 }

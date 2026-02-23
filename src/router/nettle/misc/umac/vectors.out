@@ -1,0 +1,432 @@
+nonce: bcdefghi
+msg length: 0
+data:
+tag32: 113145fb
+tag64: 6e155fad26900be1
+tag96: 32fedb100c79ad58f07ff764
+tag128: 32fedb100c79ad58f07ff7643cc60465
+
+nonce: bcdefghi
+msg length: 3
+data (repeated): a
+tag32: 3b91d102
+tag64: 44b5cb542f220104
+tag96: 185e4fe905cba7bd85e4c2dc
+tag128: 185e4fe905cba7bd85e4c2dc3d117d8d
+
+nonce: bcdefghi
+msg length: 1024
+data (repeated): a
+tag32: 599b350b
+tag64: 26bf2f5d60118bd9
+tag96: 7a54abe04af82d60fb298c3c
+tag128: 7a54abe04af82d60fb298c3cbd195bcb
+
+nonce: bcdefghi
+msg length: 32768
+data (repeated): a
+tag32: 58dcf532
+tag64: 27f8ef643b0d118d
+tag96: 7b136bd911e4b734286ef2be
+tag128: 7b136bd911e4b734286ef2be501f2c3c
+
+nonce: bcdefghi
+msg length: 1048576
+data (repeated): a
+tag32: db6364d1
+tag64: a4477e87e9f55853
+tag96: f8acfa3ac31cfeea047f7b11
+tag128: f8acfa3ac31cfeea047f7b115b03bef5
+
+nonce: bcdefghi
+msg length: 33554432
+data (repeated): a
+tag32: 85ee5cae
+tag64: faca46f856e9b45f
+tag96: a621c2457c0012e64f3fdae9
+tag128: a621c2457c0012e64f3fdae9e7e1870c
+
+nonce: bcdefghi
+msg length: 3
+data: abc
+tag32: abf3a3a0
+tag64: d4d7b9f6bd4fbfcf
+tag96: 883c3d4b97a61976ffcf2323
+tag128: 883c3d4b97a61976ffcf232308cba5a5
+
+nonce: bcdefghi
+msg length: 1500
+data (repeated): abc
+tag32: abeb3c8b
+tag64: d4cf26ddefd5c01a
+tag96: 8824a260c53c66a36c9260a6
+tag128: 8824a260c53c66a36c9260a62cb83aa1
+
+nonce: b
+msg length: 0
+data (repeated): def
+tag32: 3a58486b
+tag64: 9e38f67da91a08d9
+tag96: 9e38f67da91a08d9c980f4db
+tag128: 9e38f67da91a08d9c980f4db4089c877
+
+nonce: bc
+msg length: 1
+data (repeated): def
+tag32: d86b1512
+tag64: fb0e207971b8e66a
+tag96: ef406c2ec70d0222f59e860e
+tag128: ef406c2ec70d0222f59e860eabb79ed0
+
+nonce: bcd
+msg length: 2
+data (repeated): def
+tag32: 1ae6e02d
+tag64: 1ae6e02d73aa9ab2
+tag96: 1ae6e02d73aa9ab2a27fb89e
+tag128: 1ae6e02d73aa9ab2a27fb89e014dc07b
+
+nonce: bcde
+msg length: 3
+data: def
+tag32: e8c1eb59
+tag64: c81cf22342e84302
+tag96: 82626d0d575e01038e5e2cc6
+tag128: 82626d0d575e01038e5e2cc6408216f5
+
+nonce: bcdef
+msg length: 4
+data (repeated): def
+tag32: 8950f0d3
+tag64: aba003e7bd673cc3
+tag96: aba003e7bd673cc368ba8513
+tag128: aba003e7bd673cc368ba8513cecf2e7c
+
+nonce: bcdefg
+msg length: 1020
+data (repeated): def
+tag32: 7412167c
+tag64: f98828a161bb4ae3
+tag96: d8b4811f747d588d7a913360
+tag128: d8b4811f747d588d7a913360960de7cf
+
+nonce: bcdefgh
+msg length: 1021
+data (repeated): def
+tag32: 2d54936b
+tag64: 2d54936be5bff72d
+tag96: 2d54936be5bff72d2e105236
+tag128: 2d54936be5bff72d2e1052361163b474
+
+nonce: bcdefghi
+msg length: 1022
+data (repeated): def
+tag32: 53ca8dd2
+tag64: 2cee9784556387b3
+tag96: 700513397f8a210a98938d3e
+tag128: 700513397f8a210a98938d3e7ac3bd88
+
+nonce: bcdefghij
+msg length: 1023
+data (repeated): def
+tag32: 26cc58df
+tag64: 24ac4284ca371f42
+tag96: 24ac4284ca371f4280f60bd2
+tag128: 24ac4284ca371f4280f60bd274633d67
+
+nonce: bcdefghijk
+msg length: 1024
+data (repeated): def
+tag32: 3cada45a
+tag64: 64c6a0fd14615a76
+tag96: abc223116cedd2db5af365e6
+tag128: abc223116cedd2db5af365e641a97539
+
+nonce: bcdefghijkl
+msg length: 1025
+data (repeated): def
+tag32: 93251e18
+tag64: 93251e18e56bbdc4
+tag96: 93251e18e56bbdc457de556f
+tag128: 93251e18e56bbdc457de556f95c59931
+
+nonce: bcdefghijklm
+msg length: 1026
+data (repeated): def
+tag32: 24a4c3ab
+tag64: 5d98bd8dfaf16352
+tag96: c1298672e52386753383a15e
+tag128: c1298672e52386753383a15ed58c0e42
+
+nonce: bcdefghijklmn
+msg length: 1027
+data (repeated): def
+tag32: e7e98945
+tag64: 5b0557c9fdcf661b
+tag96: 5b0557c9fdcf661b1758efc6
+tag128: 5b0557c9fdcf661b1758efc603516ebe
+
+nonce: bcdefghijklmno
+msg length: 2046
+data (repeated): def
+tag32: e12ddc9f
+tag64: 65e85d47447c2277
+tag96: 16bb5183017826ed47c9995c
+tag128: 16bb5183017826ed47c9995c1e5834f3
+
+nonce: bcdefghijklmnop
+msg length: 2047
+data (repeated): def
+tag32: 34d723a6
+tag64: 34d723a6cb1676d3
+tag96: 34d723a6cb1676d3547a5064
+tag128: 34d723a6cb1676d3547a5064dc5b0a37
+
+nonce: bcdefghijklmnopq
+msg length: 2048
+data (repeated): def
+tag32: 21fd8802
+tag64: 3968d5d0af147884
+tag96: 84565620def1e3a614d274e8
+tag128: 84565620def1e3a614d274e87626f215
+
+nonce: b
+msg length: 2049
+data (repeated): def
+tag32: 097e5abd
+tag64: ad1ee4ab606061c5
+tag96: ad1ee4ab606061c55e0d2ecf
+tag128: ad1ee4ab606061c55e0d2ecfee59940a
+
+nonce: bc
+msg length: 2050
+data (repeated): def
+tag32: a03a7fe9
+tag64: 835f4a8242100055
+tag96: 971106d5f4a5e41dce40a917
+tag128: 971106d5f4a5e41dce40a91704cfe1f3
+
+nonce: bcd
+msg length: 16777212
+data (repeated): def
+tag32: 7ef41cf3
+tag64: 7ef41cf351960aaf
+tag96: 7ef41cf351960aaf729bb19f
+tag128: 7ef41cf351960aaf729bb19fcee7d8c4
+
+nonce: bcde
+msg length: 16777213
+data (repeated): def
+tag32: 8bf81932
+tag64: ab250048807ff640
+tag96: e15b9f6695c9b441de035e9b
+tag128: e15b9f6695c9b441de035e9b10b8ac32
+
+nonce: bcdef
+msg length: 16777214
+data (repeated): def
+tag32: ddb2f0ab
+tag64: ff42039fcfe1248e
+tag96: ff42039fcfe1248e36c19efe
+tag128: ff42039fcfe1248e36c19efed14d7140
+
+nonce: bcdefg
+msg length: 16777215
+data (repeated): def
+tag32: e67ad507
+tag64: 6be0ebda623d76df
+tag96: 4adc426477fb64b1ce5afd76
+tag128: 4adc426477fb64b1ce5afd76d505f048
+
+nonce: bcdefgh
+msg length: 16777216
+data (repeated): def
+tag32: 42d8562a
+tag64: 42d8562a224a9e9a
+tag96: 42d8562a224a9e9a75c2f85d
+tag128: 42d8562a224a9e9a75c2f85d39462d07
+
+nonce: bcdefghi
+msg length: 16777217
+data (repeated): def
+tag32: 486b138d
+tag64: 374f09dbb0b84b88
+tag96: 6ba48d669a51ed3195ebc2aa
+tag128: 6ba48d669a51ed3195ebc2aa562ee71b
+
+nonce: bcdefghij
+msg length: 16778239
+data (repeated): def
+tag32: 850cb2c5
+tag64: 876ca89ed045777b
+tag96: 876ca89ed045777bf7efa793
+tag128: 876ca89ed045777bf7efa7934e1758c2
+
+nonce: bcdefghijk
+msg length: 16778240
+data (repeated): def
+tag32: b9fc4f81
+tag64: e1974b26fb35f2c6
+tag96: 2e93c8ca83b97a6b1a21082e
+tag128: 2e93c8ca83b97a6b1a21082e2a4c540d
+
+nonce: bcdefghijkl
+msg length: 16778241
+data (repeated): def
+tag32: ffced8f2
+tag64: ffced8f2494d85bf
+tag96: ffced8f2494d85bf0cb39408
+tag128: ffced8f2494d85bf0cb39408ddfe0295
+
+nonce: bcdefghijklm
+msg length: 16778242
+data (repeated): def
+tag32: 1c99c5fb
+tag64: 65a5bbdda3b85368
+tag96: f9148022bc6ab64f019e9db8
+tag128: f9148022bc6ab64f019e9db83704c17b
+
+nonce: bcdefghijklmn
+msg length: 16778243
+data (repeated): def
+tag32: ec304be9
+tag64: 50dc9565fbfc4884
+tag96: 50dc9565fbfc48844a4be344
+tag128: 50dc9565fbfc48844a4be34403804605
+
+nonce: bcdefghijklmno
+msg length: 16778244
+data (repeated): def
+tag32: 8034e26f
+tag64: 04f163b7c2d5d849
+tag96: 77a26f7387d1dcd39378a322
+tag128: 77a26f7387d1dcd39378a3220652cff7
+
+nonce: #00000000000000000000000000000000
+msg length: 4
+data: zero
+tag32: a0e94011
+tag64: a0e940111c9c2cd5
+tag96: a0e940111c9c2cd5fa59090e
+tag128: a0e940111c9c2cd5fa59090e3ac2061f
+
+nonce: #00000000000000000000000000000001
+msg length: 4
+data: zero
+tag32: 8c6fea51
+tag64: 6d8971434be8ee41
+tag96: cbbf18b799fd0f4afb9216e5
+tag128: cbbf18b799fd0f4afb9216e52a89f247
+
+nonce: #00000000000000000000000000000002
+msg length: 4
+data: zero
+tag32: 6d897143
+tag64: c9c9aef87e2be502
+tag96: c9c9aef87e2be50237716af8
+tag128: c9c9aef87e2be50237716af8e24f8959
+
+nonce: #00000000000000000000000000000003
+msg length: 4
+data: zero
+tag32: db1b28c5
+tag64: a0a112b593656107
+tag96: d6e96ef461f54d1c85aa66cb
+tag128: d6e96ef461f54d1c85aa66cbd76ca336
+
+nonce: #00000000000000000000000000000004
+msg length: 4
+data: zero
+tag32: a75e23b7
+tag64: a75e23b7d419e03a
+tag96: a75e23b7d419e03a02d55ebf
+tag128: a75e23b7d419e03a02d55ebf1ba62824
+
+nonce: #00000000000000000000000000000005
+msg length: 4
+data: zero
+tag32: 44ea26be
+tag64: 950526f26a8cc07a
+tag96: 2e63031d182a59b84f148d9a
+tag128: 2e63031d182a59b84f148d9a91de70a3
+
+nonce: a
+msg length: 7
+data: nonce-a
+tag32: 81b4ac24
+tag64: b7e8aad0da6e7f99
+tag96: d7604bffb5e368da5fe564da
+tag128: d7604bffb5e368da5fe564da0068d2cc
+
+nonce: b
+msg length: 7
+data: nonce-a
+tag32: b7e8aad0
+tag64: 138814c6a03bdadf
+tag96: 138814c6a03bdadff7f1666e
+tag128: 138814c6a03bdadff7f1666e1bd881aa
+
+nonce: c
+msg length: 7
+data: nonce-a
+tag32: f70246fe
+tag64: fb77dd1cd4c7074f
+tag96: 86a016d9e67957c8ab5ebb78
+tag128: 86a016d9e67957c8ab5ebb78a673e4e9
+
+nonce: d
+msg length: 7
+data: nonce-a
+tag32: 0595f0bf
+tag64: 0595f0bf8585c7e2
+tag96: 0595f0bf8585c7e28dfab005
+tag128: 0595f0bf8585c7e28dfab00598d4e612
+
+nonce: e
+msg length: 7
+data: nonce-a
+tag32: a8e9fe85
+tag64: 817c0b7757cb60f7
+tag96: 3266ec16a9d85b4f0dc74ec8
+tag128: 3266ec16a9d85b4f0dc74ec8272238a9
+
+nonce: #beafcafe
+msg length: 15
+data: nonce-beaf-cafe
+tag32: f19d9dc1
+tag64: 9e878413aa079032
+tag96: 9e878413aa0790329604f3b6
+tag128: 9e878413aa0790329604f3b6ae980e58
+
+nonce: #beafcaff
+msg length: 15
+data: nonce-beaf-cafe
+tag32: 4604a56a
+tag64: 9cfd7af0bb107748
+tag96: f2b2dd5dab08bb3bc5e9a83e
+tag128: f2b2dd5dab08bb3bc5e9a83e1b4ab2e7
+
+nonce: #beafcb00
+msg length: 15
+data: nonce-beaf-cafe
+tag32: 4ba9420e
+tag64: 4ba9420e55b6ba13
+tag96: 4ba9420e55b6ba137d03443f
+tag128: 4ba9420e55b6ba137d03443f6ee01734
+
+nonce: #beafcb01
+msg length: 15
+data: nonce-beaf-cafe
+tag32: da86ff71
+tag64: 77facd797b686e24
+tag96: 2721ca2e1bcda53a54ae65e0
+tag128: 2721ca2e1bcda53a54ae65e0da139c0d
+
+nonce: #beafcb02
+msg length: 15
+data: nonce-beaf-cafe
+tag32: 77facd79
+tag64: 9000c0de4f5f7236
+tag96: 9000c0de4f5f7236b81ae1a5
+tag128: 9000c0de4f5f7236b81ae1a52e78a821
+

@@ -64,25 +64,6 @@ ocb_set_key (struct ocb_key *key, const void *cipher, nettle_cipher_func *f)
   block16_mulx_be (&key->L[2], &key->L[1]);
 }
 
-/* Add x^k L[2], where k is the number of trailing zero bits in i. */
-static void
-update_offset(const struct ocb_key *key,
-	      union nettle_block16 *offset, size_t i)
-{
-  if (i & 1)
-    block16_xor (offset, &key->L[2]);
-  else
-    {
-      assert (i > 0);
-      union nettle_block16 diff;
-      block16_mulx_be (&diff, &key->L[2]);
-      for (i >>= 1; !(i&1); i >>= 1)
-	block16_mulx_be (&diff, &diff);
-
-      block16_xor (offset, &diff);
-    }
-}
-
 static void
 pad_block (union nettle_block16 *block, size_t length, const uint8_t *data)
 {
@@ -104,6 +85,8 @@ ocb_set_nonce (struct ocb_ctx *ctx,
   assert (nonce_length < 16);
   assert (tag_length > 0);
   assert (tag_length <= 16);
+
+  ctx->tag_length = tag_length;
 
   /* Bit size, or zero for tag_length == 16 */
   top.b[0] = (tag_length & 15) << 4;
@@ -130,13 +113,30 @@ ocb_set_nonce (struct ocb_ctx *ctx,
   ctx->data_count = ctx->message_count = 0;
 }
 
+/* Construct x^k L[2], where k > 0 is the number of trailing zero bits
+   in count, where count should be even. */
+static void
+ocb_mul_xk (const struct ocb_key *key, uint64_t count,
+	    union nettle_block16 *dst)
+{
+  assert (count > 1);
+
+  /* In principle, count should always be even, but since the initial
+     shift below discards a bit, it works fine also if count is the
+     intended even number + 1. */
+  block16_mulx_be (dst, &key->L[2]);
+  for (count >>= 1; !(count&1); count >>= 1)
+    block16_mulx_be (dst, dst);
+}
+
 static void
 ocb_fill_n (const struct ocb_key *key,
-	    union nettle_block16 *offset, size_t count,
+	    union nettle_block16 *offset, uint64_t count,
 	    size_t n, union nettle_block16 *o)
 {
-  assert (n > 0);
+  union nettle_block16 diff;
   union nettle_block16 *prev;
+  assert (n > 0);
   if (count & 1)
     prev = offset;
   else
@@ -151,16 +151,12 @@ ocb_fill_n (const struct ocb_key *key,
 
   for (; n >= 2; n -= 2, o += 2)
     {
-      size_t i;
       count += 2; /* Always odd. */
 
-      /* Based on trailing zeros of ctx->message_count - 1, the
+      /* Based on trailing zeros of count - 1, the
          initial shift below discards a one bit. */
-      block16_mulx_be (&o[0], &key->L[2]);
-      for (i = count >> 1; !(i&1); i >>= 1)
-	block16_mulx_be (&o[0], &o[0]);
-
-      block16_xor (&o[0], prev);
+      ocb_mul_xk (key, count, &diff);
+      block16_xor3 (&o[0], prev, &diff);
       block16_xor3 (&o[1], &o[0], &key->L[2]);
       prev = &o[1];
     }
@@ -168,7 +164,8 @@ ocb_fill_n (const struct ocb_key *key,
 
   if (n > 0)
     {
-      update_offset (key, offset, ++count);
+      ocb_mul_xk (key, ++count, &diff);
+      block16_xor (offset, &diff);
       block16_set (o, offset);
     }
 }
@@ -385,15 +382,15 @@ ocb_decrypt (struct ocb_ctx *ctx, const struct ocb_key *key,
 void
 ocb_digest (const struct ocb_ctx *ctx, const struct ocb_key *key,
 	    const void *cipher, nettle_cipher_func *f,
-	    size_t length, uint8_t *digest)
+	    uint8_t *digest)
 {
   union nettle_block16 block;
-  assert (length <= OCB_DIGEST_SIZE);
   block16_xor3 (&block,  &key->L[1],
 		(ctx->message_count > 0) ? &ctx->offset : &ctx->initial);
   block16_xor (&block, &ctx->checksum);
   f (cipher, OCB_BLOCK_SIZE, block.b, block.b);
-  memxor3 (digest, block.b, ctx->sum.b, length);
+  assert (ctx->tag_length <= OCB_BLOCK_SIZE);
+  memxor3 (digest, block.b, ctx->sum.b, ctx->tag_length);
 }
 
 void
@@ -409,7 +406,7 @@ ocb_encrypt_message (const struct ocb_key *key,
   ocb_set_nonce (&ctx, cipher, f, tlength, nlength, nonce);
   ocb_update (&ctx, key, cipher, f, alength, adata);
   ocb_encrypt (&ctx, key, cipher, f,  clength - tlength, dst, src);
-  ocb_digest (&ctx, key, cipher, f, tlength, dst + clength - tlength);
+  ocb_digest (&ctx, key, cipher, f, dst + clength - tlength);
 }
 
 int
@@ -427,6 +424,6 @@ ocb_decrypt_message (const struct ocb_key *key,
   ocb_update (&ctx, key, encrypt_ctx, encrypt, alength, adata);
   ocb_decrypt (&ctx, key, encrypt_ctx, encrypt, decrypt_ctx, decrypt,
 	       mlength, dst, src);
-  ocb_digest (&ctx, key, encrypt_ctx, encrypt, tlength, digest.b);
+  ocb_digest (&ctx, key, encrypt_ctx, encrypt, digest.b);
   return memeql_sec(digest.b, src + mlength, tlength);
 }

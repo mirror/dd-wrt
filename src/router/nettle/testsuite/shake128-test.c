@@ -37,12 +37,12 @@
 const struct nettle_xof nettle_shake128 =
   {
    "shake128",
-   sizeof(struct sha3_128_ctx),
+   sizeof(struct sha3_ctx),
    SHA3_128_BLOCK_SIZE,
-   (nettle_hash_init_func *) sha3_128_init,
+   (nettle_hash_init_func *) sha3_init,
    (nettle_hash_update_func *) sha3_128_update,
-   (nettle_hash_digest_func *) sha3_128_shake,
-   (nettle_hash_digest_func *) sha3_128_shake_output,
+   (nettle_output_func *) sha3_128_shake,
+   (nettle_output_func *) sha3_128_shake_output,
   };
 
 void

@@ -39,4 +39,4 @@
 #include "sha3-internal.h"
 
 const struct nettle_hash nettle_sha3_224
-= _NETTLE_HASH(sha3_224, SHA3_224);
+= _NETTLE_SHA3_HASH(sha3_224, SHA3_224);

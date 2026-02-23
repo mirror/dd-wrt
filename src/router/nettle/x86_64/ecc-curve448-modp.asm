@@ -46,6 +46,8 @@ define(`T0', `%r11')
 define(`T1', `%r12')
 define(`T2', `%r13')
 
+	.text
+	ALIGN(16)
 PROLOGUE(_nettle_ecc_curve448_modp)
 	W64_ENTRY(3, 0)
 

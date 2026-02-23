@@ -42,22 +42,18 @@ extern "C" {
 
 /* Name mangling */
 #define sha3_permute nettle_sha3_permute
-#define sha3_128_init nettle_sha3_128_init
+#define sha3_init nettle_sha3_init
 #define sha3_128_update nettle_sha3_128_update
 #define sha3_128_shake nettle_sha3_128_shake
 #define sha3_128_shake_output nettle_sha3_128_shake_output
-#define sha3_224_init nettle_sha3_224_init
 #define sha3_224_update nettle_sha3_224_update
 #define sha3_224_digest nettle_sha3_224_digest
-#define sha3_256_init nettle_sha3_256_init
 #define sha3_256_update nettle_sha3_256_update
 #define sha3_256_digest nettle_sha3_256_digest
 #define sha3_256_shake nettle_sha3_256_shake
 #define sha3_256_shake_output nettle_sha3_256_shake_output
-#define sha3_384_init nettle_sha3_384_init
 #define sha3_384_update nettle_sha3_384_update
 #define sha3_384_digest nettle_sha3_384_digest
-#define sha3_512_init nettle_sha3_512_init
 #define sha3_512_update nettle_sha3_512_update
 #define sha3_512_digest nettle_sha3_512_digest
 
@@ -98,130 +94,77 @@ sha3_permute (struct sha3_state *state);
 #define SHA3_512_DIGEST_SIZE 64
 #define SHA3_512_BLOCK_SIZE 72
 
-/* For backwards compatibility */
-#define SHA3_224_DATA_SIZE SHA3_224_BLOCK_SIZE
-#define SHA3_256_DATA_SIZE SHA3_256_BLOCK_SIZE
-#define SHA3_384_DATA_SIZE SHA3_384_BLOCK_SIZE
-#define SHA3_512_DATA_SIZE SHA3_512_BLOCK_SIZE
-
-struct sha3_128_ctx
+struct sha3_ctx
 {
   struct sha3_state state;
+  /* The position in current block of next input byte (for update) or
+     next output byte (for shake). */
   unsigned index;
-  uint8_t block[SHA3_128_BLOCK_SIZE];
+  /* Set when shake output has been initialized. */
+  int shake_flag;
+  /* Buffer for partial words; input and output from the state is
+     handled one uint64_t at a time. */
+  union nettle_block8 block;
 };
 
 void
-sha3_128_init (struct sha3_128_ctx *ctx);
+sha3_init (struct sha3_ctx *ctx);
 
 void
-sha3_128_update (struct sha3_128_ctx *ctx,
-		 size_t length,
-		 const uint8_t *data);
+sha3_128_update (struct sha3_ctx *ctx, size_t length, const uint8_t *data);
 
 void
-sha3_128_shake (struct sha3_128_ctx *ctx,
-		size_t length,
-		uint8_t *digest);
+sha3_128_shake (struct sha3_ctx *ctx, size_t length, uint8_t *digest);
 
 void
-sha3_128_shake_output (struct sha3_128_ctx *ctx,
-		       size_t length,
-		       uint8_t *digest);
-
-struct sha3_224_ctx
-{
-  struct sha3_state state;
-  unsigned index;
-  uint8_t block[SHA3_224_BLOCK_SIZE];
-};
+sha3_128_shake_output (struct sha3_ctx *ctx, size_t length, uint8_t *digest);
 
 void
-sha3_224_init (struct sha3_224_ctx *ctx);
+sha3_224_update (struct sha3_ctx *ctx, size_t length, const uint8_t *data);
 
 void
-sha3_224_update (struct sha3_224_ctx *ctx,
-		 size_t length,
-		 const uint8_t *data);
+sha3_224_digest(struct sha3_ctx *ctx, uint8_t *digest);
 
 void
-sha3_224_digest(struct sha3_224_ctx *ctx,
-		size_t length,
-		uint8_t *digest);
-
-struct sha3_256_ctx
-{
-  struct sha3_state state;
-  unsigned index;
-  uint8_t block[SHA3_256_BLOCK_SIZE];
-};
+sha3_256_update (struct sha3_ctx *ctx, size_t length, const uint8_t *data);
 
 void
-sha3_256_init (struct sha3_256_ctx *ctx);
-
-void
-sha3_256_update (struct sha3_256_ctx *ctx,
-		 size_t length,
-		 const uint8_t *data);
-
-void
-sha3_256_digest(struct sha3_256_ctx *ctx,
-		size_t length,
-		uint8_t *digest);
+sha3_256_digest(struct sha3_ctx *ctx, uint8_t *digest);
 
 /* Alternative digest function implementing shake256, with arbitrary
    digest size */
 void
-sha3_256_shake(struct sha3_256_ctx *ctx,
-	       size_t length,
-	       uint8_t *digest);
+sha3_256_shake(struct sha3_ctx *ctx, size_t length, uint8_t *digest);
 
 /* Unlike sha3_256_shake, this function can be called multiple times
    to retrieve output from shake256 in an incremental manner */
 void
-sha3_256_shake_output(struct sha3_256_ctx *ctx,
-		      size_t length,
-		      uint8_t *digest);
-
-struct sha3_384_ctx
-{
-  struct sha3_state state;
-  unsigned index;
-  uint8_t block[SHA3_384_BLOCK_SIZE];
-};
+sha3_256_shake_output(struct sha3_ctx *ctx, size_t length, uint8_t *digest);
 
 void
-sha3_384_init (struct sha3_384_ctx *ctx);
+sha3_384_update (struct sha3_ctx *ctx, size_t length, const uint8_t *data);
 
 void
-sha3_384_update (struct sha3_384_ctx *ctx,
-		 size_t length,
-		 const uint8_t *data);
+sha3_384_digest(struct sha3_ctx *ctx, uint8_t *digest);
 
 void
-sha3_384_digest(struct sha3_384_ctx *ctx,
-		size_t length,
-		uint8_t *digest);
-
-struct sha3_512_ctx
-{
-  struct sha3_state state;
-  unsigned index;
-  uint8_t block[SHA3_512_BLOCK_SIZE];
-};
+sha3_512_update (struct sha3_ctx *ctx, size_t length, const uint8_t *data);
 
 void
-sha3_512_init (struct sha3_512_ctx *ctx);
+sha3_512_digest(struct sha3_ctx *ctx, uint8_t *digest);
 
-void
-sha3_512_update (struct sha3_512_ctx *ctx,
-		 size_t length,
-		 const uint8_t *data);
+/* Old names, for compatibility with nettle-3. */
+#define sha3_128_ctx sha3_ctx
+#define sha3_224_ctx sha3_ctx
+#define sha3_256_ctx sha3_ctx
+#define sha3_384_ctx sha3_ctx
+#define sha3_512_ctx sha3_ctx
 
-void
-sha3_512_digest(struct sha3_512_ctx *ctx,
-		size_t length,
-		uint8_t *digest);
+#define sha3_128_init sha3_init
+#define sha3_224_init sha3_init
+#define sha3_256_init sha3_init
+#define sha3_384_init sha3_init
+#define sha3_512_init sha3_init
 
 #ifdef __cplusplus
 }

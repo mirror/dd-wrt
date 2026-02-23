@@ -137,15 +137,15 @@ DECLARE_FAT_FUNC_VAR(aes256_encrypt, aes256_crypt_func, aesni)
 DECLARE_FAT_FUNC_VAR(aes256_decrypt, aes256_crypt_func, c)
 DECLARE_FAT_FUNC_VAR(aes256_decrypt, aes256_crypt_func, aesni)
 
-DECLARE_FAT_FUNC(nettle_cbc_aes128_encrypt, cbc_aes128_encrypt_func);
-DECLARE_FAT_FUNC_VAR(cbc_aes128_encrypt, cbc_aes128_encrypt_func, c);
-DECLARE_FAT_FUNC_VAR(cbc_aes128_encrypt, cbc_aes128_encrypt_func, aesni);
-DECLARE_FAT_FUNC(nettle_cbc_aes192_encrypt, cbc_aes192_encrypt_func);
-DECLARE_FAT_FUNC_VAR(cbc_aes192_encrypt, cbc_aes192_encrypt_func, c);
-DECLARE_FAT_FUNC_VAR(cbc_aes192_encrypt, cbc_aes192_encrypt_func, aesni);
-DECLARE_FAT_FUNC(nettle_cbc_aes256_encrypt, cbc_aes256_encrypt_func);
-DECLARE_FAT_FUNC_VAR(cbc_aes256_encrypt, cbc_aes256_encrypt_func, c);
-DECLARE_FAT_FUNC_VAR(cbc_aes256_encrypt, cbc_aes256_encrypt_func, aesni);
+DECLARE_FAT_FUNC(nettle_cbc_aes128_encrypt, cbc_aes128_encrypt_func)
+DECLARE_FAT_FUNC_VAR(cbc_aes128_encrypt, cbc_aes128_encrypt_func, c)
+DECLARE_FAT_FUNC_VAR(cbc_aes128_encrypt, cbc_aes128_encrypt_func, aesni)
+DECLARE_FAT_FUNC(nettle_cbc_aes192_encrypt, cbc_aes192_encrypt_func)
+DECLARE_FAT_FUNC_VAR(cbc_aes192_encrypt, cbc_aes192_encrypt_func, c)
+DECLARE_FAT_FUNC_VAR(cbc_aes192_encrypt, cbc_aes192_encrypt_func, aesni)
+DECLARE_FAT_FUNC(nettle_cbc_aes256_encrypt, cbc_aes256_encrypt_func)
+DECLARE_FAT_FUNC_VAR(cbc_aes256_encrypt, cbc_aes256_encrypt_func, c)
+DECLARE_FAT_FUNC_VAR(cbc_aes256_encrypt, cbc_aes256_encrypt_func, aesni)
 
 DECLARE_FAT_FUNC(nettle_memxor, memxor_func)
 DECLARE_FAT_FUNC_VAR(memxor, memxor_func, x86_64)

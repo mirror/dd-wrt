@@ -19,11 +19,7 @@ test_pbkdf2 () {
 	-i "$iters" -l "$length" "$salt" | tr -d '\r' > test1.out
     echo "$expected" | tr -d '\r' > test2.out
 
-    if cmp test1.out test2.out ; then
-	true
-    else
-	exit 1;
-    fi
+    cmp test1.out test2.out || exit 1
 }
 
 test_pbkdf2 passwd salt 1 "55ac046e56e3089f ec1691c22544b605"

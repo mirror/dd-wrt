@@ -64,16 +64,16 @@ _siv_s2v (const struct nettle_cipher *nc,
 
   cmac128_init(&cmac_ctx);
   cmac128_update (&cmac_ctx, cmac_cipher, nc->encrypt, 16, const_zero.b);
-  cmac128_digest (&cmac_ctx, cmac_key, cmac_cipher, nc->encrypt, 16, D.b);
+  cmac128_digest (&cmac_ctx, cmac_key, cmac_cipher, nc->encrypt, D.b);
 
   block16_mulx_be (&D, &D);
   cmac128_update (&cmac_ctx, cmac_cipher, nc->encrypt, alength, adata);
-  cmac128_digest (&cmac_ctx, cmac_key, cmac_cipher, nc->encrypt, 16, S.b);
+  cmac128_digest (&cmac_ctx, cmac_key, cmac_cipher, nc->encrypt, S.b);
   block16_xor (&D, &S);
 
   block16_mulx_be (&D, &D);
   cmac128_update (&cmac_ctx, cmac_cipher, nc->encrypt, nlength, nonce);
-  cmac128_digest (&cmac_ctx, cmac_key, cmac_cipher, nc->encrypt, 16, S.b);
+  cmac128_digest (&cmac_ctx, cmac_key, cmac_cipher, nc->encrypt, S.b);
   block16_xor (&D, &S);
 
   /* Sn */
@@ -99,7 +99,7 @@ _siv_s2v (const struct nettle_cipher *nc,
     }
 
   cmac128_update (&cmac_ctx, cmac_cipher, nc->encrypt, 16, T.b);
-  cmac128_digest (&cmac_ctx, cmac_key, cmac_cipher, nc->encrypt, 16, v);
+  cmac128_digest (&cmac_ctx, cmac_key, cmac_cipher, nc->encrypt, v);
 }
 
 void

@@ -2,6 +2,62 @@
 #include "base64.h"
 #include "knuth-lfib.h"
 
+struct base64_variant
+{
+  void (*encode_init)(struct base64_encode_ctx *ctx);
+  void (*decode_init)(struct base64_decode_ctx *ctx);
+};
+
+static const struct base64_variant base64std = {
+  base64_encode_init, base64_decode_init,
+};
+static const struct base64_variant base64url = {
+  base64url_encode_init, base64url_decode_init,
+};
+
+static void
+test_base64 (const struct base64_variant *variant,
+	     size_t data_length,
+	     const uint8_t *data,
+	     const char *ascii)
+{
+  size_t ascii_length = strlen (ascii);
+  char *buffer = xalloc (1 + ascii_length);
+  uint8_t *check = xalloc (1 + BASE64_DECODE_LENGTH (ascii_length));
+  struct base64_encode_ctx encode;
+  struct base64_decode_ctx decode;
+  size_t done;
+
+  ASSERT (ascii_length
+	  <= (BASE64_ENCODE_LENGTH (data_length) + BASE64_ENCODE_FINAL_LENGTH));
+  ASSERT (data_length <= BASE64_DECODE_LENGTH (ascii_length));
+
+  memset(buffer, 0x33, 1 + ascii_length);
+  memset(check, 0x55, 1 + data_length);
+
+  variant->encode_init(&encode);
+
+  done = base64_encode_update (&encode, buffer, data_length, data);
+  done += base64_encode_final (&encode, buffer + done);
+  ASSERT (done == ascii_length);
+
+  ASSERT (MEMEQ(ascii_length, buffer, ascii));
+  ASSERT (0x33 == buffer[ascii_length]);
+
+  variant->decode_init (&decode);
+  done = BASE64_DECODE_LENGTH (ascii_length);
+
+  ASSERT (base64_decode_update(&decode, &done, check, ascii_length, buffer));
+  ASSERT (done == data_length);
+  ASSERT (base64_decode_final(&decode));
+
+  ASSERT (MEMEQ(data_length, check, data));
+  ASSERT (0x55 == check[data_length]);
+
+  free(buffer);
+  free(check);
+}
+
 static void
 test_fuzz_once(struct base64_encode_ctx *encode,
 	       struct base64_decode_ctx *decode,
@@ -76,6 +132,7 @@ static inline int
 base64_decode_in_place (struct base64_decode_ctx *ctx, size_t *dst_length,
 			size_t length, uint8_t *data)
 {
+  *dst_length = length;
   return base64_decode_update (ctx, dst_length,
 			       data, length, (const char *) data);
 }
@@ -98,25 +155,25 @@ test_main(void)
   ASSERT(BASE64_DECODE_LENGTH(3) == 3); /* At most 24 bits */
   ASSERT(BASE64_DECODE_LENGTH(4) == 3); /* At most 30 bits */
   
-  test_armor(&nettle_base64, LDATA(""), "");
-  test_armor(&nettle_base64, LDATA("H"), "SA==");
-  test_armor(&nettle_base64, LDATA("He"), "SGU=");
-  test_armor(&nettle_base64, LDATA("Hel"), "SGVs");
-  test_armor(&nettle_base64, LDATA("Hell"), "SGVsbA==");
-  test_armor(&nettle_base64, LDATA("Hello"), "SGVsbG8=");
-  test_armor(&nettle_base64, LDATA("Hello\0"), "SGVsbG8A");
-  test_armor(&nettle_base64, LDATA("Hello?>>>"), "SGVsbG8/Pj4+");
-  test_armor(&nettle_base64, LDATA("\xff\xff\xff\xff"), "/////w==");
+  test_base64(&base64std, LDATA(""), "");
+  test_base64(&base64std, LDATA("H"), "SA==");
+  test_base64(&base64std, LDATA("He"), "SGU=");
+  test_base64(&base64std, LDATA("Hel"), "SGVs");
+  test_base64(&base64std, LDATA("Hell"), "SGVsbA==");
+  test_base64(&base64std, LDATA("Hello"), "SGVsbG8=");
+  test_base64(&base64std, LDATA("Hello\0"), "SGVsbG8A");
+  test_base64(&base64std, LDATA("Hello?>>>"), "SGVsbG8/Pj4+");
+  test_base64(&base64std, LDATA("\xff\xff\xff\xff"), "/////w==");
 
-  test_armor(&nettle_base64url, LDATA(""), "");
-  test_armor(&nettle_base64url, LDATA("H"), "SA==");
-  test_armor(&nettle_base64url, LDATA("He"), "SGU=");
-  test_armor(&nettle_base64url, LDATA("Hel"), "SGVs");
-  test_armor(&nettle_base64url, LDATA("Hell"), "SGVsbA==");
-  test_armor(&nettle_base64url, LDATA("Hello"), "SGVsbG8=");
-  test_armor(&nettle_base64url, LDATA("Hello\0"), "SGVsbG8A");
-  test_armor(&nettle_base64url, LDATA("Hello?>>>"), "SGVsbG8_Pj4-");
-  test_armor(&nettle_base64url, LDATA("\xff\xff\xff\xff"), "_____w==");
+  test_base64(&base64url, LDATA(""), "");
+  test_base64(&base64url, LDATA("H"), "SA==");
+  test_base64(&base64url, LDATA("He"), "SGU=");
+  test_base64(&base64url, LDATA("Hel"), "SGVs");
+  test_base64(&base64url, LDATA("Hell"), "SGVsbA==");
+  test_base64(&base64url, LDATA("Hello"), "SGVsbG8=");
+  test_base64(&base64url, LDATA("Hello\0"), "SGVsbG8A");
+  test_base64(&base64url, LDATA("Hello?>>>"), "SGVsbG8_Pj4-");
+  test_base64(&base64url, LDATA("\xff\xff\xff\xff"), "_____w==");
 
   {
     /* Test overlapping areas */

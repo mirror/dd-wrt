@@ -78,7 +78,7 @@ _eddsa_sign (const struct ecc_curve *ecc,
   eddsa->dom (ctx);
   eddsa->update (ctx, nbytes, k1);
   eddsa->update (ctx, length, msg);
-  eddsa->digest (ctx, 2*nbytes, hash);
+  eddsa->digest (ctx, hash);
   _eddsa_hash (&ecc->q, rp, 2*nbytes, hash);
 
   ecc->mul_g (ecc, P, rp, scratch_out);
@@ -88,7 +88,7 @@ _eddsa_sign (const struct ecc_curve *ecc,
   eddsa->update (ctx, nbytes, signature);
   eddsa->update (ctx, nbytes, pub);
   eddsa->update (ctx, length, msg);
-  eddsa->digest (ctx, 2*nbytes, hash);
+  eddsa->digest (ctx, hash);
   _eddsa_hash (&ecc->q, hp, 2*nbytes, hash);
 
   ecc_mod_mul (&ecc->q, sp, hp, k2, sp);

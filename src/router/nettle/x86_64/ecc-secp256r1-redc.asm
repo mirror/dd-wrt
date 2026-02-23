@@ -65,6 +65,8 @@ define(`FOLDC', `
 	sub	F0, F2
 	sbb	F1, $1
 ')
+	.text
+	ALIGN(16)
 PROLOGUE(_nettle_ecc_secp256r1_redc)
 	W64_ENTRY(3, 0)
 

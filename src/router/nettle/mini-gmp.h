@@ -1,6 +1,6 @@
 /* mini-gmp, a minimalistic implementation of a GNU GMP subset.
 
-Copyright 2011-2015, 2017, 2019 Free Software Foundation, Inc.
+Copyright 2011-2015, 2017, 2019-2021 Free Software Foundation, Inc.
 
 This file is part of the GNU MP Library.
 
@@ -105,6 +105,7 @@ void mpn_mul_n (mp_ptr, mp_srcptr, mp_srcptr, mp_size_t);
 void mpn_sqr (mp_ptr, mp_srcptr, mp_size_t);
 int mpn_perfect_square_p (mp_srcptr, mp_size_t);
 mp_size_t mpn_sqrtrem (mp_ptr, mp_ptr, mp_srcptr, mp_size_t);
+mp_size_t mpn_gcd (mp_ptr, mp_ptr, mp_size_t, mp_ptr, mp_size_t);
 
 mp_limb_t mpn_lshift (mp_ptr, mp_srcptr, mp_size_t, unsigned int);
 mp_limb_t mpn_rshift (mp_ptr, mp_srcptr, mp_size_t, unsigned int);
@@ -295,7 +296,9 @@ int mpz_init_set_str (mpz_t, const char *, int);
   || defined (_MSL_STDIO_H)           /* Metrowerks */          \
   || defined (_STDIO_H_INCLUDED)      /* QNX4 */		\
   || defined (_ISO_STDIO_ISO_H)       /* Sun C++ */		\
-  || defined (__STDIO_LOADED)         /* VMS */
+  || defined (__STDIO_LOADED)         /* VMS */			\
+  || defined (_STDIO)                 /* HPE NonStop */         \
+  || defined (__DEFINED_FILE)         /* musl */
 size_t mpz_out_str (FILE *, int, const mpz_t);
 #endif
 

@@ -184,7 +184,6 @@ struct nettle_aead
   nettle_hash_update_func *update;
   nettle_crypt_func *encrypt;
   nettle_crypt_func *decrypt;
-  /* FIXME: Drop length argument? */
   nettle_hash_digest_func *digest;
 };
 
@@ -203,65 +202,6 @@ extern const struct nettle_aead nettle_gcm_camellia256;
 extern const struct nettle_aead nettle_gcm_sm4;
 extern const struct nettle_aead nettle_eax_aes128;
 extern const struct nettle_aead nettle_chacha_poly1305;
-
-struct nettle_armor
-{
-  const char *name;
-  unsigned encode_context_size;
-  unsigned decode_context_size;
-
-  unsigned encode_final_length;
-
-  nettle_armor_init_func *encode_init;
-  nettle_armor_length_func *encode_length;
-  nettle_armor_encode_update_func *encode_update;
-  nettle_armor_encode_final_func *encode_final;
-  
-  nettle_armor_init_func *decode_init;
-  nettle_armor_length_func *decode_length;
-  nettle_armor_decode_update_func *decode_update;
-  nettle_armor_decode_final_func *decode_final;
-};
-
-#define _NETTLE_ARMOR(name, NAME) {				\
-  #name,							\
-  sizeof(struct name##_encode_ctx),				\
-  sizeof(struct name##_decode_ctx),				\
-  NAME##_ENCODE_FINAL_LENGTH,					\
-  (nettle_armor_init_func *) name##_encode_init,		\
-  (nettle_armor_length_func *) name##_encode_length,		\
-  (nettle_armor_encode_update_func *) name##_encode_update,	\
-  (nettle_armor_encode_final_func *) name##_encode_final,	\
-  (nettle_armor_init_func *) name##_decode_init,		\
-  (nettle_armor_length_func *) name##_decode_length,		\
-  (nettle_armor_decode_update_func *) name##_decode_update,	\
-  (nettle_armor_decode_final_func *) name##_decode_final,	\
-}
-
-#define _NETTLE_ARMOR_0(name, NAME) {				\
-  #name,							\
-  0,								\
-  sizeof(struct name##_decode_ctx),				\
-  NAME##_ENCODE_FINAL_LENGTH,					\
-  (nettle_armor_init_func *) name##_encode_init,		\
-  (nettle_armor_length_func *) name##_encode_length,		\
-  (nettle_armor_encode_update_func *) name##_encode_update,	\
-  (nettle_armor_encode_final_func *) name##_encode_final,	\
-  (nettle_armor_init_func *) name##_decode_init,		\
-  (nettle_armor_length_func *) name##_decode_length,		\
-  (nettle_armor_decode_update_func *) name##_decode_update,	\
-  (nettle_armor_decode_final_func *) name##_decode_final,	\
-}
-
-/* null-terminated list of armor schemes implemented by this version of nettle */
-const struct nettle_armor * const * _NETTLE_ATTRIBUTE_PURE
-nettle_get_armors (void);
-
-#define nettle_armors (nettle_get_armors())
-
-extern const struct nettle_armor nettle_base64;
-extern const struct nettle_armor nettle_base64url;
-extern const struct nettle_armor nettle_base16;
 
 #define _NETTLE_HMAC(name, HASH) {		\
   #name,					\

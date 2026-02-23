@@ -112,7 +112,7 @@ cmac128_update(struct cmac128_ctx *ctx, const void *cipher,
 void
 cmac128_digest(struct cmac128_ctx *ctx, const struct cmac128_key *key,
 	       const void *cipher, nettle_cipher_func *encrypt,
-	       unsigned length, uint8_t *digest);
+	       uint8_t *digest);
 
 
 #define CMAC128_CTX(type) \
@@ -136,13 +136,13 @@ cmac128_digest(struct cmac128_ctx *ctx, const struct cmac128_key *key,
 		      (nettle_cipher_func *)encrypt,		\
 		      (length), (src)))
 
-#define CMAC128_DIGEST(self, encrypt, length, digest)		\
+#define CMAC128_DIGEST(self, encrypt, digest)			\
   (0 ? (encrypt)(&(self)->cipher, ~(size_t) 0,			\
 		 (uint8_t *) 0, (const uint8_t *) 0)		\
      : cmac128_digest(&(self)->ctx, &(self)->key,		\
 		      &(self)->cipher,				\
 		      (nettle_cipher_func *) (encrypt),		\
-		      (length), (digest)))
+		      (digest)))
 
 void
 cmac64_set_key(struct cmac64_key *key, const void *cipher,
@@ -159,7 +159,7 @@ cmac64_update(struct cmac64_ctx *ctx, const void *cipher,
 void
 cmac64_digest(struct cmac64_ctx *ctx, const struct cmac64_key *key,
 	       const void *cipher, nettle_cipher_func *encrypt,
-	       unsigned length, uint8_t *digest);
+	       uint8_t *digest);
 
 
 #define CMAC64_CTX(type) \
@@ -183,13 +183,13 @@ cmac64_digest(struct cmac64_ctx *ctx, const struct cmac64_key *key,
 		      (nettle_cipher_func *)encrypt,		\
 		      (length), (src)))
 
-#define CMAC64_DIGEST(self, encrypt, length, digest)		\
+#define CMAC64_DIGEST(self, encrypt, digest)			\
   (0 ? (encrypt)(&(self)->cipher, ~(size_t) 0,			\
 		 (uint8_t *) 0, (const uint8_t *) 0)		\
      : cmac64_digest(&(self)->ctx, &(self)->key,		\
 		      &(self)->cipher,				\
 		      (nettle_cipher_func *) (encrypt),		\
-		      (length), (digest)))
+		      (digest)))
 
 struct cmac_aes128_ctx CMAC128_CTX(struct aes128_ctx);
 
@@ -202,7 +202,7 @@ cmac_aes128_update(struct cmac_aes128_ctx *ctx,
 
 void
 cmac_aes128_digest(struct cmac_aes128_ctx *ctx,
-		   size_t length, uint8_t *digest);
+		   uint8_t *digest);
 
 struct cmac_aes256_ctx CMAC128_CTX(struct aes256_ctx);
 
@@ -215,7 +215,7 @@ cmac_aes256_update(struct cmac_aes256_ctx *ctx,
 
 void
 cmac_aes256_digest(struct cmac_aes256_ctx *ctx,
-		   size_t length, uint8_t *digest);
+		   uint8_t *digest);
 
 struct cmac_des3_ctx CMAC64_CTX(struct des3_ctx);
 
@@ -228,7 +228,7 @@ cmac_des3_update(struct cmac_des3_ctx *ctx,
 
 void
 cmac_des3_digest(struct cmac_des3_ctx *ctx,
-		 size_t length, uint8_t *digest);
+		 uint8_t *digest);
 
 #ifdef __cplusplus
 }
