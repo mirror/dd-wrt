@@ -17,21 +17,18 @@ OPT_HOGWEED_OBJS = @OPT_HOGWEED_OBJS@
 
 OPT_NETTLE_SOURCES = @OPT_NETTLE_SOURCES@
 
-FAT_OVERRIDE_LIST = @FAT_OVERRIDE_LIST@
-FAT_EMULATE_LIST = @FAT_EMULATE_LIST@
+FAT_TEST_LIST = @FAT_TEST_LIST@
 
-SUBDIRS = testsuite tools examples
+SUBDIRS = tools testsuite examples
 
 include config.make
 
-PRE_CPPFLAGS = -I. -I$(srcdir)
+PRE_CPPFLAGS = -I.
 EXTRA_CFLAGS = $(CCPIC)
 
 LIBTARGETS = @IF_STATIC@ libnettle.a @IF_HOGWEED@ libhogweed.a
 SHLIBTARGETS = @IF_SHARED@ $(LIBNETTLE_FORLINK) @IF_HOGWEED@ $(LIBHOGWEED_FORLINK)
 
-gnulib_FILES = lib/getopt-core.h lib/getopt-ext.h \
-	       lib/getopt.c lib/getopt1.c lib/getopt_int.h
 getopt_SOURCES = getopt.c getopt1.c
 getopt_TARGETS = $(getopt_SOURCES:.c=.$(OBJEXT))
 
@@ -62,29 +59,21 @@ check-here:
 # Tries different settings of NETTLE_FAT_OVERRIDE. Note that this
 # requires that corresponding processor features are available on the
 # test machine.
-check-fat-override:
-	[ -z "$(FAT_OVERRIDE_LIST)" ] || \
-	  set -e; cd testsuite && for f in $(FAT_OVERRIDE_LIST) ; do \
+check-fat:
+	[ -z "$(FAT_TEST_LIST)" ] || \
+	  set -e; cd testsuite && for f in $(FAT_TEST_LIST) ; do \
 	    echo NETTLE_FAT_OVERRIDE=$$f ; \
 	    NETTLE_FAT_OVERRIDE=$$f $(MAKE) check TS_ALL='$$(TS_FAT)' ; \
 	  done
 
-# Emulate for multiple cpu flavors; -cpu is the right flag for qemu.
-EMULATOR_CPU_FLAG = -cpu
-check-fat-emulate:
-	[ -z "$(FAT_EMULATE_LIST)" ] || [ -z "$(EMULATOR)" ] || \
-	  set -e; cd testsuite && for f in $(FAT_EMULATE_LIST) ; do \
-	    echo Emulating: $$f ; \
-            $(MAKE) check EMULATOR="$(EMULATOR) $(EMULATOR_CPU_FLAG) $$f" TS_ALL='$$(TS_FAT)' ; \
-	  done
-
 all-here: $(TARGETS) $(DOCTARGETS)
 
-nettle_SOURCES = aes-decrypt-internal.c aes-decrypt-table.c \
+nettle_SOURCES = aes-decrypt-internal.c aes-decrypt.c aes-decrypt-table.c \
 		 aes128-decrypt.c aes192-decrypt.c aes256-decrypt.c \
-		 aes-encrypt-internal.c aes-encrypt-table.c \
+		 aes-encrypt-internal.c aes-encrypt.c aes-encrypt-table.c \
 		 aes128-encrypt.c aes192-encrypt.c aes256-encrypt.c \
 		 aes-invert-internal.c aes-set-key-internal.c \
+		 aes-set-encrypt-key.c aes-set-decrypt-key.c \
 		 aes128-set-encrypt-key.c aes128-set-decrypt-key.c \
 		 aes128-meta.c \
 		 aes192-set-encrypt-key.c aes192-set-decrypt-key.c \
@@ -96,9 +85,9 @@ nettle_SOURCES = aes-decrypt-internal.c aes-decrypt-table.c \
 		 arctwo.c arctwo-meta.c blowfish.c blowfish-bcrypt.c \
 		 balloon.c balloon-sha1.c balloon-sha256.c \
 		 balloon-sha384.c balloon-sha512.c \
-		 base16-encode.c base16-decode.c \
-		 base64-encode.c base64-decode.c \
-		 base64url-encode.c base64url-decode.c \
+		 base16-encode.c base16-decode.c base16-meta.c \
+		 base64-encode.c base64-decode.c base64-meta.c \
+		 base64url-encode.c base64url-decode.c base64url-meta.c \
 		 buffer.c buffer-init.c \
 		 camellia-crypt-internal.c camellia-table.c \
 		 camellia-absorb.c camellia-invert-key.c \
@@ -122,7 +111,7 @@ nettle_SOURCES = aes-decrypt-internal.c aes-decrypt-table.c \
 		 eax.c eax-aes128.c eax-aes128-meta.c \
 		 ghash-set-key.c ghash-update.c \
 		 siv-ghash-set-key.c siv-ghash-update.c \
-		 gcm.c \
+		 gcm.c gcm-aes.c \
 		 gcm-aes128.c gcm-aes128-meta.c \
 		 gcm-aes192.c gcm-aes192-meta.c \
 		 gcm-aes256.c gcm-aes256-meta.c \
@@ -132,7 +121,7 @@ nettle_SOURCES = aes-decrypt-internal.c aes-decrypt-table.c \
 		 cmac.c cmac64.c cmac-aes128.c cmac-aes256.c cmac-des3.c \
 		 cmac-aes128-meta.c cmac-aes256-meta.c cmac-des3-meta.c \
 		 gost28147.c gosthash94.c gosthash94-meta.c \
-		 hmac-internal.c hmac-gosthash94.c hmac-md5.c hmac-ripemd160.c \
+		 hmac.c hmac-gosthash94.c hmac-md5.c hmac-ripemd160.c \
 		 hmac-sha1.c hmac-sha224.c hmac-sha256.c hmac-sha384.c \
 		 hmac-sha512.c hmac-streebog.c hmac-sm3.c \
 		 hmac-md5-meta.c hmac-ripemd160-meta.c hmac-sha1-meta.c \
@@ -141,10 +130,10 @@ nettle_SOURCES = aes-decrypt-internal.c aes-decrypt-table.c \
 		 hmac-streebog-meta.c hmac-sm3-meta.c \
 		 knuth-lfib.c hkdf.c \
 		 md2.c md2-meta.c md4.c md4-meta.c \
-		 md5.c md5-meta.c \
+		 md5.c md5-compat.c md5-meta.c \
 		 memeql-sec.c memxor.c memxor3.c \
 		 nettle-lookup-hash.c \
-		 nettle-meta-aeads.c \
+		 nettle-meta-aeads.c nettle-meta-armors.c \
 		 nettle-meta-ciphers.c nettle-meta-hashes.c nettle-meta-macs.c \
 		 ocb.c ocb-aes128.c \
 		 pbkdf2.c pbkdf2-hmac-gosthash94.c pbkdf2-hmac-sha1.c \
@@ -177,11 +166,7 @@ nettle_SOURCES = aes-decrypt-internal.c aes-decrypt-table.c \
 		 write-be32.c write-le32.c write-le64.c \
 		 yarrow256.c yarrow_key_event.c \
 		 xts.c xts-aes128.c xts-aes256.c \
-		 drbg-ctr-aes256.c \
-		 slh-shake.c slh-sha256.c \
-		 slh-fors.c slh-merkle.c slh-wots.c slh-xmss.c \
-		 slh-dsa.c slh-dsa-128s.c slh-dsa-128f.c \
-		 slh-dsa-shake-128s.c slh-dsa-shake-128f.c slh-dsa-sha2-128s.c slh-dsa-sha2-128f.c
+		 drbg-ctr-aes256.c
 
 hogweed_SOURCES = sexp.c sexp-format.c \
 		  sexp-transport.c sexp-transport-format.c \
@@ -205,11 +190,14 @@ hogweed_SOURCES = sexp.c sexp-format.c \
 		  rsa-encrypt.c rsa-decrypt.c \
 		  rsa-oaep-encrypt.c rsa-oaep-decrypt.c \
 		  rsa-sec-decrypt.c rsa-decrypt-tr.c \
-		  rsa-keygen.c \
+		  rsa-keygen.c rsa-blind.c \
 		  rsa2sexp.c sexp2rsa.c \
-		  dsa.c dsa-gen-params.c \
+		  dsa.c dsa-compat.c dsa-compat-keygen.c dsa-gen-params.c \
 		  dsa-sign.c dsa-verify.c dsa-keygen.c dsa-hash.c \
+		  dsa-sha1-sign.c dsa-sha1-verify.c \
+		  dsa-sha256-sign.c dsa-sha256-verify.c  \
 		  dsa2sexp.c sexp2dsa.c \
+		  pgp-encode.c rsa2openpgp.c \
 		  der-iterator.c der2rsa.c der2dsa.c \
 		  sec-add-1.c sec-sub-1.c \
 		  gmp-glue.c cnd-copy.c \
@@ -245,19 +233,20 @@ OPT_SOURCES = fat-arm.c fat-arm64.c fat-ppc.c fat-s390x.c fat-x86_64.c mini-gmp.
 HEADERS = aes.h arcfour.h arctwo.h asn1.h blowfish.h balloon.h \
 	  base16.h base64.h bignum.h buffer.h camellia.h cast128.h \
 	  cbc.h ccm.h cfb.h chacha.h chacha-poly1305.h ctr.h \
-	  curve25519.h curve448.h des.h dsa.h eax.h \
+	  curve25519.h curve448.h des.h dsa.h dsa-compat.h eax.h \
 	  ecc-curve.h ecc.h ecdsa.h eddsa.h \
 	  gcm.h gostdsa.h gosthash94.h hmac.h \
 	  knuth-lfib.h hkdf.h \
 	  macros.h \
 	  cmac.h siv-cmac.h siv-gcm.h \
-	  md2.h md4.h md5.h \
+	  md2.h md4.h \
+	  md5.h md5-compat.h \
 	  memops.h memxor.h \
 	  nettle-meta.h nettle-types.h \
 	  ocb.h pbkdf2.h \
-	  pkcs1.h pss.h pss-mgf1.h realloc.h ripemd160.h rsa.h \
+	  pgp.h pkcs1.h pss.h pss-mgf1.h realloc.h ripemd160.h rsa.h \
 	  salsa20.h sexp.h serpent.h \
-	  sha1.h sha2.h sha3.h slh-dsa.h sm3.h sm4.h streebog.h twofish.h \
+	  sha.h sha1.h sha2.h sha3.h sm3.h sm4.h streebog.h twofish.h \
 	  umac.h yarrow.h xts.h poly1305.h nist-keywrap.h \
 	  drbg-ctr.h
 
@@ -270,7 +259,7 @@ SOURCES = $(nettle_SOURCES) $(hogweed_SOURCES) \
 
 # NOTE: This list must include all source files, with no duplicates,
 # independently of which source files are included in the build.
-DISTFILES = $(SOURCES) $(HEADERS) getopt.h \
+DISTFILES = $(SOURCES) $(HEADERS) getopt.h getopt_int.h \
 	.bootstrap run-tests \
 	aclocal.m4 configure.ac \
 	configure stamp-h.in version.h.in \
@@ -287,10 +276,9 @@ DISTFILES = $(SOURCES) $(HEADERS) getopt.h \
 	serpent-internal.h cast128_sboxes.h desinfo.h desCode.h \
 	ripemd160-internal.h md-internal.h sha2-internal.h \
 	memxor-internal.h nettle-internal.h non-nettle.h nettle-write.h \
-	ctr-internal.h chacha-internal.h hmac-internal.h sha3-internal.h \
+	ctr-internal.h chacha-internal.h sha3-internal.h \
 	salsa20-internal.h umac-internal.h hogweed-internal.h \
 	rsa-internal.h pkcs1-internal.h dsa-internal.h eddsa-internal.h \
-	slh-dsa-internal.h \
 	gmp-glue.h ecc-internal.h fat-setup.h oaep.h \
 	mini-gmp.h asm.m4 m4-utils.m4 \
 	nettle.texinfo nettle.info nettle.html nettle.pdf sha-example.c
@@ -629,10 +617,6 @@ distdir: $(DISTFILES)
 	  else cp "$(srcdir)/$$f" "$(distdir)" ; \
 	  fi ; \
 	done
-	mkdir "$(distdir)/lib"
-	set -e; for f in $(gnulib_FILES) ; do \
-	  cp "$(srcdir)/$$f" "$(distdir)/lib" ; \
-	done
 	set -e; for d in sparc64 x86 \
 		x86_64 x86_64/aesni x86_64/sha_ni x86_64/pclmul x86_64/fat \
 		arm arm/neon arm/v6 arm/fat \
@@ -648,9 +632,8 @@ distdir: $(DISTFILES)
 	  mkdir "$$sd" && $(MAKE) -C $$d distdir="`cd $$sd && pwd`" $@ ; \
 	done
 
-TAR_OPTIONS = --owner=0 --group=0 --numeric-owner --sort=name --mode=go+u,go-w --format=ustar
 dist: distdir
-	TAR_OPTIONS="$(TAR_OPTIONS)" tar cf - $(distdir) | gzip -c >$(distdir).tar.gz
+	tar cf - $(distdir) | gzip -c >$(distdir).tar.gz	
 	rm -rf $(distdir)
 
 rm_distcheck = test ! -d distcheck-tmp \

@@ -88,10 +88,13 @@ umac128_update (struct umac128_ctx *ctx,
 
 void
 umac128_digest (struct umac128_ctx *ctx,
-		uint8_t *digest)
+		size_t length, uint8_t *digest)
 {
   uint32_t tag[4];
   unsigned i;
+
+  assert (length > 0);
+  assert (length <= 16);
 
   if (ctx->index > 0 || ctx->count == 0)
     {
@@ -119,7 +122,7 @@ umac128_digest (struct umac128_ctx *ctx,
     tag[i] ^= ctx->l3_key2[i] ^ _nettle_umac_l3 (ctx->l3_key1 + 8*i,
 						 ctx->l2_state + 2*i);
 
-  memcpy (digest, tag, UMAC128_DIGEST_SIZE);
+  memcpy (digest, tag, length);
 
   /* Reinitialize */
   ctx->count = ctx->index = 0;

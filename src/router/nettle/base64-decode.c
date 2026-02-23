@@ -1,4 +1,4 @@
-/* base64-decode.c
+/* base64-encode.c
 
    Copyright (C) 2002 Niels Möller
 
@@ -75,9 +75,46 @@ base64_decode_single(struct base64_decode_ctx *ctx,
 		     uint8_t *dst,
 		     char src)
 {
-  size_t dst_length = 1;
-  return base64_decode_update (ctx, &dst_length, dst, 1, &src)
-    ? dst_length : -1;
+  int data = ctx->table[(uint8_t) src];
+
+  switch(data)
+    {
+    default:
+      assert(data >= 0 && data < 0x40);
+
+      if (ctx->padding)
+	return -1;
+      
+      ctx->word = ctx->word << 6 | data;
+      ctx->bits += 6;
+
+      if (ctx->bits >= 8)
+	{
+	  ctx->bits -= 8;
+	  dst[0] = ctx->word >> ctx->bits;
+	  return 1;
+	}
+      else return 0;
+
+    case TABLE_INVALID:
+      return -1;
+
+    case TABLE_SPACE:
+      return 0;
+      
+    case TABLE_END:
+      /* There can be at most two padding characters. */
+      if (!ctx->bits || ctx->padding > 2)
+	return -1;
+      
+      if (ctx->word & ( (1<<ctx->bits) - 1))
+	/* We shouldn't have any leftover bits */
+	return -1;
+
+      ctx->padding++;
+      ctx->bits -= 2;
+      return 0;
+    }
 }
 
 int
@@ -90,44 +127,20 @@ base64_decode_update(struct base64_decode_ctx *ctx,
   size_t done;
   size_t i;
 
-  for (i = done = 0; i<src_length; i++)
-    {
-      int data = ctx->table[(uint8_t) src[i]];
-      switch (data)
-	{
-	default:
-	  assert(data >= 0 && data < 0x40);
-
-	  if (ctx->padding || (done >= *dst_length))
-	    return 0;
-
-	  ctx->word = ctx->word << 6 | data;
-	  ctx->bits += 6;
-
-	  if (ctx->bits >= 8)
-	    {
-	      ctx->bits -= 8;
-	      dst[done++] = ctx->word >> ctx->bits;
-	    }
-	  break;
-	case TABLE_INVALID:
-	  return 0;
-	case TABLE_SPACE:
-	  continue;
-	case TABLE_END:
-	  /* There can be at most two padding characters. */
-	  if (!ctx->bits || ctx->padding > 2)
-	    return 0;
-
-	  if (ctx->word & ( (1<<ctx->bits) - 1))
-	    /* We shouldn't have any leftover bits */
-	    return 0;
-
-	  ctx->padding++;
-	  ctx->bits -= 2;
-	  break;
-	}
-    }
+  for (i = 0, done = 0; i<src_length; i++)
+    switch(base64_decode_single(ctx, dst + done, src[i]))
+      {
+      case -1:
+	return 0;
+      case 1:
+	done++;
+	/* Fall through */
+      case 0:
+	break;
+      default:
+	abort();
+      }
+  
   assert(done <= BASE64_DECODE_LENGTH(src_length));
 
   *dst_length = done;

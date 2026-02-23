@@ -368,7 +368,9 @@ static void
 ecc_mul_binary (const struct ecc_curve *ecc,
 		struct ecc_point *r, const mpz_t n, const struct ecc_point *p)
 {
-  mp_bitcnt_t k;
+  /* Avoid the mp_bitcnt_t type for compatibility with older GMP
+     versions. */
+  unsigned k;
 
   assert (r != p);
   assert (mpz_sgn (n) > 0);

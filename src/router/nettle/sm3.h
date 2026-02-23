@@ -70,6 +70,7 @@ sm3_update(struct sm3_ctx *ctx,
 
 void
 sm3_digest(struct sm3_ctx *ctx,
+	   size_t length,
 	   uint8_t *digest);
 
 #ifdef __cplusplus

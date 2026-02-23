@@ -49,7 +49,7 @@ static struct tstring *tstring_first = NULL;
 struct tstring *
 tstring_alloc (size_t length)
 {
-  struct tstring *s = xalloc(sizeof(struct tstring) + length + 1);
+  struct tstring *s = xalloc(sizeof(struct tstring) + length);
   s->length = length;
   s->next = tstring_first;
   /* NUL-terminate, for convenience. */
@@ -122,33 +122,6 @@ print_hex(size_t length, const uint8_t *data)
   printf("\n");
 }
 
-/* Tries opening the file in $srcdir, if set, otherwise the current
- * working directory */
-FILE *
-open_srcdir_file (const char *name)
-{
-  const char *srcdir = getenv("srcdir");
-  FILE *f;
-  if (srcdir && srcdir[0])
-    {
-      size_t size  = strlen(name) + strlen(srcdir) + 2;
-      char *buf = xalloc(size);
-      snprintf(buf, size, "%s/%s", srcdir, name);
-
-      f = fopen(buf, "r");
-      free(buf);
-    }
-  else
-    f = fopen(name, "r");
-
-  if (!f)
-    {
-      fprintf(stderr, "Failed to open '%s': %s\n", name, strerror(errno));
-      FAIL();
-    }
-  return f;
-}
-
 int verbose = 0;
 int test_side_channel = 0;
 
@@ -210,48 +183,43 @@ test_cipher(const struct nettle_cipher *cipher,
 	    const struct tstring *ciphertext)
 {
   void *ctx = xalloc(cipher->context_size);
-  uint8_t *buf = xalloc(cleartext->length + 7);
+  uint8_t *data = xalloc(cleartext->length);
   size_t length;
-  unsigned align;
   ASSERT (cleartext->length == ciphertext->length);
   length = cleartext->length;
 
   ASSERT (key->length == cipher->key_size);
+  cipher->set_encrypt_key(ctx, key->data);
+  cipher->encrypt(ctx, length, data, cleartext->data);
 
-  for (align = 0; align <= 7; align++)
+  if (!MEMEQ(length, data, ciphertext->data))
     {
-      uint8_t *data = buf + align;
-      cipher->set_encrypt_key(ctx, key->data);
-      cipher->encrypt(ctx, length, data, cleartext->data);
-
-      if (!MEMEQ(length, data, ciphertext->data))
-	{
-	  fprintf(stderr, "Encrypt failed (align %d):\nInput:", align);
-	  tstring_print_hex(cleartext);
-	  fprintf(stderr, "\nOutput: ");
-	  print_hex(length, data);
-	  fprintf(stderr, "\nExpected:");
-	  tstring_print_hex(ciphertext);
-	  fprintf(stderr, "\n");
-	  FAIL();
-	}
-      cipher->set_decrypt_key(ctx, key->data);
-      cipher->decrypt(ctx, length, data, data);
-
-      if (!MEMEQ(length, data, cleartext->data))
-	{
-	  fprintf(stderr, "Decrypt failed (align %d):\nInput:", align);
-	  tstring_print_hex(ciphertext);
-	  fprintf(stderr, "\nOutput: ");
-	  print_hex(length, data);
-	  fprintf(stderr, "\nExpected:");
-	  tstring_print_hex(cleartext);
-	  fprintf(stderr, "\n");
-	  FAIL();
-	}
+      fprintf(stderr, "Encrypt failed:\nInput:");
+      tstring_print_hex(cleartext);
+      fprintf(stderr, "\nOutput: ");
+      print_hex(length, data);
+      fprintf(stderr, "\nExpected:");
+      tstring_print_hex(ciphertext);
+      fprintf(stderr, "\n");
+      FAIL();
     }
+  cipher->set_decrypt_key(ctx, key->data);
+  cipher->decrypt(ctx, length, data, data);
+
+  if (!MEMEQ(length, data, cleartext->data))
+    {
+      fprintf(stderr, "Decrypt failed:\nInput:");
+      tstring_print_hex(ciphertext);
+      fprintf(stderr, "\nOutput: ");
+      print_hex(length, data);
+      fprintf(stderr, "\nExpected:");
+      tstring_print_hex(cleartext);
+      fprintf(stderr, "\n");
+      FAIL();
+    }
+
   free(ctx);
-  free(buf);
+  free(data);
 }
 
 void
@@ -921,9 +889,9 @@ test_aead(const struct nettle_aead *aead,
 	    }
 	  if (digest)
 	    {
-	      ASSERT (digest->length == aead->digest_size);
+	      ASSERT (digest->length <= aead->digest_size);
 	      memset(buffer, 0, aead->digest_size);
-	      aead->digest(ctx, buffer);
+	      aead->digest(ctx, digest->length, buffer);
 	      if (!MEMEQ(digest->length, buffer, digest->data))
 		{
 		  fprintf(stderr, "aead->digest failed (offset = %u):\n  got: ",
@@ -962,9 +930,8 @@ test_aead(const struct nettle_aead *aead,
 
 	      if (digest)
 		{
-		  ASSERT (digest->length == aead->digest_size);
 		  memset(buffer, 0, aead->digest_size);
-		  aead->digest(ctx, buffer);
+		  aead->digest(ctx, digest->length, buffer);
 		  ASSERT(MEMEQ(digest->length, buffer, digest->data));
 		}
 	    }
@@ -1145,7 +1112,7 @@ test_hash(const struct nettle_hash *hash,
       hash->update(ctx, 0, NULL);
       hash->update(ctx, msg->length - offset, msg->data + offset);
 
-      hash->digest(ctx, buffer);
+      hash->digest(ctx, digest->length, buffer);
 
       if (MEMEQ(digest->length, digest->data, buffer) == 0)
 	{
@@ -1157,13 +1124,23 @@ test_hash(const struct nettle_hash *hash,
 	}
     }
 
+  memset(buffer, 0, digest->length);
+
+  hash->update(ctx, msg->length, msg->data);
+  ASSERT(digest->length > 0);
+  hash->digest(ctx, digest->length - 1, buffer);
+
+  ASSERT(MEMEQ(digest->length - 1, digest->data, buffer));
+
+  ASSERT(buffer[digest->length - 1] == 0);
+
   input = xalloc (msg->length + 16);
   for (offset = 0; offset < 16; offset++)
     {
       memset (input, 0, msg->length + 16);
       memcpy (input + offset, msg->data, msg->length);
       hash->update (ctx, msg->length, input + offset);
-      hash->digest (ctx, buffer);
+      hash->digest (ctx, digest->length, buffer);
       if (MEMEQ(digest->length, digest->data, buffer) == 0)
 	{
 	  fprintf(stdout, "hash input address: %p\nGot:\n", input + offset);
@@ -1287,7 +1264,7 @@ test_hash_large(const struct nettle_hash *hash,
     }
   fprintf (stderr, "\n");
   
-  hash->digest(ctx, buffer);
+  hash->digest(ctx, hash->digest_size, buffer);
 
   print_hex(hash->digest_size, buffer);
 
@@ -1318,11 +1295,11 @@ test_mac(const struct nettle_mac *mac,
       mac->set_key (ctx, key->data);
     }
   mac->update (ctx, msg->length, msg->data);
-  mac->digest (ctx, hash);
+  mac->digest (ctx, digest->length, hash);
 
   if (!MEMEQ (digest->length, digest->data, hash))
     {
-      fprintf (stderr, "test_mac %s failed, msg: ", mac->name);
+      fprintf (stderr, "test_mac failed, msg: ");
       print_hex (msg->length, msg->data);
       fprintf(stderr, "Output:");
       print_hex (mac->digest_size, hash);
@@ -1334,10 +1311,10 @@ test_mac(const struct nettle_mac *mac,
 
   /* attempt to re-use the structure */
   mac->update (ctx, msg->length, msg->data);
-  mac->digest (ctx, hash);
+  mac->digest (ctx, digest->length, hash);
   if (!MEMEQ (digest->length, digest->data, hash))
     {
-      fprintf (stderr, "test_mac %s failed on re-use, msg: ", mac->name);
+      fprintf (stderr, "test_mac: failed on re-use, msg: ");
       print_hex (msg->length, msg->data);
       fprintf(stderr, "Output:");
       print_hex (mac->digest_size, hash);
@@ -1350,10 +1327,10 @@ test_mac(const struct nettle_mac *mac,
   /* attempt byte-by-byte hashing */
   for (i=0;i<msg->length;i++)
     mac->update (ctx, 1, msg->data+i);
-  mac->digest (ctx, hash);
+  mac->digest (ctx, digest->length, hash);
   if (!MEMEQ (digest->length, digest->data, hash))
     {
-      fprintf (stderr, "test_mac %s failed on byte-by-byte, msg: ", mac->name);
+      fprintf (stderr, "test_mac failed on byte-by-byte, msg: ");
       print_hex (msg->length, msg->data);
       fprintf(stderr, "Output:");
       print_hex (16, hash);
@@ -1364,6 +1341,51 @@ test_mac(const struct nettle_mac *mac,
     }
   free (ctx);
   free (hash);
+}
+
+void
+test_armor(const struct nettle_armor *armor,
+           size_t data_length,
+           const uint8_t *data,
+           const char *ascii)
+{
+  size_t ascii_length = strlen(ascii);
+  char *buffer = xalloc(1 + ascii_length);
+  uint8_t *check = xalloc(1 + armor->decode_length(ascii_length));
+  void *encode = xalloc(armor->encode_context_size);
+  void *decode = xalloc(armor->decode_context_size);
+  size_t done;
+
+  ASSERT(ascii_length
+	 <= (armor->encode_length(data_length) + armor->encode_final_length));
+  ASSERT(data_length <= armor->decode_length(ascii_length));
+  
+  memset(buffer, 0x33, 1 + ascii_length);
+  memset(check, 0x55, 1 + data_length);
+
+  armor->encode_init(encode);
+  
+  done = armor->encode_update(encode, buffer, data_length, data);
+  done += armor->encode_final(encode, buffer + done);
+  ASSERT(done == ascii_length);
+
+  ASSERT (MEMEQ(ascii_length, buffer, ascii));
+  ASSERT (0x33 == buffer[strlen(ascii)]);
+
+  armor->decode_init(decode);
+  done = armor->decode_length(ascii_length);
+
+  ASSERT(armor->decode_update(decode, &done, check, ascii_length, buffer));
+  ASSERT(done == data_length);
+  ASSERT(armor->decode_final(decode));
+  
+  ASSERT (MEMEQ(data_length, check, data));
+  ASSERT (0x55 == check[data_length]);
+
+  free(buffer);
+  free(check);
+  free(encode);
+  free(decode);
 }
 
 #if WITH_HOGWEED
@@ -1482,7 +1504,7 @@ xalloc_limbs (mp_size_t n)
   ASSERT(mpz_cmp (signature, expected) == 0);				\
 									\
   hash##_update(&hash, LDATA(msg));					\
-  hash##_digest(&hash, digest);						\
+  hash##_digest(&hash, sizeof(digest), digest);				\
   ASSERT(rsa_##hash##_sign_digest(key, digest, signature));		\
   ASSERT(mpz_cmp (signature, expected) == 0);				\
 									\
@@ -1970,30 +1992,27 @@ test_rsa_key(struct rsa_public_key *pub,
 }
 
 /* Requires that the context is named like the hash algorithm. */
-#define DSA_VERIFY(params, key, hash, buf, msg, signature)	\
-  (hash##_update(&hash, LDATA(msg)),				\
-   hash##_digest(&hash, buf),					\
-   dsa_verify(params, key, sizeof(buf), buf, signature))
+#define DSA_VERIFY(key, hash, msg, signature)	\
+  (hash##_update(&hash, LDATA(msg)),		\
+   dsa_##hash##_verify(key, &hash, signature))
 
 void
-test_dsa160(const struct dsa_params *params,
-	    const mpz_t pub, const mpz_t key,
+test_dsa160(const struct dsa_public_key *pub,
+	    const struct dsa_private_key *key,
 	    const struct dsa_signature *expected)
 {
   struct sha1_ctx sha1;
   struct dsa_signature signature;
   struct knuth_lfib_ctx lfib;
-  uint8_t digest[SHA1_DIGEST_SIZE];
-
+  
   sha1_init(&sha1);
   dsa_signature_init(&signature);
   knuth_lfib_init(&lfib, 1111);
   
   sha1_update(&sha1, LDATA("The magic words are squeamish ossifrage"));
-  sha1_digest(&sha1, digest);
-  ASSERT (dsa_sign(params, key,
-		   &lfib, (nettle_random_func *) knuth_lfib_random,
-		   sizeof(digest), digest, &signature));
+  ASSERT (dsa_sha1_sign(pub, key,
+			&lfib, (nettle_random_func *) knuth_lfib_random,
+			&sha1, &signature));
 
   if (verbose)
     {
@@ -2009,18 +2028,18 @@ test_dsa160(const struct dsa_params *params,
 	    && mpz_cmp (signature.s, expected->s) == 0);
   
   /* Try bad data */
-  ASSERT (!DSA_VERIFY(params, pub, sha1, digest,
+  ASSERT (!DSA_VERIFY(pub, sha1,
 		      "The magick words are squeamish ossifrage",
 		      &signature));
 
   /* Try correct data */
-  ASSERT (DSA_VERIFY(params, pub, sha1, digest,
+  ASSERT (DSA_VERIFY(pub, sha1,
 		     "The magic words are squeamish ossifrage",
 		     &signature));
 
   /* Try bad signature */
   mpz_combit(signature.r, 17);
-  ASSERT (!DSA_VERIFY(params, pub, sha1, digest,
+  ASSERT (!DSA_VERIFY(pub, sha1,
 		      "The magic words are squeamish ossifrage",
 		      &signature));
 
@@ -2028,24 +2047,22 @@ test_dsa160(const struct dsa_params *params,
 }
 
 void
-test_dsa256(const struct dsa_params *params,
-	    const mpz_t pub, const mpz_t key,
+test_dsa256(const struct dsa_public_key *pub,
+	    const struct dsa_private_key *key,
 	    const struct dsa_signature *expected)
 {
   struct sha256_ctx sha256;
   struct dsa_signature signature;
   struct knuth_lfib_ctx lfib;
-  uint8_t digest[SHA256_DIGEST_SIZE];
   
   sha256_init(&sha256);
   dsa_signature_init(&signature);
   knuth_lfib_init(&lfib, 1111);
   
   sha256_update(&sha256, LDATA("The magic words are squeamish ossifrage"));
-  sha256_digest(&sha256, digest);
-  ASSERT (dsa_sign(params, key,
-		   &lfib, (nettle_random_func *) knuth_lfib_random,
-		   sizeof(digest), digest, &signature));
+  ASSERT (dsa_sha256_sign(pub, key,
+			&lfib, (nettle_random_func *) knuth_lfib_random,
+			&sha256, &signature));
   
   if (verbose)
     {
@@ -2061,18 +2078,18 @@ test_dsa256(const struct dsa_params *params,
 	    && mpz_cmp (signature.s, expected->s) == 0);
   
   /* Try bad data */
-  ASSERT (!DSA_VERIFY(params, pub, sha256, digest,
+  ASSERT (!DSA_VERIFY(pub, sha256,
 		      "The magick words are squeamish ossifrage",
 		      &signature));
 
   /* Try correct data */
-  ASSERT (DSA_VERIFY(params, pub, sha256, digest,
+  ASSERT (DSA_VERIFY(pub, sha256,
 		     "The magic words are squeamish ossifrage",
 		     &signature));
 
   /* Try bad signature */
   mpz_combit(signature.r, 17);
-  ASSERT (!DSA_VERIFY(params, pub, sha256, digest,
+  ASSERT (!DSA_VERIFY(pub, sha256,
 		      "The magic words are squeamish ossifrage",
 		      &signature));
 
@@ -2154,14 +2171,14 @@ test_dsa_verify(const struct dsa_params *params,
   hash->init(ctx);
   
   hash->update (ctx, msg->length, msg->data);
-  hash->digest (ctx, digest);
+  hash->digest (ctx, hash->digest_size, digest);
 
   mpz_set (signature.r, ref->r);
   mpz_set (signature.s, ref->s);
 
   ASSERT (dsa_verify (params, pub,
-		      hash->digest_size, digest,
-		      &signature));
+		       hash->digest_size, digest,
+		       &signature));
 
   /* Try bad signature */
   mpz_combit(signature.r, 17);

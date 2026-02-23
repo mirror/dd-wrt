@@ -49,6 +49,8 @@ extern "C" {
 
 #define RIPEMD160_DIGEST_SIZE 20
 #define RIPEMD160_BLOCK_SIZE 64
+/* For backwards compatibility */
+#define RIPEMD160_DATA_SIZE RIPEMD160_BLOCK_SIZE
 
 /* Digest is kept internally as 5 32-bit words. */
 #define _RIPEMD160_DIGEST_LENGTH 5
@@ -71,6 +73,7 @@ ripemd160_update(struct ripemd160_ctx *ctx,
 
 void
 ripemd160_digest(struct ripemd160_ctx *ctx,
+		 size_t length,
 		 uint8_t *digest);
 
 #ifdef __cplusplus

@@ -54,8 +54,8 @@ cmac_des3_update (struct cmac_des3_ctx *ctx,
 
 void
 cmac_des3_digest (struct cmac_des3_ctx *ctx,
-		  uint8_t *digest)
+		  size_t length, uint8_t *digest)
 {
-  CMAC64_DIGEST (ctx, des3_encrypt, digest);
+  CMAC64_DIGEST (ctx, des3_encrypt, length, digest);
 }
 

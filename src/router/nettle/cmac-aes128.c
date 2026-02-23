@@ -54,7 +54,7 @@ cmac_aes128_update (struct cmac_aes128_ctx *ctx,
 
 void
 cmac_aes128_digest(struct cmac_aes128_ctx *ctx,
-		   uint8_t *digest)
+		  size_t length, uint8_t *digest)
 {
-  CMAC128_DIGEST(ctx, aes128_encrypt, digest);
+  CMAC128_DIGEST(ctx, aes128_encrypt, length, digest);
 }

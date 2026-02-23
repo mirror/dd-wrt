@@ -2,7 +2,7 @@
 
    HMAC-MD5 message authentication code.
 
-   Copyright (C) 2002, 2025 Niels Möller
+   Copyright (C) 2002 Niels Möller
 
    This file is part of GNU Nettle.
 
@@ -36,14 +36,12 @@
 #endif
 
 #include "hmac.h"
-#include "hmac-internal.h"
 
 void
 hmac_md5_set_key(struct hmac_md5_ctx *ctx,
 		 size_t key_length, const uint8_t *key)
 {
-  _nettle_hmac_set_key (sizeof(ctx->outer), ctx->outer, ctx->inner, &ctx->state,
-			ctx->state.block, &nettle_md5, key_length, key);
+  HMAC_SET_KEY(ctx, &nettle_md5, key_length, key);
 }
 
 void
@@ -55,8 +53,7 @@ hmac_md5_update(struct hmac_md5_ctx *ctx,
 
 void
 hmac_md5_digest(struct hmac_md5_ctx *ctx,
-		uint8_t *digest)
+		size_t length, uint8_t *digest)
 {
-  _NETTLE_HMAC_DIGEST (ctx->outer, ctx->inner, &ctx->state, md5_digest,
-		       MD5_DIGEST_SIZE, digest);
+  HMAC_DIGEST(ctx, &nettle_md5, length, digest);
 }

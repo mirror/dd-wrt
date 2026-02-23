@@ -1,16 +1,21 @@
 variables:
-  BUILD_IMAGES: git.lysator.liu.se:5050/nettle/build-images
+  BUILDENV_NATIVE_IMAGE: gnutls/nettle-build-images:buildenv-native
+  BUILDENV_CLANG_IMAGE: gnutls/nettle-build-images:buildenv-clang
+  BUILDENV_CROSS_IMAGE: gnutls/nettle-build-images:buildenv-cross
   GET_SOURCES_ATTEMPTS: "3"
 
 # "Native" means x86-64; no jobs run on anything else.
 .native-build:
-  image: $BUILD_IMAGES:buildenv-native
+  image: $CI_REGISTRY/$BUILDENV_NATIVE_IMAGE
   script:
   - ./.bootstrap
   - './configure $EXTRA_CONFIGURE_ARGS --disable-documentation'
   - 'make -j$(nproc)'
-  - 'make -j$(nproc) check'
-  - 'for t in $EXTRA_CHECK_TARGET ; do make -j$(nproc) $t ; done'
+  - 'make -j$(nproc) check $EXTRA_CHECK_TARGET'
+  tags:
+  - saas-linux-small-amd64
+  except:
+  - tags
   variables:
     NETTLE_TEST_SEED: '0'
   artifacts:
@@ -22,7 +27,7 @@ variables:
 native/fat:
   extends: .native-build
   variables:
-    EXTRA_CHECK_TARGET: check-fat-override
+    EXTRA_CHECK: check-fat
 
 native/no-fat:
   extends: .native-build
@@ -51,11 +56,11 @@ native/mini-gmp:
   variables:
     EXTRA_CONFIGURE_ARGS: '--enable-mini-gmp'
 
-native/c99:
+native/c89:
   extends: .native-build
   variables:
     EXTRA_CONFIGURE_ARGS: '--disable-assembler'
-    CC: '$CI_PROJECT_DIR/misc/c99'
+    CC: '$CI_PROJECT_DIR/misc/c89'
 
 native/extra-asserts:
   extends: .native-build
@@ -82,11 +87,15 @@ native/asan:
     CXXFLAGS: '-fsanitize=address -g -O2'
 
 build/static-analyzers:
-  image: $BUILD_IMAGES:buildenv-clang
+  image: $CI_REGISTRY/$BUILDENV_CLANG_IMAGE
   script:
   - ./.bootstrap
   - scan-build ./configure --disable-documentation --disable-assembler
   - scan-build --status-bugs -o scan-build-lib make -j$(nproc)
+  tags:
+  - saas-linux-small-amd64
+  except:
+  - tags
   artifacts:
     expire_in: 1 week
     when: on_failure
@@ -94,7 +103,7 @@ build/static-analyzers:
       - scan-build-lib/*
 
 build/gnutls:
-  image: $BUILD_IMAGES:buildenv-native
+  image: $CI_REGISTRY/$BUILDENV_NATIVE_IMAGE
   script:
   - ./.bootstrap &&
     ./configure --disable-documentation --prefix="$(pwd)/local" --libdir="$(pwd)/local/lib" &&
@@ -105,6 +114,10 @@ build/gnutls:
       LDFLAGS="-L$(pwd)/../local/lib -Wl,-rpath,$(pwd)/../local/lib"
       --disable-cxx --disable-guile --without-p11-kit --disable-doc &&
     make -j$(nproc) && make -j $(nproc) check
+  tags:
+  - saas-linux-small-amd64
+  except:
+  - tags
   artifacts:
     expire_in: 1 week
     when: on_failure
@@ -114,12 +127,9 @@ build/gnutls:
       - gnutls-git/*.log
       - gnutls-git/tests/*/*.log
       - gnutls-git/tests/suite/*/*.log
-  rules:
-  # Temporarily disable; enable when gnutls is updated for Nettle-4.
-  - when: never
 
 remote/s390x:
-  image: $BUILD_IMAGES:buildenv-native
+  image: $CI_REGISTRY/$BUILDENV_NATIVE_IMAGE
   before_script:
   # File created as world-readable by gitlab ci machinery.
   - chmod 0600 $SSH_PRIVATE_KEY
@@ -142,11 +152,17 @@ remote/s390x:
   after_script:
   - ssh -o 'StrictHostKeyChecking no' -i "$SSH_PRIVATE_KEY" "$S390X_ACCOUNT"
     "rm -rf ci-work/$CI_PIPELINE_IID"
-  rules:
-  - if: $SSH_PRIVATE_KEY && $S390X_ACCOUNT
+  only:
+    variables:
+    - $SSH_PRIVATE_KEY != ""
+    - $S390X_ACCOUNT != ""
+  tags:
+  - saas-linux-small-amd64
+  except:
+  - tags
 
 .cross-build:
-  image: $BUILD_IMAGES:buildenv-cross
+  image: $CI_REGISTRY/$BUILDENV_CROSS_IMAGE
   script:
   - build=$(dpkg-architecture -qDEB_HOST_GNU_TYPE)
   - host="${CI_JOB_NAME#cross/}"
@@ -161,7 +177,11 @@ remote/s390x:
   - ./configure --disable-documentation $EXTRA_CONFIGURE_ARGS --build=$build --host=$host
   - make -j$(nproc)
   - make EMULATOR=${EMULATOR} -j$(nproc) check
-  - for t in $EXTRA_CHECK_TARGET ; do make EMULATOR=${EMULATOR} -j$(nproc) $t ; done
+  - make EMULATOR=${EMULATOR} -j$(nproc) check-fat
+  tags:
+  - saas-linux-small-amd64
+  except:
+  - tags
   variables:
     NETTLE_TEST_SEED: '0'
   artifacts:
@@ -174,13 +194,11 @@ cross/arm-linux-gnueabihf:
   extends: .cross-build
   variables:
     EMULATOR: qemu-arm
-    EXTRA_CHECK_TARGET: check-fat-override
 
 cross/aarch64-linux-gnu:
   extends: .cross-build
   variables:
     EMULATOR: qemu-aarch64
-    EXTRA_CHECK_TARGET: check-fat-override
 
 # Setting QEMU_LD_PREFIX works around the error "qemu-ppc64: Could not
 # open '/lib64/ld64.so.1".
@@ -188,15 +206,12 @@ cross/powerpc64-linux-gnu:
   extends: .cross-build
   variables:
     EXTRA_CONFIGURE_ARGS: '--enable-mini-gmp'
-    CFLAGS: '-mvsx -g -O2'
     QEMU_LD_PREFIX: /usr/powerpc64-linux-gnu
-    EXTRA_CHECK_TARGET: check-fat-override check-fat-emulate
     EMULATOR: qemu-ppc64
 
 cross/powerpc64le-linux-gnu:
   extends: .cross-build
   variables:
-    EXTRA_CHECK_TARGET: check-fat-override check-fat-emulate
     EMULATOR: qemu-ppc64le
 
 # Disable assembly files, because current qemu doesn't support all

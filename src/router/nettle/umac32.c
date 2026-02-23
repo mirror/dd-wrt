@@ -87,9 +87,13 @@ umac32_update (struct umac32_ctx *ctx,
 
 
 void
-umac32_digest (struct umac32_ctx *ctx, uint8_t *digest)
+umac32_digest (struct umac32_ctx *ctx,
+	       size_t length, uint8_t *digest)
 {
   uint32_t pad;
+
+  assert (length > 0);
+  assert (length <= 4);
 
   if (ctx->index > 0 || ctx->count == 0)
     {
@@ -127,7 +131,7 @@ umac32_digest (struct umac32_ctx *ctx, uint8_t *digest)
 
   _nettle_umac_l2_final (ctx->l2_key, ctx->l2_state, 1, ctx->count);
   pad ^= ctx->l3_key2[0] ^ _nettle_umac_l3 (ctx->l3_key1, ctx->l2_state);
-  memcpy (digest, &pad, UMAC32_DIGEST_SIZE);
+  memcpy (digest, &pad, length);
 
   /* Reinitialize */
   ctx->count = ctx->index = 0;

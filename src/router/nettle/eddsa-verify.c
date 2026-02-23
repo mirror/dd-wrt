@@ -96,10 +96,6 @@ _eddsa_verify (const struct ecc_curve *ecc,
   if (!_eddsa_decompress (ecc, R, signature, R+2*ecc->p.size))
     return 0;
 
-  /* For Ed448, this conversion reads only the significant 56 octets
-     of the encoding of S. By RFC 8032, S is encoded with a redundant
-     always-zero byte at the end, which should be checked by the
-     caller. */
   mpn_set_base256_le (sp, ecc->q.size, signature + nbytes, nbytes);
   /* Check that s < q */
   if (mpn_cmp (sp, ecc->q.m, ecc->q.size) >= 0)
@@ -109,7 +105,7 @@ _eddsa_verify (const struct ecc_curve *ecc,
   eddsa->update (ctx, nbytes, signature);
   eddsa->update (ctx, nbytes, pub);
   eddsa->update (ctx, length, msg);
-  eddsa->digest (ctx, hash);
+  eddsa->digest (ctx, 2*nbytes, hash);
   _eddsa_hash (&ecc->q, hp, 2*nbytes, hash);
 
   /* Compute h A + R - s G, which should be the neutral point */

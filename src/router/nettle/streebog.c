@@ -1282,9 +1282,12 @@ streebog512_write_digest(struct streebog512_ctx *ctx,
 
 void
 streebog512_digest(struct streebog512_ctx *ctx,
+		   size_t length,
 		   uint8_t *digest)
 {
-  streebog512_write_digest(ctx, 0, STREEBOG512_DIGEST_SIZE, digest);
+  assert(length <= STREEBOG512_DIGEST_SIZE);
+
+  streebog512_write_digest(ctx, 0, length, digest);
   streebog512_init(ctx);
 }
 
@@ -1301,11 +1304,14 @@ streebog256_init(struct streebog256_ctx *ctx)
 
 void
 streebog256_digest(struct streebog256_ctx *ctx,
+                   size_t length,
                    uint8_t *digest)
 {
+  assert(length <= STREEBOG256_DIGEST_SIZE);
+
   streebog512_write_digest(ctx,
       4,
-      STREEBOG256_DIGEST_SIZE,
+      length,
       digest);
   streebog256_init(ctx);
 }

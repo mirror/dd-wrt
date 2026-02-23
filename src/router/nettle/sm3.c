@@ -220,9 +220,12 @@ sm3_update(struct sm3_ctx *ctx,
 
 static void
 sm3_write_digest(struct sm3_ctx *ctx,
+		 size_t length,
 		 uint8_t *digest)
 {
   uint64_t bit_count;
+
+  assert(length <= SM3_DIGEST_SIZE);
 
   MD_PAD(ctx, 8, COMPRESS);
 
@@ -235,13 +238,14 @@ sm3_write_digest(struct sm3_ctx *ctx,
   WRITE_UINT64(ctx->block + (SM3_BLOCK_SIZE - 8), bit_count);
   COMPRESS(ctx, ctx->block);
 
-  _nettle_write_be32(SM3_DIGEST_SIZE, digest, ctx->state);
+  _nettle_write_be32(length, digest, ctx->state);
 }
 
 void
 sm3_digest(struct sm3_ctx *ctx,
+	   size_t length,
 	   uint8_t *digest)
 {
-  sm3_write_digest(ctx, digest);
+  sm3_write_digest(ctx, length, digest);
   sm3_init(ctx);
 }

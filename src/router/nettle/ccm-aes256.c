@@ -82,31 +82,33 @@ ccm_aes256_decrypt(struct ccm_aes256_ctx *ctx,
 }
 
 void
-ccm_aes256_digest(struct ccm_aes256_ctx *ctx, uint8_t *digest)
+ccm_aes256_digest(struct ccm_aes256_ctx *ctx,
+		  size_t length, uint8_t *digest)
 {
-  ccm_digest(&ctx->ccm, &ctx->cipher, (nettle_cipher_func *) aes256_encrypt, digest);
+  ccm_digest(&ctx->ccm, &ctx->cipher, (nettle_cipher_func *) aes256_encrypt,
+	     length, digest);
 }
 
 void
-ccm_aes256_encrypt_message(const struct aes256_ctx *ctx,
+ccm_aes256_encrypt_message(struct ccm_aes256_ctx *ctx,
 			   size_t nlength, const uint8_t *nonce,
 			   size_t alength, const uint8_t *adata,
 			   size_t tlength,
 			   size_t clength, uint8_t *dst, const uint8_t *src)
 {
-  ccm_encrypt_message(ctx, (nettle_cipher_func *) aes256_encrypt,
+  ccm_encrypt_message(&ctx->cipher, (nettle_cipher_func *) aes256_encrypt,
 		      nlength, nonce, alength, adata,
 		      tlength, clength, dst, src);
 }
 
 int
-ccm_aes256_decrypt_message(const struct aes256_ctx *ctx,
+ccm_aes256_decrypt_message(struct ccm_aes256_ctx *ctx,
 			   size_t nlength, const uint8_t *nonce,
 			   size_t alength, const uint8_t *adata,
 			   size_t tlength,
 			   size_t mlength, uint8_t *dst, const uint8_t *src)
 {
-  return ccm_decrypt_message(ctx, (nettle_cipher_func *) aes256_encrypt,
+  return ccm_decrypt_message(&ctx->cipher, (nettle_cipher_func *) aes256_encrypt,
 			     nlength, nonce, alength, adata,
 			     tlength, mlength, dst, src);
 }

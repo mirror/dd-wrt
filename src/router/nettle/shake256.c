@@ -40,13 +40,19 @@
 #include "sha3-internal.h"
 
 void
-sha3_256_shake (struct sha3_ctx *ctx, size_t length, uint8_t *dst)
+sha3_256_shake (struct sha3_256_ctx *ctx,
+		size_t length, uint8_t *dst)
 {
-  _nettle_sha3_shake (ctx, SHA3_256_BLOCK_SIZE >> 3, length, dst);
+  _nettle_sha3_shake (&ctx->state, sizeof (ctx->block), ctx->block, ctx->index, length, dst);
+  sha3_256_init (ctx);
 }
 
 void
-sha3_256_shake_output (struct sha3_ctx *ctx, size_t length, uint8_t *digest)
+sha3_256_shake_output (struct sha3_256_ctx *ctx,
+		       size_t length, uint8_t *digest)
 {
-  _nettle_sha3_shake_output (ctx, SHA3_256_BLOCK_SIZE >> 3, length, digest);
+  ctx->index =
+    _nettle_sha3_shake_output (&ctx->state,
+			       sizeof (ctx->block), ctx->block, ctx->index,
+			       length, digest);
 }

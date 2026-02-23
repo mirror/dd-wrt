@@ -51,6 +51,10 @@ _nettle_ghash_set_key_c (struct gcm_key *ctx, const union nettle_block16 *key);
 #define _nettle_ghash_set_key _nettle_ghash_set_key_c
 #endif
 
+#if GCM_TABLE_BITS < 7
+# error Unsupported table size.
+#endif
+
 /* Implements a lookup table for processors without carryless-mul
    instruction. */
 void

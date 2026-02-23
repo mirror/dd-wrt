@@ -77,14 +77,14 @@ pbkdf2 (void *mac_ctx,
       
       update (mac_ctx, salt_length, salt);
       update (mac_ctx, sizeof(tmp), tmp);
-      digest (mac_ctx, T);
+      digest (mac_ctx, digest_size, T);
 
       prev = T;
       
       for (u = 1; u < iterations; u++, prev = U)
 	{
 	  update (mac_ctx, digest_size, prev);
-	  digest (mac_ctx, U);
+	  digest (mac_ctx, digest_size, U);
 
 	  memxor (T, U, digest_size);
 	}

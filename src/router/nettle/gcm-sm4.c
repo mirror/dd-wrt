@@ -75,7 +75,7 @@ gcm_sm4_decrypt(struct gcm_sm4_ctx *ctx,
 
 void
 gcm_sm4_digest(struct gcm_sm4_ctx *ctx,
-	       uint8_t *digest)
+	       size_t length, uint8_t *digest)
 {
-  GCM_DIGEST(ctx, sm4_crypt, digest);
+  GCM_DIGEST(ctx, sm4_crypt, length, digest);
 }

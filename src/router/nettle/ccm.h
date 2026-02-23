@@ -90,8 +90,6 @@ extern "C" {
 /* For CCM, the block size of the block cipher shall be 128 bits. */
 #define CCM_BLOCK_SIZE  16
 #define CCM_DIGEST_SIZE 16
-/* Digest size must be even, valid values 4, 6, 8, 10, 12, 14, 16 */
-#define CCM_MIN_DIGEST_SIZE 4
 #define CCM_MIN_NONCE_SIZE 7
 #define CCM_MAX_NONCE_SIZE 14
 
@@ -108,13 +106,12 @@ struct ccm_ctx {
   union nettle_block16 ctr;     /* Counter for CTR encryption. */
   union nettle_block16 tag;     /* CBC-MAC message tag. */
   /* Length of data processed by the CBC-MAC modulus the block size */
-  unsigned short blength;
-  unsigned short tag_length;
+  unsigned int blength;
 };
 
 /*
  * CCM mode requires the adata and message lengths when building the IV, which
- * prevents streaming processing and is incompatible with the AEAD API.
+ * prevents streaming processing and it incompatible with the AEAD API.
  */
 void
 ccm_set_nonce(struct ccm_ctx *ctx, const void *cipher, nettle_cipher_func *f,
@@ -123,7 +120,7 @@ ccm_set_nonce(struct ccm_ctx *ctx, const void *cipher, nettle_cipher_func *f,
 
 void
 ccm_update(struct ccm_ctx *ctx, const void *cipher, nettle_cipher_func *f,
-	   size_t length, const uint8_t *data);
+	    size_t length, const uint8_t *data);
 
 void
 ccm_encrypt(struct ccm_ctx *ctx, const void *cipher, nettle_cipher_func *f,
@@ -135,7 +132,7 @@ ccm_decrypt(struct ccm_ctx *ctx, const void *cipher, nettle_cipher_func *f,
 
 void
 ccm_digest(struct ccm_ctx *ctx, const void *cipher, nettle_cipher_func *f,
-	   uint8_t *digest);
+	   size_t length, uint8_t *digest);
 
 /*
  * All-in-one encryption and decryption API:
@@ -193,17 +190,21 @@ ccm_aes128_decrypt(struct ccm_aes128_ctx *ctx,
 		   size_t length, uint8_t *dst, const uint8_t *src);
 
 void
-ccm_aes128_digest(struct ccm_aes128_ctx *ctx, uint8_t *digest);
+ccm_aes128_digest(struct ccm_aes128_ctx *ctx,
+		  size_t length, uint8_t *digest);
 
+/* FIXME: For next API/ABI break: first argument should be const
+   struct aes128_ctx *, and similarly for other ccm_*_message
+   functions below. */
 void
-ccm_aes128_encrypt_message(const struct aes128_ctx *ctx,
+ccm_aes128_encrypt_message(struct ccm_aes128_ctx *ctx,
 			   size_t nlength, const uint8_t *nonce,
 			   size_t alength, const uint8_t *adata,
 			   size_t tlength,
 			   size_t clength, uint8_t *dst, const uint8_t *src);
 
 int
-ccm_aes128_decrypt_message(const struct aes128_ctx *ctx,
+ccm_aes128_decrypt_message(struct ccm_aes128_ctx *ctx,
 			   size_t nlength, const uint8_t *nonce,
 			   size_t alength, const uint8_t *adata,
 			   size_t tlength,
@@ -236,17 +237,18 @@ ccm_aes192_decrypt(struct ccm_aes192_ctx *ctx,
 		   size_t length, uint8_t *dst, const uint8_t *src);
 
 void
-ccm_aes192_digest(struct ccm_aes192_ctx *ctx, uint8_t *digest);
+ccm_aes192_digest(struct ccm_aes192_ctx *ctx,
+		  size_t length, uint8_t *digest);
 
 void
-ccm_aes192_encrypt_message(const struct aes192_ctx *ctx,
+ccm_aes192_encrypt_message(struct ccm_aes192_ctx *ctx,
 			   size_t nlength, const uint8_t *nonce,
 			   size_t alength, const uint8_t *adata,
 			   size_t tlength,
 			   size_t clength, uint8_t *dst, const uint8_t *src);
 
 int
-ccm_aes192_decrypt_message(const struct aes192_ctx *ctx,
+ccm_aes192_decrypt_message(struct ccm_aes192_ctx *ctx,
 			   size_t nlength, const uint8_t *nonce,
 			   size_t alength, const uint8_t *adata,
 			   size_t tlength,
@@ -279,17 +281,18 @@ ccm_aes256_decrypt(struct ccm_aes256_ctx *ctx,
 		   size_t length, uint8_t *dst, const uint8_t *src);
 
 void
-ccm_aes256_digest(struct ccm_aes256_ctx *ctx, uint8_t *digest);
+ccm_aes256_digest(struct ccm_aes256_ctx *ctx,
+		  size_t length, uint8_t *digest);
 
 void
-ccm_aes256_encrypt_message(const struct aes256_ctx *ctx,
+ccm_aes256_encrypt_message(struct ccm_aes256_ctx *ctx,
 			   size_t nlength, const uint8_t *nonce,
 			   size_t alength, const uint8_t *adata,
 			   size_t tlength,
 			   size_t clength, uint8_t *dst, const uint8_t *src);
 
 int
-ccm_aes256_decrypt_message(const struct aes256_ctx *ctx,
+ccm_aes256_decrypt_message(struct ccm_aes256_ctx *ctx,
 			   size_t nlength, const uint8_t *nonce,
 			   size_t alength, const uint8_t *adata,
 			   size_t tlength,

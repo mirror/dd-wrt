@@ -94,8 +94,8 @@ digest_file(const struct nettle_hash *alg,
       return 0;
     }
 
-  digest = xalloc(alg->digest_size);
-  alg->digest(ctx, digest);
+  digest = xalloc(digest_length);
+  alg->digest(ctx, digest_length, digest);
   free(ctx);
 
   if (raw)

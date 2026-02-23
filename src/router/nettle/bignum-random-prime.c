@@ -184,7 +184,10 @@ miller_rabin_pocklington(mpz_t n, mpz_t nm1, mpz_t nm1dq, mpz_t a)
   mpz_t y;
   int is_prime = 0;
 
-  mp_bitcnt_t k, j;
+  /* Avoid the mp_bitcnt_t type for compatibility with older GMP
+     versions. */
+  unsigned k;
+  unsigned j;
 
   VERBOSE(".");
 

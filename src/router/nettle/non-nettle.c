@@ -290,9 +290,9 @@ ocb_aes128_decrypt_wrapper (struct ocb_aes128_ctx *ctx,
 }
 
 static void
-ocb_aes128_digest_wrapper (struct ocb_aes128_ctx *ctx, uint8_t *digest)
+ocb_aes128_digest_wrapper (struct ocb_aes128_ctx *ctx, size_t length, uint8_t *digest)
 {
-  ocb_aes128_digest (&ctx->ocb, &ctx->key, digest);
+  ocb_aes128_digest (&ctx->ocb, &ctx->key, length, digest);
 }
 
 const struct nettle_aead
@@ -307,26 +307,4 @@ nettle_ocb_aes128 =
     (nettle_crypt_func *) ocb_aes128_encrypt_wrapper,
     (nettle_crypt_func *) ocb_aes128_decrypt_wrapper,
     (nettle_hash_digest_func *) ocb_aes128_digest_wrapper
-  };
-
-/* For 96-bit tag */
-static void
-ocb_aes128_t96_set_nonce (struct ocb_aes128_ctx *ctx, const uint8_t *nonce)
-{
-  ocb_aes128_set_nonce (&ctx->ocb, &ctx->key,
-			12, OCB_NONCE_SIZE, nonce);
-}
-
-const struct nettle_aead
-nettle_ocb_aes128_t96 =
-  { "ocb_aes128", sizeof(struct ocb_aes128_ctx),
-    OCB_BLOCK_SIZE, AES128_KEY_SIZE,
-    OCB_NONCE_SIZE, 12,
-    (nettle_set_key_func *) ocb_aes128_set_encrypt_key_wrapper,
-    (nettle_set_key_func *) ocb_aes128_set_decrypt_key_wrapper,
-    (nettle_set_key_func *) ocb_aes128_t96_set_nonce,
-    (nettle_hash_update_func *) ocb_aes128_update_wrapper,
-    (nettle_crypt_func *) ocb_aes128_encrypt_wrapper,
-    (nettle_crypt_func *) ocb_aes128_decrypt_wrapper,
-    (nettle_hash_digest_func *) ocb_aes128_digest_wrapper,
   };

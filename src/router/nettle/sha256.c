@@ -150,9 +150,10 @@ sha256_write_digest(struct sha256_ctx *ctx,
 
 void
 sha256_digest(struct sha256_ctx *ctx,
+	      size_t length,
 	      uint8_t *digest)
 {
-  sha256_write_digest(ctx, SHA256_DIGEST_SIZE, digest);
+  sha256_write_digest(ctx, length, digest);
   sha256_init(ctx);
 }
 
@@ -179,8 +180,9 @@ sha224_init(struct sha256_ctx *ctx)
 
 void
 sha224_digest(struct sha256_ctx *ctx,
+	      size_t length,
 	      uint8_t *digest)
 {
-  sha256_write_digest(ctx, SHA224_DIGEST_SIZE, digest);
+  sha256_write_digest(ctx, length, digest);
   sha224_init(ctx);
 }

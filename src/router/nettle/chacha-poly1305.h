@@ -89,7 +89,7 @@ chacha_poly1305_decrypt (struct chacha_poly1305_ctx *ctx,
 			 
 void
 chacha_poly1305_digest (struct chacha_poly1305_ctx *ctx,
-			uint8_t *digest);
+			size_t length, uint8_t *digest);
 
 #ifdef __cplusplus
 }

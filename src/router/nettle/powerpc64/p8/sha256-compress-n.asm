@@ -206,10 +206,9 @@ define(`DOLOADS', `
 ')
 
 .text
-define(`FUNC_ALIGN', `5')
 PROLOGUE(_nettle_sha256_compress_n)
-	cmpldi	NUMBLOCKS, 0
-	ble	.done
+	cmpwi	0, NUMBLOCKS, 0
+	ble	0, .done
 	mtctr	NUMBLOCKS
 
 	C Store non-volatile registers

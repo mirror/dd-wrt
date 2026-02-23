@@ -76,10 +76,10 @@ ecc_secp384r1_modp (const struct ecc_modulo *p, mp_limb_t *rp, mp_limb_t *xp)
   cy = sec_add_1 (xp + 15, xp + 15, 1, cy);
 
   cy += mpn_add_n (xp + 8, xp + 8, xp + 16, 8);
-  assert_maybe (bw <= cy);
+  assert (bw <= cy);
   cy -= bw;
 
-  assert_maybe (cy <= 2);
+  assert (cy <= 2);  
   xp[16] = cy;
 
   /* Reduce from 17 to 12 limbs */
@@ -95,11 +95,11 @@ ecc_secp384r1_modp (const struct ecc_modulo *p, mp_limb_t *rp, mp_limb_t *xp)
   cy += mpn_add_n (xp + 4, xp + 4, xp + 12, 5);
   cy = sec_add_1 (xp + 9, xp + 9, 3, cy);
 
-  assert_maybe (cy >= bw);
+  assert (cy >= bw);
   cy -= bw;
-  assert_maybe (cy <= 1);
+  assert (cy <= 1);
   cy = mpn_cnd_add_n (cy, rp, xp, p->B, ECC_LIMB_SIZE);
-  assert_maybe (cy == 0);
+  assert (cy == 0);
 }
 #elif GMP_NUMB_BITS == 64
 /* p is 6 limbs, and B^6 - p = B^2 + 2^32 (B - 1) + 1. Eliminate 3

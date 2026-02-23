@@ -73,7 +73,7 @@ gcm_camellia128_decrypt(struct gcm_camellia128_ctx *ctx,
 
 void
 gcm_camellia128_digest(struct gcm_camellia128_ctx *ctx,
-		       uint8_t *digest)
+		       size_t length, uint8_t *digest)
 {
-  GCM_DIGEST(ctx, camellia128_crypt, digest);
+  GCM_DIGEST(ctx, camellia128_crypt, length, digest);
 }

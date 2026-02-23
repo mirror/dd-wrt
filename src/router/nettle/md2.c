@@ -109,7 +109,7 @@ md2_transform(struct md2_ctx *ctx, const uint8_t *data)
 void
 md2_init(struct md2_ctx *ctx)
 {
-  memset(ctx, 0, offsetof (struct md2_ctx, block));
+  memset(ctx, 0, sizeof(*ctx));
 }
 
 void
@@ -122,15 +122,18 @@ md2_update(struct md2_ctx *ctx,
 
 void
 md2_digest(struct md2_ctx *ctx,
+	   size_t length,
 	   uint8_t *digest)
 {
   unsigned left;
   
+  assert(length <= MD2_DIGEST_SIZE);
+
   left = MD2_BLOCK_SIZE - ctx->index;
   memset(ctx->block + ctx->index, left, left);
   md2_transform(ctx, ctx->block);
   
   md2_transform(ctx, ctx->C);
-  memcpy(digest, ctx->X, MD2_DIGEST_SIZE);
+  memcpy(digest, ctx->X, length);
   md2_init(ctx);
 }
