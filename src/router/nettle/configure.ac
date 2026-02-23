@@ -253,7 +253,7 @@ if test "x$enable_public_key" = "xyes" ; then
   fi
 fi
 
-nettle_cv_gmp_numb_bits=0
+#nettle_cv_gmp_numb_bits=0
 if test "x$enable_public_key" = "xyes" ; then
   # Check for gmp limb size
   if test "x$enable_mini_gmp" = "xyes" ; then
