@@ -70,6 +70,7 @@ void start_smartdns(void)
 	fprintf(fp, "log-size 32K\n");
 	fprintf(fp, "log-num 1\n");
 	fprintf(fp, "log-level warn\n");
+	fprintf(fp, "cache-size %s\n", nvram_defaul_get("smartdns_cache_size","3000"));
 	fprintf(fp, "log-file /tmp/smartdns.log\n");
 	if (!nvram_matchi("dns_dnsmasq", 1) && !nvram_matchi("dhcpd_usenvram", 1)) {
 		int usejffs = 0;
