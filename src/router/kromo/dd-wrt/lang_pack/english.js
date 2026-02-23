@@ -7,6 +7,7 @@ var lang_charset=new Object();
 lang_charset.set="utf-8";
 
 var share=new Object();
+share.entries="Entries";
 share.packets="Packets";
 share.annex="Annex Type";
 share.apn="APN";
@@ -1899,6 +1900,7 @@ service.dnsmasq_ipv6_ralifetime="DHCP6 RA lifetime";
 service.dnsmasq_ipv6_dhcp6_start_end="DHCP6 Range, Start - End";
 service.dnsmasq_ipv6_dhcp6_leasetime="DHCP6 Lease Expiration";
 service.dns_smartdns="SmartDNS Resolver";
+service.dns_smartdns_size="Cache Size";
 service.dns_smartdns_label="Enable Resolver";
 service.dns_smartdns_dualstack="Dualstack IP Selection";
 service.dns_smartdns_prefetch_domain="Prefetch Domain";

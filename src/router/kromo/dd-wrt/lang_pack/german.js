@@ -9,6 +9,7 @@
 lang_charset.set="utf-8";
 
 
+share.entries="Einträge";
 share.packets="Pakete";
 share.annex="Annex Typ";
 share.apn="APN";
@@ -1680,6 +1681,7 @@ service.dhcp_option="Zusätzliche DHCPD-Optionen";
 service.dns_crypt="Verschlüssele DNS (DNSCrypt)";
 service.dns_crypt_resolv="DNS Crypt Server";
 service.dns_smartdns="SmartDNS Auflösung";
+service.dns_smartdns_size="Cache Größe";
 service.dns_smartdns_dualstack="Dualstack IP Vorauswahl";
 service.dns_smartdns_prefetch_domain="Domain Vorabruf";
 service.dns_smartdns_serve_expired="Serve Expired";
