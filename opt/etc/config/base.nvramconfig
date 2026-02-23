@@ -122,6 +122,7 @@
  "smartdns_serve_expired"  "SmartDNS"  "CHOICE"  "2" "0"  "1"  "FALSE" "0"
  "smartdns_use_dns"  "SmartDNS"  "CHOICE"  "2" "0"  "1"  "FALSE" "0"
  "smartdns_options"  "SmartDNS"  "NULL"  "TRUE" "0"
+ "smartdns_cache_size"  "SmartDNS"  "RANGE" "1" "99999999" "TRUE" "0"
  "dnssec"  "DNS sec"  "CHOICE"  "2" "0"  "1"  "FALSE" "0"
  "dnssec_proxy"  "DNS sec"  "CHOICE"  "2" "0"  "1"  "FALSE" "0"
  "dnssec_cu"  "DNS sec"  "CHOICE"  "2" "0"  "1"  "FALSE" "0"
