@@ -168,7 +168,7 @@ int touch_main(int argc UNUSED_PARAM, char **argv)
 	argv += optind;
 	do {
 	    int result;
-#if __UCLIBC__
+#if defined(__UCLIBC__)
 #if !defined(ENABLE_FEATURE_TOUCH_SUSV3)
 	char *reference_file = NULL;
 	char *date_str = NULL;
