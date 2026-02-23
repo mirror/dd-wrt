@@ -110,6 +110,16 @@
 				<input class="spaceradio" type="radio" name="smartdns_use_dns" value="0" <% nvc("smartdns_use_dns", "0"); %> /><% tran("share.disable"); %>
 			</div>
 			<div class="setting">
+				<div class="label"><% tran("service.dns_smartdns_size"); %></div>
+				<input class="num" maxlength="8" size="8" name="smartdns_cache_size" value="<% nvg("smartdns_cache_size"); %>" />&nbsp;
+				<script type="text/javascript">Capture(share.entries)</script>
+				<span class="default"><script type="text/javascript">
+				//<![CDATA[
+					document.write("(" + share.deflt + ": 3000)");
+				//]]>
+				</script></span>
+			</div>
+			<div class="setting">
 				<div class="label"><% tran("service.dns_smartdns_option"); %></div>
 				<textarea cols="60" rows="4" id="smartdns_options" name="smartdns_options"></textarea>
 				<script type="text/javascript">
