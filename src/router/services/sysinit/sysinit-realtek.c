@@ -102,6 +102,7 @@ void start_sysinit(void)
 			ether_etoa(bin, mac);
 			MAC_ADD(mac);
 			MAC_ADD(mac);
+			sleep(4);
 			for (i = 1; i < 51; i++) {
 				sprintf(name, "lan%02d", i);
 				if (ifexists(name)) {
@@ -126,6 +127,7 @@ void start_sysinit(void)
 		if (mac) {
 			char name[32];
 			int i;
+			sleep(4);
 			set_hwaddr("eth0", mac);
 			for (i = 1; i < 13; i++) {
 				sprintf(name, "lan%02d", i);
@@ -157,6 +159,7 @@ void start_sysinit(void)
 		if (mac) {
 			char name[32];
 			int i;
+			sleep(4);
 			set_hwaddr("eth0", mac);
 			for (i = 1; i < 13; i++) {
 				sprintf(name, "lan%02d", i);
@@ -179,6 +182,7 @@ void start_sysinit(void)
 		if (mac) {
 			char name[32];
 			int i;
+			sleep(4);
 			set_hwaddr("eth0", mac);
 			for (i = 1; i < 11; i++) {
 				sprintf(name, "lan%02d", i);
@@ -196,6 +200,7 @@ void start_sysinit(void)
 		if (mac) {
 			char name[32];
 			int i;
+			sleep(2);
 			for (i = 1; i < 9; i++) {
 				sprintf(name, "lan%02d", i);
 				set_hwaddr(name, mac);
@@ -209,6 +214,7 @@ void start_sysinit(void)
 			set_envtools(mtd, "0x0", "0x400", "0x10000", 0);
 		mac = getUEnv("mac_start");
 		if (mac) {
+			sleep(4);
 			char name[32];
 			int i;
 			for (i = 1; i < 53; i++) {
