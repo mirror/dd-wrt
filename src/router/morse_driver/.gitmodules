@@ -1,0 +1,4 @@
+[submodule "mmrc-submodule"]
+	path = mmrc-submodule
+	url = ../mm_rate_control.git
+	branch = master

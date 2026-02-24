@@ -1,0 +1,13 @@
+*.o
+*.cmd
+*.swp
+*.mod.*
+*.mod
+cscope*
+*.ko
+.*
+output
+*.orig
+*.diff
+*.patch
+coverity/

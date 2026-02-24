@@ -1,0 +1,151 @@
+config WLAN_VENDOR_MORSE
+	tristate "Morse Micro driver"
+	help
+	  If you have a wireless card belonging to this class, say Y.
+
+	  Note that the answer to this question doesn't directly affect the
+	  kernel: saying N will just cause the configurator to skip all
+	  the questions about cards. If you say Y, you will be asked for
+	  your specific card in the following questions.
+
+if WLAN_VENDOR_MORSE
+
+config MORSE_SDIO
+	bool "SDIO support"
+	help
+	  This driver supports wireless cards connected over SDIO.
+
+	  The kernel device tree must be configured appropriately
+	  for the host/device interface.
+	  Both SDIO and SPI drivers may be enabled simultaneously.
+
+config MORSE_USB
+	bool "USB support"
+	help
+	  This driver supports wireless cards connected over USB.
+
+config MORSE_SDIO_ALIGNMENT
+	int "Alignment requirements for bulk SDIO reads/writes"
+	default 2
+	range 2 8
+	help
+	  Number of bytes to align data buffers for bulk SDIO transactions. Some hosts have
+	  specific alignment requirements for DMA, use this setting to
+	  adjust the alignment required.
+
+	  Must be a power of 2.
+
+config MORSE_SPI
+	bool "SPI support"
+	help
+	  This driver supports wireless cards connected over SPI.
+
+	  The kernel device tree must be configured appropriately
+	  for the host/device interface.
+	  Both SDIO and SPI drivers may be enabled simultaneously.
+
+config MORSE_SPI_RK3288
+	bool "SPI support for Rockchip 3288"
+	default n
+	depends on MORSE_SPI
+	help
+	  This driver supports the Rockchip 3288 SPI interface.
+
+	  Special handling is required for this board because initialisation
+	  of the Morse chip in SPI mode requires a handshake with the SPI CS
+	  line held high, which is not supported in the Rockchip driver.
+
+	  When enabled, the Morse SPI driver must be brought up before the
+	  Rockchip SPI driver.
+
+config MORSE_USER_ACCESS
+	bool "User space access support"
+	help
+	  Enable user-space access to wireless cards.
+
+config MORSE_VENDOR_COMMAND
+	bool "Morse vendor commands"
+	default n
+	help
+	  Allow vendor-specific commands from userspace applications such as iw.
+
+config MORSE_COUNTRY
+	string "Country code for regulatory compliance"
+	default "AU"
+	help
+	  Two-character country code.
+
+config MORSE_DEBUG_MASK
+	int "Debug mask"
+	default 8
+	help
+	  Set the Morse driver debug level.
+	  Choose any combination of 8 (Error), 4 (Warning), 2 (Informational) and 1 (Debug).
+	  The minimum debug level applied is 8 (Error).
+	  Note that increasing debug level can impact performance.
+
+config MORSE_SDIO_RESET_TIME
+	int "Time to wait after SDIO reset (ms)"
+	default 400
+	range 0 400
+	help
+	  Reduce the wait time after SDIO reset to reduce boot time.
+	  Can cause instability and load failure if set too low for the device.
+
+config MORSE_POWERSAVE_MODE
+	int "Power Save mode"
+	default 2
+	range 0 2
+	help
+	  Choose 0 to disable Power Save, 1 to enable the Power Save protocol, or 2 to fully enable
+	  Power Save mode.
+
+config MORSE_DHCP_OFFLOAD
+	bool "Offload DHCP lease renewal processing to the firmware"
+	default n
+	help
+	  When enabled, DHCP lease renewal and discovery is handled by the firmware, with no
+	  interaction with the host device. Only basic DHCP options are supported.
+
+config MORSE_ARP_OFFLOAD
+	bool "Offload ARP packet handling to the firmware"
+	default n
+	help
+	  When enabled, the firmware will directly respond to ARP requests for the wireless
+	  interface's IP address, with no interaction with the host device. All other ARP requests
+	  are ignored.
+
+config MORSE_WATCHDOG_RESET_DEFAULT_DISABLED
+	bool "Disable driver reset from watchdog by default"
+	default y
+	help
+	  When not set, if the watchdog detects an unrecoverable error, the default behaviour is to
+	  reset the firmware. When set, the default behaviour is to not reset the firmware.
+	  This setting can be overridden when loading the driver, by setting the enable_watchdog
+	  parameter.
+
+config MORSE_DISABLE_CHANNEL_SURVEY
+	bool "Disable channel survey"
+	default n
+	help
+	  When set, the firmware will not perform channel surveys.
+
+config ANDROID
+	bool "Android build"
+	default n
+	help
+	  Enable to compile driver for android.
+
+config MORSE_MONITOR
+	bool "Monitor mode support"
+	default n
+	help
+	  Enable to monitor traffic in a wireless channel.
+
+config MORSE_DEBUGFS
+	bool "DebugFS support"
+	default n
+	help
+	  Enable for debugging support.
+
+endif # WLAN_VENDOR_MORSE
