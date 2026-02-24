@@ -298,6 +298,9 @@ endif
 ifeq ($(CONFIG_ATH11K),y)
 	cat $(TOP)/mac80211-rules/configs/ath11k.config >> $(MAC80211_PATH)/.config_temp
 endif
+ifeq ($(CONFIG_MORSE),y)
+	cat $(TOP)/mac80211-rules/configs/morse.config >> $(MAC80211_PATH)/.config_temp
+endif
 ifeq ($(CONFIG_B43),y)
 	cat $(TOP)/mac80211-rules/configs/b43.config >> $(MAC80211_PATH)/.config_temp
 endif

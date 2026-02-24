@@ -3,13 +3,7 @@ MAC80211_PATH=compat-wireless
 ifeq ($(CONFIG_IPQ6018),y)
 MAC80211_PATH=compat-wireless-nss
 endif
-ifeq ($(CONFIG_X86),y)
-MAC80211_PATH=compat-wireless-nss
-endif
-ifeq ($(CONFIG_ALPINE),y)
-MAC80211_PATH=compat-wireless-nss
-endif
-ifeq ($(CONFIG_NEWPORT),y)
+ifeq ($(KERNELVERSION),6.12)
 MAC80211_PATH=compat-wireless-nss
 endif
 #ifeq ($(CONFIG_IPQ806X),y)
