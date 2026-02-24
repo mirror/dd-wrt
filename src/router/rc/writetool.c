@@ -236,7 +236,8 @@ int main_mbr(int argc, char *argv[])
 			}
 		} else {
 			fprintf(stderr, "read nvram from old offset %lld with len %d and write to offset %lld\n",
-				(unsigned long long)(le32_to_cpu(nvram->start) * 512), nvlen, (unsigned long long)le32_to_cpu(newlayout[2].start) * 512);
+				(unsigned long long)(le32_to_cpu(nvram->start) * 512), nvlen,
+				(unsigned long long)le32_to_cpu(newlayout[2].start) * 512);
 			copy(out, le32_to_cpu(nvram->start) * 512, le32_to_cpu(newlayout[2].start) * 512, nvlen);
 		}
 	}
@@ -297,13 +298,13 @@ int main_gpt(int argc, char *argv[])
 	for (i = 0; i < 4; i++) {
 		part = (gpt_partition *)&buf2[i * le32_to_cpu(header2.part_entry_len)];
 		fprintf(stderr, "p[%d]: start %llu end %llu flags %llX name %s\n", i, le64_to_cpu(part->lba_start),
-			le64_to_cpu(part->lba_end), le64_to_cpu(part->flags), (char*)part->name36);
+			le64_to_cpu(part->lba_end), le64_to_cpu(part->flags), (char *)part->name36);
 	}
 	fprintf(stderr, "new layout\n");
 	for (i = 0; i < 4; i++) {
 		part = (gpt_partition *)&buf[i * le32_to_cpu(header.part_entry_len)];
 		fprintf(stderr, "p[%d]: start %lld end %lld flags %llX name %s\n", i, le64_to_cpu(part->lba_start),
-			le64_to_cpu(part->lba_end), le64_to_cpu(part->flags), (char*)part->name36);
+			le64_to_cpu(part->lba_end), le64_to_cpu(part->flags), (char *)part->name36);
 	}
 	gpt_partition *nvram = (gpt_partition *)&buf2[2 * le32_to_cpu(header2.part_entry_len)];
 	gpt_partition *newnvram = (gpt_partition *)&buf[2 * le32_to_cpu(header.part_entry_len)];

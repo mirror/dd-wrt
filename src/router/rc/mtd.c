@@ -764,7 +764,7 @@ rewrite:;
 			int redo = 0;
 again:;
 			dd_loginfoverbose("flash", "write block [%d] at [0x%08X]", (base + (i * mtd_info.erasesize)),
-				   base + (i * mtd_info.erasesize) + badblocks);
+					  base + (i * mtd_info.erasesize) + badblocks);
 			if (!writeubifs && !writeubiformat) {
 				erase_info.start = base + (i * mtd_info.erasesize);
 				memcpy(&tmp_erase_info, &erase_info, sizeof(erase_info));

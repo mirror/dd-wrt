@@ -163,7 +163,9 @@ static void check_signal(const char *var, int interface, int vap)
 			if (wc) {
 				if (!(wc->signal - wc->noise)) {
 					zerocount[interface][vap]++;
-					dd_logerror("ath11k_watchdog", "zero signal issue detected on interface %s\n", wc->ifname);
+					if (zerocount[interface][vap] > 5)
+						dd_logerror("ath11k_watchdog", "zero signal issue detected on interface %s\n",
+							    wc->ifname);
 					if (zerocount[interface][vap] == 20) {
 						dd_logerror("ath11k_watchdog", "20 consecutive signal fails detected on %s\n",
 							    wc->ifname);
@@ -171,8 +173,10 @@ static void check_signal(const char *var, int interface, int vap)
 					}
 				} else {
 					if (zerocount[interface][vap]) {
-						dd_logerror("ath11k_watchdog", "signal measurement received. reset failcount %s\n",
-							    wc->ifname);
+						if (zerocount[interface][vap] > 5)
+							dd_logerror("ath11k_watchdog",
+								    "signal measurement received. reset failcount %s\n",
+								    wc->ifname);
 						int i;
 						for (i = 0; i < 17; i++)
 							zerocount[interface][i] = 0;
