@@ -564,6 +564,12 @@ config PLX_DMA
 	  These are exposed via extra functions on the switch's
 	  upstream port. Each function exposes one DMA channel.
 
+config RALINK_GDMA
+	tristate "RALINK GDMA support"
+	depends on RALINK && !SOC_RT288X
+	select DMA_ENGINE
+	select DMA_VIRTUAL_CHANNELS
+
 config STE_DMA40
 	bool "ST-Ericsson DMA40 support"
 	depends on ARCH_U8500

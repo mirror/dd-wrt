@@ -685,6 +685,7 @@ struct phy_device {
 	unsigned downshifted_rate:1;
 	unsigned is_on_sfp_module:1;
 	unsigned mac_managed_pm:1;
+	unsigned no_auto_carrier_off:1;
 	unsigned wol_enabled:1;
 
 	unsigned autoneg:1;

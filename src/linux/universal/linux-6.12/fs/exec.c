@@ -750,8 +750,10 @@ int setup_arg_pages(struct linux_binprm *bprm,
 	mm->arg_start = bprm->p - stack_shift;
 	bprm->p = vma->vm_end - stack_shift;
 #else
+#ifndef CONFIG_NET_RALINK_MT7620
 	stack_top = arch_align_stack(stack_top);
 	stack_top = PAGE_ALIGN(stack_top);
+#endif
 
 	if (unlikely(stack_top < mmap_min_addr) ||
 	    unlikely(vma->vm_end - vma->vm_start >= stack_top - mmap_min_addr))

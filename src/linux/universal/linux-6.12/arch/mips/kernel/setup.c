@@ -556,8 +556,28 @@ static int __init bootcmdline_scan_chosen(unsigned long node, const char *uname,
 
 #endif /* CONFIG_OF_EARLY_FLATTREE */
 
+static int __init bootcmdline_scan_chosen_override(unsigned long node, const char *uname,
+						   int depth, void *data)
+{
+	bool *dt_bootargs = data;
+	const char *p;
+	int l;
+
+	if (depth != 1 || !data || strcmp(uname, "chosen") != 0)
+		return 0;
+
+	p = of_get_flat_dt_prop(node, "bootargs-override", &l);
+	if (p != NULL && l > 0) {
+		strscpy(boot_command_line, p, COMMAND_LINE_SIZE);
+		*dt_bootargs = true;
+	}
+
+	return 1;
+}
+
 static void __init bootcmdline_init(void)
 {
+	bool dt_bootargs_override = false;
 	bool dt_bootargs = false;
 
 	/*
@@ -569,6 +589,14 @@ static void __init bootcmdline_init(void)
 		strscpy(boot_command_line, builtin_cmdline, COMMAND_LINE_SIZE);
 		return;
 	}
+
+	/*
+	 * If bootargs-override in the chosen node is set, use this as the
+	 * command line
+	 */
+	of_scan_flat_dt(bootcmdline_scan_chosen_override, &dt_bootargs_override);
+	if (dt_bootargs_override)
+		return;
 
 	/*
 	 * If the user specified a built-in command line &
@@ -670,7 +698,6 @@ static void __init arch_mem_init(char **cmdline_p)
 	mips_reserve_vmcore();
 
 	mips_parse_crashkernel();
-	device_tree_init();
 
 	/*
 	 * In order to reduce the possibility of kernel panic when failed to
@@ -800,6 +827,7 @@ void __init setup_arch(char **cmdline_p)
 
 	cpu_cache_init();
 	paging_init();
+	device_tree_init();
 
 	memblock_dump_all();
 

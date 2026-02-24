@@ -101,6 +101,10 @@ static inline __sum16 ip_fast_csum(const void *iph, unsigned int ihl)
 	unsigned int csum;
 	int carry;
 	unsigned int w;
+	
+	/* ihl should never be zero */
+	if (unlikely(ihl == 0))
+		return 0;
 
 	csum = net_hdr_word(word++);
 

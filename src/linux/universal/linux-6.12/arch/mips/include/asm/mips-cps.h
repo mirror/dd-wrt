@@ -12,6 +12,8 @@
 #include <linux/io.h>
 #include <linux/types.h>
 
+#include <asm/mach-ralink/mt7621.h>
+
 extern unsigned long __cps_access_bad_size(void)
 	__compiletime_error("Bad size for CPS accessor");
 
@@ -166,6 +168,10 @@ static inline unsigned int mips_cps_numcores(unsigned int cluster)
 	if (!mips_cm_present())
 		return 0;
 
+	if (IS_ENABLED(CONFIG_SOC_MT7621) &&
+	    !FIELD_GET(0x20000, __raw_readl(MT7621_SYSC_BASE + SYSC_REG_CHIP_REV)))
+		return 1;
+ 
 	/* Add one before masking to handle 0xff indicating no cores */
 	return FIELD_GET(CM_GCR_CONFIG_PCORES,
 			 mips_cps_cluster_config(cluster) + 1);

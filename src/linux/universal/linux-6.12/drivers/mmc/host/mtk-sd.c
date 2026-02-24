@@ -33,6 +33,7 @@
 #include <linux/mmc/slot-gpio.h>
 
 #include "cqhci.h"
+#include "mmc_hsq.h"
 
 #define MAX_BD_NUM          1024
 #define MSDC_NR_CLOCKS      3
@@ -74,8 +75,13 @@
 #define MSDC_PATCH_BIT   0xb0
 #define MSDC_PATCH_BIT1  0xb4
 #define MSDC_PATCH_BIT2  0xb8
+#define MSDC_PAD_CTRL0   0xe0
+#define MSDC_PAD_CTRL1   0xe4
+#define MSDC_PAD_CTRL2   0xe8
 #define MSDC_PAD_TUNE    0xec
 #define MSDC_PAD_TUNE0   0xf0
+#define MSDC_DAT_RDDLY0  0xf0
+#define MSDC_DAT_RDDLY1  0xf4
 #define PAD_DS_TUNE      0x188
 #define PAD_CMD_TUNE     0x18c
 #define EMMC51_CFG0	 0x204
@@ -406,7 +412,9 @@ struct mtk_mmc_compatible {
 	bool stop_clk_fix;
 	bool enhance_rx;
 	bool support_64g;
+	bool support_cmd23;
 	bool use_internal_cd;
+	bool mips_mt762x;
 };
 
 struct msdc_tune_para {
@@ -475,6 +483,7 @@ struct msdc_host {
 	bool hs400_tuning;	/* hs400 mode online tuning */
 	bool internal_cd;	/* Use internal card-detect logic */
 	bool cqhci;		/* support eMMC hw cmdq */
+	bool hsq_en;		/* Host Software Queue is enabled */
 	struct msdc_save_para save_para; /* used when gate HCLK */
 	struct msdc_tune_para def_tune_para; /* default tune setting */
 	struct msdc_tune_para saved_tune_para; /* tune result of CMD21/CMD19 */
@@ -493,6 +502,7 @@ static const struct mtk_mmc_compatible mt2701_compat = {
 	.stop_clk_fix = false,
 	.enhance_rx = false,
 	.support_64g = false,
+	.support_cmd23 = true,
 };
 
 static const struct mtk_mmc_compatible mt2712_compat = {
@@ -506,6 +516,7 @@ static const struct mtk_mmc_compatible mt2712_compat = {
 	.stop_clk_fix = true,
 	.enhance_rx = true,
 	.support_64g = true,
+	.support_cmd23 = true,
 };
 
 static const struct mtk_mmc_compatible mt6779_compat = {
@@ -519,6 +530,7 @@ static const struct mtk_mmc_compatible mt6779_compat = {
 	.stop_clk_fix = true,
 	.enhance_rx = true,
 	.support_64g = true,
+	.support_cmd23 = true,
 };
 
 static const struct mtk_mmc_compatible mt6795_compat = {
@@ -532,6 +544,7 @@ static const struct mtk_mmc_compatible mt6795_compat = {
 	.stop_clk_fix = false,
 	.enhance_rx = false,
 	.support_64g = false,
+	.support_cmd23 = true,
 };
 
 static const struct mtk_mmc_compatible mt7620_compat = {
@@ -544,7 +557,9 @@ static const struct mtk_mmc_compatible mt7620_compat = {
 	.busy_check = false,
 	.stop_clk_fix = false,
 	.enhance_rx = false,
+	.support_cmd23 = false,
 	.use_internal_cd = true,
+	.mips_mt762x = true,
 };
 
 static const struct mtk_mmc_compatible mt7622_compat = {
@@ -558,6 +573,7 @@ static const struct mtk_mmc_compatible mt7622_compat = {
 	.stop_clk_fix = true,
 	.enhance_rx = true,
 	.support_64g = false,
+	.support_cmd23 = true,
 };
 
 static const struct mtk_mmc_compatible mt7986_compat = {
@@ -571,6 +587,7 @@ static const struct mtk_mmc_compatible mt7986_compat = {
 	.stop_clk_fix = true,
 	.enhance_rx = true,
 	.support_64g = true,
+	.support_cmd23 = true,
 };
 
 static const struct mtk_mmc_compatible mt8135_compat = {
@@ -584,6 +601,7 @@ static const struct mtk_mmc_compatible mt8135_compat = {
 	.stop_clk_fix = false,
 	.enhance_rx = false,
 	.support_64g = false,
+	.support_cmd23 = true,
 };
 
 static const struct mtk_mmc_compatible mt8173_compat = {
@@ -597,6 +615,7 @@ static const struct mtk_mmc_compatible mt8173_compat = {
 	.stop_clk_fix = false,
 	.enhance_rx = false,
 	.support_64g = false,
+	.support_cmd23 = true,
 };
 
 static const struct mtk_mmc_compatible mt8183_compat = {
@@ -610,6 +629,7 @@ static const struct mtk_mmc_compatible mt8183_compat = {
 	.stop_clk_fix = true,
 	.enhance_rx = true,
 	.support_64g = true,
+	.support_cmd23 = true,
 };
 
 static const struct mtk_mmc_compatible mt8516_compat = {
@@ -621,6 +641,7 @@ static const struct mtk_mmc_compatible mt8516_compat = {
 	.data_tune = true,
 	.busy_check = true,
 	.stop_clk_fix = true,
+	.support_cmd23 = true,
 };
 
 static const struct of_device_id msdc_of_ids[] = {
@@ -974,7 +995,12 @@ static void msdc_set_mclk(struct msdc_host *host, unsigned char timing, u32 hz)
 	 * mmc_select_hs400() will drop to 50Mhz and High speed mode,
 	 * tune result of hs200/200Mhz is not suitable for 50Mhz
 	 */
-	if (mmc->actual_clock <= 52000000) {
+	if (host->dev_comp->mips_mt762x &&
+	    mmc->actual_clock > 25000000) {
+		sdr_set_bits(host->base + MSDC_IOCON, MSDC_IOCON_RSPL);
+		sdr_set_bits(host->base + MSDC_IOCON, MSDC_IOCON_DSPL);
+		sdr_set_bits(host->base + MSDC_IOCON, MSDC_IOCON_W_DSPL);
+	} else if (mmc->actual_clock <= 52000000) {
 		writel(host->def_tune_para.iocon, host->base + MSDC_IOCON);
 		if (host->top_base) {
 			writel(host->def_tune_para.emmc_top_control,
@@ -1172,13 +1198,36 @@ static void msdc_track_cmd_data(struct msdc_host *host, struct mmc_command *cmd)
 
 static void msdc_request_done(struct msdc_host *host, struct mmc_request *mrq)
 {
+	struct mmc_host *mmc = mmc_from_priv(host);
 	unsigned long flags;
+	bool hsq_req_done;
 
 	/*
 	 * No need check the return value of cancel_delayed_work, as only ONE
 	 * path will go here!
 	 */
 	cancel_delayed_work(&host->req_timeout);
+
+	/*
+	 * If the request was handled from Host Software Queue, there's almost
+	 * nothing to do here, and we also don't need to reset mrq as any race
+	 * condition would not have any room to happen, since HSQ stores the
+	 * "scheduled" mrqs in an internal array of mrq slots anyway.
+	 * However, if the controller experienced an error, we still want to
+	 * reset it as soon as possible.
+	 *
+	 * Note that non-HSQ requests will still be happening at times, even
+	 * though it is enabled, and that's what is going to reset host->mrq.
+	 * Also, msdc_unprepare_data() is going to be called by HSQ when needed
+	 * as HSQ request finalization will eventually call the .post_req()
+	 * callback of this driver which, in turn, unprepares the data.
+	 */
+	hsq_req_done = host->hsq_en ? mmc_hsq_finalize_request(mmc, mrq) : false;
+	if (hsq_req_done) {
+		if (host->error)
+			msdc_reset_hw(host);
+		return;
+	}
 
 	spin_lock_irqsave(&host->lock, flags);
 	host->mrq = NULL;
@@ -1189,7 +1238,7 @@ static void msdc_request_done(struct msdc_host *host, struct mmc_request *mrq)
 		msdc_unprepare_data(host, mrq->data);
 	if (host->error)
 		msdc_reset_hw(host);
-	mmc_request_done(mmc_from_priv(host), mrq);
+	mmc_request_done(mmc, mrq);
 	if (host->dev_comp->recheck_sdio_irq)
 		msdc_recheck_sdio_irq(host);
 }
@@ -1349,7 +1398,7 @@ static void msdc_ops_request(struct mmc_host *mmc, struct mmc_request *mrq)
 	struct msdc_host *host = mmc_priv(mmc);
 
 	host->error = 0;
-	WARN_ON(host->mrq);
+	WARN_ON(!host->hsq_en && host->mrq);
 	host->mrq = mrq;
 
 	if (mrq->data) {
@@ -1756,9 +1805,11 @@ static void msdc_init_hw(struct msdc_host *host)
 	}
 	writel(0, host->base + MSDC_IOCON);
 	sdr_set_field(host->base + MSDC_IOCON, MSDC_IOCON_DDLSEL, 0);
-	writel(0x403c0046, host->base + MSDC_PATCH_BIT);
-	sdr_set_field(host->base + MSDC_PATCH_BIT, MSDC_CKGEN_MSDC_DLY_SEL, 1);
-	writel(0xffff4089, host->base + MSDC_PATCH_BIT1);
+	if (!host->dev_comp->mips_mt762x) {
+		writel(0x403c0046, host->base + MSDC_PATCH_BIT);
+		sdr_set_field(host->base + MSDC_PATCH_BIT, MSDC_CKGEN_MSDC_DLY_SEL, 1);
+		writel(0xffff4089, host->base + MSDC_PATCH_BIT1);
+	}
 	sdr_set_bits(host->base + EMMC50_CFG0, EMMC50_CFG_CFCSTS_SEL);
 
 	if (host->dev_comp->stop_clk_fix) {
@@ -1830,6 +1881,18 @@ static void msdc_init_hw(struct msdc_host *host)
 		else
 			sdr_set_bits(host->base + tune_reg,
 				     MSDC_PAD_TUNE_RXDLYSEL);
+	}
+
+	if (host->dev_comp->mips_mt762x) {
+		/* Set pins drive strength */
+		writel(0x000d0044, host->base + MSDC_PAD_CTRL0);
+		writel(0x000e0044, host->base + MSDC_PAD_CTRL1);
+		writel(0x000e0044, host->base + MSDC_PAD_CTRL2);
+
+		/* Set tuning parameters */
+		writel(0x84101010, host->base + tune_reg);
+		writel(0x10101010, host->base + MSDC_DAT_RDDLY0);
+		writel(0x10101010, host->base + MSDC_DAT_RDDLY1);
 	}
 
 	if (mmc->caps2 & MMC_CAP2_NO_SDIO) {
@@ -2865,7 +2928,9 @@ static int msdc_drv_probe(struct platform_device *pdev)
 	if (mmc->caps & MMC_CAP_SDIO_IRQ)
 		mmc->caps2 |= MMC_CAP2_SDIO_IRQ_NOTHREAD;
 
-	mmc->caps |= MMC_CAP_CMD23;
+	if (host->dev_comp->support_cmd23)
+		mmc->caps |= MMC_CAP_CMD23;
+
 	if (host->cqhci)
 		mmc->caps2 |= MMC_CAP2_CQE | MMC_CAP2_CQE_DCMD;
 	/* MMC core transfer sizes tunable parameters */
@@ -2926,6 +2991,19 @@ static int msdc_drv_probe(struct platform_device *pdev)
 		mmc->max_seg_size = 64 * 1024;
 		/* Reduce CIT to 0x40 that corresponds to 2.35us */
 		msdc_cqe_cit_cal(host, 2350);
+	} else if (mmc->caps2 & MMC_CAP2_NO_SDIO) {
+		/* Use HSQ on eMMC/SD (but not on SDIO) if HW CQE not supported */
+		struct mmc_hsq *hsq = devm_kzalloc(&pdev->dev, sizeof(*hsq), GFP_KERNEL);
+		if (!hsq) {
+			ret = -ENOMEM;
+			goto release;
+		}
+
+		ret = mmc_hsq_init(hsq, mmc);
+		if (ret)
+			goto release;
+
+		host->hsq_en = true;
 	}
 
 	ret = devm_request_irq(&pdev->dev, host->irq, msdc_irq,
@@ -3051,6 +3129,9 @@ static int __maybe_unused msdc_runtime_suspend(struct device *dev)
 	struct mmc_host *mmc = dev_get_drvdata(dev);
 	struct msdc_host *host = mmc_priv(mmc);
 
+	if (host->hsq_en)
+		mmc_hsq_suspend(mmc);
+
 	msdc_save_reg(host);
 
 	if (sdio_irq_claimed(mmc)) {
@@ -3081,6 +3162,10 @@ static int __maybe_unused msdc_runtime_resume(struct device *dev)
 		pinctrl_select_state(host->pinctrl, host->pins_uhs);
 		enable_irq(host->irq);
 	}
+
+	if (host->hsq_en)
+		mmc_hsq_resume(mmc);
+
 	return 0;
 }
 

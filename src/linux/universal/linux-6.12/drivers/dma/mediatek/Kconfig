@@ -36,3 +36,9 @@ config MTK_UART_APDMA
 	  When SERIAL_8250_MT6577 is enabled, and if you want to use DMA,
 	  you can enable the config. The DMA engine can only be used
 	  with MediaTek SoCs.
+
+config MTK_HSDMA
+	tristate "MTK HSDMA support"
+	depends on RALINK && SOC_MT7621
+	select DMA_ENGINE
+	select DMA_VIRTUAL_CHANNELS

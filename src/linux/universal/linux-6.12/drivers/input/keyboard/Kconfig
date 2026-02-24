@@ -604,6 +604,17 @@ config KEYBOARD_SUNKBD
 	  To compile this driver as a module, choose M here: the
 	  module will be called sunkbd.
 
+config KEYBOARD_SX951X
+	tristate "Semtech SX951X capacitive touch controller"
+	depends on OF && I2C
+	select REGMAP_I2C
+	help
+	  Say Y here to enable the Semtech SX9512/SX9153 capacitive
+	  touch controller driver.
+
+	  To compile this driver as a module, choose M here: the
+	  module will be called sx951x.
+
 config KEYBOARD_SH_KEYSC
 	tristate "SuperH KEYSC keypad support"
 	depends on ARCH_SHMOBILE || COMPILE_TEST

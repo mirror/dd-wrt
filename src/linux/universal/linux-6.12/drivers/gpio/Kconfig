@@ -565,6 +565,14 @@ config GPIO_RB91X_KEY
 	tristate "MikroTik RB91x board series reset key support"
 	depends on ATH79
 
+config GPIO_RALINK
+	bool "Ralink GPIO Support"
+	depends on SOC_RT288X || SOC_RT305X || SOC_RT3883 || SOC_MT7620 
+	select GPIO_GENERIC
+	select GPIOLIB_IRQCHIP
+	help
+	  Say yes here to support the Ralink SoC GPIO device
+
 config GPIO_RCAR
 	tristate "Renesas R-Car and RZ/G GPIO support"
 	depends on ARCH_RENESAS || COMPILE_TEST

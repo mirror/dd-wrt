@@ -337,6 +337,14 @@ config MTD_NAND_QCOM
 	  Enables support for NAND flash chips on SoCs containing the EBI2 NAND
 	  controller. This controller is found on IPQ806x SoC.
 
+config MTD_NAND_MT7621
+	tristate "MT7621 NAND controller"
+	depends on SOC_MT7621 || COMPILE_TEST
+	depends on HAS_IOMEM
+	help
+	  Enables support for NAND controller on MT7621 SoC.
+	  This driver uses PIO mode for data transmission instead of DMA mode.
+
 config MTD_NAND_MTK
 	tristate "MTK NAND controller"
 	depends on MTD_NAND_ECC_MEDIATEK

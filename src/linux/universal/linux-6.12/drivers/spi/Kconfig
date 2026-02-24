@@ -943,6 +943,12 @@ config SPI_QCOM_GENI
 	  This driver can also be built as a module.  If so, the module
 	  will be called spi-geni-qcom.
 
+config SPI_RT2880
+	tristate "Ralink RT288x SPI Controller"
+	depends on RALINK
+	help
+	  This selects a driver for the Ralink RT288x/RT305x SPI Controller.
+
 config SPI_S3C64XX
 	tristate "Samsung S3C64XX/Exynos SoC series type SPI"
 	depends on (PLAT_SAMSUNG || ARCH_S5PV210 || ARCH_EXYNOS || COMPILE_TEST)

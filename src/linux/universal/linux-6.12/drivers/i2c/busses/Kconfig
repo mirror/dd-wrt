@@ -1081,6 +1081,11 @@ config I2C_RTL9300
 	  This driver can also be built as a module. If so, the module will
 	  be called i2c-rtl9300.
 
+config I2C_RALINK
+	tristate "Ralink I2C Controller"
+	depends on RALINK && !SOC_MT7621
+	select OF_I2C
+
 config I2C_RZV2M
 	tristate "Renesas RZ/V2M adapter"
 	depends on ARCH_RENESAS || COMPILE_TEST

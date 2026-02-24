@@ -79,6 +79,8 @@
 #define UVC_QUIRK_DISABLE_AUTOSUSPEND	0x00008000
 #define UVC_QUIRK_INVALID_DEVICE_SOF	0x00010000
 #define UVC_QUIRK_MJPEG_NO_EOF		0x00020000
+#define UVC_QUIRK_MOTION		0x00040000
+#define UVC_QUIRK_SINGLE_ISO		0x00080000
 
 /* Format flags */
 #define UVC_FMT_FLAG_COMPRESSED		0x00000001
@@ -598,6 +600,7 @@ struct uvc_device {
 
 	struct input_dev *input;
 	char input_phys[64];
+	int motion;
 
 	struct uvc_ctrl_work {
 		struct work_struct work;

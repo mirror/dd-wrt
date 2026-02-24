@@ -19,27 +19,22 @@
 
 static const char *clk_cpu(int *idx)
 {
+	*idx = 1;
+
 	switch (ralink_soc) {
 	case RT2880_SOC:
-		*idx = 0;
 		return "ralink,rt2880-sysc";
 	case RT3883_SOC:
-		*idx = 0;
 		return "ralink,rt3883-sysc";
 	case RT305X_SOC_RT3050:
-		*idx = 0;
 		return "ralink,rt3050-sysc";
 	case RT305X_SOC_RT3052:
-		*idx = 0;
 		return "ralink,rt3052-sysc";
 	case RT305X_SOC_RT3350:
-		*idx = 1;
 		return "ralink,rt3350-sysc";
 	case RT305X_SOC_RT3352:
-		*idx = 1;
 		return "ralink,rt3352-sysc";
 	case RT305X_SOC_RT5350:
-		*idx = 1;
 		return "ralink,rt5350-sysc";
 	case MT762X_SOC_MT7620A:
 		*idx = 2;
@@ -48,10 +43,8 @@ static const char *clk_cpu(int *idx)
 		*idx = 2;
 		return "ralink,mt7620-sysc";
 	case MT762X_SOC_MT7628AN:
-		*idx = 1;
 		return "ralink,mt7628-sysc";
 	case MT762X_SOC_MT7688:
-		*idx = 1;
 		return "ralink,mt7688-sysc";
 	default:
 		*idx = -1;

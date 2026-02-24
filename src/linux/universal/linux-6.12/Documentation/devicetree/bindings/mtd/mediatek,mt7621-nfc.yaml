@@ -1,0 +1,68 @@
+# SPDX-License-Identifier: GPL-2.0
+%YAML 1.2
+---
+$id: http://devicetree.org/schemas/mtd/mediatek,mt7621-nfc.yaml#
+$schema: http://devicetree.org/meta-schemas/core.yaml#
+
+title: MediaTek MT7621 SoC NAND Flash Controller (NFC) DT binding
+
+maintainers:
+  - Weijie Gao <weijie.gao@mediatek.com>
+
+description: |
+  This driver uses a single node to describe both NAND Flash controller
+  interface (NFI) and ECC engine for MT7621 SoC.
+  MT7621 supports only one chip select.
+
+properties:
+  "#address-cells": false
+  "#size-cells": false
+
+  compatible:
+    enum:
+      - mediatek,mt7621-nfc
+
+  reg:
+    items:
+      - description: Register base of NFI core
+      - description: Register base of ECC engine
+
+  reg-names:
+    items:
+      - const: nfi
+      - const: ecc
+
+  clocks:
+    items:
+      - description: Source clock for NFI core, fixed 125MHz
+
+  clock-names:
+    items:
+      - const: nfi_clk
+
+required:
+  - compatible
+  - reg
+  - reg-names
+  - clocks
+  - clock-names
+
+examples:
+  - |
+    nficlock: nficlock {
+    	#clock-cells = <0>;
+    	compatible = "fixed-clock";
+
+    	clock-frequency = <125000000>;
+    };
+
+    nand@1e003000 {
+    	compatible = "mediatek,mt7621-nfc";
+
+    	reg = <0x1e003000 0x800
+    	       0x1e003800 0x800>;
+    	reg-names = "nfi", "ecc";
+
+    	clocks = <&nficlock>;
+    	clock-names = "nfi_clk";
+    };

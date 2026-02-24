@@ -464,6 +464,15 @@ config PWM_MICROCHIP_CORE
 	  To compile this driver as a module, choose M here: the module
 	  will be called pwm-microchip-core.
 
+config PWM_MEDIATEK_RAMIPS
+	tristate "Mediatek PWM support"
+	depends on RALINK && OF
+	help
+	  Generic PWM framework driver for Mediatek ARM SoC.
+
+	  To compile this driver as a module, choose M here: the module
+	  will be called pwm-mxs.
+
 config PWM_MXS
 	tristate "Freescale MXS PWM support"
 	depends on ARCH_MXS || COMPILE_TEST

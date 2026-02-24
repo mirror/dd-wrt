@@ -73,17 +73,45 @@ static inline u32 get_random_u32_below(u32 ceil)
 	BUILD_BUG_ON_MSG(!ceil, "get_random_u32_below() must take ceil > 0");
 	if (ceil <= 1)
 		return 0;
-	for (;;) {
-		if (ceil <= 1U << 8) {
+	if (ceil <= 1U << 8) {
+#ifdef CONFIG_NET_RALINK_MT7620
+		typedef u8 (*getrnd_t)(void);
+		volatile getrnd_t rnd_fn = (getrnd_t)get_random_u8;
+#endif
+		for (;;) {
+#ifdef CONFIG_NET_RALINK_MT7620
+			u32 mult = ceil * rnd_fn();
+#else
 			u32 mult = ceil * get_random_u8();
+#endif
 			if (likely(is_power_of_2(ceil) || (u8)mult >= (1U << 8) % ceil))
 				return mult >> 8;
-		} else if (ceil <= 1U << 16) {
+		}
+	} else if (ceil <= 1U << 16) {
+#ifdef CONFIG_NET_RALINK_MT7620
+		typedef u16 (*getrnd_t)(void);
+		volatile getrnd_t rnd_fn = (getrnd_t)get_random_u16;
+#endif
+		for (;;) {
+#ifdef CONFIG_NET_RALINK_MT7620
+			u32 mult = ceil * rnd_fn();
+#else
 			u32 mult = ceil * get_random_u16();
+#endif
 			if (likely(is_power_of_2(ceil) || (u16)mult >= (1U << 16) % ceil))
 				return mult >> 16;
-		} else {
+		}
+	} else {
+#ifdef CONFIG_NET_RALINK_MT7620
+		typedef u32 (*getrnd_t)(void);
+		volatile getrnd_t rnd_fn = (getrnd_t)get_random_u32;
+#endif
+		for (;;) {
+#ifdef CONFIG_NET_RALINK_MT7620
+			u64 mult = (u64)ceil * rnd_fn();
+#else
 			u64 mult = (u64)ceil * get_random_u32();
+#endif
 			if (likely(is_power_of_2(ceil) || (u32)mult >= -ceil % ceil))
 				return mult >> 32;
 		}

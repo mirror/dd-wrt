@@ -57,7 +57,13 @@ static inline void resume_user_mode_work(struct pt_regs *regs)
 #endif
 
 	mem_cgroup_handle_over_high(GFP_KERNEL);
+#ifdef CONFIG_NET_RALINK_MT7620
+	typedef void (*bmtc_t)(void);
+	volatile bmtc_t bmtc_fn = (bmtc_t)blkcg_maybe_throttle_current;
+	bmtc_fn();
+#else
 	blkcg_maybe_throttle_current();
+#endif
 
 	rseq_handle_notify_resume(NULL, regs);
 }
