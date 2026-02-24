@@ -86,6 +86,7 @@ void start_sysinit(void)
 	char *mac;
 	insmod("rtl_otto_dsa");
 	insmod("rtl838x_eth");
+	eval("ifconfig", "eth0", "up");
 	switch (getRouterBrand()) {
 	case ROUTER_HP_1920:
 		FILE *fp = openMTD("factory");
