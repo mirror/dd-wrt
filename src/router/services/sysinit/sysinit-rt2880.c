@@ -166,10 +166,10 @@ void start_sysinit(void)
 			insmod("mt76x0e");
 			insmod("mt7603e");
 			insmod("dot11ah");
-			eval("insmod","morse","reattach_hw=0","macaddr_suffix=82:60:00","bcf=bcf_mm_hl2_ext.bin","country=US");
+			eval("insmod", "morse", "reattach_hw=0", "macaddr_suffix=82:60:00", "bcf=bcf_mm_hl2_ext.bin", "country=US");
 		}
-	
-	break;
+
+		break;
 	case ROUTER_DIR882:
 	case ROUTER_R6850:
 	case ROUTER_R6220:
