@@ -1,0 +1,385 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include "mt7621.dtsi"
+
+#include <dt-bindings/leds/common.h>
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+
+/ {
+	compatible = "morse,halowlink1", "mediatek,mt7621-soc";
+	model = "MorseMicro HaLowLink 1";
+
+	aliases {
+		led-halow = &led2;
+		led-wifi = &led0;
+		led-status = &led1;
+		label-mac-device = &wan;
+	};
+
+	chosen {
+		bootargs = "console=ttyS0,115200";
+	};
+
+	keys {
+		compatible = "gpio-keys";
+
+		reset {
+			label = "reset";
+			gpios = <&gpio 18 GPIO_ACTIVE_LOW>;
+			linux,code = <BTN_0>;
+		};
+	};
+
+	led0 {
+		compatible = "pwm-leds-multicolor";
+
+		led0: multi-led {
+			label = "rgb:led0";
+			color = <LED_COLOR_ID_RGB>;
+			function = LED_FUNCTION_INDICATOR;
+			max-brightness = <255>;
+
+			led0_red {
+				pwms = <&pwm0_red 0 1000000>;
+				color = <LED_COLOR_ID_RED>;
+			};
+
+			led0_green {
+				pwms = <&pwm0_green 0 1000000>;
+				color = <LED_COLOR_ID_GREEN>;
+			};
+
+			led0_blue {
+				pwms = <&pwm0_blue 0 1000000>;
+				color = <LED_COLOR_ID_BLUE>;
+			};
+		};
+	};
+
+	led1 {
+		compatible = "pwm-leds-multicolor";
+
+		led1: multi-led {
+			label = "rgb:led1";
+			color = <LED_COLOR_ID_RGB>;
+			function = LED_FUNCTION_INDICATOR;
+			max-brightness = <255>;
+			linux,default-trigger = "timer";
+			led-pattern = <100 100>;
+			default-brightness = <255>;
+			default-mc-intensity = <0 255 0>;
+
+			led1_red {
+				pwms = <&pwm1_red 0 1000000>;
+				color = <LED_COLOR_ID_RED>;
+			};
+
+			led1_green {
+				pwms = <&pwm1_green 0 1000000>;
+				color = <LED_COLOR_ID_GREEN>;
+			};
+
+			led1_blue {
+				pwms = <&pwm1_blue 0 1000000>;
+				color = <LED_COLOR_ID_BLUE>;
+			};
+		};
+	};
+
+	led2 {
+		compatible = "pwm-leds-multicolor";
+
+		led2: multi-led {
+			label = "rgb:led2";
+			color = <LED_COLOR_ID_RGB>;
+			function = LED_FUNCTION_INDICATOR;
+			max-brightness = <255>;
+
+			led2_red {
+				pwms = <&pwm2_red 0 1000000>;
+				color = <LED_COLOR_ID_RED>;
+			};
+
+			led2_green {
+				pwms = <&pwm2_green 0 1000000>;
+				color = <LED_COLOR_ID_GREEN>;
+			};
+
+			led2_blue {
+				pwms = <&pwm2_blue 0 1000000>;
+				color = <LED_COLOR_ID_BLUE>;
+			};
+		};
+	};
+
+	pwm0_red: pwm0_red {
+		#pwm-cells = <2>;
+		compatible = "pwm-gpio";
+		gpios = <&gpio 13 GPIO_ACTIVE_LOW>;
+	};
+
+	pwm0_green: pwm0_green {
+		#pwm-cells = <2>;
+		compatible = "pwm-gpio";
+		gpios = <&gpio 14 GPIO_ACTIVE_LOW>;
+	};
+
+	pwm0_blue: pwm0_blue {
+		#pwm-cells = <2>;
+		compatible = "pwm-gpio";
+		gpios = <&gpio 15 GPIO_ACTIVE_LOW>;
+	};
+
+	pwm1_red: pwm1_red {
+		#pwm-cells = <2>;
+		compatible = "pwm-gpio";
+		gpios = <&gpio 23 GPIO_ACTIVE_LOW>;
+	};
+
+	pwm1_green: pwm1_green {
+		#pwm-cells = <2>;
+		compatible = "pwm-gpio";
+		gpios = <&gpio 22 GPIO_ACTIVE_LOW>;
+	};
+
+	pwm1_blue: pwm1_blue {
+		#pwm-cells = <2>;
+		compatible = "pwm-gpio";
+		gpios = <&gpio 33 GPIO_ACTIVE_LOW>;
+	};
+
+	pwm2_red: pwm2_red {
+		#pwm-cells = <2>;
+		compatible = "pwm-gpio";
+		gpios = <&gpio 28 GPIO_ACTIVE_LOW>;
+	};
+
+	pwm2_green: pwm2_green {
+		#pwm-cells = <2>;
+		compatible = "pwm-gpio";
+		gpios = <&gpio 29 GPIO_ACTIVE_LOW>;
+	};
+
+	pwm2_blue: pwm2_blue {
+		#pwm-cells = <2>;
+		compatible = "pwm-gpio";
+		gpios = <&gpio 32 GPIO_ACTIVE_LOW>;
+	};
+
+	mmc_clock: mmc_clock@0 {
+		#clock-cells = <0>;
+		compatible = "fixed-clock";
+		clock-frequency = <48000000>;
+	};
+
+	mmc_fixed_3v3: fixedregulator@0 {
+		compatible = "regulator-fixed";
+		regulator-name = "mmc_power";
+		regulator-min-microvolt = <3300000>;
+		regulator-max-microvolt = <3300000>;
+		enable-active-high;
+		regulator-always-on;
+	};
+
+	mmc_fixed_1v8_io: fixedregulator@1 {
+		compatible = "regulator-fixed";
+		regulator-name = "mmc_io";
+		regulator-min-microvolt = <1800000>;
+		regulator-max-microvolt = <1800000>;
+		enable-active-high;
+		regulator-always-on;
+
+	};
+};
+
+&i2c {
+	status = "okay";
+};
+
+&pinctrl {
+	jtag_pins: jtag_pins {
+		jtag_pins {
+			groups = "jtag";
+			function = "gpio";
+		};
+	};
+};
+
+&sdhci {
+	compatible = "mediatek,mt7620-mmc";
+	status = "okay";
+	bus-width = <4>;
+	max-frequency = <48000000>;
+
+	cap-sd-highspeed;
+	cap-mmc-highspeed;
+	vmmc-supply = <&mmc_fixed_3v3>;
+	vqmmc-supply = <&mmc_fixed_3v3>;
+	non-removable;
+	disable-wp;
+	cap-sdio-irq;
+
+	pinctrl-names = "default", "state_uhs";
+	pinctrl-0 = <&sdhci_pins>;
+	pinctrl-1 = <&sdhci_pins>;
+
+	clocks = <&mmc_clock>, <&mmc_clock>;
+	clock-names = "source", "hclk";
+
+	mm6108_sdio: mm6108_sdio@0 {
+		compatible = "morse,mm610x";
+		reset-gpios = <&gpio 6 0>;
+		power-gpios = <&gpio 7 0>,
+		              <&gpio 8 0>;
+		fem-4v3-gpios = <&gpio 27 0>;
+		status = "okay";
+		reg = <2>;
+		bus-width = <4>;
+	};
+};
+
+&spi0 {
+	status = "okay";
+
+	flash@0 {
+		compatible = "jedec,spi-nor";
+		reg = <0>;
+		spi-max-frequency = <50000000>;
+		broken-flash-reset;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "u-boot";
+				reg = <0x0 0x70000>;
+				read-only;
+			};
+
+			// This is a 'ubootenv' format partition that we use to persist settings
+			// between flashes/factory reset (i.e. similar to the factory partition,
+			// but writeable by userspace).
+			partition@70000 {
+				label = "openwrt-env";
+				reg = <0x70000 0x10000>;
+			};
+
+			partition@80000 {
+				label = "u-boot-env";
+				reg = <0x80000 0x10000>;
+				read-only;
+			};
+
+			factory: partition@90000 {
+				label = "factory";
+				reg = <0x90000 0x10000>;
+				read-only;
+			};
+
+			partition@A0000 {
+				compatible = "denx,uimage";
+				label = "linux";
+				reg = <0xA0000 0x1f40000>;
+			};
+
+			partition@1fe0000 {
+				label = "nvram";
+				reg = <0x1fe0000 0x20000>;
+			};
+		};
+	};
+};
+
+&pcie {
+	status = "okay";
+};
+
+&pcie0 {
+	wifi@0,0 {
+		compatible = "mediatek,mt76";
+		reg = <0x0000 0 0 0 0>;
+		mediatek,mtd-eeprom = <&factory 0x0>;
+	};
+};
+
+&ethernet {
+	/* MDIO is required to be on to talk to GSW controller */
+	pinctrl-names = "default";
+	pinctrl-0 = <&mdio_pins>;
+};
+
+&gmac0 {
+	nvmem-cells = <&macaddr_factory_4000>;
+	nvmem-cell-names = "mac-address";
+	mac-address-increment = <1>;
+};
+
+&switch0 {
+	ports {
+		port@0 {
+			status = "okay";
+			label = "usblan";
+		};
+
+		port@2 {
+			status = "okay";
+			label = "lan";
+		};
+
+		wan: port@4 {
+			status = "okay";
+			label = "wan";
+			nvmem-cells = <&macaddr_factory_4000>;
+			nvmem-cell-names = "mac-address";
+		};
+	};
+};
+
+&gpio {
+	/* These are the default names from the docs, EXCEPT that those that are connected to the HaLow chip and renamed
+	 * (see MM_*).
+	 */
+	gpio-line-names =
+		/* GPIO0 -> GPIO12 */
+		"", "RXD1", "TXD1", "I2C_SD", "I2C_SCLK", "", "MM_RESET", "MM_WAKE", "MM_BUSY", "RTS2_N", "CTS2_N", "TXD2", "MM_DBG_TX",
+		/* GPIO13 -> GPIO21 */
+		"JTDO", "JTDI", "JTMS", "JTCLK", "JTRST_N", "WDT_RST_N", "PERST", "", "",
+		/* GPIO22 -> GPIO33 */
+		"GE2_TXD0", "GE2_TXD1", "GE2_TXD2", "GE2_TXD3", "GE2_TXEN", "MM_BOOST", "GE2_RXD0", "GE2_RXD1", "GE2_RXD2", "GE2_RXD3", "GE2_RXDV", "GE2_RXCLK",
+		/* GPIO34 -> GPIO48 */
+		"ND_CS_N", "ND_WE_N", "ND_RE_N", "ND_D4", "ND_D5", "ND_D6", "ND_D7", "ND_WP", "ND_RB_N", "ND_CLE", "ND_ALE", "ND_D0", "ND_D1", "ND_D2", "ND_D3",
+		/* GPIO49 -> GPIO63 - unused, but need to be specified to avoid kernel complaints */
+		"", "", "", "", "", "", "", "", "", "", "", "", "", "", "",
+		/* GPIO64 -> GPIO95 - unused, but need to be specified to avoid kernel complaints */
+		"", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", ""
+		;
+};
+
+&state_default {
+	gpio {
+		groups = "wdt", "jtag", "uart3", "rgmii2";
+		function = "gpio";
+	};
+};
+
+/* HaLow DBG_TX is connected to this uart (other lines are unused). */
+&uartlite2 {
+	status = "okay";
+};
+
+&factory {
+	compatible = "nvmem-cells";
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	macaddr_factory_4000: macaddr@4000 {
+		reg = <0x4000 0x6>;
+	};
+};
+
+&xhci {
+	status = "disabled";
+};

@@ -249,8 +249,8 @@
 		};
 
 		partition@200000 {
-			label = "kernel";
-			reg = <0x200000 0x400000>;
+			label = "linux";
+			reg = <0x200000 0x2c00000>;
 			sercomm,scpart-id = <2>;
 		};
 
@@ -258,6 +258,16 @@
 			label = "ubi";
 			reg = <0x600000 0x2800000>;
 			sercomm,scpart-id = <3>;
+		};
+
+		partition@2e00000 {
+			label = "ddwrt";
+			reg = <0x2e00000 0x1800000>;
+		};
+
+		partition@4800000 {
+			label = "nvram";
+			reg = <0x4800000 0x200000>;
 		};
 
 		partition@2e00000 {
