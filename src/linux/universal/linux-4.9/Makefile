@@ -226,20 +226,6 @@ export srctree objtree VPATH
 # line overrides the setting of ARCH below.  If a native build is happening,
 # then ARCH is assigned, getting whatever value it gets normally, and
 # SUBARCH is subsequently ignored.
-ifeq ($(ARCH),armeb)
-ARCH := arm
-endif
-ifeq ($(ARCH),aarch64)
-ARCH := arm64
-endif
-ifeq ($(ARCH),mips64)
-ARCH := mips
-endif
-ifeq ($(ARCH),mipsel)
-ARCH=mips
-endif
-
-SUBARCH := $(ARCH)
 
 # Cross compiling and selecting different set of gcc/bin-utils
 # ---------------------------------------------------------------------------
@@ -261,12 +247,27 @@ SUBARCH := $(ARCH)
 # "make" in the configured kernel build directory always uses that.
 # Default value for CROSS_COMPILE is not to prefix executables
 # Note: Some architectures assign CROSS_COMPILE in their arch/*/Makefile
-ARCH		?= $(SUBARCH)
 CROSS_COMPILE	?= ccache $(CONFIG_CROSS_COMPILE:"%"=%)
 
+ARCH2 		:= $(ARCH)
+ifeq ($(ARCH2),armeb)
+ARCH2 		:= arm
+endif
+ifeq ($(ARCH2),aarch64)
+ARCH2 		:= arm64
+endif
+ifeq ($(ARCH2),mips64)
+ARCH2 		:= mips
+endif
+ifeq ($(ARCH2),mipsel)
+ARCH2 		:= mips
+endif
+
+SUBARCH := $(ARCH2)
+
 # Architecture as present in compile.h
-UTS_MACHINE 	:= $(ARCH)
-SRCARCH 	:= $(ARCH)
+UTS_MACHINE 	:= $(ARCH2)
+SRCARCH 	:= $(ARCH2)
 
 # Additional ARCH settings for x86
 ifeq ($(ARCH),i386)
