@@ -729,6 +729,26 @@ char *set_wan_state(int state)
 	return NULL;
 }
 
+void start_post_network(void)
+{
+	int brand = getRouterBrand();
+	switch (brand) {
+	case ROUTER_MORSE:
+		sysprintf("echo netdev > /sys/class/leds/rgb:led0/trigger");
+		sysprintf("echo wlan0 > /sys/class/leds/rgb:led0/device_name");
+		sysprintf("echo 1 > /sys/class/leds/rgb:led0/link");
+		sysprintf("echo 1 > /sys/class/leds/rgb:led0/rx");
+		sysprintf("echo 1 > /sys/class/leds/rgb:led0/tx");
+
+		sysprintf("echo netdev > /sys/class/leds/rgb:led2/trigger");
+		sysprintf("echo wlan1 > /sys/class/leds/rgb:led2/device_name");
+		sysprintf("echo 1 > /sys/class/leds/rgb:led2/link");
+		sysprintf("echo 1 > /sys/class/leds/rgb:led2/rx");
+		sysprintf("echo 1 > /sys/class/leds/rgb:led2/tx");
+
+		break;
+	}
+}
 void start_devinit_arch(void)
 {
 }
