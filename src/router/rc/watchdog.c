@@ -161,10 +161,10 @@ static void check_signal(const char *var, int interface, int vap)
 		struct wifi_client_info *wc;
 		for (wc = mac80211_info->wci; wc; wc = wc->next) {
 			if (wc) {
+				char mac[32];
+				ether_etoa(wc->etheraddr, mac);
 				if (!(wc->signal - wc->noise)) {
 					zerocount[interface][vap]++;
-					char mac[32];
-					ether_etoa(wc->etheraddr, mac);
 					if (zerocount[interface][vap] > 20)
 						dd_logerror("ath11k_watchdog", "zero signal issue detected on interface %s (%s)\n",
 							    wc->ifname, mac);
