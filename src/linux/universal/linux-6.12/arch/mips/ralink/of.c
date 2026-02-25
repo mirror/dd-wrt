@@ -82,7 +82,10 @@ void __init ralink_of_remap(void)
 
 	if (!rt_sysc_membase || !rt_memc_membase)
 		panic("Failed to remap core resources");
+
 }
+
+extern struct boot_param_header __image_dtb;
 
 void __init plat_mem_setup(void)
 {
@@ -94,7 +97,19 @@ void __init plat_mem_setup(void)
 	 * Load the builtin devicetree. This causes the chosen node to be
 	 * parsed resulting in our memory appearing.
 	 */
+
+	/*
+	 * Load the builtin devicetree. This causes the chosen node to be
+	 * parsed resulting in our memory appearing. fw_passed_dtb is used
+	 * by CONFIG_MIPS_APPENDED_RAW_DTB as well.
+	 */
 	dtb = get_fdt();
+	if (!dtb) {
+		if (&__dtb_start != &__dtb_end)
+			dtb = (void *)__dtb_start;
+	}
+	__dt_setup_arch(&__image_dtb);
+
 	__dt_setup_arch(dtb);
 
 	if (early_init_dt_scan_memory())
