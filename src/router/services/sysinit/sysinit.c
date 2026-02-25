@@ -992,6 +992,14 @@ void start_restore_defaults(void)
 					 { "wan_default", "vlan1" },
 					 { "wan_ifnames", "vlan1" },
 					 { 0, 0 } };
+#elif HAVE_MT7621
+	struct nvram_param generic[] = { { "lan_ifname", "br0" },
+					 { "lan_ifnames", "wan lan usblan lan1 lan2 lan3 lan4" },
+					 { "wan_ifname2", "wan" },
+					 { "wan_ifname", "wan" },
+					 { "wan_default", "wan" },
+					 { "wan_ifnames", "wan" },
+					 { 0, 0 } };
 #elif HAVE_RT2880
 	struct nvram_param generic[] = { { "lan_ifname", "br0" },
 					 { "lan_ifnames", "vlan1 vlan2 ra0 ba0" },

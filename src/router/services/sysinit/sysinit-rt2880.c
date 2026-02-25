@@ -149,6 +149,27 @@ void start_sysinit(void)
 		nvram_seti("sw_lan3", 3);
 		nvram_seti("sw_lan4", 4);
 		break;
+	case ROUTER_MORSE:
+		insmod("thermal_sys");
+		insmod("hwmon");
+		insmod("compat");
+		insmod("mac80211");
+		if (!nvram_match("no_mt76", "1")) {
+			insmod("mt76");
+			insmod("mt76-connac-lib");
+			insmod("mt7615-common");
+			insmod("mt7615e");
+			insmod("mt76x02-lib");
+			insmod("mt76x2-common");
+			insmod("mt76x2e");
+			insmod("mt76x0-common");
+			insmod("mt76x0e");
+			insmod("mt7603e");
+			insmod("dot11ah");
+			eval("insmod","morse","reattach_hw=0","macaddr_suffix=82:60:00","bcf=bcf_mm_hl2_ext.bin","country=US");
+		}
+	
+	break;
 	case ROUTER_DIR882:
 	case ROUTER_R6850:
 	case ROUTER_R6220:
