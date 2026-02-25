@@ -1211,6 +1211,9 @@ static void resetbtn_period_check(int sig)
 	case ROUTER_R6800:
 		val = (get_gpio(18) << 18) | (get_gpio(12) << 12) | (get_gpio(14) << 14);
 		break;
+	case ROUTER_MORSE:
+		val = get_gpio(18) << 18;
+		break;
 	case ROUTER_R6850:
 		val = (get_gpio(7) << 7) | (get_gpio(14) << 14);
 		break;

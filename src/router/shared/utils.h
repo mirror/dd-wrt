@@ -856,6 +856,8 @@
 
 #define ROUTER_LUXUL_ABR4400 0x12d10e
 
+#define ROUTER_MORSE 0x12e112
+
 #define NVROUTER "DD_BOARD"
 #define NVROUTER_ALT "alternate_name"
 

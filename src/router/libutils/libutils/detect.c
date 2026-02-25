@@ -1306,6 +1306,10 @@ old_way:;
 		setRouter("Netgear WNDR3700V5");
 		return ROUTER_R6220;
 	}
+	if (!strcmp(modelstr, "HaLowLink")) {
+		setRouter("MorseMicro HaLowLink 1");
+		return ROUTER_MORSE;
+	}
 	//fallback
 	setRouter("Netgear R6800");
 	return ROUTER_R6800;

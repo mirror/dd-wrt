@@ -1004,6 +1004,9 @@ endif
 ifeq ($(CONFIG_HOBBIT),y)
   CFLAGS += -DHAVE_HOBBIT
 endif
+ifeq ($(CONFIG_MORSE),y)
+  CFLAGS += -DHAVE_MORSE
+endif
 ifeq ($(CONFIG_ACK),y)
   CFLAGS += -DHAVE_ACK
 endif
