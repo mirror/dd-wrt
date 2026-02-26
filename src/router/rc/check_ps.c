@@ -137,12 +137,20 @@ static int check_antaira_agent(void)
 }
 #endif
 
+#ifdef HAVE_UPNP
+static int check_upnpd(void)
+{
+	if (nvram_match("wan_proto", "disabled") || !nvram_match("upnp_enable", "1")) // todo: add upstream
+		return 0;
+	return !search_process("upnpd", 1);
+}
+#endif
 enum { M_LAN, M_WAN };
 
 struct mon mons[] = {
 // {"tftpd",  M_LAN, stop_tftpd, start_tftpd},
 #ifdef HAVE_UPNP
-	{ "upnpd", M_LAN, "upnp_enable", "1", NULL, NULL, NULL },
+	{ "upnpd", M_LAN, "upnp_enable", "1", NULL, NULL, &check_upnpd },
 #endif
 	{ "process_monitor", M_LAN, NULL, NULL, NULL, NULL, NULL },
 	{ "httpd", M_LAN, "http_enable", "1", "https_enable", "1", &check_httpd },
