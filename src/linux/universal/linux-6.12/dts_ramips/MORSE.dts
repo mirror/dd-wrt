@@ -167,7 +167,7 @@
 		gpios = <&gpio 32 GPIO_ACTIVE_LOW>;
 	};
 
-	mmc_clock: mmc_clock@0 {
+/*	mmc_clock: mmc_clock@0 {
 		#clock-cells = <0>;
 		compatible = "fixed-clock";
 		clock-frequency = <48000000>;
@@ -190,7 +190,7 @@
 		enable-active-high;
 		regulator-always-on;
 
-	};
+	};*/
 };
 
 &i2c {
@@ -207,25 +207,15 @@
 };
 
 &sdhci {
-	compatible = "mediatek,mt7620-mmc";
 	status = "okay";
 	bus-width = <4>;
 	max-frequency = <48000000>;
 
 	cap-sd-highspeed;
 	cap-mmc-highspeed;
-	vmmc-supply = <&mmc_fixed_3v3>;
-	vqmmc-supply = <&mmc_fixed_3v3>;
 	non-removable;
 	disable-wp;
 	cap-sdio-irq;
-
-	pinctrl-names = "default", "state_uhs";
-	pinctrl-0 = <&sdhci_pins>;
-	pinctrl-1 = <&sdhci_pins>;
-
-	clocks = <&mmc_clock>, <&mmc_clock>;
-	clock-names = "source", "hclk";
 
 	mm6108_sdio: mm6108_sdio@0 {
 		compatible = "morse,mm610x";
@@ -322,11 +312,17 @@
 		port@0 {
 			status = "okay";
 			label = "usblan";
+			nvmem-cells = <&macaddr_factory_4000>;
+			nvmem-cell-names = "mac-address";
+			mac-address-increment = <3>;
 		};
 
 		port@2 {
 			status = "okay";
 			label = "lan";
+			nvmem-cells = <&macaddr_factory_4000>;
+			nvmem-cell-names = "mac-address";
+			mac-address-increment = <2>;
 		};
 
 		wan: port@4 {

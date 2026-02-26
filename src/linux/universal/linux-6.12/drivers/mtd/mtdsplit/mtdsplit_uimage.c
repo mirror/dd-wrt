@@ -40,6 +40,11 @@ struct uimage_header {
 	uint8_t		ih_type;	/* Image Type			*/
 	uint8_t		ih_comp;	/* Compression Type		*/
 	uint8_t		ih_name[IH_NMLEN];	/* Image Name		*/
+
+	uint32_t	ih_ksz; // kernel size
+	uint8_t		devicename[64];
+	uint8_t		version[16];
+	uint8_t		rev[16];
 };
 
 static int

@@ -260,7 +260,7 @@
 			sercomm,scpart-id = <3>;
 		};
 
-		partition@2e00000 {
+		partition@ddwrt {
 			label = "ddwrt";
 			reg = <0x2e00000 0x1800000>;
 		};
@@ -379,13 +379,6 @@
 					#nvmem-cell-cells = <1>;
 				};
 			};
-		};
-
-		partition@4800000 {
-			label = "SC Private Data";
-			reg = <0x4800000 0x200000>;
-			sercomm,scpart-id = <17>;
-			read-only;
 		};
 
 		partition@4a00000 {
