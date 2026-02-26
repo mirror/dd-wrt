@@ -106,6 +106,6 @@ $(TARGET)-objs += \
 endif
 
 build:
-	@$(MAKE) -C $(KERNEL_SRC) M=$(M) V=1 modules
+	@make -C $(KERNEL_SRC) M=$(M) V=1 modules
 
 endif

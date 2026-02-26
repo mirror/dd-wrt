@@ -61,7 +61,7 @@ else
 all: build install
 
 build:
-	@$(MAKE) -C $(LINUXDIR) M=`pwd` modules MDIR=$(CURDIR)
+	@make -C $(LINUXDIR) M=`pwd` modules MDIR=$(CURDIR)
 
 install:
 	@install -m 644 $(TARGET).ko $(MODULEPATH)
@@ -70,7 +70,7 @@ uninstall:
 	@find $(MODULEPATH) -name $(TARGET).ko | xargs rm -rf
 
 clean:
-	@$(MAKE) -C $(LINUXDIR) M=`pwd` clean
+	@make -C $(LINUXDIR) M=`pwd` clean
 	@rm -f Module.symvers
 
 endif

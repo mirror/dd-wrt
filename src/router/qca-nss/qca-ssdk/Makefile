@@ -29,30 +29,30 @@ all: $(BIN_DIR) kslib
 # 			LNX Modules-Style Makefile
 ####################################################################
 modules: $(BIN_DIR) kslib_c
-	@$(MAKE) -C $(SYS_PATH) M=$(PRJ_PATH) $(LNX_MAKEOPTS) modules
+	@make -C $(SYS_PATH) M=$(PRJ_PATH) $(LNX_MAKEOPTS) modules
 	@echo "---Build [SSDK-$(VERSION)] at $(BUILD_DATE) finished."
 
 kslib_c:
-	$(foreach i, $(SUB_LIB), $(MAKE) MODULE_TYPE=KSLIB -C src/$i src_list_loop || exit 1;)
+	$(foreach i, $(SUB_LIB), make MODULE_TYPE=KSLIB -C src/$i src_list_loop || exit 1;)
 
 kslib:kslib_o
 	$(AR) -r $(BIN_DIR)/$(KS_MOD)_$(RUNMODE).a $(wildcard $(BLD_DIR)/KSLIB/*.o)
 
 kslib_o:
-	$(foreach i, $(SUB_LIB), $(MAKE) MODULE_TYPE=KSLIB -C src/$i all || exit 1;)
+	$(foreach i, $(SUB_LIB), make MODULE_TYPE=KSLIB -C src/$i all || exit 1;)
 
 uslib:uslib_o
 	$(AR) -r $(BIN_DIR)/$(US_MOD)_$(RUNMODE).a $(wildcard $(BLD_DIR)/USLIB/*.o)
 
 uslib_o:
-	$(foreach i, $(SUB_LIB), $(MAKE) MODULE_TYPE=USLIB -C src/$i all || exit 1;)
+	$(foreach i, $(SUB_LIB), make MODULE_TYPE=USLIB -C src/$i all || exit 1;)
 
 shell:uslib shell_o
 	$(CP) $(BLD_DIR)/SHELL/$(SHELLOBJ) $(BIN_DIR)/$(SHELLOBJ)
 	$(STRIP) $(BIN_DIR)/$(SHELLOBJ)
 
 shell_o:
-	$(foreach i, $(SUB_LIB), $(MAKE) MODULE_TYPE=SHELL -C src/$i all || exit 1;)
+	$(foreach i, $(SUB_LIB), make MODULE_TYPE=SHELL -C src/$i all || exit 1;)
 
 $(BIN_DIR):
 	$(MKDIR) -p $@

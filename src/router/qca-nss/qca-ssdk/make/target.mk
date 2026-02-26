@@ -7,7 +7,7 @@ include $(PRJ_PATH)/make/tools.mk
 # 			LNX Modules-Style Makefile
 ####################################################################
 src_list_loop: src_list
-	$(foreach i, $(SUB_DIR), $(MAKE) -C $(i) src_list_loop || exit 1;)
+	$(foreach i, $(SUB_DIR), make -C $(i) src_list_loop || exit 1;)
 
 src_list:
 	echo -n "$(LOC_SRC_FILE) " >>  $(PRJ_PATH)/src_list.dep
