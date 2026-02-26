@@ -1,4 +1,24 @@
 ------------------------------------------------------------------------
+r8622 | brainslayer | 2026-02-26 16:12:11 +0700 (Thu, 26 Feb 2026) | 1 line
+
+merge ath11k: fix RCU stall while reaping monitor destination ring
+------------------------------------------------------------------------
+r8621 | brainslayer | 2026-02-26 16:07:52 +0700 (Thu, 26 Feb 2026) | 1 line
+
+merge ath11k: fix wrong TID passed when stopping AMPDU session
+------------------------------------------------------------------------
+r8620 | brainslayer | 2026-02-26 16:04:55 +0700 (Thu, 26 Feb 2026) | 1 line
+
+merge ath11k: Fix failure to connect to a 6 GHz AP
+------------------------------------------------------------------------
+r8619 | brainslayer | 2026-02-26 00:29:54 +0700 (Thu, 26 Feb 2026) | 1 line
+
+morse micro patches
+------------------------------------------------------------------------
+r8618 | brainslayer | 2026-02-25 21:57:47 +0700 (Wed, 25 Feb 2026) | 1 line
+
+fix paths
+------------------------------------------------------------------------
 r8617 | brainslayer | 2026-02-25 16:23:13 +0700 (Wed, 25 Feb 2026) | 1 line
 
 some wds hacks
