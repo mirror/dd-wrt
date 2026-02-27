@@ -125,6 +125,7 @@ void start_sysinit(void)
 	}
 	switch (brand) {
 	case ROUTER_DIR860LB1:
+		nvram_set("dsa", "1");
 		insmod("thermal_sys");
 		insmod("hwmon");
 		insmod("compat");
@@ -150,6 +151,7 @@ void start_sysinit(void)
 		nvram_seti("sw_lan4", 4);
 		break;
 	case ROUTER_MORSE:
+		nvram_set("dsa", "1");
 		insmod("thermal_sys");
 		insmod("hwmon");
 		insmod("compat");
@@ -173,6 +175,7 @@ void start_sysinit(void)
 	case ROUTER_DIR882:
 	case ROUTER_R6850:
 	case ROUTER_R6220:
+		nvram_set("dsa", "1");
 		insmod("thermal_sys");
 		insmod("hwmon");
 		insmod("compat");
@@ -205,6 +208,7 @@ void start_sysinit(void)
 		nvram_seti("sw_lan4", 0);
 		break;
 	case ROUTER_R6800:
+		nvram_set("dsa", "1");
 		insmod("thermal_sys");
 		insmod("hwmon");
 		insmod("compat");
