@@ -105,6 +105,7 @@ void start_sysinit(void)
 		in = fopen("/dev/mtdblock/2", "rb");
 
 	char mac[32];
+	char suffix[32];
 	if (in != NULL) {
 		if (brand == ROUTER_DIR810L)
 			fseek(in, 0x28, SEEK_SET);
@@ -119,6 +120,7 @@ void start_sysinit(void)
 			copy[i] = mac[i] & 0xff;
 		sprintf(mac, "%02X:%02X:%02X:%02X:%02X:%02X", copy[0] & 0xff, copy[1] & 0xff, copy[2] & 0xff, copy[3] & 0xff,
 			copy[4] & 0xff, copy[5] & 0xff);
+		sprintf(suffix, "macaddr_suffix=%02X:%02X:%02X", copy[3] & 0xff, copy[4] & 0xff, copy[5] & 0xff);
 		fprintf(stderr, "configure mac address to %s\n", mac);
 		if (!strcmp(mac, "ff:ff:ff:ff:ff:ff"))
 			set_hwaddr("eth0", "00:11:22:33:44:55");
@@ -170,7 +172,7 @@ void start_sysinit(void)
 			insmod("mt76x0e");
 			insmod("mt7603e");
 			insmod("dot11ah");
-			eval("insmod", "morse", "reattach_hw=0", "macaddr_suffix=82:60:00", "bcf=bcf_mm_hl2_ext.bin", "country=US");
+			eval("insmod", "morse", "reattach_hw=0", suffix, "bcf=bcf_mm_hl2_ext.bin", "country=US");
 		}
 
 		break;
