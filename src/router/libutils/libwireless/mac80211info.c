@@ -2078,6 +2078,73 @@ nla_put_failure:
 	nlmsg_free(msg);
 	return NULL;
 }
+/*
+for morse micro chipsets we need to implement the following mappings
+20 mhz translates to 1 mhz
+40 mhz translates to 2 mhz
+80 mhz translates to 4 mhz
+160 mhz translates to 8 mhz
+
+*/
+typedef struct morse_micro_map {
+	int lowfreq_khz;
+	int freq;
+	int width;
+} MICRO_MAP;
+
+static MICRO_MAP us_chans[] = {
+	{ 902000, 5660, 40 },
+	{ 904000, 5180, 160 },
+	{ 912000, 5500, 160 },
+	{ 920000, 5745, 160 },
+};
+
+static MICRO_MAP nz_chans[] = {
+	{ 915000, 5560, 20 },
+	{ 916000, 5580, 80 },
+	{ 920000, 5745, 160 },
+};
+
+static MICRO_MAP kr_chans[] = {
+	{ 926000, 5310, 20 }, { 917500, 5660, 40 }, { 921500, 5220, 40 },
+	{ 926000, 5310, 40 }, { 928000, 5510, 40 }, { 919500, 5180, 80 },
+};
+
+static MICRO_MAP jp_chans[] = {
+	{ 920500, 5540, 20 },
+	{ 922500, 5180, 80 },
+	{ 923500, 5260, 80 },
+};
+
+static MICRO_MAP gb_chans[] = {
+	{ 867000, 5220, 20 },
+	{ 863000, 5660, 40 },
+	{ 865000, 5180, 40 },
+	{ 917400, 5620, 20 },
+};
+
+static MICRO_MAP eu_chans[] = {
+	{ 867000, 5220, 20 },
+	{ 863000, 5660, 40 },
+	{ 865000, 5180, 40 },
+};
+
+static MICRO_MAP ca_chans[] = {
+	{ 902000, 5660, 40 },
+	{ 904000, 5180, 160 },
+	{ 912000, 5500, 160 },
+	{ 920000, 5745, 160 },
+};
+
+static MICRO_MAP au_chans[] = {
+	{ 915000, 5560, 20 },
+	{ 916000, 5580, 80 },
+	{ 920000, 5745, 160 },
+};
+
+static MICRO_MAP in_chans[] = {
+	{ 985000, 5180, 20 },
+};
 
 struct wifi_channels *mac80211_get_channels_simple(const char *interface, const char *country, int max_bandwidth_mhz,
 						   unsigned char checkband)
@@ -2085,6 +2152,56 @@ struct wifi_channels *mac80211_get_channels_simple(const char *interface, const 
 	lock();
 	struct wifi_channels *chan = mac80211_get_channels(&unl, interface, country, max_bandwidth_mhz, checkband, 1);
 	unlock();
+	if (is_morse_micro(interface)) {
+		MICRO_MAP *map;
+		int num;
+		map = us_chans;
+		num = ARRAY_SIZE(us_chans);
+		if (!strcmp(country, "DE")) {
+			map = eu_chans;
+			num = ARRAY_SIZE(eu_chans);
+		}
+		if (!strcmp(country, "CA")) {
+			map = ca_chans;
+			num = ARRAY_SIZE(ca_chans);
+		}
+		if (!strcmp(country, "AU")) {
+			map = au_chans;
+			num = ARRAY_SIZE(au_chans);
+		}
+		if (!strcmp(country, "NZ")) {
+			map = nz_chans;
+			num = ARRAY_SIZE(nz_chans);
+		}
+		if (!strcmp(country, "GB")) {
+			map = gb_chans;
+			num = ARRAY_SIZE(gb_chans);
+		}
+		if (!strcmp(country, "KR")) {
+			map = kr_chans;
+			num = ARRAY_SIZE(kr_chans);
+		}
+		if (!strcmp(country, "JP")) {
+			map = jp_chans;
+			num = ARRAY_SIZE(jp_chans);
+		}
+		if (!strcmp(country, "IN")) {
+			map = in_chans;
+			num = ARRAY_SIZE(in_chans);
+		}
+		int i;
+		while (chan[i].freq != -1) {
+			int a;
+			chan[i].disabled = 1;
+			for (a = 0; a < num; a++) {
+				if (chan[i].freq == map[a].freq) {
+					chan[i].disabled = 0;
+					chan[i].mapped_freq = map[a].lowfreq_khz;
+				}
+			}
+			i++;
+		}
+	}
 	return chan;
 }
 
