@@ -994,7 +994,7 @@ void start_restore_defaults(void)
 					 { 0, 0 } };
 #elif HAVE_MT7621
 	struct nvram_param generic[] = { { "lan_ifname", "br0" },
-					 { "lan_ifnames", "wan lan usblan lan1 lan2 lan3 lan4" },
+					 { "lan_ifnames", "wan usblan lan1 lan2 lan3 lan4" },
 					 { "wan_ifname2", "wan" },
 					 { "wan_ifname", "wan" },
 					 { "wan_default", "wan" },

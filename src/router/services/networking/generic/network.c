@@ -1657,7 +1657,7 @@ void start_lan(void)
 			PORTSETUPWAN("eth2");
 		}
 	} else {
-		nvram_setz(lan_ifnames, "wan lan usblan lan1 lan2 lan3 lan4");
+		nvram_setz(lan_ifnames, "wan usblan lan1 lan2 lan3 lan4");
 		if (getSTA() || getWET() || CANBRIDGE()) {
 			PORTSETUPWAN("");
 		} else {
