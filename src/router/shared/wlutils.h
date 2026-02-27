@@ -143,6 +143,7 @@ struct wifi_channels {
 	int channel;
 	int freq;
 	int mapped_freq; //frequency mapping of available
+	int disabled; // for hidding channel if not mapped
 	int noise;
 	int max_eirp;
 	int hw_eirp;
