@@ -99,6 +99,8 @@ void start_sysinit(void)
 	FILE *in;
 	if (brand == ROUTER_R6800 || brand == ROUTER_R6850 || brand == ROUTER_R6220)
 		in = fopen("/dev/mtdblock/5", "rb");
+	else if (brand == ROUTER_MORSE)
+		in = fopen("/dev/mtdblock/3", "rb");
 	else
 		in = fopen("/dev/mtdblock/2", "rb");
 
