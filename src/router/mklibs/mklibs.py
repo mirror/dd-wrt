@@ -112,7 +112,7 @@ def library_depends_gcc_libnames(obj, soname):
     libs = library_depends(obj)
     ret = []
     for i in libs:
-        match = re.match("^(((?P<ld>ld\S*)|(lib(?P<lib>\S+))))\.so.*$", i)
+        match = re.match(r"^(((?P<ld>ld\S*)|(lib(?P<lib>\S+))))\.so.*$", i)
         if match:
             ret.append(find_lib(match.group(0)))
     return ' '.join(ret)
@@ -358,8 +358,8 @@ root = ""
 sysroot = ""
 force_libs = []
 gcc_options = []
-so_pattern = re.compile("((lib|ld).*)\.so(\..+)*")
-script_pattern = re.compile("^#!\s*/")
+so_pattern = re.compile(r"((lib|ld).*)\.so(\..+)*")
+script_pattern = re.compile(r"^#!\s*/")
 
 try:
     optlist, proglist = getopt.getopt(sys.argv[1:], opts, longopts)
@@ -492,7 +492,7 @@ while 1:
             # Some undefined symbols in libthread_db are defined in
             # the application that uses it.  __gnu_local_gp is defined
             # specially by the linker on MIPS.
-            if (not (re.search("libthread_db\.so", obj)
+            if (not (re.search(r"libthread_db\.so", obj)
                      and re.search("^ps_", str(symbol)))
                 and not (re.search("ld-linux.so.3$", str(symbol)))
                 and not (re.search("^__gnu_local_gp", str(symbol)))):
@@ -633,7 +633,7 @@ for lib in regexpfilter(os.listdir(dest_path), "(.*)-so$"):
     os.rename(dest_path + "/" + lib + "-so", dest_path + "/" + lib)
 
 # Canonicalize library names.
-for lib in sorted(regexpfilter(os.listdir(dest_path), "(.*so[.\d]*)$")):
+for lib in sorted(regexpfilter(os.listdir(dest_path), r"(.*so[.\d]*)$")):
     this_lib_path = dest_path + "/" + lib
     if os.path.islink(this_lib_path):
         debug(DEBUG_VERBOSE, "Unlinking %s." % lib)
