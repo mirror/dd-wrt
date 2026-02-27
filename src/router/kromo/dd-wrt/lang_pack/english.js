@@ -3345,6 +3345,7 @@ wl_basic.ch_pos_uuu="UUU (+14)";
 wl_basic.ch_pos_lwr="Lower";
 wl_basic.ghz="GHz";
 wl_basic.mhz="MHz";
+wl_basic.khz="KHz";
 wl_basic.tbqam="TurboQAM";
 wl_basic.upper="upper";
 wl_basic.lower="lower";
