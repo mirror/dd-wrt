@@ -1220,11 +1220,14 @@ static void show_channel(webs_t wp, char *dev, char *prefix, int type)
 			int offset = get_freqoffset(prefix);
 			int poffset = wifi_gettxpoweroffset(prefix);
 			// int cnt = getchannelcount ();
-			if (!nvram_nmatch("mesh", "%s_mode", prefix) && !nvram_nmatch("infra", "%s_mode", prefix) && !has_6ghz(prefix))
+			if (!nvram_nmatch("mesh", "%s_mode", prefix) && !nvram_nmatch("infra", "%s_mode", prefix) &&
+			    !has_6ghz(prefix))
 				websWrite(wp, "document.write(\"<option value=\\\"0\\\" %s>\" + share.auto + \"</option>\");\n",
 					  !strcmp(wlc, "0") ? "selected=\\\"selected\\\"" : "");
 			int i = 0;
 			while (chan[i].freq != -1) {
+				if (chan[i].disabled)
+					continue;
 #ifdef HAVE_BUFFALO
 				if (chan[i].dfs == 1) {
 					i++;
@@ -1262,7 +1265,14 @@ static void show_channel(webs_t wp, char *dev, char *prefix, int type)
 					snprintf(eirp, sizeof(eirp), " (%d dBm%s)", chan[i].max_eirp + poffset,
 						 is_6ghz_psc_frequency(freq) ? ", PSC" : "");
 				if (freq != -1) {
-					if (is_mac80211(prefix) && !is_ath5k(prefix)) {
+					if (is_morse_micro(prefix)) {
+						websWrite(
+							wp,
+							"document.write(\"<option value=\\\"%s\\\" %s>%s - %d.%d \"+wl_basic.mhz+\"%s</option>\");\n",
+							fr, !strcmp(wlc, fr) ? "selected=\\\"selected\\\"" : "", cn,
+							chan[i].mapped_freq / 1000, (chan[i].mapped_freq % 1000) / 100, eirp);
+
+					} else if (is_mac80211(prefix) && !is_ath5k(prefix)) {
 						websWrite(
 							wp,
 							"document.write(\"<option value=\\\"%s\\\" rel=\\\'{\\\"lll\\\":%d,\\\"llu\\\":%d,\\\"lul\\\":%d,\\\"luu\\\":%d,\\\"ull\\\":%d,\\\"ulu\\\":%d,\\\"uul\\\":%d,\\\"uuu\\\":%d}\\\'%s>%s - %d\"+wl_basic.mhz+\"%s</option>\");\n",
@@ -3713,34 +3723,57 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 			//              websWrite(wp,
 			//                        "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<option value=\\\"0\\\" %s >\" + share.auto + \"</option>\");\n//]]>\n</script>\n",
 			//                        nvram_nmatch("0", "%s_nbw", prefix) ? "selected=\\\"selected\\\"" : "");
-			websWrite(
-				wp,
-				"<option value=\"20\" %s>20 <script type=\"text/javascript\">Capture(wl_basic.mhz);</script></option>\n",
-				nvram_nmatch("20", "%s_nbw", prefix) ? "selected=\"selected\"" : "");
-			websWrite(
-				wp,
-				"<option value=\"40\" %s><script type=\"text/javascript\">Capture(share.ht40);</script></option>\n",
-				nvram_nmatch("40", "%s_nbw", prefix) ? "selected=\"selected\"" : "");
-			if ((has_ac(prefix) || has_ax(prefix)) && (has_5ghz(prefix) || has_6ghz(prefix)) &&
-			    (nvram_nmatch("mixed", "%s_net_mode", prefix) || nvram_nmatch("ac-only", "%s_net_mode", prefix) ||
-			     nvram_nmatch("acn-mixed", "%s_net_mode", prefix) || nvram_nmatch("ax-only", "%s_net_mode", prefix) ||
-			     nvram_nmatch("ax6-only", "%s_net_mode", prefix) || nvram_nmatch("ax5-only", "%s_net_mode", prefix) ||
-			     nvram_nmatch("xacn-mixed", "%s_net_mode", prefix))) {
+			if (is_morse_micro(prefix)) {
 				websWrite(
 					wp,
-					"<option value=\"80\" %s><script type=\"text/javascript\">Capture(share.vht80);</script></option>\n",
+					"<option value=\"20\" %s>1 <script type=\"text/javascript\">Capture(wl_basic.mhz);</script></option>\n",
+					nvram_nmatch("20", "%s_nbw", prefix) ? "selected=\"selected\"" : "");
+				websWrite(
+					wp,
+					"<option value=\"40\" %s>2 <script type=\"text/javascript\">Capture(wl_basic.mhz);</script></option>\n",
+					nvram_nmatch("40", "%s_nbw", prefix) ? "selected=\"selected\"" : "");
+				websWrite(
+					wp,
+					"<option value=\"80\" %s>4 <script type=\"text/javascript\">Capture(wl_basic.mhz);</script></option>\n",
 					nvram_nmatch("80", "%s_nbw", prefix) ? "selected=\"selected\"" : "");
-				if (has_vht160(prefix) || has_he160(prefix)) {
+				websWrite(
+					wp,
+					"<option value=\"160\" %s>8 <script type=\"text/javascript\">Capture(wl_basic.mhz);</script></option>\n",
+					nvram_nmatch("160", "%s_nbw", prefix) ? "selected=\"selected\"" : "");
+
+			} else {
+				websWrite(
+					wp,
+					"<option value=\"20\" %s>20 <script type=\"text/javascript\">Capture(wl_basic.mhz);</script></option>\n",
+					nvram_nmatch("20", "%s_nbw", prefix) ? "selected=\"selected\"" : "");
+				websWrite(
+					wp,
+					"<option value=\"40\" %s><script type=\"text/javascript\">Capture(share.ht40);</script></option>\n",
+					nvram_nmatch("40", "%s_nbw", prefix) ? "selected=\"selected\"" : "");
+				if ((has_ac(prefix) || has_ax(prefix)) && (has_5ghz(prefix) || has_6ghz(prefix)) &&
+				    (nvram_nmatch("mixed", "%s_net_mode", prefix) ||
+				     nvram_nmatch("ac-only", "%s_net_mode", prefix) ||
+				     nvram_nmatch("acn-mixed", "%s_net_mode", prefix) ||
+				     nvram_nmatch("ax-only", "%s_net_mode", prefix) ||
+				     nvram_nmatch("ax6-only", "%s_net_mode", prefix) ||
+				     nvram_nmatch("ax5-only", "%s_net_mode", prefix) ||
+				     nvram_nmatch("xacn-mixed", "%s_net_mode", prefix))) {
 					websWrite(
 						wp,
-						"<option value=\"160\" %s><script type=\"text/javascript\">Capture(share.vht160);</script></option>\n",
-						nvram_nmatch("160", "%s_nbw", prefix) ? "selected=\"selected\"" : "");
-				}
-				if (has_vht80plus80(prefix)) {
-					websWrite(
-						wp,
-						"<option value=\"80+80\" %s><script type=\"text/javascript\">Capture(share.vht80plus80);</script></option>\n",
-						nvram_nmatch("80+80", "%s_nbw", prefix) ? "selected=\"selected\"" : "");
+						"<option value=\"80\" %s><script type=\"text/javascript\">Capture(share.vht80);</script></option>\n",
+						nvram_nmatch("80", "%s_nbw", prefix) ? "selected=\"selected\"" : "");
+					if (has_vht160(prefix) || has_he160(prefix)) {
+						websWrite(
+							wp,
+							"<option value=\"160\" %s><script type=\"text/javascript\">Capture(share.vht160);</script></option>\n",
+							nvram_nmatch("160", "%s_nbw", prefix) ? "selected=\"selected\"" : "");
+					}
+					if (has_vht80plus80(prefix)) {
+						websWrite(
+							wp,
+							"<option value=\"80+80\" %s><script type=\"text/javascript\">Capture(share.vht80plus80);</script></option>\n",
+							nvram_nmatch("80+80", "%s_nbw", prefix) ? "selected=\"selected\"" : "");
+					}
 				}
 			}
 			websWrite(wp, "</select>\n");
@@ -4381,34 +4414,58 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 			//                      websWrite(wp,
 			//                                "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<option value=\"0\" %s >\" + share.auto + \"</option>\");\n//]]>\n</script>\n",
 			//                                nvram_nmatch("0", "%s_nbw", prefix) ? "selected=\"selected\"" : "");
-			websWrite(
-				wp,
-				"<option value=\"20\" %s>20 <script type=\"text/javascript\">Capture(wl_basic.mhz);</script></option>\n",
-				nvram_nmatch("20", "%s_nbw", prefix) ? "selected=\"selected\"" : "");
-			websWrite(
-				wp,
-				"<option value=\"40\" %s>40 <script type=\"text/javascript\">Capture(wl_basic.mhz);</script></option>\n",
-				nvram_nmatch("40", "%s_nbw", prefix) ? "selected=\"selected\"" : "");
-			if ((has_ac(prefix) || has_ax(prefix)) && (has_5ghz(prefix) || has_6ghz(prefix)) &&
-			    (nvram_nmatch("mixed", "%s_net_mode", prefix) || nvram_nmatch("ac-only", "%s_net_mode", prefix) ||
-			     nvram_nmatch("acn-mixed", "%s_net_mode", prefix) || nvram_nmatch("ax-only", "%s_net_mode", prefix) ||
-			     nvram_nmatch("ax6-only", "%s_net_mode", prefix) || nvram_nmatch("ax5-only", "%s_net_mode", prefix) ||
-			     nvram_nmatch("xacn-mixed", "%s_net_mode", prefix))) {
+
+			if (is_morse_micro(prefix)) {
 				websWrite(
 					wp,
-					"<option value=\"80\" %s><script type=\"text/javascript\">Capture(share.vht80);</script></option>\n",
+					"<option value=\"20\" %s>1 <script type=\"text/javascript\">Capture(wl_basic.mhz);</script></option>\n",
+					nvram_nmatch("20", "%s_nbw", prefix) ? "selected=\"selected\"" : "");
+				websWrite(
+					wp,
+					"<option value=\"40\" %s>2 <script type=\"text/javascript\">Capture(wl_basic.mhz);</script></option>\n",
+					nvram_nmatch("40", "%s_nbw", prefix) ? "selected=\"selected\"" : "");
+				websWrite(
+					wp,
+					"<option value=\"80\" %s>4 <script type=\"text/javascript\">Capture(wl_basic.mhz);</script></option>\n",
 					nvram_nmatch("80", "%s_nbw", prefix) ? "selected=\"selected\"" : "");
-				if (has_vht160(prefix) || has_he160(prefix)) {
+				websWrite(
+					wp,
+					"<option value=\"160\" %s>8 <script type=\"text/javascript\">Capture(wl_basic.mhz);</script></option>\n",
+					nvram_nmatch("160", "%s_nbw", prefix) ? "selected=\"selected\"" : "");
+
+			} else {
+				websWrite(
+					wp,
+					"<option value=\"20\" %s>20 <script type=\"text/javascript\">Capture(wl_basic.mhz);</script></option>\n",
+					nvram_nmatch("20", "%s_nbw", prefix) ? "selected=\"selected\"" : "");
+				websWrite(
+					wp,
+					"<option value=\"40\" %s>40 <script type=\"text/javascript\">Capture(wl_basic.mhz);</script></option>\n",
+					nvram_nmatch("40", "%s_nbw", prefix) ? "selected=\"selected\"" : "");
+				if ((has_ac(prefix) || has_ax(prefix)) && (has_5ghz(prefix) || has_6ghz(prefix)) &&
+				    (nvram_nmatch("mixed", "%s_net_mode", prefix) ||
+				     nvram_nmatch("ac-only", "%s_net_mode", prefix) ||
+				     nvram_nmatch("acn-mixed", "%s_net_mode", prefix) ||
+				     nvram_nmatch("ax-only", "%s_net_mode", prefix) ||
+				     nvram_nmatch("ax6-only", "%s_net_mode", prefix) ||
+				     nvram_nmatch("ax5-only", "%s_net_mode", prefix) ||
+				     nvram_nmatch("xacn-mixed", "%s_net_mode", prefix))) {
 					websWrite(
 						wp,
-						"<option value=\"160\" %s><script type=\"text/javascript\">Capture(share.vht160);</script></option>\n",
-						nvram_nmatch("160", "%s_nbw", prefix) ? "selected=\"selected\"" : "");
-				}
-				if (has_vht80plus80(prefix)) {
-					websWrite(
-						wp,
-						"<option value=\"80+80\" %s><script type=\"text/javascript\">Capture(share.vht80plus80);</script></option>\n",
-						nvram_nmatch("80+80", "%s_nbw", prefix) ? "selected=\"selected\"" : "");
+						"<option value=\"80\" %s><script type=\"text/javascript\">Capture(share.vht80);</script></option>\n",
+						nvram_nmatch("80", "%s_nbw", prefix) ? "selected=\"selected\"" : "");
+					if (has_vht160(prefix) || has_he160(prefix)) {
+						websWrite(
+							wp,
+							"<option value=\"160\" %s><script type=\"text/javascript\">Capture(share.vht160);</script></option>\n",
+							nvram_nmatch("160", "%s_nbw", prefix) ? "selected=\"selected\"" : "");
+					}
+					if (has_vht80plus80(prefix)) {
+						websWrite(
+							wp,
+							"<option value=\"80+80\" %s><script type=\"text/javascript\">Capture(share.vht80plus80);</script></option>\n",
+							nvram_nmatch("80+80", "%s_nbw", prefix) ? "selected=\"selected\"" : "");
+					}
 				}
 			}
 			websWrite(wp, "</select>\n");
