@@ -2,6 +2,7 @@ zfs-configure: libtirpc libudev openssl zlib curl ncurses util-linux
 	$(MAKE) -C libtirpc
 	cd zfs && ./autogen.sh
 	cd zfs && autoreconf
+	rm -rf zfs/$(KERNELVERSION)
 	mkdir -p zfs/$(KERNELVERSION)
 	cd zfs/$(KERNELVERSION) && ../configure \
 		--prefix=/usr \
