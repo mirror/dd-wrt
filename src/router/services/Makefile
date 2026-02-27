@@ -241,6 +241,9 @@ endif
 ifeq ($(CONFIG_GEOIP),y)
 CFLAGS_EXTRA += -DHAVE_GEOIP
 endif
+ifeq ($(CONFIG_MORSE),y)
+CFLAGS_EXTRA += -DHAVE_MORSE
+endif
 ifeq ($(CONFIG_NANOAC),y)
 CFLAGS_EXTRA += -DHAVE_NANOAC
 endif

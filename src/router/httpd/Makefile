@@ -348,6 +348,9 @@ endif
 ifeq ($(CONFIG_CPE890),y)
 CFLAGS += -DHAVE_CPE890
 endif
+ifeq ($(CONFIG_MORSE),y)
+CFLAGS += -DHAVE_MORSE
+endif
 ifeq ($(CONFIG_SR3200),y)
 CFLAGS += -DHAVE_SR3200
 endif
