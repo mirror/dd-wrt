@@ -319,7 +319,7 @@
 
 		port@2 {
 			status = "okay";
-			label = "lan";
+			label = "lan1";
 			nvmem-cells = <&macaddr_factory_4000>;
 			nvmem-cell-names = "mac-address";
 			mac-address-increment = <2>;
