@@ -142,6 +142,7 @@ struct frequency {
 struct wifi_channels {
 	int channel;
 	int freq;
+	int mapped_freq; //frequency mapping of available
 	int noise;
 	int max_eirp;
 	int hw_eirp;
