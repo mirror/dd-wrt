@@ -3721,14 +3721,17 @@ static int devicecountbydriver(const char *prefix, const char *drivername, const
 	int devnum;
 	int ret;
 	char mod[32];
+	fprintf(stderr, "%s: check %s\n", module);
 	snprintf(mod, sizeof(mod), "/sys/module/%s*", module);
 	globresult = glob(mod, GLOB_NOSORT, NULL, &globbuf);
 	if (globresult)
 		return -1; // keep cache invalidated
 	// correct index if there are legacy cards arround... should not...
+	fprintf(stderr, "%s: check prefix %s\n", prefix);
 	devnum = mac80211_get_phy_ifname(prefix);
 	if (devnum == -1)
 		return 0;
+	fprintf(stderr, "%s: check is devnum %d\n", devnum);
 	snprintf(globstring, sizeof(globstring), "/sys/class/ieee80211/phy%d/device/driver/module/drivers/%s", devnum, drivername);
 	globresult = glob(globstring, GLOB_NOSORT, NULL, &globbuf);
 	if (globresult == 0)

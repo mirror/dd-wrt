@@ -448,8 +448,9 @@ ATH9KCFLAGS += -DNDEBUG -I$(LINUXDIR)/brcm/$(ARCH)/shared/bcmwifi/include
 ifeq ($(CONFIG_MAC80211_MESH),y)
 ATH9KCFLAGS += -DHAVE_MAC80211_MESH
 endif
-
-
+ifeq ($(CONFIG_MORSE),y)
+ATH9KCFLAGS += -DHAVE_MORSE
+endif
 ifeq ($(CONFIG_SYSLOG),y)
 ATH9KCFLAGS += -DHAVE_SYSLOG
 endif
