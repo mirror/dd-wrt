@@ -2781,7 +2781,7 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 		sprintf(frequencies,
 			" <script type=\"text/javascript\">document.write(\"[802.11ah]%s%s - Max Vaps(%d)\");</script>",
 			chipset ? " - " : "", chipset ? chipset : "", maxvaps);
-	if (has_ad(prefix)) {
+	} else if (has_ad(prefix)) {
 		sprintf(frequencies,
 			" <script type=\"text/javascript\">document.write(\"[60\"+wl_basic.ghz+\" 802.11ad]%s%s - Max Vaps(%d)\");</script>",
 			chipset ? " - " : "", chipset ? chipset : "", maxvaps);

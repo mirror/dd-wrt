@@ -3501,7 +3501,9 @@ static int flagcheck(const char *prefix, int flag, int nullvalid)
 FLAGCHECK(channelsurvey, CHANNELSURVEY, 1);
 FLAGCHECK(nolivesurvey, SURVEY_NOPERIOD, 1);
 FLAGCHECK(qboost, QBOOST, 0);
+#ifdef HAVE_MORSE
 FLAGCHECK(ah, AH, 0);
+#endif
 FLAGCHECK(qboost_tdma, TDMA, 0);
 FLAGCHECK(wave2, WAVE2, 0);
 FLAGCHECK(vht160_2by2, VHT160_2BY2, 0);
