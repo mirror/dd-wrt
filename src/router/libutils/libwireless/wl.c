@@ -2571,6 +2571,7 @@ struct wifidevices {
 #define AX 0x8000
 #define AR900B 0x10000
 #define VHT160_2BY2 0x20000
+#define AH 0x40000
 
 #define PCI_ANY 0
 #ifdef HAVE_ATH5K
@@ -3377,6 +3378,11 @@ char *getWifiDeviceName(const char *prefix, int *flags)
 	int i;
 	int device = 0, vendor = 0, subdevice = 0, subvendor = 0;
 	int devcount;
+if (is_morse_micro(prefix)){
+	if (flags)
+		*flags = CHANNELSURVEY | AH;
+	return "Morse Micro MM8108";
+}
 	sscanf(prefix, "wlan%d", &devcount);
 	vendor = getValueFromPath("/proc/sys/dev/wifi%d/dev_vendor", devcount, "%d", NULL);
 	device = getValueFromPath("/proc/sys/dev/wifi%d/dev_device", devcount, "%d", NULL);
@@ -3495,6 +3501,7 @@ static int flagcheck(const char *prefix, int flag, int nullvalid)
 FLAGCHECK(channelsurvey, CHANNELSURVEY, 1);
 FLAGCHECK(nolivesurvey, SURVEY_NOPERIOD, 1);
 FLAGCHECK(qboost, QBOOST, 0);
+FLAGCHECK(ah, AH, 0);
 FLAGCHECK(qboost_tdma, TDMA, 0);
 FLAGCHECK(wave2, WAVE2, 0);
 FLAGCHECK(vht160_2by2, VHT160_2BY2, 0);

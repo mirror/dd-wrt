@@ -1066,6 +1066,9 @@ ATH9KCFLAGS += -DNDEBUG -I$(LINUXDIR)/brcm/$(ARCH)/shared/bcmwifi/include
 ifeq ($(CONFIG_MT76),y)
 ATH9KCFLAGS += -DHAVE_MT76
 endif
+ifeq ($(CONFIG_MORSE),y)
+ATH9KCFLAGS += -DHAVE_MORSE
+endif
 ifeq ($(CONFIG_ATH10K),y)
 ATH9KOBJS += dumper.o
 ATH9KFILES += tools/dumper.c

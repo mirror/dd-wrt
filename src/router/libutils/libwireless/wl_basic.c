@@ -74,78 +74,92 @@ const char *get_channeloffset(const char *prefix, int *iht, int *channeloffset)
 	sprintf(sb, "%s_nctrlsb", prefix);
 	switch (usebw) {
 	case 40:
-		if (nvram_default_match(sb, "ull", "luu") || nvram_match(sb, "upper")) {
+		if (is_morse_micro(prefix)) {
 			ht = "HT40+";
 			*iht = 1;
-		}
-		if (nvram_match(sb, "luu") || nvram_match(sb, "lower")) {
-			ht = "HT40-";
-			*iht = -1;
+		} else {
+			if (nvram_default_match(sb, "ull", "luu") || nvram_match(sb, "upper")) {
+				ht = "HT40+";
+				*iht = 1;
+			}
+			if (nvram_match(sb, "luu") || nvram_match(sb, "lower")) {
+				ht = "HT40-";
+				*iht = -1;
+			}
 		}
 		break;
 	case 80:
 	case 8080:
-		if (nvram_default_match(sb, "ulu", "lul") || nvram_match(sb, "upper")) {
+		if (is_morse_micro(prefix)) {
 			ht = "HT40+";
 			*iht = 1;
 			*channeloffset = 6;
-		}
-		if (nvram_match(sb, "ull")) {
-			ht = "HT40-";
-			*iht = 1;
-			*channeloffset = 2;
-		}
-		if (nvram_match(sb, "luu")) {
-			ht = "HT40+";
-			*iht = -1;
-			*channeloffset = 2;
-		}
-		if (nvram_match(sb, "lul") || nvram_match(sb, "lower")) {
-			ht = "HT40-";
-			*iht = -1;
-			*channeloffset = 6;
+		} else {
+			if (nvram_default_match(sb, "ulu", "lul") || nvram_match(sb, "upper")) {
+				ht = "HT40+";
+				*iht = 1;
+				*channeloffset = 6;
+			}
+			if (nvram_match(sb, "ull")) {
+				ht = "HT40-";
+				*iht = 1;
+				*channeloffset = 2;
+			}
+			if (nvram_match(sb, "luu")) {
+				ht = "HT40+";
+				*iht = -1;
+				*channeloffset = 2;
+			}
+			if (nvram_match(sb, "lul") || nvram_match(sb, "lower")) {
+				ht = "HT40-";
+				*iht = -1;
+				*channeloffset = 6;
+			}
 		}
 		break;
 	case 160:
-		if (nvram_default_match(sb, "uuu", "lll") || nvram_match(sb, "upper")) {
-			ht = "HT40+";
-			*iht = 1;
-			*channeloffset = 14;
-		}
-		if (nvram_match(sb, "uul")) {
-			ht = "HT40-";
-			*iht = 1;
-			*channeloffset = 10;
-		}
-		if (nvram_match(sb, "ulu")) {
-			ht = "HT40+";
-			*iht = 1;
-			*channeloffset = 6;
-		}
-		if (nvram_match(sb, "ull")) {
-			ht = "HT40-";
-			*iht = 1;
-			*channeloffset = 2;
-		}
-		if (nvram_match(sb, "luu")) {
-			ht = "HT40+";
-			*iht = -1;
-			*channeloffset = 2;
-		}
-		if (nvram_match(sb, "lul")) {
-			ht = "HT40-";
-			*iht = -1;
-			*channeloffset = 6;
-		}
-		if (nvram_match(sb, "llu")) {
-			ht = "HT40+";
-			*iht = -1;
-			*channeloffset = 10;
-		}
-		if (nvram_match(sb, "lll") || nvram_match(sb, "lower")) {
-			ht = "HT40-";
-			*iht = -1;
-			*channeloffset = 14;
+		if (is_morse_micro(prefix)) {
+			if (nvram_default_match(sb, "uuu", "lll") || nvram_match(sb, "upper")) {
+				ht = "HT40+";
+				*iht = 1;
+				*channeloffset = 14;
+			}
+		} else {
+			if (nvram_match(sb, "uul")) {
+				ht = "HT40-";
+				*iht = 1;
+				*channeloffset = 10;
+			}
+			if (nvram_match(sb, "ulu")) {
+				ht = "HT40+";
+				*iht = 1;
+				*channeloffset = 6;
+			}
+			if (nvram_match(sb, "ull")) {
+				ht = "HT40-";
+				*iht = 1;
+				*channeloffset = 2;
+			}
+			if (nvram_match(sb, "luu")) {
+				ht = "HT40+";
+				*iht = -1;
+				*channeloffset = 2;
+			}
+			if (nvram_match(sb, "lul")) {
+				ht = "HT40-";
+				*iht = -1;
+				*channeloffset = 6;
+			}
+			if (nvram_match(sb, "llu")) {
+				ht = "HT40+";
+				*iht = -1;
+				*channeloffset = 10;
+			}
+			if (nvram_match(sb, "lll") || nvram_match(sb, "lower")) {
+				ht = "HT40-";
+				*iht = -1;
+				*channeloffset = 14;
+			}
 		}
 		break;
 	}

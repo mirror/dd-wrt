@@ -128,10 +128,13 @@ static const char *gethtmode(const char *prefix)
 		sprintf(sb, "%s_nctrlsb", prefix);
 		switch (usebw) {
 		case 40:
+if (!is_morse_micro(prefix)) {
 			if (nvram_default_match(sb, "ull", "luu") || nvram_match(sb, "upper"))
 				ht = "HT40+";
 			else
 				ht = "HT40-";
+}else
+				ht = "HT40+";
 			break;
 		case 80:
 			ht = "80MHz";

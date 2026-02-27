@@ -2777,6 +2777,10 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 	sprintf(wl_macaddr, "%s_hwaddr", prefix);
 	sprintf(wl_ssid, "%s_ssid", prefix);
 	// check the frequency capabilities;
+	if (has_ah(prefix)) {
+		sprintf(frequencies,
+			" <script type=\"text/javascript\">document.write(\"[802.11ah]%s%s - Max Vaps(%d)\");</script>",
+			chipset ? " - " : "", chipset ? chipset : "", maxvaps);
 	if (has_ad(prefix)) {
 		sprintf(frequencies,
 			" <script type=\"text/javascript\">document.write(\"[60\"+wl_basic.ghz+\" 802.11ad]%s%s - Max Vaps(%d)\");</script>",
@@ -3797,124 +3801,48 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 			}
 			websWrite(wp, "</select>\n");
 			websWrite(wp, "</div>\n");
-			if (!is_ath5k(prefix) && nvram_nmatch("40", "%s_nbw", prefix)) {
-				websWrite(wp, "<div class=\"setting\">\n");
-				show_caption(wp, "label", "wl_basic.channel_wide", NULL);
-				websWrite(wp, "<select name=\"%s_nctrlsb\" >\n", prefix);
-				websWrite(
-					wp,
-					"<option value=\"upper\" %s><script type=\"text/javascript\">document.write(wl_basic.lower);</script></option>\n",
-					nvram_nmatch("upper", "%s_nctrlsb", prefix) ? "selected=\"selected\"" : "");
-				websWrite(
-					wp,
-					"<option value=\"lower\" %s><script type=\"text/javascript\">document.write(wl_basic.upper);</script></option>\n",
-					nvram_nmatch("lower", "%s_nctrlsb", prefix) ? "selected=\"selected\"" : "");
-				websWrite(wp, "</select>\n");
-				websWrite(wp, "</div>\n");
-			}
-			if (nvram_nmatch("80", "%s_nbw", prefix) || nvram_nmatch("80+80", "%s_nbw",
-										 prefix)) { // 802.11ac
-				websWrite(wp, "<div class=\"setting\">\n");
-				show_caption(wp, "label", "wl_basic.channel_wide", NULL);
-				websWrite(wp, "<select name=\"%s_nctrlsb\" >\n", prefix);
-				websWrite(
-					wp,
-					"<option value=\"ll\" %s><script type=\"text/javascript\">document.write(wl_basic.lower+\" \"+wl_basic.lower)</script></option>\n",
-					nvram_nmatch("ll", "%s_nctrlsb", prefix) ? "selected=\"selected\"" : "");
-				websWrite(
-					wp,
-					"<option value=\"lu\" %s><script type=\"text/javascript\">document.write(wl_basic.lower+\" \"+wl_basic.upper)</script></option>\n",
-					nvram_nmatch("lu", "%s_nctrlsb", prefix) ? "selected=\"selected\"" : "");
-				websWrite(
-					wp,
-					"<option value=\"ul\" %s><script type=\"text/javascript\">document.write(wl_basic.upper+\" \"+wl_basic.lower)</script></option>\n",
-					nvram_nmatch("ul", "%s_nctrlsb", prefix) ? "selected=\"selected\"" : "");
-				websWrite(
-					wp,
-					"<option value=\"uu\" %s><script type=\"text/javascript\">document.write(wl_basic.upper+\" \"+wl_basic.upper)</script></option>\n",
-					nvram_nmatch("uu", "%s_nctrlsb", prefix) ? "selected=\"selected\"" : "");
-				websWrite(wp, "</select>\n");
-				websWrite(wp, "</div>\n");
-			}
+			if (!is_morse_micro(prefix)) {
+				if (!is_ath5k(prefix) && nvram_nmatch("40", "%s_nbw", prefix)) {
+					websWrite(wp, "<div class=\"setting\">\n");
+					show_caption(wp, "label", "wl_basic.channel_wide", NULL);
+					websWrite(wp, "<select name=\"%s_nctrlsb\" >\n", prefix);
+					websWrite(
+						wp,
+						"<option value=\"upper\" %s><script type=\"text/javascript\">document.write(wl_basic.lower);</script></option>\n",
+						nvram_nmatch("upper", "%s_nctrlsb", prefix) ? "selected=\"selected\"" : "");
+					websWrite(
+						wp,
+						"<option value=\"lower\" %s><script type=\"text/javascript\">document.write(wl_basic.upper);</script></option>\n",
+						nvram_nmatch("lower", "%s_nctrlsb", prefix) ? "selected=\"selected\"" : "");
+					websWrite(wp, "</select>\n");
+					websWrite(wp, "</div>\n");
+				}
+				if (nvram_nmatch("80", "%s_nbw", prefix) || nvram_nmatch("80+80", "%s_nbw",
+											 prefix)) { // 802.11ac
+					websWrite(wp, "<div class=\"setting\">\n");
+					show_caption(wp, "label", "wl_basic.channel_wide", NULL);
+					websWrite(wp, "<select name=\"%s_nctrlsb\" >\n", prefix);
+					websWrite(
+						wp,
+						"<option value=\"ll\" %s><script type=\"text/javascript\">document.write(wl_basic.lower+\" \"+wl_basic.lower)</script></option>\n",
+						nvram_nmatch("ll", "%s_nctrlsb", prefix) ? "selected=\"selected\"" : "");
+					websWrite(
+						wp,
+						"<option value=\"lu\" %s><script type=\"text/javascript\">document.write(wl_basic.lower+\" \"+wl_basic.upper)</script></option>\n",
+						nvram_nmatch("lu", "%s_nctrlsb", prefix) ? "selected=\"selected\"" : "");
+					websWrite(
+						wp,
+						"<option value=\"ul\" %s><script type=\"text/javascript\">document.write(wl_basic.upper+\" \"+wl_basic.lower)</script></option>\n",
+						nvram_nmatch("ul", "%s_nctrlsb", prefix) ? "selected=\"selected\"" : "");
+					websWrite(
+						wp,
+						"<option value=\"uu\" %s><script type=\"text/javascript\">document.write(wl_basic.upper+\" \"+wl_basic.upper)</script></option>\n",
+						nvram_nmatch("uu", "%s_nctrlsb", prefix) ? "selected=\"selected\"" : "");
+					websWrite(wp, "</select>\n");
+					websWrite(wp, "</div>\n");
+				}
 #if 0
-			if (nvram_nmatch("160", "%s_nbw", prefix)) {
-				websWrite(wp, "<div class=\"setting\">\n");
-				show_caption(wp, "label", "wl_basic.channel_wide", NULL);
-				websWrite(wp, "<select name=\"%s_nctrlsb\" >\n", prefix);
-				websWrite(wp, "<option value=\"lll\" %s><script type=\"text/javascript\">Capture(wl_basic.ch_pos_lll);</script></option>\n",
-					  (nvram_nmatch("lll", "%s_nctrlsb", prefix) || nvram_nmatch("lower", "%s_nctrlsb", prefix)) ? "selected=\"selected\"" : "");
-				websWrite(wp, "<option value=\"llu\" %s><script type=\"text/javascript\">Capture(wl_basic.ch_pos_llu);</script></option>\n",
-					  nvram_nmatch("llu", "%s_nctrlsb", prefix) ? "selected=\"selected\"" : "");
-				websWrite(wp, "<option value=\"lul\" %s><script type=\"text/javascript\">Capture(wl_basic.ch_pos_lul);</script></option>\n",
-					  nvram_nmatch("lul", "%s_nctrlsb", prefix) ? "selected=\"selected\"" : "");
-				websWrite(wp, "<option value=\"luu\" %s><script type=\"text/javascript\">Capture(wl_basic.ch_pos_luu);</script></option>\n",
-					  nvram_nmatch("luu", "%s_nctrlsb", prefix) ? "selected=\"selected\"" : "");
-				websWrite(wp, "<option value=\"ull\" %s><script type=\"text/javascript\">Capture(wl_basic.ch_pos_ull);</script></option>\n",
-					  nvram_nmatch("ull", "%s_nctrlsb", prefix) ? "selected=\"selected\"" : "");
-				websWrite(wp, "<option value=\"ulu\" %s><script type=\"text/javascript\">Capture(wl_basic.ch_pos_ulu);</script></option>\n",
-					  nvram_nmatch("ulu", "%s_nctrlsb", prefix) ? "selected=\"selected\"" : "");
-				websWrite(wp, "<option value=\"uul\" %s><script type=\"text/javascript\">Capture(wl_basic.ch_pos_uul);</script></option>\n",
-					  nvram_nmatch("uul", "%s_nctrlsb", prefix) ? "selected=\"selected\"" : "");
-				websWrite(wp, "<option value=\"uuu\" %s><script type=\"text/javascript\">Capture(wl_basic.ch_pos_uuu);</script></option>\n",
-					  (nvram_nmatch("uuu", "%s_nctrlsb", prefix) || nvram_nmatch("upper", "%s_nctrlsb", prefix)) ? "selected=\"selected\"" : "");
-				websWrite(wp, "</select>\n");
-				websWrite(wp, "</div>\n");
-			}
-#endif
-		} else {
-			show_channel(wp, prefix, prefix, 0);
-			if (is_mac80211(prefix)) {
-				if (!is_ath5k(prefix) && (nvram_matchi(wl_width, 40) || nvram_matchi(wl_width, 2040))) {
-					websWrite(wp, "<div class=\"setting\">\n");
-					show_caption(wp, "label", "wl_basic.channel_wide", NULL);
-					websWrite(wp, "<select name=\"%s_nctrlsb\" >\n", prefix);
-					websWrite(
-						wp,
-						"<option value=\"ull\" %s><script type=\"text/javascript\">Capture(wl_basic.ch_pos_upr);</script></option>\n",
-						(nvram_nmatch("ull", "%s_nctrlsb", prefix) ||
-						 nvram_nmatch("upper", "%s_nctrlsb", prefix)) ?
-							"selected=\"selected\"" :
-							"");
-					websWrite(
-						wp,
-						"<option value=\"luu\" %s><script type=\"text/javascript\">Capture(wl_basic.ch_pos_lwr);</script></option>\n",
-						(nvram_nmatch("luu", "%s_nctrlsb", prefix) ||
-						 nvram_nmatch("lower", "%s_nctrlsb", prefix)) ?
-							"selected=\"selected\"" :
-							"");
-					websWrite(wp, "</select>\n");
-					websWrite(wp, "</div>\n");
-				}
-				if (nvram_matchi(wl_width, 80) || nvram_match(wl_width, "80+80")) {
-					websWrite(wp, "<div class=\"setting\">\n");
-					show_caption(wp, "label", "wl_basic.channel_wide", NULL);
-					websWrite(wp, "<select name=\"%s_nctrlsb\" >\n", prefix);
-					websWrite(
-						wp,
-						"<option value=\"lul\" %s><script type=\"text/javascript\">Capture(wl_basic.ch_pos_ll);</script></option>\n",
-						(nvram_nmatch("lul", "%s_nctrlsb", prefix) ||
-						 nvram_nmatch("lower", "%s_nctrlsb", prefix)) ?
-							"selected=\"selected\"" :
-							"");
-					websWrite(
-						wp,
-						"<option value=\"luu\" %s><script type=\"text/javascript\">Capture(wl_basic.ch_pos_lu);</script></option>\n",
-						nvram_nmatch("luu", "%s_nctrlsb", prefix) ? "selected=\"selected\"" : "");
-					websWrite(
-						wp,
-						"<option value=\"ull\" %s><script type=\"text/javascript\">Capture(wl_basic.ch_pos_ul);</script></option>\n",
-						nvram_nmatch("ull", "%s_nctrlsb", prefix) ? "selected=\"selected\"" : "");
-					websWrite(
-						wp,
-						"<option value=\"ulu\" %s><script type=\"text/javascript\">Capture(wl_basic.ch_pos_uu);</script></option>\n",
-						(nvram_nmatch("ulu", "%s_nctrlsb", prefix) ||
-						 nvram_nmatch("upper", "%s_nctrlsb", prefix)) ?
-							"selected=\"selected\"" :
-							"");
-					websWrite(wp, "</select>\n");
-					websWrite(wp, "</div>\n");
-				}
-				if (nvram_matchi(wl_width, 160)) {
+				if (nvram_nmatch("160", "%s_nbw", prefix)) {
 					websWrite(wp, "<div class=\"setting\">\n");
 					show_caption(wp, "label", "wl_basic.channel_wide", NULL);
 					websWrite(wp, "<select name=\"%s_nctrlsb\" >\n", prefix);
@@ -3958,6 +3886,108 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 							"");
 					websWrite(wp, "</select>\n");
 					websWrite(wp, "</div>\n");
+				}
+#endif
+			}
+		} else {
+			show_channel(wp, prefix, prefix, 0);
+			if (!is_morse_micro(prefix)) {
+				if (is_mac80211(prefix)) {
+					if (!is_ath5k(prefix) && (nvram_matchi(wl_width, 40) || nvram_matchi(wl_width, 2040))) {
+						websWrite(wp, "<div class=\"setting\">\n");
+						show_caption(wp, "label", "wl_basic.channel_wide", NULL);
+						websWrite(wp, "<select name=\"%s_nctrlsb\" >\n", prefix);
+						websWrite(
+							wp,
+							"<option value=\"ull\" %s><script type=\"text/javascript\">Capture(wl_basic.ch_pos_upr);</script></option>\n",
+							(nvram_nmatch("ull", "%s_nctrlsb", prefix) ||
+							 nvram_nmatch("upper", "%s_nctrlsb", prefix)) ?
+								"selected=\"selected\"" :
+								"");
+						websWrite(
+							wp,
+							"<option value=\"luu\" %s><script type=\"text/javascript\">Capture(wl_basic.ch_pos_lwr);</script></option>\n",
+							(nvram_nmatch("luu", "%s_nctrlsb", prefix) ||
+							 nvram_nmatch("lower", "%s_nctrlsb", prefix)) ?
+								"selected=\"selected\"" :
+								"");
+						websWrite(wp, "</select>\n");
+						websWrite(wp, "</div>\n");
+					}
+					if (nvram_matchi(wl_width, 80) || nvram_match(wl_width, "80+80")) {
+						websWrite(wp, "<div class=\"setting\">\n");
+						show_caption(wp, "label", "wl_basic.channel_wide", NULL);
+						websWrite(wp, "<select name=\"%s_nctrlsb\" >\n", prefix);
+						websWrite(
+							wp,
+							"<option value=\"lul\" %s><script type=\"text/javascript\">Capture(wl_basic.ch_pos_ll);</script></option>\n",
+							(nvram_nmatch("lul", "%s_nctrlsb", prefix) ||
+							 nvram_nmatch("lower", "%s_nctrlsb", prefix)) ?
+								"selected=\"selected\"" :
+								"");
+						websWrite(
+							wp,
+							"<option value=\"luu\" %s><script type=\"text/javascript\">Capture(wl_basic.ch_pos_lu);</script></option>\n",
+							nvram_nmatch("luu", "%s_nctrlsb", prefix) ? "selected=\"selected\"" : "");
+						websWrite(
+							wp,
+							"<option value=\"ull\" %s><script type=\"text/javascript\">Capture(wl_basic.ch_pos_ul);</script></option>\n",
+							nvram_nmatch("ull", "%s_nctrlsb", prefix) ? "selected=\"selected\"" : "");
+						websWrite(
+							wp,
+							"<option value=\"ulu\" %s><script type=\"text/javascript\">Capture(wl_basic.ch_pos_uu);</script></option>\n",
+							(nvram_nmatch("ulu", "%s_nctrlsb", prefix) ||
+							 nvram_nmatch("upper", "%s_nctrlsb", prefix)) ?
+								"selected=\"selected\"" :
+								"");
+						websWrite(wp, "</select>\n");
+						websWrite(wp, "</div>\n");
+					}
+					if (nvram_matchi(wl_width, 160)) {
+						websWrite(wp, "<div class=\"setting\">\n");
+						show_caption(wp, "label", "wl_basic.channel_wide", NULL);
+						websWrite(wp, "<select name=\"%s_nctrlsb\" >\n", prefix);
+						websWrite(
+							wp,
+							"<option value=\"lll\" %s><script type=\"text/javascript\">Capture(wl_basic.ch_pos_lll);</script></option>\n",
+							(nvram_nmatch("lll", "%s_nctrlsb", prefix) ||
+							 nvram_nmatch("lower", "%s_nctrlsb", prefix)) ?
+								"selected=\"selected\"" :
+								"");
+						websWrite(
+							wp,
+							"<option value=\"llu\" %s><script type=\"text/javascript\">Capture(wl_basic.ch_pos_llu);</script></option>\n",
+							nvram_nmatch("llu", "%s_nctrlsb", prefix) ? "selected=\"selected\"" : "");
+						websWrite(
+							wp,
+							"<option value=\"lul\" %s><script type=\"text/javascript\">Capture(wl_basic.ch_pos_lul);</script></option>\n",
+							nvram_nmatch("lul", "%s_nctrlsb", prefix) ? "selected=\"selected\"" : "");
+						websWrite(
+							wp,
+							"<option value=\"luu\" %s><script type=\"text/javascript\">Capture(wl_basic.ch_pos_luu);</script></option>\n",
+							nvram_nmatch("luu", "%s_nctrlsb", prefix) ? "selected=\"selected\"" : "");
+						websWrite(
+							wp,
+							"<option value=\"ull\" %s><script type=\"text/javascript\">Capture(wl_basic.ch_pos_ull);</script></option>\n",
+							nvram_nmatch("ull", "%s_nctrlsb", prefix) ? "selected=\"selected\"" : "");
+						websWrite(
+							wp,
+							"<option value=\"ulu\" %s><script type=\"text/javascript\">Capture(wl_basic.ch_pos_ulu);</script></option>\n",
+							nvram_nmatch("ulu", "%s_nctrlsb", prefix) ? "selected=\"selected\"" : "");
+						websWrite(
+							wp,
+							"<option value=\"uul\" %s><script type=\"text/javascript\">Capture(wl_basic.ch_pos_uul);</script></option>\n",
+							nvram_nmatch("uul", "%s_nctrlsb", prefix) ? "selected=\"selected\"" : "");
+						websWrite(
+							wp,
+							"<option value=\"uuu\" %s><script type=\"text/javascript\">Capture(wl_basic.ch_pos_uuu);</script></option>\n",
+							(nvram_nmatch("uuu", "%s_nctrlsb", prefix) ||
+							 nvram_nmatch("upper", "%s_nctrlsb", prefix)) ?
+								"selected=\"selected\"" :
+								"");
+						websWrite(wp, "</select>\n");
+						websWrite(wp, "</div>\n");
+					}
 				}
 			}
 		}
@@ -4433,7 +4463,8 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 		websWrite(wp, "</select>\n");
 		websWrite(wp, "</div>\n");
 	}
-// test
+	// test
+
 #if defined(HAVE_RT2880) && !defined(HAVE_MT76)
 #else
 	if (is_ap(prefix) || nvram_match(wl_mode, "infra") || nvram_match(wl_mode, "mesh"))
@@ -4510,124 +4541,48 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 			}
 			websWrite(wp, "</select>\n");
 			websWrite(wp, "</div>\n");
-			if (!is_ath5k(prefix) && nvram_nmatch("40", "%s_nbw", prefix)) {
-				websWrite(wp, "<div class=\"setting\">\n");
-				show_caption(wp, "label", "wl_basic.channel_wide", NULL);
-				websWrite(wp, "<select name=\"%s_nctrlsb\" >\n", prefix);
-				websWrite(
-					wp,
-					"<option value=\"upper\" %s><script type=\"text/javascript\">Capture(wl_basic.upper);</script></option>\n",
-					nvram_nmatch("upper", "%s_nctrlsb", prefix) ? "selected=\"selected\"" : "");
-				websWrite(
-					wp,
-					"<option value=\"lower\" %s><script type=\"text/javascript\">Capture(wl_basic.lower);</script></option>\n",
-					nvram_nmatch("lower", "%s_nctrlsb", prefix) ? "selected=\"selected\"" : "");
-				websWrite(wp, "</select>\n");
-				websWrite(wp, "</div>\n");
-			}
-			if (nvram_nmatch("80", "%s_nbw", prefix) || nvram_nmatch("80+80", "%s_nbw",
-										 prefix)) { // 802.11ac
-				websWrite(wp, "<div class=\"setting\">\n");
-				show_caption(wp, "label", "wl_basic.channel_wide", NULL);
-				websWrite(wp, "<select name=\"%s_nctrlsb\" >\n", prefix);
-				websWrite(
-					wp,
-					"<option value=\"ll\" %s><script type=\"text/javascript\">document.write(wl_basic.lower+\" \"+wl_basic.lower)</script></option>\n",
-					nvram_nmatch("ll", "%s_nctrlsb", prefix) ? "selected=\"selected\"" : "");
-				websWrite(
-					wp,
-					"<option value=\"lu\" %s><script type=\"text/javascript\">document.write(wl_basic.lower+\" \"+wl_basic.upper)</script></option>\n",
-					nvram_nmatch("lu", "%s_nctrlsb", prefix) ? "selected=\"selected\"" : "");
-				websWrite(
-					wp,
-					"<option value=\"ul\" %s><script type=\"text/javascript\">document.write(wl_basic.upper+\" \"+wl_basic.lower)</script></option>\n",
-					nvram_nmatch("ul", "%s_nctrlsb", prefix) ? "selected=\"selected\"" : "");
-				websWrite(
-					wp,
-					"<option value=\"uu\" %s><script type=\"text/javascript\">document.write(wl_basic.upper+\" \"+wl_basic.upper)</script></option>\n",
-					nvram_nmatch("uu", "%s_nctrlsb", prefix) ? "selected=\"selected\"" : "");
-				websWrite(wp, "</select>\n");
-				websWrite(wp, "</div>\n");
-			}
+			if (!is_morse_micro(prefix)) {
+				if (!is_ath5k(prefix) && nvram_nmatch("40", "%s_nbw", prefix)) {
+					websWrite(wp, "<div class=\"setting\">\n");
+					show_caption(wp, "label", "wl_basic.channel_wide", NULL);
+					websWrite(wp, "<select name=\"%s_nctrlsb\" >\n", prefix);
+					websWrite(
+						wp,
+						"<option value=\"upper\" %s><script type=\"text/javascript\">Capture(wl_basic.upper);</script></option>\n",
+						nvram_nmatch("upper", "%s_nctrlsb", prefix) ? "selected=\"selected\"" : "");
+					websWrite(
+						wp,
+						"<option value=\"lower\" %s><script type=\"text/javascript\">Capture(wl_basic.lower);</script></option>\n",
+						nvram_nmatch("lower", "%s_nctrlsb", prefix) ? "selected=\"selected\"" : "");
+					websWrite(wp, "</select>\n");
+					websWrite(wp, "</div>\n");
+				}
+				if (nvram_nmatch("80", "%s_nbw", prefix) || nvram_nmatch("80+80", "%s_nbw",
+											 prefix)) { // 802.11ac
+					websWrite(wp, "<div class=\"setting\">\n");
+					show_caption(wp, "label", "wl_basic.channel_wide", NULL);
+					websWrite(wp, "<select name=\"%s_nctrlsb\" >\n", prefix);
+					websWrite(
+						wp,
+						"<option value=\"ll\" %s><script type=\"text/javascript\">document.write(wl_basic.lower+\" \"+wl_basic.lower)</script></option>\n",
+						nvram_nmatch("ll", "%s_nctrlsb", prefix) ? "selected=\"selected\"" : "");
+					websWrite(
+						wp,
+						"<option value=\"lu\" %s><script type=\"text/javascript\">document.write(wl_basic.lower+\" \"+wl_basic.upper)</script></option>\n",
+						nvram_nmatch("lu", "%s_nctrlsb", prefix) ? "selected=\"selected\"" : "");
+					websWrite(
+						wp,
+						"<option value=\"ul\" %s><script type=\"text/javascript\">document.write(wl_basic.upper+\" \"+wl_basic.lower)</script></option>\n",
+						nvram_nmatch("ul", "%s_nctrlsb", prefix) ? "selected=\"selected\"" : "");
+					websWrite(
+						wp,
+						"<option value=\"uu\" %s><script type=\"text/javascript\">document.write(wl_basic.upper+\" \"+wl_basic.upper)</script></option>\n",
+						nvram_nmatch("uu", "%s_nctrlsb", prefix) ? "selected=\"selected\"" : "");
+					websWrite(wp, "</select>\n");
+					websWrite(wp, "</div>\n");
+				}
 #if 0
-			if (nvram_nmatch("160", "%s_nbw", prefix)) {
-				websWrite(wp, "<div class=\"setting\">\n");
-				show_caption(wp, "label", "wl_basic.channel_wide", NULL);
-				websWrite(wp, "<select name=\"%s_nctrlsb\" >\n", prefix);
-				websWrite(wp, "<option value=\"lll\" %s><script type=\"text/javascript\">Capture(wl_basic.ch_pos_lll);</script></option>\n",
-					  (nvram_nmatch("lll", "%s_nctrlsb", prefix) || nvram_nmatch("lower", "%s_nctrlsb", prefix)) ? "selected=\"selected\"" : "");
-				websWrite(wp, "<option value=\"llu\" %s><script type=\"text/javascript\">Capture(wl_basic.ch_pos_llu);</script></option>\n",
-					  nvram_nmatch("llu", "%s_nctrlsb", prefix) ? "selected=\"selected\"" : "");
-				websWrite(wp, "<option value=\"lul\" %s><script type=\"text/javascript\">Capture(wl_basic.ch_pos_lul);</script></option>\n",
-					  nvram_nmatch("lul", "%s_nctrlsb", prefix) ? "selected=\"selected\"" : "");
-				websWrite(wp, "<option value=\"luu\" %s><script type=\"text/javascript\">Capture(wl_basic.ch_pos_luu);</script></option>\n",
-					  nvram_nmatch("luu", "%s_nctrlsb", prefix) ? "selected=\"selected\"" : "");
-				websWrite(wp, "<option value=\"ull\" %s><script type=\"text/javascript\">Capture(wl_basic.ch_pos_ull);</script></option>\n",
-					  nvram_nmatch("ull", "%s_nctrlsb", prefix) ? "selected=\"selected\"" : "");
-				websWrite(wp, "<option value=\"ulu\" %s><script type=\"text/javascript\">Capture(wl_basic.ch_pos_ulu);</script></option>\n",
-					  nvram_nmatch("ulu", "%s_nctrlsb", prefix) ? "selected=\"selected\"" : "");
-				websWrite(wp, "<option value=\"uul\" %s><script type=\"text/javascript\">Capture(wl_basic.ch_pos_uul);</script></option>\n",
-					  nvram_nmatch("uul", "%s_nctrlsb", prefix) ? "selected=\"selected\"" : "");
-				websWrite(wp, "<option value=\"uuu\" %s><script type=\"text/javascript\">Capture(wl_basic.ch_pos_uuu);</script></option>\n",
-					  (nvram_nmatch("uuu", "%s_nctrlsb", prefix) || nvram_nmatch("upper", "%s_nctrlsb", prefix)) ? "selected=\"selected\"" : "");
-				websWrite(wp, "</select>\n");
-				websWrite(wp, "</div>\n");
-			}
-#endif
-		} else {
-			show_channel(wp, prefix, prefix, 0);
-			if (is_mac80211(prefix)) {
-				if (!is_ath5k(prefix) && (nvram_matchi(wl_width, 40) || nvram_matchi(wl_width, 2040))) {
-					websWrite(wp, "<div class=\"setting\">\n");
-					show_caption(wp, "label", "wl_basic.channel_wide", NULL);
-					websWrite(wp, "<select name=\"%s_nctrlsb\" >\n", prefix);
-					websWrite(
-						wp,
-						"<option value=\"ull\" %s><script type=\"text/javascript\">Capture(wl_basic.ch_pos_upr);</script></option>\n",
-						(nvram_nmatch("ull", "%s_nctrlsb", prefix) ||
-						 nvram_nmatch("upper", "%s_nctrlsb", prefix)) ?
-							"selected=\"selected\"" :
-							"");
-					websWrite(
-						wp,
-						"<option value=\"luu\" %s><script type=\"text/javascript\">Capture(wl_basic.ch_pos_lwr);</script></option>\n",
-						(nvram_nmatch("luu", "%s_nctrlsb", prefix) ||
-						 nvram_nmatch("lower", "%s_nctrlsb", prefix)) ?
-							"selected=\"selected\"" :
-							"");
-					websWrite(wp, "</select>\n");
-					websWrite(wp, "</div>\n");
-				}
-				if (nvram_matchi(wl_width, 80) || nvram_match(wl_width, "80+80")) {
-					websWrite(wp, "<div class=\"setting\">\n");
-					show_caption(wp, "label", "wl_basic.channel_wide", NULL);
-					websWrite(wp, "<select name=\"%s_nctrlsb\" >\n", prefix);
-					websWrite(
-						wp,
-						"<option value=\"lul\" %s><script type=\"text/javascript\">Capture(wl_basic.ch_pos_ll);</script></option>\n",
-						(nvram_nmatch("lul", "%s_nctrlsb", prefix) ||
-						 nvram_nmatch("lower", "%s_nctrlsb", prefix)) ?
-							"selected=\"selected\"" :
-							"");
-					websWrite(
-						wp,
-						"<option value=\"luu\" %s><script type=\"text/javascript\">Capture(wl_basic.ch_pos_lu);</script></option>\n",
-						nvram_nmatch("luu", "%s_nctrlsb", prefix) ? "selected=\"selected\"" : "");
-					websWrite(
-						wp,
-						"<option value=\"ull\" %s><script type=\"text/javascript\">Capture(wl_basic.ch_pos_ul);</script></option>\n",
-						nvram_nmatch("ull", "%s_nctrlsb", prefix) ? "selected=\"selected\"" : "");
-					websWrite(
-						wp,
-						"<option value=\"ulu\" %s><script type=\"text/javascript\">Capture(wl_basic.ch_pos_uu);</script></option>\n",
-						(nvram_nmatch("ulu", "%s_nctrlsb", prefix) ||
-						 nvram_nmatch("upper", "%s_nctrlsb", prefix)) ?
-							"selected=\"selected\"" :
-							"");
-					websWrite(wp, "</select>\n");
-					websWrite(wp, "</div>\n");
-				}
-				if (nvram_matchi(wl_width, 160)) {
+				if (nvram_nmatch("160", "%s_nbw", prefix)) {
 					websWrite(wp, "<div class=\"setting\">\n");
 					show_caption(wp, "label", "wl_basic.channel_wide", NULL);
 					websWrite(wp, "<select name=\"%s_nctrlsb\" >\n", prefix);
@@ -4671,6 +4626,108 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 							"");
 					websWrite(wp, "</select>\n");
 					websWrite(wp, "</div>\n");
+				}
+#endif
+			}
+		} else {
+			show_channel(wp, prefix, prefix, 0);
+			if (!is_morse_micro(prefix)) {
+				if (is_mac80211(prefix)) {
+					if (!is_ath5k(prefix) && (nvram_matchi(wl_width, 40) || nvram_matchi(wl_width, 2040))) {
+						websWrite(wp, "<div class=\"setting\">\n");
+						show_caption(wp, "label", "wl_basic.channel_wide", NULL);
+						websWrite(wp, "<select name=\"%s_nctrlsb\" >\n", prefix);
+						websWrite(
+							wp,
+							"<option value=\"ull\" %s><script type=\"text/javascript\">Capture(wl_basic.ch_pos_upr);</script></option>\n",
+							(nvram_nmatch("ull", "%s_nctrlsb", prefix) ||
+							 nvram_nmatch("upper", "%s_nctrlsb", prefix)) ?
+								"selected=\"selected\"" :
+								"");
+						websWrite(
+							wp,
+							"<option value=\"luu\" %s><script type=\"text/javascript\">Capture(wl_basic.ch_pos_lwr);</script></option>\n",
+							(nvram_nmatch("luu", "%s_nctrlsb", prefix) ||
+							 nvram_nmatch("lower", "%s_nctrlsb", prefix)) ?
+								"selected=\"selected\"" :
+								"");
+						websWrite(wp, "</select>\n");
+						websWrite(wp, "</div>\n");
+					}
+					if (nvram_matchi(wl_width, 80) || nvram_match(wl_width, "80+80")) {
+						websWrite(wp, "<div class=\"setting\">\n");
+						show_caption(wp, "label", "wl_basic.channel_wide", NULL);
+						websWrite(wp, "<select name=\"%s_nctrlsb\" >\n", prefix);
+						websWrite(
+							wp,
+							"<option value=\"lul\" %s><script type=\"text/javascript\">Capture(wl_basic.ch_pos_ll);</script></option>\n",
+							(nvram_nmatch("lul", "%s_nctrlsb", prefix) ||
+							 nvram_nmatch("lower", "%s_nctrlsb", prefix)) ?
+								"selected=\"selected\"" :
+								"");
+						websWrite(
+							wp,
+							"<option value=\"luu\" %s><script type=\"text/javascript\">Capture(wl_basic.ch_pos_lu);</script></option>\n",
+							nvram_nmatch("luu", "%s_nctrlsb", prefix) ? "selected=\"selected\"" : "");
+						websWrite(
+							wp,
+							"<option value=\"ull\" %s><script type=\"text/javascript\">Capture(wl_basic.ch_pos_ul);</script></option>\n",
+							nvram_nmatch("ull", "%s_nctrlsb", prefix) ? "selected=\"selected\"" : "");
+						websWrite(
+							wp,
+							"<option value=\"ulu\" %s><script type=\"text/javascript\">Capture(wl_basic.ch_pos_uu);</script></option>\n",
+							(nvram_nmatch("ulu", "%s_nctrlsb", prefix) ||
+							 nvram_nmatch("upper", "%s_nctrlsb", prefix)) ?
+								"selected=\"selected\"" :
+								"");
+						websWrite(wp, "</select>\n");
+						websWrite(wp, "</div>\n");
+					}
+					if (nvram_matchi(wl_width, 160)) {
+						websWrite(wp, "<div class=\"setting\">\n");
+						show_caption(wp, "label", "wl_basic.channel_wide", NULL);
+						websWrite(wp, "<select name=\"%s_nctrlsb\" >\n", prefix);
+						websWrite(
+							wp,
+							"<option value=\"lll\" %s><script type=\"text/javascript\">Capture(wl_basic.ch_pos_lll);</script></option>\n",
+							(nvram_nmatch("lll", "%s_nctrlsb", prefix) ||
+							 nvram_nmatch("lower", "%s_nctrlsb", prefix)) ?
+								"selected=\"selected\"" :
+								"");
+						websWrite(
+							wp,
+							"<option value=\"llu\" %s><script type=\"text/javascript\">Capture(wl_basic.ch_pos_llu);</script></option>\n",
+							nvram_nmatch("llu", "%s_nctrlsb", prefix) ? "selected=\"selected\"" : "");
+						websWrite(
+							wp,
+							"<option value=\"lul\" %s><script type=\"text/javascript\">Capture(wl_basic.ch_pos_lul);</script></option>\n",
+							nvram_nmatch("lul", "%s_nctrlsb", prefix) ? "selected=\"selected\"" : "");
+						websWrite(
+							wp,
+							"<option value=\"luu\" %s><script type=\"text/javascript\">Capture(wl_basic.ch_pos_luu);</script></option>\n",
+							nvram_nmatch("luu", "%s_nctrlsb", prefix) ? "selected=\"selected\"" : "");
+						websWrite(
+							wp,
+							"<option value=\"ull\" %s><script type=\"text/javascript\">Capture(wl_basic.ch_pos_ull);</script></option>\n",
+							nvram_nmatch("ull", "%s_nctrlsb", prefix) ? "selected=\"selected\"" : "");
+						websWrite(
+							wp,
+							"<option value=\"ulu\" %s><script type=\"text/javascript\">Capture(wl_basic.ch_pos_ulu);</script></option>\n",
+							nvram_nmatch("ulu", "%s_nctrlsb", prefix) ? "selected=\"selected\"" : "");
+						websWrite(
+							wp,
+							"<option value=\"uul\" %s><script type=\"text/javascript\">Capture(wl_basic.ch_pos_uul);</script></option>\n",
+							nvram_nmatch("uul", "%s_nctrlsb", prefix) ? "selected=\"selected\"" : "");
+						websWrite(
+							wp,
+							"<option value=\"uuu\" %s><script type=\"text/javascript\">Capture(wl_basic.ch_pos_uuu);</script></option>\n",
+							(nvram_nmatch("uuu", "%s_nctrlsb", prefix) ||
+							 nvram_nmatch("upper", "%s_nctrlsb", prefix)) ?
+								"selected=\"selected\"" :
+								"");
+						websWrite(wp, "</select>\n");
+						websWrite(wp, "</div>\n");
+					}
 				}
 			}
 		}
