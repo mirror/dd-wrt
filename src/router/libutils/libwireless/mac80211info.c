@@ -2189,12 +2189,12 @@ struct wifi_channels *mac80211_get_channels_simple(const char *interface, const 
 			map = in_chans;
 			num = ARRAY_SIZE(in_chans);
 		}
-		int i;
+		int i = 0;
 		while (chan[i].freq != -1) {
 			int a;
 			chan[i].disabled = 1;
 			for (a = 0; a < num; a++) {
-				if (chan[i].freq == map[a].freq && map[i].width == max_bandwidth_mhz) {
+				if (chan[i].freq == map[a].freq && map[a].width == max_bandwidth_mhz) {
 					chan[i].disabled = 0;
 					chan[i].mapped_freq = map[a].lowfreq_khz;
 				}
