@@ -1318,6 +1318,15 @@ static inline int is_wil6210(const char *prefix)
 }
 #endif
 
+#if defined(HAVE_MORSE)
+extern int has_ah(const char *prefix);
+#else
+static inline int has_ah(const char *prefix)
+{
+	return 0;
+}
+#endif
+
 #if defined(HAVE_ATH11K) || defined(HAVE_IPQ6018)
 extern int has_ax(const char *prefix);
 #else
