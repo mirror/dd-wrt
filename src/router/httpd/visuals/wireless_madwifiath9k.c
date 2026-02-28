@@ -138,7 +138,7 @@ int active_wireless_if_ath9k(webs_t wp, int argc, char_t **argv, char *ifname, i
 				ht = 6;
 			if (div == 8)
 				ht = 5;
-			char *bwinfo[];
+			char **bwinfo;
 			if (is_morse_micro(prefix))
 				bwinfo = { "1", "2", "3", "8", "80+80", "2.5", "5", "10" };
 			else
