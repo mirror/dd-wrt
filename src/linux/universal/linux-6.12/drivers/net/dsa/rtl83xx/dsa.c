@@ -445,6 +445,16 @@ static void rtldsa_vlan_set_pvid(struct rtl838x_switch_priv *priv,
 	priv->ports[port].pvid = pvid;
 }
 
+static void rtldsa_83xx_mc_pmasks_setup(struct rtl838x_switch_priv *priv)
+{
+	/* RTL8380 and RTL8390 use an index into the portmask table to set the
+	 * unknown multicast portmask, setup a default at a safe location
+	 * On RTL93XX, the portmask is directly set in the profile,
+	 * see e.g. rtl9300_vlan_profile_setup
+	 */
+	priv->r->write_mcast_pmask(MC_PMASK_ALL_PORTS_IDX, ~0);
+}
+
 /* Initialize all VLANS */
 static void rtldsa_vlan_setup(struct rtl838x_switch_priv *priv)
 {
@@ -453,9 +463,7 @@ static void rtldsa_vlan_setup(struct rtl838x_switch_priv *priv)
 	pr_info("In %s\n", __func__);
 
 	priv->r->vlan_profile_setup(0);
-	priv->r->vlan_profile_setup(1);
-	dev_info(priv->dev, "MC_PMASK_ALL_PORTS: %016llx\n", priv->r->read_mcast_pmask(MC_PMASK_ALL_PORTS_IDX));
-	priv->r->vlan_profile_dump(0);
+	priv->r->vlan_profile_dump(priv, 0);
 
 	info.fid = 0;			/* Default Forwarding ID / MSTI */
 	info.hash_uc_fid = false;	/* Do not build the L2 lookup hash with FID, but VID */
@@ -548,6 +556,7 @@ static int rtldsa_83xx_setup(struct dsa_switch *ds)
 	rtldsa_83xx_init_stats(priv);
 	rtldsa_init_counters(priv);
 
+	rtldsa_83xx_mc_pmasks_setup(priv);
 	rtldsa_vlan_setup(priv);
 
 	rtldsa_setup_bpdu_traps(priv);
@@ -1911,69 +1920,6 @@ unlock:
 	mutex_unlock(&priv->reg_mutex);
 }
 
-void rtldsa_83xx_fast_age(struct dsa_switch *ds, int port)
-{
-	struct rtl838x_switch_priv *priv = ds->priv;
-	int s = priv->family_id == RTL8390_FAMILY_ID ? 2 : 0;
-
-	pr_debug("FAST AGE port %d\n", port);
-	mutex_lock(&priv->reg_mutex);
-	/* RTL838X_L2_TBL_FLUSH_CTRL register bits, 839x has 1 bit larger
-	 * port fields:
-	 * 0-4: Replacing port
-	 * 5-9: Flushed/replaced port
-	 * 10-21: FVID
-	 * 22: Entry types: 1: dynamic, 0: also static
-	 * 23: Match flush port
-	 * 24: Match FVID
-	 * 25: Flush (0) or replace (1) L2 entries
-	 * 26: Status of action (1: Start, 0: Done)
-	 */
-	sw_w32(1 << (26 + s) | 1 << (23 + s) | port << (5 + (s / 2)), priv->r->l2_tbl_flush_ctrl);
-
-	do { } while (sw_r32(priv->r->l2_tbl_flush_ctrl) & BIT(26 + s));
-
-	mutex_unlock(&priv->reg_mutex);
-}
-
-static void rtldsa_931x_fast_age(struct dsa_switch *ds, int port)
-{
-	struct rtl838x_switch_priv *priv = ds->priv;
-	u32 val;
-
-	mutex_lock(&priv->reg_mutex);
-
-	sw_w32(0, RTL931X_L2_TBL_FLUSH_CTRL + 4);
-
-	val = 0;
-	val |= port << 11;
-	val |= BIT(24); /* compare port id */
-	val |= BIT(28); /* status - trigger flush */
-	sw_w32(val, RTL931X_L2_TBL_FLUSH_CTRL);
-
-	do { } while (sw_r32(RTL931X_L2_TBL_FLUSH_CTRL) & BIT(28));
-
-	mutex_unlock(&priv->reg_mutex);
-}
-
-static void rtldsa_930x_fast_age(struct dsa_switch *ds, int port)
-{
-	struct rtl838x_switch_priv *priv = ds->priv;
-
-	if (priv->family_id == RTL9310_FAMILY_ID)
-		return rtldsa_931x_fast_age(ds, port);
-
-	pr_debug("FAST AGE port %d\n", port);
-	mutex_lock(&priv->reg_mutex);
-	sw_w32(port << 11, RTL930X_L2_TBL_FLUSH_CTRL + 4);
-
-	sw_w32(BIT(26) | BIT(30), RTL930X_L2_TBL_FLUSH_CTRL);
-
-	do { } while (sw_r32(priv->r->l2_tbl_flush_ctrl) & BIT(30));
-
-	mutex_unlock(&priv->reg_mutex);
-}
-
 static int rtldsa_port_mst_state_set(struct dsa_switch *ds, int port,
 				     const struct switchdev_mst_state *st)
 {
@@ -2185,16 +2131,26 @@ static int rtldsa_vlan_del(struct dsa_switch *ds, int port,
 	return 0;
 }
 
+void rtldsa_port_fast_age(struct dsa_switch *ds, int port)
+{
+	struct rtl838x_switch_priv *priv = ds->priv;
+
+	mutex_lock(&priv->reg_mutex);
+	if (!priv->r->fast_age)
+		priv->r->fast_age(priv, port, -1);
+	mutex_unlock(&priv->reg_mutex);
+}
+
 static int rtldsa_port_vlan_fast_age(struct dsa_switch *ds, int port, u16 vid)
 {
 	struct rtl838x_switch_priv *priv = ds->priv;
 	int ret;
 
-	if (!priv->r->vlan_port_fast_age)
+	if (!priv->r->fast_age)
 		return -EOPNOTSUPP;
 
 	mutex_lock(&priv->reg_mutex);
-	ret = priv->r->vlan_port_fast_age(priv, port, vid);
+	ret = priv->r->fast_age(priv, port, vid);
 	mutex_unlock(&priv->reg_mutex);
 
 	return ret;
@@ -3017,12 +2973,13 @@ const struct dsa_switch_ops rtldsa_83xx_switch_ops = {
 	.port_bridge_join	= rtldsa_port_bridge_join,
 	.port_bridge_leave	= rtldsa_port_bridge_leave,
 	.port_stp_state_set	= rtldsa_port_stp_state_set,
-	.port_fast_age		= rtldsa_83xx_fast_age,
+	.port_fast_age		= rtldsa_port_fast_age,
 	.port_mst_state_set	= rtldsa_port_mst_state_set,
 
 	.port_vlan_filtering	= rtldsa_vlan_filtering,
 	.port_vlan_add		= rtldsa_vlan_add,
 	.port_vlan_del		= rtldsa_vlan_del,
+	.port_vlan_fast_age	= rtldsa_port_vlan_fast_age,
 	.vlan_msti_set		= rtldsa_vlan_msti_set,
 
 	.port_fdb_add		= rtldsa_port_fdb_add,
@@ -3076,7 +3033,7 @@ const struct dsa_switch_ops rtldsa_93xx_switch_ops = {
 	.port_bridge_join	= rtldsa_port_bridge_join,
 	.port_bridge_leave	= rtldsa_port_bridge_leave,
 	.port_stp_state_set	= rtldsa_port_stp_state_set,
-	.port_fast_age		= rtldsa_930x_fast_age,
+	.port_fast_age		= rtldsa_port_fast_age,
 	.port_mst_state_set	= rtldsa_port_mst_state_set,
 
 	.port_vlan_filtering	= rtldsa_vlan_filtering,

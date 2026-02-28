@@ -132,26 +132,41 @@ static inline int rtl931x_tbl_access_data_0(int i)
 	return RTL931X_TBL_ACCESS_DATA_0(i);
 }
 
-static void rtl931x_vlan_profile_dump(int index)
+static int
+rtldsa_931x_vlan_profile_get(int idx, struct rtldsa_vlan_profile *profile)
 {
 	u32 p[7];
 
-	if (index < 0 || index > RTL931X_VLAN_PROFILE_MAX)
+	if (idx < 0 || idx > RTL931X_VLAN_PROFILE_MAX)
+		return -EINVAL;
+
+	for (int i = 0; i < 7; i++)
+		p[i] = sw_r32(RTL931X_VLAN_PROFILE_SET(idx) + i * 4);
+
+	*profile = (struct rtldsa_vlan_profile) {
+		.l2_learn = RTL931X_VLAN_L2_LEARN_EN_R(p),
+		.unkn_mc_fld.pmsks = {
+			.l2 = RTL931X_VLAN_L2_UNKN_MC_FLD_PMSK(p),
+			.ip = RTL931X_VLAN_IP4_UNKN_MC_FLD_PMSK(p),
+			.ip6 = RTL931X_VLAN_IP6_UNKN_MC_FLD_PMSK(p),
+		},
+	};
+
+	return 0;
+}
+
+static void
+rtldsa_931x_vlan_profile_dump(struct rtl838x_switch_priv *priv, int idx)
+{
+	struct rtldsa_vlan_profile p;
+
+	if (rtldsa_931x_vlan_profile_get(idx, &p) < 0)
 		return;
 
-	p[0] = sw_r32(RTL931X_VLAN_PROFILE_SET(index));
-	p[1] = sw_r32(RTL931X_VLAN_PROFILE_SET(index) + 4);
-	p[2] = sw_r32(RTL931X_VLAN_PROFILE_SET(index) + 8);
-	p[3] = sw_r32(RTL931X_VLAN_PROFILE_SET(index) + 12);
-	p[4] = sw_r32(RTL931X_VLAN_PROFILE_SET(index) + 16);
-	p[5] = sw_r32(RTL931X_VLAN_PROFILE_SET(index) + 20);
-	p[6] = sw_r32(RTL931X_VLAN_PROFILE_SET(index) + 24);
-
-	pr_debug("VLAN %d: L2 learning: %d, L2 Unknown MultiCast Field %llx, IPv4 Unknown MultiCast Field %llx, IPv6 Unknown MultiCast Field: %llx\n",
-		 index, RTL931X_VLAN_L2_LEARN_EN_R(p),
-		 RTL931X_VLAN_L2_UNKN_MC_FLD_PMSK(p),
-		 RTL931X_VLAN_IP4_UNKN_MC_FLD_PMSK(p),
-		 RTL931X_VLAN_IP6_UNKN_MC_FLD_PMSK(p));
+	dev_dbg(priv->dev,
+		"VLAN %d: L2 learning: %d, L2 Unknown MultiCast Field %llx, IPv4 Unknown MultiCast Field %llx, IPv6 Unknown MultiCast Field: %llx\n",
+		idx, p.l2_learn, p.unkn_mc_fld.pmsks.l2,
+		p.unkn_mc_fld.pmsks.ip, p.unkn_mc_fld.pmsks.ip6);
 }
 
 static int rtldsa_931x_stp_get(struct rtl838x_switch_priv *priv, u16 msti, int port, u32 port_state[])
@@ -1478,17 +1493,20 @@ static void rtl931x_vlan_port_pvid_set(int port, enum pbvlan_type type, int pvid
 		sw_w32_mask(0xfff << 14, pvid << 14, RTL931X_VLAN_PORT_IGR_CTRL + (port << 2));
 }
 
-static int rtldsa_931x_vlan_port_fast_age(struct rtl838x_switch_priv *priv, int port, u16 vid)
+static int rtldsa_931x_fast_age(struct rtl838x_switch_priv *priv, int port, int vid)
 {
 	u32 val;
 
-	sw_w32(vid << 20, RTL931X_L2_TBL_FLUSH_CTRL + 4);
+	sw_w32(0, RTL931X_L2_TBL_FLUSH_CTRL + 4);
 
 	val = 0;
 	val |= port << 11;
 	val |= BIT(24); /* compare port id */
-	val |= BIT(26); /* compare VID */
 	val |= BIT(28); /* status - trigger flush */
+	if (vid >= 0) {
+		sw_w32(vid << 20, RTL931X_L2_TBL_FLUSH_CTRL + 4);
+		val |= BIT(26); /* compare VID */
+	}
 	sw_w32(val, RTL931X_L2_TBL_FLUSH_CTRL);
 
 	do { } while (sw_r32(RTL931X_L2_TBL_FLUSH_CTRL) & BIT(28));
@@ -1807,7 +1825,8 @@ const struct rtldsa_config rtldsa_931x_cfg = {
 	.vlan_tables_read = rtl931x_vlan_tables_read,
 	.vlan_set_tagged = rtl931x_vlan_set_tagged,
 	.vlan_set_untagged = rtl931x_vlan_set_untagged,
-	.vlan_profile_dump = rtl931x_vlan_profile_dump,
+	.vlan_profile_get = rtldsa_931x_vlan_profile_get,
+	.vlan_profile_dump = rtldsa_931x_vlan_profile_dump,
 	.vlan_profile_setup = rtl931x_vlan_profile_setup,
 	.vlan_fwd_on_inner = rtl931x_vlan_fwd_on_inner,
 	.stp_get = rtldsa_931x_stp_get,
@@ -1827,7 +1846,7 @@ const struct rtldsa_config rtldsa_931x_cfg = {
 	.vlan_port_keep_tag_set = rtl931x_vlan_port_keep_tag_set,
 	.vlan_port_pvidmode_set = rtl931x_vlan_port_pvidmode_set,
 	.vlan_port_pvid_set = rtl931x_vlan_port_pvid_set,
-	.vlan_port_fast_age = rtldsa_931x_vlan_port_fast_age,
+	.fast_age = rtldsa_931x_fast_age,
 	.trk_mbr_ctr = rtldsa_931x_trk_mbr_ctr,
 	.rma_bpdu_fld_pmask = RTL931X_RMA_BPDU_FLD_PMSK,
 	.set_vlan_igr_filter = rtl931x_set_igr_filter,
