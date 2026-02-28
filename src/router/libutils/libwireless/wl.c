@@ -3378,11 +3378,11 @@ char *getWifiDeviceName(const char *prefix, int *flags)
 	int i;
 	int device = 0, vendor = 0, subdevice = 0, subvendor = 0;
 	int devcount;
-if (is_morse_micro(prefix)){
-	if (flags)
-		*flags = CHANNELSURVEY | AH;
-	return "Morse Micro MM8108";
-}
+	if (is_morse_micro(prefix)) {
+		if (flags)
+			*flags = CHANNELSURVEY | AH;
+		return "Morse Micro MM8108";
+	}
 	sscanf(prefix, "wlan%d", &devcount);
 	vendor = getValueFromPath("/proc/sys/dev/wifi%d/dev_vendor", devcount, "%d", NULL);
 	device = getValueFromPath("/proc/sys/dev/wifi%d/dev_device", devcount, "%d", NULL);
@@ -3758,11 +3758,9 @@ static int devicecountbydriver(const char *prefix, const char *drivername, const
 		return ret > 0;                                         \
 	}
 
-
 #ifdef HAVE_MORSE
 IS_DRIVER(morse_micro, "sdio:morse_sdio", "morse");
 #endif
-
 
 #ifdef HAVE_ATH5K
 IS_DRIVER(ath5k_pci, "pci:ath5k", "ath5k");
