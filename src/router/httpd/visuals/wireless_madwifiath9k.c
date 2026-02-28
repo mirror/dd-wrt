@@ -138,7 +138,11 @@ int active_wireless_if_ath9k(webs_t wp, int argc, char_t **argv, char *ifname, i
 				ht = 6;
 			if (div == 8)
 				ht = 5;
-			char *bwinfo[] = { "20", "40", "80", "160", "80+80", "2.5", "5", "10" };
+			char *bwinfo[];
+			if (is_morse_micro(prefix))
+				bwinfo = { "1", "2", "3", "8", "80+80", "2.5", "5", "10" };
+			else
+				bwinfo = { "20", "40", "80", "160", "80+80", "2.5", "5", "10" };
 			if (ht < 8 && ht >= 0)
 				snprintf(info, sizeof(info), "%s%s", info, bwinfo[ht]);
 			if (sgi)
@@ -289,11 +293,14 @@ EJ_VISIBLE void ej_dump_channel_survey(webs_t wp, int argc, char_t **argv)
 	{
 		if (!f->active_count && !f->busy_count && !f->noise_count)
 			continue;
+		int freq = morse_translate(f->freq);
+		if (freq == -1)
+			continue;
 		if (f->in_use)
-			websWrite(wp, "%c\"[%d]\"", !first_survey ? ' ' : ',', f->freq);
+			websWrite(wp, "%c\"[%d]\"", !first_survey ? ' ' : ',', freq);
 		else
-			websWrite(wp, "%c\"%d\"", !first_survey ? ' ' : ',', f->freq);
-		websWrite(wp, ",\"%d\"", ieee80211_mhz2ieee(interface, f->freq));
+			websWrite(wp, "%c\"%d\"", !first_survey ? ' ' : ',', freq);
+		websWrite(wp, ",\"%d\"", ieee80211_mhz2ieee(interface, freq));
 		first_survey = 1;
 		if (f->noise_count)
 			websWrite(wp, ",\"%d\"", f->noise / f->noise_count);

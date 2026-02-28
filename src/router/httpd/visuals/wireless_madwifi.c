@@ -536,20 +536,25 @@ EJ_VISIBLE void ej_get_curchannel(webs_t wp, int argc, char_t **argv)
 
 		int freq = get_wififreq(base,
 					interface->freq); // translation for special frequency devices
-		if (is_mac80211(base)) {
+		if (is_morse_micro(base)) {
+			websWrite(wp, "%d KHz (", morse_translate(freq));
+		} else if (is_mac80211(base)) {
 			websWrite(wp, "%d", ieee80211_mhz2ieee(prefix, interface->freq));
 			if (interface->center1 != -1 && interface->center1 != interface->freq)
 				websWrite(wp, " + %d", ieee80211_mhz2ieee(prefix, interface->center1));
 			if (interface->center2 != -1 && interface->center1 != interface->freq)
 				websWrite(wp, " + %d", ieee80211_mhz2ieee(prefix, interface->center2));
+			websWrite(wp, " (%d MHz", freq);
 		} else {
 			websWrite(wp, "%d", channel);
+			websWrite(wp, " (%d MHz", freq);
 		}
-		websWrite(wp, " (%d MHz", freq);
 		char *vht = "HT";
 
 		char *netmode = nvram_nget("%s_net_mode", base);
-		if (has_qam256(base) && freq < 4000 && nvram_nmatch("1", "%s_turbo_qam", base)) {
+		if (is_morse_micro(base))
+			vht = "AH";
+		else if (has_qam256(base) && freq < 4000 && nvram_nmatch("1", "%s_turbo_qam", base)) {
 			vht = "VHT";
 		} else if (freq < 4000) {
 			vht = "HT";
@@ -584,8 +589,10 @@ EJ_VISIBLE void ej_get_curchannel(webs_t wp, int argc, char_t **argv)
 				websWrite(wp, " NOHT");
 				break;
 			case 20:
+				if (is_morse_micro(base)) {
+					websWrite(wp, "%s 1MHz Width", vht);
 
-				if (ht || vht) {
+				} else if (ht || vht) {
 					if (width == 2)
 						websWrite(wp, " %s2.5", vht);
 					else if (width == 5)
@@ -607,20 +614,31 @@ EJ_VISIBLE void ej_get_curchannel(webs_t wp, int argc, char_t **argv)
 				}
 				break;
 			case 40:
-				if (ht || vht)
+				if (is_morse_micro(base)) {
+					websWrite(wp, "%s 2MHz Width", vht);
+
+				} else if (ht || vht)
 					websWrite(wp, " %s40", vht);
 				else
 					websWrite(wp,
 						  " Turbo"); //ath5k turbo mode
 				break;
 			case 80:
-				websWrite(wp, " %s80", vht);
+				if (is_morse_micro(base)) {
+					websWrite(wp, "%s 4MHz Width", vht);
+
+				} else
+					websWrite(wp, " %s80", vht);
 				break;
 			case 8080:
 				websWrite(wp, " %s80+80", vht);
 				break;
 			case 160:
-				websWrite(wp, " %s160", vht);
+				if (is_morse_micro(base)) {
+					websWrite(wp, "%s 8MHz Width", vht);
+
+				} else
+					websWrite(wp, " %s160", vht);
 				break;
 			}
 		}
