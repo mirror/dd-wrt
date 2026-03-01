@@ -92,31 +92,25 @@ endif
 
 WIN_LDFLAGS += -lws2_32
 
-ifeq ($(CONFIG_MORSE_TRANS_NL80211),1)
-	ifeq ($(CFLAGS),)
-		LINUX_CFLAGS += -I${SYSROOT}/usr/include/libnl3
-	endif
-	ifeq ($(CONFIG_ANDROID),1)
-		LINUX_LDFLAGS += -lnl
-	else
-		LINUX_LDFLAGS += -lnl-3 -lnl-genl-3 -lpthread
-	endif
+#ifeq ($(CONFIG_MORSE_TRANS_NL80211),1)
+	LINUX_CFLAGS += -I$(TOP)/libnl-tiny/include -I$(TOP)/shared
+	LINUX_LDFLAGS += -L$(TOP)/libnl-tiny -lnl-tiny
 	LINUX_SRCS += transport/nl80211.c
-endif
+#endif
 
-ifeq ($(CONFIG_MORSE_TRANS_UART_SLIP),1)
+#ifeq ($(CONFIG_MORSE_TRANS_UART_SLIP),1)
 	SRCS += transport/slip.c
 	SRCS += transport/uart_slip.c
 	LINUX_SRCS += transport/uart_linux.c
 	WIN_SRCS += transport/uart_win.c
-endif
+#endif
 
-ifeq ($(CONFIG_MORSE_TRANS_TCP_SLIP),1)
+#ifeq ($(CONFIG_MORSE_TRANS_TCP_SLIP),1)
 	SRCS += transport/slip.c
 	LINUX_SRCS += transport/tcp_slip.c
-endif
+#endif
 
-ifeq ($(CONFIG_MORSE_TRANS_FTDI_SPI),1)
+#ifeq ($(CONFIG_MORSE_TRANS_FTDI_SPI),1)
 	SRCS += transport/ftdi_spi.c
 	SRCS += transport/sdio_over_spi.c
 	LIB_SRCS += transport/libmpsse/source/ftdi_i2c.c
@@ -144,7 +138,7 @@ ifeq ($(CONFIG_MORSE_TRANS_FTDI_SPI),1)
 	else
 		LINUX_LDFLAGS += -lpthread -lrt -ldl
 	endif
-endif
+#endif
 
 ifneq ($(CONFIG_ANDROID),1)
 LINUX_SRCS += usb.c
