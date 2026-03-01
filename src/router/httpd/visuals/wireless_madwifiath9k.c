@@ -299,10 +299,18 @@ EJ_VISIBLE void ej_dump_channel_survey(webs_t wp, int argc, char_t **argv)
 		int freq = morse_translate(f->freq);
 		if (freq == -1)
 			continue;
-		if (f->in_use)
-			websWrite(wp, "%c\"[%d]\"", !first_survey ? ' ' : ',', freq);
-		else
-			websWrite(wp, "%c\"%d\"", !first_survey ? ' ' : ',', freq);
+		if (is_morse_micro(interface)) {
+			if (f->in_use)
+				websWrite(wp, "%c\"[%d.%d]\"", !first_survey ? ' ' : ',', freq / 1000, (freq % 1000) / 100);
+			else
+				websWrite(wp, "%c\"%d.%d\"", !first_survey ? ' ' : ',', freq / 1000, (freq % 1000) / 100);
+
+		} else {
+			if (f->in_use)
+				websWrite(wp, "%c\"[%d]\"", !first_survey ? ' ' : ',', freq);
+			else
+				websWrite(wp, "%c\"%d\"", !first_survey ? ' ' : ',', freq);
+		}
 		websWrite(wp, ",\"%d\"", ieee80211_mhz2ieee(interface, freq));
 		first_survey = 1;
 		if (f->noise_count)
