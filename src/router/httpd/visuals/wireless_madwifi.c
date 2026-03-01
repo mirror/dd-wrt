@@ -537,7 +537,8 @@ EJ_VISIBLE void ej_get_curchannel(webs_t wp, int argc, char_t **argv)
 		int freq = get_wififreq(base,
 					interface->freq); // translation for special frequency devices
 		if (is_morse_micro(base)) {
-			websWrite(wp, "%d KHz (", morse_translate(freq));
+			int translate = morse_translate(freq);
+			websWrite(wp, "%d (%d.%d MHz", ieee80211_mhz2ieee(translate), translate / 1000, (translate % 1000) / 100);;
 		} else if (is_mac80211(base)) {
 			websWrite(wp, "%d", ieee80211_mhz2ieee(prefix, interface->freq));
 			if (interface->center1 != -1 && interface->center1 != interface->freq)
@@ -590,8 +591,14 @@ EJ_VISIBLE void ej_get_curchannel(webs_t wp, int argc, char_t **argv)
 				break;
 			case 20:
 				if (is_morse_micro(base)) {
-					websWrite(wp, "%s 1MHz Width", vht);
-
+					if (width == 20)
+					websWrite(wp, "%s 1 MHz Width", vht);
+					if (width == 40)
+					websWrite(wp, "%s 2 MHz Width", vht);
+					if (width == 80)
+					websWrite(wp, "%s 4 MHz Width", vht);
+					if (width == 1600)
+					websWrite(wp, "%s 8 MHz Width", vht);
 				} else if (ht || vht) {
 					if (width == 2)
 						websWrite(wp, " %s2.5", vht);
