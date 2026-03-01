@@ -172,6 +172,7 @@ void start_sysinit(void)
 			insmod("mt76x0e");
 			insmod("mt7603e");
 			insmod("dot11ah");
+			// todo implement all countries
 			eval("insmod", "morse", "reattach_hw=0", suffix, "bcf=bcf_mm_hl2_ext.bin", "country=US");
 		}
 
