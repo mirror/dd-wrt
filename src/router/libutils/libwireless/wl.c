@@ -73,10 +73,12 @@ int getValueFromPath(char *path, int dev, char *fmt, int *err)
 
 int _ieee80211_mhz2ieee(int has_6ghz, int freq)
 {
-	if (freq > 100000) {
+	if (freq >= 900000) { // US
 		return ((freq - 902000) / 500) & 0xff;
 	}
-
+	if (freq >= 863000) { // EU
+		return ((freq - 863000) / 500) & 0xff;
+	}
 	if (freq == 2484)
 		return 14;
 	if (freq == 2407)
@@ -226,7 +228,7 @@ int has_vht80plus80(const char *prefix)
 unsigned int _ieee80211_ieee2mhz(int has_6ghz, int has_ah, unsigned int chan)
 {
 	if (has_ah) {
-		return 902000 + chan * 500;
+		return 902000 + chan * 500; // US Only for now
 	}
 	if (has_6ghz) {
 		if (chan == 2)
