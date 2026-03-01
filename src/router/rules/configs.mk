@@ -725,6 +725,7 @@ obj-$(CONFIG_IPTOOLS) += libmnl iptools
 obj-$(CONFIG_REALTEK) += libubox json-c ubus realtek-poe
 obj-$(CONFIG_REALTEKPOE) += libubox json-c ubus realtek-poe
 obj-$(CONFIG_BRIDGER) += musl-fts argp-standalone elfutils libbpf libubox ubus libnl-tiny bridger
+obj-$(CONFIG_MORSE) += morse_cli
 
 ifneq ($(CONFIG_DIST),"micro")
 obj-y+=wrtbwmon 
