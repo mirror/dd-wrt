@@ -1,0 +1,14 @@
+output*
+*.o
+.vscode
+morsectrl
+./morsectrl_*
+morsectrl.exe
+morse-ctrl-custom*
+morse_cli
+morse_cli_*
+morse_cli.exe
+morsecli*
+tmp*
+coverity/
+unit_tests/build

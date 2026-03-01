@@ -1,0 +1,7 @@
+this tool was built for buildroot auto-grab 
+
+if you want to manually install make sure you have libnl 3 or run
+    $ sudo apt install libnl-3-dev libnl-genl-3-dev libusb-1.0-0-dev pkg-config
+then
+    - make all
+    - make install
