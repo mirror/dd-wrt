@@ -73,6 +73,10 @@ int getValueFromPath(char *path, int dev, char *fmt, int *err)
 
 int _ieee80211_mhz2ieee(int has_6ghz, int freq)
 {
+	if (freq > 100000) {
+		return ((freq - 902000) / 500) & 0xff;
+	}
+
 	if (freq == 2484)
 		return 14;
 	if (freq == 2407)
@@ -219,8 +223,11 @@ int has_vht80plus80(const char *prefix)
 }
 #endif
 
-unsigned int _ieee80211_ieee2mhz(int has_6ghz, unsigned int chan)
+unsigned int _ieee80211_ieee2mhz(int has_6ghz, int has_ah, unsigned int chan)
 {
+	if (has_ah) {
+		return 902000 + chan * 500;
+	}
 	if (has_6ghz) {
 		if (chan == 2)
 			return 5935;
@@ -241,7 +248,7 @@ unsigned int _ieee80211_ieee2mhz(int has_6ghz, unsigned int chan)
 
 unsigned int ieee80211_ieee2mhz(const char *prefix, unsigned int chan)
 {
-	return _ieee80211_ieee2mhz(prefix ? has_6ghz(prefix) : 0, chan);
+	return _ieee80211_ieee2mhz(prefix ? has_6ghz(prefix) : 0, is_morse_micro(prefix), chan);
 }
 
 #ifndef HAVE_MADWIFI
