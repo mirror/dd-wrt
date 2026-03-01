@@ -15,7 +15,6 @@ endif
 
 override MORSECTRL_VERSION_STRING = "rel_1_16_4_2025_Sep_18"
 DEFAULT_INTERFACE_NAME ?= "wlan0"
-PKG_CONFIG ?= pkg-config
 
 MORSECTRL_CFLAGS = $(CFLAGS)
 MORSECTRL_CFLAGS += -Wall -Werror
@@ -150,12 +149,8 @@ endif
 ifneq ($(CONFIG_ANDROID),1)
 LINUX_SRCS += usb.c
 
-ifneq (,$(shell which $(PKG_CONFIG)))
-	LINUX_CFLAGS  += $(shell $(PKG_CONFIG) --cflags libusb-1.0)
-	LINUX_LDFLAGS += $(shell $(PKG_CONFIG) --libs libusb-1.0)
-else
-	LINUX_LDFLAGS += -lusb-1.0
-endif
+	LINUX_CFLAGS  += -I$(TOP)/usb_modeswitch/libusb/libusb/ -DNEED_PRINTF
+	LINUX_LDFLAGS += $(TOP)/usb_modeswitch/libusb/libusb/.libs/libusb-1.0.a
 endif
 
 MORSE_CLI_CFLAGS = $(MORSECTRL_CFLAGS)
@@ -202,7 +197,8 @@ morse_cli_win: $(CLIENT_OBJS_WIN)
 	$(Q) $(WIN_CC) $(MORSE_CLI_CFLAGS) $(WIN_CFLAGS) -o morse_cli $^ \
 		$(MORSE_CLI_LDFLAGS) $(WIN_LDFLAGS)
 
-install_cli:
+install:
 	@echo Installing morse_cli to /usr/bin
-	$(Q) cp morse_cli /usr/bin
+	mkdir -p $(INSTALLDIR)/usr/bin
+	$(Q) cp morse_cli $(INSTALLDIR)/usr/bin
 
