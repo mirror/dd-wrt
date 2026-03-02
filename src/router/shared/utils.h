@@ -1681,6 +1681,8 @@ u_int64_t freediskSpace(char *path);
 
 const char *getRegionCode(char *country);
 const char *getIsoName(char *country);
+const char *getIsoToRegion(char *iso);
+
 int has_gateway(void); // return 1 if nat/gateway mode is enabled for wan
 #if defined(HAVE_RT2880) || defined(HAVE_RT61)
 char *getRADev(const char *prefix);
