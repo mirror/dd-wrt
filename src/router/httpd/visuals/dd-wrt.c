@@ -1271,7 +1271,7 @@ static void show_channel(webs_t wp, char *dev, char *prefix, int type)
 						websWrite(
 							wp,
 							"document.write(\"<option value=\\\"%s\\\" %s>%s - %d.%d \"+wl_basic.khz+\"%s</option>\");\n",
-							fr, !strcmp(wlc, fr) ? "selected=\\\"selected\\\"" : "", cn,
+							fr, !strcmp(wlc, fr) ? "selected=\\\"selected\\\"" : "", ieee80211_mhz2ieee(chan[i].mapped_freq),
 							chan[i].mapped_freq / 1000, (chan[i].mapped_freq % 1000) / 100, eirp);
 
 					} else if (is_mac80211(prefix) && !is_ath5k(prefix)) {
@@ -1458,10 +1458,10 @@ found:;
 					websWrite(
 						wp,
 						"document.write(\"<option value=\\\"%d\\\" %s>%d - %d.%d \"+wl_basic.ghz+\"</option>\");\n",
-						chanlist[i],
+						ieee80211_mhz2ieee(ofs),
 						nvram_nmatch(channelstring, "%s_channel", prefix) ? "selected=\\\"selected\\\"" :
 												    "",
-						chanlist[i], ofs / 1000, ofs % 1000);
+						chanlist[i], ofs / 1000, (ofs % 1000) / 100);
 				}
 			}
 		}

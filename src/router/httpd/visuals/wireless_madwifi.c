@@ -593,13 +593,13 @@ EJ_VISIBLE void ej_get_curchannel(webs_t wp, int argc, char_t **argv)
 			case 20:
 				if (is_morse_micro(base)) {
 					if (width == 20)
-						websWrite(wp, "%s 1 MHz Width", vht);
+						websWrite(wp, " %s1", vht);
 					if (width == 40)
-						websWrite(wp, "%s 2 MHz Width", vht);
+						websWrite(wp, " %s2", vht);
 					if (width == 80)
-						websWrite(wp, "%s 4 MHz Width", vht);
+						websWrite(wp, " %s4", vht);
 					if (width == 160)
-						websWrite(wp, "%s 8 MHz Width", vht);
+						websWrite(wp, " %s8", vht);
 				} else if (ht || vht) {
 					if (width == 2)
 						websWrite(wp, " %s2.5", vht);
@@ -623,7 +623,7 @@ EJ_VISIBLE void ej_get_curchannel(webs_t wp, int argc, char_t **argv)
 				break;
 			case 40:
 				if (is_morse_micro(base)) {
-					websWrite(wp, "%s 2MHz Width", vht);
+					websWrite(wp, " %s2", vht);
 
 				} else if (ht || vht)
 					websWrite(wp, " %s40", vht);
@@ -633,7 +633,7 @@ EJ_VISIBLE void ej_get_curchannel(webs_t wp, int argc, char_t **argv)
 				break;
 			case 80:
 				if (is_morse_micro(base)) {
-					websWrite(wp, "%s 4MHz Width", vht);
+					websWrite(wp, " %s4", vht);
 
 				} else
 					websWrite(wp, " %s80", vht);
@@ -643,7 +643,7 @@ EJ_VISIBLE void ej_get_curchannel(webs_t wp, int argc, char_t **argv)
 				break;
 			case 160:
 				if (is_morse_micro(base)) {
-					websWrite(wp, "%s 8MHz Width", vht);
+					websWrite(wp, " %s8", vht);
 
 				} else
 					websWrite(wp, " %s160", vht);
