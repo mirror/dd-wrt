@@ -1319,8 +1319,13 @@ static inline int is_wil6210(const char *prefix)
 #endif
 
 #if defined(HAVE_MORSE)
+extern int morse_translate(int freq);
 extern int has_ah(const char *prefix);
 #else
+static inline int morse_translate(int freq) 
+{
+return freq;
+}
 static inline int has_ah(const char *prefix)
 {
 	return 0;
