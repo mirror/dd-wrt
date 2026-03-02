@@ -980,6 +980,29 @@ const char *getRegionCode(char *country)
 	return NULL;
 }
 
+const char *getIsoToRegion(char *iso)
+{
+	int i;
+#ifdef HAVE_SUPERCHANNEL
+	int issuperchannel(void);
+
+	int sc = issuperchannel();
+#endif
+	for (i = 0; i < N(allCountries); i++) {
+		if (!strcmp(allCountries[i].isoName, iso)) {
+#ifdef HAVE_SUPERCHANNEL
+			if (!sc && !strcmp(allCountries[i].isoName, "PS"))
+				return "US";
+#else
+			if (!strcmp(allCountries[i].isoName, "PS"))
+				return "US";
+#endif
+			return allCountries[i].region;
+		}
+	}
+	return NULL;
+}
+
 const char *getCountryByIso(char *country)
 {
 	int i;

@@ -2184,77 +2184,20 @@ int morse_translate(int freq)
 	char *country;
 	char regdomain[32];
 	sprintf(regdomain, "wlan0_regdomain");
-	country = getIsoName(nvram_default_get(regdomain, "UNITED_STATES"));
+	country = getRegionCode(nvram_default_get(regdomain, "UNITED_STATES"));
 	MICRO_MAP *map;
 	int num;
 	map = us_chans;
 	num = ARRAY_SIZE(us_chans);
-	if (!strcmp(country, "DE")) {
-		map = eu_chans;
-		num = ARRAY_SIZE(eu_chans);
-	}
-	if (!strcmp(country, "FR")) {
-		map = eu_chans;
-		num = ARRAY_SIZE(eu_chans);
-	}
-	if (!strcmp(country, "CA")) {
-		map = ca_chans;
-		num = ARRAY_SIZE(ca_chans);
-	}
-	if (!strcmp(country, "AU")) {
-		map = au_chans;
-		num = ARRAY_SIZE(au_chans);
-	}
-	if (!strcmp(country, "NZ")) {
-		map = nz_chans;
-		num = ARRAY_SIZE(nz_chans);
-	}
-	if (!strcmp(country, "GB")) {
-		map = gb_chans;
-		num = ARRAY_SIZE(gb_chans);
-	}
-	if (!strcmp(country, "KR")) {
-		map = kr_chans;
-		num = ARRAY_SIZE(kr_chans);
-	}
-	if (!strcmp(country, "JP")) {
-		map = jp_chans;
-		num = ARRAY_SIZE(jp_chans);
-	}
-	if (!strcmp(country, "IN")) {
-		map = in_chans;
-		num = ARRAY_SIZE(in_chans);
-	}
-	int i = 0;
-	int a;
-	for (a = 0; a < num; a++) {
-		if (freq == map[a].freq) {
-			return map[a].lowfreq_khz;
-		}
-	}
-	i++;
-	return -1;
-}
-#endif
-struct wifi_channels *mac80211_get_channels_simple(const char *interface, const char *country, int max_bandwidth_mhz,
-						   unsigned char checkband)
-{
-	lock();
-	struct wifi_channels *chan = mac80211_get_channels(&unl, interface, country, max_bandwidth_mhz, checkband, 1);
-	unlock();
-	if (is_morse_micro(interface)) {
-		MICRO_MAP *map;
-		int num;
-		map = us_chans;
-		num = ARRAY_SIZE(us_chans);
+	if (country) {
 		if (!strcmp(country, "DE")) {
 			map = eu_chans;
 			num = ARRAY_SIZE(eu_chans);
 		}
-	if (!strcmp(country, "FR")) {
-		map = eu_chans;
-		num = ARRAY_SIZE(eu_chans);
-	}
+		if (!strcmp(country, "FR")) {
+			map = eu_chans;
+			num = ARRAY_SIZE(eu_chans);
+		}
 		if (!strcmp(country, "CA")) {
 			map = ca_chans;
 			num = ARRAY_SIZE(ca_chans);
@@ -2282,6 +2225,64 @@ struct wifi_channels *mac80211_get_channels_simple(const char *interface, const 
 		if (!strcmp(country, "IN")) {
 			map = in_chans;
 			num = ARRAY_SIZE(in_chans);
+		}
+	}
+	int i = 0;
+	int a;
+	for (a = 0; a < num; a++) {
+		if (freq == map[a].freq) {
+			return map[a].lowfreq_khz;
+		}
+	}
+	i++;
+	return -1;
+}
+#endif
+struct wifi_channels *mac80211_get_channels_simple(const char *interface, const char *country, int max_bandwidth_mhz,
+						   unsigned char checkband)
+{
+	lock();
+	struct wifi_channels *chan = mac80211_get_channels(&unl, interface, country, max_bandwidth_mhz, checkband, 1);
+	unlock();
+	if (is_morse_micro(interface)) {
+		MICRO_MAP *map;
+		int num;
+		map = us_chans;
+		num = ARRAY_SIZE(us_chans);
+		char *region = getIsoToRegion(country);
+		if (region) {
+			if (!strcmp(region, "EU")) {
+				map = eu_chans;
+				num = ARRAY_SIZE(eu_chans);
+			}
+			if (!strcmp(region, "CA")) {
+				map = ca_chans;
+				num = ARRAY_SIZE(ca_chans);
+			}
+			if (!strcmp(region, "AU")) {
+				map = au_chans;
+				num = ARRAY_SIZE(au_chans);
+			}
+			if (!strcmp(region, "NZ")) {
+				map = nz_chans;
+				num = ARRAY_SIZE(nz_chans);
+			}
+			if (!strcmp(region, "GB")) {
+				map = gb_chans;
+				num = ARRAY_SIZE(gb_chans);
+			}
+			if (!strcmp(region, "KR")) {
+				map = kr_chans;
+				num = ARRAY_SIZE(kr_chans);
+			}
+			if (!strcmp(region, "JP")) {
+				map = jp_chans;
+				num = ARRAY_SIZE(jp_chans);
+			}
+			if (!strcmp(region, "IN")) {
+				map = in_chans;
+				num = ARRAY_SIZE(in_chans);
+			}
 		}
 		int i = 0;
 		while (chan[i].freq != -1) {
