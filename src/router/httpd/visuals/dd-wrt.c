@@ -1270,7 +1270,7 @@ static void show_channel(webs_t wp, char *dev, char *prefix, int type)
 					if (is_morse_micro(prefix)) {
 						websWrite(
 							wp,
-							"document.write(\"<option value=\\\"%s\\\" %s>%s - %d.%d \"+wl_basic.khz+\"%s</option>\");\n",
+							"document.write(\"<option value=\\\"%s\\\" %s>%d - %d.%d \"+wl_basic.khz+\"%s</option>\");\n",
 							fr, !strcmp(wlc, fr) ? "selected=\\\"selected\\\"" : "", ieee80211_mhz2ieee(prefix, chan[i].mapped_freq),
 							chan[i].mapped_freq / 1000, (chan[i].mapped_freq % 1000) / 100, eirp);
 
