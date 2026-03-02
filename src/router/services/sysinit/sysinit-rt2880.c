@@ -772,7 +772,7 @@ void start_wifi_drivers(void)
 			char *region = getRegionCode(nvram_default_get(regdomain, "UNITED_STATES"));
 			if (region) {
 				sprintf(country, "country=%s", region);
-				if (nvram_invmatch("cur_region", region)) {
+				if (!nvram_match("cur_region", region)) {
 					eval("rmmod", "morse");
 					eval("insmod", "morse", "reattach_hw=0", suffix, "bcf=bcf_mm_hl2_ext.bin", country);
 				}
