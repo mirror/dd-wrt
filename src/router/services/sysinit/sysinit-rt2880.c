@@ -132,12 +132,6 @@ void start_sysinit(void)
 		nvram_set("dsa", "1");
 		insmod("thermal_sys");
 		insmod("hwmon");
-		insmod("compat");
-		insmod("mac80211");
-		insmod("mt76");
-		insmod("mt76x02-lib");
-		insmod("mt76x2-common");
-		insmod("mt76x2e");
 		//              insmod("mt7615e");
 		eval("swconfig", "dev", "eth0", "set", "reset", "1");
 		eval("swconfig", "dev", "eth0", "set", "enable_vlan", "1");
@@ -155,62 +149,10 @@ void start_sysinit(void)
 		nvram_seti("sw_lan4", 4);
 		break;
 	case ROUTER_MORSE:
+		nvram_unset("cur_region");
 		nvram_set("dsa", "1");
 		insmod("thermal_sys");
 		insmod("hwmon");
-		insmod("compat");
-		insmod("mac80211");
-		if (!nvram_match("no_mt76", "1")) {
-			insmod("mt76");
-			insmod("mt76-connac-lib");
-			insmod("mt7615-common");
-			insmod("mt7615e");
-			insmod("mt76x02-lib");
-			insmod("mt76x2-common");
-			insmod("mt76x2e");
-			insmod("mt76x0-common");
-			insmod("mt76x0e");
-			insmod("mt7603e");
-			insmod("dot11ah");
-			char *country;
-			char *interface = "wlan0";
-			char regdomain[32];
-			sprintf(regdomain, "%s_regdomain", interface);
-			country = getIsoName(nvram_default_get(regdomain, "UNITED_STATES"));
-			if (!strcmp(country, "DE")) {
-				country = "country=EU";
-			}
-			if (!strcmp(country, "FR")) {
-				country = "country=EU";
-			}
-			if (!strcmp(country, "CA")) {
-				country = "country=CA";
-			}
-			if (!strcmp(country, "AU")) {
-				country = "country=AU";
-			}
-			if (!strcmp(country, "NZ")) {
-				country = "country=NZ";
-			}
-			if (!strcmp(country, "GB")) {
-				country = "country=GB";
-			}
-			if (!strcmp(country, "KR")) {
-				country = "country=KR";
-			}
-			if (!strcmp(country, "JP")) {
-				country = "country=JP";
-			}
-			if (!strcmp(country, "IN")) {
-				country = "country=IN";
-			}
-			if (!strcmp(country, "US")) {
-				country = "country=US";
-			}
-			// todo implement all countries
-			eval("insmod", "morse", "reattach_hw=0", suffix, "bcf=bcf_mm_hl2_ext.bin", country);
-		}
-
 		break;
 	case ROUTER_DIR882:
 	case ROUTER_R6850:
@@ -218,20 +160,6 @@ void start_sysinit(void)
 		nvram_set("dsa", "1");
 		insmod("thermal_sys");
 		insmod("hwmon");
-		insmod("compat");
-		insmod("mac80211");
-		if (!nvram_match("no_mt76", "1")) {
-			insmod("mt76");
-			insmod("mt76-connac-lib");
-			insmod("mt7615-common");
-			insmod("mt7615e");
-			insmod("mt76x02-lib");
-			insmod("mt76x2-common");
-			insmod("mt76x2e");
-			insmod("mt76x0-common");
-			insmod("mt76x0e");
-			insmod("mt7603e");
-		}
 		eval("swconfig", "dev", "eth0", "set", "reset", "1");
 		eval("swconfig", "dev", "eth0", "set", "enable_vlan", "1");
 		eval("swconfig", "dev", "eth0", "vlan", "1", "set", "ports", "0 1 2 3 6t");
@@ -798,6 +726,118 @@ void start_devinit_arch(void)
 }
 void start_wifi_drivers(void)
 {
+	int brand = getRouterBrand();
+	switch (brand) {
+	case ROUTER_DIR860LB1:
+		insmod("compat");
+		insmod("mac80211");
+		insmod("mt76");
+		insmod("mt76x02-lib");
+		insmod("mt76x2-common");
+		insmod("mt76x2e");
+		break;
+	case ROUTER_MORSE:
+		FILE *in = fopen("/dev/mtdblock/3", "rb");
+		fseek(in, 4, SEEK_SET);
+		char mac[32];
+		char suffix[32];
+		fread(mac, 6, 1, in);
+		fclose(in);
+		unsigned int copy[6];
+		int i;
+		for (i = 0; i < 6; i++)
+			copy[i] = mac[i] & 0xff;
+		sprintf(mac, "%02X:%02X:%02X:%02X:%02X:%02X", copy[0] & 0xff, copy[1] & 0xff, copy[2] & 0xff, copy[3] & 0xff,
+			copy[4] & 0xff, copy[5] & 0xff);
+		sprintf(suffix, "macaddr_suffix=%02X:%02X:%02X", copy[3] & 0xff, copy[4] & 0xff, copy[5] & 0xff);
+
+		insmod("compat");
+		insmod("mac80211");
+		if (!nvram_match("no_mt76", "1")) {
+			insmod("mt76");
+			insmod("mt76-connac-lib");
+			insmod("mt7615-common");
+			insmod("mt7615e");
+			insmod("mt76x02-lib");
+			insmod("mt76x2-common");
+			insmod("mt76x2e");
+			insmod("mt76x0-common");
+			insmod("mt76x0e");
+			insmod("mt7603e");
+			insmod("dot11ah");
+			char country[64];
+			char *interface = "wlan0";
+			char regdomain[32];
+			sprintf(regdomain, "%s_regdomain", interface);
+			char *region = getRegionCode(nvram_default_get(regdomain, "UNITED_STATES"));
+			if (region) {
+				sprintf(country, "country=%s", region);
+				if (nvram_invmatch("cur_region", region)) {
+					eval("rmmod", "morse");
+					eval("insmod", "morse", "reattach_hw=0", suffix, "bcf=bcf_mm_hl2_ext.bin", country);
+				}
+			}
+			nvram_set("cur_region", region);
+		}
+		break;
+	case ROUTER_DIR882:
+	case ROUTER_R6850:
+	case ROUTER_R6220:
+	case ROUTER_R6800:
+		insmod("compat");
+		insmod("mac80211");
+		if (!nvram_match("no_mt76", "1")) {
+			insmod("mt76");
+			insmod("mt76-connac-lib");
+			insmod("mt7615-common");
+			insmod("mt7615e");
+			insmod("mt76x02-lib");
+			insmod("mt76x2-common");
+			insmod("mt76x2e");
+			insmod("mt76x0-common");
+			insmod("mt76x0e");
+			insmod("mt7603e");
+		}
+		break;
+	case ROUTER_BOARD_E1700:
+	case ROUTER_DIR810L:
+		insmod("compat");
+		insmod("mac80211");
+		/* load soc drivers */
+		insmod("rt2x00lib");
+		insmod("rt2x00mmio");
+		insmod("rt2x00soc");
+		insmod("rt2x00pci");
+		insmod("rt2800lib");
+		insmod("rt2800mmio");
+		insmod("rt2800soc");
+		//              insmod("rt2800pci");
+		if (brand == ROUTER_DIR810L) {
+			insmod("mt76");
+			insmod("mt76x02-lib");
+			insmod("mt76x0-common");
+			insmod("mt76x0e");
+		}
+		break;
+	default:
+		insmod("compat");
+		insmod("mac80211");
+		/* load soc drivers */
+		insmod("rt2x00lib");
+		insmod("rt2x00mmio");
+		insmod("rt2x00soc");
+		insmod("rt2x00pci");
+		insmod("rt2800lib");
+		insmod("rt2800mmio");
+		insmod("rt2800soc");
+		insmod("rt2800pci");
+
+		insmod("mt76");
+		insmod("mt76x02-lib");
+		insmod("mt76x2-common");
+		insmod("mt76x2e");
+		break;
+	}
 }
 void start_arch_defaults(void)
 {
