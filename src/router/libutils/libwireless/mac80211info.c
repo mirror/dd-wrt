@@ -2182,9 +2182,8 @@ static MICRO_MAP in_chans[] = {
 int morse_translate(int freq)
 {
 	char *country;
-	char *interface = nvram_safe_get("wifi_display");
 	char regdomain[32];
-	sprintf(regdomain, "%s_regdomain", interface);
+	sprintf(regdomain, "wlan0_regdomain");
 	country = getIsoName(nvram_default_get(regdomain, "UNITED_STATES"));
 	MICRO_MAP *map;
 	int num;
@@ -2252,6 +2251,10 @@ struct wifi_channels *mac80211_get_channels_simple(const char *interface, const 
 			map = eu_chans;
 			num = ARRAY_SIZE(eu_chans);
 		}
+	if (!strcmp(country, "FR")) {
+		map = eu_chans;
+		num = ARRAY_SIZE(eu_chans);
+	}
 		if (!strcmp(country, "CA")) {
 			map = ca_chans;
 			num = ARRAY_SIZE(ca_chans);
