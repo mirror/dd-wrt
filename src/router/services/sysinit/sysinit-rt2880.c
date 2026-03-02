@@ -172,8 +172,47 @@ void start_sysinit(void)
 			insmod("mt76x0e");
 			insmod("mt7603e");
 			insmod("dot11ah");
+			char *country;
+			char *interface = "wlan0";
+			char regdomain[32];
+			sprintf(regdomain, "%s_regdomain", interface);
+			country = getIsoName(nvram_default_get(regdomain, "UNITED_STATES"));
+			MICRO_MAP *map;
+			int num;
+			map = us_chans;
+			num = ARRAY_SIZE(us_chans);
+			if (!strcmp(country, "DE")) {
+				country = "country=EU";
+			}
+			if (!strcmp(country, "FR")) {
+				country = "country=EU";
+			}
+			if (!strcmp(country, "CA")) {
+				country = "country=CA";
+			}
+			if (!strcmp(country, "AU")) {
+				country = "country=AU";
+			}
+			if (!strcmp(country, "NZ")) {
+				country = "country=NZ";
+			}
+			if (!strcmp(country, "GB")) {
+				country = "country=GB";
+			}
+			if (!strcmp(country, "KR")) {
+				country = "country=KR";
+			}
+			if (!strcmp(country, "JP")) {
+				country = "country=JP";
+			}
+			if (!strcmp(country, "IN")) {
+				country = "country=IN";
+			}
+			if (!strcmp(country, "US")) {
+				country = "country=US";
+			}
 			// todo implement all countries
-			eval("insmod", "morse", "reattach_hw=0", suffix, "bcf=bcf_mm_hl2_ext.bin", "country=US");
+			eval("insmod", "morse", "reattach_hw=0", suffix, "bcf=bcf_mm_hl2_ext.bin", country);
 		}
 
 		break;
