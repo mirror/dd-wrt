@@ -1734,6 +1734,21 @@ static void sort_channels(struct wifi_channels *list, int count)
 		}
 	}
 }
+
+static void sort_mapped_channels(struct wifi_channels *list, int count)
+{
+	int i, j;
+	for (j = 0; j < count; j++) {
+		for (i = 1; i < count; i++) {
+			if (list[i].mapped_freq < list[i - 1].mapped_freq) {
+				struct wifi_channels a;
+				memcpy(&a, &list[i - 1], sizeof(a));
+				memcpy(&list[i - 1], &list[i], sizeof(a));
+				memcpy(&list[i], &a, sizeof(a));
+			}
+		}
+	}
+}
 struct wifi_channels *mac80211_get_channels(struct unl *local_unl, const char *interface, const char *country,
 					    int max_bandwidth_mhz, unsigned char checkband, int nocache)
 {
@@ -2471,6 +2486,8 @@ struct wifi_channels *mac80211_get_channels_simple(const char *interface, const 
 			}
 			i++;
 		}
+		sort_mapped_channels(chan, i);
+
 	}
 	return chan;
 }
