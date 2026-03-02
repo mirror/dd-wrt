@@ -177,10 +177,6 @@ void start_sysinit(void)
 			char regdomain[32];
 			sprintf(regdomain, "%s_regdomain", interface);
 			country = getIsoName(nvram_default_get(regdomain, "UNITED_STATES"));
-			MICRO_MAP *map;
-			int num;
-			map = us_chans;
-			num = ARRAY_SIZE(us_chans);
 			if (!strcmp(country, "DE")) {
 				country = "country=EU";
 			}
