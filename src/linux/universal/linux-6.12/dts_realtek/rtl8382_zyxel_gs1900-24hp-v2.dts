@@ -74,7 +74,7 @@
 };
 
 &switch0 {
-	ports {
+	ethernet-ports {
 		SWITCH_PORT(0, 01, qsgmii)
 		SWITCH_PORT(1, 02, qsgmii)
 		SWITCH_PORT(2, 03, qsgmii)
