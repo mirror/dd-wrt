@@ -701,7 +701,7 @@ char *set_wan_state(int state)
 	return NULL;
 }
 
-void start_post_network(void)
+void start_postnetwork(void)
 {
 	int brand = getRouterBrand();
 	switch (brand) {

@@ -2814,7 +2814,7 @@ void start_lan(void)
 		}
 	}
 #endif
-#if defined(HAVE_R9000) || defined(HAVE_IPQ806X)
+#if defined(HAVE_R9000) || defined(HAVE_IPQ806X) || defined(HAVE_MT7621)
 	start_postnetwork();
 #endif
 }
