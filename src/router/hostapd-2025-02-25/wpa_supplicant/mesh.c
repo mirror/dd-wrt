@@ -511,6 +511,7 @@ static int wpa_supplicant_mesh_init(struct wpa_supplicant *wpa_s,
 	}
 
 #ifdef CONFIG_IEEE80211AH
+	if (wpa_s->conf->ieee80211ah)
 	morse_ibss_mesh_setup_freq(wpa_s, ssid, freq, conf);
 #endif
 
@@ -715,6 +716,7 @@ int wpa_supplicant_join_mesh(struct wpa_supplicant *wpa_s,
 	params->meshid_len = ssid->ssid_len;
 	params->mcast_rate = ssid->mcast_rate;
 #ifdef CONFIG_IEEE80211AH
+	if (wpa_s->conf->ieee80211ah) {
 	if (conf) {
 		morse_ibss_mesh_setup_freq(wpa_s, ssid, &params->freq, conf);
 		hostapd_config_free(conf);
@@ -722,9 +724,9 @@ int wpa_supplicant_join_mesh(struct wpa_supplicant *wpa_s,
 		ret = -1;
 		goto out;
 	}
-#else
-	ibss_mesh_setup_freq(wpa_s, ssid, &params->freq);
+	}else
 #endif
+	ibss_mesh_setup_freq(wpa_s, ssid, &params->freq);
 	wpa_s->mesh_ht_enabled = !!params->freq.ht_enabled;
 	wpa_s->mesh_vht_enabled = !!params->freq.vht_enabled;
 	wpa_s->mesh_he_enabled = !!params->freq.he_enabled;

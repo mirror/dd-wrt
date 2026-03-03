@@ -3057,7 +3057,7 @@ static int hostapd_setup_interface_complete_sync(struct hostapd_iface *iface,
 
 #ifdef CONFIG_IEEE80211AH
 #ifdef CONFIG_MESH
-	if (!(hapd->conf->mesh & MESH_ENABLED))
+	if (!(hapd->conf->mesh & MESH_ENABLED) && hapd->iconf->ieee80211ah)
 #endif /* CONFIG_MESH */
 		hostapd_send_raw_config(hapd->conf);
 #endif /* CONFIG_IEEE80211AH */
@@ -4884,6 +4884,7 @@ static int hostapd_fill_csa_settings(struct hostapd_data *hapd,
 				   &old_freq, NULL);
 
 #ifdef CONFIG_IEEE80211AH
+	if (hapd->iconf->ieee80211ah) {
 	wpa_printf(MSG_INFO, "%s : ECSA info op_bw=%d, prim_bw=%d, vht=%d, ht=%d, change to oldconfig: ht=%d, vht=%d\n",
 										 __func__,
 										 settings->freq_params.bandwidth,
@@ -4895,6 +4896,7 @@ static int hostapd_fill_csa_settings(struct hostapd_data *hapd,
 	/* Enable 11ac if we are switching to 2/4/8 MHz channel */
 	if (settings->freq_params.bandwidth > 20) {
 		iface->conf->ieee80211ac = true;
+	}
 	}
 #endif
 
