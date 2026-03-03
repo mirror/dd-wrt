@@ -2498,8 +2498,9 @@ static int configured_fixed_chan_to_freq(struct hostapd_iface *iface)
 {
 	int freq, i, j;
 
-//	if (!iface->conf->channel)
-//		return 0;
+	if (!iface->conf->channel && iface->conf->ieee80211ah)
+		return 0;
+	
 	if (iface->conf->op_class) {
 		freq = ieee80211_chan_to_freq(NULL, iface->conf->op_class,
 				      iface->conf->channel);
@@ -2526,10 +2527,18 @@ static int configured_fixed_chan_to_freq(struct hostapd_iface *iface)
 		for (i = 0; i < mode->num_channels; i++) {
 			struct hostapd_channel_data *chan = &mode->channels[i];
 
-			if (chan->freq == iface->conf->frequency &&
-			    !is_6ghz_freq(chan->freq)) {
-				iface->freq = chan->freq;
-				return 0;
+			if (iface->conf->ieee80211ah) {
+				if (chan->chan == iface->conf->channel &&
+				    !is_6ghz_freq(chan->freq)) {
+					iface->freq = chan->freq;
+					return 0;
+				}
+			} else {
+				if (chan->freq == iface->conf->frequency &&
+				    !is_6ghz_freq(chan->freq)) {
+					iface->freq = chan->freq;
+					return 0;
+				}
 			}
 		}
 	}
