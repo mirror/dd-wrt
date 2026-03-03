@@ -1905,9 +1905,9 @@ static int wpa_driver_nl80211_set_country(void *priv, const char *alpha2_arg)
 {
 	struct i802_bss *bss = priv;
 	struct wpa_driver_nl80211_data *drv = bss->drv;
-#ifdef CONFIG_IEEE80211AH
+	if (drv->ieee80211ah) 
 	os_strlcpy(drv->alpha2, alpha2_arg, 3);
-#else
+	else{
 	char alpha2[3];
 	struct nl_msg *msg;
 
@@ -1926,7 +1926,7 @@ static int wpa_driver_nl80211_set_country(void *priv, const char *alpha2_arg)
 	}
 	if (send_and_recv_cmd(drv, msg))
 		return -EINVAL;
-#endif
+	}
 	return 0;
 }
 
@@ -1953,10 +1953,10 @@ static int wpa_driver_nl80211_get_country(void *priv, char *alpha2)
 	struct i802_bss *bss = priv;
 	struct wpa_driver_nl80211_data *drv = bss->drv;
 	int ret;
-#ifdef CONFIG_IEEE80211AH
+	if (drv->ieee80211ah)  {
 	os_strlcpy(alpha2, drv->alpha2, 3);
 	ret = 0;
-#else
+	} else {
 	struct nl_msg *msg;
 
 	msg = nlmsg_alloc();
@@ -1976,7 +1976,7 @@ static int wpa_driver_nl80211_get_country(void *priv, char *alpha2)
 
 	alpha2[0] = '\0';
 	ret = send_and_recv_resp(drv, msg, nl80211_get_country, alpha2);
-#endif
+	}
 	if (!alpha2[0])
 		ret = -1;
 
@@ -2330,7 +2330,7 @@ static void * wpa_driver_nl80211_drv_init(void *ctx, const char *ifname,
 					  void *global_priv, int hostapd,
 					  const u8 *set_addr,
 					  const char *driver_params,
-					  enum wpa_p2p_mode p2p_mode)
+					  enum wpa_p2p_mode p2p_mode, int ieee80211ah)
 {
 	struct wpa_driver_nl80211_data *drv;
 	struct i802_bss *bss;
@@ -2364,6 +2364,7 @@ static void * wpa_driver_nl80211_drv_init(void *ctx, const char *ifname,
 	drv->ctx = ctx;
 	drv->hostapd = !!hostapd;
 	drv->eapol_sock = -1;
+	drv->ieee80211ah = ieee80211ah;
 
 	/*
 	 * There is no driver capability flag for this, so assume it is
@@ -2454,10 +2455,10 @@ failed:
  */
 static void * wpa_driver_nl80211_init(void *ctx, const char *ifname,
 				      void *global_priv,
-				      enum wpa_p2p_mode p2p_mode)
+				      enum wpa_p2p_mode p2p_mode, int ieee80211ah)
 {
 	return wpa_driver_nl80211_drv_init(ctx, ifname, global_priv, 0, NULL,
-					   NULL, p2p_mode);
+					   NULL, p2p_mode, ieee80211ah);
 }
 
 
@@ -5544,7 +5545,7 @@ static int wpa_driver_nl80211_set_ap(void *priv,
 		goto fail;
 #endif /* CONFIG_IEEE80211AX */
 #ifdef CONFIG_IEEE80211AH
-	if (params->mbssid_tx_iface) {
+	if (params->mbssid_tx_iface && drv->ieee80211ah) {
 		if (morse_set_mbssid_info(bss->ifname,
 				params->mbssid_tx_iface, MBSSID_MAX_INTERFACES))
 			goto fail;
@@ -8782,7 +8783,7 @@ static int i802_check_bridge(struct wpa_driver_nl80211_data *drv,
 
 
 static void *i802_init(struct hostapd_data *hapd,
-		       struct wpa_init_params *params)
+		       struct wpa_init_params *params, int ieee80211ah)
 {
 	struct wpa_driver_nl80211_data *drv;
 	struct i802_bss *bss;
@@ -8794,7 +8795,7 @@ static void *i802_init(struct hostapd_data *hapd,
 	bss = wpa_driver_nl80211_drv_init(hapd, params->ifname,
 					  params->global_priv, 1,
 					  params->bssid, params->driver_params,
-					  WPA_P2P_MODE_WFD_R1);
+					  WPA_P2P_MODE_WFD_R1,ieee80211ah);
 	if (bss == NULL)
 		return NULL;
 

@@ -5437,7 +5437,8 @@ struct hostapd_config * hostapd_config_read(const char *fname)
 	fclose(f);
 
 #ifdef CONFIG_IEEE80211AH
-	errors += hostapd_config_s1g_val(conf);
+	if (conf->ieee80211ah)
+		errors += hostapd_config_s1g_val(conf);
 #endif
 
 	for (i = 0; i < conf->num_bss; i++)

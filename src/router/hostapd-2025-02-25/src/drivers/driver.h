@@ -3645,7 +3645,7 @@ struct wpa_driver_ops {
 	 * uses global data.
 	 */
 	void * (*init2)(void *ctx, const char *ifname, void *global_priv,
-			enum wpa_p2p_mode p2p_mode);
+			enum wpa_p2p_mode p2p_mode, int ieee80211ah);
 
 	/**
 	 * get_interfaces - Get information about available interfaces
@@ -3725,7 +3725,7 @@ struct wpa_driver_ops {
 	 * wrapper is used with hostapd.
 	 */
 	void * (*hapd_init)(struct hostapd_data *hapd,
-			    struct wpa_init_params *params);
+			    struct wpa_init_params *params, int ieee80211ah);
 
 	/**
 	 * hapd_deinit - Deinitialize driver interface (hostapd only)

@@ -1622,6 +1622,7 @@ struct phy_info_arg {
 	int last_mode, last_chan_idx;
 	int failed;
 	u8 dfs_domain;
+	int ieee80211ah;
 };
 
 static void phy_info_ht_capa(struct hostapd_hw_modes *mode, struct nlattr *capa,
@@ -2291,7 +2292,6 @@ wpa_driver_nl80211_postprocess_modes(struct hostapd_hw_modes *modes,
 }
 
 
-#ifndef CONFIG_IEEE80211AH
 static void nl80211_set_ht40_mode(struct hostapd_hw_modes *mode, int start,
 				  int end)
 {
@@ -2431,7 +2431,6 @@ static void nl80211_reg_rule_vht(struct nlattr *tb[],
 		nl80211_set_vht_mode(&results->modes[m], start, end, max_bw);
 	}
 }
-#endif /* CONFIG_IEEE80211AH */
 
 
 static void nl80211_set_6ghz_mode(struct hostapd_hw_modes *mode, int start,
@@ -2485,7 +2484,6 @@ static void nl80211_reg_rule_6ghz(struct nlattr *tb[],
 }
 
 
-#ifndef CONFIG_IEEE80211AH
 static void nl80211_set_dfs_domain(enum nl80211_dfs_regions region,
 				   u8 *dfs_domain)
 {
@@ -2515,7 +2513,6 @@ static const char * dfs_domain_name(enum nl80211_dfs_regions region)
 		return "DFS-invalid";
 	}
 }
-#endif /* CONFIG_IEEE80211AH */
 
 
 static int nl80211_get_reg(struct nl_msg *msg, void *arg)
@@ -2544,7 +2541,7 @@ static int nl80211_get_reg(struct nl_msg *msg, void *arg)
 		return NL_SKIP;
 	}
 
-#ifndef CONFIG_IEEE80211AH
+	if (!results->ieee80211ah) {
 	if (tb_msg[NL80211_ATTR_DFS_REGION]) {
 		enum nl80211_dfs_regions dfs_domain;
 		dfs_domain = nla_get_u8(tb_msg[NL80211_ATTR_DFS_REGION]);
@@ -2605,7 +2602,7 @@ static int nl80211_get_reg(struct nl_msg *msg, void *arg)
 			  nla_data(nl_rule), nla_len(nl_rule), reg_policy);
 		nl80211_reg_rule_vht(tb_rule, results);
 	}
-#endif /* CONFIG_IEEE80211AH */
+	}
 
 	nla_for_each_nested(nl_rule, tb_msg[NL80211_ATTR_REG_RULES], rem_rule)
 	{
@@ -2639,7 +2636,6 @@ static int nl80211_set_regulatory_flags(struct wpa_driver_nl80211_data *drv,
 }
 
 
-#ifndef CONFIG_IEEE80211AH
 static const char * modestr(enum hostapd_hw_mode mode)
 {
 	switch (mode) {
@@ -2655,7 +2651,6 @@ static const char * modestr(enum hostapd_hw_mode mode)
 		return "?";
 	}
 }
-#endif
 
 #ifdef CONFIG_IEEE80211AH
 static void nl80211_dump_chan_list(struct wpa_driver_nl80211_data *drv,
@@ -2705,7 +2700,11 @@ static void nl80211_dump_chan_list(struct wpa_driver_nl80211_data *drv,
 
 		*pos = '\0';
 #ifdef CONFIG_IEEE80211AH
+		if (drv->ieee80211ah) 
 		wpa_printf(MSG_DEBUG, "nl80211: Mode IEEE 802.11ah:%s", str);
+		else
+		wpa_printf(MSG_DEBUG, "nl80211: Mode IEEE %s:%s",
+			   modestr(mode->mode), str);
 #else
 		wpa_printf(MSG_DEBUG, "nl80211: Mode IEEE %s:%s",
 			   modestr(mode->mode), str);
@@ -2730,7 +2729,7 @@ nl80211_get_hw_feature_data(void *priv, u16 *num_modes, u16 *flags,
 		.failed = 0,
 		.dfs_domain = 0,
 	};
-
+	result.ieee80211ah = drv->ieee80211ah;
 	*num_modes = 0;
 	*flags = 0;
 	*dfs_domain = 0;

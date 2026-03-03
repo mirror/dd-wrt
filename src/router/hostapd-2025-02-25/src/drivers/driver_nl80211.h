@@ -112,6 +112,7 @@ struct wpa_driver_nl80211_data {
 	unsigned int wiphy_idx;
 	u8 perm_addr[ETH_ALEN];
 	void *ctx;
+	int ieee80211ah;
 	int ifindex;
 	int if_removed;
 	int if_disabled;

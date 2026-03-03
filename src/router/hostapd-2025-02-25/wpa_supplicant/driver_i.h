@@ -11,6 +11,7 @@
 
 #include "common/nan_de.h"
 #include "drivers/driver.h"
+#include "config.h"
 
 /* driver_ops */
 static inline void * wpa_drv_init(struct wpa_supplicant *wpa_s,
@@ -25,7 +26,7 @@ static inline void * wpa_drv_init(struct wpa_supplicant *wpa_s,
 
 		return wpa_s->driver->init2(wpa_s, ifname,
 					    wpa_s->global_drv_priv,
-					    p2p_mode);
+					    p2p_mode,wpa_s->conf->ieee80211ah);
 	}
 	if (wpa_s->driver->init) {
 		return wpa_s->driver->init(wpa_s, ifname);
