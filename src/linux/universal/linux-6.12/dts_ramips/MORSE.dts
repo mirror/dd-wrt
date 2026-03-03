@@ -279,6 +279,10 @@
 				label = "nvram";
 				reg = <0x1fe0000 0x20000>;
 			};
+			partition@fullflash {
+				label = "fullflash";
+				reg = <0x0 0x2000000>;
+			};
 		};
 	};
 };
