@@ -1,6 +1,7 @@
 /*
  * WPA Supplicant - Basic mesh peer management
  * Copyright (c) 2013-2014, cozybit, Inc.  All rights reserved.
+ * Copyright 2023 Morse Micro
  *
  * This software may be distributed under the terms of the BSD license.
  * See README for more details.
@@ -823,8 +824,15 @@ static struct sta_info * mesh_mpm_add_peer(struct wpa_supplicant *wpa_s,
 		params.flags |= WPA_STA_AUTHORIZED;
 		params.flags |= WPA_STA_AUTHENTICATED;
 	} else {
-		sta->flags |= WLAN_STA_MFP;
-		params.flags |= WPA_STA_MFP;
+		if (conf->ieee80211w != NO_MGMT_FRAME_PROTECTION) {
+			sta->flags |= WLAN_STA_MFP;
+			params.flags |= WPA_STA_MFP;
+			wpa_msg(wpa_s, MSG_DEBUG, "mesh: Enabling MFP ieee80211w:%d flags:%x",
+					conf->ieee80211w, sta->flags);
+		} else {
+			wpa_msg(wpa_s, MSG_DEBUG, "mesh: Disabling MFP ieee80211w:%d flags:%x",
+					conf->ieee80211w, sta->flags);
+		}
 	}
 
 	ret = wpa_drv_sta_add(wpa_s, &params);
@@ -1423,17 +1431,45 @@ void mesh_mpm_action_rx(struct wpa_supplicant *wpa_s,
 	mesh_mpm_fsm(wpa_s, sta, event, reason);
 }
 
+#if defined(CONFIG_MESH) && defined(CONFIG_IEEE80211AH)
+void mesh_mpm_kickout_peer(struct hostapd_data *hapd)
+{
+	struct sta_info *sta = ap_get_sta(hapd, hapd->mesh_kickout_peer_addr);
+
+	if (!sta) {
+		wpa_printf(MSG_ERROR, "%s: Peer " MACSTR " not found - stas=%d, links=%d/%d\n",
+				__func__,
+				MAC2STR(hapd->mesh_kickout_peer_addr), hapd->num_sta,
+				hapd->num_plinks, hapd->max_plinks);
+		return;
+	}
+
+	wpa_printf(MSG_DEBUG, "%s: closing plink sta=" MACSTR "\n", __func__, MAC2STR(sta->addr));
+	ap_free_sta(hapd, sta);
+	/* Clear kickout peer addr */
+	memset(hapd->mesh_kickout_peer_addr, 0, ETH_ALEN);
+}
+#endif /* CONFIG_MESH && CONFIG_IEEE80211AH */
 
 /* called by ap_free_sta */
 void mesh_mpm_free_sta(struct hostapd_data *hapd, struct sta_info *sta)
 {
 	struct wpa_supplicant *wpa_s = hapd->iface->owner;
+	int reason = WLAN_REASON_MESH_PEERING_CANCELLED;
+
+#if defined(CONFIG_MESH) && defined(CONFIG_IEEE80211AH)
+	if (!memcmp(hapd->mesh_kickout_peer_addr, sta->addr, ETH_ALEN))
+		reason = WLAN_REASON_MESH_MAX_PEERS;
+#endif /* CONFIG_MESH && CONFIG_IEEE80211AH */
 
 	if (sta->plink_state == PLINK_ESTAB) {
 		hapd->num_plinks--;
 		wpas_notify_mesh_peer_disconnected(
 			wpa_s, sta->addr, WLAN_REASON_UNSPECIFIED);
 	}
+	mesh_mpm_send_plink_action(wpa_s, sta, PLINK_CLOSE, reason);
+	wpa_printf(MSG_DEBUG, "MPM closing plink sta=" MACSTR,
+			   MAC2STR(sta->addr));
 	eloop_cancel_timeout(plink_timer, ELOOP_ALL_CTX, sta);
 	eloop_cancel_timeout(mesh_auth_timer, ELOOP_ALL_CTX, sta);
 }

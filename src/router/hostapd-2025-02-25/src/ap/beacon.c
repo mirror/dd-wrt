@@ -3,12 +3,14 @@
  * Copyright (c) 2002-2004, Instant802 Networks, Inc.
  * Copyright (c) 2005-2006, Devicescape Software, Inc.
  * Copyright (c) 2008-2012, Jouni Malinen <j@w1.fi>
+ * Copyright 2023 Morse Micro
  *
  * This software may be distributed under the terms of the BSD license.
  * See README for more details.
  */
 
 #include "utils/includes.h"
+#include "utils/morse.h"
 
 #ifndef CONFIG_NATIVE_WINDOWS
 
@@ -588,6 +590,11 @@ ieee802_11_build_ap_params_mbssid(struct hostapd_data *hapd,
 	size_t len, rnr_len = 0;
 	u8 elem_count = 0, *elem = NULL, **elem_offset = NULL, *end;
 	u8 rnr_elem_count = 0, *rnr_elem = NULL, **rnr_elem_offset = NULL;
+
+#ifdef CONFIG_IEEE80211AH
+	if (!iface->mbssid_max_interfaces)
+		iface->mbssid_max_interfaces = MBSSID_MAX_INTERFACES;
+#endif /* CONFIG_IEEE80211AH */
 
 	if (!iface->mbssid_max_interfaces ||
 	    iface->num_bss > iface->mbssid_max_interfaces ||
@@ -1395,9 +1402,29 @@ static bool parse_ml_probe_req(const struct ieee80211_eht_ml *ml, size_t ml_len,
 }
 #endif /* CONFIG_IEEE80211BE */
 
+static bool ignore_probe_req_80211ah(struct hostapd_data *hapd, int freq)
+{
+#ifdef CONFIG_IEEE80211AH
+	int chan = morse_ht_freq_to_s1g_chan(freq);
+	int bw = morse_s1g_chan_to_bw(chan);
+	int prim_bw = (hapd->iconf->s1g_prim_chwidth == S1G_PRIM_CHWIDTH_1) ? 1 : 2;
+	int prim_chan = morse_s1g_get_primary_channel(hapd->iconf, (bw < prim_bw) ? bw : prim_bw);
+
+	/* For the AP to respond, the probe request must be received on the primary channel. */
+	if (chan != prim_chan) {
+		wpa_printf(MSG_DEBUG,
+			   "%s: Probe request not on primary: %d (%d MHz) != %d",
+			   __func__, chan, bw, prim_chan);
+
+		return true;
+	}
+#endif
+	return false;
+}
+ 
 void handle_probe_req(struct hostapd_data *hapd,
 		      const struct ieee80211_mgmt *mgmt, size_t len,
-		      struct hostapd_frame_info *fi)
+		      struct hostapd_frame_info *fi, int freq)
 {
 	struct ieee802_11_elems elems;
 	const u8 *ie;
@@ -1475,14 +1502,23 @@ void handle_probe_req(struct hostapd_data *hapd,
 	 * is less likely to see them (Probe Request frame sent on a
 	 * neighboring, but partially overlapping, channel).
 	 */
-	if (elems.ds_params && 0 &&
-	    hapd->iface->current_mode &&
-	    (hapd->iface->current_mode->mode == HOSTAPD_MODE_IEEE80211G ||
-	     hapd->iface->current_mode->mode == HOSTAPD_MODE_IEEE80211B) &&
-	    hapd->iconf->channel != elems.ds_params[0]) {
-		wpa_printf(MSG_DEBUG,
-			   "Ignore Probe Request due to DS Params mismatch: chan=%u != ds.chan=%u",
-			   hapd->iconf->channel, elems.ds_params[0]);
+	if (hapd->iface->current_mode) {
+		enum hostapd_hw_mode mode = hapd->iface->current_mode->mode;
+
+		if (elems.ds_params &&
+		    (mode == HOSTAPD_MODE_IEEE80211G ||
+		     mode == HOSTAPD_MODE_IEEE80211B) &&
+		     hapd->iconf->channel != elems.ds_params[0]) {
+			wpa_printf(MSG_DEBUG,
+				   "Ignore Probe Request due to DS Params mismatch: chan=%u != ds.chan=%u",
+				   hapd->iconf->channel, elems.ds_params[0]);
+			return;
+		}
+
+		if (mode == HOSTAPD_MODE_IEEE80211A &&
+		    hapd->iface->conf->ieee80211ah &&
+		    ignore_probe_req_80211ah(hapd, freq))
+			return;
 		return;
 	}
 

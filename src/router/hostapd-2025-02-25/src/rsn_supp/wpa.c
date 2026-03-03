@@ -2,6 +2,7 @@
  * WPA Supplicant - WPA state machine and EAPOL-Key processing
  * Copyright (c) 2003-2018, Jouni Malinen <j@w1.fi>
  * Copyright(c) 2015 Intel Deutschland GmbH
+ * Copyright 2022 Morse Micro
  *
  * This software may be distributed under the terms of the BSD license.
  * See README for more details.
@@ -32,6 +33,7 @@
 #include "pmksa_cache.h"
 #include "wpa_i.h"
 #include "wpa_ie.h"
+#include "morse.h"
 
 
 static const u8 null_rsc[8] = { 0, 0, 0, 0, 0, 0, 0, 0 };
@@ -1215,6 +1217,46 @@ static void wpa_sm_rekey_ptk(void *eloop_ctx, void *timeout_ctx)
 	wpa_sm_key_request(sm, 0, 1);
 }
 
+/*
+ * Resend message 4/4 without encryption if message 3/4 is received after completing the 4-way
+ * handshake - see wpa_supplicant_handle_m4_timeout().
+ */
+#define WPA_EAPOL_M4_TIMEOUT_RESEND true
+
+/*
+ * The IEEE 802.11 security specification does not handle the case where message 4 of the 4-way
+ * handshake is sent by the supplicant but not received within the timeout period by the
+ * authenticator.
+ * The supplicant installs the PTK to the driver immediately after sending message 4, so whilst the
+ * authenticator will resend message 3 multiple times, the supplicant will respond with an
+ * encrypted message 4, which cannot be decrypted by the authenticator.
+ *
+ * Delete the PTK from the driver when message 3 is received after sending message 4, so message 4
+ * will be sent without encryption. The same PTK will be reinstalled immediately after sending msg
+ * 4/4.
+ *
+ * Only the initial handshake is handled. During rekey, the lower layers will discard resent M3
+ * messages because they will not be decryptable.
+ */
+static void wpa_supplicant_handle_m4_timeout(struct wpa_sm *sm)
+{
+	if (sm->ptk.tk_len == 0)
+		return;
+
+	wpa_msg(sm->ctx->msg_ctx, MSG_WARNING,
+		"%s: EAPOL msg 3/4 received after 4-way handshake - delete PTK",
+		sm->proto == WPA_PROTO_RSN ? "RSN" : "WPA");
+
+	if (wpa_sm_set_key(sm, -1, WPA_ALG_NONE, wpa_sm_get_auth_addr(sm),
+			   sm->keyidx_active, 0, NULL, 0, NULL, 0,
+			   KEY_FLAG_PAIRWISE) < 0) {
+		wpa_msg(sm->ctx->msg_ctx, MSG_WARNING,
+			"%s: Failed to delete PTK",
+			sm->proto == WPA_PROTO_RSN ? "RSN" : "WPA");
+	}
+	sm->ptk.installed = 0;
+	sm->tk_set = false;
+}
 
 static int wpa_supplicant_install_ptk(struct wpa_sm *sm,
 				      const struct wpa_eapol_key *key,
@@ -1298,9 +1340,11 @@ static int wpa_supplicant_install_ptk(struct wpa_sm *sm,
 	if (key_flag & KEY_FLAG_NEXT) {
 		sm->ptk.installed_rx = true;
 	} else {
-		/* TK is not needed anymore in supplicant */
-		os_memset(sm->ptk.tk, 0, WPA_TK_MAX_LEN);
-		sm->ptk.tk_len = 0;
+		if (!WPA_EAPOL_M4_TIMEOUT_RESEND) {
+			/* TK is not needed anymore in supplicant */
+			os_memset(sm->ptk.tk, 0, WPA_TK_MAX_LEN);
+			sm->ptk.tk_len = 0;
+		}
 		sm->ptk.installed = 1;
 		sm->tk_set = true;
 	}
@@ -2657,6 +2701,7 @@ static void wpa_supplicant_process_3_of_4_wpa(struct wpa_sm *sm,
 {
 	u16 key_info, keylen;
 	struct wpa_eapol_ie_parse ie;
+	enum wpa_states old_state = wpa_sm_get_state(sm);
 
 	wpa_sm_set_state(sm, WPA_4WAY_HANDSHAKE);
 	wpa_dbg(sm->ctx->msg_ctx, MSG_DEBUG,
@@ -2687,6 +2732,9 @@ static void wpa_supplicant_process_3_of_4_wpa(struct wpa_sm *sm,
 			MAC2STR(sm->bssid));
 		goto failed;
 	}
+
+	if (old_state == WPA_COMPLETED && WPA_EAPOL_M4_TIMEOUT_RESEND)
+		wpa_supplicant_handle_m4_timeout(sm);
 
 	if (wpa_supplicant_send_4_of_4(sm, wpa_sm_get_auth_addr(sm), key, ver,
 				       key_info, &sm->ptk) < 0)
@@ -2726,6 +2774,7 @@ static void wpa_supplicant_process_3_of_4(struct wpa_sm *sm,
 	struct wpa_eapol_ie_parse ie;
 	bool mlo = sm->mlo.valid_links;
 	int i;
+	enum wpa_states old_state = wpa_sm_get_state(sm);
 
 	wpa_sm_set_state(sm, WPA_4WAY_HANDSHAKE);
 	wpa_dbg(sm->ctx->msg_ctx, MSG_DEBUG,
@@ -2913,6 +2962,9 @@ static void wpa_supplicant_process_3_of_4(struct wpa_sm *sm,
 		 * changes that could result in some protected frames getting
 		 * discarded. */
 	}
+
+	if (old_state == WPA_COMPLETED && WPA_EAPOL_M4_TIMEOUT_RESEND)
+		wpa_supplicant_handle_m4_timeout(sm);
 
 	if (wpa_supplicant_send_4_of_4(sm, wpa_sm_get_auth_addr(sm), key, ver,
 				       key_info, &sm->ptk) < 0)
@@ -5239,6 +5291,17 @@ int wpa_sm_set_assoc_wpa_ie_default(struct wpa_sm *sm, u8 *wpa_ie,
 	return 0;
 }
 
+int wpa_sm_set_assoc_aid(struct wpa_sm *sm, u16 aid)
+{
+	if (sm == NULL)
+		return -1;
+
+	sm->aid = aid;
+
+	wpa_printf(MSG_DEBUG, "WPA Got aid %d", sm->aid);
+
+	return 0;
+}
 
 /**
  * wpa_sm_set_assoc_wpa_ie - Set own WPA/RSN IE from (Re)AssocReq

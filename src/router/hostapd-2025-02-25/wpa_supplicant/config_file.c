@@ -1,6 +1,7 @@
 /*
  * WPA Supplicant / Configuration backend: text file
  * Copyright (c) 2003-2019, Jouni Malinen <j@w1.fi>
+ * Copyright 2022 Morse Micro
  *
  * This software may be distributed under the terms of the BSD license.
  * See README for more details.
@@ -25,6 +26,8 @@
 #include "eap_peer/eap.h"
 #include "utils/config.h"
 
+#include "utils/morse.h"
+#include "wpa_supplicant_i.h"
 
 static int wpa_config_validate_network(struct wpa_ssid *ssid, int line)
 {
@@ -68,6 +71,13 @@ static int wpa_config_validate_network(struct wpa_ssid *ssid, int line)
 			   line);
 		errors++;
 	}
+#ifdef CONFIG_IEEE80211AH
+	if ((ssid->mode == WPAS_MODE_IBSS ||
+	    ssid->mode == WPAS_MODE_MESH) &&
+	    ssid->country) {
+		morse_set_s1g_ht_chan_pairs(ssid->country);
+	}
+#endif /* CONFIG_IEEE80211AH */
 
 #ifdef CONFIG_OCV
 	if (ssid->ocv && ssid->ieee80211w == NO_MGMT_FRAME_PROTECTION) {
@@ -81,12 +91,35 @@ static int wpa_config_validate_network(struct wpa_ssid *ssid, int line)
 	return errors;
 }
 
+#ifdef CONFIG_S1G_TWT
+static void wpa_config_set_twt_default(struct wpa_ssid *ssid)
+{
+	ssid->twt_conf.enable = 0;
+	ssid->twt_conf.wake_duration_us = 0;
+	ssid->twt_conf.wake_interval_us = 0;
+}
+
+static bool is_number(char *str)
+{
+	while (*str) {
+		if (isdigit(*str++) == 0)
+			return false;
+	}
+
+	return true;
+}
+
+#endif /* CONFIG_S1G_TWT */
 
 static struct wpa_ssid * wpa_config_read_network(FILE *f, int *line, int id)
 {
 	struct wpa_ssid *ssid;
 	int errors = 0, end = 0;
 	char buf[2000], *pos, *pos2;
+#ifdef CONFIG_S1G_TWT
+	bool twt_block_detected = false;
+	int twt_block_end = 0;
+#endif /* CONFIG_S1G_TWT */
 
 	wpa_printf(MSG_MSGDUMP, "Line: %d - start of a new network block",
 		   *line);
@@ -100,9 +133,29 @@ static struct wpa_ssid * wpa_config_read_network(FILE *f, int *line, int id)
 
 	while (wpa_config_get_line(buf, sizeof(buf), f, line, &pos)) {
 		if (os_strcmp(pos, "}") == 0) {
+#ifdef CONFIG_S1G_TWT
+			if (!twt_block_detected) {
+				end = 1;
+				break;
+			} else {
+				twt_block_end = 1;
+				twt_block_detected = false;
+				continue;
+			}
+#else
 			end = 1;
 			break;
+#endif /* CONFIG_S1G_TWT */
 		}
+
+#ifdef CONFIG_S1G_TWT
+		if (os_strcmp(pos, "twt={") == 0) {
+			wpa_config_set_twt_default(ssid);
+			twt_block_detected = true;
+			ssid->twt_conf.enable = 1;
+			continue;
+		}
+#endif /* CONFIG_S1G_TWT */
 
 		pos2 = os_strchr(pos, '=');
 		if (pos2 == NULL) {
@@ -122,7 +175,26 @@ static struct wpa_ssid * wpa_config_read_network(FILE *f, int *line, int id)
 			}
 		}
 
+#ifdef CONFIG_S1G_TWT
+		if (twt_block_detected) {
+			wpa_printf(MSG_DEBUG, "twt conf: %s:%s", pos, pos2);
+			if ((os_strcmp(pos, "wake_interval") == 0) && is_number(pos2)) {
+				ssid->twt_conf.wake_interval_us = strtoull(pos2, NULL, 0);
+			} else if ((os_strcmp(pos, "min_wake_duration") == 0) && is_number(pos2)) {
+				ssid->twt_conf.wake_duration_us = strtoul(pos2, NULL, 0);
+			} else if ((os_strcmp(pos, "setup_command") == 0) && is_number(pos2)) {
+				ssid->twt_conf.setup_command = strtoul(pos2, NULL, 0);
+			} else {
+				wpa_printf(MSG_ERROR, "%s=%s is not a valid twt conf", pos, pos2);
+				errors++;
+			}
+			continue;
+		}
+		if (wpa_config_set(ssid, pos, pos2, *line) < 0 && !twt_block_detected) {
+#else
 		if (wpa_config_set(ssid, pos, pos2, *line) < 0) {
+#endif /* CONFIG_S1G_TWT */
+
 #ifndef CONFIG_WEP
 			if (os_strcmp(pos, "wep_key0") == 0 ||
 			    os_strcmp(pos, "wep_key1") == 0 ||
@@ -145,6 +217,21 @@ static struct wpa_ssid * wpa_config_read_network(FILE *f, int *line, int id)
 			   "terminated properly.", *line);
 		errors++;
 	}
+
+#ifdef CONFIG_S1G_TWT
+	if (ssid->twt_conf.enable && (ssid->twt_conf.wake_interval_us == 0) &&
+		(ssid->twt_conf.wake_duration_us == 0)) {
+		wpa_printf(MSG_ERROR, "Invalid TWT parameters");
+		ssid->twt_conf.enable = 0;
+		errors++;
+	}
+	if (ssid->twt_conf.enable && !twt_block_end) {
+		wpa_printf(MSG_ERROR, "Line %d: twt block was not "
+			   "terminated properly.", *line);
+		ssid->twt_conf.enable = 0;
+		errors++;
+	}
+#endif /* CONFIG_S1G_TWT */
 
 	errors += wpa_config_validate_network(ssid, *line);
 
@@ -355,7 +442,59 @@ static struct wpa_dev_ik * wpa_config_read_identity(FILE *f, int *line, int id)
 }
 
 
-struct wpa_config * wpa_config_read(const char *name, struct wpa_config *cfgp,
+#ifdef CONFIG_IEEE80211AH
+/*
+ * Convert an S1G frequency to an HT frequency, for internal use by the kernel.
+ * The value will be converted back to S1G in the driver, for use by firmware.
+ */
+static int wpa_config_convert_s1g_freq_to_ht_freq(struct wpa_ssid *ssid, int idx,
+						  const char *country)
+{
+	int ht_freq;
+
+	wpa_printf(MSG_DEBUG, "Converting s1g freq %d to ht freq", ssid->scan_freq[idx]);
+	if (!country[0]) {
+		wpa_printf(MSG_ERROR,
+			"Country not configured - cannot convert s1g scan_freq %d",
+			ssid->scan_freq[idx]);
+		return -1;
+	}
+
+	ht_freq = morse_s1g_freq_and_cc_to_ht_freq(ssid->scan_freq[idx], country);
+	if (ht_freq <= 0) {
+		wpa_printf(MSG_INFO, "Failed to get ht freq for s1g freq %d",
+			ssid->scan_freq[idx]);
+		return -1;
+	}
+
+	wpa_printf(MSG_INFO, "Processing s1g freq %d internally as ht freq %d",
+		ssid->scan_freq[idx], ht_freq);
+	ssid->scan_freq[idx] = ht_freq;
+
+	return 0;
+}
+
+static int wpa_config_convert_s1g_freqs(struct wpa_config *config, struct wpa_ssid *ssid)
+{
+	int scan_freq_errors = 0;
+
+	if (!ssid->scan_freq)
+		return 0;
+
+	for (int i = 0; ssid->scan_freq[i] != 0; i++) {
+		if (ssid->scan_freq[i] >= MIN_S1G_FREQ_KHZ &&
+		    ssid->scan_freq[i] <= MAX_S1G_FREQ_KHZ) {
+			if (wpa_config_convert_s1g_freq_to_ht_freq(ssid,
+							i, config->country) < 0)
+				scan_freq_errors++;
+		}
+
+	}
+	return scan_freq_errors;
+}
+#endif
+
+struct wpa_config * wpa_config_read(struct wpa_supplicant *wpa_s, const char *name, struct wpa_config *cfgp,
 				    bool ro)
 {
 	FILE *f;
@@ -428,6 +567,10 @@ struct wpa_config * wpa_config_read(const char *name, struct wpa_config *cfgp,
 				errors++;
 				continue;
 			}
+#ifdef CONFIG_IEEE80211AH
+			if (ssid->scan_freq && wpa_s->conf->ieee80211ah)
+				errors += wpa_config_convert_s1g_freqs(config, ssid);
+#endif
 		} else if (os_strcmp(pos, "cred={") == 0) {
 			cred = wpa_config_read_cred(f, &line, cred_id++);
 			if (cred == NULL) {
@@ -477,6 +620,7 @@ struct wpa_config * wpa_config_read(const char *name, struct wpa_config *cfgp,
 	}
 
 	fclose(f);
+
 
 	config->ssid = head;
 	wpa_config_debug_dump_networks(config);
@@ -931,6 +1075,19 @@ static void wpa_config_write_network(FILE *f, struct wpa_ssid *ssid)
 	INT_DEF(dot11MeshConfirmTimeout, DEFAULT_MESH_CONFIRM_TIMEOUT);
 	INT_DEF(dot11MeshHoldingTimeout, DEFAULT_MESH_HOLDING_TIMEOUT);
 	INT_DEF(mesh_rssi_threshold, DEFAULT_MESH_RSSI_THRESHOLD);
+	INT_DEF(dot11MeshHWMPRootMode, DEFAULT_HWMP_ROOTMODE);
+	INT_DEF(dot11MeshGateAnnouncements, DEFAULT_MESH_GATE_ANNOUNCEMENTS);
+#ifdef CONFIG_IEEE80211AH
+	INT_DEF(mesh_beaconless_mode, DEFAULT_MESH_BEACONLESS_MODE);
+	INT_DEF(mbca_config, DEFAULT_MBCA_CFG);
+	INT_DEF(mbca_min_beacon_gap_ms, DEFAULT_MBCA_MIN_BCN_GAP_MS);
+	INT_DEF(mbca_tbtt_adj_interval_sec, DEFAULT_TBTT_ADJ_INTERVAL_SEC);
+	INT_DEF(dot11MeshBeaconTimingReportInterval, DEFAULT_MESH_BCN_TIMING_REPORT_INT);
+	INT_DEF(mbss_start_scan_duration_ms, DEFAULT_MBSS_START_SCAN_DURATION_MS);
+	INT_DEF(mesh_dynamic_peering, DEFAULT_MESH_DYNAMIC_PEERING);
+	INT_DEF(mesh_rssi_margin, DEFAULT_MESH_RSSI_MARGIN);
+	INT_DEF(mesh_blacklist_timeout, DEFAULT_MESH_BLACKLIST_TIMEOUT);
+#endif
 #endif /* CONFIG_MESH */
 	INT(wpa_ptk_rekey);
 	INT(wpa_deny_ptk0_rekey);
@@ -991,6 +1148,11 @@ static void wpa_config_write_network(FILE *f, struct wpa_ssid *ssid)
 #ifdef CONFIG_HE_OVERRIDES
 	INT(disable_he);
 #endif /* CONFIG_HE_OVERRIDES */
+#ifdef CONFIG_IEEE80211AH
+	INT(cac);
+	INT_DEF(disable_s1g_sgi, DEFAULT_DISABLE_SGI);
+	STR(auth_retry_backoff);
+#endif
 	INT(disable_eht);
 	INT(enable_4addr_mode);
 	INT(max_idle);
@@ -1719,6 +1881,12 @@ static void wpa_config_write_global(FILE *f, struct wpa_config *config)
 	if (config->dpp_connector_privacy_default)
 		fprintf(f, "dpp_connector_privacy_default=%d\n",
 			config->dpp_connector_privacy_default);
+	if (config->dpp_key)
+		fprintf(f, "dpp_key=%s\n",
+			config->dpp_key);
+	if (config->dpp_chirp_forever)
+		fprintf(f, "dpp_chirp_forever=%d\n",
+			config->dpp_chirp_forever);
 	if (config->coloc_intf_reporting)
 		fprintf(f, "coloc_intf_reporting=%d\n",
 			config->coloc_intf_reporting);

@@ -33,9 +33,11 @@
 
 #define UNUSED_SCI 0xffffffffffffffff
 
+#if 0
 #if (LIBNL_VER_NUM >= LIBNL_VER(3, 6) && \
      LINUX_VERSION_CODE >= KERNEL_VERSION(5, 7, 0))
 #define LIBNL_HAS_OFFLOAD
+#endif
 #endif
 
 struct cb_arg {
@@ -80,7 +82,7 @@ struct macsec_drv_data {
 	bool replay_protect_set;
 
 #ifdef LIBNL_HAS_OFFLOAD
-	enum macsec_offload offload;
+	u8 offload;
 	bool offload_set;
 #endif /* LIBNL_HAS_OFFLOAD */
 

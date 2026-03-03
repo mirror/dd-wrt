@@ -1,6 +1,7 @@
 /*
  * Wrapper functions for libwolfssl
  * Copyright (c) 2004-2017, Jouni Malinen <j@w1.fi>
+ * Copyright 2022 Morse Micro
  *
  * This software may be distributed under the terms of the BSD license.
  * See README for more details.
@@ -583,8 +584,7 @@ void * aes_encrypt_init(const u8 *key, size_t len)
 
 int aes_encrypt(void *ctx, const u8 *plain, u8 *crypt)
 {
-#if defined(HAVE_FIPS) && \
-    (!defined(HAVE_FIPS_VERSION) || (HAVE_FIPS_VERSION <= 2))
+#if LIBWOLFSSL_VERSION_HEX < 0x05002000 || defined(WOLFSSL_OLD_FIPS)
 	/* Old FIPS has void return on this API */
 	wc_AesEncryptDirect(ctx, crypt, plain);
 #else
@@ -632,8 +632,7 @@ void * aes_decrypt_init(const u8 *key, size_t len)
 
 int aes_decrypt(void *ctx, const u8 *crypt, u8 *plain)
 {
-#if defined(HAVE_FIPS) && \
-    (!defined(HAVE_FIPS_VERSION) || (HAVE_FIPS_VERSION <= 2))
+#if LIBWOLFSSL_VERSION_HEX < 0x05002000 || defined(WOLFSSL_OLD_FIPS)
 	/* Old FIPS has void return on this API */
 	wc_AesDecryptDirect(ctx, plain, crypt);
 #else
@@ -2125,6 +2124,7 @@ static struct crypto_ecdh * _crypto_ecdh_init(int group)
 #endif /* ECC_TIMING_RESISTANT && !WOLFSSL_OLD_FIPS */
 
 	return ecdh;
+
 fail:
 	crypto_ecdh_deinit(ecdh);
 	return NULL;
@@ -2183,7 +2183,6 @@ struct crypto_ecdh * crypto_ecdh_init2(int group, struct crypto_ec_key *own_key)
 
 	return ret;
 }
-
 
 void crypto_ecdh_deinit(struct crypto_ecdh *ecdh)
 {

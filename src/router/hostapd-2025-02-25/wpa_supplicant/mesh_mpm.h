@@ -1,6 +1,7 @@
 /*
  * WPA Supplicant - Basic mesh peer management
  * Copyright (c) 2013-2014, cozybit, Inc.  All rights reserved.
+ * Copyright 2023 Morse Micro
  *
  * This software may be distributed under the terms of the BSD license.
  * See README for more details.
@@ -28,6 +29,9 @@ void mesh_mpm_action_rx(struct wpa_supplicant *wpa_s,
 			const struct ieee80211_mgmt *mgmt, size_t len);
 void mesh_mpm_mgmt_rx(struct wpa_supplicant *wpa_s, struct rx_mgmt *rx_mgmt);
 
+#ifdef CONFIG_IEEE80211AH
+void mesh_mpm_kickout_peer(struct hostapd_data *hapd);
+#endif /* CONFIG_IEEE80211AH */
 #else /* CONFIG_MESH */
 
 static inline void mesh_mpm_action_rx(struct wpa_supplicant *wpa_s,

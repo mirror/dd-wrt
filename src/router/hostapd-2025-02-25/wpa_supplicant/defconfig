@@ -95,25 +95,25 @@ CONFIG_DRIVER_MACSEC_LINUX=y
 CONFIG_IEEE8021X_EAPOL=y
 
 # EAP-MD5
-CONFIG_EAP_MD5=y
+#CONFIG_EAP_MD5=y
 
 # EAP-MSCHAPv2
-CONFIG_EAP_MSCHAPV2=y
+#CONFIG_EAP_MSCHAPV2=y
 
 # EAP-TLS
-CONFIG_EAP_TLS=y
+#CONFIG_EAP_TLS=y
 # Enable EAP-TLSv1.3 support by default (currently disabled unless explicitly
 # enabled in network configuration)
 #CONFIG_EAP_TLSV1_3=y
 
 # EAL-PEAP
-CONFIG_EAP_PEAP=y
+#CONFIG_EAP_PEAP=y
 
 # EAP-TTLS
-CONFIG_EAP_TTLS=y
+#CONFIG_EAP_TTLS=y
 
 # EAP-FAST
-CONFIG_EAP_FAST=y
+#CONFIG_EAP_FAST=y
 
 # EAP-TEAP
 # Note: The current EAP-TEAP implementation is experimental and should not be
@@ -126,10 +126,10 @@ CONFIG_EAP_FAST=y
 #CONFIG_EAP_TEAP=y
 
 # EAP-GTC
-CONFIG_EAP_GTC=y
+#CONFIG_EAP_GTC=y
 
 # EAP-OTP
-CONFIG_EAP_OTP=y
+#CONFIG_EAP_OTP=y
 
 # EAP-SIM (enable CONFIG_PCSC, if EAP-SIM is used)
 #CONFIG_EAP_SIM=y
@@ -141,13 +141,13 @@ CONFIG_EAP_OTP=y
 #CONFIG_EAP_PSK=y
 
 # EAP-pwd (secure authentication using only a password)
-CONFIG_EAP_PWD=y
+#CONFIG_EAP_PWD=y
 
 # EAP-PAX
-CONFIG_EAP_PAX=y
+#CONFIG_EAP_PAX=y
 
 # LEAP
-CONFIG_EAP_LEAP=y
+#CONFIG_EAP_LEAP=y
 
 # EAP-AKA (enable CONFIG_PCSC, if EAP-AKA is used)
 #CONFIG_EAP_AKA=y
@@ -160,15 +160,15 @@ CONFIG_EAP_LEAP=y
 #CONFIG_USIM_SIMULATOR=y
 
 # EAP-SAKE
-CONFIG_EAP_SAKE=y
+#CONFIG_EAP_SAKE=y
 
 # EAP-GPSK
-CONFIG_EAP_GPSK=y
+#CONFIG_EAP_GPSK=y
 # Include support for optional SHA256 cipher suite in EAP-GPSK
-CONFIG_EAP_GPSK_SHA256=y
+#CONFIG_EAP_GPSK_SHA256=y
 
 # EAP-TNC and related Trusted Network Connect support (experimental)
-CONFIG_EAP_TNC=y
+#CONFIG_EAP_TNC=y
 
 # Wi-Fi Protected Setup (WPS)
 CONFIG_WPS=y
@@ -181,7 +181,7 @@ CONFIG_WPS=y
 #CONFIG_WPS_NFC=y
 
 # EAP-IKEv2
-CONFIG_EAP_IKEV2=y
+#CONFIG_EAP_IKEV2=y
 
 # EAP-EKE
 #CONFIG_EAP_EKE=y
@@ -195,7 +195,7 @@ CONFIG_PKCS12=y
 
 # Smartcard support (i.e., private key on a smartcard), e.g., with openssl
 # engine.
-CONFIG_SMARTCARD=y
+#CONFIG_SMARTCARD=y
 
 # PC/SC interface for smartcards (USIM, GSM SIM)
 # Enable this if EAP-SIM or EAP-AKA is included
@@ -212,6 +212,10 @@ CONFIG_SMARTCARD=y
 
 # Development testing
 #CONFIG_EAPOL_TEST=y
+
+# Testing options
+# This can be used to enable some testing options
+CONFIG_TESTING_OPTIONS=y
 
 # Support IPv6
 CONFIG_IPV6=y
@@ -333,7 +337,7 @@ CONFIG_BACKEND=file
 # mbedtls = mbed TLS
 # linux = Linux kernel AF_ALG and internal TLSv1 implementation (experimental)
 # none = Empty template
-#CONFIG_TLS=openssl
+CONFIG_TLS=openssl
 
 # TLS-based EAP methods require at least TLS v1.0. Newer version of TLS (v1.1)
 # can be enabled to get a stronger construction of messages when block ciphers
@@ -357,7 +361,7 @@ CONFIG_BACKEND=file
 # needed for LibTomMath. Alternatively, an integrated, minimal version of
 # LibTomMath can be used. See beginning of libtommath.c for details on benefits
 # and drawbacks of this option.
-#CONFIG_INTERNAL_LIBTOMMATH=y
+CONFIG_INTERNAL_LIBTOMMATH=y
 #ifndef CONFIG_INTERNAL_LIBTOMMATH
 #LTM_PATH=/usr/src/libtommath-0.39
 #CFLAGS += -I$(LTM_PATH)
@@ -367,7 +371,7 @@ CONFIG_BACKEND=file
 # At the cost of about 4 kB of additional binary size, the internal LibTomMath
 # can be configured to include faster routines for exptmod, sqr, and div to
 # speed up DH and RSA calculation considerably
-#CONFIG_INTERNAL_LIBTOMMATH_FAST=y
+CONFIG_INTERNAL_LIBTOMMATH_FAST=y
 
 # Include NDIS event processing through WMI into wpa_supplicant/wpasvc.
 # This is only for Windows builds and requires WMI-related header files and
@@ -377,7 +381,7 @@ CONFIG_BACKEND=file
 
 # Add support for new DBus control interface
 # (fi.w1.wpa_supplicant1)
-CONFIG_CTRL_IFACE_DBUS_NEW=y
+#CONFIG_CTRL_IFACE_DBUS_NEW=y
 
 # Add introspection support for new DBus control interface
 CONFIG_CTRL_IFACE_DBUS_INTRO=y
@@ -505,7 +509,7 @@ CONFIG_DEBUG_SYSLOG=y
 CONFIG_IEEE80211AC=y
 
 # IEEE 802.11ax HE support (mainly for AP mode)
-CONFIG_IEEE80211AX=y
+#CONFIG_IEEE80211AX=y
 
 # IEEE 802.11be EHT support (mainly for AP mode)
 # CONFIG_IEEE80211AX is mandatory for setting CONFIG_IEEE80211BE.
@@ -514,9 +518,12 @@ CONFIG_IEEE80211AX=y
 # final IEEE 802.11be version.
 #CONFIG_IEEE80211BE=y
 
+# IEEE 802.11ah (Sub-1 GHz) support
+CONFIG_IEEE80211AH=y
+
 # Wireless Network Management (IEEE Std 802.11v-2011)
 # Note: This is experimental and not complete implementation.
-#CONFIG_WNM=y
+CONFIG_WNM=y
 
 # Interworking (IEEE 802.11u)
 # This can be used to enable functionality to improve interworking with
@@ -528,7 +535,7 @@ CONFIG_INTERWORKING=y
 CONFIG_HS20=y
 
 # Enable interface matching in wpa_supplicant
-#CONFIG_MATCH_IFACE=y
+CONFIG_MATCH_IFACE=y
 
 # Disable roaming in wpa_supplicant
 #CONFIG_NO_ROAMING=y
@@ -551,7 +558,7 @@ CONFIG_TDLS=y
 # Wi-Fi Display
 # This can be used to enable Wi-Fi Display extensions for P2P using an external
 # program to control the additional information exchanges in the messages.
-CONFIG_WIFI_DISPLAY=y
+#CONFIG_WIFI_DISPLAY=y
 
 # Autoscan
 # This can be used to enable automatic scan support in wpa_supplicant.
@@ -624,7 +631,7 @@ CONFIG_IBSS_RSN=y
 # External PMKSA cache control
 # This can be used to enable control interface commands that allow the current
 # PMKSA cache entries to be fetched and new entries to be added.
-#CONFIG_PMKSA_CACHE_EXTERNAL=y
+CONFIG_PMKSA_CACHE_EXTERNAL=y
 
 # Mesh Networking (IEEE 802.11s)
 #CONFIG_MESH=y
@@ -637,11 +644,11 @@ CONFIG_IBSS_RSN=y
 CONFIG_BGSCAN_SIMPLE=y
 # Learn channels used by the network and try to avoid bgscans on other
 # channels (experimental)
-#CONFIG_BGSCAN_LEARN=y
+CONFIG_BGSCAN_LEARN=y
 
 # Opportunistic Wireless Encryption (OWE)
 # Experimental implementation of draft-harkins-owe-07.txt
-#CONFIG_OWE=y
+CONFIG_OWE=y
 
 # Device Provisioning Protocol (DPP) (also known as Wi-Fi Easy Connect)
 CONFIG_DPP=y
@@ -649,7 +656,7 @@ CONFIG_DPP=y
 CONFIG_DPP2=y
 # DPP version 3 support (experimental and still changing; do not enable for
 # production use)
-#CONFIG_DPP3=y
+CONFIG_DPP3=y
 
 # Wired equivalent privacy (WEP)
 # WEP is an obsolete cryptographic data confidentiality algorithm that is not
@@ -688,3 +695,14 @@ CONFIG_DPP2=y
 
 # Wi-Fi Aware unsynchronized service discovery (NAN USD)
 #CONFIG_NAN_USD=y
+
+# Enable Target Wake Time (TWT)
+CONFIG_S1G_TWT=y
+
+# Enable Morse Standby Mode
+CONFIG_MORSE_STANDBY_MODE=y
+
+# Enable keep-alive offload
+# If the chip does not support this feature, wpa supplicant will fall back to
+# scheduling the keep-alive itself.
+CONFIG_MORSE_KEEP_ALIVE_OFFLOAD=y

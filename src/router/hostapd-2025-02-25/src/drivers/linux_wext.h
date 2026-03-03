@@ -1,6 +1,7 @@
 /*
  * Driver interaction with generic Linux Wireless Extensions
  * Copyright (c) 2003-2011, Jouni Malinen <j@w1.fi>
+ * Copyright 2022 Morse Micro
  *
  * This software may be distributed under the terms of the BSD license.
  * See README for more details.
@@ -26,6 +27,7 @@ typedef int32_t __s32;
 typedef uint16_t __u16;
 typedef int16_t __s16;
 typedef uint8_t __u8;
+typedef int8_t __s8;
 #ifndef __user
 #define __user
 #endif /* __user */

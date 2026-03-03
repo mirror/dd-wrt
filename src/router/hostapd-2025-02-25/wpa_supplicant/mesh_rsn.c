@@ -27,6 +27,7 @@
 
 #define MESH_AUTH_TIMEOUT 10
 #define MESH_AUTH_RETRY 3
+#define MESH_RSN_FRAME_MIC_OFFSET 6
 
 void mesh_auth_timer(void *eloop_ctx, void *user_data)
 {
@@ -136,7 +137,7 @@ static int auth_start_ampe(void *ctx, const u8 *addr)
 	sta = ap_get_sta(hapd, addr);
 	if (sta)
 		eloop_cancel_timeout(mesh_auth_timer, mesh_rsn->wpa_s, sta);
-
+	wpa_printf(MSG_DEBUG, "mesh: Initializing AMPE, Peering Start");
 	mesh_mpm_auth_peer(mesh_rsn->wpa_s, addr);
 	return 0;
 }
@@ -553,10 +554,16 @@ int mesh_rsn_protect_frame(struct mesh_rsn *rsn, struct sta_info *sta,
 			   const u8 *cat, struct wpabuf *buf)
 {
 	struct ieee80211_ampe_ie *ampe;
+#ifndef CONFIG_IEEE80211AH
 	u8 const *ie = wpabuf_head_u8(buf) + wpabuf_len(buf);
+#endif
 	u8 *ampe_ie, *pos, *mic_payload;
 	const u8 *aad[] = { rsn->wpa_s->own_addr, sta->addr, cat };
-	const size_t aad_len[] = { ETH_ALEN, ETH_ALEN, ie - cat };
+#ifdef CONFIG_IEEE80211AH
+	const size_t aad_len[] = { ETH_ALEN, ETH_ALEN, MESH_RSN_FRAME_MIC_OFFSET };
+#else
+	const size_t aad_len[] = { ETH_ALEN, ETH_ALEN, ie-cat };
+#endif /* CONFIG_IEEE80211AH */
 	int ret = 0;
 	size_t len;
 
@@ -630,12 +637,16 @@ skip_keys:
 
 	/* encrypt after MIC */
 	mic_payload = wpabuf_put(buf, 2 + len + AES_BLOCK_SIZE);
+	wpa_hexdump_key(MSG_DEBUG, "mesh: Tx SHA Key element", sta->aek, sizeof(sta->aek));
 
 	if (aes_siv_encrypt(sta->aek, sizeof(sta->aek), ampe_ie, 2 + len, 3,
 			    aad, aad_len, mic_payload)) {
 		wpa_printf(MSG_ERROR, "protect frame: failed to encrypt");
 		ret = -ENOMEM;
 	}
+
+	wpa_hexdump_key(MSG_DEBUG, "mesh: encrypted AMPE element",
+			mic_payload, 2 + len + AES_BLOCK_SIZE);
 
 	os_free(ampe_ie);
 
@@ -656,8 +667,12 @@ int mesh_rsn_process_ampe(struct wpa_supplicant *wpa_s, struct sta_info *sta,
 	u8 *ampe_buf, *crypt = NULL, *pos, *end;
 	size_t crypt_len;
 	const u8 *aad[] = { sta->addr, wpa_s->own_addr, cat };
+#ifdef CONFIG_IEEE80211AH
+	const size_t aad_len[] = { ETH_ALEN, ETH_ALEN, MESH_RSN_FRAME_MIC_OFFSET};
+#else
 	const size_t aad_len[] = { ETH_ALEN, ETH_ALEN,
-				   elems->mic ? (elems->mic - 2) - cat : 0 };
+					elems->mic ? (elems->mic - 2) - cat : 0 };
+#endif /* CONFIG_IEEE80211AH */
 	size_t key_len;
 
 	if (!sta->sae) {
@@ -702,6 +717,8 @@ int mesh_rsn_process_ampe(struct wpa_supplicant *wpa_s, struct sta_info *sta,
 		goto free;
 	}
 
+	wpa_hexdump_key(MSG_DEBUG, "mesh: Encrypted AMPE element", elems->mic, crypt_len);
+	wpa_hexdump_key(MSG_DEBUG, "mesh: Rx SHA Key element", sta->aek, sizeof(sta->aek));
 	os_memcpy(crypt, elems->mic, crypt_len);
 
 	if (aes_siv_decrypt(sta->aek, sizeof(sta->aek), crypt, crypt_len, 3,
@@ -712,8 +729,7 @@ int mesh_rsn_process_ampe(struct wpa_supplicant *wpa_s, struct sta_info *sta,
 	}
 
 	crypt_len -= AES_BLOCK_SIZE;
-	wpa_hexdump_key(MSG_DEBUG, "mesh: Decrypted AMPE element",
-			ampe_buf, crypt_len);
+	wpa_hexdump_key(MSG_DEBUG, "mesh: Decrypted AMPE element", ampe_buf, crypt_len);
 
 	ampe_eid = *ampe_buf++;
 	ampe_ie_len = *ampe_buf++;

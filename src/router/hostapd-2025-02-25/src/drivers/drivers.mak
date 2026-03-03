@@ -194,7 +194,9 @@ else
   else
     ifndef CONFIG_OSX
       DRV_LIBS += -lnl
+    ifndef CONFIG_ANDROID
       DRV_LIBS += -lnl-genl
+    endif
     endif
   endif
 endif

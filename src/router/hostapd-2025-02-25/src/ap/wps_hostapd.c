@@ -315,7 +315,7 @@ static void wps_reload_config(void *eloop_data, void *user_ctx)
 
 	wpa_printf(MSG_DEBUG, "WPS: Reload configuration data");
 	if (iface->interfaces == NULL ||
-	    iface->interfaces->reload_config(iface) < 0) {
+	    iface->interfaces->reload_config(iface, 1) < 0) {
 		wpa_printf(MSG_WARNING, "WPS: Failed to reload the updated "
 			   "configuration");
 	}

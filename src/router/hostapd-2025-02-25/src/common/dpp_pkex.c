@@ -1383,6 +1383,7 @@ void dpp_pkex_free(struct dpp_pkex *pkex)
 	crypto_ec_key_deinit(pkex->peer_bootstrap_key);
 	wpabuf_free(pkex->exchange_req);
 	wpabuf_free(pkex->exchange_resp);
+	wpabuf_free(pkex->commit_reveal_req);
 	wpabuf_free(pkex->enc_key);
 	os_free(pkex);
 }

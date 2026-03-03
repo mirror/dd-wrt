@@ -33,7 +33,7 @@ static void request_scan(struct wpa_supplicant *wpa_s)
 	wpa_s->scan_req = MANUAL_SCAN_REQ;
 
 	if (wpa_supplicant_req_sched_scan(wpa_s))
-		wpa_supplicant_req_scan(wpa_s, wpa_s->scan_interval, 0);
+		wpa_supplicant_req_scan(wpa_s, wpa_s->scan_interval, rand() % 1000000);
 }
 
 
@@ -149,9 +149,17 @@ int autoscan_notify_scan(struct wpa_supplicant *wpa_s,
 		interval = wpa_s->autoscan->notify_scan(wpa_s->autoscan_priv,
 							scan_res);
 
+		int half_interval = interval / 2;
+		int jitter = rand() % interval;
+
 		if (interval <= 0)
 			return -1;
 
+		/*
+		 * Randomise the scan interval by the interval value
+		 * uniformly around the interval value.
+		 */
+		interval = half_interval + jitter;
 		wpa_s->scan_interval = interval;
 		wpa_s->sched_scan_plans[0].interval = interval;
 

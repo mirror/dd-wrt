@@ -1,6 +1,7 @@
 /*
  * wpa_supplicant - SME
  * Copyright (c) 2009-2024, Jouni Malinen <j@w1.fi>
+ * Copyright 2021 Morse Micro
  *
  * This software may be distributed under the terms of the BSD license.
  * See README for more details.
@@ -32,6 +33,7 @@
 #include "scan.h"
 #include "sme.h"
 #include "hs20_supplicant.h"
+#include "morse.h"
 
 #define SME_AUTH_TIMEOUT 5
 #define SME_ASSOC_TIMEOUT 5
@@ -879,6 +881,11 @@ static void sme_send_authentication(struct wpa_supplicant *wpa_s,
 #endif /* CONFIG_FST */
 
 	sme_auth_handle_rrm(wpa_s, bss);
+#ifdef CONFIG_IEEE80211AH
+	wpa_s->sme.assoc_req_ie_len += wpas_supp_s1g_op_class_ie(wpa_s, ssid, bss,
+				wpa_s->sme.assoc_req_ie + wpa_s->sme.assoc_req_ie_len,
+				sizeof(wpa_s->sme.assoc_req_ie) - wpa_s->sme.assoc_req_ie_len);
+#else
 
 #ifndef CONFIG_NO_RRM
 	wpa_s->sme.assoc_req_ie_len += wpas_supp_op_class_ie(
@@ -886,6 +893,7 @@ static void sme_send_authentication(struct wpa_supplicant *wpa_s,
 		wpa_s->sme.assoc_req_ie + wpa_s->sme.assoc_req_ie_len,
 		sizeof(wpa_s->sme.assoc_req_ie) - wpa_s->sme.assoc_req_ie_len);
 #endif /* CONFIG_NO_RRM */
+#endif
 
 	if (params.p2p)
 		wpa_drv_get_ext_capa(wpa_s, WPA_IF_P2P_CLIENT);
@@ -1140,8 +1148,13 @@ no_fils:
 	wpa_supplicant_cancel_scan(wpa_s);
 
 	wpa_msg(wpa_s, MSG_INFO, "SME: Trying to authenticate with " MACSTR
-		" (SSID='%s' freq=%d MHz)", MAC2STR(params.bssid),
-		wpa_ssid_txt(params.ssid, params.ssid_len), params.freq);
+		" (SSID='%s' %s=%d%s)", MAC2STR(params.bssid),
+		wpa_ssid_txt(params.ssid, params.ssid_len),
+#ifdef CONFIG_IEEE80211AH
+		"chan", morse_ht_freq_to_s1g_chan(bss->freq), "");
+#else
+		"freq", params.freq, " MHz");
+#endif
 
 	eapol_sm_notify_portValid(wpa_s->eapol, false);
 	wpa_clear_keys(wpa_s, bss->bssid);
@@ -1995,6 +2008,11 @@ void sme_external_auth_mgmt_rx(struct wpa_supplicant *wpa_s,
 				    wpa_s->sme.ext_auth_bssid) < 0)
 			return;
 	}
+
+#ifdef CONFIG_IEEE80211AH
+	/* Reset the CAC random value reset after a successful auth */
+	wpa_bss_cac_set_random_value(wpa_s->current_bss);
+#endif /* CONFIG_IEEE80211AH */
 }
 
 #endif /* CONFIG_SAE */
@@ -2056,6 +2074,7 @@ void sme_event_auth(struct wpa_supplicant *wpa_s, union wpa_event_data *data)
 				wpa_s_clear_sae_rejected(wpa_s);
 			}
 		}
+
 		if (res != 1)
 			return;
 
@@ -2125,6 +2144,11 @@ void sme_event_auth(struct wpa_supplicant *wpa_s, union wpa_event_data *data)
 			return;
 		}
 	}
+
+#ifdef CONFIG_IEEE80211AH
+	/* Reset the CAC random value reset after a successful auth */
+	wpa_bss_cac_set_random_value(wpa_s->current_bss);
+#endif /* CONFIG_IEEE80211AH */
 
 #ifdef CONFIG_IEEE80211R
 	if (data->auth.auth_type == WLAN_AUTH_FT) {
@@ -2465,6 +2489,23 @@ mscs_fail:
 				       wpa_s->sme.assoc_req_ie_len,
 				       sizeof(wpa_s->sme.assoc_req_ie));
 
+#ifdef CONFIG_IEEE80211AH
+	/* If the STA has a priority for use with RAW insert a QoS Traffic
+	* Capability. */
+	wpa_printf(MSG_DEBUG, "raw_sta_priority: %d", ssid->raw_sta_priority);
+	if (ssid && (ssid->raw_sta_priority >= 0)) {
+		u8 qos_traffic_cap[QOS_TRAFFIC_CAP_SIZE] =
+			{ WLAN_EID_QOS_TRAFFIC_CAPABILITY,
+			1,
+			(ssid->raw_sta_priority  << QOS_TRAFFIC_UP_SHIFT) &
+				QOS_TRAFFIC_UP_MASK };
+
+		os_memcpy(wpa_s->sme.assoc_req_ie + wpa_s->sme.assoc_req_ie_len,
+			  qos_traffic_cap, QOS_TRAFFIC_CAP_SIZE);
+		wpa_s->sme.assoc_req_ie_len += QOS_TRAFFIC_CAP_SIZE;
+	}
+#endif
+
 	if (ssid && ssid->multi_ap_backhaul_sta) {
 		size_t multi_ap_ie_len;
 		struct multi_ap_params multi_ap = { 0 };
@@ -2650,10 +2691,13 @@ mscs_fail:
 		params.prev_bssid = wpa_s->sme.prev_bssid;
 
 	wpa_msg(wpa_s, MSG_INFO, "Trying to associate with " MACSTR
-		" (SSID='%s' freq=%d MHz)", MAC2STR(params.bssid),
+		" (SSID='%s' %s=%d%s)", MAC2STR(params.bssid),
 		params.ssid ? wpa_ssid_txt(params.ssid, params.ssid_len) : "",
-		params.freq.freq);
-
+#ifdef CONFIG_IEEE80211AH
+		"chan", morse_ht_freq_to_s1g_chan(params.freq.center_freq1), "");
+#else
+		"freq", params.freq.freq, " MHz");
+#endif
 	wpa_supplicant_set_state(wpa_s, WPA_ASSOCIATING);
 
 	if (params.wpa_ie == NULL ||
@@ -3512,7 +3556,8 @@ void sme_event_unprot_disconnect(struct wpa_supplicant *wpa_s, const u8 *sa,
 	if (!ether_addr_equal(sa, wpa_s->bssid))
 		return;
 	if (reason_code != WLAN_REASON_CLASS2_FRAME_FROM_NONAUTH_STA &&
-	    reason_code != WLAN_REASON_CLASS3_FRAME_FROM_NONASSOC_STA)
+	    reason_code != WLAN_REASON_CLASS3_FRAME_FROM_NONASSOC_STA &&
+	    reason_code != WLAN_REASON_4WAY_HANDSHAKE_TIMEOUT)
 		return;
 	if (wpa_s->sme.sa_query_count > 0)
 		return;

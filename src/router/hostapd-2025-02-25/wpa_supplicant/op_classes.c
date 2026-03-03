@@ -4,6 +4,8 @@
  * Contact Information:
  * Intel Linux Wireless <ilw@linux.intel.com>
  * Intel Corporation, 5200 N.E. Elam Young Parkway, Hillsboro, OR 97124-6497
+
+ * Copyright 2023 Morse Micro
  *
  * This software may be distributed under the terms of the BSD license.
  * See README for more details.
@@ -15,6 +17,7 @@
 #include "common/ieee802_11_common.h"
 #include "wpa_supplicant_i.h"
 #include "bss.h"
+#include "utils/morse.h"
 
 
 static enum chan_allowed allow_channel(struct hostapd_hw_modes *mode,
@@ -313,6 +316,7 @@ static int wpas_op_class_supported(struct wpa_supplicant *wpa_s,
 				   struct wpa_ssid *ssid,
 				   const struct oper_class_map *op_class)
 {
+#ifndef MM_IOT
 	int chan;
 	size_t i;
 	struct hostapd_hw_modes *mode;
@@ -500,6 +504,10 @@ static int wpas_op_class_supported(struct wpa_supplicant *wpa_s,
 	}
 
 	return found;
+
+#else /* MM_IOT */
+	return 0;
+#endif /* MM_IOT */
 }
 
 
@@ -519,11 +527,161 @@ static int wpas_sta_secondary_channel_offset(struct wpa_bss *bss, u8 *current,
 				    channel, &phy_type);
 }
 
+#ifdef CONFIG_IEEE80211AH
+size_t wpas_supp_s1g_op_class_ie(struct wpa_supplicant *wpa_s,
+						struct wpa_ssid *ssid,
+						struct wpa_bss *bss, u8 *pos, size_t len)
+{
+	struct wpabuf *buf;
+	u8 ht_chan;
+	int s1g_op_chan = -1;
+	u8 *ie_len;
+	size_t res;
+	u8 s1g_op_ch_width;
+	const u8 *country_ie;
+	const u8 *s1g_op_ie;
+	const u8 *vht_ie;
+	const u8 *ht_ie;
+	char country[3];
+	int sec_chan = 0;
+	struct ieee80211_s1g_operation *s1g_oper = NULL;
+	struct ieee80211_vht_operation *vht_oper = NULL;
+	struct ieee80211_ht_operation *ht_oper = NULL;
+	/* Indication that in the 1/2 MHz bandwidth case, when the VHT IE is present to use the
+	 * HT IE to calculate the S1G operating channel.
+	 */
+	bool vht_use_ht = false;
+
+	buf = wpabuf_alloc(S1G_OP_CLASSES_LEN + S1G_OP_CLASS_IE_LEN);
+	if (!buf)
+		return 0;
+
+	country_ie = wpa_bss_get_ie(bss, WLAN_EID_COUNTRY);
+	if (!country_ie) {
+		wpa_printf(MSG_DEBUG,
+			"Unable to determine country - list of op classes will not be set");
+		res = 0;
+		goto end;
+	}
+	country[0] = country_ie[2];
+	country[1] = country_ie[3];
+	country[2] = '\0';
+
+	ht_ie = wpa_bss_get_ie(bss, WLAN_EID_HT_OPERATION);
+	if (ht_ie && ht_ie[1] >= 2) {
+		u8 sec_chan_offset;
+		ht_oper = (struct ieee80211_ht_operation *) (ht_ie + 2);
+
+		sec_chan_offset = ht_oper->ht_param &
+				HT_INFO_HT_PARAM_SECONDARY_CHNL_OFF_MASK;
+		sec_chan = morse_cc_get_sec_channel_offset(sec_chan_offset, country);
+		ht_chan = ht_oper->primary_chan;
+		if(strncmp(country, "JP", COUNTRY_CODE_LEN) == 0)
+			ht_chan -= morse_ht_chan_offset_jp(ht_chan, MORSE_INVALID_CHANNEL, 1);
+
+		s1g_op_chan = morse_ht_chan_to_s1g_chan(ht_chan);
+	}
+
+	wpabuf_put_u8(buf, WLAN_EID_SUPPORTED_OPERATING_CLASSES);
+	ie_len = wpabuf_put(buf, 1);
+
+	/* Get operating class from native S1G Operation IE, if it exists. */
+	s1g_op_ie = wpa_bss_get_ie(bss, WLAN_EID_S1G_OPERATION);
+	if (s1g_op_ie && s1g_op_ie[1] >= 4) {
+		s1g_oper = (struct ieee80211_s1g_operation *) (s1g_op_ie + 2);
+		s1g_op_ch_width =
+		     ((s1g_oper->s1g_chwidth & S1G_OPERATION_OPERATING_CHANNEL_WIDTH_MASK)
+		     >> S1G_OPERATION_OPERATING_CHANNEL_WIDTH_SHIFT) + 1;
+		s1g_op_chan = s1g_oper->s1g_oper_ch;
+		if (morse_insert_supported_op_class(buf, country, s1g_op_ch_width, s1g_op_chan)
+							== MORSE_S1G_RETURN_ERROR) {
+			wpa_printf(MSG_ERROR, "Failed to insert supported operating class");
+			res = 0;
+			goto end;
+		}
+	}
+
+	/* Get current operating class for s1g channel bw > 4MHz */
+	vht_ie = wpa_bss_get_ie(bss, WLAN_EID_VHT_OPERATION);
+	if (!s1g_op_ie && vht_ie && vht_ie[1] >= 1) {
+		vht_oper = (struct ieee80211_vht_operation *) (vht_ie + 2);
+
+		if (vht_oper->vht_op_info_chwidth == CHANWIDTH_80MHZ ||
+			vht_oper->vht_op_info_chwidth == CHANWIDTH_160MHZ) {
+			switch (vht_oper->vht_op_info_chwidth) {
+			case CHANWIDTH_80MHZ:
+				s1g_op_ch_width = 4;
+				break;
+			case CHANWIDTH_160MHZ:
+				s1g_op_ch_width = 8;
+				break;
+			default:
+				wpa_printf(MSG_INFO,
+				" No valid s1g operating bandwidth derived");
+				break;
+			}
+			ht_chan = vht_oper->vht_op_info_chan_center_freq_seg0_idx;
+			s1g_op_chan = morse_ht_chan_to_s1g_chan(ht_chan);
+			if (s1g_op_chan < 0 ||
+			    morse_insert_supported_op_class(buf, country, s1g_op_ch_width,
+							s1g_op_chan) < 0) {
+				wpa_printf(MSG_ERROR,"Failed to insert supported operating class"
+						"for operating bw 4/8 MHz");
+				res = 0;
+				goto end;
+			}
+		} else if (vht_oper->vht_op_info_chwidth == CHANWIDTH_USE_HT) {
+			vht_use_ht = true;
+		}
+	}
+
+	/* Get current operating class for s1g channel bw is 1MHz or 2MHz */
+	if (!s1g_op_ie && ht_ie && (!vht_ie || vht_use_ht) && s1g_op_chan > 0) {
+		if ((ht_oper->ht_param & HT_INFO_HT_PARAM_STA_CHNL_WIDTH) && sec_chan) {
+			s1g_op_ch_width = 2;
+			s1g_op_chan += sec_chan;
+		} else {
+			s1g_op_ch_width = 1;
+		}
+
+		if (morse_insert_supported_op_class(buf, country, s1g_op_ch_width, s1g_op_chan)
+			            == MORSE_S1G_RETURN_ERROR) {
+			wpa_printf(MSG_ERROR,"Failed to insert supported operating class"
+					"for operating bw 1/2 MHz");
+			res = 0;
+			goto end;
+		}
+	}
+
+	morse_remove_duplicates_and_sort_buf(buf, S1G_OP_CLASS_IE_LEN);
+
+	*ie_len = wpabuf_len(buf) - 2;
+	if (*ie_len < 2) {
+		wpa_printf(MSG_DEBUG,
+			   "No supported operating classes IE to add");
+		res = 0;
+	} else if (wpabuf_len(buf) > len) {
+		wpa_printf(MSG_ERROR,
+			   "Supported operating classes IE exceeds maximum buffer length");
+		res = 0;
+	} else {
+		os_memcpy(pos, wpabuf_head(buf), wpabuf_len(buf));
+		res = wpabuf_len(buf);
+		wpa_hexdump_buf(MSG_DEBUG,
+				"Added supported operating classes IE", buf);
+	}
+
+end:
+	wpabuf_free(buf);
+	return res;
+}
+#endif
 
 size_t wpas_supp_op_class_ie(struct wpa_supplicant *wpa_s,
 			     struct wpa_ssid *ssid,
 			     struct wpa_bss *bss, u8 *pos, size_t len)
 {
+#ifndef MM_IOT
 	struct wpabuf *buf;
 	u8 op, current, chan;
 	u8 *ie_len;
@@ -620,6 +778,10 @@ size_t wpas_supp_op_class_ie(struct wpa_supplicant *wpa_s,
 
 	wpabuf_free(buf);
 	return res;
+
+#else /* MM_IOT */
+	return 0;
+#endif /* MM_IOT */
 }
 
 

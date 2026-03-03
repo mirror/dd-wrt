@@ -2,6 +2,7 @@
  * ACS - Automatic Channel Selection module
  * Copyright (c) 2011, Atheros Communications
  * Copyright (c) 2013, Qualcomm Atheros, Inc.
+ * Copyright 2021 Morse Micro
  *
  * This software may be distributed under the terms of the BSD license.
  * See README for more details.
@@ -22,6 +23,7 @@
 #include "ap_config.h"
 #include "hw_features.h"
 #include "acs.h"
+#include "utils/morse.h"
 
 /*
  * Automatic Channel Selection
@@ -305,7 +307,6 @@ static const struct bw_item *bw_desc[] = {
 	[ACS_BW320_2] = bw_320_2,
 };
 
-
 static int acs_request_scan(struct hostapd_iface *iface);
 static int acs_survey_is_sufficient(struct freq_survey *survey);
 static void acs_scan_retry(void *eloop_data, void *user_data);
@@ -565,10 +566,15 @@ static int acs_usable_chan(struct hostapd_channel_data *chan)
 static int is_in_chanlist(struct hostapd_iface *iface,
 			  struct hostapd_channel_data *chan)
 {
+	int chan_num = chan->chan;
+
 	if (!iface->conf->acs_ch_list.num)
 		return 1;
 
-	return freq_range_list_includes(&iface->conf->acs_ch_list, chan->chan);
+	if (iface->conf->ieee80211ah)
+		chan_num = morse_ht_chan_to_s1g_chan(chan_num);
+
+	return freq_range_list_includes(&iface->conf->acs_ch_list, chan_num);
 }
 
 
@@ -582,12 +588,13 @@ static int is_in_freqlist(struct hostapd_iface *iface,
 					chan->freq);
 }
 
-
 static void acs_survey_mode_interference_factor(
 	struct hostapd_iface *iface, struct hostapd_hw_modes *mode)
 {
 	int i;
 	struct hostapd_channel_data *chan;
+	int s1g_chan;
+	const struct ah_class *class;
 
 	for (i = 0; i < mode->num_channels; i++) {
 		chan = &mode->channels[i];
@@ -611,6 +618,26 @@ static void acs_survey_mode_interference_factor(
 		if ((chan->flag & HOSTAPD_CHAN_INDOOR_ONLY) &&
 		    iface->conf->country[2] == 0x4f)
 			continue;
+
+		/* check if ht chan is valid for op class */
+		s1g_chan = morse_ht_chan_to_s1g_chan(chan->chan);
+		if (s1g_chan < 0)
+			continue;
+
+		/* Upon initial configuration parsing, hostap will have selected the first
+		 * S1G op class based on the provided global op class. In regions that have
+		 * overlapping channels (e.g. JP), it is important that all local op classes
+		 * are evaluated.
+		 */
+		if (morse_s1g_op_class_valid(iface->conf->s1g_op_class, &class) !=
+			OP_CLASS_S1G_LOCAL)
+			continue;
+
+		if (morse_s1g_verify_op_class_country_channel(class->global_op_class,
+			iface->conf->op_country, s1g_chan,
+			iface->conf->s1g_prim_1mhz_chan_index) == MORSE_S1G_RETURN_ERROR) {
+			continue;
+		}
 
 		wpa_printf(MSG_DEBUG, "ACS: Survey analysis for channel %d (%d MHz)",
 			   chan->chan, chan->freq);
@@ -1126,6 +1153,9 @@ acs_find_ideal_chan(struct hostapd_iface *iface)
 		}
 	}
 
+	/* SW-4195: ignore subbands and only scan primary channels (i.e, assume HT20) */
+	n_chans = 1;
+
 	bw = num_chan_to_bw(n_chans);
 
 bw_selected:
@@ -1158,6 +1188,111 @@ bw_selected:
 	return rand_chan;
 }
 
+static struct hostapd_channel_data *
+acs_s1g_find_ideal_chan(struct hostapd_iface *iface)
+{
+	struct hostapd_channel_data *ideal_chan = NULL, *chan = NULL;
+	long double factor = 0, ideal_factor = 0;
+	struct hostapd_hw_modes *mode;
+	int i, s1g_chan;
+	unsigned int k;
+	const struct ah_class *class;
+	int ideal_s1g_op_class;
+
+	wpa_printf(MSG_DEBUG,
+		   "ACS: Survey analysis for selected S1G bandwidth %d MHz",
+		   morse_s1g_op_class_to_ch_width(iface->conf->s1g_op_class));
+
+	mode = &iface->hw_features[0];
+
+	for (i = 0; i < mode->num_channels; i++) {
+		struct acs_bias *bias;
+		int s1g_op_class;
+		chan = &mode->channels[i];
+
+		if (!is_in_chanlist(iface, chan))
+			continue;
+
+		if (!acs_usable_chan(chan))
+			continue;
+
+		/* SW-5333 */
+		/* check if ht chan is valid for op class */
+		s1g_chan = morse_ht_chan_to_s1g_chan(chan->chan);
+		if (s1g_chan < 0)
+			continue;
+
+		/* Upon initial configuration parsing, hostap will have selected the first
+		 * S1G op class based on the provided global op class. In regions that have
+		 * overlapping channels (e.g. JP), it is important that all local op classes
+		 * are evaluated.
+		 */
+		if (morse_s1g_op_class_valid(iface->conf->s1g_op_class, &class) !=
+			OP_CLASS_S1G_LOCAL)
+			continue;
+
+		s1g_op_class = morse_s1g_verify_op_class_country_channel(class->global_op_class,
+			iface->conf->op_country, s1g_chan, iface->conf->s1g_prim_1mhz_chan_index);
+
+		if (s1g_op_class == MORSE_S1G_RETURN_ERROR)
+			continue;
+
+		if (morse_s1g_is_chan_conf_primary_disabled(iface->conf, mode, s1g_chan)) {
+			wpa_printf(MSG_DEBUG, "ACS: Skipping channel %d due to disabled primary",
+				   s1g_chan);
+			continue;
+		}
+
+		bias = NULL;
+		if (iface->conf->acs_chan_bias) {
+			for (k = 0; k < iface->conf->num_acs_chan_bias; k++) {
+				bias = &iface->conf->acs_chan_bias[k];
+				wpa_printf(MSG_DEBUG,
+					   "ACS: Checking for matching bias channel %d, chan %d",
+					   bias->channel, s1g_chan);
+				if (bias->channel == s1g_chan)
+					break;
+				bias = NULL;
+			}
+		}
+
+		factor = chan->interference_factor;
+
+		if (bias) {
+			factor *= bias->bias;
+			wpa_printf(MSG_DEBUG,
+					   "ACS:  * channel %d: total interference = %Lg (%f bias)",
+					   s1g_chan, factor, bias->bias);
+		} else {
+			wpa_printf(MSG_DEBUG,
+					   "ACS:  * channel %d: total interference = %Lg",
+					   s1g_chan, factor);
+		}
+
+		if ((!ideal_chan) || (factor < ideal_factor)) {
+			ideal_chan = chan;
+			ideal_factor = factor;
+			ideal_s1g_op_class = s1g_op_class;
+		}
+	}
+
+	if (!ideal_chan)
+		return ideal_chan; /* Not found */
+
+	if (iface->conf->s1g_op_class != ideal_s1g_op_class) {
+		wpa_printf(MSG_DEBUG, "ACS: Updating S1G op class %d -> %d",
+			iface->conf->s1g_op_class, ideal_s1g_op_class);
+		iface->conf->s1g_op_class = ideal_s1g_op_class;
+	}
+
+	wpa_printf(MSG_DEBUG, "ACS: selected channel %d (%d MHz) S1G ch %d (%d kHz)",
+		ideal_chan->chan, ideal_chan->freq,
+		morse_ht_chan_to_s1g_chan(ideal_chan->chan),
+		morse_s1g_op_class_ht_chan_to_s1g_freq(
+			iface->conf->s1g_op_class, ideal_chan->chan));
+
+	return ideal_chan;
+}
 
 static void acs_adjust_secondary(struct hostapd_iface *iface)
 {
@@ -1180,7 +1315,6 @@ static void acs_adjust_secondary(struct hostapd_iface *iface)
 			iface->conf->secondary_channel = -1;
 	}
 }
-
 
 static void acs_adjust_center_freq(struct hostapd_iface *iface)
 {
@@ -1276,7 +1410,12 @@ static void acs_study(struct hostapd_iface *iface)
 		goto fail;
 	}
 
-	ideal_chan = acs_find_ideal_chan(iface);
+	/* SW-5333 */
+	if (iface->conf->ieee80211ah) {
+		ideal_chan = acs_s1g_find_ideal_chan(iface);
+	} else {
+		ideal_chan = acs_find_ideal_chan(iface);
+	}
 	if (!ideal_chan) {
 		wpa_printf(MSG_ERROR, "ACS: Failed to compute ideal channel");
 		err = -1;
@@ -1284,7 +1423,22 @@ static void acs_study(struct hostapd_iface *iface)
 	}
 
 	iface->conf->channel = ideal_chan->chan;
+
+#ifdef CONFIG_IEEE80211AH
+	int ht_chan = morse_ht_center_chan_to_ht_chan(iface->conf, ideal_chan->chan);
+	iface->freq = ieee80211_channel_to_frequency(ht_chan, NL80211_BAND_5GHZ);
+#else
 	iface->freq = ideal_chan->freq;
+#endif
+
+	if (iface->conf->ieee80211ah) {
+		if (iface->conf->ieee80211ac) {
+			hostapd_set_oper_centr_freq_seg0_idx(iface->conf,
+					iface->conf->channel);
+		}
+		iface->conf->channel = morse_ht_center_chan_to_ht_chan(iface->conf, iface->conf->channel);
+	}
+
 #ifdef CONFIG_IEEE80211BE
 	iface->conf->punct_bitmap = ideal_chan->punct_bitmap;
 #endif /* CONFIG_IEEE80211BE */

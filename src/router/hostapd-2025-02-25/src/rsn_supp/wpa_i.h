@@ -1,6 +1,7 @@
 /*
  * Internal WPA/RSN supplicant state machine definitions
  * Copyright (c) 2004-2018, Jouni Malinen <j@w1.fi>
+ * Copyright 2022 Morse Micro
  *
  * This software may be distributed under the terms of the BSD license.
  * See README for more details.
@@ -232,6 +233,7 @@ struct wpa_sm {
 	int dpp_pfs;
 #endif /* CONFIG_DPP2 */
 	struct wpa_sm_mlo mlo;
+	u16 aid;
 
 	bool wmm_enabled;
 	bool driver_bss_selection;

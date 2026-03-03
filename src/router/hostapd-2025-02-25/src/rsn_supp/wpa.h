@@ -1,6 +1,7 @@
 /*
  * wpa_supplicant - WPA definitions
  * Copyright (c) 2003-2015, Jouni Malinen <j@w1.fi>
+ * Copyright 2022 Morse Micro
  *
  * This software may be distributed under the terms of the BSD license.
  * See README for more details.
@@ -207,6 +208,7 @@ void wpa_sm_set_own_addr(struct wpa_sm *sm, const u8 *addr);
 void wpa_sm_set_ifname(struct wpa_sm *sm, const char *ifname,
 		       const char *bridge_ifname);
 void wpa_sm_set_eapol(struct wpa_sm *sm, struct eapol_sm *eapol);
+int wpa_sm_set_assoc_aid(struct wpa_sm *sm, u16 aid);
 int wpa_sm_set_assoc_wpa_ie(struct wpa_sm *sm, const u8 *ie, size_t len);
 int wpa_sm_set_assoc_wpa_ie_default(struct wpa_sm *sm, u8 *wpa_ie,
 				    size_t *wpa_ie_len);

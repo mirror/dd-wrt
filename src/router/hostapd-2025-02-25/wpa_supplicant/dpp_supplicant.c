@@ -3,12 +3,14 @@
  * Copyright (c) 2017, Qualcomm Atheros, Inc.
  * Copyright (c) 2018-2020, The Linux Foundation
  * Copyright (c) 2021-2022, Qualcomm Innovation Center, Inc.
+ * Copyright 2022 Morse Micro
  *
  * This software may be distributed under the terms of the BSD license.
  * See README for more details.
  */
 
 #include "utils/includes.h"
+#include <openssl/pem.h>
 
 #include "utils/common.h"
 #include "utils/eloop.h"
@@ -30,6 +32,12 @@
 #include "notify.h"
 #include "dpp_supplicant.h"
 
+#ifdef CONFIG_DPP2
+#define DEFAULT_CHIRP_FOREVER_START_DELAY_S     (2)
+#endif
+#ifdef CONFIG_DPP3
+#define PUSH_BUTTON_CHIRP_FOREVER_START_DELAY_S (30)
+#endif
 
 static int wpas_dpp_listen_start(struct wpa_supplicant *wpa_s,
 				 unsigned int freq);
@@ -103,6 +111,9 @@ int wpas_dpp_qr_code(struct wpa_supplicant *wpa_s, const char *cmd)
 #ifdef CONFIG_DPP2
 	dpp_controller_new_qr_code(wpa_s->dpp, bi);
 #endif /* CONFIG_DPP2 */
+#ifdef CONFIG_DPP3
+static void wpas_dpp_pb_discovery_t2e(void *eloop_ctx, void *timeout_ctx);
+#endif /* CONFIG_DPP3*/
 
 	return bi->id;
 }
@@ -1904,8 +1915,16 @@ static void wpas_dpp_gas_resp_cb(void *ctx, const u8 *addr, u8 dialog_token,
 	}
 	if (result != GAS_QUERY_SUCCESS ||
 	    !resp || status_code != WLAN_STATUS_SUCCESS) {
-		wpa_printf(MSG_DEBUG, "DPP: GAS query did not succeed");
-		goto fail;
+		wpa_printf(MSG_DEBUG, "DPP: GAS query did not succeed (try: %d)",
+			auth->conf_req_tries);
+
+		if (auth->conf_req_tries >= 5)
+			goto fail;
+
+		auth->conf_req_tries++;
+		wpas_dpp_start_gas_client(wpa_s);
+		wpa_printf(MSG_DEBUG, "DPP: Restarting GAS client to resend GAS request");
+		return;
 	}
 
 	wpa_hexdump_buf(MSG_DEBUG, "DPP: Configuration Response adv_proto",
@@ -2059,8 +2078,10 @@ static void wpas_dpp_start_gas_client(struct wpa_supplicant *wpa_s)
 	 * out new Config Requests for 60 seconds, so this gives an extra 60
 	 * second time after the last expected new Config Request for the
 	 * Configurator to determine what kind of configuration to provide. */
-	eloop_register_timeout(120, 0, wpas_dpp_gas_client_timeout,
-			       wpa_s, NULL);
+	if (!eloop_is_timeout_registered(wpas_dpp_gas_client_timeout, wpa_s, NULL)) {
+		eloop_register_timeout(120, 0, wpas_dpp_gas_client_timeout,
+				       wpa_s, NULL);
+	}
 
 	res = gas_query_req(wpa_s->gas, auth->peer_mac_addr, auth->curr_freq,
 			    1, 1, buf, wpas_dpp_gas_resp_cb, wpa_s);
@@ -2091,10 +2112,12 @@ static void wpas_dpp_auth_success(struct wpa_supplicant *wpa_s, int initiator)
 	}
 #endif /* CONFIG_TESTING_OPTIONS */
 
-	if (wpa_s->dpp_auth->configurator)
+	if (wpa_s->dpp_auth->configurator) {
 		wpas_dpp_start_gas_server(wpa_s);
-	else
+	} else {
+		wpa_s->dpp_auth->conf_req_tries = 1;
 		wpas_dpp_start_gas_client(wpa_s);
+	}
 }
 
 
@@ -2749,6 +2772,7 @@ wpas_dpp_rx_reconfig_auth_conf(struct wpa_supplicant *wpa_s, const u8 *src,
 	if (dpp_reconfig_auth_conf_rx(auth, hdr, buf, len) < 0)
 		return;
 
+	auth->conf_req_tries = 1;
 	wpas_dpp_start_gas_client(wpa_s);
 }
 
@@ -2945,10 +2969,43 @@ static int wpas_dpp_allow_ir(struct wpa_supplicant *wpa_s, unsigned int freq)
 	return 0;
 }
 
+#if defined(CONFIG_IEEE80211AH)
+static int wpas_s1g_preferred_ht_announce_freq(struct wpa_supplicant *wpa_s)
+{
+	/* From '6.2.2 Generation of Channel List for Presence Announcement' in
+	 * Easy Connect Specification v2.0.0.6.
+	 *
+	 * Sub-1 GHz: Channel 37 (920.5 MHz) if local regulations permit use of global
+	 * operating class 68 (ITU Region 2, Australia, New Zealand, Singapore)
+	 * otherwise Channel 1 (863.5 MHz) if local regulations permit use of
+	 * global operating class 66 (Europe)
+	 */
+	int global_op_class = morse_s1g_country_to_global_op_class(wpa_s->conf->country);
+	int preferred_ann_chan_s1g =
+		(global_op_class == 68) ? 37 :
+		(global_op_class == 66) ? 1 : -1;
+	int ht_s1g_freq = ieee80211_channel_to_frequency(
+		morse_s1g_chan_to_ht_chan(preferred_ann_chan_s1g), NL80211_BAND_5GHZ);
+
+	/* S1G devices masquerading as 5G must convert back to a HT frequency */
+	return ht_s1g_freq;
+}
+#endif
+
 
 static int wpas_dpp_pkex_next_channel(struct wpa_supplicant *wpa_s,
 				      struct dpp_pkex *pkex)
 {
+#if defined(CONFIG_IEEE80211AH)
+	int preferred_s1g_ht_freq = wpas_s1g_preferred_ht_announce_freq(wpa_s);
+
+	if (preferred_s1g_ht_freq <= 0 || pkex->freq == (unsigned int) preferred_s1g_ht_freq)
+		return -1; /* no more channels to try */
+	else if (pkex->freq == 2437)
+		pkex->freq = preferred_s1g_ht_freq;
+	else
+		return -1;
+#else
 	if (pkex->freq == 2437)
 		pkex->freq = 5745;
 	else if (pkex->freq == 5745)
@@ -2957,6 +3014,7 @@ static int wpas_dpp_pkex_next_channel(struct wpa_supplicant *wpa_s,
 		pkex->freq = 60480;
 	else
 		return -1; /* no more channels to try */
+#endif
 
 	if (wpas_dpp_allow_ir(wpa_s, pkex->freq) == 1) {
 		wpa_printf(MSG_DEBUG, "DPP: Try to initiate on %u MHz",
@@ -3094,6 +3152,12 @@ static int wpas_dpp_pkex_init(struct wpa_supplicant *wpa_s,
 	if (wait_time > 2000)
 		wait_time = 2000;
 	pkex->freq = 2437;
+	if (!wpas_dpp_allow_ir(wpa_s, pkex->freq)) {
+		if (wpas_dpp_pkex_next_channel(wpa_s, pkex) < 0) {
+			wpa_printf(MSG_DEBUG, "DPP: Could not initiate (no channels to try)");
+			return -1;
+		}
+	}
 	wpa_msg(wpa_s, MSG_INFO, DPP_EVENT_TX "dst=" MACSTR
 		" freq=%u type=%d",
 		MAC2STR(broadcast), pkex->freq,
@@ -3154,6 +3218,44 @@ static void wpas_dpp_pkex_retry_timeout(void *eloop_ctx, void *timeout_ctx)
 			       wpas_dpp_tx_pkex_status, 0);
 }
 
+static struct dpp_bootstrap_info *
+wpas_dpp_pkex_finish(struct wpa_supplicant *wpa_s, const u8 *peer,
+		     unsigned int freq)
+{
+	struct dpp_bootstrap_info *bi;
+
+	wpas_dpp_pkex_clear_code(wpa_s);
+	bi = dpp_pkex_finish(wpa_s->dpp, wpa_s->dpp_pkex, peer, freq);
+	if (!bi)
+		return NULL;
+
+	wpa_s->dpp_pkex = NULL;
+
+#ifdef CONFIG_DPP3
+	if (wpa_s->dpp_pb_bi && !wpa_s->dpp_pb_configurator &&
+	    os_memcmp(bi->pubkey_hash_chirp, wpa_s->dpp_pb_init_hash,
+		      SHA256_MAC_LEN) != 0) {
+		char id[20];
+
+		wpa_printf(MSG_INFO,
+			   "DPP: Peer bootstrap key from PKEX does not match PB announcement response hash");
+		wpa_hexdump(MSG_DEBUG,
+			    "DPP: Peer provided bootstrap key hash(chirp) from PB PKEX",
+			    bi->pubkey_hash_chirp, SHA256_MAC_LEN);
+		wpa_hexdump(MSG_DEBUG,
+			    "DPP: Peer provided bootstrap key hash(chirp) from PB announcement response",
+			    wpa_s->dpp_pb_init_hash, SHA256_MAC_LEN);
+
+		os_snprintf(id, sizeof(id), "%u", bi->id);
+		dpp_bootstrap_remove(wpa_s->dpp, id);
+		wpas_dpp_push_button_stop(wpa_s);
+		return NULL;
+	}
+#endif /* CONFIG_DPP3 */
+
+	return bi;
+}
+
 
 static void
 wpas_dpp_tx_pkex_status(struct wpa_supplicant *wpa_s,
@@ -3199,6 +3301,9 @@ wpas_dpp_tx_pkex_status(struct wpa_supplicant *wpa_s,
 				       wpas_dpp_pkex_retry_timeout, wpa_s,
 				       NULL);
 	}
+
+	if (result == OFFCHANNEL_SEND_ACTION_SUCCESS && wpa_s->dpp_pkex_wait_auth_req)
+		wpas_dpp_pkex_finish(wpa_s, src, freq);
 }
 
 
@@ -3241,7 +3346,7 @@ wpas_dpp_rx_pkex_exchange_req(struct wpa_supplicant *wpa_s, const u8 *src,
 	}
 #endif /* CONFIG_DPP2 */
 
-	if (wpa_s->dpp_pkex) {
+	if (wpa_s->dpp_pkex && memcmp(src, wpa_s->dpp_pkex->peer_mac, ETH_ALEN)) {
 		/* TODO: Support parallel operations */
 		wpa_printf(MSG_DEBUG,
 			   "DPP: Already in PKEX session - ignore new request");
@@ -3264,6 +3369,7 @@ wpas_dpp_rx_pkex_exchange_req(struct wpa_supplicant *wpa_s, const u8 *src,
 	if (wpa_s->dpp_pb_bi && wpa_s->dpp_pb_announcement) {
 		wpa_printf(MSG_DEBUG,
 			   "DPP: Started PB PKEX (no more PB announcements)");
+		eloop_cancel_timeout(wpas_dpp_pb_discovery_t2e, wpa_s, NULL);
 		wpabuf_free(wpa_s->dpp_pb_announcement);
 		wpa_s->dpp_pb_announcement = NULL;
 	}
@@ -3326,44 +3432,6 @@ wpas_dpp_rx_pkex_exchange_resp(struct wpa_supplicant *wpa_s, const u8 *src,
 }
 
 
-static struct dpp_bootstrap_info *
-wpas_dpp_pkex_finish(struct wpa_supplicant *wpa_s, const u8 *peer,
-		     unsigned int freq)
-{
-	struct dpp_bootstrap_info *bi;
-
-	wpas_dpp_pkex_clear_code(wpa_s);
-	bi = dpp_pkex_finish(wpa_s->dpp, wpa_s->dpp_pkex, peer, freq);
-	if (!bi)
-		return NULL;
-
-	wpa_s->dpp_pkex = NULL;
-
-#ifdef CONFIG_DPP3
-	if (wpa_s->dpp_pb_bi && !wpa_s->dpp_pb_configurator &&
-	    os_memcmp(bi->pubkey_hash_chirp, wpa_s->dpp_pb_init_hash,
-		      SHA256_MAC_LEN) != 0) {
-		char id[20];
-
-		wpa_printf(MSG_INFO,
-			   "DPP: Peer bootstrap key from PKEX does not match PB announcement response hash");
-		wpa_hexdump(MSG_DEBUG,
-			    "DPP: Peer provided bootstrap key hash(chirp) from PB PKEX",
-			    bi->pubkey_hash_chirp, SHA256_MAC_LEN);
-		wpa_hexdump(MSG_DEBUG,
-			    "DPP: Peer provided bootstrap key hash(chirp) from PB announcement response",
-			    wpa_s->dpp_pb_init_hash, SHA256_MAC_LEN);
-
-		os_snprintf(id, sizeof(id), "%u", bi->id);
-		dpp_bootstrap_remove(wpa_s->dpp, id);
-		wpas_dpp_push_button_stop(wpa_s);
-		return NULL;
-	}
-#endif /* CONFIG_DPP3 */
-
-	return bi;
-}
-
 
 static void
 wpas_dpp_rx_pkex_commit_reveal_req(struct wpa_supplicant *wpa_s, const u8 *src,
@@ -3409,7 +3477,6 @@ wpas_dpp_rx_pkex_commit_reveal_req(struct wpa_supplicant *wpa_s, const u8 *src,
 			       wait_time, wpas_dpp_tx_pkex_status, 0);
 	wpabuf_free(msg);
 
-	wpas_dpp_pkex_finish(wpa_s, src, freq);
 	wpa_s->dpp_pkex_wait_auth_req = true;
 }
 
@@ -3783,10 +3850,6 @@ skip_hash_check:
 		os_memcpy(wpa_s->dpp_pb_init_hash, i_hash, SHA256_MAC_LEN);
 		os_memcpy(wpa_s->dpp_pb_c_nonce, c_nonce, c_nonce_len);
 		wpa_s->dpp_pb_c_nonce_len = c_nonce_len;
-		/* Stop announcement iterations after at least one more full
-		 * round and one extra round for postponed session overlap
-		 * detection. */
-		wpa_s->dpp_pb_stop_iter = 3;
 	}
 }
 
@@ -4847,6 +4910,47 @@ void wpas_dpp_stop(struct wpa_supplicant *wpa_s)
 }
 
 
+static void wpas_dpp_chirp_forever(void *eloop_ctx, void *timeout_ctx);
+static void wpas_dpp_chirp_forever_start_after(struct wpa_supplicant *wpa_s,
+	unsigned int secs);
+
+static void wpas_dpp_set_key(struct wpa_supplicant *wpa_s, EC_KEY *eckey)
+{
+	unsigned char *der = NULL;
+	int der_len = i2d_ECPrivateKey(eckey, &der);
+	int i;
+	char *key = NULL;
+	char *cmd = NULL;
+	int size;
+
+	if (!der || der_len <= 0)
+		return;
+
+	key = malloc((der_len * 2) + 1);
+	if (!key)
+		goto exit;
+
+	for (i = 0; i < der_len; i++)
+		sprintf((char *)(key + i * 2), "%02X", der[i]);
+	key[i * 2] = '\0';
+
+	size = os_snprintf(NULL, 0, "type=qrcode mac="MACSTR" key=%s",
+		MAC2STR(wpa_s->own_addr), key);
+
+	cmd = malloc(size + 1);
+	if (!cmd)
+		goto exit;
+
+	os_snprintf(cmd, size+1, "type=qrcode mac="MACSTR" key=%s",
+		MAC2STR(wpa_s->own_addr), key);
+	dpp_bootstrap_gen(wpa_s->dpp, cmd);
+
+exit:
+	OPENSSL_free(der);
+	free(key);
+	free(cmd);
+}
+
 int wpas_dpp_init(struct wpa_supplicant *wpa_s)
 {
 	struct dpp_global_config config;
@@ -4869,6 +4973,31 @@ int wpas_dpp_init(struct wpa_supplicant *wpa_s)
 	config.remove_bi = wpas_dpp_remove_bi;
 #endif /* CONFIG_DPP2 */
 	wpa_s->dpp = dpp_global_init(&config);
+#ifdef CONFIG_DPP2
+	if (wpa_s->conf->dpp_key && wpa_s->dpp) {
+		BIO *bio;
+		EC_KEY *eckey;
+		EVP_PKEY *pkey;
+
+		bio = BIO_new_file(wpa_s->conf->dpp_key, "r");
+		if (!bio)
+			return -1;
+
+		pkey = PEM_read_bio_PrivateKey(bio, NULL, NULL, NULL);
+		BIO_free(bio);
+
+		eckey = EVP_PKEY_get1_EC_KEY(pkey);
+		EVP_PKEY_free(pkey);
+		if (!eckey)
+			return -1;
+
+		wpas_dpp_set_key(wpa_s, eckey);
+
+		EC_KEY_free(eckey);
+	}
+	wpas_dpp_chirp_forever_start_after(wpa_s,
+		DEFAULT_CHIRP_FOREVER_START_DELAY_S);
+#endif
 	return wpa_s->dpp ? 0 : -1;
 }
 
@@ -5121,6 +5250,29 @@ static void wpas_dpp_chirp_start(struct wpa_supplicant *wpa_s)
 	wpabuf_free(announce);
 }
 
+static void log_dpp_presence_ann_channels(int *freqs)
+{
+	int i;
+	int n_freqs;
+
+	if (!freqs)
+		return;
+
+	n_freqs = int_array_len(freqs);
+	wpa_printf(MSG_DEBUG, "DPP: Announcing presence on %d channels", n_freqs);
+	for (i = 0; i < n_freqs; i++) {
+		int freq = freqs[i];
+#if defined(CONFIG_IEEE80211AH)
+		int chan_s1g = morse_ht_freq_to_s1g_chan(freq);
+		int op_bw_s1g = morse_s1g_chan_to_bw(chan_s1g);
+
+		wpa_printf(MSG_DEBUG, "DPP:    [%d] %d MHz (S1G operating:%d MHz)", chan_s1g,
+			   freq, op_bw_s1g);
+#else
+		wpa_printf(MSG_DEBUG, "DPP:    %d MHz", freq)
+#endif
+	}
+}
 
 static int * wpas_dpp_presence_ann_channels(struct wpa_supplicant *wpa_s,
 					    struct dpp_bootstrap_info *bi)
@@ -5158,23 +5310,37 @@ static int * wpas_dpp_presence_ann_channels(struct wpa_supplicant *wpa_s,
 	mode = get_mode(wpa_s->hw.modes, wpa_s->hw.num_modes,
 			HOSTAPD_MODE_IEEE80211A, false);
 	if (mode) {
+#if defined(CONFIG_IEEE80211AH)
+		int preferred_s1g_ht_freq = wpas_s1g_preferred_ht_announce_freq(wpa_s);
+		int add_s1g_chan = 0;
+#else
 		int chan44 = 0, chan149 = 0;
-
+#endif
 		for (c = 0; c < mode->num_channels; c++) {
 			struct hostapd_channel_data *chan = &mode->channels[c];
 
 			if (chan->flag & (HOSTAPD_CHAN_DISABLED |
 					  HOSTAPD_CHAN_RADAR))
 				continue;
+#if defined(CONFIG_IEEE80211AH)
+			if (chan->freq == preferred_s1g_ht_freq)
+				add_s1g_chan = 1;
+#else
 			if (chan->freq == 5220)
 				chan44 = 1;
 			if (chan->freq == 5745)
 				chan149 = 1;
+#endif
 		}
+#if defined(CONFIG_IEEE80211AH)
+		if (add_s1g_chan)
+			int_array_add_unique(&freqs, preferred_s1g_ht_freq);
+#else
 		if (chan149)
 			int_array_add_unique(&freqs, 5745);
 		else if (chan44)
 			int_array_add_unique(&freqs, 5220);
+#endif
 	}
 
 	mode = get_mode(wpa_s->hw.modes, wpa_s->hw.num_modes,
@@ -5215,6 +5381,7 @@ static void wpas_dpp_chirp_scan_res_handler(struct wpa_supplicant *wpa_s,
 
 	os_free(wpa_s->dpp_chirp_freqs);
 	wpa_s->dpp_chirp_freqs = wpas_dpp_presence_ann_channels(wpa_s, bi);
+	log_dpp_presence_ann_channels(wpa_s->dpp_chirp_freqs);
 
 	if (!wpa_s->dpp_chirp_freqs ||
 	    eloop_register_timeout(0, 0, wpas_dpp_chirp_next, wpa_s, NULL) < 0)
@@ -5271,7 +5438,8 @@ static void wpas_dpp_chirp_next(void *eloop_ctx, void *timeout_ctx)
 			wpa_s->dpp_chirp_freq = wpa_s->dpp_chirp_freqs[i];
 		} else {
 			wpa_s->dpp_chirp_iter--;
-			if (wpa_s->dpp_chirp_iter <= 0) {
+			if (wpa_s->dpp_chirp_iter <= 0 &&
+			    !wpa_s->conf->dpp_chirp_forever) {
 				wpa_printf(MSG_DEBUG,
 					   "DPP: Chirping iterations completed");
 				wpas_dpp_chirp_stop(wpa_s);
@@ -5301,6 +5469,18 @@ static void wpas_dpp_chirp_next(void *eloop_ctx, void *timeout_ctx)
 	wpas_dpp_chirp_start(wpa_s);
 }
 
+
+static void wpas_dpp_chirp_forever(void *eloop_ctx, void *timeout_ctx) {
+	struct wpa_supplicant *wpa_s = eloop_ctx;
+	(void)wpas_dpp_chirp(wpa_s, "dpp_chirp own=1");
+	return;
+}
+
+static void wpas_dpp_chirp_forever_start_after(struct wpa_supplicant *wpa_s,
+	unsigned int secs) {
+	if (wpa_s->conf->dpp_chirp_forever && !wpa_s->conf->ssid)
+		eloop_register_timeout(secs, 0,  wpas_dpp_chirp_forever, wpa_s, NULL);
+}
 
 int wpas_dpp_chirp(struct wpa_supplicant *wpa_s, const char *cmd)
 {
@@ -5521,6 +5701,16 @@ int wpas_dpp_ca_set(struct wpa_supplicant *wpa_s, const char *cmd)
 
 static int wpas_dpp_pb_announce(struct wpa_supplicant *wpa_s, int freq);
 
+void wpas_dpp_push_button_tx_wait_expire(struct wpa_supplicant *wpa_s)
+{
+	if (!wpa_s->dpp_pb_announcement || wpa_s->dpp_pb_discovery_done)
+		return;
+
+	wpa_printf(MSG_DEBUG, "DPP: Failed to send push button announcement");
+	if (eloop_register_timeout(0, 0, wpas_dpp_pb_next, wpa_s, NULL) < 0)
+		wpas_dpp_push_button_stop(wpa_s);
+}
+
 
 static void wpas_dpp_pb_tx_status(struct wpa_supplicant *wpa_s,
 				  unsigned int freq, const u8 *dst,
@@ -5593,74 +5783,113 @@ static int wpas_dpp_pb_announce(struct wpa_supplicant *wpa_s, int freq)
 	return 0;
 }
 
+static void wpas_dpp_pb_discovery_t1e(void *eloop_ctx, void *timeout_ctx)
+{
+	struct wpa_supplicant *wpa_s = eloop_ctx;
+
+	wpa_printf(MSG_DEBUG, "DPP: Push button T1e timeout expired");
+	if (!wpa_s->dpp_pb_discovery_done)
+		offchannel_send_action_done(wpa_s);
+	wpas_dpp_push_button_stop(wpa_s);
+}
+
+static void wpas_dpp_pb_discovery_t2e(void *eloop_ctx, void *timeout_ctx)
+{
+	struct wpa_supplicant *wpa_s = eloop_ctx;
+
+	wpa_printf(MSG_DEBUG, "DPP: Push button T2e timeout expired");
+	if (!wpa_s->dpp_pb_discovery_done)
+		offchannel_send_action_done(wpa_s);
+	wpas_dpp_push_button_stop(wpa_s);
+}
 
 static void wpas_dpp_pb_next(void *eloop_ctx, void *timeout_ctx)
 {
 	struct wpa_supplicant *wpa_s = eloop_ctx;
-	struct os_reltime now;
 	int freq;
 
 	if (!wpa_s->dpp_pb_freqs)
 		return;
 
-	os_get_reltime(&now);
-	offchannel_send_action_done(wpa_s);
-
-	if (os_reltime_expired(&now, &wpa_s->dpp_pb_time, 100)) {
-		wpa_printf(MSG_DEBUG, "DPP: Push button wait time expired");
-		wpas_dpp_push_button_stop(wpa_s);
-		return;
-	}
+	if (!wpa_s->dpp_pb_discovery_done)
+		offchannel_send_action_done(wpa_s);
 
 	if (wpa_s->dpp_pb_freq_idx >= int_array_len(wpa_s->dpp_pb_freqs)) {
 		wpa_printf(MSG_DEBUG,
-			   "DPP: Completed push button announcement round");
+				"DPP: Completed push button announcement round");
 		wpa_s->dpp_pb_freq_idx = 0;
-		if (wpa_s->dpp_pb_stop_iter > 0) {
-			wpa_s->dpp_pb_stop_iter--;
+	}
 
-			if (wpa_s->dpp_pb_stop_iter == 1) {
-				wpa_msg(wpa_s, MSG_INFO, DPP_EVENT_PB_STATUS
-					"wait for AP/Configurator to allow PKEX to be initiated");
-				if (eloop_register_timeout(10, 0,
-							   wpas_dpp_pb_next,
-							   wpa_s, NULL) < 0) {
-					wpas_dpp_push_button_stop(wpa_s);
-					return;
-				}
+	if (!wpa_s->dpp_pb_freq_idx) {
+		switch (wpa_s->dpp_pb_discovery_round) {
+		case DPP_PB_DISCOVERY_NOT_STARTED:
+			wpa_s->dpp_pb_discovery_round = DPP_PB_DISCOVERY_ROUND_1;
+			if (eloop_register_timeout(30, 0, wpas_dpp_pb_discovery_t1e,
+						   wpa_s, NULL) < 0) {
+				wpas_dpp_push_button_stop(wpa_s);
+				return;
+			}
+			break;
+		case DPP_PB_DISCOVERY_ROUND_1:
+			if (wpa_s->dpp_pb_resp_freq)
+				wpa_s->dpp_pb_discovery_round = DPP_PB_DISCOVERY_ROUND_2;
+			break;
+		case DPP_PB_DISCOVERY_ROUND_2:
+			wpa_s->dpp_pb_discovery_round = DPP_PB_DISCOVERY_ROUND_3A;
+			wpa_msg(wpa_s, MSG_INFO, DPP_EVENT_PB_STATUS
+				"wait for AP/Configurator to allow PKEX to be initiated");
+			eloop_cancel_timeout(wpas_dpp_pb_discovery_t1e, wpa_s, NULL);
+			if (eloop_register_timeout(30, 0, wpas_dpp_pb_discovery_t2e,
+						wpa_s, NULL) < 0) {
+				wpas_dpp_push_button_stop(wpa_s);
 				return;
 			}
 
-			if (wpa_s->dpp_pb_stop_iter == 0) {
-				wpa_msg(wpa_s, MSG_INFO, DPP_EVENT_PB_STATUS
-					"start push button PKEX responder on the discovered channel (%d MHz)",
-					wpa_s->dpp_pb_resp_freq);
-				wpa_s->dpp_pb_discovery_done = true;
-
-				wpa_s->dpp_pkex_bi = wpa_s->dpp_pb_bi;
-
-				os_free(wpa_s->dpp_pkex_code);
-				wpa_s->dpp_pkex_code = os_memdup(
-					wpa_s->dpp_pb_c_nonce,
-					wpa_s->dpp_pb_c_nonce_len);
-				wpa_s->dpp_pkex_code_len =
-					wpa_s->dpp_pb_c_nonce_len;
-
-				os_free(wpa_s->dpp_pkex_identifier);
-				wpa_s->dpp_pkex_identifier =
-					os_strdup("PBPKEX");
-
-				if (!wpa_s->dpp_pkex_code ||
-				    !wpa_s->dpp_pkex_identifier) {
-					wpas_dpp_push_button_stop(wpa_s);
-					return;
-				}
-
-				wpa_s->dpp_pkex_ver = PKEX_VER_ONLY_2;
-
-				os_free(wpa_s->dpp_pkex_auth_cmd);
-				wpa_s->dpp_pkex_auth_cmd = NULL;
+			if (eloop_register_timeout(10, 0, wpas_dpp_pb_next, wpa_s, NULL) < 0) {
+				wpas_dpp_push_button_stop(wpa_s);
+				return;
 			}
+			return;
+		case DPP_PB_DISCOVERY_ROUND_3A:
+			wpa_s->dpp_pb_discovery_round = DPP_PB_DISCOVERY_ROUND_3B;
+			break;
+		case DPP_PB_DISCOVERY_ROUND_3B:
+			wpa_s->dpp_pb_discovery_round = DPP_PB_DISCOVERY_ROUND_3C;
+			wpa_msg(wpa_s, MSG_INFO, DPP_EVENT_PB_STATUS
+				"start push button PKEX responder on the discovered channel (%d MHz)",
+				wpa_s->dpp_pb_resp_freq);
+			wpa_s->dpp_pb_discovery_done = true;
+
+			wpa_s->dpp_pkex_bi = wpa_s->dpp_pb_bi;
+
+			os_free(wpa_s->dpp_pkex_code);
+			wpa_s->dpp_pkex_code = os_memdup(
+				wpa_s->dpp_pb_c_nonce,
+				wpa_s->dpp_pb_c_nonce_len);
+			wpa_s->dpp_pkex_code_len =
+				wpa_s->dpp_pb_c_nonce_len;
+
+			os_free(wpa_s->dpp_pkex_identifier);
+			wpa_s->dpp_pkex_identifier =
+				os_strdup("PBPKEX");
+
+			if (!wpa_s->dpp_pkex_code ||
+				!wpa_s->dpp_pkex_identifier) {
+				wpas_dpp_push_button_stop(wpa_s);
+				return;
+			}
+
+			wpa_s->dpp_pkex_ver = PKEX_VER_ONLY_2;
+
+			os_free(wpa_s->dpp_pkex_auth_cmd);
+			wpa_s->dpp_pkex_auth_cmd = NULL;
+			break;
+		case DPP_PB_DISCOVERY_ROUND_3C:
+			break;
+		default:
+			wpa_msg(wpa_s, MSG_INFO, DPP_EVENT_PB_STATUS "invalid discovery round");
+			wpas_dpp_push_button_stop(wpa_s);
+			return;
 		}
 	}
 
@@ -5719,6 +5948,7 @@ static void wpas_dpp_pb_scan_res_handler(struct wpa_supplicant *wpa_s,
 
 	os_free(wpa_s->dpp_pb_freqs);
 	wpa_s->dpp_pb_freqs = wpas_dpp_presence_ann_channels(wpa_s, NULL);
+	log_dpp_presence_ann_channels(wpa_s->dpp_pb_freqs);
 
 	wpa_printf(MSG_DEBUG, "DPP: Scan completed for PB discovery");
 	if (!wpa_s->dpp_pb_freqs ||
@@ -5733,43 +5963,64 @@ int wpas_dpp_push_button(struct wpa_supplicant *wpa_s, const char *cmd)
 
 	if (!wpa_s->dpp)
 		return -1;
-	wpas_dpp_push_button_stop(wpa_s);
+
 	wpas_dpp_stop(wpa_s);
 	wpas_dpp_chirp_stop(wpa_s);
+	eloop_cancel_timeout(wpas_dpp_chirp_forever, ELOOP_ALL_CTX, ELOOP_ALL_CTX);
 
 	os_get_reltime(&wpa_s->dpp_pb_time);
 
 	if (cmd &&
 	    (os_strstr(cmd, " role=configurator") ||
-	     os_strstr(cmd, " conf=")))
-		return wpas_dpp_push_button_configurator(wpa_s, cmd);
+	     os_strstr(cmd, " conf="))) {
+		res = wpas_dpp_push_button_configurator(wpa_s, cmd);
+		goto out;
+	}
 
 	wpa_s->dpp_pb_configurator = false;
 
 	wpa_s->dpp_pb_freq_idx = 0;
+	wpa_s->dpp_pb_discovery_round = DPP_PB_DISCOVERY_NOT_STARTED;
 
 	res = dpp_bootstrap_gen(wpa_s->dpp, "type=pkex");
-	if (res < 0)
-		return -1;
+	if (res < 0) {
+		res = -1;
+		goto out;
+	}
+
 	wpa_s->dpp_pb_bi = dpp_bootstrap_get_id(wpa_s->dpp, res);
-	if (!wpa_s->dpp_pb_bi)
-		return -1;
+	if (!wpa_s->dpp_pb_bi) {
+		res = -1;
+		goto out;
+	}
 
 	wpa_s->dpp_allowed_roles = DPP_CAPAB_ENROLLEE;
 	wpa_s->dpp_netrole = DPP_NETROLE_STA;
 	wpa_s->dpp_qr_mutual = 0;
 	wpa_s->dpp_pb_announcement =
 		dpp_build_pb_announcement(wpa_s->dpp_pb_bi);
-	if (!wpa_s->dpp_pb_announcement)
-		return -1;
+	if (!wpa_s->dpp_pb_announcement) {
+		res = -1;
+		goto out;
+	}
 
 	wpa_printf(MSG_DEBUG,
 		   "DPP: Scan to create channel list for PB discovery");
 	wpa_s->scan_req = MANUAL_SCAN_REQ;
 	wpa_s->scan_res_handler = wpas_dpp_pb_scan_res_handler;
+	wpa_supplicant_cancel_sched_scan(wpa_s);
 	wpa_supplicant_req_scan(wpa_s, 0, 0);
 	wpa_msg(wpa_s, MSG_INFO, DPP_EVENT_PB_STATUS "started");
-	return 0;
+
+	res = 0;
+out:
+
+	/* If push button mode failed to start, restart the chirp forever timer */
+	if (res)
+		wpas_dpp_chirp_forever_start_after(wpa_s,
+			DEFAULT_CHIRP_FOREVER_START_DELAY_S);
+
+	return res;
 }
 
 
@@ -5796,13 +6047,15 @@ void wpas_dpp_push_button_stop(struct wpa_supplicant *wpa_s)
 	}
 
 	wpa_s->dpp_pb_resp_freq = 0;
-	wpa_s->dpp_pb_stop_iter = 0;
+	wpa_s->dpp_pb_discovery_round = DPP_PB_DISCOVERY_NOT_STARTED;
 	wpa_s->dpp_pb_discovery_done = false;
 	os_free(wpa_s->dpp_pb_cmd);
 	wpa_s->dpp_pb_cmd = NULL;
 
 	eloop_cancel_timeout(wpas_dpp_pb_next, wpa_s, NULL);
 	eloop_cancel_timeout(wpas_dpp_push_button_expire, wpa_s, NULL);
+	eloop_cancel_timeout(wpas_dpp_pb_discovery_t1e, wpa_s, NULL);
+	eloop_cancel_timeout(wpas_dpp_pb_discovery_t2e, wpa_s, NULL);
 	if (wpas_dpp_pb_active(wpa_s)) {
 		wpa_printf(MSG_DEBUG, "DPP: Stop active push button mode");
 		if (!wpa_s->dpp_pb_result_indicated)
@@ -5824,6 +6077,9 @@ void wpas_dpp_push_button_stop(struct wpa_supplicant *wpa_s)
 		wpas_abort_ongoing_scan(wpa_s);
 		wpa_s->scan_res_handler = NULL;
 	}
+
+	wpas_dpp_chirp_forever_start_after(wpa_s,
+		PUSH_BUTTON_CHIRP_FOREVER_START_DELAY_S);
 }
 
 #endif /* CONFIG_DPP3 */

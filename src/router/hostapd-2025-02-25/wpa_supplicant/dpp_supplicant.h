@@ -46,5 +46,6 @@ int wpas_dpp_ca_set(struct wpa_supplicant *wpa_s, const char *cmd);
 int wpas_dpp_conf_set(struct wpa_supplicant *wpa_s, const char *cmd);
 int wpas_dpp_push_button(struct wpa_supplicant *wpa_s, const char *cmd);
 void wpas_dpp_push_button_stop(struct wpa_supplicant *wpa_s);
+void wpas_dpp_push_button_tx_wait_expire(struct wpa_supplicant *wpa_s);
 
 #endif /* DPP_SUPPLICANT_H */

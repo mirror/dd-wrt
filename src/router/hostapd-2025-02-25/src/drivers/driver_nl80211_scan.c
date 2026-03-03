@@ -486,6 +486,10 @@ int wpa_driver_nl80211_scan(struct i802_bss *bss,
 		 */
 		timeout = 30;
 	}
+	if (params->num_ssids == 0) {
+		/* If passively scanning, use longer timeout since we wait longer on each channel */
+		timeout = 60;
+	}
 	wpa_printf(MSG_DEBUG, "Scan requested (ret=%d) - scan timeout %d "
 		   "seconds", ret, timeout);
 	eloop_cancel_timeout(wpa_driver_nl80211_scan_timeout, drv, bss->ctx);

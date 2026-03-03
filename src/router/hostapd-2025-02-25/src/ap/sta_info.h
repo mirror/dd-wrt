@@ -1,6 +1,7 @@
 /*
  * hostapd / Station table
  * Copyright (c) 2002-2017, Jouni Malinen <j@w1.fi>
+ * Copyright 2022 Morse Micro
  *
  * This software may be distributed under the terms of the BSD license.
  * See README for more details.
@@ -312,6 +313,10 @@ struct sta_info {
 #ifdef CONFIG_PASN
 	struct pasn_data *pasn;
 #endif /* CONFIG_PASN */
+
+#ifdef CONFIG_IEEE80211AH
+	u8 raw_priority;
+#endif /* CONFIG_IEEE80211AH */
 
 #ifdef CONFIG_IEEE80211BE
 	struct mld_info mld_info;

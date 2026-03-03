@@ -1,6 +1,7 @@
 /*
  * WPA Supplicant / Configuration backend: Windows registry
  * Copyright (c) 2003-2019, Jouni Malinen <j@w1.fi>
+ * Copyright 2022 Morse Micro
  *
  * This software may be distributed under the terms of the BSD license.
  * See README for more details.
@@ -32,6 +33,7 @@ HKEY_LOCAL_MACHINE\SOFTWARE\wpa_supplicant\configs\test\networks\0000
 #include "common.h"
 #include "uuid.h"
 #include "config.h"
+#include "wpa_supplicant_i.h"
 
 #ifndef WPA_KEY_ROOT
 #define WPA_KEY_ROOT HKEY_LOCAL_MACHINE
@@ -446,7 +448,7 @@ static int wpa_config_read_networks(struct wpa_config *config, HKEY hk)
 }
 
 
-struct wpa_config * wpa_config_read(const char *name, struct wpa_config *cfgp,
+struct wpa_config * wpa_config_read(struct wpa_supplicant *wpas, const char *name, struct wpa_config *cfgp,
 				    bool ro)
 {
 	TCHAR buf[256];
@@ -961,6 +963,10 @@ static int wpa_config_write_network(HKEY hk, struct wpa_ssid *ssid, int id)
 #endif /* CONFIG_HS20 */
 	INT(group_rekey);
 	INT(ft_eap_pmksa_caching);
+#ifdef CONFIG_IEEE80211AH
+	INT(cac);
+#endif
+	FUNC(auth_retry_backoff);
 
 #undef STR
 #undef INT

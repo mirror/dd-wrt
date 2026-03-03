@@ -2,6 +2,7 @@
  * WPA Supplicant - Basic AP mode support routines
  * Copyright (c) 2003-2009, Jouni Malinen <j@w1.fi>
  * Copyright (c) 2009, Atheros Communications
+ * Copyright 2022 Morse Micro
  *
  * This software may be distributed under the terms of the BSD license.
  * See README for more details.
@@ -294,6 +295,14 @@ int wpa_supplicant_conf_ap_ht(struct wpa_supplicant *wpa_s,
 		wpa_printf(MSG_DEBUG,
 			   "Determining HT/VHT options based on driver capabilities (freq=%u chan=%u)",
 			   ssid->frequency, conf->channel);
+
+#ifdef CONFIG_IEEE80211AH
+		if (wpa_s->conf->op_class) {
+			conf->s1g_op_class = wpa_s->conf->op_class;
+			wpa_printf(MSG_DEBUG, "s1g op class set: %d", conf->s1g_op_class);
+		} else
+			wpa_printf(MSG_DEBUG, "s1g op class not set: %d", conf->s1g_op_class);
+#endif /* CONFIG_IEEE80211AH */
 
 		mode = get_mode(wpa_s->hw.modes, wpa_s->hw.num_modes,
 				conf->hw_mode, is_6ghz_freq(ssid->frequency));
@@ -1682,6 +1691,8 @@ int ap_ctrl_iface_acl_add_mac(struct wpa_supplicant *wpa_s,
 
 	if (wpa_s->ap_iface)
 		hapd = wpa_s->ap_iface->bss[0];
+	else if (wpa_s->ifmsh)
+		hapd = wpa_s->ifmsh->bss[0];
 	else
 		return -1;
 
@@ -1708,6 +1719,8 @@ int ap_ctrl_iface_acl_del_mac(struct wpa_supplicant *wpa_s,
 
 	if (wpa_s->ap_iface)
 		hapd = wpa_s->ap_iface->bss[0];
+	else if (wpa_s->ifmsh)
+		hapd = wpa_s->ifmsh->bss[0];
 	else
 		return -1;
 
@@ -1734,6 +1747,8 @@ int ap_ctrl_iface_acl_show_mac(struct wpa_supplicant *wpa_s,
 
 	if (wpa_s->ap_iface)
 		hapd = wpa_s->ap_iface->bss[0];
+	else if (wpa_s->ifmsh)
+		hapd = wpa_s->ifmsh->bss[0];
 	else
 		return -1;
 
@@ -1757,6 +1772,8 @@ void ap_ctrl_iface_acl_clear_list(struct wpa_supplicant *wpa_s,
 
 	if (wpa_s->ap_iface)
 		hapd = wpa_s->ap_iface->bss[0];
+	else if (wpa_s->ifmsh)
+		hapd = wpa_s->ifmsh->bss[0];
 	else
 		return;
 
@@ -1777,6 +1794,8 @@ int ap_ctrl_iface_disassoc_deny_mac(struct wpa_supplicant *wpa_s)
 
 	if (wpa_s->ap_iface)
 		hapd = wpa_s->ap_iface->bss[0];
+	else if (wpa_s->ifmsh)
+		hapd = wpa_s->ifmsh->bss[0];
 	else
 		return -1;
 
@@ -1790,6 +1809,8 @@ int ap_ctrl_iface_disassoc_accept_mac(struct wpa_supplicant *wpa_s)
 
 	if (wpa_s->ap_iface)
 		hapd = wpa_s->ap_iface->bss[0];
+	else if (wpa_s->ifmsh)
+		hapd = wpa_s->ifmsh->bss[0];
 	else
 		return -1;
 
@@ -1803,6 +1824,8 @@ int ap_ctrl_iface_set_acl(struct wpa_supplicant *wpa_s)
 
 	if (wpa_s->ap_iface)
 		hapd = wpa_s->ap_iface->bss[0];
+	else if (wpa_s->ifmsh)
+		hapd = wpa_s->ifmsh->bss[0];
 	else
 		return -1;
 

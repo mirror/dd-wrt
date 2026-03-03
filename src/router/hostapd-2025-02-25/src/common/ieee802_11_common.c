@@ -1,6 +1,7 @@
 /*
  * IEEE 802.11 Common routines
  * Copyright (c) 2002-2019, Jouni Malinen <j@w1.fi>
+ * Copyright 2022 Morse Micro
  *
  * This software may be distributed under the terms of the BSD license.
  * See README for more details.
@@ -604,6 +605,10 @@ static ParseRes __ieee802_11_parse_elems(void *ctx, const u8 *start, size_t len,
 			elems->ext_capab = pos;
 			elems->ext_capab_len = elen;
 			break;
+		case WLAN_EID_QOS_TRAFFIC_CAPABILITY:
+			elems->qos_traffic_cap = pos;
+			elems->qos_traffic_cap_len = elen;
+			break;
 		case WLAN_EID_BSS_MAX_IDLE_PERIOD:
 			if (elen < 3)
 				break;
@@ -673,6 +678,11 @@ static ParseRes __ieee802_11_parse_elems(void *ctx, const u8 *start, size_t len,
 			if (elen < 15)
 				break;
 			elems->s1g_capab = pos;
+			break;
+		case WLAN_EID_AID_RESPONSE:
+			if (elen < 5)
+				break;
+			elems->aid = pos;
 			break;
 		case WLAN_EID_FRAGMENT:
 			wpa_printf(MSG_MSGDUMP,
@@ -1435,6 +1445,7 @@ ieee80211_freq_to_channel_ext(unsigned int freq, int sec_channel,
 			      enum oper_chan_width chanwidth,
 			      u8 *op_class, u8 *channel)
 {
+#ifndef MM_IOT
 	u8 vht_opclass;
 	int chan;
 	int fcast = freq;
@@ -1742,6 +1753,7 @@ ieee80211_freq_to_channel_ext(unsigned int freq, int sec_channel,
 		return HOSTAPD_MODE_IEEE80211AD;
 	}
 
+#endif /* MM_IOT */
 	return NUM_HOSTAPD_MODES;
 }
 
@@ -1749,6 +1761,7 @@ ieee80211_freq_to_channel_ext(unsigned int freq, int sec_channel,
 int ieee80211_chaninfo_to_channel(unsigned int freq, enum chan_width chanwidth,
 				  int sec_channel, u8 *op_class, u8 *channel)
 {
+#ifndef MM_IOT
 	int cw = CHAN_WIDTH_UNKNOWN;
 
 	switch (chanwidth) {
@@ -1792,10 +1805,12 @@ int ieee80211_chaninfo_to_channel(unsigned int freq, enum chan_width chanwidth,
 		return -1;
 	}
 
+#endif /* MM_IOT */
 	return 0;
 }
 
 
+#ifndef MM_IOT
 static const char *const us_op_class_cc[] = {
 	"US", "CA", NULL
 };
@@ -2148,6 +2163,7 @@ int ieee80211_chan_to_freq(const char *country, u8 op_class, u8 chan)
 
 	return ieee80211_chan_to_freq_global(op_class, chan);
 }
+#endif /* MM_IOT */
 
 
 int ieee80211_is_dfs(int freq, const struct hostapd_hw_modes *modes,
@@ -2522,6 +2538,7 @@ struct wpabuf * mb_ies_by_info(struct mb_ies_info *info)
 }
 
 
+#ifndef MM_IOT
 const struct oper_class_map global_op_class[] = {
 	{ HOSTAPD_MODE_IEEE80211G, 81, 1, 13, 1, BW20, P2P_SUPP },
 	{ HOSTAPD_MODE_IEEE80211G, 82, 14, 14, 1, BW20, NO_P2P_SUPP },
@@ -2624,6 +2641,15 @@ enum phy_type ieee80211_get_phy_type(int freq, int ht, int vht)
 
 
 size_t global_op_class_size = ARRAY_SIZE(global_op_class);
+
+#else /* MM_IOT */
+
+enum phy_type ieee80211_get_phy_type(int freq, int ht, int vht)
+{
+	return PHY_TYPE_S1G;
+}
+
+#endif /* MM_IOT */
 
 
 /**
@@ -2852,6 +2878,7 @@ size_t add_multi_ap_ie(u8 *buf, size_t len,
 }
 
 
+#ifndef MM_IOT
 static const struct country_op_class us_op_class[] = {
 	{ 1, 115 },
 	{ 2, 118 },
@@ -3332,6 +3359,7 @@ bool ieee802_11_rsnx_capab(const u8 *rsnxe, unsigned int capab)
 }
 
 
+#ifndef MM_IOT
 void hostapd_encode_edmg_chan(int edmg_enable, u8 edmg_channel,
 			      int primary_channel,
 			      struct ieee80211_edmg_config *edmg)
@@ -3530,6 +3558,22 @@ enum oper_chan_width op_class_to_ch_width(u8 op_class)
 	}
 }
 
+#else /* MM_IOT */
+
+bool is_6ghz_freq(int freq)
+{
+	(void)freq;
+	return false;
+}
+
+bool is_6ghz_psc_frequency(int freq)
+{
+	(void)freq;
+	return false;
+}
+
+#endif /* MM_IOT */
+
 
 /**
  * chwidth_freq2_to_ch_width - Determine channel width as enum oper_chan_width
@@ -3561,6 +3605,7 @@ int chwidth_freq2_to_ch_width(int chwidth, int freq2)
 		return -1;
 	}
 }
+#endif /* MM_IOT */
 
 
 struct wpabuf * ieee802_11_defrag(const u8 *data, size_t len, bool ext_elem)

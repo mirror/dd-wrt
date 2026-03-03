@@ -2,6 +2,7 @@
  * Common hostapd/wpa_supplicant HW features
  * Copyright (c) 2002-2013, Jouni Malinen <j@w1.fi>
  * Copyright (c) 2015, Qualcomm Atheros, Inc.
+ * Copyright 2021 Morse Micro
  *
  * This software may be distributed under the terms of the BSD license.
  * See README for more details.
@@ -113,8 +114,13 @@ int allowed_ht40_channel_pair(enum hostapd_hw_mode mode,
 			      struct hostapd_channel_data *s_chan)
 {
 	int ok, first;
-	int allowed[] = { 36, 44, 52, 60, 100, 108, 116, 124, 132, 140,
-			  149, 157, 165, 173, 184, 192 };
+
+	/* SW-3238/SW-4135: Expand the list to allow the rest of channels to use 40MHz band */
+	int allowed[] = { 36, 38, 40, 42, 44, 46, 48, 50, 52, 54, 56, 58, 60, 62, 64,
+				100, 102, 104, 106, 108, 110, 112, 114, 116, 118, 120, 122, 124,
+				126, 128, 132, 134, 136, 138, 140, 142, 144, 149, 151, 153, 155,
+				157, 159, 161, 165, 169, 173, 177, 184, 192 };
+
 	size_t k;
 	int ht40_plus, pri_chan, sec_chan;
 
@@ -522,6 +528,7 @@ int hostapd_set_freq_params(struct hostapd_freq_params *data,
 	else
 		data->bandwidth = 20;
 
+#ifndef MM_IOT
 	hostapd_encode_edmg_chan(enable_edmg, edmg_channel, channel,
 				 &data->edmg);
 
@@ -873,6 +880,7 @@ int hostapd_set_freq_params(struct hostapd_freq_params *data,
 
 
 	wpa_printf(MSG_DEBUG,"bandwidth config = %d oper %d\n", data->bandwidth, oper_chwidth);
+#endif /* MM_IOT */
 	return 0;
 }
 

@@ -1,6 +1,7 @@
 /*
  * wpa_supplicant - Radio Measurements
  * Copyright (c) 2003-2016, Jouni Malinen <j@w1.fi>
+ * Copyright 2022 Morse Micro
  *
  * This software may be distributed under the terms of the BSD license.
  * See README for more details.
@@ -9,6 +10,7 @@
 #include "includes.h"
 
 #include "utils/common.h"
+#include "utils/morse.h"
 #include "utils/eloop.h"
 #include "common/ieee802_11_common.h"
 #include "wpa_supplicant_i.h"
@@ -17,6 +19,9 @@
 #include "scan.h"
 #include "p2p_supplicant.h"
 
+/* These value are from RSNI val in the standard*/
+#define MAX_RSNI_VAL (117)
+#define MIN_RSNI_VAL (-10)
 
 static void wpas_rrm_neighbor_rep_timeout_handler(void *data, void *user_ctx)
 {
@@ -652,6 +657,102 @@ out:
 	return NULL;
 }
 
+#ifdef CONFIG_IEEE80211AH
+static int get_num_of_channels(const struct ah_class *class)
+{
+	int chan_num = 0;
+
+	for (int i = 0; i < (int) NUMBER_OF_BITS(class->chans); i++) {
+		if (class->chans & S1G_CHAN_ENABLED_FLAG(i))
+			chan_num++;
+	}
+	return chan_num;
+}
+
+static int * add_single_s1g_to_ht_freq(int chan, int bss_freq)
+{
+	int *freq_list;
+	int offset_from_center_freq;
+	int bw = morse_s1g_chan_to_bw(chan);
+
+	/* one extra place for the zero-terminator */
+	freq_list = os_calloc(2, sizeof(*freq_list));
+	if (!freq_list) {
+		wpa_printf(MSG_ERROR, "Beacon Report: Failed to allocate freq array");
+		return NULL;
+	}
+
+	int freq = morse_s1g_chan_to_ht_chan(chan);
+	freq = ieee80211_channel_to_frequency(freq, NL80211_BAND_5GHZ);
+	if (freq == 0) {
+		os_free(freq_list);
+		wpa_printf(MSG_ERROR, "Beacon Report: Invaild frequency found\n");
+		return NULL;
+	}
+
+	switch (bw)
+	{
+	case 1:
+		freq_list[0] = freq;
+		return freq_list;
+	case 2:
+	case 4:
+	case 8:
+		offset_from_center_freq = freq - bss_freq;
+		/* This checks if the primary index value used is within the valid bounds */
+		if ((offset_from_center_freq >= (bw - 1) * -10) &&
+			(offset_from_center_freq <= (bw - 1) * 10)) {
+			freq_list[0] = bss_freq;
+			return freq_list;
+		}
+	default:
+		break;
+	}
+
+	wpa_printf(MSG_ERROR, "Beacon Report: Invaild bw found\n");
+	os_free(freq_list);
+	return NULL;
+}
+
+static int * get_s1g_to_ht_frequency_list(const struct ah_class *class)
+{
+	int *freq_list;
+	/* Get number of channels in the class*/
+	int num_channels = get_num_of_channels(class);
+	int freq_added = 0;
+
+	/* one extra place for the zero-terminator */
+	freq_list = os_calloc(num_channels + 1, sizeof(*freq_list));
+	if (!freq_list) {
+		wpa_printf(MSG_ERROR, "Beacon Report: Failed to allocate freq array");
+		return NULL;
+	}
+
+	for (int ch = 0; ch < (int) NUMBER_OF_BITS(class->chans); ch++) {
+		if (class->chans & S1G_CHAN_ENABLED_FLAG(ch)) {
+			int freq = morse_s1g_chan_to_ht_chan(ch);
+			freq_list[freq_added] = ieee80211_channel_to_frequency(freq, NL80211_BAND_5GHZ);
+			if (freq_list[freq_added] < 0) {
+				os_free(freq_list);
+				return NULL;
+			}
+			freq_added++;
+		}
+
+		/* Bail early if number of channels has been filled */
+		if (num_channels == freq_added) {
+			break;
+		}
+	}
+
+	if (freq_added == 0) {
+		os_free(freq_list);
+		return NULL;
+	}
+
+	return freq_list;
+}
+#endif /* CONFIG_IEEE80211AH */
 
 static int * wpas_beacon_request_freqs(struct wpa_supplicant *wpa_s,
 				       u8 op_class, u8 chan,
@@ -665,9 +766,35 @@ static int * wpas_beacon_request_freqs(struct wpa_supplicant *wpa_s,
 
 	if (!wpa_s->current_bss)
 		return NULL;
+
 	elem = wpa_bss_get_ie(wpa_s->current_bss, WLAN_EID_COUNTRY);
 	if (elem && elem[1] >= 2)
 		country = (const char *) (elem + 2);
+
+#ifdef CONFIG_IEEE80211AH
+	/* The below is used when beacon report request uses S1G information */
+	const struct ah_class *class;
+	if (morse_s1g_op_class_valid(op_class, &class) != OP_CLASS_INVALID) {
+		wpa_printf(MSG_DEBUG, "rrm got op class: %d and chan: %d", op_class, chan);
+		wpa_s->s1g_rrm_op_class = op_class;
+		switch (chan) {
+		case 0:
+			if (!class)
+				return NULL;
+			freqs = get_s1g_to_ht_frequency_list(class);
+			if (!freqs)
+				return NULL;
+			break;
+		case 255:
+			/* freqs will be added from AP channel subelements */
+			break;
+		default:
+			freqs = add_single_s1g_to_ht_freq(chan, wpa_s->current_bss->freq);
+			break;
+		}
+		return freqs;
+	}
+#endif /* CONFIG_IEEE80211AH */
 
 	op = get_oper_class(country, op_class);
 	if (!op) {
@@ -717,6 +844,7 @@ int wpas_get_op_chan_phy(int freq, const u8 *ies, size_t ies_len,
 	struct ieee80211_ht_operation *ht_oper = NULL;
 	struct ieee80211_vht_operation *vht_oper = NULL;
 	u8 seg0, seg1;
+	u8 s1g_center_ch = MORSE_S1G_RETURN_ERROR;
 
 	ie = get_ie(ies, ies_len, WLAN_EID_HT_OPERATION);
 	if (ie && ie[1] >= sizeof(struct ieee80211_ht_operation)) {
@@ -735,11 +863,15 @@ int wpas_get_op_chan_phy(int freq, const u8 *ies, size_t ies_len,
 	ie = get_ie(ies, ies_len, WLAN_EID_VHT_OPERATION);
 	if (ie && ie[1] >= sizeof(struct ieee80211_vht_operation)) {
 		vht_oper = (struct ieee80211_vht_operation *) (ie + 2);
-
+		/*
+		 * TODO: Currently s1g_center_ch is not used. It will be needed
+		 * later when prplmesh would send S1G information
+		 */
 		switch (vht_oper->vht_op_info_chwidth) {
 		case CHANWIDTH_80MHZ:
 			seg0 = vht_oper->vht_op_info_chan_center_freq_seg0_idx;
 			seg1 = vht_oper->vht_op_info_chan_center_freq_seg1_idx;
+			s1g_center_ch = morse_ht_chan_to_s1g_chan(seg0);
 			if (seg1 && abs(seg1 - seg0) == 8)
 				vht = CONF_OPER_CHWIDTH_160MHZ;
 			else if (seg1)
@@ -748,6 +880,9 @@ int wpas_get_op_chan_phy(int freq, const u8 *ies, size_t ies_len,
 				vht = CONF_OPER_CHWIDTH_80MHZ;
 			break;
 		case CHANWIDTH_160MHZ:
+			seg0 = vht_oper->vht_op_info_chan_center_freq_seg0_idx;
+			seg1 = vht_oper->vht_op_info_chan_center_freq_seg1_idx;
+			s1g_center_ch = morse_ht_chan_to_s1g_chan(seg0);
 			vht = CONF_OPER_CHWIDTH_160MHZ;
 			break;
 		case CHANWIDTH_80P80MHZ:
@@ -766,6 +901,12 @@ int wpas_get_op_chan_phy(int freq, const u8 *ies, size_t ies_len,
 		return -1;
 	}
 
+#ifdef CONFIG_IEEE80211AH
+	wpa_printf(MSG_DEBUG, "op_class: %d chan: %d, s1g_center_chan:%d", *op_class, *chan,
+				s1g_center_ch);
+#endif /* CONFIG_IEEE80211AH */
+
+
 	*phy_type = ieee80211_get_phy_type(freq, ht_oper != NULL,
 					   vht_oper != NULL);
 	if (*phy_type == PHY_TYPE_UNSPECIFIED) {
@@ -773,6 +914,12 @@ int wpas_get_op_chan_phy(int freq, const u8 *ies, size_t ies_len,
 		return -1;
 	}
 
+#ifdef CONFIG_IEEE80211AH
+	if (vht == CHANWIDTH_USE_HT) {
+		s1g_center_ch = morse_ht_chan_to_s1g_chan(*chan);
+	}
+	*chan = s1g_center_ch;
+#endif /* CONFIG_IEEE80211AH */
 	return 0;
 }
 
@@ -930,6 +1077,16 @@ out:
 	return ret;
 }
 
+static u8 snr_to_rsni(int snr)
+{
+	/*
+	 * RSNI is not dB domain values. RSNI in dB is scaled in steps of 0.5 dB to obtain
+	 * 8-bit RSNI values
+	 */
+	if (snr > MAX_RSNI_VAL || snr < MIN_RSNI_VAL)
+		return 255;
+	return ((snr - MIN_RSNI_VAL) * 2);
+}
 
 static int wpas_add_beacon_rep(struct wpa_supplicant *wpa_s,
 			       struct wpabuf **wpa_buf, struct wpa_bss *bss,
@@ -955,10 +1112,13 @@ static int wpas_add_beacon_rep(struct wpa_supplicant *wpa_s,
 				 &rep.channel, &rep.report_info) < 0)
 		return 0;
 
+#ifdef CONFIG_IEEE80211AH
+	rep.op_class = wpa_s->s1g_rrm_op_class;
+#endif /* CONFIG_IEEE80211AH */
 	rep.start_time = host_to_le64(start);
 	rep.duration = host_to_le16(data->scan_params.duration);
 	rep.rcpi = rssi_to_rcpi(bss->level);
-	rep.rsni = 255; /* 255 indicates that RSNI is not available */
+	rep.rsni = snr_to_rsni(bss->snr); /* 255 indicates that RSNI is not available */
 	os_memcpy(rep.bssid, bss->bssid, ETH_ALEN);
 	rep.antenna_id = 0; /* unknown */
 	rep.parent_tsf = host_to_le32(parent_tsf);
@@ -1038,7 +1198,9 @@ static void wpas_rrm_scan_timeout(void *eloop_ctx, void *timeout_ctx)
 	if (!(wpa_s->drv_rrm_flags & WPA_DRIVER_FLAGS_SUPPORT_SET_SCAN_DWELL) &&
 	    params->duration) {
 		wpa_printf(MSG_DEBUG,
-			   "RRM: Cannot set scan duration due to missing driver support");
+			   "RRM: Cannot set scan duration due to missing driver support %d %d",
+			    (wpa_s->drv_rrm_flags & WPA_DRIVER_FLAGS_SUPPORT_SET_SCAN_DWELL),
+				wpa_s->drv_rrm_flags & WPA_DRIVER_FLAGS_SUPPORT_BEACON_REPORT);
 		params->duration = 0;
 	}
 	os_get_reltime(&wpa_s->beacon_rep_scan);
@@ -1612,7 +1774,7 @@ int wpas_beacon_rep_scan_process(struct wpa_supplicant *wpa_s,
 					   scan_res->res[i]->age,
 					   (unsigned int) diff.sec,
 					   (unsigned int) diff.usec);
-				continue;
+				// continue;
 			}
 		} else if (info->scan_start_tsf >
 			   scan_res->res[i]->parent_tsf) {

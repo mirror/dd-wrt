@@ -1,6 +1,7 @@
 /*
  * BSS table
  * Copyright (c) 2009-2019, Jouni Malinen <j@w1.fi>
+ * Copyright 2022 Morse Micro
  *
  * This software may be distributed under the terms of the BSD license.
  * See README for more details.
@@ -124,6 +125,12 @@ struct wpa_bss {
 	int snr;
 	/** ANQP data */
 	struct wpa_bss_anqp *anqp;
+#ifdef CONFIG_IEEE80211AH
+	/** Centralized Authentication Control (CAC) threshold */
+	u16 cac_threshold;
+	/** Centralized Authentication Control (CAC) random value */
+	u16 cac_random;
+#endif
 	/** Length of the following IE field in octets (from Probe Response) */
 	size_t ie_len;
 	/** Length of the following Beacon IE field in octets */
@@ -197,6 +204,9 @@ struct wpa_bss_anqp * wpa_bss_anqp_alloc(void);
 int wpa_bss_anqp_unshare_alloc(struct wpa_bss *bss);
 const u8 * wpa_bss_get_fils_cache_id(const struct wpa_bss *bss);
 int wpa_bss_ext_capab(const struct wpa_bss *bss, unsigned int capab);
+#ifdef CONFIG_IEEE80211AH
+void wpa_bss_cac_set_random_value(struct wpa_bss *bss);
+#endif
 
 static inline int bss_is_dmg(const struct wpa_bss *bss)
 {

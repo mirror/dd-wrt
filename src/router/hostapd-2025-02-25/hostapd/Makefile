@@ -373,6 +373,11 @@ CONFIG_IEEE80211AX=y
 CFLAGS += -DCONFIG_IEEE80211BE
 OBJS += ../src/ap/ieee802_11_eht.o
 endif
+ifdef CONFIG_IEEE80211AH
+CFLAGS += -DCONFIG_IEEE80211AH
+OBJS += ../src/utils/morse.o
+OBJS += ../src/utils/morse_cli.o
+endif
 
 ifdef CONFIG_IEEE80211AX
 CFLAGS += -DCONFIG_IEEE80211AX

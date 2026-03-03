@@ -3,6 +3,7 @@
  * Copyright (c) 2017, Qualcomm Atheros, Inc.
  * Copyright (c) 2018-2020, The Linux Foundation
  * Copyright (c) 2021-2022, Qualcomm Innovation Center, Inc.
+ * Copyright 2022 Morse Micro
  *
  * This software may be distributed under the terms of the BSD license.
  * See README for more details.
@@ -223,9 +224,11 @@ struct dpp_pkex {
 	struct crypto_ec_key *peer_bootstrap_key;
 	struct wpabuf *exchange_req;
 	struct wpabuf *exchange_resp;
+	struct wpabuf *commit_reveal_req;
 	unsigned int t; /* number of failures on code use */
 	unsigned int exch_req_wait_time;
 	unsigned int exch_req_tries;
+	unsigned int commit_reveal_tries;
 	unsigned int freq;
 	u8 peer_version;
 	struct wpabuf *enc_key;
@@ -337,6 +340,7 @@ struct dpp_authentication {
 	int waiting_auth_conf;
 	int auth_req_ack;
 	unsigned int auth_resp_tries;
+	unsigned int conf_req_tries;
 	u8 allowed_roles;
 	int configurator;
 	int remove_on_tx_status;
@@ -667,6 +671,7 @@ int dpp_check_attrs(const u8 *buf, size_t len);
 int dpp_key_expired(const char *timestamp, os_time_t *expiry);
 const char * dpp_akm_str(enum dpp_akm akm);
 const char * dpp_akm_selector_str(enum dpp_akm akm);
+int dpp_akm_from_hapd_wpa_key(int wpa_key_mgmt);
 int dpp_configurator_get_key(const struct dpp_configurator *conf, char *buf,
 			     size_t buflen);
 void dpp_configurator_free(struct dpp_configurator *conf);

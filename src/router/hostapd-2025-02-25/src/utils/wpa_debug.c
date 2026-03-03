@@ -41,7 +41,11 @@ static FILE *out_file = NULL;
 #include <android/log.h>
 
 #ifndef ANDROID_LOG_NAME
+#ifdef CONFIG_IEEE80211AH
+#define ANDROID_LOG_NAME	"wpa_supplicant_s1g"
+#else
 #define ANDROID_LOG_NAME	"wpa_supplicant"
+#endif /* CONFIG_IEEE80211AH */
 #endif /* ANDROID_LOG_NAME */
 
 static int wpa_to_android_level(int level)
@@ -93,7 +97,11 @@ void wpa_debug_print_timestamp(void)
 
 void wpa_debug_open_syslog(void)
 {
+#ifdef CONFIG_IEEE80211AH
+	openlog("wpa_supplicant_s1g", LOG_PID | LOG_NDELAY, LOG_HOSTAPD);
+#else
 	openlog("wpa_supplicant", LOG_PID | LOG_NDELAY, LOG_HOSTAPD);
+#endif /* CONFIG_IEEE80211AH */
 	wpa_debug_syslog++;
 }
 

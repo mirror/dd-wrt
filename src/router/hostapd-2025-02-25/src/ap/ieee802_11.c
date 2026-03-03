@@ -1,6 +1,7 @@
 /*
  * hostapd / IEEE 802.11 Management
  * Copyright (c) 2002-2017, Jouni Malinen <j@w1.fi>
+ * Copyright 2021 Morse Micro
  *
  * This software may be distributed under the terms of the BSD license.
  * See README for more details.
@@ -134,7 +135,8 @@ static size_t hostapd_supp_rates(struct hostapd_data *hapd, u8 *buf)
 		pos++;
 	}
 
-	if (hapd->iconf->ieee80211n && hapd->iconf->require_ht)
+	if ((hapd->iconf->ieee80211n || hapd->iconf->ieee80211ah) &&
+	    hapd->iconf->require_ht)
 		*pos++ = 0x80 | BSS_MEMBERSHIP_SELECTOR_HT_PHY;
 
 	if (hapd->iconf->ieee80211ac && hapd->iconf->require_vht)
@@ -1506,6 +1508,7 @@ static void handle_auth_sae(struct hostapd_data *hapd, struct sta_info *sta,
 
 	if (hapd->conf->sae_commit_override && auth_transaction == 1) {
 		wpa_printf(MSG_DEBUG, "SAE: TESTING - commit override");
+		resp = status_code;
 		send_auth_reply(hapd, sta, sta->addr,
 				WLAN_AUTH_SAE,
 				auth_transaction, resp,
@@ -3267,7 +3270,7 @@ static void handle_auth(struct hostapd_data *hapd,
 				phytype = 8; /* dmg */
 			else if (other->iconf->ieee80211ac)
 				phytype = 9; /* vht */
-			else if (other->iconf->ieee80211n)
+			else if (other->iconf->ieee80211n || other->iconf->ieee80211ah)
 				phytype = 7; /* ht */
 			else if (other->iconf->hw_mode ==
 				 HOSTAPD_MODE_IEEE80211A)
@@ -3650,7 +3653,28 @@ int hostapd_get_aid(struct hostapd_data *hapd, struct sta_info *sta)
 
 	if (TEST_FAIL())
 		return -1;
+#ifdef CONFIG_IEEE80211AH
+	if (sta->raw_priority >= 8)
+		return -1;
 
+	/* Keep the original AID assignment method when RAW is disabled so AIDs
+	 * aren't capped at 255. */
+	if (hapd->conf->raw_enabled) {
+		int counter_start = (sta->raw_priority << 8) / 32;
+		int counter_stop = MIN(((sta->raw_priority + 1) << 8) / 32, AID_WORDS);
+
+		for (i = counter_start; i < counter_stop; i++) {
+			if (hapd->sta_aid[i] == (u32) -1)
+				continue;
+			for (j = 0; j < 32; j++) {
+				if (!(hapd->sta_aid[i] & BIT(j)))
+					break;
+			}
+			if (j < 32)
+				break;
+		}
+	} else {
+#endif
 	for (i = 0; i < AID_WORDS; i++) {
 		u32 aid_word = hostapd_get_aid_word(hapd, sta, i);
 
@@ -3663,11 +3687,34 @@ int hostapd_get_aid(struct hostapd_data *hapd, struct sta_info *sta)
 		if (j < 32)
 			break;
 	}
+#ifdef CONFIG_IEEE80211AH
+	}
+#endif
 	if (j == 32)
 		return -1;
+#if CONFIG_IEEE80211AH
+	if ((!hapd->conf->raw_enabled) || (sta->raw_priority == 0)) {
+		aid = i * 32 + j + (1 << hostapd_max_bssid_indicator(hapd));
+	} else {
+		aid = i * 32 + j;
+	}
+
+	if (hapd->conf->raw_enabled &&
+		(sta->raw_priority == 0) &&
+		((1 << hostapd_max_bssid_indicator(hapd)) > 255)) {
+		wpa_printf(MSG_DEBUG,
+			"Error hostapd_max_bssid_indicator to large, cannot allocate AIDs\n");
+		return -1;
+	}
+
+	if (aid > 2007 ||
+	    (hapd->conf->raw_enabled && (aid >= ((sta->raw_priority + 1) << 8))))
+		return -1;
+#else
 	aid = i * 32 + j + (1 << hostapd_max_bssid_indicator(hapd));
 	if (aid > 2007)
 		return -1;
+#endif
 
 	sta->aid = aid;
 	hapd->sta_aid[i] |= BIT(j);
@@ -4212,6 +4259,24 @@ static bool check_sa_query(struct hostapd_data *hapd, struct sta_info *sta,
 	return false;
 }
 
+#ifdef CONFIG_IEEE80211AH
+static u16 process_qos_traffic_cap(struct hostapd_data *hapd, struct sta_info *sta,
+				   const u8 *qos_tc_ie, size_t qos_tc_len)
+{
+	if (qos_tc_len == 0) {
+		sta->raw_priority = 0;
+		wpa_printf(MSG_DEBUG, "No QoS Traffic Cap UP using default: %u",
+			   sta->raw_priority);
+	} else {
+		sta->raw_priority =
+			(*qos_tc_ie & QOS_TRAFFIC_UP_MASK) >> QOS_TRAFFIC_UP_SHIFT;
+
+		wpa_printf(MSG_DEBUG, "QoS Traffic Cap UP: %u", sta->raw_priority);
+	}
+
+	return WLAN_STATUS_SUCCESS;
+}
+#endif
 
 static int __check_assoc_ies(struct hostapd_data *hapd, struct sta_info *sta,
 			     const u8 *ies, size_t ies_len,
@@ -4246,8 +4311,8 @@ static int __check_assoc_ies(struct hostapd_data *hapd, struct sta_info *sta,
 	resp = copy_sta_ht_capab(hapd, sta, elems->ht_capabilities);
 	if (resp != WLAN_STATUS_SUCCESS)
 		return resp;
-	if (hapd->iconf->ieee80211n && hapd->iconf->require_ht &&
-	    !(sta->flags & WLAN_STA_HT)) {
+	if ((hapd->iconf->ieee80211n ||  hapd->iconf->ieee80211ah) &&
+	    hapd->iconf->require_ht && !(sta->flags & WLAN_STA_HT)) {
 		hostapd_logger(hapd, sta->addr, HOSTAPD_MODULE_IEEE80211,
 			       HOSTAPD_LEVEL_INFO, "Station does not support "
 			       "mandatory HT PHY - reject association");
@@ -4665,6 +4730,19 @@ static int __check_assoc_ies(struct hostapd_data *hapd, struct sta_info *sta,
 		}
 	}
 #endif /* CONFIG_FILS && CONFIG_OCV */
+
+#ifdef CONFIG_IEEE80211AH
+	if (hapd->conf->raw_enabled) {
+		wpa_printf(MSG_DEBUG, "RAW enabled, reading QoS traffic cap");
+		resp = process_qos_traffic_cap(hapd, sta,
+					       elems->qos_traffic_cap,
+					       elems->qos_traffic_cap_len);
+		if (resp != WLAN_STATUS_SUCCESS)
+			return resp;
+	} else {
+		wpa_printf(MSG_DEBUG, "RAW disabled, don't read QoS traffic cap");
+	}
+#endif /* CONFIG_IEEE80211AH */
 
 	ap_copy_sta_supp_op_classes(sta, elems->supp_op_classes,
 				    elems->supp_op_classes_len);
@@ -5789,6 +5867,11 @@ static void handle_assoc(struct hostapd_data *hapd,
 		}
 	}
 
+#ifdef CONFIG_IEEE80211AH
+	/* Workaround for using VHT capabilities at lower bandwidths. */
+	sta->flags |= WLAN_STA_VHT;
+#endif
+
 	if ((fc & WLAN_FC_RETRY) &&
 	    sta->last_seq_ctrl != WLAN_INVALID_MGMT_SEQ &&
 	    sta->last_seq_ctrl == seq_ctrl &&
@@ -6675,7 +6758,7 @@ int ieee802_11_mgmt(struct hostapd_data *hapd, const u8 *buf, size_t len,
 	}
 
 	if (stype == WLAN_FC_STYPE_PROBE_REQ) {
-		handle_probe_req(hapd, mgmt, len, fi);
+		handle_probe_req(hapd, mgmt, len, fi, freq);
 		return 1;
 	}
 

@@ -2,6 +2,7 @@
  * wpa_supplicant ctrl_iface helpers
  * Copyright (c) 2010-2011, Atheros Communications, Inc.
  * Copyright (c) 2011-2012, Qualcomm Atheros, Inc.
+ * Copyright 2022 Morse Micro
  *
  * This software may be distributed under the terms of the BSD license.
  * See README for more details.
@@ -14,8 +15,8 @@
 #include "wpa_ctrl.h"
 #include "wpa_helpers.h"
 
-
-char *wpas_ctrl_path = "/var/run/wpa_supplicant/";
+/* Morse Micro SW-5153. Update control interface to use _s1g for HaLow specific wpa_supplicant */
+char *wpas_ctrl_path = "/var/run/wpa_supplicant_s1g/";
 static int default_timeout = 60;
 
 

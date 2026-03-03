@@ -1,6 +1,7 @@
 /*
  * wpa_supplicant/hostapd control interface library
  * Copyright (c) 2004-2017, Jouni Malinen <j@w1.fi>
+ * Copyright 2022 Morse Micro
  *
  * This software may be distributed under the terms of the BSD license.
  * See README for more details.
@@ -529,7 +530,7 @@ enum wpa_vendor_elem_frame {
  * Returns: Pointer to abstract control interface data or %NULL on failure
  *
  * This function is used to open a control interface to wpa_supplicant/hostapd.
- * ctrl_path is usually /var/run/wpa_supplicant or /var/run/hostapd. This path
+ * ctrl_path is usually /var/run/wpa_supplicant_s1g or /var/run/hostapd_s1g. This path
  * is configured in wpa_supplicant/hostapd and other programs using the control
  * interface need to use matching path configuration.
  */
@@ -544,7 +545,7 @@ struct wpa_ctrl * wpa_ctrl_open(const char *ctrl_path);
  *
  * This function is used to open a control interface to wpa_supplicant/hostapd
  * when the socket path for client need to be specified explicitly. Default
- * ctrl_path is usually /var/run/wpa_supplicant or /var/run/hostapd and client
+ * ctrl_path is usually /var/run/wpa_supplicant_s1g or /var/run/hostapd_s1g and client
  * socket path is /tmp.
  */
 struct wpa_ctrl * wpa_ctrl_open2(const char *ctrl_path, const char *cli_path);

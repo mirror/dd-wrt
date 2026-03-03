@@ -1,6 +1,7 @@
 /*
  * WPA Supplicant - Basic mesh mode routines
  * Copyright (c) 2013-2014, cozybit, Inc.  All rights reserved.
+ * Copyright 2023 Morse Micro
  *
  * This software may be distributed under the terms of the BSD license.
  * See README for more details.
@@ -30,6 +31,17 @@ void wpa_mesh_notify_peer(struct wpa_supplicant *wpa_s, const u8 *addr,
 			  const u8 *ies, size_t ie_len);
 void wpa_supplicant_mesh_add_scan_ie(struct wpa_supplicant *wpa_s,
 				     struct wpabuf **extra_ie);
+/**
+ * mesh_iface_wpa_get_status - Get mesh WPA status
+ * @wpa_s: Pointer to wpa supplicant
+ * @buf: Buffer for status information
+ * @buflen: Maximum buffer length
+ * Returns: Number of bytes written to buf
+ *
+ * Query Mesh module for status information. This function fills in
+ * a text area with current status information.
+ */
+int mesh_iface_wpa_get_status(struct wpa_supplicant *wpa_s, char *buf, size_t buflen);
 
 #else /* CONFIG_MESH */
 
@@ -44,6 +56,11 @@ static inline void wpa_supplicant_mesh_add_scan_ie(struct wpa_supplicant *wpa_s,
 {
 }
 
+static inline int mesh_iface_wpa_get_status(struct wpa_supplicant *wpa_s,
+		char *buf, size_t buflen)
+{
+	return 0;
+}
 #endif /* CONFIG_MESH */
 
 #endif /* MESH_H */

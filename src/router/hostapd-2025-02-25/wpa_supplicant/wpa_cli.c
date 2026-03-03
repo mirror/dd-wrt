@@ -1,6 +1,7 @@
 /*
  * WPA Supplicant - command line interface for wpa_supplicant daemon
  * Copyright (c) 2004-2022, Jouni Malinen <j@w1.fi>
+ * Copyright 2022 Morse Micro
  *
  * This software may be distributed under the terms of the BSD license.
  * See README for more details.
@@ -53,7 +54,8 @@ static int wpa_cli_attached = 0;
 static int wpa_cli_connected = -1;
 static int wpa_cli_last_id = 0;
 #ifndef CONFIG_CTRL_IFACE_DIR
-#define CONFIG_CTRL_IFACE_DIR "/var/run/wpa_supplicant"
+/* Morse Micro SW-5153. Update control interface to use _s1g for HaLow specific wpa_supplicant */
+#define CONFIG_CTRL_IFACE_DIR "/var/run/wpa_supplicant_s1g"
 #endif /* CONFIG_CTRL_IFACE_DIR */
 static const char *ctrl_iface_dir = CONFIG_CTRL_IFACE_DIR;
 static const char *client_socket_dir = NULL;
@@ -1472,7 +1474,8 @@ static const char *network_fields[] = {
 	"no_auto_peer", "mesh_rssi_threshold",
 	"mesh_basic_rates", "dot11MeshMaxRetries",
 	"dot11MeshRetryTimeout", "dot11MeshConfirmTimeout",
-	"dot11MeshHoldingTimeout",
+	"dot11MeshHoldingTimeout", "dot11MeshHWMPRootMode",
+	"dot11MeshGateAnnouncements",
 #endif /* CONFIG_MESH */
 	"wpa_ptk_rekey", "bgscan", "ignore_broadcast_ssid",
 	"wpa_deny_ptk0_rekey",
@@ -1513,6 +1516,16 @@ static const char *network_fields[] = {
 	"mac_addr", "pbss", "wps_disabled",
 	"beacon_tx_mode",
 	"smps",
+#ifdef CONFIG_IEEE80211AH
+	"cac",
+	"backoffs",
+#endif
+#ifdef CONFIG_MORSE_STANDBY_MODE
+	"standby_session_dir",
+#endif
+#ifdef CONFIG_MORSE_KEEP_ALIVE_OFFLOAD
+	"vendor_keep_alive_offload",
+#endif
 };
 
 
@@ -3186,6 +3199,50 @@ static int wpa_cli_cmd_dpp_push_button(struct wpa_ctrl *ctrl, int argc,
 #endif /* CONFIG_DPP */
 
 
+#ifdef CONFIG_NAN_USD
+static int wpa_cli_cmd_nan_publish(struct wpa_ctrl *ctrl, int argc,
+				   char *argv[])
+{
+	return wpa_cli_cmd(ctrl, "NAN_PUBLISH", 1, argc, argv);
+}
+
+
+static int wpa_cli_cmd_nan_cancel_publish(struct wpa_ctrl *ctrl, int argc,
+					  char *argv[])
+{
+	return wpa_cli_cmd(ctrl, "NAN_CANCEL_PUBLISH", 1, argc, argv);
+}
+
+
+static int wpa_cli_cmd_nan_update_publish(struct wpa_ctrl *ctrl, int argc,
+					  char *argv[])
+{
+	return wpa_cli_cmd(ctrl, "NAN_UPDATE_PUBLISH", 1, argc, argv);
+}
+
+
+static int wpa_cli_cmd_nan_subscribe(struct wpa_ctrl *ctrl, int argc,
+				     char *argv[])
+{
+	return wpa_cli_cmd(ctrl, "NAN_SUBSCRIBE", 1, argc, argv);
+}
+
+
+static int wpa_cli_cmd_nan_cancel_subscribe(struct wpa_ctrl *ctrl, int argc,
+					    char *argv[])
+{
+	return wpa_cli_cmd(ctrl, "NAN_CANCEL_SUBSCRIBE", 1, argc, argv);
+}
+
+
+static int wpa_cli_cmd_nan_transmit(struct wpa_ctrl *ctrl, int argc,
+				    char *argv[])
+{
+	return wpa_cli_cmd(ctrl, "NAN_TRANSMIT", 3, argc, argv);
+}
+#endif /* CONFIG_NAN_USD */
+
+
 static int wpa_ctrl_command_bss(struct wpa_ctrl *ctrl, const char *cmd)
 {
 	char buf[512], *pos, *bssid = NULL, *freq = NULL, *level = NULL,
@@ -4075,6 +4132,34 @@ static const struct wpa_cli_cmd wpa_cli_commands[] = {
 	  "= press DPP push button" },
 #endif /* CONFIG_DPP3 */
 #endif /* CONFIG_DPP */
+#ifdef CONFIG_NAN_USD
+	{ "nan_publish", wpa_cli_cmd_nan_publish, NULL,
+	  cli_cmd_flag_none,
+#ifdef CONFIG_IEEE80211AH
+	  "service_name=<name> [ttl=<time-to-live-in-sec>] [freq=<in KHz>] [freq_list=<comma separated list in KHz>] [srv_proto_type=<type>] [ssi=<service specific information (hexdump)>] [p2p=1] [solicited=0] [unsolicited=0] [fsd=0] = Publish USD Service"},
+#else
+	  "service_name=<name> [ttl=<time to live in sec>] [freq=<in MHz>] [freq_list=<'all' | comma separated list in MHz>] [srv_proto_type=<type>] [ssi=<service specific information (hexdump)>] [p2p=1] [solicited=0] [unsolicited=0] [fsd=0] = Publish USD Service"},
+#endif /* CONFIG_IEEE80211AH */
+	{ "nan_cancel_publish", wpa_cli_cmd_nan_cancel_publish, NULL,
+	  cli_cmd_flag_none,
+	  "publish_id=<id from NAN_PUBLISH> = Cancel USD Service"},
+	{ "nan_update_publish", wpa_cli_cmd_nan_update_publish, NULL,
+	  cli_cmd_flag_none,
+	  "publish_id=<id from NAN_PUBLISH> [ssi=<service specific information (hexdump)>] = Update USD Service"},
+	{ "nan_subscribe", wpa_cli_cmd_nan_subscribe, NULL,
+	  cli_cmd_flag_none,
+#ifdef CONFIG_IEEE80211AH
+	  "service_name=<name> [active=1] [ttl=<time-to-live-in-sec>] [freq=<in KHz>] [freq_list=<comma separated list in KHz>] [srv_proto_type=<type>] [ssi=<service specific information (hexdump)>] [p2p=1] = Subscribe to a USD service"},
+#else
+	  "service_name=<name> [active=1] [ttl=<time to live in sec>] [freq=<in MHz>] [freq_list=<'all' | comma separated list in MHz>] [srv_proto_type=<type>] [ssi=<service specific information (hexdump)>] [p2p=1] = Subscribe to a USD Service"},
+#endif /* CONFIG_IEEE80211AH */
+	{ "nan_cancel_subscribe", wpa_cli_cmd_nan_cancel_subscribe, NULL,
+	  cli_cmd_flag_none,
+	  "subscribe_id=<id from NAN_SUBSCRIBE> = Un-subscribe from a USD Service"},
+	{ "nan_transmit", wpa_cli_cmd_nan_transmit, NULL,
+	  cli_cmd_flag_none,
+	  "handle=<id from NAN_PUBLISH or NAN_SUBSCRIBE> req_instance_id=<peer's id> address=<peer's MAC address> [ssi=<service specific information (hexdump)>] = Send a USD Transmit message to the given peer"},
+#endif /* CONFIG_NAN_USD */
 	{ "all_bss", wpa_cli_cmd_all_bss, NULL, cli_cmd_flag_none,
 	  "= list all BSS entries (scan results)" },
 #ifdef CONFIG_PASN

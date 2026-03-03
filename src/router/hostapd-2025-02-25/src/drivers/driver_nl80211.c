@@ -5,6 +5,7 @@
  * Copyright (c) 2005-2006, Devicescape Software, Inc.
  * Copyright (c) 2007, Johannes Berg <johannes@sipsolutions.net>
  * Copyright (c) 2009-2010, Atheros Communications
+ * Copyright 2022 Morse Micro
  *
  * This software may be distributed under the terms of the BSD license.
  * See README for more details.
@@ -41,7 +42,7 @@
 #include "radiotap_iter.h"
 #include "rfkill.h"
 #include "driver_nl80211.h"
-
+#include "morse.h"
 
 #ifndef NETLINK_CAP_ACK
 #define NETLINK_CAP_ACK 10
@@ -182,9 +183,6 @@ static void add_ifidx(struct wpa_driver_nl80211_data *drv, int ifidx,
 		      int ifidx_reason);
 static void del_ifidx(struct wpa_driver_nl80211_data *drv, int ifidx,
 		      int ifidx_reason);
-static int have_ifidx(struct wpa_driver_nl80211_data *drv, int ifidx,
-		      int ifidx_reason);
-
 static int nl80211_set_channel(struct i802_bss *bss,
 			       struct hostapd_freq_params *freq, int set_chan);
 static int nl80211_disable_11b_rates(struct wpa_driver_nl80211_data *drv,
@@ -1277,7 +1275,7 @@ nl80211_find_drv(struct nl80211_global *global, int idx, u8 *buf, size_t len,
 				*init_failed = 1;
 			return drv;
 		}
-		if (res > 0 || have_ifidx(drv, idx, IFIDX_ANY))
+		if (res > 0 || nl80211_has_ifidx(drv, idx, IFIDX_ANY))
 			return drv;
 	}
 	return NULL;
@@ -1619,8 +1617,13 @@ static int nl80211_get_assoc_freq_handler(struct nl_msg *msg, void *arg)
 		if (!drv->sta_mlo_info.valid_links ||
 		    drv->sta_mlo_info.assoc_link_id == link_id) {
 			ctx->assoc_freq = freq;
-			wpa_printf(MSG_DEBUG, "nl80211: Associated on %u MHz",
+#ifdef CONFIG_IEEE80211AH
+			wpa_printf(MSG_DEBUG, "nl80211: Associated on %u MHz (5 GHz mapped)",
 				   ctx->assoc_freq);
+#else
+			wpa_printf(MSG_DEBUG, "nl80211: Associated on %u MHz",
+					ctx->assoc_freq);
+#endif
 		}
 	}
 	if (status == NL80211_BSS_STATUS_IBSS_JOINED &&
@@ -1902,6 +1905,9 @@ static int wpa_driver_nl80211_set_country(void *priv, const char *alpha2_arg)
 {
 	struct i802_bss *bss = priv;
 	struct wpa_driver_nl80211_data *drv = bss->drv;
+#ifdef CONFIG_IEEE80211AH
+	os_strlcpy(drv->alpha2, alpha2_arg, 3);
+#else
 	char alpha2[3];
 	struct nl_msg *msg;
 
@@ -1920,6 +1926,7 @@ static int wpa_driver_nl80211_set_country(void *priv, const char *alpha2_arg)
 	}
 	if (send_and_recv_cmd(drv, msg))
 		return -EINVAL;
+#endif
 	return 0;
 }
 
@@ -1945,8 +1952,12 @@ static int wpa_driver_nl80211_get_country(void *priv, char *alpha2)
 {
 	struct i802_bss *bss = priv;
 	struct wpa_driver_nl80211_data *drv = bss->drv;
-	struct nl_msg *msg;
 	int ret;
+#ifdef CONFIG_IEEE80211AH
+	os_strlcpy(alpha2, drv->alpha2, 3);
+	ret = 0;
+#else
+	struct nl_msg *msg;
 
 	msg = nlmsg_alloc();
 	if (!msg)
@@ -1965,6 +1976,7 @@ static int wpa_driver_nl80211_get_country(void *priv, char *alpha2)
 
 	alpha2[0] = '\0';
 	ret = send_and_recv_resp(drv, msg, nl80211_get_country, alpha2);
+#endif
 	if (!alpha2[0])
 		ret = -1;
 
@@ -4161,7 +4173,12 @@ retry:
 			goto fail;
 	}
 	if (params->freq) {
-		wpa_printf(MSG_DEBUG, "  * freq=%d", params->freq);
+#ifdef CONFIG_IEEE80211AH
+		wpa_printf(MSG_DEBUG, "  * mapped freq=%d",
+#else
+		wpa_printf(MSG_DEBUG, "  * freq=%d",
+#endif /* CONFIG_IEEE80211AH */
+		params->freq);
 		if (nla_put_u32(msg, NL80211_ATTR_WIPHY_FREQ, params->freq))
 			goto fail;
 	}
@@ -5009,7 +5026,6 @@ static int nl80211_mbssid(struct nl_msg *msg,
 
 	return 0;
 }
-
 #endif /* CONFIG_IEEE80211AX */
 
 
@@ -5524,11 +5540,16 @@ static int wpa_driver_nl80211_set_ap(void *priv,
 	if (params->ubpr.unsol_bcast_probe_resp_interval &&
 	    nl80211_unsol_bcast_probe_resp(bss, msg, &params->ubpr) < 0)
 		goto fail;
-
 	if (nl80211_mbssid(msg, params) < 0)
 		goto fail;
 #endif /* CONFIG_IEEE80211AX */
-
+#ifdef CONFIG_IEEE80211AH
+	if (params->mbssid_tx_iface) {
+		if (morse_set_mbssid_info(bss->ifname,
+				params->mbssid_tx_iface, MBSSID_MAX_INTERFACES))
+			goto fail;
+	}
+#endif /* CONFIG_IEEE80211AH */
 #ifdef CONFIG_SAE
 	if (wpa_key_mgmt_sae(params->key_mgmt_suites) &&
 	    nl80211_put_sae_pwe(msg, params->sae_pwe) < 0)
@@ -5563,6 +5584,9 @@ static int wpa_driver_nl80211_set_ap(void *priv,
 	if (ret) {
 		wpa_printf(MSG_DEBUG, "nl80211: Beacon set failed: %d (%s) (max %d)",
 			   ret, strerror(-ret), NL80211_ATTR_MAX);
+		if (!link->beacon_set)
+			ret = 0;
+		link->beacon_set = 0;
 	} else {
 		link->beacon_set = 1;
 		nl80211_set_bss(bss, params->cts_protect, params->preamble,
@@ -5736,8 +5760,8 @@ static int wpa_driver_nl80211_sta_add(void *priv,
 			"NL80211_CMD_NEW_STATION";
 	}
 
-	wpa_printf(MSG_DEBUG, "nl80211: %s STA " MACSTR,
-		   cmd_string, MAC2STR(params->addr));
+	wpa_printf(MSG_DEBUG, "nl80211: %s STA Flags:%x " MACSTR,
+		   cmd_string, params->flags, MAC2STR(params->addr));
 	msg = nl80211_bss_msg(bss, 0, cmd);
 	if (!msg)
 		goto fail;
@@ -6885,7 +6909,12 @@ static int nl80211_connect_common(struct wpa_driver_nl80211_data *drv,
 	}
 
 	if (params->freq.freq && !params->mld_params.mld_addr) {
-		wpa_printf(MSG_DEBUG, "  * freq=%d", params->freq.freq);
+#ifdef CONFIG_IEEE80211AH
+		wpa_printf(MSG_DEBUG, "  * mapped freq=%d",
+#else
+		wpa_printf(MSG_DEBUG, "  * freq=%d",
+#endif /* CONFIG_IEEE80211AH */
+				params->freq.freq);
 		if (nla_put_u32(msg, NL80211_ATTR_WIPHY_FREQ,
 				params->freq.freq))
 			return -1;
@@ -8524,7 +8553,7 @@ static void add_ifidx(struct wpa_driver_nl80211_data *drv, int ifidx,
 	wpa_printf(MSG_DEBUG,
 		   "nl80211: Add own interface ifindex %d (ifidx_reason %d)",
 		   ifidx, ifidx_reason);
-	if (have_ifidx(drv, ifidx, ifidx_reason)) {
+	if (nl80211_has_ifidx(drv, ifidx, ifidx_reason)) {
 		wpa_printf(MSG_DEBUG, "nl80211: ifindex %d already in the list",
 			   ifidx);
 		return;
@@ -8584,8 +8613,8 @@ static void del_ifidx(struct wpa_driver_nl80211_data *drv, int ifidx,
 }
 
 
-static int have_ifidx(struct wpa_driver_nl80211_data *drv, int ifidx,
-		      int ifidx_reason)
+int nl80211_has_ifidx(struct wpa_driver_nl80211_data *drv, int ifidx,
+					  int ifidx_reason)
 {
 	int i;
 
@@ -8685,7 +8714,7 @@ static void handle_eapol(int sock, void *eloop_ctx, void *sock_ctx)
 		return;
 	}
 
-	if (have_ifidx(drv, lladdr.sll_ifindex, IFIDX_ANY))
+	if (nl80211_has_ifidx(drv, lladdr.sll_ifindex, IFIDX_ANY))
 		drv_event_eapol_rx(drv->ctx, lladdr.sll_addr, buf, len);
 }
 
@@ -12271,6 +12300,9 @@ static int nl80211_put_mesh_config(struct nl_msg *msg,
 	    ((params->flags & WPA_DRIVER_MESH_CONF_FLAG_FORWARDING) &&
 	     nla_put_u8(msg, NL80211_MESHCONF_FORWARDING,
 			params->forwarding)) ||
+	    ((params->flags & WPA_DRIVER_MESH_CONF_FLAG_NOLEARN) &&
+	     nla_put_u8(msg, NL80211_MESHCONF_NOLEARN,
+			params->nolearn)) ||
 	    ((params->flags & WPA_DRIVER_MESH_CONF_FLAG_MAX_PEER_LINKS) &&
 	     nla_put_u16(msg, NL80211_MESHCONF_MAX_PEER_LINKS,
 			 params->max_peer_links)) ||
@@ -12295,6 +12327,24 @@ static int nl80211_put_mesh_config(struct nl_msg *msg,
 		wpa_printf(MSG_ERROR, "nl80211: Failed to set HT_OP_MODE");
 		return -1;
 	}
+
+	/*
+	 * HWPM Related parameters
+	 */
+	if ((params->flags & WPA_DRIVER_MESH_CONF_FLAG_ROOTMODE) &&
+	     nla_put_u8(msg, NL80211_MESHCONF_HWMP_ROOTMODE, params->dot11MeshHWMPRootMode)) {
+		wpa_printf(MSG_ERROR, "nl80211: Failed to set HWMP_ROOTMODE");
+		return -1;
+	}
+
+	if ((params->flags & WPA_DRIVER_MESH_CONF_FLAG_GATE_ANNOUNCEMENTS) &&
+	     nla_put_u8(msg, NL80211_MESHCONF_GATE_ANNOUNCEMENTS,
+	     		params->dot11MeshGateAnnouncements) &&
+	     nla_put_u8(msg, NL80211_MESHCONF_CONNECTED_TO_GATE, 1)) {
+		wpa_printf(MSG_ERROR, "nl80211: Failed to set GATE_ANNOUNCEMENTS");
+		return -1;
+	}
+
 
 	nla_nest_end(msg, container);
 
@@ -14753,6 +14803,18 @@ static int testing_nl80211_radio_disable(void *priv, int disabled)
 
 #endif /* CONFIG_TESTING_OPTIONS */
 
+#ifdef CONFIG_MORSE_WNM
+static int nl80211_wnm_oper(void *priv, enum wnm_oper oper, const u8 *peer,
+			u8 *buf, u16 *buf_len)
+{
+	struct i802_bss *bss = priv;
+
+	(void)buf;
+	(void)buf_len;
+
+	return morse_wnm_oper(bss->ifname, oper);
+}
+#endif
 
 static struct hostapd_multi_hw_info *
 wpa_driver_get_multi_hw_info(void *priv, unsigned int *num_multi_hws)
@@ -14933,4 +14995,7 @@ const struct wpa_driver_ops wpa_driver_nl80211_ops = {
 	.radio_disable = testing_nl80211_radio_disable,
 #endif /* CONFIG_TESTING_OPTIONS */
 	.get_multi_hw_info = wpa_driver_get_multi_hw_info,
+#ifdef CONFIG_MORSE_WNM
+	.wnm_oper = nl80211_wnm_oper,
+#endif
 };

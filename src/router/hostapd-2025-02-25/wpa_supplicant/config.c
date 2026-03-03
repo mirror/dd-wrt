@@ -1,6 +1,7 @@
 /*
  * WPA Supplicant / Configuration parser and common functions
  * Copyright (c) 2003-2019, Jouni Malinen <j@w1.fi>
+ * Copyright 2022 Morse Micro
  *
  * This software may be distributed under the terms of the BSD license.
  * See README for more details.
@@ -20,7 +21,9 @@
 #include "fst/fst.h"
 #include "ap/sta_info.h"
 #include "config.h"
+#include "morse.h"
 
+#include "utils/morse.h"
 
 #if !defined(CONFIG_CTRL_IFACE) && defined(CONFIG_NO_CONFIG_WRITE)
 #define NO_CONFIG_WRITE
@@ -1490,18 +1493,18 @@ static int wpa_config_parse_freq_list(const struct parse_data *data,
 
 
 #ifndef NO_CONFIG_WRITE
-static char * wpa_config_write_freqs(const struct parse_data *data,
-				     const int *freqs)
+static char * wpa_config_write_list(const struct parse_data *data,
+				     const int *values)
 {
 	char *buf, *pos, *end;
 	int i, ret;
 	size_t count;
 
-	if (freqs == NULL)
+	if (values == NULL)
 		return NULL;
 
 	count = 0;
-	for (i = 0; freqs[i]; i++)
+	for (i = 0; values[i]; i++)
 		count++;
 
 	pos = buf = os_zalloc(10 * count + 1);
@@ -1509,9 +1512,9 @@ static char * wpa_config_write_freqs(const struct parse_data *data,
 		return NULL;
 	end = buf + 10 * count + 1;
 
-	for (i = 0; freqs[i]; i++) {
+	for (i = 0; values[i]; i++) {
 		ret = os_snprintf(pos, end - pos, "%s%u",
-				  i == 0 ? "" : " ", freqs[i]);
+				  i == 0 ? "" : " ", values[i]);
 		if (os_snprintf_error(end - pos, ret)) {
 			end[-1] = '\0';
 			return buf;
@@ -1526,14 +1529,14 @@ static char * wpa_config_write_freqs(const struct parse_data *data,
 static char * wpa_config_write_scan_freq(const struct parse_data *data,
 					 struct wpa_ssid *ssid)
 {
-	return wpa_config_write_freqs(data, ssid->scan_freq);
+	return wpa_config_write_list(data, ssid->scan_freq);
 }
 
 
 static char * wpa_config_write_freq_list(const struct parse_data *data,
 					 struct wpa_ssid *ssid)
 {
-	return wpa_config_write_freqs(data, ssid->freq_list);
+	return wpa_config_write_list(data, ssid->freq_list);
 }
 #endif /* NO_CONFIG_WRITE */
 
@@ -2238,11 +2241,49 @@ static int wpa_config_parse_mesh_basic_rates(const struct parse_data *data,
 static char * wpa_config_write_mesh_basic_rates(const struct parse_data *data,
 						struct wpa_ssid *ssid)
 {
-	return wpa_config_write_freqs(data, ssid->mesh_basic_rates);
+	return wpa_config_write_list(data, ssid->mesh_basic_rates);
 }
 
 #endif /* NO_CONFIG_WRITE */
 
+
+static int wpa_config_parse_dot11MeshHWMPRootMode(const struct parse_data *data,
+						  struct wpa_ssid *ssid, int line,
+						  const char *value)
+{
+	struct parse_data temp;
+
+	memcpy(&temp, data, sizeof(temp));
+
+	temp.param1 = (void *) &((struct wpa_ssid *) 0)->dot11MeshHWMPRootMode;
+
+	/* Note: wpa_config_parse_int can't handle an upper or lower bound = 0! */
+	if (wpa_config_parse_int(&temp, ssid, line, value) < 0)
+		return -1;
+
+	if (ssid->dot11MeshHWMPRootMode < MESH_HWMP_NOROOT ||
+	    ssid->dot11MeshHWMPRootMode > MESH_HWMP_RANN ||
+	    ssid->dot11MeshHWMPRootMode == MESH_HWMP_NOT_USED) {
+		wpa_printf(MSG_ERROR, "Line %d: Invalid dot11MeshHWMPRootMode '%d'",
+			   line, ssid->dot11MeshHWMPRootMode);
+		return -1;
+	}
+
+	return 0;
+}
+
+#ifndef NO_CONFIG_WRITE
+static char * wpa_config_write_dot11MeshHWMPRootMode(const struct parse_data *data,
+						     struct wpa_ssid *ssid)
+{
+	struct parse_data temp;
+	memcpy(&temp, data, sizeof(temp));
+
+	temp.param1 = (void *)&((struct wpa_ssid *) 0)->dot11MeshHWMPRootMode;
+
+	return wpa_config_write_int(&temp, ssid);
+}
+#endif /* NO_CONFIG_WRITE */
 #endif /* CONFIG_MESH */
 
 
@@ -2579,6 +2620,31 @@ static char * wpa_config_write_htmode(const struct parse_data *data,
 }
 #endif /* NO_CONFIG_WRITE */
 
+#ifdef CONFIG_IEEE80211AH
+static int wpa_config_parse_auth_retry_backoff(const struct parse_data *data,
+					       struct wpa_ssid *ssid, int line,
+					       const char *value)
+{
+	ssid->auth_retry_backoff = wpa_config_parse_int_array(value);
+	if (!ssid->auth_retry_backoff)
+		return -1;
+	if (ssid->auth_retry_backoff[0] == 0) {
+		os_free(ssid->auth_retry_backoff);
+		ssid->auth_retry_backoff = NULL;
+		return -1;
+	}
+
+	return 0;
+}
+#ifndef NO_CONFIG_WRITE
+static char * wpa_config_write_auth_retry_backoff(const struct parse_data *data,
+						  struct wpa_ssid *ssid)
+{
+	return wpa_config_write_list(data, ssid->auth_retry_backoff);
+}
+#endif /* NO_CONFIG_WRITE */
+#endif
+
 /* Helper macros for network block parser */
 
 #ifdef OFFSET
@@ -2795,6 +2861,16 @@ static const struct parse_data ssid_fields[] = {
 	{ INT_RANGE(no_auto_peer, 0, 1) },
 	{ INT_RANGE(mesh_fwding, 0, 1) },
 	{ INT_RANGE(mesh_rssi_threshold, -255, 1) },
+	{ FUNC(dot11MeshHWMPRootMode) },
+	{ INT_RANGE(dot11MeshGateAnnouncements, 0, 1) },
+#ifdef CONFIG_IEEE80211AH
+	{ INT_RANGE(mbca_config, 0, 3)},
+	{ INT_RANGE(mbca_min_beacon_gap_ms, MIN_BCN_GAP_MIN, MIN_BCN_GAP_MAX)},
+	{ INT_RANGE(mbca_tbtt_adj_interval_sec, TBTT_ADJ_INT_MIN, TBTT_ADJ_INT_MAX)},
+	{ INT_RANGE(dot11MeshBeaconTimingReportInterval, BCN_TIMING_REP_INT_MIN,
+		BCN_TIMING_REP_INT_MAX)},
+	{ INT_RANGE(mbss_start_scan_duration_ms, MBSS_SCAN_DURATION_MIN, MBSS_SCAN_DURATION_MAX)},
+#endif
 #else /* CONFIG_MESH */
 	{ INT_RANGE(mode, 0, 4) },
 #endif /* CONFIG_MESH */
@@ -2924,6 +3000,23 @@ static const struct parse_data ssid_fields[] = {
 	{ INT_RANGE(rsn_overriding, 0, 2)},
 	{ INT_RANGE(beacon_tx_mode, 1, 2)},
 	{ INT_RANGE(smps, 0, 2)},
+#ifdef CONFIG_IEEE80211AH
+	{ FUNC(auth_retry_backoff) },
+	{ INT_RANGE(raw_sta_priority, 0, 7) },
+	{ INT_RANGE(cac, 0, 1) },
+	{ INT_RANGE(channel, 0, 60) },
+	{ STR(country) },
+	{ INT_RANGE(op_class, 0, 80) },
+	{ INT_RANGE(s1g_prim_chwidth, 0, 2) },
+	{ INT_RANGE(s1g_prim_1mhz_chan_index, 0, 8) },
+	{ INT_RANGE(disable_s1g_sgi, 0, 1) },
+#ifdef CONFIG_MESH
+	{ INT_RANGE(mesh_beaconless_mode, 0, 1) },
+	{ INT_RANGE(mesh_dynamic_peering, 0, 1) },
+	{ INT_RANGE(mesh_rssi_margin, 3, 30) },
+	{ INT_RANGE(mesh_blacklist_timeout, 10, 600) },
+#endif /* CONFIG_MESH */
+#endif /* CONFIG_IEEE80211AH */
 };
 
 #undef OFFSET
@@ -3128,6 +3221,9 @@ void wpa_config_free_ssid(struct wpa_ssid *ssid)
 #ifdef CONFIG_SAE
 	sae_deinit_pt(ssid->pt);
 #endif /* CONFIG_SAE */
+#ifdef CONFIG_IEEE80211AH
+	os_free(ssid->auth_retry_backoff);
+#endif
 	bin_clear_free(ssid, sizeof(*ssid));
 }
 
@@ -3271,10 +3367,13 @@ void wpa_config_free(struct wpa_config *config)
 	os_free(config->dpp_mud_url);
 	os_free(config->dpp_extra_conf_req_name);
 	os_free(config->dpp_extra_conf_req_value);
+	os_free(config->dpp_key);
 	wpabuf_free(config->dik);
 	wpabuf_free(config->wfa_gen_capa_supp);
 	wpabuf_free(config->wfa_gen_capa_cert);
-
+#ifdef CONFIG_MORSE_STANDBY_MODE
+	os_free(config->standby_session_dir);
+#endif
 	os_free(config);
 }
 
@@ -3450,6 +3549,15 @@ void wpa_config_set_network_defaults(struct wpa_ssid *ssid)
 	ssid->dot11MeshHoldingTimeout = DEFAULT_MESH_HOLDING_TIMEOUT;
 	ssid->mesh_fwding = DEFAULT_MESH_FWDING;
 	ssid->mesh_rssi_threshold = DEFAULT_MESH_RSSI_THRESHOLD;
+	ssid->dot11MeshHWMPRootMode = DEFAULT_HWMP_ROOTMODE;
+	ssid->dot11MeshGateAnnouncements = DEFAULT_MESH_GATE_ANNOUNCEMENTS;
+#ifdef CONFIG_IEEE80211AH
+	ssid->mbca_config = DEFAULT_MBCA_CFG;
+	ssid->mbca_min_beacon_gap_ms = DEFAULT_MBCA_MIN_BCN_GAP_MS;
+	ssid->mbca_tbtt_adj_interval_sec = DEFAULT_TBTT_ADJ_INTERVAL_SEC;
+	ssid->dot11MeshBeaconTimingReportInterval = DEFAULT_MESH_BCN_TIMING_REPORT_INT;
+	ssid->mbss_start_scan_duration_ms = DEFAULT_MBSS_START_SCAN_DURATION_MS;
+#endif
 #endif /* CONFIG_MESH */
 #ifdef CONFIG_HT_OVERRIDES
 	ssid->disable_ht = DEFAULT_DISABLE_HT;
@@ -3490,6 +3598,21 @@ void wpa_config_set_network_defaults(struct wpa_ssid *ssid)
 	ssid->max_oper_chwidth = DEFAULT_MAX_OPER_CHWIDTH;
 	ssid->rsn_overriding = RSN_OVERRIDING_NOT_SET;
 	ssid->beacon_tx_mode = DEFAULT_BEACON_TX_MODE;
+#ifdef CONFIG_IEEE80211AH
+	ssid->raw_sta_priority = -1;
+	ssid->cac = 0;
+	ssid->channel = DEFAULT_MORSE_IBSS_CHANNEL;
+	ssid->op_class = DEFAULT_MORSE_IBSS_OP_CLASS;
+	ssid->s1g_prim_1mhz_chan_index = DEFAULT_MORSE_S1G_PRIM_1M_CH_IDX;
+	ssid->disable_s1g_sgi = DEFAULT_DISABLE_SGI;
+#ifdef CONFIG_MESH
+	ssid->mesh_beaconless_mode = DEFAULT_MESH_BEACONLESS_MODE;
+	ssid->mesh_dynamic_peering = DEFAULT_MESH_DYNAMIC_PEERING;
+	ssid->mesh_rssi_margin = DEFAULT_MESH_RSSI_MARGIN;
+	ssid->mesh_blacklist_timeout = DEFAULT_MESH_BLACKLIST_TIMEOUT;
+#endif /* CONFIG_MESH */
+#endif /* CONFIG_IEEE80211AH */
+
 }
 
 
@@ -4858,6 +4981,7 @@ struct wpa_config * wpa_config_alloc_empty(const char *ctrl_interface,
 	if (config == NULL)
 		return NULL;
 	config->eapol_version = DEFAULT_EAPOL_VERSION;
+	config->ieee80211ah = 0;
 	config->ap_scan = DEFAULT_AP_SCAN;
 	config->user_mpm = DEFAULT_USER_MPM;
 	config->max_peer_links = DEFAULT_MAX_PEER_LINKS;
@@ -4894,6 +5018,10 @@ struct wpa_config * wpa_config_alloc_empty(const char *ctrl_interface,
 	config->cert_in_cb = DEFAULT_CERT_IN_CB;
 	config->wpa_rsc_relaxation = DEFAULT_WPA_RSC_RELAXATION;
 	config->extended_key_id = DEFAULT_EXTENDED_KEY_ID;
+
+#ifdef CONFIG_MORSE_KEEP_ALIVE_OFFLOAD
+	config->vendor_keep_alive_offload = DEFAULT_VENDOR_KEEP_ALIVE_OFFLOAD;
+#endif
 
 #ifdef CONFIG_MBO
 	config->mbo_cell_capa = DEFAULT_MBO_CELL_CAPA;
@@ -5199,6 +5327,9 @@ static int wpa_config_process_country(const struct global_parse_data *data,
 	config->country[1] = pos[1];
 	wpa_printf(MSG_DEBUG, "country='%c%c'",
 		   config->country[0], config->country[1]);
+
+	morse_set_s1g_ht_chan_pairs(config->country);
+
 	return 0;
 }
 
@@ -5611,11 +5742,16 @@ static const struct global_parse_data global_fields[] = {
 #else /* CONFIG_MACSEC */
 	{ INT_RANGE(eapol_version, 1, 2), 0 },
 #endif /* CONFIG_MACSEC */
+	{ INT(ieee80211ah), 0 },
 	{ INT(ap_scan), 0 },
 	{ FUNC(bgscan), CFG_CHANGED_BGSCAN },
 #ifdef CONFIG_MESH
 	{ INT(user_mpm), 0 },
+#ifdef CONFIG_IEEE80211AH
+	{ INT_RANGE(max_peer_links, 0, 10), 0 },
+#else /* CONFIG_IEEE80211AH */
 	{ INT_RANGE(max_peer_links, 0, 255), 0 },
+#endif
 	{ INT(mesh_max_inactivity), 0 },
 	{ INT_RANGE(mesh_fwding, 0, 1), 0 },
 	{ INT(dot11RSNASAERetransPeriod), 0 },
@@ -5739,6 +5875,7 @@ static const struct global_parse_data global_fields[] = {
 	{ INT_RANGE(auto_interworking, 0, 1), 0 },
 	{ INT(okc), 0 },
 	{ INT(pmf), 0 },
+	{ INT(op_class), 0 },
 	{ INT_RANGE(sae_check_mfp, 0, 1), 0 },
 	{ FUNC(sae_groups), 0 },
 	{ INT_RANGE(sae_pwe, 0, 3), 0 },
@@ -5792,6 +5929,8 @@ static const struct global_parse_data global_fields[] = {
 	{ STR(dpp_extra_conf_req_name), 0 },
 	{ STR(dpp_extra_conf_req_value), 0 },
 	{ INT_RANGE(dpp_connector_privacy_default, 0, 1), 0 },
+	{ INT_RANGE(dpp_chirp_forever, 0, 1), 0 },
+	{ STR(dpp_key), 0 },
 #endif /* CONFIG_DPP */
 	{ INT_RANGE(coloc_intf_reporting, 0, 1), 0 },
 #ifdef CONFIG_WNM
@@ -5800,6 +5939,12 @@ static const struct global_parse_data global_fields[] = {
 #endif /* CONFIG_WNM */
 	{ INT_RANGE(wowlan_disconnect_on_deinit, 0, 1), 0},
 	{ INT_RANGE(rsn_overriding, 0, 2), 0},
+#ifdef CONFIG_MORSE_STANDBY_MODE
+	{ STR(standby_session_dir), 0 },
+#endif
+#ifdef CONFIG_MORSE_KEEP_ALIVE_OFFLOAD
+	{ INT_RANGE(vendor_keep_alive_offload, 0, 1), 0},
+#endif
 #ifdef CONFIG_PASN
 #ifdef CONFIG_TESTING_OPTIONS
 	{ INT_RANGE(force_kdk_derivation, 0, 1), 0 },
