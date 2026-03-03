@@ -1425,7 +1425,7 @@ static void acs_study(struct hostapd_iface *iface)
 	iface->conf->channel = ideal_chan->chan;
 
 #ifdef CONFIG_IEEE80211AH
-	if (hapd->iconf->ieee80211ah) {
+	if (iface->conf->ieee80211ah) {
 	int ht_chan = morse_ht_center_chan_to_ht_chan(iface->conf, ideal_chan->chan);
 	iface->freq = ieee80211_channel_to_frequency(ht_chan, NL80211_BAND_5GHZ);
 	}else{
