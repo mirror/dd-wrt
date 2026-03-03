@@ -1981,9 +1981,10 @@ struct wifi_channels *mac80211_get_channels(struct unl *local_unl, const char *i
 								continue;
 							if (band->nla_type == NL80211_BAND_6GHZ && freq_mhz == 5935)
 								regmaxbw = 20;
-
-							if (max_bandwidth_mhz > regmaxbw)
-								continue;
+							if (!is_morse_micro(interface)) {
+								if (max_bandwidth_mhz > regmaxbw)
+									continue;
+							}
 							list[count].channel =
 								_ieee80211_mhz2ieee(band->nla_type == NL80211_BAND_6GHZ, freq_mhz);
 							list[count].freq = freq_mhz;
@@ -2156,6 +2157,7 @@ static MICRO_MAP us_chans[] = {
 	{ 925000, 5835, 40 },
 	{ 927000, 5875, 40 },
 	//4 Mhz
+
 	{ 906000, 5210, 80 },
 	{ 910000, 5290, 80 },
 	{ 914000, 5530, 80 },
@@ -2204,44 +2206,44 @@ static MICRO_MAP nz_chans[] = {
 };
 
 static MICRO_MAP kr_chans[] = {
-//1 Mhz
+	//1 Mhz
 	{ 918000, 5680, 20 },
-	{ 919000, 5180, 20 }, 
-	{ 920000, 5200, 20 }, 
-	{ 921000, 5220, 20 }, 
+	{ 919000, 5180, 20 },
+	{ 920000, 5200, 20 },
+	{ 921000, 5220, 20 },
 	{ 922000, 5240, 20 },
 
-	{ 926500, 5310, 20 }, 
+	{ 926500, 5310, 20 },
 	{ 927500, 5330, 20 },
-	{ 928500, 5510, 20 }, 
+	{ 928500, 5510, 20 },
 	{ 929500, 5530, 20 },
 
-// 2 mhz
+	// 2 mhz
 	{ 918500, 5680, 40 },
-	{ 920500, 5200, 40 }, 
+	{ 920500, 5200, 40 },
 	{ 922500, 5240, 40 },
-// 4 mhz
-	{ 921500, 5220, 80 }, 
+	// 4 mhz
+	{ 921500, 5220, 80 },
 	{ 927000, 5330, 80 },
 	{ 929000, 5530, 80 },
 };
 
 static MICRO_MAP jp_chans[] = {
-// 1 mhz
+	// 1 mhz
 	{ 921000, 5540, 20 },
-	{ 923000, 5180, 20 }, 
-	{ 924000, 5200, 20 }, 
+	{ 923000, 5180, 20 },
+	{ 924000, 5200, 20 },
 	{ 925000, 5220, 20 },
 	{ 926000, 5240, 20 },
 	{ 927000, 5320, 20 },
-// 2 mhz
-	{ 923500, 5190, 40 }, 
-	{ 924500, 5270, 40 }, 
-	{ 925500, 5230, 40 }, 
+	// 2 mhz
+	{ 923500, 5190, 40 },
+	{ 924500, 5270, 40 },
+	{ 925500, 5230, 40 },
 	{ 926500, 5310, 40 },
-// 4 mhz
-	{ 924500, 5180, 80 }, 
-	{ 925500, 5190, 80 }, 
+	// 4 mhz
+	{ 924500, 5180, 80 },
+	{ 925500, 5190, 80 },
 };
 
 static MICRO_MAP gb_chans[] = {
@@ -2254,8 +2256,8 @@ static MICRO_MAP gb_chans[] = {
 	{ 917900, 5620, 20 },
 	{ 918900, 5640, 20 },
 	// 2 mhz
-	{ 864000, 5670, 40 },
-	{ 866000, 5190, 40 },
+	{ 864000, 5660, 40 },
+	{ 866000, 5180, 40 },
 
 };
 
@@ -2267,8 +2269,8 @@ static MICRO_MAP eu_chans[] = {
 	{ 866500, 5200, 20 },
 	{ 867500, 5220, 20 },
 	// 2 mhz
-	{ 864000, 5670, 40 },
-	{ 866000, 5190, 40 },
+	{ 864000, 5660, 40 },
+	{ 866000, 5180, 40 },
 };
 
 static MICRO_MAP ca_chans[] = {
@@ -2320,6 +2322,7 @@ static MICRO_MAP ca_chans[] = {
 	{ 925000, 5835, 40 },
 	{ 927000, 5875, 40 },
 	//4 Mhz
+
 	{ 906000, 5210, 80 },
 	{ 910000, 5290, 80 },
 	{ 914000, 5530, 80 },
@@ -2380,11 +2383,7 @@ int morse_translate(int freq)
 	map = us_chans;
 	num = ARRAY_SIZE(us_chans);
 	if (country) {
-		if (!strcmp(country, "DE")) {
-			map = eu_chans;
-			num = ARRAY_SIZE(eu_chans);
-		}
-		if (!strcmp(country, "FR")) {
+		if (!strcmp(country, "EU")) {
 			map = eu_chans;
 			num = ARRAY_SIZE(eu_chans);
 		}
@@ -2441,6 +2440,7 @@ struct wifi_channels *mac80211_get_channels_simple(const char *interface, const 
 		num = ARRAY_SIZE(us_chans);
 		char *region = getIsoToRegion(country);
 		if (region) {
+			fprintf(stderr, "region %s for iso %s\n", region, country);
 			if (!strcmp(region, "EU")) {
 				map = eu_chans;
 				num = ARRAY_SIZE(eu_chans);
@@ -2479,7 +2479,9 @@ struct wifi_channels *mac80211_get_channels_simple(const char *interface, const 
 			int a;
 			chan[i].disabled = 1;
 			for (a = 0; a < num; a++) {
+//				fprintf(stderr, "map %d to %d\n", chan[i].freq, map[a].freq);
 				if (chan[i].freq == map[a].freq && max_bandwidth_mhz == map[a].width) {
+//					fprintf(stderr, "found for width %d = %d\n", max_bandwidth_mhz, map[a].lowfreq_khz);
 					chan[i].disabled = 0;
 					chan[i].mapped_freq = map[a].lowfreq_khz;
 				}
@@ -2487,7 +2489,11 @@ struct wifi_channels *mac80211_get_channels_simple(const char *interface, const 
 			i++;
 		}
 		sort_mapped_channels(chan, i);
-
+		i=0;
+/*		while (chan[i].freq != -1) {
+			fprintf(stderr, "results %d %d disabled %d\n", chan[i].mapped_freq , chan[i].freq, chan[i].disabled);
+			i++;
+		}*/
 	}
 	return chan;
 }

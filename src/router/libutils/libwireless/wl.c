@@ -67,6 +67,87 @@ int getValueFromPath(char *path, int dev, char *fmt, int *err)
 	return value;
 }
 
+struct s1g_ht_chan_pair {
+	int s1g_channel;
+	int ht_channel;
+	int bw;
+};
+
+static const struct s1g_ht_chan_pair s1g_ht_chan_pairs_default[] = {
+	/* nulls for alignment */
+	{ -1, -1, -1 }, { 1, 132, 1 },	{ 2, 134, 2 },	{ 3, 136, 1 },	{ 4, -1, -1 }, /* unmapped */
+	{ 5, 36, 1 },	{ 6, 38, 2 },	{ 7, 40, 1 },	{ 8, 42, 4 },	{ 9, 44, 1 },	{ 10, 46, 2 },
+	{ 11, 48, 1 },	{ 12, 50, 8 },	{ 13, 52, 1 },	{ 14, 54, 2 },	{ 15, 56, 1 },	{ 16, 58, 4 },
+	{ 17, 60, 1 },	{ 18, 62, 2 },	{ 19, 64, 1 },	{ 20, -1, 16 }, /* unmapped */
+	{ 21, 100, 1 }, { 22, 102, 2 }, { 23, 104, 1 }, { 24, 106, 4 }, { 25, 108, 1 }, { 26, 110, 2 },
+	{ 27, 112, 1 }, { 28, 114, 8 }, { 29, 116, 1 }, { 30, 118, 2 }, { 31, 120, 1 }, { 32, 122, 4 },
+	{ 33, 124, 1 }, { 34, 126, 2 }, { 35, 128, 1 }, { 36, -1, -1 }, /* unmapped */
+	{ 37, 149, 1 }, { 38, 151, 2 }, { 39, 153, 1 }, { 40, 155, 4 }, { 41, 157, 1 }, { 42, 159, 2 },
+	{ 43, 161, 1 }, { 44, 163, 8 }, { 45, 165, 1 }, { 46, 167, 2 }, { 47, 169, 1 }, { 48, 171, 4 },
+	{ 49, 173, 1 }, { 50, 175, 2 }, { 51, 177, 1 },
+};
+
+/** Implements the JP specific channelisation scheme */
+static const struct s1g_ht_chan_pair s1g_ht_chan_pairs_jp[] = {
+	/* nulls for alignment */
+	{
+		-1,
+		-1,
+		-1,
+	}, /* unmapped */
+	{ 1, -1, -1 }, /* unmapped */
+	{ 2, 38, 2 },
+	{ 3, -1, -1 }, /* unmapped */
+	{ 4, 54, 2 },
+	{ 5, -1, -1 }, /* unmapped */
+	{ 6, 46, 2 },
+	{ 7, -1, -1 }, /* unmapped */
+	{ 8, 62, 2 },
+	{ 9, 108, 1 },
+	{ 10, -1, -1 }, /* unmapped */
+	{ 11, -1, -1 }, /* unmapped */
+	{ 12, -1, -1 }, /* unmapped */
+	{ 13, 36, 1 },
+	{ 14, -1, -1 }, /* unmapped */
+	{ 15, 40, 1 },
+	{ 16, -1, -1 }, /* unmapped */
+	{ 17, 44, 1 },
+	{ 18, -1, -1 }, /* unmapped */
+	{ 19, 48, 1 },
+	{ 20, -1, -1 }, /* unmapped */
+	{ 21, 64, 1 },
+	{ 22, -1, -1 }, /* unmapped */
+	{ 23, -1, -1 }, /* unmapped */
+	{ 24, -1, -1 }, /* unmapped */
+	{ 25, -1, -1 }, /* unmapped */
+	{ 26, -1, -1 }, /* unmapped */
+	{ 27, -1, -1 }, /* unmapped */
+	{ 28, -1, -1 }, /* unmapped */
+	{ 29, -1, -1 }, /* unmapped */
+	{ 30, -1, -1 }, /* unmapped */
+	{ 31, -1, -1 }, /* unmapped */
+	{ 32, -1, -1 }, /* unmapped */
+	{ 33, -1, -1 }, /* unmapped */
+	{ 34, -1, -1 }, /* unmapped */
+	{ 35, -1, -1 }, /* unmapped */
+	{ 36, 42, 4 },
+	{ 37, -1, -1 }, /* unmapped */
+	{ 38, 58, 4 },
+	{ 39, -1, -1 }, /* unmapped */
+	{ 40, -1, -1 }, /* unmapped */
+	{ 41, -1, -1 }, /* unmapped */
+	{ 42, -1, -1 }, /* unmapped */
+	{ 43, -1, -1 }, /* unmapped */
+	{ 44, -1, -1 }, /* unmapped */
+	{ 45, -1, -1 }, /* unmapped */
+	{ 46, -1, -1 }, /* unmapped */
+	{ 47, -1, -1 }, /* unmapped */
+	{ 48, -1, -1 }, /* unmapped */
+	{ 49, -1, -1 }, /* unmapped */
+	{ 50, -1, -1 }, /* unmapped */
+	{ 51, -1, -1 }, /* unmapped */
+};
+
 /*
  * DD-WRT addition (loaned from radauth) 
  */
