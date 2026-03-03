@@ -731,6 +731,54 @@ void setupHostAP_generic_ath9k(const char *prefix, FILE *fp, int isrepeater, int
 	int isath5k = is_ath5k(prefix);
 	fprintf(fp, "driver=nl80211\n");
 	fprintf(fp, "ctrl_interface=/var/run/hostapd\n");
+if (is_morse_micro(prefix)) {
+	fprintf(fp, "wmm_ac_bk_cwmin=4\n");
+	fprintf(fp, "wmm_ac_bk_cwmax=10\n");
+	fprintf(fp, "wmm_ac_bk_aifs=7\n");
+	fprintf(fp, "wmm_ac_bk_txop_limit=469\n");
+	fprintf(fp, "wmm_ac_bk_acm=0\n");
+
+	fprintf(fp, "wmm_ac_be_aifs=3\n");
+	fprintf(fp, "wmm_ac_be_cwmin=4\n");
+	fprintf(fp, "wmm_ac_be_cwmax=10\n");
+	fprintf(fp, "wmm_ac_be_txop_limit=469\n");
+	fprintf(fp, "wmm_ac_be_acm=0\n");
+
+	fprintf(fp, "wmm_ac_vi_aifs=2\n");
+	fprintf(fp, "wmm_ac_vi_cwmin=3\n");
+	fprintf(fp, "wmm_ac_vi_cwmax=4\n");
+	fprintf(fp, "wmm_ac_vi_txop_limit=469\n");
+	fprintf(fp, "wmm_ac_vi_acm=0\n");
+	fprintf(fp, "wmm_ac_vo_aifs=2\n");
+	fprintf(fp, "wmm_ac_vo_cwmin=2\n");
+	fprintf(fp, "wmm_ac_vo_cwmax=3\n");
+	fprintf(fp, "wmm_ac_vo_txop_limit=469\n");
+	fprintf(fp, "wmm_ac_vo_acm=0\n");
+
+	fprintf(fp, "tx_queue_data3_aifs=7\n");
+	fprintf(fp, "tx_queue_data3_cwmin=15\n");
+	fprintf(fp, "tx_queue_data3_cwmax=1023\n");
+	fprintf(fp, "tx_queue_data3_burst=0\n");
+	fprintf(fp, "tx_queue_data3_burst=15.0\n");
+
+	fprintf(fp, "tx_queue_data2_aifs=3\n");
+	fprintf(fp, "tx_queue_data2_cwmin=15\n");
+	fprintf(fp, "tx_queue_data2_cwmax=1023\n");
+	fprintf(fp, "tx_queue_data2_burst=15.0\n");
+
+	fprintf(fp, "tx_queue_data1_aifs=1\n");
+	fprintf(fp, "tx_queue_data1_cwmin=7\n");
+	fprintf(fp, "tx_queue_data1_cwmax=15\n");
+	fprintf(fp, "tx_queue_data1_burst=15.0\n");
+
+	fprintf(fp, "tx_queue_data1_burst=3.0\n");
+	fprintf(fp, "tx_queue_data0_aifs=1\n");
+	fprintf(fp, "tx_queue_data0_cwmin=3\n");
+	fprintf(fp, "tx_queue_data0_cwmax=7\n");
+	fprintf(fp, "tx_queue_data0_burst=15.0\n");
+
+
+}else{
 	fprintf(fp, "wmm_ac_bk_cwmin=4\n");
 	fprintf(fp, "wmm_ac_bk_cwmax=10\n");
 	fprintf(fp, "wmm_ac_bk_aifs=7\n");
@@ -765,6 +813,7 @@ void setupHostAP_generic_ath9k(const char *prefix, FILE *fp, int isrepeater, int
 	fprintf(fp, "tx_queue_data0_cwmin=3\n");
 	fprintf(fp, "tx_queue_data0_cwmax=7\n");
 	fprintf(fp, "tx_queue_data0_burst=1.5\n");
+}
 	const char *country = getIsoName(nvram_default_get("wlan0_regdomain", "UNITED_STATES"));
 	if (!country)
 		country = "DE";
@@ -808,6 +857,9 @@ void setupHostAP_generic_ath9k(const char *prefix, FILE *fp, int isrepeater, int
 		usebw = 8080;
 
 	MAC80211DEBUG();
+	if (is_morse_micro(prefix)) {
+			fprintf(fp, "ieee80211ah=1\n");
+	}else{
 	if (has_ac(prefix)) {
 		if (strcmp(netmode, "acn-mixed") && //
 		    strcmp(netmode, "ac-only") && //
@@ -829,6 +881,8 @@ void setupHostAP_generic_ath9k(const char *prefix, FILE *fp, int isrepeater, int
 			fprintf(fp, "ieee80211ax=0\n");
 		}
 	}
+	}
+	
 	if ((!strcmp(netmode, "ng-only") || //
 	     !strcmp(netmode, "na-only") || //
 	     !strcmp(netmode, "n2-only") || //
@@ -1155,7 +1209,7 @@ void setupHostAP_generic_ath9k(const char *prefix, FILE *fp, int isrepeater, int
 				    usebw == 8080 ? 1 : 0, nvram_default_matchi(subf, 1, DEFAULT_BF),
 				    nvram_default_matchi(mubf, 1, DEFAULT_BF));
 	cur_caps = caps;
-	if ((has_ac(prefix) || has_ax(prefix)) && (has_5ghz(prefix) || has_6ghz(prefix))) {
+	if (!is_morse_micro(prefix) && (has_ac(prefix) || has_ax(prefix)) && (has_5ghz(prefix) || has_6ghz(prefix))) {
 		if (freq >= 4000 &&
 		    (!strcmp(netmode, "mixed") || //
 		     !strcmp(netmode, "ac-only") || !strcmp(netmode, "acn-mixed") || !strcmp(netmode, "ax-only") ||
@@ -1330,7 +1384,9 @@ void setupHostAP_generic_ath9k(const char *prefix, FILE *fp, int isrepeater, int
 	nvram_default_nget("1", "%s_legacy", prefix);
 	int density = nvram_ngeti("%s_cell_density", prefix);
 	int legacy = nvram_ngeti("%s_legacy", prefix);
-	if (has_ad(prefix)) {
+	if (is_morse_micro(prefix)) {
+		fprintf(fp, "hw_mode=a\n");
+	} else if (has_ad(prefix)) {
 		fprintf(fp, "hw_mode=ad\n");
 	} else if (freq < 4000) {
 		if (!strcmp(netmode, "b-only")) {
@@ -1451,9 +1507,21 @@ void setupHostAP_generic_ath9k(const char *prefix, FILE *fp, int isrepeater, int
 	}
 
 	MAC80211DEBUG();
+	if (is_morse_micro(prefix)) {
+	fprintf(fp, "channel=acs_survey\n");
+	char *country = getRegionCode(nvram_default_get(regdomain, "UNITED_STATES"));
+	fprintf(fp, "country_code=%s\n", country);
+	fprintf(fp, "op_class=67\n");
+	fprintf(fp, "s1g_capab=[SHORT-GI-ALL]\n");
+	fprintf(fp, "s1g_prim_chwidth=0\n");
+	fprintf(fp, "s1g_prim_1mhz_chan_index=0\n");
+	fprintf(fp, "raw=0\n");
+	
+	}else{
 	fprintf(fp, "channel=%d\n", ieee80211_mhz2ieee(prefix, freq));
 	//	if (!has_ad(prefix))
 	fprintf(fp, "frequency=%d\n", freq);
+	}
 	if (is_6ghz_freq_prefix(prefix, freq)) {
 		switch (usebw) {
 		case 20:

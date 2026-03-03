@@ -701,6 +701,8 @@ void setupSupplicant(const char *prefix, char *ssidoverride)
 		fprintf(fp, "ap_scan=1\n");
 		fprintf(fp, "fast_reauth=1\n");
 		fprintf(fp, "eapol_version=%s\n", nvram_default_get(eapol, "1"));
+	char *country = getRegionCode(nvram_default_get(regdomain, "UNITED_STATES"));
+	fprintf(fp, "country=%s\n", country);
 		if (ispsk3)
 			fprintf(fp, "\tsae_groups=19 20 21\n");
 
