@@ -1508,7 +1508,7 @@ void setupHostAP_generic_ath9k(const char *prefix, FILE *fp, int isrepeater, int
 	MAC80211DEBUG();
 	if (is_morse_micro(prefix)) {
 		fprintf(fp, "channel=acs_survey\n");
-		char *country = getRegionCode(nvram_default_get(regdomain, "UNITED_STATES"));
+		char *country = getRegionCode(nvram_default_get("wlan0_regdomain", "UNITED_STATES"));
 		fprintf(fp, "country_code=%s\n", country);
 		fprintf(fp, "op_class=67\n");
 		fprintf(fp, "s1g_capab=[SHORT-GI-ALL]\n");
