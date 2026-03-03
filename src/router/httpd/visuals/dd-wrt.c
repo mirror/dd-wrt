@@ -1236,28 +1236,29 @@ static void show_channel(webs_t wp, char *dev, char *prefix, int type)
 					continue;
 				}
 #endif
+				if (!is_morse_micro(prefix)) {
+					if (is_mvebu(prefix) &&
+					    ((chan[i].channel == 161 || chan[i].channel == 153 || chan[i].channel == 64) &&
+					     channelbw == 80)) {
+						i++;
+						continue;
+					}
 
-				if (is_mvebu(prefix) &&
-				    ((chan[i].channel == 161 || chan[i].channel == 153 || chan[i].channel == 64) &&
-				     channelbw == 80)) {
-					i++;
-					continue;
-				}
+					if (channelbw == 40 && !chan[i].luu && !chan[i].ull) {
+						i++;
+						continue; // do not show channels where bandwidth is not available
+					}
 
-				if (channelbw == 40 && !chan[i].luu && !chan[i].ull) {
-					i++;
-					continue; // do not show channels where bandwidth is not available
-				}
+					if (channelbw == 80 && !chan[i].lul && !chan[i].ull && !chan[i].ulu && !chan[i].luu) {
+						i++;
+						continue; // do not show channels where bandwidth is not available
+					}
 
-				if (channelbw == 80 && !chan[i].lul && !chan[i].ull && !chan[i].ulu && !chan[i].luu) {
-					i++;
-					continue; // do not show channels where bandwidth is not available
-				}
-
-				if (channelbw == 160 && !chan[i].lll && !chan[i].llu && !chan[i].lul && !chan[i].luu &&
-				    !chan[i].ull && !chan[i].ulu && !chan[i].uul && !chan[i].uuu) {
-					i++;
-					continue; // do not show channels where bandwidth is not available
+					if (channelbw == 160 && !chan[i].lll && !chan[i].llu && !chan[i].lul && !chan[i].luu &&
+					    !chan[i].ull && !chan[i].ulu && !chan[i].uul && !chan[i].uuu) {
+						i++;
+						continue; // do not show channels where bandwidth is not available
+					}
 				}
 				sprintf(cn, "%d", chan[i].channel);
 				sprintf(fr, "%d", chan[i].freq);
@@ -1271,8 +1272,9 @@ static void show_channel(webs_t wp, char *dev, char *prefix, int type)
 						websWrite(
 							wp,
 							"document.write(\"<option value=\\\"%s\\\" %s>%d - %d.%d \"+wl_basic.khz+\"%s</option>\");\n",
-							fr, !strcmp(wlc, fr) ? "selected=\\\"selected\\\"" : "", ieee80211_mhz2ieee(prefix, chan[i].mapped_freq),
-							chan[i].mapped_freq / 1000, (chan[i].mapped_freq % 1000) / 100, eirp);
+							fr, !strcmp(wlc, fr) ? "selected=\\\"selected\\\"" : "",
+							ieee80211_mhz2ieee(prefix, chan[i].mapped_freq), chan[i].mapped_freq / 1000,
+							(chan[i].mapped_freq % 1000) / 100, eirp);
 
 					} else if (is_mac80211(prefix) && !is_ath5k(prefix)) {
 						websWrite(
