@@ -1905,9 +1905,12 @@ static int wpa_driver_nl80211_set_country(void *priv, const char *alpha2_arg)
 {
 	struct i802_bss *bss = priv;
 	struct wpa_driver_nl80211_data *drv = bss->drv;
+#ifdef CONFIG_IEEE80211AH
 	if (drv->ieee80211ah) 
 	os_strlcpy(drv->alpha2, alpha2_arg, 3);
-	else{
+	else
+#endif
+	{
 	char alpha2[3];
 	struct nl_msg *msg;
 
@@ -1953,10 +1956,13 @@ static int wpa_driver_nl80211_get_country(void *priv, char *alpha2)
 	struct i802_bss *bss = priv;
 	struct wpa_driver_nl80211_data *drv = bss->drv;
 	int ret;
+#ifdef CONFIG_IEEE80211AH
 	if (drv->ieee80211ah)  {
 	os_strlcpy(alpha2, drv->alpha2, 3);
 	ret = 0;
-	} else {
+	} else 
+#endif
+	{
 	struct nl_msg *msg;
 
 	msg = nlmsg_alloc();
