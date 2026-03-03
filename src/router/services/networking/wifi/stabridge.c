@@ -77,8 +77,7 @@ void start_stabridge(void)
 		     "ACCEPT");
 		eval(EBTABLES, "-t", "nat", "-A", "POSTROUTING", "--out-interface", getWET(), "-j", "arpnat", "--arpnat-target",
 		     "ACCEPT");
-		eval(EBTABLES, "-t", "broute", "-A", "BROUTING", "--protocol", "0x888e", "--in-interface", getWET(), "-j",
-		     "DROP");
+		eval(EBTABLES, "-t", "broute", "-A", "BROUTING", "--protocol", "0x888e", "--in-interface", getWET(), "-j", "DROP");
 	}
 #endif
 }
@@ -89,8 +88,7 @@ void stop_stabridge(void)
 	stop_process("relayd", "Client Bridge Relay Daemon");
 #else
 	if (getWET()) {
-		eval(EBTABLES, "-t", "broute", "-D", "BROUTING", "--protocol", "0x888e", "--in-interface", getWET(), "-j",
-		     "DROP");
+		eval(EBTABLES, "-t", "broute", "-D", "BROUTING", "--protocol", "0x888e", "--in-interface", getWET(), "-j", "DROP");
 		eval(EBTABLES, "-t", "nat", "-D", "POSTROUTING", "--out-interface", getWET(), "-j", "arpnat", "--arpnat-target",
 		     "ACCEPT");
 		eval(EBTABLES, "-t", "nat", "-D", "PREROUTING", "--in-interface", getWET(), "-j", "arpnat", "--arpnat-target",

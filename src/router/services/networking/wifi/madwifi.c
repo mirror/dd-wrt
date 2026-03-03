@@ -701,8 +701,8 @@ void setupSupplicant(const char *prefix, char *ssidoverride)
 		fprintf(fp, "ap_scan=1\n");
 		fprintf(fp, "fast_reauth=1\n");
 		fprintf(fp, "eapol_version=%s\n", nvram_default_get(eapol, "1"));
-	char *country = getRegionCode(nvram_default_get(regdomain, "UNITED_STATES"));
-	fprintf(fp, "country=%s\n", country);
+		char *country = getRegionCode(nvram_default_get(regdomain, "UNITED_STATES"));
+		fprintf(fp, "country=%s\n", country);
 		if (ispsk3)
 			fprintf(fp, "\tsae_groups=19 20 21\n");
 
@@ -1529,7 +1529,8 @@ void setupHostAPPSK(FILE *fp, const char *prefix, int isfirst)
 		char dl[32];
 		char temp[128];
 		fprintf(fp, "nas_identifier=%s\n", nvram_nget("%s_nas", prefix));
-		fprintf(fp, "mobility_domain=%s\n", nvram_default_nget(hash_string(nvram_nget("%s_ssid", prefix), temp, sizeof(temp)), "%s_domain", prefix));
+		fprintf(fp, "mobility_domain=%s\n",
+			nvram_default_nget(hash_string(nvram_nget("%s_ssid", prefix), temp, sizeof(temp)), "%s_domain", prefix));
 		sprintf(dl, "%s_ft_over_ds", prefix);
 		fprintf(fp, "ft_over_ds=%d\n", nvram_default_geti(dl, 0));
 		fprintf(fp, "ft_psk_generate_local=1\n");
@@ -1543,7 +1544,7 @@ void setupHostAPPSK(FILE *fp, const char *prefix, int isfirst)
 			wpa_key = nvram_nget("%s_wpa_psk", prefix);
 		}
 		char input[128];
-		sprintf(input, "%s/%s", nvram_nget("%s_domain",prefix), wpa_key);
+		sprintf(input, "%s/%s", nvram_nget("%s_domain", prefix), wpa_key);
 		sha256_string(input, temp, sizeof(temp));
 		fprintf(fp, "r0kh=ff:ff:ff:ff:ff:ff * %s\n", temp);
 		fprintf(fp, "r1kh=00:00:00:00:00:00 00:00:00:00:00:00 %s\n", temp);
@@ -2980,14 +2981,14 @@ void configure_wifi(void) // madwifi implementation for atheros based
 		char *country;
 		sprintf(regdomain, "wlan0_regdomain");
 		country = nvram_default_get(regdomain, "UNITED_STATES");
-//		eval("iw", "reg", "set", "PA");
+		//		eval("iw", "reg", "set", "PA");
 		const char *iso = getIsoName(country);
 		if (!iso)
 			iso = "DE";
 
-//		if (strcmp(iso, "PA")) {
-//			sleep(3);
-			eval("iw", "reg", "set", iso);
+		//		if (strcmp(iso, "PA")) {
+		//			sleep(3);
+		eval("iw", "reg", "set", iso);
 //		}
 #if defined(HAVE_ONNET) && defined(HAVE_ATH10K_CT)
 		if (nvram_geti("ath10k-ct") != nvram_geti("wlan10k-ct_bak")) {
