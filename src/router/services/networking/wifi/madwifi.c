@@ -2978,15 +2978,15 @@ void configure_wifi(void) // madwifi implementation for atheros based
 		char *country;
 		sprintf(regdomain, "wlan0_regdomain");
 		country = nvram_default_get(regdomain, "UNITED_STATES");
-		eval("iw", "reg", "set", "PA");
+//		eval("iw", "reg", "set", "PA");
 		const char *iso = getIsoName(country);
 		if (!iso)
 			iso = "DE";
 
-		if (strcmp(iso, "PA")) {
-			sleep(3);
+//		if (strcmp(iso, "PA")) {
+//			sleep(3);
 			eval("iw", "reg", "set", iso);
-		}
+//		}
 #if defined(HAVE_ONNET) && defined(HAVE_ATH10K_CT)
 		if (nvram_geti("ath10k-ct") != nvram_geti("wlan10k-ct_bak")) {
 			fprintf(stderr, "Switching ATH10K driver, rebooting now...\n");
@@ -3014,19 +3014,19 @@ void configure_wifi(void) // madwifi implementation for atheros based
 	}
 #ifdef HAVE_ATH9K
 	if (hasath9k) {
-		char regdomain[32];
-		char *country;
-		sprintf(regdomain, "wlan0_regdomain");
-		country = nvram_default_get(regdomain, "UNITED_STATES");
-		eval("iw", "reg", "set", "PA");
-		const char *iso = getIsoName(country);
-		if (!iso)
-			iso = "DE";
+//		char regdomain[32];
+//		char *country;
+//		sprintf(regdomain, "wlan0_regdomain");
+//		country = nvram_default_get(regdomain, "UNITED_STATES");
+//		eval("iw", "reg", "set", "PA");
+//		const char *iso = getIsoName(country);
+//		if (!iso)
+//			iso = "DE";
 
-		if (strcmp(iso, "PA")) {
-			sleep(3);
-			eval("iw", "reg", "set", iso);
-		}
+//		if (strcmp(iso, "PA")) {
+//			sleep(3);
+//			eval("iw", "reg", "set", iso);
+//		}
 #if defined(HAVE_ONNET) && defined(HAVE_ATH10K_CT)
 		if (nvram_geti("ath10k-ct") != nvram_geti("wlan10k-ct_bak")) {
 			fprintf(stderr, "Switching ATH10K driver, rebooting now...\n");
@@ -3066,15 +3066,15 @@ void configure_wifi(void) // madwifi implementation for atheros based
 			do_hostapd(configs, NULL);
 #ifdef HAVE_ATH9K
 		if (hasath9k) {
-			char regdomain[16];
-			char *country;
-			sprintf(regdomain, "wlan0_regdomain");
-			country = nvram_default_get(regdomain, "UNITED_STATES");
-			eval("iw", "reg", "set", "ßß");
-			const char *iso = getIsoName(country);
-			if (!iso)
-				iso = "DE";
-			eval("iw", "reg", "set", iso);
+//			char regdomain[16];
+//			char *country;
+//			sprintf(regdomain, "wlan0_regdomain");
+//			country = nvram_default_get(regdomain, "UNITED_STATES");
+//			eval("iw", "reg", "set", "ßß");
+//			const char *iso = getIsoName(country);
+//			if (!iso)
+//				iso = "DE";
+//			eval("iw", "reg", "set", iso);
 #if defined(HAVE_ONNET) && defined(HAVE_ATH10K_CT)
 			if (nvram_geti("ath10k-ct") != nvram_geti("wlan10k-ct_bak")) {
 				fprintf(stderr, "Switching ATH10K driver, rebooting now...\n");
