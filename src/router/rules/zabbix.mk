@@ -36,7 +36,7 @@ zabbix-configure: zlib pcre2
 	--with-libpcre2="$(TOP)/pcre2" \
 	--with-libpcre2-include="$(TOP)/pcre2/src" \
 	--with-libpcre2-lib="$(TOP)/pcre2/.libs" \
-	CFLAGS="$(COPTS) $(MIPS16_OPT) $(THUMB) -DOLD_LIBC_MODE -L$(TOP)/pcre2/.libs  -ffunction-sections -fdata-sections -Wl,--gc-section" \
+	CFLAGS="$(COPTS) $(MIPS16_OPT) $(THUMB) -DOLD_LIBC_MODE -I$(TOP)/pcre2/src -L$(TOP)/pcre2/.libs  -ffunction-sections -fdata-sections -Wl,--gc-section -lpcre2-8" \
 	LIBPCRE2_CFLAGS="-I$(TOP)/pcre2/src" \
 	LIBPCRE2_LDFLAGS="-L$(TOP)/pcre2/.libs -lpcre2-8"
 	cd zabbix && touch *
