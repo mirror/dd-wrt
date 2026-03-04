@@ -1510,8 +1510,7 @@ void setupHostAP_generic_ath9k(const char *prefix, FILE *fp, int isrepeater, int
 		fprintf(fp, "channel=acs_survey\n");
 		char *country = getRegionCode(nvram_default_get("wlan0_regdomain", "UNITED_STATES"));
 		fprintf(fp, "country_code=%s\n", country);
-		fprintf(fp, "op_class=67\n");
-
+		fprintf(fp, "op_class=%d\n", morse_opclass(nvram_safe_geti("%s_channel", prefix)));
 		char shortgi[32];
 		sprintf(shortgi, "%s_shortgi", prefix);
 		if (nvram_default_matchi(shortgi, 1, 1))
