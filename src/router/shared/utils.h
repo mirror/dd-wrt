@@ -841,7 +841,6 @@
 
 #define ROUTER_ZYXEL_XGS1250 0x126116
 
-
 #define ROUTER_EDGECORE_ECS4125 0x1270ff
 
 #define ROUTER_GLINET_AX1800 0x128112
@@ -1323,15 +1322,15 @@ extern int morse_translate(int freq);
 extern int morse_opclass(int freq);
 extern int has_ah(const char *prefix);
 #else
-static inline int morse_translate(int freq) 
+static inline int morse_translate(int freq)
 {
-return freq;
+	return freq;
 }
 static inline int has_ah(const char *prefix)
 {
 	return 0;
 }
-static inline int morse_opclass(const char *prefix)
+static inline int morse_opclass(int freq)
 {
 	return 0;
 }
@@ -1701,7 +1700,7 @@ char *getRADev(const char *prefix);
 	do {                        \
 	} while (0)
 #define dd_loginfoverbose(a, fmt, args...) \
-	do {                        \
+	do {                               \
 	} while (0)
 #define dd_logdebug(a, fmt, args...) \
 	do {                         \
