@@ -882,6 +882,7 @@ static void sme_send_authentication(struct wpa_supplicant *wpa_s,
 
 	sme_auth_handle_rrm(wpa_s, bss);
 #ifdef CONFIG_IEEE80211AH
+	if (wpa_s->conf->ieee80211ah)
 	wpa_s->sme.assoc_req_ie_len += wpas_supp_s1g_op_class_ie(wpa_s, ssid, bss,
 				wpa_s->sme.assoc_req_ie + wpa_s->sme.assoc_req_ie_len,
 				sizeof(wpa_s->sme.assoc_req_ie) - wpa_s->sme.assoc_req_ie_len);
@@ -1147,12 +1148,21 @@ no_fils:
 	wpa_supplicant_cancel_sched_scan(wpa_s);
 	wpa_supplicant_cancel_scan(wpa_s);
 
+#ifdef CONFIG_IEEE80211AH
+	if (wpa_s->conf->ieee80211ah)
 	wpa_msg(wpa_s, MSG_INFO, "SME: Trying to authenticate with " MACSTR
 		" (SSID='%s' %s=%d%s)", MAC2STR(params.bssid),
 		wpa_ssid_txt(params.ssid, params.ssid_len),
-#ifdef CONFIG_IEEE80211AH
 		"chan", morse_ht_freq_to_s1g_chan(bss->freq), "");
+	else
+	wpa_msg(wpa_s, MSG_INFO, "SME: Trying to authenticate with " MACSTR
+		" (SSID='%s' %s=%d%s)", MAC2STR(params.bssid),
+		wpa_ssid_txt(params.ssid, params.ssid_len),
+		"freq", params.freq, " MHz");
 #else
+	wpa_msg(wpa_s, MSG_INFO, "SME: Trying to authenticate with " MACSTR
+		" (SSID='%s' %s=%d%s)", MAC2STR(params.bssid),
+		wpa_ssid_txt(params.ssid, params.ssid_len),
 		"freq", params.freq, " MHz");
 #endif
 
@@ -2690,12 +2700,22 @@ mscs_fail:
 	if (wpa_s->sme.prev_bssid_set)
 		params.prev_bssid = wpa_s->sme.prev_bssid;
 
+#ifdef CONFIG_IEEE80211AH
+	if (wpa_s->conf->ieee80211ah)
 	wpa_msg(wpa_s, MSG_INFO, "Trying to associate with " MACSTR
 		" (SSID='%s' %s=%d%s)", MAC2STR(params.bssid),
 		params.ssid ? wpa_ssid_txt(params.ssid, params.ssid_len) : "",
-#ifdef CONFIG_IEEE80211AH
 		"chan", morse_ht_freq_to_s1g_chan(params.freq.center_freq1), "");
+else
+	wpa_msg(wpa_s, MSG_INFO, "Trying to associate with " MACSTR
+		" (SSID='%s' %s=%d%s)", MAC2STR(params.bssid),
+		params.ssid ? wpa_ssid_txt(params.ssid, params.ssid_len) : "",
+		"freq", params.freq.freq, " MHz");
+
 #else
+	wpa_msg(wpa_s, MSG_INFO, "Trying to associate with " MACSTR
+		" (SSID='%s' %s=%d%s)", MAC2STR(params.bssid),
+		params.ssid ? wpa_ssid_txt(params.ssid, params.ssid_len) : "",
 		"freq", params.freq.freq, " MHz");
 #endif
 	wpa_supplicant_set_state(wpa_s, WPA_ASSOCIATING);

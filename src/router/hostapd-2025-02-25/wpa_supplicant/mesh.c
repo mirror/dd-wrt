@@ -620,6 +620,7 @@ static int wpa_supplicant_mesh_init(struct wpa_supplicant *wpa_s,
 	}
 
 #ifdef CONFIG_IEEE80211AH
+	if (wpa_s->conf->ieee80211ah) {
 	/* MBCA configuration should be set before mesh config cmd as mesh interface is started
 	 * immediately after sending mesh config command.
 	 */
@@ -648,6 +649,7 @@ static int wpa_supplicant_mesh_init(struct wpa_supplicant *wpa_s,
 	/* Start the Mesh Interface */
 	morse_set_mesh_config(wpa_s->ifname, ssid->ssid, ssid->ssid_len,
 		ssid->mesh_beaconless_mode, wpa_s->conf->max_peer_links);
+	}
 #endif
 
 	return 0;
@@ -698,7 +700,8 @@ int wpa_supplicant_join_mesh(struct wpa_supplicant *wpa_s,
 #ifdef CONFIG_IEEE80211AH
 	struct hostapd_config *conf = hostapd_config_defaults();
 
-	channel_or_frequency = ssid->channel;
+	if (wpa_s->conf->ieee80211ah)
+		channel_or_frequency = ssid->channel;
 #endif
 	if (!ssid || !ssid->ssid || !ssid->ssid_len || !channel_or_frequency || !params) {
 		ret = -ENOENT;
@@ -770,7 +773,7 @@ int wpa_supplicant_join_mesh(struct wpa_supplicant *wpa_s,
 	else if (wpa_s->conf->dtim_period > 0)
 		params->dtim_period = wpa_s->conf->dtim_period;
 #if CONFIG_IEEE80211AH
-	if (params->dtim_period != 1) {
+	if (wpa_s->conf->ieee80211ah && params->dtim_period != 1) {
 		wpa_msg(wpa_s, MSG_ERROR, "Invalid DTIM period (%d) for Mesh, set (1)",
 			params->dtim_period);
 		ret = -1;
