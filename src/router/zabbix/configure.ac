@@ -1973,24 +1973,7 @@ SENDER_LIBS="$SENDER_LIBS $ZLIB_LIBS $LIBPTHREAD_LIBS"
 ZBXJS_LDFLAGS="$ZBXJS_LDFLAGS $LIBCURL_LDFLAGS"
 ZBXJS_LIBS="$ZBXJS_LIBS $LIBCURL_LIBS"
 
-if test "x$server" = "xyes" || test "x$proxy" = "xyes" || test "x$agent" = "xyes" || test "x$agent2" = "xyes"; then
-	LIBPCRE2_CHECK_CONFIG([mandatory])
-
-	if test "x$found_libpcre2" != "xyes"; then
-	    AC_MSG_ERROR([unable to use libpcre2 (libpcre2 check failed)])
-	fi
-
-	CFLAGS="$CFLAGS $LIBPCRE2_CFLAGS"
-	LDFLAGS="$LDFLAGS $LIBPCRE2_LDFLAGS"
-	if test "x$ARCH" = "xosx"; then
-		LIBS="$LIBPCRE2_LIBS $LIBS"
-	else
-		LIBS="$LIBS $LIBPCRE2_LIBS"
-	fi
-
-	AC_DEFINE([HAVE_PCRE2_H], 1, [Define to 1 if you have the 'libpcre2' library (-lpcre2-8)])
-	have_pcre2=1
-fi
+have_pcre2=1
 
 AM_CONDITIONAL([HAVE_PCRE2], [test "x$have_pcre2" = "x1"])
 
