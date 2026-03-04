@@ -2420,15 +2420,14 @@ int morse_opclass(int freq)
 			num = ARRAY_SIZE(in_chans);
 		}
 	}
-	int i = 0;
 	int a;
+	int op = map[0].opclass;
 	for (a = 0; a < num; a++) {
 		if (freq == map[a].freq) {
 			return map[a].opclass;
 		}
 	}
-	i++;
-	return -1;
+	return op;
 }
 
 int morse_translate(int freq)
@@ -2475,14 +2474,12 @@ int morse_translate(int freq)
 			num = ARRAY_SIZE(in_chans);
 		}
 	}
-	int i = 0;
 	int a;
 	for (a = 0; a < num; a++) {
 		if (freq == map[a].freq) {
 			return map[a].lowfreq_khz;
 		}
 	}
-	i++;
 	return -1;
 }
 #endif
@@ -2499,7 +2496,6 @@ struct wifi_channels *mac80211_get_channels_simple(const char *interface, const 
 		num = ARRAY_SIZE(us_chans);
 		char *region = getIsoToRegion(country);
 		if (region) {
-			fprintf(stderr, "region %s for iso %s\n", region, country);
 			if (!strcmp(region, "EU")) {
 				map = eu_chans;
 				num = ARRAY_SIZE(eu_chans);
@@ -2543,6 +2539,7 @@ struct wifi_channels *mac80211_get_channels_simple(const char *interface, const 
 					//					fprintf(stderr, "found for width %d = %d\n", max_bandwidth_mhz, map[a].lowfreq_khz);
 					chan[i].disabled = 0;
 					chan[i].mapped_freq = map[a].lowfreq_khz;
+					break;
 				}
 			}
 			i++;
