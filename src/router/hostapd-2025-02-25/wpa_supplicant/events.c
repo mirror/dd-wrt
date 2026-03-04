@@ -1639,7 +1639,6 @@ struct wpa_ssid * wpa_scan_res_match(struct wpa_supplicant *wpa_s,
 #else
 			"freq", bss->freq,
 #endif
-			bss->freq,
 			wpa_bss_get_vendor_ie(bss, WPS_IE_VENDOR_TYPE) ?
 			" wps" : "",
 			(wpa_bss_get_vendor_ie(bss, P2P_IE_VENDOR_TYPE) ||
