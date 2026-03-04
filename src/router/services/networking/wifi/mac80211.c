@@ -1532,6 +1532,8 @@ void setupHostAP_generic_ath9k(const char *prefix, FILE *fp, int isrepeater, int
 		if (nvram_matchi(bw, 40))
 			b = 2;
 		fprintf(fp, "s1g_prim_1mhz_chan_index=%d\n", (b - 1) / 2);
+		fprintf(fp, "sae_pwe=1\n");
+		fprintf(fp, "dpp_configurator_connectivity=1\n");
 		fprintf(fp, "raw=0\n");
 
 	} else {
