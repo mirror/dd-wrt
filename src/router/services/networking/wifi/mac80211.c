@@ -1511,9 +1511,28 @@ void setupHostAP_generic_ath9k(const char *prefix, FILE *fp, int isrepeater, int
 		char *country = getRegionCode(nvram_default_get("wlan0_regdomain", "UNITED_STATES"));
 		fprintf(fp, "country_code=%s\n", country);
 		fprintf(fp, "op_class=67\n");
-		fprintf(fp, "s1g_capab=[SHORT-GI-ALL]\n");
-		fprintf(fp, "s1g_prim_chwidth=0\n");
-		fprintf(fp, "s1g_prim_1mhz_chan_index=0\n");
+
+		char shortgi[32];
+		sprintf(shortgi, "%s_shortgi", prefix);
+		if (nvram_default_matchi(shortgi, 1, 1))
+			fprintf(fp, "s1g_capab=[SHORT-GI-ALL]\n");
+		else
+			fprintf(fp, "s1g_capab=[SHORT-GI-NONE]\n");
+
+		char bw[32];
+		sprintf(bw, "%s_channelbw", prefix);
+		if (nvram_matchi(bw, 80) || nvram_matchi(bw, 160))
+			fprintf(fp, "s1g_prim_chwidth=1\n");
+		else
+			fprintf(fp, "s1g_prim_chwidth=0\n");
+		int b = 1;
+		if (nvram_matchi(bw, 160))
+			b = 8;
+		if (nvram_matchi(bw, 80))
+			b = 4;
+		if (nvram_matchi(bw, 40))
+			b = 2;
+		fprintf(fp, "s1g_prim_1mhz_chan_index=%d\n"(b - 1) / 2);
 		fprintf(fp, "raw=0\n");
 
 	} else {
