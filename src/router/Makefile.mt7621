@@ -241,6 +241,10 @@ ifeq ($(CONFIG_R6800),y)
 	-cp $(LINUXDIR)/drivers/net/wireless/Kconfig.dir882 $(LINUXDIR)/drivers/net/wireless/Kconfig
 endif
 endif
+ifeq ($(CONFIG_MORSE),y)
+	cp $(LINUXDIR)/.config_mt7621_morse $(LINUXDIR)/.config
+	-cp $(LINUXDIR)/drivers/net/wireless/Kconfig.dir882 $(LINUXDIR)/drivers/net/wireless/Kconfig
+endif
 	$(kernelfeatures)
 	$(MAKE) -C $(LINUXDIR) ARCH=mips oldconfig
 
