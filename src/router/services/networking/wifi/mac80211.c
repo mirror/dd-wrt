@@ -1508,9 +1508,9 @@ void setupHostAP_generic_ath9k(const char *prefix, FILE *fp, int isrepeater, int
 	MAC80211DEBUG();
 	if (is_morse_micro(prefix)) {
 		fprintf(fp, "channel=acs_survey\n");
-		char *country = getRegionCode(nvram_default_get("wlan0_regdomain", "UNITED_STATES"));
+		const char *country = getRegionCode(nvram_default_get("wlan0_regdomain", "UNITED_STATES"));
 		fprintf(fp, "country_code=%s\n", country);
-		fprintf(fp, "op_class=%d\n", morse_opclass(nvram_safe_geti("%s_channel", prefix)));
+		fprintf(fp, "op_class=%d\n", morse_opclass(nvram_geti("%s_channel", prefix)));
 		char shortgi[32];
 		sprintf(shortgi, "%s_shortgi", prefix);
 		if (nvram_default_matchi(shortgi, 1, 1))
@@ -1531,7 +1531,7 @@ void setupHostAP_generic_ath9k(const char *prefix, FILE *fp, int isrepeater, int
 			b = 4;
 		if (nvram_matchi(bw, 40))
 			b = 2;
-		fprintf(fp, "s1g_prim_1mhz_chan_index=%d\n"(b - 1) / 2);
+		fprintf(fp, "s1g_prim_1mhz_chan_index=%d\n",(b - 1) / 2);
 		fprintf(fp, "raw=0\n");
 
 	} else {
