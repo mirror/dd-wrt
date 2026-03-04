@@ -149,6 +149,31 @@ void start_sysinit(void)
 		nvram_seti("sw_lan4", 4);
 		break;
 	case ROUTER_MORSE:
+		in = fopen("/dev/mtdblock3", "rb");
+		if (in) {
+			char country[4];
+			fseek(in, 0x40c0, SEEK_SET);
+			country[0] = getc(in);
+			country[1] = getc(in);
+			country[2] = 0;
+			fclose(in);
+			if (!strcmp(country, "EU"))
+				nvram_set("wlan0_regdomain", "GERMANY");
+			if (!strcmp(country, "IN"))
+				nvram_set("wlan0_regdomain", "INDIA");
+			if (!strcmp(country, "GB"))
+				nvram_set("wlan0_regdomain", "UNITED_KINGDOM");
+			if (!strcmp(country, "NZ"))
+				nvram_set("wlan0_regdomain", "NEW_ZEALAND");
+			if (!strcmp(country, "AU"))
+				nvram_set("wlan0_regdomain", "AUSTRALIA");
+			if (!strcmp(country, "CA"))
+				nvram_set("wlan0_regdomain", "CANADA");
+			if (!strcmp(country, "JP"))
+				nvram_set("wlan0_regdomain", "JAPAN");
+			if (!strcmp(country, "KR"))
+				nvram_set("wlan0_regdomain", "KOREA_REPUBLIC");
+		}
 		nvram_unset("cur_region");
 		nvram_set("dsa", "1");
 		insmod("thermal_sys");
