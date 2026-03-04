@@ -2365,6 +2365,12 @@ void setupSupplicant_ath9k(const char *prefix, char *ssidoverride, int isadhoc)
 		fprintf(fp, "ctrl_interface=/var/run/wpa_supplicant\n");
 		fprintf(fp, "fast_reauth=1\n");
 		fprintf(fp, "eapol_version=%s\n", nvram_default_get(eapol, "1"));
+		if (is_morse_micro(prefix)) {
+			char *country = getRegionCode(nvram_default_get("wlan0_regdomain", "UNITED_STATES"));
+			fprintf(fp, "country=%s\n", country);
+			if (ispsk3)
+				fprintf(fp, "sae_pwe=1\n");
+		}
 		if (ispsk3)
 			fprintf(fp, "sae_groups=19 20 21\n");
 		//              if (ismesh)

@@ -841,6 +841,10 @@ void setupSupplicant(const char *prefix, char *ssidoverride)
 		fprintf(fp, "ap_scan=1\n");
 		fprintf(fp, "fast_reauth=1\n");
 		fprintf(fp, "eapol_version=%s\n", nvram_default_get(eapol, "1"));
+		if (is_morse_micro(prefix)) {
+			char *country = getRegionCode(nvram_default_get("wlan0_regdomain", "UNITED_STATES"));
+			fprintf(fp, "country=%s\n", country);
+		}
 		// fprintf (fp, "ctrl_interface_group=0\n");
 		// fprintf (fp, "ctrl_interface=/var/run/wpa_supplicant\n");
 		eap_sta_config(fp, prefix, ssidoverride, 0);
