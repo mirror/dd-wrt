@@ -2436,7 +2436,7 @@ CREATE TABLE dbversion (
 	optional                 integer         DEFAULT '0'               NOT NULL,
 	PRIMARY KEY (dbversionid)
 );
-INSERT INTO dbversion VALUES ('1','7040000','7040008');
+INSERT INTO dbversion VALUES ('1','7040000','7040009');
 create or replace function changelog_hosts_insert() returns trigger as $$
 begin
 insert into changelog (object,objectid,operation,clock)

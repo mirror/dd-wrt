@@ -1,5 +1,5 @@
 dnl
-dnl Copyright (C) 2001-2025 Zabbix SIA
+dnl Copyright (C) 2001-2026 Zabbix SIA
 dnl
 dnl This program is free software: you can redistribute it and/or modify it under the terms of
 dnl the GNU Affero General Public License as published by the Free Software Foundation, version 3.
@@ -14,7 +14,7 @@ dnl
 
 dnl Process this file with autoconf to produce a configure script.
 
-AC_INIT([Zabbix], [7.4.6])
+AC_INIT([Zabbix], [7.4.7])
 
 AC_MSG_NOTICE([Configuring $PACKAGE_NAME $PACKAGE_VERSION])
 
@@ -1974,11 +1974,11 @@ ZBXJS_LDFLAGS="$ZBXJS_LDFLAGS $LIBCURL_LDFLAGS"
 ZBXJS_LIBS="$ZBXJS_LIBS $LIBCURL_LIBS"
 
 if test "x$server" = "xyes" || test "x$proxy" = "xyes" || test "x$agent" = "xyes" || test "x$agent2" = "xyes"; then
-#	LIBPCRE2_CHECK_CONFIG([mandatory])
+	LIBPCRE2_CHECK_CONFIG([mandatory])
 
-#	if test "x$found_libpcre2" != "xyes"; then
-#	    AC_MSG_ERROR([unable to use libpcre2 (libpcre2 check failed)])
-#	fi
+	if test "x$found_libpcre2" != "xyes"; then
+	    AC_MSG_ERROR([unable to use libpcre2 (libpcre2 check failed)])
+	fi
 
 	CFLAGS="$CFLAGS $LIBPCRE2_CFLAGS"
 	LDFLAGS="$LDFLAGS $LIBPCRE2_LDFLAGS"
