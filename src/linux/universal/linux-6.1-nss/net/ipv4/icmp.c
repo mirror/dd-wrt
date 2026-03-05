@@ -221,22 +221,15 @@ static inline void icmp_xmit_unlock(struct sock *sk)
 	spin_unlock(&sk->sk_lock.slock);
 }
 
-int sysctl_icmp_msgs_per_sec __read_mostly = 1000;
-int sysctl_icmp_msgs_burst __read_mostly = 50;
-
-static struct {
-	atomic_t	credit;
-	u32		stamp;
-} icmp_global;
-
 /**
  * icmp_global_allow - Are we allowed to send one more ICMP message ?
+ * @net: network namespace
  *
  * Uses a token bucket to limit our ICMP messages to ~sysctl_icmp_msgs_per_sec.
  * Returns false if we reached the limit and can not send another packet.
  * Works in tandem with icmp_global_consume().
  */
-bool icmp_global_allow(void)
+bool icmp_global_allow(struct net *net)
 {
 	u32 delta, now, oldstamp;
 	int incr, new, old;
@@ -245,36 +238,37 @@ bool icmp_global_allow(void)
 	 * Then later icmp_global_consume() could consume more credits,
 	 * this is an acceptable race.
 	 */
-	if (atomic_read(&icmp_global.credit) > 0)
+	if (atomic_read(&net->ipv4.icmp_global_credit) > 0)
 		return true;
 
 	now = jiffies;
-	oldstamp = READ_ONCE(icmp_global.stamp);
+	oldstamp = READ_ONCE(net->ipv4.icmp_global_stamp);
 	delta = min_t(u32, now - oldstamp, HZ);
 	if (delta < HZ / 50)
 		return false;
 
-	incr = READ_ONCE(sysctl_icmp_msgs_per_sec) * delta / HZ;
+	incr = READ_ONCE(net->ipv4.sysctl_icmp_msgs_per_sec);
+	incr = div_u64((u64)incr * delta, HZ);
 	if (!incr)
 		return false;
 
-	if (cmpxchg(&icmp_global.stamp, oldstamp, now) == oldstamp) {
-		old = atomic_read(&icmp_global.credit);
+	if (cmpxchg(&net->ipv4.icmp_global_stamp, oldstamp, now) == oldstamp) {
+		old = atomic_read(&net->ipv4.icmp_global_credit);
 		do {
-			new = min(old + incr, READ_ONCE(sysctl_icmp_msgs_burst));
-		} while (!atomic_try_cmpxchg(&icmp_global.credit, &old, new));
+			new = min(old + incr, READ_ONCE(net->ipv4.sysctl_icmp_msgs_burst));
+		} while (!atomic_try_cmpxchg(&net->ipv4.icmp_global_credit, &old, new));
 	}
 	return true;
 }
 EXPORT_SYMBOL(icmp_global_allow);
 
-void icmp_global_consume(void)
+void icmp_global_consume(struct net *net)
 {
 	int credits = get_random_u32_below(3);
 
 	/* Note: this might make icmp_global.credit negative. */
 	if (credits)
-		atomic_sub(credits, &icmp_global.credit);
+		atomic_sub(credits, &net->ipv4.icmp_global_credit);
 }
 EXPORT_SYMBOL(icmp_global_consume);
 
@@ -300,7 +294,7 @@ static bool icmpv4_global_allow(struct net *net, int type, int code,
 	if (icmpv4_mask_allow(net, type, code))
 		return true;
 
-	if (icmp_global_allow()) {
+	if (icmp_global_allow(net)) {
 		*apply_ratelimit = true;
 		return true;
 	}
@@ -337,7 +331,7 @@ out:
 	if (!rc)
 		__ICMP_INC_STATS(net, ICMP_MIB_RATELIMITHOST);
 	else
-		icmp_global_consume();
+		icmp_global_consume(net);
 	return rc;
 }
 
@@ -546,14 +540,30 @@ static struct rtable *icmp_route_lookup(struct net *net, struct flowi4 *fl4,
 			goto relookup_failed;
 		}
 		/* Ugh! */
-		orefdst = skb_in->_skb_refdst; /* save old refdst */
-		skb_dst_set(skb_in, NULL);
+		orefdst = skb_dstref_steal(skb_in);
 		err = ip_route_input(skb_in, fl4_dec.daddr, fl4_dec.saddr,
 				     dscp, rt2->dst.dev);
 
 		dst_release(&rt2->dst);
 		rt2 = skb_rtable(skb_in);
-		skb_in->_skb_refdst = orefdst; /* restore old refdst */
+		/* steal dst entry from skb_in, don't drop refcnt */
+		skb_dstref_steal(skb_in);
+		skb_dstref_restore(skb_in, orefdst);
+
+		/*
+		 * At this point, fl4_dec.daddr should NOT be local (we
+		 * checked fl4_dec.saddr above). However, a race condition
+		 * may occur if the address is added to the interface
+		 * concurrently. In that case, ip_route_input() returns a
+		 * LOCAL route with dst.output=ip_rt_bug, which must not
+		 * be used for output.
+		 */
+		if (!err && rt2 && rt2->rt_type == RTN_LOCAL) {
+			net_warn_ratelimited("detected local route for %pI4 during ICMP sending, src %pI4\n",
+					     &fl4_dec.daddr, &fl4_dec.saddr);
+			dst_release(&rt2->dst);
+			err = -EINVAL;
+		}
 	}
 
 	if (err)
@@ -1498,6 +1508,8 @@ static int __net_init icmp_sk_init(struct net *net)
 	net->ipv4.sysctl_icmp_ratelimit = 1 * HZ;
 	net->ipv4.sysctl_icmp_ratemask = 0x1818;
 	net->ipv4.sysctl_icmp_errors_use_inbound_ifaddr = 0;
+	net->ipv4.sysctl_icmp_msgs_per_sec = 1000;
+	net->ipv4.sysctl_icmp_msgs_burst = 50;
 
 	return 0;
 }
