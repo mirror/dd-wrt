@@ -1572,7 +1572,6 @@ static void hostapd_dpp_rx_auth_conf(struct hostapd_data *hapd, const u8 *src,
 
 
 #ifdef CONFIG_DPP2
-
 static void hostapd_dpp_config_result_wait_timeout(void *eloop_ctx,
 						   void *timeout_ctx)
 {

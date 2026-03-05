@@ -69,6 +69,9 @@ static bool wpas_dpp_tcp_msg_sent(void *ctx, struct dpp_authentication *auth);
 #ifdef CONFIG_DPP3
 static void wpas_dpp_pb_next(void *eloop_ctx, void *timeout_ctx);
 #endif /* CONFIG_DPP3 */
+#ifdef CONFIG_DPP3
+static void wpas_dpp_pb_discovery_t2e(void *eloop_ctx, void *timeout_ctx);
+#endif /* CONFIG_DPP3*/
 
 static const u8 broadcast[ETH_ALEN] = { 0xff, 0xff, 0xff, 0xff, 0xff, 0xff };
 
@@ -111,9 +114,7 @@ int wpas_dpp_qr_code(struct wpa_supplicant *wpa_s, const char *cmd)
 #ifdef CONFIG_DPP2
 	dpp_controller_new_qr_code(wpa_s->dpp, bi);
 #endif /* CONFIG_DPP2 */
-#ifdef CONFIG_DPP3
-static void wpas_dpp_pb_discovery_t2e(void *eloop_ctx, void *timeout_ctx);
-#endif /* CONFIG_DPP3*/
+
 
 	return bi->id;
 }
