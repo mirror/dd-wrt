@@ -49,13 +49,8 @@
 #include <net/transp_v6.h>
 #endif
 
-#define ping_portaddr_for_each_entry(__sk, node, list) \
-	hlist_nulls_for_each_entry(__sk, node, list, sk_nulls_node)
-#define ping_portaddr_for_each_entry_rcu(__sk, node, list) \
-	hlist_nulls_for_each_entry_rcu(__sk, node, list, sk_nulls_node)
-
 struct ping_table {
-	struct hlist_nulls_head	hash[PING_HTABLE_SIZE];
+	struct hlist_head	hash[PING_HTABLE_SIZE];
 	spinlock_t		lock;
 };
 
@@ -74,17 +69,17 @@ static inline u32 ping_hashfn(const struct net *net, u32 num, u32 mask)
 }
 EXPORT_SYMBOL_GPL(ping_hash);
 
-static inline struct hlist_nulls_head *ping_hashslot(struct ping_table *table,
-					     struct net *net, unsigned int num)
+static inline struct hlist_head *ping_hashslot(struct ping_table *table,
+					       struct net *net, unsigned int num)
 {
 	return &table->hash[ping_hashfn(net, num, PING_HTABLE_MASK)];
 }
 
 int ping_get_port(struct sock *sk, unsigned short ident)
 {
-	struct hlist_nulls_node *node;
-	struct hlist_nulls_head *hlist;
+	struct net *net = sock_net(sk);
 	struct inet_sock *isk, *isk2;
+	struct hlist_head *hlist;
 	struct sock *sk2 = NULL;
 
 	isk = inet_sk(sk);
@@ -96,9 +91,10 @@ int ping_get_port(struct sock *sk, unsigned short ident)
 		for (i = 0; i < (1L << 16); i++, result++) {
 			if (!result)
 				result++; /* avoid zero */
-			hlist = ping_hashslot(&ping_table, sock_net(sk),
-					    result);
-			ping_portaddr_for_each_entry(sk2, node, hlist) {
+			hlist = ping_hashslot(&ping_table, net, result);
+			sk_for_each(sk2, hlist) {
+				if (!net_eq(sock_net(sk2), net))
+					continue;
 				isk2 = inet_sk(sk2);
 
 				if (isk2->inet_num == result)
@@ -114,8 +110,10 @@ next_port:
 		if (i >= (1L << 16))
 			goto fail;
 	} else {
-		hlist = ping_hashslot(&ping_table, sock_net(sk), ident);
-		ping_portaddr_for_each_entry(sk2, node, hlist) {
+		hlist = ping_hashslot(&ping_table, net, ident);
+		sk_for_each(sk2, hlist) {
+			if (!net_eq(sock_net(sk2), net))
+				continue;
 			isk2 = inet_sk(sk2);
 
 			/* BUG? Why is this reuse and not reuseaddr? ping.c
@@ -133,10 +131,9 @@ next_port:
 	isk->inet_num = ident;
 	if (sk_unhashed(sk)) {
 		pr_debug("was not hashed\n");
-		sock_hold(sk);
+		sk_add_node_rcu(sk, hlist);
 		sock_set_flag(sk, SOCK_RCU_FREE);
-		hlist_nulls_add_head_rcu(&sk->sk_nulls_node, hlist);
-		sock_prot_inuse_add(sock_net(sk), sk->sk_prot, 1);
+		sock_prot_inuse_add(net, sk->sk_prot, 1);
 	}
 	spin_unlock(&ping_table.lock);
 	return 0;
@@ -161,10 +158,8 @@ void ping_unhash(struct sock *sk)
 
 	pr_debug("ping_unhash(isk=%p,isk->num=%u)\n", isk, isk->inet_num);
 	spin_lock(&ping_table.lock);
-	if (sk_hashed(sk)) {
-		hlist_nulls_del_init_rcu(&sk->sk_nulls_node);
-		sock_put(sk);
-		isk->inet_num = 0;
+	if (sk_del_node_init_rcu(sk)) {
+		WRITE_ONCE(isk->inet_num, 0);
 		isk->inet_sport = 0;
 		sock_prot_inuse_add(sock_net(sk), sk->sk_prot, -1);
 	}
@@ -175,10 +170,9 @@ EXPORT_SYMBOL_GPL(ping_unhash);
 /* Called under rcu_read_lock() */
 static struct sock *ping_lookup(struct net *net, struct sk_buff *skb, u16 ident)
 {
-	struct hlist_nulls_head *hslot = ping_hashslot(&ping_table, net, ident);
+	struct hlist_head *hslot = ping_hashslot(&ping_table, net, ident);
 	struct sock *sk = NULL;
 	struct inet_sock *isk;
-	struct hlist_nulls_node *hnode;
 	int dif, sdif;
 
 	if (skb->protocol == htons(ETH_P_IP)) {
@@ -197,30 +191,36 @@ static struct sock *ping_lookup(struct net *net, struct sk_buff *skb, u16 ident)
 		return NULL;
 	}
 
-	ping_portaddr_for_each_entry_rcu(sk, hnode, hslot) {
+	sk_for_each_rcu(sk, hslot) {
+		int bound_dev_if;
+
+		if (!net_eq(sock_net(sk), net))
+			continue;
 		isk = inet_sk(sk);
 
 		pr_debug("iterate\n");
-		if (isk->inet_num != ident)
+		if (READ_ONCE(isk->inet_num) != ident)
 			continue;
 
+		bound_dev_if = READ_ONCE(sk->sk_bound_dev_if);
 		if (skb->protocol == htons(ETH_P_IP) &&
 		    sk->sk_family == AF_INET) {
-			pr_debug("found: %p: num=%d, daddr=%pI4, dif=%d\n", sk,
-				 (int) isk->inet_num, &isk->inet_rcv_saddr,
-				 sk->sk_bound_dev_if);
+			__be32 rcv_saddr = READ_ONCE(isk->inet_rcv_saddr);
 
-			if (isk->inet_rcv_saddr &&
-			    isk->inet_rcv_saddr != ip_hdr(skb)->daddr)
+			pr_debug("found: %p: num=%d, daddr=%pI4, dif=%d\n", sk,
+				 ident, &rcv_saddr,
+				 bound_dev_if);
+
+			if (rcv_saddr && rcv_saddr != ip_hdr(skb)->daddr)
 				continue;
 #if IS_ENABLED(CONFIG_IPV6)
 		} else if (skb->protocol == htons(ETH_P_IPV6) &&
 			   sk->sk_family == AF_INET6) {
 
 			pr_debug("found: %p: num=%d, daddr=%pI6c, dif=%d\n", sk,
-				 (int) isk->inet_num,
+				 ident,
 				 &sk->sk_v6_rcv_saddr,
-				 sk->sk_bound_dev_if);
+				 bound_dev_if);
 
 			if (!ipv6_addr_any(&sk->sk_v6_rcv_saddr) &&
 			    !ipv6_addr_equal(&sk->sk_v6_rcv_saddr,
@@ -231,8 +231,8 @@ static struct sock *ping_lookup(struct net *net, struct sk_buff *skb, u16 ident)
 			continue;
 		}
 
-		if (sk->sk_bound_dev_if && sk->sk_bound_dev_if != dif &&
-		    sk->sk_bound_dev_if != sdif)
+		if (bound_dev_if && bound_dev_if != dif &&
+		    bound_dev_if != sdif)
 			continue;
 
 		goto exit;
@@ -407,7 +407,9 @@ static void ping_set_saddr(struct sock *sk, struct sockaddr *saddr)
 	if (saddr->sa_family == AF_INET) {
 		struct inet_sock *isk = inet_sk(sk);
 		struct sockaddr_in *addr = (struct sockaddr_in *) saddr;
-		isk->inet_rcv_saddr = isk->inet_saddr = addr->sin_addr.s_addr;
+
+		isk->inet_saddr = addr->sin_addr.s_addr;
+		WRITE_ONCE(isk->inet_rcv_saddr, addr->sin_addr.s_addr);
 #if IS_ENABLED(CONFIG_IPV6)
 	} else if (saddr->sa_family == AF_INET6) {
 		struct sockaddr_in6 *addr = (struct sockaddr_in6 *) saddr;
@@ -869,7 +871,8 @@ int ping_recvmsg(struct sock *sk, struct msghdr *msg, size_t len, int flags,
 	struct sk_buff *skb;
 	int copied, err;
 
-	pr_debug("ping_recvmsg(sk=%p,sk->num=%u)\n", isk, isk->inet_num);
+	pr_debug("ping_recvmsg(sk=%p,sk->num=%u)\n", isk,
+		 READ_ONCE(isk->inet_num));
 
 	err = -EOPNOTSUPP;
 	if (flags & MSG_OOB)
@@ -1043,15 +1046,14 @@ static struct sock *ping_get_first(struct seq_file *seq, int start)
 
 	for (state->bucket = start; state->bucket < PING_HTABLE_SIZE;
 	     ++state->bucket) {
-		struct hlist_nulls_node *node;
-		struct hlist_nulls_head *hslot;
+		struct hlist_head *hslot;
 
 		hslot = &ping_table.hash[state->bucket];
 
-		if (hlist_nulls_empty(hslot))
+		if (hlist_empty(hslot))
 			continue;
 
-		sk_nulls_for_each(sk, node, hslot) {
+		sk_for_each(sk, hslot) {
 			if (net_eq(sock_net(sk), net) &&
 			    sk->sk_family == state->family)
 				goto found;
@@ -1068,7 +1070,7 @@ static struct sock *ping_get_next(struct seq_file *seq, struct sock *sk)
 	struct net *net = seq_file_net(seq);
 
 	do {
-		sk = sk_nulls_next(sk);
+		sk = sk_next(sk);
 	} while (sk && (!net_eq(sock_net(sk), net)));
 
 	if (!sk)
@@ -1204,6 +1206,6 @@ void __init ping_init(void)
 	int i;
 
 	for (i = 0; i < PING_HTABLE_SIZE; i++)
-		INIT_HLIST_NULLS_HEAD(&ping_table.hash[i], i);
+		INIT_HLIST_HEAD(&ping_table.hash[i]);
 	spin_lock_init(&ping_table.lock);
 }
