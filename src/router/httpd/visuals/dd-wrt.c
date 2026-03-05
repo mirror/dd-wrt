@@ -1459,8 +1459,8 @@ found:;
 				if (showit) {
 					websWrite(
 						wp,
-						"document.write(\"<option value=\\\"%s\\\" %s>%s - %d\"+wl_basic.ghz+\"</option>\");\n",
-						channelstring,
+						"document.write(\"<option value=\\\"%d\\\" %s>%d - %d\"+wl_basic.ghz+\"</option>\");\n",
+						chanlist[i],
 						nvram_nmatch(channelstring, "%s_channel", prefix) ? "selected=\\\"selected\\\"" :
 												    "",
 						chanlist[i], ofs;
