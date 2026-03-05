@@ -1269,14 +1269,14 @@ static inline aa_state_t match_component(struct aa_profile *profile,
 	const char *ns_name;
 
 	if (profile->ns == tp->ns)
-		return aa_dfa_match(rules->policy.dfa, state, tp->base.hname);
+		return aa_dfa_match(rules->policy->dfa, state, tp->base.hname);
 
 	/* try matching with namespace name and then profile */
 	ns_name = aa_ns_name(profile->ns, tp->ns, true);
-	state = aa_dfa_match_len(rules->policy.dfa, state, ":", 1);
-	state = aa_dfa_match(rules->policy.dfa, state, ns_name);
-	state = aa_dfa_match_len(rules->policy.dfa, state, ":", 1);
-	return aa_dfa_match(rules->policy.dfa, state, tp->base.hname);
+	state = aa_dfa_match_len(rules->policy->dfa, state, ":", 1);
+	state = aa_dfa_match(rules->policy->dfa, state, ns_name);
+	state = aa_dfa_match_len(rules->policy->dfa, state, ":", 1);
+	return aa_dfa_match(rules->policy->dfa, state, tp->base.hname);
 }
 
 /**
@@ -1288,7 +1288,7 @@ static inline aa_state_t match_component(struct aa_profile *profile,
  * @request: permissions to request
  * @perms: perms struct to set
  *
- * Returns: 0 on success else ERROR
+ * Returns: state match stopped at or DFA_NOMATCH if aborted early
  *
  * For the label A//&B//&C this does the perm match for A//&B//&C
  * @perms should be preinitialized with allperms OR a previous permission
@@ -1315,27 +1315,23 @@ static int label_compound_match(struct aa_profile *profile,
 
 	/* no component visible */
 	*perms = allperms;
-	return 0;
+	return state;
 
 next:
 	label_for_each_cont(i, label, tp) {
 		if (!aa_ns_visible(profile->ns, tp->ns, subns))
 			continue;
-		state = aa_dfa_match(rules->policy.dfa, state, "//&");
+		state = aa_dfa_match(rules->policy->dfa, state, "//&");
 		state = match_component(profile, rules, tp, state);
 		if (!state)
 			goto fail;
 	}
-	*perms = *aa_lookup_perms(&rules->policy, state);
-	aa_apply_modes_to_perms(profile, perms);
-	if ((perms->allow & request) != request)
-		return -EACCES;
-
-	return 0;
+	*perms = *aa_lookup_perms(rules->policy, state);
+	return state;
 
 fail:
 	*perms = nullperms;
-	return state;
+	return DFA_NOMATCH;
 }
 
 /**
@@ -1348,7 +1344,7 @@ fail:
  * @request: permissions to request
  * @perms: an initialized perms struct to add accumulation to
  *
- * Returns: 0 on success else ERROR
+ * Returns: the state the match finished in, may be the none matching state
  *
  * For the label A//&B//&C this does the perm match for each of A and B and C
  * @perms should be preinitialized with allperms OR a previous permission
@@ -1376,11 +1372,10 @@ static int label_components_match(struct aa_profile *profile,
 	}
 
 	/* no subcomponents visible - no change in perms */
-	return 0;
+	return state;
 
 next:
-	tmp = *aa_lookup_perms(&rules->policy, state);
-	aa_apply_modes_to_perms(profile, &tmp);
+	tmp = *aa_lookup_perms(rules->policy, state);
 	aa_perms_accum(perms, &tmp);
 	label_for_each_cont(i, label, tp) {
 		if (!aa_ns_visible(profile->ns, tp->ns, subns))
@@ -1388,19 +1383,18 @@ next:
 		state = match_component(profile, rules, tp, start);
 		if (!state)
 			goto fail;
-		tmp = *aa_lookup_perms(&rules->policy, state);
-		aa_apply_modes_to_perms(profile, &tmp);
+		tmp = *aa_lookup_perms(rules->policy, state);
 		aa_perms_accum(perms, &tmp);
 	}
 
 	if ((perms->allow & request) != request)
-		return -EACCES;
+		return DFA_NOMATCH;
 
-	return 0;
+	return state;
 
 fail:
 	*perms = nullperms;
-	return -EACCES;
+	return DFA_NOMATCH;
 }
 
 /**
@@ -1419,11 +1413,12 @@ int aa_label_match(struct aa_profile *profile, struct aa_ruleset *rules,
 		   struct aa_label *label, aa_state_t state, bool subns,
 		   u32 request, struct aa_perms *perms)
 {
-	int error = label_compound_match(profile, rules, label, state, subns,
-					 request, perms);
-	if (!error)
-		return error;
+	aa_state_t tmp = label_compound_match(profile, rules, label, state, subns,
+					request, perms);
+	if ((perms->allow & request) == request)
+		return tmp;
 
+	/* failed compound_match try component matches */
 	*perms = allperms;
 	return label_components_match(profile, rules, label, state, subns,
 				      request, perms);
