@@ -158,21 +158,21 @@ void start_sysinit(void)
 			country[2] = 0;
 			fclose(in);
 			if (!strcmp(country, "EU"))
-				nvram_set("wlan0_regdomain", "GERMANY");
+				nvram_default_get("wlan0_regdomain", "GERMANY");
 			if (!strcmp(country, "IN"))
-				nvram_set("wlan0_regdomain", "INDIA");
+				nvram_default_get("wlan0_regdomain", "INDIA");
 			if (!strcmp(country, "GB"))
-				nvram_set("wlan0_regdomain", "UNITED_KINGDOM");
+				nvram_default_get("wlan0_regdomain", "UNITED_KINGDOM");
 			if (!strcmp(country, "NZ"))
-				nvram_set("wlan0_regdomain", "NEW_ZEALAND");
+				nvram_default_get("wlan0_regdomain", "NEW_ZEALAND");
 			if (!strcmp(country, "AU"))
-				nvram_set("wlan0_regdomain", "AUSTRALIA");
+				nvram_default_get("wlan0_regdomain", "AUSTRALIA");
 			if (!strcmp(country, "CA"))
-				nvram_set("wlan0_regdomain", "CANADA");
+				nvram_default_get("wlan0_regdomain", "CANADA");
 			if (!strcmp(country, "JP"))
-				nvram_set("wlan0_regdomain", "JAPAN");
+				nvram_default_get("wlan0_regdomain", "JAPAN");
 			if (!strcmp(country, "KR"))
-				nvram_set("wlan0_regdomain", "KOREA_REPUBLIC");
+				nvram_default_get("wlan0_regdomain", "KOREA_REPUBLIC");
 		}
 		nvram_unset("cur_region");
 		nvram_set("dsa", "1");
