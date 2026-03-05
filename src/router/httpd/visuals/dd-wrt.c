@@ -1459,11 +1459,11 @@ found:;
 				if (showit) {
 					websWrite(
 						wp,
-						"document.write(\"<option value=\\\"%d\\\" %s>%d - %d.%d \"+wl_basic.ghz+\"</option>\");\n",
-						ieee80211_mhz2ieee(ofs),
+						"document.write(\"<option value=\\\"%s\\\" %s>%s - %d\"+wl_basic.ghz+\"</option>\");\n",
+						channelstring,
 						nvram_nmatch(channelstring, "%s_channel", prefix) ? "selected=\\\"selected\\\"" :
 												    "",
-						chanlist[i], ofs / 1000, (ofs % 1000) / 100);
+						chanlist[i], ofs;
 				}
 			}
 		}
