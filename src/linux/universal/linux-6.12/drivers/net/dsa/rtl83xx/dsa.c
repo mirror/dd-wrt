@@ -50,7 +50,7 @@ static void rtldsa_enable_phy_polling(struct rtl838x_switch_priv *priv)
 	msleep(1000);
 	/* Enable all ports with a PHY, including the SFP-ports */
 	for (int i = 0; i < priv->cpu_port; i++) {
-		if (priv->ports[i].phy || priv->pcs[i])
+		if (priv->ports[i].phy || priv->ports[i].pcs)
 			v |= BIT_ULL(i);
 	}
 
@@ -180,7 +180,7 @@ static int rtldsa_83xx_setup(struct dsa_switch *ds)
 	 * they will work in isolated mode (only traffic between port and CPU).
 	 */
 	for (int i = 0; i < priv->cpu_port; i++) {
-		if (priv->ports[i].phy || priv->pcs[i]) {
+		if (priv->ports[i].phy || priv->ports[i].pcs) {
 			priv->ports[i].pm = BIT_ULL(priv->cpu_port);
 			priv->r->traffic_set(i, BIT_ULL(i));
 		}
@@ -253,7 +253,7 @@ static int rtldsa_93xx_setup(struct dsa_switch *ds)
 	 * they will work in isolated mode (only traffic between port and CPU).
 	 */
 	for (int i = 0; i < priv->cpu_port; i++) {
-		if (priv->ports[i].phy || priv->pcs[i]) {
+		if (priv->ports[i].phy || priv->ports[i].pcs) {
 			priv->ports[i].pm = BIT_ULL(priv->cpu_port);
 			priv->r->traffic_set(i, BIT_ULL(i));
 		}
@@ -291,7 +291,7 @@ static struct phylink_pcs *rtldsa_phylink_mac_select_pcs(struct dsa_switch *ds,
 {
 	struct rtl838x_switch_priv *priv = ds->priv;
 
-	return priv->pcs[port];
+	return priv->ports[port].pcs;
 }
 
 static void rtldsa_83xx_phylink_get_caps(struct dsa_switch *ds, int port,
@@ -767,7 +767,7 @@ static void rtldsa_poll_counters(struct work_struct *work)
 							counters_work);
 
 	for (int port = 0; port < priv->cpu_port; port++) {
-		if (!priv->ports[port].phy && !priv->pcs[port])
+		if (!priv->ports[port].phy && !priv->ports[port].pcs)
 			continue;
 
 		rtldsa_counters_lock(priv, port);
@@ -784,7 +784,7 @@ static void rtldsa_init_counters(struct rtl838x_switch_priv *priv)
 	struct rtldsa_counter_state *counters;
 
 	for (int port = 0; port < priv->cpu_port; port++) {
-		if (!priv->ports[port].phy && !priv->pcs[port])
+		if (!priv->ports[port].phy && !priv->ports[port].pcs)
 			continue;
 
 		counters = &priv->ports[port].counters;
@@ -1360,10 +1360,10 @@ static void rtldsa_update_port_member(struct rtl838x_switch_priv *priv, int port
 				      __must_hold(&priv->reg_mutex)
 {
 	struct dsa_port *dp = dsa_to_port(priv->ds, port);
-	struct rtl838x_port *p = &priv->ports[port];
+	struct rtldsa_port *p = &priv->ports[port];
 	struct dsa_port *cpu_dp = dp->cpu_dp;
 	u64 port_mask = BIT_ULL(cpu_dp->index);
-	struct rtl838x_port *other_p;
+	struct rtldsa_port *other_p;
 	struct dsa_port *other_dp;
 	int other_port;
 	bool isolated;
@@ -2467,7 +2467,7 @@ static int rtldsa_cls_flower_add(struct dsa_switch *ds, int port,
 				 bool ingress)
 {
 	struct rtl838x_switch_priv *priv = ds->priv;
-	struct rtl838x_port *p = &priv->ports[port];
+	struct rtldsa_port *p = &priv->ports[port];
 	const struct flow_action_entry *act;
 	int ret;
 
@@ -2513,7 +2513,7 @@ static int rtldsa_cls_flower_del(struct dsa_switch *ds, int port,
 				 bool ingress)
 {
 	struct rtl838x_switch_priv *priv = ds->priv;
-	struct rtl838x_port *p = &priv->ports[port];
+	struct rtldsa_port *p = &priv->ports[port];
 	int ret;
 
 	if (!priv->r->port_rate_police_del)

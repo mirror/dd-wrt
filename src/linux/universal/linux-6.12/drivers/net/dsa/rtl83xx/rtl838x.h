@@ -882,11 +882,9 @@ struct rtldsa_counter_state {
 	struct rtnl_link_stats64 link_stat;
 };
 
-struct rtl838x_port {
+struct rtldsa_port {
 	bool enable:1;
 	bool phy_is_integrated:1;
-	bool is10G:1;
-	bool is2G5:1;
 	bool isolated:1;
 	bool rate_police_egress:1;
 	bool rate_police_ingress:1;
@@ -894,6 +892,7 @@ struct rtl838x_port {
 	u16 pvid;
 	bool eee_enabled;
 	enum phy_type phy;
+	struct phylink_pcs *pcs;
 	int led_set;
 	int leds_on_this_port;
 	struct rtldsa_counter_state counters;
@@ -1382,8 +1381,7 @@ struct rtl838x_switch_priv {
 	struct device *dev;
 	u16 id;
 	u16 family_id;
-	struct rtl838x_port ports[57];
-	struct phylink_pcs *pcs[57];
+	struct rtldsa_port ports[57];
 	struct mutex reg_mutex;		/* Mutex for individual register manipulations */
 	struct mutex pie_mutex;		/* Mutex for Packet Inspection Engine */
 	int link_state_irq;
