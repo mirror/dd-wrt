@@ -991,9 +991,15 @@ struct tr_torrent
         return session->torrent_queue().get_pos(id());
     }
 
-    void set_queue_position(size_t new_pos) // NOLINT(readability-make-member-function-const)
+    void set_queue_position(size_t const new_pos) // NOLINT(readability-make-member-function-const)
     {
-        session->torrent_queue().set_pos(id(), new_pos);
+        for (auto const& changed_id : session->torrent_queue().set_pos(id(), new_pos))
+        {
+            if (auto* const tor = session->torrents().get(changed_id))
+            {
+                tor->mark_changed();
+            }
+        }
     }
 
     static constexpr struct
@@ -1042,16 +1048,8 @@ private:
         tr_torrent* tor,
         bool delete_flag,
         tr_fileFunc delete_func,
-        void* delete_user_data,
-        tr_torrent_remove_done_func callback,
-        void* callback_user_data);
-    friend void tr_torrentRemove(
-        tr_torrent* tor,
-        bool delete_flag,
-        tr_fileFunc delete_func,
-        void* delete_user_data,
-        tr_torrent_remove_done_func callback,
-        void* callback_user_data);
+        void* delete_user_data);
+    friend void tr_torrentRemove(tr_torrent* tor, bool delete_flag, tr_fileFunc delete_func, void* delete_user_data);
     friend void tr_torrentSetDownloadDir(tr_torrent* tor, char const* path);
     friend void tr_torrentSetPriority(tr_torrent* tor, tr_priority_t priority);
     friend void tr_torrentStart(tr_torrent* tor);

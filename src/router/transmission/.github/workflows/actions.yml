@@ -3,9 +3,11 @@ on:
   push:
     branches:
       - 'main'
+      - '4.*.x'
   pull_request:
     branches:
       - 'main'
+      - '4.*.x'
 env:
   GTEST_OUTPUT: xml:./
 jobs:
@@ -48,7 +50,13 @@ jobs:
         run: |
           set +e
           cd src
-          MERGE_BASE=`git merge-base origin/main HEAD`
+          if [ "$GITHUB_EVENT_NAME" = 'pull_request' ]; then
+            BASE_BRANCH="$GITHUB_BASE_REF"
+          else
+            BASE_BRANCH="$GITHUB_REF_NAME"
+          fi
+          git fetch --no-tags origin "$BASE_BRANCH"
+          MERGE_BASE=$(git merge-base "origin/$BASE_BRANCH" HEAD)
           function get_changes() { # name, paths...
             local name="$1"
             shift
@@ -398,6 +406,8 @@ jobs:
             -DCMAKE_BUILD_TYPE=RelWithDebInfo \
             -DCMAKE_INSTALL_PREFIX=pfx \
             -DCMAKE_PREFIX_PATH=`brew --prefix`/opt/qt \
+            -DCMAKE_CXX_FLAGS='--system-header-prefix=fmt/' `# Needed to supress system header warnings in macos-15-intel` \
+            -DCMAKE_C_FLAGS='--system-header-prefix=fmt/' `# Needed to supress system header warnings in macos-15-intel` \
             -DENABLE_CLI=${{ (needs.what-to-make.outputs.make-cli == 'true') && 'ON' || 'OFF' }} \
             -DENABLE_DAEMON=${{ (needs.what-to-make.outputs.make-daemon == 'true') && 'ON' || 'OFF' }} \
             -DENABLE_GTK=${{ (needs.what-to-make.outputs.make-gtk == 'true') && 'ON' || 'OFF' }} \
@@ -443,7 +453,6 @@ jobs:
             ca-certificates \
             clang \
             cmake \
-            crc32c-dev \
             curl-dev \
             fmt-dev \
             gettext-dev \
@@ -663,6 +672,8 @@ jobs:
             -DCMAKE_BUILD_TYPE=RelWithDebInfo \
             -DCMAKE_INSTALL_PREFIX=pfx \
             -DCMAKE_PREFIX_PATH=`brew --prefix`/opt/qt \
+            -DCMAKE_CXX_FLAGS='--system-header-prefix=fmt/' `# Needed to supress system header warnings in macos-15-intel` \
+            -DCMAKE_C_FLAGS='--system-header-prefix=fmt/' `# Needed to supress system header warnings in macos-15-intel` \
             -DENABLE_CLI=${{ (needs.what-to-make.outputs.make-cli == 'true') && 'ON' || 'OFF' }} \
             -DENABLE_DAEMON=${{ (needs.what-to-make.outputs.make-daemon == 'true') && 'ON' || 'OFF' }} \
             -DENABLE_GTK=${{ (needs.what-to-make.outputs.make-gtk == 'true') && 'ON' || 'OFF' }} \
@@ -954,7 +965,7 @@ jobs:
       with:
         java-version: '17'
         distribution: 'temurin'
-    
+
     - name: Setup Gradle
       uses: gradle/gradle-build-action@v3
       with:

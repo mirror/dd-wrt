@@ -79,7 +79,6 @@ tr_auto_option(USE_SYSTEM_NATPMP "Use system natpmp library" AUTO)
 tr_auto_option(USE_SYSTEM_UTP "Use system utp library" AUTO)
 tr_auto_option(USE_SYSTEM_B64 "Use system b64 library" AUTO)
 tr_auto_option(USE_SYSTEM_PSL "Use system psl library" AUTO)
-tr_auto_option(USE_SYSTEM_CRC32C "Use system crc32c library" AUTO)
 tr_list_option(USE_GTK_VERSION "Use specific GTK version" AUTO 3 4)
 tr_list_option(USE_QT_VERSION "Use specific Qt version" AUTO 5 6)
 tr_list_option(WITH_CRYPTO "Use specified crypto library" AUTO ccrypto mbedtls openssl wolfssl)
@@ -96,7 +95,7 @@ set(TR_NAME ${PROJECT_NAME})
 # these should be the only five lines you need to change
 set(TR_VERSION_MAJOR "4")
 set(TR_VERSION_MINOR "1")
-set(TR_VERSION_PATCH "0")
+set(TR_VERSION_PATCH "1")
 set(TR_VERSION_BETA_NUMBER "") # empty string for not beta
 set(TR_VERSION_DEV FALSE)
 
@@ -370,7 +369,7 @@ if(GTK_FOUND)
         INTERFACE
             ${GTK${GTK_VERSION}_CFLAGS_OTHER})
 
-    target_include_directories(transmission::gtk_impl
+    target_include_directories(transmission::gtk_impl SYSTEM
         INTERFACE
             ${GTK${GTK_VERSION}_INCLUDE_DIRS})
 
@@ -544,6 +543,7 @@ if(NOT USE_SYSTEM_MINIUPNPC)
 endif()
 unset(TR_MINIUPNPC_LIBNAME)
 
+add_subdirectory(${TR_THIRD_PARTY_SOURCE_DIR}/madler-crcany)
 add_subdirectory(${TR_THIRD_PARTY_SOURCE_DIR}/wildmat)
 
 tr_add_external_auto_library(DHT dht dht
@@ -565,14 +565,6 @@ tr_add_external_auto_library(B64 libb64 b64
     TARGET libb64::libb64
     CMAKE_ARGS
         -DLIBB64_SHARED:BOOL=OFF)
-
-tr_add_external_auto_library(CRC32C crc32c crc32c
-    TARGET Crc32c::crc32c
-    CMAKE_ARGS
-        -DCRC32C_BUILD_TESTS=OFF
-        -DCRC32C_BUILD_BENCHMARKS=OFF
-        -DCRC32C_USE_GLOG=OFF
-        -DCRC32C_INSTALL=ON)
 
 set(TR_WEB_ASSETS ${PROJECT_SOURCE_DIR}/web/public_html)
 if(REBUILD_WEB)

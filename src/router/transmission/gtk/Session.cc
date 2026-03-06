@@ -144,7 +144,7 @@ private:
     void inc_busy();
     void dec_busy();
 
-    bool add_file(Glib::RefPtr<Gio::File> const& file, bool do_start, bool do_prompt, bool do_notify);
+    bool add(Glib::ustring const& name_in, bool do_start, bool do_prompt, bool do_notify);
     void add_file_async_callback(
         Glib::RefPtr<Gio::File> const& file,
         Glib::RefPtr<Gio::AsyncResult>& result,
@@ -170,8 +170,6 @@ private:
 
     void on_torrent_completeness_changed(tr_torrent* tor, tr_completeness completeness, bool was_running);
     void on_torrent_metadata_changed(tr_torrent* raw_torrent);
-
-    void on_torrent_removal_done(tr_torrent_id_t id, bool succeeded);
 
 private:
     Session& core_;
@@ -823,8 +821,19 @@ void Session::Impl::add_file_async_callback(
     dec_busy();
 }
 
-bool Session::Impl::add_file(Glib::RefPtr<Gio::File> const& file, bool do_start, bool do_prompt, bool do_notify)
+// Add `name,` which might be a local filename, a magnet link, or a URI.
+bool Session::Impl::add(Glib::ustring const& name_in, bool const do_start, bool const do_prompt, bool const do_notify)
 {
+    auto name = name_in;
+
+    // `gio::File` doesn't seem to know how to stringify magnet links correctly.
+    // Unfortunately there are some code paths that unavoidably use `gio::File`
+    // e.g. Gtk::Application::on_open() so we have to do this:
+    if (auto constexpr BrokenMagnetLinkPrefix = "magnet:///?"sv; tr_strv_starts_with(name.raw(), BrokenMagnetLinkPrefix))
+    {
+        name.replace(0, std::size(BrokenMagnetLinkPrefix), "magnet:?");
+    }
+
     auto* const session = get_session();
     if (session == nullptr)
     {
@@ -837,6 +846,7 @@ bool Session::Impl::add_file(Glib::RefPtr<Gio::File> const& file, bool do_start,
     tr_ctorSetPaused(ctor, TR_FORCE, !do_start);
 
     bool loaded = false;
+    auto file = Gio::File::create_for_parse_name(name);
     if (auto const path = file->get_path(); !std::empty(path))
     {
         // try to treat it as a file...
@@ -846,7 +856,7 @@ bool Session::Impl::add_file(Glib::RefPtr<Gio::File> const& file, bool do_start,
     if (!loaded)
     {
         // try to treat it as a magnet link...
-        loaded = tr_ctorSetMetainfoFromMagnetLink(ctor, file->get_uri().c_str(), nullptr);
+        loaded = tr_ctorSetMetainfoFromMagnetLink(ctor, name.raw().c_str(), nullptr);
     }
 
     // if we could make sense of it, add it
@@ -881,12 +891,11 @@ bool Session::add_from_url(Glib::ustring const& url)
 
 bool Session::Impl::add_from_url(Glib::ustring const& url)
 {
-    auto const file = Gio::File::create_for_uri(url);
     auto const do_start = gtr_pref_flag_get(TR_KEY_start_added_torrents);
     auto const do_prompt = gtr_pref_flag_get(TR_KEY_show_options_window);
     auto const do_notify = false;
 
-    auto const handled = add_file(file, do_start, do_prompt, do_notify);
+    auto const handled = add(url, do_start, do_prompt, do_notify);
     torrents_added();
     return handled;
 }
@@ -900,7 +909,7 @@ void Session::Impl::add_files(std::vector<Glib::RefPtr<Gio::File>> const& files,
 {
     for (auto const& file : files)
     {
-        add_file(file, do_start, do_prompt, do_notify);
+        add(file->get_parse_name(), do_start, do_prompt, do_notify);
     }
 
     torrents_added();
@@ -932,41 +941,16 @@ void Session::remove_torrent(tr_torrent_id_t id, bool delete_files)
 
 void Session::Impl::remove_torrent(tr_torrent_id_t id, bool delete_files)
 {
-    static auto const callback = [](tr_torrent_id_t processed_id, bool succeeded, void* user_data)
-    {
-        // "Own" the core since refcount has already been incremented before operation start — only decrement required.
-        auto const core = Glib::make_refptr_for_instance(static_cast<Session*>(user_data));
-
-        Glib::signal_idle().connect_once([processed_id, succeeded, core]()
-                                         { core->impl_->on_torrent_removal_done(processed_id, succeeded); });
-    };
-
     if (auto const& [torrent, position] = find_torrent_by_id(id); torrent)
     {
-        // Extend core lifetime, refcount will be decremented in the callback.
-        core_.reference();
+        get_raw_model()->remove(position);
 
         tr_torrentRemove(
             &torrent->get_underlying(),
             delete_files,
             [](char const* filename, void* /*user_data*/, tr_error* error)
             { return gtr_file_trash_or_remove(filename, error); },
-            nullptr,
-            callback,
-            &core_);
-    }
-}
-
-void Session::Impl::on_torrent_removal_done(tr_torrent_id_t id, bool succeeded)
-{
-    if (!succeeded)
-    {
-        return;
-    }
-
-    if (auto const& [torrent, position] = find_torrent_by_id(id); torrent)
-    {
-        get_raw_model()->remove(position);
+            nullptr);
     }
 }
 
@@ -1376,7 +1360,7 @@ void Session::blocklist_update()
                 gtr_pref_int_set(TR_KEY_blocklist_date, tr_time());
             }
 
-            impl_->signal_blocklist_updated().emit(*n_rules >= 0);
+            impl_->signal_blocklist_updated().emit(n_rules >= 0);
         });
 }
 

@@ -259,7 +259,10 @@ tr_target_compile_definitions_for_functions(${TR_NAME}
 target_include_directories(${TR_NAME}
     PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}/..
-        ${CMAKE_CURRENT_BINARY_DIR}/..
+        ${CMAKE_CURRENT_BINARY_DIR}/..)
+
+target_include_directories(${TR_NAME} SYSTEM
+    PUBLIC
         ${Intl_INCLUDE_DIRS})
 
 if(ANDROID)
@@ -286,7 +289,7 @@ target_link_libraries(${TR_NAME}
         utf8::cpp
         wildmat
         WideInteger::WideInteger
-        Crc32c::crc32c
+        MadlerCrcany
         $<$<BOOL:${WIN32}>:crypt32>
         $<$<BOOL:${WIN32}>:shlwapi>
         "$<$<BOOL:${APPLE}>:-framework Foundation>"
