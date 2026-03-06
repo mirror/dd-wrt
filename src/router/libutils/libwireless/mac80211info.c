@@ -2230,7 +2230,6 @@ static MICRO_MAP kr_chans[] = {
 	{ 921500, 5220, 80, 76 }, // 8 42
 };
 
-
 static MICRO_MAP jp_chans[] = {
 	// 1 mhz
 	{ 921000, 5540, 20, 73 },

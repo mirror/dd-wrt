@@ -123,6 +123,11 @@ const char *get_channeloffset(const char *prefix, int *iht, int *channeloffset)
 			*iht = 1;
 			*channeloffset = 14;
 		} else {
+			if (nvram_default_match(sb, "uuu", "lll") || nvram_match(sb, "upper")) {
+				ht = "HT40+";
+				*iht = 1;
+				*channeloffset = 14;
+			}
 			if (nvram_match(sb, "uul")) {
 				ht = "HT40-";
 				*iht = 1;
