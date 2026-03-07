@@ -432,10 +432,11 @@ void pppoe_check_options(void)
     lcp_allowoptions[0].neg_pcompression = 0;
     lcp_wantoptions[0].neg_pcompression = 0;
 
-    if (lcp_allowoptions[0].mru > MAX_PPPOE_MTU)
+/*    if (lcp_allowoptions[0].mru > MAX_PPPOE_MTU)
 	lcp_allowoptions[0].mru = MAX_PPPOE_MTU;
     if (lcp_wantoptions[0].mru > MAX_PPPOE_MTU)
 	lcp_wantoptions[0].mru = MAX_PPPOE_MTU;
+*/
 
     /* Save configuration */
     conn->mtu = lcp_allowoptions[0].mru;
