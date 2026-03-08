@@ -67,7 +67,11 @@ static int show_cpuinfo(struct seq_file *m, void *v)
 	seq_printf(m, "BogoMIPS\t\t: %u.%02u\n",
 		      cpu_data[n].udelay_val / (500000/HZ),
 		      (cpu_data[n].udelay_val / (5000/HZ)) % 100);
+		      
+		      
+#ifdef CONFIG_RALINK 
 	seq_printf(m, "CPUClock\t\t: %d\n",getCPUClock());
+#endif
 	seq_printf(m, "wait instruction\t: %s\n", cpu_wait ? "yes" : "no");
 	seq_printf(m, "microsecond timers\t: %s\n",
 		      cpu_has_counter ? "yes" : "no");
