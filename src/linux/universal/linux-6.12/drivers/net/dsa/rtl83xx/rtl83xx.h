@@ -143,6 +143,9 @@ static inline void rtl_table_data_w(struct table_reg *r, u32 v, int i)
 	sw_w32(v, rtl_table_data(r, i));
 }
 
+int rtldsa_83xx_lag_setup_algomask(struct rtl838x_switch_priv *priv, int group,
+				   struct netdev_lag_upper_info *info);
+
 void rtldsa_838x_qos_init(struct rtl838x_switch_priv *priv);
 void rtldsa_839x_qos_init(struct rtl838x_switch_priv *priv);
 
