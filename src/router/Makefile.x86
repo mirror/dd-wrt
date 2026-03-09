@@ -408,7 +408,7 @@ endif
 	qemu-img convert -f raw -O vhdx $(ARCH)-uclibc/dd-wrt_vga_2GB.image $(ARCH)-uclibc/dd-wrt_vga_2GB.vhdx
 	qemu-img convert -f raw -O vhdx $(ARCH)-uclibc/dd-wrt_serial_2GB.image $(ARCH)-uclibc/dd-wrt_serial_2GB.vhdx
 
-	libdeflate-gzip -9 $(ARCH)-uclibc/*.image
+	libdeflate-gzip -9 -k $(ARCH)-uclibc/*.image
 	libdeflate-gzip -9 $(ARCH)-uclibc/*.vhdx
 	libdeflate-gzip -9 $(ARCH)-uclibc/*.vdi
 	libdeflate-gzip -9 $(ARCH)-uclibc/*.vmdk
