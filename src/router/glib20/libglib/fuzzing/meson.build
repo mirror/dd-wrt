@@ -19,9 +19,15 @@
 fuzz_targets = [
   'fuzz_bookmark',
   'fuzz_canonicalize_filename',
+  'fuzz_data_input_stream_read_line',
+  'fuzz_data_input_stream_read_line_utf8',
+  'fuzz_data_input_stream_read_upto',
   'fuzz_date_parse',
   'fuzz_date_time_new_from_iso8601',
   'fuzz_dbus_message',
+  'fuzz_filename_from_uri',
+  'fuzz_filename_to_uri',
+  'fuzz_get_locale_variants',
   'fuzz_inet_address_mask_new_from_string',
   'fuzz_inet_address_new_from_string',
   'fuzz_inet_socket_address_new_from_string',
@@ -30,6 +36,8 @@ fuzz_targets = [
   'fuzz_network_address_parse_uri',
   'fuzz_paths',
   'fuzz_resolver',
+  'fuzz_special_dirs',
+  'fuzz_string',
   'fuzz_uri_escape',
   'fuzz_uri_parse',
   'fuzz_uri_parse_params',
@@ -41,7 +49,7 @@ fuzz_targets = [
   'fuzz_variant_text',
 ]
 
-deps = [libgmodule_dep, libgio_dep, libglib_dep, libgobject_dep]
+deps = [libgmodule_dep, libgio_dep, libglib_dep, libgobject_dep, test_profile_dep]
 
 extra_sources = []
 extra_c_args = cc.get_supported_arguments('-Werror=unused-function')

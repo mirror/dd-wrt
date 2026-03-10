@@ -22,13 +22,21 @@
  *          Руслан Ижбулатов  <lrn1986@gmail.com>
  */
 
+#ifdef NTDDI_VERSION
+#undef NTDDI_VERSION
+#endif
+
+#define NTDDI_VERSION NTDDI_WIN8
+
 #include "config.h"
 
 #define COBJMACROS
 
 #include <string.h>
+#include <stdbool.h>
 
 #include "gcontenttype.h"
+#include "gappinfoprivate.h"
 #include "gwin32appinfo.h"
 #include "gappinfo.h"
 #include "gioerror.h"
@@ -37,11 +45,7 @@
 #include "glibintl.h"
 #include <gio/gwin32registrykey.h>
 #include <shlobj.h>
-/* Contains the definitions from shlobj.h that are
- * guarded as Windows8-or-newer and are unavailable
- * to GLib, being only Windows7-or-newer.
- */
-#include "gwin32api-application-activation-manager.h"
+#include <shobjidl.h>
 
 #include <windows.h>
 /* For SHLoadIndirectString() */
@@ -1549,7 +1553,7 @@ process_verbs_commands (GList             *verbs,
 
       if (verb_key)
         {
-          gsize verb_displayname_len;
+          size_t verb_displayname_size;
 
           got_value = g_win32_registry_key_get_value_w (verb_key,
                                                         g_win32_registry_get_os_dirs_w (),
@@ -1557,12 +1561,12 @@ process_verbs_commands (GList             *verbs,
                                                         L"MUIVerb",
                                                         &val_type,
                                                         (void **) &verb_displayname,
-                                                        &verb_displayname_len,
+                                                        &verb_displayname_size,
                                                         NULL);
 
           if (got_value &&
               val_type == G_WIN32_REGISTRY_VALUE_STR &&
-              verb_displayname_len > sizeof (gunichar2))
+              verb_displayname_size > sizeof (gunichar2))
             verb_displayname_u8 = g_utf16_to_utf8 (verb_displayname, -1, NULL, NULL, NULL);
 
           g_clear_pointer (&verb_displayname, g_free);
@@ -1575,12 +1579,12 @@ process_verbs_commands (GList             *verbs,
                                                             L"",
                                                             &val_type,
                                                             (void **) &verb_displayname,
-                                                            &verb_displayname_len,
+                                                            &verb_displayname_size,
                                                             NULL);
 
               if (got_value &&
                   val_type == G_WIN32_REGISTRY_VALUE_STR &&
-                  verb_displayname_len > sizeof (gunichar2))
+                  verb_displayname_size > sizeof (gunichar2))
                 verb_displayname_u8 = g_utf16_to_utf8 (verb_displayname, -1, NULL, NULL, NULL);
             }
 
@@ -1622,7 +1626,7 @@ process_uwp_verbs (GList                    *verbs,
       gboolean got_value;
       GWin32RegistryValueType val_type;
       gunichar2 *acid;
-      gsize acid_len;
+      size_t acid_size;
 
       key = _g_win32_registry_key_build_and_new_w (NULL, path_to_progid, progid,
                                                    L"\\", verb->shellpath, NULL);
@@ -1641,15 +1645,15 @@ process_uwp_verbs (GList                    *verbs,
                                                     L"ActivatableClassId",
                                                     &val_type,
                                                     (void **) &acid,
-                                                    &acid_len,
+                                                    &acid_size,
                                                     NULL);
 
       if (got_value &&
           val_type == G_WIN32_REGISTRY_VALUE_STR &&
-          acid_len > sizeof (gunichar2))
+          acid_size > sizeof (gunichar2))
         {
           /* TODO: default value of a shell subkey, if not empty,
-           * migh contain something like @{Some.Identifier_1234.456.678.789_some_words?ms-resource://Arbitrary.Path/Pointing/Somewhere}
+           * might contain something like @{Some.Identifier_1234.456.678.789_some_words?ms-resource://Arbitrary.Path/Pointing/Somewhere}
            * and it might be possible to turn it into a nice displayname.
            */
           uwp_handler_add_verb (handler_rec,
@@ -3668,10 +3672,7 @@ grab_registry_string (GWin32RegistryKey  *handler_appkey,
 
   /* There's no way for us to resolve "ms-resource:..." strings */
   if (value != NULL &&
-      value_size >= ms_resource_prefix_len &&
-      memcmp (value,
-              ms_resource_prefix,
-              ms_resource_prefix_len * sizeof (gunichar2)) == 0)
+      wcsncmp (value, ms_resource_prefix, ms_resource_prefix_len) == 0)
     g_clear_pointer (&value, g_free);
 
   if (value == NULL)
@@ -4400,7 +4401,7 @@ expand_macro (char               macro,
 Legend: (from http://msdn.microsoft.com/en-us/library/windows/desktop/cc144101%28v=vs.85%29.aspx)
 %* - replace with all parameters
 %~ - replace with all parameters starting with and following the second parameter
-%0 or %1 the first file parameter. For example "C:\\Users\\Eric\\Destop\\New Text Document.txt". Generally this should be in quotes and the applications command line parsing should accept quotes to disambiguate files with spaces in the name and different command line parameters (this is a security best practice and I believe mentioned in MSDN).
+%0 or %1 the first file parameter. For example "C:\\Users\\Eric\\Desktop\\New Text Document.txt". Generally this should be in quotes and the applications command line parsing should accept quotes to disambiguate files with spaces in the name and different command line parameters (this is a security best practice and I believe mentioned in MSDN).
 %<n> (where N is 2 - 9), replace with the nth parameter
 %s - show command
 %h - hotkey value
@@ -4789,7 +4790,7 @@ make_platform_data (GPid pid)
 {
   GVariantBuilder builder;
 
-  g_variant_builder_init (&builder, G_VARIANT_TYPE_ARRAY);
+  g_variant_builder_init_static (&builder, G_VARIANT_TYPE_ARRAY);
   /* pid handles are never bigger than 2^24 as per
    * https://docs.microsoft.com/en-us/windows/win32/sysinfo/kernel-objects,
    * so truncating to `int32` is valid.
@@ -4894,6 +4895,55 @@ emit_launch_failed (GAppLaunchContext *context,
     }
 }
 
+typedef struct
+{
+  /* Allow steal focus */
+  bool foreground_window;
+} ContextOptions;
+
+ContextOptions context_options_default = {
+  false,
+};
+
+static ContextOptions
+startup_notify_id_to_context_options (const char *startup_notify_id)
+{
+  ContextOptions context_options = context_options_default;
+
+  if (startup_notify_id)
+    {
+      char **tokens;
+
+      if (!g_str_has_prefix (startup_notify_id, "win32-startup-notify,"))
+        {
+          g_warning_once ("Unknown startup-notify-id format");
+          return context_options;
+        }
+
+      tokens = g_strsplit (startup_notify_id, ",", 0);
+
+      typedef const char * const * const_iter_t;
+
+      for (const_iter_t iter = (const_iter_t) (tokens + 1); *iter != NULL; iter++)
+        {
+          const char *token = *iter;
+
+          if (g_strcmp0 (token, "foreground-window") == 0)
+            {
+              context_options.foreground_window = true;
+            }
+          else
+            {
+              g_debug ("Unknown token in startup-notify-id");
+            }
+        }
+
+      g_strfreev (tokens);
+    }
+
+  return context_options;
+}
+
 typedef enum
 {
   /* PLAIN: just open the application, without arguments of any kind
@@ -4977,7 +5027,7 @@ g_win32_app_info_launch_uwp_single (IApplicationActivationManager  *app_activati
        * ApplicationActivationManager methods return a process ID, but it
        * keeps no open HANDLE to the spawned process internally (tested
        * on Windows 10 21H2). So we cannot guarantee that by the time
-       * OpenProcess is called, process ID still referes to the spawned
+       * OpenProcess is called, process ID still refers to the spawned
        * process. Anyway hitting such case is extremely unlikely.
        *
        * https://docs.microsoft.com/en-us/answers/questions/942879/
@@ -5048,6 +5098,8 @@ g_win32_app_info_launch_uwp_internal (GWin32AppInfo           *info,
   IApplicationActivationManager *paam = NULL;
   gboolean com_initialized = FALSE;
   gboolean result = FALSE;
+  char *startup_notify_id = NULL;
+  ContextOptions context_options;
   HRESULT hr;
 
   /* ApplicationActivationManager threading model is both,
@@ -5088,6 +5140,20 @@ g_win32_app_info_launch_uwp_internal (GWin32AppInfo           *info,
       g_set_error (error, G_IO_ERROR, G_IO_ERROR_FAILED,
                    "Failed to create ApplicationActivationManager: 0x%lx", hr);
       goto cleanup;
+    }
+
+  startup_notify_id = g_app_launch_context_get_startup_notify_id (launch_context,
+                                                                  G_APP_INFO (info),
+                                                                  NULL);
+  context_options = startup_notify_id_to_context_options (startup_notify_id);
+
+  if (context_options.foreground_window)
+    {
+      hr = CoAllowSetForegroundWindow ((IUnknown*)paam, NULL);
+#ifdef G_ENABLE_DEBUG
+      if (FAILED (hr) && hr != E_ACCESSDENIED)
+        g_debug ("%s failed with HRESULT %lx", "CoAllowSetForegroundWindow", hr);
+#endif
     }
 
   if (!objs)
@@ -5163,6 +5229,8 @@ g_win32_app_info_launch_uwp_internal (GWin32AppInfo           *info,
 
 cleanup:
 
+  g_free (startup_notify_id);
+
   if (paam)
     {
       IApplicationActivationManager_Release (paam);
@@ -5194,6 +5262,8 @@ g_win32_app_info_launch_internal (GWin32AppInfo      *info,
   const gchar *command;
   gchar *apppath;
   GWin32AppInfoShellVerb *shverb;
+  char *startup_notify_id = NULL;
+  ContextOptions context_options;
   GPid pid = NULL;
 
   g_return_val_if_fail (info != NULL, FALSE);
@@ -5285,6 +5355,11 @@ g_win32_app_info_launch_internal (GWin32AppInfo      *info,
         }
     }
 
+  startup_notify_id = g_app_launch_context_get_startup_notify_id (launch_context,
+                                                                  G_APP_INFO (info),
+                                                                  NULL);
+  context_options = startup_notify_id_to_context_options (startup_notify_id);
+
   do
     {
       if (from_task && g_task_return_error_if_cancelled (from_task))
@@ -5314,8 +5389,19 @@ g_win32_app_info_launch_internal (GWin32AppInfo      *info,
 
           goto out;
         }
-      else if (launch_context)
-        emit_launched (launch_context, info, &pid, from_task);
+
+      if (context_options.foreground_window)
+        {
+          DWORD id = GetProcessId ((HANDLE)pid);
+
+          if (id != 0)
+            AllowSetForegroundWindow (id);
+        }
+
+      if (launch_context)
+        {
+          emit_launched (launch_context, info, &pid, from_task);
+        }
 
       g_spawn_close_pid (pid);
       pid = NULL;
@@ -5330,6 +5416,7 @@ out:
   g_spawn_close_pid (pid);
   g_strfreev (argv);
   g_strfreev (envp);
+  g_free (startup_notify_id);
 
   return completed;
 }
@@ -5671,10 +5758,10 @@ g_win32_app_info_get_supported_types (GAppInfo *appinfo)
 }
 
 GAppInfo *
-g_app_info_create_from_commandline (const char           *commandline,
-                                    const char           *application_name,
-                                    GAppInfoCreateFlags   flags,
-                                    GError              **error)
+g_app_info_create_from_commandline_impl (const char           *commandline,
+                                         const char           *application_name,
+                                         GAppInfoCreateFlags   flags,
+                                         GError              **error)
 {
   GWin32AppInfo *info;
   GWin32AppInfoApplication *app;
@@ -5754,7 +5841,7 @@ g_win32_app_info_iface_init (GAppInfoIface *iface)
 }
 
 GAppInfo *
-g_app_info_get_default_for_uri_scheme (const char *uri_scheme)
+g_app_info_get_default_for_uri_scheme_impl (const char *uri_scheme)
 {
   GWin32AppInfoURLSchema *scheme = NULL;
   char *scheme_down;
@@ -5796,8 +5883,8 @@ g_app_info_get_default_for_uri_scheme (const char *uri_scheme)
 }
 
 GAppInfo *
-g_app_info_get_default_for_type (const char *content_type,
-                                 gboolean    must_support_uris)
+g_app_info_get_default_for_type_impl (const char *content_type,
+                                      gboolean    must_support_uris)
 {
   GWin32AppInfoFileExtension *ext = NULL;
   char *ext_down;
@@ -5858,7 +5945,7 @@ g_app_info_get_default_for_type (const char *content_type,
 }
 
 GList *
-g_app_info_get_all (void)
+g_app_info_get_all_impl (void)
 {
   GHashTableIter iter;
   gpointer value;
@@ -5887,7 +5974,7 @@ g_app_info_get_all (void)
 }
 
 GList *
-g_app_info_get_all_for_type (const char *content_type)
+g_app_info_get_all_for_type_impl (const char *content_type)
 {
   GWin32AppInfoFileExtension *ext = NULL;
   char *ext_down;
@@ -5957,21 +6044,21 @@ g_app_info_get_all_for_type (const char *content_type)
 }
 
 GList *
-g_app_info_get_fallback_for_type (const gchar *content_type)
+g_app_info_get_fallback_for_type_impl (const gchar *content_type)
 {
   /* TODO: fix this once gcontenttype support is improved */
   return g_app_info_get_all_for_type (content_type);
 }
 
 GList *
-g_app_info_get_recommended_for_type (const gchar *content_type)
+g_app_info_get_recommended_for_type_impl (const gchar *content_type)
 {
   /* TODO: fix this once gcontenttype support is improved */
   return g_app_info_get_all_for_type (content_type);
 }
 
 void
-g_app_info_reset_type_associations (const char *content_type)
+g_app_info_reset_type_associations_impl (const char *content_type)
 {
   /* nothing to do */
 }

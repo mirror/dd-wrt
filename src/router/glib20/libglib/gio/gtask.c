@@ -303,9 +303,9 @@
  *
  * You can use [method@Gio.Task.run_in_thread] to turn a synchronous
  * operation into an asynchronous one, by running it in a thread.
- * When it completes, the result will be dispatched to the thread-default main
- * context (see [method@GLib.MainContext.push_thread_default]) where the `GTask`
- * was created.
+ * When it completes, the result will be dispatched to the thread-default
+ * main context (see [method@GLib.MainContext.push_thread_default])
+ * where the `GTask` was created.
  *
  * Running a task in a thread:
  * ```c
@@ -796,8 +796,8 @@ g_task_finalize (GObject *object)
  * @callback_data: user data passed to @callback.
  *
  * Creates a #GTask acting on @source_object, which will eventually be
- * used to invoke @callback in the current
- * [thread-default main context][g-main-context-push-thread-default].
+ * used to invoke @callback in the current thread-default main context
+ * (see [method@GLib.MainContext.push_thread_default]).
  *
  * Call this in the "start" method of your asynchronous method, and
  * pass the #GTask around throughout the asynchronous operation. You
@@ -1126,8 +1126,7 @@ void
  * name of the #GSource used for idle completion of the task.
  *
  * This function may only be called before the @task is first used in a thread
- * other than the one it was constructed in. It is called automatically by
- * g_task_set_source_tag() if not called already.
+ * other than the one it was constructed in.
  *
  * Since: 2.60
  */
@@ -1154,6 +1153,9 @@ void
  * Sets @task’s name, used in debugging and profiling.
  *
  * This is a variant of g_task_set_name() that avoids copying @name.
+ *
+ * This function is called automatically by [method@Gio.Task.set_source_tag]
+ * unless a name is set.
  *
  * Since: 2.76
  */
@@ -1240,8 +1242,8 @@ g_task_get_priority (GTask *task)
  * @task: a #GTask
  *
  * Gets the #GMainContext that @task will return its result in (that
- * is, the context that was the
- * [thread-default main context][g-main-context-push-thread-default]
+ * is, the context that was the thread-default main context
+ * (see [method@GLib.MainContext.push_thread_default])
  * at the point when @task was created).
  *
  * This will always return a non-%NULL value, even if the task's
@@ -1537,7 +1539,7 @@ g_task_thread_setup (void)
   if (tasks_running == G_TASK_POOL_SIZE)
     task_wait_time = G_TASK_WAIT_TIME_BASE;
   else if (tasks_running > G_TASK_POOL_SIZE && tasks_running < G_TASK_WAIT_TIME_MAX_POOL_SIZE)
-    task_wait_time *= G_TASK_WAIT_TIME_MULTIPLIER;
+    task_wait_time = (guint64) (task_wait_time * G_TASK_WAIT_TIME_MULTIPLIER);
 
   if (tasks_running >= G_TASK_POOL_SIZE)
     g_source_set_ready_time (task_pool_manager, g_get_monotonic_time () + task_wait_time);
@@ -1549,22 +1551,22 @@ static void
 g_task_thread_cleanup (void)
 {
   gint tasks_pending;
+  gint max_threads;
 
   g_mutex_lock (&task_pool_mutex);
   tasks_pending = g_thread_pool_unprocessed (task_pool);
 
-  if (tasks_running > G_TASK_POOL_SIZE)
-    {
-      g_thread_pool_set_max_threads (task_pool, tasks_running - 1, NULL);
-      g_trace_set_int64_counter (task_pool_max_counter, tasks_running - 1);
-    }
-  else if (tasks_running + tasks_pending < G_TASK_POOL_SIZE)
-    g_source_set_ready_time (task_pool_manager, -1);
-
   if (tasks_running > G_TASK_POOL_SIZE && tasks_running < G_TASK_WAIT_TIME_MAX_POOL_SIZE)
-    task_wait_time /= G_TASK_WAIT_TIME_MULTIPLIER;
+    task_wait_time = (guint64) (task_wait_time / G_TASK_WAIT_TIME_MULTIPLIER);
 
   tasks_running--;
+
+  max_threads = MAX (G_TASK_POOL_SIZE, tasks_running + 1);
+  g_thread_pool_set_max_threads (task_pool, max_threads, NULL);
+  g_trace_set_int64_counter (task_pool_max_counter, max_threads);
+
+  if (tasks_running + tasks_pending < G_TASK_POOL_SIZE)
+    g_source_set_ready_time (task_pool_manager, -1);
 
   g_trace_set_int64_counter (tasks_running_counter, tasks_running);
 

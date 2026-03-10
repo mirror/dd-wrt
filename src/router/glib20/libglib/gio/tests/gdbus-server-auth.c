@@ -41,7 +41,7 @@ typedef enum
   INTEROP_FLAGS_ABSTRACT = (1 << 5),
   INTEROP_FLAGS_REQUIRE_SAME_USER = (1 << 6),
   INTEROP_FLAGS_NONE = 0
-} InteropFlags;
+} G_GNUC_FLAG_ENUM InteropFlags;
 
 static gboolean
 allow_external_cb (G_GNUC_UNUSED GDBusAuthObserver *observer,
@@ -537,6 +537,50 @@ test_server_auth_sha1_tcp (void)
   do_test_server_auth (INTEROP_FLAGS_SHA1 | INTEROP_FLAGS_TCP);
 }
 
+static void
+test_server_path_in_use (void)
+{
+#ifdef G_OS_UNIX
+#ifndef UNIX_PATH_MAX
+#define UNIX_PATH_MAX G_SIZEOF_MEMBER (struct sockaddr_un, sun_path)
+#endif
+  GError *error = NULL;
+  GString *path = NULL;
+  gchar *listenable_address = NULL;
+  GDBusServer *server = NULL;
+  gchar *guid = NULL;
+  gchar *escaped = NULL;
+
+  path = g_string_new (g_get_tmp_dir ());
+  guid = g_dbus_generate_guid ();
+  while (path->len < UNIX_PATH_MAX - 1)
+    g_string_append_c (path, 'x');
+  escaped = g_dbus_address_escape_value (path->str);
+  listenable_address = g_strdup_printf ("unix:%s=%s", "dir", escaped);
+  g_assert_cmpint (g_mkdir_with_parents (path->str, 0700), ==, 0);
+  g_string_free (path, TRUE);
+
+  server = g_dbus_server_new_sync (listenable_address,
+                                   G_DBUS_SERVER_FLAGS_RUN_IN_THREAD,
+                                   guid,
+                                   NULL,
+                                   NULL,
+                                   &error);
+  g_assert_error (error, G_IO_ERROR, G_IO_ERROR_ADDRESS_IN_USE);
+  g_error_free (error);
+
+  if (server != NULL)
+    g_dbus_server_stop (server);
+
+  g_clear_object (&server);
+  g_free (guid);
+  g_free (escaped);
+  g_free (listenable_address);
+#else
+  g_test_skip ("unix: addresses only work on Unix");
+#endif
+}
+
 int
 main (int   argc,
       char *argv[])
@@ -552,6 +596,7 @@ main (int   argc,
   g_test_add_func ("/gdbus/server-auth/external/require-same-user", test_server_auth_external_require_same_user);
   g_test_add_func ("/gdbus/server-auth/sha1", test_server_auth_sha1);
   g_test_add_func ("/gdbus/server-auth/sha1/tcp", test_server_auth_sha1_tcp);
+  g_test_add_func ("/gdbus/server-auth/path-in-use", test_server_path_in_use);
 
   return g_test_run();
 }

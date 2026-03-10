@@ -22,7 +22,7 @@ many things that we value:
 Please, do not use the issue tracker for support questions. If you have
 questions on how to use GLib effectively, you can use:
 
- - the `#gtk` channel on [Matrix](https://wiki.gnome.org/GettingInTouch/Matrix)
+ - the `#gtk` channel on [Matrix](https://handbook.gnome.org/get-in-touch/matrix.html)
  - the [`glib` tag on GNOME's Discourse](https://discourse.gnome.org/tags/glib)
 
 You can also look at the [`glib` tag on Stack
@@ -120,14 +120,14 @@ development tools appropriate for your operating system, including:
  - Meson
  - Ninja
  - Gettext (19.7 or newer)
- - a [C99 compatible compiler](./docs/toolchain-requirements.md)
+ - a [compatible toolchain](./docs/toolchain-requirements.md)
 
 Up-to-date instructions about developing GNOME applications and libraries
 can be found on [the GNOME Developer Center](https://developer.gnome.org).
 
 The [GLib project uses GitLab](https://gitlab.gnome.org/GNOME/glib/) for code
 hosting and for tracking issues. More information about using GitLab can be
-found [on the GNOME wiki](https://wiki.gnome.org/GitLab).
+found [on the GNOME wiki](https://handbook.gnome.org/infrastructure/gitlab.html).
 
 ### Getting started
 
@@ -153,7 +153,15 @@ Typically, you should work on your own branch:
 $ git checkout -b your-branch
 ```
 
-Once you’ve finished working on the bug fix or feature, push the branch
+Once you’ve finished working on the bug fix or feature, make sure the tests
+pass by using the standard `meson` test harness:
+
+```sh
+$ meson test -C _builddir
+$ meson test -C _builddir --setup=valgrind
+```
+
+Then push the branch
 to the Git repository and open a new merge request, to let the GLib
 core developers review your contribution.
 
@@ -228,7 +236,7 @@ Closes #1234
  `git commit -a --author "Joe Coder <joe@coder.org>"` and `--signoff`.
 
  - If your commit is addressing an issue, use the
- [GitLab syntax](https://docs.gitlab.com/ce/user/project/issues/automatic_issue_closing.html)
+ [GitLab syntax](https://docs.gitlab.com/ce/user/project/issues/managing_issues.html#default-closing-pattern)
  to automatically close the issue when merging the commit with the upstream
  repository:
 
@@ -269,4 +277,4 @@ GLib to follow a few rules:
 
 If you have been contributing to GLib for a while and you don’t have commit
 access to the repository, you may ask to obtain it following the [GNOME account
-process](https://wiki.gnome.org/Infrastructure/NewAccounts).
+process](https://handbook.gnome.org/infrastructure/accounts.html).

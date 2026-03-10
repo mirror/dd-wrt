@@ -35,6 +35,8 @@
 #include "girffi.h"
 #include "gicallableinfo.h"
 
+#define GET_BLOB(Type, rinfo) ((Type *) &rinfo->typelib->data[rinfo->offset])
+
 /* GICallableInfo functions */
 
 /**
@@ -78,7 +80,7 @@ signature_offset (GICallableInfo *info)
       g_assert_not_reached ();
     }
   if (sigoff >= 0)
-    return *(uint32_t *)&rinfo->typelib->data[rinfo->offset + sigoff];
+    return *(uint32_t *)&rinfo->typelib->data[rinfo->offset + (unsigned) sigoff];
   return 0;
 }
 
@@ -133,9 +135,12 @@ gi_callable_info_can_throw_gerror (GICallableInfo *info)
  *
  * Determines if the callable info is a method.
  *
- * For [class@GIRepository.VFuncInfo]s, [class@GIRepository.CallbackInfo]s, and
- * [class@GIRepository.SignalInfo]s, this is always true. Otherwise, this looks
- * at the `GI_FUNCTION_IS_METHOD` flag on the [class@GIRepository.FunctionInfo].
+ * For [class@GIRepository.SignalInfo]s, this is always true, and for
+ * [class@GIRepository.CallbackInfo]s always false.
+ * For [class@GIRepository.FunctionInfo]s this looks at the
+ * `GI_FUNCTION_IS_METHOD` flag on the [class@GIRepository.FunctionInfo].
+ * For [class@GIRepository.VFuncInfo]s this is true when the virtual function
+ * has an instance parameter.
  *
  * Concretely, this function returns whether
  * [method@GIRepository.CallableInfo.get_n_args] matches the number of arguments
@@ -157,6 +162,11 @@ gi_callable_info_is_method (GICallableInfo *info)
       return (!blob->constructor && !blob->is_static);
     }
   case GI_INFO_TYPE_VFUNC:
+    {
+      VFuncBlob *blob;
+      blob = (VFuncBlob *) &rinfo->typelib->data[rinfo->offset];
+      return !blob->is_static;
+    }
   case GI_INFO_TYPE_SIGNAL:
     return TRUE;
   case GI_INFO_TYPE_CALLBACK:
@@ -287,8 +297,8 @@ gi_callable_info_get_caller_owns (GICallableInfo *info)
   GIRealInfo *rinfo = (GIRealInfo*) info;
   SignatureBlob *blob;
 
-  g_return_val_if_fail (info != NULL, -1);
-  g_return_val_if_fail (GI_IS_CALLABLE_INFO (info), -1);
+  g_return_val_if_fail (info != NULL, GI_TRANSFER_NOTHING);
+  g_return_val_if_fail (GI_IS_CALLABLE_INFO (info), GI_TRANSFER_NOTHING);
 
   blob = (SignatureBlob *)&rinfo->typelib->data[signature_offset (info)];
 
@@ -317,8 +327,8 @@ gi_callable_info_get_instance_ownership_transfer (GICallableInfo *info)
   GIRealInfo *rinfo = (GIRealInfo*) info;
   SignatureBlob *blob;
 
-  g_return_val_if_fail (info != NULL, -1);
-  g_return_val_if_fail (GI_IS_CALLABLE_INFO (info), -1);
+  g_return_val_if_fail (info != NULL, GI_TRANSFER_NOTHING);
+  g_return_val_if_fail (GI_IS_CALLABLE_INFO (info), GI_TRANSFER_NOTHING);
 
   blob = (SignatureBlob *)&rinfo->typelib->data[signature_offset (info)];
 
@@ -344,8 +354,8 @@ gi_callable_info_get_n_args (GICallableInfo *info)
   uint32_t offset;
   SignatureBlob *blob;
 
-  g_return_val_if_fail (info != NULL, -1);
-  g_return_val_if_fail (GI_IS_CALLABLE_INFO (info), -1);
+  g_return_val_if_fail (info != NULL, 0);
+  g_return_val_if_fail (GI_IS_CALLABLE_INFO (info), 0);
 
   offset = signature_offset (info);
   blob = (SignatureBlob *)&rinfo->typelib->data[offset];
@@ -651,7 +661,7 @@ gi_callable_info_invoke (GICallableInfo    *info,
   GITypeInfo *rinfo;
   GITypeTag rtag;
   GIArgInfo *ainfo;
-  size_t n_args, n_invoke_args, in_pos, out_pos, i;
+  unsigned int n_args, n_invoke_args, in_pos, out_pos, i;
   void **args;
   gboolean success = FALSE;
   GError *local_error = NULL;
@@ -700,7 +710,7 @@ gi_callable_info_invoke (GICallableInfo    *info,
     }
   for (i = 0; i < n_args; i++)
     {
-      int offset = (is_method ? 1 : 0);
+      size_t offset = (is_method ? 1 : 0);
       ainfo = gi_callable_info_get_arg ((GICallableInfo *)info, i);
       switch (gi_arg_info_get_direction (ainfo))
         {
@@ -839,3 +849,193 @@ gi_callable_info_class_init (gpointer g_class,
 
   info_class->info_type = GI_INFO_TYPE_CALLABLE;
 }
+
+static GICallableInfo *
+get_method_callable_info_for_index (GIBaseInfo   *rinfo,
+                                    unsigned int  index)
+{
+  GIBaseInfo *container = rinfo->container;
+
+  g_assert (container);
+
+  if (GI_IS_OBJECT_INFO (container))
+    return (GICallableInfo *) gi_object_info_get_method ((GIObjectInfo *) container, index);
+
+  if (GI_IS_INTERFACE_INFO (container))
+    return (GICallableInfo *) gi_interface_info_get_method ((GIInterfaceInfo *) container,
+                                                            index);
+
+  return NULL;
+}
+
+static GICallableInfo *
+get_callable_info_for_index (GIBaseInfo   *rinfo,
+                             unsigned int  index)
+{
+  if (!rinfo->container)
+    {
+      GIBaseInfo *info = gi_info_from_entry (rinfo->repository, rinfo->typelib, index);
+
+      g_assert (GI_IS_CALLABLE_INFO (info));
+
+      return (GICallableInfo *) info;
+    }
+
+  return get_method_callable_info_for_index (rinfo, index);
+}
+
+/**
+ * gi_callable_info_get_async_function
+ * @info: a callable info structure
+ *
+ * Gets the callable info for the callable's asynchronous version
+ *
+ * Returns: (transfer full) (nullable): a [class@GIRepository.CallableInfo] for the
+ *   async function or `NULL` if not defined.
+ * Since: 2.84
+ */
+GICallableInfo *
+gi_callable_info_get_async_function (GICallableInfo *info)
+{
+  GIBaseInfo *rinfo = (GIBaseInfo *) info;
+
+  switch (gi_base_info_get_info_type (rinfo))
+    {
+    case GI_INFO_TYPE_FUNCTION:
+      {
+        FunctionBlob *blob = GET_BLOB (FunctionBlob, rinfo);
+        if (blob->is_async || blob->sync_or_async == ASYNC_SENTINEL)
+          return NULL;
+
+        return get_callable_info_for_index (rinfo, blob->sync_or_async);
+      }
+    case GI_INFO_TYPE_VFUNC:
+      {
+        VFuncBlob *blob = GET_BLOB (VFuncBlob, rinfo);
+        if (blob->is_async || blob->sync_or_async == ASYNC_SENTINEL)
+          return NULL;
+
+        return get_method_callable_info_for_index (rinfo, blob->sync_or_async);
+      }
+    case GI_INFO_TYPE_CALLBACK:
+    case GI_INFO_TYPE_SIGNAL:
+      return NULL;
+    default:
+      g_assert_not_reached ();
+    }
+}
+
+/**
+ * gi_callable_info_get_sync_function
+ * @info: a callable info structure
+ *
+ * Gets the callable info for the callable's synchronous version
+ *
+ * Returns: (transfer full) (nullable): a [class@GIRepository.CallableInfo] for the
+ *   sync function or `NULL` if not defined.
+ * Since: 2.84
+ */
+GICallableInfo *
+gi_callable_info_get_sync_function (GICallableInfo *info)
+{
+  GIBaseInfo *rinfo = (GIBaseInfo *) info;
+
+  switch (gi_base_info_get_info_type (rinfo))
+    {
+    case GI_INFO_TYPE_FUNCTION:
+      {
+        FunctionBlob *blob = GET_BLOB (FunctionBlob, rinfo);
+        if (!blob->is_async || blob->sync_or_async == ASYNC_SENTINEL)
+          return NULL;
+
+        return get_callable_info_for_index (rinfo, blob->sync_or_async);
+      }
+    case GI_INFO_TYPE_VFUNC:
+      {
+        VFuncBlob *blob = GET_BLOB (VFuncBlob, rinfo);
+        if (!blob->is_async || blob->sync_or_async == ASYNC_SENTINEL)
+          return NULL;
+
+        return get_method_callable_info_for_index (rinfo, blob->sync_or_async);
+      }
+    case GI_INFO_TYPE_CALLBACK:
+    case GI_INFO_TYPE_SIGNAL:
+      return NULL;
+    default:
+      g_assert_not_reached ();
+    }
+}
+
+/**
+ * gi_callable_info_get_finish_function
+ * @info: a callable info structure
+ *
+ * Gets the info for an async function's corresponding finish function
+ *
+ * Returns: (transfer full) (nullable): a [class@GIRepository.CallableInfo] for the
+ *   finish function or `NULL` if not defined.
+ * Since: 2.84
+ */
+GICallableInfo *
+gi_callable_info_get_finish_function (GICallableInfo *info)
+{
+  GIBaseInfo *rinfo = (GIBaseInfo *) info;
+
+  switch (gi_base_info_get_info_type (rinfo))
+    {
+    case GI_INFO_TYPE_FUNCTION:
+      {
+        FunctionBlob *blob = GET_BLOB (FunctionBlob, rinfo);
+        if (!blob->is_async || blob->finish == ASYNC_SENTINEL)
+          return NULL;
+
+        return get_callable_info_for_index (rinfo, blob->finish);
+      }
+    case GI_INFO_TYPE_VFUNC:
+      {
+        VFuncBlob *blob = GET_BLOB (VFuncBlob, rinfo);
+        if (!blob->is_async || blob->finish == ASYNC_SENTINEL)
+          return NULL;
+
+        return get_method_callable_info_for_index (rinfo, blob->finish);
+      }
+    case GI_INFO_TYPE_CALLBACK:
+    case GI_INFO_TYPE_SIGNAL:
+      return NULL;
+    default:
+      g_assert_not_reached ();
+    }
+}
+
+/**
+ * gi_callable_info_is_async
+ * @info: a callable info structure
+ *
+ * Gets whether a callable is ‘async’. Async callables have a
+ * [type@Gio.AsyncReadyCallback] parameter and user data.
+ *
+ * Returns: true if the callable is async
+ * Since: 2.84
+ */
+gboolean
+gi_callable_info_is_async (GICallableInfo *callable_info)
+{
+  GIBaseInfo *info = (GIBaseInfo *) callable_info;
+  switch (gi_base_info_get_info_type ((GIBaseInfo *) callable_info))
+    {
+    case GI_INFO_TYPE_FUNCTION:
+      {
+        return GET_BLOB (FunctionBlob, info)->is_async;
+      }
+    case GI_INFO_TYPE_VFUNC:
+      {
+        return GET_BLOB (VFuncBlob, info)->is_async;
+      }
+    case GI_INFO_TYPE_CALLBACK:
+    case GI_INFO_TYPE_SIGNAL:
+      return FALSE;
+    default:
+      g_assert_not_reached ();
+    }
+}
+

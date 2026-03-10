@@ -126,19 +126,22 @@ mapped_file_new_from_fd (int           fd,
 
   if (fstat (fd, &st) == -1)
     {
-      int save_errno = errno;
-      gchar *display_filename = filename ? g_filename_display_name (filename) : NULL;
+      if (error != NULL)
+        {
+          int save_errno = errno;
+          gchar *display_filename = filename ? g_filename_display_name (filename) : NULL;
 
-      g_set_error (error,
-                   G_FILE_ERROR,
-                   g_file_error_from_errno (save_errno),
-                   _("Failed to get attributes of file “%s%s%s%s”: fstat() failed: %s"),
-		   display_filename ? display_filename : "fd",
-		   display_filename ? "' " : "",
-		   display_filename ? display_filename : "",
-		   display_filename ? "'" : "",
-		   g_strerror (save_errno));
-      g_free (display_filename);
+          g_set_error (error,
+                       G_FILE_ERROR,
+                       g_file_error_from_errno (save_errno),
+                       _("Failed to get attributes of file “%s%s%s%s”: fstat() failed: %s"),
+                       display_filename ? display_filename : "fd",
+                       display_filename ? "' " : "",
+                       display_filename ? display_filename : "",
+                       display_filename ? "'" : "",
+                       g_strerror (save_errno));
+          g_free (display_filename);
+        }
       goto out;
     }
 
@@ -151,6 +154,13 @@ mapped_file_new_from_fd (int           fd,
       file->length = 0;
       file->contents = NULL;
       return file;
+    }
+  else if (st.st_size == 0)
+    {
+      errno = EINVAL;
+      file->length = 0;
+      file->contents = MAP_FAILED;
+      goto error;
     }
 
   file->contents = MAP_FAILED;
@@ -189,22 +199,25 @@ mapped_file_new_from_fd (int           fd,
     }
 #endif
 
-  
+error:
   if (file->contents == MAP_FAILED)
     {
-      int save_errno = errno;
-      gchar *display_filename = filename ? g_filename_display_name (filename) : NULL;
+      if (error != NULL)
+        {
+          int save_errno = errno;
+          gchar *display_filename = filename ? g_filename_display_name (filename) : NULL;
 
-      g_set_error (error,
-		   G_FILE_ERROR,
-		   g_file_error_from_errno (save_errno),
-		   _("Failed to map %s%s%s%s: mmap() failed: %s"),
-		   display_filename ? display_filename : "fd",
-		   display_filename ? "' " : "",
-		   display_filename ? display_filename : "",
-		   display_filename ? "'" : "",
-		   g_strerror (save_errno));
-      g_free (display_filename);
+          g_set_error (error,
+                       G_FILE_ERROR,
+                       g_file_error_from_errno (save_errno),
+                       _("Failed to map %s%s%s%s: mmap() failed: %s"),
+                       display_filename ? display_filename : "fd",
+                       display_filename ? "' " : "",
+                       display_filename ? display_filename : "",
+                       display_filename ? "'" : "",
+                       g_strerror (save_errno));
+          g_free (display_filename);
+        }
       goto out;
     }
 
@@ -259,16 +272,20 @@ g_mapped_file_new (const gchar  *filename,
   fd = g_open (filename, (writable ? O_RDWR : O_RDONLY) | _O_BINARY | O_CLOEXEC, 0);
   if (fd == -1)
     {
-      int save_errno = errno;
-      gchar *display_filename = g_filename_display_name (filename);
+      if (error != NULL)
+        {
+          int save_errno = errno;
+          gchar *display_filename = g_filename_display_name (filename);
 
-      g_set_error (error,
-                   G_FILE_ERROR,
-                   g_file_error_from_errno (save_errno),
-                   _("Failed to open file “%s”: open() failed: %s"),
-                   display_filename,
-		   g_strerror (save_errno));
-      g_free (display_filename);
+          g_set_error (error,
+                       G_FILE_ERROR,
+                       g_file_error_from_errno (save_errno),
+                       _("Failed to open file “%s”: open() failed: %s"),
+                       display_filename,
+                       g_strerror (save_errno));
+          g_free (display_filename);
+        }
+
       return NULL;
     }
 
@@ -340,7 +357,7 @@ g_mapped_file_get_length (GMappedFile *file)
  *
  * If the file is empty then %NULL is returned.
  *
- * Returns: the contents of @file, or %NULL.
+ * Returns: (transfer none) (nullable): the contents of @file, or %NULL.
  *
  * Since: 2.8
  */

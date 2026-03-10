@@ -119,6 +119,15 @@
  */
 
 /**
+ * G_NSEC_PER_SEC:
+ *
+ * Number of nanoseconds in one second (1 billion).
+ * This macro is provided for code readability.
+ *
+ * Since: 2.88
+ */
+
+/**
  * GTimeVal:
  * @tv_sec: seconds
  * @tv_usec: microseconds
@@ -742,27 +751,9 @@ g_date_get_day_of_year (const GDate *d)
  * Returns: week of the year
  */
 guint        
-g_date_get_monday_week_of_year (const GDate *d)
+g_date_get_monday_week_of_year (const GDate *date)
 {
-  GDateWeekday wd;
-  guint day;
-  GDate first;
-  
-  g_return_val_if_fail (g_date_valid (d), 0);
-  
-  if (!d->dmy) 
-    g_date_update_dmy (d);
-
-  g_return_val_if_fail (d->dmy, 0);  
-  
-  g_date_clear (&first, 1);
-  
-  g_date_set_dmy (&first, 1, 1, d->year);
-  
-  wd = g_date_get_weekday (&first) - 1; /* make Monday day 0 */
-  day = g_date_get_day_of_year (d) - 1;
-  
-  return ((day + wd)/7U + (wd == 0 ? 1 : 0));
+  return g_date_get_week_of_year (date, G_DATE_MONDAY);
 }
 
 /**
@@ -776,28 +767,52 @@ g_date_get_monday_week_of_year (const GDate *d)
  * Returns: week number
  */
 guint        
-g_date_get_sunday_week_of_year (const GDate *d)
+g_date_get_sunday_week_of_year (const GDate *date)
 {
-  GDateWeekday wd;
-  guint day;
-  GDate first;
-  
-  g_return_val_if_fail (g_date_valid (d), 0);
-  
-  if (!d->dmy) 
-    g_date_update_dmy (d);
+  return g_date_get_week_of_year (date, G_DATE_SUNDAY);
+}
 
-  g_return_val_if_fail (d->dmy, 0);  
-  
-  g_date_clear (&first, 1);
-  
-  g_date_set_dmy (&first, 1, 1, d->year);
-  
-  wd = g_date_get_weekday (&first);
-  if (wd == 7) wd = 0; /* make Sunday day 0 */
-  day = g_date_get_day_of_year (d) - 1;
-  
-  return ((day + wd)/7U + (wd == 0 ? 1 : 0));
+/**
+ * g_date_get_week_of_year:
+ * @date: a [struct@GLib.Date]
+ * @first_day_of_week: the day which is considered the first day of the week
+ *    (for example, this would be [enum@GLib.DateWeekday.SUNDAY] in US locales,
+ *    [enum@GLib.DateWeekday.MONDAY] in British locales, and
+ *    [enum@GLib.DateWeekday.SATURDAY] in Egyptian locales
+ *
+ * Calculates the week of the year during which this date falls.
+ *
+ * The result depends on which day is considered the first day of the week,
+ * which varies by locale. Both `date` and `first_day_of_week` must be valid.
+ *
+ * If @date is before the start of the first week of the year (for example,
+ * before the first Monday in January if @first_day_of_week is
+ * [enum@GLib.DateWeekday.MONDAY]) then zero will be returned.
+ *
+ * Returns: week number (starting from 1), or `0` if @date is before the start
+ *    of the first week of the year
+ * Since: 2.86
+ */
+unsigned int
+g_date_get_week_of_year (const GDate  *date,
+                         GDateWeekday  first_day_of_week)
+{
+  GDate first_day_of_year;
+  unsigned int n_days_before_first_week;
+
+  g_return_val_if_fail (g_date_valid (date), 0);
+  g_return_val_if_fail (first_day_of_week != G_DATE_BAD_WEEKDAY, 0);
+
+  if (!date->dmy)
+    g_date_update_dmy (date);
+
+  g_return_val_if_fail (date->dmy, 0);
+
+  g_date_clear (&first_day_of_year, 1);
+  g_date_set_dmy (&first_day_of_year, 1, 1, date->year);
+
+  n_days_before_first_week = (first_day_of_week - g_date_get_weekday (&first_day_of_year) + 7) % 7;
+  return (g_date_get_day_of_year (date) + 6 - n_days_before_first_week) / 7;
 }
 
 /**
@@ -1228,10 +1243,10 @@ convert_twodigit_year (guint y)
  * @str: string to parse
  *
  * Parses a user-inputted string @str, and try to figure out what date it
- * represents, taking the [current locale][setlocale] into account. If the
- * string is successfully parsed, the date will be valid after the call.
- * Otherwise, it will be invalid. You should check using g_date_valid()
- * to see whether the parsing succeeded.
+ * represents, taking the [current locale](running.html#locale)
+ * into account. If the string is successfully parsed, the date will be
+ * valid after the call. Otherwise, it will be invalid. You should check
+ * using g_date_valid() to see whether the parsing succeeded.
  *
  * This function is not appropriate for file formats and the like; it
  * isn't very precise, and its exact behavior varies with the locale.
@@ -1392,6 +1407,7 @@ _g_localtime (time_t timet, struct tm *out_tm)
   gboolean success = TRUE;
 
 #ifdef HAVE_LOCALTIME_R
+  tzset ();
   if (!localtime_r (&timet, out_tm))
     success = FALSE;
 #else
@@ -1964,23 +1980,7 @@ g_date_get_days_in_month (GDateMonth month,
 guint8       
 g_date_get_monday_weeks_in_year (GDateYear year)
 {
-  GDate d;
-  
-  g_return_val_if_fail (g_date_valid_year (year), 0);
-  
-  g_date_clear (&d, 1);
-  g_date_set_dmy (&d, 1, 1, year);
-  if (g_date_get_weekday (&d) == G_DATE_MONDAY) return 53;
-  g_date_set_dmy (&d, 31, 12, year);
-  if (g_date_get_weekday (&d) == G_DATE_MONDAY) return 53;
-  if (g_date_is_leap_year (year)) 
-    {
-      g_date_set_dmy (&d, 2, 1, year);
-      if (g_date_get_weekday (&d) == G_DATE_MONDAY) return 53;
-      g_date_set_dmy (&d, 30, 12, year);
-      if (g_date_get_weekday (&d) == G_DATE_MONDAY) return 53;
-    }
-  return 52;
+  return g_date_get_weeks_in_year (year, G_DATE_MONDAY);
 }
 
 /**
@@ -2000,21 +2000,50 @@ g_date_get_monday_weeks_in_year (GDateYear year)
 guint8       
 g_date_get_sunday_weeks_in_year (GDateYear year)
 {
+  return g_date_get_weeks_in_year (year, G_DATE_SUNDAY);
+}
+
+/**
+ * g_date_get_weeks_in_year:
+ * @year: year to count weeks in
+ * @first_day_of_week: the day which is considered the first day of the week
+ *    (for example, this would be [enum@GLib.DateWeekday.SUNDAY] in US locales,
+ *    [enum@GLib.DateWeekday.MONDAY] in British locales, and
+ *    [enum@GLib.DateWeekday.SATURDAY] in Egyptian locales
+ *
+ * Calculates the number of weeks in the year.
+ *
+ * The result depends on which day is considered the first day of the week,
+ * which varies by locale. `first_day_of_week` must be valid.
+ *
+ * The result will be either 52 or 53. Years always have 52 seven-day periods,
+ * plus one or two extra days depending on whether it’s a leap year. This
+ * function effectively calculates how many @first_day_of_week days there are in
+ * the year.
+ *
+ * Returns: the number of weeks in @year
+ * Since: 2.86
+ */
+guint8
+g_date_get_weeks_in_year (GDateYear    year,
+                          GDateWeekday first_day_of_week)
+{
   GDate d;
-  
+
   g_return_val_if_fail (g_date_valid_year (year), 0);
-  
+  g_return_val_if_fail (first_day_of_week != G_DATE_BAD_WEEKDAY, 0);
+
   g_date_clear (&d, 1);
   g_date_set_dmy (&d, 1, 1, year);
-  if (g_date_get_weekday (&d) == G_DATE_SUNDAY) return 53;
+  if (g_date_get_weekday (&d) == first_day_of_week) return 53;
   g_date_set_dmy (&d, 31, 12, year);
-  if (g_date_get_weekday (&d) == G_DATE_SUNDAY) return 53;
-  if (g_date_is_leap_year (year)) 
+  if (g_date_get_weekday (&d) == first_day_of_week) return 53;
+  if (g_date_is_leap_year (year))
     {
       g_date_set_dmy (&d, 2, 1, year);
-      if (g_date_get_weekday (&d) == G_DATE_SUNDAY) return 53;
+      if (g_date_get_weekday (&d) == first_day_of_week) return 53;
       g_date_set_dmy (&d, 30, 12, year);
-      if (g_date_get_weekday (&d) == G_DATE_SUNDAY) return 53;
+      if (g_date_get_weekday (&d) == first_day_of_week) return 53;
     }
   return 52;
 }
@@ -2258,6 +2287,7 @@ win32_strftime_helper (const GDate     *d,
   gchar *convbuf;
   glong convlen = 0;
   gsize retval;
+  size_t format_len = strlen (format);
 
   systemtime.wYear = tm->tm_year + 1900;
   systemtime.wMonth = tm->tm_mon + 1;
@@ -2269,7 +2299,8 @@ win32_strftime_helper (const GDate     *d,
   systemtime.wMilliseconds = 0;
   
   lcid = GetThreadLocale ();
-  result = g_array_sized_new (FALSE, FALSE, sizeof (wchar_t), MAX (128, strlen (format) * 2));
+  result = g_array_sized_new (FALSE, FALSE, sizeof (wchar_t),
+                              (format_len <= 64) ? (guint) format_len * 2 : 128);
 
   p = format;
   while (*p)
@@ -2628,7 +2659,7 @@ win32_strftime_helper (const GDate     *d,
  * @date: valid #GDate
  *
  * Generates a printed representation of the date, in a
- * [locale][setlocale]-specific way.
+ * [locale](running.html#locale)-specific way.
  * Works just like the platform's C library strftime() function,
  * but only accepts date-related formats; time-related formats
  * give undefined results. Date must be valid. Unlike strftime()
@@ -2641,7 +2672,7 @@ win32_strftime_helper (const GDate     *d,
  * make the \%F provided by the C99 strftime() work on Windows
  * where the C library only complies to C89.
  *
- * Returns: number of characters written to the buffer, or 0 the buffer was too small
+ * Returns: number of characters written to the buffer, or `0` if the buffer was too small
  */
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wformat-nonliteral"

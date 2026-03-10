@@ -37,9 +37,10 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-#if defined(__linux__) && !defined(__BIONIC__)
+#if defined(__linux__) && !defined(__ANDROID__)
 #include <alloca.h>
 #include <errno.h>
+#include <limits.h>
 #include <stddef.h>
 #include <string.h>
 #include <syslog.h>
@@ -129,7 +130,7 @@ journal_stream_fd (const char *identifier,
   if (fd < 0)
     goto fail;
 
-  salen = offsetof (struct sockaddr_un, sun_path) + strlen (sa.un.sun_path) + 1;
+  salen = offsetof (struct sockaddr_un, sun_path) + (socklen_t) strlen (sa.un.sun_path) + 1;
 
   if (connect (fd, &sa.sa, salen) < 0)
     goto fail;
@@ -150,6 +151,12 @@ journal_stream_fd (const char *identifier,
     priority = 7;
 
   l = strlen (identifier);
+  if (l > PATH_MAX)
+    {
+      errno = EINVAL;
+      goto fail;
+    }
+
   header = alloca (l + 1  /* identifier, newline */
                    + 1    /* empty unit ID, newline */
                    + 2    /* priority, newline */
@@ -252,7 +259,7 @@ main (int argc, char *argv[])
 
   putenv (buf);
 
-#if defined(__linux__) && !defined(__BIONIC__)
+#if defined(__linux__) && !defined(__ANDROID__)
   set_up_journal (argv[1]);
 #endif
 

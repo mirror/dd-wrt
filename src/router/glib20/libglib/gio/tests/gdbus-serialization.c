@@ -543,7 +543,7 @@ get_and_check_serialization (GVariant *value)
   /* First check that the serialization to the D-Bus wire format is correct - do this for both byte orders */
   for (n = 0; n < 2; n++)
     {
-      GDBusMessageByteOrder byte_order;
+      GDBusMessageByteOrder byte_order = G_DBUS_MESSAGE_BYTE_ORDER_BIG_ENDIAN;
       switch (n)
         {
         case 0:
@@ -1027,10 +1027,10 @@ test_message_serialize_header_checks (void)
   g_clear_error (&error);
   g_assert_null (blob);
   /* interface reserved value => error */
-  g_dbus_message_set_interface (message, "org.freedesktop.DBus.Local");
+  g_dbus_message_set_interface (message, DBUS_INTERFACE_LOCAL);
   blob = g_dbus_message_to_blob (message, &blob_size, G_DBUS_CAPABILITY_FLAGS_NONE, &error);
   g_assert_error (error, G_IO_ERROR, G_IO_ERROR_INVALID_ARGUMENT);
-  g_assert_cmpstr (error->message, ==, "Cannot serialize message: SIGNAL message: INTERFACE header field is using the reserved value org.freedesktop.DBus.Local");
+  g_assert_cmpstr (error->message, ==, "Cannot serialize message: SIGNAL message: INTERFACE header field is using the reserved value " DBUS_INTERFACE_LOCAL);
   g_clear_error (&error);
   g_assert_null (blob);
   /* reset interface */
@@ -1044,10 +1044,10 @@ test_message_serialize_header_checks (void)
   g_clear_error (&error);
   g_assert_null (blob);
   /* path reserved value => error */
-  g_dbus_message_set_path (message, "/org/freedesktop/DBus/Local");
+  g_dbus_message_set_path (message, DBUS_PATH_LOCAL);
   blob = g_dbus_message_to_blob (message, &blob_size, G_DBUS_CAPABILITY_FLAGS_NONE, &error);
   g_assert_error (error, G_IO_ERROR, G_IO_ERROR_INVALID_ARGUMENT);
-  g_assert_cmpstr (error->message, ==, "Cannot serialize message: SIGNAL message: PATH header field is using the reserved value /org/freedesktop/DBus/Local");
+  g_assert_cmpstr (error->message, ==, "Cannot serialize message: SIGNAL message: PATH header field is using the reserved value " DBUS_PATH_LOCAL);
   g_clear_error (&error);
   g_assert_null (blob);
   /* reset path */
@@ -1262,7 +1262,7 @@ test_message_serialize_double_array (void)
 
   g_test_bug ("https://bugzilla.gnome.org/show_bug.cgi?id=732754");
 
-  g_variant_builder_init (&builder, G_VARIANT_TYPE ("ad"));
+  g_variant_builder_init_static (&builder, G_VARIANT_TYPE ("ad"));
   g_variant_builder_add (&builder, "d", (gdouble)0.0);
   g_variant_builder_add (&builder, "d", (gdouble)8.0);
   g_variant_builder_add (&builder, "d", (gdouble)22.0);
@@ -1639,7 +1639,7 @@ test_message_parse_truncated (void)
   g_test_bug ("https://gitlab.gnome.org/GNOME/glib/-/issues/2528");
 
   message = g_dbus_message_new ();
-  g_variant_builder_init (&builder, G_VARIANT_TYPE ("(asbynqiuxtd)"));
+  g_variant_builder_init_static (&builder, G_VARIANT_TYPE ("(asbynqiuxtd)"));
   g_variant_builder_open (&builder, G_VARIANT_TYPE ("as"));
   g_variant_builder_add (&builder, "s", "fourtytwo");
   g_variant_builder_close (&builder);
@@ -1747,7 +1747,7 @@ test_message_serialize_empty_structure (void)
   g_test_bug ("https://gitlab.gnome.org/GNOME/glib/-/issues/2557");
 
   message = g_dbus_message_new ();
-  g_variant_builder_init (&builder, G_VARIANT_TYPE ("(a())"));
+  g_variant_builder_init_static (&builder, G_VARIANT_TYPE ("(a())"));
   g_variant_builder_open (&builder, G_VARIANT_TYPE ("a()"));
   g_variant_builder_add (&builder, "()");
   g_variant_builder_close (&builder);

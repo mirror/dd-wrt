@@ -20,6 +20,37 @@ indent (int extra)
     }
 }
 
+static gsize tag_lines;
+static gsize tag_chars;
+static gsize tag_offset;
+
+static void
+check_positions (GMarkupParseContext *context)
+{
+  gsize chars, lines, offset;
+  int current_lines, current_chars;
+
+  g_markup_parse_context_get_tag_start (context, &lines, &chars, &offset);
+
+  g_assert_cmpint (tag_lines, <=, lines);
+  if (tag_lines == lines)
+    g_assert_cmpint (tag_chars, <=, chars);
+  g_assert_cmpint (tag_offset, <=, offset);
+  tag_lines = lines;
+  tag_chars = chars;
+  tag_offset = offset;
+
+  g_markup_parse_context_get_position (context, &current_lines, &current_chars);
+  lines = (gsize) current_lines;
+  chars = (gsize) current_chars;
+  offset = g_markup_parse_context_get_offset (context);
+
+  g_assert_cmpint (tag_lines, <=, lines);
+  if (tag_lines == lines)
+    g_assert_cmpint (tag_chars, <=, chars);
+  g_assert_cmpint (tag_offset, <=, offset);
+}
+
 static void
 start_element_handler  (GMarkupParseContext *context,
                         const gchar         *element_name,
@@ -29,7 +60,9 @@ start_element_handler  (GMarkupParseContext *context,
                         GError             **error)
 {
   int i;
-  
+
+  check_positions (context);
+
   indent (0);
   g_string_append_printf (string, "ELEMENT '%s'\n", element_name);
 
@@ -54,6 +87,8 @@ end_element_handler (GMarkupParseContext *context,
                      gpointer             user_data,
                      GError             **error)
 {
+  check_positions (context);
+
   --depth;
   indent (0);
   g_string_append_printf (string, "END '%s'\n", element_name);
@@ -158,11 +193,16 @@ test_file (const gchar       *filename,
   GError *local_error = NULL;
   GMarkupParseContext *context;
   gint line, col;
+  gsize offset;
   guint n_failures = 0;
   guint n_tests = 0;
   const gsize chunk_sizes_bytes[] = { 1, 2, 5, 12, 1024 };
   gsize i;
   GString *first_string = NULL;
+
+  tag_lines = 0;
+  tag_chars = 0;
+  tag_offset = 0;
 
   g_file_get_contents (filename, &contents, &length_bytes, &local_error);
   g_assert_no_error (local_error);
@@ -178,6 +218,8 @@ test_file (const gchar       *filename,
   g_markup_parse_context_get_position (context, &line, &col);
   g_assert_cmpint (line, ==, 1);
   g_assert_cmpint (col, ==, 1);
+  offset = g_markup_parse_context_get_offset (context);
+  g_assert_cmpint (offset, ==, 0);
 
   if (!g_markup_parse_context_parse (context, contents, -1, NULL) ||
       !g_markup_parse_context_end_parse (context, NULL))

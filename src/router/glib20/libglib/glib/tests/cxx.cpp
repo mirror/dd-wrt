@@ -19,6 +19,10 @@
 
 #include <glib.h>
 
+#ifdef G_OS_WIN32
+#include <wincodec.h>
+#endif
+
 #if !defined (G_CXX_STD_VERSION) || !defined (G_CXX_STD_CHECK_VERSION)
 #error G_CXX_STD_VERSION is not defined
 #endif
@@ -93,7 +97,17 @@ G_STATIC_ASSERT (!G_C_STD_CHECK_VERSION (99));
 
 #if G_CXX_STD_VERSION == 202002L
   G_STATIC_ASSERT (!G_CXX_STD_CHECK_VERSION (23));
-  G_STATIC_ASSERT (!G_CXX_STD_CHECK_VERSION (202300L));
+  G_STATIC_ASSERT (!G_CXX_STD_CHECK_VERSION (202302L));
+#endif
+
+#if G_CXX_STD_VERSION >= 202302L
+  G_STATIC_ASSERT (G_CXX_STD_CHECK_VERSION (23));
+  G_STATIC_ASSERT (G_CXX_STD_CHECK_VERSION (202302L));
+#endif
+
+#if G_CXX_STD_VERSION == 202302L
+  G_STATIC_ASSERT (!G_CXX_STD_CHECK_VERSION (26));
+  G_STATIC_ASSERT (!G_CXX_STD_CHECK_VERSION (202600L));
 #endif
 
 #ifdef _G_EXPECTED_CXX_STANDARD
@@ -114,6 +128,15 @@ test_cpp_standard (void)
   if (std_version >= 20)
     {
       // See: https://gcc.gnu.org/bugzilla/show_bug.cgi?id=93821
+      g_test_skip ("Expected standard version is not properly supported by compiler");
+      return;
+    }
+#endif
+
+#if !G_GNUC_CHECK_VERSION(14, 0)
+  if (std_version >= 23)
+    {
+      // See: https://gcc.gnu.org/git/?p=gcc.git;a=commit;h=5388a43f6a3f348929292998bd6d0c1da6f006de
       g_test_skip ("Expected standard version is not properly supported by compiler");
       return;
     }
@@ -532,6 +555,56 @@ test_string_free (void)
   g_free (data);
 }
 
+#if G_CXX_STD_CHECK_VERSION(14)
+#if !defined (_MSC_VER) || _MSC_VER >= 1910 /* VS2017 */
+/* N3652 Extended Constexpr is not supported in VS2015
+ * https://learn.microsoft.com/en-us/cpp/overview/visual-cpp-language-conformance
+ */
+static constexpr gboolean
+g_likely_test_expr (void)
+{
+  if G_LIKELY (1 == 1)
+    {
+      return TRUE;
+    }
+  return FALSE;
+}
+
+static void
+test_constexpr_var_init (void)
+{
+  g_test_message ("Test that G_LIKELY macro creates an initialized variable "
+                  "for compatibility with constexpr");
+  g_assert_true (g_likely_test_expr ());
+}
+#endif
+#endif
+
+#ifdef G_OS_WIN32
+static void
+test_clear_com (void)
+{
+  IWICImagingFactory *tmp;
+  IWICImagingFactory *o =  NULL;
+
+  CoInitialize (NULL);
+  g_win32_clear_com (&o);
+  g_assert_null (o);
+  g_assert_true (SUCCEEDED (CoCreateInstance (CLSID_WICImagingFactory, NULL, CLSCTX_INPROC_SERVER, IID_IWICImagingFactory, (void **)&tmp)));
+  g_assert_nonnull (tmp);
+  tmp->QueryInterface (IID_IWICImagingFactory, (void **)&o); /* IWICImagingFactory::QueryInterface increments tmp's refcount */
+  g_assert_nonnull (o);
+  g_assert_cmpint (tmp->AddRef (), ==, 3); /* tmp's refcount incremented again */
+  g_win32_clear_com (&o);  /* tmp's refcount gets decremented */
+  g_assert_null (o);
+  g_assert_cmpint (tmp->Release (), ==, 1);  /* tmp's refcount gets decremented, again */
+  g_win32_clear_com (&tmp);
+  g_assert_null (tmp);
+
+  CoUninitialize ();
+}
+#endif
+
 int
 main (int argc, char *argv[])
 {
@@ -566,5 +639,14 @@ main (int argc, char *argv[])
   g_test_add_func ("/C++/string-append", test_string_append);
   g_test_add_func ("/C++/string-free", test_string_free);
 
+#if G_CXX_STD_CHECK_VERSION(14)
+#if !defined (_MSC_VER) || _MSC_VER >= 1910 /* VS2017 */
+  g_test_add_func ("/C++/constexpr-var-init", test_constexpr_var_init);
+#endif
+#endif
+
+#ifdef G_OS_WIN32
+  g_test_add_func ("/C++/test_clear_com", test_clear_com);
+#endif
   return g_test_run ();
 }

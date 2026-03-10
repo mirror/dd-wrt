@@ -1,7 +1,9 @@
-FROM debian:bookworm
+ARG ARCHITECTURE_PREFIX=
+FROM ${ARCHITECTURE_PREFIX}debian:bookworm
 
 RUN apt-get update -qq && apt-get install --no-install-recommends -qq -y \
     bindfs \
+    bison \
     black \
     clang \
     clang-tools \
@@ -11,6 +13,7 @@ RUN apt-get update -qq && apt-get install --no-install-recommends -qq -y \
     elfutils \
     findutils \
     flake8 \
+    flex \
     fuse \
     gcc \
     gdb \
@@ -31,19 +34,21 @@ RUN apt-get update -qq && apt-get install --no-install-recommends -qq -y \
     libmount-dev \
     libpcre2-dev \
     libselinux1-dev \
+    libunwind-dev \
     libxml2-utils \
     libxslt1-dev \
     libz3-dev \
     locales \
     ninja-build \
     python3 \
-    python3-packaging \
+    python3-dev \
     python3-pip \
     python3-setuptools \
     python3-wheel \
     reuse \
     shared-mime-info \
     shellcheck \
+    sudo \
     systemtap-sdt-dev \
     unzip \
     wget \
@@ -72,11 +77,14 @@ RUN locale-gen de_DE.UTF-8 \
 
 ENV LANG=C.UTF-8 LANGUAGE=C.UTF-8 LC_ALL=C.UTF-8
 
-RUN pip3 install --break-system-packages meson==1.2.3
+RUN pip3 install --break-system-packages meson==1.4.2
+
+# Enable passwordless sudo for sudo users
+RUN echo "%sudo	ALL=(ALL:ALL)	NOPASSWD: ALL" > /etc/sudoers.d/sudo-nopasswd
 
 ARG HOST_USER_ID=5555
 ENV HOST_USER_ID ${HOST_USER_ID}
-RUN useradd -u $HOST_USER_ID -ms /bin/bash user
+RUN useradd -u $HOST_USER_ID -G sudo -ms /bin/bash user
 
 USER user
 WORKDIR /home/user

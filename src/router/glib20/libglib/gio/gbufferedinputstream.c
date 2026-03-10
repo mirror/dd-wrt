@@ -36,7 +36,7 @@
 /**
  * GBufferedInputStream:
  *
- * Buffered input stream implements #GFilterInputStream and provides
+ * Buffered input stream implements [class@Gio.FilterInputStream] and provides
  * for buffered reads.
  *
  * By default, `GBufferedInputStream`'s buffer size is set at 4 kilobytes.
@@ -176,7 +176,7 @@ g_buffered_input_stream_class_init (GBufferedInputStreamClass *klass)
 
 /**
  * g_buffered_input_stream_get_buffer_size:
- * @stream: a #GBufferedInputStream
+ * @stream: a [class@Gio.BufferedInputStream]
  *
  * Gets the size of the input buffer.
  *
@@ -192,7 +192,7 @@ g_buffered_input_stream_get_buffer_size (GBufferedInputStream  *stream)
 
 /**
  * g_buffered_input_stream_set_buffer_size:
- * @stream: a #GBufferedInputStream
+ * @stream: a [class@Gio.BufferedInputStream]
  * @size: a #gsize
  *
  * Sets the size of the internal buffer of @stream to @size, or to the
@@ -319,12 +319,12 @@ g_buffered_input_stream_init (GBufferedInputStream *stream)
 
 /**
  * g_buffered_input_stream_new:
- * @base_stream: a #GInputStream
+ * @base_stream: a [class@Gio.InputStream]
  *
- * Creates a new #GInputStream from the given @base_stream, with
+ * Creates a new [class@Gio.InputStream] from the given @base_stream, with
  * a buffer set to the default size (4 kilobytes).
  *
- * Returns: a #GInputStream for the given @base_stream.
+ * Returns: a [class@Gio.InputStream] for the given @base_stream.
  */
 GInputStream *
 g_buffered_input_stream_new (GInputStream *base_stream)
@@ -342,13 +342,13 @@ g_buffered_input_stream_new (GInputStream *base_stream)
 
 /**
  * g_buffered_input_stream_new_sized:
- * @base_stream: a #GInputStream
+ * @base_stream: a [class@Gio.InputStream]
  * @size: a #gsize
  *
- * Creates a new #GBufferedInputStream from the given @base_stream,
+ * Creates a new [class@Gio.BufferedInputStream] from the given @base_stream,
  * with a buffer set to @size.
  *
- * Returns: a #GInputStream.
+ * Returns: a [class@Gio.InputStream].
  */
 GInputStream *
 g_buffered_input_stream_new_sized (GInputStream *base_stream,
@@ -368,16 +368,17 @@ g_buffered_input_stream_new_sized (GInputStream *base_stream,
 
 /**
  * g_buffered_input_stream_fill:
- * @stream: a #GBufferedInputStream
+ * @stream: a [class@Gio.BufferedInputStream]
  * @count: the number of bytes that will be read from the stream
- * @cancellable: (nullable): optional #GCancellable object, %NULL to ignore
- * @error: location to store the error occurring, or %NULL to ignore
+ * @cancellable: (nullable): optional [class@Gio.Cancellable] object, `NULL` to ignore
+ * @error: location to store the error occurring, or `NULL` to ignore
  *
  * Tries to read @count bytes from the stream into the buffer.
  * Will block during this read.
  *
  * If @count is zero, returns zero and does nothing. A value of @count
- * larger than %G_MAXSSIZE will cause a %G_IO_ERROR_INVALID_ARGUMENT error.
+ * larger than `G_MAXSSIZE` will cause a
+ * [error@Gio.IOErrorEnum.INVALID_ARGUMENT] error.
  *
  * On success, the number of bytes read into the buffer is returned.
  * It is not an error if this is not the same as the requested size, as it
@@ -387,19 +388,19 @@ g_buffered_input_stream_new_sized (GInputStream *base_stream,
  * If @count is -1 then the attempted read size is equal to the number of
  * bytes that are required to fill the buffer.
  *
- * If @cancellable is not %NULL, then the operation can be cancelled by
+ * If @cancellable is not `NULL`, then the operation can be cancelled by
  * triggering the cancellable object from another thread. If the operation
- * was cancelled, the error %G_IO_ERROR_CANCELLED will be returned. If an
- * operation was partially finished when the operation was cancelled the
+ * was cancelled, the error [error@Gio.IOErrorEnum.CANCELLED] will be returned.
+ * If an operation was partially finished when the operation was cancelled the
  * partial result will be returned, without an error.
  *
- * On error -1 is returned and @error is set accordingly.
+ * On error `-1` is returned and @error is set accordingly.
  *
  * For the asynchronous, non-blocking, version of this function, see
- * g_buffered_input_stream_fill_async().
+ * [method@Gio.BufferedInputStream.fill_async].
  *
  * Returns: the number of bytes read into @stream's buffer, up to @count,
- *     or -1 on error.
+ *     or `-1` on error.
  */
 gssize
 g_buffered_input_stream_fill (GBufferedInputStream  *stream,
@@ -453,18 +454,18 @@ async_fill_callback_wrapper (GObject      *source_object,
 
 /**
  * g_buffered_input_stream_fill_async:
- * @stream: a #GBufferedInputStream
+ * @stream: a [class@Gio.BufferedInputStream]
  * @count: the number of bytes that will be read from the stream
- * @io_priority: the [I/O priority][io-priority] of the request
- * @cancellable: (nullable): optional #GCancellable object
- * @callback: (scope async) (closure user_data): a #GAsyncReadyCallback
+ * @io_priority: the [I/O priority](iface.AsyncResult.html#io-priority) of the request
+ * @cancellable: (nullable): optional [class@Gio.Cancellable] object
+ * @callback: (scope async) (closure user_data): a [callback@Gio.AsyncReadyCallback]
  * @user_data: a #gpointer
  *
  * Reads data into @stream's buffer asynchronously, up to @count size.
  * @io_priority can be used to prioritize reads. For the synchronous
- * version of this function, see g_buffered_input_stream_fill().
+ * version of this function, see [method@Gio.BufferedInputStream.fill].
  *
- * If @count is -1 then the attempted read size is equal to the number
+ * If @count is `-1` then the attempted read size is equal to the number
  * of bytes that are required to fill the buffer.
  */
 void
@@ -519,9 +520,9 @@ g_buffered_input_stream_fill_async (GBufferedInputStream *stream,
 
 /**
  * g_buffered_input_stream_fill_finish:
- * @stream: a #GBufferedInputStream
- * @result: a #GAsyncResult
- * @error: a #GError
+ * @stream: a [class@Gio.BufferedInputStream]
+ * @result: a [iface@Gio.AsyncResult]
+ * @error: a [type@GLib.Error]
  *
  * Finishes an asynchronous read.
  *
@@ -548,7 +549,7 @@ g_buffered_input_stream_fill_finish (GBufferedInputStream  *stream,
 
 /**
  * g_buffered_input_stream_get_available:
- * @stream: #GBufferedInputStream
+ * @stream: [class@Gio.BufferedInputStream]
  *
  * Gets the size of the available data within the stream.
  *
@@ -557,23 +558,24 @@ g_buffered_input_stream_fill_finish (GBufferedInputStream  *stream,
 gsize
 g_buffered_input_stream_get_available (GBufferedInputStream *stream)
 {
-  g_return_val_if_fail (G_IS_BUFFERED_INPUT_STREAM (stream), -1);
+  g_return_val_if_fail (G_IS_BUFFERED_INPUT_STREAM (stream), 0);
 
   return stream->priv->end - stream->priv->pos;
 }
 
 /**
  * g_buffered_input_stream_peek:
- * @stream: a #GBufferedInputStream
+ * @stream: a [class@Gio.BufferedInputStream]
  * @buffer: (array length=count) (element-type guint8): a pointer to
- *   an allocated chunk of memory
- * @offset: a #gsize
- * @count: a #gsize
+ *   an allocated chunk of memory, which must be at least @count bytes long
+ * @offset: offset into the buffered input to peek from, or zero to peek from
+ *   the next byte in the buffered input onwards
+ * @count: number of bytes to peek
  *
- * Peeks in the buffer, copying data of size @count into @buffer,
- * offset @offset bytes.
+ * Peeks in the buffered input, copying @count bytes of data from @offset bytes
+ * in the buffered input into @buffer.
  *
- * Returns: a #gsize of the number of bytes peeked, or -1 on error.
+ * Returns: the number of bytes copied, which may be zero
  */
 gsize
 g_buffered_input_stream_peek (GBufferedInputStream *stream,
@@ -584,12 +586,12 @@ g_buffered_input_stream_peek (GBufferedInputStream *stream,
   gsize available;
   gsize end;
 
-  g_return_val_if_fail (G_IS_BUFFERED_INPUT_STREAM (stream), -1);
-  g_return_val_if_fail (buffer != NULL, -1);
+  g_return_val_if_fail (G_IS_BUFFERED_INPUT_STREAM (stream), 0);
+  g_return_val_if_fail (buffer != NULL, 0);
 
   available = g_buffered_input_stream_get_available (stream);
 
-  if (offset > available)
+  if (offset > available || offset > G_MAXSIZE - count)
     return 0;
 
   end = MIN (offset + count, available);
@@ -601,7 +603,7 @@ g_buffered_input_stream_peek (GBufferedInputStream *stream,
 
 /**
  * g_buffered_input_stream_peek_buffer:
- * @stream: a #GBufferedInputStream
+ * @stream: a [class@Gio.BufferedInputStream]
  * @count: (out): a #gsize to get the number of bytes available in the buffer
  *
  * Returns the buffer with the currently available bytes. The returned
@@ -942,25 +944,25 @@ g_buffered_input_stream_truncate (GSeekable     *seekable,
 
 /**
  * g_buffered_input_stream_read_byte:
- * @stream: a #GBufferedInputStream
- * @cancellable: (nullable): optional #GCancellable object, %NULL to ignore
- * @error: location to store the error occurring, or %NULL to ignore
+ * @stream: a [class@Gio.BufferedInputStream]
+ * @cancellable: (nullable): optional [class@Gio.Cancellable] object, `NULL` to ignore
+ * @error: location to store the error occurring, or `NULL` to ignore
  *
  * Tries to read a single byte from the stream or the buffer. Will block
  * during this read.
  *
  * On success, the byte read from the stream is returned. On end of stream
- * -1 is returned but it's not an exceptional error and @error is not set.
+ * `-1` is returned but it's not an exceptional error and @error is not set.
  *
- * If @cancellable is not %NULL, then the operation can be cancelled by
+ * If @cancellable is not `NULL`, then the operation can be cancelled by
  * triggering the cancellable object from another thread. If the operation
- * was cancelled, the error %G_IO_ERROR_CANCELLED will be returned. If an
- * operation was partially finished when the operation was cancelled the
+ * was cancelled, the error [error@Gio.IOErrorEnum.CANCELLED] will be returned.
+ * If an operation was partially finished when the operation was cancelled the
  * partial result will be returned, without an error.
  *
- * On error -1 is returned and @error is set accordingly.
+ * On error `-1` is returned and @error is set accordingly.
  *
- * Returns: the byte read from the @stream, or -1 on end of stream or error.
+ * Returns: the byte read from the @stream, or `-1` on end of stream or error.
  */
 int
 g_buffered_input_stream_read_byte (GBufferedInputStream  *stream,
@@ -1044,7 +1046,7 @@ fill_async_callback (GObject      *source_object,
       stream = g_task_get_source_object (task);
       priv = G_BUFFERED_INPUT_STREAM (stream)->priv;
 
-      g_assert_cmpint (priv->end + res, <=, priv->len);
+      g_assert (priv->end + res <= priv->len);
       priv->end += res;
 
       g_task_return_int (task, res);

@@ -6,14 +6,19 @@ being defined at build time:
 
 `--buildtype={plain,release,minsize,custom}`
  : No special macros or options
+
 `--buildtype={debug,debugoptimized}` (`debugoptimized` is the default)
  : `-DG_ENABLE_DEBUG -g`
+
 `-Dglib_debug=disabled`
  : Omits `G_ENABLE_DEBUG` when implied by `--buildtype`/`-Ddebug`
+
 `-Dglib_debug=enabled`
  : Defines `G_ENABLE_DEBUG` regardless of `--buildtype`/`-Ddebug`
+
 `-Dglib_asserts=false`
  : `-DG_DISABLE_ASSERT`
+
 `-Dglib_checks=false`
  : `-DG_DISABLE_CHECKS`
 
@@ -60,6 +65,10 @@ This macro also switches off certain checks in the GSignal code.
 Quite a bit of additional debugging code is compiled into GLib when this
 macro is defined, and since it is a globally visible define, third-party code
 may be affected by it similarly to `G_DISABLE_ASSERT`.
+
+Some of these checks can be relatively expensive at runtime, as they affect
+every GObject type cast. Distributions are recommended to disable
+`G_ENABLE_DEBUG` in stable release builds.
 
 The additional code executed/compiled for this macro currently includes the
 following, but this is not an exhaustive list:

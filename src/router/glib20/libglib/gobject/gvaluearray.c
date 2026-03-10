@@ -62,7 +62,7 @@
  *    as described above.
  */
 
-#define	GROUP_N_VALUES	(8)	/* power of 2 !! */
+#define	GROUP_N_VALUES	(8u)	/* power of 2 !! */
 
 
 /* --- functions --- */
@@ -71,7 +71,7 @@
  * @value_array: #GValueArray to get a value from
  * @index_: index of the value of interest
  *
- * Return a pointer to the value at @index_ containd in @value_array.
+ * Return a pointer to the value at @index_ contained in @value_array.
  *
  * Returns: (transfer none): pointer to a value at @index_ in @value_array
  *
@@ -99,6 +99,7 @@ value_array_grow (GValueArray *value_array,
     {
       guint i = value_array->n_prealloced;
 
+      /* round up to the next multiple of GROUP_N_VALUES */
       value_array->n_prealloced = (value_array->n_values + GROUP_N_VALUES - 1) & ~(GROUP_N_VALUES - 1);
       value_array->values = g_renew (GValue, value_array->values, value_array->n_prealloced);
       if (!zero_init)
@@ -364,9 +365,9 @@ g_value_array_sort_with_data (GValueArray     *value_array,
   g_return_val_if_fail (compare_func != NULL, NULL);
 
   if (value_array->n_values)
-    g_qsort_with_data (value_array->values,
-		       value_array->n_values,
-		       sizeof (value_array->values[0]),
-		       compare_func, user_data);
+    g_sort_array (value_array->values,
+		  value_array->n_values,
+		  sizeof (value_array->values[0]),
+		  compare_func, user_data);
   return value_array;
 }

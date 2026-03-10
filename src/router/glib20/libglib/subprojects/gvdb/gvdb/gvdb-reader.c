@@ -1,6 +1,8 @@
 /*
  * Copyright © 2010 Codethink Limited
  *
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
@@ -524,13 +526,13 @@ gvdb_table_list (GvdbTable   *file,
 
       if (itemno < file->n_hash_items)
         {
-          const struct gvdb_hash_item *item;
+          const struct gvdb_hash_item *child_item;
           const gchar *string;
           gsize strsize;
 
-          item = file->hash_items + itemno;
+          child_item = file->hash_items + itemno;
 
-          string = gvdb_table_item_get_key (file, item, &strsize);
+          string = gvdb_table_item_get_key (file, child_item, &strsize);
 
           if (string != NULL)
             strv[i] = g_strndup (string, strsize);
@@ -544,6 +546,32 @@ gvdb_table_list (GvdbTable   *file,
   strv[i] = NULL;
 
   return strv;
+}
+
+/**
+ * gvdb_table_n_children:
+ * @file: a #GvdbTable
+ * @key: a string
+ *
+ * Returns the number of keys that appear below @key.
+ *
+ * Returns: the number of keys below @key
+ */
+guint
+gvdb_table_n_children (GvdbTable  *file,
+                       const char *key)
+{
+  const struct gvdb_hash_item *item;
+  const guint32_le *list;
+  guint length;
+
+  if ((item = gvdb_table_lookup (file, key, 'L')) == NULL)
+    return 0;
+
+  if (!gvdb_table_list_from_item (file, item, &list, &length))
+    return 0;
+
+  return length;
 }
 
 /**
@@ -610,7 +638,7 @@ gvdb_table_value_from_item (GvdbTable                   *table,
  * You should call g_variant_unref() on the return result when you no
  * longer require it.
  *
- * Returns: a #GVariant, or %NULL
+ * Returns: (transfer full) (nullable): a #GVariant, or %NULL
  **/
 GVariant *
 gvdb_table_get_value (GvdbTable    *file,
@@ -646,7 +674,7 @@ gvdb_table_get_value (GvdbTable    *file,
  * This call is equivalent to gvdb_table_get_value() except that it
  * never byteswaps the value.
  *
- * Returns: a #GVariant, or %NULL
+ * Returns: (transfer full) (nullable): a #GVariant, or %NULL
  **/
 GVariant *
 gvdb_table_get_raw_value (GvdbTable   *table,

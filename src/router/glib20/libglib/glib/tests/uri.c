@@ -154,7 +154,8 @@ file_from_uri_tests[] = {
   { "file:///c:/foo", "/c:/foo", NULL, 0 },
   { "file:////c:/foo", "//c:/foo",  NULL, 0 },
 #endif
-  { "file://0123456789/", NULL, NULL, G_CONVERT_ERROR_BAD_URI},
+  { "file://0123456789/", "/", "0123456789", 0},
+  { "file://dev-1.2/", "/", "dev-1.2", 0},
   { "file://ABCDEFGHIJKLMNOPQRSTUVWXYZ/", "/", "ABCDEFGHIJKLMNOPQRSTUVWXYZ", 0 },
   { "file://abcdefghijklmnopqrstuvwxyz/", "/", "abcdefghijklmnopqrstuvwxyz", 0 },
   { "file://-_.!~*'()/", NULL, NULL, G_CONVERT_ERROR_BAD_URI},
@@ -769,6 +770,18 @@ static const UriAbsoluteTest absolute_tests[] = {
   /* Invalid IDN hostname */
   { "http://xn--mixed-\xc3\xbcp/", G_URI_FLAGS_NONE, FALSE, G_URI_ERROR_BAD_HOST,
     { NULL, NULL, NULL, -1, NULL, NULL, NULL } },
+
+  /* Paths with double slashes */
+  { "data:.///",
+    G_URI_FLAGS_HAS_PASSWORD | G_URI_FLAGS_ENCODED_PATH | G_URI_FLAGS_ENCODED_QUERY | G_URI_FLAGS_ENCODED_FRAGMENT | G_URI_FLAGS_SCHEME_NORMALIZE,
+    TRUE, 0,
+    { "data", NULL, NULL, -1, "/.//", NULL, NULL }
+  },
+  { "data:/.//",
+    G_URI_FLAGS_HAS_PASSWORD | G_URI_FLAGS_ENCODED_PATH | G_URI_FLAGS_ENCODED_QUERY | G_URI_FLAGS_ENCODED_FRAGMENT | G_URI_FLAGS_SCHEME_NORMALIZE,
+    TRUE, 0,
+    { "data", NULL, NULL, -1, "/.//", NULL, NULL }
+  },
 };
 
 static void
@@ -1742,6 +1755,19 @@ test_uri_join (void)
 
   uri = g_uri_join (G_URI_FLAGS_NONE, "scheme", NULL, "foo:bar._webdav._tcp.local", -1, "", NULL, NULL);
   g_assert_cmpstr (uri, ==, "scheme://foo%3Abar._webdav._tcp.local");
+  g_free (uri);
+
+  uri = g_uri_join (G_URI_FLAGS_NONE, "data", NULL, NULL, -1, "/.//", NULL, NULL);
+  g_assert_cmpstr (uri, ==, "data:/.//");
+  g_free (uri);
+
+  uri = g_uri_join (G_URI_FLAGS_NONE, "data", NULL, NULL, -1, ".///", NULL, NULL);
+  g_assert_cmpstr (uri, ==, "data:.///");
+  g_free (uri);
+
+  /* From https://url.spec.whatwg.org/#url-serializing */
+  uri = g_uri_join (G_URI_FLAGS_NONE, "web+demo", NULL, NULL, -1, "/.//not-a-host/", NULL, NULL);
+  g_assert_cmpstr (uri, ==, "web+demo:/.//not-a-host/");
   g_free (uri);
 }
 

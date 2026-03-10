@@ -5,6 +5,8 @@
    Copyright (C) 2006 John McCutchan
    Copyright (C) 2009 Codethink Limited
 
+   SPDX-License-Identifier: LGPL-2.1-or-later
+
    This library is free software; you can redistribute it and/or
    modify it under the terms of the GNU Lesser General Public
    License as published by the Free Software Foundation; either
@@ -410,7 +412,7 @@ ip_watched_dir_new (const char *path,
 static void
 ip_watched_dir_free (ip_watched_dir_t *dir)
 {
-  g_assert_cmpint (g_hash_table_size (dir->files_hash), ==, 0);
+  g_assert (g_hash_table_size (dir->files_hash) == 0);
   g_assert (dir->subs == NULL);
   g_free (dir->path);
   g_hash_table_unref (dir->files_hash);
@@ -480,7 +482,7 @@ ip_event_dispatch (GList      *dir_list,
 	   */
 	  if (sub->hardlinks)
 	    {
-	      event->mask &= ~IP_INOTIFY_FILE_MASK;
+	      event->mask &= (guint32) ~IP_INOTIFY_FILE_MASK;
 	      if (!event->mask)
 		continue;
 	    }

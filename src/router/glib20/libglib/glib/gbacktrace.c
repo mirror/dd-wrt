@@ -57,12 +57,9 @@
 #include <string.h>
 
 #ifdef G_OS_WIN32
-#  define STRICT                /* Strict typing, please */
-#  define _WIN32_WINDOWS 0x0401 /* to get IsDebuggerPresent */
-#  include <windows.h>
-#  undef STRICT
+#include <windows.h>
 #else
-#  include <fcntl.h>
+#include <fcntl.h>
 #endif
 
 #include "gbacktrace.h"
@@ -73,12 +70,9 @@
 #include "gunicode.h"
 #include "gutils.h"
 
-#ifndef G_OS_WIN32
-static void stack_trace (const char * const *args);
-#endif
-
 /* Default to using LLDB for backtraces on macOS. */
 #ifdef __APPLE__
+#include <TargetConditionals.h>
 #define USE_LLDB
 #endif
 
@@ -86,6 +80,11 @@ static void stack_trace (const char * const *args);
 #define DEBUGGER "lldb"
 #else
 #define DEBUGGER "gdb"
+#endif
+
+#if defined(G_OS_UNIX) && (!defined(__APPLE__) || TARGET_OS_OSX)
+#define HAVE_STACK_TRACE
+static void stack_trace (const char * const *args);
 #endif
 
 /* People want to hit this from their debugger... */
@@ -143,7 +142,7 @@ volatile gboolean glib_on_error_halt = TRUE;
  * This function may cause different actions on non-UNIX platforms.
  *
  * On Windows consider using the `G_DEBUGGER` environment
- * variable (see [Running GLib Applications](glib-running.html)) and
+ * variable (see [Running GLib Applications](running.html)) and
  * calling g_on_error_stack_trace() instead.
  */
 void
@@ -160,20 +159,12 @@ g_on_error_query (const gchar *prg_name)
 
  retry:
 
-  if (prg_name)
-    _g_fprintf (stdout,
-                "%s (pid:%u): %s%s%s: ",
-                prg_name,
-                (guint) getpid (),
-                query1,
-                query2,
-                query3);
-  else
-    _g_fprintf (stdout,
-                "(process:%u): %s%s: ",
-                (guint) getpid (),
-                query1,
-                query3);
+  _g_fprintf (stdout,
+              "(process:%u): %s%s%s: ",
+              (guint) getpid (),
+              query1,
+              query2,
+              query3);
   fflush (stdout);
 
   if (isatty(0) && isatty(1))
@@ -192,8 +183,7 @@ g_on_error_query (const gchar *prg_name)
   else if ((buf[0] == 'P' || buf[0] == 'p')
            && buf[1] == '\n')
     return;
-  else if (prg_name
-           && (buf[0] == 'S' || buf[0] == 's')
+  else if ((buf[0] == 'S' || buf[0] == 's')
            && buf[1] == '\n')
     {
       g_on_error_stack_trace (prg_name);
@@ -240,8 +230,8 @@ g_on_error_query (const gchar *prg_name)
 
 /**
  * g_on_error_stack_trace:
- * @prg_name: the program name, needed by gdb for the "[S]tack trace"
- *     option
+ * @prg_name: (nullable): the program name, needed by gdb for the
+ *   "[S]tack trace" option, or `NULL` to use a default string
  *
  * Invokes gdb, which attaches to the current process and shows a
  * stack trace. Called by g_on_error_query() when the "[S]tack trace"
@@ -255,21 +245,25 @@ g_on_error_query (const gchar *prg_name)
  * g_on_error_query(). If called directly, it will raise an
  * exception, which will crash the program. If the `G_DEBUGGER` environment
  * variable is set, a debugger will be invoked to attach and
- * handle that exception (see [Running GLib Applications](glib-running.html)).
+ * handle that exception (see [Running GLib Applications](running.html)).
  */
 void
 g_on_error_stack_trace (const gchar *prg_name)
 {
-#if defined(G_OS_UNIX)
+#ifdef HAVE_STACK_TRACE
   pid_t pid;
   gchar buf[16];
+  gchar buf2[64];
   const gchar *args[5] = { DEBUGGER, NULL, NULL, NULL, NULL };
   int status;
 
   if (!prg_name)
-    return;
+    {
+      _g_snprintf (buf2, sizeof (buf2), "/proc/%u/exe", (guint) getpid ());
+      prg_name = buf2;
+    }
 
-  _g_sprintf (buf, "%u", (guint) getpid ());
+  _g_snprintf (buf, sizeof (buf), "%u", (guint) getpid ());
 
 #ifdef USE_LLDB
   args[1] = prg_name;
@@ -298,18 +292,26 @@ g_on_error_stack_trace (const gchar *prg_name)
   while (1)
     {
       pid_t retval = waitpid (pid, &status, 0);
-      if (WIFEXITED (retval) || WIFSIGNALED (retval))
+      if (retval == -1)
+        {
+          if (errno == EAGAIN || errno == EINTR)
+            continue;
+          break;
+        }
+      else if (WIFEXITED (status) || WIFSIGNALED (status))
         break;
     }
 #else
+#ifdef G_OS_WIN32
   if (IsDebuggerPresent ())
     G_BREAKPOINT ();
   else
+#endif
     g_abort ();
 #endif
 }
 
-#ifndef G_OS_WIN32
+#ifdef HAVE_STACK_TRACE
 
 static gboolean stack_trace_done = FALSE;
 
@@ -452,8 +454,10 @@ stack_trace (const char * const *args)
   checked_write (in_fd[1], "quit\n", 5);
 #else
   /* Don't wrap so that lines are not truncated */
-  checked_write (in_fd[1], "set width unlimited\n", 20);
-  checked_write (in_fd[1], "backtrace\n", 10);
+  checked_write (in_fd[1], "set width 0\n", 12);
+  checked_write (in_fd[1], "set height 0\n", 13);
+  checked_write (in_fd[1], "set pagination no\n", 18);
+  checked_write (in_fd[1], "thread apply all backtrace\n", 27);
   checked_write (in_fd[1], "p x = 0\n", 8);
   checked_write (in_fd[1], "quit\n", 5);
 #endif
@@ -497,7 +501,7 @@ stack_trace (const char * const *args)
                     }
                   break;
                 case 1:
-                  if (idx < BUFSIZE)
+                  if (idx < BUFSIZE - 1)
                     buffer[idx++] = c;
                   if ((c == '\n') || (c == '\r'))
                     {

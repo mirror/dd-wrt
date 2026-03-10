@@ -4,6 +4,8 @@
 #
 # Copyright (C) 2008-2011 Red Hat, Inc.
 #
+# SPDX-License-Identifier: LGPL-2.1-or-later
+#
 # This library is free software; you can redistribute it and/or
 # modify it under the terms of the GNU Lesser General Public
 # License as published by the Free Software Foundation; either
@@ -140,9 +142,11 @@ class Arg:
         self.ctype_in = "GVariant *"
         self.ctype_in_dup = "GVariant *"
         self.ctype_in_default_value = "NULL"
-        self.ctype_out = "GVariant **"
+        self.ctype_out = "GVariant *"
         self.gtype = "G_TYPE_VARIANT"
         self.free_func = "g_variant_unref"
+        # the copy_func is being used by extensions, not by the main codegen
+        self.copy_func = "g_variant_ref"
         self.format_in = "@" + self.signature
         self.format_out = "@" + self.signature
         self.gvariant_get = "XXX"
@@ -160,9 +164,10 @@ class Arg:
                 self.ctype_in_g = "gboolean "
                 self.ctype_in = "gboolean "
                 self.ctype_in_default_value = "FALSE"
-                self.ctype_out = "gboolean *"
+                self.ctype_out = "gboolean"
                 self.gtype = "G_TYPE_BOOLEAN"
                 self.free_func = None
+                self.copy_func = None
                 self.format_in = "b"
                 self.format_out = "b"
                 self.gvariant_get = "g_variant_get_boolean"
@@ -174,9 +179,10 @@ class Arg:
                 self.ctype_in_g = "guchar "
                 self.ctype_in = "guchar "
                 self.ctype_in_default_value = "'\\0'"
-                self.ctype_out = "guchar *"
+                self.ctype_out = "guchar"
                 self.gtype = "G_TYPE_UCHAR"
                 self.free_func = None
+                self.copy_func = None
                 self.format_in = "y"
                 self.format_out = "y"
                 self.gvariant_get = "g_variant_get_byte"
@@ -188,9 +194,10 @@ class Arg:
                 self.ctype_in_g = "gint "
                 self.ctype_in = "gint16 "
                 self.ctype_in_default_value = "0"
-                self.ctype_out = "gint16 *"
+                self.ctype_out = "gint16"
                 self.gtype = "G_TYPE_INT"
                 self.free_func = None
+                self.copy_func = None
                 self.format_in = "n"
                 self.format_out = "n"
                 self.gvariant_get = "g_variant_get_int16"
@@ -202,9 +209,10 @@ class Arg:
                 self.ctype_in_g = "guint "
                 self.ctype_in = "guint16 "
                 self.ctype_in_default_value = "0"
-                self.ctype_out = "guint16 *"
+                self.ctype_out = "guint16"
                 self.gtype = "G_TYPE_UINT"
                 self.free_func = None
+                self.copy_func = None
                 self.format_in = "q"
                 self.format_out = "q"
                 self.gvariant_get = "g_variant_get_uint16"
@@ -216,9 +224,10 @@ class Arg:
                 self.ctype_in_g = "gint "
                 self.ctype_in = "gint "
                 self.ctype_in_default_value = "0"
-                self.ctype_out = "gint *"
+                self.ctype_out = "gint"
                 self.gtype = "G_TYPE_INT"
                 self.free_func = None
+                self.copy_func = None
                 self.format_in = "i"
                 self.format_out = "i"
                 self.gvariant_get = "g_variant_get_int32"
@@ -230,9 +239,10 @@ class Arg:
                 self.ctype_in_g = "guint "
                 self.ctype_in = "guint "
                 self.ctype_in_default_value = "0"
-                self.ctype_out = "guint *"
+                self.ctype_out = "guint"
                 self.gtype = "G_TYPE_UINT"
                 self.free_func = None
+                self.copy_func = None
                 self.format_in = "u"
                 self.format_out = "u"
                 self.gvariant_get = "g_variant_get_uint32"
@@ -244,9 +254,10 @@ class Arg:
                 self.ctype_in_g = "gint64 "
                 self.ctype_in = "gint64 "
                 self.ctype_in_default_value = "0"
-                self.ctype_out = "gint64 *"
+                self.ctype_out = "gint64"
                 self.gtype = "G_TYPE_INT64"
                 self.free_func = None
+                self.copy_func = None
                 self.format_in = "x"
                 self.format_out = "x"
                 self.gvariant_get = "g_variant_get_int64"
@@ -257,10 +268,11 @@ class Arg:
             elif self.signature == "t":
                 self.ctype_in_g = "guint64 "
                 self.ctype_in = "guint64 "
-                self.ctype_out = "guint64 *"
+                self.ctype_out = "guint64"
                 self.ctype_in_default_value = "0"
                 self.gtype = "G_TYPE_UINT64"
                 self.free_func = None
+                self.copy_func = None
                 self.format_in = "t"
                 self.format_out = "t"
                 self.gvariant_get = "g_variant_get_uint64"
@@ -272,9 +284,10 @@ class Arg:
                 self.ctype_in_g = "gdouble "
                 self.ctype_in = "gdouble "
                 self.ctype_in_default_value = "0.0"
-                self.ctype_out = "gdouble *"
+                self.ctype_out = "gdouble"
                 self.gtype = "G_TYPE_DOUBLE"
                 self.free_func = None
+                self.copy_func = None
                 self.format_in = "d"
                 self.format_out = "d"
                 self.gvariant_get = "g_variant_get_double"
@@ -287,9 +300,10 @@ class Arg:
                 self.ctype_in = "const gchar *"
                 self.ctype_in_dup = "gchar *"
                 self.ctype_in_default_value = "NULL"
-                self.ctype_out = "gchar **"
+                self.ctype_out = "gchar *"
                 self.gtype = "G_TYPE_STRING"
                 self.free_func = "g_free"
+                self.copy_func = "g_strdup"
                 self.format_in = "s"
                 self.format_out = "s"
                 self.gvariant_get = "g_variant_get_string"
@@ -302,9 +316,10 @@ class Arg:
                 self.ctype_in = "const gchar *"
                 self.ctype_in_dup = "gchar *"
                 self.ctype_in_default_value = "NULL"
-                self.ctype_out = "gchar **"
+                self.ctype_out = "gchar *"
                 self.gtype = "G_TYPE_STRING"
                 self.free_func = "g_free"
+                self.copy_func = "g_strdup"
                 self.format_in = "o"
                 self.format_out = "o"
                 self.gvariant_get = "g_variant_get_string"
@@ -317,9 +332,10 @@ class Arg:
                 self.ctype_in = "const gchar *"
                 self.ctype_in_dup = "gchar *"
                 self.ctype_in_default_value = "NULL"
-                self.ctype_out = "gchar **"
+                self.ctype_out = "gchar *"
                 self.gtype = "G_TYPE_STRING"
                 self.free_func = "g_free"
+                self.copy_func = "g_strdup"
                 self.format_in = "g"
                 self.format_out = "g"
                 self.gvariant_get = "g_variant_get_string"
@@ -332,9 +348,10 @@ class Arg:
                 self.ctype_in = "const gchar *"
                 self.ctype_in_default_value = "NULL"
                 self.ctype_in_dup = "gchar *"
-                self.ctype_out = "gchar **"
+                self.ctype_out = "gchar *"
                 self.gtype = "G_TYPE_STRING"
                 self.free_func = "g_free"
+                self.copy_func = "g_strdup"
                 self.format_in = "^ay"
                 self.format_out = "^ay"
                 self.gvariant_get = "g_variant_get_bytestring"
@@ -347,9 +364,10 @@ class Arg:
                 self.ctype_in = "const gchar *const *"
                 self.ctype_in_dup = "gchar **"
                 self.ctype_in_default_value = "NULL"
-                self.ctype_out = "gchar ***"
+                self.ctype_out = "gchar **"
                 self.gtype = "G_TYPE_STRV"
                 self.free_func = "g_strfreev"
+                self.copy_func = "g_strdupv"
                 self.format_in = "^as"
                 self.format_out = "^as"
                 self.gvariant_get = "g_variant_get_strv"
@@ -363,9 +381,10 @@ class Arg:
                 self.ctype_in = "const gchar *const *"
                 self.ctype_in_dup = "gchar **"
                 self.ctype_in_default_value = "NULL"
-                self.ctype_out = "gchar ***"
+                self.ctype_out = "gchar **"
                 self.gtype = "G_TYPE_STRV"
                 self.free_func = "g_strfreev"
+                self.copy_func = "g_strdupv"
                 self.format_in = "^ao"
                 self.format_out = "^ao"
                 self.gvariant_get = "g_variant_get_objv"
@@ -379,9 +398,10 @@ class Arg:
                 self.ctype_in = "const gchar *const *"
                 self.ctype_in_dup = "gchar **"
                 self.ctype_in_default_value = "NULL"
-                self.ctype_out = "gchar ***"
+                self.ctype_out = "gchar **"
                 self.gtype = "G_TYPE_STRV"
                 self.free_func = "g_strfreev"
+                self.copy_func = "g_strdupv"
                 self.format_in = "^aay"
                 self.format_out = "^aay"
                 self.gvariant_get = "g_variant_get_bytestring_array"
@@ -428,6 +448,7 @@ class Method:
                 name = overridden_name
             self.name_lower = utils.camel_case_to_uscore(name).lower().replace("-", "_")
         self.name_hyphen = self.name_lower.replace("_", "-")
+        self.name_upper = self.name_lower.upper()
 
         arg_count = 0
         for a in self.in_args:
@@ -459,7 +480,7 @@ class Method:
         method_invocation_arg.gvalue_type = "object"
         method_invocation_arg.gvalue_get = "g_marshal_value_peek_object"
         method_invocation_arg.gclosure_marshaller = None
-        self.marshaller_in_args = [method_invocation_arg] + self.in_args
+        self.marshaller_in_args = [method_invocation_arg]
 
         if self.unix_fd:
             fd_list_arg = Arg("fd_list", None)
@@ -467,7 +488,9 @@ class Method:
             fd_list_arg.gvalue_type = "object"
             fd_list_arg.gvalue_get = "g_marshal_value_peek_object"
             fd_list_arg.gclosure_marshaller = None
-            self.marshaller_in_args.insert(0, fd_list_arg)
+            self.marshaller_in_args.append(fd_list_arg)
+
+        self.marshaller_in_args.extend(self.in_args)
 
         for a in self.annotations:
             a.post_process(interface_prefix, cns, cns_upper, cns_lower, self)
@@ -642,6 +665,7 @@ class Interface:
             self.name_without_prefix = name
             self.camel_name = name_with_ns
             self.ns_upper = cns_upper
+            self.ns_lower = cns_lower
             self.name_lower = cns_lower + overridden_name.lower()
             self.name_upper = overridden_name.upper()
 
@@ -658,6 +682,7 @@ class Interface:
             name_with_ns = utils.strip_dots(cns + "." + name)
             self.camel_name = name_with_ns
             self.ns_upper = cns_upper
+            self.ns_lower = cns_lower
             self.name_lower = cns_lower + utils.camel_case_to_uscore(name)
             self.name_upper = utils.camel_case_to_uscore(name).upper()
 

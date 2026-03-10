@@ -762,7 +762,8 @@ gvs_variable_sized_array_get_child (GVariantSerialised value,
    * Don’t bother checking if the highest known-good offset is lower than the
    * highest checked offset, as that means there’s an invalid element at that
    * index, so there’s no need to check further. */
-  if (index_ > value.checked_offsets_up_to &&
+  if (offsets.array != NULL &&
+      index_ > value.checked_offsets_up_to &&
       value.ordered_offsets_up_to == value.checked_offsets_up_to)
     {
       switch (offsets.offset_size)
@@ -902,6 +903,8 @@ gvs_variable_sized_array_is_normal (GVariantSerialised value)
 
   if (value.size != 0 && offsets.length == 0)
     return FALSE;
+
+  g_assert (value.size != 0 || offsets.length == 0);
 
   child.type_info = g_variant_type_info_element (value.type_info);
   g_variant_type_info_query (child.type_info, &alignment, NULL);
@@ -1617,7 +1620,7 @@ g_variant_serialised_get_child (GVariantSerialised serialised,
  * memory region large enough to serialize into (ie: at least as big as
  * the size field).
  *
- * This function is only resonsible for serializing the top-level
+ * This function is only responsible for serializing the top-level
  * container.  @gvs_filler is called on each child of the container in
  * order for all of the data of that child to be filled in.
  */

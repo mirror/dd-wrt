@@ -26,8 +26,9 @@
 
 #include "config.h"
 
-#include <string.h>
 #include <signal.h>
+#include <stdint.h>
+#include <string.h>
 
 #include "gsignal.h"
 #include "gtype-private.h"
@@ -71,10 +72,9 @@ static inline Handler*		handler_new		(guint            signal_id,
 static	      void		handler_insert		(guint		  signal_id,
 							 gpointer	  instance,
 							 Handler	 *handler);
-static	      Handler*		handler_lookup		(gpointer	  instance,
-							 gulong		  handler_id,
-							 GClosure        *closure,
-							 guint		 *signal_id_p);
+static	      Handler *         handler_lookup_by_closure (gpointer       instance,
+                                                           GClosure      *closure,
+                                                           guint         *signal_id_p);
 static inline HandlerMatch*	handler_match_prepend	(HandlerMatch	 *list,
 							 Handler	 *handler,
 							 guint		  signal_id);
@@ -283,9 +283,8 @@ is_canonical (const gchar *key)
  * Validate a signal name. This can be useful for dynamically-generated signals
  * which need to be validated at run-time before actually trying to create them.
  *
- * See [canonical parameter names][canonical-parameter-names] for details of
- * the rules for valid names. The rules for signal names are the same as those
- * for property names.
+ * See [func@GObject.signal_new] for details of the rules for valid names.
+ * The rules for signal names are the same as those for property names.
  *
  * Returns: %TRUE if @name is a valid signal name, %FALSE otherwise.
  * Since: 2.66
@@ -428,22 +427,47 @@ handler_equal (gconstpointer a, gconstpointer b)
       (ha->instance  == hb->instance);
 }
 
+static Handler *
+handler_lookup_by_id (gpointer instance,
+                      gulong   handler_id)
+{
+  Handler key;
+
+  g_assert (handler_id != 0);
+
+  key.sequential_number = handler_id;
+  key.instance = instance;
+
+  return g_hash_table_lookup (g_handlers, &key);
+}
+
+static Handler *
+handler_steal_by_id (gpointer instance,
+                     gulong   handler_id)
+{
+  Handler key;
+  Handler *handler = NULL;
+
+  g_assert (handler_id != 0);
+
+  key.sequential_number = handler_id;
+  key.instance = instance;
+
+  if (!g_hash_table_steal_extended (g_handlers, &key,
+                                    (gpointer *) &handler, NULL))
+    return NULL;
+
+  return handler;
+}
+
 static Handler*
-handler_lookup (gpointer  instance,
-		gulong    handler_id,
-		GClosure *closure,
-		guint    *signal_id_p)
+handler_lookup_by_closure (gpointer  instance,
+                           GClosure *closure,
+                           guint    *signal_id_p)
 {
   GBSearchArray *hlbsa;
 
-  if (handler_id)
-    {
-      Handler key;
-      key.sequential_number = handler_id;
-      key.instance = instance;
-      return g_hash_table_lookup (g_handlers, &key);
-
-    }
+  g_assert (closure != NULL);
 
   hlbsa = g_hash_table_lookup (g_handler_list_bsa_ht, instance);
   
@@ -457,7 +481,7 @@ handler_lookup (gpointer  instance,
           Handler *handler;
           
           for (handler = hlist->handlers; handler; handler = handler->next)
-            if (closure ? (handler->closure == closure) : (handler->sequential_number == handler_id))
+            if (handler->closure == closure)
               {
                 if (signal_id_p)
                   *signal_id_p = hlist->signal_id;
@@ -756,7 +780,7 @@ node_update_single_va_closure (SignalNode *node)
 
   node->single_va_closure_is_valid = TRUE;
   node->single_va_closure = closure;
-  node->single_va_closure_is_after = is_after;
+  node->single_va_closure_is_after = (guint) is_after;
 }
 
 static inline void
@@ -1057,7 +1081,7 @@ signal_parse_name (const gchar *name,
   else if (colon[1] == ':')
     {
       gchar buffer[32];
-      guint l = colon - name;
+      size_t l = (size_t) (colon - name);
       
       if (colon[2] == '\0')
         return 0;
@@ -1695,7 +1719,7 @@ g_signal_newv (const gchar       *signal_name,
       key.quark = g_quark_from_string (name);
       g_signal_key_bsa = g_bsearch_array_insert (g_signal_key_bsa, &g_signal_key_bconfig, &key);
 
-      TRACE(GOBJECT_SIGNAL_NEW(signal_id, name, itype));
+      TRACE (GOBJECT_SIGNAL_NEW (signal_id, name, (uintmax_t) itype));
     }
   node->destroyed = FALSE;
 
@@ -2301,8 +2325,13 @@ g_signal_get_invocation_hint (gpointer instance)
  * If @closure is a floating reference (see g_closure_sink()), this function
  * takes ownership of @closure.
  *
- * This function cannot fail. If the given signal doesn’t exist, a critical
- * warning is emitted.
+ * This function cannot fail. If the given signal name doesn’t exist,
+ * a critical warning is emitted. No validation is performed on the
+ * ‘detail’ string when specified in @detailed_signal, other than a
+ * non-empty check.
+ *
+ * Refer to the [signals documentation](signals.html) for more
+ * details.
  *
  * Returns: the handler ID (always greater than 0)
  */
@@ -2369,8 +2398,13 @@ g_signal_connect_closure_by_id (gpointer  instance,
  * If @closure is a floating reference (see g_closure_sink()), this function
  * takes ownership of @closure.
  *
- * This function cannot fail. If the given signal doesn’t exist, a critical
- * warning is emitted.
+ * This function cannot fail. If the given signal name doesn’t exist,
+ * a critical warning is emitted. No validation is performed on the
+ * ‘detail’ string when specified in @detailed_signal, other than a
+ * non-empty check.
+ *
+ * Refer to the [signals documentation](signals.html) for more
+ * details.
  *
  * Returns: the handler ID (always greater than 0)
  */
@@ -2468,8 +2502,13 @@ node_check_deprecated (const SignalNode *node)
  * used. Specify @connect_flags if you need `..._after()` or
  * `..._swapped()` variants of this function.
  *
- * This function cannot fail. If the given signal doesn’t exist, a critical
- * warning is emitted.
+ * This function cannot fail. If the given signal name doesn’t exist,
+ * a critical warning is emitted. No validation is performed on the
+ * ‘detail’ string when specified in @detailed_signal, other than a
+ * non-empty check.
+ *
+ * Refer to the [signals documentation](signals.html) for more
+ * details.
  *
  * Returns: the handler ID (always greater than 0)
  */
@@ -2572,7 +2611,7 @@ signal_handler_block_unlocked (gpointer instance,
 {
   Handler *handler;
 
-  handler = handler_lookup (instance, handler_id, NULL, NULL);
+  handler = handler_lookup_by_id (instance, handler_id);
   if (handler)
     {
 #ifndef G_DISABLE_CHECKS
@@ -2626,7 +2665,7 @@ signal_handler_unblock_unlocked (gpointer instance,
 {
   Handler *handler;
 
-  handler = handler_lookup (instance, handler_id, NULL, NULL);
+  handler = handler_lookup_by_id (instance, handler_id);
   if (handler)
     {
       if (handler->block_count)
@@ -2672,10 +2711,9 @@ signal_handler_disconnect_unlocked (gpointer instance,
 {
   Handler *handler;
 
-  handler = handler_lookup (instance, handler_id, 0, 0);
+  handler = handler_steal_by_id (instance, handler_id);
   if (handler)
     {
-      g_hash_table_remove (g_handlers, handler);
       handler->sequential_number = 0;
       handler->block_count = 1;
       remove_invalid_closure_notify (handler, instance);
@@ -2703,8 +2741,11 @@ g_signal_handler_is_connected (gpointer instance,
 
   g_return_val_if_fail (G_TYPE_CHECK_INSTANCE (instance), FALSE);
 
+  if (handler_id == 0)
+    return FALSE;
+
   SIGNAL_LOCK ();
-  handler = handler_lookup (instance, handler_id, NULL, NULL);
+  handler = handler_lookup_by_id (instance, handler_id);
   connected = handler != NULL;
   SIGNAL_UNLOCK ();
 
@@ -2794,7 +2835,7 @@ g_signal_handler_find (gpointer         instance,
   gulong handler_seq_no = 0;
   
   g_return_val_if_fail (G_TYPE_CHECK_INSTANCE (instance), 0);
-  g_return_val_if_fail ((mask & ~G_SIGNAL_MATCH_MASK) == 0, 0);
+  g_return_val_if_fail ((mask & (unsigned) ~G_SIGNAL_MATCH_MASK) == 0, 0);
   
   if (mask & G_SIGNAL_MATCH_MASK)
     {
@@ -2880,7 +2921,7 @@ g_signal_handlers_block_matched (gpointer         instance,
   guint n_handlers = 0;
   
   g_return_val_if_fail (G_TYPE_CHECK_INSTANCE (instance), 0);
-  g_return_val_if_fail ((mask & ~G_SIGNAL_MATCH_MASK) == 0, 0);
+  g_return_val_if_fail ((mask & (unsigned) ~G_SIGNAL_MATCH_MASK) == 0, 0);
   
   if (mask & (G_SIGNAL_MATCH_ID | G_SIGNAL_MATCH_CLOSURE | G_SIGNAL_MATCH_FUNC | G_SIGNAL_MATCH_DATA))
     {
@@ -2936,7 +2977,7 @@ g_signal_handlers_unblock_matched (gpointer         instance,
   guint n_handlers = 0;
   
   g_return_val_if_fail (G_TYPE_CHECK_INSTANCE (instance), 0);
-  g_return_val_if_fail ((mask & ~G_SIGNAL_MATCH_MASK) == 0, 0);
+  g_return_val_if_fail ((mask & (unsigned) ~G_SIGNAL_MATCH_MASK) == 0, 0);
   
   if (mask & (G_SIGNAL_MATCH_ID | G_SIGNAL_MATCH_CLOSURE | G_SIGNAL_MATCH_FUNC | G_SIGNAL_MATCH_DATA))
     {
@@ -2991,7 +3032,7 @@ g_signal_handlers_disconnect_matched (gpointer         instance,
   guint n_handlers = 0;
   
   g_return_val_if_fail (G_TYPE_CHECK_INSTANCE (instance), 0);
-  g_return_val_if_fail ((mask & ~G_SIGNAL_MATCH_MASK) == 0, 0);
+  g_return_val_if_fail ((mask & (unsigned) ~G_SIGNAL_MATCH_MASK) == 0, 0);
   
   if (mask & (G_SIGNAL_MATCH_ID | G_SIGNAL_MATCH_CLOSURE | G_SIGNAL_MATCH_FUNC | G_SIGNAL_MATCH_DATA))
     {
@@ -3226,7 +3267,7 @@ accumulate (GSignalInvocationHint *ihint,
   continue_emission = accumulator->func (ihint, return_accu, handler_return, accumulator->data);
   g_value_reset (handler_return);
 
-  ihint->run_type &= ~G_SIGNAL_ACCUMULATOR_FIRST_RUN;
+  ihint->run_type &= (unsigned) ~G_SIGNAL_ACCUMULATOR_FIRST_RUN;
 
   return continue_emission;
 }
@@ -3401,12 +3442,12 @@ signal_emit_valist_unlocked (gpointer instance,
 
 	  if (closure != NULL)
 	    {
-	  TRACE(GOBJECT_SIGNAL_EMIT(signal_id, detail, instance, instance_type));
+              TRACE (GOBJECT_SIGNAL_EMIT (signal_id, detail, instance, (uintmax_t) instance_type));
 
-	      SIGNAL_UNLOCK ();
+              SIGNAL_UNLOCK ();
 
-	  if (rtype != G_TYPE_NONE)
-	    g_value_init (&emission_return, rtype);
+              if (rtype != G_TYPE_NONE)
+                g_value_init (&emission_return, rtype);
 
               if (node_copy.accumulator)
                 g_value_init (&accu, rtype);
@@ -3470,8 +3511,8 @@ signal_emit_valist_unlocked (gpointer instance,
 		   */
 		}
 	    }
-	  
-	  TRACE(GOBJECT_SIGNAL_EMIT_END(signal_id, detail, instance, instance_type));
+
+          TRACE (GOBJECT_SIGNAL_EMIT_END (signal_id, detail, instance, (uintmax_t) instance_type));
 
           /* See comment above paired ref above */
 #ifndef __COVERITY__
@@ -3839,9 +3880,9 @@ signal_emit_unlocked_R (SignalNode   *node,
 
                 if (!(old_flags & G_HOOK_FLAG_IN_CALL))
                   {
-                    g_atomic_int_compare_and_exchange (&hook->flags,
-                                                       old_flags | G_HOOK_FLAG_IN_CALL,
-                                                       old_flags);
+                    g_atomic_int_compare_and_exchange ((gint *) &hook->flags,
+                                                       (gint) old_flags | G_HOOK_FLAG_IN_CALL,
+                                                       (gint) old_flags);
                   }
 
                 hook_returns[i] = !!need_destroy;
@@ -3915,7 +3956,7 @@ signal_emit_unlocked_R (SignalNode   *node,
 	goto EMIT_RESTART;
     }
   
-  emission.ihint.run_type &= ~G_SIGNAL_RUN_FIRST;
+  emission.ihint.run_type &= (unsigned) ~G_SIGNAL_RUN_FIRST;
   emission.ihint.run_type |= G_SIGNAL_RUN_LAST;
   
   if ((node->flags & G_SIGNAL_RUN_LAST) && class_closure)
@@ -3989,7 +4030,7 @@ signal_emit_unlocked_R (SignalNode   *node,
   
  EMIT_CLEANUP:
   
-  emission.ihint.run_type &= ~G_SIGNAL_RUN_LAST;
+  emission.ihint.run_type &= (unsigned) ~G_SIGNAL_RUN_LAST;
   emission.ihint.run_type |= G_SIGNAL_RUN_CLEANUP;
   
   if ((node->flags & G_SIGNAL_RUN_CLEANUP) && class_closure)
@@ -4064,7 +4105,7 @@ invalid_closure_notify (gpointer  instance,
 
   SIGNAL_LOCK ();
 
-  handler = handler_lookup (instance, 0, closure, &signal_id);
+  handler = handler_lookup_by_closure (instance, closure, &signal_id);
   /* See https://bugzilla.gnome.org/show_bug.cgi?id=730296 for discussion about this... */
   g_assert (handler != NULL);
   g_assert (handler->closure == closure);

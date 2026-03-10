@@ -1,5 +1,6 @@
 /*
  * Copyright © 2013 Canonical Limited
+ * Copyright © 2024 GNOME Foundation Inc.
  *
  * SPDX-License-Identifier: LGPL-2.1-or-later
  *
@@ -17,12 +18,15 @@
  * Public License along with this library; if not, see <http://www.gnu.org/licenses/>.
  *
  * Authors: Ryan Lortie <desrt@desrt.ca>
+ *          Julian Sparber <jsparber@gnome.org>
  */
 
 #include <gio/gio.h>
 #include <gio/gdesktopappinfo.h>
 
 #include "gdbus-sessionbus.h"
+#include "fake-desktop-portal.h"
+#include "fake-document-portal.h"
 
 static GDesktopAppInfo *appinfo;
 static int current_state;
@@ -228,8 +232,6 @@ test_application_before_emit (GApplication *application,
   const gchar *startup_id;
   gsize i;
 
-  g_assert (!saw_startup_id);
-
   const gchar *startup_id_keys[] = {
     "desktop-startup-id",
     "activation-token",
@@ -289,174 +291,488 @@ test_dbus_appinfo (void)
   g_object_unref (app);
 }
 
+typedef struct {
+  GApplication parent;
+
+  gboolean opened;
+} TestSandboxedApplication;
+
+static GType test_sandboxed_application_get_type (void);
+typedef GApplicationClass TestSandboxedApplicationClass;
+G_DEFINE_TYPE (TestSandboxedApplication, test_sandboxed_application, G_TYPE_APPLICATION)
+
 static void
-on_flatpak_launch_uris_finish (GObject *object,
-                               GAsyncResult *result,
-                               gpointer user_data)
+on_sandboxed_app_launch_uris_finish (GObject *object,
+                                     GAsyncResult *result,
+                                     gpointer user_data)
 {
   GApplication *app = user_data;
   GError *error = NULL;
 
   g_app_info_launch_uris_finish (G_APP_INFO (object), result, &error);
   g_assert_no_error (error);
+  g_assert_true (requested_startup_id);
+  g_assert_true (saw_startup_id);
 
   g_application_release (app);
 }
 
 static void
-on_flatpak_activate (GApplication *app,
-                     gpointer user_data)
+on_sandboxed_app_activate (GApplication *app,
+                           gpointer user_data)
 {
-  GDesktopAppInfo *flatpak_appinfo = user_data;
+  GAppLaunchContext *ctx;
+  GDesktopAppInfo *sandboxed_app_appinfo = user_data;
   char *uri;
   GList *uris;
 
-  /* The app will be released in on_flatpak_launch_uris_finish */
+  /* The app will be released in on_sandboxed_app_launch_uris_finish */
   g_application_hold (app);
 
-  uri = g_filename_to_uri (g_desktop_app_info_get_filename (flatpak_appinfo), NULL, NULL);
+  uri = g_filename_to_uri (g_desktop_app_info_get_filename (sandboxed_app_appinfo), NULL, NULL);
   g_assert_nonnull (uri);
   uris = g_list_prepend (NULL, uri);
-  g_app_info_launch_uris_async (G_APP_INFO (flatpak_appinfo), uris, NULL,
-                                NULL, on_flatpak_launch_uris_finish, app);
+  ctx = g_object_new (test_app_launch_context_get_type (), NULL);
+  requested_startup_id = FALSE;
+  saw_startup_id = FALSE;
+  g_app_info_launch_uris_async (G_APP_INFO (sandboxed_app_appinfo), uris, ctx,
+                                NULL, on_sandboxed_app_launch_uris_finish, app);
+  g_object_unref (ctx);
   g_list_free (uris);
   g_free (uri);
 }
 
 static void
-on_flatpak_open (GApplication  *app,
-                 GFile        **files,
-                 gint           n_files,
-                 const char    *hint)
+on_sandboxed_app_open (GApplication  *app,
+                       GFile        **files,
+                       gint           n_files,
+                       const char    *hint,
+                       gpointer       user_data)
 {
+  GFakeDocumentPortalThread *portal = user_data;
+  TestSandboxedApplication *sandboxed_app = (TestSandboxedApplication *) app;
   GFile *f;
+  char *desktop_id;
 
   g_assert_cmpint (n_files, ==, 1);
-  g_test_message ("on_flatpak_open received file '%s'", g_file_peek_path (files[0]));
+  g_test_message ("on_sandboxed_app_open received file '%s'", g_file_peek_path (files[0]));
+
+  desktop_id = g_strconcat (g_application_get_application_id (app), ".desktop", NULL);
 
   /* The file has been exported via the document portal */
-  f = g_file_new_for_uri ("file:///document-portal/document-id/org.gtk.test.dbusappinfo.flatpak.desktop");
+  f = g_file_new_build_filename (g_fake_document_portal_thread_get_mount_point (portal),
+                                 "document-id-0",
+                                 desktop_id,
+                                 NULL);
+  g_assert_cmpstr (g_file_peek_path (files[0]), == , g_file_peek_path (f));
   g_assert_true (g_file_equal (files[0], f));
+  sandboxed_app->opened = TRUE;
+
   g_object_unref (f);
+  g_free (desktop_id);
+}
+
+static void
+test_sandboxed_application_init (TestSandboxedApplication *app)
+{
+}
+
+static void
+test_sandboxed_application_class_init (GApplicationClass *class)
+{
+  class->before_emit = test_application_before_emit;
+}
+
+static void
+test_sandboxed_application_doc_export (const char *app_id,
+                                       const char *expected_portal_app_id)
+{
+  const gchar *argv[] = { "myapp", NULL };
+  gchar *desktop_file = NULL;
+  gchar *desktop_id;
+  GDesktopAppInfo *appinfo;
+  GApplication *app;
+  GFakeDocumentPortalThread *thread = NULL;
+  int status;
+
+  /* Run a fake-document-portal */
+  thread = g_fake_document_portal_thread_new (session_bus_get_address (),
+                                              expected_portal_app_id);
+  g_fake_document_portal_thread_run (thread);
+
+  desktop_id = g_strconcat (app_id, ".desktop", NULL);
+  desktop_file = g_test_build_filename (G_TEST_DIST, desktop_id, NULL);
+  appinfo = g_desktop_app_info_new_from_filename (desktop_file);
+  g_assert_nonnull (appinfo);
+  g_free (desktop_file);
+  g_free (desktop_id);
+
+  app = g_object_new (test_sandboxed_application_get_type (),
+                      "application-id", app_id,
+                      "flags", G_APPLICATION_HANDLES_OPEN,
+                      NULL);
+  g_signal_connect (app, "activate", G_CALLBACK (on_sandboxed_app_activate),
+                    appinfo);
+  g_signal_connect_object (app, "open", G_CALLBACK (on_sandboxed_app_open),
+                           thread, G_CONNECT_DEFAULT);
+
+  g_assert_false (((TestSandboxedApplication *) app)->opened);
+  status = g_application_run (app, 1, (gchar **) argv);
+  g_assert_cmpint (status, ==, 0);
+  g_assert_true (((TestSandboxedApplication *) app)->opened);
+
+  g_object_unref (app);
+  g_object_unref (appinfo);
+  g_fake_document_portal_thread_stop (thread);
+  g_clear_object (&thread);
 }
 
 static void
 test_flatpak_doc_export (void)
 {
-  const gchar *argv[] = { "myapp", NULL };
-  gchar *desktop_file = NULL;
-  GDesktopAppInfo *flatpak_appinfo;
-  GApplication *app;
-  int status;
+  g_test_summary ("Test that files opened by launching flatpak apps are made "
+                  "available via the document portal.");
 
-  g_test_summary ("Test that files launched via Flatpak apps are made available via the document portal.");
-
-  desktop_file = g_test_build_filename (G_TEST_DIST,
-                                        "org.gtk.test.dbusappinfo.flatpak.desktop",
-                                        NULL);
-  flatpak_appinfo = g_desktop_app_info_new_from_filename (desktop_file);
-  g_assert_nonnull (flatpak_appinfo);
-  g_free (desktop_file);
-
-  app = g_application_new ("org.gtk.test.dbusappinfo.flatpak",
-                           G_APPLICATION_HANDLES_OPEN);
-  g_signal_connect (app, "activate", G_CALLBACK (on_flatpak_activate),
-                    flatpak_appinfo);
-  g_signal_connect (app, "open", G_CALLBACK (on_flatpak_open), NULL);
-
-  status = g_application_run (app, 1, (gchar **) argv);
-  g_assert_cmpint (status, ==, 0);
-
-  g_object_unref (app);
-  g_object_unref (flatpak_appinfo);
+  test_sandboxed_application_doc_export ("org.gtk.test.dbusappinfo.flatpak",
+                                         "org.gtk.test.dbusappinfo.flatpak");
 }
 
 static void
-on_flatpak_launch_invalid_uri_finish (GObject *object,
-                                      GAsyncResult *result,
-                                      gpointer user_data)
+test_snap_doc_export (void)
+{
+  g_test_summary ("Test that files opened by launching snap apps are made "
+                  "available via the document portal.");
+
+  test_sandboxed_application_doc_export ("org.gtk.test.dbusappinfo.snap",
+                                         "snap.snap-app");
+}
+
+static void
+on_sandboxed_app_launch_invalid_uri_finish (GObject *object,
+                                            GAsyncResult *result,
+                                            gpointer user_data)
 {
   GApplication *app = user_data;
   GError *error = NULL;
 
   g_app_info_launch_uris_finish (G_APP_INFO (object), result, &error);
   g_assert_no_error (error);
+  g_assert_true (requested_startup_id);
+  g_assert_true (saw_startup_id);
 
   g_application_release (app);
 }
 
 static void
-on_flatpak_activate_invalid_uri (GApplication *app,
-                                 gpointer user_data)
+on_sandboxed_app_activate_invalid_uri (GApplication *app,
+                                       gpointer user_data)
 {
-  GDesktopAppInfo *flatpak_appinfo = user_data;
+  GAppLaunchContext *ctx;
+  GDesktopAppInfo *sandboxed_app_appinfo = user_data;
   GList *uris;
 
-  /* The app will be released in on_flatpak_launch_uris_finish */
+  /* The app will be released in on_sandboxed_app_launch_uris_finish */
   g_application_hold (app);
 
   uris = g_list_prepend (NULL, "file:///hopefully/an/invalid/path.desktop");
-  g_app_info_launch_uris_async (G_APP_INFO (flatpak_appinfo), uris, NULL,
-                                NULL, on_flatpak_launch_invalid_uri_finish, app);
+  ctx = g_object_new (test_app_launch_context_get_type (), NULL);
+  requested_startup_id = FALSE;
+  saw_startup_id = FALSE;
+  g_app_info_launch_uris_async (G_APP_INFO (sandboxed_app_appinfo), uris, ctx,
+                                NULL, on_sandboxed_app_launch_invalid_uri_finish, app);
+  g_object_unref (ctx);
   g_list_free (uris);
 }
 
 static void
-on_flatpak_open_invalid_uri (GApplication  *app,
-                             GFile        **files,
-                             gint           n_files,
-                             const char    *hint)
+on_sandboxed_app_open_invalid_uri (GApplication  *app,
+                                    GFile        **files,
+                                    gint           n_files,
+                                    const char    *hint)
 {
   GFile *f;
 
   g_assert_cmpint (n_files, ==, 1);
-  g_test_message ("on_flatpak_open received file '%s'", g_file_peek_path (files[0]));
+  g_test_message ("on_sandboxed_app_open received file '%s'", g_file_peek_path (files[0]));
 
   /* The file has been exported via the document portal */
   f = g_file_new_for_uri ("file:///hopefully/an/invalid/path.desktop");
+  g_assert_cmpstr (g_file_peek_path (files[0]), == , g_file_peek_path (f));
   g_assert_true (g_file_equal (files[0], f));
   g_object_unref (f);
 }
 
 static void
-test_flatpak_missing_doc_export (void)
+test_sandboxed_app_missing_doc_export (const char *app_id)
 {
   const gchar *argv[] = { "myapp", NULL };
   gchar *desktop_file = NULL;
-  GDesktopAppInfo *flatpak_appinfo;
+  gchar *desktop_id;
+  GDesktopAppInfo *appinfo;
   GApplication *app;
   int status;
+  GFakeDocumentPortalThread *thread = NULL;
 
-  g_test_summary ("Test that files launched via Flatpak apps are made available via the document portal.");
+  /* Run a fake-document-portal */
+  thread = g_fake_document_portal_thread_new (session_bus_get_address (),
+                                              "%%_NO_PORTAL_CALLED_%%");
+  g_fake_document_portal_thread_run (thread);
 
-  desktop_file = g_test_build_filename (G_TEST_DIST,
-                                        "org.gtk.test.dbusappinfo.flatpak.desktop",
-                                        NULL);
-  flatpak_appinfo = g_desktop_app_info_new_from_filename (desktop_file);
-  g_assert_nonnull (flatpak_appinfo);
+  desktop_id = g_strconcat (app_id, ".desktop", NULL);
+  desktop_file = g_test_build_filename (G_TEST_DIST, desktop_id, NULL);
+  appinfo = g_desktop_app_info_new_from_filename (desktop_file);
+  g_assert_nonnull (appinfo);
 
-  app = g_application_new ("org.gtk.test.dbusappinfo.flatpak",
-                           G_APPLICATION_HANDLES_OPEN);
-  g_signal_connect (app, "activate", G_CALLBACK (on_flatpak_activate_invalid_uri),
-                    flatpak_appinfo);
-  g_signal_connect (app, "open", G_CALLBACK (on_flatpak_open_invalid_uri), NULL);
+  app = g_object_new (test_sandboxed_application_get_type (),
+                      "application-id", app_id,
+                      "flags", G_APPLICATION_HANDLES_OPEN,
+                      NULL);
+  g_signal_connect (app, "activate", G_CALLBACK (on_sandboxed_app_activate_invalid_uri),
+                    appinfo);
+  g_signal_connect (app, "open", G_CALLBACK (on_sandboxed_app_open_invalid_uri), NULL);
 
+  g_assert_false (((TestSandboxedApplication *) app)->opened);
   status = g_application_run (app, 1, (gchar **) argv);
   g_assert_cmpint (status, ==, 0);
+  g_assert_false (((TestSandboxedApplication *) app)->opened);
 
   g_object_unref (app);
-  g_object_unref (flatpak_appinfo);
+  g_object_unref (appinfo);
   g_free (desktop_file);
+  g_free (desktop_id);
+  g_fake_document_portal_thread_stop (thread);
+  g_clear_object (&thread);
+}
+
+static void
+test_flatpak_missing_doc_export (void)
+{
+  g_test_summary ("Test that files opened by launching flatpak apps are not made "
+                  "available via the document portal.");
+
+  test_sandboxed_app_missing_doc_export ("org.gtk.test.dbusappinfo.flatpak");
+}
+
+static void
+test_snap_missing_doc_export (void)
+{
+  g_test_summary ("Test that files opened by launching snap apps are not made "
+                  "available via the document portal.");
+
+  test_sandboxed_app_missing_doc_export ("org.gtk.test.dbusappinfo.snap");
+}
+
+static void
+check_portal_openuri_call (const char               *expected_uri,
+                           GFakeDesktopPortalThread *thread)
+{
+  const char *activation_token = NULL;
+  GFile *expected_file = NULL;
+  GFile *file = NULL;
+  const char *uri = NULL;
+
+  activation_token = g_fake_desktop_portal_thread_get_last_request_activation_token (thread);
+  uri = g_fake_desktop_portal_thread_get_last_request_uri (thread);
+
+  g_assert_cmpstr (activation_token, ==, "expected startup id");
+  g_assert_nonnull (uri);
+
+  expected_file = g_file_new_for_uri (expected_uri);
+  file = g_file_new_for_uri (uri);
+  g_assert_true (g_file_equal (expected_file, file));
+
+  g_object_unref (file);
+  g_object_unref (expected_file);
+}
+
+static void
+test_portal_open_file (void)
+{
+  GAppLaunchContext *ctx;
+  GError *error = NULL;
+  char *uri;
+  GFakeDesktopPortalThread *thread = NULL;
+
+  if (!g_fake_desktop_portal_is_supported ())
+    {
+      g_test_skip ("fake-desktop-portal not currently supported on this platform");
+      return;
+    }
+
+  /* Run a fake-desktop-portal */
+  thread = g_fake_desktop_portal_thread_new (session_bus_get_address ());
+  g_fake_desktop_portal_thread_run (thread);
+
+  uri = g_filename_to_uri (g_test_get_filename (G_TEST_DIST,
+                                                "org.gtk.test.dbusappinfo.flatpak.desktop",
+                                                NULL),
+                           NULL,
+                           NULL);
+
+  ctx = g_object_new (test_app_launch_context_get_type (), NULL);
+
+  requested_startup_id = FALSE;
+
+  g_app_info_launch_default_for_uri (uri, ctx, &error);
+
+  g_assert_no_error (error);
+  g_assert_true (requested_startup_id);
+
+  g_fake_desktop_portal_thread_stop (thread);
+  check_portal_openuri_call (uri, thread);
+
+  g_clear_object (&ctx);
+  g_clear_object (&thread);
+  g_clear_pointer (&uri, g_free);
+}
+
+static void
+test_portal_open_uri (void)
+{
+  GAppLaunchContext *ctx;
+  GError *error = NULL;
+  const char *uri = "http://example.com";
+  GFakeDesktopPortalThread *thread = NULL;
+
+  if (!g_fake_desktop_portal_is_supported ())
+    {
+      g_test_skip ("fake-desktop-portal not currently supported on this platform");
+      return;
+    }
+
+  /* Run a fake-desktop-portal */
+  thread = g_fake_desktop_portal_thread_new (session_bus_get_address ());
+  g_fake_desktop_portal_thread_run (thread);
+
+  ctx = g_object_new (test_app_launch_context_get_type (), NULL);
+
+  requested_startup_id = FALSE;
+
+  g_app_info_launch_default_for_uri (uri, ctx, &error);
+
+  g_assert_no_error (error);
+  g_assert_true (requested_startup_id);
+
+  g_fake_desktop_portal_thread_stop (thread);
+  check_portal_openuri_call (uri, thread);
+
+  g_clear_object (&ctx);
+  g_clear_object (&thread);
+}
+
+static void
+on_launch_default_for_uri_finished (GObject      *object,
+                                    GAsyncResult *result,
+                                    gpointer      user_data)
+{
+  GError *error = NULL;
+  gboolean *called = user_data;
+
+  g_app_info_launch_default_for_uri_finish (result, &error);
+  g_assert_no_error (error);
+
+  *called = TRUE;
+
+  g_main_context_wakeup (NULL);
+}
+
+static void
+test_portal_open_file_async (void)
+{
+  GAppLaunchContext *ctx;
+  gboolean called = FALSE;
+  char *uri;
+  GFakeDesktopPortalThread *thread = NULL;
+
+  if (!g_fake_desktop_portal_is_supported ())
+    {
+      g_test_skip ("fake-desktop-portal not currently supported on this platform");
+      return;
+    }
+
+  /* Run a fake-desktop-portal */
+  thread = g_fake_desktop_portal_thread_new (session_bus_get_address ());
+  g_fake_desktop_portal_thread_run (thread);
+
+  uri = g_filename_to_uri (g_test_get_filename (G_TEST_DIST,
+                                                "org.gtk.test.dbusappinfo.flatpak.desktop",
+                                                NULL),
+                           NULL,
+                           NULL);
+
+  ctx = g_object_new (test_app_launch_context_get_type (), NULL);
+
+  requested_startup_id = FALSE;
+
+  g_app_info_launch_default_for_uri_async (uri, ctx,
+                                           NULL, on_launch_default_for_uri_finished, &called);
+
+  while (!called)
+    g_main_context_iteration (NULL, TRUE);
+
+  g_assert_true (requested_startup_id);
+
+  g_fake_desktop_portal_thread_stop (thread);
+  check_portal_openuri_call (uri, thread);
+
+  g_clear_pointer (&uri, g_free);
+  g_clear_object (&ctx);
+  g_clear_object (&thread);
+}
+
+static void
+test_portal_open_uri_async (void)
+{
+  GAppLaunchContext *ctx;
+  gboolean called = FALSE;
+  const char *uri = "http://example.com";
+  GFakeDesktopPortalThread *thread = NULL;
+
+  if (!g_fake_desktop_portal_is_supported ())
+    {
+      g_test_skip ("fake-desktop-portal not currently supported on this platform");
+      return;
+    }
+
+  /* Run a fake-desktop-portal */
+  thread = g_fake_desktop_portal_thread_new (session_bus_get_address ());
+  g_fake_desktop_portal_thread_run (thread);
+
+  ctx = g_object_new (test_app_launch_context_get_type (), NULL);
+
+  requested_startup_id = FALSE;
+
+  g_app_info_launch_default_for_uri_async (uri, ctx,
+                                           NULL, on_launch_default_for_uri_finished, &called);
+
+  while (!called)
+    g_main_context_iteration (NULL, TRUE);
+
+  g_assert_true (requested_startup_id);
+
+  g_fake_desktop_portal_thread_stop (thread);
+  check_portal_openuri_call (uri, thread);
+
+  g_clear_object (&ctx);
+  g_clear_object (&thread);
 }
 
 int
 main (int argc, char **argv)
 {
-  g_test_init (&argc, &argv, NULL);
+  g_test_init (&argc, &argv, G_TEST_OPTION_ISOLATE_DIRS, NULL);
+
+  g_setenv ("GIO_USE_PORTALS", "1", TRUE);
 
   g_test_add_func ("/appinfo/dbusappinfo", test_dbus_appinfo);
   g_test_add_func ("/appinfo/flatpak-doc-export", test_flatpak_doc_export);
   g_test_add_func ("/appinfo/flatpak-missing-doc-export", test_flatpak_missing_doc_export);
+  g_test_add_func ("/appinfo/snap-doc-export", test_snap_doc_export);
+  g_test_add_func ("/appinfo/snap-missing-doc-export", test_snap_missing_doc_export);
+  g_test_add_func ("/appinfo/portal-open-file", test_portal_open_file);
+  g_test_add_func ("/appinfo/portal-open-uri", test_portal_open_uri);
+  g_test_add_func ("/appinfo/portal-open-file-async", test_portal_open_file_async);
+  g_test_add_func ("/appinfo/portal-open-uri-async", test_portal_open_uri_async);
 
   return session_bus_run ();
 }

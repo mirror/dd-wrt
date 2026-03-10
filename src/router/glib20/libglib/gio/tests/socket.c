@@ -837,7 +837,7 @@ cancellable_thread_cb (gpointer data)
 {
   GCancellable *cancellable = data;
 
-  g_usleep (0.1 * G_USEC_PER_SEC);
+  g_usleep ((guint64) (0.1 * G_USEC_PER_SEC));
   g_cancellable_cancel (cancellable);
   g_object_unref (cancellable);
 
@@ -1361,7 +1361,8 @@ static void
 bind_win32_unixfd (int fd)
 {
 #ifdef G_OS_WIN32
-  gint len, ret;
+  gsize len;
+  int ret;
   struct sockaddr_un addr;
 
   memset (&addr, 0, sizeof addr);
@@ -2543,6 +2544,208 @@ test_receive_bytes_from (void)
   ip_test_data_free (data);
 }
 
+static void
+test_accept_cancelled (void)
+{
+  GSocket *socket = NULL;
+  GError *local_error = NULL;
+  GCancellable *cancellable = NULL;
+  GSocket *socket2 = NULL;
+
+  g_test_summary ("Calling g_socket_accept() with a cancelled cancellable "
+                  "should return immediately regardless of whether the socket "
+                  "is blocking");
+
+  socket = g_socket_new (G_SOCKET_FAMILY_IPV4,
+                         G_SOCKET_TYPE_STREAM,
+                         G_SOCKET_PROTOCOL_DEFAULT,
+                         &local_error);
+  g_assert_no_error (local_error);
+
+  cancellable = g_cancellable_new ();
+  g_cancellable_cancel (cancellable);
+
+  for (unsigned int i = 0; i < 2; i++)
+    {
+      g_socket_set_blocking (socket, i);
+
+      socket2 = g_socket_accept (socket, cancellable, &local_error);
+      g_assert_error (local_error, G_IO_ERROR, G_IO_ERROR_CANCELLED);
+      g_assert_null (socket2);
+      g_clear_error (&local_error);
+    }
+
+  g_clear_object (&cancellable);
+  g_clear_object (&socket);
+}
+
+static void
+test_connect_cancelled (void)
+{
+  GSocket *socket = NULL;
+  GError *local_error = NULL;
+  GCancellable *cancellable = NULL;
+  GInetAddress *inet_addr = NULL;
+  GSocketAddress *addr = NULL;
+
+  g_test_summary ("Calling g_socket_connect() with a cancelled cancellable "
+                  "should return immediately regardless of whether the socket "
+                  "is blocking");
+
+  socket = g_socket_new (G_SOCKET_FAMILY_IPV4,
+                         G_SOCKET_TYPE_STREAM,
+                         G_SOCKET_PROTOCOL_DEFAULT,
+                         &local_error);
+  g_assert_no_error (local_error);
+
+  cancellable = g_cancellable_new ();
+  g_cancellable_cancel (cancellable);
+
+  inet_addr = g_inet_address_new_loopback (G_SOCKET_FAMILY_IPV4);
+  addr = g_inet_socket_address_new (inet_addr, 0);
+
+  for (unsigned int i = 0; i < 2; i++)
+    {
+      gboolean retval;
+
+      g_socket_set_blocking (socket, i);
+
+      retval = g_socket_connect (socket, addr, cancellable, &local_error);
+      g_assert_error (local_error, G_IO_ERROR, G_IO_ERROR_CANCELLED);
+      g_assert_false (retval);
+      g_clear_error (&local_error);
+    }
+
+  g_clear_object (&addr);
+  g_clear_object (&inet_addr);
+  g_clear_object (&cancellable);
+  g_clear_object (&socket);
+}
+
+#ifdef G_OS_UNIX
+#define H_TYPE_APP_MESSAGE (h_app_message_get_type ())
+
+G_DECLARE_FINAL_TYPE (HAppMessage, h_app_message, H, APP_MESSAGE, GSocketControlMessage)
+
+struct _HAppMessage
+{
+  GSocketControlMessage parent_instance;
+
+  gint fds[2];
+};
+
+G_DEFINE_TYPE (HAppMessage, h_app_message, G_TYPE_SOCKET_CONTROL_MESSAGE);
+
+static void
+h_app_message_init (HAppMessage *message)
+{
+}
+
+static gsize
+h_app_message_get_size (GSocketControlMessage *message)
+{
+  return 2 * sizeof (gint);
+}
+
+static int
+h_app_message_get_level (GSocketControlMessage *message)
+{
+  return SOL_SOCKET;
+}
+
+static int
+h_app_message_get_msg_type (GSocketControlMessage *message)
+{
+  return SCM_RIGHTS;
+}
+
+static void
+h_app_message_serialize (GSocketControlMessage *message, gpointer data)
+{
+  memcpy (data, H_APP_MESSAGE (message)->fds, 2 * sizeof (gint));
+}
+
+static GSocketControlMessage *
+h_app_message_deserialize (gint level, gint type, gsize size, gpointer data)
+{
+  HAppMessage *message;
+
+  if (level != SOL_SOCKET || type != SCM_RIGHTS)
+    return NULL;
+
+  message = g_object_new (H_TYPE_APP_MESSAGE, NULL);
+  memcpy (message->fds, data, 2 * sizeof (gint));
+
+  return G_SOCKET_CONTROL_MESSAGE (message);
+}
+
+static void
+h_app_message_class_init (HAppMessageClass *klass)
+{
+  GSocketControlMessageClass *scm_class = G_SOCKET_CONTROL_MESSAGE_CLASS (klass);
+
+  scm_class->get_size = h_app_message_get_size;
+  scm_class->get_level = h_app_message_get_level;
+  scm_class->get_type = h_app_message_get_msg_type;
+  scm_class->serialize = h_app_message_serialize;
+  scm_class->deserialize = h_app_message_deserialize;
+}
+
+static void
+test_socket_control_message_custom (void)
+{
+  gint fds[2];
+  int res;
+  GSocket *sockets[2];
+  HAppMessage *appmsg;
+  GOutputVector ov;
+  GInputVector iv;
+  HAppMessage **mv;
+  gint num_msg;
+  char buffer[1];
+  gssize s;
+  GError *err = NULL;
+
+  g_test_summary ("Tests that an application can create its own subclass "
+                  "of GSocketControlMessage and that the message can be sent and "
+                  "received using GSocket APIs");
+
+  res = socketpair (PF_UNIX, SOCK_STREAM, 0, fds);
+  g_assert_cmpint (res, ==, 0);
+
+  sockets[0] = g_socket_new_from_fd (fds[0], &err);
+  g_assert_no_error (err);
+  sockets[1] = g_socket_new_from_fd (fds[1], &err);
+  g_assert_no_error (err);
+
+  appmsg = g_object_new (H_TYPE_APP_MESSAGE, NULL);
+  memcpy (appmsg->fds, fds, sizeof (fds));
+
+  buffer[0] = 0xff;
+  ov.buffer = buffer;
+  ov.size = 1;
+
+  s = g_socket_send_message (sockets[0], NULL, &ov, 1, (GSocketControlMessage **) &appmsg, 1, 0, NULL, &err);
+  g_assert_no_error (err);
+  g_assert_cmpint (s, ==, 1);
+
+  iv.buffer = buffer;
+  iv.size = 1;
+  s = g_socket_receive_message (sockets[1], NULL, &iv, 1, (GSocketControlMessage ***) &mv, &num_msg, NULL, NULL, &err);
+  g_assert_no_error (err);
+  g_assert_cmpint (s, ==, 1);
+  g_assert_cmpint (num_msg, ==, 1);
+  g_assert_true (H_IS_APP_MESSAGE (mv[0]));
+
+  g_clear_object (&mv[0]);
+  g_clear_pointer (mv, g_free);
+
+  g_clear_object (&appmsg);
+  g_clear_object (&sockets[0]);
+  g_clear_object (&sockets[1]);
+}
+#endif
+
 int
 main (int   argc,
       char *argv[])
@@ -2612,5 +2815,10 @@ main (int   argc,
   g_test_add_func ("/socket/receive_bytes", test_receive_bytes);
   g_test_add_func ("/socket/receive_bytes_from", test_receive_bytes_from);
 
+  g_test_add_func ("/socket/accept/cancelled", test_accept_cancelled);
+  g_test_add_func ("/socket/connect/cancelled", test_connect_cancelled);
+#ifdef G_OS_UNIX
+  g_test_add_func ("/socket/control-message/custom", test_socket_control_message_custom);
+#endif
   return g_test_run();
 }

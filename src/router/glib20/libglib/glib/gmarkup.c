@@ -78,6 +78,11 @@ struct _GMarkupParseContext
 
   gint line_number;
   gint char_number;
+  gsize offset;
+
+  gint tag_line;
+  gint tag_char;
+  gsize tag_offset;
 
   GMarkupParseState state;
 
@@ -182,6 +187,11 @@ g_markup_parse_context_new (const GMarkupParser *parser,
 
   context->line_number = 1;
   context->char_number = 1;
+  context->offset = 0;
+
+  context->tag_line = 1;
+  context->tag_char = 1;
+  context->tag_offset = 0;
 
   context->partial_chunk = NULL;
   context->spare_chunks = NULL;
@@ -746,6 +756,7 @@ advance_char (GMarkupParseContext *context)
 {
   context->iter++;
   context->char_number++;
+  context->offset++;
 
   if (G_UNLIKELY (context->iter == context->current_text_end))
       return FALSE;
@@ -867,9 +878,11 @@ static void
 push_partial_as_tag (GMarkupParseContext *context)
 {
   GString *str = context->partial_chunk;
+
   /* sadly, this is exported by gmarkup_get_element_stack as-is */
   context->tag_stack = g_slist_concat (get_list_node (context, str->str), context->tag_stack);
   context->tag_stack_gstr = g_slist_concat (get_list_node (context, str), context->tag_stack_gstr);
+
   context->partial_chunk = NULL;
 }
 
@@ -1013,6 +1026,7 @@ emit_start_element (GMarkupParseContext  *context,
                                         (const gchar **)attr_values,
                                         context->user_data,
                                         &tmp_error);
+
   clear_attributes (context);
 
   if (tmp_error != NULL)
@@ -1145,6 +1159,10 @@ g_markup_parse_context_parse (GMarkupParseContext  *context,
           /* Possible next states: INSIDE_OPEN_TAG_NAME,
            *  AFTER_CLOSE_TAG_SLASH, INSIDE_PASSTHROUGH
            */
+          context->tag_line = context->line_number;
+          context->tag_char = context->char_number - 1;
+          context->tag_offset = context->offset - 1;
+
           if (*context->iter == '?' ||
               *context->iter == '!')
             {
@@ -1922,6 +1940,68 @@ g_markup_parse_context_get_position (GMarkupParseContext *context,
 }
 
 /**
+ * g_markup_parse_context_get_offset:
+ * @context: a #GMarkupParseContext
+ *
+ * Retrieves the current offset from the beginning of the document,
+ * in bytes.
+ *
+ * The information is meant to accompany the values returned by
+ * [method@GLib.MarkupParseContext.get_position], and comes with the
+ * same accuracy guarantees.
+ *
+ * Returns: the offset
+ *
+ * Since: 2.88
+ */
+gsize
+g_markup_parse_context_get_offset (GMarkupParseContext *context)
+{
+  g_return_val_if_fail (context != NULL, 0);
+
+  return context->offset;
+}
+
+/**
+ * g_markup_parse_context_get_tag_start:
+ * @context: a #GMarkupParseContext
+ * @line_number: (out): return location for the line number
+ * @char_number: (out): return location for the character number
+ * @offset: (out): return location for offset from the beginning of the document
+ *
+ * Retrieves the start position of the current start or end tag.
+ *
+ * This function can be used in the `start_element` or `end_element`
+ * callbacks to obtain location information for error reporting.
+ *
+ * Note that @line_number and @char_number are intended for human
+ * readable error messages and are therefore 1-based and in Unicode
+ * characters. @offset on the other hand is meant for programmatic
+ * use, and thus is 0-based and in bytes.
+ *
+ * The information is meant to accompany the values returned by
+ * [method@GLib.MarkupParseContext.get_position], and comes with the
+ * same accuracy guarantees.
+ *
+ * Since: 2.88
+ */
+void
+g_markup_parse_context_get_tag_start (GMarkupParseContext *context,
+                                      gsize               *line_number,
+                                      gsize               *char_number,
+                                      gsize               *offset)
+{
+  g_return_if_fail (context != NULL);
+  g_return_if_fail (line_number != NULL);
+  g_return_if_fail (char_number != NULL);
+  g_return_if_fail (offset != NULL);
+
+  *line_number = context->tag_line;
+  *char_number = context->tag_char;
+  *offset = context->tag_offset;
+}
+
+/**
  * g_markup_parse_context_get_user_data:
  * @context: a #GMarkupParseContext
  *
@@ -2627,14 +2707,14 @@ g_markup_parse_boolean (const char  *string,
  * @G_MARKUP_COLLECT_STRDUP: as with %G_MARKUP_COLLECT_STRING, but
  *     expects a parameter of type (char **) and g_strdup()s the
  *     returned pointer. The pointer must be freed with g_free()
- * @G_MARKUP_COLLECT_BOOLEAN: expects a parameter of type (gboolean *)
+ * @G_MARKUP_COLLECT_BOOLEAN: expects a parameter of type (`gboolean *`)
  *     and parses the attribute value as a boolean. Sets %FALSE if the
  *     attribute isn't present. Valid boolean values consist of
  *     (case-insensitive) "false", "f", "no", "n", "0" and "true", "t",
  *     "yes", "y", "1"
  * @G_MARKUP_COLLECT_TRISTATE: as with %G_MARKUP_COLLECT_BOOLEAN, but
  *     in the case of a missing attribute a value is set that compares
- *     equal to neither %FALSE nor %TRUE G_MARKUP_COLLECT_OPTIONAL is
+ *     equal to neither %FALSE nor %TRUE %G_MARKUP_COLLECT_OPTIONAL is
  *     implied
  * @G_MARKUP_COLLECT_OPTIONAL: can be bitwise ORed with the other fields.
  *     If present, allows the attribute not to appear. A default value

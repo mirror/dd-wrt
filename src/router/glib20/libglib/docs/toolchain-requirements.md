@@ -1,14 +1,15 @@
 Toolchain/Compiler requirements
 ===
 
-GLib requires a toolchain that supports C99.
+GLib strongly recommends a toolchain that supports C11, and requires a toolchain
+that supports C99.
 
 GLib contains some fall back code that allows supporting toolchains that are not
-fully C99-compatible.
+fully C11-compatible.
 
 GLib makes some assumptions about features of the C library and C preprocessor,
-compiler and linker that may go beyond what C99 mandates.  We will use features
-beyond C99 if they are substantially useful and if they are supported in a wide
+compiler and linker that may go beyond what C11 mandates.  We will use features
+beyond C11 if they are substantially useful and if they are supported in a wide
 range of compilers.
 
 In general, we are primarily interested in supporting these four compilers:
@@ -18,7 +19,7 @@ In general, we are primarily interested in supporting these four compilers:
  * MSVC
  * mingw32-w64
 
-This is in keeping with our goal of primarily targetting GNU/Linux, Windows and
+This is in keeping with our goal of primarily targeting GNU/Linux, Windows and
 Mac OS, along with Free Software POSIX-compliant operating systems.  See
 [Supported platforms](./supported-platforms.md) for a bit more information and
 rationale about that.
@@ -116,11 +117,10 @@ _Hard requirement._
 Your compiler must support `alloca()`, defined in `<alloca.h>` (or `<malloc.h>`
 on Windows) and it must accept a non-constant argument.
 
-(C11) support for type redefinition
+C11 support for type redefinition
 ---
 
-**This requirement has been temporarily suspended (on account of OpenBSD
-carrying an old version of gcc) but it will probably return in the future.**
+_Hard requirement._
 
 Your compiler must allow “a typedef name [to] be redefined to denote the same
 type as it currently does”, as per C11 §6.7, item 3.
@@ -155,6 +155,49 @@ GLib heavily relies on the ability to convert a function pointer to a `void*`
 and back again losslessly. Any platform or compiler which doesn’t support this
 cannot be used to compile GLib or code which uses GLib. This precludes use of
 the `-pedantic` GCC flag with GLib.
+
+Calling functions through differently typed function pointers
+---
+_Hard requirement_
+
+GLib heavily relies on the ability to cast a function to a differently-typed
+function pointer and call it.  Specifically, all of the following must work:
+
+- Calling a function that takes one type of pointer through a function pointer
+  that takes a different type of pointer:
+
+  ```c
+  typedef void (*callback_type) (void *);
+  void func (char *x);
+  void *p = NULL;
+  ((callback_type) func) (p);
+  ```
+
+- Calling a function with additional arguments:
+
+  ```c
+  typedef void (*callback_type) (void *, void *);
+  void func (GtkWidget *);
+  ((callback_type) func) (some_widget, some_pointer_that_will_be_ignored);
+  ```
+
+- Calling a function with too few arguments, provided that the function
+  only uses arguments that are actually provided:
+
+  ```c
+  typedef void (*callback_type) (void *);
+  void
+  func (void *a, void *b)
+  {
+    /* b is unused */
+    do_something (a);
+  }
+  ((callback_type) func) (some_pointer);
+  ```
+
+Most native toolchains meet this requirement. When using Emscripten,
+`-sEMULATE_FUNCTION_POINTER_CASTS` is required.  This causes a performance
+penalty.
 
 NULL defined as void pointer, or same size and representation as void pointer
 ---
@@ -193,4 +236,3 @@ GLib [requires a C99 `stdint.h`](https://gitlab.gnome.org/GNOME/glib/-/merge_req
 with all the usual sized integer types (`int8_t`, `uint64_t` and so on),
 believed to be supported by all relevant Unix platforms/compilers, as well as
 Microsoft compilers since MSVC 2013.
-

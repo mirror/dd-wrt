@@ -261,11 +261,6 @@ threaded_dispose_thread_cb (gpointer user_data)
 static void
 test_cancellable_source_threaded_dispose (void)
 {
-#ifdef _GLIB_ADDRESS_SANITIZER
-  g_test_incomplete ("FIXME: Leaks lots of GCancellableSource objects, see glib#2309");
-  (void) cancelled_cb;
-  (void) threaded_dispose_thread_cb;
-#else
   ThreadedDisposeData data;
   GThread *thread = NULL;
   guint i;
@@ -275,6 +270,10 @@ test_cancellable_source_threaded_dispose (void)
                   "(in one thread) and cancelling the GCancellable it refers "
                   "to (in another thread)");
   g_test_bug ("https://gitlab.gnome.org/GNOME/glib/issues/1841");
+#ifdef _GLIB_ADDRESS_SANITIZER
+  g_test_message ("We also ensure that no GCancellableSource are leaked");
+  g_test_bug ("https://gitlab.gnome.org/GNOME/glib/issues/2309");
+#endif
 
   /* Create a new thread and wait until it’s ready to execute. Each iteration of
    * the test will pass it a new #GCancellableSource. */
@@ -335,7 +334,6 @@ test_cancellable_source_threaded_dispose (void)
   g_cond_clear (&data.cond);
 
   g_ptr_array_unref (cancellables_pending_unref);
-#endif
 }
 
 static void
@@ -532,6 +530,17 @@ test_cancellable_disconnect_on_cancelled_callback_hangs (void)
       return;
     }
 
+  /* Run the test in a subprocess. While we can get away with deadlocking a
+   * specific thread on Linux, the libc on FreeBSD manages to detect the
+   * deadlock and aborts the whole test process. */
+  if (!g_test_subprocess ())
+    {
+      g_test_trap_subprocess (NULL, 0, G_TEST_SUBPROCESS_DEFAULT);
+      if (!g_test_trap_has_passed ())
+        g_test_trap_assert_stderr ("*Unexpected error from C library during 'pthread_mutex_lock': Resource deadlock avoided.  Aborting.*");
+      return;
+    }
+
   cancellable = g_cancellable_new ();
   thread_data.cancellable = cancellable;
   thread_data.callback = G_CALLBACK (on_cancellable_connect_disconnect);
@@ -548,10 +557,9 @@ test_cancellable_disconnect_on_cancelled_callback_hangs (void)
   thread_loop = thread_data.loop;
   g_assert_cmpuint ((gulong) (guintptr) g_atomic_pointer_get (&thread_data.handler_id), !=, 0);
 
-  /* FIXME: This thread will hang (at least that's what this test wants to
-   *        ensure), but we can't stop it from the caller, unless we'll expose
-   *        pthread_cancel (and similar) to GLib.
-   *        So it will keep hanging till the test process is alive.
+  /* This thread will hang (at least that's what this test wants to ensure), but
+   * we can't stop it from the caller, unless we'll expose pthread_cancel() (and
+   * similar) to GLib. So it will keep hanging until the test subprocess exits.
    */
   cancelling_thread = g_thread_new ("/cancellable/disconnect-on-cancelled-callback-hangs",
                                     (GThreadFunc) g_cancellable_cancel,
@@ -617,6 +625,17 @@ test_cancellable_reset_on_cancelled_callback_hangs (void)
       return;
     }
 
+  /* Run the test in a subprocess. While we can get away with deadlocking a
+   * specific thread on Linux, the libc on FreeBSD manages to detect the
+   * deadlock and aborts the whole test process. */
+  if (!g_test_subprocess ())
+    {
+      g_test_trap_subprocess (NULL, 0, G_TEST_SUBPROCESS_DEFAULT);
+      if (!g_test_trap_has_passed ())
+        g_test_trap_assert_stderr ("*Unexpected error from C library during 'pthread_mutex_lock': Resource deadlock avoided.  Aborting.*");
+      return;
+    }
+
   cancellable = g_cancellable_new ();
   thread_data.cancellable = cancellable;
   thread_data.callback = G_CALLBACK (on_cancelled_reset);
@@ -633,10 +652,9 @@ test_cancellable_reset_on_cancelled_callback_hangs (void)
   thread_loop = thread_data.loop;
   g_assert_cmpuint ((gulong) (guintptr) g_atomic_pointer_get (&thread_data.handler_id), !=, 0);
 
-  /* FIXME: This thread will hang (at least that's what this test wants to
-   *        ensure), but we can't stop it from the caller, unless we'll expose
-   *        pthread_cancel (and similar) to GLib.
-   *        So it will keep hanging till the test process is alive.
+  /* This thread will hang (at least that's what this test wants to ensure), but
+   * we can't stop it from the caller, unless we'll expose pthread_cancel() (and
+   * similar) to GLib. So it will keep hanging until the test subprocess exits.
    */
   cancelling_thread = g_thread_new ("/cancellable/reset-on-cancelled-callback-hangs",
                                     (GThreadFunc) g_cancellable_cancel,
@@ -692,7 +710,10 @@ static void
 on_racy_cancellable_cancelled (GCancellable *cancellable,
                                gpointer data)
 {
-  gboolean *callback_called = data;
+  gboolean *callback_called = data;  /* (atomic) */
+
+  /* This must be a no-op and never dead-lock here! */
+  g_cancellable_cancel (cancellable);
 
   g_assert_true (g_cancellable_is_cancelled (cancellable));
   g_atomic_int_set (callback_called, TRUE);
@@ -704,7 +725,7 @@ test_cancellable_cancel_reset_races (void)
   GCancellable *cancellable;
   GThread *resetting_thread = NULL;
   GThread *cancelling_thread = NULL;
-  gboolean callback_called = FALSE;
+  gboolean callback_called = FALSE;  /* (atomic) */
 
   g_test_summary ("Tests threads racing for cancelling and resetting a GCancellable");
 
@@ -712,7 +733,7 @@ test_cancellable_cancel_reset_races (void)
 
   g_cancellable_connect (cancellable, G_CALLBACK (on_racy_cancellable_cancelled),
                          &callback_called, NULL);
-  g_assert_false (callback_called);
+  g_assert_false (g_atomic_int_get (&callback_called));
 
   resetting_thread = g_thread_new ("/cancellable/cancel-reset-races/resetting",
                                    repeatedly_resetting_thread,
@@ -723,7 +744,7 @@ test_cancellable_cancel_reset_races (void)
   g_thread_join (g_steal_pointer (&cancelling_thread));
   g_thread_join (g_steal_pointer (&resetting_thread));
 
-  g_assert_true (callback_called);
+  g_assert_true (g_atomic_int_get (&callback_called));
 
   g_object_unref (cancellable);
 }
@@ -737,8 +758,11 @@ repeatedly_connecting_thread (gpointer data)
 
   for (guint i = 0; i < iterations; ++i)
     {
-      gboolean callback_called = FALSE;
+      gboolean callback_called; /* (atomic) */
       gboolean called;
+
+      g_atomic_int_set (&callback_called, FALSE);
+
       gulong id = g_cancellable_connect (cancellable,
                                          G_CALLBACK (on_racy_cancellable_cancelled),
                                          &callback_called, NULL);
@@ -762,16 +786,17 @@ test_cancellable_cancel_reset_connect_races (void)
   GThread *resetting_thread = NULL;
   GThread *cancelling_thread = NULL;
   GThread *connecting_thread = NULL;
-  gboolean callback_called = FALSE;
+  gboolean callback_called;  /* (atomic) */
 
   g_test_summary ("Tests threads racing for cancelling, connecting and disconnecting "
                   " and resetting a GCancellable");
 
   cancellable = g_cancellable_new ();
 
+  g_atomic_int_set (&callback_called, FALSE);
   g_cancellable_connect (cancellable, G_CALLBACK (on_racy_cancellable_cancelled),
                          &callback_called, NULL);
-  g_assert_false (callback_called);
+  g_assert_false (g_atomic_int_get (&callback_called));
 
   resetting_thread = g_thread_new ("/cancel-reset-connect-races/resetting",
                                    repeatedly_resetting_thread,
@@ -785,9 +810,359 @@ test_cancellable_cancel_reset_connect_races (void)
   g_thread_join (g_steal_pointer (&resetting_thread));
   g_thread_join (g_steal_pointer (&connecting_thread));
 
-  g_assert_true (callback_called);
+  g_assert_true (g_atomic_int_get (&callback_called));
 
   g_object_unref (cancellable);
+}
+
+static gboolean
+source_cancelled_counter_cb (GCancellable *cancellable,
+                             gpointer      user_data)
+{
+  guint *n_calls = user_data;
+
+  *n_calls = *n_calls + 1;
+
+  return G_SOURCE_CONTINUE;
+}
+
+static void
+do_nothing (G_GNUC_UNUSED void *user_data)
+{
+  /* An empty timeout/idle once callback function */
+}
+
+static void
+test_cancellable_source_can_be_fired_multiple_times (void)
+{
+  GCancellable *cancellable;
+  GSource *source;
+  guint n_calls = 0;
+
+  g_test_summary ("Test a cancellable source callback can be called multiple times");
+  g_test_bug ("https://gitlab.gnome.org/GNOME/glib/issues/774");
+
+  cancellable = g_cancellable_new ();
+  source = g_cancellable_source_new (cancellable);
+
+  g_source_set_callback (source, G_SOURCE_FUNC (source_cancelled_counter_cb),
+                         &n_calls, NULL);
+  g_source_attach (source, NULL);
+
+  g_cancellable_cancel (cancellable);
+  g_assert_cmpuint (n_calls, ==, 0);
+
+  while (g_main_context_pending (NULL))
+    g_main_context_iteration (NULL, TRUE);
+
+  g_assert_cmpuint (n_calls, ==, 1);
+
+  g_cancellable_cancel (cancellable);
+
+  g_timeout_add_once (100, do_nothing, NULL);
+  while (g_main_context_pending (NULL))
+    g_main_context_iteration (NULL, TRUE);
+
+  g_assert_cmpuint (n_calls, ==, 1);
+
+  g_cancellable_reset (cancellable);
+  g_cancellable_cancel (cancellable);
+  g_assert_cmpuint (n_calls, ==, 1);
+
+  while (g_main_context_pending (NULL))
+    g_main_context_iteration (NULL, TRUE);
+
+  g_assert_cmpuint (n_calls, ==, 2);
+
+  g_source_unref (source);
+  g_object_unref (cancellable);
+}
+
+static void
+data_cleanup_cb (gpointer user_data)
+{
+  gboolean *data_cleanup_called = user_data;
+
+  *data_cleanup_called = TRUE;
+}
+
+static void
+test_connect_data_is_destroyed_on_disconnect_and_dispose (void)
+{
+  GCancellable *cancellable;
+  gboolean data_cleanup_called;
+  gulong id;
+
+  cancellable = g_cancellable_new ();
+
+  data_cleanup_called = FALSE;
+  id = g_cancellable_connect (cancellable, G_CALLBACK (do_nothing),
+                              &data_cleanup_called, data_cleanup_cb);
+  g_assert_cmpuint (id, >, 0);
+  g_cancellable_disconnect (cancellable, id);
+  g_assert_true (data_cleanup_called);
+
+  data_cleanup_called = FALSE;
+  id = g_cancellable_connect (cancellable, G_CALLBACK (do_nothing),
+                              &data_cleanup_called, data_cleanup_cb);
+  g_assert_cmpuint (id, >, 0);
+  g_clear_object (&cancellable);
+  g_assert_true (data_cleanup_called);
+}
+
+static void
+test_connect_cancelled_data_is_destroyed (void)
+{
+  GCancellable *cancellable;
+  gboolean data_cleanup_called;
+  gulong id;
+
+  cancellable = g_cancellable_new ();
+  data_cleanup_called = FALSE;
+  g_cancellable_cancel (cancellable);
+  id = g_cancellable_connect (cancellable, G_CALLBACK (do_nothing),
+                              &data_cleanup_called, data_cleanup_cb);
+  g_assert_cmpuint (id, ==, 0);
+  g_assert_true (data_cleanup_called);
+  g_clear_object (&cancellable);
+}
+
+static void
+assert_references_and_unref (GCancellable *cancellable, gpointer data)
+{
+  gint expected_references = GPOINTER_TO_INT (data);
+
+  /* This must be a no-op and never dead-lock here! */
+  g_cancellable_cancel (cancellable);
+
+  g_assert_cmpint (G_OBJECT (cancellable)->ref_count, ==, expected_references);
+  g_object_unref (cancellable);
+}
+
+static void
+test_connect_to_disposing_callback (void)
+{
+  GCancellable *cancellable;
+  gulong id;
+
+  g_test_summary ("A cancellable signal callback can unref the cancellable");
+  g_test_bug ("https://gitlab.gnome.org/GNOME/glib/-/issues/3643");
+
+  cancellable = g_cancellable_new ();
+  g_object_add_weak_pointer (G_OBJECT (cancellable), (gpointer *) &cancellable);
+
+  id = g_cancellable_connect (cancellable, G_CALLBACK (assert_references_and_unref),
+                              GINT_TO_POINTER (4), NULL);
+  g_assert_cmpuint (id, >, 0);
+  g_cancellable_cancel (cancellable);
+  g_assert_null (cancellable);
+}
+
+typedef struct
+{
+  gulong id;
+  gboolean ignore_next_toggle_down;
+} ToggleReferenceData;
+
+static void
+toggle_reference_cb (gpointer data,
+                     GObject *object,
+                     gboolean is_last_ref)
+{
+  GCancellable *cancellable = G_CANCELLABLE (object);
+  ToggleReferenceData *toggle_data = data;
+
+  g_test_message ("Toggle reference callback for %s (%p), last: %d",
+                  g_type_name_from_instance ((GTypeInstance *) object),
+                  object, is_last_ref);
+
+  if (!is_last_ref)
+    {
+      g_assert_false (g_cancellable_is_cancelled (cancellable));
+
+      /* Disconnect and reconnect to the signal so that we can verify that the
+       * "toggle-up" does not happen while we're locked
+       */
+      g_cancellable_disconnect (cancellable, toggle_data->id);
+      toggle_data->id = g_cancellable_connect (cancellable,
+                                               G_CALLBACK (assert_references_and_unref),
+                                               GINT_TO_POINTER (4), NULL);
+      return;
+    }
+
+  g_assert_true (is_last_ref);
+
+  if (toggle_data->ignore_next_toggle_down)
+    {
+      g_assert_false (g_cancellable_is_cancelled (cancellable));
+      toggle_data->ignore_next_toggle_down = FALSE;
+      return;
+    }
+
+  g_assert_true (g_cancellable_is_cancelled (cancellable));
+
+  /* This would deadlock if the last reference was removed during cancellation */
+  g_cancellable_disconnect (cancellable, toggle_data->id);
+  toggle_data->id = 0;
+}
+
+static void
+test_connect_to_disposing_callback_with_toggle_reference (void)
+{
+  GCancellable *cancellable;
+  ToggleReferenceData data = {0};
+
+  cancellable = g_cancellable_new ();
+  g_object_add_weak_pointer (G_OBJECT (cancellable), (gpointer *) &cancellable);
+
+  data.id = g_cancellable_connect (cancellable, G_CALLBACK (assert_references_and_unref),
+                                   GINT_TO_POINTER (4), NULL);
+
+  /* Switch to toggle references. */
+  g_object_add_toggle_ref (G_OBJECT (cancellable), toggle_reference_cb, &data);
+  data.ignore_next_toggle_down = TRUE;
+  g_object_unref (cancellable);
+
+  g_cancellable_cancel (cancellable);
+  g_assert_cmpuint (data.id, ==, 0);
+  g_assert_null (cancellable);
+}
+
+static void
+cancelled_toggle_reference_cb (gpointer data,
+                               GObject *object,
+                               gboolean is_last_ref)
+{
+  GCancellable *cancellable = G_CANCELLABLE (object);
+  ToggleReferenceData *toggle_data = data;
+
+  g_test_message ("Toggle reference callback for %s (%p), last: %d",
+                  g_type_name_from_instance ((GTypeInstance *) object),
+                  object, is_last_ref);
+
+  if (!is_last_ref)
+    {
+      gulong id;
+
+      if (g_cancellable_is_cancelled (cancellable))
+        {
+          /* Disconnect and reconnect to the signal so that we can verify that the
+           * "toggle-up" does not happen while we're locked
+           */
+          g_cancellable_disconnect (cancellable, toggle_data->id);
+          id = g_cancellable_connect (cancellable, G_CALLBACK (do_nothing), NULL, NULL);
+          g_assert_cmpuint (id, ==, 0);
+          return;
+        }
+
+      /* Connect and disconnect to the signal so that we can verify that the
+       * "toggle-up" does not happen while we're locked
+       */
+      id = g_cancellable_connect (cancellable, G_CALLBACK (do_nothing), NULL, NULL);
+      g_cancellable_disconnect (cancellable, id);
+      return;
+    }
+
+  g_assert_true (is_last_ref);
+
+  if (toggle_data->ignore_next_toggle_down)
+    {
+      g_assert_false (g_cancellable_is_cancelled (cancellable));
+      toggle_data->ignore_next_toggle_down = FALSE;
+      return;
+    }
+
+  g_assert_true (g_cancellable_is_cancelled (cancellable));
+
+  g_test_expect_message ("GLib-GObject", G_LOG_LEVEL_CRITICAL,
+                         "*has no handler with id*");
+
+  /* We try resetting the a signal that isn't connected, since we don't care
+   * about anything but checking whether this would deadlock
+   */
+  g_cancellable_disconnect (cancellable, G_MAXULONG);
+
+  g_test_assert_expected_messages ();
+}
+
+static void
+test_connect_cancelled_to_disposing_callback_with_toggle_reference (void)
+{
+  GCancellable *cancellable;
+  ToggleReferenceData data = {0};
+  gulong id;
+
+  cancellable = g_cancellable_new ();
+  g_object_add_weak_pointer (G_OBJECT (cancellable), (gpointer *) &cancellable);
+
+  /* Switch to toggle references. */
+  g_object_add_toggle_ref (G_OBJECT (cancellable), cancelled_toggle_reference_cb, &data);
+  data.ignore_next_toggle_down = TRUE;
+  g_object_unref (cancellable);
+
+  g_cancellable_cancel (cancellable);
+  id = g_cancellable_connect (cancellable, G_CALLBACK (assert_references_and_unref),
+                              GINT_TO_POINTER (3), NULL);
+
+  g_assert_cmpuint (id, ==, 0);
+  g_assert_null (cancellable);
+}
+
+static void
+test_connect_cancelled_to_disposing_callback (void)
+{
+  GCancellable *cancellable;
+  gulong id;
+
+  g_test_summary ("A cancellable signal callback can unref the cancellable");
+  g_test_bug ("https://gitlab.gnome.org/GNOME/glib/-/issues/3643");
+
+  cancellable = g_cancellable_new ();
+  g_object_add_weak_pointer (G_OBJECT (cancellable), (gpointer *) &cancellable);
+
+  g_cancellable_cancel (cancellable);
+  id = g_cancellable_connect (cancellable, G_CALLBACK (assert_references_and_unref),
+                              GINT_TO_POINTER (3), NULL);
+  g_assert_cmpuint (id, ==, 0);
+  g_assert_null (cancellable);
+}
+
+static void
+on_connect_data_callback (GCancellable *cancellable,
+                          gpointer user_data)
+{
+  g_assert_true (cancellable == user_data);
+}
+
+static void
+connect_data_destroy (gpointer user_data)
+{
+  GCancellable *cancellable = user_data;
+
+  g_assert_true (g_cancellable_is_cancelled (cancellable));
+
+  /* We try resetting the cancellable, since we don't care
+   * about anything but checking whether this would deadlock
+   */
+  g_cancellable_reset (cancellable);
+  g_object_unref (cancellable);
+}
+
+static void
+test_connect_cancelled_with_destroy_func_disposing_cancellable (void)
+{
+  GCancellable *cancellable;
+  gulong id;
+
+  cancellable = g_cancellable_new ();
+  g_object_add_weak_pointer (G_OBJECT (cancellable), (gpointer *) &cancellable);
+
+  g_cancellable_cancel (cancellable);
+  id = g_cancellable_connect (cancellable, G_CALLBACK (on_connect_data_callback),
+                              cancellable, connect_data_destroy);
+  g_assert_cmpuint (id, ==, 0);
+
+  g_assert_null (cancellable);
 }
 
 int
@@ -797,6 +1172,13 @@ main (int argc, char *argv[])
 
   g_test_add_func ("/cancellable/multiple-concurrent", test_cancel_multiple_concurrent);
   g_test_add_func ("/cancellable/null", test_cancel_null);
+  g_test_add_func ("/cancellable/connect-data-is-destroyed-on-disconnect-and-dispose", test_connect_data_is_destroyed_on_disconnect_and_dispose);
+  g_test_add_func ("/cancellable/connect-to-disposing-callback", test_connect_to_disposing_callback);
+  g_test_add_func ("/cancellable/connect-cancelled-data-is-destroyed", test_connect_cancelled_data_is_destroyed);
+  g_test_add_func ("/cancellable/connect-to-disposing-callback-with-toggle-reference", test_connect_to_disposing_callback_with_toggle_reference);
+  g_test_add_func ("/cancellable/connect-cancelled-to-disposing-callback", test_connect_cancelled_to_disposing_callback);
+  g_test_add_func ("/cancellable/connect-cancelled-with-destroy-func-disposing-cancellable", test_connect_cancelled_with_destroy_func_disposing_cancellable);
+  g_test_add_func ("/cancellable/connect-cancelled-to-disposing-callback-with-toggle-reference", test_connect_cancelled_to_disposing_callback_with_toggle_reference);
   g_test_add_func ("/cancellable/disconnect-on-cancelled-callback-hangs", test_cancellable_disconnect_on_cancelled_callback_hangs);
   g_test_add_func ("/cancellable/resets-on-cancel-callback-hangs", test_cancellable_reset_on_cancelled_callback_hangs);
   g_test_add_func ("/cancellable/poll-fd", test_cancellable_poll_fd);
@@ -805,6 +1187,7 @@ main (int argc, char *argv[])
   g_test_add_func ("/cancellable/cancel-reset-races", test_cancellable_cancel_reset_races);
   g_test_add_func ("/cancellable/cancel-reset-connect-races", test_cancellable_cancel_reset_connect_races);
   g_test_add_func ("/cancellable-source/threaded-dispose", test_cancellable_source_threaded_dispose);
+  g_test_add_func ("/cancellable-source/can-be-fired-multiple-times", test_cancellable_source_can_be_fired_multiple_times);
 
   return g_test_run ();
 }

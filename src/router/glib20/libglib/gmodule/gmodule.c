@@ -30,6 +30,12 @@
 
 #include "config.h"
 
+/* For the G_MODULE_SUFFIX macro; since macro deprecation is implemented
+ * in the preprocessor, we need to define this before including glib.h */
+#ifndef GLIB_DISABLE_DEPRECATION_WARNINGS
+#define GLIB_DISABLE_DEPRECATION_WARNINGS
+#endif
+
 #include "glib.h"
 #include "gmodule.h"
 
@@ -57,8 +63,12 @@
  * GModule:
  *
  * The #GModule struct is an opaque data structure to represent a
- * [dynamically-loaded module][glib-Dynamic-Loading-of-Modules].
+ * [dynamically-loaded module](modules.html#dynamic-loading-of-modules).
  * It should only be accessed via the following functions.
+ * 
+ * To ensure correct lock ordering, these functions must not be called from
+ * global constructors (for example, those using GCC’s
+ * `__attribute__((constructor))` attribute).
  */
 
 /**
@@ -405,7 +415,7 @@ enum
 {
   G_MODULE_DEBUG_RESIDENT_MODULES = 1 << 0,
   G_MODULE_DEBUG_BIND_NOW_MODULES = 1 << 1
-};
+} G_GNUC_FLAG_ENUM;
 
 static void
 _g_module_debug_init (void)
@@ -481,7 +491,7 @@ g_module_open_full (const gchar   *file_name,
     _g_module_debug_init ();
 
   if (module_debug_flags & G_MODULE_DEBUG_BIND_NOW_MODULES)
-    flags &= ~G_MODULE_BIND_LAZY;
+    flags &= (unsigned) ~G_MODULE_BIND_LAZY;
 
   if (!file_name)
     {      
@@ -490,7 +500,7 @@ g_module_open_full (const gchar   *file_name,
 	  handle = _g_module_self ();
 /* On Android 64 bit, RTLD_DEFAULT is (void *)0x0
  * so it always fails to create main_module if file_name is NULL */
-#if !defined(__BIONIC__) || !defined(__LP64__)
+#if !defined(__ANDROID__) || !defined(__LP64__)
 	  if (handle)
 #endif
 	    {
@@ -540,8 +550,13 @@ g_module_open_full (const gchar   *file_name,
         suffixes[suffix_idx++] = ".dll";
 #else
   #ifdef __CYGWIN__
+    #ifdef __MSYS__
+      if (!g_str_has_prefix (basename, "msys-"))
+        prefixes[prefix_idx++] = "msys-";
+    #else
       if (!g_str_has_prefix (basename, "cyg"))
         prefixes[prefix_idx++] = "cyg";
+    #endif
   #else
       if (!g_str_has_prefix (basename, "lib"))
         prefixes[prefix_idx++] = "lib";
@@ -551,7 +566,10 @@ g_module_open_full (const gchar   *file_name,
          * .dylib and .dll in those cases. */
         prefixes[prefix_idx++] = "";
   #endif
-  #ifdef __APPLE__
+  #ifdef __CYGWIN__
+      if (!g_str_has_suffix (basename, ".dll"))
+        suffixes[suffix_idx++] = ".dll";
+  #elif defined (__APPLE__)
       if (!g_str_has_suffix (basename, ".dylib") &&
           !g_str_has_suffix (basename, ".so"))
         {
@@ -594,8 +612,8 @@ g_module_open_full (const gchar   *file_name,
    */
   if (!name)
     {
-      gchar *dot = strrchr (file_name, '.');
-      gchar *slash = strrchr (file_name, G_DIR_SEPARATOR);
+      const gchar *dot = strrchr (file_name, '.');
+      const gchar *slash = strrchr (file_name, G_DIR_SEPARATOR);
 
       /* we make sure the name has a suffix using the deprecated
        * G_MODULE_SUFFIX for backward-compat */

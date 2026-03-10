@@ -60,8 +60,8 @@ gi_arg_info_get_direction (GIArgInfo *info)
   GIRealInfo *rinfo = (GIRealInfo *)info;
   ArgBlob *blob;
 
-  g_return_val_if_fail (info != NULL, -1);
-  g_return_val_if_fail (GI_IS_ARG_INFO (info), -1);
+  g_return_val_if_fail (info != NULL, GI_DIRECTION_OUT);
+  g_return_val_if_fail (GI_IS_ARG_INFO (info), GI_DIRECTION_OUT);
 
   blob = (ArgBlob *)&rinfo->typelib->data[rinfo->offset];
 
@@ -218,8 +218,8 @@ gi_arg_info_get_ownership_transfer (GIArgInfo *info)
   GIRealInfo *rinfo = (GIRealInfo *)info;
   ArgBlob *blob;
 
-  g_return_val_if_fail (info != NULL, -1);
-  g_return_val_if_fail (GI_IS_ARG_INFO (info), -1);
+  g_return_val_if_fail (info != NULL, GI_TRANSFER_NOTHING);
+  g_return_val_if_fail (GI_IS_ARG_INFO (info), GI_TRANSFER_NOTHING);
 
   blob = (ArgBlob *)&rinfo->typelib->data[rinfo->offset];
 
@@ -251,8 +251,8 @@ gi_arg_info_get_scope (GIArgInfo *info)
   GIRealInfo *rinfo = (GIRealInfo *)info;
   ArgBlob *blob;
 
-  g_return_val_if_fail (info != NULL, -1);
-  g_return_val_if_fail (GI_IS_ARG_INFO (info), -1);
+  g_return_val_if_fail (info != NULL, GI_SCOPE_TYPE_INVALID);
+  g_return_val_if_fail (GI_IS_ARG_INFO (info), GI_SCOPE_TYPE_INVALID);
 
   blob = (ArgBlob *)&rinfo->typelib->data[rinfo->offset];
 
@@ -286,7 +286,7 @@ gi_arg_info_get_closure_index (GIArgInfo    *info,
   has_closure_index = (blob->closure >= 0);
 
   if (out_closure_index != NULL)
-    *out_closure_index = has_closure_index ? blob->closure : 0;
+    *out_closure_index = has_closure_index ? (unsigned int) blob->closure : 0;
   return has_closure_index;
 }
 
@@ -317,7 +317,7 @@ gi_arg_info_get_destroy_index (GIArgInfo    *info,
   has_destroy_index = (blob->destroy >= 0);
 
   if (out_destroy_index != NULL)
-    *out_destroy_index = has_destroy_index ? blob->destroy : 0;
+    *out_destroy_index = has_destroy_index ? (unsigned int) blob->destroy : 0;
   return has_destroy_index;
 }
 

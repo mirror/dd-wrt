@@ -518,8 +518,8 @@ g_dbus_object_manager_client_class_init (GDBusObjectManagerClientClass *klass)
    * This signal exists purely as a convenience to avoid having to
    * connect signals to all interface proxies managed by @manager.
    *
-   * This signal is emitted in the
-   * [thread-default main context][g-main-context-push-thread-default]
+   * This signal is emitted in the thread-default main context
+   * (see [method@GLib.MainContext.push_thread_default])
    * that @manager was constructed in.
    *
    * Since: 2.30
@@ -560,8 +560,8 @@ g_dbus_object_manager_client_class_init (GDBusObjectManagerClientClass *klass)
    * This signal exists purely as a convenience to avoid having to
    * connect signals to all interface proxies managed by @manager.
    *
-   * This signal is emitted in the
-   * [thread-default main context][g-main-context-push-thread-default]
+   * This signal is emitted in the thread-default main context
+   * (see [method@GLib.MainContext.push_thread_default])
    * that @manager was constructed in.
    *
    * Since: 2.30
@@ -675,10 +675,10 @@ g_dbus_object_manager_client_new_sync (GDBusConnection               *connection
  * Asynchronously creates a new #GDBusObjectManagerClient object.
  *
  * This is an asynchronous failable constructor. When the result is
- * ready, @callback will be invoked in the
- * [thread-default main context][g-main-context-push-thread-default]
- * of the thread you are calling this method from. You can
- * then call g_dbus_object_manager_client_new_finish() to get the result. See
+ * ready, @callback will be invoked in the thread-default main context
+ * (see [method@GLib.MainContext.push_thread_default])
+ * of the thread you are calling this method from. You can then call
+ * g_dbus_object_manager_client_new_finish() to get the result. See
  * g_dbus_object_manager_client_new_sync() for the synchronous version.
  *
  * Since: 2.30
@@ -828,8 +828,8 @@ g_dbus_object_manager_client_new_for_bus_sync (GBusType                       bu
  * #GDBusConnection.
  *
  * This is an asynchronous failable constructor. When the result is
- * ready, @callback will be invoked in the
- * [thread-default main loop][g-main-context-push-thread-default]
+ * ready, @callback will be invoked in the thread-default main context
+ * (see [method@GLib.MainContext.push_thread_default])
  * of the thread you are calling this method from. You can
  * then call g_dbus_object_manager_client_new_for_bus_finish() to get the result. See
  * g_dbus_object_manager_client_new_for_bus_sync() for the synchronous version.
@@ -1026,7 +1026,7 @@ signal_cb (GDBusConnection *connection,
   //g_debug ("yay, signal_cb %s %s: %s\n", signal_name, object_path, g_variant_print (parameters, TRUE));
 
   g_object_ref (manager);
-  if (g_strcmp0 (interface_name, "org.freedesktop.DBus.Properties") == 0)
+  if (g_strcmp0 (interface_name, DBUS_INTERFACE_PROPERTIES) == 0)
     {
       if (g_strcmp0 (signal_name, "PropertiesChanged") == 0)
         {
@@ -1145,9 +1145,9 @@ subscribe_signals (GDBusObjectManagerClient *manager,
       /* The bus daemon may not implement path_namespace so gracefully
        * handle this by using a fallback triggered if @error is set. */
       ret = g_dbus_connection_call_sync (manager->priv->connection,
-                                         "org.freedesktop.DBus",
-                                         "/org/freedesktop/DBus",
-                                         "org.freedesktop.DBus",
+                                         DBUS_SERVICE_DBUS,
+                                         DBUS_PATH_DBUS,
+                                         DBUS_INTERFACE_DBUS,
                                          "AddMatch",
                                          g_variant_new ("(s)",
                                                         manager->priv->match_rule),
@@ -1218,11 +1218,8 @@ maybe_unsubscribe_signals (GDBusObjectManagerClient *manager)
   g_return_if_fail (G_IS_DBUS_OBJECT_MANAGER_CLIENT (manager));
 
   if (manager->priv->signal_subscription_id > 0)
-    {
-      g_dbus_connection_signal_unsubscribe (manager->priv->connection,
-                                            manager->priv->signal_subscription_id);
-      manager->priv->signal_subscription_id = 0;
-    }
+    g_dbus_connection_signal_unsubscribe (manager->priv->connection,
+                                          g_steal_handle_id (&manager->priv->signal_subscription_id));
 
   if (manager->priv->match_rule != NULL)
     {
@@ -1230,9 +1227,9 @@ maybe_unsubscribe_signals (GDBusObjectManagerClient *manager)
        * fail - therefore, don't bother checking the return value
        */
       g_dbus_connection_call (manager->priv->connection,
-                              "org.freedesktop.DBus",
-                              "/org/freedesktop/DBus",
-                              "org.freedesktop.DBus",
+                              DBUS_SERVICE_DBUS,
+                              DBUS_PATH_DBUS,
+                              DBUS_INTERFACE_DBUS,
                               "RemoveMatch",
                               g_variant_new ("(s)",
                                              manager->priv->match_rule),
@@ -1419,7 +1416,7 @@ initable_init (GInitable     *initable,
                                                         NULL, /* GDBusInterfaceInfo* */
                                                         manager->priv->name,
                                                         manager->priv->object_path,
-                                                        "org.freedesktop.DBus.ObjectManager",
+                                                        DBUS_INTERFACE_OBJECT_MANAGER,
                                                         cancellable,
                                                         error);
   if (manager->priv->control_proxy == NULL)
@@ -1688,7 +1685,7 @@ remove_interfaces (GDBusObjectManagerClient   *manager,
 
   num_interfaces_to_remove = g_strv_length ((gchar **) interface_names);
 
-  /* see if we are going to completety remove the object */
+  /* see if we are going to completely remove the object */
   g_object_ref (manager);
   if (num_interfaces_to_remove == num_interfaces)
     {

@@ -54,7 +54,7 @@
 
 /* --- defines --- */
 #define PARAM_FLOATING_FLAG                     0x2
-#define	G_PARAM_USER_MASK			(~0U << G_PARAM_USER_SHIFT)
+#define	G_PARAM_USER_MASK			((GParamFlags) (~0U << G_PARAM_USER_SHIFT))
 #define PSPEC_APPLIES_TO_VALUE(pspec, value)	(G_TYPE_CHECK_VALUE_TYPE ((value), G_PARAM_SPEC_VALUE_TYPE (pspec)))
 
 /* --- prototypes --- */
@@ -389,8 +389,8 @@ is_canonical (const gchar *key)
  * dynamically-generated properties which need to be validated at run-time
  * before actually trying to create them.
  *
- * See [canonical parameter names][canonical-parameter-names] for details of
- * the rules for valid names.
+ * See [canonical parameter names][class@GObject.ParamSpec#parameter-names]
+ * for details of the rules for valid names.
  *
  * Returns: %TRUE if @name is a valid property name, %FALSE otherwise.
  * Since: 2.66
@@ -429,9 +429,9 @@ g_param_spec_is_valid_name (const gchar *name)
  *
  * Creates a new #GParamSpec instance.
  *
- * See [canonical parameter names][canonical-parameter-names] for details of
- * the rules for @name. Names which violate these rules lead to undefined
- * behaviour.
+ * See [canonical parameter names][class@GObject.ParamSpec#parameter-names]
+ * for details of the rules for @name. Names which violate these rules lead
+ * to undefined behaviour.
  *
  * Beyond the name, #GParamSpecs have two more descriptive strings, the
  * @nick and @blurb, which may be used as a localized label and description.
@@ -956,7 +956,7 @@ param_spec_pool_hash (gconstpointer key_spec)
   guint h = (guint) key->owner_type;
 
   for (p = key->name; *p; p++)
-    h = (h << 5) - h + *p;
+    h = (guint) (h << 5) - h + (guint) *p;
 
   return h;
 }
@@ -1175,23 +1175,23 @@ g_param_spec_pool_lookup (GParamSpecPool *pool,
 
   if (pool->type_prefixing)
     {
-      char *delim;
+      const char *delim;
 
       delim = strchr (param_name, ':');
 
       /* strip type prefix */
       if (delim && delim[1] == ':')
         {
-          guint l = delim - param_name;
+          size_t l = (size_t) (delim - param_name);
           gchar stack_buffer[32], *buffer = l < 32 ? stack_buffer : g_new (gchar, l + 1);
           GType type;
 
-          strncpy (buffer, param_name, delim - param_name);
+          strncpy (buffer, param_name, l);
           buffer[l] = 0;
           type = g_type_from_name (buffer);
           if (l >= 32)
             g_free (buffer);
-          if (type)         /* type==0 isn't a valid type pefix */
+          if (type)         /* type==0 isn't a valid type prefix */
             {
               /* sanity check, these cases don't make a whole lot of sense */
               if ((!walk_ancestors && type != owner_type) || !g_type_is_a (owner_type, type))
@@ -1311,7 +1311,7 @@ pool_depth_list (gpointer key,
   GSList **slists = data[0];
   GType owner_type = (GType) data[1];
   GHashTable *ht = data[2];
-  int *count = data[3];
+  unsigned int *count = data[3];
 
   if (g_type_is_a (owner_type, pspec->owner_type) &&
       should_list_pspec (pspec, owner_type, ht))
@@ -1337,8 +1337,8 @@ pool_depth_list (gpointer key,
  * the prerequisite class, not from the interface that
  * prerequires it.
  * 
- * also 'depth' isn't a meaningful concept for interface
- * prerequites.
+ * Also 'depth' isn't a meaningful concept for interface
+ * prerequisites.
  */
 static void
 pool_depth_list_for_interface (gpointer key,
@@ -1350,7 +1350,7 @@ pool_depth_list_for_interface (gpointer key,
   GSList **slists = data[0];
   GType owner_type = (GType) data[1];
   GHashTable *ht = data[2];
-  int *count = data[3];
+  unsigned int *count = data[3];
 
   if (pspec->owner_type == owner_type &&
       should_list_pspec (pspec, owner_type, ht))
@@ -1382,7 +1382,7 @@ g_param_spec_pool_list (GParamSpecPool *pool,
   GSList **slists, *node;
   gpointer data[4];
   guint d, i;
-  int n_pspecs = 0;
+  unsigned int n_pspecs = 0;
 
   g_return_val_if_fail (pool != NULL, NULL);
   g_return_val_if_fail (owner_type > 0, NULL);

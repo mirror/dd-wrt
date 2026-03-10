@@ -88,7 +88,34 @@ enum {
   XDP_ADD_FLAGS_PERSISTENT                 =  (1 << 1),
   XDP_ADD_FLAGS_AS_NEEDED_BY_APP           =  (1 << 2),
   XDP_ADD_FLAGS_FLAGS_ALL                  = ((1 << 3) - 1)
-};
+} G_GNUC_FLAG_ENUM;
+
+/*
+ * Assume that opening a file read/write failed with @saved_errno,
+ * and return TRUE if opening the same file read-only might succeed.
+ */
+static gboolean
+opening_ro_might_succeed (int saved_errno)
+{
+  switch (saved_errno)
+    {
+    case EACCES:
+    case EISDIR:
+#ifdef EPERM
+    case EPERM:
+#endif
+#ifdef EROFS
+    case EROFS:
+#endif
+#ifdef ETXTBSY
+    case ETXTBSY:
+#endif
+      return TRUE;
+
+    default:
+      return FALSE;
+    }
+}
 
 GList *
 g_document_portal_add_documents (GList       *uris,
@@ -97,7 +124,7 @@ g_document_portal_add_documents (GList       *uris,
 {
   GXdpDocuments *documents = NULL;
   char *documents_mountpoint = NULL;
-  int length;
+  unsigned int length;
   GList *ruris = NULL;
   gboolean *as_is;
   GVariantBuilder builder;
@@ -116,7 +143,7 @@ g_document_portal_add_documents (GList       *uris,
   length = g_list_length (uris);
   as_is = g_new0 (gboolean, length);
 
-  g_variant_builder_init (&builder, G_VARIANT_TYPE ("ah"));
+  g_variant_builder_init_static (&builder, G_VARIANT_TYPE ("ah"));
 
   fd_list = g_unix_fd_list_new ();
   for (l = uris, i = 0; l; l = l->next, i++)
@@ -131,7 +158,7 @@ g_document_portal_add_documents (GList       *uris,
           int fd;
 
           fd = g_open (path, O_CLOEXEC | O_RDWR);
-          if (fd == -1 && (errno == EACCES || errno == EISDIR))
+          if (fd == -1 && opening_ro_might_succeed (errno))
             {
               /* If we don't have write access, fall back to read-only,
                * and stop requesting the write permission */
@@ -187,11 +214,45 @@ g_document_portal_add_documents (GList       *uris,
             }
           else
             {
-              char *basename = g_path_get_basename (uri + strlen ("file:"));
-              char *doc_path = g_build_filename (documents_mountpoint, doc_ids[j], basename, NULL);
-              ruri = g_strconcat ("file:", doc_path, NULL);
-              g_free (basename);
-              g_free (doc_path);
+              const char *doc_name;
+              char *doc_path;
+              GDir *doc_dir;
+              GError *local_error = NULL;
+
+              doc_path = g_build_filename (documents_mountpoint, doc_ids[j], NULL);
+              doc_dir = g_dir_open (doc_path, 0, &local_error);
+              g_clear_pointer (&doc_path, g_free);
+
+              if (!doc_dir)
+                {
+                  g_set_error_literal (error, G_IO_ERROR,
+                                       g_io_error_from_file_error (local_error->code),
+                                       local_error->message);
+
+                  g_clear_error (&local_error);
+                  g_clear_list (&ruris, g_free);
+                  goto out;
+                }
+
+              doc_name = g_dir_read_name (doc_dir);
+
+              if (!doc_name)
+                {
+                  g_set_error (error, G_IO_ERROR, G_IO_ERROR_NOT_FOUND,
+                               "Failed to read %s" G_DIR_SEPARATOR_S "%s",
+                               documents_mountpoint, doc_ids[j]);
+
+                  g_clear_pointer (&doc_dir, g_dir_close);
+                  g_clear_list (&ruris, g_free);
+                  goto out;
+                }
+
+              ruri = g_strconcat ("file:",
+                                  documents_mountpoint, G_DIR_SEPARATOR_S,
+                                  doc_ids[j], G_DIR_SEPARATOR_S,
+                                  doc_name, NULL);
+
+              g_clear_pointer (&doc_dir, g_dir_close);
               j++;
             }
 

@@ -34,11 +34,13 @@
 #endif
 
 #include <gi18n.h>
+#include <glib/gstdio.h>
 
 #ifdef G_OS_WIN32
 #include "glib/glib-private.h"
-#include "gdbusprivate.h"
 #endif
+
+#include "gdbusprivate.h"
 
 /* ---------------------------------------------------------------------------------------------------- */
 
@@ -70,7 +72,7 @@ completion_debug (const gchar *format, ...)
   s = g_strdup_vprintf (format, var_args);
   if (f == NULL)
     {
-      f = fopen ("/tmp/gdbus-completion-debug.txt", "a+");
+      f = g_fopen ("/tmp/gdbus-completion-debug.txt", "a+e");
     }
   fprintf (f, "%s\n", s);
   g_free (s);
@@ -191,7 +193,7 @@ print_methods_and_signals (GDBusConnection *c,
   result = g_dbus_connection_call_sync (c,
                                         name,
                                         path,
-                                        "org.freedesktop.DBus.Introspectable",
+                                        DBUS_INTERFACE_INTROSPECTABLE,
                                         "Introspect",
                                         NULL,
                                         G_VARIANT_TYPE ("(s)"),
@@ -263,7 +265,7 @@ print_paths (GDBusConnection *c,
   result = g_dbus_connection_call_sync (c,
                                         name,
                                         path,
-                                        "org.freedesktop.DBus.Introspectable",
+                                        DBUS_INTERFACE_INTROSPECTABLE,
                                         "Introspect",
                                         NULL,
                                         G_VARIANT_TYPE ("(s)"),
@@ -332,9 +334,9 @@ print_names (GDBusConnection *c,
 
   error = NULL;
   result = g_dbus_connection_call_sync (c,
-                                        "org.freedesktop.DBus",
-                                        "/org/freedesktop/DBus",
-                                        "org.freedesktop.DBus",
+                                        DBUS_SERVICE_DBUS,
+                                        DBUS_PATH_DBUS,
+                                        DBUS_INTERFACE_DBUS,
                                         "ListNames",
                                         NULL,
                                         G_VARIANT_TYPE ("(as)"),
@@ -356,9 +358,9 @@ print_names (GDBusConnection *c,
 
   error = NULL;
   result = g_dbus_connection_call_sync (c,
-                                        "org.freedesktop.DBus",
-                                        "/org/freedesktop/DBus",
-                                        "org.freedesktop.DBus",
+                                        DBUS_SERVICE_DBUS,
+                                        DBUS_PATH_DBUS,
+                                        DBUS_INTERFACE_DBUS,
                                         "ListActivatableNames",
                                         NULL,
                                         G_VARIANT_TYPE ("(as)"),
@@ -501,7 +503,7 @@ call_helper_get_method_in_signature (GDBusConnection  *c,
   result = g_dbus_connection_call_sync (c,
                                         dest,
                                         path,
-                                        "org.freedesktop.DBus.Introspectable",
+                                        DBUS_INTERFACE_INTROSPECTABLE,
                                         "Introspect",
                                         NULL,
                                         G_VARIANT_TYPE ("(s)"),
@@ -583,6 +585,61 @@ _g_variant_parse_me_harder (GVariantType   *type,
 
   return value;
 }
+
+/* ---------------------------------------------------------------------------------------------------- */
+
+#ifdef G_OS_UNIX
+static gboolean
+walk_variant_for_handle (GVariantBuilder  *builder,
+                         GUnixFDList      *fd_list,
+                         GVariant         *value)
+{
+  g_assert (!g_variant_is_floating (value));
+
+  if (g_variant_is_container (value))
+    {
+      gboolean res = TRUE;
+      GVariantIter iter;
+      GVariant *child;
+
+      g_variant_iter_init (&iter, value);
+
+      g_variant_builder_open (builder, g_variant_get_type (value));
+
+      while ((child = g_variant_iter_next_value (&iter)) && res)
+        {
+          res = walk_variant_for_handle (builder, fd_list, child);
+          g_variant_unref (child);
+        }
+
+      g_variant_builder_close (builder);
+
+      if (!res)
+        return FALSE;
+    }
+  else if (g_variant_is_of_type (value, G_VARIANT_TYPE_HANDLE))
+    {
+      GError *error = NULL;
+      int fd_id = -1;
+
+      if ((fd_id = g_unix_fd_list_append (fd_list, g_variant_get_handle (value), &error)) < 0)
+        {
+          g_printerr (_("Error adding handle %d: %s\n"),
+                        g_variant_get_handle (value), error->message);
+          g_error_free (error);
+          return FALSE;
+        }
+
+      g_variant_builder_add_value (builder, g_variant_new_handle (fd_id));
+    }
+  else
+    {
+      g_variant_builder_add_value (builder, value);
+    }
+
+  return TRUE;
+}
+#endif
 
 /* ---------------------------------------------------------------------------------------------------- */
 
@@ -801,7 +858,7 @@ handle_emit (gint        *argc,
     }
 
   /* Read parameters */
-  g_variant_builder_init (&builder, G_VARIANT_TYPE_TUPLE);
+  g_variant_builder_init_static (&builder, G_VARIANT_TYPE_TUPLE);
   skip_dashes = TRUE;
   parm = 0;
   for (n = 1; n < (guint) *argc; n++)
@@ -920,7 +977,6 @@ handle_call (gint        *argc,
   GPtrArray *in_signature_types;
 #ifdef G_OS_UNIX
   GUnixFDList *fd_list;
-  gint fd_id;
 #endif
   gboolean complete_names;
   gboolean complete_paths;
@@ -939,7 +995,7 @@ handle_call (gint        *argc,
   result = NULL;
   in_signature_types = NULL;
 #ifdef G_OS_UNIX
-  fd_list = NULL;
+  fd_list = g_unix_fd_list_new ();
 #endif
 
   modify_argv0_for_command (argc, argv, "call");
@@ -1093,6 +1149,12 @@ handle_call (gint        *argc,
     }
   method_name = g_strdup (s + 1);
   interface_name = g_strndup (opt_call_method, s - opt_call_method);
+  if (!request_completion &&
+      (!g_dbus_is_interface_name (interface_name) || !g_dbus_is_member_name (method_name)))
+    {
+      g_printerr (_("Error: Method name “%s” is invalid\n"), opt_call_method);
+      goto out;
+    }
 
   /* All done with completion now */
   if (request_completion)
@@ -1113,7 +1175,7 @@ handle_call (gint        *argc,
     }
 
   /* Read parameters */
-  g_variant_builder_init (&builder, G_VARIANT_TYPE_TUPLE);
+  g_variant_builder_init_static (&builder, G_VARIANT_TYPE_TUPLE);
   skip_dashes = TRUE;
   parm = 0;
   for (n = 1; n < (guint) *argc; n++)
@@ -1186,23 +1248,16 @@ handle_call (gint        *argc,
           g_free (context);
         }
 #ifdef G_OS_UNIX
-      if (g_variant_is_of_type (value, G_VARIANT_TYPE_HANDLE))
+      if (!walk_variant_for_handle (&builder, fd_list, value))
         {
-          if (!fd_list)
-            fd_list = g_unix_fd_list_new ();
-          if ((fd_id = g_unix_fd_list_append (fd_list, g_variant_get_handle (value), &error)) == -1)
-            {
-              g_printerr (_("Error adding handle %d: %s\n"),
-                          g_variant_get_handle (value), error->message);
-              g_variant_builder_clear (&builder);
-              g_error_free (error);
-              goto out;
-            } 
-	  g_variant_unref (value);
-          value = g_variant_new_handle (fd_id);
-      	}
-#endif
+          g_clear_pointer (&value, g_variant_unref);
+          g_variant_builder_clear (&builder);
+          goto out;
+        }
+#else
       g_variant_builder_add_value (&builder, value);
+#endif
+      g_clear_pointer (&value, g_variant_unref);
       ++parm;
     }
   parameters = g_variant_builder_end (&builder);
@@ -1373,7 +1428,7 @@ dump_method (const GDBusMethodInfo *o,
 {
   guint n;
   guint m;
-  guint name_len;
+  size_t name_len;
   guint total_num_args;
 
   for (n = 0; o->annotations != NULL && o->annotations[n] != NULL; n++)
@@ -1500,7 +1555,7 @@ dump_interface (GDBusConnection          *c,
       result = g_dbus_connection_call_sync (c,
                                             name,
                                             object_path,
-                                            "org.freedesktop.DBus.Properties",
+                                            DBUS_INTERFACE_PROPERTIES,
                                             "GetAll",
                                             g_variant_new ("(s)", o->name),
                                             NULL,
@@ -1538,7 +1593,7 @@ dump_interface (GDBusConnection          *c,
               result = g_dbus_connection_call_sync (c,
                                                     name,
                                                     object_path,
-                                                    "org.freedesktop.DBus.Properties",
+                                                    DBUS_INTERFACE_PROPERTIES,
                                                     "Get",
                                                     g_variant_new ("(ss)", o->name, o->properties[n]->name),
                                                     G_VARIANT_TYPE ("(v)"),
@@ -1720,7 +1775,7 @@ introspect_do (GDBusConnection *c,
   result = g_dbus_connection_call_sync (c,
                                         opt_introspect_dest,
                                         object_path,
-                                        "org.freedesktop.DBus.Introspectable",
+                                        DBUS_INTERFACE_INTROSPECTABLE,
                                         "Introspect",
                                         NULL,
                                         G_VARIANT_TYPE ("(s)"),
@@ -1983,10 +2038,7 @@ monitor_on_name_vanished (GDBusConnection *connection,
   g_print ("The name %s does not have an owner\n", name);
 
   if (monitor_filter_id != 0)
-    {
-      g_dbus_connection_signal_unsubscribe (connection, monitor_filter_id);
-      monitor_filter_id = 0;
-    }
+    g_dbus_connection_signal_unsubscribe (connection, g_steal_handle_id (&monitor_filter_id));
 }
 
 static const GOptionEntry monitor_entries[] =
@@ -2482,7 +2534,8 @@ main (gint argc, gchar *argv[])
 
  again:
   command = argv[1];
-  if (g_strcmp0 (command, "help") == 0)
+  if (g_strcmp0 (command, "help") == 0 ||
+      g_strcmp0 (command, "--help") == 0)
     {
       if (request_completion)
         {

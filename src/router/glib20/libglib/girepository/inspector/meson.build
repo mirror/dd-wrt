@@ -3,6 +3,7 @@
 
 custom_c_args = [
   '-DG_LOG_DOMAIN="GLib-GirInspector"',
+  warning_sign_conversion_args,
 ]
 
 if cc.get_id() != 'msvc'
@@ -18,6 +19,7 @@ giinspecttypelib = executable('gi-inspect-typelib', 'inspector.c',
   dependencies: [
     libgirepository_dep,
     libgio_dep,
+    app_profile_dep,
   ],
   install: true,
   c_args: custom_c_args,

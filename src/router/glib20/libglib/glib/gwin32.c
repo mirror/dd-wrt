@@ -41,10 +41,8 @@
 #include <errno.h>
 #include <fcntl.h>
 
-#define STRICT			/* Strict typing, please */
 #include <winsock2.h>
 #include <windows.h>
-#undef STRICT
 #ifndef G_WITH_CYGWIN
 #include <direct.h>
 #endif
@@ -72,7 +70,10 @@
 #endif
 
 #include "glib.h"
+#include "gwin32.h"
+#include "gwin32private.h"
 #include "gthreadprivate.h"
+#include "gwin32private.h"
 #include "glib-init.h"
 
 #ifdef G_WITH_CYGWIN
@@ -194,16 +195,23 @@ g_win32_getlocale (void)
 
 /**
  * g_win32_error_message:
- * @error: error code.
+ * @error: Win32 error code
  *
- * Translate a Win32 error code (as returned by GetLastError() or
- * WSAGetLastError()) into the corresponding message. The message is
- * either language neutral, or in the thread's language, or the user's
- * language, the system's language, or US English (see docs for
- * FormatMessage()). The returned string is in UTF-8. It should be
- * deallocated with g_free().
+ * Translate a Win32 error code into a human readable message.
  *
- * Returns: newly-allocated error message
+ * The error code could be as returned by
+ * [`GetLastError()`](https://learn.microsoft.com/en-us/windows/win32/api/errhandlingapi/nf-errhandlingapi-getlasterror)
+ * or [`WSAGetLastError()`](https://learn.microsoft.com/en-us/windows/win32/api/winsock/nf-winsock-wsagetlasterror).
+ *
+ * The message is either language neutral, or in the thread’s language, or the
+ * user’s language, the system’s language, or US English (see documentation for
+ * [`FormatMessage()`](https://learn.microsoft.com/en-us/windows/win32/api/winbase/nf-winbase-formatmessagew)).
+ * The returned string is in UTF-8.
+ *
+ * If a human readable message cannot be found for the given @error, an empty
+ * string is returned.
+ *
+ * Returns: (transfer full) (not nullable): newly-allocated error message
  **/
 gchar *
 g_win32_error_message (gint error)
@@ -397,7 +405,7 @@ get_package_directory_from_module (const gchar *module_name)
  *
  * It is strongly recommended that packagers of GLib-using libraries
  * for Windows do not store installation paths in the Registry to be
- * used by this function as that interfers with having several
+ * used by this function as that interferes with having several
  * parallel installations of the library. Enabling multiple
  * installations of different versions of some GLib-using library, or
  * GLib itself, is desirable for various reasons.
@@ -1067,7 +1075,66 @@ static DWORD       *exceptions_to_catch = NULL;
 static HANDLE       debugger_wakeup_event = 0;
 static DWORD        debugger_spawn_flags = 0;
 
-#include "gwin32-private.c"
+/* Copy @cmdline into @debugger, and substitute @pid for `%p`
+ * and @event for `%e`.
+ * If @debugger_size (in wchar_ts) is overflowed, return %FALSE.
+ * Also returns %FALSE when `%` is followed by anything other
+ * than `e` or `p`.
+ */
+bool
+g_win32_substitute_pid_and_event (wchar_t       *local_debugger,
+                                  gsize          debugger_size,
+                                  const wchar_t *cmdline,
+                                  DWORD          pid,
+                                  guintptr       event)
+{
+  gsize i = 0, dbg_i = 0;
+/* These are integers, and they can't be longer than 20 characters
+ * even when they are 64-bit and in decimal notation.
+ * Use 30 just to be sure.
+ */
+#define STR_BUFFER_SIZE 30
+  wchar_t pid_str[STR_BUFFER_SIZE] = {0};
+  gsize pid_str_len;
+  wchar_t event_str[STR_BUFFER_SIZE] = {0};
+  gsize event_str_len;
+
+  _snwprintf_s (pid_str, STR_BUFFER_SIZE, G_N_ELEMENTS (pid_str), L"%lu", pid);
+  pid_str[G_N_ELEMENTS (pid_str) - 1] = 0;
+  pid_str_len = wcslen (pid_str);
+  _snwprintf_s (event_str, STR_BUFFER_SIZE, G_N_ELEMENTS (pid_str), L"%Iu", event);
+  event_str[G_N_ELEMENTS (pid_str) - 1] = 0;
+  event_str_len = wcslen (event_str);
+#undef STR_BUFFER_SIZE
+
+  while (cmdline[i] != 0 && dbg_i < debugger_size)
+    {
+      if (cmdline[i] != L'%')
+        local_debugger[dbg_i++] = cmdline[i++];
+      else if (cmdline[i + 1] == L'p')
+        {
+          gsize j = 0;
+          while (j < pid_str_len && dbg_i < debugger_size)
+            local_debugger[dbg_i++] = pid_str[j++];
+          i += 2;
+        }
+      else if (cmdline[i + 1] == L'e')
+        {
+          gsize j = 0;
+          while (j < event_str_len && dbg_i < debugger_size)
+            local_debugger[dbg_i++] = event_str[j++];
+          i += 2;
+        }
+      else
+        return FALSE;
+    }
+  if (dbg_i < debugger_size)
+    local_debugger[dbg_i] = 0;
+  else
+    return FALSE;
+
+  return TRUE;
+}
 
 static char *
 copy_chars (char       *buffer,
@@ -1297,9 +1364,9 @@ g_crash_handler_win32_init (void)
   debugger_wakeup_event = CreateEvent (&sa, FALSE, FALSE, NULL);
 
   /* Put process ID and event handle into debugger commandline */
-  if (!_g_win32_subst_pid_and_event_w (debugger, G_N_ELEMENTS (debugger),
-                                       debugger_env, GetCurrentProcessId (),
-                                       (guintptr) debugger_wakeup_event))
+  if (!g_win32_substitute_pid_and_event (debugger, G_N_ELEMENTS (debugger),
+                                         debugger_env, GetCurrentProcessId (),
+                                         (guintptr) debugger_wakeup_event))
     {
       CloseHandle (debugger_wakeup_event);
       debugger_wakeup_event = 0;
@@ -1455,6 +1522,76 @@ g_win32_find_helper_executable_path (const gchar *executable_name, void *dll_han
   return executable_path;
 }
 
+/** < private >
+ *
+ * g_win32_file_stream_is_console_output:
+ *
+ * @stream: a FILE stream
+ *
+ * Checks if the given FILE stream refers to a Win32 console
+ * screen buffer.
+ */
+bool
+g_win32_file_stream_is_console_output (FILE *stream)
+{
+  int fd = _fileno (stream);
+
+  if (fd < 0)
+    {
+      /* On Windows, FILE streams can be 'open' but not associated
+       * with any file descriptor. As far as I know, that can only
+       * happen for the standard streams stdin, stdout, and stderr.
+       * Window processes can have NULL standard HANDLEs, but the
+       * C standard states that standard streams must be 'open'
+       * when main is called. So, on Windows, _fileno() is expected
+       * to return values < 0 even without errors.
+       */
+      return false;
+    }
+
+  /* We call _isatty() first because it's a very fast check (just
+   * checking an internal flag). However, the _isatty check comprehends
+   * output devices like serial ports, so we check if the output is
+   * really a win32 console with g_win32_handle_is_console_output.
+   */
+  return _isatty (fd) &&
+         g_win32_handle_is_console_output ((HANDLE)_get_osfhandle (fd));
+}
+
+/** < private >
+ *
+ * g_win32_handle_is_console_output:
+ *
+ * @handle: the given HANDLE
+ *
+ * Checks if the given HANDLE refers to a Win32 console screen
+ * buffer (output HANDLE).
+ */
+bool
+g_win32_handle_is_console_output (HANDLE handle)
+{
+  /* MSDN suggests using GetConsoleMode() to check if a HANDLE refers to
+   * the console. However GetConsoleMode() requires read access rights
+   * (FILE_READ_DATA | FILE_READ_ATTRIBUTES | FILE_READ_EA on Windows 10),
+   * and output HANDLEs may have been opened with write rights only. To
+   * overcome that, we use WriteConsole() with a zero characters count.
+   */
+  const wchar_t *dummy = L"";
+  if (!WriteConsole (handle, dummy, 0, NULL, NULL))
+    {
+      DWORD code = GetLastError ();
+
+      if (code != ERROR_INVALID_FUNCTION && code != ERROR_INVALID_HANDLE)
+        {
+          WIN32_API_FAILED ("WriteConsole");
+        }
+
+      return false;
+    }
+
+  return true;
+}
+
 /*
  * g_win32_handle_is_socket:
  * @h: a win32 HANDLE
@@ -1563,4 +1700,73 @@ g_win32_reopen_noninherited (int fd,
     }
 
   return dupfd;
+}
+
+bool
+g_win32_error_message_in_place (DWORD    code,
+                                wchar_t *buffer,
+                                size_t   wchars_count)
+{
+  const DWORD flags = FORMAT_MESSAGE_FROM_SYSTEM |
+                      FORMAT_MESSAGE_IGNORE_INSERTS;
+  DWORD wchars_written;
+
+  g_assert (wchars_count > 0);
+
+  wchars_written = FormatMessage (flags, NULL, code, 0, buffer, wchars_count - 1, NULL);
+  if (wchars_written == 0)
+    return false;
+
+  g_assert (wchars_written < wchars_count);
+
+  if (wchars_written >= 2)
+    {
+      wchars_written -= (buffer[wchars_written - 1] == L'\n') +
+                        (buffer[wchars_written - 2] == L'\r');
+    }
+
+  buffer[wchars_written] = L'\0';
+
+  return true;
+}
+
+/** < private >
+ *
+ * g_win32_api_failed:
+ *
+ * @where: location in the source code
+ * @api: name of the failing API
+ * @code: a Windows error code or a failing HRESULT
+ *
+ * Prints a warning about the failing API with an extended
+ * error description (see g_win32_error_message).
+ */
+void
+g_win32_api_failed_with_code (const char *where,
+                              const char *api,
+                              DWORD       code)
+{
+  wchar_t description[500];
+
+  if (g_win32_error_message_in_place (code, description, G_N_ELEMENTS (description)))
+    g_warning ("%s failed: %S", api, description);
+  else
+    g_warning ("%s failed with error code %u", api, (unsigned int) code);
+}
+
+/** < private >
+ *
+ * g_win32_api_failed:
+ *
+ * @where: location in the source code
+ * @api: name of the failing API
+ *
+ * Prints a warning about the failing API with an extended
+ * error description (see g_win32_error_message).
+ */
+void
+g_win32_api_failed (const char *where,
+                    const char *api)
+{
+  g_win32_api_failed_with_code (where, api, GetLastError ());
 }

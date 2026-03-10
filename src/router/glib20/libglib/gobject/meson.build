@@ -32,8 +32,6 @@ gobject_visibility_h = custom_target(
   command: [gen_visibility_macros, meson.project_version(), 'visibility-macros', 'GOBJECT', '@OUTPUT@'],
   install: true,
   install_dir: gobject_includedir,
-  # FIXME: Not needed with Meson >= 0.64.0
-  install_tag: 'devel',
 )
 gobject_sources += gobject_visibility_h
 
@@ -63,13 +61,21 @@ gobject_sources += files(
 )
 
 if host_system == 'windows' and glib_build_shared
-  gobject_win_rc = configure_file(
-    input: 'gobject.rc.in',
+  gobject_rc_conf = configuration_data({
+    'NAME': 'GObject',
+    'FILENAME': (cc.get_argument_syntax() == 'msvc' ? '' : 'lib') + 'gobject-' + glib_api_version + '-' + soversion.to_string() + '.dll',
+    'DESCRIPTION': 'The base type system and object class',
+  })
+  gobject_rc_conf.merge_from(rc_conf_base)
+  lib_rc = configure_file(
+    input: lib_rc_in,
     output: 'gobject.rc',
-    configuration: glibconfig_conf,
+    configuration: gobject_rc_conf,
   )
-  gobject_win_res = windows.compile_resources(gobject_win_rc)
-  gobject_sources += [gobject_win_res]
+  gobject_sources += [windows.compile_resources(lib_rc,
+    # Workaround for https://github.com/llvm/llvm-project/issues/63426
+    args: ['-c', '65001'],
+  )]
 endif
 
 if enable_dtrace
@@ -87,7 +93,7 @@ python_tools = [
 
 python_tools_conf = configuration_data()
 python_tools_conf.set('VERSION', glib_version)
-python_tools_conf.set('PYTHON', python_name)
+python_tools_conf.set('PYTHON', python_shebang)
 
 foreach tool: python_tools
   tool_bin = configure_file(
@@ -148,8 +154,8 @@ libgobject = library('gobject-2.0',
   darwin_versions : darwin_versions,
   install : true,
   include_directories : [configinc],
-  dependencies : [libglib_dep],
-  c_args : ['-DG_LOG_DOMAIN="GLib-GObject"', '-DGOBJECT_COMPILATION'],
+  dependencies : [libffi_dep, libglib_dep],
+  c_args : ['-DG_LOG_DOMAIN="GLib-GObject"', '-DGOBJECT_COMPILATION', warning_sign_conversion_args, warning_shorten_64_to_32_args],
   gnu_symbol_visibility : 'hidden',
   link_args : glib_link_flags,
 )
@@ -173,7 +179,7 @@ meson.override_dependency('gobject-2.0', libgobject_dep)
 gobject_query = executable('gobject-query', 'gobject-query.c',
   install : true,
   install_tag : 'bin-devel',
-  dependencies : [libglib_dep, libgobject_dep])
+  dependencies : [libglib_dep, libgobject_dep, app_profile_dep])
 
 install_data('gobject_gdb.py',
   install_dir : glib_pkgdatadir / 'gdb',

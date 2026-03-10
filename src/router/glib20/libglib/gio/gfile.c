@@ -84,7 +84,6 @@
 typedef off_t loff_t;
 #endif
 
-
 /**
  * GFile:
  *
@@ -176,9 +175,9 @@ typedef off_t loff_t;
  * short. Entity tags are somewhat like a more abstract version of the
  * traditional mtime, and can be used to quickly determine if the file
  * has been modified from the version on the file system. See the
- * HTTP 1.1 
- * [specification](http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html)
- * for HTTP `ETag` headers, which are a very similar concept.
+ * description of HTTP ETags in
+ * [RFC9110](https://www.rfc-editor.org/rfc/rfc9110.html#name-etag).
+ * `GFile` Entity Tags are a very similar concept.
  */
 
 static void               g_file_real_query_info_async            (GFile                  *file,
@@ -783,9 +782,17 @@ g_file_hash (gconstpointer file)
  *
  * Checks if the two given #GFiles refer to the same file.
  *
+ * This function can be used with [method@Gio.File.hash] to insert
+ * [iface@Gio.File]s efficiently in a hash table.
+ *
  * Note that two #GFiles that differ can still refer to the same
  * file on the filesystem due to various forms of filename
- * aliasing.
+ * aliasing. For local files, this function essentially compares the file paths,
+ * so two [iface@Gio.File]s which point to different hard or soft links will not
+ * be considered equal, despite pointing to the same content.
+ *
+ * For determining whether two files are hardlinked, see
+ * [const@Gio.FILE_ATTRIBUTE_ID_FILE].
  *
  * This call does no blocking I/O.
  *
@@ -1115,7 +1122,7 @@ g_file_enumerate_children (GFile                *file,
  * @file: input #GFile
  * @attributes: an attribute query string
  * @flags: a set of #GFileQueryInfoFlags
- * @io_priority: the [I/O priority][io-priority] of the request
+ * @io_priority: the [I/O priority](iface.AsyncResult.html#io-priority) of the request
  * @cancellable: (nullable): optional #GCancellable object,
  *   %NULL to ignore
  * @callback: (scope async) (closure user_data): a #GAsyncReadyCallback
@@ -1192,8 +1199,11 @@ g_file_enumerate_children_finish (GFile         *file,
  * @cancellable: (nullable): optional #GCancellable object,
  *   %NULL to ignore
  *
- * Utility function to check if a particular file exists. This is
- * implemented using g_file_query_info() and as such does blocking I/O.
+ * Utility function to check if a particular file exists.
+ *
+ * The fallback implementation of this API is using [method@Gio.File.query_info]
+ * and therefore may do blocking I/O. To asynchronously query the existence
+ * of a file, use [method@Gio.File.query_info_async].
  *
  * Note that in many cases it is [racy to first check for file existence](https://en.wikipedia.org/wiki/Time_of_check_to_time_of_use)
  * and then execute something based on the outcome of that, because the
@@ -1222,9 +1232,15 @@ gboolean
 g_file_query_exists (GFile        *file,
                      GCancellable *cancellable)
 {
+  GFileIface *iface;
   GFileInfo *info;
 
-  g_return_val_if_fail (G_IS_FILE(file), FALSE);
+  g_return_val_if_fail (G_IS_FILE (file), FALSE);
+
+  iface = G_FILE_GET_IFACE (file);
+
+  if (iface->query_exists)
+    return iface->query_exists (file, cancellable);
 
   info = g_file_query_info (file, G_FILE_ATTRIBUTE_STANDARD_TYPE,
                             G_FILE_QUERY_INFO_NONE, cancellable, NULL);
@@ -1279,46 +1295,57 @@ g_file_query_file_type (GFile               *file,
 
 /**
  * g_file_query_info:
- * @file: input #GFile
+ * @file: input file
  * @attributes: an attribute query string
- * @flags: a set of #GFileQueryInfoFlags
- * @cancellable: (nullable): optional #GCancellable object,
- *   %NULL to ignore
- * @error: a #GError
+ * @flags: flags to affect the query operation
+ * @cancellable: (nullable): optional cancellable object
+ * @error: return location for an error
  *
  * Gets the requested information about specified @file.
- * The result is a #GFileInfo object that contains key-value
+ *
+ * The result is a [class@Gio.FileInfo] object that contains key-value
  * attributes (such as the type or size of the file).
  *
  * The @attributes value is a string that specifies the file
  * attributes that should be gathered. It is not an error if
- * it's not possible to read a particular requested attribute
- * from a file - it just won't be set. @attributes should be a
- * comma-separated list of attributes or attribute wildcards.
- * The wildcard "*" means all attributes, and a wildcard like
- * "standard::*" means all attributes in the standard namespace.
- * An example attribute query be "standard::*,owner::user".
- * The standard attributes are available as defines, like
- * %G_FILE_ATTRIBUTE_STANDARD_NAME.
+ * it’s not possible to read a particular requested attribute
+ * from a file — it just won't be set. In particular this means that if a file
+ * is inaccessible (due to being in a folder with restrictive permissions), for
+ * example, you can expect the returned [class@Gio.FileInfo] to have very few
+ * attributes set. You should check whether an attribute is set using
+ * [method@Gio.FileInfo.has_attribute] before trying to retrieve its value.
  *
- * If @cancellable is not %NULL, then the operation can be cancelled
+ * It is guaranteed that if any of the following attributes are listed in
+ * @attributes, they will always be set in the returned [class@Gio.FileInfo],
+ * even if the user doesn’t have permissions to access the file:
+ *
+ *  - [const@Gio.FILE_ATTRIBUTE_STANDARD_NAME]
+ *  - [const@Gio.FILE_ATTRIBUTE_STANDARD_DISPLAY_NAME]
+ *
+ * @attributes should be a comma-separated list of attributes or attribute
+ * wildcards. The wildcard `"*"` means all attributes, and a wildcard like
+ * `"standard::*"` means all attributes in the standard namespace.
+ * An example attribute query might be `"standard::*,owner::user"`.
+ * The standard attributes are available as defines, like
+ * [const@Gio.FILE_ATTRIBUTE_STANDARD_NAME].
+ *
+ * If @cancellable is not `NULL`, then the operation can be cancelled
  * by triggering the cancellable object from another thread. If the
- * operation was cancelled, the error %G_IO_ERROR_CANCELLED will be
+ * operation was cancelled, the error [error@Gio.IOErrorEnum.CANCELLED] will be
  * returned.
  *
  * For symlinks, normally the information about the target of the
  * symlink is returned, rather than information about the symlink
- * itself. However if you pass %G_FILE_QUERY_INFO_NOFOLLOW_SYMLINKS
+ * itself. However if you pass [flags@Gio.FileQueryInfoFlags.NOFOLLOW_SYMLINKS]
  * in @flags the information about the symlink itself will be returned.
  * Also, for symlinks that point to non-existing files the information
  * about the symlink itself will be returned.
  *
- * If the file does not exist, the %G_IO_ERROR_NOT_FOUND error will be
+ * If the file does not exist, the [error@Gio.IOErrorEnum.NOT_FOUND] error will be
  * returned. Other errors are possible too, and depend on what kind of
- * filesystem the file is on.
+ * file system the file is on.
  *
- * Returns: (transfer full): a #GFileInfo for the given @file, or %NULL
- *   on error. Free the returned object with g_object_unref().
+ * Returns: (transfer full): a [class@Gio.FileInfo] for the given @file
  */
 GFileInfo *
 g_file_query_info (GFile                *file,
@@ -1352,7 +1379,7 @@ g_file_query_info (GFile                *file,
  * @file: input #GFile
  * @attributes: an attribute query string
  * @flags: a set of #GFileQueryInfoFlags
- * @io_priority: the [I/O priority][io-priority] of the request
+ * @io_priority: the [I/O priority](iface.AsyncResult.html#io-priority) of the request
  * @cancellable: (nullable): optional #GCancellable object,
  *   %NULL to ignore
  * @callback: (scope async) (closure user_data): a #GAsyncReadyCallback
@@ -1489,7 +1516,7 @@ g_file_query_filesystem_info (GFile         *file,
  * g_file_query_filesystem_info_async:
  * @file: input #GFile
  * @attributes: an attribute query string
- * @io_priority: the [I/O priority][io-priority] of the request
+ * @io_priority: the [I/O priority](iface.AsyncResult.html#io-priority) of the request
  * @cancellable: (nullable): optional #GCancellable object,
  *   %NULL to ignore
  * @callback: (scope async) (closure user_data): a #GAsyncReadyCallback
@@ -1611,7 +1638,7 @@ g_file_find_enclosing_mount (GFile         *file,
 /**
  * g_file_find_enclosing_mount_async:
  * @file: a #GFile
- * @io_priority: the [I/O priority][io-priority] of the request
+ * @io_priority: the [I/O priority](iface.AsyncResult.html#io-priority) of the request
  * @cancellable: (nullable): optional #GCancellable object,
  *   %NULL to ignore
  * @callback: (scope async) (closure user_data): a #GAsyncReadyCallback
@@ -2098,7 +2125,7 @@ g_file_replace_readwrite (GFile             *file,
 /**
  * g_file_read_async:
  * @file: input #GFile
- * @io_priority: the [I/O priority][io-priority] of the request
+ * @io_priority: the [I/O priority](iface.AsyncResult.html#io-priority) of the request
  * @cancellable: (nullable): optional #GCancellable object,
  *   %NULL to ignore
  * @callback: (scope async) (closure user_data): a #GAsyncReadyCallback
@@ -2166,7 +2193,7 @@ g_file_read_finish (GFile         *file,
  * g_file_append_to_async:
  * @file: input #GFile
  * @flags: a set of #GFileCreateFlags
- * @io_priority: the [I/O priority][io-priority] of the request
+ * @io_priority: the [I/O priority](iface.AsyncResult.html#io-priority) of the request
  * @cancellable: (nullable): optional #GCancellable object,
  *   %NULL to ignore
  * @callback: (scope async) (closure user_data): a #GAsyncReadyCallback
@@ -2237,7 +2264,7 @@ g_file_append_to_finish (GFile         *file,
  * g_file_create_async:
  * @file: input #GFile
  * @flags: a set of #GFileCreateFlags
- * @io_priority: the [I/O priority][io-priority] of the request
+ * @io_priority: the [I/O priority](iface.AsyncResult.html#io-priority) of the request
  * @cancellable: (nullable): optional #GCancellable object,
  *   %NULL to ignore
  * @callback: (scope async) (closure user_data): a #GAsyncReadyCallback
@@ -2311,7 +2338,7 @@ g_file_create_finish (GFile         *file,
  *   or %NULL to ignore
  * @make_backup: %TRUE if a backup should be created
  * @flags: a set of #GFileCreateFlags
- * @io_priority: the [I/O priority][io-priority] of the request
+ * @io_priority: the [I/O priority](iface.AsyncResult.html#io-priority) of the request
  * @cancellable: (nullable): optional #GCancellable object,
  *   %NULL to ignore
  * @callback: (scope async) (closure user_data): a #GAsyncReadyCallback
@@ -2385,7 +2412,7 @@ g_file_replace_finish (GFile         *file,
 /**
  * g_file_open_readwrite_async
  * @file: input #GFile
- * @io_priority: the [I/O priority][io-priority] of the request
+ * @io_priority: the [I/O priority](iface.AsyncResult.html#io-priority) of the request
  * @cancellable: (nullable): optional #GCancellable object,
  *   %NULL to ignore
  * @callback: (scope async) (closure user_data): a #GAsyncReadyCallback
@@ -2457,7 +2484,7 @@ g_file_open_readwrite_finish (GFile         *file,
  * g_file_create_readwrite_async:
  * @file: input #GFile
  * @flags: a set of #GFileCreateFlags
- * @io_priority: the [I/O priority][io-priority] of the request
+ * @io_priority: the [I/O priority](iface.AsyncResult.html#io-priority) of the request
  * @cancellable: (nullable): optional #GCancellable object,
  *   %NULL to ignore
  * @callback: (scope async) (closure user_data): a #GAsyncReadyCallback
@@ -2535,7 +2562,7 @@ g_file_create_readwrite_finish (GFile         *file,
  *   or %NULL to ignore
  * @make_backup: %TRUE if a backup should be created
  * @flags: a set of #GFileCreateFlags
- * @io_priority: the [I/O priority][io-priority] of the request
+ * @io_priority: the [I/O priority](iface.AsyncResult.html#io-priority) of the request
  * @cancellable: (nullable): optional #GCancellable object,
  *   %NULL to ignore
  * @callback: (scope async) (closure user_data): a #GAsyncReadyCallback
@@ -3768,7 +3795,7 @@ g_file_copy (GFile                  *source,
  * @source: input #GFile
  * @destination: destination #GFile
  * @flags: set of #GFileCopyFlags
- * @io_priority: the [I/O priority][io-priority] of the request
+ * @io_priority: the [I/O priority](iface.AsyncResult.html#io-priority) of the request
  * @cancellable: (nullable): optional #GCancellable object,
  *   %NULL to ignore
  * @progress_callback: (nullable) (scope notified) (closure progress_callback_data):
@@ -3816,6 +3843,123 @@ g_file_copy_async (GFile                  *source,
                          progress_callback_data,
                          callback,
                          user_data);
+}
+
+typedef struct _CopyAsyncClosuresData
+{
+  GClosure *progress_callback_closure;
+  GClosure *ready_callback_closure;
+} CopyAsyncClosuresData;
+
+static CopyAsyncClosuresData *
+copy_async_closures_data_new (GClosure *progress_callback_closure,
+                              GClosure *ready_callback_closure)
+{
+  CopyAsyncClosuresData *data;
+
+  data = g_new0 (CopyAsyncClosuresData, 1);
+
+  if (progress_callback_closure != NULL)
+    {
+      data->progress_callback_closure = g_closure_ref (progress_callback_closure);
+      g_closure_sink (progress_callback_closure);
+      if (G_CLOSURE_NEEDS_MARSHAL (progress_callback_closure))
+        g_closure_set_marshal (progress_callback_closure, g_cclosure_marshal_generic);
+    }
+
+  data->ready_callback_closure = g_closure_ref (ready_callback_closure);
+  g_closure_sink (ready_callback_closure);
+  if (G_CLOSURE_NEEDS_MARSHAL (ready_callback_closure))
+    g_closure_set_marshal (ready_callback_closure, g_cclosure_marshal_generic);
+
+  return data;
+}
+
+static void
+copy_async_closures_data_free (CopyAsyncClosuresData *data)
+{
+  if (data->progress_callback_closure != NULL)
+    g_closure_unref (data->progress_callback_closure);
+
+  g_closure_unref (data->ready_callback_closure);
+
+  g_free (data);
+}
+
+static void
+copy_async_invoke_progress (goffset current_num_bytes,
+                            goffset total_num_bytes,
+                            void *user_data)
+{
+  CopyAsyncClosuresData *data = (CopyAsyncClosuresData *) user_data;
+  GValue params[2] = { G_VALUE_INIT, G_VALUE_INIT };
+
+  /* goffset is 64-bits even on 32-bits platforms */
+  g_value_init (&params[0], G_TYPE_INT64);
+  g_value_set_int64 (&params[0], current_num_bytes);
+  g_value_init (&params[1], G_TYPE_INT64);
+  g_value_set_int64 (&params[1], total_num_bytes);
+
+  g_closure_invoke (data->progress_callback_closure, /* result = */ NULL, 2, params, /* hint = */ NULL);
+
+  g_value_unset (&params[0]);
+  g_value_unset (&params[1]);
+}
+
+static void
+copy_async_invoke_ready (GObject *file,
+                         GAsyncResult *result,
+                         void *user_data)
+{
+  CopyAsyncClosuresData *data = (CopyAsyncClosuresData *) user_data;
+  GValue params[2] = { G_VALUE_INIT, G_VALUE_INIT };
+
+  g_value_init (&params[0], G_TYPE_FILE);
+  g_value_set_object (&params[0], file);
+  g_value_init (&params[1], G_TYPE_ASYNC_RESULT);
+  g_value_set_object (&params[1], result);
+
+  g_closure_invoke (data->ready_callback_closure, /* result = */ NULL, 2, params, /* hint = */ NULL);
+
+  copy_async_closures_data_free (data);
+  g_value_unset (&params[0]);
+  g_value_unset (&params[1]);
+}
+
+/**
+ * g_file_copy_async_with_closures: (rename-to g_file_copy_async) (finish-func copy_finish):
+ * @source: input [type@Gio.File]
+ * @destination: destination [type@Gio.File]
+ * @flags: set of [flags@Gio.FileCopyFlags]
+ * @io_priority: the [I/O priority](iface.AsyncResult.html#io-priority) of the request
+ * @cancellable: (nullable): optional [class@Gio.Cancellable] object,
+ *   `NULL` to ignore
+ * @progress_callback_closure: (nullable): [type@GObject.Closure] to invoke with progress
+ *   information, or `NULL` if progress information is not needed
+ * @ready_callback_closure: (not nullable): [type@GObject.Closure] to invoke when the request is satisfied
+ *
+ * Version of [method@Gio.File.copy_async] using closures instead of callbacks for
+ * easier binding in other languages.
+ *
+ * Since: 2.82
+ */
+void
+g_file_copy_async_with_closures (GFile *source,
+                                 GFile *destination,
+                                 GFileCopyFlags flags,
+                                 int io_priority,
+                                 GCancellable *cancellable,
+                                 GClosure *progress_callback_closure,
+                                 GClosure *ready_callback_closure)
+{
+  CopyAsyncClosuresData *data;
+
+  /* freed in copy_async_invoke_ready */
+  data = copy_async_closures_data_new (progress_callback_closure, ready_callback_closure);
+
+  g_file_copy_async (source, destination, flags, io_priority, cancellable,
+                     progress_callback_closure == NULL ? NULL : copy_async_invoke_progress, data,
+                     copy_async_invoke_ready, data);
 }
 
 /**
@@ -3984,7 +4128,7 @@ g_file_move (GFile                  *source,
  * @source: #GFile pointing to the source location
  * @destination: #GFile pointing to the destination location
  * @flags: set of #GFileCopyFlags
- * @io_priority: the [I/O priority][io-priority] of the request
+ * @io_priority: the [I/O priority](iface.AsyncResult.html#io-priority) of the request
  * @cancellable: (nullable): optional #GCancellable object,
  *   %NULL to ignore
  * @progress_callback: (nullable) (scope call) (closure progress_callback_data):
@@ -4036,6 +4180,42 @@ g_file_move_async (GFile                *source,
 }
 
 /**
+ * g_file_move_async_with_closures: (rename-to g_file_move_async) (finish-func move_finish):
+ * @source: input [type@Gio.File]
+ * @destination: destination [type@Gio.File]
+ * @flags: set of [flags@Gio.FileCopyFlags]
+ * @io_priority: the [I/O priority](iface.AsyncResult.html#io-priority) of the request
+ * @cancellable: (nullable): optional [class@Gio.Cancellable] object,
+ *   `NULL` to ignore
+ * @progress_callback_closure: (nullable): [type@GObject.Closure] to invoke with progress
+ *   information, or `NULL` if progress information is not needed
+ * @ready_callback_closure: (not nullable): [type@GObject.Closure] to invoke when the request is satisfied
+ *
+ * Version of [method@Gio.File.move_async] using closures instead of callbacks for
+ * easier binding in other languages.
+ *
+ * Since: 2.82
+ */
+void
+g_file_move_async_with_closures (GFile *source,
+                                 GFile *destination,
+                                 GFileCopyFlags flags,
+                                 int io_priority,
+                                 GCancellable *cancellable,
+                                 GClosure *progress_callback_closure,
+                                 GClosure *ready_callback_closure)
+{
+  CopyAsyncClosuresData *data;
+
+  /* freed in copy_async_invoke_ready */
+  data = copy_async_closures_data_new (progress_callback_closure, ready_callback_closure);
+
+  g_file_move_async (source, destination, flags, io_priority, cancellable,
+                     progress_callback_closure == NULL ? NULL : copy_async_invoke_progress, data,
+                     copy_async_invoke_ready, data);
+}
+
+/**
  * g_file_move_finish:
  * @file: input source #GFile
  * @result: a #GAsyncResult
@@ -4070,13 +4250,17 @@ g_file_move_finish (GFile         *file,
  *   %NULL to ignore
  * @error: a #GError, or %NULL
  *
- * Creates a directory. Note that this will only create a child directory
+ * Creates a directory.
+ *
+ * Note that this will only create a child directory
  * of the immediate parent directory of the path or URI given by the #GFile.
  * To recursively create directories, see g_file_make_directory_with_parents().
+ *
  * This function will fail if the parent directory does not exist, setting
  * @error to %G_IO_ERROR_NOT_FOUND. If the file system doesn't support
  * creating directories, this function will fail, setting @error to
- * %G_IO_ERROR_NOT_SUPPORTED.
+ * %G_IO_ERROR_NOT_SUPPORTED. If the directory already exists,
+ * [error@Gio.IOErrorEnum.EXISTS] will be returned.
  *
  * For a local #GFile the newly created directory will have the default
  * (current) ownership and permissions of the current process.
@@ -4115,7 +4299,7 @@ g_file_make_directory (GFile         *file,
 /**
  * g_file_make_directory_async: (virtual make_directory_async)
  * @file: input #GFile
- * @io_priority: the [I/O priority][io-priority] of the request
+ * @io_priority: the [I/O priority](iface.AsyncResult.html#io-priority) of the request
  * @cancellable: (nullable): optional #GCancellable object,
  *   %NULL to ignore
  * @callback: a #GAsyncReadyCallback to call
@@ -4389,7 +4573,7 @@ g_file_real_make_symbolic_link_async (GFile               *file,
  * @file: a #GFile with the name of the symlink to create
  * @symlink_value: (type filename): a string with the path for the target
  *   of the new symlink
- * @io_priority: the [I/O priority][io-priority] of the request
+ * @io_priority: the [I/O priority](iface.AsyncResult.html#io-priority) of the request
  * @cancellable: (nullable): optional #GCancellable object,
  *   %NULL to ignore
  * @callback: a #GAsyncReadyCallback to call
@@ -4522,7 +4706,7 @@ g_file_delete (GFile         *file,
 /**
  * g_file_delete_async: (virtual delete_file_async)
  * @file: input #GFile
- * @io_priority: the [I/O priority][io-priority] of the request
+ * @io_priority: the [I/O priority](iface.AsyncResult.html#io-priority) of the request
  * @cancellable: (nullable): optional #GCancellable object,
  *   %NULL to ignore
  * @callback: a #GAsyncReadyCallback to call
@@ -4591,10 +4775,13 @@ g_file_delete_finish (GFile         *file,
  *
  * Sends @file to the "Trashcan", if possible. This is similar to
  * deleting it, but the user can recover it before emptying the trashcan.
- * Not all file systems support trashing, so this call can return the
+ * Trashing is disabled for system mounts by default (see
+ * g_unix_mount_entry_is_system_internal()), so this call can return the
  * %G_IO_ERROR_NOT_SUPPORTED error. Since GLib 2.66, the `x-gvfs-notrash` unix
- * mount option can be used to disable g_file_trash() support for certain
+ * mount option can be used to disable g_file_trash() support for particular
  * mounts, the %G_IO_ERROR_NOT_SUPPORTED error will be returned in that case.
+ * Since 2.82, the `x-gvfs-trash` unix mount option can be used to enable
+ * g_file_trash() support for particular system mounts.
  *
  * If @cancellable is not %NULL, then the operation can be cancelled by
  * triggering the cancellable object from another thread. If the operation
@@ -4630,7 +4817,7 @@ g_file_trash (GFile         *file,
 /**
  * g_file_trash_async: (virtual trash_async)
  * @file: input #GFile
- * @io_priority: the [I/O priority][io-priority] of the request
+ * @io_priority: the [I/O priority](iface.AsyncResult.html#io-priority) of the request
  * @cancellable: (nullable): optional #GCancellable object,
  *   %NULL to ignore
  * @callback: a #GAsyncReadyCallback to call
@@ -4746,7 +4933,7 @@ g_file_set_display_name (GFile         *file,
  * g_file_set_display_name_async:
  * @file: input #GFile
  * @display_name: a string
- * @io_priority: the [I/O priority][io-priority] of the request
+ * @io_priority: the [I/O priority](iface.AsyncResult.html#io-priority) of the request
  * @cancellable: (nullable): optional #GCancellable object,
  *   %NULL to ignore
  * @callback: (scope async) (closure user_data): a #GAsyncReadyCallback
@@ -5080,7 +5267,7 @@ g_file_real_set_attributes_from_info (GFile                *file,
  * @file: input #GFile
  * @info: a #GFileInfo
  * @flags: a #GFileQueryInfoFlags
- * @io_priority: the [I/O priority][io-priority] of the request
+ * @io_priority: the [I/O priority](iface.AsyncResult.html#io-priority) of the request
  * @cancellable: (nullable): optional #GCancellable object,
  *   %NULL to ignore
  * @callback: (scope async) (closure user_data): a #GAsyncReadyCallback
@@ -7176,7 +7363,7 @@ new_tmp_async_thread (GTask         *task,
  * g_file_new_tmp_async:
  * @tmpl: (type filename) (nullable): Template for the file
  *   name, as in g_file_open_tmp(), or %NULL for a default template
- * @io_priority: the [I/O priority][io-priority] of the request
+ * @io_priority: the [I/O priority](iface.AsyncResult.html#io-priority) of the request
  * @cancellable: optional #GCancellable object, %NULL to ignore
  * @callback: (nullable): a #GAsyncReadyCallback to call when the request is done
  * @user_data: (nullable): data to pass to @callback
@@ -7299,7 +7486,7 @@ new_tmp_dir_async_thread (GTask         *task,
  * g_file_new_tmp_dir_async:
  * @tmpl: (type filename) (nullable): Template for the file
  *   name, as in g_dir_make_tmp(), or %NULL for a default template
- * @io_priority: the [I/O priority][io-priority] of the request
+ * @io_priority: the [I/O priority](iface.AsyncResult.html#io-priority) of the request
  * @cancellable: optional #GCancellable object, %NULL to ignore
  * @callback: (nullable): a #GAsyncReadyCallback to call when the request is done
  * @user_data: (nullable): data to pass to @callback
@@ -7829,7 +8016,7 @@ on_query_default_handler_for_uri_cb (GObject      *object,
 /**
  * g_file_query_default_handler_async:
  * @file: a #GFile to open
- * @io_priority: the [I/O priority][io-priority] of the request
+ * @io_priority: the [I/O priority](iface.AsyncResult.html#io-priority) of the request
  * @cancellable: optional #GCancellable object, %NULL to ignore
  * @callback: (nullable): a #GAsyncReadyCallback to call when the request is done
  * @user_data: (nullable): data to pass to @callback
@@ -7933,7 +8120,8 @@ g_file_load_contents (GFile         *file,
                       GError       **error)
 {
   GFileInputStream *in;
-  GByteArray *content;
+  char *data;
+  gsize size;
   gsize pos;
   gssize res;
   GFileInfo *info;
@@ -7945,17 +8133,22 @@ g_file_load_contents (GFile         *file,
   if (in == NULL)
     return FALSE;
 
-  content = g_byte_array_new ();
+  size = GET_CONTENT_BLOCK_SIZE;
+  data = g_malloc (GET_CONTENT_BLOCK_SIZE);
   pos = 0;
 
-  g_byte_array_set_size (content, pos + GET_CONTENT_BLOCK_SIZE + 1);
   while ((res = g_input_stream_read (G_INPUT_STREAM (in),
-                                     content->data + pos,
+                                     data + pos,
                                      GET_CONTENT_BLOCK_SIZE,
                                      cancellable, error)) > 0)
     {
       pos += res;
-      g_byte_array_set_size (content, pos + GET_CONTENT_BLOCK_SIZE + 1);
+      if (size - pos < GET_CONTENT_BLOCK_SIZE)
+        {
+          g_assert (size <= G_MAXSIZE / 2);
+          size *= 2;
+          data = g_realloc (data, size);
+        }
     }
 
   if (etag_out)
@@ -7980,17 +8173,19 @@ g_file_load_contents (GFile         *file,
   if (res < 0)
     {
       /* error is set already */
-      g_byte_array_free (content, TRUE);
+      g_free (data);
       return FALSE;
     }
 
   if (length)
     *length = pos;
 
-  /* Zero terminate (we got an extra byte allocated for this */
-  content->data[pos] = 0;
+  /* Zero terminate (allocating extra bytes if needed) */
+  if (pos >= size)
+    data = g_realloc (data, pos + 1);
+  data[pos] = 0;
 
-  *contents = (char *)g_byte_array_free (content, FALSE);
+  *contents = g_steal_pointer (&data);
 
   return TRUE;
 }
@@ -7998,7 +8193,8 @@ g_file_load_contents (GFile         *file,
 typedef struct {
   GTask *task;
   GFileReadMoreCallback read_more_callback;
-  GByteArray *content;
+  char *data;
+  gsize size;
   gsize pos;
   char *etag;
 } LoadContentsData;
@@ -8007,10 +8203,29 @@ typedef struct {
 static void
 load_contents_data_free (LoadContentsData *data)
 {
-  if (data->content)
-    g_byte_array_free (data->content, TRUE);
+  g_clear_pointer (&data->data, g_free);
   g_free (data->etag);
   g_free (data);
+}
+
+static void
+load_contents_data_ensure_space (LoadContentsData *data,
+                                 gsize             space)
+{
+  if (data->size - data->pos < space)
+    {
+      if (data->data == NULL)
+        {
+          data->size = space;
+          data->data = g_malloc (space);
+        }
+      else
+        {
+          g_assert (data->size <= G_MAXSIZE / 2);
+          data->size *= 2;
+          data->data = g_realloc (data->data, data->size);
+        }
+    }
 }
 
 static void
@@ -8085,12 +8300,10 @@ load_contents_read_callback (GObject      *obj,
     {
       data->pos += read_size;
 
-      g_byte_array_set_size (data->content,
-                             data->pos + GET_CONTENT_BLOCK_SIZE);
-
+      load_contents_data_ensure_space (data, GET_CONTENT_BLOCK_SIZE);
 
       if (data->read_more_callback &&
-          !data->read_more_callback ((char *)data->content->data, data->pos,
+          !data->read_more_callback (data->data, data->pos,
                                      g_async_result_get_user_data (G_ASYNC_RESULT (data->task))))
         g_file_input_stream_query_info_async (G_FILE_INPUT_STREAM (stream),
                                               G_FILE_ATTRIBUTE_ETAG_VALUE,
@@ -8100,7 +8313,7 @@ load_contents_read_callback (GObject      *obj,
                                               data);
       else
         g_input_stream_read_async (stream,
-                                   data->content->data + data->pos,
+                                   data->data + data->pos,
                                    GET_CONTENT_BLOCK_SIZE,
                                    0,
                                    g_task_get_cancellable (data->task),
@@ -8123,10 +8336,9 @@ load_contents_open_callback (GObject      *obj,
 
   if (stream)
     {
-      g_byte_array_set_size (data->content,
-                             data->pos + GET_CONTENT_BLOCK_SIZE);
+      load_contents_data_ensure_space (data, GET_CONTENT_BLOCK_SIZE);
       g_input_stream_read_async (G_INPUT_STREAM (stream),
-                                 data->content->data + data->pos,
+                                 data->data + data->pos,
                                  GET_CONTENT_BLOCK_SIZE,
                                  0,
                                  g_task_get_cancellable (data->task),
@@ -8176,7 +8388,6 @@ g_file_load_partial_contents_async (GFile                 *file,
 
   data = g_new0 (LoadContentsData, 1);
   data->read_more_callback = read_more_callback;
-  data->content = g_byte_array_new ();
 
   data->task = g_task_new (file, cancellable, callback, user_data);
   g_task_set_source_tag (data->task, g_file_load_partial_contents_async);
@@ -8245,11 +8456,10 @@ g_file_load_partial_contents_finish (GFile         *file,
     }
 
   /* Zero terminate */
-  g_byte_array_set_size (data->content, data->pos + 1);
-  data->content->data[data->pos] = 0;
+  load_contents_data_ensure_space (data, 1);
+  data->data[data->pos] = 0;
 
-  *contents = (char *)g_byte_array_free (data->content, FALSE);
-  data->content = NULL;
+  *contents = g_steal_pointer (&data->data);
 
   return TRUE;
 }
@@ -8895,7 +9105,7 @@ g_file_measure_disk_usage (GFile                         *file,
  * g_file_measure_disk_usage_async:
  * @file: a #GFile
  * @flags: #GFileMeasureFlags
- * @io_priority: the [I/O priority][io-priority] of the request
+ * @io_priority: the [I/O priority](iface.AsyncResult.html#io-priority) of the request
  * @cancellable: (nullable): optional #GCancellable
  * @progress_callback: (nullable): a #GFileMeasureProgressCallback
  * @progress_data: user_data for @progress_callback
@@ -9224,8 +9434,8 @@ g_file_poll_mountable_finish (GFile         *file,
  * g_file_supports_thread_contexts:
  * @file: a #GFile
  *
- * Checks if @file supports
- * [thread-default contexts][g-main-context-push-thread-default-context].
+ * Checks if @file supports thread-default main contexts
+ * (see [method@GLib.MainContext.push_thread_default])
  * If this returns %FALSE, you cannot perform asynchronous operations on
  * @file in a thread that has a thread-default context.
  *

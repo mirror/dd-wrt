@@ -103,12 +103,6 @@
 #include "glibintl.h"
 
 
-struct ThumbMD5Context {
-	guint32 buf[4];
-	guint32 bits[2];
-	unsigned char in[64];
-};
-
 #ifndef G_OS_WIN32
 
 typedef struct {
@@ -906,7 +900,7 @@ get_access_rights (GFileAttributeMatcher *attribute_matcher,
 		   GLocalFileStat        *statbuf,
 		   GLocalParentFileInfo  *parent_info)
 {
-  /* FIXME: Windows: The underlyin _waccess() is mostly pointless */
+  /* FIXME: Windows: The underlying _waccess() is mostly pointless */
   if (_g_file_attribute_matcher_matches_id (attribute_matcher,
 					    G_FILE_ATTRIBUTE_ID_ACCESS_CAN_READ))
     _g_file_info_set_attribute_boolean_by_id (info, G_FILE_ATTRIBUTE_ID_ACCESS_CAN_READ,
@@ -2027,13 +2021,14 @@ _g_local_file_info_get (const char             *basename,
   _g_file_info_set_attribute_boolean_by_id (info, G_FILE_ATTRIBUTE_ID_DOS_IS_SYSTEM,
                                             (statbuf.attributes & FILE_ATTRIBUTE_SYSTEM));
 
-  _g_file_info_set_attribute_boolean_by_id (info, G_FILE_ATTRIBUTE_ID_DOS_IS_MOUNTPOINT,
-                                            (statbuf.reparse_tag == IO_REPARSE_TAG_MOUNT_POINT));
+  if (stat_ok)
+    {
+      _g_file_info_set_attribute_boolean_by_id (info, G_FILE_ATTRIBUTE_ID_DOS_IS_MOUNTPOINT,
+                                                (statbuf.reparse_tag == IO_REPARSE_TAG_MOUNT_POINT));
 
-  if (statbuf.reparse_tag != 0)
-    _g_file_info_set_attribute_uint32_by_id (info, G_FILE_ATTRIBUTE_ID_DOS_REPARSE_POINT_TAG, statbuf.reparse_tag);
-
-  _g_file_info_set_attribute_boolean_by_id (info, G_FILE_ATTRIBUTE_ID_STANDARD_IS_BACKUP, FALSE);
+      if (statbuf.reparse_tag != 0)
+        _g_file_info_set_attribute_uint32_by_id (info, G_FILE_ATTRIBUTE_ID_DOS_REPARSE_POINT_TAG, statbuf.reparse_tag);
+    }
 #endif
 
   symlink_target = NULL;

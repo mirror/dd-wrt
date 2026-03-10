@@ -21,6 +21,13 @@ Files:
 Copyright: See individual files
 License: CC0-1.0
 
+# .gitignore files are too simple to be copyrightable
+Files:
+ .gitignore
+ **/.gitignore
+Copyright: See individual files
+License: CC0-1.0
+
 # Translation files are explicitly contributed under the license of the project,
 # but by multiple authors
 Files: po/*.po
@@ -35,12 +42,11 @@ Files:
 Copyright: Meson Wrap Database (wrapdb) contributors
 License: CC0-1.0
 
-# SVG files do contain the licensing metadata, but `reuse` can’t extract it
-# yet. The canonical licensing information for these files is in their internal
-# metadata.
-Files: docs/reference/glib/gvariant-*.svg
-Copyright: 2022 Philip Withnall
-License: CC-BY-SA-3.0
+Files: docs/reference/glib/file-name-encodings*.odg
+Copyright:
+  2004-2006 Federico Mena Quintero <federico@ximian.com>
+  2025 Frank Dana
+License: CC0-1.0
 
 # libgirepository uses cmph as a copylib. Adding copyright/license data to the
 # files there would cause divergence from upstream. See

@@ -216,7 +216,7 @@ g_output_stream_write (GOutputStream  *stream,
   gssize res;
 
   g_return_val_if_fail (G_IS_OUTPUT_STREAM (stream), -1);
-  g_return_val_if_fail (buffer != NULL, 0);
+  g_return_val_if_fail (buffer != NULL || count == 0, 0);
 
   if (count == 0)
     return 0;
@@ -1129,7 +1129,7 @@ write_all_callback (GObject      *stream,
           return;
         }
 
-      g_assert_cmpint (nwritten, <=, data->to_write);
+      g_assert ((size_t) nwritten <= data->to_write);
       g_warn_if_fail (nwritten > 0);
 
       data->to_write -= nwritten;

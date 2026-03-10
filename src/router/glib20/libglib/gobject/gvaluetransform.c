@@ -51,7 +51,7 @@ static void                                                                 \
 value_transform_##func_name (const GValue *src_value,                       \
                              GValue       *dest_value)                      \
 {                                                                           \
-  ctype c_value = src_value->data[0].from_member;                           \
+  ctype c_value = (ctype) src_value->data[0].from_member;                   \
   dest_value->data[0].to_member = c_value;                                  \
 } extern void glib_dummy_decl (void)
 DEFINE_CAST (int_s8,            v_int,    gint8,   v_int);
@@ -185,7 +185,7 @@ static void
 value_transform_enum_string (const GValue *src_value,
                              GValue       *dest_value)
 {
-  gint v_enum = src_value->data[0].v_long;
+  gint v_enum = (int) src_value->data[0].v_long;
   gchar *str = g_enum_to_string (G_VALUE_TYPE (src_value), v_enum);
 
   dest_value->data[0].v_pointer = str;
@@ -195,7 +195,7 @@ value_transform_flags_string (const GValue *src_value,
                               GValue       *dest_value)
 {
   GFlagsClass *class = g_type_class_ref (G_VALUE_TYPE (src_value));
-  GFlagsValue *flags_value = g_flags_get_first_value (class, src_value->data[0].v_ulong);
+  GFlagsValue *flags_value = g_flags_get_first_value (class, (unsigned int) src_value->data[0].v_ulong);
 
   /* Note: this does not use g_flags_to_string()
    * to keep backwards compatibility.
@@ -203,7 +203,7 @@ value_transform_flags_string (const GValue *src_value,
   if (flags_value)
     {
       GString *gstring = g_string_new (NULL);
-      guint v_flags = src_value->data[0].v_ulong;
+      guint v_flags = (unsigned int) src_value->data[0].v_ulong;
       
       do
         {

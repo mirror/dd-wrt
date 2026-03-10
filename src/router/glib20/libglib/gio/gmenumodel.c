@@ -50,6 +50,8 @@
  *
  * ![](menu-example.png)
  *
+ * While this kind of deeply nested menu is no longer considered good UI
+ * practice, it serves as a good example of the concepts in `GMenuModel`.
  * There are 8 ‘menus’ visible in the screenshot: one menubar, two
  * submenus and 5 sections:
  *
@@ -69,7 +71,10 @@
  *
  * ## A menu example
  *
- * ![](menu-model.png)
+ * <picture>
+ *   <source srcset="menu-model-dark.svg" media="(prefers-color-scheme: dark)">
+ *   <img src="menu-model-light.svg" alt="menu model">
+ * </picture>
  *
  * Notice that the separators visible in the [example](#an-example-menu)
  * appear nowhere in the [menu model](#a-menu-example). This is because

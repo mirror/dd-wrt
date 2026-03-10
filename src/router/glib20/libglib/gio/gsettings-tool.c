@@ -324,10 +324,15 @@ gsettings_list_recursively (void)
       for (i = 0; schemas[i]; i++)
         {
           GSettings *settings;
+          GSettingsSchema *schema;
 
-          settings = g_settings_new (schemas[i]);
+          schema = g_settings_schema_source_lookup (global_schema_source, schemas[i], FALSE);
+          if (!schema)
+            continue;
+          settings = g_settings_new_full (schema, NULL, NULL);
           list_recursively (settings);
           g_object_unref (settings);
+          g_settings_schema_unref (schema);
         }
 
       g_strfreev (schemas);
@@ -506,7 +511,6 @@ gsettings_set (void)
   const GVariantType *type;
   GError *error = NULL;
   GVariant *new;
-  gchar *freeme = NULL;
 
   type = g_settings_schema_key_get_value_type (global_schema_key);
 
@@ -539,6 +543,7 @@ gsettings_set (void)
     {
       g_clear_error (&error);
       new = g_variant_new_string (global_value);
+      g_variant_ref_sink (new);
     }
 
   if (new == NULL)
@@ -547,6 +552,7 @@ gsettings_set (void)
 
       context = g_variant_parse_error_print_context (error, global_value);
       g_printerr ("%s", context);
+      g_free (context);
       exit (1);
     }
 
@@ -560,12 +566,13 @@ gsettings_set (void)
   if (!g_settings_set_value (global_settings, global_key, new))
     {
       g_printerr (_("The key is not writable\n"));
+      g_variant_unref (new);
       exit (1);
     }
 
   g_settings_sync ();
 
-  g_free (freeme);
+  g_variant_unref (new);
 }
 
 static int
@@ -893,14 +900,20 @@ main (int argc, char **argv)
           if (parts[1])
             {
               if (!check_relocatable_schema (global_schema, parts[0]) || !check_path (parts[1]))
-                return 1;
+                {
+                  g_strfreev (parts);
+                  return 1;
+                }
 
               global_settings = g_settings_new_full (global_schema, NULL, parts[1]);
             }
           else
             {
               if (!check_schema (global_schema, parts[0]))
-                return 1;
+                {
+                  g_strfreev (parts);
+                  return 1;
+                }
 
               global_settings = g_settings_new_full (global_schema, NULL, NULL);
             }
@@ -916,13 +929,17 @@ main (int argc, char **argv)
           if (parts[1])
             {
               if (!check_relocatable_schema (global_schema, parts[0]) || !check_path (parts[1]))
-                return 1;
+                {
+                  g_strfreev (parts);
+                  return 1;
+                }
             }
           else
             {
               if (global_schema == NULL)
                 {
                   g_printerr (_("No such schema “%s”\n"), parts[0]);
+                  g_strfreev (parts);
                   return 1;
                 }
             }

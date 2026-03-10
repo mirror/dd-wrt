@@ -118,8 +118,8 @@ static const GEnumValue my_enum_values[] =
 typedef enum {
   MY_FLAGS_FIRST_BIT = (1 << 0),
   MY_FLAGS_THIRD_BIT = (1 << 2),
-  MY_FLAGS_LAST_BIT = (1 << 31)
-} MyFlags;
+  MY_FLAGS_LAST_BIT = (1u << 31)
+} G_GNUC_FLAG_ENUM MyFlags;
 
 static const GFlagsValue my_flag_values[] =
 {
@@ -668,7 +668,7 @@ static void
 test_generic_marshaller_signal_enum_return_signed (void)
 {
   Test *test;
-  guint id;
+  unsigned long id;
   TestEnum retval = 0;
 
   test = g_object_new (test_get_type (), NULL);
@@ -711,7 +711,7 @@ static void
 test_generic_marshaller_signal_enum_return_unsigned (void)
 {
   Test *test;
-  guint id;
+  unsigned long id;
   TestUnsignedEnum retval = 0;
 
   test = g_object_new (test_get_type (), NULL);
@@ -756,7 +756,7 @@ static void
 test_generic_marshaller_signal_int_return (void)
 {
   Test *test;
-  guint id;
+  unsigned long id;
   gint retval = 0;
 
   test = g_object_new (test_get_type (), NULL);
@@ -820,7 +820,7 @@ static void
 test_generic_marshaller_signal_uint_return (void)
 {
   Test *test;
-  guint id;
+  unsigned long id;
   guint retval = 0;
 
   test = g_object_new (test_get_type (), NULL);
@@ -874,7 +874,7 @@ static void
 test_generic_marshaller_signal_interface_return (void)
 {
   Test *test;
-  guint id;
+  unsigned long id;
   gpointer retval;
 
   test = g_object_new (test_get_type (), NULL);
@@ -1083,6 +1083,30 @@ test_connect (void)
                        G_CALLBACK (on_generic_marshaller_int_return_signed_2),
                        NULL,
                        NULL);
+
+  g_object_unref (test);
+}
+
+static void
+test_is_connected (void)
+{
+  GObject *test;
+  gulong handler_id;
+
+  test = g_object_new (test_get_type (), NULL);
+
+  handler_id = g_signal_connect (test, "generic-marshaller-int-return",
+                                 G_CALLBACK (test_is_connected),
+                                 NULL);
+
+  g_assert_true (g_signal_handler_is_connected (test, handler_id));
+
+  g_signal_handler_disconnect (test, handler_id);
+
+  g_assert_false (g_signal_handler_is_connected (test, handler_id));
+
+  g_assert_false (g_signal_handler_is_connected (test, 0));
+  g_assert_false (g_signal_handler_is_connected (test, handler_id + 1));
 
   g_object_unref (test);
 }
@@ -1509,7 +1533,7 @@ test_introspection (void)
   g_assert_cmpstr (query.signal_name, ==, "simple");
   g_assert_true (query.itype == test_get_type ());
   g_assert_cmpint (query.signal_flags, ==, G_SIGNAL_RUN_LAST);
-  g_assert_cmpint (query.return_type, ==, G_TYPE_NONE);
+  g_assert_cmpuint (query.return_type, ==, G_TYPE_NONE);
   g_assert_cmpuint (query.n_params, ==, 0);
 
   g_free (ids);
@@ -1654,7 +1678,7 @@ test_signal_disconnect_wrong_object (void)
 {
   Test *object, *object2;
   Test2 *object3;
-  guint signal_id;
+  unsigned long signal_id;
 
   object = g_object_new (test_get_type (), NULL);
   object2 = g_object_new (test_get_type (), NULL);
@@ -1664,6 +1688,8 @@ test_signal_disconnect_wrong_object (void)
                                 "simple",
                                 G_CALLBACK (simple_handler1),
                                 NULL);
+
+  g_assert_true (g_signal_handler_is_connected (object, signal_id));
 
   /* disconnect from the wrong object (same type), should warn */
   g_test_expect_message ("GLib-GObject", G_LOG_LEVEL_CRITICAL,
@@ -1705,7 +1731,7 @@ test_clear_signal_handler (void)
 
   if (g_test_undefined ())
     {
-      handler = g_random_int_range (0x01, 0xFF);
+      handler = (gulong) g_random_int_range (0x01, 0xFF);
       g_test_expect_message (G_LOG_DOMAIN, G_LOG_LEVEL_CRITICAL,
                              "*instance '* has no handler with id *'");
       g_clear_signal_handler (&handler, test_obj);
@@ -2074,11 +2100,11 @@ test_weak_ref_disconnect (void)
                                          &state,
                                          (GClosureNotify) weak_ref_disconnect_notify,
                                          0);
-  g_assert_cmpint (state.handler, >, 0);
+  g_assert_cmpuint (state.handler, >, 0);
 
   g_object_unref (test);
 
-  g_assert_cmpint (state.handler, ==, 0);
+  g_assert_cmpuint (state.handler, ==, 0);
   g_assert_null (g_weak_ref_get (&state.wr));
   g_weak_ref_clear (&state.wr);
 }
@@ -2103,6 +2129,7 @@ main (int argc,
   g_test_add_func ("/gobject/signals/generic-marshaller-interface-return", test_generic_marshaller_signal_interface_return);
   g_test_add_func ("/gobject/signals/custom-marshaller", test_custom_marshaller);
   g_test_add_func ("/gobject/signals/connect", test_connect);
+  g_test_add_func ("/gobject/signals/is-connected", test_is_connected);
   g_test_add_func ("/gobject/signals/emission-hook", test_emission_hook);
   g_test_add_func ("/gobject/signals/emitv", test_emitv);
   g_test_add_func ("/gobject/signals/accumulator", test_accumulator);

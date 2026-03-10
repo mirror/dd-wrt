@@ -127,20 +127,10 @@ g_file_enumerator_dispose (GObject *object)
     enumerator->priv->container = NULL;
   }
 
-  G_OBJECT_CLASS (g_file_enumerator_parent_class)->dispose (object);
-}
-
-static void
-g_file_enumerator_finalize (GObject *object)
-{
-  GFileEnumerator *enumerator;
-
-  enumerator = G_FILE_ENUMERATOR (object);
-  
   if (!enumerator->priv->closed)
     g_file_enumerator_close (enumerator, NULL, NULL);
 
-  G_OBJECT_CLASS (g_file_enumerator_parent_class)->finalize (object);
+  G_OBJECT_CLASS (g_file_enumerator_parent_class)->dispose (object);
 }
 
 static void
@@ -150,7 +140,6 @@ g_file_enumerator_class_init (GFileEnumeratorClass *klass)
 
   gobject_class->set_property = g_file_enumerator_set_property;
   gobject_class->dispose = g_file_enumerator_dispose;
-  gobject_class->finalize = g_file_enumerator_finalize;
 
   klass->next_files_async = g_file_enumerator_real_next_files_async;
   klass->next_files_finish = g_file_enumerator_real_next_files_finish;
@@ -314,7 +303,7 @@ next_async_callback_wrapper (GObject      *source_object,
  * g_file_enumerator_next_files_async:
  * @enumerator: a #GFileEnumerator.
  * @num_files: the number of file info objects to request
- * @io_priority: the [I/O priority][io-priority] of the request
+ * @io_priority: the [I/O priority](iface.AsyncResult.html#io-priority) of the request
  * @cancellable: (nullable): optional #GCancellable object, %NULL to ignore.
  * @callback: (scope async) (closure user_data): a #GAsyncReadyCallback
  *   to call when the request is satisfied
@@ -486,7 +475,7 @@ close_async_callback_wrapper (GObject      *source_object,
 /**
  * g_file_enumerator_close_async:
  * @enumerator: a #GFileEnumerator.
- * @io_priority: the [I/O priority][io-priority] of the request
+ * @io_priority: the [I/O priority](iface.AsyncResult.html#io-priority) of the request
  * @cancellable: (nullable): optional #GCancellable object, %NULL to ignore.
  * @callback: (scope async) (closure user_data): a #GAsyncReadyCallback
  *   to call when the request is satisfied

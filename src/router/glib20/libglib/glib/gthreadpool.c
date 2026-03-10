@@ -99,9 +99,11 @@ static gint wakeup_thread_serial = 0;
 /* Here all unused threads are waiting  */
 static GAsyncQueue *unused_thread_queue = NULL;
 static gint unused_threads = 0;
-static gint max_unused_threads = 2;
+static gint max_unused_threads = 8;
 static gint kill_unused_threads = 0;
 static guint max_idle_time = 15 * 1000;
+
+static int thread_counter = 0;
 
 typedef struct
 {
@@ -283,11 +285,9 @@ g_thread_pool_spawn_thread (gpointer data)
       SpawnThreadData *spawn_thread_data;
       GThread *thread = NULL;
       GError *error = NULL;
-      const gchar *prgname = g_get_prgname ();
-      gchar name[16] = "pool";
+      gchar name[16];
 
-      if (prgname)
-        g_snprintf (name, sizeof (name), "pool-%s", prgname);
+      g_snprintf (name, sizeof (name), "pool-%d", g_atomic_int_add (&thread_counter, 1));
 
       g_async_queue_lock (spawn_thread_queue);
       /* Spawn a new thread for the given pool and wake the requesting thread
@@ -434,12 +434,7 @@ g_thread_pool_start_thread (GRealThreadPool  *pool,
 
   if (!success)
     {
-      const gchar *prgname = g_get_prgname ();
-      gchar name[16] = "pool";
       GThread *thread;
-
-      if (prgname)
-        g_snprintf (name, sizeof (name), "pool-%s", prgname);
 
       /* No thread was found, we have to start a new one */
       if (pool->pool.exclusive)
@@ -448,6 +443,10 @@ g_thread_pool_start_thread (GRealThreadPool  *pool,
            * we simply start new threads that inherit the scheduler settings
            * from the current thread.
            */
+          char name[16];
+
+          g_snprintf (name, sizeof (name), "pool-%d", g_atomic_int_add (&thread_counter, 1));
+
           thread = g_thread_try_new (name, g_thread_pool_thread_proxy, pool, error);
         }
       else
@@ -583,6 +582,7 @@ g_thread_pool_new_full (GFunc           func,
 {
   GRealThreadPool *retval;
   G_LOCK_DEFINE_STATIC (init);
+  GError *local_error = NULL;
 
   g_return_val_if_fail (func, NULL);
   g_return_val_if_fail (!exclusive || max_threads != -1, NULL);
@@ -630,27 +630,48 @@ g_thread_pool_new_full (GFunc           func,
 
       spawn_thread_queue = g_async_queue_new ();
       g_cond_init (&spawn_thread_cond);
-      pool_spawner = g_thread_new ("pool-spawner", g_thread_pool_spawn_thread, NULL);
+      pool_spawner = g_thread_try_new ("pool-spawner", g_thread_pool_spawn_thread, NULL, &local_error);
+      if (pool_spawner == NULL)
+        {
+          /* The only way to know that the pool_spawner exists is
+           * if (spawn_thread_queue != NULL), so if creating the pool_spawner
+           * failed, we must destroy the queue.
+           */
+          g_clear_pointer (&spawn_thread_queue, g_async_queue_unref);
+          /* We must also clear spawn_thread_cond, so that a future attempt
+           * to create a non-exclusive pool can safely initialize it.
+           */
+          g_cond_clear (&spawn_thread_cond);
+        }
       g_ignore_leak (pool_spawner);
     }
   G_UNLOCK (init);
 
-  if (retval->pool.exclusive)
+  if (retval->pool.exclusive && local_error == NULL)
     {
       g_async_queue_lock (retval->queue);
 
       while (retval->num_threads < (guint) retval->max_threads)
         {
-          GError *local_error = NULL;
-
           if (!g_thread_pool_start_thread (retval, &local_error))
             {
-              g_propagate_error (error, local_error);
               break;
             }
         }
 
       g_async_queue_unlock (retval->queue);
+    }
+
+  if (local_error != NULL)
+    {
+      /* Failed to create pool spawner or failed to start a thread,
+       * so we must return NULL */
+      g_propagate_error (error, local_error);
+
+      g_clear_pointer (&retval->queue, g_async_queue_unref);
+      g_cond_clear (&retval->cond);
+
+      g_clear_pointer (&retval, g_free);
     }
 
   return (GThreadPool*) retval;
@@ -985,7 +1006,7 @@ g_thread_pool_wakeup_and_stop_all (GRealThreadPool *pool)
  * If @max_threads is -1, no limit is imposed on the number
  * of unused threads.
  *
- * The default value is 2.
+ * The default value is 8 since GLib 2.84. Previously the default value was 2.
  */
 void
 g_thread_pool_set_max_unused_threads (gint max_threads)

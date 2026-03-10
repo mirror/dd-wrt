@@ -33,10 +33,7 @@ glib_tests = {
     'can_fail' : host_system == 'darwin' or linux_libc == 'musl',
   },
   'dir' : {},
-  'environment' : {
-    # FIXME: https://gitlab.gnome.org/GNOME/glib/-/issues/1392
-    'can_fail' : host_system == 'darwin',
-  },
+  'environment' : {},
   'error' : {},
   'fileutils' : {},
   'gdatetime' : {
@@ -81,6 +78,7 @@ glib_tests = {
     'link_args' : cc.get_id() == 'gcc' and cc.version().version_compare('> 6')
       ? ['-Wno-alloc-size-larger-than'] : [],
   },
+  'monotonic-time' : {},
   'mutex' : {},
   'node' : {},
   'once' : {},
@@ -98,6 +96,9 @@ glib_tests = {
   },
   'pathbuf' : {},
   'pattern' : {},
+  'print' : {
+    'can_fail' : host_system == 'windows',
+  },
   'private' : {},
   'protocol' : {},
   'queue' : {},
@@ -141,9 +142,13 @@ glib_tests = {
   'spawn-singlethread' : {
     'dependencies' : [winsock2],
     'extra_programs' : ['test-spawn-echo'],
+    # FIXME: https://gitlab.gnome.org/GNOME/glib/-/issues/3148
+    'can_fail' : host_system == 'gnu',
   },
   'spawn-test' : {
     'extra_programs' : host_machine.system() == 'windows' ? ['spawn-test-win32-gui'] : [],
+    # FIXME: https://gitlab.gnome.org/GNOME/glib/-/issues/3148
+    'can_fail' : host_system == 'gnu',
   },
   'strfuncs' : {},
   'string' : {
@@ -155,6 +160,9 @@ glib_tests = {
     'extra_programs' : ['testing-helper'],
     'c_args' : cc.get_id() == 'gcc' ? ['-Werror=sign-conversion'] : [],
   },
+  'testing-nonfatal' : {
+    'protocol' : 'exitcode'
+  },
   'test-printf' : {},
   'thread' : {},
   'thread-deprecated' : {},
@@ -165,13 +173,17 @@ glib_tests = {
   'tree' : {},
   'types' : {},
   'utf8-performance' : {},
-  'utf8-pointer' : {},
+  'utf8-pointer' : {
+    'c_args' : cc.get_id() == 'gcc' ? ['-Werror=cast-qual'] : [],
+  },
+  'utf8-private' : {},
   'utf8-validate' : {},
   'utf8-misc' : {},
   'utils' : {
     'c_standards': c_standards.keys(),
   },
   'utils-isolated' : {},
+  'utils-unisolated' : {},
   'unicode' : {},
   'unicode-encoding' : {},
   'unicode-normalize': {},
@@ -180,6 +192,8 @@ glib_tests = {
   '1bit-emufutex' : {
     'source' : '1bit-mutex.c',
     'c_args' : ['-DTEST_EMULATED_FUTEX'],
+    # FIXME: https://gitlab.gnome.org/GNOME/glib/-/issues/3359
+    'can_fail': 'undefined' in glib_sanitizers,
     'install' : false,
     'suite' : ['slow'],
   },
@@ -198,6 +212,7 @@ if have_cxx
     'cxx' : {
       'source' : ['cxx.cpp'],
       'suite': ['cpp'],
+      'dependencies' : [wincodecs],
     }
   }
 
@@ -207,6 +222,7 @@ if have_cxx
         'source' : ['cxx.cpp'],
         'suite' : ['cpp'],
         'cpp_args' : [arg, '-D_G_EXPECTED_CXX_STANDARD="@0@"'.format(std)],
+        'dependencies' : [wincodecs],
       },
     }
   endforeach
@@ -235,37 +251,48 @@ if host_machine.system() == 'windows'
     }
   endif
   glib_tests += {
-    'win32' : {},
+    'win32' : {
+      'dependencies' : [wincodecs],
+    },
+    'win32-private' : {
+      'dependencies' : [winsock2],
+    },
   }
 else
   glib_tests += {
     'include' : {},
+    'poll-fdset' : {},
     'unix' : {},
   }
   if have_rtld_next and glib_build_shared
     getpwuid_preload = shared_library('getpwuid-preload',
                                       'getpwuid-preload.c',
                                       name_prefix : '',
-                                      dependencies: libdl_dep,
+                                      dependencies: [libdl_dep, libglib_dep],
                                       install_dir : installed_tests_execdir,
                                       install_tag : 'tests',
                                       install: installed_tests_enabled)
 
-    if host_system not in ['ios', 'darwin']
+    if host_system != 'darwin'
       var_preload = 'LD_PRELOAD'
     else
       var_preload = 'DYLD_INSERT_LIBRARIES'
     endif
 
+    asan_env = {}
+    if 'address' in glib_sanitizers
+      asan_env = {'ASAN_OPTIONS': 'verify_asan_link_order=0'}
+    endif
+
     glib_tests += {
       'gutils-user-database' : {
-        'depends' : [],
+        'depends' : getpwuid_preload,
         'env' : {
           var_preload: getpwuid_preload.full_path()
-        },
+        } + asan_env,
         'installed_tests_env' : {
           var_preload: installed_tests_execdir / fs.name(getpwuid_preload.full_path())
-        },
+        } + asan_env,
       },
     }
   endif
@@ -298,6 +325,11 @@ if installed_tests_enabled
   install_subdir('time-zones',
     install_dir : installed_tests_execdir,
     install_tag : 'tests',
+  )
+  install_subdir('localtime',
+    install_dir : installed_tests_execdir,
+    install_tag : 'tests',
+    follow_symlinks : false,
   )
 endif
 
@@ -346,6 +378,7 @@ if host_machine.system() == 'windows' or have_dlopen_dlsym
                  '-DBUILD_TEST_EXECUTABLE',
                  '-DPREFIX=app'],
       'dependencies' : libdl_dep,
+      'depends': constructor_lib,
       'link_with': [constructor_helper]
     }
   }
@@ -358,10 +391,12 @@ foreach test_name, extra_args : glib_tests
         '@0@-c-@1@'.format(test_name, std) : extra_args + {
           'source' : extra_args.get('source', test_name + '.c'),
           'suite' : ['cc'] + extra_args.get('suite', []),
-          'c_args' : [
-            c_standards.get(std),
-            '-D_G_EXPECTED_C_STANDARD="@0@"'.format(std)
-          ] + extra_args.get('c_args', []),
+          'override_options' : extra_args.get('override_options', []) + [
+            'c_std=c@0@'.format(std),
+          ],
+          'c_args' : extra_args.get('c_args', []) + [
+            '-D_G_EXPECTED_C_STANDARD="@0@"'.format(std),
+          ],
         }
       }
     endif
@@ -372,7 +407,8 @@ test_env = environment()
 test_env.set('G_TEST_SRCDIR', meson.current_source_dir())
 test_env.set('G_TEST_BUILDDIR', meson.current_build_dir())
 
-test_deps = [libm, thread_dep, libglib_dep]
+test_deps = [libm, thread_dep, libglib_dep, test_profile_dep]
+test_deps_static = [libm, thread_dep, libglib_static_dep, test_profile_dep]
 test_cargs = ['-DG_LOG_DOMAIN="GLib"', '-UG_DISABLE_ASSERT']
 test_cpp_args = test_cargs
 
@@ -425,19 +461,21 @@ foreach test_name, extra_args : glib_tests
     )
   endif
 
+  base_deps = test_name.contains('-private') ? test_deps_static : test_deps
+
   exe = executable(test_name, source,
     c_args : test_cargs + extra_args.get('c_args', []),
     cpp_args : test_cpp_args + extra_args.get('cpp_args', []),
     link_args : extra_args.get('link_args', []),
     override_options : extra_args.get('override_options', []),
-    dependencies : test_deps + extra_args.get('dependencies', []),
+    dependencies : base_deps + extra_args.get('dependencies', []),
     link_with : extra_args.get('link_with', []),
     install_dir: installed_tests_execdir,
     install_tag: 'tests',
     install: install,
   )
 
-  depends = [extra_args.get('depends', [])]
+  depends = [extra_args.get('depends', []), gspawn_helpers]
   suite = ['glib', 'core'] + extra_args.get('suite', [])
   timeout = suite.contains('slow') ? test_timeout_slow : test_timeout
 
@@ -477,6 +515,7 @@ python_tests = {
   'assert-msg-test.py' : {
     'can_fail' : host_system == 'windows',
     'extra_programs': ['assert-msg-test'],
+    'env': {'_GLIB_TEST_SANITIZERS': ','.join(glib_sanitizers)},
   },
 }
 
@@ -488,6 +527,13 @@ if 'messages-low-memory' in test_extra_programs
   }
 endif
 
+python_test_env = test_env
+python_test_env.prepend('PYTHONPATH', python_test_libraries_path)
+python_test_env.prepend('PYTHONPATH', python_test_libraries_built)
+if python_test_env_common_path.length() > 0
+  python_test_env.prepend('PATH', python_test_env_common_path)
+endif
+
 foreach test_name, extra_args : python_tests
   depends = [extra_args.get('depends', [])]
   suite = ['glib', 'core', 'no-valgrind']
@@ -495,6 +541,11 @@ foreach test_name, extra_args : python_tests
   if extra_args.get('can_fail', false)
     suite += 'failing'
   endif
+
+  local_test_env = python_test_env
+  foreach var, value : extra_args.get('env', {})
+    local_test_env.append(var, value)
+  endforeach
 
   foreach program : extra_args.get('extra_programs', [])
     depends += test_extra_programs_targets[program]
@@ -506,7 +557,7 @@ foreach test_name, extra_args : python_tests
     protocol : extra_args.get('protocol', test_protocol),
     depends: depends,
     args: ['-B', files(test_name)],
-    env: test_env,
+    env: local_test_env,
     suite: suite,
   )
 

@@ -42,58 +42,133 @@
 /**
  * GRegex:
  *
- * A `GRegex` is the "compiled" form of a regular expression pattern.
+ * A `GRegex` is a compiled form of a regular expression.
+ * 
+ * After instantiating a `GRegex`, you can use its methods to find matches
+ * in a string, replace matches within a string, or split the string at matches.
  *
- * `GRegex` implements regular expression pattern matching using syntax and
- * semantics similar to Perl regular expression. See the
- * [PCRE documentation](man:pcrepattern(3)) for the syntax definition.
+ * `GRegex` implements regular expression pattern matching using syntax and 
+ * semantics (such as character classes, quantifiers, and capture groups) 
+ * similar to Perl regular expression. See the 
+ * [PCRE documentation](man:pcre2pattern(3)) for details.
  *
- * Some functions accept a @start_position argument, setting it differs
- * from just passing over a shortened string and setting %G_REGEX_MATCH_NOTBOL
- * in the case of a pattern that begins with any kind of lookbehind assertion.
- * For example, consider the pattern "\Biss\B" which finds occurrences of "iss"
- * in the middle of words. ("\B" matches only if the current position in the
- * subject is not a word boundary.) When applied to the string "Mississipi"
- * from the fourth byte, namely "issipi", it does not match, because "\B" is
- * always false at the start of the subject, which is deemed to be a word
- * boundary. However, if the entire string is passed , but with
- * @start_position set to 4, it finds the second occurrence of "iss" because
- * it is able to look behind the starting point to discover that it is
- * preceded by a letter.
+ * A typical scenario for regex pattern matching is to check if a string 
+ * matches a pattern. The following statements implement this scenario.
+ * 
+ * ``` { .c }
+ * const char *regex_pattern = ".*GLib.*";
+ * const char *string_to_search = "You will love the GLib implementation of regex";
+ * g_autoptr(GMatchInfo) match_info = NULL;
+ * g_autoptr(GRegex) regex = NULL;
  *
- * Note that, unless you set the %G_REGEX_RAW flag, all the strings passed
- * to these functions must be encoded in UTF-8. The lengths and the positions
- * inside the strings are in bytes and not in characters, so, for instance,
- * "\xc3\xa0" (i.e. "à") is two bytes long but it is treated as a
- * single character. If you set %G_REGEX_RAW the strings can be non-valid
- * UTF-8 strings and a byte is treated as a character, so "\xc3\xa0" is two
- * bytes and two characters long.
+ * regex = g_regex_new (regex_pattern, G_REGEX_DEFAULT, G_REGEX_MATCH_DEFAULT, NULL);
+ * g_assert (regex != NULL);
+ * 
+ * if (g_regex_match (regex, string_to_search, G_REGEX_MATCH_DEFAULT, &match_info))
+ *   {
+ *     int start_pos, end_pos;
+ *     g_match_info_fetch_pos (match_info, 0, &start_pos, &end_pos);
+ *     g_print ("Match successful! Overall pattern matches bytes %d to %d\n", start_pos, end_pos);
+ *   }
+ * else
+ *   {
+ *     g_print ("No match!\n");
+ *   }
+ * ```
+ * 
+ * The constructor for `GRegex` includes two sets of bitmapped flags:
+
+ * * [flags@GLib.RegexCompileFlags]—These flags 
+ * control how GLib compiles the regex. There are options for case 
+ * sensitivity, multiline, ignoring whitespace, etc.
+ * * [flags@GLib.RegexMatchFlags]—These flags control 
+ * `GRegex`’s matching behavior, such as anchoring and customizing definitions 
+ * for newline characters.
+ * 
+ * Some regex patterns include backslash assertions, such as `\d` (digit) or 
+ * `\D` (non-digit). The regex pattern must escape those backslashes. For 
+ * example, the pattern `"\\d\\D"` matches a digit followed by a non-digit.
  *
- * When matching a pattern, "\n" matches only against a "\n" character in
- * the string, and "\r" matches only a "\r" character. To match any newline
- * sequence use "\R". This particular group matches either the two-character
- * sequence CR + LF ("\r\n"), or one of the single characters LF (linefeed,
- * U+000A, "\n"), VT vertical tab, U+000B, "\v"), FF (formfeed, U+000C, "\f"),
- * CR (carriage return, U+000D, "\r"), NEL (next line, U+0085), LS (line
- * separator, U+2028), or PS (paragraph separator, U+2029).
+ * GLib’s implementation of pattern matching includes a `start_position` 
+ * argument for some of the match, replace, and split methods. Specifying 
+ * a start position provides flexibility when you want to ignore the first 
+ * _n_ characters of a string, but want to incorporate backslash assertions 
+ * at character _n_ - 1. For example, a database field contains inconsistent
+ * spelling for a job title: `healthcare provider` and `health-care provider`.
+ * The database manager wants to make the spelling consistent by adding a 
+ * hyphen when it is missing. The following regex pattern tests for the string 
+ * `care` preceded by a non-word boundary character (instead of a hyphen) 
+ * and followed by a space.
  *
- * The behaviour of the dot, circumflex, and dollar metacharacters are
- * affected by newline characters, the default is to recognize any newline
- * character (the same characters recognized by "\R"). This can be changed
- * with `G_REGEX_NEWLINE_CR`, `G_REGEX_NEWLINE_LF` and `G_REGEX_NEWLINE_CRLF`
- * compile options, and with `G_REGEX_MATCH_NEWLINE_ANY`,
- * `G_REGEX_MATCH_NEWLINE_CR`, `G_REGEX_MATCH_NEWLINE_LF` and
- * `G_REGEX_MATCH_NEWLINE_CRLF` match options. These settings are also
- * relevant when compiling a pattern if `G_REGEX_EXTENDED` is set, and an
- * unescaped "#" outside a character class is encountered. This indicates
- * a comment that lasts until after the next newline.
+ * ``` { .c }
+ * const char *regex_pattern = "\\Bcare\\s";
+ * ```
  *
- * Creating and manipulating the same `GRegex` structure from different
- * threads is not a problem as `GRegex` does not modify its internal
- * state between creation and destruction, on the other hand `GMatchInfo`
- * is not threadsafe.
+ * An efficient way to match with this pattern is to start examining at 
+ * `start_position` 6 in the string `healthcare` or `health-care`.
+
+ * ``` { .c }
+ * const char *regex_pattern = "\\Bcare\\s";
+ * const char *string_to_search = "healthcare provider";
+ * g_autoptr(GMatchInfo) match_info = NULL;
+ * g_autoptr(GRegex) regex = NULL;
  *
- * The regular expressions low-level functionalities are obtained through
+ * regex = g_regex_new (
+ *   regex_pattern,
+ *   G_REGEX_DEFAULT,
+ *   G_REGEX_MATCH_DEFAULT,
+ *   NULL);
+ * g_assert (regex != NULL);
+ * 
+ * g_regex_match_full (
+ *   regex, 
+ *   string_to_search, 
+ *   -1,
+ *   6, // position of 'c' in the test string.
+ *   G_REGEX_MATCH_DEFAULT, 
+ *   &match_info,
+ *   NULL);
+ * ```
+ * 
+ * The method [method@GLib.Regex.match_full] (and other methods implementing 
+ * `start_pos`) allow for lookback before the start position to determine if 
+ * the previous character satisfies an assertion.
+ *
+ * Unless you set the [flags@GLib.RegexCompileFlags.RAW] as one of 
+ * the `GRegexCompileFlags`, all the strings passed to `GRegex` methods must 
+ * be encoded in UTF-8. The lengths and the positions inside the strings are 
+ * in bytes and not in characters, so, for instance, `\xc3\xa0` (i.e., `à`) 
+ * is two bytes long but it is treated as a single character. If you set 
+ * `G_REGEX_RAW`, the strings can be non-valid UTF-8 strings and a byte is 
+ * treated as a character, so `\xc3\xa0` is two bytes and two characters long.
+ *
+ * Regarding line endings, `\n` matches a `\n` character, and `\r` matches 
+ * a `\r` character. More generally, `\R` matches all typical line endings: 
+ * CR + LF (`\r\n`), LF (linefeed, U+000A, `\n`), VT (vertical tab, U+000B, 
+ * `\v`), FF (formfeed, U+000C, `\f`), CR (carriage return, U+000D, `\r`), 
+ * NEL (next line, U+0085), LS (line separator, U+2028), and PS (paragraph 
+ * separator, U+2029).
+ * 
+ * The behaviour of the dot, circumflex, and dollar metacharacters are 
+ * affected by newline characters. By default, `GRegex` matches any newline 
+ * character matched by `\R`. You can limit the matched newline characters by 
+ * specifying the [flags@GLib.RegexMatchFlags.NEWLINE_CR], 
+ * [flags@GLib.RegexMatchFlags.NEWLINE_LF], and 
+ * [flags@GLib.RegexMatchFlags.NEWLINE_CRLF] compile options, and 
+ * with [flags@GLib.RegexMatchFlags.NEWLINE_ANY], 
+ * [flags@GLib.RegexMatchFlags.NEWLINE_CR], 
+ * [flags@GLib.RegexMatchFlags.NEWLINE_LF] and 
+ * [flags@GLib.RegexMatchFlags.NEWLINE_CRLF] match options. 
+ * These settings are also relevant when compiling a pattern if 
+ * [flags@GLib.RegexCompileFlags.EXTENDED] is set and an unescaped 
+ * `#` outside a character class is encountered. This indicates a comment 
+ * that lasts until after the next newline.
+ * 
+ * Because `GRegex` does not modify its internal state between creation and 
+ * destruction, you can create and modify the same `GRegex` instance from 
+ * different threads. In contrast, [struct@GLib.MatchInfo] is not thread safe.
+ * 
+ * The regular expression low-level functionalities are obtained through
  * the excellent [PCRE](http://www.pcre.org/) library written by Philip Hazel.
  *
  * Since: 2.14
@@ -699,6 +774,12 @@ translate_compile_error (gint *errcode, const gchar **errmsg)
       *errmsg = _("\\g is not followed by a braced, angle-bracketed, or quoted name or "
                   "number, or by a plain number");
       break;
+#ifdef PCRE2_ERROR_MISSING_NUMBER_TERMINATOR
+    case PCRE2_ERROR_MISSING_NUMBER_TERMINATOR:
+      *errcode = G_REGEX_ERROR_MISSING_BACK_REFERENCE;
+      *errmsg = _("syntax error in subpattern number (missing terminator?)");
+      break;
+#endif
     case PCRE2_ERROR_VERB_ARGUMENT_NOT_ALLOWED:
       *errcode = G_REGEX_ERROR_BACKTRACKING_CONTROL_VERB_ARGUMENT_FORBIDDEN;
       *errmsg = _("an argument is not allowed for (*ACCEPT), (*FAIL), or (*COMMIT)");
@@ -1441,29 +1522,221 @@ g_match_info_fetch (const GMatchInfo *match_info,
 /**
  * g_match_info_fetch_pos:
  * @match_info: #GMatchInfo structure
- * @match_num: number of the sub expression
+ * @match_num: number of the capture parenthesis
  * @start_pos: (out) (optional): pointer to location where to store
  *     the start position, or %NULL
  * @end_pos: (out) (optional): pointer to location where to store
- *     the end position, or %NULL
+ *     the end position (the byte after the final byte of the match), or %NULL
  *
- * Retrieves the position in bytes of the @match_num'th capturing
- * parentheses. 0 is the full text of the match, 1 is the first
- * paren set, 2 the second, and so on.
+ * Returns the start and end positions (in bytes) of a successfully matching 
+ * capture parenthesis.
+ * 
+ * Valid values for @match_num are `0` for the full text of the match,
+ * `1` for the first paren set, `2` for the second, and so on.
  *
- * If @match_num is a valid sub pattern but it didn't match anything
- * (e.g. sub pattern 1, matching "b" against "(a)?b") then @start_pos
- * and @end_pos are set to -1 and %TRUE is returned.
+ * As @end_pos is set to the byte after the final byte of the match (on success),
+ * the length of the match can be calculated as `end_pos - start_pos`.
  *
- * If the match was obtained using the DFA algorithm, that is using
- * g_regex_match_all() or g_regex_match_all_full(), the retrieved
- * position is not that of a set of parentheses but that of a matched
- * substring. Substrings are matched in reverse order of length, so
- * 0 is the longest match.
+ * As a best practice, initialize @start_pos and @end_pos to identifiable 
+ * values, such as `G_MAXINT`, so that you can test if 
+ * `g_match_info_fetch_pos()` actually changed the value for a given 
+ * capture parenthesis.
  *
- * Returns: %TRUE if the position was fetched, %FALSE otherwise. If
- *   the position cannot be fetched, @start_pos and @end_pos are left
- *   unchanged
+ * The parameter @match_num corresponds to a matched capture parenthesis. The 
+ * actual value you use for @match_num depends on the method used to generate
+ * @match_info. The following sections describe those methods.
+ * 
+ * ## Methods Using Non-deterministic Finite Automata Matching
+ *
+ * The methods [method@GLib.Regex.match] and [method@GLib.Regex.match_full]
+ * return a [struct@GLib.MatchInfo] using traditional (greedy) pattern
+ * matching, also known as 
+ * [Non-deterministic Finite Automaton](https://en.wikipedia.org/wiki/Nondeterministic_finite_automaton)
+ * (NFA) matching. You pass the returned `GMatchInfo` from these methods to 
+ * `g_match_info_fetch_pos()` to determine the start and end positions 
+ * of capture parentheses. The values for @match_num correspond to the capture 
+ * parentheses in order, with `0` corresponding to the entire matched string.
+ * 
+ * @match_num can refer to a capture parenthesis with no match. For example, 
+ * the string `b` matches against the pattern `(a)?b`, but the capture
+ * parenthesis `(a)` has no match. In this case, `g_match_info_fetch_pos()`
+ * returns true and sets @start_pos and @end_pos to `-1` when called with
+ * `match_num` as `1` (for `(a)`).
+ *
+ * For an expanded example, a regex pattern is `(a)?(.*?)the (.*)`, 
+ * and a candidate string is `glib regexes are the best`. In this scenario 
+ * there are four capture parentheses numbered 0–3: an implicit one 
+ * for the entire string, and three explicitly declared in the regex pattern.
+ *
+ * Given this example, the following table describes the return values 
+ * from `g_match_info_fetch_pos()` for various values of @match_num.
+ *
+ * `match_num` | Contents | Return value | Returned `start_pos` | Returned `end_pos`
+ * ----------- | -------- | ------------ | -------------------- | ------------------
+ * 0 | Matches entire string | True | 0 | 25
+ * 1 | Does not match first character | True | -1 | -1
+ * 2 | All text before `the ` | True | 0 | 17
+ * 3 | All text after `the ` | True | 21 | 25
+ * 4 | Capture paren out of range | False | Unchanged | Unchanged
+ *
+ * The following code sample and output implements this example.
+ *
+ * ``` { .c }
+ * #include <glib.h>
+ *
+ * int
+ * main (int argc, char *argv[])
+ * {
+ *   g_autoptr(GError) local_error = NULL;
+ *   const char *regex_pattern = "(a)?(.*?)the (.*)";
+ *   const char *test_string = "glib regexes are the best";
+ *   g_autoptr(GRegex) regex = NULL;
+ *
+ *   regex = g_regex_new (regex_pattern,
+ *                        G_REGEX_DEFAULT,
+ *                        G_REGEX_MATCH_DEFAULT,
+ *                        &local_error);
+ *   if (regex == NULL)
+ *     {
+ *       g_printerr ("Error creating regex: %s\n", local_error->message);
+ *       return 1;
+ *     }
+ *
+ *   g_autoptr(GMatchInfo) match_info = NULL;
+ *   g_regex_match (regex, test_string, G_REGEX_MATCH_DEFAULT, &match_info);
+ *
+ *   int n_matched_strings = g_match_info_get_match_count (match_info);
+ *
+ *   // Print header line
+ *   g_print ("match_num Contents                  Return value returned start_pos returned end_pos\n");
+ *
+ *   // Iterate over each capture paren, including one that is out of range as a demonstration.
+ *   for (int match_num = 0; match_num <= n_matched_strings; match_num++)
+ *     {
+ *       gboolean found_match;
+ *       g_autofree char *paren_string = NULL;
+ *       int start_pos = G_MAXINT;
+ *       int end_pos = G_MAXINT;
+ *
+ *       found_match = g_match_info_fetch_pos (match_info,
+ *                                             match_num,
+ *                                             &start_pos,
+ *                                             &end_pos);
+ *
+ *       // If no match, display N/A as the found string.
+ *       if (start_pos == G_MAXINT || start_pos == -1)
+ *         paren_string = g_strdup ("N/A");
+ *       else
+ *         paren_string = g_strndup (test_string + start_pos, end_pos - start_pos);
+ *
+ *       g_print ("%-9d %-25s %-12d %-18d %d\n", match_num, paren_string, found_match, start_pos, end_pos);
+ *     }
+ *
+ *   return 0;
+ * }
+ * ```
+ *
+ * ```
+ * match_num Contents                  Return value returned start_pos returned end_pos
+ * 0         glib regexes are the best 1            0                  25
+ * 1         N/A                       1            -1                 -1
+ * 2         glib regexes are          1            0                  17
+ * 3         best                      1            21                 25
+ * 4         N/A                       0            2147483647         2147483647
+ * ```
+ * ## Methods Using Deterministic Finite Automata Matching
+ *
+ * The methods [method@GLib.Regex.match_all] and 
+ * [method@GLib.Regex.match_all_full]
+ * return a `GMatchInfo` using
+ * [Deterministic Finite Automaton](https://en.wikipedia.org/wiki/Deterministic_finite_automaton)
+ * (DFA) pattern matching. This algorithm detects overlapping matches. You pass
+ * the returned `GMatchInfo` from these methods to `g_match_info_fetch_pos()`
+ * to determine the start and end positions of each overlapping match. Use the 
+ * method [method@GLib.MatchInfo.get_match_count] to determine the number 
+ * of overlapping matches.
+ *
+ * For example, a regex pattern is `<.*>`, and a candidate string is 
+ * `<a> <b> <c>`. In this scenario there are three implicit capture 
+ * parentheses: one for the entire string, one for `<a> <b>`, and one for `<a>`.
+ *
+ * Given this example, the following table describes the return values from
+ * `g_match_info_fetch_pos()` for various values of @match_num.
+ *
+ * `match_num` | Contents | Return value | Returned `start_pos` | Returned `end_pos`
+ * ----------- | -------- | ------------ | -------------------- | ------------------
+ * 0 | Matches entire string | True | 0 | 11
+ * 1 | Matches `<a> <b>` | True | 0 | 7
+ * 2 | Matches `<a>` | True | 0 | 3
+ * 3 | Capture paren out of range | False | Unchanged | Unchanged
+ *
+ * The following code sample and output implements this example.
+ *
+ * ``` { .c }
+ * #include <glib.h>
+ *
+ * int
+ * main (int argc, char *argv[])
+ * {
+ *   g_autoptr(GError) local_error = NULL;
+ *   const char *regex_pattern = "<.*>";
+ *   const char *test_string = "<a> <b> <c>";
+ *   g_autoptr(GRegex) regex = NULL;
+ * 
+ *   regex = g_regex_new (regex_pattern,
+ *                        G_REGEX_DEFAULT,
+ *                        G_REGEX_MATCH_DEFAULT,
+ *                        &local_error);
+ *   if (regex == NULL)
+ *     {
+ *       g_printerr ("Error creating regex: %s\n", local_error->message);
+ *       return -1;
+ *     }
+ *
+ *   g_autoptr(GMatchInfo) match_info = NULL;
+ *   g_regex_match_all (regex, test_string, G_REGEX_MATCH_DEFAULT, &match_info);
+ *
+ *   int n_matched_strings = g_match_info_get_match_count (match_info);
+ *
+ *   // Print header line 
+ *   g_print ("match_num Contents                  Return value returned start_pos returned end_pos\n");
+ * 
+ *   // Iterate over each capture paren, including one that is out of range as a demonstration.
+ *   for (int match_num = 0; match_num <= n_matched_strings; match_num++)
+ *     {
+ *       gboolean found_match;
+ *       g_autofree char *paren_string = NULL;
+ *       int start_pos = G_MAXINT;
+ *       int end_pos = G_MAXINT;
+ *
+ *       found_match = g_match_info_fetch_pos (match_info, match_num, &start_pos, &end_pos);
+ *
+ *       // If no match, display N/A as the found string.
+ *       if (start_pos == G_MAXINT || start_pos == -1)
+ *         paren_string = g_strdup ("N/A");
+ *       else
+ *         paren_string = g_strndup (test_string + start_pos, end_pos - start_pos);
+ *
+ *       g_print ("%-9d %-25s %-12d %-18d %d\n", match_num, paren_string, found_match, start_pos, end_pos);
+ *     }
+ *
+ *   return 0;
+ * }
+ * ```
+ *
+ * ```
+ * match_num Contents                  Return value returned start_pos returned end_pos
+ * 0         <a> <b> <c>               1            0                  11
+ * 1         <a> <b>                   1            0                  7
+ * 2         <a>                       1            0                  3
+ * 3         N/A                       0            2147483647         2147483647
+ * ```
+ *
+ * Returns: True if @match_num is within range, false otherwise. If
+ *   the capture paren has a match, @start_pos and @end_pos contain the 
+ *   start and end positions (in bytes) of the matching substring. If the 
+ *   capture paren has no match, @start_pos and @end_pos are `-1`. If 
+ *   @match_num is out of range, @start_pos and @end_pos are left unchanged.
  *
  * Since: 2.14
  */
@@ -1540,7 +1813,7 @@ get_matched_substring_number (const GMatchInfo *match_info,
  * Retrieves the text matching the capturing parentheses named @name.
  *
  * If @name is a valid sub pattern name but it didn't match anything
- * (e.g. sub pattern "X", matching "b" against "(?P<X>a)?b")
+ * (e.g. sub pattern `"X"`, matching `"b"` against `"(?P<X>a)?b"`)
  * then an empty string is returned.
  *
  * The string is fetched from the string passed to the match function,
@@ -1574,13 +1847,16 @@ g_match_info_fetch_named (const GMatchInfo *match_info,
  * @start_pos: (out) (optional): pointer to location where to store
  *     the start position, or %NULL
  * @end_pos: (out) (optional): pointer to location where to store
- *     the end position, or %NULL
+ *     the end position (the byte after the final byte of the match), or %NULL
  *
  * Retrieves the position in bytes of the capturing parentheses named @name.
  *
  * If @name is a valid sub pattern name but it didn't match anything
- * (e.g. sub pattern "X", matching "b" against "(?P<X>a)?b")
+ * (e.g. sub pattern `"X"`, matching `"b"` against `"(?P<X>a)?b"`)
  * then @start_pos and @end_pos are set to -1 and %TRUE is returned.
+ *
+ * As @end_pos is set to the byte after the final byte of the match (on success),
+ * the length of the match can be calculated as `end_pos - start_pos`.
  *
  * Returns: %TRUE if the position was fetched, %FALSE otherwise.
  *     If the position cannot be fetched, @start_pos and @end_pos
@@ -2351,15 +2627,15 @@ g_regex_match_all (const GRegex      *regex,
  * Using the standard algorithm for regular expression matching only
  * the longest match in the @string is retrieved, it is not possible
  * to obtain all the available matches. For instance matching
- * "<a> <b> <c>" against the pattern "<.*>"
- * you get "<a> <b> <c>".
+ * `"<a> <b> <c>"` against the pattern `"<.*>"`
+ * you get `"<a> <b> <c>"`.
  *
  * This function uses a different algorithm (called DFA, i.e. deterministic
  * finite automaton), so it can retrieve all the possible matches, all
  * starting at the same point in the string. For instance matching
- * "<a> <b> <c>" against the pattern "<.*>;"
- * you would obtain three matches: "<a> <b> <c>",
- * "<a> <b>" and "<a>".
+ * `"<a> <b> <c>"` against the pattern `"<.*>"`
+ * you would obtain three matches: `"<a> <b> <c>"`,
+ * `"<a> <b>"` and `"<a>"`.
  *
  * The number of matched strings is retrieved using
  * g_match_info_get_match_count(). To obtain the matched strings and
@@ -2831,7 +3107,7 @@ typedef enum
   CHANGE_CASE_SINGLE_MASK  = CHANGE_CASE_UPPER_SINGLE | CHANGE_CASE_LOWER_SINGLE,
   CHANGE_CASE_LOWER_MASK   = CHANGE_CASE_LOWER | CHANGE_CASE_LOWER_SINGLE,
   CHANGE_CASE_UPPER_MASK   = CHANGE_CASE_UPPER | CHANGE_CASE_UPPER_SINGLE
-} ChangeCase;
+} G_GNUC_FLAG_ENUM ChangeCase;
 
 struct _InterpolationData
 {
@@ -3265,13 +3541,13 @@ interpolation_list_needs_match (GList *list)
  * @error: location to store the error occurring, or %NULL to ignore errors
  *
  * Replaces all occurrences of the pattern in @regex with the
- * replacement text. Backreferences of the form '\number' or
- * '\g<number>' in the replacement text are interpolated by the
- * number-th captured subexpression of the match, '\g<name>' refers
- * to the captured subexpression with the given name. '\0' refers
- * to the complete match, but '\0' followed by a number is the octal
- * representation of a character. To include a literal '\' in the
- * replacement, write '\\\\'.
+ * replacement text. Backreferences of the form `\number` or
+ * `\g<number>` in the replacement text are interpolated by the
+ * number-th captured subexpression of the match, `\g<name>` refers
+ * to the captured subexpression with the given name. `\0` refers
+ * to the complete match, but `\0` followed by a number is the octal
+ * representation of a character. To include a literal `\` in the
+ * replacement, write `\\\\`.
  *
  * There are also escapes that changes the case of the following text:
  *

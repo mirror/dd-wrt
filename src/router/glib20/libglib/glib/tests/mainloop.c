@@ -25,6 +25,7 @@
 #include <glib.h>
 #include <glib/gstdio.h>
 #include "glib-private.h"
+#include "gvalgrind.h"
 #include <stdio.h>
 #include <string.h>
 
@@ -64,7 +65,7 @@ static GSourceFuncs global_funcs = {
 static void
 test_maincontext_basic (void)
 {
-  GMainContext *ctx;
+  GMainContext *ctx, *source_ctx;
   GSource *source;
   guint id;
   gpointer data = &global_funcs;
@@ -103,6 +104,10 @@ test_maincontext_basic (void)
   g_source_destroy (source);
   g_assert_true (g_source_get_context (source) == ctx);
   g_assert_null (g_main_context_find_source_by_id (ctx, id));
+  source_ctx = g_source_dup_context (source);
+  g_assert_true (source_ctx == ctx);
+  g_main_context_unref (source_ctx);
+  source_ctx = NULL;
 
   g_main_context_unref (ctx);
 
@@ -1171,6 +1176,24 @@ test_unref_while_pending (void)
   g_assert_cmpint (n_finalized, ==, 1);
 }
 
+static void
+test_null_default_context (void)
+{
+  int n_poll_fds;
+  GPollFD poll_fds[10];
+
+  g_test_message ("Test that the global default main context is used if NULL is passed to various methods");
+  g_test_bug ("https://gitlab.gnome.org/GNOME/glib/-/issues/3818");
+
+  g_assert_true (g_main_context_acquire (NULL));
+  g_assert_false (g_main_context_prepare (NULL, NULL));
+  n_poll_fds = g_main_context_query (NULL, 0, NULL, poll_fds, G_N_ELEMENTS (poll_fds));
+  g_assert_cmpint (n_poll_fds, ==, 1);  /* one pollfd always exists for gwakeup */
+  g_assert_false (g_main_context_check (NULL, 1000, poll_fds, n_poll_fds));
+  g_main_context_dispatch (NULL);
+  g_main_context_release (NULL);
+}
+
 typedef struct {
   GSource parent;
   GMainLoop *loop;
@@ -1328,14 +1351,17 @@ test_unix_fd (void)
   /* Assuming the kernel isn't internally 'laggy' then there will always
    * be either data to read or room in which to write.  That will keep
    * the loop running until all data has been read and written.
+   *
+   * We can’t rely on the data being available in exactly one `GMainContext`
+   * iteration, though, as it may be potentially deferred in favour of higher
+   * priority sources.
    */
-  while (TRUE)
+  while (to_write > 0 || to_read > 0)
     {
       gssize to_write_was = to_write;
       gssize to_read_was = to_read;
 
-      if (!g_main_context_iteration (NULL, FALSE))
-        break;
+      g_main_context_iteration (NULL, TRUE);
 
       /* Since the sources are at different priority, only one of them
        * should possibly have run.
@@ -2378,6 +2404,38 @@ test_maincontext_source_finalization_from_dispatch (gconstpointer user_data)
 }
 
 static void
+callback_source_unref (gpointer cb_data)
+{
+  GSource *s = (GSource *) cb_data;
+
+  g_source_destroy (s);
+};
+
+static GSourceCallbackFuncs callback_funcs = {
+  NULL,
+  callback_source_unref,
+  NULL,
+};
+
+static void
+test_context_ref_while_in_source_callbackfuncs_unref (void)
+{
+  GMainContext *c = g_main_context_new ();
+  GSource *s;
+
+  g_test_summary ("Tests if calling GSource API in GSourceCallbackFuncs.unref "
+                  "does not deadlock attempting to retrieve the relevant GMainContext.");
+  g_test_bug ("https://gitlab.gnome.org/GNOME/glib/issues/3725");
+
+  s = g_source_new (&source_with_source_funcs, sizeof (SourceWithSource));
+  g_source_set_callback_indirect (s, s, &callback_funcs);
+  g_source_attach (s, c);
+  g_source_unref (s);
+
+  g_main_context_unref (c);
+}
+
+static void
 once_cb (gpointer user_data)
 {
   guint *counter = user_data;
@@ -2478,6 +2536,176 @@ test_steal_fd (void)
   g_free (tmpfile);
 }
 
+typedef enum
+{
+  INITIAL = 0,
+  MAIN_CONTEXT_READY = (1 << 0),
+  SOURCE_READY = (1 << 1),
+} G_GNUC_FLAG_ENUM SimultaneousDestructionTestState;
+
+typedef struct
+{
+  SimultaneousDestructionTestState state; /* (mutex lock) */
+  GMainContext *main_context; /* (mutex lock) */
+  GSource *source; /* (mutex lock) */
+  GMutex lock;
+  GCond cond;
+  GThread *main_context_thread;
+  GThread *source_thread; /* (mutex lock) */
+} SimultaneousDestructionTest;
+
+static SimultaneousDestructionTest *
+create_simultaneous_destruction_test (void)
+{
+  SimultaneousDestructionTest *test;
+
+  test = g_new0 (SimultaneousDestructionTest, 1);
+
+  g_mutex_init (&test->lock);
+  g_cond_init (&test->cond);
+
+  return test;
+}
+
+static void
+free_simultaneous_destruction_test (SimultaneousDestructionTest * test)
+{
+  g_mutex_clear (&test->lock);
+  g_cond_clear (&test->cond);
+
+  /* Should have already been cleared in wait_simultaneous_destruction_test() */
+  g_assert (test->main_context == NULL);
+  g_assert (test->source == NULL);
+  g_assert (test->main_context_thread == NULL);
+  g_assert (test->source_thread == NULL);
+
+  g_free (test);
+}
+
+static gpointer
+source_create_unref_thread_func (gpointer data)
+{
+  SimultaneousDestructionTest *test = data;
+
+  g_mutex_lock (&test->lock);
+  test->source = g_timeout_source_new_seconds (100);
+  g_source_attach (test->source, test->main_context);
+  test->state |= SOURCE_READY;
+  g_cond_broadcast (&test->cond);
+  while ((test->state & MAIN_CONTEXT_READY) == 0)
+    g_cond_wait (&test->cond, &test->lock);
+  g_mutex_unlock (&test->lock);
+
+  g_thread_yield ();
+  g_source_destroy (test->source);
+
+  g_mutex_lock (&test->lock);
+  g_source_unref (test->source);
+  test->source = NULL;
+  g_cond_broadcast (&test->cond);
+  g_mutex_unlock (&test->lock);
+
+  return NULL;
+}
+
+static gpointer
+main_context_create_unref_thread_func (gpointer data)
+{
+  SimultaneousDestructionTest *test = data;
+
+  g_mutex_lock (&test->lock);
+  test->main_context = g_main_context_new ();
+  test->source_thread = g_thread_new (NULL, source_create_unref_thread_func, test);
+
+  test->state |= MAIN_CONTEXT_READY;
+  while ((test->state & SOURCE_READY) == 0)
+    g_cond_wait (&test->cond, &test->lock);
+  g_mutex_unlock (&test->lock);
+
+  g_thread_yield ();
+  g_main_context_unref (test->main_context);
+
+  g_mutex_lock (&test->lock);
+  test->main_context = NULL;
+  g_cond_broadcast (&test->cond);
+  g_mutex_unlock (&test->lock);
+
+  return NULL;
+}
+
+static void
+start_simultaneous_destruction_test (SimultaneousDestructionTest * test)
+{
+  test->main_context_thread = g_thread_new (NULL, main_context_create_unref_thread_func, test);
+
+  g_mutex_lock (&test->lock);
+  while (test->main_context)
+    g_cond_wait (&test->cond, &test->lock);
+  g_mutex_unlock (&test->lock);
+}
+
+static void
+wait_simultaneous_destruction_test (SimultaneousDestructionTest * test)
+{
+  g_mutex_lock (&test->lock);
+  while (test->main_context || test->source)
+    g_cond_wait (&test->cond, &test->lock);
+  g_mutex_unlock (&test->lock);
+
+  g_thread_join (g_steal_pointer (&test->main_context_thread));
+  g_thread_join (g_steal_pointer (&test->source_thread));
+}
+
+static void
+test_simultaneous_source_context_destruction (void)
+{
+  guint64 n_concurrent = 120, n_iterations = 100;
+  SimultaneousDestructionTest **test;
+  guint64 i;
+
+  /* The race in this test is very hard to reproduce under valgrind, so skip it.
+   * Otherwise the test can run for tens of minutes. */
+#if defined (ENABLE_VALGRIND)
+  if (RUNNING_ON_VALGRIND && !g_test_thorough ())
+    {
+      g_test_skip ("Skipping hard-to-reproduce race under valgrind");
+      return;
+    }
+#endif
+
+  if (g_test_thorough ())
+    {
+      n_concurrent = 512;
+      n_iterations = 2000;
+    }
+
+  test = g_new0 (SimultaneousDestructionTest *, n_concurrent);
+
+  for (i = 0; i < n_iterations; i++)
+    {
+      gsize j = 0;
+      for (j = 0; j < n_concurrent; j++)
+        test[j] = create_simultaneous_destruction_test ();
+
+      for (j = 0; j < n_concurrent; j++)
+        start_simultaneous_destruction_test (test[j]);
+
+      for (j = 0; j < n_concurrent; j++)
+        {
+          wait_simultaneous_destruction_test (test[j]);
+          free_simultaneous_destruction_test (test[j]);
+        }
+
+      if (g_test_verbose() && i % 100 == 0)
+        g_test_message ("# %" G_GUINT64_FORMAT " / %" G_GUINT64_FORMAT, i, n_iterations);
+    }
+
+  if (g_test_verbose ())
+    g_test_message ("%" G_GUINT64_FORMAT " / %" G_GUINT64_FORMAT, n_iterations, n_iterations);
+
+  g_free (test);
+}
+
 int
 main (int argc, char *argv[])
 {
@@ -2504,6 +2732,7 @@ main (int argc, char *argv[])
     }
   g_test_add_func ("/maincontext/idle-once", test_maincontext_idle_once);
   g_test_add_func ("/maincontext/timeout-once", test_maincontext_timeout_once);
+  g_test_add_func ("/maincontext/context-ref-in-source-callbackfuncs-unref", test_context_ref_while_in_source_callbackfuncs_unref);
 
   g_test_add_func ("/mainloop/basic", test_mainloop_basic);
   g_test_add_func ("/mainloop/timeouts", test_timeouts);
@@ -2520,6 +2749,7 @@ main (int argc, char *argv[])
   g_test_add_func ("/mainloop/wakeup", test_wakeup);
   g_test_add_func ("/mainloop/remove-invalid", test_remove_invalid);
   g_test_add_func ("/mainloop/unref-while-pending", test_unref_while_pending);
+  g_test_add_func ("/mainloop/null-default-context", test_null_default_context);
 #ifdef G_OS_UNIX
   g_test_add_func ("/mainloop/unix-fd", test_unix_fd);
   g_test_add_func ("/mainloop/unix-fd-source", test_unix_fd_source);
@@ -2532,6 +2762,7 @@ main (int argc, char *argv[])
   g_test_add_func ("/mainloop/steal-fd", test_steal_fd);
   g_test_add_data_func ("/mainloop/ownerless-polling/attach-first", GINT_TO_POINTER (TRUE), test_ownerless_polling);
   g_test_add_data_func ("/mainloop/ownerless-polling/pop-first", GINT_TO_POINTER (FALSE), test_ownerless_polling);
+  g_test_add_func ("/mainloop/simultaneous-source-context-destruction", test_simultaneous_source_context_destruction);
 
   return g_test_run ();
 }

@@ -38,11 +38,31 @@ G_BEGIN_DECLS
 #define G_DATALIST_GET_FLAGS(datalist)				\
   ((gsize) g_atomic_pointer_get (datalist) & G_DATALIST_FLAGS_MASK)
 
+#define _G_DATALIST_LOCK_BIT 2
+
+#define g_datalist_lock(datalist)                                   \
+  G_STMT_START                                                      \
+  {                                                                 \
+    GData **const _datalist = (datalist);                           \
+                                                                    \
+    g_pointer_bit_lock ((void **) _datalist, _G_DATALIST_LOCK_BIT); \
+  }                                                                 \
+  G_STMT_END
+
+#define g_datalist_unlock(datalist)                                   \
+  G_STMT_START                                                        \
+  {                                                                   \
+    GData **const _datalist = (datalist);                             \
+                                                                      \
+    g_pointer_bit_unlock ((void **) _datalist, _G_DATALIST_LOCK_BIT); \
+  }                                                                   \
+  G_STMT_END
+
 /*< private >
  * GDataListUpdateAtomicFunc:
- * @key_id: ID of the entry to update
- * @data: (inout) (nullable) (not optional): the existing data corresponding
- *   to @key_id, and return location for the new value for it
+ * @data: (inout) (nullable) (not optional): the existing data corresponding to
+ *   the "key_id" parameter of g_datalist_id_update_atomic(), and return location
+ *   for the new value for it
  * @destroy_notify: (inout) (nullable) (not optional): the existing destroy
  *   notify function for @data, and return location for the destroy notify
  *   function for the new value for it
@@ -52,13 +72,13 @@ G_BEGIN_DECLS
  *
  * Since: 2.80
  */
-typedef gpointer (*GDataListUpdateAtomicFunc) (GQuark key_id,
-                                               gpointer *data,
+typedef gpointer (*GDataListUpdateAtomicFunc) (gpointer *data,
                                                GDestroyNotify *destroy_notify,
                                                gpointer user_data);
 
 gpointer g_datalist_id_update_atomic (GData **datalist,
                                       GQuark key_id,
+                                      gboolean already_locked,
                                       GDataListUpdateAtomicFunc callback,
                                       gpointer user_data);
 

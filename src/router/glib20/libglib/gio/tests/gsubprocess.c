@@ -1,3 +1,4 @@
+#include "glib-private.h"
 #include <gio/gio.h>
 #include <string.h>
 
@@ -1351,6 +1352,22 @@ test_terminate (void)
   g_object_unref (proc);
 }
 
+static void
+test_fail_initialization (void)
+{
+  GError *local_error = NULL;
+  GSubprocess *proc;
+
+  proc = g_subprocess_new (G_SUBPROCESS_FLAGS_NONE,
+                           &local_error,
+                           "thisprogramshouldnotexistprettyplease",
+                           NULL);
+
+  g_assert_error (local_error, G_SPAWN_ERROR, G_SPAWN_ERROR_NOENT);
+  g_assert_null (proc);
+  g_clear_error (&local_error);
+}
+
 #ifdef G_OS_UNIX
 static void
 send_signal (gpointer user_data)
@@ -2073,6 +2090,8 @@ trace_children (pid_t main_child)
 static void
 test_exit_status_trapped (void)
 {
+#ifndef _GLIB_ADDRESS_SANITIZER
+
 #ifdef __linux__
   GPtrArray *args = NULL;
   pid_t test_child;
@@ -2103,6 +2122,13 @@ test_exit_status_trapped (void)
 #else
   g_test_skip ("ptrace() support for this test is only tested on Linux");
 #endif
+
+#else /* if defined (_GLIB_ADDRESS_SANITIZER) */
+
+g_test_skip ("LeakSanitizer does not work under ptrace");
+(void) trace_children;
+
+#endif /* _GLIB_ADDRESS_SANITIZER */
 }
 
 #endif  /* G_OS_UNIX */
@@ -2234,6 +2260,7 @@ main (int argc, char **argv)
   g_test_add_func ("/gsubprocess/communicate/utf8/invalid", test_communicate_utf8_invalid);
   g_test_add_func ("/gsubprocess/communicate/nothing", test_communicate_nothing);
   g_test_add_func ("/gsubprocess/terminate", test_terminate);
+  g_test_add_func ("/gsubprocess/fail-initialization", test_fail_initialization);
   g_test_add_func ("/gsubprocess/env", test_env);
   g_test_add_func ("/gsubprocess/env/inherit", test_env_inherit);
   g_test_add_func ("/gsubprocess/cwd", test_cwd);

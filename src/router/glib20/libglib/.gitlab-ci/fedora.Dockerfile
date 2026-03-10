@@ -1,4 +1,4 @@
-FROM fedora:37
+FROM fedora:41
 
 RUN dnf -y update \
  && dnf -y install \
@@ -20,6 +20,7 @@ RUN dnf -y update \
     glibc-devel \
     glibc-gconv-extra \
     glibc-headers \
+    glibc-langpack-az \
     glibc-langpack-de \
     glibc-langpack-el \
     glibc-langpack-en \
@@ -50,12 +51,12 @@ RUN dnf -y update \
     pcre2-devel \
     "python3-dbusmock >= 0.18.3-2" \
     python3-docutils \
-    python3-packaging \
     python3-pip \
     python3-pygments \
     python3-wheel \
     shared-mime-info \
     systemtap-sdt-devel \
+    systemtap-sdt-dtrace \
     unzip \
     valgrind \
     wget \
@@ -80,7 +81,7 @@ RUN dnf -y update \
     make \
  && dnf clean all
 
-RUN pip3 install meson==1.2.3
+RUN pip3 install meson==1.4.2
 
 COPY install-gitlab-cobertura-tools.sh .
 RUN ./install-gitlab-cobertura-tools.sh

@@ -74,7 +74,17 @@ G_STATIC_ASSERT (G_C_STD_CHECK_VERSION (90));
 
 #if G_C_STD_VERSION == 201710L
   G_STATIC_ASSERT (!G_C_STD_CHECK_VERSION (23));
-  G_STATIC_ASSERT (!G_C_STD_CHECK_VERSION (202300L));
+  G_STATIC_ASSERT (!G_C_STD_CHECK_VERSION (202311L));
+#endif
+
+#if G_C_STD_VERSION >= 202311L
+  G_STATIC_ASSERT (G_C_STD_CHECK_VERSION (23));
+  G_STATIC_ASSERT (G_C_STD_CHECK_VERSION (202311L));
+#endif
+
+#if G_C_STD_VERSION == 202311L
+  G_STATIC_ASSERT (!G_C_STD_CHECK_VERSION (26));
+  G_STATIC_ASSERT (!G_C_STD_CHECK_VERSION (202600L));
 #endif
 
 #ifdef _G_EXPECTED_C_STANDARD
@@ -91,6 +101,8 @@ test_c_standard (void)
       return;
     }
 
+  g_test_message ("G_C_STD_VERSION is %lu", G_C_STD_VERSION);
+
   g_assert_true (G_C_STD_CHECK_VERSION (std_version));
 
   if (std_version > 80 && std_version < 99)
@@ -98,6 +110,9 @@ test_c_standard (void)
 
   if (std_version >= 90)
     g_assert_cmpuint (G_C_STD_VERSION, >=, (std_version + 1900) * 100);
+  else if (std_version == 23)
+    /* see comment in the definition of G_C_STD_CHECK_VERSION */
+    g_assert_cmpuint (G_C_STD_VERSION, >=, 202000L);
   else
     g_assert_cmpuint (G_C_STD_VERSION, >=, (std_version + 2000) * 100);
 }

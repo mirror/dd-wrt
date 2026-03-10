@@ -57,7 +57,7 @@ typedef enum {
   NONE      = 0,
   INOTIFY   = (1 << 1),
   KQUEUE    = (1 << 2)
-} Environment;
+} G_GNUC_FLAG_ENUM Environment;
 
 typedef struct
 {
@@ -116,11 +116,15 @@ static const gchar DONT_CARE[] = "";
 static Environment
 get_environment (GFileMonitor *monitor)
 {
-  if (g_str_equal (G_OBJECT_TYPE_NAME (monitor), "GInotifyFileMonitor"))
+#if defined(FILE_MONITOR_BACKEND_INOTIFY)
     return INOTIFY;
-  if (g_str_equal (G_OBJECT_TYPE_NAME (monitor), "GKqueueFileMonitor"))
+#elif defined(FILE_MONITOR_BACKEND_KQUEUE)
     return KQUEUE;
+#elif defined(FILE_MONITOR_BACKEND_LIBINOTIFY_KQUEUE)
+    return INOTIFY | KQUEUE;
+#else
   return NONE;
+#endif
 }
 
 static void
@@ -231,6 +235,17 @@ check_expected_events (RecordedEvent *expected,
               g_test_message ("Event CHANGES_DONE_HINT ignored at "
                               "expected index %"  G_GSIZE_FORMAT ", recorded index %d", i, li);
               li++, l = l->next;
+              continue;
+            }
+          /* The ordering of 'CHANGES_DONE_HINT' can not be guaranteed
+           * so treat it as optional. */
+          else if (e1->event_type == G_FILE_MONITOR_EVENT_CHANGES_DONE_HINT &&
+                   e2->event_type != G_FILE_MONITOR_EVENT_CHANGES_DONE_HINT)
+            {
+              g_test_message ("Skipping expected 'CHANGES_DONE_HINT' "
+                              "at index %" G_GSIZE_FORMAT,
+                              i);
+              i++;
               continue;
             }
           /* If an event is marked as optional in the current environment and

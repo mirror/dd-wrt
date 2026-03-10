@@ -56,7 +56,7 @@ typedef struct
   gpointer arg_data;
   union
   {
-    gboolean bool;
+    gboolean boolean;
     gint integer;
     gchar *str;
     gchar **array;
@@ -68,7 +68,7 @@ typedef struct
     gchar *str;
     struct
     {
-      gint len;
+      size_t len;
       gchar **data;
     } array;
   } allocated;
@@ -513,7 +513,7 @@ g_option_context_add_main_entries (GOptionContext      *context,
   g_option_group_set_translation_domain (context->main_group, translation_domain);
 }
 
-static gint
+static size_t
 calculate_max_length (GOptionGroup *group,
                       GHashTable   *aliases)
 {
@@ -541,6 +541,10 @@ calculate_max_length (GOptionGroup *group,
       if (!NO_ARG (entry) && entry->arg_description)
         len += 1 + _g_utf8_strwidth (TRANSLATE (group, entry->arg_description));
 
+      /* " (deprecated)" */
+      if (entry->flags & G_OPTION_FLAG_DEPRECATED)
+        len += 3 + _g_utf8_strwidth (_("deprecated"));
+
       max_length = MAX (max_length, len);
     }
 
@@ -549,7 +553,7 @@ calculate_max_length (GOptionGroup *group,
 
 static void
 print_entry (GOptionGroup       *group,
-             gint                max_length,
+             size_t              max_length,
              const GOptionEntry *entry,
              GString            *string,
              GHashTable         *aliases)
@@ -577,9 +581,16 @@ print_entry (GOptionGroup       *group,
   if (entry->arg_description)
     g_string_append_printf (str, "=%s", TRANSLATE (group, entry->arg_description));
 
+  if (entry->flags & G_OPTION_FLAG_DEPRECATED)
+    {
+      const char *deprecated = _("deprecated");
+      g_string_append_printf (str, " (%s)", deprecated);
+    }
+
   g_string_append_printf (string, "%s%*s %s\n", str->str,
                           (int) (max_length + 4 - _g_utf8_strwidth (str->str)), "",
                           entry->description ? TRANSLATE (group, entry->description) : "");
+
   g_string_free (str, TRUE);
 }
 
@@ -590,7 +601,7 @@ group_has_visible_entries (GOptionContext *context,
 {
   GOptionFlags reject_filter = G_OPTION_FLAG_HIDDEN;
   GOptionEntry *entry;
-  gint i, l;
+  size_t i, l;
   gboolean main_group = group == context->main_group;
 
   if (!main_entries)
@@ -680,7 +691,7 @@ g_option_context_get_help (GOptionContext *context,
                            GOptionGroup   *group)
 {
   GList *list;
-  gint max_length = 0, len;
+  size_t max_length = 0, len;
   gsize i;
   GOptionEntry *entry;
   GHashTable *shadow_map;
@@ -805,22 +816,30 @@ g_option_context_get_help (GOptionContext *context,
     {
       GOptionGroup *g = list->data;
 
-      if (context->help_enabled)
+      if (!group || group == g)
         {
-          /* First, we check the --help-<groupname> options */
-          len = _g_utf8_strwidth ("--help-") + _g_utf8_strwidth (g->name);
-          max_length = MAX (max_length, len);
-        }
+          if (context->help_enabled)
+            {
+              /* First, we check the --help-<groupname> options */
+              len = _g_utf8_strwidth ("--help-") + _g_utf8_strwidth (g->name);
+              max_length = MAX (max_length, len);
+            }
 
-      /* Then we go through the entries */
-      len = calculate_max_length (g, aliases);
-      max_length = MAX (max_length, len);
+          /* Then we go through the entries */
+          if (group_has_visible_entries (context, g, main_help))
+            {
+              len = calculate_max_length (g, aliases);
+              max_length = MAX (max_length, len);
+            }
+        }
 
       list = list->next;
     }
 
   /* Add a bit of padding */
   max_length += 4;
+
+  g_assert (max_length <= G_MAXINT);
 
   if (!group && context->help_enabled)
     {
@@ -829,13 +848,13 @@ g_option_context_get_help (GOptionContext *context,
       token = context_has_h_entry (context) ? '?' : 'h';
 
       g_string_append_printf (string, "%s\n  -%c, --%-*s %s\n",
-                              _("Help Options:"), token, max_length - 4, "help",
+                              _("Help Options:"), token, (int) max_length - 4, "help",
                               _("Show help options"));
 
       /* We only want --help-all when there are groups */
       if (list)
         g_string_append_printf (string, "  --%-*s %s\n",
-                                max_length, "help-all",
+                                (int) max_length, "help-all",
                                 _("Show all help options"));
 
       while (list)
@@ -844,7 +863,7 @@ g_option_context_get_help (GOptionContext *context,
 
           if (group_has_visible_entries (context, g, FALSE))
             g_string_append_printf (string, "  --help-%-*s %s\n",
-                                    max_length - 5, g->name,
+                                    (int) max_length - 5, g->name,
                                     TRANSLATE (g, g->help_description));
 
           list = list->next;
@@ -970,7 +989,7 @@ parse_int (const gchar *arg_name,
       return FALSE;
     }
 
-  *result = tmp;
+  *result = (int) tmp;
   if (*result != tmp || errno == ERANGE)
     {
       g_set_error (error,
@@ -1461,7 +1480,7 @@ parse_long_option (GOptionContext *context,
         }
       else
         {
-          gint len = strlen (group->entries[j].long_name);
+          size_t len = strlen (group->entries[j].long_name);
 
           if (strncmp (arg, group->entries[j].long_name, len) == 0 &&
               (arg[len] == '=' || arg[len] == 0))
@@ -1585,7 +1604,7 @@ free_changes_list (GOptionContext *context,
           switch (change->arg_type)
             {
             case G_OPTION_ARG_NONE:
-              *(gboolean *)change->arg_data = change->prev.bool;
+              *(gboolean *)change->arg_data = change->prev.boolean;
               break;
             case G_OPTION_ARG_INT:
               *(gint *)change->arg_data = change->prev.integer;
@@ -1784,9 +1803,9 @@ platform_get_argv0 (void)
  * this function will produce help output to stdout and
  * call `exit (0)`.
  *
- * Note that function depends on the [current locale][setlocale] for
- * automatic character set conversion of string and filename
- * arguments.
+ * Note that function depends on the
+ * [current locale](running.html#locale) for automatic
+ * character set conversion of string and filename arguments.
  *
  * Returns: %TRUE if the parsing was successful,
  *               %FALSE if an error occurred
@@ -1799,7 +1818,7 @@ g_option_context_parse (GOptionContext   *context,
                         gchar          ***argv,
                         GError          **error)
 {
-  gint i, j, k;
+  gint i, k;
   GList *list;
 
   g_return_val_if_fail (context != NULL, FALSE);
@@ -1948,13 +1967,14 @@ g_option_context_parse (GOptionContext   *context,
                 }
               else
                 { /* short option */
-                  gint new_i = i, arg_length;
+                  gint new_i = i;
+                  size_t arg_length;
                   gboolean *nulled_out = NULL;
                   gboolean has_h_entry = context_has_h_entry (context);
                   arg = (*argv)[i] + 1;
                   arg_length = strlen (arg);
                   nulled_out = g_newa0 (gboolean, arg_length);
-                  for (j = 0; j < arg_length; j++)
+                  for (size_t j = 0; j < arg_length; j++)
                     {
                       if (context->help_enabled && (arg[j] == '?' ||
                         (arg[j] == 'h' && !has_h_entry)))
@@ -1993,7 +2013,7 @@ g_option_context_parse (GOptionContext   *context,
                     {
                       gchar *new_arg = NULL;
                       gint arg_index = 0;
-                      for (j = 0; j < arg_length; j++)
+                      for (size_t j = 0; j < arg_length; j++)
                         {
                           if (!nulled_out[j])
                             {
@@ -2082,7 +2102,7 @@ g_option_context_parse (GOptionContext   *context,
           if (k > i)
             {
               k -= i;
-              for (j = i + k; j < *argc; j++)
+              for (int j = i + k; j < *argc; j++)
                 {
                   (*argv)[j-k] = (*argv)[j];
                   (*argv)[j] = NULL;
@@ -2559,7 +2579,7 @@ g_option_context_get_description (GOptionContext *context)
 /**
  * g_option_context_parse_strv:
  * @context: a #GOptionContext
- * @arguments: (inout) (array null-terminated=1) (optional): a pointer
+ * @arguments: (inout) (array zero-terminated=1) (optional): a pointer
  *    to the command line arguments (which must be in UTF-8 on Windows).
  *    Starting with GLib 2.62, @arguments can be %NULL, which matches
  *    g_option_context_parse().

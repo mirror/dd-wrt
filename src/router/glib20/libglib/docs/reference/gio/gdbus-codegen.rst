@@ -39,6 +39,7 @@ SYNOPSIS
 |    [--c-generate-autocleanup none|objects|all]
 |    [--output-directory *OUTDIR* | --output *OUTFILE*]
 |    [--generate-docbook *OUTFILES*]
+|    [--generate-md *OUTFILES*]
 |    [--generate-rst *OUTFILES*]
 |    [--pragma-once]
 |    [--xml-files *FILE*]
@@ -46,6 +47,7 @@ SYNOPSIS
 |    [--annotate *ELEMENT* *KEY* *VALUE*]…
 |    [--glib-min-required *VERSION*]
 |    [--glib-max-allowed *VERSION*]
+|    [--extension-path *EXTENSION_PATH*]
 |    *FILE*…
 
 DESCRIPTION
@@ -120,6 +122,12 @@ Each generated DocBook XML file (see the ``--generate-docbook`` option for
 details) is a ``RefEntry`` article describing the D-Bus interface. (See the
 `DocBook documentation <https://tdg.docbook.org/tdg/4.5/refentry.html>`_.)
 
+GENERATING MARKDOWN DOCUMENTATION
+-----------------------------------------
+
+Each generated Markdown file (see the ``--generate-md`` option for
+details) is a plain text Markdown document describing the D-Bus interface.
+
 GENERATING RESTRUCTUREDTEXT DOCUMENTATION
 -----------------------------------------
 
@@ -152,6 +160,15 @@ The following options are supported:
 
   Generate DocBook Documentation for each D-Bus interface and put it in
   ``OUTFILES-NAME.xml`` where ``NAME`` is a placeholder for the interface
+  name, e.g. ``net.Corp.FooBar`` and so on.
+
+  Pass ``--output-directory`` to specify the directory to put the output files
+  in. By default the current directory will be used.
+
+``--generate-md`` *OUTFILES*
+
+  Generate Markdown Documentation for each D-Bus interface and put it in
+  ``OUTFILES-NAME.md`` where ``NAME`` is a placeholder for the interface
   name, e.g. ``net.Corp.FooBar`` and so on.
 
   Pass ``--output-directory`` to specify the directory to put the output files
@@ -376,6 +393,20 @@ The following options are supported:
   greater than or equal to that passed to ``--glib-min-required``.
   It defaults to the version of GLib which provides this ``gdbus-codegen``.
 
+``--extension-path`` *EXTENSION_PATH*
+
+  Used to load an extension to the codegen. The *EXTENSION_PATH* is a path to
+  a Python file that will be loaded as a module. The extension needs to define
+  at least the function ``def init(args, options)`` where ``args`` is a
+  ``argparse.Namespace`` and ``options`` is a dict containing the key
+  ``version``.
+
+  All other API the extension can use are internal and thus unstable, but effort
+  is made to increase the ``version`` field when those internals change. If you
+  want to use this mechanism, please get in touch by
+  `filing an issue <https://gitlab.gnome.org/GNOME/glib/-/issues>`_. with your
+  use case.
+
 SUPPORTED D-BUS ANNOTATIONS
 ---------------------------
 
@@ -443,7 +474,7 @@ The following D-Bus annotations are supported by ``gdbus-codegen``:
 
 As an easier alternative to using the ``org.gtk.GDBus.DocString`` annotation,
 note that parser used by ``gdbus-codegen`` parses XML comments in a way similar
-to `gtk-doc <https://developer-old.gnome.org/gtk-doc-manual/stable/>`_::
+to `gtk-doc <https://gitlab.gnome.org/GNOME/gtk-doc/>`_::
 
    <!--
      net.Corp.Bar:
@@ -560,7 +591,7 @@ instantiatable types with the same name but suffixed with ``Proxy`` and
                                     const gchar *greeting,
                                     GCancellable *cancellable,
                                     GAsyncReadyCallback callback,
-                                    gp ointer user_data);
+                                    gpointer user_data);
    gboolean
    my_app_frobber_call_hello_world_finish (MyAppFrobber *proxy,
                                            gchar **out_response,
@@ -797,7 +828,7 @@ only if, each added method, property signal is annotated with the
 versions.
 
 The generated C code currently happens to be annotated with
-`gtk-doc <https://developer-old.gnome.org/gtk-doc-manual/stable/>`_ and
+`gtk-doc <https://gitlab.gnome.org/GNOME/gtk-doc/>`_ and
 `GObject Introspection <https://gi.readthedocs.io/en/latest/>`_ comments and
 annotations. The layout and contents might change in the future so no guarantees
 about e.g. ``SECTION`` usage etc. are given.

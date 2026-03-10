@@ -21,7 +21,7 @@ How to make a release
 ---
 
 Broadly, GLib follows the same process as [every other GNOME
-module](https://wiki.gnome.org/MaintainersCorner/Releasing).
+module](https://handbook.gnome.org/maintainers/making-a-release.html).
 
 These instructions use the following variables:
  - `new_version`: the version number of the release you are making, for example `2.73.1`
@@ -54,38 +54,30 @@ You can get review of your `NEWS` changes from other co-maintainers if you wish.
 Commit the release:
 ```sh
 git add -p
-git commit -sm "${new_version}"
+git commit -s -m "${new_version}" --gpg-sign
 ```
 
-Build the release tarball:
+Test build the release tarball:
 ```sh
-ninja -C build/ dist
+meson dist -C build/
 ```
 
-Tag, sign and push the release (see below for information about `git evtag`):
+Tag, sign and push the release, using `${new_version}` as the tag message (see below for information about `git evtag`):
 ```sh
 git evtag sign ${new_version}
 git push --atomic origin ${branch} ${new_version}
 ```
-To use a specific key add an option `-u ${keyid|email}` after the `sign` argument.
+You will need to **temporarily** allow maintainers to push to the `main` branch on https://gitlab.gnome.org/GNOME/glib/-/settings/repository. To use a specific key add an option `-u ${keyid|email}` after the `sign` argument.
 
-Use `${new_version}` as the tag message.
-
-Upload the release tarball (you will need a
-[GNOME LDAP account](https://wiki.gnome.org/Infrastructure/NewAccounts) for this):
-```sh
-scp build/meson-dist/glib-${new_version}.tar.xz master.gnome.org:
-ssh master.gnome.org ftpadmin install glib-${new_version}.tar.xz
-```
+The `dist-job` CI job will be triggered and will build and upload the final release archive.
 
 Add the release notes to GitLab and close the milestone:
- - Go to https://gitlab.gnome.org/GNOME/glib/-/tags/${new_version}/release/edit
-   and upload the release notes for the new release from the `NEWS` file
  - Go to https://gitlab.gnome.org/GNOME/glib/-/releases/${new_version}/edit
-   and link the milestone to it, then list the new release tarball and
+   and upload the release notes for the new release from the `NEWS` file
+ - Then link the milestone to it, then list the new release tarball and
    `sha256sum` file in the ‘Release Assets’ section as the ‘Other’ types.
    Get the file links from https://download.gnome.org/sources/glib/ and
-   name them ‘Release tarball’ and ‘Release tarball sha256sum’
+   name them ‘Release archive’ and ‘Release archive checksum’
  - Go to https://gitlab.gnome.org/GNOME/glib/-/milestones/
    choose the milestone and close it, as all issues and merge requests tagged
    for this release should now be complete
@@ -93,12 +85,22 @@ Add the release notes to GitLab and close the milestone:
 `git-evtag`
 ---
 
-Releases must be done with `git evtag` rather than `git tag`, as it provides
+Releases should be done with `git evtag` rather than `git tag -s`, as it provides
 stronger security guarantees. See
 [its documentation](https://github.com/cgwalters/git-evtag) for more details.
 In particular, it calculates its checksum over all blobs reachable from the tag,
 including submodules; and uses a stronger checksum than SHA-1.
 
+`git tag -a` must not be used. Releases must be cryptographically signed to
+prove that they were made by a maintainer and have not been modified since
+release.
+
 You will need a GPG key for this, ideally which has been signed by others so
 that it can be verified as being yours. However, even if your GPG key is
 unsigned, using `git evtag` is still beneficial over using `git tag`.
+
+It is possible to use an SSH key rather than a GPG key — git supports both,
+although GitLab currently does not support verifying signatures by SSH keys.
+
+See [the GNOME Handbook](https://handbook.gnome.org/maintainers/signing-releases.html)
+for further information about release signing.

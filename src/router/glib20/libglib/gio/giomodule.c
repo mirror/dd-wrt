@@ -52,6 +52,12 @@
 #include "gmemorymonitor.h"
 #include "gmemorymonitorportal.h"
 #include "gmemorymonitordbus.h"
+#ifdef __linux__
+#include "gmemorymonitorpsi.h"
+#endif
+#ifdef HAVE_SYSINFO
+#include "gmemorymonitorpoll.h"
+#endif
 #include "gpowerprofilemonitor.h"
 #include "gpowerprofilemonitordbus.h"
 #include "gpowerprofilemonitorportal.h"
@@ -70,6 +76,10 @@
 
 #ifdef __APPLE__
 #include <AvailabilityMacros.h>
+#include <TargetConditionals.h>
+#if TARGET_OS_OSX
+#include <dlfcn.h>
+#endif
 #endif
 
 #define __GLIB_H_INSIDE__
@@ -1081,6 +1091,12 @@ extern GType _g_network_monitor_nm_get_type (void);
 
 extern GType g_debug_controller_dbus_get_type (void);
 extern GType g_memory_monitor_dbus_get_type (void);
+#ifdef __linux__
+extern GType g_memory_monitor_psi_get_type (void);
+#endif
+#ifdef HAVE_SYSINFO
+extern GType g_memory_monitor_poll_get_type (void);
+#endif
 extern GType g_memory_monitor_portal_get_type (void);
 extern GType g_memory_monitor_win32_get_type (void);
 extern GType g_power_profile_monitor_dbus_get_type (void);
@@ -1093,8 +1109,9 @@ extern GType g_proxy_resolver_portal_get_type (void);
 extern GType g_network_monitor_portal_get_type (void);
 #endif
 
-#if MAC_OS_X_VERSION_MIN_REQUIRED >= 1090
+#ifdef HAVE_COCOA
 extern GType g_cocoa_notification_backend_get_type (void);
+extern GType g_osx_network_monitor_get_type (void);
 #endif
 
 #ifdef G_PLATFORM_WIN32
@@ -1233,12 +1250,9 @@ _g_io_modules_ensure_extension_points_registered (void)
     }
 }
 
-static gchar *
-get_gio_module_dir (void)
+static inline gchar *
+get_gio_module_dir_env (void)
 {
-  gchar *module_dir;
-  gboolean is_setuid = GLIB_PRIVATE_CALL (g_check_setuid) ();
-
   /* If running as setuid, loading modules from an arbitrary directory
    * controlled by the unprivileged user who is running the program could allow
    * for execution of arbitrary code (in constructors in modules).
@@ -1246,7 +1260,44 @@ get_gio_module_dir (void)
    *
    * If a setuid program somehow needs to load additional GIO modules, it should
    * explicitly call g_io_modules_scan_all_in_directory(). */
-  module_dir = !is_setuid ? g_strdup (g_getenv ("GIO_MODULE_DIR")) : NULL;
+  if (GLIB_PRIVATE_CALL (g_check_setuid) ())
+    return NULL;
+
+  return g_strdup (g_getenv ("GIO_MODULE_DIR"));
+}
+
+#ifdef __APPLE__
+static inline gchar *
+get_gio_module_dir_darwin (void)
+{
+/* Only auto-relocate on macOS, not watchOS etc; older macOS SDKs only define TARGET_OS_MAC */
+#if TARGET_OS_OSX
+  g_autofree gchar *path = NULL;
+  g_autofree gchar *possible_dir = NULL;
+  Dl_info info;
+
+  if (dladdr (get_gio_module_dir_darwin, &info))
+    {
+      /* Gets path to the PREFIX/lib directory */
+      path = g_path_get_dirname (info.dli_fname);
+      possible_dir = g_build_filename (path, "gio", "modules", NULL);
+      if (g_file_test (possible_dir, G_FILE_TEST_IS_DIR))
+        {
+          return g_steal_pointer (&possible_dir);
+        }
+    }
+  return g_strdup (GIO_MODULE_DIR);
+#else
+  return NULL;
+#endif
+}
+#endif
+
+static gchar *
+get_gio_module_dir (void)
+{
+  gchar *module_dir = get_gio_module_dir_env ();
+
   if (module_dir == NULL)
     {
 #ifdef G_OS_WIN32
@@ -1257,33 +1308,10 @@ get_gio_module_dir (void)
                                      "lib", "gio", "modules",
                                      NULL);
       g_free (install_dir);
+#elif defined(__APPLE__)
+      module_dir = get_gio_module_dir_darwin ();
 #else
       module_dir = g_strdup (GIO_MODULE_DIR);
-#ifdef __APPLE__
-#include "TargetConditionals.h"
-/* Only auto-relocate on macOS, not watchOS etc; older macOS SDKs only define TARGET_OS_MAC */
-#if (defined (TARGET_OS_OSX) && TARGET_OS_OSX) || \
-     (!defined (TARGET_OS_OSX) && defined (TARGET_OS_MAC) && TARGET_OS_MAC)
-#include <dlfcn.h>
-      {
-        g_autofree gchar *path = NULL;
-        g_autofree gchar *possible_dir = NULL;
-        Dl_info info;
-
-        if (dladdr (get_gio_module_dir, &info))
-          {
-            /* Gets path to the PREFIX/lib directory */
-            path = g_path_get_dirname (info.dli_fname);
-            possible_dir = g_build_filename (path, "gio", "modules", NULL);
-            if (g_file_test (possible_dir, G_FILE_TEST_IS_DIR))
-              {
-                g_free (module_dir);
-                module_dir = g_steal_pointer (&possible_dir);
-              }
-          }
-      }
-#endif
-#endif
 #endif
     }
 
@@ -1336,10 +1364,10 @@ _g_io_modules_ensure_loaded (void)
       g_type_ensure (g_memory_settings_backend_get_type ());
       g_type_ensure (g_keyfile_settings_backend_get_type ());
       g_type_ensure (g_power_profile_monitor_dbus_get_type ());
-#if defined(HAVE_INOTIFY_INIT1)
+#if defined(FILE_MONITOR_BACKEND_INOTIFY) || defined(FILE_MONITOR_BACKEND_LIBINOTIFY_KQUEUE)
       g_type_ensure (g_inotify_file_monitor_get_type ());
 #endif
-#if defined(HAVE_KQUEUE)
+#if defined(FILE_MONITOR_BACKEND_KQUEUE)
       g_type_ensure (g_kqueue_file_monitor_get_type ());
 #endif
 #ifdef G_OS_WIN32
@@ -1348,8 +1376,10 @@ _g_io_modules_ensure_loaded (void)
       g_type_ensure (g_registry_settings_backend_get_type ());
 #endif
 #ifdef HAVE_COCOA
+      g_type_ensure (g_cocoa_notification_backend_get_type ());
       g_type_ensure (g_nextstep_settings_backend_get_type ());
       g_type_ensure (g_osx_app_info_get_type ());
+      g_type_ensure (g_osx_network_monitor_get_type ());
 #endif
 #ifdef G_OS_UNIX
       g_type_ensure (_g_unix_volume_monitor_get_type ());
@@ -1358,13 +1388,16 @@ _g_io_modules_ensure_loaded (void)
       g_type_ensure (g_gtk_notification_backend_get_type ());
       g_type_ensure (g_portal_notification_backend_get_type ());
       g_type_ensure (g_memory_monitor_dbus_get_type ());
+#ifdef __linux__
+      g_type_ensure (g_memory_monitor_psi_get_type ());
+#endif
+#ifdef HAVE_SYSINFO
+      g_type_ensure (g_memory_monitor_poll_get_type ());
+#endif
       g_type_ensure (g_memory_monitor_portal_get_type ());
       g_type_ensure (g_network_monitor_portal_get_type ());
       g_type_ensure (g_power_profile_monitor_portal_get_type ());
       g_type_ensure (g_proxy_resolver_portal_get_type ());
-#endif
-#if MAC_OS_X_VERSION_MIN_REQUIRED >= 1090
-      g_type_ensure (g_cocoa_notification_backend_get_type ());
 #endif
 #ifdef G_OS_WIN32
       g_type_ensure (g_win32_notification_backend_get_type ());

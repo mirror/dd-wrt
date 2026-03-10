@@ -37,7 +37,7 @@ test_to_file (void)
   const gchar *filename;
   gboolean res;
   GError *error = NULL;
-  char *in, *out;
+  char *in, *mime, *out;
   gchar *tmp_filename = NULL;
   gint fd;
 
@@ -50,6 +50,10 @@ test_to_file (void)
   g_test_message ("Roundtrip from newly created bookmark file %s", tmp_filename);
   g_bookmark_file_set_title (bookmark, "file:///tmp/schedule.ps", "schedule.ps");
   g_bookmark_file_set_mime_type (bookmark, "file:///tmp/schedule.ps", "application/postscript");
+  g_bookmark_file_set_icon (bookmark,
+                            "file:///tmp/schedule.ps",
+                            "application\">-x-postscript",
+                            "image/\">png");
   g_bookmark_file_add_application (bookmark, "file:///tmp/schedule.ps", "ghostscript", "ghostscript %F");
 
   res = g_bookmark_file_to_file (bookmark, tmp_filename, &error);
@@ -71,6 +75,18 @@ test_to_file (void)
   g_free (out);
 
   remove (tmp_filename);
+  res = g_bookmark_file_get_icon (bookmark,
+                                  "file:///tmp/schedule.ps",
+                                  &out,
+                                  &mime,
+                                  &error);
+
+  g_assert_no_error (error);
+  g_assert_true (res);
+  g_assert_cmpstr (out, ==, "application\">-x-postscript");
+  g_free (out);
+  g_assert_cmpstr (mime, ==, "image/\">png");
+  g_free (mime);
 
   g_test_message ("Roundtrip from a valid bookmark file");
   filename = g_test_get_filename (G_TEST_DIST, "bookmarks", "valid-01.xbel", NULL);
@@ -153,6 +169,7 @@ test_corner_cases (void)
   gchar *message, **messages;
   GError *error = NULL;
   GBookmarkFile *bookmark;
+  char *path = NULL;
 
   bookmark = g_bookmark_file_new ();
 
@@ -669,8 +686,10 @@ test_corner_cases (void)
   g_clear_error (&error);
 
   /* g_bookmark_file_to_file() */
-  g_assert_true (g_bookmark_file_to_file (bookmark, "a", &error));
+  path = g_build_filename (g_get_tmp_dir (), "corner-case-bookmark-file.xbel", NULL);
+  g_assert_true (g_bookmark_file_to_file (bookmark, path, &error));
   g_assert_no_error (error);
+  g_free (path);
 
   /* g_bookmark_file_remove_group() */
   g_assert_false (g_bookmark_file_remove_group (bookmark, "a", NULL, NULL));

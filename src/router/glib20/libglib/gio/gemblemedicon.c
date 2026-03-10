@@ -356,6 +356,9 @@ g_emblemed_icon_from_tokens (gchar  **tokens,
   GEmblemedIcon *emblemed_icon;
   int n;
 
+  /* This is guaranteed by the GIcon interface */
+  g_assert (num_tokens >= 0);
+
   emblemed_icon = NULL;
 
   if (version != 0)
@@ -424,7 +427,7 @@ g_emblemed_icon_serialize (GIcon *icon)
   if (!icon_data)
     return NULL;
 
-  g_variant_builder_init (&builder, G_VARIANT_TYPE ("(va(va{sv}))"));
+  g_variant_builder_init_static (&builder, G_VARIANT_TYPE ("(va(va{sv}))"));
 
   g_variant_builder_add (&builder, "v", icon_data);
   g_variant_unref (icon_data);

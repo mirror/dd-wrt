@@ -90,7 +90,7 @@
  *   debug_controller = G_DEBUG_CONTROLLER (g_debug_controller_dbus_new (priv->connection, NULL, &child_error));
  *   if (debug_controller == NULL)
  *     {
- *       g_error ("Could not register debug controller on bus: %s"),
+ *       g_error ("Could not register debug controller on bus: %s",
  *                child_error->message);
  *     }
  *
@@ -235,13 +235,13 @@ set_debug_enabled (GDebugControllerDBus *self,
       /* Notify internally and externally of the property change. */
       g_object_notify (G_OBJECT (self), "debug-enabled");
 
-      g_variant_builder_init (&builder, G_VARIANT_TYPE ("a{sv}"));
+      g_variant_builder_init_static (&builder, G_VARIANT_TYPE ("a{sv}"));
       g_variant_builder_add (&builder, "{sv}", "DebugEnabled", g_variant_new_boolean (priv->debug_enabled));
 
       g_dbus_connection_emit_signal (priv->connection,
                                      NULL,
                                      "/org/gtk/Debugging",
-                                     "org.freedesktop.DBus.Properties",
+                                     DBUS_INTERFACE_PROPERTIES,
                                      "PropertiesChanged",
                                      g_variant_new ("(sa{sv}as)",
                                                     "org.gtk.Debugging",

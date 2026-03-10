@@ -147,7 +147,8 @@ g_socket_address_init (GSocketAddress *address)
  * g_socket_address_to_native().
  *
  * Returns: the size of the native struct sockaddr that
- *     @address represents
+ *     @address represents, or `-1` if @address
+ *     is not valid
  *
  * Since: 2.22
  */
@@ -207,9 +208,13 @@ GSocketAddress *
 g_socket_address_new_from_native (gpointer native,
 				  gsize    len)
 {
-  gshort family;
+#ifdef G_OS_WIN32
+  ADDRESS_FAMILY family;
+#else
+  sa_family_t family;
+#endif
 
-  if (len < sizeof (gshort))
+  if (len < sizeof (family))
     return NULL;
 
   family = ((struct sockaddr *) native)->sa_family;
@@ -226,7 +231,7 @@ g_socket_address_new_from_native (gpointer native,
       if (len < sizeof (*addr))
 	return NULL;
 
-      iaddr = g_inet_address_new_from_bytes ((guint8 *) &(addr->sin_addr), AF_INET);
+      iaddr = g_inet_address_new_from_bytes ((guint8 *) &(addr->sin_addr), G_SOCKET_FAMILY_IPV4);
       sockaddr = g_inet_socket_address_new (iaddr, g_ntohs (addr->sin_port));
       g_object_unref (iaddr);
       return sockaddr;
@@ -248,18 +253,16 @@ g_socket_address_new_from_native (gpointer native,
 	  sin_addr.sin_family = AF_INET;
 	  sin_addr.sin_port = addr->sin6_port;
 	  memcpy (&(sin_addr.sin_addr.s_addr), addr->sin6_addr.s6_addr + 12, 4);
-	  iaddr = g_inet_address_new_from_bytes ((guint8 *) &(sin_addr.sin_addr), AF_INET);
+	  iaddr = g_inet_address_new_from_bytes ((guint8 *) &(sin_addr.sin_addr), G_SOCKET_FAMILY_IPV4);
 	}
       else
-	{
-	  iaddr = g_inet_address_new_from_bytes ((guint8 *) &(addr->sin6_addr), AF_INET6);
-	}
+        {
+          iaddr = g_inet_address_new_from_bytes_with_ipv6_info ((guint8 *) &(addr->sin6_addr), G_SOCKET_FAMILY_IPV6, addr->sin6_flowinfo, addr->sin6_scope_id);
+        }
 
       sockaddr = g_object_new (G_TYPE_INET_SOCKET_ADDRESS,
 			       "address", iaddr,
 			       "port", g_ntohs (addr->sin6_port),
-			       "flowinfo", addr->sin6_flowinfo,
-			       "scope_id", addr->sin6_scope_id,
 			       NULL);
       g_object_unref (iaddr);
       return sockaddr;

@@ -25,6 +25,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
+#include <stdint.h>
 #include <string.h>
 #include <errno.h>
 #include <sys/types.h>
@@ -373,7 +374,7 @@ g_file_test (const gchar *filename,
     {
       const gchar *lastdot = strrchr (filename, '.');
       const gchar *pathext = NULL, *p;
-      int extlen;
+      size_t extlen;
 
       if (lastdot == NULL)
         break;
@@ -401,7 +402,7 @@ g_file_test (const gchar *filename,
 	  const gchar *q = strchr (p, ';');
 	  if (q == NULL)
 	    q = p + strlen (p);
-	  if (extlen == q - p &&
+	  if (extlen == (size_t) (q - p) &&
 	      memcmp (lastdot, p, extlen) == 0)
 	    {
 	      g_free ((gchar *) pathext);
@@ -938,7 +939,7 @@ get_contents_posix (const gchar  *filename,
       FILE *f;
       gboolean retval;
 
-      f = fdopen (fd, "r");
+      f = fdopen (fd, "re");
       
       if (f == NULL)
         {
@@ -969,7 +970,7 @@ get_contents_win32 (const gchar  *filename,
   FILE *f;
   gboolean retval;
   
-  f = g_fopen (filename, "rb");
+  f = g_fopen (filename, "rbe");
 
   if (f == NULL)
     {
@@ -1318,8 +1319,8 @@ g_file_set_contents (const gchar  *filename,
  * to 7 characters to @filename.
  *
  * If the file didn’t exist before and is created, it will be given the
- * permissions from @mode. Otherwise, the permissions of the existing file may
- * be changed to @mode depending on @flags, or they may remain unchanged.
+ * permissions from @mode. Otherwise, the permissions of the existing file will
+ * remain unchanged.
  *
  * Returns: %TRUE on success, %FALSE if an error occurred
  *
@@ -1362,6 +1363,7 @@ g_file_set_contents_full (const gchar            *filename,
       gboolean retval;
       int fd;
       gboolean do_fsync;
+      GStatBuf old_stat;
 
       tmp_filename = g_strdup_printf ("%s.XXXXXX", filename);
 
@@ -1377,6 +1379,26 @@ g_file_set_contents_full (const gchar            *filename,
                             saved_errno);
           retval = FALSE;
           goto consistent_out;
+        }
+
+      /* Maintain the permissions of the file if it exists */
+      if (!g_stat (filename, &old_stat))
+        {
+#ifndef G_OS_WIN32
+          if (fchmod (fd, old_stat.st_mode))
+#else  /* G_OS_WIN32 */
+          if (chmod (tmp_filename, old_stat.st_mode))
+#endif /* G_OS_WIN32 */
+            {
+              int saved_errno = errno;
+              if (error)
+                set_file_error (error,
+                                tmp_filename, _ ("Failed to set permissions of “%s”: %s"),
+                                saved_errno);
+              g_unlink (tmp_filename);
+              retval = FALSE;
+              goto consistent_out;
+            }
         }
 
       do_fsync = fd_should_be_fsynced (fd, filename, flags);
@@ -1517,9 +1539,9 @@ get_tmp_file (gchar            *tmpl,
   static const char letters[] =
     "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
   static const int NLETTERS = sizeof (letters) - 1;
-  gint64 value;
-  gint64 now_us;
-  static int counter = 0;
+  guint64 value;
+  guint64 now_us;
+  static guint counter = 0;
 
   g_return_val_if_fail (tmpl != NULL, -1);
 
@@ -1538,7 +1560,7 @@ get_tmp_file (gchar            *tmpl,
 
   for (count = 0; count < 100; value += 7777, ++count)
     {
-      gint64 v = value;
+      guint64 v = value;
 
       /* Fill in the random bits.  */
       XXXXXX[0] = letters[v % NLETTERS];
@@ -1597,8 +1619,9 @@ wrap_g_open (const gchar *filename,
  * @tmpl: (type filename): template directory name
  * @mode: permissions to create the temporary directory with
  *
- * Creates a temporary directory. See the mkdtemp() documentation
- * on most UNIX-like systems.
+ * Creates a temporary directory in the current directory.
+ *
+ * See the [`mkdtemp()`](man:mkdtemp(3)) documentation on most UNIX-like systems.
  *
  * The parameter is a string that should follow the rules for
  * mkdtemp() templates, i.e. contain the string "XXXXXX".
@@ -1633,8 +1656,9 @@ g_mkdtemp_full (gchar *tmpl,
  * g_mkdtemp: (skip)
  * @tmpl: (type filename): template directory name
  *
- * Creates a temporary directory. See the mkdtemp() documentation
- * on most UNIX-like systems.
+ * Creates a temporary directory in the current directory.
+ *
+ * See the [`mkdtemp()`](man:mkdtemp(3)) documentation on most UNIX-like systems.
  *
  * The parameter is a string that should follow the rules for
  * mkdtemp() templates, i.e. contain the string "XXXXXX".
@@ -1668,8 +1692,9 @@ g_mkdtemp (gchar *tmpl)
  *   and O_CREAT, which are passed automatically
  * @mode: permissions to create the temporary file with
  *
- * Opens a temporary file. See the mkstemp() documentation
- * on most UNIX-like systems.
+ * Opens a temporary file in the current directory.
+ *
+ * See the [`mkstemp()`](man:mkstemp(3)) documentation on most UNIX-like systems.
  *
  * The parameter is a string that should follow the rules for
  * mkstemp() templates, i.e. contain the string "XXXXXX".
@@ -1701,8 +1726,9 @@ g_mkstemp_full (gchar *tmpl,
  * g_mkstemp: (skip)
  * @tmpl: (type filename): template filename
  *
- * Opens a temporary file. See the mkstemp() documentation
- * on most UNIX-like systems.
+ * Opens a temporary file in the current directory.
+ *
+ * See the [`mkstemp()`](man:mkstemp(3)) documentation on most UNIX-like systems.
  *
  * The parameter is a string that should follow the rules for
  * mkstemp() templates, i.e. contain the string "XXXXXX".
@@ -1903,13 +1929,13 @@ g_build_path_va (const gchar  *separator,
 		 gchar       **str_array)
 {
   GString *result;
-  gint separator_len = strlen (separator);
+  size_t separator_len = strlen (separator);
   gboolean is_first = TRUE;
   gboolean have_leading = FALSE;
   const gchar *single_element = NULL;
   const gchar *next_element;
   const gchar *last_trailing = NULL;
-  gint i = 0;
+  size_t i = 0;
 
   result = g_string_new (NULL);
 
@@ -2001,7 +2027,7 @@ g_build_path_va (const gchar  *separator,
 
 /**
  * g_build_pathv:
- * @separator: a string used to separator the elements of the path.
+ * @separator: a string used to separate the elements of the path.
  * @args: (array zero-terminated=1) (element-type filename): %NULL-terminated
  *   array of strings containing the path elements.
  * 
@@ -2028,7 +2054,7 @@ g_build_pathv (const gchar  *separator,
 
 /**
  * g_build_path:
- * @separator: (type filename): a string used to separator the elements of the path.
+ * @separator: (type filename): a string used to separate the elements of the path.
  * @first_element: (type filename): the first element in the path
  * @...: remaining elements in path, terminated by %NULL
  * 
@@ -2097,7 +2123,7 @@ g_build_pathname_va (const gchar  *first_element,
   const gchar *next_element;
   const gchar *last_trailing = NULL;
   gchar current_separator = '\\';
-  gint i = 0;
+  size_t i = 0;
 
   result = g_string_new (NULL);
 
@@ -2551,7 +2577,7 @@ g_path_skip_root (const gchar *file_name)
 const gchar *
 g_basename (const gchar *file_name)
 {
-  gchar *base;
+  const gchar *base;
 
   g_return_val_if_fail (file_name != NULL, NULL);
 
@@ -2559,7 +2585,7 @@ g_basename (const gchar *file_name)
 
 #ifdef G_OS_WIN32
   {
-    gchar *q;
+    const gchar *q;
     q = strrchr (file_name, '/');
     if (base == NULL || (q != NULL && q > base))
       base = q;
@@ -2594,8 +2620,8 @@ g_basename (const gchar *file_name)
 gchar *
 g_path_get_basename (const gchar *file_name)
 {
-  gssize base;
-  gssize last_nonslash;
+  size_t base;
+  size_t last_nonslash;
   gsize len;
   gchar *retval;
 
@@ -2606,10 +2632,10 @@ g_path_get_basename (const gchar *file_name)
 
   last_nonslash = strlen (file_name) - 1;
 
-  while (last_nonslash >= 0 && G_IS_DIR_SEPARATOR (file_name [last_nonslash]))
+  while (last_nonslash > 0 && G_IS_DIR_SEPARATOR (file_name[last_nonslash]))
     last_nonslash--;
 
-  if (last_nonslash == -1)
+  if (last_nonslash == 0 && G_IS_DIR_SEPARATOR (file_name[0]))
     /* string only containing slashes */
     return g_strdup (G_DIR_SEPARATOR_S);
 
@@ -2622,20 +2648,36 @@ g_path_get_basename (const gchar *file_name)
 #endif
   base = last_nonslash;
 
-  while (base >=0 && !G_IS_DIR_SEPARATOR (file_name [base]))
+  while (base > 0 && !G_IS_DIR_SEPARATOR (file_name[base]))
     base--;
 
-#ifdef G_OS_WIN32
-  if (base == -1 &&
-      g_ascii_isalpha (file_name[0]) &&
-      file_name[1] == ':')
-    base = 1;
-#endif /* G_OS_WIN32 */
+  /* Does the file_name start without a directory separator, with the only
+   * directory separators being at the end of the string? e.g. `dir/` */
+  if (base == 0 && !G_IS_DIR_SEPARATOR (file_name[0]))
+    {
+      base = 0;
 
-  len = last_nonslash - base;
+#ifdef G_OS_WIN32
+      /* Does it start with a drive letter? e.g. `C:dir/`
+       * If so, skip that. */
+      if (g_ascii_isalpha (file_name[0]) &&
+          file_name[1] == ':')
+        base = 2;
+#endif /* G_OS_WIN32 */
+    }
+  else
+    {
+      /* Otherwise, `base` now points at the last directory separator character
+       * before the component we want as the basename, so increase the index
+       * again. */
+      base += 1;
+    }
+
+  len = last_nonslash - base + 1;
+  g_assert (len < SIZE_MAX);
   retval = g_malloc (len + 1);
-  memcpy (retval, file_name + (base + 1), len);
-  retval [len] = '\0';
+  memcpy (retval, file_name + base, len);
+  retval[len] = '\0';
 
   return retval;
 }
@@ -2670,7 +2712,8 @@ g_path_get_basename (const gchar *file_name)
 gchar *
 g_path_get_dirname (const gchar *file_name)
 {
-  gchar *base;
+  const gchar *base;
+  gchar *base_p;
   gsize len;
 
   g_return_val_if_fail (file_name != NULL, NULL);
@@ -2679,7 +2722,7 @@ g_path_get_dirname (const gchar *file_name)
 
 #ifdef G_OS_WIN32
   {
-    gchar *q;
+    const gchar *q;
     q = strrchr (file_name, '/');
     if (base == NULL || (q != NULL && q > base))
       base = q;
@@ -2736,11 +2779,11 @@ g_path_get_dirname (const gchar *file_name)
       if (p == base + 1)
         {
           len = (guint) strlen (file_name) + 1;
-          base = g_new (gchar, len + 1);
-          strcpy (base, file_name);
-          base[len-1] = G_DIR_SEPARATOR;
-          base[len] = 0;
-          return base;
+          base_p = g_new (gchar, len + 1);
+          strcpy (base_p, file_name);
+          base_p[len-1] = G_DIR_SEPARATOR;
+          base_p[len] = 0;
+          return base_p;
         }
       if (G_IS_DIR_SEPARATOR (*p))
         {
@@ -2754,11 +2797,11 @@ g_path_get_dirname (const gchar *file_name)
 #endif
 
   len = (guint) 1 + base - file_name;
-  base = g_new (gchar, len + 1);
-  memmove (base, file_name, len);
-  base[len] = 0;
+  base_p = g_new (gchar, len + 1);
+  memmove (base_p, file_name, len);
+  base_p[len] = 0;
 
-  return base;
+  return base_p;
 }
 
 /**
@@ -2991,6 +3034,7 @@ g_get_current_dir (void)
     {
       /* Fallback return value */
       g_assert (buffer_size >= 2);
+      g_assert (buffer != NULL);
       buffer[0] = G_DIR_SEPARATOR;
       buffer[1] = 0;
     }

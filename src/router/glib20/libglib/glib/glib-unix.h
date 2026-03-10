@@ -184,6 +184,11 @@ G_GNUC_BEGIN_IGNORE_DEPRECATIONS
  * Since: 2.80
  */
 GLIB_AVAILABLE_STATIC_INLINE_IN_2_80
+static inline gboolean g_unix_pipe_open (GUnixPipe  *self,
+                                         int         flags,
+                                         GError    **error);
+
+GLIB_AVAILABLE_STATIC_INLINE_IN_2_80
 static inline gboolean
 g_unix_pipe_open (GUnixPipe *self,
                   int flags,
@@ -211,6 +216,10 @@ g_unix_pipe_open (GUnixPipe *self,
  *
  * Since: 2.80
  */
+GLIB_AVAILABLE_STATIC_INLINE_IN_2_80
+static inline int g_unix_pipe_get (GUnixPipe    *self,
+                                   GUnixPipeEnd  end);
+
 GLIB_AVAILABLE_STATIC_INLINE_IN_2_80
 static inline int
 g_unix_pipe_get (GUnixPipe *self,
@@ -240,6 +249,10 @@ g_unix_pipe_get (GUnixPipe *self,
  *
  * Since: 2.80
  */
+GLIB_AVAILABLE_STATIC_INLINE_IN_2_80
+static inline int g_unix_pipe_steal (GUnixPipe    *self,
+                                     GUnixPipeEnd  end);
+
 GLIB_AVAILABLE_STATIC_INLINE_IN_2_80
 static inline int
 g_unix_pipe_steal (GUnixPipe *self,
@@ -276,6 +289,11 @@ g_unix_pipe_steal (GUnixPipe *self,
  * Since: 2.80
  */
 GLIB_AVAILABLE_STATIC_INLINE_IN_2_80
+static inline gboolean g_unix_pipe_close (GUnixPipe     *self,
+                                          GUnixPipeEnd   end,
+                                          GError       **error);
+
+GLIB_AVAILABLE_STATIC_INLINE_IN_2_80
 static inline gboolean
 g_unix_pipe_close (GUnixPipe *self,
                    GUnixPipeEnd end,
@@ -305,6 +323,9 @@ g_unix_pipe_close (GUnixPipe *self,
  * Since: 2.80
  */
 GLIB_AVAILABLE_STATIC_INLINE_IN_2_80
+static inline void g_unix_pipe_clear (GUnixPipe *self);
+
+GLIB_AVAILABLE_STATIC_INLINE_IN_2_80
 static inline void
 g_unix_pipe_clear (GUnixPipe *self)
 {
@@ -331,6 +352,10 @@ int g_closefrom (int lowfd);
 
 GLIB_AVAILABLE_IN_2_80
 int g_fdwalk_set_cloexec (int lowfd);
+
+GLIB_AVAILABLE_IN_2_88
+char * g_unix_fd_query_path (int      fd,
+                             GError **error);
 
 G_GNUC_END_IGNORE_DEPRECATIONS
 

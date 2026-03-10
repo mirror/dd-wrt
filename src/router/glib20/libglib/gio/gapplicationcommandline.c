@@ -57,7 +57,7 @@
  * The `GApplicationCommandLine` object can provide the @argc and @argv
  * parameters for use with the [struct@GLib.OptionContext] command-line parsing API,
  * with the [method@Gio.ApplicationCommandLine.get_arguments] function. See
- * [gapplication-example-cmdline3.c][gapplication-example-cmdline3]
+ * [gapplication-example-cmdline3.c](https://gitlab.gnome.org/GNOME/glib/-/blob/HEAD/gio/tests/gapplication-example-cmdline3.c)
  * for an example.
  *
  * The exit status of the originally-invoked process may be set and
@@ -630,7 +630,7 @@ g_application_command_line_get_cwd (GApplicationCommandLine *cmdline)
  * See g_application_command_line_getenv() if you are only interested
  * in the value of a single environment variable.
  *
- * Returns: (array zero-terminated=1) (element-type filename) (transfer none):
+ * Returns: (nullable) (array zero-terminated=1) (element-type filename) (transfer none):
  *     the environment strings, or %NULL if they were not sent
  *
  * Since: 2.28
@@ -666,8 +666,8 @@ const gchar *
 g_application_command_line_getenv (GApplicationCommandLine *cmdline,
                                    const gchar             *name)
 {
-  gint length = strlen (name);
-  gint i;
+  size_t length = strlen (name);
+  size_t i;
 
   /* TODO: expand on windows */
   if (cmdline->priv->environ)

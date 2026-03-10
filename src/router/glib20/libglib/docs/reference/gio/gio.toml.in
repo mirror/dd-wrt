@@ -36,6 +36,9 @@ name = "basic"
 show_index_summary = true
 show_class_hierarchy = true
 
+[source-location]
+base_url = "https://gitlab.gnome.org/GNOME/glib/-/blob/main/"
+
 [extra]
 urlmap_file = "../urlmap.js"
 # The same order will be used when generating the index
@@ -63,9 +66,54 @@ content_files = [
   "migrating-posix.md",
 
   "io-scheduler.md",
+
+  "content-types.md",
 ]
 content_images = [
   "gvfs-overview.png",
   "menu-example.png",
-  "menu-model.png",
+  "menu-model-dark.svg",
+  "menu-model-light.svg",
 ]
+
+# We have to hide the GioUnix and GioWin32 symbols from the documentation — they
+# have to be present in the GIR files (until we next break API), but their
+# documentation is split out to gio-{unix,win32}.toml.
+#
+# There are four exceptions, which are ‘Unix’ APIs which are legitimately in
+# the main Gio library as they can now be used on Windows:
+#  - GUnixConnection
+#  - GUnixCredentialsMessage
+#  - GUnixFDList
+#  - GUnixSocketAddress
+[[object]]
+pattern = "Unix(?!Connection|CredentialsMessage|FDList|SocketAddress).+"
+hidden = true
+
+[[object]]
+pattern = "unix_(?!connection|credentials_message|fd_list|socket_address).+"
+hidden = true
+
+[[struct]]
+pattern = "Unix(?!Connection|CredentialsMessage|FDList|SocketAddress).+"
+hidden = true
+
+[[function]]
+pattern = "unix_(?!connection|credentials_message|fd_list|socket_address).+"
+hidden = true
+
+[[object]]
+pattern = "Win32[A-Z].+"
+hidden = true
+
+[[object]]
+pattern = "win32_.+"
+hidden = true
+
+[[struct]]
+pattern = "Win32[A-Z].+"
+hidden = true
+
+[[function]]
+pattern = "win32_.+"
+hidden = true

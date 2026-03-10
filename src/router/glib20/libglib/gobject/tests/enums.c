@@ -41,12 +41,14 @@ test_enum_basic (void)
   val = g_enum_get_value_by_name (class, "the third value");
   g_assert_nonnull (val);
   g_assert_cmpint (val->value, ==, 3);
+  g_assert_true (g_enum_get_value_by_name (class, "The Third Value") == val);
   val = g_enum_get_value_by_name (class, "the color purple");
   g_assert_null (val);
 
   val = g_enum_get_value_by_nick (class, "one");
   g_assert_nonnull (val);
   g_assert_cmpint (val->value, ==, 1);
+  g_assert_true (g_enum_get_value_by_nick (class, "One") == val);
   val = g_enum_get_value_by_nick (class, "purple");
   g_assert_null (val);
 
@@ -118,6 +120,7 @@ test_flags_basic (void)
 
   val = g_flags_get_value_by_name (class, "the third flag");
   g_assert_nonnull (val);
+  g_assert_true (g_flags_get_value_by_name (class, "The Third Flag") == val);
   g_assert_cmpint (val->value, ==, 8);
   val = g_flags_get_value_by_name (class, "the color purple");
   g_assert_null (val);
@@ -125,6 +128,7 @@ test_flags_basic (void)
   val = g_flags_get_value_by_nick (class, "one");
   g_assert_nonnull (val);
   g_assert_cmpint (val->value, ==, 1);
+  g_assert_true (g_flags_get_value_by_nick (class, "One") == val);
   val = g_flags_get_value_by_nick (class, "purple");
   g_assert_null (val);
 
@@ -195,7 +199,7 @@ typedef enum {
   TEST_FLAGS_FIRST   = 1 << 0,
   TEST_FLAGS_SECOND  = 1 << 1,
   TEST_FLAGS_THIRD   = 1 << 2
-} TestFlags;
+} G_GNUC_FLAG_ENUM TestFlags;
 
 GType test_flags_get_type (void);
 

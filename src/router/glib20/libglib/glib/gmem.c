@@ -98,7 +98,7 @@ g_malloc (gsize n_bytes)
       gpointer mem;
 
       mem = malloc (n_bytes);
-      TRACE (GLIB_MEM_ALLOC((void*) mem, (unsigned int) n_bytes, 0, 0));
+      TRACE (GLIB_MEM_ALLOC ((void *) mem, n_bytes, 0, 0));
       if (mem)
 	return mem;
 
@@ -106,7 +106,7 @@ g_malloc (gsize n_bytes)
                G_STRLOC, n_bytes);
     }
 
-  TRACE(GLIB_MEM_ALLOC((void*) NULL, (int) n_bytes, 0, 0));
+  TRACE (GLIB_MEM_ALLOC ((void *) NULL, n_bytes, 0, 0));
 
   return NULL;
 }
@@ -131,7 +131,7 @@ g_malloc0 (gsize n_bytes)
       gpointer mem;
 
       mem = calloc (1, n_bytes);
-      TRACE (GLIB_MEM_ALLOC((void*) mem, (unsigned int) n_bytes, 1, 0));
+      TRACE (GLIB_MEM_ALLOC ((void *) mem, n_bytes, 1, 0));
       if (mem)
 	return mem;
 
@@ -139,7 +139,7 @@ g_malloc0 (gsize n_bytes)
                G_STRLOC, n_bytes);
     }
 
-  TRACE(GLIB_MEM_ALLOC((void*) NULL, (int) n_bytes, 1, 0));
+  TRACE (GLIB_MEM_ALLOC ((void *) NULL, n_bytes, 1, 0));
 
   return NULL;
 }
@@ -169,7 +169,7 @@ g_realloc (gpointer mem,
   if (G_LIKELY (n_bytes))
     {
       newmem = realloc (mem, n_bytes);
-      TRACE (GLIB_MEM_REALLOC((void*) newmem, (void*)mem, (unsigned int) n_bytes, 0));
+      TRACE (GLIB_MEM_REALLOC ((void *) newmem, (void *) mem, n_bytes, 0));
       if (newmem)
 	return newmem;
 
@@ -244,7 +244,7 @@ g_free_sized (void   *mem,
  * g_clear_pointer: (skip)
  * @pp: (nullable) (not optional) (inout) (transfer full): a pointer to a
  *   variable, struct member etc. holding a pointer
- * @destroy: a function to which a gpointer can be passed, to destroy *@pp
+ * @destroy: a function to which a gpointer can be passed, to destroy `*pp`
  *
  * Clears a reference to a variable.
  *
@@ -257,9 +257,32 @@ g_free_sized (void   *mem,
  * A macro is also included that allows this function to be used without
  * pointer casts. This will mask any warnings about incompatible function types
  * or calling conventions, so you must ensure that your @destroy function is
- * compatible with being called as `GDestroyNotify` using the standard calling
- * convention for the platform that GLib was compiled for; otherwise the program
- * will experience undefined behaviour.
+ * compatible with being called as [callback@GLib.DestroyNotify] using the
+ * standard calling convention for the platform that GLib was compiled for;
+ * otherwise the program will experience undefined behaviour.
+ *
+ * Examples of this kind of undefined behaviour include using many Windows Win32
+ * APIs, as well as many if not all OpenGL and Vulkan calls on 32-bit Windows,
+ * which typically use the `__stdcall` calling convention rather than the
+ * `__cdecl` calling convention.
+ *
+ * The affected functions can be used by wrapping them in a
+ * [callback@GLib.DestroyNotify] that is declared with the standard calling
+ * convention:
+ *
+ * ```c
+ * // Wrapper needed to avoid mismatched calling conventions on Windows
+ * static void
+ * destroy_sync (void *sync)
+ * {
+ *   glDeleteSync (sync);
+ * }
+ *
+ * // …
+ *
+ * g_clear_pointer (&sync, destroy_sync);
+ * ```
+
  *
  * Since: 2.34
  **/
@@ -297,7 +320,7 @@ g_try_malloc (gsize n_bytes)
   else
     mem = NULL;
 
-  TRACE (GLIB_MEM_ALLOC((void*) mem, (unsigned int) n_bytes, 0, 1));
+  TRACE (GLIB_MEM_ALLOC ((void *) mem, n_bytes, 0, 1));
 
   return mem;
 }
@@ -352,13 +375,11 @@ g_try_realloc (gpointer mem,
       free (mem);
     }
 
-  TRACE (GLIB_MEM_REALLOC((void*) newmem, (void*)mem, (unsigned int) n_bytes, 1));
+  TRACE (GLIB_MEM_REALLOC ((void *) newmem, (void *) mem, n_bytes, 1));
 
   return newmem;
 }
 
-
-#define SIZE_OVERFLOWS(a,b) (G_UNLIKELY ((b) > 0 && (a) > G_MAXSIZE / (b)))
 
 /**
  * g_malloc_n:
@@ -378,13 +399,15 @@ gpointer
 g_malloc_n (gsize n_blocks,
 	    gsize n_block_bytes)
 {
-  if (SIZE_OVERFLOWS (n_blocks, n_block_bytes))
+  size_t len;
+
+  if (!g_size_checked_mul (&len, n_blocks, n_block_bytes))
     {
       g_error ("%s: overflow allocating %"G_GSIZE_FORMAT"*%"G_GSIZE_FORMAT" bytes",
                G_STRLOC, n_blocks, n_block_bytes);
     }
 
-  return g_malloc (n_blocks * n_block_bytes);
+  return g_malloc (len);
 }
 
 /**
@@ -405,13 +428,15 @@ gpointer
 g_malloc0_n (gsize n_blocks,
 	     gsize n_block_bytes)
 {
-  if (SIZE_OVERFLOWS (n_blocks, n_block_bytes))
+  size_t len;
+
+  if (!g_size_checked_mul (&len, n_blocks, n_block_bytes))
     {
       g_error ("%s: overflow allocating %"G_GSIZE_FORMAT"*%"G_GSIZE_FORMAT" bytes",
                G_STRLOC, n_blocks, n_block_bytes);
     }
 
-  return g_malloc0 (n_blocks * n_block_bytes);
+  return g_malloc0 (len);
 }
 
 /**
@@ -434,13 +459,15 @@ g_realloc_n (gpointer mem,
 	     gsize    n_blocks,
 	     gsize    n_block_bytes)
 {
-  if (SIZE_OVERFLOWS (n_blocks, n_block_bytes))
+  size_t len;
+
+  if (!g_size_checked_mul (&len, n_blocks, n_block_bytes))
     {
       g_error ("%s: overflow allocating %"G_GSIZE_FORMAT"*%"G_GSIZE_FORMAT" bytes",
                G_STRLOC, n_blocks, n_block_bytes);
     }
 
-  return g_realloc (mem, n_blocks * n_block_bytes);
+  return g_realloc (mem, len);
 }
 
 /**
@@ -458,10 +485,12 @@ gpointer
 g_try_malloc_n (gsize n_blocks,
 		gsize n_block_bytes)
 {
-  if (SIZE_OVERFLOWS (n_blocks, n_block_bytes))
+  size_t len;
+
+  if (!g_size_checked_mul (&len, n_blocks, n_block_bytes))
     return NULL;
 
-  return g_try_malloc (n_blocks * n_block_bytes);
+  return g_try_malloc (len);
 }
 
 /**
@@ -479,10 +508,12 @@ gpointer
 g_try_malloc0_n (gsize n_blocks,
 		 gsize n_block_bytes)
 {
-  if (SIZE_OVERFLOWS (n_blocks, n_block_bytes))
+  size_t len;
+
+  if (!g_size_checked_mul (&len, n_blocks, n_block_bytes))
     return NULL;
 
-  return g_try_malloc0 (n_blocks * n_block_bytes);
+  return g_try_malloc0 (len);
 }
 
 /**
@@ -502,10 +533,12 @@ g_try_realloc_n (gpointer mem,
 		 gsize    n_blocks,
 		 gsize    n_block_bytes)
 {
-  if (SIZE_OVERFLOWS (n_blocks, n_block_bytes))
+  size_t len;
+
+  if (!g_size_checked_mul (&len, n_blocks, n_block_bytes))
     return NULL;
 
-  return g_try_realloc (mem, n_blocks * n_block_bytes);
+  return g_try_realloc (mem, len);
 }
 
 /**
@@ -614,17 +647,15 @@ g_aligned_alloc (gsize n_blocks,
                G_STRLOC, alignment, sizeof (void *));
     }
 
-  if (SIZE_OVERFLOWS (n_blocks, n_block_bytes))
+  if (!g_size_checked_mul (&real_size, n_blocks, n_block_bytes))
     {
       g_error ("%s: overflow allocating %"G_GSIZE_FORMAT"*%"G_GSIZE_FORMAT" bytes",
                G_STRLOC, n_blocks, n_block_bytes);
     }
 
-  real_size = n_blocks * n_block_bytes;
-
   if (G_UNLIKELY (real_size == 0))
     {
-      TRACE(GLIB_MEM_ALLOC((void*) NULL, (int) real_size, 0, 0));
+      TRACE (GLIB_MEM_ALLOC ((void *) NULL, real_size, 0, 0));
       return NULL;
     }
 
@@ -662,7 +693,7 @@ g_aligned_alloc (gsize n_blocks,
 # error "This platform does not have an aligned memory allocator."
 #endif
 
-  TRACE (GLIB_MEM_ALLOC((void*) res, (unsigned int) real_size, 0, 0));
+  TRACE (GLIB_MEM_ALLOC ((void *) res, real_size, 0, 0));
   if (res)
     return res;
 

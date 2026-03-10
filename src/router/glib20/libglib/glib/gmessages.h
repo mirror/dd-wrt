@@ -67,7 +67,7 @@ typedef enum
   G_LOG_LEVEL_DEBUG             = 1 << 7,
 
   G_LOG_LEVEL_MASK              = ~(G_LOG_FLAG_RECURSION | G_LOG_FLAG_FATAL)
-} GLogLevelFlags;
+} G_GNUC_FLAG_ENUM GLogLevelFlags;
 
 /* GLib log levels that are considered fatal by default */
 #define G_LOG_FATAL_MASK        (G_LOG_FLAG_RECURSION | G_LOG_LEVEL_ERROR)
@@ -116,6 +116,9 @@ GLogLevelFlags  g_log_set_fatal_mask    (const gchar    *log_domain,
                                          GLogLevelFlags  fatal_mask);
 GLIB_AVAILABLE_IN_ALL
 GLogLevelFlags  g_log_set_always_fatal  (GLogLevelFlags  fatal_mask);
+
+GLIB_AVAILABLE_IN_2_86
+GLogLevelFlags  g_log_get_always_fatal  (void);
 
 /* Structured logging mechanism. */
 
@@ -587,7 +590,7 @@ GPrintFunc      g_set_printerr_handler  (GPrintFunc      func);
  *
  * To debug failure of a g_return_if_fail() check, run the code under a debugger
  * with `G_DEBUG=fatal-criticals` or `G_DEBUG=fatal-warnings` defined in the
- * environment (see [Running GLib Applications](glib-running.html)):
+ * environment (see [Running GLib Applications](running.html)):
  *
  * |[
  *   G_DEBUG=fatal-warnings gdb ./my-program

@@ -1,6 +1,8 @@
 /*
  * Copyright © 2010 Codethink Limited
  *
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
@@ -57,6 +59,11 @@ gchar **                gvdb_table_get_names                            (GvdbTab
 G_GNUC_INTERNAL GVDB_GNUC_WEAK
 gchar **                gvdb_table_list                                 (GvdbTable    *table,
                                                                          const gchar  *key);
+
+G_GNUC_INTERNAL GVDB_GNUC_WEAK
+guint                   gvdb_table_n_children                           (GvdbTable    *table,
+                                                                         const char   *key);
+
 G_GNUC_INTERNAL GVDB_GNUC_WEAK
 GvdbTable *             gvdb_table_get_table                            (GvdbTable    *table,
                                                                          const gchar  *key);

@@ -135,7 +135,7 @@ GThreadFunctions g_thread_functions_for_glib_use =
 static guint64
 gettime (void)
 {
-  return g_get_monotonic_time () * 1000;
+  return (guint64) g_get_monotonic_time () * 1000;
 }
 
 guint64 (*g_thread_gettime) (void) = gettime;
@@ -158,15 +158,17 @@ gboolean         g_threads_got_initialized = TRUE;
  * Since version 2.32, GLib does not support custom thread implementations
  * anymore and the @vtable parameter is ignored and you should pass %NULL.
  *
- * <note><para>g_thread_init() must not be called directly or indirectly
- * in a callback from GLib. Also no mutexes may be currently locked while
- * calling g_thread_init().</para></note>
+ * ::: note
+ *     g_thread_init() must not be called directly or indirectly in a
+ *     callback from GLib. Also no mutexes may be currently locked
+ *     while calling g_thread_init().
  *
- * <note><para>To use g_thread_init() in your program, you have to link
- * with the libraries that the command <command>pkg-config --libs
- * gthread-2.0</command> outputs. This is not the case for all the
- * other thread-related functions of GLib. Those can be used without
- * having to link with the thread libraries.</para></note>
+ * ::: note
+ *     To use g_thread_init() in your program, you have to link with
+ *     the libraries that the command `pkg-config --libs gthread-2.0`
+ *     outputs. This is not the case for all the other thread-related
+ *     functions of GLib. Those can be used without having to link
+ *     with the thread libraries.
  *
  * Deprecated:2.32: This function is no longer necessary. The GLib
  *     threading system is automatically initialized at the start
@@ -801,8 +803,8 @@ guint
 g_static_rec_mutex_unlock_full (GStaticRecMutex *mutex)
 {
   GRecMutex *rm;
-  gint depth;
-  gint i;
+  guint depth;
+  guint i;
 
   rm = g_static_rec_mutex_get_rec_mutex_impl (mutex);
 
@@ -1194,7 +1196,7 @@ g_static_rw_lock_free (GStaticRWLock* lock)
 /* GPrivate {{{1 ------------------------------------------------------ */
 
 /**
- * g_private_new: (skip):
+ * g_private_new: (skip) (constructor) (not method):
  * @notify: a #GDestroyNotify
  *
  * Creates a new #GPrivate.
@@ -1202,7 +1204,7 @@ g_static_rw_lock_free (GStaticRWLock* lock)
  * Deprecated:2.32: dynamic allocation of #GPrivate is a bad idea.  Use
  *                  static storage and G_PRIVATE_INIT() instead.
  *
- * Returns: a newly allocated #GPrivate (which can never be destroyed)
+ * Returns: (transfer full): a newly allocated #GPrivate (which can never be destroyed)
  */
 GPrivate *
 g_private_new (GDestroyNotify notify)
@@ -1441,11 +1443,11 @@ g_static_private_free (GStaticPrivate *private_key)
 /* GMutex {{{1 ------------------------------------------------------ */
 
 /**
- * g_mutex_new: (skip):
+ * g_mutex_new: (skip) (constructor) (not method):
  *
  * Allocates and initializes a new #GMutex.
  *
- * Returns: a newly allocated #GMutex. Use g_mutex_free() to free
+ * Returns: (transfer full): a newly allocated #GMutex. Use g_mutex_free() to free
  *
  * Deprecated: 2.32: GMutex can now be statically allocated, or embedded
  * in structures and initialised with g_mutex_init().
@@ -1483,11 +1485,11 @@ g_mutex_free (GMutex *mutex)
 /* GCond {{{1 ------------------------------------------------------ */
 
 /**
- * g_cond_new: (skip):
+ * g_cond_new: (skip) (constructor) (not method):
  *
  * Allocates and initializes a new #GCond.
  *
- * Returns: a newly allocated #GCond. Free with g_cond_free()
+ * Returns: (transfer full): a newly allocated #GCond. Free with g_cond_free()
  *
  * Deprecated: 2.32: GCond can now be statically allocated, or embedded
  * in structures and initialised with g_cond_init().

@@ -406,7 +406,7 @@ credentials_native_type_check (GCredentialsType  requested_type,
 #endif
 
   enum_class = g_type_class_ref (g_credentials_type_get_type ());
-  requested = g_enum_get_value (enum_class, requested_type);
+  requested = g_enum_get_value (enum_class, (int) requested_type);
 
 #if G_CREDENTIALS_SUPPORTED
   supported = g_enum_get_value (enum_class, G_CREDENTIALS_NATIVE_TYPE);
@@ -511,7 +511,11 @@ g_credentials_set_native (GCredentials     *credentials,
  * OS or if the native credentials type does not contain information
  * about the UNIX user.
  *
- * Returns: The UNIX user identifier or `-1` if @error is set.
+ * As the signedness of `uid_t` is not specified by POSIX, it is recommended to
+ * check @error for failure rather than trying to check the return value,
+ * particularly in language bindings.
+ *
+ * Returns: The UNIX user identifier or `(uid_t) -1` if @error is set.
  *
  * Since: 2.26
  */
@@ -521,14 +525,14 @@ g_credentials_get_unix_user (GCredentials    *credentials,
 {
   uid_t ret;
 
-  g_return_val_if_fail (G_IS_CREDENTIALS (credentials), -1);
-  g_return_val_if_fail (error == NULL || *error == NULL, -1);
+  g_return_val_if_fail (G_IS_CREDENTIALS (credentials), (uid_t) -1);
+  g_return_val_if_fail (error == NULL || *error == NULL, (uid_t) -1);
 
 #if G_CREDENTIALS_USE_LINUX_UCRED
   if (linux_ucred_check_valid (&credentials->native, error))
     ret = credentials->native.uid;
   else
-    ret = -1;
+    ret = (uid_t) -1;
 #elif G_CREDENTIALS_USE_APPLE_XUCRED
   if (credentials->native.cr_version == XUCRED_VERSION)
     {

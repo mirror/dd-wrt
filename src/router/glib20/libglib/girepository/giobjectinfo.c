@@ -70,7 +70,7 @@ gi_object_info_get_field_offset (GIObjectInfo *info,
   FieldBlob *field_blob;
 
   offset = rinfo->offset + header->object_blob_size
-    + (blob->n_interfaces + blob->n_interfaces % 2) * 2;
+    + (blob->n_interfaces + blob->n_interfaces % 2u) * 2u;
 
   for (size_t i = 0; i < n; i++)
     {
@@ -383,7 +383,7 @@ gi_object_info_get_property (GIObjectInfo *info,
   blob = (ObjectBlob *)&rinfo->typelib->data[rinfo->offset];
 
   offset = rinfo->offset + header->object_blob_size
-    + (blob->n_interfaces + blob->n_interfaces % 2) * 2
+    + (blob->n_interfaces + blob->n_interfaces % 2u) * 2u
     + blob->n_fields * header->field_blob_size
     + blob->n_field_callbacks * header->callback_blob_size
     + n * header->property_blob_size;
@@ -444,7 +444,7 @@ gi_object_info_get_method (GIObjectInfo *info,
 
 
   offset = rinfo->offset + header->object_blob_size
-    + (blob->n_interfaces + blob->n_interfaces % 2) * 2
+    + (blob->n_interfaces + blob->n_interfaces % 2u) * 2u
     + blob->n_fields * header->field_blob_size
     + blob->n_field_callbacks * header->callback_blob_size
     + blob->n_properties * header->property_blob_size
@@ -484,7 +484,7 @@ gi_object_info_find_method (GIObjectInfo *info,
   blob = (ObjectBlob *)&rinfo->typelib->data[rinfo->offset];
 
   offset = rinfo->offset + header->object_blob_size
-    + (blob->n_interfaces + blob->n_interfaces % 2) * 2
+    + (blob->n_interfaces + blob->n_interfaces % 2u) * 2u
     + blob->n_fields * header->field_blob_size +
     + blob->n_field_callbacks * header->callback_blob_size
     + blob->n_properties * header->property_blob_size;
@@ -528,8 +528,7 @@ gi_object_info_find_method_using_interfaces (GIObjectInfo  *info,
 
   if (result == NULL)
     {
-      int n_interfaces;
-      int i;
+      unsigned int n_interfaces, i;
 
       n_interfaces = gi_object_info_get_n_interfaces (info);
       for (i = 0; i < n_interfaces; ++i)
@@ -580,6 +579,22 @@ gi_object_info_get_n_signals (GIObjectInfo *info)
   return blob->n_signals;
 }
 
+static uint32_t
+object_get_signal_offset (GIObjectInfo *info, unsigned int n)
+{
+  GIRealInfo *rinfo = (GIRealInfo *) info;
+  Header *header = (Header *) rinfo->typelib->data;
+  ObjectBlob *blob = (ObjectBlob *) &rinfo->typelib->data[rinfo->offset];
+
+  return rinfo->offset + header->object_blob_size
+    + (blob->n_interfaces + blob->n_interfaces % 2u) * 2u
+    + blob->n_fields * header->field_blob_size
+    + blob->n_field_callbacks * header->callback_blob_size
+    + blob->n_properties * header->property_blob_size
+    + blob->n_methods * header->function_blob_size
+    + n * header->signal_blob_size;
+}
+
 /**
  * gi_object_info_get_signal:
  * @info: a #GIObjectInfo
@@ -595,28 +610,37 @@ GISignalInfo *
 gi_object_info_get_signal (GIObjectInfo *info,
                            unsigned int  n)
 {
-  size_t offset;
   GIRealInfo *rinfo = (GIRealInfo *)info;
-  Header *header;
-  ObjectBlob *blob;
 
   g_return_val_if_fail (info != NULL, NULL);
   g_return_val_if_fail (GI_IS_OBJECT_INFO (info), NULL);
   g_return_val_if_fail (n <= G_MAXUINT16, NULL);
 
-  header = (Header *)rinfo->typelib->data;
-  blob = (ObjectBlob *)&rinfo->typelib->data[rinfo->offset];
-
-  offset = rinfo->offset + header->object_blob_size
-    + (blob->n_interfaces + blob->n_interfaces % 2) * 2
-    + blob->n_fields * header->field_blob_size
-    + blob->n_field_callbacks * header->callback_blob_size
-    + blob->n_properties * header->property_blob_size
-    + blob->n_methods * header->function_blob_size
-    + n * header->signal_blob_size;
-
   return (GISignalInfo *) gi_base_info_new (GI_INFO_TYPE_SIGNAL, (GIBaseInfo*)info,
-                                            rinfo->typelib, offset);
+                                            rinfo->typelib, object_get_signal_offset (info, n));
+}
+
+static GISignalInfo *
+find_signal (GIRealInfo  *rinfo,
+             uint32_t     offset,
+             uint16_t     n_signals,
+             const char  *name)
+{
+  Header *header = (Header *) rinfo->typelib->data;
+
+  for (uint16_t i = 0; i < n_signals; i++)
+    {
+      const SignalBlob *sblob = (SignalBlob *) &rinfo->typelib->data[offset];
+      const char *sname = gi_typelib_get_string (rinfo->typelib, sblob->name);
+
+      if (strcmp (name, sname) == 0)
+        return (GISignalInfo *) gi_base_info_new (GI_INFO_TYPE_SIGNAL, (GIBaseInfo *) rinfo,
+                                                  rinfo->typelib, offset);
+
+      offset += header->signal_blob_size;
+    }
+
+  return NULL;
 }
 
 /**
@@ -637,22 +661,13 @@ GISignalInfo *
 gi_object_info_find_signal (GIObjectInfo *info,
                             const char   *name)
 {
-  size_t n_signals;
+  GIRealInfo *rinfo = (GIRealInfo *) info;
 
-  n_signals = gi_object_info_get_n_signals (info);
-  for (size_t i = 0; i < n_signals; i++)
-    {
-      GISignalInfo *siginfo = gi_object_info_get_signal (info, i);
+  g_return_val_if_fail (info != NULL, NULL);
+  g_return_val_if_fail (GI_IS_OBJECT_INFO (info), NULL);
 
-      if (g_strcmp0 (gi_base_info_get_name ((GIBaseInfo *) siginfo), name) != 0)
-        {
-          gi_base_info_unref ((GIBaseInfo*)siginfo);
-          continue;
-        }
-
-      return siginfo;
-    }
-  return NULL;
+  return find_signal (rinfo, object_get_signal_offset (info, 0),
+                      gi_object_info_get_n_signals (info), name);
 }
 
 
@@ -707,7 +722,7 @@ gi_object_info_get_vfunc (GIObjectInfo *info,
   blob = (ObjectBlob *)&rinfo->typelib->data[rinfo->offset];
 
   offset = rinfo->offset + header->object_blob_size
-    + (blob->n_interfaces + blob->n_interfaces % 2) * 2
+    + (blob->n_interfaces + blob->n_interfaces % 2u) * 2u
     + blob->n_fields * header->field_blob_size
     + blob->n_field_callbacks * header->callback_blob_size
     + blob->n_properties * header->property_blob_size
@@ -755,7 +770,7 @@ gi_object_info_find_vfunc (GIObjectInfo *info,
   blob = (ObjectBlob *)&rinfo->typelib->data[rinfo->offset];
 
   offset = rinfo->offset + header->object_blob_size
-    + (blob->n_interfaces + blob->n_interfaces % 2) * 2
+    + (blob->n_interfaces + blob->n_interfaces % 2u) * 2u
     + blob->n_fields * header->field_blob_size
     + blob->n_field_callbacks * header->callback_blob_size
     + blob->n_properties * header->property_blob_size
@@ -806,8 +821,7 @@ gi_object_info_find_vfunc_using_interfaces (GIObjectInfo  *info,
 
   if (result == NULL)
     {
-      int n_interfaces;
-      int i;
+      unsigned int n_interfaces, i;
 
       n_interfaces = gi_object_info_get_n_interfaces (info);
       for (i = 0; i < n_interfaces; ++i)
@@ -886,7 +900,7 @@ gi_object_info_get_constant (GIObjectInfo *info,
   blob = (ObjectBlob *)&rinfo->typelib->data[rinfo->offset];
 
   offset = rinfo->offset + header->object_blob_size
-    + (blob->n_interfaces + blob->n_interfaces % 2) * 2
+    + (blob->n_interfaces + blob->n_interfaces % 2u) * 2u
     + blob->n_fields * header->field_blob_size
     + blob->n_field_callbacks * header->callback_blob_size
     + blob->n_properties * header->property_blob_size

@@ -73,7 +73,7 @@ typedef enum
 {
   GI_REPOSITORY_LOAD_FLAG_NONE = 0,
   GI_REPOSITORY_LOAD_FLAG_LAZY = 1 << 0
-} GIRepositoryLoadFlags;
+} G_GNUC_FLAG_ENUM GIRepositoryLoadFlags;
 
 /* Repository */
 
@@ -241,6 +241,9 @@ void gi_cclosure_marshal_generic (GClosure       *closure,
                                   const GValue   *param_values,
                                   void           *invocation_hint,
                                   void           *marshal_data);
+
+GI_AVAILABLE_IN_2_86
+GIRepository *gi_repository_dup_default (void);
 
 #include <girepository/girepository-autocleanups.h>
 

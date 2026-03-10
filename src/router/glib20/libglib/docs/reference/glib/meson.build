@@ -1,7 +1,7 @@
+glib_manpages = ['glib-gettextize', 'gtester', 'gtester-report']
 
 if get_option('man-pages').enabled()
-  manpages = ['glib-gettextize', 'gtester', 'gtester-report']
-  foreach page : manpages
+  foreach page: glib_manpages
     custom_target(page + '-man',
       input: page + '.rst',
       output: page + '.1',
@@ -20,37 +20,49 @@ endif
 
 if get_option('documentation')
   # GVariant specification is currently standalone
-  rst2html5 = find_program('rst2html5', 'rst2html5.py', required: false)
+  spec_path = docs_dir / 'glib-2.0'
+  man_html_path = docs_dir / 'glib-2.0'
 
-  if rst2html5.found()
-    spec_path = docs_dir
+  figures = files(
+    'gvariant-byte-boundaries.svg',
+    'gvariant-integer-and-string-structure.svg',
+    'gvariant-integer-array.svg',
+    'gvariant-string-array.svg',
+  )
 
-    figures = files(
-      'gvariant-byte-boundaries.svg',
-      'gvariant-integer-and-string-structure.svg',
-      'gvariant-integer-array.svg',
-      'gvariant-string-array.svg',
-    )
+  custom_target('gvariant-specification-1.0',
+    input: 'gvariant-specification-1.0.rst',
+    output: 'gvariant-specification-1.0.html',
+    command: [
+      rst2html5,
+      '@INPUT@',
+    ],
+    capture: true,
+    install: true,
+    install_dir: spec_path,
+    install_tag: 'doc',
+    depend_files: figures,
+  )
 
-    custom_target('gvariant-specification-1.0',
-      input: 'gvariant-specification-1.0.rst',
-      output: 'gvariant-specification-1.0.html',
+  install_data(figures,
+    install_dir: spec_path,
+    install_tag: 'doc',
+  )
+
+  foreach page: glib_manpages
+    custom_target(
+      input: page + '.rst',
+      output: page + '.html',
       command: [
         rst2html5,
         '@INPUT@',
       ],
       capture: true,
       install: true,
-      install_dir: spec_path,
+      install_dir: man_html_path,
       install_tag: 'doc',
-      depend_files: figures,
     )
-
-    install_data(figures,
-      install_dir : spec_path,
-      install_tag : 'doc',
-    )
-  endif
+  endforeach
 endif
 
 if get_option('documentation') and enable_gir
@@ -106,7 +118,7 @@ if get_option('documentation') and enable_gir
 
   custom_target('glib-docs',
     input: [ glib_toml, glib_gir[0] ],
-    output: 'glib',
+    output: 'glib-2.0',
     command: [
       gidocgen,
       'generate',
@@ -128,7 +140,7 @@ if get_option('documentation') and enable_gir
 
     custom_target('glib-win32-docs',
       input: [ glib_win32_toml, glib_win32_gir[0] ],
-      output: 'glib-win32',
+      output: 'glib-win32-2.0',
       command: [
         gidocgen,
         'generate',
@@ -149,7 +161,7 @@ if get_option('documentation') and enable_gir
 
     custom_target('glib-unix-docs',
       input: [ glib_unix_toml, glib_unix_gir[0] ],
-      output: 'glib-unix',
+      output: 'glib-unix-2.0',
       command: [
         gidocgen,
         'generate',

@@ -40,14 +40,16 @@ static const GOptionEntry entries[] = {
   G_OPTION_ENTRY_NULL
 };
 
-static void
-delete_trash_file (GFile *file, gboolean del_file, gboolean del_children)
+static gboolean
+delete_trash_file (GFile *file, gboolean del_file, gboolean del_children, GError **error)
 {
   GFileInfo *info;
   GFile *child;
   GFileEnumerator *enumerator;
+  GError *local_error = NULL;
+  gboolean success = TRUE;
 
-  g_return_if_fail (g_file_has_uri_scheme (file, "trash"));
+  g_return_val_if_fail (g_file_has_uri_scheme (file, "trash"), FALSE);
 
   if (del_children)
     {
@@ -56,30 +58,65 @@ delete_trash_file (GFile *file, gboolean del_file, gboolean del_children)
                                               G_FILE_ATTRIBUTE_STANDARD_TYPE,
                                               G_FILE_QUERY_INFO_NOFOLLOW_SYMLINKS,
                                               NULL,
-                                              NULL);
-      if (enumerator)
+                                              &local_error);
+      if (!enumerator)
         {
-          while ((info = g_file_enumerator_next_file (enumerator, NULL, NULL)) != NULL)
+          g_propagate_error (error, g_steal_pointer (&local_error));
+          return FALSE;
+        }
+
+      while ((info = g_file_enumerator_next_file (enumerator, NULL, &local_error)) != NULL)
+        {
+          child = g_file_get_child (file, g_file_info_get_name (info));
+
+          /* The g_file_delete operation works differently for locations
+           * provided by the trash backend as it prevents modifications of
+           * trashed items. For that reason, it is enough to call
+           * g_file_delete on top-level items only.
+           */
+          if (!delete_trash_file (child, TRUE, FALSE, &local_error))
             {
-              child = g_file_get_child (file, g_file_info_get_name (info));
-
-              /* The g_file_delete operation works differently for locations
-               * provided by the trash backend as it prevents modifications of
-               * trashed items. For that reason, it is enough to call
-               * g_file_delete on top-level items only.
-               */
-              delete_trash_file (child, TRUE, FALSE);
-
               g_object_unref (child);
               g_object_unref (info);
+              success = FALSE;
+              break;
             }
-          g_file_enumerator_close (enumerator, NULL, NULL);
-          g_object_unref (enumerator);
+
+          g_object_unref (child);
+          g_object_unref (info);
         }
+
+      if (local_error)
+        {
+          g_propagate_error (error, g_steal_pointer (&local_error));
+          success = FALSE;
+        }
+
+      if (!g_file_enumerator_close (enumerator, NULL, &local_error))
+        {
+          if (success)
+            g_propagate_error (error, g_steal_pointer (&local_error));
+          else
+            g_clear_error (&local_error);
+          success = FALSE;
+        }
+
+      g_object_unref (enumerator);
+
+      if (!success)
+        return FALSE;
     }
 
   if (del_file)
-    g_file_delete (file, NULL, NULL);
+    {
+      if (!g_file_delete (file, NULL, &local_error))
+        {
+          g_propagate_error (error, g_steal_pointer (&local_error));
+          return FALSE;
+        }
+    }
+
+  return TRUE;
 }
 
 static gboolean
@@ -92,7 +129,7 @@ restore_trash (GFile         *file,
   GFile *target = NULL;
   GFile *dir_target = NULL;
   gboolean ret = FALSE;
-  gchar *orig_path = NULL;
+  const gchar *orig_path = NULL;
   GError *local_error = NULL;
 
   info = g_file_query_info (file, G_FILE_ATTRIBUTE_TRASH_ORIG_PATH, G_FILE_QUERY_INFO_NONE, cancellable, &local_error);
@@ -102,7 +139,7 @@ restore_trash (GFile         *file,
       goto exit_func;
     }
 
-  orig_path = g_file_info_get_attribute_as_string (info, G_FILE_ATTRIBUTE_TRASH_ORIG_PATH);
+  orig_path = g_file_info_get_attribute_byte_string (info, G_FILE_ATTRIBUTE_TRASH_ORIG_PATH);
   if (!orig_path)
     {
       g_set_error_literal (error, G_IO_ERROR, G_IO_ERROR_NOT_FOUND, _("Unable to find original path"));
@@ -110,7 +147,6 @@ restore_trash (GFile         *file,
     }
 
   target = g_file_new_for_commandline_arg (orig_path);
-  g_free (orig_path);
 
   dir_target = g_file_get_parent (target);
   if (dir_target)
@@ -173,21 +209,23 @@ trash_list (GFile         *file,
   while ((info = g_file_enumerator_next_file (enumerator, cancellable, &local_error)) != NULL)
     {
       const char *name;
-      char *orig_path;
+      const char *orig_path;
       char *uri;
+      gchar *utf8_path;
       GFile* child;
 
       name = g_file_info_get_name (info);
       child = g_file_get_child (file, name);
       uri = g_file_get_uri (child);
       g_object_unref (child);
-      orig_path = g_file_info_get_attribute_as_string (info, G_FILE_ATTRIBUTE_TRASH_ORIG_PATH);
+      orig_path = g_file_info_get_attribute_byte_string (info, G_FILE_ATTRIBUTE_TRASH_ORIG_PATH);
+      utf8_path = g_filename_to_utf8 (orig_path, -1, NULL, NULL, NULL);
 
-      g_print ("%s\t%s\n", uri, orig_path);
+      g_print ("%s\t%s\n", uri, utf8_path);
 
       g_object_unref (info);
-      g_free (orig_path);
       g_free (uri);
+      g_free (utf8_path);
     }
 
   if (local_error)
@@ -203,6 +241,8 @@ trash_list (GFile         *file,
       g_clear_error (&local_error);
       res = FALSE;
     }
+
+  g_object_unref (enumerator);
 
   return res;
 }
@@ -294,7 +334,12 @@ handle_trash (int argc, char *argv[], gboolean do_help)
   else if (empty)
     {
       file = g_file_new_for_uri ("trash:");
-      delete_trash_file (file, FALSE, TRUE);
+      if (!delete_trash_file (file, FALSE, TRUE, &error))
+        {
+          print_file_error (file, error->message);
+          g_clear_error (&error);
+          retval = 1;
+        }
       g_object_unref (file);
     }
 

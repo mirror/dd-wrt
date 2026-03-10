@@ -159,7 +159,7 @@
 #  define PLAT_s390x_linux 1
 #elif defined(__linux__) && defined(__mips__) && (__mips==64)
 #  define PLAT_mips64_linux 1
-#elif defined(__linux__) && defined(__mips__) && (__mips!=64) && !defined(__mips16)
+#elif defined(__linux__) && defined(__mips__) && (__mips!=64)
 #  define PLAT_mips32_linux 1
 #elif defined(__sun) && defined(__i386__)
 #  define PLAT_x86_solaris 1
@@ -702,7 +702,6 @@ typedef
    OrigFn;
 
 #define __SPECIAL_INSTRUCTION_PREAMBLE                            \
-	    ".arm\n\t" \
             "mov r12, r12, ror #3  ; mov r12, r12, ror #13 \n\t"  \
             "mov r12, r12, ror #29 ; mov r12, r12, ror #19 \n\t"
 
@@ -719,8 +718,7 @@ typedef
     _zzq_args[3] = (unsigned int)(_zzq_arg3);                     \
     _zzq_args[4] = (unsigned int)(_zzq_arg4);                     \
     _zzq_args[5] = (unsigned int)(_zzq_arg5);                     \
-    __asm__ volatile(".arm \n\t"				\
-		    "mov r3, %1\n\t" /*default*/                 \
+    __asm__ volatile("mov r3, %1\n\t" /*default*/                 \
                      "mov r4, %2\n\t" /*ptr*/                     \
                      __SPECIAL_INSTRUCTION_PREAMBLE               \
                      /* R3 = client_request ( R4 ) */             \
@@ -1079,7 +1077,7 @@ typedef
 
 /* Use these to write the name of your wrapper.  NOTE: duplicates
    VG_WRAP_FUNCTION_Z{U,Z} in pub_tool_redir.h.  NOTE also: inserts
-   the default behaviour equivalance class tag "0000" into the name.
+   the default behaviour equivalence class tag "0000" into the name.
    See pub_tool_redir.h for details -- normally you don't need to
    think about this, though. */
 
@@ -1677,7 +1675,7 @@ typedef
 /* NB 9 Sept 07.  There is a nasty kludge here in all these CALL_FN_
    macros.  In order not to trash the stack redzone, we need to drop
    %rsp by 128 before the hidden call, and restore afterwards.  The
-   nastyness is that it is only by luck that the stack still appears
+   nastiness is that it is only by luck that the stack still appears
    to be unwindable during the hidden call - since then the behaviour
    of any routine using this macro does not match what the CFI data
    says.  Sigh.

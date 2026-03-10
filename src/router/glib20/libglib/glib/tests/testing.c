@@ -35,8 +35,15 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define TAP_VERSION G_STRINGIFY (13)
-#define TAP_SUBTEST_PREFIX "#    "
+#ifdef G_OS_UNIX
+#define _POSIX_C_SOURCE 200809L  /* for F_DUPFD_CLOEXEC */
+#include <fcntl.h>
+#include <glib-unix.h>
+#include <unistd.h>
+#endif
+
+#define TAP_VERSION G_STRINGIFY (14)
+#define TAP_SUBTEST_PREFIX "    "
 
 /* test assertion variants */
 static void
@@ -330,7 +337,7 @@ static void
 test_fork_timeout (void)
 {
   /* allow child to run for only a fraction of a second */
-  if (g_test_trap_fork (0.11 * 1000000, G_TEST_TRAP_DEFAULT))
+  if (g_test_trap_fork ((guint64) (0.11 * G_USEC_PER_SEC), G_TEST_TRAP_DEFAULT))
     {
       /* loop and sleep forever */
       while (TRUE)
@@ -355,6 +362,20 @@ test_subprocess_fail (void)
   g_test_trap_subprocess (NULL, 0, G_TEST_SUBPROCESS_DEFAULT);
   g_test_trap_assert_failed ();
   g_test_trap_assert_stderr ("*ERROR*test_subprocess_fail*should not be reached*");
+}
+
+static void
+test_subprocess_skip (void)
+{
+  if (g_test_subprocess ())
+    {
+      g_test_skip ("");
+      return;
+    }
+
+  g_test_trap_subprocess (NULL, 0, G_TEST_SUBPROCESS_DEFAULT);
+  g_assert_true (g_test_trap_has_skipped ());
+  g_assert_true (!g_test_trap_has_passed ());
 }
 
 static void
@@ -399,7 +420,7 @@ test_subprocess_timeout (void)
       return;
     }
   /* allow child to run for only a fraction of a second */
-  g_test_trap_subprocess (NULL, 0.05 * G_USEC_PER_SEC, G_TEST_SUBPROCESS_DEFAULT);
+  g_test_trap_subprocess (NULL, (guint64) (0.05 * G_USEC_PER_SEC), G_TEST_SUBPROCESS_DEFAULT);
   g_test_trap_assert_failed ();
   g_assert_true (g_test_trap_reached_timeout ());
 }
@@ -421,6 +442,56 @@ test_subprocess_envp (void)
                                     0, G_TEST_SUBPROCESS_DEFAULT);
   g_test_trap_assert_passed ();
   g_strfreev (envp);
+}
+
+static void
+test_subprocess_stdin (void)
+{
+#ifdef G_OS_UNIX
+  int old_stdin_fd = -1;
+  int pipe_fd[2] = { -1, -1 };
+  const char *test_string = "*hello there*";
+  GError *local_error = NULL;
+
+  if (g_test_subprocess ())
+    {
+      char buf[100];
+      ssize_t n_read;
+
+      g_assert_no_errno (n_read = read (STDIN_FILENO, buf, sizeof (buf)));
+      g_assert_cmpint (n_read, >, 0);
+
+      g_print ("Read: %.*s\n", (int) n_read, buf);
+
+      return;
+    }
+
+  /* Temporarily override this process’ stdin with a pipe. */
+  old_stdin_fd = fcntl (STDIN_FILENO, F_DUPFD_CLOEXEC, 0);
+  g_assert_cmpint (old_stdin_fd, >=, 0);
+
+  g_unix_open_pipe (pipe_fd, O_CLOEXEC, &local_error);
+  g_assert_no_error (local_error);
+
+  g_assert_no_errno (dup2 (pipe_fd[0], STDIN_FILENO));
+
+  /* Write something into it for the subprocess to read. */
+  g_assert_no_errno (write (pipe_fd[1], test_string, strlen (test_string) + 1));
+
+  /* Run the subprocess. */
+  g_test_trap_subprocess (NULL, 0, G_TEST_SUBPROCESS_INHERIT_STDIN);
+  g_test_trap_assert_passed ();
+  g_test_trap_assert_stdout (test_string);
+
+  /* Restore the old stdin */
+  g_assert_no_errno (dup2 (old_stdin_fd, STDIN_FILENO));
+
+  g_assert_no_errno (close (old_stdin_fd));
+  g_assert_no_errno (close (pipe_fd[0]));
+  g_assert_no_errno (close (pipe_fd[1]));
+#else
+  g_test_skip ("Testing stdin for subprocesses can only be done on Unix at the moment");
+#endif
 }
 
 /* run a test with fixture setup and teardown */
@@ -2913,9 +2984,11 @@ main (int   argc,
 #endif
 
   g_test_add_func ("/trap_subprocess/fail", test_subprocess_fail);
+  g_test_add_func ("/trap_subprocess/skip", test_subprocess_skip);
   g_test_add_func ("/trap_subprocess/no-such-test", test_subprocess_no_such_test);
   g_test_add_func ("/trap_subprocess/timeout", test_subprocess_timeout);
   g_test_add_func ("/trap_subprocess/envp", test_subprocess_envp);
+  g_test_add_func ("/trap_subprocess/stdin", test_subprocess_stdin);
 
   g_test_add_func ("/trap_subprocess/patterns", test_subprocess_patterns);
 

@@ -160,7 +160,7 @@
  *
  * To parse commandline arguments you may handle the
  * [signal@Gio.Application::command-line] signal or override the
- * [vfunc@Gio.Application.local_command_line] virtual funcion, to parse them in
+ * [vfunc@Gio.Application.local_command_line] virtual function, to parse them in
  * either the primary instance or the local instance, respectively.
  *
  * For an example of opening files with a `GApplication`, see
@@ -191,12 +191,12 @@
  *     alternative to handling some commandline options locally
  * @before_emit: invoked on the primary instance before 'activate', 'open',
  *     'command-line' or any action invocation, gets the 'platform data' from
- *     the calling instance
+ *     the calling instance. Must chain up
  * @after_emit: invoked on the primary instance after 'activate', 'open',
  *     'command-line' or any action invocation, gets the 'platform data' from
- *     the calling instance
+ *     the calling instance. Must chain up
  * @add_platform_data: invoked (locally) to add 'platform data' to be sent to
- *     the primary instance when activating, opening or invoking actions
+ *     the primary instance when activating, opening or invoking actions. Must chain up
  * @quit_mainloop: Used to be invoked on the primary instance when the use
  *     count of the application drops to zero (and after any inactivity
  *     timeout, if requested). Not used anymore since 2.32
@@ -459,7 +459,7 @@ g_application_pack_option_entries (GApplication *application,
           break;
 
         case G_OPTION_ARG_DOUBLE:
-          if (*(gdouble *) entry->arg_data)
+          if (*(gdouble *) entry->arg_data != 0.0)
             value = g_variant_new_double (*(gdouble *) entry->arg_data);
           break;
 
@@ -709,8 +709,8 @@ add_packed_option (GApplication *application,
  * was to send all of the commandline arguments (options and all) to the
  * primary instance for handling.  #GApplication ignored them completely
  * on the local side.  Calling this function "opts in" to the new
- * behaviour, and in particular, means that unrecognised options will be
- * treated as errors.  Unrecognised options have never been ignored when
+ * behaviour, and in particular, means that unrecognized options will be
+ * treated as errors.  Unrecognized options have never been ignored when
  * %G_APPLICATION_HANDLES_COMMAND_LINE is unset.
  *
  * If #GApplication::handle-local-options needs to see the list of
@@ -851,7 +851,7 @@ g_application_add_main_option (GApplication *application,
  *
  * Calling this function will cause the options in the supplied option
  * group to be parsed, but it does not cause you to be "opted in" to the
- * new functionality whereby unrecognised options are rejected even if
+ * new functionality whereby unrecognized options are rejected even if
  * %G_APPLICATION_HANDLES_COMMAND_LINE was given.
  *
  * Since: 2.40
@@ -1094,6 +1094,14 @@ g_application_call_command_line (GApplication        *application,
       GApplicationCommandLine *cmdline;
       GVariant *v;
       gint handler_exit_status;
+      GVariant *platform_data;
+
+      if (options != NULL)
+        g_variant_ref_sink (options);
+
+      platform_data = g_variant_ref_sink (get_platform_data (application, options));
+
+      G_APPLICATION_GET_CLASS (application)->before_emit (application, platform_data);
 
       v = g_variant_new_bytestring_array ((const gchar **) arguments, -1);
       cmdline = g_object_new (G_TYPE_APPLICATION_COMMAND_LINE,
@@ -1107,6 +1115,11 @@ g_application_call_command_line (GApplication        *application,
       *exit_status = g_application_command_line_get_exit_status (cmdline);
 
       g_object_unref (cmdline);
+
+      G_APPLICATION_GET_CLASS (application)->after_emit (application, platform_data);
+      g_variant_unref (platform_data);
+      if (options != NULL)
+        g_variant_unref (options);
     }
 }
 
@@ -1117,7 +1130,7 @@ g_application_real_local_command_line (GApplication   *application,
 {
   GError *error = NULL;
   GVariantDict *options;
-  gint n_args;
+  unsigned int n_args;
   gboolean print_version = FALSE;
 
   options = g_application_parse_command_line (application, arguments, &print_version, &error);
@@ -1168,7 +1181,7 @@ g_application_real_local_command_line (GApplication   *application,
       if ((*exit_status = n_args > 1))
         {
           g_printerr ("GApplication service mode takes no arguments.\n");
-          application->priv->flags &= ~G_APPLICATION_IS_SERVICE;
+          application->priv->flags &= (unsigned int) ~G_APPLICATION_IS_SERVICE;
           *exit_status = 1;
         }
       else
@@ -1199,18 +1212,18 @@ g_application_real_local_command_line (GApplication   *application,
           else
             {
               GFile **files;
-              gint n_files;
-              gint i;
+              unsigned int n_files;
 
               n_files = n_args - 1;
+              g_assert (n_files <= INT_MAX);
               files = g_new (GFile *, n_files);
 
-              for (i = 0; i < n_files; i++)
+              for (unsigned int i = 0; i < n_files; i++)
                 files[i] = g_file_new_for_commandline_arg ((*arguments)[i + 1]);
 
-              g_application_open (application, files, n_files, "");
+              g_application_open (application, files, (int) n_files, "");
 
-              for (i = 0; i < n_files; i++)
+              for (unsigned int i = 0; i < n_files; i++)
                 g_object_unref (files[i]);
               g_free (files);
 
@@ -1614,6 +1627,9 @@ g_application_class_init (GApplicationClass *class)
    * The group of actions that the application exports.
    *
    * Since: 2.28
+   * Deprecated: 2.32: Use the [iface@Gio.ActionMap] interface instead.
+   *   Never ever mix use of this API with use of `GActionMap` on the
+   *   same @application or things will go very badly wrong.
    */
   g_object_class_install_property (object_class, PROP_ACTION_GROUP,
     g_param_spec_object ("action-group", NULL, NULL,
@@ -2063,10 +2079,10 @@ g_application_get_resource_base_path (GApplication *application)
  *
  * Sets (or unsets) the base resource path of @application.
  *
- * The path is used to automatically load various [application
- * resources][gresource] such as menu layouts and action descriptions.
- * The various types of resources will be found at fixed names relative
- * to the given base path.
+ * The path is used to automatically load various
+ * [application resources][struct@Gio.Resource] such as menu layouts and
+ * action descriptions. The various types of resources will be found at
+ * fixed names relative to the given base path.
  *
  * By default, the resource base path is determined from the application
  * ID by prefixing '/' and replacing each '.' with '/'.  This is done at
@@ -2448,7 +2464,14 @@ g_application_activate (GApplication *application)
                                  get_platform_data (application, NULL));
 
   else
-    g_signal_emit (application, g_application_signals[SIGNAL_ACTIVATE], 0);
+    {
+      GVariant *platform_data = g_variant_ref_sink (get_platform_data (application, NULL));
+
+      G_APPLICATION_GET_CLASS (application)->before_emit (application, platform_data);
+      g_signal_emit (application, g_application_signals[SIGNAL_ACTIVATE], 0);
+      G_APPLICATION_GET_CLASS (application)->after_emit (application, platform_data);
+      g_variant_unref (platform_data);
+    }
 }
 
 /**
@@ -2492,8 +2515,14 @@ g_application_open (GApplication  *application,
                              get_platform_data (application, NULL));
 
   else
-    g_signal_emit (application, g_application_signals[SIGNAL_OPEN],
-                   0, files, n_files, hint);
+    {
+      GVariant *platform_data = g_variant_ref_sink (get_platform_data (application, NULL));
+
+      G_APPLICATION_GET_CLASS (application)->before_emit (application, platform_data);
+      g_signal_emit (application, g_application_signals[SIGNAL_OPEN], 0, files, n_files, hint);
+      G_APPLICATION_GET_CLASS (application)->after_emit (application, platform_data);
+      g_variant_unref (platform_data);
+    }
 }
 
 /* Run {{{1 */
@@ -2596,6 +2625,7 @@ g_application_run (GApplication  *application,
 
   g_return_val_if_fail (G_IS_APPLICATION (application), 1);
   g_return_val_if_fail (argc == 0 || argv != NULL, 1);
+  g_return_val_if_fail (argc >= 0, 1);
   g_return_val_if_fail (!application->priv->must_quit_now, 1);
 
 #ifdef G_OS_WIN32
@@ -2653,7 +2683,7 @@ g_application_run (GApplication  *application,
   {
     gint i;
 
-    arguments = g_new (gchar *, argc + 1);
+    arguments = g_new (gchar *, (unsigned int) argc + 1);
     for (i = 0; i < argc; i++)
       arguments[i] = g_strdup (argv[i]);
     arguments[i] = NULL;
@@ -3074,11 +3104,11 @@ g_application_get_is_busy (GApplication *application)
  * notification. This works even for notifications sent from a previous
  * execution of the application, as long as @id is the same string.
  *
- * @id may be %NULL, but it is impossible to replace or withdraw
+ * @id may be `NULL`, but it is impossible to replace or withdraw
  * notifications without an id.
  *
  * If @notification is no longer relevant, it can be withdrawn with
- * g_application_withdraw_notification().
+ * [method@Gio.Application.withdraw_notification].
  *
  * It is an error to call this function if @application has no
  * application ID.
@@ -3098,8 +3128,11 @@ g_application_send_notification (GApplication  *application,
   g_return_if_fail (!g_application_get_is_remote (application));
   g_return_if_fail (g_application_get_application_id (application) != NULL);
 
-  if (application->priv->notifications == NULL)
-    application->priv->notifications = g_notification_backend_new_default (application);
+  if (g_once_init_enter_pointer (&application->priv->notifications))
+    {
+      g_once_init_leave_pointer (&application->priv->notifications,
+                                 g_notification_backend_new_default (application));
+    }
 
   if (id == NULL)
     {
@@ -3140,8 +3173,11 @@ g_application_withdraw_notification (GApplication *application,
   g_return_if_fail (G_IS_APPLICATION (application));
   g_return_if_fail (id != NULL);
 
-  if (application->priv->notifications == NULL)
-    application->priv->notifications = g_notification_backend_new_default (application);
+  if (g_once_init_enter_pointer (&application->priv->notifications))
+    {
+      g_once_init_leave_pointer (&application->priv->notifications,
+                                 g_notification_backend_new_default (application));
+    }
 
   g_notification_backend_withdraw_notification (application->priv->notifications, id);
 }

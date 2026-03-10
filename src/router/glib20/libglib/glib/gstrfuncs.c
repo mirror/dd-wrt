@@ -416,6 +416,8 @@ g_strndup (const gchar *str,
 
   if (str)
     {
+      g_return_val_if_fail (n < G_MAXSIZE, NULL);
+
       new_str = g_new (gchar, n + 1);
       strncpy (new_str, str, n);
       new_str[n] = '\0';
@@ -440,6 +442,8 @@ g_strnfill (gsize length,
             gchar fill_char)
 {
   gchar *str;
+
+  g_return_val_if_fail (length < G_MAXSIZE, NULL);
 
   str = g_new (gchar, length + 1);
   memset (str, (guchar)fill_char, length);
@@ -577,7 +581,8 @@ g_strconcat (const gchar *string1, ...)
   s = va_arg (args, gchar*);
   while (s)
     {
-      l += strlen (s);
+      if (!g_size_checked_add (&l, l, strlen (s)))
+        g_error ("%s: overflow concatenating strings", G_STRLOC);
       s = va_arg (args, gchar*);
     }
   va_end (args);
@@ -689,12 +694,14 @@ g_ascii_strtod (const gchar *nptr,
                 gchar      **endptr)
 {
 #if defined(USE_XLOCALE) && defined(HAVE_STRTOD_L)
+  locale_t c_locale;
 
   g_return_val_if_fail (nptr != NULL, 0);
 
+  c_locale = get_C_locale ();
   errno = 0;
 
-  return strtod_l (nptr, endptr, get_C_locale ());
+  return strtod_l (nptr, endptr, c_locale);
 
 #else
 
@@ -930,7 +937,7 @@ g_ascii_formatd (gchar       *buffer,
   const char *decimal_point;
   gsize decimal_point_len;
   gchar *p;
-  int rest_len;
+  size_t rest_len;
   gchar format_char;
 
   g_return_val_if_fail (buffer != NULL, NULL);
@@ -1016,7 +1023,7 @@ g_parse_long_long (const gchar  *nptr,
                    guint         base,
                    gboolean     *negative)
 {
-  /* this code is based on on the strtol(3) code from GNU libc released under
+  /* this code is based on the strtol(3) code from GNU libc released under
    * the GNU Lesser General Public License.
    *
    * Copyright (C) 1991,92,94,95,96,97,98,99,2000,01,02
@@ -1176,7 +1183,10 @@ g_ascii_strtoull (const gchar *nptr,
                   guint        base)
 {
 #if defined(USE_XLOCALE) && defined(HAVE_STRTOULL_L)
-  return strtoull_l (nptr, endptr, base, get_C_locale ());
+  locale_t c_locale = get_C_locale ();
+
+  errno = 0;
+  return strtoull_l (nptr, endptr, base, c_locale);
 #else
   gboolean negative;
   guint64 result;
@@ -1224,7 +1234,10 @@ g_ascii_strtoll (const gchar *nptr,
                  guint        base)
 {
 #if defined(USE_XLOCALE) && defined(HAVE_STRTOLL_L)
-  return strtoll_l (nptr, endptr, base, get_C_locale ());
+  locale_t c_locale = get_C_locale ();
+
+  errno = 0;
+  return strtoll_l (nptr, endptr, base, c_locale);
 #else
   gboolean negative;
   guint64 result;
@@ -1242,7 +1255,7 @@ g_ascii_strtoll (const gchar *nptr,
       return G_MAXINT64;
     }
   else if (negative)
-    return - (gint64) result;
+    return (result == (guint64) G_MININT64) ? G_MININT64 : -(gint64) result;
   else
     return (gint64) result;
 #endif
@@ -1594,29 +1607,6 @@ g_ascii_strup (const gchar *str,
     *s = g_ascii_toupper (*s);
 
   return result;
-}
-
-/**
- * g_str_is_ascii:
- * @str: a string
- *
- * Determines if a string is pure ASCII. A string is pure ASCII if it
- * contains no bytes with the high bit set.
- *
- * Returns: true if @str is ASCII
- *
- * Since: 2.40
- */
-gboolean
-g_str_is_ascii (const gchar *str)
-{
-  gsize i;
-
-  for (i = 0; str[i]; i++)
-    if (str[i] & 0x80)
-      return FALSE;
-
-  return TRUE;
 }
 
 /**
@@ -2109,9 +2099,20 @@ g_strcanon (gchar       *string,
  * g_strcompress:
  * @source: a string to compress
  *
- * Replaces all escaped characters with their one byte equivalent.
+ * Makes a copy of a string replacing C string-style escape
+ * sequences with their one byte equivalent:
  *
- * This function does the reverse conversion of [func@GLib.strescape].
+ * - `\b` → [U+0008 Backspace](https://en.wikipedia.org/wiki/Backspace)
+ * - `\f` → [U+000C Form Feed](https://en.wikipedia.org/wiki/Form_feed)
+ * - `\n` → [U+000A Line Feed](https://en.wikipedia.org/wiki/Newline)
+ * - `\r` → [U+000D Carriage Return](https://en.wikipedia.org/wiki/Carriage_return)
+ * - `\t` → [U+0009 Horizontal Tabulation](https://en.wikipedia.org/wiki/Tab_character)
+ * - `\v` → [U+000B Vertical Tabulation](https://en.wikipedia.org/wiki/Vertical_Tab)
+ * - `\` followed by one to three octal digits → the numeric value (mod 256)
+ * - `\` followed by any other character → the character as is.
+ *   For example, `\\` will turn into a backslash (`\`) and `\"` into a double quote (`"`).
+ *
+ * [func@GLib.strescape] does the reverse conversion.
  *
  * Returns: a newly-allocated copy of @source with all escaped
  *   character compressed
@@ -2188,11 +2189,22 @@ out:
  * @source: a string to escape
  * @exceptions: (nullable): a string of characters not to escape in @source
  *
- * Escapes the special characters '\b', '\f', '\n', '\r', '\t', '\v', '\'
- * and '"' in the string @source by inserting a '\' before
- * them. Additionally all characters in the range 0x01-0x1F (everything
+ * It replaces the following special characters in the string @source
+ * with their corresponding C escape sequence:
+ *
+ * | Symbol                                                                      | Escape |
+ * |-----------------------------------------------------------------------------|--------|
+ * | [U+0008 Backspace](https://en.wikipedia.org/wiki/Backspace)                 | `\b`   |
+ * | [U+000C Form Feed](https://en.wikipedia.org/wiki/Form_feed)                 | `\f`   |
+ * | [U+000A Line Feed](https://en.wikipedia.org/wiki/Newline)                   | `\n`   |
+ * | [U+000D Carriage Return](https://en.wikipedia.org/wiki/Carriage_return)     | `\r`   |
+ * | [U+0009 Horizontal Tabulation](https://en.wikipedia.org/wiki/Tab_character) | `\t`   |
+ * | [U+000B Vertical Tabulation](https://en.wikipedia.org/wiki/Vertical_Tab)    | `\v`   |
+ *
+ * It also inserts a backslash (`\`) before any backslash or a double quote (`"`).
+ * Additionally all characters in the range 0x01-0x1F (everything
  * below SPACE) and in the range 0x7F-0xFF (all non-ASCII chars) are
- * replaced with a '\' followed by their octal representation.
+ * replaced with a backslash followed by their octal representation.
  * Characters supplied in @exceptions are not escaped.
  *
  * [func@GLib.strcompress] does the reverse conversion.
@@ -2203,6 +2215,7 @@ gchar *
 g_strescape (const gchar *source,
              const gchar *exceptions)
 {
+  size_t len;
   const guchar *p;
   gchar *dest;
   gchar *q;
@@ -2212,7 +2225,13 @@ g_strescape (const gchar *source,
 
   p = (guchar *) source;
   /* Each source byte needs maximally four destination chars (\777) */
-  q = dest = g_malloc (strlen (source) * 4 + 1);
+  if (!g_size_checked_mul (&len, strlen (source), 4) ||
+      !g_size_checked_add (&len, len, 1))
+    {
+      g_error ("%s: overflow allocating %" G_GSIZE_FORMAT "*4+1 bytes",
+               G_STRLOC, strlen (source));
+    }
+  q = dest = g_malloc (len);
 
   memset (excmap, 0, 256);
   if (exceptions)
@@ -2383,7 +2402,7 @@ g_strsplit (const gchar *string,
             const gchar *delimiter,
             gint         max_tokens)
 {
-  char *s;
+  const char *s;
   const gchar *remainder;
   GPtrArray *string_list;
 
@@ -2428,23 +2447,28 @@ g_strsplit (const gchar *string,
 /**
  * g_strsplit_set:
  * @string: a string to split
- * @delimiters: a string containing characters that are used to split the
- *   string. Can be empty, which will result in no string splitting
+ * @delimiters: (array zero-terminated=1) (element-type guint8): a
+ *   nul-terminated byte array containing bytes that are used to
+ *   split the string; can be empty (just a nul byte), which will result in no
+ *   string splitting
  * @max_tokens: the maximum number of tokens to split @string into.
  *   If this is less than 1, the string is split completely
  *
- * Splits @string into a number of tokens not containing any of the characters
- * in @delimiters. A token is the (possibly empty) longest string that does not
- * contain any of the characters in @delimiters. If @max_tokens is reached, the
- * remainder is appended to the last token.
+ * Splits @string into a number of tokens not containing any of the
+ * bytes in @delimiters.
  *
- * For example, the result of g_strsplit_set ("abc:def/ghi", ":/", -1) is an
- * array containing the three strings "abc", "def", and "ghi".
+ * A token is the (possibly empty) longest string that does not
+ * contain any of the bytes in @delimiters. Note that separators
+ * will only be single bytes from @delimiters. If @max_tokens is reached,
+ * the remainder is appended to the last token.
  *
- * The result of g_strsplit_set (":def/ghi:", ":/", -1) is an array containing
- * the four strings "", "def", "ghi", and "".
+ * For example, the result of `g_strsplit_set ("abc:def/ghi", ":/", -1)`
+ * is an array containing the three strings `"abc"`, `"def"`, and `"ghi"`.
  *
- * As a special case, the result of splitting the empty string "" is an empty
+ * The result of `g_strsplit_set (":def/ghi:/x", ":/", -1)` is an array
+ * containing the five strings `""`, `"def"`, `"ghi"`, `""`, `"x"`.
+ *
+ * As a special case, the result of splitting the empty string `""` is an empty
  * array, not an array containing a single string. The reason for this
  * special case is that being able to represent an empty array is typically
  * more useful than consistent handling of empty elements. If you do need
@@ -2627,13 +2651,18 @@ g_strjoinv (const gchar  *separator,
       gsize i;
       gsize len;
       gsize separator_len;
+      gsize separators_len;
 
       separator_len = strlen (separator);
       /* First part, getting length */
       len = 1 + strlen (str_array[0]);
       for (i = 1; str_array[i] != NULL; i++)
-        len += strlen (str_array[i]);
-      len += separator_len * (i - 1);
+        if (!g_size_checked_add (&len, len, strlen (str_array[i])))
+          g_error ("%s: overflow joining strings", G_STRLOC);
+
+      if (!g_size_checked_mul (&separators_len, separator_len, (i - 1)) ||
+          !g_size_checked_add (&len, len, separators_len))
+        g_error ("%s: overflow joining strings", G_STRLOC);
 
       /* Second part, building string */
       string = g_new (gchar, len);
@@ -2688,7 +2717,9 @@ g_strjoin (const gchar *separator,
       s = va_arg (args, gchar*);
       while (s)
         {
-          len += separator_len + strlen (s);
+          if (!g_size_checked_add (&len, len, separator_len) ||
+              !g_size_checked_add (&len, len, strlen (s)))
+            g_error ("%s: overflow joining strings", G_STRLOC);
           s = va_arg (args, gchar*);
         }
       va_end (args);
@@ -2732,7 +2763,11 @@ g_strjoin (const gchar *separator,
  * A length of `-1` can be used to mean “search the entire string”, like
  * `strstr()`.
  *
- * Returns: a pointer to the found occurrence, or `NULL` if not found
+ * The fact that this function returns `gchar *` rather than `const gchar *` is
+ * a historical artifact.
+ *
+ * Returns: (transfer none) (nullable): a pointer to the found occurrence, or
+ *    `NULL` if not found
  */
 gchar *
 g_strstr_len (const gchar *haystack,
@@ -2743,7 +2778,7 @@ g_strstr_len (const gchar *haystack,
   g_return_val_if_fail (needle != NULL, NULL);
 
   if (haystack_len < 0)
-    return strstr (haystack, needle);
+    return (gchar *)strstr (haystack, needle);
   else
     {
       const gchar *p = haystack;
@@ -2784,7 +2819,11 @@ g_strstr_len (const gchar *haystack,
  * Searches the string @haystack for the last occurrence
  * of the string @needle.
  *
- * Returns: a pointer to the found occurrence, or `NULL` if not found
+ * The fact that this function returns `gchar *` rather than `const gchar *` is
+ * a historical artifact.
+ *
+ * Returns: (transfer none) (nullable): a pointer to the found occurrence, or
+ *    `NULL` if not found
  */
 gchar *
 g_strrstr (const gchar *haystack,
@@ -2835,7 +2874,11 @@ g_strrstr (const gchar *haystack,
  * of the string @needle, limiting the length of the search
  * to @haystack_len.
  *
- * Returns: a pointer to the found occurrence, or `NULL` if not found
+ * The fact that this function returns `gchar *` rather than `const gchar *` is
+ * a historical artifact.
+ *
+ * Returns: (transfer none) (nullable): a pointer to the found occurrence, or
+ *    `NULL` if not found
  */
 gchar *
 g_strrstr_len (const gchar *haystack,
@@ -3234,10 +3277,6 @@ g_strv_contains (const gchar * const *strv,
  *
  * Checks if two arrays of strings contain exactly the same elements in
  * exactly the same order.
- *
- * Elements are compared using [func@GLib.str_equal]. To match independently
- * of order, sort the arrays first (using [func@GLib.qsort_with_data]
- * or similar).
  *
  * Elements are compared using [func@GLib.str_equal]. To match independently
  * of order, sort the arrays first (using [func@GLib.qsort_with_data]

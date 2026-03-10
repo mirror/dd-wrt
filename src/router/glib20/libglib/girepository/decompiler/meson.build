@@ -3,6 +3,7 @@
 
 custom_c_args = [
   '-DG_LOG_DOMAIN="GLib-GirDecompiler"',
+  warning_sign_conversion_args,
 ]
 
 if cc.get_id() != 'msvc'
@@ -19,6 +20,7 @@ gidecompiletypelib = executable('gi-decompile-typelib', 'decompiler.c',
     libgirepository_dep,
     libgirepository_internals_dep,
     libgio_dep,
+    app_profile_dep,
   ],
   install: true,
   c_args: custom_c_args,

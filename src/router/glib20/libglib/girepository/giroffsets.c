@@ -356,7 +356,7 @@ get_field_size_alignment (GIIrTypelibBuild *build,
   return success;
 }
 
-#define GI_ALIGN(n, align) (((n) + (align) - 1) & ~((align) - 1))
+#define GI_ALIGN(n, align) (((n) + (align) - 1u) & ~((align) - 1u))
 
 static gboolean
 compute_struct_field_offsets (GIIrTypelibBuild *build,
@@ -465,6 +465,8 @@ compute_union_field_offsets (GIIrTypelibBuild *build,
                 {
                   size = MAX (size, member_size);
                   alignment = MAX (alignment, member_alignment);
+                  field->offset = 0;
+                  field->offset_state = GI_IR_OFFSETS_COMPUTED;
                 }
               else
                 have_error = TRUE;
