@@ -236,28 +236,22 @@ static struct peer *peer_xfer_conn(struct peer *from_peer)
 		XFREE(MTYPE_BGP_PEER_HOST, peer->hostname);
 		peer->hostname = NULL;
 	}
-	if (from_peer->hostname != NULL) {
-		peer->hostname = from_peer->hostname;
-		from_peer->hostname = NULL;
-	}
+	if (from_peer->hostname != NULL)
+		peer->hostname = XSTRDUP(MTYPE_BGP_PEER_HOST, from_peer->hostname);
 
 	if (peer->domainname) {
 		XFREE(MTYPE_BGP_PEER_HOST, peer->domainname);
 		peer->domainname = NULL;
 	}
-	if (from_peer->domainname != NULL) {
-		peer->domainname = from_peer->domainname;
-		from_peer->domainname = NULL;
-	}
+	if (from_peer->domainname != NULL)
+		peer->domainname = XSTRDUP(MTYPE_BGP_PEER_HOST, from_peer->domainname);
 
 	if (peer->soft_version) {
 		XFREE(MTYPE_BGP_SOFT_VERSION, peer->soft_version);
 		peer->soft_version = NULL;
 	}
-	if (from_peer->soft_version) {
-		peer->soft_version = from_peer->soft_version;
-		from_peer->soft_version = NULL;
-	}
+	if (from_peer->soft_version)
+		peer->soft_version = XSTRDUP(MTYPE_BGP_SOFT_VERSION, from_peer->soft_version);
 
 	FOREACH_AFI_SAFI (afi, safi) {
 		peer->af_sflags[afi][safi] = from_peer->af_sflags[afi][safi];
@@ -1988,6 +1982,9 @@ bgp_connect_success(struct peer_connection *connection)
 	/* Send an open message */
 	bgp_open_send(connection);
 
+	if (peer->bfd_config)
+		bgp_peer_bfd_update_source(peer);
+
 	return BGP_FSM_SUCCESS;
 }
 
@@ -2045,6 +2042,9 @@ bgp_connect_success_w_delayopen(struct peer_connection *connection)
 		zlog_debug("%s [FSM] BGP OPEN message delayed for %d seconds for connection %s",
 			   peer->host, peer->delayopen,
 			   bgp_peer_get_connection_direction(connection));
+
+	if (peer->bfd_config)
+		bgp_peer_bfd_update_source(peer);
 
 	return BGP_FSM_SUCCESS;
 }

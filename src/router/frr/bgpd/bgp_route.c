@@ -81,6 +81,21 @@
 
 #include "bgpd/bgp_route_clippy.c"
 
+static bool bgp_attr_nexthop_same(const struct attr *attr1, const struct attr *attr2, afi_t afi)
+{
+	afi_t nh_afi1 = BGP_ATTR_NH_AFI(afi, attr1);
+	afi_t nh_afi2 = BGP_ATTR_NH_AFI(afi, attr2);
+
+	/* v4<->v6 transition: treat as different */
+	if (nh_afi1 != nh_afi2)
+		return false;
+
+	if (nh_afi1 == AFI_IP6)
+		return IPV6_ADDR_SAME(&attr1->mp_nexthop_global, &attr2->mp_nexthop_global);
+
+	return IPV4_ADDR_SAME(&attr1->nexthop, &attr2->nexthop);
+}
+
 DEFINE_MTYPE_STATIC(BGPD, BGP_EOIU_MARKER_INFO, "BGP EOIU Marker info");
 DEFINE_MTYPE_STATIC(BGPD, BGP_METAQ, "BGP MetaQ");
 /* Memory for batched clearing of peers from the RIB */
@@ -3368,6 +3383,14 @@ void bgp_best_selection(struct bgp *bgp, struct bgp_dest *dest,
 			old_select ? old_select->peer->host : "NONE");
 	}
 
+	if (new_select) {
+		if (debug)
+			zlog_debug("%pBD(%s): %s is the bestpath, add to the multipath list", dest,
+				   bgp->name_pretty, path_buf);
+		SET_FLAG(new_select->flags, BGP_PATH_MULTIPATH_NEW);
+		num_candidates++;
+	}
+
 	if (do_mpath && new_select) {
 		bool first_reason = true;
 		enum bgp_path_selection_reason ignore;
@@ -3377,16 +3400,8 @@ void bgp_best_selection(struct bgp *bgp, struct bgp_dest *dest,
 				bgp_path_info_path_with_addpath_rx_str(
 					pi, path_buf, sizeof(path_buf));
 
-			if (pi == new_select) {
-				if (debug)
-					zlog_debug(
-						"%pBD(%s): %s is the bestpath, add to the multipath list",
-						dest, bgp->name_pretty,
-						path_buf);
-				SET_FLAG(pi->flags, BGP_PATH_MULTIPATH_NEW);
-				num_candidates++;
+			if (pi == new_select)
 				continue;
-			}
 
 			if (BGP_PATH_HOLDDOWN(pi))
 				continue;
@@ -5286,7 +5301,7 @@ void bgp_update(struct peer *peer, const struct prefix *p, uint32_t addpath_id,
 	 * implementations.
 	 */
 	if (CHECK_FLAG(bgp->flags, BGP_FLAG_EBGP_REQUIRES_POLICY))
-		if (!bgp_inbound_policy_exists(peer, &peer->filter[afi][safi])) {
+		if (!bgp_inbound_policy_exists(peer, &peer->filter[afi][orig_safi])) {
 			reason = "inbound policy missing";
 			if (monotime_since(&bgp->ebgprequirespolicywarning, NULL) >
 				    FIFTEENMINUTE2USEC ||
@@ -5630,8 +5645,8 @@ void bgp_update(struct peer *peer, const struct prefix *p, uint32_t addpath_id,
 		}
 
 		/* Special handling for EVPN update of an existing route. If the
-		 * extended community attribute has changed, we need to
-		 * un-import
+		 * extended community or nexthop attribute has changed, we need
+		 * to un-import
 		 * the route using its existing extended community. It will be
 		 * subsequently processed for import with the new extended
 		 * community.
@@ -5641,6 +5656,7 @@ void bgp_update(struct peer *peer, const struct prefix *p, uint32_t addpath_id,
 			if (CHECK_FLAG(pi->attr->flag, ATTR_FLAG_BIT(BGP_ATTR_EXT_COMMUNITIES)) &&
 			    CHECK_FLAG(attr_new->flag, ATTR_FLAG_BIT(BGP_ATTR_EXT_COMMUNITIES))) {
 				int cmp;
+				struct prefix_evpn *evp = (struct prefix_evpn *)p;
 
 				cmp = ecommunity_cmp(
 					bgp_attr_get_ecommunity(pi->attr),
@@ -5660,6 +5676,12 @@ void bgp_update(struct peer *peer, const struct prefix *p, uint32_t addpath_id,
 							bgp, afi, safi, p, pi);
 					else /* SAFI_MPLS_VPN */
 						vpn_leak_to_vrf_withdraw(pi);
+				}
+				/* evpn update with new nexthop: unimport route with old VTEP entry.*/
+				else if (safi == SAFI_EVPN &&
+					 evp->prefix.route_type == BGP_EVPN_AD_ROUTE &&
+					 !bgp_attr_nexthop_same(pi->attr, attr_new, afi)) {
+					bgp_evpn_unimport_route(bgp, afi, safi, p, pi);
 				}
 			}
 		}
@@ -6460,12 +6482,9 @@ static wq_item_status bgp_clear_route_node(struct work_queue *wq, void *data)
 			continue;
 
 		/* graceful restart STALE flag set. */
-		if (((CHECK_FLAG(peer->sflags, PEER_STATUS_NSF_WAIT)
-		      && peer->nsf[afi][safi])
-		     || CHECK_FLAG(peer->af_sflags[afi][safi],
-				   PEER_STATUS_ENHANCED_REFRESH))
-		    && !CHECK_FLAG(pi->flags, BGP_PATH_STALE)
-		    && !CHECK_FLAG(pi->flags, BGP_PATH_UNUSEABLE))
+		if (((CHECK_FLAG(peer->sflags, PEER_STATUS_NSF_WAIT) && peer->nsf[afi][safi]) ||
+		     CHECK_FLAG(peer->af_sflags[afi][safi], PEER_STATUS_ENHANCED_REFRESH)) &&
+		    !CHECK_FLAG(pi->flags, BGP_PATH_UNUSEABLE))
 			bgp_path_info_set_flag(dest, pi, BGP_PATH_STALE);
 		else {
 			/* If this is an EVPN route, process for
@@ -6686,14 +6705,16 @@ static void clearing_clear_one_pi(struct bgp_table *table, struct bgp_dest *dest
 	afi = table->afi;
 	safi = table->safi;
 
-	/* graceful restart STALE flag set. */
-	if (((CHECK_FLAG(pi->peer->sflags, PEER_STATUS_NSF_WAIT)
-	      && pi->peer->nsf[afi][safi])
-	     || CHECK_FLAG(pi->peer->af_sflags[afi][safi],
-			   PEER_STATUS_ENHANCED_REFRESH))
-	    && !CHECK_FLAG(pi->flags, BGP_PATH_STALE)
-	    && !CHECK_FLAG(pi->flags, BGP_PATH_UNUSEABLE)) {
-
+	/* graceful restart STALE flag set.
+	 * Note: we intentionally do NOT check for BGP_PATH_STALE here.
+	 * A route may already be stale (e.g., from a prior enhanced refresh
+	 * or GR cycle). We must preserve it for the current GR cycle rather
+	 * than deleting it - deletion of stale routes is handled by
+	 * bgp_clear_stale_route() when the appropriate timer expires.
+	 */
+	if (((CHECK_FLAG(pi->peer->sflags, PEER_STATUS_NSF_WAIT) && pi->peer->nsf[afi][safi]) ||
+	     CHECK_FLAG(pi->peer->af_sflags[afi][safi], PEER_STATUS_ENHANCED_REFRESH)) &&
+	    !CHECK_FLAG(pi->flags, BGP_PATH_UNUSEABLE)) {
 		bgp_path_info_set_flag(dest, pi, BGP_PATH_STALE);
 	} else {
 		/* If this is an EVPN route, process for un-import. */
@@ -6794,21 +6815,14 @@ static struct bgp_dest *clearing_dest_helper(struct bgp_table *table,
 						   inner_p ? " inner" : "", buf);
 				}
 
-				dest = bgp_node_match(table, pfx);
+				dest = bgp_node_get(table, pfx);
 			} else {
 				/* Normal prefix: look for next prefix */
 				if (bgp_debug_neighbor_events(NULL))
 					zlog_debug("%s: using RESUME%s prefix %pFX", __func__,
 						   inner_p ? " inner" : "", pfx);
 
-				dest = bgp_node_match(table, pfx);
-				if (dest) {
-					/* if 'dest' matches or precedes the 'last' prefix
-					 * visited, then advance.
-					 */
-					while (dest && (prefix_cmp(&(dest->rn->p), pfx) <= 0))
-						dest = bgp_route_next(dest);
-				}
+				dest = bgp_node_get(table, pfx);
 			}
 		}
 	}

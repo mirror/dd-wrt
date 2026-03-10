@@ -1650,7 +1650,7 @@ static bool rib_compare_routes(const struct route_entry *re1,
 	 * v6 link-locals, and we also support multiple addresses in the same
 	 * subnet on a single interface.
 	 */
-	if (re1->type == ZEBRA_ROUTE_CONNECT &&
+	if ((re1->type == ZEBRA_ROUTE_CONNECT || re1->type == ZEBRA_ROUTE_LOCAL) &&
 	    (re1->nhe->nhg.nexthop->ifindex == re2->nhe->nhg.nexthop->ifindex))
 		return true;
 
@@ -4387,11 +4387,11 @@ void _route_entry_dump(const char *func, union prefixconstptr pp,
 	for (ALL_NEXTHOPS(re->nhe->nhg, nexthop))
 		route_entry_dump_nh(re, straddr, vrf, nexthop);
 
-	if (zebra_nhg_get_backup_nhg(re->nhe)) {
+	nhg = zebra_nhg_get_backup_nhg(re->nhe);
+	if (nhg) {
 		zlog_debug("%s(%s): backup nexthops:", straddr,
 			   VRF_LOGNAME(vrf));
 
-		nhg = zebra_nhg_get_backup_nhg(re->nhe);
 		for (ALL_NEXTHOPS_PTR(nhg, nexthop))
 			route_entry_dump_nh(re, straddr, vrf, nexthop);
 	}
@@ -4595,8 +4595,10 @@ int rib_add_multipath(afi_t afi, safi_t safi, struct prefix *p,
 
 		if (RIB_SYSTEM_ROUTE(re))
 			SET_FLAG(nhe.flags, NEXTHOP_GROUP_INITIAL_DELAY_INSTALL);
-	} else if (re->nhe_id > 0)
+	} else if (re->nhe_id > 0) {
 		nhe.id = re->nhe_id;
+		SET_FLAG(nhe.flags, NEXTHOP_GROUP_RECEIVED_FROM_EXTERNAL);
+	}
 
 	n = zebra_nhe_copy(&nhe, 0);
 

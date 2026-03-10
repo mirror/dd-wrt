@@ -599,14 +599,17 @@ static void bgp_bnc_mark_nht_important(struct bgp_nexthop_cache *bnc, struct zap
 		return;
 
 	dest = bgp_afi_node_get(table, afi, nhr->safi, &bnc->resolved_prefix, NULL);
-	if (dest)
+	if (dest) {
 		UNSET_FLAG(dest->flags, BGP_NODE_NHT_RESOLVED_NODE);
+		bgp_dest_unlock_node(dest);
+	}
 
 	dest = bgp_afi_node_get(table, afi, nhr->safi, &nhr->prefix, NULL);
 	if (!dest)
 		return;
 
 	SET_FLAG(dest->flags, BGP_NODE_NHT_RESOLVED_NODE);
+	bgp_dest_unlock_node(dest);
 }
 
 static void bgp_process_nexthop_update(struct bgp_nexthop_cache *bnc,
@@ -799,7 +802,9 @@ static void bgp_nht_ifp_table_handle(struct bgp *bgp,
 	}
 
 	frr_each (bgp_nexthop_cache, table, bnc) {
-		if (bnc->ifindex_ipv6_ll != ifp->ifindex)
+		if ((bnc->nexthop_num == 1 && bnc->nexthop &&
+		     bnc->nexthop->ifindex != ifp->ifindex) &&
+		    (bnc->ifindex_ipv6_ll != ifp->ifindex))
 			continue;
 
 		bnc->last_update = monotime(NULL);
@@ -968,6 +973,7 @@ void bgp_nexthop_update(struct vrf *vrf, struct prefix *match,
 				    pi->sub_type == BGP_ROUTE_STATIC)
 					vpn_leak_from_vrf_update(bgp_default,
 								 bgp, pi);
+			bgp_dest_unlock_node(dest);
 		}
 	} else if (BGP_DEBUG(nht, NHT))
 		zlog_debug("parse nexthop update %pFX(%u)(%s): bnc info not found for import check",
@@ -1500,7 +1506,9 @@ void evaluate_paths(struct bgp_nexthop_cache *bnc)
 		if (old_path_valid != bnc_is_valid_nexthop)
 			hook_call(bgp_nht_path_update, bgp_path, path, bnc_is_valid_nexthop);
 
-		bgp_process(bgp_path, dest, path, afi, safi);
+		if (CHECK_FLAG(bnc->change_flags, BGP_NEXTHOP_METRIC_CHANGED) ||
+		    CHECK_FLAG(bnc->change_flags, BGP_NEXTHOP_CHANGED))
+			bgp_process(bgp_path, dest, path, afi, safi);
 	}
 
 	if (peer) {

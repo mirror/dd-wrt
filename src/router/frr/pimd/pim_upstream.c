@@ -943,6 +943,17 @@ void pim_upstream_switch(struct pim_instance *pim, struct pim_upstream *up,
 		bool new_use_rpt;
 		bool send_xg_jp = false;
 
+		/*
+		 * In FHR pimreg interface is needed all the time
+		 * inorder to send register packets.
+		 * Only for ASM (Any Source Multicast) groups, NOT for SSM or Dense mode.
+		 */
+		if (PIM_UPSTREAM_FLAG_TEST_FHR(up->flags) && up->reg_state == PIM_REG_NOINFO &&
+		    pim->regiface->configured && !pim_is_grp_ssm(pim, up->sg.grp) &&
+		    !PIM_UPSTREAM_DM_TEST_INTERFACE(up->flags)) {
+			pim_channel_add_oif(up->channel_oil, pim->regiface, PIM_OIF_FLAG_PROTO_PIM,
+					    __func__);
+		}
 		forward_off(up);
 		/*
 		 * RFC 4601 Sec 4.5.7:
@@ -2238,6 +2249,10 @@ static bool pim_upstream_kat_start_ok(struct pim_upstream *up)
 		return false;
 
 	pim_ifp = ifp->info;
+
+	if (!pim_ifp || !c_oil)
+		return false;
+
 	if (pim_ifp->mroute_vif_index != *oil_incoming_vif(c_oil))
 		return false;
 
@@ -2314,6 +2329,23 @@ static bool pim_upstream_sg_running_proc(struct pim_upstream *up)
 					 __func__);
 			PIM_UPSTREAM_FLAG_SET_SRC_STREAM(up->flags);
 			pim_upstream_fhr_kat_start(up);
+		}
+
+		/*
+		 * Let's ensure that when we have an active source that we do not have any
+		 * register state for that is a FHR, that we allow the registration to
+		 * happen if it should be
+		 */
+		if (pim_upstream_could_register(up) && !pim_is_grp_ssm(pim, up->sg.grp) &&
+		    up->reg_state == PIM_REG_NOINFO && !event_is_scheduled(up->t_rs_timer) &&
+		    !PIM_UPSTREAM_DM_TEST_INTERFACE(up->flags) && pim->regiface &&
+		    pim->regiface->configured) {
+			if (PIM_DEBUG_PIM_TRACE)
+				zlog_debug("%s: add pimreg to %s[%s]", __func__, up->sg_str,
+					   pim->vrf->name);
+			PIM_UPSTREAM_FLAG_SET_FHR(up->flags);
+			pim_register_join(up);
+			pim_upstream_update_use_rpt(up, true /*update_mroute*/);
 		}
 		pim_upstream_keep_alive_timer_start(up, pim->keep_alive_time);
 		rv = true;

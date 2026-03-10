@@ -473,7 +473,7 @@ static int parse_encap_seg6(struct rtattr *tb, struct in6_addr *segs,
 {
 	struct rtattr *tb_encap[SEG6_IPTUNNEL_MAX + 1] = {};
 	struct seg6_iptunnel_encap *ipt = NULL;
-	int i;
+	int i, ind_seg6;
 
 	netlink_parse_rtattr_nested(tb_encap, SEG6_IPTUNNEL_MAX, tb);
 
@@ -498,12 +498,19 @@ static int parse_encap_seg6(struct rtattr *tb, struct in6_addr *segs,
 			*encap_behavior = SRV6_HEADEND_BEHAVIOR_H_ENCAPS_L2_RED;
 			break;
 		}
+		ind_seg6 = ipt->srh[0].first_segment;
+		if (ind_seg6 >= SRV6_MAX_SIDS) {
+			ind_seg6 = SRV6_MAX_SIDS - 1;
+			flog_err(EC_ZEBRA_NETLINK_SRV6_SID_NUMBER_ERROR,
+				 "%s: nexthop unicast SRV6 Segment truncated from  %d to %d",
+				 __func__, ipt->srh[0].first_segment, ind_seg6);
+		}
 
-		for (i = ipt->srh[0].first_segment; i >= 0; i--)
-			memcpy(&segs[i], &ipt->srh[0].segments[i],
+		for (i = ind_seg6; i >= 0; i--)
+			memcpy(&segs[ind_seg6 - i], &ipt->srh[0].segments[i],
 			       sizeof(struct in6_addr));
 
-		return ipt->srh[0].first_segment + 1;
+		return ind_seg6 + 1;
 	}
 
 	return 0;
@@ -1219,7 +1226,7 @@ static int netlink_route_change_read_unicast_internal(struct nlmsghdr *h,
 	if (!IS_IPADDR_NONE(gate_addr))
 		gate = (void *)&(gate_addr->ip.addr);
 
-	nhe_id = dplane_ctx_get_nhe_id(ctx);
+	nhe_id = dplane_ctx_get_nhg_id(ctx);
 
 	metric = dplane_ctx_get_metric(ctx);
 	distance = dplane_ctx_get_distance(ctx);
@@ -4489,7 +4496,6 @@ ssize_t netlink_macfdb_update_ctx(struct zebra_dplane_ctx *ctx, void *data,
 static int netlink_ipneigh_change(struct nlmsghdr *h, int len, ns_id_t ns_id)
 {
 	struct ndmsg *ndm;
-	struct interface *ifp;
 	struct rtattr *tb[NDA_MAX + 1];
 	struct ethaddr mac;
 	struct ipaddr ip;
@@ -4510,19 +4516,13 @@ static int netlink_ipneigh_change(struct nlmsghdr *h, int len, ns_id_t ns_id)
 
 	ndm = NLMSG_DATA(h);
 
-	/* The interface should exist. */
-	ifp = if_lookup_by_index_per_ns(zebra_ns_lookup(ns_id), ndm->ndm_ifindex);
-	if (!ifp || !ifp->info)
-		return 0;
-
 	/* Parse attributes and extract fields of interest. */
 	netlink_parse_rtattr(tb, NDA_MAX, NDA_RTA(ndm), len);
 
 	if (!tb[NDA_DST]) {
-		zlog_debug("%s family %s IF %s(%u) vrf %s(%u) - no DST",
+		zlog_debug("%s family %s IF %u NSID %u - no DST",
 			   nl_msg_type_to_str(h->nlmsg_type),
-			   nl_family_to_str(ndm->ndm_family), ifp->name,
-			   ndm->ndm_ifindex, ifp->vrf->name, ifp->vrf->vrf_id);
+			   nl_family_to_str(ndm->ndm_family), ndm->ndm_ifindex, ns_id);
 		return 0;
 	}
 
@@ -4580,14 +4580,12 @@ static int netlink_ipneigh_change(struct nlmsghdr *h, int len, ns_id_t ns_id)
 			if (RTA_PAYLOAD(tb[NDA_LLADDR]) != ETH_ALEN) {
 				if (IS_ZEBRA_DEBUG_KERNEL)
 					zlog_debug(
-						"%s family %s IF %s(%u) vrf %s(%u) - LLADDR is not MAC, len %lu",
+						"%s family %s IF %u NSID %u - LLADDR is not MAC, len %lu",
 						nl_msg_type_to_str(
 							h->nlmsg_type),
 						nl_family_to_str(
 							ndm->ndm_family),
-						ifp->name, ndm->ndm_ifindex,
-						ifp->vrf->name,
-						ifp->vrf->vrf_id,
+						ndm->ndm_ifindex, ns_id,
 						(unsigned long)RTA_PAYLOAD(
 							tb[NDA_LLADDR]));
 
@@ -4615,16 +4613,12 @@ static int netlink_ipneigh_change(struct nlmsghdr *h, int len, ns_id_t ns_id)
 		dplane_ctx_neigh_set_dp_static(ctx, dp_static);
 
 		if (IS_ZEBRA_DEBUG_KERNEL)
-			zlog_debug(
-				"Rx %s family %s IF %s(%u) vrf %s(%u) IP %pIA MAC %s state 0x%x flags 0x%x ext_flags 0x%x",
-				nl_msg_type_to_str(h->nlmsg_type),
-				nl_family_to_str(ndm->ndm_family), ifp->name,
-				ndm->ndm_ifindex, ifp->vrf->name,
-				ifp->vrf->vrf_id, &ip,
-				mac_present
-					? prefix_mac2str(&mac, buf, sizeof(buf))
-					: "",
-				ndm->ndm_state, ndm->ndm_flags, ext_flags);
+			zlog_debug("Rx %s family %s IF %u NSID %u IP %pIA MAC %s state 0x%x flags 0x%x ext_flags 0x%x",
+				   nl_msg_type_to_str(h->nlmsg_type),
+				   nl_family_to_str(ndm->ndm_family), ndm->ndm_ifindex,
+				   ns_id, &ip,
+				   mac_present ? prefix_mac2str(&mac, buf, sizeof(buf)) : "",
+				   ndm->ndm_state, ndm->ndm_flags, ext_flags);
 
 		if (ndm->ndm_state & NUD_VALID) {
 			if (zebra_evpn_mh_do_adv_reachable_neigh_only())

@@ -2912,11 +2912,25 @@ DEFPY(bgp_enforce_first_as,
       "Enforce the first AS for EBGP routes\n")
 {
 	VTY_DECLVAR_CONTEXT(bgp, bgp);
+	struct listnode *node;
+	struct peer *peer;
+	afi_t afi;
+	safi_t safi;
 
-	if (no)
+	if (no) {
+		if (!CHECK_FLAG(bgp->flags, BGP_FLAG_ENFORCE_FIRST_AS))
+			return CMD_SUCCESS;
 		UNSET_FLAG(bgp->flags, BGP_FLAG_ENFORCE_FIRST_AS);
-	else
+	} else {
+		if (CHECK_FLAG(bgp->flags, BGP_FLAG_ENFORCE_FIRST_AS))
+			return CMD_SUCCESS;
 		SET_FLAG(bgp->flags, BGP_FLAG_ENFORCE_FIRST_AS);
+	}
+
+	for (ALL_LIST_ELEMENTS_RO(bgp->peer, node, peer)) {
+		FOREACH_AFI_SAFI (afi, safi)
+			peer_on_policy_change(peer, afi, safi, 0);
+	}
 
 	return CMD_SUCCESS;
 }
@@ -11224,6 +11238,20 @@ static void bgp_segment_routing_srv6_hencaps_refresh(struct bgp *bgp)
 		bgp_zebra_update_srv6_encap_routes(bgp_inst, AFI_IP6, bgp, true);
 	}
 }
+
+static void bgp_srv6_only_change(struct bgp *bgp, bool enable)
+{
+	/* pre-change */
+	vpn_leak_prechange(BGP_VPN_POLICY_DIR_TOVPN, AFI_IP, bgp_get_default(), bgp);
+	vpn_leak_prechange(BGP_VPN_POLICY_DIR_TOVPN, AFI_IP6, bgp_get_default(), bgp);
+
+	bgp->srv6_only = enable;
+
+	/* post-change */
+	vpn_leak_postchange(BGP_VPN_POLICY_DIR_TOVPN, AFI_IP, bgp_get_default(), bgp);
+	vpn_leak_postchange(BGP_VPN_POLICY_DIR_TOVPN, AFI_IP6, bgp_get_default(), bgp);
+}
+
 DEFUN (no_bgp_segment_routing_srv6,
        no_bgp_segment_routing_srv6_cmd,
        "no segment-routing srv6",
@@ -11241,6 +11269,9 @@ DEFUN (no_bgp_segment_routing_srv6,
 		bgp->srv6_encap_behavior = SRV6_HEADEND_BEHAVIOR_H_ENCAPS;
 		bgp_segment_routing_srv6_hencaps_refresh(bgp);
 	}
+
+	if (bgp->srv6_only)
+		bgp_srv6_only_change(bgp, false);
 
 	return CMD_SUCCESS;
 }
@@ -11318,16 +11349,7 @@ DEFPY (bgp_srv6_only,
 
 	if ((!no && bgp->srv6_only) || (no && !bgp->srv6_only))
 		return CMD_SUCCESS;
-
-	/* pre-change */
-	vpn_leak_prechange(BGP_VPN_POLICY_DIR_TOVPN, AFI_IP, bgp_get_default(), bgp);
-	vpn_leak_prechange(BGP_VPN_POLICY_DIR_TOVPN, AFI_IP6, bgp_get_default(), bgp);
-
-	bgp->srv6_only = !no;
-
-	/* post-change */
-	vpn_leak_postchange(BGP_VPN_POLICY_DIR_TOVPN, AFI_IP, bgp_get_default(), bgp);
-	vpn_leak_postchange(BGP_VPN_POLICY_DIR_TOVPN, AFI_IP6, bgp_get_default(), bgp);
+	bgp_srv6_only_change(bgp, !no);
 	return CMD_SUCCESS;
 }
 
@@ -13903,6 +13925,7 @@ static void bgp_show_peer_afi(struct vty *vty, struct peer *p, afi_t afi,
 			      safi_t safi, bool use_json,
 			      json_object *json_neigh)
 {
+	int pfx_rcd_safi;
 	struct bgp_filter *filter;
 	struct peer_af *paf;
 	char orf_pfx_name[BUFSIZ];
@@ -13911,6 +13934,11 @@ static void bgp_show_peer_afi(struct vty *vty, struct peer *p, afi_t afi,
 	json_object *json_prefA = NULL;
 	json_object *json_addr = NULL;
 	json_object *json_advmap = NULL;
+
+	if (safi == SAFI_LABELED_UNICAST)
+		pfx_rcd_safi = SAFI_UNICAST;
+	else
+		pfx_rcd_safi = safi;
 
 	if (use_json) {
 		json_addr = json_object_new_object();
@@ -14194,7 +14222,7 @@ static void bgp_show_peer_afi(struct vty *vty, struct peer *p, afi_t afi,
 
 		/* Receive prefix count */
 		json_object_int_add(json_addr, "acceptedPrefixCounter",
-				    p->pcount[afi][safi]);
+				    p->pcount[afi][pfx_rcd_safi]);
 		if (paf && PAF_SUBGRP(paf))
 			json_object_int_add(json_addr, "sentPrefixCounter",
 						(PAF_SUBGRP(paf))->scount);
@@ -14497,10 +14525,9 @@ static void bgp_show_peer_afi(struct vty *vty, struct peer *p, afi_t afi,
 		paf = peer_af_find(p, afi, safi);
 		if (paf && PAF_SUBGRP(paf))
 			vty_out(vty, "  %u accepted, %u sent prefixes\n",
-				p->pcount[afi][safi], PAF_SUBGRP(paf)->scount);
+				p->pcount[afi][pfx_rcd_safi], PAF_SUBGRP(paf)->scount);
 		else
-			vty_out(vty, "  %u accepted prefixes\n",
-				p->pcount[afi][safi]);
+			vty_out(vty, "  %u accepted prefixes\n", p->pcount[afi][pfx_rcd_safi]);
 
 		/* maximum-prefix-out */
 		if (CHECK_FLAG(p->af_flags[afi][safi],
@@ -19407,21 +19434,26 @@ static void bgp_config_write_peer_global(struct vty *vty, struct bgp *bgp,
 			" neighbor %s path-attribute treat-as-withdraw %s\n",
 			addr, withdraw_attrs_str);
 
-	if (!CHECK_FLAG(peer->sflags, PEER_STATUS_GROUP)) {
-		if (!CHECK_FLAG(peer->peer_gr_new_status_flag,
-				PEER_GRACEFUL_RESTART_NEW_STATE_INHERIT)) {
-			if (CHECK_FLAG(peer->peer_gr_new_status_flag,
-				       PEER_GRACEFUL_RESTART_NEW_STATE_HELPER)) {
-				vty_out(vty, " neighbor %s graceful-restart-helper\n", addr);
-			} else if (CHECK_FLAG(peer->peer_gr_new_status_flag,
-					      PEER_GRACEFUL_RESTART_NEW_STATE_RESTART)) {
-				vty_out(vty, " neighbor %s graceful-restart\n", addr);
-			} else if ((!(CHECK_FLAG(peer->peer_gr_new_status_flag,
-						 PEER_GRACEFUL_RESTART_NEW_STATE_HELPER)) &&
-				    !(CHECK_FLAG(peer->peer_gr_new_status_flag,
-						 PEER_GRACEFUL_RESTART_NEW_STATE_RESTART)))) {
-				vty_out(vty, " neighbor %s graceful-restart-disable\n", addr);
-			}
+	if (!CHECK_FLAG(peer->peer_gr_new_status_flag,
+			PEER_GRACEFUL_RESTART_NEW_STATE_INHERIT)) {
+
+		if (CHECK_FLAG(peer->peer_gr_new_status_flag,
+			       PEER_GRACEFUL_RESTART_NEW_STATE_HELPER)) {
+			vty_out(vty,
+				" neighbor %s graceful-restart-helper\n", addr);
+		} else if (CHECK_FLAG(
+				   peer->peer_gr_new_status_flag,
+				   PEER_GRACEFUL_RESTART_NEW_STATE_RESTART)) {
+			vty_out(vty,
+				" neighbor %s graceful-restart\n", addr);
+		} else if (
+			(!(CHECK_FLAG(peer->peer_gr_new_status_flag,
+				      PEER_GRACEFUL_RESTART_NEW_STATE_HELPER))
+			 && !(CHECK_FLAG(
+				 peer->peer_gr_new_status_flag,
+				 PEER_GRACEFUL_RESTART_NEW_STATE_RESTART)))) {
+			vty_out(vty, " neighbor %s graceful-restart-disable\n",
+				addr);
 		}
 	}
 

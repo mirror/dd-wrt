@@ -2342,6 +2342,7 @@ route_set_local_pref(void *rule, const struct prefix *prefix, void *object)
 	/* Fetch routemap's rule information. */
 	rv = rule;
 	path = object;
+	locpref = path->peer->bgp->default_local_pref;
 
 	/* Set local preference value. */
 	if (path->attr->local_pref)
@@ -3023,10 +3024,13 @@ route_set_lcommunity_delete(void *rule, const struct prefix *pfx, void *object)
 static void *route_set_lcommunity_delete_compile(const char *arg)
 {
 	struct rmap_community *rcom;
-	char **splits;
-	int num;
+	char **splits = NULL;
+	int num = 0;
 
 	frrstr_split(arg, " ", &splits, &num);
+
+	if (splits == NULL)
+		return NULL;
 
 	rcom = XCALLOC(MTYPE_ROUTE_MAP_COMPILED, sizeof(struct rmap_community));
 	rcom->name = XSTRDUP(MTYPE_ROUTE_MAP_COMPILED, splits[0]);
@@ -3107,10 +3111,13 @@ route_set_community_delete(void *rule, const struct prefix *prefix,
 static void *route_set_community_delete_compile(const char *arg)
 {
 	struct rmap_community *rcom;
-	char **splits;
-	int num;
+	char **splits = NULL;
+	int num = 0;
 
 	frrstr_split(arg, " ", &splits, &num);
+
+	if (splits == NULL)
+		return NULL;
 
 	rcom = XCALLOC(MTYPE_ROUTE_MAP_COMPILED, sizeof(struct rmap_community));
 	rcom->name = XSTRDUP(MTYPE_ROUTE_MAP_COMPILED, splits[0]);

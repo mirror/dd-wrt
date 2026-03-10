@@ -174,6 +174,9 @@ uint16_t ospf_lsa_checksum(struct lsa_header *lsa)
 
 int ospf_lsa_checksum_valid(struct lsa_header *lsa)
 {
+	if (lsa->checksum == 0)
+		return 0; /* cannot be 0, discard */
+
 	uint8_t *buffer = &lsa->options;
 	int options_offset = buffer - (uint8_t *)&lsa->ls_age; /* should be 2 */
 
@@ -2525,8 +2528,9 @@ void ospf_nssa_lsa_flush(struct ospf *ospf, struct prefix_ipv4 *p)
 
 	for (ALL_LIST_ELEMENTS(ospf->areas, node, nnode, area)) {
 		if (area->external_routing == OSPF_AREA_NSSA) {
-			lsa = ospf_lsa_lookup(ospf, area, OSPF_AS_NSSA_LSA,
-					      p->prefix, ospf->router_id);
+			lsa = ospf_lsa_lookup_by_prefix(area->lsdb, OSPF_AS_NSSA_LSA, p,
+							ospf->router_id);
+
 			if (!lsa) {
 				if (IS_DEBUG_OSPF(lsa, LSA_FLOODING))
 					zlog_debug(

@@ -1262,7 +1262,7 @@ struct peer_connection *bgp_peer_connection_new(struct peer *peer)
 	 * UPDATE.
 	 */
 	connection->ibuf_work =
-		ringbuf_new(BGP_MAX_PACKET_SIZE * BGP_READ_PACKET_MAX);
+		ringbuf_new(BGP_MAX_PACKET_SIZE + BGP_MAX_PACKET_SIZE / 2);
 
 	connection->status = Idle;
 	connection->ostatus = Idle;
@@ -2838,10 +2838,8 @@ int peer_delete(struct peer *peer)
 	/* Password configuration */
 	if (CHECK_FLAG(peer->flags, PEER_FLAG_PASSWORD)) {
 		XFREE(MTYPE_PEER_PASSWORD, peer->password);
-		if (!accept_peer &&
-		    !BGP_CONNECTION_SU_UNSPEC(peer->connection) &&
-		    !CHECK_FLAG(peer->sflags, PEER_STATUS_GROUP) &&
-		    !CHECK_FLAG(peer->flags, PEER_FLAG_DYNAMIC_NEIGHBOR))
+		if (!accept_peer && !BGP_CONNECTION_SU_UNSPEC(peer->connection) &&
+		    !CHECK_FLAG(peer->sflags, PEER_STATUS_GROUP))
 			bgp_md5_unset(peer->connection);
 	}
 
@@ -8222,6 +8220,8 @@ int peer_maximum_prefix_set(struct peer *peer, afi_t afi, safi_t safi,
 		if ((peer_established(peer->connection)) &&
 		    (peer->afc[afi][safi]))
 			bgp_maximum_prefix_overflow(peer, afi, safi, 1);
+		else if (!peer_established(peer->connection))
+			peer_maximum_prefix_clear_overflow(peer);
 
 		/* Skip peer-group mechanics for regular peers. */
 		return 0;
@@ -8260,6 +8260,8 @@ int peer_maximum_prefix_set(struct peer *peer, afi_t afi, safi_t safi,
 		if ((peer_established(member->connection)) &&
 		    (member->afc[afi][safi]))
 			bgp_maximum_prefix_overflow(member, afi, safi, 1);
+		else if (!peer_established(member->connection))
+			peer_maximum_prefix_clear_overflow(member);
 	}
 
 	return 0;
@@ -8277,6 +8279,9 @@ int peer_maximum_prefix_unset(struct peer *peer, afi_t afi, safi_t safi)
 		PEER_ATTR_INHERIT(peer, peer->group, pmax[afi][safi]);
 		PEER_ATTR_INHERIT(peer, peer->group, pmax_threshold[afi][safi]);
 		PEER_ATTR_INHERIT(peer, peer->group, pmax_restart[afi][safi]);
+
+		/* Trigger peer FSM to form neighborship using updated config */
+		peer_maximum_prefix_clear_overflow(peer);
 
 		return 0;
 	}
@@ -9374,8 +9379,9 @@ static void bgp_clearing_batch_end(struct bgp *bgp)
 		return;
 
 	cinfo = bgp_clearing_info_first(&bgp->clearing_list);
+	if (!cinfo)
+		return; /* Nothing to do */
 
-	assert(cinfo != NULL);
 	assert(CHECK_FLAG(cinfo->flags, BGP_CLEARING_INFO_FLAG_OPEN));
 
 	/* Batch is closed */
