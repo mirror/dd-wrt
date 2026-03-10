@@ -316,7 +316,8 @@ static int hostapd_driver_init(struct hostapd_iface *iface)
 	hapd->drv_priv = hapd->driver->hapd_init(hapd, &params, hapd->iconv->ieee80211ah);
 #else
 	hapd->drv_priv = hapd->driver->hapd_init(hapd, &params, 0);
-#endif	os_free(params.bridge);
+#endif	
+	os_free(params.bridge);
 	if (hapd->drv_priv == NULL) {
 		wpa_printf(MSG_ERROR, "%s driver initialization failed.",
 			   hapd->driver->name);
