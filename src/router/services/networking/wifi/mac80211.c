@@ -1891,14 +1891,15 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 		}
 		fprintf(fp, "logger_syslog=-1\n");
 		debug = nvram_nget("%s_wpa_debug", ifname);
-		if (debug != NULL) {
-			if (!strcmp(debug, "1"))
-				fprintf(fp, "logger_syslog_level=1\n");
-			else if (!strcmp(debug, "2"))
-				fprintf(fp, "logger_syslog_level=2\n");
-			else if (!strcmp(debug, "3"))
-				fprintf(fp, "logger_syslog_level=0\n");
-		} else
+		if (!*debug)
+			debug = nvram_safe_get("wpa_debug");
+		if (!strcmp(debug, "1"))
+			fprintf(fp, "logger_syslog_level=1\n");
+		else if (!strcmp(debug, "2"))
+			fprintf(fp, "logger_syslog_level=2\n");
+		else if (!strcmp(debug, "3"))
+			fprintf(fp, "logger_syslog_level=0\n");
+		else
 			fprintf(fp, "logger_syslog_level=2\n");
 		fprintf(fp, "logger_stdout=-1\n");
 		fprintf(fp, "logger_stdout_level=2\n");
@@ -2786,6 +2787,8 @@ void ath9k_start_supplicant(int count, char *prefix, char **configs, int *config
 		sprintf(wmode, "%s_mode", dev);
 		sprintf(bridged, "%s_bridged", dev);
 		debug = nvram_ngeti("%s_wpa_debug", dev);
+		if (!*debug)
+			debug = nvram_safe_get("wpa_debug");
 		if (debug == 1)
 			background = "-Bds";
 		else if (debug == 2)
@@ -2900,14 +2903,17 @@ void post_hostapd_actions(int count)
 		char pid[64];
 		sprintf(pid, "/var/run/%s_wpa_supplicant.pid", dev);
 		vifs = nvram_safe_get(wifivifs);
-		int debug = nvram_ngeti("%s_wpa_debug", dev);
+		char *debug = nvram_nget("%s_wpa_debug", dev);
+		if (!*debug)
+			debug = nvram_safe_get("wpa_debug");
+
 		char *background = "-B";
 
-		if (debug == 1)
+		if (!strcmp(debug, "1"))
 			background = "-Bds";
-		else if (debug == 2)
+		else if (!strcmp(debug, "2"))
 			background = "-Bdds";
-		else if (debug == 3)
+		else if (!strcmp(debug, "3"))
 			background = "-Bddds";
 
 		if ((!strcmp(apm, "sta") || !strcmp(apm, "wdssta") || !strcmp(apm, "wdssta_mtik") || !strcmp(apm, "infra") ||

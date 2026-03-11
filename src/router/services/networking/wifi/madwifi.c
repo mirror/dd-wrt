@@ -648,14 +648,15 @@ void setupSupplicant(const char *prefix, char *ssidoverride)
 	sprintf(eapol, "%s_eapol_version", prefix);
 	int i;
 	debug = nvram_nget("%s_wpa_debug", prefix);
-	if (debug != NULL) {
-		if (!strcmp(debug, "1"))
-			background = "-Bds";
-		else if (!strcmp(debug, "2"))
-			background = "-Bdds";
-		else if (!strcmp(debug, "3"))
-			background = "-Bddds";
-	}
+	if (!*debug)
+		debug = nvram_safe_get("wpa_debug");
+
+	if (!strcmp(debug, "1"))
+		background = "-Bds";
+	else if (!strcmp(debug, "2"))
+		background = "-Bdds";
+	else if (!strcmp(debug, "3"))
+		background = "-Bddds";
 
 	char driver[32];
 	sprintf(driver, "-Dwext");
@@ -978,9 +979,7 @@ void do_hostapd(char **fstr, const char *prefix)
 			argv[argc++] = "-dd";
 		else if (debug == 3)
 			argv[argc++] = "-ddd";
-		argv[argc++] = "-f";
-		sprintf(file, "/tmp/wifi/%s_debug", prefix);
-		argv[argc++] = file;
+		argv[argc++] = "-s";
 	}
 	int i = 0;
 	while (fstr[i]) {
@@ -1407,14 +1406,15 @@ void setupHostAPPSK(FILE *fp, const char *prefix, int isfirst)
 		fprintf(fp, "bridge=%s\n", getBridge(prefix, tmp));
 	fprintf(fp, "logger_syslog=-1\n");
 	debug = nvram_nget("%s_wpa_debug", prefix);
-	if (debug != NULL) {
-		if (!strcmp(debug, "1"))
-			fprintf(fp, "logger_syslog_level=1\n");
-		else if (!strcmp(debug, "2"))
-			fprintf(fp, "logger_syslog_level=2\n");
-		else if (!strcmp(debug, "3"))
-			fprintf(fp, "logger_syslog_level=0\n");
-	} else
+	if (!*debug)
+		debug = nvram_safe_get("wpa_debug");
+	if (!strcmp(debug, "1"))
+		fprintf(fp, "logger_syslog_level=1\n");
+	else if (!strcmp(debug, "2"))
+		fprintf(fp, "logger_syslog_level=2\n");
+	else if (!strcmp(debug, "3"))
+		fprintf(fp, "logger_syslog_level=0\n");
+	else
 		fprintf(fp, "logger_syslog_level=2\n");
 	fprintf(fp, "logger_stdout=-1\n");
 	fprintf(fp, "logger_stdout_level=2\n");
