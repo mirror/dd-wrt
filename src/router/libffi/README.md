@@ -1,6 +1,5 @@
 
-libffi-3.4.4 was released on October 23, 2022.  Check the libffi web
-page for updates: <URL:http://sourceware.org/libffi/>.
+libffi-3.5.2 was released on August 2, 2025.
 
 
 What is libffi?
@@ -50,6 +49,8 @@ tested:
 | Alpha           | Linux            | GCC                     |
 | Alpha           | Tru64            | GCC                     |
 | ARC             | Linux            | GCC                     |
+| ARC32           | Linux            | GCC                     |
+| ARC64           | Linux            | GCC                     |
 | ARM             | Linux            | GCC                     |
 | ARM             | iOS              | GCC                     |
 | ARM             | Windows          | MSVC                    |
@@ -57,6 +58,7 @@ tested:
 | Blackfin        | uClinux          | GCC                     |
 | CSKY            | Linux            | GCC                     |
 | HPPA            | HPUX             | GCC                     |
+| HPPA64          | HPUX             | GCC                     |
 | KVX             | Linux            | GCC                     |
 | IA-64           | Linux            | GCC                     |
 | LoongArch64     | Linux            | GCC                     |
@@ -71,7 +73,6 @@ tested:
 | MIPS            | RTEMS            | GCC                     |
 | MIPS64          | Linux            | GCC                     |
 | Moxie           | Bare metal       | GCC                     |
-| Nios II         | Linux            | GCC                     |
 | OpenRISC        | Linux            | GCC                     |
 | PowerPC 32-bit  | AIX              | GCC                     |
 | PowerPC 32-bit  | AIX              | IBM XL C                |
@@ -87,6 +88,9 @@ tested:
 | RISC-V 64-bit   | Linux            | GCC                     |
 | S390            | Linux            | GCC                     |
 | S390X           | Linux            | GCC                     |
+| SH3             | Linux            | GCC                     |
+| SH4             | Linux            | GCC                     |
+| SH5/SH64        | Linux            | GCC                     |
 | SPARC           | Linux            | GCC                     |
 | SPARC           | Solaris          | GCC                     |
 | SPARC           | Solaris          | Oracle Solaris Studio C |
@@ -95,6 +99,8 @@ tested:
 | SPARC64         | Solaris          | Oracle Solaris Studio C |
 | TILE-Gx/TILEPro | Linux            | GCC                     |
 | VAX             | OpenBSD/vax      | GCC                     |
+| WASM32          | Emscripten       | EMCC                    |
+| WASM64          | Emscripten       | EMCC                    |
 | X86             | FreeBSD          | GCC                     |
 | X86             | GNU HURD         | GCC                     |
 | X86             | Interix          | GCC                     |
@@ -105,14 +111,15 @@ tested:
 | X86             | Solaris          | GCC                     |
 | X86             | Solaris          | Oracle Solaris Studio C |
 | X86             | Windows/Cygwin   | GCC                     |
-| X86             | Windows/MingW    | GCC                     |
+| X86             | Windows/MinGW    | GCC                     |
+| X86-64          | DragonFly BSD    | GCC                     |
 | X86-64          | FreeBSD          | GCC                     |
 | X86-64          | Linux            | GCC                     |
 | X86-64          | Linux/x32        | GCC                     |
 | X86-64          | OpenBSD          | GCC                     |
 | X86-64          | Solaris          | Oracle Solaris Studio C |
 | X86-64          | Windows/Cygwin   | GCC                     |
-| X86-64          | Windows/MingW    | GCC                     |
+| X86-64          | Windows/MinGW    | GCC                     |
 | X86-64          | Mac OSX          | GCC                     |
 | Xtensa          | Linux            | GCC                     |
 
@@ -130,7 +137,7 @@ compiler.
 
 If you're building libffi directly from git hosted sources, configure
 won't exist yet; run ./autogen.sh first.  This will require that you
-install autoconf, automake and libtool.
+install autoconf, automake, libtool and texinfo.
 
 You may want to tell configure where to install the libffi library and
 header files. To do that, use the ``--prefix`` configure switch.  Libffi
@@ -152,7 +159,7 @@ It's also possible to build libffi on Windows platforms with
 Microsoft's Visual C++ compiler.  In this case, use the msvcc.sh
 wrapper script during configuration like so:
 
-    path/to/configure CC=path/to/msvcc.sh CXX=path/to/msvcc.sh LD=link CPP="cl -nologo -EP" CPPFLAGS="-DFFI_BUILDING_DLL"
+    path/to/configure CC=path/to/msvcc.sh CXX=path/to/msvcc.sh LD=link CPP="cl -nologo -EP" CXXCPP="cl -nologo -EP" CPPFLAGS="-DFFI_BUILDING_DLL"
 
 For 64-bit Windows builds, use ``CC="path/to/msvcc.sh -m64"`` and
 ``CXX="path/to/msvcc.sh -m64"``.  You may also need to specify
@@ -194,6 +201,50 @@ History
 =======
 
 See the git log for details at http://github.com/libffi/libffi.
+
+    3.5.2 Aug-2-2025
+        Add wasm64 support.
+        Add DragonFly BSD support.
+        Ensure trampoline file descriptors are closed on exec.
+
+    3.5.1 Jun-10-2025
+        Fix symbol versioning error.
+
+    3.5.0 Jun-8-2025
+        Add FFI_VERSION_STRING and FFI_VERSION_NUMBER macros, as well
+          as ffi_get_version() and ffi_get_version_number() functions.
+        Add ffi_get_default_abi() and ffi_get_closure_size() functions.
+        Fix closures on powerpc64-linux when statically linking.
+        Mark the PA stack as non-executable.
+
+    3.4.8 Apr-9-2025
+        Add static trampoline support for powerpc-linux (32-bit SYSV BE),
+          powerpc64-linux (64-bit ELFv1 BE) and
+          powerpc64le-linux (64-bit ELFv2 LE)
+        Various x86-64 bug fixes (x32 ABI and improper memory access for
+          small argument calls).
+        Fix to enable pointer authentication for aarch64.
+
+    3.4.7 Feb-8-2025
+        Add static trampoline support for Linux on s390x.
+        Fix BTI support for ARM64.
+        Support pointer authentication for ARM64.
+        Fix ASAN compatibility.
+        Fix x86-64 calls with 6 GP registers and some SSE registers.
+        Miscellaneous fixes for ARC and Darwin ARM64.
+        Fix OpenRISC or1k and Solaris 10 builds.
+        Remove nios2 port.
+
+    3.4.6 Feb-18-2024
+        Fix long double regression on mips64 and alpha.
+
+    3.4.5 Feb-15-2024
+        Add support for wasm32.
+        Add support for aarch64 branch target identification (bti).
+        Add support for ARCv3: ARC32 & ARC64.
+        Add support for HPPA64, and many HPPA fixes.
+        Add support for Haikuos on PowerPC.
+        Fixes for AIX, loongson, MIPS, power, sparc64, and x86 Darwin.
 
     3.4.4 Oct-23-2022
         Important aarch64 fixes, including support for linux builds
@@ -472,6 +523,7 @@ developers:
     nios ii             Sandra Loosemore
     openrisc            Sebastian Macke
     pa                  Randolph Chung, Dave Anglin, Andreas Tobler
+    pa64                Dave Anglin
     powerpc             Geoffrey Keating, Andreas Tobler,
                         David Edelsohn, John Hornkvist
     powerpc64           Jakub Jelinek
@@ -482,6 +534,7 @@ developers:
     sparc               Anthony Green, Gordon Irlam
     tile-gx/tilepro     Walter Lee
     vax                 Miod Vallat
+    wasm32              Hood Chatham, Brion Vibber, Kleis Auke Wolthuizen
     x86                 Anthony Green, Jon Beniston
     x86-64              Bo Thorsen
     xtensa              Chris Zankel

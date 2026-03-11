@@ -42,8 +42,6 @@
 #define RA_OFF		(SIZEOF_FRAME - 1 * FFI_SIZEOF_ARG)
 
 	.abicalls
-	.set hardfloat
-	.set nomips16
 	.text
 	.align	2
 	.globl	ffi_call_O32
@@ -560,4 +558,8 @@ $LASFDE2:
 	.align	2
 $LEFDE2:
 
+#endif
+
+#if defined __ELF__ && defined __linux__
+	.section .note.GNU-stack,"",%progbits
 #endif

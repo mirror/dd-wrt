@@ -1,3 +1,2329 @@
+commit e2eda0cf72a0598b44278cc91860ea402273fa29
+Author: Anthony Green <green@moxielogic.com>
+Date:   Sat Aug 2 08:56:01 2025 +0200
+
+    feat: Update libffi version to 3.5.2 with wasm64 and DragonFly BSD support
+
+commit b53b0042c2637162ba8ea55f382264a0841359a7
+Author: Anthony Green <green@moxielogic.com>
+Date:   Sat Aug 2 08:52:25 2025 +0200
+
+    Fix for systems without O_CLOEXEC
+
+commit 20eacb22e9e9cdd6402cb75278dede2b36051e53
+Author: Kohei Tokunaga <43872416+ktock@users.noreply.github.com>
+Date:   Sat Aug 2 15:28:46 2025 +0900
+
+    Emscripten: Add wasm64 target (#927)
+    
+    * src/wasm32: Allow building with Emscripten with 64bit support
+    
+    MEMORY64 enables 64bit pointers so this commit updates the accessors for the
+    libffi data structures accordingly.
+    
+    Each JS functions in ffi.c receives pointers as BigInt (i64) values and with
+    casts them to Numer (i53) using bigintToI53Checked. While memory64 supports
+    64bit addressing, the maximum memory size is currently limited to 16GiB
+    [1]. Therefore, we can assume that the passed pointers are within the
+    Number's range.
+    
+    [1] https://webassembly.github.io/memory64/js-api/#limits
+    
+    Signed-off-by: Kohei Tokunaga <ktokunaga.mail@gmail.com>
+    
+    * Add wasm64 target to the build scripts
+    
+    This commit adds support for the wasm64 target via the configure
+    script. Emscripten supports two modes of the -sMEMORY64 flag[1] so the
+    script allows users specifying the value through a configuration variable.
+    
+    Additionally, "src/wasm32" directory has been renamed to the more generic
+    "src/wasm" because it's now shared between both 32bit and 64bit builds.
+    
+    [1] https://emscripten.org/docs/tools_reference/settings_reference.html#memory64
+    
+    Signed-off-by: Kohei Tokunaga <ktokunaga.mail@gmail.com>
+    
+    * GitHub Actions: Add wasm64 tests
+    
+    This commit adds a test matrix for wasm32, wasm64 and wasm64 with the
+    -sMEMORY64=2 flag, using the latest version of Emscripten. -Wno-main is
+    added to suppress the following warning in unwindtest.cc and
+    unwindtest_ffi_call.cc.
+    
+    > FAIL: libffi.closures/unwindtest_ffi_call.cc -W -Wall -O2 (test for excess errors)
+    > Excess errors:
+    > ./libffi.closures/unwindtest_ffi_call.cc:20:5: warning: 'main' should not be 'extern "C"' [-Wmain]
+    >    20 | int main (void)
+    >       |     ^
+    > 1 warning generated.
+    
+    Signed-off-by: Kohei Tokunaga <ktokunaga.mail@gmail.com>
+    
+    * testsuite: Fix types of main function
+    
+    test_libffi.py calls each test's main function without arguments, but some
+    tests define the main function with parameters. This signature mismatch
+    causes a runtime error with the recent version of Emscripten.
+    
+    This commit resolves this issue by updating the function signatures to match
+    the way they are called.
+    
+    Signed-off-by: Kohei Tokunaga <ktokunaga.mail@gmail.com>
+    
+    * README: Add document about WASM64
+    
+    Signed-off-by: Kohei Tokunaga <ktokunaga.mail@gmail.com>
+    
+    ---------
+    
+    Signed-off-by: Kohei Tokunaga <ktokunaga.mail@gmail.com>
+
+commit b7885ace59999564aec38c812156093cf0bfac02
+Author: Weitian LI <liweitianux@live.com>
+Date:   Sat Aug 2 14:27:51 2025 +0800
+
+    fix: enable FFI_MMAP_EXEC_WRIT for DragonFly BSD (#930)
+    
+    Similar to PR #265 [1], we need to enable FFI_MMAP_EXEC_WRIT to use
+    explicit write+exec mapping on DragonFly BSD.
+    
+    Without this fix, we were having segfaults with Meld [2]; it would crash
+    with SIGSEGV after 5 diff operations.  The crash was caused by it
+    attempting to execute code from non-execute memory region.  Moreover, if
+    we set the `machdep.pmap_nx_enable=2` tunable (i.e., strict NX mode),
+    Meld would crash upon the first diff operation.
+    
+    Fix the `configure.ac` script to enable `FFI_MMAP_EXEC_WRIT` for
+    DragonFly BSD.  In addition, add it to the supported platforms table.
+    
+    [1] https://github.com/libffi/libffi/pull/265
+    [2] https://meldmerge.org/
+
+commit 60671187688ae3b295ab0e1dd77a8d6dd7a805a2
+Author: Anthony Green <green@moxielogic.com>
+Date:   Fri Jul 11 03:17:18 2025 -0400
+
+    fix(tramp): ensure file descriptor is closed on exec.  Thanks to Florian Weimer.
+    
+    c# Please enter the commit message for your changes. Lines starting
+
+commit d0f831bca60ea74b55a3155b929f195a971a3cac
+Author: Anthony Green <green@moxielogic.com>
+Date:   Sat Jun 21 16:05:31 2025 -0400
+
+    feat: add QUESTION to .gail-labels
+
+commit e28a0d5b0708ade04979e2a1d5c2a2d3acc749ec
+Author: Anthony Green <green@moxielogic.com>
+Date:   Tue Jun 10 16:17:58 2025 -0400
+
+    ci: add fail-if-no-assets option in tarball workflow
+
+commit 90220e51bcb2040d24b1f06581f0805a3091acda
+Author: Anthony Green <green@moxielogic.com>
+Date:   Tue Jun 10 16:03:47 2025 -0400
+
+    Update version.
+
+commit 330467d55c5f983d16cb2b03703a149db21d07ce
+Author: Anthony Green <green@moxielogic.com>
+Date:   Tue Jun 10 16:01:56 2025 -0400
+
+    Move new symbols to new symbol versioning.
+
+commit 517310ddbf7046a743af035ce61f2b304802bd00
+Author: Anthony Green <green@moxielogic.com>
+Date:   Mon Jun 9 19:03:49 2025 -0400
+
+    ci: update compiler versions in github workflow
+
+commit d994395ce74026f67b50957e6ce899e8ddbe5028
+Author: Anthony Green <green@moxielogic.com>
+Date:   Mon Jun 9 18:43:40 2025 -0400
+
+    ci: update gcc version to 15 in build process
+
+commit 26d7be77cc151acb458ef84f66859ef5300ce432
+Author: Anthony Green <green@moxielogic.com>
+Date:   Mon Jun 9 18:23:15 2025 -0400
+
+    ci: update build.sh for Linux build process
+
+commit a18d4e95d39d4b2b155abdea4ff1ac0006c12a6f
+Author: Anthony Green <green@moxielogic.com>
+Date:   Mon Jun 9 13:35:29 2025 -0400
+
+    feat(.github/workflows): add step to wipe old snapshot assets in tarball.yml
+
+commit b9b837855666636645bd3e00ce60d082ad8cc713
+Author: Anthony Green <green@moxielogic.com>
+Date:   Mon Jun 9 13:29:03 2025 -0400
+
+    fix(github-actions): correct regex in version extraction
+
+commit 7ac6f14591d174a314bf45a8b02d136525cd86f9
+Author: Anthony Green <green@moxielogic.com>
+Date:   Mon Jun 9 13:08:02 2025 -0400
+
+    ci: change packages installed during workflow
+
+commit ceab352dfa55745ab058a289e59faee925508d10
+Author: Anthony Green <green@moxielogic.com>
+Date:   Mon Jun 9 13:01:50 2025 -0400
+
+    ci: add installation of necessary tools to tarball workflow
+
+commit 1f73aa507ed8e8bc49864c99ff21d82dd454cb55
+Author: Anthony Green <green@moxielogic.com>
+Date:   Mon Jun 9 12:56:19 2025 -0400
+
+    refactor(.github/workflows/tarball): remove repeated job blocks
+
+commit 7f5375d7c75805d02f95516875107e9eb345ae8c
+Author: Anthony Green <green@moxielogic.com>
+Date:   Mon Jun 9 12:55:09 2025 -0400
+
+    chore(workflows): update snapshot release description in tarball.yml
+
+commit 2a5195bb2a633f7c9cc3b787d16ddb940c2a719d
+Author: Anthony Green <green@moxielogic.com>
+Date:   Mon Jun 9 12:54:55 2025 -0400
+
+    chore(.github/workflows): update tarball.yml indentation
+
+commit 2f535b8f747eea5c3336ecf20a3ecc9c0d523f62
+Author: Anthony Green <green@moxielogic.com>
+Date:   Mon Jun 9 12:52:43 2025 -0400
+
+    chore(ci): update tarball workflow in GitHub Actions
+
+commit 172bfb41f4f27cac939537e907106ef37abae701
+Author: Anthony Green <green@moxielogic.com>
+Date:   Mon Jun 9 12:22:35 2025 -0400
+
+    chore(.github/workflows): update tarball workflow to use softprops/action-gh-release
+
+commit 0947743f691bbd9d034a8ebe178ca8cb81e7fcd7
+Author: Anthony Green <green@moxielogic.com>
+Date:   Mon Jun 9 11:53:15 2025 -0400
+
+    Make tarballs (#924)
+    
+    * Create tarballs in CI
+
+commit a46977da5056cc7f23eee6db544d88cd5a88b9f4
+Author: Kleis Auke Wolthuizen <github@kleisauke.nl>
+Date:   Mon Jun 9 15:55:02 2025 +0200
+
+    Downgrade Autoconf requirement to version 2.68 (#922)
+    
+    * Downgrade Autoconf requirement to version 2.68
+    
+    * CI: remove redundant Autoconf install scripts
+
+commit 40a76827051bde95e20cc4edeba31a353c074321
+Author: Anthony Green <green@moxielogic.com>
+Date:   Mon Jun 9 09:49:00 2025 -0400
+
+    Improve CI test coverage (#923)
+    
+    Add CI testing on Windows with both gcc and clang.
+
+commit 64a42f618dcd555920756e84b0c8bfcec358c32e
+Author: Anthony Green <green@moxielogic.com>
+Date:   Sun Jun 8 16:59:58 2025 -0400
+
+    More CI testing (#921)
+    
+    * ci: add new build configuration in GitHub Actions
+    
+    * ci: add Windows clang build workflow
+    
+    * ci: add additional packages to GitHub workflows build
+    
+    * ci: optimize build workflow and improve commenting
+    
+    * ci: remove unused MSVC dev command from build workflow
+    
+    * ci: modify build workflow to support multiple compilers
+    
+    * build(github-actions): use matrix.compiler for CC and CXX variables
+
+commit d2c78d2ebbd9e65401095c6a2f281fe5132f028b
+Author: Anthony Green <green@moxielogic.com>
+Date:   Sun Jun 8 08:16:42 2025 -0400
+
+    feat(testsuite): exclude wasm from pthreads testing in libffi
+
+commit 668e2162e8185c007c3876c0de6723fb56aee0a1
+Author: Anthony Green <green@moxielogic.com>
+Date:   Sun Jun 8 08:00:36 2025 -0400
+
+    refactor(threads): don't run tests on windows
+
+commit 5be311bed5e93305ed3f31bd29bcdcfe4baaa00c
+Author: Anthony Green <green@moxielogic.com>
+Date:   Sun Jun 8 07:56:37 2025 -0400
+
+    refactor: add POSIX barriers to libffi.threads testsuite
+
+commit 70b34efece027faa843520709b300242e0526154
+Author: Anthony Green <green@moxielogic.com>
+Date:   Sun Jun 8 07:53:00 2025 -0400
+
+    feat(testsuite): add -lpthread flag for wasm32 targets
+
+commit f530522ce48922178b25af9b5467cacc41c21de6
+Author: Anthony Green <green@moxielogic.com>
+Date:   Sun Jun 8 07:52:25 2025 -0400
+
+    chore: disable color diagnostics in libffi tests
+
+commit 5fd812149e4740346341c1c9a8c355cc05f411c3
+Author: Anthony Green <green@moxielogic.com>
+Date:   Sun Jun 8 07:47:04 2025 -0400
+
+    chore: update documentation date and add test files to Makefile
+
+commit a5d465029ce1ffce4860c75c2aa3fa0d1a8e18be
+Author: Anthony Green <green@moxielogic.com>
+Date:   Sun Jun 8 07:40:39 2025 -0400
+
+    feat(testsuite): add new threading tests to libffi test suite
+
+commit 074c423f86b30fa895f391230bdbedf076053fa3
+Author: Anthony Green <green@moxielogic.com>
+Date:   Sun Jun 8 07:30:54 2025 -0400
+
+    feat: Add ffi_get_default_abi and ffi_get_closure_size functions
+
+commit b14d43793a83aabe79cae4ac6a39b6183f25c8aa
+Author: Anthony Green <green@moxielogic.com>
+Date:   Sun Jun 8 06:53:12 2025 -0400
+
+    Update version
+
+commit c8225fb03db49dfa04403a28091ab99b0998fffe
+Author: Anthony Green <green@moxielogic.com>
+Date:   Sun Jun 8 06:51:58 2025 -0400
+
+    chore: update libffi version to 3.5.0
+
+commit cb424c6d41401bb93c59a553849d32c34bfff765
+Author: Anthony Green <green@moxielogic.com>
+Date:   Sun Jun 8 06:50:47 2025 -0400
+
+    docs: Update README with release details for version 3.5.0
+
+commit 8b0eab28cb45c6862b30f5cadfc1a7fe996b072c
+Author: JupiterRider <60042618+JupiterRider@users.noreply.github.com>
+Date:   Sun Jun 8 12:16:38 2025 +0200
+
+    Update License date and improve rcedit DLL metadata (#919)
+    
+    * rcedit add architecture and original filename
+    
+    * Update LICENSE to 2025
+
+commit 8b30fe51d46ad29608d928c9920ca69f93394092
+Author: Anthony Green <green@moxielogic.com>
+Date:   Sat Jun 7 08:51:52 2025 -0400
+
+    ci: add user configuration for DejaGNU tests in ppc64le container
+
+commit 58f9179009b61ff563279fcd6ea489eda94b5260
+Author: Anthony Green <green@moxielogic.com>
+Date:   Sat Jun 7 08:48:41 2025 -0400
+
+    ci: add diffutils and gawk to ppc64le container dependencies
+
+commit d796b1ba066358f57e02a2337e3c1451ba900016
+Author: Anthony Green <green@moxielogic.com>
+Date:   Sat Jun 7 08:47:04 2025 -0400
+
+    feat(.ci): add libtool to ppc64le container setup
+
+commit 024cbc252c534419573ea775706c8b272e7159ef
+Author: Anthony Green <green@moxielogic.com>
+Date:   Sat Jun 7 08:35:15 2025 -0400
+
+    feat(.ci): add Containerfile for ppc64le architecture
+
+commit e3cbebffcc397ce2121a32887ffbc06070a3c024
+Author: JupiterRider <60042618+JupiterRider@users.noreply.github.com>
+Date:   Fri Jun 6 22:40:40 2025 +0200
+
+    use rcedit to add metainfo to DLL (#918)
+    
+    * use rcedit to add metainfo to DLL
+    
+    * remove trailing backslash in build.yml
+    
+    * build.yml: add rcedit execute permission
+    
+    * build.yml: cd to the right directory
+
+commit 9bb21f1d291235c7aa2627b1175b4a085858396c
+Author: Anthony Green <green@moxielogic.com>
+Date:   Fri Jun 6 13:48:25 2025 -0400
+
+    fix: correct path in LDFLAGS line of build.yml workflow
+
+commit c2ae66fc45dbfc18afe1244663bb5d97937c7976
+Author: Anthony Green <green@moxielogic.com>
+Date:   Fri Jun 6 13:41:56 2025 -0400
+
+    fix(build): change version.o to version.obj in build.yml
+
+commit d326a4c025a379ea590a9926a55bd39dcc8d9ae3
+Author: Anthony Green <green@moxielogic.com>
+Date:   Thu Jun 5 09:35:47 2025 -0400
+
+    refactor: simplify versioning in .github/workflows/build.yml
+
+commit d241e510196393c4ec8a7a8f1e456d2695802ff6
+Author: Anthony Green <green@moxielogic.com>
+Date:   Thu Jun 5 09:22:10 2025 -0400
+
+    chore(build): update build script to use object file for versioning
+
+commit c07b0c4ddc99d6be9d3d4fbe2c39ca86e9af4dc4
+Author: Anthony Green <green@moxielogic.com>
+Date:   Thu Jun 5 08:52:41 2025 -0400
+
+    fix(github workflows): correct LDFLAGS path in build.yml
+
+commit ec22d0fe7bd9db7629a7540a7ba12a2ec6a28889
+Author: Anthony Green <green@moxielogic.com>
+Date:   Thu Jun 5 08:44:36 2025 -0400
+
+    build(.github/workflows): include build number in version info
+
+commit e133ee847de50b710072aae1a478208c0a56c8f9
+Author: Anthony Green <green@moxielogic.com>
+Date:   Thu Jun 5 07:42:52 2025 -0400
+
+    chore(build): add command to log version information in build script
+
+commit c8d929fc45bae3192666c06b1c83e53afe7e639d
+Author: Anthony Green <green@moxielogic.com>
+Date:   Thu Jun 5 07:33:57 2025 -0400
+
+    ci: add version logging in build workflow
+
+commit d6029210d795258c99e0606753556060d233109e
+Author: Anthony Green <green@moxielogic.com>
+Date:   Thu Jun 5 07:11:43 2025 -0400
+
+    ci: refactor version retrieval in build workflow
+
+commit 49c70cab94981600b471a480048f497fccf03239
+Author: Anthony Green <green@moxielogic.com>
+Date:   Thu Jun 5 06:57:20 2025 -0400
+
+    fix(build): correct variables for FILEVERSION and PRODUCTVERSION
+
+commit 27f93a7038925797eaca6dea34375fd1b9909307
+Author: Anthony Green <green@moxielogic.com>
+Date:   Thu Jun 5 06:50:12 2025 -0400
+
+    feat(build): add version information resource to build script and update documentation version
+
+commit 1b6b176a289d923e7cf4c19f17eeadac67c5bd02
+Author: Anthony Green <green@moxielogic.com>
+Date:   Thu Jun 5 06:17:56 2025 -0400
+
+    Update README.md to mention SH targets
+
+commit bac99f2f3f3c7b368cd304d14188e473975e129f
+Author: Anthony Green <green@moxielogic.com>
+Date:   Thu Jun 5 06:12:10 2025 -0400
+
+    Release candidate 1 for 3.5.0.  Windows build fixes. (#916)
+    
+    * refactor(ci): improve wget retry logic in .ci/install.sh
+    
+    * build(github-actions): use static runtime library in build
+    
+    * refactor(ffi.h.in): export version API
+    
+    * chore: update libffi version to 3.5.0-rc1
+
+commit 3c54639eb81b68115f6ff3dcc562857d67d4136d
+Author: Anthony Green <green@moxielogic.com>
+Date:   Wed Jun 4 19:20:37 2025 -0400
+
+    refactor(ci): improve wget retry logic in .ci/install.sh (#915)
+
+commit d6b1f3423278f52cf01f4ddc24b432a0875fbb00
+Author: Anthony Green <green@moxielogic.com>
+Date:   Wed Jun 4 11:24:11 2025 -0400
+
+    refactor: move and modify unix-noexec.exp and site.exp files
+
+commit d38abaf9db7cb4f9ddd8a18083f0d1f86a8c3312
+Author: Anthony Green <green@moxielogic.com>
+Date:   Wed Jun 4 07:57:21 2025 -0400
+
+    feat(testsuite): add Emscripten support to libffi.closures tests
+
+commit 2d8868ace7419b377587adf6b63fb276411931dd
+Author: Anthony Green <green@moxielogic.com>
+Date:   Wed Jun 4 07:04:53 2025 -0400
+
+    Update generate-darwin-source-and-headers.py (#914)
+
+commit 5ad529fb0dabeec863bec8d6c5f6b3502b45d6c1
+Author: Anthony Green <green@moxielogic.com>
+Date:   Tue Jun 3 19:12:49 2025 -0400
+
+    Many CI testing fixes and improvements. (#913)
+
+commit 2529b40dbd9b5d1c5bff8123dfc7568635f5c900
+Author: Anthony Green <green@moxielogic.com>
+Date:   Mon Jun 2 20:42:47 2025 -0400
+
+    chore: update version to 3.5.0-rc0 in documentation and configuration files
+
+commit 3ee0dc41b681814e3789867d7d4ff31b6fd9ab99
+Author: Anthony Green <green@moxielogic.com>
+Date:   Mon Jun 2 20:41:27 2025 -0400
+
+    chore: update version to 3.5.0-pre0 in version.texi
+
+commit 55d84b0cb9e2561bfbbb4c8a7d3e731a45543c76
+Author: Anthony Green <green@moxielogic.com>
+Date:   Mon Jun 2 20:40:44 2025 -0400
+
+    docs: update README with new libffi release information
+
+commit 854ce7be85da6ab571b2f73390be20f57c5afc9b
+Author: Anthony Green <green@moxielogic.com>
+Date:   Mon Jun 2 20:18:46 2025 -0400
+
+    Make 3.5.0-pre0 release. Build and publish Windows binaries. Clean up testing. (#912)
+    
+    This commit removes many platforms from the testing workflow.
+    They will be added back in future commits.
+
+commit 022929b1fc06082389862816f08308f222de9389
+Author: JupiterRider <60042618+JupiterRider@users.noreply.github.com>
+Date:   Sun Jun 1 13:30:51 2025 +0200
+
+    doc now shows the correct calculation for version number (#911)
+
+commit dcc9e93b8ab1990ae0b598d083e19b6c47eb89cc
+Author: Anthony Green <green@moxielogic.com>
+Date:   Wed May 28 14:32:02 2025 -0400
+
+    Add Issue labeler Action
+
+commit 9ee7341dbaec04d8c79685fb55703fc9453d0e55
+Author: Anthony Green <green@moxielogic.com>
+Date:   Mon May 26 08:19:32 2025 -0400
+
+    feat(README): add details for next version release in history section
+
+commit 4094362f545cdfe07f65b00c8c0db82b9b96b34b
+Author: Anthony Green <green@moxielogic.com>
+Date:   Mon May 26 08:19:15 2025 -0400
+
+    refactor: enhance assembler pseudo-ops and compiler flag checking
+
+commit be4e59e3990142905bb55ffe94950f0f2201cde5
+Author: Anthony Green <green@moxielogic.com>
+Date:   Mon May 26 08:19:00 2025 -0400
+
+    chore: update version to 3.5.0 and libtool version to 10:0:2
+
+commit dc9b1332f7b74513a24c87051fa8334e7b461074
+Author: Anthony Green <green@moxielogic.com>
+Date:   Mon May 26 08:18:40 2025 -0400
+
+    chore: update Makefile.am configurations
+
+commit c9a3a06f9be8f32da3eac132ff6754ec74feb42a
+Author: Anthony Green <green@moxielogic.com>
+Date:   Mon May 26 08:18:13 2025 -0400
+
+    feat(libffi): upgrade to version 3.5.0 and add version API
+
+commit 64d5e122f747c9b761b311f85cfc5d99c02fe959
+Author: Anthony Green <green@moxielogic.com>
+Date:   Sun May 25 16:09:59 2025 -0400
+
+    docs: update required installations in README.md
+
+commit 5b253476d10e12291e96671ff5bf275737928ffd
+Author: Anthony Green <green@moxielogic.com>
+Date:   Sun May 25 13:33:51 2025 -0400
+
+    chore(testsuite): remove mingw64-align.c from Makefile and delete file
+
+commit f9c60855da770a8465ad0fe7149ad86d1a6f900b
+Author: Anthony Green <green@moxielogic.com>
+Date:   Sat May 24 08:11:37 2025 -0400
+
+    Add custom github issue labels for gail
+
+commit c6f1610509d3d146017d6cc30020ce334bde8425
+Author: Anthony Green <green@moxielogic.com>
+Date:   Sun Apr 27 08:59:12 2025 -0400
+
+    feat(testsuite): add mingw64-align.c to test alignment in structs
+
+commit 571177adcb2b604739a0432b7392f1b83294decf
+Author: Anthony Green <green@moxielogic.com>
+Date:   Sun Apr 27 08:30:35 2025 -0400
+
+    feat(testsuite): add longjmp test to Makefile and implement longjmp test code
+
+commit 562cb53b5ddc97020291927d47823f210c5f3486
+Author: David Tenty <daltenty@ibm.com>
+Date:   Fri Apr 25 05:07:57 2025 -0400
+
+    Add initializer (#904)
+
+commit aea22de28ec92a69cab9198de479263fe8b1a637
+Author: Peter Bergner <bergner@linux.ibm.com>
+Date:   Fri Apr 18 10:09:45 2025 -0500
+
+    powerpc: Fix closures on powerpc64-linux when statically linking (#900) (#902)
+    
+    Closures on powerpc64-linux using static trampolines do not work when
+    statically linking libffi.  The problem is the usage of tramp_globals.text
+    in libffi assumes it contains the entry point address of the first trampoline.
+    Powerpc's ffi_tramp_arch code returns &trampoline_code_table which for ABIs
+    that use function descriptors, ends up returning trampoline_code_table's
+    function descriptor address instead of its entry point address.  Update
+    the code to always return the entry point address for all ABIs.
+
+commit a431b47822f06e3f16b2e16f3163fd209ac56b5f
+Author: Sam James <sam@gentoo.org>
+Date:   Tue Apr 15 10:30:27 2025 +0100
+
+    pa: add .note.GNU-stack marker to linux.S (#899)
+    
+    Similarly to f515eac04cf8e5f594d5d9dee5fb7dfc3a186a4c, add a .note.GNU-stack
+    marker to pa/linux.S as it doesn't need an executable stack. Absence of the
+    note means that GNU Binutils will consider it as needing an executable stack
+    and mark it as such automatically.
+    
+    When building libffi on HPPA with `-Wl,--warn-warn-execstack`, we get:
+    ```
+    ld: warning: src/pa/.libs/linux.o: missing .note.GNU-stack section implies executable stack
+    ld: NOTE: This behaviour is deprecated and will be removed in a future version of the linker
+    ```
+    
+    That becomes more problematic with glibc-2.41 which forbids dlopen()
+    of a library with an executable stack, and libffi is commonly dlopen()'d,
+    especially by Python.
+    
+    I suspect the reason it didn't show up on Debian is that since February,
+    Debian has been building Binutils with --disable-default-execstack.
+    
+    Bug: https://bugs.gentoo.org/953805
+    Bug: https://github.com/libffi/libffi/issues/898
+
+commit 6a99edb8082f75e523e0d6ebaba42218b80e10c8
+Author: Sam James <sam@gentoo.org>
+Date:   Thu Apr 10 03:44:45 2025 +0100
+
+    testsuite: add two tests to Makefile.am (#893)
+    
+    * Add libffi.call/overread.c and libffi.call/x32.c to Makefile.am
+      so they're included in dist tarballs
+    
+    * Fix indentation and rewrap
+
+commit bfb5b005a08239c751db667f68a67aeb72a9b9ff
+Author: Anthony Green <green@moxielogic.com>
+Date:   Wed Apr 9 10:32:42 2025 -0400
+
+    feat: Update version of libffi to 3.4.8 with various fixes and enhancements
+
+commit 3429ed6b9414dfbe9d9da7609ab043291a01a148
+Author: Peter Bergner <bergner@linux.ibm.com>
+Date:   Tue Apr 8 05:52:37 2025 -0500
+
+    powerpc: Add static trampoline support (#894) (#895)
+    
+    Add static trampoline support to all three powerpc Linux ABIs, specifically
+    powerpc-linux (32-bit SYSV BE), powerpc64-linux (64-bit ELFv1 BE) and
+    powerpc64le-linux (64-bit ELFv2 LE).  This follows the s390x implementation
+    and does not introduce a ffi_closure_*_alt function, but rather jumps
+    directly to the ffi_closure_* function itself.  If compiling with
+    --with-gcc-arch=power10 and pc-relative is enabled, we use a simpler and
+    smaller trampoline that utilizes Power10's new pc-relative load instructions.
+
+commit bb1a84ed9772ee65e00762dab1c4ae50100d5a27
+Author: mikulas-patocka <94898783+mikulas-patocka@users.noreply.github.com>
+Date:   Sun Mar 30 12:07:59 2025 +0200
+
+    Add the "ABI_ATTR" attribute to called functions (#891) (#892)
+    
+    I accidentally omitted the "ABI_ATTR" attribute, so that the testsuite
+    fails when testing the Microsoft ABI.
+    
+    Fixes: fe203ffbb2bd ("Fix bugs in the x86-64 and x32 target (#887) (#889)")
+    
+    Signed-off-by: Mikulas Patocka <mikulas@twibright.com>
+
+commit fe203ffbb2bd7f93a86013d341aa767a406150bc
+Author: mikulas-patocka <94898783+mikulas-patocka@users.noreply.github.com>
+Date:   Thu Mar 27 01:31:49 2025 +0100
+
+    Fix bugs in the x86-64 and x32 target (#887) (#889)
+    
+    This commit fixes two bugs in ffi in the x86-64 target. The bugs were
+    introduced by the commit d21881f55ed4a44d464c9091871e69b0bb47611a ("Fix
+    x86/ffi64 calls with 6 gp and some sse registers").
+    
+    The first bug is that when we pass an argument with less than 8 bytes,
+    ffi will read memory beyond argument end, causing a crash if the argument
+    is located just before the end of the mapped region.
+    
+    The second bug is in the x32 ABI - pointers in x32 are 4-byte, but GCC
+    assumes that the pointer values in the registers are zero-extended. ffi
+    doesn't respect this assumption, causing crashes in the called library.
+    
+    For example, when we compile this function for x32:
+    int fn(int *a)
+    {
+            if (a)
+                    return *a;
+            return -1;
+    }
+    we get this code:
+    fn:
+            testq   %rdi, %rdi
+            je      .L3
+            movl    (%edi), %eax
+            ret
+    .L3:
+            movl    $-1, %eax
+            ret
+    When we call this function using ffi with the argument NULL, the function
+    crashes because top 4 bytes of the RDI register are not cleared.
+    
+    
+    Fixes: d21881f55ed4 ("Fix x86/ffi64 calls with 6 gp and some sse registers (#848)")
+    
+    Signed-off-by: Mikulas Patocka <mikulas@twibright.com>
+
+commit cf69efabcaefcb6803f6cefd970741d10c17cec1
+Author: Nikita Samusev <127026067+Nikitf777@users.noreply.github.com>
+Date:   Sat Mar 8 14:41:02 2025 +0300
+
+    Update the Simple Example to fix a compile error (#886)
+    
+    Fixes the following error:
+    candidate function not viable: no known conversion from 'int (const char *)' to 'void (*)()' for 2nd argument
+
+commit 89c99d738fd564da61b7ec70ab08fede475ba351
+Author: fossdd <fossdd@pwned.life>
+Date:   Fri Feb 28 22:10:10 2025 +0100
+
+    MIPS: Dont import asm/sgidefs.h on linux (#885)
+    
+    Removed from Linux since Linux 3.7
+    
+    Ref: https://web.git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/commit/?id=61730c538f8281efa7ac12596da9f3f9a31b9272
+
+commit 5ceddf4071e8bce3bdb20f8795d57d5ef0bc5503
+Author: Bill Roberts <152999275+billatarm@users.noreply.github.com>
+Date:   Thu Feb 20 04:25:21 2025 -0600
+
+    aarch64: add PAC to GNU Notes (#882)
+    
+    While PAC was enabled, the bit to indicate support in the GNU Notes
+    section of the ELF was missing.
+    
+    Before:
+    readelf -n ./aarch64-unknown-linux-gnu/.libs/libffi.so
+    
+    Displaying notes found in: .note.gnu.property
+      Owner                Data size        Description
+      GNU                  0x00000010       NT_GNU_PROPERTY_TYPE_0
+          Properties: AArch64 feature: BTI
+    
+    This was caused by this file not having PAC indicated in GNU Notes and
+    the linker discarding it:
+    File: ./aarch64-unknown-linux-gnu/src/aarch64/sysv.o
+    
+    Displaying notes found in: .note.gnu.property
+      Owner                Data size        Description
+      GNU                  0x00000010       NT_GNU_PROPERTY_TYPE_0
+          Properties: AArch64 feature: BTI
+    
+    Now it has it:
+    File: ./aarch64-unknown-linux-gnu/src/aarch64/sysv.o
+    
+    Displaying notes found in: .note.gnu.property
+      Owner                Data size        Description
+      GNU                  0x00000010       NT_GNU_PROPERTY_TYPE_0
+          Properties: AArch64 feature: BTI, PAC
+    
+    As well as the output shared object:
+    readelf -n ./aarch64-unknown-linux-gnu/.libs/libffi.so
+    
+    Displaying notes found in: .note.gnu.property
+      Owner                Data size        Description
+      GNU                  0x00000010       NT_GNU_PROPERTY_TYPE_0
+          Properties: AArch64 feature: BTI, PAC
+    
+    Fixes: #881
+    
+    Signed-off-by: Bill Roberts <bill.roberts@arm.com>
+
+commit 1716f81e9a115d340429504563bc8e7fb2eeef2b
+Author: Anthony Green <green@moxielogic.com>
+Date:   Sat Feb 8 11:32:05 2025 -0500
+
+    feat: remove nios2 support
+    
+    Acked-by: Anthony Green <green@moxielogic.com>
+
+commit 252c0f463641e6100169c3f0a4a590d7df438278
+Author: Anthony Green <green@moxielogic.com>
+Date:   Sat Feb 8 09:37:31 2025 -0500
+
+    chore: Bump version to 3.4.7 and update change log
+
+commit adfe4489c17b542216a502efaaf6b0156e2197ab
+Author: Kleis Auke Wolthuizen <github@kleisauke.nl>
+Date:   Fri Jan 31 21:41:56 2025 +0100
+
+    Emscripten: remove support for `-sWASM_BIGINT=0` (#874)
+    
+    * Emscripten: cleanup
+    
+    * Emscripten: remove support for `-sWASM_BIGINT=0`
+    
+    * Emscripten: remove redundant CircleCI config
+    
+    * Emscripten: modernize CI
+    
+    * Ensure test helper methods are static
+    
+    Similar to #644.
+    
+    * Fix test failures in `cls_multi_{s,u}shortchar`
+
+commit 2f34cf639cab60123a7725fc9488657766ba665d
+Author: Matthew Flatt <mflatt@cs.utah.edu>
+Date:   Fri Jan 31 13:40:40 2025 -0700
+
+    x86 Darwin returns structs of size 1, 2, 4, and 8 in registers (#876)
+
+commit a0d8074a672312dbc757320d8bc42e39aa5b3d9a
+Author: zye2-sc <140619768+zye2-sc@users.noreply.github.com>
+Date:   Fri Jan 31 21:40:00 2025 +0100
+
+    Disable go closures on Android (#877)
+    
+    * x18 register shouldn't be used on Android due to the shadow call stack feature in llvm
+    * https://source.android.com/docs/security/test/shadow-call-stack
+
+commit d77b9fefa25f7f11dcc4e6380c661c4cf2960a85
+Author: 杨萧玉 <yulingtianxia@users.noreply.github.com>
+Date:   Fri Dec 13 18:38:01 2024 +0800
+
+    Fix config.sub on Apple platforms (#860)
+    
+    * update config.sub
+    
+    * update config.sub
+
+commit 593cb01a46e63d5361f2df803947cb657bb4e822
+Author: Satadru Pramanik, DO, MPH, MEng <satadru@gmail.com>
+Date:   Fri Dec 13 05:37:15 2024 -0500
+
+    Add mold linker to linker checks. (#866)
+    
+    Signed-off-by: Satadru Pramanik <satadru@gmail.com>
+
+commit f515eac04cf8e5f594d5d9dee5fb7dfc3a186a4c
+Author: Icenowy Zheng <uwu@icenowy.me>
+Date:   Fri Dec 13 18:36:02 2024 +0800
+
+    MIPS: add .note.GNU-stack section to assembly sources (#872)
+    
+    To build ELF shared libraries that do not require executable stack on
+    MIPS, every object file linked should have a .note.GNU-stack section,
+    otherwise the linker defaults to executable stack.
+    
+    As libffi shouldn't require executable stack, add the .note.GNU-stack
+    section to the assembly source files under src/mips, like other
+    architectures.
+    
+    Signed-off-by: Icenowy Zheng <uwu@icenowy.me>
+
+commit 458b2ae2829f1916ea3a3e07c944b4668732290f
+Author: Eddy S. <fneddy@users.noreply.github.com>
+Date:   Sat Nov 16 13:03:24 2024 +0100
+
+    Add static trampoline support for s390 (#862)
+    
+    * added static trampoline support for s390
+    
+    * enable static tramp only for  s390x 64bit
+
+commit 0859f8431242d5adff21420b9cab538d2af527b5
+Author: Joseph Myers <jsm@polyomino.org.uk>
+Date:   Thu Oct 24 18:26:58 2024 +0000
+
+    Fix testsuite for C23 `va_start` (#861)
+    
+    In the C23 revision of the C standard, `va_start` ignores its second
+    argument, which is no longer required (previously the last named
+    function parameter - which the compiler knows anyway, so it's
+    redundant information).
+    
+    This has the consequence for the libffi testsuite, when making GCC
+    default to `-std=gnu23`, of making two tests fail with warnings about
+    an unused function argument (only passed to `va_start` and not
+    otherwise used).  Fix those test failures by explicitly casting the
+    argument to `void`.
+
+commit 8308bed5b2423878aa20d7884a99cf2e30b8daf7
+Author: Ivan Tadeu Ferreira Antunes Filho <antunesi@google.com>
+Date:   Fri Sep 20 06:01:23 2024 -0400
+
+    Move cfi_startproc after CNAME(label) (#857)
+    
+    This is a fix for https://github.com/libffi/libffi/issues/852: error: invalid CFI advance_loc expression on apple targets.
+    
+    The CFI for darwin arm64 was broken because the CNAME macro was being used after the
+    cfi_startproc macro.
+
+commit 01db744b4af8665f9b7494d00cc2a1cc45ee9636
+Author: KJ Tsanaktsidis <kj@kjtsanaktsidis.id.au>
+Date:   Fri Sep 20 20:00:49 2024 +1000
+
+    Disable ASAN in ffi_call_int functions (#858)
+    
+    The pattern for several of the architectures is for ffi_call_int to
+    stack-allocate some arguments + the registers, and then
+    ffi_call_$ARCH will pop the top of that structure into registers, and
+    then adjust the stack pointer such that the alloca'd buffer _becomes_
+    the stack-passed arguments for the function being called.
+    
+    If libffi is compiled with ASAN, then there will be a redzone inserted
+    after the alloca'd buffer which is marked as poisoned. This redzone
+    appears beyond the end of $sp upon entry to the called function.
+    
+    If the called function does anything to use this stack memory, ASAN will
+    notice that it's poisoned and report an error.
+    
+    This commit fixes the situation (on the architectures that I have access
+    to) disabling instrumentation for ffi_call_int; that means there will be
+    no alloca redzone left on the shadow-stack.
+
+commit f7e4992789fa563b4cc74521c37ff703555da21c
+Author: Sam James <sam@cmpct.info>
+Date:   Fri Sep 20 10:58:06 2024 +0100
+
+    testsuite: fix dejagnu directive typo (#859)
+
+commit 084f36903f56b280283f3f4473a80b8e77727a29
+Merge: 92d384d 348e70e
+Author: Anthony Green <green@moxielogic.com>
+Date:   Sun Sep 15 12:32:58 2024 -0400
+
+    Merge remote-tracking branch 'refs/remotes/origin/master'
+
+commit 92d384df196a099fde384f9178864dbfe8c6b0fc
+Author: Anthony Green <green@moxielogic.com>
+Date:   Sun Sep 15 12:32:29 2024 -0400
+
+    Fix floating point compare
+
+commit 348e70ef1c785b85e194e47d47b7c4c2b1cec861
+Author: Richard Barnes <rbarnes@umn.edu>
+Date:   Sun Sep 15 07:39:51 2024 -0400
+
+    Suppress unused variable warning in dlmalloc.c (#843)
+    
+    Allows `-Wunused-but-set-variable` to pass
+
+commit 30e887f84e70c16df5c421983f074d07a93b4e58
+Author: Yuriy Kolerov <ykolerov@synopsys.com>
+Date:   Sun Sep 15 14:39:01 2024 +0300
+
+    A series of fixes for ARC port (#844)
+    
+    * arc: Fix warnings
+    
+    These warnings are fixed:
+    
+    1. A series of "unused variables".
+    2. Implicit conversion from a pointer to uint32_t.
+    
+    Signed-off-by: Yuriy Kolerov <ykolerov@synopsys.com>
+    
+    * arc: Do not use mov_s and movl_s instructions
+    
+    mov_s and movl_s instructions use a restricted set of registers.
+    However, a list of available registers for such instructions for
+    one ARC target may not match a list for another ARC targets. For
+    example, it is applicable to ARC700 and ARC HS3x/4x - build
+    fails because mov_s formats may be incompatible in some cases.
+    
+    The easiest and the most straightforward way to fix this issue
+    is to use mov and movl instead of mov_s and movl_s.
+    
+    Signed-off-by: Yuriy Kolerov <ykolerov@synopsys.com>
+    
+    ---------
+    
+    Signed-off-by: Yuriy Kolerov <ykolerov@synopsys.com>
+
+commit 377a13696928aabc6f0df378ecd25437a1ff1d17
+Author: dependabot[bot] <49699333+dependabot[bot]@users.noreply.github.com>
+Date:   Sun Sep 15 07:38:22 2024 -0400
+
+    Bump actions/download-artifact from 3 to 4.1.7 in /.github/workflows (#856)
+    
+    Bumps [actions/download-artifact](https://github.com/actions/download-artifact) from 3 to 4.1.7.
+    - [Release notes](https://github.com/actions/download-artifact/releases)
+    - [Commits](https://github.com/actions/download-artifact/compare/v3...v4.1.7)
+    
+    ---
+    updated-dependencies:
+    - dependency-name: actions/download-artifact
+      dependency-type: direct:production
+    ...
+    
+    Signed-off-by: dependabot[bot] <support@github.com>
+    Co-authored-by: dependabot[bot] <49699333+dependabot[bot]@users.noreply.github.com>
+
+commit c7437f671e20f8864fd98b06f167af6e8ab6514b
+Author: Yury V. Zaytsev <yury@shurup.com>
+Date:   Sun Sep 15 13:37:28 2024 +0200
+
+    configure: fix shared build on Solaris 10 (#846)
+    
+    GNU tools are often installed with g-prefix on Solaris. Unfortunately, a check
+    in configure was using grep directly instead of through a variable, which lead
+    to wrong results due to missing option `-q`. Additionally, the check will fail
+    silently if `readelf` is not on `PATH` instead of trying `greadelf`.
+
+commit 63b925fe98058a433c7bda6a6c2c6330b8ac77cd
+Author: Anthony Green <green@moxielogic.com>
+Date:   Sun Sep 15 07:32:50 2024 -0400
+
+    feat(testsuite): add struct_int_float.c to Makefile.am
+
+commit efb98a72d8b9bdb71b4f972efced073bee3b30fc
+Author: Anthony Green <green@moxielogic.com>
+Date:   Sun Sep 15 07:31:33 2024 -0400
+
+    Robustify floating point comparison in test
+
+commit d21881f55ed4a44d464c9091871e69b0bb47611a
+Author: kellda <59569234+kellda@users.noreply.github.com>
+Date:   Sun Sep 15 13:29:42 2024 +0200
+
+    Fix x86/ffi64 calls with 6 gp and some sse registers (#848)
+    
+    * Fix x86/ffi64 calls with 6 gp and some sse registers
+    
+    * Add test demonstating issue when mixing gp and sse registers
+
+commit 8a0d029244d9b0393db19898e603f24febfb53ee
+Author: Thomas Petazzoni <thomas.petazzoni@bootlin.com>
+Date:   Sun Sep 15 13:22:36 2024 +0200
+
+    OpenRISC/or1k build fixes (#854)
+    
+    * src/or1k/ffi.c: fix prototype of ffi_call_SYSV()
+    
+    The current code base of libffi on OpenRISC (or1k) fails to build with
+    GCC 14.x with the following error:
+    
+    ../src/or1k/ffi.c: In function 'ffi_call':
+    ../src/or1k/ffi.c:167:34: error: passing argument 3 of 'ffi_call_SYSV' from incompatible pointer type [-Wincompatible-pointer-types]
+      167 |       ffi_call_SYSV(size, &ecif, ffi_prep_args, rvalue, fn, cif->flags);
+          |                                  ^~~~~~~~~~~~~
+          |                                  |
+          |                                  void * (*)(char *, extended_cif *)
+    ../src/or1k/ffi.c:113:27: note: expected 'void * (*)(int *, extended_cif *)' but argument is of type 'void * (*)(char *, extended_cif *)'
+      113 |                           void *(*)(int *, extended_cif *),
+          |                           ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    
+    This is due to the fact that ffi_prep_args() is in fact defined as:
+    
+      void* ffi_prep_args(char *stack, extended_cif *ecif)
+    
+    so, let's fix the prototype of the function pointer, which anyway gets
+    passed to assembly code, so the typing gets lost.
+    
+    Signed-off-by: Thomas Petazzoni <thomas.petazzoni@bootlin.com>
+    
+    * src/or1k/ffi.c: fix incompatible pointer type
+    
+    The current code base of libffi on OpenRISC (or1k) fails to build with
+    GCC 14.x with the following error:
+    
+    ../src/or1k/ffi.c: In function 'ffi_closure_SYSV':
+    ../src/or1k/ffi.c:183:22: error: initialization of 'char *' from incompatible pointer type 'int *' [-Wincompatible-pointer-types]
+      183 |   char *stack_args = sp;
+          |                      ^~
+    
+    Indeed:
+    
+      register int *sp __asm__ ("r17");
+      [..]
+      char *stack_args = sp;
+    
+    Adopt the same logic used for:
+    
+      char *ptr = (char *) register_args;
+    
+    which consists in casting to the desired pointer type. Indeed, later
+    in the code stack_args is assigned to ptr (so they need to be the same
+    pointer type), and some arithmetic is done on ptr, so changing its
+    pointer type would change the behavior.
+    
+    Signed-off-by: Thomas Petazzoni <thomas.petazzoni@bootlin.com>
+    
+    ---------
+    
+    Signed-off-by: Thomas Petazzoni <thomas.petazzoni@bootlin.com>
+
+commit 8e3ef965c2d0015ed129a06d0f11f30c2120a413
+Author: Anthony Green <green@moxielogic.com>
+Date:   Fri Jun 28 04:07:09 2024 -0400
+
+    Fix struct args (Rainer Orth)
+
+commit 9c9e8368e49804c4f7c35ac9f0d7c1d0d533308b
+Author: Martin Storsjö <martin@martin.st>
+Date:   Tue Jun 4 14:13:08 2024 +0300
+
+    aarch64: Add a missing no-op define of SIGN_LR_LINUX_ONLY (#838)
+    
+    This is needed at least if building for Linux, with a toolchain
+    that doesn't default to having PAC enabled, fixing build errors
+    since 45d284f2d066cc3a080c5be88e51b4d934349797.
+
+commit 6993bc14dad1cd24294d64bf91e4503a4d7835d6
+Author: Anthony Green <green@moxielogic.com>
+Date:   Sat Jun 1 13:42:29 2024 -0400
+
+    Import from upstream
+
+commit 00bf6e679160886cfa12de617ae1640721455ca5
+Author: Florian <florian.atteneder@gmail.com>
+Date:   Sat Jun 1 19:39:24 2024 +0200
+
+    A fix to the struct type example (#837)
+    
+    Section 2.3.2 Structures of the docs declare `ffi_type`'s  `elements` field to be of type `ffi_type **`.
+
+commit 45d284f2d066cc3a080c5be88e51b4d934349797
+Author: Bill Roberts <152999275+billatarm@users.noreply.github.com>
+Date:   Sat Jun 1 12:34:53 2024 -0500
+
+    aarch64: support pointer authentication (#834)
+    
+    * aarch64: fix callstack in ffi_call_SYSV
+    
+    The debug stack gets corrupted between the frame and stack pivots, update
+    the CFI directives so the call stack stays correct in the debugger.
+    
+    str     x9, [x1, #32] // stack is ffi_call_SYSV() -> ffi_call_int() -> ffi_call_int() -> main() (good)
+    mov     x29, x1       // stack is ffi_call_SYSV() -> ffi_call_int() -> ffi_call_int() -> ffi_call() -> main() (bad)
+    mov     sp, x0        // stack is ffi_call_SYSV() -> ffi_call_int() -> ffi_call_int() -> main() (good)
+    
+    The CFA data needs to be updated around the pivots, after this patch the
+    callstack stays correct.
+    
+    Signed-off-by: Bill Roberts <bill.roberts@arm.com>
+    
+    * aarch64: remove uneeded CFI directive
+    
+    This directive doesn't actually set the CFA to anything valid, and
+    during unwinding this isn't even used. Note that the PAC/Darwin usage
+    is quite suspect as well, as the CFA is either x1 or x29 after the frame
+    pivot, and the CFA address is what's used as the modifier when verifying
+    the PAC. At least this is the behavior on Linux with PAC, I need to
+    verify ARME ABI unwinding. So for now leave Darwin as is.
+    
+    Signed-off-by: Bill Roberts <bill.roberts@arm.com>
+    
+    * ptrauth: rename define for clarity
+    
+    Rename the HAVE_PTRAUTH define for clarity that its associated with the
+    ARM64E ABI and not the ARM64 ABI that can be supported on Linux and
+    enabled with -mbranch-protection=standard.
+    
+    Signed-off-by: Bill Roberts <bill.roberts@arm.com>
+    
+    * aarch64: add PAC support to ffi_call_SYSV
+    
+    Support AARCH64 Pointer Authentication Codes (PAC) within ffi_call_SYSV
+    and support exception unwinding.
+    
+    The Linux ABI for PAC is to use paciasp/autiasp instructions which also
+    have hint space equivelent instructions. They sign the LR (x30) with the
+    A key and the current stack pointer as the salt. Note that this can also be
+    configured to use the B key and will use pacibsp/autibsp hint instructions.
+    
+    The Linux ABI for exception frame data when PAC is enabled assumes that the
+    Connonical Frame Address, or CFA is equal to the stack pointer. I.E sp is
+    equal to x29 (fp). When the unwinder is invoked the cfa will point to
+    the frame which will include the *signed* return address from the LR.
+    This will then be passed to __builtin_aarch64_autia1716 where the CFA
+    will be used as the salt and stored to register x16 and register x17
+    will contain the signed address to demangle. This can be noted in:
+      - https://github.com/gcc-mirror/gcc/blob/d6d7afcdbc04adb0ec42a44b2d7e05600945af42/libgcc/config/aarch64/aarch64-unwind.h#L56
+    
+    The other required portion of this is to indicate to the unwinder that
+    this is a signed address that needs to go the special demangle route in
+    the unwinder. This is accomplished by using CFI directive "cfi_window_save"
+    which marks that frame as being signed.
+    
+    Putting all of this together is a bit tricky, as the internals of
+    ffi_call_SYSV the callee allocates its stack and frame and passes it in
+    arg1 (x0) and arg2 (x1) to the called function, where that function
+    pivots its stack, so care must be taken to get the sp == fp before
+    paciasp is called and also restore that state before autiasp is called.
+    
+    Signed-off-by: Bill Roberts <bill.roberts@arm.com>
+    
+    ---------
+    
+    Signed-off-by: Bill Roberts <bill.roberts@arm.com>
+
+commit 38732240c125b6af9db66d940c0725a69292cc49
+Author: Bill Roberts <152999275+billatarm@users.noreply.github.com>
+Date:   Sat Jun 1 12:33:28 2024 -0500
+
+    ffi: fix spelling mistake (#833)
+    
+    Signed-off-by: Bill Roberts <bill.roberts@arm.com>
+
+commit f64141ee3f9e455a060bd09e9ab72b6c94653d7c
+Author: Bill Roberts <152999275+billatarm@users.noreply.github.com>
+Date:   Tue Mar 19 11:44:55 2024 -0500
+
+    Fix bti support (#830)
+    
+    * bti: add identifier to ffi_closure_SYSV_V_alt
+    
+    This was missing BTI_C identifier.
+    
+    Old Code:
+    ffi_closure_SYSV_V_alt:
+    0000fffff7f70500:   ldr     x17, [sp, #8]
+    
+    Signed-off-by: Bill Roberts <bill.roberts@arm.com>
+    
+    * testsuite: fix whitespace in Makefile.am
+    
+    Signed-off-by: Bill Roberts <bill.roberts@arm.com>
+    
+    * aarch64: correct comment describing BTI
+    
+    The comment is incorrect, BTI is enabled per mapping via mprotect with
+    PROT_BTI flag set, not per-process. When the loader loads the library,
+    if the GNU Notes section is missing this, PROT_BTI will not be enabled
+    for that mapping, but is independent of other mappings.
+    
+    Signed-off-by: Bill Roberts <bill.roberts@arm.com>
+    
+    ---------
+    
+    Signed-off-by: Bill Roberts <bill.roberts@arm.com>
+
+commit 3d0ce1e6fcf19f853894862abcbac0ae78a7be60
+Author: Anthony Green <green@moxielogic.org>
+Date:   Sun Feb 18 09:22:51 2024 -0500
+
+    chore: update version to 3.4.6 and fix long double regression on mips64 and alpha
+
+commit 94eaedb40e67e26d2fa35d1c22d8818f4d9f4c2d
+Author: Anthony Green <green@moxielogic.org>
+Date:   Sun Feb 18 08:41:04 2024 -0500
+
+    Update sparc64 host
+
+commit e1dcf03b4642e75a1058799a3023e0ebd0024258
+Author: Anthony Green <green@moxielogic.org>
+Date:   Sun Feb 18 08:02:45 2024 -0500
+
+    Update cfarm hostnames
+
+commit cd78b539125ae615d76df5a57039fe70ebd56c27
+Author: Anthony Green <green@moxielogic.org>
+Date:   Sun Feb 18 07:48:51 2024 -0500
+
+    Always define long double types.
+
+commit 012fcaf96c87ab617ba34babce9b6b259188fcf0
+Author: Anthony Green <green@moxielogic.org>
+Date:   Thu Feb 15 08:35:02 2024 -0500
+
+    Update
+
+commit d1597239af492240770692b8e453f0dca70fc551
+Author: Anthony Green <green@moxielogic.org>
+Date:   Thu Feb 15 08:32:42 2024 -0500
+
+    update copyright year in libffi.texi
+
+commit 91739a1a912476adbf1e0e4dcb091b9a2c5007d9
+Author: Anthony Green <green@moxielogic.org>
+Date:   Thu Feb 15 08:30:09 2024 -0500
+
+    Update version, copyright and testsuite info.
+
+commit 9752a622d12e696eaf9a4c46d4f09b58bca6bb83
+Author: Anthony Green <green@moxielogic.org>
+Date:   Thu Feb 15 08:03:21 2024 -0500
+
+    Fix test filename reference
+
+commit 404355317b3314da14a9ead0c0a50c040212e1fc
+Author: Anthony Green <green@moxielogic.org>
+Date:   Thu Feb 15 08:01:43 2024 -0500
+
+    docs(README): update release details for libffi-3.4.5
+
+commit 04f6fa310ddec494cfcf32fd3685cefe35a8d2a2
+Author: Xi Ruoyao <xry111@xry111.site>
+Date:   Thu Feb 15 20:52:13 2024 +0800
+
+    mips: Fix N32 ABI return value handling (#813)
+    
+    In N32 ABI, 8-bit or 16-bit integers should be extended following the
+    signedness of the integer, but 32-bit integers should always be
+    sign-extended to 64-bit (note that N32 ABI only works on 64-bit CPUs).
+    
+    So handling this in everything using libffi would be nasty.  And the
+    libffi code for architectures with a similar rule (LoongArch & RISC-V)
+    also properly handle this.  Let's do this work in libffi for MIPS N32
+    too.
+    
+    This fixes two failures in Python 3.12.1 ctypes test.
+
+commit 00c0c87773910a320d82f026bb481eea31b50206
+Author: 杨屿杰 <30362409+scylaac@users.noreply.github.com>
+Date:   Thu Feb 15 20:51:40 2024 +0800
+
+    Fix loongarch64 soft-float build (#816) (#817)
+
+commit b3091029ed85339c856224c243826022ae93c041
+Author: Hood Chatham <roberthoodchatham@gmail.com>
+Date:   Thu Feb 15 04:51:12 2024 -0800
+
+    Emscripten: Don't unbox single element structs if they are larger than 16 bytes (#818)
+    
+    This arguably is a compensation for a Python ctypes bug / strange behavior
+    described here:
+    https://github.com/python/cpython/blob/a16a9f978f42b8a09297c1efbf33877f6388c403/Modules/_ctypes/stgdict.c#L718-L779
+    
+    If a struct is larger than 16 bytes, Python does not bother to accurately report
+    its contents figuring that we don't need to know.
+
+commit 98881ecb8eec6d5f2beaaced96d9f625b0dee499
+Author: Bill Roberts <152999275+billatarm@users.noreply.github.com>
+Date:   Thu Feb 15 06:50:40 2024 -0600
+
+    aarch64: add BTI flag to ELF notes (#822)
+    
+    When a program is loaded and linked, the first ELF file that doesn't
+    declare that BTI is supported in the GNU NOTES section disables BTI
+    support.
+    
+    Example:
+    readelf -n ./aarch64-unknown-linux-gnu/.libs/libffi.so
+    Displaying notes found in: .note.gnu.property
+      Owner                Data size        Description
+      GNU                  0x00000010       NT_GNU_PROPERTY_TYPE_0
+          Properties: AArch64 feature: BTI
+    
+    Fixes: #823
+    
+    Signed-off-by: Bill Roberts <bill.roberts@arm.com>
+
+commit f9da12e944c947e797e5f3a98f3860c2a0ed055e
+Author: Dan Horák <dan@danny.cz>
+Date:   Thu Feb 15 13:50:13 2024 +0100
+
+    don't skip ffi_type_longdouble symbols (#814) (#824)
+    
+    Seems there are configurations (ppc64 or ppc64le) that define
+    HAVE_LONG_DOUBLE_VARIANT in fficonfig.h, but do not define
+    HAVE_LONG_DOUBLE, and still want ffi_type_{,complex_}longdouble
+    symbols. Update the condition in libffi.map.in accordingly.
+
+commit f8ed78f1b2e65f2741455612d38477424e321850
+Author: Xi Ruoyao <xry111@xry111.site>
+Date:   Thu Feb 15 20:49:27 2024 +0800
+
+    LoongArch: Fix a build error with GCC 14 (#825)
+    
+    Fix the build error with GCC 14:
+    
+        ../src/loongarch64/ffi.c: In function 'ffi_prep_closure_loc':
+        ../src/loongarch64/ffi.c:525:7: error: implicit declaration of
+        function 'ffi_tramp_set_parms' [-Wimplicit-function-declaration]
+
+commit 0b1dd62bef4192b61153182f7687edf7e885611c
+Author: bartoli <perso.olivier.barthelemy@gmail.com>
+Date:   Thu Feb 1 04:54:57 2024 +0100
+
+    Update README.md (#820)
+    
+    For cygwin/MSVC build, CXXCPP is also needed to pass configure checks
+
+commit c07c40ee9444e029bc595860a669de32b7af282a
+Author: Anthony Green <green@moxielogic.org>
+Date:   Wed Jan 31 22:43:38 2024 -0500
+
+    `feat(github-actions): add new build workflow for warp`
+
+commit 622caabcd25f4e11f752241417d06c9062acdf1f
+Author: Chongyun Lee <45286352+licy183@users.noreply.github.com>
+Date:   Sun Dec 24 23:38:32 2023 +0800
+
+    Put more optional symbols behind ifdefs (#812)
+
+commit a1c391bd8e604c611c7e9c8f6705dc723d403eb5
+Author: Виктор Чернякин <56512186+LocalSpook@users.noreply.github.com>
+Date:   Fri Dec 22 03:30:50 2023 -0700
+
+    Fix a variety of warnings (#811)
+
+commit 3a62a08af7bd0b5d540a087590dc54cdc312416b
+Author: Anthony Green <green@moxielogic.org>
+Date:   Thu Dec 21 15:19:44 2023 -0500
+
+    Remove warnings
+
+commit d96fa2117cc6ca2923de9a2f34311ef0219b7590
+Author: Anthony Green <green@moxielogic.org>
+Date:   Thu Dec 21 14:04:19 2023 -0500
+
+    Eliminate warning
+
+commit 5b1944b4ce4b03e28a5843d36812756168d66b08
+Author: Martin Storsjö <martin@martin.st>
+Date:   Wed Nov 29 00:38:13 2023 +0200
+
+    aarch64: Write the BTI instructions as "hint" instructions (#810)
+    
+    GNU binutils refuses to assemble the direct BTI instructions unless
+    the target architecture explicitly supports BTI, ending up with errors
+    such as
+    
+        ../src/aarch64/sysv.S: Assembler messages:
+        ../src/aarch64/sysv.S:87: Error: selected processor does not support `bti c'
+        ../src/aarch64/sysv.S:156: Error: selected processor does not support `bti j'
+    
+    Building with -march=armv8.5-a fixes building this.
+    
+    However, the BTI instructions assemble into hint instructions, that
+    are ignored by processors that don't implement them. Therefore it is
+    possible to assemble them for the baseline armv8.0-a target as well,
+    by replacing "bti j" with "hint #36", "bti c" with "hint #34" and
+    "bti jc" with "hint #38"; this assembles into the same instruction
+    bits.
+
+commit 11af2196d5f4e8c756758cf86e4ab79dda89f405
+Author: Anthony Green <green@moxielogic.org>
+Date:   Thu Nov 23 09:22:20 2023 -0500
+
+    Reference recent changes
+
+commit d7f5e98b437a242ac712cda8df3e47b205339711
+Author: David Tenty <daltenty.dev@gmail.com>
+Date:   Thu Nov 23 09:16:56 2023 -0500
+
+    Fix visibility check for AIX (#804)
+
+commit 7f960d9a062fab0624302e9f63ef8b025f51dd10
+Author: David Tenty <daltenty.dev@gmail.com>
+Date:   Thu Nov 23 09:16:35 2023 -0500
+
+    [powerpc][AIX] fix layout issues for nested struct types (#805)
+    
+    * [powerpc][AIX] fix layout issues for nested struct types
+    
+    On AIX under the default power alignment rules, the layout
+    of struct types which are nested inside other structs may
+    be different than the layout of those types on their own.
+    
+    Specifically the first member double rules which would
+    apply an eight byte alignment if that type appears in the
+    first position of a struct:
+    
+     1) apply recursively if the struct appear in the first member
+        of another struct
+     2) do not apply if that struct is itself a member of another struct
+        and not the first member.
+    
+    The current implementation of the rules in libffi doesn't handle these
+    cases, causing a mismatch with the compiler and causing some crashes
+    we see when OpenJ9 is used with libffi on AIX.
+    
+    This PR corrects this and adds some representative test cases.
+    
+    * Fix code style
+    
+    * Add a size check
+    
+    * Add additional test
+    
+    * Fix padding in internal structs
+    
+    * Flip condition back to original form
+    
+    * Add a comment
+
+commit d93c0be8a0f11f207e8232770c5f0590406efad1
+Author: Tobias Heider <tobias.heider@stusta.de>
+Date:   Thu Nov 23 15:15:29 2023 +0100
+
+    Add bti intructions to aarch64 assembly to work with strict (#808)
+    
+    BTI enforcement on OpenBSD.
+
+commit adbcf2b247696dde2667ab552cb93e0c79455c84
+Author: Daily Price Depot Droid <anthony@atgreen.org>
+Date:   Sat Oct 21 09:58:28 2023 -0400
+
+    Disable firefox testing
+
+commit 357755eef44735676de1cec458192c7784fb3aa8
+Author: Daily Price Depot Droid <anthony@atgreen.org>
+Date:   Sat Oct 21 09:05:48 2023 -0400
+
+    Try logging
+
+commit c23e9a1c81a84ea4804d001865845b25ff8d4c8a
+Author: Nobuyoshi Nakada <nobu@ruby-lang.org>
+Date:   Sat Oct 21 20:44:24 2023 +0900
+
+    Check if FFI_GO_CLOSURES is defined (#796)
+    
+    This macro is always defined to 1 if defined, or undefined.
+    With `-Wundef` option, checking the value without checking if it is defined causes warnings:
+    
+    ```
+    /opt/local/include/ffi.h:477:5: warning: 'FFI_GO_CLOSURES' is not defined, evaluates to 0 [-Wundef]
+    #if FFI_GO_CLOSURES
+        ^
+    ```
+
+commit a4be0b7210b5a7fd67770d2f4d63105900bc459a
+Author: Yn0ga <ynoga@protonmail.com>
+Date:   Sat Oct 21 13:43:43 2023 +0200
+
+    Add support for Haikuos on PowerPC (#799)
+
+commit dd90749505559d38abb339f1a1cd03791a9dc484
+Author: Petr Sumbera <sumbera@volny.cz>
+Date:   Sat Oct 21 13:42:11 2023 +0200
+
+    Fix passing floating point arguments on 64bits SPARC (libffi#778) (#802)
+
+commit 44f6fa3e526c920c61c8ac10661f447ccfe30872
+Author: Alfred Wingate <parona@protonmail.com>
+Date:   Fri Oct 20 15:02:37 2023 +0300
+
+    Put optional symbols behind ifdefs (#800)
+    
+    Signed-off-by: Alfred Wingate <parona@protonmail.com>
+
+commit 5c6e53db873767cd2266745cebc62551958f5bee
+Author: Michael Osipov <1983-01-06@gmx.net>
+Date:   Mon Sep 4 13:27:01 2023 +0200
+
+    Fix build failures on HP-UX (#792)
+    
+    This fixes #328
+    
+    Co-authored-by: Chris Hunt <chrahunt@gmail.com>
+
+commit 1b3e7569fe114fc7d7779e35704b8519fe65fd4d
+Author: Russell Keith-Magee <russell@keith-magee.com>
+Date:   Mon Sep 4 19:26:11 2023 +0800
+
+    Replace use of triple with target, and explicitly specify build host to force cross-compilation (#794)
+
+commit 22b50e896a80171648439497041afe3b6dba1c08
+Author: Anthony Green <green@moxielogic.com>
+Date:   Thu Aug 31 16:31:42 2023 -0400
+
+    Fix python and pyodide version
+
+commit 4467a3bc350bca106aee2c55cbb19ffffb144d1b
+Author: Anthony Green <green@moxielogic.com>
+Date:   Thu Aug 31 08:48:50 2023 -0400
+
+    Upgrade pyodide version to match newer selenium API
+
+commit 1d0a28ab5a2ee2e12b0650d69184d561cd1fd83c
+Author: Ivan Tadeu Ferreira Antunes Filho <itadeufa@gmail.com>
+Date:   Sat Aug 12 09:02:39 2023 -0400
+
+    Make label private on apple (#788)
+    
+    Private labels on apple must start with L prefix, while on ELF they start with .L prefix.
+    This makes the label start with L on apple instead of .L.
+
+commit 9e8f1bd8de39ee90a73c6927e2df18a418f6da55
+Author: Hood Chatham <roberthoodchatham@gmail.com>
+Date:   Tue Jun 20 21:17:04 2023 -0700
+
+    Emscripten build: Remove -sSTRICT_JS (#781)
+    
+    This rasies errors on newer versions of the emscripten compiler.
+
+commit ac598b7f5272d536b75f4b3833a4610cf4cd9404
+Merge: 2d63cee 8bdd471
+Author: Anthony Green <green@moxielogic.com>
+Date:   Mon Apr 3 08:20:32 2023 -0400
+
+    Merge branch 'master' of github.com:/libffi/libffi
+
+commit 2d63cee0e2154bb9027cff71f780cfaa2f543567
+Author: Anthony Green <green@moxielogic.com>
+Date:   Mon Apr 3 08:18:23 2023 -0400
+
+    Add tests with homogeneous aggregate types
+
+commit 8bdd4716e5974ee0b28b3c09db1eaa9e8833481e
+Author: Hood Chatham <roberthoodchatham@gmail.com>
+Date:   Sun Apr 2 19:54:22 2023 -0700
+
+    More accurate explanation of wasm32 state in readme (#776)
+    
+    There are three main wasm32 target triples:
+    * wasm32-unknown-unknown
+    * wasm32-unknown-emscripten
+    * wasm32-unknown-wasi
+    
+    The wasm32 port is only for the wasm32-unknown-emscripten target triple.
+    (The other triples have no dynamic linking support so libffi would be both
+    hard to port and of limited utility.)
+
+commit f08493d249d2067c8b3207ba46693dd858f95db3
+Author: Anthony Green <green@moxielogic.com>
+Date:   Fri Feb 17 20:35:44 2023 -0500
+
+    Mention ARCv3 work
+
+commit c4df19c99f8d8841942e3edaadbf331d30e298c8
+Author: Claudiu Zissulescu <claziss@gmail.com>
+Date:   Sat Feb 18 03:33:47 2023 +0200
+
+    Update ARC's libffi port (#771)
+    
+    * Add support for ARC and ARC64
+    
+    Add support for ARC/ARC32/ARC64
+    
+    * Implementation of GO Closure for ARC/ARC32/ARC64 Architectures
+    
+    ---------
+    
+    Co-authored-by: Nuno Cardoso <cardoso@synopsys.com>
+    Co-authored-by: Luis Silva <luiss@synopsys.com>
+
+commit 237520649730cb21daf4ebff1cf9a0a64f8507f8
+Author: Anthony Green <green@moxielogic.com>
+Date:   Thu Feb 9 12:23:35 2023 -0500
+
+    Normalize libffi labels
+
+commit ca26801567e9ce19c83f132c6a116d3d25d3b8a1
+Author: Anthony Green <green@moxielogic.com>
+Date:   Thu Feb 9 10:31:22 2023 -0500
+
+    Use rlgl
+
+commit 7d23c2d28e884ad5978e0974ad2443570940d393
+Author: Hood Chatham <roberthoodchatham@gmail.com>
+Date:   Thu Feb 9 06:01:37 2023 -0800
+
+    Add emscripten gha workflow (#768)
+    
+    Resolves issue #767
+
+commit 883f5ae665bf96008a7a56bf4d6c64cb05c68272
+Author: Anthony Green <green@moxielogic.com>
+Date:   Sun Feb 5 09:51:37 2023 -0500
+
+    Rename label
+
+commit 678dad5abe6c95ffa087b799922c2114b18c8541
+Author: Hood Chatham <roberthoodchatham@gmail.com>
+Date:   Thu Feb 2 14:48:07 2023 -0800
+
+    Use libffi-dg-prune to handle Emscripten INFO messages rather than patching emcc.py (#766)
+
+commit 7d03d3a3150c5c1ff70753edaa880bb5d57ae566
+Author: Anthony Green <green@moxielogic.com>
+Date:   Thu Feb 2 16:09:14 2023 -0500
+
+    Mention wasm32
+
+commit c267c72fa803316e95462f16bf1e3d6d5d55612c
+Author: Anthony Green <green@moxielogic.com>
+Date:   Thu Feb 2 16:04:34 2023 -0500
+
+    Modernize
+
+commit 2687cfc5329d08d6bd4d397c1ca8eb0d171e22fd
+Author: Hood Chatham <roberthoodchatham@gmail.com>
+Date:   Thu Feb 2 09:10:00 2023 -0800
+
+    Add wasm32 emscripten support (#763)
+    
+    * added build script
+    
+    * Apply libffi-emscripten patch
+    
+    * Some changes to wasm32/ffi.c
+    
+    * Remove exit(0); from test suites
+    
+    * Fix LONGDOUBLE argument type
+    
+    * Use more macros in ffi.c
+    
+    * Use switch statements instead of if chains
+    
+    * Implemented struct args
+    
+    * Finish struct implementation
+    
+    * Partially working closures
+    
+    * Got closures working (most of closures test suite passes)
+    
+    * Revert changes to test suite
+    
+    * Update .gitignore
+    
+    * Apply code formatter
+    
+    * Use stackSave and stackRestore rather than directly adjusting stack pointer
+    
+    * Add missing break
+    
+    * Fix visibility of ffi_closure_alloc and ffi_closure_free
+    
+    * Fix FFI_TYPE_STRUCT and FFI_TYPE_LONGDOUBLE when WASM_BIGINT is not used
+    sig needs to be vi here for FFI_TYPE_STRUCT and FFI_TYPE_LONGDOUBLE, noticed this while running the test suite without WASM_BIGINT support.
+    
+    * Always use dynCall rather than direct wasmTable lookup (function pointer cast emulation changes dynCall)
+    
+    * Prevent closures.c from duplicating symbols
+    
+    * Try to set up CI
+    
+    * Add test with bigint
+    
+    * Make test methods static
+    
+    * Remove BigInt shorthand because it messes up terser
+    
+    * Add selenium tests
+    
+    * Update tests a bit to try to make CI work
+    
+    * WASM_BIGINT is a linker flag not a compile flag
+    
+    * Finish getting CI working (#1)
+    
+    * update gitignore
+    
+    * Avoid adding "use strict;" to generated JS
+    
+    This should be controlled by -s STRICT_JS in Emscripten.
+    
+    * Make JavaScript ES5 compliant
+    
+    * Remove redundant EXPORTED_RUNTIME_METHODS settings
+    
+    * Fix definition of DEREF_I16
+    
+    * Avoid marshalling FFI_TYPE_LONGDOUBLE when WASM_BIGINT is not used
+    
+    * Add missing FFI_TYPE_STRUCT signature
+    
+    * Improve test scripts
+    
+    * Remove redundant EXPORTED_RUNTIME_METHODS settings
+    
+    * Add missing EOL
+    
+    * Add struct unpacking tests
+    
+    * Update ci config to try to actually use WASM_BIGINT
+    
+    * Revert "Avoid marshalling FFI_TYPE_LONGDOUBLE when WASM_BIGINT is not used"
+    
+    This reverts commit 61bd5a3e20891623715604581b6e872ab3dfab80.
+    
+    * Fix single_entry_structs tests
+    
+    * Fix return from closure call
+    
+    * Fix 64 bit return from closures
+    
+    * only allocate as much space on stack for return pointer as needed
+    
+    * Revert "only allocate as much space on stack for return pointer as needed"
+    
+    This reverts commit e54a30faea3803e7ac33eed191bde9e573850fc1.
+    
+    * xfail two tests
+    
+    * Fix err_bad_abi test
+    
+    * Remove test logging junk
+    
+    * Try to set up long double marshalling for closures
+    
+    * xfail err_bad_abi
+    
+    * Fix reference errors in previous commit
+    
+    * Add missing argument pointer assignment
+    
+    * Fix signature of function pointer in cls_dbls_struct
+    
+    * Fix longdouble argument
+    
+    * Try some changes to bigint handling
+    
+    * Fix BigInt handling
+    
+    * Fix cls_longdouble test
+    
+    * Fix long double closure arg with no WASM_BIGINT
+    
+    * Use EM_JS to factor out js helpers
+    
+    * Support for varargs closure calls
+    
+    * Fix varargs calls
+    
+    * Fix err_bad_abi test
+    
+    * Fix typo in previous commit
+    
+    * Add more assertions to closures test suite
+    
+    * Fix some asserts
+    
+    * Add assertions to a few more tests
+    
+    * Fix some tests
+    
+    * Fix more floating point assertions
+    
+    * Update more tests
+    
+    * Var args for ffi_call
+    
+    * Don't do node tests
+    
+    * Macro for allocating on stack
+    
+    * Add some comments, simplify struct handling
+    
+    * Try again to fix varargs calls, add comments
+    
+    * Consolidate WASM_BIGINT conditionals into LOAD_U64 and STORE_U64 macros
+    
+    * A bit of cleanup
+    
+    * Fix another typo
+    
+    * Some fixes to the testsuite
+    
+    * Another testsuite fix
+    
+    * Fix varags with closures?
+    
+    * Another attempt at getting closure varargs to work
+    
+    * sig is initialized later
+    
+    * Allow libffi.closures tests to be run
+    
+    * Improve build script
+    
+    * Remove redundant semicolons
+    
+    * Fix a few libffi.closures test failures
+    
+    * Cleanup
+    
+    * Legacy dynCall API is no longer used
+    
+    * Fix FFI_TYPE_LONGDOUBLE offset
+    
+    * xfail 2 tests for WASM
+    
+    - closure_loc_fn0; not applicable -- codeloc doesn't point to closure.
+    - huge_struct; function signature too long.
+    
+    * Revert some redundant dg-output/printf statements
+    
+    Helps Node.
+    
+    * Revert "Don't do node tests"
+    
+    This reverts commit a341ef4b.
+    
+    * Fix assertions in cls_24byte
+    
+    * More tiny formating fixes to test suite
+    
+    * Revert "Revert "Don't do node tests""
+    
+    This reverts commit 7722e685ea04e2420e042886816d8c4dd31f5dcb.
+    
+    * Fix 64 bit returns when WASM_BIGINT is absent
+    
+    * Fix print statement in cls_24byte
+    
+    * Add CALL_FUNC_PTR macro to allow pyodide to define custom calling behavior to handle fpcast
+    
+    * Update single_entry_structs tests
+    
+    * More explanations
+    
+    * Fix compile error in last commit
+    
+    * Add more support for pyodide fpcast emulation, update CI to try to test it
+    
+    * Clone via https
+    
+    * Fix path to pyodide emsdk_env
+    
+    * Add asserts to the rest of the test suite
+    
+    * Fix test compile errors
+    
+    * Fix some tests
+    
+    * Fix cls_ulonglong
+    
+    * Fix alignment of <4 byte args
+    
+    * fix cls_ulonglong again
+    
+    * Use snprintf instead of sprintf
+    
+    * Should assert than strncmp returned 0
+    
+    * Fix va_struct1 and va_struct3
+    
+    * Change double and long double tests
+    
+    These tests are failing because of a strange bug with prinft and doubles, but I am not convinced
+    it necessarily has anything to do with libffi. This version casts the double to int before printing it and avoids the issue
+    
+    * Enable node tests
+    
+    * Revert "Change double and long double tests"
+    
+    This reverts commit 8f3ff89c6577dc99564181cd9974f2f1ba21f1e9.
+    
+    * Fix PYODIDE_FPCAST flag
+    
+    * add conftest.py back in
+    
+    * Fix emcc error: setting `EXPORTED_FUNCTIONS` expects `<class 'list'>` but got `<class 'str'>`
+    
+    See discussion on https://github.com/pyodide/pyodide/pull/1596
+    
+    * Remove test.html
+    
+    * Remove duplicate test file
+    
+    * More changes from upstream
+    
+    * Fix some whitespace
+    
+    * Add some basic debug logging statements
+    
+    * Reapply libffi.exp changes
+    
+    * Don't build docs (#7)
+    
+    Works around build issue makeinfo: command not found.
+    
+    * Update long double alignment
+    
+    Emscripten 2.0.26 reduces the aligmnet of long double to 8. Quoting
+    from `ChangeLog.md`:
+    
+    > The alignment of `long double`, which is a 128-bit floating-point
+    > value implemented in software, is reduced from 16 to 8. The lower
+    > alignment allows `max_align_t` to properly match the alignment we
+    > use for malloc, which is 8 (raising malloc's alignment to achieve
+    > correctness the other way would come with a performance regression).
+    > (#10072)
+    
+    * Update long double alignment
+    
+    Emscripten 2.0.26 reduces the aligmnet of long double to 8. Quoting
+    from `ChangeLog.md`:
+    
+    > The alignment of `long double`, which is a 128-bit floating-point
+    > value implemented in software, is reduced from 16 to 8. The lower
+    > alignment allows `max_align_t` to properly match the alignment we
+    > use for malloc, which is 8 (raising malloc's alignment to achieve
+    > correctness the other way would come with a performance regression).
+    > (#10072)
+    
+    * Improve error handling a bit (#8)
+    
+    * Fix handling of signed arguments to ffi_call (#11)
+    
+    * Fix struct argument handling in ffi_call (#10)
+    
+    * Remove fpcast emulation tests
+    
+    * Align the stack to MAX_ALIGN before making call (#12)
+    
+    * Increase MAX_ARGS
+    
+    * Cleanup (#14)
+    
+    * Fix Closure compiler error with -sASSERTIONS=1 (#15)
+    
+    * Remove function pointer cast emulation (#13)
+    
+    This reverts commit 593b402 and cbc54da, as it's no longer needed
+    after PR pyodide/pyodide#2019.
+    
+    * Prefer the `__EMSCRIPTEN__` definition over `EMSCRIPTEN` (#18)
+    
+    "The preprocessor define EMSCRIPTEN is deprecated. Don't pass it to code
+    in strict mode. Code should use the define __EMSCRIPTEN__ instead."
+    https://github.com/emscripten-core/emscripten/blob/84a634167a1cd9e8c47d37a559688153a4ceace6/emcc.py#L887-L890
+    
+    * Install autoconf 2.71
+    
+    * Try again with installing autoconf 2.71
+    
+    * Fix compatibility with Emscripten 3.1.28
+    
+    * CI: remove use of `EM_CONFIG` env
+    
+    See commit:
+    https://github.com/emscripten-core/emsdk/commit/3d87d5ea8143b3636f872fb05b896eb4a19a070b
+    
+    * Fix cls_multi_schar: cast rest_call to signed char
+    
+    * Remove test xfails (#17)
+    
+    * Fix long double when used as a varargs argument
+    
+    * Enable unwindtest and fix it
+    
+    * Add EM_JS_DEPS
+    
+    * Also require convertJsFunctionToWasm
+    
+    * Run tests very very verbose
+    
+    * Echo the .emscripten file
+    
+    * Remove --experimental-wasm-bigint insertion
+    
+    * Build with assertions
+    
+    * Move verbosity flags back out of LDFLAGS
+    
+    * Remove debug print statement
+    
+    * Use up to date pyodide docker image
+    
+    * Explicitly cast res_call to fix test failure
+    
+    * Put back name of main function in cls_longdouble_va.c
+    
+    * Fix alignment
+    
+    The stack pointer apparently needs to be aligned to 16. There were
+    some terrible subtle bugs caused by not respecting this. stackAlloc
+    knows that the stack should be 16 aligned, so we can use stackAlloc(0)
+    to enforce this. This way if alignment requirements change, as long
+    as Emscripten updates stackAlloc to continue to enforce them we should
+    be okay.
+    
+    * Fix handling of systems with no Js bigint integration
+    
+    When we run the node tests we use node v14 tests (since node v14 is
+    vendored with Emscripten). Node v14 has no Js bigint integration
+    unless the --experimental-wasm-bigint flag is passed. So only the
+    node tests really notice if we get this right. Turns out, it didn't
+    work. We can't call a JavaScript function with 64 bit integer arguments
+    without bigint integration.
+    
+    In ffi_call, we are trying to call a wasm function that takes 64 bit
+    integer arguments. dynCall is designed to do this. We need to go back
+    to tracking the signature when we don't have WASM_BIGINT, and then use
+    dynCall. This works better now that emscripten can dynamically fill in
+    extra dynCall wrappers:
+    https://github.com/emscripten-core/emscripten/pull/17328
+    
+    On the other hand, for the closures we are not getting a function pointer
+    as a first argument. We need to make our own wasm legalizer adaptor that
+    splits 64 bit integer arguments and then calls the JavaScript trampoline,
+    then the JavaScript trampoline reassembles them, calls the closure, then
+    splits the result (if it's a 64 bit integer) and the adaptor puts it back
+    together.
+    
+    * Improvements to emscripten test shell scripts (#21)
+    
+    This fixes the C++ unwinding tests and makes other minor improvements
+    to the Emscripten test shell scripts.
+    
+    * Rename the test folder and move test files into emscripten test folder
+    
+    * Use docker image that has autoconf-2.71
+    
+    * Cleanup
+    
+    * Pin emscripten 3.1.30
+    
+    * Fix build.sh path
+    
+    * Rearrange ci pipeline
+    
+    * Fix bpo_38748 test
+    
+    * Cleanup
+    
+    * Improvements to comments, add static asserts, and update copyright
+    
+    * Use `*_js` instead of `*_helper` for EM_JS functions (#22)
+    
+    * Minor code simplification
+    
+    * Xfail first dejagnu test to work around emscripten cache messages
+    
+    See https://github.com/emscripten-core/emscripten/issues/18607
+    
+    * Remove unneeded xfails
+    
+    * Shorten conftest.py by using pytest-pyodide
+    
+    * Apply formatters and linters to emscripten directory
+    
+    * Fix Emscripten xfail hack
+    
+    * Fix build-tests script
+    
+    * Patch emscripten to quiet info messages
+    
+    * Clean up compiler flags in scripts and remove some settings from circleci config
+    
+    * Rename emscripten quiet script
+    
+    * Add missing export
+    
+    * Don't remove go.exp
+    
+    * Add reference to emscripten logging issue
+    
+    ---------
+    
+    Co-authored-by: Kleis Auke Wolthuizen <info@kleisauke.nl>
+    Co-authored-by: Kleis Auke Wolthuizen <github@kleisauke.nl>
+    Co-authored-by: Christian Heimes <christian@python.org>
+
+commit ce077e5565366171aa1b4438749b0922fce887a4
+Author: serge-sans-paille <serge.guelton@telecom-bretagne.eu>
+Date:   Thu Feb 2 14:46:29 2023 +0000
+
+    Forward declare open_temp_exec_file (#764)
+    
+    It's defined in closures.c and used in tramp.c.
+    Also declare it as an hidden symbol, as it should be.
+    
+    Co-authored-by: serge-sans-paille <sguelton@mozilla.com>
+
+commit abf211d1603da9d687455169646e0e9667be17c1
+Author: Anthony Green <green@moxielogic.com>
+Date:   Thu Feb 2 07:06:02 2023 -0500
+
+    Mention HPPA fixes
+
+commit 222abd0c65babe2174b21753217145f5031a8b91
+Author: Anthony Green <green@moxielogic.com>
+Date:   Thu Feb 2 07:04:55 2023 -0500
+
+    From Dave Anglin:
+    
+    This patch is derived from the work done in implementing libffi for 64-bit hppa64-hpux target. Currently, the 32-bit hppa targets do a linear search for the return type of an ffi_call. This is slow and inefficient. A jump table can used to jump directly to the code used to process the return value. In most common cases, the return value can be processed in the jump table itself.
+    
+    The patch also fixes return handling for FFI_TYPE_UINT8, FFI_TYPE_SINT8, FFI_TYPE_UINT16 and FFI_TYPE_SINT16.
+
+commit e58e22b22386ed0e0a95e97eb8eed016e3f01b02
+Author: Anthony Green <green@moxielogic.com>
+Date:   Thu Feb 2 07:02:53 2023 -0500
+
+    From Dave Anglin:
+    
+    A couple of years ago the 32-bit hppa targets were converted from using a trampoline executed on the stack to the function descriptor technique used by ia64. This is more efficient and avoids having to have an executable stack. However, function pointers on 32-bit need the PLABEL bit set in the pointer. It distinguishes between pointers that point directly to the executable code and pointer that point to a function descriptor. We need the later for libffi. But as a result, it is not possible to convert using casts data pointers to function pointers.
+    
+    The solution at the time was to set the PLABEL bit in hppa closure pointers using FFI_CLOSURE_PTR. However, I realized recently that this was a bad choice. Packages like python-cffi allocate their own closure pointers, so this isn't going to work well there.
+    
+    A better solution is to leave closure pointers unchanged and only set the PLABEL bit in pointers used to point to executable code.
+    
+    The attached patch drops the FFI_CLOSURE_PTR and FFI_RESTORE_PTR defines. This allows some cleanup in the hppa closure routines. The FFI_FN define is now used to set the PLABEL bit on hppa. ffi_closure_alloc is modified to set the PLABEL bit in the value set in *code.
+    
+    I also added a FFI_CL define to convert a function pointer to a closure pointer. It is only used in one test case.
+
+commit baa6bbbc176b3c572eaf05b3fae0311df7e5f7b7
+Author: Anthony Green <green@moxielogic.com>
+Date:   Thu Feb 2 06:59:46 2023 -0500
+
+    Add HPPA64 support
+
+commit e70dd1aa240159bd2050cb1eafffb49cdc1d8b22
+Author: Iain Sandoe <iain@sandoe.co.uk>
+Date:   Thu Feb 2 11:44:13 2023 +0000
+
+    libffi: Fix X86 32b Darwin build and EH frames. (#757)
+    
+    This addresses a number of issues in the X86 Darwin 32b port for libffi.
+    
+    1. The pic symbol stubs are weak definitions; the correct section placement
+       for these depends on the linker version in use.  We do not have access
+       to that information, but we can use the target OS version (assumes that
+       the user has installed the latest version of xcode available).
+       When a coalesced section is in use (OS versions earlier than Darwin12 /
+       OSX 10.8), its name must differ from  __TEXT,__text since otherwise that
+       would correspond to altering the attributes of the .text section (which
+       produces a diagnostic from the assembler).
+       Here we use __TEXT, __textcoal_nt for this which is what GCC emits for
+       these stubs.
+       For later versions than Darwin 12 (OS X 10.8) we can place the stubs in
+       the .text section (if we do not we get a diagnostic from clang -cc1as
+       saying that the use of coalesced sections for this is deprecated).
+    
+    2. The EH frame is specified manually, since there is no support for .cfi_
+       directives in 'cctools' assemblers.  The implementation needs to provide
+       offsets for CFA advance, code size and to the CIE as signed values
+       rather than relocations. However the cctools assembler will produce a
+       relocation for expressions like ' .long Lxx-Lyy' which then leads to a
+       link-time error.  We correct this by forming the offset values using
+       ' .set' directives and then assigning the results of them.
+    
+    3. The register numbering used by m32 X86 Darwin EH frames is not the same
+       as the DWARF debug numbering (the Frame and Stack pointer numbers are
+       swapped).
+    
+    4. The FDE address encoding used by the system tools is '0x10' (PCrel + abs)
+       where the value provided was PCrel + sdata4.
+    
+    5. GCC does not use compact unwind at present, and it was not implemented
+       until Darwin10 / OSX 10.6.  There were some issues with function location
+       in 10.6 so that the solution here suppresses emitting the compact unwind
+       section until Darwin11 / OSX 10.7.
+
+commit 7effe99955b228ae828d06fa8d07dc546ef67b1a
+Author: Iain Sandoe <iain@sandoe.co.uk>
+Date:   Thu Feb 2 11:42:46 2023 +0000
+
+    Darwin: Search for both shared and convenience libraries in each path. (#761)
+    
+    For several Darwin linker versions, the default behaviour is to first traverse
+    the set of library paths, looking for shared libraries, and then a second time
+    looking for archives.
+    
+    This means that if the library is configured --disable-shared the installed
+    system version /usr/lib/libffi.dylib will be found before the archive under
+    test.
+    
+    Using the linker option '-search-paths-first' alters the strategy to search each
+    path for dylib and then archive before moving on to the next.
+
+commit ebbc5e14cdbfcc24bf3c9bb7b41ee10cd979c535
+Author: serge-sans-paille <serge.guelton@telecom-bretagne.eu>
+Date:   Thu Feb 2 11:40:17 2023 +0000
+
+    Fix signed vs unsigned comparison (#765)
+    
+    As reported by -Wsign-compare. In the case of getting the result of
+    comparing the result of sysconf (_SC_PAGESIZE) to other value, this also
+    correctly handles edge cases where the above fails and returns -1.
+    
+    Co-authored-by: serge-sans-paille <sguelton@mozilla.com>
+
+commit 7611bb4cfe90884b55ad225e0166136a1d2cf22b
+Author: Anthony Green <green@moxielogic.com>
+Date:   Sun Jan 8 09:01:00 2023 -0500
+
+    Use checkout@v3, with nodejs 16
+
+commit 3a8bb6bb7f51844b890ce6ae44fc6d7c4547fbd0
+Author: YongKang Zhou <zhouyongkang4321@gmail.com>
+Date:   Sun Jan 8 21:56:34 2023 +0800
+
+    fix typo (#758)
+    
+    `mingW` -> `MinGW`
+
+commit 00116b6d0171ba69ffe23d6b5c21c0fdb5907a48
+Author: Alexander Kanavin <alex.kanavin@gmail.com>
+Date:   Mon Dec 5 03:20:09 2022 +0100
+
+    arm/sysv: reverted clang VFP mitigation (#747)
+    
+    Since commit e3d2812ce43940aacae5bab2d0e965278cb1e7ea,
+    seperate instructions were used when compiling under clang,
+    as clang didn't allow the directives at the time. This mitigation
+    now causes compilation to fail under clang 10, as described by
+    https://github.com/libffi/libffi/issues/607. Now that
+    clang supports the LDC and SDC instructions, this mitigation
+    has been reverted.
+    
+    Co-authored-by: Brett Warren <brett.warren@arm.com>
+
+commit c50c16d0bcb58952840184aa83e62c6d912bf779
+Author: Anthony Green <green@moxielogic.com>
+Date:   Sun Nov 20 12:20:40 2022 -0500
+
+    Fix large struct passing on PA-RISC
+
+commit c6dc125afba294b9b9613392c492ae18df3ede84
+Author: Anthony Green <green@moxielogic.com>
+Date:   Tue Oct 25 10:28:19 2022 -0400
+
+    Add missing test cases
+
+commit 2b2f61f6e6a79d46fa277965745a8cd8bb5f04bc
+Author: Xavier Claessens <xclaesse@gmail.com>
+Date:   Mon Oct 24 20:39:04 2022 +0200
+
+    Small build cleanup (#743)
+    
+    * configure.ac: Remove some unused checks
+    
+    * Fix FFI_API definition
+    
+    When doing a static build dllimport/dllexport should be disabled. It was
+    also using 2 different macros FFI_BUILDING_DLL and FFI_BUILDING for no
+    reason.
+
 commit f24180be1367f942824365b131ae894b9c769c7d
 Author: Anthony Green <green@moxielogic.com>
 Date:   Sun Oct 23 20:17:29 2022 -0400

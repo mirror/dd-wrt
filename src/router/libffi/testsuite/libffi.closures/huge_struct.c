@@ -5,7 +5,7 @@
 	Originator:		Blake Chaffin	6/18/2007
 */
 
-/* { dg-do run { xfail strongarm*-*-* xscale*-*-* wasm32*-*-* } } */
+/* { dg-do run { xfail strongarm*-*-* xscale*-*-* } } */
 /* { dg-options -mlong-double-128 { target powerpc64*-*-linux-gnu* } } */
 /* { dg-options -Wformat=0 { target moxie*-*-elf or1k-*-* } } */
 
@@ -216,8 +216,7 @@ cls_large_fn(ffi_cif* cif __UNUSED__, void* resp, void** args, void* userdata __
 		ui8_5, si8_5);
 }
 
-int
-main(int argc __UNUSED__, const char** argv __UNUSED__)
+int main (void)
 {
         void *code;
 	ffi_closure *pcl = ffi_closure_alloc(sizeof(ffi_closure), &code);

@@ -39,6 +39,10 @@
 #ifdef __linux__
 #define _GNU_SOURCE 1
 #endif
+
+#include <ffi.h>
+#include <ffi_common.h>
+
 #include <stdio.h>
 #include <unistd.h>
 #include <stdlib.h>
@@ -205,6 +209,11 @@ ffi_tramp_get_libffi (void)
   unsigned long start, end, offset, inode;
   uintptr_t addr = (uintptr_t) tramp_globals.text;
   int nfields, found;
+  int open_flags = O_RDONLY;
+
+#ifdef O_CLOEXEC
+  open_flags |= O_CLOEXEC;
+#endif
 
   snprintf (file, PATH_MAX, "/proc/%d/maps", getpid());
   fp = fopen (file, "r");
@@ -232,7 +241,7 @@ ffi_tramp_get_libffi (void)
   if (!found)
     return 0;
 
-  tramp_globals.fd = open (file, O_RDONLY);
+  tramp_globals.fd = open (file, open_flags);
   if (tramp_globals.fd == -1)
     return 0;
 
@@ -266,7 +275,7 @@ ffi_tramp_get_temp_file (void)
    * trampoline table to make sure that the temporary file can be mapped.
    */
   count = write(tramp_globals.fd, tramp_globals.text, tramp_globals.map_size);
-  if (count == tramp_globals.map_size && tramp_table_alloc ())
+  if (count >=0 && (size_t)count == tramp_globals.map_size && tramp_table_alloc ())
     return 1;
 
   close (tramp_globals.fd);
@@ -303,7 +312,7 @@ ffi_tramp_lock(void)
 }
 
 static void
-ffi_tramp_unlock()
+ffi_tramp_unlock(void)
 {
   pthread_mutex_unlock (&tramp_globals_mutex);
 }
@@ -374,6 +383,8 @@ tramp_table_unmap (struct tramp_table *table)
 static int
 ffi_tramp_init (void)
 {
+  long page_size;
+
   if (tramp_globals.status == TRAMP_GLOBALS_PASSED)
     return 1;
 
@@ -396,7 +407,8 @@ ffi_tramp_init (void)
     &tramp_globals.map_size);
   tramp_globals.ntramp = tramp_globals.map_size / tramp_globals.size;
 
-  if (sysconf (_SC_PAGESIZE) > tramp_globals.map_size)
+  page_size = sysconf (_SC_PAGESIZE);
+  if (page_size >= 0 && (size_t)page_size > tramp_globals.map_size)
     return 0;
 
   if (ffi_tramp_init_os ())
