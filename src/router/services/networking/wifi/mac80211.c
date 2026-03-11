@@ -2730,7 +2730,7 @@ void ath9k_start_supplicant(int count, char *prefix, char **configs, int *config
 	char wifivifs[32];
 	char tmp[256];
 	char *background = "-B";
-	int debug;
+	char *debug;
 	char subinterface[32];
 	char net[32];
 	char wmode[32];
@@ -2786,14 +2786,14 @@ void ath9k_start_supplicant(int count, char *prefix, char **configs, int *config
 		sprintf(subinterface, "-i%s", dev);
 		sprintf(wmode, "%s_mode", dev);
 		sprintf(bridged, "%s_bridged", dev);
-		debug = nvram_ngeti("%s_wpa_debug", dev);
+		debug = nvram_nget("%s_wpa_debug", dev);
 		if (!*debug)
 			debug = nvram_safe_get("wpa_debug");
-		if (debug == 1)
+		if (!strcmp(debug,"1"))
 			background = "-Bds";
-		else if (debug == 2)
+		else if (!strcmp(debug,"2"))
 			background = "-Bdds";
-		else if (debug == 3)
+		else if (!strcmp(debug,"3"))
 			background = "-Bddds";
 		int wet = 0;
 #ifndef HAVE_RELAYD
