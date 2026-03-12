@@ -509,7 +509,6 @@ int hostapd_set_freq_params(struct hostapd_freq_params *data,
 	data->he_enabled = he_enabled;
 	data->eht_enabled = eht_enabled;
 	data->sec_channel_offset = sec_channel_offset;
-	fprintf(stderr, "offset %d\n", sec_channel_offset);
 	if (center_segment0 > 255) {
 		data->center_freq1 = center_segment0;
 	}else {
