@@ -4367,8 +4367,10 @@ int process_global_event(struct nl_msg *msg, void *arg)
 				wiphy_idx = nl80211_get_wiphy_index(bss);
 			if ((ifidx == -1 && !wiphy_idx_set && !wdev_id_set) ||
 			    ifidx == bss->ifindex ||
-			    (bss->br_ifindex > 0 &&
+#ifdef CONFIG_IEEE80211AH
+			    (drv->ieee80211ah && bss->br_ifindex > 0 &&
 			     nl80211_has_ifidx(drv, bss->br_ifindex, ifidx)) ||
+#endif
 			    (wiphy_idx_set && wiphy_idx == wiphy_idx_rx) ||
 			    (wdev_id_set && bss->wdev_id_set &&
 			     wdev_id == bss->wdev_id)) {

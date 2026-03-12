@@ -605,10 +605,12 @@ static ParseRes __ieee802_11_parse_elems(void *ctx, const u8 *start, size_t len,
 			elems->ext_capab = pos;
 			elems->ext_capab_len = elen;
 			break;
+#ifdef CONFIG_IEEE80211AH
 		case WLAN_EID_QOS_TRAFFIC_CAPABILITY:
 			elems->qos_traffic_cap = pos;
 			elems->qos_traffic_cap_len = elen;
 			break;
+#endif
 		case WLAN_EID_BSS_MAX_IDLE_PERIOD:
 			if (elen < 3)
 				break;
@@ -679,11 +681,13 @@ static ParseRes __ieee802_11_parse_elems(void *ctx, const u8 *start, size_t len,
 				break;
 			elems->s1g_capab = pos;
 			break;
+#ifdef CONFIG_IEEE80211AH
 		case WLAN_EID_AID_RESPONSE:
 			if (elen < 5)
 				break;
 			elems->aid = pos;
 			break;
+#endif
 		case WLAN_EID_FRAGMENT:
 			wpa_printf(MSG_MSGDUMP,
 				   "Fragment without a valid last element - skip");
