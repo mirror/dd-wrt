@@ -140,12 +140,11 @@ libgirepository_internals = static_library('girepository-internals',
   c_args: gir_c_args + custom_c_args,
   gnu_symbol_visibility : 'hidden',
   include_directories : [configinc, girepoinc],
-  dependencies: [girepo_gthash_dep, libffi_dep],
+  dependencies: [girepo_gthash_dep],
 )
 
 libgirepository_internals_dep = declare_dependency(
   link_with: libgirepository_internals,
-  dependencies: libffi_dep,
   include_directories: [girepoinc],
 )
 

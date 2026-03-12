@@ -43,15 +43,7 @@ if enable_gir
   ]
 
   girepository_tests += {
-    'callable-info' : {
-      'dependencies': [libffi_dep],
-      'depends': gio_gir_testing_dep,
-    },
     'field-info' : {
-      'depends': glib_gir_testing_dep,
-    },
-    'function-info' : {
-      'dependencies': [libffi_dep],
       'depends': glib_gir_testing_dep,
     },
     'ir-parser' : {
@@ -85,7 +77,6 @@ if enable_gir
   if cc.get_id() != 'msvc'
     girepository_tests += {
       'autoptr-girepository' : {
-        'dependencies': [libffi_dep],
         'source' : 'autoptr.c',
         'depends': gio_gir_testing_dep,
       },
