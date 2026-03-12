@@ -844,8 +844,9 @@ int wpas_get_op_chan_phy(int freq, const u8 *ies, size_t ies_len,
 	struct ieee80211_ht_operation *ht_oper = NULL;
 	struct ieee80211_vht_operation *vht_oper = NULL;
 	u8 seg0, seg1;
+#ifdef CONFIG_IEEE80211AH
 	u8 s1g_center_ch = MORSE_S1G_RETURN_ERROR;
-
+#endif
 	ie = get_ie(ies, ies_len, WLAN_EID_HT_OPERATION);
 	if (ie && ie[1] >= sizeof(struct ieee80211_ht_operation)) {
 		u8 sec_chan_offset;
@@ -871,7 +872,9 @@ int wpas_get_op_chan_phy(int freq, const u8 *ies, size_t ies_len,
 		case CHANWIDTH_80MHZ:
 			seg0 = vht_oper->vht_op_info_chan_center_freq_seg0_idx;
 			seg1 = vht_oper->vht_op_info_chan_center_freq_seg1_idx;
+#ifdef CONFIG_IEEE80211AH
 			s1g_center_ch = morse_ht_chan_to_s1g_chan(seg0);
+#endif
 			if (seg1 && abs(seg1 - seg0) == 8)
 				vht = CONF_OPER_CHWIDTH_160MHZ;
 			else if (seg1)
@@ -882,7 +885,9 @@ int wpas_get_op_chan_phy(int freq, const u8 *ies, size_t ies_len,
 		case CHANWIDTH_160MHZ:
 			seg0 = vht_oper->vht_op_info_chan_center_freq_seg0_idx;
 			seg1 = vht_oper->vht_op_info_chan_center_freq_seg1_idx;
+#ifdef CONFIG_IEEE80211AH
 			s1g_center_ch = morse_ht_chan_to_s1g_chan(seg0);
+#endif
 			vht = CONF_OPER_CHWIDTH_160MHZ;
 			break;
 		case CHANWIDTH_80P80MHZ:

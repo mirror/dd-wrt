@@ -5328,7 +5328,9 @@ static int wpa_config_process_country(const struct global_parse_data *data,
 	wpa_printf(MSG_DEBUG, "country='%c%c'",
 		   config->country[0], config->country[1]);
 
+#ifdef CONFIG_IEEE80211AH
 	morse_set_s1g_ht_chan_pairs(config->country);
+#endif
 
 	return 0;
 }
