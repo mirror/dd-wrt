@@ -119,7 +119,7 @@ static inline struct dma_desc_tx *syn_dp_tx_process_nr_frags(struct syn_dp_info_
  * syn_dp_tx_nr_frags()
  *	TX routine for Synopsys GMAC SG packets with nr frags
  */
-int syn_dp_tx_nr_frags(struct syn_dp_info_tx *tx_info, struct sk_buff *skb)
+static int syn_dp_tx_nr_frags(struct syn_dp_info_tx *tx_info, struct sk_buff *skb)
 {
 	dma_addr_t dma_addr;
 	unsigned int length = skb_headlen(skb);
@@ -212,7 +212,7 @@ int syn_dp_tx_nr_frags(struct syn_dp_info_tx *tx_info, struct sk_buff *skb)
  * syn_dp_tx_frag_list()
  *	TX routine for Synopsys GMAC SG packets with frag lists
  */
-int syn_dp_tx_frag_list(struct syn_dp_info_tx *tx_info, struct sk_buff *skb)
+static int syn_dp_tx_frag_list(struct syn_dp_info_tx *tx_info, struct sk_buff *skb)
 {
 	dma_addr_t dma_addr;
 	struct sk_buff *iter_skb;
@@ -517,7 +517,7 @@ int syn_dp_tx_complete(struct syn_dp_info_tx *tx_info, int budget)
  * syn_dp_tx_sg()
  *	Tx routine for Synopsys GMAC scatter gather packets
  */
-int syn_dp_tx_sg(struct syn_dp_info_tx *tx_info, struct sk_buff *skb)
+static int syn_dp_tx_sg(struct syn_dp_info_tx *tx_info, struct sk_buff *skb)
 {
 	struct net_device *netdev = tx_info->netdev;
 	bool has_frag_list;

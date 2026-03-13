@@ -465,7 +465,7 @@ static int32_t syn_set_max_frame_size(struct nss_gmac_hal_dev *nghd,
 /*
  * syn_get_mib_stats()
  */
-int syn_get_mib_stats(struct nss_gmac_hal_dev *nghd, fal_mib_counter_t *stats)
+static int syn_get_mib_stats(struct nss_gmac_hal_dev *nghd, fal_mib_counter_t *stats)
 {
 	if (fal_mib_counter_get(0, nghd->mac_id, stats) < 0) {
 		return -1;
