@@ -759,7 +759,7 @@ add_event_entry(int ctrl_index,
 #endif
 
 /*
- * Registration & Initializatio section 
+ * Registration & Initialization section
  */
 
 oid             eventTable_variables_oid[] =

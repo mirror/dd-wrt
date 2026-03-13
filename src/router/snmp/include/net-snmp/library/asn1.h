@@ -6,6 +6,10 @@
 #include <sys/types.h>
 #endif
 
+#ifdef HAVE_ASN_BOOLEAN
+#include <openssl/ssl.h> /* ASN_BOOLEAN etc. */
+#endif
+
 #ifdef __cplusplus
 extern          "C" {
 #endif
@@ -55,14 +59,24 @@ SOFTWARE.
 #define OID_LENGTH(x)  (sizeof(x)/sizeof(oid))
 
 
+#ifndef HAVE_ASN_BOOLEAN
 #define ASN_BOOLEAN	    0x01U
+#endif
+#ifndef HAVE_ASN_INTEGER
 #define ASN_INTEGER	    0x02U
+#endif
 #define ASN_BIT_STR	    0x03U
 #define ASN_OCTET_STR	    0x04U
 #define ASN_NULL	    0x05U
+#ifndef HAVE_ASN_OBJECT_ID
 #define ASN_OBJECT_ID	    0x06U
+#endif
+#ifndef HAVE_ASN_SEQUENCE
 #define ASN_SEQUENCE	    0x10U
+#endif
+#ifndef HAVE_ASN_SET
 #define ASN_SET		    0x11U
+#endif
 
 #define ASN_UNIVERSAL	    0x00U
 #define ASN_APPLICATION     0x40U

@@ -251,10 +251,6 @@ typedef int (Netsnmp_Node_Handler) (netsnmp_mib_handler *handler,
     int netsnmp_request_remove_list_data(netsnmp_request_info *request,
                                          const char *name);
 
-    int
-        netsnmp_request_remove_list_data(netsnmp_request_info *request,
-                                         const char *name);
-
     void    *netsnmp_request_get_list_data(netsnmp_request_info
                                                   *request,
                                                   const char *name);

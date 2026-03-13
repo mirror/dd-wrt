@@ -139,9 +139,10 @@ ipCidrRouteTable_container_init(netsnmp_container **container_ptr_ptr,
  *
  */
 static void
-_snarf_route_entry(netsnmp_route_entry *route_entry,
-                   netsnmp_container *container)
+_snarf_route_entry(void *p, void *q)
 {
+    netsnmp_route_entry *route_entry = p;
+    netsnmp_container *container = q;
     ipCidrRouteTable_rowreq_ctx *rowreq_ctx;
 
     DEBUGTRACE;
@@ -223,7 +224,7 @@ ipCidrRouteTable_container_shutdown(netsnmp_container *container_ptr)
  *  If access to your data is cheap/fast (e.g. you have a pointer to a
  *  structure in memory), it would make sense to update the data here.
  *  If, however, the accessing the data involves more work (e.g. parsing
- *  some other existing data, or peforming calculations to derive the data),
+ *  some other existing data, or performing calculations to derive the data),
  *  then you can limit yourself to setting the indexes and saving any
  *  information you will need later. Then use the saved information in
  *  ipCidrRouteTable_row_prep() for populating data.
@@ -258,9 +259,7 @@ ipCidrRouteTable_container_load(netsnmp_container *container)
     /*
      * we just got a fresh copy of route data. snarf data
      */
-    CONTAINER_FOR_EACH(route_container,
-                       (netsnmp_container_obj_func *) _snarf_route_entry,
-                       container);
+    CONTAINER_FOR_EACH(route_container, _snarf_route_entry, container);
 
     /*
      * free the container. we've either claimed each ifentry, or released it,

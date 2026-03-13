@@ -473,14 +473,14 @@ netxname(struct sockaddr_storage *in, int mask)
     case AF_INET:
         inet_ntop(in->ss_family, &sin->sin_addr, host, sizeof(host));
         if (mask == 32)
-            strcpy(line, host);
+            strlcpy(line, host, sizeof line);
         else
             snprintf(line, sizeof(line), "%s/%d", host, mask);
         break;
     case AF_INET6:
         inet_ntop(in->ss_family, &sin6->sin6_addr, host, sizeof(host));
         if (mask == 128)
-            strcpy(line, host);
+            strlcpy(line, host, sizeof line);
         else
             snprintf(line, sizeof(line), "%s/%d", host, mask);
         break;

@@ -21,12 +21,12 @@
 
 /* prototypes always needed */
 #ifndef NETSNMP_FEATURE_CHECKING
-#define netsnmp_feature_provide(X)	extern char netsnmp_feature_unused_ ## X
-#define netsnmp_feature_require(X)	extern char netsnmp_feature_unused_ ## X
-#define netsnmp_feature_want(X)		extern char netsnmp_feature_unused_ ## X
-#define netsnmp_feature_child_of(X, Y)	extern char netsnmp_feature_unused_ ## X
+#define netsnmp_feature_provide(X)	struct netsnmp_unused_struct
+#define netsnmp_feature_require(X)	struct netsnmp_unused_struct
+#define netsnmp_feature_want(X)		struct netsnmp_unused_struct
+#define netsnmp_feature_child_of(X, Y)	struct netsnmp_unused_struct
 #endif
 
-#define netsnmp_feature_unused(X)	extern char netsnmp_feature_unused_ ## X
+#define netsnmp_feature_unused(X)	struct netsnmp_unused_struct
 
 #endif /* NETSNMP_FEATURES_H */

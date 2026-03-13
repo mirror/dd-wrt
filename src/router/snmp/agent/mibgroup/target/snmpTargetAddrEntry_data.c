@@ -78,6 +78,8 @@ snmpTargetAddrTable_create(void)
 
         newEntry->storageType = SNMP_STORAGE_NONVOLATILE;
         newEntry->rowStatus = SNMP_ROW_NONEXISTENT;
+
+        newEntry->close_sess = 1;
     }
 
     return newEntry;
@@ -94,7 +96,7 @@ snmpTargetAddrTable_dispose(struct targetAddrTable_struct *reaped)
     if (NULL == reaped)
         return;
 
-    if (reaped->sess)
+    if (reaped->sess && reaped->close_sess)
         snmp_close(reaped->sess);
     SNMP_FREE(reaped->tAddress);
     SNMP_FREE(reaped->nameData);
@@ -262,7 +264,7 @@ init_snmpTargetAddrEntry_data(void)
 
     snmpd_register_config_handler("targetAddr",
                                   snmpd_parse_config_targetAddr,
-                                  (void (*)(void))0, NULL);
+                                  NULL, NULL);
 
     /*
      * we need to be called back later 

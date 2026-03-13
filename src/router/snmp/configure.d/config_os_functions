@@ -27,8 +27,8 @@ AC_CHECK_FUNCS([rand   random srand srandom lrand48 srand48])
 #  Library:
 AC_CHECK_FUNCS([asprintf        closedir        fgetc_unlocked   ] dnl
                [flockfile       funlockfile     getipnodebyname  ] dnl
-               [gettimeofday    getlogin                         ] dnl
-               [if_nametoindex  mkstemp                          ] dnl
+               [gettimeofday    getlogin        getnetgrent      ] dnl
+               [if_nametoindex  malloc_trim     mkstemp          ] dnl
                [opendir         readdir         regcomp          ] dnl
                [setenv          setitimer       setlocale        ] dnl
                [setsid          snprintf        strcasestr       ] dnl

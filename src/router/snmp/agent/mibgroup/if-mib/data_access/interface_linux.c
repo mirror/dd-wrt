@@ -143,7 +143,7 @@ static void init_libpci(void)
      * When snmpd is run inside an OpenVZ container or on a Raspberry Pi system
      * /proc/bus/pci is not available.
      */
-    if (stat("/proc/bus/pci", &stbuf) == 0)
+    if (stat("/proc/bus/pci", &stbuf) < 0)
         return;
 
     pci_access = pci_alloc();

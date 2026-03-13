@@ -81,10 +81,10 @@ LINKCC	        = @LINKCC@
 # 5.3 was at 10, 5.4 is at 15, ...  This leaves some room for needed
 # changes for past releases if absolutely necessary.
 #
-# Most recent change: 40 for the v5.8.1 release.
-LIBCURRENT  = 42
-LIBAGE      = 2
-LIBREVISION = 1
+# Most recent change: 45 for the PR#586 - snmpv3 for multithread.
+LIBCURRENT  = 45
+LIBAGE      = 0
+LIBREVISION = 0
 
 LIB_LD_CMD      = $(LIBTOOL) --mode=link $(LINKCC) $(CFLAGS) -rpath $(libdir) -version-info $(LIBCURRENT):$(LIBREVISION):$(LIBAGE) @LD_NO_UNDEFINED@ -o
 LIB_EXTENSION   = la

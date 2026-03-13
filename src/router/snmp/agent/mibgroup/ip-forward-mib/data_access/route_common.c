@@ -16,7 +16,7 @@
 /*
  * local static prototypes
  */
-static void _access_route_entry_release(netsnmp_route_entry * entry, void *unused);
+static void _access_route_entry_release(void *entry, void *unused);
 
 /**---------------------------------------------------------------------*/
 /*
@@ -67,9 +67,7 @@ netsnmp_access_route_container_free(netsnmp_container *container, u_int free_fla
         /*
          * free all items.
          */
-        CONTAINER_CLEAR(container,
-                        (netsnmp_container_obj_func*)_access_route_entry_release,
-                        NULL);
+        CONTAINER_CLEAR(container, _access_route_entry_release, NULL);
     }
     else {
         /*
@@ -268,7 +266,7 @@ netsnmp_access_route_entry_copy(netsnmp_route_entry *lhs,
 /**
  */
 void
-_access_route_entry_release(netsnmp_route_entry * entry, void *context)
+_access_route_entry_release(void *entry, void *context)
 {
     netsnmp_access_route_entry_free(entry);
 }

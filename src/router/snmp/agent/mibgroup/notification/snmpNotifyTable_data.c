@@ -274,7 +274,7 @@ notifyTable_register_notifications(int major, int minor,
     struct targetAddrTable_struct *ptr = NULL;
     struct targetParamTable_struct *pptr = NULL;
     struct snmpNotifyTable_data *nptr = NULL;
-    int             confirm, i;
+    int             confirm, close_sess, i;
     char            buf[SNMP_MAXBUF_SMALL];
     netsnmp_transport *t = NULL;
     struct agent_add_trap_args *args =
@@ -289,6 +289,7 @@ notifyTable_register_notifications(int major, int minor,
     args->rc = SNMPERR_GENERR;
     confirm = args->confirm;
     ss = args->ss;
+    close_sess = args->close_sess;
     name = args->nameData;
     nameLen = args->nameLen;
     tag = args->tagData;
@@ -360,6 +361,7 @@ notifyTable_register_notifications(int major, int minor,
     ptr->storageType = ST_READONLY;
     ptr->rowStatus = RS_ACTIVE;
     ptr->sess = ss;
+    ptr->close_sess = close_sess;
     DEBUGMSGTL(("trapsess", "adding %s to trap table\n", ptr->nameData));
     snmpTargetAddrTable_add(ptr);
 
@@ -469,6 +471,7 @@ notifyTable_register_notifications(int major, int minor,
 
     if (NULL != nptr)
         snmpNotifyTable_remove(nptr);
+    free(nptr);
 
     if (NULL != pptr)
         snmpTargetParamTable_remove(pptr);

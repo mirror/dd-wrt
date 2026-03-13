@@ -67,6 +67,8 @@
 #include "winstub.h"
 #endif
 
+#define MAX_IFNAME 64
+
 #define SET_MASK 0x01
 #define SET_GWAY 0x02
 #define SET_IFNO 0x04
@@ -83,7 +85,7 @@ struct route_entry {
     int             proto;
     int             af;
     int             set_bits;
-    char            ifname[64];
+    char            ifname[MAX_IFNAME];
 };
 
 void            p_rtnode(struct route_entry *rp);
@@ -276,7 +278,7 @@ route4pr(int af)
 
 struct iflist {
     int             index;
-    char            name[64];
+    char            name[MAX_IFNAME];
     struct iflist  *next;
 }              *Iflist = NULL;
 
@@ -295,7 +297,7 @@ get_ifname(char *name, int ifIndex)
             break;
     }
     if (ip) {
-        strcpy(name, ip->name);
+        strlcpy(name, ip->name, MAX_IFNAME);
         return;
     }
     ip = (struct iflist *) malloc(sizeof(struct iflist));
@@ -313,7 +315,7 @@ get_ifname(char *name, int ifIndex)
             var->val_len = sizeof(ip->name) - 1;
         memmove(ip->name, var->val.string, var->val_len);
         ip->name[var->val_len] = '\0';
-        strcpy(name, ip->name);
+        strlcpy(name, ip->name, MAX_IFNAME);
         snmp_free_varbind(var);
         return;
     }
@@ -328,9 +330,9 @@ get_ifname(char *name, int ifIndex)
         ip->name[var->val_len] = '\0';
         snmp_free_varbind(var);
     } else {
-        sprintf(ip->name, "if%d", ifIndex);
+        snprintf(ip->name, MAX_IFNAME, "if%d", ifIndex);
     }
-    strcpy(name, ip->name);
+    strlcpy(name, ip->name, MAX_IFNAME);
 }
 
 /*

@@ -660,7 +660,7 @@ sprint_realloc_octet_string(u_char ** buf, size_t * buf_len,
     case NETSNMP_STRING_OUTPUT_GUESS:
         hex = 0;
         for (cp = var->val.string, x = 0; x < (int) var->val_len; x++, cp++) {
-            if (!isprint(*cp) && !isspace(*cp)) {
+            if ((!isprint(*cp) || !isascii(*cp)) && !isspace(*cp)) {
                 hex = 1;
             }
         }
@@ -2323,7 +2323,7 @@ snmp_out_options(char *options, int argc, char *const *argv)
         case 'p':
             /* What if argc/argv are null ? */
             if (!*(options)) {
-		if (optind == argc) {
+		if (optind == argc || argc == 0) {
 		    fprintf(stderr, "Missing precision for -Op\n");
 		    return options-1;
 		}
@@ -2412,7 +2412,7 @@ snmp_out_toggle_options_usage(const char *lead, FILE * outf)
     fprintf(outf, "%sX:  extended index format\n", lead);
 }
 
-char *
+const char *
 snmp_in_options(char *optarg, int argc, char *const *argv)
 {
     char *cp;
@@ -2435,18 +2435,22 @@ snmp_in_options(char *optarg, int argc, char *const *argv)
             netsnmp_ds_toggle_boolean(NETSNMP_DS_LIBRARY_ID, NETSNMP_DS_LIB_READ_UCD_STYLE_OID);
             break;
         case 's':
-            /* What if argc/argv are null ? */
-            if (!*(++cp))
-                cp = argv[optind++];
+            if (!*(++cp)) {
+                cp = optind < argc ? argv[optind++] : NULL;
+                if (!cp)
+                    return "?";
+            }
             netsnmp_ds_set_string(NETSNMP_DS_LIBRARY_ID,
                                   NETSNMP_DS_LIB_OIDSUFFIX,
                                   cp);
             return NULL;  /* -Is... is a standalone option, so we're done here */
 
         case 'S':
-            /* What if argc/argv are null ? */
-            if (!*(++cp))
-                cp = argv[optind++];
+            if (!*(++cp)) {
+                cp = optind < argc ? argv[optind++] : NULL;
+                if (!cp)
+                    return "?";
+            }
             netsnmp_ds_set_string(NETSNMP_DS_LIBRARY_ID,
                                   NETSNMP_DS_LIB_OIDPREFIX,
                                   cp);
@@ -2463,7 +2467,7 @@ snmp_in_options(char *optarg, int argc, char *const *argv)
     return NULL;
 }
 
-char           *
+const char     *
 snmp_in_toggle_options(char *options)
 {
     return snmp_in_options( options, 0, NULL );
@@ -2672,7 +2676,7 @@ netsnmp_get_mib_directory(void)
 void
 netsnmp_fixup_mib_directory(void)
 {
-    char *homepath = netsnmp_getenv("HOME");
+    const char *homepath = netsnmp_gethomedir();
     char *mibpath = netsnmp_get_mib_directory();
     char *oldmibpath = NULL;
     char *ptr_home;
@@ -2775,40 +2779,40 @@ netsnmp_init_mib(void)
         env_var = strdup(env_var);
     }
     if (env_var && ((*env_var == '+') || (*env_var == '-'))) {
-        entry =
-            (char *) malloc(strlen(NETSNMP_DEFAULT_MIBS) + strlen(env_var) + 2);
-        if (!entry) {
-            DEBUGMSGTL(("init_mib", "env mibs malloc failed"));
-            SNMP_FREE(env_var);
-            return;
-        } else {
-            if (*env_var == '+')
-                sprintf(entry, "%s%c%s", NETSNMP_DEFAULT_MIBS, ENV_SEPARATOR_CHAR,
-                        env_var+1);
-            else
-                sprintf(entry, "%s%c%s", env_var+1, ENV_SEPARATOR_CHAR,
-                        NETSNMP_DEFAULT_MIBS );
-        }
+        int res;
+
+        if (*env_var == '+')
+            res = asprintf(&entry, "%s%c%s", NETSNMP_DEFAULT_MIBS,
+                           ENV_SEPARATOR_CHAR, env_var + 1);
+        else
+            res = asprintf(&entry, "%s%c%s", env_var + 1, ENV_SEPARATOR_CHAR,
+                           NETSNMP_DEFAULT_MIBS);
         SNMP_FREE(env_var);
+        if (res < 0) {
+            DEBUGMSGTL(("init_mib", "env mibs malloc failed"));
+            return;
+        }
         env_var = entry;
     }
 
-    DEBUGMSGTL(("init_mib",
-                "Seen MIBS: Looking in '%s' for mib files ...\n",
-                env_var));
-    entry = strtok_r(env_var, ENV_SEPARATOR, &st);
-    while (entry) {
-        if (strcasecmp(entry, DEBUG_ALWAYS_TOKEN) == 0) {
-            read_all_mibs();
-        } else if (strstr(entry, "/") != NULL) {
-            read_mib(entry);
-        } else {
-            netsnmp_read_module(entry);
+    if (env_var != NULL) {
+        DEBUGMSGTL(("init_mib",
+                    "Seen MIBS: Looking in '%s' for mib files ...\n",
+                    env_var));
+        entry = strtok_r(env_var, ENV_SEPARATOR, &st);
+        while (entry) {
+            if (strcasecmp(entry, DEBUG_ALWAYS_TOKEN) == 0) {
+                read_all_mibs();
+            } else if (strstr(entry, "/") != NULL) {
+                read_mib(entry);
+            } else {
+                netsnmp_read_module(entry);
+            }
+            entry = strtok_r(NULL, ENV_SEPARATOR, &st);
         }
-        entry = strtok_r(NULL, ENV_SEPARATOR, &st);
+        adopt_orphans();
+        SNMP_FREE(env_var);
     }
-    adopt_orphans();
-    SNMP_FREE(env_var);
 
     env_var = netsnmp_getenv("MIBFILES");
     if (env_var != NULL) {
@@ -5237,6 +5241,8 @@ get_module_node(const char *fname,
      * Isolate the first component of the name ... 
      */
     name = strdup(fname);
+    if (name == NULL)
+        return -1;
     cp = strchr(name, '.');
     if (cp != NULL) {
         *cp = '\0';

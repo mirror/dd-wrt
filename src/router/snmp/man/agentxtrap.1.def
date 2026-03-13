@@ -70,14 +70,14 @@ Unsigned
 Counter32
 .TP
 .B s
-OCTET STRING of chaacters
+OCTET STRING of characters
 .TP
 .B x
 OCTET STRING, entered as a sequence of optionally space separated hexadecimal
 digit pairs
 .TP
 .B d
-OCTET STRING, entered as a sequence of space separated decimal digits in the
+OCTET STRING, entered as a sequence of space-separated decimal digits in the
 range 0 - 255
 .TP
 .B n

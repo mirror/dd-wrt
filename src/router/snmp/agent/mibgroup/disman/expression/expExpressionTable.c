@@ -1158,9 +1158,8 @@ write_expExpressionEntryStatus(int action,
                 }
                 if (pdu->securityName) {
                     StorageTmp->pdu_securityName =
-                        calloc(1, pdu->securityNameLen + 1);
-                    memcpy(StorageTmp->pdu_securityName, pdu->securityName,
-                           pdu->securityNameLen);
+                        netsnmp_memdup(pdu->securityName,
+                                       pdu->securityNameLen + 1);
                     StorageTmp->pdu_securityNameLen = pdu->securityNameLen;
                 } else {
                     StorageTmp->pdu_securityName = NULL;

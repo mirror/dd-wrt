@@ -223,7 +223,6 @@ config_require(if-mib/ifXTable/ifXTable_data_access);
     int             ifXTable_undo_cleanup(ifXTable_rowreq_ctx *
                                           rowreq_ctx);
     int             ifXTable_undo(ifXTable_rowreq_ctx * rowreq_ctx);
-    int             ifXTable_commit(ifXTable_rowreq_ctx * rowreq_ctx);
     int             ifXTable_undo_commit(ifXTable_rowreq_ctx * rowreq_ctx);
 
 
@@ -435,9 +434,6 @@ config_require(if-mib/ifXTable/ifXTable_data_access);
                                                    ifCounterDiscontinuityTime_val);
     int             ifCounterDiscontinuityTime_undo(ifXTable_rowreq_ctx *
                                                     rowreq_ctx);
-
-
-    int             ifXTable_check_dependencies(ifXTable_rowreq_ctx * ctx);
 #endif /* !NETSNMP_NO_WRITE_SUPPORT */
 
     /*

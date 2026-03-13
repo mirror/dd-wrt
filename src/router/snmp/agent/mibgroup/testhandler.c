@@ -32,7 +32,7 @@ static oid      my_data_table_oid[4] = { 1, 2, 3, 7 };
 static oid      my_data_ulong_instance[4] = { 1, 2, 3, 9 };
 
 static netsnmp_handler_registration *ro_scalar_h, *rw_scalar_h, *table_h;
-static netsnmp_handler_registration *my_test, *table_h;
+static netsnmp_handler_registration *my_test;
 static netsnmp_table_registration_info *table_info1;
 static netsnmp_table_registration_info *table_info2;
 static netsnmp_table_data *table;

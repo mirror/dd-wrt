@@ -113,9 +113,6 @@ PERFORMANCE OF THIS SOFTWARE.
     int             init_agent(const char *);
     void            shutdown_agent(void);
 
-    int             should_init(const char *module_name);
-    void            add_to_init_list(char *module_list);
-
 #ifdef USING_AGENTX_SUBAGENT_MODULE
     void            netsnmp_enable_subagent(void);
 #endif

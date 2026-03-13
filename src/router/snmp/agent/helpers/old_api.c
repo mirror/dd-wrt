@@ -71,6 +71,12 @@ get_old_api_handler(void)
     return netsnmp_create_handler("old_api", netsnmp_old_api_helper);
 }
 
+static void *
+netsnmp_clone_variable(void *p)
+{
+    return netsnmp_duplicate_variable(p);
+}
+
 struct variable *
 netsnmp_duplicate_variable(const struct variable *var)
 {
@@ -119,6 +125,11 @@ netsnmp_register_old_api(const char *moduleName,
 	vp = netsnmp_duplicate_variable((const struct variable *)
 					((const char *) var + varsize * i));
 
+        if (vp == NULL) {
+            SNMP_FREE(reginfo);
+            return SNMP_ERR_GENERR;
+        }
+
         reginfo->handler = get_old_api_handler();
         reginfo->handlerName = strdup(moduleName);
         reginfo->rootoid_len = (mibloclen + vp->namelen);
@@ -138,8 +149,7 @@ netsnmp_register_old_api(const char *moduleName,
         memcpy(reginfo->rootoid + mibloclen, vp->name, vp->namelen
                * sizeof(oid));
         reginfo->handler->myvoid = (void *) vp;
-        reginfo->handler->data_clone
-	    = (void *(*)(void *))netsnmp_duplicate_variable;
+        reginfo->handler->data_clone = netsnmp_clone_variable;
         reginfo->handler->data_free = free;
 
         reginfo->priority = priority;
@@ -218,7 +228,7 @@ netsnmp_register_mib_table_row(const char *moduleName,
         DEBUGMSG(("netsnmp_register_mib_table_row", "(%d)\n",
                      (var_subid - vr->namelen)));
         r->handler->myvoid = netsnmp_duplicate_variable(vr);
-        r->handler->data_clone = (void *(*)(void *))netsnmp_duplicate_variable;
+        r->handler->data_clone = netsnmp_clone_variable;
         r->handler->data_free = free;
 
         r->contextName = (context) ? strdup(context) : NULL;

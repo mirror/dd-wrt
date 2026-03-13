@@ -44,7 +44,7 @@
 #include "kernel.h"
 #include <net-snmp/agent/ds_agent.h>
 
-#if defined(HAVE_KVM_H) && !defined(NETSNMP_NO_KMEM_USAGE)
+#if defined(HAVE_KVM_H) && !defined(NETSNMP_NO_KMEM_USAGE) && !defined(__FreeBSD__)
 kvm_t *kd;
 
 /**
@@ -130,7 +130,7 @@ free_kmem(void)
     }
 }
 
-#elif defined(HAVE_NLIST_H) && !defined(__linux__) &&   \
+#elif defined(HAVE_NLIST_H) && !defined(__linux__) && !defined(__FreeBSD__) && \
     !defined(NETSNMP_NO_KMEM_USAGE)
 
 static off_t    klseek(off_t);
@@ -252,7 +252,48 @@ free_kmem(void)
         kmem = -1;
     }
 }
+#elif defined(__FreeBSD__)
+kvm_t *kd;
 
+/**
+ * Initialize the libkvm descriptor. On FreeBSD we can use most of libkvm
+ * without requiring /dev/kmem access.  Only kvm_nlist() and kvm_read() need
+ * that, and we don't use them.
+ *
+ * @return TRUE upon success; FALSE upon failure.
+ */
+int
+init_kmem(const char *file)
+{
+    char err[4096];
+
+    kd = kvm_openfiles(NULL, "/dev/null", NULL, O_RDONLY, err);
+    if (!kd) {
+        snmp_log(LOG_CRIT, "init_kmem: kvm_openfiles failed: %s\n", err);
+        return FALSE;
+    }
+    return TRUE;
+}
+
+/**
+ * A stub to return failure to any attempt to read kernel memory.  Our
+ * libkvm handle doesn't enable /dev/kmem access.  MIB implementations should
+ * use unprivileged to fetch information about the system.
+ */
+int
+klookup(unsigned long off, void *target, size_t siz)
+{
+    return 0;
+}
+
+void
+free_kmem(void)
+{
+    if (kd != NULL) {
+        (void)kvm_close(kd);
+        kd = NULL;
+    }
+}
 #else
 int
 init_kmem(const char *file)

@@ -1174,14 +1174,15 @@ write_vacmAccessStatus(int action,
         free(newGroupName);
         free(newContextPrefix);
     } else if (action == ACTION) {
-        access_parse_oid(&name[ACCESS_MIB_LENGTH],
-                         name_len - ACCESS_MIB_LENGTH,
-                         (u_char **) & newGroupName, &groupNameLen,
-                         (u_char **) & newContextPrefix, &contextPrefixLen,
-                         &model, &level);
-        aptr =
-            vacm_getAccessEntry(newGroupName, newContextPrefix, model,
-                                level);
+        if (access_parse_oid(&name[ACCESS_MIB_LENGTH],
+                             name_len - ACCESS_MIB_LENGTH,
+                             (u_char **) & newGroupName, &groupNameLen,
+                             (u_char **) & newContextPrefix, &contextPrefixLen,
+                             &model, &level)) {
+            return SNMP_ERR_INCONSISTENTNAME;
+        }
+
+        aptr = vacm_getAccessEntry(newGroupName, newContextPrefix, model, level);
 
         if (aptr != NULL) {
             if (long_ret == RS_CREATEANDGO || long_ret == RS_ACTIVE) {
@@ -1201,14 +1202,15 @@ write_vacmAccessStatus(int action,
         free(newGroupName);
         free(newContextPrefix);
     } else if (action == COMMIT) {
-        access_parse_oid(&name[ACCESS_MIB_LENGTH],
-                         name_len - ACCESS_MIB_LENGTH,
-                         (u_char **) & newGroupName, &groupNameLen,
-                         (u_char **) & newContextPrefix, &contextPrefixLen,
-                         &model, &level);
-        aptr =
-            vacm_getAccessEntry(newGroupName, newContextPrefix, model,
-                                level);
+        if (access_parse_oid(&name[ACCESS_MIB_LENGTH],
+                             name_len - ACCESS_MIB_LENGTH,
+                             (u_char **) & newGroupName, &groupNameLen,
+                             (u_char **) & newContextPrefix, &contextPrefixLen,
+                             &model, &level)) {
+            return SNMP_ERR_INCONSISTENTNAME;
+        }
+
+        aptr = vacm_getAccessEntry(newGroupName, newContextPrefix, model, level);
 
         if (aptr) {
             if (long_ret == RS_DESTROY) {
@@ -1220,21 +1222,22 @@ write_vacmAccessStatus(int action,
         free(newContextPrefix);
     } else if (action == UNDO) {
         if (long_ret == RS_CREATEANDGO || long_ret == RS_CREATEANDWAIT) {
-            access_parse_oid(&name[ACCESS_MIB_LENGTH],
-                             name_len - ACCESS_MIB_LENGTH,
-                             (u_char **) & newGroupName, &groupNameLen,
-                             (u_char **) & newContextPrefix,
-                             &contextPrefixLen, &model, &level);
-            aptr =
-                vacm_getAccessEntry(newGroupName, newContextPrefix, model,
-                                    level);
+            if (access_parse_oid(&name[ACCESS_MIB_LENGTH],
+                                 name_len - ACCESS_MIB_LENGTH,
+                                 (u_char **) & newGroupName, &groupNameLen,
+                                 (u_char **) & newContextPrefix, &contextPrefixLen,
+                                 &model, &level)) {
+                return SNMP_ERR_INCONSISTENTNAME;
+            }
+
+            aptr = vacm_getAccessEntry(newGroupName, newContextPrefix, model, level);
             if (aptr != NULL) {
                 vacm_destroyAccessEntry(newGroupName, newContextPrefix,
                                         model, level);
             }
+            free(newGroupName);
+            free(newContextPrefix);
         }
-        free(newGroupName);
-        free(newContextPrefix);
     }
 
     return SNMP_ERR_NOERROR;

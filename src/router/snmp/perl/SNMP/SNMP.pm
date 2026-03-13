@@ -7,7 +7,7 @@
 #     modify it under the same terms as Perl itself.
 
 package SNMP;
-$VERSION = '5.0904';   # current release version number
+$VERSION = '5.09052';   # current release version number
 
 use strict;
 use warnings;

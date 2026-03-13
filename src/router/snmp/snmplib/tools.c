@@ -394,7 +394,9 @@ netsnmp_binary_to_hex(u_char ** dest, size_t *dest_len, int allow_realloc,
         return 0;
 
     if (NULL == *dest) {
-        s = (unsigned char *) calloc(1, olen);
+        s = calloc(1, olen);
+        if (s == NULL)
+            return 0;
         *dest_len = olen;
     }
     else
@@ -583,8 +585,8 @@ netsnmp_hex_to_binary(u_char ** buf, size_t * buf_len, size_t * offset,
     }
 
     while (*cp != '\0') {
-        if (!isxdigit((int) *cp) ||
-            !isxdigit((int) *(cp+1))) {
+        if (!isxdigit((unsigned char)cp[0]) ||
+            !isxdigit((unsigned char)cp[1])) {
             if ((NULL != delim) && (NULL != strchr(delim, *cp))) {
                 cp++;
                 continue;
@@ -1072,6 +1074,8 @@ atime_ready(const_marker_t pm, int delta_ms)
         return 0;
 
     now = atime_newMarker();
+    if (!now)
+        return 0;
 
     diff = atime_diff(pm, now);
     free(now);
@@ -1097,6 +1101,8 @@ uatime_ready(const_marker_t pm, unsigned int delta_ms)
         return 0;
 
     now = atime_newMarker();
+    if (!now)
+        return 0;
 
     diff = uatime_diff(pm, now);
     free(now);
@@ -1148,6 +1154,8 @@ marker_tticks(const_marker_t pm)
 {
     int             res;
     marker_t        now = atime_newMarker();
+    if (!now)
+        return 0;
 
     res = atime_diff(pm, now);
     free(now);
@@ -1407,3 +1415,12 @@ netsnmp_string_time_to_secs(const char *time_string) {
     return secs;
 }
 #endif /* NETSNMP_FEATURE_REMOVE_STRING_TIME_TO_SECS */
+
+const char *netsnmp_gethomedir(void) {
+    const char *homepath = netsnmp_getenv("HOME");
+#ifdef _WIN32
+    if (!homepath)
+        homepath = netsnmp_getenv("USERPROFILE");
+#endif
+    return homepath;
+}

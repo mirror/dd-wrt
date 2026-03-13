@@ -229,8 +229,14 @@ init_hr_swinst(void)
         snprintf(path, sizeof(path), "%s/Packages", swi->swi_dbpath);
         if (stat(path, &stat_buf) == -1)
             snprintf(path, sizeof(path), "%s/packages.rpm", swi->swi_dbpath);
+        /* check for SQLite DB backend */
+        if (stat(path, &stat_buf) == -1)
+            snprintf(path, sizeof(path), "%s/rpmdb.sqlite", swi->swi_dbpath);
         path[ sizeof(path)-1 ] = 0;
         swi->swi_directory = strdup(path);
+#ifdef HAVE_RPMGETPATH
+        rpmFreeRpmrc();
+#endif
     }
 #else
 #  ifdef _PATH_HRSW_directory

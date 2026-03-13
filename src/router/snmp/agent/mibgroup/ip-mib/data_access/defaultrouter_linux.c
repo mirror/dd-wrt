@@ -83,7 +83,7 @@ netsnmp_arch_defaultrouter_container_load(netsnmp_container *container,
 static int
 _load(netsnmp_container *container)
 {
-#ifndef HAVE_LINUX_RTNETLINK_H
+#ifndef HAVE_LIBNL3
     DEBUGMSGTL(("access:defaultrouter",
                 "cannot get default router information"
                 "as netlink socket is not available\n"));
@@ -109,7 +109,6 @@ _load(netsnmp_container *container)
     struct rtmsg *rthdr;
     int count;
     int end_of_message = 0;
-    long hz = sysconf(_SC_CLK_TCK);
 
     netsnmp_assert(NULL != container);
 
@@ -163,7 +162,6 @@ _load(netsnmp_container *container)
         struct nlmsghdr *nlmhp;
         struct rtmsg *rtmp;
         struct rtattr *rtap;
-        struct rta_cacheinfo *rtci;
         socklen_t sock_len;
         int rtcount;
 
@@ -257,11 +255,14 @@ _load(netsnmp_container *container)
 
 #ifdef NETSNMP_ENABLE_IPV6
                     case RTA_CACHEINFO:
-                        rtci = RTA_DATA(rtap);
+		    {
+                        struct rta_cacheinfo *rtci = RTA_DATA(rtap);
+                        long hz = sysconf(_SC_CLK_TCK);
                         if ((rtmp->rtm_flags & RTM_F_CLONED) ||
                             (rtci && rtci->rta_expires)) {
                             lifetime = rtci->rta_expires / hz;
                         }
+		    }
                         break;
 #endif
 

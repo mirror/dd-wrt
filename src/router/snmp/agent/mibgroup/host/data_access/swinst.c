@@ -23,7 +23,7 @@ netsnmp_feature_child_of(swinst_entry_remove, netsnmp_unused);
 /* ---------------------------------------------------------------------
  */
 
-static void netsnmp_swinst_entry_free_cb(netsnmp_swinst_entry *, void *);
+static void netsnmp_swinst_entry_free_cb(void *, void *);
 
 void init_swinst( void )
 {
@@ -129,9 +129,7 @@ void netsnmp_swinst_container_free_items(netsnmp_container *container)
     /*
      * free all items.
      */
-    CONTAINER_CLEAR(container,
-                    (netsnmp_container_obj_func*)netsnmp_swinst_entry_free_cb,
-                    NULL);
+    CONTAINER_CLEAR(container, netsnmp_swinst_entry_free_cb, NULL);
 }
 
 
@@ -175,7 +173,7 @@ netsnmp_swinst_entry_free(netsnmp_swinst_entry *entry)
  * free a row
  */
 static void
-netsnmp_swinst_entry_free_cb(netsnmp_swinst_entry *entry, void *context)
+netsnmp_swinst_entry_free_cb(void *entry, void *context)
 {
     free(entry);
 }

@@ -82,6 +82,7 @@ init_nsDebug(void)
      */
     iinfo      = SNMP_MALLOC_TYPEDEF(netsnmp_iterator_info);
     if (!iinfo) {
+        free(table_info);
         return;
     }
     iinfo->get_first_data_point = get_first_debug_entry;
@@ -332,7 +333,9 @@ handle_nsDebugTable(netsnmp_mib_handler *handler,
 {
     long status;
     netsnmp_request_info       *request    =NULL;
+#ifndef NETSNMP_NO_WRITE_SUPPORT
     netsnmp_table_request_info *table_info    =NULL;
+#endif
     netsnmp_token_descr        *debug_entry=NULL;
 
     switch (reqinfo->mode) {

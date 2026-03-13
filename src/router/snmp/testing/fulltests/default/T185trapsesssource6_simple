@@ -5,6 +5,7 @@
 HEADER Agent uses -s argument for v6 trapsess source
 
 SKIPIF NETSNMP_DISABLE_SNMPV2C
+SKIPIFNOT NETSNMP_TRANSPORT_UDPIPV6_DOMAIN
 
 . ./S180trapaddrinfra
 

@@ -80,8 +80,10 @@ ipAddressTable_init_data(ipAddressTable_registration * ipAddressTable_reg)
  * check entry for update
  */
 static void
-_clear_times(ipAddressTable_rowreq_ctx * rowreq_ctx, void *magic)
+_clear_times(void *p, void *magic)
 {
+    ipAddressTable_rowreq_ctx *rowreq_ctx = p;
+
     rowreq_ctx->ipAddressLastChanged = rowreq_ctx->ipAddressCreated = 0;
 }
 
@@ -145,9 +147,7 @@ ipAddressTable_container_init(netsnmp_container **container_ptr_ptr,
         (*container_ptr_ptr)->flags = CONTAINER_KEY_ALLOW_DUPLICATES;
         (*container_ptr_ptr)->container_name = strdup("ipAddressTable");
         ipAddressTable_container_load(*container_ptr_ptr);
-        CONTAINER_FOR_EACH(*container_ptr_ptr,
-                           (netsnmp_container_obj_func *) _clear_times,
-                           NULL);
+        CONTAINER_FOR_EACH(*container_ptr_ptr, _clear_times, NULL);
     }
 
     if (NULL == cache) {
@@ -201,12 +201,13 @@ ipAddressTable_container_shutdown(netsnmp_container *container_ptr)
  * check entry for update
  */
 static void
-_check_entry_for_updates(ipAddressTable_rowreq_ctx * rowreq_ctx,
-                         void **magic)
+_check_entry_for_updates(void *p, void *q)
 {
-    netsnmp_container *ipaddress_container = (netsnmp_container*)magic[0];
-    netsnmp_container *to_delete           = (netsnmp_container*)magic[1];
-    netsnmp_container *to_ignore           = (netsnmp_container*)magic[2];
+    ipAddressTable_rowreq_ctx *rowreq_ctx = p;
+    void **magic = q;
+    netsnmp_container *ipaddress_container = magic[0];
+    netsnmp_container *to_delete           = magic[1];
+    netsnmp_container *to_ignore           = magic[2];
 
     /*
      * check for matching entry using secondary index.
@@ -255,11 +256,12 @@ _check_entry_for_updates(ipAddressTable_rowreq_ctx * rowreq_ctx,
  * add new entry
  */
 static void
-_add_new_entry(netsnmp_ipaddress_entry *ipaddress_entry,
-               void **magic)
+_add_new_entry(void *p, void *q)
 {
-	netsnmp_container *container = magic[0];
-	netsnmp_container *to_ignore = magic[2];
+    netsnmp_ipaddress_entry *ipaddress_entry = p;
+    void **magic = q;
+    netsnmp_container *container = magic[0];
+    netsnmp_container *to_ignore = magic[2];
 
     ipAddressTable_rowreq_ctx *rowreq_ctx;
 
@@ -331,7 +333,7 @@ _add_new_entry(netsnmp_ipaddress_entry *ipaddress_entry,
  *  If access to your data is cheap/fast (e.g. you have a pointer to a
  *  structure in memory), it would make sense to update the data here.
  *  If, however, the accessing the data involves more work (e.g. parsing
- *  some other existing data, or peforming calculations to derive the data),
+ *  some other existing data, or performing calculations to derive the data),
  *  then you can limit yourself to setting the indexes and saving any
  *  information you will need later. Then use the saved information in
  *  ipAddressTable_row_prep() for populating data.
@@ -373,16 +375,13 @@ ipAddressTable_container_load(netsnmp_container *container)
     tmp_ptr[0] = ipaddress_container->next;
     tmp_ptr[1] = NULL; /* list of interfaces to be removed from 'container' */
     tmp_ptr[2] = NULL; /* list of interfaces to be ignored in ipaddress_container */
-    CONTAINER_FOR_EACH(container, (netsnmp_container_obj_func *)
-                       _check_entry_for_updates, tmp_ptr);
+    CONTAINER_FOR_EACH(container, _check_entry_for_updates, tmp_ptr);
 
     /*
      * now add any new interfaces
      */
     tmp_ptr[0] = container;
-    CONTAINER_FOR_EACH(ipaddress_container,
-                       (netsnmp_container_obj_func *) _add_new_entry,
-                       tmp_ptr);
+    CONTAINER_FOR_EACH(ipaddress_container, _add_new_entry, tmp_ptr);
 
     /*
      * free the container. we've either claimed each entry, or released it,

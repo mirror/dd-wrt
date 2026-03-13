@@ -37,7 +37,7 @@
      */
 void init_cpu_linux( void ) {
     FILE *fp;
-    char buf[1024], *cp;
+    char buf[1024];
     int  i, n = 0;
     netsnmp_cpu_info *cpu = netsnmp_cpu_get_byIdx( -1, 1 );
     strcpy(cpu->name, "Overall CPU statistics");
@@ -72,7 +72,7 @@ void init_cpu_linux( void ) {
 
 #ifdef DESCR_FIELD
         if (!strncmp( buf, DESCR_FIELD, strlen(DESCR_FIELD))) {
-            cp = strchr( buf, ':' );
+            char *cp = strchr( buf, ':' );
             if (cp) {
                 strlcpy(cpu->descr, cp + 2, sizeof(cpu->descr));
                 cp = strchr(cpu->descr, '\n');
@@ -83,7 +83,7 @@ void init_cpu_linux( void ) {
 #endif
 #ifdef DESCR2_FIELD
         if (!strncmp( buf, DESCR2_FIELD, strlen(DESCR2_FIELD))) {
-            cp = strchr( buf, ':' );
+            char *cp = strchr( buf, ':' );
             if (cp) {
                 strlcat(cpu->descr, cp, sizeof(cpu->descr));
                 cp = strchr(cpu->descr, '\n');

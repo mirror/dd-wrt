@@ -291,6 +291,7 @@ int
 netsnmp_transport_filter_add(const char *addrtxt)
 {
     char *tmp;
+    int res;
 
     /*
      * create the container, if needed
@@ -305,7 +306,10 @@ netsnmp_transport_filter_add(const char *addrtxt)
         snmp_log(LOG_ERR,"netsnmp_transport_filter_add strdup failed\n");
         return(-1);
     }
-    return CONTAINER_INSERT(filtered, tmp);
+    res = CONTAINER_INSERT(filtered, tmp);
+    if (res)
+        free(tmp);
+    return res;
 }
 
 int
@@ -458,9 +462,7 @@ netsnmp_transport_recv(netsnmp_transport *t, void *packet, int length,
         char *str = netsnmp_transport_peer_string(t,
                                                   opaque ? *opaque : NULL,
                                                   olength ? *olength : 0);
-        if (debugLength)
-            DEBUGMSGT_NC(("transport:recv","%d bytes from %s\n",
-                          length, str));
+        DEBUGMSGT_NC(("transport:recv","%d bytes from %s\n", length, str));
         SNMP_FREE(str);
     }
 
@@ -716,6 +718,8 @@ netsnmp_tdomain_transport_tspec(netsnmp_tdomain_spec *tspec)
         const char *cp;
         if ((cp = strchr(str, ':')) != NULL) {
             char* mystring = (char*)malloc(cp + 1 - str);
+            if (mystring == NULL)
+                return NULL;
             memcpy(mystring, str, cp - str);
             mystring[cp - str] = '\0';
             addr = cp + 1;
@@ -748,9 +752,15 @@ netsnmp_tdomain_transport_tspec(netsnmp_tdomain_spec *tspec)
                 const char *cp = default_domain;
                 char *ptr = NULL;
                 tokenized_domain = strdup(default_domain);
+                if (!tokenized_domain)
+                    return NULL;
 
                 while (*++cp) if (*cp == ',') commas++;
                 lspec = calloc(commas+2, sizeof(char *));
+                if (!lspec) {
+                    free(tokenized_domain);
+                    return NULL;
+                }
                 commas = 1;
                 lspec[0] = strtok_r(tokenized_domain, ",", &ptr);
                 while ((lspec[commas++] = strtok_r(NULL, ",", &ptr)))
@@ -976,8 +986,10 @@ netsnmp_transport_remove_from_list(netsnmp_transport_list **transport_list,
 }
 
 int
-netsnmp_transport_config_compare(netsnmp_transport_config *left,
-                                 netsnmp_transport_config *right) {
+netsnmp_transport_config_compare(const void *p, const void *q)
+{
+    const netsnmp_transport_config *left = p, *right = q;
+
     return strcmp(left->key, right->key);
 }
 
@@ -986,8 +998,16 @@ netsnmp_transport_create_config(const char *key, const char *value)
 {
     netsnmp_transport_config *entry =
         SNMP_MALLOC_TYPEDEF(netsnmp_transport_config);
+    if (!entry)
+        return NULL;
     entry->key = strdup(key);
     entry->value = strdup(value);
+    if (!entry->key || !entry->value) {
+        free(entry->key);
+        free(entry->value);
+        free(entry);
+        return NULL;
+    }
     return entry;
 }
 
@@ -1005,8 +1025,8 @@ typedef struct trans_cache_s {
     int count; /* number of times this transport has been returned */
 } trans_cache;
 
-static void _tc_free_item(trans_cache *tc, void *context);
-static int _tc_compare(trans_cache *lhs, trans_cache *rhs);
+static void _tc_free_item(void *tc, void *context);
+static int _tc_compare(const void *p, const void *q);
 
 /** initialize transport cache */
 static int
@@ -1025,8 +1045,8 @@ _tc_init(void)
     }
 
     _container->container_name = strdup("trans_cache");
-    _container->free_item = (netsnmp_container_obj_func*) _tc_free_item;
-    _container->compare = (netsnmp_container_compare*) _tc_compare;
+    _container->free_item = _tc_free_item;
+    _container->compare = _tc_compare;
 
     return 0;
 }
@@ -1037,8 +1057,10 @@ _tc_init(void)
  * sort by af, type, local
  */
 static int
-_tc_compare(trans_cache *lhs, trans_cache *rhs)
+_tc_compare(const void *p, const void *q)
 {
+    const trans_cache *lhs = p, *rhs = q;
+
     netsnmp_assert((lhs != NULL) && (rhs != NULL));
 
     DEBUGMSGTL(("9:transport:cache:compare", "%p/%p\n", lhs, rhs));
@@ -1059,7 +1081,7 @@ _tc_compare(trans_cache *lhs, trans_cache *rhs)
         return 1;
 
     if (AF_INET == lhs->af) {
-        struct sockaddr_in *lha = &lhs->bind_addr.sin,
+        const struct sockaddr_in *lha = &lhs->bind_addr.sin,
             *rha = &rhs->bind_addr.sin;
         if (lha->sin_addr.s_addr < rha->sin_addr.s_addr)
             return -1;
@@ -1073,7 +1095,7 @@ _tc_compare(trans_cache *lhs, trans_cache *rhs)
     }
 #ifdef NETSNMP_ENABLE_IPV6
     else if (AF_INET6 == lhs->af) {
-        struct sockaddr_in6 *lha = &lhs->bind_addr.sin6,
+        const struct sockaddr_in6 *lha = &lhs->bind_addr.sin6,
             *rha = &rhs->bind_addr.sin6;
         int rc = memcmp(lha->sin6_addr.s6_addr, rha->sin6_addr.s6_addr,
                         sizeof(rha->sin6_addr.s6_addr));
@@ -1113,7 +1135,7 @@ _tc_free(trans_cache *tc)
 }
 
 static void
-_tc_free_item(trans_cache *tc, void *context)
+_tc_free_item(void *tc, void *context)
 {
     _tc_free(tc);
 }

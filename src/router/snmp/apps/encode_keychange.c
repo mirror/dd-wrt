@@ -131,8 +131,9 @@ main(int argc, char **argv)
         fprintf(stderr, "%s: out of memory!", local_progname);
         exit(-1);
     }
-    sprintf(local_passphrase_filename, "%s/%s", PASSPHRASE_DIR,
-            PASSPHRASE_FILE);
+    snprintf(local_passphrase_filename, sizeof(PASSPHRASE_DIR) +
+                                        sizeof(PASSPHRASE_FILE) + 4,
+             "%s/%s", PASSPHRASE_DIR, PASSPHRASE_FILE);
 
 
 
@@ -374,7 +375,7 @@ usage_synopsis(FILE * ofp)
 void
 usage_to_file(FILE * ofp)
 {
-    char           *s;
+    const char *s;
 
     usage_synopsis(ofp);
 
@@ -387,7 +388,7 @@ usage_to_file(FILE * ofp)
     Ku=>Kul, and to hash the old Kul with the random bits.\n\
 \n\
     Passphrase will be taken from the first successful source as follows:\n",
-    (s = getenv("HOME")) ? s : "$HOME", local_passphrase_filename,
+    (s = netsnmp_gethomedir()) ? s : "$HOME", local_passphrase_filename,
    "-f will require reading from the stdin/terminal, ignoring a) and b).\n\
     -P will prevent prompts for passphrases to stdout from being printed.\n\
 \n\
@@ -460,7 +461,8 @@ get_user_passphrases(void)
 
     char           *obuf = NULL, *nbuf = NULL;
 
-    char            path[SNMP_MAXBUF], buf[SNMP_MAXBUF], *s = NULL;
+    char            path[SNMP_MAXBUF], buf[SNMP_MAXBUF];
+    const char     *s = NULL;
 
     struct stat     statbuf;
     FILE           *fp = NULL;
@@ -483,7 +485,7 @@ get_user_passphrases(void)
      * path for existence and access first.  Refuse to read
      * if the permissions are wrong.
      */
-    s = getenv("HOME");
+    s = netsnmp_gethomedir();
     snprintf(path, sizeof(path), "%s/%s", s, PASSPHRASE_DIR);
     path[ sizeof(path)-1 ] = 0;
 

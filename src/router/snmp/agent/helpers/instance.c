@@ -50,16 +50,20 @@ typedef struct netsnmp_num_file_instance_s {
  *  @{
  */
 
-static netsnmp_num_file_instance *
-netsnmp_num_file_instance_ref(netsnmp_num_file_instance *nfi)
+static void *
+netsnmp_num_file_instance_ref(void *p)
 {
+    netsnmp_num_file_instance *nfi = p;
+
     nfi->refcnt++;
     return nfi;
 }
 
 static void
-netsnmp_num_file_instance_deref(netsnmp_num_file_instance *nfi)
+netsnmp_num_file_instance_deref(void *p)
 {
+    netsnmp_num_file_instance *nfi = p;
+
     if (--nfi->refcnt == 0) {
 	free(nfi->file_name);
 	free(nfi);
@@ -196,10 +200,8 @@ get_reg(const char *name,
         if (!myreg)
             return NULL;
         myreg->handler->myvoid = it;
-	myreg->handler->data_clone
-	    = (void *(*)(void *))netsnmp_num_file_instance_ref;
-	myreg->handler->data_free
-	    = (void (*)(void *))netsnmp_num_file_instance_deref;
+	myreg->handler->data_clone = netsnmp_num_file_instance_ref;
+	myreg->handler->data_free = netsnmp_num_file_instance_deref;
     }
     if (contextName) {
         myreg->contextName = strdup(contextName);

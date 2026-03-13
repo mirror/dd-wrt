@@ -29,11 +29,10 @@
 oid             dot3StatsTable_oid[] = { DOT3STATSTABLE_OID };
 int             dot3StatsTable_oid_size = OID_LENGTH(dot3StatsTable_oid);
 
-dot3StatsTable_registration dot3StatsTable_user_context;
 static dot3StatsTable_registration *dot3StatsTable_user_context_p;
 
-void            initialize_table_dot3StatsTable(void);
-void            shutdown_table_dot3StatsTable(void);
+static void     initialize_table_dot3StatsTable(void);
+static void     shutdown_table_dot3StatsTable(void);
 
 
 /**

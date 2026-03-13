@@ -54,13 +54,13 @@ SETTING UP APACHE
 
   (assumes you have mod_perl installed properly from above)
 
-  Idealy, it should be put behind a user/password database in your web
+  Ideally, it should be put behind a user/password database in your web
   server (something that sets the REMOTE_USER environmental for CGI
   scripts).  This will greatly enhance its operation so that different
   users can be users of different groups of hosts, etc...  If this is
   not done, everyone will use the user name "guest".
 
-  At the bottom of your httpd.conf file or in an apporpriate
+  At the bottom of your httpd.conf file or in an appropriate
   VirtualHost directive put the following lines, appropriately
   configuring the sql username, etc.  I strongly recommend turning on
   SSL support for this as well.:

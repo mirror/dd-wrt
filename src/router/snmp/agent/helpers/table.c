@@ -122,6 +122,16 @@ netsnmp_get_table_handler(netsnmp_table_registration_info *tabreq)
     return ret;
 }
 
+static void *netsnmp_clone_tri(void *tri)
+{
+    return netsnmp_table_registration_info_clone(tri);
+}
+
+static void netsnmp_free_tri(void *tri)
+{
+    netsnmp_table_registration_info_free(tri);
+}
+
 /** Configures a handler such that table registration information is freed by
  *  netsnmp_handler_free(). Should only be called if handler->myvoid points to
  *  an object of type netsnmp_table_registration_info.
@@ -130,10 +140,8 @@ void netsnmp_handler_owns_table_info(netsnmp_mib_handler *handler)
 {
     netsnmp_assert(handler);
     netsnmp_assert(handler->myvoid);
-    handler->data_clone
-	= (void *(*)(void *)) netsnmp_table_registration_info_clone;
-    handler->data_free
-	= (void (*)(void *)) netsnmp_table_registration_info_free;
+    handler->data_clone = netsnmp_clone_tri;
+    handler->data_free = netsnmp_free_tri;
 }
 
 /** Configures a handler such that table registration information is freed by

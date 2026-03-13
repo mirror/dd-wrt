@@ -114,11 +114,17 @@ sub AddCommonParams {
 	my $cflags = `$opts->{'nsconfig'} --cflags` or
 	    die "net-snmp-config failed\n";
 	chomp($cflags);
-	# Remove -Wimplicit-fallthrough since it is not supported by older
-	# versions of gcc.
-	$cflags =~ s/-Wimplicit-fallthrough=[0-9]//g;
+	# Remove -Wimplicit-fallthrough and -Wcast-function-type since these are
+	# not supported by older versions of gcc.
+	$cflags =~ s/-Wimplicit-fallthrough=*[0-9]*//g;
+	$cflags =~ s/-Wcast-function-type//g;
+	# Remove -Wmaybe-uninitialized because there are multiple unused
+	# variables in the .xs files.
+	$cflags =~ s/-Wmaybe-uninitialized//g;
 	append($Params->{'CCFLAGS'}, $cflags);
 	append($Params->{'CCFLAGS'}, $Config{'ccflags'});
+	# Suppress warnings about old-style function definitions.
+	append($Params->{'CCFLAGS'}, '-Wno-old-style-definition');
 	# Suppress known Perl header shortcomings.
 	$Params->{'CCFLAGS'} =~ s/ -W(cast-qual|write-strings)//g;
 	append($Params->{'CCFLAGS'}, '-Wformat');

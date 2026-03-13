@@ -42,8 +42,6 @@ extern          "C" {
                                        rowreq_ctx);
     int             usmDHUserKeyTable_undo(usmDHUserKeyTable_rowreq_ctx *
                                            rowreq_ctx);
-    int             usmDHUserKeyTable_commit(usmDHUserKeyTable_rowreq_ctx *
-                                             rowreq_ctx);
     int            
         usmDHUserKeyTable_undo_commit(usmDHUserKeyTable_rowreq_ctx *
                                       rowreq_ctx);

@@ -555,7 +555,7 @@ and GAUGE types among others), and set the return paramaters write_method and
 var_len appropriately. These settings can then be corrected for those cases
 when either or both of these assumptions are wrong. Examples of this can be
 seen in the example module.
-EXAMPLEINTEGER is writeable, so this branch sets the write_method parameter,
+EXAMPLEINTEGER is writable, so this branch sets the write_method parameter,
 and EXAMPLEOBJECTID is not an integer, so this branch sets the var_len
 parameter.  In the case of EXAMPLESTRING, both assumptions are wrong, so this
 branch needs to set both these parameters explicitly.
@@ -700,7 +700,7 @@ also sets default values for the other two return parameters.
         memcpy( (char *)name,(char *)newname,
                 ((int)vp->namelen + 1) * sizeof(oid));
         *length = vp->namelen + 1;
-        *write_method = 0;              // Non-writeable
+        *write_method = 0;              // Non-writable
         *var_len = sizeof(long);        // default to integer results
         return(MATCH_SUCCEEDED);
 

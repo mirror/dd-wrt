@@ -1,8 +1,13 @@
 /* -*- C -*- */
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wcast-qual"
+#pragma GCC diagnostic ignored "-Wdeclaration-after-statement"
 #include "EXTERN.h"
 #include "perl.h"
 #include "XSUB.h"
+#pragma GCC diagnostic pop
+
 #include <netdb.h>
 #include <sys/socket.h>
 

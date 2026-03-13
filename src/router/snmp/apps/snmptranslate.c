@@ -170,7 +170,8 @@ int
 main(int argc, char *argv[])
 {
     int             arg;
-    char           *current_name = NULL, *cp = NULL;
+    char           *current_name = NULL;
+    const char     *cp = NULL;
     oid             name[MAX_OID_LEN];
     size_t          name_length;
     int             description = 0;

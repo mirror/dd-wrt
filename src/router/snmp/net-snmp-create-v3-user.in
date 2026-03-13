@@ -86,7 +86,7 @@ if test "x$usage" = "xyes"; then
     echo ""
     echo "Usage:"
     echo "  net-snmp-create-v3-user [-ro] [-A authpass] [-X privpass]"
-    echo "                          [-a MD5|SHA|SHA-512|SHA-384|SHA-256|SHA-224] [-x DES|AES] [username]"
+    echo "                          [-a MD5|SHA|SHA-512|SHA-384|SHA-256|SHA-224] [-x DES|AES|AES128] [username]"
     echo ""
     exit
 fi

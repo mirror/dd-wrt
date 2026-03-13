@@ -47,8 +47,7 @@ static int ifmib_max_num_ifaces = 0;
  */
 static int _access_interface_entry_compare_name(const void *lhs,
                                                 const void *rhs);
-static void _access_interface_entry_release(netsnmp_interface_entry * entry,
-                                            void *unused);
+static void _access_interface_entry_release(void *entry, void *unused);
 static void _access_interface_entry_save_name(const char *name, oid index);
 static void _parse_interface_config(const char *token, char *cptr);
 static void _parse_ifmib_max_num_ifaces(const char *token, char *cptr);
@@ -202,9 +201,7 @@ netsnmp_access_interface_container_free(netsnmp_container *container, u_int free
         /*
          * free all items.
          */
-        CONTAINER_CLEAR(container,
-                        (netsnmp_container_obj_func*)_access_interface_entry_release,
-                        NULL);
+        CONTAINER_CLEAR(container, _access_interface_entry_release, NULL);
     }
 
     CONTAINER_FREE(container);
@@ -476,7 +473,7 @@ _access_interface_entry_compare_name(const void *lhs, const void *rhs)
 /**
  */
 static void
-_access_interface_entry_release(netsnmp_interface_entry * entry, void *context)
+_access_interface_entry_release(void *entry, void *context)
 {
     netsnmp_access_interface_entry_free(entry);
 }

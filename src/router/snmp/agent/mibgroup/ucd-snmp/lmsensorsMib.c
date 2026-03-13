@@ -74,7 +74,7 @@ initialize_lmSensorsTable(const char *tableName, const oid *tableOID,
     table_info = SNMP_MALLOC_TYPEDEF( netsnmp_table_registration_info );
     netsnmp_table_helper_add_indexes(table_info, ASN_INTEGER, 0);
     table_info->min_column = COLUMN_LMSENSORS_INDEX;
-    table_info->max_column = COLUMN_LMSENSORS_VALUE;
+    table_info->max_column = COLUMN_LMSENSORS_SIGNED;
     if (netsnmp_container_table_register(reg, table_info, container, 0) !=
         SNMPERR_SUCCESS) {
         snmp_log(LOG_ERR, "Failed to register the sensors container table\n");
@@ -225,6 +225,15 @@ lmSensorsTables_handler(
                 /* Multiply the value by the appropriate scaling factor for this table */
                 snmp_set_var_typed_integer( request->requestvb, ASN_GAUGE,
                                             (int)(mult*sensor_info->value));
+                break;
+            case COLUMN_LMSENSORS_SIGNED:
+		/* Only avalable for temperature table */
+	        if (reginfo->rootoid[9] != 2)
+		    netsnmp_set_request_error(reqinfo, request, SNMP_NOSUCHOBJECT);
+		else
+                    /* Multiply the value by the appropriate scaling factor for this table */
+                    snmp_set_var_typed_integer( request->requestvb, ASN_INTEGER,
+                                                (int)(mult*sensor_info->value));
                 break;
             default:
                 netsnmp_set_request_error(reqinfo, request,

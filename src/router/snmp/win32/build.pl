@@ -14,17 +14,17 @@ use constant true => 1;
 my $target_arch = $ENV{TARGET_CPU} ? $ENV{TARGET_CPU} : $ENV{Platform} ?
                   $ENV{Platform} : "x86";
 $target_arch = lc $target_arch;
-if ($target_arch ne "x86" && $target_arch ne "x64") {
+if ($target_arch ne "x86" && $target_arch ne "x64" && $target_arch ne "arm64") {
     print "Error: unsupported target architecture $target_arch\n";
     die;
 }
 my @perl_arch = split(/-/, $Config{archname});
 my $openssl = false;
-my $default_openssldir = $target_arch eq "x64" ?
-    "C:\\Progra~1\\OpenSSL-Win64" : "C:\\Progra~1\\OpenSSL-Win32";
+my $default_openssldir = $target_arch eq "x64" || $target_arch eq "arm64" ?
+    "C:\\OpenSSL-Win64" : "C:\\OpenSSL-Win32";
 my $default_opensslincdir = $default_openssldir . "\\include";
 my $opensslincdir = $default_opensslincdir;
-my $default_openssllibdir = $default_openssldir . "\\lib\\VC";
+my $default_openssllibdir = $default_openssldir . "\\lib\\VC\\x64";
 my $openssllibdir = $default_openssllibdir;
 my $b_ipv6 = false;
 my $b_winextdll = false;
@@ -148,10 +148,15 @@ if ($perl && $perl_arch[1] ne $target_arch) {
     die;
 }
 
+my $openssllibsubdir = $link_dynamic ? "\\MD" : "\\MT";
+if ($debug) {
+  $openssllibsubdir .= "d";
+}
+
 my $linktype = $link_dynamic ? "dynamic" : "static";
 $configOpts = (($openssl ? "--with-ssl --enable-blumenthal-aes" : "")	 . " " .
                ($opensslincdir ? "--with-sslincdir=$opensslincdir" : "") . " " .
-               ($openssllibdir ? "--with-ssllibdir=$openssllibdir" : "") . " " .
+               ($openssllibdir ? "--with-ssllibdir=$openssllibdir" . "$openssllibsubdir" : "") . " " .
                ($sdk ? "--with-sdk" : "")		. " " .
                ($b_ipv6 ? "--with-ipv6" : "")		. " " .
                ($b_winextdll ? "--with-winextdll" : "") . " " .

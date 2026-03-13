@@ -135,6 +135,7 @@ date_n_time(const time_t * when, size_t * length)
      * Null time
      */
     if (when == NULL || *when == 0 || *when == (time_t) - 1) {
+invalid_time:
         string[0] = 0;
         string[1] = 0;
         string[2] = 1;
@@ -152,6 +153,9 @@ date_n_time(const time_t * when, size_t * length)
      * Basic 'local' time handling
      */
     tm_p = localtime(when);
+    if (!tm_p)
+        goto invalid_time;
+
     yauron = tm_p->tm_year + 1900;
     string[0] = (u_char)(yauron >> 8);
     string[1] = (u_char)yauron;

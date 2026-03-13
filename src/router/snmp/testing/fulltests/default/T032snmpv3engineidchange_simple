@@ -1,0 +1,74 @@
+#!/bin/sh
+
+. ../support/simple_eval_tools.sh
+
+HEADER SNMPv3 exactEngineID change and SIGHUP
+
+SKIPIF NETSNMP_DISABLE_SET_SUPPORT
+SKIPIF NETSNMP_NO_WRITE_SUPPORT
+SKIPIFNOT USING_SNMPV3_USMUSER_MODULE
+SKIPIFNOT NETSNMP_CAN_DO_CRYPTO
+SKIPIFNOT NETSNMP_ENABLE_SCAPI_AUTHPRIV
+
+#
+# Begin test
+#
+
+# standard SNMPv3 USM agent configuration
+DEFSECURITYLEVEL=authPriv
+. ./Sv3usmconfigagent
+
+# test user
+NEWUSER=newtestuser
+NEWAUTHPASS=newauthpass
+NEWPRIVPASS=newprivpass
+
+#The "exactEngineID"
+AGENT_ENGINEID=0x8000b85c03049081004b00
+AGENT_ENGINEID_NEW=0x8000b85c03049081004b01
+
+#Add user in snmpd.conf and start the agent
+
+CONFIGAGENT exactEngineID $AGENT_ENGINEID
+CONFIGAGENT createUser $NEWUSER $DEFAUTHTYPE $NEWAUTHPASS $DEFPRIVTYPE $NEWPRIVPASS
+CONFIGAGENT rouser $NEWUSER priv
+
+# Start the agent
+STARTAGENT
+
+#Perform snmpget with the configured 'exactEngineID'
+CAPTURE "snmpget -On $SNMP_FLAGS -v 3 -u $NEWUSER -l ap -a $DEFAUTHTYPE \
+-A $NEWAUTHPASS -x $DEFPRIVTYPE -X $NEWPRIVPASS -e $AGENT_ENGINEID \
+$SNMP_TRANSPORT_SPEC:$SNMP_TEST_DEST$SNMP_SNMPD_PORT 1.3.6.1.6.3.10.2.1.1.0"
+CHECKORDIE ".1.3.6.1.6.3.10.2.1.1.0 = Hex-STRING: 80 00 B8 5C 03 04 90 81 00 4B 00"
+
+#Remove the old exactEngineID i.e $AGENT_ENGINEID
+sed '/exactEngineID/d' $SNMP_CONFIG_FILE >$SNMP_CONFIG_FILE.new
+mv $SNMP_CONFIG_FILE.new $SNMP_CONFIG_FILE
+
+#Modify the 'exactEngineID' to a new value
+CONFIGAGENT exactEngineID $AGENT_ENGINEID_NEW
+
+#Send SIGHUP and validate the snmpget with the modified and the old 'exactEngineID'
+if ISDEFINED HAVE_SIGHUP; then
+
+HUPAGENT
+DELAY
+
+#Validate snmpget with MODIFIED 'exactEngineID'
+CAPTURE "snmpget -On $SNMP_FLAGS -v 3 -u $NEWUSER -l ap -a $DEFAUTHTYPE \
+-A $NEWAUTHPASS -x $DEFPRIVTYPE -X $NEWPRIVPASS -e $AGENT_ENGINEID_NEW \
+$SNMP_TRANSPORT_SPEC:$SNMP_TEST_DEST$SNMP_SNMPD_PORT 1.3.6.1.6.3.10.2.1.1.0"
+CHECKORDIE ".1.3.6.1.6.3.10.2.1.1.0 = Hex-STRING: 80 00 B8 5C 03 04 90 81 00 4B 01"
+
+#Validate snmpget with OLD 'exactEngineID'
+#snmpget should timeout with OLD enginID.
+CAPTURE "snmpget -On $SNMP_FLAGS -v 3 -u $NEWUSER -l ap -a $DEFAUTHTYPE \
+-A $NEWAUTHPASS -x $DEFPRIVTYPE -X $NEWPRIVPASS -e $AGENT_ENGINEID \
+$SNMP_TRANSPORT_SPEC:$SNMP_TEST_DEST$SNMP_SNMPD_PORT 1.3.6.1.6.3.10.2.1.1.0"
+CHECKORDIE "Timeout"
+fi
+
+## stop agent and finish
+STOPAGENT
+FINISHED

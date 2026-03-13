@@ -306,17 +306,19 @@ init_diskio(void)
 
 
 #ifdef linux
-    char *app = netsnmp_ds_get_string(NETSNMP_DS_LIBRARY_ID,
-                                      NETSNMP_DS_LIB_APPTYPE);
-    netsnmp_ds_register_config(ASN_BOOLEAN, app, "diskio_exclude_fd",
-                               NETSNMP_DS_APPLICATION_ID,
-                               NETSNMP_DS_AGENT_DISKIO_NO_FD);
-    netsnmp_ds_register_config(ASN_BOOLEAN, app, "diskio_exclude_loop",
-                               NETSNMP_DS_APPLICATION_ID,
-                               NETSNMP_DS_AGENT_DISKIO_NO_LOOP);
-    netsnmp_ds_register_config(ASN_BOOLEAN, app, "diskio_exclude_ram",
-                               NETSNMP_DS_APPLICATION_ID,
-                               NETSNMP_DS_AGENT_DISKIO_NO_RAM);
+    {
+        char *app = netsnmp_ds_get_string(NETSNMP_DS_LIBRARY_ID,
+                                          NETSNMP_DS_LIB_APPTYPE);
+        netsnmp_ds_register_config(ASN_BOOLEAN, app, "diskio_exclude_fd",
+                                   NETSNMP_DS_APPLICATION_ID,
+                                   NETSNMP_DS_AGENT_DISKIO_NO_FD);
+        netsnmp_ds_register_config(ASN_BOOLEAN, app, "diskio_exclude_loop",
+                                   NETSNMP_DS_APPLICATION_ID,
+                                   NETSNMP_DS_AGENT_DISKIO_NO_LOOP);
+        netsnmp_ds_register_config(ASN_BOOLEAN, app, "diskio_exclude_ram",
+                                   NETSNMP_DS_APPLICATION_ID,
+                                   NETSNMP_DS_AGENT_DISKIO_NO_RAM);
+    }
 
     snmpd_register_config_handler("diskio", diskio_parse_config_disks,
         diskio_free_config, "path | device");
@@ -1327,7 +1329,9 @@ static int get_sysfs_stats(void)
     head.length  = 0;
 
     for(i = 0; i < numdisks; i++) {
+        linux_diskio* pTemp;
         FILE *f = fopen(disks[i].syspath, "r");
+
         if ( f == NULL ) {
             DEBUGMSGTL(("ucd-snmp/diskio", "Can't open %s, skipping", disks[i].syspath));
             continue;
@@ -1339,7 +1343,6 @@ static int get_sysfs_stats(void)
             continue;
         }
 
-        linux_diskio* pTemp;
         if (head.length == head.alloc) {
             head.alloc += DISK_INCR;
             head.indices = (linux_diskio *) realloc(head.indices, head.alloc*sizeof(linux_diskio));

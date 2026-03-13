@@ -50,17 +50,28 @@ netsnmp_feature_require(cert_util);
 #include <net-snmp/library/system.h>
 #include <net-snmp/library/snmpTLSBaseDomain.h>
 
+#ifndef X509_CHECK_FLAG_MULTI_LABEL_WILDCARDS
+#define X509_CHECK_FLAG_MULTI_LABEL_WILDCARDS 0
+#endif
+
 #define LOGANDDIE(msg) do { snmp_log(LOG_ERR, "%s\n", msg); return 0; } while(0)
 
 int openssl_local_index;
 
 #ifndef HAVE_ERR_GET_ERROR_ALL
-/* A backport of the OpenSSL 1.1.1e ERR_get_error_all() function. */
+/*
+ * A backport of the OpenSSL 3.0 ERR_get_error_all() function. See also
+ * OpenSSL commit b13342e933c5 ("Modernise the ERR functionality further (new
+ * functions and deprecations)").
+ */
 static unsigned long ERR_get_error_all(const char **file, int *line,
                                        const char **func,
                                        const char **data, int *flags)
 {
     *func = "(?)";
+#ifdef HAVE_ERR_GET_ERROR_FUNC
+    ERR_get_error_func(func);
+#endif
     return ERR_get_error_line_data(file, line, data, flags);
 }
 #endif
@@ -81,7 +92,7 @@ int verify_callback(int ok, X509_STORE_CTX *ctx) {
     /* things to do: */
 
     X509_NAME_oneline(X509_get_subject_name(thecert), buf, sizeof(buf));
-    fingerprint = netsnmp_openssl_cert_get_fingerprint(thecert, -1);
+    fingerprint = netsnmp_openssl_cert_get_fingerprint(thecert, NS_HASH_SHA1);
     DEBUGMSGTL(("tls_x509:verify", "Cert: %s\n", buf));
     DEBUGMSGTL(("tls_x509:verify", "  fp: %s\n", fingerprint ?
                 fingerprint : "unknown"));
@@ -160,7 +171,7 @@ _netsnmp_tlsbase_verify_remote_fingerprint(X509 *remote_cert,
     char            *fingerprint;
 
     fingerprint =
-        netsnmp_openssl_cert_get_fingerprint(remote_cert, -1);
+        netsnmp_openssl_cert_get_fingerprint(remote_cert, NS_HASH_SHA1);
 
     if (!fingerprint) {
         /* no peer cert */
@@ -177,7 +188,7 @@ _netsnmp_tlsbase_verify_remote_fingerprint(X509 *remote_cert,
 
         if (peer_cert)
             tlsdata->their_fingerprint =
-                netsnmp_openssl_cert_get_fingerprint(peer_cert->ocert, -1);
+                netsnmp_openssl_cert_get_fingerprint(peer_cert->ocert, NS_HASH_SHA1);
     }
 
     if (!tlsdata->their_fingerprint && try_default) {
@@ -189,7 +200,7 @@ _netsnmp_tlsbase_verify_remote_fingerprint(X509 *remote_cert,
 
         if (peer_cert)
             tlsdata->their_fingerprint =
-                netsnmp_openssl_cert_get_fingerprint(peer_cert->ocert, -1);
+                netsnmp_openssl_cert_get_fingerprint(peer_cert->ocert, NS_HASH_SHA1);
     }
     
     if (tlsdata->their_fingerprint) {
@@ -518,6 +529,7 @@ sslctx_client_setup(const SSL_METHOD *method, _netsnmpTLSBaseData *tlsbase) {
     netsnmp_cert *id_cert, *peer_cert;
     SSL_CTX      *the_ctx;
     X509         *ocert;
+    const char   *msg;
 
     /***********************************************************************
      * Set up the client context
@@ -525,7 +537,8 @@ sslctx_client_setup(const SSL_METHOD *method, _netsnmpTLSBaseData *tlsbase) {
     the_ctx = SSL_CTX_new(NETSNMP_REMOVE_CONST(SSL_METHOD *, method));
     if (!the_ctx) {
         snmp_log(LOG_ERR, "ack: %p\n", the_ctx);
-        LOGANDDIE("can't create a new context");
+        msg = "can't create a new context";
+        goto err;
     }
     MAKE_MEM_DEFINED(the_ctx, 256/*sizeof(*the_ctx)*/);
     SSL_CTX_set_read_ahead (the_ctx, 1); /* Required for DTLS */
@@ -545,25 +558,35 @@ sslctx_client_setup(const SSL_METHOD *method, _netsnmpTLSBaseData *tlsbase) {
         id_cert = netsnmp_cert_find(NS_CERT_IDENTITY, NS_CERTKEY_DEFAULT, NULL);
     }
 
-    if (!id_cert)
-        LOGANDDIE ("error finding client identity keys");
+    if (!id_cert) {
+        msg = "error finding client identity keys";
+        goto err;
+    }
 
-    if (!id_cert->key || !id_cert->key->okey)
-        LOGANDDIE("failed to load private key");
+    if (!id_cert->key || !id_cert->key->okey) {
+        msg = "failed to load private key";
+        goto err;
+    }
 
     DEBUGMSGTL(("sslctx_client", "using public key: %s\n",
                 id_cert->info.filename));
     DEBUGMSGTL(("sslctx_client", "using private key: %s\n",
                 id_cert->key->info.filename));
 
-    if (SSL_CTX_use_certificate(the_ctx, id_cert->ocert) <= 0)
-        LOGANDDIE("failed to set the client certificate to use");
+    if (SSL_CTX_use_certificate(the_ctx, id_cert->ocert) <= 0) {
+        msg = "failed to set the client certificate to use";
+        goto err;
+    }
 
-    if (SSL_CTX_use_PrivateKey(the_ctx, id_cert->key->okey) <= 0)
-        LOGANDDIE("failed to set the client private key to use");
+    if (SSL_CTX_use_PrivateKey(the_ctx, id_cert->key->okey) <= 0) {
+        msg = "failed to set the client private key to use";
+        goto err;
+    }
 
-    if (!SSL_CTX_check_private_key(the_ctx))
-        LOGANDDIE("client public and private keys incompatible");
+    if (!SSL_CTX_check_private_key(the_ctx)) {
+        msg = "client public and private keys incompatible";
+        goto err;
+    }
 
     while (id_cert->issuer_cert) {
         id_cert = id_cert->issuer_cert;
@@ -571,8 +594,10 @@ sslctx_client_setup(const SSL_METHOD *method, _netsnmpTLSBaseData *tlsbase) {
         {
             ocert = X509_dup(id_cert->ocert);
             DEBUGMSGTL(("sslctx_client", "adding cert-chain certificate %p", ocert));
-            if (!ocert || !SSL_CTX_add_extra_chain_cert(the_ctx, ocert))
-                LOGANDDIE("failed to add intermediate client certificate");
+            if (!ocert || !SSL_CTX_add_extra_chain_cert(the_ctx, ocert)) {
+                msg = "failed to add intermediate client certificate";
+                goto err;
+            }
         }
     }
 
@@ -588,23 +613,33 @@ sslctx_client_setup(const SSL_METHOD *method, _netsnmpTLSBaseData *tlsbase) {
                     peer_cert ? peer_cert->info.filename : "none"));
 
         /* Trust the expected certificate */
-        if (netsnmp_cert_trust(the_ctx, peer_cert) != SNMPERR_SUCCESS)
-            LOGANDDIE ("failed to set verify paths");
+        if (netsnmp_cert_trust(the_ctx, peer_cert) != SNMPERR_SUCCESS) {
+            msg = "failed to set verify paths";
+            goto err;
+        }
     }
 
     /* trust a certificate (possibly a CA) specifically passed in */
     if (tlsbase->trust_cert) {
-        if (!_trust_this_cert(the_ctx, tlsbase->trust_cert))
+        if (!_trust_this_cert(the_ctx, tlsbase->trust_cert)) {
+            SSL_CTX_free(the_ctx);
             return 0;
+        }
     }
 
     return _sslctx_common_setup(the_ctx, tlsbase);
+
+err:
+    snmp_log(LOG_ERR, "%s\n", msg);
+    SSL_CTX_free(the_ctx);
+    return 0;
 }
 
 SSL_CTX *
 sslctx_server_setup(const SSL_METHOD *method) {
     netsnmp_cert *id_cert;
     X509         *ocert;
+    const char	 *msg;
 
     /***********************************************************************
      * Set up the server context
@@ -612,30 +647,41 @@ sslctx_server_setup(const SSL_METHOD *method) {
     /* setting up for ssl */
     SSL_CTX *the_ctx = SSL_CTX_new(NETSNMP_REMOVE_CONST(SSL_METHOD *, method));
     if (!the_ctx) {
-        LOGANDDIE("can't create a new server context");
+        msg = "can't create a new server context";
+        goto err;
     }
     MAKE_MEM_DEFINED(the_ctx, 256/*sizeof(*the_ctx)*/);
 
     id_cert = netsnmp_cert_find(NS_CERT_IDENTITY, NS_CERTKEY_DEFAULT, NULL);
-    if (!id_cert)
-        LOGANDDIE ("error finding server identity keys");
+    if (!id_cert) {
+        msg = "error finding server identity keys";
+        goto err;
+    }
 
-    if (!id_cert->key || !id_cert->key->okey)
-        LOGANDDIE("failed to load server private key");
+    if (!id_cert->key || !id_cert->key->okey) {
+        msg = "failed to load server private key";
+        goto err;
+    }
 
     DEBUGMSGTL(("sslctx_server", "using public key: %s\n",
                 id_cert->info.filename));
     DEBUGMSGTL(("sslctx_server", "using private key: %s\n",
                 id_cert->key->info.filename));
 
-    if (SSL_CTX_use_certificate(the_ctx, id_cert->ocert) <= 0)
-        LOGANDDIE("failed to set the server certificate to use");
+    if (SSL_CTX_use_certificate(the_ctx, id_cert->ocert) <= 0) {
+        msg = "failed to set the server certificate to use";
+        goto err;
+    }
 
-    if (SSL_CTX_use_PrivateKey(the_ctx, id_cert->key->okey) <= 0)
-        LOGANDDIE("failed to set the server private key to use");
+    if (SSL_CTX_use_PrivateKey(the_ctx, id_cert->key->okey) <= 0) {
+        msg = "failed to set the server private key to use";
+        goto err;
+    }
 
-    if (!SSL_CTX_check_private_key(the_ctx))
-        LOGANDDIE("server public and private keys incompatible");
+    if (!SSL_CTX_check_private_key(the_ctx)) {
+        msg ="server public and private keys incompatible";
+        goto err;
+    }
 
     while (id_cert->issuer_cert) {
         id_cert = id_cert->issuer_cert;
@@ -643,8 +689,10 @@ sslctx_server_setup(const SSL_METHOD *method) {
         {
             ocert = X509_dup(id_cert->ocert);
             DEBUGMSGTL(("sslctx_server", "adding cert-chain certificate %p", ocert));
-            if (!ocert || !SSL_CTX_add_extra_chain_cert(the_ctx, ocert))
-                LOGANDDIE("failed to add intermediate server certificate");
+            if (!ocert || !SSL_CTX_add_extra_chain_cert(the_ctx, ocert)) {
+                msg = "failed to add intermediate server certificate";
+                goto err;
+            }
         }
     }
 
@@ -656,7 +704,14 @@ sslctx_server_setup(const SSL_METHOD *method) {
                        SSL_VERIFY_CLIENT_ONCE,
                        &verify_callback);
 
+    SSL_CTX_set_options(the_ctx, SSL_OP_CIPHER_SERVER_PREFERENCE);
+
     return _sslctx_common_setup(the_ctx, NULL);
+    
+err:
+    snmp_log(LOG_ERR, "%s\n", msg);
+    SSL_CTX_free(the_ctx);
+    return NULL;
 }
 
 int

@@ -192,12 +192,9 @@ config_require(ip-mib/inetNetToMediaTable/inetNetToMediaTable_data_access);
     int
         inetNetToMediaTable_check_dependencies
         (inetNetToMediaTable_rowreq_ctx * rowreq_ctx);
-    int
-        inetNetToMediaTable_commit(inetNetToMediaTable_rowreq_ctx *
-                                   rowreq_ctx);
 
-        inetNetToMediaTable_rowreq_ctx
-        * inetNetToMediaTable_row_find_by_mib_index
+    inetNetToMediaTable_rowreq_ctx *
+        inetNetToMediaTable_row_find_by_mib_index
         (inetNetToMediaTable_mib_index * mib_idx);
 
     extern const oid      inetNetToMediaTable_oid[];
@@ -395,12 +392,6 @@ config_require(ip-mib/inetNetToMediaTable/inetNetToMediaTable_data_access);
     int
         inetNetToMediaRowStatus_undo(inetNetToMediaTable_rowreq_ctx *
                                      rowreq_ctx);
-
-
-    int
-        inetNetToMediaTable_check_dependencies
-        (inetNetToMediaTable_rowreq_ctx * ctx);
-
 
     /*
      * DUMMY markers, ignore

@@ -896,8 +896,11 @@ init_snmp(const char *type)
 
     /*
      * set our current locale properly to initialize isprint() type functions 
+     *
+     * Do not use setlocale on qnx, it is buggy 
+     * https://www.qnx.com/developers/docs/7.1/#com.qnx.doc.neutrino.lib_ref/topic/s/setlocale.html
      */
-#ifdef HAVE_SETLOCALE
+#if defined(HAVE_SETLOCALE) && !defined(__QNX__)
     setlocale(LC_CTYPE, "");
 #endif
 
@@ -1036,6 +1039,8 @@ snmp_open(netsnmp_session *session)
         return NULL;
     }
 
+    slp->session->flags &= ~SNMP_FLAGS_SESSION_USER;
+
     snmp_session_insert(slp);
 
     return (slp->session);
@@ -1072,6 +1077,8 @@ snmp_open_ex(netsnmp_session *session,
     slp->internal->hook_build = fbuild;
     slp->internal->hook_realloc_build = frbuild;
     slp->internal->check_packet = fcheck;
+
+    slp->session->flags &= ~SNMP_FLAGS_SESSION_USER;
 
     snmp_session_insert(slp);
 
@@ -1133,7 +1140,10 @@ _sess_copy(netsnmp_session * in_session)
     session->securityEngineID = NULL;
     session->securityName = NULL;
     session->securityAuthProto = NULL;
+    session->securityAuthLocalKey = NULL;
     session->securityPrivProto = NULL;
+    session->securityPrivLocalKey = NULL;
+    session->sessUser = NULL;
     /*
      * session now points to the new structure that still contains pointers to
      * data allocated elsewhere.  Some of this data is copied to space malloc'd
@@ -1266,6 +1276,22 @@ _sess_copy(netsnmp_session * in_session)
         session->securityNameLen = strlen(cp);
     }
 
+    if (in_session->securityAuthLocalKey) {
+            session->securityAuthLocalKey =
+                netsnmp_memdup(in_session->securityAuthLocalKey,
+                               in_session->securityAuthLocalKeyLen);
+            session->securityAuthLocalKeyLen =
+                in_session->securityAuthLocalKeyLen;
+    }
+
+    if (in_session->securityPrivLocalKey) {
+            session->securityPrivLocalKey =
+                netsnmp_memdup(in_session->securityPrivLocalKey,
+                               in_session->securityPrivLocalKeyLen);
+            session->securityPrivLocalKeyLen =
+                in_session->securityPrivLocalKeyLen;
+    }
+
     if (session->retries == SNMP_DEFAULT_RETRIES) {
         int retry = netsnmp_ds_get_int(NETSNMP_DS_LIBRARY_ID,
                                        NETSNMP_DS_LIB_RETRIES);
@@ -1310,6 +1336,19 @@ _sess_copy(netsnmp_session * in_session)
             }
         }
     }
+
+#ifndef NETSNMP_NO_WRITE_SUPPORT
+    if (in_session->sessUser) {
+        struct usmUser *user;
+
+        user = calloc(1, sizeof(struct usmUser));
+        if (user == NULL) {
+            snmp_sess_close(slp);
+            return NULL;
+        }
+        session->sessUser = usm_cloneFrom_user(in_session->sessUser, user);
+    }
+#endif /* NETSNMP_NO_WRITE_SUPPORT */
 
     /* Anything below this point should only be done if the transport
        had no say in the matter */
@@ -1899,6 +1938,9 @@ void           *
 snmp_sess_open(netsnmp_session * pss)
 {
     void           *pvoid;
+
+    pss->flags |= SNMP_FLAGS_SESSION_USER;
+
     pvoid = _sess_open(pss);
     if (!pvoid) {
         SET_SNMP_ERROR(pss->s_snmp_errno);
@@ -1920,21 +1962,22 @@ create_user_from_session(netsnmp_session * session) {
 /* Free the memory owned by a session but not the session object itself. */
 void netsnmp_cleanup_session(netsnmp_session *s)
 {
-    SNMP_FREE(s->localname);
-    SNMP_FREE(s->peername);
-    SNMP_FREE(s->community);
-    SNMP_FREE(s->contextEngineID);
-    SNMP_FREE(s->contextName);
-    SNMP_FREE(s->securityEngineID);
-    SNMP_FREE(s->securityName);
-    SNMP_FREE(s->securityAuthProto);
-    SNMP_FREE(s->securityAuthLocalKey);
-    SNMP_FREE(s->securityPrivProto);
-    SNMP_FREE(s->securityPrivLocalKey);
-    SNMP_FREE(s->paramName);
+    free(s->localname);
+    free(s->peername);
+    free(s->community);
+    free(s->contextEngineID);
+    free(s->contextName);
+    free(s->securityEngineID);
+    free(s->securityName);
+    free(s->securityAuthProto);
+    free(s->securityAuthLocalKey);
+    free(s->securityPrivProto);
+    free(s->securityPrivLocalKey);
+    free(s->paramName);
 #ifndef NETSNMP_NO_TRAP_STATS
-    SNMP_FREE(s->trap_stats);
+    free(s->trap_stats);
 #endif /* NETSNMP_NO_TRAP_STATS */
+    usm_free_user(s->sessUser);
 }
 
 /*
@@ -1946,16 +1989,17 @@ void netsnmp_cleanup_session(netsnmp_session *s)
 static void
 snmp_free_session(netsnmp_session * s)
 {
-    if (s) {
-        netsnmp_cleanup_session(s);
+    if (!s)
+        return;
 
-        /*
-         * clear session from any callbacks
-         */
-        netsnmp_callback_clear_client_arg(s, 0, 0);
+    netsnmp_cleanup_session(s);
 
-        free(s);
-    }
+    /*
+     * clear session from any callbacks
+     */
+    netsnmp_callback_clear_client_arg(s, 0, 0);
+
+    free(s);
 }
 
 /*
@@ -2140,8 +2184,9 @@ snmpv3_verify_msg(netsnmp_request_list *rp, netsnmp_pdu *pdu)
        USM specific (and maybe other future ones) */
     if (pdu->securityModel == SNMP_SEC_MODEL_USM &&
         (rpdu->securityEngineIDLen != pdu->securityEngineIDLen ||
-        memcmp(rpdu->securityEngineID, pdu->securityEngineID,
-               pdu->securityEngineIDLen)))
+         (pdu->securityEngineIDLen &&
+          memcmp(rpdu->securityEngineID, pdu->securityEngineID,
+                 pdu->securityEngineIDLen))))
         return 0;
 
     /* the securityName must match though regardless of secmodel */
@@ -5629,6 +5674,13 @@ _sess_process_packet_parse_pdu(void *sessp, netsnmp_session * sp,
               if (c)
                   *c = 0;
               filtered = netsnmp_transport_filter_check(sourceaddr);
+          }
+          else if (!strncmp(addrtxt, "callback", 8)) {
+              /* do not filter internal request */
+              DEBUGMSGTL(("sess_process_packet:filter",
+                          "bypass packet from %s \n",
+                          addrtxt));
+              filtered = 1;
           }
           if ((filter == -1) && filtered)
               dropstr = "matched blocklist";

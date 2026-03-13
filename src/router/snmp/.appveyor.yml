@@ -11,7 +11,6 @@ environment:
     - BUILD: MSVCDYNAMIC64
     - BUILD: MSVCSTATIC64
     - BUILD: INSTALLER
-    - BUILD: MinGW32
     - BUILD: MSYS2
     - BUILD: MinGW64
 

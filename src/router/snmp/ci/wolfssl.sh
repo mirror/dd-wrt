@@ -14,6 +14,7 @@ options="
     --enable-opensslextra
     --prefix=$PWD/../wolfssl-inst
 "
+# shellcheck disable=SC2086
 ./configure ${options}
 make -j"$(nproc)"
 make install

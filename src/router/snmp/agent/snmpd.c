@@ -561,7 +561,10 @@ main(int argc, char *argv[])
                     struct group  *info;
 
                     info = getgrnam(optarg);
-                    gid = info ? info->gr_gid : -1;
+                    if (info)
+                        gid = info->gr_gid;
+                    else
+                        gid = -1;
                     endgrent();
                 }
 #endif
@@ -739,7 +742,10 @@ main(int argc, char *argv[])
                     struct passwd  *info;
 
                     info = getpwnam(optarg);
-                    uid = info ? info->pw_uid : -1;
+                    if (info)
+                        uid = info->pw_uid;
+                    else
+                        uid = -1;
                     endpwent();
                 }
 #endif
@@ -816,15 +822,17 @@ main(int argc, char *argv[])
          */
         DEBUGMSGTL(("snmpd/main", "optind %d, argc %d\n", optind, argc));
         for (i = optind; i < argc; i++) {
-            char *c, *astring;
+            char *c;
             if ((c = netsnmp_ds_get_string(NETSNMP_DS_APPLICATION_ID, 
 					   NETSNMP_DS_AGENT_PORTS))) {
-                astring = (char*)malloc(strlen(c) + 2 + strlen(argv[i]));
+                char *astring;
+                size_t alen = strlen(c) + 2 + strlen(argv[i]);
+                astring = (char*)malloc(alen);
                 if (astring == NULL) {
                     fprintf(stderr, "malloc failure processing argv[%d]\n", i);
                     goto out;
                 }
-                sprintf(astring, "%s,%s", c, argv[i]);
+                snprintf(astring, alen, "%s,%s", c, argv[i]);
                 netsnmp_ds_set_string(NETSNMP_DS_APPLICATION_ID, 
 				      NETSNMP_DS_AGENT_PORTS, astring);
                 SNMP_FREE(astring);
@@ -874,12 +882,13 @@ main(int argc, char *argv[])
             fprintf(stderr, "malloc failure processing argvrestart\n");
             goto out;
         }
-        strcpy(argvrestartname, argv[0]);
+        strlcpy(argvrestartname, argv[0], strlen(argv[0])+1);
 
         for (cptr = argvrestart, i = 0; i < argc; i++) {
-            strcpy(cptr, argv[i]);
+            strlcpy(cptr, argv[i], ret);
             *(argvptr++) = cptr;
             cptr += strlen(argv[i]) + 1;
+            ret -= strlen(argv[i]) + 1;
         }
     }
 #endif /* USING_UTIL_FUNCS_RESTART_MODULE */
@@ -1168,6 +1177,7 @@ snmpd_reconfig(void)
     netsnmp_logging_restart();
     snmp_log(LOG_INFO, "NET-SNMP version %s restarted\n",
              netsnmp_get_version());
+    read_premib_configs();
     update_config();
     send_easy_trap(SNMP_TRAP_ENTERPRISESPECIFIC, 3);
 #ifdef HAVE_SIGPROCMASK

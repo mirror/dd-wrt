@@ -25,12 +25,27 @@ case "$(uname -a)" in
 	pacman --noconfirm --sync --needed mingw-w64-x86_64-gcc
 	pacman --noconfirm --sync --needed mingw-w64-x86_64-libmariadbclient
 	pacman --noconfirm --sync --needed mingw-w64-x86_64-openssl
-	pacman --noconfirm --sync --needed mingw-w64-x86_64-pkg-config
+	pacman --noconfirm --sync --needed mingw-w64-x86_64-pkgconf ||
+	    pacman --noconfirm --sync --needed mingw-w64-x86_64-pkg-config
 	export PATH="/mingw64/bin:$PATH"
 	;;
 esac
+case "$MODE" in
+    Android)
+	NDK=$PWD/android-ndk-r27d/toolchains/llvm/prebuilt/linux-x86_64/bin
+	export PATH="${NDK}:${PATH}"
+	export CC=aarch64-linux-android34-clang
+	;;
+esac
 echo "compiler path: $(type -p "${CC:-gcc}")"
-"${scriptdir}"/net-snmp-configure V5-9-patches || exit $?
+branch_name=$(git rev-parse --abbrev-ref HEAD)
+if ! "${scriptdir}"/net-snmp-configure "${branch_name}"; then
+    echo "========================================"
+    echo "Configure failed. Dumping config.log:"
+    echo "========================================"
+    cat config.log
+    exit 1
+fi
 case "$MODE" in
     mini*)
 	# Net-SNMP uses static dependencies, the Makefile.depend files have
@@ -46,8 +61,11 @@ case "$MODE" in
 	    nproc=1
 	fi;;
 esac
-make -s -j${nproc}                       || exit $?
+make -s -j"${nproc}" || exit $?
 case "$MODE" in
-    disable-set|mini*|read-only)
-        exit 0;;
+    regular)
+	if [ -e testing/fuzzing ]; then
+	    make -C testing -s fuzz-tests || exit $?
+	fi
+	;;
 esac

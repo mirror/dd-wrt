@@ -222,6 +222,7 @@ int main(int argc, char **argv)
     netsnmp_transport *transport;
     int arg;
     char errbuf[PCAP_ERRBUF_SIZE];
+    const char *app_name;
     char *fname;
     pcap_t *p;
     mystuff_t mystuff;
@@ -254,7 +255,7 @@ int main(int argc, char **argv)
         return 2;
     }
 
-    const char *app_name = "snmppcap";
+    app_name = "snmppcap";
     if (acting_as_agent) {
 	if (init_agent(app_name) != 0) {
 	    snmp_log(LOG_ERR, "Agent initialization failed\n");

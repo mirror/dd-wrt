@@ -34,8 +34,6 @@ extern          "C" {
 
     void netsnmp_binary_array_release(netsnmp_container *c);
 
-    void netsnmp_container_binary_array_init(void);
-
     int netsnmp_binary_array_options_set(netsnmp_container *c, int set, u_int flags);
 
 

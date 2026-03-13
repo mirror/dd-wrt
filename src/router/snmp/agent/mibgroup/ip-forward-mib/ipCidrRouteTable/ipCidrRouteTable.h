@@ -188,8 +188,6 @@ config_require(ip-forward-mib/ipCidrRouteTable/ipCidrRouteTable_data_access);
     void            ipCidrRouteTable_release_data(ipCidrRouteTable_data *
                                                   data);
 
-    int             ipCidrRouteTable_commit(ipCidrRouteTable_rowreq_ctx *
-                                            rowreq_ctx);
     ipCidrRouteTable_rowreq_ctx
         * ipCidrRouteTable_row_find_by_mib_index(ipCidrRouteTable_mib_index
                                                  * mib_idx);

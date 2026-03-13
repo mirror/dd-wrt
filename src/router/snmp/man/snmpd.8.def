@@ -260,7 +260,7 @@ The SSH transport, on the server side, is actually just a unix
 named pipe that can be connected to via a ssh subsystem configured in
 the main ssh server.  The pipe location (configurable with the
 sshtosnmpsocket token in snmp.conf) is
-.I /var/net\-snmp/sshtosnmp.
+.I PERSISTENT_DIRECTORY/sshdomainsocket.
 Packets should be submitted to it via the sshtosnmp application, which
 also sends the user ID as well when starting the connection.  The TSM
 security model should be used when packets should process it.
@@ -275,16 +275,16 @@ configuration file (which is normally
 using the following configuration line:
 .TP 8
 .IP
-Subsystem snmp /usr/local/bin/sshtosnmp
+Subsystem snmp /usr/local/bin/sshtosnmp PERSISTENT_DIRECTORY/sshdomainsocket
 .IP
 The
 .I sshtosnmp
 command will need read/write access to the 
-.I /var/net\-snmp/sshtosnmp
+.I PERSISTENT_DIRECTORY/sshdomainsocket
 pipe.  Although it should be fairly safe to grant access to the
 average user since it still requires modifications to the ACM settings
 before the user can perform operations, paranoid administrators may
-want to make the /var/net\-snmp directory accessible only by users in a
+want to make the PERSISTENT_DIRECTORY directory accessible only by users in a
 particular group.  Use the
 .I sshtosnmpsocketperms
 snmp.conf configure option to set the permissions, owner and group of

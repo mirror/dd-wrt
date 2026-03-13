@@ -664,7 +664,6 @@ int main(int argc, char **argv)
     cleanup_ctlTable( ss, index, indexlen );
 
     snmp_close(ss);
-    netsnmp_cleanup_session(&session);
     SOCK_CLEANUP;
     return 0;
 }

@@ -1,6 +1,7 @@
 #!/bin/sh
 
-export LD_LIBRARY_PATH="$(find . -name '*.so' | grep -v NetSNMP/agent/default_store | sed 's,^\./,'"$PWD/"',;s,/[^/]*$,,' | sort -u | tr '\n' :)" &&
+LD_LIBRARY_PATH="$(find . -name '*.so' | grep -v NetSNMP/agent/default_store | sed 's,^\./,'"$PWD/"',;s,/[^/]*$,,' | sort -u | tr '\n' :)" &&
+export LD_LIBRARY_PATH &&
 make perlmakefiles &&
 cd perl &&
 make &&

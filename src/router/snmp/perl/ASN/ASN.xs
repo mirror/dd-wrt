@@ -1,8 +1,12 @@
 /* -*- C -*- */
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wcast-qual"
+#pragma GCC diagnostic ignored "-Wdeclaration-after-statement"
 #include "EXTERN.h"
 #include "perl.h"
 #include "XSUB.h"
+#pragma GCC diagnostic pop
 
 #include <net-snmp/net-snmp-config.h>
 #include <net-snmp/library/asn1.h>

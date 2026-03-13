@@ -114,6 +114,7 @@ parse_lookupResultsTable(const char *token, char *line)
                               &StorageTmp->lookupCtlOwnerIndexLen);
     if (StorageTmp->lookupCtlOwnerIndex == NULL) {
         config_perror("invalid specification for lookupCtlOwnerIndex");
+        free(StorageTmp);
         return;
     }
 
@@ -123,6 +124,7 @@ parse_lookupResultsTable(const char *token, char *line)
                               &StorageTmp->lookupCtlOperationNameLen);
     if (StorageTmp->lookupCtlOperationName == NULL) {
         config_perror("invalid specification for lookupCtlOperationName");
+        free(StorageTmp);
         return;
     }
 
@@ -139,6 +141,7 @@ parse_lookupResultsTable(const char *token, char *line)
                               &StorageTmp->lookupResultsAddressLen);
     if (StorageTmp->lookupResultsAddress == NULL) {
         config_perror("invalid specification for lookupResultsAddress");
+        free(StorageTmp);
         return;
     }
 

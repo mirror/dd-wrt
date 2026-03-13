@@ -93,19 +93,21 @@ static netsnmp_fsys_info **
 _expand_disk_array(char *cptr)
 {
     int prev_max = maxdisks;
+    netsnmp_fsys_info **new_disks;
 
     if (maxdisks == 0)
         maxdisks = 50;
     else
         maxdisks *= 2;
 
-    disks = realloc(disks, maxdisks * sizeof(netsnmp_fsys_info *));
-    if (!disks) {
+    new_disks = realloc(disks, maxdisks * sizeof(netsnmp_fsys_info *));
+    if (!new_disks) {
         config_perror("malloc failed for new disk allocation.");
         netsnmp_config_error("\tignoring: %s", cptr);
         return NULL;
     }
 
+    disks = new_disks;
     memset(disks + prev_max, 0, (maxdisks - prev_max) *
            sizeof(netsnmp_fsys_info *));
 

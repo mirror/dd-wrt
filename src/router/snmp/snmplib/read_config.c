@@ -158,7 +158,8 @@ struct config_files *config_files = NULL;
 static struct config_line *
 internal_register_config_handler(const char *type_param,
 				 const char *token,
-				 void (*parser) (const char *, char *),
+				 void (*parser1) (const char *, char *),
+				 void (*parser2) (const char *, const char *),
 				 void (*releaser) (void), const char *help,
 				 int when)
 {
@@ -187,7 +188,7 @@ internal_register_config_handler(const char *type_param,
                 *cptr = '\0';
                 ++cptr;
             }
-            ltmp2 = internal_register_config_handler(c, token, parser,
+            ltmp2 = internal_register_config_handler(c, token, parser1, parser2,
                                                      releaser, help, when);
         }
         return ltmp2;
@@ -208,6 +209,11 @@ internal_register_config_handler(const char *type_param,
         }
 
         (*ctmp)->fileHeader = strdup(type);
+        if (!(*ctmp)->fileHeader) {
+            free(*ctmp);
+            *ctmp = NULL;
+            return NULL;
+        }
         DEBUGMSGTL(("9:read_config:type", "new type %s\n", type));
     }
 
@@ -232,6 +238,12 @@ internal_register_config_handler(const char *type_param,
 
         (*ltmp)->config_time = when;
         (*ltmp)->config_token = strdup(token);
+        if (!(*ltmp)->config_token) {
+            free(*ltmp);
+            *ltmp = NULL;
+            return NULL;
+        }
+
         if (help != NULL)
             (*ltmp)->help = strdup(help);
     }
@@ -240,7 +252,8 @@ internal_register_config_handler(const char *type_param,
      * Add/Replace the parse/free functions for the given line type
      * in the given file type.
      */
-    (*ltmp)->parse_line = parser;
+    (*ltmp)->parse_line1 = parser1;
+    (*ltmp)->parse_line2 = parser2;
     (*ltmp)->free_func = releaser;
 
     return (*ltmp);
@@ -253,7 +266,7 @@ register_prenetsnmp_mib_handler(const char *type,
                                 void (*parser) (const char *, char *),
                                 void (*releaser) (void), const char *help)
 {
-    return internal_register_config_handler(type, token, parser, releaser,
+    return internal_register_config_handler(type, token, parser, NULL, releaser,
 					    help, PREMIB_CONFIG);
 }
 
@@ -308,7 +321,7 @@ register_config_handler(const char *type,
 			void (*parser) (const char *, char *),
 			void (*releaser) (void), const char *help)
 {
-    return internal_register_config_handler(type, token, parser, releaser,
+    return internal_register_config_handler(type, token, parser, NULL, releaser,
 					    help, NORMAL_CONFIG);
 }
 
@@ -318,9 +331,7 @@ register_const_config_handler(const char *type,
                               void (*parser) (const char *, const char *),
                               void (*releaser) (void), const char *help)
 {
-    return internal_register_config_handler(type, token,
-                                            (void(*)(const char *, char *))
-                                            parser, releaser,
+    return internal_register_config_handler(type, token, NULL, parser, releaser,
 					    help, NORMAL_CONFIG);
 }
 
@@ -329,9 +340,16 @@ register_app_config_handler(const char *token,
                             void (*parser) (const char *, char *),
                             void (*releaser) (void), const char *help)
 {
-    return (register_config_handler(NULL, token, parser, releaser, help));
+    return register_config_handler(NULL, token, parser, releaser, help);
 }
 
+struct config_line *
+register_const_app_config_handler(const char *token,
+                                  void (*parser) (const char *, const char *),
+                                  void (*releaser) (void), const char *help)
+{
+    return register_const_config_handler(NULL, token, parser, releaser, help);
+}
 
 
 /**
@@ -526,7 +544,7 @@ read_config_find_handler(struct config_line *line_handlers,
 /*
  * searches a config_line linked list for a match 
  */
-int
+static int
 run_config_handler(struct config_line *lptr,
                    const char *token, char *cptr, int when)
 {
@@ -556,7 +574,10 @@ run_config_handler(struct config_line *lptr,
             while ((cp > cptr) && isspace((unsigned char)(*cp))) {
                 *(cp--) = '\0';
             }
-            (*(lptr->parse_line)) (token, cptr);
+            if (lptr->parse_line1)
+                lptr->parse_line1(token, cptr);
+            else
+                lptr->parse_line2(token, cptr);
         }
         else
             DEBUGMSGTL(("9:read_config:parser",
@@ -582,13 +603,13 @@ run_config_handler(struct config_line *lptr,
  */
 #define SNMP_CONFIG_DELIMETERS " \t="
 
-int
+static int
 snmp_config_when(char *line, int when)
 {
     char           *cptr, buf[STRINGMAX];
     struct config_line *lptr = NULL;
     struct config_files *ctmp = config_files;
-    char           *st;
+    char           *st, *start_from, *end;
 
     if (line == NULL) {
         config_perror("snmp_config() called with a null string.");
@@ -614,7 +635,10 @@ snmp_config_when(char *line, int when)
             return SNMPERR_GENERR;
         }
         cptr = strtok_r(NULL, SNMP_CONFIG_DELIMETERS, &st);
-        netsnmp_assert(cptr);
+        if (!cptr) {
+            netsnmp_config_error("Invalid configuration line %s", line);
+            return SNMPERR_GENERR;
+        }
         lptr = read_config_find_handler(lptr, cptr);
     } else {
         /*
@@ -632,7 +656,11 @@ snmp_config_when(char *line, int when)
     /*
      * use the original string instead since strtok_r messed up the original 
      */
-    line = skip_white(line + (cptr - buf) + strlen(cptr) + 1);
+    end = line + strlen(line);
+    start_from = line + (cptr - buf) + strlen(cptr) + 1;
+    if (start_from > end)
+        start_from = end;
+    line = skip_white(start_from);
 
     return (run_config_handler(lptr, cptr, line, when));
 }
@@ -1138,11 +1166,11 @@ const char     *
 get_configuration_directory(void)
 {
     char            defaultPath[SPRINT_MAX_LEN];
-    char           *homepath;
+    const char     *homepath;
 
     if (NULL == netsnmp_ds_get_string(NETSNMP_DS_LIBRARY_ID, 
 				      NETSNMP_DS_LIB_CONFIGURATION_DIR)) {
-        homepath = netsnmp_getenv("HOME");
+        homepath = netsnmp_gethomedir();
         snprintf(defaultPath, sizeof(defaultPath), "%s%c%s%c%s%s%s%s",
                 SNMPCONFPATH, ENV_SEPARATOR_CHAR,
                 SNMPSHAREPATH, ENV_SEPARATOR_CHAR, SNMPLIBPATH,
@@ -1254,6 +1282,9 @@ read_config_files_in_path(const char *path, struct config_files *ctmp,
         return SNMPERR_GENERR;
 
     envconfpath = strdup(path);
+    if (NULL == envconfpath) {
+        return SNMPERR_GENERR;
+    }
 
     DEBUGMSGTL(("read_config:path", " config path used for %s:%s (persistent path:%s)\n",
                 ctmp->fileHeader, envconfpath, perspath));
@@ -1403,6 +1434,9 @@ read_config_files_of_type(int when, struct config_files *ctmp)
          * keyword transforms the perspath pointer into a dangling pointer.
          */
         perspath = strdup(get_persistent_directory());
+        if (perspath == NULL) {
+            return SNMPERR_GENERR;
+        }
         if (envconfpath == NULL) {
             /*
              * read just the config files (no persistent stuff), since
@@ -1414,6 +1448,9 @@ read_config_files_of_type(int when, struct config_files *ctmp)
                 ret = SNMPERR_SUCCESS;
             free(perspath);
             perspath = strdup(get_persistent_directory());
+            if (perspath == NULL) {
+                return SNMPERR_GENERR;
+            }
             if ( read_config_files_in_path(perspath, ctmp, when, perspath,
                                       persfile) == SNMPERR_SUCCESS )
                 ret = SNMPERR_SUCCESS;
@@ -1464,7 +1501,7 @@ read_config_files(int when) {
 void
 read_config_print_usage(const char *lead)
 {
-    struct config_files *ctmp = config_files;
+    struct config_files *ctmp;
     struct config_line *ltmp;
 
     if (lead == NULL)
@@ -2047,6 +2084,7 @@ read_config_read_octet_string_const(const char *readfrom, u_char ** str,
         /*
          * copy validated data 
          */
+        *len = ilen;
         cptr = *str;
         for (i = 0; i < ilen; i++) {
             if (1 == sscanf(readfrom, "%2x", &tmp))
@@ -2063,7 +2101,6 @@ read_config_read_octet_string_const(const char *readfrom, u_char ** str,
          * Terminate the output buffer.
          */
         *cptr++ = '\0';
-        *len = ilen;
         readfrom = skip_white_const(readfrom);
     } else {
         /*
@@ -2096,7 +2133,7 @@ read_config_read_octet_string_const(const char *readfrom, u_char ** str,
  * read_config_save_objid(): saves an objid as a numerical string 
  */
 char           *
-read_config_save_objid(char *saveto, oid * objid, size_t len)
+read_config_save_objid(char *saveto, const oid *objid, size_t len)
 {
     int             i;
 
@@ -2109,10 +2146,9 @@ read_config_save_objid(char *saveto, oid * objid, size_t len)
     /*
      * in case len=0, this makes it easier to read it back in 
      */
-    for (i = 0; i < (int) len; i++) {
-        sprintf(saveto, ".%" NETSNMP_PRIo "d", objid[i]);
-        saveto += strlen(saveto);
-    }
+    for (i = 0; i < len; i++)
+        saveto += sprintf(saveto, ".%" NETSNMP_PRIo "d", objid[i]);
+
     return saveto;
 }
 

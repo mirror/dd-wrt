@@ -130,8 +130,8 @@ etherstats_interface_ioctl_ifindex_get (int fd, const char *name) {
     rc = _etherStats_ioctl_get(fd, SIOCGIFINDEX, &ifrq, name);
     if (rc < 0) {
         DEBUGMSGTL(("access:etherStats:ioctl",
-                    "ifindex_get error on inerface '%s'\n", name));
-        snmp_log (LOG_ERR, "access:etherStatsTable:ioctl, ifindex_get error on inerface '%s'\n", name);
+                    "ifindex_get error on interface '%s'\n", name));
+        snmp_log (LOG_ERR, "access:etherStatsTable:ioctl, ifindex_get error on interface '%s'\n", name);
         return 0;
 
     }
@@ -143,7 +143,7 @@ etherstats_interface_ioctl_ifindex_get (int fd, const char *name) {
 /*
  * @retval  0 success
  * @retval -1 cannot get ETHTOOL_DRVINFO failed 
- * @retval -2 n_stats zero - no statistcs available
+ * @retval -2 n_stats zero - no statistics available
  * @retval -3 memory allocation for holding the statistics failed
  * @retval -4 cannot get ETHTOOL_GSTRINGS information
  * @retval -5 cannot get ETHTOOL_GSTATS information
@@ -359,7 +359,7 @@ _etherStats_ioctl_get(int fd, int which, struct ifreq *ifrq, const char* name)
         if(ourfd < 0) {
             DEBUGMSGTL(("access:etherStatsTable:ioctl",
                         "_etherStats_ioctl_get couldn't create a socket\n"));
-            snmp_log (LOG_ERR, "access:etherStatsTable:ioctl, _etherStats_ioctl_get error on inerface '%s'\n", name);
+            snmp_log (LOG_ERR, "access:etherStatsTable:ioctl, _etherStats_ioctl_get error on interface '%s'\n", name);
 
             return -2;
         }

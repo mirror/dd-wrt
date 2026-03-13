@@ -203,6 +203,7 @@ snmpv3_parse_arg(int arg, char *optarg, netsnmp_session *session, char **Apsz,
                 free(ebuf);
                 return (-1);
             }
+	    free(session->securityEngineID);
             session->securityEngineID = ebuf;
             session->securityEngineIDLen = eout_len;
             break;
@@ -227,17 +228,20 @@ snmpv3_parse_arg(int arg, char *optarg, netsnmp_session *session, char **Apsz,
                 free(ebuf);
                 return (-1);
             }
+	    free(session->contextEngineID);
             session->contextEngineID = ebuf;
             session->contextEngineIDLen = eout_len;
             break;
         }
 
     case 'n':
+        free(session->contextName);
         session->contextName = strdup(optarg);
         session->contextNameLen = strlen(optarg);
         break;
 
     case 'u':
+        free(session->securityName);
         session->securityName = strdup(optarg);
         session->securityNameLen = strlen(optarg);
         break;
@@ -270,6 +274,7 @@ snmpv3_parse_arg(int arg, char *optarg, netsnmp_session *session, char **Apsz,
 
             auth_proto = sc_get_auth_oid(auth_type,
                                          &session->securityAuthProtoLen);
+            free(session->securityAuthProto);
             session->securityAuthProto = snmp_duplicate_objid(auth_proto,
                                              session->securityAuthProtoLen);
          } else {
@@ -292,11 +297,16 @@ snmpv3_parse_arg(int arg, char *optarg, netsnmp_session *session, char **Apsz,
             return (-1);
         }
         priv_proto = sc_get_priv_oid(priv_type, &session->securityPrivProtoLen);
+        free(session->securityPrivProto);
         session->securityPrivProto = snmp_duplicate_objid(priv_proto,
                                          session->securityPrivProtoLen);
         break;
     }
     case 'A':
+        if (*Apsz && zero_sensitive) {
+            memset(*Apsz, 0x0, strlen(*Apsz));
+        }
+        free(*Apsz);
         *Apsz = strdup(optarg);
         if (NULL == *Apsz) {
             fprintf(stderr, "malloc failure processing -%c flag.\n",
@@ -308,6 +318,10 @@ snmpv3_parse_arg(int arg, char *optarg, netsnmp_session *session, char **Apsz,
         break;
 
     case 'X':
+        if (*Xpsz && zero_sensitive) {
+            memset(*Xpsz, 0x0, strlen(*Xpsz));
+        }
+        free(*Xpsz);
         *Xpsz = strdup(optarg);
         if (NULL == *Xpsz) {
             fprintf(stderr, "malloc failure processing -%c flag.\n",
@@ -355,6 +369,7 @@ snmpv3_parse_arg(int arg, char *optarg, netsnmp_session *session, char **Apsz,
             SNMP_FREE(kbuf);
             return (-1);
         }
+        free(session->securityAuthLocalKey);
         session->securityAuthLocalKey = kbuf;
         session->securityAuthLocalKeyLen = kout_len;
         break;
@@ -374,6 +389,7 @@ snmpv3_parse_arg(int arg, char *optarg, netsnmp_session *session, char **Apsz,
             SNMP_FREE(kbuf);
             return (-1);
         }
+        free(session->securityPrivLocalKey);
         session->securityPrivLocalKey = kbuf;
         session->securityPrivLocalKeyLen = kout_len;
         break;
@@ -564,8 +580,13 @@ setup_engineID(u_char ** eidp, const char *text)
     /*
      * Allocate memory and store enterprise ID.
      */
-    if ((bufp = (u_char *) calloc(1, len)) == NULL) {
-        snmp_log_perror("setup_engineID malloc");
+    if (len == 0) {
+        snmp_log(LOG_ERR, "%s(): len == 0\n", __func__);
+        return -1;
+    }
+    bufp = calloc(1, len);
+    if (bufp == NULL) {
+        snmp_log_perror("setup_engineID() calloc()");
         return -1;
     }
     if (localEngineIDType == ENGINEID_TYPE_NETSNMP_RND)
@@ -862,12 +883,23 @@ version_conf(const char *word, char *cptr)
 void
 oldengineID_conf(const char *word, char *cptr)
 {
+    unsigned char *EngineID = NULL;
+    size_t         EngineIDLength = 0;
+
     if (oldEngineID) {
         free(oldEngineID);
         oldEngineID = NULL;
         oldEngineIDLength = 0;
     }
-    read_config_read_octet_string(cptr, &oldEngineID, &oldEngineIDLength);
+
+    read_config_read_octet_string(cptr, &EngineID, &EngineIDLength);
+    if (EngineIDLength < 4) {
+        config_perror("Invalid oldEngineID");
+        free(EngineID);
+        return;
+    }
+    oldEngineID = EngineID;
+    oldEngineIDLength = EngineIDLength;
 }
 
 /*
@@ -1060,9 +1092,9 @@ init_snmpv3_post_config(int majorid, int minorid, void *serverarg,
 
     c_engineID = snmpv3_generate_engineID(&engineIDLen);
 
-    if (engineIDLen == 0 || !c_engineID) {
+    if (!c_engineID || engineIDLen == 0) {
         /*
-         * Somethine went wrong - help! 
+         * Something went wrong - help! 
          */
         SNMP_FREE(c_engineID);
         return SNMPERR_GENERR;

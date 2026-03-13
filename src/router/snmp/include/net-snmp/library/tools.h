@@ -279,6 +279,9 @@ extern          "C" {
     NETSNMP_IMPORT
     int             netsnmp_string_time_to_secs(const char *time_string);
 
+    NETSNMP_IMPORT
+    const char      *netsnmp_gethomedir(void);
+
 #ifdef __cplusplus
 }
 #endif

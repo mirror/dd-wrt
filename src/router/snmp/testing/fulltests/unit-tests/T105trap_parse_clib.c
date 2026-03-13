@@ -1,6 +1,4 @@
 /* HEADER Parsing of an SNMP trap with no varbinds */
-netsnmp_pdu pdu;
-int rc;
 static u_char trap_pdu[] = {
     /* Sequence with length of 0x2d = 45 bytes. */
     [ 0] = 0x30, [ 1] = 0x82, [ 2] = 0x00, [ 3] = 0x2d,
@@ -30,12 +28,17 @@ static u_char trap_pdu[] = {
 };
 static size_t trap_pdu_length = sizeof(trap_pdu);
 netsnmp_session session;
+netsnmp_pdu *pdu = calloc(1, sizeof(*pdu));
+int rc;
 
 snmp_set_do_debugging(TRUE);
 debug_register_tokens("dumpv_recv,dumpv_send,asn,recv");
 memset(&session, 0, sizeof(session));
 snmp_sess_init(&session);
-memset(&pdu, 0, sizeof(pdu));
-rc = snmp_parse(NULL, &session, &pdu, trap_pdu, trap_pdu_length);
+rc = snmp_parse(NULL, &session, pdu, trap_pdu, trap_pdu_length);
 
 OKF((rc == 0), ("Parsing of a trap PDU"));
+
+snmp_free_pdu(pdu);
+
+netsnmp_cleanup_session(&session);

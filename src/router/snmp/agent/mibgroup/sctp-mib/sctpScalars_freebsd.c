@@ -17,7 +17,7 @@
 #include <netinet/sctp_constants.h>
 
 void
-netsnmp_access_sctp_stats_arch_init()
+netsnmp_access_sctp_stats_arch_init(void)
 {
 }
 
@@ -53,7 +53,7 @@ netsnmp_access_sctp_stats_arch_load(netsnmp_sctp_stats * sctp_stats)
 }
 
 void
-netsnmp_access_sctp_params_arch_init()
+netsnmp_access_sctp_params_arch_init(void)
 {
 }
 

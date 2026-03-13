@@ -93,6 +93,7 @@ open_agentx_session(netsnmp_session * session, netsnmp_pdu *pdu)
     sp->contextName = NULL;
     sp->securityEngineID = NULL;
     sp->securityPrivProto = NULL;
+    sp->sessUser = NULL;
 
     /*
      * This next bit utilises unused SNMPv3 fields
@@ -500,6 +501,9 @@ handle_master_agentx_packet(int operation,
         asp = (netsnmp_agent_session *) magic;
     } else {
         asp = init_agent_snmp_session(session, pdu);
+        if (asp == NULL) {
+            return 1;
+        }
     }
 
     DEBUGMSGTL(("agentx/master", "handle pdu (req=0x%lx,trans=0x%lx,sess=0x%lx)\n",

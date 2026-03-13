@@ -152,7 +152,7 @@ search list (although any modules listed in the IMPORTS clause do).
 .B read_all_mibs
 will read in all the MIB modules found on the MIB directory search list.
 .PP
-In general the parser is silent about what strangenesses it sees in
+In general, the parser is silent about what strangenesses it sees in
 the MIB files. To get warnings reported, call
 .B snmp_set_mib_warnings
 with a
@@ -248,9 +248,9 @@ take a similar object identifier
 and print out a version of the MIB definition for that object,
 together with the full OID. The
 .I width
-argument controls how the OID is layed out.
+argument controls how the OID is laid out.
 .PP
-By default the parser does not save descriptions since they may be
+By default, the parser does not save descriptions since they may be
 huge.  In order to be able to print them, it is necessary to invoke
 .BI snmp_set_save_descriptions(1) before
 calling
@@ -263,7 +263,7 @@ is to configure which MIB modules should be loaded, and where they are
 located.
 .TP 10
 MIBDIRS
-A colon separated list of directories to search for MIB modules.
+A colon-separated list of directories to search for MIB modules.
 .br
 Default: DATADIR/snmp/mibs
 .br
@@ -273,7 +273,7 @@ and (implicitly) by
 .BR read_mib .
 .TP 10
 MIBS
-A colon separated list of MIB modules to load.
+A colon-separated list of MIB modules to load.
 .br
 The default list of modules will depend on how the Net-SNMP software
 was originally compiled, but is typically:
@@ -299,7 +299,7 @@ Used by
 only.
 .TP 10
 MIBFILES
-A colon separated list of files to load.
+A colon-separated list of files to load.
 .br
 Default: (none)
 .br

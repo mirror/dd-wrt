@@ -8,7 +8,7 @@ mib2c-update - script to merge custom code into updated mib2c code
 .PP
 Use mib2c-update to generate your mib2c code templates, and it will track
 the original code and the changes you make to the code. If the mib2c
-template changes (bug fixes, enhances in later releases), re-running
+template changes (bug fixes, enhancements in later releases), re-running
 mib2c will update the template and then attempt to re-apply your
 changes.
 .PP
@@ -25,4 +25,4 @@ Additional mib2c options can be specified in UPDATE_MIB2C_OPTS.
 .SH BUGS
 .PP
 mib2c-update has only been tested on individual tables. Specifying
-a scalar or and entire MIB might not work.
+a scalar or an entire MIB might not work.

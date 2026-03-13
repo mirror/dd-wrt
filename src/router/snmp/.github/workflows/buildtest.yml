@@ -11,7 +11,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        mode: [regular, disable-set, mini, read-only, wolfssl]
+        mode: [regular, disable-ipv6, disable-set, mini, read-only, without-nl, wolfssl, Android]
 
     env:
       MODE: ${{ matrix.mode }}

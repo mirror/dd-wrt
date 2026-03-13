@@ -640,7 +640,7 @@ add_hist_entry(int ctrl_index, int ifIndex,
 #endif
 
 /*
- * Registration & Initializatio section 
+ * Registration & Initialization section
  */
 
 oid             historyControlTable_variables_oid[] =

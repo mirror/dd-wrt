@@ -880,7 +880,10 @@ int snmptop(int argc, char **argv)
 
         clock = time(NULL);
         ptm = localtime(&clock);
-        strftime(timestr, sizeof(timestr), "%H:%M:%S", ptm);
+        if (ptm)
+            strftime(timestr, sizeof(timestr), "%H:%M:%S", ptm);
+        else
+            snprintf(timestr, sizeof(timestr), "(unknown)");
 
         clear();
         move(0, 0);

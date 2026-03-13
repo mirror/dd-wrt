@@ -252,6 +252,7 @@ _load_ipv6(netsnmp_container* container, u_long *index )
             snmp_log(LOG_ERR,
                      "/proc/net/ipv6_route data format error (%d!=8), "
                      "line ==|%s|", rc, line);
+            free(entry);
             continue;
         }
 

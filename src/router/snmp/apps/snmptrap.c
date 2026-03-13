@@ -323,7 +323,7 @@ main(int argc, char *argv[])
         trap = argv[arg];
         if (*trap == 0) {
             sysuptime = get_uptime();
-            sprintf(csysuptime, "%ld", sysuptime);
+            snprintf(csysuptime, sizeof csysuptime, "%ld", sysuptime);
             trap = csysuptime;
         }
         snmp_add_var(pdu, objid_sysuptime,
@@ -381,8 +381,7 @@ close_session:
     snmp_shutdown(NETSNMP_APPLICATION_CONFIG_TYPE);
 
 out:
-    if (ss == NULL)
-        netsnmp_cleanup_session(&session);
+    netsnmp_cleanup_session(&session);
     SOCK_CLEANUP;
     return exitval;
 }

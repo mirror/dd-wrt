@@ -23,6 +23,9 @@
 #endif
 
 #include <sys/types.h>
+#if defined(HAVE_SYS_SELECT_H)
+#include <sys/select.h>
+#endif
 
 #if defined(WIN32) && !defined(cygwin)
 typedef HANDLE netsnmp_pid_t;
@@ -295,7 +298,7 @@ struct snmp_session {
     long            version;
     /** Number of retries before timeout. */
     int             retries;
-    /** Number of uS until first timeout, then exponential backoff */
+    /** Message timeout in μs before first retry and between retries */
     long            timeout;        
     u_long          flags;
     struct snmp_session *subsession;
@@ -417,6 +420,11 @@ struct snmp_session {
      * XXX: or should we add a new field into this structure?
      */
     void           *myvoid;
+
+    /**
+     * session specific user
+     */
+    struct usmUser *sessUser;
 };
 
 

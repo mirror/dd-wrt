@@ -2,28 +2,49 @@
 
 scriptdir="$(cd "$(dirname "$0")" && pwd)"
 
+install_android_ndk() {
+    echo "Installing Android NDK..."
+    wget --quiet https://dl.google.com/android/repository/android-ndk-r27d-linux.zip
+    unzip -oq android-ndk-r27d-linux.zip
+}
+
 case "$(uname)" in
     Linux)
-	packages="
-	    libatm1-dev
-	    libkrb5-dev
-	    libmariadb-client-lgpl-dev
-	    libmariadbclient-dev
-	    libmysqlclient-dev
-	    libncurses-dev
-	    libncurses5-dev
-	    libnl-route-3-dev
-	    libpcre3-dev
-	    libperl-dev
-	    libsensors-dev
-	    libsensors4-dev
-	    libssh2-1-dev
-	    libssl-dev
-	    make
-	    pkg-config
-	    python3-dev
-	    setpriv
-	"
+	case "$MODE" in
+	    Android)
+		install_android_ndk
+		packages="
+		    make
+		    setpriv
+		    util-linux
+		"
+		;;
+	    *)
+		packages="
+		    libatm1-dev
+		    libkrb5-dev
+		    libmariadb-client-lgpl-dev
+		    libmariadb-dev
+		    libmariadb-dev-compat
+		    libmariadbclient-dev
+		    libmysqlclient-dev
+		    libncurses-dev
+		    libncurses5-dev
+		    libnl-route-3-dev
+		    libpcre3-dev
+		    libperl-dev
+		    libsensors-dev
+		    libsensors4-dev
+		    libssh2-1-dev
+		    libssl-dev
+		    make
+		    pkg-config
+		    python3-dev
+		    setpriv
+		    util-linux
+		"
+		;;
+	esac
 	apt-get update
 	for p in ${packages}; do
 	    apt-get install -qq -o=Dpkg::Use-Pty=0 -y "$p"

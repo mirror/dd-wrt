@@ -313,6 +313,9 @@ netsnmp_register_user_target(const char* token, char* cptr)
     char* target = (char*)malloc(len);
     int i = 0;
 
+    if (application == NULL || domain == NULL || target == NULL) {
+        goto done;
+    }
     {
 	char* cp = copy_nword(cptr, application, len);
         if (cp == NULL) {

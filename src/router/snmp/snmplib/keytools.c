@@ -181,6 +181,9 @@ generate_Ku(const oid * hashtype, u_int hashtype_len,
     ctx = EVP_MD_CTX_new();
 #elif defined(HAVE_EVP_MD_CTX_CREATE)
     ctx = EVP_MD_CTX_create();
+#elif defined(HAVE_VOID_EVP_MD_CTX_INIT)
+    ctx = malloc(sizeof(*ctx));
+    EVP_MD_CTX_init(ctx);
 #else
     ctx = malloc(sizeof(*ctx));
     if (!EVP_MD_CTX_init(ctx)) {

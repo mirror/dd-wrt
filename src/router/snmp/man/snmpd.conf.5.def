@@ -89,9 +89,9 @@ population can not be trusted.
 In general, the total number of responses will not be allowed to
 exceed the maxGetbulkResponses number, and the total number returned
 will be an integer multiple of the number of variables requested times
-the calculated number of repeats allow to fit below this number.
+the calculated number of repeats allowed to fit below this number.
 .IP
-Also note that processing of maxGetbulkRepeats is handled first.
+Also note that the processing of maxGetbulkRepeats is handled first.
 .IP "ifmib_max_num_ifaces NUM"
 Sets the maximum number of interfaces included in IF-MIB data collection.
 For servers with a large number of interfaces (ppp, dummy, bridge, etc)
@@ -106,7 +106,7 @@ The default (without this configured) is to include all interfaces.
 Sets the interface name prefixes to include in the IF-MIB data collection.
 For servers with a large number of interfaces (ppp, dummy, bridge, etc)
 the IF-MIB processing will take a large chunk of CPU for ioctl calls
-(on Linux). A set of space separated interface name prefixes will
+(on Linux). A set of space-separated interface name prefixes will
 reduce the CPU load for IF-MIB processing.  For example, configuring
 "include_ifmib_iface_prefix eth dummy lo" will include only interfaces
 with these prefixes and ignore all others for IF-MIB processing. If
@@ -117,17 +117,17 @@ The default (without this configured) is to include all interfaces.
 .SS SNMPv3 Configuration - Real Security
 SNMPv3 is added flexible security models to the SNMP packet structure
 so that multiple security solutions could be used.  SNMPv3 was
-original defined with a "User-based Security Model" (USM) [RFC3414]
-that required maintaining a SNMP-specific user database.  This was
+originally defined with a "User-based Security Model" (USM) [RFC3414]
+that required maintaining an SNMP-specific user database.  This was
 later determined to be troublesome to maintain and had some minor
 security issues.  The IETF has since added additional security models
 to tunnel SNMP over SSH [RFC5592] and DTLS/TLS [RFC-to-be].  Net-SNMP
 contains robust support for SNMPv3/USM, SNMPv3/TLS, and SNMPv3/DTLS.
 It contains partial support for SNMPv3/SSH as well but has not been as
 extensively tested.  It also contains code for support for an
-experimental Kerberos based SNMPv3 that never got standardized.
+experimental Kerberos-based SNMPv3 that never got standardized.
 .PP
-Hopefully more SNMP software and devices will eventually support SNMP
+Hopefully, more SNMP software and devices will eventually support SNMP
 over (D)TLS or SSH, but it is likely that devices with original
 support for SNMP will only contain support for USM users.  If your
 network manager supports SNMP over (D)TLS or SNMP over SSH we suggest
@@ -169,8 +169,8 @@ The default is to use eth0.
 SNMPv3 may be tunneled over TLS and DTLS.  TLS runs over TCP and DTLS
 is the UDP equivalent.  Wes Hardaker (the founder of Net-SNMP)
 performed a study and presented it at an IETF meeting that showed that
-TCP based protocols are sufficient for stable networks but quickly
-becomes a problem in unstable networks with even moderate levels of
+TCP-based protocols are sufficient for stable networks but quickly
+become a problem in unstable networks with even moderate levels of
 packet loss (~ 20-30%).  If you are going to use TLS or DTLS, you
 should use the one appropriate for your networking environment.  You
 should potentially turn them both on so your management system can
@@ -191,7 +191,7 @@ certificate file.
 .IP "[snmp] tlsAlgorithms <algorithms>"
 This string will select the algorithms to use when negotiating
 security during (D)TLS session establishment.  See the openssl manual
-page ciphers(1) for details on the format.  Examples strings include:
+page ciphers(1) for details on the format.  Example strings include:
 .RS
 .nf
 
@@ -216,10 +216,10 @@ be noticed upon a restart of the snmpd agent.
 OPTIONS can be one of <\-\-sn SECNAME | \-\-rfc822 | \-\-dns | \-\-ip | \-\-cn | \-\-any>.
 .IP
 The certSecName token will specify how to map a certificate field from
-the client's X.509 certificate to a SNMPv3 username.  Use the \-\-sn
+the client's X.509 certificate to an SNMPv3 username.  Use the \-\-sn
 SECNAME flag to directly specify a securityName for a given
 certificate.  The other flags extract a particular component of the
-certificate for use as a snmpv3 securityName.  These fields are one
+certificate for use as an snmpv3 securityName.  These fields are one
 of: A SubjectAltName containing an rfc822 value (eg hardaker@net\-snmp.org),
 A SubjectAltName containing a dns name value (eg foo.net\-snmp.org),
 an IP address (eg 192.0.2.1) or a common name "Wes Hardaker".  The
@@ -251,7 +251,7 @@ program as well as configure the access control settings to allow
 access through the tsm security model using the user name provided to
 snmpd by the ssh transport.
 .SS SNMPv3 with the Transport Security Model (TSM)
-The Transport Security Model [RFC5591] defines a SNMPv3 security
+The Transport Security Model [RFC5591] defines an SNMPv3 security
 system for use with "tunneled" security protocols like TLS, DTLS and
 SSH.  It is a very simple security model that simply lets properly
 protected packets to pass through into the snmp application.  The
@@ -339,7 +339,7 @@ createUser myuser SHA \-m 0x0001020304050607080900010203040506070809 AES \-m 0x0
 Due to the way localization happens, localized privacy keys are
 expected to be the length needed by the algorithm (128 bits for all
 supported algorithms).  Master encryption keys, though, need to be the
-length required by the authentication algorithm not the length
+length required by the authentication algorithm, not the length
 required by the encrypting algorithm (MD5: 16 bytes, SHA: 20 bytes).
 .SH ACCESS CONTROL
 .B snmpd
@@ -415,7 +415,7 @@ a subnet - represented as IP/MASK (e.g. 10.10.10.0/255.255.255.0), or
 IP/BITS (e.g. 10.10.10.0/24), or the IPv6 equivalents.
 A restriction preceded by an exclamation mark (!) denies access from
 that address or subnet, e.g., !10.10.10.0/24 denies requests from
-that sources in that subnet.  Deny restrictions must be before
+sources in that subnet.  Deny restrictions must be before
 permit.  E.g., the following example permits access from all of 10.0.0.0/8
 except for 10.10.10.0/24:
 .RS
@@ -552,7 +552,7 @@ set the system location, system contact or system name
 (\fCsysLocation.0\fR, \fCsysContact.0\fR and \fCsysName.0\fR) for the agent respectively.
 Ordinarily these objects are writable via suitably authorized SNMP SET
 requests.  However, specifying one of these directives makes the
-corresponding object read-only, and attempts to SET it will result in
+corresponding object read-only and attempts to SET it will result in
 a \fInotWritable\fR error response.
 .IP "sysServices NUMBER"
 sets the value of the \fCsysServices.0\fR object.
@@ -580,7 +580,7 @@ can be used to remove already existing entries in \fCifTable\fR when an
 interface with the same name appears on the system. E.g. when ppp0 interface
 is removed, it is still listed in the table for \fIinterface_fadeout\fR
 seconds. This option ensures, that the old ppp0 interface is removed even
-before the \fIinterface_fadeout\fR timeour when new ppp0 (with different
+before the \fIinterface_fadeout\fR timeout when new ppp0 (with different
 \fCifIndex\fR) shows up.
 .SS Host Resources Group
 This requires that the agent was built with support for the
@@ -635,7 +635,7 @@ as 'Fixed Disks', and this is still the default behaviour.
 Setting this directive to '1' reports such file systems as
 \'Network Disks', as required by the Host Resources MIB.
 .IP "realStorageUnits"
-controlls how the agent reports hrStorageAllocationUnits, hrStorageSize and
+controls how the agent reports hrStorageAllocationUnits, hrStorageSize and
 hrStorageUsed in hrStorageTable.
 For big storage drives with small allocation units the agent re-calculates
 these values so they all fit Integer32 and
@@ -728,7 +728,7 @@ The threshold for individual disks can be adjusted using suitable
 \fIincludeAllDisks\fR directive).
 .RS
 .IP "Note:"
-Whether \fIdisk\fR directives appears before or after \fIincludeAllDisks\fR 
+Whether \fIdisk\fR directives appear before or after \fIincludeAllDisks\fR 
 may affect the indexing of the \fCdskTable\fR.
 .RE
 .IP
@@ -763,12 +763,15 @@ e.g. "fd0"
 Excludes all Linux loopback block devices, whose names start with "loop",
 e.g. "loop0"
 .IP "diskio_exclude_ram yes"
-Excludes all LInux ramdisk block devices, whose names start with "ram", e.g.
-"ram0"
+Excludes all Linux ramdisk block devices, whose names start with "ram",
+e.g. "ram0"
+.IP "diskio_exclude_md yes"
+Excludes all Linux RAID block devices, whose names start with "md",
+e.g. "md0"
 .PP
-On Linux systems, it is also possible to report only explicitly accepted
-devices. It may take significant amount of time to process diskIOTable data
-on systems with tens of thousands of block devices and accept only the
+On Linux systems, it is also possible to report only explicitly whitelisted
+devices. It may take a significant amount of time to process diskIOTable data
+on systems with tens of thousands of block devices and whitelisting only the
 important ones avoids large CPU consumption.
 .IP "diskio <device>"
 Enables acceptlist of devices and adds the device to the acceptlist. Only
@@ -972,9 +975,9 @@ this directive makes this object read-only, and attempts to set the
 value via SET requests will result in a \fInotWritable\fR error response.
 .RE
 .IP "v1trapaddress HOST"
-defines the agent address, which is inserted into SNMPv1 TRAPs. Arbitrary local 
-IPv4 address is chosen if this option is ommited. This option is useful mainly 
-when the agent is visible from outside world by specific address only (e.g. 
+defines the agent address, which is inserted into SNMPv1 TRAPs. An arbitrary local 
+IPv4 address is chosen if this option is omitted. This option is mainly useful 
+when the agent is visible from the outside world by a specific address only (e.g. 
 because of network address translation or firewall).
 .SS "DisMan Event MIB"
 The previous directives can be used to configure where traps should
@@ -1034,7 +1037,7 @@ defines an \fIexistence(0)\fR monitor test.
 A bare OID specifies a \fIpresent(0)\fR test, which will fire when
 (an instance of) the monitored OID is created.
 An expression of the form \fI! OID\fR specifies an \fIabsent(1)\fR test,
-which will fire when the monitored OID is delected.
+which will fire when the monitored OID is detected.
 An expression of the form \fI!= OID\fR specifies a \fIchanged(2)\fR test,
 which will fire whenever the monitored value(s) change.
 Note that there \fBmust\fP be whitespace before the OID token.
@@ -1249,9 +1252,9 @@ backwards from the end of the month.
 configures a one-shot SET assignment, to be run at the first matching
 time as specified by the fields MINUTE to WEEKDAY.  The interpretation
 of these fields is exactly the same as for the \fIcron\fR directive.
-.SS "Data Delivery via Notfiications"
-Note: this functionality is only available if the
-\fIdeliver/deliverByNotify\fR mib module was complied in to the agent
+.SS "Data Delivery via Notifications"
+Note: This functionality is only available if the
+\fIdeliver/deliverByNotify\fR mib module was compiled in to the agent
 .PP
 In some situations it may be advantageous to deliver SNMP data over
 SNMP Notifications (TRAPs and INFORMs) rather than the typical process
@@ -1263,7 +1266,7 @@ incoming SNMP traffic.
 .PP
 It should be noted that although most management software is capable
 of logging notifications, very little (if any) management software
-will updated their "knowledge database" based on the contents of SNMP
+will update their "knowledge database" based on the contents of SNMP
 notifications.  IE, it won't (for example) update the interface
 traffic counter history that is used to produce graphs.  Most larger
 network management packages have a separate database for storing data
@@ -1281,8 +1284,8 @@ This directive tells the SNMP agent to self-walk the \fIOID\fR,
 collect all the data and send it out every \fIFREQUENCY\fR seconds,
 where FREQUENCY is in seconds or optionally suffixed by one of s (for
 seconds), m (for minutes), h (for hours), d (for days), or w (for
-weeks).  By default scalars are included in the notification that
-specify the how often the notification will be sent (unless the
+weeks).  By default, scalars are included in the notification that
+specify how often the notification will be sent (unless the
 \fI\-p\fR option is specified) and which message number of how many
 messages a particular notification is (unless \fI\-m\fR is specified).
 To break the notifications into manageable packet sizes, use the
@@ -1693,7 +1696,7 @@ causes it to only listen on 127.0.0.1 by default. SMUX uses the well-known
 TCP port 199.
 .PP
 Note the Net-SNMP agent will only operate as a SMUX \fImaster\fR
-agent. It does not support acting in a SMUX subagent role.
+agent. It does not support acting in an SMUX subagent role.
 .SS AgentX Sub-Agents
 The Net-SNMP agent supports the AgentX protocol (RFC 2741) in
 both master and subagent roles.
@@ -1714,7 +1717,7 @@ Defines the permissions and ownership of the AgentX Unix Domain socket,
 and the parent directories of this socket.
 SOCKPERMS and DIRPERMS must be octal digits (see 
 .I chmod(1)
-). By default this socket will only be accessible to subagents which 
+). By default, this socket will only be accessible to subagents which 
 have the same userid as the agent.
 .PP
 There is one directive specifically relevant to running as
@@ -1755,7 +1758,7 @@ subagent.
 .IP "override [\-rw] OID TYPE VALUE"
 This directive allows you to override a particular OID with a
 different value (and possibly a different type of value).  The \-rw
-flag will allow snmp SETs to modify it's value as well. (note that if
+flag will allow snmp SETs to modify its value as well. (note that if
 you're overriding original functionality, that functionality will be
 entirely lost.  Thus SETS will do nothing more than modify the
 internal overridden value and will not perform any of the original
@@ -1799,9 +1802,9 @@ The types of handlers available for insertion are:
 .RS
 .IP stash_cache
 Caches information returned from the lower level.  This
-greatly help the performance of the agent, at the cost
-of caching the data such that its no longer "live" for
-30 seconds (in this future, this will be configurable).
+greatly helps the performance of the agent, at the cost
+of caching the data such that it's no longer "live" for
+30 seconds (in the future, this will be configurable).
 Note that this means snmpd will use more memory as well
 while the information is cached.  Currently this only
 works for handlers registered using the table_iterator
@@ -1861,7 +1864,7 @@ or any of \fI0\fR, \fIno\fR or \fIfalse\fR to disable it.
 The default in each case is for the feature to be turned off, so these
 directives are typically only used to enable the appropriate behaviour.
 .SH "EXAMPLE CONFIGURATION FILE"
-See the EXAMPLE.CONF file in the top level source directory for a more
+See the EXAMPLE.CONF file in the top-level source directory for a more
 detailed example of how the above information is used in real
 examples.
 .SH "FILES"

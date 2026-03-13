@@ -12,16 +12,33 @@
  */
 
 #include <net-snmp/net-snmp-config.h>
+#include <net-snmp/library/openssl_config.h>
 
 #include <net-snmp/net-snmp-includes.h>
 
 #include <net-snmp/net-snmp-features.h>
 
+#if defined(NETSNMP_USE_OPENSSL) && defined(HAVE_LIBSSL) && !defined(NETSNMP_FEATURE_REMOVE_CERT_UTIL)
+
+#include <ctype.h>
+
+#include <openssl/evp.h>
+#include <openssl/ssl.h>
+#include <openssl/x509.h>
+#include <openssl/x509v3.h>
+#include <openssl/err.h>
+#include <openssl/objects.h>
+
+#include <net-snmp/library/snmp_debug.h>
+#include <net-snmp/library/cert_util.h>
+#include <net-snmp/library/snmp_openssl.h>
+
+#endif /* NETSNMP_USE_OPENSSL & ... */
+
 /** OpenSSL compat functions for apps */
 #if defined(NETSNMP_USE_OPENSSL)
 
 #include <string.h>
-#include <net-snmp/library/openssl_config.h>
 #include <openssl/dh.h>
 
 #ifndef HAVE_DH_GET0_PQG
@@ -89,19 +106,6 @@ netsnmp_feature_child_of(openssl_cert_get_subjectAltNames, netsnmp_unused);
 netsnmp_feature_child_of(openssl_ht2nid, netsnmp_unused);
 netsnmp_feature_child_of(openssl_err_log, netsnmp_unused);
 netsnmp_feature_child_of(cert_dump_names, netsnmp_unused);
-
-#include <ctype.h>
-
-#include <openssl/evp.h>
-#include <openssl/ssl.h>
-#include <openssl/x509.h>
-#include <openssl/x509v3.h>
-#include <openssl/err.h>
-#include <openssl/objects.h>
-
-#include <net-snmp/library/snmp_debug.h>
-#include <net-snmp/library/cert_util.h>
-#include <net-snmp/library/snmp_openssl.h>
 
 static u_char have_started_already = 0;
 
@@ -710,7 +714,7 @@ netsnmp_openssl_get_cert_chain(SSL *ssl)
     /*
      * get fingerprint and save it
      */
-    fingerprint = netsnmp_openssl_cert_get_fingerprint(ocert, -1);
+    fingerprint = netsnmp_openssl_cert_get_fingerprint(ocert, NS_HASH_SHA1);
     if (NULL == fingerprint)
         return NULL;
 
@@ -748,7 +752,7 @@ netsnmp_openssl_get_cert_chain(SSL *ssl)
         sk_num_res = sk_num((const void *)ochain);
         for(i = 0; i < sk_num_res; ++i) {
             ocert_tmp = (X509*)sk_value((const void *)ochain,i);
-            fingerprint = netsnmp_openssl_cert_get_fingerprint(ocert_tmp, -1);
+            fingerprint = netsnmp_openssl_cert_get_fingerprint(ocert_tmp, NS_HASH_SHA1);
             if (NULL == fingerprint)
                 break;
             cert_map = netsnmp_cert_map_alloc(NULL, ocert);

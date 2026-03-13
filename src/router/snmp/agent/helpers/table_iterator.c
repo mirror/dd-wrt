@@ -187,16 +187,20 @@ netsnmp_iterator_delete_table( netsnmp_iterator_info *iinfo )
  *
  * ================================== */
 
-static netsnmp_iterator_info *
-netsnmp_iterator_ref(netsnmp_iterator_info *iinfo)
+static void *
+netsnmp_iterator_ref(void *p)
 {
+    netsnmp_iterator_info *iinfo = p;
+
     iinfo->refcnt++;
     return iinfo;
 }
 
 static void
-netsnmp_iterator_deref(netsnmp_iterator_info *iinfo)
+netsnmp_iterator_deref(void *p)
 {
+    netsnmp_iterator_info *iinfo = p;
+
     if (--iinfo->refcnt == 0)
         netsnmp_iterator_delete_table(iinfo);
 }
@@ -206,8 +210,8 @@ void netsnmp_handler_owns_iterator_info(netsnmp_mib_handler *h)
     netsnmp_assert(h);
     netsnmp_assert(h->myvoid);
     ((netsnmp_iterator_info *)(h->myvoid))->refcnt++;
-    h->data_clone = (void *(*)(void *))netsnmp_iterator_ref;
-    h->data_free  = (void(*)(void *))netsnmp_iterator_deref;
+    h->data_clone = netsnmp_iterator_ref;
+    h->data_free  = netsnmp_iterator_deref;
 }
 
 /**
@@ -468,7 +472,7 @@ netsnmp_table_iterator_helper_handler(netsnmp_mib_handler *handler,
     netsnmp_request_info *request, *reqtmp = NULL;
     netsnmp_variable_list *index_search = NULL;
     netsnmp_variable_list *free_this_index_search = NULL;
-    void           *callback_loop_context = NULL, *last_loop_context;
+    void           *callback_loop_context = NULL;
     void           *callback_data_context = NULL;
     ti_cache_info  *ti_info = NULL;
     int             request_count = 0;
@@ -821,8 +825,9 @@ netsnmp_table_iterator_helper_handler(netsnmp_mib_handler *handler,
                 /* Is there any point in carrying on? */
                 if (!request_count)
                     break;
+                {
                 /* get the next search possibility */
-                last_loop_context = callback_loop_context;
+                void *last_loop_context = callback_loop_context;
                 index_search =
                     (iinfo->get_next_data_point) (&callback_loop_context,
                                                   &callback_data_context,
@@ -830,7 +835,7 @@ netsnmp_table_iterator_helper_handler(netsnmp_mib_handler *handler,
                 if (iinfo->free_loop_context && last_loop_context &&
                     callback_data_context != last_loop_context) {
                     (iinfo->free_loop_context) (last_loop_context, iinfo);
-                    last_loop_context = NULL;
+                }
                 }
             }
 

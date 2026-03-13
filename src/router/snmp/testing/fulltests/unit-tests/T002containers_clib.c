@@ -5,7 +5,7 @@ void *p;
 
 init_snmp("container-test");
 container = netsnmp_container_find("fifo");
-container->compare = (netsnmp_container_compare*) strcmp;
+container->compare = netsnmp_str_compare;
 
 CONTAINER_INSERT(container, "foo");
 CONTAINER_INSERT(container, "bar");

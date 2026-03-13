@@ -28,8 +28,8 @@ main(int argc, char **argv) {
     u_char buf[] = "wes hardaker";
     u_char MAC[MAX_HASH_LEN];
     size_t MAC_LEN = sizeof(MAC);
-    u_char sha1key[20] = "55555555555555555555";
-    u_char md5key[16] = "5555555555555555";
+    u_char sha1key[20] __attribute__((nonstring)) = "55555555555555555555";
+    u_char md5key[16] __attribute__((nonstring)) = "5555555555555555";
 
     u_char sha1proper[20] = { 0x4a, 0x55, 0x2f, 0x65, 0x79, 0x3a, 0x49, 0x35,
                               0x37, 0x91, 0x51, 0x1d,

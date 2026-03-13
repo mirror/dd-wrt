@@ -81,7 +81,6 @@ int             smux_listen_sd = -1;
 static struct timeval smux_rcv_timeout;
 static long   smux_reqid;
 
-void            init_smux(void);
 static u_char  *smux_open_process(int, u_char *, size_t *, int *);
 static u_char  *smux_rreq_process(int, u_char *, size_t *);
 static u_char  *smux_close_process(int, u_char *, size_t *);

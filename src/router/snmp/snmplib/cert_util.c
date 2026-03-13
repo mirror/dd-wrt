@@ -42,7 +42,9 @@ netsnmp_feature_child_of(tls_fingerprint_build, cert_util_all);
 
 #include <ctype.h>
 
-#ifdef HAVE_STDLIB_H
+#include <stddef.h>
+
+#if HAVE_STDLIB_H
 #include <stdlib.h>
 #endif
 
@@ -114,16 +116,14 @@ static netsnmp_container *_trusted_certs = NULL;
 static void _setup_containers(void);
 
 static void _cert_indexes_load(void);
-static void _cert_free(netsnmp_cert *cert, void *context);
-static void _key_free(netsnmp_key *key, void *context);
-static int  _cert_compare(netsnmp_cert *lhs, netsnmp_cert *rhs);
-static int  _cert_sn_compare(netsnmp_cert *lhs, netsnmp_cert *rhs);
-static int  _cert_sn_ncompare(netsnmp_cert *lhs, netsnmp_cert *rhs);
-static int  _cert_cn_compare(netsnmp_cert *lhs, netsnmp_cert *rhs);
-static int  _cert_fn_compare(netsnmp_cert_common *lhs,
-                             netsnmp_cert_common *rhs);
-static int  _cert_fn_ncompare(netsnmp_cert_common *lhs,
-                              netsnmp_cert_common *rhs);
+static void _cert_free(void *cert, void *context);
+static void _key_free(void *key, void *context);
+static int  _cert_compare(const void *p, const void *q);
+static int  _cert_sn_compare(const void *p, const void *q);
+static int  _cert_sn_ncompare(const void *p, const void *q);
+static int  _cert_cn_compare(const void *p, const void *q);
+static int  _cert_fn_compare(const void *p, const void *q);
+static int  _cert_fn_ncompare(const void *p, const void *q);
 static void _find_partner(netsnmp_cert *cert, netsnmp_key *key);
 static netsnmp_cert *_find_issuer(netsnmp_cert *cert);
 static netsnmp_void_array *_cert_find_subset_fn(const char *filename,
@@ -200,7 +200,7 @@ _setup_trusted_certs(void)
         return;
     }
     _trusted_certs->container_name = strdup("trusted certificates");
-    _trusted_certs->compare = (netsnmp_container_compare*) strcmp;
+    _trusted_certs->compare = netsnmp_str_compare;
 }
 
 /*
@@ -351,8 +351,8 @@ _get_cert_container(const char *use)
         return NULL;
     }
     c->container_name = strdup(use);
-    c->free_item = (netsnmp_container_obj_func*)_cert_free;
-    c->compare = (netsnmp_container_compare*)_cert_compare;
+    c->free_item = _cert_free;
+    c->compare = _cert_compare;
 
     return c;
 }
@@ -361,6 +361,8 @@ static void
 _setup_containers(void)
 {
     netsnmp_container *additional_keys;
+
+    int rc;
 
     _certs = _get_cert_container("netsnmp certificates");
     if (NULL == _certs)
@@ -375,7 +377,8 @@ _setup_containers(void)
     }
     additional_keys->container_name = strdup("certs_cn");
     additional_keys->free_item = NULL;
-    additional_keys->compare = (netsnmp_container_compare*)_cert_cn_compare;
+    additional_keys->compare = _cert_cn_compare;
+    CONTAINER_SET_OPTIONS(additional_keys, CONTAINER_KEY_ALLOW_DUPLICATES, rc);
     netsnmp_container_add_index(_certs, additional_keys);
 
     /** additional keys: subject name */
@@ -387,8 +390,9 @@ _setup_containers(void)
     }
     additional_keys->container_name = strdup("certs_sn");
     additional_keys->free_item = NULL;
-    additional_keys->compare = (netsnmp_container_compare*)_cert_sn_compare;
-    additional_keys->ncompare = (netsnmp_container_compare*)_cert_sn_ncompare;
+    additional_keys->compare = _cert_sn_compare;
+    additional_keys->ncompare = _cert_sn_ncompare;
+    CONTAINER_SET_OPTIONS(additional_keys, CONTAINER_KEY_ALLOW_DUPLICATES, rc);
     netsnmp_container_add_index(_certs, additional_keys);
 
     /** additional keys: file name */
@@ -400,8 +404,9 @@ _setup_containers(void)
     }
     additional_keys->container_name = strdup("certs_fn");
     additional_keys->free_item = NULL;
-    additional_keys->compare = (netsnmp_container_compare*)_cert_fn_compare;
-    additional_keys->ncompare = (netsnmp_container_compare*)_cert_fn_ncompare;
+    additional_keys->compare = _cert_fn_compare;
+    additional_keys->ncompare = _cert_fn_ncompare;
+    CONTAINER_SET_OPTIONS(additional_keys, CONTAINER_KEY_ALLOW_DUPLICATES, rc);
     netsnmp_container_add_index(_certs, additional_keys);
 
     _keys = netsnmp_container_find("cert_keys:binary_array");
@@ -411,8 +416,8 @@ _setup_containers(void)
         return;
     }
     _keys->container_name = strdup("netsnmp certificate keys");
-    _keys->free_item = (netsnmp_container_obj_func*)_key_free;
-    _keys->compare = (netsnmp_container_compare*)_cert_fn_compare;
+    _keys->free_item = _key_free;
+    _keys->compare = _cert_fn_compare;
 
     _setup_trusted_certs();
 }
@@ -548,20 +553,22 @@ netsnmp_key_free(netsnmp_key *key)
 }
 
 static void
-_cert_free(netsnmp_cert *cert, void *context)
+_cert_free(void *cert, void *context)
 {
     netsnmp_cert_free(cert);
 }
 
 static void
-_key_free(netsnmp_key *key, void *context)
+_key_free(void *key, void *context)
 {
     netsnmp_key_free(key);
 }
 
 static int
-_cert_compare(netsnmp_cert *lhs, netsnmp_cert *rhs)
+_cert_compare(const void *p, const void *q)
 {
+    const netsnmp_cert *lhs = p, *rhs = q;
+
     netsnmp_assert((lhs != NULL) && (rhs != NULL));
     netsnmp_assert((lhs->fingerprint != NULL) &&
                    (rhs->fingerprint != NULL));
@@ -571,7 +578,8 @@ _cert_compare(netsnmp_cert *lhs, netsnmp_cert *rhs)
 }
 
 static int
-_cert_path_compare(netsnmp_cert_common *lhs, netsnmp_cert_common *rhs)
+_cert_path_compare(const netsnmp_cert_common *lhs,
+                   const netsnmp_cert_common *rhs)
 {
     int rc;
 
@@ -587,8 +595,9 @@ _cert_path_compare(netsnmp_cert_common *lhs, netsnmp_cert_common *rhs)
 }
 
 static int
-_cert_cn_compare(netsnmp_cert *lhs, netsnmp_cert *rhs)
+_cert_cn_compare(const void *p, const void *q)
 {
+    const netsnmp_cert *lhs = p, *rhs = q;
     int rc;
     const char *lhcn, *rhcn;
 
@@ -608,13 +617,13 @@ _cert_cn_compare(netsnmp_cert *lhs, netsnmp_cert *rhs)
         return rc;
 
     /** in case of equal common names, sub-sort by path */
-    return _cert_path_compare((netsnmp_cert_common*)lhs,
-                              (netsnmp_cert_common*)rhs);
+    return _cert_path_compare(&lhs->info, &rhs->info);
 }
 
 static int
-_cert_sn_compare(netsnmp_cert *lhs, netsnmp_cert *rhs)
+_cert_sn_compare(const void *p, const void *q)
 {
+    const netsnmp_cert *lhs = p, *rhs = q;
     int rc;
     const char *lhsn, *rhsn;
 
@@ -634,13 +643,13 @@ _cert_sn_compare(netsnmp_cert *lhs, netsnmp_cert *rhs)
         return rc;
 
     /** in case of equal common names, sub-sort by path */
-    return _cert_path_compare((netsnmp_cert_common*)lhs,
-                              (netsnmp_cert_common*)rhs);
+    return _cert_path_compare(&lhs->info, &rhs->info);
 }
 
 static int
-_cert_fn_compare(netsnmp_cert_common *lhs, netsnmp_cert_common *rhs)
+_cert_fn_compare(const void *p, const void *q)
 {
+    const netsnmp_cert_common *lhs = p, *rhs = q;
     int rc;
 
     netsnmp_assert((lhs != NULL) && (rhs != NULL));
@@ -654,8 +663,10 @@ _cert_fn_compare(netsnmp_cert_common *lhs, netsnmp_cert_common *rhs)
 }
 
 static int
-_cert_fn_ncompare(netsnmp_cert_common *lhs, netsnmp_cert_common *rhs)
+_cert_fn_ncompare(const void *p, const void *q)
 {
+    const netsnmp_cert_common *lhs = p, *rhs = q;
+
     netsnmp_assert((lhs != NULL) && (rhs != NULL));
     netsnmp_assert((lhs->filename != NULL) && (rhs->filename != NULL));
 
@@ -663,8 +674,10 @@ _cert_fn_ncompare(netsnmp_cert_common *lhs, netsnmp_cert_common *rhs)
 }
 
 static int
-_cert_sn_ncompare(netsnmp_cert *lhs, netsnmp_cert *rhs)
+_cert_sn_ncompare(const void *p, const void *q)
 {
+    const netsnmp_cert *lhs = p, *rhs = q;
+
     netsnmp_assert((lhs != NULL) && (rhs != NULL));
     netsnmp_assert((lhs->subject != NULL) && (rhs->subject != NULL));
 
@@ -1029,7 +1042,7 @@ netsnmp_ocert_get(netsnmp_cert *cert)
     }
     
     if (NULL == cert->fingerprint) {
-        cert->hash_type = netsnmp_openssl_cert_get_hash_type(ocert);
+        cert->hash_type = NS_HASH_SHA1;
         cert->fingerprint =
             netsnmp_openssl_cert_get_fingerprint(ocert, cert->hash_type);
     }
@@ -1629,8 +1642,10 @@ _cert_indexes_load(void)
 }
 
 static void
-_cert_print(netsnmp_cert *c, void *context)
+_cert_print(void *p, void *context)
 {
+    netsnmp_cert *c = p;
+
     if (NULL == c)
         return;
 
@@ -1661,8 +1676,10 @@ _cert_print(netsnmp_cert *c, void *context)
 }
 
 static void
-_key_print(netsnmp_key *k, void *context)
+_key_print(void *p, void *context)
 {
+    netsnmp_key *k = p;
+
     if (NULL == k)
         return;
 
@@ -1674,8 +1691,8 @@ _key_print(netsnmp_key *k, void *context)
 void
 netsnmp_cert_dump_all(void)
 {
-    CONTAINER_FOR_EACH(_certs, (netsnmp_container_obj_func*)_cert_print, NULL);
-    CONTAINER_FOR_EACH(_keys, (netsnmp_container_obj_func*)_key_print, NULL);
+    CONTAINER_FOR_EACH(_certs, _cert_print, NULL);
+    CONTAINER_FOR_EACH(_keys, _key_print, NULL);
 }
 
 #ifdef CERT_MAIN
@@ -1708,8 +1725,6 @@ main(int argc, char** argv)
 }
 
 #endif /* CERT_MAIN */
-
-static netsnmp_cert *_cert_find_fp(const char *fingerprint);
 
 void
 netsnmp_fp_lowercase_and_strip_colon(char *fp)
@@ -2046,7 +2061,7 @@ netsnmp_cert_trust(SSL_CTX *ctx, netsnmp_cert *thiscert)
                                 SNMPERR_GENERR);
 
     /* Put the certificate into the store */
-    fingerprint = netsnmp_openssl_cert_get_fingerprint(cert, -1);
+    fingerprint = netsnmp_openssl_cert_get_fingerprint(cert, NS_HASH_SHA1);
     DEBUGMSGTL(("cert:trust",
                 "putting trusted cert %p = %s in certstore %p\n", cert,
                 fingerprint, certstore));
@@ -2418,7 +2433,7 @@ _time_filter(const void *text, void *ctx)
  * ***************************************************************************/
 #define MAP_CONFIG_TOKEN "certSecName"
 static void _parse_map(const char *token, char *line);
-static void _map_free(netsnmp_cert_map* entry, void *ctx);
+static void _map_free(void *map, void *ctx);
 static void _purge_config_entries(void);
 
 static void
@@ -2523,14 +2538,16 @@ netsnmp_cert_map_find(netsnmp_cert_map *map)
 #endif /* NETSNMP_FEATURE_REMOVE_CERT_MAP_FIND */
 
 static void
-_map_free(netsnmp_cert_map *map, void *context)
+_map_free(void *map, void *context)
 {
     netsnmp_cert_map_free(map);
 }
 
 static int
-_map_compare(netsnmp_cert_map *lhs, netsnmp_cert_map *rhs)
+_map_compare(const void *p, const void *q)
 {
+    const netsnmp_cert_map *lhs = p, *rhs = q;
+
     netsnmp_assert((lhs != NULL) && (rhs != NULL));
 
     if (lhs->priority < rhs->priority)
@@ -2542,9 +2559,11 @@ _map_compare(netsnmp_cert_map *lhs, netsnmp_cert_map *rhs)
 }
 
 static int
-_map_fp_compare(netsnmp_cert_map *lhs, netsnmp_cert_map *rhs)
+_map_fp_compare(const void *p, const void *q)
 {
+    const netsnmp_cert_map *lhs = p, *rhs = q;
     int rc;
+
     netsnmp_assert((lhs != NULL) && (rhs != NULL));
 
     if ((rc = strcmp(lhs->fingerprint, rhs->fingerprint)) != 0)
@@ -2559,8 +2578,10 @@ _map_fp_compare(netsnmp_cert_map *lhs, netsnmp_cert_map *rhs)
 }
 
 static int
-_map_fp_ncompare(netsnmp_cert_map *lhs, netsnmp_cert_map *rhs)
+_map_fp_ncompare(const void *p, const void *q)
 {
+    const netsnmp_cert_map *lhs = p, *rhs = q;
+
     netsnmp_assert((lhs != NULL) && (rhs != NULL));
 
     return strncmp(lhs->fingerprint, rhs->fingerprint,
@@ -2579,8 +2600,8 @@ netsnmp_cert_map_container_create(int with_fp)
     }
 
     chain_map->container_name = strdup("cert_map");
-    chain_map->free_item = (netsnmp_container_obj_func*)_map_free;
-    chain_map->compare = (netsnmp_container_compare*)_map_compare;
+    chain_map->free_item = _map_free;
+    chain_map->compare = _map_compare;
 
     if (!with_fp)
         return chain_map;
@@ -2596,8 +2617,8 @@ netsnmp_cert_map_container_create(int with_fp)
         return NULL;
     }
     fp->container_name = strdup("cert2sn_fp");
-    fp->compare = (netsnmp_container_compare*)_map_fp_compare;
-    fp->ncompare = (netsnmp_container_compare*)_map_fp_ncompare;
+    fp->compare = _map_fp_compare;
+    fp->ncompare = _map_fp_ncompare;
     netsnmp_container_add_index(chain_map, fp);
 
     return chain_map;
@@ -2748,7 +2769,7 @@ netsnmp_certToTSN_parse_common(char **line)
         map->fingerprint = strdup(buf);
     } else {
         map->fingerprint =
-            netsnmp_openssl_cert_get_fingerprint(tmpcert->ocert, -1);
+            netsnmp_openssl_cert_get_fingerprint(tmpcert->ocert, NS_HASH_SHA1);
     }
     
     if (NULL == *line) {

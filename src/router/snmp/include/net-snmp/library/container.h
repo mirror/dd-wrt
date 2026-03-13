@@ -361,6 +361,9 @@ extern "C" {
     NETSNMP_IMPORT
     void  netsnmp_container_simple_free(void *data, void *context);
 
+    NETSNMP_IMPORT
+    int   netsnmp_str_compare(const void *lhs, const void *rhs);
+
 /*
  * container optionflags
  */

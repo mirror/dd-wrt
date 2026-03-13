@@ -181,8 +181,10 @@ _transport_common(netsnmp_transport *t)
     t->flags = NETSNMP_TRANSPORT_FLAG_SHARED;
     if (t->base_transport->domain == netsnmpUDPDomain)
         t->f_get_taddr = netsnmp_ipv4_get_taddr;
+#ifdef NETSNMP_ENABLE_IPV6
     else if (t->base_transport->domain == netsnmp_UDPIPv6Domain)
         t->f_get_taddr = netsnmp_ipv6_get_taddr;
+#endif
     else
         netsnmp_assert(0);
 

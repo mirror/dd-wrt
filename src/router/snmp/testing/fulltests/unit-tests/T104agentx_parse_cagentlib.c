@@ -28,3 +28,5 @@ fprintf(stderr, "rc = %d\n", rc);
 fflush(stderr);
 
 OKF(rc != 0, ("Parsing of AgentX data failed"));
+
+netsnmp_cleanup_session(&session);

@@ -1,0 +1,7 @@
+* eol=lf
+*.bat eol=crlf
+/win32/dist/README* eol=crlf
+*.gif -text
+*.jpg -text
+*.bin -text
+*.bmp -text

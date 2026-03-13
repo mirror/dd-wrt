@@ -191,7 +191,7 @@ dot3StatsTable_container_shutdown(netsnmp_container * container_ptr)
  *  If access to your data is cheap/fast (e.g. you have a pointer to a
  *  structure in memory), it would make sense to update the data here.
  *  If, however, the accessing the data involves more work (e.g. parsing
- *  some other existing data, or peforming calculations to derive the data),
+ *  some other existing data, or performing calculations to derive the data),
  *  then you can limit yourself to setting the indexes and saving any
  *  information you will need later. Then use the saved information in
  *  dot3StatsTable_row_prep() for populating data.
@@ -216,12 +216,6 @@ int
 dot3StatsTable_container_load(netsnmp_container * container)
 {
     size_t          count = 0;
-    int             fd;
-#if defined(linux)
-    long            dot3StatsIndex;
-    int             rc = 0, retval = 0;
-    struct ifname *list_head = NULL, *p = NULL;
-#endif
     
     DEBUGMSGTL(("verbose:dot3StatsTable:dot3StatsTable_container_load",
                 "called\n"));
@@ -231,134 +225,9 @@ dot3StatsTable_container_load(netsnmp_container * container)
      * data context will be set from the param (unless NULL,
      * in which case a new data context will be allocated)
      */
-    
-    /*
-     * temporary storage for index values
-     */
-
-    /*
-     * dot3StatsIndex(1)/InterfaceIndex/ASN_INTEGER/long(long)//l/A/w/e/R/d/H
-     */
-
-
-
-    /*
-     * create socket for ioctls
-     */
-    
-    fd = socket(AF_INET, SOCK_DGRAM, 0);
-    if(fd < 0) {
-        snmp_log(LOG_ERR, "could not create socket\n");
-        return -2;
-    }
-
-    /*
-     * get the interface names of the devices present in the system, in case of failure retval suggests the reson for failure
-     * and list_head contains null
-     */
 
 #if defined(linux)
-    list_head = dot3stats_interface_name_list_get (list_head, &retval);
-
-    if (!list_head) {
-        snmp_log (LOG_ERR, "access:dot3StatsTable, error getting the interface names present in the system\n");
-        DEBUGMSGTL(("access:dot3StatsTable", "error getting the interface names present in the system"));
-        close(fd);
-        return MFD_ERROR;
-    }
-    
-    /*
-     * Walk over the list of interface names present in the system and retreive the statistics 
-     */
-
-    for (p = list_head; p; p = p->ifn_next) {
-        dot3StatsTable_rowreq_ctx *rowreq_ctx;
-
-        DEBUGMSGTL(("access:dot3StatsTable", "processing '%s'\n", p->name));
-
-        /*
-         * get index via ioctl.
-         */
-
-        dot3StatsIndex = (long) dot3stats_interface_ioctl_ifindex_get(-1, p->name);
-
-        /* 
-         *    get the dot3stats contents populated, if the device is not an ethernet device
-         *    the operation will not be supported and an error message will be logged
-         */
-        
-        rowreq_ctx = dot3StatsTable_allocate_rowreq_ctx(NULL);
-        if (NULL == rowreq_ctx) {
-            snmp_log(LOG_ERR, "memory allocation for dot3StatsTable failed\n");
-            dot3stats_interface_name_list_free(list_head);
-            close(fd);
-            return MFD_RESOURCE_UNAVAILABLE;
-        }
-        
-        if (MFD_SUCCESS !=
-            dot3StatsTable_indexes_set(rowreq_ctx, dot3StatsIndex)) {
-            snmp_log(LOG_ERR,
-                     "error setting index while loading "
-                     "dot3StatsTable data.\n");
-            dot3StatsTable_release_rowreq_ctx(rowreq_ctx);
-            continue;
-        }
-
-        /*
-         * TODO:352:r: |   |-> populate dot3StatsTable data context.
-         * Populate data context here. (optionally, delay until row prep)
-         */
-        /*
-         * non-TRANSIENT data: no need to copy. set pointer to data 
-         */
-
-        memset (&rowreq_ctx->data, 0, sizeof (rowreq_ctx->data));
-
-	interface_sysclassnet_dot3stats_get(rowreq_ctx, p->name);
-
-	interface_dot3stats_get_errorcounters(rowreq_ctx, p->name);
-
-        rc = interface_ioctl_dot3stats_get (rowreq_ctx, fd, p->name);
-
-        if (rc < 0) {
-            DEBUGMSGTL(("access:dot3StatsTable", "error getting the statistics for interface |%s| "
-                        "dot3StatsTable data, operation might not be supported\n", p->name));
-            dot3StatsTable_release_rowreq_ctx(rowreq_ctx);
-            continue;
-        }
-
-        rc = interface_ioctl_dot3stats_duplex_get(rowreq_ctx, fd, p->name);
-        if (rc < 0) {
-            DEBUGMSGTL(("access:dot3StatsTable", "error getting the duplex status for |%s| "
-                        "dot3StatsTable data, operation might not be supported\n", p->name));
-            dot3StatsTable_release_rowreq_ctx(rowreq_ctx);
-            continue;
-        }
-
-        /*
-         * insert into table container
-         */
-        rc = CONTAINER_INSERT(container, rowreq_ctx);
-        if (rc < 0) {
-            DEBUGMSGTL(("access:dot3StatsTable", "error inserting |%s|", p->name));
-            dot3StatsTable_release_rowreq_ctx(rowreq_ctx);
-            continue;
-        }
-
-        ++count;
-    }
-
-    close(fd);
-
-    /*
-     * free the interface names list 
-     */
-
-    if ( (dot3stats_interface_name_list_free(list_head)) < 0) {
-        snmp_log(LOG_ERR, "access:dot3StatsTable, error freeing the interface name list \n");
-        DEBUGMSGTL(("access:dot3StatsTable", "error freeing the interface name list\n"));
-        return MFD_ERROR;
-    }
+    dot3StatsTable_container_load_impl(container);
 #endif
 
     DEBUGMSGT(("verbose:dot3StatsTable:dot3StatsTable_container_load",

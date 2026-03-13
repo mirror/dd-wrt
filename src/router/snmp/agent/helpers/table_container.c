@@ -278,16 +278,20 @@ netsnmp_tcontainer_replace_row( container_table_data *table,
  *
  * ================================== */
 
-static container_table_data *
-netsnmp_container_table_data_clone(container_table_data *tad)
+static void *
+netsnmp_container_table_data_clone(void *p)
 {
+    container_table_data *tad = p;
+
     ++tad->refcnt;
     return tad;
 }
 
 static void
-netsnmp_container_table_data_free(container_table_data *tad)
+netsnmp_container_table_data_free(void *p)
 {
+    container_table_data *tad = p;
+
     if (--tad->refcnt == 0)
 	free(tad);
 }
@@ -333,8 +337,8 @@ netsnmp_container_table_handler_get(netsnmp_table_registration_info *tabreg,
         container->ncompare = netsnmp_ncompare_netsnmp_index;
     
     handler->myvoid = (void*)tad;
-    handler->data_clone = (void *(*)(void *))netsnmp_container_table_data_clone;
-    handler->data_free = (void (*)(void *))netsnmp_container_table_data_free;
+    handler->data_clone = netsnmp_container_table_data_clone;
+    handler->data_free = netsnmp_container_table_data_free;
     handler->flags |= MIB_HANDLER_AUTO_NEXT;
     
     return handler;

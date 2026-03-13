@@ -22,7 +22,7 @@ static int need_wrap_check = -1;
 /*
  * local static prototypes
  */
-static void _entry_release(netsnmp_systemstats_entry * entry, void *unused);
+static void _entry_release(void *entry, void *unused);
 
 /**---------------------------------------------------------------------*/
 /*
@@ -119,9 +119,7 @@ netsnmp_access_systemstats_container_free(netsnmp_container *container, u_int fr
         /*
          * free all items.
          */
-        CONTAINER_CLEAR(container,
-                        (netsnmp_container_obj_func*)_entry_release,
-                        NULL);
+        CONTAINER_CLEAR(container, _entry_release, NULL);
     }
 
     CONTAINER_FREE(container);
@@ -205,7 +203,7 @@ netsnmp_access_systemstats_entry_free(netsnmp_systemstats_entry * entry)
  * \internal
  */
 static void
-_entry_release(netsnmp_systemstats_entry * entry, void *context)
+_entry_release(void *entry, void *context)
 {
     netsnmp_access_systemstats_entry_free(entry);
 }

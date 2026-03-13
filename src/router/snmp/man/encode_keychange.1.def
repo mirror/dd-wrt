@@ -35,7 +35,7 @@ standard input \fB\-or\-\fR  user input from the terminal.
 .SH OPTIONS
 .TP
 \fB\-E\fR [0x]<\fIengineID\fR> EngineID used for Kul generation.
-<\fIengineID\fR> is intepreted as a hex string when preceded by 0x,
+<\fIengineID\fR> is interpreted as a hex string when preceded by 0x,
 otherwise it is treated as a text string. If no <\fIengineID\fR> is
 specified, it is constructed from the first IP address for the local
 host.

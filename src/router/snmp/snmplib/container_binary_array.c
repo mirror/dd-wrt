@@ -202,6 +202,7 @@ netsnmp_binary_array_release(netsnmp_container *c)
     binary_array_table *t = (binary_array_table*)c->container_data;
     SNMP_FREE(t->data);
     SNMP_FREE(t);
+    SNMP_FREE(c->container_name);
     SNMP_FREE(c);
 }
 
@@ -801,6 +802,11 @@ netsnmp_container_get_binary_array(void)
     }
 
     c->container_data = netsnmp_binary_array_initialize();
+    if (NULL == c->container_data) {
+        free(c);
+        snmp_log(LOG_ERR, "couldn't allocate memory for container_data\n");
+        return NULL;
+    }
 
     /*
      * NOTE: CHANGES HERE MUST BE DUPLICATED IN duplicate AS WELL!!
@@ -886,8 +892,10 @@ _ba_iterator_position(binary_array_iterator *it, size_t pos)
 }
 
 static void *
-_ba_iterator_curr(binary_array_iterator *it)
+_ba_iterator_curr(netsnmp_iterator *nit)
 {
+    binary_array_iterator *it = (void *)nit;
+
     if(NULL == it) {
         netsnmp_assert(NULL != it);
         return NULL;
@@ -897,14 +905,18 @@ _ba_iterator_curr(binary_array_iterator *it)
 }
 
 static void *
-_ba_iterator_first(binary_array_iterator *it)
+_ba_iterator_first(netsnmp_iterator *nit)
 {
+    binary_array_iterator *it = (void *)nit;
+
     return _ba_iterator_position(it, 0);
 }
 
 static void *
-_ba_iterator_next(binary_array_iterator *it)
+_ba_iterator_next(netsnmp_iterator *nit)
 {
+    binary_array_iterator *it = (void *)nit;
+
     if(NULL == it) {
         netsnmp_assert(NULL != it);
         return NULL;
@@ -916,8 +928,9 @@ _ba_iterator_next(binary_array_iterator *it)
 }
 
 static void *
-_ba_iterator_last(binary_array_iterator *it)
+_ba_iterator_last(netsnmp_iterator *nit)
 {
+    binary_array_iterator *it = (void *)nit;
     binary_array_table* t = _ba_it2cont(it);
     if(NULL == t) {
         netsnmp_assert(NULL != t);
@@ -928,9 +941,11 @@ _ba_iterator_last(binary_array_iterator *it)
 }
 
 static int
-_ba_iterator_remove(binary_array_iterator *it)
+_ba_iterator_remove(netsnmp_iterator *nit)
 {
+    binary_array_iterator *it = (void *)nit;
     binary_array_table* t = _ba_it2cont(it);
+
     if(NULL == t) {
         netsnmp_assert(NULL != t);
         return -1;
@@ -947,8 +962,9 @@ _ba_iterator_remove(binary_array_iterator *it)
 }
 
 static int
-_ba_iterator_reset(binary_array_iterator *it)
+_ba_iterator_reset(netsnmp_iterator *nit)
 {
+    binary_array_iterator *it = (void *)nit;
     binary_array_table* t = _ba_it2cont(it);
     if(NULL == t) {
         netsnmp_assert(NULL != t);
@@ -991,15 +1007,15 @@ _ba_iterator_get(netsnmp_container *c)
 
     it->base.container = c;
     
-    it->base.first = (netsnmp_iterator_rtn*)_ba_iterator_first;
-    it->base.next = (netsnmp_iterator_rtn*)_ba_iterator_next;
-    it->base.curr = (netsnmp_iterator_rtn*)_ba_iterator_curr;
-    it->base.last = (netsnmp_iterator_rtn*)_ba_iterator_last;
-    it->base.remove = (netsnmp_iterator_rc*)_ba_iterator_remove;
-    it->base.reset = (netsnmp_iterator_rc*)_ba_iterator_reset;
-    it->base.release = (netsnmp_iterator_rc*)_ba_iterator_release;
+    it->base.first = _ba_iterator_first;
+    it->base.next = _ba_iterator_next;
+    it->base.curr = _ba_iterator_curr;
+    it->base.last = _ba_iterator_last;
+    it->base.remove = _ba_iterator_remove;
+    it->base.reset = _ba_iterator_reset;
+    it->base.release = _ba_iterator_release;
 
-    (void)_ba_iterator_reset(it);
+    (void)_ba_iterator_reset(&it->base);
 
-    return (netsnmp_iterator *)it;
+    return &it->base;
 }

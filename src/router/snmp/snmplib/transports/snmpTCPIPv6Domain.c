@@ -301,6 +301,7 @@ netsnmp_tcp6_transport(const struct netsnmp_ep *ep, int local)
     t->f_send     = netsnmp_tcpbase_send;
     t->f_close    = netsnmp_socketbase_close;
     t->f_accept   = netsnmp_tcp6_accept;
+    t->f_setup_session = netsnmp_ipbase_session_init;
     t->f_fmtaddr  = netsnmp_tcp6_fmtaddr;
     t->f_get_taddr = netsnmp_ipv6_get_taddr;
 

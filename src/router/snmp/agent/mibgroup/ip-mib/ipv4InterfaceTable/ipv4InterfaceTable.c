@@ -704,7 +704,7 @@ ipv4InterfaceTable_commit(ipv4InterfaceTable_rowreq_ctx * rowreq_ctx)
     }
 
     /*
-     * if we successfully commited this row, set the dirty flag.
+     * if we successfully committed this row, set the dirty flag.
      */
     if (MFD_SUCCESS == rc) {
         rowreq_ctx->rowreq_flags |= MFD_ROW_DIRTY;
@@ -754,7 +754,7 @@ ipv4InterfaceTable_undo_commit(ipv4InterfaceTable_rowreq_ctx * rowreq_ctx)
 
 
     /*
-     * if we successfully un-commited this row, clear the dirty flag.
+     * if we successfully un-committed this row, clear the dirty flag.
      */
     if (MFD_SUCCESS == rc) {
         rowreq_ctx->rowreq_flags &= ~MFD_ROW_DIRTY;

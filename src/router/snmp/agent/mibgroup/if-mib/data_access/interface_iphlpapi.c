@@ -61,7 +61,7 @@ static int netsnmp_arch_interface_load_old(netsnmp_container *container)
     for (row = iftable->table; row < end; row++) {
         netsnmp_interface_entry *entry;
 
-        entry = calloc(sizeof(*entry), 1);
+        entry = calloc(1, sizeof(*entry));
         if (!entry)
             continue;
         entry->name = strdup((const char *) row->wszName);
@@ -116,7 +116,7 @@ static int netsnmp_arch_interface_load_new(netsnmp_container *container)
     for (row = iftable->Table; row < end; row++) {
         netsnmp_interface_entry *entry;
 
-        entry = calloc(sizeof(*entry), 1);
+        entry = calloc(1, sizeof(*entry));
         if (!entry)
             continue;
         entry->name = strdup((const char *) row->Alias);

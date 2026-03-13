@@ -50,9 +50,10 @@ netsnmp_feature_require(header_complex_find_entry);
 
 oid             snmpNotifyFilterProfileTable_variables_oid[] =
     { 1, 3, 6, 1, 6, 3, 13, 1, 2 };
+#ifndef NETSNMP_NO_WRITE_SUPPORT
 static const size_t table_offset =
     sizeof(snmpNotifyFilterProfileTable_variables_oid)/sizeof(oid) + 3 - 1;
-
+#endif
 
 /*
  * variable2 snmpNotifyFilterProfileTable_variables:
@@ -199,11 +200,9 @@ var_snmpNotifyFilterProfileTable(struct variable *vp,
     return NULL;
 }
 
-
+#ifndef NETSNMP_NO_WRITE_SUPPORT
 
 static struct snmpNotifyFilterProfileTable_data *StorageNew;
-
-#ifndef NETSNMP_NO_WRITE_SUPPORT 
 
 int
 write_snmpNotifyFilterProfileName(int action,

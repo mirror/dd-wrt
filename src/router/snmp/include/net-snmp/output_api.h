@@ -52,8 +52,6 @@ extern "C" {
 #endif
     int  snmp_get_do_logging(    void);
     NETSNMP_IMPORT
-    void netsnmp_logging_restart(void);
-    NETSNMP_IMPORT
     void snmp_disable_log(       void);
     NETSNMP_IMPORT
     void shutdown_snmp_logging(  void);

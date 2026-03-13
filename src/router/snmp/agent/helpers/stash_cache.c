@@ -226,13 +226,17 @@ _netsnmp_stash_cache_load( netsnmp_cache *cache, void *magic )
     return ret;
 }
 
+static void netsnmp_free_var(void *var)
+{
+    snmp_free_var(var);
+}
+
 void
 _netsnmp_stash_cache_free( netsnmp_cache *cache, void *magic )
 {
-    netsnmp_stash_cache_info *cinfo = (netsnmp_stash_cache_info*) magic;
-    netsnmp_oid_stash_free(&cinfo->cache,
-                          (NetSNMPStashFreeNode *) snmp_free_var);
-    return;
+    netsnmp_stash_cache_info *cinfo = magic;
+
+    netsnmp_oid_stash_free(&cinfo->cache, netsnmp_free_var);
 }
 
 /** initializes the stash_cache helper which then registers a stash_cache

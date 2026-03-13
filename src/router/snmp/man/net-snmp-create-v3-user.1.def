@@ -1,14 +1,14 @@
-.TH net-snmp-create-v3-user 1 "17 Sep 2008" VVERSIONINFO "Net-SNMP"
+.TH net-snmp-create-v3-user 1 "09 Aug 2024" VVERSIONINFO "Net-SNMP"
 .SH NAME
 net-snmp-create-v3-user \- create a SNMPv3 user in net-snmp configuration file
 .SH SYNOPSIS
 .PP
-.B net-snmp-create-v3-user [-ro] [-a authpass] [-x privpass] [-X DES|AES]
+.B net-snmp-create-v3-user [-ro] [-A authpass] [-a MD5|SHA|SHA-512|SHA-384|SHA-256|SHA-224] [-X privpass] [-x DES|AES|AES128]
 .B [username]
 .SH DESCRIPTION
 .PP
 The \fInet-snmp-create-v3-user\fP shell script is designed to create a
-new user in net-snmp configuration file (/var/net-snmp/snmpd.conf by default).
+new user in the net-snmp configuration file (/var/net-snmp/snmpd.conf by default).
 
 .SH OPTIONS
 .TP
@@ -16,13 +16,16 @@ new user in net-snmp configuration file (/var/net-snmp/snmpd.conf by default).
 displays the net-snmp version number
 .TP
 \fB\-ro\fR
-create an user with read-only permissions
+create a user with read-only permissions
 .TP
-\fB\-a authpass\fR
+\fB\-A authpass\fR
 specify authentication password
 .TP
-\fB\-x privpass\fR
+\fB\-a MD5|SHA|SHA-512|SHA-384|SHA-256|SHA-224\fR
+specify authentication algorithm
+.TP
+\fB\-X privpass\fR
 specify encryption password
 .TP
-\fB\-X DES|AES\fR
+\fB\-x DES|AES|AES128\fR
 specify encryption algorithm

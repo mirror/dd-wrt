@@ -16,13 +16,13 @@ netsnmp_feature_require(container_fifo);
 /* if v is !NULL, then estimate it's likely size */
 #define ESTIMATE_VAR_SIZE(v) (v?(v->name_length + v->val_len + 8):0)
 
-void parse_deliver_config(const char *, char *);
-void parse_deliver_maxsize_config(const char *, char *);
-void parse_data_notification_oid_config(const char *, char *);
-void parse_periodic_time_oid_config(const char *, char *);
-void parse_message_number_oid_config(const char *, char *);
-void parse_max_message_number_oid_config(const char *, char *);
-void free_deliver_config(void);
+static void parse_deliver_config(const char *, char *);
+static void parse_deliver_maxsize_config(const char *, char *);
+static void parse_data_notification_oid_config(const char *, char *);
+static void parse_periodic_time_oid_config(const char *, char *);
+static void parse_message_number_oid_config(const char *, char *);
+static void parse_max_message_number_oid_config(const char *, char *);
+static void free_deliver_config(void);
 
 static void _schedule_next_execute_time(void);
 
@@ -44,13 +44,16 @@ size_t netsnmp_max_message_number_oid_len = 13;
 
 oid objid_snmptrap[] = { 1, 3, 6, 1, 6, 3, 1, 1, 4, 1, 0 };
 
-#define DEFAULT_MAX_DELIVER_SIZE -1;
+#define DEFAULT_MAX_DELIVER_SIZE -1
 static int default_max_size;
 unsigned int alarm_reg;
 static netsnmp_container *deliver_container;
 
 static int
-_deliver_compare(deliver_by_notify *lhs, deliver_by_notify *rhs) {
+_deliver_compare(const void *p, const void *q)
+{
+    const deliver_by_notify *lhs = p, *rhs = q;
+
     /* sort by the next_run time */
     if (lhs->next_run < rhs->next_run)
         return -1;
@@ -99,7 +102,7 @@ init_deliverByNotify(void)
         return;
     }
     deliver_container->container_name = strdup("deliverByNotify");
-    deliver_container->compare = (netsnmp_container_compare *) _deliver_compare;
+    deliver_container->compare = _deliver_compare;
 
     /* set the defaults */
     default_max_size = DEFAULT_MAX_DELIVER_SIZE;
@@ -239,7 +242,10 @@ parse_deliver_maxsize_config(const char *token, char *line) {
 }
 
 static void
-_free_deliver_obj(deliver_by_notify *obj, void *context) {
+_free_deliver_obj(void *p, void *context)
+{
+    deliver_by_notify *obj = p;
+
     netsnmp_assert_or_return(obj != NULL, );
     SNMP_FREE(obj->target);
     SNMP_FREE(obj);
@@ -248,8 +254,7 @@ _free_deliver_obj(deliver_by_notify *obj, void *context) {
 void
 free_deliver_config(void) {
     default_max_size = DEFAULT_MAX_DELIVER_SIZE;
-    CONTAINER_CLEAR(deliver_container,
-                    (netsnmp_container_obj_func *) _free_deliver_obj, NULL);
+    CONTAINER_CLEAR(deliver_container, _free_deliver_obj, NULL);
     if (alarm_reg) {
         snmp_alarm_unregister(alarm_reg);
         alarm_reg = 0;
@@ -298,6 +303,7 @@ deliver_execute(unsigned int clientreg, void *clientarg) {
             /* XXX: disable? and reset the next query time point! */
             snmp_log(LOG_ERR, "deliverByNotify: failed to issue the query");
             ITERATOR_RELEASE(iterator);
+            free(vars);
             return;
         }
 
@@ -457,7 +463,7 @@ _schedule_next_execute_time(void) {
     for(obj = ITERATOR_FIRST(iterator); obj;
         obj = ITERATOR_NEXT(iterator)) {
         next_time = calculate_time_until_next_run(obj, &local_now);
-        DEBUGMSGTL(("deliverByNotify", "  obj: %d (last=%d, next_run=%d)\n", next_time, obj->last_run, obj->next_run));
+        DEBUGMSGTL(("deliverByNotify", "  obj: %d (last=%lld, next_run=%lld)\n", next_time, (long long)obj->last_run, (long long)obj->next_run));
         if (next_time < sleep_for)
             sleep_for = next_time;
     }

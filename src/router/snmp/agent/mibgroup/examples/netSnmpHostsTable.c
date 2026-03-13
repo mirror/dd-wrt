@@ -65,8 +65,9 @@ initialize_table_netSnmpHostsTable(void)
     if (!my_handler || !table_info || !iinfo) {
         snmp_log(LOG_ERR,
                  "malloc failed in initialize_table_netSnmpHostsTable");
-        free(iinfo);
+        free(my_handler);
         free(table_info);
+        free(iinfo);
         return; /** Serious error. */
     }
 

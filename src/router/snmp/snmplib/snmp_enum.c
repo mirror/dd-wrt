@@ -41,9 +41,9 @@ struct snmp_enum_list_str {
     struct snmp_enum_list_str *next;
 };
 
-static struct snmp_enum_list ***snmp_enum_lists;
-unsigned int    current_maj_num;
-unsigned int    current_min_num;
+static struct snmp_enum_list **snmp_enum_lists;
+static unsigned int current_maj_num;
+static unsigned int current_min_num;
 static struct snmp_enum_list_str *sliststorage;
 
 static void
@@ -52,50 +52,18 @@ free_enum_list(struct snmp_enum_list *list);
 int
 init_snmp_enum(const char *type)
 {
-    int             i;
-
     if (NULL != snmp_enum_lists)
         return SE_OK;
 
-    snmp_enum_lists = (struct snmp_enum_list ***)
-        calloc(1, sizeof(struct snmp_enum_list **) * SE_MAX_IDS);
+    snmp_enum_lists = calloc(SE_MAX_IDS * SE_MAX_SUBIDS,
+                             sizeof(*snmp_enum_lists));
     if (!snmp_enum_lists)
         return SE_NOMEM;
     current_maj_num = SE_MAX_IDS;
-
-    for (i = 0; i < SE_MAX_IDS; i++) {
-        if (!snmp_enum_lists[i])
-            snmp_enum_lists[i] = (struct snmp_enum_list **)
-                calloc(1, sizeof(struct snmp_enum_list *) * SE_MAX_SUBIDS);
-        if (!snmp_enum_lists[i])
-            return SE_NOMEM;
-    }
     current_min_num = SE_MAX_SUBIDS;
 
     register_const_config_handler(type, "enum", se_read_conf, NULL, NULL);
     return SE_OK;
-}
-
-int
-se_store_in_list(struct snmp_enum_list *new_list,
-              unsigned int major, unsigned int minor)
-{
-    int             ret = SE_OK;
-
-    if (major > current_maj_num || minor > current_min_num) {
-        /*
-         * XXX: realloc 
-         */
-        return SE_NOMEM;
-    }
-    netsnmp_assert(NULL != snmp_enum_lists);
-
-    if (snmp_enum_lists[major][minor] != NULL)
-        ret = SE_ALREADY_THERE;
-
-    snmp_enum_lists[major][minor] = new_list;
-
-    return ret;
 }
 
 void
@@ -134,7 +102,7 @@ se_read_conf(const char *word, const char *cptr)
                 break;
             }
             cp2 = e_enum;
-            while (*(cp2++) != ':')
+            while (*cp2 != 0 && *cp2++ != ':')
                 ;
             se_add_pair(major, minor, strdup(cp2), value);
             if (!cp)
@@ -150,7 +118,7 @@ se_read_conf(const char *word, const char *cptr)
                 break;
             }
             cp2 = e_enum;
-            while (*(cp2++) != ':')
+            while (*cp2 != 0 && *cp2++ != ':')
                 ;
             se_add_pair_to_slist(e_name, strdup(cp2), value);
             if (!cp)
@@ -201,14 +169,22 @@ se_store_list(unsigned int major, unsigned int minor, const char *type)
 }
 #endif /* NETSNMP_FEATURE_REMOVE_SNMP_ENUM_STORE_LIST */
 
-struct snmp_enum_list *
-se_find_list(unsigned int major, unsigned int minor)
+static struct snmp_enum_list **
+se_find_list_ptr(unsigned int major, unsigned int minor)
 {
-    if (major > current_maj_num || minor > current_min_num)
+    if (major >= current_maj_num || minor >= current_min_num)
         return NULL;
     netsnmp_assert(NULL != snmp_enum_lists);
 
-    return snmp_enum_lists[major][minor];
+    return &snmp_enum_lists[major * current_min_num + minor];
+}
+
+struct snmp_enum_list *
+se_find_list(unsigned int major, unsigned int minor)
+{
+    struct snmp_enum_list **p = se_find_list_ptr(major, minor);
+
+    return p ? *p : NULL;
 }
 
 int
@@ -284,13 +260,19 @@ se_find_label(unsigned int major, unsigned int minor, int value)
     return se_find_label_in_list(se_find_list(major, minor), value);
 }
 
+/*
+ * Ownership of 'label' is transferred from the caller to this function.
+ * 'label' is freed if list insertion fails.
+ */
 int
 se_add_pair_to_list(struct snmp_enum_list **list, char *label, int value)
 {
-    struct snmp_enum_list *lastnode = NULL, *tmp;
+    struct snmp_enum_list *lastnode = NULL, *new_node, *tmp;
 
-    if (!list)
+    if (!list) {
+        free(label);
         return SE_DNE;
+    }
 
     tmp = *list;
     while (tmp) {
@@ -302,32 +284,26 @@ se_add_pair_to_list(struct snmp_enum_list **list, char *label, int value)
         tmp = tmp->next;
     }
 
-    if (lastnode) {
-        lastnode->next = SNMP_MALLOC_STRUCT(snmp_enum_list);
-        lastnode = lastnode->next;
-    } else {
-        (*list) = SNMP_MALLOC_STRUCT(snmp_enum_list);
-        lastnode = (*list);
-    }
-    if (!lastnode) {
+    new_node = SNMP_MALLOC_STRUCT(snmp_enum_list);
+    if (!new_node) {
         free(label);
         return (SE_NOMEM);
     }
-    lastnode->label = label;
-    lastnode->value = value;
-    lastnode->next = NULL;
+
+    if (lastnode)
+        lastnode->next = new_node;
+    else
+        *list = new_node;
+    new_node->label = label;
+    new_node->value = value;
+    new_node->next = NULL;
     return (SE_OK);
 }
 
 int
 se_add_pair(unsigned int major, unsigned int minor, char *label, int value)
 {
-    struct snmp_enum_list *list = se_find_list(major, minor);
-    int             created = (list) ? 1 : 0;
-    int             ret = se_add_pair_to_list(&list, label, value);
-    if (!created)
-        se_store_in_list(list, major, minor);
-    return ret;
+    return se_add_pair_to_list(se_find_list_ptr(major, minor), label, value);
 }
 
 /*
@@ -380,26 +356,34 @@ se_find_free_value_in_slist(const char *listname)
 }
 #endif /* NETSNMP_FEATURE_REMOVE_SE_FIND_FREE_VALUE_IN_SLIST */
 
+/*
+ * Ownership of 'label' is transferred from the caller to this function.
+ * 'label' is freed if list insertion fails.
+ */
 int
 se_add_pair_to_slist(const char *listname, char *label, int value)
 {
-    struct snmp_enum_list *list = se_find_slist(listname);
-    int             created = (list) ? 1 : 0;
-    int             ret = se_add_pair_to_list(&list, label, value);
+    struct snmp_enum_list **list_p = se_find_slist_ptr(listname);
 
-    if (!created) {
+    if (!list_p) {
         struct snmp_enum_list_str *sptr =
             SNMP_MALLOC_STRUCT(snmp_enum_list_str);
         if (!sptr) {
-            free_enum_list(list);
+            free(label);
             return SE_NOMEM;
         }
         sptr->next = sliststorage;
         sptr->name = strdup(listname);
-        sptr->list = list;
+        if (!sptr->name) {
+            free(sptr);
+            free(label);
+            return SE_NOMEM;
+        }
+        list_p = &sptr->list;
         sliststorage = sptr;
     }
-    return ret;
+
+    return se_add_pair_to_list(list_p, label, value);
 }
 
 static void
@@ -419,7 +403,7 @@ void
 clear_snmp_enum(void)
 {
     struct snmp_enum_list_str *sptr = sliststorage, *next = NULL;
-    int i, j;
+    unsigned int major, minor;
 
     while (sptr != NULL) {
 	next = sptr->next;
@@ -430,18 +414,18 @@ clear_snmp_enum(void)
     }
     sliststorage = NULL;
 
-    if (snmp_enum_lists) {
-        for (i = 0; i < SE_MAX_IDS; i++) {
-            if (snmp_enum_lists[i]) {
-                for (j = 0; j < SE_MAX_SUBIDS; j++) {
-                    if (snmp_enum_lists[i][j])
-                        free_enum_list(snmp_enum_lists[i][j]);
-                }
-                SNMP_FREE(snmp_enum_lists[i]);
-            }
+    for (major = 0; major < current_maj_num; major++) {
+        for (minor = 0; minor < current_min_num; minor++) {
+            struct snmp_enum_list **list_ptr = se_find_list_ptr(major, minor);
+
+            if (!list_ptr || !*list_ptr)
+                continue;
+            free_enum_list(*list_ptr);
         }
-        SNMP_FREE(snmp_enum_lists);
     }
+    current_maj_num = 0;
+    current_min_num = 0;
+    SNMP_FREE(snmp_enum_lists);
 }
 
 void

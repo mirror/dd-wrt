@@ -24,7 +24,7 @@ struct ifname {
 };
 
 struct ifname *dot3stats_interface_name_list_get (struct ifname *, int *);
-int dot3stats_interface_name_list_free (struct ifname *list_head);
+void dot3stats_interface_name_list_free(struct ifname *list_head);
 int dot3stats_interface_ioctl_ifindex_get (int fd, const char *name);
 int _dot3Stats_ioctl_get(int fd, int which, struct ifreq *ifrq, const char* name);
 int interface_ioctl_dot3stats_get(dot3StatsTable_rowreq_ctx *rowreq_ctx, int fd, const char* name);

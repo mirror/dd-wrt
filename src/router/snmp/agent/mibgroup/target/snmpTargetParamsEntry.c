@@ -96,7 +96,7 @@ init_snmpTargetParamsEntry(void)
 
     snmpd_register_config_handler("targetParams",
                                   snmpd_parse_config_targetParams,
-                                  (void (*)(void))0, NULL);
+                                  NULL, NULL);
 
 }                               /*  init_snmpTargetParmsEntry  */
 

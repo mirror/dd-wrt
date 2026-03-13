@@ -43,15 +43,6 @@ extern          "C" {
     void            add_module_replacement(const char *, const char *,
                                            const char *, int);
 
-         /* from ucd-compat.h */
-    NETSNMP_IMPORT
-    void            snmp_set_mib_warnings(int);
-    NETSNMP_IMPORT
-    void            snmp_set_mib_errors(int);
-    NETSNMP_IMPORT
-    void            snmp_set_save_descriptions(int);
-
-
      /* Searching the MIB Tree */
     NETSNMP_IMPORT
     int             read_objid(const char *, oid *, size_t *);
@@ -61,9 +52,6 @@ extern          "C" {
     int             get_module_node(const char *, const char *, oid *, size_t *);
 
      /* Output */
-    NETSNMP_IMPORT
-    void            print_mib(FILE * fp);
-
     NETSNMP_IMPORT
     void            print_objid(const oid * objid, size_t objidlen);
     NETSNMP_IMPORT

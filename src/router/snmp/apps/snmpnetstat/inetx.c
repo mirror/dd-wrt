@@ -282,7 +282,7 @@ tcpxprotopr(const char *name)
             first = 0;
         }
 
-        strcpy(lname, "tcp");
+        strlcpy(lname, "tcp", sizeof lname);
         if (localType == 2)
             lname[3] = '6';
         else
@@ -350,7 +350,7 @@ listenxprotopr(const char *name)
         inx += vp->name[inx] + 1;
         localPort = vp->name[inx++];
         pid = *vp->val.integer;
-        strcpy(lname, "tcp");
+        strlcpy(lname, "tcp", sizeof lname);
         if (localType == 2)
             lname[3] = '6';
         else
@@ -425,7 +425,7 @@ udpxprotopr(const char *name)
         inx += vp->name[inx] + 1;
         remotePort = vp->name[inx++];
         pid = *vp->val.integer;
-        strcpy(lname, "udp");
+        strlcpy(lname, "udp", sizeof lname);
         if (localType == 2)
             lname[3] = '6';
         else

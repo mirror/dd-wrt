@@ -186,14 +186,7 @@ config_require(ip-mib/ipAddressTable/ipAddressTable_data_access);
     ipAddressTable_data *ipAddressTable_allocate_data(void);
     void            ipAddressTable_release_data(ipAddressTable_data *
                                                 data);
-
-    int
-        ipAddressTable_check_dependencies(ipAddressTable_rowreq_ctx *
-                                          rowreq_ctx);
-    int             ipAddressTable_commit(ipAddressTable_rowreq_ctx *
-                                          rowreq_ctx);
-
-        ipAddressTable_rowreq_ctx
+    ipAddressTable_rowreq_ctx
         * ipAddressTable_row_find_by_mib_index(ipAddressTable_mib_index *
                                                mib_idx);
 

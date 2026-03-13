@@ -868,7 +868,7 @@ sub find_cfgdir {
     return NetSNMP::Cert::fq_rel_path($dir);
   } else {
     my @path = cfg_path();
-    # search first for writeable tls dir
+    # search first for writable tls dir
     # for root search top down, for user bottom up
     while (@path) {
       $dir = ($> ? pop(@path): shift(@path));

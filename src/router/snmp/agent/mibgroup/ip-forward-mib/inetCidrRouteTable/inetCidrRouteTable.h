@@ -205,14 +205,6 @@ config_require(ip-forward-mib/inetCidrRouteTable/inetCidrRouteTable_data_access)
     inetCidrRouteTable_data *inetCidrRouteTable_allocate_data(void);
     void            inetCidrRouteTable_release_data(inetCidrRouteTable_data
                                                     * data);
-
-    int
-        inetCidrRouteTable_check_dependencies(inetCidrRouteTable_rowreq_ctx
-                                              * rowreq_ctx);
-    int             inetCidrRouteTable_commit(inetCidrRouteTable_rowreq_ctx
-                                              * rowreq_ctx);
-
-         
     inetCidrRouteTable_rowreq_ctx
         * inetCidrRouteTable_row_find_by_mib_index
         (inetCidrRouteTable_mib_index * mib_idx);

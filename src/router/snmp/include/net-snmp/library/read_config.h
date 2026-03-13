@@ -37,7 +37,8 @@ extern          "C" {
     struct config_line {
         char           *config_token;   /* Label for each line parser
                                          * in the given file. */
-        void            (*parse_line) (const char *, char *);
+        void            (*parse_line1) (const char *, char *);
+        void            (*parse_line2) (const char *, const char *);
         void            (*free_func) (void);
         struct config_line *next;
         char            config_time;    /* {NORMAL,PREMIB,EITHER}_CONFIG */
@@ -105,7 +106,7 @@ extern          "C" {
                                                  oid ** objid,
                                                  size_t * len);
     NETSNMP_IMPORT
-    char           *read_config_save_objid(char *saveto, oid * objid,
+    char           *read_config_save_objid(char *saveto, const oid * objid,
                                            size_t len);
     NETSNMP_IMPORT
     char           *read_config_read_data(int type, char *readfrom,

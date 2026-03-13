@@ -145,6 +145,7 @@ parse_pingResultsTable(const char *token, char *line)
                               &StorageTmp->pingCtlOwnerIndexLen);
     if (StorageTmp->pingCtlOwnerIndex == NULL) {
         config_perror("invalid specification for pingCtlOwnerIndex");
+        free(StorageTmp);
         return;
     }
 
@@ -154,6 +155,7 @@ parse_pingResultsTable(const char *token, char *line)
                               &StorageTmp->pingCtlTestNameLen);
     if (StorageTmp->pingCtlTestName == NULL) {
         config_perror("invalid specification for pingCtlTestName");
+        free(StorageTmp);
         return;
     }
 
@@ -171,6 +173,7 @@ parse_pingResultsTable(const char *token, char *line)
     if (StorageTmp->pingResultsIpTargetAddress == NULL) {
         config_perror
             ("invalid specification for pingResultsIpTargetAddress");
+        free(StorageTmp);
         return;
     }
 
@@ -201,6 +204,7 @@ parse_pingResultsTable(const char *token, char *line)
     if (StorageTmp->pingResultsLastGoodProbe == NULL) {
         config_perror
             ("invalid specification for pingResultsLastGoodProbe!");
+        free(StorageTmp);
         return;
     }
 

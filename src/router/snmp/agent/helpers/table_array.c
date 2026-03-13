@@ -647,10 +647,10 @@ group_requests(netsnmp_agent_request_info *agtreq_info,
 
 #ifndef NETSNMP_NO_WRITE_SUPPORT
 static void
-release_netsnmp_request_group(netsnmp_index *g, void *v)
+release_netsnmp_request_group(void *g, void *v)
 {
     netsnmp_request_group_item *tmp;
-    netsnmp_request_group *group = (netsnmp_request_group *) g;
+    netsnmp_request_group *group = g;
 
     if (!g)
         return;
@@ -666,18 +666,17 @@ release_netsnmp_request_group(netsnmp_index *g, void *v)
 static void
 release_netsnmp_request_groups(void *vp)
 {
-    netsnmp_container *c = (netsnmp_container*)vp;
-    CONTAINER_FOR_EACH(c, (netsnmp_container_obj_func*)
-                       release_netsnmp_request_group, NULL);
+    netsnmp_container *c = vp;
+    CONTAINER_FOR_EACH(c, release_netsnmp_request_group, NULL);
     CONTAINER_FREE(c);
 }
 
 static void
-process_set_group(netsnmp_index *o, void *c)
+process_set_group(void *o, void *c)
 {
     /* xxx-rks: should we continue processing after an error?? */
     set_context           *context = (set_context *) c;
-    netsnmp_request_group *ag = (netsnmp_request_group *) o;
+    netsnmp_request_group *ag = o;
     int                    rc = SNMP_ERR_NOERROR;
 
     switch (context->agtreq_info->mode) {
@@ -859,9 +858,7 @@ process_set_requests(netsnmp_agent_request_info *agtreq_info,
     context.agtreq_info = agtreq_info;
     context.tad = tad;
     context.status = SNMP_ERR_NOERROR;
-    CONTAINER_FOR_EACH(request_group,
-                       (netsnmp_container_obj_func*)process_set_group,
-                       &context);
+    CONTAINER_FOR_EACH(request_group, process_set_group, &context);
 
     return context.status;
 }

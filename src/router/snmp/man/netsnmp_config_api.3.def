@@ -221,7 +221,7 @@ re-reading the configuration files.  This function should free any
 resources allocated by the token handler function and reset its notion
 of the configuration to its default.  The token handler function can
 then safely be called again.
-No arguments are passed to the resource freeing handler.
+No arguments are passed to the resource-freeing function.
 .br
 Note that this function is not called when the handler is
 unregistered individually (but \fIis\fP called as part of
@@ -235,7 +235,7 @@ unregistered individually (but \fIis\fP called as part of
 .B register_app_prenetsnmp_mib_handler()
 .TP
 .B unregister_app_config_handler()
-These functions are analagous to 
+These functions are analogous to 
 .BR register_config_handler() ", " register_prenetsnmp_mib_handler() " and "
 .B unregister_config_handler()
 but do not require the file type argument (which is filled in by the
@@ -283,7 +283,7 @@ In each such directory, the library will look for files named
 \fI app\fP\fC.conf\fP,
 \fI app\fP\fC.local.conf\fP,
 .br
-(where \fIapp\fP is the appication-specific filePrefix used to
+(where \fIapp\fP is the application-specific filePrefix used to
 register configuration handlers).
 It is not necessary for any or all of these files to be present
 in each directory.  Missing files will be silently skipped.
@@ -299,7 +299,7 @@ followed by \fC LIBDIR/snmp\fP,
 followed by \fC $HOME/.snmp\fP.
 This list can be changed by setting the environmental variable
 .I SNMPCONFPATH
-to be a (colon separated) list of directories to search.
+to be a (colon-separated) list of directories to search.
 .br
 .SS init_snmp()
 .PP
@@ -311,7 +311,7 @@ configuration handlers, process any configuration tokens registered with
 .B register_prenetsnmp_mib_handler(),
 read in the textual MIB files using
 .B init_mib(),
-and finally parse the configuration file tokens registered with 
+and finally, parse the configuration file tokens registered with 
 .BR register_config_handler() .
 .PP
 If the 
@@ -324,7 +324,7 @@ The
 .I usageLine
 parameter passed to
 .B register_config_handler()
-and similar calls, is used to display help information when the
+and similar calls is used to display help information when the
 .B read_config_print_usage()
 function is called.  This function is used by all of the applications
 when the 
@@ -358,12 +358,12 @@ both take an error string as an argument and print it to stderr along
 with the file and line number that caused the error.  A call to the
 second function will also force 
 .B read_configs() 
-to eventually return with an error code indicating to it's calling
+to eventually return with an error code indicating to its calling
 function that it should abort the operation of the application.
 .SH "ENVIRONMENT VARIABLES"
 .TP 10
 SNMPCONFPATH
-A colon separated list of directories to search for configuration
+A colon-separated list of directories to search for configuration
 files in.
 Default:
 .br

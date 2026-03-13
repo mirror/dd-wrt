@@ -441,6 +441,7 @@ updateTunnels(void)
             }
 
             if (!updateTunnel(tunnel)) {
+                free(tunnel->ifname);
                 free(tunnel);
                 continue;
             }

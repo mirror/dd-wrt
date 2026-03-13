@@ -187,7 +187,7 @@ else
 #include <stddef.h>
 #include <stdlib.h>
 
-int main(void)
+int main(int argc, char **argv)
 {
   int                 mib[2];
   size_t              len;
@@ -363,6 +363,23 @@ AC_CACHE_CHECK([for IP_PKTINFO ],
 )])
 if test x$ac_cv_have_ip_pktinfo = xyes; then
     AC_DEFINE(HAVE_IP_PKTINFO, 1, [Set if IP_PKTINFO is usable])
+fi
+
+#   Check whether IPV6_RECVPKTINFO is usable.
+#
+
+AC_CACHE_CHECK([for IPV6_RECVPKTINFO ],
+                [ac_cv_have_ipv6_recvpktinfo],
+[AC_LINK_IFELSE([AC_LANG_PROGRAM([
+#include <netinet/in.h>
+], [
+return IPV6_RECVPKTINFO
+])],
+[ac_cv_have_ipv6_recvpktinfo=yes],
+[ac_cv_have_ipv6_recvpktinfo=no]
+)])
+if test x$ac_cv_have_ipv6_recvpktinfo = xyes; then
+    AC_DEFINE(HAVE_IPV6_RECVPKTINFO, 1, [Set if IPV6_RECVPKTINFO is usable])
 fi
 
 #   Check whether IP_RECVDSTADDR is usable.

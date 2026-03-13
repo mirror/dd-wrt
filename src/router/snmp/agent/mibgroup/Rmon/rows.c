@@ -52,7 +52,7 @@ rowapi_delete(RMON_ENTRY_T * eold)
     table_ptr = (TABLE_DEFINTION_T *) eold->table_ptr;
 
     /*
-     * delete timout scheduling 
+     * delete timeout scheduling
      */
     snmp_alarm_unregister(eold->timer_id);
     ag_trace("Entry %ld in %s has been deleted",
@@ -67,7 +67,7 @@ rowapi_delete(RMON_ENTRY_T * eold)
     }
 
     /*
-     * delete it in users's sence 
+     * delete it in the user's sense
      */
     if (table_ptr->ClbkDelete)
         table_ptr->ClbkDelete((RMON_ENTRY_T *) eold->body);
@@ -163,7 +163,7 @@ rowapi_activate(TABLE_DEFINTION_T * table_ptr, RMON_ENTRY_T * eptr)
 }
 
 /*
- * creates an entry, locats it in proper sorted order by index
+ * creates an entry, locates it in proper sorted order by index
  * Row is initialized to zero,
  * except: 'next', 'table_ptr', 'index',
  * 'timer_id' & 'status'=(RMON1_ENTRY_UNDER_CREATION)
@@ -396,7 +396,7 @@ ROWAPI_action_check(TABLE_DEFINTION_T * table_ptr, u_long ctrl_index)
 
     eptr = ROWAPI_find(table_ptr, ctrl_index);
     if (!eptr) {
-        ag_trace("Smth wrong ?");
+        ag_trace("Something wrong ?");
         return SNMP_ERR_GENERR;
     }
 
@@ -438,7 +438,7 @@ ROWAPI_action_check(TABLE_DEFINTION_T * table_ptr, u_long ctrl_index)
         /*
          * Our MIB understanding extension: we permit to set
          * VALID when entry doesn't exit, in this case PDU has to have
-         * the nessessary & valid set of non-default values 
+         * the necessary & valid set of non-default values
          */
         if (table_ptr->ClbkValidate) {
             return table_ptr->ClbkValidate(eptr);
@@ -462,7 +462,7 @@ ROWAPI_commit(TABLE_DEFINTION_T * table_ptr, u_long ctrl_index)
 
     eptr = ROWAPI_find(table_ptr, ctrl_index);
     if (!eptr) {
-        ag_trace("Smth wrong ?");
+        ag_trace("Something wrong ?");
         return SNMP_ERR_GENERR;
     }
 
@@ -490,7 +490,7 @@ ROWAPI_commit(TABLE_DEFINTION_T * table_ptr, u_long ctrl_index)
         /*
          * Our MIB understanding extension: we permit to set
          * VALID when entry doesn't exit, in this case PDU has to have
-         * the nessessary & valid set of non-default values 
+         * the necessary & valid set of non-default values
          */
         if (eptr->new_owner) {
             if (eptr->owner)

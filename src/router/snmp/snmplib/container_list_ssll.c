@@ -422,8 +422,9 @@ _ssll_it2cont(ssll_iterator *it)
 }
 
 static void *
-_ssll_iterator_curr(ssll_iterator *it)
+_ssll_iterator_curr(netsnmp_iterator *p)
 {
+    ssll_iterator *it = (void *)p;
     sl_container *t = _ssll_it2cont(it);
     if ((NULL == t) || (NULL == it->pos))
         return NULL;
@@ -432,8 +433,9 @@ _ssll_iterator_curr(ssll_iterator *it)
 }
 
 static void *
-_ssll_iterator_first(ssll_iterator *it)
+_ssll_iterator_first(netsnmp_iterator *p)
 {
+    ssll_iterator *it = (void *)p;
     sl_container *t = _ssll_it2cont(it);
     if ((NULL == t) || (NULL == t->head))
         return NULL;
@@ -442,8 +444,9 @@ _ssll_iterator_first(ssll_iterator *it)
 }
 
 static void *
-_ssll_iterator_next(ssll_iterator *it)
+_ssll_iterator_next(netsnmp_iterator *p)
 {
+    ssll_iterator *it = (void *)p;
     sl_container *t = _ssll_it2cont(it);
     if ((NULL == t) || (NULL == it->pos))
         return NULL;
@@ -456,8 +459,9 @@ _ssll_iterator_next(ssll_iterator *it)
 }
 
 static void *
-_ssll_iterator_last(ssll_iterator *it)
+_ssll_iterator_last(netsnmp_iterator *p)
 {
+    ssll_iterator *it = (void *)p;
     sl_node      *n;
     sl_container *t = _ssll_it2cont(it);
     if(NULL == t)
@@ -479,8 +483,9 @@ _ssll_iterator_last(ssll_iterator *it)
 }
 
 static int
-_ssll_iterator_reset(ssll_iterator *it)
+_ssll_iterator_reset(netsnmp_iterator *p)
 {
+    ssll_iterator *it = (void *)p;
     sl_container *t;
 
     /** can't use it2conf cuz we might be out of sync */
@@ -531,16 +536,16 @@ _ssll_iterator_get(netsnmp_container *c)
 
     it->base.container = c;
     
-    it->base.first = (netsnmp_iterator_rtn*)_ssll_iterator_first;
-    it->base.next = (netsnmp_iterator_rtn*)_ssll_iterator_next;
-    it->base.curr = (netsnmp_iterator_rtn*)_ssll_iterator_curr;
-    it->base.last = (netsnmp_iterator_rtn*)_ssll_iterator_last;
-    it->base.reset = (netsnmp_iterator_rc*)_ssll_iterator_reset;
-    it->base.release = (netsnmp_iterator_rc*)_ssll_iterator_release;
+    it->base.first = _ssll_iterator_first;
+    it->base.next = _ssll_iterator_next;
+    it->base.curr = _ssll_iterator_curr;
+    it->base.last = _ssll_iterator_last;
+    it->base.reset = _ssll_iterator_reset;
+    it->base.release = _ssll_iterator_release;
 
-    (void)_ssll_iterator_reset(it);
+    (void)_ssll_iterator_reset(&it->base);
 
-    return (netsnmp_iterator *)it;
+    return &it->base;
 }
 #else /* NETSNMP_FEATURE_REMOVE_CONTAINER_LINKED_LIST */
 netsnmp_feature_unused(container_linked_list);

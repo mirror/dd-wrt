@@ -35,7 +35,6 @@ extern          "C" {
     void            unregister_config_handler(const char *filePrefix, const char *token);
 
     				/* Defined in mib.c, rather than read_config.c */
-    void            register_mib_handlers(void);
     void            unregister_all_config_handlers(void);
 
     /* Application Handlers */
@@ -43,6 +42,13 @@ extern          "C" {
     struct config_line *register_app_config_handler(
                                                 const char *token,
                                                 void (*parser) (const char *, char *),
+                                                void (*releaser) (void),
+                                                const char *usageLine);
+
+    NETSNMP_IMPORT
+    struct config_line *register_const_app_config_handler(
+                                                const char *token,
+                                                void (*parser) (const char *, const char *),
                                                 void (*releaser) (void),
                                                 const char *usageLine);
 

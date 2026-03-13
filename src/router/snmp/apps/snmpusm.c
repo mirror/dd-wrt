@@ -91,26 +91,23 @@ static const char *successNotes[CMD_NUM] = {
 #define                   USM_OID_LEN    12
 #define                DH_USM_OID_LEN    11
 
-static oid
-
-authKeyOid[MAX_OID_LEN] = { 1, 3, 6, 1, 6, 3, 15, 1, 2, 2, 1, 6 },
-ownAuthKeyOid[MAX_OID_LEN] = {1, 3, 6, 1, 6, 3, 15, 1, 2, 2, 1, 7},
-privKeyOid[MAX_OID_LEN] = {1, 3, 6, 1, 6, 3, 15, 1, 2, 2, 1, 9},
-ownPrivKeyOid[MAX_OID_LEN] = {1, 3, 6, 1, 6, 3, 15, 1, 2, 2, 1, 10},
-usmUserCloneFrom[MAX_OID_LEN] = {1, 3, 6, 1, 6, 3, 15, 1, 2, 2, 1, 4},
-usmUserSecurityName[MAX_OID_LEN] = {1, 3, 6, 1, 6, 3, 15, 1, 2, 2, 1, 3},
-usmUserPublic[MAX_OID_LEN] = {1, 3, 6, 1, 6, 3, 15, 1, 2, 2, 1, 11},
-usmUserStatus[MAX_OID_LEN] = {1, 3, 6, 1, 6, 3, 15, 1, 2, 2, 1, 13},
+static oid authKeyOid[MAX_OID_LEN] = { 1, 3, 6, 1, 6, 3, 15, 1, 2, 2, 1, 6 };
+static oid ownAuthKeyOid[MAX_OID_LEN] = {1, 3, 6, 1, 6, 3, 15, 1, 2, 2, 1, 7};
+static oid privKeyOid[MAX_OID_LEN] = {1, 3, 6, 1, 6, 3, 15, 1, 2, 2, 1, 9};
+static oid ownPrivKeyOid[MAX_OID_LEN] = {1, 3, 6, 1, 6, 3, 15, 1, 2, 2, 1, 10};
+static oid usmUserCloneFrom[MAX_OID_LEN] = {1, 3, 6, 1, 6, 3, 15, 1, 2, 2, 1, 4};
+static oid usmUserSecurityName[MAX_OID_LEN] = {1, 3, 6, 1, 6, 3, 15, 1, 2, 2, 1, 3};
+static oid usmUserPublic[MAX_OID_LEN] = {1, 3, 6, 1, 6, 3, 15, 1, 2, 2, 1, 11};
+static oid usmUserStatus[MAX_OID_LEN] = {1, 3, 6, 1, 6, 3, 15, 1, 2, 2, 1, 13};
 /* diffie helman change key objects */
-usmDHUserAuthKeyChange[MAX_OID_LEN] = {1, 3, 6, 1, 3, 101, 1, 1, 2, 1, 1 },
-usmDHUserPrivKeyChange[MAX_OID_LEN] = {1, 3, 6, 1, 3, 101, 1, 1, 2, 1, 3 },
+static oid usmDHUserAuthKeyChange[MAX_OID_LEN] = {1, 3, 6, 1, 3, 101, 1, 1, 2, 1, 1 };
+static oid usmDHUserPrivKeyChange[MAX_OID_LEN] = {1, 3, 6, 1, 3, 101, 1, 1, 2, 1, 3 };
 #if defined(HAVE_OPENSSL_DH_H) && defined(HAVE_LIBCRYPTO)
-usmDHUserOwnAuthKeyChange[MAX_OID_LEN] = {1, 3, 6, 1, 3, 101, 1, 1, 2, 1, 2 },
-usmDHUserOwnPrivKeyChange[MAX_OID_LEN] = {1, 3, 6, 1, 3, 101, 1, 1, 2, 1, 4 },
+static oid usmDHUserOwnAuthKeyChange[MAX_OID_LEN] = {1, 3, 6, 1, 3, 101, 1, 1, 2, 1, 2 };
+static oid usmDHUserOwnPrivKeyChange[MAX_OID_LEN] = {1, 3, 6, 1, 3, 101, 1, 1, 2, 1, 4 };
+static oid usmDHParameters[] = { 1,3,6,1,3,101,1,1,1,0 };
+static size_t usmDHParameters_len = OID_LENGTH(usmDHParameters);
 #endif /* HAVE_OPENSSL_DH_H && HAVE_LIBCRYPTO */
-usmDHParameters[] = { 1,3,6,1,3,101,1,1,1,0 }
-;
-size_t usmDHParameters_len = OID_LENGTH(usmDHParameters);
 
 static
 oid            *authKeyChange = authKeyOid, *privKeyChange = privKeyOid;
@@ -119,7 +116,7 @@ oid            *dhauthKeyChange = usmDHUserAuthKeyChange,
 int             doauthkey = 0, doprivkey = 0, uselocalizedkey = 0;
 size_t          usmUserEngineIDLen = 0;
 u_char         *usmUserEngineID = NULL;
-char           *usmUserPublic_val = NULL;
+const char     *usmUserPublic_val = NULL;
 int             docreateandwait = 0;
 
 
@@ -145,7 +142,7 @@ usage(void)
     fprintf(stderr, "\t-CE ENGINE-ID\tSet usmUserEngineID (e.g. 800000020109840301).\n");
     fprintf(stderr, "\t-Cp STRING\tSet usmUserPublic value to STRING.\n");
     fprintf(stderr, "\t-Cw\t\tCreate the user with createAndWait.\n");
-    fprintf(stderr, "\t\t\t(it won't be active until you active it)\n");
+    fprintf(stderr, "\t\t\t(it won't be active until you activate it)\n");
     fprintf(stderr, "\t-Cx\t\tChange the privacy key.\n");
     fprintf(stderr, "\t-Ca\t\tChange the authentication key.\n");
     fprintf(stderr, "\t-Ck\t\tAllows one to use localized key (must start with 0x)\n");
@@ -368,7 +365,7 @@ main(int argc, char *argv[])
         keychange_len = SNMP_MAXBUF_SMALL,
         keychangepriv_len = SNMP_MAXBUF_SMALL;
 
-    char           *newpass = NULL, *oldpass = NULL;
+    const char     *newpass = NULL, *oldpass = NULL;
     u_char          oldKu[SNMP_MAXBUF_SMALL],
         newKu[SNMP_MAXBUF_SMALL],
         oldkul[SNMP_MAXBUF_SMALL],
@@ -447,7 +444,7 @@ main(int argc, char *argv[])
          * XXX:  Uses the auth type of the calling user, a MD5 user can't
          *       change a SHA user's key.
          */
-        char *passwd_user;
+        const char *passwd_user;
 
         command = CMD_PASSWD;
         oldpass = argv[++arg];
@@ -553,7 +550,7 @@ main(int argc, char *argv[])
 	     */
 	    rval = generate_Ku(session.securityAuthProto,
 			       session.securityAuthProtoLen,
-			       (u_char *) oldpass, strlen(oldpass),
+			       (const u_char *) oldpass, strlen(oldpass),
 			       oldKu, &oldKu_len);
 	    
 	    if (rval != SNMPERR_SUCCESS) {
@@ -597,7 +594,7 @@ main(int argc, char *argv[])
 	} else {
             rval = generate_Ku(session.securityAuthProto,
                                session.securityAuthProtoLen,
-                               (u_char *) newpass, strlen(newpass),
+                               (const u_char *) newpass, strlen(newpass),
                                newKu, &newKu_len);
 
             if (rval != SNMPERR_SUCCESS) {
@@ -874,7 +871,7 @@ main(int argc, char *argv[])
          * change the key of a user if DH is available
          */
 
-        char *passwd_user;
+        const char *passwd_user;
         netsnmp_pdu *dhpdu, *dhresponse = NULL;
         netsnmp_variable_list *vars, *dhvar;
         
@@ -891,7 +888,8 @@ main(int argc, char *argv[])
          * Change the user supplied on command line.
          */
         if ((passwd_user != NULL) && (strlen(passwd_user) > 0)) {
-            session.securityName = passwd_user;
+            free(session.securityName);
+            session.securityName = strdup(passwd_user);
         } else {
             /*
              * Use own key object if no user was supplied.

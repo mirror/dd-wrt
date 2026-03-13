@@ -32,7 +32,7 @@ in that they start with a "$".  They can be used for anything you
 want, but most typically they'll hold mib node names being processed
 by @foreach ...@ clauses.
 .PP
-They also have a special properties when they are a mib node, such that
+They also have a special property when they are a mib node, such that
 adding special suffixes to them will allow them to be interpreted in
 some fashion.  The easiest way to understand this is through an
 example.  If the variable 'x' contained the word 'ifType' then some

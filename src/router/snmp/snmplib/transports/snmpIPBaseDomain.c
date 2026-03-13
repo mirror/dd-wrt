@@ -107,20 +107,58 @@ int netsnmp_bindtodevice(int fd, const char *iface)
         return 0;
 
 #ifdef HAVE_SO_BINDTODEVICE
-    /*
-     * +1 to work around the Linux kernel bug that the passed in name is not
-     * '\0'-terminated.
-     */
-    int ifacelen = strlen(iface) + 1;
-    int ret;
+    {
+        /*
+         * +1 to work around the Linux kernel bug that the passed in name is not
+         * '\0'-terminated.
+         */
+        int ifacelen = strlen(iface) + 1;
+        int ret;
 
-    ret = setsockopt(fd, SOL_SOCKET, SO_BINDTODEVICE, iface, ifacelen);
-    if (ret < 0)
-        snmp_log(LOG_ERR, "Binding socket to interface %s failed: %s\n", iface,
-                 strerror(errno));
-    return ret;
+        ret = setsockopt(fd, SOL_SOCKET, SO_BINDTODEVICE, iface, ifacelen);
+        if (ret < 0)
+            snmp_log(LOG_ERR, "Binding socket to interface %s failed: %s\n",
+                     iface, strerror(errno));
+        return ret;
+    }
 #else
     errno = EINVAL;
     return -1;
 #endif
+}
+
+int netsnmp_ipbase_session_init(struct netsnmp_transport_s *transport,
+                            struct snmp_session *sess) {
+    union {
+        struct sockaddr     sa;
+        struct sockaddr_in  sin;
+        struct sockaddr_in6 sin6;
+    } ss;
+    socklen_t len = sizeof(ss);
+
+    if (!sess) {
+        DEBUGMSGTL(("netsnmp_ipbase", "session pointer is NULL\n"));
+        return SNMPERR_SUCCESS;
+    }
+
+    if (getsockname(transport->sock, (struct sockaddr *)&ss, &len) == -1) {
+        DEBUGMSGTL(("netsnmp_ipbase", "getsockname error %s\n", strerror(errno)));
+        return SNMPERR_SUCCESS;
+    }
+    switch (ss.sa.sa_family) {
+    case AF_INET:
+        sess->local_port = ntohs(ss.sin.sin_port);
+        break;
+    case AF_INET6:
+        sess->local_port = ntohs(ss.sin6.sin6_port);
+        break;
+    default:
+        DEBUGMSGTL(("netsnmp_ipbase", "unsupported address family %d\n",
+                    ss.sa.sa_family));
+        return SNMPERR_SUCCESS;
+    }
+
+    DEBUGMSGTL(("netsnmp_ipbase", "local port number %d\n", sess->local_port));
+
+    return SNMPERR_SUCCESS;
 }

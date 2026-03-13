@@ -202,7 +202,7 @@ The same holds for the "combined subtree2 view defined below.
 In fact, a mask field is only needed when defining row slices
 across a table (or similar views), and can almost always be omitted.
 .PP
-In general, it is advisible not to mix traditional and VACM-based
+In general, it is advisable not to mix traditional and VACM-based
 access configuration settings, as these can sometimes interfere
 with each other in unexpected ways.  Choose a particular style
 of access configuration, and stick to it.
@@ -337,7 +337,7 @@ trap2sink      localhost
 .fi
 .RE
 Alternatively, the second and third directives could be combined
-(and an acknowledgement requested) using:
+(and an acknowledgment requested) using:
 .RS
 informsink     localhost  public
 .RE
@@ -470,7 +470,7 @@ cron 10 0 * * * versionUpdateConfig.0 = 1
 .RE
 .PP
 The one-shot style of scheduling is rather less common, but the
-secret SNMP virus could be activated on the next occurance of Friday 13th using:
+secret SNMP virus could be activated on the next occurrence of Friday 13th using:
 .RS
 at   13 13 13 * 5 snmpVirus.0 = 1
 .RE

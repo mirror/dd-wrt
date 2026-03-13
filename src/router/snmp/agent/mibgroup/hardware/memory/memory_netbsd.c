@@ -211,7 +211,7 @@ swapinfo(long pagesize)
             continue;
         if (!mem->descr) {
          /* sprintf(buf, "swap #%d", s[i].se_dev); */
-            sprintf(buf, "swap %s",  s[i].se_path);
+            snprintf(buf, sizeof buf, "swap %s",  s[i].se_path);
             mem->descr = strdup( buf );
         }
         mem->units = pagesize;

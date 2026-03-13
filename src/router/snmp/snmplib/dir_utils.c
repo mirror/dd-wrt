@@ -93,10 +93,8 @@ netsnmp_directory_container_read_some(netsnmp_container *user_container,
             container = netsnmp_container_find("nsfile_directory_container:"
                                                "binary_array");
             if (container) {
-                container->compare = (netsnmp_container_compare*)
-                    netsnmp_file_compare_name;
-                container->free_item = (netsnmp_container_obj_func *)
-                    netsnmp_file_container_free;
+                container->compare = netsnmp_file_compare_name;
+                container->free_item = netsnmp_file_container_free;
             }
         }
         else

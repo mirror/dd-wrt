@@ -97,7 +97,7 @@ main(int argc, char **argv)
 {
     int             rval = SNMPERR_SUCCESS;
     int             failcount NETSNMP_ATTRIBUTE_UNUSED = 0;
-    char            ch;
+    int             ch;
 
     local_progname = argv[0];
 

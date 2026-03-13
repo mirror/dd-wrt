@@ -3,7 +3,7 @@
  *
  * Maintain a registry of index allocations
  *      (Primarily required for AgentX support,
- *       but it could be more widely useable).
+ *       but it could be more widely usable).
  */
 
 
@@ -346,21 +346,33 @@ register_index(netsnmp_variable_list * varbind, int flags,
             break;
         case ASN_OCTET_STR:
             if (prev_idx_ptr) {
+                size_t maxlen = sizeof(new_index->varbind->buf);
                 i = new_index->varbind->val_len - 1;
-                while (new_index->varbind->buf[i] == 'z') {
+
+                while (i >= 0 && new_index->varbind->buf[i] == 'z') {
                     new_index->varbind->buf[i] = 'a';
                     i--;
-                    if (i < 0) {
-                        i = new_index->varbind->val_len;
-                        new_index->varbind->buf[i] = 'a';
-                        new_index->varbind->buf[i + 1] = 0;
+                }
+
+                if (i >= 0) {
+                    new_index->varbind->buf[i]++;
+                } else {
+                    /* All 'z's — need to grow */
+                    if (new_index->varbind->val_len + 1 < maxlen) {
+                        memmove(new_index->varbind->buf + 1, new_index->varbind->buf,
+                                new_index->varbind->val_len);
+                        new_index->varbind->buf[0] = 'a';
+                        new_index->varbind->val_len++;
+                    } else {
+                        /* Buffer full — cannot grow */
+                        free(new_index);
+                        return NULL;
                     }
                 }
-                new_index->varbind->buf[i]++;
-            } else
+            } else {
                 strcpy((char *) new_index->varbind->buf, "aaaa");
-            new_index->varbind->val_len =
-                strlen((char *) new_index->varbind->buf);
+                new_index->varbind->val_len = 4;
+            }
             break;
         case ASN_OBJECT_ID:
             if (prev_idx_ptr) {

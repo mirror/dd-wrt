@@ -52,7 +52,7 @@ netsnmp_feature_require(date_n_time);
     *    - reporting hrSWInstalledLast* objects
     *    - detecting when the cached contents are out of date.
     */
-char pkg_directory[SNMP_MAXPATH];
+static char pkg_directory[SNMP_MAXPATH];
 
 /* ---------------------------------------------------------------------
  */

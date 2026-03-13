@@ -172,6 +172,7 @@ static Netsnmp_Node_Handler _mfd_snmpNotifyFilterTable_post_request;
 static Netsnmp_Node_Handler _mfd_snmpNotifyFilterTable_object_lookup;
 static Netsnmp_Node_Handler _mfd_snmpNotifyFilterTable_get_values;
 #ifndef NETSNMP_DISABLE_SET_SUPPORT
+#ifndef NETSNMP_NO_WRITE_SUPPORT
 static Netsnmp_Node_Handler _mfd_snmpNotifyFilterTable_check_objects;
 static Netsnmp_Node_Handler _mfd_snmpNotifyFilterTable_undo_setup;
 static Netsnmp_Node_Handler _mfd_snmpNotifyFilterTable_set_values;
@@ -181,6 +182,7 @@ static Netsnmp_Node_Handler _mfd_snmpNotifyFilterTable_commit;
 static Netsnmp_Node_Handler _mfd_snmpNotifyFilterTable_undo_commit;
 static Netsnmp_Node_Handler _mfd_snmpNotifyFilterTable_irreversible_commit;
 static Netsnmp_Node_Handler _mfd_snmpNotifyFilterTable_check_dependencies;
+#endif
 
 NETSNMP_STATIC_INLINE int
                 _snmpNotifyFilterTable_undo_column(snmpNotifyFilterTable_rowreq_ctx *
@@ -1632,7 +1634,7 @@ _mfd_snmpNotifyFilterTable_commit(netsnmp_mib_handler *handler,
 
     if (rowreq_ctx->rowreq_flags & MFD_ROW_DIRTY) {
         /*
-         * if we successfully commited this row, set the dirty flag. Use the
+         * if we successfully committed this row, set the dirty flag. Use the
          * current value + 1 (i.e. dirty = # rows changed).
          * this is checked in post_request...
          */
@@ -1880,9 +1882,7 @@ _container_free(netsnmp_container *container)
     /*
      * free all items. inefficient, but easy.
      */
-    CONTAINER_CLEAR(container,
-                    (netsnmp_container_obj_func *) _container_item_free,
-                    NULL);
+    CONTAINER_CLEAR(container, _container_item_free, NULL);
 }                               /* _container_free */
 #endif
 

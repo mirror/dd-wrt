@@ -8,9 +8,13 @@
      modify it under the same terms as Perl itself.
 */
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wcast-qual"
+#pragma GCC diagnostic ignored "-Wdeclaration-after-statement"
 #include "EXTERN.h"
 #include "perl.h"
 #include "XSUB.h"
+#pragma GCC diagnostic pop
 
 #include <net-snmp/net-snmp-config.h>
 #include <net-snmp/net-snmp-includes.h>
@@ -423,13 +427,11 @@ int type;
 #define USE_ENUMS 1
 #define USE_SPRINT_VALUE 2
 static int
-__snprint_value (buf, buf_len, var, tp, type, flag)
-char * buf;
-size_t buf_len;
-netsnmp_variable_list * var;
-struct tree * tp;
-int type;
-int flag;
+#if defined(__has_attribute) && __has_attribute(nonnull)
+__attribute__((nonnull(1)))
+#endif
+__snprint_value(char *buf, size_t buf_len, netsnmp_variable_list *var,
+                struct tree *tp, int type, int flag)
 {
    int len = 0;
    u_char* ip;
@@ -2812,7 +2814,6 @@ snmp_new_tunneled_session(version, peer, retries, timeout, sec_name, sec_level, 
                }
 
                session.transport_configuration->compare =
-                   (netsnmp_container_compare*)
                    netsnmp_transport_config_compare;
            }
 
@@ -3020,7 +3021,6 @@ snmp_read_module(module)
         OUTPUT:
         RETVAL
 
-
 void
 snmp_set(sess_ref, varlist_ref, perl_callback)
         SV *	sess_ref
@@ -3028,6 +3028,7 @@ snmp_set(sess_ref, varlist_ref, perl_callback)
         SV *	perl_callback
 	PPCODE:
 	{
+#ifndef NETSNMP_NO_WRITE_SUPPORT
            AV *varlist;
            SV **varbind_ref;
            SV **varbind_val_f;
@@ -3052,7 +3053,6 @@ snmp_set(sess_ref, varlist_ref, perl_callback)
            int use_enums;
            struct enum_list *ep;
            int best_guess;	   
-#ifndef NETSNMP_NO_WRITE_SUPPORT
 
            New (0, oid_arr, MAX_OID_LEN, oid);
 
@@ -3174,11 +3174,11 @@ snmp_set(sess_ref, varlist_ref, perl_callback)
               /* BUG!!! need to return an error value */
               XPUSHs(&sv_undef); /* no mem or bad args */
            }
+done:
+           Safefree(oid_arr);
 #else  /* NETSNMP_NO_WRITE_SUPPORT */
            warn("error: Net-SNMP was compiled using --enable-read-only, set() can not be used.");
 #endif /* NETSNMP_NO_WRITE_SUPPORT */
-done:
-           Safefree(oid_arr);
         }
 
 void
@@ -5194,11 +5194,11 @@ snmp_mib_node_FETCH(tp_ref, key)
                     mib_hv = perl_get_hv("SNMP::MIB", FALSE);
                     if (SvMAGICAL(mib_hv)) mg = mg_find((SV*)mib_hv, 'P');
                     if (mg) mib_tied_href = (SV*)mg->mg_obj;
+                    next_node_href = newRV((SV*)newHV());
                     __tp_sprint_num_objid(str_buf, sizeof(str_buf), tp);
                     nn_hrefp = hv_fetch((HV*)SvRV(mib_tied_href),
                                         str_buf, strlen(str_buf), 1);
                     if (!SvROK(*nn_hrefp)) {
-                       next_node_href = newRV((SV*)newHV());
                        sv_setsv(*nn_hrefp, next_node_href);
                        ENTER ;
                        SAVETMPS ;
@@ -5438,14 +5438,14 @@ MODULE = SNMP	PACKAGE = SnmpSessionPtr	PREFIX = snmp_session_
 
 void
 snmp_session_DESTROY(sess_ptr)
-	SnmpSession *sess_ptr
+	void *sess_ptr
 	CODE:
 	{
 	if(sess_ptr != NULL)
 	{
  	 if(api_mode == SNMP_API_SINGLE)
 	 {
-           snmp_sess_close( (struct session_list *) sess_ptr );
+           snmp_sess_close( sess_ptr );
 	 } else { 
            snmp_close( sess_ptr );
 	 }

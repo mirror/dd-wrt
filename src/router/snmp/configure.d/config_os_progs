@@ -110,6 +110,24 @@ AC_SUBST(LIBTOOL_DEPS)
 #   Build environment:
 ##
 
+for opt in -Werror=declaration-after-statement
+do
+    AC_MSG_CHECKING([whether the compiler supports $opt])
+    netsnmp_save_CFLAGS="$CFLAGS"
+    if test x$opt != x-Wstrict-prototypes; then
+      CFLAGS="-Werror $opt $CFLAGS"
+    else
+      CFLAGS="$opt $CFLAGS"
+    fi
+    AC_LINK_IFELSE([AC_LANG_PROGRAM([], [])], [
+      AC_MSG_RESULT([yes])
+      CFLAGS="$opt $netsnmp_save_CFLAGS"
+    ], [
+      AC_MSG_RESULT([no])
+      CFLAGS="$netsnmp_save_CFLAGS"
+    ])
+done
+
 #   developer build 
 #       (enabled by default when building from SVN checkout)
 #
@@ -124,7 +142,7 @@ if test "x$developer" = "xyes" -a "x$GCC" = "xyes"; then
     for opt in -Wall -Wextra -Wstrict-prototypes -Wwrite-strings -Wcast-qual \
         -Wimplicit-fallthrough=2 -Wlogical-op -Wundef                        \
         -Wno-format-truncation -Wno-missing-field-initializers               \
-        -Wno-sign-compare -Wno-unused-parameter
+        -Wno-sign-compare -Wno-unused-parameter -Wcast-function-type
     do
       AC_MSG_CHECKING([whether the compiler supports $opt])
       if test x$opt != x-Wstrict-prototypes; then

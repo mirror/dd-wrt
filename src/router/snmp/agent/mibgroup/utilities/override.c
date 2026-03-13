@@ -34,7 +34,9 @@ override_handler(netsnmp_mib_handler *handler,
 {
 
     override_data  *data = (override_data*)handler->myvoid;
+#ifndef NETSNMP_NO_WRITE_SUPPORT
     void *tmpptr;
+#endif
 
     if (!data) {
         netsnmp_set_request_error(reqinfo, requests, SNMP_ERR_GENERR);

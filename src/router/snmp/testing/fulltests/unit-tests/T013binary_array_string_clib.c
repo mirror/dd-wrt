@@ -18,7 +18,7 @@ int i;
 init_snmp(test_name);
 
 c = netsnmp_container_get_binary_array();
-c->compare = (netsnmp_container_compare*)strcmp;
+c->compare = netsnmp_str_compare;
     
 for (i = 0; i < sizeof(b)/sizeof(b[0]); ++i)
     CONTAINER_INSERT(c, b[i]);

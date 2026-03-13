@@ -56,20 +56,11 @@ extern          "C" {
     void            dot3StatsTable_container_free(netsnmp_container *
                                                   container);
 
-    int             dot3StatsTable_cache_load(netsnmp_container *
-                                              container);
-    void            dot3StatsTable_cache_free(netsnmp_container *
-                                              container);
-
-#define MAX_LINE_SIZE 256
-
     int             dot3StatsTable_row_prep(dot3StatsTable_rowreq_ctx *
                                             rowreq_ctx);
 
-    void            interface_sysclassnet_dot3stats_get
-        (dot3StatsTable_rowreq_ctx * rowreq_ctx, const char *name);
-    void            interface_dot3stats_get_errorcounters
-        (dot3StatsTable_rowreq_ctx * rowreq_ctx, const char *name);
+    int             dot3StatsTable_container_load_impl(netsnmp_container *
+                                                       container);
 
 
 

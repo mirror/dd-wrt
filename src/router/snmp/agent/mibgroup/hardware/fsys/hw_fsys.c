@@ -386,10 +386,6 @@ _parse_mount_config(const char *token, char *cptr)
         return;
 #endif
     }
-    if (!name) {
-        config_perror("Missing mount parameter");
-        return;
-    }
     m_new = SNMP_MALLOC_TYPEDEF(conf_mount_list);
     if (!m_new) {
         config_perror("Out of memory");

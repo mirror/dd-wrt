@@ -386,7 +386,8 @@ realloc_output_temp_bfr(u_char ** buf, size_t * buf_len, size_t * out_len,
                     return 0;
                 }
             }
-            if (options->leading_zeroes || zeroes_to_write-- > 0) {
+            if (options->leading_zeroes ||
+                (zeroes_to_write && zeroes_to_write-- > 0)) {
                 *(*buf + *out_len) = '0';
             } else {
                 *(*buf + *out_len) = ' ';
@@ -461,6 +462,8 @@ realloc_handle_time_fmt(u_char ** buf, size_t * buf_len, size_t * out_len,
         return 0;
     }
 
+    memset(&time_val, 0, sizeof(time_val));
+
     /*
      * Get the time field to output.  
      */
@@ -519,64 +522,67 @@ realloc_handle_time_fmt(u_char ** buf, size_t * buf_len, size_t * out_len,
             parsed_time = localtime(&time_val);
         }
 
-        switch (fmt_cmd) {
+        if (!parsed_time) {
+            sprintf(safe_bfr, "(unknown)");
+        } else {
+            switch (fmt_cmd) {
+                /*
+                 * Output year. The year field is unusual: if there's a
+                 * restriction on precision, we want to truncate from the left
+                 * of the number, not the right, so someone printing the year
+                 * 1972 with 2 digit precision gets "72" not "19".
+                 */
+            case CHR_CUR_YEAR:
+            case CHR_UP_YEAR:
+                sprintf(safe_bfr, "%d", parsed_time->tm_year + 1900);
+                break;
 
-            /*
-             * Output year. The year field is unusual: if there's a restriction 
-             * on precision, we want to truncate from the left of the number,
-             * not the right, so someone printing the year 1972 with 2 digit 
-             * precision gets "72" not "19".
-             */
-        case CHR_CUR_YEAR:
-        case CHR_UP_YEAR:
-            sprintf(safe_bfr, "%d", parsed_time->tm_year + 1900);
-            break;
+                /*
+                 * output month 
+                 */
+            case CHR_CUR_MONTH:
+            case CHR_UP_MONTH:
+                sprintf(safe_bfr, "%d", parsed_time->tm_mon + 1);
+                break;
 
-            /*
-             * output month 
-             */
-        case CHR_CUR_MONTH:
-        case CHR_UP_MONTH:
-            sprintf(safe_bfr, "%d", parsed_time->tm_mon + 1);
-            break;
+                /*
+                 * output day of month 
+                 */
+            case CHR_CUR_MDAY:
+            case CHR_UP_MDAY:
+                sprintf(safe_bfr, "%d", parsed_time->tm_mday);
+                break;
 
-            /*
-             * output day of month 
-             */
-        case CHR_CUR_MDAY:
-        case CHR_UP_MDAY:
-            sprintf(safe_bfr, "%d", parsed_time->tm_mday);
-            break;
+                /*
+                 * output hour 
+                 */
+            case CHR_CUR_HOUR:
+            case CHR_UP_HOUR:
+                sprintf(safe_bfr, "%d", parsed_time->tm_hour);
+                break;
 
-            /*
-             * output hour 
-             */
-        case CHR_CUR_HOUR:
-        case CHR_UP_HOUR:
-            sprintf(safe_bfr, "%d", parsed_time->tm_hour);
-            break;
+                /*
+                 * output minute 
+                 */
+            case CHR_CUR_MIN:
+            case CHR_UP_MIN:
+                sprintf(safe_bfr, "%d", parsed_time->tm_min);
+                break;
 
-            /*
-             * output minute 
-             */
-        case CHR_CUR_MIN:
-        case CHR_UP_MIN:
-            sprintf(safe_bfr, "%d", parsed_time->tm_min);
-            break;
+                /*
+                 * output second 
+                 */
+            case CHR_CUR_SEC:
+            case CHR_UP_SEC:
+                sprintf(safe_bfr, "%d", parsed_time->tm_sec);
+                break;
 
-            /*
-             * output second 
-             */
-        case CHR_CUR_SEC:
-        case CHR_UP_SEC:
-            sprintf(safe_bfr, "%d", parsed_time->tm_sec);
-            break;
-
-            /*
-             * unknown format command - just output the character 
-             */
-        default:
-            sprintf(safe_bfr, "%c", fmt_cmd);
+                /*
+                 * unknown format command - just output the character 
+                 */
+            default:
+                sprintf(safe_bfr, "%c", fmt_cmd);
+            }
         }
     }
 
@@ -1351,10 +1357,13 @@ realloc_format_plain_trap(u_char ** buf, size_t * buf_len,
      */
     time(&now);
     now_parsed = localtime(&now);
-    sprintf(safe_bfr, "%.4d-%.2d-%.2d %.2d:%.2d:%.2d ",
+    if (now_parsed)
+        sprintf(safe_bfr, "%.4d-%.2d-%.2d %.2d:%.2d:%.2d ",
             now_parsed->tm_year + 1900, now_parsed->tm_mon + 1,
             now_parsed->tm_mday, now_parsed->tm_hour,
             now_parsed->tm_min, now_parsed->tm_sec);
+    else
+        sprintf(safe_bfr, "(unknown)");
     if (!snmp_strcat
         (buf, buf_len, out_len, allow_realloc,
          (const u_char *) safe_bfr)) {

@@ -33,8 +33,7 @@ netsnmp_feature_require(ipaddress_arch_entry_copy);
  */
 static int _access_ipaddress_entry_compare_addr(const void *lhs,
                                                 const void *rhs);
-static void _access_ipaddress_entry_release(netsnmp_ipaddress_entry * entry,
-                                            void *unused);
+static void _access_ipaddress_entry_release(void *entry, void *unused);
 
 /**---------------------------------------------------------------------*/
 /*
@@ -183,9 +182,7 @@ netsnmp_access_ipaddress_container_free(netsnmp_container *container, u_int free
         /*
          * free all items.
          */
-        CONTAINER_CLEAR(container,
-                        (netsnmp_container_obj_func*)_access_ipaddress_entry_release,
-                        NULL);
+        CONTAINER_CLEAR(container, _access_ipaddress_entry_release, NULL);
     }
 
     if(! (free_flags & NETSNMP_ACCESS_IPADDRESS_FREE_KEEP_CONTAINER))
@@ -526,7 +523,7 @@ netsnmp_ipaddress_ipv6_prefix_len(struct in6_addr mask)
 /**
  */
 void
-_access_ipaddress_entry_release(netsnmp_ipaddress_entry * entry, void *context)
+_access_ipaddress_entry_release(void *entry, void *context)
 {
     netsnmp_access_ipaddress_entry_free(entry);
 }

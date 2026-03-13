@@ -1012,7 +1012,7 @@ mteTrigger_run( unsigned int reg, void *clientarg)
                      * Similarly, if no fallEvent is configured,
                      *  there's no point in trying to fire it either.
                      */
-                    if (entry->mteTThRiseEvent[0] != '\0' ) {
+                    if (entry->mteTThFallEvent[0] != '\0' ) {
                         entry->mteTriggerXOwner   = entry->mteTThObjOwner;
                         entry->mteTriggerXObjects = entry->mteTThObjects;
                         entry->mteTriggerFired    = vp1;
@@ -1105,7 +1105,7 @@ mteTrigger_run( unsigned int reg, void *clientarg)
                      * Similarly, if no fallEvent is configured,
                      *  there's no point in trying to fire it either.
                      */
-                    if (entry->mteTThDRiseEvent[0] != '\0' ) {
+                    if (entry->mteTThDFallEvent[0] != '\0' ) {
                         entry->mteTriggerXOwner   = entry->mteTThObjOwner;
                         entry->mteTriggerXObjects = entry->mteTThObjects;
                         entry->mteTriggerFired    = vp1;

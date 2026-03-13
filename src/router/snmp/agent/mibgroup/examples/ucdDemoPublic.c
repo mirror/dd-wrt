@@ -188,6 +188,7 @@ write_ucdDemoResetKeys(int action,
                                           demopass);
                 }
             }
+            free(engineID);
             /*
              * reset the keys 
              */

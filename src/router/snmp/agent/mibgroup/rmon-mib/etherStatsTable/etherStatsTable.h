@@ -270,9 +270,6 @@ extern          "C" {
         etherStatsTable_rowreq_ctx_cleanup(etherStatsTable_rowreq_ctx *
                                            rowreq_ctx);
 
-    int             etherStatsTable_commit(etherStatsTable_rowreq_ctx *
-                                           rowreq_ctx);
-
     etherStatsTable_rowreq_ctx
         *etherStatsTable_row_find_by_mib_index(etherStatsTable_mib_index *
                                                mib_idx);

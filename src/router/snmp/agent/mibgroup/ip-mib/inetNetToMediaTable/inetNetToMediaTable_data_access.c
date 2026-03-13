@@ -163,9 +163,11 @@ typedef struct {
  * Put all entries with outdated generation to deletion list.
  */
 static void
-_collect_invalid_arp_ctx(inetNetToMediaTable_rowreq_ctx *ctx,
-                         _collect_ctx *cctx)
+_collect_invalid_arp_ctx(void *p, void *q)
 {
+    inetNetToMediaTable_rowreq_ctx *ctx = p;
+    _collect_ctx *cctx = q;
+
     if (ctx->data->generation != cctx->generation)
         CONTAINER_INSERT(cctx->to_delete, ctx);
 }
@@ -178,9 +180,7 @@ static void _arp_hook_gc(netsnmp_arp_access *access)
     cctx.to_delete = netsnmp_container_find("lifo");
     cctx.generation = access->generation;
 
-    CONTAINER_FOR_EACH(container,
-                       (netsnmp_container_obj_func *) _collect_invalid_arp_ctx,
-                       &cctx);
+    CONTAINER_FOR_EACH(container, _collect_invalid_arp_ctx, &cctx);
 
     while (CONTAINER_SIZE(cctx.to_delete)) {
         inetNetToMediaTable_rowreq_ctx *ctx = (inetNetToMediaTable_rowreq_ctx*)CONTAINER_FIRST(cctx.to_delete);
@@ -310,7 +310,7 @@ inetNetToMediaTable_container_shutdown(netsnmp_container *container_ptr)
  *  If access to your data is cheap/fast (e.g. you have a pointer to a
  *  structure in memory), it would make sense to update the data here.
  *  If, however, the accessing the data involves more work (e.g. parsing
- *  some other existing data, or peforming calculations to derive the data),
+ *  some other existing data, or performing calculations to derive the data),
  *  then you can limit yourself to setting the indexes and saving any
  *  information you will need later. Then use the saved information in
  *  inetNetToMediaTable_row_prep() for populating data.

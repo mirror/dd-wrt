@@ -285,7 +285,7 @@ ip_handler(netsnmp_mib_handler          *handler,
 {
     netsnmp_request_info  *request;
     netsnmp_variable_list *requestvb;
-    long     ret_value;
+    long     ret_value = 0;
     oid      subid;
     int      type = ASN_COUNTER;
 
@@ -720,7 +720,7 @@ ip_load(netsnmp_cache *cache, void *vmagic)
     struct nmparms  p;
     unsigned int    ulen;
     int             ret;
-    int             magic = (int) vmagic;
+    int             magic = (uintptr_t)vmagic;
     
     if ((fd = open_mib("/dev/ip", O_RDONLY, 0, NM_ASYNC_OFF)) < 0) {
         DEBUGMSGTL(("mibII/ip", "Failed to load IP object %d (hpux11)\n", magic));
@@ -929,7 +929,7 @@ int
 ip_load(netsnmp_cache *cache, void *vmagic)
 {
     long ret_value = -1;
-    int  magic     = (int) vmagic;
+    int  magic     = (uintptr_t)vmagic;
 
     switch (magic) {
     case IPFORWARDING:
@@ -963,7 +963,7 @@ int
 ip_load(netsnmp_cache *cache, void *vmagic)
 {
     long ret_value = -1;
-    int  magic     = (int) vmagic;
+    int  magic     = (uintptr_t)vmagic;
 
     switch (magic) {
     case IPFORWARDING:

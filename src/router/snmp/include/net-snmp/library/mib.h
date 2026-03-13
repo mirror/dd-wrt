@@ -490,9 +490,9 @@ SOFTWARE.
     NETSNMP_IMPORT
     void            snmp_out_toggle_options_usage(const char *, FILE *);
     NETSNMP_IMPORT
-    char           *snmp_in_toggle_options(char *);
+    const char     *snmp_in_toggle_options(char *);
     NETSNMP_IMPORT
-    char           *snmp_in_options(char *, int, char * const *);
+    const char     *snmp_in_options(char *, int, char * const *);
     NETSNMP_IMPORT
     void            snmp_in_toggle_options_usage(const char *, FILE *);
     NETSNMP_IMPORT

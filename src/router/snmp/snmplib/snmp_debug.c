@@ -37,7 +37,11 @@
 #endif
 
 #ifdef HAVE_PRIORITYNAMES
-#include <sys/syslog.h>
+ #if defined( HAVE_SYSLOG_H )
+  #include <syslog.h>
+ #elif defined ( HAVE_SYS_SYSLOG_H )
+  #include <sys/syslog.h>
+ #endif
 #endif
 
 #include <net-snmp/types.h>
@@ -680,9 +684,25 @@ snmp_debug_shutdown(void)
 
 #endif /* NETSNMP_NO_DEBUGGING */
 
+#ifdef HAVE_WOLFSSL_WOLFCRYPT_LOGGING_H
+#include <wolfssl/options.h>
+#include <wolfssl/wolfcrypt/logging.h>
+
+static void snmp_log_wolfssl_msg(const int logLevel NETSNMP_ATTRIBUTE_UNUSED,
+                                 const char* const msg)
+{
+    DEBUGMSGTL(("snmp_openssl", msg, "\n"));
+}
+#endif
+
 void
 snmp_debug_init(void)
 {
+#ifdef HAVE_WOLFSSL_WOLFCRYPT_LOGGING_H
+    wolfSSL_Debugging_ON();
+    wolfSSL_SetLoggingCb(snmp_log_wolfssl_msg);
+#endif
+
     register_prenetsnmp_mib_handler("snmp", "doDebugging",
                                     debug_config_turn_on_debugging, NULL,
                                     "(1|0)");

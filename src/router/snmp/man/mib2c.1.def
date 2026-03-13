@@ -32,7 +32,7 @@ code files. Thus, mib2c generates a template that you can edit
 to add logic necessary to obtain information from the
 operating system or application to complete the module.
 .PP
-MIBNODE is the top level mib node you want to generate code for.
+MIBNODE is the top-level mib node you want to generate code for.
 You must give mib2c a mib node (e.g. ifTable) on the command line,
 not a mib file.  This is the single most common mistake.
 .PP
@@ -119,7 +119,7 @@ GENERATING CODE FOR TABLES:
 The recommended configuration file for tables is the MIBs for
 Dummies, or MFD, configuration file. It hides as much of the SNMP
 details as possible, generating small, easy to understand functions.
-It is also the most flexible and well documented configuration file.
+It is also the most flexible and well-documented configuration file.
 See the agent/mibgroup/if-mib/ifTable/ifTable*.c files for an example:
 
         mib2c -c mib2c.mfd.conf MIBNODE
@@ -133,7 +133,7 @@ example:
 	mib2c -c mib2c.iterate.conf MIBNODE
 
 If your table data is kept in the agent (i.e. it's not located in
-an external source) and is purely data driven (i.e. you do not need
+an external source) and is purely data-driven (i.e. you do not need
 to perform any work when a set occurs).  See the
 agent/mibgroup/examples/data_set.c file for an example of such a
 table:
@@ -204,7 +204,7 @@ running indent on ucdDemoPublic.h
 running indent on ucdDemoPublic.c
 .PP
 The resulting ucdDemoPublic.c and ucdDemoPublic.h files are
-generated the current working directory.
+generated in the current working directory.
 .PP
 The following generates C template code for the header and implementation
 files  for the module to implement TCP-MIB::tcpConnTable.

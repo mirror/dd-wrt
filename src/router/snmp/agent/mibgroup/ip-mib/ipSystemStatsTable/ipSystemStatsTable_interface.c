@@ -1264,7 +1264,7 @@ _cache_free(netsnmp_cache * cache, void *magic)
  * @internal
  */
 static void
-_container_item_free(ipSystemStatsTable_rowreq_ctx * rowreq_ctx,
+_container_item_free(void *rowreq_ctx,
                      void *context)
 {
     DEBUGMSGTL(("internal:ipSystemStatsTable:_container_item_free",
@@ -1299,9 +1299,7 @@ _container_free(netsnmp_container *container)
     /*
      * free all items. inefficient, but easy.
      */
-    CONTAINER_CLEAR(container,
-                    (netsnmp_container_obj_func *) _container_item_free,
-                    NULL);
+    CONTAINER_CLEAR(container, _container_item_free, NULL);
 }                               /* _container_free */
 
 /**

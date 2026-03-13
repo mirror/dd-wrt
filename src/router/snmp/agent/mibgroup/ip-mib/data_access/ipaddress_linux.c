@@ -50,7 +50,7 @@ int _load_v6(netsnmp_container *container, int idx_offset);
 int
 netsnmp_access_ipaddress_extra_prefix_info(int index,
                                            u_long *preferedlt,
-                                           ulong *validlt,
+                                           u_long *validlt,
                                            char *addr);
 #endif
 
@@ -523,7 +523,7 @@ out:
 
 int
 netsnmp_access_ipaddress_extra_prefix_info(int index, u_long *preferedlt,
-                                           ulong *validlt, char *addr)
+                                           u_long *validlt, char *addr)
 {
 
     struct {

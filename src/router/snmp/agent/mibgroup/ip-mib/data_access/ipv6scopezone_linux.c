@@ -97,6 +97,11 @@ _scopezone_v6(netsnmp_container* container, int idx_offset)
                     "addr %s, index %d, pfx %d, scope %d, flags 0x%X\n",
                     addr, if_index, pfx_len, scope, flags));
 
+        if (if_index < 0) {
+            DEBUGMSGTL(("access:scopezone:container",
+                        "Invalid interface index %d\n", if_index));
+            continue;
+        }
         if (! (scope & IPV6_ADDR_LINKLOCAL)) {
             DEBUGMSGTL(("access:scopezone:container", 
                         "The address is not link-local, skipping\n"));

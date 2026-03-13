@@ -180,8 +180,10 @@ main(int argc, char *argv[])
         } else
             snmp_add_null_var(pdu, name, name_length);
     }
-    if (failures)
+    if (failures) {
+        snmp_free_pdu(pdu);
         goto close_session;
+    }
 
     exitval = 0;
 

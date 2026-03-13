@@ -36,8 +36,6 @@ if test "x$with_rpm" != "xno"; then
   # rpm-4.0.x needs rpmio.
   NETSNMP_SEARCH_LIBS(rpmGetPath, rpmio,,, $LMIBLIBS, _rpmlibs)
   
-  # rpm-4.0.3 librpmdb actually contains what we need.
-  NETSNMP_SEARCH_LIBS(rpmdbOpen, rpmdb,,, $LMIBLIBS, _rpmlibs)
   # now check for rpm using the appropriate libraries.
   NETSNMP_SEARCH_LIBS(rpmReadConfigFiles, rpm, [
     AC_DEFINE(HAVE_LIBRPM, 1,
@@ -122,4 +120,69 @@ if test "x$with_pcre" != "xno"; then
     ],,, LAGENTLIBS)
   AC_SUBST(LAGENTLIBS)
   AC_SUBST(LMIBLIBS)
+fi
+
+#
+# libnl (netlink)
+#
+
+# The test below verifies whether the libnl-3 package been installed.
+# This test works as follows:
+# - If pkg-config is not installed at the time autoreconf is run,
+#   autoreconf will fail.
+# - If pkg-config is installed at the time autoreconf is run,
+#   the generated configure script will try to detect the presence of
+#   the libnl-3 library by looking up compile and linker flags in the
+#   file called libnl-3.pc.
+# - pkg-config settings can be overridden via the configure variables
+#   LIBNL3_CFLAGS and LIBNL3_LIBS (added by the pkg-config m4 macro's to
+#   the configure script -- see also ./configure --help).
+# - The LIBNL3_CFLAGS and LIBNL3_LIBS configure variables can be used
+#   even if the pkg-config executable is not present on the system on
+#   which the configure script is run.
+# - Although libnl-3 is only used on Linux, test presence of libnl-3 on
+#   all platforms because this code is the first occurrence in the configure
+#   script of PKG_* macros and because the search for the pkg-config executable
+#   only occurs once.
+if test "x$with_nl" != "xno"; then
+    ifdef(
+      [PKG_CHECK_EXISTS],
+      [
+        PKG_CHECK_EXISTS([libnl-3.0],
+	  [PKG_CHECK_MODULES([LIBNL3], [libnl-3.0])])
+        PKG_CHECK_EXISTS([libnl-route-3.0],
+          [PKG_CHECK_MODULES([LIBNLROUTE3], [libnl-route-3.0])])
+      ],
+      [
+        AC_MSG_ERROR([pkg-config must be installed before autoconf is run.])
+      ]
+    )
+
+    case $target_os in
+    linux*) # Check for libnl (linux)
+        netsnmp_save_CPPFLAGS="$CPPFLAGS"
+        CPPFLAGS="${LIBNL3_CFLAGS} ${LIBNLROUTE3_CFLAGS} $CPPFLAGS"
+        NETSNMP_SEARCH_LIBS(nl_connect, nl-3,
+            [AC_CHECK_HEADERS([netlink/cache.h   netlink/msg.h   ]dnl
+			      [netlink/netlink.h netlink/socket.h])
+            EXTERNAL_MIBGROUP_INCLUDES="$EXTERNAL_MIBGROUP_INCLUDES ${LIBNL3_CFLAGS}"],
+            [CPPFLAGS="$netsnmp_save_CPPFLAGS"], [], [LMIBLIBS])
+        NETSNMP_SEARCH_LIBS(rtnl_link_alloc_cache, nl-route-3,
+            [AC_CHECK_HEADERS([netlink/route/addr.h netlink/route/link.h])
+            EXTERNAL_MIBGROUP_INCLUDES="$EXTERNAL_MIBGROUP_INCLUDES ${LIBNLROUTE3_CFLAGS}"],
+            [CPPFLAGS="$netsnmp_save_CPPFLAGS"], [], [LMIBLIBS])
+        if test "x$ac_cv_header_netlink_netlink_h" != xyes; then
+            NETSNMP_SEARCH_LIBS(nl_connect, nl, [
+                AC_CHECK_HEADERS([netlink/cache.h   netlink/msg.h   ]dnl
+				  [netlink/netlink.h netlink/socket.h])],
+		[], [], LMIBLIBS)
+        fi
+        if test "x$ac_cv_header_netlink_netlink_h" = xyes; then
+            AC_EGREP_HEADER([nl_socket_free], [netlink/socket.h],
+                            [AC_DEFINE([HAVE_LIBNL3], [1],
+                            [Define to 1 if <netlink/netlink.h> provides the
+                            libnl3 API])])
+        fi
+    ;;
+    esac
 fi

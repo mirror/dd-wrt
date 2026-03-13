@@ -378,7 +378,7 @@ extend_load_cache(netsnmp_cache *cache, void *magic)
             }
         }
         if ( extension->numlines > 1 ) {
-            extension->lines = (char**)calloc( sizeof(char *), extension->numlines );
+            extension->lines = (char**)calloc( extension->numlines , sizeof(char *) );
             memcpy( extension->lines, line_buf,
                                        sizeof(char *) * extension->numlines );
         } else {

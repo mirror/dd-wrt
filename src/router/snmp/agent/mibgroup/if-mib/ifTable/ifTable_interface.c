@@ -1626,7 +1626,7 @@ _mfd_ifTable_commit(netsnmp_mib_handler *handler,
 
     if (rowreq_ctx->rowreq_flags & MFD_ROW_DIRTY) {
         /*
-         * if we successfully commited this row, set the dirty flag. Use the
+         * if we successfully committed this row, set the dirty flag. Use the
          * current value + 1 (i.e. dirty = # rows changed).
          * this is checked in post_request...
          */
@@ -1635,7 +1635,7 @@ _mfd_ifTable_commit(netsnmp_mib_handler *handler,
 
     if (rowreq_ctx->rowreq_flags & MFD_ROW_DIRTY) {
         /*
-         * if we successfully commited this row, set the dirty flag. Use the
+         * if we successfully committed this row, set the dirty flag. Use the
          * current value + 1 (i.e. dirty = # rows changed).
          * this is checked in post_request...
          */

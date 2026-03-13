@@ -185,6 +185,8 @@ main(int argc, char *argv[])
                 }
             }
         }
+	if (copy)
+	    snmp_free_pdu(copy);
         copy = snmp_clone_pdu(pdu);
         if (command == SNMP_MSG_TRAP2) {
             /*

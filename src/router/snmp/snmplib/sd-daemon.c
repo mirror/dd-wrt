@@ -313,7 +313,12 @@ int netsnmp_sd_notify(int unset_environment, const char *state) {
 
         memset(&sockaddr, 0, sizeof(sockaddr));
         sockaddr.sa.sa_family = AF_UNIX;
-        strncpy(sockaddr.un.sun_path, e, sizeof(sockaddr.un.sun_path));
+        if (sizeof(sockaddr.un.sun_path) <= snprintf(sockaddr.un.sun_path,
+            sizeof(sockaddr.un.sun_path), "%s", e)) {
+                DEBUGMSGTL(("systemd:netsnmp_sd_notify", "Unix socket path %s is too long.\n", e));
+                r = -EINVAL;
+                goto finish;
+        }
 
         if (sockaddr.un.sun_path[0] == '@')
                 sockaddr.un.sun_path[0] = 0;

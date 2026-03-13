@@ -648,9 +648,6 @@
 /* Define to 1 if you have the <search.h> header file. */
 #define HAVE_SEARCH_H 1
 
-/* Define to 1 if you have the <security/cryptoki.h> header file. */
-/* #undef HAVE_SECURITY_CRYPTOKI_H */
-
 /* Define to 1 if you have the `select' function. */
 /* #undef HAVE_SELECT */
 
@@ -1187,7 +1184,7 @@
 
 #if defined(_M_PPC) || defined(_M_MPPC)
 # define NETSNMP_BIGENDIAN 1
-#elif defined(_M_IX86) || defined(_M_X64)
+#elif defined(_M_IX86) || defined(_M_X64) || defined(_M_ARM64)
 # define NETSNMP_BIGENDIAN 0
 #else
 #  error Unknown byte order
@@ -1480,6 +1477,9 @@
 #if defined(HAVE_OPENSSL_AES_H) && defined(HAVE_AES_CFB128_ENCRYPT)
 #define HAVE_AES 1
 #endif
+
+/* Define to 1 if you have the `ERR_get_error_all' function. */
+#define HAVE_ERR_GET_ERROR_ALL 1
 
 #else /* ! NETSNMP_USE_OPENSSL */
 
@@ -1778,57 +1778,11 @@ enum {
 #if defined(_MSC_VER)
 #  if defined(NETSNMP_USE_OPENSSL)
 #    ifdef _DLL
-#      ifdef _DEBUG
-#        ifdef OPENSSL_BEFORE_1_1_0
-#          pragma comment(lib, "libeay32MDd.lib")
-#        else
-#          ifdef _M_X64
-#            pragma comment(lib, "libcrypto64MDd.lib")
-#            pragma comment(lib, "libssl64MDd.lib")
-#          else
-#            pragma comment(lib, "libcrypto32MDd.lib")
-#            pragma comment(lib, "libssl32MDd.lib")
-#          endif
-#        endif
-#      else
-#        ifdef OPENSSL_BEFORE_1_1_0
-#          pragma comment(lib, "libeay32MD.lib")
-#        else
-#          ifdef _M_X64
-#            pragma comment(lib, "libcrypto64MD.lib")
-#            pragma comment(lib, "libssl64MD.lib")
-#          else
-#            pragma comment(lib, "libcrypto32MD.lib")
-#            pragma comment(lib, "libssl32MD.lib")
-#          endif
-#        endif
-#      endif
+#      pragma comment(lib, "libcrypto.lib")
+#      pragma comment(lib, "libssl.lib")
 #    else
-#      ifdef _DEBUG
-#        ifdef OPENSSL_BEFORE_1_1_0
-#          pragma comment(lib, "libeay32MTd.lib")
-#        else
-#          ifdef _M_X64
-#            pragma comment(lib, "libcrypto64MTd.lib")
-#            pragma comment(lib, "libssl64MTd.lib")
-#          else
-#            pragma comment(lib, "libcrypto32MTd.lib")
-#            pragma comment(lib, "libssl32MTd.lib")
-#          endif
-#        endif
-#      else
-#        ifdef OPENSSL_BEFORE_1_1_0
-#          pragma comment(lib, "libeay32MT.lib")
-#        else
-#          ifdef _M_X64
-#            pragma comment(lib, "libcrypto64MT.lib")
-#            pragma comment(lib, "libssl64MT.lib")
-#          else
-#            pragma comment(lib, "libcrypto32MT.lib")
-#            pragma comment(lib, "libssl32MT.lib")
-#          endif
-#        endif
-#      endif
+#      pragma comment(lib, "libcrypto_static.lib")
+#      pragma comment(lib, "libssl_static.lib")
 #    endif
 #    pragma comment(lib, "gdi32.lib")
 #    pragma comment(lib, "user32.lib")

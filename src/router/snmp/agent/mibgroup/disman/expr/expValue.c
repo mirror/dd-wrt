@@ -70,7 +70,7 @@ netsnmp_variable_list *
 _expValue_evalParam( netsnmp_variable_list *expIdx, int param,
                      oid *suffix, size_t suffix_len )
 {
-    netsnmp_variable_list *var = SNMP_MALLOC_TYPEDEF( netsnmp_variable_list );
+    netsnmp_variable_list *var = NULL;
     struct expObject  *obj;
     netsnmp_variable_list *val_var  = NULL, *oval_var = NULL;  /* values  */
     netsnmp_variable_list *dd_var   = NULL,  *odd_var = NULL;  /* deltaDs */
@@ -80,9 +80,14 @@ _expValue_evalParam( netsnmp_variable_list *expIdx, int param,
     /*
      * Retrieve the expObject entry for the requested parameter.
      */
-    if ( !var || !expIdx || !expIdx->next_variable ||
-                 !expIdx->next_variable->next_variable )
+    if (!expIdx || !expIdx->next_variable ||
+                 !expIdx->next_variable->next_variable ) {
         return NULL;
+    }
+    var = SNMP_MALLOC_TYPEDEF( netsnmp_variable_list );
+    if (!var) {
+        return NULL;
+    }
 
     *expIdx->next_variable->next_variable->val.integer = param;
     obj = (struct expObject *)

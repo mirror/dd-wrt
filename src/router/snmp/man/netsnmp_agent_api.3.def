@@ -1,6 +1,6 @@
 .TH NETSNMP_AGENT_API 3 "13 Aug 2010" VVERSIONINFO "Net-SNMP"
 .SH NAME
-netsnmp_agent_api - embedding an agent into a external application
+netsnmp_agent_api - embedding an agent into an external application
 .SH SYNOPSIS
 .nf
 #include <net\-snmp/net\-snmp\-config.h>
@@ -29,7 +29,7 @@ main (int argc, char *argv[])
   /*  `yourappname' will be used to read yourappname.conf files.  */
   init_snmp("yourappname");
 
-  /*  If we're going to be a SNMP master agent...  */
+  /*  If we're going to be an SNMP master agent...  */
   if (!agentx_subagent)
       init_master_agent();  /*  Listen on default port (161).  */
 
@@ -50,10 +50,10 @@ $(CC) ... `net\-snmp\-config \-\-agent\-libs`
 .fi
 .SH DESCRIPTION
 .PP
-Our goal is to create a easy to use interface to the Net-SNMP package
+Our goal is to create an easy-to-use interface to the Net-SNMP package
 such that you can take code that you have written that has been
 designed to be a Net-SNMP MIB module and embed it into an external
-application where you can either chose to be a SNMP master agent or an
+application where you can either choose to be an SNMP master agent or an
 AgentX sub-agent using the same MIB module code.  Our suggestion is
 that you use our (or another) SNMP agent as the AgentX master agent
 and chose to become an AgentX subagent which then attaches to the
@@ -123,7 +123,7 @@ is non-zero, the function call will block until a packet arrives or an
 alarm must be run (see
 .IR snmp_alarm(3) ).
 The return value from this function is a positive integer if packets
-were processed, zero if an alarm occurred and \-1 if an error occured.
+were processed, zero if an alarm occurred and \-1 if an error occurred.
 .IP "snmp_shutdown(char *name);"
 This shuts down the agent, saving any needed persistent storage, etc.
 .SH "SEE ALSO"

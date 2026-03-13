@@ -25,7 +25,8 @@ INCLUDESUBDIRHEADERS= aix.h bsd.h bsdi3.h bsdi4.h bsdi.h cygwin.h \
 	generic.h \
 	hpux.h irix.h kfreebsd.h linux.h mingw32.h mingw32msvc.h mips.h \
 	netbsd.h nto-qnx6.h osf5.h \
-	openbsd.h openbsd6.h openbsd5.h openbsd4.h \
+	openbsd4.h openbsd5.h openbsd6.h openbsd7.h openbsd8.h \
+	openbsd.h \
 	solaris2.3.h solaris2.4.h solaris2.5.h solaris2.6.h \
 	solaris.h sunos.h svr5.h sysv.h ultrix4.h
 INCLUDESUBDIR2=machine

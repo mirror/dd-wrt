@@ -234,6 +234,21 @@ create_pingCtlTable_data(void)
 
     StorageNew->storageType = ST_NONVOLATILE;
     StorageNew->pingProbeHistoryMaxIndex = 0;
+
+    if (StorageNew->pingCtlTargetAddress == NULL ||
+        StorageNew->pingCtlTrapGeneration == NULL ||
+        StorageNew->pingCtlType == NULL ||
+        StorageNew->pingCtlDescr == NULL ||
+        StorageNew->pingCtlSourceAddress == NULL) {
+        free(StorageNew->pingCtlTargetAddress);
+        free(StorageNew->pingCtlTrapGeneration);
+        free(StorageNew->pingCtlType);
+        free(StorageNew->pingCtlDescr);
+        free(StorageNew->pingCtlSourceAddress);
+        free(StorageNew);
+        return NULL;
+    }
+
     return StorageNew;
 }
 
@@ -418,6 +433,7 @@ parse_pingCtlTable(const char *token, char *line)
                               &StorageTmp->pingCtlOwnerIndexLen);
     if (StorageTmp->pingCtlOwnerIndex == NULL) {
         config_perror("invalid specification for pingCtlOwnerIndex");
+        free(StorageTmp);
         return;
     }
 
@@ -427,6 +443,7 @@ parse_pingCtlTable(const char *token, char *line)
                               &StorageTmp->pingCtlTestNameLen);
     if (StorageTmp->pingCtlTestName == NULL) {
         config_perror("invalid specification for pingCtlTestName");
+        free(StorageTmp);
         return;
     }
 
@@ -441,6 +458,7 @@ parse_pingCtlTable(const char *token, char *line)
                               &StorageTmp->pingCtlTargetAddressLen);
     if (StorageTmp->pingCtlTargetAddress == NULL) {
         config_perror("invalid specification for pingCtlTargetAddress");
+        free(StorageTmp);
         return;
     }
 
@@ -466,6 +484,7 @@ parse_pingCtlTable(const char *token, char *line)
                               &StorageTmp->pingCtlDataFillLen);
     if (StorageTmp->pingCtlDataFill == NULL) {
         config_perror("invalid specification for pingCtlDataFill");
+        free(StorageTmp);
         return;
     }
 
@@ -487,6 +506,7 @@ parse_pingCtlTable(const char *token, char *line)
                               &StorageTmp->pingCtlTrapGenerationLen);
     if (StorageTmp->pingCtlTrapGeneration == NULL) {
         config_perror("invalid specification for pingCtlTrapGeneration");
+        free(StorageTmp);
         return;
     }
 
@@ -506,6 +526,7 @@ parse_pingCtlTable(const char *token, char *line)
                               &StorageTmp->pingCtlTypeLen);
     if (StorageTmp->pingCtlType == NULL) {
         config_perror("invalid specification for pingCtlType");
+        free(StorageTmp);
         return;
     }
 
@@ -515,6 +536,7 @@ parse_pingCtlTable(const char *token, char *line)
                               &StorageTmp->pingCtlDescrLen);
     if (StorageTmp->pingCtlDescr == NULL) {
         config_perror("invalid specification for pingCtlTrapDescr");
+        free(StorageTmp);
         return;
     }
 
@@ -1082,7 +1104,7 @@ in_cksum(unsigned short *addr, int len)
      */
     sum = (sum >> 16) + (sum & 0xffff); /* add hi 16 to low 16 */
     sum += (sum >> 16);         /* add carry */
-    answer = ~sum;              /* truncate to 16 bits */
+    answer = (u_short)~sum;     /* truncate to 16 bits */
     return (answer);
 }
 
@@ -1507,6 +1529,7 @@ proc_v4(char *ptr, ssize_t len, struct timeval *tvrecv, time_t timep,
             temp->pingCtlTestName[item->pingCtlTestNameLen] = '\0';
             temp->pingCtlTestNameLen = item->pingCtlTestNameLen;
 
+            {
             /* add lock to protect */
             pthread_mutex_t counter_mutex = PTHREAD_MUTEX_INITIALIZER;
             pthread_mutex_lock(&counter_mutex);
@@ -1516,7 +1539,7 @@ proc_v4(char *ptr, ssize_t len, struct timeval *tvrecv, time_t timep,
             temp->pingProbeHistoryIndex =
                 ++(item->pingProbeHistoryMaxIndex);
             pthread_mutex_unlock(&counter_mutex);
-
+            }
 
             temp->pingProbeHistoryResponse = rtt;
             temp->pingProbeHistoryStatus = 1;
@@ -1592,12 +1615,14 @@ proc_v4(char *ptr, ssize_t len, struct timeval *tvrecv, time_t timep,
         temp->pingCtlTestName[item->pingCtlTestNameLen] = '\0';
         temp->pingCtlTestNameLen = item->pingCtlTestNameLen;
 
+        {
         /* add lock to protect */
         pthread_mutex_t counter_mutex = PTHREAD_MUTEX_INITIALIZER;
         pthread_mutex_lock(&counter_mutex);
         temp->pingProbeHistoryIndex = ++(item->pingProbeHistoryMaxIndex);
         pthread_mutex_unlock(&counter_mutex);
         /* end */
+        }
 
         temp->pingProbeHistoryResponse = item->pingCtlTimeOut * 1000;
         temp->pingProbeHistoryStatus = 4;
@@ -1735,9 +1760,9 @@ run_ping(unsigned int clientreg, void *clientarg)
         unsigned long  *minrtt = NULL;
         unsigned long  *maxrtt = NULL;
         unsigned long  *averagertt = NULL;
+        struct addrinfo *ai = NULL;
 
         datalen = 56;           /* data that goes with ICMP echo request */
-        struct addrinfo *ai = NULL;
         minrtt = malloc(sizeof(unsigned long));
         maxrtt = malloc(sizeof(unsigned long));
         averagertt = malloc(sizeof(unsigned long));
@@ -4873,6 +4898,7 @@ main_loop(struct pingCtlTable_data *item, int icmp_sock, int preload,
     cur_time.tv_sec = 0;
     cur_time.tv_usec = 0;
 
+    {
     struct pingProbeHistoryTable_data current_temp;
     static int      probeFailed = 0;
     static int      testFailed = 0;
@@ -4986,6 +5012,7 @@ main_loop(struct pingCtlTable_data *item, int icmp_sock, int preload,
             struct timeval  recv_time;
             int             not_ours = 0;       /* Raw socket can receive messages
                                                  * destined to other running pings. */
+            time_t          timep;
 
             iov.iov_len = packlen;
             msg.msg_name = addrbuf;
@@ -4997,7 +5024,6 @@ main_loop(struct pingCtlTable_data *item, int icmp_sock, int preload,
             msg.msg_flags = 0;
 
             cc = recvmsg(icmp_sock, &msg, polling);
-            time_t          timep;
             time(&timep);
             polling = MSG_DONTWAIT;
 
@@ -5051,6 +5077,7 @@ main_loop(struct pingCtlTable_data *item, int icmp_sock, int preload,
                     temp->pingCtlTestName[item->pingCtlTestNameLen] = '\0';
                     temp->pingCtlTestNameLen = item->pingCtlTestNameLen;
 
+                    {
                     /* add lock to protect */
                     pthread_mutex_t counter_mutex =
                         PTHREAD_MUTEX_INITIALIZER;
@@ -5059,6 +5086,7 @@ main_loop(struct pingCtlTable_data *item, int icmp_sock, int preload,
                         ++(item->pingProbeHistoryMaxIndex);
                     pthread_mutex_unlock(&counter_mutex);
                     /* end */
+                    }
 
                     temp->pingProbeHistoryResponse =
                         item->pingCtlTimeOut * 1000;
@@ -5201,6 +5229,7 @@ main_loop(struct pingCtlTable_data *item, int icmp_sock, int preload,
         probeFailed = 0;
         testFailed = 0;
 
+    }
     }
 
     finish(options, hostname, interval, timing, &rtt, start_time, deadline,
@@ -5384,6 +5413,7 @@ gather_statistics(int *series, struct pingCtlTable_data *item, __u8 * ptr,
         temp->pingCtlTestName[item->pingCtlTestNameLen] = '\0';
         temp->pingCtlTestNameLen = item->pingCtlTestNameLen;
 
+        {
         /* add lock to protect */
         pthread_mutex_t counter_mutex = PTHREAD_MUTEX_INITIALIZER;
         pthread_mutex_lock(&counter_mutex);
@@ -5392,7 +5422,7 @@ gather_statistics(int *series, struct pingCtlTable_data *item, __u8 * ptr,
         temp->pingProbeHistoryIndex = ++(item->pingProbeHistoryMaxIndex);
         pthread_mutex_unlock(&counter_mutex);
         /* end */
-
+        }
 
         temp->pingProbeHistoryResponse = triptime;
         temp->pingProbeHistoryStatus = 1;

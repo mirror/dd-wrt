@@ -263,6 +263,10 @@ init_ksm(void)
 
 void shutdown_ksm(void)
 {
+    unregister_sec_mod(NETSNMP_SEC_MODEL_KSM);
+    if (kcontext)
+        krb5_free_context(kcontext);
+    kcontext = NULL;
 }
 
 /*

@@ -132,7 +132,7 @@ int
 stat_Validate(RMON_ENTRY_T * eptr)
 {
     /*
-     * T.B.D. (system dependent) check valid inteface in body->data_source; 
+     * T.B.D. (system dependent) check valid interface in body->data_source;
      */
 
     return 0;

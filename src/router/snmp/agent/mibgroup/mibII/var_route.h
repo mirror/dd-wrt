@@ -10,6 +10,13 @@ config_require(mibII/ip);
 config_require(kernel_sunos5);
 #endif
 
+#if defined(HAVE_SYS_SYSCTL_H) && !defined(linux)
+const struct sockaddr *
+get_address(const void *_ap, int addresses, int wanted);
+const struct in_addr *
+get_in_address(const void *ap, int addresses, int wanted);
+#endif
+
 #if defined(HAVE_IPHLPAPI_H)
 #include <iphlpapi.h>
      extern PMIB_IPFORWARDROW route_row;

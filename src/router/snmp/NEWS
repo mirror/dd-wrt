@@ -3,6 +3,70 @@ Please see the CHANGES file for a more detailed list of specific bugs/patches
 that have been fixed/applied, and the ChangeLog file for a comprehensive
 listing of all changes made to the code.
 
+*5.9.5.2*
+
+    building:
+      - Fix an issue with needing limits.h included.
+      - update to autoconf 2.72
+
+*5.9.5.1*
+
+Only a version numbering fix.
+
+*5.9.5*
+
+    snmptrapd:
+      - fixed a critical vulnerability (CVE-2025-68615) which can be triggered
+        by a specially crafted trap
+
+    snmplib:
+      - Add support for IPV6_RECVPKTINFO 
+      - Port the SSH domain transport to FreeBSD 
+      - Improve error handling in parse_enumlist and other parsing functions 
+      - Filter out non-ASCII characters from output 
+      - Fix multiple memory leaks in MIB parsing, OID handling, and transport filters 
+      - Fix multiple buffer overflows triggered when creating ASN packets
+      - Fix handling of large/negative values (integer underflows/overflows) 
+      - Fix segmentation faults when `varbind` cannot be constructed or buf is null 
+      - Fix crash in netsnmp_parse_args when passing invalid argument lists 
+      - Fix SNMPv3 multithreading support for snmp_sess_open() 
+
+    snmpd:
+      - Make UCD-SNMP::dskTable dynamic if includeAllDisks is set.") added
+	a verification that drops all filesystems not present in other_fs[]
+	table. So add 'ubifs' in other_fs[] to fix it.
+      - Fix SIGHUP handling for engineID changes and agent port changes 
+      - Fix a use-after-free in unregister_mib_context() 
+      - Fix regression of memory leak when using RPMDB macros 
+      - Improve cache management: clear timer_id on stop, keep cache flags unchanged 
+      - Always open libkvm in "safe mode" on FreeBSD 
+      - Fix crash when snmptrapd subagent terminates the TCP connection 
+
+    apps:
+      - snmpusm: Improve error handling and fix memory leaks 
+      - sshtosnmp: Avoid EINVAL when passing credentials over SSH unix domain socket 
+      - snmptest: Plug a possible memory leak 
+      - snmpget: Avoid leak if parsing OID fails 
+
+    MIBs:
+      - EtherLike-MIB: Optimize Linux implementation to use netlink statistics 
+      - IP-MIB: Add Linux 6.7 compatibility for parsing /proc/net/snmp 
+      - LM-SENSORS-MIB: Support negative temperatures 
+      - SNMP-TLS-TM-MIB: Update to RFC 9456 and allow TLS protocols higher than TLS1.0 
+      - HOST-RESOURCES-MIB: Add support for RPM SQLite DB background 
+
+    building:
+      - Add support for Windows on ARM 
+      - Support OpenBSD 8, FreeBSD 15/16, and DragonflyBSD 
+      - Fix build for OS/X versions prior to 10.6.0 
+      - Windows: Bump OpenSSL version and fix library paths 
+      - MinGW64: Switch from pkg-config to pkgconf 
+      - Add --with-wolfssl Add support for building and linking with the
+	wolfSSL library instead of OpenSSL. Other changes that have been
+	included in this patch are: - Only enable AES support if
+	EVP_aes_128_cfb() is available. - Add support for detecting SSL
+	functions if these have been defined as macros.
+
 *5.9.4*:
 
     IMPORTANT: SNMP over TLS and/or DTLS are not functioning properly
@@ -33,19 +97,19 @@ listing of all changes made to the code.
 *5.9.3*:
     security:
       - These two CVEs can be exploited by a user with read-only credentials:
-          - CVE-2022-24805 A buffer overflow in the handling of the INDEX of
+        - CVE-2022-24805 A buffer overflow in the handling of the INDEX of
             NET-SNMP-VACM-MIB can cause an out-of-bounds memory access.
-          - CVE-2022-24809 A malformed OID in a GET-NEXT to the nsVacmAccessTable
+        - CVE-2022-24809 A malformed OID in a GET-NEXT to the nsVacmAccessTable
             can cause a NULL pointer dereference.
       - These CVEs can be exploited by a user with read-write credentials:
-          - CVE-2022-24806 Improper Input Validation when SETing malformed
+        - CVE-2022-24806 Improper Input Validation when SETing malformed
             OIDs in master agent and subagent simultaneously
-          - CVE-2022-24807 A malformed OID in a SET request to
+        - CVE-2022-24807 A malformed OID in a SET request to
             SNMP-VIEW-BASED-ACM-MIB::vacmAccessTable can cause an
             out-of-bounds memory access.
-          - CVE-2022-24808 A malformed OID in a SET request to
+        - CVE-2022-24808 A malformed OID in a SET request to
             NET-SNMP-AGENT-MIB::nsLogTable can cause a NULL pointer dereference
-          - CVE-2022-24810 A malformed OID in a SET to the nsVacmAccessTable
+        - CVE-2022-24810 A malformed OID in a SET to the nsVacmAccessTable
             can cause a NULL pointer dereference.
       - To avoid these flaws, use strong SNMPv3 credentials and do not share them.
         If you must use SNMPv1 or SNMPv2c, use a complex community string
@@ -62,35 +126,7 @@ listing of all changes made to the code.
     general: Many bug fixes
 
 *5.9.2*:
-    security:
-      - These two CVEs can be exploited by a user with read-only credentials:
-          - CVE-2022-24805 A buffer overflow in the handling of the INDEX of
-            NET-SNMP-VACM-MIB can cause an out-of-bounds memory access.
-          - CVE-2022-24809 A malformed OID in a GET-NEXT to the nsVacmAccessTable
-            can cause a NULL pointer dereference.
-      - These CVEs can be exploited by a user with read-write credentials:
-          - CVE-2022-24806 Improper Input Validation when SETing malformed
-            OIDs in master agent and subagent simultaneously
-          - CVE-2022-24807 A malformed OID in a SET request to
-            SNMP-VIEW-BASED-ACM-MIB::vacmAccessTable can cause an
-            out-of-bounds memory access.
-          - CVE-2022-24808 A malformed OID in a SET request to
-            NET-SNMP-AGENT-MIB::nsLogTable can cause a NULL pointer dereference
-          - CVE-2022-24810 A malformed OID in a SET to the nsVacmAccessTable
-            can cause a NULL pointer dereference.
-      - To avoid these flaws, use strong SNMPv3 credentials and do not share them.
-        If you must use SNMPv1 or SNMPv2c, use a complex community string
-        and enhance the protection by restricting access to a given IP address range.
-      - Thanks are due to Yu Zhang of VARAS@IIE and Nanyu Zhong of VARAS@IIE for
-        reporting the following CVEs that have been fixed in this release, and
-        to Arista Networks for providing fixes.
-
-    misc:
-      - Snmp-create-v3-user: Fix the snmpd.conf path   @datadir@ is
-	expanded in ${datarootdir} so datarootdir must be set before
-	@datadir@ is used.
-
-    general: Many bug fixes
+    skipped due to a last minute library versioning found bug -- use 5.9.3 instead
 
 *5.9.1*:
     General: Many bug fixes
@@ -125,13 +161,13 @@ listing of all changes made to the code.
       - add new sha2 auth protocols
       - Restore AES-192 and AES-256 privacy protocols - from
 	draft-blumenthal-aes-usm-04 (precursor to RFC 3826)
-        - Use OIDs from http://www.snmp.com/eso/esoConsortiumMIB.txt
-        - Some code borrowed from PATCH 1346, thanks to
+      - Use OIDs from http://www.snmp.com/eso/esoConsortiumMIB.txt
+      - Some code borrowed from PATCH 1346, thanks to
           Alexander Ivanov and Vladimir Sukhorukov.
       - BUG: 2622: Fix excessive indents in log file
       - new config tokens:
-        - sendMessageMaxSize
-        - disableSNMPv1 / disableSNMPv2c
+      - sendMessageMaxSize
+      - disableSNMPv1 / disableSNMPv2c
       - new api for dynamic debug log level (netsnmp_set_debug_log_level)
 
     snmpd:
@@ -143,10 +179,10 @@ listing of all changes made to the code.
       - packet filtering by source ip (enableSourceFiltering/filtersource)
       - several getbulk handling improvements
       - several new APIs introduced for run-time configuration of agent:
-        - netsnmp_vacm_simple_usm_add/del
-        - usm_create_usmUser_*
-        - netsnmp_udp_com2SecEntry_create/netsnmp_udp_com2SecList_remove
-        - netsnmp_agent_listen_on to open agent port
+      - netsnmp_vacm_simple_usm_add/del
+      - usm_create_usmUser_*
+      - netsnmp_udp_com2SecEntry_create/netsnmp_udp_com2SecList_remove
+      - netsnmp_agent_listen_on to open agent port
 
     Win32:
       - Add support for the DTLS-UDP and TLS-TCP transports
@@ -201,7 +237,7 @@ listing of all changes made to the code.
 
     building:
       - PATCH: 2091156: correctly declare dependencies in Makefile. 'make
-        -j <N>' should work now. Backport this to V5-4 as it is needed for
+      -j <N>' should work now. Backport this to V5-4 as it is needed for
         correct operation in the single threaded case of make miblib as
         well.
 
@@ -340,7 +376,7 @@ listing of all changes made to the code.
         extensions and dependencies for code reuse.
       - New transport functions: f_config, f_open, f_copy and f_setup_session
       - Transports can now specify session defaults
-        - E.G. dtlsudp: auto-sets the SNMP version and the security model.
+      - E.G. dtlsudp: auto-sets the SNMP version and the security model.
       - [PATCH 2942940]: Add a new function, netsnmp_parse_args, that is
 	like snmp_parse_args but takes an additional bitmask, flags, to
 	affect the behaviour. Also remove the magic handling of some
@@ -349,10 +385,10 @@ listing of all changes made to the code.
       - new experimental row creation API which uses a state machine
         to try really hard to create a row from a given varbind list
       - netsnmp_container enhancements:
-        - added a free_item function
-        - added a CONTAINER_FREE_ALL macro/function
-        - added an interface for duplicating a container (CONTAINER_DUP)
-        - added a remove function to container_iterators
+      - added a free_item function
+      - added a CONTAINER_FREE_ALL macro/function
+      - added an interface for duplicating a container (CONTAINER_DUP)
+      - added a remove function to container_iterators
 	- added an ability to set options on binary_array containers
       - new snmp token logOption allows specifying log destinations
         via configuration conf files
@@ -706,10 +742,10 @@ listing of all changes made to the code.
  Ports:
    Linux:
        - new experimental tables
-         - tcpConnectionTable, tcpListenerTable
-         - ipAddressPrefixTable
-         - udpEndpointTable
-         - ipv4InterfaceTable, ipv6InterfaceTable
+       - tcpConnectionTable, tcpListenerTable
+       - ipAddressPrefixTable
+       - udpEndpointTable
+       - ipv4InterfaceTable, ipv6InterfaceTable
        - inetCidrRouteTable supports dynamic ipv4 route creation/deletion
        - added ipv6IpForwarding.0 and ipv6IpDefaultHopLimit.0 (read-write)
 
@@ -785,17 +821,17 @@ listing of all changes made to the code.
 
     mib2c:
       - a number of new or updated configuration templates:
-        - mib2c.iterate.conf: the iterator-based table config
+      - mib2c.iterate.conf: the iterator-based table config
             now produces fuller template code than before.
-        - mib2c.table_data.conf and mib2c.container.conf:
+      - mib2c.table_data.conf and mib2c.container.conf:
             two new "internal-row" style configs
-        - mib2c.mfd.conf: "MIBs for Dummies" (or MFD) - intended to
+      - mib2c.mfd.conf: "MIBs for Dummies" (or MFD) - intended to
             reduce the SNMP knowledge needed to develop MIB modules
             and add flexibility at the same time.  Run "mib2c -S
             mfd_interactive_setup=1 -c mib2c.mfd.conf OID" and follow
             its guided instructions to help you tailor its results to
             meet your needs.
-        - mib2c.genhtml.conf: Generates an easier-to-read HTML view of
+      - mib2c.genhtml.conf: Generates an easier-to-read HTML view of
           a MIB tree structure.  (See http://www.Net-SNMP.org/mibs/
           for example output.)
       - more node tags available for conf file writers

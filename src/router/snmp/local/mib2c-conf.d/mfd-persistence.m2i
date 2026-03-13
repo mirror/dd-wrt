@@ -60,9 +60,7 @@ ${context}_container_should_save(${context}_rowreq_ctx * rowreq_ctx)
 
 static int _${context}_container_save_rows(int majorID, int minorID, void *serverarg, void *clientarg);
 static void _${context}_container_row_restore(const char *token, char *buf);
-static int _${context}_container_row_save(
-            ${context}_rowreq_ctx *rowreq_ctx,
-            void *type);
+static int _${context}_container_row_save(void *p, void *type);
 static char * _${context}_container_col_restore(
             ${context}_rowreq_ctx *rowreq_ctx,
             u_int col, char* buf);
@@ -117,8 +115,7 @@ _${context}_container_save_rows(int majorID, int minorID, void *serverarg, void 
      * save all rows
      */
     CONTAINER_FOR_EACH((netsnmp_container*)clientarg,
-                       (netsnmp_container_obj_func*)_${context}_container_row_save,
-                       type);
+                       _${context}_container_row_save, type);
 
     read_config_store((char*)type, sep);
     read_config_store((char*)type, "\n");
@@ -135,10 +132,10 @@ _${context}_container_save_rows(int majorID, int minorID, void *serverarg, void 
  * _${context}_container_row_save
  */
 static int
-_${context}_container_row_save(
-            ${context}_rowreq_ctx *rowreq_ctx,
-            void *type)
+_${context}_container_row_save(void *p, void *type)
 {
+    ${context}_rowreq_ctx *rowreq_ctx = p;
+
     /*
      * Allocate space for a line with all data for a row. An
      * attempt is made to come up with a default maximum size, but

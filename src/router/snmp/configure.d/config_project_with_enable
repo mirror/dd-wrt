@@ -72,7 +72,7 @@ NETSNMP_ARG_WITH(rsaref,
     fi,
 )
 
-tryopenssl=defaultyes
+tryopenssl=yes
 askedopenssl=no
 aes_capable=no
 NETSNMP_ARG_WITH(openssl,
@@ -98,10 +98,21 @@ NETSNMP_ARG_WITH(openssl,
       askedopenssl=yes
     fi,
 )
-if test "x$tryopenssl" = "xdefaultyes"; then
-      AC_ADD_SEARCH_PATH(/usr/local/ssl)
-      tryopenssl=yes
-fi
+NETSNMP_ARG_WITH(wolfssl,
+[  --with-wolfssl=PATH             Look for wolfssl in PATH/lib.],
+    if test "x$withval" = xyes; then
+        tryopenssl=yes
+        askedopenssl=yes
+        CPPFLAGS="-I/usr/include/wolfssl -DWC_NO_HARDEN -DNO_OLD_TIMEVAL_NAME -DOPENSSL_EXTRA -DEXTERNAL_OPTS_OPENVPN $CPPFLAGS"
+    elif test -d "$withval" && test -d "$withval/include/wolfssl"; then
+        tryopenssl=yes
+        askedopenssl=yes
+        LDFLAGS="-L$withval/lib $LDFLAGS"
+        CPPFLAGS="-I$withval/include -I$withval/include/wolfssl -DWC_NO_HARDEN -DNO_OLD_TIMEVAL_NAME -DOPENSSL_EXTRA -DEXTERNAL_OPTS_OPENVPN $CPPFLAGS"
+    else
+        AC_MSG_ERROR([Cannot find wolfSSL in ${withval}.])
+    fi
+)
 if test "x$tryopenssl" = "xyes"; then
     AC_CHECK_HEADERS(
         [openssl/aes.h openssl/evp.h],

@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@main
 
     - name: install required packages
       run: sudo apt-get install libatm-dev libperl-dev libpopt-dev libsensors4-dev libssh2-1-dev libxml2-dev uuid-dev libkrb5-dev python3-setuptools

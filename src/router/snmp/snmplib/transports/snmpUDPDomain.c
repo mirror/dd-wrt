@@ -50,6 +50,9 @@
 #ifdef HAVE_NETDB_H
 #include <netdb.h>
 #endif
+#ifdef HAVE_NETGROUP_H
+#include <netgroup.h>
+#endif
 #ifdef HAVE_SYS_UIO_H
 #include <sys/uio.h>
 #endif
@@ -81,10 +84,6 @@ static netsnmp_tdomain udpDomain;
  * and perl/agent/agent.xs 
  */
 typedef netsnmp_indexed_addr_pair netsnmp_udp_addr_pair;
-
-int
-netsnmp_sockaddr_in2(struct sockaddr_in *addr,
-                     const char *inpeername, const char *default_target);
 
 /*
  * Return a string representing the address in data, or else the "far end"
@@ -142,6 +141,7 @@ netsnmp_udp_transport_base(netsnmp_transport *t)
     t->f_send     = netsnmp_udpbase_send;
     t->f_close    = netsnmp_socketbase_close;
     t->f_accept   = NULL;
+    t->f_setup_session = netsnmp_ipbase_session_init;
     t->f_fmtaddr  = netsnmp_udp_fmtaddr;
     t->f_get_taddr = netsnmp_ipv4_get_taddr;
 

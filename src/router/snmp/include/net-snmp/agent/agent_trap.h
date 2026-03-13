@@ -13,6 +13,7 @@ extern          "C" {
 
 struct agent_add_trap_args {
     netsnmp_session *ss;
+    int             close_sess;
     int             confirm;
     const char      *nameData; /* notification target addr name */
     int             nameLen;
@@ -77,9 +78,15 @@ netsnmp_session *netsnmp_create_v3user_notification_session(const char *dst,
                                                             const char *name,
                                                             const char *tag,
                                                             const char *prof);
+/* This is a wrapper to netsnmp_add_closable_notification_session
+   for backward compatibility
+ */
 int             netsnmp_add_notification_session(netsnmp_session *, int, int,
                                                  int, const char*, const char*,
                                                  const char*);
+int             netsnmp_add_closable_notification_session(netsnmp_session *, int, int,
+                                                          int, int, const char*,
+                                                          const char*, const char*);
 void            netsnmp_unregister_notification(const char *, u_char);
 
 int             netsnmp_build_trap_oid(netsnmp_pdu *pdu, oid *, size_t *);

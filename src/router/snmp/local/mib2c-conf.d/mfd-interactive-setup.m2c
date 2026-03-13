@@ -44,9 +44,9 @@ There are no defaults for ${context}. Would you like to
 ## ---------------------------------------------------
 @    if $m2c_temp_writable == 1@
 This table has writable columns. Do you want to generate
-code for writeable columns, or restrict the table to read-only?
+code for writable columns, or restrict the table to read-only?
 
-  1) generate code with writeable columns [DEFAULT]
+  1) generate code with writable columns [DEFAULT]
   2) generate code with read-only columns
 
 @      prompt $ans Select your choice : @

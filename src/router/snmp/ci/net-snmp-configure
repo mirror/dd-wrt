@@ -19,9 +19,8 @@ rpm_version() {
 }
 
 dpkg_version() {
-    if type -p dpkg-query >/dev/null 2>&1; then
+    type -p dpkg-query >/dev/null 2>&1 &&
 	dpkg-query --show -f '${Version}\n' "$1" 2>/dev/null | grep -v '^$'
-    fi
 }
 
 pacman_version() {
@@ -58,71 +57,69 @@ scriptdir=$(cd "$(dirname "$0")" && pwd)
 branch_name="$1"
 shift
 
-is_5_7_or_above="false"
-is_5_8_or_above="false"
-if [ "${branch_name#master}" != "${branch_name}" ]; then
-  is_5_8_or_above="true"
-  is_5_7_or_above="true"
-elif [ "${branch_name#V5-7-}" != "${branch_name}" ]; then
-  is_5_7_or_above="true"
-fi
+case "$MODE" in
+    Android)
+	;;
+    *)
+	libatmver="$(rpm_version linux-atm-devel;
+		     dpkg_version libatm1-dev)"
+	echo "libatmver=$libatmver"
 
-libatmver="$(rpm_version linux-atm-devel;
-	     dpkg_version libatm1-dev)"
-echo "libatmver=$libatmver"
-
-libmysqlver="$(rpm_version libmariadb-devel;
-	      for p in libmariadbclient-dev libmariadb-client-lgpl-dev; do
-	        dpkg_version "$p";
+	libmysqlver="$(rpm_version libmariadb-devel;
+	      for p in libmariadb-dev libmariadb-dev-compat \
+		       libmariadbclient-dev libmariadb-client-lgpl-dev; do
+	        dpkg_version "$p" && break;
               done;
               pacman_version mingw-w64-x86_64-libmariadbclient)"
-echo "libmysqlver=$libmysqlver"
+	echo "libmysqlver=$libmysqlver"
 
-libsensorsver="$(rpm_version libsensors4-devel;
-		 dpkg_version libsensors4-dev)"
-echo "libsensorsver=$libsensorsver"
+	libsensorsver="$(rpm_version libsensors4-devel;
+		 dpkg_version libsensors-dev libsensors4-dev)"
+	echo "libsensorsver=$libsensorsver"
 
-if echo "$*" | grep -q wolfssl; then
-    have_ssl=true
-elif ! echo "$*" | grep -Eq 'with-openssl=(no|internal)|without-openssl'; then
-    have_ssl=true
-fi
-echo "have_ssl=$have_ssl"
+	if echo "$*" | grep -q wolfssl; then
+	    have_ssl=true
+	elif ! echo "$*" | grep -Eq 'with-openssl=(no|internal)|without-openssl'; then
+	    have_ssl=true
+	fi
+	echo "have_ssl=$have_ssl"
 
-case "$(uname)" in
-    FreeBSD*)
-	libssh2ver="$(freebsd_pkg_version libssh2 2>/dev/null)";;
-    Linux*)
-	libssh2ver="$(for p in openssh-devel libssh2-devel libssh-devel; do
-                rpm_version "$p";
-              done |
-              head -n1;
-              for p in libopenssh2 libssh2-1-dev libssh-dev; do
-                dpkg_version "$p";
-              done;
-              pacman_version mingw-w64-x86_64-libssh2)"
+	case "$(uname)" in
+	    FreeBSD*)
+		libssh2ver="$(freebsd_pkg_version libssh2 2>/dev/null)";;
+	    Linux*)
+		libssh2ver="$(for p in openssh-devel libssh2-devel libssh-devel
+			do
+			    rpm_version "$p";
+			done |
+			head -n1;
+			for p in libopenssh2 libssh2-1-dev libssh-dev; do
+			    dpkg_version "$p";
+			done;
+			pacman_version mingw-w64-x86_64-libssh2)"
+		;;
+	esac
+	echo "libssh2ver=$libssh2ver"
+
+	case "$(uname)" in
+	    FreeBSD*)
+		perldevver="$(freebsd_pkg_version perl5 2>/dev/null)";;
+	    Linux*)
+		perldevver="$(rpm_version perl;
+			      dpkg_version libperl-dev;
+			      pacman_version mingw-w64-x86_64-perl)"
+		;;
+	esac
+	echo "perldevver=$perldevver"
+	# Set the perlcc variable.
+	eval "perl$(perl -V:cc)"
+	perlcc=$(compiler_type "$perlcc")
+	echo "perlcc=$perlcc"
 	;;
 esac
-echo "libssh2ver=$libssh2ver"
-
-case "$(uname)" in
-    FreeBSD*)
-	perldevver="$(freebsd_pkg_version perl5 2>/dev/null)";;
-    Linux*)
-	perldevver="$(rpm_version perl;
-		      dpkg_version libperl-dev;
-		      pacman_version mingw-w64-x86_64-perl)"
-	;;
-esac
-echo "perldevver=$perldevver"
-# Set the perlcc variable.
-eval "perl$(perl -V:cc)"
-perlcc=$(compiler_type "$perlcc")
-echo "perlcc=$perlcc"
 
 options=()
 options+=(--enable-developer)
-options+=(--enable-ipv6)
 options+=("--prefix=/usr/local/net-snmp-${branch_name}")
 options+=("--with-cflags=$CFLAGS")
 options+=(--with-defaults)
@@ -134,7 +131,25 @@ transports=()
 mibs=()
 mibs+=(agent/extend)
 case "$MODE" in
+    disable-ipv6)
+	options+=(--disable-ipv6)
+        ;;
+    *)
+	options+=(--enable-ipv6)
+	;;
+esac
+case "$MODE" in
     read-only)
+	;;
+    Android)
+	options+=(
+	    --disable-embedded-perl
+	    --host=aarch64-linux-android33
+	    --with-openssl=internal
+	    --with-out-mib-modules="if-mib default_modules"
+	    --without-perl-modules
+	    --without-python-modules
+	)
         ;;
     *)
         mibs+=(examples/data_set)
@@ -148,14 +163,16 @@ case "$MODE" in
         ;;
 esac
 
-case "$(uname)" in
+case "$(uname):${MODE}" in
+  *:Android*)
+      ;;
   Linux*)
       options+=(--enable-new-features)
       case "$MODE" in
-          mini*|read-only)
+          mini*|read-only|without-nl)
               ;;
           *)
-              $is_5_7_or_above && mibs+=(deliver/deliverByNotify)
+              mibs+=(deliver/deliverByNotify)
               mibs+=(disman/event)
               mibs+=(disman/expression)
               mibs+=(disman/mteEventNotificationTable)
@@ -215,7 +232,7 @@ case "$(uname)" in
 	  transports+=(IPX)
       fi
       transports+=(STD)
-      $is_5_8_or_above && transports+=(UDPshared)
+      transports+=(UDPshared)
       options+=("--with-default-snmp-version=2")
       options+=("--with-systemd")
       # Disabled modules because troublesome: Rmon ipfwchains/ipfwchains ucd-snmp/lmSensors
@@ -300,7 +317,7 @@ case "$MODE" in
     wolfssl)
 	with_openssl=wolfssl
 	wolfssl_dir=$(dirname "${scriptdir}")/wolfssl-inst
-	options+=(--with-wolfssl=${wolfssl_dir})
+	options+=(--with-wolfssl="${wolfssl_dir}")
 	ssl_include_path=${wolfssl_dir}/include/wolfssl/openssl
 	;;
     *)
@@ -318,34 +335,38 @@ if [ -z "$have_ssl" ]; then
     options+=("--with-openssl=internal")
     with_openssl="internal"
 else
-    if grep -rq 'DTLS_method(void)\|define DTLS_method' "${ssl_include_path}" 2>/dev/null; then
+    if grep -rq 'BIO_dgram_get_peer(void)\|define BIO_dgram_get_peer' "${ssl_include_path}" 2>/dev/null; then
 	transports+=(DTLSUDP TLSTCP)
     else
-	echo "DTLS_method not found:"
-	grep -r DTLS_method "${ssl_include_path}"
+	echo "BIO_dgram_get_peer() not found:"
+	grep -r BIO_dgram_get_peer "${ssl_include_path}"
     fi
     if [ "$MODE" != "read-only" ]; then
 	# these MIB modules do not support read-only
 	if [ -e "${ssl_include_path}/dh.h" ]; then
 	    mibs+=(snmp-usm-dh-objects-mib)
 	fi
-	if [ -e "${ssl_include_path}/ssl.h" ]; then
+	if [ -e "${ssl_include_path}/ssl.h" ] &&
+               [ "${ssl_include_path%/wolfssl/openssl}" = "${ssl_include_path}" ]
+	then
 	    mibs+=(tlstm-mib)
 	fi
 	mibs+=(tsm-mib)
     fi
 fi
-if [ "$with_openssl" != "internal" ] && $is_5_8_or_above &&
+if [ "$with_openssl" != "internal" ] &&
        [ -e "${ssl_include_path}/aes.h" ] &&
        [ -e "${ssl_include_path}/evp.h" ] &&
        grep -qw EVP_aes_256_cfb "${ssl_include_path}/evp.h"; then
     options+=(--enable-blumenthal-aes)
 fi
 security_modules=(usm tsm)
-if [ -e /usr/include/krb5.h ]; then
+if [ "${MODE}" != Android ] && [ -e /usr/include/krb5.h ]; then
     security_modules+=(ksm)
 fi
-case "$(uname)" in
+case "$(uname):${MODE}" in
+    *:Android*)
+	;;
     MSYS*|MINGW*)
 	# Do not enable Python support on MinGW32 nor for the MSYS build
 	# environment because the Python interpreter has been built on these
@@ -363,16 +384,16 @@ case "$(uname)" in
 	esac
 	;;
     *)
-	# Do not enable Python support for Cirrus CI because on Cirrus linking
-	# with Python fails as follows (this is probably a bug in Net-SNMP):
-	# /usr/bin/ld: /tmp/cirrus-ci-build/snmplib/.libs/libnetsnmp.a(snmp_client.o): relocation R_X86_64_32S against `a local symbol' can not be used when making a shared object; recompile with -fPIC
+	# To do: fix the build of the Python modules when using WolfSSL.
 	if python3 -c 'import setuptools' 1>/dev/null 2>&1 &&
-	       [ -z "$CIRRUS_CI" ]; then
+	       [ "$MODE" != "wolfssl" ]; then
 	    options+=(--with-python-modules)
 	fi
     esac
 
 case "$MODE" in
+    disable-ipv6)
+	;;
     disable-set)
         options+=(--disable-set-support);;
     mini)
@@ -381,7 +402,9 @@ case "$MODE" in
         options+=(--enable-minimalist);;
     read-only)
         options+=(--enable-read-only);;
-    regular|wolfssl|"")
+    without-nl)
+	options+=(--without-nl);;
+    regular|wolfssl|Android|"")
         ;;
     *)
         echo "Error: unknown build type $MODE"

@@ -236,7 +236,7 @@ etherStatsTable_undo_cleanup(etherStatsTable_rowreq_ctx * rowreq_ctx)
  * this commit will not fail.
  *
  * Should you need different behavior depending on which columns were
- * set, rowreq_ctx->column_set_flags will indicate which writeable columns were
+ * set, rowreq_ctx->column_set_flags will indicate which writable columns were
  * set. The definitions for the COLUMN_*_FLAG bits can be found in
  * etherStatsTable_oids.h.
  * A new row will have the MFD_ROW_CREATED bit set in rowreq_flags.
@@ -325,7 +325,7 @@ etherStatsTable_commit(etherStatsTable_rowreq_ctx * rowreq_ctx)
     }
 
     /*
-     * if we successfully commited this row, set the dirty flag.
+     * if we successfully committed this row, set the dirty flag.
      */
     if (MFD_SUCCESS == rc) {
         rowreq_ctx->rowreq_flags |= MFD_ROW_DIRTY;
@@ -344,7 +344,7 @@ etherStatsTable_commit(etherStatsTable_rowreq_ctx * rowreq_ctx)
  * undo commit new values.
  *
  * Should you need different behavior depending on which columns were
- * set, rowreq_ctx->column_set_flags will indicate which writeable columns were
+ * set, rowreq_ctx->column_set_flags will indicate which writable columns were
  * set. The definitions for the COLUMN_*_FLAG bits can be found in
  * etherStatsTable_oids.h.
  * A new row will have the MFD_ROW_CREATED bit set in rowreq_flags.
@@ -376,7 +376,7 @@ etherStatsTable_undo_commit(etherStatsTable_rowreq_ctx * rowreq_ctx)
 
 
     /*
-     * if we successfully un-commited this row, clear the dirty flag.
+     * if we successfully un-committed this row, clear the dirty flag.
      */
     if (MFD_SUCCESS == rc) {
         rowreq_ctx->rowreq_flags &= ~MFD_ROW_DIRTY;
@@ -399,7 +399,7 @@ etherStatsTable_undo_commit(etherStatsTable_rowreq_ctx * rowreq_ctx)
  * Description:
 This object identifies the source of the data that
         this etherStats entry is configured to analyze.  This
-        source can be any ethernet interface on this device.
+        source can be any Ethernet interface on this device.
         In order to identify a particular interface, this object
         shall identify the instance of the ifIndex object,
         defined in RFC 2233 [17], for the desired interface.
@@ -413,7 +413,7 @@ This object identifies the source of the data that
         An agent may or may not be able to tell if fundamental
         changes to the media of the interface have occurred and
         necessitate an invalidation of this entry.  For example, a
-        hot-pluggable ethernet card could be pulled out and replaced
+        hot-pluggable Ethernet card could be pulled out and replaced
         by a token-ring card.  In such a case, if the agent has such
         knowledge of the change, it is recommended that it
         invalidate this entry.
@@ -450,7 +450,7 @@ This object identifies the source of the data that
  * is detailed in the description for an object).
  *
  * You should check that the requested change between the undo value and the
- * new value is legal (ie, the transistion from one value to another
+ * new value is legal (ie, the transition from one value to another
  * is legal).
  *      
  *@note
@@ -646,7 +646,7 @@ The entity that configured this entry and is therefore
  * is detailed in the description for an object).
  *
  * You should check that the requested change between the undo value and the
- * new value is legal (ie, the transistion from one value to another
+ * new value is legal (ie, the transition from one value to another
  * is legal).
  *      
  *@note
@@ -838,7 +838,7 @@ The status of this etherStats entry.
  * is detailed in the description for an object).
  *
  * You should check that the requested change between the undo value and the
- * new value is legal (ie, the transistion from one value to another
+ * new value is legal (ie, the transition from one value to another
  * is legal).
  *      
  *@note

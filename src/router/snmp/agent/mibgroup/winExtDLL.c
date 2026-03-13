@@ -84,6 +84,7 @@
 #include <net-snmp/net-snmp-config.h>
 #include <net-snmp/net-snmp-features.h>
 #include <net-snmp/agent/mib_module_config.h>
+#include <net-snmp/agent/mib_modules.h>
 
 #ifdef USING_WINEXTDLL_MODULE
 

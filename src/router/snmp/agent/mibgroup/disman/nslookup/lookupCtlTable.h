@@ -71,8 +71,6 @@ SNMPCallback    store_lookupCtlTable;
 WriteMethod     write_lookupCtlTargetAddressType;
 WriteMethod     write_lookupCtlTargetAddress;
 WriteMethod     write_lookupCtlRowStatus;
-
-WriteMethod     write_lookupCtlRowStatus;
 #endif /* !NETSNMP_NO_WRITE_SUPPORT */
 
 /*

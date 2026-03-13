@@ -330,47 +330,47 @@ intpr(int interval)
                  */
                 break;
             case 10:           /* ifInOctets     */
-                sprintf(cur_if->s_ibytes, "%lu", *vp->val.integer);
+                snprintf(cur_if->s_ibytes, sizeof cur_if->s_ibytes, "%lu", *vp->val.integer);
                 i = strlen(cur_if->s_ibytes);
                 if (i > max_ibytes)
                     max_ibytes = i;
                 break;
             case 11:           /* ifInUcastPkts  */
                 cur_if->ipkts += *vp->val.integer;
-                sprintf(cur_if->s_ipkts, "%lu", cur_if->ipkts);
+                snprintf(cur_if->s_ipkts, sizeof cur_if->s_ipkts, "%lu", cur_if->ipkts);
                 i = strlen(cur_if->s_ipkts);
                 if (i > max_ipkts)
                     max_ipkts = i;
                 break;
             case 12:           /* ifInNUcastPkts  */
                 cur_if->ipkts += *vp->val.integer;
-                sprintf(cur_if->s_ipkts, "%lu", cur_if->ipkts);
+                snprintf(cur_if->s_ipkts, sizeof cur_if->s_ipkts, "%lu", cur_if->ipkts);
                 i = strlen(cur_if->s_ipkts);
                 if (i > max_ipkts)
                     max_ipkts = i;
                 break;
             case 14:           /* ifInErrors      */
-                sprintf(cur_if->s_ierrs, "%lu", *vp->val.integer);
+                snprintf(cur_if->s_ierrs, sizeof cur_if->s_ierrs, "%lu", *vp->val.integer);
                 i = strlen(cur_if->s_ierrs);
                 if (i > max_ierrs)
                     max_ierrs = i;
                 break;
             case 16:           /* ifOutOctets      */
-                sprintf(cur_if->s_obytes, "%lu", *vp->val.integer);
+                snprintf(cur_if->s_obytes, sizeof cur_if->s_obytes, "%lu", *vp->val.integer);
                 i = strlen(cur_if->s_obytes);
                 if (i > max_obytes)
                     max_obytes = i;
                 break;
             case 17:           /* ifOutUcastPkts */
                 cur_if->opkts += *vp->val.integer;
-                sprintf(cur_if->s_opkts, "%lu", cur_if->opkts);
+                snprintf(cur_if->s_opkts, sizeof cur_if->s_opkts, "%lu", cur_if->opkts);
                 i = strlen(cur_if->s_opkts);
                 if (i > max_opkts)
                     max_opkts = i;
                 break;
             case 18:           /* ifOutNUcastPkts */
                 cur_if->opkts += *vp->val.integer;
-                sprintf(cur_if->s_opkts, "%lu", cur_if->opkts);
+                snprintf(cur_if->s_opkts, sizeof cur_if->s_opkts, "%lu", cur_if->opkts);
                 i = strlen(cur_if->s_opkts);
                 if (i > max_opkts)
                     max_opkts = i;
@@ -379,13 +379,13 @@ intpr(int interval)
                 cur_if->drops = *vp->val.integer;
                 break;
             case 20:           /* ifOutErrors     */
-                sprintf(cur_if->s_oerrs, "%lu", *vp->val.integer);
+                snprintf(cur_if->s_oerrs, sizeof cur_if->s_oerrs, "%lu", *vp->val.integer);
                 i = strlen(cur_if->s_oerrs);
                 if (i > max_oerrs)
                     max_oerrs = i;
                 break;
             case 21:           /* ifOutQLen       */
-                sprintf(cur_if->s_outq, "%lu", *vp->val.integer);
+                snprintf(cur_if->s_outq, sizeof cur_if->s_outq, "%lu", *vp->val.integer);
                 i = strlen(cur_if->s_outq);
                 if (i > max_outq)
                     max_outq = i;

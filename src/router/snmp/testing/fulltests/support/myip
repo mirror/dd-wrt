@@ -9,8 +9,10 @@
 use strict;
 use warnings;
 import IO::Socket::INET6;
-if (eval "Socket6->import(qw(AF_INET6 inet_ntop inet_pton pack_sockaddr_in6
-                             sockaddr_in6))") {
+# For older Perl versions AF_INET6 is defined in the Socket6 package. For newer
+# Perl versions all IPv6 functionality we need is defined in the Socket package.
+if (eval "use Socket6 qw(AF_INET6 inet_ntop inet_pton pack_sockaddr_in6
+                             sockaddr_in6)") {
     use Socket qw(AF_INET SOCK_DGRAM pack_sockaddr_in sockaddr_in);
 } else {
     use Socket qw(AF_INET AF_INET6 SOCK_DGRAM inet_ntop inet_pton

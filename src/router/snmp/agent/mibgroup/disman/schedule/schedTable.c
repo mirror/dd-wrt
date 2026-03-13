@@ -449,7 +449,7 @@ schedTable_handler(netsnmp_mib_handler *handler,
                 recalculate = 1;
                 break;
             case COLUMN_SCHEDWEEKDAY:
-                entry->schedWeekDay  = request->requestvb->val.string[0];
+                entry->schedWeekDay[0] = request->requestvb->val.string[0];
                 recalculate = 1;
                 break;
             case COLUMN_SCHEDMONTH:

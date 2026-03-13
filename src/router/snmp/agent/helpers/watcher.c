@@ -224,7 +224,7 @@ netsnmp_owns_watcher_info(netsnmp_mib_handler *handler)
 {
     netsnmp_assert(handler);
     netsnmp_assert(handler->myvoid);
-    handler->data_clone = (void *(*)(void *))netsnmp_clone_watcher_info;
+    handler->data_clone = netsnmp_clone_watcher_info;
     handler->data_free = free;
 }
 
@@ -591,10 +591,12 @@ netsnmp_watched_spinlock_handler(netsnmp_mib_handler *handler,
      *
      ***************************/
 
-netsnmp_watcher_info *
-netsnmp_clone_watcher_info(netsnmp_watcher_info *winfo)
+void *
+netsnmp_clone_watcher_info(void *p)
 {
+    netsnmp_watcher_info *winfo = p;
     netsnmp_watcher_info *copy = malloc(sizeof(*copy));
+
     if (copy)
 	*copy = *winfo;
     return copy;

@@ -2,13 +2,6 @@
 
 #if defined(NETSNMP_USE_OPENSSL) && defined(HAVE_LIBSSL)
 
-#ifndef HEADER_SSL_H
-#error "must include <openssl/ssl.h> before cert_util.h"
-#endif
-#ifndef HEADER_X509_H
-#error "must include <openssl/x509.h> before cert_util.h"
-#endif
-
 #ifdef  __cplusplus
 extern "C" {
 #endif

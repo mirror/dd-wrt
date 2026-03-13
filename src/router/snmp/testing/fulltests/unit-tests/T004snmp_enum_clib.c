@@ -32,34 +32,35 @@
 char tmp_persist_file[256];
 char *se_find_result;
 
-sprintf(tmp_persist_file, "/tmp/snmp-enum-unit-test-%ld", (long)getpid());
+snprintf(tmp_persist_file, sizeof(tmp_persist_file),
+         "/tmp/snmp-enum-unit-test-%ld", (long)getpid());
 netsnmp_setenv("SNMP_PERSISTENT_FILE", tmp_persist_file, 1);
 
 init_snmp_enum("snmp");
 
 STORE_AND_COMPARE(1, 1, "enum 1:1|");
 
-se_add_pair(1, 1, strdup("hi"), 1);
+OK(se_add_pair(1, 1, strdup("hi"), 1) == SE_OK, "add to list");
 
 STORE_AND_COMPARE(1, 1, "enum 1:1 1:hi|");
 
-se_add_pair(1, 1, strdup("there"), 2);
+OK(se_add_pair(1, 1, strdup("there"), 2) == SE_OK, "add to list");
 
 STORE_AND_COMPARE(1, 1, "enum 1:1 1:hi 2:there|");
 
-se_add_pair(1, 1, strdup(LONG_STRING), 3);
-se_add_pair(1, 1, strdup(LONG_STRING), 4);
-se_add_pair(1, 1, strdup(LONG_STRING), 5);
-se_add_pair(1, 1, strdup(LONG_STRING), 6);
-se_add_pair(1, 1, strdup(LONG_STRING), 7);
-se_add_pair(1, 1, strdup(LONG_STRING), 8);
-se_add_pair(1, 1, strdup(LONG_STRING), 9);
+OK(se_add_pair(1, 1, strdup(LONG_STRING), 3) == SE_OK, "add to list");
+OK(se_add_pair(1, 1, strdup(LONG_STRING), 4) == SE_OK, "add to list");
+OK(se_add_pair(1, 1, strdup(LONG_STRING), 5) == SE_OK, "add to list");
+OK(se_add_pair(1, 1, strdup(LONG_STRING), 6) == SE_OK, "add to list");
+OK(se_add_pair(1, 1, strdup(LONG_STRING), 7) == SE_OK, "add to list");
+OK(se_add_pair(1, 1, strdup(LONG_STRING), 8) == SE_OK, "add to list");
+OK(se_add_pair(1, 1, strdup(LONG_STRING), 9) == SE_OK, "add to list");
 
 STORE_AND_COMPARE(1, 1, "enum 1:1 1:hi 2:there 3:" LONG_STRING " 4:" LONG_STRING
                  " 5:" LONG_STRING " 6:" LONG_STRING " 7:" LONG_STRING
                  " 8:" LONG_STRING " 9:" LONG_STRING "|");
 
-se_add_pair(1, 1, strdup(LONG_STRING), 10);
+OK(se_add_pair(1, 1, strdup(LONG_STRING), 10) == SE_OK, "add to list");
 
 STORE_AND_COMPARE(1, 1, "enum 1:1 1:hi 2:there 3:" LONG_STRING " 4:" LONG_STRING
                  " 5:" LONG_STRING " 6:" LONG_STRING " 7:" LONG_STRING
@@ -72,9 +73,11 @@ OK(strcmp(se_find_label(1, 1, 2), "there") == 0,
    "lookup by string #1 should be the proper number");
 
 
-se_add_pair_to_slist("testing", strdup(STRING1), 42);
-se_add_pair_to_slist("testing", strdup(STRING2), 2);
-se_add_pair_to_slist("testing", strdup(STRING3), 2);
+OK(se_add_pair_to_slist("testing", strdup(STRING1), 42) == SE_OK,
+   "add to list");
+OK(se_add_pair_to_slist("testing", strdup(STRING2), 2) == SE_OK, "add to list");
+OK(se_add_pair_to_slist("testing", strdup(STRING3), 2) == SE_ALREADY_THERE,
+   "add to list");
     
 OK(se_find_value_in_slist("testing", STRING1) == 42,
    "lookup by number should be the proper string");

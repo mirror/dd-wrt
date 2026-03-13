@@ -403,7 +403,9 @@ handle_ipAddressSpinLock(netsnmp_mib_handler *handler,
                           netsnmp_agent_request_info   *reqinfo,
                           netsnmp_request_info         *requests)
 {
+#ifndef NETSNMP_NO_WRITE_SUPPORT
     long   value;
+#endif
 
     /* We are never called for a GETNEXT if it's registered as a
        "instance", as it's "magically" handled for us.  */

@@ -194,8 +194,9 @@ netsnmp_arch_ipaddress_container_load(netsnmp_container *container,
 
     /* pass 2: walk addresses */
     for (cp = if_list; cp < if_list + if_list_size; cp += ifa->ifam_msglen) {
-        ifa = (struct ifa_msghdr *) cp;
         int rtax;
+
+        ifa = (struct ifa_msghdr *) cp;
 
         if (ifa->ifam_type != RTM_NEWADDR)
             continue;

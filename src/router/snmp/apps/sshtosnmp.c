@@ -26,13 +26,16 @@
 #include <stdlib.h>
 #include <errno.h>
 #include <stdio.h>
+#ifdef HAVE_STRING_H
+#include <string.h>
+#endif
 
 #ifndef MAXPATHLEN
 #warning no system max path length detected
 #define MAXPATHLEN 2048
 #endif
 
-#define DEFAULT_SOCK_PATH "/var/net-snmp/sshdomainsocket"
+#define DEFAULT_SOCK_PATH NETSNMP_PERSISTENT_DIRECTORY "/sshdomainsocket"
 
 #define NETSNMP_SSHTOSNMP_VERSION_NUMBER 1
 
@@ -87,6 +90,7 @@ main(int argc, char **argv) {
         exit(1);
     }
 
+#if defined(SO_PASSCRED)
     /* set the SO_PASSCRED option so we can pass uid */
     /* XXX: according to the unix(1) manual this shouldn't be needed
        on the sending side? */
@@ -95,6 +99,15 @@ main(int argc, char **argv) {
         setsockopt(sock, SOL_SOCKET, SO_PASSCRED, (void *) &one,
                    sizeof(one));
     }
+#elif defined(LOCAL_CREDS)
+    {
+        int one = 1;
+        setsockopt(sock, SOL_SOCKET, LOCAL_CREDS, (void *) &one,
+                   sizeof(one));
+    }
+#else
+#error Cannot pass credentials
+#endif
 
     if (connect(sock, (struct sockaddr *) &addr,
                 sizeof(struct sockaddr_un)) != 0) {
@@ -122,42 +135,51 @@ main(int argc, char **argv) {
     
     /* send the prelim message and the credentials together using sendmsg() */
     {
-        struct msghdr m;
-        /*
-         * Ancillary data buffer, wrapped in a union in order to ensure it is
-         * suitably aligned.
-         */
-        union {
-            char buf[CMSG_SPACE(sizeof(struct ucred))];
-            struct cmsghdr cm;
-        } cmsg;
-        struct ucred *const ouruser = (void *)CMSG_DATA(&cmsg.cm);
+        struct msghdr msg = { 0 };
         struct iovec iov = { buf, buf_len };
+        struct cmsghdr *cmsg;
+#if defined(SCM_CREDENTIALS)
+        struct ucred ouruser = { 0 };
+        char cmsgbuf[sizeof(ouruser)];
 
-        /* Make sure that even padding fields get initialized.*/
-        memset(&cmsg, 0, sizeof(cmsg));
-        memset(&m, 0, sizeof(m));
+        ouruser.uid = getuid();
+        ouruser.gid = getgid();
+        ouruser.pid = getpid();
+#elif defined(SCM_CREDS)
+        struct cmsgcred ouruser = { 0 };
+        char cmsgbuf[2*4096];
 
-        /* set up the message header */
-        cmsg.cm.cmsg_len = sizeof(cmsg);
-        cmsg.cm.cmsg_level = SOL_SOCKET;
-        cmsg.cm.cmsg_type = SCM_CREDENTIALS;
+        ouruser.cmcred_uid = getuid();
+        ouruser.cmcred_gid = getgid();
+        ouruser.cmcred_pid = getpid();
+#else
+#error cannot encode credentials
+#endif
 
-        ouruser->uid = getuid();
-        ouruser->gid = getgid();
-        ouruser->pid = getpid();
+        msg.msg_control = cmsgbuf;
+        msg.msg_controllen = sizeof(cmsgbuf);
 
-        m.msg_iov               = &iov;
-        m.msg_iovlen            = 1;
-        m.msg_control           = &cmsg;
-        m.msg_controllen        = sizeof(cmsg);
-        m.msg_flags             = 0;
-        
+	cmsg = CMSG_FIRSTHDR(&msg);
+	cmsg->cmsg_len = CMSG_LEN(sizeof(ouruser));
+	cmsg->cmsg_level = SOL_SOCKET;
+#if defined(SCM_CREDENTIALS)
+        cmsg->cmsg_type = SCM_CREDENTIALS;
+#elif defined(SCM_CREDS)
+        cmsg->cmsg_type = SCM_CREDS;
+#endif
+	memcpy(CMSG_DATA(cmsg), &ouruser, sizeof(ouruser));
+
+	msg.msg_name = NULL;
+	msg.msg_namelen = 0;
+	iov.iov_base = buf;
+	iov.iov_len = buf_len;
+	msg.msg_iov = &iov;
+	msg.msg_iovlen = 1;
+
         DEBUG("sending to sock");
-        rc = sendmsg(sock, &m, MSG_NOSIGNAL|MSG_DONTWAIT);
+        rc = sendmsg(sock, &msg, MSG_NOSIGNAL|MSG_DONTWAIT);
         if (rc < 0) {
-            fprintf(stderr, "failed to send startup message\n");
-            DEBUG("failed to send startup message\n");
+            fprintf(stderr, "failed to send startup message: %s\n", strerror(errno));
             exit(1);
         }
     }

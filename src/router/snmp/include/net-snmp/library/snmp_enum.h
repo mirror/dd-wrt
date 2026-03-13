@@ -48,8 +48,6 @@ extern          "C" {
     struct snmp_enum_list *se_find_list(unsigned int major,
                                         unsigned int minor);
     struct snmp_enum_list *se_find_slist(const char *listname);
-    int             se_store_in_list(struct snmp_enum_list *,
-                                     unsigned int major, unsigned int minor);
     int             se_find_value(unsigned int major, unsigned int minor,
                                   const char *label);
     int             se_find_free_value(unsigned int major, unsigned int minor);

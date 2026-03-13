@@ -59,18 +59,6 @@ extern          "C" {
     int             ifTable_container_load(netsnmp_container *container);
     void            ifTable_container_free(netsnmp_container *container);
 
-    void            ifTable_container_shutdown(netsnmp_container
-                                               *container_ptr);
-
-    int             ifTable_container_load(netsnmp_container *container);
-    void            ifTable_container_free(netsnmp_container *container);
-
-    void            ifTable_container_shutdown(netsnmp_container
-                                               *container_ptr);
-
-    int             ifTable_container_load(netsnmp_container *container);
-    void            ifTable_container_free(netsnmp_container *container);
-
     int             ifTable_cache_load(netsnmp_container *container);
     void            ifTable_cache_free(netsnmp_container *container);
 

@@ -638,7 +638,7 @@ init_icmp(void)
     netsnmp_iterator_info *iinfo;
     netsnmp_iterator_info *msg_stats_iinfo;
     netsnmp_table_registration_info *table_info = NULL;
-    netsnmp_table_registration_info *msg_stats_table_info;
+    netsnmp_table_registration_info *msg_stats_table_info = NULL;
 #endif
     netsnmp_handler_registration *scalar_reginfo = NULL;
     int                    rc;
@@ -751,6 +751,8 @@ bail:
         netsnmp_handler_registration_free(msg_stats_reginfo);
     if (table_reginfo)
         netsnmp_handler_registration_free(table_reginfo);
+    if (msg_stats_table_info)
+        free(msg_stats_table_info);
 #endif
     if (scalar_reginfo)
         netsnmp_handler_registration_free(scalar_reginfo);

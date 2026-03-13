@@ -133,10 +133,15 @@ create_lookupTable_data(void)
     struct lookupTable_data *StorageNew = NULL;
     StorageNew = SNMP_MALLOC_STRUCT(lookupTable_data);
     if (StorageNew == NULL) {
-        snmp_log(LOG_ERR, "Out in memory in nslookup-mib/create_lookupTable_date\n");
+        snmp_log(LOG_ERR, "Out of memory in nslookup-mib/create_lookupTable_data\n");
         exit(1);
     }
     StorageNew->lookupCtlTargetAddress = strdup("");
+    if (StorageNew->lookupCtlTargetAddress == NULL) {
+        free(StorageNew);
+        snmp_log(LOG_ERR, "Out of memory in nslookup-mib/create_lookupTable_data\n");
+        exit(1);
+    }
     StorageNew->lookupCtlTargetAddressLen = 0;
     StorageNew->lookupCtlOperStatus = 2L;
     StorageNew->lookupCtlTime = 0;
@@ -260,6 +265,7 @@ parse_lookupCtlTable(const char *token, char *line)
                               &StorageTmp->lookupCtlOwnerIndexLen);
     if (StorageTmp->lookupCtlOwnerIndex == NULL) {
         config_perror("invalid specification for lookupCtlOwnerIndex");
+        free(StorageTmp);
         return;
     }
 
@@ -269,6 +275,7 @@ parse_lookupCtlTable(const char *token, char *line)
                               &StorageTmp->lookupCtlOperationNameLen);
     if (StorageTmp->lookupCtlOperationName == NULL) {
         config_perror("invalid specification for lookupCtlOperationName");
+        free(StorageTmp);
         return;
     }
 
@@ -283,6 +290,7 @@ parse_lookupCtlTable(const char *token, char *line)
                               &StorageTmp->lookupCtlTargetAddressLen);
     if (StorageTmp->lookupCtlTargetAddress == NULL) {
         config_perror("invalid specification for lookupCtlTargetAddress");
+        free(StorageTmp);
         return;
     }
 
@@ -492,6 +500,13 @@ add_result(struct lookupTable_data *item, int index,
 
     temp->lookupResultsAddressType = iatype;
     temp->lookupResultsAddress = malloc(data_len + 1);
+    if (temp->lookupResultsAddress == NULL) {
+        snmp_log(LOG_ERR, "Out of memory in nslookup-mib/run_lookup\n");
+        free(temp->lookupCtlOperationName);
+        free(temp->lookupCtlOwnerIndex);
+        free(temp);
+        return NULL;
+    }
     memcpy(temp->lookupResultsAddress, data, data_len);
     temp->lookupResultsAddress[data_len] = '\0';
     temp->lookupResultsAddressLen = data_len;
@@ -520,6 +535,9 @@ run_lookup(struct lookupTable_data *item)
     addressType = (long) item->lookupCtlTargetAddressType;
     addresslen = (size_t) item->lookupCtlTargetAddressLen;
     address = (char *) malloc(addresslen + 1);
+    if (!address) {
+        return;
+    }
     memcpy(address, item->lookupCtlTargetAddress, addresslen + 1);
     address[addresslen] = '\0';
 
@@ -531,6 +549,7 @@ run_lookup(struct lookupTable_data *item)
             DEBUGMSGTL(("lookupResultsTable", "Invalid argument: %s\n",
                         address));
             modify_lookupCtlRc(item, 99);
+            free(address);
             return;
         }
 
@@ -548,6 +567,7 @@ run_lookup(struct lookupTable_data *item)
                         "Can't get a network host entry for ipv4 address: %s\n",
                         address));
             modify_lookupCtlRc(item, h_errno);
+            free(address);
             return;
         } else {
             modify_lookupCtlRc(item, 0L);
@@ -760,6 +780,7 @@ run_lookup(struct lookupTable_data *item)
                         "Can't get a network host entry for %s\n",
                         address));
             modify_lookupCtlRc(item, h_errno);
+            free(address);
             return;
         } else {
             modify_lookupCtlRc(item, 0L);

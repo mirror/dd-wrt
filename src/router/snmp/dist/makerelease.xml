@@ -633,7 +633,7 @@
 	  </commands>
  -->
 	</step>
-	<step type="system" stepname="publish:editpatches"
+	<step type="informational" stepname="publish:editpatches"
 	      skipunless="'{RELEASETYPE}' eq 'full'"
 	      title="Update the SF Official Patch tracker">
 	  <text>
@@ -641,9 +641,11 @@
 	    Any official patches for the previous release should be re-prioritised to level 5.
 	    Any official patches for the earlier releases should be re-prioritised to level 1 and closed.
 	  </text>
+<!-- Doesn't work
 	  <commands>
 	    <command>firefox 'http://www.net-snmp.org/official_patches/'</command>
 	  </commands>
+ -->
 	</step>
       </steps>
     </step>

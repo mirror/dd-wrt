@@ -121,7 +121,7 @@ proxy_parse_config(const char *token, char *line)
         if (!argv[argn]) {
             config_perror("could not allocate memory for argv[n]");
             SNMP_FREE(buff);
-            goto out;
+            goto free_argv;
         }
 	argn++;
     }
@@ -131,6 +131,8 @@ proxy_parse_config(const char *token, char *line)
         DEBUGMSGTL(("proxy_args", "final args: %d = %s\n", arg,
                     argv[arg]));
     }
+
+    memset(&session, 0, sizeof(session));
 
     DEBUGMSGTL(("proxy_config", "parsing args: %d\n", argn));
     /* Call special parse_args that allows for no specified community string */
@@ -144,13 +146,13 @@ proxy_parse_config(const char *token, char *line)
     
     if (arg < 0) {
         config_perror("failed to parse proxy args");
-        goto out;
+        goto cleanup_session;
     }
     DEBUGMSGTL(("proxy_config", "done parsing args\n"));
 
     if (arg >= argn) {
         config_perror("missing base oid");
-        goto out;
+        goto cleanup_session;
     }
 
     /*
@@ -174,7 +176,7 @@ proxy_parse_config(const char *token, char *line)
          * diagnose snmp_open errors with the input netsnmp_session pointer 
          */
         snmp_sess_perror("snmpget", &session);
-        goto out;
+        goto cleanup_session;
     }
 
     newp = (struct simple_proxy *) calloc(1, sizeof(struct simple_proxy));
@@ -187,7 +189,7 @@ proxy_parse_config(const char *token, char *line)
         config_perror("illegal proxy oid specified\n");
         /*deallocate the memory previously allocated*/
         SNMP_FREE(newp);
-        goto out;
+        goto cleanup_session;
     }
 
     if (arg < argn) {
@@ -197,7 +199,7 @@ proxy_parse_config(const char *token, char *line)
             snmp_perror("proxy");
             config_perror("illegal variable name specified (base oid)\n");
             SNMP_FREE(newp);
-            goto out;
+            goto cleanup_session;
         }
     }
     if ( context_string )
@@ -245,7 +247,10 @@ proxy_parse_config(const char *token, char *line)
 
     netsnmp_register_handler(reg);
 
-out:
+cleanup_session:
+    netsnmp_cleanup_session(&session);
+
+free_argv:
     /* Free the memory allocated */
     while(argn--)
         SNMP_FREE(argv[argn]);

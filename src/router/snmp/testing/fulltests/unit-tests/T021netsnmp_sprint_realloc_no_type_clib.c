@@ -15,6 +15,7 @@ size_t buf_len, out_len;
 int buf_overflow, i;
 char mibdir[PATH_MAX];
 int ret;
+netsnmp_variable_list variable;
 
 snprintf(mibdir, sizeof(mibdir), "%s/%s", ABS_SRCDIR, "mibs");
 netsnmp_ds_set_string(NETSNMP_DS_LIBRARY_ID, NETSNMP_DS_LIB_MIBDIRS, mibdir);
@@ -22,7 +23,6 @@ netsnmp_ds_set_boolean(NETSNMP_DS_LIBRARY_ID, NETSNMP_DS_LIB_QUICKE_PRINT, TRUE)
 
 init_snmp("T021");
 
-netsnmp_variable_list variable;
 variable.next_variable = NULL;
 variable.name = objid;
 variable.name_length = sizeof(objid) / sizeof(objid[0]);

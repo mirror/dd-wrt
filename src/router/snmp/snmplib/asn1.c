@@ -2338,7 +2338,7 @@ asn_parse_signed_int64(u_char * data,
         high = 0xFFFFFF;
     }
 
-    while (asn_length--) {
+    for ( ; asn_length; asn_length--) {
         high = ((0x00FFFFFF & high) << 8) | ((low & 0xFF000000U) >> 24);
         low = ((low & 0x00FFFFFF) << 8) | *bufp++;
     }
@@ -3439,6 +3439,9 @@ asn_realloc_rbuild_bitstring(u_char ** pkt, size_t * pkt_len,
      */
     static const char *errpre = "build bitstring";
     size_t          start_offset = *offset;
+
+    if (str == NULL && strlength != 0) 
+        return 0;
 
     while ((*pkt_len - *offset) < strlength) {
         if (!(r && asn_realloc(pkt, pkt_len))) {

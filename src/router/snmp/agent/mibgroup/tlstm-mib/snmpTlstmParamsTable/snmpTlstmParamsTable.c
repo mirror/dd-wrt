@@ -45,7 +45,7 @@ netsnmp_feature_require(table_tdata_insert_row);
  typedef struct snmpTlstmParamsTable_undo_s {
     char  fate;
     char  copied;
-    char  is_consistent;
+    signed char  is_consistent;
     netsnmp_request_info *req[SNMPTLSTMPARAMSTABLE_MAX_COLUMN + 1];
     /* undo Column space */
     char snmpTlstmParamsClientFingerprint[SNMPTLSTMPARAMSCLIENTFINGERPRINT_MAX_SIZE];
@@ -579,7 +579,6 @@ snmpTlstmParamsTable_handler(
     netsnmp_request_info       *request = NULL;
     netsnmp_table_request_info *table_info;
     netsnmp_tdata              *table_data;
-    netsnmp_tdata_row          *table_row;
     snmpTlstmParamsTable_entry          *table_entry;
     int                         ret = SNMP_ERR_NOERROR;
     
@@ -703,6 +702,8 @@ snmpTlstmParamsTable_handler(
      */
     case MODE_SET_RESERVE2:
         for (request=requests; request; request=request->next) {
+            netsnmp_tdata_row *table_row = NULL;
+
             table_entry = (snmpTlstmParamsTable_entry *)
                 netsnmp_tdata_extract_entry(request);
             table_data = netsnmp_tdata_extract_table(request);
@@ -785,7 +786,8 @@ snmpTlstmParamsTable_handler(
          * remove any newly created rows
          */
         for (request=requests; request; request=request->next) {
-            table_row   =     netsnmp_tdata_extract_row(  request);
+            netsnmp_tdata_row *table_row = netsnmp_tdata_extract_row(request);
+
             table_data  =  netsnmp_tdata_extract_table(request);
             table_entry = (snmpTlstmParamsTable_entry *)
                               netsnmp_tdata_extract_entry(request);
@@ -931,7 +933,6 @@ snmpTlstmParamsTable_handler(
         for (request=requests; request; request=request->next) {
             table_entry = (snmpTlstmParamsTable_entry *)
                               netsnmp_tdata_extract_entry(request);
-            table_row   =     netsnmp_tdata_extract_row(  request);
             table_data  =     netsnmp_tdata_extract_table(request);
             table_info  =     netsnmp_extract_table_info( request);
 
@@ -963,7 +964,8 @@ snmpTlstmParamsTable_handler(
          * or remove any newly created rows
          */
         for (request=requests; request; request=request->next) {
-            table_row   =     netsnmp_tdata_extract_row(  request);
+            netsnmp_tdata_row *table_row = netsnmp_tdata_extract_row(request);
+
             table_entry = (snmpTlstmParamsTable_entry *)
                               netsnmp_tdata_extract_entry(request);
             
@@ -989,7 +991,8 @@ snmpTlstmParamsTable_handler(
      */
     case MODE_SET_COMMIT:
         for (request=requests; request; request=request->next) {
-            table_row   =     netsnmp_tdata_extract_row(  request);
+            netsnmp_tdata_row *table_row = netsnmp_tdata_extract_row(request);
+
             table_data  =     netsnmp_tdata_extract_table(request);
             table_info  =     netsnmp_extract_table_info(    request);
             table_entry = (snmpTlstmParamsTable_entry *)
@@ -1049,7 +1052,6 @@ snmpTlstmParamsTable_handler(
                     /** disassociate row with requests */
                     netsnmp_remove_tdata_row( request, table_row );
                     snmpTlstmParamsTable_removeEntry(table_data, table_row );
-                    table_row = NULL;
                     table_entry = NULL;
                 }
                 /** release undo data */

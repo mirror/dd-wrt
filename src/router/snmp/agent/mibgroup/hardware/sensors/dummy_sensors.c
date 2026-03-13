@@ -12,12 +12,15 @@ void netsnmp_sensor_arch_init( void ) {
 
 int
 netsnmp_sensor_arch_load(netsnmp_cache *cache, void *vp) {
-    time_t now;
-    struct tm                  *tm;
+    static const struct tm      zero_tm;
+    time_t                      now;
+    const struct tm            *tm;
     netsnmp_sensor_info        *sp;
 
     time(&now);
     tm = localtime(&now);
+    if (!tm)
+        tm = &zero_tm;
 
     DEBUGMSGTL(("sensors:arch", "Reload Dummy Sensors module\n"));
 

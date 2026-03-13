@@ -57,8 +57,8 @@ extern "C" {
     int netsnmp_file_close(netsnmp_file * filei);
 
     /** support netsnmp_file containers */
-    int netsnmp_file_compare_name(netsnmp_file *lhs, netsnmp_file *rhs);
-    void netsnmp_file_container_free(netsnmp_file *file, void *context);
+    int netsnmp_file_compare_name(const void *lhs, const void *rhs);
+    void netsnmp_file_container_free(void *file, void *context);
 
 
 

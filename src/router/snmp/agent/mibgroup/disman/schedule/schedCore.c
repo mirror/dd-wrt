@@ -117,7 +117,7 @@ static u_char _bits[]  = { 0x80, 0x40, 0x20, 0x10,
  * Are any of the bits set?
  */
 static int
-_bit_allClear( char *pattern, int len ) {
+_bit_allClear(const u_char *pattern, int len) {
     int i;
 
     for (i=0; i<len; i++) {
@@ -131,7 +131,7 @@ _bit_allClear( char *pattern, int len ) {
  * Is a particular bit set?
  */
 static int
-_bit_set( char *pattern, int bit ) {
+_bit_set(const u_char *pattern, int bit) {
     int major, minor;
 
     major = bit/8;
@@ -147,7 +147,7 @@ _bit_set( char *pattern, int bit ) {
  *   (after a specified point)
  */
 static int
-_bit_next( char *pattern, int current, size_t len ) {
+_bit_next(const u_char *pattern, int current, size_t len) {
     char buf[ 8 ];
     int major, minor, i, j;
 
@@ -201,9 +201,9 @@ static u_char _truncate[] = { 0xfe, 0xf0, 0xfe, 0xfc,
  * Then check this result against the day of the week bits.
  */
 static int
-_bit_next_day( char *day_pattern, char weekday_pattern,
+_bit_next_day(const u_char *day_pattern, const u_char *weekday_pattern,
                int day, int month, int year ) {
-    char buf[4];
+    u_char buf[4];
     union {
         char buf2[4];
         int int_val;
@@ -257,8 +257,9 @@ _bit_next_day( char *day_pattern, char weekday_pattern,
         tm_val.tm_mday = next_day+1;
         tm_val.tm_mon  = month;
         tm_val.tm_year = year;
-        mktime( &tm_val );
-    } while ( !_bit_set( &weekday_pattern, tm_val.tm_wday ));
+        if (mktime(&tm_val) == (time_t)-1)
+            return -1;
+    } while ( !_bit_set( weekday_pattern, tm_val.tm_wday ));
     return next_day+1; /* Convert back to 1-based list */
 }
 
@@ -324,7 +325,7 @@ sched_nextTime( struct schedTable_entry *entry )
              _bit_allClear( entry->schedHour,   3 ) ||
              _bit_allClear( entry->schedDay,  4+4 ) ||
              _bit_allClear( entry->schedMonth,  2 ) ||
-             _bit_allClear(&entry->schedWeekDay, 1 )) {
+             _bit_allClear( entry->schedWeekDay, 1 )) {
             DEBUGMSGTL(("disman:schedule:time", "calendar: incomplete spec\n"));
             return;
         }
@@ -357,7 +358,7 @@ sched_nextTime( struct schedTable_entry *entry )
         if ( _bit_set( entry->schedMonth, now_tm.tm_mon )) {
             next_tm.tm_mon = now_tm.tm_mon;
             rev_day = _daysPerMonth[ now_tm.tm_mon ] - now_tm.tm_mday;
-            if ( _bit_set( &entry->schedWeekDay, now_tm.tm_wday ) &&
+            if ( _bit_set( entry->schedWeekDay, now_tm.tm_wday ) &&
                 (_bit_set( entry->schedDay, now_tm.tm_mday-1 ) ||
                  _bit_set( entry->schedDay, 31+rev_day ))) {
                 next_tm.tm_mday = now_tm.tm_mday;

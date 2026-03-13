@@ -663,7 +663,7 @@ var_alarmEntry(struct variable * vp, oid * name, size_t * length,
 }
 
 /*
- * Registration & Initializatio section 
+ * Registration & Initialization section
  */
 
 oid             oidalarmVariablesOid[] = { 1, 3, 6, 1, 2, 1, 16, 3 };

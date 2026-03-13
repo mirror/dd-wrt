@@ -128,8 +128,8 @@ netsnmp_create_watcher_info(void *, size_t, u_char, int);
 netsnmp_watcher_info *
 netsnmp_create_watcher_info6(void *, size_t, u_char, int, size_t, size_t*);
 
-netsnmp_watcher_info *
-netsnmp_clone_watcher_info(netsnmp_watcher_info *winfo);
+void *
+netsnmp_clone_watcher_info(void *winfo);
 void
 netsnmp_owns_watcher_info(netsnmp_mib_handler *handler);
 

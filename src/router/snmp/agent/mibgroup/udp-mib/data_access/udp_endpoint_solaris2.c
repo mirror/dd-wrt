@@ -109,7 +109,7 @@ _load_udp_endpoint_table_v4(netsnmp_container *container, int flag)
         /* 
          * remote address/port. The address length is the same as the
          * local address, so no check needed. If the remote address is
-         * unspecfied, then the type should be set to "unknown" (per RFC 4113).
+         * unspecified, then the type should be set to "unknown" (per RFC 4113).
          */
         if (ue.udpEntryInfo.ue_RemoteAddress == INADDR_ANY) {
             ep->rmt_addr_len = 0;

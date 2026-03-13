@@ -119,8 +119,6 @@ config_require(ip-mib/ipv6InterfaceTable/ipv6InterfaceTable_data_access);
         ipv6InterfaceTable_rowreq_ctx_cleanup(ipv6InterfaceTable_rowreq_ctx
                                               * rowreq_ctx);
 
-    int             ipv6InterfaceTable_commit(ipv6InterfaceTable_rowreq_ctx
-                                              * rowreq_ctx);
     ipv6InterfaceTable_rowreq_ctx *ipv6InterfaceTable_row_find_by_mib_index
         (ipv6InterfaceTable_mib_index * mib_idx);
 

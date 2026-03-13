@@ -20,6 +20,16 @@
 
 #include "kernel_sysctl.h"
 
+#ifndef MLD_LISTENER_QUERY
+#define MLD_LISTENER_QUERY MLD6_LISTENER_QUERY
+#endif
+#ifndef MLD_LISTENER_REPORT
+#define MLD_LISTENER_REPORT MLD6_LISTENER_REPORT
+#endif
+#ifndef MLD_LISTENER_DONE
+#define MLD_LISTENER_DONE MLD6_LISTENER_DONE
+#endif
+
 #if defined(NETSNMP_CAN_USE_SYSCTL)
 
 int

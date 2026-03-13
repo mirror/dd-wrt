@@ -66,10 +66,11 @@ AC_CHECK_HEADERS([dlfcn.h    err.h      fcntl.h    fstab.h      ] dnl
                  [           com_err.h             et/com_err.h ] dnl
                  [           utmpx.h    utsname.h               ])
 
-AC_CHECK_HEADERS([sys/diskio.h  sys/dkio.h                                 ] dnl
+AC_CHECK_HEADERS([sys/callout.h sys/diskio.h  sys/dkio.h                   ] dnl
                  [sys/file.h    sys/filio.h   sys/fixpoint.h               ] dnl
                  [sys/fs.h      sys/ioctl.h   sys/loadavg.h   sys/mntent.h ] dnl
-                 [sys/mnttab.h  sys/pool.h    sys/protosw.h   sys/pstat.h  ] dnl
+                 [sys/mnttab.h  sys/osd.h                                  ] dnl
+                 [sys/pool.h    sys/protosw.h sys/pstat.h                  ] dnl
                  [sys/sockio.h  sys/stat.h    sys/statfs.h    sys/statvfs.h] dnl
                  [sys/stream.h  sys/sysget.h  sys/sysmacros.h sys/sysmp.h  ] dnl
                  [sys/tcpipstats.h            sys/utsname.h  sys/vfs.h     ] dnl
@@ -100,11 +101,8 @@ AC_CHECK_HEADERS([search.h   sgtty.h    xti.h      ] dnl
 # Valgrind
 AC_CHECK_HEADERS([valgrind/valgrind.h valgrind/memcheck.h])
 # OpenSSL
-AC_CHECK_HEADERS([openssl/aes.h ])     #  (Core)
-AC_CHECK_HEADERS([openssl/dh.h  ])     #  (Apps)
-#  Not-Used:
-AC_CHECK_HEADERS([openssl/des.h  openssl/hmac.h ] dnl
-                 [openssl/evp.h  security/cryptoki.h])
+AC_CHECK_HEADERS([openssl/aes.h openssl/dh.h openssl/des.h openssl/err.h]dnl
+                 [openssl/evp.h openssl/hmac.h openssl/ssl.h])
 
 # RPM subdirectory path                   (Agent)
 if test "x$with_rpm" != "xno"; then
@@ -261,6 +259,7 @@ AC_CHECK_HEADERS([sys/socket.h]dnl
                  [net/if.h]dnl
                  [netinet/in.h]dnl
                  [netdb.h]dnl
+                 [netgroup.h]dnl
                  [net/if_arp.h]dnl
                  [net/if_mib.h]dnl
                  [net/if_var.h]dnl

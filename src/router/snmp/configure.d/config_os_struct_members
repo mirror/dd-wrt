@@ -421,7 +421,7 @@ AC_CACHE_CHECK([if _KERNEL needs to be defined for if_mtu],
 #ifdef HAVE_NET_IF_VAR_H
 #include <net/if_var.h>
 #endif
-             ], [[struct ifnet test; test.if_mtu = 0;]])],
+             ], [[struct ifnet test; test.if_mtu = 0; return sizeof(struct in_ifaddr);]])],
              [ac_cv_IFNET_NEEDS_KERNEL=no])
          if test "$ac_cv_IFNET_NEEDS_KERNEL" = unknown ; then
          AC_COMPILE_IFELSE(
@@ -440,7 +440,7 @@ AC_CACHE_CHECK([if _KERNEL needs to be defined for if_mtu],
 #ifdef HAVE_NET_IF_VAR_H
 #include <net/if_var.h>
 #endif
-             ], [[struct ifnet test; test.if_mtu = 0;]])],
+             ], [[struct ifnet test; test.if_mtu = 0; return sizeof(struct in_ifaddr);]])],
              [ac_cv_IFNET_NEEDS_KERNEL=yes])
          fi])
 
@@ -469,7 +469,7 @@ AC_CACHE_CHECK([if _KERNEL_STRUCTURES needs to be defined for if_mtu],
 #ifdef HAVE_NET_IF_VAR_H
 #include <net/if_var.h>
 #endif
-             ], [[struct ifnet test; test.if_mtu = 0;]])],
+             ], [[struct ifnet test; test.if_mtu = 0; return sizeof(struct in_ifaddr);]])],
              [ac_cv_IFNET_NEEDS_KERNEL_STRUCTURES=no])
          if test "$ac_cv_IFNET_NEEDS_KERNEL_STRUCTURES" = unknown ; then
          AC_COMPILE_IFELSE(
@@ -488,7 +488,7 @@ AC_CACHE_CHECK([if _KERNEL_STRUCTURES needs to be defined for if_mtu],
 #ifdef HAVE_NET_IF_VAR_H
 #include <net/if_var.h>
 #endif
-             ], [[struct ifnet test; test.if_mtu = 0;]])],
+             ], [[struct ifnet test; test.if_mtu = 0; return sizeof(struct in_ifaddr);]])],
              [ac_cv_IFNET_NEEDS_KERNEL_STRUCTURES=yes])
          fi])
 

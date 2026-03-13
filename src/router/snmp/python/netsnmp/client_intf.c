@@ -1269,7 +1269,6 @@ netsnmp_create_session_tunneled(PyObject *self, PyObject *args)
       }
 
       session.transport_configuration->compare =
-          (netsnmp_container_compare*)
           netsnmp_transport_config_compare;
   }
 
@@ -1524,6 +1523,10 @@ netsnmp_get_or_getnext(PyObject *self, PyObject *args, int pdu_type,
           continue;
 
       varbind = PySequence_GetItem(varlist, varlist_ind);
+      if (varbind == NULL) {
+        /* PySequence_GetItem failed - break to avoid NULL deref in build_python_varbind */
+        break;
+      }
       type = build_python_varbind(varbind, vars, varlist_ind, sprintval_flag,
                                   &len, &str_buf, getlabel_flag);
       if (type != TYPE_OTHER) {
@@ -1794,9 +1797,8 @@ netsnmp_walk(PyObject *self, PyObject *args)
       } else {
           newpdu = snmp_pdu_create(SNMP_MSG_GETNEXT);
 
-          for(vars = (response ? response->variables : NULL),
-                  varlist_ind = 0,
-                  oldvars = (pdu ? pdu->variables : NULL);
+          for(vars = response->variables, varlist_ind = 0,
+		oldvars = (pdu ? pdu->variables : NULL);
               vars && (varlist_ind < varlist_len);
               vars = vars->next_variable, varlist_ind++,
                   oldvars = (oldvars ? oldvars->next_variable : NULL)) {
@@ -1833,6 +1835,9 @@ netsnmp_walk(PyObject *self, PyObject *args)
               }
 
               varbind = py_netsnmp_construct_varbind();
+              if (varbind == NULL)
+                break;
+
               if (varbind && build_python_varbind(varbind, vars, varlist_ind,
                                        sprintval_flag, &len, &str_buf, getlabel_flag) !=
                   TYPE_OTHER) {
@@ -2056,6 +2061,9 @@ netsnmp_getbulk(PyObject *self, PyObject *args)
 	    vars = vars->next_variable, varbind_ind++) {
 
 	  varbind = py_netsnmp_construct_varbind();
+	      if (varbind == NULL)
+	        break;
+
           if (varbind && build_python_varbind(varbind, vars, varbind_ind,
                               sprintval_flag, &len, &str_buf, getlabel_flag) != TYPE_OTHER) {
             const int hex = is_hex(str_buf, len);

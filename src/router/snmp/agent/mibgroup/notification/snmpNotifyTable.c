@@ -312,9 +312,9 @@ snmpTagValid(const char *tag, const size_t tagLen)
     return 1;
 }
 
-static struct snmpNotifyTable_data *StorageNew;
+#ifndef NETSNMP_NO_WRITE_SUPPORT
 
-#ifndef NETSNMP_NO_WRITE_SUPPORT 
+static struct snmpNotifyTable_data *StorageNew;
 
 static const int snmpNotifyTable_offset =
     sizeof(snmpNotifyTable_variables_oid) / sizeof(oid) + 3 - 1;
@@ -614,7 +614,7 @@ write_snmpNotifyRowStatus(int action,
             StorageNew->snmpNotifyStorageType = ST_NONVOLATILE;
             StorageNew->snmpNotifyType = SNMPNOTIFYTYPE_TRAP;
             StorageNew->snmpNotifyTagLen = 0;
-            StorageNew->snmpNotifyTag = (char *) calloc(sizeof(char), 1);
+            StorageNew->snmpNotifyTag = (char *) calloc(1, sizeof(char));
             if (StorageNew->snmpNotifyTag == NULL) {
                 return SNMP_ERR_RESOURCEUNAVAILABLE;
             }

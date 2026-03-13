@@ -510,13 +510,12 @@ netsnmp_callback_hook_build(netsnmp_session * sp,
 #endif
     case SNMP_VERSION_3:
         if (pdu->securityNameLen == 0) {
-	  pdu->securityName = malloc(sp->securityNameLen);
+            pdu->securityName = netsnmp_memdup(sp->securityName,
+                                               sp->securityNameLen + 1);
             if (pdu->securityName == NULL) {
                 sp->s_snmp_errno = SNMPERR_MALLOC;
                 return -1;
             }
-            memmove(pdu->securityName,
-                     sp->securityName, sp->securityNameLen);
             pdu->securityNameLen = sp->securityNameLen;
         }
         if (pdu->securityModel == -1)

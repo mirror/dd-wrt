@@ -56,6 +56,7 @@
          int             rowStatus;
          struct targetAddrTable_struct *next;
          netsnmp_session *sess; /* a snmp session to the target host */
+         int             close_sess;
          time_t          sessionCreationTime;
      };
 
