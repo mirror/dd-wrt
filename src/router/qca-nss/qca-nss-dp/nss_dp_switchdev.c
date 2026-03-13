@@ -692,6 +692,23 @@ static int nss_dp_switchdev_fdb_del_event(struct net_device *netdev,
 	return notifier_from_errno(rv);
 }
 
+static void process_child(struct net_device *dev, void *ptr)
+{
+	struct net_device *lower;
+	struct list_head *iter;
+
+	netdev_for_each_lower_dev(dev, lower, iter) {
+		if (lower != NULL) {
+			netdev_dbg(lower, "  lower physical %d \n", nss_dp_is_phy_dev(lower));
+			if (nss_dp_is_phy_dev(lower)) {
+				nss_dp_switchdev_fdb_del_event(lower, ptr);
+			} else {
+				process_child(lower, ptr);
+			}
+		}
+	}
+}
+
 /*
  * nss_dp_switchdev_event_nb
  *
@@ -702,18 +719,15 @@ static int nss_dp_switchdev_event_nb(struct notifier_block *unused,
 		unsigned long event, void *ptr)
 {
 	struct net_device *dev = switchdev_notifier_info_to_dev(ptr);
-	/*
-	 * Handle switchdev event only for physical devices
-	 */
-	if (!nss_dp_is_phy_dev(dev)) {
-		return NOTIFY_DONE;
-	}
 
-	switch (event) {
-	case SWITCHDEV_FDB_DEL_TO_DEVICE:
-		return nss_dp_switchdev_fdb_del_event(dev, ptr);
-	default:
-		netdev_dbg(dev, "Switchdev event %lu is not supported\n", event);
+	if (event == SWITCHDEV_FDB_DEL_TO_DEVICE) {
+		if (!nss_dp_is_phy_dev(dev)) {
+			netdev_dbg(dev, "FDB event %ld Not Physical \n", event);
+			process_child(dev, ptr);
+			return NOTIFY_DONE;
+		} else {
+			return nss_dp_switchdev_fdb_del_event(dev, ptr);
+		}
 	}
 
 	return NOTIFY_DONE;
