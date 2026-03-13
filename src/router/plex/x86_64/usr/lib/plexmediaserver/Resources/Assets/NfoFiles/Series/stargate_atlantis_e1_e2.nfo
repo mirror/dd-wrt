@@ -1,0 +1,566 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<!--created on 2026-02-06 14:44:59 by tinyMediaManager 5.2.2 for PLEX-->
+<episodedetails>
+  <title>Rising (1)</title>
+  <originaltitle>Rising (1)</originaltitle>
+  <showtitle>Stargate Atlantis</showtitle>
+  <season>1</season>
+  <episode>1</episode>
+  <id>25333</id>
+  <uniqueid default="false" type="tmdb">168437</uniqueid>
+  <uniqueid default="true" type="imdb">tt0426236</uniqueid>
+  <uniqueid default="false" type="tvdb">25333</uniqueid>
+  <ratings>
+    <rating default="false" max="10" name="themoviedb">
+      <value>8.2</value>
+      <votes>25</votes>
+    </rating>
+  </ratings>
+  <userrating>0</userrating>
+  <plot>A new Stargate team embarks on a dangerous mission to a distant galaxy, where they discover a mythical lost city -- and a deadly new enemy.</plot>
+  <runtime>45</runtime>
+  <thumb>https://image.tmdb.org/t/p/w1280/xUzhHYonG3QOpdU0DziSmlUi1Cn.jpg</thumb>
+  <mpaa/>
+  <premiered>2004-07-15</premiered>
+  <aired>2004-07-15</aired>
+  <watched>false</watched>
+  <playcount>0</playcount>
+  <studio>Syfy</studio>
+  <studio>Acme Shark</studio>
+  <studio>MGM Television</studio>
+  <studio>Pegasus Productions</studio>
+  <studio>Sony Pictures Television</studio>
+  <credits tmdbid="72101">Martin Gero</credits>
+  <credits tmdbid="72082">Brad Wright</credits>
+  <credits tmdbid="27745">Robert C. Cooper</credits>
+  <director tmdbid="1214381">Martin Wood</director>
+  <actor>
+    <name>Joe Flanigan</name>
+    <role>John Sheppard</role>
+    <thumb>https://image.tmdb.org/t/p/h632/5AA1ORKIsnMakT6fCVy3JKlzMs6.jpg</thumb>
+    <profile>https://www.themoviedb.org/person/26066</profile>
+    <tmdbid>26066</tmdbid>
+  </actor>
+  <actor>
+    <name>David Hewlett</name>
+    <role>Rodney McKay</role>
+    <thumb>https://image.tmdb.org/t/p/h632/xXBUwcV9raoAuwbAOxJ0Jv7iE6M.jpg</thumb>
+    <profile>https://www.themoviedb.org/person/5892</profile>
+    <tmdbid>5892</tmdbid>
+  </actor>
+  <actor>
+    <name>Rachel Luttrell</name>
+    <role>Teyla Emmagan</role>
+    <thumb>https://image.tmdb.org/t/p/h632/zPutigjuf5ozJc1LtU3At9RbtGi.jpg</thumb>
+    <profile>https://www.themoviedb.org/person/26067</profile>
+    <tmdbid>26067</tmdbid>
+  </actor>
+  <actor>
+    <name>Torri Higginson</name>
+    <role>Elizabeth Weir</role>
+    <thumb>https://image.tmdb.org/t/p/h632/gMYIyJKmfPxX12lRFFAV1NeIymI.jpg</thumb>
+    <profile>https://www.themoviedb.org/person/5480</profile>
+    <tmdbid>5480</tmdbid>
+  </actor>
+  <actor>
+    <name>Rainbow Sun Francks</name>
+    <role>Aiden Ford</role>
+    <thumb>https://image.tmdb.org/t/p/h632/7vPUMxOGISy2W7JZbaNIORn8MlC.jpg</thumb>
+    <profile>https://www.themoviedb.org/person/1196455</profile>
+    <tmdbid>1196455</tmdbid>
+  </actor>
+  <actor>
+    <name>Paul McGillion</name>
+    <role>Carson Beckett</role>
+    <thumb>https://image.tmdb.org/t/p/h632/43sfykb5iFosUHZqCnmx5GFFkro.jpg</thumb>
+    <profile>https://www.themoviedb.org/person/26069</profile>
+    <type>GuestStar</type>
+    <tmdbid>26069</tmdbid>
+  </actor>
+  <actor>
+    <name>Richard Dean Anderson</name>
+    <role>Jack O'Neill</role>
+    <thumb>https://image.tmdb.org/t/p/h632/hHCSMRiI4OMT1AxgWQhugtipvy2.jpg</thumb>
+    <profile>https://www.themoviedb.org/person/26085</profile>
+    <type>GuestStar</type>
+    <tmdbid>26085</tmdbid>
+  </actor>
+  <actor>
+    <name>Garwin Sanford</name>
+    <role>Simon Wallis</role>
+    <thumb>https://image.tmdb.org/t/p/h632/uVhyU0G7LQUHdfRdr2mSmEbzR7B.jpg</thumb>
+    <profile>https://www.themoviedb.org/person/46899</profile>
+    <type>GuestStar</type>
+    <tmdbid>46899</tmdbid>
+  </actor>
+  <actor>
+    <name>Boyan Vukelic</name>
+    <role>Sgt. Stackhouse</role>
+    <thumb>https://image.tmdb.org/t/p/h632/8H5EAEPbkXh0HkMY9L3rX7KATWA.jpg</thumb>
+    <profile>https://www.themoviedb.org/person/72098</profile>
+    <type>GuestStar</type>
+    <tmdbid>72098</tmdbid>
+  </actor>
+  <actor>
+    <name>Dan Payne</name>
+    <role>Wraith Warrior</role>
+    <thumb>https://image.tmdb.org/t/p/h632/oaKJV67XtJNQLtSGlO1YVveGqly.jpg</thumb>
+    <profile>https://www.themoviedb.org/person/85505</profile>
+    <type>GuestStar</type>
+    <tmdbid>85505</tmdbid>
+  </actor>
+  <actor>
+    <name>Michael Shanks</name>
+    <role>Dr. Daniel Jackson</role>
+    <thumb>https://image.tmdb.org/t/p/h632/4YkOrSUmfKljqTMwGIo50oviKe1.jpg</thumb>
+    <profile>https://www.themoviedb.org/person/26086</profile>
+    <type>GuestStar</type>
+    <tmdbid>26086</tmdbid>
+  </actor>
+  <actor>
+    <name>Robert Patrick</name>
+    <role>Colonel Marshall Sumner</role>
+    <thumb>https://image.tmdb.org/t/p/h632/qRv2Es9rZoloullTbzss3I5j1Mp.jpg</thumb>
+    <profile>https://www.themoviedb.org/person/418</profile>
+    <type>GuestStar</type>
+    <tmdbid>418</tmdbid>
+  </actor>
+  <actor>
+    <name>Reece Thompson</name>
+    <role>Jinto</role>
+    <thumb>https://image.tmdb.org/t/p/h632/xA212pV7L7FcF6yxO24RGEOiHWb.jpg</thumb>
+    <profile>https://www.themoviedb.org/person/48463</profile>
+    <type>GuestStar</type>
+    <tmdbid>48463</tmdbid>
+  </actor>
+  <actor>
+    <name>Casey Dubois</name>
+    <role>Wex</role>
+    <thumb>https://image.tmdb.org/t/p/h632/miGjbqGVfmhElSaGmoEO22aL6MJ.jpg</thumb>
+    <profile>https://www.themoviedb.org/person/132347</profile>
+    <type>GuestStar</type>
+    <tmdbid>132347</tmdbid>
+  </actor>
+  <actor>
+    <name>Melia McClure</name>
+    <role>Hologrammatic Female Ancient</role>
+    <thumb>https://image.tmdb.org/t/p/h632/d153v45AJnRCIm6tKVUD4M9YfWL.jpg</thumb>
+    <profile>https://www.themoviedb.org/person/183738</profile>
+    <type>GuestStar</type>
+    <tmdbid>183738</tmdbid>
+  </actor>
+  <actor>
+    <name>Dan Shea</name>
+    <role>Sgt. Siler</role>
+    <thumb>https://image.tmdb.org/t/p/h632/58bGSn8u45HBOMrt2E2LBW26snT.jpg</thumb>
+    <profile>https://www.themoviedb.org/person/385220</profile>
+    <type>GuestStar</type>
+    <tmdbid>385220</tmdbid>
+  </actor>
+  <actor>
+    <name>David Milchard</name>
+    <role>SGC Technician</role>
+    <thumb>https://image.tmdb.org/t/p/h632/5fAkTchSP81VJawTgOqwN96thtC.jpg</thumb>
+    <profile>https://www.themoviedb.org/person/51803</profile>
+    <type>GuestStar</type>
+    <tmdbid>51803</tmdbid>
+  </actor>
+  <actor>
+    <name>Bro Gilbert</name>
+    <role>Scientist</role>
+    <thumb>https://image.tmdb.org/t/p/h632/AqYlirLPVwM9QJOd03nc4s4SjJr.jpg</thumb>
+    <profile>https://www.themoviedb.org/person/122879</profile>
+    <type>GuestStar</type>
+    <tmdbid>122879</tmdbid>
+  </actor>
+  <actor>
+    <name>Peter Grasso</name>
+    <role>Scientist</role>
+    <thumb>https://image.tmdb.org/t/p/h632/wfPfVshnA8ZwdlCwOR3SJ1yi0RA.jpg</thumb>
+    <profile>https://www.themoviedb.org/person/178863</profile>
+    <type>GuestStar</type>
+    <tmdbid>178863</tmdbid>
+  </actor>
+  <actor>
+    <name>Ona Grauer</name>
+    <role>Ancient</role>
+    <thumb>https://image.tmdb.org/t/p/h632/vfcupzwyzs1CNrjuG0wW4B3eQcD.jpg</thumb>
+    <profile>https://www.themoviedb.org/person/67978</profile>
+    <type>GuestStar</type>
+    <tmdbid>67978</tmdbid>
+  </actor>
+  <actor>
+    <name>Aaron Dudley</name>
+    <role>Male Ancient</role>
+    <profile>https://www.themoviedb.org/person/173007</profile>
+    <type>GuestStar</type>
+    <tmdbid>173007</tmdbid>
+  </actor>
+  <actor>
+    <name>Mary Joan Buchanan</name>
+    <role>Beckett's Mom</role>
+    <thumb>https://image.tmdb.org/t/p/h632/4Je9zf3xew5e8RDUxld8xrcbWhM.jpg</thumb>
+    <profile>https://www.themoviedb.org/person/1283545</profile>
+    <type>GuestStar</type>
+    <tmdbid>1283545</tmdbid>
+  </actor>
+  <actor>
+    <name>James Lafazanos</name>
+    <role>Male Wraith</role>
+    <thumb>https://image.tmdb.org/t/p/h632/sl1GjFhEDC8lyY6l5r7suybYGv2.jpg</thumb>
+    <profile>https://www.themoviedb.org/person/1178559</profile>
+    <type>GuestStar</type>
+    <tmdbid>1178559</tmdbid>
+  </actor>
+  <actor>
+    <name>Andee Frizzell</name>
+    <role>Wraith Keeper</role>
+    <thumb>https://image.tmdb.org/t/p/h632/dF8roZOxElK0T49lgkranhtcRB2.jpg</thumb>
+    <profile>https://www.themoviedb.org/person/1230692</profile>
+    <type>GuestStar</type>
+    <tmdbid>1230692</tmdbid>
+  </actor>
+  <actor>
+    <name>Lynda Riley</name>
+    <role>Brunette (Uncredited)</role>
+    <profile>https://www.themoviedb.org/person/1283576</profile>
+    <type>GuestStar</type>
+    <tmdbid>1283576</tmdbid>
+  </actor>
+  <actor>
+    <name>Jon Johnson</name>
+    <role>Parker</role>
+    <thumb>https://image.tmdb.org/t/p/h632/caRlXS4dDOEY50Vbjcoy3NBfg4C.jpg</thumb>
+    <profile>https://www.themoviedb.org/person/90732</profile>
+    <type>GuestStar</type>
+    <tmdbid>90732</tmdbid>
+  </actor>
+  <actor>
+    <name>Darren Hird</name>
+    <role>Antarctic outpost Guard (Uncredited)</role>
+    <thumb>https://image.tmdb.org/t/p/h632/nnux49EkcHKXxWgeBWMop2cNass.jpg</thumb>
+    <profile>https://www.themoviedb.org/person/168513</profile>
+    <type>GuestStar</type>
+    <tmdbid>168513</tmdbid>
+  </actor>
+  <actor>
+    <name>Sean Amsing</name>
+    <role>Athosian with Swiss Army knife (Uncredited)</role>
+    <thumb>https://image.tmdb.org/t/p/h632/iFeuwiZFd4o6Ps47Kxmc99rd28Y.jpg</thumb>
+    <profile>https://www.themoviedb.org/person/1237725</profile>
+    <type>GuestStar</type>
+    <tmdbid>1237725</tmdbid>
+  </actor>
+  <actor>
+    <name>Craig Veroni</name>
+    <role>Dr. Peter Grodin</role>
+    <thumb>https://image.tmdb.org/t/p/h632/w4uIVcxvXUQRwAmSHfVq5ycliOY.jpg</thumb>
+    <profile>https://www.themoviedb.org/person/60288</profile>
+    <type>GuestStar</type>
+    <tmdbid>60288</tmdbid>
+  </actor>
+  <actor>
+    <name>Edmond Kato Wong</name>
+    <role>Atlantis Technician</role>
+    <profile>https://www.themoviedb.org/person/1602595</profile>
+    <type>GuestStar</type>
+    <tmdbid>1602595</tmdbid>
+  </actor>
+  <actor>
+    <name>Craig Fraser</name>
+    <role>Marine (Uncredited)</role>
+    <thumb>https://image.tmdb.org/t/p/h632/4mXU3ssyFng1JrLaYBNQadmR0Q3.jpg</thumb>
+    <profile>https://www.themoviedb.org/person/1378680</profile>
+    <type>GuestStar</type>
+    <tmdbid>1378680</tmdbid>
+  </actor>
+  <actor>
+    <name>Dean Marshall</name>
+    <role>Sgt. Bates</role>
+    <thumb>https://image.tmdb.org/t/p/h632/che3C6ZnOAGQimCgXWIZwnf56iW.jpg</thumb>
+    <profile>https://www.themoviedb.org/person/79151</profile>
+    <type>GuestStar</type>
+    <tmdbid>79151</tmdbid>
+  </actor>
+  <actor>
+    <name>Christopher Heyerdahl</name>
+    <role>Halling</role>
+    <thumb>https://image.tmdb.org/t/p/h632/pTPZa3TFIkxRbqM5adXYE51a99s.jpg</thumb>
+    <profile>https://www.themoviedb.org/person/32887</profile>
+    <type>GuestStar</type>
+    <tmdbid>32887</tmdbid>
+  </actor>
+  <actor>
+    <name>Christopher Ang</name>
+    <role>Athosian (Uncredited)</role>
+    <thumb>https://image.tmdb.org/t/p/h632/hsKB1A1fBXu1nt41KDjzvhYATKT.jpg</thumb>
+    <profile>https://www.themoviedb.org/person/1381540</profile>
+    <type>GuestStar</type>
+    <tmdbid>1381540</tmdbid>
+  </actor>
+  <actor>
+    <name>Chris Bradford</name>
+    <role>Marine (uncredited)</role>
+    <thumb>https://image.tmdb.org/t/p/h632/a1lTXXyIqCmooy1TDUhbOmpC9Dp.jpg</thumb>
+    <profile>https://www.themoviedb.org/person/1236390</profile>
+    <type>GuestStar</type>
+    <tmdbid>1236390</tmdbid>
+  </actor>
+  <actor>
+    <name>D. Harlan Cutshall</name>
+    <role>Marine (Uncredited)</role>
+    <thumb>https://image.tmdb.org/t/p/h632/uef8JtTlod6KVARoSNZO7kazDCy.jpg</thumb>
+    <profile>https://www.themoviedb.org/person/1235560</profile>
+    <type>GuestStar</type>
+    <tmdbid>1235560</tmdbid>
+  </actor>
+  <actor>
+    <name>Ari Solomon</name>
+    <role>Billick (Uncredited)</role>
+    <thumb>https://image.tmdb.org/t/p/h632/9dAPwvlNtpun0eXyVzK2TUUzXSM.jpg</thumb>
+    <profile>https://www.themoviedb.org/person/1235599</profile>
+    <type>GuestStar</type>
+    <tmdbid>1235599</tmdbid>
+  </actor>
+  <actor>
+    <name>Tony Baretta</name>
+    <role>Smitty (Uncredited)</role>
+    <thumb>https://image.tmdb.org/t/p/h632/2Sd9ZvdyCKHPX6O27z2XUcTgPSE.jpg</thumb>
+    <profile>https://www.themoviedb.org/person/2458602</profile>
+    <type>GuestStar</type>
+    <tmdbid>2458602</tmdbid>
+  </actor>
+  <actor>
+    <name>Andre Benjamin</name>
+    <role>Walker</role>
+    <thumb>https://image.tmdb.org/t/p/h632/kP5Tl8bkoMP1fsijZX1mDshCt9W.jpg</thumb>
+    <profile>https://www.themoviedb.org/person/2594798</profile>
+    <type>GuestStar</type>
+    <tmdbid>2594798</tmdbid>
+  </actor>
+  <actor>
+    <name>Colin Decker</name>
+    <role>Marine (uncredited)</role>
+    <thumb>https://image.tmdb.org/t/p/h632/nstlHGVBdiwlwt7en123af53YzC.jpg</thumb>
+    <profile>https://www.themoviedb.org/person/113100</profile>
+    <type>GuestStar</type>
+    <tmdbid>113100</tmdbid>
+  </actor>
+  <actor>
+    <name>Stefano DiMatteo</name>
+    <role>Toran</role>
+    <thumb>https://image.tmdb.org/t/p/h632/v7m1QEADqpBrFlNz1GFzf0bdUcA.jpg</thumb>
+    <profile>https://www.themoviedb.org/person/224309</profile>
+    <type>GuestStar</type>
+    <tmdbid>224309</tmdbid>
+  </actor>
+  <dateadded>2026-01-14 16:56:48</dateadded>
+  <fileinfo>
+    <streamdetails>
+      <video>
+        <codec/>
+        <aspect>0.00</aspect>
+        <width>0</width>
+        <height>0</height>
+        <resolution/>
+        <durationinseconds>0</durationinseconds>
+      </video>
+    </streamdetails>
+  </fileinfo>
+  <epbookmark/>
+  <code/>
+  <!--tinyMediaManager meta data-->
+  <source>BLURAY</source>
+  <edition>NONE</edition>
+  <original_filename>Stargate.Atlantis.S01E01E02.1080p.BluRay.mkv</original_filename>
+  <user_note/>
+  <episode_groups>
+    <group episode="1" id="AIRED" name="" season="1"/>
+    <group episode="1" id="DVD" name="DVD Order" season="1"/>
+  </episode_groups>
+  <english_title>Rising (1)</english_title>
+</episodedetails>
+<episodedetails>
+  <title>Hide and Seek</title>
+  <originaltitle>Hide and Seek</originaltitle>
+  <showtitle>Stargate Atlantis</showtitle>
+  <season>1</season>
+  <episode>2</episode>
+  <id>25335</id>
+  <uniqueid default="false" type="tmdb">168440</uniqueid>
+  <uniqueid default="false" type="tvrage">161643</uniqueid>
+  <uniqueid default="true" type="imdb">tt0709233</uniqueid>
+  <uniqueid default="false" type="tvdb">25335</uniqueid>
+  <ratings>
+    <rating default="false" max="10" name="themoviedb">
+      <value>7.2</value>
+      <votes>23</votes>
+    </rating>
+  </ratings>
+  <userrating>0</userrating>
+  <plot>The Atlantis base is threatened when the team discovers that an alien entity is in the city. McKay's experiment with alien technology goes awry.</plot>
+  <runtime>44</runtime>
+  <thumb>https://image.tmdb.org/t/p/w1280/A32DBEnOgW1fBooGXrrPE7PTpJ5.jpg</thumb>
+  <mpaa/>
+  <premiered>2004-07-23</premiered>
+  <aired>2004-07-23</aired>
+  <watched>false</watched>
+  <playcount>0</playcount>
+  <studio>Syfy</studio>
+  <studio>Acme Shark</studio>
+  <studio>MGM Television</studio>
+  <studio>Pegasus Productions</studio>
+  <studio>Sony Pictures Television</studio>
+  <credits tmdbid="72101">Martin Gero</credits>
+  <credits tmdbid="72082">Brad Wright</credits>
+  <credits tmdbid="27745">Robert C. Cooper</credits>
+  <director tmdbid="1211827">David Warry-Smith</director>
+  <actor>
+    <name>Joe Flanigan</name>
+    <role>John Sheppard</role>
+    <thumb>https://image.tmdb.org/t/p/h632/5AA1ORKIsnMakT6fCVy3JKlzMs6.jpg</thumb>
+    <profile>https://www.themoviedb.org/person/26066</profile>
+    <tmdbid>26066</tmdbid>
+  </actor>
+  <actor>
+    <name>David Hewlett</name>
+    <role>Rodney McKay</role>
+    <thumb>https://image.tmdb.org/t/p/h632/xXBUwcV9raoAuwbAOxJ0Jv7iE6M.jpg</thumb>
+    <profile>https://www.themoviedb.org/person/5892</profile>
+    <tmdbid>5892</tmdbid>
+  </actor>
+  <actor>
+    <name>Rachel Luttrell</name>
+    <role>Teyla Emmagan</role>
+    <thumb>https://image.tmdb.org/t/p/h632/zPutigjuf5ozJc1LtU3At9RbtGi.jpg</thumb>
+    <profile>https://www.themoviedb.org/person/26067</profile>
+    <tmdbid>26067</tmdbid>
+  </actor>
+  <actor>
+    <name>Torri Higginson</name>
+    <role>Elizabeth Weir</role>
+    <thumb>https://image.tmdb.org/t/p/h632/gMYIyJKmfPxX12lRFFAV1NeIymI.jpg</thumb>
+    <profile>https://www.themoviedb.org/person/5480</profile>
+    <tmdbid>5480</tmdbid>
+  </actor>
+  <actor>
+    <name>Rainbow Sun Francks</name>
+    <role>Aiden Ford</role>
+    <thumb>https://image.tmdb.org/t/p/h632/7vPUMxOGISy2W7JZbaNIORn8MlC.jpg</thumb>
+    <profile>https://www.themoviedb.org/person/1196455</profile>
+    <tmdbid>1196455</tmdbid>
+  </actor>
+  <actor>
+    <name>Paul McGillion</name>
+    <role>Carson Beckett</role>
+    <thumb>https://image.tmdb.org/t/p/h632/43sfykb5iFosUHZqCnmx5GFFkro.jpg</thumb>
+    <profile>https://www.themoviedb.org/person/26069</profile>
+    <type>GuestStar</type>
+    <tmdbid>26069</tmdbid>
+  </actor>
+  <actor>
+    <name>Boyan Vukelic</name>
+    <role>Sgt. Stackhouse</role>
+    <thumb>https://image.tmdb.org/t/p/h632/8H5EAEPbkXh0HkMY9L3rX7KATWA.jpg</thumb>
+    <profile>https://www.themoviedb.org/person/72098</profile>
+    <type>GuestStar</type>
+    <tmdbid>72098</tmdbid>
+  </actor>
+  <actor>
+    <name>Reece Thompson</name>
+    <role>Jinto</role>
+    <thumb>https://image.tmdb.org/t/p/h632/xA212pV7L7FcF6yxO24RGEOiHWb.jpg</thumb>
+    <profile>https://www.themoviedb.org/person/48463</profile>
+    <type>GuestStar</type>
+    <tmdbid>48463</tmdbid>
+  </actor>
+  <actor>
+    <name>Casey Dubois</name>
+    <role>Wex</role>
+    <thumb>https://image.tmdb.org/t/p/h632/miGjbqGVfmhElSaGmoEO22aL6MJ.jpg</thumb>
+    <profile>https://www.themoviedb.org/person/132347</profile>
+    <type>GuestStar</type>
+    <tmdbid>132347</tmdbid>
+  </actor>
+  <actor>
+    <name>Meghan Black</name>
+    <role>Marta</role>
+    <thumb>https://image.tmdb.org/t/p/h632/6rsRrlhhpD5kpFnApbdnlQx5iRL.jpg</thumb>
+    <profile>https://www.themoviedb.org/person/52510</profile>
+    <type>GuestStar</type>
+    <tmdbid>52510</tmdbid>
+  </actor>
+  <actor>
+    <name>Jon Johnson</name>
+    <role>Parker</role>
+    <thumb>https://image.tmdb.org/t/p/h632/caRlXS4dDOEY50Vbjcoy3NBfg4C.jpg</thumb>
+    <profile>https://www.themoviedb.org/person/90732</profile>
+    <type>GuestStar</type>
+    <tmdbid>90732</tmdbid>
+  </actor>
+  <actor>
+    <name>Craig Veroni</name>
+    <role>Dr. Peter Grodin</role>
+    <thumb>https://image.tmdb.org/t/p/h632/w4uIVcxvXUQRwAmSHfVq5ycliOY.jpg</thumb>
+    <profile>https://www.themoviedb.org/person/60288</profile>
+    <type>GuestStar</type>
+    <tmdbid>60288</tmdbid>
+  </actor>
+  <actor>
+    <name>Christopher Heyerdahl</name>
+    <role>Halling</role>
+    <thumb>https://image.tmdb.org/t/p/h632/pTPZa3TFIkxRbqM5adXYE51a99s.jpg</thumb>
+    <profile>https://www.themoviedb.org/person/32887</profile>
+    <type>GuestStar</type>
+    <tmdbid>32887</tmdbid>
+  </actor>
+  <actor>
+    <name>Chris Bradford</name>
+    <role>Marine (uncredited)</role>
+    <thumb>https://image.tmdb.org/t/p/h632/a1lTXXyIqCmooy1TDUhbOmpC9Dp.jpg</thumb>
+    <profile>https://www.themoviedb.org/person/1236390</profile>
+    <type>GuestStar</type>
+    <tmdbid>1236390</tmdbid>
+  </actor>
+  <actor>
+    <name>Tony Baretta</name>
+    <role>Smitty (Uncredited)</role>
+    <thumb>https://image.tmdb.org/t/p/h632/2Sd9ZvdyCKHPX6O27z2XUcTgPSE.jpg</thumb>
+    <profile>https://www.themoviedb.org/person/2458602</profile>
+    <type>GuestStar</type>
+    <tmdbid>2458602</tmdbid>
+  </actor>
+  <actor>
+    <name>Colin Decker</name>
+    <role>Marine (uncredited)</role>
+    <thumb>https://image.tmdb.org/t/p/h632/nstlHGVBdiwlwt7en123af53YzC.jpg</thumb>
+    <profile>https://www.themoviedb.org/person/113100</profile>
+    <type>GuestStar</type>
+    <tmdbid>113100</tmdbid>
+  </actor>
+  <dateadded>2026-01-14 16:56:48</dateadded>
+  <fileinfo>
+    <streamdetails>
+      <video>
+        <codec/>
+        <aspect>0.00</aspect>
+        <width>0</width>
+        <height>0</height>
+        <resolution/>
+        <durationinseconds>0</durationinseconds>
+      </video>
+    </streamdetails>
+  </fileinfo>
+  <epbookmark/>
+  <code/>
+  <!--tinyMediaManager meta data-->
+  <source>BLURAY</source>
+  <edition>NONE</edition>
+  <original_filename>Stargate.Atlantis.S01E01E02.1080p.BluRay.mkv</original_filename>
+  <user_note/>
+  <episode_groups>
+    <group episode="3" id="AIRED" name="" season="1"/>
+    <group episode="2" id="DVD" name="DVD Order" season="1"/>
+  </episode_groups>
+  <english_title>Hide and Seek</english_title>
+</episodedetails>

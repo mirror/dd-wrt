@@ -1,0 +1,216 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<!--created on 2026-01-14 16:58:12 by tinyMediaManager 5.2.2 for PLEX-->
+<episodedetails>
+  <title>Shindig</title>
+  <originaltitle>Shindig</originaltitle>
+  <showtitle>Firefly</showtitle>
+  <season>1</season>
+  <episode>3</episode>
+  <id>297994</id>
+  <uniqueid default="false" type="tmdb">1048596</uniqueid>
+  <uniqueid default="true" type="imdb">tt0579537</uniqueid>
+  <uniqueid default="false" type="wikidata">Q7497303</uniqueid>
+  <uniqueid default="false" type="tvdb">297994</uniqueid>
+  <ratings>
+    <rating default="false" max="10" name="themoviedb">
+      <value>7.7</value>
+      <votes>63</votes>
+    </rating>
+  </ratings>
+  <userrating>0</userrating>
+  <plot>Inara attends a formal society dance, only to find Malcolm there as well, attempting to set up a smuggling job. Mal comes to blows with Inara's conceited date and finds himself facing a duel with a renowned swordsman, and only one night to learn how to fence.</plot>
+  <runtime>44</runtime>
+  <thumb>https://image.tmdb.org/t/p/w1280/kHZWQszqkSrDWyFTj08Koh0Ng4I.jpg</thumb>
+  <mpaa/>
+  <premiered>2002-11-01</premiered>
+  <aired>2002-11-01</aired>
+  <watched>false</watched>
+  <playcount>0</playcount>
+  <studio>FOX</studio>
+  <studio>Mutant Enemy Productions</studio>
+  <studio>20th Century Fox Television</studio>
+  <credits tmdbid="77213">Jane Espenson</credits>
+  <credits tmdbid="12891">Joss Whedon</credits>
+  <director tmdbid="1174226">Vern Gillum</director>
+  <actor>
+    <name>Nathan Fillion</name>
+    <role>Mal Reynolds</role>
+    <thumb>https://image.tmdb.org/t/p/h632/q31mXXgnN5PsuIjEqaaAPvBDvHc.jpg</thumb>
+    <profile>https://www.themoviedb.org/person/51797</profile>
+    <tmdbid>51797</tmdbid>
+  </actor>
+  <actor>
+    <name>Gina Torres</name>
+    <role>Zoë Washburne</role>
+    <thumb>https://image.tmdb.org/t/p/h632/ukDNHgvEgdU95eaw6pngiAPucv4.jpg</thumb>
+    <profile>https://www.themoviedb.org/person/9576</profile>
+    <tmdbid>9576</tmdbid>
+  </actor>
+  <actor>
+    <name>Alan Tudyk</name>
+    <role>Hoban Washburne</role>
+    <thumb>https://image.tmdb.org/t/p/h632/jUuUbPuMGonFT5E2pcs4alfqaCN.jpg</thumb>
+    <profile>https://www.themoviedb.org/person/21088</profile>
+    <tmdbid>21088</tmdbid>
+  </actor>
+  <actor>
+    <name>Morena Baccarin</name>
+    <role>Inara Serra</role>
+    <thumb>https://image.tmdb.org/t/p/h632/kBSKKaOtsqIzZPhtEeHfCBmhWl9.jpg</thumb>
+    <profile>https://www.themoviedb.org/person/54882</profile>
+    <tmdbid>54882</tmdbid>
+  </actor>
+  <actor>
+    <name>Adam Baldwin</name>
+    <role>Jayne Cobb</role>
+    <thumb>https://image.tmdb.org/t/p/h632/rtRCD2rl9k3RVgyv3cHaUJer0Ms.jpg</thumb>
+    <profile>https://www.themoviedb.org/person/2059</profile>
+    <tmdbid>2059</tmdbid>
+  </actor>
+  <actor>
+    <name>Jewel Staite</name>
+    <role>Kaylee Frye</role>
+    <thumb>https://image.tmdb.org/t/p/h632/ztxDIZvuPreUixO6ZPxwkCg2UlO.jpg</thumb>
+    <profile>https://www.themoviedb.org/person/72092</profile>
+    <tmdbid>72092</tmdbid>
+  </actor>
+  <actor>
+    <name>Sean Maher</name>
+    <role>Simon Tam</role>
+    <thumb>https://image.tmdb.org/t/p/h632/o7splcOIVAdbHnwohJOUAvXWVlk.jpg</thumb>
+    <profile>https://www.themoviedb.org/person/55148</profile>
+    <tmdbid>55148</tmdbid>
+  </actor>
+  <actor>
+    <name>Summer Glau</name>
+    <role>River Tam</role>
+    <thumb>https://image.tmdb.org/t/p/h632/17eWfqG9SZeRNx8AQctajX06Ik5.jpg</thumb>
+    <profile>https://www.themoviedb.org/person/54881</profile>
+    <tmdbid>54881</tmdbid>
+  </actor>
+  <actor>
+    <name>Ron Glass</name>
+    <role>Derrial Book</role>
+    <thumb>https://image.tmdb.org/t/p/h632/wXkS9e8VZPWlc7jK3AaMXZ2OTUx.jpg</thumb>
+    <profile>https://www.themoviedb.org/person/74570</profile>
+    <tmdbid>74570</tmdbid>
+  </actor>
+  <actor>
+    <name>Edward Atterton</name>
+    <role>Atherton Wing</role>
+    <thumb>https://image.tmdb.org/t/p/h632/jzGLz10ij0g7u84caAfyqXMqOeD.jpg</thumb>
+    <profile>https://www.themoviedb.org/person/38331</profile>
+    <type>GuestStar</type>
+    <tmdbid>38331</tmdbid>
+  </actor>
+  <actor>
+    <name>Larry Drake</name>
+    <role>Sir Warwick Harrow</role>
+    <thumb>https://image.tmdb.org/t/p/h632/vPI6gPoWskUMWla92MOiSD1OuBt.jpg</thumb>
+    <profile>https://www.themoviedb.org/person/16476</profile>
+    <type>GuestStar</type>
+    <tmdbid>16476</tmdbid>
+  </actor>
+  <actor>
+    <name>Carl Bresk</name>
+    <role>Wright</role>
+    <profile>https://www.themoviedb.org/person/180249</profile>
+    <type>GuestStar</type>
+    <tmdbid>180249</tmdbid>
+  </actor>
+  <actor>
+    <name>Larry Pennell</name>
+    <role>Murphy</role>
+    <thumb>https://image.tmdb.org/t/p/h632/bNTGFjUvhxPPrxlxWiccnvG8cbF.jpg</thumb>
+    <profile>https://www.themoviedb.org/person/58214</profile>
+    <type>GuestStar</type>
+    <tmdbid>58214</tmdbid>
+  </actor>
+  <actor>
+    <name>Michael McMillian</name>
+    <role>Younger Hopeful</role>
+    <thumb>https://image.tmdb.org/t/p/h632/tHCAeqKvDk2KCJKbkzklWcjNUzy.jpg</thumb>
+    <profile>https://www.themoviedb.org/person/101416</profile>
+    <type>GuestStar</type>
+    <tmdbid>101416</tmdbid>
+  </actor>
+  <actor>
+    <name>Kim Onasch</name>
+    <role>Banning</role>
+    <profile>https://www.themoviedb.org/person/202661</profile>
+    <type>GuestStar</type>
+    <tmdbid>202661</tmdbid>
+  </actor>
+  <actor>
+    <name>Janora McDuffie</name>
+    <role>Cabott</role>
+    <thumb>https://image.tmdb.org/t/p/h632/okGqvhKCXaE6keAbexLm87WtK1t.jpg</thumb>
+    <profile>https://www.themoviedb.org/person/124503</profile>
+    <type>GuestStar</type>
+    <tmdbid>124503</tmdbid>
+  </actor>
+  <actor>
+    <name>Casey Piotrowski</name>
+    <role>Older Farmer</role>
+    <thumb>https://image.tmdb.org/t/p/h632/q2SJyZJVPngncndc6REHT9Umts3.jpg</thumb>
+    <profile>https://www.themoviedb.org/person/197497</profile>
+    <type>GuestStar</type>
+    <tmdbid>197497</tmdbid>
+  </actor>
+  <actor>
+    <name>Hunter Cochran</name>
+    <role>Younger Farmer</role>
+    <profile>https://www.themoviedb.org/person/202663</profile>
+    <type>GuestStar</type>
+    <tmdbid>202663</tmdbid>
+  </actor>
+  <actor>
+    <name>Roy Werner</name>
+    <role>Gentleman</role>
+    <thumb>https://image.tmdb.org/t/p/h632/9UjUsjMzDbzHVOyfPtnPvXCBFdP.jpg</thumb>
+    <profile>https://www.themoviedb.org/person/159480</profile>
+    <type>GuestStar</type>
+    <tmdbid>159480</tmdbid>
+  </actor>
+  <actor>
+    <name>Joshua Grenrock</name>
+    <role>Porter</role>
+    <profile>https://www.themoviedb.org/person/1823446</profile>
+    <type>GuestStar</type>
+    <tmdbid>1823446</tmdbid>
+  </actor>
+  <actor>
+    <name>Mark Sheppard</name>
+    <role>Badger</role>
+    <thumb>https://image.tmdb.org/t/p/h632/aTlqvlKgfyUAZT48AvEytqkMBC6.jpg</thumb>
+    <profile>https://www.themoviedb.org/person/53516</profile>
+    <type>GuestStar</type>
+    <tmdbid>53516</tmdbid>
+  </actor>
+  <dateadded>2026-01-14 16:54:23</dateadded>
+  <fileinfo>
+    <streamdetails>
+      <video>
+        <codec/>
+        <aspect>0.00</aspect>
+        <width>0</width>
+        <height>0</height>
+        <resolution/>
+        <durationinseconds>0</durationinseconds>
+      </video>
+    </streamdetails>
+  </fileinfo>
+  <epbookmark/>
+  <code/>
+  <!--tinyMediaManager meta data-->
+  <source>BLURAY</source>
+  <edition>NONE</edition>
+  <original_filename>Firefly.S01E03.1080p.BluRay.mkv</original_filename>
+  <user_note/>
+  <episode_groups>
+    <group episode="6" id="AIRED" name="" season="1"/>
+    <group episode="3" id="DVD" name="DVD Order" season="1"/>
+    <group episode="4" id="ABSOLUTE" name="Intended Order" season="1"/>
+  </episode_groups>
+  <english_title>Shindig</english_title>
+</episodedetails>

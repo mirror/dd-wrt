@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<!--created on 2026-02-05 08:00:38 by tinyMediaManager 5.2.5 for XBMC-->
+<episodedetails>
+  <title>Okada Robin Shoko &amp; Ishida Ayumi</title>
+  <originaltitle>アプカミ#62 番組リニューアル モーニング娘。20周年企画、堀内孝雄、ひなフェス、チャオベラライブ映像、オススメ紹介ほか　MC：ロビン（チャオベラ）、石田亜佑美（モ娘。'17）4/14/2017</originaltitle>
+  <showtitle>Upcoming</showtitle>
+  <season>2017</season>
+  <episode>62</episode>
+  <id/>
+  <rating>0.0</rating>
+  <userrating>0</userrating>
+  <votes>0</votes>
+  <plot>Morning Musume and Hello! Project performances. Ciao Bella Cinquetti performance. Iida Kaori Interview.</plot>
+  <runtime>55</runtime>
+  <mpaa/>
+  <premiered>2017-04-14</premiered>
+  <aired>2017-04-14</aired>
+  <watched>false</watched>
+  <playcount>0</playcount>
+  <studio>Youtube</studio>
+  <dateadded>2021-01-22 19:04:00</dateadded>
+  <fileinfo>
+    <streamdetails>
+      <video>
+        <codec>h264</codec>
+        <aspect>1.78</aspect>
+        <width>1920</width>
+        <height>1080</height>
+        <durationinseconds>3334</durationinseconds>
+        <stereomode/>
+      </video>
+      <audio>
+        <codec>AAC</codec>
+        <language>jpn</language>
+        <channels>2</channels>
+      </audio>
+    </streamdetails>
+  </fileinfo>
+  <epbookmark/>
+  <code/>
+  <!--tinyMediaManager meta data-->
+  <source>UNKNOWN</source>
+  <edition>NONE</edition>
+  <original_filename>Upcoming - s2017e062 - Okada Robin Shoko &amp; Ishida Ayumi.mp4</original_filename>
+  <user_note/>
+  <episode_groups>
+    <group episode="62" id="AIRED" name="" season="2017"/>
+  </episode_groups>
+</episodedetails>

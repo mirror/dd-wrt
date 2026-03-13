@@ -1,0 +1,241 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<!--created on 2026-01-14 16:58:08 by tinyMediaManager 5.2.2 for PLEX-->
+<episodedetails>
+  <title>The Train Job</title>
+  <originaltitle>The Train Job</originaltitle>
+  <showtitle>Firefly</showtitle>
+  <season>1</season>
+  <episode>1</episode>
+  <id>297989</id>
+  <uniqueid default="false" type="tmdb">1048594</uniqueid>
+  <uniqueid default="true" type="imdb">tt0579539</uniqueid>
+  <uniqueid default="false" type="wikidata">Q7769902</uniqueid>
+  <uniqueid default="false" type="tvdb">297989</uniqueid>
+  <ratings>
+    <rating default="false" max="10" name="themoviedb">
+      <value>7.8</value>
+      <votes>69</votes>
+    </rating>
+  </ratings>
+  <userrating>0</userrating>
+  <plot>The crew of Serenity take on a train heist commissioned by a crime lord. They steal the goods, only to find it is medicine that's desperately needed by the town.</plot>
+  <runtime>43</runtime>
+  <thumb>https://image.tmdb.org/t/p/w1280/w4yFzJkAiGjuDQuFKLOocjrH1eH.jpg</thumb>
+  <mpaa/>
+  <premiered>2002-09-20</premiered>
+  <aired>2002-09-20</aired>
+  <watched>false</watched>
+  <playcount>0</playcount>
+  <studio>FOX</studio>
+  <studio>Mutant Enemy Productions</studio>
+  <studio>20th Century Fox Television</studio>
+  <credits tmdbid="12891">Joss Whedon</credits>
+  <credits tmdbid="202100">Tim Minear</credits>
+  <director tmdbid="12891">Joss Whedon</director>
+  <actor>
+    <name>Nathan Fillion</name>
+    <role>Mal Reynolds</role>
+    <thumb>https://image.tmdb.org/t/p/h632/q31mXXgnN5PsuIjEqaaAPvBDvHc.jpg</thumb>
+    <profile>https://www.themoviedb.org/person/51797</profile>
+    <tmdbid>51797</tmdbid>
+  </actor>
+  <actor>
+    <name>Gina Torres</name>
+    <role>Zoë Washburne</role>
+    <thumb>https://image.tmdb.org/t/p/h632/ukDNHgvEgdU95eaw6pngiAPucv4.jpg</thumb>
+    <profile>https://www.themoviedb.org/person/9576</profile>
+    <tmdbid>9576</tmdbid>
+  </actor>
+  <actor>
+    <name>Alan Tudyk</name>
+    <role>Hoban Washburne</role>
+    <thumb>https://image.tmdb.org/t/p/h632/jUuUbPuMGonFT5E2pcs4alfqaCN.jpg</thumb>
+    <profile>https://www.themoviedb.org/person/21088</profile>
+    <tmdbid>21088</tmdbid>
+  </actor>
+  <actor>
+    <name>Morena Baccarin</name>
+    <role>Inara Serra</role>
+    <thumb>https://image.tmdb.org/t/p/h632/kBSKKaOtsqIzZPhtEeHfCBmhWl9.jpg</thumb>
+    <profile>https://www.themoviedb.org/person/54882</profile>
+    <tmdbid>54882</tmdbid>
+  </actor>
+  <actor>
+    <name>Adam Baldwin</name>
+    <role>Jayne Cobb</role>
+    <thumb>https://image.tmdb.org/t/p/h632/rtRCD2rl9k3RVgyv3cHaUJer0Ms.jpg</thumb>
+    <profile>https://www.themoviedb.org/person/2059</profile>
+    <tmdbid>2059</tmdbid>
+  </actor>
+  <actor>
+    <name>Jewel Staite</name>
+    <role>Kaylee Frye</role>
+    <thumb>https://image.tmdb.org/t/p/h632/ztxDIZvuPreUixO6ZPxwkCg2UlO.jpg</thumb>
+    <profile>https://www.themoviedb.org/person/72092</profile>
+    <tmdbid>72092</tmdbid>
+  </actor>
+  <actor>
+    <name>Sean Maher</name>
+    <role>Simon Tam</role>
+    <thumb>https://image.tmdb.org/t/p/h632/o7splcOIVAdbHnwohJOUAvXWVlk.jpg</thumb>
+    <profile>https://www.themoviedb.org/person/55148</profile>
+    <tmdbid>55148</tmdbid>
+  </actor>
+  <actor>
+    <name>Summer Glau</name>
+    <role>River Tam</role>
+    <thumb>https://image.tmdb.org/t/p/h632/17eWfqG9SZeRNx8AQctajX06Ik5.jpg</thumb>
+    <profile>https://www.themoviedb.org/person/54881</profile>
+    <tmdbid>54881</tmdbid>
+  </actor>
+  <actor>
+    <name>Ron Glass</name>
+    <role>Derrial Book</role>
+    <thumb>https://image.tmdb.org/t/p/h632/wXkS9e8VZPWlc7jK3AaMXZ2OTUx.jpg</thumb>
+    <profile>https://www.themoviedb.org/person/74570</profile>
+    <tmdbid>74570</tmdbid>
+  </actor>
+  <actor>
+    <name>Michael Fairman</name>
+    <role>Adelai Niska</role>
+    <thumb>https://image.tmdb.org/t/p/h632/zFLOZiKJJxhSTwgKgAGZyexOyUm.jpg</thumb>
+    <profile>https://www.themoviedb.org/person/84707</profile>
+    <type>GuestStar</type>
+    <tmdbid>84707</tmdbid>
+  </actor>
+  <actor>
+    <name>Tom Towles</name>
+    <role>Lund</role>
+    <thumb>https://image.tmdb.org/t/p/h632/ekBEknY5CAjX8zXkSjGVkS3WcAN.jpg</thumb>
+    <profile>https://www.themoviedb.org/person/27736</profile>
+    <type>GuestStar</type>
+    <tmdbid>27736</tmdbid>
+  </actor>
+  <actor>
+    <name>Andrew Bryniarski</name>
+    <role>Crow</role>
+    <thumb>https://image.tmdb.org/t/p/h632/7WecTlVEkck19VMXTcBfSkmshYL.jpg</thumb>
+    <profile>https://www.themoviedb.org/person/52366</profile>
+    <type>GuestStar</type>
+    <tmdbid>52366</tmdbid>
+  </actor>
+  <actor>
+    <name>Gregg Henry</name>
+    <role>Sheriff Bourne</role>
+    <thumb>https://image.tmdb.org/t/p/h632/j17nuAFulrbYP34g4Qw8SZRDNUo.jpg</thumb>
+    <profile>https://www.themoviedb.org/person/2518</profile>
+    <type>GuestStar</type>
+    <tmdbid>2518</tmdbid>
+  </actor>
+  <actor>
+    <name>Valerie Red-Horse</name>
+    <role>Deputy</role>
+    <thumb>https://image.tmdb.org/t/p/h632/v0oo1SKp4erO85jB46nZU9gNYhp.jpg</thumb>
+    <profile>https://www.themoviedb.org/person/131455</profile>
+    <type>GuestStar</type>
+    <tmdbid>131455</tmdbid>
+  </actor>
+  <actor>
+    <name>Lina Patel</name>
+    <role>Ensign</role>
+    <thumb>https://image.tmdb.org/t/p/h632/nocneBfZHR0Z8SJORvEdYVJVTew.jpg</thumb>
+    <profile>https://www.themoviedb.org/person/154599</profile>
+    <type>GuestStar</type>
+    <tmdbid>154599</tmdbid>
+  </actor>
+  <actor>
+    <name>Kevin Will</name>
+    <role>Officer</role>
+    <thumb>https://image.tmdb.org/t/p/h632/skLUZhtN2aUsBusSWAGjd5ThY1t.jpg</thumb>
+    <profile>https://www.themoviedb.org/person/1219579</profile>
+    <type>GuestStar</type>
+    <tmdbid>1219579</tmdbid>
+  </actor>
+  <actor>
+    <name>Eric Lange</name>
+    <role>Fed</role>
+    <thumb>https://image.tmdb.org/t/p/h632/ziOcfPKJ5jjyUikOOoCfjusy0Ut.jpg</thumb>
+    <profile>https://www.themoviedb.org/person/116514</profile>
+    <type>GuestStar</type>
+    <tmdbid>116514</tmdbid>
+  </actor>
+  <actor>
+    <name>David Reynolds</name>
+    <role>Henchman</role>
+    <thumb>https://image.tmdb.org/t/p/h632/6HKWm7shK5BrLlI91JV6KAIzK2H.jpg</thumb>
+    <profile>https://www.themoviedb.org/person/44825</profile>
+    <type>GuestStar</type>
+    <tmdbid>44825</tmdbid>
+  </actor>
+  <actor>
+    <name>Jeff Ricketts</name>
+    <role>Man</role>
+    <thumb>https://image.tmdb.org/t/p/h632/khiwfKygqFILzpvUNlu55EqQjFm.jpg</thumb>
+    <profile>https://www.themoviedb.org/person/149640</profile>
+    <type>GuestStar</type>
+    <tmdbid>149640</tmdbid>
+  </actor>
+  <actor>
+    <name>Dennis Cockrum</name>
+    <role>Other Man</role>
+    <thumb>https://image.tmdb.org/t/p/h632/A3Or26SK7GFf9nv9OVd2X5DpLuO.jpg</thumb>
+    <profile>https://www.themoviedb.org/person/155825</profile>
+    <type>GuestStar</type>
+    <tmdbid>155825</tmdbid>
+  </actor>
+  <actor>
+    <name>Rene Hamilton</name>
+    <role>Immigrant Woman</role>
+    <profile>https://www.themoviedb.org/person/205374</profile>
+    <type>GuestStar</type>
+    <tmdbid>205374</tmdbid>
+  </actor>
+  <actor>
+    <name>Michelle Ferrara</name>
+    <role>Immigrant Woman #2</role>
+    <profile>https://www.themoviedb.org/person/149628</profile>
+    <type>GuestStar</type>
+    <tmdbid>149628</tmdbid>
+  </actor>
+  <actor>
+    <name>Melody White</name>
+    <role>Bellydancer (uncredited)</role>
+    <profile>https://www.themoviedb.org/person/1287070</profile>
+    <type>GuestStar</type>
+    <tmdbid>1287070</tmdbid>
+  </actor>
+  <actor>
+    <name>Rick Williamson</name>
+    <role>Bar Guy, Henchman (uncredited)</role>
+    <thumb>https://image.tmdb.org/t/p/h632/byOjQKOeC6c8eLxQZWnhmtnIU4A.jpg</thumb>
+    <profile>https://www.themoviedb.org/person/1286738</profile>
+    <type>GuestStar</type>
+    <tmdbid>1286738</tmdbid>
+  </actor>
+  <dateadded>2026-01-14 16:54:23</dateadded>
+  <fileinfo>
+    <streamdetails>
+      <video>
+        <codec/>
+        <aspect>0.00</aspect>
+        <width>0</width>
+        <height>0</height>
+        <resolution/>
+        <durationinseconds>0</durationinseconds>
+      </video>
+    </streamdetails>
+  </fileinfo>
+  <epbookmark/>
+  <code/>
+  <!--tinyMediaManager meta data-->
+  <source>BLURAY</source>
+  <edition>NONE</edition>
+  <original_filename>Firefly.S01E01.1080p.BluRay.mkv</original_filename>
+  <user_note/>
+  <episode_groups>
+    <group episode="1" id="AIRED" name="" season="1"/>
+    <group episode="1" id="DVD" name="DVD Order" season="1"/>
+    <group episode="2" id="ABSOLUTE" name="Intended Order" season="1"/>
+  </episode_groups>
+  <english_title>The Train Job</english_title>
+</episodedetails>

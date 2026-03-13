@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CFBundleIdentifier</key>
+	<string>com.plexapp.agents.movieposterdb</string>
+	<key>PlexAgentAttributionText</key>
+	<string>
+		The main purpose of the &lt;a href=&quot;http://www.cinematerial.com&quot;&gt;CineMaterial.com&lt;/a&gt; website &lt;br/&gt;
+        is to provide a database with movie posters that is as &lt;br/&gt; complete as possible. All movie posters are free to download.
+	</string>
+	<key>PlexFrameworkVersion</key>
+	<string>2</string>
+	<key>PlexPluginClass</key>
+	<string>Agent</string>
+</dict>
+</plist>

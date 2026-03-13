@@ -1,0 +1,162 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<!--created on 2026-01-14 16:58:10 by tinyMediaManager 5.2.2 for PLEX-->
+<episodedetails>
+  <title>Bushwhacked</title>
+  <originaltitle>Bushwhacked</originaltitle>
+  <showtitle>Firefly</showtitle>
+  <season>1</season>
+  <episode>2</episode>
+  <id>297990</id>
+  <uniqueid default="false" type="tmdb">1048595</uniqueid>
+  <uniqueid default="true" type="imdb">tt0579528</uniqueid>
+  <uniqueid default="false" type="wikidata">Q5001589</uniqueid>
+  <uniqueid default="false" type="tvdb">297990</uniqueid>
+  <ratings>
+    <rating default="false" max="10" name="themoviedb">
+      <value>7.8</value>
+      <votes>66</votes>
+    </rating>
+  </ratings>
+  <userrating>0</userrating>
+  <plot>Serenity is pulled in by a Tohoku-class cruiser while investigating a spaceship that was attacked by Reavers. Simon and River must hide to prevent capture, while something is wrong with the lone survivor of the attacked spaceship.</plot>
+  <runtime>44</runtime>
+  <thumb>https://image.tmdb.org/t/p/original/q7ThwoiakscSHdPOkcL9wCkppQd.jpg</thumb>
+  <mpaa/>
+  <premiered>2002-09-27</premiered>
+  <aired>2002-09-27</aired>
+  <watched>false</watched>
+  <playcount>0</playcount>
+  <studio>FOX</studio>
+  <studio>Mutant Enemy Productions</studio>
+  <studio>20th Century Fox Television</studio>
+  <credits tmdbid="12891">Joss Whedon</credits>
+  <credits tmdbid="202100">Tim Minear</credits>
+  <director tmdbid="202100">Tim Minear</director>
+  <actor>
+    <name>Nathan Fillion</name>
+    <role>Mal Reynolds</role>
+    <thumb>https://image.tmdb.org/t/p/h632/q31mXXgnN5PsuIjEqaaAPvBDvHc.jpg</thumb>
+    <profile>https://www.themoviedb.org/person/51797</profile>
+    <tmdbid>51797</tmdbid>
+  </actor>
+  <actor>
+    <name>Gina Torres</name>
+    <role>Zoë Washburne</role>
+    <thumb>https://image.tmdb.org/t/p/h632/ukDNHgvEgdU95eaw6pngiAPucv4.jpg</thumb>
+    <profile>https://www.themoviedb.org/person/9576</profile>
+    <tmdbid>9576</tmdbid>
+  </actor>
+  <actor>
+    <name>Alan Tudyk</name>
+    <role>Hoban Washburne</role>
+    <thumb>https://image.tmdb.org/t/p/h632/jUuUbPuMGonFT5E2pcs4alfqaCN.jpg</thumb>
+    <profile>https://www.themoviedb.org/person/21088</profile>
+    <tmdbid>21088</tmdbid>
+  </actor>
+  <actor>
+    <name>Morena Baccarin</name>
+    <role>Inara Serra</role>
+    <thumb>https://image.tmdb.org/t/p/h632/kBSKKaOtsqIzZPhtEeHfCBmhWl9.jpg</thumb>
+    <profile>https://www.themoviedb.org/person/54882</profile>
+    <tmdbid>54882</tmdbid>
+  </actor>
+  <actor>
+    <name>Adam Baldwin</name>
+    <role>Jayne Cobb</role>
+    <thumb>https://image.tmdb.org/t/p/h632/rtRCD2rl9k3RVgyv3cHaUJer0Ms.jpg</thumb>
+    <profile>https://www.themoviedb.org/person/2059</profile>
+    <tmdbid>2059</tmdbid>
+  </actor>
+  <actor>
+    <name>Jewel Staite</name>
+    <role>Kaylee Frye</role>
+    <thumb>https://image.tmdb.org/t/p/h632/ztxDIZvuPreUixO6ZPxwkCg2UlO.jpg</thumb>
+    <profile>https://www.themoviedb.org/person/72092</profile>
+    <tmdbid>72092</tmdbid>
+  </actor>
+  <actor>
+    <name>Sean Maher</name>
+    <role>Simon Tam</role>
+    <thumb>https://image.tmdb.org/t/p/h632/o7splcOIVAdbHnwohJOUAvXWVlk.jpg</thumb>
+    <profile>https://www.themoviedb.org/person/55148</profile>
+    <tmdbid>55148</tmdbid>
+  </actor>
+  <actor>
+    <name>Summer Glau</name>
+    <role>River Tam</role>
+    <thumb>https://image.tmdb.org/t/p/h632/17eWfqG9SZeRNx8AQctajX06Ik5.jpg</thumb>
+    <profile>https://www.themoviedb.org/person/54881</profile>
+    <tmdbid>54881</tmdbid>
+  </actor>
+  <actor>
+    <name>Ron Glass</name>
+    <role>Derrial Book</role>
+    <thumb>https://image.tmdb.org/t/p/h632/wXkS9e8VZPWlc7jK3AaMXZ2OTUx.jpg</thumb>
+    <profile>https://www.themoviedb.org/person/74570</profile>
+    <tmdbid>74570</tmdbid>
+  </actor>
+  <actor>
+    <name>Doug Savant</name>
+    <role>Commander Harken</role>
+    <thumb>https://image.tmdb.org/t/p/h632/yJ9UjfZ3PcULd0OPZhZ4vv23KMG.jpg</thumb>
+    <profile>https://www.themoviedb.org/person/14737</profile>
+    <type>GuestStar</type>
+    <tmdbid>14737</tmdbid>
+  </actor>
+  <actor>
+    <name>Branden Morgan</name>
+    <role>Survivor</role>
+    <thumb>https://image.tmdb.org/t/p/h632/25OUQsBPNGxRMDKkf9jtcgYgGoY.jpg</thumb>
+    <profile>https://www.themoviedb.org/person/56165</profile>
+    <type>GuestStar</type>
+    <tmdbid>56165</tmdbid>
+  </actor>
+  <actor>
+    <name>Lancer Dean Shull</name>
+    <role>Radio Operator</role>
+    <profile>https://www.themoviedb.org/person/200096</profile>
+    <type>GuestStar</type>
+    <tmdbid>200096</tmdbid>
+  </actor>
+  <actor>
+    <name>Jared Poe</name>
+    <role>Ensign</role>
+    <profile>https://www.themoviedb.org/person/179877</profile>
+    <type>GuestStar</type>
+    <tmdbid>179877</tmdbid>
+  </actor>
+  <actor>
+    <name>Gary J. Wayton</name>
+    <role>Rebel Soldier (uncredited)</role>
+    <thumb>https://image.tmdb.org/t/p/h632/2xskyQVl79d9sfL9IIA7ebTJIp0.jpg</thumb>
+    <profile>https://www.themoviedb.org/person/182168</profile>
+    <type>GuestStar</type>
+    <tmdbid>182168</tmdbid>
+  </actor>
+  <dateadded>2026-01-14 16:54:23</dateadded>
+  <fileinfo>
+    <streamdetails>
+      <video>
+        <codec/>
+        <aspect>0.00</aspect>
+        <width>0</width>
+        <height>0</height>
+        <resolution/>
+        <durationinseconds>0</durationinseconds>
+      </video>
+    </streamdetails>
+  </fileinfo>
+  <epbookmark/>
+  <code/>
+  <!--tinyMediaManager meta data-->
+  <source>BLURAY</source>
+  <edition>NONE</edition>
+  <original_filename>Firefly.S01E02.1080p.BluRay.mkv</original_filename>
+  <user_note/>
+  <episode_groups>
+    <group episode="2" id="AIRED" name="" season="1"/>
+    <group episode="2" id="DVD" name="DVD Order" season="1"/>
+    <group episode="3" id="ABSOLUTE" name="Intended Order" season="1"/>
+  </episode_groups>
+  <english_title>Bushwhacked</english_title>
+</episodedetails>

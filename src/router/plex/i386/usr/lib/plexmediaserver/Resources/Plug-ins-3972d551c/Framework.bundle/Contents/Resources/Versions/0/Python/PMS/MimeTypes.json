@@ -1,0 +1,6 @@
+{
+  ".jpg": "image/jpeg",
+  ".jpeg": "image/jpeg",
+  ".png": "image/png",
+  ".xml": "application/xml"
+}
