@@ -1287,6 +1287,9 @@ int __init nss_dp_init(void)
 	ret = platform_driver_register(&nss_dp_drv);
 	if (ret)
 		pr_info("NSS DP platform drv register failed\n");
+	ret = register_netdevice_notifier(&nss_dp_netdev_notifier);
+	if (ret)
+		pr_warn("netdevice notifier register failed: ret=%d\n", ret);
 
 	dp_global_ctx.common_init_done = true;
 	pr_info("**********************************************************\n");
@@ -1302,6 +1305,7 @@ int __init nss_dp_init(void)
 void __exit nss_dp_exit(void)
 {
 	platform_driver_unregister(&nss_dp_drv);
+	unregister_netdevice_notifier(&nss_dp_netdev_notifier);
 
 	/*
 	 * TODO Move this to soc_ops

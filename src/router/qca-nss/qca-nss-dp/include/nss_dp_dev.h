@@ -356,6 +356,7 @@ void nss_dp_switchdev_setup(struct net_device *dev);
 void nss_dp_switchdev_remove(struct net_device *dev);
 bool nss_dp_is_phy_dev(struct net_device *dev);
 #endif
+extern struct notifier_block nss_dp_netdev_notifier;
 
 /*
  * nss_dp_get_idx_from_macid()
