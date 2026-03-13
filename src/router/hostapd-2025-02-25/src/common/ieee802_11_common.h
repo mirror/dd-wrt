@@ -1,7 +1,6 @@
 /*
  * IEEE 802.11 Common routines
  * Copyright (c) 2002-2019, Jouni Malinen <j@w1.fi>
- * Copyright 2022 Morse Micro
  *
  * This software may be distributed under the terms of the BSD license.
  * See README for more details.
@@ -74,7 +73,6 @@ struct ieee802_11_elems {
 	const u8 *qos_map_set;
 	const u8 *hs20;
 	const u8 *ext_capab;
-	const u8 *qos_traffic_cap;
 	const u8 *bss_max_idle_period;
 	const u8 *ssid_list;
 	const u8 *mbo;
@@ -124,7 +122,6 @@ struct ieee802_11_elems {
 	const u8 *rsnxe_override;
 	const u8 *rsn_selection;
 	const u8 *wfa_capab;
-	const u8 *aid;
 
 	u8 ssid_len;
 	u8 supp_rates_len;
@@ -152,7 +149,6 @@ struct ieee802_11_elems {
 	u8 qos_map_set_len;
 	u8 hs20_len;
 	u8 ext_capab_len;
-	u8 qos_traffic_cap_len;
 	u8 ssid_list_len;
 	u8 mbo_len;
 	u8 ampe_len;

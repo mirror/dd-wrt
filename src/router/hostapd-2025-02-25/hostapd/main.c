@@ -1,7 +1,6 @@
 /*
  * hostapd / main()
  * Copyright (c) 2002-2022, Jouni Malinen <j@w1.fi>
- * Copyright 2022 Morse Micro
  *
  * This software may be distributed under the terms of the BSD license.
  * See README for more details.
@@ -312,11 +311,7 @@ static int hostapd_driver_init(struct hostapd_iface *iface)
 	}
 #endif /* CONFIG_IEEE80211BE */
 
-#ifdef HAVE_IEEE80211AH
-	hapd->drv_priv = hapd->driver->hapd_init(hapd, &params, hapd->iconv->ieee80211ah);
-#else
-	hapd->drv_priv = hapd->driver->hapd_init(hapd, &params, 0);
-#endif	
+	hapd->drv_priv = hapd->driver->hapd_init(hapd, &params);
 	os_free(params.bridge);
 	if (hapd->drv_priv == NULL) {
 		wpa_printf(MSG_ERROR, "%s driver initialization failed.",
@@ -473,7 +468,7 @@ static void handle_term(int sig, void *signal_ctx)
 
 static int handle_reload_iface(struct hostapd_iface *iface, void *ctx)
 {
-	if (hostapd_reload_config(iface, 0) < 0) {
+	if (hostapd_reload_config(iface) < 0) {
 		wpa_printf(MSG_WARNING, "Failed to read new configuration "
 			   "file - continuing with old.");
 	}
@@ -529,11 +524,7 @@ static int hostapd_global_init(struct hapd_interfaces *interfaces,
 	eloop_register_signal_terminate(handle_term, interfaces);
 
 #ifndef CONFIG_NATIVE_WINDOWS
-#ifdef CONFIG_IEEE80211AH
-	openlog("hostapd_s1g", 0, LOG_DAEMON);
-#else
 	openlog("hostapd", 0, LOG_DAEMON);
-#endif /* CONFIG_IEEE80211AH */
 #endif /* CONFIG_NATIVE_WINDOWS */
 
 	for (i = 0; wpa_drivers[i]; i++)

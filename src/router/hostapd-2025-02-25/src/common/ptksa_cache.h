@@ -12,7 +12,7 @@
 
 #include "wpa_common.h"
 #include "defs.h"
-#include "utils/list.h"
+#include "list.h"
 
 /**
  * struct ptksa_cache_entry - PTKSA cache entry

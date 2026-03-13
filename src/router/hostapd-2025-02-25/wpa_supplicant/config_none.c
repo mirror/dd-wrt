@@ -15,10 +15,9 @@
 #include "common.h"
 #include "config.h"
 #include "base64.h"
-#include "wpa_supplicant_i.h"
 
 
-struct wpa_config * wpa_config_read(struct wpa_supplicant *wpas, const char *name, struct wpa_config *cfgp,
+struct wpa_config * wpa_config_read(const char *name, struct wpa_config *cfgp,
 				    bool ro)
 {
 	struct wpa_config *config;

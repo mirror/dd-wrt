@@ -1,7 +1,6 @@
 /*
  * wpa_supplicant/hostapd / common helper functions, etc.
  * Copyright (c) 2002-2019, Jouni Malinen <j@w1.fi>
- * Copyright 2022 Morse Micro
  *
  * This software may be distributed under the terms of the BSD license.
  * See README for more details.
@@ -12,7 +11,6 @@
 
 #include "common/ieee802_11_defs.h"
 #include "common.h"
-#include "drivers/nl80211_copy.h"
 
 
 int hex2num(char c)
@@ -1257,7 +1255,7 @@ int str_starts(const char *str, const char *start)
 /**
  * rssi_to_rcpi - Convert RSSI to RCPI
  * @rssi: RSSI to convert
- * Returns: RCPI corresponding to the given RSSI value.
+ * Returns: RCPI corresponding to the given RSSI value, or 255 if not available.
  *
  * It's possible to estimate RCPI based on RSSI in dBm. This calculation will
  * not reflect the correct value for high rates, but it's good enough for Action
@@ -1265,9 +1263,11 @@ int str_starts(const char *str, const char *start)
  */
 u8 rssi_to_rcpi(int rssi)
 {
+	if (!rssi)
+		return 255; /* not available */
 	if (rssi < -110)
 		return 0;
-	if (rssi >= 0)
+	if (rssi > 0)
 		return 220;
 	return (rssi + 110) * 2;
 }
@@ -1314,43 +1314,4 @@ void forced_memzero(void *ptr, size_t len)
 	memset_func(ptr, 0, len);
 	if (len)
 		forced_memzero_val = ((u8 *) ptr)[0];
-}
-
-
-/* Borrowed from iw to convert a HT channel to frequency for use in S1G/HT
- * mappings based on Morse driver */
-int ieee80211_channel_to_frequency(int chan, enum nl80211_band band)
-{
-	/* see 802.11 17.3.8.3.2 and Annex J
-	 * there are overlapping channel numbers in 5GHz and 2GHz bands */
-	if (chan <= 0)
-		return 0; /* not supported */
-	switch (band) {
-	case NL80211_BAND_2GHZ:
-		if (chan == 14)
-			return 2484;
-		else if (chan < 14)
-			return 2407 + chan * 5;
-		break;
-	case NL80211_BAND_5GHZ:
-		if (chan >= 182 && chan <= 196)
-			return 4000 + chan * 5;
-		else
-			return 5000 + chan * 5;
-		break;
-	case NL80211_BAND_6GHZ:
-		/* see 802.11ax D6.1 27.3.23.2 */
-		if (chan == 2)
-			return 5935;
-		if (chan <= 253)
-			return 5950 + chan * 5;
-		break;
-	case NL80211_BAND_60GHZ:
-		if (chan < 7)
-			return 56160 + chan * 2160;
-		break;
-	default:
-		;
-	}
-	return 0; /* not supported */
 }

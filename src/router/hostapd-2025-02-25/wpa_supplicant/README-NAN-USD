@@ -56,7 +56,7 @@ NAN_UPDATE_PUBLISH publish_id=<id from NAN_PUBLISH> [ssi=<service specific infor
 This command maps to the UpdatePublish() method in the NAN Discovery
 Engine.
 
-NAN_SUBSCRIBE service_name=<name> [active=1] [ttl=<time-to-live-in-sec>] [freq=<in MHz>] [freq_list=<comma separate list of MHz>] [srv_proto_type=<type>] [ssi=<service specific information (hexdump)>]
+NAN_SUBSCRIBE service_name=<name> [active=1] [ttl=<time-to-live-in-sec>] [freq=<in MHz>] [srv_proto_type=<type>] [ssi=<service specific information (hexdump)>]
 
 If ttl=0 or the parameter is not included, operation is terminated once
 the first matching publisher is found.

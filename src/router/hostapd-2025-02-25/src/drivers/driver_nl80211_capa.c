@@ -3,7 +3,6 @@
  * Copyright (c) 2002-2015, Jouni Malinen <j@w1.fi>
  * Copyright (c) 2007, Johannes Berg <johannes@sipsolutions.net>
  * Copyright (c) 2009-2010, Atheros Communications
- * Copyright 2022 Morse Micro
  *
  * This software may be distributed under the terms of the BSD license.
  * See README for more details.
@@ -19,7 +18,6 @@
 #include "common/qca-vendor-attr.h"
 #include "common/brcm_vendor.h"
 #include "driver_nl80211.h"
-#include "utils/morse.h"
 
 
 static int protocol_feature_handler(struct nl_msg *msg, void *arg)
@@ -1622,7 +1620,6 @@ struct phy_info_arg {
 	int last_mode, last_chan_idx;
 	int failed;
 	u8 dfs_domain;
-	int ieee80211ah;
 };
 
 static void phy_info_ht_capa(struct hostapd_hw_modes *mode, struct nlattr *capa,
@@ -2541,7 +2538,6 @@ static int nl80211_get_reg(struct nl_msg *msg, void *arg)
 		return NL_SKIP;
 	}
 
-	if (!results->ieee80211ah) {
 	if (tb_msg[NL80211_ATTR_DFS_REGION]) {
 		enum nl80211_dfs_regions dfs_domain;
 		dfs_domain = nla_get_u8(tb_msg[NL80211_ATTR_DFS_REGION]);
@@ -2602,7 +2598,6 @@ static int nl80211_get_reg(struct nl_msg *msg, void *arg)
 			  nla_data(nl_rule), nla_len(nl_rule), reg_policy);
 		nl80211_reg_rule_vht(tb_rule, results);
 	}
-	}
 
 	nla_for_each_nested(nl_rule, tb_msg[NL80211_ATTR_REG_RULES], rem_rule)
 	{
@@ -2652,15 +2647,10 @@ static const char * modestr(enum hostapd_hw_mode mode)
 	}
 }
 
-#ifdef CONFIG_IEEE80211AH
-static void nl80211_dump_chan_list(struct wpa_driver_nl80211_data *drv,
-				   struct hostapd_hw_modes *modes,
-				   u16 num_modes, char *alpha2)
-#else
+
 static void nl80211_dump_chan_list(struct wpa_driver_nl80211_data *drv,
 				   struct hostapd_hw_modes *modes,
 				   u16 num_modes)
-#endif
 {
 	int i;
 
@@ -2669,24 +2659,20 @@ static void nl80211_dump_chan_list(struct wpa_driver_nl80211_data *drv,
 
 	for (i = 0; i < num_modes; i++) {
 		struct hostapd_hw_modes *mode = &modes[i];
-		char str[1024];
+		char str[1000];
 		char *pos = str;
 		char *end = pos + sizeof(str);
 		int j, res;
 
 		for (j = 0; j < mode->num_channels; j++) {
 			struct hostapd_channel_data *chan = &mode->channels[j];
-#ifdef CONFIG_IEEE80211AH
-			res = os_snprintf(pos, end - pos, " %d%s%s%s",
-					  morse_ht_chan_to_s1g_chan(chan->chan),
-#else
+
 			if (is_6ghz_freq(chan->freq))
 				drv->uses_6ghz = true;
 			if (chan->freq >= 900 && chan->freq < 1000)
 				drv->uses_s1g = true;
 			res = os_snprintf(pos, end - pos, " %d%s%s%s",
 					  chan->freq,
-#endif
 					  (chan->flag & HOSTAPD_CHAN_DISABLED) ?
 					  "[DISABLED]" : "",
 					  (chan->flag & HOSTAPD_CHAN_NO_IR) ?
@@ -2699,16 +2685,8 @@ static void nl80211_dump_chan_list(struct wpa_driver_nl80211_data *drv,
 		}
 
 		*pos = '\0';
-#ifdef CONFIG_IEEE80211AH
-		if (drv->ieee80211ah) 
-		wpa_printf(MSG_DEBUG, "nl80211: Mode IEEE 802.11ah:%s", str);
-		else
 		wpa_printf(MSG_DEBUG, "nl80211: Mode IEEE %s:%s",
 			   modestr(mode->mode), str);
-#else
-		wpa_printf(MSG_DEBUG, "nl80211: Mode IEEE %s:%s",
-			   modestr(mode->mode), str);
-#endif
 	}
 }
 
@@ -2729,7 +2707,7 @@ nl80211_get_hw_feature_data(void *priv, u16 *num_modes, u16 *flags,
 		.failed = 0,
 		.dfs_domain = 0,
 	};
-	result.ieee80211ah = drv->ieee80211ah;
+
 	*num_modes = 0;
 	*flags = 0;
 	*dfs_domain = 0;
@@ -2763,11 +2741,7 @@ nl80211_get_hw_feature_data(void *priv, u16 *num_modes, u16 *flags,
 
 		modes = wpa_driver_nl80211_postprocess_modes(result.modes,
 							     num_modes);
-#if CONFIG_IEEE80211AH
-		nl80211_dump_chan_list(drv, modes, *num_modes, drv->alpha2);
-#else
 		nl80211_dump_chan_list(drv, modes, *num_modes);
-#endif
 		return modes;
 	}
 

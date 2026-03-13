@@ -1,7 +1,6 @@
 /*
  * wpa_supplicant/hostapd / common helper functions, etc.
  * Copyright (c) 2002-2007, Jouni Malinen <j@w1.fi>
- * Copyright 2022 Morse Micro
  *
  * This software may be distributed under the terms of the BSD license.
  * See README for more details.
@@ -11,7 +10,6 @@
 #define COMMON_H
 
 #include "os.h"
-#include "drivers/nl80211_copy.h"
 
 #if defined(__linux__) || defined(__GLIBC__)
 #include <endian.h>
@@ -651,7 +649,5 @@ void * __hide_aliasing_typecast(void *foo);
 #else /* CONFIG_VALGRIND */
 #define WPA_MEM_DEFINED(ptr, len) do { } while (0)
 #endif /* CONFIG_VALGRIND */
-
-int ieee80211_channel_to_frequency(int chan, enum nl80211_band band);
 
 #endif /* COMMON_H */

@@ -544,4 +544,3 @@ int * wpas_nan_usd_all_freqs(struct wpa_supplicant *wpa_s)
 
 	return freqs;
 }
-

@@ -1,7 +1,6 @@
 /*
  * WPA Supplicant - Scanning
  * Copyright (c) 2003-2019, Jouni Malinen <j@w1.fi>
- * Copyright 2022 Morse Micro
  *
  * This software may be distributed under the terms of the BSD license.
  * See README for more details.
@@ -24,7 +23,6 @@
 #include "bss.h"
 #include "scan.h"
 #include "mesh.h"
-#include "morse.h"
 
 static struct wpabuf * wpa_supplicant_extra_ies(struct wpa_supplicant *wpa_s);
 
@@ -796,12 +794,9 @@ static struct wpabuf * wpa_supplicant_extra_ies(struct wpa_supplicant *wpa_s)
 	}
 #endif /* CONFIG_P2P */
 
-#endif /* CONFIG_WPS */
+	wpa_supplicant_mesh_add_scan_ie(wpa_s, &extra_ie);
 
-#ifdef CONFIG_MESH
-	if (wpa_s->conf && wpa_s->conf->ssid && wpa_s->conf->ssid->mode == WPAS_MODE_MESH)
-		wpa_supplicant_mesh_add_scan_ie(wpa_s, &extra_ie);
-#endif /* CONFIG_MESH */
+#endif /* CONFIG_WPS */
 
 #ifdef CONFIG_HS20
 	if (wpa_s->conf->hs20 && wpa_s->drv_max_probe_req_ie_len >= 9 &&
@@ -1055,23 +1050,6 @@ static int wpa_set_ssids_from_scan_req(struct wpa_supplicant *wpa_s,
 	return 1;
 }
 
-#if defined(CONFIG_MESH) && defined(CONFIG_IEEE80211AH)
-static struct wpa_ssid *wpa_supplicant_get_mesh_ssid(struct wpa_supplicant *wpa_s)
-{
-	size_t prio;
-	struct wpa_ssid *ssid;
-
-	for (prio = 0; prio < wpa_s->conf->num_prio; prio++) {
-		for (ssid = wpa_s->conf->pssid[prio]; ssid; ssid = ssid->pnext) {
-			if (wpas_network_disabled(wpa_s, ssid))
-				continue;
-			if (ssid->mode == WPAS_MODE_MESH)
-				return ssid;
-		}
-	}
-	return NULL;
-}
-#endif
 
 static void wpa_supplicant_scan(void *eloop_ctx, void *timeout_ctx)
 {
@@ -1113,14 +1091,6 @@ static void wpa_supplicant_scan(void *eloop_ctx, void *timeout_ctx)
 		wpa_supplicant_set_state(wpa_s, WPA_INACTIVE);
 		return;
 	}
-
-#if defined(CONFIG_MESH) && defined(CONFIG_IEEE80211AH)
-	ssid = wpa_supplicant_get_mesh_ssid(wpa_s);
-	if (ssid && ssid->mode == WPAS_MODE_MESH && ssid->mesh_beaconless_mode) {
-		wpa_dbg(wpa_s, MSG_DEBUG, "Scan is blocked in Mesh beaconless mode");
-		return;
-	}
-#endif
 
 	if (wpa_s->conf->ap_scan != 0 &&
 	    (wpa_s->drv_flags & WPA_DRIVER_FLAGS_WIRED)) {
@@ -1399,11 +1369,6 @@ static void wpa_supplicant_scan(void *eloop_ctx, void *timeout_ctx)
 		params.num_ssids++;
 		wpa_dbg(wpa_s, MSG_DEBUG, "Starting AP scan for wildcard "
 			"SSID");
-	}
-
-	if (wpa_s->next_scan_dwell_duration) {
-		params.duration = wpa_s->next_scan_dwell_duration;
-		wpa_s->next_scan_dwell_duration = 0;
 	}
 
 ssid_list_set:
@@ -2562,8 +2527,7 @@ static int wpa_scan_result_wps_compar(const void *a, const void *b)
 #endif /* CONFIG_WPS */
 
 
-static void dump_scan_res(struct wpa_scan_results *scan_res,
-						  struct wpa_supplicant *wpa_s)
+static void dump_scan_res(struct wpa_scan_results *scan_res)
 {
 #ifndef CONFIG_NO_STDOUT_DEBUG
 	size_t i;
@@ -2589,34 +2553,20 @@ static void dump_scan_res(struct wpa_scan_results *scan_res,
 			int noise_valid = !(r->flags & WPA_SCAN_NOISE_INVALID);
 
 			wpa_printf(MSG_EXCESSIVE, MACSTR
-				   " ssid=%s %s=%d qual=%d noise=%d%s level=%d snr=%d%s flags=0x%x age=%u est=%u",
+				   " ssid=%s freq=%d qual=%d noise=%d%s level=%d snr=%d%s flags=0x%x age=%u est=%u",
 				   MAC2STR(r->bssid),
 				   wpa_ssid_txt(ssid, ssid_len),
-#ifdef CONFIG_IEEE80211AH
-				   "chan",
-				   morse_ht_freq_to_s1g_chan(r->freq),
-#else
-				   "freq",
-				   r->freq,
-#endif			   
-				   r->qual,
+				   r->freq, r->qual,
 				   r->noise, noise_valid ? "" : "~", r->level,
 				   r->snr, r->snr >= GREAT_SNR ? "*" : "",
 				   r->flags,
 				   r->age, r->est_throughput);
 		} else {
 			wpa_printf(MSG_EXCESSIVE, MACSTR
-				   " ssid=%s %s=%d qual=%d noise=%d level=%d flags=0x%x age=%u est=%u",
+				   " ssid=%s freq=%d qual=%d noise=%d level=%d flags=0x%x age=%u est=%u",
 				   MAC2STR(r->bssid),
 				   wpa_ssid_txt(ssid, ssid_len),
-#ifdef CONFIG_IEEE80211AH
-				   "chan",
-				   morse_ht_freq_to_s1g_chan(r->freq),
-#else
-				   "freq",
-				   r->freq,
-#endif
-				   r->qual,
+				   r->freq, r->qual,
 				   r->noise, r->level, r->flags, r->age,
 				   r->est_throughput);
 		}
@@ -3270,7 +3220,7 @@ wpa_supplicant_get_scan_results(struct wpa_supplicant *wpa_s,
 		qsort(scan_res->res, scan_res->num,
 		      sizeof(struct wpa_scan_res *), compar);
 	}
-	dump_scan_res(scan_res, wpa_s);
+	dump_scan_res(scan_res);
 
 	if (wpa_s->ignore_post_flush_scan_res) {
 		/* FLUSH command aborted an ongoing scan and these are the

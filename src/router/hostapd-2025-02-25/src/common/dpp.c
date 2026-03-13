@@ -3,7 +3,6 @@
  * Copyright (c) 2017, Qualcomm Atheros, Inc.
  * Copyright (c) 2018-2020, The Linux Foundation
  * Copyright (c) 2021-2022, Qualcomm Innovation Center, Inc.
- * Copyright 2022 Morse Micro
  *
  * This software may be distributed under the terms of the BSD license.
  * See README for more details.
@@ -3133,17 +3132,6 @@ const char * dpp_akm_str(enum dpp_akm akm)
 	default:
 		return "??";
 	}
-}
-
-
-int dpp_akm_from_hapd_wpa_key(int wpa_key_mgmt)
-{
-	if (wpa_key_mgmt & WPA_KEY_MGMT_SAE)
-		return DPP_AKM_SAE;
-	if (wpa_key_mgmt & WPA_KEY_MGMT_DPP)
-		return DPP_AKM_DPP;
-
-	return DPP_AKM_UNKNOWN;
 }
 
 

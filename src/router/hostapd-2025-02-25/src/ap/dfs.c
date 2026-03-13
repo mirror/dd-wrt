@@ -2,7 +2,6 @@
  * DFS - Dynamic Frequency Selection
  * Copyright (c) 2002-2013, Jouni Malinen <j@w1.fi>
  * Copyright (c) 2013-2017, Qualcomm Atheros, Inc.
- * Copyright 2022 Morse Micro
  *
  * This software may be distributed under the terms of the BSD license.
  * See README for more details.
@@ -460,9 +459,8 @@ static int dfs_check_chans_radar(struct hostapd_iface *iface,
 	mode = iface->current_mode;
 
 	for (i = 0; i < n_chans; i++) {
-		if ((start_chan_idx + i) >= mode->num_channels)
+		if (start_chan_idx + i >= mode->num_channels)
 			break;
-
 		channel = &mode->channels[start_chan_idx + i];
 		if (channel->flag & HOSTAPD_CHAN_RADAR)
 			res++;

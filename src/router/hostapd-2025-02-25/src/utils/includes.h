@@ -1,7 +1,6 @@
 /*
  * wpa_supplicant/hostapd - Default include files
  * Copyright (c) 2005-2006, Jouni Malinen <j@w1.fi>
- * Copyright 2022 Morse Micro
  *
  * This software may be distributed under the terms of the BSD license.
  * See README for more details.
@@ -34,7 +33,6 @@
 #include <unistd.h>
 #endif /* _MSC_VER */
 
-#ifndef MM_IOT
 #ifndef CONFIG_NATIVE_WINDOWS
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -44,8 +42,5 @@
 #include <sys/time.h>
 #endif /* __vxworks */
 #endif /* CONFIG_NATIVE_WINDOWS */
-#else
-#include <time.h>
-#endif /* MM_IOT */
 
 #endif /* INCLUDES_H */

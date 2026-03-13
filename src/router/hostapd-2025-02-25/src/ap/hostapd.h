@@ -1,7 +1,6 @@
 /*
  * hostapd / Initialization and configuration
  * Copyright (c) 2002-2014, Jouni Malinen <j@w1.fi>
- * Copyright 2022 Morse Micro
  *
  * This software may be distributed under the terms of the BSD license.
  * See README for more details.
@@ -50,7 +49,7 @@ struct hostapd_iface;
 struct hostapd_mld;
 
 struct hapd_interfaces {
-	int (*reload_config)(struct hostapd_iface *iface, int reconf);
+	int (*reload_config)(struct hostapd_iface *iface);
 	struct hostapd_config * (*config_read_cb)(const char *config_fname);
 	int (*ctrl_iface_init)(struct hostapd_data *hapd);
 	void (*ctrl_iface_deinit)(struct hostapd_data *hapd);
@@ -144,19 +143,6 @@ enum pbc_status {
 	WPS_PBC_STATUS_OVERLAP
 };
 
-enum s1g_oper_chwidth {
-	S1G_OPER_CHWIDTH_1,
-	S1G_OPER_CHWIDTH_2,
-	S1G_OPER_CHWIDTH_4,
-	S1G_OPER_CHWIDTH_8,
-	S1G_OPER_CHWIDTH_16,
-};
-
-enum s1g_prim_chwidth {
-	S1G_PRIM_CHWIDTH_1,
-	S1G_PRIM_CHWIDTH_2,
-};
-
 struct wps_stat {
 	enum wps_status status;
 	enum wps_error_indication failure_reason;
@@ -224,7 +210,6 @@ struct hostapd_data {
 	struct hostapd_config *iconf;
 	struct hostapd_bss_config *conf;
 	struct hostapd_ubus_bss ubus;
-	char *config_id;
 	int interface_added; /* virtual interface added for this BSS */
 	unsigned int started:1;
 	unsigned int disabled:1;
@@ -360,10 +345,6 @@ struct hostapd_data {
 
 	/* channel switch parameters */
 	struct hostapd_freq_params cs_freq_params;
-#ifdef CONFIG_IEEE80211AH
-	/* S1G channel switch parameters */
-	struct hostapd_s1g_freq_params cs_s1g_freq_params;
-#endif
 	u8 cs_count;
 	int cs_block_tx;
 	unsigned int cs_c_off_beacon;
@@ -410,9 +391,6 @@ struct hostapd_data {
 	struct wpabuf *mesh_pending_auth;
 	struct os_reltime mesh_pending_auth_time;
 	u8 mesh_required_peer[ETH_ALEN];
-#ifdef CONFIG_IEEE80211AH
-	u8 mesh_kickout_peer_addr[ETH_ALEN];
-#endif /* CONFIG_IEEE80211AH */
 #endif /* CONFIG_MESH */
 
 #ifdef CONFIG_SQLITE
@@ -794,7 +772,7 @@ struct hostapd_iface {
 int hostapd_for_each_interface(struct hapd_interfaces *interfaces,
 			       int (*cb)(struct hostapd_iface *iface,
 					 void *ctx), void *ctx);
-int hostapd_reload_config(struct hostapd_iface *iface, int reconf);
+int hostapd_reload_config(struct hostapd_iface *iface);
 void hostapd_reconfig_encryption(struct hostapd_data *hapd);
 struct hostapd_data *
 hostapd_alloc_bss_data(struct hostapd_iface *hapd_iface,

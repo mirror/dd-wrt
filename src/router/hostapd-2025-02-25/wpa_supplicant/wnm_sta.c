@@ -824,7 +824,6 @@ static int wnm_nei_rep_add_bss(struct wpa_supplicant *wpa_s,
 }
 
 
-#ifndef CONFIG_NO_BSS_TRANS_MGMT
 static void wnm_add_cand_list(struct wpa_supplicant *wpa_s, struct wpabuf **buf)
 {
 	unsigned int i, pref = 255;
@@ -1001,12 +1000,10 @@ static void wnm_bss_tm_connect(struct wpa_supplicant *wpa_s,
 	if (!already_connecting && radio_work_pending(wpa_s, "sme-connect"))
 		wpa_s->bss_trans_mgmt_in_progress = true;
 }
-#endif /* CONFIG_NO_BSS_TRANS_MGMT */
 
 
 int wnm_scan_process(struct wpa_supplicant *wpa_s, bool pre_scan_check)
 {
-#ifndef CONFIG_NO_BSS_TRANS_MGMT
 	struct wpa_bss *bss, *current_bss = wpa_s->current_bss;
 	struct wpa_ssid *ssid = wpa_s->current_ssid;
 	enum bss_trans_mgmt_status_code status = WNM_BSS_TM_REJECT_UNSPECIFIED;
@@ -1142,13 +1139,11 @@ send_bss_resp_fail:
 	}
 
 	wnm_btm_reset(wpa_s);
-#endif /* CONFIG_NO_BSS_TRANS_MGMT */
 
 	return 0;
 }
 
 
-#ifndef CONFIG_NO_BSS_TRANS_MGMT
 static int cand_pref_compar(const void *a, const void *b)
 {
 	const struct neighbor_report *aa = a;
@@ -1659,7 +1654,6 @@ int wnm_send_bss_transition_mgmt_query(struct wpa_supplicant *wpa_s,
 	wpabuf_free(buf);
 	return ret;
 }
-#endif /* CONFIG_NO_BSS_TRANS_MGMT */
 
 
 static void ieee802_11_rx_wnm_notif_req_wfa(struct wpa_supplicant *wpa_s,
@@ -1865,12 +1859,10 @@ void ieee802_11_rx_wnm_action(struct wpa_supplicant *wpa_s,
 	}
 
 	switch (act) {
-#ifndef CONFIG_NO_BSS_TRANS_MGMT
 	case WNM_BSS_TRANS_MGMT_REQ:
 		ieee802_11_rx_bss_trans_mgmt_req(wpa_s, pos, end,
 						 !(mgmt->da[0] & 0x01));
 		break;
-#endif /* CONFIG_NO_BSS_TRANS_MGMT */
 	case WNM_SLEEP_MODE_RESP:
 		ieee802_11_rx_wnmsleep_resp(wpa_s, pos, end - pos);
 		break;

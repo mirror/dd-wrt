@@ -116,8 +116,6 @@ OBJS += bss.o
 OBJS += eap_register.o
 OBJS += ../src/utils/common.o
 OBJS += ../src/utils/config.o
-OBJS += ../src/utils/morse.o
-OBJS += ../src/utils/morse_cli.o
 OBJS += ../src/utils/wpa_debug.o
 OBJS += ../src/utils/wpabuf.o
 OBJS += ../src/utils/bitfield.o
@@ -279,10 +277,6 @@ CFLAGS += -DCONFIG_IEEE80211R
 OBJS += ../src/rsn_supp/wpa_ft.o
 endif
 
-ifdef CONFIG_IEEE80211AH
-CFLAGS += -DCONFIG_IEEE80211AH
-endif
-
 ifdef CONFIG_MESH
 NEED_80211_COMMON=y
 NEED_AES_SIV=y
@@ -370,9 +364,6 @@ endif
 
 ifdef CONFIG_MBO
 CONFIG_WNM=y
-ifdef CONFIG_IEEE80211AH
-CFLAGS += -DCONFIG_MORSE_WNM
-endif
 endif
 
 ifdef CONFIG_BGSCAN_SIMPLE
@@ -382,18 +373,6 @@ endif
 ifdef CONFIG_WNM
 CFLAGS += -DCONFIG_WNM
 OBJS += wnm_sta.o
-endif
-
-ifdef CONFIG_S1G_TWT
-CFLAGS += -DCONFIG_S1G_TWT
-endif
-
-ifdef CONFIG_MORSE_STANDBY_MODE
-CFLAGS += -DCONFIG_MORSE_STANDBY_MODE
-endif
-
-ifdef CONFIG_MORSE_KEEP_ALIVE_OFFLOAD
-CFLAGS += -DCONFIG_MORSE_KEEP_ALIVE_OFFLOAD
 endif
 
 ifdef CONFIG_TDLS

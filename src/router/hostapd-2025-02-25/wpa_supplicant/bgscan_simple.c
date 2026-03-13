@@ -41,7 +41,6 @@ static void bgscan_simple_timeout(void *eloop_ctx, void *timeout_ctx);
 static bool bgscan_simple_btm_query(struct wpa_supplicant *wpa_s,
 				    struct bgscan_simple_data *data)
 {
-#ifndef CONFIG_NO_BSS_TRANS_MGMT
 	unsigned int mod;
 
 	if (!data->use_btm_query || wpa_s->conf->disable_btm ||
@@ -72,10 +71,6 @@ static bool bgscan_simple_btm_query(struct wpa_supplicant *wpa_s,
 	eloop_register_timeout(data->scan_interval, 0,
 			       bgscan_simple_timeout, data, NULL);
 	return true;
-
-#else /* CONFIG_NO_BSS_TRANS_MGMT */
-	return false;
-#endif
 }
 
 

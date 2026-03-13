@@ -1,7 +1,3 @@
-#
-# Copyright 2021 Morse Micro
-#
-
 #CFLAGS += -DWPA_TRACE
 CFLAGS += -DCONFIG_IPV6
 CFLAGS += -DCONFIG_DEBUG_FILE
@@ -14,8 +10,6 @@ LIB_OBJS= \
 	crc32.o \
 	ip_addr.o \
 	json.o \
-	morse.o \
-	morse_cli.o \
 	radiotap.o \
 	trace.o \
 	uuid.o \

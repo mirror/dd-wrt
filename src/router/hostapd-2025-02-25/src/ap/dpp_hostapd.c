@@ -3,7 +3,6 @@
  * Copyright (c) 2017, Qualcomm Atheros, Inc.
  * Copyright (c) 2018-2020, The Linux Foundation
  * Copyright (c) 2021-2022, Qualcomm Innovation Center, Inc.
- * Copyright 2022 Morse Micro
  *
  * This software may be distributed under the terms of the BSD license.
  * See README for more details.
@@ -25,9 +24,6 @@
 #include "beacon.h"
 #include "dpp_hostapd.h"
 
-#if defined(CONFIG_IEEE80211AH)
-#include "morse.h"
-#endif
 
 static void hostapd_dpp_reply_wait_timeout(void *eloop_ctx, void *timeout_ctx);
 static void hostapd_dpp_auth_conf_wait_timeout(void *eloop_ctx,
@@ -261,42 +257,9 @@ static int hostapd_dpp_allow_ir(struct hostapd_data *hapd, unsigned int freq)
 }
 
 
-#if defined(CONFIG_IEEE80211AH)
-static int hostapd_s1g_preferred_ht_announce_freq(struct hostapd_data *hapd)
-{
-	/* From '6.2.2 Generation of Channel List for Presence Announcement' in
-	 * Easy Connect Specification v2.0.0.6.
-	 *
-	 * Sub-1 GHz: Channel 37 (920.5 MHz) if local regulations permit use of global
-	 * operating class 68 (ITU Region 2, Australia, New Zealand, Singapore)
-	 * otherwise Channel 1 (863.5 MHz) if local regulations permit use of
-	 * global operating class 66 (Europe)
-	 */
-	int global_op_class = morse_s1g_country_to_global_op_class(hapd->iface->conf->country);
-	int preferred_ann_chan_s1g =
-		(global_op_class == 68) ? 37 :
-		(global_op_class == 66) ? 1 : -1;
-	int ht_s1g_freq = ieee80211_channel_to_frequency(
-		morse_s1g_chan_to_ht_chan(preferred_ann_chan_s1g), NL80211_BAND_5GHZ);
-
-	/* S1G devices masquerading as 5G must convert back to a HT frequency */
-	return ht_s1g_freq;
-}
-#endif
-
 static int hostapd_dpp_pkex_next_channel(struct hostapd_data *hapd,
 					 struct dpp_pkex *pkex)
 {
-#if defined(CONFIG_IEEE80211AH)
-	int preferred_s1g_ht_freq = hostapd_s1g_preferred_ht_announce_freq(hapd);
-
-	if (preferred_s1g_ht_freq <= 0 || pkex->freq == (unsigned int) preferred_s1g_ht_freq)
-		return -1; /* no more channels to try */
-	else if (pkex->freq == 2437)
-		pkex->freq = preferred_s1g_ht_freq;
-	else
-		return -1;
-#else
 	if (pkex->freq == 2437)
 		pkex->freq = 5745;
 	else if (pkex->freq == 5745)
@@ -305,7 +268,6 @@ static int hostapd_dpp_pkex_next_channel(struct hostapd_data *hapd,
 		pkex->freq = 60480;
 	else
 		return -1; /* no more channels to try */
-#endif
 
 	if (hostapd_dpp_allow_ir(hapd, pkex->freq) == 1) {
 		wpa_printf(MSG_DEBUG, "DPP: Try to initiate on %u MHz",
@@ -443,12 +405,6 @@ static int hostapd_dpp_pkex_init(struct hostapd_data *hapd,
 	msg = hapd->dpp_pkex->exchange_req;
 	wait_time = 2000; /* TODO: hapd->max_remain_on_chan; */
 	pkex->freq = 2437;
-	if (!hostapd_dpp_allow_ir(hapd, pkex->freq)) {
-		if (hostapd_dpp_pkex_next_channel(hapd, pkex) < 0) {
-			wpa_printf(MSG_DEBUG, "DPP: Could not initiate (no channels to try)");
-			return -1;
-		}
-	}
 	wpa_msg(hapd->msg_ctx, MSG_INFO, DPP_EVENT_TX "dst=" MACSTR
 		" freq=%u type=%d", MAC2STR(broadcast), pkex->freq,
 		v2 ? DPP_PA_PKEX_EXCHANGE_REQ :
@@ -466,12 +422,10 @@ static void hostapd_dpp_pkex_retry_timeout(void *eloop_ctx, void *timeout_ctx)
 {
 	struct hostapd_data *hapd = eloop_ctx;
 	struct dpp_pkex *pkex = hapd->dpp_pkex;
-	const u8 *dst;
 
 	if (!pkex || !pkex->exchange_req)
 		return;
-	if ((!pkex->exchange_done && pkex->exch_req_tries >= 5) ||
-	     (pkex->exchange_done && pkex->commit_reveal_tries >= 5)) {
+	if (pkex->exch_req_tries >= 5) {
 		if (hostapd_dpp_pkex_next_channel(hapd, pkex) < 0) {
 #ifdef CONFIG_DPP3
 			if (pkex->v2 && !pkex->forced_ver) {
@@ -489,33 +443,19 @@ static void hostapd_dpp_pkex_retry_timeout(void *eloop_ctx, void *timeout_ctx)
 			return;
 		}
 		pkex->exch_req_tries = 0;
-		pkex->commit_reveal_tries = 0;
-	}
-
-	if (pkex->exchange_done) {
-		pkex->commit_reveal_tries++;
-		wpa_printf(MSG_DEBUG, "DPP: Retransmit PKEX Commit-Reveal Request (try %d)",
-			   pkex->commit_reveal_tries);
-		hostapd_drv_send_action(hapd, pkex->freq, 0, pkex->peer_mac,
-					wpabuf_head(pkex->commit_reveal_req),
-					wpabuf_len(pkex->commit_reveal_req));
-		return;
 	}
 
 	pkex->exch_req_tries++;
-	if (!is_zero_ether_addr(pkex->peer_mac))
-		dst = pkex->peer_mac;
-	else
-		dst = broadcast;
 	wpa_printf(MSG_DEBUG, "DPP: Retransmit PKEX Exchange Request (try %u)",
 		   pkex->exch_req_tries);
 	wpa_msg(hapd->msg_ctx, MSG_INFO, DPP_EVENT_TX "dst=" MACSTR
 		" freq=%u type=%d",
-		MAC2STR(dst), pkex->freq,
+		MAC2STR(broadcast), pkex->freq,
 		pkex->v2 ? DPP_PA_PKEX_EXCHANGE_REQ :
 		DPP_PA_PKEX_V1_EXCHANGE_REQ);
 	hostapd_drv_send_action(hapd, pkex->freq, pkex->exch_req_wait_time,
-				dst, wpabuf_head(pkex->exchange_req),
+				broadcast,
+				wpabuf_head(pkex->exchange_req),
 				wpabuf_len(pkex->exchange_req));
 }
 
@@ -532,12 +472,6 @@ static void hostapd_dpp_pkex_tx_status(struct hostapd_data *hapd, const u8 *dst,
 			pkex->own_bi->pkex_t = pkex->t;
 		dpp_pkex_free(pkex);
 		hapd->dpp_pkex = NULL;
-		return;
-	}
-
-	if (hapd->dpp_pkex->exchange_done) {
-		eloop_cancel_timeout(hostapd_dpp_pkex_retry_timeout, hapd, NULL);
-		eloop_register_timeout(2, 0, hostapd_dpp_pkex_retry_timeout, hapd, NULL);
 		return;
 	}
 
@@ -682,7 +616,7 @@ static void hostapd_dpp_reply_wait_timeout(void *eloop_ctx, void *timeout_ctx)
 		return;
 
 	wait_time = hapd->dpp_resp_wait_time ?
-		hapd->dpp_resp_wait_time : 5000;
+		hapd->dpp_resp_wait_time : 2000;
 	os_get_reltime(&now);
 	os_reltime_sub(&now, &hapd->dpp_last_init, &diff);
 	diff_ms = diff.sec * 1000 + diff.usec / 1000;
@@ -692,8 +626,7 @@ static void hostapd_dpp_reply_wait_timeout(void *eloop_ctx, void *timeout_ctx)
 
 	if (auth->auth_req_ack && diff_ms >= wait_time) {
 		/* Peer ACK'ed Authentication Request frame, but did not reply
-		 * with Authentication Response frame within five seconds.
-		 */
+		 * with Authentication Response frame within two seconds. */
 		wpa_printf(MSG_INFO,
 			   "DPP: No response received from responder - stopping initiation attempt");
 		wpa_msg(hapd->msg_ctx, MSG_INFO, DPP_EVENT_AUTH_INIT_FAILED);
@@ -706,8 +639,7 @@ static void hostapd_dpp_reply_wait_timeout(void *eloop_ctx, void *timeout_ctx)
 
 	if (diff_ms >= wait_time) {
 		/* Authentication Request frame was not ACK'ed and no reply
-		 * was receiving within five seconds.
-		 */
+		 * was receiving within two seconds. */
 		wpa_printf(MSG_DEBUG,
 			   "DPP: Continue Initiator channel iteration");
 		hostapd_drv_send_action_cancel_wait(hapd);
@@ -716,7 +648,7 @@ static void hostapd_dpp_reply_wait_timeout(void *eloop_ctx, void *timeout_ctx)
 		return;
 	}
 
-	/* Driver did not support 5000 ms long wait_time with TX command, so
+	/* Driver did not support 2000 ms long wait_time with TX command, so
 	 * schedule listen operation to continue waiting for the response.
 	 *
 	 * DPP listen operations continue until stopped, so simply schedule a
@@ -855,9 +787,9 @@ static int hostapd_dpp_auth_init_next(struct hostapd_data *hapd)
 		dst = auth->peer_bi->mac_addr;
 	hapd->dpp_auth_ok_on_ack = 0;
 	eloop_cancel_timeout(hostapd_dpp_reply_wait_timeout, hapd, NULL);
-	wait_time = 5000; /* TODO: hapd->max_remain_on_chan; */
+	wait_time = 2000; /* TODO: hapd->max_remain_on_chan; */
 	max_wait_time = hapd->dpp_resp_wait_time ?
-		hapd->dpp_resp_wait_time : 5000;
+		hapd->dpp_resp_wait_time : 2000;
 	if (wait_time > max_wait_time)
 		wait_time = max_wait_time;
 	wait_time += 10; /* give the driver some extra time to complete */
@@ -1572,6 +1504,7 @@ static void hostapd_dpp_rx_auth_conf(struct hostapd_data *hapd, const u8 *src,
 
 
 #ifdef CONFIG_DPP2
+
 static void hostapd_dpp_config_result_wait_timeout(void *eloop_ctx,
 						   void *timeout_ctx)
 {
@@ -1801,11 +1734,6 @@ hostapd_dpp_rx_presence_announcement(struct hostapd_data *hapd, const u8 *src,
 	if (!auth)
 		return;
 	hostapd_dpp_set_testing_options(hapd, auth);
-
-	/* If dpp_configurator_params is not set, lets try configurator=1 */
-	if (!hapd->dpp_configurator_params)
-		hapd->dpp_configurator_params = strdup("configurator=1");
-
 	if (dpp_set_configurator(auth,
 				 hapd->dpp_configurator_params) < 0) {
 		dpp_auth_deinit(auth);
@@ -1915,9 +1843,9 @@ hostapd_dpp_rx_reconfig_announcement(struct hostapd_data *hapd, const u8 *src,
 
 	hapd->dpp_in_response_listen = 0;
 	hapd->dpp_auth_ok_on_ack = 0;
-	wait_time = 5000; /* TODO: hapd->max_remain_on_chan; */
+	wait_time = 2000; /* TODO: hapd->max_remain_on_chan; */
 	max_wait_time = hapd->dpp_resp_wait_time ?
-		hapd->dpp_resp_wait_time : 5000;
+		hapd->dpp_resp_wait_time : 2000;
 	if (wait_time > max_wait_time)
 		wait_time = max_wait_time;
 	wait_time += 10; /* give the driver some extra time to complete */
@@ -2358,7 +2286,6 @@ hostapd_dpp_rx_pkex_exchange_resp(struct hostapd_data *hapd, const u8 *src,
 	hapd->dpp_pkex->exch_req_wait_time = 0;
 
 	msg = dpp_pkex_rx_exchange_resp(hapd->dpp_pkex, src, buf, len);
-	hapd->dpp_pkex->commit_reveal_req = msg;
 	if (!msg) {
 		wpa_printf(MSG_DEBUG, "DPP: Failed to process the response");
 		return;
@@ -2372,6 +2299,7 @@ hostapd_dpp_rx_pkex_exchange_resp(struct hostapd_data *hapd, const u8 *src,
 		DPP_PA_PKEX_COMMIT_REVEAL_REQ);
 	hostapd_drv_send_action(hapd, freq, 0, src,
 				wpabuf_head(msg), wpabuf_len(msg));
+	wpabuf_free(msg);
 }
 
 
@@ -2435,7 +2363,6 @@ hostapd_dpp_rx_pkex_commit_reveal_resp(struct hostapd_data *hapd, const u8 *src,
 	struct dpp_pkex *pkex = hapd->dpp_pkex;
 	char cmd[500];
 
-	eloop_cancel_timeout(hostapd_dpp_pkex_retry_timeout, hapd, NULL);
 	wpa_printf(MSG_DEBUG, "DPP: PKEX Commit-Reveal Response from " MACSTR,
 		   MAC2STR(src));
 
@@ -2536,7 +2463,6 @@ static void hostapd_dpp_pb_pkex_init(struct hostapd_data *hapd,
 		return;
 	}
 	pkex->freq = freq;
-	os_memcpy(pkex->peer_mac, src, ETH_ALEN);
 
 	hapd->dpp_pkex = pkex;
 	msg = hapd->dpp_pkex->exchange_req;
@@ -3173,12 +3099,6 @@ hostapd_dpp_gas_req_handler(struct hostapd_data *hapd, const u8 *sa,
 {
 	struct dpp_authentication *auth = hapd->dpp_auth;
 	struct wpabuf *resp;
-	int akm;
-	const char *password = NULL;
-	bool sae = false;
-#ifdef CONFIG_SAE
-	struct sae_password_entry *e;
-#endif /* CONFIG_SAE */
 
 	wpa_printf(MSG_DEBUG, "DPP: GAS request from " MACSTR, MAC2STR(sa));
 	eloop_cancel_timeout(hostapd_gas_req_wait, hapd, NULL);
@@ -3218,56 +3138,6 @@ hostapd_dpp_gas_req_handler(struct hostapd_data *hapd, const u8 *sa,
 		    query, query_len);
 	wpa_msg(hapd->msg_ctx, MSG_INFO, DPP_EVENT_CONF_REQ_RX "src=" MACSTR,
 		MAC2STR(sa));
-
-	/* Update station configuration to match the AP requirements */
-	akm = dpp_akm_from_hapd_wpa_key(hapd->conf->wpa_key_mgmt);
-	if (akm == DPP_AKM_UNKNOWN) {
-		wpa_printf(MSG_DEBUG,
-			"DPP: unsupported AKM for DPP flow, using connector as default");
-		akm = DPP_AKM_DPP;
-	}
-
-	/* Free and reallocate existing station configuration */
-	if (auth->conf_sta)
-		dpp_configuration_free(auth->conf_sta);
-
-	auth->conf_sta =
-		dpp_configuration_alloc(dpp_akm_str(akm));
-
-	auth->conf_sta->netrole = DPP_NETROLE_STA;
-
-	os_memcpy(auth->conf_sta->ssid,
-		  hapd->conf->ssid.ssid,
-		  hapd->conf->ssid.ssid_len);
-	auth->conf_sta->ssid_len = hapd->conf->ssid.ssid_len;
-
-#ifdef CONFIG_SAE
-	if (hapd->conf->wpa & WPA_PROTO_RSN)
-		sae = hapd->conf->wpa_key_mgmt & WPA_KEY_MGMT_SAE;
-#endif /* CONFIG_SAE */
-
-	if (dpp_akm_psk(akm) || dpp_akm_sae(akm)) {
-#ifdef CONFIG_SAE
-		for (e = hapd->conf->sae_passwords; sae && e && !password;
-			e = e->next) {
-			if (e->identifier || !is_broadcast_ether_addr(e->peer_addr))
-				continue;
-			password = e->password;
-		}
-#endif /* CONFIG_SAE */
-		if (!password && hapd->conf->ssid.wpa_passphrase_set &&
-		    hapd->conf->ssid.wpa_passphrase) {
-			password = hapd->conf->ssid.wpa_passphrase;
-		}
-
-		if (!password) {
-			wpa_printf(MSG_INFO, "DPP: SAE passphrase is missing");
-			return NULL;
-		}
-
-		auth->conf_sta->passphrase = os_strdup(password);
-	}
-
 	resp = dpp_conf_req_rx(auth, query, query_len);
 	if (!resp)
 		wpa_msg(hapd->msg_ctx, MSG_INFO, DPP_EVENT_CONF_FAILED);

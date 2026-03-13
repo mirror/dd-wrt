@@ -1,7 +1,6 @@
 /*
  * WPA Supplicant / Network configuration structures
  * Copyright (c) 2003-2013, Jouni Malinen <j@w1.fi>
- * Copyright 2022 Morse Micro
  *
  * This software may be distributed under the terms of the BSD license.
  * See README for more details.
@@ -13,7 +12,6 @@
 #include "common/defs.h"
 #include "ap/sta_info.h"
 #include "utils/list.h"
-#include "utils/morse.h"
 #include "eap_peer/eap_config.h"
 #include "drivers/nl80211_copy.h"
 
@@ -34,17 +32,9 @@
 
 #define DEFAULT_BG_SCAN_PERIOD -1
 #define DEFAULT_MESH_MAX_RETRIES 2
-
-#ifdef CONFIG_IEEE80211AH
-#define DEFAULT_MESH_RETRY_TIMEOUT 400
-#define DEFAULT_MESH_CONFIRM_TIMEOUT 400
-#define DEFAULT_MESH_HOLDING_TIMEOUT 400
-#else
 #define DEFAULT_MESH_RETRY_TIMEOUT 40
 #define DEFAULT_MESH_CONFIRM_TIMEOUT 40
 #define DEFAULT_MESH_HOLDING_TIMEOUT 40
-#endif
-
 #define DEFAULT_MESH_RSSI_THRESHOLD 1 /* no change */
 #define DEFAULT_DISABLE_HT 0
 #define DEFAULT_DISABLE_HT40 0
@@ -58,13 +48,6 @@
 #define DEFAULT_USER_SELECTED_SIM 1
 #define DEFAULT_MAX_OPER_CHWIDTH -1
 #define DEFAULT_BEACON_TX_MODE 0
-
-#ifdef CONFIG_IEEE80211AH
-#define DEFAULT_MORSE_IBSS_CHANNEL 44
-#define DEFAULT_MORSE_IBSS_OP_CLASS 71
-#define DEFAULT_MORSE_S1G_PRIM_1M_CH_IDX 3
-#define DEFAULT_MORSE_IBSS_HT_FREQ 5815
-#endif
 
 /* Consider global sae_pwe for SAE mechanism for PWE derivation */
 #define DEFAULT_SAE_PWE SAE_PWE_NOT_SET
@@ -615,23 +598,6 @@ struct wpa_ssid {
 	 * Mesh network layer-2 forwarding (dot11MeshForwarding)
 	 */
 	int mesh_fwding;
-
-	/**
-	 * Mesh HWMP - Proactive Path Selection parameters
-	 */
-	int dot11MeshHWMPRootMode;
-	int dot11MeshGateAnnouncements;
-
-	/**
-	 * Mesh Beacon Collision Avoidance Configuration Parameters.
-	 */
-#ifdef CONFIG_IEEE80211AH
-	int mbca_config;
-	int mbca_min_beacon_gap_ms;
-	int mbca_tbtt_adj_interval_sec;
-	int dot11MeshBeaconTimingReportInterval;
-	int mbss_start_scan_duration_ms;
-#endif
 
 	int ht;
 	int ht40;
@@ -1381,121 +1347,6 @@ struct wpa_ssid {
 	 * 2 = BURST MODE
 	 */
 	int beacon_tx_mode;
-#ifdef CONFIG_IEEE80211AH
-	/**
-	 * raw_sta_priority - piority used by the AP to assign a STA to RAW
-	 *
-	 * This value is between 0-7 with 7 being the highest priority and 1/2 being the
-	 * lowest. This value is transmitted to the AP using the QoS Traffic capability
-	 * IE in the association request frame. There is a general guidence which is the
-	 * following values should be used:
-	 *
-	 * 0 = Normal traffic (best effort)
-	 * 2 = Background traffic
-	 * 5 = Video
-	 * 6 = Voice
-	 *
-	 * If more RAWs are required the guidence is:
-	 * 1 = Background traffic
-	 * 3 = Normal traffic
-	 * 4 = Video
-	 * 7 = Voice
-	 *
-	 * While these can map to queues in the Linux kernel they don't have to. E.g.
-	 * you could still send normal best effort traffic in a RAW with priority 7.
-	 */
-	int raw_sta_priority;
-
-	/**
-	 * cac - Whether to enable Centralized Admission Control (CAC)
-	 *
-	 * When set to 1, the station will not attempt association with an AP
-	 * that is advertising a CAC threshold in beacons and probe responses
-	 * whilst the advertised threshold is lower than an internally generated
-	 * random value.
-	 */
-	int cac;
-
-	/**
-	 * twt_conf - TWT configuration
-	 */
-	struct morse_twt twt_conf;
-
-	/**
-	 * channel - Initial S1G channel for IBSS (adhoc)
-	 *
-	 * This value is used to configure the initial channel for IBSS (adhoc)
-	 * networks.
-	 */
-	int channel;
-
-	/**
-	 * country - Two-letter string country code for validating support for the IBSS channel
-	 */
-	char *country;
-
-	/**
-	 * op_class - S1G operating class
-	 */
-	int op_class;
-
-	/**
-	 * s1g_prim_chwidth - Primary channel bandwidth
-	 *
-	 * Defaults to 2 MHz for 4MHz and 8MHz channels, 1 MHz otherwise.
-	 */
-	int s1g_prim_chwidth;
-
-	/**
-	 * s1g_prim_1mhz_chan_index - Primary channel index
-	 *
-	 * Used to derive the center channel based on operating and primary channel widths
-	 * - 0-7 for 8MHz operating BW
-	 * - 0-3 for 4MHz operating BW
-	 * - 0-1 for 2MHz operating BW
-	 * - 0   for 1MHz operating BW
-	 */
-	int s1g_prim_1mhz_chan_index;
-
-	/**
-	 * Morse mesh proprietary extension for beaconless mode
-	 */
-	int mesh_beaconless_mode;
-
-	/**
-	 * Morse mesh proprietary extension for dynamic peering
-	 */
-	bool mesh_dynamic_peering;
-
-	/**
-	 * RSSI margin to consider while selecting a peer to kickout.
-	 */
-	int mesh_rssi_margin;
-
-	/**
-	 * Duration in seconds, a kicked out peer is blacklisted.
-	 */
-	u32 mesh_blacklist_timeout;
-	/**
-	 * disable_s1g_sgi - Disable SGI (Short Guard Interval) for S1G network
-	 *
-	 * By default, use it if it is available, but this can be configured
-	 * to 1 to have it disabled.
-	 */
-	int disable_s1g_sgi;
-
-	/**
-	 * auth_retry_backoff - List of authentication retry backoff times in seconds
-	 *
-	 * This is an optional zero-terminated array of backoff times in seconds. When present, it
-	 * overrides the default delay times used between successive authentication failures.
-	 * network.
-	 */
-	int *auth_retry_backoff;
-
-#endif /* CONFIG_IEEE80211AH */
-
-
 };
 
 #endif /* CONFIG_SSID_H */

@@ -1,7 +1,6 @@
 /*
  * hostapd - command line interface for hostapd daemon
  * Copyright (c) 2004-2022, Jouni Malinen <j@w1.fi>
- * Copyright 2022 Morse Micro
  *
  * This software may be distributed under the terms of the BSD license.
  * See README for more details.
@@ -29,8 +28,7 @@ static int hostapd_cli_quit = 0;
 static int hostapd_cli_attached = 0;
 
 #ifndef CONFIG_CTRL_IFACE_DIR
-/* Morse Micro SW-5153. Update control interface to use _s1g for HaLow specific hostapd */
-#define CONFIG_CTRL_IFACE_DIR "/var/run/hostapd_s1g"
+#define CONFIG_CTRL_IFACE_DIR "/var/run/hostapd"
 #endif /* CONFIG_CTRL_IFACE_DIR */
 static const char *ctrl_iface_dir = CONFIG_CTRL_IFACE_DIR;
 static const char *client_socket_dir = NULL;
@@ -68,7 +66,7 @@ static void usage(void)
 		"   -h           help (show this usage text)\n"
 		"   -v           shown version information\n"
 		"   -p<path>     path to find control sockets (default: "
-		"/var/run/hostapd_s1g)\n"
+		"/var/run/hostapd)\n"
 		"   -s<dir_path> dir path to open client sockets (default: "
 		CONFIG_CTRL_IFACE_DIR ")\n"
 		"   -a<file>     run in daemon mode executing the action file "
@@ -1193,20 +1191,11 @@ static int hostapd_cli_cmd_chan_switch(struct wpa_ctrl *ctrl,
 	int total;
 
 	if (argc < 2) {
-#ifdef CONFIG_IEEE80211AH
-		printf("Invalid chan_switch command: needs at least five arguments "
-		       "(count, freq, prim_bandwidth, center_freq1 and bandwidth) for S1G "
-		       "frequency and at least two arguments (count and freq) for ht frequency\n"
-		       "usage: <cs_count> <freq> [prim_bandwidth=] [sec_channel_offset=] "
-		       "[center_freq1=] [center_freq2=] [bandwidth=] "
-		       "[blocktx] [ht|vht]\n");
-#else
 		printf("Invalid chan_switch command: needs at least two "
 		       "arguments (count and freq)\n"
 		       "usage: <cs_count> <freq> [sec_channel_offset=] "
 		       "[center_freq1=] [center_freq2=] [bandwidth=] "
 		       "[blocktx] [ht|vht|he|eht]\n");
-#endif /* CONFIG_IEEE80211AH */
 		return -1;
 	}
 
@@ -1601,50 +1590,6 @@ static int hostapd_cli_cmd_dpp_push_button(struct wpa_ctrl *ctrl, int argc,
 #endif /* CONFIG_DPP */
 
 
-#ifdef CONFIG_NAN_USD
-static int hostapd_cli_cmd_nan_publish(struct wpa_ctrl *ctrl, int argc,
-				       char *argv[])
-{
-	return hostapd_cli_cmd(ctrl, "NAN_PUBLISH", 1, argc, argv);
-}
-
-
-static int hostapd_cli_cmd_nan_cancel_publish(struct wpa_ctrl *ctrl, int argc,
-					      char *argv[])
-{
-	return hostapd_cli_cmd(ctrl, "NAN_CANCEL_PUBLISH", 1, argc, argv);
-}
-
-
-static int hostapd_cli_cmd_nan_update_publish(struct wpa_ctrl *ctrl, int argc,
-					      char *argv[])
-{
-	return hostapd_cli_cmd(ctrl, "NAN_UPDATE_PUBLISH", 1, argc, argv);
-}
-
-
-static int hostapd_cli_cmd_nan_subscribe(struct wpa_ctrl *ctrl, int argc,
-					 char *argv[])
-{
-	return hostapd_cli_cmd(ctrl, "NAN_SUBSCRIBE", 1, argc, argv);
-}
-
-
-static int hostapd_cli_cmd_nan_cancel_subscribe(struct wpa_ctrl *ctrl, int argc,
-						char *argv[])
-{
-	return hostapd_cli_cmd(ctrl, "NAN_CANCEL_SUBSCRIBE", 1, argc, argv);
-}
-
-
-static int hostapd_cli_cmd_nan_transmit(struct wpa_ctrl *ctrl, int argc,
-					char *argv[])
-{
-	return hostapd_cli_cmd(ctrl, "NAN_TRANSMIT", 3, argc, argv);
-}
-#endif /* CONFIG_NAN_USD */
-
-
 static int hostapd_cli_cmd_accept_macacl(struct wpa_ctrl *ctrl, int argc,
 					 char *argv[])
 {
@@ -1806,17 +1751,10 @@ static const struct hostapd_cli_cmd hostapd_cli_commands[] = {
 	{ "send_qos_map_conf", hostapd_cli_cmd_send_qos_map_conf,
 	  hostapd_complete_stations,
 	  "<addr> = send QoS Map Configure frame" },
-#ifdef CONFIG_IEEE80211AH
-	{ "chan_switch", hostapd_cli_cmd_chan_switch, NULL,
-	  "<cs_count> <freq> [prim_bandwidth=] [sec_channel_offset=] [center_freq1=]\n"
-	  "  [center_freq2=] [bandwidth=] [blocktx] [ht|vht]\n"
-	  "  = initiate channel switch announcement" },
-#else
 	{ "chan_switch", hostapd_cli_cmd_chan_switch, NULL,
 	  "<cs_count> <freq> [sec_channel_offset=] [center_freq1=]\n"
 	  "  [center_freq2=] [bandwidth=] [blocktx] [ht|vht]\n"
 	  "  = initiate channel switch announcement" },
-#endif /* CONFIG_IEEE80211AH */
 #ifdef CONFIG_IEEE80211AX
 	{ "color_change", hostapd_cli_cmd_color_change, NULL,
 	  "<color> = initiate BSS color change to set the specified color\n"
@@ -1922,22 +1860,6 @@ static const struct hostapd_cli_cmd hostapd_cli_commands[] = {
 	  "= press DPP push button" },
 #endif /* CONFIG_DPP3 */
 #endif /* CONFIG_DPP */
-
-#ifdef CONFIG_NAN_USD
-	{ "nan_publish", hostapd_cli_cmd_nan_publish, NULL,
-	  "service_name=<name> [ttl=<time to live in sec>] [srv_proto_type=<type>] [ssi=<service specific information (hexdump)>] [p2p=1] [solicited=0] [unsolicited=0] [fsd=0] = Publish USD Service"},
-	{ "nan_cancel_publish", hostapd_cli_cmd_nan_cancel_publish, NULL,
-	  "publish_id=<id from NAN_PUBLISH> = Cancel USD Service"},
-	{ "nan_update_publish", hostapd_cli_cmd_nan_update_publish, NULL,
-	  "publish_id=<id from NAN_PUBLISH> [ssi=<service specific information (hexdump)>] = Update USD Service"},
-	{ "nan_subscribe", hostapd_cli_cmd_nan_subscribe, NULL,
-	  "service_name=<name> [active=1] [ttl=<time to live in sec>] [srv_proto_type=<type>] [ssi=<service specific information (hexdump)>] [p2p=1] = Subscribe to a USD Service"},
-	{ "nan_cancel_subscribe", hostapd_cli_cmd_nan_cancel_subscribe, NULL,
-	  "subscribe_id=<id from NAN_SUBSCRIBE> = Un-subscribe from a USD Service"},
-	{ "nan_transmit", hostapd_cli_cmd_nan_transmit, NULL,
-	  "handle=<id from NAN_PUBLISH or NAN_SUBSCRIBE> req_instance_id=<peer's id> address=<peer's MAC address> [ssi=<service specific information (hexdump)>] = Send a USD transmit message to the given peer"},
-#endif /* CONFIG_NAN_USD */
-
 	{ "accept_acl", hostapd_cli_cmd_accept_macacl, NULL,
 	  "=Add/Delete/Show/Clear accept MAC ACL" },
 	{ "deny_acl", hostapd_cli_cmd_deny_macacl, NULL,

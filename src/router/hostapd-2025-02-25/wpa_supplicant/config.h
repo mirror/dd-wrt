@@ -1,7 +1,6 @@
 /*
  * WPA Supplicant / Configuration file structures
  * Copyright (c) 2003-2012, Jouni Malinen <j@w1.fi>
- * Copyright 2022 Morse Micro
  *
  * This software may be distributed under the terms of the BSD license.
  * See README for more details.
@@ -17,41 +16,9 @@
 #define DEFAULT_AP_SCAN 1
 #endif /* CONFIG_NO_SCAN_PROCESSING */
 #define DEFAULT_USER_MPM 1
-#ifdef CONFIG_IEEE80211AH
-#define DEFAULT_MAX_PEER_LINKS 10
-#else
 #define DEFAULT_MAX_PEER_LINKS 99
-#endif
 #define DEFAULT_MESH_MAX_INACTIVITY 300
 #define DEFAULT_MESH_FWDING 1
-#define DEFAULT_HWMP_ROOTMODE MESH_HWMP_NOROOT	/* No root */
-#define DEFAULT_MESH_GATE_ANNOUNCEMENTS 0	/* No gate announcements */
-#ifdef CONFIG_IEEE80211AH
-/*
- * Mesh MBCA TBTT selection and adjustment configuration to enable
- * in target LMAC firmware.
- */
-#define MESH_MBCA_CFG_TBTT_SEL_ENABLE BIT(0)
-#define MESH_MBCA_CFG_TBTT_ADJ_ENABLE BIT(1)
-#define DEFAULT_MBCA_CFG MESH_MBCA_CFG_TBTT_SEL_ENABLE
-/* Every 10th beacon contains beacon timing element */
-#define DEFAULT_MESH_BCN_TIMING_REPORT_INT 10
-#define DEFAULT_TBTT_ADJ_INTERVAL_SEC 60
-#define DEFAULT_MBCA_MIN_BCN_GAP_MS 10
-#define DEFAULT_MBSS_START_SCAN_DURATION_MS 2048
-#define MIN_BCN_GAP_MIN 5
-#define MIN_BCN_GAP_MAX 100
-#define TBTT_ADJ_INT_MIN 30
-#define TBTT_ADJ_INT_MAX 65
-#define BCN_TIMING_REP_INT_MIN 1
-#define BCN_TIMING_REP_INT_MAX 255
-#define MBSS_SCAN_DURATION_MIN 2048
-#define MBSS_SCAN_DURATION_MAX 10240
-#define DEFAULT_MESH_BEACONLESS_MODE 0	/* Beaconless mode disabled by default */
-#define DEFAULT_MESH_DYNAMIC_PEERING 0 /* Dynamic peering is disabled by default */
-#define DEFAULT_MESH_BLACKLIST_TIMEOUT 60
-#define DEFAULT_MESH_RSSI_MARGIN 5
-#endif
 /*
  * The default dot11RSNASAERetransPeriod is defined as 40 ms in the standard,
  * but use 1000 ms in practice to avoid issues on low power CPUs.
@@ -81,7 +48,6 @@
 #define DEFAULT_EXTENDED_KEY_ID 0
 #define DEFAULT_SCAN_RES_VALID_FOR_CONNECT 5
 #define DEFAULT_MLD_CONNECT_BAND_PREF MLD_CONNECT_BAND_PREF_AUTO
-#define DEFAULT_VENDOR_KEEP_ALIVE_OFFLOAD 0
 
 #include "config_ssid.h"
 #include "wps/wps.h"
@@ -92,25 +58,6 @@
 #define MAX_ROAMING_CONS 36
 #define MAX_ROAMING_CONS_OI_LEN 15
 
-/*
- * Configure Mesh RootMode:
- * This attribute controls the configuration of a mesh STA as root mesh STA.
- * A mesh STA is configured as a root mesh STA if dot11MeshHWMPRootMode is
- * set to 2, 3 or 4. Different values correspond to different modes of the
- * root mesh.
- * 
- * 0: Not a Root Node
- * 2: Proactive PREQ no PREP
- * 3: Proactive PREQ with PREP
- * 4: RANN
-*/
-enum mesh_hwmp_rootmode {
-	MESH_HWMP_NOROOT = 0,
-	MESH_HWMP_NOT_USED = 1,
-	MESH_HWMP_PREQ_NO_PREP = 2,
-	MESH_HWMP_PREQ_WITH_PREP = 3,
-	MESH_HWMP_RANN = 4
-};
 struct wpa_cred {
 	/**
 	 * next - Next credential in the list
@@ -654,7 +601,7 @@ struct wpa_config {
 	 * information and configuration. The socket file will be named based
 	 * on the interface name, so multiple %wpa_supplicant processes can be
 	 * run at the same time if more than one interface is used.
-	 * /var/run/wpa_supplicant_s1g is the recommended directory for sockets and
+	 * /var/run/wpa_supplicant is the recommended directory for sockets and
 	 * by default, wpa_cli will use it when trying to connect with
 	 * %wpa_supplicant.
 	 *
@@ -673,8 +620,8 @@ struct wpa_config {
 	 * interface access to this group.
 	 *
 	 * When configuring both the directory and group, use following format:
-	 * DIR=/var/run/wpa_supplicant_s1g GROUP=wheel
-	 * DIR=/var/run/wpa_supplicant_s1g GROUP=0
+	 * DIR=/var/run/wpa_supplicant GROUP=wheel
+	 * DIR=/var/run/wpa_supplicant GROUP=0
 	 * (group can be either group name or gid)
 	 *
 	 * For UDP connections (default on Windows): The value will be ignored.
@@ -1390,14 +1337,6 @@ struct wpa_config {
 	int sae_check_mfp;
 
 	/**
-	 * op_class - Operating class to use
-	 *
-	 * By default, op_class is set to 0. This is only needed when using softAP.
-	 * op_class is requered for the device that will be started as an AP.
-	 */
-	int op_class;
-
-	/**
 	 * sae_groups - Preference list of enabled groups for SAE
 	 *
 	 * By default (if this parameter is not set), the mandatory group 19
@@ -1787,18 +1726,6 @@ struct wpa_config {
 	int dpp_connector_privacy_default;
 
 	/**
-	 * dpp_chirp_forever - If configured, will initiate chirp, and continue
-	 * until a connection succeeds
-	 */
-	int dpp_chirp_forever;
-
-	/**
-	 * dpp_key - A *.pem file containing a private EC key in the following
-	 * format: prime256v1
-	 */
-	char *dpp_key;
-
-	/**
 	 * coloc_intf_reporting - Colocated interference reporting
 	 *
 	 * dot11CoLocIntfReportingActivated
@@ -1891,27 +1818,6 @@ struct wpa_config {
 	 * rsn_overriding - RSN overriding (default behavior)
 	 */
 	enum wpas_rsn_overriding rsn_overriding;
-
-#ifdef CONFIG_MORSE_STANDBY_MODE
-	/**
-	 * standby_session_dir - Directory in which to store persistent session keys for Standby
-	 * mode
-	 *
-	 * When not set, Standby Mode is disabled.
-	 */
-	char *standby_session_dir;
-#endif
-	int ieee80211ah;
-
-#ifdef CONFIG_MORSE_KEEP_ALIVE_OFFLOAD
-	/**
-	 * vendor_keep_alive_offload - Attempt to offload null ipv4 keep alive generation
-	 * to the hardware
-	 *
-	 * When not set, keep alive offload is disabled;
-	 */
-	int vendor_keep_alive_offload;
-#endif
 
 #ifdef CONFIG_PASN
 #ifdef CONFIG_TESTING_OPTIONS
@@ -2081,9 +1987,7 @@ const char * wpa_config_get_global_field_name(unsigned int i, int *no_var);
  *
  * Each configuration backend needs to implement this function.
  */
-struct wpa_supplicant;
-
-struct wpa_config * wpa_config_read(struct wpa_supplicant *wpa_s,const char *name, struct wpa_config *cfgp,
+struct wpa_config * wpa_config_read(const char *name, struct wpa_config *cfgp,
 				    bool ro);
 
 /**

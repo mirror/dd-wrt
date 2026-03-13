@@ -1,7 +1,6 @@
 /*
  * hostapd / UNIX domain socket -based control interface
  * Copyright (c) 2004-2018, Jouni Malinen <j@w1.fi>
- * Copyright 2022 Morse Micro
  *
  * This software may be distributed under the terms of the BSD license.
  * See README for more details.
@@ -71,8 +70,6 @@
 #include "fst/fst_ctrl_iface.h"
 #include "config_file.h"
 #include "ctrl_iface.h"
-#include "config_file.h"
-#include "utils/morse.h"
 
 
 #define HOSTAPD_CLI_DUP_VALUE_MAX_LEN 256
@@ -89,6 +86,7 @@ static char *reload_opts = NULL;
 static void hostapd_ctrl_iface_send(struct hostapd_data *hapd, int level,
 				    enum wpa_msg_type type,
 				    const char *buf, size_t len);
+
 
 static int hostapd_ctrl_iface_attach(struct hostapd_data *hapd,
 				     struct sockaddr_storage *from,
@@ -220,7 +218,7 @@ static int hostapd_ctrl_iface_update(struct hostapd_data *hapd, char *txt)
 	iface->interfaces->config_read_cb = hostapd_ctrl_iface_config_read;
 	reload_opts = txt;
 
-	hostapd_reload_config(iface, 0);
+	hostapd_reload_config(iface);
 
 	iface->interfaces->config_read_cb = config_read_cb;
 }
@@ -2764,7 +2762,6 @@ static int hostapd_ctrl_iface_chan_switch(struct hostapd_iface *iface,
 	unsigned int i;
 	int bandwidth;
 	u8 chan;
-	u8 is_s1g_freq = 0;
 	unsigned int num_err = 0;
 	int err = 0;
 
@@ -2778,26 +2775,6 @@ static int hostapd_ctrl_iface_chan_switch(struct hostapd_iface *iface,
 		settings.link_id = iface->bss[0]->mld_link_id;
 #endif /* CONFIG_IEEE80211BE */
 
-	/* Check if input frequency is s1g_frequency.
-	 * This check is necessary for interoperability with
-	 * ht frequencies as input. If the input is S1G frequency
-	 * then we do S1G to ht frequency conversions later
-	 */
-	if (settings.freq_params.center_freq1 >  MIN_S1G_FREQ_KHZ &&
-		settings.freq_params.center_freq1 < MAX_S1G_FREQ_KHZ &&
-		settings.freq_params.freq >  MIN_S1G_FREQ_KHZ &&
-		settings.freq_params.freq < MAX_S1G_FREQ_KHZ)
-	{
-		is_s1g_freq = 1;
-	}
-#ifdef CONFIG_IEEE80211AH
-	if (is_s1g_freq)
-	{
-		ret = morse_s1g_validate_csa_params(iface, &settings);
-		if (ret)
-			return ret;
-	}
-#endif /* CONFIG_IEEE80211AH */
 	if (iface->num_hw_features > 1 &&
 	    !hostapd_ctrl_is_freq_in_cmode(iface->current_mode,
 					   iface->current_hw_info,
@@ -2886,25 +2863,6 @@ static int hostapd_ctrl_iface_chan_switch(struct hostapd_iface *iface,
 		hostapd_chan_switch_config(iface->bss[i],
 					   &settings.freq_params);
 
-#ifdef CONFIG_IEEE80211AH
-		if (iface->conf->ieee80211ah) {
-		/* Enable VHT caps based on the new channel width and S1G config */
-		if (settings.freq_params.bandwidth > 80) {
-			iface->conf->vht_capab |= VHT_CAP_SUPP_CHAN_WIDTH_160MHZ;
-			if (iface->conf->s1g_capab & S1G_CAP0_SGI_8MHZ)
-				iface->conf->vht_capab |= VHT_CAP_SHORT_GI_160;
-		}
-		if (is_s1g_freq)
-			morse_set_ecsa_params(iface->conf->bss[i]->iface,
-					settings.s1g_freq_params.s1g_global_op_class,
-					settings.s1g_freq_params.s1g_prim_bw,
-					settings.s1g_freq_params.s1g_oper_bw,
-					settings.s1g_freq_params.s1g_oper_freq,
-					settings.s1g_freq_params.s1g_prim_channel_index_1MHz,
-					settings.s1g_freq_params.s1g_prim_ch_global_op_class,
-					iface->conf->s1g_capab);
-		}
-#endif /* CONFIG_IEEE80211AH */
 		err = hostapd_switch_channel(iface->bss[i], &settings);
 		if (err) {
 			ret = err;
@@ -3327,6 +3285,7 @@ static int hostapd_ctrl_iface_log_level(struct hostapd_data *hapd, char *cmd,
 	os_memcpy(buf, "OK\n", 3);
 	return 3;
 }
+
 
 #ifdef NEED_AP_MLME
 
@@ -4385,7 +4344,7 @@ static int hostapd_ctrl_iface_receive_process(struct hostapd_data *hapd,
 		if (hostapd_ctrl_iface_reload_bss(hapd))
 			reply_len = -1;
 	} else if (os_strcmp(buf, "RELOAD_CONFIG") == 0) {
-		if (hostapd_reload_config(hapd->iface, 1))
+		if (hostapd_reload_config(hapd->iface))
 			reply_len = -1;
 	} else if (os_strcmp(buf, "RELOAD") == 0) {
 		if (hostapd_ctrl_iface_reload(hapd->iface))

@@ -723,9 +723,6 @@ struct wpa_eapol_ie_parse {
 	size_t rsne_override_2_len;
 	const u8 *rsnxe_override;
 	size_t rsnxe_override_len;
-#ifndef MAX_NUM_MLO_LINKS
-#define MAX_NUM_MLO_LINKS 15
-#endif
 	u16 valid_mlo_gtks; /* bitmap of valid link GTK KDEs */
 	const u8 *mlo_gtk[MAX_NUM_MLD_LINKS];
 	size_t mlo_gtk_len[MAX_NUM_MLD_LINKS];
