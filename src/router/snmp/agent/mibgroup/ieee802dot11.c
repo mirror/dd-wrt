@@ -3960,6 +3960,8 @@ static void loadTables()
 *              load80211Structs() - load the 802.11 structures              *
 *                                                                           *
 ****************************************************************************/
+unsigned int if_nametoindex (const char *);
+
 static void 
 load80211Structs ( int skfd, char *ifName, struct wireless_info *wi )
 {
@@ -3982,7 +3984,6 @@ load80211Structs ( int skfd, char *ifName, struct wireless_info *wi )
     strcpy  ( nOp.MACAddress, MACAddress );
     nRi.haveManufacturerOUI = TRUE;
     strncpy ( nRi.manufacturerOUI, MACAddress, MAN_OUI_LEN ); 
-unsigned int if_nametoindex (const char *);
 
     ifIndex = if_nametoindex ( ifName );
     if ( !ifIndex ) {

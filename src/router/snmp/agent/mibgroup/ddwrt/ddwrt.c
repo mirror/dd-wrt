@@ -1013,11 +1013,12 @@ int get_distance_madwifi(char *iface)
 {
 	char path[64];
 	int ifcount, distance = 0;
+	FILE *in;
 
 	strcpy(path, iface);
 	sscanf(path, "wlan%d", &ifcount);
 	sprintf(path, "/proc/sys/dev/wifi%d/distance", ifcount);
-	FILE *in = fopen(path, "rb");
+	in = fopen(path, "rb");
 
 	if (in != NULL) {
 		fscanf(in, "%d", &distance);
@@ -1140,6 +1141,7 @@ void ddxrWlStatTable_madwifi()
 {
 	const char *next;
 	char *mac;
+	char *names;
 	// struct ether_addr *mac;
 	char var[32];
 	char temp[32];
@@ -1255,7 +1257,7 @@ void ddxrWlStatTable_madwifi()
 		}
 
 		mainentry = entry;
-		char *names = nvram_nget("wlan%d_vifs", i);
+		names = nvram_nget("wlan%d_vifs", i);
 
 		foreach(var, names, next) {
 			vapindex = var[strlen(var) - 1];
@@ -1376,10 +1378,12 @@ void set_ddxrWlRtabAntennaname(struct ddWlRtabTable_entry *entry, char *var)
 void ddWlRtabTable_madwifi()
 {
 	const char *next;
+	char *names;
 	char var[32];
 	char temp[32];
 	int count;
 	int i;
+	int c;
 	int turbo = 1;
 	int vap;
 	char vapindex;
@@ -1403,7 +1407,7 @@ void ddWlRtabTable_madwifi()
 #endif
 			ddWlRtabTable_madwifi_assoc(var, 0, turbo, i, vap, 0, 0);
 #endif
-		char *names = nvram_nget("wlan%d_vifs", i);
+		names = nvram_nget("wlan%d_vifs", i);
 
 		foreach(var, names, next) {
 			vapindex = var[strlen(var) - 1];
@@ -1424,7 +1428,7 @@ void ddWlRtabTable_madwifi()
 	}
 
 	// show wds links
-	int c = getdevicecount();
+	c = getdevicecount();
 	vap = 0;
 	for (i = 0; i < c; i++) {
 
@@ -1473,18 +1477,21 @@ void ddWlRtabTable_madwifi_assoc(char *ifname, int cnt, int turbo, int ciface, i
 	char *bssid;
 	int type = 0;
 	struct ddWlRtabTable_entry *entry;
+	int bias;
+	int state;
 
-	unsigned char *cp;
+	unsigned char *cp, *buf;
 	int s, len;
 	struct iwreq iwr;
 	char nb[32];
+	char mac[32];
 	sprintf(nb, "%s_bias", ifname);
-	int bias = atoi(nvram_default_get(nb, "0"));
+	bias = atoi(nvram_default_get(nb, "0"));
 	if (!ifexists(ifname)) {
 		DEBUGMSGTL(("ddwrt:madwifiassoc", "IOCTL_STA_INFO ifresolv %s failed!\n", ifname));
 		return;
 	}
-	int state = get_radiostate(ifname);
+	state = get_radiostate(ifname);
 
 	if (state == 0 || state == -1) {
 		DEBUGMSGTL(("ddwrt:madwifiassoc", "IOCTL_STA_INFO radio %s not enabled!\n", ifname));
@@ -1497,7 +1504,7 @@ void ddWlRtabTable_madwifi_assoc(char *ifname, int cnt, int turbo, int ciface, i
 	}
 	(void)memset(&iwr, 0, sizeof(struct iwreq));
 	(void)strlcpy(iwr.ifr_name, ifname, sizeof(iwr.ifr_name));
-	unsigned char *buf = (unsigned char *)malloc(24 * 1024);
+	buf = (unsigned char *)malloc(24 * 1024);
 
 	iwr.u.data.pointer = (void *)buf;
 	iwr.u.data.length = 24 * 1024;
@@ -1525,7 +1532,6 @@ void ddWlRtabTable_madwifi_assoc(char *ifname, int cnt, int turbo, int ciface, i
 		// if (cnt)
 		// printf( ",");
 		cnt++;
-		char mac[32];
 
 		strcpy(mac, ieee80211_ntoa(si->isi_macaddr));
 		if (si->isi_noise == 0) {
