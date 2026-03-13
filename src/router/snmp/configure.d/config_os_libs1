@@ -145,44 +145,9 @@ fi
 #   script of PKG_* macros and because the search for the pkg-config executable
 #   only occurs once.
 if test "x$with_nl" != "xno"; then
-    ifdef(
-      [PKG_CHECK_EXISTS],
-      [
-        PKG_CHECK_EXISTS([libnl-3.0],
-	  [PKG_CHECK_MODULES([LIBNL3], [libnl-3.0])])
-        PKG_CHECK_EXISTS([libnl-route-3.0],
-          [PKG_CHECK_MODULES([LIBNLROUTE3], [libnl-route-3.0])])
-      ],
-      [
-        AC_MSG_ERROR([pkg-config must be installed before autoconf is run.])
-      ]
-    )
-
     case $target_os in
     linux*) # Check for libnl (linux)
         netsnmp_save_CPPFLAGS="$CPPFLAGS"
-        CPPFLAGS="${LIBNL3_CFLAGS} ${LIBNLROUTE3_CFLAGS} $CPPFLAGS"
-        NETSNMP_SEARCH_LIBS(nl_connect, nl-3,
-            [AC_CHECK_HEADERS([netlink/cache.h   netlink/msg.h   ]dnl
-			      [netlink/netlink.h netlink/socket.h])
-            EXTERNAL_MIBGROUP_INCLUDES="$EXTERNAL_MIBGROUP_INCLUDES ${LIBNL3_CFLAGS}"],
-            [CPPFLAGS="$netsnmp_save_CPPFLAGS"], [], [LMIBLIBS])
-        NETSNMP_SEARCH_LIBS(rtnl_link_alloc_cache, nl-route-3,
-            [AC_CHECK_HEADERS([netlink/route/addr.h netlink/route/link.h])
-            EXTERNAL_MIBGROUP_INCLUDES="$EXTERNAL_MIBGROUP_INCLUDES ${LIBNLROUTE3_CFLAGS}"],
-            [CPPFLAGS="$netsnmp_save_CPPFLAGS"], [], [LMIBLIBS])
-        if test "x$ac_cv_header_netlink_netlink_h" != xyes; then
-            NETSNMP_SEARCH_LIBS(nl_connect, nl, [
-                AC_CHECK_HEADERS([netlink/cache.h   netlink/msg.h   ]dnl
-				  [netlink/netlink.h netlink/socket.h])],
-		[], [], LMIBLIBS)
-        fi
-        if test "x$ac_cv_header_netlink_netlink_h" = xyes; then
-            AC_EGREP_HEADER([nl_socket_free], [netlink/socket.h],
-                            [AC_DEFINE([HAVE_LIBNL3], [1],
-                            [Define to 1 if <netlink/netlink.h> provides the
-                            libnl3 API])])
-        fi
     ;;
     esac
 fi
