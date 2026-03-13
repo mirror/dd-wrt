@@ -57,7 +57,9 @@ CONFIG_SSID_PROTECTION=y
 endif
 endif
 
-
+ifeq ($(CONFIG_MORSE),y)
+HOSTAPDVERSION=2025-02-25.ah
+endif
 
 ifeq ($(KERNELVERSION),6.12)
 ATH9K_CFLAGS += $(MIPS16_OPT) -ffunction-sections -fdata-sections -Wl,--gc-sections -I$(TOP)/_staging/usr/include 
