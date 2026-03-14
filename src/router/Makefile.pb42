@@ -956,7 +956,7 @@ endif
 
 	lzma e -lc1 -lp2 -pb2 $(ARCH)-uclibc/vmlinux.bin $(ARCH)-uclibc/vmlinux.lzma
 	lzma e $(ARCH)-uclibc/vmlinux.bin $(ARCH)-uclibc/vmlinux.tpl
-#	gzip -9 $(ARCH)-uclibc/vmlinux.bin $(ARCH)-uclibc/vmlinux.gz
+#	libdeflate-gzip -12 $(ARCH)-uclibc/vmlinux.bin $(ARCH)-uclibc/vmlinux.gz
 	dd if=$(ARCH)-uclibc/vmlinux.lzma of=$(ARCH)-uclibc/vmlinux.bin.l7 bs=65536 conv=sync
 
 #	dd if=$(ARCH)-uclibc/vmlinux.gz of=$(ARCH)-uclibc/vmlinux.bin.gz bs=65536 conv=sync

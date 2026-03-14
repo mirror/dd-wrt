@@ -191,7 +191,7 @@ endif
 #	$(LINUXDIR)/scripts/squashfs/mksquashfs4 $(ARCH)-uclibc/target $(ARCH)-uclibc/root.fs -comp xz -sort tools/sort.txt -root-owned -noappend -Xbcj arm
 	dd if=$(ARCH)-uclibc/root.fs of=$(ARCH)-uclibc/newport.img bs=16M seek=1
 	# compress it
-	gzip -k -f $(ARCH)-uclibc/newport.img 
+	libdeflate-gzip -k -f $(ARCH)-uclibc/newport.img 
 	./tools/newp $(ARCH)-uclibc/newport.img $(ARCH)-uclibc/newport-webupgrade.bin
 
 
@@ -267,7 +267,7 @@ endif
 	$(TOP)/../../tools/removewhitespace.sh $(TOP)/../../tools $(TARGETDIR)/etc/config
 
 	cp $(LINUXDIR)/arch/arm64/boot/Image $(ARCH)-uclibc/vmlinux
-	gzip -f $(ARCH)-uclibc/vmlinux
+	libdeflate-gzip -12 -f $(ARCH)-uclibc/vmlinux
 ifeq ($(KERNELVERSION),6.1)
 	cd $(ARCH)-uclibc && ../tools/newport/mkits2.sh -o kernel.its -k vmlinux.gz -C gzip -v "dd-wrt"
 else
@@ -315,12 +315,12 @@ endif
 	# compress it
 	dd if=$(ARCH)-uclibc/newport.img of=$(ARCH)-uclibc/newport.align bs=1048576 conv=sync
 	mv -f $(ARCH)-uclibc/newport.align $(ARCH)-uclibc/newport.img
-	gzip -k -f $(ARCH)-uclibc/newport.img 
+	libdeflate-gzip -12 -k -f $(ARCH)-uclibc/newport.img 
 	./tools/newp $(ARCH)-uclibc/newport.img $(ARCH)-uclibc/newport-webupgrade.bin
 	
 #	cp $(LINUXDIR)/arch/arm64/boot/Image $(TARGETDIR)/boot
 #	./tools/ext2/genext2fs -d $(ARCH)-uclibc/target -b 300000 -i 65536 -N 65536 -q $(ARCH)-uclibc/disc_emmc.img
-#	gzip -9 $(ARCH)-uclibc/disc_emmc.img
+#	libdeflate-gzip -12 $(ARCH)-uclibc/disc_emmc.img
 
 
 	
