@@ -317,18 +317,18 @@ ifeq ($(CONFIG_R6800),y)
 	cp $(LINUXDIR)/vmlinux $(LINUXDIR)/vmlinux-3700
 	cp $(LINUXDIR)/vmlinux $(LINUXDIR)/vmlinux-morse
 	./tools/patch-dtb/patch-dtb $(LINUXDIR)/vmlinux-r6850 $(LINUXDIR)/dts_ramips/MT7620a_6850.dtb
-	./tools/patch-dtb/patch-dtb patch-dtb $(LINUXDIR)/vmlinux-r6260 $(LINUXDIR)/dts_ramips/MT7620a_6260.dtb
-	./tools/patch-dtb/patch-dtb patch-dtb $(LINUXDIR)/vmlinux-r6350 $(LINUXDIR)/dts_ramips/MT7620a_6350.dtb
-	./tools/patch-dtb/patch-dtb patch-dtb $(LINUXDIR)/vmlinux-r6220 $(LINUXDIR)/dts_ramips/MT7620a_6220.dtb
-	./tools/patch-dtb/patch-dtb patch-dtb $(LINUXDIR)/vmlinux-wac124 $(LINUXDIR)/dts_ramips/MT7620a_124.dtb
-	./tools/patch-dtb/patch-dtb patch-dtb $(LINUXDIR)/vmlinux-3700 $(LINUXDIR)/dts_ramips/MT7620a_3700.dtb
-	./tools/patch-dtb/patch-dtb patch-dtb $(LINUXDIR)/vmlinux-morse $(LINUXDIR)/dts_ramips/MT7620a_morse.dtb
+	./tools/patch-dtb/patch-dtb $(LINUXDIR)/vmlinux-r6260 $(LINUXDIR)/dts_ramips/MT7620a_6260.dtb
+	./tools/patch-dtb/patch-dtb $(LINUXDIR)/vmlinux-r6350 $(LINUXDIR)/dts_ramips/MT7620a_6350.dtb
+	./tools/patch-dtb/patch-dtb $(LINUXDIR)/vmlinux-r6220 $(LINUXDIR)/dts_ramips/MT7620a_6220.dtb
+	./tools/patch-dtb/patch-dtb $(LINUXDIR)/vmlinux-wac124 $(LINUXDIR)/dts_ramips/MT7620a_124.dtb
+	./tools/patch-dtb/patch-dtb $(LINUXDIR)/vmlinux-3700 $(LINUXDIR)/dts_ramips/MT7620a_3700.dtb
+	./tools/patch-dtb/patch-dtb $(LINUXDIR)/vmlinux-morse $(LINUXDIR)/dts_ramips/MT7620a_morse.dtb
 endif
 ifeq ($(CONFIG_DIR882),y)
 	cp $(LINUXDIR)/vmlinux-mt7620 $(LINUXDIR)/vmlinux-mt7620-r1
-	./tools/patch-dtb/patch-dtb patch-dtb $(LINUXDIR)/vmlinux-mt7620-r1 $(LINUXDIR)/dts_ramips/MT7620a-R1.dtb
+	./tools/patch-dtb/patch-dtb $(LINUXDIR)/vmlinux-mt7620-r1 $(LINUXDIR)/dts_ramips/MT7620a-R1.dtb
 endif
-	./tools/patch-dtb/patch-dtb patch-dtb $(LINUXDIR)/vmlinux-mt7620 $(LINUXDIR)/dts_ramips/MT7620a.dtb
+	./tools/patch-dtb/patch-dtb $(LINUXDIR)/vmlinux-mt7620 $(LINUXDIR)/dts_ramips/MT7620a.dtb
 #	$(call CompressLzma,$(KDIR)/vmlinux-$(1)$(3),$(KDIR)/vmlinux-$(1)$(3).bin.lzma)
 endif
 
