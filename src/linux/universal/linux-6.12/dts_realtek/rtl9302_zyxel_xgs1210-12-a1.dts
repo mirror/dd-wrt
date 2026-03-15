@@ -9,9 +9,11 @@
 };
 
 &phy24 {
-	realtek,smi-address = <1 8>;
+	realtek,smi-address = <8>;
+	enet-phy-pair-order = <1>;
 };
 
 &phy25 {
-	realtek,smi-address = <2 9>;
+	realtek,smi-address = <9>;
+	enet-phy-pair-order = <1>;
 };
