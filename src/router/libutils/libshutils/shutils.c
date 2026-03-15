@@ -1586,6 +1586,20 @@ int getipv4fromipv6(char *dstip, const char *srcip)
 	return ipv6;
 }
 
+int ipow(int base, int exp)
+{
+    int result = 1;
+    while (exp != 0)
+    {
+        if ((exp & 1) == 1)
+            result *= base;
+        exp >>= 1;
+        base *= base;
+    }
+
+    return result;
+}
+
 #ifdef HAVE_MICRO
 void add_blocklist(const char *service, char *ip)
 {
@@ -1688,18 +1702,21 @@ void add_blocklist(const char *service, char *ip)
 		if (!strcmp(ip, &entry->ip[0])) {
 			entry->count++;
 			if (entry->blocked != 1 && entry->count > 4) {
+				int newblocktime;
 				if (entry->blocked == -1) {
 					entry->attempts++;
-					entry->end = time(NULL) + (BLOCKTIME * entry->attempts) * 60;
+					newblocktime = ipow(BLOCKTIME, entry->attempts);
+					entry->end = time(NULL) + newblocktime * 60;
 					dd_loginfo(service, "client %s was blocked before, set new blocktime to %d minutes", ip,
-						   (BLOCKTIME * entry->attempts));
+						   newblocktime);
 				} else {
-					entry->end = time(NULL) + BLOCKTIME * 60;
+					newblocktime = BLOCKTIME;
+					entry->end = time(NULL) + newblocktime * 60;
 					entry->attempts = 1;
 				}
 				entry->blocked = 1;
 				dd_loginfo(service, "5 failed login attempts reached. block client %s for %d minutes", ip,
-					   BLOCKTIME * entry->attempts);
+					   newblocktime);
 #ifdef HAVE_PORTSCAN
 				char check[INET6_ADDRSTRLEN];
 				int ipv6 = getipv4fromipv6(check, ip);
@@ -1753,9 +1770,11 @@ int check_blocklist(const char *service, char *ip)
 			if (entry->end > cur) {
 				// each try from a blocked client is extended by another 5 minutes;
 				entry->attempts++;
-				entry->end = time(NULL) + (BLOCKTIME * entry->attempts) * 60;
+				int newblocktime = ipow(BLOCKTIME, entry->attempts);
+				entry->end = time(NULL) + newblocktime * 60;
+
 				dd_loginfo(service, "client %s is blocked, terminate connection, set new blocktime to %d minutes",
-					   ip, (BLOCKTIME * entry->attempts));
+					   ip, newblocktime);
 				ret = -1;
 				change = 1;
 				goto end;
