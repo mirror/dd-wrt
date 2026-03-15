@@ -177,10 +177,6 @@
 			sercomm,scpart-id = <3>;
 		};
 
-		partition@ddwrt {
-			label = "ddwrt";
-			reg = <0x2e00000 0x1800000>;
-		};
 
 		partition@nvram {
 			label = "nvram";
@@ -212,6 +208,11 @@
 					#nvmem-cell-cells = <1>;
 				};
 			};
+		};
+
+		partition@ddwrt {
+			label = "ddwrt";
+			reg = <0x2e00000 0x1800000>;
 		};
 
 		partition@2e00000 {
