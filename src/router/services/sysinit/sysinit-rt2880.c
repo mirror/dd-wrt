@@ -57,6 +57,14 @@
 	eval("/bin/umount", "-a", "-r"); \
 	eval("event", "3", "1", "15")
 
+void set_led_netdev(const char *dev, const char *led)
+{
+	sysprintf("echo netdev > /sys/class/leds/%s/trigger");
+	sysprintf("echo %s > /sys/class/leds/%s/device_name", dev, led);
+	sysprintf("echo 1 > /sys/class/leds/%s/link", led);
+	sysprintf("echo 1 > /sys/class/leds/%s/rx", led);
+	sysprintf("echo 1 > /sys/class/leds/%s/tx", led);
+}
 void start_sysinit(void)
 {
 	char buf[PATH_MAX];
@@ -132,21 +140,6 @@ void start_sysinit(void)
 		nvram_set("dsa", "1");
 		insmod("thermal_sys");
 		insmod("hwmon");
-		//              insmod("mt7615e");
-		eval("swconfig", "dev", "eth0", "set", "reset", "1");
-		eval("swconfig", "dev", "eth0", "set", "enable_vlan", "1");
-		eval("swconfig", "dev", "eth0", "vlan", "1", "set", "ports", "1 2 3 4 6t");
-		eval("swconfig", "dev", "eth0", "vlan", "2", "set", "ports", "0 6t");
-		eval("swconfig", "dev", "eth0", "set", "apply");
-		//              set_smp_affinity(11, 2);        // eth
-		//              set_smp_affinity(12, 4);        //wifi1
-		//              set_smp_affinity(32, 8);        // wifi2
-		nvram_seti("sw_cpuport", 6);
-		nvram_seti("sw_wan", 0);
-		nvram_seti("sw_lan1", 1);
-		nvram_seti("sw_lan2", 2);
-		nvram_seti("sw_lan3", 3);
-		nvram_seti("sw_lan4", 4);
 		break;
 	case ROUTER_MORSE:
 		in = fopen("/dev/mtdblock3", "rb");
@@ -185,53 +178,11 @@ void start_sysinit(void)
 		nvram_set("dsa", "1");
 		insmod("thermal_sys");
 		insmod("hwmon");
-		eval("swconfig", "dev", "eth0", "set", "reset", "1");
-		eval("swconfig", "dev", "eth0", "set", "enable_vlan", "1");
-		eval("swconfig", "dev", "eth0", "vlan", "1", "set", "ports", "0 1 2 3 6t");
-		eval("swconfig", "dev", "eth0", "vlan", "2", "set", "ports", "4 6t");
-		eval("swconfig", "dev", "eth0", "set", "apply");
-		//              set_smp_affinity(20, 2);        // eth
-		//              set_smp_affinity(22, 4);        //wifi1
-		//              set_smp_affinity(23, 8);        // wifi2
-		nvram_seti("sw_cpuport", 6);
-		nvram_seti("sw_wan", 4);
-		nvram_seti("sw_lan1", 3);
-		nvram_seti("sw_lan2", 2);
-		nvram_seti("sw_lan3", 1);
-		nvram_seti("sw_lan4", 0);
 		break;
 	case ROUTER_R6800:
 		nvram_set("dsa", "1");
 		insmod("thermal_sys");
 		insmod("hwmon");
-		insmod("compat");
-		insmod("mac80211");
-		if (!nvram_match("no_mt76", "1")) {
-			insmod("mt76");
-			insmod("mt76-connac-lib");
-			insmod("mt7615-common");
-			insmod("mt7615e");
-			insmod("mt76x02-lib");
-			insmod("mt76x2-common");
-			insmod("mt76x2e");
-			insmod("mt76x0-common");
-			insmod("mt76x0e");
-			insmod("mt7603e");
-		}
-		eval("swconfig", "dev", "eth0", "set", "reset", "1");
-		eval("swconfig", "dev", "eth0", "set", "enable_vlan", "1");
-		eval("swconfig", "dev", "eth0", "vlan", "1", "set", "ports", "0 1 2 3 6t");
-		eval("swconfig", "dev", "eth0", "vlan", "2", "set", "ports", "4 6t");
-		eval("swconfig", "dev", "eth0", "set", "apply");
-		//              set_smp_affinity(20, 2);        // eth
-		//              set_smp_affinity(22, 4);        //wifi1
-		//              set_smp_affinity(23, 8);        // wifi2
-		nvram_seti("sw_cpuport", 6);
-		nvram_seti("sw_wan", 4);
-		nvram_seti("sw_lan1", 3);
-		nvram_seti("sw_lan2", 2);
-		nvram_seti("sw_lan3", 1);
-		nvram_seti("sw_lan4", 0);
 
 		writestr("/sys/class/leds/white:wan/brightness", "0");
 		writestr("/sys/class/leds/white:lan1/brightness", "0");
@@ -245,55 +196,12 @@ void start_sysinit(void)
 		writestr("/sys/class/leds/orange:lan3/brightness", "0");
 		writestr("/sys/class/leds/orange:lan4/brightness", "0");
 
-		writestr("/sys/class/leds/white:wan/trigger", "switch0");
-		writestr("/sys/class/leds/white:lan1/trigger", "switch0");
-		writestr("/sys/class/leds/white:lan2/trigger", "switch0");
-		writestr("/sys/class/leds/white:lan3/trigger", "switch0");
-		writestr("/sys/class/leds/white:lan4/trigger", "switch0");
-		writestr("/sys/class/leds/white:wan/port_mask", "0x10");
-		writestr("/sys/class/leds/white:lan1/port_mask", "0x8");
-		writestr("/sys/class/leds/white:lan2/port_mask", "0x4");
-		writestr("/sys/class/leds/white:lan3/port_mask", "0x2");
-		writestr("/sys/class/leds/white:lan4/port_mask", "0x1");
+		set_led_netdev("wan", "white:wan");
+		set_led_netdev("lan1", "white:lan1");
+		set_led_netdev("lan2", "white:lan2");
+		set_led_netdev("lan3", "white:lan3");
+		set_led_netdev("lan4", "white:lan4");
 
-		writestr("/sys/class/leds/white:wan/mode", "link");
-		writestr("/sys/class/leds/white:lan1/mode", "link");
-		writestr("/sys/class/leds/white:lan2/mode", "link");
-		writestr("/sys/class/leds/white:lan3/mode", "link");
-		writestr("/sys/class/leds/white:lan4/mode", "link");
-
-		writestr("/sys/class/leds/white:wan/speed_mask", "0x8");
-		writestr("/sys/class/leds/white:lan1/speed_mask", "0x8");
-		writestr("/sys/class/leds/white:lan2/speed_mask", "0x8");
-		writestr("/sys/class/leds/white:lan3/speed_mask", "0x8");
-		writestr("/sys/class/leds/white:lan4/speed_mask", "0x8");
-
-		writestr("/sys/class/leds/orange:wan/trigger", "switch0");
-		writestr("/sys/class/leds/orange:lan1/trigger", "switch0");
-		writestr("/sys/class/leds/orange:lan2/trigger", "switch0");
-		writestr("/sys/class/leds/orange:lan3/trigger", "switch0");
-		writestr("/sys/class/leds/orange:lan4/trigger", "switch0");
-
-		writestr("/sys/class/leds/orange:wan/port_mask", "0x10");
-		writestr("/sys/class/leds/orange:lan1/port_mask", "0x8");
-		writestr("/sys/class/leds/orange:lan2/port_mask", "0x4");
-		writestr("/sys/class/leds/orange:lan3/port_mask", "0x2");
-		writestr("/sys/class/leds/orange:lan4/port_mask", "0x1");
-
-		writestr("/sys/class/leds/orange:wan/mode", "link");
-		writestr("/sys/class/leds/orange:lan1/mode", "link");
-		writestr("/sys/class/leds/orange:lan2/mode", "link");
-		writestr("/sys/class/leds/orange:lan3/mode", "link");
-		writestr("/sys/class/leds/orange:lan4/mode", "link");
-
-		writestr("/sys/class/leds/orange:wan/speed_mask", "0x4");
-		writestr("/sys/class/leds/orange:lan1/speed_mask", "0x4");
-		writestr("/sys/class/leds/orange:lan2/speed_mask", "0x4");
-		writestr("/sys/class/leds/orange:lan3/speed_mask", "0x4");
-		writestr("/sys/class/leds/orange:lan4/speed_mask", "0x4");
-
-		writestr("/sys/class/leds/white:wlan2g/trigger", "phy0radio");
-		writestr("/sys/class/leds/white:wlan5g/trigger", "phy1radio");
 		break;
 	case ROUTER_BOARD_E1700:
 	case ROUTER_DIR810L:
@@ -731,18 +639,13 @@ void start_postnetwork(void)
 	int brand = getRouterBrand();
 	switch (brand) {
 	case ROUTER_MORSE:
-		sysprintf("echo netdev > /sys/class/leds/rgb:led0/trigger");
-		sysprintf("echo wlan0 > /sys/class/leds/rgb:led0/device_name");
-		sysprintf("echo 1 > /sys/class/leds/rgb:led0/link");
-		sysprintf("echo 1 > /sys/class/leds/rgb:led0/rx");
-		sysprintf("echo 1 > /sys/class/leds/rgb:led0/tx");
+		set_led_netdev("wlan0", "rgb:led0");
+		set_led_netdev("wlan1", "rgb:led2");
 
-		sysprintf("echo netdev > /sys/class/leds/rgb:led2/trigger");
-		sysprintf("echo wlan1 > /sys/class/leds/rgb:led2/device_name");
-		sysprintf("echo 1 > /sys/class/leds/rgb:led2/link");
-		sysprintf("echo 1 > /sys/class/leds/rgb:led2/rx");
-		sysprintf("echo 1 > /sys/class/leds/rgb:led2/tx");
-
+		break;
+	case ROUTER_R6800:
+		writestr("/sys/class/leds/white:wlan2g/trigger", "phy0radio");
+		writestr("/sys/class/leds/white:wlan5g/trigger", "phy1radio");
 		break;
 	}
 }
@@ -808,6 +711,21 @@ void start_wifi_drivers(void)
 	case ROUTER_DIR882:
 	case ROUTER_R6850:
 	case ROUTER_R6220:
+		insmod("compat");
+		insmod("mac80211");
+		if (!nvram_match("no_mt76", "1")) {
+			insmod("mt76");
+			insmod("mt76-connac-lib");
+			insmod("mt7615-common");
+			insmod("mt7615e");
+			insmod("mt76x02-lib");
+			insmod("mt76x2-common");
+			insmod("mt76x2e");
+			insmod("mt76x0-common");
+			insmod("mt76x0e");
+			insmod("mt7603e");
+		}
+		break;
 	case ROUTER_R6800:
 		insmod("compat");
 		insmod("mac80211");
@@ -823,6 +741,8 @@ void start_wifi_drivers(void)
 			insmod("mt76x0e");
 			insmod("mt7603e");
 		}
+		writestr("/sys/class/leds/white:wlan2g/trigger", "phy0radio");
+		writestr("/sys/class/leds/white:wlan5g/trigger", "phy1radio");
 		break;
 	case ROUTER_BOARD_E1700:
 	case ROUTER_DIR810L:
