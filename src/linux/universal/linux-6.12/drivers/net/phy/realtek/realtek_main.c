@@ -1486,6 +1486,148 @@ static unsigned int rtl822x_inband_caps(struct phy_device *phydev,
 	}
 }
 
+static int rtl8226_set_mdi_swap(struct phy_device *phydev, bool swap_enable)
+{
+	u16 val = swap_enable ? BIT(5) : 0;
+
+	return phy_modify_mmd(phydev, MDIO_MMD_VEND1, 0x6a21, BIT(5), val);
+}
+
+static int rtl8226_patch_mdi_swap(struct phy_device *phydev)
+{
+	int ret;
+	u16 vals[4];
+
+	ret = phy_read_mmd(phydev, MDIO_MMD_VEND2, 0xd068);
+	if (ret < 0)
+		return ret;
+
+	if (!(ret & BIT(1))) {
+		/* already swapped */
+		return 0;
+	}
+
+	ret = phy_modify_mmd(phydev, MDIO_MMD_VEND2, 0xd068, 0x7, 0x1);
+	if (ret < 0)
+		return ret;
+
+	/* swap adccal_offset */
+
+	for (int i = 0; i < 4; i++) {
+		ret = phy_modify_mmd(phydev, MDIO_MMD_VEND2, 0xd068, 0x3 << 3, i << 3);
+		if (ret < 0)
+			return ret;
+
+		ret = phy_read_mmd(phydev, MDIO_MMD_VEND2, 0xd06a);
+		if (ret < 0)
+			return ret;
+
+		vals[i] = ret;
+	}
+
+	for (int i = 0; i < 4; i++) {
+		ret = phy_modify_mmd(phydev, MDIO_MMD_VEND2, 0xd068, 0x3 << 3, i << 3);
+		if (ret < 0)
+			return ret;
+
+		ret = phy_write_mmd(phydev, MDIO_MMD_VEND2, 0xd06a, vals[3 - i]);
+		if (ret < 0)
+			return ret;
+	}
+
+	/* swap rg_lpf_cap_xg */
+
+	ret = phy_read_mmd(phydev, MDIO_MMD_VEND2, 0xbd5a);
+	if (ret < 0)
+		return ret;
+
+	vals[0] = ret & 0x1f;
+	vals[1] = (ret >> 8) & 0x1f;
+
+	ret = phy_read_mmd(phydev, MDIO_MMD_VEND2, 0xbd5c);
+	if (ret < 0)
+		return ret;
+
+	vals[2] = ret & 0x1f;
+	vals[3] = (ret >> 8) & 0x1f;
+
+	ret = phy_modify_mmd(phydev, MDIO_MMD_VEND2, 0xbd5a, 0x1f1f,
+		vals[3] | (vals[2] << 8));
+	if (ret < 0)
+		return ret;
+
+	ret = phy_modify_mmd(phydev, MDIO_MMD_VEND2, 0xbd5c, 0x1f1f,
+		vals[1] | (vals[0] << 8));
+	if (ret < 0)
+		return ret;
+
+	/* swap rg_lpf_cap */
+
+	ret = phy_read_mmd(phydev, MDIO_MMD_VEND2, 0xbc18);
+	if (ret < 0)
+		return ret;
+
+	vals[0] = ret & 0x1f;
+	vals[1] = (ret >> 8) & 0x1f;
+
+	ret = phy_read_mmd(phydev, MDIO_MMD_VEND2, 0xbc1a);
+	if (ret < 0)
+		return ret;
+
+	vals[2] = ret & 0x1f;
+	vals[3] = (ret >> 8) & 0x1f;
+
+	ret = phy_modify_mmd(phydev, MDIO_MMD_VEND2, 0xbc18, 0x1f1f,
+		vals[3] | (vals[2] << 8));
+	if (ret < 0)
+		return ret;
+
+	ret = phy_modify_mmd(phydev, MDIO_MMD_VEND2, 0xbc1a, 0x1f1f,
+		vals[1] | (vals[0] << 8));
+	if (ret < 0)
+		return ret;
+
+	return 0;
+}
+
+static int rtl8226_config_mdi_order(struct phy_device *phydev)
+{
+	u32 order;
+	int ret;
+
+	ret = of_property_read_u32(phydev->mdio.dev.of_node, "enet-phy-pair-order", &order);
+
+	/* Property not present, nothing to do */
+	if (ret == -EINVAL)
+		return 0;
+
+	if (ret)
+		return ret;
+
+	/* Only enabling MDI swapping is supported */
+	if (order != 1)
+		return -EINVAL;
+
+	ret = rtl8226_set_mdi_swap(phydev, true);
+	if (ret)
+		return ret;
+
+	ret = rtl8226_patch_mdi_swap(phydev);
+	return ret;
+}
+
+static int rtl8226_config_init(struct phy_device *phydev)
+{
+	int ret;
+
+	ret = rtl8226_config_mdi_order(phydev);
+	if (ret)
+		return ret;
+
+	return rtl822x_config_init(phydev);
+}
+
+
 static int rtl822xb_get_rate_matching(struct phy_device *phydev,
 				      phy_interface_t iface)
 {
@@ -2358,7 +2500,7 @@ static struct phy_driver realtek_drvs[] = {
 		.soft_reset	= rtl822x_c45_soft_reset,
 		.get_features	= rtl822x_c45_get_features,
 		.config_aneg	= rtl822x_c45_config_aneg,
-		.config_init	= rtl822x_config_init,
+		.config_init	= rtl8226_config_init,
 		.inband_caps	= rtl822x_inband_caps,
 		.config_inband	= rtl822x_config_inband,
 		.read_status	= rtl822xb_c45_read_status,

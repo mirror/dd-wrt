@@ -708,49 +708,6 @@ static void rtl839x_set_static_move_action(int port, bool forward)
 		    RTL839X_L2_PORT_STATIC_MV_ACT(port));
 }
 
-irqreturn_t rtl839x_switch_irq(int irq, void *dev_id)
-{
-	struct dsa_switch *ds = dev_id;
-	u32 status = sw_r32(RTL839X_ISR_GLB_SRC);
-	u64 ports = rtl839x_get_port_reg_le(RTL839X_ISR_PORT_LINK_STS_CHG);
-	u64 link;
-
-	/* Clear status */
-	rtl839x_set_port_reg_le(ports, RTL839X_ISR_PORT_LINK_STS_CHG);
-	pr_debug("RTL8390 Link change: status: %x, ports %llx\n", status, ports);
-
-	for (int i = 0; i < RTL839X_CPU_PORT; i++) {
-		if (ports & BIT_ULL(i)) {
-			link = rtl839x_get_port_reg_le(RTL839X_MAC_LINK_STS);
-			if (link & BIT_ULL(i))
-				dsa_port_phylink_mac_change(ds, i, true);
-			else
-				dsa_port_phylink_mac_change(ds, i, false);
-		}
-	}
-
-	return IRQ_HANDLED;
-}
-
-/* TODO: unused */
-int rtl8390_sds_power(int mac, int val)
-{
-	u32 offset = (mac == 48) ? 0x0 : 0x100;
-	u32 mode = val ? 0 : 1;
-
-	pr_debug("In %s: mac %d, set %d\n", __func__, mac, val);
-
-	if ((mac != 48) && (mac != 49)) {
-		pr_err("%s: not an SFP port: %d\n", __func__, mac);
-		return -1;
-	}
-
-	/* Set bit 1003. 1000 starts at 7c */
-	sw_w32_mask(BIT(11), mode << 11, RTL839X_SDS12_13_PWR0 + offset);
-
-	return 0;
-}
-
 static void
 rtldsa_839x_vlan_profile_dump(struct rtl838x_switch_priv *priv, int idx)
 {
@@ -1819,6 +1776,7 @@ const struct rtldsa_config rtldsa_839x_cfg = {
 	.stp_get = rtldsa_839x_stp_get,
 	.stp_set = rtl839x_stp_set,
 	.mac_force_mode_ctrl = rtl839x_mac_force_mode_ctrl,
+	.mac_link_sts = RTL839X_MAC_LINK_STS,
 	.mac_port_ctrl = rtl839x_mac_port_ctrl,
 	.l2_port_new_salrn = rtl839x_l2_port_new_salrn,
 	.l2_port_new_sa_fwd = rtl839x_l2_port_new_sa_fwd,
