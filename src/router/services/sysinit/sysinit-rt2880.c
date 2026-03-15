@@ -59,7 +59,7 @@
 
 void set_led_netdev(const char *dev, const char *led)
 {
-	sysprintf("echo netdev > /sys/class/leds/%s/trigger");
+	sysprintf("echo netdev > /sys/class/leds/%s/trigger", led);
 	sysprintf("echo %s > /sys/class/leds/%s/device_name", dev, led);
 	sysprintf("echo 1 > /sys/class/leds/%s/link", led);
 	sysprintf("echo 1 > /sys/class/leds/%s/rx", led);
