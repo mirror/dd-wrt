@@ -595,7 +595,7 @@ int check_wan_link(int num)
 	} else
 #endif
 	{
-		if (nvram_invmatch("wan_ipaddr", "0.0.0.0"))
+		if (!nvram_match("wan_ipaddr", "0.0.0.0") && strlen(nvram_safe_get("wan_ipaddr")) > 0)
 			wan_link = 1;
 	}
 
