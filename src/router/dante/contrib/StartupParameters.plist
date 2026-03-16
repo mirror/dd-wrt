@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist SYSTEM "file://localhost/System/Library/DTDs/PropertyList.dtd">
+<plist version="0.9">
+<dict>
+	<key>Author</key>
+	<string>Gerben Wierda &lt;Gerben.Wierda@rna.nl&gt;</string>
+	<key>Description</key>
+	<string>Dante</string>
+	<key>Messages</key>
+	<dict>
+		<key>start</key>
+		<string>Starting Dante SOCKS server</string>
+		<key>stop</key>
+		<string>Stopping Dante SOCKS server</string>
+	</dict>
+	<key>OrderPreference</key>
+	<string>Last</string>
+	<key>Provides</key>
+	<array>
+		<string>Dante</string>
+	</array>
+	<key>Requires</key>
+	<array>
+		<string>Resolver</string>
+	</array>
+</dict>
+</plist>

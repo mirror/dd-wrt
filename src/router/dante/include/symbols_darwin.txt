@@ -1,0 +1,5 @@
+connect$NOCANCEL
+read$NOCANCEL
+recvfrom$NOCANCEL
+sendto$NOCANCEL
+write$NOCANCEL

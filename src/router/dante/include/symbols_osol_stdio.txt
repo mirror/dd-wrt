@@ -1,0 +1,16 @@
+fclose
+fflush
+fgetc
+fgets
+fprintf
+fputc
+fputs
+fread
+fwrite
+getc
+gets
+printf
+putc
+puts
+vfprintf
+vprintf

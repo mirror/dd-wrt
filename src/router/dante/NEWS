@@ -1,0 +1,1494 @@
+@(#)$Id: NEWS,v 1.99.4.16.2.18.4.20.4.12 2024/12/16 06:34:29 karls Exp $
+
+(NOTE: The contents of this file is not updated for pre-releases.)
+
+***
+***  Monday, December 16, 2024 -- Dante v1.4.4
+***
+
+ o Fix potential security issue CVE-2024-54662, related to "socksmethod"
+   use in client/hostid-rules.
+   Reported by Igor Medovolkin (igor.aka.igro@gmail.com.example.com)
+
+ o Add a missing call to setgroups(2).  
+   Reported by Leo <deleo@gmx.de.example.com>
+
+ o Patch to fix compilation with libminiupnp 2.2.8.
+   From Emily <hello@emily.moe.example.com>
+
+ o Client connectchild optimizations.
+
+ o Client SIGIO handling improvements.
+
+ o Various configure/build fixes.
+
+ o Updated to support TCP_EXP1 version of TCP hostid format.
+
+***
+***  Friday, April 30, 2021 -- Dante v1.4.3
+***
+
+ o LDAP module functionality expanded with support for PAC and
+   LDAP based authentication.
+   Developed by Markus Moeller <markus_moeller@compuserve.com.example.com>.
+
+ o Changed child.maxrequests behavior to be an upper limit on requests
+   handled and added child.maxlifetime, which can be used to specify
+   the limit on how long child-processes will receive new requests.
+
+   Fixes customer X request.
+
+ o Added Linux service specification file.
+
+ o Work around an issue where "logoutput: syslog" in the client 
+   could create issues for the application being socksified.
+
+   Fixes customer-SID 1613386077.
+
+ o RHEL8 build fix.
+   Patch and bug report from Alexey Svistunov <svalx@svalx.net.example.com>.
+
+ o Added missing NULL argument check in Raccept().
+   Problem reported by Kosby, Ray B. <ray.b.kosby@gmail.com.example.com>.
+
+ o Fix an error case where the Dante mother process would never
+   terminate a request process that failed handling a client due to 
+   resource shortage, leading the request process to hang around idle
+   forever.
+
+   Will hopefully fix problem reported by ANON.
+
+ o Fix for server crash in builds with preloading disabled (preloading
+   is enabled by default).
+
+ o Fix for MALLOC_OPTIONS related startup warning on OpenBSD.
+
+ o Fix for module related SIOCGIFHWADDR warning in obscure situations.
+
+ o Removal of arbitrary interface limit in getifaddrs() compatibility
+   function.
+
+ o Some minor automated build/test related changes.
+
+ o Minor documentation fixes.
+
+ o Fix for BSD authentication ECHILD error on OpenBSD.
+
+***
+***  Monday, February 6, 2017 -- Dante v1.4.2
+***
+
+ o Support new version of libminiupnp.   Patch from Michele Testa
+   <themike@libero.it.example.com>
+
+ o Fix memory bug in the client that would lead to a crash when resolving
+   hostnames on certain platforms.
+
+   Diagnosis and patch from Jeremie Courreges-Anglas
+   <jca@wxcvbn.org.example.org>.  Thank you.
+
+ o A new environment variable has been added to aid application
+   compatibility with socksify: SOCKS_FORCE_BLOCKING_CONNECT.
+
+   See the socksify manpage for more information.
+
+ o Fixed bug in configure that broke compilation with rpmbuild on
+   newer Linux versions. Multiple bug reports received, thanks
+   to everyone that reported this problem.
+
+ o Add glibc-devel as Dante rpm requirement.  Requires entry for
+   librt, used by socksify.  Suggested by <ealogar@gmail.com.example.com>.
+   Also needed for libdl.so.
+
+ o Various NetBSD configure and server related fixes.
+   Thanks to Anthony Howe <achowe@snert.com.example.com> for bug
+   reports and testing.
+
+ o Corrected srchost values in examples/sockd.conf.
+   Thanks to ANON for bug report.
+
+ o Various build fixes, affecting RHEL 7 and potentially other platforms.
+   Thanks to Thomas Petazzoni <thomas.petazzoni@free-electrons.com.example.com>
+   for submitting related patch.
+
+ o Updates to hostid/TCP_IPA code to use newer API version.
+
+ o Added check for OpenBSD getpwnam_shadow().
+
+ o Added workaround for __FD_ELT() fortify related bug in recent glibc
+   versions.
+
+***
+***  Wednesday, September 3, 2014 -- Dante v1.4.1
+***
+
+ o Fixed configure problem with detection of libc.so on recent FreeBSD
+   versions.
+   Problem report and testing by Mikhail <mp39590@gmail.com.example.com>.
+
+ o Fixed problem in configure test used for figuring out which
+   buffer in an IPC socket is used for determining bytes that can
+   be buffered.  Should fix problem on FreeBSD.
+
+   Diagnosed in detail by Mikhail <mp39590@gmail.com.example.com>.
+   Also reported by Carlos Jacobo Puga Medina <cpm@fbsd.es.example.com>.
+
+ o Fixed bug in handling of buffered GSSAPI data.
+
+ o Added keywords for specifying that only IPv4 or IPv6 should be used
+   on internal or external interfaces.
+
+ o Fix bug that prevented external.rotation: same-same from working correctly.
+   Reported by Alexander.V.Makkoveev (makkoveev@gmail.com.example.com).
+
+ o AIX 6.1 compilation fixes.
+
+ o NetBSD 6.1.3 gethostbyaddr() configure fix.
+   Problem reported by Anthony Howe <achowe@snert.com.example.com>.
+
+ o Use wait3(2) rather than wait4(2), as the latter (implemented as a
+   wrapper on Solaris) has a bug on Solaris in the handling of the WAIT_ANY
+   value.  This is -1 traditionally, but on Solaris wait4(2) is expecting
+   it to be the value 0. This change also fixes a similar problem on AIX.
+
+ o Remove extra CRLF from CONNECT request, as in patch submitted by
+   "Dyson, Brian J" <Brian.Dyson@ca.com.example.com>.
+
+***
+***  Monday, November 18, 2013 -- Dante v1.4.0
+***
+
+ o Older syntax for setting the socket buffer sizes via
+   socket.recvbuf.udp, socket.sendbuf.udp, socket.recvbuf.tcp and
+   socket.sendbuf.tcp options have been deprecated and replaced with
+   the more general API for setting socket options.
+
+   "socket.recvbuf.udp" can now be set by "<interface-side>.udp.so_rcvbuf"
+   "socket.sendbuf.udp" can now be set by "<interface-side>.udp.so_sndbuf"
+   "socket.recvbuf.tcp" can now be set by "<interface-side>.tcp.so_rcvbuf"
+   "socket.sendbuf.tcp" can now be set by "<interface-side>.tcp.so_sndbuf"
+
+   <interface-side> refers to either "internal", for Dante's internal
+   interface(s), or "external", for Dante's external interface(s).
+
+ o socks-rules now require a "socks" prefix (like client-rules require a
+   "client" prefix), and the socks "method" keyword has been renamed to
+   "socksmethod".
+
+ o The "socksmethod" keyword can now be set in client-rules too.  It
+   is used to override the default preference for what socksmethod to
+   select for which clients addresses, making it possible to by
+   default e.g., have the preference "gssapi username none", but for
+   some client-ranges have a different preference, e.g., "none
+   username gssapi".
+
+   Normally there is no need to use set this keyword in a client-rule.
+
+ o Fallback to direct (non-proxy) routes now defaults to off in the client,
+   as well as in the server.
+
+   To keep previous behaviour in the client, with direct route fallback
+   for destinations with no matching route, set SOCKS_DIRECTROUTE_FALLBACK
+   to "yes" in the environment, or ./configure with --enable-drt-fallback.
+
+   Direct fallback is enabled if there are no routes configured (as is
+   usually the case in a server configuration), and disabled otherwise.
+
+ o IPv6 is now supported in the server.
+
+   Standard IPv6 address syntax is used for addresses, with the addition
+   of the special address "0/0" used for matching both all IPv4 and
+   all IPv6 addresses.
+
+ o New "monitor" object added.  Syntax is similar to rules and routes,
+   but instead of applying to individual sessions, it applies to all
+   sessions currently matching the addresses to monitor.
+
+   This can be used for monitoring network anomalies related to too
+   little data being transferred or too many disconnects occurring,
+   triggering alarms if detected.
+
+ o Possibility to configure system errors and DNS-errors for
+   special logging in certain cases (when connecting and performing
+   hostname resolving).
+
+ o More aggressive regarding how many processes to fork when starting
+   and how many processes to reserve for future clients.
+
+ o Added new log keyword: "tcpinfo".  Used to report more extensive
+   statistics about sessions, including TCP_INFO on supported platforms.
+
+ o SIGINFO/SIGUSR1 output is now logged at level "info" instead of level
+   "debug".
+
+ o SIGHUP code rewritten.  Should function considerably better in
+   environments were SIGHUP is, for whatever reason, sent an excessive
+   amount of times every second.
+
+ o Default for the maximum number of clients an i/o process can handle has
+   been increased from 8 to 32.
+
+ o Improved UDP compatibility by sending appropriate ICMP unreachable
+   errors to clients and targets, if running with the appropriate
+   privileges (typically, root is required for this).
+
+   Makes it possible for a client or target to be notified that a UDP
+   packet it wanted the Dante server to forward was not forwarded.
+
+ o Reduction in memory consumption at the expense of allocating extra
+   memory dynamically in the very rare, perhaps non-existing, cases
+   where the extra memory is needed.
+
+ o The default timeout for TCP i/o (timeout.io.tcp) has been changed from
+   84000 to 0.  0 means use the kernels default, which in most cases will
+   mean no timeout.  See UPGRADE for more information.
+
+ o The session module has been merged with the mainstream Dante code,
+   and has also been extended to support the following new features:
+     - connection throttling (number of new sessions accepted per second).
+     - state-keys.
+       Two state keys are currently supported:
+         - per-IP address.
+         - per-hostid (hostid is supported on certain platforms, with
+                       certain kernel patches, with certain clients).
+
+   The syntax has also changed (see UPGRADE).
+   See the manual for more information about the new features.
+
+ o Code used for finding the correct outgoing address to bind when
+   external.rotation is set to "route" replaced with much simpler,
+   but hopefully equally (or better) functioning code.
+   Idea taken from Quagga.
+
+ o Use getpassphrase() rather then getpass() to obtain password for
+   username authentication when available. Avoids 9 character limit
+   on Solaris.  Suggested by Albert Fluegel <af@muc.de.example.com>
+
+ o Use sqrt() rather than sqrtl() in stddev calculation, as sqrtl() is not
+   available on some platforms (such as FreeBSD 7.2).  Problem reported
+   by Rudolf Polzer <rpolzer@one-it.de.example.org>.
+
+ o If the authentication method used was RFC931 (ident), the username
+   was not always logged when it should be.
+   Reported by Gregory Charot (EVENIUM) <gcharot@evenium.com.example.com>.
+
+ o Syntax checking has been improved to better detect invalid or
+   likely incorrect server configurations.
+
+   This can result in some configurations that have previously been
+   accepted or accepted with warnings by Dante, to now cause an error
+   on startup, preventing the Dante server from starting up until the
+   configuration error has been fixed.
+
+ o Fixed compilation on OpenBSD with compilers not supporting -Wbounded.
+   Problem report and testing by
+   Mikael More <mikael.more@gmail.com.example.com>.
+
+ o GSSAPI "clear" is no longer enabled by default, as it is not part
+   of the SOCKS GSSAPI standard per se.
+
+ o external.rotation was not handling non-IPv4 target addresses correctly.
+   Reported and diagnosed by Rudolf Polzer <rpolzer@one-it.de.example.com>.
+
+ o The "--disable-libwrap" option has been renamed "--without-libwrap".
+
+ o Fixed bug that would cause the following warning to sometimes be
+   erroneously reported:
+   "warning: accept(2) failed: Resource temporarily unavailable"
+
+ o SIGINFO log information extended to include information about i/o
+   buffer status and as well as UDP packet latency.
+
+ o Real-time scheduling priority settings and CPU affinity settings made
+   available in sockd.conf.
+
+   See https://www.inet.no/dante/files/dante_realtime_preview.pdf for
+   a performance analysis done in relation to these new features.
+
+ o General API for setting socket options on sockets used by Dante
+   made available in sockd.conf.
+
+ o Support for cross compilation of client library for Android
+   (system name 'arm-linux-androideabi').
+   Testing and analysis by Yoav Weiss <weiss.yoav@gmail.com.example.com>.
+
+ o Problem with sockd.init generation in dante.spec fixed.
+   Reported by Luiz Gustavo Nascimento <luizgn@gmail.com.example.com>.
+
+***
+***  Thursday, August 4, 2011 -- Dante v1.3.2
+***
+
+ o Part of the possible resource optimization indicated in section 4.4
+   of the Dante 1.3.1 performance evaluation report
+   (http://www.inet.no/dante/doc/1.3.x/dante_performance_1.3.1.pdf)
+   has been implemented: scheduling new clients to the Dante process
+   with fewest free slots available.
+
+ o If a proxy server (socks, http, or upnp) is configured via
+   environment variables, don't attempt to also parse any socks.conf
+   files.
+
+ o The "HTTP_PROXY" environment variable has been renamed to
+   "HTTP_CONNECT_PROXY" to avoid conflict with HTTP proxies that do not
+   support the HTTP CONNECT request.
+
+ o Fixed an unintended change to ACL semantics regarding bind requests in
+   Dante 1.2.3.
+   Noted by Ralf Wenk <Ralf.Wenk@hs-karlsruhe.de.example.com>.  Many thanks.
+
+ o Fixed a bug regarding handling of cases where the ulimit for max number
+   of files is unlimited.  Reported and analyzed by
+   Ralf Wenk <Ralf.Wenk@hs-karlsruhe.de.example.com>.
+
+ o Fixed a bug introduced in 1.3.1 related to privileges during startup
+   on Solaris.
+
+***
+***  Tuesday, June 21, 2011 -- Dante v1.3.1
+***
+
+ o Fixed a bug regarding handling of socks clients that do not follow the
+   spec and start sending traffic data before request has been granted.
+
+ o Fixed an error related to ACL on UDP-packets.  If a given SOCKS
+   client was allowed to send some UDP packets, in some cases packets
+   from the same SOCKS client that should have been blocked were allowed.
+
+***
+***  Tuesday, June 14, 2011 -- Dante v1.3.0
+***
+
+ o Fixed a bug related to parsing the HTTP_PROXY environment variable.
+   Problem reported by John Fletcher <john.fletcher@rd.bbc.co.uk.example.com>.
+   Note that the format of the HTTP_PROXY variable has also changed.
+
+ o Logfiles can now be added or changed in sockd.conf after startup.
+
+ o The priority of proxy routes has changed, so that a SOCKS v4 route is
+   now preferred over a SOCKS v5 route when both can be used, because
+   v4 requests can be performed faster than v5 requests.
+
+ o Support for a new module, providing LDAP based authorisation.
+   Developed by Markus Moeller (markus_moeller at compuserve.com).
+
+   Note that modules need to be purchased separately.
+   See "http://www.inet.no/dante/module.html" for more information about
+   Dante modules.
+
+ o Resource requirements have been significantly reduced.
+   Performance has also been improved.
+
+ o When checking whether a username is member of a group, as used in
+   in group-based authentication checks, also check against the
+   primary groupname of the user, as listed in /etc/passwd or similar,
+   rather than only against the entries in /etc/group or similar.
+
+   Based on a patch from Ralf Wenk <Ralf.Wenk@hs-karlsruhe.de.example.com>.
+   Thanks.
+
+ o The socket buffer sizes can now be set in sockd.conf.  The default
+   value is 0, which lets the kernel choose the buffer sizes itself.
+
+ o A new keyword has been added to the configuration files: "errorlog".
+   The syntax is the same as for the "logoutput" keyword, but
+   "errorlog" is used to specify how errors, and only errors, should
+   be logged.
+
+   The meaning of the "logoutput" keyword has not changed, and will
+   still log errors if configured to do so.
+
+ o "child.maxidle: yes" is now the default setting, meaning most idle
+   sockd child processes will be terminated automatically.
+
+ o A bug that prevented binding privileged ports in the client from working
+   has been fixed.
+   Bug reported by Christophe Réquillart <requillart@gmail.com.example.com>
+
+ o Two new timeout parameters have been added to sockd.conf:
+   - "timeout.connect":
+     This controls how many seconds the server will wait for a connect
+     initiated on behalf of the SOCKS-client to complete.  The default
+     is 30.  Setting it to 0 will use the kernel default.
+
+   - "timeout.tcp_fin_wait":
+     This controls the equivalent of TCP FIN-WAIT-2.
+
+     Note that FIN-WAIT-2 is a normal TCP state.  Having many tcp
+     connections stuck in this state does not indicate something is wrong,
+     but it can create a resource problem for the kernel if there are
+     too many of them.
+
+     The default value is 0, meaning, let the kernel handle it as before
+     rather than for Dante to time out sessions in this state.
+
+ o "timeout.connect" is now supported also in socks.conf.  The value
+   overrides the default timeout when the client attempts to connect
+   to the SOCKS server.
+
+ o The different server timeouts (negotiate, connect, i/o) can now be
+   set on a rule-by-rule basis, and not just globally for all rules.
+
+ o The config.h variables MAX_ROUTE_FAILS and BADROUTE_EXPIRE can now
+   set in the configuration files instead of at compile time.
+   The new values are "route.maxfail" and "route.badexpire" and control
+   how to handle bad routes (to e.g., a SOCKS/HTTP proxy server).
+
+ o Support for a new value for the "external.rotation" keyword: "same-same".
+   This will tell the Dante server to use the same address for outgoing
+   connections as the address the SOCKS client was accepted on, i.e.,
+   one of the internal addresses.
+
+   Based on a patch from Lysenko Konstantin <gshaud@gmail.com.example.com>.
+   Thanks.
+
+ o Fixed a bug where we could end up exiting if we got a SIGHUP
+   at a point where we had no more free file descriptors, and
+   thus could not reopen the sockd.conf.
+   Problem reported by Mark Sinner <mark.sinner@db.com.example.com>.
+
+ o The most time consuming part of the work performed by the request
+   children (waiting for connect(2) to complete) has been moved to the
+   i/o children.
+
+   This should reduce the total number of sockd processes necessary to
+   handle medium and higher loads, since the request children can only
+   handle one client at a time, while the i/o children can handle many.
+
+ o The "srchost" parameter "nomismatch" has been renamed to "nodnsmismatch",
+   while "nounknown" has been renamed to "nodnsunknown".
+
+   The "nodnsmismatch" and "nodnsunknown" functionality is now
+   implemented internally in sockd, rather than via libwrap; there is
+   no longer any dependency on libwrap ("tcp_wrappers") when using
+   these options.
+
+ o BSD authentication support on OpenBSD.
+
+ o Option ordering in sockd.conf is now enforced, rather than just
+   recommended.  Server options now always have to come before rules
+   and routes.
+
+ o The file to write the pid to can now be specified on the command line
+   using the "-p" option.
+
+ o If TMPDIR is not set, temporary files will be created in the
+   current working directory when sockd is started.  If this fails,
+   temporary files will be created in "/tmp" as before.
+
+ o A 64-bit version of libdsocks is now built on 64-bit OpenSolaris machines.
+   Should make socksify work with 64-bit applications.
+
+ o Fix compilation on machines with Linuxthreads. Locking via
+   Linuxthreads is however not supported.
+
+   Problem report and testing by
+   Nicolas VANHAUTE <nicolas.vanhaute@ac-clermont.fr.example.com>
+
+ o Fix usage of negation operation in shell scripts causing problems
+   for socksify when using Bourne shell on Solaris 8.
+   Problem reported by Sebastian Kayser <skayser@opencsw.org.example.com>.
+
+ o Size of byte and packet counters used for logging changed to 64 bits.
+
+ o IBM Visual Age C/C++ V8 compilation fixes for AIX.
+   Problem reported by Kieron Curtis2 <KCURTIS2@uk.ibm.com.example.com>
+
+***
+***  Monday, March 21, 2011 -- Dante v1.2.3
+***
+
+ o Fix problem introduced in version 1.2.1, causing the SO_REUSEADDR
+   flag to not be set. Would cause problems during server restart if
+   only the main process was killed.
+
+   Thanks to Ralf Wenk <Ralf.Wenk@hs-karlsruhe.de.example.com> for
+   reporting this problem.
+
+ o The regular expression for host and interface name parsing has been
+   relaxed somewhat, allowing the use of some interface names and host
+   names containing characters that were not allowed previously.
+
+   Fixes problem reported by karesmakro <ipcop@it-connect-unix.de.example.com>,
+   Ralf Wenk <Ralf.Wenk@hs-karlsruhe.de.example.com>,
+   and <Adam.Barclay@barclayscapital.com.example.com>.
+
+ o The traffic log format has been slightly extended and now includes
+   complete information about all communication endpoints, for both
+   normal usage and with server chaining.
+
+ o Compilation fixes for older Linux distributions.
+
+ o Fix bug where the Solaris capabilities were not correctly
+   added/removed at all times.
+
+ o Compilation fixes for AIX 6.1.  Problem report and testing by
+   Ville O Kesola <ville.kesola@fi.ibm.com.example.com> and
+   Ralf Wenk <iz-dante-0910@hs-karlsruhe.de.example.com>.
+
+***
+***  Tuesday, September 21, 2010 -- Dante v1.2.2
+***
+
+ o Fix PAM bug introduced in v1.2.0 that would leak resources when
+   using PAM.  Also relax the code handling PAM concerning
+   unknown msg_styles.
+
+ o Set PAM_RUSER so that rhosts-based PAM authentication can work.
+
+ o Wrapper for calling getsockopt(2) with SO_ERROR added.
+
+ o Compilation fixes for AIX 6.1.
+   Problem reported by Ralf Wenk <iz-dante-0910@hs-karlsruhe.de.example.com>.
+   Note to Ralf Wenk: we have been unable to contact you on the email
+   address you send from.
+
+***
+***  Friday, May 28, 2010 -- Dante v1.2.1
+***
+
+ o GSSAPI support is no longer disabled on Heimdal versions older than
+   0.8.0, which have no wrap/unwrap support for aes256-cts-hmac-sha1-96.
+   The following krb5.conf configuration might be needed to ensure that
+   AES-256 is not used:
+
+    default_etypes = arcfour-hmac-md5 des3-cbc-sha1 des-cbc-crc des-cbc-md5
+    default_etypes_des = des-cbc-crc des-cbc-md5
+
+   Problem analyzed by Markus Moeller <markus_moeller at compuserve.com>.
+
+ o Code for shutting down idle sockd processes put back and can be
+   enabled again, if desired.  It is not recommended for busy servers
+   however as performance may be slightly degraded.
+
+ o Fix bug related to clients using MSG_PEEK and GSSAPI on Linux.
+   Problem found by Markus Moeller <markus_moeller at compuserve.com>.
+
+ o Don't print warning if accept(2) fails when started with the -N<k> option.
+   When started with the -N option, it is expected that accept(2) will
+   fail in 1/k of the cases.  Instead just log a debug message about it.
+
+   Should fix problem reported by Mark Sinner <mark.sinner@db.com.example.org>.
+
+ o The fflush() wrapper function did not handle a NULL argument.
+   Reported by "Kirby Zhou" <kirbyzhou@sohu-rd.com.example.org> and
+   Victor Sologoubov <victor0@rambler.ru.example.org>
+
+ o Fix libsocks upnpcleanup() linking problem when compiled without
+   libminiupnpc.
+   Problem reported by Kyle Thurow <krthurow@gmail.com.example.com> and
+   Adam Prato <adam.prato@gmail.com.example.com>.
+
+ o Assert failure related to message passing on some 64-bit architectures
+   fixed.  Problem reported by Soner Tari <soner@comixwall.org.example.com>.
+
+ o The capi/socks.h file was not correctly installed.
+   Problem reported by Soner Tari <soner@comixwall.org.example.com>.
+
+ o Compilation fixes for OpenSuse 11.1.
+   Problem reported by Markus Moeller (markus_moeller at compuserve.com).
+
+ o Compilation fix for config_parse.y compilation without YYDEBUG.
+   Problem reported by Markus Moeller (markus_moeller at compuserve.com).
+
+ o Compilation fixes for AIX 6.1.
+   Problem reported by Ralf Wenk <iz-dante-0910@hs-karlsruhe.de.example.com>.
+   Tested by Marcel Augenstein.
+
+***
+***  Tuesday, October 27, 2009 -- Dante v1.2.0
+***
+
+ o Improvements to client thread compatibility.  The client
+   library should now be mostly thread safe.
+
+ o Solaris privilege model support.  Based on patch from
+   Mayuresh Nirhali <Mayuresh.Nirhali@Sun.COM.example.com> & co.
+
+ o Make support for the socks 5 version described in draft-5.05 be
+   configurable.  Before this was always enabled, but it breaks clients
+   based on NEC socks code in some cases as they use the same bit to
+   mean something completely different.
+   A new option has been added to sockd.conf to enable it:
+   "compatibility: draft-5.05".  Unless explicitly enabled, the Dante
+   server will not use the socks 5.05 draft specification.
+
+   Problem found by Markus Moeller (markus_moeller at compuserve.com).
+
+ o Don't leak username/passwords provided to us for local authentication
+   to upstream proxy server when server-chaining.  Error reported by
+   Mathieu DELAPLACE <mathieu.delaplace@gmail.com.example.com>.
+
+ o Fixed a bug/oversight that imposed an artificial limit on the number
+   of sockd processes that could be created, even when the load required
+   more.
+
+ o Slight improvement of configuration parsing in an attempt to avoid
+   confusing non-qualified hostnames with NIC interface names.
+
+ o The default connect-timeout/negotiate-timeout has been reduced from
+   120 seconds to 30 seconds.  The "connecttimeout" name has also been
+   deprecated in favour of "timeout.negotiate".
+
+ o Separate iotimeouts can be set for udp and tcp clients.  The "iotimeout"
+   object has also been deprecated in favour of "timeout.io".
+
+ o New configure option: "--disable-drt-fallback".
+   Used to disable the attempted automatic fallback to a direct route
+   if there are no usable proxy routes.  Default is, as before,
+   automatic fallback.
+
+ o Added a new option: "udp.connectdst".  Controls whether the server
+   should connect udp sockets to the destination.
+   The default for this release is yes, which improves performance,
+   but _may_ be incompatible with some udp-based application protocols.
+
+   Please let us know if you experience problems with some applications
+   no longer working.
+
+ o Markus Moeller (markus_moeller at compuserve.com) contributed support
+   for GSSAPI encryption/authentication (RFC 1961) to both the socks
+   server and socks client.  Many thanks to Markus for this and for a
+   lot of help in testing it.
+
+ o Fixed problem with connection close before accept on HPUX.
+   Based on patch from Reine Persson <reine.persson@skatteverket.se>.
+
+ o Support for SunOS 4 and Solaris 2.5.1 removed.
+
+ o Added gethostbyaddr prototype for compilation on FreeBSD v6.2.
+   Patch from "Igor Mozolevsky" <igor@hybrid-lab.co.uk>.
+
+ o Fix getifa compilation problem on Solaris 8.
+   Reported by "Thomas" <dante@birdhouse.ch.example.com>.
+
+ o Patch from Markus Moeller (markus_moeller at compuserve.com),
+   to limit the range of udp-ports used between the socks-client
+   and the Dante server.
+
+ o By default, try to auto-add direct routes for all addresses on the LAN.
+   To disable it, set SOCKS_AUTOADD_LANROUTES to "no".
+
+ o Fix bug that caused problems with certain combinations of
+   bind(2)/accept(2)/close(2).
+   Reported by Markus Moeller (markus_moeller at compuserve.com).
+
+ o Fix bug that erroneously blocked the bind request from some clients.
+   Reported by Markus Moeller (markus_moeller at compuserve.com).
+
+ o Add support for environment variables SOCKS4_SERVER, SOCKS5_SERVER,
+   HTTP_PROXY, and UPNP_IGD.
+   If set, they specify the socks v4, socks v5 server, http proxy,
+   or UPNP-enabled ID to use, without the need for a socks.conf.
+
+   This should make it possible to run socksify with reasonable results
+   even without a socks.conf, as long as one of these new environment
+   variables are set correctly.
+
+ o Auto-add direct routes for all gateways.  Should make the client
+   a little more user-friendly by not having to specify "direct" routes
+   for the proxyserver any longer.
+
+ o More fine grained marking of when to mark a proxy route as "bad" so that
+   it will not be used again by the same client.
+
+   Also add a new variable to config.h, MAX_ROUTE_FAILS, determining
+   how many times a route can fail before being blacklisted.  Default
+   is one (same semantics as before there was a variable to control this).
+
+ o Fix bug that could prevent password authentication from working
+   on some systems. Spotted by
+   Nathan Johnson <n.johnson@vanderbilt.edu.example.com>.
+
+ o Add configure option --without-glibc-secure, which disables check for
+   the glibc variable __libc_enable_secure. Creates undesired dependencies
+   for packaging.  Reported by Mathieu CHOUQUET-STRINGER
+   <mathieu.chouquet-stringer@sgcib.com.example.com>.
+
+ o New getifaddrs() compatibility function, taken from Heimdal-1.2.1.
+
+ o (Open)Solaris sa_len compilation problem fixed.
+   Reported by Markus Moeller (markus_moeller at compuserve.com).
+
+ o New version of the BSD version of "external.rotation: route",
+   from Christoph Badura <bad@bsd.de.example.com>.
+
+ o Support for interface names in sockd rules, and in the destination
+   address for socks routes.
+
+   Should make it easier to set up direct routes for local lan in
+   the client (specify all local interface names in route statements),
+   and block connections to e.g. loopback addresses (specify the the
+   loopback interface name in a block rule) in the server.
+
+ o UPnP support in the client, using the miniupnp library by
+   Thomas Bernard (http://miniupnp.free.fr/).
+
+   UPnP is a protocol implemented by many home/small-business routers
+   and adsl-modems.  It allows you to dynamically open up ports on
+   the router for accepting incoming connections, as well as figuring
+   out what the external ipaddress of the router is.
+
+   Dante uses this to make socksify of ftp/bittorent/etc programs
+   work via the UPnP router.
+
+   Note that only the miniupnp library with release date 2009/09/21
+   or later is expected to work with Dante.
+
+ o Be less strict about bind in the client.  The standards says
+   it is expected that the client first performs a connect via
+   the socks server, but it seems some/many socks servers support
+   the client requesting a bind without a previous connect, so we
+   assume that is the case in the client from now on.
+
+ o Changed the magic bytes that indicate the client is requesting
+   use of the Dante-specific bind extension from 0x00000000 to
+   0xffffffff, as part of the process to become less strict about
+   the bind command requiring a previous connection.
+
+ o Don't zero password in client if we read it from environment, or
+   it will not work the next time the same client process tries to
+   authenticate to the server.
+   Found by Pavel Fedin <fedin@matek.ru.example.com>.
+
+   That mail address no longer works.  Please contact us if you have
+   another address for Mr. Fedin.
+
+ o Add support for "group:" syntax to rules, similar to "user:" statement.
+   Requested by Don Harvie <donharvi@au1.ibm.com.example.com>
+
+ o Close connection to PAM server each time we get an error-reply from
+   it, fixing a bug.
+   Patch from Robert Marcano <robert@marcanoonline.com.example.com>.
+
+ o Incorrect assert fixed. Problem reported by
+   "d binderman" <dcb314@hotmail.com.example.com>.
+
+ o Log close of client-rule with correct command.
+   Fixes bug reported by Tom Vandenbelt <tvandenb@au1.ibm.com.example.com>.
+
+ o Update to autoconf 2.61 and libtool 1.5.26.
+
+***
+***  Monday, January 16, 2006 -- Dante v1.1.19
+***
+
+ o Disabled code for shutting down idle sockd processes, appears to need
+   more testing.
+   Thanks to Rene Burkhardt <rene.burkhardt@ch.ibm.com.example.com>.
+
+ o Upgrade to Automake 1.9.6.
+
+ o Use __libc_enable_secure if it exists and issetugid() doesn't.
+   Should allow the SOCKS_CONF environment variable to be used on Linux.
+
+ o Check if large files need special support; logfiles can grow
+   large.
+   Problem reported by Tom Vandenbelt <tvandenb@au1.ibm.com.example.com>.
+
+ o Drop trying to optimize away unnecessary PAM calls, creates
+   obscure problems on some PAM-Linux implementations.
+   Based on good work by Mr E_T <troll@arach.net.au.example.com>, many thanks.
+
+ o Fixed bug introduced as part of additions to better preserve TCP
+   semantics across connections.
+   Thanks to Rene Burkhardt <rene.burkhardt@ch.ibm.com.example.com>.
+
+ o New module available: session.  This gives control over how
+   many sessions different clients can create.
+   See the module page "http://www.inet.no/dante/module.html"
+   and doc/module for more information.
+
+ o In order to share some code, there were some api changes
+   made to the bandwidth module, requiring users to upgrade.
+   Users of the bandwidth module can contact sales for a free upgrade.
+
+ o Fix bug preventing immediate-error on wrong password to take effect
+   for servers configured to use PAM.
+   Thanks for help to Rene Burkhardt <rene.burkhardt@ch.ibm.com.example.com>.
+
+ o Update usage of 'head'. Problem first reported by
+   "William Adams" <wlarip@gmail.com.example.com>.
+
+ o Support server-chaining.  Currently only the tcp connect command
+   is supported.  It might be possible to add support for udp and
+   tcp bind if requested.
+
+ o Fix PAM-related bug introduced in version 1.1.16.
+   Reported by Jacob Toxværd <tox@microknights.dk.example.com>.
+
+***
+***  Friday, September 9, 2005 -- Dante v1.1.18
+***
+
+ o Fix bug involving syslog.
+   Problem report from Nicola <nicola.canepa@sys-net.it.example.com>
+
+ o Fix bug related to socks header split across multiple segments.
+   Thanks to Patrick LeBoutillier <patrick.leboutillier@gmail.com.example.com>.
+
+***
+***  Thursdag, July 14, 2005 -- Dante v1.1.17
+***
+
+ o Fix bug involving setting "pam.servicename".
+
+***
+***  Monday, July 4, 2005 -- Dante v1.1.16
+***
+
+ o Enabled code for shutting down idle sockd processes.
+
+ o Some additions to better preserve TCP semantics across connections.
+
+ o Allow PAM tests to be disabled.
+   Thanks to Daniel <dragonheart@gentoo.org.example.com> for patch.
+
+ o Conflict between socks.h and netinet/in.h fixed.
+   Thanks to Daniel <dragonheart@gentoo.org.example.com> for patch.
+
+ o Error in capi/socks.h fixed.  Thanks to Alin Nastac
+   <mrness@gentoo.org.example.com> for patch solving problem.
+
+ o Fix res_9_init related compilation problems on OS X.
+   Problem reported by Changshin Lee <iasandcb@gmail.com.example.com>.
+
+ o Return immediate error if username/password is wrong in the common
+   case, rather than delaying it for later.  Helps avoid the case where
+   socks-clients cache the wrong username/password.  Reworked
+   rule-checking code a little too.
+
+ o In one rare case, such as triggered in some LVS health-checker
+   installations, a bug could make us leak descriptors.
+   Thanks to Antonio Paulo Salgado Forster <aforster@br.ibm.com.example.com>
+   and Pete Harvey <Peter.Harvey@newcastle.ac.uk.example.com> for help with
+   debugging.
+
+ o Fix a bug where server could hang while waiting for input from client
+   during negotiation.
+   Thanks to Robert Marcano <robert@marcanoonline.com.example.com>.
+
+ o Fix formating of some warning messages.
+   Thanks to James Carlson <james.d.carlson@sun.com.example.com>.
+
+***
+***  Monday, January 31, 2005 -- Dante v1.1.15
+***
+
+ o Limit the maximum number of available descriptors if necessary,
+   avoiding a possible overflow of fd_sets.
+
+ o Added absolute timestamp to logformat, in preparation for new
+   module.
+
+ o Fixed problem involving non-blocking connects in socks clients
+   on Linux.
+
+ o Prototype related tests during configure are rewritten.
+   Might require prototypes for some platforms to be readded.
+
+ o Compilation fixes for AIX 5.1-ML03 with IBM Visual Age C/C++ V5.
+   Based on patch from Kieron Curtis2 <KCURTIS2@uk.ibm.com.example.com>.
+
+ o A 'an macro' version of the sockd.8 manual page.
+   Submitted by Tony Leneis <tony@cvrreg.com.example.com>.
+
+ o Upgrade to autoconf 2.59, libtool 1.5.10 and automake 1.9.3.
+
+ o Bugfix to code for shutting down idle sockd processes, from
+   William Adams <wlarip@earthlink.net.example.com>.
+
+ o Add test for setegid(), use replacement if not found.
+   Replacement code based on patch by <rainer.doerntge@dlh.de.example.com>.
+
+ o Do not warn at runtime about SO_{SND,RCV}LOWAT socket options if not
+   supported by OS.
+   Based on patch from William Adams <wlarip@earthlink.net.example.com>.
+
+ o enable setegid() call after moving it to correct place;
+   William Adams <wlarip@earthlink.net.example.com>.
+
+ o Support for socksification of getipnodebyname(), contributed by
+   Lennart Dahlström <lennart@appgate.com.example.com>.
+
+ o Support for socksification of getaddrinfo(), contributed by
+   Motoyuki Kasahara <m-kasahr@sra.co.jp.example.com>.
+
+ o Fix some problems with descriptor passing on platforms without
+   cmsghdr.
+
+ o AIX 5.1 ML-03 compilation fixes for IBM Visual Age C/C++ compiler
+   version 5 by Kieron Curtis2 <KCURTIS2@uk.ibm.com.example.com>.
+
+ o Remove usage of SO_BSDCOMPAT, obsolete and causes warnings with
+   version 2.6 Linux kernels.
+   Noted by Adrian Bridgett <adrian@smop.co.uk.example.com>.
+
+***
+***  Monday, July 28, 2002 -- Dante v1.1.14
+***
+
+ o Fix some problems involving use of bindresvport() when running
+   the server on a privileged port.
+   Problem brought up by Anton A Golubev <anton@engec.ru.example.com>
+   and Silvio Macedo <smacedo@imperial.ac.uk.example.com>.
+
+ o Avoid nameclash with sa_len define on IRIX, patch from
+   Herb Lewis <herb@sgi.com.example.com>
+
+ o Startup item for Dante on Mac OS X.
+   From Gerben Wierda <Sherlock@rna.nl.example.com>.
+
+ o Fix bug that prevented rfc931 auth (ident) from working, patch from
+  "Meno Abels" <Meno.Abels@7d.net.example.com>.
+
+ o Fixes for 'configure' under AIX 5.
+   Problem reported by "Scott Rickard" <rickard43@insightbb.com.example.com>.
+
+ o Workaround for 'bswap_32' header bug on linux.
+
+ o CMSG alignment fix. Problem reported by
+   Ibrahim Khalifa <ibo@toontown.org.example.com>.
+
+***
+***  Monday, June 24, 2002 -- Dante v1.1.13
+***
+
+ o AIX needs n{recv,send}msg when calling system functions.
+   Reported by Tom Chan <tchan@austin.rr.com.example.com>.
+
+ o Fix some bugs in bandwidth module.  Users using a version older
+   than "bandwidth.c,v 1.18" can contact sales for a upgrade.
+
+ o Fix a bug in logprinting, reported by
+   Borsenkow Andrej <Andrej.Borsenkow@mow.siemens.ru.example.com>.
+
+ o Reset buffering after sighup.  Also, always linebuffer logoutput.
+   Fixes some problems with loglineoverlap, problem found by
+   Borsenkow Andrej <Andrej.Borsenkow@mow.siemens.ru.example.com>.
+   This deprecates the "-l" option to sockd.
+
+ o Move daemon() call to later so more errors can be reported, suggested
+   by Borsenkow Andrej <Andrej.Borsenkow@mow.siemens.ru.example.com>.
+
+ o fix problem when linking with libsocks;
+   NISHIMURA Daisuke <nishi@graco.c.u-tokyo.ac.jp.example.com>.
+
+ o fix some problems when socksifying, making certain programs
+   hang forever (e.g. certain versions/installations of "ssh -X").
+   Thanks to NISHIMURA Daisuke <nishi@graco.c.u-tokyo.ac.jp.example.com> for
+   diagnosis, help and testing.
+
+***
+***  Thursday, April 11, 2002 -- Dante v1.1.12
+***
+
+ o Don't mark the rule as good either if sockscf.state.unfixedpamdata,
+   fixes bug reported by Jerry Murdock <jmurdock@itraktech.com.example.com>.
+
+ o fix a bug preventing the list given in a 'user:' keyword from being checked
+   correctly. Reported by Oleg Bulavsky <bulch@ftc.ru.example.com>.
+
+ o support interfacenames containing ':', e.g eth0:1, supposedly on
+   linux 2.4.x.  From Rob Fowler <rfo@keta.mine.nu.example.com>.
+
+ o new --disable-pidfile option to configure; disables pidfile creation.
+
+ o upgrade to libtool-1.4.2, automake-1.5 and autoconf-2.52.
+
+ o "-h" prints out configfile used, based on suggestion from
+   dh_tsc_10@ugcs.net.example.com.
+
+ o fix bugs that reset some defaults at the wrong time, reported by
+   dh_tsc_10@ugcs.net.example.com.
+
+ o prototype script for generation of graphs with usage information included
+   (bin/sockd-graphgen). Contact us if you run a socks server with significant
+   usage, and you are willing to help with testing.
+
+ o status info printed at the end of configure.
+
+***
+***  Friday, Dec 7, 2001 -- Dante v1.1.11
+***
+
+ o Fixes for libdsocks on HP-UX 11.00. Thanks to
+   'albert chin (china@thewrittenword.com.example.com)' for testing.
+
+ o Some minor optimisations in server i/o code, at the cost of some
+   timer accuracy concerning bandwidth limiting/client expiration.
+
+ o prefix "socks" to some global variables to avoid collisions during
+   socksify.  Reported by Don Reid <donr@cvs.agilent.com.example.com>.
+
+ o capi/socks.h needs Rxxx prototypes to work with a c++
+   compiler. Noted by Alex Morozov <alex@idisys.iae.nsk.su.example.com>.
+
+ o Fix compilation problems on Compaq Tru64 UNIX V5.0A (and V5.1 and V5.1A).
+   Mainly based on patch from Peter Derr <pderr@islet.zk3.dec.com.example.com>,
+   who also provided access to a machine for testing.
+
+ o Fix bug that logged to stdout on startup sometimes, confusing
+   some programs.  First reported by
+   Vitor Choi Feitosa <vchoi@interlegis.gov.br.example.com>
+
+ o If Rgetsockname() is called on a socket that a previous uncompleted
+   Rconnect() has been done on, try to sleep until Rconnect() has
+   finished instead of returning ENOBUFS.  Hoped to help compatibility
+   with some applications.
+
+ o Modified httpproxy code a little, based on patch from
+   dh_tsc_10@ugcs.net.example.com.
+
+ o Code for selecting which of multiple external ipaddresses to use
+   on a global basis based on routing.
+   Code contributed by Tom Chan <tchan@austin.rr.com.example.com>.
+
+ o Re-open logfiles on SIGHUP.
+
+ o Rename "pamservicename" to "pam.servicename".
+
+ o Fix memory overrun problem in Rgethostbyname*().  Found and
+   diagnosed by dme@dme.org.example.com, thanks.
+
+ o Warn if "logoutput:" changes to something we don't handle after
+   SIGHUP.
+
+ o Try to log presumably harmless client-related errors with LOG_DEBUG
+   instead of LOG_ERR, by popular request.
+
+ o New module available: redirect, gives control over both
+   where clients requests and replies will end up, aswell as what
+   addresses and portranges the Dante server will use.
+   Can also be used to limit the number of concurrent sessions
+   from each client.
+   See the module page "http://www.inet.no/dante/module.html"
+   and doc/module for more information.
+
+ o New module available: bandwidth, gives control over how much
+   bandwidth the Dante server uses on behalf of the different clients.
+   See the module page "http://www.inet.no/dante/module.html"
+   and doc/module for more information.
+
+ o upgraded to autoconf-2.50, libtool-1.4 and automake-1.4-p4
+
+***
+***  Tuesday, May 29, 2001 -- Dante v1.1.10
+***
+
+ o new method added: "pam".  Code contributed by
+   Patrick Bihan-Faou, MindStep Corporation, patrick@mindstep.com.example.com.
+
+ o let client-rules have their own global methodline, "clientmethod",
+   default value set to "none".
+   The global "method" is only used for socks-rules now.
+
+ o delay checking of password/etc til we have received the socks
+   request (rather than during negotiation, as was the case).
+   Required for supporting passwordbased authentication via non-socks
+   methods, e.g. pam.
+
+ o socklen_t definition updated for NetBSD 1.5U.
+   Problem report and patch from Janne Snabb <snabb@ssh.com.example.com>.
+
+ o Output from 'config.guess' is not sufficient to determine use
+   of elf on NetBSD.
+   Problem report and patch from Janne Snabb <snabb@ssh.com.example.com>
+
+ o BSDI 4.1 doesn't have freeifaddrs(), but uses free()
+   Problem reported by "Zand, Nooshin" <nooshin.zand@intel.com.example.com>
+
+***
+***  Tuesday, March 13, 2001 -- Dante v1.1.9
+***
+
+ o fix big bug in rulespermit().  Problem reported by
+   Stephan Eisvogel <eisvogel@hawo.stw.uni-erlangen.de.example.com>.
+
+***
+***  Tuesday, February 20, 2001 -- Dante v1.1.8
+***
+
+ o contrib directory actually added to distributed archive
+
+***
+***  Tuesday, February 20, 2001 -- Dante v1.1.7
+***
+
+ o contrib/sockd-stat.awk, provides statistics based on sockd logfiles.
+   Contributed by Stephan Eisvogel
+   <eisvogel@hawo.stw.uni-erlangen.de.example.com>.
+
+ o If gethostbyname() fails, treat it as if resolveprotocol was set to
+   fake, meaning we hope the socksserver will be able to resolve it.
+   Will presumably make certain dns configurations work better for
+   client.
+
+ o When showing rule (debug mode), print out linenumber too.
+   Loosely based on suggestion from
+   "N. Kremla" (kremlanh@aramco.com.sa.example.com).
+
+ o contrib/ directory added.
+
+ o Support for giving interfacenames as internal/external address.
+
+ o osf host test in configure did not match all alpha based machines;
+   Dobrica Pavlinusic <dpavlin@rot13.org.example.com>.
+
+ o -V flag added to sockd, which causes the server to exit after
+   parsing the configuration file.
+
+ o Header file (socks.h) with socks function prototypes added. By
+   default installed in /usr/local/include.
+
+***
+***  Tuesday, November 21, 2000 -- Dante v1.1.6
+***
+
+ o fix a bug related to hostnamelength parsing in server.
+   Thanks to "Thomas Jarosch" <thomas.jarosch@styletec.de.example.com>.
+
+***
+***  Monday, October 16, 2000 -- Dante v1.1.5
+***
+
+ o New prototype for gethostbyaddr in RedHat 7.0 added.
+   First reported by Paul R Streitman <prs@us.ibm.com.example.com>.
+
+ o RedHat needs libnsl for tcpwrappers to work.
+
+***
+***  Thursday, October 5, 2000 -- Dante v1.1.4
+***
+
+ o fix bug affecting clients going through socks v4 servers.  Reported and
+   nicely diagnosed by Jack Keane (jkeane@OpenReach.com.example.com).
+
+ o increase default listen backlog to 511, based on request by
+   Doug Hardie (bc979@lafn.org.example.com).
+
+***
+***  Monday, September 25, 2000 -- Dante v1.1.3
+***
+
+ o some fixes/additions to example/ files.
+
+ o HP-UX 11.00 should now work.
+   Thanks to Malte Cornils <malte@cornils.net.example.com> for testing.
+
+ o httpproxysupport in client (meaning "socksify" can work
+   when going through webproxies too).
+
+ o expire badmarking on bad/non-working routes/proxyservers after
+   configured time.  Default to never expiring, as in previous
+   versions.  See BADROUTE_EXPIRE in config.h.
+
+ o say what address we expected the bindreply to come from in
+   "unexpected bindreply ..."
+
+ o don't close controlconnection if another socket is using it.
+   Fixes a bug triggered when using the bindextension in certain cases.
+   Problem reported by Jacques A. Vidrine (n@nectar.com.example.com).
+
+ o compilation outside source directory fixed, based on patch from
+   NISHIMURA Daisuke <nishi@graco.c.u-tokyo.ac.jp.example.com>
+
+ o bsdi uses elf; NISHIMURA Daisuke <nishi@graco.c.u-tokyo.ac.jp.example.com>
+
+ o dlib/hostcache.c now compiled again. First reported by
+   "Jacques A. Vidrine" <n@nectar.com.example.com>
+
+***
+***  Monday, Jun 26, 2000 -- Dante v1.1.2
+***
+
+ o minor additions and standardization to logformat.
+
+ o slightly smarter about what descriptors we leave open when
+   forking of connectchild in client for non-blocking connect.
+   Also don't setsid() in connectchild.
+
+ o work around linux/sysv bug involving getpwnam() preventing
+   password authentication from working in some cases.
+   hp-ux may need similar workaround but not yet verified.
+
+ o Prefer the result of getlogin() to getpwuid(getuid()).
+
+ o HP-UX port.  Many thanks to Malte Cornils <malte@cornils.net.example.com>
+   for help with the port. HP-UX 10.20 should work, HP-UX 11.00
+   currently doesn't.
+
+ o AIX port.  Many thanks to M. Everett Hinckley (everett@lsli.com.example.com)
+   and Tommy Chan for doing the port.  Great work.  AIX 4.2.1 should work.
+
+ o share some of the client interposition code with the server;
+   lets libwrap (and any other external library) use the
+   hostname/hostaddress cache too, making things faster for
+   those using libwrap.
+
+ o always call gettimedout() regardless of select(), fixes an atleast
+   theoretically possible problem.
+   Brought up by Per Hedeland (per@erix.ericsson.se.example.com).
+
+ o assume the globally allowed methods are already set when parsing
+   the rules.  Allows more checking/warning about "strange" rules.
+
+ o fix a bug so portranges get parsed again, instead of reporting
+   syntax error.
+
+ o some cleanup/generalization in preparation for cryptography
+   support.
+
+ o in the case of the commands "bindreply" and "udpreply",
+   "method" based itself on the controlconnection rather than the
+   remote "reply".  Corrected to base itself on the remote reply.
+
+ o when printing authinfo, include what the name of authmethod used
+   is.
+
+ o removed the "feature" that a user listed with the same name as
+   a method would be considered special; too complex for practical
+   use.  No more magic names.
+
+ o clientrules now also take a method field, only non-socks
+   method can be listed there of course; currently that's "none"
+   and "rfc931".
+
+ o call gethostbyname2() internally instead of gethostbyname();
+   fixes a client problem present in some environments.
+   Problem described by Per Hedeland (per@erix.ericsson.se.example.com).
+
+Special compatibility notes for users upgrading from
+previous versions of Dante:
+  Server part:
+    -  In the previous versions the "method" field in the rules
+       specifying bind/udp-replies wasn't used entirely correct;
+       it used the socksclient as the source when matching the
+       method field, rather than the source of the reply, a
+       non-socks connection.
+
+       The correct usage should be that the method field is relative
+       to the sourceaddress, and the sourceaddress for replies is
+       a "non-socks" connection.  Special care might have to be
+       taken to not accidently block the replies since most of them
+       can only be using method "none" (the only other alternative
+       is "rfc931").
+
+    -  The "feature" that a "user" listed with the same name as
+       a "method" would be considered special has been removed.
+       Instead "client-rules" now take a "method" specification on
+       the same form as the "socks-rules".  They also use the global
+       method line in the same way as socks-rules.
+
+    -  The feature that "libwrap: rfc931" would include the rfc931
+       (ident) name in logging has been removed.  This functionality
+       should instead be provided by adding a additional rule,
+       almost identical to the rule with "libwrap: rfc931", before
+       the "libwrap: rfc931" rule.
+
+       The only difference is that the added rule should have
+       "method: rfc931" specified instead of "libwrap: rfc931".
+       "libwrap: rfc931" should also be removed from the old rule.
+
+       The first rule will try to do send a rfc931 query to the
+       client address.  If that fails, Dante moves on to the next
+       rule, which in this case does not require a successful
+       rfc931 lookup.  Refer to example/sockd.conf for more
+       information.
+
+***
+***  Wednesday, January 5, 2000 -- Dante v1.1.1
+***
+
+ o Can't do rulespermit() that early, move to after connect().
+   Fixes a hang that could occur when using libwrap, thanks
+   to Marc G. Fournier (marc.fournier@acadiau.ca.example.com) for help
+   and testing.
+
+ o socksify on elf-based FreeBSD systems should hopefully work now;
+   thanks to Andre Albsmeier <andre.albsmeier@mchp.siemens.de.example.com> for
+   testing.
+
+ o Allow specifying what facility to use for syslog output.
+   Code mostly from Per Hedeland (per@erix.ericsson.se.example.com).
+
+ o Fix bug preventing one of the serverchilds from dying when the server is
+   killed.  Reported by Per Hedeland (per@erix.ericsson.se.example.com).
+
+ o config.c: increment pointed to area, not pointer.
+   Patch from Per Hedeland (per@erix.ericsson.se.example.com).
+
+***
+***  Monday, Sep 27, 1999 -- Dante v1.1
+***
+
+ o Obscure bug on osf causing problems for /usr/bin/ftp fixed.
+
+ o new command for socks-rules added: "udpreply".  This is analogous to
+   the "bindreply" command and replaces the old way of saying what
+   addresses udppacket "replies" shall be allowed from.
+
+ o starting the server with debugging on will automatically enable more
+   logging rather than requiring user to set it manually for each rule.
+
+ o misc minor fixes; more consistent and correct logoutput,
+   handle more temporary errors, some bugs fixed too.
+
+ o fixed some of the finer details of the main i/o loop.
+
+ o pretend Rgetsockname() works on udp sockets; might help some programs.
+
+ o tuned some things for better i/o performance though also greater
+   resource usage.
+
+ o better support for profiling.
+
+ o The name and location of the configuration files can now be
+   changed via arguments to ./configure too.
+   Requested by Albert Chin-A-Young (china@thewrittenword.com.example.com).
+
+ o Problems with glibc-2.1 diagnosed. See the FAQ for details.
+
+ o libtool-1.3.3
+
+ o Building of dlib/interposition.c cleaned up.
+
+ o try to throttle childcreation if it looks like there is a problem.
+   Suggested by Robert Loomans (robertl@jinx.silas.unsw.edu.au.example.com).
+
+ o added a new method: "rfc931"; matches users against rfc931/ident
+   lookup.  Requested by Per Hedeland (per@erix.ericsson.se.example.com).
+
+ o added a new keyword: "user:"; limits the acceptable users on
+   a rule-by-rule basis.
+
+ o rewrote addressmatch().  This sort of reverses the logic and is
+   also no longer recursive.  Much Thanks to Per Hedeland
+   (per@erix.ericsson.se.example.com) for pointing out some problems here
+   and helping with making this hopefully more correct.  Any mistakes
+   are obviously our own.
+
+ o SIGINFO signal is now broadcast to children too.
+
+ o always set default socks serverport so server doesn't complain if
+   using default on sighup.
+   Fix from Per Hedeland (per@erix.ericsson.se.example.com).
+
+ o make server write out correct pid when started with -D.
+   Problem reported by Per Hedeland (per@erix.ericsson.se.example.com).
+
+ o depending on how one configured the userid's used by the server,
+   it could sometimes fail.
+   Problem described by Per Hedeland (per@erix.ericsson.se.example.com).
+
+***
+***  Monday, Jun 7, 1999 -- Dante v1.0.1
+***
+
+ o fixes bug preventing "iotimeout" variable in sockd.conf from
+   working correctly.
+
+ o minor improvements to sockd.conf.5 manpage.
+
+***
+***  Monday, May 31, 1999 -- Dante v1.0.0
+***
+
+ o support for sun/dec/sgi cc.
+
+ o osf4.0a port.  Thanks to Jay Weber (jweb@accessus.net.example.com) for help
+   with the port and an account to test it on.
+
+ o Set subnegotiationversion in username method correctly.
+   Thanks to Marc Haber (Marc.Haber@gmx.de.example.com)
+   and Olaf Titz (olaf@bigred.inka.de.example.com).
+
+ o Cache resolved hostnames/addresses.  Problem of not having it
+   first brought up by Devin Nate (devin.nate@bridgecomm.net.example.com),
+   thanks.  Several new variables were added to config.h for tuning the cache.
+
+ o srchost flags settable in configfile, see sockd.conf(8) for more info.
+
+ o Addressmatching much improved and should now be "complete".
+
+ o libtool-1.3
+
+ o Try to locate newest libc on linux, allow manual specification
+   in worst case.
+
+ o irix 6.2 port.
+
+ o Update to autoconf 2.13 and automake 1.4.
+
+ o New keyword in client configfile: "resolveprotocol".  Must
+   be set to "fake" on clients that can not resolve hostnames.
+
+ o Support resolving hostnames for socks v4 clients too (requires
+   the Dante client but should work with any socks server).
+
+ o Compilation problems on Solaris 7 fixed.  Reported by and fixed
+   with the help of Stephen C. Hailey <haileyn@flash.net.example.com>.
+
+ o Library conflict on linux systems with several libc versions
+   (gnu/non-gnu?) resolved, reported by
+   Martin Piskernig <martin.piskernig@stuwo.at.example.com>.
+
+ o Configparsing reworked, should no longer care much about the order
+   of things.
+
+ o The library with dlopen should be correctly found for socksify.
+
+ o Let user know if we failed due to authentication on at msproxy
+   server.
+
+ o "protocolversion" renamed to "proxyprotocol" in clientconfig,
+   also changed the value names.
+
+ o version in reply for socksv4 is not same as in request, reported
+   by Stefan Reiner (stefanr@segue.at.example.com).
+
+ o added experimental support for msproxy v2, supports tcp.
+
+ o better support for clients that can't resolve hostnames.
+
+ o nonblocking connects have a chance of working on linux too now.
+
+***
+***  Monday, December 14, 1998 -- Dante v0.91.1.
+***
+
+ o  a nasty typo.
+
+***
+***  Monday, December 14, 1998 -- Dante v0.91.0.
+***
+
+ o  all reported bugs and compilation problems fixed.
+
+ o  much improved UDP support, using calls other than sendto()/recvfrom()
+    on UDP sockets should now work.
+
+ o  spread SO_KEEPALIVE to all appropriate sockets, added option
+    "-n" to switch SO_KEEPALIVE off.  Old "-n" became "-N".
+
+ o  nonblocking connect stuff redesigned, should now handle all cases
+    and also makes ftp client in lynx work.
+
+ o  more documentation available.
+
+ o  --enable-diagnostic option added to configure
+
+ o  cache's username/password, does not prompt twice.
+
+ o  Server is no longer tested on Solaris 2.5.1, we have switched
+    to 2.6 due to all the 2.5.1 specific problems.  Much of the bandaid
+    necessary for Solaris 2.5.1 is still present in this version but
+    will probably be removed in next version.
+
+ o  Socksify program now also works on SunOS and Linux.
+
+***
+***  Monday, November 16, 1998 -- Dante v0.90.0.
+***
+
+ o  A socks client and server implementation for UNIX.

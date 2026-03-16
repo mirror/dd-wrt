@@ -1,0 +1,95 @@
+#!/bin/sh -
+#
+# Copyright (c) 1997, 1998, 1999, 2001, 2008, 2009, 2010, 2011, 2012, 2013
+#      Inferno Nettverk A/S, Norway.  All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions
+# are met:
+# 1. The above copyright notice, this list of conditions and the following
+#    disclaimer must appear in all copies of the software, derivative works
+#    or modified versions, and any portions thereof, aswell as in all
+#    supporting documentation.
+# 2. All advertising materials mentioning features or use of this software
+#    must display the following acknowledgement:
+#      This product includes software developed by
+#      Inferno Nettverk A/S, Norway.
+# 3. The name of the author may not be used to endorse or promote products
+#    derived from this software without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR
+# IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+# OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+# IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT,
+# INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
+# NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+# DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+# THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
+# THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+#
+# Inferno Nettverk A/S requests users of this software to return to
+#
+#  Software Distribution Coordinator  or  sdc@inet.no
+#  Inferno Nettverk A/S
+#  Oslo Research Park
+#  Gaustadalléen 21
+#  NO-0349 Oslo
+#  Norway
+#
+# any improvements or extensions that they make and grant Inferno Nettverk A/S
+# the rights to redistribute these changes.
+#
+# $Id: socksify.in,v 1.43 2013/10/27 15:24:41 karls Exp $
+
+#On systems where a supported preloading mechanism is used, you can
+#do "socksify <program>" and <program> will use socks without having
+#been relinked or recompiled.  This will not work on statically linked
+#binaries.
+
+NOPRELOAD="@NOPRELOAD@"
+if test x"$NOPRELOAD" != x; then
+    echo "socksify: error: dante client not built with preloading support."
+    exit 1
+fi
+
+SOCKSIFY_PRELOAD_LIBS="@SOCKSIFY_PRELOAD_LIBS@"
+SOCKS_LIBDIR="${SOCKS_LIBDIR:-@LIBRARY_PREFIX@}"
+
+#platform that requires full path to libdsocks?
+SOCKS_USEFULLPATH="${SOCKS_USEFULLPATH:-@SOFULLPATH@}"
+if test x"$SOCKS_USEFULLPATH" != x; then
+    #specify full path to libdsocks
+    FULLPATH="${SOCKS_LIBDIR}/"
+else
+    unset FULLPATH
+fi
+
+#use "FLAT_NAMESPACE" on Darwin in attempt to match LD_PRELOAD behavior
+if test x`uname` = xDarwin; then
+    export DYLD_FORCE_FLAT_NAMESPACE=t
+fi
+
+#dlib/Makefile.am libtool flags should produce a predictable library name
+#(ending in SOLIB_POSTFIX).
+LIBRARY="${SOCKS_LIBRARY:-${FULLPATH}libdsocks.@SOLIB_POSTFIX@}"
+
+#platform dependent LD_PRELOAD-variant format
+PRELOAD_SEPERATOR="@PRELOAD_SEPERATOR@"
+PRELOAD_POSTFIX="@PRELOAD_POSTFIX@"
+
+#set variable activating preloading (LD_PRELOAD etc.)
+@PRELOAD_VARIABLE@="${LIBRARY}${SOCKSIFY_PRELOAD_LIBS:+${PRELOAD_SEPERATOR}}${SOCKSIFY_PRELOAD_LIBS}${PRELOAD_POSTFIX:+${PRELOAD_SEPERATOR}}${PRELOAD_POSTFIX}"
+export @PRELOAD_VARIABLE@
+
+LD_LIBRARY_PATH="${SOCKS_LIBDIR}${LD_LIBRARY_PATH:+:}${LD_LIBRARY_PATH}"
+export LD_LIBRARY_PATH
+
+#SunOS 64-bit library path
+if test x"@ISA64DIR@" != x; then
+    SOCKS_LIB64DIR="${LIB64DIR:-${SOCKS_LIBDIR}/@ISA64DIR@}"
+    LD_LIBRARY_PATH_64="${SOCKS_LIB64DIR}${LD_LIBRARY_PATH_64:+:}${LD_LIBRARY_PATH_64}"
+    export LD_LIBRARY_PATH_64
+fi
+
+exec "$@"

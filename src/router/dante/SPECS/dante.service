@@ -1,0 +1,19 @@
+[Unit]
+Description=Dante SOCKS server
+After=syslog.target network.target network-online.target
+Documentation=man:sockd
+Documentation=man:sockd.conf
+Wants=network-online.target
+
+[Service]
+Type=forking
+PIDFile=/var/run/sockd.pid
+Environment="DANTE_OPTIONS="
+EnvironmentFile=-/etc/sysconfig/dante
+#ExecStartPre=xxx/check-config.sh
+ExecStart=/usr/sbin/sockd -D -p /var/run/sockd.pid $DANTE_OPTIONS
+ExecReload=/bin/kill -HUP $MAINPID
+KillMode=process
+
+[Install]
+WantedBy=multi-user.target

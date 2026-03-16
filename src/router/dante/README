@@ -1,0 +1,10 @@
+# $Id: README,v 1.14 2011/05/18 11:27:31 karls Exp $
+
+    Dante - a SOCKS client and server implementation for UNIX,
+    developed by Inferno Nettverk A/S, Norway.
+
+Feedback can be sent to dante-misc@inet.no.
+Bugs to dante-bugs@inet.no.
+
+Visit http://www.inet.no/dante/support.html for information about
+commercial support.

@@ -1,0 +1,50 @@
+#!/bin/sh
+
+# This StartupItem has been created by Gerben Wierda, Gerben.Wierda@rna.nl
+# on July 22, 2002. Install this directory in /Library/StartupItems on
+# Mac OS X
+
+. /etc/rc.common
+
+##
+# Start Dante SOCKS server
+##
+
+PIDFILE=/var/run/sockd.pid
+
+# Currently, sockd does not always remove sockd.pid when it dies (e.g. on
+# kill -TERM) so its existence is not very well coupled to sockd running with
+# that particular pid (and you might kill something unrelated...)
+# So we use ps output
+DANTELEADER=`ps axww | grep /usr/local/sbin/sockd | grep -v grep | \
+	awk '{print $3$1}' | grep '^[SRDI]s' | sed 's/^[SRDI]s//'` 2>/dev/null
+DANTEPID=`cat ${PIDFILE}` 2>/dev/null
+
+if [ "$1" == "start" ]
+then
+	if [ "${DANTELEADER}" != "" ]
+	then
+		ConsoleMessage "Dante already running (pid = ${DANTELEADER})"
+	else
+		ConsoleMessage "Starting Dante SOCKS server"
+		/usr/local/sbin/sockd -D
+	fi
+elif [ "$1" == "stop" ]
+then
+	if [ "${DANTELEADER}" != "" ]
+	then
+		ConsoleMessage "Stopping Dante SOCKS server"
+		kill -TERM "${DANTELEADER}"
+		rm -f ${PIDFILE}
+	fi
+elif [ "$1" == "restart" ]
+then
+	if [ "${DANTELEADER}" != "" ]
+	then
+		ConsoleMessage "Stopping Dante SOCKS server"
+		kill -TERM "${DANTELEADER}"
+		rm -f ${PIDFILE}
+	fi
+	ConsoleMessage "Starting Dante SOCKS server"
+	/usr/local/sbin/sockd -D
+fi

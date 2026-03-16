@@ -1,0 +1,4172 @@
+/* include/autoconf.h.in.  Generated from configure.ac by autoheader.  */
+
+/* avoid warnings on Android */
+#ifdef HAVE_ANDROID_OS
+# undef /*XXX protect against redefinition */ HAVE_SCHED_SETSCHEDULER
+# undef /*XXX protect against redefinition */ HAVE_MALLOC_H
+#endif /* HAVE_ANDROID_OS */
+
+
+/* we are Dante */
+#undef BAREFOOTD
+
+/* we are Dante */
+#undef COVENANT
+
+/* Features enabled in build */
+#undef DANTE_BUILD
+
+/* Compat functions enabled in build */
+#undef DANTE_COMPATFILES
+
+/* IPV4 level socket options enabled in build */
+#undef DANTE_SOCKOPTS_IPV4
+
+/* IPV6 level socket options enabled in build */
+#undef DANTE_SOCKOPTS_IPV6
+
+/* Socket level socket options enabled in build */
+#undef DANTE_SOCKOPTS_SO
+
+/* TCP level socket options enabled in build */
+#undef DANTE_SOCKOPTS_TCP
+
+/* UDP level socket options enabled in build */
+#undef DANTE_SOCKOPTS_UDP
+
+/* for debugging */
+#undef DIAGNOSTIC
+
+/* dlopen has RTLD_ prefix */
+#undef DL_LAZY
+
+/* ignore FD_SETSIZE */
+#undef FD_SETSIZE_LIMITS_SELECT
+
+/* Define to 1 if you have the <arpa/nameser.h> header file. */
+#undef HAVE_ARPA_NAMESER_H
+
+/* Define to 1 if you have the `backtrace' function. */
+#undef HAVE_BACKTRACE
+
+/* Define to 1 if you have the `bindresvport' function. */
+#undef HAVE_BINDRESVPORT
+
+/* platform bug */
+#undef HAVE_BROKEN_INET_NTOA
+
+/* BSD Authentication support */
+#undef HAVE_BSDAUTH
+
+/* Define to 1 if you have the <bsd_auth.h> header file. */
+#undef HAVE_BSD_AUTH_H
+
+/* Define to 1 if you have the `bzero' function. */
+#undef HAVE_BZERO
+
+/* monotonic clock_gettime() */
+#undef HAVE_CLOCK_GETTIME_MONOTONIC
+
+/* struct cmsghdr exists */
+#undef HAVE_CMSGHDR
+
+/* CMSG_LEN exists */
+#undef HAVE_CMSG_LEN
+
+/* CMSG_SPACE exists */
+#undef HAVE_CMSG_SPACE
+
+/* Define to 1 if you have the <com_err.h> header file. */
+#undef HAVE_COM_ERR_H
+
+/* Define to 1 if you have com_err in krb5.h */
+#undef HAVE_COM_ERR_IN_KRB5
+
+/* use tcpwrappers */
+#undef HAVE_COND_LIBWRAP
+
+/* low-overhead debugging enabled */
+#undef HAVE_COND_LIVEDEBUG
+
+/* PAM support */
+#undef HAVE_COND_PAM
+
+/* Disable environment variables */
+#undef HAVE_CONFENV_DISABLE
+
+/* for code coverage */
+#undef HAVE_COVERAGE
+
+/* CPU_EQUAL exists in sched.h */
+#undef HAVE_CPU_EQUAL
+
+/* Define to 1 if you have the <crypt.h> header file. */
+#undef HAVE_CRYPT_H
+
+/* Define to 1 if you have the `daemon' function. */
+#undef HAVE_DAEMON
+
+/* enable darwin/osx workarounds */
+#undef HAVE_DARWIN
+
+/* __attribute__ macro support */
+#undef HAVE_DECL_ATTRIBUTE
+
+/* __bounded__ macro support */
+#undef HAVE_DECL_BOUNDED
+
+/* constructor __attribute__ support */
+#undef HAVE_DECL_CONSTRUCTOR
+
+/* format attribute support */
+#undef HAVE_DECL_FORMAT
+
+/* Define to 1 if you have the declaration of `gets', and to 0 if you don't.
+   */
+#undef HAVE_DECL_GETS
+
+/* Define to 1 if you have the declaration of `krb5_kt_free_entry', and to 0
+   if you don't. */
+#undef HAVE_DECL_KRB5_KT_FREE_ENTRY
+
+/* __nonnull__ attribute support */
+#undef HAVE_DECL_NONNULL
+
+/* Define to 1 if you have the declaration of `_IO_getc', and to 0 if you
+   don't. */
+#undef HAVE_DECL__IO_GETC
+
+/* Define to 1 if you have the declaration of `_IO_putc', and to 0 if you
+   don't. */
+#undef HAVE_DECL__IO_PUTC
+
+/* DEC workarounds */
+#undef HAVE_DEC_PROTO
+
+/* Define to 1 if you have the `difftime' function. */
+#undef HAVE_DIFFTIME
+
+/* dlfcn.h exists */
+#undef HAVE_DLFCN_H
+
+/* Define to 1 if you don't have `vprintf' but do have `_doprnt.' */
+#undef HAVE_DOPRNT
+
+/* option count */
+#undef HAVE_DUPSOCKOPT_MAX
+
+/* using pidfile for server */
+#undef HAVE_ENABLED_PIDFILE
+
+/* Define to 1 if you have error_message */
+#undef HAVE_ERROR_MESSAGE
+
+/* EAI_ADDRFAMILY gai error found */
+#undef HAVE_ERR_EAI_ADDRFAMILY
+
+/* EAI_AGAIN gai error found */
+#undef HAVE_ERR_EAI_AGAIN
+
+/* EAI_ALLDONE gai error found */
+#undef HAVE_ERR_EAI_ALLDONE
+
+/* EAI_BADEXTFLAGS gai error found */
+#undef HAVE_ERR_EAI_BADEXTFLAGS
+
+/* EAI_BADFLAGS gai error found */
+#undef HAVE_ERR_EAI_BADFLAGS
+
+/* EAI_BADHINTS gai error found */
+#undef HAVE_ERR_EAI_BADHINTS
+
+/* EAI_CANCELED gai error found */
+#undef HAVE_ERR_EAI_CANCELED
+
+/* EAI_FAIL gai error found */
+#undef HAVE_ERR_EAI_FAIL
+
+/* EAI_FAMILY gai error found */
+#undef HAVE_ERR_EAI_FAMILY
+
+/* EAI_IDN_ENCODE gai error found */
+#undef HAVE_ERR_EAI_IDN_ENCODE
+
+/* EAI_INPROGRESS gai error found */
+#undef HAVE_ERR_EAI_INPROGRESS
+
+/* EAI_INTR gai error found */
+#undef HAVE_ERR_EAI_INTR
+
+/* EAI_MEMORY gai error found */
+#undef HAVE_ERR_EAI_MEMORY
+
+/* EAI_NODATA gai error found */
+#undef HAVE_ERR_EAI_NODATA
+
+/* EAI_NONAME gai error found */
+#undef HAVE_ERR_EAI_NONAME
+
+/* EAI_NOTCANCELED gai error found */
+#undef HAVE_ERR_EAI_NOTCANCELED
+
+/* EAI_OVERFLOW gai error found */
+#undef HAVE_ERR_EAI_OVERFLOW
+
+/* EAI_PROTOCOL gai error found */
+#undef HAVE_ERR_EAI_PROTOCOL
+
+/* EAI_SERVICE gai error found */
+#undef HAVE_ERR_EAI_SERVICE
+
+/* EAI_SOCKTYPE gai error found */
+#undef HAVE_ERR_EAI_SOCKTYPE
+
+/* EAI_SYSTEM gai error found */
+#undef HAVE_ERR_EAI_SYSTEM
+
+/* Define to 1 if you have the <et/com_err.h> header file. */
+#undef HAVE_ET_COM_ERR_H
+
+/* Define to 1 if you have the <execinfo.h> header file. */
+#undef HAVE_EXECINFO_H
+
+/* DEC workarounds */
+#undef HAVE_EXTRA_OSF_SYMBOLS
+
+/* Define to 1 if you have the <fcntl.h> header file. */
+#undef HAVE_FCNTL_H
+
+/* no fd_mask definition */
+#undef HAVE_FDMASK
+
+/* Define to 1 if you have the `freeaddrinfo' function. */
+#undef HAVE_FREEADDRINFO
+
+/* Define to 1 if you have the `freeifaddrs' function. */
+#undef HAVE_FREEIFADDRS
+
+/* Define to 1 if you have the `getaddrinfo' function. */
+#undef HAVE_GETADDRINFO
+
+/* Define to 1 if you have the `gethostbyname2' function. */
+#undef HAVE_GETHOSTBYNAME2
+
+/* Define to 1 if you have the `getifaddrs' function. */
+#undef HAVE_GETIFADDRS
+
+/* Define to 1 if you have the `getipnodebyname' function. */
+#undef HAVE_GETIPNODEBYNAME
+
+/* Define to 1 if you have the `getnameinfo' function. */
+#undef HAVE_GETNAMEINFO
+
+/* Define to 1 if you have the `getpass' function. */
+#undef HAVE_GETPASS
+
+/* Define to 1 if you have the `getprpwnam' function. */
+#undef HAVE_GETPRPWNAM
+
+/* Define to 1 if you have the `getpwnam_shadow' function. */
+#undef HAVE_GETPWNAM_SHADOW
+
+/* Define to 1 if you have the `getspnam' function. */
+#undef HAVE_GETSPNAM
+
+/* Define to 1 if you have krb5_get_init_creds_keytab */
+#undef HAVE_GET_INIT_CREDS_KEYTAB
+
+/* Define to 1 if you have krb5_get_init_creds_opt_alloc */
+#undef HAVE_GET_INIT_CREDS_OPT_ALLOC
+
+/* Define to 1 if you have krb5_get_init_creds_opt_free with krb5 context */
+#undef HAVE_GET_INIT_CREDS_OPT_FREE_CTX
+
+/* GSSAPI support */
+#undef HAVE_GSSAPI
+
+/* Define to 1 if you have the <gssapi/gssapi_ext.h> header file. */
+#undef HAVE_GSSAPI_GSSAPI_EXT_H
+
+/* Define to 1 if you have the <gssapi/gssapi_generic.h> header file. */
+#undef HAVE_GSSAPI_GSSAPI_GENERIC_H
+
+/* Define to 1 if you have the <gssapi/gssapi.h> header file. */
+#undef HAVE_GSSAPI_GSSAPI_H
+
+/* Define to 1 if you have the <gssapi/gssapi_krb5.h> header file. */
+#undef HAVE_GSSAPI_GSSAPI_KRB5_H
+
+/* Define to 1 if you have the <gssapi.h> header file. */
+#undef HAVE_GSSAPI_H
+
+/* Define to 1 if you have gsskrb5_extract_authz_data_from_sec_context */
+#undef HAVE_GSSKRB5_EXTRACT_AUTHZ_DATA_FROM_SEC_CONTEXT
+
+/* Define to 1 if you have gss_map_name_to_any */
+#undef HAVE_GSS_MAP_ANY_TO_ANY
+
+/* Define to 1 if you have the `gss_map_name_to_any' function. */
+#undef HAVE_GSS_MAP_NAME_TO_ANY
+
+/* Heimdal kerberos implementation */
+#undef HAVE_HEIMDAL_KERBEROS
+
+/* Define to 1 if you have the `hstrerror' function. */
+#undef HAVE_HSTRERROR
+
+/* Define to 1 if you have the <ifaddrs.h> header file. */
+#undef HAVE_IFADDRS_H
+
+/* in6_addr defined */
+#undef HAVE_IN6_ADDR
+
+/* Define to 1 if you have the `inet_pton' function. */
+#undef HAVE_INET_PTON
+
+/* Define to 1 if the system has the type `int16_t'. */
+#undef HAVE_INT16_T
+
+/* Define to 1 if the system has the type `int32_t'. */
+#undef HAVE_INT32_T
+
+/* Define to 1 if the system has the type `int8_t'. */
+#undef HAVE_INT8_T
+
+/* Define to 1 if you have the <inttypes.h> header file. */
+#undef HAVE_INTTYPES_H
+
+/* Define to 1 if the system has the type `in_addr_t'. */
+#undef HAVE_IN_ADDR_T
+
+/* Define to 1 if the system has the type `in_port_t'. */
+#undef HAVE_IN_PORT_T
+
+/* IPV6_2292DSTOPTS socket option */
+#undef HAVE_IPV6_2292DSTOPTS
+
+/* IPV6_2292HOPLIMIT socket option */
+#undef HAVE_IPV6_2292HOPLIMIT
+
+/* IPV6_2292HOPOPTS socket option */
+#undef HAVE_IPV6_2292HOPOPTS
+
+/* IPV6_2292PKTINFO socket option */
+#undef HAVE_IPV6_2292PKTINFO
+
+/* IPV6_2292PKTOPTIONS socket option */
+#undef HAVE_IPV6_2292PKTOPTIONS
+
+/* IPV6_2292RTHDR socket option */
+#undef HAVE_IPV6_2292RTHDR
+
+/* IPV6_ADDRFORM socket option */
+#undef HAVE_IPV6_ADDRFORM
+
+/* IPV6_ADDR_PREFERENCES socket option */
+#undef HAVE_IPV6_ADDR_PREFERENCES
+
+/* IPV6_ADD_MEMBERSHIP socket option */
+#undef HAVE_IPV6_ADD_MEMBERSHIP
+
+/* IPV6_AIXRAWSOCKET socket option */
+#undef HAVE_IPV6_AIXRAWSOCKET
+
+/* IPV6_AUTHHDR socket option */
+#undef HAVE_IPV6_AUTHHDR
+
+/* IPV6_AUTH_LEVEL socket option */
+#undef HAVE_IPV6_AUTH_LEVEL
+
+/* IPV6_AUTOFLOWLABEL socket option */
+#undef HAVE_IPV6_AUTOFLOWLABEL
+
+/* IPV6_CHECKSUM socket option */
+#undef HAVE_IPV6_CHECKSUM
+
+/* IPV6_DONTFRAG socket option */
+#undef HAVE_IPV6_DONTFRAG
+
+/* IPV6_DROP_MEMBERSHIP socket option */
+#undef HAVE_IPV6_DROP_MEMBERSHIP
+
+/* IPV6_DSTOPTS socket option */
+#undef HAVE_IPV6_DSTOPTS
+
+/* IPV6_ESP_NETWORK_LEVEL socket option */
+#undef HAVE_IPV6_ESP_NETWORK_LEVEL
+
+/* IPV6_ESP_TRANS_LEVEL socket option */
+#undef HAVE_IPV6_ESP_TRANS_LEVEL
+
+/* IPV6_FLOWINFO socket option */
+#undef HAVE_IPV6_FLOWINFO
+
+/* IPV6_FLOWINFO_SEND socket option */
+#undef HAVE_IPV6_FLOWINFO_SEND
+
+/* IPV6_FLOWLABEL_MGR socket option */
+#undef HAVE_IPV6_FLOWLABEL_MGR
+
+/* IPV6_HOPLIMIT socket option */
+#undef HAVE_IPV6_HOPLIMIT
+
+/* IPV6_HOPOPTS socket option */
+#undef HAVE_IPV6_HOPOPTS
+
+/* IPV6_IPCOMP_LEVEL socket option */
+#undef HAVE_IPV6_IPCOMP_LEVEL
+
+/* IPV6_IPSEC_POLICY socket option */
+#undef HAVE_IPV6_IPSEC_POLICY
+
+/* IPV6_JOIN_ANYCAST socket option */
+#undef HAVE_IPV6_JOIN_ANYCAST
+
+/* IPV6_JOIN_GROUP socket option */
+#undef HAVE_IPV6_JOIN_GROUP
+
+/* IPV6_LEAVE_ANYCAST socket option */
+#undef HAVE_IPV6_LEAVE_ANYCAST
+
+/* IPV6_LEAVE_GROUP socket option */
+#undef HAVE_IPV6_LEAVE_GROUP
+
+/* IPV6_MINHOPCOUNT socket option */
+#undef HAVE_IPV6_MINHOPCOUNT
+
+/* IPV6_MIPDSTOPTS socket option */
+#undef HAVE_IPV6_MIPDSTOPTS
+
+/* IPV6_MTU socket option */
+#undef HAVE_IPV6_MTU
+
+/* IPV6_MTU_DISCOVER socket option */
+#undef HAVE_IPV6_MTU_DISCOVER
+
+/* IPV6_MULTICAST_HOPS socket option */
+#undef HAVE_IPV6_MULTICAST_HOPS
+
+/* IPV6_MULTICAST_IF socket option */
+#undef HAVE_IPV6_MULTICAST_IF
+
+/* IPV6_MULTICAST_LOOP socket option */
+#undef HAVE_IPV6_MULTICAST_LOOP
+
+/* IPV6_NEXTHOP socket option */
+#undef HAVE_IPV6_NEXTHOP
+
+/* IPV6_NOPROBE socket option */
+#undef HAVE_IPV6_NOPROBE
+
+/* IPV6_ORIGDSTADDR socket option */
+#undef HAVE_IPV6_ORIGDSTADDR
+
+/* IPV6_PATHMTU socket option */
+#undef HAVE_IPV6_PATHMTU
+
+/* IPV6_PIPEX socket option */
+#undef HAVE_IPV6_PIPEX
+
+/* IPV6_PKTINFO socket option */
+#undef HAVE_IPV6_PKTINFO
+
+/* IPV6_PKTOPTIONS socket option */
+#undef HAVE_IPV6_PKTOPTIONS
+
+/* IPV6_PORTRANGE socket option */
+#undef HAVE_IPV6_PORTRANGE
+
+/* IPV6_RECVDSTADDR socket option */
+#undef HAVE_IPV6_RECVDSTADDR
+
+/* IPV6_RECVDSTOPTS socket option */
+#undef HAVE_IPV6_RECVDSTOPTS
+
+/* IPV6_RECVERR socket option */
+#undef HAVE_IPV6_RECVERR
+
+/* IPV6_RECVHOPLIMIT socket option */
+#undef HAVE_IPV6_RECVHOPLIMIT
+
+/* IPV6_RECVHOPOPTS socket option */
+#undef HAVE_IPV6_RECVHOPOPTS
+
+/* IPV6_RECVHOPS socket option */
+#undef HAVE_IPV6_RECVHOPS
+
+/* IPV6_RECVIF socket option */
+#undef HAVE_IPV6_RECVIF
+
+/* IPV6_RECVOPTS socket option */
+#undef HAVE_IPV6_RECVOPTS
+
+/* IPV6_RECVORIGDSTADDR socket option */
+#undef HAVE_IPV6_RECVORIGDSTADDR
+
+/* IPV6_RECVPATHMTU socket option */
+#undef HAVE_IPV6_RECVPATHMTU
+
+/* IPV6_RECVPKTINFO socket option */
+#undef HAVE_IPV6_RECVPKTINFO
+
+/* IPV6_RECVRETOPTS socket option */
+#undef HAVE_IPV6_RECVRETOPTS
+
+/* IPV6_RECVRTHDR socket option */
+#undef HAVE_IPV6_RECVRTHDR
+
+/* IPV6_RECVSRCRT socket option */
+#undef HAVE_IPV6_RECVSRCRT
+
+/* IPV6_RECVTCLASS socket option */
+#undef HAVE_IPV6_RECVTCLASS
+
+/* IPV6_RETOPTS socket option */
+#undef HAVE_IPV6_RETOPTS
+
+/* IPV6_ROUTER_ALERT socket option */
+#undef HAVE_IPV6_ROUTER_ALERT
+
+/* IPV6_RTHDR socket option */
+#undef HAVE_IPV6_RTHDR
+
+/* IPV6_RTHDRDSTOPTS socket option */
+#undef HAVE_IPV6_RTHDRDSTOPTS
+
+/* IPV6_SENDIF socket option */
+#undef HAVE_IPV6_SENDIF
+
+/* IPV6_TCLASS socket option */
+#undef HAVE_IPV6_TCLASS
+
+/* IPV6_TRANSPARENT socket option */
+#undef HAVE_IPV6_TRANSPARENT
+
+/* IPV6_UNICAST_HOPS socket option */
+#undef HAVE_IPV6_UNICAST_HOPS
+
+/* IPV6_USE_MIN_MTU socket option */
+#undef HAVE_IPV6_USE_MIN_MTU
+
+/* IPV6_V6ONLY socket option */
+#undef HAVE_IPV6_V6ONLY
+
+/* IPV6_XFRM_POLICY socket option */
+#undef HAVE_IPV6_XFRM_POLICY
+
+/* IP_ADDRFORM socket option */
+#undef HAVE_IP_ADDRFORM
+
+/* IP_ADD_MEMBERSHIP socket option */
+#undef HAVE_IP_ADD_MEMBERSHIP
+
+/* IP_ADD_SOURCE_MEMBERSHIP socket option */
+#undef HAVE_IP_ADD_SOURCE_MEMBERSHIP
+
+/* IP_AUTH_LEVEL socket option */
+#undef HAVE_IP_AUTH_LEVEL
+
+/* IP_BLOCK_SOURCE socket option */
+#undef HAVE_IP_BLOCK_SOURCE
+
+/* IP_BROADCAST_IF socket option */
+#undef HAVE_IP_BROADCAST_IF
+
+/* IP_DHCPMODE socket option */
+#undef HAVE_IP_DHCPMODE
+
+/* IP_DONTFRAG socket option */
+#undef HAVE_IP_DONTFRAG
+
+/* IP_DROP_MEMBERSHIP socket option */
+#undef HAVE_IP_DROP_MEMBERSHIP
+
+/* IP_DROP_SOURCE_MEMBERSHIP socket option */
+#undef HAVE_IP_DROP_SOURCE_MEMBERSHIP
+
+/* IP_ESP_NETWORK_LEVEL socket option */
+#undef HAVE_IP_ESP_NETWORK_LEVEL
+
+/* IP_ESP_TRANS_LEVEL socket option */
+#undef HAVE_IP_ESP_TRANS_LEVEL
+
+/* IP_FINDPMTU socket option */
+#undef HAVE_IP_FINDPMTU
+
+/* IP_FREEBIND socket option */
+#undef HAVE_IP_FREEBIND
+
+/* IP_HDRINCL socket option */
+#undef HAVE_IP_HDRINCL
+
+/* IP_IPCOMP_LEVEL socket option */
+#undef HAVE_IP_IPCOMP_LEVEL
+
+/* IP_MINTTL socket option */
+#undef HAVE_IP_MINTTL
+
+/* IP_MTU_DISCOVER socket option */
+#undef HAVE_IP_MTU_DISCOVER
+
+/* IP_MULTICAST_HOPS socket option */
+#undef HAVE_IP_MULTICAST_HOPS
+
+/* IP_MULTICAST_IF socket option */
+#undef HAVE_IP_MULTICAST_IF
+
+/* IP_MULTICAST_LOOP socket option */
+#undef HAVE_IP_MULTICAST_LOOP
+
+/* IP_MULTICAST_TTL socket option */
+#undef HAVE_IP_MULTICAST_TTL
+
+/* IP_OPTIONS socket option */
+#undef HAVE_IP_OPTIONS
+
+/* IP_PMTUAGE socket option */
+#undef HAVE_IP_PMTUAGE
+
+/* IP_PORTRANGE socket option */
+#undef HAVE_IP_PORTRANGE
+
+/* IP_RECVDSTADDR socket option */
+#undef HAVE_IP_RECVDSTADDR
+
+/* IP_RECVIF socket option */
+#undef HAVE_IP_RECVIF
+
+/* IP_RECVIFINFO socket option */
+#undef HAVE_IP_RECVIFINFO
+
+/* IP_RECVINTERFACE socket option */
+#undef HAVE_IP_RECVINTERFACE
+
+/* IP_RECVMACHDR socket option */
+#undef HAVE_IP_RECVMACHDR
+
+/* IP_RECVTOS socket option */
+#undef HAVE_IP_RECVTOS
+
+/* IP_RECVTTL socket option */
+#undef HAVE_IP_RECVTTL
+
+/* IP_SOURCE_FILTER socket option */
+#undef HAVE_IP_SOURCE_FILTER
+
+/* IP_TOS socket option */
+#undef HAVE_IP_TOS
+
+/* IP_TRANSPARENT socket option */
+#undef HAVE_IP_TRANSPARENT
+
+/* IP_TTL socket option */
+#undef HAVE_IP_TTL
+
+/* IP_UNBLOCK_SOURCE socket option */
+#undef HAVE_IP_UNBLOCK_SOURCE
+
+/* IP_UNICAST_HOPS socket option */
+#undef HAVE_IP_UNICAST_HOPS
+
+/* Define to 1 if you have the `issetugid' function. */
+#undef HAVE_ISSETUGID
+
+/* Define to 1 if you have the <kerberosv5/com_err.h> header file. */
+#undef HAVE_KERBEROSV5_COM_ERR_H
+
+/* Define to 1 if you have the <kerberosv5/krb5.h> header file. */
+#undef HAVE_KERBEROSV5_KRB5_H
+
+/* KRB5 support */
+#undef HAVE_KRB5
+
+/* Define to 1 if you have krb5_get_error_message */
+#undef HAVE_KRB5_GET_ERROR_MESSAGE
+
+/* Define to 1 if you have krb5_get_err_text */
+#undef HAVE_KRB5_GET_ERR_TEXT
+
+/* Define to 1 if you have the <krb5.h> header file. */
+#undef HAVE_KRB5_H
+
+/* Define to 1 if you have krb5_kt_free_entry */
+#undef HAVE_KRB5_KT_FREE_ENTRY
+
+/* Define to 1 if you have MEMORY: cache support */
+#undef HAVE_KRB5_MEMORY_CACHE
+
+/* Define to 1 if you have MEMORY: keytab support */
+#undef HAVE_KRB5_MEMORY_KEYTAB
+
+/* Define to 1 if you have krb5_pac */
+#undef HAVE_KRB5_PAC
+
+/* Define to 1 if you have the <lber.h> header file. */
+#undef HAVE_LBER_H
+
+/* LDAP support */
+#undef HAVE_LDAP
+
+/* Define to 1 if you have ldapssl_client_init */
+#undef HAVE_LDAPSSL_CLIENT_INIT
+
+/* Define to 1 if you have the <ldap.h> header file. */
+#undef HAVE_LDAP_H
+
+/* Define to 1 if you have LDAP_REBINDPROC_CALLBACK */
+#undef HAVE_LDAP_REBINDPROC_CALLBACK
+
+/* Define to 1 if you have LDAP_REBIND_FUNCTION */
+#undef HAVE_LDAP_REBIND_FUNCTION
+
+/* Define to 1 if you have LDAP_REBIND_PROC */
+#undef HAVE_LDAP_REBIND_PROC
+
+/* Define to 1 if you have LDAP_SCOPE_DEFAULT */
+#undef HAVE_LDAP_SCOPE_DEFAULT
+
+/* Define to 1 if you have ldap_url_desc2str */
+#undef HAVE_LDAP_URL_DESC2STR
+
+/* Define to 1 if you have LDAPURLDesc.lud_scheme */
+#undef HAVE_LDAP_URL_LUD_SCHEME
+
+/* Define to 1 if you have ldap_url_parse */
+#undef HAVE_LDAP_URL_PARSE
+
+/* Define to 1 if you have the `asn1' library (-lasn1). */
+#undef HAVE_LIBASN1
+
+/* use libcfail */
+#undef HAVE_LIBCFAIL
+
+/* Define to 1 if you have the `com_err' library (-lcom_err). */
+#undef HAVE_LIBCOM_ERR
+
+/* Define to 1 if you have the `crypt' library (-lcrypt). */
+#undef HAVE_LIBCRYPT
+
+/* Linux version of issetugid() */
+#undef HAVE_LIBC_ENABLE_SECURE
+
+/* glibc variable disable */
+#undef HAVE_LIBC_ENABLE_SECURE_DISABLED
+
+/* Define to 1 if you have the `des' library (-ldes). */
+#undef HAVE_LIBDES
+
+/* Define to 1 if you have the `des425' library (-ldes425). */
+#undef HAVE_LIBDES425
+
+/* Define to 1 if you have the `gss' library (-lgss). */
+#undef HAVE_LIBGSS
+
+/* Define to 1 if you have the `gssapi' library (-lgssapi). */
+#undef HAVE_LIBGSSAPI
+
+/* Define to 1 if you have the `gssapi_krb5' library (-lgssapi_krb5). */
+#undef HAVE_LIBGSSAPI_KRB5
+
+/* Define to 1 if you have the `k5crypto' library (-lk5crypto). */
+#undef HAVE_LIBK5CRYPTO
+
+/* Define to 1 if you have the `krb5' library (-lkrb5). */
+#undef HAVE_LIBKRB5
+
+/* Define to 1 if you have the `ksvc' library (-lksvc). */
+#undef HAVE_LIBKSVC
+
+/* Define to 1 if you have the `lber' library (-llber). */
+#undef HAVE_LIBLBER
+
+/* Define to 1 if you have the `ldap' library (-lldap). */
+#undef HAVE_LIBLDAP
+
+/* Define to 1 if you have the `ldap60' library (-lldap60). */
+#undef HAVE_LIBLDAP60
+
+/* UPNP support library */
+#undef HAVE_LIBMINIUPNP
+
+/* UPNP support library 1.3 */
+#undef HAVE_LIBMINIUPNP13
+
+/* UPNP support library 1.4 */
+#undef HAVE_LIBMINIUPNP14
+
+/* UPNP support library 1.7 */
+#undef HAVE_LIBMINIUPNP17
+
+/* UPNP support library 2.2.8 */
+#undef HAVE_LIBMINIUPNP228
+
+/* Define to 1 if you have the `prldap60' library (-lprldap60). */
+#undef HAVE_LIBPRLDAP60
+
+/* Define to 1 if you have the `pthread' library (-lpthread). */
+#undef HAVE_LIBPTHREAD
+
+/* Define to 1 if you have the `resolv' library (-lresolv). */
+#undef HAVE_LIBRESOLV
+
+/* Define to 1 if you have the `roken' library (-lroken). */
+#undef HAVE_LIBROKEN
+
+/* Define to 1 if you have the `sasl2' library (-lsasl2). */
+#undef HAVE_LIBSASL2
+
+/* Define to 1 if you have the `ssldap60' library (-lssldap60). */
+#undef HAVE_LIBSSLDAP60
+
+/* Define to 1 if you have the <limits.h> header file. */
+#undef HAVE_LIMITS_H
+
+/* linux/bbkernel.h header found */
+#undef HAVE_LINUX_BBKERNEL_H
+
+/* bug workaround */
+#undef HAVE_LINUX_BUGS
+
+/* stdio function preloading */
+#undef HAVE_LINUX_GLIBC_WORKAROUND
+
+/* Define to 1 if you have the <malloc.h> header file. */
+#undef HAVE_MALLOC_H
+
+/* support for malloc debugging */
+#undef HAVE_MALLOC_OPTIONS
+
+/* value of MAX_IPA */
+#undef HAVE_MAX_HOSTIDS
+
+/* Define to 1 if you have the `memmove' function. */
+#undef HAVE_MEMMOVE
+
+/* Define to 1 if you have the <memory.h> header file. */
+#undef HAVE_MEMORY_H
+
+/* module bandwidth installed */
+#undef HAVE_MODULE_BANDWIDTH
+
+/* module checkmodule installed */
+#undef HAVE_MODULE_CHECKMODULE
+
+/* module convert_sid installed */
+#undef HAVE_MODULE_CONVERT_SID
+
+/* module ldap installed */
+#undef HAVE_MODULE_LDAP
+
+/* module pac installed */
+#undef HAVE_MODULE_PAC
+
+/* module redirect installed */
+#undef HAVE_MODULE_REDIRECT
+
+/* Define to 1 if you have the `moncontrol' function. */
+#undef HAVE_MONCONTROL
+
+/* Mozilla LDAP SDK support */
+#undef HAVE_MOZILLA_LDAP_SDK
+
+/* Define to 1 if you have the <mozldap/ldap.h> header file. */
+#undef HAVE_MOZLDAP_LDAP_H
+
+/* sys/socket.h defines MSG_WAITALL */
+#undef HAVE_MSG_WAITALL
+
+/* Define to 1 if you have the <netinet/in.h> header file. */
+#undef HAVE_NETINET_IN_H
+
+/* netinet/ip.h header found */
+#undef HAVE_NETINET_IP_H
+
+/* Define to 1 if you have the <netinet/ip_var.h> header file. */
+#undef HAVE_NETINET_IP_VAR_H
+
+/* Define to 1 if you have the <netinet/tcp_fsm.h> header file. */
+#undef HAVE_NETINET_TCP_FSM_H
+
+/* Define to 1 if you have the <net/if_dl.h> header file. */
+#undef HAVE_NET_IF_DL_H
+
+/* realloc never calls malloc */
+#undef HAVE_NOMALLOC_REALLOC
+
+/* free does not accept NULL parameter */
+#undef HAVE_NONULL_FREE
+
+/* primitive platform */
+#undef HAVE_NO_RESOLVESTUFF
+
+/* underscores not needed */
+#undef HAVE_NO_SYMBOL_UNDERSCORE
+
+/* bug workaround */
+#undef HAVE_OPENBSD_BUGS
+
+/* OpenLDAP support */
+#undef HAVE_OPENLDAP
+
+/* openlog supports LOG_PERROR */
+#undef HAVE_OPENLOG_LOG_PERROR
+
+/* PAC support */
+#undef HAVE_PAC
+
+/* Define to 1 if you have the <paths.h> header file. */
+#undef HAVE_PATHS_H
+
+/* platform pipe behavior */
+#undef HAVE_PIPEBUFFER_RECV_BASED
+
+/* platform pipe behavior */
+#undef HAVE_PIPEBUFFER_SEND_BASED
+
+/* platform pipe behavior */
+#undef HAVE_PIPEBUFFER_UNKNOWN
+
+/* _Pragma() supported by compiler */
+#undef HAVE_PRAGMA_SUPPORT
+
+/* preloading enabled */
+#undef HAVE_PRELOAD
+
+/* Some privilege type supported */
+#undef HAVE_PRIVILEGES
+
+/* Define to 1 if you have the <priv.h> header file. */
+#undef HAVE_PRIV_H
+
+/* Define to 1 if you have the `processor_bind' function. */
+#undef HAVE_PROCESSOR_BIND
+
+/* for profiling */
+#undef HAVE_PROFILING
+
+/* programe name symbol exists */
+#undef HAVE_PROGNAME
+
+/* proto */
+#undef HAVE_PROT_ACCEPT_0
+
+/* proto */
+#undef HAVE_PROT_ACCEPT_1
+
+/* proto */
+#undef HAVE_PROT_ACCEPT_2
+
+/* proto */
+#undef HAVE_PROT_ACCEPT_3
+
+/* proto */
+#undef HAVE_PROT_BIND_0
+
+/* proto */
+#undef HAVE_PROT_BIND_1
+
+/* proto */
+#undef HAVE_PROT_BIND_2
+
+/* proto */
+#undef HAVE_PROT_BIND_3
+
+/* proto */
+#undef HAVE_PROT_CONNECT_0
+
+/* proto */
+#undef HAVE_PROT_CONNECT_1
+
+/* proto */
+#undef HAVE_PROT_CONNECT_2
+
+/* proto */
+#undef HAVE_PROT_CONNECT_3
+
+/* proto */
+#undef HAVE_PROT_FCLOSE_0
+
+/* proto */
+#undef HAVE_PROT_FCLOSE_1
+
+/* proto */
+#undef HAVE_PROT_FFLUSH_0
+
+/* proto */
+#undef HAVE_PROT_FFLUSH_1
+
+/* proto */
+#undef HAVE_PROT_FGETC_0
+
+/* proto */
+#undef HAVE_PROT_FGETC_1
+
+/* proto */
+#undef HAVE_PROT_FGETS_0
+
+/* proto */
+#undef HAVE_PROT_FGETS_1
+
+/* proto */
+#undef HAVE_PROT_FGETS_2
+
+/* proto */
+#undef HAVE_PROT_FGETS_3
+
+/* proto */
+#undef HAVE_PROT_FPRINTF_0
+
+/* proto */
+#undef HAVE_PROT_FPRINTF_1
+
+/* proto */
+#undef HAVE_PROT_FPRINTF_2
+
+/* proto */
+#undef HAVE_PROT_FPRINTF_3
+
+/* proto */
+#undef HAVE_PROT_FPUTC_0
+
+/* proto */
+#undef HAVE_PROT_FPUTC_1
+
+/* proto */
+#undef HAVE_PROT_FPUTC_2
+
+/* proto */
+#undef HAVE_PROT_FPUTS_0
+
+/* proto */
+#undef HAVE_PROT_FPUTS_1
+
+/* proto */
+#undef HAVE_PROT_FPUTS_2
+
+/* proto */
+#undef HAVE_PROT_FREAD_0
+
+/* proto */
+#undef HAVE_PROT_FREAD_1
+
+/* proto */
+#undef HAVE_PROT_FREAD_2
+
+/* proto */
+#undef HAVE_PROT_FREAD_3
+
+/* proto */
+#undef HAVE_PROT_FREAD_4
+
+/* proto */
+#undef HAVE_PROT_FWRITE_0
+
+/* proto */
+#undef HAVE_PROT_FWRITE_1
+
+/* proto */
+#undef HAVE_PROT_FWRITE_2
+
+/* proto */
+#undef HAVE_PROT_FWRITE_3
+
+/* proto */
+#undef HAVE_PROT_FWRITE_4
+
+/* proto */
+#undef HAVE_PROT_GETC_0
+
+/* proto */
+#undef HAVE_PROT_GETC_1
+
+/* proto */
+#undef HAVE_PROT_GETHOSTBYADDR_0
+
+/* proto */
+#undef HAVE_PROT_GETHOSTBYADDR_1
+
+/* proto */
+#undef HAVE_PROT_GETHOSTBYADDR_2
+
+/* proto */
+#undef HAVE_PROT_GETHOSTBYADDR_3
+
+/* proto */
+#undef HAVE_PROT_GETNAMEINFO_0
+
+/* proto */
+#undef HAVE_PROT_GETNAMEINFO_1
+
+/* proto */
+#undef HAVE_PROT_GETNAMEINFO_2
+
+/* proto */
+#undef HAVE_PROT_GETNAMEINFO_3
+
+/* proto */
+#undef HAVE_PROT_GETNAMEINFO_4
+
+/* proto */
+#undef HAVE_PROT_GETNAMEINFO_5
+
+/* proto */
+#undef HAVE_PROT_GETNAMEINFO_6
+
+/* proto */
+#undef HAVE_PROT_GETNAMEINFO_7
+
+/* proto */
+#undef HAVE_PROT_GETPEERNAME_0
+
+/* proto */
+#undef HAVE_PROT_GETPEERNAME_1
+
+/* proto */
+#undef HAVE_PROT_GETPEERNAME_2
+
+/* proto */
+#undef HAVE_PROT_GETPEERNAME_3
+
+/* proto */
+#undef HAVE_PROT_GETSOCKNAME_0
+
+/* proto */
+#undef HAVE_PROT_GETSOCKNAME_1
+
+/* proto */
+#undef HAVE_PROT_GETSOCKNAME_2
+
+/* proto */
+#undef HAVE_PROT_GETSOCKNAME_3
+
+/* proto */
+#undef HAVE_PROT_GETSOCKOPT_0
+
+/* proto */
+#undef HAVE_PROT_GETSOCKOPT_1
+
+/* proto */
+#undef HAVE_PROT_GETSOCKOPT_2
+
+/* proto */
+#undef HAVE_PROT_GETSOCKOPT_3
+
+/* proto */
+#undef HAVE_PROT_GETSOCKOPT_4
+
+/* proto */
+#undef HAVE_PROT_GETSOCKOPT_5
+
+/* proto */
+#undef HAVE_PROT_GETS_0
+
+/* proto */
+#undef HAVE_PROT_GETS_1
+
+/* proto */
+#undef HAVE_PROT_LISTEN_0
+
+/* proto */
+#undef HAVE_PROT_LISTEN_1
+
+/* proto */
+#undef HAVE_PROT_LISTEN_2
+
+/* proto */
+#undef HAVE_PROT_PRINTF_0
+
+/* proto */
+#undef HAVE_PROT_PRINTF_1
+
+/* proto */
+#undef HAVE_PROT_PRINTF_2
+
+/* proto */
+#undef HAVE_PROT_PUTC_0
+
+/* proto */
+#undef HAVE_PROT_PUTC_1
+
+/* proto */
+#undef HAVE_PROT_PUTC_2
+
+/* proto */
+#undef HAVE_PROT_PUTS_0
+
+/* proto */
+#undef HAVE_PROT_PUTS_1
+
+/* proto */
+#undef HAVE_PROT_READV_0
+
+/* proto */
+#undef HAVE_PROT_READV_1
+
+/* proto */
+#undef HAVE_PROT_READV_2
+
+/* proto */
+#undef HAVE_PROT_READV_3
+
+/* proto */
+#undef HAVE_PROT_READ_0
+
+/* proto */
+#undef HAVE_PROT_READ_1
+
+/* proto */
+#undef HAVE_PROT_READ_2
+
+/* proto */
+#undef HAVE_PROT_READ_3
+
+/* proto */
+#undef HAVE_PROT_RECVFROM_0
+
+/* proto */
+#undef HAVE_PROT_RECVFROM_1
+
+/* proto */
+#undef HAVE_PROT_RECVFROM_2
+
+/* proto */
+#undef HAVE_PROT_RECVFROM_3
+
+/* proto */
+#undef HAVE_PROT_RECVFROM_4
+
+/* proto */
+#undef HAVE_PROT_RECVFROM_5
+
+/* proto */
+#undef HAVE_PROT_RECVFROM_6
+
+/* proto */
+#undef HAVE_PROT_RECVMSG_0
+
+/* proto */
+#undef HAVE_PROT_RECVMSG_1
+
+/* proto */
+#undef HAVE_PROT_RECVMSG_2
+
+/* proto */
+#undef HAVE_PROT_RECVMSG_3
+
+/* proto */
+#undef HAVE_PROT_RECV_0
+
+/* proto */
+#undef HAVE_PROT_RECV_1
+
+/* proto */
+#undef HAVE_PROT_RECV_2
+
+/* proto */
+#undef HAVE_PROT_RECV_3
+
+/* proto */
+#undef HAVE_PROT_RECV_4
+
+/* proto */
+#undef HAVE_PROT_SENDMSG_0
+
+/* proto */
+#undef HAVE_PROT_SENDMSG_1
+
+/* proto */
+#undef HAVE_PROT_SENDMSG_2
+
+/* proto */
+#undef HAVE_PROT_SENDMSG_3
+
+/* proto */
+#undef HAVE_PROT_SENDTO_0
+
+/* proto */
+#undef HAVE_PROT_SENDTO_1
+
+/* proto */
+#undef HAVE_PROT_SENDTO_2
+
+/* proto */
+#undef HAVE_PROT_SENDTO_3
+
+/* proto */
+#undef HAVE_PROT_SENDTO_4
+
+/* proto */
+#undef HAVE_PROT_SENDTO_5
+
+/* proto */
+#undef HAVE_PROT_SENDTO_6
+
+/* proto */
+#undef HAVE_PROT_SEND_0
+
+/* proto */
+#undef HAVE_PROT_SEND_1
+
+/* proto */
+#undef HAVE_PROT_SEND_2
+
+/* proto */
+#undef HAVE_PROT_SEND_3
+
+/* proto */
+#undef HAVE_PROT_SEND_4
+
+/* proto */
+#undef HAVE_PROT_VFPRINTF_0
+
+/* proto */
+#undef HAVE_PROT_VFPRINTF_1
+
+/* proto */
+#undef HAVE_PROT_VFPRINTF_2
+
+/* proto */
+#undef HAVE_PROT_VFPRINTF_3
+
+/* proto */
+#undef HAVE_PROT_VPRINTF_0
+
+/* proto */
+#undef HAVE_PROT_VPRINTF_1
+
+/* proto */
+#undef HAVE_PROT_VPRINTF_2
+
+/* proto */
+#undef HAVE_PROT_WRITEV_0
+
+/* proto */
+#undef HAVE_PROT_WRITEV_1
+
+/* proto */
+#undef HAVE_PROT_WRITEV_2
+
+/* proto */
+#undef HAVE_PROT_WRITEV_3
+
+/* proto */
+#undef HAVE_PROT_WRITE_0
+
+/* proto */
+#undef HAVE_PROT_WRITE_1
+
+/* proto */
+#undef HAVE_PROT_WRITE_2
+
+/* proto */
+#undef HAVE_PROT_WRITE_3
+
+/* proto */
+#undef HAVE_PROT__IO_GETC_0
+
+/* proto */
+#undef HAVE_PROT__IO_GETC_1
+
+/* proto */
+#undef HAVE_PROT__IO_PUTC_0
+
+/* proto */
+#undef HAVE_PROT__IO_PUTC_1
+
+/* proto */
+#undef HAVE_PROT__IO_PUTC_2
+
+/* proto */
+#undef HAVE_PROT__READ_CHK_0
+
+/* proto */
+#undef HAVE_PROT__READ_CHK_1
+
+/* proto */
+#undef HAVE_PROT__READ_CHK_2
+
+/* proto */
+#undef HAVE_PROT__READ_CHK_3
+
+/* proto */
+#undef HAVE_PROT__READ_CHK_4
+
+/* working pselect() support */
+#undef HAVE_PSELECT
+
+/* have pthread header */
+#undef HAVE_PTHREAD_H
+
+/* readable buffer data */
+#undef HAVE_RECVBUF_IOCTL
+
+/* Define to 1 if you have the <resolv.h> header file. */
+#undef HAVE_RESOLV_H
+
+/* BSD type routing socket */
+#undef HAVE_ROUTEINFO_BSD
+
+/* Linux type routing socket */
+#undef HAVE_ROUTEINFO_LINUX
+
+/* routing socket communication supported */
+#undef HAVE_ROUTE_SOURCE
+
+/* Define to 1 if you have the <rpc/rpc.h> header file. */
+#undef HAVE_RPC_RPC_H
+
+/* Define to 1 if you have the `rresvport' function. */
+#undef HAVE_RRESVPORT
+
+/* no working dlsym RTLD_NEXT */
+#undef HAVE_RTLD_NEXT
+
+/* Have SASL support */
+#undef HAVE_SASL
+
+/* Define to 1 if Mac Darwin without sasl.h */
+#undef HAVE_SASL_DARWIN
+
+/* Define to 1 if you have the <sasl.h> header file. */
+#undef HAVE_SASL_H
+
+/* Define to 1 if you have the <sasl/sasl.h> header file. */
+#undef HAVE_SASL_SASL_H
+
+/* Define to 1 if you have the <sched.h> header file. */
+#undef HAVE_SCHED_H
+
+/* have sched_setaffinity */
+#undef HAVE_SCHED_SETAFFINITY
+
+/* Define to 1 if you have the `sched_setscheduler' function. */
+#undef HAVE_SCHED_SETSCHEDULER
+
+/* Define to 1 if you have the <security/pam_appl.h> header file. */
+#undef HAVE_SECURITY_PAM_APPL_H
+
+/* max timeout value */
+#undef HAVE_SELECT_MAXTIMEOUT
+
+/* send buffer data */
+#undef HAVE_SENDBUF_IOCTL
+
+/* bug workaround */
+#undef HAVE_SENDMSG_DEADLOCK
+
+/* Define to 1 if you have the `setegid' function. */
+#undef HAVE_SETEGID
+
+/* Define to 1 if you have the `seteuid' function. */
+#undef HAVE_SETEUID
+
+/* Define to 1 if you have the `setproctitle' function. */
+#undef HAVE_SETPROCTITLE
+
+/* Define to 1 if you have the <shadow.h> header file. */
+#undef HAVE_SHADOW_H
+
+/* signal.h defined SIGINFO */
+#undef HAVE_SIGNAL_SIGINFO
+
+/* sig_atomic_t defined in signal.h */
+#undef HAVE_SIG_ATOMIC_T
+
+/* missing MAC retrieval interface */
+#undef HAVE_SIOCGIFHWADDR
+
+/* sa_len exists in sockaddr */
+#undef HAVE_SOCKADDR_SA_LEN
+
+/* ss_len exists in sockaddr_storage */
+#undef HAVE_SOCKADDR_STORAGE_SS_LEN
+
+/* working sockatmark() support */
+#undef HAVE_SOCKATMARK
+
+/* symbol count */
+#undef HAVE_SOCKOPTVALSYM_MAX
+
+/* socket option count */
+#undef HAVE_SOCKOPTVAL_MAX
+
+/* bug workaround */
+#undef HAVE_SOLARIS_BUGS
+
+/* Solaris priv.h support */
+#undef HAVE_SOLARIS_PRIVS
+
+/* SO_ACCEPTCONN socket option */
+#undef HAVE_SO_ACCEPTCONN
+
+/* SO_AUDIT socket option */
+#undef HAVE_SO_AUDIT
+
+/* SO_BINDANY socket option */
+#undef HAVE_SO_BINDANY
+
+/* SO_BROADCAST socket option */
+#undef HAVE_SO_BROADCAST
+
+/* SO_CKSUMRECV socket option */
+#undef HAVE_SO_CKSUMRECV
+
+/* SO_DEBUG socket option */
+#undef HAVE_SO_DEBUG
+
+/* SO_DONTROUTE socket option */
+#undef HAVE_SO_DONTROUTE
+
+/* SO_ERROR socket option */
+#undef HAVE_SO_ERROR
+
+/* SO_JUMBO socket option */
+#undef HAVE_SO_JUMBO
+
+/* SO_KEEPALIVE socket option */
+#undef HAVE_SO_KEEPALIVE
+
+/* SO_KERNACCEPT socket option */
+#undef HAVE_SO_KERNACCEPT
+
+/* SO_LINGER socket option */
+#undef HAVE_SO_LINGER
+
+/* SO_NOMULTIPATH socket option */
+#undef HAVE_SO_NOMULTIPATH
+
+/* SO_NOREUSEADDR socket option */
+#undef HAVE_SO_NOREUSEADDR
+
+/* SO_OOBINLINE socket option */
+#undef HAVE_SO_OOBINLINE
+
+/* SO_PEERID socket option */
+#undef HAVE_SO_PEERID
+
+/* SO_PRIORITY socket option */
+#undef HAVE_SO_PRIORITY
+
+/* SO_RCVBUF socket option */
+#undef HAVE_SO_RCVBUF
+
+/* SO_RCVBUFFORCE socket option */
+#undef HAVE_SO_RCVBUFFORCE
+
+/* SO_RCVLOWAT socket option */
+#undef HAVE_SO_RCVLOWAT
+
+/* SO_RCVTIMEO socket option */
+#undef HAVE_SO_RCVTIMEO
+
+/* SO_REUSEADDR socket option */
+#undef HAVE_SO_REUSEADDR
+
+/* SO_REUSEPORT socket option */
+#undef HAVE_SO_REUSEPORT
+
+/* SO_SNDBUF socket option */
+#undef HAVE_SO_SNDBUF
+
+/* SO_SNDBUFFORCE socket option */
+#undef HAVE_SO_SNDBUFFORCE
+
+/* SO_SNDLOWAT socket option */
+#undef HAVE_SO_SNDLOWAT
+
+/* SO_SNDTIMEO socket option */
+#undef HAVE_SO_SNDTIMEO
+
+/* SO_TIMESTAMP socket option */
+#undef HAVE_SO_TIMESTAMP
+
+/* SO_TYPE socket option */
+#undef HAVE_SO_TYPE
+
+/* SO_USELOOPBACK socket option */
+#undef HAVE_SO_USELOOPBACK
+
+/* SO_USE_IFBUFS socket option */
+#undef HAVE_SO_USE_IFBUFS
+
+/* Define to 1 if you have the <stddef.h> header file. */
+#undef HAVE_STDDEF_H
+
+/* Define to 1 if you have the <stdint.h> header file. */
+#undef HAVE_STDINT_H
+
+/* Define to 1 if you have the <stdlib.h> header file. */
+#undef HAVE_STDLIB_H
+
+/* Define to 1 if you have the `strftime' function. */
+#undef HAVE_STRFTIME
+
+/* Define to 1 if you have the <strings.h> header file. */
+#undef HAVE_STRINGS_H
+
+/* Define to 1 if you have the <string.h> header file. */
+#undef HAVE_STRING_H
+
+/* Define to 1 if you have the `strlcpy' function. */
+#undef HAVE_STRLCPY
+
+/* ip_opts defined in netinet/in.h */
+#undef HAVE_STRUCT_IPOPTS
+
+/* Define to 1 if you have the `strvis' function. */
+#undef HAVE_STRVIS
+
+/* Sun LDAP SDK support */
+#undef HAVE_SUN_LDAP_SDK
+
+/* Define to 1 if you have the <syslog.h> header file. */
+#undef HAVE_SYSLOG_H
+
+/* platform workaround */
+#undef HAVE_SYSTEM_XMSG_MAGIC
+
+/* Define to 1 if you have the <sys/file.h> header file. */
+#undef HAVE_SYS_FILE_H
+
+/* Define to 1 if you have the <sys/ioctl.h> header file. */
+#undef HAVE_SYS_IOCTL_H
+
+/* Define to 1 if you have the <sys/ipc.h> header file. */
+#undef HAVE_SYS_IPC_H
+
+/* Define to 1 if you have the <sys/pstat.h> header file. */
+#undef HAVE_SYS_PSTAT_H
+
+/* sys/select.h needed */
+#undef HAVE_SYS_SELECT_H
+
+/* Define to 1 if you have the <sys/sem.h> header file. */
+#undef HAVE_SYS_SEM_H
+
+/* Define to 1 if you have the <sys/shm.h> header file. */
+#undef HAVE_SYS_SHM_H
+
+/* sys/sockio.h exists */
+#undef HAVE_SYS_SOCKIO_H
+
+/* Define to 1 if you have the <sys/stat.h> header file. */
+#undef HAVE_SYS_STAT_H
+
+/* Define to 1 if you have the <sys/time.h> header file. */
+#undef HAVE_SYS_TIME_H
+
+/* Define to 1 if you have the <sys/types.h> header file. */
+#undef HAVE_SYS_TYPES_H
+
+/* Define to 1 if you have <sys/wait.h> that is POSIX.1 compatible. */
+#undef HAVE_SYS_WAIT_H
+
+/* Define to 1 if you have the <tcpd.h> header file. */
+#undef HAVE_TCPD_H
+
+/* TCP_CORK socket option */
+#undef HAVE_TCP_CORK
+
+/* TCP_CWND socket option */
+#undef HAVE_TCP_CWND
+
+/* TCP_CWND_DF socket option */
+#undef HAVE_TCP_CWND_DF
+
+/* TCP_CWND_IF socket option */
+#undef HAVE_TCP_CWND_IF
+
+/* TCP_EXP1 supported */
+#undef HAVE_TCP_EXP1
+
+/* tcp_info struct found in netinet/tcp.h */
+#undef HAVE_TCP_INFO
+
+/* tcpi_advmss found in tcp_info struct */
+#undef HAVE_TCP_INFO_TCPI_ADVMSS
+
+/* tcpi_ato found in tcp_info struct */
+#undef HAVE_TCP_INFO_TCPI_ATO
+
+/* tcpi_backoff found in tcp_info struct */
+#undef HAVE_TCP_INFO_TCPI_BACKOFF
+
+/* tcpi_ca_state found in tcp_info struct */
+#undef HAVE_TCP_INFO_TCPI_CA_STATE
+
+/* tcpi_fackets found in tcp_info struct */
+#undef HAVE_TCP_INFO_TCPI_FACKETS
+
+/* tcpi_last_ack_recv found in tcp_info struct */
+#undef HAVE_TCP_INFO_TCPI_LAST_ACK_RECV
+
+/* tcpi_last_ack_sent found in tcp_info struct */
+#undef HAVE_TCP_INFO_TCPI_LAST_ACK_SENT
+
+/* tcpi_last_data_recv found in tcp_info struct */
+#undef HAVE_TCP_INFO_TCPI_LAST_DATA_RECV
+
+/* tcpi_last_data_sent found in tcp_info struct */
+#undef HAVE_TCP_INFO_TCPI_LAST_DATA_SENT
+
+/* tcpi_lost found in tcp_info struct */
+#undef HAVE_TCP_INFO_TCPI_LOST
+
+/* tcpi_pmtu found in tcp_info struct */
+#undef HAVE_TCP_INFO_TCPI_PMTU
+
+/* tcpi_probes found in tcp_info struct */
+#undef HAVE_TCP_INFO_TCPI_PROBES
+
+/* tcpi_rcv_rtt found in tcp_info struct */
+#undef HAVE_TCP_INFO_TCPI_RCV_RTT
+
+/* tcpi_rcv_space found in tcp_info struct */
+#undef HAVE_TCP_INFO_TCPI_RCV_SPACE
+
+/* tcpi_rcv_ssthresh found in tcp_info struct */
+#undef HAVE_TCP_INFO_TCPI_RCV_SSTHRESH
+
+/* tcpi_reordering found in tcp_info struct */
+#undef HAVE_TCP_INFO_TCPI_REORDERING
+
+/* tcpi_retrans found in tcp_info struct */
+#undef HAVE_TCP_INFO_TCPI_RETRANS
+
+/* tcpi_retransmits found in tcp_info struct */
+#undef HAVE_TCP_INFO_TCPI_RETRANSMITS
+
+/* tcpi_sacked found in tcp_info struct */
+#undef HAVE_TCP_INFO_TCPI_SACKED
+
+/* tcpi_total_retrans found in tcp_info struct */
+#undef HAVE_TCP_INFO_TCPI_TOTAL_RETRANS
+
+/* tcpi_unacked found in tcp_info struct */
+#undef HAVE_TCP_INFO_TCPI_UNACKED
+
+/* TCP_INIT_CWND socket option */
+#undef HAVE_TCP_INIT_CWND
+
+/* TCP_IPA supported */
+#undef HAVE_TCP_IPA
+
+/* TCP_KEEPCNT socket option */
+#undef HAVE_TCP_KEEPCNT
+
+/* TCP_KEEPIDLE socket option */
+#undef HAVE_TCP_KEEPIDLE
+
+/* TCP_KEEPINTVL socket option */
+#undef HAVE_TCP_KEEPINTVL
+
+/* TCP_LINGER2 socket option */
+#undef HAVE_TCP_LINGER2
+
+/* TCP_MAXRT socket option */
+#undef HAVE_TCP_MAXRT
+
+/* TCP_MAXSEG socket option */
+#undef HAVE_TCP_MAXSEG
+
+/* TCP_MD5SIG socket option */
+#undef HAVE_TCP_MD5SIG
+
+/* TCP_NODELAY socket option */
+#undef HAVE_TCP_NODELAY
+
+/* TCP_NODELAYACK socket option */
+#undef HAVE_TCP_NODELAYACK
+
+/* TCP_NOOPT socket option */
+#undef HAVE_TCP_NOOPT
+
+/* TCP_NOPUSH socket option */
+#undef HAVE_TCP_NOPUSH
+
+/* TCP_NOREDUCE_CWND_EXIT_FRXMT socket option */
+#undef HAVE_TCP_NOREDUCE_CWND_EXIT_FRXMT
+
+/* TCP_NOREDUCE_CWND_IN_FRXMT socket option */
+#undef HAVE_TCP_NOREDUCE_CWND_IN_FRXMT
+
+/* TCP_NOTENTER_SSTART socket option */
+#undef HAVE_TCP_NOTENTER_SSTART
+
+/* TCP_RFC1323 socket option */
+#undef HAVE_TCP_RFC1323
+
+/* TCP_SACK_ENABLE socket option */
+#undef HAVE_TCP_SACK_ENABLE
+
+/* TCP_STDURG socket option */
+#undef HAVE_TCP_STDURG
+
+/* TCP_SYNCNT socket option */
+#undef HAVE_TCP_SYNCNT
+
+/* TCP_WINDOW_CLAMP socket option */
+#undef HAVE_TCP_WINDOW_CLAMP
+
+/* threads unstable platform */
+#undef HAVE_THREADS_EINTR_PROBLEMS
+
+/* timeradd(), timersub etc. exist in sys/time.h */
+#undef HAVE_TIMER_MACROS
+
+/* UDP_CORK socket option */
+#undef HAVE_UDP_CORK
+
+/* Define to 1 if the system has the type `uint16_t'. */
+#undef HAVE_UINT16_T
+
+/* Define to 1 if the system has the type `uint32_t'. */
+#undef HAVE_UINT32_T
+
+/* Define to 1 if the system has the type `uint8_t'. */
+#undef HAVE_UINT8_T
+
+/* unified vm buffers */
+#undef HAVE_UNIFIED_BUFFERCACHE
+
+/* Define to 1 if you have the <unistd.h> header file. */
+#undef HAVE_UNISTD_H
+
+/* Define to 1 if you have the <utime.h> header file. */
+#undef HAVE_UTIME_H
+
+/* Define to 1 if `utime(file, NULL)' sets file's timestamp to the present. */
+#undef HAVE_UTIME_NULL
+
+/* Define to 1 if you have the <valgrind/valgrind.h> header file. */
+#undef HAVE_VALGRIND_VALGRIND_H
+
+/* platform workaround */
+#undef HAVE_VOLATILE_SIG_ATOMIC_T
+
+/* Define to 1 if you have the `vprintf' function. */
+#undef HAVE_VPRINTF
+
+/* Define to 1 if you have the `vsyslog' function. */
+#undef HAVE_VSYSLOG
+
+/* system V getpwnam */
+#undef HAVE_WORKING_GETPWNAM
+
+/* Define to 1 if you have the `_IO_getc' function. */
+#undef HAVE__IO_GETC
+
+/* Define to 1 if you have the `_IO_putc' function. */
+#undef HAVE__IO_PUTC
+
+/* Define to 1 if you have the `__fprintf_chk' function. */
+#undef HAVE___FPRINTF_CHK
+
+/* Define to 1 if you have the `__read_chk' function. */
+#undef HAVE___READ_CHK
+
+/* Define to 1 if you have the `__vfprintf_chk' function. */
+#undef HAVE___VFPRINTF_CHK
+
+/* Product name (lower case) */
+#undef LCPRODUCT
+
+/* function loc */
+#undef LIBRARY_ACCEPT
+
+/* function loc */
+#undef LIBRARY_BIND
+
+/* function loc */
+#undef LIBRARY_BINDRESVPORT
+
+/* function loc */
+#undef LIBRARY_CONNECT
+
+/* function loc */
+#undef LIBRARY_FREEADDRINFO
+
+/* function loc */
+#undef LIBRARY_FREEHOSTENT
+
+/* function loc */
+#undef LIBRARY_GETADDRINFO
+
+/* function loc */
+#undef LIBRARY_GETHOSTBYADDR
+
+/* function loc */
+#undef LIBRARY_GETHOSTBYNAME
+
+/* function loc */
+#undef LIBRARY_GETHOSTBYNAME2
+
+/* function loc */
+#undef LIBRARY_GETIPNODEBYNAME
+
+/* function loc */
+#undef LIBRARY_GETNAMEINFO
+
+/* function loc */
+#undef LIBRARY_GETPEERNAME
+
+/* function loc */
+#undef LIBRARY_GETSOCKNAME
+
+/* libc name */
+#undef LIBRARY_LIBC
+
+/* libloc */
+#undef LIBRARY_LIBNSL
+
+/* libloc */
+#undef LIBRARY_LIBRESOLV
+
+/* libname */
+#undef LIBRARY_LIBRPCSOC
+
+/* libloc */
+#undef LIBRARY_LIBSOCKET
+
+/* function loc */
+#undef LIBRARY_LISTEN
+
+/* libloc */
+#undef LIBRARY_PTHREAD
+
+/* function loc */
+#undef LIBRARY_RECV
+
+/* function loc */
+#undef LIBRARY_RECVFROM
+
+/* function loc */
+#undef LIBRARY_RECVMSG
+
+/* function loc */
+#undef LIBRARY_RRESVPORT
+
+/* function loc */
+#undef LIBRARY_SEND
+
+/* function loc */
+#undef LIBRARY_SENDMSG
+
+/* function loc */
+#undef LIBRARY_SENDTO
+
+/* Define to the sub-directory in which libtool stores uninstalled libraries.
+   */
+#undef LT_OBJDIR
+
+/* Max number of errno values matching any alias keyword */
+#undef MAX_ERRNO_VALUES_FOR_SYMBOL
+
+/* Max number of gataddrinfo() error values matching any alias keyword */
+#undef MAX_GAIERR_VALUES_FOR_SYMBOL
+
+/* MAX_TCP_OPTION_SPACE replacement */
+#undef MAX_TCP_OPTION_SPACE
+
+/* need AF_LOCAL definition */
+#undef NEED_AF_LOCAL
+
+/* EXIT_FAILURE not defined in stdlib.h */
+#undef NEED_EXIT_FAILURE
+
+/* getsockopt needs cast */
+#undef NEED_GETSOCKOPT_CAST
+
+/* use SA_RESTART, not SV_INTERRUPT */
+#undef NEED_SA_RESTART
+
+/* sys/sockio.h must be included */
+#undef NEED_SYS_SOCKIO_H
+
+/* Name of package */
+#undef PACKAGE
+
+/* Define to the address where bug reports for this package should be sent. */
+#undef PACKAGE_BUGREPORT
+
+/* Define to the full name of this package. */
+#undef PACKAGE_NAME
+
+/* Define to the full name and version of this package. */
+#undef PACKAGE_STRING
+
+/* Define to the one symbol short name of this package. */
+#undef PACKAGE_TARNAME
+
+/* Define to the home page for this package. */
+#undef PACKAGE_URL
+
+/* Define to the version of this package. */
+#undef PACKAGE_VERSION
+
+/* software prerelease */
+#undef PRERELEASE
+
+/* Product name */
+#undef PRODUCT
+
+/* readable buffer ioctl */
+#undef RECVBUF_IOCTLVAL
+
+/* Define as the return type of signal handlers (`int' or `void'). */
+#undef RETSIGTYPE
+
+/* send buffer ioctl */
+#undef SENDBUF_IOCTLVAL
+
+/* The size of `char', as computed by sizeof. */
+#undef SIZEOF_CHAR
+
+/* The size of `int', as computed by sizeof. */
+#undef SIZEOF_INT
+
+/* The size of `long', as computed by sizeof. */
+#undef SIZEOF_LONG
+
+/* The size of `short', as computed by sizeof. */
+#undef SIZEOF_SHORT
+
+/* sockd config file */
+#undef SOCKD_CONFIGFILE
+
+/* pid file location */
+#undef SOCKD_PIDFILE
+
+/* longest name + 1 */
+#undef SOCKOPTNAME_MAXLEN
+
+/* socks config file */
+#undef SOCKS_CONFIGFILE
+
+/* do not use fallback */
+#undef SOCKS_DIRECTROUTE_FALLBACK
+
+/* hostid option type */
+#undef SOCKS_HOSTID_NAME
+
+/* hostid option type */
+#undef SOCKS_HOSTID_TYPE
+
+/* value of IPA_VERSION */
+#undef SOCKS_HOSTID_VERSION
+
+/* IPV6_2292DSTOPTS IPv4 option */
+#undef SOCKS_IPV6_2292DSTOPTS_IPV4
+
+/* IPV6_2292DSTOPTS IPv4 option */
+#undef SOCKS_IPV6_2292DSTOPTS_IPV6
+
+/* IPV6_2292DSTOPTS protocol level */
+#undef SOCKS_IPV6_2292DSTOPTS_LVL
+
+/* IPV6_2292DSTOPTS value */
+#undef SOCKS_IPV6_2292DSTOPTS_NAME
+
+/* IPV6_2292HOPLIMIT IPv4 option */
+#undef SOCKS_IPV6_2292HOPLIMIT_IPV4
+
+/* IPV6_2292HOPLIMIT IPv4 option */
+#undef SOCKS_IPV6_2292HOPLIMIT_IPV6
+
+/* IPV6_2292HOPLIMIT protocol level */
+#undef SOCKS_IPV6_2292HOPLIMIT_LVL
+
+/* IPV6_2292HOPLIMIT value */
+#undef SOCKS_IPV6_2292HOPLIMIT_NAME
+
+/* IPV6_2292HOPOPTS IPv4 option */
+#undef SOCKS_IPV6_2292HOPOPTS_IPV4
+
+/* IPV6_2292HOPOPTS IPv4 option */
+#undef SOCKS_IPV6_2292HOPOPTS_IPV6
+
+/* IPV6_2292HOPOPTS protocol level */
+#undef SOCKS_IPV6_2292HOPOPTS_LVL
+
+/* IPV6_2292HOPOPTS value */
+#undef SOCKS_IPV6_2292HOPOPTS_NAME
+
+/* IPV6_2292PKTINFO IPv4 option */
+#undef SOCKS_IPV6_2292PKTINFO_IPV4
+
+/* IPV6_2292PKTINFO IPv4 option */
+#undef SOCKS_IPV6_2292PKTINFO_IPV6
+
+/* IPV6_2292PKTINFO protocol level */
+#undef SOCKS_IPV6_2292PKTINFO_LVL
+
+/* IPV6_2292PKTINFO value */
+#undef SOCKS_IPV6_2292PKTINFO_NAME
+
+/* IPV6_2292PKTOPTIONS IPv4 option */
+#undef SOCKS_IPV6_2292PKTOPTIONS_IPV4
+
+/* IPV6_2292PKTOPTIONS IPv4 option */
+#undef SOCKS_IPV6_2292PKTOPTIONS_IPV6
+
+/* IPV6_2292PKTOPTIONS protocol level */
+#undef SOCKS_IPV6_2292PKTOPTIONS_LVL
+
+/* IPV6_2292PKTOPTIONS value */
+#undef SOCKS_IPV6_2292PKTOPTIONS_NAME
+
+/* IPV6_2292RTHDR IPv4 option */
+#undef SOCKS_IPV6_2292RTHDR_IPV4
+
+/* IPV6_2292RTHDR IPv4 option */
+#undef SOCKS_IPV6_2292RTHDR_IPV6
+
+/* IPV6_2292RTHDR protocol level */
+#undef SOCKS_IPV6_2292RTHDR_LVL
+
+/* IPV6_2292RTHDR value */
+#undef SOCKS_IPV6_2292RTHDR_NAME
+
+/* IPV6_ADDRFORM IPv4 option */
+#undef SOCKS_IPV6_ADDRFORM_IPV4
+
+/* IPV6_ADDRFORM IPv4 option */
+#undef SOCKS_IPV6_ADDRFORM_IPV6
+
+/* IPV6_ADDRFORM protocol level */
+#undef SOCKS_IPV6_ADDRFORM_LVL
+
+/* IPV6_ADDRFORM value */
+#undef SOCKS_IPV6_ADDRFORM_NAME
+
+/* IPV6_ADDR_PREFERENCES IPv4 option */
+#undef SOCKS_IPV6_ADDR_PREFERENCES_IPV4
+
+/* IPV6_ADDR_PREFERENCES IPv4 option */
+#undef SOCKS_IPV6_ADDR_PREFERENCES_IPV6
+
+/* IPV6_ADDR_PREFERENCES protocol level */
+#undef SOCKS_IPV6_ADDR_PREFERENCES_LVL
+
+/* IPV6_ADDR_PREFERENCES value */
+#undef SOCKS_IPV6_ADDR_PREFERENCES_NAME
+
+/* IPV6_ADD_MEMBERSHIP IPv4 option */
+#undef SOCKS_IPV6_ADD_MEMBERSHIP_IPV4
+
+/* IPV6_ADD_MEMBERSHIP IPv4 option */
+#undef SOCKS_IPV6_ADD_MEMBERSHIP_IPV6
+
+/* IPV6_ADD_MEMBERSHIP protocol level */
+#undef SOCKS_IPV6_ADD_MEMBERSHIP_LVL
+
+/* IPV6_ADD_MEMBERSHIP value */
+#undef SOCKS_IPV6_ADD_MEMBERSHIP_NAME
+
+/* IPV6_AIXRAWSOCKET IPv4 option */
+#undef SOCKS_IPV6_AIXRAWSOCKET_IPV4
+
+/* IPV6_AIXRAWSOCKET IPv4 option */
+#undef SOCKS_IPV6_AIXRAWSOCKET_IPV6
+
+/* IPV6_AIXRAWSOCKET protocol level */
+#undef SOCKS_IPV6_AIXRAWSOCKET_LVL
+
+/* IPV6_AIXRAWSOCKET value */
+#undef SOCKS_IPV6_AIXRAWSOCKET_NAME
+
+/* IPV6_AUTHHDR IPv4 option */
+#undef SOCKS_IPV6_AUTHHDR_IPV4
+
+/* IPV6_AUTHHDR IPv4 option */
+#undef SOCKS_IPV6_AUTHHDR_IPV6
+
+/* IPV6_AUTHHDR protocol level */
+#undef SOCKS_IPV6_AUTHHDR_LVL
+
+/* IPV6_AUTHHDR value */
+#undef SOCKS_IPV6_AUTHHDR_NAME
+
+/* IPV6_AUTH_LEVEL IPv4 option */
+#undef SOCKS_IPV6_AUTH_LEVEL_IPV4
+
+/* IPV6_AUTH_LEVEL IPv4 option */
+#undef SOCKS_IPV6_AUTH_LEVEL_IPV6
+
+/* IPV6_AUTH_LEVEL protocol level */
+#undef SOCKS_IPV6_AUTH_LEVEL_LVL
+
+/* IPV6_AUTH_LEVEL value */
+#undef SOCKS_IPV6_AUTH_LEVEL_NAME
+
+/* IPV6_AUTOFLOWLABEL IPv4 option */
+#undef SOCKS_IPV6_AUTOFLOWLABEL_IPV4
+
+/* IPV6_AUTOFLOWLABEL IPv4 option */
+#undef SOCKS_IPV6_AUTOFLOWLABEL_IPV6
+
+/* IPV6_AUTOFLOWLABEL protocol level */
+#undef SOCKS_IPV6_AUTOFLOWLABEL_LVL
+
+/* IPV6_AUTOFLOWLABEL value */
+#undef SOCKS_IPV6_AUTOFLOWLABEL_NAME
+
+/* IPV6_CHECKSUM IPv4 option */
+#undef SOCKS_IPV6_CHECKSUM_IPV4
+
+/* IPV6_CHECKSUM IPv4 option */
+#undef SOCKS_IPV6_CHECKSUM_IPV6
+
+/* IPV6_CHECKSUM protocol level */
+#undef SOCKS_IPV6_CHECKSUM_LVL
+
+/* IPV6_CHECKSUM value */
+#undef SOCKS_IPV6_CHECKSUM_NAME
+
+/* IPV6_DONTFRAG IPv4 option */
+#undef SOCKS_IPV6_DONTFRAG_IPV4
+
+/* IPV6_DONTFRAG IPv4 option */
+#undef SOCKS_IPV6_DONTFRAG_IPV6
+
+/* IPV6_DONTFRAG protocol level */
+#undef SOCKS_IPV6_DONTFRAG_LVL
+
+/* IPV6_DONTFRAG value */
+#undef SOCKS_IPV6_DONTFRAG_NAME
+
+/* IPV6_DROP_MEMBERSHIP IPv4 option */
+#undef SOCKS_IPV6_DROP_MEMBERSHIP_IPV4
+
+/* IPV6_DROP_MEMBERSHIP IPv4 option */
+#undef SOCKS_IPV6_DROP_MEMBERSHIP_IPV6
+
+/* IPV6_DROP_MEMBERSHIP protocol level */
+#undef SOCKS_IPV6_DROP_MEMBERSHIP_LVL
+
+/* IPV6_DROP_MEMBERSHIP value */
+#undef SOCKS_IPV6_DROP_MEMBERSHIP_NAME
+
+/* IPV6_DSTOPTS IPv4 option */
+#undef SOCKS_IPV6_DSTOPTS_IPV4
+
+/* IPV6_DSTOPTS IPv4 option */
+#undef SOCKS_IPV6_DSTOPTS_IPV6
+
+/* IPV6_DSTOPTS protocol level */
+#undef SOCKS_IPV6_DSTOPTS_LVL
+
+/* IPV6_DSTOPTS value */
+#undef SOCKS_IPV6_DSTOPTS_NAME
+
+/* IPV6_ESP_NETWORK_LEVEL IPv4 option */
+#undef SOCKS_IPV6_ESP_NETWORK_LEVEL_IPV4
+
+/* IPV6_ESP_NETWORK_LEVEL IPv4 option */
+#undef SOCKS_IPV6_ESP_NETWORK_LEVEL_IPV6
+
+/* IPV6_ESP_NETWORK_LEVEL protocol level */
+#undef SOCKS_IPV6_ESP_NETWORK_LEVEL_LVL
+
+/* IPV6_ESP_NETWORK_LEVEL value */
+#undef SOCKS_IPV6_ESP_NETWORK_LEVEL_NAME
+
+/* IPV6_ESP_TRANS_LEVEL IPv4 option */
+#undef SOCKS_IPV6_ESP_TRANS_LEVEL_IPV4
+
+/* IPV6_ESP_TRANS_LEVEL IPv4 option */
+#undef SOCKS_IPV6_ESP_TRANS_LEVEL_IPV6
+
+/* IPV6_ESP_TRANS_LEVEL protocol level */
+#undef SOCKS_IPV6_ESP_TRANS_LEVEL_LVL
+
+/* IPV6_ESP_TRANS_LEVEL value */
+#undef SOCKS_IPV6_ESP_TRANS_LEVEL_NAME
+
+/* IPV6_FLOWINFO IPv4 option */
+#undef SOCKS_IPV6_FLOWINFO_IPV4
+
+/* IPV6_FLOWINFO IPv4 option */
+#undef SOCKS_IPV6_FLOWINFO_IPV6
+
+/* IPV6_FLOWINFO protocol level */
+#undef SOCKS_IPV6_FLOWINFO_LVL
+
+/* IPV6_FLOWINFO value */
+#undef SOCKS_IPV6_FLOWINFO_NAME
+
+/* IPV6_FLOWINFO_SEND IPv4 option */
+#undef SOCKS_IPV6_FLOWINFO_SEND_IPV4
+
+/* IPV6_FLOWINFO_SEND IPv4 option */
+#undef SOCKS_IPV6_FLOWINFO_SEND_IPV6
+
+/* IPV6_FLOWINFO_SEND protocol level */
+#undef SOCKS_IPV6_FLOWINFO_SEND_LVL
+
+/* IPV6_FLOWINFO_SEND value */
+#undef SOCKS_IPV6_FLOWINFO_SEND_NAME
+
+/* IPV6_FLOWLABEL_MGR IPv4 option */
+#undef SOCKS_IPV6_FLOWLABEL_MGR_IPV4
+
+/* IPV6_FLOWLABEL_MGR IPv4 option */
+#undef SOCKS_IPV6_FLOWLABEL_MGR_IPV6
+
+/* IPV6_FLOWLABEL_MGR protocol level */
+#undef SOCKS_IPV6_FLOWLABEL_MGR_LVL
+
+/* IPV6_FLOWLABEL_MGR value */
+#undef SOCKS_IPV6_FLOWLABEL_MGR_NAME
+
+/* IPV6_HOPLIMIT IPv4 option */
+#undef SOCKS_IPV6_HOPLIMIT_IPV4
+
+/* IPV6_HOPLIMIT IPv4 option */
+#undef SOCKS_IPV6_HOPLIMIT_IPV6
+
+/* IPV6_HOPLIMIT protocol level */
+#undef SOCKS_IPV6_HOPLIMIT_LVL
+
+/* IPV6_HOPLIMIT value */
+#undef SOCKS_IPV6_HOPLIMIT_NAME
+
+/* IPV6_HOPOPTS IPv4 option */
+#undef SOCKS_IPV6_HOPOPTS_IPV4
+
+/* IPV6_HOPOPTS IPv4 option */
+#undef SOCKS_IPV6_HOPOPTS_IPV6
+
+/* IPV6_HOPOPTS protocol level */
+#undef SOCKS_IPV6_HOPOPTS_LVL
+
+/* IPV6_HOPOPTS value */
+#undef SOCKS_IPV6_HOPOPTS_NAME
+
+/* IPV6_IPCOMP_LEVEL IPv4 option */
+#undef SOCKS_IPV6_IPCOMP_LEVEL_IPV4
+
+/* IPV6_IPCOMP_LEVEL IPv4 option */
+#undef SOCKS_IPV6_IPCOMP_LEVEL_IPV6
+
+/* IPV6_IPCOMP_LEVEL protocol level */
+#undef SOCKS_IPV6_IPCOMP_LEVEL_LVL
+
+/* IPV6_IPCOMP_LEVEL value */
+#undef SOCKS_IPV6_IPCOMP_LEVEL_NAME
+
+/* IPV6_IPSEC_POLICY IPv4 option */
+#undef SOCKS_IPV6_IPSEC_POLICY_IPV4
+
+/* IPV6_IPSEC_POLICY IPv4 option */
+#undef SOCKS_IPV6_IPSEC_POLICY_IPV6
+
+/* IPV6_IPSEC_POLICY protocol level */
+#undef SOCKS_IPV6_IPSEC_POLICY_LVL
+
+/* IPV6_IPSEC_POLICY value */
+#undef SOCKS_IPV6_IPSEC_POLICY_NAME
+
+/* IPV6_JOIN_ANYCAST IPv4 option */
+#undef SOCKS_IPV6_JOIN_ANYCAST_IPV4
+
+/* IPV6_JOIN_ANYCAST IPv4 option */
+#undef SOCKS_IPV6_JOIN_ANYCAST_IPV6
+
+/* IPV6_JOIN_ANYCAST protocol level */
+#undef SOCKS_IPV6_JOIN_ANYCAST_LVL
+
+/* IPV6_JOIN_ANYCAST value */
+#undef SOCKS_IPV6_JOIN_ANYCAST_NAME
+
+/* IPV6_JOIN_GROUP IPv4 option */
+#undef SOCKS_IPV6_JOIN_GROUP_IPV4
+
+/* IPV6_JOIN_GROUP IPv4 option */
+#undef SOCKS_IPV6_JOIN_GROUP_IPV6
+
+/* IPV6_JOIN_GROUP protocol level */
+#undef SOCKS_IPV6_JOIN_GROUP_LVL
+
+/* IPV6_JOIN_GROUP value */
+#undef SOCKS_IPV6_JOIN_GROUP_NAME
+
+/* IPV6_LEAVE_ANYCAST IPv4 option */
+#undef SOCKS_IPV6_LEAVE_ANYCAST_IPV4
+
+/* IPV6_LEAVE_ANYCAST IPv4 option */
+#undef SOCKS_IPV6_LEAVE_ANYCAST_IPV6
+
+/* IPV6_LEAVE_ANYCAST protocol level */
+#undef SOCKS_IPV6_LEAVE_ANYCAST_LVL
+
+/* IPV6_LEAVE_ANYCAST value */
+#undef SOCKS_IPV6_LEAVE_ANYCAST_NAME
+
+/* IPV6_LEAVE_GROUP IPv4 option */
+#undef SOCKS_IPV6_LEAVE_GROUP_IPV4
+
+/* IPV6_LEAVE_GROUP IPv4 option */
+#undef SOCKS_IPV6_LEAVE_GROUP_IPV6
+
+/* IPV6_LEAVE_GROUP protocol level */
+#undef SOCKS_IPV6_LEAVE_GROUP_LVL
+
+/* IPV6_LEAVE_GROUP value */
+#undef SOCKS_IPV6_LEAVE_GROUP_NAME
+
+/* IPV6_MINHOPCOUNT IPv4 option */
+#undef SOCKS_IPV6_MINHOPCOUNT_IPV4
+
+/* IPV6_MINHOPCOUNT IPv4 option */
+#undef SOCKS_IPV6_MINHOPCOUNT_IPV6
+
+/* IPV6_MINHOPCOUNT protocol level */
+#undef SOCKS_IPV6_MINHOPCOUNT_LVL
+
+/* IPV6_MINHOPCOUNT value */
+#undef SOCKS_IPV6_MINHOPCOUNT_NAME
+
+/* IPV6_MIPDSTOPTS IPv4 option */
+#undef SOCKS_IPV6_MIPDSTOPTS_IPV4
+
+/* IPV6_MIPDSTOPTS IPv4 option */
+#undef SOCKS_IPV6_MIPDSTOPTS_IPV6
+
+/* IPV6_MIPDSTOPTS protocol level */
+#undef SOCKS_IPV6_MIPDSTOPTS_LVL
+
+/* IPV6_MIPDSTOPTS value */
+#undef SOCKS_IPV6_MIPDSTOPTS_NAME
+
+/* IPV6_MTU_DISCOVER IPv4 option */
+#undef SOCKS_IPV6_MTU_DISCOVER_IPV4
+
+/* IPV6_MTU_DISCOVER IPv4 option */
+#undef SOCKS_IPV6_MTU_DISCOVER_IPV6
+
+/* IPV6_MTU_DISCOVER protocol level */
+#undef SOCKS_IPV6_MTU_DISCOVER_LVL
+
+/* IPV6_MTU_DISCOVER value */
+#undef SOCKS_IPV6_MTU_DISCOVER_NAME
+
+/* IPV6_MTU IPv4 option */
+#undef SOCKS_IPV6_MTU_IPV4
+
+/* IPV6_MTU IPv4 option */
+#undef SOCKS_IPV6_MTU_IPV6
+
+/* IPV6_MTU protocol level */
+#undef SOCKS_IPV6_MTU_LVL
+
+/* IPV6_MTU value */
+#undef SOCKS_IPV6_MTU_NAME
+
+/* IPV6_MULTICAST_HOPS IPv4 option */
+#undef SOCKS_IPV6_MULTICAST_HOPS_IPV4
+
+/* IPV6_MULTICAST_HOPS IPv4 option */
+#undef SOCKS_IPV6_MULTICAST_HOPS_IPV6
+
+/* IPV6_MULTICAST_HOPS protocol level */
+#undef SOCKS_IPV6_MULTICAST_HOPS_LVL
+
+/* IPV6_MULTICAST_HOPS value */
+#undef SOCKS_IPV6_MULTICAST_HOPS_NAME
+
+/* IPV6_MULTICAST_IF IPv4 option */
+#undef SOCKS_IPV6_MULTICAST_IF_IPV4
+
+/* IPV6_MULTICAST_IF IPv4 option */
+#undef SOCKS_IPV6_MULTICAST_IF_IPV6
+
+/* IPV6_MULTICAST_IF protocol level */
+#undef SOCKS_IPV6_MULTICAST_IF_LVL
+
+/* IPV6_MULTICAST_IF value */
+#undef SOCKS_IPV6_MULTICAST_IF_NAME
+
+/* IPV6_MULTICAST_LOOP IPv4 option */
+#undef SOCKS_IPV6_MULTICAST_LOOP_IPV4
+
+/* IPV6_MULTICAST_LOOP IPv4 option */
+#undef SOCKS_IPV6_MULTICAST_LOOP_IPV6
+
+/* IPV6_MULTICAST_LOOP protocol level */
+#undef SOCKS_IPV6_MULTICAST_LOOP_LVL
+
+/* IPV6_MULTICAST_LOOP value */
+#undef SOCKS_IPV6_MULTICAST_LOOP_NAME
+
+/* IPV6_NEXTHOP IPv4 option */
+#undef SOCKS_IPV6_NEXTHOP_IPV4
+
+/* IPV6_NEXTHOP IPv4 option */
+#undef SOCKS_IPV6_NEXTHOP_IPV6
+
+/* IPV6_NEXTHOP protocol level */
+#undef SOCKS_IPV6_NEXTHOP_LVL
+
+/* IPV6_NEXTHOP value */
+#undef SOCKS_IPV6_NEXTHOP_NAME
+
+/* IPV6_NOPROBE IPv4 option */
+#undef SOCKS_IPV6_NOPROBE_IPV4
+
+/* IPV6_NOPROBE IPv4 option */
+#undef SOCKS_IPV6_NOPROBE_IPV6
+
+/* IPV6_NOPROBE protocol level */
+#undef SOCKS_IPV6_NOPROBE_LVL
+
+/* IPV6_NOPROBE value */
+#undef SOCKS_IPV6_NOPROBE_NAME
+
+/* IPV6_ORIGDSTADDR IPv4 option */
+#undef SOCKS_IPV6_ORIGDSTADDR_IPV4
+
+/* IPV6_ORIGDSTADDR IPv4 option */
+#undef SOCKS_IPV6_ORIGDSTADDR_IPV6
+
+/* IPV6_ORIGDSTADDR protocol level */
+#undef SOCKS_IPV6_ORIGDSTADDR_LVL
+
+/* IPV6_ORIGDSTADDR value */
+#undef SOCKS_IPV6_ORIGDSTADDR_NAME
+
+/* IPV6_PATHMTU IPv4 option */
+#undef SOCKS_IPV6_PATHMTU_IPV4
+
+/* IPV6_PATHMTU IPv4 option */
+#undef SOCKS_IPV6_PATHMTU_IPV6
+
+/* IPV6_PATHMTU protocol level */
+#undef SOCKS_IPV6_PATHMTU_LVL
+
+/* IPV6_PATHMTU value */
+#undef SOCKS_IPV6_PATHMTU_NAME
+
+/* IPV6_PIPEX IPv4 option */
+#undef SOCKS_IPV6_PIPEX_IPV4
+
+/* IPV6_PIPEX IPv4 option */
+#undef SOCKS_IPV6_PIPEX_IPV6
+
+/* IPV6_PIPEX protocol level */
+#undef SOCKS_IPV6_PIPEX_LVL
+
+/* IPV6_PIPEX value */
+#undef SOCKS_IPV6_PIPEX_NAME
+
+/* IPV6_PKTINFO IPv4 option */
+#undef SOCKS_IPV6_PKTINFO_IPV4
+
+/* IPV6_PKTINFO IPv4 option */
+#undef SOCKS_IPV6_PKTINFO_IPV6
+
+/* IPV6_PKTINFO protocol level */
+#undef SOCKS_IPV6_PKTINFO_LVL
+
+/* IPV6_PKTINFO value */
+#undef SOCKS_IPV6_PKTINFO_NAME
+
+/* IPV6_PKTOPTIONS IPv4 option */
+#undef SOCKS_IPV6_PKTOPTIONS_IPV4
+
+/* IPV6_PKTOPTIONS IPv4 option */
+#undef SOCKS_IPV6_PKTOPTIONS_IPV6
+
+/* IPV6_PKTOPTIONS protocol level */
+#undef SOCKS_IPV6_PKTOPTIONS_LVL
+
+/* IPV6_PKTOPTIONS value */
+#undef SOCKS_IPV6_PKTOPTIONS_NAME
+
+/* IPV6_PORTRANGE IPv4 option */
+#undef SOCKS_IPV6_PORTRANGE_IPV4
+
+/* IPV6_PORTRANGE IPv4 option */
+#undef SOCKS_IPV6_PORTRANGE_IPV6
+
+/* IPV6_PORTRANGE protocol level */
+#undef SOCKS_IPV6_PORTRANGE_LVL
+
+/* IPV6_PORTRANGE value */
+#undef SOCKS_IPV6_PORTRANGE_NAME
+
+/* IPV6_RECVDSTADDR IPv4 option */
+#undef SOCKS_IPV6_RECVDSTADDR_IPV4
+
+/* IPV6_RECVDSTADDR IPv4 option */
+#undef SOCKS_IPV6_RECVDSTADDR_IPV6
+
+/* IPV6_RECVDSTADDR protocol level */
+#undef SOCKS_IPV6_RECVDSTADDR_LVL
+
+/* IPV6_RECVDSTADDR value */
+#undef SOCKS_IPV6_RECVDSTADDR_NAME
+
+/* IPV6_RECVDSTOPTS IPv4 option */
+#undef SOCKS_IPV6_RECVDSTOPTS_IPV4
+
+/* IPV6_RECVDSTOPTS IPv4 option */
+#undef SOCKS_IPV6_RECVDSTOPTS_IPV6
+
+/* IPV6_RECVDSTOPTS protocol level */
+#undef SOCKS_IPV6_RECVDSTOPTS_LVL
+
+/* IPV6_RECVDSTOPTS value */
+#undef SOCKS_IPV6_RECVDSTOPTS_NAME
+
+/* IPV6_RECVERR IPv4 option */
+#undef SOCKS_IPV6_RECVERR_IPV4
+
+/* IPV6_RECVERR IPv4 option */
+#undef SOCKS_IPV6_RECVERR_IPV6
+
+/* IPV6_RECVERR protocol level */
+#undef SOCKS_IPV6_RECVERR_LVL
+
+/* IPV6_RECVERR value */
+#undef SOCKS_IPV6_RECVERR_NAME
+
+/* IPV6_RECVHOPLIMIT IPv4 option */
+#undef SOCKS_IPV6_RECVHOPLIMIT_IPV4
+
+/* IPV6_RECVHOPLIMIT IPv4 option */
+#undef SOCKS_IPV6_RECVHOPLIMIT_IPV6
+
+/* IPV6_RECVHOPLIMIT protocol level */
+#undef SOCKS_IPV6_RECVHOPLIMIT_LVL
+
+/* IPV6_RECVHOPLIMIT value */
+#undef SOCKS_IPV6_RECVHOPLIMIT_NAME
+
+/* IPV6_RECVHOPOPTS IPv4 option */
+#undef SOCKS_IPV6_RECVHOPOPTS_IPV4
+
+/* IPV6_RECVHOPOPTS IPv4 option */
+#undef SOCKS_IPV6_RECVHOPOPTS_IPV6
+
+/* IPV6_RECVHOPOPTS protocol level */
+#undef SOCKS_IPV6_RECVHOPOPTS_LVL
+
+/* IPV6_RECVHOPOPTS value */
+#undef SOCKS_IPV6_RECVHOPOPTS_NAME
+
+/* IPV6_RECVHOPS IPv4 option */
+#undef SOCKS_IPV6_RECVHOPS_IPV4
+
+/* IPV6_RECVHOPS IPv4 option */
+#undef SOCKS_IPV6_RECVHOPS_IPV6
+
+/* IPV6_RECVHOPS protocol level */
+#undef SOCKS_IPV6_RECVHOPS_LVL
+
+/* IPV6_RECVHOPS value */
+#undef SOCKS_IPV6_RECVHOPS_NAME
+
+/* IPV6_RECVIF IPv4 option */
+#undef SOCKS_IPV6_RECVIF_IPV4
+
+/* IPV6_RECVIF IPv4 option */
+#undef SOCKS_IPV6_RECVIF_IPV6
+
+/* IPV6_RECVIF protocol level */
+#undef SOCKS_IPV6_RECVIF_LVL
+
+/* IPV6_RECVIF value */
+#undef SOCKS_IPV6_RECVIF_NAME
+
+/* IPV6_RECVOPTS IPv4 option */
+#undef SOCKS_IPV6_RECVOPTS_IPV4
+
+/* IPV6_RECVOPTS IPv4 option */
+#undef SOCKS_IPV6_RECVOPTS_IPV6
+
+/* IPV6_RECVOPTS protocol level */
+#undef SOCKS_IPV6_RECVOPTS_LVL
+
+/* IPV6_RECVOPTS value */
+#undef SOCKS_IPV6_RECVOPTS_NAME
+
+/* IPV6_RECVORIGDSTADDR IPv4 option */
+#undef SOCKS_IPV6_RECVORIGDSTADDR_IPV4
+
+/* IPV6_RECVORIGDSTADDR IPv4 option */
+#undef SOCKS_IPV6_RECVORIGDSTADDR_IPV6
+
+/* IPV6_RECVORIGDSTADDR protocol level */
+#undef SOCKS_IPV6_RECVORIGDSTADDR_LVL
+
+/* IPV6_RECVORIGDSTADDR value */
+#undef SOCKS_IPV6_RECVORIGDSTADDR_NAME
+
+/* IPV6_RECVPATHMTU IPv4 option */
+#undef SOCKS_IPV6_RECVPATHMTU_IPV4
+
+/* IPV6_RECVPATHMTU IPv4 option */
+#undef SOCKS_IPV6_RECVPATHMTU_IPV6
+
+/* IPV6_RECVPATHMTU protocol level */
+#undef SOCKS_IPV6_RECVPATHMTU_LVL
+
+/* IPV6_RECVPATHMTU value */
+#undef SOCKS_IPV6_RECVPATHMTU_NAME
+
+/* IPV6_RECVPKTINFO IPv4 option */
+#undef SOCKS_IPV6_RECVPKTINFO_IPV4
+
+/* IPV6_RECVPKTINFO IPv4 option */
+#undef SOCKS_IPV6_RECVPKTINFO_IPV6
+
+/* IPV6_RECVPKTINFO protocol level */
+#undef SOCKS_IPV6_RECVPKTINFO_LVL
+
+/* IPV6_RECVPKTINFO value */
+#undef SOCKS_IPV6_RECVPKTINFO_NAME
+
+/* IPV6_RECVRETOPTS IPv4 option */
+#undef SOCKS_IPV6_RECVRETOPTS_IPV4
+
+/* IPV6_RECVRETOPTS IPv4 option */
+#undef SOCKS_IPV6_RECVRETOPTS_IPV6
+
+/* IPV6_RECVRETOPTS protocol level */
+#undef SOCKS_IPV6_RECVRETOPTS_LVL
+
+/* IPV6_RECVRETOPTS value */
+#undef SOCKS_IPV6_RECVRETOPTS_NAME
+
+/* IPV6_RECVRTHDR IPv4 option */
+#undef SOCKS_IPV6_RECVRTHDR_IPV4
+
+/* IPV6_RECVRTHDR IPv4 option */
+#undef SOCKS_IPV6_RECVRTHDR_IPV6
+
+/* IPV6_RECVRTHDR protocol level */
+#undef SOCKS_IPV6_RECVRTHDR_LVL
+
+/* IPV6_RECVRTHDR value */
+#undef SOCKS_IPV6_RECVRTHDR_NAME
+
+/* IPV6_RECVSRCRT IPv4 option */
+#undef SOCKS_IPV6_RECVSRCRT_IPV4
+
+/* IPV6_RECVSRCRT IPv4 option */
+#undef SOCKS_IPV6_RECVSRCRT_IPV6
+
+/* IPV6_RECVSRCRT protocol level */
+#undef SOCKS_IPV6_RECVSRCRT_LVL
+
+/* IPV6_RECVSRCRT value */
+#undef SOCKS_IPV6_RECVSRCRT_NAME
+
+/* IPV6_RECVTCLASS IPv4 option */
+#undef SOCKS_IPV6_RECVTCLASS_IPV4
+
+/* IPV6_RECVTCLASS IPv4 option */
+#undef SOCKS_IPV6_RECVTCLASS_IPV6
+
+/* IPV6_RECVTCLASS protocol level */
+#undef SOCKS_IPV6_RECVTCLASS_LVL
+
+/* IPV6_RECVTCLASS value */
+#undef SOCKS_IPV6_RECVTCLASS_NAME
+
+/* IPV6_RETOPTS IPv4 option */
+#undef SOCKS_IPV6_RETOPTS_IPV4
+
+/* IPV6_RETOPTS IPv4 option */
+#undef SOCKS_IPV6_RETOPTS_IPV6
+
+/* IPV6_RETOPTS protocol level */
+#undef SOCKS_IPV6_RETOPTS_LVL
+
+/* IPV6_RETOPTS value */
+#undef SOCKS_IPV6_RETOPTS_NAME
+
+/* IPV6_ROUTER_ALERT IPv4 option */
+#undef SOCKS_IPV6_ROUTER_ALERT_IPV4
+
+/* IPV6_ROUTER_ALERT IPv4 option */
+#undef SOCKS_IPV6_ROUTER_ALERT_IPV6
+
+/* IPV6_ROUTER_ALERT protocol level */
+#undef SOCKS_IPV6_ROUTER_ALERT_LVL
+
+/* IPV6_ROUTER_ALERT value */
+#undef SOCKS_IPV6_ROUTER_ALERT_NAME
+
+/* IPV6_RTHDRDSTOPTS IPv4 option */
+#undef SOCKS_IPV6_RTHDRDSTOPTS_IPV4
+
+/* IPV6_RTHDRDSTOPTS IPv4 option */
+#undef SOCKS_IPV6_RTHDRDSTOPTS_IPV6
+
+/* IPV6_RTHDRDSTOPTS protocol level */
+#undef SOCKS_IPV6_RTHDRDSTOPTS_LVL
+
+/* IPV6_RTHDRDSTOPTS value */
+#undef SOCKS_IPV6_RTHDRDSTOPTS_NAME
+
+/* IPV6_RTHDR IPv4 option */
+#undef SOCKS_IPV6_RTHDR_IPV4
+
+/* IPV6_RTHDR IPv4 option */
+#undef SOCKS_IPV6_RTHDR_IPV6
+
+/* IPV6_RTHDR protocol level */
+#undef SOCKS_IPV6_RTHDR_LVL
+
+/* IPV6_RTHDR value */
+#undef SOCKS_IPV6_RTHDR_NAME
+
+/* IPV6_SENDIF IPv4 option */
+#undef SOCKS_IPV6_SENDIF_IPV4
+
+/* IPV6_SENDIF IPv4 option */
+#undef SOCKS_IPV6_SENDIF_IPV6
+
+/* IPV6_SENDIF protocol level */
+#undef SOCKS_IPV6_SENDIF_LVL
+
+/* IPV6_SENDIF value */
+#undef SOCKS_IPV6_SENDIF_NAME
+
+/* IPV6_TCLASS IPv4 option */
+#undef SOCKS_IPV6_TCLASS_IPV4
+
+/* IPV6_TCLASS IPv4 option */
+#undef SOCKS_IPV6_TCLASS_IPV6
+
+/* IPV6_TCLASS protocol level */
+#undef SOCKS_IPV6_TCLASS_LVL
+
+/* IPV6_TCLASS value */
+#undef SOCKS_IPV6_TCLASS_NAME
+
+/* IPV6_TRANSPARENT IPv4 option */
+#undef SOCKS_IPV6_TRANSPARENT_IPV4
+
+/* IPV6_TRANSPARENT IPv4 option */
+#undef SOCKS_IPV6_TRANSPARENT_IPV6
+
+/* IPV6_TRANSPARENT protocol level */
+#undef SOCKS_IPV6_TRANSPARENT_LVL
+
+/* IPV6_TRANSPARENT value */
+#undef SOCKS_IPV6_TRANSPARENT_NAME
+
+/* IPV6_UNICAST_HOPS IPv4 option */
+#undef SOCKS_IPV6_UNICAST_HOPS_IPV4
+
+/* IPV6_UNICAST_HOPS IPv4 option */
+#undef SOCKS_IPV6_UNICAST_HOPS_IPV6
+
+/* IPV6_UNICAST_HOPS protocol level */
+#undef SOCKS_IPV6_UNICAST_HOPS_LVL
+
+/* IPV6_UNICAST_HOPS value */
+#undef SOCKS_IPV6_UNICAST_HOPS_NAME
+
+/* IPV6_USE_MIN_MTU IPv4 option */
+#undef SOCKS_IPV6_USE_MIN_MTU_IPV4
+
+/* IPV6_USE_MIN_MTU IPv4 option */
+#undef SOCKS_IPV6_USE_MIN_MTU_IPV6
+
+/* IPV6_USE_MIN_MTU protocol level */
+#undef SOCKS_IPV6_USE_MIN_MTU_LVL
+
+/* IPV6_USE_MIN_MTU value */
+#undef SOCKS_IPV6_USE_MIN_MTU_NAME
+
+/* IPV6_V6ONLY IPv4 option */
+#undef SOCKS_IPV6_V6ONLY_IPV4
+
+/* IPV6_V6ONLY IPv4 option */
+#undef SOCKS_IPV6_V6ONLY_IPV6
+
+/* IPV6_V6ONLY protocol level */
+#undef SOCKS_IPV6_V6ONLY_LVL
+
+/* IPV6_V6ONLY value */
+#undef SOCKS_IPV6_V6ONLY_NAME
+
+/* IPV6_XFRM_POLICY IPv4 option */
+#undef SOCKS_IPV6_XFRM_POLICY_IPV4
+
+/* IPV6_XFRM_POLICY IPv4 option */
+#undef SOCKS_IPV6_XFRM_POLICY_IPV6
+
+/* IPV6_XFRM_POLICY protocol level */
+#undef SOCKS_IPV6_XFRM_POLICY_LVL
+
+/* IPV6_XFRM_POLICY value */
+#undef SOCKS_IPV6_XFRM_POLICY_NAME
+
+/* IP_ADDRFORM IPv4 option */
+#undef SOCKS_IP_ADDRFORM_IPV4
+
+/* IP_ADDRFORM IPv4 option */
+#undef SOCKS_IP_ADDRFORM_IPV6
+
+/* IP_ADDRFORM protocol level */
+#undef SOCKS_IP_ADDRFORM_LVL
+
+/* IP_ADDRFORM value */
+#undef SOCKS_IP_ADDRFORM_NAME
+
+/* IP_ADD_MEMBERSHIP IPv4 option */
+#undef SOCKS_IP_ADD_MEMBERSHIP_IPV4
+
+/* IP_ADD_MEMBERSHIP IPv4 option */
+#undef SOCKS_IP_ADD_MEMBERSHIP_IPV6
+
+/* IP_ADD_MEMBERSHIP protocol level */
+#undef SOCKS_IP_ADD_MEMBERSHIP_LVL
+
+/* IP_ADD_MEMBERSHIP value */
+#undef SOCKS_IP_ADD_MEMBERSHIP_NAME
+
+/* IP_ADD_SOURCE_MEMBERSHIP IPv4 option */
+#undef SOCKS_IP_ADD_SOURCE_MEMBERSHIP_IPV4
+
+/* IP_ADD_SOURCE_MEMBERSHIP IPv4 option */
+#undef SOCKS_IP_ADD_SOURCE_MEMBERSHIP_IPV6
+
+/* IP_ADD_SOURCE_MEMBERSHIP protocol level */
+#undef SOCKS_IP_ADD_SOURCE_MEMBERSHIP_LVL
+
+/* IP_ADD_SOURCE_MEMBERSHIP value */
+#undef SOCKS_IP_ADD_SOURCE_MEMBERSHIP_NAME
+
+/* IP_AUTH_LEVEL IPv4 option */
+#undef SOCKS_IP_AUTH_LEVEL_IPV4
+
+/* IP_AUTH_LEVEL IPv4 option */
+#undef SOCKS_IP_AUTH_LEVEL_IPV6
+
+/* IP_AUTH_LEVEL protocol level */
+#undef SOCKS_IP_AUTH_LEVEL_LVL
+
+/* IP_AUTH_LEVEL value */
+#undef SOCKS_IP_AUTH_LEVEL_NAME
+
+/* IP_BLOCK_SOURCE IPv4 option */
+#undef SOCKS_IP_BLOCK_SOURCE_IPV4
+
+/* IP_BLOCK_SOURCE IPv4 option */
+#undef SOCKS_IP_BLOCK_SOURCE_IPV6
+
+/* IP_BLOCK_SOURCE protocol level */
+#undef SOCKS_IP_BLOCK_SOURCE_LVL
+
+/* IP_BLOCK_SOURCE value */
+#undef SOCKS_IP_BLOCK_SOURCE_NAME
+
+/* IP_BROADCAST_IF IPv4 option */
+#undef SOCKS_IP_BROADCAST_IF_IPV4
+
+/* IP_BROADCAST_IF IPv4 option */
+#undef SOCKS_IP_BROADCAST_IF_IPV6
+
+/* IP_BROADCAST_IF protocol level */
+#undef SOCKS_IP_BROADCAST_IF_LVL
+
+/* IP_BROADCAST_IF value */
+#undef SOCKS_IP_BROADCAST_IF_NAME
+
+/* IP_DHCPMODE IPv4 option */
+#undef SOCKS_IP_DHCPMODE_IPV4
+
+/* IP_DHCPMODE IPv4 option */
+#undef SOCKS_IP_DHCPMODE_IPV6
+
+/* IP_DHCPMODE protocol level */
+#undef SOCKS_IP_DHCPMODE_LVL
+
+/* IP_DHCPMODE value */
+#undef SOCKS_IP_DHCPMODE_NAME
+
+/* IP_DONTFRAG IPv4 option */
+#undef SOCKS_IP_DONTFRAG_IPV4
+
+/* IP_DONTFRAG IPv4 option */
+#undef SOCKS_IP_DONTFRAG_IPV6
+
+/* IP_DONTFRAG protocol level */
+#undef SOCKS_IP_DONTFRAG_LVL
+
+/* IP_DONTFRAG value */
+#undef SOCKS_IP_DONTFRAG_NAME
+
+/* IP_DROP_MEMBERSHIP IPv4 option */
+#undef SOCKS_IP_DROP_MEMBERSHIP_IPV4
+
+/* IP_DROP_MEMBERSHIP IPv4 option */
+#undef SOCKS_IP_DROP_MEMBERSHIP_IPV6
+
+/* IP_DROP_MEMBERSHIP protocol level */
+#undef SOCKS_IP_DROP_MEMBERSHIP_LVL
+
+/* IP_DROP_MEMBERSHIP value */
+#undef SOCKS_IP_DROP_MEMBERSHIP_NAME
+
+/* IP_DROP_SOURCE_MEMBERSHIP IPv4 option */
+#undef SOCKS_IP_DROP_SOURCE_MEMBERSHIP_IPV4
+
+/* IP_DROP_SOURCE_MEMBERSHIP IPv4 option */
+#undef SOCKS_IP_DROP_SOURCE_MEMBERSHIP_IPV6
+
+/* IP_DROP_SOURCE_MEMBERSHIP protocol level */
+#undef SOCKS_IP_DROP_SOURCE_MEMBERSHIP_LVL
+
+/* IP_DROP_SOURCE_MEMBERSHIP value */
+#undef SOCKS_IP_DROP_SOURCE_MEMBERSHIP_NAME
+
+/* IP_ESP_NETWORK_LEVEL IPv4 option */
+#undef SOCKS_IP_ESP_NETWORK_LEVEL_IPV4
+
+/* IP_ESP_NETWORK_LEVEL IPv4 option */
+#undef SOCKS_IP_ESP_NETWORK_LEVEL_IPV6
+
+/* IP_ESP_NETWORK_LEVEL protocol level */
+#undef SOCKS_IP_ESP_NETWORK_LEVEL_LVL
+
+/* IP_ESP_NETWORK_LEVEL value */
+#undef SOCKS_IP_ESP_NETWORK_LEVEL_NAME
+
+/* IP_ESP_TRANS_LEVEL IPv4 option */
+#undef SOCKS_IP_ESP_TRANS_LEVEL_IPV4
+
+/* IP_ESP_TRANS_LEVEL IPv4 option */
+#undef SOCKS_IP_ESP_TRANS_LEVEL_IPV6
+
+/* IP_ESP_TRANS_LEVEL protocol level */
+#undef SOCKS_IP_ESP_TRANS_LEVEL_LVL
+
+/* IP_ESP_TRANS_LEVEL value */
+#undef SOCKS_IP_ESP_TRANS_LEVEL_NAME
+
+/* IP_FINDPMTU IPv4 option */
+#undef SOCKS_IP_FINDPMTU_IPV4
+
+/* IP_FINDPMTU IPv4 option */
+#undef SOCKS_IP_FINDPMTU_IPV6
+
+/* IP_FINDPMTU protocol level */
+#undef SOCKS_IP_FINDPMTU_LVL
+
+/* IP_FINDPMTU value */
+#undef SOCKS_IP_FINDPMTU_NAME
+
+/* IP_FREEBIND IPv4 option */
+#undef SOCKS_IP_FREEBIND_IPV4
+
+/* IP_FREEBIND IPv4 option */
+#undef SOCKS_IP_FREEBIND_IPV6
+
+/* IP_FREEBIND protocol level */
+#undef SOCKS_IP_FREEBIND_LVL
+
+/* IP_FREEBIND value */
+#undef SOCKS_IP_FREEBIND_NAME
+
+/* IP_HDRINCL IPv4 option */
+#undef SOCKS_IP_HDRINCL_IPV4
+
+/* IP_HDRINCL IPv4 option */
+#undef SOCKS_IP_HDRINCL_IPV6
+
+/* IP_HDRINCL protocol level */
+#undef SOCKS_IP_HDRINCL_LVL
+
+/* IP_HDRINCL value */
+#undef SOCKS_IP_HDRINCL_NAME
+
+/* IP_IPCOMP_LEVEL IPv4 option */
+#undef SOCKS_IP_IPCOMP_LEVEL_IPV4
+
+/* IP_IPCOMP_LEVEL IPv4 option */
+#undef SOCKS_IP_IPCOMP_LEVEL_IPV6
+
+/* IP_IPCOMP_LEVEL protocol level */
+#undef SOCKS_IP_IPCOMP_LEVEL_LVL
+
+/* IP_IPCOMP_LEVEL value */
+#undef SOCKS_IP_IPCOMP_LEVEL_NAME
+
+/* IP_MINTTL IPv4 option */
+#undef SOCKS_IP_MINTTL_IPV4
+
+/* IP_MINTTL IPv4 option */
+#undef SOCKS_IP_MINTTL_IPV6
+
+/* IP_MINTTL protocol level */
+#undef SOCKS_IP_MINTTL_LVL
+
+/* IP_MINTTL value */
+#undef SOCKS_IP_MINTTL_NAME
+
+/* IP_MTU_DISCOVER IPv4 option */
+#undef SOCKS_IP_MTU_DISCOVER_IPV4
+
+/* IP_MTU_DISCOVER IPv4 option */
+#undef SOCKS_IP_MTU_DISCOVER_IPV6
+
+/* IP_MTU_DISCOVER protocol level */
+#undef SOCKS_IP_MTU_DISCOVER_LVL
+
+/* IP_MTU_DISCOVER value */
+#undef SOCKS_IP_MTU_DISCOVER_NAME
+
+/* IP_MULTICAST_HOPS IPv4 option */
+#undef SOCKS_IP_MULTICAST_HOPS_IPV4
+
+/* IP_MULTICAST_HOPS IPv4 option */
+#undef SOCKS_IP_MULTICAST_HOPS_IPV6
+
+/* IP_MULTICAST_HOPS protocol level */
+#undef SOCKS_IP_MULTICAST_HOPS_LVL
+
+/* IP_MULTICAST_HOPS value */
+#undef SOCKS_IP_MULTICAST_HOPS_NAME
+
+/* IP_MULTICAST_IF IPv4 option */
+#undef SOCKS_IP_MULTICAST_IF_IPV4
+
+/* IP_MULTICAST_IF IPv4 option */
+#undef SOCKS_IP_MULTICAST_IF_IPV6
+
+/* IP_MULTICAST_IF protocol level */
+#undef SOCKS_IP_MULTICAST_IF_LVL
+
+/* IP_MULTICAST_IF value */
+#undef SOCKS_IP_MULTICAST_IF_NAME
+
+/* IP_MULTICAST_LOOP IPv4 option */
+#undef SOCKS_IP_MULTICAST_LOOP_IPV4
+
+/* IP_MULTICAST_LOOP IPv4 option */
+#undef SOCKS_IP_MULTICAST_LOOP_IPV6
+
+/* IP_MULTICAST_LOOP protocol level */
+#undef SOCKS_IP_MULTICAST_LOOP_LVL
+
+/* IP_MULTICAST_LOOP value */
+#undef SOCKS_IP_MULTICAST_LOOP_NAME
+
+/* IP_MULTICAST_TTL IPv4 option */
+#undef SOCKS_IP_MULTICAST_TTL_IPV4
+
+/* IP_MULTICAST_TTL IPv4 option */
+#undef SOCKS_IP_MULTICAST_TTL_IPV6
+
+/* IP_MULTICAST_TTL protocol level */
+#undef SOCKS_IP_MULTICAST_TTL_LVL
+
+/* IP_MULTICAST_TTL value */
+#undef SOCKS_IP_MULTICAST_TTL_NAME
+
+/* IP_OPTIONS IPv4 option */
+#undef SOCKS_IP_OPTIONS_IPV4
+
+/* IP_OPTIONS IPv4 option */
+#undef SOCKS_IP_OPTIONS_IPV6
+
+/* IP_OPTIONS protocol level */
+#undef SOCKS_IP_OPTIONS_LVL
+
+/* IP_OPTIONS value */
+#undef SOCKS_IP_OPTIONS_NAME
+
+/* IP_PMTUAGE IPv4 option */
+#undef SOCKS_IP_PMTUAGE_IPV4
+
+/* IP_PMTUAGE IPv4 option */
+#undef SOCKS_IP_PMTUAGE_IPV6
+
+/* IP_PMTUAGE protocol level */
+#undef SOCKS_IP_PMTUAGE_LVL
+
+/* IP_PMTUAGE value */
+#undef SOCKS_IP_PMTUAGE_NAME
+
+/* IP_PORTRANGE_DEFAULT value */
+#undef SOCKS_IP_PORTRANGE_DEFAULT_SYMNAME
+
+/* IP_PORTRANGE_HIGH value */
+#undef SOCKS_IP_PORTRANGE_HIGH_SYMNAME
+
+/* IP_PORTRANGE IPv4 option */
+#undef SOCKS_IP_PORTRANGE_IPV4
+
+/* IP_PORTRANGE IPv4 option */
+#undef SOCKS_IP_PORTRANGE_IPV6
+
+/* IP_PORTRANGE_LOW value */
+#undef SOCKS_IP_PORTRANGE_LOW_SYMNAME
+
+/* IP_PORTRANGE protocol level */
+#undef SOCKS_IP_PORTRANGE_LVL
+
+/* IP_PORTRANGE value */
+#undef SOCKS_IP_PORTRANGE_NAME
+
+/* IP_RECVDSTADDR IPv4 option */
+#undef SOCKS_IP_RECVDSTADDR_IPV4
+
+/* IP_RECVDSTADDR IPv4 option */
+#undef SOCKS_IP_RECVDSTADDR_IPV6
+
+/* IP_RECVDSTADDR protocol level */
+#undef SOCKS_IP_RECVDSTADDR_LVL
+
+/* IP_RECVDSTADDR value */
+#undef SOCKS_IP_RECVDSTADDR_NAME
+
+/* IP_RECVIFINFO IPv4 option */
+#undef SOCKS_IP_RECVIFINFO_IPV4
+
+/* IP_RECVIFINFO IPv4 option */
+#undef SOCKS_IP_RECVIFINFO_IPV6
+
+/* IP_RECVIFINFO protocol level */
+#undef SOCKS_IP_RECVIFINFO_LVL
+
+/* IP_RECVIFINFO value */
+#undef SOCKS_IP_RECVIFINFO_NAME
+
+/* IP_RECVIF IPv4 option */
+#undef SOCKS_IP_RECVIF_IPV4
+
+/* IP_RECVIF IPv4 option */
+#undef SOCKS_IP_RECVIF_IPV6
+
+/* IP_RECVIF protocol level */
+#undef SOCKS_IP_RECVIF_LVL
+
+/* IP_RECVIF value */
+#undef SOCKS_IP_RECVIF_NAME
+
+/* IP_RECVINTERFACE IPv4 option */
+#undef SOCKS_IP_RECVINTERFACE_IPV4
+
+/* IP_RECVINTERFACE IPv4 option */
+#undef SOCKS_IP_RECVINTERFACE_IPV6
+
+/* IP_RECVINTERFACE protocol level */
+#undef SOCKS_IP_RECVINTERFACE_LVL
+
+/* IP_RECVINTERFACE value */
+#undef SOCKS_IP_RECVINTERFACE_NAME
+
+/* IP_RECVMACHDR IPv4 option */
+#undef SOCKS_IP_RECVMACHDR_IPV4
+
+/* IP_RECVMACHDR IPv4 option */
+#undef SOCKS_IP_RECVMACHDR_IPV6
+
+/* IP_RECVMACHDR protocol level */
+#undef SOCKS_IP_RECVMACHDR_LVL
+
+/* IP_RECVMACHDR value */
+#undef SOCKS_IP_RECVMACHDR_NAME
+
+/* IP_RECVTOS IPv4 option */
+#undef SOCKS_IP_RECVTOS_IPV4
+
+/* IP_RECVTOS IPv4 option */
+#undef SOCKS_IP_RECVTOS_IPV6
+
+/* IP_RECVTOS protocol level */
+#undef SOCKS_IP_RECVTOS_LVL
+
+/* IP_RECVTOS value */
+#undef SOCKS_IP_RECVTOS_NAME
+
+/* IP_RECVTTL IPv4 option */
+#undef SOCKS_IP_RECVTTL_IPV4
+
+/* IP_RECVTTL IPv4 option */
+#undef SOCKS_IP_RECVTTL_IPV6
+
+/* IP_RECVTTL protocol level */
+#undef SOCKS_IP_RECVTTL_LVL
+
+/* IP_RECVTTL value */
+#undef SOCKS_IP_RECVTTL_NAME
+
+/* IP_SOURCE_FILTER IPv4 option */
+#undef SOCKS_IP_SOURCE_FILTER_IPV4
+
+/* IP_SOURCE_FILTER IPv4 option */
+#undef SOCKS_IP_SOURCE_FILTER_IPV6
+
+/* IP_SOURCE_FILTER protocol level */
+#undef SOCKS_IP_SOURCE_FILTER_LVL
+
+/* IP_SOURCE_FILTER value */
+#undef SOCKS_IP_SOURCE_FILTER_NAME
+
+/* IP_TOS subfield */
+#undef SOCKS_IP_TOS_DSCP_NAME
+
+/* IP_TOS IPv4 option */
+#undef SOCKS_IP_TOS_IPV4
+
+/* IP_TOS IPv4 option */
+#undef SOCKS_IP_TOS_IPV6
+
+/* IP_TOS protocol level */
+#undef SOCKS_IP_TOS_LVL
+
+/* IP_TOS value */
+#undef SOCKS_IP_TOS_NAME
+
+/* IP_TOS subfield */
+#undef SOCKS_IP_TOS_PREC_NAME
+
+/* IP_TOS subfield */
+#undef SOCKS_IP_TOS_TOS_NAME
+
+/* IP_TRANSPARENT IPv4 option */
+#undef SOCKS_IP_TRANSPARENT_IPV4
+
+/* IP_TRANSPARENT IPv4 option */
+#undef SOCKS_IP_TRANSPARENT_IPV6
+
+/* IP_TRANSPARENT protocol level */
+#undef SOCKS_IP_TRANSPARENT_LVL
+
+/* IP_TRANSPARENT value */
+#undef SOCKS_IP_TRANSPARENT_NAME
+
+/* IP_TTL IPv4 option */
+#undef SOCKS_IP_TTL_IPV4
+
+/* IP_TTL IPv4 option */
+#undef SOCKS_IP_TTL_IPV6
+
+/* IP_TTL protocol level */
+#undef SOCKS_IP_TTL_LVL
+
+/* IP_TTL value */
+#undef SOCKS_IP_TTL_NAME
+
+/* IP_UNBLOCK_SOURCE IPv4 option */
+#undef SOCKS_IP_UNBLOCK_SOURCE_IPV4
+
+/* IP_UNBLOCK_SOURCE IPv4 option */
+#undef SOCKS_IP_UNBLOCK_SOURCE_IPV6
+
+/* IP_UNBLOCK_SOURCE protocol level */
+#undef SOCKS_IP_UNBLOCK_SOURCE_LVL
+
+/* IP_UNBLOCK_SOURCE value */
+#undef SOCKS_IP_UNBLOCK_SOURCE_NAME
+
+/* IP_UNICAST_HOPS IPv4 option */
+#undef SOCKS_IP_UNICAST_HOPS_IPV4
+
+/* IP_UNICAST_HOPS IPv4 option */
+#undef SOCKS_IP_UNICAST_HOPS_IPV6
+
+/* IP_UNICAST_HOPS protocol level */
+#undef SOCKS_IP_UNICAST_HOPS_LVL
+
+/* IP_UNICAST_HOPS value */
+#undef SOCKS_IP_UNICAST_HOPS_NAME
+
+/* Guess at max number of valid signals */
+#undef SOCKS_NSIG
+
+/* SO_ACCEPTCONN IPv4 option */
+#undef SOCKS_SO_ACCEPTCONN_IPV4
+
+/* SO_ACCEPTCONN IPv4 option */
+#undef SOCKS_SO_ACCEPTCONN_IPV6
+
+/* SO_ACCEPTCONN protocol level */
+#undef SOCKS_SO_ACCEPTCONN_LVL
+
+/* SO_ACCEPTCONN value */
+#undef SOCKS_SO_ACCEPTCONN_NAME
+
+/* SO_AUDIT IPv4 option */
+#undef SOCKS_SO_AUDIT_IPV4
+
+/* SO_AUDIT IPv4 option */
+#undef SOCKS_SO_AUDIT_IPV6
+
+/* SO_AUDIT protocol level */
+#undef SOCKS_SO_AUDIT_LVL
+
+/* SO_AUDIT value */
+#undef SOCKS_SO_AUDIT_NAME
+
+/* SO_BINDANY IPv4 option */
+#undef SOCKS_SO_BINDANY_IPV4
+
+/* SO_BINDANY IPv4 option */
+#undef SOCKS_SO_BINDANY_IPV6
+
+/* SO_BINDANY protocol level */
+#undef SOCKS_SO_BINDANY_LVL
+
+/* SO_BINDANY value */
+#undef SOCKS_SO_BINDANY_NAME
+
+/* SO_BROADCAST IPv4 option */
+#undef SOCKS_SO_BROADCAST_IPV4
+
+/* SO_BROADCAST IPv4 option */
+#undef SOCKS_SO_BROADCAST_IPV6
+
+/* SO_BROADCAST protocol level */
+#undef SOCKS_SO_BROADCAST_LVL
+
+/* SO_BROADCAST value */
+#undef SOCKS_SO_BROADCAST_NAME
+
+/* SO_CKSUMRECV IPv4 option */
+#undef SOCKS_SO_CKSUMRECV_IPV4
+
+/* SO_CKSUMRECV IPv4 option */
+#undef SOCKS_SO_CKSUMRECV_IPV6
+
+/* SO_CKSUMRECV protocol level */
+#undef SOCKS_SO_CKSUMRECV_LVL
+
+/* SO_CKSUMRECV value */
+#undef SOCKS_SO_CKSUMRECV_NAME
+
+/* SO_DEBUG IPv4 option */
+#undef SOCKS_SO_DEBUG_IPV4
+
+/* SO_DEBUG IPv4 option */
+#undef SOCKS_SO_DEBUG_IPV6
+
+/* SO_DEBUG protocol level */
+#undef SOCKS_SO_DEBUG_LVL
+
+/* SO_DEBUG value */
+#undef SOCKS_SO_DEBUG_NAME
+
+/* SO_DONTROUTE IPv4 option */
+#undef SOCKS_SO_DONTROUTE_IPV4
+
+/* SO_DONTROUTE IPv4 option */
+#undef SOCKS_SO_DONTROUTE_IPV6
+
+/* SO_DONTROUTE protocol level */
+#undef SOCKS_SO_DONTROUTE_LVL
+
+/* SO_DONTROUTE value */
+#undef SOCKS_SO_DONTROUTE_NAME
+
+/* SO_ERROR IPv4 option */
+#undef SOCKS_SO_ERROR_IPV4
+
+/* SO_ERROR IPv4 option */
+#undef SOCKS_SO_ERROR_IPV6
+
+/* SO_ERROR protocol level */
+#undef SOCKS_SO_ERROR_LVL
+
+/* SO_ERROR value */
+#undef SOCKS_SO_ERROR_NAME
+
+/* SO_JUMBO IPv4 option */
+#undef SOCKS_SO_JUMBO_IPV4
+
+/* SO_JUMBO IPv4 option */
+#undef SOCKS_SO_JUMBO_IPV6
+
+/* SO_JUMBO protocol level */
+#undef SOCKS_SO_JUMBO_LVL
+
+/* SO_JUMBO value */
+#undef SOCKS_SO_JUMBO_NAME
+
+/* SO_KEEPALIVE IPv4 option */
+#undef SOCKS_SO_KEEPALIVE_IPV4
+
+/* SO_KEEPALIVE IPv4 option */
+#undef SOCKS_SO_KEEPALIVE_IPV6
+
+/* SO_KEEPALIVE protocol level */
+#undef SOCKS_SO_KEEPALIVE_LVL
+
+/* SO_KEEPALIVE value */
+#undef SOCKS_SO_KEEPALIVE_NAME
+
+/* SO_KERNACCEPT IPv4 option */
+#undef SOCKS_SO_KERNACCEPT_IPV4
+
+/* SO_KERNACCEPT IPv4 option */
+#undef SOCKS_SO_KERNACCEPT_IPV6
+
+/* SO_KERNACCEPT protocol level */
+#undef SOCKS_SO_KERNACCEPT_LVL
+
+/* SO_KERNACCEPT value */
+#undef SOCKS_SO_KERNACCEPT_NAME
+
+/* SO_LINGER IPv4 option */
+#undef SOCKS_SO_LINGER_IPV4
+
+/* SO_LINGER IPv4 option */
+#undef SOCKS_SO_LINGER_IPV6
+
+/* SO_LINGER protocol level */
+#undef SOCKS_SO_LINGER_LVL
+
+/* SO_LINGER value */
+#undef SOCKS_SO_LINGER_NAME
+
+/* SO_NOMULTIPATH IPv4 option */
+#undef SOCKS_SO_NOMULTIPATH_IPV4
+
+/* SO_NOMULTIPATH IPv4 option */
+#undef SOCKS_SO_NOMULTIPATH_IPV6
+
+/* SO_NOMULTIPATH protocol level */
+#undef SOCKS_SO_NOMULTIPATH_LVL
+
+/* SO_NOMULTIPATH value */
+#undef SOCKS_SO_NOMULTIPATH_NAME
+
+/* SO_NOREUSEADDR IPv4 option */
+#undef SOCKS_SO_NOREUSEADDR_IPV4
+
+/* SO_NOREUSEADDR IPv4 option */
+#undef SOCKS_SO_NOREUSEADDR_IPV6
+
+/* SO_NOREUSEADDR protocol level */
+#undef SOCKS_SO_NOREUSEADDR_LVL
+
+/* SO_NOREUSEADDR value */
+#undef SOCKS_SO_NOREUSEADDR_NAME
+
+/* SO_OOBINLINE IPv4 option */
+#undef SOCKS_SO_OOBINLINE_IPV4
+
+/* SO_OOBINLINE IPv4 option */
+#undef SOCKS_SO_OOBINLINE_IPV6
+
+/* SO_OOBINLINE protocol level */
+#undef SOCKS_SO_OOBINLINE_LVL
+
+/* SO_OOBINLINE value */
+#undef SOCKS_SO_OOBINLINE_NAME
+
+/* SO_PEERID IPv4 option */
+#undef SOCKS_SO_PEERID_IPV4
+
+/* SO_PEERID IPv4 option */
+#undef SOCKS_SO_PEERID_IPV6
+
+/* SO_PEERID protocol level */
+#undef SOCKS_SO_PEERID_LVL
+
+/* SO_PEERID value */
+#undef SOCKS_SO_PEERID_NAME
+
+/* SO_PRIORITY IPv4 option */
+#undef SOCKS_SO_PRIORITY_IPV4
+
+/* SO_PRIORITY IPv4 option */
+#undef SOCKS_SO_PRIORITY_IPV6
+
+/* SO_PRIORITY protocol level */
+#undef SOCKS_SO_PRIORITY_LVL
+
+/* SO_PRIORITY value */
+#undef SOCKS_SO_PRIORITY_NAME
+
+/* SO_RCVBUFFORCE IPv4 option */
+#undef SOCKS_SO_RCVBUFFORCE_IPV4
+
+/* SO_RCVBUFFORCE IPv4 option */
+#undef SOCKS_SO_RCVBUFFORCE_IPV6
+
+/* SO_RCVBUFFORCE protocol level */
+#undef SOCKS_SO_RCVBUFFORCE_LVL
+
+/* SO_RCVBUFFORCE value */
+#undef SOCKS_SO_RCVBUFFORCE_NAME
+
+/* SO_RCVBUF IPv4 option */
+#undef SOCKS_SO_RCVBUF_IPV4
+
+/* SO_RCVBUF IPv4 option */
+#undef SOCKS_SO_RCVBUF_IPV6
+
+/* SO_RCVBUF protocol level */
+#undef SOCKS_SO_RCVBUF_LVL
+
+/* SO_RCVBUF value */
+#undef SOCKS_SO_RCVBUF_NAME
+
+/* SO_RCVLOWAT IPv4 option */
+#undef SOCKS_SO_RCVLOWAT_IPV4
+
+/* SO_RCVLOWAT IPv4 option */
+#undef SOCKS_SO_RCVLOWAT_IPV6
+
+/* SO_RCVLOWAT protocol level */
+#undef SOCKS_SO_RCVLOWAT_LVL
+
+/* SO_RCVLOWAT value */
+#undef SOCKS_SO_RCVLOWAT_NAME
+
+/* SO_RCVTIMEO IPv4 option */
+#undef SOCKS_SO_RCVTIMEO_IPV4
+
+/* SO_RCVTIMEO IPv4 option */
+#undef SOCKS_SO_RCVTIMEO_IPV6
+
+/* SO_RCVTIMEO protocol level */
+#undef SOCKS_SO_RCVTIMEO_LVL
+
+/* SO_RCVTIMEO value */
+#undef SOCKS_SO_RCVTIMEO_NAME
+
+/* SO_REUSEADDR IPv4 option */
+#undef SOCKS_SO_REUSEADDR_IPV4
+
+/* SO_REUSEADDR IPv4 option */
+#undef SOCKS_SO_REUSEADDR_IPV6
+
+/* SO_REUSEADDR protocol level */
+#undef SOCKS_SO_REUSEADDR_LVL
+
+/* SO_REUSEADDR value */
+#undef SOCKS_SO_REUSEADDR_NAME
+
+/* SO_REUSEPORT IPv4 option */
+#undef SOCKS_SO_REUSEPORT_IPV4
+
+/* SO_REUSEPORT IPv4 option */
+#undef SOCKS_SO_REUSEPORT_IPV6
+
+/* SO_REUSEPORT protocol level */
+#undef SOCKS_SO_REUSEPORT_LVL
+
+/* SO_REUSEPORT value */
+#undef SOCKS_SO_REUSEPORT_NAME
+
+/* SO_SNDBUFFORCE IPv4 option */
+#undef SOCKS_SO_SNDBUFFORCE_IPV4
+
+/* SO_SNDBUFFORCE IPv4 option */
+#undef SOCKS_SO_SNDBUFFORCE_IPV6
+
+/* SO_SNDBUFFORCE protocol level */
+#undef SOCKS_SO_SNDBUFFORCE_LVL
+
+/* SO_SNDBUFFORCE value */
+#undef SOCKS_SO_SNDBUFFORCE_NAME
+
+/* SO_SNDBUF IPv4 option */
+#undef SOCKS_SO_SNDBUF_IPV4
+
+/* SO_SNDBUF IPv4 option */
+#undef SOCKS_SO_SNDBUF_IPV6
+
+/* SO_SNDBUF protocol level */
+#undef SOCKS_SO_SNDBUF_LVL
+
+/* SO_SNDBUF value */
+#undef SOCKS_SO_SNDBUF_NAME
+
+/* SO_SNDLOWAT IPv4 option */
+#undef SOCKS_SO_SNDLOWAT_IPV4
+
+/* SO_SNDLOWAT IPv4 option */
+#undef SOCKS_SO_SNDLOWAT_IPV6
+
+/* SO_SNDLOWAT protocol level */
+#undef SOCKS_SO_SNDLOWAT_LVL
+
+/* SO_SNDLOWAT value */
+#undef SOCKS_SO_SNDLOWAT_NAME
+
+/* SO_SNDTIMEO IPv4 option */
+#undef SOCKS_SO_SNDTIMEO_IPV4
+
+/* SO_SNDTIMEO IPv4 option */
+#undef SOCKS_SO_SNDTIMEO_IPV6
+
+/* SO_SNDTIMEO protocol level */
+#undef SOCKS_SO_SNDTIMEO_LVL
+
+/* SO_SNDTIMEO value */
+#undef SOCKS_SO_SNDTIMEO_NAME
+
+/* SO_TIMESTAMP IPv4 option */
+#undef SOCKS_SO_TIMESTAMP_IPV4
+
+/* SO_TIMESTAMP IPv4 option */
+#undef SOCKS_SO_TIMESTAMP_IPV6
+
+/* SO_TIMESTAMP protocol level */
+#undef SOCKS_SO_TIMESTAMP_LVL
+
+/* SO_TIMESTAMP value */
+#undef SOCKS_SO_TIMESTAMP_NAME
+
+/* SO_TYPE IPv4 option */
+#undef SOCKS_SO_TYPE_IPV4
+
+/* SO_TYPE IPv4 option */
+#undef SOCKS_SO_TYPE_IPV6
+
+/* SO_TYPE protocol level */
+#undef SOCKS_SO_TYPE_LVL
+
+/* SO_TYPE value */
+#undef SOCKS_SO_TYPE_NAME
+
+/* SO_USELOOPBACK IPv4 option */
+#undef SOCKS_SO_USELOOPBACK_IPV4
+
+/* SO_USELOOPBACK IPv4 option */
+#undef SOCKS_SO_USELOOPBACK_IPV6
+
+/* SO_USELOOPBACK protocol level */
+#undef SOCKS_SO_USELOOPBACK_LVL
+
+/* SO_USELOOPBACK value */
+#undef SOCKS_SO_USELOOPBACK_NAME
+
+/* SO_USE_IFBUFS IPv4 option */
+#undef SOCKS_SO_USE_IFBUFS_IPV4
+
+/* SO_USE_IFBUFS IPv4 option */
+#undef SOCKS_SO_USE_IFBUFS_IPV6
+
+/* SO_USE_IFBUFS protocol level */
+#undef SOCKS_SO_USE_IFBUFS_LVL
+
+/* SO_USE_IFBUFS value */
+#undef SOCKS_SO_USE_IFBUFS_NAME
+
+/* TCP_CORK IPv4 option */
+#undef SOCKS_TCP_CORK_IPV4
+
+/* TCP_CORK IPv4 option */
+#undef SOCKS_TCP_CORK_IPV6
+
+/* TCP_CORK protocol level */
+#undef SOCKS_TCP_CORK_LVL
+
+/* TCP_CORK value */
+#undef SOCKS_TCP_CORK_NAME
+
+/* TCP_CWND_DF IPv4 option */
+#undef SOCKS_TCP_CWND_DF_IPV4
+
+/* TCP_CWND_DF IPv4 option */
+#undef SOCKS_TCP_CWND_DF_IPV6
+
+/* TCP_CWND_DF protocol level */
+#undef SOCKS_TCP_CWND_DF_LVL
+
+/* TCP_CWND_DF value */
+#undef SOCKS_TCP_CWND_DF_NAME
+
+/* TCP_CWND_IF IPv4 option */
+#undef SOCKS_TCP_CWND_IF_IPV4
+
+/* TCP_CWND_IF IPv4 option */
+#undef SOCKS_TCP_CWND_IF_IPV6
+
+/* TCP_CWND_IF protocol level */
+#undef SOCKS_TCP_CWND_IF_LVL
+
+/* TCP_CWND_IF value */
+#undef SOCKS_TCP_CWND_IF_NAME
+
+/* TCP_CWND IPv4 option */
+#undef SOCKS_TCP_CWND_IPV4
+
+/* TCP_CWND IPv4 option */
+#undef SOCKS_TCP_CWND_IPV6
+
+/* TCP_CWND protocol level */
+#undef SOCKS_TCP_CWND_LVL
+
+/* TCP_CWND value */
+#undef SOCKS_TCP_CWND_NAME
+
+/* TCP_EXP1 IPv4 usability */
+#undef SOCKS_TCP_EXP1_IPV4
+
+/* TCP_EXP1 IPv6 usability */
+#undef SOCKS_TCP_EXP1_IPV6
+
+/* TCP_EXP1 protocol level */
+#undef SOCKS_TCP_EXP1_LVL
+
+/* TCP_EXP1 symbolic name */
+#undef SOCKS_TCP_EXP1_NAME
+
+/* TCP_INIT_CWND IPv4 option */
+#undef SOCKS_TCP_INIT_CWND_IPV4
+
+/* TCP_INIT_CWND IPv4 option */
+#undef SOCKS_TCP_INIT_CWND_IPV6
+
+/* TCP_INIT_CWND protocol level */
+#undef SOCKS_TCP_INIT_CWND_LVL
+
+/* TCP_INIT_CWND value */
+#undef SOCKS_TCP_INIT_CWND_NAME
+
+/* TCP_IPA IPv4 usability */
+#undef SOCKS_TCP_IPA_IPV4
+
+/* TCP_IPA IPv6 usability */
+#undef SOCKS_TCP_IPA_IPV6
+
+/* TCP_IPA protocol level */
+#undef SOCKS_TCP_IPA_LVL
+
+/* TCP_IPA symbolic name */
+#undef SOCKS_TCP_IPA_NAME
+
+/* TCP_KEEPCNT IPv4 option */
+#undef SOCKS_TCP_KEEPCNT_IPV4
+
+/* TCP_KEEPCNT IPv4 option */
+#undef SOCKS_TCP_KEEPCNT_IPV6
+
+/* TCP_KEEPCNT protocol level */
+#undef SOCKS_TCP_KEEPCNT_LVL
+
+/* TCP_KEEPCNT value */
+#undef SOCKS_TCP_KEEPCNT_NAME
+
+/* TCP_KEEPIDLE IPv4 option */
+#undef SOCKS_TCP_KEEPIDLE_IPV4
+
+/* TCP_KEEPIDLE IPv4 option */
+#undef SOCKS_TCP_KEEPIDLE_IPV6
+
+/* TCP_KEEPIDLE protocol level */
+#undef SOCKS_TCP_KEEPIDLE_LVL
+
+/* TCP_KEEPIDLE value */
+#undef SOCKS_TCP_KEEPIDLE_NAME
+
+/* TCP_KEEPINTVL IPv4 option */
+#undef SOCKS_TCP_KEEPINTVL_IPV4
+
+/* TCP_KEEPINTVL IPv4 option */
+#undef SOCKS_TCP_KEEPINTVL_IPV6
+
+/* TCP_KEEPINTVL protocol level */
+#undef SOCKS_TCP_KEEPINTVL_LVL
+
+/* TCP_KEEPINTVL value */
+#undef SOCKS_TCP_KEEPINTVL_NAME
+
+/* TCP_LINGER2 IPv4 option */
+#undef SOCKS_TCP_LINGER2_IPV4
+
+/* TCP_LINGER2 IPv4 option */
+#undef SOCKS_TCP_LINGER2_IPV6
+
+/* TCP_LINGER2 protocol level */
+#undef SOCKS_TCP_LINGER2_LVL
+
+/* TCP_LINGER2 value */
+#undef SOCKS_TCP_LINGER2_NAME
+
+/* TCP_MAXRT IPv4 option */
+#undef SOCKS_TCP_MAXRT_IPV4
+
+/* TCP_MAXRT IPv4 option */
+#undef SOCKS_TCP_MAXRT_IPV6
+
+/* TCP_MAXRT protocol level */
+#undef SOCKS_TCP_MAXRT_LVL
+
+/* TCP_MAXRT value */
+#undef SOCKS_TCP_MAXRT_NAME
+
+/* TCP_MAXSEG IPv4 option */
+#undef SOCKS_TCP_MAXSEG_IPV4
+
+/* TCP_MAXSEG IPv4 option */
+#undef SOCKS_TCP_MAXSEG_IPV6
+
+/* TCP_MAXSEG protocol level */
+#undef SOCKS_TCP_MAXSEG_LVL
+
+/* TCP_MAXSEG value */
+#undef SOCKS_TCP_MAXSEG_NAME
+
+/* TCP_MD5SIG IPv4 option */
+#undef SOCKS_TCP_MD5SIG_IPV4
+
+/* TCP_MD5SIG IPv4 option */
+#undef SOCKS_TCP_MD5SIG_IPV6
+
+/* TCP_MD5SIG protocol level */
+#undef SOCKS_TCP_MD5SIG_LVL
+
+/* TCP_MD5SIG value */
+#undef SOCKS_TCP_MD5SIG_NAME
+
+/* TCP_NODELAYACK IPv4 option */
+#undef SOCKS_TCP_NODELAYACK_IPV4
+
+/* TCP_NODELAYACK IPv4 option */
+#undef SOCKS_TCP_NODELAYACK_IPV6
+
+/* TCP_NODELAYACK protocol level */
+#undef SOCKS_TCP_NODELAYACK_LVL
+
+/* TCP_NODELAYACK value */
+#undef SOCKS_TCP_NODELAYACK_NAME
+
+/* TCP_NODELAY IPv4 option */
+#undef SOCKS_TCP_NODELAY_IPV4
+
+/* TCP_NODELAY IPv4 option */
+#undef SOCKS_TCP_NODELAY_IPV6
+
+/* TCP_NODELAY protocol level */
+#undef SOCKS_TCP_NODELAY_LVL
+
+/* TCP_NODELAY value */
+#undef SOCKS_TCP_NODELAY_NAME
+
+/* TCP_NOOPT IPv4 option */
+#undef SOCKS_TCP_NOOPT_IPV4
+
+/* TCP_NOOPT IPv4 option */
+#undef SOCKS_TCP_NOOPT_IPV6
+
+/* TCP_NOOPT protocol level */
+#undef SOCKS_TCP_NOOPT_LVL
+
+/* TCP_NOOPT value */
+#undef SOCKS_TCP_NOOPT_NAME
+
+/* TCP_NOPUSH IPv4 option */
+#undef SOCKS_TCP_NOPUSH_IPV4
+
+/* TCP_NOPUSH IPv4 option */
+#undef SOCKS_TCP_NOPUSH_IPV6
+
+/* TCP_NOPUSH protocol level */
+#undef SOCKS_TCP_NOPUSH_LVL
+
+/* TCP_NOPUSH value */
+#undef SOCKS_TCP_NOPUSH_NAME
+
+/* TCP_NOREDUCE_CWND_EXIT_FRXMT IPv4 option */
+#undef SOCKS_TCP_NOREDUCE_CWND_EXIT_FRXMT_IPV4
+
+/* TCP_NOREDUCE_CWND_EXIT_FRXMT IPv4 option */
+#undef SOCKS_TCP_NOREDUCE_CWND_EXIT_FRXMT_IPV6
+
+/* TCP_NOREDUCE_CWND_EXIT_FRXMT protocol level */
+#undef SOCKS_TCP_NOREDUCE_CWND_EXIT_FRXMT_LVL
+
+/* TCP_NOREDUCE_CWND_EXIT_FRXMT value */
+#undef SOCKS_TCP_NOREDUCE_CWND_EXIT_FRXMT_NAME
+
+/* TCP_NOREDUCE_CWND_IN_FRXMT IPv4 option */
+#undef SOCKS_TCP_NOREDUCE_CWND_IN_FRXMT_IPV4
+
+/* TCP_NOREDUCE_CWND_IN_FRXMT IPv4 option */
+#undef SOCKS_TCP_NOREDUCE_CWND_IN_FRXMT_IPV6
+
+/* TCP_NOREDUCE_CWND_IN_FRXMT protocol level */
+#undef SOCKS_TCP_NOREDUCE_CWND_IN_FRXMT_LVL
+
+/* TCP_NOREDUCE_CWND_IN_FRXMT value */
+#undef SOCKS_TCP_NOREDUCE_CWND_IN_FRXMT_NAME
+
+/* TCP_NOTENTER_SSTART IPv4 option */
+#undef SOCKS_TCP_NOTENTER_SSTART_IPV4
+
+/* TCP_NOTENTER_SSTART IPv4 option */
+#undef SOCKS_TCP_NOTENTER_SSTART_IPV6
+
+/* TCP_NOTENTER_SSTART protocol level */
+#undef SOCKS_TCP_NOTENTER_SSTART_LVL
+
+/* TCP_NOTENTER_SSTART value */
+#undef SOCKS_TCP_NOTENTER_SSTART_NAME
+
+/* TCP_RFC1323 IPv4 option */
+#undef SOCKS_TCP_RFC1323_IPV4
+
+/* TCP_RFC1323 IPv4 option */
+#undef SOCKS_TCP_RFC1323_IPV6
+
+/* TCP_RFC1323 protocol level */
+#undef SOCKS_TCP_RFC1323_LVL
+
+/* TCP_RFC1323 value */
+#undef SOCKS_TCP_RFC1323_NAME
+
+/* TCP_SACK_ENABLE IPv4 option */
+#undef SOCKS_TCP_SACK_ENABLE_IPV4
+
+/* TCP_SACK_ENABLE IPv4 option */
+#undef SOCKS_TCP_SACK_ENABLE_IPV6
+
+/* TCP_SACK_ENABLE protocol level */
+#undef SOCKS_TCP_SACK_ENABLE_LVL
+
+/* TCP_SACK_ENABLE value */
+#undef SOCKS_TCP_SACK_ENABLE_NAME
+
+/* TCP_STDURG IPv4 option */
+#undef SOCKS_TCP_STDURG_IPV4
+
+/* TCP_STDURG IPv4 option */
+#undef SOCKS_TCP_STDURG_IPV6
+
+/* TCP_STDURG protocol level */
+#undef SOCKS_TCP_STDURG_LVL
+
+/* TCP_STDURG value */
+#undef SOCKS_TCP_STDURG_NAME
+
+/* TCP_SYNCNT IPv4 option */
+#undef SOCKS_TCP_SYNCNT_IPV4
+
+/* TCP_SYNCNT IPv4 option */
+#undef SOCKS_TCP_SYNCNT_IPV6
+
+/* TCP_SYNCNT protocol level */
+#undef SOCKS_TCP_SYNCNT_LVL
+
+/* TCP_SYNCNT value */
+#undef SOCKS_TCP_SYNCNT_NAME
+
+/* TCP_WINDOW_CLAMP IPv4 option */
+#undef SOCKS_TCP_WINDOW_CLAMP_IPV4
+
+/* TCP_WINDOW_CLAMP IPv4 option */
+#undef SOCKS_TCP_WINDOW_CLAMP_IPV6
+
+/* TCP_WINDOW_CLAMP protocol level */
+#undef SOCKS_TCP_WINDOW_CLAMP_LVL
+
+/* TCP_WINDOW_CLAMP value */
+#undef SOCKS_TCP_WINDOW_CLAMP_NAME
+
+/* UDP_CORK IPv4 option */
+#undef SOCKS_UDP_CORK_IPV4
+
+/* UDP_CORK IPv4 option */
+#undef SOCKS_UDP_CORK_IPV6
+
+/* UDP_CORK protocol level */
+#undef SOCKS_UDP_CORK_LVL
+
+/* UDP_CORK value */
+#undef SOCKS_UDP_CORK_NAME
+
+/* setproctitle replacement type */
+#undef SPT_TYPE
+
+/* Define to 1 if you have the ANSI C header files. */
+#undef STDC_HEADERS
+
+/* value of TCP_EXP1 */
+#undef TCP_EXP1
+
+/* value of TCP_IPA */
+#undef TCP_IPA
+
+/* Define to 1 if you can safely include both <sys/time.h> and <time.h>. */
+#undef TIME_WITH_SYS_TIME
+
+/* Number of unique errno numbers */
+#undef UNIQUE_ERRNO_VALUES
+
+/* Number of unique getaddrinfo() error numbers */
+#undef UNIQUE_GAIERR_VALUES
+
+/* Version number of package */
+#undef VERSION
+
+/* Define to 1 if `lex' declares `yytext' as a `char *' by default, not a
+   `char[]'. */
+#undef YYTEXT_POINTER
+
+/* contents from old AC_AIX test */
+#undef _ALL_SOURCE
+
+/* Enable large inode numbers on Mac OS X 10.5.  */
+#ifndef _DARWIN_USE_64_BIT_INODE
+# define _DARWIN_USE_64_BIT_INODE 1
+#endif
+
+/* Number of bits in a file offset, on hosts where this is settable. */
+#undef _FILE_OFFSET_BITS
+
+/* Define for large files, on AIX-style hosts. */
+#undef _LARGE_FILES
+
+/* bzero replacement */
+#undef bzero
+
+/* Define to empty if `const' does not conform to ANSI C. */
+#undef const
+
+/* use getpassphrase */
+#undef getpass
+
+/* Define to `int' if <sys/types.h> doesn't define. */
+#undef gid_t
+
+/* gss_nt_service_name replacement */
+#undef gss_nt_service_name
+
+/* Define to `__inline__' or `__inline' if that's what the C compiler
+   calls it, or to nothing if 'inline' is not supported under any name.  */
+#ifndef __cplusplus
+#undef inline
+#endif
+
+/* Define to `long int' if <sys/types.h> does not define. */
+#undef off_t
+
+/* Define to `int' if <sys/types.h> does not define. */
+#undef pid_t
+
+/* resolver options type */
+#undef res_options_type_t
+
+/* sa_len type */
+#undef sa_len_type
+
+/* Define to `unsigned int' if <sys/types.h> does not define. */
+#undef size_t
+
+/* platform workaround */
+#undef socklen_t
+
+/* Define to `int' if <sys/types.h> does not define. */
+#undef ssize_t
+
+/* Define to `int' if <sys/types.h> doesn't define. */
+#undef uid_t
+
+
+#include "redefac.h"
+

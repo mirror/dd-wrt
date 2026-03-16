@@ -1,0 +1,132 @@
+# $Id: UPGRADE,v 1.40 2013/10/25 12:54:59 karls Exp $
+
+This file describes the upgrade procedure from various versions of Dante,
+if any.  If nothing is mentioned for upgrading to a given version it
+means there are no changes relevant to upgrading.
+
+More extensive upgrade information for 1.4.x can also be found on the
+Dante 1.4.x configuration page:
+  http://www.inet.no/dante/doc/1.4.x/config/upgrade.html
+
+*** Upgrading from 1.3.2 to 1.4.0
+
+ o socks-rules now require a "socks" prefix (like client-rules require a
+   "client" prefix), and the socks "method" keyword has been renamed to
+   "socksmethod".
+
+ o The socket.recvbuf.udp, socket.sendbuf.udp, socket.recvbuf.tcp and
+   socket.sendbuf.tcp options have been deprecated and replaced with
+   a more general way to set socket options.
+
+   "socket.recvbuf.udp" can now be set by "<interface-side>.udp.so_rcvbuf"
+   "socket.sendbuf.udp" can now be set by "<interface-side>.udp.so_sndbuf"
+   "socket.recvbuf.tcp" can now be set by "<interface-side>.tcp.so_rcvbuf"
+   "socket.sendbuf.tcp" can now be set by "<interface-side>.tcp.so_sndbuf"
+
+   <interface-side> refers to either "internal", for Dante's internal
+   interface(s), or "external", for Dante's external interface(s).
+
+ o Fallback to direct (non-proxy) routes now defaults to off in the client,
+   as well as in the server.
+
+   To keep previous behaviour in the client, with direct route fallback
+   for destinations with no matching route, set SOCKS_DIRECTROUTE_FALLBACK
+   to "yes" in the environment, or ./configure with --enable-drt-fallback.
+
+   Direct fallback is enabled if there are no routes configured, and
+   disabled otherwise.
+
+ o The server is more strict about not using any other addresses
+   than the ones specified for the external interface in sockd.conf
+   ("external:").  Before it could in some cases just print a warning,
+   but still use the non-configured address.  Now the request will
+   actually be blocked too.
+
+   This only applies to configurations where "external.rotation" is set to
+   "route".
+
+ o In the server, the IPv6-compatible getnameinfo(3) and getaddrinfo(3)
+   functions are now used instead of gethostbyaddr(3) and gethostbyname(3).
+   The newer functions do not return hostname aliases (but only IP-address
+   aliases), so any sockd.conf which depends on hostname aliases will
+   no longer work.  IP-address aliases continue to work as before.
+
+ o The "child.maxidle" option has been removed because the server
+   now always removes idle children.
+
+ o The "--disable-libwrap" option has been renamed "--without-libwrap".
+
+ o SIGINFO/SIGUSR1 output is now logged at level info instead of level debug.
+
+ o The name printed when starting up has changed from "dante" to "Dante".
+
+ o Session limits are now by default inherited by from lower level ACL-rules.
+   To keep the old behavior, "session.inheritable: no" must be added to
+   each rule using session limits.
+   [only applies to customers using the session module.]
+
+ o The syntax for maxsessions has changed from "maxsessions: <value>"
+   to "session.max: <value>".
+   [only applies to customers using the session module.]
+
+ o The default timeout for tcp i/o (timeout.io.tcp) has been changed from
+   84000 to 0.  0 means use the kernels default, which in most cases will
+   mean no timeout.
+
+   The old behavior can be restored by adding the following line to
+   the server configuration file:
+      timeout.io.tcp: 84000
+
+ o GSSAPI "clear" is no longer enabled by default, as it is not part of the
+   SOCKS GSSAPI standard.
+
+   To have the GSSAPI encoding-type "clear" available, it is now
+   necessary to explicitly set the "gssapi.enctype" in rules and/or
+   routes as needed.  E.g. adding the below line would match what was
+   the default in previous versions of Dante:
+
+   """
+   gssapi.enctype: clear integrity confidentiality
+   """
+
+   The new default is: "gssapi.enctype: integrity confidentiality"
+
+*** Upgrading from 1.3.1 to 1.3.2
+
+ o If a proxy server (socks, http, or upnp) is configured via environment
+   variables, socks.conf is not parsed.
+
+ o The "HTTP_PROXY" environment variable has been renamed to
+   "HTTP_CONNECT_PROXY" to avoid conflict with HTTP proxies that do not
+   support the HTTP CONNECT request, but may be configured for use via
+   other programs using environment variables.
+
+*** Upgrading from 1.2.x to 1.3.0
+
+ o The HTTP_PROXY environment value must start with "http://".
+
+ o The "-d" (debug) option now requires a value, setting the debug level.
+   E.g., instead of "-d", one has to say "-d1", and instead of "-dd",
+   one has to say "-d2".
+
+ o Priority of proxy routes has changed, so that a socks v4 route is
+   now preferred over a socks v5 route when both can be used, because
+   v4 requests can be performed faster than v5 requests.
+
+ o "child.maxidle: yes" is now the default setting, meaning most idle
+   sockd child processes will be terminated automatically.
+
+ o The config.h variables MAX_ROUTE_FAILS and BADROUTE_EXPIRE are now
+   set in the configuration files instead of at compile time.
+   The values are "route.maxfail" and "route.badexpire" and control
+   how to handle bad routes (to e.g., a SOCKS/HTTP proxy server).
+
+ o Option ordering in sockd.conf is now enforced, rather than just
+   recommended.  Server options now always have to come before rules
+   and routes.
+
+ o The "srchost" parameter "nomismatch" has been renamed to "nodnsmismatch",
+   while "nounknown" has been renamed to "nodnsunknown".
+
+ o The default block rule no longer has logging of connect and iooperations
+   enabled.

@@ -1,0 +1,17 @@
+$Id: README.socksify,v 1.8 2009/10/27 12:00:12 karls Exp $
+
+The shell script socksify in the bin directory is meant to aid in
+using socks with already compiled dynamic binaries.  This works by
+setting the LD_PRELOAD environment variable to libdsocks.  It will
+then wrap all networking-related system calls.
+
+When used the script can socksify a program by simply giving it as a
+parameter to socksify:
+
+socksify ftp ftp.example.org
+
+For minimal setup, without any socks.conf file, specify the server
+address with the SOCKS_SERVER value (for a server supporting socks v4
+and socks v5).
+
+SOCKS_SERVER=10.0.0.1:1080 socksify ftp ftp.example.org

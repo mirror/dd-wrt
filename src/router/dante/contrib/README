@@ -1,0 +1,26 @@
+   This directory contains contributed files that are not
+   supported or maintained by Inferno Nettverk A/S.
+
+   They are included here in the hope that they may be useful
+   to someone.
+
+   If any of these are no longer working, please send
+   a bug-report so they can be removed.
+
+   If you have suggestions for improvements, please contact the author
+   of the contributed file, not Inferno Nettverk A/S.
+
+
+Filename            Description
+--------------------------------------------------------------------------------
+sockd-stat.awk      provides statistics based on sockd/barefootd logfiles.
+                    Note that this is an ancient script written by
+                    Stephan Eisvogel, who last updated this 10 years ago.
+                    A minimal update was done in 2011 by Inferno Nettverk
+                    in an attempt to sync it with changes to the logformat
+                    in Dante 1.2.3.
+
+StartupItems.Dante
+StartupParameters.plist
+                    Mac OS X StartupItem files.
+                    Written by Gerben Wierda, Gerben.Wierda@rna.nl.

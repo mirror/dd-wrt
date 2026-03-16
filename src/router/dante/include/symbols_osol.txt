@@ -1,0 +1,6 @@
+__xnet_bind
+__xnet_connect
+__xnet_listen
+__xnet_recvmsg
+__xnet_sendmsg
+__xnet_sendto

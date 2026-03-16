@@ -1,0 +1,88 @@
+#
+# enable automatic ldap server determination
+#
+        ldap.auto.off: no
+#
+# keytab used to authenticate to ldap server (can be the same as for gssapi)
+#
+        ldap.keytab: FILE:/opt/dante-1.2-ldap/etc/sockd.keytab
+#
+# ldap connection timeout
+#
+        ldap.timeout: 2
+#
+#  Is ssl required for "automagic" ldap connections
+#
+        ldap.ssl: yes
+#
+#  Is ssl certificate check required for ldap connections
+#
+        ldap.certcheck: no
+#
+#  Openldap ca certificate file
+#
+        ldap.certfile: /etc/ssl/certs/cert.pem
+#
+#  Sun/Mozilla LDAP SDK certificate database location
+#
+        ldap.certpath: /etc/certs
+#
+# openldap debug option
+#
+        ldap.debug: 0
+#
+#  When comparing usernames with ldap users should the Kerberos realm be compared too ?
+#
+        ldap.keeprealm: no
+#
+#  LDAP urls to use if  "automagic" ldap determination fails or username does not contain domain/realm name
+#   ldap(s)://<username>:<password>@<Host:Port>/<basedn>
+#
+        ldap.url: ldap://cn=M M,OU=People,DC=SUSE,DC=HOME:Mypwd@opensuse.suse.home/dc=SUSE dc=home
+        ldap.url: ldaps://cn=m,CN=Users,DC=Win2003R2,DC=HOME:Mypwd@w2k3r2.win2003r2.home:636/dc=Win2003R2 dc=home
+
+#
+# Set bindpath for either "automagic" ldap connections or urls above
+#
+        ldap.basedn: dc=WIN2003R2, dc=HOME
+#
+# ldap filter for Openldap server (assumes rfc2307bis schema) or active directory
+#
+# Openldap: With a rfc2307bis schema the group membership is based on
+#                 primary or secondary group membership (e.g. like normal unix accounts)
+#
+# Active Directory: The group membership is determined by the memberof attribute. Any group
+#                          membership is recursively followed to the top.
+#
+#  %s = username
+#
+         ldap.filter: (memberuid=%s)
+         ldap.filter.ad: (samaccountname=%s)
+#
+# ldap attribute for Openldap server or active directory
+#
+         ldap.attribute: cn
+         ldap.attribute.ad: memberof
+#
+#  List of groups per domain/realm
+#       <group>       means use group for usernames with any domain name and usernames which do not have a domain/realm
+#       <group@>      means use group for usernames with any domain name but not for usernames without a domain/realm
+#       <group@REALM> means use group for usernames with domain REALM
+#
+#        ldap.group: test1@REALM row2@DOMAIN2 test2@REALM test1@REALM2 test3@  SQUID_ALLOW@SUSE.HOME  test4 SQUID_ALLOW@WIN2003R2.HOME
+        ldap.group: SQUID_ALLOW
+#
+# Time (in sec) to cache successful/failed ldap searches
+#
+        ldap.cache: 3600
+        ldap.cache.neg: 3600
+        ldap.cache.pos: 3600
+#
+# Time (in sec) to cache failed ldap server connects
+#
+        ldap.deadtime: 30
+
+#
+# Time (in sec) an ldap search can take
+#
+        ldap.searchtime: 30

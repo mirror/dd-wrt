@@ -1,0 +1,76 @@
+$Id: README.usage,v 1.11 2012/12/31 20:51:30 karls Exp $
+
+The socks package can be used in two ways.
+
+Dynamically
+
+	The simplest way to add socks support to an already
+(dynamically) complied application is to use the LD_PRELOAD facility
+to replace the standard library functions with socksified ones.  The
+libdsocks library is provided for this purpose.  See the
+README.socksify file for more information.  This will probably only
+work with non-setuid applications since LD_PRELOAD is usually ignored
+otherwise.  If setting LD_PRELOAD is not possible, compilation is
+another possibility.
+
+	If the application can be compiled dynamically socks support
+can be added explicitly by linking with libdsocks (usually done by adding
+'-ldsocks').  This will automagically give the application socks
+support without making any code changes.
+
+Static Compilation
+
+	If the source code for an application is available it can be
+changed to use socks, even if it is not linked dynamically.
+Several system calls and library calls must be changed to use the
+socksified versions instead of the standard ones.  The application
+is then linked with the libsocks library in the distribution (-lsocks,
+not -ldsocks).
+
+These function calls can be found in the socks library:
+Raccept
+Rbind
+Rbindresvport
+Rconnect
+Rgetaddrinfo
+Rgethostbyname
+Rgethostbyname2
+Rgetipnodebyname
+Rgetpeername
+Rgetsockname
+Rlisten
+Rread
+Rreadv
+Rrecv
+Rrecvfrom
+Rrecvfrom
+Rrecvmsg
+Rrresvport
+Rsend
+Rsendmsg
+Rsendto
+Rwrite
+Rwritev
+
+These calls currently does nothing and are only provided for
+compatibility with programs which use them:
+Rselect
+SOCKSinit
+
+The source can either be modified directly, or by using defines to
+change the source during compilation, as following:
+
+Either add this line to the command compilation line (e.g. CFLAGS):
+-Dconnect=Rconnect -Dbind=Rbind -Dgetsockname=Rgetsockname -Dgetpeername=Rgetpeername -Daccept=Raccept -Drresvport=Rrresvport -Dbindresvport=Rbindresvport -Dgethostbyname=Rgethostbyname -Dgethostbyname2=Rgethostbyname2 -Dsendto=Rsendto -Drecvfrom=Rrecvfrom -Drecvfrom=Rrecvfrom -Dwrite=Rwrite -Dwritev=Rwritev -Dlisten=Rlisten -Dsend=Rsend -Dsendmsg=Rsendmsg -Dread=Rread -Dreadv=Rreadv -Drecv=Rrecv -Drecvmsg=Rrecvmsg -Dgetaddrinfo=Rgetaddrinfo -Dgetipnodebyname=Rgetipnodebyname
+
+or add "include <socks.h>" to every C file in the program you are
+compiling.
+
+
+
+Libraries
+	In total there are three libraries distributed with this package:
+
+ libsocks.so  - standard shared library, contains Rfoo type functions.
+ libsocks.a   - static version of the above.
+ libdsocks.so - shared library which does "on the fly" socksification.

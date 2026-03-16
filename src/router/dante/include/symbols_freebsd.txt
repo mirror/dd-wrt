@@ -1,0 +1,17 @@
+_accept
+_bind
+_connect
+_getpeername
+_getsockname
+_getsockopt
+_listen
+_read
+_readv
+_recv
+_recvfrom
+_recvmsg
+_send
+_sendmsg
+_sendto
+_write
+_writev

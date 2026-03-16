@@ -1,0 +1,399 @@
+# $Id: INSTALL,v 1.46 2013/10/27 15:24:41 karls Exp $
+
+This file describes how to install Dante.  Dante is a Socks client
+and server firewall implementation.  It can be installed on a machine
+with access to a external TCP/IP network and will allow all other
+machines, without direct access to that network, to be relayed through
+the machine the Dante server is running on.  The external network
+will never see any other machines than the one Dante is running on.
+
+
+INSTALLATION
+
+
+Basic Installation
+==================
+
+   These are generic installation instructions.
+
+   The `configure' shell script attempts to guess correct values for
+various system-dependent variables used during compilation.  It uses
+those values to create a `Makefile' in each directory of the package.
+It may also create one or more `.h' files containing system-dependent
+definitions.  Finally, it creates a shell script `config.status' that
+you can run in the future to recreate the current configuration, a file
+`config.cache' that saves the results of its tests to speed up
+reconfiguring, and a file `config.log' containing compiler output
+(useful mainly for debugging `configure').
+
+   If you need to do unusual things to compile the package, please try
+to figure out how `configure' could check whether to do them, and mail
+diffs or instructions to the address given in the `README' so they can
+be considered for the next release.  If at some point `config.cache'
+contains results you do not want to keep, you may remove or edit it.
+
+   The file `configure.in' is used to create `configure' by a program
+called `autoconf'.  You only need `configure.in' if you want to change
+it or regenerate `configure' using a newer version of `autoconf'.
+
+The simplest way to compile this package is:
+
+  0. If compiling for use with a commercial module, first extract the
+     `INSTALL' file from the module archive and follow the
+     instructions there.
+
+  1. `cd' to the directory containing the package's source code and type
+     `./configure' to configure the package for your system.  If you're
+     using `csh' on an old version of System V, you might need to type
+     `sh ./configure' instead to prevent `csh' from trying to execute
+     `configure' itself.
+
+     Running `configure' takes awhile.  While running, it prints some
+     messages telling which features it is checking for.
+
+  2. Type `make' to compile the package.
+
+  3. Optionally, type `make check' to run any self-tests that come with
+     the package.
+
+  4. Type `make install' to install the programs and any data files and
+     documentation.
+
+  5. Test the server and clients for some days or more.
+
+  6. That's it.  To report success:
+     $ kill -USR1 `cat /var/run/sockd.pid`
+
+     # the above command should produce some server statistics in your
+     # logfile, save it to the file 'stats'.  If you are only using
+     # client, skip the 'stats' file but do the rest please.
+     # If you should have any objections to being mentioned by name
+     # please mention that.
+
+     $ (echo '<Firstname> <Lastname>'; cat stats include/autoconf.h) \
+     | mail dante-qst@inet.no
+
+
+Compilers and Options
+=====================
+
+   Some systems require unusual options for compilation or linking that
+the `configure' script does not know about.  You can give `configure'
+initial values for variables by setting them in the environment.  Using
+a Bourne-compatible shell, you can do that on the command line like
+this:
+     CC=c89 CFLAGS=-O2 LIBS=-lposix ./configure
+
+     CPPFLAGS="-I/usr/local/include" LDFLAGS="-L/usr/local/lib" ./configure
+
+Or on systems that have the `env' program, you can do it like this:
+     env CPPFLAGS=-I/usr/local/include LDFLAGS=-s ./configure
+
+Compiling For Multiple Architectures
+====================================
+
+   You can compile the package for more than one kind of computer at the
+same time, by placing the object files for each architecture in their
+own directory.  To do this, you must use a version of `make' that
+supports the `VPATH' variable, such as GNU `make'.  `cd' to the
+directory where you want the object files and executables to go and run
+the `configure' script.  `configure' automatically checks for the
+source code in the directory that `configure' is in and in `..'.
+
+   If you have to use a `make' that does not supports the `VPATH'
+variable, you have to compile the package for one architecture at a time
+in the source code directory.  After you have installed the package for
+one architecture, use `make distclean' before reconfiguring for another
+architecture.
+
+Installation Names
+==================
+
+   By default, `make install' will install the package's files in
+`/usr/local/bin', `/usr/local/man', etc.  You can specify an
+installation prefix other than `/usr/local' by giving `configure' the
+option `--prefix=PATH'.
+
+   You can specify separate installation prefixes for
+architecture-specific files and architecture-independent files.  If you
+give `configure' the option `--exec-prefix=PATH', the package will use
+PATH as the prefix for installing programs and libraries.
+Documentation and other data files will still use the regular prefix.
+
+   In addition, if you use an unusual directory layout you can give
+options like `--bindir=PATH' to specify different values for particular
+kinds of files.  Run `configure --help' for a list of the directories
+you can set and what kinds of files go in them.
+
+   If the package supports it, you can cause programs to be installed
+with an extra prefix or suffix on their names by giving `configure' the
+option `--program-prefix=PREFIX' or `--program-suffix=SUFFIX'.
+
+Optional Features
+=================
+
+   Some packages pay attention to `--enable-FEATURE' options to
+`configure', where FEATURE indicates an optional part of the package.
+They may also pay attention to `--with-PACKAGE' options, where PACKAGE
+is something like `gnu-as' or `x' (for the X Window System).  The
+`README' should mention any `--enable-' and `--with-' options that the
+package recognizes.
+
+Specifying the System Type
+==========================
+
+   There may be some features `configure' can not figure out
+automatically, but needs to determine by the type of host the package
+will run on.  Usually `configure' can figure that out, but if it prints
+a message saying it can not guess the host type, give it the
+`--host=TYPE' option.  TYPE can either be a short name for the system
+type, such as `sun4', or a canonical name with three fields:
+     CPU-COMPANY-SYSTEM
+
+See the file `config.sub' for the possible values of each field.  If
+`config.sub' is not included in this package, then this package does not
+need to know the host type.
+
+   If you are building compiler tools for cross-compiling, you can also
+use the `--target=TYPE' option to select the type of system they will
+produce code for and the `--build=TYPE' option to select the type of
+system on which you are compiling the package.
+
+Sharing Defaults
+================
+
+   If you want to set default values for `configure' scripts to share,
+you can create a site shell script called `config.site' that gives
+default values for variables like `CC', `cache_file', and `prefix'.
+`configure' looks for `PREFIX/share/config.site' if it exists, then
+`PREFIX/etc/config.site' if it exists.  Or, you can set the
+`CONFIG_SITE' environment variable to the location of the site script.
+A warning: not all `configure' scripts look for a site script.
+
+Operation Controls
+==================
+
+   `configure' recognizes the following options to control how it
+operates.
+
+`--cache-file=FILE'
+     Use and save the results of the tests in FILE instead of
+     `./config.cache'.  Set FILE to `/dev/null' to disable caching, for
+     debugging `configure'.
+
+`--help'
+     Print a summary of the options to `configure', and exit.
+
+`--quiet'
+`--silent'
+`-q'
+     Do not print messages saying which checks are being made.  To
+     suppress all normal output, redirect it to `/dev/null' (any error
+     messages will still be shown).
+
+`--srcdir=DIR'
+     Look for the package's source code in directory DIR.  Usually
+     `configure' can determine that directory automatically.
+
+`--version'
+     Print the version of Autoconf used to generate the `configure'
+     script, and exit.
+
+`configure' also accepts some other, not widely useful, options.
+
+Program Specific configure options
+==================================
+
+These `configure' options are also supported (run `configure' with
+`--help' to list all options.
+
+`--enable-debug'
+     Compile with extra debugging information.
+
+`--enable-livedebug'
+     For debugging of problems in production environments; provides
+     information that allows serious errors to be analyzed without
+     aborting the application or having to enable debug log output.
+
+`--enable-warnings'
+     Compiles the package with '-Wall'; shows more compiler warnings.
+
+`--enable-diagnostics'
+     Compiles with diagnostics enabled.
+
+`--enable-profiling'
+     Build the libraries and the server with profiling.
+
+`--enable-coverage'
+     Build with code coverage. Recommended used with --enable-debug and
+     --enable-profiling.
+
+`--enable-linting'
+     Run lint when compiling the source-code.
+
+`--disable-client'
+     Disable SOCKS client compilation (only SOCKS server will be built).
+
+`--disable-server'
+     Disable SOCKS server compilation (only SOCKS client will be built).
+
+`--disable-libwrap'
+     Disable test for libwrap.  Makes no difference if libwrap does
+     not exist on the local system.
+
+`--disable-pidfile'
+     Disable creation by the server of a file with the process id of
+     the main server process.
+
+`--disable-largefile'
+     Disable support for large files.
+
+`--disable-preload'
+     Do not build libdsocks.  The dynamic socks library might not work
+     properly on all architectures.  This option disables building of
+     the library. Also disables it's use in the server.
+
+`--disable-clientdl'
+     Disable building of libdsocks, used by the socksify application.
+
+`--disable-serverdl'
+     Enable the use of the libdsocks functionality in the server. Will
+     allow the use of the hostcache code with libwrap. On by default
+     when libwrap is found and not disabled, off by default otherwise.
+
+`--disable-drt-fallback'
+     The socksify application will generally attempt to connect
+     directly to machines on the same network as the client, rather
+     than going through the socks server, by creating direct routes.
+     This option disables this behavior, but is not recommended for
+     general use.
+
+`--with-socks-conf=FILE'
+     Read the library configuration file from FILE instead of
+     /etc/socks.conf.
+
+`--with-sockd-conf=FILE'
+     Read the server configuration file from FILE instead of
+     /etc/sockd.conf.
+
+`--with-pidfile=FILE'
+     Write the server process id into FILE instead of
+     /var/run/sockd.pid.
+
+`--with-libc=NAME'
+     Manually set the name of libc. Should never be needed, but can be
+     use if configure is unable to correctly find the name.
+
+`--with-bufsize=NUMBER'
+     Override the default SOCKD_BUFSIZE value. This can be done to tune
+     the Dante server. See include/config.h for details.
+
+`--with-iomax=NUMBER'
+     Override the default SOCKD_IOMAX value. This can be done to tune
+     the Dante server, by changing the number of clients that each
+     io process will handle. A high value will reduce the number of
+     processes running on a machine with many clients.
+
+`--with-negmax=NUMBER'
+     Override the default SOCKD_NEGOTIATEMAX value. This can be done
+     to tune the Dante server, by changing the number of clients that
+     each negotiate process will handle. A high value will reduce the
+     number of processes running on a machine with many clients.
+
+`--without-upnp'
+     Always disable support for the UPnP proxy protocol.
+
+`--without-pam'
+     Always compile without Pluggable Authentication Modules (PAM)
+     support in the server.
+
+`--without-gssapi'
+     Always compile without support for the Generic Security Services
+     Application Program Interface (GSSAPI) for authentication between
+     the server and client.
+
+`--with-gssapi-path=PATH'
+     Used to specify the location of GSSAPI files.
+
+`--with-krb5-config=PATH'
+     Can be used to specify the location of the krb5-config
+     application if it exists outside the standard path. The program
+     is only used if GSSAPI support is enabled.
+
+`--without-glibc-secure'
+     Prevents the system from using the libc_enable_secure glibc
+     variable as a replacement for the issetugid() system call, which
+     might be problematic for package creation.
+
+     This option, if used on a platform that lacks issetugid(), will
+     essentially make unavailable the environment variable SOCKS_CONF,
+     which can be used to specify an alternate configuration file for
+     the client. If will however still be possible to use variables
+     such as SOCKS_SERVER, unless the --without-full-env option is
+     also used.
+
+     This option is only needed on Linux/glibc systems.
+
+`--without-full-env'
+     This parameter limits the environment variables that can be used
+     by the client, essentially forcing the system /etc/socks.conf
+     file to be used. The following variables are ignored when this
+     parameter is used:
+
+      SOCKS_AUTOADD_LANROUTES
+      SOCKS_LOGOUTPUT
+      SOCKS_SERVER
+      SOCKS4_SERVER
+      SOCKS5_SERVER
+      TMPDIR
+      HTTP_PROXY
+      UPNP_IGD
+
+     The following variables are always available, even when
+     --without-full-env is used:
+
+      SOCKS_BINDLOCALONLY
+      SOCKS_DEBUG
+      SOCKS_DIRECTROUTE_FALLBACK
+      SOCKS_DISABLE_THREADLOCK
+      SOCKS_PASSWD
+      SOCKS_PASSWORD
+      SOCKS_USER
+      SOCKS_USERNAME
+      SOCKS5_PASSWD
+      SOCKS5_USER
+
+     The following variable is always disabled for setu/gid programs
+     (on platforms that support issetugid()), and always disabled on
+     platforms that lack the issetugid() system call. On Linux, it
+     will still be available, as long as the --without-glibc-secure
+     parameter is not used.
+
+      SOCKS_CONF
+
+
+FURTHER CONFIGURATION
+
+The file include/config.h contains defines you might wish to
+change, but generally this should not be needed.
+
+RUNTIME CONFIGURATION FILES
+
+No configuration-files are installed, these must be installed
+manually.
+The Dante server expects it's configuration file to be in /etc/sockd.conf.
+The client library uses the file /etc/socks.conf.
+
+The file bin/socksify.sh contains a shell script that allows one
+to dynamically socksify a dynamically linked application at runtime.
+The program can be installed as /usr/local/bin/socksify on platforms
+where it works, but is not installed by default.
+
+REPORTING PROBLEMS
+
+Please report any bugs, problems or enhancements to dante-bugs@inet.no
+
+The WWW home page for Dante is located at: http://www.inet.no/dante/
+
+Copyright (c) 1998, 1999, 2000, 2009, 2011, 2012, 2013
+ Inferno Nettverk A/S, Norway.
