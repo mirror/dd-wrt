@@ -218,6 +218,7 @@
 #endif /* HAVE_STDDEF_H */
 
 #if HAVE_PTHREAD_H
+#define _GNU_SOURCE
 #include <pthread.h>
 #endif /* HAVE_PTHREAD_H */
 

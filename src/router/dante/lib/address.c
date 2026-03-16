@@ -48,10 +48,11 @@
 
 #include "upnp.h"
 
-#ifndef __USE_GNU
-#define __USE_GNU /* XXX for RTLD_NEXT on Linux */
-#endif /* !__USE_GNU */
 #include <dlfcn.h>
+
+#ifndef RTLD_NEXT
+#define RTLD_NEXT  ((void *) -1l)
+#endif
 
 static const char rcsid[] =
 "$Id: address.c,v 1.288.4.4.6.4.4.1 2024/11/21 10:22:42 michaels Exp $";

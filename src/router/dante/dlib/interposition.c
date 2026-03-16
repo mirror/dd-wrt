@@ -93,12 +93,12 @@ write$NOCANCEL(HAVE_PROT_WRITE_1, HAVE_PROT_WRITE_2, HAVE_PROT_WRITE_3);
 
 #endif /* HAVE_DARWIN */
 
-#ifndef __USE_GNU
-#define __USE_GNU /* XXX for RTLD_NEXT on Linux */
-#endif /* !__USE_GNU */
-
 
 #include <dlfcn.h>
+
+#ifndef RTLD_NEXT
+#define RTLD_NEXT  ((void *) -1l)
+#endif
 
 #ifdef __COVERITY__
 /*
