@@ -416,6 +416,7 @@ include rules/elfutils.mk
 include rules/libbpf.mk
 include rules/musl-fts.mk
 include rules/argp-standalone.mk
+include rules/dante.mk
 
 #
 # Generic rules
