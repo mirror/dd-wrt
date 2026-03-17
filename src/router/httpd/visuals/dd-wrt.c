@@ -1655,7 +1655,7 @@ static void show_netmode(webs_t wp, char *prefix)
 	if (is_morse_micro(prefix)) {
 		websWrite(wp, "document.write(\"<option value=\\\"mixed\\\" %s>\" + wl_basic.ah + \"</option>\");\n",
 			  nvram_match(wl_net_mode, "mixed") ? "selected=\\\"selected\\\"" : "");
-
+	} else {
 		if (!has_ad(prefix))
 			websWrite(wp, "document.write(\"<option value=\\\"mixed\\\" %s>\" + wl_basic.mixed + \"</option>\");\n",
 				  nvram_match(wl_net_mode, "mixed") ? "selected=\\\"selected\\\"" : "");
