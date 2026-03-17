@@ -159,24 +159,7 @@ ifdef NEED_LINUX_IOCTL
 DRV_OBJS += src/drivers/linux_ioctl.c
 endif
 
-ifdef NEED_LIBNL
-ifdef CONFIG_LIBNL32
-  DRV_LIBS += -lnl-3
-  DRV_LIBS += -lnl-genl-3
-  DRV_CFLAGS += -I/usr/include/libnl3
-ifdef CONFIG_LIBNL3_ROUTE
-  DRV_LIBS += -lnl-route-3
-  DRV_CFLAGS += -DCONFIG_LIBNL3_ROUTE
-endif
-else
-  ifdef CONFIG_LIBNL_TINY
-    DRV_LIBS += -lnl-tiny
-  else
-    DRV_LIBS += -lnl
-    DRV_LIBS += -lnl-genl
-  endif
-endif
-endif
+DRV_LIBS += -lnl-tiny
 
 ##### COMMON VARS
 DRV_BOTH_CFLAGS := $(DRV_CFLAGS) $(DRV_WPA_CFLAGS) $(DRV_AP_CFLAGS)
