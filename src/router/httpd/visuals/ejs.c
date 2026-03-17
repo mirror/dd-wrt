@@ -2030,7 +2030,7 @@ EJ_VISIBLE void ej_getwirelessnetmode(webs_t wp, int argc, char_t **argv)
 	if (nvram_match(netmode, "disabled") || nvram_match(mode, "disabled"))
 		websWrite(wp, "Capture(share.disabled)");
 	else {
-		if (has_morse_micro(ifname)) {
+		if (is_morse_micro(ifname)) {
 			if (nvram_match(netmode, "mixed"))
 				websWrite(wp, "Capture(wl_basic.ah)");
 

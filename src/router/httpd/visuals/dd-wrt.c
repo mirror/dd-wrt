@@ -1652,7 +1652,7 @@ static void show_netmode(webs_t wp, char *prefix)
 	websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
 	websWrite(wp, "document.write(\"<option value=\\\"disabled\\\" %s>\" + share.disabled + \"</option>\");\n",
 		  nvram_match(wl_net_mode, "disabled") ? "selected=\\\"selected\\\"" : "");
-	if (has_morse_micro(prefix)) {
+	if (is_morse_micro(prefix)) {
 		websWrite(wp, "document.write(\"<option value=\\\"mixed\\\" %s>\" + wl_basic.ah + \"</option>\");\n",
 			  nvram_match(wl_net_mode, "mixed") ? "selected=\\\"selected\\\"" : "");
 
