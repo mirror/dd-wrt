@@ -2259,7 +2259,11 @@ static void supplicant_common_mesh(FILE *fp, const char *prefix, char *ssidoverr
 	} else
 		fprintf(fp, "\tmode=1\n");
 	fprintf(fp, "\tfixed_freq=1\n");
-	fprintf(fp, "\tfrequency=%d\n", freq);
+	if (is_morse_micro(prefix)) {
+		fprintf(fp, "\tchannel=%d\n", ieee80211_mhz2ieee(prefix, morse_translate(freq)));
+	} else {
+		fprintf(fp, "\tfrequency=%d\n", freq);
+	}
 	sprintf(bw, "%s_channelbw", prefix);
 	sprintf(ht, "20");
 	int iht, channeloffset;
@@ -2276,8 +2280,8 @@ static void supplicant_common_mesh(FILE *fp, const char *prefix, char *ssidoverr
 		fprintf(fp, "\thtmode=HT%s\n", ht);
 	if (is_morse_micro(prefix)) {
 		const char *country = getRegionCode(nvram_default_get("wlan0_regdomain", "UNITED_STATES"));
-		fprintf(fp, "country=%s\n", country);
-		fprintf(fp, "op_class=%d\n", morse_opclass(nvram_ngeti("%s_channel", prefix)));
+		fprintf(fp, "\tcountry=%s\n", country);
+		fprintf(fp, "\top_class=%d\n", morse_opclass(nvram_ngeti("%s_channel", prefix)));
 		/*		char shortgi[32];
 		sprintf(shortgi, "%s_shortgi", prefix);
 		if (nvram_default_matchi(shortgi, 1, 1))
@@ -2288,9 +2292,9 @@ static void supplicant_common_mesh(FILE *fp, const char *prefix, char *ssidoverr
 		char bw[32];
 		sprintf(bw, "%s_channelbw", prefix);
 		if (nvram_matchi(bw, 80) || nvram_matchi(bw, 160))
-			fprintf(fp, "s1g_prim_chwidth=1\n");
+			fprintf(fp, "\ts1g_prim_chwidth=1\n");
 		else
-			fprintf(fp, "s1g_prim_chwidth=0\n");
+			fprintf(fp, "\ts1g_prim_chwidth=0\n");
 		int b = 1;
 		if (nvram_matchi(bw, 160))
 			b = 8;
@@ -2298,7 +2302,7 @@ static void supplicant_common_mesh(FILE *fp, const char *prefix, char *ssidoverr
 			b = 4;
 		if (nvram_matchi(bw, 40))
 			b = 2;
-		fprintf(fp, "s1g_prim_1mhz_chan_index=%d\n", (b - 1) / 2);
+		fprintf(fp, "\ts1g_prim_1mhz_chan_index=%d\n", (b - 1) / 2);
 	}
 	/* todo. consider mode configuration */
 	if (nvram_match(bw, "80") || nvram_match(bw, "80+80") || nvram_match(bw, "160")) {
