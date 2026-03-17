@@ -2099,6 +2099,7 @@ wl_basic.clientRelaydDefaultGwMode="기본 GW 모드";
 wl_basic.b="B-Only";
 wl_basic.a="A-Only";
 wl_basic.ac="AC-Only";
+wl_basic.ah="AH-Only";
 wl_basic.acn="AC/N-Mixed";
 wl_basic.na="NA-Mixed";
 wl_basic.ng="NG-Mixed";

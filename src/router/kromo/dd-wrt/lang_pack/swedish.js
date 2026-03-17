@@ -1800,6 +1800,7 @@ wl_basic.preamble="Kort Preamble";
 wl_basic.b="B-Endast";
 wl_basic.a="A-Endast";
 wl_basic.ac="AC-Endast";
+wl_basic.ah="AH-Endast";
 wl_basic.na="NA-Mixat";
 wl_basic.ng="NG-Mixat";
 wl_basic.n5="N-Endast (5 GHz)";

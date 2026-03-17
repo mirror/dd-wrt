@@ -2825,6 +2825,7 @@ wl_basic.b="Nur-B";
 wl_basic.a="Nur-A";
 wl_basic.na="NA-Gemischt";
 wl_basic.ac="Nur-AC";
+wl_basic.ah="Nur-AH";
 wl_basic.acn="AC/N-Gemischt";
 wl_basic.ax="Nur-AX";
 wl_basic.ax6="Nur-AX (6 GHz)";

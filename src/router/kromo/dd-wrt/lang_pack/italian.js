@@ -2359,6 +2359,7 @@ wl_basic.clientRelaydDefaultGwMode="Default GW Mode";
 wl_basic.b="Solo-B";
 wl_basic.a="Solo-A";
 wl_basic.ac="Solo-AC";
+wl_basic.ah="Solo-AH";
 wl_basic.na="Misto-NA";
 wl_basic.ng="Misto-NG";
 wl_basic.n5="Solo-N (5 GHz)";

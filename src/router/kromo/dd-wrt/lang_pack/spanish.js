@@ -1875,6 +1875,7 @@ wl_basic.preamble="Preámbulo corto";
 wl_basic.b="Sólo-B";
 wl_basic.a="Sólo-A";
 wl_basic.ac="Sólo-AC";
+wl_basic.ah="Sólo-AH";
 wl_basic.na="Mixto-NA";
 wl_basic.ng="Mixto-NG";
 wl_basic.n5="Sólo-N (5 GHz)";

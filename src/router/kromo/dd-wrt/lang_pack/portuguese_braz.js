@@ -2089,6 +2089,7 @@ wl_basic.clientRelaydDefaultGwMode="Modo GW Padrão";
 wl_basic.b="Somente-B";
 wl_basic.a="Somente-A";
 wl_basic.ac="Somente-AC";
+wl_basic.ah="Somente-AH";
 wl_basic.na="NA-Misto";
 wl_basic.ng="NG-Misto";
 wl_basic.n5="Somente-N (5 GHz)";

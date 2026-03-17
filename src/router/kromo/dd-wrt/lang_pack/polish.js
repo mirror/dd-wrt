@@ -2840,6 +2840,7 @@ wl_basic.b="Tylko B";
 wl_basic.a="Tylko A";
 wl_basic.ac="Tylko AC";
 wl_basic.ad="Tylko AD";
+wl_basic.ah="Tylko AH";
 wl_basic.acn="Mieszany AC/N";
 wl_basic.na="Mieszany NA";
 wl_basic.ng="Mieszany NG";

@@ -1972,6 +1972,7 @@ wl_basic.clientRelaydDefaultGwMode="Mode GW per Defecte";
 wl_basic.b="Només B";
 wl_basic.a="Només A";
 wl_basic.ac="Només AC";
+wl_basic.ah="Només AH";
 wl_basic.na="Mixt NA";
 wl_basic.ng="Mixt NG";
 wl_basic.n5="Només N (5 GHz)";

@@ -2177,6 +2177,7 @@ wl_basic.clientRelaydDefaultGwMode="默认网关模式";
 wl_basic.b="仅B";
 wl_basic.a="仅A";
 wl_basic.ac="仅AC";
+wl_basic.ah="仅AH";
 wl_basic.ad="仅AD";
 wl_basic.acn="AC/N混合";
 wl_basic.na="仅NA";

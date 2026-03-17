@@ -2805,6 +2805,7 @@ wl_basic.clientRelaydDefaultGwMode="Výchozí režim brány";
 wl_basic.b="B-Pouze";
 wl_basic.a="A-Pouze";
 wl_basic.ac="AC-Pouze";
+wl_basic.ah="AH-Pouze";
 wl_basic.ad="AD-Pouze";
 wl_basic.acn="AC/N-Smíšený";
 wl_basic.na="NA-Smíšený";

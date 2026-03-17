@@ -1847,6 +1847,7 @@ wl_basic.preamble="Korte Aanloop";
 wl_basic.b="Alleen-B";
 wl_basic.a="Alleen-A";
 wl_basic.ac="Alleen-AC";
+wl_basic.ah="Alleen-AH";
 wl_basic.na="NA-Gemengd";
 wl_basic.ng="NG-Gemengd";
 wl_basic.n5="Alleen-N (5 GHz)";
