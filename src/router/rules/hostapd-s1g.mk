@@ -1,4 +1,5 @@
 hostapd-s1g:
+	cp -uvf shared/nl80211.h hostapd_s1g/src/drivers/nl80211_copy.h
 	$(MAKE) -C hostapd_s1g/hostapd 
 
 hostapd-s1g-clean:
