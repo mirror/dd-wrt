@@ -12,6 +12,10 @@
 
 #include <linux/stddef.h>
 #include <linux/kernel.h>
+#include <linux/version.h>
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(7, 0, 0)
+#include <linux/hex.h>
+#endif
 #include <linux/module.h>
 #include <linux/compiler.h>
 #include <linux/fs.h>
@@ -19,7 +23,6 @@
 #include <linux/smp.h>
 #include <linux/pagemap.h>
 #include <linux/uidgid.h>
-#include <linux/version.h>
 
 #include "volume.h"
 #include "layout.h"
@@ -293,12 +296,11 @@ static inline int ntfs_ffs(int x)
 
 /* From fs/ntfs/bdev-io.c */
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 16, 0)
-int ntfs_bdev_read(struct block_device *bdev, sector_t sector, unsigned int count,
-		 char *data);
+int ntfs_bdev_read(struct block_device *bdev, char *data, loff_t start, size_t size);
 #else
-int ntfs_dev_read(struct super_block *sb, void *buf, loff_t start, loff_t size);
+int ntfs_dev_read(struct super_block *sb, void *buf, loff_t start, size_t size);
 #endif
 
-int ntfs_bdev_write(struct super_block *sb, void *buf, loff_t start, loff_t size);
+int ntfs_bdev_write(struct super_block *sb, void *buf, loff_t start, size_t size);
 
 #endif /* _LINUX_NTFS_H */
