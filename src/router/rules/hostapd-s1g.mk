@@ -1,5 +1,4 @@
 hostapd-s1g:
-	$(MAKE) -C hostapd_s1g/hostapd clean
 	$(MAKE) -C hostapd_s1g/hostapd 
 
 hostapd-s1g-clean:
