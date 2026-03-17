@@ -2207,7 +2207,7 @@ static void supplicant_common_mesh(FILE *fp, const char *prefix, char *ssidoverr
 	fprintf(fp, "\tbeacon_int=%d\n", intval);
 	char dtim[32];
 	sprintf(dtim, "%s_dtim", prefix);
-	fprintf(fp, "\tdtim_period=%s\n", nvram_default_get(dtim, "2"));
+	fprintf(fp, "\tdtim_period=1\n");
 
 	if (ismesh) {
 		fprintf(fp, "\tmode=5\n");
@@ -2279,8 +2279,8 @@ static void supplicant_common_mesh(FILE *fp, const char *prefix, char *ssidoverr
 	if (!is_morse_micro(prefix) && !is_ath5k(prefix))
 		fprintf(fp, "\thtmode=HT%s\n", ht);
 	if (is_morse_micro(prefix)) {
-//		const char *country = getRegionCode(nvram_default_get("wlan0_regdomain", "UNITED_STATES"));
-//		fprintf(fp, "\tcountry=%s\n", country);
+		const char *country = getRegionCode(nvram_default_get("wlan0_regdomain", "UNITED_STATES"));
+		fprintf(fp, "\tcountry=\"%s\"\n", country);
 		fprintf(fp, "\top_class=%d\n", morse_opclass(nvram_ngeti("%s_channel", prefix)));
 		/*		char shortgi[32];
 		sprintf(shortgi, "%s_shortgi", prefix);
