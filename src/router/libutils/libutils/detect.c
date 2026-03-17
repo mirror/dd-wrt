@@ -1307,7 +1307,7 @@ old_way:;
 		return ROUTER_R6220;
 	}
 	if (!strcmp(modelstr, "HaLowLink")) {
-		setRouter("GL.iNet HaLowLink 1/2");
+		setRouter("GL.iNet HaLowLink");
 		return ROUTER_MORSE;
 	}
 	//fallback
