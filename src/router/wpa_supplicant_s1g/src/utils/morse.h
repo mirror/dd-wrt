@@ -58,7 +58,7 @@ struct ah_class {
 	u8 s1g_op_class_idx;
 	u8 global_op_class;
 	u8 s1g_width;
-	char cc_list[COUNTRY_CODE_MAX][COUNTRY_CODE_LEN];
+	char cc_list[COUNTRY_CODE_MAX][COUNTRY_CODE_LEN + 1];
 	u64 chans;
 };
 
