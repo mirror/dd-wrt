@@ -94,7 +94,9 @@ enum domain_rule {
 	DOMAIN_RULE_NFTSET_IP6, /* NFTSet IPv6 */
 	DOMAIN_RULE_IPSET_IPV6, /* IPv6 IPSet */
 
+#ifdef HAVE_OPENSSL
 	DOMAIN_RULE_HTTPS,         /* HTTPS record */
+#endif
 	DOMAIN_RULE_SRV,           /* SRV record */
 	DOMAIN_RULE_RESPONSE_MODE, /* Response mode */
 	DOMAIN_RULE_CNAME,         /* CNAME rule */

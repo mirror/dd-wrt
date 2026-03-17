@@ -73,10 +73,11 @@ static void _dns_server_update_rule_by_flags(struct dns_request_domain_rule *req
 		request_domain_rule->rules[DOMAIN_RULE_ADDRESS_IPV6] = NULL;
 	}
 
+#ifdef HAVE_OPENSSL
 	if (flags & DOMAIN_FLAG_ADDR_HTTPS_IGN) {
 		request_domain_rule->rules[DOMAIN_RULE_HTTPS] = NULL;
 	}
-
+#endif
 	if (flags & DOMAIN_FLAG_IPSET_IGN) {
 		request_domain_rule->rules[DOMAIN_RULE_IPSET] = NULL;
 	}
@@ -587,6 +588,7 @@ int _dns_server_pre_process_rule_flags(struct dns_request *request)
 		}
 		goto out;
 		break;
+#ifdef HAVE_OPENSSL
 	case DNS_T_HTTPS:
 		if (flags & DOMAIN_FLAG_ADDR_HTTPS_IGN) {
 			/* ignore this domain for A request */
@@ -613,6 +615,7 @@ int _dns_server_pre_process_rule_flags(struct dns_request *request)
 
 		goto out;
 		break;
+#endif
 	default:
 		goto out;
 		break;
