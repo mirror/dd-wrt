@@ -467,13 +467,13 @@ EJ_VISIBLE void ej_dump_site_survey(webs_t wp, int argc, char_t **argv)
 		int freq = morse_translate(site_survey_lists[i].frequency);
 		if (freq == -1)
 			continue;
-		channel = site_survey_lists[i].channel & 0xff;
+		int channel = site_survey_lists[i].channel & 0xff;
 		if (is_morse_micro(ifname))
-			channel = ieee80211_mhz2ieee(interface, freq);
+			channel = ieee80211_mhz2ieee(ifname, freq);
 		websWrite(
 			wp,
 			"\",\"%s\",\"%s\",\"%d\",\"%d\",\"%s\",\"%s\",\"%d\",\"%d\",\"%llu\",\"%d\",\"%s\",\"%s\",\"%s\",\"%s\"\n",
-			net, site_survey_lists[i].BSSID, channel, freqy, site_survey_lists[i].numsta == -1 ? "N/A" : numsta,
+			net, site_survey_lists[i].BSSID, channel, freq, site_survey_lists[i].numsta == -1 ? "N/A" : numsta,
 			site_survey_lists[i].radioname, site_survey_lists[i].RSSI, site_survey_lists[i].phy_noise, quality,
 			site_survey_lists[i].beacon_period, open, site_survey_lists[i].ENCINFO,
 			dtim_period(site_survey_lists[i].dtim_period, dtim), rates);
