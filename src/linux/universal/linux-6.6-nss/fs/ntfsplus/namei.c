@@ -178,8 +178,8 @@ static struct dentry *ntfs_lookup(struct inode *dir_ino, struct dentry *dent,
 	unsigned long dent_ino;
 	int uname_len;
 
-	ntfs_debug("Looking up %pd in directory inode 0x%lx.",
-			dent, dir_ino->i_ino);
+	ntfs_debug("Looking up %pd in directory inode 0x%llx.",
+			dent, NTFS_I(dir_ino)->mft_no);
 	/* Convert the name of the dentry to Unicode. */
 	uname_len = ntfs_nlstoucs(vol, dent->d_name.name, dent->d_name.len,
 				  &uname, NTFS_MAX_NAME_LEN);
@@ -538,7 +538,7 @@ static struct ntfs_inode *__ntfs_create(struct user_namespace *mnt_userns, struc
 	spin_unlock(&vi->i_lock);
 
 	/* Add the inode to the inode hash for the superblock. */
-	vi->i_ino = ni->mft_no;
+	vi->i_ino = (unsigned long)ni->mft_no;
 	inode_set_iversion(vi, 1);
 	insert_inode_hash(vi);
 
@@ -551,7 +551,7 @@ static struct ntfs_inode *__ntfs_create(struct user_namespace *mnt_userns, struc
 
 	dni_mrec = map_mft_record(dir_ni);
 	if (IS_ERR(dni_mrec)) {
-		ntfs_error(dir_ni->vol->sb, "failed to map mft record for file %ld.\n",
+		ntfs_error(dir_ni->vol->sb, "failed to map mft record for file 0x%llx.\n",
 			   dir_ni->mft_no);
 		err = -EIO;
 		goto err_out;
@@ -853,7 +853,7 @@ no_hardlink:
 static int ntfs_test_inode_attr(struct inode *vi, void *data)
 {
 	struct ntfs_inode *ni = NTFS_I(vi);
-	unsigned long mft_no = (unsigned long)data;
+	u64 mft_no = (u64)(uintptr_t)data;
 
 	if (ni->mft_no != mft_no)
 		return 0;
@@ -947,7 +947,7 @@ search:
 
 		/* Ignore hard links from other directories */
 		if (dir_ni->mft_no != MREF_LE(fn->parent_directory)) {
-			ntfs_debug("MFT record numbers don't match (%lu != %lu)\n",
+			ntfs_debug("MFT record numbers don't match (%llu != %lu)\n",
 					dir_ni->mft_no,
 					MREF_LE(fn->parent_directory));
 			continue;
@@ -1033,7 +1033,7 @@ search:
 		struct inode *attr_vi;
 
 		while ((attr_vi = ilookup5(sb, ni->mft_no, ntfs_test_inode_attr,
-					   (void *)ni->mft_no)) != NULL) {
+					   (void *)(uintptr_t)ni->mft_no)) != NULL) {
 			clear_nlink(attr_vi);
 			iput(attr_vi);
 		}
@@ -1170,7 +1170,7 @@ static int ntfs_mkdir(struct user_namespace *mnt_userns, struct inode *dir,
 	}
 
 	d_instantiate_new(dentry, VFS_I(ni));
-	return ERR_PTR(err);
+	return NULL;
 #else
 	if (IS_ERR(ni)) {
 		err = PTR_ERR(ni);
@@ -1281,10 +1281,7 @@ static int __ntfs_link(struct ntfs_inode *ni, struct ntfs_inode *dir_ni,
 
 	/* Create FILE_NAME attribute. */
 	fn_len = sizeof(struct file_name_attr) + name_len * sizeof(__le16);
-	if (name_len > NTFS_MAX_NAME_LEN) {
-		err = -EIO;
-		goto err_out;
-	}
+
 	fn = kzalloc(fn_len, GFP_NOFS);
 	if (!fn) {
 		err = -ENOMEM;
@@ -1487,7 +1484,7 @@ static int ntfs_rename(struct user_namespace *mnt_userns, struct inode *old_dir,
 	if (err) {
 		int err2;
 
-		ntfs_error(sb, "Failed to delete old ntfs inode(%ld) in old dir, err : %d\n",
+		ntfs_error(sb, "Failed to delete old ntfs inode(%llu) in old dir, err : %d\n",
 				old_ni->mft_no, err);
 		err2 = ntfs_delete(old_ni, new_dir_ni, uname_new, new_name_len, false);
 		if (err2)
@@ -1803,7 +1800,7 @@ static struct dentry *ntfs_get_parent(struct dentry *child_dent)
 	unsigned long parent_ino;
 	int err;
 
-	ntfs_debug("Entering for inode 0x%lx.", vi->i_ino);
+	ntfs_debug("Entering for inode 0x%llx.", ni->mft_no);
 	/* Get the mft record of the inode belonging to the child dentry. */
 	mrec = map_mft_record(ni);
 	if (IS_ERR(mrec))
@@ -1822,8 +1819,8 @@ try_next:
 		unmap_mft_record(ni);
 		if (err == -ENOENT)
 			ntfs_error(vi->i_sb,
-				   "Inode 0x%lx does not have a file name attribute.  Run chkdsk.",
-				   vi->i_ino);
+				   "Inode 0x%llx does not have a file name attribute.  Run chkdsk.",
+				   ni->mft_no);
 		return ERR_PTR(err);
 	}
 	attr = ctx->attr;
