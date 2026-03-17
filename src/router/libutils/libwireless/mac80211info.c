@@ -951,7 +951,7 @@ unsigned int bitrate_s1g(int mcs, int bw, int sgi)
 	if (sgi)
 		bitrate = (bitrate / 9) * 10;
 	/* do NOT round down here */
-	return ((bitrate + 50000) / 100000) / 10000;
+	return ((bitrate + 5000) / 10000);
 warn:
 	return 0;
 }
