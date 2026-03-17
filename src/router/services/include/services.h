@@ -286,9 +286,9 @@ char *getMacAddr(char *ifname, char *mac, size_t len);
 void init_skb_recycler(int profile);
 
 #ifdef HAVE_ATH9K
-void deconfigure_single_ath9k(int count);
-void configure_single_ath9k(int count);
-void ath9k_start_supplicant(int count, char *prefix, char **configs, int *configidx);
+void deconfigure_single_mac80211(int count);
+void configure_single_mac80211(int count);
+void mac80211_start_supplicant(int count, char *prefix, char **configs, int *configidx);
 #endif
 
 #ifdef HAVE_BONDING

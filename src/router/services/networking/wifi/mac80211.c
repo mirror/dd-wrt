@@ -2414,7 +2414,7 @@ void setupSupplicant_ath9k(const char *prefix, char *ssidoverride, int isadhoc)
 		    strcmp(netmode, "axg-only")) {
 			fprintf(fp, "\tdisable_ht=1\n");
 		} else {
-			if (!is_ath5k(prefix))
+			if (!is_morse_micro(prefix) && !is_ath5k(prefix))
 				fprintf(fp, "\tsmps=%d\n", nvram_default_ngeti(0, "%s_smps", prefix));
 		}
 		if (!is_morse_micro(prefix))
