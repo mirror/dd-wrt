@@ -371,6 +371,31 @@ define kernelfeatures
 	else \
 		sed -i 's/\CONFIG_BRIDGE_CFM=y/# CONFIG_BRIDGE_CFM is not set/g' $(LINUXDIR)/.config; \
 	fi
+	if [ "$(CONFIG_NTFS3)" = "y" ] && [ "$(KERNELVERSION)" = "6.12"]; then \
+		sed -i 's/\# CONFIG_NTFSPLUS_FS is not set/CONFIG_NTFSPLUS_FS=m/g' $(LINUXDIR)/.config; \
+		echo "# CONFIG_NTFSPLUS_DEBUG is not set" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_NTFSPLUS_FS_POSIX_ACL=y" >> $(LINUXDIR)/.config; \
+	fi
+	if [ "$(CONFIG_NTFS3)" = "y" ] && [ "$(KERNELVERSION)" = "6.1"]; then \
+		sed -i 's/\# CONFIG_NTFSPLUS_FS is not set/CONFIG_NTFSPLUS_FS=m/g' $(LINUXDIR)/.config; \
+		echo "# CONFIG_NTFSPLUS_DEBUG is not set" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_NTFSPLUS_FS_POSIX_ACL=y" >> $(LINUXDIR)/.config; \
+	fi
+	if [ "$(CONFIG_NTFS3)" = "y" ] && [ "$(KERNELVERSION)" = "6.1-nss"]; then \
+		sed -i 's/\# CONFIG_NTFSPLUS_FS is not set/CONFIG_NTFSPLUS_FS=m/g' $(LINUXDIR)/.config; \
+		echo "# CONFIG_NTFSPLUS_DEBUG is not set" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_NTFSPLUS_FS_POSIX_ACL=y" >> $(LINUXDIR)/.config; \
+	fi
+	if [ "$(CONFIG_NTFS3)" = "y" ] && [ "$(KERNELVERSION)" = "6.6"]; then \
+		sed -i 's/\# CONFIG_NTFSPLUS_FS is not set/CONFIG_NTFSPLUS_FS=m/g' $(LINUXDIR)/.config; \
+		echo "# CONFIG_NTFSPLUS_DEBUG is not set" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_NTFSPLUS_FS_POSIX_ACL=y" >> $(LINUXDIR)/.config; \
+	fi
+	if [ "$(CONFIG_NTFS3)" = "y" ] && [ "$(KERNELVERSION)" = "6.6-nss"]; then \
+		sed -i 's/\# CONFIG_NTFSPLUS_FS is not set/CONFIG_NTFSPLUS_FS=m/g' $(LINUXDIR)/.config; \
+		echo "# CONFIG_NTFSPLUS_DEBUG is not set" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_NTFSPLUS_FS_POSIX_ACL=y" >> $(LINUXDIR)/.config; \
+	fi
 	if [ "$(CONFIG_OPENVPN)" = "y" ] && [ "$(KERNELVERSION)" = "6.12"]; then \
 		sed -i 's/\# CONFIG_TUN is not set/CONFIG_TUN=m/g' $(LINUXDIR)/.config; \
 		sed -i 's/\# CONFIG_CRYPTO_CMAC is not set/CONFIG_CRYPTO_CMAC=y/g' $(LINUXDIR)/.config; \
