@@ -2274,6 +2274,34 @@ static void supplicant_common_mesh(FILE *fp, const char *prefix, char *ssidoverr
 		// fprintf(fp, "ibss_ht_mode=HT%s\n",ht);
 	if (!is_morse_micro(prefix) && !is_ath5k(prefix))
 		fprintf(fp, "\thtmode=HT%s\n", ht);
+	if (is_morse_micro(prefix)) {
+
+		const char *country = getRegionCode(nvram_default_get("wlan0_regdomain", "UNITED_STATES"));
+		fprintf(fp, "country=%s\n", country);
+		fprintf(fp, "op_class=%d\n", morse_opclass(nvram_ngeti("%s_channel", prefix)));
+/*		char shortgi[32];
+		sprintf(shortgi, "%s_shortgi", prefix);
+		if (nvram_default_matchi(shortgi, 1, 1))
+			fprintf(fp, "s1g_capab=[SHORT-GI-ALL]\n");
+		else
+			fprintf(fp, "s1g_capab=[SHORT-GI-NONE]\n");*/
+
+		char bw[32];
+		sprintf(bw, "%s_channelbw", prefix);
+		if (nvram_matchi(bw, 80) || nvram_matchi(bw, 160))
+			fprintf(fp, "s1g_prim_chwidth=1\n");
+		else
+			fprintf(fp, "s1g_prim_chwidth=0\n");
+		int b = 1;
+		if (nvram_matchi(bw, 160))
+			b = 8;
+		if (nvram_matchi(bw, 80))
+			b = 4;
+		if (nvram_matchi(bw, 40))
+			b = 2;
+		fprintf(fp, "s1g_prim_1mhz_chan_index=%d\n", (b - 1) / 2);
+	
+	}
 	/* todo. consider mode configuration */
 	if (nvram_match(bw, "80") || nvram_match(bw, "80+80") || nvram_match(bw, "160")) {
 		fprintf(fp, "\tvht=1\n");
