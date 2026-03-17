@@ -1146,11 +1146,13 @@ void setupHostAP_generic_ath9k(const char *prefix, FILE *fp, int isrepeater, int
 		}
 		if (!isath5k && !has_ad(prefix)) {
 			fprintf(fp, "ieee80211n=1\n");
-			if (nvram_matchi(bw, 2040)) {
-				fprintf(fp, "dynamic_ht40=1\n");
-			} else {
-				fprintf(fp, "noscan=1\n");
-				fprintf(fp, "dynamic_ht40=0\n");
+			if (!is_morse_micro(prefix)) {
+				if (nvram_matchi(bw, 2040)) {
+					fprintf(fp, "dynamic_ht40=1\n");
+				} else {
+					fprintf(fp, "noscan=1\n");
+					fprintf(fp, "dynamic_ht40=0\n");
+				}
 			}
 		}
 	}
@@ -1323,7 +1325,7 @@ void setupHostAP_generic_ath9k(const char *prefix, FILE *fp, int isrepeater, int
 					}
 				}
 			}
-			if (!has_ax(prefix))
+			if (!is_morse_micro(prefix) && !has_ax(prefix))
 				fprintf(fp, "no_country_ie=1\n");
 
 			if (!is_6ghz_freq_prefix(prefix, freq)) {
@@ -1758,7 +1760,7 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 			}
 		}
 	}
-	if (!has_ax(ifname))
+	if (!is_morse_micro(ifname) && !has_ax(ifname))
 		fprintf(fp, "no_country_ie=1\n");
 	if (has_qam256(ifname) && has_2ghz(ifname) && (usebw < 80 || cansuperchannel(maininterface))) {
 		if (nvram_nmatch("1", "%s_turbo_qam", maininterface)) {
@@ -1990,15 +1992,17 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 
 	MAC80211DEBUG();
 	/* low signal drop */
-	char signal[32];
-	sprintf(signal, "%s_connect", ifname);
-	fprintf(fp, "signal_connect=%s\n", nvram_default_get(signal, "-128"));
-	sprintf(signal, "%s_stay", ifname);
-	fprintf(fp, "signal_stay=%s\n", nvram_default_get(signal, "-128"));
-	sprintf(signal, "%s_poll_time", ifname);
-	fprintf(fp, "signal_poll_time=%s\n", nvram_default_get(signal, "10"));
-	sprintf(signal, "%s_strikes", ifname);
-	fprintf(fp, "signal_strikes=%s\n", nvram_default_get(signal, "3"));
+	if (!is_morse_micro(prefix)) {
+		char signal[32];
+		sprintf(signal, "%s_connect", ifname);
+		fprintf(fp, "signal_connect=%s\n", nvram_default_get(signal, "-128"));
+		sprintf(signal, "%s_stay", ifname);
+		fprintf(fp, "signal_stay=%s\n", nvram_default_get(signal, "-128"));
+		sprintf(signal, "%s_poll_time", ifname);
+		fprintf(fp, "signal_poll_time=%s\n", nvram_default_get(signal, "10"));
+		sprintf(signal, "%s_strikes", ifname);
+		fprintf(fp, "signal_strikes=%s\n", nvram_default_get(signal, "3"));
+	}
 #ifdef HAVE_WPA3
 	char airtime[32];
 	sprintf(airtime, "%s_at_policy", maininterface);
@@ -2486,9 +2490,10 @@ void setupSupplicant_ath9k(const char *prefix, char *ssidoverride, int isadhoc)
 		} else if (nvram_default_matchi(mfp, 0, 0))
 			fprintf(fp, "\tieee80211w=0\n");
 #endif
-		if (ismesh)
-			fprintf(fp, "\tnoscan=1\n");
-
+		if (!is_morse_micro(prefix)) {
+			if (ismesh)
+				fprintf(fp, "\tnoscan=1\n");
+		}
 		if (!*pwstring) {
 			sprintf(psk, "%s_crypto", prefix);
 			if (nvram_match(psk, "aes")) {
