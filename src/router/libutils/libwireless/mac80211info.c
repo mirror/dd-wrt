@@ -858,6 +858,107 @@ nla_put_failure:
 	return (data.mac80211_info);
 }
 
+#ifdef HAVE_MORSE
+unsigned int bitrate_s1g(int mcs, int bw, int sgi)
+{
+	/* For 1, 2, 4, 8 and 16 MHz channels */
+	static const unsigned int base[5][11] = {
+		{  300000,
+		   600000,
+		   900000,
+		  1200000,
+		  1800000,
+		  2400000,
+		  2700000,
+		  3000000,
+		  3600000,
+		  4000000,
+		  /* MCS 10 supported in 1 MHz only */
+		  150000,
+		},
+		{  650000,
+		  1300000,
+		  1950000,
+		  2600000,
+		  3900000,
+		  5200000,
+		  5850000,
+		  6500000,
+		  7800000,
+		  /* MCS 9 not valid */
+		},
+		{  1350000,
+		   2700000,
+		   4050000,
+		   5400000,
+		   8100000,
+		  10800000,
+		  12150000,
+		  13500000,
+		  16200000,
+		  18000000,
+		},
+		{  2925000,
+		   5850000,
+		   8775000,
+		  11700000,
+		  17550000,
+		  23400000,
+		  26325000,
+		  29250000,
+		  35100000,
+		  39000000,
+		},
+		{  8580000,
+		  11700000,
+		  17550000,
+		  23400000,
+		  35100000,
+		  46800000,
+		  52650000,
+		  58500000,
+		  70200000,
+		  78000000,
+		},
+	};
+	unsigned int bitrate;
+	/* default is 1 MHz index */
+	int idx = 0;
+
+	if (mcs >= 11)
+		goto warn;
+
+	switch (bw) {
+	case 4:
+		idx = 4;
+		break;
+	case 3:
+		idx = 3;
+		break;
+	case 2:
+		idx = 2;
+		break;
+	case 1:
+		idx = 1;
+		break;
+	case 0:
+		idx = 0;
+		break;
+	default:
+		goto warn;
+	}
+
+	bitrate = base[idx][mcs];
+	//bitrate *= rate->nss;
+
+	if (sgi)
+		bitrate = (bitrate / 9) * 10;
+	/* do NOT round down here */
+	return ((bitrate + 50000) / 100000) / 10000;
+warn:
+	return 0;
+}
+#endif
 char *mac80211_get_caps(const char *interface, int shortgi, int greenfield, int ht40, int ldpc, int smps)
 {
 	mac80211_init();
