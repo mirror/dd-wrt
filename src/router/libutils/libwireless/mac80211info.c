@@ -711,6 +711,7 @@ static int mac80211_cb_stations(struct nl_msg *msg, void *data)
 				mac80211_info->wci->is_vht = 1;
 			}
 			if (rinfo[NL80211_RATE_INFO_VHT_MCS]) {
+				mac80211_info->wci->vht_mcs = nla_get_u8(rinfo[NL80211_RATE_INFO_VHT_MCS]);
 				mac80211_info->wci->is_vht = 1;
 			}
 			if (rinfo[NL80211_RATE_INFO_HE_MCS]) {
@@ -775,6 +776,7 @@ static int mac80211_cb_stations(struct nl_msg *msg, void *data)
 				mac80211_info->wci->rx_is_vht = 1;
 			}
 			if (rinfo[NL80211_RATE_INFO_VHT_MCS]) {
+				mac80211_info->wci->rx_vht_mcs = nla_get_u8(rinfo[NL80211_RATE_INFO_VHT_MCS]);
 				mac80211_info->wci->rx_is_vht = 1;
 			}
 
