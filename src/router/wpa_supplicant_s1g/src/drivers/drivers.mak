@@ -164,45 +164,7 @@ ifdef NEED_LINUX_IOCTL
 DRV_OBJS += ../src/drivers/linux_ioctl.o
 endif
 
-ifdef NEED_LIBNL
-ifndef CONFIG_LIBNL32
-ifndef CONFIG_LIBNL20
-ifndef CONFIG_LIBNL_TINY
-PKG_CONFIG ?= pkg-config
-HAVE_LIBNL3 := $(shell $(PKG_CONFIG) --exists libnl-3.0; echo $$?)
-ifeq ($(HAVE_LIBNL3),0)
-CONFIG_LIBNL32=y
-endif
-endif
-endif
-endif
-
-ifdef CONFIG_LIBNL32
-  DRV_LIBS += -lnl-3
-  DRV_LIBS += -lnl-genl-3
-  ifdef LIBNL_INC
-    DRV_CFLAGS += -I$(LIBNL_INC)
-  else
-    PKG_CONFIG ?= pkg-config
-    DRV_CFLAGS += $(shell $(PKG_CONFIG) --cflags libnl-3.0)
-  endif
-  ifdef CONFIG_LIBNL3_ROUTE
-    DRV_LIBS += -lnl-route-3
-    DRV_CFLAGS += -DCONFIG_LIBNL3_ROUTE
-  endif
-else
-  ifdef CONFIG_LIBNL_TINY
-    DRV_LIBS += -lnl-tiny
-  else
-    ifndef CONFIG_OSX
-      DRV_LIBS += -lnl
-    ifndef CONFIG_ANDROID
-      DRV_LIBS += -lnl-genl
-    endif
-    endif
-  endif
-endif
-endif
+DRV_LIBS += -lnl-tiny
 
 ##### COMMON VARS
 DRV_BOTH_CFLAGS := $(DRV_CFLAGS) $(DRV_WPA_CFLAGS) $(DRV_AP_CFLAGS)
