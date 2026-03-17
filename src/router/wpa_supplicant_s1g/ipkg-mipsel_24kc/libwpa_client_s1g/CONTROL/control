@@ -1,0 +1,12 @@
+Package: libwpa_client_s1g
+Version: 1.16.4-2
+Depends: libc, wpa_supplicant_s1g
+Source: feeds/morse/essentials/wpa_supplicant_s1g
+SourceName: libwpa_client_s1g
+License: BSD-3-Clause
+Section: net
+SourceDateEpoch: 1760011748
+Maintainer: Morse Micro <info@morsemicro.com>
+Architecture: mipsel_24kc
+Installed-Size: 12840
+Description:  wpa_supplicant_s1g client library

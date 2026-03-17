@@ -1,0 +1,18 @@
+#ifndef VERSION_H
+#define VERSION_H
+
+#ifndef VERSION_STR_POSTFIX
+#define VERSION_STR_POSTFIX ""
+#endif /* VERSION_STR_POSTFIX */
+
+#ifndef GIT_VERSION_STR_POSTFIX
+#define GIT_VERSION_STR_POSTFIX ""
+#endif /* GIT_VERSION_STR_POSTFIX */
+
+#ifdef MORSE_VERSION_STR
+#define VERSION_STR "2.12-morse_micro-" MORSE_VERSION_STR
+#else
+#define VERSION_STR "2.12-devel" VERSION_STR_POSTFIX GIT_VERSION_STR_POSTFIX
+#endif
+
+#endif /* VERSION_H */
