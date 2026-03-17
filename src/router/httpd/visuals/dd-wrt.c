@@ -1652,154 +1652,115 @@ static void show_netmode(webs_t wp, char *prefix)
 	websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
 	websWrite(wp, "document.write(\"<option value=\\\"disabled\\\" %s>\" + share.disabled + \"</option>\");\n",
 		  nvram_match(wl_net_mode, "disabled") ? "selected=\\\"selected\\\"" : "");
-	if (!has_ad(prefix))
-		websWrite(wp, "document.write(\"<option value=\\\"mixed\\\" %s>\" + wl_basic.mixed + \"</option>\");\n",
+	if (has_morse_micro(prefix)) {
+		websWrite(wp, "document.write(\"<option value=\\\"mixed\\\" %s>\" + wl_basic.ah + \"</option>\");\n",
 			  nvram_match(wl_net_mode, "mixed") ? "selected=\\\"selected\\\"" : "");
-	if (has_mimo(prefix) && has_2ghz(prefix)) {
-		websWrite(wp, "document.write(\"<option value=\\\"bg-mixed\\\" %s>\" + wl_basic.bg + \"</option>\");\n",
-			  nvram_match(wl_net_mode, "bg-mixed") ? "selected=\\\"selected\\\"" : "");
-	}
+
+		if (!has_ad(prefix))
+			websWrite(wp, "document.write(\"<option value=\\\"mixed\\\" %s>\" + wl_basic.mixed + \"</option>\");\n",
+				  nvram_match(wl_net_mode, "mixed") ? "selected=\\\"selected\\\"" : "");
+		if (has_mimo(prefix) && has_2ghz(prefix)) {
+			websWrite(wp, "document.write(\"<option value=\\\"bg-mixed\\\" %s>\" + wl_basic.bg + \"</option>\");\n",
+				  nvram_match(wl_net_mode, "bg-mixed") ? "selected=\\\"selected\\\"" : "");
+		}
 #ifdef HAVE_WHRAG108
-	if (!strcmp(prefix, "wlan1"))
-#endif
-#ifdef HAVE_TW6600
 		if (!strcmp(prefix, "wlan1"))
 #endif
+#ifdef HAVE_TW6600
+			if (!strcmp(prefix, "wlan1"))
+#endif
+
+				if (has_2ghz(prefix)) {
+					websWrite(
+						wp,
+						"document.write(\"<option value=\\\"b-only\\\" %s>\" + wl_basic.b + \"</option>\");\n",
+						nvram_match(wl_net_mode, "b-only") ? "selected=\\\"selected\\\"" : "");
+				}
+#ifdef HAVE_MADWIFI
+		if (has_2ghz(prefix)) {
+#ifdef HAVE_WHRAG108
+			if (!strcmp(prefix, "wlan1"))
+#endif
+#ifdef HAVE_TW6600
+				if (!strcmp(prefix, "wlan1"))
+#endif
+					websWrite(
+						wp,
+						"document.write(\"<option value=\\\"g-only\\\" %s>\" + wl_basic.g + \"</option>\");\n",
+						nvram_match(wl_net_mode, "g-only") ? "selected=\\\"selected\\\"" : "");
+#ifdef HAVE_WHRAG108
+			if (!strcmp(prefix, "wlan1"))
+#endif
+#ifdef HAVE_TW6600
+				if (!strcmp(prefix, "wlan1"))
+#endif
+#if !defined(HAVE_LS5) || defined(HAVE_EOC5610)
+					websWrite(
+						wp,
+						"document.write(\"<option value=\\\"bg-mixed\\\" %s>\" + wl_basic.bg + \"</option>\");\n",
+						nvram_match(wl_net_mode, "bg-mixed") ? "selected=\\\"selected\\\"" : "");
+#endif
+		}
+#else
+#ifdef HAVE_WHRAG108
+		if (!strcmp(prefix, "wlan1"))
+#endif
+#if !defined(HAVE_LS5) || defined(HAVE_EOC5610)
 
 			if (has_2ghz(prefix)) {
 				websWrite(wp,
-					  "document.write(\"<option value=\\\"b-only\\\" %s>\" + wl_basic.b + \"</option>\");\n",
-					  nvram_match(wl_net_mode, "b-only") ? "selected=\\\"selected\\\"" : "");
-			}
-#ifdef HAVE_MADWIFI
-	if (has_2ghz(prefix)) {
-#ifdef HAVE_WHRAG108
-		if (!strcmp(prefix, "wlan1"))
-#endif
-#ifdef HAVE_TW6600
-			if (!strcmp(prefix, "wlan1"))
-#endif
-				websWrite(wp,
 					  "document.write(\"<option value=\\\"g-only\\\" %s>\" + wl_basic.g + \"</option>\");\n",
 					  nvram_match(wl_net_mode, "g-only") ? "selected=\\\"selected\\\"" : "");
-#ifdef HAVE_WHRAG108
-		if (!strcmp(prefix, "wlan1"))
+			}
+		if (has_mimo(prefix) && has_2ghz(prefix) && !is_ath5k(prefix)) {
+			websWrite(wp, "document.write(\"<option value=\\\"ng-only\\\" %s>\" + wl_basic.ng + \"</option>\");\n",
+				  nvram_match(wl_net_mode, "ng-only") ? "selected=\\\"selected\\\"" : "");
+		}
 #endif
-#ifdef HAVE_TW6600
-			if (!strcmp(prefix, "wlan1"))
 #endif
-#if !defined(HAVE_LS5) || defined(HAVE_EOC5610)
+		if (has_mimo(prefix) && has_2ghz(prefix) && !is_ath5k(prefix)) {
+			if (has_5ghz(prefix)) {
 				websWrite(wp,
-					  "document.write(\"<option value=\\\"bg-mixed\\\" %s>\" + wl_basic.bg + \"</option>\");\n",
-					  nvram_match(wl_net_mode, "bg-mixed") ? "selected=\\\"selected\\\"" : "");
-#endif
-	}
-#else
-#ifdef HAVE_WHRAG108
-	if (!strcmp(prefix, "wlan1"))
-#endif
-#if !defined(HAVE_LS5) || defined(HAVE_EOC5610)
-
-		if (has_2ghz(prefix)) {
-			websWrite(wp, "document.write(\"<option value=\\\"g-only\\\" %s>\" + wl_basic.g + \"</option>\");\n",
-				  nvram_match(wl_net_mode, "g-only") ? "selected=\\\"selected\\\"" : "");
+					  "document.write(\"<option value=\\\"n2-only\\\" %s>\" + wl_basic.n2 + \"</option>\");\n",
+					  nvram_match(wl_net_mode, "n2-only") ? "selected=\\\"selected\\\"" : "");
+			} else {
+				websWrite(wp,
+					  "document.write(\"<option value=\\\"n-only\\\" %s>\" + wl_basic.n + \"</option>\");\n",
+					  nvram_match(wl_net_mode, "n-only") ? "selected=\\\"selected\\\"" : "");
+			}
 		}
-	if (has_mimo(prefix) && has_2ghz(prefix) && !is_ath5k(prefix)) {
-		websWrite(wp, "document.write(\"<option value=\\\"ng-only\\\" %s>\" + wl_basic.ng + \"</option>\");\n",
-			  nvram_match(wl_net_mode, "ng-only") ? "selected=\\\"selected\\\"" : "");
-	}
-#endif
-#endif
-	if (has_mimo(prefix) && has_2ghz(prefix) && !is_ath5k(prefix)) {
-		if (has_5ghz(prefix)) {
-			websWrite(wp, "document.write(\"<option value=\\\"n2-only\\\" %s>\" + wl_basic.n2 + \"</option>\");\n",
-				  nvram_match(wl_net_mode, "n2-only") ? "selected=\\\"selected\\\"" : "");
-		} else {
-			websWrite(wp, "document.write(\"<option value=\\\"n-only\\\" %s>\" + wl_basic.n + \"</option>\");\n",
-				  nvram_match(wl_net_mode, "n-only") ? "selected=\\\"selected\\\"" : "");
+		if (has_ax(prefix) && has_2ghz(prefix)) {
+			if (has_5ghz(prefix)) {
+				websWrite(
+					wp,
+					"document.write(\"<option value=\\\"axg-only\\\" %s>\" + wl_basic.axg + \"</option>\");\n",
+					nvram_match(wl_net_mode, "axg-only") ? "selected=\\\"selected\\\"" : "");
+			} else {
+				websWrite(wp,
+					  "document.write(\"<option value=\\\"axg-only\\\" %s>\" + wl_basic.ax + \"</option>\");\n",
+					  nvram_match(wl_net_mode, "axg-only") ? "selected=\\\"selected\\\"" : "");
+			}
 		}
-	}
-	if (has_ax(prefix) && has_2ghz(prefix)) {
-		if (has_5ghz(prefix)) {
-			websWrite(wp, "document.write(\"<option value=\\\"axg-only\\\" %s>\" + wl_basic.axg + \"</option>\");\n",
-				  nvram_match(wl_net_mode, "axg-only") ? "selected=\\\"selected\\\"" : "");
-		} else {
-			websWrite(wp, "document.write(\"<option value=\\\"axg-only\\\" %s>\" + wl_basic.ax + \"</option>\");\n",
-				  nvram_match(wl_net_mode, "axg-only") ? "selected=\\\"selected\\\"" : "");
-		}
-	}
 #if !defined(HAVE_FONERA) && !defined(HAVE_LS2) && !defined(HAVE_MERAKI)
 #ifndef HAVE_MADWIFI
 
-	if (has_5ghz(prefix)) {
-		websWrite(wp, "document.write(\"<option value=\\\"a-only\\\" %s>\" + wl_basic.a + \"</option>\");\n",
-			  nvram_match(wl_net_mode, "a-only") ? "selected=\\\"selected\\\"" : "");
-	}
-	if (has_mimo(prefix) && has_5ghz(prefix) && !is_ath5k(prefix)) {
-		websWrite(wp, "document.write(\"<option value=\\\"na-only\\\" %s>\" + wl_basic.na + \"</option>\");\n",
-			  nvram_match(wl_net_mode, "na-only") ? "selected=\\\"selected\\\"" : "");
-		websWrite(wp, "document.write(\"<option value=\\\"n5-only\\\" %s>\" + wl_basic.n5 + \"</option>\");\n",
-			  nvram_match(wl_net_mode, "n5-only") ? "selected=\\\"selected\\\"" : "");
-	}
-	if (has_ac(prefix) && (has_ac(prefix) || has_ax(prefix)) && has_5ghz(prefix)) {
-		websWrite(wp, "document.write(\"<option value=\\\"acn-mixed\\\" %s>\" + wl_basic.acn + \"</option>\");\n",
-			  nvram_match(wl_net_mode, "acn-mixed") ? "selected=\\\"selected\\\"" : "");
-		websWrite(wp, "document.write(\"<option value=\\\"ac-only\\\" %s>\" + wl_basic.ac + \"</option>\");\n",
-			  nvram_match(wl_net_mode, "ac-only") ? "selected=\\\"selected\\\"" : "");
-	}
-	if (has_ax(prefix) && !is_ath10k(prefix)) {
 		if (has_5ghz(prefix)) {
-			websWrite(wp, "document.write(\"<option value=\\\"xacn-mixed\\\" %s>\" + wl_basic.xacn + \"</option>\");\n",
-				  nvram_match(wl_net_mode, "xacn-mixed") ? "selected=\\\"selected\\\"" : "");
-			websWrite(wp, "document.write(\"<option value=\\\"ax-only\\\" %s>\" + wl_basic.ax + \"</option>\");\n",
-				  nvram_match(wl_net_mode, "ax-only") ? "selected=\\\"selected\\\"" : "");
+			websWrite(wp, "document.write(\"<option value=\\\"a-only\\\" %s>\" + wl_basic.a + \"</option>\");\n",
+				  nvram_match(wl_net_mode, "a-only") ? "selected=\\\"selected\\\"" : "");
 		}
-		if (has_6ghz(prefix) && has_5ghz(prefix))
-			websWrite(wp, "document.write(\"<option value=\\\"ax5-only\\\" %s>\" + wl_basic.ax5 + \"</option>\");\n",
-				  nvram_match(wl_net_mode, "ax5-only") ? "selected=\\\"selected\\\"" : "");
-		if (has_6ghz(prefix))
-			websWrite(wp, "document.write(\"<option value=\\\"ax6-only\\\" %s>\" + wl_basic.ax6 + \"</option>\");\n",
-				  nvram_match(wl_net_mode, "ax6-only") ? "selected=\\\"selected\\\"" : "");
-	}
-	if (has_ad(prefix)) {
-		websWrite(wp, "document.write(\"<option value=\\\"ad-only\\\" %s>\" + wl_basic.ad + \"</option>\");\n",
-			  nvram_match(wl_net_mode, "ad-only") ? "selected=\\\"selected\\\"" : "");
-	}
-#else
-#if HAVE_WHRAG108
-	if (!strcmp(prefix, "wlan0"))
-#endif
-#ifdef HAVE_TW6600
-		if (!strcmp(prefix, "wlan0"))
-#endif
-			if (has_5ghz(prefix)) {
-				websWrite(wp,
-					  "document.write(\"<option value=\\\"a-only\\\" %s>\" + wl_basic.a + \"</option>\");\n",
-					  nvram_match(wl_net_mode, "a-only") ? "selected=\\\"selected\\\"" : "");
-			}
-#endif
-
-#endif
-	if (is_mac80211(prefix)) {
-		if (has_2ghz(prefix) && !is_ath5k(prefix)) {
-			websWrite(wp, "document.write(\"<option value=\\\"ng-only\\\" %s>\" + wl_basic.ng + \"</option>\");\n",
-				  nvram_match(wl_net_mode, "ng-only") ? "selected=\\\"selected\\\"" : "");
-			websWrite(wp, "document.write(\"<option value=\\\"n2-only\\\" %s>\" + wl_basic.n2 + \"</option>\");\n",
-				  nvram_match(wl_net_mode, "n2-only") ? "selected=\\\"selected\\\"" : "");
-		}
-		if (has_5ghz(prefix) && !is_ath5k(prefix)) {
+		if (has_mimo(prefix) && has_5ghz(prefix) && !is_ath5k(prefix)) {
 			websWrite(wp, "document.write(\"<option value=\\\"na-only\\\" %s>\" + wl_basic.na + \"</option>\");\n",
 				  nvram_match(wl_net_mode, "na-only") ? "selected=\\\"selected\\\"" : "");
 			websWrite(wp, "document.write(\"<option value=\\\"n5-only\\\" %s>\" + wl_basic.n5 + \"</option>\");\n",
 				  nvram_match(wl_net_mode, "n5-only") ? "selected=\\\"selected\\\"" : "");
 		}
-		if ((is_ath10k(prefix) || is_ath11k(prefix) || is_mvebu(prefix) || has_vht80(prefix)) && has_5ghz(prefix)) {
+		if (has_ac(prefix) && (has_ac(prefix) || has_ax(prefix)) && has_5ghz(prefix)) {
 			websWrite(wp, "document.write(\"<option value=\\\"acn-mixed\\\" %s>\" + wl_basic.acn + \"</option>\");\n",
 				  nvram_match(wl_net_mode, "acn-mixed") ? "selected=\\\"selected\\\"" : "");
 			websWrite(wp, "document.write(\"<option value=\\\"ac-only\\\" %s>\" + wl_basic.ac + \"</option>\");\n",
 				  nvram_match(wl_net_mode, "ac-only") ? "selected=\\\"selected\\\"" : "");
 		}
-		if (has_ax(prefix) && (has_5ghz(prefix) || has_6ghz(prefix)) && !is_ath10k(prefix)) {
+		if (has_ax(prefix) && !is_ath10k(prefix)) {
 			if (has_5ghz(prefix)) {
 				websWrite(
 					wp,
@@ -1814,7 +1775,6 @@ static void show_netmode(webs_t wp, char *prefix)
 					wp,
 					"document.write(\"<option value=\\\"ax5-only\\\" %s>\" + wl_basic.ax5 + \"</option>\");\n",
 					nvram_match(wl_net_mode, "ax5-only") ? "selected=\\\"selected\\\"" : "");
-
 			if (has_6ghz(prefix))
 				websWrite(
 					wp,
@@ -1825,8 +1785,78 @@ static void show_netmode(webs_t wp, char *prefix)
 			websWrite(wp, "document.write(\"<option value=\\\"ad-only\\\" %s>\" + wl_basic.ad + \"</option>\");\n",
 				  nvram_match(wl_net_mode, "ad-only") ? "selected=\\\"selected\\\"" : "");
 		}
-	}
+#else
+#if HAVE_WHRAG108
+		if (!strcmp(prefix, "wlan0"))
+#endif
+#ifdef HAVE_TW6600
+			if (!strcmp(prefix, "wlan0"))
+#endif
+				if (has_5ghz(prefix)) {
+					websWrite(
+						wp,
+						"document.write(\"<option value=\\\"a-only\\\" %s>\" + wl_basic.a + \"</option>\");\n",
+						nvram_match(wl_net_mode, "a-only") ? "selected=\\\"selected\\\"" : "");
+				}
+#endif
 
+#endif
+		if (is_mac80211(prefix)) {
+			if (has_2ghz(prefix) && !is_ath5k(prefix)) {
+				websWrite(wp,
+					  "document.write(\"<option value=\\\"ng-only\\\" %s>\" + wl_basic.ng + \"</option>\");\n",
+					  nvram_match(wl_net_mode, "ng-only") ? "selected=\\\"selected\\\"" : "");
+				websWrite(wp,
+					  "document.write(\"<option value=\\\"n2-only\\\" %s>\" + wl_basic.n2 + \"</option>\");\n",
+					  nvram_match(wl_net_mode, "n2-only") ? "selected=\\\"selected\\\"" : "");
+			}
+			if (has_5ghz(prefix) && !is_ath5k(prefix)) {
+				websWrite(wp,
+					  "document.write(\"<option value=\\\"na-only\\\" %s>\" + wl_basic.na + \"</option>\");\n",
+					  nvram_match(wl_net_mode, "na-only") ? "selected=\\\"selected\\\"" : "");
+				websWrite(wp,
+					  "document.write(\"<option value=\\\"n5-only\\\" %s>\" + wl_basic.n5 + \"</option>\");\n",
+					  nvram_match(wl_net_mode, "n5-only") ? "selected=\\\"selected\\\"" : "");
+			}
+			if ((is_ath10k(prefix) || is_ath11k(prefix) || is_mvebu(prefix) || has_vht80(prefix)) && has_5ghz(prefix)) {
+				websWrite(
+					wp,
+					"document.write(\"<option value=\\\"acn-mixed\\\" %s>\" + wl_basic.acn + \"</option>\");\n",
+					nvram_match(wl_net_mode, "acn-mixed") ? "selected=\\\"selected\\\"" : "");
+				websWrite(wp,
+					  "document.write(\"<option value=\\\"ac-only\\\" %s>\" + wl_basic.ac + \"</option>\");\n",
+					  nvram_match(wl_net_mode, "ac-only") ? "selected=\\\"selected\\\"" : "");
+			}
+			if (has_ax(prefix) && (has_5ghz(prefix) || has_6ghz(prefix)) && !is_ath10k(prefix)) {
+				if (has_5ghz(prefix)) {
+					websWrite(
+						wp,
+						"document.write(\"<option value=\\\"xacn-mixed\\\" %s>\" + wl_basic.xacn + \"</option>\");\n",
+						nvram_match(wl_net_mode, "xacn-mixed") ? "selected=\\\"selected\\\"" : "");
+					websWrite(
+						wp,
+						"document.write(\"<option value=\\\"ax-only\\\" %s>\" + wl_basic.ax + \"</option>\");\n",
+						nvram_match(wl_net_mode, "ax-only") ? "selected=\\\"selected\\\"" : "");
+				}
+				if (has_6ghz(prefix) && has_5ghz(prefix))
+					websWrite(
+						wp,
+						"document.write(\"<option value=\\\"ax5-only\\\" %s>\" + wl_basic.ax5 + \"</option>\");\n",
+						nvram_match(wl_net_mode, "ax5-only") ? "selected=\\\"selected\\\"" : "");
+
+				if (has_6ghz(prefix))
+					websWrite(
+						wp,
+						"document.write(\"<option value=\\\"ax6-only\\\" %s>\" + wl_basic.ax6 + \"</option>\");\n",
+						nvram_match(wl_net_mode, "ax6-only") ? "selected=\\\"selected\\\"" : "");
+			}
+			if (has_ad(prefix)) {
+				websWrite(wp,
+					  "document.write(\"<option value=\\\"ad-only\\\" %s>\" + wl_basic.ad + \"</option>\");\n",
+					  nvram_match(wl_net_mode, "ad-only") ? "selected=\\\"selected\\\"" : "");
+			}
+		}
+	}
 	websWrite(wp, "//]]>\n</script>\n");
 	websWrite(wp, "</select>\n");
 	websWrite(wp, "</div>\n");
