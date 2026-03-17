@@ -1992,7 +1992,7 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 
 	MAC80211DEBUG();
 	/* low signal drop */
-	if (!is_morse_micro(prefix)) {
+	if (!is_morse_micro(ifname)) {
 		char signal[32];
 		sprintf(signal, "%s_connect", ifname);
 		fprintf(fp, "signal_connect=%s\n", nvram_default_get(signal, "-128"));
