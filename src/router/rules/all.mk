@@ -417,6 +417,8 @@ include rules/libbpf.mk
 include rules/musl-fts.mk
 include rules/argp-standalone.mk
 include rules/dante.mk
+include rules/hostapd-s1g.mk
+include rules/wpa_supplicant-s1g.mk
 
 #
 # Generic rules
