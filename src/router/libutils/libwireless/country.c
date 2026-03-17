@@ -974,7 +974,7 @@ const char *getRegionCode(char *country)
 			if (!strcmp(allCountries[i].isoName, "PS"))
 				return "US";
 #endif
-			return allCountries[i].region;
+			return allCountries[i].region ? allCountries[i].region : "US";
 		}
 	}
 	return NULL;
@@ -997,7 +997,7 @@ const char *getIsoToRegion(char *iso)
 			if (!strcmp(allCountries[i].isoName, "PS"))
 				return "US";
 #endif
-			return allCountries[i].region;
+			return allCountries[i].region ? allCountries[i].region : "US";
 		}
 	}
 	return NULL;
