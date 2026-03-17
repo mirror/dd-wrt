@@ -2271,8 +2271,8 @@ static void supplicant_common_mesh(FILE *fp, const char *prefix, char *ssidoverr
 		sprintf(ht, cht + 2);
 		fprintf(fp, "\tht40=1\n");
 	}
-	if (!is_ath5k(prefix))
 		// fprintf(fp, "ibss_ht_mode=HT%s\n",ht);
+	if (!is_morse_micro(prefix) && !is_ath5k(prefix))
 		fprintf(fp, "\thtmode=HT%s\n", ht);
 	/* todo. consider mode configuration */
 	if (nvram_match(bw, "80") || nvram_match(bw, "80+80") || nvram_match(bw, "160")) {
