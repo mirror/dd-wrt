@@ -31,7 +31,7 @@ endif
 # cflags
 #override CFLAGS +=$(COPTS) $(LTO) -g3 -Wall -Wstrict-prototypes -fno-omit-frame-pointer -Wstrict-aliasing -funwind-tables -Wmissing-prototypes -Wshadow -Wextra -Wno-unused-parameter -Wno-implicit-fallthrough
 
-override CFLAGS += -Iinclude -funsigned-char
+override CFLAGS += -Iinclude -funsigned-char -g3 $(LTO) $(MIPS16_OPT)
 override CFLAGS += -DBASE_FILE_NAME='"$(notdir $<)"'
 ifdef VER
 override CFLAGS += -DSMARTDNS_VERION='"$(VER)"'
