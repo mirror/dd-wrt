@@ -313,10 +313,11 @@ EJ_VISIBLE void ej_dump_channel_survey(webs_t wp, int argc, char_t **argv)
 	{
 		if (!f->active_count && !f->busy_count && !f->noise_count)
 			continue;
-		int freq = morse_translate(f->freq);
-		if (freq == -1)
-			continue;
+		int freq = f->freq;
 		if (is_morse_micro(interface)) {
+			freq = morse_translate(freq);
+			if (freq == -1)
+				continue;
 			if (f->in_use)
 				websWrite(wp, "%c\"[%d.%d]\"", !first_survey ? ' ' : ',', freq / 1000, (freq % 1000) / 100);
 			else
