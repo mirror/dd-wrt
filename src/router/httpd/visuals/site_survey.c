@@ -270,7 +270,9 @@ EJ_VISIBLE void ej_dump_site_survey(webs_t wp, int argc, char_t **argv)
 	char speedbuf[32];
 	struct site_survey_list *site_survey_lists;
 	name = argv[0];
-
+	char *ifname = nvram_safe_get("wifi_display");
+	if (name)
+		ifname = name;
 	site_survey_lists = open_site_survey(name);
 	if (!site_survey_lists)
 		return;
@@ -306,7 +308,7 @@ EJ_VISIBLE void ej_dump_site_survey(webs_t wp, int argc, char_t **argv)
 			//0x200 = 8080 or 160 mhz
 			int speed = site_survey_lists[i].rate_count;
 			int s = 20;
-			int narrow = atoi(nvram_nget("%s_channelbw", nvram_safe_get("wifi_display")));
+			int narrow = atoi(nvram_nget("%s_channelbw", ifname));
 			if (narrow == 5 || narrow == 10 || narrow == 2)
 				s = narrow;
 			//fprintf(stderr, "%d %d %d\n", s, speed, site_survey_lists[i].extcap);
@@ -461,13 +463,20 @@ EJ_VISIBLE void ej_dump_site_survey(webs_t wp, int argc, char_t **argv)
 			quality = 100;
 		char numsta[32];
 		sprintf(numsta, "%d", site_survey_lists[i].numsta);
+
+		int freq = morse_translate(site_survey_lists[i].frequency);
+		if (freq == -1)
+			continue;
+		channel = site_survey_lists[i].channel & 0xff;
+		if (is_morse_micro(ifname))
+			channel = ieee80211_mhz2ieee(interface, freq);
 		websWrite(
 			wp,
 			"\",\"%s\",\"%s\",\"%d\",\"%d\",\"%s\",\"%s\",\"%d\",\"%d\",\"%llu\",\"%d\",\"%s\",\"%s\",\"%s\",\"%s\"\n",
-			net, site_survey_lists[i].BSSID, site_survey_lists[i].channel & 0xff, site_survey_lists[i].frequency,
-			site_survey_lists[i].numsta == -1 ? "N/A" : numsta, site_survey_lists[i].radioname,
-			site_survey_lists[i].RSSI, site_survey_lists[i].phy_noise, quality, site_survey_lists[i].beacon_period,
-			open, site_survey_lists[i].ENCINFO, dtim_period(site_survey_lists[i].dtim_period, dtim), rates);
+			net, site_survey_lists[i].BSSID, channel, freqy, site_survey_lists[i].numsta == -1 ? "N/A" : numsta,
+			site_survey_lists[i].radioname, site_survey_lists[i].RSSI, site_survey_lists[i].phy_noise, quality,
+			site_survey_lists[i].beacon_period, open, site_survey_lists[i].ENCINFO,
+			dtim_period(site_survey_lists[i].dtim_period, dtim), rates);
 	}
 	debug_free(site_survey_lists);
 
