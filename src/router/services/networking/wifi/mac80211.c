@@ -215,7 +215,7 @@ void delete_ath9k_devices(char *physical_iface)
 	LEAVE;
 }
 
-void deconfigure_single_ath9k(int count)
+void deconfigure_single_mac80211(int count)
 {
 	ENTER;
 	int idx = mac80211_get_phy_idx(count);
@@ -311,7 +311,7 @@ static void setchanbw(char *wif, char *driver, int bw)
 }
 
 int iscpe(void);
-void configure_single_ath9k(int count)
+void configure_single_mac80211(int count)
 {
 	const char *next;
 	char var[80];
@@ -2711,7 +2711,7 @@ int vhtcaps_main(int argc, char *argv[])
 }
 
 extern void do_hostapd(char **fstr, const char *prefix);
-void ath9k_start_supplicant(int count, char *prefix, char **configs, int *configidx)
+void mac80211_start_supplicant(int count, char *prefix, char **configs, int *configidx)
 {
 	// erst hostapd starten fuer repeater mode
 	// dann wpa_supplicant mit link zu hostapd
@@ -2810,9 +2810,14 @@ void ath9k_start_supplicant(int count, char *prefix, char **configs, int *config
 		if (strcmp(apm, "sta") && strcmp(apm, "wdssta") && strcmp(apm, "wdssta_mtik") && strcmp(apm, "infra") &&
 		    strcmp(apm, "mesh") && strcmp(apm, "tdma") && strcmp(apm, "wet")) {
 			sprintf(fstr, "/tmp/wifi/%s_hostap.conf", dev);
-			configs[*configidx] = strdup(fstr);
-			configidx[0]++;
-			configs[*configidx] = NULL;
+			if (!is_morse_micro(dev)) {
+				configs[*configidx] = strdup(fstr);
+				configidx[0]++;
+				configs[*configidx] = NULL;
+			} else {
+				char *fstrarr[2] = { fstr, NULL };
+				do_hostapd(fstrarr, dev);
+			}
 		} else {
 			if (*vifs) {
 				int ctrl = 0;
@@ -2831,9 +2836,14 @@ void ath9k_start_supplicant(int count, char *prefix, char **configs, int *config
 				if (ctrl == 0)
 					goto skip;
 				sprintf(fstr, "/tmp/wifi/%s_hostap.conf", dev);
-				configs[*configidx] = strdup(fstr);
-				configidx[0]++;
-				configs[*configidx] = NULL;
+				if (!is_morse_micro(dev)) {
+					configs[*configidx] = strdup(fstr);
+					configidx[0]++;
+					configs[*configidx] = NULL;
+				} else {
+					char *fstrarr[2] = { fstr, NULL };
+					do_hostapd(fstrarr, dev);
+				}
 				sprintf(ctrliface, "/var/run/hostapd/%s.%d", dev, ctrl);
 				sprintf(fstr, "/tmp/wifi/%s_wpa_supplicant.conf", dev);
 				if (nvram_match(wmode, "mesh") || nvram_match(wmode, "infra")) {
@@ -2941,12 +2951,12 @@ void post_hostapd_actions(int count)
 				if (!nvram_match(wmode, "mesh") && !nvram_match(wmode, "infra")) {
 					if ((nvram_match(wmode, "wdssta") || nvram_match(wmode, "wdsta_mtik") || wet) &&
 					    nvram_matchi(bridged, 1))
-						log_eval(is_morse_micro(prefix) ? "wpa_supplicant_s1g" : "wpa_supplicant", "-P",
-							 pid, "-b", getBridge(dev, tmp), background, "-Dnl80211", subinterface,
-							 "-H", ctrliface, "-c", fstr);
+						log_eval(is_morse_micro(dev) ? "wpa_supplicant_s1g" : "wpa_supplicant", "-P", pid,
+							 "-b", getBridge(dev, tmp), background, "-Dnl80211", subinterface, "-H",
+							 ctrliface, "-c", fstr);
 					else
-						log_eval(is_morse_micro(prefix) ? "wpa_supplicant_s1g" : "wpa_supplicant", "-P",
-							 pid, background, "-Dnl80211", subinterface, "-H", ctrliface, "-c", fstr);
+						log_eval(is_morse_micro(dev) ? "wpa_supplicant_s1g" : "wpa_supplicant", "-P", pid,
+							 background, "-Dnl80211", subinterface, "-H", ctrliface, "-c", fstr);
 				}
 			}
 		}
@@ -2995,11 +3005,11 @@ skip:;
 					sprintf(fstr, "/tmp/wifi/%s_wpa_supplicant.conf", var);
 					sprintf(subinterface, "-i%s", var);
 					if (nvram_matchi(bridged, 1))
-						log_eval(is_morse_micro(prefix) ? "wpa_supplicant_s1g" : "wpa_supplicant", "-b",
+						log_eval(is_morse_micro(var) ? "wpa_supplicant_s1g" : "wpa_supplicant", "-b",
 							 getBridge(var, tmp), background, "-Dnl80211", subinterface, "-c", fstr);
 					else {
-						log_eval(is_morse_micro(prefix) ? "wpa_supplicant_s1g" : "wpa_supplicant",
-							 background, "-Dnl80211", subinterface, "-c", fstr);
+						log_eval(is_morse_micro(var) ? "wpa_supplicant_s1g" : "wpa_supplicant", background,
+							 "-Dnl80211", subinterface, "-c", fstr);
 					}
 				}
 				if (!strcmp(m2, "wdsap_mtik")) {

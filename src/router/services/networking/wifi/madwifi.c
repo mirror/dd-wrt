@@ -99,7 +99,7 @@ static void deconfigure_single(int count)
 	char vifs[128];
 #ifdef HAVE_ATH9K
 	if (is_mac80211(dev)) {
-		deconfigure_single_ath9k(count);
+		deconfigure_single_mac80211(count);
 		sysprintf("rm -f /tmp/wlan%d_configured", count);
 		return;
 	}
@@ -976,7 +976,20 @@ void do_hostapd(char **fstr, const char *prefix)
 		if (pid > 0)
 			kill(pid, SIGTERM);
 	}
-	char *argv[] = { "hostapd", "-B", "-P", fname, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL };
+	char *argv[] = { prefix && is_morse_micro(prefix) ? "hostapd_s1g" : "hostapd",
+			 "-B",
+			 "-P",
+			 fname,
+			 NULL,
+			 NULL,
+			 NULL,
+			 NULL,
+			 NULL,
+			 NULL,
+			 NULL,
+			 NULL,
+			 NULL,
+			 NULL };
 	int argc = 4;
 	if (!prefix)
 		debug = nvram_geti("wpa_debug");
@@ -2109,8 +2122,8 @@ static void configure_single(int count, char **configs, int *configidx)
 		led_control(LED_SEC1, LED_OFF);
 #ifdef HAVE_ATH9K
 	if (is_mac80211(dev)) {
-		configure_single_ath9k(count);
-		ath9k_start_supplicant(count, dev, configs, configidx);
+		configure_single_mac80211(count);
+		mac80211_start_supplicant(count, dev, configs, configidx);
 		sysprintf("touch /tmp/wifi/wlan%d_configured", count);
 		return;
 	}
