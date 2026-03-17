@@ -2789,11 +2789,11 @@ void ath9k_start_supplicant(int count, char *prefix, char **configs, int *config
 		debug = nvram_nget("%s_wpa_debug", dev);
 		if (!*debug)
 			debug = nvram_safe_get("wpa_debug");
-		if (!strcmp(debug,"1"))
+		if (!strcmp(debug, "1"))
 			background = "-Bds";
-		else if (!strcmp(debug,"2"))
+		else if (!strcmp(debug, "2"))
 			background = "-Bdds";
-		else if (!strcmp(debug,"3"))
+		else if (!strcmp(debug, "3"))
 			background = "-Bddds";
 		int wet = 0;
 #ifndef HAVE_RELAYD
@@ -2839,11 +2839,12 @@ void ath9k_start_supplicant(int count, char *prefix, char **configs, int *config
 				if (nvram_match(wmode, "mesh") || nvram_match(wmode, "infra")) {
 					/* for mesh mode we dont need ctrl interface since it has a static channel configuration */
 					if (nvram_matchi(bridged, 1))
-						log_eval("wpa_supplicant", "-P", pid, "-b", getBridge(dev, tmp), background,
-							 "-Dnl80211", subinterface, "-c", fstr);
+						log_eval(is_morse_micro(prefix) ? "wpa_supplicant_s1g" : "wpa_supplicant", "-P",
+							 pid, "-b", getBridge(dev, tmp), background, "-Dnl80211", subinterface,
+							 "-c", fstr);
 					else
-						log_eval("wpa_supplicant", "-P", pid, background, "-Dnl80211", subinterface, "-c",
-							 fstr);
+						log_eval(is_morse_micro(prefix) ? "wpa_supplicant_s1g" : "wpa_supplicant", "-P",
+							 pid, background, "-Dnl80211", subinterface, "-c", fstr);
 				}
 			} else {
 skip:;
@@ -2854,11 +2855,12 @@ skip:;
 					if ((nvram_match(wmode, "wdssta") || nvram_match(wmode, "mesh") ||
 					     nvram_match(wmode, "wdsta_mtik") || wet) &&
 					    nvram_matchi(bridged, 1)) {
-						log_eval("wpa_supplicant", "-P", pid, "-b", getBridge(dev, tmp), background,
-							 "-Dnl80211", subinterface, "-c", fstr);
+						log_eval(is_morse_micro(prefix) ? "wpa_supplicant_s1g" : "wpa_supplicant", "-P",
+							 pid, "-b", getBridge(dev, tmp), background, "-Dnl80211", subinterface,
+							 "-c", fstr);
 					} else {
-						log_eval("wpa_supplicant", "-P", pid, background, "-Dnl80211", subinterface, "-c",
-							 fstr);
+						log_eval(is_morse_micro(prefix) ? "wpa_supplicant_s1g" : "wpa_supplicant", "-P",
+							 pid, background, "-Dnl80211", subinterface, "-c", fstr);
 					}
 				}
 			}
@@ -2939,11 +2941,12 @@ void post_hostapd_actions(int count)
 				if (!nvram_match(wmode, "mesh") && !nvram_match(wmode, "infra")) {
 					if ((nvram_match(wmode, "wdssta") || nvram_match(wmode, "wdsta_mtik") || wet) &&
 					    nvram_matchi(bridged, 1))
-						log_eval("wpa_supplicant", "-P", pid, "-b", getBridge(dev, tmp), background,
-							 "-Dnl80211", subinterface, "-H", ctrliface, "-c", fstr);
+						log_eval(is_morse_micro(prefix) ? "wpa_supplicant_s1g" : "wpa_supplicant", "-P",
+							 pid, "-b", getBridge(dev, tmp), background, "-Dnl80211", subinterface,
+							 "-H", ctrliface, "-c", fstr);
 					else
-						log_eval("wpa_supplicant", "-P", pid, background, "-Dnl80211", subinterface, "-H",
-							 ctrliface, "-c", fstr);
+						log_eval(is_morse_micro(prefix) ? "wpa_supplicant_s1g" : "wpa_supplicant", "-P",
+							 pid, background, "-Dnl80211", subinterface, "-H", ctrliface, "-c", fstr);
 				}
 			}
 		}
@@ -2992,10 +2995,11 @@ skip:;
 					sprintf(fstr, "/tmp/wifi/%s_wpa_supplicant.conf", var);
 					sprintf(subinterface, "-i%s", var);
 					if (nvram_matchi(bridged, 1))
-						log_eval("wpa_supplicant", "-b", getBridge(var, tmp), background, "-Dnl80211",
-							 subinterface, "-c", fstr);
+						log_eval(is_morse_micro(prefix) ? "wpa_supplicant_s1g" : "wpa_supplicant", "-b",
+							 getBridge(var, tmp), background, "-Dnl80211", subinterface, "-c", fstr);
 					else {
-						log_eval("wpa_supplicant", background, "-Dnl80211", subinterface, "-c", fstr);
+						log_eval(is_morse_micro(prefix) ? "wpa_supplicant_s1g" : "wpa_supplicant",
+							 background, "-Dnl80211", subinterface, "-c", fstr);
 					}
 				}
 				if (!strcmp(m2, "wdsap_mtik")) {

@@ -144,6 +144,7 @@ void deconfigure_wifi(void)
 	stop_process("wrt-radauth", "Radius daemon");
 	stop_process("hostapd", "hostapd daemon");
 	stop_process("wpa_supplicant", "wpa_supplicant daemon");
+	stop_process("wpa_supplicant_s1g", "wpa_supplicant daemon");
 	sysprintf("rm -f /var/run/ath*"); // delete pid files
 	int c = getdevicecount();
 	int i;
@@ -817,16 +818,20 @@ void setupSupplicant(const char *prefix, char *ssidoverride)
 #ifdef HAVE_RELAYD
 		if ((nvram_match(wmode, "wdssta") || nvram_match(wmode, "mesh") || nvram_match(wmode, "wdssta_mtik")) &&
 		    nvram_matchi(bridged, 1))
-			log_eval("wpa_supplicant", "-P", pid, "-b", getBridge(prefix, tmp), background, driver, psk, "-c", fstr);
+			log_eval(is_morse_micro(prefix) ? "wpa_supplicant_s1g" : "wpa_supplicant", "-P", pid, "-b",
+				 getBridge(prefix, tmp), background, driver, psk, "-c", fstr);
 		else
-			log_eval("wpa_supplicant", "-P", pid, background, driver, psk, "-c", fstr);
+			log_eval(is_morse_micro(prefix) ? "wpa_supplicant_s1g" : "wpa_supplicant", "-P", pid, background, driver,
+				 psk, "-c", fstr);
 #else
 		if ((nvram_match(wmode, "wdssta") || nvram_match(wmode, "wet") || nvram_match(wmode, "mesh") ||
 		     nvram_match(wmode, "wdssta_mtik")) &&
 		    nvram_matchi(bridged, 1))
-			log_eval("wpa_supplicant", "-P", pid, "-b", getBridge(prefix, tmp), background, driver, psk, "-c", fstr);
+			log_eval(is_morse_micro(prefix) ? "wpa_supplicant_s1g" : "wpa_supplicant", "-P", pid, "-b",
+				 getBridge(prefix, tmp), background, driver, psk, "-c", fstr);
 		else
-			log_eval("wpa_supplicant", "-P", pid, background, driver, psk, "-c", fstr);
+			log_eval(is_morse_micro(prefix) ? "wpa_supplicant_s1g" : "wpa_supplicant", "-P", pid, background, driver,
+				 psk, "-c", fstr);
 #endif
 	} else if (ispeap || isleap || istls || isttls) {
 		char fstr[64];
@@ -859,17 +864,19 @@ void setupSupplicant(const char *prefix, char *ssidoverride)
 #ifdef HAVE_RELAYD
 		if (nvram_matchi(bridged, 1) &&
 		    (nvram_match(wmode, "wdssta") || nvram_match(wmode, "mesh") || nvram_match(wmode, "wdssta_mtik")))
-			log_eval("wpa_supplicant", "-P", pid, "-b", nvram_safe_get("lan_ifname"), background, driver, psk, "-c",
-				 fstr);
+			log_eval(is_morse_micro(prefix) ? "wpa_supplicant_s1g" : "wpa_supplicant", "-P", pid, "-b",
+				 nvram_safe_get("lan_ifname"), background, driver, psk, "-c", fstr);
 		else
-			log_eval("wpa_supplicant", "-P", pid, background, driver, psk, "-c", fstr);
+			log_eval(is_morse_micro(prefix) ? "wpa_supplicant_s1g" : "wpa_supplicant", "-P", pid, background, driver,
+				 psk, "-c", fstr);
 #else
 		if (nvram_matchi(bridged, 1) && (nvram_match(wmode, "wdssta") || nvram_match(wmode, "mesh") ||
 						 nvram_match(wmode, "wdssta_mtik") || nvram_match(wmode, "wet")))
-			log_eval("wpa_supplicant", "-P", pid, "-b", nvram_safe_get("lan_ifname"), background, driver, psk, "-c",
-				 fstr);
+			log_eval(is_morse_micro(prefix) ? "wpa_supplicant_s1g" : "wpa_supplicant", "-P", pid, "-b",
+				 nvram_safe_get("lan_ifname"), background, driver, psk, "-c", fstr);
 		else
-			log_eval("wpa_supplicant", "-P", pid, background, driver, psk, "-c", fstr);
+			log_eval(is_morse_micro(prefix) ? "wpa_supplicant_s1g" : "wpa_supplicant", "-P", pid, background, driver,
+				 psk, "-c", fstr);
 
 #endif
 	} else if (nvram_match(akm, "disabled") || nvram_match(akm, "wep")) {
@@ -927,16 +934,20 @@ void setupSupplicant(const char *prefix, char *ssidoverride)
 #ifdef HAVE_RELAYD
 		if ((nvram_match(wmode, "wdssta") || nvram_match(wmode, "mesh") || nvram_match(wmode, "wdssta_mtik")) &&
 		    nvram_matchi(bridged, 1))
-			log_eval("wpa_supplicant", "-P", pid, "-b", getBridge(prefix, tmp), background, driver, psk, "-c", fstr);
+			log_eval(is_morse_micro(prefix) ? "wpa_supplicant_s1g" : "wpa_supplicant", "-P", pid, "-b",
+				 getBridge(prefix, tmp), background, driver, psk, "-c", fstr);
 		else
-			log_eval("wpa_supplicant", "-P", pid, background, driver, psk, "-c", fstr);
+			log_eval(is_morse_micro(prefix) ? "wpa_supplicant_s1g" : "wpa_supplicant", "-P", pid, background, driver,
+				 psk, "-c", fstr);
 #else
 		if ((nvram_match(wmode, "wdssta") || nvram_match(wmode, "wet") || nvram_match(wmode, "mesh") ||
 		     nvram_match(wmode, "wdssta_mtik")) &&
 		    nvram_matchi(bridged, 1))
-			log_eval("wpa_supplicant", "-P", pid, "-b", getBridge(prefix, tmp), background, driver, psk, "-c", fstr);
+			log_eval(is_morse_micro(prefix) ? "wpa_supplicant_s1g" : "wpa_supplicant", "-P", pid, "-b",
+				 getBridge(prefix, tmp), background, driver, psk, "-c", fstr);
 		else
-			log_eval("wpa_supplicant", "-P", pid, background, driver, psk, "-c", fstr);
+			log_eval(is_morse_micro(prefix) ? "wpa_supplicant_s1g" : "wpa_supplicant", "-P", pid, background, driver,
+				 psk, "-c", fstr);
 #endif
 	}
 }
