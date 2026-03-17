@@ -752,7 +752,7 @@ out:
 		rl[rlpos].length = 0;
 	}
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 6, 0)
-	if (likely(folio && !IS_ERR(folio))) {
+	if (!IS_ERR_OR_NULL(folio)) {
 		if (need_writeback) {
 			ntfs_debug("Marking page dirty.");
 			folio_mark_dirty(folio);
@@ -763,7 +763,7 @@ out:
 		folio_put(folio);
 	}
 #else
-	if (likely(page && !IS_ERR(page))) {
+	if (!IS_ERR_OR_NULL(page)) {
 		if (need_writeback) {
 			ntfs_debug("Marking page dirty.");
 			set_page_dirty(page);
@@ -775,11 +775,13 @@ out:
 	}
 #endif
 	if (likely(!err)) {
+		if (!rl) {
+			err = -EIO;
+			goto out_restore;
+		}
 		if (is_dealloc == true)
 			ntfs_release_dirty_clusters(vol, rl->length);
 		ntfs_debug("Done.");
-		if (rl == NULL)
-			err = -EIO;
 		goto out_restore;
 	}
 	if (err != -ENOSPC)
@@ -885,7 +887,7 @@ s64 __ntfs_cluster_free(struct ntfs_inode *ni, const s64 start_vcn, s64 count,
 	int err;
 	unsigned int memalloc_flags;
 
-	ntfs_debug("Entering for i_ino 0x%lx, start_vcn 0x%llx, count 0x%llx.%s",
+	ntfs_debug("Entering for i_ino 0x%llx, start_vcn 0x%llx, count 0x%llx.%s",
 			ni->mft_no, start_vcn, count,
 			is_rollback ? " (rollback)" : "");
 	vol = ni->vol;

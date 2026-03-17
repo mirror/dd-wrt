@@ -564,7 +564,7 @@ static char *read_ntfs_boot_sector(struct super_block *sb,
 		return NULL;
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 16, 0)
-	if (ntfs_bdev_read(sb->s_bdev, 0, PAGE_SIZE, boot_sector)) {
+	if (ntfs_bdev_read(sb->s_bdev, boot_sector, 0, PAGE_SIZE)) {
 #else
 	if (ntfs_dev_read(sb, boot_sector, 0, PAGE_SIZE)) {
 #endif
@@ -1443,7 +1443,7 @@ read_partial_upcase_page:
 		kunmap(page);
 		put_page(page);
 #endif
-	};
+	}
 	if (size == PAGE_SIZE) {
 		size = i_size & ~PAGE_MASK;
 		if (size)
@@ -1959,6 +1959,7 @@ static void ntfs_put_super(struct super_block *sb)
 
 	iput(vol->mft_ino);
 	vol->mft_ino = NULL;
+	blkdev_issue_flush(sb->s_bdev);
 
 	ntfs_volume_free(vol);
 }
@@ -2844,6 +2845,7 @@ static struct file_system_type ntfs_fs_type = {
 	.kill_sb                = kill_block_super,
 	.fs_flags               = FS_REQUIRES_DEV | FS_ALLOW_IDMAP,
 };
+MODULE_ALIAS_FS("ntfsplus");
 
 static int ntfs_workqueue_init(void)
 {
