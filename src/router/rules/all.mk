@@ -419,6 +419,7 @@ include rules/argp-standalone.mk
 include rules/dante.mk
 include rules/hostapd-s1g.mk
 include rules/wpa_supplicant-s1g.mk
+include rules/wavemon.mk
 
 #
 # Generic rules
