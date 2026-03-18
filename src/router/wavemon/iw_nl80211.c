@@ -83,7 +83,7 @@ int handle_cmd(struct cmd *cmd)
 		free_msg_args(cmd);
 	}
 
-	ret = nl_send_auto_complete(cmd->sk, msg);
+	ret = nl_send_auto(cmd->sk, msg);
 	if (ret < 0)
 		err_sys("failed to send netlink message");
 
@@ -96,8 +96,13 @@ int handle_cmd(struct cmd *cmd)
 	if (cmd->handler)
 		nl_cb_set(cb, NL_CB_VALID, NL_CB_CUSTOM, cmd->handler, cmd->handler_arg);
 
+	/* Do not block, otherwise UI might get stalled waiting for updates */
+	nl_socket_set_nonblocking(cmd->sk);
 	while (ret > 0)
-		nl_recvmsgs(cmd->sk, cb);
+		if (nl_recvmsgs(cmd->sk, cb) == -NLE_AGAIN) {
+			ret = -NLE_AGAIN;
+			break;
+		}
 
 	nl_cb_put(cb);
 	nlmsg_free(msg);
@@ -533,7 +538,9 @@ static int link_sta_handler(struct nl_msg *msg, void *arg)
 		[NL80211_STA_INFO_CONNECTED_TIME] = { .type = NLA_U32 },
 		[NL80211_STA_INFO_INACTIVE_TIME] = { .type = NLA_U32 },
 		[NL80211_STA_INFO_RX_BYTES] = { .type = NLA_U32 },
+		[NL80211_STA_INFO_RX_BYTES64] = { .type = NLA_U64 },
 		[NL80211_STA_INFO_TX_BYTES] = { .type = NLA_U32 },
+		[NL80211_STA_INFO_TX_BYTES64] = { .type = NLA_U64 },
 		[NL80211_STA_INFO_RX_PACKETS] = { .type = NLA_U32 },
 		[NL80211_STA_INFO_TX_PACKETS] = { .type = NLA_U32 },
 		[NL80211_STA_INFO_SIGNAL] = { .type = NLA_U8 },
@@ -593,14 +600,18 @@ static int link_sta_handler(struct nl_msg *msg, void *arg)
 	if (sinfo[NL80211_STA_INFO_CONNECTED_TIME])
 		ls->connected_time = nla_get_u32(sinfo[NL80211_STA_INFO_CONNECTED_TIME]);
 
-	if (sinfo[NL80211_STA_INFO_RX_BYTES])
+	if (sinfo[NL80211_STA_INFO_RX_BYTES64])
+		ls->rx_bytes = nla_get_u64(sinfo[NL80211_STA_INFO_RX_BYTES64]);
+	else if (sinfo[NL80211_STA_INFO_RX_BYTES])
 		ls->rx_bytes = nla_get_u32(sinfo[NL80211_STA_INFO_RX_BYTES]);
 	if (sinfo[NL80211_STA_INFO_RX_PACKETS])
 		ls->rx_packets = nla_get_u32(sinfo[NL80211_STA_INFO_RX_PACKETS]);
 	if (sinfo[NL80211_STA_INFO_RX_DROP_MISC])
 		ls->rx_drop_misc = nla_get_u64(sinfo[NL80211_STA_INFO_RX_DROP_MISC]);
 
-	if (sinfo[NL80211_STA_INFO_TX_BYTES])
+	if (sinfo[NL80211_STA_INFO_TX_BYTES64])
+		ls->tx_bytes = nla_get_u64(sinfo[NL80211_STA_INFO_TX_BYTES64]);
+	else if (sinfo[NL80211_STA_INFO_TX_BYTES])
 		ls->tx_bytes = nla_get_u32(sinfo[NL80211_STA_INFO_TX_BYTES]);
 	if (sinfo[NL80211_STA_INFO_TX_PACKETS])
 		ls->tx_packets = nla_get_u32(sinfo[NL80211_STA_INFO_TX_PACKETS]);
@@ -872,7 +883,7 @@ int nl_get_multicast_id(struct nl_sock *sock, const char *family, const char *gr
 	ret = -ENOBUFS;
 	NLA_PUT_STRING(msg, CTRL_ATTR_FAMILY_NAME, family);
 
-	ret = nl_send_auto_complete(sock, msg);
+	ret = nl_send_auto(sock, msg);
 	if (ret < 0)
 		goto out;
 

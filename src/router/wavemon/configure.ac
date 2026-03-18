@@ -1,7 +1,6 @@
 dnl Process this file with autoconf to produce a configure script.
-AC_PREREQ(2.64)
-AC_INIT([wavemon], [0.9.5], [https://github.com/uoaerg/wavemon], [wavemon-current],
-	[https://github.com/uoaerg/wavemon])
+AC_PREREQ([2.71])
+AC_INIT([wavemon],[0.9.7],[https://github.com/uoaerg/wavemon],[wavemon-current],[https://github.com/uoaerg/wavemon])
 
 
 # Variables
@@ -39,19 +38,21 @@ m4_define([NCURSES_CHECK_CONFIG],
                    ])
       LDFLAGS="$ncurses_save_LDFLAGS"
    fi
-   if test "x$ncurses_script_success" == xno; then
+   if test "x$ncurses_script_success" = xno; then
       [$3]
    fi
 ])
 
 # Checks for programs.
-AC_PROG_CC_C99
+AC_PROG_CC
 AC_PROG_CPP
 AC_PROG_INSTALL
+AC_PROG_GREP
 
 # Checks for header files.
-AC_HEADER_STDC
-AC_HEADER_TIME
+AC_CHECK_INCLUDES_DEFAULT
+AC_CHECK_HEADERS_ONCE([sys/time.h])
+
 AC_CHECK_HEADERS([ncurses.h fcntl.h netdb.h sys/ioctl.h sys/time.h unistd.h\
 		  net/if_arp.h netinet/ether.h net/ethernet.h pthread.h],
 		 [], [AC_MSG_ERROR($ac_header not found)])
@@ -98,8 +99,8 @@ AC_CHECK_FUNCS([gettimeofday ether_ntohost], [],
 	       [AC_MSG_ERROR(function '$ac_func' not supported)])
 
 # libnl3 cli package (pulls in genl and route package).
-PKG_CHECK_MODULES([LIBNL3_CLI], [libnl-cli-3.0 >= 3.2], [],
-		  [AC_MSG_ERROR(need libnl-cli-3.0 >= 3.2)])
+PKG_CHECK_MODULES([LIBNL3_CLI], [libnl-cli-3.0 >= 3.2.22], [],
+	       [AC_MSG_ERROR(need libnl-cli-3.0 >= 3.2.22)])
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_PROG_GCC_TRADITIONAL
