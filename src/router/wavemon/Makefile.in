@@ -1,0 +1,82 @@
+prefix	    = @prefix@
+exec_prefix = @exec_prefix@
+
+bindir	    = @bindir@
+datarootdir = $(prefix)/share
+mandir	    = @mandir@
+datadir     = $(datarootdir)/@PACKAGE_NAME@
+exec_perms  = 0755
+install-suid-root: exec_perms = 4755
+
+# Allow overriding CC from the command-line.
+CC_DEFAULT := @CC@
+ifeq ($(origin CC), default)
+CC	 := $(CC_DEFAULT)
+else
+CC	 ?= $(CC_DEFAULT)
+endif
+CFLAGS	 ?= @CFLAGS@ @LIBNL3_CLI_CFLAGS@
+CPPFLAGS ?= @CPPFLAGS@
+LDFLAGS  ?= @LDFLAGS@
+DEFS	 ?= @DEFS@
+LDLIBS	 ?= @LIBS@ @LIBNL3_CLI_LIBS@
+
+ifdef MORSE_VERSION
+CFLAGS += -DMORSE_VERSION_STR=\"$(MORSE_VERSION)\"
+endif
+
+INSTALL = @INSTALL@
+RM	= rm -vf
+
+MAIN	= @PACKAGE_NAME@.c
+HEADERS	= $(wildcard *.h)
+PURESRC	= $(filter-out $(MAIN),$(sort $(wildcard *.c)))
+OBJS	= $(PURESRC:.c=.o)
+DOCS	= README.md LICENSE
+
+%.o: %.c $(HEADERS)
+	@echo ' CC  ' $<
+	@$(CC) $(CFLAGS) $(CPPFLAGS) $(LDFLAGS) $(DEFS) -c -o $@ $<
+
+all: @PACKAGE_NAME@
+@PACKAGE_NAME@: $(MAIN) $(OBJS)
+
+$(MAIN): Makefile
+Makefile: Makefile.in config.status
+	./config.status
+config.status: configure
+	./config.status --recheck
+configure: configure.ac
+	autoconf
+
+tags: $(MAIN) $(PURESRC) $(HEADERS)
+	ctags $^ > $@
+
+.PHONY: all install uninstall clean distclean
+
+install: install-binaries install-docs
+
+install-suid-root install-binaries: all
+	$(INSTALL) -m 0755 -d $(DESTDIR)$(bindir)
+	$(INSTALL) -m $(exec_perms) @PACKAGE_NAME@ $(DESTDIR)$(bindir)
+
+install-docs: @PACKAGE_NAME@.1 @PACKAGE_NAME@rc.5 $(DOCS)
+	$(INSTALL) -m 0755 -d $(DESTDIR)$(mandir)/man1
+	$(INSTALL) -m 0644 @PACKAGE_NAME@.1 $(DESTDIR)$(mandir)/man1
+	$(INSTALL) -m 0755 -d $(DESTDIR)$(mandir)/man5
+	$(INSTALL) -m 0644 @PACKAGE_NAME@rc.5 $(DESTDIR)$(mandir)/man5
+	$(INSTALL) -m 0755 -d $(DESTDIR)$(datadir)
+	$(INSTALL) -m 0644 $(DOCS) $(DESTDIR)$(datadir)
+
+uninstall:
+	@$(RM) $(bindir)/@PACKAGE_NAME@
+	@$(RM) $(mandir)/man1/@PACKAGE_NAME@.1
+	@$(RM) $(mandir)/man5/@PACKAGE_NAME@rc.5
+	@$(RM) -r $(datadir)
+
+clean:
+	@$(RM) *.o *~ tags @PACKAGE_NAME@
+
+distclean: uninstall clean
+	@$(RM) config.status config.log config.cache Makefile
+	@$(RM) -r autom4te.cache

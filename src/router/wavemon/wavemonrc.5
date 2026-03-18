@@ -1,0 +1,135 @@
+.TH wavemonrc 5 "September 2021" Linux "User Manuals"
+.SH NAME
+$XDG_CONFIG_HOME/wavemon/wavemonrc \- wavemon configuration file
+.SH DESCRIPTION
+\fIwavemonrc\fR is the per-user configuration file for \fBwavemon\fR(1).
+This page describes its individual configuration options.  Each corresponds
+to a configuration item of the \fIPreferences\fR screen (F7 key), whose
+on-screen name is shown in parentheses.
+.P
+.B interface = <ifname>
+.RS
+.RE
+(Interface)
+.RS
+Selects the wireless interface to use.
+.P
+.RE
+.B cisco_mac = (on|off)
+.RS
+.RE
+(Cisco-style MAC addresses)
+.RS
+If enabled, display MAC addresses using lower-case hex digits separated by dots
+rather than colons.
+.P
+.RE
+.B scan_filter_band = (2.4ghz|5ghz|both)
+.RS
+.RE
+(Scan band selection)
+.RS
+Filter bands in the scan window: \fI2.4ghz\fR (2.4GHz only), \fI5ghz\fR (5GHz only), or \fIboth\fR (show both bands).
+.P
+.RE
+.B scan_hidden_essids = (on|off)
+.RS
+.RE
+(Scan hidden ESSIDs)
+.RS
+Whether the scan window should include hidden ESSIDs.
+.P
+.RE
+.B sort_order = (channel|essid|mac|signal|open|chan/sig|open/sig)
+.RS
+.RE
+(Scan sort type)
+.RS
+Determines the ordering used in the scan window: \fIchannel\fR sorts by channel number, \fIessid\fR by
+access point name, \fImac\fR by MAC address, \fIsignal\fR by signal strength, and \fIopen\fR by openness.
+The combined variants \fIchan/sig\fR and \fIopen/sig\fR sort first by channel/openness and then by signal strength.
+It also affects the status line at the bottom: normally the most crowded channels are listed,
+sorting by \fIchannel\fR in descending order switches to least crowded ones instead.
+.P
+.RE
+.B sort_ascending = (on|off)
+.RS
+.RE
+(Scan sort direction)
+.RS
+Sets the direction of the \fIsort_order\fR: ascending (on) or descending (off).
+.P
+.P
+.RE
+.B stat_updates = <n>
+.RS
+.RE
+(Statistics updates)
+.RS
+Time interval for polling new statistics (including scan refresh). Range: 10..4000ms.
+.P
+.RE
+.B lhist_slot_size = <n>
+.RS
+.RE
+(Histogram update cycles)
+.RS
+Number of samples used per each histogram slot. For example, if the stat_updates
+interval is 500ms and the histogram slot size is 4, the histogram is moved
+one slot further every 2 seconds. Range: 1..64.
+.P
+.RE
+.B meter_smoothness = <n>
+.RS
+.RE
+(Level meter smoothness)
+.RS
+Determines the responsiveness of level meters, tracking the moving average
+rather than following each new sample. The given value specifies the percentage
+of the history (the 'inertia') of preceding samples. A value of 0 disables
+this option. Range: 0..99%.
+.P
+.RE
+.B info_updates = <n>
+.RS
+.RE
+(Dynamic info updates)
+.RS
+Sets refresh rate for dynamic device parameters (e.g. bitrate) and the
+refresh interval for the Scan window (F3). Range: 1..60s.
+.P
+.RE
+.B override_auto_scale = (on|off)
+.RS
+.RE
+(Override scale autodetect)
+.RS
+Override the auto-scaling of the bar graphs and histogram, allowing you to set your own scales.
+.P
+.RE
+.B min_signal_level, max_signal_level = <n>
+.RS
+.RE
+(Minimum signal level, Maximum signal level)
+.RS
+Set the left and right boundaries of the signal level scales. Ranges: \-100..\-39 (minimum) and \-40..\-10dBm (maximum).
+.P
+.RE
+.B transparent_bg = (on|off)
+.RS
+.RE
+(Use a transparent background)
+.RS
+Use a transparent background instead of black. This is enabled by default and can only be turned off via the startup file.
+.P
+.RE
+.B startup_screen = (info|histogram|scan window)
+.RS
+.RE
+(Startup screen)
+.RS
+Which of the screens appears at program startup.
+.SH "AUTHOR"
+Written by Jan Morgenstern <jan@jm-music.de>.
+.SH "REPORTING BUGS"
+Open an issue on \fIhttps://github.com/uoaerg/wavemon/issues\fR.
