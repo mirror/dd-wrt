@@ -1113,6 +1113,10 @@ char *getCountryList(char *filter)
 		for (i = 0; i < N(allCountries); i++) {
 			if (!checkfilter(filter, allCountries[i].isoName, sc))
 				continue;
+#ifdef HAVE_MORSE
+			if (allCountries[i].region == NULL)
+				continue;
+#endif
 #ifdef HAVE_BUFFALO
 			sprintf(country, "%s", allCountries[i].isoName);
 			if (isValidCountry(region, country)) {
