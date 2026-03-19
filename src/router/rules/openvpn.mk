@@ -237,6 +237,9 @@ endif
 ifeq ($(KERNELVERSION),6.6)
 	make -C ovpn-dco
 endif
+ifeq ($(KERNELVERSION),6.12)
+	make -C ovpn-dco
+endif
 ifeq ($(KERNELVERSION),4.9)
 	make -C ovpn-dco
 endif
@@ -261,6 +264,9 @@ endif
 ifeq ($(KERNELVERSION),6.6)
 	make -C ovpn-dco install
 endif
+ifeq ($(KERNELVERSION),6.12)
+	make -C ovpn-dco install
+endif
 ifeq ($(KERNELVERSION),4.9)
 	make -C ovpn-dco install
 endif
@@ -282,6 +288,9 @@ ifeq ($(KERNELVERSION),6.6-nss)
 	make -C ovpn-dco clean
 endif
 ifeq ($(KERNELVERSION),6.6)
+	make -C ovpn-dco clean
+endif
+ifeq ($(KERNELVERSION),6.12)
 	make -C ovpn-dco clean
 endif
 ifeq ($(KERNELVERSION),4.9)
