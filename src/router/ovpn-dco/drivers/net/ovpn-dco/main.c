@@ -147,10 +147,15 @@ static void ovpn_setup(struct net_device *dev)
 	const int overhead = sizeof(u32) + NONCE_WIRE_SIZE + 16 + sizeof(struct udphdr) +
 			     max(sizeof(struct ipv6hdr), sizeof(struct iphdr));
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 12, 0)
+	netdev_features_t feat = NETIF_F_SG |
+				 NETIF_F_HW_CSUM | NETIF_F_RXCSUM | NETIF_F_GSO |
+				 NETIF_F_GSO_SOFTWARE | NETIF_F_HIGHDMA;
+#else
 	netdev_features_t feat = NETIF_F_SG | NETIF_F_LLTX |
 				 NETIF_F_HW_CSUM | NETIF_F_RXCSUM | NETIF_F_GSO |
 				 NETIF_F_GSO_SOFTWARE | NETIF_F_HIGHDMA;
-
+#endif
 	dev->ethtool_ops = &ovpn_ethtool_ops;
 
 	dev->netdev_ops = &ovpn_netdev_ops;
@@ -162,6 +167,9 @@ static void ovpn_setup(struct net_device *dev)
 	dev->mtu = ETH_DATA_LEN - overhead;
 	dev->min_mtu = IPV4_MIN_MTU;
 	dev->max_mtu = IP_MAX_MTU - overhead;
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 12, 0)
+	dev->lltx = true;
+#endif
 
 	/* Zero header length */
 	dev->type = ARPHRD_NONE;

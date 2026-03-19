@@ -248,7 +248,7 @@ static int ovpn_netlink_new_key(struct sk_buff *skb, struct genl_info *info)
 
 	peer_id = nla_get_u32(attrs[OVPN_NEW_KEY_ATTR_PEER_ID]);
 	pkr.slot = nla_get_u8(attrs[OVPN_NEW_KEY_ATTR_KEY_SLOT]);
-	pkr.key.key_id = nla_get_u16(attrs[OVPN_NEW_KEY_ATTR_KEY_ID]);
+	pkr.key.key_id = nla_get_u8(attrs[OVPN_NEW_KEY_ATTR_KEY_ID]);
 
 	pkr.key.cipher_alg = nla_get_u16(attrs[OVPN_NEW_KEY_ATTR_CIPHER_ALG]);
 
