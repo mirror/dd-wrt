@@ -28,6 +28,9 @@
 #include <linux/version.h>
 
 #include <net/ip_tunnels.h>
+#if LINUX_VERSION_CODE > KERNEL_VERSION(6, 12, 0)
+#include <net/genetlink.h>
+#endif
 
 /* Driver info */
 #define DRV_NAME	"ovpn-dco"
