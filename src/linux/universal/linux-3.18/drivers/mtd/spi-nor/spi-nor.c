@@ -936,7 +936,7 @@ int guessbootsize(struct mtd_info *mtd, void *offset, unsigned int maxscan)
 #ifdef CONFIG_ARCHERC25
 	return 0x30000;
 #endif
-	ofsb = ofs = vmalloc(0x20000+4);
+	ofsb = ofs = vmalloc(0x20000 + 4);
 	mtd_read(mtd, 0, 65536, &retlen, &ofs[0]);
 	if (!strncmp((char *)(&ofsb[0x29da]), "myloram.bin", 11) || !strncmp((char *)(&ofsb[0x2aba]), "myloram.bin", 11)) {
 		printk(KERN_INFO "compex WP72E detected\n");
@@ -946,7 +946,6 @@ int guessbootsize(struct mtd_info *mtd, void *offset, unsigned int maxscan)
 	}
 
 	for (i = 0; i < maxscan - 65536; i += 65536) {
-
 		if (ofs[0] == 0x6d000080) {
 			printk(KERN_INFO "redboot or compatible detected\n");
 			vfree(ofs);
@@ -965,7 +964,7 @@ int guessbootsize(struct mtd_info *mtd, void *offset, unsigned int maxscan)
 				vfree(ofs);
 				return i; // uboot, lzma image
 			}
-			mtd_read(mtd, i, 0x20000+4, &retlen, &ofs[0]);
+			mtd_read(mtd, i, 0x20000 + 4, &retlen, &ofs[0]);
 			if (ofs[0x8000] == 0x27051956) {
 				printk(KERN_INFO "uboot detected (MMS344 Quirk)\n");
 				vfree(ofs);
@@ -1398,15 +1397,18 @@ int spi_nor_scan(struct spi_nor *nor, const char *name, enum read_mode mode)
 			origlen = dir_parts[ROOTFS].offset + dir_parts[ROOTFS].size;
 
 			len = dir_parts[ROOTFS].offset + dir_parts[ROOTFS].size;
-			len += (mtd->erasesize - 1);
-			len &= ~(mtd->erasesize - 1);
+#define ALIGN(a)                   \
+	a += (mtd->erasesize - 1); \
+	a &= ~(mtd->erasesize - 1);
+	
+			ALIGN(len);
 			printk(KERN_INFO "adjusted length %X, original length %X\n", len, origlen);
 			if ((len - (inc + 4096)) < origlen)
 				len += mtd->erasesize;
 			dir_parts[ROOTFS].size = (len & 0x3ffffff) - dir_parts[ROOTFS].offset;
 
 			dir_parts[DDWRT].offset = dir_parts[ROOTFS].offset + dir_parts[ROOTFS].size;
-
+			ALIGN(dir_parts[DDWRT].offset);
 			dir_parts[BOARD_CONFIG].offset = mtd->size - mtd->erasesize; //fis config
 			dir_parts[BOARD_CONFIG].size = mtd->erasesize;
 #if defined(CONFIG_ARCHERC25)
@@ -1449,10 +1451,11 @@ int spi_nor_scan(struct spi_nor *nor, const char *name, enum read_mode mode)
 	}
 #if IS_ENABLED(CONFIG_MTD_OOPS)
 	printk(KERN_INFO "dd-wrt partition is %lld\n", dir_parts[DDWRT].size);
-	if (dir_parts[DDWRT].size > 0x20000) {
-		dir_parts[DDWRT].size -= 0x20000;
+	unsigned long long oopssize = mtd->erasesize > 0x20000 ? mtd->erasesize : 0x20000;
+	if (dir_parts[DDWRT].size > oopssize) {
+		dir_parts[DDWRT].size -= oopssize;
 		dir_parts[OOPS].offset = dir_parts[DDWRT].offset + dir_parts[DDWRT].size;
-		dir_parts[OOPS].size = 0x20000;
+		dir_parts[OOPS].size = oopssize;
 		numparts = 10;
 	} else
 		dir_parts[OOPS].name = NULL;
