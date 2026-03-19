@@ -134,6 +134,8 @@ void start_resetbutton(void)
 {
 	int ret = 0;
 
+	if (nvram_match("http_username", DEFAULT_USER) && nvram_match("http_passwd", DEFAULT_PASS))
+		return;
 	log_eval("resetbutton");
 
 	return;
