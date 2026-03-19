@@ -2531,6 +2531,69 @@ int morse_opclass(int freq)
 	return op;
 }
 
+int morse_bwsupport(int bw)
+{
+	char *country;
+	char regdomain[32];
+	sprintf(regdomain, "wlan0_regdomain");
+	country = getRegionCode(nvram_default_get(regdomain, "UNITED_STATES"));
+	MICRO_MAP *map;
+	int num;
+	map = us_chans;
+	num = ARRAY_SIZE(us_chans);
+	if (country) {
+		if (!strcmp(country, "EU")) {
+			map = eu_chans;
+			num = ARRAY_SIZE(eu_chans);
+		}
+		if (!strcmp(country, "CA")) {
+			map = ca_chans;
+			num = ARRAY_SIZE(ca_chans);
+		}
+		if (!strcmp(country, "AU")) {
+			map = au_chans;
+			num = ARRAY_SIZE(au_chans);
+		}
+		if (!strcmp(country, "NZ")) {
+			map = nz_chans;
+			num = ARRAY_SIZE(nz_chans);
+		}
+		if (!strcmp(country, "GB")) {
+			map = gb_chans;
+			num = ARRAY_SIZE(gb_chans);
+		}
+		if (!strcmp(country, "KR")) {
+			map = kr_chans;
+			num = ARRAY_SIZE(kr_chans);
+		}
+		if (!strcmp(country, "JP")) {
+			map = jp_chans;
+			num = ARRAY_SIZE(jp_chans);
+		}
+		if (!strcmp(country, "IN")) {
+			map = in_chans;
+			num = ARRAY_SIZE(in_chans);
+		}
+	}
+	int a;
+	int op = map[0].opclass;
+	for (a = 0; a < num; a++) {
+		if (bw == 1 && map[a].width == 20) {
+			return 1;
+		}
+		if (bw == 2 && map[a].width == 40) {
+			return 1;
+		}
+		if (bw == 4 && map[a].width == 80) {
+			return 1;
+		}
+		if (bw == 8 && map[a].width == 160) {
+			return 1;
+		}
+	}
+	return 0;
+}
+
 int morse_translate(int freq)
 {
 	char *country;
