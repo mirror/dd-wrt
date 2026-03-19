@@ -3398,14 +3398,18 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 		wl_width);
 	websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
 	if (is_morse_micro(prefix)) {
-		websWrite(wp, "document.write(\"<option value=\\\"20\\\" %s > 1 \" + wl_basic.mhz + \"</option>\");\n",
-			  nvram_matchi(wl_width, 20) ? "selected=\\\"selected\\\"" : "");
-		websWrite(wp, "document.write(\"<option value=\\\"40\\\" %s > 2 \" + wl_basic.mhz + \"</option>\");\n",
-			  nvram_matchi(wl_width, 40) ? "selected=\\\"selected\\\"" : "");
-		websWrite(wp, "document.write(\"<option value=\\\"80\\\" %s > 4 \" + wl_basic.mhz + \"</option>\");\n",
-			  nvram_matchi(wl_width, 80) ? "selected=\\\"selected\\\"" : "");
-		websWrite(wp, "document.write(\"<option value=\\\"160\\\" %s > 8 \" + wl_basic.mhz + \"</option>\");\n",
-			  nvram_matchi(wl_width, 160) ? "selected=\\\"selected\\\"" : "");
+		if (morse_bwsupport(1))
+			websWrite(wp, "document.write(\"<option value=\\\"20\\\" %s > 1 \" + wl_basic.mhz + \"</option>\");\n",
+				  nvram_matchi(wl_width, 20) ? "selected=\\\"selected\\\"" : "");
+		if (morse_bwsupport(2))
+			websWrite(wp, "document.write(\"<option value=\\\"40\\\" %s > 2 \" + wl_basic.mhz + \"</option>\");\n",
+				  nvram_matchi(wl_width, 40) ? "selected=\\\"selected\\\"" : "");
+		if (morse_bwsupport(4))
+			websWrite(wp, "document.write(\"<option value=\\\"80\\\" %s > 4 \" + wl_basic.mhz + \"</option>\");\n",
+				  nvram_matchi(wl_width, 80) ? "selected=\\\"selected\\\"" : "");
+		if (morse_bwsupport(8))
+			websWrite(wp, "document.write(\"<option value=\\\"160\\\" %s > 8 \" + wl_basic.mhz + \"</option>\");\n",
+				  nvram_matchi(wl_width, 160) ? "selected=\\\"selected\\\"" : "");
 
 	} else {
 		websWrite(wp, "document.write(\"<option value=\\\"20\\\" %s >\" + share.full + \"</option>\");\n",
@@ -3779,22 +3783,26 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 			//                        "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<option value=\\\"0\\\" %s >\" + share.auto + \"</option>\");\n//]]>\n</script>\n",
 			//                        nvram_nmatch("0", "%s_nbw", prefix) ? "selected=\\\"selected\\\"" : "");
 			if (is_morse_micro(prefix)) {
-				websWrite(
-					wp,
-					"<option value=\"20\" %s>1 <script type=\"text/javascript\">Capture(wl_basic.mhz);</script></option>\n",
-					nvram_nmatch("20", "%s_nbw", prefix) ? "selected=\"selected\"" : "");
-				websWrite(
-					wp,
-					"<option value=\"40\" %s>2 <script type=\"text/javascript\">Capture(wl_basic.mhz);</script></option>\n",
-					nvram_nmatch("40", "%s_nbw", prefix) ? "selected=\"selected\"" : "");
-				websWrite(
-					wp,
-					"<option value=\"80\" %s>4 <script type=\"text/javascript\">Capture(wl_basic.mhz);</script></option>\n",
-					nvram_nmatch("80", "%s_nbw", prefix) ? "selected=\"selected\"" : "");
-				websWrite(
-					wp,
-					"<option value=\"160\" %s>8 <script type=\"text/javascript\">Capture(wl_basic.mhz);</script></option>\n",
-					nvram_nmatch("160", "%s_nbw", prefix) ? "selected=\"selected\"" : "");
+				if (morse_bwsupport(1))
+					websWrite(
+						wp,
+						"<option value=\"20\" %s>1 <script type=\"text/javascript\">Capture(wl_basic.mhz);</script></option>\n",
+						nvram_nmatch("20", "%s_nbw", prefix) ? "selected=\"selected\"" : "");
+				if (morse_bwsupport(2))
+					websWrite(
+						wp,
+						"<option value=\"40\" %s>2 <script type=\"text/javascript\">Capture(wl_basic.mhz);</script></option>\n",
+						nvram_nmatch("40", "%s_nbw", prefix) ? "selected=\"selected\"" : "");
+				if (morse_bwsupport(4))
+					websWrite(
+						wp,
+						"<option value=\"80\" %s>4 <script type=\"text/javascript\">Capture(wl_basic.mhz);</script></option>\n",
+						nvram_nmatch("80", "%s_nbw", prefix) ? "selected=\"selected\"" : "");
+				if (morse_bwsupport(8))
+					websWrite(
+						wp,
+						"<option value=\"160\" %s>8 <script type=\"text/javascript\">Capture(wl_basic.mhz);</script></option>\n",
+						nvram_nmatch("160", "%s_nbw", prefix) ? "selected=\"selected\"" : "");
 
 			} else {
 				websWrite(
@@ -4390,14 +4398,22 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 			wl_width, prefix);
 		websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
 		if (is_morse_micro(prefix)) {
-			websWrite(wp, "document.write(\"<option value=\\\"20\\\" %s > 1 \" + wl_basic.mhz + \"</option>\");\n",
-				  nvram_matchi(wl_width, 20) ? "selected=\\\"selected\\\"" : "");
-			websWrite(wp, "document.write(\"<option value=\\\"40\\\" %s > 2 \" + wl_basic.mhz + \"</option>\");\n",
-				  nvram_matchi(wl_width, 40) ? "selected=\\\"selected\\\"" : "");
-			websWrite(wp, "document.write(\"<option value=\\\"80\\\" %s > 4 \" + wl_basic.mhz + \"</option>\");\n",
-				  nvram_matchi(wl_width, 80) ? "selected=\\\"selected\\\"" : "");
-			websWrite(wp, "document.write(\"<option value=\\\"160\\\" %s > 8 \" + wl_basic.mhz + \"</option>\");\n",
-				  nvram_matchi(wl_width, 160) ? "selected=\\\"selected\\\"" : "");
+			if (morse_bwsupport(1))
+				websWrite(wp,
+					  "document.write(\"<option value=\\\"20\\\" %s > 1 \" + wl_basic.mhz + \"</option>\");\n",
+					  nvram_matchi(wl_width, 20) ? "selected=\\\"selected\\\"" : "");
+			if (morse_bwsupport(2))
+				websWrite(wp,
+					  "document.write(\"<option value=\\\"40\\\" %s > 2 \" + wl_basic.mhz + \"</option>\");\n",
+					  nvram_matchi(wl_width, 40) ? "selected=\\\"selected\\\"" : "");
+			if (morse_bwsupport(4))
+				websWrite(wp,
+					  "document.write(\"<option value=\\\"80\\\" %s > 4 \" + wl_basic.mhz + \"</option>\");\n",
+					  nvram_matchi(wl_width, 80) ? "selected=\\\"selected\\\"" : "");
+			if (morse_bwsupport(8))
+				websWrite(wp,
+					  "document.write(\"<option value=\\\"160\\\" %s > 8 \" + wl_basic.mhz + \"</option>\");\n",
+					  nvram_matchi(wl_width, 160) ? "selected=\\\"selected\\\"" : "");
 
 		} else {
 			websWrite(wp, "document.write(\"<option value=\\\"20\\\" %s >\" + share.full + \"</option>\");\n",
@@ -4519,22 +4535,26 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 			//                                nvram_nmatch("0", "%s_nbw", prefix) ? "selected=\"selected\"" : "");
 
 			if (is_morse_micro(prefix)) {
-				websWrite(
-					wp,
-					"<option value=\"20\" %s>1 <script type=\"text/javascript\">Capture(wl_basic.mhz);</script></option>\n",
-					nvram_nmatch("20", "%s_nbw", prefix) ? "selected=\"selected\"" : "");
-				websWrite(
-					wp,
-					"<option value=\"40\" %s>2 <script type=\"text/javascript\">Capture(wl_basic.mhz);</script></option>\n",
-					nvram_nmatch("40", "%s_nbw", prefix) ? "selected=\"selected\"" : "");
-				websWrite(
-					wp,
-					"<option value=\"80\" %s>4 <script type=\"text/javascript\">Capture(wl_basic.mhz);</script></option>\n",
-					nvram_nmatch("80", "%s_nbw", prefix) ? "selected=\"selected\"" : "");
-				websWrite(
-					wp,
-					"<option value=\"160\" %s>8 <script type=\"text/javascript\">Capture(wl_basic.mhz);</script></option>\n",
-					nvram_nmatch("160", "%s_nbw", prefix) ? "selected=\"selected\"" : "");
+				if (morse_bwsupport(1))
+					websWrite(
+						wp,
+						"<option value=\"20\" %s>1 <script type=\"text/javascript\">Capture(wl_basic.mhz);</script></option>\n",
+						nvram_nmatch("20", "%s_nbw", prefix) ? "selected=\"selected\"" : "");
+				if (morse_bwsupport(2))
+					websWrite(
+						wp,
+						"<option value=\"40\" %s>2 <script type=\"text/javascript\">Capture(wl_basic.mhz);</script></option>\n",
+						nvram_nmatch("40", "%s_nbw", prefix) ? "selected=\"selected\"" : "");
+				if (morse_bwsupport(4))
+					websWrite(
+						wp,
+						"<option value=\"80\" %s>4 <script type=\"text/javascript\">Capture(wl_basic.mhz);</script></option>\n",
+						nvram_nmatch("80", "%s_nbw", prefix) ? "selected=\"selected\"" : "");
+				if (morse_bwsupport(8))
+					websWrite(
+						wp,
+						"<option value=\"160\" %s>8 <script type=\"text/javascript\">Capture(wl_basic.mhz);</script></option>\n",
+						nvram_nmatch("160", "%s_nbw", prefix) ? "selected=\"selected\"" : "");
 
 			} else {
 				websWrite(
