@@ -23,3 +23,9 @@
 		linux,default-trigger = "usbport";
 	};
 };
+
+
+&xhci {
+	status = "okay";
+};
+

@@ -7,3 +7,7 @@
 	compatible = "dlink,dir-878-r1", "mediatek,mt7621-soc";
 	model = "D-Link DIR-878 R1";
 };
+&xhci {
+	status = "okay";
+};
+
