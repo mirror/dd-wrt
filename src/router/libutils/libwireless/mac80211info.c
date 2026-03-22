@@ -807,12 +807,13 @@ struct mac80211_info *mac80211_assoclist(const char *interface)
 	struct statdata data;
 	lock();
 	data.mac80211_info = calloc(1, sizeof(struct mac80211_info));
-	if (intf)
+	if (intf) {
 		data.mac80211_info->frequency = intf->freq;
 
-	if (lastfreq != intf->freq) {
-		lastfreq = intf->freq;
-		eval("iw", "dev", interface, "scan");
+		if (lastfreq != intf->freq) {
+			lastfreq = intf->freq;
+			eval("iw", "dev", interface, "scan");
+		}
 	}
 
 	if (interface)
