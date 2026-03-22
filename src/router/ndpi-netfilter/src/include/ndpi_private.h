@@ -36,6 +36,8 @@ extern "C" {
 #define _NDPI_CONFIG_H_
 #endif
 
+#include "ndpi_usdt.h"
+
 /* NDPI_NODE */
 typedef struct node_t {
   char *key;
@@ -146,11 +148,6 @@ struct ndpi_packet_struct {
   u_int8_t packet_lines_parsed_complete:1,
     packet_direction:1, empty_line_position_set:1, http_check_content:1, pad:4;
 };
-
-typedef struct ndpi_list_struct {
-  char *value;
-  struct ndpi_list_struct *next;
-} ndpi_list;
 
 #ifdef HAVE_NBPF
 typedef struct {
@@ -712,7 +709,8 @@ NDPI_STATIC void exclude_dissector(struct ndpi_detection_module_struct *ndpi_str
 
 NDPI_STATIC char *strptime(const char *s, const char *format, struct tm *tm);
 
-NDPI_STATIC u_int8_t iph_is_valid_and_not_fragmented(const struct ndpi_iphdr *iph, const u_int16_t ipsize);
+NDPI_STATIC u_int8_t iph_is_valid_and_not_fragmented(struct ndpi_detection_module_struct *ndpi_str,
+                                         const struct ndpi_iphdr *iph, const u_int16_t ipsize);
 
 NDPI_STATIC int current_pkt_from_client_to_server(struct ndpi_detection_module_struct *ndpi_str, const struct ndpi_flow_struct *flow);
 NDPI_STATIC int current_pkt_from_server_to_client(struct ndpi_detection_module_struct *ndpi_str, const struct ndpi_flow_struct *flow);

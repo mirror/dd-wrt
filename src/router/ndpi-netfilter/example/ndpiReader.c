@@ -158,11 +158,12 @@ extern u_int16_t min_pattern_len, max_pattern_len;
 u_int8_t dump_internal_stats;
 
 static struct ndpi_bin malloc_bins;
-static int enable_malloc_bins = 0;
-static int max_malloc_bins = 14;
+static struct ndpi_bin realloc_bins;
+static int enable_alloc_bins = 0;
+static int max_alloc_bins = 14;
 static u_int8_t dump_hosts_mode = 0;
 
-int malloc_size_stats = 0;
+int alloc_size_stats = 0;
 
 int monitoring_enabled;
 
@@ -322,12 +323,12 @@ FILE *trace = NULL;
 
 /* ***************************************************** */
 
-static u_int32_t reader_slot_malloc_bins(u_int64_t v)
+static u_int32_t reader_slot_alloc_bins(u_int64_t v)
 {
   int i;
 
   /* 0-2,3-4,5-8,9-16,17-32,33-64,65-128,129-256,257-512,513-1024,1025-2048,2049-4096,4097-8192,8193- */
-  for(i=0; i < max_malloc_bins - 1; i++)
+  for(i=0; i < max_alloc_bins - 1; i++)
     if((1ULL << (i + 1)) >= v)
       return i;
   return i;
@@ -339,8 +340,8 @@ static u_int32_t reader_slot_malloc_bins(u_int64_t v)
 static void *malloc_wrapper(size_t size) {
   tot_ndpi_memory += size;
 
-  if(enable_malloc_bins && malloc_size_stats)
-    ndpi_inc_bin(&malloc_bins, reader_slot_malloc_bins(size), 1);
+  if(enable_alloc_bins && alloc_size_stats)
+    ndpi_inc_bin(&malloc_bins, reader_slot_alloc_bins(size), 1);
 
   return(malloc(size)); /* Don't change to ndpi_malloc !!!!! */
 }
@@ -359,8 +360,8 @@ static void free_wrapper(void *freeable) {
 static void *calloc_wrapper(size_t nmemb, size_t size) {
   tot_ndpi_memory += (nmemb * size);
 
-  if(enable_malloc_bins && malloc_size_stats)
-    ndpi_inc_bin(&malloc_bins, reader_slot_malloc_bins(nmemb * size), 1);
+  if(enable_alloc_bins && alloc_size_stats)
+    ndpi_inc_bin(&malloc_bins, reader_slot_alloc_bins(nmemb * size), 1);
 
   return(calloc(nmemb, size)); /* Don't change to ndpi_calloc !!!!! */
 }
@@ -370,8 +371,8 @@ static void *calloc_wrapper(size_t nmemb, size_t size) {
 static void *realloc_wrapper(void *ptr, size_t size) {
   tot_ndpi_memory += size;
 
-  if(enable_malloc_bins && malloc_size_stats)
-    ndpi_inc_bin(&malloc_bins, reader_slot_malloc_bins(size), 1);
+  if(enable_alloc_bins && alloc_size_stats)
+    ndpi_inc_bin(&realloc_bins, reader_slot_alloc_bins(size), 1);
 
   return(realloc(ptr, size)); /* Don't change to ndpi_realloc !!!!! */
 }
@@ -381,8 +382,8 @@ static void *realloc_wrapper(void *ptr, size_t size) {
 static void *aligned_malloc_wrapper(size_t alignment, size_t size) {
   tot_ndpi_memory += size;
 
-  if(enable_malloc_bins && malloc_size_stats)
-    ndpi_inc_bin(&malloc_bins, reader_slot_malloc_bins(size), 1);
+  if(enable_alloc_bins && alloc_size_stats)
+    ndpi_inc_bin(&malloc_bins, reader_slot_alloc_bins(size), 1);
 
   void* p;
 #ifdef _MSC_VER
@@ -571,9 +572,6 @@ static void configure_ndpi(struct ndpi_detection_module_struct *ndpi_struct) {
     }
   }
 
-  if(_protoFilePath != NULL)
-    ndpi_load_protocols_file(ndpi_struct, _protoFilePath);
-
   ndpi_set_config(ndpi_struct, NULL, "tcp_ack_payload_heuristic", "enable");
 
   for(i = 0; i < num_cfgs; i++) {
@@ -585,6 +583,9 @@ static void configure_ndpi(struct ndpi_detection_module_struct *ndpi_struct) {
               cfgs[i].param, cfgs[i].value, ndpi_cfg_error2string(rc), rc);
     }
   }
+
+  if(_protoFilePath != NULL)
+    ndpi_load_protocols_file(ndpi_struct, _protoFilePath);
 
   if(enable_doh_dot_detection)
     ndpi_set_config(ndpi_struct, "tls", "application_blocks_tracking", "enable");
@@ -1630,8 +1631,9 @@ static void parse_parameters(int argc, char **argv)
     break;
 
     case 'M':
-      enable_malloc_bins = 1;
-      ndpi_init_bin(&malloc_bins, ndpi_bin_family64, max_malloc_bins);
+      enable_alloc_bins = 1;
+      ndpi_init_bin(&malloc_bins, ndpi_bin_family64, max_alloc_bins);
+      ndpi_init_bin(&realloc_bins, ndpi_bin_family64, max_alloc_bins);
       break;
 
     case 169:
@@ -1906,7 +1908,7 @@ static void parseOptions(int argc, char **argv) {
         _pcap_file[thread_id] = _pcap_file[0];
     }
 
-    if(num_threads > 1 && enable_malloc_bins == 1)
+    if(num_threads > 1 && enable_alloc_bins == 1)
     {
       printf("Memory profiling ('-M') is incompatible with multi-thread enviroment");
       exit(1);
@@ -2653,7 +2655,8 @@ static void printFlow(u_int32_t id, struct ndpi_flow_info *flow, u_int16_t threa
 
     if((flow->tls.num_blocks > 0) && (flow->tls.blocks != NULL)) {
       int i;
-
+      u_char *enc = ndpi_encode_tls_blocks(flow->tls.blocks, flow->tls.num_blocks);
+      
       fprintf(out, "[TLS blocks: ");
 
       for(i=0; i<flow->tls.num_blocks; i++)
@@ -2661,7 +2664,9 @@ static void printFlow(u_int32_t id, struct ndpi_flow_info *flow, u_int16_t threa
 		ndpi_print_encoded_tls_block_type(flow->tls.blocks[i].block_type, true),
 		flow->tls.blocks[i].len);
 
-      fprintf(out, "]");
+      fprintf(out, "][%s]", enc ? (char*)enc : "");
+
+      if(enc) ndpi_free(enc);
     }
 
     if(flow->flow_payload && (flow->flow_payload_len > 0)) {
@@ -2883,10 +2888,10 @@ static void node_proto_guess_walker(const void *node, ndpi_VISIT which, int dept
   if((which == ndpi_preorder) || (which == ndpi_leaf)) { /* Avoid walking the same node multiple times */
     if((!flow->detection_completed) && flow->ndpi_flow) {
 
-      malloc_size_stats = 1;
+      alloc_size_stats = 1;
       flow->detected_protocol = ndpi_detection_giveup(ndpi_thread_info[thread_id].workflow->ndpi_struct,
                                                       flow->ndpi_flow);
-      malloc_size_stats = 0;
+      alloc_size_stats = 0;
 
       if(flow->ndpi_flow->protocol_was_guessed) ndpi_thread_info[thread_id].workflow->stats.guessed_flow_protocols++;
     }
@@ -4745,8 +4750,10 @@ static void printResults(u_int64_t processing_time_usec, u_int64_t setup_time_us
              (long long unsigned int)cumulative_stats.hash_stats[NDPI_STR_HASH_HTTP_URL].n_search,
              (long long unsigned int)cumulative_stats.hash_stats[NDPI_STR_HASH_HTTP_URL].n_found);
 
-      if(enable_malloc_bins)
-	printf("\tData-path malloc histogram: %s\n", ndpi_print_bin(&malloc_bins, 0, buf, sizeof(buf)));
+      if(enable_alloc_bins) {
+	printf("\tData-path malloc histogram:  %s\n", ndpi_print_bin(&malloc_bins, 0, buf, sizeof(buf)));
+	printf("\tData-path realloc histogram: %s\n", ndpi_print_bin(&realloc_bins, 0, buf, sizeof(buf)));
+      }
     }
   }
 
@@ -4891,8 +4898,10 @@ static void printResults(u_int64_t processing_time_usec, u_int64_t setup_time_us
              (long long unsigned int)cumulative_stats.hash_stats[NDPI_STR_HASH_HTTP_URL].n_search,
              (long long unsigned int)cumulative_stats.hash_stats[NDPI_STR_HASH_HTTP_URL].n_found);
 
-      if(enable_malloc_bins)
-        fprintf(results_file, "Data-path malloc histogram: %s\n", ndpi_print_bin(&malloc_bins, 0, buf, sizeof(buf)));
+      if(enable_alloc_bins) {
+        fprintf(results_file, "Data-path malloc histogram:  %s\n", ndpi_print_bin(&malloc_bins, 0, buf, sizeof(buf)));
+        fprintf(results_file, "Data-path realloc histogram: %s\n", ndpi_print_bin(&realloc_bins, 0, buf, sizeof(buf)));
+      }
     }
 
     fprintf(results_file, "\n");
@@ -5395,6 +5404,18 @@ static void ndpi_process_packet(u_char *args,
   }
 }
 
+
+#define timespec_diff_macro(a, b, result)             \
+  do {                                                \
+    (result)->tv_sec = (a)->tv_sec - (b)->tv_sec;     \
+    (result)->tv_nsec = (a)->tv_nsec - (b)->tv_nsec;  \
+    if ((result)->tv_nsec < 0) {                      \
+      --(result)->tv_sec;                             \
+      (result)->tv_nsec += 1000000000;                \
+    }                                                 \
+  } while (0)
+
+
 #ifndef USE_DPDK
 /**
  * @brief Call pcap_loop() to process packets from a live capture or savefile
@@ -5402,6 +5423,25 @@ static void ndpi_process_packet(u_char *args,
 static void runPcapLoop(u_int16_t thread_id) {
   if((!shutdown_app) && (ndpi_thread_info[thread_id].workflow->pcap_handle != NULL)) {
     int datalink_type = pcap_datalink(ndpi_thread_info[thread_id].workflow->pcap_handle);
+    int ret;
+    int perf_ctl_fd = -1;
+    int perf_ctl_ack_fd = -1;
+    char ack[5];
+    char *env;
+#ifdef PRINT_RUNTIME
+    struct timespec start, end, diff;
+#endif
+
+   /* Enable perf only for "runtime" functions, not for initialization phase.
+      See: example/perf.sh */
+    if(num_threads == 1) {
+      env = getenv("PERF_CTL_FD");
+      if(env)
+        perf_ctl_fd = atoi(env);
+      env = getenv("PERF_CTL_ACK_FD");
+      if(env)
+        perf_ctl_ack_fd =atoi(env);
+    }
 
     /* When using as extcap interface, the output/dumper pcap must have the same datalink
        type of the input traffic [to be able to use, for example, input pcaps with
@@ -5417,9 +5457,41 @@ static void runPcapLoop(u_int16_t thread_id) {
       printf("Unsupported datalink %d. Skip pcap\n", datalink_type);
       return;
     }
-    int ret = pcap_loop(ndpi_thread_info[thread_id].workflow->pcap_handle, -1, &ndpi_process_packet, (u_char*)&thread_id);
+
+    if(perf_ctl_fd != -1 && perf_ctl_ack_fd != -1) {
+      /* Start the performance counter and read the ack */
+      ret = write(perf_ctl_fd, "enable\n", 8);
+      assert(ret >= 0);
+      ret = read(perf_ctl_ack_fd, ack, 5);
+      assert(ret >= 0);
+      assert(strcmp(ack, "ack\n") == 0);
+    }
+
+#ifdef PRINT_RUNTIME
+    clock_gettime(CLOCK_MONOTONIC, &start);
+#endif
+
+    ret = pcap_loop(ndpi_thread_info[thread_id].workflow->pcap_handle, -1, &ndpi_process_packet, (u_char*)&thread_id);
     if (ret == -1)
       printf("Error while reading pcap file: '%s'\n", pcap_geterr(ndpi_thread_info[thread_id].workflow->pcap_handle));
+
+#ifdef PRINT_RUNTIME
+    clock_gettime(CLOCK_MONOTONIC, &end);
+#endif
+
+    if(perf_ctl_fd != -1 && perf_ctl_ack_fd != -1) {
+      /* Stop the performance counter and read the ack */
+      ret = write(perf_ctl_fd, "disable\n", 9);
+      assert(ret >= 0);
+      ret = read(perf_ctl_ack_fd, ack, 5);
+      assert(ret >= 0);
+      assert(strcmp(ack, "ack\n") == 0);
+    }
+
+#ifdef PRINT_RUNTIME
+    timespec_diff_macro(&end, &start, &diff);
+    printf("(Run-)Time: %ld.%ld\n", diff.tv_sec, diff.tv_nsec);
+#endif
   }
 }
 #endif
@@ -5869,12 +5941,11 @@ void automataDomainsUnitTest() {
 /* *********************************************** */
   
 void blocksUnitTest() {
-  struct ndpi_tls_block a[] = { { 4, 1, 0, 1590, 0}, { 5, 1, 0, -1212, 0}, { 1, 1, 0, -1, 0}, { 16, 1, 0, -42, 0}, { 16, 1, 0, -53, 0}  };
-  struct ndpi_tls_block b[] = { { 4, 1, 0, 1591, 0}, { 5, 1, 0, -1212, 0}, { 1, 1, 0, -1, 0}, { 16, 1, 0, -42, 0}, { 16, 1, 0, -53, 0}  };
-  float multiplier[]        = { 100, 100, 80, 40, 20};
-  float ret = ndpi_tls_blocks_len_compare(a, b, multiplier, sizeof(multiplier) / sizeof(float));
+  struct ndpi_tls_block a[] = { { 4, 1590, 0, 1, 0}, { 5, -1212, 0, 1, 0}, { 1, -1, 0, 1, 0}, { 16, -42, 0, 1, 0}, { 16, -53, 0, 1, 0}  };
+  struct ndpi_tls_block b[] = { { 4, 1590, 0, 1, 0}, { 5, -1212, 0, 1, 0}, { 1, -1, 0, 1, 0}, { 16, -42, 0, 1, 0}, { 16, -52, 0, 1, 0}  };
+  float ret = ndpi_tls_blocks_len_compare(a, b, 5 /* num_blocks */);
 
-  assert(ret == 20.0);
+  assert(ret == 1.0);
 }
 
 /* *********************************************** */
@@ -6060,7 +6131,7 @@ void hashUnitTest() {
     u_int8_t l = strlen(dict[i]);
     u_int64_t v;
 
-    assert(ndpi_hash_add_entry(&h, dict[i], l, i) == 0);
+    assert(ndpi_hash_add_entry(&h, dict[i], l, i, NULL) == 0);
     assert(ndpi_hash_find_entry(h, dict[i], l, &v) == 0);
     assert(v == i);
   }
@@ -7073,7 +7144,7 @@ void cryptDecryptUnitTest() {
 
 /* *********************************************** */
 
-void encodeDomainsUnitTest() {
+void encodeDomainsUnitTest(bool load_suffix_list) {
   struct ndpi_detection_module_struct *ndpi_str = ndpi_init_detection_module(NULL);
   const char *lists_path = "../lists/public_suffix_list.dat";
   char *lists_dir = "../lists";
@@ -7089,14 +7160,18 @@ void encodeDomainsUnitTest() {
     ndpi_protocol_category_t id;
     ndpi_protocol_breed_t breed;
 
-    assert(ndpi_load_domain_suffixes(ndpi_str, (char*)lists_path) == 0);
+    if(load_suffix_list)
+      assert(ndpi_load_domain_suffixes(ndpi_str, (char*)lists_path) == 0);
 
     ndpi_get_host_domain_suffix(ndpi_str, "lcb.it", &suffix_id);
     ndpi_get_host_domain_suffix(ndpi_str, "www.ntop.org", &suffix_id);
     ndpi_get_host_domain_suffix(ndpi_str, "www.bbc.co.uk", &suffix_id);
 
-    str = (char*)"www.ntop.org"; assert(ndpi_encode_domain(ndpi_str, str, out, sizeof(out)) == 8);
-    str = (char*)"www.bbc.co.uk"; assert(ndpi_encode_domain(ndpi_str, str, out, sizeof(out)) == 8);
+    if(load_suffix_list) {
+      /* The encoding is different with or without the suffix list */
+      str = (char*)"www.ntop.org"; assert(ndpi_encode_domain(ndpi_str, str, out, sizeof(out)) == 8);
+      str = (char*)"www.bbc.co.uk"; assert(ndpi_encode_domain(ndpi_str, str, out, sizeof(out)) == 8);
+    }
 
     assert(ndpi_load_categories_dir(ndpi_str, lists_dir));
     assert(ndpi_load_categories_file(ndpi_str, categories_path, "categories.txt"));
@@ -7108,6 +7183,16 @@ void encodeDomainsUnitTest() {
     str = (char*)"10bet.com"; assert(ndpi_get_custom_category_match(ndpi_str, str, strlen(str), &id, &breed) == 0); assert(id == 107);
     str = (char*)"www.ntop.org"; assert(ndpi_get_custom_category_match(ndpi_str, str, strlen(str), &id, &breed) == -1); assert(id == 0);
     str = (char*)"lifyqyi.com"; assert(ndpi_get_custom_category_match(ndpi_str, str, strlen(str), &id, &breed) == 0); assert(id == 100);
+    str = (char*)"xhamster.com"; assert(ndpi_get_custom_category_match(ndpi_str, str, strlen(str), &id, &breed) == 0); assert(id == NDPI_PROTOCOL_CATEGORY_ADULT_CONTENT);
+    str = (char*)"a.xhamster.com"; assert(ndpi_get_custom_category_match(ndpi_str, str, strlen(str), &id, &breed) == 0); assert(id == NDPI_PROTOCOL_CATEGORY_ADULT_CONTENT);
+    str = (char*)"a.xhamster.com.com"; assert(ndpi_get_custom_category_match(ndpi_str, str, strlen(str), &id, &breed) == -1);
+    str = (char*)"a.xhamster.com.a"; assert(ndpi_get_custom_category_match(ndpi_str, str, strlen(str), &id, &breed) == -1);
+    str = (char*)"gateway.unityads.unity3d.com"; assert(ndpi_get_custom_category_match(ndpi_str, str, strlen(str), &id, &breed) == 0); assert(id == NDPI_PROTOCOL_CATEGORY_ADVERTISEMENT);
+    str = (char*)"unityads.unity3d.com"; assert(ndpi_get_custom_category_match(ndpi_str, str, strlen(str), &id, &breed) == 0); assert(id == NDPI_PROTOCOL_CATEGORY_ADVERTISEMENT);
+    str = (char*)"unity3d.com"; assert(ndpi_get_custom_category_match(ndpi_str, str, strlen(str), &id, &breed) == -1);
+
+    str = (char*)"something.arpa"; assert(ndpi_get_custom_category_match(ndpi_str, str, strlen(str), &id, &breed) == -1);
+    str = (char*)"something.local"; assert(ndpi_get_custom_category_match(ndpi_str, str, strlen(str), &id, &breed) == -1);
   }
 
   ndpi_exit_detection_module(ndpi_str);
@@ -7454,7 +7539,9 @@ int main(int argc, char **argv) {
     domainCacheTestUnit();
     cryptDecryptUnitTest();
     kdUnitTest();
-    encodeDomainsUnitTest();
+    /* We want the same results, with and without the public suffix list */
+    encodeDomainsUnitTest(true);
+    encodeDomainsUnitTest(false);
     loadStressTest();
     domainsUnitTest();
     outlierUnitTest();
@@ -7576,7 +7663,10 @@ int main(int argc, char **argv) {
   if(results_file)  fclose(results_file);
   if(extcap_dumper) pcap_dump_close(extcap_dumper);
   if(extcap_fifo_h) pcap_close(extcap_fifo_h);
-  if(enable_malloc_bins) ndpi_free_bin(&malloc_bins);
+  if(enable_alloc_bins) {
+    ndpi_free_bin(&malloc_bins);
+    ndpi_free_bin(&realloc_bins);
+  }
   if(csv_fp)         fclose(csv_fp);
   if(fingerprint_fp) fclose(fingerprint_fp);
 

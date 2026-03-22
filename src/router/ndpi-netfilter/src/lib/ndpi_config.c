@@ -719,12 +719,12 @@ static char *_get_param_string(struct ndpi_detection_module_struct *ndpi_str,
 }
 
 /* ****************************************** */
-#ifndef __KERNEL__
 
 static ndpi_cfg_error _set_param_filename(struct ndpi_detection_module_struct *ndpi_str,
                                           void *_variable, const char *value,
                                           const char *min_value, const char *max_value,
                                           const char *proto, const char *param) {
+#ifndef __KERNEL__
   char *variable = (char *)_variable;
 
   (void)ndpi_str;
@@ -742,9 +742,9 @@ static ndpi_cfg_error _set_param_filename(struct ndpi_detection_module_struct *n
     return NDPI_CFG_INVALID_PARAM;
 
   strncpy(variable, value, CFG_MAX_LEN);
+#endif
   return NDPI_CFG_OK;
 }
-#endif
 /* ****************************************** */
 
 static ndpi_cfg_error _set_param_filename_config(struct ndpi_detection_module_struct *ndpi_str,
@@ -1007,7 +1007,7 @@ static AC_ERROR_t ac_walk_proto_id(AC_AUTOMATA_t *thiz, AC_NODE_t *n, int idx, v
     for(i=0; i<n->matched_patterns->num; i++) {
       AC_PATTERN_t *p = &n->matched_patterns->patterns[i];
 
-      ndpi_hash_add_entry(&h, p->astring, strlen(p->astring), p->rep.number);
+      ndpi_hash_add_entry(&h, p->astring, strlen(p->astring), p->rep.number, NULL);
     }
   }
 
@@ -1028,7 +1028,7 @@ static AC_ERROR_t ac_walk_category_id(AC_AUTOMATA_t *thiz, AC_NODE_t *n, int idx
     for(i=0; i<n->matched_patterns->num; i++) {
       AC_PATTERN_t *p = &n->matched_patterns->patterns[i];
 
-      ndpi_hash_add_entry(&h, p->astring, strlen(p->astring), p->rep.category);
+      ndpi_hash_add_entry(&h, p->astring, strlen(p->astring), p->rep.category, NULL);
     }
   }
 

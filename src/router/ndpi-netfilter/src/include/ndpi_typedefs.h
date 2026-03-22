@@ -934,12 +934,14 @@ typedef enum {
   tls_heartbeat,
 } ndpi_tls_block_type;
 
+PACK_ON
 struct ndpi_tls_block {
   u_int8_t block_type /* ndpi_tls_block_type */;
-  u_int8_t same_pkt:1, _unused:7;
   int16_t len; /* + = src->dst, - = dst->src */
-  u_int16_t msec_delta;
-};
+  /* Optional, leave it at the end */
+  u_int8_t same_pkt:1, _unused:7;
+  u_int16_t msec_delta; /* Used to store protocol_id in ja4 hash */
+} PACK_OFF;
 
 struct ndpi_flow_tcp_struct {
   struct {
@@ -1388,6 +1390,11 @@ typedef struct _ndpi_automa {
   void *ac_automa; /* Real type is AC_AUTOMATA_t */
   struct ndpi_automa_stats stats;
 } ndpi_automa;
+
+typedef struct ndpi_list_struct {
+  char *value;
+  struct ndpi_list_struct *next;
+} ndpi_list;
 
 typedef struct ndpi_str_hash {
   void *priv;
@@ -1843,12 +1850,6 @@ struct ndpi_flow_struct {
       u_int8_t sha1_certificate_fingerprint[20];
       u_int8_t client_hello_processed:1, ch_direction:1, subprotocol_detected:1,
 	server_hello_processed:1, fingerprint_set:1, webrtc:1;
-
-#ifdef TLS_HANDLE_SIGNATURE_ALGORITMS
-      /* Under #ifdef to save memory for those who do not need them */
-      u_int8_t num_tls_signature_algorithms;
-      u_int16_t client_signature_algorithms[MAX_NUM_TLS_SIGNATURE_ALGORITHMS];
-#endif
 
       struct tls_heuristics browser_heuristics;
       u_int16_t ssl_version, server_names_len;

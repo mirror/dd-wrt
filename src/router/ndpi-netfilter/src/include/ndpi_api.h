@@ -1079,6 +1079,12 @@ NDPI_STATIC  int ndpi_load_tcp_fingerprint_file(struct ndpi_detection_module_str
                        struct ndpi_proto_stack *stack, char *buf, u_int buf_len);
   NDPI_STATIC ndpi_tls_block_type ndpi_encode_tls_block_type(u_int8_t block_type, u_int8_t handshake_type);
   NDPI_STATIC const char* ndpi_print_encoded_tls_block_type(ndpi_tls_block_type block_type, bool numeric_mode);
+  NDPI_STATIC u_char* ndpi_encode_tls_blocks(struct ndpi_tls_block *tls_blocks, u_int8_t num_tls_blocks);
+  NDPI_STATIC struct ndpi_tls_block* ndpi_decode_tls_blocks(const u_char *encoded_blocks, u_int encoded_blocks_len,
+						u_int8_t *num_tls_blocks);
+  NDPI_STATIC u_int64_t ndpi_compare_flow_tls_blocks(struct ndpi_detection_module_struct *ndpi_str,
+					 struct ndpi_flow_struct *flow,
+					 ndpi_list *extra_data, u_int64_t proto_id);
 
   NDPI_STATIC ndpi_proto_defaults_t* ndpi_get_proto_defaults(struct ndpi_detection_module_struct *ndpi_mod);
   NDPI_STATIC u_int ndpi_get_ndpi_detection_module_size(void);
@@ -1145,7 +1151,7 @@ NDPI_STATIC  int ndpi_load_tcp_fingerprint_file(struct ndpi_detection_module_str
   NDPI_STATIC u_char* ndpi_base64_decode(const u_char *src, size_t len, size_t *out_len);
 
   NDPI_STATIC u_char* ndpi_hex_decode(const u_char *src, size_t len, size_t *out_len);
-  NDPI_STATIC char* ndpi_hex_encode(unsigned char const* bytes_to_encode, size_t in_len); /* NOTE: caller MUST free the returned pointer */
+  NDPI_STATIC u_char* ndpi_hex_encode(unsigned char const* bytes_to_encode, size_t in_len); /* NOTE: caller MUST free the returned pointer */
   NDPI_STATIC char* ndpi_base64_encode(unsigned char const* bytes_to_encode, size_t in_len); /* NOTE: caller MUST free the returned pointer */
   NDPI_STATIC void ndpi_string_sha1_hash(const u_int8_t *message, size_t len, u_char *hash /* 20-bytes */);
 
@@ -2070,13 +2076,18 @@ NDPI_STATIC  const char* ndpi_tls_supported_version2str(u_int16_t version_id, ch
    * @return 0 if an entry with that key was found, 1 otherwise
    *
    */
-  NDPI_STATIC int ndpi_hash_find_entry(ndpi_str_hash *h, char *key, u_int key_len, u_int64_t *value);
+  NDPI_STATIC int ndpi_hash_find_entry(ndpi_str_hash *h, const char *key, u_int key_len,
+			   u_int64_t *value /* out */);
+  NDPI_STATIC int ndpi_hash_find_entry_extra(ndpi_str_hash *h, const char *key, u_int key_len,
+				 u_int64_t *value /* out */,
+				 ndpi_list **extra_data /* out */);
 
   /* ******************************* */
 
   NDPI_STATIC char* ndpi_get_flow_name(struct ndpi_flow_struct *flow);
 
-  NDPI_STATIC int ndpi_hash_add_entry(ndpi_str_hash **h, char *key, u_int8_t key_len, u_int64_t value);
+  NDPI_STATIC int ndpi_hash_add_entry(ndpi_str_hash **h, char *key, u_int8_t key_len, u_int64_t value,
+			  char *extra_data /* Allocated by caller */);
 
   typedef void (*ndpi_hash_walk_iter)(char *key, u_int64_t value64, void *data);
   NDPI_STATIC void ndpi_hash_walk(ndpi_str_hash **h, ndpi_hash_walk_iter cb, void *data);
@@ -2087,6 +2098,10 @@ NDPI_STATIC  const char* ndpi_tls_supported_version2str(u_int16_t version_id, ch
                           struct ndpi_str_hash_stats *stats);
 
   /* ******************************* */
+
+  NDPI_STATIC void ndpi_list_init(ndpi_list *l);
+  NDPI_STATIC void ndpi_list_free(ndpi_list *l);
+  NDPI_STATIC bool ndpi_list_append(ndpi_list *l, void *value);
 
 #ifndef __KERNEL__
   NDPI_STATIC int ndpi_load_geoip(struct ndpi_detection_module_struct *ndpi_str,
@@ -2214,7 +2229,7 @@ NDPI_STATIC  const char* ndpi_tls_supported_version2str(u_int16_t version_id, ch
   NDPI_STATIC bool ndpi_domain_classify_hostname(struct ndpi_detection_module_struct *ndpi_mod,
 				     ndpi_domain_classify *s,
 				     u_int64_t *class_id /* out */,
-				     char *hostname);
+				     const char *hostname);
 
   /* ******************************* */
 
@@ -2362,7 +2377,7 @@ NDPI_STATIC  const char* ndpi_tls_supported_version2str(u_int16_t version_id, ch
      suffixes using ndpi_load_domain_suffixes()
   */
   NDPI_STATIC u_int ndpi_encode_domain(struct ndpi_detection_module_struct *ndpi_str,
-			   char *domain, char *out, u_int out_len);
+			   const char *domain, char *out, u_int out_len);
 
   NDPI_STATIC char* ndpi_quick_encrypt(const char *cleartext_msg,
 			   u_int16_t cleartext_msg_len,
@@ -2546,7 +2561,6 @@ NDPI_STATIC  u_int16_t ndpi_ranking_add_epoch(ndpi_ranking *rank, u_int32_t epoc
 #ifndef __KERNEL__
   float ndpi_tls_blocks_len_compare(struct ndpi_tls_block *a,
 				    struct ndpi_tls_block *b,
-				    float *multiplier,
 				    u_int8_t num_tls_blocks);
 #endif
 #ifdef __cplusplus

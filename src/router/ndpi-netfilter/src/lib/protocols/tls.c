@@ -1173,6 +1173,61 @@ static void processCertificateElements(struct ndpi_detection_module_struct *ndpi
 
 /* **************************************** */
 
+static void tls_match_ja4(struct ndpi_detection_module_struct *ndpi_struct,
+			  struct ndpi_flow_struct *flow) {
+  if(ndpi_struct->ja4_custom_protos != NULL) {
+    u_int64_t proto_id;
+    ndpi_list *extra_data = NULL;
+
+    /* This protocol has been defined in protos.txt-like files */
+    if(ndpi_hash_find_entry_extra(ndpi_struct->ja4_custom_protos,
+				  flow->protos.tls_quic.ja4_client,
+				  NDPI_ARRAY_LENGTH(flow->protos.tls_quic.ja4_client) - 1,
+				  &proto_id, &extra_data) != 0)
+      return; /* Not found */
+    else
+      proto_id = ndpi_compare_flow_tls_blocks(ndpi_struct, flow, extra_data, proto_id);
+    
+    if(proto_id != NDPI_PROTOCOL_UNKNOWN)
+      ndpi_set_detected_protocol(ndpi_struct, flow, proto_id,
+				 ndpi_get_master_proto(ndpi_struct, flow),
+				 NDPI_CONFIDENCE_CUSTOM_RULE);
+  }
+
+#ifndef __KERNEL__
+  if(ndpi_struct->malicious_ja4_hashmap != NULL) {
+    u_int16_t rc1 = ndpi_hash_find_entry(ndpi_struct->malicious_ja4_hashmap,
+					 flow->protos.tls_quic.ja4_client,
+					 NDPI_ARRAY_LENGTH(flow->protos.tls_quic.ja4_client) - 1,
+					 NULL);
+
+    if(rc1 == 0)
+      ndpi_set_risk(ndpi_struct, flow, NDPI_MALICIOUS_FINGERPRINT,
+		    flow->protos.tls_quic.ja4_client);
+  }
+#else
+  {
+    static const char pref_str[]="RISK_JA4_";
+    char risk_ja4_str[sizeof(pref_str) + sizeof(flow->protos.tls_quic.ja4_client) + 1];
+    u_int32_t val;
+    u_int16_t rc1;
+    size_t len = sizeof(pref_str)-1,len2 = strlen(flow->protos.tls_quic.ja4_client);
+
+    strcpy(risk_ja4_str,pref_str);
+    strncpy(&risk_ja4_str[len],flow->protos.tls_quic.ja4_client,len2);
+    len += len2;
+    risk_ja4_str[len] = '\0';
+
+    rc1 = ndpi_match_string_value(ndpi_struct->host_automa.ac_automa,
+  		risk_ja4_str, len | AC_FEATURE_EXACT, &val) == -1;
+    if(rc1 == 0)
+      ndpi_set_risk(ndpi_struct, flow, NDPI_MALICIOUS_FINGERPRINT, flow->protos.tls_quic.ja4_client);
+    }
+#endif
+}
+
+/* **************************************** */
+
 /* See https://blog.catchpoint.com/2017/05/12/dissecting-tls-using-wireshark/ */
 static int processCertificate(struct ndpi_detection_module_struct *ndpi_struct,
 		       struct ndpi_flow_struct *flow) {
@@ -1310,15 +1365,6 @@ static int processCertificate(struct ndpi_detection_module_struct *ndpi_struct,
     certificates_offset += certificate_len;
   }
 
-  if((ndpi_struct->cfg.tls_max_num_blocks_to_analyze != 0)
-     && (flow->l4.tcp.tls.num_tls_blocks >= ndpi_struct->cfg.tls_max_num_blocks_to_analyze)) {
-#ifdef DEBUG_TLS_BLOCKS
-    printf("*** [TLS Block] Enough blocks dissected\n");
-#endif
-
-    flow->extra_packets_func = NULL; /* We're good now */
-  }
-
   return(1);
 }
 
@@ -1431,9 +1477,9 @@ static int processHandshakeTLSBlock(struct ndpi_detection_module_struct *ndpi_st
 
     if(!is_dtls && flow->protos.tls_quic.ssl_version >= 0x0304 /* TLS 1.3 */)
       flow->tls_quic.certificate_processed = 1; /* No Certificate with TLS 1.3+ */
-    
+
     if(is_dtls && flow->protos.tls_quic.ssl_version == 0xFEFC /* DTLS 1.3 */)
-      flow->tls_quic.certificate_processed = 1; /* No Certificate with DTLS 1.3+ */    
+      flow->tls_quic.certificate_processed = 1; /* No Certificate with DTLS 1.3+ */
 
     checkTLSSubprotocol(ndpi_struct, flow, packet->payload[0] == 0x01);
     break;
@@ -1731,7 +1777,10 @@ int ndpi_search_tls_tcp(struct ndpi_detection_module_struct *ndpi_struct,
       ndpi_set_detected_protocol(ndpi_struct, flow, NDPI_PROTOCOL_OOKLA, NDPI_PROTOCOL_TLS, NDPI_CONFIDENCE_DPI_AGGRESSIVE);
       /* TLS over port 8080 usually triggers that risk; clear it */
       ndpi_unset_risk(ndpi_struct, flow, NDPI_KNOWN_PROTOCOL_ON_NON_STANDARD_PORT);
+
+      tls_match_ja4(ndpi_struct, flow);
       flow->extra_packets_func = NULL;
+
       return(0); /* That's all */
     /* Loook for TLS-in-TLS */
     } else if((ndpi_struct->cfg.tls_heuristics & NDPI_HEURISTICS_TLS_OBFUSCATED_TLS) && /* Feature enabled */
@@ -1744,6 +1793,8 @@ int ndpi_search_tls_tcp(struct ndpi_detection_module_struct *ndpi_struct,
       switch_extra_dissection_to_tls_obfuscated_heur(ndpi_struct, flow);
       return(1);
     } else {
+      tls_match_ja4(ndpi_struct, flow);
+
       flow->extra_packets_func = NULL;
       return(0); /* That's all */
     }
@@ -2464,6 +2515,10 @@ static void ndpi_compute_ja4(struct ndpi_detection_module_struct *ndpi_struct,
   printf("[EXTN] %s [len: %u]\n", tmp_str, tmp_str_len);
 #endif
 
+#ifdef DEBUG_NDPIFP
+  printf("[EXTN] %s [len: %u]\n", tmp_ndpi_str, tmp_ndpi_str_len);
+#endif
+
   tmp_str[tmp_str_len] = 0;
 
 #ifndef JA4R_DECIMAL
@@ -2493,6 +2548,9 @@ static void ndpi_compute_ja4(struct ndpi_detection_module_struct *ndpi_struct,
   ja_str_len = ja_offset;
   strncpy(ja_ndpi_str, ja_str, ja_str_len);
 
+  /* Overwrite the extensions number */
+  ndpi_snprintf(&ja_ndpi_str[6], 2, "%02u", num_ndpi_extn);
+
   rc = ndpi_snprintf(&ja_ndpi_str[ja_str_len], ja_max_len - ja_str_len,
 		     "%02x%02x%02x%02x%02x%02x",
 		     sha_hash[0], sha_hash[1], sha_hash[2],
@@ -2502,6 +2560,10 @@ static void ndpi_compute_ja4(struct ndpi_detection_module_struct *ndpi_struct,
 
 #ifdef DEBUG_JA
   printf("[JA4] %s [len: %lu]\n", ja_str, strlen(ja_str));
+#endif
+
+#ifdef DEBUG_NDPIFP
+  printf("[EXTN] %s\n", ja_ndpi_str);
 #endif
 }
 
@@ -3223,16 +3285,6 @@ static int _processClientServerHello(struct ndpi_detection_module_struct *ndpi_s
 		s_offset += 2;
 		tot_signature_algorithms_len = ndpi_min((sizeof(ja->client.signature_algorithms_str) / 2) - 1, tot_signature_algorithms_len);
 
-#ifdef TLS_HANDLE_SIGNATURE_ALGORITMS
-		size_t sa_size = ndpi_min(tot_signature_algorithms_len / 2, MAX_NUM_TLS_SIGNATURE_ALGORITHMS);
-
-		if (s_offset + 2 * sa_size <= packet->payload_packet_len) {
-		  flow->protos.tls_quic.num_tls_signature_algorithms = sa_size;
-		  memcpy(flow->protos.tls_quic.client_signature_algorithms,
-			 &packet->payload[s_offset], 2 /* 16 bit */ * sa_size);
-		}
-#endif
-
 		for(i=0, id=0; i<tot_signature_algorithms_len && s_offset+i+1<total_len; i += 2)
 		  ja->client.signature_algorithm[id++] = ntohs(*(u_int16_t*)&packet->payload[s_offset+i]);
 		
@@ -3623,49 +3675,7 @@ static int _processClientServerHello(struct ndpi_detection_module_struct *ndpi_s
 compute_ja4c:
 	      if(ndpi_struct->cfg.tls_ja4c_fingerprint_enabled) {
 	        ndpi_compute_ja4(ndpi_struct, flow, quic_version, ja);
-		
-		if(ndpi_struct->ja4_custom_protos != NULL) {
-		  u_int64_t proto_id;
-
-		  /* This protocol has been defined in protos.txt-like files */
-		  if(ndpi_hash_find_entry(ndpi_struct->ja4_custom_protos,
-					  flow->protos.tls_quic.ja4_client,
-					  NDPI_ARRAY_LENGTH(flow->protos.tls_quic.ja4_client) - 1,
-					  &proto_id) == 0) {
-		    ndpi_set_detected_protocol(ndpi_struct, flow, proto_id,
-					       ndpi_get_master_proto(ndpi_struct, flow),
-					       NDPI_CONFIDENCE_CUSTOM_RULE);
-		  }
-		}
-#ifndef __KERNEL__
-                if(ndpi_struct->malicious_ja4_hashmap != NULL) {
-                  u_int16_t rc1 = ndpi_hash_find_entry(ndpi_struct->malicious_ja4_hashmap,
-                                                       flow->protos.tls_quic.ja4_client,
-                                                       NDPI_ARRAY_LENGTH(flow->protos.tls_quic.ja4_client) - 1,
-                                                       NULL);
-
-                  if(rc1 == 0)
-                    ndpi_set_risk(ndpi_struct, flow, NDPI_MALICIOUS_FINGERPRINT, flow->protos.tls_quic.ja4_client);
-                }
-#else
-	        {
-		  static const char pref_str[]="RISK_JA4_";
-		  char risk_ja4_str[sizeof(pref_str) + sizeof(flow->protos.tls_quic.ja4_client) + 1];
-		  u_int32_t val;
-		  u_int16_t rc1;
-		  size_t len = sizeof(pref_str)-1,len2 = strlen(flow->protos.tls_quic.ja4_client);
-
-		  strcpy(risk_ja4_str,pref_str);
-		  strncpy(&risk_ja4_str[len],flow->protos.tls_quic.ja4_client,len2);
-		  len += len2;
-		  risk_ja4_str[len] = '\0';
-
-		  rc1 = ndpi_match_string_value(ndpi_struct->host_automa.ac_automa,
-				risk_ja4_str, len | AC_FEATURE_EXACT, &val) == -1;
-                  if(rc1 == 0)
-                    ndpi_set_risk(ndpi_struct, flow, NDPI_MALICIOUS_FINGERPRINT, flow->protos.tls_quic.ja4_client);
-	        }
-#endif
+		tls_match_ja4(ndpi_struct, flow);
 	      }
 
 	      if(ndpi_struct->cfg.tls_ja_data_enabled) {

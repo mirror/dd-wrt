@@ -26,6 +26,7 @@ EXTRA_DIST = README.md README.fuzzer.md CHANGELOG.md CONTRIBUTING.md \
 		doc/configuration_parameters.rst \
 		doc/library_initialization.rst \
 		doc/monitoring.rst \
+		doc/usdt.rst \
 	python/DEV_GUIDE.md python/dev_requirements.txt python/ndpi_example.py python/ndpi/__init__.py \
 		python/ndpi/ndpi_build.py python/ndpi/ndpi.py python/README.md \
 		python/requirements.txt python/setup.py python/tests.py \
@@ -83,6 +84,7 @@ all-local:
 	  $(INSTALL_DATA) $(srcdir)/example/*.txt example/; \
 	  $(INSTALL_DATA) $(srcdir)/example/*.conf example/; \
 	  $(INSTALL_DATA) $(srcdir)/example/*.csv example/; \
+	  $(INSTALL) $(srcdir)/example/perf.sh example/; \
 	  if test -d $(srcdir)/lists && test -n "$$(ls -A $(srcdir)/lists 2>/dev/null)"; then \
 	    cp -R $(srcdir)/lists/* lists/; \
 	  fi; \
@@ -101,6 +103,7 @@ clean-local:
 	  -$(RM) example/*.txt; \
 	  -$(RM) example/*.conf; \
 	  -$(RM) example/*.csv; \
+	  -$(RM) example/perf.sh; \
 	  -$(RM) -r lists/*; \
 	  -$(RM) tests/cfgs/*/config.txt; \
 	fi

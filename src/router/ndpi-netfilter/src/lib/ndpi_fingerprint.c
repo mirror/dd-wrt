@@ -91,7 +91,7 @@ int ndpi_add_tcp_fingerprint(struct ndpi_detection_module_struct *ndpi_str,
     return(-1);
   } else {
     if(ndpi_hash_add_entry(&ndpi_str->tcp_fingerprint_hashmap, fingerprint, len,
-			   (u_int64_t)os) == 0) {
+			   (u_int64_t)os, NULL) == 0) {
       return(0);
     } else
       return(-2);
@@ -210,6 +210,43 @@ static char* ndpi_compute_tls_blocks_flow_fingerprint(struct ndpi_flow_struct *f
 
 /* **************************************** */
 
+u_int64_t ndpi_compare_flow_tls_blocks(struct ndpi_detection_module_struct *ndpi_str,
+				       struct ndpi_flow_struct *flow,
+				       ndpi_list *extra_data,
+				       u_int64_t proto_id) {
+#ifndef __KERNEL__
+  if((flow->l4_proto == IPPROTO_TCP)
+     && (flow->l4.tcp.tls.num_tls_blocks == ndpi_str->cfg.tls_max_num_blocks_to_analyze)
+     && (ndpi_str->cfg.tls_max_num_blocks_to_analyze <= 8 /* (&) */)
+     && (flow->l4.tcp.tls.tls_blocks != NULL)) {
+    float best_res = 9999999.;
+
+    while(extra_data != NULL) {
+      /* Multiple matches: let's find the best match (if any) */
+      struct ndpi_tls_block *tls_blocks = (struct ndpi_tls_block*)extra_data->value;
+
+      if(tls_blocks != NULL) {
+	float res = ndpi_tls_blocks_len_compare(flow->l4.tcp.tls.tls_blocks, tls_blocks, 8 /* (&) */);
+
+
+	if((res < 4) && (res < best_res)) {
+	  best_res = res;
+	  proto_id = tls_blocks->msec_delta; /* It stores the protocolId. See (*%*) in ndpi_main.c */
+
+	  if(res == 0) /* identical TLS blocks */
+	    break; /* No match better than this ! */
+	}
+      }
+
+      extra_data = extra_data->next;
+    }
+  }
+#endif
+  return(proto_id);
+}
+
+/* **************************************** */
+
 char* ndpi_compute_ndpi_flow_fingerprint(struct ndpi_detection_module_struct *ndpi_str,
 					 struct ndpi_flow_struct *flow) {
   if(ndpi_str->cfg.ndpi_fingerprint_enabled &&
@@ -253,7 +290,8 @@ char* ndpi_compute_ndpi_flow_fingerprint(struct ndpi_detection_module_struct *nd
       }
     }
 
-    s = snprintf((char*)fp_buf, sizeof(fp_buf)-1, "%s-%s%s-%s", l4_fp, l7_pf, l7_pf_tls_blocks, l7_pf_server);
+    s = snprintf((char*)fp_buf, sizeof(fp_buf)-1, "%s-%s%s-%s",
+		 l4_fp, l7_pf, l7_pf_tls_blocks, l7_pf_server);
 
     if(ndpi_str->cfg.tls_ndpifp_ignore_sni_extension)
       fp_buf[strlen(l4_fp)+4] = '_';
@@ -277,20 +315,26 @@ char* ndpi_compute_ndpi_flow_fingerprint(struct ndpi_detection_module_struct *nd
 
       flow->ndpi.fingerprint = ndpi_strdup((char*)fp_buf);
 
-      if(flow->ndpi.fingerprint != NULL &&
-         ndpi_str->ndpifp_custom_protos != NULL) {
+      if((flow->ndpi.fingerprint != NULL)
+	 && (ndpi_str->ndpifp_custom_protos != NULL)) {
 	u_int64_t proto_id;
-
+	ndpi_list *extra_data = NULL;
+	
 	/* This protocol has been defined in protos.txt-like files */
-	if(ndpi_hash_find_entry(ndpi_str->ndpifp_custom_protos,
-				flow->ndpi.fingerprint, strlen(flow->ndpi.fingerprint),
-				&proto_id) == 0) {
-	  ndpi_set_detected_protocol(ndpi_str, flow, proto_id,
-				     ndpi_get_master_proto(ndpi_str, flow),
-				     NDPI_CONFIDENCE_CUSTOM_RULE);
+	if(ndpi_hash_find_entry_extra(ndpi_str->ndpifp_custom_protos,
+				      flow->ndpi.fingerprint, strlen(flow->ndpi.fingerprint),
+				      &proto_id, &extra_data) == 0) {
 
-	  flow->category = ndpi_str->proto_defaults[proto_id].protoCategory,
-	    flow->breed = ndpi_str->proto_defaults[proto_id].protoBreed;
+	  proto_id = ndpi_compare_flow_tls_blocks(ndpi_str, flow, extra_data, proto_id);
+	  
+	  if(proto_id != NDPI_PROTOCOL_UNKNOWN) {
+	    ndpi_set_detected_protocol(ndpi_str, flow, proto_id,
+				       ndpi_get_master_proto(ndpi_str, flow),
+				       NDPI_CONFIDENCE_CUSTOM_RULE);
+	    
+	    flow->category = ndpi_str->proto_defaults[proto_id].protoCategory,
+	      flow->breed = ndpi_str->proto_defaults[proto_id].protoBreed;
+	  }
 	}
       }
     }

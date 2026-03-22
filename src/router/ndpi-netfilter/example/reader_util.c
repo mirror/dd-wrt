@@ -85,7 +85,7 @@ static u_int32_t flow_id = 0;
 extern FILE *fingerprint_fp;
 extern char *addr_dump_path;
 extern u_int8_t enable_doh_dot_detection;
-extern int malloc_size_stats;
+extern int alloc_size_stats;
 extern int monitoring_enabled;
 
 /* ****************************************************** */
@@ -824,6 +824,8 @@ static struct ndpi_flow_info *get_ndpi_flow_info(struct ndpi_workflow * workflow
     l4_data_len = l4_packet_len - sizeof(struct ndpi_icmp6hdr);
     *sport = *dport = 0;
   } else {
+    *payload = NULL;
+    *payload_len = 0;
     // non tcp/udp protocols
     *sport = *dport = 0;
     l4_data_len = 0;
@@ -1053,7 +1055,7 @@ static struct ndpi_flow_info *get_ndpi_flow_info6(struct ndpi_workflow * workflo
   const u_int8_t *l4ptr = (((const u_int8_t *) iph6) + sizeof(struct ndpi_ipv6hdr));
   if(ipsize < sizeof(struct ndpi_ipv6hdr) + ip_len)
     return(NULL);
-  if(ndpi_handle_ipv6_extension_headers(ipsize - sizeof(struct ndpi_ipv6hdr), &l4ptr, &ip_len, &l4proto) != 0) {
+  if(ndpi_handle_ipv6_extension_headers(NULL, iph6, ipsize - sizeof(struct ndpi_ipv6hdr), &l4ptr, &ip_len, &l4proto) != 0) {
     return(NULL);
   }
   iph.protocol = l4proto;
@@ -1848,7 +1850,7 @@ static struct ndpi_proto packet_processing(struct ndpi_workflow * workflow,
 
     workflow->stats.ip_packet_count++;
     workflow->stats.total_wire_bytes += rawsize + 24 /* CRC etc */,
-      workflow->stats.total_ip_bytes += rawsize;
+    workflow->stats.total_ip_bytes += rawsize;
     ndpi_flow = flow->ndpi_flow;
 
     if(tcph != NULL){
@@ -2042,10 +2044,12 @@ static struct ndpi_proto packet_processing(struct ndpi_workflow * workflow,
 	}
     }
 #endif
-    malloc_size_stats = 1;
+    // malloc_size_stats = 1;
+    alloc_size_stats = 1;
     flow->detected_protocol = ndpi_detection_process_packet(workflow->ndpi_struct, ndpi_flow,
 							    iph ? (uint8_t *)iph : (uint8_t *)iph6,
 							    ipsize, time_ms, &input_info);
+
     if(monitoring_enabled)
       process_ndpi_monitoring_info(flow);
     if(flow->detected_protocol.state == NDPI_STATE_CLASSIFIED ||
@@ -2064,7 +2068,7 @@ static struct ndpi_proto packet_processing(struct ndpi_workflow * workflow,
     /* Let's try to save client-server direction */
     flow->current_pkt_from_client_to_server = input_info.in_pkt_dir;
 
-    malloc_size_stats = 0;
+    alloc_size_stats = 0;
   } else {
     flow->current_pkt_from_client_to_server = NDPI_IN_PKT_DIR_UNKNOWN; /* Unknown */
   }
@@ -2723,7 +2727,7 @@ struct ndpi_proto ndpi_workflow_process_packet(struct ndpi_workflow * workflow,
     const u_int8_t *l4ptr = (((const u_int8_t *) iph6) + sizeof(struct ndpi_ipv6hdr));
     u_int16_t ipsize = header->caplen - ip_offset;
 
-    if(ndpi_handle_ipv6_extension_headers(ipsize - sizeof(struct ndpi_ipv6hdr), &l4ptr, &ip_len, &proto) != 0) {
+    if(ndpi_handle_ipv6_extension_headers(NULL, iph6, ipsize - sizeof(struct ndpi_ipv6hdr), &l4ptr, &ip_len, &proto) != 0) {
       return(nproto);
     }
 

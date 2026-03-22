@@ -499,6 +499,9 @@ typedef enum {
   NDPI_PROTOCOL_AKAMAI                = 467,
   NDPI_PROTOCOL_JSON                  = 468,
   NDPI_PROTOCOL_MSGPACK               = 469,
+  NDPI_PROTOCOL_GITHUB_COPILOT        = 470,
+  NDPI_PROTOCOL_GITHUB_PACKAGES       = 471,
+  NDPI_PROTOCOL_GITHUB_ACTIONS        = 472,
 
 #ifdef CUSTOM_NDPI_PROTOCOLS
 #include "../../../nDPI-custom/custom_ndpi_protocol_ids.h"
