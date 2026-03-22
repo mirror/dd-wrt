@@ -192,7 +192,7 @@ static int mac80211_cb_survey(struct nl_msg *msg, void *data)
 		goto out;
 
 	freq = nla_get_u32(sinfo[NL80211_SURVEY_INFO_FREQUENCY]);
-	if (sinfo[NL80211_SURVEY_INFO_IN_USE]) {
+	if (sinfo[NL80211_SURVEY_INFO_IN_USE] || mac80211_info->frequency == freq) {
 		mac80211_info->channel_active_time = (unsigned long long)-1;
 		mac80211_info->channel_busy_time = (unsigned long long)-1;
 		if (sinfo[NL80211_SURVEY_INFO_CHANNEL_TIME] && sinfo[NL80211_SURVEY_INFO_CHANNEL_TIME_BUSY]) {
@@ -235,7 +235,6 @@ static void getNoise_mac80211_internal(char *interface, struct mac80211_info *ma
 {
 	struct nl_msg *msg;
 	int wdev = if_nametoindex(interface);
-
 	msg = unl_genl_msg(&unl, NL80211_CMD_GET_SURVEY, true);
 	NLA_PUT_U32(msg, NL80211_ATTR_IFINDEX, wdev);
 	unl_genl_request(&unl, msg, mac80211_cb_survey, mac80211_info);
@@ -247,9 +246,12 @@ nla_put_failure:
 
 struct mac80211_info *mac80211_getcurrentsurvey(const char *interface, struct mac80211_info *mac80211_info)
 {
+	struct wifi_interface *intf = mac80211_get_interface(interface);
 	mac80211_init();
 	lock();
 	struct nl_msg *msg;
+	if (intf)
+		mac80211_info->frequency = intf->freq;
 	int wdev = if_nametoindex(interface);
 	bzero(mac80211_info, sizeof(struct mac80211_info));
 #ifdef HAVE_MVEBU
@@ -795,7 +797,9 @@ static int mac80211_cb_stations(struct nl_msg *msg, void *data)
 
 struct mac80211_info *mac80211_assoclist(const char *interface)
 {
+	static unsigned int lastfreq;
 	mac80211_init();
+	struct wifi_interface *intf = mac80211_get_interface(interface);
 	struct nl_msg *msg;
 	glob_t globbuf;
 	char *globstring;
@@ -803,6 +807,14 @@ struct mac80211_info *mac80211_assoclist(const char *interface)
 	struct statdata data;
 	lock();
 	data.mac80211_info = calloc(1, sizeof(struct mac80211_info));
+	if (intf)
+		data.mac80211_info->frequency = intf->freq;
+
+	if (lastfreq != intf->freq) {
+		lastfreq = intf->freq;
+		eval("iw", "dev", interface, "scan");
+	}
+
 	if (interface)
 		asprintf(&globstring, "/sys/class/ieee80211/phy*/device/net/%s*", interface);
 	else
@@ -2479,7 +2491,7 @@ static MICRO_MAP in_chans[] = {
 
 int morse_opclass(int freq)
 {
-	char *country;
+	const char *country;
 	char regdomain[32];
 	sprintf(regdomain, "wlan0_regdomain");
 	country = getRegionCode(nvram_default_get(regdomain, "UNITED_STATES"));
@@ -2533,7 +2545,7 @@ int morse_opclass(int freq)
 
 int morse_bwsupport(int bw)
 {
-	char *country;
+	const char *country;
 	char regdomain[32];
 	sprintf(regdomain, "wlan0_regdomain");
 	country = getRegionCode(nvram_default_get(regdomain, "UNITED_STATES"));
@@ -2596,7 +2608,7 @@ int morse_bwsupport(int bw)
 
 int morse_translate(int freq)
 {
-	char *country;
+	const char *country;
 	char regdomain[32];
 	sprintf(regdomain, "wlan0_regdomain");
 	country = getRegionCode(nvram_default_get(regdomain, "UNITED_STATES"));

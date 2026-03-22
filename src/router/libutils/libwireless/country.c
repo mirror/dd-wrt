@@ -461,11 +461,11 @@ enum CountryCode {
 };
 
 typedef struct {
-	const char *region;
+	char *region;
 	unsigned short countryCode;
 	unsigned short regDmnEnum;
-	const char *isoName;
-	const char *name;
+	char *isoName;
+	char *name;
 } COUNTRY_CODE_TO_ENUM_RD;
 #define DEF_REGDMN FCC1_FCCA
 
@@ -934,7 +934,7 @@ unsigned int getCountry(char *country)
 	return 0;
 }
 
-const char *getIsoName(char *country)
+char *getIsoName(char *country)
 {
 	int i;
 #ifdef HAVE_SUPERCHANNEL
@@ -957,7 +957,7 @@ const char *getIsoName(char *country)
 	return NULL;
 }
 
-const char *getRegionCode(char *country)
+char *getRegionCode(char *country)
 {
 	int i;
 #ifdef HAVE_SUPERCHANNEL
@@ -980,7 +980,7 @@ const char *getRegionCode(char *country)
 	return NULL;
 }
 
-const char *getIsoToRegion(char *iso)
+char *getIsoToRegion(char *iso)
 {
 	int i;
 #ifdef HAVE_SUPERCHANNEL
@@ -1003,7 +1003,7 @@ const char *getIsoToRegion(char *iso)
 	return NULL;
 }
 
-const char *getCountryByIso(char *country)
+char *getCountryByIso(char *country)
 {
 	int i;
 	for (i = 0; i < N(allCountries); i++) {
