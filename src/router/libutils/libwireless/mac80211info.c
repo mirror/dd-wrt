@@ -797,9 +797,9 @@ static int mac80211_cb_stations(struct nl_msg *msg, void *data)
 
 struct mac80211_info *mac80211_assoclist(const char *interface)
 {
-	static unsigned int lastfreq;
+	static unsigned int lastfreq[16];
 	mac80211_init();
-	struct wifi_interface *intf = mac80211_get_interface(interface);
+	struct wifi_interface *intf;
 	struct nl_msg *msg;
 	glob_t globbuf;
 	char *globstring;
@@ -807,14 +807,6 @@ struct mac80211_info *mac80211_assoclist(const char *interface)
 	struct statdata data;
 	lock();
 	data.mac80211_info = calloc(1, sizeof(struct mac80211_info));
-	if (intf) {
-		data.mac80211_info->frequency = intf->freq;
-
-		if (lastfreq != intf->freq) {
-			lastfreq = intf->freq;
-			eval("iw", "dev", interface, "scan");
-		}
-	}
 
 	if (interface)
 		asprintf(&globstring, "/sys/class/ieee80211/phy*/device/net/%s*", interface);
@@ -836,6 +828,18 @@ struct mac80211_info *mac80211_assoclist(const char *interface)
 				if (!strcmp(ifcheck, ifname + 1))
 					goto skip;
 			}
+		}
+		unlock();
+		intf = mac80211_get_interface(interface);
+		lock();
+		if (intf) {
+			data.mac80211_info->frequency = intf->freq;
+#ifdef HAVE_MORSE
+			if (lastfreq[i] != intf->freq) {
+				lastfreq[i] = intf->freq;
+				eval("iw", "dev", interface, "scan");
+			}
+#endif
 		}
 		// get noise for the actual interface
 		getNoise_mac80211_internal(ifname + 1, data.mac80211_info);
