@@ -1,1 +1,0 @@
-../../../net/forwarding/bridge_mdb.sh
