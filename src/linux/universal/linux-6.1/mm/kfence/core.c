@@ -13,6 +13,7 @@
 #include <linux/hash.h>
 #include <linux/irq_work.h>
 #include <linux/jhash.h>
+#include <linux/kasan-enabled.h>
 #include <linux/kcsan-checks.h>
 #include <linux/kfence.h>
 #include <linux/kmemleak.h>
@@ -844,6 +845,20 @@ void __init kfence_alloc_pool(void)
 	if (!kfence_sample_interval)
 		return;
 
+	/*
+	 * If KASAN hardware tags are enabled, disable KFENCE, because it
+	 * does not support MTE yet.
+	 */
+	if (kasan_hw_tags_enabled()) {
+		pr_info("disabled as KASAN HW tags are enabled\n");
+		if (__kfence_pool) {
+			memblock_free(__kfence_pool, KFENCE_POOL_SIZE);
+			__kfence_pool = NULL;
+		}
+		kfence_sample_interval = 0;
+		return;
+	}
+
 	/* if the pool has already been initialized by arch, skip the below. */
 	if (__kfence_pool)
 		return;
@@ -897,7 +912,8 @@ static int kfence_init_late(void)
 #ifdef CONFIG_CONTIG_ALLOC
 	struct page *pages;
 
-	pages = alloc_contig_pages(nr_pages, GFP_KERNEL, first_online_node, NULL);
+	pages = alloc_contig_pages(nr_pages, GFP_KERNEL | __GFP_SKIP_KASAN_UNPOISON |
+				   __GFP_SKIP_KASAN_POISON, first_online_node, NULL);
 	if (!pages)
 		return -ENOMEM;
 	__kfence_pool = page_to_virt(pages);
@@ -906,7 +922,9 @@ static int kfence_init_late(void)
 		pr_warn("KFENCE_NUM_OBJECTS too large for buddy allocator\n");
 		return -EINVAL;
 	}
-	__kfence_pool = alloc_pages_exact(KFENCE_POOL_SIZE, GFP_KERNEL);
+	__kfence_pool = alloc_pages_exact(KFENCE_POOL_SIZE, GFP_KERNEL |
+					  __GFP_SKIP_KASAN_UNPOISON |
+					  __GFP_SKIP_KASAN_POISON);
 	if (!__kfence_pool)
 		return -ENOMEM;
 #endif

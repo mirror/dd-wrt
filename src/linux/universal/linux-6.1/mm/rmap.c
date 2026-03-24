@@ -75,7 +75,7 @@
 #include <linux/userfaultfd_k.h>
 #include <linux/mm_inline.h>
 
-#include <asm/tlbflush.h>
+#include <asm/tlb.h>
 
 #define CREATE_TRACE_POINTS
 #include <trace/events/tlb.h>
@@ -1555,18 +1555,22 @@ static bool try_to_unmap_one(struct folio *folio, struct vm_area_struct *vma,
 			 * if unsuccessful.
 			 */
 			if (!anon) {
+				struct mmu_gather tlb;
+
 				VM_BUG_ON(!(flags & TTU_RMAP_LOCKED));
 				if (!hugetlb_vma_trylock_write(vma)) {
 					page_vma_mapped_walk_done(&pvmw);
 					ret = false;
 					break;
 				}
-				if (huge_pmd_unshare(mm, vma, address, pvmw.pte)) {
+
+				tlb_gather_mmu_vma(&tlb, vma);
+				if (huge_pmd_unshare(&tlb, vma, address, pvmw.pte)) {
 					hugetlb_vma_unlock_write(vma);
-					flush_tlb_range(vma,
-						range.start, range.end);
+					huge_pmd_unshare_flush(&tlb, vma);
 					mmu_notifier_invalidate_range(mm,
 						range.start, range.end);
+					tlb_finish_mmu(&tlb);
 					/*
 					 * The PMD table was unmapped,
 					 * consequently unmapping the folio.
@@ -1575,6 +1579,7 @@ static bool try_to_unmap_one(struct folio *folio, struct vm_area_struct *vma,
 					break;
 				}
 				hugetlb_vma_unlock_write(vma);
+				tlb_finish_mmu(&tlb);
 			}
 			pteval = huge_ptep_clear_flush(vma, address, pvmw.pte);
 		} else {
@@ -1939,19 +1944,22 @@ static bool try_to_migrate_one(struct folio *folio, struct vm_area_struct *vma,
 			 * fail if unsuccessful.
 			 */
 			if (!anon) {
+				struct mmu_gather tlb;
+
 				VM_BUG_ON(!(flags & TTU_RMAP_LOCKED));
 				if (!hugetlb_vma_trylock_write(vma)) {
 					page_vma_mapped_walk_done(&pvmw);
 					ret = false;
 					break;
 				}
-				if (huge_pmd_unshare(mm, vma, address, pvmw.pte)) {
+
+				tlb_gather_mmu_vma(&tlb, vma);
+				if (huge_pmd_unshare(&tlb, vma, address, pvmw.pte)) {
 					hugetlb_vma_unlock_write(vma);
-					flush_tlb_range(vma,
-						range.start, range.end);
+					huge_pmd_unshare_flush(&tlb, vma);
 					mmu_notifier_invalidate_range(mm,
 						range.start, range.end);
-
+					tlb_finish_mmu(&tlb);
 					/*
 					 * The PMD table was unmapped,
 					 * consequently unmapping the folio.
@@ -1960,6 +1968,7 @@ static bool try_to_migrate_one(struct folio *folio, struct vm_area_struct *vma,
 					break;
 				}
 				hugetlb_vma_unlock_write(vma);
+				tlb_finish_mmu(&tlb);
 			}
 			/* Nuke the hugetlb page table entry */
 			pteval = huge_ptep_clear_flush(vma, address, pvmw.pte);
