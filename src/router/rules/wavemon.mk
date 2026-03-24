@@ -15,6 +15,3 @@ wavemon-clean:
 wavemon-install:
 	$(MAKE) -C wavemon install DESTDIR=$(INSTALLDIR)/wavemon
 	rm -rf $(INSTALLDIR)/wavemon/usr/share
-
-#		LIBNL3_CFLAGS="-I$(TOP)/libnl/include" \
-#		LIBNL3_LIBS="-L$(TOP)/libnl/lib/.libs -lnl-3  -lnl-genl-3" \
