@@ -1513,7 +1513,6 @@ int phy_attach_direct(struct net_device *dev, struct phy_device *phydev,
 		goto error;
 
 	phy_resume(phydev);
-	phy_led_triggers_register(phydev);
 
 	return err;
 
@@ -1772,8 +1771,6 @@ void phy_detach(struct phy_device *phydev)
 		phydev->attached_dev = NULL;
 	}
 	phydev->phylink = NULL;
-
-	phy_led_triggers_unregister(phydev);
 
 	if (phydev->mdio.dev.driver)
 		module_put(phydev->mdio.dev.driver->owner);
@@ -3215,10 +3212,14 @@ static int phy_probe(struct device *dev)
 	 */
 	err = of_phy_leds(phydev);
 
+	/* Register the PHY LED triggers */
+	phy_led_triggers_register(phydev);
+
+	return 0;
+
 out:
 	/* Re-assert the reset signal on error */
-	if (err)
-		phy_device_reset(phydev, 1);
+	phy_device_reset(phydev, 1);
 
 	return err;
 }
@@ -3228,6 +3229,8 @@ static int phy_remove(struct device *dev)
 	struct phy_device *phydev = to_phy_device(dev);
 
 	cancel_delayed_work_sync(&phydev->state_queue);
+
+	phy_led_triggers_unregister(phydev);
 
 	phydev->state = PHY_DOWN;
 
