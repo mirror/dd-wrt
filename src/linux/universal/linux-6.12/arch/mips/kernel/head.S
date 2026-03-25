@@ -79,11 +79,13 @@ FEXPORT(__kernel_entry)
 	j	kernel_entry
 #endif /* CONFIG_BOOT_RAW */
 
+#ifdef CONFIG_RALINK
 	.ascii  "OWRTDTB:"
 	EXPORT(__image_dtb)
 	.fill   0x4000
 	.fill   0x4c58
 	j	kernel_entry
+#endif
 
 	__REF
 
