@@ -698,6 +698,7 @@ static void __init arch_mem_init(char **cmdline_p)
 	mips_reserve_vmcore();
 
 	mips_parse_crashkernel();
+	device_tree_init();
 
 	/*
 	 * In order to reduce the possibility of kernel panic when failed to
@@ -827,7 +828,6 @@ void __init setup_arch(char **cmdline_p)
 
 	cpu_cache_init();
 	paging_init();
-	device_tree_init();
 
 	memblock_dump_all();
 
