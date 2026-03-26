@@ -125,7 +125,7 @@ void start_dhcp6c(void)
 		//sla_len = 64 - ipv6_pf_len ?: 64;    // egc: why this ? This will stop working if prefix is 64 which can work for one subnet
 		sla_len = (64 - ipv6_pf_len < 0) ? 0 : (64 - ipv6_pf_len);
 
-		if ((fpc = fopencreate("/etc/dhcp6/dhcp6c.conf", "w"))) {
+		if ((fpc = fopencreate("/tmp/dhcp6/dhcp6c.conf", "w"))) {
 			fprintf(fpc,
 				"interface %s {\n" //
 				" send ia-pd 0;\n" //
