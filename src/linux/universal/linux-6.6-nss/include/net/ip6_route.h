@@ -338,7 +338,7 @@ static inline unsigned int ip6_dst_mtu_maybe_forward(const struct dst_entry *dst
 
 	mtu = IPV6_MIN_MTU;
 	rcu_read_lock();
-	idev = __in6_dev_get(dst_dev_rcu(dst));
+	idev = __in6_dev_get(dst->dev);
 	if (idev)
 		mtu = idev->cnf.mtu6;
 	rcu_read_unlock();
