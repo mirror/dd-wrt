@@ -559,8 +559,8 @@ static struct rtable *icmp_route_lookup(struct net *net, struct flowi4 *fl4,
 		 * be used for output.
 		 */
 		if (!err && rt2 && rt2->rt_type == RTN_LOCAL) {
-			net_warn_ratelimited("detected local route for %pI4 during ICMP sending, src %pI4\n",
-					     &fl4_dec.daddr, &fl4_dec.saddr);
+//			net_warn_ratelimited("detected local route for %pI4 during ICMP sending, src %pI4\n",
+//					     &fl4_dec.daddr, &fl4_dec.saddr);
 			dst_release(&rt2->dst);
 			err = -EINVAL;
 		}
