@@ -1721,9 +1721,15 @@ void add_blocklist(const char *service, char *ip)
 				char check[INET6_ADDRSTRLEN];
 				int ipv6 = getipv4fromipv6(check, ip);
 				if (!ipv6)
+					eval(IPTABLES, "-I", "SECURITY", "-s", check, "-j", "DROP");
+				else
+					eval(IP6TABLES, "-I", "SECURITY", "-s", ip, "-j", "DROP");
+
+				if (!ipv6)
 					eval(IPTABLES, "-I", "SECURITY", "-p", "tcp", "-s", check, "-j", "TARPIT");
 				else
 					eval(IP6TABLES, "-I", "SECURITY", "-p", "tcp", "-s", ip, "-j", "TARPIT");
+
 #endif
 			}
 			goto end;
@@ -1789,6 +1795,10 @@ int check_blocklist(const char *service, char *ip)
 					eval(IPTABLES, "-D", "SECURITY", "-p", "tcp", "-s", check, "-j", "TARPIT");
 				else
 					eval(IP6TABLES, "-D", "SECURITY", "-p", "tcp", "-s", &entry->ip[0], "-j", "TARPIT");
+				if (!ipv6)
+					eval(IPTABLES, "-D", "SECURITY", "-s", check, "-j", "DROP");
+				else
+					eval(IP6TABLES, "-D", "SECURITY", "-s", &entry->ip[0], "-j", "DROP");
 #endif
 				dd_loginfo(service, "time is over for client %s, so free it", &entry->ip[0]);
 				entry->blocked = -1;
@@ -1808,6 +1818,10 @@ int check_blocklist(const char *service, char *ip)
 				eval(IPTABLES, "-D", "SECURITY", "-p", "tcp", "-s", check, "-j", "TARPIT");
 			else
 				eval(IP6TABLES, "-D", "SECURITY", "-p", "tcp", "-s", &entry->ip[0], "-j", "TARPIT");
+			if (!ipv6)
+				eval(IPTABLES, "-D", "SECURITY", "-s", check, "-j", "DROP");
+			else
+				eval(IP6TABLES, "-D", "SECURITY", "-s", &entry->ip[0], "-j", "DROP");
 			dd_loginfo(service, "time is over for client %s, so free it", &entry->ip[0]);
 			entry->blocked = -1;
 			entry->count = 0;
