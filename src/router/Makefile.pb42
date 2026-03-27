@@ -356,6 +356,9 @@ endif
 ifeq ($(CONFIG_DW02_412H),y)
 	cp $(LINUXDIR)/.config_dw02_412h $(LINUXDIR)/.config
 endif
+ifeq ($(CONFIG_RUCKUSR500),y)
+	cp $(LINUXDIR)/.config_ruckus $(LINUXDIR)/.config
+endif
 ifeq ($(CONFIG_WR710),y)
 ifeq ($(CONFIG_WR710V1),y)
 	cp $(LINUXDIR)/.config_carambola $(LINUXDIR)/.config
@@ -508,7 +511,6 @@ else
 	echo "# CONFIG_WDR4900V2 is not set" >> $(LINUXDIR)/.config
 endif
 ifeq ($(CONFIG_RUCKUSR500),y)
-	cp $(LINUXDIR)/.config_ruckus $(LINUXDIR)/.config
 	echo CONFIG_RUCKUSR500=y >> $(LINUXDIR)/.config
 else
 	echo "# CONFIG_RUCKUSR500 is not set" >> $(LINUXDIR)/.config
