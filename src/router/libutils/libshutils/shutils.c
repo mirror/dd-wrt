@@ -1588,16 +1588,15 @@ int getipv4fromipv6(char *dstip, const char *srcip)
 
 int ipow(int base, int exp)
 {
-    int result = 1;
-    while (exp != 0)
-    {
-        if ((exp & 1) == 1)
-            result *= base;
-        exp >>= 1;
-        base *= base;
-    }
+	int result = 1;
+	while (exp != 0) {
+		if ((exp & 1) == 1)
+			result *= base;
+		exp >>= 1;
+		base *= base;
+	}
 
-    return result;
+	return result;
 }
 
 #ifdef HAVE_MICRO
