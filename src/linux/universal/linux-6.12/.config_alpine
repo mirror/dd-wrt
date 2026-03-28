@@ -3142,6 +3142,7 @@ CONFIG_BCMA_POSSIBLE=y
 #
 # Multifunction device drivers
 #
+# CONFIG_MFD_HASIVO_STC8 is not set
 # CONFIG_MFD_ADP5585 is not set
 # CONFIG_MFD_AIROHA_AN8855 is not set
 # CONFIG_MFD_ACT8945A is not set

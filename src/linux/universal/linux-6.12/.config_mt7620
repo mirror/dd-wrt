@@ -1654,6 +1654,7 @@ CONFIG_BCMA_POSSIBLE=y
 #
 # Multifunction device drivers
 #
+# CONFIG_MFD_HASIVO_STC8 is not set
 # CONFIG_MFD_CORE is not set
 # CONFIG_MFD_ATMEL_FLEXCOM is not set
 # CONFIG_MFD_ATMEL_HLCDC is not set
