@@ -121,7 +121,8 @@ struct lm75_data {
 
 static const u8 lm75_sample_set_masks[] = { 0 << 5, 1 << 5, 2 << 5, 3 << 5 };
 
-#define LM75_SAMPLE_CLEAR_MASK	(3 << 5)
+#define LM75_SAMPLE_CLEAR_MASK		(3 << 5)
+#define LM75_ALERT_POLARITY_HIGH	BIT(2)
 
 /* The structure below stores the configuration values of the supported devices.
  * In case of being supported multiple configurations, the default one must
@@ -631,6 +632,7 @@ static int lm75_probe(struct i2c_client *client)
 	struct device *hwmon_dev;
 	struct lm75_data *data;
 	int status, err;
+	u16 set_mask;
 
 	if (!i2c_check_functionality(client->adapter,
 			I2C_FUNC_SMBUS_BYTE_DATA | I2C_FUNC_SMBUS_WORD_DATA))
@@ -680,9 +682,14 @@ static int lm75_probe(struct i2c_client *client)
 	}
 	data->orig_conf = status;
 	data->current_conf = status;
+	
+	set_mask = data->params->set_mask;
+	if (of_property_read_bool(dev->of_node, "alert-polarity-active-high")) {
+		pr_info("set lm75 alert to active high\n");
+		set_mask |= LM75_ALERT_POLARITY_HIGH;
+	}
 
-	err = lm75_write_config(data, data->params->set_mask,
-				data->params->clr_mask);
+	err = lm75_write_config(data, set_mask, data->params->clr_mask);
 	if (err)
 		return err;
 

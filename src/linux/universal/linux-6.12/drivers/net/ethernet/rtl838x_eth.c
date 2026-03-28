@@ -1475,7 +1475,7 @@ static const struct ethtool_ops rteth_ethtool_ops = {
 	.set_link_ksettings = rteth_set_link_ksettings,
 };
 
-static int rtl838x_eth_probe(struct platform_device *pdev)
+static int rteth_probe(struct platform_device *pdev)
 {
 	struct net_device *dev;
 	struct device_node *dn = pdev->dev.of_node;
@@ -1488,11 +1488,6 @@ static int rtl838x_eth_probe(struct platform_device *pdev)
 
 	pr_info("Probing RTL838X eth device pdev: %x, dev: %x\n",
 		(u32)pdev, (u32)(&pdev->dev));
-
-	if (!dn) {
-		dev_err(&pdev->dev, "No DT found\n");
-		return -EINVAL;
-	}
 
 	cfg = device_get_match_data(&pdev->dev);
 
@@ -1616,23 +1611,21 @@ static int rtl838x_eth_probe(struct platform_device *pdev)
 	return 0;
 }
 
-static void rtl838x_eth_remove(struct platform_device *pdev)
+static void rteth_remove(struct platform_device *pdev)
 {
 	struct net_device *dev = platform_get_drvdata(pdev);
 	struct rteth_ctrl *ctrl = netdev_priv(dev);
 
-	if (dev) {
-		pr_info("Removing platform driver for rtl838x-eth\n");
-		rteth_hw_stop(ctrl);
+	pr_info("Removing platform driver for rtl838x-eth\n");
+	rteth_hw_stop(ctrl);
 
-		netif_tx_stop_all_queues(dev);
+	netif_tx_stop_all_queues(dev);
 
-		for (int i = 0; i < RTETH_RX_RINGS; i++)
-			netif_napi_del(&ctrl->rx_qs[i].napi);
-	}
+	for (int i = 0; i < RTETH_RX_RINGS; i++)
+		netif_napi_del(&ctrl->rx_qs[i].napi);
 }
 
-static const struct of_device_id rtl838x_eth_of_ids[] = {
+static const struct of_device_id rteth_of_ids[] = {
 	{
 		.compatible = "realtek,rtl8380-eth",
 		.data = &rteth_838x_cfg,
@@ -1651,15 +1644,15 @@ static const struct of_device_id rtl838x_eth_of_ids[] = {
 	},
 	{ /* sentinel */ }
 };
-MODULE_DEVICE_TABLE(of, rtl838x_eth_of_ids);
+MODULE_DEVICE_TABLE(of, rteth_of_ids);
 
 static struct platform_driver rtl838x_eth_driver = {
-	.probe  = rtl838x_eth_probe,
-	.remove = rtl838x_eth_remove,
+	.probe  = rteth_probe,
+	.remove = rteth_remove,
 	.driver = {
-		.name = "rtl838x-eth",
+		.name = KBUILD_MODNAME,
 		.pm = NULL,
-		.of_match_table = rtl838x_eth_of_ids,
+		.of_match_table = rteth_of_ids,
 	},
 };
 
