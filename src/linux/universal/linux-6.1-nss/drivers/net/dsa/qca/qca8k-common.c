@@ -837,6 +837,13 @@ int qca8k_port_fdb_add(struct dsa_switch *ds, int port,
 	struct qca8k_priv *priv = ds->priv;
 	u16 port_mask = BIT(port);
 
+	if (!vid)
+		vid = QCA8K_PORT_VID_DEF;
+
+	if (dsa_is_cpu_port(ds, port) || dsa_is_dsa_port(ds, port))
+		return qca8k_fdb_search_and_insert(priv, BIT(port), addr, vid,
+						   QCA8K_ATU_STATUS_STATIC);
+
 	return qca8k_port_fdb_insert(priv, addr, port_mask, vid);
 }
 
@@ -849,6 +856,9 @@ int qca8k_port_fdb_del(struct dsa_switch *ds, int port,
 
 	if (!vid)
 		vid = QCA8K_PORT_VID_DEF;
+
+	if (dsa_is_cpu_port(ds, port) || dsa_is_dsa_port(ds, port))
+		return qca8k_fdb_search_and_del(priv, BIT(port), addr, vid);
 
 	return qca8k_fdb_del(priv, addr, port_mask, vid);
 }
