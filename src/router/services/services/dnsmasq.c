@@ -20,28 +20,28 @@
  * $Id:
  */
 #ifdef HAVE_DNSMASQ
-#include <netinet/in.h>
-#include <arpa/inet.h>
-#include <unistd.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <errno.h>
-#include <sys/time.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <syslog.h>
-#include <utils.h>
-#include <ddnvram.h>
-#include <shutils.h>
-#include <wlutils.h>
-#include <services.h>
-#include <libgen.h>
+	#include <netinet/in.h>
+	#include <arpa/inet.h>
+	#include <unistd.h>
+	#include <stdio.h>
+	#include <stdlib.h>
+	#include <string.h>
+	#include <errno.h>
+	#include <sys/time.h>
+	#include <sys/types.h>
+	#include <sys/stat.h>
+	#include <syslog.h>
+	#include <utils.h>
+	#include <ddnvram.h>
+	#include <shutils.h>
+	#include <wlutils.h>
+	#include <services.h>
+	#include <libgen.h>
 
 static char *getoet_ifnames(char *buffer, size_t len)
 {
 	*buffer = 0;
-#ifdef HAVE_EOP
+	#ifdef HAVE_EOP
 	int maxitunnels = nvram_geti("oet_tunnels");
 	char oet_en[16] = { 0 };
 	int en = 0;
@@ -53,14 +53,14 @@ static char *getoet_ifnames(char *buffer, size_t len)
 			snprintf(buffer, len - 1, "%s,oet%d", buffer, i);
 		}
 	}
-#endif
+	#endif
 	return buffer;
 }
 
 static char *getoet_addresses(char *buffer, size_t len)
 {
 	*buffer = 0;
-#ifdef HAVE_EOP
+	#ifdef HAVE_EOP
 	int maxitunnels = nvram_geti("oet_tunnels");
 	char oet_en[16] = { 0 };
 	int en = 0;
@@ -74,7 +74,7 @@ static char *getoet_addresses(char *buffer, size_t len)
 				snprintf(buffer, len - 1, "%s,%s", buffer, ip);
 		}
 	}
-#endif
+	#endif
 	return buffer;
 }
 
@@ -484,11 +484,11 @@ static void add_ms_telemetry(FILE *fp)
 }
 
 void stop_dnsmasq(void);
-#define IDX_IFNAME 0
-#define IDX_DHCPON 1
-#define IDX_LEASESTART 2
-#define IDX_LEASEMAX 3
-#define IDX_LEASETIME 4
+	#define IDX_IFNAME 0
+	#define IDX_DHCPON 1
+	#define IDX_LEASESTART 2
+	#define IDX_LEASEMAX 3
+	#define IDX_LEASETIME 4
 
 char *getmdhcp(int count, int index, char *buffer)
 {
@@ -614,20 +614,20 @@ void start_dnsmasq(void)
 		stop_dnsmasq();
 		return;
 	}
-#ifdef HAVE_SMARTDNS
+	#ifdef HAVE_SMARTDNS
 	start_smartdns();
-#endif
+	#endif
 	int leasechange = nvram_state_change("static_leases");
 
 	update_timezone();
 
-#ifdef HAVE_DNSCRYPT
+	#ifdef HAVE_DNSCRYPT
 	if (nvram_matchi("dns_crypt", 1)) {
 		stop_process("dnscrypt-proxy", "daemon");
 		log_eval("dnscrypt-proxy", "-d", "-S", "-a", "127.0.0.1:30", "-R", nvram_safe_get("dns_crypt_resolver"), "-L",
 			 "/etc/dnscrypt/dnscrypt-resolvers.csv");
 	}
-#endif
+	#endif
 	usejffs = 0;
 
 	if (jffs_mounted() && nvram_matchi("dhcpd_usejffs", 1)) {
@@ -649,11 +649,11 @@ void start_dnsmasq(void)
 	//    fprintf(fp, "bind-interfaces\n");
 	if (nvram_matchi("chilli_enable", 1) || nvram_matchi("hotss_enable", 1)) {
 		char *chilliif;
-#ifdef HAVE_HOTSPOT
+	#ifdef HAVE_HOTSPOT
 		if (nvram_matchi("hotss_enable", 1))
 			chilliif = nvram_safe_get("hotss_interface");
 		else
-#endif
+	#endif
 			chilliif = nvram_safe_get("chilli_interface");
 
 		fprintf(fp, "interface=%s", chilliif);
@@ -668,12 +668,12 @@ void start_dnsmasq(void)
 		fprintf(fp, "listen-address=127.0.0.1");
 		if (canlan()) {
 			fprintf(fp, ",%s", get_lan_ipaddr());
-#ifdef HAVE_IPV6
+	#ifdef HAVE_IPV6
 			char buf[INET6_ADDRSTRLEN + 1];
 			char *ip = getifaddr_any(buf, nvram_safe_get("lan_ifname"), AF_INET6) ?: NULL;
 			if (ip && nvram_matchi("ipv6_enable", 1))
 				fprintf(fp, ",%s", ip);
-#endif
+	#endif
 		}
 		char vifs[512];
 		getIfLists(vifs, sizeof(vifs));
@@ -735,12 +735,12 @@ void start_dnsmasq(void)
 			}
 			if (nvram_matchi("pptpd_enable", 1)) {
 				fprintf(fp, "%s", nvram_nget("%s_ipaddr", ifname));
-#ifdef HAVE_IPV6
+	#ifdef HAVE_IPV6
 				char buf[INET6_ADDRSTRLEN + 1];
 				char *ip = getifaddr_any(buf, ifname, AF_INET6) ?: NULL;
 				if (ip && nvram_matchi("ipv6_enable", 1))
 					fprintf(fp, ",%s", ip);
-#endif
+	#endif
 			} else
 				fprintf(fp, "%s", ifname);
 		}
@@ -751,31 +751,31 @@ void start_dnsmasq(void)
 	if (nvram_matchi("dnsmasq_strict", 1))
 		fprintf(fp, "strict-order\n");
 
-#ifdef HAVE_SMARTDNS
+	#ifdef HAVE_SMARTDNS
 	if (nvram_matchi("smartdns", 1)) {
 		nvram_seti("dns_crypt", 0);
 		fprintf(fp, "server=127.0.0.1#6053\n");
 		fprintf(fp, "no-resolv\n");
 	}
-#endif
-#ifdef HAVE_DNSCRYPT
+	#endif
+	#ifdef HAVE_DNSCRYPT
 	if (nvram_matchi("dns_crypt", 1)) {
 		nvram_seti("recursive_dns", 0); // disable unbound
 		fprintf(fp, "server=127.0.0.1#30\n");
 		fprintf(fp, "no-resolv\n");
 	}
-#endif
-#ifdef HAVE_UNBOUND
+	#endif
+	#ifdef HAVE_UNBOUND
 	if (nvram_matchi("recursive_dns", 1) && !nvram_matchi("smartdns", 1)) {
 		fprintf(fp, "server=127.0.0.1#7053\n");
 		fprintf(fp, "no-resolv\n");
 	}
-#endif
-#ifdef HAVE_TOR
+	#endif
+	#ifdef HAVE_TOR
 	if (nvram_match("tor_enable", "1") && !nvram_matchi("smartdns", 1))
 		fprintf(fp, "server=%s#5353\n", get_lan_ipaddr());
-#endif
-#ifdef HAVE_IPV6
+	#endif
+	#ifdef HAVE_IPV6
 	if (nvram_matchi("ipv6_enable", 1)) {
 		if (nvram_matchi("dnsipv6_enable", 1)) {
 			//leasetime
@@ -822,7 +822,7 @@ void start_dnsmasq(void)
 			fprintf(fp, "quiet-dhcp6\nquiet-ra\n");
 		}
 	}
-#endif
+	#endif
 
 	/*
 	 * Domain 
@@ -881,16 +881,16 @@ void start_dnsmasq(void)
 			fprintf(fp, "dhcp-option=44,%s\n", nvram_safe_get("wan_wins"));
 		if (nvram_matchi("dns_dnsmasq", 0)) {
 			fprintf(fp, "port=0\n");
-#ifdef HAVE_UNBOUND
+	#ifdef HAVE_UNBOUND
 			if (nvram_matchi("recursive_dns", 1)) {
 				fprintf(fp, "dhcp-option=6,%s\n", get_lan_ipaddr());
 			} else
-#endif
-#ifdef HAVE_SMARTDNS
+	#endif
+	#ifdef HAVE_SMARTDNS
 				if (nvram_matchi("smartdns", 1)) {
 				fprintf(fp, "dhcp-option=6,%s\n", get_lan_ipaddr());
 			} else
-#endif
+	#endif
 			{
 				dns_list6 = get_dns_list(1);
 				char buffdns6[256] = { 0 };
@@ -977,9 +977,9 @@ void start_dnsmasq(void)
 				else
 					fprintf(fp, "%sm\n", time);
 
-#ifdef HAVE_UNBOUND
+	#ifdef HAVE_UNBOUND
 				if (!nvram_matchi("recursive_dns", 1))
-#endif
+	#endif
 				{
 					if (!first) {
 						generate_hosts();
@@ -994,7 +994,7 @@ void start_dnsmasq(void)
 	fprintf(fp, "bogus-priv\n");
 	fprintf(fp, "conf-file=/etc/rfc6761.conf\n");
 	fprintf(fp, "clear-on-reload\n");
-#ifdef HAVE_DNSSEC
+	#ifdef HAVE_DNSSEC
 	if (nvram_matchi("dnssec", 1)) {
 		fprintf(fp, "conf-file=/etc/trust-anchors.conf\n");
 		fprintf(fp, "dnssec\n");
@@ -1007,7 +1007,7 @@ void start_dnsmasq(void)
 			fprintf(fp, "dnssec-check-unsigned=no\n");
 		}
 	}
-#endif
+	#endif
 	if (nvram_matchi("dnssec_proxy", 1)) {
 		fprintf(fp, "proxy-dnssec\n");
 	}
@@ -1021,7 +1021,7 @@ void start_dnsmasq(void)
 	if (nvram_matchi("dnsmasq_add_mac", 1)) {
 		fprintf(fp, "add-mac\n");
 	}
-#ifdef HAVE_PRIVOXY
+	#ifdef HAVE_PRIVOXY
 	if (nvram_matchi("privoxy_enable", 1)) {
 		if (nvram_matchi("privoxy_transp_enable", 1)) {
 			fprintf(fp, "dhcp-option=252,http://config.privoxy.org/wpad.dat\n");
@@ -1031,15 +1031,15 @@ void start_dnsmasq(void)
 	} else {
 		fprintf(fp, "dhcp-option=252,\"\\n\"\n");
 	}
-#else
+	#else
 	fprintf(fp, "dhcp-option=252,\"\\n\"\n");
-#endif
+	#endif
 	char *addoptions = nvram_safe_get("dnsmasq_options");
-#ifdef HAVE_SMARTDNS
+	#ifdef HAVE_SMARTDNS
 	if (nvram_matchi("smartdns", 1) && !nvram_matchi("dnssec", 1))
 		fprintf(fp, "cache-size=0\n");
 	else
-#endif
+	#endif
 		if (!strstr(addoptions, "cache-size="))
 		fprintf(fp, "cache-size=%d\n", nvram_default_geti("dnsmasq_cachesize", 1500));
 	if (!strstr(addoptions, "dns-forward-max="))
@@ -1053,7 +1053,7 @@ void start_dnsmasq(void)
 		fprintf(fp, "address=/use-application-dns.net/mask.icloud.com/mask-h2.icloud.com/\n");
 	}
 
-#ifdef HAVE_EOP
+	#ifdef HAVE_EOP
 	//egc use ipset from WireGuard
 	char *ipsetfile = 0;
 	char *ipsetbasename = 0;
@@ -1073,7 +1073,7 @@ void start_dnsmasq(void)
 		dpbr = nvram_geti(oet_dpbr);
 		//syslog(LOG_INFO, "dnsmasq: ipset tunnel started, i:[%d]\n", i);
 		if (en) {
-#ifdef HAVE_IPSET
+		#ifdef HAVE_IPSET
 			if (dpbr) {
 				char dnsm_ipset[512] = { 0 };
 				char ipsetbasename6[34] = { 0 };
@@ -1094,22 +1094,22 @@ void start_dnsmasq(void)
 				if (ipsetfile[0] != '\0') {
 					ipsetbasename = basename(ipsetfile);
 					if (ipsetbasename[0] != '\0' && dnsm_ipset[0] != '\0') {
-#ifdef HAVE_IPV6
+			#ifdef HAVE_IPV6
 						if (nvram_matchi("ipv6_enable", 1)) {
 							strlcpy(ipsetbasename6, ", ", sizeof(ipsetbasename6));
 							strlcat(ipsetbasename6, ipsetbasename, sizeof(ipsetbasename6));
 							strlcat(ipsetbasename6, "6", sizeof(ipsetbasename6));
 						}
-#endif
+			#endif
 						fprintf(fp, "ipset=/%s%s%s\n", dnsm_ipset, ipsetbasename, ipsetbasename6);
 						dd_loginfo("dnsmasq", "ipset=/%s%s%s\n", dnsm_ipset, ipsetbasename, ipsetbasename6);
 					}
 				}
 			}
-#endif
+		#endif
 		}
 	}
-#endif
+	#endif
 
 	/*
 	 * Additional options 
@@ -1134,9 +1134,9 @@ void restart_dnsmasq(void)
 
 void stop_dnsmasq(void)
 {
-#ifdef HAVE_SMARTDNS
+	#ifdef HAVE_SMARTDNS
 	stop_smartdns();
-#endif
+	#endif
 	if (stop_process("dnsmasq", "daemon")) {
 		unlink("/tmp/dnsmasq/resolv.dnsmasq");
 	}

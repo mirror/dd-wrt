@@ -21,36 +21,36 @@
  */
 
 #ifdef HAVE_WAVESAT
-#include <sys/mman.h>
-#include <stdio.h>
-#include <unistd.h>
-#include <signal.h>
-#include <fcntl.h>
+	#include <sys/mman.h>
+	#include <stdio.h>
+	#include <unistd.h>
+	#include <signal.h>
+	#include <fcntl.h>
 
-#include <sys/types.h>
-#include <sys/file.h>
-#include <sys/ioctl.h>
-#include <sys/socket.h>
+	#include <sys/types.h>
+	#include <sys/file.h>
+	#include <sys/ioctl.h>
+	#include <sys/socket.h>
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <stdint.h>
-#include <ctype.h>
-#include <getopt.h>
-#include <err.h>
+	#include <stdio.h>
+	#include <stdlib.h>
+	#include <string.h>
+	#include <stdint.h>
+	#include <ctype.h>
+	#include <getopt.h>
+	#include <err.h>
 
-#include <ctype.h>
-#include <string.h>
-#include <stdlib.h>
-#include <stdio.h>
-#include <ddnvram.h>
-#include <shutils.h>
-#include <utils.h>
-#include <unistd.h>
-#include <linux/if.h>
+	#include <ctype.h>
+	#include <string.h>
+	#include <stdlib.h>
+	#include <stdio.h>
+	#include <ddnvram.h>
+	#include <shutils.h>
+	#include <utils.h>
+	#include <unistd.h>
+	#include <linux/if.h>
 
-#define IFUP (IFF_UP | IFF_RUNNING | IFF_BROADCAST | IFF_MULTICAST)
+	#define IFUP (IFF_UP | IFF_RUNNING | IFF_BROADCAST | IFF_MULTICAST)
 
 extern int br_add_interface(const char *br, const char *dev);
 

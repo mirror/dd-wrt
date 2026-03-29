@@ -21,20 +21,20 @@
  */
 
 #ifdef HAVE_ZABBIX
-#include <unistd.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <errno.h>
-#include <sys/time.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <syslog.h>
-#include <signal.h>
-#include <utils.h>
-#include <ddnvram.h>
-#include <shutils.h>
-#include <services.h>
+	#include <unistd.h>
+	#include <stdio.h>
+	#include <stdlib.h>
+	#include <string.h>
+	#include <errno.h>
+	#include <sys/time.h>
+	#include <sys/types.h>
+	#include <sys/stat.h>
+	#include <syslog.h>
+	#include <signal.h>
+	#include <utils.h>
+	#include <ddnvram.h>
+	#include <shutils.h>
+	#include <services.h>
 
 void start_zabbix(void)
 {
@@ -62,14 +62,14 @@ void start_zabbix(void)
 		fprintf(fp, "ListenIP=%s\n", IP);
 		fprintf(fp, "StartAgents=5\n");
 		fprintf(fp, "AllowRoot=1\n");
-#ifndef HAVE_MADWIFI
+	#ifndef HAVE_MADWIFI
 		fprintf(fp, "UserParameter=temperature.wl0, /usr/sbin/temps eth1 2> /dev/null\n");
 		fprintf(fp, "UserParameter=temperature.wl1, /usr/sbin/temps eth2 2> /dev/null\n");
 		fprintf(fp, "UserParameter=temperature.wl2, /usr/sbin/temps eth3 2> /dev/null\n");
 		fprintf(fp, "UserParameter=clients.wl0, /usr/sbin/wclients eth1\n");
 		fprintf(fp, "UserParameter=clients.wl1, /usr/sbin/wclients eth2\n");
 		fprintf(fp, "UserParameter=clients.wl2, /usr/sbin/wclients eth3\n");
-#else
+	#else
 		/* todo, write temperature sensor tool for zabbix for qca devices */
 		fprintf(fp, "UserParameter=temperature.wlan0, /usr/sbin/temps wlan0 2> /dev/null\n");
 		fprintf(fp, "UserParameter=temperature.wlan1, /usr/sbin/temps wlan1 2> /dev/null\n");
@@ -77,7 +77,7 @@ void start_zabbix(void)
 		fprintf(fp, "UserParameter=clients.wlan0, /usr/sbin/wclients wlan0\n");
 		fprintf(fp, "UserParameter=clients.wlan1, /usr/sbin/wclients wlan1\n");
 		fprintf(fp, "UserParameter=clients.wlan2, /usr/sbin/wclients wlan2\n");
-#endif
+	#endif
 		fprintf(fp, "UserParameter=clients.wired, /usr/sbin/clients\n");
 		fprintf(fp, "UserParameter=system.topcpu[*], /usr/sbin/topcpu $1 $2\n");
 		fprintf(fp, "UserParameter=listenport[*], netstat -ln 2> /dev/null  | grep -c ':'\n");

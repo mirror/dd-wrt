@@ -147,11 +147,11 @@ int ipup_main(int argc, char **argv)
 			nvram_set("wan_netmask", "255.255.255.255");
 			// reset 3gnetmodetoggle for mode 5
 			nvram_unset("3gnetmodetoggle");
-#if defined(HAVE_TMK) || defined(HAVE_BKM)
+	#if defined(HAVE_TMK) || defined(HAVE_BKM)
 			char *gpio3g = nvram_safe_get("gpio3g");
 			if (*gpio3g)
 				set_gpio(atoi(gpio3g), 1);
-#endif
+	#endif
 		}
 #endif
 	}
@@ -224,13 +224,13 @@ int ipdown_main(int argc, char **argv)
 		eval(IPTABLES, "-t", "nat", "-A", "POSTROUTING", "-o", nvram_safe_get("pptp_ifname"), "-j", "MASQUERADE");
 	}
 #ifdef HAVE_3G
-#if defined(HAVE_TMK) || defined(HAVE_BKM)
+	#if defined(HAVE_TMK) || defined(HAVE_BKM)
 	else if (nvram_match("wan_proto", "3g")) {
 		char *gpio3g = nvram_safe_get("gpio3g");
 		if (*gpio3g)
 			set_gpio(atoi(gpio3g), 0);
 	}
-#endif
+	#endif
 #endif
 
 	nvram_set("pppoe_ifname", "");

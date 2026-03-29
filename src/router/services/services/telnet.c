@@ -20,13 +20,13 @@
  * $Id:
  */
 #ifdef HAVE_TELNET
-#include <stdlib.h>
-#include <ddnvram.h>
-#include <shutils.h>
-#include <utils.h>
-#include <syslog.h>
-#include <signal.h>
-#include <services.h>
+	#include <stdlib.h>
+	#include <ddnvram.h>
+	#include <shutils.h>
+	#include <utils.h>
+	#include <syslog.h>
+	#include <signal.h>
+	#include <services.h>
 
 int isregistered_real(void);
 
@@ -43,9 +43,9 @@ char *telnetd_proc(void)
 void start_telnetd(void)
 {
 	char *telnetd_argv[] = { "telnetd", NULL };
-#ifdef HAVE_REGISTER
+	#ifdef HAVE_REGISTER
 	char *telnetd_argv_reg[] = { "telnetd", "-l", "/sbin/regshell", NULL };
-#endif
+	#endif
 	stop_telnetd();
 
 	if (!nvram_invmatchi("telnetd_enable", 0))
@@ -53,14 +53,14 @@ void start_telnetd(void)
 	if (nvram_match("http_username", DEFAULT_USER) && nvram_match("http_passwd", DEFAULT_PASS))
 		return;
 
-#ifdef HAVE_REGISTER
+	#ifdef HAVE_REGISTER
 	if (isregistered_real())
-#endif
+	#endif
 		_log_evalpid(telnetd_argv, NULL, 0, NULL);
-#ifdef HAVE_REGISTER
+	#ifdef HAVE_REGISTER
 	else
 		return;
-#endif
+	#endif
 
 	return;
 }

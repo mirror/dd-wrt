@@ -167,45 +167,32 @@ void run_pppoe(int pppoe_num)
 	/*
 	 * add here 
 	 */
-	char *pppoe_argv
-		[] = { "pppoecd",
-		       wan_ifname,
-		       "-u",
-		       username,
-		       "-p",
-		       passwd,
-		       "-r",
-		       nvram_safe_get("wan_mtu"), // del by honor, add by tallest.
-		       "-t",
-		       nvram_safe_get("wan_mtu"),
-		       "-i",
-		       nvram_matchi(ppp_demand[pppoe_num], 1) ? idletime : "0",
-		       "-I",
-		       "10", // Send an LCP echo-request frame to the
-		       // server every 10 seconds
-		       "-T",
-		       "20", // pppd will presume the server to be dead if
-		       // 20 LCP echo-requests are sent without
-		       //-> timeout 1 min
-		       // receiving a valid LCP echo-reply
-		       "-P",
-		       param, // PPPOE session number.
-		       "-N",
-		       retry_num, // To avoid kill pppd when pppd has been
+	char *pppoe_argv[] = { "pppoecd", wan_ifname, "-u", username, "-p", passwd, "-r",
+			       nvram_safe_get("wan_mtu"), // del by honor, add by tallest.
+			       "-t", nvram_safe_get("wan_mtu"), "-i", nvram_matchi(ppp_demand[pppoe_num], 1) ? idletime : "0", "-I",
+			       "10", // Send an LCP echo-request frame to the
+			       // server every 10 seconds
+			       "-T",
+			       "20", // pppd will presume the server to be dead if
+			       // 20 LCP echo-requests are sent without
+			       //-> timeout 1 min
+			       // receiving a valid LCP echo-reply
+			       "-P",
+			       param, // PPPOE session number.
+			       "-N",
+			       retry_num, // To avoid kill pppd when pppd has been
 	// connecting.
-#if LOG_PPPOE == 2
-		       "-d",
-#endif
-		       "-C",
-		       "disconnected_pppoe", // by tallest 0407
-		       NULL, /* set default route */
-		       NULL,
-		       NULL, /* pppoe_service */
-		       NULL,
-		       NULL, /* pppoe_ac */
-		       NULL, /* pppoe_keepalive */
-		       NULL },
-     **arg;
+	#if LOG_PPPOE == 2
+			       "-d",
+	#endif
+			       "-C",
+			       "disconnected_pppoe", // by tallest 0407
+			       NULL, /* set default route */
+			       NULL, NULL, /* pppoe_service */
+			       NULL, NULL, /* pppoe_ac */
+			       NULL, /* pppoe_keepalive */
+			       NULL },
+	     **arg;
 	/*
 	 * Add optional arguments 
 	 */

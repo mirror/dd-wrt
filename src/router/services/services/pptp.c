@@ -20,15 +20,15 @@
  * $Id:
  */
 #ifdef HAVE_PPTPD
-#include <stdlib.h>
-#include <ddnvram.h>
-#include <shutils.h>
-#include <utils.h>
-#include <syslog.h>
-#include <signal.h>
-#include <errno.h>
-#include <sys/stat.h>
-#include <services.h>
+	#include <stdlib.h>
+	#include <ddnvram.h>
+	#include <shutils.h>
+	#include <utils.h>
+	#include <syslog.h>
+	#include <signal.h>
+	#include <errno.h>
+	#include <sys/stat.h>
+	#include <services.h>
 
 static int jffs = 0;
 
@@ -135,15 +135,15 @@ void start_pptpd(void)
 		fprintf(fp, "ms-dns %s\n", nvram_safe_get("pptpd_dns2"));
 	}
 	//      use jffs/usb for auth scripts if available
-#if 0
+	#if 0
 	if (jffs == 1) {
 		fprintf(fp, "auth-up /jffs/etc/pptpd/auth-up.sh\n");
 		fprintf(fp, "auth-down /jffs/etc/pptpd/auth-down.sh\n");
-#ifdef HAVE_IPV6
+		#ifdef HAVE_IPV6
 		if (nvram_matchi("ipv6_enable", 1)) {
 			fprintf(fp, "+ipv6\n");
 		}
-#endif
+		#endif
 		fclose(fp);
 		if ((fp = fopen("/jffs/etc/pptpd/auth-up.sh", "r")) == NULL) {
 			fclose(fp);
@@ -160,13 +160,13 @@ void start_pptpd(void)
 			chmod("/jffs/etc/pptpd/auth-down.sh", 0700);
 		}
 	} else
-#endif
+	#endif
 	{
-#ifdef HAVE_IPV6
+	#ifdef HAVE_IPV6
 		if (nvram_matchi("ipv6_enable", 1)) {
 			fprintf(fp, "+ipv6\n");
 		}
-#endif
+	#endif
 		fclose(fp);
 	}
 
@@ -306,9 +306,9 @@ void stop_pptpd(void)
 	unlink("/tmp/pptp_connected");
 	if (jffs == 1)
 		dd_system("/bin/cp /tmp/pptp_peer.db /jffs/etc/pptpd/");
-#ifdef HAVE_PPTP_ACCEL
+	#ifdef HAVE_PPTP_ACCEL
 	rmmod("pptp");
-#endif
+	#endif
 	dd_loginfo("pptpd", "daemon successfully stopped");
 	return;
 }

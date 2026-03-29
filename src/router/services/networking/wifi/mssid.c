@@ -39,8 +39,8 @@
 #define IFUP (IFF_UP | IFF_RUNNING | IFF_BROADCAST | IFF_MULTICAST)
 
 void config_macs(char *wlifname) // reconfigure macs which
-	// should fix the corerev 5
-	// and 7 problem
+// should fix the corerev 5
+// and 7 problem
 {
 	int unit = get_wl_instance(wlifname);
 	char *vifs = nvram_nget("wl%d_vifs", unit);

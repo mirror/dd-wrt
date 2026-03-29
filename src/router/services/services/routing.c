@@ -46,11 +46,11 @@ static int zebra_init(void)
 	char daemons[64];
 	int services = 0;
 	int has_ospfd = 0, has_ospf6d = 0, has_bgpd = 0, has_ripd = 0;
-#ifdef HAVE_FRR
+	#ifdef HAVE_FRR
 	sprintf(daemons, "watchfrr -d -s '%%s -d' -k 'killall %%s' -r '%%s -d' zebra");
-#else
+	#else
 	sprintf(daemons, "watchquagga -dz -r '%%s -d' zebra");
-#endif
+	#endif
 	sub = nvram_safe_get("wk_mode");
 	foreach(var, sub, next) {
 		if (!strcmp(var, "ospf")) {
@@ -83,7 +83,7 @@ static int zebra_init(void)
 			}
 		}
 	}
-#ifdef HAVE_FRR
+	#ifdef HAVE_FRR
 	if (services) {
 		log_eval("zebra", "-d");
 		if (has_ospfd) {
@@ -99,7 +99,7 @@ static int zebra_init(void)
 			log_eval("ripd", "-d");
 		}
 	}
-#endif
+	#endif
 
 	if (services) {
 		dd_loginfo("zebra", "(%s) successfully initiated", daemons);
@@ -710,17 +710,17 @@ static int bird_init(void)
  */
 void start_zebra(void)
 {
-#ifdef HAVE_BIRD
+	#ifdef HAVE_BIRD
 
 	if (bird_init() != 0)
 		return;
 
-#elif defined(HAVE_QUAGGA)
+	#elif defined(HAVE_QUAGGA)
 
 	if (zebra_init() != 0)
 		return;
 
-#endif /* HAVE_BIRD */
+	#endif /* HAVE_BIRD */
 	return;
 }
 
@@ -729,12 +729,12 @@ void start_zebra(void)
  */
 void stop_zebra(void)
 {
-#ifdef HAVE_QUAGGA
-#ifdef HAVE_FRR
+	#ifdef HAVE_QUAGGA
+		#ifdef HAVE_FRR
 	stop_process("watchfrr", "daemon");
-#else
+		#else
 	stop_process("watchquagga", "daemon");
-#endif
+		#endif
 	stop_process("zebra", "daemon");
 	stop_process("ripd", "daemon");
 	stop_process("ospfd", "daemon");
@@ -742,13 +742,13 @@ void stop_zebra(void)
 	stop_process("bgpd", "daemon");
 	return;
 
-#elif defined(HAVE_BIRD)
+	#elif defined(HAVE_BIRD)
 	stop_process("bird", "daemon");
 	return;
 
-#else
+	#else
 	return;
-#endif
+	#endif
 }
 
 #endif

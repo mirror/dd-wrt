@@ -298,13 +298,13 @@ static int usb_process_path(char *path, char *fs, char *target)
 		mkdir("/tmp/mnt", 0700);
 #ifdef HAVE_NTFS3G
 	if (!strcmp(fs, "ntfs")) {
-#ifdef HAVE_LEGACY_KERNEL
+	#ifdef HAVE_LEGACY_KERNEL
 		insmod("fuse");
 		ret = eval("ntfs-3g", "-o", "compression,direct_io,big_writes", path, mount_point);
 		if (ret)
 			rmmod("fuse");
-#else
-#ifdef HAVE_NTFS3
+	#else
+		#ifdef HAVE_NTFS3
 		insmod("ntfsplus");
 		ret = eval("/bin/mount", "-t", "ntfsplus", "-o", "nls=utf8,noatime", path, mount_point);
 		if (ret) {
@@ -314,13 +314,13 @@ static int usb_process_path(char *path, char *fs, char *target)
 			if (ret)
 				rmmod("ntfs3");
 		}
-#else
+		#else
 		insmod("antfs");
 		ret = eval("/bin/mount", "-t", "antfs", "-o", "utf8", path, mount_point);
 		if (ret)
 			rmmod("antfs");
-#endif
-#endif
+		#endif
+	#endif
 	} else
 #endif
 		if (!strcmp(fs, "vfat"))
@@ -331,13 +331,13 @@ static int usb_process_path(char *path, char *fs, char *target)
 	if (ret != 0) { //give it another try
 #ifdef HAVE_NTFS3G
 		if (!strcmp(fs, "ntfs")) {
-#ifdef HAVE_LEGACY_KERNEL
+	#ifdef HAVE_LEGACY_KERNEL
 			insmod("fuse");
 			ret = eval("ntfs-3g", "-o", "compression,direct_io,big_writes", path, mount_point);
 			if (ret)
 				rmmod("fuse");
-#else
-#ifdef HAVE_NTFS3
+	#else
+		#ifdef HAVE_NTFS3
 			insmod("ntfsplus");
 			ret = eval("/bin/mount", "-t", "ntfsplus", "-o", "nls=utf8,noatime", path, mount_point);
 			if (ret) {
@@ -347,13 +347,13 @@ static int usb_process_path(char *path, char *fs, char *target)
 				if (ret)
 					rmmod("ntfs3");
 			}
-#else
+		#else
 			insmod("antfs");
 			ret = eval("/bin/mount", "-t", "antfs", "-o", "utf8", path, mount_point);
 			if (ret)
 				rmmod("antfs");
-#endif
-#endif
+		#endif
+	#endif
 		} else
 #endif
 			ret = eval("/bin/mount", path, mount_point); //guess fs

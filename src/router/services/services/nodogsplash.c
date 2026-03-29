@@ -20,17 +20,17 @@
  * $Id:
  */
 #ifdef HAVE_NODOG
-#include <stdlib.h>
-#include <ddnvram.h>
-#include <shutils.h>
-#include <utils.h>
-#include <syslog.h>
-#include <signal.h>
-#include <errno.h>
-#include <sys/stat.h>
-#include <services.h>
-#define NODOG_CONF "nodogsplash.conf"
-#define NODOG_CONF_PATH "/tmp/nodog/" NODOG_CONF
+	#include <stdlib.h>
+	#include <ddnvram.h>
+	#include <shutils.h>
+	#include <utils.h>
+	#include <syslog.h>
+	#include <signal.h>
+	#include <errno.h>
+	#include <sys/stat.h>
+	#include <services.h>
+	#define NODOG_CONF "nodogsplash.conf"
+	#define NODOG_CONF_PATH "/tmp/nodog/" NODOG_CONF
 extern void addHost(char *host, char *ip, int withdomain);
 
 int mk_nodog_conf(void)

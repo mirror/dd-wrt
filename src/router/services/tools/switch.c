@@ -9,11 +9,11 @@
 #include "ra_ioctl.h"
 
 #ifdef CONFIG_RT2860V2_AP_MEMORY_OPTIMIZATION
-#define RT_SWITCH_HELP 0
-#define RT_TABLE_MANIPULATE 0
+	#define RT_SWITCH_HELP 0
+	#define RT_TABLE_MANIPULATE 0
 #else
-#define RT_SWITCH_HELP 1
-#define RT_TABLE_MANIPULATE 1
+	#define RT_SWITCH_HELP 1
+	#define RT_TABLE_MANIPULATE 1
 #endif
 
 int esw_fd;
@@ -41,7 +41,7 @@ void usage(char *cmd)
 	printf(" %s add [mac] [portmap]                  - add an entry to switch table\n", cmd);
 	printf(" %s add [mac] [portmap] [vlan idx]       - add an entry to switch table\n", cmd);
 	printf(" %s add [mac] [portmap] [vlan idx] [age] - add an entry to switch table\n", cmd);
-#ifdef HAVE_RT3352
+	#ifdef HAVE_RT3352
 	printf(" %s ingress-rate on [port] [Mbps]        - set ingress rate limit on port 0~5 \n", cmd);
 	printf(" %s egress-rate on [port] [Mbps]         - set egress rate limit on port 0~5 \n", cmd);
 	printf(" %s ingress-rate off [port]              - del ingress rate limit on port 0~5 \n", cmd);
@@ -51,7 +51,7 @@ void usage(char *cmd)
 	printf(" %s filt [mac] [portmap]                 - add an SA filtering entry to switch table\n", cmd);
 	printf(" %s filt [mac] [portmap] [vlan idx]      - add an SA filtering entry to switch table\n", cmd);
 	printf(" %s filt [mac] [portmap] [vlan idx] [age]- add an SA filtering entry to switch table\n", cmd);
-#elif defined(CONFIG_RALINK_RT5350)
+	#elif defined(CONFIG_RALINK_RT5350)
 	printf(" %s ingress-rate on [port] [Mbps]        - set ingress rate limit on port 0~4 \n", cmd);
 	printf(" %s egress-rate on [port] [Mbps]         - set egress rate limit on port 0~4 \n", cmd);
 	printf(" %s ingress-rate off [port]              - del ingress rate limit on port 0~4 \n", cmd);
@@ -61,7 +61,7 @@ void usage(char *cmd)
 	printf(" %s filt [mac] [portmap]                 - add an SA filtering entry to switch table\n", cmd);
 	printf(" %s filt [mac] [portmap] [vlan idx]      - add an SA filtering entry to switch table\n", cmd);
 	printf(" %s filt [mac] [portmap] [vlan idx] [age]- add an SA filtering entry to switch table\n", cmd);
-#endif
+	#endif
 	printf(" %s del [mac]                            - delete an entry from switch table\n", cmd);
 	printf(" %s del [mac] [vlan idx]                 - delete an entry from switch table\n", cmd);
 	printf(" %s vlan dump                            - dump switch table\n", cmd);

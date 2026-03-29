@@ -20,21 +20,21 @@
  * $Id:
  */
 #ifdef HAVE_FTP
-#include <unistd.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <errno.h>
-#include <sys/time.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <syslog.h>
-#include <signal.h>
-#include <utils.h>
-#include <ddnvram.h>
-#include <shutils.h>
-#include <services.h>
-#include <samba3.h>
+	#include <unistd.h>
+	#include <stdio.h>
+	#include <stdlib.h>
+	#include <string.h>
+	#include <errno.h>
+	#include <sys/time.h>
+	#include <sys/types.h>
+	#include <sys/stat.h>
+	#include <syslog.h>
+	#include <signal.h>
+	#include <utils.h>
+	#include <ddnvram.h>
+	#include <shutils.h>
+	#include <services.h>
+	#include <samba3.h>
 
 static void ftpsrv_umount()
 {
@@ -207,9 +207,9 @@ nextshare:;
 	fclose(fp);
 	chmod("/tmp/proftpd/etc/passwd", S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP);
 	if (reload_process("proftpd")) {
-#ifdef HAVE_SMP
+	#ifdef HAVE_SMP
 		if (eval("/usr/bin/taskset", "0x2", "proftpd"))
-#endif
+	#endif
 			eval("proftpd");
 		dd_loginfo("proftpd", "server successfully started");
 	}

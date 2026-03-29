@@ -20,13 +20,13 @@
  * $Id:
  */
 #ifdef HAVE_MACTELNET
-#include <stdlib.h>
-#include <ddnvram.h>
-#include <shutils.h>
-#include <utils.h>
-#include <syslog.h>
-#include <signal.h>
-#include <services.h>
+	#include <stdlib.h>
+	#include <ddnvram.h>
+	#include <shutils.h>
+	#include <utils.h>
+	#include <syslog.h>
+	#include <signal.h>
+	#include <services.h>
 int isregistered_real(void);
 
 char *mactelnetd_deps(void)
@@ -42,11 +42,11 @@ char *mactelnetd_proc(void)
 void start_mactelnetd(void)
 {
 	int ret = 0;
-#if defined(ARCH_broadcom) && !defined(HAVE_BCMMODERN)
+	#if defined(ARCH_broadcom) && !defined(HAVE_BCMMODERN)
 	char *telnetd_argv[] = { "mactelnetd", NULL };
-#else
+	#else
 	char *telnetd_argv[] = { "mactelnetd", "-n", NULL };
-#endif
+	#endif
 	stop_mactelnetd();
 
 	if (!nvram_invmatchi("mactelnetd_enable", 0))
@@ -57,14 +57,14 @@ void start_mactelnetd(void)
 	fprintf(fp, "root:%s\n", nvram_safe_get("mactelnetd_passwd"));
 	fclose(fp);
 
-#ifdef HAVE_REGISTER
+	#ifdef HAVE_REGISTER
 	if (isregistered_real())
-#endif
+	#endif
 		_log_evalpid(telnetd_argv, NULL, 0, NULL);
-#ifdef HAVE_REGISTER
+	#ifdef HAVE_REGISTER
 	else
 		return;
-#endif
+	#endif
 
 	return;
 }

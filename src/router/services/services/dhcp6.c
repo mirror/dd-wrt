@@ -56,14 +56,14 @@
 #include <time.h>
 
 #ifdef HAVE_IPV6
-#define evalip6(cmd, args...)                          \
-	{                                              \
-		if (nvram_match("ipv6_enable", "1")) { \
-			eval_va(cmd, ##args, NULL);    \
-		}                                      \
-	}
+	#define evalip6(cmd, args...)                          \
+		{                                              \
+			if (nvram_match("ipv6_enable", "1")) { \
+				eval_va(cmd, ##args, NULL);    \
+			}                                      \
+		}
 #else
-#define evalip6(...)
+	#define evalip6(...)
 #endif
 
 void start_dhcp6c(void)

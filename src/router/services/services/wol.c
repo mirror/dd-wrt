@@ -22,19 +22,19 @@
 
 #ifdef HAVE_WOL
 
-#include <unistd.h>
-#include <string.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <sys/types.h>
-#include <ddnvram.h>
-#include <shutils.h>
-#include "snmp.h"
-#include <signal.h>
-#include <utils.h>
-#include <services.h>
+	#include <unistd.h>
+	#include <string.h>
+	#include <stdio.h>
+	#include <stdlib.h>
+	#include <sys/types.h>
+	#include <ddnvram.h>
+	#include <shutils.h>
+	#include "snmp.h"
+	#include <signal.h>
+	#include <utils.h>
+	#include <services.h>
 
-#define WOL_INTERVAL 15
+	#define WOL_INTERVAL 15
 
 char *wol_deps(void)
 {

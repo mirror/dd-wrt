@@ -323,7 +323,7 @@ static int bound(void)
 	else
 		eval("ifconfig", wan_ifname, nvram_safe_get("wan_ipaddr"), "netmask", nvram_safe_get("wan_netmask"), "up");
 
-		/*
+	/*
 	 * We only want to exec bellow functions after dhcp get ip if the
 	 * wan_proto is heartbeat 
 	 */
@@ -352,9 +352,9 @@ static int bound(void)
 		start_heartbeat_boot();
 		stop_unbound();
 		start_unbound();
-#ifdef HAVE_MACTELNET
+	#ifdef HAVE_MACTELNET
 		start_mactelnetd();
-#endif
+	#endif
 	}
 #else
 	if (0) {

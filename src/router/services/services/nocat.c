@@ -20,16 +20,16 @@
  * $Id:
  */
 #ifdef HAVE_NOCAT
-#include <stdlib.h>
-#include <ddnvram.h>
-#include <shutils.h>
-#include <utils.h>
-#include <syslog.h>
-#include <signal.h>
-#include <errno.h>
-#include <sys/stat.h>
-#include <services.h>
-#define NOCAT_CONF "/tmp/etc/nocat.conf"
+	#include <stdlib.h>
+	#include <ddnvram.h>
+	#include <shutils.h>
+	#include <utils.h>
+	#include <syslog.h>
+	#include <signal.h>
+	#include <errno.h>
+	#include <sys/stat.h>
+	#include <services.h>
+	#define NOCAT_CONF "/tmp/etc/nocat.conf"
 
 int mk_nocat_conf(void)
 {

@@ -8,17 +8,17 @@
 #include "ra_ioctl.h"
 
 #ifdef CONFIG_CC_OPTIMIZE_FOR_SIZE
-#define RT_SWITCH_HELP 0
-#define RT_TABLE_MANIPULATE 0
+	#define RT_SWITCH_HELP 0
+	#define RT_TABLE_MANIPULATE 0
 #else
-#define RT_SWITCH_HELP 1
-#define RT_TABLE_MANIPULATE 1
+	#define RT_SWITCH_HELP 1
+	#define RT_TABLE_MANIPULATE 1
 #endif
 
 #if defined(CONFIG_RALINK_MT7620) || defined(CONFIG_RALINK_MT7621)
-#define MAX_PORT 7
+	#define MAX_PORT 7
 #else
-#define MAX_PORT 6
+	#define MAX_PORT 6
 #endif
 
 int esw_fd;
@@ -1418,10 +1418,10 @@ void dip_add(int argc, char *argv[])
 	printf("REG_ESW_WT_MAC_ATA1 is 0x%x\n\r", value);
 
 	value = 0;
-#if 0
+	#if 0
 	reg_write(REG_ESW_WT_MAC_ATA2, value);
 	printf("REG_ESW_WT_MAC_ATA2 is 0x%x\n\r", value);
-#endif
+	#endif
 	if (!argv[4] || strlen(argv[4]) != 8) {
 		printf("portmap format error, should be of length 7\n");
 		return;
@@ -1667,11 +1667,11 @@ void table_dump(void)
 	}
 
 	reg_write(REG_ESW_WT_MAC_ATC, 0x8004);
-#if defined(CONFIG_RALINK_MT7620) || defined(CONFIG_RALINK_MT7621)
+	#if defined(CONFIG_RALINK_MT7620) || defined(CONFIG_RALINK_MT7621)
 	printf("hash  port(0:6)   fid   vid  age   mac-address     filter my_mac\n");
-#else
+	#else
 	printf("hash  port(0:6)   fid   vid  age   mac-address     filter\n");
-#endif
+	#endif
 	for (i = 0; i < 0x800; i++) {
 		while (1) {
 			reg_read(REG_ESW_WT_MAC_ATC, &value);
@@ -1699,12 +1699,12 @@ void table_dump(void)
 				reg_read(REG_ESW_TABLE_TSRA1, &mac);
 				printf("  %08x", mac);
 				printf("%04x", ((mac2 >> 16) & 0xffff));
-#if defined(CONFIG_RALINK_MT7620) || defined(CONFIG_RALINK_MT7621)
+	#if defined(CONFIG_RALINK_MT7620) || defined(CONFIG_RALINK_MT7621)
 				printf("     %c", (((value2 >> 20) & 0x03) == 0x03) ? 'y' : '-');
 				printf("     %c\n", (((value2 >> 23) & 0x01) == 0x01) ? 'y' : '-');
-#else
+	#else
 				printf("     %c\n", (((value2 >> 20) & 0x03) == 0x03) ? 'y' : '-');
-#endif
+	#endif
 				if (value & 0x4000) {
 					printf("end of table %d\n", i);
 					return;

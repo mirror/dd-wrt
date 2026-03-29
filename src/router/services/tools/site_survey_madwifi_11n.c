@@ -153,14 +153,14 @@ __inline static int ishtinfo(const u_int8_t *frm)
 }
 
 #if __BYTE_ORDER == __BIG_ENDIAN
-#define __bswap_16(x)                                                \
-	(__extension__({                                             \
-		unsigned short int __bsx = (x);                      \
-		((((__bsx) >> 8) & 0xff) | (((__bsx) & 0xff) << 8)); \
-	}))
-#define le16toh(_x) __bswap_16(_x)
+	#define __bswap_16(x)                                                \
+		(__extension__({                                             \
+			unsigned short int __bsx = (x);                      \
+			((((__bsx) >> 8) & 0xff) | (((__bsx) & 0xff) << 8)); \
+		}))
+	#define le16toh(_x) __bswap_16(_x)
 #elif __BYTE_ORDER == __LITTLE_ENDIAN
-#define le16toh(_x) _x
+	#define le16toh(_x) _x
 #endif
 
 __inline static int isht20(const u_int8_t *frm)

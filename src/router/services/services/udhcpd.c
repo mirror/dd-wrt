@@ -20,22 +20,22 @@
  * $Id:
  */
 #ifdef HAVE_UDHCPD
-#include <unistd.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <errno.h>
-#include <sys/time.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <syslog.h>
-#include <signal.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-#include <utils.h>
-#include <ddnvram.h>
-#include <shutils.h>
-#include <services.h>
+	#include <unistd.h>
+	#include <stdio.h>
+	#include <stdlib.h>
+	#include <string.h>
+	#include <errno.h>
+	#include <sys/time.h>
+	#include <sys/types.h>
+	#include <sys/stat.h>
+	#include <syslog.h>
+	#include <signal.h>
+	#include <netinet/in.h>
+	#include <arpa/inet.h>
+	#include <utils.h>
+	#include <ddnvram.h>
+	#include <shutils.h>
+	#include <services.h>
 
 extern int usejffs;
 
@@ -103,8 +103,8 @@ void start_udhcpd(void)
 	if (nvram_matchi("dhcpfwd_enable", 1)) {
 		return;
 	}
-#ifndef HAVE_RB500
-#ifndef HAVE_XSCALE
+	#ifndef HAVE_RB500
+		#ifndef HAVE_XSCALE
 	if (getWET()) // dont
 	// start
 	// any
@@ -117,8 +117,8 @@ void start_udhcpd(void)
 		nvram_set("lan_proto", "static");
 		return;
 	}
-#endif
-#endif
+		#endif
+	#endif
 
 	if (nvram_invmatch("lan_proto", "dhcp") || *nvram_safe_get("lan_dhcpaddr") || nvram_matchi("dhcp_dnsmasq", 1)) {
 		stop_udhcpd();

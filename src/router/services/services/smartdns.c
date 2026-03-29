@@ -20,20 +20,20 @@
  * $Id:
  */
 #ifdef HAVE_SMARTDNS
-#include <unistd.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <errno.h>
-#include <sys/time.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <syslog.h>
-#include <utils.h>
-#include <ddnvram.h>
-#include <shutils.h>
-#include <wlutils.h>
-#include <services.h>
+	#include <unistd.h>
+	#include <stdio.h>
+	#include <stdlib.h>
+	#include <string.h>
+	#include <errno.h>
+	#include <sys/time.h>
+	#include <sys/types.h>
+	#include <sys/stat.h>
+	#include <syslog.h>
+	#include <utils.h>
+	#include <ddnvram.h>
+	#include <shutils.h>
+	#include <wlutils.h>
+	#include <services.h>
 
 void start_smartdns(void)
 {
@@ -70,7 +70,7 @@ void start_smartdns(void)
 	fprintf(fp, "log-size 32K\n");
 	fprintf(fp, "log-num 1\n");
 	fprintf(fp, "log-level warn\n");
-	fprintf(fp, "cache-size %s\n", nvram_default_get("smartdns_cache_size","3000"));
+	fprintf(fp, "cache-size %s\n", nvram_default_get("smartdns_cache_size", "3000"));
 	fprintf(fp, "log-file /tmp/smartdns.log\n");
 	if (!nvram_matchi("dns_dnsmasq", 1) && !nvram_matchi("dhcpd_usenvram", 1)) {
 		int usejffs = 0;
@@ -88,16 +88,16 @@ void start_smartdns(void)
 		else
 			fprintf(fp, "dnsmasq-lease-file /tmp/dnsmasq.leases\n");
 	}
-//egc: do we really need these certificates and if so are these the right ones?
-#ifdef HAVE_HTTPS
+	//egc: do we really need these certificates and if so are these the right ones?
+	#ifdef HAVE_HTTPS
 	fprintf(fp, "ca-file /etc/ssl/certs/ca-certificates.crt\n");
 	fprintf(fp, "ca-path /etc/ssl/certs/\n");
-#endif
-#ifdef HAVE_TOR
+	#endif
+	#ifdef HAVE_TOR
 	if (nvram_match("tor_enable", "1")) {
 		fprintf(fp, "server %s:5353\n", get_lan_ipaddr());
 	}
-#endif
+	#endif
 	struct dns_lists *dns_list = NULL;
 	if (nvram_matchi("recursive_dns", 1)) {
 		fprintf(fp, "server 127.0.0.1:7053\n");

@@ -14,51 +14,51 @@
  */
 
 #ifdef HAVE_ATH9K
-#include <sys/mman.h>
-#include <stdio.h>
-#include <unistd.h>
-#include <signal.h>
-#include <fcntl.h>
+	#include <sys/mman.h>
+	#include <stdio.h>
+	#include <unistd.h>
+	#include <signal.h>
+	#include <fcntl.h>
 
-#include <sys/types.h>
-#include <sys/file.h>
-#include <sys/stat.h>
-#include <sys/ioctl.h>
-#include <sys/socket.h>
+	#include <sys/types.h>
+	#include <sys/file.h>
+	#include <sys/stat.h>
+	#include <sys/ioctl.h>
+	#include <sys/socket.h>
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <stdint.h>
-#include <ctype.h>
-#include <getopt.h>
-#include <err.h>
+	#include <stdio.h>
+	#include <stdlib.h>
+	#include <string.h>
+	#include <stdint.h>
+	#include <ctype.h>
+	#include <getopt.h>
+	#include <err.h>
 
-#include <ctype.h>
-#include <string.h>
-#include <stdlib.h>
-#include <stdio.h>
-#include <ddnvram.h>
-#include <utils.h>
-#include <wlutils.h>
-#include <shutils.h>
-#include <unistd.h>
-#include <glob.h>
+	#include <ctype.h>
+	#include <string.h>
+	#include <stdlib.h>
+	#include <stdio.h>
+	#include <ddnvram.h>
+	#include <utils.h>
+	#include <wlutils.h>
+	#include <shutils.h>
+	#include <unistd.h>
+	#include <glob.h>
 
-#include <services.h>
+	#include <services.h>
 
-#include "unl.h"
-#include <nl80211.h>
+	#include "unl.h"
+	#include <nl80211.h>
 
-#define ENTER syslog(LOG_DEBUG, "mac80211: start %s", __func__)
-#define LEAVE syslog(LOG_DEBUG, "mac80211: leave %s", __func__)
-#define MAC80211DEBUG() \
-	do {            \
-	} while (0)
+	#define ENTER syslog(LOG_DEBUG, "mac80211: start %s", __func__)
+	#define LEAVE syslog(LOG_DEBUG, "mac80211: leave %s", __func__)
+	#define MAC80211DEBUG() \
+		do {            \
+		} while (0)
 
-#ifndef MAC80211DEBUG
-#define MAC80211DEBUG() syslog(LOG_DEBUG, "mac80211: %s:%d", __func__, __LINE__)
-#endif
+	#ifndef MAC80211DEBUG
+		#define MAC80211DEBUG() syslog(LOG_DEBUG, "mac80211: %s:%d", __func__, __LINE__)
+	#endif
 
 static int cur_freq;
 static int cur_freq2;
@@ -71,14 +71,14 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss);
 static void setupSupplicant_ath9k(const char *prefix, char *ssidoverride, int isadhoc);
 void setupHostAP_generic_ath9k(const char *prefix, FILE *fp, int isrepeater, int aoss);
 
-#ifndef HAVE_SUPERCHANNEL
+	#ifndef HAVE_SUPERCHANNEL
 int inline issuperchannel(void)
 {
 	return 0;
 }
-#else
+	#else
 int issuperchannel(void);
-#endif
+	#endif
 
 static int cansuperchannel(const char *prefix)
 {
@@ -424,11 +424,11 @@ void configure_single_mac80211(int count)
 		}
 	}
 	MAC80211DEBUG();
-#ifdef HAVE_REGISTER
+	#ifdef HAVE_REGISTER
 	int cpeonly = iscpe();
-#else
+	#else
 	int cpeonly = 0;
-#endif
+	#endif
 	int maxrxchain = mac80211_get_avail_rx_antenna(dev);
 	int maxtxchain = mac80211_get_avail_tx_antenna(dev);
 	int txchain;
@@ -539,14 +539,14 @@ void configure_single_mac80211(int count)
 				eval("iw", "dev", dev, "ibss", "join", nvram_nget("%s_ssid", dev), freq, htmode, farg);
 		}
 	}
-#ifdef HAVE_IPQ6018
+	#ifdef HAVE_IPQ6018
 	eval("tc", "qdisc", "replace", "dev", dev, "root", "noqueue");
-#endif
+	#endif
 
 	MAC80211DEBUG();
 	char macaddr[32];
 	// interface is created at this point, so that should work
-#if defined(HAVE_MVEBU) || defined(HAVE_IPQ806X) || defined(HAVE_IPQ6018)
+	#if defined(HAVE_MVEBU) || defined(HAVE_IPQ806X) || defined(HAVE_IPQ6018)
 	int board = getRouterBrand();
 	if (board == ROUTER_ASROCK_G10) {
 		getMacAddr(dev, macaddr, sizeof(macaddr));
@@ -556,9 +556,9 @@ void configure_single_mac80211(int count)
 		getWirelessMac(macaddr, count, sizeof(macaddr));
 		set_hwaddr(dev, macaddr);
 	}
-#else
+	#else
 	getMacAddr(dev, macaddr, sizeof(macaddr));
-#endif
+	#endif
 	if (!*nvram_safe_get(athmac))
 		nvram_set(athmac, macaddr);
 	int distance = nvram_default_geti(sens, 2000); // to meter
@@ -568,11 +568,11 @@ void configure_single_mac80211(int count)
 	else
 		sprintf(dist, "auto");
 	eval("iw", "phy", wif, "set", "distance", dist);
-#ifdef HAVE_ATH10K
-//      if (is_ath10k(dev) && !is_mvebu(dev)) { // evil hack for QCA
-//              set_ath10kdistance(dev, distance);
-//      }
-#endif
+	#ifdef HAVE_ATH10K
+	//      if (is_ath10k(dev) && !is_mvebu(dev)) { // evil hack for QCA
+	//              set_ath10kdistance(dev, distance);
+	//      }
+	#endif
 	//      experimental frame compression for internal testing only right now
 
 	// das scheint noch aerger zu machen
@@ -632,9 +632,9 @@ void configure_single_mac80211(int count)
 					     nvram_nget("%s_ssid", var));
 				setupSupplicant_ath9k(var, NULL, 0);
 			}
-#ifdef HAVE_IPQ6018
+	#ifdef HAVE_IPQ6018
 			eval("tc", "qdisc", "replace", "dev", var, "root", "noqueue");
-#endif
+	#endif
 			sprintf(compr, "%s_fc_th", var);
 			char *threshold = nvram_default_get(compr,
 							    "512"); // minimum framesize frequired for compression
@@ -1574,7 +1574,7 @@ void setupHostAP_generic_ath9k(const char *prefix, FILE *fp, int isrepeater, int
 		if (!has_hidden_ssid(prefix) && has_vaps(prefix))
 			fprintf(fp, "mbssid=2\n");
 	}
-#ifdef HAVE_ATH9K
+	#ifdef HAVE_ATH9K
 
 	char bcn[32];
 	sprintf(bcn, "%s_bcn", prefix);
@@ -1585,8 +1585,8 @@ void setupHostAP_generic_ath9k(const char *prefix, FILE *fp, int isrepeater, int
 			intval = 100;
 	}
 	fprintf(fp, "beacon_int=%d\n", intval);
-#endif
-#ifdef HAVE_WPA3
+	#endif
+	#ifdef HAVE_WPA3
 	char airtime[32];
 	sprintf(airtime, "%s_at_policy", prefix);
 	if (nvram_matchi(airtime, 0)) {
@@ -1598,7 +1598,7 @@ void setupHostAP_generic_ath9k(const char *prefix, FILE *fp, int isrepeater, int
 	if (nvram_matchi(airtime, 2)) {
 		fprintf(fp, "airtime_mode=2\n");
 	}
-#endif
+	#endif
 	fprintf(fp, "\n");
 }
 
@@ -1646,10 +1646,10 @@ extern void setupHS20(FILE *fp, char *prefix);
 void setupHostAPPSK(FILE *fp, const char *prefix, int isfirst);
 void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 {
-#ifdef HAVE_REGISTER
+	#ifdef HAVE_REGISTER
 	if (!isregistered())
 		return;
-#endif
+	#endif
 	MAC80211DEBUG();
 	char psk[32];
 	char akm[32];
@@ -1677,17 +1677,17 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 		if (!nvram_nmatch("mesh", "%s_mode", maininterface))
 			isrepeater = 1;
 	}
-#ifdef HAVE_WZRHPAG300NH
+	#ifdef HAVE_WZRHPAG300NH
 	if (aoss) {
 		if (!strncmp(ifname, "wlan0", 4))
 			sprintf(ifname, "aossg");
 		else
 			sprintf(ifname, "aossa");
 	}
-#else
+	#else
 	if (aoss)
 		sprintf(ifname, "aoss");
-#endif
+	#endif
 	MAC80211DEBUG();
 	sprintf(akm, "%s_akm", ifname);
 	sprintf(ft, "%s_ft", ifname);
@@ -1853,13 +1853,13 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 			ssid = "ESSID-AOSS";
 	} else {
 		sprintf(nssid, "%s_ssid", ifname);
-#if defined(HAVE_TMK)
+	#if defined(HAVE_TMK)
 		ssid = nvram_default_get(nssid, "KMT_vap");
-#elif defined(HAVE_BKM)
+	#elif defined(HAVE_BKM)
 		ssid = nvram_default_get(nssid, "BKM_vap");
-#else
+	#else
 		ssid = nvram_default_get(nssid, "dd-wrt");
-#endif
+	#endif
 	}
 
 	fprintf(fp, "ssid=%s\n", ssid);
@@ -2003,7 +2003,7 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 		sprintf(signal, "%s_strikes", ifname);
 		fprintf(fp, "signal_strikes=%s\n", nvram_default_get(signal, "3"));
 	}
-#ifdef HAVE_WPA3
+	#ifdef HAVE_WPA3
 	char airtime[32];
 	sprintf(airtime, "%s_at_policy", maininterface);
 	if (nvram_matchi(airtime, 1) || nvram_matchi(airtime, 2)) {
@@ -2016,7 +2016,7 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 		sprintf(at_limit, "%s_at_limit", ifname);
 		fprintf(fp, "airtime_bss_limit=%d\n", nvram_default_geti(at_limit, 0));
 	}
-#endif
+	#endif
 
 	MAC80211DEBUG();
 	char rts[32];
@@ -2033,9 +2033,9 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 	if (nvram_nmatch("1", "%s_rts", ifname)) {
 		fprintf(fp, "rts_threshold=%s\n", nvram_nget("%s_rtsvalue", ifname));
 	}
-#ifdef HAVE_HOTSPOT20
+	#ifdef HAVE_HOTSPOT20
 	setupHS20(fp, ifname);
-#endif
+	#endif
 	MAC80211DEBUG();
 	if (has_wpa3(ifname)) {
 		char *owe_ifname = nvram_nget("%s_owe_ifname", ifname);
@@ -2056,7 +2056,7 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 			}
 		}
 	}
-#ifdef HAVE_WPA3
+	#ifdef HAVE_WPA3
 	if (nvram_nmatch("1", "%s_80211v", ifname)) {
 		fprintf(fp, "wnm_sleep_mode=%d\n", nvram_nmatch("1", "%s_wnm_sleep_mode", ifname) ? 1 : 0);
 		fprintf(fp, "wnm_sleep_mode_no_keys=%d\n", nvram_nmatch("1", "%s_wnm_sleep_mode_no_keys", ifname) ? 1 : 0);
@@ -2094,7 +2094,7 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 		sprintf(mbo_pref, "%s_mbo_cell_data_conn_pref", ifname);
 		fprintf(fp, "mbo_cell_data_conn_pref=%s\n", nvram_default_get(mbo_pref, "0"));
 	}
-#endif
+	#endif
 	MAC80211DEBUG();
 	char *v = nvram_nget("%s_config", ifname);
 	fprintf(fp, "\n");
@@ -2329,7 +2329,7 @@ static void supplicant_common_mesh(FILE *fp, const char *prefix, char *ssidoverr
 		if (*cellid) {
 			fprintf(fp, "\tbssid=%s\n", cellid);
 		}
-#if defined(HAVE_MAKSAT) || defined(HAVE_TMK) || defined(HAVE_BKM)
+	#if defined(HAVE_MAKSAT) || defined(HAVE_TMK) || defined(HAVE_BKM)
 		else {
 			char cellidssid[5];
 			memset(cellidssid, 0, 5);
@@ -2337,7 +2337,7 @@ static void supplicant_common_mesh(FILE *fp, const char *prefix, char *ssidoverr
 			fprintf(fp, "\tbssid=02:%02x:%02x:%02x:%02x:%02x\n", cellidssid[0], cellidssid[1], cellidssid[2],
 				cellidssid[3], cellidssid[4]);
 		}
-#endif
+	#endif
 	}
 	MAC80211DEBUG();
 }
@@ -2348,10 +2348,10 @@ void eap_sta_config(FILE *fp, const char *prefix, char *ssidoverride, int addvht
 
 void setupSupplicant_ath9k(const char *prefix, char *ssidoverride, int isadhoc)
 {
-#ifdef HAVE_REGISTER
+	#ifdef HAVE_REGISTER
 	if (!isregistered())
 		return;
-#endif
+	#endif
 	MAC80211DEBUG();
 	char akm[32];
 	int i;
@@ -2502,24 +2502,24 @@ void setupSupplicant_ath9k(const char *prefix, char *ssidoverride, int isadhoc)
 			fprintf(fp, "WPA-PSK-SHA256 ");
 		if (_has_wpa3 && ispsk3)
 			fprintf(fp, "SAE ");
-#ifdef HAVE_80211R
+	#ifdef HAVE_80211R
 		if (_has_wpa3 && nvram_matchi(ft, 1) && ispsk3)
 			fprintf(fp, "FT-SAE ");
 		if (nvram_matchi(ft, 1) && (ispsk2 || ispsk))
 			fprintf(fp, "FT-PSK ");
-#endif
+	#endif
 		fprintf(fp, "\n");
 		char pwstring[128] = { 0 };
 		char grpstring[128] = { 0 };
 		get_pairwise(prefix, pwstring, sizeof(pwstring), grpstring, sizeof(grpstring), isadhoc, ismesh);
-#ifdef HAVE_80211W
+	#ifdef HAVE_80211W
 		if (nvram_default_matchi(mfp, 1, 0) || ((ispsk2sha256 || ispsk3) && (!ispsk2 && !ispsk)))
 			fprintf(fp, "\tieee80211w=2\n");
 		else if (nvram_default_matchi(mfp, -1, 0) || ispsk3 || ispsk2sha256) {
 			fprintf(fp, "\tieee80211w=1\n");
 		} else if (nvram_default_matchi(mfp, 0, 0))
 			fprintf(fp, "\tieee80211w=0\n");
-#endif
+	#endif
 		if (!is_morse_micro(prefix)) {
 			if (ismesh)
 				fprintf(fp, "\tnoscan=1\n");
@@ -2529,11 +2529,11 @@ void setupSupplicant_ath9k(const char *prefix, char *ssidoverride, int isadhoc)
 			if (nvram_match(psk, "aes")) {
 				nvram_nseti(1, "%s_ccmp", prefix);
 				fprintf(fp, "\tpairwise=CCMP\n");
-#if defined(HAVE_MAKSAT) || defined(HAVE_TMK) || defined(HAVE_BKM)
+	#if defined(HAVE_MAKSAT) || defined(HAVE_TMK) || defined(HAVE_BKM)
 				if (isadhoc)
 					fprintf(fp, "\tgroup=CCMP\n");
 				else
-#endif
+	#endif
 					if (ismesh)
 					fprintf(fp, "\tgroup=CCMP\n");
 				else
@@ -2595,10 +2595,10 @@ void setupSupplicant_ath9k(const char *prefix, char *ssidoverride, int isadhoc)
 		}
 		fprintf(fp, "}\n");
 		if (ispsk3) {
-#ifdef HAVE_SSID_PROTECTION
+	#ifdef HAVE_SSID_PROTECTION
 			if (nvram_nmatch("1", "%s_ssid_protection", prefix))
 				fprintf(fp, "ssid_protection=1\n");
-#endif
+	#endif
 		}
 		char extra[32];
 		sprintf(extra, "%s_supplicantext", prefix);
@@ -2675,9 +2675,9 @@ void setupSupplicant_ath9k(const char *prefix, char *ssidoverride, int isadhoc)
 		if (!ssidoverride)
 			ssidoverride = nvram_nget("%s_ssid", prefix);
 		fprintf(fp, "\tssid=\"%s\"\n", ssidoverride);
-#ifdef HAVE_UNIWIP
+	#ifdef HAVE_UNIWIP
 		fprintf(fp, "\tbgscan=\"simple:30:-45:300\"\n");
-#endif
+	#endif
 		if (ismesh || isadhoc) {
 			supplicant_common_mesh(fp, prefix, ssidoverride, isadhoc, ismesh);
 		} else {
@@ -2833,9 +2833,9 @@ void mac80211_start_supplicant(int count, char *prefix, char **configs, int *con
 		else if (!strcmp(debug, "3"))
 			background = "-Bddds";
 		int wet = 0;
-#ifndef HAVE_RELAYD
+	#ifndef HAVE_RELAYD
 		wet = nvram_match(wmode, "wet");
-#endif
+	#endif
 		char pid[64];
 		sprintf(pid, "/var/run/%s_wpa_supplicant.pid", dev);
 		{
@@ -2946,9 +2946,9 @@ void post_hostapd_actions(int count)
 	int off = nvram_default_ngeti(0, "%s_off", dev);
 	if (!off && !nvram_nmatch("disabled", "%s_net_mode", dev)) {
 		int wet = 0;
-#ifndef HAVE_RELAYD
+	#ifndef HAVE_RELAYD
 		wet = nvram_match(wmode, "wet");
-#endif
+	#endif
 		char pid[64];
 		sprintf(pid, "/var/run/%s_wpa_supplicant.pid", dev);
 		vifs = nvram_safe_get(wifivifs);
@@ -2998,11 +2998,11 @@ void post_hostapd_actions(int count)
 			}
 		}
 skip:;
-#ifdef HAVE_RELAYD
+	#ifdef HAVE_RELAYD
 		if (strcmp(apm, "sta") && strcmp(apm, "wet")) {
-#else
+	#else
 		if (strcmp(apm, "sta")) {
-#endif
+	#endif
 			char bridged[32];
 			sprintf(bridged, "%s_bridged", dev);
 			if (nvram_default_matchi(bridged, 1, 1)) {
@@ -3015,13 +3015,13 @@ skip:;
 				eval("ifconfig", dev, nvram_nget("%s_ipaddr", dev), "netmask", nvram_nget("%s_netmask", dev), "up");
 			}
 		} else {
-#ifdef HAVE_RELAYD
+	#ifdef HAVE_RELAYD
 			if (!strcmp(apm, "wet")) {
 				eval("ifconfig", dev, "0.0.0.0", "up");
 				//                      sysprintf("relayd -I %s -I %s -D -B", getBridge(dev),
 				//                                dev);
 			}
-#endif
+	#endif
 
 			char bridged[32];
 			sprintf(bridged, "%s_bridged", dev);
@@ -3084,9 +3084,9 @@ skip:;
 				hwaddr = nvram_safe_get(wdsmacname);
 				if (*hwaddr) {
 					eval("iw", wif, "interface", "add", wdsdev, "type", "wds");
-#ifdef HAVE_IPQ6018
+	#ifdef HAVE_IPQ6018
 					eval("tc", "qdisc", "replace", "dev", wdsdev, "root", "noqueue");
-#endif
+	#endif
 					eval("iw", "dev", wdsdev, "set", "peer", hwaddr);
 					eval("ifconfig", wdsdev, "0.0.0.0", "up");
 				}

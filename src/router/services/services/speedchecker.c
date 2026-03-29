@@ -21,23 +21,23 @@
  */
 
 #ifdef HAVE_SPEEDCHECKER
-#include <unistd.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <errno.h>
-#include <sys/time.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <syslog.h>
-#include <signal.h>
-#include <utils.h>
-#include <ddnvram.h>
-#include <shutils.h>
-#include <services.h>
-#include <prevision.h>
+	#include <unistd.h>
+	#include <stdio.h>
+	#include <stdlib.h>
+	#include <string.h>
+	#include <errno.h>
+	#include <sys/time.h>
+	#include <sys/types.h>
+	#include <sys/stat.h>
+	#include <syslog.h>
+	#include <signal.h>
+	#include <utils.h>
+	#include <ddnvram.h>
+	#include <shutils.h>
+	#include <services.h>
+	#include <prevision.h>
 
-#define SCVERSION "1.1"
+	#define SCVERSION "1.1"
 
 void start_speedchecker_init(void)
 {

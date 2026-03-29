@@ -20,41 +20,41 @@
  * $Id:
  */
 #ifdef HAVE_CRON
-#ifndef HAVE_MICRO
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <dirent.h>
-#include <signal.h>
-#include <unistd.h>
-#include <errno.h>
-#include <ctype.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <sys/ioctl.h> /* AhMan March 18 2005 */
-#include <sys/socket.h>
-#include <sys/mount.h>
+	#ifndef HAVE_MICRO
+		#include <stdio.h>
+		#include <stdlib.h>
+		#include <string.h>
+		#include <dirent.h>
+		#include <signal.h>
+		#include <unistd.h>
+		#include <errno.h>
+		#include <ctype.h>
+		#include <sys/types.h>
+		#include <sys/stat.h>
+		#include <sys/ioctl.h> /* AhMan March 18 2005 */
+		#include <sys/socket.h>
+		#include <sys/mount.h>
 
-#include <netinet/in.h>
-#include <arpa/inet.h>
-#include <sys/wait.h>
-#include <net/route.h> /* AhMan March 18 2005 */
-#include <sys/types.h>
-#include <signal.h>
+		#include <netinet/in.h>
+		#include <arpa/inet.h>
+		#include <sys/wait.h>
+		#include <net/route.h> /* AhMan March 18 2005 */
+		#include <sys/types.h>
+		#include <signal.h>
 
-#include <ddnvram.h>
-#include <bcmconfig.h>
-#include <netconf.h>
-#include <shutils.h>
-#include <utils.h>
-#include <cy_conf.h>
-#include <code_pattern.h>
-#include <rc.h>
-#include <wlutils.h>
-#include <nvparse.h>
-#include <syslog.h>
-#include <services.h>
-#include <time.h>
+		#include <ddnvram.h>
+		#include <bcmconfig.h>
+		#include <netconf.h>
+		#include <shutils.h>
+		#include <utils.h>
+		#include <cy_conf.h>
+		#include <code_pattern.h>
+		#include <rc.h>
+		#include <wlutils.h>
+		#include <nvparse.h>
+		#include <syslog.h>
+		#include <services.h>
+		#include <time.h>
 
 void stop_cron(void);
 
@@ -127,7 +127,7 @@ void start_cron(void)
 		fprintf(fp, "\n"); // extra new line at the end
 		fclose(fp);
 	}
-#ifdef HAVE_HOTSPOT
+		#ifdef HAVE_HOTSPOT
 	struct tm *currtime;
 	time_t tloc;
 
@@ -145,13 +145,13 @@ void start_cron(void)
 
 		fclose(fp);
 	}
-#endif
-#ifdef HAVE_RAID
+		#endif
+		#ifdef HAVE_RAID
 	fp = fopen("/tmp/cron.d/fscheck", "w");
 	fprintf(fp, "0 3 1 * * root /sbin/service fscheck main\n");
 	fclose(fp);
 
-#endif
+		#endif
 
 	/*
 	 * Custom cron files 
@@ -170,5 +170,5 @@ void stop_cron(void)
 	stop_process("cron", "daemon");
 	return;
 }
-#endif
+	#endif
 #endif

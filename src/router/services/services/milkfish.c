@@ -20,15 +20,15 @@
  * $Id:
  */
 #ifdef HAVE_MILKFISH
-#include <sys/stat.h>
-#include <stdlib.h>
-#include <ddnvram.h>
-#include <shutils.h>
-#include <utils.h>
-#include <syslog.h>
-#include <signal.h>
-#include <md5.h>
-#include <services.h>
+	#include <sys/stat.h>
+	#include <stdlib.h>
+	#include <ddnvram.h>
+	#include <shutils.h>
+	#include <utils.h>
+	#include <syslog.h>
+	#include <signal.h>
+	#include <md5.h>
+	#include <services.h>
 
 void start_milkfish_boot(void);
 

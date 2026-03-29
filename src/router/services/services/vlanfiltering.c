@@ -60,20 +60,20 @@
 
 #ifdef HAVE_VLAN_FILTERING
 
-#define iterate_filters(command)                                      \
-	{                                                             \
-		wordlist = nvram_safe_get("vlan_filters");            \
-		foreach(word, wordlist, next) {                       \
-			GETENTRYBYIDX(ifname, word, 0);               \
-			GETENTRYBYIDX(vlan, word, 1);                 \
-			GETENTRYBYIDX(pvid, word, 2);                 \
-			GETENTRYBYIDX(untagged, word, 3);             \
-			if (!ifname || !vlan || !pvid || !untagged) { \
-				break;                                \
-			}                                             \
-			command;                                      \
-		}                                                     \
-	}
+	#define iterate_filters(command)                                      \
+		{                                                             \
+			wordlist = nvram_safe_get("vlan_filters");            \
+			foreach(word, wordlist, next) {                       \
+				GETENTRYBYIDX(ifname, word, 0);               \
+				GETENTRYBYIDX(vlan, word, 1);                 \
+				GETENTRYBYIDX(pvid, word, 2);                 \
+				GETENTRYBYIDX(untagged, word, 3);             \
+				if (!ifname || !vlan || !pvid || !untagged) { \
+					break;                                \
+				}                                             \
+				command;                                      \
+			}                                                     \
+		}
 
 void start_vlanfiltering(void)
 {

@@ -55,28 +55,28 @@
 #include <services.h>
 
 #if defined(HAVE_CPUTEMP) && !defined(HAVE_BCMMODERN)
-#ifndef HAVE_LAGUNA
+	#ifndef HAVE_LAGUNA
 
-#ifdef HAVE_GATEWORX
-#define TEMP_PATH "/sys/devices/platform/IXP4XX-I2C.0/i2c-adapter:i2c-0/0-0028"
-#define TEMP2_PATH "/sys/devices/platform/IXP4XX-I2C.0/i2c-0/0-0028"
-// #define TEMP_PATH "/sys/devices/platform/IXP4XX-I2C.0/i2c-0/0-0028"
-#define TEMP_PREFIX "temp"
-#define TEMP2_PREFIX "temp1"
-#define TEMP_MUL 100
-#elif HAVE_UNIWIP
-#define TEMP_PREFIX "temp1"
-#define TEMP_PATH "/sys/bus/i2c/devices/0-0049"
-#define TEMP_MUL 1000
-#else
-#ifdef HAVE_X86
-#define TEMP_PATH "/sys/devices/platform/i2c-1/1-0048"
-#else
-#define TEMP_PATH "/sys/devices/platform/i2c-0/0-0048"
-#endif
-#define TEMP_PREFIX "temp1"
-#define TEMP_MUL 1000
-#endif
+		#ifdef HAVE_GATEWORX
+			#define TEMP_PATH "/sys/devices/platform/IXP4XX-I2C.0/i2c-adapter:i2c-0/0-0028"
+			#define TEMP2_PATH "/sys/devices/platform/IXP4XX-I2C.0/i2c-0/0-0028"
+			// #define TEMP_PATH "/sys/devices/platform/IXP4XX-I2C.0/i2c-0/0-0028"
+			#define TEMP_PREFIX "temp"
+			#define TEMP2_PREFIX "temp1"
+			#define TEMP_MUL 100
+		#elif HAVE_UNIWIP
+			#define TEMP_PREFIX "temp1"
+			#define TEMP_PATH "/sys/bus/i2c/devices/0-0049"
+			#define TEMP_MUL 1000
+		#else
+			#ifdef HAVE_X86
+				#define TEMP_PATH "/sys/devices/platform/i2c-1/1-0048"
+			#else
+				#define TEMP_PATH "/sys/devices/platform/i2c-0/0-0048"
+			#endif
+			#define TEMP_PREFIX "temp1"
+			#define TEMP_MUL 1000
+		#endif
 
 void stop_hwmon(void)
 {
@@ -89,11 +89,11 @@ void start_hwmon(void)
 
 	sysprintf("/bin/echo %d > %s/%s_max", temp_max, TEMP_PATH, TEMP_PREFIX);
 	sysprintf("/bin/echo %d > %s/%s_max_hyst", temp_hyst, TEMP_PATH, TEMP_PREFIX);
-#ifdef TEMP2_PATH
+		#ifdef TEMP2_PATH
 	sysprintf("/bin/echo %d > %s/%s_max", temp_max, TEMP2_PATH, TEMP2_PREFIX);
 	sysprintf("/bin/echo %d > %s/%s_max_hyst", temp_hyst, TEMP2_PATH, TEMP2_PREFIX);
-#endif
+		#endif
 	dd_loginfo("hwmon", "successfully started");
 }
-#endif
+	#endif
 #endif

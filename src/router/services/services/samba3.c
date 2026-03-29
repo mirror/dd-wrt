@@ -20,23 +20,23 @@
  * $Id:
  */
 #ifdef HAVE_SAMBA3
-#include <unistd.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <errno.h>
-#include <sys/time.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <sys/utsname.h>
-#include <syslog.h>
-#include <signal.h>
-#include <utils.h>
-#include <ddnvram.h>
-#include <shutils.h>
-#include <services.h>
-#include <samba3.h>
-#include <fcntl.h>
+	#include <unistd.h>
+	#include <stdio.h>
+	#include <stdlib.h>
+	#include <string.h>
+	#include <errno.h>
+	#include <sys/time.h>
+	#include <sys/types.h>
+	#include <sys/stat.h>
+	#include <sys/utsname.h>
+	#include <syslog.h>
+	#include <signal.h>
+	#include <utils.h>
+	#include <ddnvram.h>
+	#include <shutils.h>
+	#include <services.h>
+	#include <samba3.h>
+	#include <fcntl.h>
 
 static int has_sambauser(struct samba3_shareuser *csu, struct samba3_user *samba3users)
 {
@@ -104,10 +104,10 @@ void start_samba3(void)
 	mkdir("/var/cache/samba", 0700);
 	eval("touch", "/var/samba/smbpasswd");
 	eval("smbpasswd", "nobody", "nobody");
-#ifdef HAVE_SMBD
+	#ifdef HAVE_SMBD
 	eval("ksmbd.adduser", "-a", "nobody", "-p", "nobody", "-i", "/tmp/smb.db");
 	eval("ksmbd.adduser", "-u", "nobody", "-p", "nobody", "-i", "/tmp/smb.db");
-#endif
+	#endif
 	if (nvram_matchi("samba3_advanced", 1)) {
 		write_nvram("/tmp/samba/smb.conf", "samba3_conf");
 	} else {
@@ -117,10 +117,10 @@ void start_samba3(void)
 				sysprintf("echo \"%s\"\":*:%d:1000:\"%s\":/var:/bin/false\" >> /etc/passwd", cu->username,
 					  uniqueuserid++, cu->username);
 				eval("smbpasswd", cu->username, cu->password);
-#ifdef HAVE_SMBD
+	#ifdef HAVE_SMBD
 				eval("ksmbd.adduser", "-a", cu->username, "-p", cu->password, "-i", "/tmp/smb.db");
 				eval("ksmbd.adduser", "-u", cu->username, "-p", cu->password, "-i", "/tmp/smb.db");
-#endif
+	#endif
 			}
 			cunext = cu->next;
 			free(cu);
@@ -132,9 +132,9 @@ void start_samba3(void)
 			"log level = 1\n" //
 			"netbios name = %s\n" //
 			"server string = %s\n" //
-#ifdef HAVE_SAMBA4
+	#ifdef HAVE_SAMBA4
 			"unix charset = UTF-8\n"
-#endif
+	#endif
 			"syslog = 10\n" //
 			"encrypt passwords = true\n" //
 			"preferred master = yes\n" //
@@ -162,29 +162,29 @@ void start_samba3(void)
 			"dead time = 15\n" //
 			"getwd cache = yes\n" //
 			"lpq cache time = 30\n" //
-#if defined(HAVE_SMBD) || defined(HAVE_SAMBA4)
+	#if defined(HAVE_SMBD) || defined(HAVE_SAMBA4)
 			"server min protocol = %s\n" //
 			"server max protocol = %s\n" //
 			"vfs objects = streams_xattr\n"
-#else
+	#else
 			"min protocol = %s\n" //
 			"max protocol = %s\n" //
-#endif
-#ifndef HAVE_SAMBA4
+	#endif
+	#ifndef HAVE_SAMBA4
 			"printing = none\n"
-#endif
+	#endif
 			"load printers = No\n" //
 			"usershare allow guests = Yes\n",
 			nvram_safe_get("router_name"), nvram_safe_get("samba3_srvstr"), nvram_safe_get("samba3_workgrp"),
 			nvram_safe_get("samba3_guest"), nvram_safe_get("samba3_min_proto"), smbmaxproto);
 
-#ifdef HAVE_SMBD
+	#ifdef HAVE_SMBD
 		if (!strncmp(smbmaxproto, "SMB3", 4))
 			fprintf(fp, "smb3 encryption = %s\n", !strcmp(nvram_safe_get("samba3_encrypt"), "off") ? "no" : "yes");
-#elif defined(HAVE_SAMBA4)
+	#elif defined(HAVE_SAMBA4)
 		if (!strncmp(smbmaxproto, "SMB3", 4))
 			fprintf(fp, "smb encrypt = %s\n", nvram_safe_get("samba3_encrypt"));
-#endif
+	#endif
 		samba3shares = getsamba3shares();
 		for (cs = samba3shares; cs; cs = csnext) {
 			if (!cs->public) {
@@ -204,13 +204,13 @@ void start_samba3(void)
 				if (*sd == '/')
 					sd++; // kill leading slash if there is any
 
-#ifdef HAVE_SMBD
+	#ifdef HAVE_SMBD
 				fprintf(fp, "comment = %s\n", cs->label);
 				fprintf(fp, "path = %s%s%s\n", cs->mp, strlen(sd) ? "/" : "", sd);
-#else
+	#else
 				fprintf(fp, "comment = \"%s\"\n", cs->label);
 				fprintf(fp, "path = \"%s%s%s\"\n", cs->mp, strlen(sd) ? "/" : "", sd);
-#endif
+	#endif
 				fprintf(fp, "read only = %s\n", !strcmp(cs->access_perms, "ro") ? "yes" : "no");
 				fprintf(fp, "guest ok = %s\n", cs->public == 1 ? "yes" : "no");
 				if (!cs->public) {
@@ -243,20 +243,20 @@ nextshare:;
 	}
 	chmod("/jffs", 0777);
 
-#ifndef HAVE_SMBD
+	#ifndef HAVE_SMBD
 	char conffile[64];
 	if (reload_process("smbd")) {
-#ifdef HAVE_SMP
+		#ifdef HAVE_SMP
 		if (eval("/usr/bin/taskset", "0x2", "/usr/sbin/smbd", "-D", "-s",
 			 getdefaultconfig(NULL, path, sizeof(path), "samba/smb.conf")))
-#endif
+		#endif
 			log_eval("smbd", "-D", "-s", getdefaultconfig(NULL, path, sizeof(path), "samba/smb.conf"));
 
 		if (pidof("smbd") <= 0) {
-#ifdef HAVE_SMP
+		#ifdef HAVE_SMP
 			if (eval("/usr/bin/taskset", "0x2", "/usr/sbin/smbd", "-D", "-s",
 				 getdefaultconfig(NULL, path, sizeof(path), "samba/smb.conf")))
-#endif
+		#endif
 				log_eval("smbd", "-D", "-s", getdefaultconfig(NULL, path, sizeof(path), "samba/smb.conf"));
 		}
 	}
@@ -266,10 +266,10 @@ nextshare:;
 			log_eval("nmbd", "-D", "-s", getdefaultconfig(NULL, path, sizeof(path), "samba/smb.conf"));
 		}
 	}
-#ifdef HAVE_SAMBA4
+		#ifdef HAVE_SAMBA4
 	log_eval("winbindd", "-D", "-s", getdefaultconfig(NULL, path, sizeof(path), "samba/smb.conf"));
-#endif
-#else
+		#endif
+	#else
 	insmod("oid_registry nls_base nls_utf8 crypto_hash crypto_null aead aead2 sha256_generic sha512_generic geniv seqiv arc4 ecb" //
 	       " hmac cmac md4 md5 gf128mul ctr ghash-generic gcm ccm libdes des_generic aes_generic aes-arm" //
 	       " aes-arm-ce aes-arm-bs sha256-arm sha512-arm ghash-ce aes-ce-cipher aes-ce-ccm" //
@@ -299,24 +299,24 @@ nextshare:;
 		log_eval("ksmbd.mountd", "-c", getdefaultconfig(NULL, c1, sizeof(c1), "samba/smb.conf"), "-u",
 			 getdefaultconfig(NULL, c2, sizeof(c2), "smb.db"));
 	}
-#endif
+	#endif
 	return;
 }
 
 void stop_samba3(void)
 {
-#ifdef HAVE_SMBD
+	#ifdef HAVE_SMBD
 	stop_process("wsdd2", "windows service discovery daemon");
 	stop_process("ksmbd.mountd", "samba daemon");
 	sysprintf("echo hard > /sys/class/ksmbd-control/kill_server");
 	rmmod("ksmbd");
 	unlink("/tmp/ksmbd.lock");
-#else
+	#else
 	stop_process("smbd", "samba daemon");
 	stop_process("nmbd", "daemon");
 	//samba has changed the way pidfiles are named, thus stop process will not kill smbd and nmbd pidfiles, see pidfile.c in samba
 	sysprintf("rm -rf /var/run/*smb.conf.pid");
-#endif
+	#endif
 }
 #endif
 

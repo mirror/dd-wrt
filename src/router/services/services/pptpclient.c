@@ -150,9 +150,9 @@ void run_pptp(int status)
 	char username[80], passwd[80];
 
 	stop_dhcpc();
-#ifdef HAVE_PPPOE
+	#ifdef HAVE_PPPOE
 	stop_pppoe();
-#endif
+	#endif
 	stop_vpn_modules();
 
 	snprintf(username, sizeof(username), "%s", nvram_safe_get("ppp_username"));

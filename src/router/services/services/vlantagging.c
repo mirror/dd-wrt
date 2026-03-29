@@ -59,7 +59,7 @@
 #include <libbridge.h>
 
 #ifdef HAVE_VLANTAGGING
-#define IFUP (IFF_UP | IFF_RUNNING | IFF_BROADCAST | IFF_MULTICAST)
+	#define IFUP (IFF_UP | IFF_RUNNING | IFF_BROADCAST | IFF_MULTICAST)
 
 static char *EGRESS(char *map, int class, char *prio)
 {
@@ -199,7 +199,7 @@ void stop_vlantagging(void)
 void set_stp_state(char *bridge, char *stp)
 {
 	br_set_stp_state(bridge, strcmp(stp, "Off") ? 1 : 0);
-#ifdef HAVE_MSTP
+	#ifdef HAVE_MSTP
 	if (!strcmp(stp, "MSTP") && nvram_nmatch("1", "%s_vlan", bridge))
 		eval("ip", "link", "set", "dev", bridge, "type", "bridge", "mst_enable", "1");
 	else
@@ -215,16 +215,16 @@ void set_stp_state(char *bridge, char *stp)
 		eval("mstpctl", "setforcevers", bridge, "mstp");
 	if (!strcmp(stp, "RSTP"))
 		eval("mstpctl", "setforcevers", bridge, "rstp");
-#endif
+	#endif
 }
 
 void apply_bridgeif(char *ifname, char *realport)
 {
 	char word[256];
 	const char *next, *wordlist;
-#ifdef HAVE_MICRO
+	#ifdef HAVE_MICRO
 	br_init();
-#endif
+	#endif
 	wordlist = nvram_safe_get("bridgesif");
 	foreach(word, wordlist, next) {
 		GETENTRYBYIDX(tag, word, 0);
@@ -245,9 +245,9 @@ void apply_bridgeif(char *ifname, char *realport)
 				br_set_path_cost(tag, realport, atoi(pathcost));
 		}
 	}
-#ifdef HAVE_MICRO
+	#ifdef HAVE_MICRO
 	br_shutdown();
-#endif
+	#endif
 }
 
 void start_bridgesif(void)
@@ -255,9 +255,9 @@ void start_bridgesif(void)
 	char stp[256];
 	char word[256];
 	const char *next, *wordlist;
-#ifdef HAVE_MICRO
+	#ifdef HAVE_MICRO
 	br_init();
-#endif
+	#endif
 	wordlist = nvram_safe_get("bridgesif");
 	foreach(word, wordlist, next) {
 		GETENTRYBYIDX(tag, word, 0);
@@ -279,9 +279,9 @@ void start_bridgesif(void)
 				br_set_path_cost(tag, port, atoi(pathcost));
 		}
 	}
-#ifdef HAVE_MICRO
+	#ifdef HAVE_MICRO
 	br_shutdown();
-#endif
+	#endif
 }
 
 void start_bridging(void)
@@ -289,9 +289,9 @@ void start_bridging(void)
 	char word[256];
 	const char *next, *wordlist;
 	char hwaddr[32];
-#ifdef HAVE_MICRO
+	#ifdef HAVE_MICRO
 	br_init();
-#endif
+	#endif
 	wordlist = nvram_safe_get("bridges");
 	foreach(word, wordlist, next) {
 		GETENTRYBYIDX(bridge, word, 0);
@@ -324,9 +324,9 @@ void start_bridging(void)
 		}
 		eval("ifconfig", bridge, "up");
 	}
-#ifdef HAVE_MICRO
+	#ifdef HAVE_MICRO
 	br_shutdown();
-#endif
+	#endif
 
 	start_set_routes();
 }
@@ -352,9 +352,9 @@ void stop_bridgesif(void)
 {
 	char word[256];
 	const char *next, *wordlist;
-#ifdef HAVE_MICRO
+	#ifdef HAVE_MICRO
 	br_init();
-#endif
+	#endif
 
 	wordlist = nvram_safe_get("bridgesif");
 	foreach(word, wordlist, next) {
@@ -365,18 +365,18 @@ void stop_bridgesif(void)
 		if (ifexists(port))
 			br_del_interface(tag, port);
 	}
-#ifdef HAVE_MICRO
+	#ifdef HAVE_MICRO
 	br_shutdown();
-#endif
+	#endif
 }
 
 void stop_bridging(void)
 {
 	static char word[256];
 	const char *next, *wordlist;
-#ifdef HAVE_MICRO
+	#ifdef HAVE_MICRO
 	br_init();
-#endif
+	#endif
 
 	wordlist = nvram_safe_get("bridges");
 	foreach(word, wordlist, next) {
@@ -388,9 +388,9 @@ void stop_bridging(void)
 			br_del_bridge(tag);
 		}
 	}
-#ifdef HAVE_MICRO
+	#ifdef HAVE_MICRO
 	br_shutdown();
-#endif
+	#endif
 }
 
 #else

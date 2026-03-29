@@ -20,12 +20,12 @@
  * $Id:
  */
 #if defined(HAVE_AOSS) || defined(HAVE_WPS)
-#include <stdlib.h>
-#include <ddnvram.h>
-#include <shutils.h>
-#include <utils.h>
-#include <syslog.h>
-#include <signal.h>
+	#include <stdlib.h>
+	#include <ddnvram.h>
+	#include <shutils.h>
+	#include <utils.h>
+	#include <syslog.h>
+	#include <signal.h>
 
 void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss);
 
@@ -34,45 +34,45 @@ void stop_aoss(void);
 void start_aoss(void)
 {
 	int ret;
-#ifdef HAVE_WZRHPAG300NH
+	#ifdef HAVE_WZRHPAG300NH
 	if (nvram_match("wlan0_net_mode", "disabled") && nvram_match("wlan1_net_mode", "disabled")) {
 		led_control(LED_SES, LED_OFF);
 		stop_aoss();
 		return;
 	}
-#else
+	#else
 	if (nvram_match("wlan0_net_mode", "disabled")) {
 		led_control(LED_SES, LED_OFF);
 		stop_aoss();
 		return;
 	}
-#endif
+	#endif
 	if (nvram_matchi("aoss_enable", 0)) {
 		stop_aoss();
-#ifdef HAVE_WPS
+	#ifdef HAVE_WPS
 		unlink("/tmp/.wpsdone");
 		if (nvram_matchi("wps_enabled", 1)) {
 			if (!nvram_match("wlan0_net_mode", "disabled")) {
 				eval("hostapd_cli", "-i", "wlan0", "wps_pbc");
-#ifdef HAVE_IDEXX
+		#ifdef HAVE_IDEXX
 				eval("/usr/bin/check_wps");
-#endif
+		#endif
 			}
-#if defined(HAVE_WZRHPAG300NH)
+		#if defined(HAVE_WZRHPAG300NH)
 			if (!nvram_match("wlan1_net_mode", "disabled")) {
 				led_control(LED_SES, LED_FLASH);
 				eval("hostapd_cli", "-i", "wlan1", "wps_pbc");
-#ifdef HAVE_IDEXX
+			#ifdef HAVE_IDEXX
 				eval("/usr/bin/check_wps");
-#endif
+			#endif
 			}
-#endif
+		#endif
 		}
-#endif
+	#endif
 
 		return;
 	}
-#ifdef HAVE_AOSS
+	#ifdef HAVE_AOSS
 	if (pidof("aoss") > 0)
 		return;
 	led_control(LED_SES, LED_FLASH); // when pressed, blink white
@@ -84,29 +84,29 @@ void start_aoss(void)
 	char copy[256];
 	strcpy(copy, vifbak);
 
-#ifdef HAVE_WZRHPAG300NH
+		#ifdef HAVE_WZRHPAG300NH
 	char *vifbak2 = nvram_safe_get("wlan1_vifs");
 	char copy2[256];
 	strcpy(copy2, vifbak2);
-#endif
+		#endif
 	if (!is_mac80211("wlan0")) {
 		eval("startservice", "deconfigurewifi", "-f");
 	}
 	nvram_unset("wlan0_vifs");
-#ifdef HAVE_WZRHPAG300NH
+		#ifdef HAVE_WZRHPAG300NH
 	nvram_unset("wlan1_vifs");
-#endif
+		#endif
 	if (!is_mac80211("wlan0")) {
 		eval("startservice", "configurewifi", "-f");
 	}
 	nvram_set("wlan0_vifs", copy);
-#ifdef HAVE_WZRHPAG300NH
+		#ifdef HAVE_WZRHPAG300NH
 	nvram_set("wlan1_vifs", copy2);
-#endif
+		#endif
 	nvram_async_commit();
 	int hasaoss = 0;
-#ifdef HAVE_WZRHPAG300NH
-#ifdef HAVE_ATH9K
+		#ifdef HAVE_WZRHPAG300NH
+			#ifdef HAVE_ATH9K
 	if ((nvram_match("wlan0_mode", "ap") || nvram_match("wlan0_mode", "wdsap")) && !nvram_match("wlan0_net_mode", "disabled")) {
 		hasaoss = 1;
 		deconfigure_single_ath9k(0);
@@ -155,7 +155,7 @@ void start_aoss(void)
 		}
 		eval("hostapd", "-B", "-P", "/var/run/wlan1_hostapd.pid", "/tmp/wlan1_hostap.conf");
 	}
-#else
+			#else
 
 	if ((nvram_match("wlan1_mode", "ap") || nvram_match("wlan1_mode", "wdsap")) && !nvram_match("wlan1_net_mode", "disabled")) {
 		hasaoss = 1;
@@ -175,7 +175,7 @@ void start_aoss(void)
 		eval("iwconfig", "aossg", "key", "[1]");
 		eval("ifconfig", "aossg", "0.0.0.0", "up");
 	}
-#endif
+			#endif
 	if (hasaoss) {
 		//create aoss bridge
 		eval("brctl", "addbr", "aoss");
@@ -187,7 +187,7 @@ void start_aoss(void)
 			eval("brctl", "addif", "aoss", "aossg");
 		}
 	}
-#else
+		#else
 	if (nvram_match("wlan0_mode", "ap") || nvram_match("wlan0_mode", "wdsap")) {
 		if (is_mac80211("wlan0")) {
 			deconfigure_single_ath9k(0);
@@ -221,7 +221,7 @@ void start_aoss(void)
 			eval("ifconfig", "aoss", "0.0.0.0", "up");
 		}
 	}
-#endif
+		#endif
 	if (hasaoss) {
 		eval(IPTABLES, "-I", "OUTPUT", "-o", "aoss", "-j", "ACCEPT");
 		eval(IPTABLES, "-I", "INPUT", "-i", "aoss", "-j", "ACCEPT");
@@ -229,17 +229,17 @@ void start_aoss(void)
 	} else
 		dd_loginfo("aoss", "daemon not started (operation mode is not AP or WDSAP)");
 
-#endif
+	#endif
 	return;
 }
 
 void stop_aoss(void)
 {
-#ifdef HAVE_AOSS
+	#ifdef HAVE_AOSS
 	stop_process("aoss", "buffalo aoss daemon");
 	eval(IPTABLES, "-D", "OUTPUT", "-o", "aoss", "-j", "ACCEPT");
 	eval(IPTABLES, "-D", "INPUT", "-i", "aoss", "-j", "ACCEPT");
-#endif
+	#endif
 	return;
 }
 

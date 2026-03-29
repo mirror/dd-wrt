@@ -20,20 +20,20 @@
  * $Id:
  */
 #ifdef HAVE_DHCPFORWARD
-#include <unistd.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <errno.h>
-#include <sys/time.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <syslog.h>
-#include <signal.h>
-#include <utils.h>
-#include <ddnvram.h>
-#include <shutils.h>
-#include <services.h>
+	#include <unistd.h>
+	#include <stdio.h>
+	#include <stdlib.h>
+	#include <string.h>
+	#include <errno.h>
+	#include <sys/time.h>
+	#include <sys/types.h>
+	#include <sys/stat.h>
+	#include <syslog.h>
+	#include <signal.h>
+	#include <utils.h>
+	#include <ddnvram.h>
+	#include <shutils.h>
+	#include <services.h>
 
 void start_dhcpfwd(void)
 {
@@ -49,7 +49,7 @@ void start_dhcpfwd(void)
 		nvram_set("lan_proto", "static");
 		return;
 	}
-#ifdef HAVE_DHCPFORWARD
+	#ifdef HAVE_DHCPFORWARD
 	FILE *fp;
 	int mdhcpcount = 0;
 	int hasfwd = 0;
@@ -103,51 +103,51 @@ void start_dhcpfwd(void)
 		if (*dhcpfw_ifname) {
 			fprintf(fp, "if	%s	false	true	true\n", dhcpfw_ifname);
 		}
-#ifdef HAVE_PPPOE
+		#ifdef HAVE_PPPOE
 		else if (strcmp(wan_proto, "pppoe") == 0) {
 			fprintf(fp, "if	ppp0	false	true	true\n");
 		}
-#endif
+		#endif
 		else if (getWET()) {
 			// nothing
 		} else if (strcmp(wan_proto, "dhcp") == 0 || strcmp(wan_proto, "static") == 0 ||
 			   strcmp(wan_proto, "dhcp_auth") == 0) {
 			fprintf(fp, "if	%s	false	true	true\n", wan_ifname);
 		}
-#ifdef HAVE_3G
+		#ifdef HAVE_3G
 		else if (strcmp(wan_proto, "3g") == 0 && nvram_match("3gdata", "qmi")) {
 			fprintf(fp, "if	wwan0	false	true	true\n");
 		} else if (strcmp(wan_proto, "3g") == 0) {
 			fprintf(fp, "if	ppp0	false	true	true\n");
 		}
-#endif
-#ifdef HAVE_PPTP
+		#endif
+		#ifdef HAVE_PPTP
 		else if (strcmp(wan_proto, "pptp") == 0) {
 			fprintf(fp, "if	ppp0	false	true	true\n");
 		}
-#endif
-#ifdef HAVE_PPPOEDUAL
+		#endif
+		#ifdef HAVE_PPPOEDUAL
 		else if (strcmp(wan_proto, "pppoe_dual") == 0) {
 			fprintf(fp, "if	ppp0	false	true	true\n");
 		}
-#endif
-#ifdef HAVE_IPETH
+		#endif
+		#ifdef HAVE_IPETH
 		else if (strcmp(wan_proto, "iphone") == 0) {
 			fprintf(fp, "if	iph0	false	true	true\n");
 		} else if (strcmp(wan_proto, "android") == 0) {
 			fprintf(fp, "if	%s	false	true	true\n", safe_get_wan_face(buf));
 		}
-#endif
-#ifdef HAVE_L2TP
+		#endif
+		#ifdef HAVE_L2TP
 		else if (strcmp(wan_proto, "l2tp") == 0) {
 			fprintf(fp, "if	ppp0	false	true	true\n");
 		}
-#endif
-#ifdef HAVE_HEARTBEAT
+		#endif
+		#ifdef HAVE_HEARTBEAT
 		else if (strcmp(wan_proto, "heartbeat") == 0) {
 			fprintf(fp, "if	ppp0	false	true	true\n");
 		}
-#endif
+		#endif
 		else {
 			fprintf(fp, "if	%s	false	true	true\n", wan_ifname);
 		}
@@ -166,22 +166,22 @@ void start_dhcpfwd(void)
 		log_eval("dhcpfwd", "-c", "/tmp/dhcp-fwd/dhcp-fwd.conf");
 		return;
 	}
-#endif
-#ifdef HAVE_DHCPRELAY
+	#endif
+	#ifdef HAVE_DHCPRELAY
 	if (nvram_matchi("dhcpfwd_enable", 1)) {
 		log_eval("dhcrelay", "-i", nvram_safe_get("lan_ifname"), nvram_safe_get("dhcpfwd_ip"));
 	}
-#endif
+	#endif
 	return;
 }
 
 void stop_dhcpfwd(void)
 {
-#ifdef HAVE_DHCPFORWARD
+	#ifdef HAVE_DHCPFORWARD
 	stop_process("dhcpfwd", "dhcp forwarder");
-#endif
-#ifdef HAVE_DHCPRELAY
+	#endif
+	#ifdef HAVE_DHCPRELAY
 	stop_process("dhcrelay", "dhcp relay");
-#endif
+	#endif
 }
 #endif

@@ -20,14 +20,14 @@
  * $Id:
  */
 #ifdef HAVE_WIFIDOG
-#include <stdlib.h>
-#include <sys/stat.h>
-#include <ddnvram.h>
-#include <shutils.h>
-#include <utils.h>
-#include <syslog.h>
-#include <signal.h>
-#include <services.h>
+	#include <stdlib.h>
+	#include <sys/stat.h>
+	#include <ddnvram.h>
+	#include <shutils.h>
+	#include <utils.h>
+	#include <syslog.h>
+	#include <signal.h>
+	#include <services.h>
 // unfinished. do not use
 void start_wifidog(void)
 {
@@ -95,9 +95,9 @@ void start_wifidog(void)
 		eval(IPTABLES, "-I", "FORWARD", "-i", nvram_safe_get("wd_iface"), "-d", nvram_safe_get("wd_hostname"), "-j",
 		     "ACCEPT");
 	}
-#ifdef HAVE_TIEXTRA2
+	#ifdef HAVE_TIEXTRA2
 	start_mwifidog();
-#endif
+	#endif
 }
 
 void stop_wifidog(void)

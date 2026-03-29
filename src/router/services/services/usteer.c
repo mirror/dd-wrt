@@ -20,14 +20,14 @@
  * $Id:
  */
 #ifdef HAVE_USTEER
-#include <stdlib.h>
-#include <ddnvram.h>
-#include <shutils.h>
-#include <utils.h>
-#include <syslog.h>
-#include <signal.h>
-#include <services.h>
-#include <wlutils.h>
+	#include <stdlib.h>
+	#include <ddnvram.h>
+	#include <shutils.h>
+	#include <utils.h>
+	#include <syslog.h>
+	#include <signal.h>
+	#include <services.h>
+	#include <wlutils.h>
 
 void start_usteer(void)
 {

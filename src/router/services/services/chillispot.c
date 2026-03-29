@@ -41,9 +41,9 @@
 static int jffs = 0;
 
 #ifdef HAVE_CHILLI
-#ifdef HAVE_HOTSPOT
+	#ifdef HAVE_HOTSPOT
 void hotspotsys_config(void);
-#endif
+	#endif
 void main_config(void);
 void chilli_config(void);
 void stop_chilli(void);
@@ -51,13 +51,13 @@ void stop_chilli(void);
 static char log_accept[15];
 static char log_drop[15];
 static char log_reject[64];
-#define TARG_PASS "ACCEPT"
-#define TARG_RST "REJECT --reject-with tcp-reset"
+	#define TARG_PASS "ACCEPT"
+	#define TARG_RST "REJECT --reject-with tcp-reset"
 
 void start_chilli(void)
 {
 	int ret = 0;
-#ifdef HAVE_HOTSPOT
+	#ifdef HAVE_HOTSPOT
 	char ssid[128];
 
 	if (nvram_matchi("chilli_enable", 1) && nvram_matchi("chilli_def_enable", 0) && !nvram_matchi("hotss_enable", 1)) {
@@ -72,12 +72,12 @@ void start_chilli(void)
 		stop_chilli();
 		return;
 	}
-#else
+	#else
 	if (!nvram_matchi("chilli_enable", 1)) {
 		stop_chilli();
 		return;
 	}
-#endif
+	#endif
 	insmod("tun");
 	if ((nvram_matchi("usb_enable", 1) && nvram_matchi("usb_storage", 1) && nvram_matchi("usb_automnt", 1) &&
 	     nvram_match("usb_mntpoint", "jffs")) ||
@@ -90,7 +90,7 @@ void start_chilli(void)
 		nvram_set("hotss_interface", get_wdev());
 	main_config();
 
-#ifdef HAVE_HOTSPOT
+	#ifdef HAVE_HOTSPOT
 
 	if (nvram_matchi("hotss_enable", 1)) {
 		stop_cron();
@@ -111,34 +111,34 @@ void start_chilli(void)
 		nvram_unset("chilli_def_enable");
 		chilli_config();
 	}
-#else
+	#else
 	chilli_config();
 
-#endif
+	#endif
 	if (!reload_process("chilli")) {
 	} else if (f_exists("/tmp/chilli/hotss.conf")) {
-#ifdef HAVE_COOVA_CHILLI
+	#ifdef HAVE_COOVA_CHILLI
 		putenv("CHILLISTATEDIR=/var/run/chilli1");
 		mkdir("/var/run/chilli1", 0700);
 		dd_logstart("chillispot", eval("chilli", "--statedir=/var/run/chilli1", "--pidfile=/var/run/chilli1/chilli.pid",
 					       "-c", "/tmp/chilli/hotss.conf"));
-#else
+	#else
 		dd_logstart("chillispot", eval("chilli", "-c", "/tmp/chilli/hotss.conf"));
-#endif
+	#endif
 		dd_logstart("hotspotsystem", ret);
 	} else {
-#ifdef HAVE_COOVA_CHILLI
+	#ifdef HAVE_COOVA_CHILLI
 		putenv("CHILLISTATEDIR=/var/run/chilli1");
 		mkdir("/var/run/chilli1", 0700);
 		dd_logstart("chillispot", eval("chilli", "--statedir=/var/run/chilli1", "--pidfile=/var/run/chilli1/chilli.pid",
 					       "-c", "/tmp/chilli/chilli.conf"));
-#else
+	#else
 		dd_logstart("chillispot", eval("chilli", "-c", "/tmp/chilli/chilli.conf"));
-#endif
+	#endif
 	}
-#ifdef HAVE_TIEXTRA1
+	#ifdef HAVE_TIEXTRA1
 	start_mchilli();
-#endif
+	#endif
 
 	return;
 }
@@ -291,7 +291,7 @@ void chilli_config(void)
 	const char *next;
 	char var[64];
 
-#ifdef HAVE_CHILLILOCAL
+	#ifdef HAVE_CHILLILOCAL
 	if (!(fp = fopen("/tmp/chilli/fonusers.local", "w"))) {
 		perror("/tmp/chilli/fonusers.local");
 		return;
@@ -305,7 +305,7 @@ void chilli_config(void)
 			fprintf(fp, "%s:%s\n", user, pass);
 	}
 	fclose(fp);
-#endif
+	#endif
 
 	if (!(fp = fopen("/tmp/chilli/chilli.conf", "w"))) {
 		perror("/tmp/chilli/chilli.conf");
@@ -316,9 +316,9 @@ void chilli_config(void)
 	fprintf(fp, "radiusserver1 %s\n", nvram_safe_get("chilli_radius"));
 	fprintf(fp, "radiusserver2 %s\n", nvram_safe_get("chilli_backup"));
 	fprintf(fp, "radiussecret %s\n", nvram_safe_get("chilli_pass"));
-#if !defined(ARCH_broadcom) || defined(HAVE_80211AC)
+	#if !defined(ARCH_broadcom) || defined(HAVE_80211AC)
 	fprintf(fp, "kname chilli\n");
-#endif
+	#endif
 	fprintf(fp, "dhcpif %s\n", nvram_safe_get("chilli_interface"));
 	fprintf(fp, "uamserver %s\n", nvram_safe_get("chilli_url"));
 	if (jffs == 1) {
@@ -363,14 +363,14 @@ void chilli_config(void)
 		fprintf(fp, "uamanydns\n");
 	if (nvram_invmatch("chilli_uamallowed", ""))
 		fprintf(fp, "uamallowed %s\n", nvram_safe_get("chilli_uamallowed"));
-#ifdef HAVE_COOVA_CHILLI
+	#ifdef HAVE_COOVA_CHILLI
 	if (nvram_invmatch("chilli_uamdomain", "")) {
 		dnslist = nvram_safe_get("hotss_uamdomain");
 		foreach(var, dnslist, next) {
 			fprintf(fp, "uamdomain %s\n", var);
 		}
 	}
-#endif
+	#endif
 	if (nvram_invmatch("chilli_net", ""))
 		fprintf(fp, "net %s\n", nvram_safe_get("chilli_net"));
 	if (nvram_matchi("chilli_macauth", 1)) {
@@ -416,7 +416,7 @@ void chilli_config(void)
 	return;
 }
 
-#ifdef HAVE_HOTSPOT
+	#ifdef HAVE_HOTSPOT
 
 void hotspotsys_config(void)
 {
@@ -466,9 +466,9 @@ void hotspotsys_config(void)
 	fprintf(fp, "radiusserver1 radius.hotspotsystem.com\n");
 	fprintf(fp, "radiusserver2 radius2.hotspotsystem.com\n");
 	fprintf(fp, "radiussecret hotsys123\n");
-#if !defined(ARCH_broadcom) || defined(HAVE_80211AC)
+		#if !defined(ARCH_broadcom) || defined(HAVE_80211AC)
 	fprintf(fp, "kname chilli\n");
-#endif
+		#endif
 	fprintf(fp, "dhcpif %s\n", nvram_safe_get("hotss_interface"));
 	if (nvram_invmatch("hotss_net", ""))
 		fprintf(fp, "net %s\n", nvram_safe_get("hotss_net"));
@@ -516,25 +516,25 @@ void hotspotsys_config(void)
 
 	if (nvram_invmatch("hotss_uamallowed", "") && nvram_matchi("hotss_uamenable", 1))
 		fprintf(fp, "uamallowed %s\n", nvram_safe_get("hotss_uamallowed"));
-#ifdef HAVE_COOVA_CHILLI
+		#ifdef HAVE_COOVA_CHILLI
 	if (nvram_invmatch("hotss_uamdomain", "") && nvram_matchi("hotss_uamenable", 1)) {
 		dnslist = nvram_safe_get("hotss_uamdomain");
 		foreach(var, dnslist, next) {
 			fprintf(fp, "uamdomain %s\n", var);
 		}
 	}
-#endif
+		#endif
 	fprintf(fp, "uamallowed live.adyen.com,%s\n", uamdomain);
 	fprintf(fp, "uamallowed 66.211.128.0/17,216.113.128.0/17\n");
 	fprintf(fp, "uamallowed 70.42.128.0/17,128.242.125.0/24\n");
 	fprintf(fp, "uamallowed 62.249.232.74,155.136.68.77,155.136.66.34,66.4.128.0/17,66.211.128.0/17,66.235.128.0/17\n");
 	fprintf(fp, "uamallowed 88.221.136.146,195.228.254.149,195.228.254.152,203.211.140.157,203.211.150.204\n");
 	fprintf(fp, "uamallowed 82.199.90.0/24,91.212.42.0/24\n");
-#ifdef HAVE_COOVA_CHILLI
+		#ifdef HAVE_COOVA_CHILLI
 	fprintf(fp, "uamdomain paypal.com,paypalobjects.com,paypal-metrics.com\n");
 	fprintf(fp, "uamdomain worldpay.com,rbsworldpay.com\n");
 	fprintf(fp, "uamdomain mediaplex.com,hotspotsystem.com\n");
-#else
+		#else
 	fprintf(fp, "uamallowed www.paypal.com,www.paypalobjects.com\n");
 	fprintf(fp,
 		"uamallowed www.worldpay.com,select.worldpay.com,secure.ims.worldpay.com,www.rbsworldpay.com,secure.wp3.rbsworldpay.com\n");
@@ -549,7 +549,7 @@ void hotspotsys_config(void)
 		"uamallowed a19.hotspotsystem.com,a20.hotspotsystem.com,a21.hotspotsystem.com,a22.hotspotsystem.com,a23.hotspotsystem.com,a24.hotspotsystem.com\n");
 	fprintf(fp,
 		"uamallowed a25.hotspotsystem.com,a26.hotspotsystem.com,a27.hotspotsystem.com,a28.hotspotsystem.com,a29.hotspotsystem.com,a30.hotspotsystem.com\n");
-#endif
+		#endif
 	fprintf(fp, "interval 300\n");
 
 	fflush(fp);
@@ -557,5 +557,5 @@ void hotspotsys_config(void)
 
 	return;
 }
-#endif /* HAVE_HOTSPOT */
+	#endif /* HAVE_HOTSPOT */
 #endif /* HAVE_CHILLI */

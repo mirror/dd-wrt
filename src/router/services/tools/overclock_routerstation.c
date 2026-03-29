@@ -59,8 +59,8 @@ int overclock_3(FILE *out, char *freq, int value)
 }
 
 void start_overclock(void) // hidden feature. must be called with
-	// "startservice overlock". then reboot the
-	// unit
+// "startservice overlock". then reboot the
+// unit
 {
 	long len;
 	long i;

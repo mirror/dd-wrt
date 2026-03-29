@@ -75,14 +75,14 @@ int client_bridged_enabled(void)
 }
 
 #ifdef HAVE_IPV6
-#define evalip6(cmd, args...)                          \
-	{                                              \
-		if (nvram_match("ipv6_enable", "1")) { \
-			eval_va(cmd, ##args, NULL);    \
-		}                                      \
-	}
+	#define evalip6(cmd, args...)                          \
+		{                                              \
+			if (nvram_match("ipv6_enable", "1")) { \
+				eval_va(cmd, ##args, NULL);    \
+			}                                      \
+		}
 #else
-#define evalip6(...)
+	#define evalip6(...)
 #endif
 
 #ifdef HAVE_SVQOS
@@ -92,39 +92,39 @@ extern void add_client_mac_srvfilter(char *name, char *type, char *data, int lev
 extern void add_client_ip_srvfilter(char *name, char *type, char *data, int level, int base, char *client);
 extern char *get_NFServiceMark(char *buffer, size_t len, char *service, uint32 mark);
 
-#if !defined(ARCH_broadcom) || defined(HAVE_BCMMODERN)
+	#if !defined(ARCH_broadcom) || defined(HAVE_BCMMODERN)
 extern char *get_tcfmark(char *tcfmark, uint32 mark, int seg);
-#endif
+	#endif
 
 extern void add_client_classes(unsigned int base, unsigned int uprate, unsigned int downrate, unsigned int lanrate,
 			       unsigned int level);
 
 static void svqos_reset_ports(void)
 {
-#ifndef HAVE_XSCALE
-#ifndef HAVE_MAGICBOX
-#ifndef HAVE_RB600
-#ifndef HAVE_FONERA
-#ifndef HAVE_RT2880
-#ifndef HAVE_LS2
-#ifndef HAVE_SOLO51
-#ifndef HAVE_LS5
-#ifndef HAVE_X86
-#ifndef HAVE_WHRAG108
-#ifndef HAVE_CA8
-#ifndef HAVE_PB42
-#ifndef HAVE_LSX
-#ifndef HAVE_DANUBE
-#ifndef HAVE_STORM
-#ifndef HAVE_LAGUNA
-#ifndef HAVE_VENTANA
-#ifndef HAVE_IPQ6018
-#ifndef HAVE_REALTEK
-#ifndef HAVE_NEWPORT
-#ifndef HAVE_EROUTER
-#ifndef HAVE_OPENRISC
-#ifndef HAVE_ADM5120
-#ifndef HAVE_TW6600
+	#ifndef HAVE_XSCALE
+		#ifndef HAVE_MAGICBOX
+			#ifndef HAVE_RB600
+				#ifndef HAVE_FONERA
+					#ifndef HAVE_RT2880
+						#ifndef HAVE_LS2
+							#ifndef HAVE_SOLO51
+								#ifndef HAVE_LS5
+									#ifndef HAVE_X86
+										#ifndef HAVE_WHRAG108
+											#ifndef HAVE_CA8
+												#ifndef HAVE_PB42
+													#ifndef HAVE_LSX
+														#ifndef HAVE_DANUBE
+															#ifndef HAVE_STORM
+																#ifndef HAVE_LAGUNA
+																	#ifndef HAVE_VENTANA
+																		#ifndef HAVE_IPQ6018
+																			#ifndef HAVE_REALTEK
+																				#ifndef HAVE_NEWPORT
+																					#ifndef HAVE_EROUTER
+																						#ifndef HAVE_OPENRISC
+																							#ifndef HAVE_ADM5120
+																								#ifndef HAVE_TW6600
 	if (nvram_matchi("portprio_support", 1)) {
 		writeproc("/proc/switch/eth0/port/1/enable", "1");
 		writeproc("/proc/switch/eth0/port/2/enable", "1");
@@ -146,58 +146,58 @@ static void svqos_reset_ports(void)
 		writeproc("/proc/switch/eth0/port/3/bandwidth", "FULL");
 		writeproc("/proc/switch/eth0/port/4/bandwidth", "FULL");
 	}
-#endif
-#endif
-#endif
-#endif
-#endif
-#endif
-#endif
-#endif
-#endif
-#endif
-#endif
-#endif
-#endif
-#endif
-#endif
-#endif
-#endif
-#endif
-#endif
-#endif
-#endif
-#endif
-#endif
-#endif
+																								#endif
+																							#endif
+																						#endif
+																					#endif
+																				#endif
+																			#endif
+																		#endif
+																	#endif
+																#endif
+															#endif
+														#endif
+													#endif
+												#endif
+											#endif
+										#endif
+									#endif
+								#endif
+							#endif
+						#endif
+					#endif
+				#endif
+			#endif
+		#endif
+	#endif
 }
 
 static int svqos_set_ports(void)
 {
-#ifndef HAVE_XSCALE
-#ifndef HAVE_MAGICBOX
-#ifndef HAVE_RB600
-#ifndef HAVE_FONERA
-#ifndef HAVE_RT2880
-#ifndef HAVE_LS2
-#ifndef HAVE_LS5
-#ifndef HAVE_WHRAG108
-#ifndef HAVE_CA8
-#ifndef HAVE_SOLO51
-#ifndef HAVE_X86
-#ifndef HAVE_LAGUNA
-#ifndef HAVE_IPQ6018
-#ifndef HAVE_REALTEK
-#ifndef HAVE_VENTANA
-#ifndef HAVE_NEWPORT
-#ifndef HAVE_EROUTER
-#ifndef HAVE_TW6600
-#ifndef HAVE_PB42
-#ifndef HAVE_LSX
-#ifndef HAVE_DANUBE
-#ifndef HAVE_STORM
-#ifndef HAVE_OPENRISC
-#ifndef HAVE_ADM5120
+	#ifndef HAVE_XSCALE
+		#ifndef HAVE_MAGICBOX
+			#ifndef HAVE_RB600
+				#ifndef HAVE_FONERA
+					#ifndef HAVE_RT2880
+						#ifndef HAVE_LS2
+							#ifndef HAVE_LS5
+								#ifndef HAVE_WHRAG108
+									#ifndef HAVE_CA8
+										#ifndef HAVE_SOLO51
+											#ifndef HAVE_X86
+												#ifndef HAVE_LAGUNA
+													#ifndef HAVE_IPQ6018
+														#ifndef HAVE_REALTEK
+															#ifndef HAVE_VENTANA
+																#ifndef HAVE_NEWPORT
+																	#ifndef HAVE_EROUTER
+																		#ifndef HAVE_TW6600
+																			#ifndef HAVE_PB42
+																				#ifndef HAVE_LSX
+																					#ifndef HAVE_DANUBE
+																						#ifndef HAVE_STORM
+																							#ifndef HAVE_OPENRISC
+																								#ifndef HAVE_ADM5120
 	if (nvram_matchi("portprio_support", 1)) {
 		int loop = 1;
 		char nvram_var[32] = { 0 }, *level;
@@ -219,38 +219,38 @@ static int svqos_set_ports(void)
 			writevaproc(lvl, "/proc/switch/eth0/port/%d/prio", loop);
 		}
 	}
-#endif
-#endif
-#endif
-#endif
-#endif
-#endif
-#endif
-#endif
-#endif
-#endif
-#endif
-#endif
-#endif
-#endif
-#endif
-#endif
-#endif
-#endif
-#endif
-#endif
-#endif
-#endif
-#endif
-#endif
+																								#endif
+																							#endif
+																						#endif
+																					#endif
+																				#endif
+																			#endif
+																		#endif
+																	#endif
+																#endif
+															#endif
+														#endif
+													#endif
+												#endif
+											#endif
+										#endif
+									#endif
+								#endif
+							#endif
+						#endif
+					#endif
+				#endif
+			#endif
+		#endif
+	#endif
 
 	return 0;
 }
 
-#ifdef HAVE_OPENVPN
+	#ifdef HAVE_OPENVPN
 static inline int is_in_bridge(char *interface)
 {
-#define BUFFER_SIZE 256
+		#define BUFFER_SIZE 256
 
 	FILE *fd = NULL;
 	;
@@ -273,7 +273,7 @@ static inline int is_in_bridge(char *interface)
 	}
 	return 0;
 }
-#endif
+	#endif
 
 static char *s_downlist = NULL;
 static char *s_iflist = NULL;
@@ -311,13 +311,13 @@ static void s_clearIF(char **list)
 	*list = NULL;
 }
 
-#define addIF(ifname) s_addIF(&s_iflist, ifname)
-#define hasIF(ifname) s_hasIF(s_iflist, ifname)
-#define clearIF() s_clearIF(&s_iflist)
+	#define addIF(ifname) s_addIF(&s_iflist, ifname)
+	#define hasIF(ifname) s_hasIF(s_iflist, ifname)
+	#define clearIF() s_clearIF(&s_iflist)
 
-#define down_addIF(ifname) s_addIF(&s_downlist, ifname)
-#define down_hasIF(ifname) s_hasIF(s_downlist, ifname)
-#define down_clearIF() s_clearIF(&s_downlist)
+	#define down_addIF(ifname) s_addIF(&s_downlist, ifname)
+	#define down_hasIF(ifname) s_hasIF(s_downlist, ifname)
+	#define down_clearIF() s_clearIF(&s_downlist)
 static void down_upIF(void)
 {
 	char word[256];
@@ -451,10 +451,10 @@ static void aqos_tables(void)
 				     "--todev", "0");
 				eval(IPTABLES, "-t", "mangle", "-A", "INPUT", "-m", "physdev", "--physdev-in", data, "-j", "IMQ",
 				     "--todev", "0");
-				eval(IPTABLES, "-t", "mangle", "-D", "FORWARD", "-m", "physdev", "--physdev-in", data, "-j",
-				     "IMQ", "--todev", "0");
-				eval(IPTABLES, "-t", "mangle", "-A", "FORWARD", "-m", "physdev", "--physdev-in", data, "-j",
-				     "IMQ", "--todev", "0");
+				eval(IPTABLES, "-t", "mangle", "-D", "FORWARD", "-m", "physdev", "--physdev-in", data, "-j", "IMQ",
+				     "--todev", "0");
+				eval(IPTABLES, "-t", "mangle", "-A", "FORWARD", "-m", "physdev", "--physdev-in", data, "-j", "IMQ",
+				     "--todev", "0");
 
 				evalip6(IP6TABLES, "-t", "mangle", "-D", "INPUT", "-m", "physdev", "--physdev-in", data, "-j",
 					"IMQ", "--todev", "0");
@@ -484,12 +484,12 @@ static void aqos_tables(void)
 			down_addIF(data);
 			eval(IPTABLES, "-t", "mangle", "-D", "FILTER_IN", "-m", "physdev", "--physdev-in", data, "-j",
 			     chainname_in);
-			eval(IPTABLES, "-t", "mangle", "-D", "FILTER_OUT", "-m", "physdev", "--physdev-is-bridged",
-			     "--physdev-out", data, "-j", chainname_out);
+			eval(IPTABLES, "-t", "mangle", "-D", "FILTER_OUT", "-m", "physdev", "--physdev-is-bridged", "--physdev-out",
+			     data, "-j", chainname_out);
 			eval(IPTABLES, "-t", "mangle", "-A", "FILTER_IN", "-m", "physdev", "--physdev-in", data, "-j",
 			     chainname_in);
-			eval(IPTABLES, "-t", "mangle", "-A", "FILTER_OUT", "-m", "physdev", "--physdev-is-bridged",
-			     "--physdev-out", data, "-j", chainname_out);
+			eval(IPTABLES, "-t", "mangle", "-A", "FILTER_OUT", "-m", "physdev", "--physdev-is-bridged", "--physdev-out",
+			     data, "-j", chainname_out);
 
 			evalip6(IP6TABLES, "-t", "mangle", "-D", "FILTER_IN", "-m", "physdev", "--physdev-in", data, "-j",
 				chainname_in);
@@ -673,7 +673,7 @@ static int svqos_iptables(void)
 
 		insmod("ebtables");
 	}
-#if !defined(ARCH_broadcom) || defined(HAVE_BCMMODERN)
+	#if !defined(ARCH_broadcom) || defined(HAVE_BCMMODERN)
 	// if kernel version later then 2.4, overwrite all old tc filter
 	sysprintf("tc filter del dev %s", wan_dev);
 	sysprintf("tc filter del dev %s", "imq0");
@@ -760,7 +760,7 @@ static int svqos_iptables(void)
 		evalip6("tc", "filter", "add", "dev", "imq1", "protocol", "ipv6", "parent", "1:", "prio", "4", "u32", "match",
 			"mark", get_tcfmark(tcfmark, 40, 1), get_tcfmark(tcfmark2, 40, 2), "flowid", "1:40");
 	}
-#endif
+	#endif
 
 	// set-up mark/filter tables
 
@@ -961,8 +961,8 @@ static int svqos_iptables(void)
 			char *wan_face = safe_get_wan_face(wan_if_buffer);
 			char inv_wan_face[33];
 			snprintf(inv_wan_face, sizeof(inv_wan_face), "!%s", wan_face);
-			eval(IPTABLES, "-t", "mangle", "-A", "PREROUTING", "-i", inv_wan_face, "-d", get_wan_ipaddr(), "-j",
-			     "MARK", "--set-mark", get_NFServiceMark(buffer, sizeof(buffer), "FORWARD", 1));
+			eval(IPTABLES, "-t", "mangle", "-A", "PREROUTING", "-i", inv_wan_face, "-d", get_wan_ipaddr(), "-j", "MARK",
+			     "--set-mark", get_NFServiceMark(buffer, sizeof(buffer), "FORWARD", 1));
 			eval(IPTABLES, "-t", "mangle", "-A", "PREROUTING", "-j", "CONNMARK", "--save-mark");
 
 			evalip6(IP6TABLES, "-t", "mangle", "-A", "PREROUTING", "-i", inv_wan_face, "-d", get_wan_ipaddr(), "-j",
@@ -986,10 +986,10 @@ static int svqos_iptables(void)
 			break;
 
 		if (strstr(type, "udp") || strstr(type, "both")) {
-			eval(IPTABLES, "-t", "mangle", "-A", "SVQOS_SVCS", "-p", "udp", "-m", "udp", "--dport", data, "-j",
-			     "MARK", "--set-mark", qos_nfmark(buffer, sizeof(buffer), level));
-			eval(IPTABLES, "-t", "mangle", "-A", "SVQOS_SVCS", "-p", "udp", "-m", "udp", "--sport", data, "-j",
-			     "MARK", "--set-mark", qos_nfmark(buffer, sizeof(buffer), level));
+			eval(IPTABLES, "-t", "mangle", "-A", "SVQOS_SVCS", "-p", "udp", "-m", "udp", "--dport", data, "-j", "MARK",
+			     "--set-mark", qos_nfmark(buffer, sizeof(buffer), level));
+			eval(IPTABLES, "-t", "mangle", "-A", "SVQOS_SVCS", "-p", "udp", "-m", "udp", "--sport", data, "-j", "MARK",
+			     "--set-mark", qos_nfmark(buffer, sizeof(buffer), level));
 
 			evalip6(IP6TABLES, "-t", "mangle", "-A", "SVQOS_SVCS", "-p", "udp", "-m", "udp", "--dport", data, "-j",
 				"MARK", "--set-mark", qos_nfmark(buffer, sizeof(buffer), level));
@@ -998,10 +998,10 @@ static int svqos_iptables(void)
 		}
 
 		if (strstr(type, "tcp") || strstr(type, "both")) {
-			eval(IPTABLES, "-t", "mangle", "-A", "SVQOS_SVCS", "-p", "tcp", "-m", "tcp", "--dport", data, "-j",
-			     "MARK", "--set-mark", qos_nfmark(buffer, sizeof(buffer), level));
-			eval(IPTABLES, "-t", "mangle", "-A", "SVQOS_SVCS", "-p", "tcp", "-m", "tcp", "--sport", data, "-j",
-			     "MARK", "--set-mark", qos_nfmark(buffer, sizeof(buffer), level));
+			eval(IPTABLES, "-t", "mangle", "-A", "SVQOS_SVCS", "-p", "tcp", "-m", "tcp", "--dport", data, "-j", "MARK",
+			     "--set-mark", qos_nfmark(buffer, sizeof(buffer), level));
+			eval(IPTABLES, "-t", "mangle", "-A", "SVQOS_SVCS", "-p", "tcp", "-m", "tcp", "--sport", data, "-j", "MARK",
+			     "--set-mark", qos_nfmark(buffer, sizeof(buffer), level));
 
 			evalip6(IP6TABLES, "-t", "mangle", "-A", "SVQOS_SVCS", "-p", "tcp", "-m", "tcp", "--dport", data, "-j",
 				"MARK", "--set-mark", qos_nfmark(buffer, sizeof(buffer), level));
@@ -1010,7 +1010,7 @@ static int svqos_iptables(void)
 		}
 		if ((!strcmp(name, "windows-telemetry") || !strcmp(name, "ubnt-telemetry") || !strcmp(name, "ad-telemetry")))
 			continue;
-#ifndef HAVE_OPENDPI
+	#ifndef HAVE_OPENDPI
 		if (strstr(type, "l7")) {
 			insmod("ipt_layer7");
 			insmod("xt_layer7");
@@ -1019,7 +1019,7 @@ static int svqos_iptables(void)
 			evalip6(IP6TABLES, "-t", "mangle", "-A", "SVQOS_SVCS", "-m", "layer7", "--l7proto", name, "-j", "MARK",
 				"--set-mark", qos_nfmark(buffer, sizeof(buffer), level));
 		}
-#else
+	#else
 		if (strstr(type, "dpi")) {
 			insmod("xt_ndpi");
 			eval(IPTABLES, "-t", "mangle", "-A", "SVQOS_SVCS", "-m", "ndpi", "--proto", name, "-j", "MARK",
@@ -1038,7 +1038,7 @@ static int svqos_iptables(void)
 			evalip6(IP6TABLES, "-t", "mangle", "-A", "SVQOS_SVCS", "-m", "ndpi", "--proto", dep, "--risk", lvl, "-j",
 				"MARK", "--set-mark", qos_nfmark(buffer, sizeof(buffer), level));
 		}
-#endif
+	#endif
 
 		if (strstr(type, "p2p")) {
 			char *proto = NULL;
@@ -1080,27 +1080,27 @@ static int svqos_iptables(void)
 				evalip6(IP6TABLES, "-t", "mangle", "-A", "SVQOS_SVCS", "-p", "tcp", "-m", "ipp2p", s_proto, "-j",
 					"MARK", "--set-mark", qos_nfmark(buffer, sizeof(buffer), level));
 
-#ifndef HAVE_OPENDPI
+	#ifndef HAVE_OPENDPI
 				if (!strcmp(proto, "bit")) {
-					// bittorrent detection enhanced
-#ifdef HAVE_MICRO
-					eval(IPTABLES, "-t", "mangle", "-A", "SVQOS_SVCS", "-m", "layer7", "--l7proto", "bt",
-					     "-j", "MARK", "--set-mark", qos_nfmark(buffer, sizeof(buffer), level));
-#else
+						// bittorrent detection enhanced
+		#ifdef HAVE_MICRO
+					eval(IPTABLES, "-t", "mangle", "-A", "SVQOS_SVCS", "-m", "layer7", "--l7proto", "bt", "-j",
+					     "MARK", "--set-mark", qos_nfmark(buffer, sizeof(buffer), level));
+		#else
 					eval(IPTABLES, "-t", "mangle", "-A", "SVQOS_SVCS", "-m", "length", "--length", "0:550",
 					     "-m", "layer7", "--l7proto", "bt", "-j", "MARK", "--set-mark",
 					     qos_nfmark(buffer, sizeof(buffer), level));
-#endif
-					eval(IPTABLES, "-t", "mangle", "-A", "SVQOS_SVCS", "-m", "layer7", "--l7proto", "bt2",
-					     "-j", "MARK", "--set-mark", qos_nfmark(buffer, sizeof(buffer), level));
+		#endif
+					eval(IPTABLES, "-t", "mangle", "-A", "SVQOS_SVCS", "-m", "layer7", "--l7proto", "bt2", "-j",
+					     "MARK", "--set-mark", qos_nfmark(buffer, sizeof(buffer), level));
 
-					evalip6(IP6TABLES, "-t", "mangle", "-A", "SVQOS_SVCS", "-m", "length", "--length",
-						"0:550", "-m", "layer7", "--l7proto", "bt", "-j", "MARK", "--set-mark",
+					evalip6(IP6TABLES, "-t", "mangle", "-A", "SVQOS_SVCS", "-m", "length", "--length", "0:550",
+						"-m", "layer7", "--l7proto", "bt", "-j", "MARK", "--set-mark",
 						qos_nfmark(buffer, sizeof(buffer), level));
 					evalip6(IP6TABLES, "-t", "mangle", "-A", "SVQOS_SVCS", "-m", "layer7", "--l7proto", "bt2",
 						"-j", "MARK", "--set-mark", qos_nfmark(buffer, sizeof(buffer), level));
 				}
-#endif
+	#endif
 			}
 		}
 	} while ((qos_svcs = strpbrk(++qos_svcs, "|")) && qos_svcs++);
@@ -1115,13 +1115,13 @@ static int svqos_iptables(void)
 	evalip6(IP6TABLES, "-t", "mangle", "-A", "FILTER_IN", "-j", "CONNMARK", "--save-mark");
 	evalip6(IP6TABLES, "-t", "mangle", "-A", "FILTER_IN", "-j", "RETURN");
 	evalip6(IP6TABLES, "-t", "mangle", "-A", "FILTER_OUT", "-m", "mark", "--mark", nullmask, "-j", "SVQOS_SVCS");
-//      if (nvram_invmatchi("openvpn_enable", 0) || nvram_invmatchi("openvpncl_enable", 0)) {
-//              eval(IPTABLES, "-t", "mangle", "-A", "FILTER_OUT", "-j", "VPN_DSCP");
-//      }
-#if 1
-#ifdef HAVE_80211AC
+	//      if (nvram_invmatchi("openvpn_enable", 0) || nvram_invmatchi("openvpncl_enable", 0)) {
+	//              eval(IPTABLES, "-t", "mangle", "-A", "FILTER_OUT", "-j", "VPN_DSCP");
+	//      }
+	#if 1
+		#ifdef HAVE_80211AC
 	if (nvram_match("bcmdebug", "1"))
-#endif
+		#endif
 	{
 		// seems to crash northstar
 
@@ -1144,7 +1144,7 @@ static int svqos_iptables(void)
 			}
 		} while ((qos_pkts = strpbrk(++qos_pkts, "|")) && qos_pkts++);
 	}
-#endif
+	#endif
 	eval(IPTABLES, "-t", "mangle", "-A", "FILTER_OUT", "-j", "CONNMARK", "--save-mark");
 	eval(IPTABLES, "-t", "mangle", "-A", "FILTER_OUT", "-j", "RETURN");
 
@@ -1216,32 +1216,32 @@ void start_qos(void)
 	insmod("sch_tbf");
 	insmod("sch_cbq");
 
-#ifdef HAVE_CODEL
+	#ifdef HAVE_CODEL
 	if (!strcmp(aqd, "codel")) {
 		insmod("sch_codel");
 	}
-#endif
+	#endif
 
-#ifdef HAVE_FQ_CODEL
+	#ifdef HAVE_FQ_CODEL
 	if (!strcmp(aqd, "fq_codel")) {
 		insmod("sch_fq_codel");
 	}
-#endif
-#ifdef HAVE_FQ_CODEL_FAST
+	#endif
+	#ifdef HAVE_FQ_CODEL_FAST
 	if (!strcmp(aqd, "fq_codel_fast")) {
 		insmod("sch_fq_codel_fast");
 	}
-#endif
-#ifdef HAVE_PIE
+	#endif
+	#ifdef HAVE_PIE
 	if (!strcmp(aqd, "pie")) {
 		insmod("sch_pie");
 	}
-#endif
-#ifdef HAVE_CAKE
+	#endif
+	#ifdef HAVE_CAKE
 	if (!strcmp(aqd, "cake")) {
 		insmod("sch_cake");
 	}
-#endif
+	#endif
 
 	//under K3 interface defaults are way to high, set some sane values
 	eval("ifconfig", "imq0", "down");
@@ -1266,9 +1266,9 @@ void start_qos(void)
 	nvram_seti("qos_done", 1);
 
 #ifdef HAVE_REGISTER
-#ifndef HAVE_ERC
+	#ifndef HAVE_ERC
 	if (isregistered_real())
-#endif
+	#endif
 #endif
 	{
 		runStartup(".firewall");
@@ -1335,7 +1335,6 @@ void stop_qos(void)
 	eval(IPTABLES, "-t", "mangle", "-F", "SVQOS_SVCS");
 	eval(IPTABLES, "-t", "mangle", "-X", "SVQOS_SVCS");
 
-
 	evalip6(IP6TABLES, "-t", "mangle", "-D", "PREROUTING", "-j", "FILTER_IN");
 	evalip6(IP6TABLES, "-t", "mangle", "-D", "POSTROUTING", "-j", "FILTER_OUT");
 	evalip6(IP6TABLES, "-t", "mangle", "-F", "SVQOS_SVCS");
@@ -1344,7 +1343,6 @@ void stop_qos(void)
 	evalip6(IP6TABLES, "-t", "mangle", "-X", "FILTER_OUT");
 	evalip6(IP6TABLES, "-t", "mangle", "-F", "FILTER_IN");
 	evalip6(IP6TABLES, "-t", "mangle", "-X", "FILTER_IN");
-
 
 	return;
 }

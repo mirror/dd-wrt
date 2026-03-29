@@ -21,42 +21,42 @@
  */
 
 #if defined(HAVE_RT2880) || defined(HAVE_RT61)
-#include <sys/ioctl.h>
-#include <net/if.h>
-#include <sys/mman.h>
-#include <stdio.h>
-#include <unistd.h>
-#include <signal.h>
-#include <fcntl.h>
+	#include <sys/ioctl.h>
+	#include <net/if.h>
+	#include <sys/mman.h>
+	#include <stdio.h>
+	#include <unistd.h>
+	#include <signal.h>
+	#include <fcntl.h>
 
-#include <sys/types.h>
-#include <sys/file.h>
-#include <sys/ioctl.h>
-#include <sys/socket.h>
-#include <sys/stat.h>
+	#include <sys/types.h>
+	#include <sys/file.h>
+	#include <sys/ioctl.h>
+	#include <sys/socket.h>
+	#include <sys/stat.h>
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <stdint.h>
-#include <ctype.h>
-#include <getopt.h>
-#include <err.h>
+	#include <stdio.h>
+	#include <stdlib.h>
+	#include <string.h>
+	#include <stdint.h>
+	#include <ctype.h>
+	#include <getopt.h>
+	#include <err.h>
 
-#include <ctype.h>
-#include <string.h>
-#include <stdlib.h>
-#include <stdio.h>
-#include <ddnvram.h>
-#include <utils.h>
-#include <shutils.h>
-#include <utils.h>
-#include <unistd.h>
-#include <libbridge.h>
-#include <services.h>
-#include <wlutils.h>
-#include <libbridge.h>
-#define IFUP (IFF_UP | IFF_RUNNING | IFF_BROADCAST | IFF_MULTICAST)
+	#include <ctype.h>
+	#include <string.h>
+	#include <stdlib.h>
+	#include <stdio.h>
+	#include <ddnvram.h>
+	#include <utils.h>
+	#include <shutils.h>
+	#include <utils.h>
+	#include <unistd.h>
+	#include <libbridge.h>
+	#include <services.h>
+	#include <wlutils.h>
+	#include <libbridge.h>
+	#define IFUP (IFF_UP | IFF_RUNNING | IFF_BROADCAST | IFF_MULTICAST)
 
 extern int br_add_interface(const char *br, const char *dev);
 
@@ -425,13 +425,13 @@ static int isSTA(int idx)
 static int startradius[2] = { 0, 0 };
 
 void configure_wifi_single(int idx) // madwifi implementation for atheros based
-	// cards
+// cards
 {
 	char var[64];
 	const char *next;
 
 	startradius[idx] = 0;
-#ifdef HAVE_DIR810L
+	#ifdef HAVE_DIR810L
 	char mac[32];
 	char mac5[32];
 	strcpy(mac, nvram_default_get("et0macaddr_safe", "00:11:22:33:44:55"));
@@ -439,13 +439,14 @@ void configure_wifi_single(int idx) // madwifi implementation for atheros based
 	MAC_ADD(mac5);
 	MAC_ADD(mac5);
 
-#elif (defined(HAVE_DIR600) || defined(HAVE_AR670W) || defined(HAVE_AR690W) || defined(HAVE_VF803) || defined(HAVE_HAMEA15)) && \
-	!defined(HAVE_ALL02310N)
+	#elif (defined(HAVE_DIR600) || defined(HAVE_AR670W) || defined(HAVE_AR690W) || defined(HAVE_VF803) || \
+	       defined(HAVE_HAMEA15)) &&                                                                      \
+		!defined(HAVE_ALL02310N)
 	char mac[32];
 	strcpy(mac, nvram_default_get("et0macaddr_safe", "00:11:22:33:44:55"));
 	MAC_ADD(mac);
 	MAC_ADD(mac);
-#endif
+	#endif
 	if (idx == 0) {
 		stop_process("rt2860apd", "RALINK radius authenticator");
 		eval("ifconfig", "ra0", "down");
@@ -515,11 +516,11 @@ void configure_wifi_single(int idx) // madwifi implementation for atheros based
 	else if (idx == 1)
 		fprintf(fp, "E2pAccessMode=2\n");
 
-#ifdef BUFFALO_JP
+	#ifdef BUFFALO_JP
 	fprintf(fp, "CountryRegion=5\n");
 	fprintf(fp, "CountryRegionABand=7\n");
 	fprintf(fp, "CountryCode=JP\n");
-#elif HAVE_BUFFALO
+	#elif HAVE_BUFFALO
 	char *region = nvram_safe_get("region");
 	if (!strcmp(region, "EU")) {
 		fprintf(fp, "CountryRegion=0\n");
@@ -542,11 +543,11 @@ void configure_wifi_single(int idx) // madwifi implementation for atheros based
 		fprintf(fp, "CountryRegionABand=10\n");
 		fprintf(fp, "CountryCode=US\n");
 	}
-#else
+	#else
 	fprintf(fp, "CountryRegion=5\n");
 	fprintf(fp, "CountryRegionABand=7\n");
 	fprintf(fp, "CountryCode=DE\n");
-#endif
+	#endif
 	int count = 2;
 
 	char *vifs;
@@ -569,43 +570,43 @@ void configure_wifi_single(int idx) // madwifi implementation for atheros based
 				count++;
 			}
 		fprintf(fp, "BssidNum=%d\n", count - 1);
-#ifdef HAVE_ESR6650
+	#ifdef HAVE_ESR6650
 		fprintf(fp, "HT_TxStream=1\n");
 		fprintf(fp, "HT_RxStream=1\n");
-#elif HAVE_TECHNAXX3G
+	#elif HAVE_TECHNAXX3G
 		fprintf(fp, "HT_TxStream=1\n");
 		fprintf(fp, "HT_RxStream=1\n");
-#elif HAVE_ESR9752
+	#elif HAVE_ESR9752
 		fprintf(fp, "HT_TxStream=2\n");
 		fprintf(fp, "HT_RxStream=2\n");
-#elif HAVE_WCRGN
+	#elif HAVE_WCRGN
 		fprintf(fp, "HT_TxStream=1\n");
 		fprintf(fp, "HT_RxStream=1\n");
-#elif HAVE_ACXNR22
+	#elif HAVE_ACXNR22
 		fprintf(fp, "HT_TxStream=2\n");
 		fprintf(fp, "HT_RxStream=2\n");
-#elif HAVE_EAP9550
+	#elif HAVE_EAP9550
 		fprintf(fp, "HT_TxStream=2\n");
 		fprintf(fp, "HT_RxStream=2\n");
-#elif HAVE_DIR615
+	#elif HAVE_DIR615
 		fprintf(fp, "HT_TxStream=2\n");
 		fprintf(fp, "HT_RxStream=2\n");
-#elif HAVE_DIR600
+	#elif HAVE_DIR600
 		fprintf(fp, "HT_TxStream=1\n");
 		fprintf(fp, "HT_RxStream=1\n");
-#elif HAVE_RT3352
+	#elif HAVE_RT3352
 		fprintf(fp, "HT_TxStream=1\n");
 		fprintf(fp, "HT_RxStream=1\n");
-#elif HAVE_NEPTUNE
+	#elif HAVE_NEPTUNE
 		fprintf(fp, "HT_TxStream=2\n");
 		fprintf(fp, "HT_RxStream=2\n");
-#elif HAVE_RT10N
+	#elif HAVE_RT10N
 		fprintf(fp, "HT_TxStream=1\n");
 		fprintf(fp, "HT_RxStream=1\n");
-#elif HAVE_W502U
+	#elif HAVE_W502U
 		fprintf(fp, "HT_TxStream=1\n");
 		fprintf(fp, "HT_RxStream=1\n");
-#elif HAVE_RT3052
+	#elif HAVE_RT3052
 		if (idx && dev && !strcmp(dev, "MT7615 802.11ac")) {
 			fprintf(fp, "HT_TxStream=4\n");
 			fprintf(fp, "HT_RxStream=4\n");
@@ -613,10 +614,10 @@ void configure_wifi_single(int idx) // madwifi implementation for atheros based
 			fprintf(fp, "HT_TxStream=2\n");
 			fprintf(fp, "HT_RxStream=2\n");
 		}
-#else
+	#else
 		fprintf(fp, "HT_TxStream=2\n");
 		fprintf(fp, "HT_RxStream=3\n");
-#endif
+	#endif
 		fprintf(fp, "MaxStaNum=%s\n", nvram_nget("wl%d_maxassoc", idx));
 	}
 	/* suggestion by Jimmy */
@@ -1193,23 +1194,23 @@ void configure_wifi_single(int idx) // madwifi implementation for atheros based
 	fclose(fp);
 
 	if (isSTA(idx)) {
-#if (defined(HAVE_DIR600) || defined(HAVE_AR670W) || defined(HAVE_AR690W) || defined(HAVE_VF803) || defined(HAVE_DIR810L) || \
-     defined(HAVE_HAMEA15)) &&                                                                                               \
-	!defined(HAVE_ALL02310N)
+	#if (defined(HAVE_DIR600) || defined(HAVE_AR670W) || defined(HAVE_AR690W) || defined(HAVE_VF803) || \
+	     defined(HAVE_DIR810L) || defined(HAVE_HAMEA15)) &&                                             \
+		!defined(HAVE_ALL02310N)
 		if (nvram_matchi("mac_clone_enable", 1) && nvram_invmatch("def_whwaddr", "00:00:00:00:00:00") &&
 		    nvram_invmatch("def_whwaddr", "")) {
 			sysprintf("insmod rt2860v2_sta mac=%s", nvram_safe_get("def_whwaddr"));
 		} else {
 			sysprintf("insmod rt2860v2_sta mac=%s", mac);
 		}
-#else
+	#else
 		if (nvram_matchi("mac_clone_enable", 1) && nvram_invmatch("def_whwaddr", "00:00:00:00:00:00") &&
 		    nvram_invmatch("def_whwaddr", "")) {
 			sysprintf("insmod rt2860v2_sta mac=%s", nvram_safe_get("def_whwaddr"));
 		} else {
 			insmod("rt2860v2_sta");
 		}
-#endif
+	#endif
 		char dev[32];
 		sprintf(dev, "wl%d", idx);
 		char bridged[32];
@@ -1236,9 +1237,9 @@ void configure_wifi_single(int idx) // madwifi implementation for atheros based
 		setupSupplicant(dev);
 	} else {
 		if (idx == 0) {
-#if (defined(HAVE_DIR600) || defined(HAVE_AR670W) || defined(HAVE_AR690W) || defined(HAVE_VF803) || defined(HAVE_DIR810L) || \
-     defined(HAVE_HAMEA15)) &&                                                                                               \
-	!defined(HAVE_ALL02310N)
+	#if (defined(HAVE_DIR600) || defined(HAVE_AR670W) || defined(HAVE_AR690W) || defined(HAVE_VF803) || \
+	     defined(HAVE_DIR810L) || defined(HAVE_HAMEA15)) &&                                             \
+		!defined(HAVE_ALL02310N)
 			if (nvram_matchi("mac_clone_enable", 1) && nvram_invmatch("def_whwaddr", "00:00:00:00:00:00") &&
 			    nvram_invmatch("def_whwaddr", "")) {
 				sysprintf("insmod rt2860v2_ap mac=%s", nvram_safe_get("def_whwaddr"));
@@ -1253,23 +1254,23 @@ void configure_wifi_single(int idx) // madwifi implementation for atheros based
 					sysprintf("insmod /lib/rt3062/rt2860ap.ko mac=%s", mac);
 				sysprintf("insmod rt2860v2_ap mac=%s", mac);
 			}
-#else
+	#else
 			if (nvram_matchi("mac_clone_enable", 1) && nvram_invmatch("def_whwaddr", "00:00:00:00:00:00") &&
 			    nvram_invmatch("def_whwaddr", "")) {
 				sysprintf("insmod rt2860v2_ap mac=%s", nvram_safe_get("def_whwaddr"));
 			} else {
 				insmod("rt2860v2_ap");
 			}
-#endif
+	#endif
 		} else {
 			insmod("RTPCI_ap");
 			insmod("rlt_wifi");
 			insmod("mt_wifi");
-#ifdef HAVE_DIR810L
+	#ifdef HAVE_DIR810L
 			sysprintf("insmod MT7610_ap mac=%s\n", mac5);
-#else
+	#else
 			insmod("MT7610_ap");
-#endif
+	#endif
 		}
 	}
 	if (getRouterBrand() == ROUTER_DIR882) {

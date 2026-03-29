@@ -22,31 +22,31 @@
 
 #ifdef HAVE_TOR
 
-#include <unistd.h>
-#include <string.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <ddnvram.h>
-#include <shutils.h>
-#include "snmp.h"
-#include <signal.h>
-#include <utils.h>
-#include <services.h>
-#include <arpa/inet.h>
-#include <netinet/in.h>
-#include <sys/stat.h>
+	#include <unistd.h>
+	#include <string.h>
+	#include <stdio.h>
+	#include <stdlib.h>
+	#include <sys/types.h>
+	#include <sys/socket.h>
+	#include <ddnvram.h>
+	#include <shutils.h>
+	#include "snmp.h"
+	#include <signal.h>
+	#include <utils.h>
+	#include <services.h>
+	#include <arpa/inet.h>
+	#include <netinet/in.h>
+	#include <sys/stat.h>
 
-#if defined(HAVE_IPQ806X)
-#define usecrypto 1
-#elif defined(HAVE_IPQ6018)
-#define usecrypto 1
-#elif defined(HAVE_MVEBU)
-#define usecrypto 1
-#else
-#define usecrypto nvram_matchi("use_crypto", 1)
-#endif
+	#if defined(HAVE_IPQ806X)
+		#define usecrypto 1
+	#elif defined(HAVE_IPQ6018)
+		#define usecrypto 1
+	#elif defined(HAVE_MVEBU)
+		#define usecrypto 1
+	#else
+		#define usecrypto nvram_matchi("use_crypto", 1)
+	#endif
 
 char *tor_deps(void)
 {
@@ -78,7 +78,7 @@ void start_tor(void)
 	mkdir("/tmp/tor", 0700);
 	FILE *fp = fopen("/tmp/torrc", "wb");
 	fprintf(fp, "Log notice syslog\n");
-#ifdef HAVE_IPV6
+	#ifdef HAVE_IPV6
 	const char *ipv6addr = NULL;
 	char buf[INET6_ADDRSTRLEN + 1];
 	if (nvram_match("ipv6_typ", "ipv6native"))
@@ -87,7 +87,7 @@ void start_tor(void)
 		ipv6addr = getifaddr(buf, "ip6tun", AF_INET6, 0);
 	if (nvram_match("ipv6_typ", "ipv6pd"))
 		ipv6addr = getifaddr(buf, nvram_safe_get("lan_ifname"), AF_INET6, 0);
-#endif
+	#endif
 
 	if (nvram_matchi("tor_relayonly", 1)) {
 		fprintf(fp, "SocksPort 0\n");
@@ -114,12 +114,12 @@ void start_tor(void)
 		     "ACCEPT");
 		fprintf(fp, "ORPort 9001\n");
 		fprintf(fp, "ExitRelay 1\n");
-#ifdef HAVE_IPV6
+	#ifdef HAVE_IPV6
 		if (ipv6addr) {
 			fprintf(fp, "ORPort %s:9001\n", ipv6addr);
 			fprintf(fp, "IPv6Exit 1\n");
 		}
-#endif
+	#endif
 	}
 	if (nvram_matchi("tor_dir", 1)) {
 		eval(IPTABLES, "-I", "INPUT", "-p", "tcp", "-i", safe_get_wan_face(wan_if_buffer), "--dport", "9030", "-j",
@@ -146,10 +146,10 @@ void start_tor(void)
 		sysprintf("" IPTABLES " -t nat -A PREROUTING -i br0 -p udp --dport 5353 -j DNAT --to %s:5353", get_lan_ipaddr());
 		sysprintf("" IPTABLES " -t nat -A PREROUTING -i br0 -p tcp --syn -j DNAT --to %s:9040", get_lan_ipaddr());
 	}
-#ifdef HAVE_X86
+	#ifdef HAVE_X86
 	eval("mkdir", "-p", "/tmp/tor");
 	fprintf(fp, "DataDirectory /tmp/tor\n");
-#else
+	#else
 	if (jffs_mounted()) {
 		eval("rm", "-rf", "/jffs/tor");
 		eval("mkdir", "-p", "/jffs/tor");
@@ -158,7 +158,7 @@ void start_tor(void)
 		eval("rm", "-rf", "/tmp/tor");
 		fprintf(fp, "DataDirectory /tmp/tor\n");
 	}
-#endif
+	#endif
 
 	fclose(fp);
 	if (reload_process("tor"))

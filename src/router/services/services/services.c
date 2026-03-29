@@ -182,18 +182,18 @@ void start_check_sierrappp(void)
 	eval("/etc/comgt/sierrastatus.sh", nvram_safe_get("3gcontrol"));
 }
 
-#if defined(HAVE_LIBMBIM) || defined(HAVE_UMBIM)
+	#if defined(HAVE_LIBMBIM) || defined(HAVE_UMBIM)
 void start_check_mbim(void)
 {
-#ifdef HAVE_REGISTER
+		#ifdef HAVE_REGISTER
 	if (registered_has_cap(27))
-#endif
+		#endif
 	{
 		dd_loginfo("mbim", "STARTING mbim-status.sh");
 		eval("/usr/sbin/mbim-status.sh");
 	}
 }
-#endif
+	#endif
 
 #endif
 

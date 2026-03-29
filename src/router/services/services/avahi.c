@@ -21,20 +21,20 @@
  */
 
 #ifdef HAVE_MDNS
-#include <unistd.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <errno.h>
-#include <sys/time.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <syslog.h>
-#include <signal.h>
-#include <utils.h>
-#include <ddnvram.h>
-#include <shutils.h>
-#include <services.h>
+	#include <unistd.h>
+	#include <stdio.h>
+	#include <stdlib.h>
+	#include <string.h>
+	#include <errno.h>
+	#include <sys/time.h>
+	#include <sys/types.h>
+	#include <sys/stat.h>
+	#include <syslog.h>
+	#include <signal.h>
+	#include <utils.h>
+	#include <ddnvram.h>
+	#include <shutils.h>
+	#include <services.h>
 
 void start_mdns(void)
 {
@@ -104,7 +104,7 @@ void start_mdns(void)
 		get_lan_ipaddr(), nvram_matchi("mdns_reflector", 1) ? "yes" : "no");
 	fclose(fp);
 
-#ifdef HAVE_SMBD //might need SAMBA
+	#ifdef HAVE_SMBD //might need SAMBA
 	// add smb service to avahi, better place in samba3.c maybe enumerated for all partitions
 	if (nvram_matchi("samba3_enable", 1)) {
 		fp = fopen("/tmp/avahi/services/smb.service", "wb");
@@ -120,7 +120,7 @@ void start_mdns(void)
 			"</service-group>\n");
 		fclose(fp);
 	}
-#endif
+	#endif
 
 	if (reload_process("avahi-daemon")) {
 		snprintf(conffile, sizeof(conffile), getdefaultconfig("mdns", path, sizeof(path), "mdns/mdns.conf"));

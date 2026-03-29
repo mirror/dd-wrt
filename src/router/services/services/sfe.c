@@ -20,14 +20,14 @@
  * $Id:
  */
 #ifdef HAVE_SFE
-#include <stdlib.h>
-#include <ddnvram.h>
-#include <shutils.h>
-#include <utils.h>
-#include <wlutils.h>
-#include <syslog.h>
-#include <signal.h>
-#include <services.h>
+	#include <stdlib.h>
+	#include <ddnvram.h>
+	#include <shutils.h>
+	#include <utils.h>
+	#include <wlutils.h>
+	#include <syslog.h>
+	#include <signal.h>
+	#include <services.h>
 
 void start_sfe(void)
 {
@@ -37,96 +37,96 @@ void start_sfe(void)
 		insmod("shortcut-fe-ipv6");
 		insmod("fast-classifier");
 		writeproc("/proc/ctf", "0");
-#if defined(HAVE_IPQ6018) || defined(HAVE_IPQ806X) && !defined(HAVE_ALPINE)
+	#if defined(HAVE_IPQ6018) || defined(HAVE_IPQ806X) && !defined(HAVE_ALPINE)
 		sysprintf("echo 1 > /sys/kernel/debug/ecm/front_end_ipv4_stop");
 		sysprintf("echo 1 > /sys/kernel/debug/ecm/front_end_ipv6_stop");
 		sysprintf("echo 1 > /sys/kernel/debug/ecm/ecm_db/defunct_all");
 		rmmod("ecm");
 		rmmod("hyfi-bridging");
 		rmmod("qca-nss-sfe");
-#endif
+	#endif
 		sysprintf("echo 1 > /sys/fast_classifier/skip_to_bridge_ingress");
-#if !defined(HAVE_IPQ6018) && defined(HAVE_IPQ806X) && !defined(HAVE_ALPINE)
+	#if !defined(HAVE_IPQ6018) && defined(HAVE_IPQ806X) && !defined(HAVE_ALPINE)
 		sysprintf("echo 0 > /proc/sys/dev/nss/general/redirect");
-#endif
+	#endif
 		dd_loginfo("sfe", "shortcut (SFE) forwarding engine successfully started");
 	} else if (nvram_match("sfe", "2")) {
 		rmmod("fast-classifier");
 		rmmod("shortcut-fe-ipv6");
 		rmmod("shortcut-fe");
-#if defined(HAVE_IPQ6018) || defined(HAVE_IPQ806X) && !defined(HAVE_ALPINE)
+	#if defined(HAVE_IPQ6018) || defined(HAVE_IPQ806X) && !defined(HAVE_ALPINE)
 		sysprintf("echo 1 > /sys/kernel/debug/ecm/front_end_ipv4_stop");
 		sysprintf("echo 1 > /sys/kernel/debug/ecm/front_end_ipv6_stop");
 		sysprintf("echo 1 > /sys/kernel/debug/ecm/ecm_db/defunct_all");
 		rmmod("ecm");
 		rmmod("hyfi-bridging");
 		rmmod("qca-nss-sfe");
-#endif
+	#endif
 		writeproc("/proc/ctf", "1");
-#if !defined(HAVE_IPQ6018) && defined(HAVE_IPQ806X) && !defined(HAVE_ALPINE)
+	#if !defined(HAVE_IPQ6018) && defined(HAVE_IPQ806X) && !defined(HAVE_ALPINE)
 		sysprintf("echo 0 > /proc/sys/dev/nss/general/redirect");
-#endif
+	#endif
 		dd_loginfo("ctf", "fast path (CTF) forwarding successfully started");
 	} else if (nvram_match("sfe", "3") && has_nss) { // ecm nss
 		rmmod("fast-classifier");
 		rmmod("shortcut-fe-ipv6");
 		rmmod("shortcut-fe");
 		writeproc("/proc/ctf", "0");
-#if defined(HAVE_IPQ6018) || defined(HAVE_IPQ806X)
+	#if defined(HAVE_IPQ6018) || defined(HAVE_IPQ806X)
 		eval("insmod", "qca-nss-sfe");
 		insmod("hyfi-bridging");
 		eval("insmod", "ecm", "front_end_selection=1");
-#endif
-#if !defined(HAVE_IPQ6018) && defined(HAVE_IPQ806X) && !defined(HAVE_ALPINE)
+	#endif
+	#if !defined(HAVE_IPQ6018) && defined(HAVE_IPQ806X) && !defined(HAVE_ALPINE)
 		sysprintf("echo 1 > /proc/sys/dev/nss/general/redirect");
-#endif
+	#endif
 		dd_loginfo("ecm-nss", "Enhanced Connection Manager (ECM) forwarding engine successfully started");
 	} else if (nvram_match("sfe", "4") && has_nss) { // ecm sfe
 		rmmod("fast-classifier");
 		rmmod("shortcut-fe-ipv6");
 		rmmod("shortcut-fe");
 		writeproc("/proc/ctf", "0");
-#if defined(HAVE_IPQ6018) || defined(HAVE_IPQ806X) && !defined(HAVE_ALPINE)
+	#if defined(HAVE_IPQ6018) || defined(HAVE_IPQ806X) && !defined(HAVE_ALPINE)
 		eval("insmod", "qca-nss-sfe");
 		insmod("hyfi-bridging");
 		eval("insmod", "ecm", "front_end_selection=2");
-#endif
-#if !defined(HAVE_IPQ6018) && defined(HAVE_IPQ806X) && !defined(HAVE_ALPINE)
+	#endif
+	#if !defined(HAVE_IPQ6018) && defined(HAVE_IPQ806X) && !defined(HAVE_ALPINE)
 		sysprintf("echo 1 > /proc/sys/dev/nss/general/redirect");
-#endif
+	#endif
 		dd_loginfo("ecm-nss", "shortcut (NSS-SFE) forwarding engine successfully started");
 	} else if (nvram_match("sfe", "5") && has_nss) { // ecm sfe & nss
 		rmmod("fast-classifier");
 		rmmod("shortcut-fe-ipv6");
 		rmmod("shortcut-fe");
 		writeproc("/proc/ctf", "0");
-#if defined(HAVE_IPQ6018) || defined(HAVE_IPQ806X) && !defined(HAVE_ALPINE)
+	#if defined(HAVE_IPQ6018) || defined(HAVE_IPQ806X) && !defined(HAVE_ALPINE)
 		eval("insmod", "qca-nss-sfe");
 		insmod("hyfi-bridging");
 		eval("insmod", "ecm", "front_end_selection=4");
-#endif
-#if !defined(HAVE_IPQ6018) && defined(HAVE_IPQ806X) && !defined(HAVE_ALPINE)
+	#endif
+	#if !defined(HAVE_IPQ6018) && defined(HAVE_IPQ806X) && !defined(HAVE_ALPINE)
 		sysprintf("echo 1 > /proc/sys/dev/nss/general/redirect");
-#endif
+	#endif
 		dd_loginfo("ecm-nss", "Enhanced Connection Manager (ECM+NSS-SFE) forwarding engine successfully started");
 	} else {
 		rmmod("fast-classifier");
 		rmmod("shortcut-fe-ipv6");
 		rmmod("shortcut-fe");
 
-#if defined(HAVE_IPQ6018) || defined(HAVE_IPQ806X) && !defined(HAVE_ALPINE)
+	#if defined(HAVE_IPQ6018) || defined(HAVE_IPQ806X) && !defined(HAVE_ALPINE)
 		sysprintf("echo 1 > /sys/kernel/debug/ecm/front_end_ipv4_stop");
 		sysprintf("echo 1 > /sys/kernel/debug/ecm/front_end_ipv6_stop");
 		sysprintf("echo 1 > /sys/kernel/debug/ecm/ecm_db/defunct_all");
-#endif
-#if !defined(HAVE_IPQ6018) && defined(HAVE_IPQ806X) && !defined(HAVE_ALPINE)
+	#endif
+	#if !defined(HAVE_IPQ6018) && defined(HAVE_IPQ806X) && !defined(HAVE_ALPINE)
 		sysprintf("echo 0 > /proc/sys/dev/nss/general/redirect");
-#endif
-#if defined(HAVE_IPQ6018) || defined(HAVE_IPQ806X) && !defined(HAVE_ALPINE)
+	#endif
+	#if defined(HAVE_IPQ6018) || defined(HAVE_IPQ806X) && !defined(HAVE_ALPINE)
 		rmmod("ecm");
 		rmmod("hyfi-bridging");
 		rmmod("qca-nss-sfe");
-#endif
+	#endif
 		writeproc("/proc/ctf", "0");
 	}
 
@@ -138,19 +138,19 @@ void stop_sfe(void)
 	rmmod("fast-classifier");
 	rmmod("shortcut-fe-ipv6");
 	rmmod("shortcut-fe");
-#if defined(HAVE_IPQ6018) || defined(HAVE_IPQ806X) && !defined(HAVE_ALPINE)
+	#if defined(HAVE_IPQ6018) || defined(HAVE_IPQ806X) && !defined(HAVE_ALPINE)
 	sysprintf("echo 1 > /sys/kernel/debug/ecm/front_end_ipv4_stop");
 	sysprintf("echo 1 > /sys/kernel/debug/ecm/front_end_ipv6_stop");
 	sysprintf("echo 1 > /sys/kernel/debug/ecm/ecm_db/defunct_all");
-#endif
-#if !defined(HAVE_IPQ6018) && defined(HAVE_IPQ806X) && !defined(HAVE_ALPINE)
+	#endif
+	#if !defined(HAVE_IPQ6018) && defined(HAVE_IPQ806X) && !defined(HAVE_ALPINE)
 	sysprintf("echo 0 > /proc/sys/dev/nss/general/redirect");
-#endif
-#if defined(HAVE_IPQ6018) || defined(HAVE_IPQ806X) && !defined(HAVE_ALPINE)
+	#endif
+	#if defined(HAVE_IPQ6018) || defined(HAVE_IPQ806X) && !defined(HAVE_ALPINE)
 	rmmod("ecm");
 	rmmod("hyfi-bridging");
 	rmmod("qca-nss-sfe");
-#endif
+	#endif
 	writeproc("/proc/ctf", "0");
 	dd_loginfo("sfe", "shortcut forwarding engine successfully stopped");
 	return;

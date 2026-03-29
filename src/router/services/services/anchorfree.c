@@ -38,9 +38,9 @@
 #include "md5.h"
 
 #ifndef HAVE_MADWIFI
-#define IFPREFIX "wl"
+	#define IFPREFIX "wl"
 #else
-#define IFPREFIX "wlan"
+	#define IFPREFIX "wlan"
 #endif
 
 void doHash(md5_ctx_t *MD, char *filename)

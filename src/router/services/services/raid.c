@@ -20,17 +20,17 @@
  * $Id:
  */
 #ifdef HAVE_RAID
-#include <stdlib.h>
-#include <ddnvram.h>
-#include <shutils.h>
-#include <utils.h>
-#include <syslog.h>
-#include <signal.h>
-#include <services.h>
-#include <sys/ioctl.h>
-#include <sys/mount.h>
-#include <linux/fs.h>
-#include <fcntl.h>
+	#include <stdlib.h>
+	#include <ddnvram.h>
+	#include <shutils.h>
+	#include <utils.h>
+	#include <syslog.h>
+	#include <signal.h>
+	#include <services.h>
+	#include <sys/ioctl.h>
+	#include <sys/mount.h>
+	#include <linux/fs.h>
+	#include <fcntl.h>
 
 void fscheck_main(int argc, char *argv[])
 {
@@ -82,7 +82,7 @@ void start_raid_internal(void)
 	nvram_set("raid_interrupt", "0");
 again:;
 	sleep(5);
-	if (nvram_match("raid_interrupt","1")) {
+	if (nvram_match("raid_interrupt", "1")) {
 		nvram_set("raid_interrupt", "0");
 		goto again;
 	}
@@ -150,15 +150,15 @@ again:;
 		eval("service", "rsync", "stop");
 		eval("service", "dlna", "stop");
 		eval("service", "ftpsrv", "stop");
-#ifdef HAVE_WEBSERVER
+	#ifdef HAVE_WEBSERVER
 		eval("service", "lighttpd", "stop");
-#endif
-#ifdef HAVE_TRANSMISSION
+	#endif
+	#ifdef HAVE_TRANSMISSION
 		eval("service", "transmission", "stop");
-#endif
-#ifdef HAVE_PLEX
+	#endif
+	#ifdef HAVE_PLEX
 		eval("service", "plex", "stop");
-#endif
+	#endif
 		eval("service", "run_rc_usb", "stop");
 	}
 	if (md) {
@@ -192,15 +192,15 @@ again:;
 		dd_loginfo("raid", "BTRFS modules successfully loaded");
 	}
 	if (ntfs) {
-#ifdef HAVE_LEGACY_KERNEL
+	#ifdef HAVE_LEGACY_KERNEL
 		insmod("fuse");
 		dd_loginfo("raid", "NTFS / FUSE modules successfully loaded");
-#else
+	#else
 		insmod("antfs");
 		insmod("ntfs3");
 		insmod("ntfsplus");
 		dd_loginfo("raid", "NTFS modules successfully loaded");
-#endif
+	#endif
 	}
 	if (xfs) {
 		insmod("xfs");
@@ -409,16 +409,16 @@ again:;
 				try_mount("vfat", fname, "iocharset=utf8", pname);
 			}
 			if (nvram_nmatch("ntfs", "raidfs%d", i)) {
-#ifdef HAVE_LEGACY_KERNEL
+	#ifdef HAVE_LEGACY_KERNEL
 				sysprintf("ntfs-3g -o compression,direct_io,big_writes %s \"%s\"", fname, pname);
-#else
-#ifdef HAVE_NTFS3
+	#else
+		#ifdef HAVE_NTFS3
 				if (try_mount("ntfsplus", fname, "nls=utf8,noatime", pname))
 					try_mount("ntfs3", fname, "nls=utf8,noatime", pname);
-#else
+		#else
 				try_mount("antfs", fname, "utf8", pname);
-#endif
-#endif
+		#endif
+	#endif
 			}
 			if (nvram_nmatch("zfs", "raidfs%d", i)) {
 				eval("zpool", "import", "-a", "-d", "/dev");
@@ -466,15 +466,15 @@ again:;
 		eval("service", "rsync", "start");
 		eval("service", "ftpsrv", "start");
 		eval("service", "dlna", "start");
-#ifdef HAVE_WEBSERVER
+	#ifdef HAVE_WEBSERVER
 		eval("service", "lighttpd", "start");
-#endif
-#ifdef HAVE_TRANSMISSION
+	#endif
+	#ifdef HAVE_TRANSMISSION
 		eval("service", "transmission", "start");
-#endif
-#ifdef HAVE_PLEX
+	#endif
+	#ifdef HAVE_PLEX
 		eval("service", "plex", "start");
-#endif
+	#endif
 	}
 	raid_running = 0;
 }

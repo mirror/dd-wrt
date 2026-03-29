@@ -20,23 +20,23 @@
  * $Id:
  */
 #ifdef HAVE_NAS
-#ifndef HAVE_MADWIFI
-#ifndef HAVE_RT2880
-#ifndef HAVE_RT61
-#include <unistd.h>
-#include <string.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <sys/types.h>
-#include <ddnvram.h>
-#include <shutils.h>
-#include <nvparse.h>
-#include "snmp.h"
-#include <signal.h>
-#include <utils.h>
-#include <syslog.h>
-#include <wlutils.h>
-#include <services.h>
+	#ifndef HAVE_MADWIFI
+		#ifndef HAVE_RT2880
+			#ifndef HAVE_RT61
+				#include <unistd.h>
+				#include <string.h>
+				#include <stdio.h>
+				#include <stdlib.h>
+				#include <sys/types.h>
+				#include <ddnvram.h>
+				#include <shutils.h>
+				#include <nvparse.h>
+				#include "snmp.h"
+				#include <signal.h>
+				#include <utils.h>
+				#include <syslog.h>
+				#include <wlutils.h>
+				#include <services.h>
 
 void run_nas_notify(char *ifname)
 {
@@ -325,9 +325,9 @@ static void stop_nas_process(void)
 	stop_process("nas", "daemon");
 	stop_process("wrt-radauth", "radauth daemon");
 
-#ifdef HAVE_WPA_SUPPLICANT
+				#ifdef HAVE_WPA_SUPPLICANT
 	killall("wpa_supplicant", SIGKILL);
-#endif
+				#endif
 	int cnt = get_wl_instances();
 	int c;
 	char vifs_name[32];
@@ -349,9 +349,9 @@ static void stop_nas_process(void)
 	return;
 }
 
-#ifdef HAVE_WPA_SUPPLICANT
+				#ifdef HAVE_WPA_SUPPLICANT
 extern void setupSupplicant(const char *prefix);
-#endif
+				#endif
 void start_nas(void)
 {
 	unlink("/tmp/.nas");
@@ -371,9 +371,9 @@ void start_nas(void)
 	int deadcount;
 	int radiostate = -1;
 	stop_nas_process(); // ensure that no nas is running
-#ifdef HAVE_QTN
+				#ifdef HAVE_QTN
 	cnt = 1;
-#endif
+				#endif
 	for (c = 0; c < cnt; c++) {
 		if (nvram_nmatch("disabled", "wl%d_net_mode", c))
 			continue;
@@ -395,11 +395,11 @@ void start_nas(void)
 		sprintf(wlname, "wl%d", c);
 		if (nvram_nmatch("sta", "wl%d_mode", c) || nvram_nmatch("wet", "wl%d_mode", c) ||
 		    nvram_nmatch("apsta", "wl%d_mode", c) || nvram_nmatch("apstawet", "wl%d_mode", c)) {
-#ifdef HAVE_WPA_SUPPLICANT
+				#ifdef HAVE_WPA_SUPPLICANT
 			if (nvram_nmatch("8021X", "wl%d_akm", c) && nvram_nmatch("sta", "wl%d_mode", c))
 				setupSupplicant(wlname);
 			else
-#endif
+				#endif
 				start_nas_wan(c);
 
 		} else {
@@ -676,7 +676,7 @@ void stop_nas(void)
 	stop_nas_process();
 }
 
-#endif
-#endif
-#endif
+			#endif
+		#endif
+	#endif
 #endif

@@ -54,7 +54,7 @@
 #include <fcntl.h>
 #include <errno.h>
 #ifdef __UCLIBC__
-#include <error.h>
+	#include <error.h>
 #endif
 #include <time.h>
 #include <sys/ioctl.h>
@@ -97,15 +97,15 @@ void run_pppoe_dual(int status)
 	if (isClient())
 		wan_ifname = getSTA();
 
-#ifdef HAVE_PPPOE
+	#ifdef HAVE_PPPOE
 	stop_pppoe();
-#endif
-#ifdef HAVE_PPTP
+	#endif
+	#ifdef HAVE_PPTP
 	stop_pptp();
-#endif
-#ifdef HAVE_L2TP
+	#endif
+	#ifdef HAVE_L2TP
 	stop_l2tp();
-#endif
+	#endif
 	stop_pppoe_dual();
 	/*
 	if (nvram_matchi("pptp_use_dhcp",0)) {
@@ -146,11 +146,11 @@ void run_pppoe_dual(int status)
 	// Lets open option file and enter all the parameters.
 	fp = fopen("/tmp/ppp/options.pppoe", "w");
 	// rp-pppoe kernelmode plugin
-#if defined(HAVE_ADM5120) && !defined(HAVE_WP54G) && !defined(HAVE_NP28G)
+	#if defined(HAVE_ADM5120) && !defined(HAVE_WP54G) && !defined(HAVE_NP28G)
 	fprintf(fp, "plugin /lib/rp-pppoe.so\n");
-#else
+	#else
 	fprintf(fp, "plugin /usr/lib/rp-pppoe.so\n");
-#endif
+	#endif
 	if (nvram_invmatch("pppoe_service", ""))
 		fprintf(fp, " rp_pppoe_service %s", nvram_safe_get("pppoe_service"));
 	if (nvram_invmatch("pppoe_host_uniq", ""))
@@ -269,10 +269,10 @@ void run_pppoe_dual(int status)
 		    "lcp-echo-interval 3\n" //
 		    "lcp-echo-failure 20\n" //
 		    "lcp-echo-adaptive\n");
-#ifdef HAVE_IPV6
+	#ifdef HAVE_IPV6
 	if (nvram_matchi("ipv6_enable", 1))
 		fprintf(fp, "ipv6 ,\n");
-#endif
+	#endif
 	fclose(fp);
 
 	symlink("/sbin/rc", "/tmp/ppp/ip-up");
@@ -284,9 +284,9 @@ void run_pppoe_dual(int status)
 	unlink("/tmp/ppp/set-pppoepid");
 
 	stop_dhcpc();
-#ifdef HAVE_PPTP
+	#ifdef HAVE_PPTP
 	stop_pptp();
-#endif
+	#endif
 	stop_process("pppd", "daemon");
 	start_pppmodules();
 	log_eval("pppd", "file", "/tmp/ppp/options.pppoe");

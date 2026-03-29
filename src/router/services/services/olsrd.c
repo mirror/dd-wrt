@@ -21,13 +21,13 @@
  */
 
 #ifdef HAVE_OLSRD
-#include <stdlib.h>
-#include <ddnvram.h>
-#include <shutils.h>
-#include <utils.h>
-#include <syslog.h>
-#include <signal.h>
-#include <services.h>
+	#include <stdlib.h>
+	#include <ddnvram.h>
+	#include <shutils.h>
+	#include <utils.h>
+	#include <syslog.h>
+	#include <signal.h>
+	#include <services.h>
 
 void stop_olsrd(void)
 {
@@ -59,7 +59,7 @@ void start_olsrd(void)
 		fprintf(fp, "TcRedundancy\t%s\n", nvram_safe_get("olsrd_redundancy"));
 		fprintf(fp, "MprCoverage\t%s\n", nvram_safe_get("olsrd_coverage"));
 		fprintf(fp, "MainIp %s\n", get_lan_ipaddr());
-#ifdef HAVE_IPV6
+	#ifdef HAVE_IPV6
 		if (nvram_matchi("olsrd_smartgw", 1)) {
 			nvram_seti("ipv6_enable", 1);
 			start_ipv6(); // load ipv6 drivers
@@ -79,11 +79,11 @@ void start_olsrd(void)
 			fprintf(fp, "SmartGatewaySpeed 128 1024\n");
 			//                    fprintf(fp, "SmartGatewayPrefix 0::/0\n");
 		} else {
-#endif
+	#endif
 			fprintf(fp, "SmartGateway no\n");
-#ifdef HAVE_IPV6
+	#ifdef HAVE_IPV6
 		}
-#endif
+	#endif
 		fprintf(fp, "LinkQualityFishEye\t%s\n", nvram_safe_get("olsrd_lqfisheye"));
 		fprintf(fp, "LinkQualityAging\t%s\n", nvram_safe_get("olsrd_lqaging"));
 		fprintf(fp, "LinkQualityAlgorithm    \"etx_ff\"\n");
@@ -101,14 +101,14 @@ void start_olsrd(void)
 		fprintf(fp, "\tPlParam \"ping\"\t\"8.8.4.4\"");
 		fprintf(fp, "\tPlParam \"ping\"\t\"141.1.1.1\"");
 		fprintf(fp, "}\n");
-#ifndef HAVE_MICRO
+	#ifndef HAVE_MICRO
 		fprintf(fp, "LoadPlugin \"olsrd_httpinfo.so\"\n");
 		fprintf(fp, "{\n");
 		fprintf(fp, "\tPlParam \"port\"\t\"8080\"\n");
 		fprintf(fp, "\tPlParam \"Host\"\t\"127.0.0.1\"\n");
 		fprintf(fp, "\tPlParam \"Net\"\t\"%s 255.255.255.0\"\n", net);
 		fprintf(fp, "}\n");
-#endif
+	#endif
 		fprintf(fp, "IpcConnect\n");
 		fprintf(fp, "{\n");
 		fprintf(fp, "\tMaxConnections\t1\n");

@@ -357,13 +357,13 @@ static void do_mount(char *fs, char *path, char *mount_point, char *dev)
 #ifdef HAVE_NTFS3G
 	if (!strcmp(fs, "ntfs")) {
 repeat:;
-#ifdef HAVE_LEGACY_KERNEL
+	#ifdef HAVE_LEGACY_KERNEL
 		insmod("fuse");
 		ret = eval("ntfs-3g", "-o", "compression,direct_io,big_writes", path, mount_point);
 		if (ret)
 			rmmod("fuse");
-#else
-#ifdef HAVE_NTFS3
+	#else
+		#ifdef HAVE_NTFS3
 		insmod("ntfsplus");
 		ret = eval("/bin/mount", "-t", "ntfsplus", "-o", "nls=utf8,noatime", path, mount_point);
 		if (ret) {
@@ -373,13 +373,13 @@ repeat:;
 			if (ret)
 				rmmod("ntfs3");
 		}
-#else
+		#else
 		insmod("antfs");
 		ret = eval("/bin/mount", "-t", "antfs", "-o", "utf8", path, mount_point);
 		if (ret)
 			rmmod("antfs");
-#endif
-#endif
+		#endif
+	#endif
 		if (!first && ret) {
 			first = 1;
 			eval("ntfsfix", "-d", path);
@@ -413,13 +413,13 @@ repeat:;
 again2:;
 #ifdef HAVE_NTFS3G
 		if (!strcmp(fs, "ntfs")) {
-#ifdef HAVE_LEGACY_KERNEL
+	#ifdef HAVE_LEGACY_KERNEL
 			insmod("fuse");
 			ret = eval("ntfs-3g", "-o", "compression,direct_io,big_writes", path, mount_point);
 			if (ret)
 				rmmod("fuse");
-#else
-#ifdef HAVE_NTFS3
+	#else
+		#ifdef HAVE_NTFS3
 			insmod("ntfsplus");
 			ret = eval("/bin/mount", "-t", "ntfsplus", "-o", "nls=utf8,noatime", path, mount_point);
 			if (ret) {
@@ -429,13 +429,13 @@ again2:;
 				if (ret)
 					rmmod("ntfs3");
 			}
-#else
+		#else
 			insmod("antfs");
 			ret = eval("/bin/mount", "-t", "antfs", "-o", "utf8", path, mount_point);
 			if (ret)
 				rmmod("antfs");
-#endif
-#endif
+		#endif
+	#endif
 			if (!first && ret) {
 				first = 1;
 				eval("ntfsfix", "-d", path);

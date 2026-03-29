@@ -21,27 +21,27 @@
  */
 
 #ifdef HAVE_JFFS2
-#include <ddnvram.h>
-#include <shutils.h>
-#include <utils.h>
-#include <sys/mount.h>
-#include <mntent.h>
+	#include <ddnvram.h>
+	#include <shutils.h>
+	#include <utils.h>
+	#include <sys/mount.h>
+	#include <mntent.h>
 
-#define DEFAULT_UBIFS_COMPR "zstd"
+	#define DEFAULT_UBIFS_COMPR "zstd"
 
 int is_mtd_mounted(const char *dev);
 
 void stop_jffs2(void)
 {
-#if defined(HAVE_R9000)
+	#if defined(HAVE_R9000)
 	int mtd = getMTD("plex");
-#else
+	#else
 	int mtd = getMTD("ddwrt");
 	if (mtd == -1)
 		mtd = getMTD("jffs2");
 	if (mtd == -1)
 		mtd = getMTD("rootfs_data");
-#endif
+	#endif
 	if (mtd == -1)
 		return;
 	umount2("/jffs", MNT_DETACH);
@@ -56,17 +56,17 @@ void start_jffs2(void)
 	char dev[64];
 	int classic = 0;
 	int ax89 = 0;
-#if defined(HAVE_R9000)
+	#if defined(HAVE_R9000)
 	int mtd = getMTD("plex");
-#else
+	#else
 	int mtd = getMTD("ddwrt");
 	if (mtd == -1) {
 		mtd = getMTD("jffs2");
 	}
-#endif
+	#endif
 	int ubidev = 1;
 	int brand = getRouterBrand();
-#if defined(HAVE_IPQ806X) || defined(HAVE_IPQ6018)
+	#if defined(HAVE_IPQ806X) || defined(HAVE_IPQ6018)
 	switch (brand) {
 	case ROUTER_ASUS_AC58U:
 		classic = 1;
@@ -107,11 +107,11 @@ void start_jffs2(void)
 		ubidev = 0;
 		break;
 	}
-#endif
-#ifdef HAVE_REALTEK
+	#endif
+	#ifdef HAVE_REALTEK
 	rwpart = "rootfs_data";
 	mtd = getMTD("rootfs_data");
-#endif
+	#endif
 	nvram_seti("jffs_mounted", 0);
 	umount2("/jffs", MNT_DETACH);
 	u_int64_t space = freediskSpace("/jffs");
@@ -125,15 +125,15 @@ void start_jffs2(void)
 			nvram_seti("clean_jffs2", 0);
 			nvram_commit();
 			sprintf(dev, "/dev/mtd%d", mtd);
-#if defined(HAVE_DW02_412H)
+	#if defined(HAVE_DW02_412H)
 			eval("erase", rwpart);
 			eval("flash_erase", dev, "0", "0");
 			eval("mkfs.jffs2", "-o", "/dev/mtdblock11", "-n", "-b", "-e", "131072", "-p");
-#elif defined(HAVE_WNDR3700V4)
+	#elif defined(HAVE_WNDR3700V4)
 			eval("erase", rwpart);
 			eval("flash_erase", dev, "0", "0");
 			eval("mkfs.jffs2", "-o", "/dev/mtdblock3", "-n", "-b", "-e", "131072", "-p");
-#elif defined(HAVE_MVEBU) || defined(HAVE_R9000) || defined(HAVE_IPQ806X) || defined(HAVE_R6800) || defined(HAVE_IPQ6018)
+	#elif defined(HAVE_MVEBU) || defined(HAVE_R9000) || defined(HAVE_IPQ806X) || defined(HAVE_R6800) || defined(HAVE_IPQ6018)
 			if (ax89) {
 				eval("mtd", "erase", rwpart);
 			} else if (classic) {
@@ -150,12 +150,12 @@ void start_jffs2(void)
 					eval("ubimkvol", udev, "-N", "ddwrt", "-m");
 				}
 			}
-#else
+	#else
 			eval("mtd", "erase", rwpart);
 			eval("flash_erase", dev, "0", "0");
-#endif
+	#endif
 
-#if defined(HAVE_R9000) || defined(HAVE_MVEBU) || defined(HAVE_IPQ806X) || defined(HAVE_R6800) || defined(HAVE_IPQ6018)
+	#if defined(HAVE_R9000) || defined(HAVE_MVEBU) || defined(HAVE_IPQ806X) || defined(HAVE_R6800) || defined(HAVE_IPQ6018)
 			if (ax89) {
 				didntwork = mount("/dev/ubi0_5", "/jffs", "ubifs", MS_MGC_VAL | MS_NOATIME,
 						  "compr=" DEFAULT_UBIFS_COMPR);
@@ -165,10 +165,10 @@ void start_jffs2(void)
 			} else {
 				didntwork = mount(upath, "/jffs", "ubifs", MS_MGC_VAL | MS_NOATIME, "compr=" DEFAULT_UBIFS_COMPR);
 			}
-#else
+	#else
 			sprintf(dev, "/dev/mtdblock/%d", getMTD(rwpart));
 			didntwork = mount(dev, "/jffs", "jffs2", MS_MGC_VAL | MS_NOATIME, NULL);
-#endif
+	#endif
 			if (didntwork) {
 				nvram_seti("jffs_mounted", 0);
 			} else {
@@ -176,7 +176,7 @@ void start_jffs2(void)
 			}
 
 		} else {
-#if defined(HAVE_R9000) || defined(HAVE_MVEBU) || defined(HAVE_IPQ806X) || defined(HAVE_R6800) || defined(HAVE_IPQ6018)
+	#if defined(HAVE_R9000) || defined(HAVE_MVEBU) || defined(HAVE_IPQ806X) || defined(HAVE_R6800) || defined(HAVE_IPQ6018)
 			didntwork = 0;
 			if (ax89) {
 				didntwork += mount("/dev/ubi0_5", "/jffs", "ubifs", MS_MGC_VAL | MS_NOATIME,
@@ -194,7 +194,7 @@ void start_jffs2(void)
 				didntwork = mount(upath, "/jffs", "ubifs", MS_MGC_VAL | MS_NOATIME, "compr=" DEFAULT_UBIFS_COMPR);
 				fprintf(stderr, "errorcode %d\n", didntwork);
 			}
-#else
+	#else
 			/*
 			eval("mtd", "unlock", rwpart);
 			sprintf(dev, "/dev/mtdblock/%d", getMTD(rwpart));
@@ -205,7 +205,7 @@ void start_jffs2(void)
 			sprintf(dev, "/dev/mtdblock/%d", getMTD(rwpart));
 			mount(dev, "/jffs", "jffs2", MS_MGC_VAL | MS_NOATIME, NULL);
 			didntwork = is_mtd_mounted(dev);
-#endif
+	#endif
 			if (!space && didntwork) {
 				nvram_seti("jffs_mounted", 0);
 				nvram_seti("clean_jffs2", 1);

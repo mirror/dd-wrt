@@ -20,13 +20,13 @@
  * $Id:
  */
 #ifdef HAVE_MULTICAST
-#include <stdlib.h>
-#include <ddnvram.h>
-#include <shutils.h>
-#include <utils.h>
-#include <syslog.h>
-#include <signal.h>
-#include <services.h>
+	#include <stdlib.h>
+	#include <ddnvram.h>
+	#include <shutils.h>
+	#include <utils.h>
+	#include <syslog.h>
+	#include <signal.h>
+	#include <services.h>
 
 void stop_igmprt(void);
 void start_igmprt(void)
@@ -44,15 +44,15 @@ void start_igmprt(void)
 	FILE *fp = fopencreate("/tmp/igmpproxy/igmpproxy.conf", "wb");
 	int fromvlan = 0;
 	fromvlan |= (nvram_matchi("dtag_vlan8", 1) && nvram_matchi("wan_vdsl", 1));
-#ifdef HAVE_PPTP
+	#ifdef HAVE_PPTP
 	fromvlan |= (nvram_match("wan_proto", "pptp") && nvram_exists("tvnicfrom"));
-#endif
-#ifdef HAVE_L2TP
+	#endif
+	#ifdef HAVE_L2TP
 	fromvlan |= (nvram_match("wan_proto", "l2tp") && nvram_exists("tvnicfrom"));
-#endif
-#ifdef HAVE_PPPOEDUAL
+	#endif
+	#ifdef HAVE_PPPOEDUAL
 	fromvlan |= (nvram_match("wan_proto", "pppoe_dual") && nvram_exists("tvnicfrom"));
-#endif
+	#endif
 	fromvlan |= (nvram_match("wan_proto", "dhcp_auth") && nvram_exists("tvnicfrom"));
 
 	if ((nvram_matchi("dtag_bng", 1) && nvram_matchi("wan_vdsl", 1) && nvram_match("wan_proto", "pppoe")) || !fromvlan) {

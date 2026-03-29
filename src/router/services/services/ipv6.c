@@ -20,39 +20,39 @@
  * $Id:
  */
 #ifdef HAVE_IPV6
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <dirent.h>
-#include <signal.h>
-#include <unistd.h>
-#include <errno.h>
-#include <ctype.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <sys/ioctl.h> /* AhMan March 18 2005 */
-#include <sys/socket.h>
-#include <sys/mount.h>
+	#include <stdio.h>
+	#include <stdlib.h>
+	#include <string.h>
+	#include <dirent.h>
+	#include <signal.h>
+	#include <unistd.h>
+	#include <errno.h>
+	#include <ctype.h>
+	#include <sys/types.h>
+	#include <sys/stat.h>
+	#include <sys/ioctl.h> /* AhMan March 18 2005 */
+	#include <sys/socket.h>
+	#include <sys/mount.h>
 
-#include <netinet/in.h>
-#include <arpa/inet.h>
-#include <sys/wait.h>
-#include <net/route.h> /* AhMan March 18 2005 */
-#include <sys/types.h>
-#include <signal.h>
+	#include <netinet/in.h>
+	#include <arpa/inet.h>
+	#include <sys/wait.h>
+	#include <net/route.h> /* AhMan March 18 2005 */
+	#include <sys/types.h>
+	#include <signal.h>
 
-#include <ddnvram.h>
-#include <bcmconfig.h>
-#include <netconf.h>
-#include <shutils.h>
-#include <utils.h>
-#include <cy_conf.h>
-#include <code_pattern.h>
-#include <rc.h>
-#include <wlutils.h>
-#include <nvparse.h>
-#include <syslog.h>
-#include <services.h>
+	#include <ddnvram.h>
+	#include <bcmconfig.h>
+	#include <netconf.h>
+	#include <shutils.h>
+	#include <utils.h>
+	#include <cy_conf.h>
+	#include <code_pattern.h>
+	#include <rc.h>
+	#include <wlutils.h>
+	#include <nvparse.h>
+	#include <syslog.h>
+	#include <services.h>
 
 void stop_ipv6(void)
 {

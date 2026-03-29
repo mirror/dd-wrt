@@ -41,9 +41,9 @@
 #define DEBUG_HEARTBEAT
 
 #ifdef DEBUG_HEARTBEAT
-#define MY_LOG syslog
+	#define MY_LOG syslog
 #else
-#define MY_LOG(level, fmt, args...)
+	#define MY_LOG(level, fmt, args...)
 #endif
 
 static void start_heartbeat(int status)

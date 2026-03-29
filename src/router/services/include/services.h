@@ -211,9 +211,9 @@ DECLARE_SERVICE(benchmark);
 
 #if defined(HAVE_IPQ6018)
 int nss_disabled(int setcur);
-#define has_nss !nss_disabled(0)
+	#define has_nss !nss_disabled(0)
 #else
-#define has_nss 1
+	#define has_nss 1
 #endif
 extern void run_pptp(int status);
 
@@ -294,7 +294,8 @@ void mac80211_start_supplicant(int count, char *prefix, char **configs, int *con
 #ifdef HAVE_BONDING
 int isBond(char *ifname);
 #else
-static inline int isBond(char *ifname) {
+static inline int isBond(char *ifname)
+{
 	return 0;
 }
 #endif

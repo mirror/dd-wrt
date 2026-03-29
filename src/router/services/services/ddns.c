@@ -295,9 +295,9 @@ static int init_ddns(FILE *fp)
 				idx++;
 			}
 			fprintf(fp, "}\n");
-#ifdef HAVE_USE_OPENSSL
+	#ifdef HAVE_USE_OPENSSL
 			fprintf(fp, "ssl = %s\n", nvram_match(_ssl, "1") ? "true" : "false");
-#endif
+	#endif
 			if (nvram_match(_wildcard, "1"))
 				fprintf(fp, "wildcard = true\n");
 			if (flag == 5) {

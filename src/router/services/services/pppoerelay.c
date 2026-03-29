@@ -20,13 +20,13 @@
  * $Id:
  */
 #ifdef HAVE_PPPOERELAY
-#include <stdlib.h>
-#include <ddnvram.h>
-#include <shutils.h>
-#include <utils.h>
-#include <syslog.h>
-#include <signal.h>
-#include <services.h>
+	#include <stdlib.h>
+	#include <ddnvram.h>
+	#include <shutils.h>
+	#include <utils.h>
+	#include <syslog.h>
+	#include <signal.h>
+	#include <services.h>
 void stop_pppoerelay(void)
 {
 	stop_process("pppoe-relay", "daemon");

@@ -20,17 +20,17 @@
  * $Id:
  */
 #ifdef HAVE_MMC
-#include <ddnvram.h>
-#include <shutils.h>
-#include <utils.h>
-#include <sys/mount.h>
-#include <stdio.h>
-#include <stdlib.h>
+	#include <ddnvram.h>
+	#include <shutils.h>
+	#include <utils.h>
+	#include <sys/mount.h>
+	#include <stdio.h>
+	#include <stdlib.h>
 
 void start_mmc(void)
 {
 	if (nvram_matchi("mmc_enable", 1)) {
-#ifdef HAVE_FONERA
+	#ifdef HAVE_FONERA
 		int res = insmod("mmc");
 
 		if (!res) {
@@ -43,7 +43,7 @@ void start_mmc(void)
 				mount("/dev/mmc", "/mmc", "ext2", MS_MGC_VAL | MS_NOATIME, NULL);
 			}
 		}
-#else
+	#else
 		int res = 1;
 		int mmc_di = 0, mmc_do = 0, mmc_clk = 0, mmc_cs = 0;
 		char dddi[16], dddo[16], ddclk[16], ddcs[16];
@@ -119,7 +119,7 @@ void start_mmc(void)
 				mount("/dev/mmc/disc0/part1", "/mmc", "ext2", MS_MGC_VAL | MS_NOATIME, NULL);
 			}
 		}
-#endif
+	#endif
 	}
 }
 

@@ -20,21 +20,21 @@
  * $Id:
  */
 #ifdef HAVE_SOFTETHER
-#include <stdlib.h>
-#include <ddnvram.h>
-#include <shutils.h>
-#include <utils.h>
-#include <syslog.h>
-#include <signal.h>
-#include <sys/stat.h>
-#include <services.h>
+	#include <stdlib.h>
+	#include <ddnvram.h>
+	#include <shutils.h>
+	#include <utils.h>
+	#include <syslog.h>
+	#include <signal.h>
+	#include <sys/stat.h>
+	#include <services.h>
 
 static void stop_softetherclient(void);
 static void stop_softetherbridge(void);
 static void stop_softetherserver(void);
-#define VPNDIR "/var/softethervpn"
-#define JFFSVPNDIR "/jffs/var/softethervpn"
-#define EXECDIR "/usr/libexec/softethervpn"
+	#define VPNDIR "/var/softethervpn"
+	#define JFFSVPNDIR "/jffs/var/softethervpn"
+	#define EXECDIR "/usr/libexec/softethervpn"
 
 void start_softether(void)
 {

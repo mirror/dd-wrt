@@ -27,7 +27,7 @@
 #include <signal.h>
 #include <services.h>
 #ifdef HAVE_UQMI
-#include <json-c/json.h>
+	#include <json-c/json.h>
 
 static char *get_popen_data(char *command)
 {
@@ -100,7 +100,7 @@ static char *get_json_data_by_key(char *output, char *getkey)
 #if defined(HAVE_UQMI) || defined(HAVE_LIBQMI)
 void start_check_qmi(void)
 {
-#ifdef HAVE_UQMI
+	#ifdef HAVE_UQMI
 	char *output, *retval, *rsrq;
 	char command[256];
 	char buf[256];
@@ -137,8 +137,8 @@ void start_check_qmi(void)
 	} else {
 		sysprintf("echo 0 > /tmp/qmistatus");
 	}
-#else
+	#else
 	sysprintf("qmi-network /dev/cdc-wdm0 status|grep disconnected|wc -l>/tmp/qmistatus");
-#endif
+	#endif
 }
 #endif

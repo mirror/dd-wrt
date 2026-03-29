@@ -22,17 +22,17 @@
 
 #ifdef HAVE_SNMP
 
-#include <unistd.h>
-#include <string.h>
-#include <signal.h>
-#include <stdio.h>
-#include <sys/types.h>
-#include <ddnvram.h>
-#include <shutils.h>
-#include <utils.h>
-#include <syslog.h>
-#include <services.h>
-#include "snmp.h"
+	#include <unistd.h>
+	#include <string.h>
+	#include <signal.h>
+	#include <stdio.h>
+	#include <sys/types.h>
+	#include <ddnvram.h>
+	#include <shutils.h>
+	#include <utils.h>
+	#include <syslog.h>
+	#include <services.h>
+	#include "snmp.h"
 
 char *snmp_deps(void)
 {
@@ -70,11 +70,11 @@ void start_snmp(void)
 	if (*(nvram_safe_get("snmpd_rwcommunity")))
 		fprintf(fp, "rwcommunity %s\n", nvram_safe_get("snmpd_rwcommunity"));
 	fprintf(fp, "sysservices 9\n");
-#ifdef HAVE_RAYTRONIK
+	#ifdef HAVE_RAYTRONIK
 	fprintf(fp, "pass_persist .1.3.6.1.4.1.41404.255 /etc/config/wl_snmpd.sh\n");
-#else
+	#else
 	fprintf(fp, "pass_persist .1.3.6.1.4.1.2021.255 /etc/wl_snmpd.sh\n");
-#endif
+	#endif
 	fclose(fp);
 	if (reload_process("snmpd")) {
 		_log_evalpid(snmpd_argv, NULL, 0, NULL);

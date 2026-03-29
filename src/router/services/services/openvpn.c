@@ -33,15 +33,15 @@
 #include <utils.h>
 #ifdef HAVE_OPENVPN
 
-#if defined(HAVE_IPQ806X)
-#define usecrypto 1
-#elif defined(HAVE_IPQ6018)
-#define usecrypto 1
-#elif defined(HAVE_MVEBU)
-#define usecrypto 1
-#else
-#define usecrypto nvram_matchi("use_crypto", 1)
-#endif
+	#if defined(HAVE_IPQ806X)
+		#define usecrypto 1
+	#elif defined(HAVE_IPQ6018)
+		#define usecrypto 1
+	#elif defined(HAVE_MVEBU)
+		#define usecrypto 1
+	#else
+		#define usecrypto nvram_matchi("use_crypto", 1)
+	#endif
 //use in interfrace when WAP is detected
 char IN_IF[8] = { 0 };
 
@@ -233,12 +233,12 @@ void create_openvpnrules(FILE *fp)
 		fprintf(fp,
 			"" IPTABLES " -D POSTROUTING -t nat -o $dev -j MASQUERADE 2> /dev/null\n" //
 			"" IPTABLES " -I POSTROUTING -t nat -o $dev -j MASQUERADE\n");
-#ifdef HAVE_IPV6
+	#ifdef HAVE_IPV6
 		if (nvram_matchi("ipv6_enable", 1)) {
 			fprintf(fp, IP6TABLES " -D POSTROUTING -t nat -o $dev -j MASQUERADE 2> /dev/null\n" IP6TABLES
 					      " -I POSTROUTING -t nat -o $dev -j MASQUERADE\n");
 		}
-#endif
+	#endif
 	}
 	if (nvram_match("openvpncl_mit", "1"))
 		fprintf(fp, "" IPTABLES " -t raw -D PREROUTING ! -i $dev -d $ifconfig_local$vpn_netmask -j DROP 2> /dev/null\n"
@@ -261,14 +261,14 @@ void create_openvpnrules(FILE *fp)
 				    "" IPTABLES " -D FORWARD -i $dev -m state --state NEW -j ACCEPT 2> /dev/null\n"
 				    "" IPTABLES " -I INPUT -i $dev -m state --state NEW -j ACCEPT\n"
 				    "" IPTABLES " -I FORWARD -i $dev -m state --state NEW -j ACCEPT\n");
-#ifdef HAVE_IPV6
+	#ifdef HAVE_IPV6
 			if (nvram_matchi("ipv6_enable", 1)) {
 				fprintf(fp, IP6TABLES " -D INPUT -i $dev -m state --state NEW -j ACCEPT 2> /dev/null\n" IP6TABLES
 						      " -D FORWARD -i $dev -m state --state NEW -j ACCEPT 2> /dev/null\n" IP6TABLES
 						      " -I INPUT -i $dev -m state --state NEW -j ACCEPT\n" IP6TABLES
 						      " -I FORWARD -i $dev -m state --state NEW -j ACCEPT\n");
 			}
-#endif
+	#endif
 		}
 	}
 	fprintf(fp, "EOF\n"
@@ -450,14 +450,14 @@ void create_openvpnserverrules(FILE *fp)
 			fprintf(fp,
 				"" IPTABLES
 				" -t nat -A POSTROUTING -s $(nvram get openvpn_net)/$(nvram get openvpn_tunmask) -o $(get_wanface) -j MASQUERADE\n");
-#ifdef HAVE_IPV6
+	#ifdef HAVE_IPV6
 			if (nvram_invmatch("openvpn_v6netmask", "") && nvram_matchi("ipv6_enable", 1)) {
 				fprintf(fp, IP6TABLES
 					" -t nat -D POSTROUTING -s $(nvram get openvpn_v6netmask) -o $(get_wanface) -j MASQUERADE >/dev/null 2>&1\n");
 				fprintf(fp, IP6TABLES
 					" -t nat -A POSTROUTING -s $(nvram get openvpn_v6netmask) -o $(get_wanface) -j MASQUERADE\n");
 			}
-#endif
+	#endif
 		}
 		if (nvram_matchi("openvpn_allowcnlan", 1)) {
 			fprintf(fp,
@@ -466,14 +466,14 @@ void create_openvpnserverrules(FILE *fp)
 			fprintf(fp,
 				"" IPTABLES
 				" -t nat -A POSTROUTING -o br+ -s $(nvram get openvpn_net)/$(nvram get openvpn_tunmask) -j MASQUERADE\n");
-#ifdef HAVE_IPV6
+	#ifdef HAVE_IPV6
 			if (nvram_invmatch("openvpn_v6netmask", "") && nvram_matchi("ipv6_enable", 1)) {
 				fprintf(fp, IP6TABLES
 					" -t nat -D POSTROUTING -o br+ -s $(nvram get openvpn_v6netmask) -j MASQUERADE >/dev/null 2>&1\n");
 				fprintf(fp, IP6TABLES
 					" -t nat -A POSTROUTING -o br+ -s $(nvram get openvpn_v6netmask) -j MASQUERADE\n");
 			}
-#endif
+	#endif
 		}
 	}
 	fprintf(fp, "EOF\n"
@@ -631,15 +631,15 @@ void start_openvpnserver(void)
 		if (nvram_matchi("openvpn_cl2cl", 1))
 			fprintf(fp, "client-to-client\n");
 		if (nvram_matchi("openvpn_redirgate", 1)) {
-#ifdef HAVE_IPV6
+	#ifdef HAVE_IPV6
 			if (nvram_invmatch("openvpn_v6netmask", "") && nvram_matchi("ipv6_enable", 1)) {
 				fprintf(fp, "push \"redirect-gateway ipv6 def1\"\n");
 			} else {
-#endif
+	#endif
 				fprintf(fp, "push \"redirect-gateway def1\"\n");
-#ifdef HAVE_IPV6
+	#ifdef HAVE_IPV6
 			}
-#endif
+	#endif
 		} else if (nvram_matchi("openvpn_redirgate", 2)) {
 			char lanaddr[32] = { 0 };
 			char *mypoint;
@@ -675,11 +675,11 @@ void start_openvpnserver(void)
 		if (nvram_match("openvpn_tuntap", "tun")) {
 			fprintf(fp, "server %s %s\n", nvram_safe_get("openvpn_net"), nvram_safe_get("openvpn_tunmask"));
 			fprintf(fp, "dev tun2\n");
-#ifdef HAVE_IPV6
+	#ifdef HAVE_IPV6
 			if (nvram_invmatch("openvpn_v6netmask", "") && nvram_matchi("ipv6_enable", 1)) {
 				fprintf(fp, "server-ipv6 %s\n", nvram_safe_get("openvpn_v6netmask"));
 			}
-#endif
+	#endif
 		} else if (nvram_match("openvpn_tuntap", "tap") && nvram_matchi("openvpn_proxy", 0)) {
 			fprintf(fp, "server-bridge %s %s %s %s\n", nvram_safe_get("openvpn_gateway"),
 				nvram_safe_get("openvpn_mask"), nvram_safe_get("openvpn_startip"), nvram_safe_get("openvpn_endip"));
@@ -765,7 +765,7 @@ void start_openvpnserver(void)
 	if (fp == NULL)
 		return;
 	fprintf(fp, "#!/bin/sh\n");
-#if defined(HAVE_TMK) || defined(HAVE_BKM) || defined(HAVE_UNFY)
+	#if defined(HAVE_TMK) || defined(HAVE_BKM) || defined(HAVE_UNFY)
 	char *gpiovpn = nvram_safe_get("gpiovpn");
 	if (*gpiovpn) {
 		if (strncmp(gpiovpn, "-", 1))
@@ -775,7 +775,7 @@ void start_openvpnserver(void)
 			fprintf(fp, "gpio disable %s\n", gpiovpn);
 		}
 	}
-#endif
+	#endif
 	//bring up tap interface when choosen
 	if (nvram_match("openvpn_tuntap", "tap")) {
 		fprintf(fp,
@@ -800,7 +800,7 @@ void start_openvpnserver(void)
 	if (fp == NULL)
 		return;
 	fprintf(fp, "#!/bin/sh\n");
-#if defined(HAVE_TMK) || defined(HAVE_BKM) || defined(HAVE_UNFY)
+	#if defined(HAVE_TMK) || defined(HAVE_BKM) || defined(HAVE_UNFY)
 	gpiovpn = nvram_safe_get("gpiovpn");
 	if (*gpiovpn) {
 		if (strncmp(gpiovpn, "-", 1))
@@ -810,7 +810,7 @@ void start_openvpnserver(void)
 			fprintf(fp, "gpio enable %s\n", gpiovpn);
 		}
 	}
-#endif
+	#endif
 	// remove ebtales rules
 	if (nvram_matchi("openvpn_blockmulticast", 1) && nvram_match("openvpn_tuntap", "tap"))
 		fprintf(fp, "" EBTABLES " -t nat -D POSTROUTING -o $dev --pkttype-type multicast -j DROP\n");
@@ -829,23 +829,23 @@ void start_openvpnserver(void)
 		fprintf(fp,
 			"" IPTABLES
 			" -t nat -D POSTROUTING -s $(nvram get openvpn_net)/$(nvram get openvpn_tunmask) -o $(get_wanface) -j MASQUERADE\n");
-#ifdef HAVE_IPV6
+	#ifdef HAVE_IPV6
 		if (nvram_invmatch("openvpn_v6netmask", "") && nvram_matchi("ipv6_enable", 1)) {
 			fprintf(fp, IP6TABLES
 				" -t nat -D POSTROUTING -s $(nvram get openvpn_v6netmask) -o $(get_wanface) -j MASQUERADE >/dev/null 2>&1\n");
 		}
-#endif
+	#endif
 	}
 	if (nvram_matchi("openvpn_allowcnlan", 1)) {
 		fprintf(fp,
 			"" IPTABLES
 			" -t nat -D POSTROUTING -o br+ -s $(nvram get openvpn_net)/$(nvram get openvpn_tunmask) -j MASQUERADE\n");
-#ifdef HAVE_IPV6
+	#ifdef HAVE_IPV6
 		if (nvram_invmatch("openvpn_v6netmask", "") && nvram_matchi("ipv6_enable", 1)) {
 			fprintf(fp, IP6TABLES
 				" -t nat -D POSTROUTING -o br+ -s $(nvram get openvpn_v6netmask) -j MASQUERADE >/dev/null 2>&1\n");
 		}
-#endif
+	#endif
 	}
 
 	/* egc: delete interface as listen interface to DNSMasq */
@@ -875,7 +875,7 @@ void start_openvpnserver(void)
 
 void stop_openvpnserver(void)
 {
-#if defined(HAVE_TMK) || defined(HAVE_BKM) || defined(HAVE_UNFY)
+	#if defined(HAVE_TMK) || defined(HAVE_BKM) || defined(HAVE_UNFY)
 	char *gpiovpn = nvram_safe_get("gpiovpn");
 	if (*gpiovpn) {
 		if (strncmp(gpiovpn, "-", 1))
@@ -885,7 +885,7 @@ void stop_openvpnserver(void)
 			set_gpio(atoi(gpiovpn), 1);
 		}
 	}
-#endif
+	#endif
 	if (stop_process("openvpnserver", "OpenVPN daemon (Server)")) {
 		//remove ebtables rules on shutdown done with route-down script
 		//system("/usr/sbin/ebtables -t nat -D POSTROUTING -o tap2 --pkttype-type multicast -j DROP");
@@ -995,30 +995,30 @@ void start_openvpn(void)
 		//todo set IN_IF to deal with WAP
 		eval(IPTABLES, "-D", "FORWARD", "-o", safe_get_wan_face(wan_if_buffer), "-j", "DROP");
 		eval(IPTABLES, "-I", "FORWARD", "-o", safe_get_wan_face(wan_if_buffer), "-j", "DROP");
-#ifdef HAVE_IPV6
+	#ifdef HAVE_IPV6
 		if (nvram_matchi("ipv6_enable", 1)) {
 			eval(IP6TABLES, "-D", "FORWARD", "-o", safe_get_wan_face(wan_if_buffer), "-j", "DROP");
 			eval(IP6TABLES, "-I", "FORWARD", "-o", safe_get_wan_face(wan_if_buffer), "-j", "DROP");
 		}
-#endif
+	#endif
 		//consider restarting SFE to drop existing connections e.g. eval("restart", "sfe"); or: stop_sfe(); start_sfe();
-#ifdef HAVE_SFE
+	#ifdef HAVE_SFE
 		if (nvram_match("sfe", "1")) {
 			stop_sfe();
 			start_sfe();
 		}
 		dd_system("cat /proc/net/ip_conntrack_flush 2>&1");
 		dd_system("cat /proc/sys/net/netfilter/nf_conntrack_flush 2>&1");
-#endif
+	#endif
 	}
 
 	FILE *fp;
 	char ovpniface[10];
-#ifdef HAVE_ERC
+	#ifdef HAVE_ERC
 	sprintf(ovpniface, "%s0", nvram_safe_get("openvpncl_tuntap"));
-#else
+	#else
 	sprintf(ovpniface, "%s1", nvram_safe_get("openvpncl_tuntap"));
-#endif
+	#endif
 	if (nvram_matchi("openvpncl_upauth", 1)) {
 		fp = fopen("/tmp/openvpncl/credentials", "wb");
 		fprintf(fp, "%s\n", nvram_safe_get("openvpncl_user"));
@@ -1048,11 +1048,11 @@ void start_openvpn(void)
 #endif
 */
 
-#ifdef HAVE_ERC
+	#ifdef HAVE_ERC
 	fprintf(fp, "management 127.0.0.1 5001\n");
-#else
+	#else
 	fprintf(fp, "management 127.0.0.1 16\n");
-#endif
+	#endif
 	fprintf(fp, "management-log-cache 100\n"
 		    "verb 3\n"
 		    "mute 3\n"
@@ -1173,7 +1173,7 @@ void start_openvpn(void)
 		return;
 	}
 	fprintf(fp, "#!/bin/sh\n");
-#if defined(HAVE_TMK) || defined(HAVE_BKM) || defined(HAVE_UNFY)
+	#if defined(HAVE_TMK) || defined(HAVE_BKM) || defined(HAVE_UNFY)
 	char *gpiovpn = nvram_safe_get("gpiovpn");
 	if (*gpiovpn) {
 		if (strncmp(gpiovpn, "-", 1))
@@ -1183,7 +1183,7 @@ void start_openvpn(void)
 			fprintf(fp, "gpio disable %s\n", gpiovpn);
 		}
 	}
-#endif
+	#endif
 	//bridge tap interface to br0 when choosen
 	if (nvram_match("openvpncl_tuntap", "tap") && nvram_matchi("openvpncl_bridge", 1) && nvram_matchi("openvpncl_nat", 0)) {
 		fprintf(fp,
@@ -1207,7 +1207,7 @@ void start_openvpn(void)
 	if (fp == NULL)
 		return;
 	fprintf(fp, "#!/bin/sh\n");
-#if defined(HAVE_TMK) || defined(HAVE_BKM) || defined(HAVE_UNFY)
+	#if defined(HAVE_TMK) || defined(HAVE_BKM) || defined(HAVE_UNFY)
 	if (*gpiovpn)
 		if (strncmp(gpiovpn, "-", 1))
 			fprintf(fp, "gpio enable %s\n", gpiovpn);
@@ -1215,7 +1215,7 @@ void start_openvpn(void)
 			gpiovpn++;
 			fprintf(fp, "gpio disable %s\n", gpiovpn);
 		}
-#endif
+	#endif
 	if (nvram_match("openvpncl_tuntap", "tap") && nvram_matchi("openvpncl_bridge", 1) && nvram_matchi("openvpncl_nat", 0))
 		fprintf(fp,
 			"brctl delif br0 %s\n"
@@ -1226,18 +1226,18 @@ void start_openvpn(void)
 
 	if (nvram_matchi("openvpncl_nat", 1)) {
 		fprintf(fp, "" IPTABLES " -D POSTROUTING -t nat -o $dev -j MASQUERADE\n");
-#ifdef HAVE_IPV6
+	#ifdef HAVE_IPV6
 		fprintf(fp, IP6TABLES " -D POSTROUTING -t nat -o $dev -j MASQUERADE\n");
-#endif
+	#endif
 	}
 	if (nvram_matchi("openvpncl_fw", 0)) {
 		if (nvram_match("openvpncl_tuntap", "tun")) {
 			fprintf(fp, "" IPTABLES " -D INPUT -i $dev -m state --state NEW -j ACCEPT\n"
 				    "" IPTABLES " -D FORWARD -i $dev -m state --state NEW -j ACCEPT\n");
-#ifdef HAVE_IPV6
+	#ifdef HAVE_IPV6
 			fprintf(fp, IP6TABLES " -D INPUT -i $dev -m state --state NEW -j ACCEPT\n" IP6TABLES
 					      " -D FORWARD -i $dev -m state --state NEW -j ACCEPT\n");
-#endif
+	#endif
 		}
 	}
 	if (*(nvram_safe_get("openvpncl_route"))) { //policy based routing
@@ -1328,9 +1328,9 @@ void stop_openvpn(void)
 		//eval( IPTABLES, "-D", "FORWARD", "-i", "br+", "-o", safe_get_wan_face(wan_if_buffer), "-j", "DROP");
 		//eval( IPTABLES, "-D", "FORWARD", "-i", "br+", "-o", safe_get_wan_face(wan_if_buffer), "-m", "state", "--state", "NEW", "-j", "DROP");
 		eval(IPTABLES, "-D", "FORWARD", "-o", safe_get_wan_face(wan_if_buffer), "-j", "DROP");
-#ifdef HAVE_IPV6
+	#ifdef HAVE_IPV6
 		eval(IP6TABLES, "-D", "FORWARD", "-o", safe_get_wan_face(wan_if_buffer), "-j", "DROP");
-#endif
+	#endif
 		//dd_loginfo("openvpn", "General Killswitch for OpenVPN removed in 2 using wanface %s", safe_get_wan_face(wan_if_buffer));
 		// to kill running watchdog
 		eval("/usr/bin/controlovpnwdog.sh", "0");
@@ -1341,7 +1341,7 @@ void stop_openvpn_wandone(void)
 {
 	char wan_if_buffer[33];
 
-#if defined(HAVE_TMK) || defined(HAVE_BKM) || defined(HAVE_UNFY)
+	#if defined(HAVE_TMK) || defined(HAVE_BKM) || defined(HAVE_UNFY)
 	char *gpiovpn = nvram_safe_get("gpiovpn");
 	if (*gpiovpn) {
 		if (strncmp(gpiovpn, "-", 1))
@@ -1351,7 +1351,7 @@ void stop_openvpn_wandone(void)
 			set_gpio(atoi(gpiovpn), 1);
 		}
 	}
-#endif
+	#endif
 	if (nvram_invmatchi("openvpncl_enable", 1))
 		return;
 	if (stop_process("openvpn", "OpenVPN daemon (Client)")) {

@@ -98,8 +98,8 @@ void fixclk(FILE *in, int oldclk, int clk)
 }
 
 void start_overclock(void) // hidden feature. must be called with
-	// "startservice overlock". then reboot the
-	// unit
+// "startservice overlock". then reboot the
+// unit
 {
 	long len;
 	long i;

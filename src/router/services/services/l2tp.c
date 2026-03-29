@@ -66,12 +66,12 @@ void run_l2tp(int status)
 		wan_ifname = getSTA();
 	}
 	// stop_dhcpc();
-#ifdef HAVE_PPPOE
+	#ifdef HAVE_PPPOE
 	stop_pppoe();
-#endif
-#ifdef HAVE_PPTP
+	#endif
+	#ifdef HAVE_PPTP
 	stop_pptp();
-#endif
+	#endif
 	stop_l2tp();
 
 	insmod("n_hdlc");
@@ -209,11 +209,11 @@ void run_l2tp(int status)
 			"lcp-echo-adaptive\n"
 			"lock\n" //
 			"noauth\n");
-#ifdef HAVE_IPV6
+	#ifdef HAVE_IPV6
 		if (nvram_matchi("ipv6_enable", 1)) {
 			fprintf(fp, "+ipv6\n");
 		}
-#endif
+	#endif
 		fclose(fp);
 
 		/*

@@ -21,14 +21,14 @@
  */
 
 #ifdef HAVE_UDPXY
-#include <stdlib.h>
-#include <stdio.h>
-#include <ddnvram.h>
-#include <shutils.h>
-#include <utils.h>
-#include <syslog.h>
-#include <signal.h>
-#include <services.h>
+	#include <stdlib.h>
+	#include <stdio.h>
+	#include <ddnvram.h>
+	#include <shutils.h>
+	#include <utils.h>
+	#include <syslog.h>
+	#include <signal.h>
+	#include <services.h>
 
 void stop_udpxy(void);
 void start_udpxy(void)

@@ -47,13 +47,13 @@
 #include <l7protocols.h>
 
 #ifndef DEVELOPE_ENV
-#include <ddnvram.h>
-#include <shutils.h>
-#include <rc.h>
-#include <code_pattern.h>
-#include <utils.h>
-#include <wlutils.h>
-#include <cy_conf.h>
+	#include <ddnvram.h>
+	#include <shutils.h>
+	#include <rc.h>
+	#include <code_pattern.h>
+	#include <utils.h>
+	#include <wlutils.h>
+	#include <cy_conf.h>
 #endif /* DEVELOPE_ENV */
 #include <services.h>
 
@@ -105,32 +105,32 @@
 #define MARK_LAN2WAN 0x100 /* For HotSpot */
 
 #ifdef FLOOD_PROTECT
-#define FLOOD_RATE "200"
-#define TARG_PASS \
-	"limaccept" /* limited of accepting chain 
+	#define FLOOD_RATE "200"
+	#define TARG_PASS \
+		"limaccept" /* limited of accepting chain 
 						 */
-#define TARG_RST "logreject"
+	#define TARG_RST "logreject"
 #else
-#define TARG_PASS "ACCEPT"
-#define TARG_RST_TCP "REJECT --reject-with tcp-reset"
-#define TARG_RST "REJECT"
+	#define TARG_PASS "ACCEPT"
+	#define TARG_RST_TCP "REJECT --reject-with tcp-reset"
+	#define TARG_RST "REJECT"
 #endif
 
 #if 0
-#define DEBUG printf
+	#define DEBUG printf
 #else
-#define DEBUG(format, args...)
+	#define DEBUG(format, args...)
 #endif
 
 #ifdef HAVE_IPV6
-#define evalip6(cmd, args...)                          \
-	{                                              \
-		if (nvram_match("ipv6_enable", "1")) { \
-			eval_va(cmd, ##args, NULL);    \
-		}                                      \
-	}
+	#define evalip6(cmd, args...)                          \
+		{                                              \
+			if (nvram_match("ipv6_enable", "1")) { \
+				eval_va(cmd, ##args, NULL);    \
+			}                                      \
+		}
 #else
-#define evalip6(...)
+	#define evalip6(...)
 #endif
 
 static char *suspense = NULL;
@@ -244,9 +244,9 @@ static int isstandalone(char *name)
 }
 
 #if 0
-#define DEBUG printf
+	#define DEBUG printf
 #else
-#define DEBUG(format, args...)
+	#define DEBUG(format, args...)
 #endif
 
 #define IPTABLES_RULE_STAT "/tmp/.rule"
@@ -1838,12 +1838,12 @@ static void advgrp_chain(int seq, int urlenable, char *ifname)
 						save2file_A("advgrp_%d -m ndpi --proto bittorrent -j %s", seq, log_reject);
 #else
 						insmod("ipt_layer7 xt_layer7");
-#ifdef HAVE_MICRO
+	#ifdef HAVE_MICRO
 						save2file_A("advgrp_%d -m layer7 --l7proto bt -j %s", seq, log_reject);
-#else
+	#else
 						save2file_A("advgrp_%d -m length --length 0:550 -m layer7 --l7proto bt -j %s", seq,
 							    log_reject);
-#endif
+	#endif
 						save2file_A("advgrp_%d -m layer7 --l7proto bt1 -j %s", seq, log_reject);
 						save2file_A("advgrp_%d -m layer7 --l7proto bt2 -j %s", seq, log_reject);
 #endif
@@ -1895,11 +1895,11 @@ static void advgrp_chain(int seq, int urlenable, char *ifname)
 //              save2file_A("advgrp_%d -p tcp -m ndpi --soulseek -j %s", seq, log_reject);
 //              save2file_A("advgrp_%d -p tcp -m ndpi --winmx -j %s", seq, log_reject);
 #else
-#ifdef HAVE_MICRO
+	#ifdef HAVE_MICRO
 		save2file_A("advgrp_%d -m layer7 --l7proto bt -j %s", seq, log_reject);
-#else
+	#else
 		save2file_A("advgrp_%d -m length --length 0:550 -m layer7 --l7proto bt -j %s", seq, log_reject);
-#endif
+	#endif
 #endif
 		/* commonly used protocols, decending */
 		/*		save2file_A("advgrp_%d -m layer7 --l7proto bt -j %s", seq, log_reject); */
@@ -2417,7 +2417,7 @@ static void filter_input(char *wanface, char *lanface, char *wanaddr, int remote
 	/*
 	 * Impede DoS/Bruteforce, redcuce possilbe bruteforce on pptp server
 	 */
-#ifndef HAVE_MICRO
+	#ifndef HAVE_MICRO
 	if (nvram_matchi("pptpd_enable", 1)) {
 		if (nvram_matchi("limit_pptp", 1)) {
 			save2file_A_input("-i %s -p tcp --dport %d -j logbrute", wanface, PPTP_PORT);
@@ -2428,7 +2428,7 @@ static void filter_input(char *wanface, char *lanface, char *wanaddr, int remote
 			 */
 		}
 	}
-#endif
+	#endif
 	if (nvram_match("wan_proto", "dhcp") || nvram_match("wan_proto", "dhcp_auth"))
 		save2file_A_input("-i %s -p udp --sport 67 --dport 68 -j %s", wanface, log_accept);
 	if (nvram_matchi("pptpd_enable", 1) || nvram_matchi("pptpd_client_enable", 1) || nvram_match("wan_proto", "pptp")) {
@@ -2547,13 +2547,13 @@ static void filter_input(char *wanface, char *lanface, char *wanaddr, int remote
 	/*
 	 * Impede DoS/Bruteforce, reduce load on ssh
 	 */
-#ifndef HAVE_MICRO
+	#ifndef HAVE_MICRO
 	if (remotessh) {
 		if (nvram_matchi("limit_ssh", 1))
 			save2file_A_input("-i %s -p tcp -d %s --dport %s -j logbrute", wanface, get_lan_ipaddr(),
 					  nvram_safe_get("sshd_port"));
 	}
-#endif
+	#endif
 	/*
 	 * Remote Web GUI Management Botho 03-05-2006 : remote ssh & remote GUI
 	 * management are not linked anymore 
@@ -2568,12 +2568,12 @@ static void filter_input(char *wanface, char *lanface, char *wanaddr, int remote
 	/*
 	 * Impede DoS/Bruteforce, reduce load on Telnet
 	 */
-#ifndef HAVE_MICRO
+	#ifndef HAVE_MICRO
 	if (remotetelnet) {
 		if (nvram_matchi("limit_telnet", 1))
 			save2file_A_input("-i %s -p tcp -d %s --dport 23 -j logbrute", wanface, get_lan_ipaddr());
 	}
-#endif
+	#endif
 	if (remotetelnet) {
 		save2file_A_input("-i %s -p tcp -d %s --dport 23 -j %s", wanface, get_lan_ipaddr(), log_accept);
 	}
@@ -2615,8 +2615,8 @@ static void filter_input(char *wanface, char *lanface, char *wanaddr, int remote
 #ifdef HAVE_MILKFISH
 	if (*wanface && nvram_matchi("milkfish_enabled", 1))
 		save2file_A_input("-p udp -i %s --dport 5060 -j %s", wanface, log_accept);
-		// save2file ("-A INPUT -m udp -p udp -i %s --dport 35000 36000 -j
-		// ACCEPT\n", wanface);
+	// save2file ("-A INPUT -m udp -p udp -i %s --dport 35000 36000 -j
+	// ACCEPT\n", wanface);
 #endif
 #ifdef HAVE_VNCREPEATER
 	if (nvram_matchi("vncr_enable", 1) && *wanface) {
@@ -3293,12 +3293,12 @@ static void filter_table(char *wanface, char *lanface, char *wanaddr, char *lan_
 		/*
 		 * limaccept chain 
 		 */
-#ifndef HAVE_MICRO
+	#ifndef HAVE_MICRO
 		if (nvram_matchi("log_accepted", 1))
 			save2file_A(
 				"limaccept -i %s -m state --state NEW -m limit --limit %s -j LOG --log-prefix \"FLOOD \" --log-tcp-sequence --log-tcp-options --log-ip-options",
 				wanface, FLOOD_RATE);
-#endif
+	#endif
 		save2file_A("limaccept -i %s -m state --state NEW -m limit --limit %s -j %s", wanface, FLOOD_RATE, "tarpit");
 		save2file_A("-A limaccept -j ACCEPT");
 #endif
@@ -3361,20 +3361,20 @@ static void run_firewall6(char *vifs)
 		remotemanage = 1;
 	else
 		remotemanage = 0;
-#ifdef HAVE_SSHD
+	#ifdef HAVE_SSHD
 	if (nvram_matchi("remote_mgt_ssh", 1) && nvram_invmatch("sshd_wanport", "") && nvram_invmatchi("sshd_wanport", 0) &&
 	    nvram_matchi("sshd_enable", 1))
 		remotessh = 1;
 	else
 		remotessh = 0;
-#endif
-#ifdef HAVE_TELNET
+	#endif
+	#ifdef HAVE_TELNET
 	if (nvram_matchi("remote_mgt_telnet", 1) && nvram_invmatch("telnet_wanport", "") && nvram_invmatchi("telnet_wanport", 0) &&
 	    nvram_matchi("telnetd_enable", 1))
 		remotetelnet = 1;
 	else
 		remotetelnet = 0;
-#endif
+	#endif
 	insmod("nf_defrag_ipv6 nf_log_ipv6 ip6_tables nf_conntrack_ipv6 ip6table_filter ip6table_mangle");
 
 	/* First flush all and delete all */
@@ -3393,9 +3393,9 @@ static void run_firewall6(char *vifs)
 		eval(IP6TABLES, "-N", "logaccept");
 		eval(IP6TABLES, "-N", "logreject");
 		eval(IP6TABLES, "-N", "logreject_tcp");
-#ifdef FLOOD_PROTECT
+	#ifdef FLOOD_PROTECT
 		eval(IP6TABLES, "-N", "limaccept");
-#endif
+	#endif
 	}
 	/* Set default chain policies */
 	eval(IP6TABLES, "-P", "INPUT", "DROP");
@@ -3426,7 +3426,7 @@ static void run_firewall6(char *vifs)
 		eval(IP6TABLES, "-A", "SECURITY", "-i", wanface, "-p", "ipv6-icmp", "--icmpv6-type", "128", "-j", log_drop);
 	}
 
-#ifdef HAVE_GEOIP
+	#ifdef HAVE_GEOIP
 	if (*nvram_safe_get("geoip_blacklist")) {
 		eval(IP6TABLES, "-A", "SECURITY", "-i", wanface, "-m", "geoip", "--src-cc", nvram_safe_get("geoip_blacklist"), "-j",
 		     "tarpit");
@@ -3436,14 +3436,14 @@ static void run_firewall6(char *vifs)
 		     "RETURN");
 		eval(IP6TABLES, "-A", "SECURITY", "-i", wanface, "-j", "tarpit");
 	}
-#endif
+	#endif
 
-#ifdef HAVE_PORTSCAN
+	#ifdef HAVE_PORTSCAN
 	if (nvram_match("block_tarpit", "1")) {
 		eval(IP6TABLES, "-A", "tarpit", "-p", "tcp", "-j", "TARPIT");
 		eval(IP6TABLES, "-A", "tarpit", "-j", log_drop);
 	} else
-#endif
+	#endif
 	{
 		eval(IP6TABLES, "-A", "tarpit", "-j", log_drop);
 	}
@@ -3452,12 +3452,12 @@ static void run_firewall6(char *vifs)
 	eval(IP6TABLES, "-A", "portscan", "-j", log_drop);
 
 	if (nvram_matchi("block_portscan", 1)) {
-#ifdef HAVE_PORTSCAN
-//		eval(IP6TABLES, "-i", wanface, "-A", "INPUT", "-p", "tcp", "-m", "lscan", "--synscan", "--cnscan", "--mirai",
-//		     "-j", log_drop);
-//		eval(IP6TABLES, "-i", wanface, "-A", "FORWARD", "-p", "tcp", "-m", "lscan", "--synscan", "--cnscan", "--mirai",
-//		     "-j", log_drop);
-#endif
+	#ifdef HAVE_PORTSCAN
+	//		eval(IP6TABLES, "-i", wanface, "-A", "INPUT", "-p", "tcp", "-m", "lscan", "--synscan", "--cnscan", "--mirai",
+	//		     "-j", log_drop);
+	//		eval(IP6TABLES, "-i", wanface, "-A", "FORWARD", "-p", "tcp", "-m", "lscan", "--synscan", "--cnscan", "--mirai",
+	//		     "-j", log_drop);
+	#endif
 		eval(IP6TABLES, "-i", wanface, "-A", "INPUT", "-m", "recent", "--name", "portscan", "--rcheck", "--seconds",
 		     "86400", "-j", "tarpit");
 		eval(IP6TABLES, "-i", wanface, "-A", "FORWARD", "-m", "recent", "--name", "portscan", "--rcheck", "--seconds",
@@ -3469,12 +3469,12 @@ static void run_firewall6(char *vifs)
 		     "portscan", "--set", "-j", "portscan");
 		eval(IP6TABLES, "-i", wanface, "-A", "FORWARD", "-p", "tcp", "-m", "tcp", "--dport", "139", "-m", "recent",
 		     "--name", "portscan", "--set", "-j", "portscan");
-#ifdef HAVE_PORTSCAN
+	#ifdef HAVE_PORTSCAN
 		eval(IP6TABLES, "-i", wanface, "-A", "INPUT", "-m", "psd", "--psd-weight-threshold", "15", "--psd-hi-ports-weight",
 		     "3", "-j", log_drop);
 		eval(IP6TABLES, "-i", wanface, "-A", "FORWARD", "-m", "psd", "--psd-weight-threshold", "15",
 		     "--psd-hi-ports-weight", "3", "-j", log_drop);
-#endif
+	#endif
 	}
 
 	eval(IP6TABLES, "-A", "INPUT", "-j", "SECURITY");
@@ -3498,17 +3498,17 @@ static void run_firewall6(char *vifs)
 	if (remotemanage) {
 		sysprintf(IP6TABLES " -A INPUT -i %s -p tcp --dport %d -j %s", wanface, web_lanport, log_accept);
 	}
-#ifdef HAVE_SSHD
+	#ifdef HAVE_SSHD
 	if (remotessh) {
 		sysprintf(IP6TABLES " -A INPUT -i %s -p tcp --dport %s -j %s", wanface, nvram_safe_get("sshd_port"), log_accept);
 	}
-#endif
+	#endif
 
-#ifdef HAVE_TELNET
+	#ifdef HAVE_TELNET
 	if (remotetelnet) {
 		sysprintf(IP6TABLES " -A INPUT -i %s -p tcp --dport 23 -j %s", wanface, log_accept);
 	}
-#endif
+	#endif
 	/* Allow loopback communication */
 	eval(IP6TABLES, "-A", "INPUT", "-i", "lo", "-j", log_accept);
 	/* Anti-spoofing */
@@ -3671,14 +3671,14 @@ static void run_firewall6(char *vifs)
 	 * logaccept chain 
 	 */
 	if (log_level > 0) {
-#ifdef FLOOD_PROTECT
+	#ifdef FLOOD_PROTECT
 		if (nvram_matchi("log_accepted", 1))
 			eval(IP6TABLES, "-A", "logaccept", "-i", wanface, "-m", "state", "--state", "NEW", "-m", "limit", "--limit",
 			     FLOOD_RATE, "-j", "LOG", "--log-prefix", "FLOOD ", "--log-tcp-sequence", "--log-tcp-options",
 			     "--log-ip-options");
 		eval(IP6TABLES, "-A", "logaccept", "-i", wanface, "-m", "state", "--state", "NEW", "-m", "limit", "--limit",
 		     FLOOD_RATE, "-j", "tarpit");
-#endif
+	#endif
 		if (nvram_matchi("log_accepted", 1))
 			eval(IP6TABLES, "-A", "logaccept", "-m", "state", "--state", "NEW", "-j", "LOG", "--log-prefix", "ACCEPT ",
 			     "--log-tcp-sequence", "--log-tcp-options", "--log-ip-options");
@@ -3706,7 +3706,7 @@ static void run_firewall6(char *vifs)
 		}
 		eval(IP6TABLES, "-A", "logreject_tcp", "-p", "tcp", "-j", "REJECT", "--reject-with", "icmp6-adm-prohibited");
 		eval(IP6TABLES, "-A", "logreject", "-j", "REJECT");
-#ifdef FLOOD_PROTECT
+	#ifdef FLOOD_PROTECT
 		/*
 		 * limaccept chain 
 		 */
@@ -3717,10 +3717,10 @@ static void run_firewall6(char *vifs)
 		eval(IP6TABLES, "-A", "limaccept", "-i", wanface, "-m", "state", "--state", "NEW", "-m", "limit", "--limit",
 		     FLOOD_RATE, "-j", "tarpit");
 		eval(IP6TABLES, "-A", "limaccept", "-j", "ACCEPT");
-#endif
+	#endif
 	}
 
-#ifdef HAVE_OPENVPN
+	#ifdef HAVE_OPENVPN
 	if (nvram_matchi("openvpn_enable", 1)) {
 		if (nvram_invmatch("openvpn_v6netmask", "") && nvram_matchi("ipv6_enable", 1)) {
 			if (nvram_match("openvpn_proto", "udp") || nvram_match("openvpn_proto", "udp6")) {
@@ -3737,7 +3737,7 @@ static void run_firewall6(char *vifs)
 			}
 		}
 	}
-#endif
+	#endif
 }
 #endif
 void start_loadfwmodules(void)
@@ -3753,12 +3753,12 @@ void start_loadfwmodules(void)
 	       " ipt_REJECT nf_nat_h323" //
 	       " ipt_TRIGGER nf_nat_masquerade_ipv4 ipt_ah");
 #ifdef HAVE_PORTSCAN
-#ifdef HAVE_IPV6
+	#ifdef HAVE_IPV6
 	if (nvram_match("ipv6_enable", "1"))
-	       insmod("ipv6 xt_geoip_ipv6 xt_TARPIT_ipv6 xt_lscan_ipv6 xt_psd_ipv6");
+		insmod("ipv6 xt_geoip_ipv6 xt_TARPIT_ipv6 xt_lscan_ipv6 xt_psd_ipv6");
 	else
-#endif
-	       insmod("xt_geoip xt_TARPIT xt_lscan xt_psd");
+	#endif
+		insmod("xt_geoip xt_TARPIT xt_lscan xt_psd");
 #endif
 }
 
@@ -3833,10 +3833,10 @@ void start_firewall(void)
 #endif
 
 #ifdef HAVE_REGISTER
-#ifndef HAVE_ERC
+	#ifndef HAVE_ERC
 	int isregistered_real(void);
 	if (isregistered_real())
-#endif
+	#endif
 #endif
 	{
 		runStartup(".prewall");
@@ -3850,15 +3850,15 @@ void start_firewall(void)
 		writeproc("/proc/net/arp_spoofing_enable", "0");
 	writeint("/sys/fast_classifier/skip_to_bridge_ingress", 1);
 #ifndef HAVE_80211AC
-#ifndef HAVE_MADWIFI
+	#ifndef HAVE_MADWIFI
 	/*
 	 * Improve WAN<->LAN Performance on K26
 	 */
 	writeprocsysnet("core/netdev_max_backlog", nvram_default_get("net.core.netdev_max_backlog", "120"));
-#else
+	#else
 	// this is old crap code and we did not consider devices which are unrelated to broadcom devices.
 	writeprocsysnet("core/netdev_max_backlog", nvram_default_get("net.core.netdev_max_backlog", "2048"));
-#endif
+	#endif
 #endif
 #if defined(HAVE_X86) || defined(HAVE_VENTANA) || defined(HAVE_IPQ806X) || defined(HAVE_LAGUNA) || defined(HAVE_CAMBRIA) || \
 	defined(HAVE_IPQ6018) || defined(HAVE_NEWPORT) || defined(HAVE_NORTHSTAR) || defined(HAVE_OCTEON) ||                \
@@ -4048,9 +4048,9 @@ void start_firewall(void)
 	 */
 	int runfw = 0;
 #ifdef HAVE_REGISTER
-#ifndef HAVE_ERC
+	#ifndef HAVE_ERC
 	if (isregistered_real())
-#endif
+	#endif
 #endif
 	{
 		runStartup(".firewall");
@@ -4102,9 +4102,9 @@ void start_firewall(void)
 #endif
 #ifdef HAVE_GUESTPORT
 	set_gprules("wlan0");
-#ifdef HAVE_WZRHPAG300NH
+	#ifdef HAVE_WZRHPAG300NH
 	set_gprules("wlan1");
-#endif
+	#endif
 #endif
 /*
  *	Services restart.
