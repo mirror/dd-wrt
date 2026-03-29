@@ -1621,19 +1621,7 @@ int check_blocklist_sock(const char *service, int sock)
 #else
 #include <pthread.h>
 
-struct blocklist {
-	char ip[INET6_ADDRSTRLEN];
-	time_t seen;
-	time_t end;
-	int count;
-	int attempts;
-	int blocked;
-	int ver; // future
-	struct blocklist *next;
-} __attribute__((packed));
-
 #define BLOCKTIME 5
-#define BLOCKVER 1
 static struct blocklist blocklist_root;
 static pthread_mutex_t mutex_block = PTHREAD_MUTEX_INITIALIZER;
 

@@ -4,16 +4,6 @@
 #include <time.h>
 #include <arpa/inet.h>
 
-struct blocklist {
-	char ip[INET6_ADDRSTRLEN];
-	time_t seen;
-	time_t end;
-	int count;
-	int attempts;
-	int blocked;
-	int ver; // future
-	struct blocklist *next;
-} __attribute__((packed));
 
 static struct blocklist blocklist_root;
 
