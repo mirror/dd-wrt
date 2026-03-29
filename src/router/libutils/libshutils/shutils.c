@@ -1669,6 +1669,10 @@ restart:;
 	if (fp) {
 		while (!feof(fp)) {
 			last->next = malloc(sizeof(*entry));
+			if (!last->next) {
+				fclose(fp);
+				return;
+			}
 			int elems = fread(last->next, sizeof(struct blocklist) - sizeof(void *), 1, fp);
 			if (elems < 1) {
 				free(last->next);
@@ -1679,6 +1683,9 @@ restart:;
 				fclose(fp);
 				unlink("/jffs/blocklist");
 				unlink("/tmp/blocklist");
+				free(last->next);
+				entry = blocklist_root.next;
+				last = &blocklist_root;
 				goto restart;
 			}
 			last = last->next;
@@ -1828,7 +1835,8 @@ int check_blocklist(const char *service, char *ip)
 			//			entry = last->next;
 			change = 1;
 		} else if ((entry->blocked == -1 && entry->end && entry->end + (7 * 24 * 60 * 60) < cur) ||
-			   (entry->next && entry->blocked == 0 && entry->ip[0] && entry->seen && entry->seen + (7 * 24 * 60 * 60) < cur)) {
+			   (entry->next && entry->blocked == 0 && entry->ip[0] && entry->seen &&
+			    entry->seen + (7 * 24 * 60 * 60) < cur)) {
 			dd_loginfo(service, "remove %s from blocklist (1 week delay)", &entry->ip[0]);
 			last->next = entry->next;
 			free(entry);
