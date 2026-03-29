@@ -4,7 +4,6 @@
 #include <time.h>
 #include <arpa/inet.h>
 
-
 static struct blocklist blocklist_root;
 
 static void init_blocklist(void)
@@ -48,12 +47,10 @@ int main(int argc, char *argv[])
 	init_blocklist();
 
 	struct blocklist *entry = blocklist_root.next;
-	FILE *fp = NULL;
 	while (entry) {
 		fprintf(stdout, "blocklist entry [%s]\t\tAttempts %d\tState(%d) %s\tFirst Time %s\tBlocked Until %s\n", entry->ip,
 			entry->attempts, entry->blocked, entry->blocked == 1 ? "Blocked" : "Open", ctime(&entry->seen),
 			ctime(&entry->end));
 		entry = entry->next;
 	}
-	fclose(fp);
 }
