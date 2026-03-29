@@ -1670,16 +1670,16 @@ restart:;
 		while (!feof(fp)) {
 			last->next = malloc(sizeof(*entry));
 			int elems = fread(last->next, sizeof(struct blocklist) - sizeof(void *), 1, fp);
+			if (elems < 1) {
+				free(last->next);
+				last->next = NULL;
+				break;
+			}
 			if (last->next->ver != BLOCKVER) {
 				fclose(fp);
 				unlink("/jffs/blocklist");
 				unlink("/tmp/blocklist");
 				goto restart;
-			}
-			if (elems < 1) {
-				free(last->next);
-				last->next = NULL;
-				break;
 			}
 			last = last->next;
 		}
