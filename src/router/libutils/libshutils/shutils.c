@@ -1623,6 +1623,7 @@ int check_blocklist_sock(const char *service, int sock)
 
 struct blocklist {
 	char ip[INET6_ADDRSTRLEN];
+	time_t seen;
 	time_t end;
 	int count;
 	int attempts;
@@ -1632,6 +1633,7 @@ struct blocklist {
 } __attribute__((packed));
 
 #define BLOCKTIME 5
+#define BLOCKVER 1
 static struct blocklist blocklist_root;
 static pthread_mutex_t mutex_block = PTHREAD_MUTEX_INITIALIZER;
 
@@ -1646,6 +1648,7 @@ static void dump_blocklist(void)
 		fp = fopen("/tmp/blocklist", "wb");
 	if (fp) {
 		while (entry) {
+			entry->ver = BLOCKVER;
 			fwrite(entry, sizeof(struct blocklist) - sizeof(void *), 1, fp);
 			entry = entry->next;
 		}
@@ -1668,6 +1671,7 @@ static void init_blocklist(void)
 		last = &blocklist_root;
 	}
 
+restart:;
 	FILE *fp = NULL;
 	if (jffs_mounted()) {
 		fp = fopen("/jffs/blocklist", "rb");
@@ -1678,6 +1682,12 @@ static void init_blocklist(void)
 		while (!feof(fp)) {
 			last->next = malloc(sizeof(*entry));
 			int elems = fread(last->next, sizeof(struct blocklist) - sizeof(void *), 1, fp);
+			if (last->next->ver != BLOCKVER) {
+				fclose(fp);
+				unlink("/jffs/blocklist");
+				unlink("/tmp/blocklist");
+				goto restart;
+			}
 			if (elems < 1) {
 				free(last->next);
 				last->next = NULL;
@@ -1746,6 +1756,7 @@ void add_blocklist(const char *service, char *ip)
 	last->next->count = 0;
 	last->next->attempts = 0;
 	last->next->blocked = 0;
+	last->next->seen = time(NULL);
 	last->next->next = NULL;
 end:;
 	dump_blocklist();
@@ -1828,7 +1839,8 @@ int check_blocklist(const char *service, char *ip)
 			//			free(entry);
 			//			entry = last->next;
 			change = 1;
-		} else if (entry->blocked == -1 && entry->end && entry->end + (7 * 24 * 60 * 60) < cur) {
+		} else if ((entry->blocked == -1 && entry->end && entry->end + (7 * 24 * 60 * 60) < cur) ||
+			   (entry->blocked == 0 && entry->seen + (7 * 24 * 60 * 60) < cur)) {
 			last->next = entry->next;
 			free(entry);
 			entry = last->next;
