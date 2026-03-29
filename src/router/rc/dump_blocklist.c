@@ -6,6 +6,14 @@
 
 static struct blocklist blocklist_root;
 
+char *rfctime(const time_t *timep, char *s)
+{
+	struct tm tm;
+	localtime_r(timep, &tm);
+	strftime(s, 200, "%a, %d %b %Y %H:%M:%S", &tm); // spec for linksys
+	return s;
+}
+
 static void init_blocklist(void)
 {
 	struct blocklist *entry = blocklist_root.next;
@@ -48,9 +56,14 @@ int main(int argc, char *argv[])
 
 	struct blocklist *entry = blocklist_root.next;
 	while (entry) {
-		fprintf(stdout, "blocklist entry [%s]\t\tAttempts %d\tState(%d) %s\tFirst Time (%lld) %s\tBlocked Until (%lld) %s\n", entry->ip,
-			entry->attempts, entry->blocked, entry->blocked == 1 ? "Blocked" : "Open", entry->seen,ctime(&entry->seen),
-			entry->end, ctime(&entry->end));
+		char seen[128];
+		char end[128];
+		rfctime(&entry->seen, seen);
+		rfctime(&entry->end, end);
+
+		fprintf(stdout, "blocklist entry [%15s] Attempts %3d Count %3d State(%d) %s First Time %32s\tBlocked Until %s\n",
+			entry->ip, entry->attempts, entry->count, entry->blocked, entry->blocked == 1 ? "Blocked" : "Open   ", seen,
+			end);
 		entry = entry->next;
 	}
 }

@@ -642,7 +642,7 @@ IncludeCategories:
 IncludeIsMainRegex: '(Test)?$'
 IndentCaseLabels: false
 IndentGotoLabels: false
-IndentPPDirectives: BeforeHash
+IndentPPDirectives: None
 IndentWidth: 8
 IndentWrappedFunctionNames: false
 JavaScriptQuotes: Leave
