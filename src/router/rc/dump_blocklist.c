@@ -6,6 +6,7 @@
 
 struct blocklist {
 	char ip[INET6_ADDRSTRLEN];
+	time_t seen;
 	time_t end;
 	int count;
 	int attempts;
@@ -59,8 +60,9 @@ int main(int argc, char *argv[])
 	struct blocklist *entry = blocklist_root.next;
 	FILE *fp = NULL;
 	while (entry) {
-		fprintf(stdout, "blocklist entry [%s]\t\tAttempts %d\tState(%d) %s\tBlocked Until %s\n", entry->ip, entry->attempts,
-			entry->blocked, entry->blocked == 1 ? "Blocked" : "Open", ctime(&entry->end));
+		fprintf(stdout, "blocklist entry [%s]\t\tAttempts %d\tState(%d) %s\tFirst Time %s\tBlocked Until %s\n", entry->ip,
+			entry->attempts, entry->blocked, entry->blocked == 1 ? "Blocked" : "Open", ctime(&entry->seen),
+			ctime(&entry->end));
 		entry = entry->next;
 	}
 	fclose(fp);
