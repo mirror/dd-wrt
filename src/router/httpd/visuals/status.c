@@ -195,7 +195,7 @@ void nvram_status_get(webs_t wp, char *type, int trans)
 #ifdef HAVE_IPV6
 	} else if (!strcmp(type, "wan_ipv6addr")) {
 		const char *ipv6addr = NULL;
-		char buf[INET6_ADDRSTRLEN];
+		char buf[INET6_ADDRSTRLEN + 1];
 		char strbuf[128];
 		if (nvram_match("ipv6_typ", "ipv6native"))
 			ipv6addr = getifaddr(buf, safe_get_wan_face(wan_if_buffer), AF_INET6, 0);

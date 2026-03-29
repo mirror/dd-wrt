@@ -1577,7 +1577,7 @@ EJ_VISIBLE void ej_show_wanipinfo(webs_t wp, int argc, char_t **argv) // Eko
 	char wan_if_buffer[33];
 
 #ifdef HAVE_IPV6
-	char buf[INET6_ADDRSTRLEN];
+	char buf[INET6_ADDRSTRLEN + 1];
 #endif
 	char *wan_ipaddr;
 	int wan_link;
