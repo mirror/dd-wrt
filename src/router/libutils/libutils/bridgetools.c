@@ -116,7 +116,7 @@ int br_set_port_hairpin(const char *br, char *port, int on)
 	return eval("brctl", "hairpin", br, port, on ? "on" : "off");
 }
 
-#ifdef HAVE_MSTP
+	#ifdef HAVE_MSTP
 
 int br_set_port_stp(const char *br, char *port, int on) // unsupported
 {
@@ -193,7 +193,7 @@ int br_set_bridge_max_age(const char *br, int sec)
 	sprintf(age, "%d", sec);
 	return eval("mstpctl", "setmaxage", br, age);
 }
-#else
+	#else
 
 int br_set_port_stp(const char *br, char *port, int on) // unsupported
 {
@@ -260,7 +260,7 @@ int br_set_bridge_prio(const char *br, int prio)
 	return eval("brctl", "setbridgeprio", br, sprio);
 }
 
-#endif
+	#endif
 
 int br_add_bridge(const char *brname)
 {
@@ -281,14 +281,14 @@ int br_add_bridge(const char *brname)
 	int ret = eval("brctl", "addbr", brname);
 	char *mcast = nvram_default_get(brmcast, "0");
 
-#if 0 //def HAVE_80211AC
+	#if 0 //def HAVE_80211AC
 	sysprintf("echo 0 > /sys/devices/virtual/net/%s/bridge/multicast_snooping", brname);
 	eval("emf", "add", "bridge", brname);
 	if (!strcmp(mcast, "1"))
 		eval("igs", "add", "bridge", brname);
-#else
+	#else
 	sysprintf("echo %s > /sys/devices/virtual/net/%s/bridge/multicast_snooping", mcast, brname);
-#endif
+	#endif
 
 	if (nvram_exists(ipaddr) && nvram_exists(netmask) && !nvram_match(ipaddr, "0.0.0.0") && !nvram_match(netmask, "0.0.0.0")) {
 		eval("ifconfig", brname, nvram_safe_get(ipaddr), "netmask", nvram_safe_get(netmask), "mtu",
@@ -313,12 +313,12 @@ int br_del_bridge(const char *brname)
 		return -1;
 	dd_loginfo("bridge", "bridge %s successfully deleted", brname);
 	/* Stop the EMF for this LAN */
-#if 0 //def HAVE_80211AC
+	#if 0 //def HAVE_80211AC
 	eval("emf", "stop", brname);
 	/* Remove Bridge from igs */
 	eval("igs", "del", "bridge", brname);
 	eval("emf", "del", "bridge", brname);
-#endif
+	#endif
 	return eval("brctl", "delbr", brname);
 }
 
@@ -377,9 +377,9 @@ int br_add_interface(const char *br, const char *dev)
 
 	int ret = eval("brctl", "addif", br, dev);
 	dd_loginfo("bridge", "interface %s successfully added to bridge %s", dev, br);
-#ifdef HAVE_80211AC
-//      eval("emf", "add", "iface", br, dev);
-#endif
+	#ifdef HAVE_80211AC
+	//      eval("emf", "add", "iface", br, dev);
+	#endif
 	if (strcmp(br, "br0") && *(nvram_nget("%s_hwaddr", br))) {
 		get_hwaddr(br, eabuf);
 		nvram_nset(eabuf, "%s_hwaddr", br); // safe for gui
@@ -405,9 +405,9 @@ int br_del_interface(const char *br, const char *dev)
 		return -1;
 	int ret = eval("brctl", "delif", br, dev);
 	dd_loginfo("bridge", "interface %s successfully deleted from bridge %s", dev, br);
-#ifdef HAVE_80211AC
-//      eval("emf", "del", "iface", br, dev);
-#endif
+	#ifdef HAVE_80211AC
+	//      eval("emf", "del", "iface", br, dev);
+	#endif
 	return ret;
 }
 

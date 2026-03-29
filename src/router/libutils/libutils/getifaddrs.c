@@ -1,19 +1,19 @@
 /* (C) 2013 John Spencer. released under musl's standard MIT license. */
 #if defined(ARCH_broadcom) && !defined(HAVE_BCMMODERN)
-#undef _GNU_SOURCE
-#define _GNU_SOURCE
-#include <ifaddrs.h>
-#include <stdlib.h>
-#include <net/if.h> /* IFNAMSIZ, ifreq, ifconf */
-#include <stdio.h>
-#include <ctype.h>
-#include <string.h>
-#include <errno.h>
-#include <arpa/inet.h> /* inet_pton */
-#include <unistd.h>
-#include <sys/ioctl.h>
-#include <sys/socket.h>
-#include <shutils.h>
+	#undef _GNU_SOURCE
+	#define _GNU_SOURCE
+	#include <ifaddrs.h>
+	#include <stdlib.h>
+	#include <net/if.h> /* IFNAMSIZ, ifreq, ifconf */
+	#include <stdio.h>
+	#include <ctype.h>
+	#include <string.h>
+	#include <errno.h>
+	#include <arpa/inet.h> /* inet_pton */
+	#include <unistd.h>
+	#include <sys/ioctl.h>
+	#include <sys/socket.h>
+	#include <shutils.h>
 
 typedef union {
 	struct sockaddr_in6 v6;
@@ -27,7 +27,7 @@ typedef struct ifaddrs_storage {
 	soa dst;
 	char name[IFNAMSIZ + 1];
 } stor;
-#define next ifa.ifa_next
+	#define next ifa.ifa_next
 
 static stor *list_add(stor **list, stor **head, char *ifname)
 {
@@ -69,14 +69,14 @@ static void ipv6netmask(unsigned prefix_length, struct sockaddr_in6 *sa)
 	}
 }
 
-#ifndef IFF_LOWER_UP
-#define IFF_LOWER_UP 0x10000 /* driver signals L1 up         */
-#endif
+	#ifndef IFF_LOWER_UP
+		#define IFF_LOWER_UP 0x10000 /* driver signals L1 up         */
+	#endif
 
-#ifndef SOCK_CLOEXEC
-#define SOCK_CLOEXEC 02000000
-#define SOCK_NONBLOCK 04000
-#endif
+	#ifndef SOCK_CLOEXEC
+		#define SOCK_CLOEXEC 02000000
+		#define SOCK_NONBLOCK 04000
+	#endif
 
 static void dealwithipv6(stor **list, stor **head)
 {

@@ -139,11 +139,11 @@ struct ieee80211_regdomain *mac80211_get_regdomain(const char *varcountry)
 		return rd;
 	}
 #ifdef HAVE_IDEXX
-#ifdef HAVE_IDEXX_WORLD
+	#ifdef HAVE_IDEXX_WORLD
 	memcpy(alpha2, "00", 2);
-#else
+	#else
 	memcpy(alpha2, "US", 2);
-#endif
+	#endif
 #else
 	memcpy(alpha2, varcountry, 2);
 #endif

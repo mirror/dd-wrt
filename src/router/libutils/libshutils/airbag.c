@@ -27,86 +27,86 @@
 //#define AIRBAG_NO_BACKTRACE
 //#endif
 
-#ifndef _BSD_SOURCE
-#define _BSD_SOURCE
-#endif
-#ifndef _GNU_SOURCE
-#define _GNU_SOURCE
-#endif
-#include <asm/byteorder.h>
-#include <arpa/inet.h> /* for htonl */
-#include <dlfcn.h>
-#include <errno.h>
-#include <fcntl.h>
-#include <stdarg.h>
-#include <stddef.h>
-#include <stdint.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <time.h>
+	#ifndef _BSD_SOURCE
+		#define _BSD_SOURCE
+	#endif
+	#ifndef _GNU_SOURCE
+		#define _GNU_SOURCE
+	#endif
+	#include <asm/byteorder.h>
+	#include <arpa/inet.h> /* for htonl */
+	#include <dlfcn.h>
+	#include <errno.h>
+	#include <fcntl.h>
+	#include <stdarg.h>
+	#include <stddef.h>
+	#include <stdint.h>
+	#include <stdio.h>
+	#include <stdlib.h>
+	#include <string.h>
+	#include <time.h>
 
-#include <syslog.h>
-#ifdef TEST
-#define dd_syslog(a, args...) \
-	do {                  \
-	} while (0)
-#else
-#include <utils.h>
-#endif
-#include <sys/stat.h>
-#include <sys/time.h>
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <ucontext.h>
-#include <unistd.h>
-#ifdef __linux__
-#include <sys/prctl.h>
-#include <sys/syscall.h>
-#endif
-#include <pthread.h>
+	#include <syslog.h>
+	#ifdef TEST
+		#define dd_syslog(a, args...) \
+			do {                  \
+			} while (0)
+	#else
+		#include <utils.h>
+	#endif
+	#include <sys/stat.h>
+	#include <sys/time.h>
+	#include <sys/types.h>
+	#include <sys/socket.h>
+	#include <ucontext.h>
+	#include <unistd.h>
+	#ifdef __linux__
+		#include <sys/prctl.h>
+		#include <sys/syscall.h>
+	#endif
+	#include <pthread.h>
 
-#if defined(__cplusplus)
-#include <cxxabi.h>
-/*
+	#if defined(__cplusplus)
+		#include <cxxabi.h>
+		/*
  * Theoretically might want to disable this, because __cxa_demangle calls malloc/free, which could
  * deadlock or crash when called from signal inside malloc/free.  But pre-malloc a large buffer
  * ahead of time, and that shouldn't actually happen.
  */
-#define USE_GCC_DEMANGLE
-#define AIRBAG_EXPORT extern "C"
-#else
-#define AIRBAG_EXPORT
-#endif
+		#define USE_GCC_DEMANGLE
+		#define AIRBAG_EXPORT extern "C"
+	#else
+		#define AIRBAG_EXPORT
+	#endif
 
-#if defined(__GNUC__) && !defined(__clang__) && !defined(__aarch64__) && !defined(__x86_64__)
-#include <unwind.h>
-#define USE_GCC_UNWIND
-#endif
+	#if defined(__GNUC__) && !defined(__clang__) && !defined(__aarch64__) && !defined(__x86_64__)
+		#include <unwind.h>
+		#define USE_GCC_UNWIND
+	#endif
 
-#ifndef O_CLOEXEC
-#define O_CLOEXEC 0 /* Supported starting in Linux 2.6.23 */
-#endif
+	#ifndef O_CLOEXEC
+		#define O_CLOEXEC 0 /* Supported starting in Linux 2.6.23 */
+	#endif
 
-#ifndef PR_SET_NAME
-#define PR_SET_NAME 15 /* Set process name */
-#define PR_GET_NAME 16 /* Get process name */
-#endif
+	#ifndef PR_SET_NAME
+		#define PR_SET_NAME 15 /* Set process name */
+		#define PR_GET_NAME 16 /* Get process name */
+	#endif
 
-#ifndef SI_TKILL
-#define SI_TKILL (-6)
-#endif
+	#ifndef SI_TKILL
+		#define SI_TKILL (-6)
+	#endif
 
-#if defined(__GCC_HAVE_SYNC_COMPARE_AND_SWAP_4)
+	#if defined(__GCC_HAVE_SYNC_COMPARE_AND_SWAP_4)
 static uint32_t busy, pending;
-#endif
+	#endif
 
-#if defined(USE_GCC_DEMANGLE)
+	#if defined(USE_GCC_DEMANGLE)
 static char *s_demangleBuf;
 static size_t s_demangleBufLen;
-#endif
+	#endif
 sighandler_t delegate;
-#define ALT_STACK_SIZE (MINSIGSTKSZ + 256 * sizeof(void *)) /* or let it all hang out: SIGSTKSZ */
+	#define ALT_STACK_SIZE (MINSIGSTKSZ + 256 * sizeof(void *)) /* or let it all hang out: SIGSTKSZ */
 static void *s_altStackSpace;
 
 static const char comment[] = "# ";
@@ -114,7 +114,7 @@ static const char section[] = "=== ";
 static const char unknown[] = "\?\?\?";
 static const char termBt[] = "terminating backtrace";
 
-#define MAX_SIGNALS 32
+	#define MAX_SIGNALS 32
 static const char *sigNames[MAX_SIGNALS] = {
 	/*[0        ] = */ NULL,
 	/*[SIGHUP   ] = */ "HUP",
@@ -123,28 +123,28 @@ static const char *sigNames[MAX_SIGNALS] = {
 	/*[SIGILL   ] = */ "ILL",
 	/*[SIGTRAP  ] = */ "TRAP",
 	/*[SIGABRT  ] = */ "ABRT",
-#if defined(__mips__)
+	#if defined(__mips__)
 	/*[SIGEMT   ] = */ "EMT",
-#else
+	#else
 	/*[SIGBUS   ] = */ "BUS",
-#endif
+	#endif
 	/*[SIGFPE   ] = */ "FPE",
 	/*[SIGKILL  ] = */ "KILL",
-#if defined(__mips__)
+	#if defined(__mips__)
 	/*[SIGBUS   ] = */ "BUS",
-#else
+	#else
 	/*[SIGUSR1  ] = */ "USR1",
-#endif
+	#endif
 	/*[SIGSEGV  ] = */ "SEGV",
-#if defined(__mips__)
+	#if defined(__mips__)
 	/*[SIGSYS  ] =  */ "USR2",
-#else
+	#else
 	/*[SIGUSR2  ] = */ "USR2",
-#endif
+	#endif
 	/*[SIGPIPE  ] = */ "PIPE",
 	/*[SIGALRM  ] = */ "ALRM",
 	/*[SIGTERM  ] = */ "TERM",
-#if defined(__mips__)
+	#if defined(__mips__)
 	/*[SIGUSR1  ] = */ "SIGUSR1",
 	/*[SIGUSR2  ] = */ "SIGUSR2",
 	/*[SIGCHLD  ] = */ "CHLD",
@@ -161,7 +161,7 @@ static const char *sigNames[MAX_SIGNALS] = {
 	/*[SIGPROF    ] = */ "PROF",
 	/*[SIGXCPU   ] = */ "XCPU",
 	/*[SIGXFSZ   ] = */ "XFSZ"
-#else
+	#else
 	/*[SIGSTKFLT] = */ "STKFLT",
 	/*[SIGCHLD  ] = */ "CHLD",
 	/*[SIGCONT  ] = */ "CONT",
@@ -178,23 +178,23 @@ static const char *sigNames[MAX_SIGNALS] = {
 	/*[SIGIO    ] = */ "IO",
 	/*[SIGPWR   ] = */ "PWR",
 	/*[SIGSYS   ] = */ "SYS"
-#endif
+	#endif
 };
 
-#ifdef __LP64__
-#if defined(__aarch64__) || defined(__mips__) || defined(__powerpc__)
-#define INSTLEN unsigned int
-#define INSTLENFMT "08"
-#else
-#define INSTLEN unsigned long
-#define INSTLENFMT "016"
-#endif
-#define FMTBIT "016"
-#else
-#define FMTBIT "08"
-#define INSTLEN unsigned int
-#define INSTLENFMT "08"
-#endif
+	#ifdef __LP64__
+		#if defined(__aarch64__) || defined(__mips__) || defined(__powerpc__)
+			#define INSTLEN unsigned int
+			#define INSTLENFMT "08"
+		#else
+			#define INSTLEN unsigned long
+			#define INSTLENFMT "016"
+		#endif
+		#define FMTBIT "016"
+	#else
+		#define FMTBIT "08"
+		#define INSTLEN unsigned int
+		#define INSTLENFMT "08"
+	#endif
 /*
  * Do not use strsignal; it is not async signal safe.
  */
@@ -203,129 +203,129 @@ static const char *_strsignal(int sigNum)
 	return sigNum < 1 || sigNum >= MAX_SIGNALS ? unknown : sigNames[sigNum];
 }
 
-#if defined(__x86_64__)
-#define NMCTXREGS NGREG
-#define MCTXREG(uc, i) (uc->uc_mcontext.gregs[i])
-#define MCTX_PC(uc) MCTXREG(uc, 16)
+	#if defined(__x86_64__)
+		#define NMCTXREGS NGREG
+		#define MCTXREG(uc, i) (uc->uc_mcontext.gregs[i])
+		#define MCTX_PC(uc) MCTXREG(uc, 16)
 static const char *mctxRegNames[NMCTXREGS] = { "R8",  "R9",  "R10",    "R11", "R12",	"R13",	   "R14", "R15",
 					       "RDI", "RSI", "RBP",    "RBX", "RDX",	"RAX",	   "RCX", "RSP",
 					       "RIP", "EFL", "CSGSFS", "ERR", "TRAPNO", "OLDMASK", "CR2" };
 
-#define FMTLEN "07"
-#elif defined(__i386__)
-#include "sysdeps/x86_backtrace.c"
-#define NMCTXREGS NGREG
-#define MCTXREG(uc, i) (uc->uc_mcontext.gregs[i])
-#define MCTX_PC(uc) MCTXREG(uc, 14)
+		#define FMTLEN "07"
+	#elif defined(__i386__)
+		#include "sysdeps/x86_backtrace.c"
+		#define NMCTXREGS NGREG
+		#define MCTXREG(uc, i) (uc->uc_mcontext.gregs[i])
+		#define MCTX_PC(uc) MCTXREG(uc, 14)
 static const char *mctxRegNames[NMCTXREGS] = { "GS",  "FS",  "ES",     "DS",  "EDI", "ESI", "EBP", "ESP",  "EBX", "EDX",
 					       "ECX", "EAX", "TRAPNO", "ERR", "EIP", "CS",  "EFL", "UESP", "SS" };
 
-#define FMTLEN "06"
-#elif defined(__aarch64__)
-#define NMCTXREGS 31
-#define MCTXREG(uc, i) (uc->uc_mcontext.regs[i])
-#define MCTX_PC(uc) (uc->uc_mcontext.pc)
+		#define FMTLEN "06"
+	#elif defined(__aarch64__)
+		#define NMCTXREGS 31
+		#define MCTXREG(uc, i) (uc->uc_mcontext.regs[i])
+		#define MCTX_PC(uc) (uc->uc_mcontext.pc)
 static const char *mctxRegNames[NMCTXREGS] = { "X0",  "X1",  "X2",  "X3",  "X4",  "X5",	 "X6",	"X7",  "X8",  "X9",  "X10",
 					       "X11", "X12", "X13", "X14", "X15", "X16", "X17", "X18", "X19", "X20", "X21",
 					       "X22", "X23", "X24", "X25", "X26", "X27", "X28", "X29", "X30" };
 
-#define FMTLEN "03"
-#elif defined(__arm__)
-#include "sysdeps/arm_backtrace.c"
-#define NMCTXREGS 21
-#define MCTXREG(uc, i) (((unsigned long *)(&uc->uc_mcontext))[i])
-#define MCTX_PC(uc) MCTXREG(uc, 18)
+		#define FMTLEN "03"
+	#elif defined(__arm__)
+		#include "sysdeps/arm_backtrace.c"
+		#define NMCTXREGS 21
+		#define MCTXREG(uc, i) (((unsigned long *)(&uc->uc_mcontext))[i])
+		#define MCTX_PC(uc) MCTXREG(uc, 18)
 static const char *mctxRegNames[NMCTXREGS] = { "TRAPNO", "ERRCODE", "OLDMASK", "R0", "R1", "R2",   "R3",
 					       "R4",	 "R5",	    "R6",      "R7", "R8", "R9",   "R10",
 					       "FP",	 "IP",	    "SP",      "LR", "PC", "CPSR", "FAULTADDR" };
 
-#define FMTLEN "09"
+		#define FMTLEN "09"
 static const int gregOffset = 3;
-#elif defined(__mips__)
-#include "sysdeps/generic_backtrace.c"
-#define NMCTXREGS NGREG
-#ifdef CTX_EPC /* Pre-2007 uclibc */
-#define MCTXREG(uc, i) (uc->uc_mcontext.gpregs[i])
-#define MCTX_PC(uc) (uc->uc_mcontext.gpregs[35])
-#else
-#define MCTXREG(uc, i) (uc->uc_mcontext.gregs[i])
-#define MCTX_PC(uc) (uc->uc_mcontext.pc)
-#endif
+	#elif defined(__mips__)
+		#include "sysdeps/generic_backtrace.c"
+		#define NMCTXREGS NGREG
+		#ifdef CTX_EPC /* Pre-2007 uclibc */
+			#define MCTXREG(uc, i) (uc->uc_mcontext.gpregs[i])
+			#define MCTX_PC(uc) (uc->uc_mcontext.gpregs[35])
+		#else
+			#define MCTXREG(uc, i) (uc->uc_mcontext.gregs[i])
+			#define MCTX_PC(uc) (uc->uc_mcontext.pc)
+		#endif
 static const char *mctxRegNames[NMCTXREGS] = { "ZERO", "AT", "V0", "V1", "A0", "A1", "A2", "A3",
-#if _MIPS_SIM == _ABIO32
+		#if _MIPS_SIM == _ABIO32
 					       "T0",   "T1", "T2", "T3",
-#else
+		#else
 					       "A4",   "A5", "A6", "A7",
-#endif
+		#endif
 					       "T4",   "T5", "T6", "T7", "S0", "S1", "S2", "S3", "S4", "S5",
 					       "S6",   "S7", "T8", "T9", "K0", "K1", "GP", "SP", "FP", "RA" };
 
-#define FMTLEN "04"
-#elif defined(__powerpc__)
-#include "sysdeps/generic_backtrace.c"
-#define NMCTXREGS 45
-#ifdef __UCLIBC__
-#define MCTX_PC(uc) (uc->uc_mcontext.uc_regs->gregs[32])
-#define MCTXREG(uc, i) (uc->uc_mcontext.uc_regs->gregs[i])
-#else
-#define MCTX_PC(uc) (uc->uc_mcontext.gregs[32])
-#define MCTXREG(uc, i) (uc->uc_mcontext.gregs[i])
-#endif
+		#define FMTLEN "04"
+	#elif defined(__powerpc__)
+		#include "sysdeps/generic_backtrace.c"
+		#define NMCTXREGS 45
+		#ifdef __UCLIBC__
+			#define MCTX_PC(uc) (uc->uc_mcontext.uc_regs->gregs[32])
+			#define MCTXREG(uc, i) (uc->uc_mcontext.uc_regs->gregs[i])
+		#else
+			#define MCTX_PC(uc) (uc->uc_mcontext.gregs[32])
+			#define MCTXREG(uc, i) (uc->uc_mcontext.gregs[i])
+		#endif
 
 static const char *mctxRegNames[NMCTXREGS] = { "GPR0",	"GPR1",	 "GPR2",    "GPR3",   "GPR4",  "GPR5",	"GPR6",	 "GPR7",
 					       "GPR8",	"GPR9",	 "GPR10",   "GPR11",  "GPR12", "GPR13", "GPR14", "GPR15",
 					       "GPR16", "GPR17", "GPR18",   "GPR19",  "GPR20", "GPR21", "GPR22", "GPR23",
 					       "GPR24", "GPR25", "GPR26",   "GPR27",  "GPR28", "GPR29", "GPR30", "GPR31",
 					       "NIP",	"MSR",	 "ORIG_R3", "CTR",    "LNK",   "XER",	"CCR",
-#ifndef __powerpc64__
+		#ifndef __powerpc64__
 					       "MQ",
-#else
+		#else
 					       "SOFTE",
-#endif
+		#endif
 					       "TRAP",	"DAR",	 "DSISR",   "RESULT", "DSCR" };
 
-#define FMTLEN "07"
-#endif
+		#define FMTLEN "07"
+	#endif
 
-#if 0
-#if defined(__MACH__)
-#if __DARWIN_UNIX03
-#if defined(__i386__)
+	#if 0
+		#if defined(__MACH__)
+			#if __DARWIN_UNIX03
+				#if defined(__i386__)
 pnt = (void *)uc->uc_mcontext->__ss.__eip;
-#elif defined(__arm__)
+				#elif defined(__arm__)
 /* don't see mcontext in iphone headers... */
-#else
+				#else
 /* pnt = (void*) uc->uc_mcontext->__ss.__srr0; */
-#endif
-#else
-#if defined(__i386__)
+				#endif
+			#else
+				#if defined(__i386__)
 pnt = (void *)uc->uc_mcontext->ss.eip;
-#elif defined(__arm__)
+				#elif defined(__arm__)
 /* don't see mcontext in iphone headers... */
-#else
+				#else
 pnt = (void *)uc->uc_mcontext->ss.srr0;
-#endif
-#endif
-#elif defined(__FreeBSD__)
-#if defined(__i386__)
+				#endif
+			#endif
+		#elif defined(__FreeBSD__)
+			#if defined(__i386__)
 pnt = (void *)uc->uc_mcontext.mc_eip;
-#elif defined(__x86_64__)
+			#elif defined(__x86_64__)
 pnt = (void *)uc->uc_mcontext.mc_rip;
-#endif
-#elif (defined(__ppc__)) || (defined(__powerpc__))
+			#endif
+		#elif (defined(__ppc__)) || (defined(__powerpc__))
 pnt = (void *)uc->uc_mcontext.regs->nip;
-#elif defined(__i386__)
+		#elif defined(__i386__)
 pnt = (void *)uc->uc_mcontext.gregs[REG_EIP];
-#elif defined(__x86_64__)
+		#elif defined(__x86_64__)
 pnt = (void *)uc->uc_mcontext.gregs[REG_RIP];
-#elif defined(__mips__)
-#ifdef CTX_EPC /* Pre-2007 uclibc */
+		#elif defined(__mips__)
+			#ifdef CTX_EPC /* Pre-2007 uclibc */
 pnt = (void *)uc->uc_mcontext.gpregs[CTX_EPC];
-#else
+			#else
 pnt = (void *)uc->uc_mcontext.pc;
-#endif
-#endif
-#endif
+			#endif
+		#endif
+	#endif
 
 static uint8_t load8(const void *_p, uint8_t *v)
 {
@@ -374,10 +374,10 @@ static int is_lost_conn(int e)
 	return e == ECONNREFUSED || e == ECONNRESET || e == ENOTCONN || e == EPIPE;
 }
 
-#ifndef SOCK_CLOEXEC
-#define SOCK_CLOEXEC 02000000
-#define SOCK_NONBLOCK 04000
-#endif
+	#ifndef SOCK_CLOEXEC
+		#define SOCK_CLOEXEC 02000000
+		#define SOCK_NONBLOCK 04000
+	#endif
 static int postindex = -1;
 static char *postinfo[33];
 static void slog(int priority, const char *message)
@@ -490,7 +490,7 @@ static const char *demangle(const char *mangled)
 {
 	if (!mangled)
 		return unknown;
-#if defined(USE_GCC_DEMANGLE)
+	#if defined(USE_GCC_DEMANGLE)
 	int status;
 	char *newBuf = abi::__cxa_demangle(mangled, s_demangleBuf, &s_demangleBufLen, &status);
 	if (newBuf) {
@@ -498,7 +498,7 @@ static const char *demangle(const char *mangled)
 	}
 	if (status == 0)
 		return s_demangleBuf;
-#endif
+	#endif
 	return mangled;
 }
 
@@ -506,7 +506,7 @@ static void _airbag_symbol(void *pc, const char *sname, void *saddr)
 {
 	int printed = 0;
 
-#if !defined(AIRBAG_NO_DLADDR)
+	#if !defined(AIRBAG_NO_DLADDR)
 	Dl_info info;
 	if (dladdr(pc, &info)) {
 		unsigned long offset;
@@ -523,7 +523,7 @@ static void _airbag_symbol(void *pc, const char *sname, void *saddr)
 		printed = 1;
 	}
 
-#endif
+	#endif
 	if (!printed) {
 		airbag_printf("%s(+0)[0x%" FMTBIT "lx]", unknown, (unsigned long)pc);
 	}
@@ -534,7 +534,7 @@ static void airbag_symbol(void *pc)
 	_airbag_symbol(pc, 0, 0);
 }
 
-#if defined(USE_GCC_UNWIND) && !defined(__mips__) && !defined(__arm__)
+	#if defined(USE_GCC_UNWIND) && !defined(__mips__) && !defined(__arm__)
 
 /* Dummy version in case libgcc_s does not contain the real code.  */
 static _Unwind_Word airbag_dummy_getcfa(struct _Unwind_Context *ctx __attribute__((unused)))
@@ -548,7 +548,7 @@ static Unwind_GetIP_T _unwind_GetIP;
 static _Unwind_Word (*_unwind_GetCFA)(struct _Unwind_Context *);
 static _Unwind_Ptr (*_unwind_GetGR)(struct _Unwind_Context *, int);
 
-#if defined(__i386__)
+		#if defined(__i386__)
 
 static _Unwind_Reason_Code airbag_backtrace_helper(struct _Unwind_Context *ctx, void *a)
 {
@@ -566,7 +566,7 @@ static _Unwind_Reason_Code airbag_backtrace_helper(struct _Unwind_Context *ctx, 
 	arg->lastesp = (void *)_unwind_GetCFA(ctx);
 	return _URC_NO_REASON;
 }
-#else
+		#else
 static _Unwind_Reason_Code airbag_backtrace_helper(struct _Unwind_Context *ctx, void *a)
 {
 	struct trace_arg *arg = (struct trace_arg *)a;
@@ -584,11 +584,11 @@ static _Unwind_Reason_Code airbag_backtrace_helper(struct _Unwind_Context *ctx, 
 		return _URC_END_OF_STACK;
 	return _URC_NO_REASON;
 }
-#endif
+		#endif
 
-#endif
+	#endif
 
-#ifdef __arm__
+	#ifdef __arm__
 /*
  * Search for function name embedded via gcc's -mpoke-function-name.
  * addr should point near the top of the function.
@@ -622,24 +622,24 @@ static void *getPokedFnName(uint32_t addr, char *fname)
 	}
 	return faddr;
 }
-#endif
-#if defined(__aarch64__) || defined(__x86_64__)
-#include <stdio.h>
-#include <string.h>
-#include <malloc.h>
+	#endif
+	#if defined(__aarch64__) || defined(__x86_64__)
+		#include <stdio.h>
+		#include <string.h>
+		#include <malloc.h>
 
 static void fallback_unwind_backtrace(void *ctx)
 {
 	void **fp = __builtin_frame_address(0);
 	for (;;) {
-#if defined(__riscv) || defined(__loongarch__)
+		#if defined(__riscv) || defined(__loongarch__)
 		void **next_fp = fp[-2], *pc = fp[-1];
-#elif defined(__powerpc__)
+		#elif defined(__powerpc__)
 		void **next_fp = fp[0];
 		void *pc = next_fp <= fp ? 0 : next_fp[2];
-#else
+		#else
 		void **next_fp = *fp, *pc = fp[1];
-#endif
+		#endif
 		airbag_symbol(pc);
 		airbag_printf("\n");
 
@@ -655,29 +655,29 @@ static void fallback_unwind_backtrace(void *ctx)
 	}
 }
 
-#else
+	#else
 
 static int airbag_walkstack(void **buffer, int *repeat, int size, ucontext_t *uc)
 {
 	(void)uc;
 
 	memset(repeat, 0, sizeof(int) * size);
-#if defined(__mips__)
+		#if defined(__mips__)
 	/* Algorithm derived from:
 	 * http://elinux.org/images/6/68/ELC2008_-_Back-tracing_in_MIPS-based_Linux_Systems.pdf
 	 */
 	unsigned long *addr, *pc, *ra, *sp;
 	unsigned long raOffset, stackSize;
 
-#ifdef CTX_EPC /* Pre-2007 uclibc */
+			#ifdef CTX_EPC /* Pre-2007 uclibc */
 	pc = (unsigned long *)uc->uc_mcontext.gpregs[35];
 	ra = (unsigned long *)uc->uc_mcontext.gpregs[31];
 	sp = (unsigned long *)uc->uc_mcontext.gpregs[29];
-#else
+			#else
 	pc = (unsigned long *)uc->uc_mcontext.pc;
 	ra = (unsigned long *)uc->uc_mcontext.gregs[31];
 	sp = (unsigned long *)uc->uc_mcontext.gregs[29];
-#endif
+			#endif
 	int depth = 0;
 	buffer[depth++] = pc;
 	if (size == 1)
@@ -689,11 +689,11 @@ static int airbag_walkstack(void **buffer, int *repeat, int size, ucontext_t *uc
 		INSTLEN v;
 		if (load32(addr, &v)) {
 			airbag_printf("%sText at 0x%" FMTBIT "lx is not mapped; trying prior frame pointer.\n", comment, addr);
-#ifdef CTX_EPC /* Pre-2007 uclibc */
+			#ifdef CTX_EPC /* Pre-2007 uclibc */
 			uc->uc_mcontext.gpregs[35] = (unsigned long)ra;
-#else
+			#else
 			uc->uc_mcontext.pc = (unsigned long)ra;
-#endif
+			#endif
 			goto backward;
 		}
 		switch (v & 0xffff0000) {
@@ -776,7 +776,7 @@ backward:
 		sp = (unsigned long *)((unsigned long)sp + stackSize);
 	}
 	return depth;
-#elif defined(__arm__)
+		#elif defined(__arm__)
 	uint32_t pc = MCTX_PC(uc);
 	uint32_t fp = MCTXREG(uc, 14);
 	uint32_t lr = MCTXREG(uc, 17);
@@ -883,7 +883,7 @@ checkStm:
 			buffer[depth] = (void *)pc;
 	}
 	return depth;
-#elif defined(USE_GCC_UNWIND)
+		#elif defined(USE_GCC_UNWIND)
 	/* Not preferred, because doesn't handle blown stack, etc. */
 	static void *handle;
 	if (!handle)
@@ -901,26 +901,26 @@ checkStm:
 			_unwind_GetGR = dlsym(libgcc_handle, "_Unwind_GetGR");
 
 		if (_unwind_Backtrace && _unwind_GetIP) {
-#if defined(__i386__)
+			#if defined(__i386__)
 			struct trace_arg arg = { .array = buffer, .size = size, .cnt = -1 };
-#elif defined(__arm__)
+			#elif defined(__arm__)
 			struct trace_arg arg = { .array = buffer, .size = size, .cnt = -1 };
-#else
+			#else
 			struct trace_arg arg = { .array = buffer, .cfa = 0, .size = size, .cnt = -1 };
-#endif
+			#endif
 			//			struct trace_arg arg = { buffer, -1, size, uc };
 			if (load8((void *)(MCTX_PC(uc)), NULL)) {
 				airbag_printf("%sText at 0x%" FMTBIT "lx is not mapped; trying prior frame pointer.\n", comment,
 					      MCTX_PC(uc));
-#if defined(__mips__)
+			#if defined(__mips__)
 				MCTX_PC(uc) = MCTXREG(uc, 31); /* RA */
-#elif defined(__arm__)
+			#elif defined(__arm__)
 				MCTX_PC(uc) = MCTXREG(uc, 17); /* LR */
-#elif defined(__aarch64__)
+			#elif defined(__aarch64__)
 				MCTX_PC(uc) = MCTXREG(uc, 30); /* LR */
-#elif defined(__powerpc__)
+			#elif defined(__powerpc__)
 				MCTX_PC(uc) = MCTXREG(uc, 37); /* LINK */
-#elif defined(__i386__)
+			#elif defined(__i386__)
 				/* TODO heuristic for -fomit-frame-pointer? */
 				uint8_t *fp = (uint8_t *)MCTXREG(uc, 6) + 4;
 				uint32_t eip;
@@ -931,12 +931,12 @@ checkStm:
 				} else {
 					MCTX_PC(uc) = eip;
 				}
-#elif defined(__x86_64__)
+			#elif defined(__x86_64__)
 				/* TODO heuristic for -fomit-frame-pointer? */
 				MCTX_PC(uc) = MCTXREG(uc, 5);
-#else
+			#else
 				size = 0;
-#endif
+			#endif
 			}
 
 			if (size >= 1) {
@@ -945,7 +945,7 @@ checkStm:
 				_unwind_Backtrace(airbag_backtrace_helper, &arg);
 				if (arg.cnt > 1 && arg.array[arg.cnt - 1] == NULL)
 					--arg.cnt;
-#if defined(__i386__)
+			#if defined(__i386__)
 				else if (arg.cnt < size) {
 					struct layout *ebp = (struct layout *)arg.lastebp;
 
@@ -958,13 +958,13 @@ checkStm:
 						ebp = ebp->ebp;
 					}
 				}
-#endif
+			#endif
 			}
 			return arg.cnt != -1 ? arg.cnt : 0;
 		}
 	}
 	return 0;
-#elif !defined(AIRBAG_NO_BACKTRACE)
+		#elif !defined(AIRBAG_NO_BACKTRACE)
 	/*
 	 * Not preferred, because no way to explicitly start at failing PC, doesn't handle
 	 * bad PC, doesn't handle blown stack, etc.
@@ -972,24 +972,24 @@ checkStm:
 	int res = backtrace(buffer, size);
 	backtrace_release();
 	return ret;
-#else
+		#else
 	return 0;
-#endif
+		#endif
 }
-#endif
+	#endif
 static void printWhere(void *pc)
 {
-#if !defined(AIRBAG_NO_DLADDR)
+	#if !defined(AIRBAG_NO_DLADDR)
 	Dl_info info;
 	if (dladdr(pc, &info)) {
 		airbag_printf(" in %s (%p)\n", demangle(info.dli_sname), pc);
 		return;
 	}
-#endif
+	#endif
 	airbag_printf(" at 0x%" FMTBIT "lx\n", pc);
 }
 
-#if defined(__GCC_HAVE_SYNC_COMPARE_AND_SWAP_4)
+	#if defined(__GCC_HAVE_SYNC_COMPARE_AND_SWAP_4)
 static uint64_t getNow()
 {
 	struct timeval tv;
@@ -997,7 +997,7 @@ static uint64_t getNow()
 	gettimeofday(&tv, NULL);
 	return tv.tv_sec * 1000000LL + tv.tv_usec;
 }
-#endif
+	#endif
 
 struct fault {
 	int fault;
@@ -1009,12 +1009,12 @@ struct faults {
 	int errorsize;
 	struct fault *errors;
 };
-#ifndef BUS_MCEERR_AR
-#define BUS_MCEERR_AR 4
-#endif
-#ifndef BUS_MCEERR_AO
-#define BUS_MCEERR_AO 5
-#endif
+	#ifndef BUS_MCEERR_AR
+		#define BUS_MCEERR_AR 4
+	#endif
+	#ifndef BUS_MCEERR_AO
+		#define BUS_MCEERR_AO 5
+	#endif
 static struct fault sigbus_fault[] = {
 	{ BUS_ADRALN, "invalid address alignment" },
 	{ BUS_ADRERR, "nonexistent physical address" },
@@ -1023,27 +1023,27 @@ static struct fault sigbus_fault[] = {
 	{ BUS_MCEERR_AO, "hardware memory error detected in process but not consumed: action optional" },
 };
 
-#ifndef __FPE_DECOVF
-#define __FPE_DECOVF 9 /* decimal overflow */
-#endif
-#ifndef __FPE_DECDIV
-#define __FPE_DECDIV 10 /* decimal division by zero */
-#endif
-#ifndef __FPE_DECERR
-#define __FPE_DECERR 11 /* packed decimal error */
-#endif
-#ifndef __FPE_INVASC
-#define __FPE_INVASC 12 /* invalid ASCII digit */
-#endif
-#ifndef __FPE_INVDEC
-#define __FPE_INVDEC 13 /* invalid decimal digit */
-#endif
-#ifndef FPE_FLTUNK
-#define FPE_FLTUNK 14 /* undiagnosed floating-point exception */
-#endif
-#ifndef FPE_CONDTRAP
-#define FPE_CONDTRAP 15 /* trap on condition */
-#endif
+	#ifndef __FPE_DECOVF
+		#define __FPE_DECOVF 9 /* decimal overflow */
+	#endif
+	#ifndef __FPE_DECDIV
+		#define __FPE_DECDIV 10 /* decimal division by zero */
+	#endif
+	#ifndef __FPE_DECERR
+		#define __FPE_DECERR 11 /* packed decimal error */
+	#endif
+	#ifndef __FPE_INVASC
+		#define __FPE_INVASC 12 /* invalid ASCII digit */
+	#endif
+	#ifndef __FPE_INVDEC
+		#define __FPE_INVDEC 13 /* invalid decimal digit */
+	#endif
+	#ifndef FPE_FLTUNK
+		#define FPE_FLTUNK 14 /* undiagnosed floating-point exception */
+	#endif
+	#ifndef FPE_CONDTRAP
+		#define FPE_CONDTRAP 15 /* trap on condition */
+	#endif
 
 static struct fault sigfpe_fault[] = { { FPE_INTDIV, "integer divide by zero" },
 				       { FPE_INTOVF, "integer overflow" },
@@ -1061,15 +1061,15 @@ static struct fault sigfpe_fault[] = { { FPE_INTDIV, "integer divide by zero" },
 				       { FPE_FLTUNK, "undiagnosed floating-point exception" },
 				       { FPE_CONDTRAP, "trap on condition" } };
 
-#ifndef ILL_BADIADDR
-#define ILL_BADIADDR 9 /* unimplemented instruction address */
-#endif
-#ifndef __ILL_BREAK
-#define __ILL_BREAK 10 /* illegal break */
-#endif
-#ifndef __ILL_BNDMOD
-#define __ILL_BNDMOD 11 /* bundle-update (modification) in progress */
-#endif
+	#ifndef ILL_BADIADDR
+		#define ILL_BADIADDR 9 /* unimplemented instruction address */
+	#endif
+	#ifndef __ILL_BREAK
+		#define __ILL_BREAK 10 /* illegal break */
+	#endif
+	#ifndef __ILL_BNDMOD
+		#define __ILL_BNDMOD 11 /* bundle-update (modification) in progress */
+	#endif
 
 static struct fault sigill_fault[] = {
 	{ ILL_ILLOPC, "illegal opcode" },
@@ -1085,21 +1085,21 @@ static struct fault sigill_fault[] = {
 	{ __ILL_BNDMOD, "bundle-update (modification) in progress" },
 };
 
-#ifndef SEGV_BNDERR
-#define SEGV_BNDERR 3 /* failed address bound checks */
-#endif
-#ifndef SEGV_PKUERR
-#define SEGV_PKUERR 4 /* failed protection key checks */
-#endif
-#ifndef SEGV_ACCADI
-#define SEGV_ACCADI 5 /* ADI not enabled for mapped object */
-#endif
-#ifndef SEGV_ADIDERR
-#define SEGV_ADIDERR 6 /* Disrupting MCD error */
-#endif
-#ifndef SEGV_ADIPERR
-#define SEGV_ADIPERR 7 /* Precise MCD exception */
-#endif
+	#ifndef SEGV_BNDERR
+		#define SEGV_BNDERR 3 /* failed address bound checks */
+	#endif
+	#ifndef SEGV_PKUERR
+		#define SEGV_PKUERR 4 /* failed protection key checks */
+	#endif
+	#ifndef SEGV_ACCADI
+		#define SEGV_ACCADI 5 /* ADI not enabled for mapped object */
+	#endif
+	#ifndef SEGV_ADIDERR
+		#define SEGV_ADIDERR 6 /* Disrupting MCD error */
+	#endif
+	#ifndef SEGV_ADIPERR
+		#define SEGV_ADIPERR 7 /* Precise MCD exception */
+	#endif
 static struct fault sigsegv_fault[] = {
 	{ SEGV_MAPERR, "address not mapped to object" },
 	{ SEGV_ACCERR, "invalid permissions for mapped object" },
@@ -1110,21 +1110,21 @@ static struct fault sigsegv_fault[] = {
 	{ SEGV_ADIPERR, "Precise MCD exception" },
 };
 
-#ifndef TRAP_BRKPT
-#define TRAP_BRKPT 1 /* process breakpoint */
-#endif
-#ifndef TRAP_TRACE
-#define TRAP_TRACE 2 /* process trace trap */
-#endif
-#ifndef TRAP_BRANCH
-#define TRAP_BRANCH 3 /* process taken branch trap */
-#endif
-#ifndef TRAP_HWBKPT
-#define TRAP_HWBKPT 4 /* hardware breakpoint/watchpoint */
-#endif
-#ifndef TRAP_UNK
-#define TRAP_UNK 5 /* undiagnosed trap */
-#endif
+	#ifndef TRAP_BRKPT
+		#define TRAP_BRKPT 1 /* process breakpoint */
+	#endif
+	#ifndef TRAP_TRACE
+		#define TRAP_TRACE 2 /* process trace trap */
+	#endif
+	#ifndef TRAP_BRANCH
+		#define TRAP_BRANCH 3 /* process taken branch trap */
+	#endif
+	#ifndef TRAP_HWBKPT
+		#define TRAP_HWBKPT 4 /* hardware breakpoint/watchpoint */
+	#endif
+	#ifndef TRAP_UNK
+		#define TRAP_UNK 5 /* undiagnosed trap */
+	#endif
 
 static struct fault sigtrap_fault[] = {
 	{ TRAP_BRKPT, "process breakpoint" },
@@ -1147,7 +1147,7 @@ static void sigHandler(int sigNum, siginfo_t *si, void *ucontext)
 	ucontext_t *uc = (ucontext_t *)ucontext;
 	const uint8_t *pc = (uint8_t *)MCTX_PC(uc);
 	int i, a;
-#if defined(__GCC_HAVE_SYNC_COMPARE_AND_SWAP_4)
+	#if defined(__GCC_HAVE_SYNC_COMPARE_AND_SWAP_4)
 	__sync_fetch_and_add(&pending, 1);
 	if (__sync_val_compare_and_swap(&busy, 0, 1) != 0) {
 		uint64_t now, start = getNow();
@@ -1163,7 +1163,7 @@ static void sigHandler(int sigNum, siginfo_t *si, void *ucontext)
 			}
 		}
 	}
-#endif
+	#endif
 
 	airbag_printf("Caught SIG%s (%u)", _strsignal(sigNum), sigNum);
 	if (si->si_code == SI_USER) {
@@ -1189,10 +1189,10 @@ static void sigHandler(int sigNum, siginfo_t *si, void *ucontext)
 			break;
 		case SIGSYS:
 			break;
-#ifdef SIGEMT
+	#ifdef SIGEMT
 		case SIGEMT:
 			break;
-#endif
+	#endif
 		default:
 			for (i = 0; i < sizeof(signals) / sizeof(struct faults); i++) {
 				struct faults s = signals[i];
@@ -1220,12 +1220,12 @@ static void sigHandler(int sigNum, siginfo_t *si, void *ucontext)
 		if (postinfo[i])
 			airbag_printf("Postinfo: %s\n", postinfo[i]);
 	}
-#ifdef __linux__
+	#ifdef __linux__
 	{
 		char name[17];
 		prctl(PR_GET_NAME, (unsigned long)name, 0, 0, 0);
 		name[sizeof(name) - 1] = 0;
-#ifdef SYS_gettid
+		#ifdef SYS_gettid
 		unsigned int thread = syscall(SYS_gettid);
 		airbag_printf("Thread %u: %s\n", thread, name);
 		char line[256];
@@ -1239,13 +1239,13 @@ static void sigHandler(int sigNum, siginfo_t *si, void *ucontext)
 			}
 			fclose(fp);
 		}
-#else
+		#else
 		airbag_printf("Thread: %s\n", name);
-#endif
+		#endif
 	}
-#endif
+	#endif
 
-#if 0
+	#if 0
 	/*
 	 * Usually unset and unused on Linux.  Note that strerror it not guaranteed to
 	 * be async-signal safe (it deals with the locale) so hit the array directly.
@@ -1253,7 +1253,7 @@ static void sigHandler(int sigNum, siginfo_t *si, void *ucontext)
 	 */
 	if (si->si_errno)
 		airbag_printf("Errno %u: %s.\n", si->si_errno, sys_errlist[si->si_errno]);
-#endif
+	#endif
 
 	airbag_printf("%sContext:\n", section);
 	int width = 0;
@@ -1272,17 +1272,17 @@ static void sigHandler(int sigNum, siginfo_t *si, void *ucontext)
 	airbag_printf("\n");
 
 	{
-#if defined(__x86_64__) || defined(__i386__)
+	#if defined(__x86_64__) || defined(__i386__)
 		const int size = 128;
-#else
+	#else
 		const int size = 64;
-#endif
+	#endif
 		void *buffer[size];
 		int repeat[size];
 		airbag_printf("%sBacktrace:\n", section);
-#if defined(__aarch64__) || defined(__x86_64__)
+	#if defined(__aarch64__) || defined(__x86_64__)
 		fallback_unwind_backtrace(ucontext);
-#else
+	#else
 		int nptrs = airbag_walkstack(buffer, repeat, size, uc);
 		for (i = 0; i < nptrs; ++i) {
 			airbag_symbol(buffer[i]);
@@ -1292,12 +1292,12 @@ static void sigHandler(int sigNum, siginfo_t *si, void *ucontext)
 		}
 		/* Reload PC; walkstack may have discovered better state. */
 		pc = (uint8_t *)MCTX_PC(uc);
-#endif
+	#endif
 	}
 
 	width = 0;
 	ptrdiff_t bytes = 128;
-#if defined(__x86_64__) || defined(__i386__)
+	#if defined(__x86_64__) || defined(__i386__)
 	const uint8_t *startPc = pc;
 	if (startPc < (uint8_t *)(bytes / 2))
 		startPc = 0;
@@ -1305,7 +1305,7 @@ static void sigHandler(int sigNum, siginfo_t *si, void *ucontext)
 		startPc = pc - bytes / 2;
 	const uint8_t *endPc = startPc + bytes;
 	const uint8_t *addr;
-#else
+	#else
 	pc = (uint8_t *)(((unsigned long)pc) & ~3);
 	const INSTLEN *startPc = (INSTLEN *)pc;
 	if (startPc < (INSTLEN *)(bytes / 2))
@@ -1314,7 +1314,7 @@ static void sigHandler(int sigNum, siginfo_t *si, void *ucontext)
 		startPc = (INSTLEN *)(pc - bytes / 2);
 	const INSTLEN *endPc = (INSTLEN *)((uint8_t *)startPc + bytes);
 	const INSTLEN *addr;
-#endif
+	#endif
 	airbag_printf("%sCode:\n", section);
 	for (addr = startPc; addr < endPc; ++addr) {
 		if (width > 70) {
@@ -1325,7 +1325,7 @@ static void sigHandler(int sigNum, siginfo_t *si, void *ucontext)
 			airbag_printf("%" FMTBIT "lx: ", addr);
 		}
 		width += airbag_printf((const uint8_t *)addr == pc ? ">" : " ");
-#if defined(__x86_64__) || defined(__i386__)
+	#if defined(__x86_64__) || defined(__i386__)
 		uint8_t b;
 		uint8_t invalid = load8(addr, &b);
 		if (invalid)
@@ -1333,7 +1333,7 @@ static void sigHandler(int sigNum, siginfo_t *si, void *ucontext)
 		else
 			airbag_printf("%02x", b);
 		width += 2;
-#else
+	#else
 		INSTLEN w;
 		INSTLEN invalid = load32(addr, &w);
 		int bitlen = sizeof(INSTLEN) - 1;
@@ -1346,7 +1346,7 @@ static void sigHandler(int sigNum, siginfo_t *si, void *ucontext)
 			}
 		}
 		width += 8;
-#endif
+	#endif
 	}
 	airbag_printf("\n");
 
@@ -1355,7 +1355,7 @@ static void sigHandler(int sigNum, siginfo_t *si, void *ucontext)
 	/* For threads: pthread_exit is not async-signal-safe. */
 	/* Only option is to (optionally) wait and then _exit. */
 
-#if defined(__GCC_HAVE_SYNC_COMPARE_AND_SWAP_4)
+	#if defined(__GCC_HAVE_SYNC_COMPARE_AND_SWAP_4)
 	__sync_fetch_and_add(&busy, -1);
 	if (__sync_fetch_and_add(&pending, -1) > 1) {
 		uint64_t now, start = getNow();
@@ -1366,7 +1366,7 @@ static void sigHandler(int sigNum, siginfo_t *si, void *ucontext)
 				break;
 		} while (__sync_fetch_and_add(&pending, 0) > 0);
 	}
-#endif
+	#endif
 	if (delegate)
 		delegate(sigNum);
 	else
@@ -1375,14 +1375,14 @@ static void sigHandler(int sigNum, siginfo_t *si, void *ucontext)
 
 static int initCrashHandlers()
 {
-#if defined(USE_GCC_DEMANGLE)
+	#if defined(USE_GCC_DEMANGLE)
 	if (!s_demangleBuf) {
 		s_demangleBufLen = 512;
 		s_demangleBuf = (char *)malloc(s_demangleBufLen);
 		if (!s_demangleBuf)
 			return -1;
 	}
-#endif
+	#endif
 
 	if (!s_altStackSpace) {
 		stack_t altStack;
@@ -1442,15 +1442,15 @@ static void deinitCrashHandlers()
 	sigaction(SIGXCPU, &sa, 0);
 	sigaction(SIGXFSZ, &sa, 0);
 	sigaction(SIGSYS, &sa, 0);
-#ifdef SIGEMT
+	#ifdef SIGEMT
 	sigaction(SIGEMT, &sa, 0);
-#endif
-#if defined(USE_GCC_DEMANGLE)
+	#endif
+	#if defined(USE_GCC_DEMANGLE)
 	if (s_demangleBuf) {
 		free(s_demangleBuf);
 		s_demangleBuf = 0;
 	}
-#endif
+	#endif
 	if (s_altStackSpace) {
 		stack_t altStack;
 		altStack.ss_sp = 0;
@@ -1480,17 +1480,17 @@ int airbag_init_delegate(sighandler_t handler)
 
 AIRBAG_EXPORT int airbag_name_thread(const char *name)
 {
-#if defined(__linux__)
+	#if defined(__linux__)
 	prctl(PR_SET_NAME, (unsigned long)name);
 	return 0;
-#elif defined(__FreeBSD__) && !defined(AIRBAG_NO_PTHREAD)
+	#elif defined(__FreeBSD__) && !defined(AIRBAG_NO_PTHREAD)
 	pthread_set_name_np(pthread_self(), name);
 	return 0;
-#else
+	#else
 	(void)name;
 	errno = ENOTSUP;
 	return -1;
-#endif
+	#endif
 }
 
 AIRBAG_EXPORT void airbag_deinit()

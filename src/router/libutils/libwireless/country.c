@@ -508,10 +508,10 @@ static COUNTRY_CODE_TO_ENUM_RD allCountries[] = {
 	//#endif
 	{ "AU", CTRY_COLOMBIA, FCC1_FCCA, "CO", "COLOMBIA" },
 	{ NULL, CTRY_COSTA_RICA, NULL1_WORLD, "CR", "COSTA_RICA" },
-#ifdef HAVE_ATH9K
+	#ifdef HAVE_ATH9K
 	{ NULL, CTRY_CUBA, APL1_WORLD, "CU", "CUBA" },
 	{ NULL, CTRY_CHRISTMAS_ISLAND, APL1_WORLD, "CX", "CHRISTMAS_ISLAND" },
-#endif
+	#endif
 	{ "EU", CTRY_CROATIA, ETSI3_WORLD, "HR", "CROATIA" },
 	{ "EU", CTRY_CYPRUS, ETSI1_WORLD, "CY", "CYPRUS" },
 	{ "EU", CTRY_CZECH, ETSI3_WORLD, "CZ", "CZECH_REPUBLIC" },
@@ -553,20 +553,20 @@ static COUNTRY_CODE_TO_ENUM_RD allCountries[] = {
 	{ NULL, CTRY_IRAN, APL1_WORLD, "IR", "IRAN" },
 	{ "GB", CTRY_IRELAND, ETSI1_WORLD, "IE", "IRELAND" },
 	{ NULL, CTRY_ISRAEL, NULL1_WORLD, "IL", "ISRAEL" },
-#ifdef HAVE_RAIEXTRA
+	#ifdef HAVE_RAIEXTRA
 	{ "IT", CTRY_ITALY, IT_WORLD, "IT", "ITALY" },
 	{ NULL, CTRY_ITALYRAI, RAIIT_WORLD, "IY", "ITALY+RAI" },
 	{ NULL, CTRY_RAI, RAI_WORLD, "IZ", "RAI" },
-#else
+	#else
 	{ "IT", CTRY_ITALY, ETSI1_WORLD, "IT", "ITALY" },
-#endif
-#ifdef HAVE_TESTEM
+	#endif
+	#ifdef HAVE_TESTEM
 	{ NULL, CTRY_TESTEM_AP, TESTEM_AP_WORLD, "IY", "TESTEM_AP" },
 	{ NULL, CTRY_TESTEM_CLIENT, TESTEM_CLIENT_WORLD, "IZ", "TESTEM_CLIENT" },
-#endif
-#ifdef HAVE_TMK
+	#endif
+	#ifdef HAVE_TMK
 	{ NULL, CTRY_EXTRATMK, TMK_AP_WORLD, "IY", "BOS" },
-#endif
+	#endif
 	{ "JP", CTRY_JAPAN, MKK1_MKKA, "JP", "JAPAN" },
 	{ NULL, CTRY_JORDAN, APL4_WORLD, "JO", "JORDAN" },
 	{ NULL, CTRY_KAZAKHSTAN, NULL1_WORLD, "KZ", "KAZAKHSTAN" },
@@ -1016,11 +1016,11 @@ char *getCountryByIso(char *country)
 extern int getRouterBrand(void);
 
 #ifdef HAVE_BUFFALO
-#if defined(HAVE_NORTHSTAR) || defined(HAVE_MT7620)
-#define getUEnv(name) nvram_safe_get(name)
-#else
+	#if defined(HAVE_NORTHSTAR) || defined(HAVE_MT7620)
+		#define getUEnv(name) nvram_safe_get(name)
+	#else
 extern void *getUEnv(char *name);
-#endif
+	#endif
 
 static int isValidCountry(char *region, char *country)
 {

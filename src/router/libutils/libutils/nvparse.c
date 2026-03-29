@@ -35,7 +35,7 @@
 extern char *safe_snprintf(char *str, int *len, const char *fmt, ...);
 
 #ifdef __CONFIG_NAT__
-#if 0
+	#if 0
 bool valid_autofw_port(const netconf_app_t * app)
 {
 	/*
@@ -321,7 +321,7 @@ bool del_autofw_port(int which)
 	snprintf(name, sizeof(name), "autofw_port%d", which);
 	return (nvram_unset(name) == 0) ? TRUE : FALSE;
 }
-#endif
+	#endif
 
 bool valid_forward_port(const netconf_nat_t *nat)
 {

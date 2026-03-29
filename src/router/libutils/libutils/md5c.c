@@ -67,77 +67,17 @@ static void md5_hash_block(const void *buffer, md5_ctx_t *ctx)
 	};
 
 	static const char P_array[] ALIGN1 = {
-#if MD5_SIZE_VS_SPEED > 1
-		0,
-		1,
-		2,
-		3,
-		4,
-		5,
-		6,
-		7,
-		8,
-		9,
-		10,
-		11,
-		12,
-		13,
-		14,
-		15, /* 1 */
-#endif /* MD5_SIZE_VS_SPEED > 1 */
-		1,
-		6,
-		11,
-		0,
-		5,
-		10,
-		15,
-		4,
-		9,
-		14,
-		3,
-		8,
-		13,
-		2,
-		7,
-		12, /* 2 */
-		5,
-		8,
-		11,
-		14,
-		1,
-		4,
-		7,
-		10,
-		13,
-		0,
-		3,
-		6,
-		9,
-		12,
-		15,
-		2, /* 3 */
-		0,
-		7,
-		14,
-		5,
-		12,
-		3,
-		10,
-		1,
-		8,
-		15,
-		6,
-		13,
-		4,
-		11,
-		2,
-		9 /* 4 */
+	#if MD5_SIZE_VS_SPEED > 1
+		0, 1, 2,  3,  4,  5,  6,  7,  8,  9,  10, 11, 12, 13, 14, 15, /* 1 */
+	#endif /* MD5_SIZE_VS_SPEED > 1 */
+		1, 6, 11, 0,  5,  10, 15, 4,  9,  14, 3,  8,  13, 2,  7,  12, /* 2 */
+		5, 8, 11, 14, 1,  4,  7,  10, 13, 0,  3,  6,  9,  12, 15, 2, /* 3 */
+		0, 7, 14, 5,  12, 3,  10, 1,  8,  15, 6,  13, 4,  11, 2,  9 /* 4 */
 	};
 
-#if MD5_SIZE_VS_SPEED > 1
+	#if MD5_SIZE_VS_SPEED > 1
 	static const char S_array[] ALIGN1 = { 7, 12, 17, 22, 5, 9, 14, 20, 4, 11, 16, 23, 6, 10, 15, 21 };
-#endif /* MD5_SIZE_VS_SPEED > 1 */
+	#endif /* MD5_SIZE_VS_SPEED > 1 */
 #endif
 
 	uint32_t A = ctx->A;
@@ -154,7 +94,7 @@ static void md5_hash_block(const void *buffer, md5_ctx_t *ctx)
 	uint32_t D_save = D;
 
 #if MD5_SIZE_VS_SPEED > 1
-#define CYCLIC(w, s) (w = (w << s) | (w >> (32 - s)))
+	#define CYCLIC(w, s) (w = (w << s) | (w >> (32 - s)))
 
 	const uint32_t *pc;
 	const char *pp;
@@ -167,7 +107,7 @@ static void md5_hash_block(const void *buffer, md5_ctx_t *ctx)
 	}
 	words += 16;
 
-#if MD5_SIZE_VS_SPEED > 2
+	#if MD5_SIZE_VS_SPEED > 2
 	pc = C_array;
 	pp = P_array;
 	ps = S_array - 4;
@@ -197,7 +137,7 @@ static void md5_hash_block(const void *buffer, md5_ctx_t *ctx)
 		C = B;
 		B = temp;
 	}
-#else
+	#else
 	pc = C_array;
 	pp = P_array;
 	ps = S_array;
@@ -243,7 +183,7 @@ static void md5_hash_block(const void *buffer, md5_ctx_t *ctx)
 		B = temp;
 	}
 
-#endif /* MD5_SIZE_VS_SPEED > 2 */
+	#endif /* MD5_SIZE_VS_SPEED > 2 */
 #else
 	/* First round: using the given function, the context and a constant
 	   the next context is computed.  Because the algorithms processing
@@ -252,18 +192,18 @@ static void md5_hash_block(const void *buffer, md5_ctx_t *ctx)
 	   before the computation.  To reduce the work for the next steps
 	   we store the swapped words in the array CORRECT_WORDS.  */
 
-#define OP(a, b, c, d, s, T)                                         \
-	do {                                                         \
-		a += FF(b, c, d) + (*cwp++ = SWAP_LE32(*words)) + T; \
-		++words;                                             \
-		CYCLIC(a, s);                                        \
-		a += b;                                              \
-	} while (0)
+	#define OP(a, b, c, d, s, T)                                         \
+		do {                                                         \
+			a += FF(b, c, d) + (*cwp++ = SWAP_LE32(*words)) + T; \
+			++words;                                             \
+			CYCLIC(a, s);                                        \
+			a += b;                                              \
+		} while (0)
 
 	/* It is unfortunate that C does not provide an operator for
 	   cyclic rotation.  Hope the C compiler is smart enough.  */
 	/* gcc 2.95.4 seems to be --aaronl */
-#define CYCLIC(w, s) (w = (w << s) | (w >> (32 - s)))
+	#define CYCLIC(w, s) (w = (w << s) | (w >> (32 - s)))
 
 	/* Before we start, one word to the strange constants.
 	   They are defined in RFC 1321 as
@@ -271,14 +211,14 @@ static void md5_hash_block(const void *buffer, md5_ctx_t *ctx)
 	   T[i] = (int) (4294967296.0 * fabs (sin (i))), i=1..64
 	 */
 
-#if MD5_SIZE_VS_SPEED == 1
+	#if MD5_SIZE_VS_SPEED == 1
 	const uint32_t *pc;
 	const char *pp;
 	int i;
-#endif /* MD5_SIZE_VS_SPEED */
+	#endif /* MD5_SIZE_VS_SPEED */
 
 	/* Round 1.  */
-#if MD5_SIZE_VS_SPEED == 1
+	#if MD5_SIZE_VS_SPEED == 1
 	pc = C_array;
 	for (i = 0; i < 4; i++) {
 		OP(A, B, C, D, 7, *pc++);
@@ -286,7 +226,7 @@ static void md5_hash_block(const void *buffer, md5_ctx_t *ctx)
 		OP(C, D, A, B, 17, *pc++);
 		OP(B, C, D, A, 22, *pc++);
 	}
-#else
+	#else
 	OP(A, B, C, D, 7, 0xd76aa478);
 	OP(D, A, B, C, 12, 0xe8c7b756);
 	OP(C, D, A, B, 17, 0x242070db);
@@ -303,21 +243,21 @@ static void md5_hash_block(const void *buffer, md5_ctx_t *ctx)
 	OP(D, A, B, C, 12, 0xfd987193);
 	OP(C, D, A, B, 17, 0xa679438e);
 	OP(B, C, D, A, 22, 0x49b40821);
-#endif /* MD5_SIZE_VS_SPEED == 1 */
+	#endif /* MD5_SIZE_VS_SPEED == 1 */
 
 	/* For the second to fourth round we have the possibly swapped words
 	   in CORRECT_WORDS.  Redefine the macro to take an additional first
 	   argument specifying the function to use.  */
-#undef OP
-#define OP(f, a, b, c, d, k, s, T)                      \
-	do {                                            \
-		a += f(b, c, d) + correct_words[k] + T; \
-		CYCLIC(a, s);                           \
-		a += b;                                 \
-	} while (0)
+	#undef OP
+	#define OP(f, a, b, c, d, k, s, T)                      \
+		do {                                            \
+			a += f(b, c, d) + correct_words[k] + T; \
+			CYCLIC(a, s);                           \
+			a += b;                                 \
+		} while (0)
 
 	/* Round 2.  */
-#if MD5_SIZE_VS_SPEED == 1
+	#if MD5_SIZE_VS_SPEED == 1
 	pp = P_array;
 	for (i = 0; i < 4; i++) {
 		OP(FG, A, B, C, D, (int)(*pp++), 5, *pc++);
@@ -325,7 +265,7 @@ static void md5_hash_block(const void *buffer, md5_ctx_t *ctx)
 		OP(FG, C, D, A, B, (int)(*pp++), 14, *pc++);
 		OP(FG, B, C, D, A, (int)(*pp++), 20, *pc++);
 	}
-#else
+	#else
 	OP(FG, A, B, C, D, 1, 5, 0xf61e2562);
 	OP(FG, D, A, B, C, 6, 9, 0xc040b340);
 	OP(FG, C, D, A, B, 11, 14, 0x265e5a51);
@@ -342,17 +282,17 @@ static void md5_hash_block(const void *buffer, md5_ctx_t *ctx)
 	OP(FG, D, A, B, C, 2, 9, 0xfcefa3f8);
 	OP(FG, C, D, A, B, 7, 14, 0x676f02d9);
 	OP(FG, B, C, D, A, 12, 20, 0x8d2a4c8a);
-#endif /* MD5_SIZE_VS_SPEED == 1 */
+	#endif /* MD5_SIZE_VS_SPEED == 1 */
 
 	/* Round 3.  */
-#if MD5_SIZE_VS_SPEED == 1
+	#if MD5_SIZE_VS_SPEED == 1
 	for (i = 0; i < 4; i++) {
 		OP(FH, A, B, C, D, (int)(*pp++), 4, *pc++);
 		OP(FH, D, A, B, C, (int)(*pp++), 11, *pc++);
 		OP(FH, C, D, A, B, (int)(*pp++), 16, *pc++);
 		OP(FH, B, C, D, A, (int)(*pp++), 23, *pc++);
 	}
-#else
+	#else
 	OP(FH, A, B, C, D, 5, 4, 0xfffa3942);
 	OP(FH, D, A, B, C, 8, 11, 0x8771f681);
 	OP(FH, C, D, A, B, 11, 16, 0x6d9d6122);
@@ -369,17 +309,17 @@ static void md5_hash_block(const void *buffer, md5_ctx_t *ctx)
 	OP(FH, D, A, B, C, 12, 11, 0xe6db99e5);
 	OP(FH, C, D, A, B, 15, 16, 0x1fa27cf8);
 	OP(FH, B, C, D, A, 2, 23, 0xc4ac5665);
-#endif /* MD5_SIZE_VS_SPEED == 1 */
+	#endif /* MD5_SIZE_VS_SPEED == 1 */
 
 	/* Round 4.  */
-#if MD5_SIZE_VS_SPEED == 1
+	#if MD5_SIZE_VS_SPEED == 1
 	for (i = 0; i < 4; i++) {
 		OP(FI, A, B, C, D, (int)(*pp++), 6, *pc++);
 		OP(FI, D, A, B, C, (int)(*pp++), 10, *pc++);
 		OP(FI, C, D, A, B, (int)(*pp++), 15, *pc++);
 		OP(FI, B, C, D, A, (int)(*pp++), 21, *pc++);
 	}
-#else
+	#else
 	OP(FI, A, B, C, D, 0, 6, 0xf4292244);
 	OP(FI, D, A, B, C, 7, 10, 0x432aff97);
 	OP(FI, C, D, A, B, 14, 15, 0xab9423a7);
@@ -396,7 +336,7 @@ static void md5_hash_block(const void *buffer, md5_ctx_t *ctx)
 	OP(FI, D, A, B, C, 11, 10, 0xbd3af235);
 	OP(FI, C, D, A, B, 2, 15, 0x2ad7d2bb);
 	OP(FI, B, C, D, A, 9, 21, 0xeb86d391);
-#endif /* MD5_SIZE_VS_SPEED == 1 */
+	#endif /* MD5_SIZE_VS_SPEED == 1 */
 #endif /* MD5_SIZE_VS_SPEED > 1 */
 
 	/* Add the starting values of the context.  */
@@ -510,19 +450,17 @@ void *FAST_FUNC dd_md5_end(void *resbuf, md5_ctx_t *ctx)
  * Initialize array of round constants:
  * (first 32 bits of the fractional parts of the cube roots of the first 64 primes 2..311):
  */
-static const uint32_t k[] = {
-	0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5, 0x3956c25b, 0x59f111f1, 0x923f82a4, 0xab1c5ed5,
-	0xd807aa98, 0x12835b01, 0x243185be, 0x550c7dc3, 0x72be5d74, 0x80deb1fe, 0x9bdc06a7, 0xc19bf174,
-	0xe49b69c1, 0xefbe4786, 0x0fc19dc6, 0x240ca1cc, 0x2de92c6f, 0x4a7484aa, 0x5cb0a9dc, 0x76f988da,
-	0x983e5152, 0xa831c66d, 0xb00327c8, 0xbf597fc7, 0xc6e00bf3, 0xd5a79147, 0x06ca6351, 0x14292967,
-	0x27b70a85, 0x2e1b2138, 0x4d2c6dfc, 0x53380d13, 0x650a7354, 0x766a0abb, 0x81c2c92e, 0x92722c85,
-	0xa2bfe8a1, 0xa81a664b, 0xc24b8b70, 0xc76c51a3, 0xd192e819, 0xd6990624, 0xf40e3585, 0x106aa070,
-	0x19a4c116, 0x1e376c08, 0x2748774c, 0x34b0bcb5, 0x391c0cb3, 0x4ed8aa4a, 0x5b9cca4f, 0x682e6ff3,
-	0x748f82ee, 0x78a5636f, 0x84c87814, 0x8cc70208, 0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2
-};
+static const uint32_t k[] = { 0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5, 0x3956c25b, 0x59f111f1, 0x923f82a4, 0xab1c5ed5,
+			      0xd807aa98, 0x12835b01, 0x243185be, 0x550c7dc3, 0x72be5d74, 0x80deb1fe, 0x9bdc06a7, 0xc19bf174,
+			      0xe49b69c1, 0xefbe4786, 0x0fc19dc6, 0x240ca1cc, 0x2de92c6f, 0x4a7484aa, 0x5cb0a9dc, 0x76f988da,
+			      0x983e5152, 0xa831c66d, 0xb00327c8, 0xbf597fc7, 0xc6e00bf3, 0xd5a79147, 0x06ca6351, 0x14292967,
+			      0x27b70a85, 0x2e1b2138, 0x4d2c6dfc, 0x53380d13, 0x650a7354, 0x766a0abb, 0x81c2c92e, 0x92722c85,
+			      0xa2bfe8a1, 0xa81a664b, 0xc24b8b70, 0xc76c51a3, 0xd192e819, 0xd6990624, 0xf40e3585, 0x106aa070,
+			      0x19a4c116, 0x1e376c08, 0x2748774c, 0x34b0bcb5, 0x391c0cb3, 0x4ed8aa4a, 0x5b9cca4f, 0x682e6ff3,
+			      0x748f82ee, 0x78a5636f, 0x84c87814, 0x8cc70208, 0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2 };
 
 struct buffer_state {
-	const uint8_t * p;
+	const uint8_t *p;
 	size_t len;
 	size_t total_len;
 	int single_one_delivered; /* bool */
@@ -538,7 +476,7 @@ static inline uint32_t right_rot(uint32_t value, unsigned int count)
 	return value >> count | value << (32 - count);
 }
 
-static void init_buf_state(struct buffer_state * state, const void * input, size_t len)
+static void init_buf_state(struct buffer_state *state, const void *input, size_t len)
 {
 	state->p = input;
 	state->len = len;
@@ -548,7 +486,7 @@ static void init_buf_state(struct buffer_state * state, const void * input, size
 }
 
 /* Return value: bool */
-static int calc_chunk(uint8_t chunk[CHUNK_SIZE], struct buffer_state * state)
+static int calc_chunk(uint8_t chunk[CHUNK_SIZE], struct buffer_state *state)
 {
 	size_t space_in_chunk;
 
@@ -590,10 +528,10 @@ static int calc_chunk(uint8_t chunk[CHUNK_SIZE], struct buffer_state * state)
 		chunk += left;
 
 		/* Storing of len * 8 as a big endian 64-bit without overflow. */
-		chunk[7] = (uint8_t) (len << 3);
+		chunk[7] = (uint8_t)(len << 3);
 		len >>= 5;
 		for (i = 6; i >= 0; i--) {
-			chunk[i] = (uint8_t) len;
+			chunk[i] = (uint8_t)len;
 			len >>= 8;
 		}
 		state->total_len_delivered = 1;
@@ -612,7 +550,7 @@ static int calc_chunk(uint8_t chunk[CHUNK_SIZE], struct buffer_state * state)
  *   for bit string lengths that are not multiples of eight, and it really operates on arrays of bytes.
  *   In particular, the len parameter is a number of bytes.
  */
-void calc_sha_256(uint8_t hash[32], const void * input, size_t len)
+void calc_sha_256(uint8_t hash[32], const void *input, size_t len)
 {
 	/*
 	 * Note 1: All integers (expect indexes) are 32-bit unsigned integers and addition is calculated modulo 2^32.
@@ -639,7 +577,7 @@ void calc_sha_256(uint8_t hash[32], const void * input, size_t len)
 
 	while (calc_chunk(chunk, &state)) {
 		uint32_t ah[8];
-		
+
 		/*
 		 * create a 64-entry message schedule array w[0..63] of 32-bit words
 		 * (The initial values in w[0..63] don't matter, so many implementations zero them here)
@@ -650,8 +588,7 @@ void calc_sha_256(uint8_t hash[32], const void * input, size_t len)
 
 		memset(w, 0x00, sizeof w);
 		for (i = 0; i < 16; i++) {
-			w[i] = (uint32_t) p[0] << 24 | (uint32_t) p[1] << 16 |
-				(uint32_t) p[2] << 8 | (uint32_t) p[3];
+			w[i] = (uint32_t)p[0] << 24 | (uint32_t)p[1] << 16 | (uint32_t)p[2] << 8 | (uint32_t)p[3];
 			p += 4;
 		}
 
@@ -661,7 +598,7 @@ void calc_sha_256(uint8_t hash[32], const void * input, size_t len)
 			const uint32_t s1 = right_rot(w[i - 2], 17) ^ right_rot(w[i - 2], 19) ^ (w[i - 2] >> 10);
 			w[i] = w[i - 16] + s0 + w[i - 7] + s1;
 		}
-		
+
 		/* Initialize working variables to current hash value: */
 		for (i = 0; i < 8; i++)
 			ah[i] = h[i];
@@ -691,15 +628,13 @@ void calc_sha_256(uint8_t hash[32], const void * input, size_t len)
 	}
 
 	/* Produce the final hash value (big-endian): */
-	for (i = 0, j = 0; i < 8; i++)
-	{
-		hash[j++] = (uint8_t) (h[i] >> 24);
-		hash[j++] = (uint8_t) (h[i] >> 16);
-		hash[j++] = (uint8_t) (h[i] >> 8);
-		hash[j++] = (uint8_t) h[i];
+	for (i = 0, j = 0; i < 8; i++) {
+		hash[j++] = (uint8_t)(h[i] >> 24);
+		hash[j++] = (uint8_t)(h[i] >> 16);
+		hash[j++] = (uint8_t)(h[i] >> 8);
+		hash[j++] = (uint8_t)h[i];
 	}
 }
-
 
 char *sha256_string(char *string, char *hashbuf, size_t len)
 {

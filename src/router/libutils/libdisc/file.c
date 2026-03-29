@@ -31,17 +31,17 @@
 #define DEBUG_SIZE 0
 
 #ifdef USE_IOCTL_LINUX
-#include <sys/ioctl.h>
-#include <linux/fs.h>
+	#include <sys/ioctl.h>
+	#include <linux/fs.h>
 #endif
 
 #ifdef USE_IOCTL_FREEBSD
-#include <sys/disklabel.h>
+	#include <sys/disklabel.h>
 #endif
 
 #ifdef USE_IOCTL_DARWIN
-#include <sys/ioctl.h>
-#include <sys/disk.h>
+	#include <sys/ioctl.h>
+	#include <sys/disk.h>
 #endif
 
 /*
@@ -126,29 +126,29 @@ static void determine_file_size(FILE_SOURCE *fs, int filekind)
 	 * ioctl, Linux style:
 	 * Works on certain devices.
 	 */
-#ifdef BLKGETSIZE64
-#define u64 __u64 /* workaround for broken header file */
+	#ifdef BLKGETSIZE64
+		#define u64 __u64 /* workaround for broken header file */
 	if (!fs->c.size_known && filekind != 0) {
 		u8 devsize;
 		if (ioctl(fd, BLKGETSIZE64, (void *)&devsize) >= 0) {
 			fs->c.size_known = 1;
 			fs->c.size = devsize;
-#if DEBUG_SIZE
+		#if DEBUG_SIZE
 			printf("Size: Linux 64-bit ioctl reports %llu\n", fs->c.size);
-#endif
+		#endif
 		}
 	}
-#undef u64
-#endif
+		#undef u64
+	#endif
 
 	if (!fs->c.size_known && filekind != 0) {
 		u4 blockcount;
 		if (ioctl(fd, BLKGETSIZE, (void *)&blockcount) >= 0) {
 			fs->c.size_known = 1;
 			fs->c.size = (u8)blockcount * 512;
-#if DEBUG_SIZE
+	#if DEBUG_SIZE
 			printf("Size: Linux 32-bit ioctl reports %llu (%lu blocks)\n", fs->c.size, blockcount);
-#endif
+	#endif
 		}
 	}
 #endif
@@ -164,9 +164,9 @@ static void determine_file_size(FILE_SOURCE *fs, int filekind)
 			fs->c.size_known = 1;
 			fs->c.size = (u8)dl.d_ncylinders * dl.d_secpercyl * dl.d_secsize;
 			/* TODO: check this, it's the whole disk size... */
-#if DEBUG_SIZE
+	#if DEBUG_SIZE
 			printf("Size: FreeBSD ioctl reports %llu\n", fs->c.size);
-#endif
+	#endif
 		}
 	}
 #endif
@@ -183,10 +183,10 @@ static void determine_file_size(FILE_SOURCE *fs, int filekind)
 			if (ioctl(fd, DKIOCGETBLOCKCOUNT, (void *)&blockcount) >= 0) {
 				fs->c.size_known = 1;
 				fs->c.size = blockcount * blocksize;
-#if DEBUG_SIZE
+	#if DEBUG_SIZE
 				printf("Size: Darwin ioctl reports %llu (%llu blocks of %lu bytes)\n", fs->c.size, blockcount,
 				       blocksize);
-#endif
+	#endif
 			}
 		}
 	}
@@ -213,9 +213,9 @@ static void determine_file_size(FILE_SOURCE *fs, int filekind)
 
 		/* TODO: check that the target can seek at all */
 
-#if DEBUG_SIZE
+	#if DEBUG_SIZE
 		printf("Size: Doing a binary search\n");
-#endif
+	#endif
 
 		/* first, find an upper bound starting from a reasonable guess */
 		lower = 0;
@@ -236,9 +236,9 @@ static void determine_file_size(FILE_SOURCE *fs, int filekind)
 		fs->c.size_known = 1;
 		fs->c.size = lower + 1;
 
-#if DEBUG_SIZE
+	#if DEBUG_SIZE
 		printf("Size: Binary search reports %llu\n", fs->c.size);
-#endif
+	#endif
 	}
 #endif
 }
@@ -320,9 +320,9 @@ static int check_position(int fd, u8 pos)
 {
 	char buf[2];
 
-#if DEBUG_SIZE
+	#if DEBUG_SIZE
 	printf("      Probing %llu\n", pos);
-#endif
+	#endif
 
 	if (lseek(fd, pos, SEEK_SET) != pos)
 		return 0;
@@ -354,7 +354,7 @@ void analyze_file(const char *filename)
 	if (filekind < 0)
 		return;
 
-		/* Mac OS type & creator code (if running on Mac OS X) */
+	/* Mac OS type & creator code (if running on Mac OS X) */
 #ifdef USE_MACOS_TYPE
 	if (filekind == 0)
 		show_macos_type(filename);

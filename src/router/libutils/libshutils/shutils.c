@@ -17,7 +17,7 @@
 #include <stdarg.h>
 #include <errno.h>
 #ifdef __UCLIBC__
-#include <error.h>
+	#include <error.h>
 #endif
 #include <fcntl.h>
 #include <limits.h>
@@ -1327,11 +1327,11 @@ char *getdisc(void) // works only for squashfs
 	int i, a, n;
 	int nocache = 0;
 	char *ret;
-#ifndef HAVE_EROUTER
+	#ifndef HAVE_EROUTER
 	FILE *in = fopen("/usr/local/nvram/nvram.bin", "rb");
 	if (in) {
 		fclose(in);
-#endif
+	#endif
 		char *cache = nvram_safe_get("root_disc");
 		if (cache[0]) {
 			char tmp[32];
@@ -1345,10 +1345,10 @@ char *getdisc(void) // works only for squashfs
 				return strdup(cache);
 			}
 		}
-#ifndef HAVE_EROUTER
+	#ifndef HAVE_EROUTER
 	} else
 		nocache = 1;
-#endif
+	#endif
 	for (i = 'a'; i <= 'z'; i++) {
 		char dev[64];
 		sprintf(dev, "/dev/sd%c2", i);
@@ -1619,9 +1619,9 @@ int check_blocklist_sock(const char *service, int sock)
 }
 
 #else
-#include <pthread.h>
+	#include <pthread.h>
 
-#define BLOCKTIME 5
+	#define BLOCKTIME 5
 static struct blocklist blocklist_root;
 static pthread_mutex_t mutex_block = PTHREAD_MUTEX_INITIALIZER;
 
@@ -1714,7 +1714,7 @@ void add_blocklist(const char *service, char *ip)
 				entry->blocked = 1;
 				dd_loginfo(service, "5 failed login attempts reached. block client %s for %d minutes", ip,
 					   newblocktime);
-#ifdef HAVE_PORTSCAN
+	#ifdef HAVE_PORTSCAN
 				char check[INET6_ADDRSTRLEN + 1];
 				int ipv6 = getipv4fromipv6(check, ip);
 				if (!ipv6)
@@ -1727,7 +1727,7 @@ void add_blocklist(const char *service, char *ip)
 				else
 					eval(IP6TABLES, "-I", "SECURITY", "-p", "tcp", "-s", ip, "-j", "TARPIT");
 
-#endif
+	#endif
 			}
 			goto end;
 		}
@@ -1785,7 +1785,7 @@ int check_blocklist(const char *service, char *ip)
 			}
 			//time over, free entry
 			if (entry->count > 4) {
-#ifdef HAVE_PORTSCAN
+	#ifdef HAVE_PORTSCAN
 
 				char check[INET6_ADDRSTRLEN + 1];
 				int ipv6 = getipv4fromipv6(check, ip);
@@ -1797,7 +1797,7 @@ int check_blocklist(const char *service, char *ip)
 					eval(IPTABLES, "-D", "SECURITY", "-s", check, "-j", "DROP");
 				else
 					eval(IP6TABLES, "-D", "SECURITY", "-s", &entry->ip[0], "-j", "DROP");
-#endif
+	#endif
 				dd_loginfo(service, "time is over for client %s, so free it", &entry->ip[0]);
 				entry->blocked = -1;
 				//				last->next = entry->next;
@@ -1949,7 +1949,7 @@ void *mymalloc(int size, char *func, int line)
 	return ref;
 }
 
-#undef free
+	#undef free
 void myfree(void *ref, char *func, int line)
 {
 	int i;
@@ -1990,7 +1990,7 @@ void showmemdebugstat(void)
 #endif
 
 #ifdef HAVE_SYSLOG
-#undef free
+	#undef free
 void dd_loginfo(const char *servicename, const char *fmt, ...)
 {
 	char *str;
@@ -2026,12 +2026,12 @@ void dd_logdebug(const char *servicename, const char *fmt, ...)
 	if (!strcmp(servicename, "httpd"))
 		service = DEBUG_HTTPD;
 
-#ifdef SYS_gettid
+	#ifdef SYS_gettid
 	unsigned int thread = syscall(SYS_gettid);
 	dd_debug(service, "[%s][%d] : %s", servicename, thread, str);
-#else
+	#else
 	dd_debug(service, "[%s] : %s", servicename, str);
-#endif
+	#endif
 	free(str);
 }
 

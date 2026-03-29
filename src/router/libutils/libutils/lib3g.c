@@ -1706,7 +1706,7 @@ void get3GControlDevice(void)
 	//      nvram_set("3gdata", "/dev/usb/tts/0");  // crap
 	int wan_select = 1;
 	char checkforce[30];
-	char wsel[16]={0};
+	char wsel[16] = { 0 };
 	if (*(nvram_safe_get("wan_select"))) {
 		wan_select = atoi(nvram_safe_get("wan_select"));
 		if (wan_select != 1) {
@@ -1758,9 +1758,9 @@ void get3GControlDevice(void)
 #if defined(HAVE_LIBMBIM) || defined(HAVE_UMBIM)
 			if ((devicelist[devicecount].modeswitch & MBIM) || nvram_match(checkforce, "97")) {
 				nvram_set("3gcontrol", "mbim");
-#ifdef HAVE_REGISTER
+	#ifdef HAVE_REGISTER
 				if (registered_has_cap(27))
-#endif
+	#endif
 				{
 					insmod("cdc-wdm");
 					insmod("usbnet");
@@ -1769,9 +1769,9 @@ void get3GControlDevice(void)
 					insmod("usbserial");
 					insmod("usb_wwan");
 					insmod("qcserial");
-#ifndef HAVE_CAMBRIA
+	#ifndef HAVE_CAMBRIA
 					needreset = 0;
-#endif
+	#endif
 
 					//start custom setup, if defined
 					if (!nvram_match("3gdnccs", "1")) {

@@ -33,13 +33,13 @@
 #define DEBUG 0
 
 #if !defined(FD_ZERO)
-#define DECOMPRESS 0
-#warning Transparent decompression disabled, select() macros not defined
+	#define DECOMPRESS 0
+	#warning Transparent decompression disabled, select() macros not defined
 #elif defined(__amigaos__) && !defined(__ixemul__)
-#define DECOMPRESS 0
-#warning Transparent decompression disabled, ixemul not available
+	#define DECOMPRESS 0
+	#warning Transparent decompression disabled, ixemul not available
 #else
-#define DECOMPRESS 1
+	#define DECOMPRESS 1
 #endif
 
 /*
@@ -229,9 +229,9 @@ static u8 read_compressed(SOURCE *s, u8 pos, u8 len, void *buf)
 	fd_set read_set;
 	fd_set write_set;
 
-#if DEBUG
+	#if DEBUG
 	printf("rc got asked for pos %llu len %llu\n", pos, len);
-#endif
+	#endif
 
 	p = (char *)buf;
 	got = 0;
@@ -241,9 +241,9 @@ static u8 read_compressed(SOURCE *s, u8 pos, u8 len, void *buf)
 
 	while (got < len) {
 		result = read(cs->read_pipe, p, len - got);
-#if DEBUG
+	#if DEBUG
 		printf("rc read got %d\n", result);
-#endif
+	#endif
 		if (result == 0) { /* end of file */
 			/* remember size for buffer layer */
 			s->size_known = 1;
@@ -282,13 +282,13 @@ static u8 read_compressed(SOURCE *s, u8 pos, u8 len, void *buf)
 			/* no more data to write, just wait for input using select */
 			FD_ZERO(&read_set);
 			FD_SET(cs->read_pipe, &read_set);
-#if DEBUG
+	#if DEBUG
 			printf("rc starting select\n");
-#endif
+	#endif
 			selresult = select(cs->nfds, &read_set, NULL, NULL, NULL);
-#if DEBUG
+	#if DEBUG
 			printf("rc select got %d\n", selresult);
-#endif
+	#endif
 			if (selresult < 0 && errno != EINTR) {
 				errore("select");
 				break;
@@ -298,9 +298,9 @@ static u8 read_compressed(SOURCE *s, u8 pos, u8 len, void *buf)
 
 		/* get data from lower layer */
 		fill = get_buffer_real(fs, cs->offset + cs->write_pos, askfor, NULL, (void **)&filebuf);
-#if DEBUG
+	#if DEBUG
 		printf("rc get_buffer asked for pos %llu len %d got %llu\n", cs->offset + cs->write_pos, askfor, fill);
-#endif
+	#endif
 		if (fill < askfor) {
 			/* we reached the end of compressed input, note that down */
 			cs->write_max = cs->write_pos + fill;
@@ -314,9 +314,9 @@ static u8 read_compressed(SOURCE *s, u8 pos, u8 len, void *buf)
 
 		/* try a write right now */
 		result = write(cs->write_pipe, filebuf, fill);
-#if DEBUG
+	#if DEBUG
 		printf("rc write got %d\n", result);
-#endif
+	#endif
 		if (result >= 0) {
 			cs->write_pos += result;
 			continue; /* see if that made more data available for reading */
@@ -334,13 +334,13 @@ static u8 read_compressed(SOURCE *s, u8 pos, u8 len, void *buf)
 		FD_ZERO(&write_set);
 		FD_SET(cs->read_pipe, &read_set);
 		FD_SET(cs->write_pipe, &write_set);
-#if DEBUG
+	#if DEBUG
 		printf("rc starting select\n");
-#endif
+	#endif
 		selresult = select(cs->nfds, &read_set, &write_set, NULL, NULL);
-#if DEBUG
+	#if DEBUG
 		printf("rc select got %d\n", selresult);
-#endif
+	#endif
 		if (selresult < 0 && errno != EINTR) {
 			errore("select");
 			break;

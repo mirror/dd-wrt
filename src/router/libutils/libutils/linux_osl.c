@@ -104,8 +104,8 @@ struct iface {
 };
 
 #if !defined(FALSE) || !defined(TRUE)
-#define TRUE 1
-#define FALSE (!TRUE)
+	#define TRUE 1
+	#define FALSE (!TRUE)
 #endif
 
 static short osl_ifflags(const char *ifname); // - tofu

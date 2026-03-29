@@ -23,9 +23,9 @@
 */
 #define TIMER_DEBUG 0 /* Turn off the debug */
 #if TIMER_DEBUG
-#define TIMERDBG(fmt, args...) printf("%s: " fmt "\n", __FUNCTION__, ##args)
+	#define TIMERDBG(fmt, args...) printf("%s: " fmt "\n", __FUNCTION__, ##args)
 #else
-#define TIMERDBG(fmt, args...)
+	#define TIMERDBG(fmt, args...)
 #endif
 
 /*
@@ -72,22 +72,22 @@ nanosleep( ) - suspend the current task until the time interval elapses (POSIX)
 typedef void (*event_callback_t)(timer_t, int);
 
 #ifndef TIMESPEC_TO_TIMEVAL
-#define TIMESPEC_TO_TIMEVAL(tv, ts)                   \
-	{                                             \
-		(tv)->tv_sec = (ts)->tv_sec;          \
-		(tv)->tv_usec = (ts)->tv_nsec / 1000; \
-	}
+	#define TIMESPEC_TO_TIMEVAL(tv, ts)                   \
+		{                                             \
+			(tv)->tv_sec = (ts)->tv_sec;          \
+			(tv)->tv_usec = (ts)->tv_nsec / 1000; \
+		}
 #endif
 
 #ifndef TIMEVAL_TO_TIMESPEC
-#define TIMEVAL_TO_TIMESPEC(tv, ts)                   \
-	{                                             \
-		(ts)->tv_sec = (tv)->tv_sec;          \
-		(ts)->tv_nsec = (tv)->tv_usec * 1000; \
-	}
+	#define TIMEVAL_TO_TIMESPEC(tv, ts)                   \
+		{                                             \
+			(ts)->tv_sec = (tv)->tv_sec;          \
+			(ts)->tv_nsec = (tv)->tv_usec * 1000; \
+		}
 #endif
 
-#define ROUNDUP(x, y) ((((x) + (y)-1) / (y)) * (y))
+#define ROUNDUP(x, y) ((((x) + (y) - 1) / (y)) * (y))
 
 #define timerroundup(t, g)                                       \
 	do {                                                     \
@@ -135,10 +135,10 @@ static unsigned int g_granularity;
 static int g_maxevents = 0;
 
 #ifndef HAVE_MICRO
-#include <pthread.h>
+	#include <pthread.h>
 static pthread_mutex_t mutex_unl = PTHREAD_MUTEX_INITIALIZER;
 
-#define lock() pthread_mutex_lock(&mutex_unl)
+	#define lock() pthread_mutex_lock(&mutex_unl)
 
 /*#define lock() { \
 while(!pthread_mutex_trylock(&mutex_unl)) { \
@@ -146,11 +146,11 @@ while(!pthread_mutex_trylock(&mutex_unl)) { \
 } \
 }*/
 
-#define unlock() pthread_mutex_unlock(&mutex_unl)
+	#define unlock() pthread_mutex_unlock(&mutex_unl)
 
 #else
-#define lock()
-#define unlock()
+	#define lock()
+	#define unlock()
 #endif
 
 uclock_t uclock()

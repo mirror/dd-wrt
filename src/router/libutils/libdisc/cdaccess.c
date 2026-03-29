@@ -30,9 +30,9 @@
 #include "global.h"
 
 #ifdef USE_IOCTL_LINUX
-#include <sys/ioctl.h>
-#include <linux/cdrom.h>
-#define DO_CDACCESS 1
+	#include <sys/ioctl.h>
+	#include <linux/cdrom.h>
+	#define DO_CDACCESS 1
 #endif /* USE_IOCTL_LINUX */
 
 #ifdef DO_CDACCESS
@@ -43,7 +43,7 @@
 
 static int cddb_sum(int n);
 
-#define LBA_TO_SECS(lba) (((lba) + 150) / 75)
+	#define LBA_TO_SECS(lba) (((lba) + 150) / 75)
 
 /*
  * CD structure:
@@ -61,19 +61,19 @@ int analyze_cdaccess(int fd, SOURCE *s, int level)
 	u1 ctrl[100];
 	u4 lba[100], length;
 	char human_readable_size[256];
-#ifdef USE_IOCTL_LINUX
+	#ifdef USE_IOCTL_LINUX
 	struct cdrom_tochdr tochdr;
 	struct cdrom_tocentry tocentry;
-#endif
+	#endif
 
 	/* read TOC header */
-#ifdef USE_IOCTL_LINUX
+	#ifdef USE_IOCTL_LINUX
 	if (ioctl(fd, CDROMREADTOCHDR, &tochdr) < 0) {
 		return 0;
 	}
 	first = tochdr.cdth_trk0;
 	last = tochdr.cdth_trk1;
-#endif
+	#endif
 
 	ntracks = last + 1 - first;
 	if (ntracks > 99) /* natural limit */
@@ -81,7 +81,7 @@ int analyze_cdaccess(int fd, SOURCE *s, int level)
 
 	/* read per-track data from TOC */
 	for (i = 0; i <= ntracks; i++) {
-#ifdef USE_IOCTL_LINUX
+	#ifdef USE_IOCTL_LINUX
 		if (i == ntracks)
 			tocentry.cdte_track = CDROM_LEADOUT;
 		else
@@ -93,7 +93,7 @@ int analyze_cdaccess(int fd, SOURCE *s, int level)
 		}
 		ctrl[i] = tocentry.cdte_ctrl;
 		lba[i] = tocentry.cdte_addr.lba;
-#endif
+	#endif
 	}
 
 	/* System-dependent code ends here. From now on, we use the data

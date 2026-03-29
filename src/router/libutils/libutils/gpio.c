@@ -600,44 +600,44 @@ void set_gpio(int gpio, int value)
 {
 	FILE *in;
 	char buf[64];
-#if defined(HAVE_ARCHERC25)
-#define GPIOMAX 128
-#elif defined(HAVE_DANUBE)
-#define GPIOMAX 64
-#else
-#define GPIOMAX 32
-#endif
+	#if defined(HAVE_ARCHERC25)
+		#define GPIOMAX 128
+	#elif defined(HAVE_DANUBE)
+		#define GPIOMAX 64
+	#else
+		#define GPIOMAX 32
+	#endif
 	if (gpio < GPIOMAX) {
-#ifdef HAVE_E380AC
+	#ifdef HAVE_E380AC
 		if (gpio ==
 		    3) { // the red led on gpio 3 cannot be controlled by output register. it will switch on if direction is set to output and will go off if direction is input
 			sprintf(buf, "/proc/gpio/%d_dir", gpio);
 			writeint(buf, value);
 			return;
 		}
-#endif
-#if defined(HAVE_ARCHERC7V4) || defined(HAVE_ARCHERC25)
+	#endif
+	#if defined(HAVE_ARCHERC7V4) || defined(HAVE_ARCHERC25)
 		if (gpio >= 24) {
 			sysprintf("echo %d > /sys/devices/platform/leds-gpio/leds/generic_%d/brightness", value, gpio);
 			return;
 		}
-#endif
+	#endif
 		sprintf(buf, "/proc/gpio/%d_dir", gpio);
 		if (writestr(buf, "1"))
 			return;
 		sprintf(buf, "/proc/gpio/%d_out", gpio);
 	} else
-#if defined(HAVE_ERC)
+	#if defined(HAVE_ERC)
 		if (gpio >= 55) {
 		set_linux_gpio(gpio, value);
 		return;
 	} else
-#endif
-#ifdef HAVE_DANUBE
+	#endif
+	#ifdef HAVE_DANUBE
 		if (gpio >= 200)
 		sprintf(buf, "/proc/gpiostp/%d_out", gpio - 200);
 	else
-#endif
+	#endif
 	{
 		sprintf(buf, "/proc/wl0gpio/%d_out", (gpio - GPIOMAX));
 	}
@@ -673,7 +673,7 @@ int get_gpio(int gpio)
 	fscanf(in, "%d", &ret);
 	fclose(in);
 	return ret;
-#undef GPIOMAX
+	#undef GPIOMAX
 }
 
 #elif defined(HAVE_NORTHSTAR)
@@ -733,16 +733,16 @@ int get_gpio(int pin)
 	return gpio;
 }
 #elif defined(HAVE_XSCALE)
-#define u8 unsigned char
-#define u32 unsigned long
+	#define u8 unsigned char
+	#define u32 unsigned long
 
 // #include <linux/ixp425-gpio.h>
 
-#include <asm/hardware.h>
-#include <asm-arm/arch-ixp4xx/ixp4xx-regs.h>
+	#include <asm/hardware.h>
+	#include <asm-arm/arch-ixp4xx/ixp4xx-regs.h>
 
-#define IXP4XX_GPIO_OUT 0x1
-#define IXP4XX_GPIO_IN 0x2
+	#define IXP4XX_GPIO_OUT 0x1
+	#define IXP4XX_GPIO_IN 0x2
 
 struct gpio_bit {
 	unsigned char bit;
@@ -844,23 +844,23 @@ int get_gpio(int gpio)
 }
 
 #elif HAVE_STORM
-#include <linux/mii.h>
-#include <linux/sockios.h>
-#include <net/if.h>
-#include <arpa/inet.h>
-#include <sys/socket.h>
-#include <linux/sockios.h>
-#include <linux/mii.h>
-#define u8 unsigned char
-#define u32 unsigned long
+	#include <linux/mii.h>
+	#include <linux/sockios.h>
+	#include <net/if.h>
+	#include <arpa/inet.h>
+	#include <sys/socket.h>
+	#include <linux/sockios.h>
+	#include <linux/mii.h>
+	#define u8 unsigned char
+	#define u32 unsigned long
 
-#define GPIO_GET_BIT 0x0000001
-#define GPIO_SET_BIT 0x0000002
-#define GPIO_GET_CONFIG 0x0000003
-#define GPIO_SET_CONFIG 0x0000004
+	#define GPIO_GET_BIT 0x0000001
+	#define GPIO_SET_BIT 0x0000002
+	#define GPIO_GET_CONFIG 0x0000003
+	#define GPIO_SET_CONFIG 0x0000004
 
-#define IXP4XX_GPIO_OUT 0x1
-#define IXP4XX_GPIO_IN 0x2
+	#define IXP4XX_GPIO_OUT 0x1
+	#define IXP4XX_GPIO_IN 0x2
 
 struct gpio_bit {
 	unsigned char bit;
@@ -962,74 +962,74 @@ int get_gpio(int gpio)
 }
 
 #elif HAVE_RT2880
-#include <linux/mii.h>
-#include <linux/sockios.h>
-#include <net/if.h>
-#include <arpa/inet.h>
-#include <sys/socket.h>
-#include <linux/sockios.h>
-#include <linux/mii.h>
+	#include <linux/mii.h>
+	#include <linux/sockios.h>
+	#include <net/if.h>
+	#include <arpa/inet.h>
+	#include <sys/socket.h>
+	#include <linux/sockios.h>
+	#include <linux/mii.h>
 
-#define GPIO_DEV "/dev/gpio"
+	#define GPIO_DEV "/dev/gpio"
 enum {
 	gpio_in,
 	gpio_out,
 };
 enum {
-#if defined(HAVE_MT7620)
+	#if defined(HAVE_MT7620)
 	gpio2300,
 	gpio3924,
 	gpio7140,
 	gpio72,
-#else
+	#else
 	gpio2300,
-#endif
+	#endif
 };
 
-#define RALINK_GPIO6332_SET_DIR 0x51
-#define RALINK_GPIO6332_SET_DIR_IN 0x13
-#define RALINK_GPIO6332_SET_DIR_OUT 0x14
-#define RALINK_GPIO6332_READ 0x52
-#define RALINK_GPIO6332_WRITE 0x53
-#define RALINK_GPIO6332_SET 0x22
-#define RALINK_GPIO6332_CLEAR 0x32
+	#define RALINK_GPIO6332_SET_DIR 0x51
+	#define RALINK_GPIO6332_SET_DIR_IN 0x13
+	#define RALINK_GPIO6332_SET_DIR_OUT 0x14
+	#define RALINK_GPIO6332_READ 0x52
+	#define RALINK_GPIO6332_WRITE 0x53
+	#define RALINK_GPIO6332_SET 0x22
+	#define RALINK_GPIO6332_CLEAR 0x32
 
-#define RALINK_GPIO9564_SET_DIR 0x61
-#define RALINK_GPIO9564_SET_DIR_IN 0x15
-#define RALINK_GPIO9564_SET_DIR_OUT 0x16
-#define RALINK_GPIO9564_READ 0x62
-#define RALINK_GPIO9564_WRITE 0x63
-#define RALINK_GPIO9564_SET 0x23
-#define RALINK_GPIO9564_CLEAR 0x33
+	#define RALINK_GPIO9564_SET_DIR 0x61
+	#define RALINK_GPIO9564_SET_DIR_IN 0x15
+	#define RALINK_GPIO9564_SET_DIR_OUT 0x16
+	#define RALINK_GPIO9564_READ 0x62
+	#define RALINK_GPIO9564_WRITE 0x63
+	#define RALINK_GPIO9564_SET 0x23
+	#define RALINK_GPIO9564_CLEAR 0x33
 
-#define RALINK_GPIO_SET_DIR 0x01
-#define RALINK_GPIO_SET_DIR_IN 0x11
-#define RALINK_GPIO_SET_DIR_OUT 0x12
-#define RALINK_GPIO_READ 0x02
-#define RALINK_GPIO_WRITE 0x03
-#define RALINK_GPIO_SET 0x21
-#define RALINK_GPIO_CLEAR 0x31
-#define RALINK_GPIO_READ_INT 0x02 //same as read
-#define RALINK_GPIO_WRITE_INT 0x03 //same as write
-#define RALINK_GPIO_SET_INT 0x21 //same as set
-#define RALINK_GPIO_CLEAR_INT 0x31 //same as clear
-#define RALINK_GPIO_ENABLE_INTP 0x08
-#define RALINK_GPIO_DISABLE_INTP 0x09
-#define RALINK_GPIO_REG_IRQ 0x0A
-#define RALINK_GPIO_LED_SET 0x41
+	#define RALINK_GPIO_SET_DIR 0x01
+	#define RALINK_GPIO_SET_DIR_IN 0x11
+	#define RALINK_GPIO_SET_DIR_OUT 0x12
+	#define RALINK_GPIO_READ 0x02
+	#define RALINK_GPIO_WRITE 0x03
+	#define RALINK_GPIO_SET 0x21
+	#define RALINK_GPIO_CLEAR 0x31
+	#define RALINK_GPIO_READ_INT 0x02 //same as read
+	#define RALINK_GPIO_WRITE_INT 0x03 //same as write
+	#define RALINK_GPIO_SET_INT 0x21 //same as set
+	#define RALINK_GPIO_CLEAR_INT 0x31 //same as clear
+	#define RALINK_GPIO_ENABLE_INTP 0x08
+	#define RALINK_GPIO_DISABLE_INTP 0x09
+	#define RALINK_GPIO_REG_IRQ 0x0A
+	#define RALINK_GPIO_LED_SET 0x41
 
-#define RALINK_GPIO7140_SET_DIR_IN 0x15
-#define RALINK_GPIO7140_SET_DIR_OUT 0x16
-#define RALINK_GPIO7140_READ 0x62
-#define RALINK_GPIO7140_WRITE 0x63
-#define RALINK_GPIO72_SET_DIR_IN 0x17
-#define RALINK_GPIO72_SET_DIR_OUT 0x18
-#define RALINK_GPIO72_READ 0x72
-#define RALINK_GPIO72_WRITE 0x73
-#define RALINK_GPIO3924_SET_DIR_IN 0x13
-#define RALINK_GPIO3924_SET_DIR_OUT 0x14
-#define RALINK_GPIO3924_READ 0x52
-#define RALINK_GPIO3924_WRITE 0x53
+	#define RALINK_GPIO7140_SET_DIR_IN 0x15
+	#define RALINK_GPIO7140_SET_DIR_OUT 0x16
+	#define RALINK_GPIO7140_READ 0x62
+	#define RALINK_GPIO7140_WRITE 0x63
+	#define RALINK_GPIO72_SET_DIR_IN 0x17
+	#define RALINK_GPIO72_SET_DIR_OUT 0x18
+	#define RALINK_GPIO72_READ 0x72
+	#define RALINK_GPIO72_WRITE 0x73
+	#define RALINK_GPIO3924_SET_DIR_IN 0x13
+	#define RALINK_GPIO3924_SET_DIR_OUT 0x14
+	#define RALINK_GPIO3924_READ 0x52
+	#define RALINK_GPIO3924_WRITE 0x53
 
 int gpio_set_dir_in(int gpio)
 {
@@ -1042,7 +1042,7 @@ int gpio_set_dir_in(int gpio)
 	}
 	int req;
 	int val;
-#ifdef HAVE_MT7621
+	#ifdef HAVE_MT7621
 	if (gpio <= 95 && gpio >= 64) {
 		req = RALINK_GPIO9564_SET_DIR_IN;
 		val = 1 << (gpio - 64);
@@ -1050,7 +1050,7 @@ int gpio_set_dir_in(int gpio)
 		req = RALINK_GPIO6332_SET_DIR_IN;
 		val = 1 << (gpio - 32);
 	} else
-#elif defined(HAVE_MT7620)
+	#elif defined(HAVE_MT7620)
 	if (gpio == 72) {
 		req = RALINK_GPIO72_SET_DIR_IN;
 		val = 1 << (gpio - 72);
@@ -1061,7 +1061,7 @@ int gpio_set_dir_in(int gpio)
 		req = RALINK_GPIO3924_SET_DIR_IN;
 		val = 1 << (gpio - 24);
 	} else
-#endif
+	#endif
 	{
 		req = RALINK_GPIO_SET_DIR_IN;
 		val = 1 << gpio;
@@ -1086,7 +1086,7 @@ int gpio_set_dir_out(int gpio)
 	}
 	int req;
 	int val;
-#ifdef HAVE_MT7621
+	#ifdef HAVE_MT7621
 	if (gpio <= 95 && gpio >= 64) {
 		req = RALINK_GPIO9564_SET_DIR_OUT;
 		val = 1 << (gpio - 64);
@@ -1094,7 +1094,7 @@ int gpio_set_dir_out(int gpio)
 		req = RALINK_GPIO6332_SET_DIR_OUT;
 		val = 1 << (gpio - 32);
 	} else
-#elif defined(HAVE_MT7620)
+	#elif defined(HAVE_MT7620)
 	if (gpio == 72) {
 		req = RALINK_GPIO72_SET_DIR_OUT;
 		val = 1 << (gpio - 72);
@@ -1105,7 +1105,7 @@ int gpio_set_dir_out(int gpio)
 		req = RALINK_GPIO3924_SET_DIR_OUT;
 		val = 1 << (gpio - 24);
 	} else
-#endif
+	#endif
 	{
 		req = RALINK_GPIO_SET_DIR_OUT;
 		val = 1 << gpio;
@@ -1131,7 +1131,7 @@ int gpio_read_bit(int gpio, int *value)
 	}
 	int req;
 	int val;
-#ifdef HAVE_MT7621
+	#ifdef HAVE_MT7621
 	if (gpio <= 95 && gpio >= 64) {
 		req = RALINK_GPIO9564_READ;
 		val = 1 << (gpio - 64);
@@ -1139,7 +1139,7 @@ int gpio_read_bit(int gpio, int *value)
 		req = RALINK_GPIO6332_READ;
 		val = 1 << (gpio - 32);
 	} else
-#elif defined(HAVE_MT7620)
+	#elif defined(HAVE_MT7620)
 	if (gpio == 72) {
 		req = RALINK_GPIO72_READ;
 		val = 1 << (gpio - 72);
@@ -1150,7 +1150,7 @@ int gpio_read_bit(int gpio, int *value)
 		req = RALINK_GPIO3924_READ;
 		val = 1 << (gpio - 24);
 	} else
-#endif
+	#endif
 	{
 		req = RALINK_GPIO_READ;
 		val = 1 << gpio;
@@ -1181,7 +1181,7 @@ int gpio_write_bit(int gpio, int setvalue)
 	int req;
 	int wreq;
 	int val;
-#ifdef HAVE_MT7621
+	#ifdef HAVE_MT7621
 	if (gpio <= 95 && gpio >= 64) {
 		req = RALINK_GPIO9564_READ;
 		wreq = RALINK_GPIO9564_WRITE;
@@ -1191,7 +1191,7 @@ int gpio_write_bit(int gpio, int setvalue)
 		wreq = RALINK_GPIO6332_WRITE;
 		val = 1 << (gpio - 32);
 	} else
-#elif defined(HAVE_MT7620)
+	#elif defined(HAVE_MT7620)
 	if (gpio == 72) {
 		req = RALINK_GPIO72_READ;
 		wreq = RALINK_GPIO72_WRITE;
@@ -1206,7 +1206,7 @@ int gpio_write_bit(int gpio, int setvalue)
 		wreq = RALINK_GPIO3924_WRITE;
 		val = 1 << (gpio - 24);
 	} else
-#endif
+	#endif
 	{
 		req = RALINK_GPIO_READ;
 		wreq = RALINK_GPIO_WRITE;
@@ -1256,36 +1256,36 @@ int get_gpio(int pin)
 
 #elif HAVE_OPENRISC
 
-#define GPIO_CMD_GET_BTN_RST 1
-#define GPIO_CMD_SET_BTN_RST 2
-#define GPIO_CMD_GET_LEDS 3
-#define GPIO_CMD_SET_LEDS 4
-#define GPIO_CMD_SET_LED_POWER 5
-#define GPIO_CMD_SET_LED_BLUE 6
-#define GPIO_CMD_SET_LED_GREEN 7
-#define GPIO_CMD_SET 8
-#define GPIO_CMD_GET 9
-#define GPIO_CMD_SET_CTRL 10
-#define GPIO_CMD_GET_CTRL 11
-#define GPIO_CMD_SET_IRQMASK 12
-#define GPIO_CMD_GET_IRQMASK 13
-#define GPIO_CMD_SET_CHANGE 14 //!< obsolete
-#define GPIO_CMD_GET_CHANGE 15
-#define GPIO_CMD_SET_CHANGES 16 //!< obsolete
-#define GPIO_CMD_GET_CHANGES 17
-#define GPIO_CMD_SET_BUZZER 18
-#define GPIO_CMD_GET_BUZZER 19
-#define GPIO_CMD_SET_BUZZER_FRQ 20
-#define GPIO_CMD_GET_BUZZER_FRQ 21
-#define GPIO_CMD_SET_LED_BTN_WLAN 22
-#define GPIO_CMD_GET_BTN_WLAN 23
+	#define GPIO_CMD_GET_BTN_RST 1
+	#define GPIO_CMD_SET_BTN_RST 2
+	#define GPIO_CMD_GET_LEDS 3
+	#define GPIO_CMD_SET_LEDS 4
+	#define GPIO_CMD_SET_LED_POWER 5
+	#define GPIO_CMD_SET_LED_BLUE 6
+	#define GPIO_CMD_SET_LED_GREEN 7
+	#define GPIO_CMD_SET 8
+	#define GPIO_CMD_GET 9
+	#define GPIO_CMD_SET_CTRL 10
+	#define GPIO_CMD_GET_CTRL 11
+	#define GPIO_CMD_SET_IRQMASK 12
+	#define GPIO_CMD_GET_IRQMASK 13
+	#define GPIO_CMD_SET_CHANGE 14 //!< obsolete
+	#define GPIO_CMD_GET_CHANGE 15
+	#define GPIO_CMD_SET_CHANGES 16 //!< obsolete
+	#define GPIO_CMD_GET_CHANGES 17
+	#define GPIO_CMD_SET_BUZZER 18
+	#define GPIO_CMD_GET_BUZZER 19
+	#define GPIO_CMD_SET_BUZZER_FRQ 20
+	#define GPIO_CMD_GET_BUZZER_FRQ 21
+	#define GPIO_CMD_SET_LED_BTN_WLAN 22
+	#define GPIO_CMD_GET_BTN_WLAN 23
 
 struct gpio_struct {
 	unsigned long mask;
 	unsigned long value;
 };
 
-#define GPIO_DEV "/dev/misc/gpio"
+	#define GPIO_DEV "/dev/misc/gpio"
 void set_gpio(int pin, int value)
 {
 	int fd, req;
@@ -1474,7 +1474,7 @@ int get_gpio(int pin)
 
 #else //e.g. Broadcom...
 
-/*
+	/*
  * External clk/data based shift register 
  * This should be modified for boards with different control pattern
  * such as active mode (high/low), trigger mode (high/low), etc
@@ -1482,29 +1482,29 @@ int get_gpio(int pin)
  * Netgear WNDR4000 uses 8-bit serial-in/parallel-out shift register 74HC164
  */
 
-/* Direct ctrl mode */
-#define WNDR4000_GPIO_USB (1)
-#define WNDR4000_GPIO_WIFI (2)
-#define WNDR4000_GPIO_RESET (3)
-#define WNDR4000_GPIO_WPS (4)
-#define WNDR4000_GPIO_ROBO_RESET (5)
+	/* Direct ctrl mode */
+	#define WNDR4000_GPIO_USB (1)
+	#define WNDR4000_GPIO_WIFI (2)
+	#define WNDR4000_GPIO_RESET (3)
+	#define WNDR4000_GPIO_WPS (4)
+	#define WNDR4000_GPIO_ROBO_RESET (5)
 
-/* Clk/Data extended ctrl mode */
-#define WNDR4000_GPIO_EXT_CTRL_DATA (6)
-#define WNDR4000_GPIO_EXT_CTRL_CLK (7)
+	/* Clk/Data extended ctrl mode */
+	#define WNDR4000_GPIO_EXT_CTRL_DATA (6)
+	#define WNDR4000_GPIO_EXT_CTRL_CLK (7)
 
-/* Extended LED max shift times */
-#define WNDR4000_EXT_LED_MAX_SHIFTS (8 - 1) /* 8 extended pins */
+	/* Extended LED max shift times */
+	#define WNDR4000_EXT_LED_MAX_SHIFTS (8 - 1) /* 8 extended pins */
 
-/* Extended LED shift defines, not gpio pins, all active low */
-#define WNDR4000_GPIO_LED_PWR_GREEN (0)
-#define WNDR4000_GPIO_LED_PWR_AMBER (1)
-#define WNDR4000_GPIO_LED_WAN (2)
-#define WNDR4000_GPIO_LED_WLAN_2G (3)
-#define WNDR4000_GPIO_LED_WLAN_5G (4)
-#define WNDR4000_GPIO_LED_USB (5)
-#define WNDR4000_GPIO_LED_WPS (6)
-#define WNDR4000_GPIO_LED_WLAN (7)
+	/* Extended LED shift defines, not gpio pins, all active low */
+	#define WNDR4000_GPIO_LED_PWR_GREEN (0)
+	#define WNDR4000_GPIO_LED_PWR_AMBER (1)
+	#define WNDR4000_GPIO_LED_WAN (2)
+	#define WNDR4000_GPIO_LED_WLAN_2G (3)
+	#define WNDR4000_GPIO_LED_WLAN_5G (4)
+	#define WNDR4000_GPIO_LED_USB (5)
+	#define WNDR4000_GPIO_LED_WPS (6)
+	#define WNDR4000_GPIO_LED_WLAN (7)
 void set_gpio_normal(int pin, int value);
 
 void ext_output_value(unsigned int led_status, int clk, int data, int max_shifts)

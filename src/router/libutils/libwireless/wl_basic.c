@@ -173,7 +173,7 @@ static char *stalist[] = { "wlan0", "wlan1", "wlan2", "wlan3", "wlan4", "wlan5",
 
 char *getWifi(char *ifname)
 {
-#ifdef HAVE_MVEBU
+	#ifdef HAVE_MVEBU
 	if (!strncmp(ifname, "wlan0", 4))
 		return "wlan0";
 	if (!strncmp(ifname, "wlan1", 4))
@@ -183,7 +183,7 @@ char *getWifi(char *ifname)
 	if (!strncmp(ifname, "wlan3", 4))
 		return "wlan3";
 	return NULL;
-#else
+	#else
 	if (!strncmp(ifname, "wlan0", 4))
 		return "wifi0";
 	if (!strncmp(ifname, "wlan1", 4))
@@ -193,7 +193,7 @@ char *getWifi(char *ifname)
 	if (!strncmp(ifname, "wlan3", 4))
 		return "wifi3";
 	return NULL;
-#endif
+	#endif
 }
 
 char *get_wl_instance_name(int instance)
@@ -232,10 +232,10 @@ char *getWDSSTA(void)
 char *getSTA(void)
 {
 
-#ifdef HAVE_WAVESAT
+	#ifdef HAVE_WAVESAT
 	if (nvram_match("ofdm_mode", "sta"))
 		return "ofdm";
-#endif
+	#endif
 	int c = ARRAY_SIZE(stalist);
 	int i;
 
@@ -249,10 +249,10 @@ char *getSTA(void)
 
 char *getWET(void)
 {
-#ifdef HAVE_WAVESAT
+	#ifdef HAVE_WAVESAT
 	if (nvram_match("ofdm_mode", "bridge"))
 		return "ofdm";
-#endif
+	#endif
 	int c = ARRAY_SIZE(stalist);
 	int i;
 
@@ -267,18 +267,18 @@ char *getWET(void)
 #else
 char *get_wl_instance_name(int instance)
 {
-#ifdef HAVE_MVEBU
+	#ifdef HAVE_MVEBU
 	fprintf(stderr, "get_wl_instance_name \n");
-	/*if (instance == 1)
+		/*if (instance == 1)
 	   return "wlan0";
 	   if (instance == 2)
 	   return "wlan1"; */
 
-#endif
-#ifdef HAVE_QTN
+	#endif
+	#ifdef HAVE_QTN
 	if (instance == 1)
 		return "qtn";
-#endif
+	#endif
 	if (get_wl_instance("eth1") == instance)
 		return "eth1";
 	if (get_wl_instance("eth2") == instance)
@@ -293,12 +293,12 @@ char *get_wl_instance_name(int instance)
 
 int get_wl_instances(void)
 {
-#ifdef HAVE_MVEBU
+	#ifdef HAVE_MVEBU
 	return 2;
-#endif
-#ifdef HAVE_QTN
+	#endif
+	#ifdef HAVE_QTN
 	return 2;
-#else
+	#else
 	if (get_wl_instance("eth3") == 2)
 		return 3;
 	if (get_wl_instance("eth1") == 1)
@@ -307,7 +307,7 @@ int get_wl_instances(void)
 		return 2;
 	if (get_wl_instance("eth3") == 1)
 		return 2;
-#endif
+	#endif
 	return 1;
 }
 
@@ -321,7 +321,7 @@ int get_wl_instance(char *name)
 		return -1;
 
 	int offset = 0;
-#ifdef HAVE_DHDAP
+	#ifdef HAVE_DHDAP
 
 	if (getRouterBrand() != ROUTER_NETGEAR_R7000P && !strcmp(name, "eth2")) {
 		if (!dhd_probe("eth1") && dhd_probe("eth2") && !wl_probe("eth2"))
@@ -329,7 +329,7 @@ int get_wl_instance(char *name)
 		else if (!dhd_probe("eth2") && dhd_probe("eth1") && !wl_probe("eth1"))
 			offset = 1;
 	}
-#endif
+	#endif
 	ret = wl_ioctl(name, WLC_GET_INSTANCE, &unit, sizeof(unit));
 	unit += offset;
 	//      fprintf(stderr,"wl_instance = %d\n",unit);
@@ -355,10 +355,10 @@ int bcm_gettxpower(char *wlname)
 		c = 2;
 	else
 		return pwr;
-#ifdef HAVE_QTN
+	#ifdef HAVE_QTN
 	if (c == 1)
 		return nvram_geti("wl1_txpwr");
-#endif
+	#endif
 	sprintf(cmd, "wl -i %s txpwr1", get_wl_instance_name(c));
 	FILE *in = popen(cmd, "r");
 	if (in == NULL)
@@ -419,14 +419,14 @@ int wl_probe(char *name)
 	 */
 	if ((ret = wl_ioctl(name, WLC_GET_MAGIC, &val, sizeof(val)))) {
 		//fprintf(stderr,"WLC_GET_MAGIC fail: %s\n", name);
-#ifdef HAVE_DHDAP
+	#ifdef HAVE_DHDAP
 		if (dhd_probe(name)) {
-#endif
+	#endif
 			wladdList(name);
 			return ret;
-#ifdef HAVE_DHDAP
+	#ifdef HAVE_DHDAP
 		}
-#endif
+	#endif
 	}
 #endif
 
@@ -447,9 +447,9 @@ int wl_probe(char *name)
 }
 
 #ifdef HAVE_DHDAP
-#include <sys/ioctl.h>
-#include <net/if.h>
-#include <dhdioctl.h>
+	#include <sys/ioctl.h>
+	#include <net/if.h>
+	#include <dhdioctl.h>
 /*
  * Probe the specified interface.
  * @param	name	interface name

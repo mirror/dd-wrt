@@ -25,19 +25,19 @@
 #include <shutils.h>
 
 #ifdef HAVE_MADWIFI
-#include <sys/types.h>
-#include <sys/file.h>
-#include <sys/ioctl.h>
-#include <sys/socket.h>
-#include <net/ethernet.h>
-#include <ddnvram.h>
+	#include <sys/types.h>
+	#include <sys/file.h>
+	#include <sys/ioctl.h>
+	#include <sys/socket.h>
+	#include <net/ethernet.h>
+	#include <ddnvram.h>
 
-#include "wireless.h"
-#include "net80211/ieee80211.h"
-#include "net80211/ieee80211_crypto.h"
-#include "net80211/ieee80211_ioctl.h"
-#include <stdio.h>
-#include <utils.h>
+	#include "wireless.h"
+	#include "net80211/ieee80211.h"
+	#include "net80211/ieee80211_crypto.h"
+	#include "net80211/ieee80211_ioctl.h"
+	#include <stdio.h>
+	#include <utils.h>
 
 static int set80211param(char *iface, int op, int arg)
 {
@@ -62,14 +62,14 @@ struct maclist {
 
 void security_disable(char *iface)
 {
-#ifdef DEBUG
+	#ifdef DEBUG
 	printf("Security Disable\n");
-#endif
+	#endif
 	set80211param(iface, IEEE80211_PARAM_MACCMD, IEEE80211_MACCMD_FLUSH);
 	set80211param(iface, IEEE80211_PARAM_MACCMD, IEEE80211_MACCMD_POLICY_OPEN);
 }
 
-#if 0
+	#if 0
 static const char *ieee80211_ntoa(const unsigned char mac[IEEE80211_ADDR_LEN])
 {
 	static char a[18];
@@ -78,7 +78,7 @@ static const char *ieee80211_ntoa(const unsigned char mac[IEEE80211_ADDR_LEN])
 	i = snprintf(a, sizeof(a), "%02x:%02x:%02x:%02x:%02x:%02x", mac[0]&0xff, mac[1]&0xff, mac[2]&0xff, mac[3]&0xff, mac[4]&0xff, mac[5]&0xff);
 	return (i < 17 ? NULL : a);
 }
-#endif
+	#endif
 
 void set_maclist(char *iface, char *buf)
 {
@@ -99,27 +99,27 @@ void set_maclist(char *iface, char *buf)
 
 void security_deny(char *iface)
 {
-#ifdef DEBUG
+	#ifdef DEBUG
 	printf("Policy Deny\n");
-#endif
+	#endif
 	// fprintf(stderr,"maclist deny\n");
 	set80211param(iface, IEEE80211_PARAM_MACCMD, IEEE80211_MACCMD_POLICY_ALLOW);
 }
 
 void security_allow(char *iface)
 {
-#ifdef DEBUG
+	#ifdef DEBUG
 	printf("Policy Deny\n");
-#endif
+	#endif
 	// fprintf(stderr,"maclist allow\n");
 	set80211param(iface, IEEE80211_PARAM_MACCMD, IEEE80211_MACCMD_POLICY_DENY);
 }
 
 void kick_mac(char *iface, char *mac)
 {
-#ifdef DEBUG
+	#ifdef DEBUG
 	printf("KickMac: %s\n", mac);
-#endif
+	#endif
 	struct ieee80211req_mlme mlme;
 
 	mlme.im_op = IEEE80211_MLME_DISASSOC;
@@ -130,13 +130,13 @@ void kick_mac(char *iface, char *mac)
 	do80211priv(iface, IEEE80211_IOCTL_SETMLME, &mlme, sizeof(mlme));
 }
 #elif defined(HAVE_RT2880) || defined(HAVE_RT61)
-#include <sys/types.h>
-#include <sys/file.h>
-#include <sys/ioctl.h>
-#include <sys/socket.h>
-#include <net/ethernet.h>
-#include <ddnvram.h>
-#include <stdio.h>
+	#include <sys/types.h>
+	#include <sys/file.h>
+	#include <sys/ioctl.h>
+	#include <sys/socket.h>
+	#include <net/ethernet.h>
+	#include <ddnvram.h>
+	#include <stdio.h>
 
 struct maclist {
 	uint count; /* number of MAC addresses */
@@ -193,10 +193,10 @@ void kick_mac(char *iface, char *mac)
 
 #else
 
-#include <wlutils.h>
-#include <wlioctl.h>
+	#include <wlutils.h>
+	#include <wlioctl.h>
 
-#include <ddnvram.h>
+	#include <ddnvram.h>
 void set_maclist(char *iface, char *buf)
 {
 	wl_ioctl(iface, WLC_SET_MACLIST, buf, WLC_IOCTL_MAXLEN);

@@ -88,11 +88,11 @@ typedef uint32_t u32;
 static pthread_mutex_t mutex_unl = PTHREAD_MUTEX_INITIALIZER;
 static char *lastlock;
 static char *lastunlock;
-#define lock() pthread_mutex_lock(&mutex_unl)
-#define unlock() pthread_mutex_unlock(&mutex_unl)
+	#define lock() pthread_mutex_lock(&mutex_unl)
+	#define unlock() pthread_mutex_unlock(&mutex_unl)
 #else
-#define lock()
-#define unlock()
+	#define lock()
+	#define unlock()
 #endif
 
 void mac80211_lock(void)
@@ -272,7 +272,7 @@ nla_put_failure:
 }
 
 #ifdef HAVE_ATH10K
-#if 0
+	#if 0
 void set_ath10kdistance(char *dev, unsigned int distance)
 {
 	unsigned int isb = is_beeliner(dev);
@@ -363,7 +363,7 @@ unsigned int get_ath10kdistance(char *ifname)
 	distance *= 450;
 	return distance;
 }
-#endif
+	#endif
 #endif
 #if 0
 int getFrequency_mac80211(char *interface)
@@ -895,7 +895,15 @@ unsigned int bitrate_s1g(int mcs, int bw, int sgi)
 			150000,
 		},
 		{
-			650000, 1300000, 1950000, 2600000, 3900000, 5200000, 5850000, 6500000, 7800000,
+			650000,
+			1300000,
+			1950000,
+			2600000,
+			3900000,
+			5200000,
+			5850000,
+			6500000,
+			7800000,
 			/* MCS 9 not valid */
 		},
 		{
@@ -1140,7 +1148,7 @@ char *mac80211_get_vhtcaps(const char *interface, int shortgi, int vht80, int vh
 		cap = nla_get_u32(caps);
 		unsigned int bfantenna = (cap >> 13) & 0x7;
 		unsigned int sodimension = (cap >> 16) & 0x7;
-#if 0
+	#if 0
 		if (bfantenna & 4)
 			bfantenna &= 4;
 		if (bfantenna & 2)
@@ -1150,7 +1158,7 @@ char *mac80211_get_vhtcaps(const char *interface, int shortgi, int vht80, int vh
 			sodimension &= 4;
 		if (sodimension & 2)
 			sodimension &= 2;
-#endif
+	#endif
 		asprintf(&capstring, "%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s[MAX-A-MPDU-LEN-EXP%d]%s%s%s%s%s%s",
 			 (cap & VHT_CAP_RXLDPC ? "[RXLDPC]" : ""),
 			 (((cap & VHT_CAP_SHORT_GI_80) && shortgi && has5ghz && (vht80 || vht160)) ? "[SHORT-GI-80]" : ""),
@@ -1289,7 +1297,7 @@ int is_6ghz_psc_frequency(int freq)
 int has_he160(const char *interface)
 {
 	return has_6ghz(interface) || has_vht160(interface);
-#if 0
+	#if 0
 	//if vht caps do not support vht160, he160 will not work anyway. we dont need this function
 	INITVALUECACHEi(interface);
 	char *hecaps = mac80211_get_hecaps(interface);
@@ -1301,7 +1309,7 @@ int has_he160(const char *interface)
 	free(hecaps);
 	EXITVALUECACHE();
 	return ret;
-#endif
+	#endif
 }
 #endif
 
@@ -1701,16 +1709,9 @@ static int check_ranges(char *name, struct wifi_channels *list, struct wifi_chan
 	return 1;
 }
 
-#define VHT160RANGE(offset)                                                                                                \
-	(int[])                                                                                                            \
-	{                                                                                                                  \
-		offset + 70, offset + 50, offset - 50, offset - 70, offset + 30, offset + 10, offset - 10, offset - 30, -1 \
-	}
-#define VHT80RANGE(offset)                                             \
-	(int[])                                                        \
-	{                                                              \
-		offset + 30, offset + 10, offset - 10, offset - 30, -1 \
-	}
+#define VHT160RANGE(offset) \
+	(int[]){ offset + 70, offset + 50, offset - 50, offset - 70, offset + 30, offset + 10, offset - 10, offset - 30, -1 }
+#define VHT80RANGE(offset) (int[]){ offset + 30, offset + 10, offset - 10, offset - 30, -1 }
 
 #define VHTRANGE(width, offset) width == 160 ? VHT160RANGE(offset) : VHT80RANGE(offset)
 

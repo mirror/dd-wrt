@@ -64,14 +64,14 @@
 #include <linux/mii.h>
 
 #ifdef HAVE_IPV6
-#include <ifaddrs.h>
+	#include <ifaddrs.h>
 #endif
 #ifndef IP_ALEN
-#define IP_ALEN 4
+	#define IP_ALEN 4
 #endif
 
 #ifndef unlikely
-#define unlikely(x) __builtin_expect((x), 0)
+	#define unlikely(x) __builtin_expect((x), 0)
 #endif
 
 #define SIOCGMIIREG 0x8948 /* Read MII PHY register.  */
@@ -167,12 +167,12 @@ void setWifiPass(void)
 		nvram_set("wl1_crypto", "aes");
 		nvram_set("wl1_wpa_psk", pass);
 		nvram_set("wl1_akm", "psk2");
-#ifdef HAVE_DHDAP
+	#ifdef HAVE_DHDAP
 		nvram_set("wl2_security_mode", "psk2");
 		nvram_set("wl2_crypto", "aes");
 		nvram_set("wl2_wpa_psk", pass);
 		nvram_set("wl2_akm", "psk2");
-#endif
+	#endif
 #else
 		nvram_set("wlan0_security_mode", "psk2");
 		nvram_set("wlan0_ccmp", "1");
@@ -357,9 +357,9 @@ int check_switch_support(void)
 		return 1;
 	if (nvram_exists("sw_wancpuport"))
 		return 1;
-#ifdef HAVE_ALPINE
+	#ifdef HAVE_ALPINE
 	return 1;
-#endif
+	#endif
 #endif
 
 #if defined(HAVE_GEMTEK) || defined(HAVE_RB500) || defined(HAVE_XSCALE) || defined(HAVE_MAGICBOX) || defined(HAVE_RB600) || \
@@ -372,15 +372,15 @@ int check_switch_support(void)
 	int brand = getRouterBrand();
 
 	switch (brand) {
-#ifndef HAVE_BUFFALO
+	#ifndef HAVE_BUFFALO
 	case ROUTER_ASUS_WL500GD:
 	case ROUTER_WRT54G1X:
 		return 1;
 		break;
-#endif
+	#endif
 	case ROUTER_BUFFALO_WLAG54C:
 	case ROUTER_BUFFALO_WLA2G54C:
-#ifndef HAVE_BUFFALO
+	#ifndef HAVE_BUFFALO
 	case ROUTER_LINKSYS_WRT55AG:
 	case ROUTER_MOTOROLA_V1:
 	case ROUTER_MOTOROLA_WE800G:
@@ -393,7 +393,7 @@ int check_switch_support(void)
 	case ROUTER_ASUS_WL500G:
 	case ROUTER_BELKIN_F5D7230_V2000:
 	case ROUTER_ASKEY_RT220XD:
-#endif
+	#endif
 		return 0;
 		break;
 	}
@@ -447,16 +447,16 @@ int check_wan_link(int num)
 			if (nvram_match("3gdata", "sierradirectip")) {
 				fp = fopen("/tmp/sierradipstatus", "rb");
 			}
-#ifdef HAVE_UQMI
+	#ifdef HAVE_UQMI
 			if (nvram_match("3gdata", "qmi")) {
 				fp = fopen("/tmp/qmistatus", "rb");
 			}
-#endif
-#ifdef HAVE_LIBMBIM
+	#endif
+	#ifdef HAVE_LIBMBIM
 			if (nvram_match("3gdata", "mbim")) {
 				fp = fopen("/tmp/mbimstatus", "rb");
 			}
-#endif
+	#endif
 			// Where is hso? was never handled
 			if (fp) {
 				fscanf(fp, "%d", &value);
@@ -466,7 +466,7 @@ int check_wan_link(int num)
 				wan_link = 1;
 			} else {
 				wan_link = 0;
-#if defined(HAVE_TMK) || defined(HAVE_BKM)
+	#if defined(HAVE_TMK) || defined(HAVE_BKM)
 				char *gpio3g;
 				gpio3g = nvram_safe_get("gpio3g");
 				if (*gpio3g)
@@ -474,7 +474,7 @@ int check_wan_link(int num)
 				gpio3g = nvram_safe_get("gpiowancable");
 				if (*gpio3g)
 					set_gpio(atoi(gpio3g), 0);
-#endif
+	#endif
 			}
 			return wan_link;
 		}
@@ -679,54 +679,54 @@ static char *getUEnvExt(char *name)
 	defined(HAVE_IPQ6018) || defined(HAVE_PERU) || defined(HAVE_REALTEK)
 void *getUEnv(char *name)
 {
-#ifdef HAVE_ALPINE
-#define USIZE 0x40000
-#else
-#define USIZE 0x2000
-#endif
-#ifdef HAVE_WZRG300NH
-#define UOFFSET 0x40000
-#elif HAVE_WZR450HP2
-#define UOFFSET 0x40000
-#elif HAVE_WZRHPAG300NH
-#define UOFFSET 0x40000
-#elif HAVE_WZRG450
-#define UOFFSET 0x40000
-#elif HAVE_WMBR_G300NH
-#define UOFFSET 0x0
-#elif HAVE_DIR810L
-#define UOFFSET 0x0
-#elif HAVE_VENTANA
-#define UOFFSET 0x0
-#elif HAVE_REALTEK
-#define UOFFSET 0x0
-#elif HAVE_MVEBU
-#define UOFFSET 0x0
-#elif HAVE_IPQ6018
-#define UOFFSET 0x0
-#elif HAVE_IPQ806X
-#define UOFFSET 0x0
-#elif HAVE_PERU
-#define UOFFSET 0x40000
-#else
-#define UOFFSET 0x3E000
-#endif
+	#ifdef HAVE_ALPINE
+		#define USIZE 0x40000
+	#else
+		#define USIZE 0x2000
+	#endif
+	#ifdef HAVE_WZRG300NH
+		#define UOFFSET 0x40000
+	#elif HAVE_WZR450HP2
+		#define UOFFSET 0x40000
+	#elif HAVE_WZRHPAG300NH
+		#define UOFFSET 0x40000
+	#elif HAVE_WZRG450
+		#define UOFFSET 0x40000
+	#elif HAVE_WMBR_G300NH
+		#define UOFFSET 0x0
+	#elif HAVE_DIR810L
+		#define UOFFSET 0x0
+	#elif HAVE_VENTANA
+		#define UOFFSET 0x0
+	#elif HAVE_REALTEK
+		#define UOFFSET 0x0
+	#elif HAVE_MVEBU
+		#define UOFFSET 0x0
+	#elif HAVE_IPQ6018
+		#define UOFFSET 0x0
+	#elif HAVE_IPQ806X
+		#define UOFFSET 0x0
+	#elif HAVE_PERU
+		#define UOFFSET 0x40000
+	#else
+		#define UOFFSET 0x3E000
+	#endif
 	int try = 0;
 	//      static char res[64];
 	static char res[256];
 	bzero(res, sizeof(res));
 	//fprintf(stderr,"[u-boot env]%s\n",name);
-#if defined(HAVE_WMBR_G300NH) || defined(HAVE_DIR810L)
+	#if defined(HAVE_WMBR_G300NH) || defined(HAVE_DIR810L)
 	FILE *fp = fopen("/dev/mtdblock/1", "rb");
-#elif HAVE_MVEBU
+	#elif HAVE_MVEBU
 	FILE *fp = fopen("/dev/mtdblock/1", "rb");
-#elif HAVE_PERU
+	#elif HAVE_PERU
 	FILE *fp = fopen("/dev/mtdblock/0", "rb");
-#elif HAVE_VENTANA
+	#elif HAVE_VENTANA
 	FILE *fp = fopen("/dev/mtdblock/1", "rb");
-#elif HAVE_ALPINE
+	#elif HAVE_ALPINE
 	FILE *fp = fopen("/dev/mtdblock/1", "rb");
-#elif HAVE_REALTEK
+	#elif HAVE_REALTEK
 	int brand = getRouterBrand();
 	FILE *fp;
 	switch (brand) {
@@ -741,7 +741,7 @@ void *getUEnv(char *name)
 		fp = fopen("/dev/mtdblock/2", "rb");
 		break;
 	}
-#elif HAVE_IPQ6018
+	#elif HAVE_IPQ6018
 	int brand = getRouterBrand();
 	FILE *fp;
 	switch (brand) {
@@ -764,7 +764,7 @@ void *getUEnv(char *name)
 		fp = fopen("/dev/mtdblock/18", "rb");
 		break;
 	}
-#elif HAVE_IPQ806X
+	#elif HAVE_IPQ806X
 	int brand = getRouterBrand();
 	FILE *fp;
 	if (brand == ROUTER_LINKSYS_EA8500) {
@@ -774,9 +774,9 @@ void *getUEnv(char *name)
 	} else {
 		fp = fopen("/dev/mtd3", "rb");
 	}
-#else
+	#else
 	FILE *fp = fopen("/dev/mtdblock/0", "rb");
-#endif
+	#endif
 	char newname[64];
 	snprintf(newname, 64, "%s=", name);
 	fseek(fp, UOFFSET, SEEK_SET);
@@ -784,13 +784,13 @@ void *getUEnv(char *name)
 again:;
 	fread(mem, USIZE, 1, fp);
 	fclose(fp);
-#ifdef HAVE_VENTANA
+	#ifdef HAVE_VENTANA
 	if (try == 0 && mem[0] == 0xff) {
 		try = 1;
 		fp = fopen("/dev/mtdblock/2", "rb");
 		goto again;
 	}
-#endif
+	#endif
 	int s = (USIZE - 1) - strlen(newname);
 	int i;
 	int l = strlen(newname);
@@ -802,11 +802,11 @@ again:;
 		}
 	}
 	free(mem);
-#ifdef HAVE_WZR450HP2
+	#ifdef HAVE_WZR450HP2
 	char *result = getUEnvExt(name);
 	if (result)
 		return result;
-#endif
+	#endif
 	return NULL;
 }
 #endif
@@ -1426,12 +1426,12 @@ char *cpustring(void)
 	}
 	int i;
 
-#ifdef HAVE_MAGICBOX
+	#ifdef HAVE_MAGICBOX
 	int cnt = 0;
-#endif
-#ifdef HAVE_X86
+	#endif
+	#ifdef HAVE_X86
 	int cnt = 0;
-#endif
+	#endif
 	for (i = 0; i < 256; i++) {
 		int c = getc(fcpu);
 
@@ -1440,17 +1440,17 @@ char *cpustring(void)
 			return NULL;
 		}
 		if (c == ':')
-#ifdef HAVE_MAGICBOX
+	#ifdef HAVE_MAGICBOX
 			cnt++;
 		if (cnt == 2)
 			break;
-#elif HAVE_X86
+	#elif HAVE_X86
 			cnt++;
 		if (cnt == 5)
 			break;
-#else
+	#else
 			break;
-#endif
+	#endif
 	}
 	getc(fcpu);
 	for (i = 0; i < 255; i++) {
@@ -2207,7 +2207,7 @@ int buf_to_file(char *path, char *buf)
 }
 
 #ifndef IFNAMSIZ
-#include <net/if.h>
+	#include <net/if.h>
 #endif
 
 char *safe_get_wan_face(char *localwanface)
@@ -2387,7 +2387,7 @@ char *getMountedDrives(void)
 				continue;
 			}
 		}
-#ifdef HAVE_ZFS
+	#ifdef HAVE_ZFS
 next:;
 		if (fstype) {
 			if (!strcmp(dev, "zfs")) {
@@ -2402,7 +2402,7 @@ next:;
 				strcat(drives, dev);
 			}
 		}
-#endif
+	#endif
 	}
 	return drives;
 }
@@ -2432,7 +2432,7 @@ static char *s_getDrives(int type)
 						goto next;
 				}
 			}
-#ifdef HAVE_ZFS
+	#ifdef HAVE_ZFS
 			if (type) {
 				char *d = &file->d_name[0];
 				char stats[512];
@@ -2465,7 +2465,7 @@ static char *s_getDrives(int type)
 						goto next;
 				}
 			}
-#endif
+	#endif
 			int c = 0;
 			if (drives)
 				c = 1;
@@ -2507,7 +2507,7 @@ char *getAllDrives(void)
 #endif
 
 #ifdef HAVE_SYSCTL_EDIT
-#include <dirent.h>
+	#include <dirent.h>
 
 static char *sysctl_blacklist[] = { SYSCTL_BLACKLIST };
 
@@ -2601,12 +2601,12 @@ static int mdio_read(int skfd, struct ifreq *ifr, int location)
 	return mii->val_out;
 }
 
-#ifndef MII_CTRL1000
-#define MII_CTRL1000 0x09 /* 1000BASE-T control          */
-#define MII_STAT1000 0x0a /* 1000BASE-T status           */
-#define ADVERTISE_1000FULL 0x0200 /* Advertise 1000BASE-T full duplex */
-#define ADVERTISE_1000HALF 0x0100 /* Advertise 1000BASE-T half duplex */
-#endif
+	#ifndef MII_CTRL1000
+		#define MII_CTRL1000 0x09 /* 1000BASE-T control          */
+		#define MII_STAT1000 0x0a /* 1000BASE-T status           */
+		#define ADVERTISE_1000FULL 0x0200 /* Advertise 1000BASE-T full duplex */
+		#define ADVERTISE_1000HALF 0x0100 /* Advertise 1000BASE-T half duplex */
+	#endif
 
 static int getLanPortStatus_fallback(const char *ifname, struct portstatus *status)
 {

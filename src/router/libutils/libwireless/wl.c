@@ -220,11 +220,11 @@ int is_wrt3200(void)
 int has_2ghz(const char *prefix)
 {
 	INITVALUECACHE();
-#ifdef HAVE_MVEBU
+	#ifdef HAVE_MVEBU
 	if (is_wrt3200() && is_mvebu(prefix) && !strncmp(prefix, "wlan0", 5)) {
 		RETURNVALUE(0);
 	}
-#endif
+	#endif
 	if (is_mac80211(prefix)) {
 		RETURNVALUE(mac80211_check_band(prefix, 2));
 	}
@@ -274,12 +274,12 @@ int has_6ghz_only(const char *prefix)
 #if !defined(HAVE_MADWIFI)
 int has_vht160(const char *prefix)
 {
-#ifdef HAVE_RT2880
+	#ifdef HAVE_RT2880
 	char *dev = getWifiDeviceName(prefix, NULL);
 	if (dev && !strcmp(dev, "MT7615 802.11ac"))
 		return 1;
-#endif
-#if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880) && !defined(HAVE_RT61)
+	#endif
+	#if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880) && !defined(HAVE_RT61)
 	char cap[WLC_IOCTL_SMLEN];
 	char caps[WLC_IOCTL_MEDLEN];
 	const char *next;
@@ -292,7 +292,7 @@ int has_vht160(const char *prefix)
 			return 1;
 		}
 	}
-#endif
+	#endif
 	return 0;
 }
 
@@ -336,7 +336,7 @@ unsigned int ieee80211_ieee2mhz(const char *prefix, unsigned int chan)
 
 #ifndef HAVE_MADWIFI
 
-#if defined(HAVE_RT2880) || defined(HAVE_RT61)
+	#if defined(HAVE_RT2880) || defined(HAVE_RT61)
 char *getRADev(const char *prefix)
 {
 	char *ifname = NULL;
@@ -416,7 +416,7 @@ int getchannels(unsigned int *list, char *ifname)
 		list[11] = 12;
 		list[12] = 13;
 		list[13] = 14;
-#ifdef HAVE_BUFFALO
+		#ifdef HAVE_BUFFALO
 		// temporal solution, needs to be done right
 		if (nvram_match("region", "EU"))
 			return 11;
@@ -428,13 +428,13 @@ int getchannels(unsigned int *list, char *ifname)
 			return 13;
 		else
 			return 11;
-#else
+		#else
 		return 14;
-#endif
+		#endif
 	} else {
 		int i;
 		int cnt = 0;
-#ifdef HAVE_BUFFALO
+		#ifdef HAVE_BUFFALO
 		if (nvram_match("region", "EU")) {
 			for (i = 0; i < 4; i++)
 				list[cnt++] = 36 + (i * 4);
@@ -456,7 +456,7 @@ int getchannels(unsigned int *list, char *ifname)
 				list[cnt++] = 36 + (i * 4);
 		}
 
-#else
+		#else
 		for (i = 0; i < 8; i++)
 			list[cnt++] = 36 + (i * 4);
 
@@ -465,26 +465,26 @@ int getchannels(unsigned int *list, char *ifname)
 
 		for (i = 0; i < 7; i++)
 			list[cnt++] = 149 + (i * 4);
-#endif
+		#endif
 		return cnt;
 	}
 }
 
-#include <sys/types.h>
-#include <sys/file.h>
-#include <sys/ioctl.h>
-#include <sys/socket.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <stdint.h>
-#include <ctype.h>
-#include <getopt.h>
-#include <err.h>
-#include <linux/socket.h>
-#include <linux/if.h>
-#define __user
-#include "wireless.h"
+		#include <sys/types.h>
+		#include <sys/file.h>
+		#include <sys/ioctl.h>
+		#include <sys/socket.h>
+		#include <stdio.h>
+		#include <stdlib.h>
+		#include <string.h>
+		#include <stdint.h>
+		#include <ctype.h>
+		#include <getopt.h>
+		#include <err.h>
+		#include <linux/socket.h>
+		#include <linux/if.h>
+		#define __user
+		#include "wireless.h"
 
 static int wrqfreq_to_int(struct iwreq *wrq)
 {
@@ -521,7 +521,7 @@ struct wifi_interface *wifi_getfreq(char *ifname)
 	return interface;
 }
 
-#if defined(HAVE_MADWIFI) || defined(HAVE_RT2880) || defined(HAVE_RT61)
+		#if defined(HAVE_MADWIFI) || defined(HAVE_RT2880) || defined(HAVE_RT61)
 int wifi_getchannel(char *ifname)
 {
 	struct wifi_interface *interface = wifi_getfreq(ifname);
@@ -529,7 +529,7 @@ int wifi_getchannel(char *ifname)
 	free(interface);
 	return channel;
 }
-#endif
+		#endif
 long long wifi_getrate(char *ifname)
 {
 	struct iwreq wrq;
@@ -622,8 +622,8 @@ int OidQueryInformation(unsigned long OidQueryCode, int socket_id, char *DeviceN
 	return (ioctl(socket_id, (SIOCIWFIRSTPRIV + 0x0E), &wrq));
 }
 
-#include "stapriv.h"
-#include "oid.h"
+		#include "stapriv.h"
+		#include "oid.h"
 
 STAINFO *getRaStaInfo(char *ifname)
 {
@@ -678,7 +678,7 @@ STAINFO *getRaStaInfo(char *ifname)
 	return NULL;
 }
 
-#define RTPRIV_IOCTL_GET_MAC_TABLE (SIOCIWFIRSTPRIV + 0x0F)
+		#define RTPRIV_IOCTL_GET_MAC_TABLE (SIOCIWFIRSTPRIV + 0x0F)
 
 int getassoclist(const char *ifname, unsigned char *list)
 {
@@ -831,27 +831,27 @@ void radio_on(int idx)
 	led_control(LED_WLAN0, LED_ON);
 }
 
-#else
-#ifdef WL_CHANSPEC_BW_8080
+	#else
+		#ifdef WL_CHANSPEC_BW_8080
 
 static const uint8 wf_chspec_bw_mhz[] = { 5, 10, 20, 40, 80, 160, 160 };
 
-#define WF_NUM_BW (sizeof(wf_chspec_bw_mhz) / sizeof(uint8))
+			#define WF_NUM_BW (sizeof(wf_chspec_bw_mhz) / sizeof(uint8))
 
 /* 40MHz channels in 5GHz band */
 static const uint8 wf_5g_40m_chans[] = { 38, 46, 54, 62, 102, 110, 118, 126, 134, 142, 151, 159 };
 
-#define WF_NUM_5G_40M_CHANS (sizeof(wf_5g_40m_chans) / sizeof(uint8))
+			#define WF_NUM_5G_40M_CHANS (sizeof(wf_5g_40m_chans) / sizeof(uint8))
 
 /* 80MHz channels in 5GHz band */
 static const uint8 wf_5g_80m_chans[] = { 42, 58, 106, 122, 138, 155 };
 
-#define WF_NUM_5G_80M_CHANS (sizeof(wf_5g_80m_chans) / sizeof(uint8))
+			#define WF_NUM_5G_80M_CHANS (sizeof(wf_5g_80m_chans) / sizeof(uint8))
 
 /* 160MHz channels in 5GHz band */
 static const uint8 wf_5g_160m_chans[] = { 50, 114 };
 
-#define WF_NUM_5G_160M_CHANS (sizeof(wf_5g_160m_chans) / sizeof(uint8))
+			#define WF_NUM_5G_160M_CHANS (sizeof(wf_5g_160m_chans) / sizeof(uint8))
 
 static uint8 center_chan_to_edge(uint bw)
 {
@@ -924,22 +924,22 @@ static int getcenterchannel(chanspec_t chspec)
 	return wf_chspec_ctlchan(chspec);
 }
 
-#else
+		#else
 
-#ifndef CHSPEC_IS40
-#define WL_CHANSPEC_CTL_SB_MASK 0x0300
-#define WL_CHANSPEC_CTL_SB_LOWER 0x0100
-#define WL_CHANSPEC_CTL_SB_UPPER 0x0200
+			#ifndef CHSPEC_IS40
+				#define WL_CHANSPEC_CTL_SB_MASK 0x0300
+				#define WL_CHANSPEC_CTL_SB_LOWER 0x0100
+				#define WL_CHANSPEC_CTL_SB_UPPER 0x0200
 
-#define WL_CHANSPEC_BW_MASK 0x0C00
-#define WL_CHANSPEC_BW_40 0x0C00
+				#define WL_CHANSPEC_BW_MASK 0x0C00
+				#define WL_CHANSPEC_BW_40 0x0C00
 
-#define CHSPEC_CHANNEL(chspec) ((uint8)(chspec & 0xff))
+				#define CHSPEC_CHANNEL(chspec) ((uint8)(chspec & 0xff))
 
-#define CHSPEC_IS40(chspec) (((chspec) & WL_CHANSPEC_BW_MASK) == WL_CHANSPEC_BW_40)
-#define CHSPEC_SB_UPPER(chspec) ((chspec & WL_CHANSPEC_CTL_SB_MASK) == WL_CHANSPEC_CTL_SB_UPPER)
-#define CHSPEC_SB_LOWER(chspec) ((chspec & WL_CHANSPEC_CTL_SB_MASK) == WL_CHANSPEC_CTL_SB_LOWER)
-#endif
+				#define CHSPEC_IS40(chspec) (((chspec) & WL_CHANSPEC_BW_MASK) == WL_CHANSPEC_BW_40)
+				#define CHSPEC_SB_UPPER(chspec) ((chspec & WL_CHANSPEC_CTL_SB_MASK) == WL_CHANSPEC_CTL_SB_UPPER)
+				#define CHSPEC_SB_LOWER(chspec) ((chspec & WL_CHANSPEC_CTL_SB_MASK) == WL_CHANSPEC_CTL_SB_LOWER)
+			#endif
 
 static int getcenterchannel(chanspec_t chspec)
 {
@@ -958,8 +958,8 @@ static int getcenterchannel(chanspec_t chspec)
 	}
 	return channel;
 }
-#endif
-#ifdef HAVE_80211AC
+		#endif
+		#ifdef HAVE_80211AC
 int has_beamforming(const char *prefix)
 {
 	wlc_rev_info_t rev;
@@ -1003,11 +1003,11 @@ int has_mumimo(const char *prefix)
 	}
 	return 0;
 }
-#endif
+		#endif
 
 int getchannels(unsigned int *retlist, char *ifname)
 {
-#ifdef HAVE_80211AC
+		#ifdef HAVE_80211AC
 	char buf[WLC_IOCTL_MAXLEN];
 	int buflen;
 	int ret;
@@ -1048,7 +1048,7 @@ int getchannels(unsigned int *retlist, char *ifname)
 		bw = 20;
 
 	int spec = 0;
-#ifdef WL_CHANSPEC_BW_8080
+			#ifdef WL_CHANSPEC_BW_8080
 	if (nvram_nmatch("8080", "wl%d_nbw", wl))
 		mask = WL_CHANSPEC_BW_8080;
 	else if (nvram_nmatch("160", "wl%d_nbw", wl))
@@ -1056,7 +1056,7 @@ int getchannels(unsigned int *retlist, char *ifname)
 	else if (nvram_nmatch("80", "wl%d_nbw", wl))
 		mask = WL_CHANSPEC_BW_80;
 	else
-#endif
+			#endif
 		if (nvram_nmatch("40", "wl%d_nbw", wl))
 		mask = WL_CHANSPEC_BW_40;
 	else if (nvram_nmatch("20", "wl%d_nbw", wl))
@@ -1065,13 +1065,13 @@ int getchannels(unsigned int *retlist, char *ifname)
 		mask = WL_CHANSPEC_BW_20;
 	else if (nvram_nmatch("10", "wl%d_nbw", wl))
 		mask = WL_CHANSPEC_BW_10;
-#ifdef WL_CHANSPEC_BW_5
+			#ifdef WL_CHANSPEC_BW_5
 	else if (nvram_nmatch("5", "wl%d_nbw", wl))
 		mask = WL_CHANSPEC_BW_5;
-#endif
+			#endif
 
 	if (bw > 20) {
-#ifdef WL_CHANSPEC_CTL_SB_UU
+			#ifdef WL_CHANSPEC_CTL_SB_UU
 		if (bw == 80) {
 			if (nvram_nmatch("lower", "wl%d_nctrlsb", wl) || nvram_nmatch("upper", "wl%d_nctrlsb", wl))
 				nvram_nset("ll", "wl%d_nctrlsb", wl);
@@ -1084,7 +1084,7 @@ int getchannels(unsigned int *retlist, char *ifname)
 			spec = WL_CHANSPEC_CTL_SB_LU;
 		else if (nvram_nmatch("ll", "wl%d_nctrlsb", wl))
 			spec = WL_CHANSPEC_CTL_SB_LL;
-#endif
+			#endif
 		if (bw == 40) {
 			if (nvram_nmatch("uu", "wl%d_nctrlsb", wl) || nvram_nmatch("ul", "wl%d_nctrlsb", wl) ||
 			    nvram_nmatch("lu", "wl%d_nctrlsb", wl) || nvram_nmatch("ll", "wl%d_nctrlsb", wl))
@@ -1132,7 +1132,7 @@ int getchannels(unsigned int *retlist, char *ifname)
 
 	return count;
 
-#else //HAVE_80211AC
+		#else //HAVE_80211AC
 
 	// int ret, num;
 	// num = (sizeof (*list) - 4) / 6; /* Maximum number of entries in the
@@ -1153,29 +1153,29 @@ int getchannels(unsigned int *retlist, char *ifname)
 		retlist[count++] = chan;
 	}
 	pclose(in);
-#ifdef BUFFALO_JP
+			#ifdef BUFFALO_JP
 	return count - 1;
-#else
+			#else
 	return count;
-#endif
+			#endif
 
-#endif
+		#endif
 }
 
-#ifdef TEST
+		#ifdef TEST
 
 void main(int argc, char *argv[])
 {
 	char buf[1024];
 	getchannels(buf, "eth1");
 }
-#endif
+		#endif
 int has_5ghz(const char *prefix)
 {
-#ifdef HAVE_QTN
+		#ifdef HAVE_QTN
 	if (!strcmp(prefix, "wl1"))
 		return 1;
-#endif
+		#endif
 	if (strstr(nvram_nget("%s_bandlist", prefix), "a"))
 		return 1;
 
@@ -1190,7 +1190,7 @@ int has_2ghz(const char *prefix)
 	return 0;
 }
 
-#if defined(HAVE_MADWIFI) || defined(HAVE_RT2880)
+		#if defined(HAVE_MADWIFI) || defined(HAVE_RT2880)
 
 int wifi_getchannel(char *ifn)
 {
@@ -1208,7 +1208,7 @@ int wifi_getchannel(char *ifn)
 	} else
 		return -1;
 }
-#endif
+		#endif
 int wl_getbssid(char *wl, char *mac)
 {
 	int ret;
@@ -1221,10 +1221,10 @@ int wl_getbssid(char *wl, char *mac)
 
 int getassoclist(const char *name, unsigned char *list)
 {
-#ifdef HAVE_QTN
+		#ifdef HAVE_QTN
 	if (has_qtn(name))
 		return getassoclist_qtn(name, list);
-#endif
+		#endif
 
 	// int ap;
 	// if ((wl_ioctl(name, WLC_GET_AP, &ap, sizeof(ap)) < 0) || ap)
@@ -1260,7 +1260,7 @@ int getassoclist(const char *name, unsigned char *list)
 		return -1;
 	return count[0];
 }
-#endif
+	#endif
 
 int getwdslist(char *name, unsigned char *list)
 {
@@ -1275,7 +1275,7 @@ int getwdslist(char *name, unsigned char *list)
 	return (ret);
 }
 
-#if !defined(HAVE_RT2880) && !defined(HAVE_RT61)
+	#if !defined(HAVE_RT2880) && !defined(HAVE_RT61)
 
 typedef struct {
 	uint32 val;
@@ -1306,27 +1306,27 @@ int getwifiinfo(const char *ifname, unsigned char *macname, int field)
 	return 0;
 }
 
-#endif
+	#endif
 
 #else
-#include <sys/types.h>
-#include <sys/file.h>
-#include <sys/ioctl.h>
-#include <sys/socket.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <stdint.h>
-#include <ctype.h>
-#include <getopt.h>
-#include <err.h>
+	#include <sys/types.h>
+	#include <sys/file.h>
+	#include <sys/ioctl.h>
+	#include <sys/socket.h>
+	#include <stdio.h>
+	#include <stdlib.h>
+	#include <string.h>
+	#include <stdint.h>
+	#include <ctype.h>
+	#include <getopt.h>
+	#include <err.h>
 
-#include "wireless.h"
-#undef WPA_OUI
-#undef WME_OUI
-#include "../madwifi.dev/madwifi.dev/net80211/ieee80211.h"
-#include "../madwifi.dev/madwifi.dev/net80211/ieee80211_crypto.h"
-#include "../madwifi.dev/madwifi.dev/net80211/ieee80211_ioctl.h"
+	#include "wireless.h"
+	#undef WPA_OUI
+	#undef WME_OUI
+	#include "../madwifi.dev/madwifi.dev/net80211/ieee80211.h"
+	#include "../madwifi.dev/madwifi.dev/net80211/ieee80211_crypto.h"
+	#include "../madwifi.dev/madwifi.dev/net80211/ieee80211_ioctl.h"
 
 static int wrqfreq_to_int(struct iwreq *wrq)
 {
@@ -1348,10 +1348,10 @@ static int wrqfreq_to_int(struct iwreq *wrq)
  * Atheros 
  */
 
-#define IOCTL_ERR(x) [x - SIOCIWFIRSTPRIV] "ioctl[" #x "]"
+	#define IOCTL_ERR(x) [x - SIOCIWFIRSTPRIV] "ioctl[" #x "]"
 static int set80211priv(struct iwreq *iwr, const char *ifname, int op, void *data, size_t len)
 {
-#define N(a) (sizeof(a) / sizeof(a[0]))
+	#define N(a) (sizeof(a) / sizeof(a[0]))
 
 	bzero(iwr, sizeof(struct iwreq));
 	strlcpy(iwr->ifr_name, ifname, IFNAMSIZ - 1);
@@ -1390,7 +1390,7 @@ static int set80211priv(struct iwreq *iwr, const char *ifname, int op, void *dat
 		return -1;
 	}
 	return 0;
-#undef N
+	#undef N
 }
 
 int do80211priv(const char *ifname, int op, void *data, size_t len)
@@ -1404,7 +1404,7 @@ int do80211priv(const char *ifname, int op, void *data, size_t len)
 	return iwr.u.data.length;
 }
 
-#define KILO 1000
+	#define KILO 1000
 
 long long wifi_getrate(char *ifname)
 {
@@ -1548,10 +1548,10 @@ long long wifi_getrate(char *ifname)
 	}
 }
 
-/*
+	/*
  * For doing log10/exp10 without libm 
  */
-#define LOG10_MAGIC 1.25892541179
+	#define LOG10_MAGIC 1.25892541179
 
 int iw_mwatt2dbm(int in)
 {
@@ -1578,9 +1578,9 @@ int iw_mwatt2dbm(int in)
 static int checkid(char *ifname, int vendorid,
 		   int productid) //checks if its usually a emp card (no concrete detection possible)
 {
-#ifdef HAVE_MVEBU
+	#ifdef HAVE_MVEBU
 	return 0;
-#endif
+	#endif
 	int devcount;
 	char readid[64];
 
@@ -1712,49 +1712,49 @@ int wifi_gettxpoweroffset(char *ifname)
 {
 	int poweroffset = 0;
 
-#ifdef HAVE_ALPHA
+	#ifdef HAVE_ALPHA
 	poweroffset = 10;
-#elif HAVE_EOC1650
+	#elif HAVE_EOC1650
 	poweroffset = 0;
-#elif HAVE_BWRG1000
+	#elif HAVE_BWRG1000
 	poweroffset = 12; //?? guess
-#elif HAVE_EAP3660
+	#elif HAVE_EAP3660
 	poweroffset = 8;
-#elif HAVE_EOC2610
+	#elif HAVE_EOC2610
 	poweroffset = 8;
-#elif HAVE_ECB3500
+	#elif HAVE_ECB3500
 	poweroffset = 8;
-#elif HAVE_EOC5610
+	#elif HAVE_EOC5610
 	poweroffset = 0;
-#elif HAVE_NS2
+	#elif HAVE_NS2
 	poweroffset = 10;
-#elif HAVE_LC2
+	#elif HAVE_LC2
 	poweroffset = 10;
-#elif HAVE_BS2
+	#elif HAVE_BS2
 	poweroffset = 0;
-#elif HAVE_PICO2
+	#elif HAVE_PICO2
 	poweroffset = 0;
-#elif HAVE_PICO2HP
+	#elif HAVE_PICO2HP
 	poweroffset = 10;
-#elif HAVE_MS2
+	#elif HAVE_MS2
 	poweroffset = 10;
-#elif HAVE_BS2HP
+	#elif HAVE_BS2HP
 	poweroffset = 10;
-#elif HAVE_NS5
+	#elif HAVE_NS5
 	poweroffset = 5;
-#elif HAVE_PICO5
+	#elif HAVE_PICO5
 	poweroffset = 5;
-#elif HAVE_NS3
+	#elif HAVE_NS3
 	poweroffset = 5;
-#elif HAVE_LC5
+	#elif HAVE_LC5
 	poweroffset = 5;
-#elif HAVE_DLM101
+	#elif HAVE_DLM101
 	poweroffset = 5;
-#elif HAVE_BS5
+	#elif HAVE_BS5
 	poweroffset = 5;
-#elif HAVE_LS5
+	#elif HAVE_LS5
 	poweroffset = 5;
-#else
+	#else
 	if (isEMP(ifname)) {
 		if (nvram_nmatch("2", "%s_cardtype", ifname))
 			return 8;
@@ -1771,12 +1771,12 @@ int wifi_gettxpoweroffset(char *ifname)
 	if (isDL4600(ifname))
 		return 10;
 
-#ifdef HAVE_ATH9K
+		#ifdef HAVE_ATH9K
 	if (isFXXN_PRO(ifname))
 		return 5;
 	else if (isSR71E(ifname))
 		return 7;
-#endif
+		#endif
 	int devcount;
 	int err;
 	char readid[64];
@@ -1786,7 +1786,7 @@ int wifi_gettxpoweroffset(char *ifname)
 	poweroffset = getValueFromPath("/proc/sys/dev/wifi%d/poweroffset", devcount, "%d", &err);
 	if (err || poweroffset < 0 || poweroffset > 20)
 		poweroffset = 0;
-#endif
+	#endif
 	char *manpoweroffset;
 	manpoweroffset = nvram_nget("%s_poweroffset", ifname);
 	if (*(manpoweroffset)) {
@@ -1797,9 +1797,9 @@ int wifi_gettxpoweroffset(char *ifname)
 
 int get_freqoffset(char *ifname)
 {
-#ifdef HAVE_NS3
+	#ifdef HAVE_NS3
 	return -2000;
-#endif
+	#endif
 
 	if (isEMP(ifname)) {
 		if (nvram_nmatch("4", "%s_cardtype", ifname))
@@ -1809,7 +1809,7 @@ int get_freqoffset(char *ifname)
 	if (isDL4600(ifname))
 		return -705;
 
-#ifdef HAVE_ATH9K
+	#ifdef HAVE_ATH9K
 	if (isFXXN_PRO(ifname) == 1) {
 		if (nvram_nmatch("1", "%s_cardtype", ifname)) {
 			return -1830;
@@ -1818,7 +1818,7 @@ int get_freqoffset(char *ifname)
 			return 720;
 		}
 	}
-#endif
+	#endif
 
 	char *var = NULL;
 	if (ifname) {
@@ -1902,7 +1902,7 @@ struct wifi_interface *wifi_getfreq(char *ifname)
 	return interface;
 }
 
-#if defined(HAVE_MADWIFI) || defined(HAVE_RT2880) || defined(HAVE_RT61)
+	#if defined(HAVE_MADWIFI) || defined(HAVE_RT2880) || defined(HAVE_RT61)
 
 int wifi_getchannel(char *ifname)
 {
@@ -1913,7 +1913,7 @@ int wifi_getchannel(char *ifname)
 	free(interface);
 	return channel;
 }
-#endif
+	#endif
 
 int get_radiostate(char *ifname)
 {
@@ -1995,7 +1995,7 @@ int getAssocMAC(const char *ifname, char *mac)
 	return ret;
 }
 
-#ifdef HAVE_ATH9K
+	#ifdef HAVE_ATH9K
 
 static unsigned int get_ath10kreg(char *ifname, unsigned int reg)
 {
@@ -2091,20 +2091,20 @@ void mac80211_radio_on_off(int idx, int on)
 			close(f);
 		}
 	}
-	// LED
-#ifdef HAVE_WZRHPAG300NH
+		// LED
+		#ifdef HAVE_WZRHPAG300NH
 	if (idx == 0)
 		sprintf(debugstring, "/sys/class/leds/wireless_generic_1/trigger");
 	else
 		sprintf(debugstring, "/sys/class/leds/wireless_generic_21/trigger");
-#else
+		#else
 	if (is_ath10k(prefix))
 		sprintf(debugstring, "/sys/class/leds/ath10k-phy%d/trigger", mac80211_get_phy_idx(idx));
 	else if (is_ath11k(prefix))
 		sprintf(debugstring, "/sys/class/leds/ath11k-phy%d/trigger", mac80211_get_phy_idx(idx));
 	else
 		sprintf(debugstring, "/sys/class/leds/ath9k-phy%d/trigger", mac80211_get_phy_idx(idx));
-#endif
+		#endif
 	f = open(debugstring, O_WRONLY);
 	if (f) {
 		if (on) {
@@ -2120,19 +2120,19 @@ void mac80211_radio_on_off(int idx, int on)
 			}
 		} else {
 			write(f, "none", sizeof("none") - 1);
-#ifdef HAVE_WZRHPAG300NH
+		#ifdef HAVE_WZRHPAG300NH
 			if (idx == 0) {
 				led_control(LED_SEC0, LED_OFF);
 			} else if (idx == 1) {
 				led_control(LED_SEC1, LED_OFF);
 			}
-#endif
+		#endif
 		}
 		close(f);
 	}
 }
 
-#endif
+	#endif
 
 int has_athmask(int devnum, int mask)
 {
@@ -2189,27 +2189,27 @@ static struct wifi_channels *list_channelsext(const char *ifname, int allchans)
 
 		// filter out A channels if mode isnt A-Only or mixed
 		if (IEEE80211_IS_CHAN_A(&achans.ic_chans[i])) {
-#ifdef HAVE_WHRAG108
+	#ifdef HAVE_WHRAG108
 			if (!strcmp(ifname, "wlan1"))
 				continue;
-#endif
-#ifdef HAVE_TW6600
+	#endif
+	#ifdef HAVE_TW6600
 			if (!strcmp(ifname, "wlan1"))
 				continue;
-#endif
+	#endif
 			if (nvram_invmatch(wl_mode, "a-only") && nvram_invmatch(wl_mode, "mixed"))
 				continue;
 		}
 		// filter out B/G channels if mode isnt g-only, b-only or mixed
 		if (IEEE80211_IS_CHAN_ANYG(&achans.ic_chans[i]) || IEEE80211_IS_CHAN_B(&achans.ic_chans[i])) {
-#ifdef HAVE_WHRAG108
+	#ifdef HAVE_WHRAG108
 			if (!strcmp(ifname, "wlan0"))
 				continue;
-#endif
-#ifdef HAVE_TW6600
+	#endif
+	#ifdef HAVE_TW6600
 			if (!strcmp(ifname, "wlan0"))
 				continue;
-#endif
+	#endif
 			if (nvram_invmatch(wl_mode, "g-only") && nvram_invmatch(wl_mode, "mixed") &&
 			    nvram_invmatch(wl_mode, "b-only") && nvram_invmatch(wl_mode, "bg-mixed"))
 				continue;
@@ -2437,7 +2437,7 @@ int getassoclist(const char *ifname, unsigned char *list)
 
 void radio_off(int idx)
 {
-#ifdef HAVE_ATH9K
+	#ifdef HAVE_ATH9K
 	if (idx == -1) {
 		int cc = getdevicecount();
 		int i;
@@ -2453,15 +2453,15 @@ void radio_off(int idx)
 		if (idx == 1)
 			led_control(LED_WLAN1, LED_OFF);
 	}
-#endif
+	#endif
 	if (idx != -1) {
-#ifdef HAVE_MVEBU
+	#ifdef HAVE_MVEBU
 
-#else
+	#else
 		writevaproc("1", "/proc/sys/dev/wifi%d/silent", idx);
 		writevaproc("1", "/proc/sys/dev/wifi%d/ledon",
 			    idx); // switch off led
-#endif
+	#endif
 		if (idx == 0)
 			led_control(LED_WLAN0, LED_OFF);
 		if (idx == 1)
@@ -2470,24 +2470,24 @@ void radio_off(int idx)
 		int cc = getdevicecount();
 		int i;
 		for (i = 0; i < cc; i++) {
-#ifdef HAVE_MVEBU
+	#ifdef HAVE_MVEBU
 
-#else
+	#else
 			writevaproc("1", "/proc/sys/dev/wifi%d/silent", i);
 			writevaproc("1", "/proc/sys/dev/wifi%d/ledon",
 				    i); // switch off led
-#endif
+	#endif
 		}
 		led_control(LED_WLAN0, LED_OFF);
 		led_control(LED_WLAN1, LED_OFF);
 	}
-#ifdef HAVE_ATH9K
-#endif
+	#ifdef HAVE_ATH9K
+	#endif
 }
 
 void radio_on(int idx)
 {
-#ifdef HAVE_ATH9K
+	#ifdef HAVE_ATH9K
 	if (idx == -1) {
 		int cc = getdevicecount();
 		int i;
@@ -2503,13 +2503,13 @@ void radio_on(int idx)
 		if (idx == 1)
 			led_control(LED_WLAN1, LED_ON);
 	}
-#endif
+	#endif
 	if (idx != -1) {
-#ifdef HAVE_MVEBU
+	#ifdef HAVE_MVEBU
 
-#else
+	#else
 		writevaproc("0", "/proc/sys/dev/wifi%d/silent", idx);
-#endif
+	#endif
 		if (idx == 0)
 			led_control(LED_WLAN0, LED_ON);
 		if (idx == 1)
@@ -2528,10 +2528,10 @@ void radio_on(int idx)
 int gettxantenna(char *ifname)
 {
 	if (is_mac80211(ifname)) {
-#ifdef HAVE_CARLSONWIRELESS
+	#ifdef HAVE_CARLSONWIRELESS
 		if (!registered_has_cap(20))
 			return (1);
-#endif
+	#endif
 		return (mac80211_get_avail_tx_antenna(ifname));
 	} else
 		return (7);
@@ -2540,10 +2540,10 @@ int gettxantenna(char *ifname)
 int getrxantenna(char *ifname)
 {
 	if (is_mac80211(ifname)) {
-#ifdef HAVE_CARLSONWIRELESS
+	#ifdef HAVE_CARLSONWIRELESS
 		if (!registered_has_cap(20))
 			return (1);
-#endif
+	#endif
 		return (mac80211_get_avail_rx_antenna(ifname));
 	} else
 		return (7);
@@ -2604,10 +2604,10 @@ int has_ac(const char *prefix)
 
 int has_mimo(const char *prefix)
 {
-#ifdef HAVE_QTN
+	#ifdef HAVE_QTN
 	if (!strcmp(prefix, "wl1"))
 		return 1;
-#endif
+	#endif
 	char mimo[32];
 	sprintf(mimo, "%s_phytypes", prefix);
 	char *phy = nvram_safe_get(mimo);
@@ -2617,16 +2617,16 @@ int has_mimo(const char *prefix)
 		return 0;
 }
 
-#if !defined(HAVE_ATH10K) && !defined(HAVE_BRCMFMAC) && !defined(HAVE_MT76)
+	#if !defined(HAVE_ATH10K) && !defined(HAVE_BRCMFMAC) && !defined(HAVE_MT76)
 int has_ac(const char *prefix)
 {
-#ifdef HAVE_ATH9K
+		#ifdef HAVE_ATH9K
 	return 0;
-#else
-#ifdef HAVE_QTN
+		#else
+			#ifdef HAVE_QTN
 	if (!strcmp(prefix, "wl1"))
 		return 1;
-#endif
+			#endif
 	char mimo[32];
 	sprintf(mimo, "%s_phytypes", prefix);
 	char *phy = nvram_safe_get(mimo);
@@ -2634,9 +2634,9 @@ int has_ac(const char *prefix)
 		return 1;
 	else
 		return 0;
-#endif
+		#endif
 }
-#endif
+	#endif
 #endif
 
 #ifdef HAVE_QTN
@@ -2683,9 +2683,9 @@ struct wifidevices {
 
 #define PCI_ANY 0
 #ifdef HAVE_ATH5K
-#define CHANNELSURVEY5K 0x1
+	#define CHANNELSURVEY5K 0x1
 #else
-#define CHANNELSURVEY5K 0
+	#define CHANNELSURVEY5K 0
 #endif
 static struct wifidevices wdevices[] = {
 	{ "Ubiquiti XR5", CHANNELSURVEY5K | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ, 0x168c, 0x001b, 0x0777, 0x3005,
@@ -3600,25 +3600,25 @@ static int flagcheck(const char *prefix, int flag, int nullvalid)
 	return !!(flags & flag);
 }
 
-#define FLAGCHECK(name, flag, nullvalid)                   \
-	int has_##name(const char *prefix)                 \
-	{                                                  \
-		return flagcheck(prefix, flag, nullvalid); \
-	}
+	#define FLAGCHECK(name, flag, nullvalid)                   \
+		int has_##name(const char *prefix)                 \
+		{                                                  \
+			return flagcheck(prefix, flag, nullvalid); \
+		}
 
 FLAGCHECK(channelsurvey, CHANNELSURVEY, 1);
 FLAGCHECK(nolivesurvey, SURVEY_NOPERIOD, 1);
 FLAGCHECK(qboost, QBOOST, 0);
-#ifdef HAVE_MORSE
+	#ifdef HAVE_MORSE
 FLAGCHECK(ah, AH, 0);
-#endif
+	#endif
 FLAGCHECK(qboost_tdma, TDMA, 0);
 FLAGCHECK(wave2, WAVE2, 0);
 FLAGCHECK(vht160_2by2, VHT160_2BY2, 0);
 FLAGCHECK(ar900b, AR900B, 0);
-#if defined(HAVE_ATH11K) || defined(HAVE_IPQ6018)
+	#if defined(HAVE_ATH11K) || defined(HAVE_IPQ6018)
 FLAGCHECK(ax, AX, 0);
-#endif
+	#endif
 FLAGCHECK(dualband_cap, DUALBAND, 0);
 FLAGCHECK(beacon_limit, BEACONVAP100, 0);
 FLAGCHECK(fwswitch, FWSWITCH, 0);
@@ -3712,11 +3712,11 @@ static int mac80211_get_devicecount(void)
 int mac80211_get_phy_idx(int idx)
 {
 	// fprintf(stderr,"channel number %d of %d\n", i,achans.ic_nchans);
-#ifdef HAVE_MVEBU
+	#ifdef HAVE_MVEBU
 	return idx;
-#else
+	#else
 	return idx - getifcount("wifi");
-#endif
+	#endif
 }
 
 int mac80211_get_phy_ifname(const char *ifname)
@@ -3734,9 +3734,9 @@ int mac80211_get_phy_ifname(const char *ifname)
 
 int is_mac80211(const char *prefix)
 {
-#ifdef HAVE_MVEBU
+	#ifdef HAVE_MVEBU
 	return 1;
-#endif
+	#endif
 	if (strncmp(prefix, "wlan", 4))
 		return 0;
 	INITVALUECACHE();
@@ -4228,23 +4228,23 @@ int VHTTxRate(unsigned int mcs, unsigned int vhtmcs, unsigned int sgi, unsigned 
 }
 
 #ifndef HAVE_MADWIFI
-#if defined(HAVE_NORTHSTAR) || defined(HAVE_80211AC) && !defined(HAVE_BUFFALO)
+	#if defined(HAVE_NORTHSTAR) || defined(HAVE_80211AC) && !defined(HAVE_BUFFALO)
 void setRegulationDomain(char *reg)
 {
 	char ccode[4] = "";
-#define DEFAULT 0
-#define EU 1
-#define CN 2
-#define TW 3
-#define JP 4
-#define CA 5
-#define US 6
-#define AU 7
-#define RU 8
-#define KR 9
-#define LA 10
-#define BR 11
-#define SG 12
+		#define DEFAULT 0
+		#define EU 1
+		#define CN 2
+		#define TW 3
+		#define JP 4
+		#define CA 5
+		#define US 6
+		#define AU 7
+		#define RU 8
+		#define KR 9
+		#define LA 10
+		#define BR 11
+		#define SG 12
 
 	int cntry = DEFAULT;
 	struct PAIRS {
@@ -4421,7 +4421,7 @@ void setRegulationDomain(char *reg)
 		nvram_set("2:ccode", pairs[cntry].code1);
 	}
 }
-#endif
+	#endif
 #endif
 
 #if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880) && !defined(HAVE_RT61)
@@ -4439,16 +4439,16 @@ void set_vifsmac(char *base) // corrects hwaddr and bssid assignment
 	}
 }
 
-#define PHY_TYPE_A 0
-#define PHY_TYPE_B 1
-#define PHY_TYPE_G 2
-#define PHY_TYPE_NULL 0xf
+	#define PHY_TYPE_A 0
+	#define PHY_TYPE_B 1
+	#define PHY_TYPE_G 2
+	#define PHY_TYPE_NULL 0xf
 
-#define WL_IOCTL(name, cmd, buf, len) (wl_ioctl((name), (cmd), (buf), (len)))
+	#define WL_IOCTL(name, cmd, buf, len) (wl_ioctl((name), (cmd), (buf), (len)))
 
-#define TXPWR_MAX 1000
-#define TXPWR_DEFAULT 70
-#define IFUP (IFF_UP | IFF_RUNNING | IFF_BROADCAST | IFF_MULTICAST)
+	#define TXPWR_MAX 1000
+	#define TXPWR_DEFAULT 70
+	#define IFUP (IFF_UP | IFF_RUNNING | IFF_BROADCAST | IFF_MULTICAST)
 
 int wlconf_up(char *name)
 {
@@ -4457,19 +4457,19 @@ int wlconf_up(char *name)
 	const char *next;
 	char var[80];
 
-#if defined(HAVE_MADWIFI) || defined(HAVE_RT2880) || defined(HAVE_RT61)
+	#if defined(HAVE_MADWIFI) || defined(HAVE_RT2880) || defined(HAVE_RT61)
 	return -1;
-#endif
+	#endif
 	if (!strncmp(name, "vlan", 4))
 		return -1;
 	if (!strncmp(name, "br", 2))
 		return -1;
-#ifdef HAVE_ONLYCLIENT
+	#ifdef HAVE_ONLYCLIENT
 	if (nvram_match("wl_mode", "ap")) {
 		nvram_set("wl_mode", "sta");
 		nvram_async_commit();
 	}
-#endif
+	#endif
 	int instance = get_wl_instance(name);
 
 	if (instance == -1)
@@ -4485,7 +4485,7 @@ int wlconf_up(char *name)
 	} else {
 		nvram_nset("1", "wl%d_infra", instance);
 	}
-#ifdef HAVE_80211AC
+	#ifdef HAVE_80211AC
 	if (has_ac(prefix)) {
 		if (nvram_nmatch("1", "wl%d_nband", instance)) {
 			if (nvram_nmatch("1", "wl%d_nitro_qam", instance))
@@ -4512,10 +4512,10 @@ int wlconf_up(char *name)
 			eval("wl", "-i", name, "vhtmode", "1");
 		}
 	}
-#endif
-#if (defined(HAVE_NORTHSTAR) || defined(HAVE_80211AC)) && !defined(HAVE_BUFFALO)
+	#endif
+	#if (defined(HAVE_NORTHSTAR) || defined(HAVE_80211AC)) && !defined(HAVE_BUFFALO)
 	setRegulationDomain(nvram_safe_get("wl_regdomain"));
-#endif
+	#endif
 	if (nvram_nmatchi(1, "wl%d_txbf", instance)) {
 		if (nvram_nmatchi(1, "wl%d_mumimo", instance)) {
 			nvram_nseti(2, "wl%d_txbf_bfr_cap", instance);
@@ -4564,16 +4564,16 @@ int wlconf_up(char *name)
 		val = TXPWR_DEFAULT;
 	char pwr[8];
 	sprintf(pwr, "%d", val);
-#ifdef HAVE_TXPWRFIXED
-//      eval("wl", "-i", name, "txpwr1", "-m");
-#else
+	#ifdef HAVE_TXPWRFIXED
+	//      eval("wl", "-i", name, "txpwr1", "-m");
+	#else
 	eval("wl", "-i", name, "txpwr1", "-m", "-o", pwr);
-#endif
-#ifdef HAVE_80211AC
+	#endif
+	#ifdef HAVE_80211AC
 	val = nvram_ngeti("wl%d_txpwrusr", instance);
 	if (val == 1)
 		eval("wl", "-i", name, "txpwr1", "-1");
-#endif
+	#endif
 	eval("wl", "-i", name, "roam_delta", nvram_default_get("roam_delta", "15"));
 
 	/*
@@ -4614,7 +4614,7 @@ int wlconf_up(char *name)
 
 	// Set ACK Timing. Thx to Nbd
 	char *v;
-#if defined(HAVE_ACK)
+	#if defined(HAVE_ACK)
 	char sens[32];
 	sprintf(sens, "wl%d_distance", instance);
 	if ((v = nvram_default_get(sens, "500"))) {
@@ -4638,7 +4638,7 @@ int wlconf_up(char *name)
 			eval("wl", "-i", name, "acktiming", strv);
 		}
 	}
-#endif
+	#endif
 
 	/*
 	 * if (nvram_match("wl0_mode","sta") || nvram_match("wl0_mode","infra"))
@@ -5205,9 +5205,9 @@ int getdevicecount(void)
 {
 #ifdef HAVE_MADWIFI
 	int count = 0;
-#ifdef HAVE_ATH9K
+	#ifdef HAVE_ATH9K
 	count += mac80211_get_devicecount();
-#endif
+	#endif
 	count += getifcount("wifi");
 
 	return count;
