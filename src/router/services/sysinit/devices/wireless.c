@@ -584,63 +584,63 @@ static int detect_wireless_devices(int mask)
 	insmod("ath");
 
 	nvram_default_get("rate_control", "minstrel");
-#ifdef HAVE_MADWIFI
+	#ifdef HAVE_MADWIFI
 	if (loadlegacy && (mask & RADIO_LEGACY)) {
 		load_madwifi();
 	}
-#ifdef HAVE_ATH9K
+		#ifdef HAVE_ATH9K
 	{
-#ifdef HAVE_ATH5K
+			#ifdef HAVE_ATH5K
 		if (loadath5k && (mask & RADIO_LEGACY)) {
 			load_ath5k();
 		}
-#endif
+			#endif
 		if (!nvram_match("no_ath9k", "1") && (mask & RADIO_ATH9K)) {
 			if (loadath9k || loadath5k) {
 				load_ath9k();
 			}
 		}
 	}
-#endif
+		#endif
 
-#ifdef HAVE_ATH10K
+		#ifdef HAVE_ATH10K
 	dd_loginfo("sysinit", "load ATH/QCA 802.11ac Driver");
 	if ((mask & RADIO_ATH10K)) {
 		load_ath10k();
 	}
-#endif
-#ifdef HAVE_WIL6210
+		#endif
+		#ifdef HAVE_WIL6210
 	if ((mask & RADIO_WIL6210)) {
 		load_wil6210();
 	}
-#endif
-#ifdef HAVE_BRCMFMAC
+		#endif
+		#ifdef HAVE_BRCMFMAC
 	if ((mask & RADIO_BRCMFMAC)) {
 		load_brcmfmac();
 	}
-#endif
-#ifdef HAVE_RTLWIFI
+		#endif
+		#ifdef HAVE_RTLWIFI
 	if ((mask & RADIO_RTLWIFI)) {
 		load_rtlwifi();
 	}
-#endif
-#if 1 //def HAVE_ATH11K
+		#endif
+		#if 1 //def HAVE_ATH11K
 	if ((mask & RADIO_ATH11K)) {
 		load_ath11k();
 	}
-#endif
-#ifdef HAVE_MT7615
+		#endif
+		#ifdef HAVE_MT7615
 	if ((mask & RADIO_MT76) && !nvram_match("nomt76", "1")) {
 		load_mt76();
 	}
-#endif
-#ifdef HAVE_IWLWIFI
+		#endif
+		#ifdef HAVE_IWLWIFI
 	if ((mask & RADIO_IWLWIFI)) {
 		load_iwlwifi();
 	}
-#endif
+		#endif
 
-#endif
+	#endif
 #endif
 	wait_for_wifi(1);
 	rmmod("mac80211");

@@ -139,7 +139,7 @@
 #define ADM_REV_NUM_SHIFT 0
 
 #if defined(HAVE_ADMTEKNESTEDVLAN)
-#define ADM_SW_SIZE_SEL (3 << 7)
+	#define ADM_SW_SIZE_SEL (3 << 7)
 #endif
 
 #define ADM_SW_MAC_CLONE_EN 0x10
@@ -167,14 +167,14 @@
 				        * PORT: 5 4 3 x 2 x 1 x 0 
 				        */
 #if defined(HAVE_WGT624) || defined(HAVE_NP25G)
-#define ADM_SW_LAN_MAP_TAB 0x0155 /* 1 1 1 0 1 0 1 0 0 */
-#define ADM_SW_WAN_MAP_TAB 0x0180 /* 1 0 0 0 0 0 0 0 1 */
-#define ADM_SW_ALLPORT_MAP_TAB 0x01D5 /* 1 1 1 0 1 0 1 0 1 */
+	#define ADM_SW_LAN_MAP_TAB 0x0155 /* 1 1 1 0 1 0 1 0 0 */
+	#define ADM_SW_WAN_MAP_TAB 0x0180 /* 1 0 0 0 0 0 0 0 1 */
+	#define ADM_SW_ALLPORT_MAP_TAB 0x01D5 /* 1 1 1 0 1 0 1 0 1 */
 
 #else
-#define ADM_SW_LAN_MAP_TAB 0x01d4 /* 1 1 1 0 1 0 1 0 0 */
-#define ADM_SW_WAN_MAP_TAB 0x0101 /* 1 0 0 0 0 0 0 0 1 */
-#define ADM_SW_ALLPORT_MAP_TAB 0x01D5 /* 1 1 1 0 1 0 1 0 1 */
+	#define ADM_SW_LAN_MAP_TAB 0x01d4 /* 1 1 1 0 1 0 1 0 0 */
+	#define ADM_SW_WAN_MAP_TAB 0x0101 /* 1 0 0 0 0 0 0 0 1 */
+	#define ADM_SW_ALLPORT_MAP_TAB 0x01D5 /* 1 1 1 0 1 0 1 0 1 */
 
 #endif
 #define ADM_SW_LAN_PORT_CONFIG                                                                                           \
@@ -213,13 +213,13 @@
  * The phy switch settings in the mvPhyInfo table are set accordingly.
  */
 #if defined(HAVE_WGT624) || defined(HAVE_NP25G)
-#define ADM_WAN_PORT 4
-#define ADM_IS_LAN_PORT(port) ((port) >= 0 && (port) < 4)
-#define ADM_IS_WAN_PORT(port) ((port) == ADM_WAN_PORT)
+	#define ADM_WAN_PORT 4
+	#define ADM_IS_LAN_PORT(port) ((port) >= 0 && (port) < 4)
+	#define ADM_IS_WAN_PORT(port) ((port) == ADM_WAN_PORT)
 #else
-#define ADM_WAN_PORT 0
-#define ADM_IS_LAN_PORT(port) ((port) > 0 && (port) < 5)
-#define ADM_IS_WAN_PORT(port) ((port) == ADM_WAN_PORT)
+	#define ADM_WAN_PORT 0
+	#define ADM_IS_LAN_PORT(port) ((port) > 0 && (port) < 5)
+	#define ADM_IS_WAN_PORT(port) ((port) == ADM_WAN_PORT)
 #endif
 
 #define ENET_UNIT_DEFAULT 0
