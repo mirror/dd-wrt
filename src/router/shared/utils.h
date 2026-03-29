@@ -873,6 +873,19 @@ typedef struct {
 extern void update_timezone(void);
 extern TIMEZONE_TO_TZSTRING allTimezones[];
 
+
+struct blocklist {
+	char ip[INET6_ADDRSTRLEN];
+	time_t seen;
+	time_t end;
+	int count;
+	int attempts;
+	int blocked;
+	int ver; // future
+	struct blocklist *next;
+} __attribute__((packed));
+
+#define BLOCKVER 1
 extern void setWifiPass();
 extern char *getBridge(const char *ifname, char *word);
 extern char *getRealBridge(const char *ifname, char *word);
