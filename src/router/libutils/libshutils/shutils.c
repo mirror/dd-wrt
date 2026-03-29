@@ -1828,7 +1828,7 @@ int check_blocklist(const char *service, char *ip)
 			//			entry = last->next;
 			change = 1;
 		} else if ((entry->blocked == -1 && entry->end && entry->end + (7 * 24 * 60 * 60) < cur) ||
-			   (entry->blocked == 0 && entry->ip[0] && entry->seen && entry->seen + (7 * 24 * 60 * 60) < cur)) {
+			   (entry->next && entry->blocked == 0 && entry->ip[0] && entry->seen && entry->seen + (7 * 24 * 60 * 60) < cur)) {
 			last->next = entry->next;
 			free(entry);
 			entry = last->next;
