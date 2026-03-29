@@ -13,6 +13,7 @@
 #include <signal.h>
 #include <syslog.h>
 #include <typedefs.h>
+#include <arpa/inet.h>
 
 #ifndef sys_reboot
 #define sys_reboot() eval("event", "3", "1", "15")
