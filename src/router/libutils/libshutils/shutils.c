@@ -1646,6 +1646,7 @@ static void dump_blocklist(void)
 
 static void init_blocklist(void)
 {
+restart:;
 	struct blocklist *entry = blocklist_root.next;
 	struct blocklist *last = &blocklist_root;
 	if (entry) {
@@ -1659,7 +1660,6 @@ static void init_blocklist(void)
 		last = &blocklist_root;
 	}
 
-restart:;
 	FILE *fp = NULL;
 	if (jffs_mounted()) {
 		fp = fopen("/jffs/blocklist", "rb");
@@ -1684,8 +1684,7 @@ restart:;
 				unlink("/jffs/blocklist");
 				unlink("/tmp/blocklist");
 				free(last->next);
-				entry = blocklist_root.next;
-				last = &blocklist_root;
+				last->next = NULL;
 				goto restart;
 			}
 			last = last->next;
