@@ -116,7 +116,7 @@ void start_radvd(void)
 		if ((fp = fopencreate("/tmp/radvd/radvd.conf", "w")) == NULL)
 			return;
 
-		char buf[INET6_ADDRSTRLEN];
+		char buf[INET6_ADDRSTRLEN + 1];
 		ip = getifaddr_any(buf, nvram_safe_get("lan_ifname"), AF_INET6) ?: "";
 
 		fprintf(fp,

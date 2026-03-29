@@ -669,7 +669,7 @@ void start_dnsmasq(void)
 		if (canlan()) {
 			fprintf(fp, ",%s", get_lan_ipaddr());
 #ifdef HAVE_IPV6
-			char buf[INET6_ADDRSTRLEN];
+			char buf[INET6_ADDRSTRLEN + 1];
 			char *ip = getifaddr_any(buf, nvram_safe_get("lan_ifname"), AF_INET6) ?: NULL;
 			if (ip && nvram_matchi("ipv6_enable", 1))
 				fprintf(fp, ",%s", ip);
@@ -736,7 +736,7 @@ void start_dnsmasq(void)
 			if (nvram_matchi("pptpd_enable", 1)) {
 				fprintf(fp, "%s", nvram_nget("%s_ipaddr", ifname));
 #ifdef HAVE_IPV6
-				char buf[INET6_ADDRSTRLEN];
+				char buf[INET6_ADDRSTRLEN + 1];
 				char *ip = getifaddr_any(buf, ifname, AF_INET6) ?: NULL;
 				if (ip && nvram_matchi("ipv6_enable", 1))
 					fprintf(fp, ",%s", ip);

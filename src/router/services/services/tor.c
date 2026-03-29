@@ -80,7 +80,7 @@ void start_tor(void)
 	fprintf(fp, "Log notice syslog\n");
 #ifdef HAVE_IPV6
 	const char *ipv6addr = NULL;
-	char buf[INET6_ADDRSTRLEN];
+	char buf[INET6_ADDRSTRLEN + 1];
 	if (nvram_match("ipv6_typ", "ipv6native"))
 		ipv6addr = getifaddr(buf, safe_get_wan_face(wan_if_buffer), AF_INET6, 0);
 	if (nvram_match("ipv6_typ", "ipv6in4"))

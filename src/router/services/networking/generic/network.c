@@ -4348,9 +4348,9 @@ static void start_wan6_done(char *wan_ifname)
 			sysprintf("echo 2 > /proc/sys/net/ipv6/conf/%s/accept_ra", wan_ifname);
 		}
 
-		char ip[INET6_ADDRSTRLEN + 4];
+		char ip[INET6_ADDRSTRLEN + 5];
 		const char *p;
-		char addr6[INET6_ADDRSTRLEN];
+		char addr6[INET6_ADDRSTRLEN + 1];
 
 		p = ipv6_router_address(NULL, addr6, sizeof(addr6));
 		if (p && *p) {

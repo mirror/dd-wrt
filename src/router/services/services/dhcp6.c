@@ -301,7 +301,7 @@ void start_dhcp6s(void)
 
 		fprintf(fp, "option refreshtime %d;\n", 900); /* 15 minutes for now */
 		if (nvram_matchi("dnsmasq_enable", 1)) {
-			char buf[INET6_ADDRSTRLEN];
+			char buf[INET6_ADDRSTRLEN + 1];
 			fprintf(fp, "option domain-name-servers %s", getifaddr_any(buf, nvram_safe_get("lan_ifname"), AF_INET6));
 		} else {
 			struct dns_lists *list = get_dns_list(1);
@@ -374,11 +374,11 @@ static int getprefixlen(char *dev)
 
 int dhcp6c_state_main(int argc, char **argv)
 {
-	char prefix[INET6_ADDRSTRLEN];
+	char prefix[INET6_ADDRSTRLEN + 1];
 	struct in6_addr addr;
 	int i, r;
 	int c = 0;
-	char buf[INET6_ADDRSTRLEN];
+	char buf[INET6_ADDRSTRLEN + 1];
 	c |= nvram_change("ipv6_rtr_addr", getifaddr(buf, nvram_safe_get("lan_ifname"), AF_INET6, 0));
 	//      c |= nvram_change("ipv6_pf_len", getprefixlen(nvram_safe_get("lan_ifname")));
 	// extract prefix from configured IPv6 address
