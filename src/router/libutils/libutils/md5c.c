@@ -708,11 +708,7 @@ char *sha256_string(char *string, char *hashbuf, size_t len)
 	if (!strlen(string)) {
 		return NULL;
 	}
-	md5_ctx_t MD;
-	dd_md5_begin(&MD);
-	dd_md5_hash(string, strlen(string), &MD);
-	dd_md5_end((unsigned char *)hash, &MD);
-	calc_sha_256(hash, string, strlen(hashbuf));
+	calc_sha_256(hash, string, strlen(string));
 	for (i = 0; i < 32; i++) {
 		unsigned int k = hash[i];
 		snprintf(hashbuf, len, "%s%02X", hashbuf, k & 0xff);
