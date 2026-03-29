@@ -101,7 +101,7 @@ void start_sysinit(void)
 
 #ifdef HAVE_SWCONFIG
 
-#ifdef HAVE_WDR2543
+	#ifdef HAVE_WDR2543
 
 	eval("swconfig", "dev", "switch0", "set", "reset", "1");
 	eval("swconfig", "dev", "switch0", "set", "enable_vlan", "1");
@@ -120,7 +120,7 @@ void start_sysinit(void)
 	nvram_seti("sw_lan3", 3);
 	nvram_seti("sw_lan4", 4);
 
-#else
+	#else
 	eval("swconfig", "dev", "eth1", "set", "reset", "1");
 	eval("swconfig", "dev", "eth1", "set", "enable_vlan", "1");
 	eval("swconfig", "dev", "eth1", "vlan", "1", "set", "ports", "0 1 2 3 4");
@@ -139,7 +139,7 @@ void start_sysinit(void)
 	setSwitchLED(14, 0x4);
 	setSwitchLED(15, 0x8);
 	setSwitchLED(16, 0x10);
-#endif
+	#endif
 
 #endif
 	nvram_default_geti("port0vlans", 2);
@@ -165,11 +165,11 @@ void start_sysinit(void)
 #endif
 	//enable wlan led (card gpio based)
 #ifndef HAVE_WR810N
-#if defined(HAVE_WR841v7) || defined(HAVE_WR842) || defined(HAVE_MR3420)
+	#if defined(HAVE_WR841v7) || defined(HAVE_WR842) || defined(HAVE_MR3420)
 	setWirelessLedPhy0(0);
-#else
+	#else
 	setWirelessLedPhy0(1);
-#endif
+	#endif
 #endif
 	/*
 	 * Set a sane date 

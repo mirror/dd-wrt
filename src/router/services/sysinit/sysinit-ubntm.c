@@ -194,7 +194,7 @@ out:;
 		break;
 	default:
 #ifdef HAVE_SWCONFIG
-#ifdef HAVE_DAP3310
+	#ifdef HAVE_DAP3310
 		eval("swconfig", "dev", "eth1", "set", "reset", "1");
 		eval("swconfig", "dev", "eth1", "set", "enable_vlan", "0");
 		eval("swconfig", "dev", "eth1", "vlan", "1", "set", "ports", "0 1 2 3 4");
@@ -214,7 +214,7 @@ out:;
 		nvram_default_get("port5vlans", "1 18000 19000 20000");
 		setEthLED(18, "eth0");
 		setEthLED(19, "eth1");
-#elif HAVE_DAP3410
+	#elif HAVE_DAP3410
 		eval("swconfig", "dev", "eth0", "set", "reset", "1");
 		eval("swconfig", "dev", "eth0", "set", "enable_vlan", "1");
 		eval("swconfig", "dev", "eth0", "vlan", "1", "set", "ports", "0t 3");
@@ -224,7 +224,7 @@ out:;
 		eval("vconfig", "set_name_type", "VLAN_PLUS_VID_NO_PAD");
 		eval("vconfig", "add", "eth0", "1");
 		eval("vconfig", "add", "eth0", "2");
-#else
+	#else
 		eval("swconfig", "dev", "eth1", "set", "reset", "1");
 		eval("swconfig", "dev", "eth1", "set", "enable_vlan", "0");
 		eval("swconfig", "dev", "eth1", "vlan", "1", "set", "ports", "0 1 2 3 4");
@@ -243,7 +243,7 @@ out:;
 		nvram_default_geti("port3vlans", 1);
 		nvram_default_geti("port4vlans", 1);
 		nvram_default_get("port5vlans", "1 18000 19000 20000");
-#endif
+	#endif
 #endif
 	}
 	/* ubnt has a hardware fault as it seems, so the power bridge feature can break the hardware which causes endless reboot loops. we keep it disabled here. devices which are already broken will work again then */
@@ -404,9 +404,9 @@ char *set_wan_state(int state)
 		break;
 	default:
 #ifdef HAVE_SWCONFIG
-#ifdef HAVE_DAP3310
+	#ifdef HAVE_DAP3310
 		return NULL;
-#elif HAVE_DAP3410
+	#elif HAVE_DAP3410
 		if (!state) {
 			eval("swconfig", "dev", "eth0", "set", "reset", "1");
 			eval("swconfig", "dev", "eth0", "set", "enable_vlan", "0");
@@ -427,7 +427,7 @@ char *set_wan_state(int state)
 			eval("vconfig", "add", "eth0", "1");
 			eval("vconfig", "add", "eth0", "2");
 		}
-#else
+	#else
 		eval("swconfig", "dev", "eth1", "set", "reset", "1");
 		eval("swconfig", "dev", "eth1", "set", "enable_vlan", "0");
 		eval("swconfig", "dev", "eth1", "vlan", "1", "set", "ports", "0 1 2 3 4");
@@ -444,7 +444,7 @@ char *set_wan_state(int state)
 		nvram_default_geti("port3vlans", 1);
 		nvram_default_geti("port4vlans", 1);
 		nvram_default_get("port5vlans", "1 18000 19000 20000");
-#endif
+	#endif
 #endif
 		return NULL;
 	}

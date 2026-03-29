@@ -91,9 +91,9 @@ void start_sysinit(void)
 		MAC_ADD(mac);
 		fprintf(stderr, "configure eth1 to %s\n", mac);
 		set_hwaddr("eth1", mac);
-#ifndef HAVE_ATH9K
+	#ifndef HAVE_ATH9K
 		MAC_SUB(mac);
-#endif
+	#endif
 	}
 #else
 	FILE *fp = fopen("/dev/mtdblock/5", "rb");
@@ -130,9 +130,9 @@ void start_sysinit(void)
 			fprintf(stderr, "configure eth1 to %s\n", mac);
 			set_hwaddr("eth1", mac);
 		}
-#ifndef HAVE_ATH9K
+	#ifndef HAVE_ATH9K
 		MAC_SUB(mac);
-#endif
+	#endif
 	}
 #endif
 	eval("ifconfig", "eth0", "up");
@@ -144,8 +144,8 @@ void start_sysinit(void)
 		nvram_set("et0macaddr_safe", macaddr);
 	}
 #ifdef HAVE_WR741V4
-#ifdef HAVE_SWCONFIG
-#ifndef HAVE_WR710
+	#ifdef HAVE_SWCONFIG
+		#ifndef HAVE_WR710
 	eval("swconfig", "dev", "eth1", "set", "reset", "1");
 	eval("swconfig", "dev", "eth1", "set", "enable_vlan", "1");
 	eval("swconfig", "dev", "eth1", "vlan", "1", "set", "ports", "0 1 2 3 4");
@@ -158,21 +158,21 @@ void start_sysinit(void)
 	nvram_seti("sw_lan2", 2);
 	nvram_seti("sw_lan3", 3);
 	nvram_seti("sw_lan4", 4);
-#endif
-#endif
-#ifndef HAVE_WR703
+		#endif
+	#endif
+	#ifndef HAVE_WR703
 	setEthLED(13, "eth0");
 	setSwitchLED(14, 0x4);
 	setSwitchLED(15, 0x8);
 	setSwitchLED(16, 0x10);
 	setSwitchLED(17, 0x02);
-#endif
-#ifdef HAVE_MR3020
+	#endif
+	#ifdef HAVE_MR3020
 	setEthLED(17, "eth1");
-#endif
-#ifdef HAVE_WA701V2
+	#endif
+	#ifdef HAVE_WA701V2
 	setEthLED(17, "eth1");
-#endif
+	#endif
 #endif
 #ifdef HAVE_ERC
 	eval("swconfig", "dev", "eth1", "set", "reset", "1");
@@ -206,7 +206,7 @@ void start_sysinit(void)
 	eval("swconfig", "dev", "switch0", "set", "enable_vlan", "1");
 	eval("swconfig", "dev", "switch0", "vlan", "0", "set", "ports", "0 1 2 3 4");
 	eval("swconfig", "dev", "switch0", "set", "apply");
-#ifdef HAVE_FMS2111
+	#ifdef HAVE_FMS2111
 	eval("insmod", "i2c-gpio-custom", "bus0=0,23,22");
 	eval("insmod", "rtc-pcf8523");
 	writestr("/sys/class/i2c-dev/i2c-0/device/new_device", "pcf8523 0x68");
@@ -218,21 +218,21 @@ void start_sysinit(void)
 	setEthLinkLED(14, "eth0");
 	setEthLED(20, "eth1");
 	setEthLinkLED(13, "eth1");
-#endif //HAVE_FMS2111
+	#endif //HAVE_FMS2111
 #endif
 
 #ifndef HAVE_ERC
-#ifndef HAVE_GL150
-#ifdef HAVE_HORNET
-#ifdef HAVE_ONNET
+	#ifndef HAVE_GL150
+		#ifdef HAVE_HORNET
+			#ifdef HAVE_ONNET
 	setEthLED(13, "eth0");
 	setEthLED(17, "eth1");
-#else
+			#else
 	setEthLED(17, "eth0");
 	setEthLED(13, "eth1");
-#endif
-#endif
-#endif
+			#endif
+		#endif
+	#endif
 #endif
 
 	detect_wireless_devices(RADIO_ALL);

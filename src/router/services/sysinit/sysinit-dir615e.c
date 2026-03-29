@@ -76,13 +76,13 @@ void start_sysinit(void)
 	FILE *in = fopen("/dev/mtdblock/6", "rb");
 	char *lanmac = NULL;
 	if (in != NULL) {
-#ifdef HAVE_DIR632
+	#ifdef HAVE_DIR632
 		fseek(in, 0x40000, SEEK_SET);
-#elif HAVE_DIR615I
+	#elif HAVE_DIR615I
 		fseek(in, 0x10000, SEEK_SET);
-#else
+	#else
 		fseek(in, 0x30000, SEEK_SET);
-#endif
+	#endif
 		unsigned char *config = calloc(65536, 1);
 		fread(config, 65536, 1, in);
 		int len = sizeof("lan_mac=");
@@ -98,11 +98,11 @@ void start_sysinit(void)
 				mac[17] = 0;
 				lanmac = malloc(32);
 				strcpy(lanmac, mac);
-#ifdef HAVE_DIR632
+	#ifdef HAVE_DIR632
 				set_hwaddr("eth0", mac);
-#else
+	#else
 				set_hwaddr("eth1", mac);
-#endif
+	#endif
 				nvram_set("et0macaddr_safe", mac);
 				nvram_set("et0macaddr", mac);
 				if (haswan)
@@ -114,11 +114,11 @@ void start_sysinit(void)
 				if (mac[0] == '"')
 					mac++;
 				mac[17] = 0;
-#ifdef HAVE_DIR632
+	#ifdef HAVE_DIR632
 				set_hwaddr("eth1", mac);
-#else
+	#else
 				set_hwaddr("eth0", mac);
-#endif
+	#endif
 				nvram_set("et0macaddr_safe", mac);
 				nvram_set("et0macaddr", mac);
 				if (haslan)
@@ -133,7 +133,7 @@ void start_sysinit(void)
 	eval("ifconfig", "eth0", "up");
 	eval("ifconfig", "eth1", "up");
 #ifdef HAVE_SWCONFIG
-#ifndef HAVE_WA901V5
+	#ifndef HAVE_WA901V5
 	eval("swconfig", "dev", "eth1", "set", "reset", "1");
 	eval("swconfig", "dev", "eth1", "set", "enable_vlan", "0");
 	eval("swconfig", "dev", "eth1", "vlan", "1", "set", "ports", "0 1 2 3 4");
@@ -152,36 +152,36 @@ void start_sysinit(void)
 	nvram_default_geti("port3vlans", 1);
 	nvram_default_geti("port4vlans", 1);
 	nvram_default_get("port5vlans", "1 18000 19000 20000");
-#endif
+	#endif
 
-#ifndef HAVE_DAP2230
-#ifndef HAVE_DIR615I
-#ifndef HAVE_DIR632
+	#ifndef HAVE_DAP2230
+		#ifndef HAVE_DIR615I
+			#ifndef HAVE_DIR632
 	setEthLED(17, "eth0");
 	setSwitchLED(13, 0x2);
 	setSwitchLED(14, 0x4);
 	setSwitchLED(15, 0x8);
 	setSwitchLED(16, 0x10);
-#endif
-#endif
-#ifdef HAVE_WA901V5
+			#endif
+		#endif
+		#ifdef HAVE_WA901V5
 	setEthLED(7, "eth0");
-#elif HAVE_WR841HPV3
+		#elif HAVE_WR841HPV3
 	setEthLED(12, "eth1");
 	setEthLED(14, "eth0");
-#elif HAVE_WR940V4
+		#elif HAVE_WR940V4
 	setEthLED(14, "eth1");
 	setSwitchLED(4, 0x2);
 	setSwitchLED(18, 0x4);
 	setSwitchLED(6, 0x8);
 	setSwitchLED(8, 0x10);
-#elif HAVE_WR941V6
+		#elif HAVE_WR941V6
 	setEthLED(14, "eth1");
 	setSwitchLED(7, 0x2);
 	setSwitchLED(6, 0x4);
 	setSwitchLED(5, 0x8);
 	setSwitchLED(4, 0x10);
-#elif HAVE_WR841V9
+		#elif HAVE_WR841V9
 	setEthLED(4, "eth1");
 	setSwitchLED(11, 0x2);
 	setSwitchLED(14, 0x4);
@@ -191,18 +191,18 @@ void start_sysinit(void)
 	nvram_seti("sw_lan2", 3);
 	nvram_seti("sw_lan3", 2);
 	nvram_seti("sw_lan4", 1);
-#elif HAVE_WA860RE
+		#elif HAVE_WA860RE
 	setEthLED(20, "eth0");
-#elif HAVE_WA850RE
+		#elif HAVE_WA850RE
 	setEthLED(20, "eth0");
-#elif HAVE_WR841V8
+		#elif HAVE_WR841V8
 	setEthLED(18, "eth0");
 	setSwitchLED(19, 0x4);
 	setSwitchLED(20, 0x8);
 	setSwitchLED(21, 0x10);
 	setSwitchLED(12, 0x02);
-#endif
-#endif
+		#endif
+	#endif
 #endif
 	char macaddr[32];
 	if (get_hwaddr("eth0", macaddr)) {
@@ -218,23 +218,23 @@ void start_sysinit(void)
 	}
 #endif
 #ifndef HAVE_DAP3320
-#ifdef HAVE_DAP2230
-//      setWirelessLedGeneric(0, 11);
-#elif HAVE_WR841HPV3
+	#ifdef HAVE_DAP2230
+	//      setWirelessLedGeneric(0, 11);
+	#elif HAVE_WR841HPV3
 	setWirelessLedGeneric(15, 8);
-#elif HAVE_WA901V5
+	#elif HAVE_WA901V5
 	setWirelessLedGeneric(0, 8);
-#elif HAVE_WR940V4
+	#elif HAVE_WR940V4
 	setWirelessLedGeneric(0, 7);
-#elif HAVE_WR941V6
+	#elif HAVE_WR941V6
 	setWirelessLedGeneric(0, 8);
-#elif HAVE_DIR632
+	#elif HAVE_DIR632
 	setWirelessLedPhy0(0);
-#elif HAVE_WA860RE
+	#elif HAVE_WA860RE
 	setWirelessLedGeneric(0, 2);
-#elif HAVE_DIR615I
+	#elif HAVE_DIR615I
 	setWirelessLedGeneric(0, 13);
-#endif
+	#endif
 #endif
 #ifdef HAVE_WA850RE
 	if (!nvram_matchi("wlanled", 0))

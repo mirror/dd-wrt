@@ -119,15 +119,15 @@ void start_sysinit(void)
 	fprintf(stderr, "load ATH Ethernet Driver\n");
 	system("insmod ag71xx || insmod ag7240_mod");
 #ifndef HAVE_WILLY
-#ifdef HAVE_WDR3500
+	#ifdef HAVE_WDR3500
 	eval("swconfig", "dev", "eth0", "set", "reset", "1");
 	eval("swconfig", "dev", "eth0", "set", "enable_vlan", "1");
 	eval("swconfig", "dev", "eth0", "set", "igmp_snooping", "0");
 	eval("swconfig", "dev", "eth0", "set", "igmp_v3", "1");
 	eval("swconfig", "dev", "eth0", "vlan", "0", "set", "ports", "0 1 2 3 4");
 	eval("swconfig", "dev", "eth0", "set", "apply");
-#else
-#ifdef HAVE_WDR4300
+	#else
+		#ifdef HAVE_WDR4300
 	eval("swconfig", "dev", "eth0", "set", "reset", "1");
 	eval("swconfig", "dev", "eth0", "set", "enable_vlan", "1");
 	eval("swconfig", "dev", "eth0", "set", "igmp_snooping", "0");
@@ -141,22 +141,22 @@ void start_sysinit(void)
 	nvram_seti("sw_lan2", 3);
 	nvram_seti("sw_lan3", 4);
 	nvram_seti("sw_lan4", 5);
-#elif defined(HAVE_E325N)
+		#elif defined(HAVE_E325N)
 	eval("swconfig", "dev", "eth0", "set", "reset", "1");
 	eval("swconfig", "dev", "eth0", "set", "enable_vlan", "0");
 	eval("swconfig", "dev", "eth0", "set", "igmp_snooping", "0");
 	eval("swconfig", "dev", "eth0", "set", "igmp_v3", "1");
 	eval("swconfig", "dev", "eth0", "vlan", "1", "set", "ports", "0 1 2 3 4");
 
-#elif defined(HAVE_XD3200)
+		#elif defined(HAVE_XD3200)
 	eval("swconfig", "dev", "eth0", "set", "reset", "1");
-#ifndef HAVE_SR3200
+			#ifndef HAVE_SR3200
 	eval("swconfig", "dev", "eth0", "set", "enable_vlan", "1");
 	eval("swconfig", "dev", "eth0", "set", "igmp_snooping", "0");
 	eval("swconfig", "dev", "eth0", "set", "igmp_v3", "1");
 	eval("swconfig", "dev", "eth0", "vlan", "1", "set", "ports", "0t 2");
 	eval("swconfig", "dev", "eth0", "vlan", "2", "set", "ports", "0t 3");
-#else
+			#else
 	eval("swconfig", "dev", "eth0", "set", "enable_vlan", "1");
 	eval("swconfig", "dev", "eth0", "set", "igmp_snooping", "0");
 	eval("swconfig", "dev", "eth0", "set", "igmp_v3", "1");
@@ -168,13 +168,13 @@ void start_sysinit(void)
 	nvram_seti("sw_lan2", 2);
 	nvram_seti("sw_lan3", 3);
 	nvram_seti("sw_lan4", 4);
-#endif
-#elif defined(HAVE_E355AC)
-#elif defined(HAVE_WR810N)
-#elif defined(HAVE_WR615N)
-#elif defined(HAVE_AP120C)
-#elif defined(HAVE_E380AC)
-#elif defined(HAVE_DW02_412H)
+			#endif
+		#elif defined(HAVE_E355AC)
+		#elif defined(HAVE_WR810N)
+		#elif defined(HAVE_WR615N)
+		#elif defined(HAVE_AP120C)
+		#elif defined(HAVE_E380AC)
+		#elif defined(HAVE_DW02_412H)
 	eval("swconfig", "dev", "eth0", "set", "reset", "1");
 	eval("swconfig", "dev", "eth0", "set", "enable_vlan", "1");
 	eval("swconfig", "dev", "eth0", "set", "igmp_snooping", "0");
@@ -189,8 +189,8 @@ void start_sysinit(void)
 	nvram_seti("sw_lan3", 4);
 	nvram_seti("sw_lan4", 5);
 
-#elif defined(HAVE_RAMBUTAN)
-#elif defined(HAVE_WR650AC)
+		#elif defined(HAVE_RAMBUTAN)
+		#elif defined(HAVE_WR650AC)
 	eval("swconfig", "dev", "eth0", "set", "reset", "1");
 	eval("swconfig", "dev", "eth0", "set", "igmp_snooping", "0");
 	eval("swconfig", "dev", "eth0", "set", "igmp_v3", "1");
@@ -213,9 +213,9 @@ void start_sysinit(void)
 	nvram_default_get("port5vlans", "2 18000 19000 20000");
 	nvram_default_get("port6vlans", "1 18000 19000 20000");
 
-#elif defined(HAVE_JWAP606)
-	// nothing
-#elif defined(HAVE_DAP3662)
+		#elif defined(HAVE_JWAP606)
+			// nothing
+		#elif defined(HAVE_DAP3662)
 	eval("swconfig", "dev", "eth0", "set", "reset", "1");
 	eval("swconfig", "dev", "eth0", "set", "enable_vlan", "0");
 	eval("swconfig", "dev", "eth0", "set", "igmp_snooping", "0");
@@ -230,7 +230,7 @@ void start_sysinit(void)
 	nvram_default_geti("port1vlans", 1);
 	nvram_default_get("port5vlans", "2 18000 19000 20000");
 	nvram_default_get("port6vlans", "1 18000 19000 20000");
-#elif defined(HAVE_DIR862)
+		#elif defined(HAVE_DIR862)
 	eval("swconfig", "dev", "eth0", "set", "reset", "1");
 	eval("swconfig", "dev", "eth0", "set", "enable_vlan", "0");
 	eval("swconfig", "dev", "eth0", "set", "igmp_snooping", "0");
@@ -252,7 +252,7 @@ void start_sysinit(void)
 	nvram_default_geti("port4vlans", 1);
 	nvram_default_get("port5vlans", "2 18000 19000 20000");
 	nvram_default_get("port6vlans", "1 18000 19000 20000");
-#elif defined(HAVE_ARCHERC25)
+		#elif defined(HAVE_ARCHERC25)
 	eval("swconfig", "dev", "eth0", "set", "reset", "1");
 	eval("swconfig", "dev", "eth0", "set", "enable_vlan", "0");
 	eval("swconfig", "dev", "eth0", "set", "igmp_snooping", "0");
@@ -264,13 +264,13 @@ void start_sysinit(void)
 	nvram_seti("sw_lan2", 2);
 	nvram_seti("sw_lan3", 3);
 	nvram_seti("sw_lan4", 4);
-#elif defined(HAVE_XD9531)
+		#elif defined(HAVE_XD9531)
 	eval("swconfig", "dev", "eth0", "set", "reset", "1");
 	eval("swconfig", "dev", "eth0", "set", "enable_vlan", "0");
 	eval("swconfig", "dev", "eth0", "set", "igmp_snooping", "0");
 	eval("swconfig", "dev", "eth0", "set", "igmp_v3", "1");
 	eval("swconfig", "dev", "eth0", "vlan", "1", "set", "ports", "0 1 2 3 4");
-#elif defined(HAVE_CPE880)
+		#elif defined(HAVE_CPE880)
 	eval("swconfig", "dev", "eth0", "set", "reset", "1");
 	eval("swconfig", "dev", "eth0", "set", "enable_vlan", "1");
 	eval("swconfig", "dev", "eth0", "set", "igmp_snooping", "0");
@@ -278,14 +278,14 @@ void start_sysinit(void)
 	eval("swconfig", "dev", "eth0", "vlan", "1", "set", "ports", "0t 5");
 	eval("swconfig", "dev", "eth0", "vlan", "2", "set", "ports", "0t 4");
 	eval("swconfig", "dev", "eth0", "set", "apply");
-#elif defined(HAVE_MMS344)
+		#elif defined(HAVE_MMS344)
 	eval("swconfig", "dev", "eth0", "set", "reset", "1");
 	eval("swconfig", "dev", "eth0", "set", "enable_vlan", "1");
 	eval("swconfig", "dev", "eth0", "set", "igmp_snooping", "0");
 	eval("swconfig", "dev", "eth0", "set", "igmp_v3", "1");
 	eval("swconfig", "dev", "eth0", "vlan", "1", "set", "ports", "0t 2");
 	eval("swconfig", "dev", "eth0", "vlan", "2", "set", "ports", "0t 3");
-#elif defined(HAVE_WR1043V4)
+		#elif defined(HAVE_WR1043V4)
 	eval("swconfig", "dev", "eth0", "set", "reset", "1");
 	eval("swconfig", "dev", "eth0", "set", "enable_vlan", "1");
 	eval("swconfig", "dev", "eth0", "set", "igmp_snooping", "0");
@@ -299,18 +299,18 @@ void start_sysinit(void)
 	setSwitchLED(20, 0x02); // lan4
 	nvram_seti("sw_cpuport", 0);
 	nvram_seti("sw_wan", 5);
-#if defined(HAVE_WR1043V5)
+			#if defined(HAVE_WR1043V5)
 	nvram_seti("sw_lan1", 4);
 	nvram_seti("sw_lan2", 3);
 	nvram_seti("sw_lan3", 2);
 	nvram_seti("sw_lan4", 1);
-#else
+			#else
 	nvram_seti("sw_lan1", 1);
 	nvram_seti("sw_lan2", 2);
 	nvram_seti("sw_lan3", 3);
 	nvram_seti("sw_lan4", 4);
-#endif
-#elif defined(HAVE_ARCHERC7V5)
+			#endif
+		#elif defined(HAVE_ARCHERC7V5)
 	eval("swconfig", "dev", "eth0", "set", "reset", "1");
 	eval("swconfig", "dev", "eth0", "set", "enable_vlan", "1");
 	eval("swconfig", "dev", "eth0", "set", "igmp_snooping", "0");
@@ -328,7 +328,7 @@ void start_sysinit(void)
 	nvram_seti("sw_lan2", 3);
 	nvram_seti("sw_lan3", 4);
 	nvram_seti("sw_lan4", 5);
-#elif defined(HAVE_ARCHERC7V4)
+		#elif defined(HAVE_ARCHERC7V4)
 	eval("swconfig", "dev", "eth0", "set", "reset", "1");
 	eval("swconfig", "dev", "eth0", "set", "enable_vlan", "1");
 	eval("swconfig", "dev", "eth0", "set", "igmp_snooping", "0");
@@ -341,12 +341,12 @@ void start_sysinit(void)
 	nvram_seti("sw_lan2", 3);
 	nvram_seti("sw_lan3", 4);
 	nvram_seti("sw_lan4", 5);
-#elif defined(HAVE_LIMA)
+		#elif defined(HAVE_LIMA)
 	eval("swconfig", "dev", "eth0", "set", "reset", "1");
 	eval("swconfig", "dev", "eth0", "set", "enable_vlan", "0");
 	eval("swconfig", "dev", "eth0", "set", "igmp_snooping", "0");
 	eval("swconfig", "dev", "eth0", "set", "igmp_v3", "1");
-#elif defined(HAVE_RUCKUSR500)
+		#elif defined(HAVE_RUCKUSR500)
 	eval("swconfig", "dev", "eth0", "set", "reset", "1");
 	eval("swconfig", "dev", "eth0", "set", "enable_vlan", "0");
 	eval("swconfig", "dev", "eth0", "set", "igmp_snooping", "0");
@@ -366,7 +366,7 @@ void start_sysinit(void)
 	nvram_default_geti("port4vlans", 1);
 	nvram_default_get("port5vlans", "2 18000 19000 20000");
 	nvram_default_get("port6vlans", "1 18000 19000 20000");
-#elif defined(HAVE_ARCHERC7)
+		#elif defined(HAVE_ARCHERC7)
 	eval("swconfig", "dev", "eth0", "set", "reset", "1");
 	eval("swconfig", "dev", "eth0", "set", "enable_vlan", "0");
 	eval("swconfig", "dev", "eth0", "set", "igmp_snooping", "0");
@@ -389,7 +389,7 @@ void start_sysinit(void)
 	nvram_default_geti("port4vlans", 1);
 	nvram_default_get("port5vlans", "2 18000 19000 20000");
 	nvram_default_get("port6vlans", "1 18000 19000 20000");
-#elif defined(HAVE_WZR450HP2) || defined(HAVE_WR1043V2)
+		#elif defined(HAVE_WZR450HP2) || defined(HAVE_WR1043V2)
 	eval("swconfig", "dev", "eth0", "set", "reset", "1");
 	eval("swconfig", "dev", "eth0", "set", "enable_vlan", "0");
 	eval("swconfig", "dev", "eth0", "set", "igmp_snooping", "0");
@@ -411,7 +411,7 @@ void start_sysinit(void)
 	nvram_default_geti("port4vlans", 1);
 	nvram_default_get("port5vlans", "2 18000 19000 20000");
 	nvram_default_get("port6vlans", "1 18000 19000 20000");
-#else
+		#else
 	eval("swconfig", "dev", "eth0", "set", "reset", "1");
 	eval("swconfig", "dev", "eth0", "set", "enable_vlan", "1");
 	eval("swconfig", "dev", "eth0", "set", "igmp_snooping", "0");
@@ -425,8 +425,8 @@ void start_sysinit(void)
 	nvram_seti("sw_lan2", 2);
 	nvram_seti("sw_lan3", 3);
 	nvram_seti("sw_lan4", 4);
-#endif
-#endif
+		#endif
+	#endif
 #endif
 	eval("swconfig", "dev", "eth0", "set", "apply");
 #if defined(HAVE_DW02_412H)
@@ -516,7 +516,7 @@ void start_sysinit(void)
 			copy[10] & 0xff, copy[11] & 0xff);
 		fprintf(stderr, "configure eth1 to %s\n", mac);
 		set_hwaddr("eth1", mac);
-#ifdef HAVE_ATH10K
+	#ifdef HAVE_ATH10K
 		FILE *out = fopen("/tmp/archerc7-board.bin", "wb");
 		fseek(fp, 0x1000, SEEK_SET);
 		for (i = 0; i < 1088; i++)
@@ -524,18 +524,18 @@ void start_sysinit(void)
 		fclose(out);
 		eval("rm", "-f", "/tmp/ath10k-board.bin");
 		eval("ln", "-s", "/tmp/archerc7-board.bin", "/tmp/ath10k-board.bin");
-#endif
+	#endif
 		fclose(fp);
 	}
 #elif defined(HAVE_MMS344) && !defined(HAVE_DAP3662)
 	fp = fopen("/dev/mtdblock/6", "rb");
 	if (fp) {
 		unsigned char buf2[256];
-#ifdef HAVE_WILLY
+	#ifdef HAVE_WILLY
 		fseek(fp, 0x3f810, SEEK_SET);
-#else
+	#else
 		fseek(fp, 0x2e010, SEEK_SET);
-#endif
+	#endif
 		fread(buf2, 256, 1, fp);
 		fclose(fp);
 		if ((!memcmp(buf2, "\xff\xff\xff\xff\xff\xff", 6) || !memcmp(buf2, "\x00\x00\x00\x00\x00\x00", 6)))
@@ -567,11 +567,11 @@ out:;
 #endif
 #if !defined(HAVE_WR650AC) && !defined(HAVE_E355AC) && !defined(HAVE_E325N) && !defined(HAVE_E380AC) && !defined(HAVE_WR615N) && \
 	!defined(HAVE_AP120C) && !defined(HAVE_WILLY) && !defined(HAVE_WR810N)
-#ifndef HAVE_JWAP606
+	#ifndef HAVE_JWAP606
 	eval("ifconfig", "eth0", "up");
-#if (defined(HAVE_CPE880) || defined(HAVE_MMS344) || defined(HAVE_XD3200) || defined(HAVE_ARCHERC7V4) || \
-     defined(HAVE_DW02_412H)) &&                                                                         \
-	!defined(HAVE_DIR862)
+		#if (defined(HAVE_CPE880) || defined(HAVE_MMS344) || defined(HAVE_XD3200) || defined(HAVE_ARCHERC7V4) || \
+		     defined(HAVE_DW02_412H)) &&                                                                         \
+			!defined(HAVE_DIR862)
 	eval("vconfig", "set_name_type", "VLAN_PLUS_VID_NO_PAD");
 	eval("vconfig", "add", "eth0", "1");
 	eval("vconfig", "add", "eth0", "2");
@@ -580,15 +580,15 @@ out:;
 	set_hwaddr("vlan1", mac);
 	MAC_ADD(mac);
 	set_hwaddr("vlan2", mac);
-#elif defined(HAVE_WZR450HP2) || defined(HAVE_WDR3500) || defined(HAVE_XD9531)
+		#elif defined(HAVE_WZR450HP2) || defined(HAVE_WDR3500) || defined(HAVE_XD9531)
 	eval("ifconfig", "eth1", "up");
-#elif defined(HAVE_RAMBUTAN)
+		#elif defined(HAVE_RAMBUTAN)
 	eval("ifconfig", "eth0", "up");
 	eval("ifconfig", "eth1", "up");
-#elif defined(HAVE_LIMA)
+		#elif defined(HAVE_LIMA)
 	eval("ifconfig", "eth0", "up");
 	eval("ifconfig", "eth1", "up");
-#else
+		#else
 	eval("vconfig", "set_name_type", "VLAN_PLUS_VID_NO_PAD");
 	eval("vconfig", "add", "eth0", "1");
 	eval("vconfig", "add", "eth0", "2");
@@ -597,8 +597,8 @@ out:;
 	set_hwaddr("vlan1", mac);
 	MAC_ADD(mac);
 	set_hwaddr("vlan2", mac);
-#endif
-#endif
+		#endif
+	#endif
 #endif
 #ifdef HAVE_WR810N
 	eval("ifconfig", "eth0", "up");
@@ -670,9 +670,9 @@ out:;
 		eval("ln", "-s", "/tmp/archerc7-board.bin", "/tmp/ath10k-board.bin");
 	}
 	fclose(out);
-#ifdef HAVE_CPE890
+	#ifdef HAVE_CPE890
 	nvram_default_get("no_ath9k", "1");
-#endif
+	#endif
 #elif defined(HAVE_E380AC)
 	fp = fopen("/dev/mtdblock/0", "rb");
 	FILE *out = fopen("/tmp/archerc7-board.bin", "wb");
@@ -860,14 +860,14 @@ out:;
 //      don't use setWirelessLed since we only have one LED for two distinct radio's
 #elif !defined(HAVE_WR810N) && !defined(HAVE_LIMA) && !defined(HAVE_RAMBUTAN)
 
-#ifdef HAVE_WNDR3700V4
-#elif HAVE_XD9531
+	#ifdef HAVE_WNDR3700V4
+	#elif HAVE_XD9531
 	insmod("ledtrig-netdev");
 	setEthLED(16, "eth1");
-#elif HAVE_CPE880
+	#elif HAVE_CPE880
 	insmod("ledtrig-netdev");
 	setEthLED(19, "vlan2");
-#elif HAVE_ARCHERC25
+	#elif HAVE_ARCHERC25
 	/*
 #define ARCHER_C25_74HC_GPIO_BASE		120
 #define ARCHER_C25_74HC_GPIO_LED_WAN_AMBER	(ARCHER_C25_74HC_GPIO_BASE + 4)
@@ -888,7 +888,7 @@ out:;
 	setSwitchLED(122, 0x04); // lan3
 	setSwitchLED(123, 0x02); // lan4
 
-#endif
+	#endif
 #endif
 	nvram_default_geti("port0vlans", 2);
 	nvram_default_geti("port1vlans", 1);
@@ -936,7 +936,7 @@ char *set_wan_state(int state)
 {
 #if defined(HAVE_XD3200)
 	eval("swconfig", "dev", "eth0", "set", "reset", "1");
-#ifndef HAVE_SR3200
+	#ifndef HAVE_SR3200
 	if (!state) {
 		eval("swconfig", "dev", "eth0", "set", "enable_vlan", "0");
 		eval("swconfig", "dev", "eth0", "set", "igmp_snooping", "0");
@@ -958,7 +958,7 @@ char *set_wan_state(int state)
 		eval("vconfig", "add", "eth0", "2");
 		return NULL;
 	}
-#else
+	#else
 	if (!state) {
 		eval("swconfig", "dev", "eth0", "set", "enable_vlan", "0");
 		eval("swconfig", "dev", "eth0", "set", "igmp_snooping", "0");
@@ -980,7 +980,7 @@ char *set_wan_state(int state)
 		eval("vconfig", "add", "eth0", "2");
 		return NULL;
 	}
-#endif
+	#endif
 #elif defined(HAVE_CPE880)
 	eval("swconfig", "dev", "eth0", "set", "reset", "1");
 	if (!state) {
@@ -1055,12 +1055,12 @@ void start_wifi_drivers(void)
 //      don't use setWirelessLed since we only have one LED for two distinct radio's
 #elif !defined(HAVE_WR810N) && !defined(HAVE_LIMA) && !defined(HAVE_RAMBUTAN)
 
-#ifdef HAVE_WNDR3700V4
+	#ifdef HAVE_WNDR3700V4
 		setWirelessLed(0, 11);
 		setWirelessLed(1, 14);
-#elif HAVE_XD9531
+	#elif HAVE_XD9531
 		setWirelessLed(0, 12);
-#elif HAVE_CPE880
+	#elif HAVE_CPE880
 		setWirelessLed(0, 12);
 		writestr("/sys/devices/platform/leds-gpio/leds/generic_17/brightness", "0");
 		writestr("/sys/devices/platform/leds-gpio/leds/generic_20/brightness", "0");
@@ -1070,71 +1070,71 @@ void start_wifi_drivers(void)
 		if (!nvram_matchi("wlanled", 0))
 			eval("/sbin/wlanled", "-l", "generic_17:-94", "-l", "generic_20:-80", "-l", "generic_21:-73", "-l",
 			     "generic_22:-65");
-#elif HAVE_CPE890
+	#elif HAVE_CPE890
 		writestr("/sys/class/leds/ath10k-phy0/trigger", "phy0tpt");
 		if (!nvram_matchi("wlanled", 0))
 			eval("/sbin/wlanled", "-L", "generic_17:-94", "-L", "generic_16:-80", "-L", "generic_15:-73", "-L",
 			     "generic_14:-65");
-#elif HAVE_ARCHERC25
+	#elif HAVE_ARCHERC25
 
 		setWirelessLed(0, 126 + 32);
 		setWirelessLed(1, 127 + 32);
 
-#elif HAVE_JWAP606
+	#elif HAVE_JWAP606
 		//      setWirelessLed(0, 14);
 		setWirelessLed(1, 14);
-#elif HAVE_WR1043V2
-#ifndef HAVE_ONNET
+	#elif HAVE_WR1043V2
+		#ifndef HAVE_ONNET
 		setWirelessLed(0, 12);
-#endif
-#if defined(HAVE_RUCKUSR500)
+		#endif
+		#if defined(HAVE_RUCKUSR500)
 		setWirelessLed(0, 22);
 		setWirelessLed(1, 2);
-#elif defined(HAVE_WDR4900V2)
+		#elif defined(HAVE_WDR4900V2)
 		setWirelessLed(1, 17);
-#endif
-#ifdef HAVE_WR1043V4
+		#endif
+		#ifdef HAVE_WR1043V4
 		setWirelessLed(0, 19);
-#elif defined(HAVE_ARCHERC7V5)
+		#elif defined(HAVE_ARCHERC7V5)
 		setWirelessLed(0, 14);
 		setWirelessLed(1, 9);
-#elif defined(HAVE_ARCHERC7V4)
+		#elif defined(HAVE_ARCHERC7V4)
 		setWirelessLed(0, 24);
 		setWirelessLed(1, 9);
-#elif defined(HAVE_ARCHERC7)
+		#elif defined(HAVE_ARCHERC7)
 		setWirelessLed(1, 17);
-#endif
-#elif HAVE_WZR450HP2
+		#endif
+	#elif HAVE_WZR450HP2
 		setWirelessLed(0, 18);
-#elif HAVE_WR615N
+	#elif HAVE_WR615N
 		setWirelessLed(0, 12);
-#elif HAVE_E325N
+	#elif HAVE_E325N
 		setWirelessLed(0, 0);
-#elif HAVE_AP120C
+	#elif HAVE_AP120C
 		setWirelessLed(0, 0);
-#elif HAVE_SR3200
+	#elif HAVE_SR3200
 		setWirelessLed(0, 19);
 		writestr("/sys/class/leds/ath10k-phy1/trigger", "phy1tpt");
-#elif HAVE_E380AC
+	#elif HAVE_E380AC
 		setWirelessLed(0, 0);
 		setWirelessLed(1, 2);
-#elif HAVE_E355AC
+	#elif HAVE_E355AC
 		setWirelessLed(0, 0);
 		setWirelessLed(1, 3);
-#elif HAVE_WR650AC
+	#elif HAVE_WR650AC
 		setWirelessLed(0, 13);
 		setWirelessLed(1, 2);
-#elif HAVE_DIR869
+	#elif HAVE_DIR869
 		setdlinkcountry();
-#elif HAVE_DIR859
+	#elif HAVE_DIR859
 		setWirelessLed(0, 19);
-//      setWirelessLed(1, 32);
-#elif HAVE_DIR825C1
+	//      setWirelessLed(1, 32);
+	#elif HAVE_DIR825C1
 		setWirelessLed(0, 13);
 		setWirelessLed(1, 32);
-#else
+	#else
 		setWirelessLed(0, 0);
-#endif
+	#endif
 #endif
 	}
 }

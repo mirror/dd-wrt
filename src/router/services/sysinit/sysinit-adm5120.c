@@ -144,7 +144,7 @@ void start_sysinit(void)
 	 * load some netfilter stuff 
 	 */
 #ifndef HAVE_WP54G
-#ifndef HAVE_NP28G
+	#ifndef HAVE_NP28G
 	insmod("nf_conntrack_ftp");
 	insmod("nf_conntrack_irc");
 	insmod("nf_conntrack_netbios_ns");
@@ -193,7 +193,7 @@ void start_sysinit(void)
 	insmod("ppp_mppe_mppc");
 	insmod("pppox");
 	insmod("pppoe");
-#endif
+	#endif
 #endif
 	insmod("adm5120_wdt");
 	insmod("adm5120sw");

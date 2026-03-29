@@ -85,11 +85,11 @@ void start_sysinit(void)
 		eval("swconfig", "dev", "rtl8366s", "port", "5", "set", "led", "2");
 		eval("swconfig", "dev", "rtl8366s", "set", "apply");
 
-#ifdef HAVE_WNDR3700V2
+	#ifdef HAVE_WNDR3700V2
 		fseek(fp, 0xff0000, SEEK_SET);
-#else
+	#else
 		fseek(fp, 0x7f0000, SEEK_SET);
-#endif
+	#endif
 		fread(mactmp, 6, 1, fp);
 		for (i = 0; i < 6; i++)
 			copy[i] = mactmp[i];
@@ -139,9 +139,9 @@ void start_sysinit(void)
 		MAC_ADD(mac2);
 //              eval("gpio","enable","2");
 #elif HAVE_WZRG300NH2
-#ifndef HAVE_WZR300HP
+	#ifndef HAVE_WZR300HP
 		eval("startservice", "bootloader_check");
-#endif
+	#endif
 		fseek(fp, 0x5120C, SEEK_SET);
 		fread(mactmp, 6, 1, fp);
 		fclose(fp);
@@ -153,8 +153,8 @@ void start_sysinit(void)
 			copy[4] & 0xff, copy[5] & 0xff);
 		sprintf(mac2, "%02X:%02X:%02X:%02X:%02X:%02X", copy[0] & 0xff, copy[1] & 0xff, copy[2] & 0xff, copy[3] & 0xff,
 			copy[4] & 0xff, copy[5] & 0xff);
-//              eval("gpio","enable","13");
-#ifdef HAVE_SWCONFIG
+	//              eval("gpio","enable","13");
+	#ifdef HAVE_SWCONFIG
 		eval("swconfig", "dev", "eth0", "set", "reset", "1");
 		eval("swconfig", "dev", "eth0", "set", "enable_vlan", "1");
 		eval("swconfig", "dev", "eth0", "vlan", "1", "set", "ports", "0t 1 3 4 5");
@@ -167,7 +167,7 @@ void start_sysinit(void)
 		nvram_seti("sw_lan3", 4);
 		nvram_seti("sw_lan4", 5);
 
-#endif
+	#endif
 
 		fprintf(stderr, "configure eth0 to %s\n", mac2);
 		set_hwaddr("eth0", mac2);
@@ -196,10 +196,10 @@ void start_sysinit(void)
 			copy[4] & 0xff, copy[5] & 0xff);
 		sprintf(mac2, "%02X:%02X:%02X:%02X:%02X:%02X", copy[0] & 0xff, copy[1] & 0xff, copy[2] & 0xff, copy[3] & 0xff,
 			copy[4] & 0xff, copy[5] & 0xff);
-//              mac1[0] |= 0x02; // add private bit
-//              mac2[0] |= 0x02;
-//              eval("gpio","disable","16");
-#ifdef HAVE_SWCONFIG
+	//              mac1[0] |= 0x02; // add private bit
+	//              mac2[0] |= 0x02;
+	//              eval("gpio","disable","16");
+	#ifdef HAVE_SWCONFIG
 		system("swconfig dev switch0 set reset 1");
 		system("swconfig dev switch0 set enable_vlan 1");
 		system("swconfig dev switch0 vlan 1 set ports \"0t 2 3 4 5\"");
@@ -211,7 +211,7 @@ void start_sysinit(void)
 		nvram_seti("sw_lan2", 3);
 		nvram_seti("sw_lan3", 4);
 		nvram_seti("sw_lan4", 5);
-#endif
+	#endif
 
 		fprintf(stderr, "configure eth0 to %s\n", mac2);
 		set_hwaddr("eth0", mac2);
@@ -279,22 +279,22 @@ void start_sysinit(void)
 	setWirelessLedPhy1(5);
 
 #else
-#ifndef HAVE_WNDR3700
+	#ifndef HAVE_WNDR3700
 
-#ifdef HAVE_WZRG300NH2
+		#ifdef HAVE_WZRG300NH2
 	setWirelessLedPhy0(5);
-#else
-#ifndef HAVE_WZRG450
+		#else
+			#ifndef HAVE_WZRG450
 	setWirelessLedGeneric(0, 6);
 	setWirelessLedGeneric(1, 6);
-#endif
-#endif
-#else
+			#endif
+		#endif
+	#else
 	set_hwaddr("wifi0", mac1);
 	set_hwaddr("wifi1", wmac);
 	setWirelessLedPhy0(5);
 	setWirelessLedPhy1(5);
-#endif
+	#endif
 #endif
 
 	getRouterBrand(); // restore some default settings

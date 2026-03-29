@@ -244,7 +244,7 @@ void start_sysinit(void)
 		insmod("mt76x02-lib");
 		insmod("mt76x2-common");
 		insmod("mt76x2e");
-#ifdef HAVE_WHR1166D
+	#ifdef HAVE_WHR1166D
 		eval("swconfig", "dev", "eth0", "set", "reset", "1");
 		eval("swconfig", "dev", "eth0", "set", "enable_vlan", "1");
 		eval("swconfig", "dev", "eth0", "vlan", "1", "set", "ports", "0 1 2 3 6t");
@@ -256,7 +256,7 @@ void start_sysinit(void)
 		nvram_seti("sw_lan2", 1);
 		nvram_seti("sw_lan3", 2);
 		nvram_seti("sw_lan4", 3);
-#if 0
+		#if 0
 		eval("switch", "reg", "w", "2004", "ff0003");
 		eval("switch", "reg", "w", "2104", "ff0003");
 		eval("switch", "reg", "w", "2204", "ff0003");
@@ -287,8 +287,8 @@ void start_sysinit(void)
 		eval("switch", "vlan", "set", "0", "1", "11110111");
 		eval("switch", "vlan", "set", "1", "2", "00001011");
 		eval("switch", "clear");
-#endif
-#else
+		#endif
+	#else
 		eval("swconfig", "dev", "eth0", "set", "reset", "1");
 		eval("swconfig", "dev", "eth0", "set", "enable_vlan", "1");
 		eval("swconfig", "dev", "eth0", "vlan", "1", "set", "ports", "0 1 2 3 6t");
@@ -300,7 +300,7 @@ void start_sysinit(void)
 		nvram_seti("sw_lan2", 1);
 		nvram_seti("sw_lan3", 2);
 		nvram_seti("sw_lan4", 3);
-#endif
+	#endif
 		break;
 	}
 	eval("ifconfig", "eth0", "up");
@@ -324,13 +324,13 @@ void start_sysinit(void)
 	}
 #else
 
-#if defined(HAVE_DIR600) && !defined(HAVE_ALL02310N)
+	#if defined(HAVE_DIR600) && !defined(HAVE_ALL02310N)
 	writeproc("/proc/rt3052/mii/ctrl", "write 0 0 0x3300");
 	writeproc("/proc/rt3052/mii/ctrl", "write 1 0 0x3300");
 	writeproc("/proc/rt3052/mii/ctrl", "write 2 0 0x3300");
 	writeproc("/proc/rt3052/mii/ctrl", "write 3 0 0x3300");
-#endif
-#if defined(HAVE_RT10N) || defined(HAVE_F5D8235) || defined(HAVE_RT15N) || defined(HAVE_WCRGN) && !defined(HAVE_HAMEA15)
+	#endif
+	#if defined(HAVE_RT10N) || defined(HAVE_F5D8235) || defined(HAVE_RT15N) || defined(HAVE_WCRGN) && !defined(HAVE_HAMEA15)
 	FILE *in = fopen("/dev/mtdblock/2", "rb");
 	char mac[32];
 	if (in != NULL) {
@@ -348,8 +348,8 @@ void start_sysinit(void)
 		else
 			set_hwaddr("eth2", mac);
 	}
-#endif
-#ifdef HAVE_HAMEA15
+	#endif
+	#ifdef HAVE_HAMEA15
 	FILE *in = fopen("/dev/mtdblock/1", "rb");
 	if (in != NULL) {
 		unsigned char *config = calloc(65536, 1);
@@ -371,25 +371,26 @@ void start_sysinit(void)
 		free(config);
 		fclose(in);
 	}
-#endif
-#if (defined(HAVE_DIR600) || defined(HAVE_AR670W) || defined(HAVE_EAP9550) || defined(HAVE_AR690W)) && !defined(HAVE_ALL02310N)
+	#endif
+	#if (defined(HAVE_DIR600) || defined(HAVE_AR670W) || defined(HAVE_EAP9550) || defined(HAVE_AR690W)) && \
+		!defined(HAVE_ALL02310N)
 
 	FILE *in = fopen("/dev/mtdblock/1", "rb");
 	if (in != NULL) {
 		unsigned char *config = calloc(65536, 1);
 		fread(config, 65536, 1, in);
-#if defined(HAVE_AR670W) || defined(HAVE_AR690W)
+		#if defined(HAVE_AR670W) || defined(HAVE_AR690W)
 		int len = sizeof("lanmac=") - 1;
-#else
+		#else
 		int len = sizeof("ethaddr=") - 1;
-#endif
+		#endif
 		int i;
 		for (i = 0; i < 65535 - (18 + len); i++) {
-#if defined(HAVE_AR670W) || defined(HAVE_AR690W)
+		#if defined(HAVE_AR670W) || defined(HAVE_AR690W)
 			if (!strncmp(&config[i], "lanmac=", 7))
-#else
+		#else
 			if (!strncmp(&config[i], "ethaddr=", 8))
-#endif
+		#endif
 			{
 				char *mac = &config[i + len];
 				if (mac[0] == '"')
@@ -404,24 +405,24 @@ void start_sysinit(void)
 		free(config);
 		fclose(in);
 	}
-#endif
+	#endif
 
 	/* switch config */
 	if (getRouterBrand() != ROUTER_BOARD_ECB9750 && getRouterBrand() != ROUTER_BOARD_TECHNAXX3G) // lets load
 	{
 		eval("ifconfig", "eth2", "up");
-#ifndef HAVE_EAP9550
+	#ifndef HAVE_EAP9550
 		eval("vconfig", "set_name_type", "VLAN_PLUS_VID_NO_PAD");
 		eval("vconfig", "add", "eth2", "1"); //LAN
 
 		eval("vconfig", "add", "eth2", "2"); //WAN
-#ifdef HAVE_RT10N
+		#ifdef HAVE_RT10N
 		MAC_ADD(mac);
 		set_hwaddr("vlan2", mac);
-#endif
-#endif
+		#endif
+	#endif
 
-#ifdef HAVE_RUT500
+	#ifdef HAVE_RUT500
 		eval("switch", "reg", "w", "14", "7f5555");
 		eval("switch", "reg", "w", "40", "1002");
 		eval("switch", "reg", "w", "44", "1001");
@@ -446,8 +447,8 @@ void start_sysinit(void)
 		writeproc("/proc/rt3052/mii/ctrl", "write 2 0 0x3300");
 		writeproc("/proc/rt3052/mii/ctrl", "write 3 0 0x3300");
 		writeproc("/proc/rt3052/mii/ctrl", "write 4 0 0x3300");
-#elif defined(HAVE_ALLNET11N) || defined(HAVE_ESR6650) || defined(HAVE_WR5422) || defined(HAVE_RT10N) || defined(HAVE_ACXNR22) || \
-	defined(HAVE_W502U) || defined(HAVE_ESR9752) || defined(HAVE_ALL02310N)
+	#elif defined(HAVE_ALLNET11N) || defined(HAVE_ESR6650) || defined(HAVE_WR5422) || defined(HAVE_RT10N) || \
+		defined(HAVE_ACXNR22) || defined(HAVE_W502U) || defined(HAVE_ESR9752) || defined(HAVE_ALL02310N)
 		eval("switch", "reg", "w", "14", "405555");
 		eval("switch", "reg", "w", "40", "1002");
 		eval("switch", "reg", "w", "44", "1001");
@@ -457,10 +458,10 @@ void start_sysinit(void)
 		eval("switch", "reg", "w", "90", "7f7f");
 		eval("switch", "reg", "w", "98", "7f3f");
 		eval("switch", "reg", "w", "e4", "3f");
-#ifdef HAVE_ESR9752
+		#ifdef HAVE_ESR9752
 		eval("switch", "reg", "w", "c8", "3f502b28");
-#endif
-#elif HAVE_AR670W
+		#endif
+	#elif HAVE_AR670W
 		eval("mii_mgr", "-s", "-p", "29", "-r", "23", "-v", "0x07c2");
 		eval("mii_mgr", "-s", "-p", "29", "-r", "22", "-v", "0x8420");
 
@@ -472,10 +473,10 @@ void start_sysinit(void)
 		eval("mii_mgr", "-s", "-p", "30", "-r", "9", "-v", "0x1089");
 		eval("mii_mgr", "-s", "-p", "30", "-r", "1", "-v", "0x2f00");
 		eval("mii_mgr", "-s", "-p", "30", "-r", "2", "-v", "0x0030");
-#elif HAVE_AR690W
-#elif HAVE_RT15N
-#elif HAVE_BR6574N
-#elif HAVE_F5D8235
+	#elif HAVE_AR690W
+	#elif HAVE_RT15N
+	#elif HAVE_BR6574N
+	#elif HAVE_F5D8235
 		eval("switch", "reg", "w", "14", "405555");
 		eval("switch", "reg", "w", "e4", "20");
 		eval("switch", "reg", "w", "40", "1001");
@@ -486,7 +487,7 @@ void start_sysinit(void)
 		eval("switch", "reg", "w", "70", "ffffffff");
 		eval("switch", "reg", "w", "90", "7f7f");
 		eval("switch", "reg", "w", "98", "7f40");
-#elif HAVE_EAP9550
+	#elif HAVE_EAP9550
 		eval("switch", "reg", "w", "14", "5555");
 		eval("switch", "reg", "w", "40", "1001");
 		eval("switch", "reg", "w", "44", "1001");
@@ -497,7 +498,7 @@ void start_sysinit(void)
 		eval("switch", "reg", "w", "90", "7f7f");
 		eval("switch", "reg", "w", "98", "7f7f");
 		eval("switch", "reg", "w", "e4", "7f");
-#else
+	#else
 		eval("switch", "reg", "w", "14", "405555");
 		eval("switch", "reg", "w", "50", "2001");
 		eval("switch", "reg", "w", "90", "7f7f");
@@ -507,7 +508,7 @@ void start_sysinit(void)
 		eval("switch", "reg", "w", "44", "1001");
 		eval("switch", "reg", "w", "48", "1002");
 		eval("switch", "reg", "w", "70", "ffff506f");
-#endif
+	#endif
 	}
 
 	{
@@ -554,21 +555,21 @@ char *enable_dtag_vlan(int enable)
 			eval("switch", "reg", "w", "90", "7f7f");
 			eval("switch", "reg", "w", "98", "7f2f");
 			eval("switch", "reg", "w", "e4", "2f");
-#if defined(HAVE_ALLNET11N) || defined(HAVE_ESR6650) || defined(HAVE_WR5422) || defined(HAVE_RT10N) || defined(HAVE_ACXNR22) || \
-	defined(HAVE_W502U) || defined(HAVE_ESR9752) || defined(HAVE_ALL02310N)
+	#if defined(HAVE_ALLNET11N) || defined(HAVE_ESR6650) || defined(HAVE_WR5422) || defined(HAVE_RT10N) || \
+		defined(HAVE_ACXNR22) || defined(HAVE_W502U) || defined(HAVE_ESR9752) || defined(HAVE_ALL02310N)
 			eval("switch", "reg", "w", "40", "1007");
 			eval("switch", "reg", "w", "44", "1001");
 			eval("switch", "reg", "w", "48", "1001");
 			eval("switch", "reg", "w", "70", "ffff417e");
-#ifdef HAVE_ESR9752
+		#ifdef HAVE_ESR9752
 			eval("switch", "reg", "w", "c8", "3f502b28");
-#endif
-#else
+		#endif
+	#else
 			eval("switch", "reg", "w", "40", "1001");
 			eval("switch", "reg", "w", "44", "1001");
 			eval("switch", "reg", "w", "48", "1007");
 			eval("switch", "reg", "w", "70", "ffff506f");
-#endif
+	#endif
 #endif
 			// now we got vlan7, how do we trunk now. lets find out
 			return "eth2";
@@ -599,26 +600,26 @@ char *enable_dtag_vlan(int enable)
 			eval("switch", "reg", "w", "90", "7f7f");
 			eval("switch", "reg", "w", "98", "7f3f");
 			eval("switch", "reg", "w", "e4", "3f");
-#if defined(HAVE_ALLNET11N) || defined(HAVE_ESR6650) || defined(HAVE_WR5422) || defined(HAVE_RT10N) || defined(HAVE_ACXNR22) || \
-	defined(HAVE_W502U) || defined(HAVE_ESR9752) || defined(HAVE_ALL02310N)
+	#if defined(HAVE_ALLNET11N) || defined(HAVE_ESR6650) || defined(HAVE_WR5422) || defined(HAVE_RT10N) || \
+		defined(HAVE_ACXNR22) || defined(HAVE_W502U) || defined(HAVE_ESR9752) || defined(HAVE_ALL02310N)
 			eval("switch", "reg", "w", "40", "1002");
 			eval("switch", "reg", "w", "44", "1001");
 			eval("switch", "reg", "w", "48", "1001");
 			eval("switch", "reg", "w", "70", "ffff417e");
-#ifdef HAVE_ESR9752
+		#ifdef HAVE_ESR9752
 			eval("switch", "reg", "w", "c8", "3f502b28");
-#endif
-#elif HAVE_BR6574N
-#elif HAVE_AR690W
-#elif HAVE_RT15N
-#elif HAVE_AR670W
-#elif HAVE_F5D8235
-#else
+		#endif
+	#elif HAVE_BR6574N
+	#elif HAVE_AR690W
+	#elif HAVE_RT15N
+	#elif HAVE_AR670W
+	#elif HAVE_F5D8235
+	#else
 			eval("switch", "reg", "w", "40", "1001");
 			eval("switch", "reg", "w", "44", "1001");
 			eval("switch", "reg", "w", "48", "1002");
 			eval("switch", "reg", "w", "70", "ffff506f");
-#endif
+	#endif
 			eval("vconfig", "set_name_type", "VLAN_PLUS_VID_NO_PAD");
 			eval("vconfig", "add", "eth2", "2"); //WAN
 			return "eth2";

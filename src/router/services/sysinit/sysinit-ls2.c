@@ -100,7 +100,7 @@ void start_sysinit(void)
 
 #ifdef HAVE_BWRG1000
 	eval("ifconfig", "eth0", "up"); // wan
-#ifdef HAVE_SWCONFIG
+	#ifdef HAVE_SWCONFIG
 	eval("swconfig", "dev", "eth0", "vlan", "1", "set", "ports", "0 1 2 3 5t");
 	eval("swconfig", "dev", "eth0", "vlan", "2", "set", "ports", "4 5t");
 	eval("swconfig", "dev", "eth0", "set", "apply");
@@ -119,15 +119,15 @@ void start_sysinit(void)
 	nvram_default_geti("port3vlans", 1);
 	nvram_default_geti("port4vlans", 1);
 	nvram_default_get("port5vlans", "1 2 16000");
-#else
+	#else
 	vlan_init(0xff); // 4 lan + 1 wan
-#endif
+	#endif
 #else
-#ifdef HAVE_LS2
-#if !defined(HAVE_NS2) && !defined(HAVE_BS2) && !defined(HAVE_LC2) && !defined(HAVE_BS2HP) && !defined(HAVE_MS2) && \
-	!defined(HAVE_PICO2) && !defined(HAVE_PICO2HP)
+	#ifdef HAVE_LS2
+		#if !defined(HAVE_NS2) && !defined(HAVE_BS2) && !defined(HAVE_LC2) && !defined(HAVE_BS2HP) && \
+			!defined(HAVE_MS2) && !defined(HAVE_PICO2) && !defined(HAVE_PICO2HP)
 	eval("ifconfig", "eth0", "up"); // wan
-#ifdef HAVE_SWCONFIG
+			#ifdef HAVE_SWCONFIG
 	eval("swconfig", "dev", "eth0", "vlan", "1", "set", "ports", "0 1 2 3 5t");
 	eval("swconfig", "dev", "eth0", "vlan", "2", "set", "ports", "4 5t");
 	eval("swconfig", "dev", "eth0", "set", "apply");
@@ -140,18 +140,18 @@ void start_sysinit(void)
 	nvram_seti("sw_lan2", 1);
 	nvram_seti("sw_lan3", 2);
 	nvram_seti("sw_lan4", 3);
-#else
+			#else
 	vlan_init(0xff); // 4 lan + 1 wan
 	writeprocsys("dev/wifi0/ledpin", "7");
 	writeprocsys("dev/wifi0/softled", "1");
-#endif
+			#endif
 	if (get_hwaddr("eth0", macaddr)) {
 		nvram_set("et0macaddr", macaddr);
 		nvram_set("et0macaddr_safe", macaddr);
 		set_hwaddr("vlan2", macaddr);
 	}
-#endif
-#endif
+		#endif
+	#endif
 #endif
 	if (get_hwaddr("eth0", macaddr)) {
 		nvram_set("et0macaddr", macaddr);

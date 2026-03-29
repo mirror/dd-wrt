@@ -54,9 +54,9 @@
 #include "devices/wireless.c"
 
 #ifndef HAVE_TONZE
-#ifndef HAVE_NOP8670
+	#ifndef HAVE_NOP8670
 
-/*void checkupdate( void )
+	/*void checkupdate( void )
 {
     int res, res2 = 0;
     FILE *in =
@@ -125,7 +125,7 @@
     }
 }
 */
-#endif
+	#endif
 #endif
 void start_sysinit(void)
 {
@@ -149,9 +149,9 @@ void start_sysinit(void)
 	 */
 
 #ifndef HAVE_TONZE
-#ifndef HAVE_NOP8670
-//    checkupdate(  );
-#endif
+	#ifndef HAVE_NOP8670
+	//    checkupdate(  );
+	#endif
 #endif
 	fprintf(stderr, "try modules for ethernet adapters\n");
 	nvram_seti("intel_eth", 0);
@@ -169,11 +169,11 @@ void start_sysinit(void)
 	fprintf(stderr, "initialize Ethernet\n");
 	eval("ifconfig", "ixp0", "0.0.0.0", "up");
 	eval("ifconfig", "ixp1", "0.0.0.0", "up");
-#ifndef HAVE_WAVESAT
+	#ifndef HAVE_WAVESAT
 	fprintf(stderr, "Load OCF Drivers\n");
 	insmod("ocf");
 	insmod("cryptodev");
-#endif
+	#endif
 	// insmod("ixp4xx", "init_crypto=0");
 #else
 	// eval ("mknod", "/dev/IxNpe","c","10","184");
@@ -380,7 +380,7 @@ void start_sysinit(void)
 		}
 	}
 #else
-#ifdef HAVE_WG302
+	#ifdef HAVE_WG302
 	eval("setmac", "-f", "/dev/mtdblock/7", "-n", "1", "-i", "0", "-r", "npe_eth0_esa");
 	{
 		char macaddr[32];
@@ -389,7 +389,7 @@ void start_sysinit(void)
 			nvram_set("et0macaddr_safe", macaddr);
 		}
 	}
-#endif
+	#endif
 #endif
 #ifdef HAVE_TONZE
 	{
@@ -429,7 +429,7 @@ void start_sysinit(void)
 	char nvgpio[32];
 	int gpio_need_commit = 0;
 
-#if defined(HAVE_TMK) || defined(HAVE_BKM)
+	#if defined(HAVE_TMK) || defined(HAVE_BKM)
 	nvram_unset("wan_3g_signal");
 	nvram_unset("wan_3g_mode");
 	nvram_unset("wan_3g_status");
@@ -443,7 +443,7 @@ void start_sysinit(void)
 		set_gpio(0, 0);
 		set_gpio(2, 0);
 	}
-#endif
+	#endif
 
 	fprintf(stderr, "GPIO START\n");
 

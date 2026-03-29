@@ -6687,9 +6687,9 @@ next:;
 	insmod("emf");
 	insmod("igs");
 	insmod("wl");
-#ifdef HAVE_DHDAP
+	#ifdef HAVE_DHDAP
 	insmod("dhd");
-#endif
+	#endif
 #endif
 	//      set_smp_affinity(163, 1);       //eth1 and eth2  on core 0
 	//      set_smp_affinity(169, 2);       //eth3 or eth2 core 1

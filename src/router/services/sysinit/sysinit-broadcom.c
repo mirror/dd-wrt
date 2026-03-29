@@ -65,7 +65,7 @@
 	eval("event", "3", "1", "15")
 
 #ifndef BFL_AFTERBURNER
-#define BFL_AFTERBURNER 0x0200
+	#define BFL_AFTERBURNER 0x0200
 #endif
 
 static char *brcm_to_swconfig(char *vlan, char *buf)
@@ -823,8 +823,8 @@ void start_sysinit(void)
 		int isr6300 = 0;
 		int iswndr4500v2 = 0;
 
-#define R6300 "U12H218T00_NETGEAR"
-#define WNDR4500V2 "U12H224T00_NETGEAR"
+	#define R6300 "U12H218T00_NETGEAR"
+	#define WNDR4500V2 "U12H224T00_NETGEAR"
 
 		char modelstr[32];
 		fseek(fp, 0, SEEK_SET);

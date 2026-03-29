@@ -186,13 +186,13 @@ void start_sysinit(void)
 	FILE *fp = fopen("/dev/mtdblock/0", "rb");
 	unsigned char buf2[256];
 	if (fp) {
-#ifdef HAVE_E2100
+	#ifdef HAVE_E2100
 		unsigned int firstoffset = 0x3f29a;
 		unsigned int secondoffset = 0x3f288;
-#else
+	#else
 		unsigned int firstoffset = 0x3f288;
 		unsigned int secondoffset = 0x3f29a;
-#endif
+	#endif
 		fseek(fp, firstoffset, SEEK_SET);
 		fread(buf2, 19, 1, fp);
 

@@ -90,7 +90,7 @@ extern void free_defaults(struct nvram_param *);
 extern int f_exists(const char *path);
 
 #ifdef HAVE_MACBIND
-#include "../../../opt/mac.h"
+	#include "../../../opt/mac.h"
 #endif
 
 static void internal_runStartup(char *folder, char *extension)
@@ -182,8 +182,8 @@ void runStartup(char *extension)
 
 #if defined(HAVE_BUFFALO) || defined(HAVE_BUFFALO_BL_DEFAULTS)
 
-#ifdef HAVE_BCMMODERN
-#define getUEnv(name) nvram_get(name)
+	#ifdef HAVE_BCMMODERN
+		#define getUEnv(name) nvram_get(name)
 static void buffalo_defaults(int force)
 {
 	char *pincode = getUEnv("pincode");
@@ -323,13 +323,13 @@ static void buffalo_defaults(int force)
 			nvram_set("wl0_regdomain", "GERMANY");
 		} else if (!strcmp(region, "JP")) {
 			nvram_set("wl0_regdomain", "JAPAN");
-#ifdef HAVE_BUFFALO_SA
+		#ifdef HAVE_BUFFALO_SA
 		} else if (!strcmp(region, "AP")) {
 			nvram_set("wl0_regdomain", "SINGAPORE");
-#else
+		#else
 		} else if (!strcmp(region, "AP")) {
 			nvram_set("wl0_regdomain", "SINGAPORE");
-#endif
+		#endif
 		} else if (!strcmp(region, "RU")) {
 			nvram_set("wl0_regdomain", "RUSSIA");
 		} else if (!strcmp(region, "TW")) {
@@ -339,7 +339,7 @@ static void buffalo_defaults(int force)
 		} else if (!strcmp(region, "KR")) {
 			nvram_set("wl0_regdomain", "KOREA_REPUBLIC");
 		}
-#ifdef HAVE_WZRHPAG300NH
+		#ifdef HAVE_WZRHPAG300NH
 		if (!strcmp(region, "US")) {
 			nvram_set("wl1_regdomain", "UNITED_STATES");
 		} else if (!strcmp(region, "EU")) {
@@ -348,13 +348,13 @@ static void buffalo_defaults(int force)
 			nvram_set("wl1_regdomain", "JAPAN");
 		} else if (!strcmp(region, "RU")) {
 			nvram_set("wl1_regdomain", "RUSSIA");
-#ifdef HAVE_BUFFALO_SA
+			#ifdef HAVE_BUFFALO_SA
 		} else if (!strcmp(region, "AP")) {
 			nvram_set("wl1_regdomain", "SINGAPORE");
-#else
+			#else
 		} else if (!strcmp(region, "AP")) {
 			nvram_set("wl1_regdomain", "SINGAPORE");
-#endif
+			#endif
 		} else if (!strcmp(region, "TW")) {
 			nvram_set("wl1_regdomain", "TAIWAN");
 		} else if (!strcmp(region, "CH")) {
@@ -362,18 +362,18 @@ static void buffalo_defaults(int force)
 		} else if (!strcmp(region, "KR")) {
 			nvram_set("wl1_regdomain", "KOREA_REPUBLIC");
 		}
-#ifdef HAVE_HOBBIT
+			#ifdef HAVE_HOBBIT
 		nvram_set("wl_regdomain", "EUROPE");
-#endif
+			#endif
 
-#endif
+		#endif
 		if (!strcmp(region, "AP") || !strcmp(region, "CH") || !strcmp(region, "KR") || !strcmp(region, "TW") ||
 		    !strcmp(region, "RU"))
 			nvram_seti("wps_status", 0);
 		else
 			nvram_seti("wps_status", 1);
 		nvram_set("wl_country_code", region);
-#ifdef HAVE_BCMMODERN
+		#ifdef HAVE_BCMMODERN
 
 		unsigned long boardnum = strtoul(nvram_safe_get("boardnum"), NULL, 0);
 
@@ -490,21 +490,21 @@ static void buffalo_defaults(int force)
 				nvram_seti("wl1_country_rev", 41);
 			}
 		}
-#else
+		#else
 		nvram_set("wl0_country_code", region);
 		nvram_set("wl1_country_code", region);
-#endif
+		#endif
 		nvram_seti("ias_startup", 3);
 		nvram_unset("http_userpln");
 		nvram_unset("http_pwdpln");
-#ifdef HAVE_SPOTPASS
+		#ifdef HAVE_SPOTPASS
 		eval("startservice", "spotpass_defaults", "-f");
-#endif
+		#endif
 	}
 }
 
-#elif HAVE_MT7620
-#define getUEnv(name) nvram_get(name)
+	#elif HAVE_MT7620
+		#define getUEnv(name) nvram_get(name)
 static void buffalo_defaults(int force)
 {
 	if (!nvram_exists("wlan0_akm") || force) {
@@ -577,14 +577,14 @@ static void buffalo_defaults(int force)
 		nvram_seti("ias_startup", 3);
 		nvram_unset("http_userpln");
 		nvram_unset("http_pwdpln");
-#ifdef HAVE_SPOTPASS
+		#ifdef HAVE_SPOTPASS
 		eval("startservice", "spotpass_defaults", "-f");
-#endif
+		#endif
 		nvram_async_commit();
 	}
 }
 
-#else
+	#else
 extern void *getUEnv(char *name);
 static void buffalo_defaults(int force)
 {
@@ -665,7 +665,7 @@ static void buffalo_defaults(int force)
 				if (wpapsk)
 					nvram_set("wlan0_wpa_psk", wpapsk);
 			}
-#ifdef HAVE_WZRHPAG300NH
+		#ifdef HAVE_WZRHPAG300NH
 			{
 				char *mode_ex = getUEnv("DEF-p_wireless_ath1_11a-authmode_ex");
 				if (!mode_ex)
@@ -724,23 +724,23 @@ static void buffalo_defaults(int force)
 		sprintf(eabuf, "Buffalo-A-%02X%02X", edata[4] & 0xff, edata[5] & 0xff);
 		nvram_set("wlan1_ssid", eabuf);
 
-#else
+		#else
 		}
 		char eabuf[32];
 		unsigned char edata[6];
 		get_hwaddr("eth0", edata);
-#if defined(HAVE_WZR300HP) || defined(HAVE_WHR300HP)
+			#if defined(HAVE_WZR300HP) || defined(HAVE_WHR300HP)
 		sprintf(eabuf, "BUFFALO-%02X%02X%02X", edata[3] & 0xff, edata[4] & 0xff, edata[5] & 0xff);
-#elif defined(HAVE_WZR450HP2)
+			#elif defined(HAVE_WZR450HP2)
 		sprintf(eabuf, "BUFFALO-G-%02X%02X", edata[4] & 0xff, edata[5] & 0xff);
-#elif defined(HAVE_AXTEL)
+			#elif defined(HAVE_AXTEL)
 		sprintf(eabuf, "AXTELEXTREMO-%02X%02X", edata[4] & 0xff, edata[5] & 0xff);
-#else
+			#else
 		sprintf(eabuf, "%02X%02X%02X%02X%02X%02X", edata[0] & 0xff, edata[1] & 0xff, edata[2] & 0xff, edata[3] & 0xff,
 			edata[4] & 0xff, edata[5] & 0xff);
-#endif
+			#endif
 		nvram_set("wlan0_ssid", eabuf);
-#endif
+		#endif
 
 		region = getUEnv("region");
 		if (region == NULL) {
@@ -752,13 +752,13 @@ static void buffalo_defaults(int force)
 			nvram_set("wlan0_regdomain", "GERMANY");
 		} else if (!strcmp(region, "JP")) {
 			nvram_set("wlan0_regdomain", "JAPAN");
-#ifdef HAVE_BUFFALO_SA
+		#ifdef HAVE_BUFFALO_SA
 		} else if (!strcmp(region, "AP")) {
 			nvram_set("wlan0_regdomain", "SINGAPORE");
-#else
+		#else
 		} else if (!strcmp(region, "AP")) {
 			nvram_set("wlan0_regdomain", "SINGAPORE");
-#endif
+		#endif
 		} else if (!strcmp(region, "RU")) {
 			nvram_set("wlan0_regdomain", "RUSSIA");
 		} else if (!strcmp(region, "TW")) {
@@ -768,7 +768,7 @@ static void buffalo_defaults(int force)
 		} else if (!strcmp(region, "KR")) {
 			nvram_set("wlan0_regdomain", "KOREA_REPUBLIC");
 		}
-#ifdef HAVE_WZRHPAG300NH
+		#ifdef HAVE_WZRHPAG300NH
 		if (!strcmp(region, "US")) {
 			nvram_set("wlan1_regdomain", "UNITED_STATES");
 		} else if (!strcmp(region, "EU")) {
@@ -777,13 +777,13 @@ static void buffalo_defaults(int force)
 			nvram_set("wlan1_regdomain", "JAPAN");
 		} else if (!strcmp(region, "RU")) {
 			nvram_set("wlan1_regdomain", "RUSSIA");
-#ifdef HAVE_BUFFALO_SA
+			#ifdef HAVE_BUFFALO_SA
 		} else if (!strcmp(region, "AP")) {
 			nvram_set("wlan1_regdomain", "SINGAPORE");
-#else
+			#else
 		} else if (!strcmp(region, "AP")) {
 			nvram_set("wlan1_regdomain", "SINGAPORE");
-#endif
+			#endif
 		} else if (!strcmp(region, "TW")) {
 			nvram_set("wlan1_regdomain", "TAIWAN");
 		} else if (!strcmp(region, "CH")) {
@@ -791,7 +791,7 @@ static void buffalo_defaults(int force)
 		} else if (!strcmp(region, "KR")) {
 			nvram_set("wlan1_regdomain", "KOREA_REPUBLIC");
 		}
-#endif
+		#endif
 		if (!strcmp(region, "AP") || !strcmp(region, "CH") || !strcmp(region, "KR") || !strcmp(region, "TW") ||
 		    !strcmp(region, "RU"))
 			nvram_seti("wps_status", 0);
@@ -800,13 +800,13 @@ static void buffalo_defaults(int force)
 		nvram_seti("ias_startup", 3);
 		nvram_unset("http_userpln");
 		nvram_unset("http_pwdpln");
-#ifdef HAVE_SPOTPASS
+		#ifdef HAVE_SPOTPASS
 		eval("startservice", "spotpass_defaults", "-f");
-#endif
+		#endif
 		nvram_async_commit();
 	}
 }
-#endif
+	#endif
 
 #endif
 /*
@@ -1009,7 +1009,7 @@ void start_restore_defaults(void)
 					 { "wan_ifnames", "vlan2" },
 					 { 0, 0 } };
 #elif HAVE_GATEWORX
-#if defined(HAVE_XIOCOM) || defined(HAVE_MI424WR)
+	#if defined(HAVE_XIOCOM) || defined(HAVE_MI424WR)
 	struct nvram_param generic[] = { { "lan_ifname", "br0" },
 					 { "lan_ifnames", "ixp1 wlan0 wlan1 wlan2 wlan3" },
 					 { "wan_ifname2", "ixp0" },
@@ -1017,7 +1017,7 @@ void start_restore_defaults(void)
 					 { "wan_default", "ixp0" },
 					 { "wan_ifnames", "ixp0" },
 					 { 0, 0 } };
-#else
+	#else
 	struct nvram_param generic[] = { { "lan_ifname", "br0" },
 					 { "lan_ifnames", "ixp0 wlan0 wlan1 wlan2 wlan3" },
 					 { "wan_ifname2", "ixp1" },
@@ -1025,29 +1025,29 @@ void start_restore_defaults(void)
 					 { "wan_default", "ixp1" },
 					 { "wan_ifnames", "ixp1" },
 					 { 0, 0 } };
-#endif
+	#endif
 #elif HAVE_X86
 	struct nvram_param generic[] = { { "lan_ifname", "br0" },
-#ifdef HAVE_NOWIFI
+	#ifdef HAVE_NOWIFI
 					 { "lan_ifnames", "eth1 eth2 eth3 eth4 eth5 eth6 eth7 eth8 eth9 eth10" },
-#else
-#ifdef HAVE_GW700
+	#else
+		#ifdef HAVE_GW700
 					 { "lan_ifnames",
 					   "eth0 eth2 eth3 eth4 eth5 eth6 eth7 eth8 eth9 eth10 wlan0 wlan1 wlan2 wlan3 wlan5 wlan6 wlan7 wlan8" },
-#else
+		#else
 					 { "lan_ifnames",
 					   "eth1 eth2 eth3 eth4 eth5 eth6 eth7 eth8 eth9 eth10 wlan0 wlan1 wlan2 wlan3 wlan5 wlan6 wlan7 wlan8" },
-#endif
-#endif
-#ifdef HAVE_GW700
+		#endif
+	#endif
+	#ifdef HAVE_GW700
 					 { "wan_ifname", "eth1" },
 					 { "wan_ifname2", "eth1" },
 					 { "wan_ifnames", "eth1" },
-#else
+	#else
 					 { "wan_ifname", "eth0" },
 					 { "wan_ifname2", "eth0" },
 					 { "wan_ifnames", "eth0" },
-#endif
+	#endif
 					 { 0, 0 } };
 #elif HAVE_XSCALE
 	struct nvram_param generic[] = { { "lan_ifname", "br0" },
@@ -1408,23 +1408,23 @@ void start_restore_defaults(void)
 #elif HAVE_HORNET
 	struct nvram_param generic[] = { { "lan_ifname", "br0" },
 					 { "lan_ifnames", "eth0 eth1 wlan0" },
-#ifdef HAVE_MAKSAT
+	#ifdef HAVE_MAKSAT
 					 { "wan_ifname", "eth0" },
 					 { "wan_ifname2", "eth0" },
 					 { "wan_ifnames", "eth0" },
 					 { "wan_default", "eth0" },
-#elif HAVE_ONNET
+	#elif HAVE_ONNET
 					 { "wan_ifname", "eth0" },
 					 { "wan_ifname2", "eth0" },
 					 { "wan_ifnames", "eth0" },
 					 { "wan_default", "eth0" },
-#else
-/*		{"wan_ifname", "eth1"},
+	#else
+	/*		{"wan_ifname", "eth1"},
 		{"wan_ifname2", "eth1"},
 		{"wan_ifnames", "eth1"},
 		{"wan_default", "eth1"},
 */
-#endif
+	#endif
 					 { 0, 0 } };
 #elif HAVE_WNR2000
 	struct nvram_param generic[] = { { "lan_ifname", "br0" },
@@ -1621,17 +1621,17 @@ void start_restore_defaults(void)
 #elif HAVE_JA76PF
 	struct nvram_param generic[] = { { "lan_ifname", "br0" },
 					 { "lan_ifnames", "eth0 eth1 wlan0" },
-#ifdef HAVE_SANSFIL
+	#ifdef HAVE_SANSFIL
 					 { "wan_ifname", "eth0" },
 					 { "wan_ifname2", "eth0" },
 					 { "wan_ifnames", "eth0" },
 					 { "wan_default", "eth0" },
-#else
+	#else
 					 { "wan_ifname", "eth1" },
 					 { "wan_ifname2", "eth1" },
 					 { "wan_ifnames", "eth1" },
 					 { "wan_default", "eth1" },
-#endif
+	#endif
 					 { 0, 0 } };
 #elif HAVE_ALFAAP94
 	struct nvram_param generic[] = { { "lan_ifname", "br0" },
@@ -2023,7 +2023,7 @@ void start_restore_defaults(void)
 	char *ds;
 
 	switch (brand) {
-#ifndef HAVE_BUFFALO
+	#ifndef HAVE_BUFFALO
 	case ROUTER_WRTSL54GS:
 	case ROUTER_WRT150N:
 	case ROUTER_WRT160N:
@@ -2033,7 +2033,7 @@ void start_restore_defaults(void)
 	case ROUTER_NETGEAR_WNDR3300:
 	case ROUTER_ASUS_WL500G:
 	case ROUTER_ASUS_WL500W:
-#endif
+	#endif
 	case ROUTER_BUFFALO_WZRG300N:
 	case ROUTER_BUFFALO_WLAH_G54:
 	case ROUTER_BUFFALO_WAPM_HP_AM54G54:
@@ -2041,7 +2041,7 @@ void start_restore_defaults(void)
 	case ROUTER_ASKEY_RT220XD:
 		linux_overrides = generic;
 		break;
-#ifndef HAVE_BUFFALO
+	#ifndef HAVE_BUFFALO
 	case ROUTER_ASUS_WL500GD:
 	case ROUTER_ASUS_WL550GE:
 	case ROUTER_BELKIN_F5D7230_V3000:
@@ -2096,7 +2096,7 @@ void start_restore_defaults(void)
 	case ROUTER_ASUS_RTN53:
 		linux_overrides = rt53nvlan;
 		break;
-#endif
+	#endif
 	case ROUTER_ASUS_AC66U:
 	case ROUTER_D1800H:
 	case ROUTER_DLINK_DIR865:
@@ -2106,31 +2106,31 @@ void start_restore_defaults(void)
 	case ROUTER_BUFFALO_WZRG144NH:
 		linux_overrides = wzr144nhvlan;
 		break;
-#ifndef HAVE_BUFFALO
+	#ifndef HAVE_BUFFALO
 	case ROUTER_MOTOROLA_WE800G:
 	case ROUTER_WAP54G_V1:
 	case ROUTER_SITECOM_WL105B:
-#endif
+	#endif
 	case ROUTER_BUFFALO_WLI2_TX1_G54:
 	case ROUTER_BUFFALO_WLAG54C:
 		linux_overrides = generic_2;
 		break;
-#ifndef HAVE_BUFFALO
+	#ifndef HAVE_BUFFALO
 	case ROUTER_WAP54G_V2:
 	case ROUTER_VIEWSONIC_WAPBR_100:
 	case ROUTER_USR_5430:
 	case ROUTER_BELKIN_F5D7230_V2000:
 	case ROUTER_NETGEAR_WG602_V3:
 	case ROUTER_NETGEAR_WG602_V4:
-#endif
+	#endif
 	case ROUTER_BUFFALO_WLA2G54C:
 	case ROUTER_BUFFALO_WLI_TX4_G54HP:
 		linux_overrides = generic_3;
 		break;
-#ifndef HAVE_BUFFALO
+	#ifndef HAVE_BUFFALO
 	case ROUTER_RT480W:
 	case ROUTER_RT210W:
-#endif
+	#endif
 	case ROUTER_BRCM4702_GENERIC:
 		// fall through
 	default:
@@ -2251,11 +2251,11 @@ void start_restore_defaults(void)
 #ifdef HAVE_SPUTNIK
 		nvram_set("lan_ipaddr", "192.168.180.1");
 #elif HAVE_CARLSONWIRELESS
-#ifdef HAVE_LAGUNA
+	#ifdef HAVE_LAGUNA
 		nvram_set("lan_ipaddr", "192.168.3.20");
-#else
+	#else
 		nvram_set("lan_ipaddr", "192.168.2.20");
-#endif
+	#endif
 #elif HAVE_BUFFALO
 		nvram_set("lan_ipaddr", "192.168.11.1");
 #elif HAVE_IDEXX
@@ -2273,13 +2273,13 @@ void start_restore_defaults(void)
 #elif HAVE_NDTRADE
 		nvram_set("lan_ipaddr", "192.168.100.1");
 #elif HAVE_ONNET
-#ifdef HAVE_ONNET_STATION
+	#ifdef HAVE_ONNET_STATION
 		nvram_set("lan_ipaddr", "192.168.1.2");
 		nvram_set("wlan0_mode", "wdssta");
-#else
+	#else
 		nvram_set("lan_ipaddr", "192.168.1.1");
 		nvram_set("wlan0_mode", "wdsap");
-#endif
+	#endif
 		nvram_set("lan_proto", "static");
 #else
 		nvram_set("lan_ipaddr", "192.168.1.1");
@@ -2704,11 +2704,11 @@ void start_restore_defaults(void)
 		nvram_seti("wl0_txpwr", 100);
 		nvram_seti("wl1_txpwr", 100);
 	}
-#ifndef HAVE_BUFFALO
+	#ifndef HAVE_BUFFALO
 	if (restore_defaults && brand == ROUTER_BUFFALO_WHRG54S && nvram_match("DD_BOARD", "Buffalo WHR-HP-G54")) {
 		nvram_seti("wl0_txpwr", 28);
 	}
-#endif
+	#endif
 	if (restore_defaults && brand == ROUTER_BUFFALO_WLI_TX4_G54HP) {
 		nvram_seti("wl0_txpwr", 28);
 	}
@@ -2923,11 +2923,11 @@ void load_drivers(int boot)
 
 		insmod("nls_base usb-common usbcore ehci-hcd ehci-platform ehci-fsl ehci-pci usb-uhci uhci-hcd usb-ohci ohci-hcd ohci-pci xhci-hcd xhci-pci xhci-plat-hcd xhci-mtk xhci-mtk-hcd dwc_otg usb-libusual fsl-mph-dr-of phy-mxs-usb extcon-core extcon ci_hdrc ci13xxx_imx usbmisc_imx ci_hdrc_imx phy-qcom-dwc3 dwc3-of-simple dwc3 dwc3-qcom phy-qcom-hsusb phy-qcom-ssusb phy-qcom-ipq806x-usb phy-qcom-ipq806x-sata phy-qcom-ipq4019-usb phy-qcom-m31 phy-qcom-usb-ss-22ull");
 
-#ifdef HAVE_IPQ806X
+	#ifdef HAVE_IPQ806X
 		sleep(5);
 		rmmod("xhci-plat-hcd");
 		insmod("xhci-plat-hcd");
-#endif
+	#endif
 
 		if (nvram_matchi("usb_storage", 1)) {
 			insmod("insmod bsg scsi_common scsi_mod scsi_wait_scan crct10dif_common crct10dif_generic crct10dif-arm-ce crc-t10dif crc64 crc64-rocksoft crc64-rocksoft_generic crct-t10dif t10-pi sd_mod cdrom sr_mod usb-storage uas libata sata_mv ehci-orion ses");
@@ -2937,12 +2937,12 @@ void load_drivers(int boot)
 		if (nvram_matchi("usb_printer", 1)) {
 			insmod("printer usblp");
 		}
-#ifdef HAVE_USBIP
+	#ifdef HAVE_USBIP
 		if (nvram_matchi("usb_ip", 1)) {
 			insmod("usbip_common_mod usbip usbip-core usbip-host vhci-hcd");
 			eval("usbipd", "-D");
 		}
-#endif
+	#endif
 
 		//ahci
 
@@ -2961,15 +2961,15 @@ void load_drivers(int boot)
 		eval("stopservice", "rsync");
 		eval("stopservice", "dlna");
 		eval("stopservice", "ftpsrv");
-#ifdef HAVE_WEBSERVER
+	#ifdef HAVE_WEBSERVER
 		eval("stopservice", "lighttpd");
-#endif
-#ifdef HAVE_TRANSMISSION
+	#endif
+	#ifdef HAVE_TRANSMISSION
 		eval("stopservice", "transmission");
-#endif
-#ifdef HAVE_PLEX
+	#endif
+	#ifdef HAVE_PLEX
 		eval("stopservice", "plex");
-#endif
+	#endif
 		sysprintf("umount /%s", nvram_default_get("usb_mntpoint", "mnt"));
 		rmmod("phy-qcom-hsusb");
 		rmmod("phy-qcom-ssusb");
@@ -3026,37 +3026,37 @@ void load_drivers(int boot)
 		rmmod("msdos");
 		rmmod("vfat");
 		rmmod("fat");
-//
-/* ext3 */
-#ifdef HAVE_USB_ADVANCED
+	//
+	/* ext3 */
+	#ifdef HAVE_USB_ADVANCED
 		rmmod("ext3");
 		rmmod("jbd");
-#endif
+	#endif
 		/* ext2 */
 		rmmod("ext2");
 		rmmod("mbcache");
-/* ntfs-3g */
-#ifdef HAVE_NTFS3G
+	/* ntfs-3g */
+	#ifdef HAVE_NTFS3G
 		rmmod("fuse");
 		rmmod("antfs");
 		rmmod("ntfs3");
 		rmmod("ntfsplus");
-#endif
+	#endif
 		eval("startservice_f", "cron");
 		eval("startservice_f", "samba3");
 		eval("startservice_f", "nfs");
 		eval("startservice_f", "rsync");
 		eval("startservice_f", "dlna");
 		eval("startservice_f", "ftpsrv");
-#ifdef HAVE_WEBSERVER
+	#ifdef HAVE_WEBSERVER
 		eval("startservice_f", "lighttpd");
-#endif
-#ifdef HAVE_TRANSMISSION
+	#endif
+	#ifdef HAVE_TRANSMISSION
 		eval("startservice_f", "transmission");
-#endif
-#ifdef HAVE_PLEX
+	#endif
+	#ifdef HAVE_PLEX
 		eval("startservice_f", "plex");
-#endif
+	#endif
 
 	} else {
 		led_control(USB_POWER, LED_OFF);
@@ -3349,20 +3349,20 @@ void start_nvram(void)
 
 	{
 #ifdef DIST
-#ifndef HAVE_TW6600
-#ifdef HAVE_MICRO
-		// if dist_type micro, check styles, and force to elegant if needed
+	#ifndef HAVE_TW6600
+		#ifdef HAVE_MICRO
+				// if dist_type micro, check styles, and force to elegant if needed
 
-#ifdef HAVE_ROUTERSTYLE
+			#ifdef HAVE_ROUTERSTYLE
 		char *style = nvram_safe_get("router_style");
 
 		if (!strstr("blue cyan elegant green orange red yellow", style))
-#endif
+			#endif
 		{
 			nvram_set("router_style", "elegant");
 		}
-#endif
-#endif
+		#endif
+	#endif
 #endif
 	}
 
@@ -3376,31 +3376,31 @@ void start_nvram(void)
 
 #ifdef HAVE_SVQOS
 	char *aqd = nvram_safe_get("svqos_aqd");
-#ifndef HAVE_CODEL
+	#ifndef HAVE_CODEL
 	if (!strcmp(aqd, "codel")) {
 		nvram_set("svqos_aqd", "sfq");
 	}
-#endif
-#ifndef HAVE_FQ_CODEL
+	#endif
+	#ifndef HAVE_FQ_CODEL
 	if (!strcmp(aqd, "fq_codel")) {
 		nvram_set("svqos_aqd", "sfq");
 	}
-#endif
-#ifndef HAVE_FQ_CODEL_FAST
+	#endif
+	#ifndef HAVE_FQ_CODEL_FAST
 	if (!strcmp(aqd, "fq_codel_fast")) {
 		nvram_set("svqos_aqd", "sfq");
 	}
-#endif
-#ifndef HAVE_PIE
+	#endif
+	#ifndef HAVE_PIE
 	if (!strcmp(aqd, "pie")) {
 		nvram_set("svqos_aqd", "sfq");
 	}
-#endif
-#ifndef HAVE_CAKE
+	#endif
+	#ifndef HAVE_CAKE
 	if (!strcmp(aqd, "cake")) {
 		nvram_set("svqos_aqd", "sfq");
 	}
-#endif
+	#endif
 	if (strcmp(aqd, "codel") && strcmp(aqd, "fq_codel") && strcmp(aqd, "fq_codel_fast") && strcmp(aqd, "pie") &&
 	    strcmp(aqd, "cake")) {
 		nvram_set("svqos_aqd", "sfq");

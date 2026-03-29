@@ -76,7 +76,7 @@ void start_sysinit(void)
 #ifndef HAVE_WNDR3700
 	FILE *fp = fopen("/dev/mtdblock/7", "rb");
 	if (fp) {
-#ifdef HAVE_WRT400
+	#ifdef HAVE_WRT400
 		char mactmp[6];
 		int copy[6];
 		int i;
@@ -93,13 +93,13 @@ void start_sysinit(void)
 			copy[4] & 0xff, copy[5] & 0xff);
 		MAC_ADD(mac2);
 
-#else
+	#else
 		fseek(fp, 0x66ffa0, SEEK_SET);
 		fread(mac1, 18, 1, fp);
 		fseek(fp, 0x66ffb4, SEEK_SET);
 		fread(mac2, 18, 1, fp);
 		fclose(fp);
-#endif
+	#endif
 	} else
 #endif
 	{
@@ -130,10 +130,10 @@ void start_sysinit(void)
 
 #else
 
-#ifndef HAVE_WNDR3700
+	#ifndef HAVE_WNDR3700
 	set_hwaddr("wifi0", mac1);
 	set_hwaddr("wifi1", mac1);
-#endif
+	#endif
 	setWirelessLedPhy0(5);
 	setWirelessLedPhy1(5);
 #endif
