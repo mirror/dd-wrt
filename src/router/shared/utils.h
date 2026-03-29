@@ -876,7 +876,7 @@ extern TIMEZONE_TO_TZSTRING allTimezones[];
 
 
 struct blocklist {
-	char ip[INET6_ADDRSTRLEN + 1];
+	char ip[INET6_ADDRSTRLEN];
 	time_t seen;
 	time_t end;
 	int count;
@@ -886,7 +886,7 @@ struct blocklist {
 	struct blocklist *next;
 } __attribute__((packed));
 
-#define BLOCKVER 2
+#define BLOCKVER 1
 extern void setWifiPass();
 extern char *getBridge(const char *ifname, char *word);
 extern char *getRealBridge(const char *ifname, char *word);
