@@ -132,8 +132,8 @@ static void check_brcm_cpu_type(void)
 }
 
 static void loadWlModule(void) // set wled params, get boardflags,
-	// set afterburner bit, load wl,
-	// unset afterburner bit
+// set afterburner bit, load wl,
+// unset afterburner bit
 {
 	int brand = getRouterBrand();
 	char macbuf[32];
@@ -2865,7 +2865,7 @@ void start_sysinit(void)
 		    (nvram_match("boardflags", "0x1658") || nvram_match("boardflags", "0x2658"))) {
 			nvram_seti("buffalo_hp", 1);
 #ifndef HAVE_BUFFALO // if HAVE_BUFFALO not used to be FCC/CE \
-	// valid
+			// valid
 			nvram_set("boardflags", "0x3658"); // enable high gain
 			// PA
 			need_reboot = 1;
@@ -2877,7 +2877,7 @@ void start_sysinit(void)
 		if (!nvram_matchi("buffalo_hp", 1) && nvram_match("boardflags", "0x1758")) {
 			nvram_seti("buffalo_hp", 1);
 #ifndef HAVE_BUFFALO // if HAVE_BUFFALO not used to be FCC/CE \
-	// valid
+			// valid
 			nvram_set("boardflags", "0x3758"); // enable high gain
 			// PA
 			need_reboot = 1;

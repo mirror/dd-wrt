@@ -145,7 +145,8 @@ void set_envtools(int mtd, char *offset, char *envsize, char *blocksize, int num
 		fclose(fp);
 	}
 }
-void set_6ghz_defaults(void) {
+void set_6ghz_defaults(void)
+{
 	// autochannel does not work on 6ghz. so set sane defaults
 	nvram_default_get("wlan2_channel", "6115");
 	nvram_default_get("wlan2_channel2", "0");

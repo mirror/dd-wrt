@@ -749,7 +749,7 @@ out:;
 		fclose(out);
 	}
 #elif defined(HAVE_RUCKUSR500)
-//				reg = <0x0140000 0x80000>;
+	//				reg = <0x0140000 0x80000>;
 	fp = fopen("/dev/mtdblock/0", "rb");
 	FILE *out = fopen("/tmp/archerc7-board.bin", "wb");
 	if (fp) {

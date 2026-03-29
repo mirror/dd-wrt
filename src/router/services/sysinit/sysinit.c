@@ -1898,12 +1898,12 @@ void start_restore_defaults(void)
 					      { 0, 0 } };
 
 	struct nvram_param abr4400[] = { { "lan_ifname", "br0" },
-					      { "lan_ifnames", "vlan2 eth1" },
-					      { "wan_ifname", "vlan1" },
-					      { "wan_ifname2", "vlan1" },
-					      { "wan_ifnames", "vlan1" },
-					      { "wan_default", "vlan1" },
-					      { 0, 0 } };
+					 { "lan_ifnames", "vlan2 eth1" },
+					 { "wan_ifname", "vlan1" },
+					 { "wan_ifname2", "vlan1" },
+					 { "wan_ifnames", "vlan1" },
+					 { "wan_default", "vlan1" },
+					 { 0, 0 } };
 
 	struct nvram_param generic_2[] = { { "lan_ifname", "br0" },
 					   { "lan_ifnames", "eth1 eth2" },
