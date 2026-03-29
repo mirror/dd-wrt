@@ -21,17 +21,17 @@
  */
 #ifdef HAVE_GPSI
 
-#define VISUALSOURCE 1
+	#define VISUALSOURCE 1
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <unistd.h>
-#include <stdarg.h>
+	#include <stdio.h>
+	#include <stdlib.h>
+	#include <string.h>
+	#include <unistd.h>
+	#include <stdarg.h>
 
-#include <broadcom.h>
+	#include <broadcom.h>
 
-#ifdef HAVE_UNIWIP
+	#ifdef HAVE_UNIWIP
 EJ_VISIBLE void ej_gps_status(webs_t wp, int argc, char_t **argv)
 {
 	int antennastate = get_gpio(242);
@@ -40,12 +40,12 @@ EJ_VISIBLE void ej_gps_status(webs_t wp, int argc, char_t **argv)
 	else
 		websWrite(wp, "<script type=\"text/javascript\">Capture(status_gpsi.ant_disc)</script>");
 }
-#else
+	#else
 EJ_VISIBLE void ej_gps_status(webs_t wp, int argc, char_t **argv)
 {
 	websWrite(wp, "%s", nvram_safe_get("gps_status_text"));
 }
-#endif
+	#endif
 
 EJ_VISIBLE void ej_getlongitude(webs_t wp, int argc, char_t **argv)
 {

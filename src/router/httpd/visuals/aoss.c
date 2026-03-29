@@ -21,17 +21,17 @@
  */
 #ifdef HAVE_AOSS
 
-#define VISUALSOURCE 1
+	#define VISUALSOURCE 1
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <unistd.h>
-#include <stdarg.h>
+	#include <stdio.h>
+	#include <stdlib.h>
+	#include <string.h>
+	#include <unistd.h>
+	#include <stdarg.h>
 
-#include <broadcom.h>
+	#include <broadcom.h>
 
-#if !defined(HAVE_IAS) && !defined(HAVE_BUFFALO)
+	#if !defined(HAVE_IAS) && !defined(HAVE_BUFFALO)
 char *nvram_selget(webs_t wp, char *name)
 {
 	if (wp->gozila_action) {
@@ -44,7 +44,7 @@ char *nvram_selget(webs_t wp, char *name)
 	}
 	return nvram_safe_get(name);
 }
-#endif
+	#endif
 
 int aoss_status(void)
 {
@@ -88,7 +88,7 @@ EJ_VISIBLE void ej_ifnvram_nmatch(webs_t wp, int argc, char_t **argv)
 
 EJ_VISIBLE void ej_ifaoss_possible(webs_t wp, int argc, char_t **argv)
 {
-#ifdef HAVE_WZRHPAG300NH
+	#ifdef HAVE_WZRHPAG300NH
 	if (!strcmp(argv[0], "yes")) {
 		if (!strcmp(nvram_selget(wp, "wlan0_mode"), "ap") || !strcmp(nvram_selget(wp, "wlan0_mode"), "wdsap") ||
 		    !strcmp(nvram_selget(wp, "wlan1_mode"), "ap") || !strcmp(nvram_selget(wp, "wlan1_mode"), "wdsap")) {
@@ -100,7 +100,7 @@ EJ_VISIBLE void ej_ifaoss_possible(webs_t wp, int argc, char_t **argv)
 			websWrite(wp, "%s", argv[1]);
 		}
 	}
-#else
+	#else
 	if (!strcmp(argv[0], "yes")) {
 		if (!strcmp(nvram_selget(wp, "wlan0_mode"), "ap") || !strcmp(nvram_selget(wp, "wlan0_mode"), "wdsap")) {
 			websWrite(wp, "%s", argv[1]);
@@ -110,7 +110,7 @@ EJ_VISIBLE void ej_ifaoss_possible(webs_t wp, int argc, char_t **argv)
 			websWrite(wp, "%s", argv[1]);
 		}
 	}
-#endif
+	#endif
 	return;
 }
 #endif

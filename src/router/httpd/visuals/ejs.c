@@ -48,10 +48,10 @@
 #include <revision.h>
 #include <shutils.h>
 #ifdef HAVE_SAMBA_SERVER
-#include <jansson.h>
+	#include <jansson.h>
 #endif
 #ifdef HAVE_QTN
-#include <qtnapi.h>
+	#include <qtnapi.h>
 #endif
 #include <glob.h>
 int iscpe(void);
@@ -795,18 +795,18 @@ static struct defrule s_conditions[] = {
 	{ "AFTERBURNER", rule_afterburner },
 #ifndef HAVE_MICRO
 	{ "HAVE_PBR", NULL },
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
+	#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
 	{ "HAVE_EXT_IPROUTE", NULL },
-#endif
+	#endif
 #endif
 	{ "POESWITCH", rule_poeswitch },
 #if !defined(ARCH_broadcom) || defined(HAVE_BCMMODERN)
 	{ "FA", rule_fa },
 	{ "CTF", rule_ctf },
 	{ "SFE", rule_sfe },
-#if defined(HAVE_QCA_NSS)
+	#if defined(HAVE_QCA_NSS)
 	{ "NSS", NULL },
-#endif
+	#endif
 #endif
 #if defined(HAVE_IPQ6018)
 	{ "IPQ6018", NULL },
@@ -1389,7 +1389,7 @@ EJ_VISIBLE void ej_get_sysmodel(webs_t wp, int argc, char_t **argv)
 #ifdef HAVE_XIOCOM
 	websWrite(wp, "XWR");
 #elif HAVE_ONNET
-#ifdef HAVE_ONNET_BLANK
+	#ifdef HAVE_ONNET_BLANK
 	if (nvram_match(NVROUTER, "Atheros Hornet")) {
 		websWrite(wp, "9331");
 	} else if (nvram_match(NVROUTER, "Compex WPE72")) {
@@ -1423,7 +1423,7 @@ EJ_VISIBLE void ej_get_sysmodel(webs_t wp, int argc, char_t **argv)
 	} else {
 		websWrite(wp, "%s", nvram_safe_get(NVROUTER));
 	}
-#else
+	#else
 	if (nvram_match(NVROUTER, "Atheros Hornet")) {
 		websWrite(wp, "OTAi 9331");
 	} else if (nvram_match(NVROUTER, "Compex WPE72")) {
@@ -1457,7 +1457,7 @@ EJ_VISIBLE void ej_get_sysmodel(webs_t wp, int argc, char_t **argv)
 	} else {
 		websWrite(wp, "OTAi %s", getRouter());
 	}
-#endif
+	#endif
 #elif HAVE_SANSFIL
 	websWrite(wp, "%s", "SANSFIL");
 #elif HAVE_KORENRON
@@ -1755,7 +1755,7 @@ EJ_VISIBLE void ej_make_time_list(webs_t wp, int argc, char_t **argv)
 }
 
 #ifdef HAVE_QCN
-#include <qcnapi.h>
+	#include <qcnapi.h>
 #endif
 
 EJ_VISIBLE void ej_get_service_state(webs_t wp, int argc, char_t **argv)
@@ -1779,11 +1779,11 @@ EJ_VISIBLE void ej_get_service_state(webs_t wp, int argc, char_t **argv)
 	websWrite(wp, "<div class=\"setting\"><div class=\"label\">%s</div>", tran_string(buf, sizeof(buf), "nas.samba3"));
 	if (nvram_matchi("samba3_enable", 1)) {
 		websWrite(wp, "%s", tran_string(buf, sizeof(buf), "share.enabled"));
-#ifdef HAVE_SMBD
+	#ifdef HAVE_SMBD
 		if (pidof("ksmbd.mountd") > 0) {
-#else
+	#else
 		if (pidof("smbd") > 0) {
-#endif
+	#endif
 			websWrite(wp, " - %s", tran_string(buf, sizeof(buf), "diag.running"));
 		} else {
 			websWrite(wp, " - %s", tran_string(buf, sizeof(buf), "diag.stopped"));
@@ -1909,20 +1909,20 @@ EJ_VISIBLE void ej_get_txpower(webs_t wp, int argc, char_t **argv)
 #ifdef HAVE_BUFFALO
 		get_txpower_extended(wp, txpower, m);
 #else
-#ifdef HAVE_MADWIFI
+	#ifdef HAVE_MADWIFI
 		websWrite(wp, "%d dBm", txpower);
-#elif HAVE_RT2880
+	#elif HAVE_RT2880
 		websWrite(wp, "%d mW", txpower);
-#else
-#ifdef HAVE_80211AC //broadcom
+	#else
+		#ifdef HAVE_80211AC //broadcom
 		if (txpower == 1496) {
 			websWrite(wp, "Auto");
 		} else
-#endif
+		#endif
 		{
 			websWrite(wp, "%d mW", txpower);
 		}
-#endif
+	#endif
 #endif
 	}
 }
@@ -2224,7 +2224,7 @@ static void get_radio_state(char *buf)
 		break;
 	}
 #else
-#ifdef HAVE_QTN
+	#ifdef HAVE_QTN
 	if (!strcmp(wifi, "wl1")) {
 		char status[16];
 		if (!rpc_qtn_ready()) {
@@ -2238,7 +2238,7 @@ static void get_radio_state(char *buf)
 			strcpy(buf, "wl_basic.radio_off");
 		return;
 	}
-#endif
+	#endif
 
 	char name[32];
 	sprintf(name, "%s_ifname", wifi);
@@ -2441,9 +2441,9 @@ EJ_VISIBLE void ej_tf_upnp(webs_t wp, int argc, char_t **argv)
 EJ_VISIBLE void ej_show_upgrade_options(webs_t wp, int argc, char_t **argv)
 {
 #ifdef HAVE_BUFFALO
-#ifndef HAVE_FREECWMP
+	#ifndef HAVE_FREECWMP
 	show_onlineupdates(wp, argc, argv);
-#endif
+	#endif
 #endif
 }
 EJ_VISIBLE void ej_getsetuppage(webs_t wp, int argc, char_t **argv)

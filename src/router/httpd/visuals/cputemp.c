@@ -50,11 +50,11 @@
 
 #ifdef HAVE_CPUTEMP
 
-#define CELSIUS 0
-#define VOLT 1
-#define RPM 2
-#define AMPERE 3
-#define WATT 4
+	#define CELSIUS 0
+	#define VOLT 1
+	#define RPM 2
+	#define AMPERE 3
+	#define WATT 4
 
 typedef struct sensormaps {
 	char *name;
@@ -527,7 +527,7 @@ static int showsensor(webs_t wp, const char *path, int (*method)(void), const ch
 	return 0;
 }
 
-#if defined(HAVE_MVEBU) || defined(HAVE_OCTEON)
+	#if defined(HAVE_MVEBU) || defined(HAVE_OCTEON)
 static int show_temp(webs_t wp, int mon, int input, const char *name, int two)
 {
 	char sysfs[128];
@@ -538,7 +538,7 @@ static int show_temp(webs_t wp, int mon, int input, const char *name, int two)
 	return showsensor(wp, sysfs, NULL, name, 1000, CELSIUS, two ? sysfs2 : NULL);
 }
 
-#elif defined(HAVE_ALPINE)
+	#elif defined(HAVE_ALPINE)
 static int show_temp(webs_t wp, int mon, int input, char *name, int two)
 {
 	char sysfs[128];
@@ -557,7 +557,7 @@ static int show_fan(webs_t wp, int mon, int input, char *name, int two)
 		snprintf(sysfs2, 64, "/sys/class/hwmon/hwmon%d/fan%d_input", mon, input + 1);
 	return showsensor(wp, sysfs, NULL, name, 1, RPM, two ? sysfs2 : NULL);
 }
-#elif defined(HAVE_IPQ806X)
+	#elif defined(HAVE_IPQ806X)
 static int show_temp(webs_t wp, char *name)
 {
 	char sysfs[128];
@@ -570,16 +570,16 @@ static int show_temp(webs_t wp, char *name)
 	}
 	return 1;
 }
-#elif defined(HAVE_REALTEK)
+	#elif defined(HAVE_REALTEK)
 static int show_temp(webs_t wp, char *name)
 {
 	char sysfs[128];
 	snprintf(sysfs, 64, "/sys/class/hwmon/hwmon1/temp1_input");
 	return showsensor(wp, sysfs, NULL, name, 1000, CELSIUS, NULL);
 }
-#endif
+	#endif
 
-#ifdef HAVE_X86
+	#ifdef HAVE_X86
 
 int getCoreTemp(const char *p, size_t len, int *ridx, int acpi)
 {
@@ -619,9 +619,9 @@ int getCoreTemp(const char *p, size_t len, int *ridx, int acpi)
 	}
 }
 
-#endif
+	#endif
 
-#ifdef HAVE_BCMMODERN
+	#ifdef HAVE_BCMMODERN
 static int getwifi(int idx)
 {
 	static int tempcount = -2;
@@ -667,23 +667,23 @@ static int getwifi0(void)
 {
 	return getwifi(0);
 }
-#ifdef HAVE_QTN
-#include <qtnapi.h>
-#endif
+		#ifdef HAVE_QTN
+			#include <qtnapi.h>
+		#endif
 static int getwifi1(void)
 {
-#ifdef HAVE_QTN
+		#ifdef HAVE_QTN
 	return rpc_get_temperature() / 100000;
-#else
+		#else
 	return getwifi(1);
-#endif
+		#endif
 }
 
 static int getwifi2(void)
 {
 	return getwifi(2);
 }
-#endif
+	#endif
 
 static int get_cputemp(webs_t wp, int argc, char_t **argv)
 {
@@ -692,7 +692,7 @@ static int get_cputemp(webs_t wp, int argc, char_t **argv)
 	FILE *fpsys = NULL;
 	char *path;
 	sensorreset();
-#ifdef HAVE_MVEBU
+	#ifdef HAVE_MVEBU
 	if (getRouterBrand() == ROUTER_WRT_1900AC) {
 		cpufound |= show_temp(wp, 0, 1, "CPU", 0);
 		cpufound |= show_temp(wp, 2, 1, "DDR", 0);
@@ -713,23 +713,23 @@ static int get_cputemp(webs_t wp, int argc, char_t **argv)
 		cpufound |= show_temp(wp, 3, 1, "WLAN2", 0);
 	}
 	return 0;
-#endif
-#ifdef HAVE_OCTEON
+	#endif
+	#ifdef HAVE_OCTEON
 	cpufound |= show_temp(wp, 0, 1, "BOARD", 0);
 	cpufound |= show_temp(wp, 1, 1, "CPU", 0);
 	cpufound |= show_temp(wp, 0, 2, "PHY1", 0);
 	cpufound |= show_temp(wp, 1, 2, "PHY2", 0);
-#endif
-#ifdef HAVE_ALPINE
+	#endif
+	#ifdef HAVE_ALPINE
 	cpufound |= show_temp(wp, 1, 1, "CPU", 0);
-#elif defined(HAVE_IPQ806X)
+	#elif defined(HAVE_IPQ806X)
 	char *wifiname0 = getWifiDeviceName("wlan0", NULL);
 	char *wifiname1 = getWifiDeviceName("wlan1", NULL);
 	if (wifiname0) {
 		cpufound |= show_temp(wp, "Thermal Zone");
 	}
-#endif
-#ifdef HAVE_BCMMODERN
+	#endif
+	#ifdef HAVE_BCMMODERN
 	char buf[WLC_IOCTL_SMLEN];
 	int ret;
 	unsigned int present[3] = { 0, 0, 0 };
@@ -743,19 +743,19 @@ static int get_cputemp(webs_t wp, int argc, char_t **argv)
 		}
 		present[i] = 1;
 	}
-#ifdef HAVE_QTN
+		#ifdef HAVE_QTN
 	present[1] = 1;
-#endif
-#ifdef HAVE_NORTHSTAR
+		#endif
+		#ifdef HAVE_NORTHSTAR
 	if (f_exists("/proc/dmu/temperature")) {
 		cpufound |= showsensor(wp, "/proc/dmu/temperature", NULL, "CPU", 10, CELSIUS, NULL);
 	}
-#endif
-#ifdef HAVE_BRCMFMAC
+		#endif
+		#ifdef HAVE_BRCMFMAC
 	cpufound |= showsensor(wp, "/sys/class/hwmon/hwmon0/temp1_input", NULL, "WLAN0", 1000, CELSIUS, NULL);
 	cpufound |= showsensor(wp, "/sys/class/hwmon/hwmon1/temp1_input", NULL, "WLAN1", 1000, CELSIUS, NULL);
 	cpufound |= showsensor(wp, "/sys/class/hwmon/hwmon2/temp1_input", NULL, "WLAN2", 1000, CELSIUS, NULL);
-#else
+		#else
 	if (!present[0] && !present[1] && !present[2] && !cpufound)
 		return 1;
 	else {
@@ -772,11 +772,11 @@ static int get_cputemp(webs_t wp, int argc, char_t **argv)
 			}
 		}
 	}
-#endif
-#else
+		#endif
+	#else
 	int TEMP_MUL = 1000;
 	int SYSTEMP_MUL = 1000;
-#ifdef HAVE_GATEWORX
+		#ifdef HAVE_GATEWORX
 	TEMP_MUL = 100;
 	if (getRouterBrand() == ROUTER_BOARD_GATEWORX_SWAP)
 		TEMP_MUL = 200;
@@ -786,14 +786,14 @@ static int get_cputemp(webs_t wp, int argc, char_t **argv)
 		path = "/sys/devices/platform/IXP4XX-I2C.0/i2c-0/0-0028/temp1_input";
 		fp = my_fopen(path, "rb");
 	}
-#elif HAVE_LAGUNA
+		#elif HAVE_LAGUNA
 	TEMP_MUL = 10;
 	path = "/sys/bus/i2c/devices/0-0029/temp0_input";
 	fp = my_fopen(path, "rb");
-#elif HAVE_UNIWIP
+		#elif HAVE_UNIWIP
 	path = "/sys/bus/i2c/devices/0-0049/temp1_input";
 	fp = my_fopen(path, "rb");
-#elif HAVE_VENTANA
+		#elif HAVE_VENTANA
 	SYSTEMP_MUL = 10;
 	path = "/sys/class/hwmon/hwmon1/temp1_input";
 	fp = my_fopen(path, "rb");
@@ -803,16 +803,16 @@ static int get_cputemp(webs_t wp, int argc, char_t **argv)
 	}
 	char *pathsys = "/sys/class/hwmon/hwmon0/temp0_input";
 	fpsys = my_fopen(pathsys, "rb");
-#ifdef HAVE_NEWPORT
+			#ifdef HAVE_NEWPORT
 	if (!fpsys) {
 		SYSTEMP_MUL = 1000;
 		pathsys = "/sys/class/hwmon/hwmon0/temp2_input";
 		fpsys = my_fopen(path, "rb");
 	}
-#endif
+			#endif
 
-#else
-#ifdef HAVE_X86
+		#else
+			#ifdef HAVE_X86
 
 	fp = my_fopen("/sys/devices/platform/i2c-1/1-0048/temp1_input", "rb");
 	if (!fp) {
@@ -855,21 +855,21 @@ static int get_cputemp(webs_t wp, int argc, char_t **argv)
 			}
 		}
 	}
-#else
+			#else
 	path = "/sys/class/hwmon/hwmon0/temp1_input";
 	fp = my_fopen("/sys/devices/platform/i2c-0/0-0048/temp1_input", "rb");
-#endif
-#endif
+			#endif
+		#endif
 
 	FILE *fp2 = NULL;
-#if defined(HAVE_ATH10K) || defined(HAVE_MT76)
+		#if defined(HAVE_ATH10K) || defined(HAVE_MT76)
 	int c = getdevicecount();
 	for (i = 0; i < c; i++) {
-#if !defined(HAVE_MT76)
+			#if !defined(HAVE_MT76)
 		if (nvram_nmatch("disabled", "wlan%d_net_mode", i)) {
 			continue;
 		}
-#endif
+			#endif
 		char s_path[128];
 		char s_path2[128];
 		int scan = 0;
@@ -899,11 +899,11 @@ static int get_cputemp(webs_t wp, int argc, char_t **argv)
 		}
 exit_error:;
 	}
-#endif
-#ifdef HAVE_ALPINE
+		#endif
+		#ifdef HAVE_ALPINE
 	cpufound |= show_fan(wp, 0, 1, "FAN", 0);
-#endif
-#if !defined(HAVE_IPQ806X) && !defined(HAVE_PB42) && !defined(HAVE_LSX)
+		#endif
+		#if !defined(HAVE_IPQ806X) && !defined(HAVE_PB42) && !defined(HAVE_LSX)
 	if (fp != NULL) {
 		my_fclose(fp);
 		cpufound |= showsensor(wp, path, NULL, "CPU", TEMP_MUL, CELSIUS, NULL);
@@ -1093,8 +1093,8 @@ exit_error:;
 			}
 		}
 	}
-#endif
-#endif
+		#endif
+	#endif
 	if (!cpufound) {
 		return 1;
 	}

@@ -40,10 +40,10 @@ static size_t wfread(void *buf, size_t size, size_t n, webs_t fp);
 static int wfclose(webs_t fp);
 int wfflush(webs_t fp);
 #ifndef VALIDSOURCE
-#ifndef VISUALSOURCE
+	#ifndef VISUALSOURCE
 
 int wfputs(char *buf, webs_t fp);
-#endif
+	#endif
 #endif
 /* Basic authorization userid and passwd limit */
 
@@ -79,38 +79,38 @@ static void send_authenticate(webs_t conn_fp);
 #include <sys/sendfile.h>
 #include <wlutils.h>
 #ifndef HAVE_MICRO
-#include <semaphore.h>
+	#include <semaphore.h>
 #endif
 #ifdef HAVE_OPENSSL
-#include <openssl/ssl.h>
+	#include <openssl/ssl.h>
 #endif
 
 #ifdef HAVE_MATRIXSSL
-#include <matrixSsl.h>
-#include <matrixssl_xface.h>
+	#include <matrixSsl.h>
+	#include <matrixssl_xface.h>
 #endif
 
 #ifdef HAVE_POLARSSL
-#include "polarssl/entropy.h"
-#include <polarssl/ctr_drbg.h>
-#include <polarssl/certs.h>
-#include <polarssl/x509.h>
-#include <polarssl/ssl.h>
-#include <polarssl/net.h>
+	#include "polarssl/entropy.h"
+	#include <polarssl/ctr_drbg.h>
+	#include <polarssl/certs.h>
+	#include <polarssl/x509.h>
+	#include <polarssl/ssl.h>
+	#include <polarssl/net.h>
 //#include <xyssl_xface.h>
 #endif
 
 #ifdef __UCLIBC__
-#include <error.h>
+	#include <error.h>
 #endif
 #include <sys/signal.h>
 #include <ucontext.h>
 
 #ifdef HAVE_IAS
-#include <sys/sysinfo.h>
+	#include <sys/sysinfo.h>
 #endif
 #ifndef HAVE_MICRO
-#include <pthread.h>
+	#include <pthread.h>
 #endif
 
 #include <crypt.h>
@@ -121,7 +121,7 @@ static void send_authenticate(webs_t conn_fp);
 #define TIMEOUT 5
 
 #ifdef HAVE_IPV6
-#define USE_IPV6 1
+	#define USE_IPV6 1
 #endif
 /* A multi-family sockaddr. */
 typedef union {
@@ -139,15 +139,15 @@ FILE *debout;
 #endif
 
 #if defined(TCP_CORK) && !defined(TCP_NOPUSH)
-#define TCP_NOPUSH TCP_CORK
+	#define TCP_NOPUSH TCP_CORK
 /* (Linux's TCP_CORK is basically the same as BSD's TCP_NOPUSH.) */
 #endif
 
 #if defined(HAVE_OPENSSL) || defined(HAVE_MATRIXSSL) || defined(HAVE_POLARSSL)
 
-#define DEFAULT_HTTPS_PORT 443
-#define CERT_FILE "/etc/cert.pem"
-#define KEY_FILE "/etc/key.pem"
+	#define DEFAULT_HTTPS_PORT 443
+	#define CERT_FILE "/etc/cert.pem"
+	#define KEY_FILE "/etc/key.pem"
 #endif
 
 #ifdef HAVE_POLARSSL
@@ -189,11 +189,11 @@ static dd_atomic8_t registered_real = -1;
 static dd_atomic8_t superchannel = -1;
 #endif
 #ifdef HAVE_REGISTER
-#define IS_REGISTERED(conn_fp) (conn_fp->isregistered)
-#define IS_REGISTERED_REAL(conn_fp) (conn_fp->isregistered_real)
+	#define IS_REGISTERED(conn_fp) (conn_fp->isregistered)
+	#define IS_REGISTERED_REAL(conn_fp) (conn_fp->isregistered_real)
 #else
-#define IS_REGISTERED(conn_fp) (1)
-#define IS_REGISTERED_REAL(conn_fp) (1)
+	#define IS_REGISTERED(conn_fp) (1)
+	#define IS_REGISTERED_REAL(conn_fp) (1)
 #endif
 
 int isregistered(void);
@@ -218,73 +218,73 @@ static void *handle_request(void *conn_fp);
 
 #if !defined(HAVE_MICRO) && !defined(__UCLIBC__)
 
-#define PTHREAD_MUTEX_INIT pthread_mutex_init
-#define PTHREAD_MUTEX_LOCK pthread_mutex_lock
-#define PTHREAD_MUTEX_UNLOCK pthread_mutex_unlock
-#define PTHREAD_MUTEX_TRYLOCK pthread_mutex_trylock
+	#define PTHREAD_MUTEX_INIT pthread_mutex_init
+	#define PTHREAD_MUTEX_LOCK pthread_mutex_lock
+	#define PTHREAD_MUTEX_UNLOCK pthread_mutex_unlock
+	#define PTHREAD_MUTEX_TRYLOCK pthread_mutex_trylock
 
-#define SEM_WAIT sem_wait
-#define SEM_POST sem_post
-#define SEM_INIT sem_init
+	#define SEM_WAIT sem_wait
+	#define SEM_POST sem_post
+	#define SEM_INIT sem_init
 
-#define HTTP_MAXCONN 16
+	#define HTTP_MAXCONN 16
 static sem_t semaphore;
-#ifdef __UCLIBC__
+	#ifdef __UCLIBC__
 static pthread_mutex_t crypt_mutex;
-#endif
-#ifndef HAVE_MUSL
+	#endif
+	#ifndef HAVE_MUSL
 static pthread_mutex_t httpd_mutex;
-#endif
+	#endif
 static pthread_mutex_t input_mutex;
 
-#ifdef __UCLIBC__
-#define CRYPT_MUTEX_INIT pthread_mutex_init
-#define CRYPT_MUTEX_LOCK pthread_mutex_lock
-#define CRYPT_MUTEX_UNLOCK pthread_mutex_unlock
-#else
-#define CRYPT_MUTEX_INIT(m, v) \
-	do {                   \
-	} while (0)
-#define CRYPT_MUTEX_LOCK(m) \
-	do {                \
-	} while (0)
-#define CRYPT_MUTEX_UNLOCK(m) \
-	do {                  \
-	} while (0)
+	#ifdef __UCLIBC__
+		#define CRYPT_MUTEX_INIT pthread_mutex_init
+		#define CRYPT_MUTEX_LOCK pthread_mutex_lock
+		#define CRYPT_MUTEX_UNLOCK pthread_mutex_unlock
+	#else
+		#define CRYPT_MUTEX_INIT(m, v) \
+			do {                   \
+			} while (0)
+		#define CRYPT_MUTEX_LOCK(m) \
+			do {                \
+			} while (0)
+		#define CRYPT_MUTEX_UNLOCK(m) \
+			do {                  \
+			} while (0)
 
-#endif
+	#endif
 
 #else
-#define PTHREAD_MUTEX_INIT(m, v) \
-	do {                     \
-	} while (0)
-#define PTHREAD_MUTEX_LOCK(m) \
-	do {                  \
-	} while (0)
-#define PTHREAD_MUTEX_UNLOCK(m) \
-	do {                    \
-	} while (0)
-#define PTHREAD_MUTEX_TRYLOCK(m) \
-	do {                     \
-	} while (0)
-#define SEM_WAIT(sem) \
-	do {          \
-	} while (0)
-#define SEM_POST(sem) \
-	do {          \
-	} while (0)
-#define SEM_INIT(sem, p, v) \
-	do {                \
-	} while (0)
-#define CRYPT_MUTEX_INIT(m, v) \
-	do {                   \
-	} while (0)
-#define CRYPT_MUTEX_LOCK(m) \
-	do {                \
-	} while (0)
-#define CRYPT_MUTEX_UNLOCK(m) \
-	do {                  \
-	} while (0)
+	#define PTHREAD_MUTEX_INIT(m, v) \
+		do {                     \
+		} while (0)
+	#define PTHREAD_MUTEX_LOCK(m) \
+		do {                  \
+		} while (0)
+	#define PTHREAD_MUTEX_UNLOCK(m) \
+		do {                    \
+		} while (0)
+	#define PTHREAD_MUTEX_TRYLOCK(m) \
+		do {                     \
+		} while (0)
+	#define SEM_WAIT(sem) \
+		do {          \
+		} while (0)
+	#define SEM_POST(sem) \
+		do {          \
+		} while (0)
+	#define SEM_INIT(sem, p, v) \
+		do {                \
+		} while (0)
+	#define CRYPT_MUTEX_INIT(m, v) \
+		do {                   \
+		} while (0)
+	#define CRYPT_MUTEX_LOCK(m) \
+		do {                \
+		} while (0)
+	#define CRYPT_MUTEX_UNLOCK(m) \
+		do {                  \
+		} while (0)
 #endif
 
 static void lookup_hostname(usockaddr *usa4P, size_t sa4_len, int *gotv4P, usockaddr *usa6P, size_t sa6_len, int *gotv6P, int port)
@@ -727,7 +727,7 @@ static int b64_decode(const char *str, unsigned char *space, int size)
 */
 static int match(const char *pattern, const char *string)
 {
-	const char * or ;
+	const char *or;
 
 	char *path = strdup(string);
 	char *query = strchr(path, '?');
@@ -741,11 +741,11 @@ static int match(const char *pattern, const char *string)
 			debug_free(path);
 			return ret;
 		}
-		if (match_one(pattern, or -pattern, path)) {
+		if (match_one(pattern, or - pattern, path)) {
 			debug_free(path);
 			return 1;
 		}
-		pattern = or +1;
+		pattern = or + 1;
 	}
 }
 
@@ -1180,7 +1180,7 @@ static void *handle_request(void *arg)
 	conn_fp->request_url = strdup(file);
 
 #ifdef HAVE_BUFFALO
-#ifdef HAVE_IAS
+	#ifdef HAVE_IAS
 	int ias_startup = nvram_geti("ias_startup");
 	int ias_detected = 0;
 	char redirect_path[48];
@@ -1238,7 +1238,7 @@ static void *handle_request(void *arg)
 			}
 		}
 	}
-#endif
+	#endif
 #endif
 
 	if (file[0] == '\0' || file[len - 1] == '/') {
@@ -1444,7 +1444,7 @@ static void handle_sigchld(int sig)
 }
 
 #ifdef HAVE_OPENSSL
-#define SSLBUFFERSIZE 16384
+	#define SSLBUFFERSIZE 16384
 struct sslbuffer {
 	unsigned char *sslbuffer;
 	unsigned int count;
@@ -1537,7 +1537,7 @@ int main(int argc, char **argv)
 #ifdef HAVE_HTTPS
 	int do_ssl = 0;
 #else
-#define do_ssl 0
+	#define do_ssl 0
 #endif
 	int no_ssl = 0;
 	/* SEG addition */
@@ -1563,9 +1563,9 @@ int main(int argc, char **argv)
 	PTHREAD_MUTEX_INIT(&input_mutex, NULL);
 #if !defined(HAVE_MICRO) && !defined(__UCLIBC__)
 	PTHREAD_MUTEX_INIT(&global_vars.mutex_contr, NULL);
-#ifdef HAVE_WIVIZ
+	#ifdef HAVE_WIVIZ
 	PTHREAD_MUTEX_INIT(&global_vars.wiz_mutex_contr, NULL);
-#endif
+	#endif
 #endif
 
 	strcpy(pid_file, "/var/run/httpd.pid");
@@ -1641,21 +1641,21 @@ int main(int argc, char **argv)
 	signal(SIGCHLD, handle_sigchld);
 #if 0
 	struct sigaction sa1;
-#ifdef SA_SIGINFO
+	#ifdef SA_SIGINFO
 	sa1.sa_flags = SA_SIGINFO;
-#else
+	#else
 	sa1.sa_flags = 0;
-#endif
+	#endif
 	sigemptyset(&sa1.sa_mask);
 	sa1.sa_sigaction = handle_server_sigsegv;
 	sigaction(SIGSEGV, &sa1, NULL);
 
 	struct sigaction sa2;
-#ifdef SA_SIGINFO
+	#ifdef SA_SIGINFO
 	sa2.sa_flags = SA_SIGINFO;
-#else
+	#else
 	sa2.sa_flags = 0;
-#endif
+	#endif
 	sigemptyset(&sa2.sa_mask);
 	sa2.sa_sigaction = handle_server_sigsegv;
 	sigaction(SIGBUS, &sa2, NULL);
@@ -1899,21 +1899,21 @@ int main(int argc, char **argv)
 				"ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-AES256-GCM-SHA384:DHE-RSA-AES128-GCM-SHA256:DHE-DSS-AES128-GCM-SHA256:ECDHE-RSA-AES128-SHA256:ECDHE-ECDSA-AES128-SHA256:ECDHE-RSA-AES128-SHA:ECDHE-ECDSA-AES128-SHA:ECDHE-RSA-AES256-SHA384:ECDHE-ECDSA-AES256-SHA384:ECDHE-RSA-AES256-SHA:ECDHE-ECDSA-AES256-SHA:DHE-RSA-AES128-SHA256:DHE-RSA-AES128-SHA:DHE-DSS-AES128-SHA256:DHE-RSA-AES256-SHA256:DHE-DSS-AES256-SHA:DHE-RSA-AES256-SHA:AES128-GCM-SHA256:AES256-GCM-SHA384:AES128-SHA256:AES256-SHA256:AES128-SHA:AES256-SHA:AES:!aNULL:!eNULL:!EXPORT:!DES:!RC4:!MD5:!PSK:!aECDH:!EDH-DSS-DES-CBC3-SHA:!EDH-RSA-DES-CBC3-SHA:!KRB5-DES-CBC3-SHA";
 			conn_fp->ssl = SSL_new(ctx);
 
-#ifdef NID_X9_62_prime256v1
+	#ifdef NID_X9_62_prime256v1
 			EC_KEY *ecdh = NULL;
 			if ((ecdh = EC_KEY_new_by_curve_name(NID_X9_62_prime256v1))) {
 				SSL_CTX_set_tmp_ecdh(ctx, ecdh);
 				EC_KEY_free(ecdh);
 			}
-#endif
+	#endif
 
 			// Setup available ciphers
 			SSL_CTX_set_cipher_list(ctx, allowedCiphers);
 
 			// Enforce our desired cipher order, disable obsolete protocols
-#ifndef SSL_OP_SAFARI_ECDHE_ECDSA_BUG
-#define SSL_OP_SAFARI_ECDHE_ECDSA_BUG 0
-#endif
+	#ifndef SSL_OP_SAFARI_ECDHE_ECDSA_BUG
+		#define SSL_OP_SAFARI_ECDHE_ECDSA_BUG 0
+	#endif
 
 			SSL_CTX_set_options(ctx, SSL_OP_NO_TLSv1 | SSL_OP_NO_TLSv1_1 | SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3 |
 							 SSL_OP_CIPHER_SERVER_PREFERENCE | SSL_OP_SAFARI_ECDHE_ECDSA_BUG);

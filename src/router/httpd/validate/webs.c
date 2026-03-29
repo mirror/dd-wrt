@@ -23,23 +23,23 @@
 #define VALIDSOURCE 1
 
 #ifdef WEBS
-#include <webs.h>
-#include <uemf.h>
-#include <ej.h>
+	#include <webs.h>
+	#include <uemf.h>
+	#include <ej.h>
 #else /* !WEBS */
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <ctype.h>
-#include <unistd.h>
-#include <limits.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-#include <httpd.h>
-#include <errno.h>
+	#include <stdio.h>
+	#include <stdlib.h>
+	#include <string.h>
+	#include <ctype.h>
+	#include <unistd.h>
+	#include <limits.h>
+	#include <sys/types.h>
+	#include <sys/stat.h>
+	#include <sys/socket.h>
+	#include <netinet/in.h>
+	#include <arpa/inet.h>
+	#include <httpd.h>
+	#include <errno.h>
 #endif /* WEBS */
 
 #include <proto/ethernet.h>
@@ -60,7 +60,7 @@
 #include <stdarg.h>
 #include <sha1.h>
 #ifdef HAVE_SAMBA_SERVER
-#include <jansson.h>
+	#include <jansson.h>
 #endif
 #include <libbridge.h>
 
@@ -84,11 +84,11 @@ void wan_proto(webs_t wp)
 #ifdef FILTER_DEBUG
 extern FILE *debout;
 
-#define D(a)                        \
-	fprintf(debout, "%s\n", a); \
-	fflush(debout);
+	#define D(a)                        \
+		fprintf(debout, "%s\n", a); \
+		fflush(debout);
 #else
-#define D(a)
+	#define D(a)
 #endif
 
 void dhcpfwd(webs_t wp)
@@ -669,7 +669,7 @@ void delete_old_pbr(void)
 		GETENTRYBYIDX(ipproto, word, 12);
 		GETENTRYBYIDX_DEL(sport, word, 13, "><:,");
 		GETENTRYBYIDX_DEL(dport, word, 14, "><:,");
-		if (not )
+		if (not)
 			sprintf(cmd, "%s %s", cmd, "not");
 		if (from_en && from)
 			sprintf(cmd, "%s from %s", cmd, from);
@@ -2211,7 +2211,7 @@ void tunnel_save(webs_t wp)
 	applytake(value);
 }
 
-#ifdef HAVE_WIREGUARD
+	#ifdef HAVE_WIREGUARD
 void gen_wg_key(webs_t wp)
 {
 	tunnel_save(wp);
@@ -2268,12 +2268,12 @@ void add_peer(webs_t wp)
 	nvram_default_geti(idx, 0);
 	int peer = nvram_geti(idx);
 
-#define default_set(name, val)                                 \
-	if (*(nvram_nget("oet%d_%s%d", key, name, peer)) == 0) \
-	nvram_nset(val, "oet%d_%s%d", key, name, peer)
-#define default_seti(name, val)                                \
-	if (*(nvram_nget("oet%d_%s%d", key, name, peer)) == 0) \
-	nvram_nseti(val, "oet%d_%s%d", key, name, peer)
+		#define default_set(name, val)                                 \
+			if (*(nvram_nget("oet%d_%s%d", key, name, peer)) == 0) \
+			nvram_nset(val, "oet%d_%s%d", key, name, peer)
+		#define default_seti(name, val)                                \
+			if (*(nvram_nget("oet%d_%s%d", key, name, peer)) == 0) \
+			nvram_nseti(val, "oet%d_%s%d", key, name, peer)
 	default_seti("ka", 0);
 	default_set("namep", "Peer");
 	default_seti("endpoint", 0);
@@ -2288,8 +2288,8 @@ void add_peer(webs_t wp)
 	default_set("clend", nvram_safe_get("wan_ipaddr"));
 	default_seti("clka", 25);
 	default_seti("obf", 0);
-#undef default_set
-#undef default_seti
+		#undef default_set
+		#undef default_seti
 	peer++;
 	nvram_seti(idx, peer);
 }
@@ -2384,7 +2384,7 @@ static void delpeer(int tun, int peer)
 	delpeervalue("obf", tun, peer);
 	delpeervalue("obfkey", tun, peer);
 }
-#endif
+	#endif
 static void copytunvalue_prefix(const char *prefix, char *valuename, int from, int to)
 {
 	char name[32];
@@ -2416,18 +2416,18 @@ void add_tunnel(webs_t wp)
 	int tunnels = nvram_geti("oet_tunnels");
 	tunnels++;
 	nvram_seti("oet_tunnels", tunnels);
-#define default_set(name, val)                             \
-	if (*(nvram_nget("oet%d_%s", tunnels, name)) == 0) \
-	nvram_nset(val, "oet%d_%s", tunnels, name)
-#define default_seti(name, val)                            \
-	if (*(nvram_nget("oet%d_%s", tunnels, name)) == 0) \
-	nvram_nseti(val, "oet%d_%s", tunnels, name)
-#define default_vxset(name, val)                             \
-	if (*(nvram_nget("vxlan%d_%s", tunnels, name)) == 0) \
-	nvram_nset(val, "vxlan%d_%s", tunnels, name)
-#define default_vxseti(name, val)                            \
-	if (*(nvram_nget("vxlan%d_%s", tunnels, name)) == 0) \
-	nvram_nseti(val, "vxlan%d_%s", tunnels, name)
+	#define default_set(name, val)                             \
+		if (*(nvram_nget("oet%d_%s", tunnels, name)) == 0) \
+		nvram_nset(val, "oet%d_%s", tunnels, name)
+	#define default_seti(name, val)                            \
+		if (*(nvram_nget("oet%d_%s", tunnels, name)) == 0) \
+		nvram_nseti(val, "oet%d_%s", tunnels, name)
+	#define default_vxset(name, val)                             \
+		if (*(nvram_nget("vxlan%d_%s", tunnels, name)) == 0) \
+		nvram_nset(val, "vxlan%d_%s", tunnels, name)
+	#define default_vxseti(name, val)                            \
+		if (*(nvram_nget("vxlan%d_%s", tunnels, name)) == 0) \
+		nvram_nseti(val, "vxlan%d_%s", tunnels, name)
 	default_seti("en", 1);
 	default_set("label", "");
 	default_seti("mit", 1);
@@ -2479,15 +2479,15 @@ void add_tunnel(webs_t wp)
 	default_seti("bridged", 1);
 	default_vxseti("bridged", 1);
 	default_seti("peers", 0);
-#undef default_set
-#undef default_seti
+	#undef default_set
+	#undef default_seti
 }
 
 void import_tunnel(webs_t wp)
 {
-#define upload_set(name, val)                                  \
-	if (*(nvram_nget("oet%d_%s%d", key, name, peer)) == 0) \
-	nvram_nset(val, "oet%d_%s%d", key, name, peer)
+	#define upload_set(name, val)                                  \
+		if (*(nvram_nget("oet%d_%s%d", key, name, peer)) == 0) \
+		nvram_nset(val, "oet%d_%s%d", key, name, peer)
 	//#define upload_seti(name,val) if (*(nvram_nget("oet%d_%s%d",key,name,peer))==0)nvram_nseti(val, "oet%d_%s%d",key,name,peer)
 	/*
 Alternatively get the POST data, those will contain the file if enctype="multipart/form-data"
@@ -2588,7 +2588,7 @@ Need parsing to get the file data out of the POST data
 		nvram_seti(idx, peer);
 		fclose(fp);
 	}
-#undef upload_set
+	#undef upload_set
 	//#undef upload_seti
 }
 
@@ -2665,7 +2665,7 @@ void del_tunnel(webs_t wp)
 		copytunvalue("udp6zerocsumrx", i, i - 1);
 		copytunvalue("df", i, i - 1);
 		copytunvalue("fl", i, i - 1);
-#ifdef HAVE_WIREGUARD
+	#ifdef HAVE_WIREGUARD
 		copytunvalue("obf", i, i - 1);
 		copytunvalue("obfkey", i, i - 1);
 		copytunvalue("peers", i, i - 1);
@@ -2675,17 +2675,17 @@ void del_tunnel(webs_t wp)
 			copytunpeer(peer, i, i - 1);
 			//dd_loginfo("egc", "copytunvalue: peer=[%d; i=[%d]", peer, i);
 		}
-#endif
+	#endif
 	}
 
-#ifdef HAVE_WIREGUARD
+	#ifdef HAVE_WIREGUARD
 	sprintf(idx, "oet%d_peers", tunnels);
 	int peers = nvram_geti(idx);
 	for (peer = 0; peer < peers; peer++) {
 		delpeer(tunnels, peer);
 		//dd_loginfo("egc", "delpeer: peer=[%d; tunnels=[%d]", peer, tunnnels);
 	}
-#endif
+	#endif
 	deltunvalue("en", tunnels);
 	deltunvalue("label", tunnels);
 	deltunvalue("mit", tunnels);
@@ -2750,7 +2750,7 @@ void del_tunnel(webs_t wp)
 	deltunvalue("udp6zerocsumrx", tunnels);
 	deltunvalue("df", tunnels);
 	deltunvalue("fl", tunnels);
-#ifdef HAVE_WIREGUARD
+	#ifdef HAVE_WIREGUARD
 	deltunvalue("obf", tunnels);
 	deltunvalue("obfkey", tunnels);
 	deltunvalue("peers", tunnels);
@@ -2763,7 +2763,7 @@ void del_tunnel(webs_t wp)
 	char oetint[6] = { 0 };
 	snprintf(oetint, sizeof(oetint), "oet%d", tunnels);
 	eval("ip", "link", "del", oetint);
-#endif
+	#endif
 
 	tunnels--;
 	nvram_seti("oet_tunnels", tunnels);
@@ -2774,7 +2774,7 @@ void del_tunnel(webs_t wp)
 	     "dnsmasq"); //alternatively use restart_dns_main(); or stop_dnsmasq(); start_dnsmasq();
 }
 
-#ifdef HAVE_WIREGUARD
+	#ifdef HAVE_WIREGUARD
 void del_peer(webs_t wp)
 {
 	int tun = websGetVari(wp, "keyindex", -1);
@@ -2807,7 +2807,7 @@ void gen_wg_psk(webs_t wp)
 	eval("makewgpsk", idx, peeridx);
 }
 
-#endif
+	#endif
 #endif
 
 void qos_save(webs_t wp)
@@ -3511,11 +3511,11 @@ void add_vifs_single(const char *prefix, int device)
 	nvram_seti(v2, 0);
 	sprintf(v2, "%s_ssid", v);
 #ifdef HAVE_MAKSAT
-#ifdef HAVE_MAKSAT_BLANK
+	#ifdef HAVE_MAKSAT_BLANK
 	nvram_set(v2, "default_vap");
-#else
+	#else
 	nvram_set(v2, "maksat_vap");
-#endif
+	#endif
 #elif defined(HAVE_SANSFIL)
 	nvram_set(v2, "sansfil_vap");
 #elif defined(HAVE_TRIMAX)
@@ -3590,14 +3590,14 @@ void add_vifs_single(const char *prefix, int device)
 		nvram_set(guestport, v);
 
 		sprintf(v2, "%s_ssid", v);
-#ifdef HAVE_WZRHPAG300NH
+	#ifdef HAVE_WZRHPAG300NH
 		if (has_5ghz(prefix))
 			nvram_set(v2, "GuestPort_A");
 		else
 			nvram_set(v2, "GuestPort_G");
-#else
+	#else
 		nvram_set(v2, "GuestPort");
-#endif
+	#endif
 
 		sprintf(v2, "%s_bridged", v);
 		nvram_seti(v2, 0);
@@ -3614,24 +3614,24 @@ void add_vifs_single(const char *prefix, int device)
 		sprintf(v2, "%s_akm", v);
 		nvram_set(v2, "psk psk2");
 
-#ifdef HAVE_MADWIFI
+	#ifdef HAVE_MADWIFI
 		sprintf(v2, "%s_tkip", v);
 		nvram_set(v2, "1");
 		sprintf(v2, "%s_aes", v);
 		nvram_set(v2, "1");
-#else
+	#else
 		sprintf(v2, "%s_crypto", v);
 		nvram_set(v2, "tkip+aes");
-#endif
+	#endif
 		sprintf(v2, "%s_wpa_psk", v);
-#ifdef HAVE_WZRHPAG300NH
+	#ifdef HAVE_WZRHPAG300NH
 		if (has_5ghz(prefix))
 			sprintf(v3, "DEF-p_wireless_%s0_11a-wpapsk", prefix);
 		else
 			sprintf(v3, "DEF-p_wireless_%s0_11bg-wpapsk", prefix);
-#else
+	#else
 		sprintf(v3, "DEF-p_wireless_%s_11bg-wpapsk", prefix);
-#endif
+	#endif
 		nvram_set(v2, getUEnv(v3));
 
 		add_mdhcpd(v, 20, 200, 1440);
@@ -4699,13 +4699,13 @@ void save_networking(webs_t wp)
 	int bridgescount = nvram_geti("bridges_count");
 	int bridgesifcount = nvram_geti("bridgesif_count");
 	int mdhcpd_count = nvram_geti("mdhcpd_count");
-#ifdef HAVE_IPVS
+	#ifdef HAVE_IPVS
 	int ipvscount = nvram_geti("ipvs_count");
 	int ipvstargetcount = nvram_geti("ipvstarget_count");
-#endif
-#ifdef HAVE_BONDING
+	#endif
+	#ifdef HAVE_BONDING
 	int bondcount = nvram_geti("bonding_count");
-#endif
+	#endif
 	int i;
 	int has_vlan = br_has_vlan_filtering();
 	// save vlan stuff
@@ -4765,7 +4765,7 @@ void save_networking(webs_t wp)
 	nvram_set("vlan_tags", buffer);
 	// save bonds
 	bzero(buffer, 1024);
-#ifdef HAVE_BONDING
+	#ifdef HAVE_BONDING
 	nvram_set("bonding_number", websGetVar(wp, "bonding_number", NULL));
 	nvram_set("bonding_type", websGetVar(wp, "bonding_type", NULL));
 	nvram_set("bonding_policy", websGetVar(wp, "bonding_policy", NULL));
@@ -4785,8 +4785,8 @@ void save_networking(webs_t wp)
 	}
 	nvram_set("bondings", buffer);
 	bzero(buffer, 1024);
-#endif
-#ifdef HAVE_IPVS
+	#endif
+	#ifdef HAVE_IPVS
 	{
 		char var[32];
 		sprintf(var, "ipvsrole");
@@ -4885,7 +4885,7 @@ void save_networking(webs_t wp)
 	nvram_set("ipvstarget", buffer);
 	bzero(buffer, 1024);
 
-#endif
+	#endif
 
 	// save bridges
 
@@ -5056,7 +5056,7 @@ void save_networking(webs_t wp)
 			strcat(buffer, " ");
 	}
 	nvram_set("bridgesif", buffer);
-#ifdef HAVE_MDHCP
+	#ifdef HAVE_MDHCP
 	// save multipe dhcp-servers
 	bzero(buffer, 1024);
 	// if (!interface || !start || !dhcpon || !max || !leasetime)
@@ -5094,10 +5094,10 @@ void save_networking(webs_t wp)
 			strcat(buffer, " ");
 	}
 	nvram_set("mdhcpd", buffer);
-#endif
-#ifdef HAVE_PORTSETUP
+	#endif
+	#ifdef HAVE_PORTSETUP
 	validate_portsetup(wp, NULL, NULL);
-#endif
+	#endif
 
 	applytake(value);
 }
@@ -5570,9 +5570,9 @@ static void save_prefix(webs_t wp, char *prefix)
 	copymergetonv(wp, "%s_relayd_gw_ipaddr", prefix);
 #endif
 #ifdef HAVE_IFL
-#ifdef HAVE_NEXTMEDIA
+	#ifdef HAVE_NEXTMEDIA
 	copytonv_prefix(wp, "label", prefix);
-#endif
+	#endif
 	copytonv_prefix(wp, "note", prefix);
 #endif
 #ifdef HAVE_MADWIFI
@@ -5606,8 +5606,8 @@ static void save_prefix(webs_t wp, char *prefix)
 
 		if (sl) {
 			int base = atoi(sl);
-#ifdef HAVE_WIKINGS
-/*			if (base > 28)
+	#ifdef HAVE_WIKINGS
+	/*			if (base > 28)
 				base = 28;
 #ifdef HAVE_SUB3
 			if (base > 25)
@@ -5617,20 +5617,20 @@ static void save_prefix(webs_t wp, char *prefix)
 			if (base > 22)
 				base = 22;
 #endif*/
-#endif
+	#endif
 
-#ifdef HAVE_ESPOD
+	#ifdef HAVE_ESPOD
 			if (base > 30)
 				base = 30;
-#ifdef HAVE_SUB6
+		#ifdef HAVE_SUB6
 			if (base > 30)
 				base = 30;
-#endif
-#ifdef HAVE_SUB3
+		#endif
+		#ifdef HAVE_SUB3
 			if (base > 28)
 				base = 28;
-#endif
-#endif
+		#endif
+	#endif
 			int txpower = base - wifi_gettxpoweroffset(prefix);
 
 			if (txpower < 1)
@@ -5665,15 +5665,15 @@ static void save_prefix(webs_t wp, char *prefix)
 			debug_free(slc);
 		}
 	}
-#ifdef HAVE_MAKSAT
+	#ifdef HAVE_MAKSAT
 	copytonv(wp, "wlan_specialmode");
-#endif
-#ifdef HAVE_ATH9K
+	#endif
+	#ifdef HAVE_ATH9K
 	if (!strcmp(prefix, "wlan0"))
 		copytonv_prefix(wp, "regdomain", prefix);
-#else
+	#else
 	copytonv_prefix(wp, "regdomain", prefix);
-#endif
+	#endif
 
 	copytonv_prefix(wp, "rts", prefix);
 	if (nvram_nmatch("1", "%s_rts", prefix)) {
@@ -5703,7 +5703,7 @@ static void save_prefix(webs_t wp, char *prefix)
 	// enabled
 	copytonv_prefix(wp, "diversity", prefix);
 	copytonv_prefix(wp, "preamble", prefix);
-#ifdef HAVE_ATH9K
+	#ifdef HAVE_ATH9K
 	if (has_mesh(prefix)) {
 		copytonv_prefix(wp, "mesh_retry_timeout", prefix);
 		copytonv_prefix(wp, "mesh_confirm_timeout", prefix);
@@ -5750,8 +5750,8 @@ static void save_prefix(webs_t wp, char *prefix)
 	copytonv_prefix(wp, "bgscan_threshold", prefix);
 	copytonv_prefix(wp, "bgscan_long_int", prefix);
 
-#endif
-#if defined(HAVE_ATH10K) || defined(HAVE_BRCMFMAC)
+	#endif
+	#if defined(HAVE_ATH10K) || defined(HAVE_BRCMFMAC)
 	copytonv_prefix(wp, "subf", prefix);
 	copytonv_prefix(wp, "mubf", prefix);
 	copytonv_prefix(wp, "qboost", prefix);
@@ -5759,7 +5759,7 @@ static void save_prefix(webs_t wp, char *prefix)
 		copytonv_prefix(wp, "autoburst", prefix);
 	}
 	copytonv_prefix(wp, "sifs_trigger_time", prefix);
-#endif
+	#endif
 	copytonv_prefix(wp, "wmm", prefix);
 	copytonv_prefix(wp, "bcn", prefix);
 	copytonv_prefix(wp, "dtim", prefix);
@@ -5805,7 +5805,7 @@ static void save_prefix(webs_t wp, char *prefix)
 	copytonv_prefix(wp, "dwds", prefix);
 #endif
 #ifdef HAVE_80211AC
-#ifndef HAVE_NOAC
+	#ifndef HAVE_NOAC
 	copytonv_prefix(wp, "wmf_bss_enable", prefix);
 	if (has_ac(prefix) && has_2ghz(prefix)) {
 		copytonv_prefix(wp, "turbo_qam", prefix);
@@ -5820,13 +5820,13 @@ static void save_prefix(webs_t wp, char *prefix)
 	if (has_mumimo(prefix)) {
 		copytonv_prefix(wp, "mumimo", prefix);
 	}
-#endif
+	#endif
 #endif
 
 #ifndef HAVE_MADWIFI
 	char *ifname = "wl0";
 
-#ifndef HAVE_RT2880
+	#ifndef HAVE_RT2880
 
 	if (!strcmp(prefix, "wl0"))
 		ifname = get_wl_instance_name(0);
@@ -5836,21 +5836,21 @@ static void save_prefix(webs_t wp, char *prefix)
 		ifname = get_wl_instance_name(2);
 	else
 		ifname = prefix;
-#else
+	#else
 	ifname = getRADev(prefix);
-#endif
+	#endif
 	copytonv_prefix(wp, "multicast", ifname);
 	copytonv_prefix(wp, "m2u", ifname);
 	copytonv_prefix(wp, "bridged", ifname);
 	copytonv_prefix(wp, "nat", ifname);
 	copytonv_prefix(wp, "bloop", ifname);
-#ifdef HAVE_IPTOOLS
+	#ifdef HAVE_IPTOOLS
 	copytonv_prefix(wp, "arpd", ifname);
-#endif
+	#endif
 	copytonv_prefix(wp, "isolation", ifname);
-#ifdef HAVE_TOR
+	#ifdef HAVE_TOR
 	copytonv_prefix(wp, "tor", ifname);
-#endif
+	#endif
 	copytonv_prefix(wp, "dns_redirect", ifname);
 
 	copymergetonv(wp, "%s_dns_ipaddr", ifname);
@@ -5870,13 +5870,13 @@ static void save_prefix(webs_t wp, char *prefix)
 	copytonv_prefix(wp, "bridged", prefix);
 	copytonv_prefix(wp, "nat", prefix);
 	copytonv_prefix(wp, "bloop", prefix);
-#ifdef HAVE_IPTOOLS
+	#ifdef HAVE_IPTOOLS
 	copytonv_prefix(wp, "arpd", prefix);
-#endif
+	#endif
 	copytonv_prefix(wp, "isolation", prefix);
-#ifdef HAVE_TOR
+	#ifdef HAVE_TOR
 	copytonv_prefix(wp, "tor", prefix);
-#endif
+	#endif
 	copytonv_prefix(wp, "dns_redirect", prefix);
 	copymergetonv(wp, "%s_dns_ipaddr", prefix);
 	copymergetonv(wp, "%s_ipaddr", prefix);
@@ -5939,7 +5939,7 @@ static void save_prefix(webs_t wp, char *prefix)
 		}
 	}
 #ifdef HAVE_MADWIFI
-#if 0
+	#if 0
 	if (cbwchanged || chanchanged) {
 		snprintf(sifs, sizeof(sifs), "%s_sifstime", prefix);
 		snprintf(preamble, sizeof(preamble), "%s_preambletime", prefix);
@@ -5958,7 +5958,7 @@ static void save_prefix(webs_t wp, char *prefix)
 		}
 
 	}
-#endif
+	#endif
 #endif
 
 	copytonv_prefix(wp, "nbw", prefix);
@@ -5993,7 +5993,7 @@ static void save_prefix(webs_t wp, char *prefix)
 	copytonv(wp, "wl_reg_mode");
 	copytonv(wp, "wl_tpc_db");
 #ifndef HAVE_MADWIFI
-#if defined(HAVE_NORTHSTAR) || defined(HAVE_80211AC) && !defined(HAVE_BUFFALO)
+	#if defined(HAVE_NORTHSTAR) || defined(HAVE_80211AC) && !defined(HAVE_BUFFALO)
 	snprintf(n, sizeof(n), "wl_regdomain");
 	char *reg = websGetVar(wp, n, NULL);
 	if (reg) {
@@ -6003,7 +6003,7 @@ static void save_prefix(webs_t wp, char *prefix)
 		}
 	}
 	copytonv(wp, "wl_regdomain");
-#endif
+	#endif
 #endif
 }
 
@@ -6212,7 +6212,7 @@ void changepass(webs_t wp)
 }
 
 #ifdef HAVE_CHILLI
-#ifdef HAVE_CHILLILOCAL
+	#ifdef HAVE_CHILLILOCAL
 
 void user_remove(webs_t wp)
 {
@@ -6224,7 +6224,7 @@ void user_add(webs_t wp)
 	macro_add("fon_usernames");
 	// validate_userlist(wp);
 }
-#endif
+	#endif
 #endif
 
 #ifdef HAVE_RADLOCAL
@@ -6933,7 +6933,7 @@ void tf_upnp(webs_t wp)
 }
 
 #ifdef HAVE_MINIDLNA
-#include <dlna.h>
+	#include <dlna.h>
 static void dlna_save(webs_t wp)
 {
 	int c, j;
@@ -6967,7 +6967,7 @@ static void dlna_save(webs_t wp)
 }
 #endif
 #ifdef HAVE_NFS
-#include <nfs.h>
+	#include <nfs.h>
 static void nfs_save(webs_t wp)
 {
 	int c, j;
@@ -6999,7 +6999,7 @@ static void nfs_save(webs_t wp)
 }
 #endif
 #ifdef HAVE_RSYNC
-#include <rsync.h>
+	#include <rsync.h>
 static void rsync_save(webs_t wp)
 {
 	int c, j;
@@ -7025,10 +7025,10 @@ static void rsync_save(webs_t wp)
 #endif
 
 #ifdef HAVE_NAS_SERVER
-#include <samba3.h>
+	#include <samba3.h>
 void nassrv_save(webs_t wp)
 {
-#ifdef HAVE_SAMBA_SERVER
+	#ifdef HAVE_SAMBA_SERVER
 	int c, j;
 	char var[128], val[128];
 	json_t *entry = NULL, *user_entries;
@@ -7090,7 +7090,7 @@ void nassrv_save(webs_t wp)
 	}
 	nvram_set("samba3_users", json_dumps(entries, JSON_COMPACT));
 	json_array_clear(entries);
-#endif
+	#endif
 	char *value = websGetVar(wp, "action", "");
 
 	// all other vars
@@ -7098,18 +7098,18 @@ void nassrv_save(webs_t wp)
 
 	addAction("nassrv");
 	nvram_seti("nowebaction", 1);
-#ifdef HAVE_MINIDLNA
+	#ifdef HAVE_MINIDLNA
 	dlna_save(wp);
-#endif
-#ifdef HAVE_NFS
+	#endif
+	#ifdef HAVE_NFS
 	nfs_save(wp);
-#endif
-#ifdef HAVE_RSYNC
+	#endif
+	#ifdef HAVE_RSYNC
 	rsync_save(wp);
-#endif
-#ifdef HAVE_RAID
+	#endif
+	#ifdef HAVE_RAID
 	raid_save(wp);
-#endif
+	#endif
 
 	applytake(value);
 }

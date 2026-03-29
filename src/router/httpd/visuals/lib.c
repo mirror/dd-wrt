@@ -87,45 +87,45 @@ EJ_VISIBLE void ej_get_backup_name(webs_t wp, int argc, char_t **argv)
 
 static void _ej_get_firmware_version(webs_t wp, int argc, char_t **argv, int noreg)
 {
-#if defined(HAVE_ESPOD) || defined(HAVE_ONNET) || defined(HAVE_IMMERSIVE) || defined(HAVE_HDWIFI) || defined(HAVE_IDEXX) || \
-	defined(HAVE_RAYTRONIK)
+	#if defined(HAVE_ESPOD) || defined(HAVE_ONNET) || defined(HAVE_IMMERSIVE) || defined(HAVE_HDWIFI) || \
+		defined(HAVE_IDEXX) || defined(HAVE_RAYTRONIK)
 	char *p;
 	char string[32], date[16];
 	sprintf(string, CYBERTAN_VERSION);
 	sprintf(date, "%s", BUILD_DATE);
-#endif
-#ifdef HAVE_BUFFALO
+	#endif
+	#ifdef HAVE_BUFFALO
 	websWrite(wp, "DD-WRT v3.0-r%s %s%s (" BUILD_DATE ")", SVN_REVISION, nvram_safe_get("dist_type"), DIST_OPT);
-#else
+	#else
 
-#ifdef HAVE_REGISTER
+		#ifdef HAVE_REGISTER
 	if (!noreg && wp->isregistered && !wp->isregistered_real) {
 		websWrite(wp, "Click here to ACTIVATE %d Hour Trial", getTrialCount());
 	} else
-#endif
+		#endif
 	{
-#ifdef HAVE_WIKINGS
-#ifdef HAVE_SUB3
-#define V "ExcelMed"
-#elif HAVE_SUB6
-#define V "ExcelMin"
-#else
-#define V "Excellent"
-#endif
+		#ifdef HAVE_WIKINGS
+			#ifdef HAVE_SUB3
+				#define V "ExcelMed"
+			#elif HAVE_SUB6
+				#define V "ExcelMin"
+			#else
+				#define V "Excellent"
+			#endif
 		websWrite(wp, "Excel Networks (%s series) V 2.10", V);
-#undef V
-#elif HAVE_ESPOD
-#ifdef HAVE_SUB3
-#define V "A600"
-#elif HAVE_SUB6
-#define V "A1000"
-#elif HAVE_SUB9
-#define V "Hermes"
-#elif HAVE_SUB12
-#define V "Lite"
-#else
-#define V "MIMO"
-#endif
+			#undef V
+		#elif HAVE_ESPOD
+			#ifdef HAVE_SUB3
+				#define V "A600"
+			#elif HAVE_SUB6
+				#define V "A1000"
+			#elif HAVE_SUB9
+				#define V "Hermes"
+			#elif HAVE_SUB12
+				#define V "Lite"
+			#else
+				#define V "MIMO"
+			#endif
 		if (argc == 2) {
 			websWrite(wp, "ESPOD v1.0611 (%s) / ESPOD %s Series", date, V);
 		} else {
@@ -134,26 +134,26 @@ static void _ej_get_firmware_version(webs_t wp, int argc, char_t **argv, int nor
 				"ESPOD v1.0611 (%s)</a><div>\");document.write(\"<div class=\\\"info\\\">Device: ESPOD %s Series<a>",
 				date, V);
 		}
-#undef V
-#elif HAVE_CARLSONWIRELESS
+			#undef V
+		#elif HAVE_CARLSONWIRELESS
 		websWrite(wp, "Carlson Wireless v6.2 (%s)", SVN_REVISION);
-#elif HAVE_IMMERSIVE
+		#elif HAVE_IMMERSIVE
 		if (argc == 2) {
 			websWrite(wp, "Build date %s", date);
 		} else {
 			websWrite(wp, "SUPPORT %s (%s)", SVN_REVISION, date);
 		}
-#elif HAVE_HDWIFI
+		#elif HAVE_HDWIFI
 		if (argc == 2) {
 			websWrite(wp, "Build date %s", date);
 		} else {
 			websWrite(wp, "HDWIFI r%s (%s)", SVN_REVISION, date);
 		}
-#elif HAVE_IPR
+		#elif HAVE_IPR
 		websWrite(wp, "IPR-CP v1.0 (%s)", SVN_REVISION);
-#elif HAVE_ONNET_BLANK
+		#elif HAVE_ONNET_BLANK
 		websWrite(wp, "Enterprise AP (%s)", date);
-#elif HAVE_ONNET
+		#elif HAVE_ONNET
 		if (nvram_match("DD_BOARD", "Atheros Hornet")) {
 			websWrite(wp, "OTAi 9331 (%s)", date);
 		} else if (nvram_match("DD_BOARD", "Compex WPE72")) {
@@ -189,35 +189,35 @@ static void _ej_get_firmware_version(webs_t wp, int argc, char_t **argv, int nor
 		} else {
 			websWrite(wp, "OTAi %s (%s)", nvram_safe_get("DD_BOARD"), date);
 		}
-#elif HAVE_RAYTRONIK
+		#elif HAVE_RAYTRONIK
 		websWrite(wp, "RN-150M %s %s%s", MINOR_VERSION, nvram_safe_get("dist_type"), DIST_OPT);
-#elif HAVE_KORENRON
+		#elif HAVE_KORENRON
 		websWrite(wp, "KORENRON %s %s%s", MINOR_VERSION, nvram_safe_get("dist_type"), DIST_OPT);
-#elif HAVE_TESTEM
+		#elif HAVE_TESTEM
 		websWrite(wp, "TESTEM %s %s%s", MINOR_VERSION, nvram_safe_get("dist_type"), DIST_OPT);
-#elif HAVE_ANTAIRA
+		#elif HAVE_ANTAIRA
 		websWrite(wp, "Antaira r%s (" BUILD_DATE ")", SVN_REVISION);
-#elif HAVE_SANSFIL
+		#elif HAVE_SANSFIL
 		websWrite(wp, "SANSFIL %s %s%s", MINOR_VERSION, nvram_safe_get("dist_type"), DIST_OPT);
-#elif HAVE_HOBBIT
+		#elif HAVE_HOBBIT
 		websWrite(wp, "HQ-NDS %s %s%s", MINOR_VERSION, nvram_safe_get("dist_type"), DIST_OPT);
-#elif HAVE_ERC
+		#elif HAVE_ERC
 		websWrite(wp, "RemoteEngineer FW 1.1 r%s (" BUILD_DATE ")", SVN_REVISION);
-#elif HAVE_IDEXX
-#ifdef HAVE_IDEXX_WORLD
+		#elif HAVE_IDEXX
+			#ifdef HAVE_IDEXX_WORLD
 		websWrite(wp, "DD-WRT v3.0-r%s %s%s (" BUILD_DATE ") WW", SVN_REVISION, nvram_safe_get("dist_type"), DIST_OPT);
-#else
+			#else
 		websWrite(wp, "DD-WRT v3.0-r%s %s%s (" BUILD_DATE ") US", SVN_REVISION, nvram_safe_get("dist_type"), DIST_OPT);
-#endif
-#elif HAVE_TMK
+			#endif
+		#elif HAVE_TMK
 		websWrite(wp, "KMT-WAS 3.0 r%s (" BUILD_DATE ") std", SVN_REVISION);
-#elif HAVE_NDTRADE
+		#elif HAVE_NDTRADE
 		websWrite(wp, "ND TRADE v3.0-r%s %s%s (" BUILD_DATE ")", SVN_REVISION, nvram_safe_get("dist_type"), DIST_OPT);
-#else
+		#else
 		websWrite(wp, "DD-WRT v3.0-r%s %s%s (" BUILD_DATE ")", SVN_REVISION, nvram_safe_get("dist_type"), DIST_OPT);
-#endif
+		#endif
 	}
-#endif
+	#endif
 }
 #endif
 

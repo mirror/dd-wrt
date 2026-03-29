@@ -1,4 +1,4 @@
-#pragma GCC optimize ("O3")
+#pragma GCC optimize("O3")
 /*
  * ej.c
  *
@@ -37,17 +37,17 @@
 
 //#define CDEBUG 1
 #ifdef CDEBUG
-#include <utils.h>
+	#include <utils.h>
 #endif
 
 #ifndef CDEBUG
-#define cdebug(a)
+	#define cdebug(a)
 #endif
 static char *get_arg(char *args, char **next);
 static void call(char *func, webs_t stream);
 #define PATTERN_BUFFER 1000
 #define ISSPACE(p) p == 0x20
- 
+
 static inline char *uqstrchr(char *buf, char find)
 {
 	int q = 0;
@@ -172,11 +172,11 @@ static inline int decompress(webs_t stream, char *pattern, int len, int last)
 }
 
 #if __BYTE_ORDER == __LITTLE_ENDIAN
-#define PATTERN 0x253c
+	#define PATTERN 0x253c
 #elif __BYTE_ORDER == __BIG_ENDIAN
-#define PATTERN 0x3c25
+	#define PATTERN 0x3c25
 #else
-#error "no endian type"
+	#error "no endian type"
 #endif
 
 static int buffer_get(webs_t wp)
@@ -373,14 +373,14 @@ static void do_ej_file(FILE *fp, int len, webs_t stream)
 	stream->s_fp = fp;
 	stream->s_filecount = 0;
 	stream->s_filelen = len;
-#ifdef HAVE_OPENSSL
+	#ifdef HAVE_OPENSSL
 	char *p = malloc(len);
 	fread(p, 1, len, fp);
 	do_ej_s_buffer(p, len, stream);
 	free(p);
-#else
+	#else
 	do_ej_s(&file_get, stream);
-#endif
+	#endif
 #endif
 }
 

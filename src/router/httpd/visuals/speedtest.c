@@ -20,15 +20,15 @@
  * $Id:
  */
 #ifdef HAVE_SPEEDTEST_CLI
-#define VISUALSOURCE 1
+	#define VISUALSOURCE 1
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <unistd.h>
-#include <stdarg.h>
+	#include <stdio.h>
+	#include <stdlib.h>
+	#include <string.h>
+	#include <unistd.h>
+	#include <stdarg.h>
 
-#include <broadcom.h>
+	#include <broadcom.h>
 
 static void print_file(webs_t wp, char *filename, int string)
 {

@@ -50,39 +50,39 @@
 #include <ddnvram.h>
 
 #ifdef HAVE_STORM
-#define HARDFREQ "300"
+	#define HARDFREQ "300"
 #elif HAVE_OPENRISC
-#define HARDFREQ "166"
+	#define HARDFREQ "166"
 #elif HAVE_LAGUNA
-#define FREQLINE 2
+	#define FREQLINE 2
 #elif HAVE_RT3052
-#ifdef HAVE_HOTPLUG2
-#define FREQLINE 7
-#else
-#define FREQLINE 4
-#endif
+	#ifdef HAVE_HOTPLUG2
+		#define FREQLINE 7
+	#else
+		#define FREQLINE 4
+	#endif
 #elif defined(HAVE_DANUBE)
-#define FREQLINE 6
+	#define FREQLINE 6
 #elif HAVE_RT2880
-#ifdef HAVE_HOTPLUG2
-#define FREQLINE 7
-#else
-#define FREQLINE 4
-#endif
+	#ifdef HAVE_HOTPLUG2
+		#define FREQLINE 7
+	#else
+		#define FREQLINE 4
+	#endif
 #elif HAVE_XSCALE
-#define FREQLINE 2
+	#define FREQLINE 2
 #elif defined(HAVE_MAGICBOX) || defined(HAVE_RB600)
-#define FREQLINE 3
+	#define FREQLINE 3
 #elif defined(HAVE_FONERA) || defined(HAVE_SOLO51) || defined(HAVE_ADM5120) || defined(HAVE_MERAKI) || defined(HAVE_LS2) || \
 	defined(HAVE_LS5) || defined(HAVE_WHRAG108) || defined(HAVE_TW6600) || defined(HAVE_CA8) || defined(HAVE_RB500) ||  \
 	defined(HAVE_OCTEON)
-#ifdef HAVE_HOTPLUG2
-#define FREQLINE 5
-#else
-#define FREQLINE 4
-#endif
+	#ifdef HAVE_HOTPLUG2
+		#define FREQLINE 5
+	#else
+		#define FREQLINE 4
+	#endif
 #elif defined(HAVE_PB42) || defined(HAVE_LSX)
-#define FREQLINE 5
+	#define FREQLINE 5
 #elif HAVE_IPQ6018
 
 static void get_clkfreq(int *clk1, int *clk2, int *calculated)
@@ -313,14 +313,14 @@ static void get_clkfreq(int *clk1, int *clk2, int *calculated)
 	return;
 }
 
-#undef FREQLINE
+	#undef FREQLINE
 #elif defined(HARDFREQ)
 static void get_clkfreq(int *clk1, int *clk2, int *calculated)
 {
 	*clk1 = nvram_geti("cpu_speed");
 	return;
 }
-#undef HARDFREQ
+	#undef HARDFREQ
 #endif
 EJ_VISIBLE void ej_get_clkfreq(webs_t wp, int argc, char_t **argv)
 {

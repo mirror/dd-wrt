@@ -34,7 +34,7 @@
 #include <dd_defs.h>
 
 #ifdef HAVE_EROUTER
-#define HAVE_RB600
+	#define HAVE_RB600
 #endif
 
 #define MIN_BUF_SIZE 4096
@@ -77,19 +77,19 @@ do_upgrade_cgi(unsigned char method, struct mime_handler *handler, char *url,
 }
 
 #ifdef HAVE_RB600
-#define swap(x)                                                                    \
-	((unsigned int)((((unsigned int)(x) & (unsigned int)0x000000ffUL) << 24) | \
-			(((unsigned int)(x) & (unsigned int)0x0000ff00UL) << 8) |  \
-			(((unsigned int)(x) & (unsigned int)0x00ff0000UL) >> 8) |  \
-			(((unsigned int)(x) & (unsigned int)0xff000000UL) >> 24)))
+	#define swap(x)                                                                    \
+		((unsigned int)((((unsigned int)(x) & (unsigned int)0x000000ffUL) << 24) | \
+				(((unsigned int)(x) & (unsigned int)0x0000ff00UL) << 8) |  \
+				(((unsigned int)(x) & (unsigned int)0x00ff0000UL) >> 8) |  \
+				(((unsigned int)(x) & (unsigned int)0xff000000UL) >> 24)))
 
 #endif
 
 static int
 // sys_upgrade(char *url, FILE *stream, int *total)
 sys_upgrade(char *url, webs_t stream, size_t *total, int type) // jimmy,
-	// https,
-	// 8/6/2003
+// https,
+// 8/6/2003
 {
 	lcdmessage("System Upgrade");
 #ifndef ANTI_FLASH
@@ -112,7 +112,7 @@ sys_upgrade(char *url, webs_t stream, size_t *total, int type) // jimmy,
 	char drive[64];
 	sprintf(drive, "/dev/%s", drv);
 
-#ifndef HAVE_EROUTER
+	#ifndef HAVE_EROUTER
 	fprintf(stderr, "backup nvram\n");
 	FILE *in = fopen("/usr/local/nvram/nvram.bin", "rb");
 	if (in) {
@@ -133,12 +133,12 @@ sys_upgrade(char *url, webs_t stream, size_t *total, int type) // jimmy,
 		fclose(in);
 		debug_free(mem);
 	}
-#endif
+	#endif
 
 	/*
 	 * Feed write from a temporary FIFO 
 	 */
-#ifdef HAVE_NEW_UPGRADE
+	#ifdef HAVE_NEW_UPGRADE
 	char *write_argv_buf[8];
 	write_argv_buf[0] = "update-prepare.sh";
 	write_argv_buf[1] = "uploadfile.bin";
@@ -147,7 +147,7 @@ sys_upgrade(char *url, webs_t stream, size_t *total, int type) // jimmy,
 	write_argv_buf[4] = "noreboot";
 	write_argv_buf[5] = "usedd";
 	write_argv_buf[6] = NULL;
-	
+
 	eval("mkdir", "-p", "/tmp/new_root");
 	eval("mount", "-n", "-t", "tmpfs", "none", "/tmp/new_root");
 	eval("mkdir", "-p", "/tmp/new_root/tmp");
@@ -158,9 +158,9 @@ sys_upgrade(char *url, webs_t stream, size_t *total, int type) // jimmy,
 	}
 
 	if (!drv || !(fifo = fopen("/tmp/new_root/tmp/uploadfile.bin", "wb"))) {
-#else
+	#else
 	if (!drv || !(fifo = fopen(drive, "wb"))) {
-#endif
+	#endif
 		if (!ret)
 			ret = errno;
 		goto err;
@@ -198,25 +198,25 @@ sys_upgrade(char *url, webs_t stream, size_t *total, int type) // jimmy,
 	{
 		wfread(&buf[0], 1, 5, stream);
 		*total -= 5;
-#ifdef HAVE_NEWPORT
+	#ifdef HAVE_NEWPORT
 		if (memcmp(buf, "NEWP1", 5)) {
 			ret = -1;
 			goto err;
 		}
-#else
+	#else
 		if (memcmp(buf, "WRAP1", 5)) {
 			ret = -1;
 			goto err;
 		}
-#endif
+	#endif
 		int linuxsize;
 
 		wfread(&linuxsize, 1, 4, stream);
 		*total -= 4;
-//              safe_fwrite(&linuxsize, 1, 4, fifo);
-#ifdef HAVE_RB600
+	//              safe_fwrite(&linuxsize, 1, 4, fifo);
+	#ifdef HAVE_RB600
 		linuxsize = swap(linuxsize);
-#endif
+	#endif
 		for (i = 0; i < linuxsize / MIN_BUF_SIZE; i++) {
 			wfread(&buf[0], 1, MIN_BUF_SIZE, stream);
 			fwrite(&buf[0], 1, MIN_BUF_SIZE, fifo);
@@ -230,16 +230,16 @@ sys_upgrade(char *url, webs_t stream, size_t *total, int type) // jimmy,
 		*total -= linuxsize;
 	}
 	fclose(fifo);
-#ifdef HAVE_NEW_UPGRADE
+	#ifdef HAVE_NEW_UPGRADE
 	ret = _evalpid(write_argv_buf, NULL, 0, &pid);
 	waitpid(pid, &ret, 0);
-#else
+	#else
 	killall("watchdog", SIGKILL);
-	/*
+		/*
 	 * Wait for write to terminate 
 	 */
-	// waitpid (pid, &ret, 0);
-#endif
+		// waitpid (pid, &ret, 0);
+	#endif
 	ret = 0;
 err:
 	free(drv);
@@ -260,8 +260,8 @@ err:
 static int
 // do_upgrade_post(char *url, FILE *stream, int len, char *boundary)
 do_upgrade_post(char *url, webs_t stream, size_t len, char *boundary) // jimmy,
-	// https,
-	// 8/6/2003
+// https,
+// 8/6/2003
 {
 	killall("udhcpc", SIGKILL);
 #ifndef ANTI_FLASH
@@ -318,7 +318,7 @@ do_upgrade_post(char *url, webs_t stream, size_t len, char *boundary) // jimmy,
 	 * Restore factory original settings if told to. This will also cause a
 	 * restore defaults on reboot of a Sveasoft firmware. 
 	 */
-#ifndef HAVE_EROUTER
+	#ifndef HAVE_EROUTER
 	if (nvram_matchi("sv_restore_defaults", 1)) {
 		unlink("/usr/local/nvram/nvram.bin");
 		char drive[64];
@@ -339,11 +339,11 @@ do_upgrade_post(char *url, webs_t stream, size_t len, char *boundary) // jimmy,
 		fsync(fileno(in));
 		fclose(in);
 	}
-#else
+	#else
 	if (nvram_matchi("sv_restore_defaults", 1)) {
 		eval("erase", "nvram");
 	}
-#endif
+	#endif
 	/*
 	 * Slurp anything remaining in the request 
 	 */

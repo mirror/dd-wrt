@@ -51,17 +51,17 @@
 #ifdef HAVE_VOLT
 EJ_VISIBLE void ej_get_voltage(webs_t wp, int argc, char_t **argv)
 {
-#ifdef HAVE_LAGUNA
+	#ifdef HAVE_LAGUNA
 	FILE *fp = fopen("/sys/bus/i2c/devices/0-0029/in0_input", "rb");
-#elif HAVE_NEWPORT
+	#elif HAVE_NEWPORT
 	FILE *fp = fopen("/sys/class/hwmon/hwmon0/in1_input", "rb");
-#elif HAVE_VENTANA
+	#elif HAVE_VENTANA
 	FILE *fp = fopen("/sys/bus/i2c/devices/0-0029/in0_input", "rb");
-#else
+	#else
 	FILE *fp = fopen("/sys/devices/platform/IXP4XX-I2C.0/i2c-adapter:i2c-0/0-0028/volt", "rb");
 	if (!fp)
 		fp = fopen("/sys/devices/platform/IXP4XX-I2C.0/i2c-0/0-0028/in1_input", "rb");
-#endif
+	#endif
 	if (fp == NULL) {
 		websWrite(wp, "%s", live_translate(wp, "status_router.notavail")); // no
 		// i2c

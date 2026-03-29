@@ -20,18 +20,18 @@
  * $Id:
  */
 #ifdef HAVE_MINIDLNA
-#define VISUALSOURCE 1
+	#define VISUALSOURCE 1
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <unistd.h>
-#include <stdarg.h>
+	#include <stdio.h>
+	#include <stdlib.h>
+	#include <string.h>
+	#include <unistd.h>
+	#include <stdarg.h>
 
-#include <broadcom.h>
+	#include <broadcom.h>
 
-#include <dlna.h>
-#include "fs_common.h"
+	#include <dlna.h>
+	#include "fs_common.h"
 void show_caption_pp(webs_t wp, const char *class, const char *caption, const char *pre, const char *post);
 
 EJ_VISIBLE void ej_dlna_sharepaths(webs_t wp, int argc, char_t **argv)

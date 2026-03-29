@@ -20,22 +20,22 @@
  * $Id:
  */
 #ifdef WEBS
-#include <uemf.h>
-#include <ej.h>
+	#include <uemf.h>
+	#include <ej.h>
 #else /* !WEBS */
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <ctype.h>
-#include <unistd.h>
-#include <limits.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-#include <httpd.h>
-#include <errno.h>
+	#include <stdio.h>
+	#include <stdlib.h>
+	#include <string.h>
+	#include <ctype.h>
+	#include <unistd.h>
+	#include <limits.h>
+	#include <sys/types.h>
+	#include <sys/stat.h>
+	#include <sys/socket.h>
+	#include <netinet/in.h>
+	#include <arpa/inet.h>
+	#include <httpd.h>
+	#include <errno.h>
 #endif /* WEBS */
 
 #include <proto/ethernet.h>
@@ -235,9 +235,9 @@ void Initnvramtab()
 		{ "IPADDR", "validate_ipaddr", 0 },
 		{ "STATICLEASES", "validate_staticleases", 0 },
 #ifdef HAVE_CHILLI
-#ifdef HAVE_CHILLILOCAL
+	#ifdef HAVE_CHILLILOCAL
 		{ "USERLIST", "validate_userlist", 0 },
-#endif
+	#endif
 #endif
 #ifdef HAVE_RADLOCAL
 		{ "IRADIUSUSERLIST", "validate_iradius", 0 },
@@ -403,7 +403,7 @@ void Initnvramtab()
 }
 
 #ifdef HAVE_MACBIND
-#include "../../../opt/mac.h"
+	#include "../../../opt/mac.h"
 #endif
 // Added by Daniel(2004-07-29) for EZC
 static int variables_arraysize(void)
@@ -660,7 +660,7 @@ static int do_filtertable(unsigned char method, struct mime_handler *handler, ch
 }
 
 #ifdef HAVE_FREERADIUS
-#include <radiusdb.h>
+	#include <radiusdb.h>
 
 static int cert_file_out(unsigned char method, struct mime_handler *handler, char *path, webs_t stream)
 {
@@ -873,8 +873,8 @@ out:;
 #ifdef HAVE_ATH9K
 static int do_spectral_scan(unsigned char method, struct mime_handler *handler, char *p, webs_t stream)
 {
-#define json_cache "/tmp/spectral_scan.json"
-#define json_cache_timeout 2
+	#define json_cache "/tmp/spectral_scan.json"
+	#define json_cache_timeout 2
 	char *ifname = nvram_safe_get("wifi_display");
 	int phy = mac80211_get_phyidx_by_vifname(ifname);
 	char *path;
@@ -1330,16 +1330,16 @@ static struct gozila_action gozila_actions[] = {
 	{ "PPPoE_Server", "remove_chap_user", "", REFRESH, "chap_user_remove" },
 #endif
 #ifdef HAVE_CHILLI
-#ifdef HAVE_CHILLILOCAL
+	#ifdef HAVE_CHILLILOCAL
 	{ "Hotspot", "add_user", "", REFRESH, "user_add" },
 	{ "Hotspot", "remove_user", "", REFRESH, "user_remove" },
-#endif
+	#endif
 #endif
 #ifdef HAVE_RADLOCAL
 	{ "Hotspot", "add_iradius", "", REFRESH, "raduser_add" },
 #endif
 #ifdef HAVE_EOP_TUNNEL
-#ifdef HAVE_WIREGUARD
+	#ifdef HAVE_WIREGUARD
 	{ "eop-tunnel", "gen_wg_key", "", REFRESH, "gen_wg_key" },
 	{ "eop-tunnel", "gen_wg_psk", "", REFRESH, "gen_wg_psk" },
 	{ "eop-tunnel", "gen_wg_client", "", REFRESH, "gen_wg_client" },
@@ -1347,7 +1347,7 @@ static struct gozila_action gozila_actions[] = {
 	{ "eop-tunnel", "add_peer", "", REFRESH, "add_peer" },
 	{ "eop-tunnel", "del_peer", "", REFRESH, "del_peer" },
 	{ "eop-tunnel", "import_tunnel", "", REFRESH, "import_tunnel" },
-#endif
+	#endif
 	{ "eop-tunnel", "add_tunnel", "", REFRESH, "add_tunnel" },
 	{ "eop-tunnel", "del_tunnel", "", REFRESH, "del_tunnel" },
 	{ "eop-tunnel", "save", "eop", REFRESH, "tunnel_save" },
@@ -1379,13 +1379,13 @@ static struct gozila_action gozila_actions[] = {
 	{ "SetupAssistant", "security", "setupassistant", REFRESH, "set_security" },
 	{ "SetupAssistant", "keysize", "setupassistant", REFRESH, "security_save" },
 	{ "Upgrade", "get_upgrades", "firmware", REFRESH, "get_airstation_upgrades" },
-#ifdef HAVE_IAS
+	#ifdef HAVE_IAS
 	{ "InternetAtStart", "proceed", "internetatstart", REFRESH, "internetatstart" },
 	{ "InternetAtStart.ajax", "ajax", "intatstart_ajax", REFRESH, "intatstart_ajax" },
-#endif
-#ifdef HAVE_SPOTPASS
+	#endif
+	#ifdef HAVE_SPOTPASS
 	{ "Nintendo", "save", "spotpass", REFRESH, "nintendo_save" },
-#endif
+	#endif
 #endif
 	{ "Join", "Join", "wireless", REFRESH, "wireless_join" },
 #ifdef HAVE_NAS_SERVER
@@ -1402,19 +1402,19 @@ static struct gozila_action gozila_actions[] = {
 	{ "NAS", "format_raid", "nassrv", REFRESH, "format_raid" },
 	{ "NAS", "format_drive", "nassrv", REFRESH, "format_drive" },
 	{ "NAS", "raid_save", "nassrv", REFRESH, "raid_save" },
-#ifdef HAVE_ZFS
+	#ifdef HAVE_ZFS
 	{ "NAS", "zfs_scrub", "nassrv", REFRESH, "zfs_scrub" },
-#endif
+	#endif
 #endif
 #if defined(HAVE_WPS) || defined(HAVE_AOSS)
 	{ "AOSS", "save", "aoss", REFRESH, "aoss_save" },
 	{ "AOSS", "start", "aoss", REFRESH, "aoss_start" },
-#ifdef HAVE_WPS
+	#ifdef HAVE_WPS
 	{ "AOSS", "wps_register", "aoss", REFRESH, "wps_register" },
 	{ "AOSS", "wps_ap_register", "aoss", REFRESH, "wps_ap_register" },
 	{ "AOSS", "wps_forcerelease", "aoss", REFRESH, "wps_forcerelease" },
 	{ "AOSS", "wps_configure", "aoss", REFRESH, "wps_configure" },
-#endif
+	#endif
 #endif
 #ifdef HAVE_SYSCTL_EDIT
 	{ "Sysctl", "save", "sysctl", REFRESH, "sysctl_save" },
@@ -1639,7 +1639,7 @@ static struct apply_action *handle_apply_action(char *name)
 }
 
 static void do_logout(webs_t conn_fp) // static functions are not exportable,
-	// additionally this is no ej function
+// additionally this is no ej function
 {
 	send_authenticate(conn_fp);
 }
@@ -1775,20 +1775,20 @@ static void apply_cgi(webs_t wp, char_t *urlPrefix, char_t *webDir, int arg, cha
 #endif
 		killall("udhcpc", SIGKILL);
 #ifdef HAVE_TMK
-#ifdef HAVE_CAMBRIA
+	#ifdef HAVE_CAMBRIA
 		eval("/sbin/kmtdefaults.sh", "noreboot");
 		do_ej(METHOD_GET, NULL, "Reboot.asp", wp);
 		websDone(wp, 200);
 		eval("reboot");
 		eval("event", "5", "1", "15");
-#endif
+	#endif
 #endif
 #ifdef HAVE_X86
-#ifdef HAVE_ERC
+	#ifdef HAVE_ERC
 		eval("nvram", "restore", "/etc/defaults/x86ree.backup");
 		eval("reboot");
 		eval("event", "5", "1", "15");
-#endif
+	#endif
 		char drive[64];
 		char *d = getdisc();
 		sprintf(drive, "/dev/%s", d);
@@ -1824,7 +1824,7 @@ static void apply_cgi(webs_t wp, char_t *urlPrefix, char_t *webDir, int arg, cha
 		eval("rm", "-f", "/usr/local/nvram/*"); // delete nvram
 		eval("sync");
 #elif HAVE_OPENRISC
-#ifdef HAVE_ERC
+	#ifdef HAVE_ERC
 		eval("cp", "-f", "/etc/defaults/nvram.bin", "/usr/local/nvram/nvram.bin");
 		eval("sync");
 		eval("sync");
@@ -1833,7 +1833,7 @@ static void apply_cgi(webs_t wp, char_t *urlPrefix, char_t *webDir, int arg, cha
 		tim.tv_nsec = 0;
 		nanosleep(&tim, &tim2);
 		eval("event", "5", "1", "15");
-#endif
+	#endif
 		eval("mount", "/usr/local", "-o", "remount,rw");
 		eval("rm", "-f", "/tmp/nvram/*"); // delete nvram database
 		unlink("/tmp/nvram/.lock"); // delete nvram database
@@ -2174,10 +2174,10 @@ static int do_stylecss_ie(unsigned char method, struct mime_handler *handler, ch
 #ifdef HAVE_REGISTER
 static int do_trial_logo(unsigned char method, struct mime_handler *handler, char *url, webs_t stream)
 {
-#if defined(HAVE_TRIMAX) || defined(HAVE_MAKSAT) || defined(HAVE_VILIM) || defined(HAVE_TELCOM) || defined(HAVE_WIKINGS) || \
-	defined(HAVE_NEXTMEDIA)
+	#if defined(HAVE_TRIMAX) || defined(HAVE_MAKSAT) || defined(HAVE_VILIM) || defined(HAVE_TELCOM) || \
+		defined(HAVE_WIKINGS) || defined(HAVE_NEXTMEDIA)
 	return do_file(method, handler, url, stream);
-#else
+	#else
 	if (!stream->isregistered_real) {
 		return do_file(method, handler, "style/logo-trial.png", stream);
 	} else {
@@ -2187,7 +2187,7 @@ static int do_trial_logo(unsigned char method, struct mime_handler *handler, cha
 			return do_file(method, handler, url, stream);
 		}
 	}
-#endif
+	#endif
 }
 
 #endif
@@ -2635,10 +2635,10 @@ static int do_syslog(unsigned char method, struct mime_handler *handler, char *u
 		  "<script type=\"text/javascript\" src=\"common.js\"></script>\n" //
 		  "<script type=\"text/javascript\" src=\"lang_pack/english.js\"></script>\n",
 		  charset);
-#ifdef HAVE_LANGUAGE
+	#ifdef HAVE_LANGUAGE
 	if (!nvram_match("language", "english"))
 		websWrite(stream, "<script type=\"text/javascript\" src=\"lang_pack/language.js\"></script>\n");
-#endif
+	#endif
 	char *style = nvram_safe_get("router_style");
 	if (!style)
 		style = "elegant";
@@ -2732,10 +2732,10 @@ static int do_crashlog(unsigned char method, struct mime_handler *handler, char 
 		  "<script type=\"text/javascript\" src=\"common.js\"></script>\n" //
 		  "<script type=\"text/javascript\" src=\"lang_pack/english.js\"></script>\n",
 		  charset);
-#ifdef HAVE_LANGUAGE
+	#ifdef HAVE_LANGUAGE
 	if (!nvram_match("language", "english"))
 		websWrite(stream, "<script type=\"text/javascript\" src=\"lang_pack/language.js\"></script>\n");
-#endif
+	#endif
 	char *style = nvram_safe_get("router_style");
 	if (!style)
 		style = "elegant";

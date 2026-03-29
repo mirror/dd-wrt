@@ -51,18 +51,18 @@
 #include <ddnvram.h>
 
 #ifdef HAVE_OVERCLOCKING
-#ifdef HAVE_HABANERO
+	#ifdef HAVE_HABANERO
 static unsigned int qca4019_clocks[] = { 48, 200, 384, 413, 448, 500, 512, 537, 565, 597, 632, 672, 716, 768, 823, 896, 0 };
-#endif
-#ifdef HAVE_REALTEK
+	#endif
+	#ifdef HAVE_REALTEK
 static unsigned int realtek_rtl839x_clocks[] = { 425, 450, 475, 500, 525, 550, 575, 600, 625, 650, 675, 700, 725, 750, 0 };
 static unsigned int realtek_rtl838x_clocks[] = { 325, 350, 375, 400, 425, 450, 475, 500, 0 };
-#endif
-#ifdef HAVE_ALPINE
+	#endif
+	#ifdef HAVE_ALPINE
 static unsigned int alpine_clocks[] = {
 	533, 800, 1200, 1400, 1500, 1600, 1700, 1800, 1900, 2000, 0
 }; //i tested up to 2200, but it hard on the limit
-#else
+	#else
 static unsigned int type2_clocks[7] = { 200, 240, 252, 264, 300, 330, 0 };
 static unsigned int type3_clocks[3] = { 150, 200, 0 };
 static unsigned int type4_clocks[10] = { 192, 200, 216, 228, 240, 252, 264, 280, 300, 0 };
@@ -71,14 +71,14 @@ static unsigned int type8_clocks[9] = { 200, 300, 400, 500, 600, 632, 650, 662, 
 
 static unsigned int type10_clocks[9] = { 200, 266, 300, 333, 400, 480, 500, 533, 0 };
 
-#ifdef HAVE_NORTHSTAR
+		#ifdef HAVE_NORTHSTAR
 static unsigned int ns_type11_clocks[4] = { 600, 800, 900, 0 };
 static unsigned int ns_type10_clocks[4] = { 600, 800, 1000, 0 };
 static unsigned int ns_type9_clocks[3] = { 600, 800, 0 };
 static unsigned int ns_type8_clocks[6] = { 600, 800, 1000, 1200, 1400, 0 };
 static unsigned int ns_type7_clocks[4] = { 600, 800, 1000, 0 };
-#endif
-#endif
+		#endif
+	#endif
 
 //static unsigned int ipq6018_clocks_op1[] = { 864000, 1056000, 1320000, 1440000, 1608000, 1800000, 0 };
 static unsigned int ipq6018_clocks_op2[] = { 864000, 1200000, 1056000, 1320000, 1440000, 1512000, 1608000, 1800000, 0 };
@@ -91,13 +91,13 @@ EJ_VISIBLE void ej_show_clocks(webs_t wp, int argc, char_t **argv)
 	unsigned int *c;
 	char *oclk = nvram_safe_get("overclocking");
 	int div = 1;
-#if defined(HAVE_ALPINE)
+	#if defined(HAVE_ALPINE)
 	if (!*oclk) {
 		oclk = "1700";
 		nvram_set("clkfreq", "1700");
 	}
 	c = alpine_clocks;
-#elif defined(HAVE_IPQ6018)
+	#elif defined(HAVE_IPQ6018)
 	div = 1000;
 	int brand = getRouterBrand();
 	c = ipq807x_clocks;
@@ -136,13 +136,13 @@ EJ_VISIBLE void ej_show_clocks(webs_t wp, int argc, char_t **argv)
 	}
 	if (!f_exists("/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor"))
 		nvram_unset("clkfreq");
-#elif defined(HAVE_HABANERO)
+	#elif defined(HAVE_HABANERO)
 	if (!*oclk) {
 		oclk = "716";
 		nvram_set("clkfreq", "716");
 	}
 	c = qca4019_clocks;
-#elif defined(HAVE_REALTEK)
+	#elif defined(HAVE_REALTEK)
 	char *str = cpustring();
 	if (!strncmp(str, "RTL839", 6)) {
 		if (!*oclk) {
@@ -159,7 +159,7 @@ EJ_VISIBLE void ej_show_clocks(webs_t wp, int argc, char_t **argv)
 	} else
 		nvram_unset("clkfreq");
 
-#elif defined(HAVE_NORTHSTAR)
+	#elif defined(HAVE_NORTHSTAR)
 	switch (rev) {
 	case 11:
 		c = ns_type11_clocks;
@@ -180,7 +180,7 @@ EJ_VISIBLE void ej_show_clocks(webs_t wp, int argc, char_t **argv)
 		show_caption(wp, NULL, "management.clock_support", "\n");
 		return;
 	}
-#else
+	#else
 	switch (rev) {
 	case 2:
 		c = type2_clocks;
@@ -204,16 +204,16 @@ EJ_VISIBLE void ej_show_clocks(webs_t wp, int argc, char_t **argv)
 		show_caption(wp, NULL, "management.clock_support", "</div>\n");
 		return;
 	}
-#endif
+	#endif
 
 	int cclk = atoi(oclk);
 
 	int i = 0;
 
 	//check if cpu clock list contains current clkfreq
-#if defined(HAVE_IPQ6018) || defined(HAVE_HABANERO) || defined(HAVE_REALTEK) || defined(HAVE_ALPINE)
+	#if defined(HAVE_IPQ6018) || defined(HAVE_HABANERO) || defined(HAVE_REALTEK) || defined(HAVE_ALPINE)
 	int in_clock_array = 1;
-#else
+	#else
 	int in_clock_array = 0;
 
 	while (c[i] != 0) {
@@ -222,14 +222,14 @@ EJ_VISIBLE void ej_show_clocks(webs_t wp, int argc, char_t **argv)
 		}
 		i++;
 	}
-#endif
+	#endif
 
 	if (in_clock_array && nvram_exists("clkfreq")) {
-#if defined(HAVE_IPQ6018)
+	#if defined(HAVE_IPQ6018)
 		show_caption(wp, "label", "share.max_frequency", NULL);
-#else
+	#else
 		show_caption(wp, "label", "management.clock_frq", NULL);
-#endif
+	#endif
 		websWrite(wp, "<select name=\"overclocking\">\n");
 		i = 0;
 		while (c[i] != 0) {
@@ -239,12 +239,12 @@ EJ_VISIBLE void ej_show_clocks(webs_t wp, int argc, char_t **argv)
 			i++;
 		}
 		websWrite(wp, "</select>\n</div>\n");
-#if defined(HAVE_IPQ6018)
+	#if defined(HAVE_IPQ6018)
 		websWrite(wp, "<div class=\"setting\">\n");
 		show_caption(wp, "label", "share.fix_frequency", NULL);
 		websWrite(wp, "<input type=\"checkbox\" value=\"1\" name=\"_freq_fixed\" %s/></dev>\n",
 			  (nvram_default_matchi("freq_fixed", 1, 0) ? "checked=\"checked\"" : ""));
-#endif
+	#endif
 
 	} else {
 		show_caption(wp, NULL, "management.clock_support", "</div>\n");

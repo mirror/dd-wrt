@@ -23,23 +23,23 @@
 #define VALIDSOURCE 1
 
 #ifdef WEBS
-#include <webs.h>
-#include <uemf.h>
-#include <ej.h>
+	#include <webs.h>
+	#include <uemf.h>
+	#include <ej.h>
 #else /* !WEBS */
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <ctype.h>
-#include <unistd.h>
-#include <limits.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-#include <httpd.h>
-#include <errno.h>
+	#include <stdio.h>
+	#include <stdlib.h>
+	#include <string.h>
+	#include <ctype.h>
+	#include <unistd.h>
+	#include <limits.h>
+	#include <sys/types.h>
+	#include <sys/stat.h>
+	#include <sys/socket.h>
+	#include <netinet/in.h>
+	#include <arpa/inet.h>
+	#include <httpd.h>
+	#include <errno.h>
 #endif /* WEBS */
 
 #include <proto/ethernet.h>
@@ -64,11 +64,11 @@
 #ifdef FILTER_DEBUG
 extern FILE *debout;
 
-#define D(a)                        \
-	fprintf(debout, "%s\n", a); \
-	fflush(debout);
+	#define D(a)                        \
+		fprintf(debout, "%s\n", a); \
+		fflush(debout);
 #else
-#define D(a)
+	#define D(a)
 #endif
 
 /*void validate_cgi(webs_t fp)
@@ -823,14 +823,14 @@ EJ_VISIBLE void validate_portsetup(webs_t wp, char *value, struct variable *v)
 		copytonv_prefix(wp, "m2u", var);
 		copytonv_prefix(wp, "nat", var);
 		copytonv_prefix(wp, "poe_mode", var);
-#ifdef HAVE_IPTOOLS
+	#ifdef HAVE_IPTOOLS
 		copytonv_prefix(wp, "arpd", var);
-#endif
+	#endif
 		copytonv_prefix(wp, "bloop", var);
 		copytonv_prefix(wp, "isolation", var);
-#ifdef HAVE_TOR
+	#ifdef HAVE_TOR
 		copytonv_prefix(wp, "tor", var);
-#endif
+	#endif
 		copytonv_prefix(wp, "dns_redirect", var);
 		copymergetonv(wp, "%s_dns_ipaddr", var);
 		char val[64];
@@ -849,7 +849,7 @@ EJ_VISIBLE void validate_portsetup(webs_t wp, char *value, struct variable *v)
 		else
 			nvram_seti(val, 1000);
 
-#ifdef HAVE_TMK
+	#ifdef HAVE_TMK
 		sprintf(val, "%s_r1x", var);
 		nvram_set(val, websGetVar(wp, val, "0"));
 		sprintf(val, "%s_r1x_server", var);
@@ -862,7 +862,7 @@ EJ_VISIBLE void validate_portsetup(webs_t wp, char *value, struct variable *v)
 		nvram_set(val, websGetVar(wp, val, "0"));
 		sprintf(val, "%s_r1x_wl", var);
 		nvram_set(val, websGetVar(wp, val, ""));
-#endif
+	#endif
 
 		if (bridged && strcmp(bridged, "0") == 0) {
 			copymergetonv(wp, "%s_ipaddr", var);
@@ -870,20 +870,20 @@ EJ_VISIBLE void validate_portsetup(webs_t wp, char *value, struct variable *v)
 			char temp[32];
 			sprintf(temp, "%s_netmask", var);
 			nvram_set(temp, cidr_to_nm(buf, sizeof(buf), websGetVari(wp, temp, 0)));
-#if defined(HAVE_BKM) || defined(HAVE_TMK)
+	#if defined(HAVE_BKM) || defined(HAVE_TMK)
 			if (1) {
 				copytonv(wp, "nld_%s_enable", var);
 				copytonv(wp, "nld_%s_bridge", var);
 				//NSMD
 				copytonv(wp, "nsmd_%s_enable", var);
 			}
-#endif
-#if defined(HAVE_BATMANADV)
+	#endif
+	#if defined(HAVE_BATMANADV)
 			if (1) {
 				copytonv(wp, "bat_%s_enable", var);
 				copytonv(wp, "bat_%s_bridge", var);
 			}
-#endif
+	#endif
 		}
 	}
 	next = websGetVar(wp, "wan_ifname", NULL);
@@ -1113,7 +1113,7 @@ EJ_VISIBLE void validate_wl_key(webs_t wp, char *value, struct variable *v)
 }
 
 #ifndef GMODE_AFTERBURNER
-#define GMODE_AFTERBURNER 7
+	#define GMODE_AFTERBURNER 7
 #endif
 
 EJ_VISIBLE void validate_wl_wep(webs_t wp, char *value, struct variable *v)
@@ -2277,7 +2277,7 @@ EJ_VISIBLE void validate_iradius(webs_t wp, char *value, struct variable *v)
 #endif
 
 #ifdef HAVE_CHILLI
-#ifdef HAVE_CHILLILOCAL
+	#ifdef HAVE_CHILLILOCAL
 EJ_VISIBLE void validate_userlist(webs_t wp, char *value, struct variable *v)
 {
 	char username[32] = "fon_userxxx_name";
@@ -2309,7 +2309,7 @@ EJ_VISIBLE void validate_userlist(webs_t wp, char *value, struct variable *v)
 	debug_free(leases);
 }
 
-#endif
+	#endif
 #endif
 
 void filterstring(char *str, char character)
@@ -2658,17 +2658,17 @@ EJ_VISIBLE void validate_wds(webs_t wp, char *value, struct variable *v)
 			snprintf(wds_if, sizeof(wds_if), "%s.wds%d", interface, (devcount++));
 #else
 			// quick and dirty
-#ifdef HAVE_RT2880
+	#ifdef HAVE_RT2880
 			if (!strcmp(interface, "wl0"))
 				snprintf(wds_if, sizeof(wds_if), "wds%d", (devcount++) - 1);
 			else if (!strcmp(interface, "wl1"))
 				snprintf(wds_if, sizeof(wds_if), "wds%d", (devcount++) + 10 - 1);
-#else
+	#else
 			if (!strcmp(interface, "wl0"))
 				snprintf(wds_if, sizeof(wds_if), "wds0.%d", (devcount++));
 			else if (!strcmp(interface, "wl1"))
 				snprintf(wds_if, sizeof(wds_if), "wds1.%d", (devcount++));
-#endif
+	#endif
 			else
 				snprintf(wds_if, sizeof(wds_if), "wds%d.%d", get_wl_instance(interface), (devcount++));
 #endif
@@ -3476,8 +3476,8 @@ write_nvram:
 }
 
 #ifndef HAVE_MICRO
-#define PBR_LINE_SIZE \
-	sizeof("FFFFF:255.255.255.255/32:255.255.255.255/32:65536:255:0xffffffff/0xffffffff:2147483648:2147483648:2147483648:1234567890123456:255.255.255.255:unreachable:FRAGMENT:65535:65535")
+	#define PBR_LINE_SIZE \
+		sizeof("FFFFF:255.255.255.255/32:255.255.255.255/32:65536:255:0xffffffff/0xffffffff:2147483648:2147483648:2147483648:1234567890123456:255.255.255.255:unreachable:FRAGMENT:65535:65535")
 EJ_VISIBLE void validate_pbr_rule(webs_t wp, char *value, struct variable *v)
 {
 	int i, tmp = 1;

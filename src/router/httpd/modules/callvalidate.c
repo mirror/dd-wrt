@@ -20,22 +20,22 @@
  * $Id:
  */
 #ifdef WEBS
-#include <uemf.h>
-#include <ej.h>
+	#include <uemf.h>
+	#include <ej.h>
 #else /* !WEBS */
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <ctype.h>
-#include <unistd.h>
-#include <limits.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-#include <httpd.h>
-#include <errno.h>
+	#include <stdio.h>
+	#include <stdlib.h>
+	#include <string.h>
+	#include <ctype.h>
+	#include <unistd.h>
+	#include <limits.h>
+	#include <sys/types.h>
+	#include <sys/stat.h>
+	#include <sys/socket.h>
+	#include <netinet/in.h>
+	#include <arpa/inet.h>
+	#include <httpd.h>
+	#include <errno.h>
 #endif /* WEBS */
 
 #include <proto/ethernet.h>
@@ -192,9 +192,9 @@ static struct callmap validate_map[] = {
 #endif
 	{ "validate_statics", &validate_statics },
 #ifdef HAVE_CHILLI
-#ifdef HAVE_CHILLILOCAL
+	#ifdef HAVE_CHILLILOCAL
 	{ "validate_userlist", &validate_userlist },
-#endif
+	#endif
 #endif
 	{ "validate_wan_ipaddr", &validate_wan_ipaddr },
 	{ "validate_wds", &validate_wds },
@@ -344,16 +344,16 @@ static struct callmap gozila_map[] = {
 	{ "chap_user_remove", &chap_user_remove },
 #endif
 #ifdef HAVE_CHILLI
-#ifdef HAVE_CHILLILOCAL
+	#ifdef HAVE_CHILLILOCAL
 	{ "user_add", &user_add },
 	{ "user_remove", &user_remove },
-#endif
+	#endif
 #endif
 #ifdef HAVE_RADLOCAL
 	{ "raduser_add", &raduser_add },
 #endif
 #ifdef HAVE_EOP_TUNNEL
-#ifdef HAVE_WIREGUARD
+	#ifdef HAVE_WIREGUARD
 	{ "gen_wg_key", &gen_wg_key },
 	{ "gen_wg_psk", &gen_wg_psk },
 	{ "gen_wg_client", &gen_wg_client },
@@ -361,7 +361,7 @@ static struct callmap gozila_map[] = {
 	{ "add_peer", &add_peer },
 	{ "del_peer", &del_peer },
 	{ "import_tunnel", &import_tunnel },
-#endif
+	#endif
 	{ "add_tunnel", &add_tunnel },
 	{ "del_tunnel", &del_tunnel },
 	{ "tunnel_save", &tunnel_save },
@@ -393,13 +393,13 @@ static struct callmap gozila_map[] = {
 	{ "set_security", &set_security },
 	{ "security_save", &security_save },
 	{ "get_airstation_upgrades", &get_airstation_upgrades },
-#ifdef HAVE_IAS
+	#ifdef HAVE_IAS
 	{ "internetatstart", &internetatstart },
 	{ "intatstart_ajax", &intatstart_ajax },
-#endif
-#ifdef HAVE_SPOTPASS
+	#endif
+	#ifdef HAVE_SPOTPASS
 	{ "nintendo_save", &nintendo_save },
-#endif
+	#endif
 #endif
 	{ "wireless_join", &wireless_join },
 #ifdef HAVE_NAS_SERVER
@@ -413,19 +413,19 @@ static struct callmap gozila_map[] = {
 	{ "format_raid", &format_raid },
 	{ "format_drive", &format_drive },
 	{ "raid_save", &raid_save },
-#ifdef HAVE_ZFS
+	#ifdef HAVE_ZFS
 	{ "zfs_scrub", &zfs_scrub },
-#endif
+	#endif
 #endif
 #if defined(HAVE_WPS) || defined(HAVE_AOSS)
 	{ "aoss_save", &aoss_save },
 	{ "aoss_start", &aoss_start },
-#ifdef HAVE_WPS
+	#ifdef HAVE_WPS
 	{ "wps_register", &wps_register },
 	{ "wps_ap_register", &wps_ap_register },
 	{ "wps_forcerelease", &wps_forcerelease },
 	{ "wps_configure", &wps_configure },
-#endif
+	#endif
 #endif
 #ifdef HAVE_SYSCTL_EDIT
 	{ "sysctl_save", &sysctl_save },

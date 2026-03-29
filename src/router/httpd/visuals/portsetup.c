@@ -241,9 +241,9 @@ EJ_VISIBLE void ej_portsetup(webs_t wp, int argc, char_t **argv)
 
 		show_ipnetmask(wp, var);
 #if defined(HAVE_BKM) || defined(HAVE_TMK)
-#ifdef HAVE_REGISTER
+	#ifdef HAVE_REGISTER
 		if (registered_has_cap(21))
-#endif
+	#endif
 		{
 			char nld_enable[32], nld_bridge[32];
 			char word[256];
@@ -282,9 +282,9 @@ EJ_VISIBLE void ej_portsetup(webs_t wp, int argc, char_t **argv)
 		}
 #endif
 #if defined(HAVE_BATMANADV)
-#ifdef HAVE_REGISTER
+	#ifdef HAVE_REGISTER
 		if (registered_has_cap(19))
-#endif
+	#endif
 		{
 			char bat_enable[32], bat_bridge[32];
 			char word[256];

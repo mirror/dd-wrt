@@ -21,18 +21,18 @@
  */
 #ifdef HAVE_NAS_SERVER
 
-#define VISUALSOURCE 1
+	#define VISUALSOURCE 1
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <unistd.h>
-#include <stdarg.h>
+	#include <stdio.h>
+	#include <stdlib.h>
+	#include <string.h>
+	#include <unistd.h>
+	#include <stdarg.h>
 
-#include <broadcom.h>
+	#include <broadcom.h>
 
-#include <samba3.h>
-#include "fs_common.h"
+	#include <samba3.h>
+	#include "fs_common.h"
 void show_caption_pp(webs_t wp, const char *class, const char *caption, const char *pre, const char *post);
 void show_caption_simple(webs_t wp, const char *caption);
 void show_caption(webs_t wp, const char *class, const char *caption, const char *ext);

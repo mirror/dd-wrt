@@ -1,7 +1,7 @@
 #include "common.h"
 
 #ifdef HAVE_OPENSSL
-#include <openssl/err.h>
+	#include <openssl/err.h>
 BIO *bio_err = 0;
 #endif
 
@@ -78,9 +78,9 @@ char *password;
 	/* Load the CAs we trust */
 	if (!(SSL_CTX_load_verify_locations(ctx, CA_LIST, 0)))
 		berr_exit("Can't read CA list");
-#if (OPENSSL_VERSION_NUMBER < 0x00905100L)
+	#if (OPENSSL_VERSION_NUMBER < 0x00905100L)
 	SSL_CTX_set_verify_depth(ctx, 1);
-#endif
+	#endif
 
 	return ctx;
 }

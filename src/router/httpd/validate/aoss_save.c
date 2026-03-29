@@ -1,43 +1,43 @@
 #if defined(HAVE_AOSS) || defined(HAVE_WPS)
-#define VALIDSOURCE 1
+	#define VALIDSOURCE 1
 
-#ifdef WEBS
-#include <webs.h>
-#include <uemf.h>
-#include <ej.h>
-#else /* !WEBS */
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <ctype.h>
-#include <unistd.h>
-#include <limits.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-#include <httpd.h>
-#include <errno.h>
-#endif /* WEBS */
+	#ifdef WEBS
+		#include <webs.h>
+		#include <uemf.h>
+		#include <ej.h>
+	#else /* !WEBS */
+		#include <stdio.h>
+		#include <stdlib.h>
+		#include <string.h>
+		#include <ctype.h>
+		#include <unistd.h>
+		#include <limits.h>
+		#include <sys/types.h>
+		#include <sys/stat.h>
+		#include <sys/socket.h>
+		#include <netinet/in.h>
+		#include <arpa/inet.h>
+		#include <httpd.h>
+		#include <errno.h>
+	#endif /* WEBS */
 
-#include <proto/ethernet.h>
-#include <fcntl.h>
-#include <signal.h>
-#include <time.h>
-#include <sys/klog.h>
-#include <sys/wait.h>
-#include <dd_defs.h>
-#include <cy_conf.h>
-// #ifdef EZC_SUPPORT
-#include <ezc.h>
-// #endif
-#include <broadcom.h>
-#include <wlutils.h>
-#include <netdb.h>
-#include <utils.h>
-#include <stdarg.h>
-#include <sha1.h>
+	#include <proto/ethernet.h>
+	#include <fcntl.h>
+	#include <signal.h>
+	#include <time.h>
+	#include <sys/klog.h>
+	#include <sys/wait.h>
+	#include <dd_defs.h>
+	#include <cy_conf.h>
+	// #ifdef EZC_SUPPORT
+	#include <ezc.h>
+	// #endif
+	#include <broadcom.h>
+	#include <wlutils.h>
+	#include <netdb.h>
+	#include <utils.h>
+	#include <stdarg.h>
+	#include <sha1.h>
 
 struct variable **variables;
 
@@ -48,12 +48,12 @@ void aoss_save(webs_t wp)
 	nvram_set("aoss_aes", websGetVar(wp, "aoss_aes", "0"));
 	nvram_set("aoss_tkip", websGetVar(wp, "aoss_tkip", "0"));
 	nvram_set("aoss_wep", websGetVar(wp, "aoss_wep", "0"));
-#ifdef HAVE_WPS
+	#ifdef HAVE_WPS
 	nvram_set("wps_enabled", websGetVar(wp, "wps_enabled", "0"));
 	char *pin = websGetVar(wp, "wps_ap_pin", NULL);
 	if (pin)
 		nvram_set("pincode", pin);
-#endif
+	#endif
 	// check if at least one value was set
 	if (nvram_matchi("aoss_aes", 0) && nvram_matchi("aoss_tkip", 0) && nvram_matchi("aoss_wep", 0)) {
 		nvram_seti("aoss_aes", 1);

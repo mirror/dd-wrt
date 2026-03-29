@@ -76,8 +76,8 @@ do_upgrade_cgi(unsigned char method, struct mime_handler *handler, char *url,
 static int
 // sys_upgrade(char *url, FILE *stream, int *total)
 sys_upgrade(char *url, webs_t stream, size_t *total, int type) // jimmy,
-	// https,
-	// 8/6/2003
+// https,
+// 8/6/2003
 {
 #ifndef ANTI_FLASH
 	char upload_fifo[] = "/tmp/uploadXXXXXX";
@@ -217,8 +217,8 @@ err:
 static int
 // do_upgrade_post(char *url, FILE *stream, int len, char *boundary)
 do_upgrade_post(char *url, webs_t stream, size_t len, char *boundary) // jimmy,
-	// https,
-	// 8/6/2003
+// https,
+// 8/6/2003
 {
 	killall("udhcpc", SIGKILL);
 #ifndef ANTI_FLASH

@@ -20,17 +20,17 @@
  * $Id:
  */
 #if defined(HAVE_MINIDLNA) || defined(HAVE_NAS_SERVER)
-#define VISUALSOURCE 1
+	#define VISUALSOURCE 1
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <unistd.h>
-#include <stdarg.h>
+	#include <stdio.h>
+	#include <stdlib.h>
+	#include <string.h>
+	#include <unistd.h>
+	#include <stdarg.h>
 
-#include <broadcom.h>
+	#include <broadcom.h>
 
-#include "fs_common.h"
+	#include "fs_common.h"
 
 static struct fsentry *parsefsentry(char line[256])
 {

@@ -196,10 +196,10 @@ static struct menucontext *init_menu(webs_t wp)
 	static char *wdsmenu[4] = { "Wireless_WDS-wlan0.asp", "Wireless_WDS-wlan1.asp", "Wireless_WDS-wlan2.asp",
 				    "Wireless_WDS-wlan3.asp" };
 	static char *tran_wdsmenu[4] = { "wirelessWds0", "wirelessWds1", "wirelessWds2", "wirelessWds3" };
-#if defined(HAVE_BUFFALO) && !defined(HAVE_ATH9K)
+	#if defined(HAVE_BUFFALO) && !defined(HAVE_ATH9K)
 	m->menu[MENU_WIRELESS][8] = NULL;
 	m->menuname[MENU_WIRELESS][9] = NULL;
-#else
+	#else
 	// fill up WDS
 	int ifcount = getdevicecount();
 	if (ifcount > 4)
@@ -223,11 +223,11 @@ static struct menucontext *init_menu(webs_t wp)
 		}
 		count++;
 	}
-#endif
+	#endif
 #else
-#ifdef HAVE_ERC
+	#ifdef HAVE_ERC
 	if (wp->userid) {
-#endif
+	#endif
 
 		int ifcount = get_wl_instances();
 		int a;
@@ -251,9 +251,9 @@ static struct menucontext *init_menu(webs_t wp)
 				m->menuname[MENU_WIRELESS][a * 2 + 9] = tran_wdsmenu[a];
 			}
 		}
-#ifdef HAVE_ERC
+	#ifdef HAVE_ERC
 	}
-#endif
+	#endif
 #endif
 
 #ifdef HAVE_ANTAIRA_MINI
@@ -290,9 +290,9 @@ static struct menucontext *init_menu(webs_t wp)
 	m->menu[MENU_QOS][6] = NULL; // applications/NAT/QOS - p2p
 
 	//m->menu[MENU_ADMIN][1] = NULL;        // admin - keepalive
-#if !defined(HAVE_PERU)
+	#if !defined(HAVE_PERU)
 	m->menu[MENU_ADMIN][3] = NULL; // admin - diag
-#endif
+	#endif
 	//m->menu[MENU_ADMIN][4] = NULL;        // admin - wol
 
 	m->menu[MENU_STATUS][4] = NULL; // status - sputnik
@@ -333,11 +333,11 @@ EJ_VISIBLE void ej_do_menu(webs_t wp, int argc, char_t **argv)
 #endif
 
 #ifdef HAVE_MADWIFI
-#ifdef HAVE_NOWIFI
+	#ifdef HAVE_NOWIFI
 	int wifi = 0;
-#else
+	#else
 	int wifi = haswifi();
-#endif
+	#endif
 #endif
 #ifdef HAVE_MADWIFI
 	int wimaxwifi = 0;
@@ -408,14 +408,14 @@ EJ_VISIBLE void ej_do_menu(webs_t wp, int argc, char_t **argv)
 #ifdef HAVE_MADWIFI
 				if (!wifi && !strncmp(m->menu[i][j], "Wireless_Basic.asp", 8))
 					goto skip;
-#ifndef HAVE_SUPERCHANNEL
+	#ifndef HAVE_SUPERCHANNEL
 				if (!strcmp_pnt(m->menu[i][j],
 						"SuperChannel.asp")) // jump over
 					// PPTP in
 					// micro
 					// build
 					goto skip;
-#else
+	#else
 				if (!strcmp_pnt(m->menu[i][j],
 						"SuperChannel.asp") && (wp->issuperchannel || !wifi)) // jump
 					// over
@@ -424,7 +424,7 @@ EJ_VISIBLE void ej_do_menu(webs_t wp, int argc, char_t **argv)
 					// micro
 					// build
 					goto skip;
-#endif
+	#endif
 #else
 				if (!strcmp_pnt(m->menu[i][j],
 						"SuperChannel.asp")) // jump over
@@ -454,7 +454,7 @@ EJ_VISIBLE void ej_do_menu(webs_t wp, int argc, char_t **argv)
 					// micro
 					// build
 					goto skip;
-#ifndef HAVE_USTEER
+	#ifndef HAVE_USTEER
 				if (!strcmp_pnt(m->menu[i][j],
 						"Roaming.asp")) // jump
 					// over
@@ -463,7 +463,7 @@ EJ_VISIBLE void ej_do_menu(webs_t wp, int argc, char_t **argv)
 					// micro
 					// build
 					goto skip;
-#else
+	#else
 				if (!wifi && !strcmp_pnt(m->menu[i][j],
 							 "Roaming.asp")) // jump
 					// over
@@ -472,7 +472,7 @@ EJ_VISIBLE void ej_do_menu(webs_t wp, int argc, char_t **argv)
 					// micro
 					// build
 					goto skip;
-#endif
+	#endif
 				if (!strcmp_pnt(m->menu[i][j], "Wireless_radauth.asp"))
 					goto skip;
 				if (!wifi && !strncmp(m->menu[i][j], "Wireless_MAC.asp", 8))

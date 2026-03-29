@@ -49,7 +49,7 @@
 #include <sys/ioctl.h>
 #include <net/if.h>
 #ifdef __UCLIBC__
-#include <error.h>
+	#include <error.h>
 #endif
 #include <signal.h>
 
@@ -121,9 +121,9 @@ EJ_VISIBLE void ej_wireless_filter_table(webs_t wp, int argc, char_t **argv)
 	int item;
 
 #if LANGUAGE == JAPANESE
-#define BOX_LEN 20
+	#define BOX_LEN 20
 #else
-#define BOX_LEN 17
+	#define BOX_LEN 17
 #endif
 
 	char *mac_mess = "MAC";
@@ -733,13 +733,13 @@ void internal_ej_show_wpa_setting(webs_t wp, int argc, char_t **argv, char *pref
 		v_show_wep = 1;
 	if (strstr(security_mode, "radius"))
 		v_show_radius = 1;
-#ifdef HAVE_WPA_SUPPLICANT
-#ifndef HAVE_MICRO
+	#ifdef HAVE_WPA_SUPPLICANT
+		#ifndef HAVE_MICRO
 	if (strstr(security_mode, "8021X")) {
 		v_show_80211x = 1;
 	}
-#endif
-#endif
+		#endif
+	#endif
 
 	if ((strstr(security_mode, "wpa") || strstr(akm, "psk") || strstr(akm, "psk2") || strstr(akm, "psk2-sha256") ||
 	     strstr(akm, "psk3") || strstr(akm, "wpa") || strstr(akm, "wpa2") || strstr(akm, "wpa2-sha256") ||
@@ -778,14 +778,14 @@ void internal_ej_show_wpa_setting(webs_t wp, int argc, char_t **argv, char *pref
 	if (v_show_preshared || v_show_owe || v_show_wparadius) {
 		if (is_ap(prefix)) {
 			//only for madwifi, ath9k, ath10k, mwlwifi etc. right now.
-#ifdef HAVE_80211W
+	#ifdef HAVE_80211W
 			if (is_mac80211(prefix) && (strstr(akm, "wpa2") || strstr(akm, "psk2"))) {
 				char mfp[64];
 				sprintf(mfp, "%s_mfp", prefix);
 				nvram_default_get(mfp, "0");
 				showAutoOption(wp, "wpa.mfp", mfp, strstr(akm, "psk3") || strstr(akm, "wpa3"));
 			}
-#endif
+	#endif
 			char eap_key_retries[64];
 			sprintf(eap_key_retries, "%s_disable_eapol_key_retries", prefix);
 			showRadio(wp, "wpa.eapol_key_retries", eap_key_retries);
@@ -795,20 +795,20 @@ void internal_ej_show_wpa_setting(webs_t wp, int argc, char_t **argv, char *pref
 		show_wep(wp, prefix);
 	if (v_show_radius)
 		show_radius(wp, prefix, 1, 0);
-#ifdef HAVE_WPA_SUPPLICANT
-#ifndef HAVE_MICRO
+	#ifdef HAVE_WPA_SUPPLICANT
+		#ifndef HAVE_MICRO
 	if (v_show_80211x) {
 		show_authtable(wp, prefix, 1);
 		show_80211X(wp, prefix);
 	}
-#endif
-#endif
-#ifdef HAVE_SSID_PROTECTION
+		#endif
+	#endif
+	#ifdef HAVE_SSID_PROTECTION
 	if (has_ssid_protection(akm, security_mode)) {
 		sprintf(var, "%s_ssid_protection", prefix);
 		showRadioDefaultOff(wp, "wpa.ssid_protection", var);
 	}
-#endif
+	#endif
 	if (v_show_preshared || v_show_owe || v_show_wparadius)
 		show_addconfig(wp, prefix);
 #else
@@ -840,13 +840,13 @@ void internal_ej_show_wpa_setting(webs_t wp, int argc, char_t **argv, char *pref
 	} else if (strstr(security_mode, "radius")) {
 		show_radius(wp, prefix, 1, 0);
 	}
-#ifdef HAVE_WPA_SUPPLICANT
-#ifndef HAVE_MICRO
+	#ifdef HAVE_WPA_SUPPLICANT
+		#ifndef HAVE_MICRO
 	else if (strstr(security_mode, "8021X")) {
 		show_80211X(wp, prefix);
 	}
-#endif
-#endif
+		#endif
+	#endif
 #endif
 
 #ifdef HAVE_MADWIFI

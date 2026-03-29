@@ -21,16 +21,16 @@
  */
 #ifdef HAVE_STATUS_GPIO
 
-#define VISUALSOURCE 1
+	#define VISUALSOURCE 1
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <unistd.h>
-#include <stdarg.h>
+	#include <stdio.h>
+	#include <stdlib.h>
+	#include <string.h>
+	#include <unistd.h>
+	#include <stdarg.h>
 
-#include <broadcom.h>
-#include <cymac.h>
+	#include <broadcom.h>
+	#include <cymac.h>
 
 EJ_VISIBLE void ej_show_status_gpio_output(webs_t wp, int argc, char_t **argv)
 {

@@ -87,7 +87,7 @@ static char *getfsname(char *drive)
 	SOURCE *s;
 	SECTION section;
 	char *fs;
-#if defined(HAVE_X86) || defined(HAVE_NEWPORT) || defined(HAVE_RB600) || defined(HAVE_EROUTER) && !defined(HAVE_WDR4900)
+	#if defined(HAVE_X86) || defined(HAVE_NEWPORT) || defined(HAVE_RB600) || defined(HAVE_EROUTER) && !defined(HAVE_WDR4900)
 	char *root = getdisc();
 	if (strlen(root) == 3) { // sdX
 		char tmp[64];
@@ -102,7 +102,7 @@ static char *getfsname(char *drive)
 		if (!strncmp(drive, tmp, 12))
 			goto err;
 	}
-#endif
+	#endif
 	if (stat(drive, &sb) < 0) {
 		goto err;
 	}
@@ -243,18 +243,18 @@ static char *getfsname(char *drive)
 	}
 
 ret:;
-#if defined(HAVE_X86) || defined(HAVE_NEWPORT) || defined(HAVE_RB600) || defined(HAVE_EROUTER) && !defined(HAVE_WDR4900)
+	#if defined(HAVE_X86) || defined(HAVE_NEWPORT) || defined(HAVE_RB600) || defined(HAVE_EROUTER) && !defined(HAVE_WDR4900)
 	free(root);
-#endif
+	#endif
 	set_discmessage_on();
 
 	/* finish it up */
 	close_source(s);
 	return retvalue;
 err:;
-#if defined(HAVE_X86) || defined(HAVE_NEWPORT) || defined(HAVE_RB600) || defined(HAVE_EROUTER) && !defined(HAVE_WDR4900)
+	#if defined(HAVE_X86) || defined(HAVE_NEWPORT) || defined(HAVE_RB600) || defined(HAVE_EROUTER) && !defined(HAVE_WDR4900)
 	free(root);
-#endif
+	#endif
 	return NULL;
 }
 
@@ -380,10 +380,10 @@ EJ_VISIBLE void ej_show_raid(webs_t wp, int argc, char_t **argv)
 		if (btrfs)
 			websWrite(wp, "document.write(\"<option value=\\\"btrfs\\\" %s >BTRFS</option>\");\n",
 				  !strcmp(raidtype, "btrfs") ? "selected=\\\"selected\\\"" : "");
-#ifdef HAVE_ZFS
+	#ifdef HAVE_ZFS
 		websWrite(wp, "document.write(\"<option value=\\\"zfs\\\" %s >ZFS</option>\");\n",
 			  !strcmp(raidtype, "zfs") ? "selected=\\\"selected\\\"" : "");
-#endif
+	#endif
 		websWrite(wp, "//]]>\n</script></select>\n"
 			      "</td>\n");
 		if (!strcmp(raidtype, "md")) {
@@ -494,7 +494,7 @@ EJ_VISIBLE void ej_show_raid(webs_t wp, int argc, char_t **argv)
 					      "</td>\n");
 			}
 		}
-#ifdef HAVE_ZFS
+	#ifdef HAVE_ZFS
 		if (!strcmp(raidtype, "zfs")) {
 			websWrite(wp, "<td>\n");
 			websWrite(wp, "<select name=\"raidlevel%d\">\n", i);
@@ -565,7 +565,7 @@ EJ_VISIBLE void ej_show_raid(webs_t wp, int argc, char_t **argv)
 				i);
 			websWrite(wp, "</td>\n");
 		}
-#endif
+	#endif
 		websWrite(
 			wp,
 			"<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<td class=\\\"center\\\" title=\\\"\" + sbutton.del + \"\\\"><input class=\\\"remove\\\" aria-label=\\\"\" + sbutton.del + \"\\\" type=\\\"button\\\" onclick=\\\"raid_del_submit(this.form,%d)\\\" />\");\n//]]>\n</script>\n",
@@ -585,12 +585,12 @@ EJ_VISIBLE void ej_show_raid(webs_t wp, int argc, char_t **argv)
 		char var[128];
 		const char *next;
 		int midx = 0;
-#ifdef HAVE_X86
+	#ifdef HAVE_X86
 		char check[64];
 		char *d = getdisc();
 		sprintf(check, "/dev/%s", d);
 		free(d);
-#endif
+	#endif
 		foreach(var, raid, next) {
 			websWrite(wp, "<tr>\n"
 				      "<td>\n");
@@ -601,10 +601,10 @@ EJ_VISIBLE void ej_show_raid(webs_t wp, int argc, char_t **argv)
 					"<option value=\"none\"><script type=\"text/javascript\">Capture(share.none)</script></option>\n");
 			if (drives) {
 				foreach(drive, drives, dnext) {
-#ifdef HAVE_X86
+	#ifdef HAVE_X86
 					if (!strcmp(drive, check))
 						continue;
-#endif
+	#endif
 					websWrite(wp, "<option value=\"%s\" %s >%s</option>\n", drive,
 						  !strcmp(drive, var) ? "selected=\"selected\"" : "", drive);
 				}

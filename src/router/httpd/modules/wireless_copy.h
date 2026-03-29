@@ -85,12 +85,12 @@
  * To minimise problems in user space, I might remove those headers at some
  * point. Jean II 
  */
-#include <linux/types.h> /* for "caddr_t" et al */
-#include <linux/socket.h> /* for "struct sockaddr" et al */
-#include <linux/if.h> /* for IFNAMSIZ and co... */
+	#include <linux/types.h> /* for "caddr_t" et al */
+	#include <linux/socket.h> /* for "struct sockaddr" et al */
+	#include <linux/if.h> /* for IFNAMSIZ and co... */
 #else
-#include <sys/types.h>
-#include <net/if.h>
+	#include <sys/types.h>
+	#include <net/if.h>
 typedef __uint32_t __u32;
 typedef __int32_t __s32;
 typedef __uint16_t __u16;
@@ -100,9 +100,9 @@ typedef __uint8_t __u8;
 typedef __uint32_t __le32;
 typedef __uint16_t __le16;
 
-#ifndef __user
-#define __user
-#endif /* __user */
+	#ifndef __user
+		#define __user
+	#endif /* __user */
 #endif
 
 /***************************** VERSION *****************************/
@@ -403,7 +403,7 @@ typedef __uint16_t __le16;
  */
 #define SIOCIWFIRST 0x8B00
 #define SIOCIWLAST SIOCIWLASTPRIV /* 0x8BFF */
-#define IW_IOCTL_IDX(cmd) ((cmd)-SIOCIWFIRST)
+#define IW_IOCTL_IDX(cmd) ((cmd) - SIOCIWFIRST)
 
 /*
  * Even : get (world access), odd : set (root access) 
@@ -454,7 +454,7 @@ typedef __uint16_t __le16;
 				 * (struct iw_pmkid_cand) */
 
 #define IWEVFIRST 0x8C00
-#define IW_EVENT_IDX(cmd) ((cmd)-IWEVFIRST)
+#define IW_EVENT_IDX(cmd) ((cmd) - IWEVFIRST)
 
 /*
  * ------------------------- PRIVATE INFO ------------------------- 

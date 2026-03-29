@@ -21,34 +21,34 @@
  */
 #ifdef HAVE_FREERADIUS
 
-#define VISUALSOURCE 1
+	#define VISUALSOURCE 1
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <stdarg.h>
-#include <string.h>
-#include <unistd.h>
-#include <ctype.h>
-#include <signal.h>
-#include <time.h>
+	#include <stdio.h>
+	#include <stdlib.h>
+	#include <stdarg.h>
+	#include <string.h>
+	#include <unistd.h>
+	#include <ctype.h>
+	#include <signal.h>
+	#include <time.h>
 
-#include <sys/ioctl.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <sys/socket.h>
-#include <sys/statfs.h>
-#include <sys/sysinfo.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-#include <broadcom.h>
+	#include <sys/ioctl.h>
+	#include <sys/types.h>
+	#include <sys/stat.h>
+	#include <sys/socket.h>
+	#include <sys/statfs.h>
+	#include <sys/sysinfo.h>
+	#include <netinet/in.h>
+	#include <arpa/inet.h>
+	#include <broadcom.h>
 
-#include <wlutils.h>
-#include <bcmparams.h>
-#include <dirent.h>
-#include <netdb.h>
-#include <utils.h>
-#include <wlutils.h>
-#include <ddnvram.h>
+	#include <wlutils.h>
+	#include <bcmparams.h>
+	#include <dirent.h>
+	#include <netdb.h>
+	#include <utils.h>
+	#include <wlutils.h>
+	#include <ddnvram.h>
 
 EJ_VISIBLE void ej_show_certificate_status(webs_t wp, int argc, char_t **argv)
 {
@@ -80,7 +80,7 @@ EJ_VISIBLE void ej_show_certificate_status(webs_t wp, int argc, char_t **argv)
 	}
 }
 
-#include <radiusdb.h>
+	#include <radiusdb.h>
 
 /*struct radiususer {
 	unsigned int fieldlen;

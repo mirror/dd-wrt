@@ -20,47 +20,47 @@
  * $Id:
  */
 #ifdef HAVE_MADWIFI
-#define VISUALSOURCE 1
-#include <stdio.h>
-#include <stdlib.h>
-#include <stdarg.h>
-#include <string.h>
-#include <unistd.h>
-#include <ctype.h>
-#include <signal.h>
+	#define VISUALSOURCE 1
+	#include <stdio.h>
+	#include <stdlib.h>
+	#include <stdarg.h>
+	#include <string.h>
+	#include <unistd.h>
+	#include <ctype.h>
+	#include <signal.h>
 
-#include <sys/ioctl.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <sys/socket.h>
-#include <sys/statfs.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-#include <broadcom.h>
+	#include <sys/ioctl.h>
+	#include <sys/types.h>
+	#include <sys/stat.h>
+	#include <sys/socket.h>
+	#include <sys/statfs.h>
+	#include <netinet/in.h>
+	#include <arpa/inet.h>
+	#include <broadcom.h>
 
-#include <wlutils.h>
-#include <bcmparams.h>
-#include <dirent.h>
-#include <netdb.h>
-#include <utils.h>
-#include <wlutils.h>
-#include <ddnvram.h>
+	#include <wlutils.h>
+	#include <bcmparams.h>
+	#include <dirent.h>
+	#include <netdb.h>
+	#include <utils.h>
+	#include <wlutils.h>
+	#include <ddnvram.h>
 
-#include "wireless_generic.c"
+	#include "wireless_generic.c"
 
-#include <sys/types.h>
-#include <sys/file.h>
-#include <sys/ioctl.h>
-#include <sys/socket.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <stdint.h>
-#include <ctype.h>
-#include <getopt.h>
-#include <err.h>
+	#include <sys/types.h>
+	#include <sys/file.h>
+	#include <sys/ioctl.h>
+	#include <sys/socket.h>
+	#include <stdio.h>
+	#include <stdlib.h>
+	#include <string.h>
+	#include <stdint.h>
+	#include <ctype.h>
+	#include <getopt.h>
+	#include <err.h>
 
-#ifndef __UCLIBC__
+	#ifndef __UCLIBC__
 /* Convenience types.  */
 typedef unsigned char __u_char;
 typedef unsigned short int __u_short;
@@ -74,11 +74,11 @@ typedef signed short int __int16_t;
 typedef unsigned short int __uint16_t;
 typedef signed int __int32_t;
 typedef unsigned int __uint32_t;
-#endif
-#include "wireless_copy.h"
-#include "net80211/ieee80211.h"
-#include "net80211/ieee80211_crypto.h"
-#include "net80211/ieee80211_ioctl.h"
+	#endif
+	#include "wireless_copy.h"
+	#include "net80211/ieee80211.h"
+	#include "net80211/ieee80211_crypto.h"
+	#include "net80211/ieee80211_ioctl.h"
 
 unsigned char madbuf[24 * 1024];
 
@@ -442,9 +442,9 @@ EJ_VISIBLE void ej_show_acktiming(webs_t wp, int argc, char_t **argv)
 
 extern long long wifi_getrate(char *ifname);
 
-#define KILO 1000
-#define MEGA 1000000
-#define GIGA 1000000000
+	#define KILO 1000
+	#define MEGA 1000000
+	#define GIGA 1000000000
 
 EJ_VISIBLE void ej_get_currate(webs_t wp, int argc, char_t **argv)
 {

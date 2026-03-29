@@ -50,15 +50,15 @@
 #include <ddnvram.h>
 
 #if !defined(HAVE_MICRO) && !defined(__UCLIBC__)
-#include <pthread.h>
+	#include <pthread.h>
 static char *lastlock;
 static char *lastunlock;
-#define lock() pthread_mutex_lock(&wp->p->mutex_contr)
-#define unlock() pthread_mutex_unlock(&wp->p->mutex_contr)
+	#define lock() pthread_mutex_lock(&wp->p->mutex_contr)
+	#define unlock() pthread_mutex_unlock(&wp->p->mutex_contr)
 #else
-#define mutex_init()
-#define lock()
-#define unlock()
+	#define mutex_init()
+	#define lock()
+	#define unlock()
 #endif
 
 EJ_VISIBLE void ej_dumpip_conntrack(webs_t wp, int argc, char_t **argv)

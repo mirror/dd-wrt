@@ -61,28 +61,28 @@ EJ_VISIBLE void ej_show_qos_aqd(webs_t wp, int argc, char_t **argv)
 		  "<select name=\"qos_aqd\">\n"
 		  "<option value=\"sfq\" %s><script type=\"text/javascript\">Capture(qos.aqd_sfq)</script></option>\n",
 		  strcmp(aqd, "sfq") == 0 ? "selected" : "");
-#ifdef HAVE_CODEL
+	#ifdef HAVE_CODEL
 	websWrite(wp, "<option value=\"codel\" %s><script type=\"text/javascript\">Capture(qos.aqd_codel)</script></option>\n",
 		  strcmp(aqd, "codel") == 0 ? "selected" : "");
-#endif
-#ifdef HAVE_FQ_CODEL
+	#endif
+	#ifdef HAVE_FQ_CODEL
 	websWrite(wp, "<option value=\"fq_codel\" %s><script type=\"text/javascript\">Capture(qos.aqd_fqcodel)</script></option>\n",
 		  strcmp(aqd, "fq_codel") == 0 ? "selected" : "");
-#endif
-#ifdef HAVE_FQ_CODEL_FAST
+	#endif
+	#ifdef HAVE_FQ_CODEL_FAST
 	websWrite(
 		wp,
 		"<option value=\"fq_codel_fast\" %s><script type=\"text/javascript\">Capture(qos.aqd_fqcodel_fast)</script></option>\n",
 		strcmp(aqd, "fq_codel_fast") == 0 ? "selected" : "");
-#endif
-#ifdef HAVE_PIE
+	#endif
+	#ifdef HAVE_PIE
 	websWrite(wp, "<option value=\"pie\" %s><script type=\"text/javascript\">Capture(qos.aqd_pie)</script></option>\n",
 		  strcmp(aqd, "pie") == 0 ? "selected" : "");
-#endif
-#ifdef HAVE_CAKE
+	#endif
+	#ifdef HAVE_CAKE
 	websWrite(wp, "<option value=\"cake\" %s><script type=\"text/javascript\">Capture(qos.aqd_cake)</script></option>\n",
 		  strcmp(aqd, "cake") == 0 ? "selected" : "");
-#endif
+	#endif
 
 	websWrite(wp, "</select>\n</div>\n");
 

@@ -21,35 +21,35 @@
  * $Id:
  */
 #ifdef HAVE_ATH9K
-#define VISUALSOURCE 1
-#include <stdio.h>
-#include <stdlib.h>
-#include <stdarg.h>
-#include <string.h>
-#include <unistd.h>
-#include <ctype.h>
-#include <signal.h>
-#include <sys/types.h>
-#include <sys/file.h>
-#include <sys/ioctl.h>
-#include <sys/socket.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <stdint.h>
-#include <ctype.h>
-#include <getopt.h>
-#include <err.h>
+	#define VISUALSOURCE 1
+	#include <stdio.h>
+	#include <stdlib.h>
+	#include <stdarg.h>
+	#include <string.h>
+	#include <unistd.h>
+	#include <ctype.h>
+	#include <signal.h>
+	#include <sys/types.h>
+	#include <sys/file.h>
+	#include <sys/ioctl.h>
+	#include <sys/socket.h>
+	#include <stdio.h>
+	#include <stdlib.h>
+	#include <string.h>
+	#include <stdint.h>
+	#include <ctype.h>
+	#include <getopt.h>
+	#include <err.h>
 
-#include <broadcom.h>
-#include <bcmparams.h>
-#include <utils.h>
-#include <wlutils.h>
-#include "wireless_generic.c"
-#include <nl80211.h>
-#include <unl.h>
-#include <net/if.h>
-#include <dd_list.h>
+	#include <broadcom.h>
+	#include <bcmparams.h>
+	#include <utils.h>
+	#include <wlutils.h>
+	#include "wireless_generic.c"
+	#include <nl80211.h>
+	#include <unl.h>
+	#include <net/if.h>
+	#include <dd_list.h>
 
 int active_wireless_if_ath9k(webs_t wp, int argc, char_t **argv, char *ifname, int *cnt, int globalcnt, int turbo, int macmask)
 {
@@ -170,8 +170,8 @@ int active_wireless_if_ath9k(webs_t wp, int argc, char_t **argv, char *ifname, i
 					break;
 				}
 			if (is_morse_micro(ifname)) {
-#define S1G_TXRATE(wc) (bitrate_s1g(wc->vht_mcs, ht, sgi))
-#define S1G_RXRATE(wc) (bitrate_s1g(wc->rx_vht_mcs, ht, sgi))
+	#define S1G_TXRATE(wc) (bitrate_s1g(wc->vht_mcs, ht, sgi))
+	#define S1G_RXRATE(wc) (bitrate_s1g(wc->rx_vht_mcs, ht, sgi))
 				websWrite(
 					wp,
 					"'%s','%s','%s','%s','%d.%dM','%d.%dM','%s','%d','%d','%d','%d','%d','%d','%d','%d','%d','%d','%d','%d','%s','%s'",
@@ -182,8 +182,8 @@ int active_wireless_if_ath9k(webs_t wp, int argc, char_t **argv, char *ifname, i
 					wc->chaininfo_avg[6], wc->chaininfo_avg[7], nvram_nget("%s_label", wc->ifname), wc->ifname);
 
 			} else {
-#define TXRATE(wc) (wc->txrate * mul / div)
-#define RXRATE(wc) (wc->rxrate * mul / div)
+	#define TXRATE(wc) (wc->txrate * mul / div)
+	#define RXRATE(wc) (wc->rxrate * mul / div)
 				websWrite(
 					wp,
 					"'%s','%s','%s','%s','%d.%dM','%d.%dM','%s','%d','%d','%d','%d','%d','%d','%d','%d','%d','%d','%d','%d','%s','%s'",

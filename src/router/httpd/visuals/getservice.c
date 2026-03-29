@@ -68,7 +68,7 @@
 #define MAXALIASES 35
 
 #ifndef _PATH_SERVICES
-#define _PATH_SERVICES "/etc/services"
+	#define _PATH_SERVICES "/etc/services"
 #endif
 
 #define my_setservent(f)                            \

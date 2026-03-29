@@ -251,7 +251,7 @@ int active_wireless_if(webs_t wp, int argc, char_t **argv, char *iface, char *vi
 		if (!has_qtn(iface)) {
 #endif
 #ifndef WL_STA_SCBSTATS
-#define WL_STA_SCBSTATS 0x4000 /* Per STA debug stats */
+	#define WL_STA_SCBSTATS 0x4000 /* Per STA debug stats */
 #endif
 #ifdef WL_STA_ANT_MAX
 			sta_info_compat4_t *sta4;

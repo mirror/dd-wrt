@@ -21,15 +21,15 @@
  */
 #ifdef HAVE_EOP_TUNNEL
 
-#define VISUALSOURCE 1
+	#define VISUALSOURCE 1
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <unistd.h>
-#include <stdarg.h>
+	#include <stdio.h>
+	#include <stdlib.h>
+	#include <string.h>
+	#include <unistd.h>
+	#include <stdarg.h>
 
-#include <broadcom.h>
+	#include <broadcom.h>
 
 void show_cidr(webs_t wp, char *prefix, char *var, int nm, char *type, char *nmtype, char *nmname);
 void show_ip(webs_t wp, char *prefix, char *var, int nm, int invalid, char *type);
@@ -208,15 +208,15 @@ EJ_VISIBLE void ej_show_eop_tunnels(webs_t wp, int argc, char_t **argv)
 					  nvram_matchi(temp, 0) ? "selected=\\\"selected\\\"" : "");
 				websWrite(wp, "document.write(\"<option value=\\\"1\\\" %s >\"  + eoip.mtik + \"</option>\");\n",
 					  nvram_matchi(temp, 1) ? "selected=\\\"selected\\\"" : "");
-#ifdef HAVE_WIREGUARD
+	#ifdef HAVE_WIREGUARD
 				websWrite(wp,
 					  "document.write(\"<option value=\\\"2\\\" %s >\"  + eoip.wireguard + \"</option>\");\n",
 					  nvram_matchi(temp, 2) ? "selected=\\\"selected\\\"" : "");
-#endif
-#ifdef HAVE_IPV6
+	#endif
+	#ifdef HAVE_IPV6
 				websWrite(wp, "document.write(\"<option value=\\\"3\\\" %s >\"  + eoip.vxlan + \"</option>\");\n",
 					  nvram_matchi(temp, 3) ? "selected=\\\"selected\\\"" : "");
-#endif
+	#endif
 				websWrite(wp, "//]]>\n</script>\n");
 				websWrite(wp, "</select>\n");
 			}
@@ -235,7 +235,7 @@ EJ_VISIBLE void ej_show_eop_tunnels(webs_t wp, int argc, char_t **argv)
 			websWrite(wp, "</div>\n");
 			websWrite(wp, "<div id=\"idwireguard%d\">\n", tun);
 			{
-#ifdef HAVE_WIREGUARD
+	#ifdef HAVE_WIREGUARD
 				show_oet_checkbox(wp, "service.vpn_mit", "oet%d_mit", tun, 0, NULL);
 				show_oet_checkbox(wp, "eoip.wireguard_oet_natout", "oet%d_natout", tun, 0, NULL);
 				show_oet_radio(wp, "eoip.wireguard_obfuscation", "oet%d_obf", tun, 0,
@@ -399,7 +399,7 @@ EJ_VISIBLE void ej_show_eop_tunnels(webs_t wp, int argc, char_t **argv)
 					{ //egc: DPBR input box
 						show_oet_textfield(wp, 0, "eoip.wireguard_oet_dpbr_ip", 78, 1024, "", tun, NULL,
 								   "oet%d_dpbr_ip", tun);
-#ifdef HAVE_IPSET
+		#ifdef HAVE_IPSET
 						// page (wp), default, label, input size, max length, default, tun, extra attrib, name=id, tun
 						// ipset file name
 						show_oet_textfield(wp, 0, "eoip.wireguard_oet_ipsetfile", 32, 64, "", tun, NULL,
@@ -412,7 +412,7 @@ EJ_VISIBLE void ej_show_eop_tunnels(webs_t wp, int argc, char_t **argv)
 						// ipset domains
 						show_oet_textfield(wp, 0, "eoip.wireguard_oet_ipsetdomains", 78, 1024, "", tun,
 								   NULL, "oet%d_ipsetdomains", tun);
-#endif
+		#endif
 					}
 					websWrite(wp,
 						  "</div>\n"); //end show hide dpbr
@@ -710,7 +710,7 @@ EJ_VISIBLE void ej_show_eop_tunnels(webs_t wp, int argc, char_t **argv)
 
 				websWrite(wp, "<br />\n");
 
-#endif
+	#endif
 			}
 			websWrite(wp, "</div>\n");
 			websWrite(wp, "<div id=\"idlocalip%d\">\n", tun);

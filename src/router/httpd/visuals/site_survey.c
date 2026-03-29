@@ -487,16 +487,16 @@ EJ_VISIBLE void ej_dump_site_survey(webs_t wp, int argc, char_t **argv)
 
 #ifdef HAVE_WIVIZ
 
-#if !defined(HAVE_MICRO) && !defined(__UCLIBC__)
-#include <pthread.h>
+	#if !defined(HAVE_MICRO) && !defined(__UCLIBC__)
+		#include <pthread.h>
 static char *lastlock;
 static char *lastunlock;
-#define wiz_lock() pthread_mutex_lock(&wp->p->wiz_mutex_contr)
-#define wiz_unlock() pthread_mutex_unlock(&wp->p->wiz_mutex_contr)
-#else
-#define wiz_lock()
-#define wiz_unlock()
-#endif
+		#define wiz_lock() pthread_mutex_lock(&wp->p->wiz_mutex_contr)
+		#define wiz_unlock() pthread_mutex_unlock(&wp->p->wiz_mutex_contr)
+	#else
+		#define wiz_lock()
+		#define wiz_unlock()
+	#endif
 
 EJ_VISIBLE void ej_dump_wiviz_data(webs_t wp, int argc,
 				   char_t **argv) // Eko, for

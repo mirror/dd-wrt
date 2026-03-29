@@ -20,48 +20,48 @@
  * $Id:
  */
 #ifdef HAVE_RAID
-#define VALIDSOURCE 1
+	#define VALIDSOURCE 1
 
-#ifdef WEBS
-#include <webs.h>
-#include <uemf.h>
-#include <ej.h>
-#else /* !WEBS */
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <ctype.h>
-#include <unistd.h>
-#include <limits.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-#include <httpd.h>
-#include <errno.h>
-#endif /* WEBS */
+	#ifdef WEBS
+		#include <webs.h>
+		#include <uemf.h>
+		#include <ej.h>
+	#else /* !WEBS */
+		#include <stdio.h>
+		#include <stdlib.h>
+		#include <string.h>
+		#include <ctype.h>
+		#include <unistd.h>
+		#include <limits.h>
+		#include <sys/types.h>
+		#include <sys/stat.h>
+		#include <sys/socket.h>
+		#include <netinet/in.h>
+		#include <arpa/inet.h>
+		#include <httpd.h>
+		#include <errno.h>
+	#endif /* WEBS */
 
-#include <proto/ethernet.h>
-#include <fcntl.h>
-#include <signal.h>
-#include <time.h>
-#include <sys/klog.h>
-#include <sys/wait.h>
-#include <dd_defs.h>
-#include <cy_conf.h>
-// #ifdef EZC_SUPPORT
-#include <ezc.h>
-// #endif
-#include <broadcom.h>
-#include <wlutils.h>
-#include <netdb.h>
-#include <utils.h>
-#include <stdarg.h>
-#include <sha1.h>
-#include <linux/fs.h>
-#include <fcntl.h>
-#include <sys/ioctl.h>
+	#include <proto/ethernet.h>
+	#include <fcntl.h>
+	#include <signal.h>
+	#include <time.h>
+	#include <sys/klog.h>
+	#include <sys/wait.h>
+	#include <dd_defs.h>
+	#include <cy_conf.h>
+	// #ifdef EZC_SUPPORT
+	#include <ezc.h>
+	// #endif
+	#include <broadcom.h>
+	#include <wlutils.h>
+	#include <netdb.h>
+	#include <utils.h>
+	#include <stdarg.h>
+	#include <sha1.h>
+	#include <linux/fs.h>
+	#include <fcntl.h>
+	#include <sys/ioctl.h>
 
 void add_raid(webs_t wp)
 {
@@ -138,7 +138,7 @@ void format_drive(webs_t wp)
 	close(fd);
 }
 
-#ifdef HAVE_ZFS
+	#ifdef HAVE_ZFS
 void zfs_scrub(webs_t wp)
 {
 	char *val = websGetVar(wp, "zfs_scrub_value", NULL);
@@ -148,7 +148,7 @@ void zfs_scrub(webs_t wp)
 	char *poolname = nvram_nget("raidname%d", idx);
 	eval("zpool", "scrub", poolname);
 }
-#endif
+	#endif
 
 void del_raid(webs_t wp)
 {

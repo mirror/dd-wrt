@@ -35,7 +35,7 @@
 #include <sys/ioctl.h>
 #include <net/if.h>
 #ifdef __UCLIBC__
-#include <error.h>
+	#include <error.h>
 #endif
 #include <signal.h>
 
@@ -291,9 +291,9 @@ void show_roaming(webs_t wp, char *var)
 }
 
 #if defined(HAVE_RT2880) && !defined(HAVE_MT76)
-#define IFMAP(a) getRADev(a)
+	#define IFMAP(a) getRADev(a)
 #else
-#define IFMAP(a) (a)
+	#define IFMAP(a) (a)
 #endif
 
 static int ej_show_roaming_single(webs_t wp, int argc, char_t **argv, char *prefix)

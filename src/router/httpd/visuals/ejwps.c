@@ -21,15 +21,15 @@
  */
 #ifdef HAVE_WPS
 
-#define VISUALSOURCE 1
+	#define VISUALSOURCE 1
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <unistd.h>
-#include <stdarg.h>
+	#include <stdio.h>
+	#include <stdlib.h>
+	#include <string.h>
+	#include <unistd.h>
+	#include <stdarg.h>
 
-#include <broadcom.h>
+	#include <broadcom.h>
 
 EJ_VISIBLE void ej_get_wpsstatus(webs_t wp, int argc, char_t **argv)
 {

@@ -27,13 +27,13 @@
 #include "nvram_backup.c"
 #include "alarmserver.c"
 #ifdef HAVE_SSHD
-#include "ssh_exportkey.c"
+	#include "ssh_exportkey.c"
 #endif
 #ifdef HAVE_WIREGUARD
-#include "wireguard_config.c"
+	#include "wireguard_config.c"
 #endif
 #ifdef HAVE_OPENVPN
-#include "ovpncl_config.c"
+	#include "ovpncl_config.c"
 #endif
 #include "cgi.c"
 #include "ej.c"
@@ -41,7 +41,7 @@
 
 #include "callvalidate.c"
 #ifdef HAVE_UPX86
-#include "upgrade_x86.c"
+	#include "upgrade_x86.c"
 #else
-#include "upgrade.c"
+	#include "upgrade.c"
 #endif

@@ -20,47 +20,47 @@
  * $Id:
  */
 #ifdef HAVE_RT2880
-#define VISUALSOURCE 1
-#include <stdio.h>
-#include <stdlib.h>
-#include <stdarg.h>
-#include <string.h>
-#include <unistd.h>
-#include <ctype.h>
-#include <signal.h>
+	#define VISUALSOURCE 1
+	#include <stdio.h>
+	#include <stdlib.h>
+	#include <stdarg.h>
+	#include <string.h>
+	#include <unistd.h>
+	#include <ctype.h>
+	#include <signal.h>
 
-#include <sys/ioctl.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <sys/socket.h>
-#include <sys/statfs.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-#include <broadcom.h>
+	#include <sys/ioctl.h>
+	#include <sys/types.h>
+	#include <sys/stat.h>
+	#include <sys/socket.h>
+	#include <sys/statfs.h>
+	#include <netinet/in.h>
+	#include <arpa/inet.h>
+	#include <broadcom.h>
 
-#include <wlutils.h>
-#include <bcmparams.h>
-#include <dirent.h>
-#include <netdb.h>
-#include <utils.h>
-#include <wlutils.h>
-#include <ddnvram.h>
+	#include <wlutils.h>
+	#include <bcmparams.h>
+	#include <dirent.h>
+	#include <netdb.h>
+	#include <utils.h>
+	#include <wlutils.h>
+	#include <ddnvram.h>
 
-#include "wireless_generic.c"
+	#include "wireless_generic.c"
 
-#include <sys/types.h>
-#include <sys/file.h>
-#include <sys/ioctl.h>
-#include <sys/socket.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <stdint.h>
-#include <ctype.h>
-#include <getopt.h>
-#include <err.h>
+	#include <sys/types.h>
+	#include <sys/file.h>
+	#include <sys/ioctl.h>
+	#include <sys/socket.h>
+	#include <stdio.h>
+	#include <stdlib.h>
+	#include <string.h>
+	#include <stdint.h>
+	#include <ctype.h>
+	#include <getopt.h>
+	#include <err.h>
 
-#ifndef __UCLIBC__
+	#ifndef __UCLIBC__
 /* Convenience types.  */
 typedef unsigned char __u_char;
 typedef unsigned short int __u_short;
@@ -74,12 +74,12 @@ typedef signed short int __int16_t;
 typedef unsigned short int __uint16_t;
 typedef signed int __int32_t;
 typedef unsigned int __uint32_t;
-#endif
-#include "wireless_copy.h"
+	#endif
+	#include "wireless_copy.h"
 
-#ifdef HAVE_DANUBE
-#define RT_BIG_ENDIAN
-#endif
+	#ifdef HAVE_DANUBE
+		#define RT_BIG_ENDIAN
+	#endif
 
 static const char *ieee80211_ntoa(const uint8_t mac[6])
 {
@@ -119,10 +119,10 @@ typedef struct _RT_802_11_MAC_ENTRY {
 	unsigned int LastRxRate;
 	short StreamSnr[3];
 	short SoundingRespSnr[3];
-#if 0
+	#if 0
 	short TxPER;
 	short reserved;
-#endif
+	#endif
 } RT_802_11_MAC_ENTRY;
 
 typedef union _HTTRANSMIT_SETTING {
@@ -143,17 +143,17 @@ typedef struct _RT_802_11_MAC_TABLE {
 	unsigned long Num;
 	RT_802_11_MAC_ENTRY Entry[128]; //MAX_LEN_OF_MAC_TABLE = 32
 } RT_802_11_MAC_TABLE;
-#define BW_20 0
-#define BW_40 1
-// SHORTGI
-#define GI_400 1 // only support in HT mode
-#define GI_800 0
+	#define BW_20 0
+	#define BW_40 1
+	// SHORTGI
+	#define GI_400 1 // only support in HT mode
+	#define GI_800 0
 
-#define RT_OID_802_11_QUERY_LAST_RX_RATE 0x0613
-#define RT_OID_802_11_QUERY_LAST_TX_RATE 0x0632
+	#define RT_OID_802_11_QUERY_LAST_RX_RATE 0x0613
+	#define RT_OID_802_11_QUERY_LAST_TX_RATE 0x0632
 
-#define RTPRIV_IOCTL_GET_MAC_TABLE (SIOCIWFIRSTPRIV + 0x0F)
-#define RTPRIV_IOCTL_GET_MAC_TABLE_STRUCT (SIOCIWFIRSTPRIV + 0x1F) // modified by Red@Ralink, 2009/09/30
+	#define RTPRIV_IOCTL_GET_MAC_TABLE (SIOCIWFIRSTPRIV + 0x0F)
+	#define RTPRIV_IOCTL_GET_MAC_TABLE_STRUCT (SIOCIWFIRSTPRIV + 0x1F) // modified by Red@Ralink, 2009/09/30
 
 static char bGetHTTxRateByBW_GI_MCS(int nBW, int nGI, int nMCS, int *dRate)
 {
@@ -396,9 +396,9 @@ EJ_VISIBLE void ej_active_wireless(webs_t wp, int argc, char_t **argv)
 
 extern long long wifi_getrate(char *ifname);
 
-#define KILO 1000
-#define MEGA 1000000
-#define GIGA 1000000000
+	#define KILO 1000
+	#define MEGA 1000000
+	#define GIGA 1000000000
 
 EJ_VISIBLE void ej_get_currate(webs_t wp, int argc, char_t **argv)
 {

@@ -294,7 +294,7 @@ EJ_VISIBLE void ej_pbr_rule_setting(webs_t wp, int argc, char_t **argv)
 			int oif_en = flags & 0x8000;
 
 			if (!strcmp(arg, "not")) {
-				if (not )
+				if (not)
 					websWrite(wp, "checked=\"checked\"");
 				return;
 			} else if (!strcmp(arg, "from_en")) {

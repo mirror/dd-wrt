@@ -38,17 +38,17 @@
 #include <utils.h>
 
 #if (__BYTE_ORDER == __LITTLE_ENDIAN)
-#define HOST_TO_BE32(x) bswap_32(x)
-#define HOST_TO_BE16(x) bswap_16(x)
+	#define HOST_TO_BE32(x) bswap_32(x)
+	#define HOST_TO_BE16(x) bswap_16(x)
 #else
-#define HOST_TO_BE32(x) (x)
-#define HOST_TO_BE16(x) (x)
+	#define HOST_TO_BE32(x) (x)
+	#define HOST_TO_BE16(x) (x)
 #endif
 
 #ifndef HAVE_MICRO
-#define MIN_BUF_SIZE 65536
+	#define MIN_BUF_SIZE 65536
 #else
-#define MIN_BUF_SIZE 4096
+	#define MIN_BUF_SIZE 4096
 #endif
 #define CODE_PATTERN_ERROR 9999
 static void set_upgrade_ret(webs_t stream, int result)
@@ -142,20 +142,20 @@ static int checkmagic(char *magic, char *check[])
 static int
 // sys_upgrade(char *url, FILE *stream, int *total)
 sys_upgrade(char *url, webs_t stream, size_t *total, int type) // jimmy,
-	// https,
-	// 8/6/2003
+// https,
+// 8/6/2003
 {
 	int brand = getRouterBrand();
 
 #ifndef ANTI_FLASH
-#ifdef HAVE_VENTANA
-#define HAVE_VENTANA_NEW_UPGRADE
-#endif
-#ifdef HAVE_VENTANA_NEW_UPGRADE
+	#ifdef HAVE_VENTANA
+		#define HAVE_VENTANA_NEW_UPGRADE
+	#endif
+	#ifdef HAVE_VENTANA_NEW_UPGRADE
 	char upload_fifo[] = "/tmp/new_root/tmp/uploadXXXXXX";
-#else
+	#else
 	char upload_fifo[] = "/tmp/uploadXXXXXX";
-#endif
+	#endif
 	FILE *fifo = NULL;
 	FILE *fifo2 = NULL;
 	char *write_argv[4];
@@ -165,16 +165,17 @@ sys_upgrade(char *url, webs_t stream, size_t *total, int type) // jimmy,
 	long flags = -1;
 	int size = BUFSIZ;
 	int i = 0;
-#if (defined(HAVE_FONERA) || defined(HAVE_WHRAG108) || defined(HAVE_MERAKI) || defined(HAVE_TW6600) || defined(HAVE_PB42) ||     \
-     defined(HAVE_LS5) || defined(HAVE_USR5453)) &&                                                                              \
-	(!defined(HAVE_DIR400) && !defined(HAVE_WRT54G2) && !defined(HAVE_GWMF54G2) && !defined(HAVE_FONERA2200) &&              \
-	 !defined(HAVE_MR3202A) && !defined(HAVE_CA8PRO) && !defined(HAVE_CA8) && !defined(HAVE_RT2880) && !defined(HAVE_LS2) && \
-	 !defined(HAVE_WRK54G) && !defined(HAVE_ADM5120) && !defined(HAVE_DIR300) && !defined(HAVE_DLM101) &&                    \
-	 !defined(HAVE_MERAKI) && !defined(HAVE_SOLO51) && !defined(HAVE_RTG32) && !defined(HAVE_EOC5610) && !defined(HAVE_NP25G))
-#define WRITEPART "rootfs"
-#else
-#define WRITEPART "linux"
-#endif
+	#if (defined(HAVE_FONERA) || defined(HAVE_WHRAG108) || defined(HAVE_MERAKI) || defined(HAVE_TW6600) ||              \
+	     defined(HAVE_PB42) || defined(HAVE_LS5) || defined(HAVE_USR5453)) &&                                           \
+		(!defined(HAVE_DIR400) && !defined(HAVE_WRT54G2) && !defined(HAVE_GWMF54G2) && !defined(HAVE_FONERA2200) && \
+		 !defined(HAVE_MR3202A) && !defined(HAVE_CA8PRO) && !defined(HAVE_CA8) && !defined(HAVE_RT2880) &&          \
+		 !defined(HAVE_LS2) && !defined(HAVE_WRK54G) && !defined(HAVE_ADM5120) && !defined(HAVE_DIR300) &&          \
+		 !defined(HAVE_DLM101) && !defined(HAVE_MERAKI) && !defined(HAVE_SOLO51) && !defined(HAVE_RTG32) &&         \
+		 !defined(HAVE_EOC5610) && !defined(HAVE_NP25G))
+		#define WRITEPART "rootfs"
+	#else
+		#define WRITEPART "linux"
+	#endif
 
 	write_argv[0] = "write";
 	write_argv[1] = upload_fifo;
@@ -244,8 +245,8 @@ sys_upgrade(char *url, webs_t stream, size_t *total, int type) // jimmy,
 		}
 
 		if (i == 0) { // check code pattern, the first data must
-#ifdef HAVE_VENTANA
-#ifdef HAVE_VENTANA_NEW_UPGRADE
+	#ifdef HAVE_VENTANA
+		#ifdef HAVE_VENTANA_NEW_UPGRADE
 			if (!strncmp(buf, "HDR0", 4)) { // check for "trx"
 				char *write_argv_buf[8];
 				eval("mkdir", "-p", "/tmp/new_root");
@@ -265,7 +266,7 @@ sys_upgrade(char *url, webs_t stream, size_t *total, int type) // jimmy,
 				}
 				goto write_data;
 			}
-#else
+		#else
 			if (!strncmp(buf, "UBI#", 4)) { // check for "UBI#"
 				eval("mount", "-o", "remount,ro", "/");
 				char *write_argv_buf[8];
@@ -289,16 +290,16 @@ sys_upgrade(char *url, webs_t stream, size_t *total, int type) // jimmy,
 				}
 				goto write_data;
 			}
-#endif
-#endif
-//0x1200000 0x70000 RN67
-#ifdef HAVE_IPQ806X
+		#endif
+	#endif
+	//0x1200000 0x70000 RN67
+	#ifdef HAVE_IPQ806X
 
-#define _WEB_HEADER_ "RN67"
-#define FW_HEADER ((char *)"CSYS")
-#define DWORD_SWAP(v)                                                                                                        \
-	((((v & 0xff) << 24) & 0xff000000) | ((((v >> 8) & 0xff) << 16) & 0xff0000) | ((((v >> 16) & 0xff) << 8) & 0xff00) | \
-	 (((v >> 24) & 0xff) & 0xff))
+		#define _WEB_HEADER_ "RN67"
+		#define FW_HEADER ((char *)"CSYS")
+		#define DWORD_SWAP(v)                                                                 \
+			((((v & 0xff) << 24) & 0xff000000) | ((((v >> 8) & 0xff) << 16) & 0xff0000) | \
+			 ((((v >> 16) & 0xff) << 8) & 0xff00) | (((v >> 24) & 0xff) & 0xff))
 
 			typedef struct img_header {
 				unsigned char signature[4];
@@ -334,8 +335,8 @@ sys_upgrade(char *url, webs_t stream, size_t *total, int type) // jimmy,
 					goto write_data;
 				}
 			}
-#endif
-#if defined(HAVE_DIR860) || defined(HAVE_DIR859)
+	#endif
+	#if defined(HAVE_DIR860) || defined(HAVE_DIR859)
 			if (brand == ROUTER_DIR882) {
 				unsigned int *uboot_magic = (unsigned int *)buf;
 				if (*uboot_magic == HOST_TO_BE32(0x27051956)) {
@@ -356,7 +357,7 @@ sys_upgrade(char *url, webs_t stream, size_t *total, int type) // jimmy,
 				}
 
 			} else {
-#define SEAMA_MAGIC 0x5EA3A417
+		#define SEAMA_MAGIC 0x5EA3A417
 
 				typedef struct seama_hdr seamahdr_t;
 				struct seama_hdr {
@@ -372,13 +373,13 @@ sys_upgrade(char *url, webs_t stream, size_t *total, int type) // jimmy,
 					fprintf(stderr, "found seama header, skip seal header of %d bytes\n", skip);
 					if (skip > count)
 						goto err;
-#ifdef HAVE_DIR869
-#define signature "signature=wrgac54_dlink.2015_dir869"
-#elif HAVE_DIR859
-#define signature "signature=wrgac37_dlink.2013gui_dir859"
-#else
-#define signature "signature=wrgac13_dlink.2013gui_dir860lb"
-#endif
+		#ifdef HAVE_DIR869
+			#define signature "signature=wrgac54_dlink.2015_dir869"
+		#elif HAVE_DIR859
+			#define signature "signature=wrgac37_dlink.2013gui_dir859"
+		#else
+			#define signature "signature=wrgac13_dlink.2013gui_dir860lb"
+		#endif
 					if (memcmp(buf + sizeof(seamahdr_t), signature, sizeof(signature))) {
 						fprintf(stderr, "firmware signature must be %s\n", signature);
 						goto err;
@@ -402,8 +403,8 @@ sys_upgrade(char *url, webs_t stream, size_t *total, int type) // jimmy,
 					goto write_data;
 				}
 			}
-#endif
-#if defined(HAVE_DIR862)
+	#endif
+	#if defined(HAVE_DIR862)
 			unsigned int *uboot_magic = (unsigned int *)buf;
 			if (*uboot_magic == HOST_TO_BE32(0x27051956)) {
 				char *write_argv_buf[8];
@@ -421,7 +422,7 @@ sys_upgrade(char *url, webs_t stream, size_t *total, int type) // jimmy,
 				}
 				goto write_data;
 			}
-#elif defined(HAVE_MVEBU)
+	#elif defined(HAVE_MVEBU)
 			unsigned int *uboot_magic = (unsigned int *)buf;
 			if (*uboot_magic == HOST_TO_BE32(0x27051956)) {
 				char *write_argv_buf[8];
@@ -466,19 +467,20 @@ sys_upgrade(char *url, webs_t stream, size_t *total, int type) // jimmy,
 				}
 				goto write_data;
 			}
-#endif
-#if defined(HAVE_DAP2230) || defined(HAVE_DAP2330) || defined(HAVE_DAP2660) || defined(HAVE_DAP3662) || defined(HAVE_DAP3320)
-#ifdef HAVE_DAP2660
-#define MAGIC "wapac09_dkbs_dap2660"
-#elif HAVE_DAP2330
-#define MAGIC "wapn24_dkbs_dap2330"
-#elif HAVE_DAP3662
-#define MAGIC "wapac11_dkbs_dap3662"
-#elif HAVE_DAP3320
-#define MAGIC "wapn29_dkbs_dap3320"
-#elif HAVE_DAP2230
-#define MAGIC "wapn31_dkbs_dap2230"
-#endif
+	#endif
+	#if defined(HAVE_DAP2230) || defined(HAVE_DAP2330) || defined(HAVE_DAP2660) || defined(HAVE_DAP3662) || \
+		defined(HAVE_DAP3320)
+		#ifdef HAVE_DAP2660
+			#define MAGIC "wapac09_dkbs_dap2660"
+		#elif HAVE_DAP2330
+			#define MAGIC "wapn24_dkbs_dap2330"
+		#elif HAVE_DAP3662
+			#define MAGIC "wapac11_dkbs_dap3662"
+		#elif HAVE_DAP3320
+			#define MAGIC "wapn29_dkbs_dap3320"
+		#elif HAVE_DAP2230
+			#define MAGIC "wapn31_dkbs_dap2230"
+		#endif
 			if (!strncmp(buf, MAGIC, strlen(MAGIC))) {
 				char *write_argv_buf[8];
 				write_argv_buf[0] = "mtd";
@@ -495,8 +497,8 @@ sys_upgrade(char *url, webs_t stream, size_t *total, int type) // jimmy,
 				}
 				goto write_data;
 			}
-#endif
-#if defined(HAVE_BUFFALO) || defined(HAVE_IDEXX)
+	#endif
+	#if defined(HAVE_BUFFALO) || defined(HAVE_IDEXX)
 			ralink_firmware_header fh;
 			memcpy(&fh, buf, sizeof(fh));
 			char *str;
@@ -517,12 +519,12 @@ sys_upgrade(char *url, webs_t stream, size_t *total, int type) // jimmy,
 				char *write_argv_buf[4];
 				write_argv_buf[0] = "buffalo_flash";
 				write_argv_buf[1] = upload_fifo;
-#if defined(HAVE_IDEXX) || defined(HAVE_IDEXX_SIGNATUR)
+		#if defined(HAVE_IDEXX) || defined(HAVE_IDEXX_SIGNATUR)
 				write_argv_buf[2] = "verify";
 				write_argv_buf[3] = NULL;
-#else
+		#else
 				write_argv_buf[2] = NULL;
-#endif
+		#endif
 				if (!mktemp(upload_fifo) || mkfifo(upload_fifo, S_IRWXU) < 0 ||
 				    (ret = _evalpid(write_argv_buf, NULL, 0, &pid)) || !(fifo = fopen(upload_fifo, "w"))) {
 					if (!ret)
@@ -536,12 +538,12 @@ sys_upgrade(char *url, webs_t stream, size_t *total, int type) // jimmy,
 				write_argv_buf[0] = "buffalo_flash";
 				write_argv_buf[1] = upload_fifo;
 				write_argv_buf[2] = "ralink";
-#if defined(HAVE_IDEXX) || defined(HAVE_IDEXX_SIGNATUR)
+		#if defined(HAVE_IDEXX) || defined(HAVE_IDEXX_SIGNATUR)
 				write_argv_buf[3] = "verify";
 				write_argv_buf[4] = NULL;
-#else
+		#else
 				write_argv_buf[3] = NULL;
-#endif
+		#endif
 				if (!mktemp(upload_fifo) || mkfifo(upload_fifo, S_IRWXU) < 0 ||
 				    (ret = _evalpid(write_argv_buf, NULL, 0, &pid)) || !(fifo = fopen(upload_fifo, "w"))) {
 					if (!ret)
@@ -550,9 +552,9 @@ sys_upgrade(char *url, webs_t stream, size_t *total, int type) // jimmy,
 				}
 				goto write_data;
 			} else {
-#ifdef HAVE_IDEXX_SIGNATUR
+		#ifdef HAVE_IDEXX_SIGNATUR
 				goto err;
-#endif
+		#endif
 				if (!mktemp(upload_fifo) || mkfifo(upload_fifo, S_IRWXU) < 0 ||
 				    (ret = _evalpid(write_argv, NULL, 0, &pid)) || !(fifo = fopen(upload_fifo, "w"))) {
 					if (!ret)
@@ -561,7 +563,7 @@ sys_upgrade(char *url, webs_t stream, size_t *total, int type) // jimmy,
 				}
 			}
 
-#else
+	#else
 			/*
 			 * Feed write from a temporary FIFO 
 			 */
@@ -571,7 +573,7 @@ sys_upgrade(char *url, webs_t stream, size_t *total, int type) // jimmy,
 					ret = errno;
 				goto err;
 			}
-#endif
+	#endif
 			// have code pattern
 			char ver[40];
 			long ver1, ver2, ver3;
@@ -580,42 +582,42 @@ sys_upgrade(char *url, webs_t stream, size_t *total, int type) // jimmy,
 			ver2 = convert_ver(INTEL_FLASH_SUPPORT_VERSION_FROM);
 			ver3 = convert_ver(BCM4712_CHIP_SUPPORT_VERSION_FROM);
 			fprintf(stderr, "upgrade_ver[%s] upgrade_ver[%ld] intel_ver[%ld] 4712_ver[%ld]\n", ver, ver1, ver2, ver3);
-#if defined(HAVE_WIKINGS) || defined(HAVE_ESPOD)
-#ifdef HAVE_WIKINGS
-#ifdef HAVE_SUB3
-#define V "XMED"
-#elif HAVE_SUB6
-#define V "XMIN"
-#else
-#define V "XMAX"
-#endif
-#endif
-#ifdef HAVE_ESPOD
-#ifdef HAVE_SUB3
-#define V "EPMN"
-#elif HAVE_SUB6
-#define V "EPMD"
-#else
-#define V "EPMX"
-#endif
-#endif
+	#if defined(HAVE_WIKINGS) || defined(HAVE_ESPOD)
+		#ifdef HAVE_WIKINGS
+			#ifdef HAVE_SUB3
+				#define V "XMED"
+			#elif HAVE_SUB6
+				#define V "XMIN"
+			#else
+				#define V "XMAX"
+			#endif
+		#endif
+		#ifdef HAVE_ESPOD
+			#ifdef HAVE_SUB3
+				#define V "EPMN"
+			#elif HAVE_SUB6
+				#define V "EPMD"
+			#else
+				#define V "EPMX"
+			#endif
+		#endif
 			if (memcmp(&buf[0], V, 4)) {
 				fprintf(stderr, "code pattern error!\n");
 				goto write_data; // must be there, otherwise fail here
 				//goto err;     // must be there, otherwise fail here
 			}
-#undef V
-#endif
+		#undef V
+	#endif
 
-#if defined(HAVE_WIKINGS) || defined(HAVE_ESPOD)
-#else
-#ifdef HAVE_WRT160NL
+	#if defined(HAVE_WIKINGS) || defined(HAVE_ESPOD)
+	#else
+		#ifdef HAVE_WRT160NL
 			if (memcmp(&buf[0], &CODE_PATTERN_WRT160NL, 4) && memcmp(&buf[0], &CODE_PATTERN_E2100L, 4)) {
 				goto err; // must be there, otherwise fail here
 			}
-#else
+		#else
 
-#ifndef HAVE_80211AC
+			#ifndef HAVE_80211AC
 			if (brand == ROUTER_LINKSYS_E1550 || (brand == ROUTER_WRT320N && nvram_match("boardrev", "0x1307")) //E2000
 			    || brand == ROUTER_LINKSYS_E2500 ||
 			    (brand == ROUTER_WRT610NV2 && nvram_match("boot_hw_model", "E300")) //E3000
@@ -634,12 +636,12 @@ sys_upgrade(char *url, webs_t stream, size_t *total, int type) // jimmy,
 					goto err; // fail here
 				}
 			}
-#endif
+			#endif
 			if (checkmagic(&buf[0], allmagics)) {
 				goto write_data;
 			}
-#endif
-#endif
+		#endif
+	#endif
 
 			if (check_hw_type() == BCM4712_CHIP && ver1 < ver3) {
 				fprintf(stderr, "The old firmware version can't support bcm4712 chipset\n");
@@ -650,14 +652,14 @@ sys_upgrade(char *url, webs_t stream, size_t *total, int type) // jimmy,
 
 			fprintf(stderr, "code pattern correct!\n");
 			*total -= count;
-#ifdef HAVE_WRT160NL
+	#ifdef HAVE_WRT160NL
 			safe_fwrite(buf, 1, count,
 				    fifo); // we have to write the whole header to flash too
-#else
+	#else
 			safe_fwrite(&buf[sizeof(struct code_header)], 1, count - sizeof(struct code_header), fifo);
 			if (fifo2)
 				safe_fwrite(&buf[sizeof(struct code_header)], 1, count - sizeof(struct code_header), fifo2);
-#endif
+	#endif
 			i++;
 			continue;
 		}
@@ -722,8 +724,8 @@ err:
 static int
 // do_upgrade_post(char *url, FILE *stream, int len, char *boundary)
 do_upgrade_post(char *url, webs_t stream, size_t len, char *boundary) // jimmy,
-	// https,
-	// 8/6/2003
+// https,
+// 8/6/2003
 {
 	killall("udhcpc", SIGKILL);
 
@@ -787,18 +789,18 @@ do_upgrade_post(char *url, webs_t stream, size_t len, char *boundary) // jimmy,
 	 * Restore factory original settings if told to. This will also cause a
 	 * restore defaults on reboot of a Sveasoft firmware. 
 	 */
-#ifdef HAVE_BUFFALO_SA
+	#ifdef HAVE_BUFFALO_SA
 	int region_sa = 0;
 	if (nvram_default_match("region", "SA", ""))
 		region_sa = 1;
-#endif
+	#endif
 	if (nvram_matchi("sv_restore_defaults", 1)) {
 		eval("erase", "nvram");
-#ifdef HAVE_BUFFALO_SA
+	#ifdef HAVE_BUFFALO_SA
 		nvram_seti("sv_restore_defaults", 1);
 		if (region_sa)
 			nvram_set("region", "SA");
-#endif
+	#endif
 	}
 	_sys_commit(1);
 
