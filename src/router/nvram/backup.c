@@ -42,272 +42,270 @@
 
 static int NVRAMSPACE = NVRAM_SPACE;
 
-static char *filter[] = {
-	"ATEMODE",
-	"Ate_power_on_off_ret",
-	"CFEver",
-	"DEF-p_wireless_eth1_11a-authmode",
-	"DEF-p_wireless_eth1_11a-authmode_ex",
-	"DEF-p_wireless_eth1_11a-crypto",
-	"DEF-p_wireless_eth1_11a-wpapsk",
-	"DEF-p_wireless_eth1_11bg-authmode",
-	"DEF-p_wireless_eth1_11bg-authmode_ex",
-	"DEF-p_wireless_eth1_11bg-crypto",
-	"DEF-p_wireless_eth1_11bg-wpapsk",
-	"DEF-p_wireless_eth2_11a-authmode",
-	"DEF-p_wireless_eth2_11a-authmode_ex",
-	"DEF-p_wireless_eth2_11a-crypto",
-	"DEF-p_wireless_eth2_11a-wpapsk",
-	"DEF-p_wireless_eth2_11bg-authmode",
-	"DEF-p_wireless_eth2_11bg-authmode_ex",
-	"DEF-p_wireless_eth2_11bg-crypto",
-	"DEF-p_wireless_eth2_11bg-wpapsk",
-	"GemtekPmonVer",
-	"HW_ver",
-	"PA",
-	"aa2g",
-	"af_hash",
-	"ag0",
-	"ag1",
-	"antswctl2g",
-	"antswitch",
-	"bl_version",
-	"blink_diag_led",
-	"boardflags",
-	"boardflags2",
-	"boardflags3",
-	"boardnum",
-	"boardpwrctl",
-	"boardrev",
-	"boardtype",
-	"boot_hw_model",
-	"boot_hw_ver",
-	"boot_ver",
-	"boot_wait",
-	"bootflags",
-	"bootnv_ver",
-	"bootpartition",
-	"bw40po",
-	"bwduppo",
-	"bxa2g",
-	"bypasscrccheck",
-	"cardbus",
-	"cck2gpo",
-	"ccode",
-	"cddpo",
-	"cert_region",
-	"cfe_disable_2G",
-	"cfe_disable_5G",
-	"cfe_ping_timeout",
-	"cisco_default",
-	"clkdivsf",
-	"clkfreq",
-	"csromrev",
-	"cthwver",
-	"custom_id",
-	"default_passphrase",
-	"default_ssid",
-	"deviceType",
-	"devid",
-	"devinfo_version",
-	"devpath0",
-	"devpath1",
-	"devpath2",
-	"devpath3",
-	"et0macaddr",
-	"et0macaddr_safe",
-	"et0mdcport",
-	"et0phyaddr",
-	"et1macaddr",
-	"et1mdcport",
-	"et1phyaddr",
-	"et2macaddr",
-	"et2mdcport",
-	"et2phyaddr",
-	"et_pwrsave",
-	"et_txq_thresh",
-	"extpagain2g",
-	"firmwarename",
-	"gpio0",
-	"gpio1",
-	"gpio10",
-	"gpio11",
-	"gpio12",
-	"gpio13",
-	"gpio14",
-	"gpio15",
-	"gpio16",
-	"gpio17",
-	"gpio18",
-	"gpio19",
-	"gpio2",
-	"gpio20",
-	"gpio21",
-	"gpio22",
-	"gpio3",
-	"gpio4",
-	"gpio5",
-	"gpio6",
-	"gpio7",
-	"gpio8",
-	"gpio9",
-	"gs_sku_id",
-	"hardware_version",
-	"hw_mac_addr",
-	"hw_model",
-	"hw_rev",
-	"hw_revision",
-	"hw_version",
-	"il0macaddr",
-	"image_first_offset",
-	"image_second_offset",
-	"itt2ga0",
-	"itt2ga1",
-	"lan_ifname",
-	"lan_ifnames",
-	"landevs",
-	"ledbh0",
-	"ledbh10",
-	"ledbh11",
-	"ledbh2",
-	"ledbh3",
-	"ledbh5",
-	"leddc",
-	"loader_version",
-	"macaddr",
-	"manufacturer",
-	"manufacturerURL",
-	"manufacturer_date",
-	"maxp2ga0",
-	"maxp2ga1",
-	"maxpartialboots",
-	"mcs2gpo0",
-	"mcs2gpo1",
-	"mcs2gpo2",
-	"mcs2gpo3",
-	"mcs2gpo4",
-	"mcs2gpo5",
-	"mcs2gpo6",
-	"mcs2gpo7",
-	"melco_id",
-	"mfg_data_version",
-	"mfg_wait",
-	"model",
-	"modelDescription",
-	"modelNumber",
-	"nospare",
-	"ntype",
-	"nvram_factory_reset",
-	"nvram_reboot",
-	"nvram_space",
-	"nvram_version",
-	"odmpid",
-	"ofdm2gpo",
-	"os_ram_addr",
-	"pa2gw0a0",
-	"pa2gw0a1",
-	"pa2gw1a0",
-	"pa2gw1a1",
-	"pa2gw2a0",
-	"pa2gw2a1",
-	"parefldovoltage",
-	"pcie_force_gen1",
-	"pdetrange2g",
-	"phyid_num",
-	"pincode",
-	"pmon_date",
-	"pmon_ver",
-	"prodid",
-	"product",
-	"productid",
-	"product_name",
-	"region",
-	"regrev",
-	"regulation_domain",
-	"regulation_domain_5G",
-	"reset_gpio",
-	"rgmii_port",
-	"rssisav2g",
-	"rssismc2g",
-	"rssismf2g",
-	"rxchain",
-	"rxpo2g",
-	"sdram_config",
-	"sdram_init",
-	"sdram_ncdl",
-	"sdram_refresh",
-	"secret_code",
-	"serial_no",
-	"serial_number",
-	"sn",
-	"sromrev",
-	"stbcpo",
-	"strap_p5_mode",
-	"sw_version",
-	"tc_passphrase",
-	"tc_ssid",
-	"territory_code",
-	"test_led_gpio",
-	"tftp_max_retries",
-	"tftp_recv_timeout",
-	"tftp_rrq_timeout",
-	"tftpd_ipaddr",
-	"tftpserverip",
-	"tri2g",
-	"triso2g",
-	"tssipos2g",
-	"txchain",
-	"um_board_id",
-	"usb_gpio_reverse",
-	"uuid_key",
-	"vlan0hwname",
-	"vlan0ports",
-	"vlan1hwname",
-	"vlan1ports",
-	"vlan2hwname",
-	"vlan2ports",
-	"wait_time",
-	"wan_ifname",
-	"wan_ifnames",
-	"wandevs",
-	"watchdog",
-	"wl0_country_code",
-	"wl0_country_rev",
-	"wl0_wandevs",
-	"wl0gpio0",
-	"wl0gpio1",
-	"wl0gpio2",
-	"wl0gpio3",
-	"wl0gpio4",
-	"wl1_country_code",
-	"wl1_country_rev",
-	"wl_country",
-	"wl_dmarxctl",
-	"wl_dmatxctl",
-	"wl_msglevel",
-	"wl_pcie_mrrs",
-	"wl_use_coregpio",
-	"wltest",
-	"wps_lock_forever_cnt",
-	"xtalfreq",
-	"cpurev",
-	"color",
-	"PA",
-	"nocountrysel",
-	"nvram_min_ver",
-	"board_id",		//netgear specific
-	"hwrev",
-	"hwver",
-	"winbond_flash",
-	"scratch",
-	"dl_ram_addr",
-	"os_flash_addr",
-	"wl0id",
-	"wl1id",
-	"wl2id",
-	"ctf_fa_cap",
-	NULL
-};
+static char *filter[] = { "ATEMODE",
+			  "Ate_power_on_off_ret",
+			  "CFEver",
+			  "DEF-p_wireless_eth1_11a-authmode",
+			  "DEF-p_wireless_eth1_11a-authmode_ex",
+			  "DEF-p_wireless_eth1_11a-crypto",
+			  "DEF-p_wireless_eth1_11a-wpapsk",
+			  "DEF-p_wireless_eth1_11bg-authmode",
+			  "DEF-p_wireless_eth1_11bg-authmode_ex",
+			  "DEF-p_wireless_eth1_11bg-crypto",
+			  "DEF-p_wireless_eth1_11bg-wpapsk",
+			  "DEF-p_wireless_eth2_11a-authmode",
+			  "DEF-p_wireless_eth2_11a-authmode_ex",
+			  "DEF-p_wireless_eth2_11a-crypto",
+			  "DEF-p_wireless_eth2_11a-wpapsk",
+			  "DEF-p_wireless_eth2_11bg-authmode",
+			  "DEF-p_wireless_eth2_11bg-authmode_ex",
+			  "DEF-p_wireless_eth2_11bg-crypto",
+			  "DEF-p_wireless_eth2_11bg-wpapsk",
+			  "GemtekPmonVer",
+			  "HW_ver",
+			  "PA",
+			  "aa2g",
+			  "af_hash",
+			  "ag0",
+			  "ag1",
+			  "antswctl2g",
+			  "antswitch",
+			  "bl_version",
+			  "blink_diag_led",
+			  "boardflags",
+			  "boardflags2",
+			  "boardflags3",
+			  "boardnum",
+			  "boardpwrctl",
+			  "boardrev",
+			  "boardtype",
+			  "boot_hw_model",
+			  "boot_hw_ver",
+			  "boot_ver",
+			  "boot_wait",
+			  "bootflags",
+			  "bootnv_ver",
+			  "bootpartition",
+			  "bw40po",
+			  "bwduppo",
+			  "bxa2g",
+			  "bypasscrccheck",
+			  "cardbus",
+			  "cck2gpo",
+			  "ccode",
+			  "cddpo",
+			  "cert_region",
+			  "cfe_disable_2G",
+			  "cfe_disable_5G",
+			  "cfe_ping_timeout",
+			  "cisco_default",
+			  "clkdivsf",
+			  "clkfreq",
+			  "csromrev",
+			  "cthwver",
+			  "custom_id",
+			  "default_passphrase",
+			  "default_ssid",
+			  "deviceType",
+			  "devid",
+			  "devinfo_version",
+			  "devpath0",
+			  "devpath1",
+			  "devpath2",
+			  "devpath3",
+			  "et0macaddr",
+			  "et0macaddr_safe",
+			  "et0mdcport",
+			  "et0phyaddr",
+			  "et1macaddr",
+			  "et1mdcport",
+			  "et1phyaddr",
+			  "et2macaddr",
+			  "et2mdcport",
+			  "et2phyaddr",
+			  "et_pwrsave",
+			  "et_txq_thresh",
+			  "extpagain2g",
+			  "firmwarename",
+			  "gpio0",
+			  "gpio1",
+			  "gpio10",
+			  "gpio11",
+			  "gpio12",
+			  "gpio13",
+			  "gpio14",
+			  "gpio15",
+			  "gpio16",
+			  "gpio17",
+			  "gpio18",
+			  "gpio19",
+			  "gpio2",
+			  "gpio20",
+			  "gpio21",
+			  "gpio22",
+			  "gpio3",
+			  "gpio4",
+			  "gpio5",
+			  "gpio6",
+			  "gpio7",
+			  "gpio8",
+			  "gpio9",
+			  "gs_sku_id",
+			  "hardware_version",
+			  "hw_mac_addr",
+			  "hw_model",
+			  "hw_rev",
+			  "hw_revision",
+			  "hw_version",
+			  "il0macaddr",
+			  "image_first_offset",
+			  "image_second_offset",
+			  "itt2ga0",
+			  "itt2ga1",
+			  "lan_ifname",
+			  "lan_ifnames",
+			  "landevs",
+			  "ledbh0",
+			  "ledbh10",
+			  "ledbh11",
+			  "ledbh2",
+			  "ledbh3",
+			  "ledbh5",
+			  "leddc",
+			  "loader_version",
+			  "macaddr",
+			  "manufacturer",
+			  "manufacturerURL",
+			  "manufacturer_date",
+			  "maxp2ga0",
+			  "maxp2ga1",
+			  "maxpartialboots",
+			  "mcs2gpo0",
+			  "mcs2gpo1",
+			  "mcs2gpo2",
+			  "mcs2gpo3",
+			  "mcs2gpo4",
+			  "mcs2gpo5",
+			  "mcs2gpo6",
+			  "mcs2gpo7",
+			  "melco_id",
+			  "mfg_data_version",
+			  "mfg_wait",
+			  "model",
+			  "modelDescription",
+			  "modelNumber",
+			  "nospare",
+			  "ntype",
+			  "nvram_factory_reset",
+			  "nvram_reboot",
+			  "nvram_space",
+			  "nvram_version",
+			  "odmpid",
+			  "ofdm2gpo",
+			  "os_ram_addr",
+			  "pa2gw0a0",
+			  "pa2gw0a1",
+			  "pa2gw1a0",
+			  "pa2gw1a1",
+			  "pa2gw2a0",
+			  "pa2gw2a1",
+			  "parefldovoltage",
+			  "pcie_force_gen1",
+			  "pdetrange2g",
+			  "phyid_num",
+			  "pincode",
+			  "pmon_date",
+			  "pmon_ver",
+			  "prodid",
+			  "product",
+			  "productid",
+			  "product_name",
+			  "region",
+			  "regrev",
+			  "regulation_domain",
+			  "regulation_domain_5G",
+			  "reset_gpio",
+			  "rgmii_port",
+			  "rssisav2g",
+			  "rssismc2g",
+			  "rssismf2g",
+			  "rxchain",
+			  "rxpo2g",
+			  "sdram_config",
+			  "sdram_init",
+			  "sdram_ncdl",
+			  "sdram_refresh",
+			  "secret_code",
+			  "serial_no",
+			  "serial_number",
+			  "sn",
+			  "sromrev",
+			  "stbcpo",
+			  "strap_p5_mode",
+			  "sw_version",
+			  "tc_passphrase",
+			  "tc_ssid",
+			  "territory_code",
+			  "test_led_gpio",
+			  "tftp_max_retries",
+			  "tftp_recv_timeout",
+			  "tftp_rrq_timeout",
+			  "tftpd_ipaddr",
+			  "tftpserverip",
+			  "tri2g",
+			  "triso2g",
+			  "tssipos2g",
+			  "txchain",
+			  "um_board_id",
+			  "usb_gpio_reverse",
+			  "uuid_key",
+			  "vlan0hwname",
+			  "vlan0ports",
+			  "vlan1hwname",
+			  "vlan1ports",
+			  "vlan2hwname",
+			  "vlan2ports",
+			  "wait_time",
+			  "wan_ifname",
+			  "wan_ifnames",
+			  "wandevs",
+			  "watchdog",
+			  "wl0_country_code",
+			  "wl0_country_rev",
+			  "wl0_wandevs",
+			  "wl0gpio0",
+			  "wl0gpio1",
+			  "wl0gpio2",
+			  "wl0gpio3",
+			  "wl0gpio4",
+			  "wl1_country_code",
+			  "wl1_country_rev",
+			  "wl_country",
+			  "wl_dmarxctl",
+			  "wl_dmatxctl",
+			  "wl_msglevel",
+			  "wl_pcie_mrrs",
+			  "wl_use_coregpio",
+			  "wltest",
+			  "wps_lock_forever_cnt",
+			  "xtalfreq",
+			  "cpurev",
+			  "color",
+			  "PA",
+			  "nocountrysel",
+			  "nvram_min_ver",
+			  "board_id", //netgear specific
+			  "hwrev",
+			  "hwver",
+			  "winbond_flash",
+			  "scratch",
+			  "dl_ram_addr",
+			  "os_flash_addr",
+			  "wl0id",
+			  "wl1id",
+			  "wl2id",
+			  "ctf_fa_cap",
+			  NULL };
 
 static int nvram_critical_internal(char *name, int ommit)
 {
@@ -347,8 +345,8 @@ static int nvram_critical_internal(char *name, int ommit)
 		nvram_unset(name);
 		return 1;
 	}
-	if (strncmp(name, "sb/", 3) && strncmp(name, "pci/", 4) && strncmp(name, "pcie/", 5) && strncmp(name, "0:", 2) && strncmp(name, "1:", 2) && strncmp(name, "2:", 2) && strncmp(name, "3:", 2)
-	    && !strstr(name, "_hwaddr"))
+	if (strncmp(name, "sb/", 3) && strncmp(name, "pci/", 4) && strncmp(name, "pcie/", 5) && strncmp(name, "0:", 2) &&
+	    strncmp(name, "1:", 2) && strncmp(name, "2:", 2) && strncmp(name, "3:", 2) && !strstr(name, "_hwaddr"))
 		return 0;
 	else
 		return 1;
@@ -387,7 +385,7 @@ void nvram_clear(void)
 	free(buf);
 }
 
-static void save(FILE * fp, char *p, int not)
+static void save(FILE *fp, char *p, int not)
 {
 	int i;
 	while (*p) {
@@ -408,10 +406,9 @@ static void save(FILE * fp, char *p, int not)
 		fwrite(val, 1, strlen(val), fp);
 		p += len + 1;
 	}
-
 }
 
-#define getRouterName() nvram_exists(NVROUTER_ALT)?nvram_safe_get(NVROUTER_ALT):nvram_safe_get(NVROUTER)
+#define getRouterName() nvram_exists(NVROUTER_ALT) ? nvram_safe_get(NVROUTER_ALT) : nvram_safe_get(NVROUTER)
 
 int nvram_restore(char *filename, int force, int keepsettings)
 {
@@ -471,33 +468,45 @@ int nvram_restore(char *filename, int force, int keepsettings)
 				fread(value, l, 1, fp);
 				len -= (l + 2);
 				value[l] = 0;
-//                              if (!strcmp(name, "nvram_ver"))
-//                                      nvram_ver = value;
+				//                              if (!strcmp(name, "nvram_ver"))
+				//                                      nvram_ver = value;
 				char *routername = getRouterName();
 #if defined(HAVE_NEWPORT) || defined(HAVE_VENTANA) || defined(HAVE_LAGUNA)
-				if (!strncmp(routername, "Gateworks Newport GW61", 22) && !strncmp(value, "Gateworks Newport GW61", 22))
+				if (!strncmp(routername, "Gateworks Newport GW61", 22) &&
+				    !strncmp(value, "Gateworks Newport GW61", 22))
 					goto success;
-				if (!strncmp(routername, "Gateworks Newport GW62", 22) && !strncmp(value, "Gateworks Newport GW62", 22))
+				if (!strncmp(routername, "Gateworks Newport GW62", 22) &&
+				    !strncmp(value, "Gateworks Newport GW62", 22))
 					goto success;
-				if (!strncmp(routername, "Gateworks Newport GW63", 22) && !strncmp(value, "Gateworks Newport GW63", 22))
+				if (!strncmp(routername, "Gateworks Newport GW63", 22) &&
+				    !strncmp(value, "Gateworks Newport GW63", 22))
 					goto success;
-				if (!strncmp(routername, "Gateworks Newport GW64", 22) && !strncmp(value, "Gateworks Newport GW64", 22))
+				if (!strncmp(routername, "Gateworks Newport GW64", 22) &&
+				    !strncmp(value, "Gateworks Newport GW64", 22))
 					goto success;
-				if (!strncmp(routername, "Gateworks Newport GW65", 22) && !strncmp(value, "Gateworks Newport GW65", 22))
+				if (!strncmp(routername, "Gateworks Newport GW65", 22) &&
+				    !strncmp(value, "Gateworks Newport GW65", 22))
 					goto success;
-				if (!strncmp(routername, "Gateworks Newport GW69", 22) && !strncmp(value, "Gateworks Newport GW69", 22))
+				if (!strncmp(routername, "Gateworks Newport GW69", 22) &&
+				    !strncmp(value, "Gateworks Newport GW69", 22))
 					goto success;
-				if (!strncmp(routername, "Gateworks Ventana GW51", 22) && !strncmp(value, "Gateworks Ventana GW51", 22))
+				if (!strncmp(routername, "Gateworks Ventana GW51", 22) &&
+				    !strncmp(value, "Gateworks Ventana GW51", 22))
 					goto success;
-				if (!strncmp(routername, "Gateworks Ventana GW52", 22) && !strncmp(value, "Gateworks Ventana GW52", 22))
+				if (!strncmp(routername, "Gateworks Ventana GW52", 22) &&
+				    !strncmp(value, "Gateworks Ventana GW52", 22))
 					goto success;
-				if (!strncmp(routername, "Gateworks Ventana GW53", 22) && !strncmp(value, "Gateworks Ventana GW53", 22))
+				if (!strncmp(routername, "Gateworks Ventana GW53", 22) &&
+				    !strncmp(value, "Gateworks Ventana GW53", 22))
 					goto success;
-				if (!strncmp(routername, "Gateworks Ventana GW54", 22) && !strncmp(value, "Gateworks Ventana GW54", 22))
+				if (!strncmp(routername, "Gateworks Ventana GW54", 22) &&
+				    !strncmp(value, "Gateworks Ventana GW54", 22))
 					goto success;
-				if (!strncmp(routername, "Gateworks Ventana GW55", 22) && !strncmp(value, "Gateworks Ventana GW55", 22))
+				if (!strncmp(routername, "Gateworks Ventana GW55", 22) &&
+				    !strncmp(value, "Gateworks Ventana GW55", 22))
 					goto success;
-				if (!strncmp(routername, "Gateworks Laguna GW23", 21) && !strncmp(value, "Gateworks Laguna GW23", 21))
+				if (!strncmp(routername, "Gateworks Laguna GW23", 21) &&
+				    !strncmp(value, "Gateworks Laguna GW23", 21))
 					goto success;
 #endif
 				if (!c && !strcmp(name, routername)) {
@@ -514,10 +523,10 @@ int nvram_restore(char *filename, int force, int keepsettings)
 					}
 #endif
 				}
-			      success:;
+success:;
 				if (c && !nvram_critical(name)) {
 					if (!keepsettings || !*nvram_safe_get(name))
-					nvram_immed_set(name, value);
+						nvram_immed_set(name, value);
 				}
 				free(value);
 				free(name);
@@ -533,13 +542,11 @@ int nvram_restore(char *filename, int force, int keepsettings)
 		fclose(fp);
 	}
 	return 0;
-
 }
 
 int nvram_size(void);
 int nvram_backup(char *filename)
 {
-
 	int backupcount = 0;
 	char sign[7] = { "DD-WRT" };
 #ifdef HAVE_REGISTER
@@ -572,8 +579,8 @@ int nvram_backup(char *filename)
 	}
 
 	fwrite(sign, 6, 1, fp);
-	fputc(backupcount & 255, fp);	// high byte
-	fputc(backupcount >> 8, fp);	// low byte
+	fputc(backupcount & 255, fp); // high byte
+	fputc(backupcount >> 8, fp); // low byte
 	//first save all "wl_" prefixed parameters
 	save(fp, p, 1);
 	nvram_getall(buf, NVRAMSPACE);
@@ -588,7 +595,6 @@ int nvram_backup(char *filename)
 #ifdef TEST
 int main(int argc, char *argv[])
 {
-
 	nvram_backup("/tmp/fixup.bin");
 	nvram_restore("/tmp/fixup.bin", 0);
 }

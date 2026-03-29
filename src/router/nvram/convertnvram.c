@@ -49,12 +49,11 @@ struct nvrams {
 
 struct nvramdb {
 	int offsets[('z' + 1) - 'A'];
-	int nov;		//number of values;
+	int nov; //number of values;
 	struct nvrams *values;
 };
 
 static struct nvramdb values;
-
 
 //simply sort algorithm
 void sort(void)
@@ -136,7 +135,7 @@ void readdb(void)
 	in = fopen("/tmp/nvram/nvram.db", "rb");
 	if (in == NULL) {
 		values.nov = 0;
-		return;		//first time init;
+		return; //first time init;
 	}
 	values.nov = getc(in) << 8;
 	values.nov += getc(in);
