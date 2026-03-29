@@ -50,7 +50,7 @@ static inline unsigned long long microseconds(void)
 }
 
 #if defined(__i386__) || defined(__x86_64__)
-#define HAVE_RDTSC 1
+	#define HAVE_RDTSC 1
 #endif
 
 #ifdef HAVE_RDTSC
@@ -61,7 +61,7 @@ static inline unsigned long long rdtsc(void)
 	return a + ((unsigned long long)d << 32);
 }
 #else
-#define rdtsc() 0
+	#define rdtsc() 0
 #endif
 
 /* performs read-after-write operations that the CPU is not supposed to be able

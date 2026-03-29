@@ -384,70 +384,70 @@
 
 #ifdef TIME
 
-#define CLOCK_TYPE "time()"
-#undef HZ
-#define HZ (1) /* time() returns time in seconds */
+	#define CLOCK_TYPE "time()"
+	#undef HZ
+	#define HZ (1) /* time() returns time in seconds */
 extern long     time(); /* see library function "time"  */
-#define Too_Small_Time 2 /* Measurements should last at least 2 seconds */
-#define Start_Timer() Begin_Time = time((long *)0)
-#define Stop_Timer() End_Time = time((long *)0)
+	#define Too_Small_Time 2 /* Measurements should last at least 2 seconds */
+	#define Start_Timer() Begin_Time = time((long *)0)
+	#define Stop_Timer() End_Time = time((long *)0)
 
 #else
 
-#ifdef MSC_CLOCK /* Use Microsoft C hi-res clock */
+	#ifdef MSC_CLOCK /* Use Microsoft C hi-res clock */
 
-#undef HZ
-#undef TIMES
-#include <time.h>
-#define HZ CLK_TCK
-#define CLOCK_TYPE "MSC clock()"
+		#undef HZ
+		#undef TIMES
+		#include <time.h>
+		#define HZ CLK_TCK
+		#define CLOCK_TYPE "MSC clock()"
 extern clock_t clock();
-#define Too_Small_Time (2 * HZ)
-#define Start_Timer() Begin_Time = clock()
-#define Stop_Timer() End_Time = clock()
+		#define Too_Small_Time (2 * HZ)
+		#define Start_Timer() Begin_Time = clock()
+		#define Stop_Timer() End_Time = clock()
 
-#else
-/* Use times(2) time function unless    */
-/* explicitly defined otherwise         */
-#define CLOCK_TYPE "times()"
-#include <sys/types.h>
-#include <sys/times.h>
-#ifndef HZ /* Added by SP 900619 */
-#include <sys/param.h> /* If your system doesn't have this, use -DHZ=xxx */
-#else
-#endif /* HZ */
-#ifndef PASS2
+	#else
+		/* Use times(2) time function unless    */
+		/* explicitly defined otherwise         */
+		#define CLOCK_TYPE "times()"
+		#include <sys/types.h>
+		#include <sys/times.h>
+		#ifndef HZ /* Added by SP 900619 */
+			#include <sys/param.h> /* If your system doesn't have this, use -DHZ=xxx */
+		#else
+		#endif /* HZ */
+		#ifndef PASS2
 struct tms time_info;
-#endif
-/*extern  int     times ();*/
-/* see library function "times" */
-#define Too_Small_Time (2 * HZ)
-/* Measurements should last at least about 2 seconds */
-#define Start_Timer()      \
-		times(&time_info); \
-		Begin_Time = (long)time_info.tms_utime
-#define Stop_Timer()       \
-		times(&time_info); \
-		End_Time = (long)time_info.tms_utime
+		#endif
+		/*extern  int     times ();*/
+		/* see library function "times" */
+		#define Too_Small_Time (2 * HZ)
+		/* Measurements should last at least about 2 seconds */
+		#define Start_Timer()      \
+			times(&time_info); \
+			Begin_Time = (long)time_info.tms_utime
+		#define Stop_Timer()       \
+			times(&time_info); \
+			End_Time = (long)time_info.tms_utime
 
-#endif /* MSC_CLOCK */
+	#endif /* MSC_CLOCK */
 #endif /* TIME */
 
 #define Mic_secs_Per_Second 1000000.0
 #define NUMBER_OF_RUNS 50000 /* Default number of runs */
 
 #ifdef NOSTRUCTASSIGN
-#define structassign(d, s) memcpy(&(d), &(s), sizeof(d))
+	#define structassign(d, s) memcpy(&(d), &(s), sizeof(d))
 #else
-#define structassign(d, s) d = s
+	#define structassign(d, s) d = s
 #endif
 
 #ifdef NOENUM
-#define Ident_1 0
-#define Ident_2 1
-#define Ident_3 2
-#define Ident_4 3
-#define Ident_5 4
+	#define Ident_1 0
+	#define Ident_2 1
+	#define Ident_3 2
+	#define Ident_4 3
+	#define Ident_5 4
   typedef int   Enumeration;
 #else
 typedef enum { Ident_1, Ident_2, Ident_3, Ident_4, Ident_5 } Enumeration;
@@ -524,16 +524,16 @@ int             Arr_2_Glob [50] [50];
 
 	/* extern char     *malloc (); */
 
-#ifndef REG
+	#ifndef REG
         Boolean Reg = false;
-#define REG
-	/* REG becomes defined as empty */
-	/* i.e. no register variables   */
-#else
+		#define REG
+		/* REG becomes defined as empty */
+		/* i.e. no register variables   */
+	#else
         Boolean Reg = true;
-#undef REG
-#define REG register
-#endif
+		#undef REG
+		#define REG register
+	#endif
 
 Boolean		Done;
 
@@ -544,7 +544,7 @@ float           Microseconds,
                 Dhrystones_Per_Second;
 
 	/* end of variables for time measurement */
-#include <ddnvram.h>
+	#include <ddnvram.h>
 
 void start_benchmark(void)
 /*****/
@@ -778,7 +778,7 @@ void Proc_5 () /* without parameters */
 
 	/* Procedure for the assignment of structures,          */
 	/* if the C compiler doesn't support this feature       */
-#ifdef NOSTRUCTASSIGN
+	#ifdef NOSTRUCTASSIGN
 memcpy (d, s, l)
 register char   *d;
 register char   *s;
@@ -786,18 +786,18 @@ register int    l;
 {
         while (l--) *d++ = *s++;
 }
-#endif
+	#endif
 
 #else /* PASS2 */
 
-#ifndef REG
-#define REG
-/* REG becomes defined as empty */
-/* i.e. no register variables   */
-#else
-#undef REG
-#define REG register
-#endif
+	#ifndef REG
+		#define REG
+	/* REG becomes defined as empty */
+	/* i.e. no register variables   */
+	#else
+		#undef REG
+		#define REG register
+	#endif
 
 extern int Int_Glob;
 extern char Ch_1_Glob;
