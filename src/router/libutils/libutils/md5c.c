@@ -709,6 +709,7 @@ char *sha256_string(char *string, char *hashbuf, size_t len)
 		return NULL;
 	}
 	calc_sha_256(hash, string, strlen(string));
+	*hashbuf = 0;
 	for (i = 0; i < 32; i++) {
 		unsigned int k = hash[i];
 		snprintf(hashbuf, len, "%s%02X", hashbuf, k & 0xff);
