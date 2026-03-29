@@ -1156,7 +1156,7 @@ vpath %.c $(TOP)/shared $(SRCBASE)/rts/src
 	@echo "[CC] $@"
 	$(CC) $(CFLAGS) -c -o $@ $<
 
-all: rc init resetbutton wlanled wland et writetool ttraff process_monitor redial radio_timer watchdog hotplug servicemanager
+all: rc init resetbutton wlanled wland et writetool ttraff process_monitor redial dump_blocklist radio_timer watchdog hotplug servicemanager
 
 clean:
 	rm -f *.o rc init resetbutton wland et writetool
@@ -1207,6 +1207,7 @@ endif
 ifneq ($(CONFIG_MICRO),y)
 ifneq ($(CONFIG_DIST),"micro")
 	-install watchdog $(INSTALLDIR)/sbin
+	-install dump_blocklist $(INSTALLDIR)/usr/sbin
 endif
 endif
 ifeq ($(CONFIG_ADM5120),y)
@@ -1399,6 +1400,10 @@ endif
 radio_timer: radio_timer.o
 	@echo "[LD] $@"
 	$(CC) $(CFLAGS) $(LDLTO) -o $@ $^ $(LDFLAGS) -lshutils -lwireless
+
+dump_blocklist: dump_blocklist.o
+	@echo "[LD] $@"
+	$(CC) $(CFLAGS) $(LDLTO) -o $@ $^ $(LDFLAGS) -lshutils
 
 init:
 	@echo "[LD] init"
