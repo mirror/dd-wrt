@@ -56,11 +56,11 @@ int main(int argc, char **argv)
 
 	while (1) {
 #if defined(HAVE_3G)
-#if defined(HAVE_LIBMBIM) || defined(HAVE_UMBIM)
+	#if defined(HAVE_LIBMBIM) || defined(HAVE_UMBIM)
 		if (nvram_match("wan_proto", "3g") && nvram_match("3gdata", "mbim")) {
 			start_service_force("check_mbim");
 		}
-#endif
+	#endif
 		if (nvram_match("wan_proto", "3g") && nvram_match("3gdata", "sierradirectip")) {
 			start_service_force("check_sierradirectip");
 		} else if (nvram_match("wan_proto", "3g") && nvram_match("3gnmvariant", "1")) {
@@ -100,9 +100,9 @@ int main(int argc, char **argv)
 					sleep(1);
 					start_service_force("wan_redial");
 				}
-#if defined(HAVE_PPTP) || defined(HAVE_L2TP) || defined(HAVE_HEARTBEAT) || defined(HAVE_PPPOATM) || defined(HAVE_PPPOEDUAL)
+	#if defined(HAVE_PPTP) || defined(HAVE_L2TP) || defined(HAVE_HEARTBEAT) || defined(HAVE_PPPOATM) || defined(HAVE_PPPOEDUAL)
 				else
-#endif
+	#endif
 #endif
 
 #ifdef HAVE_PPPOEDUAL
@@ -110,9 +110,9 @@ int main(int argc, char **argv)
 					sleep(1);
 					start_service_force("wan_redial");
 				}
-#if defined(HAVE_PPTP) || defined(HAVE_L2TP) || defined(HAVE_HEARTBEAT) || defined(HAVE_PPPOATM)
+	#if defined(HAVE_PPTP) || defined(HAVE_L2TP) || defined(HAVE_HEARTBEAT) || defined(HAVE_PPPOATM)
 				else
-#endif
+	#endif
 #endif
 
 #ifdef HAVE_PPPOATM
@@ -120,9 +120,9 @@ int main(int argc, char **argv)
 					sleep(1);
 					start_service_force("wan_redial");
 				}
-#if defined(HAVE_PPTP) || defined(HAVE_L2TP) || defined(HAVE_HEARTBEAT)
+	#if defined(HAVE_PPTP) || defined(HAVE_L2TP) || defined(HAVE_HEARTBEAT)
 				else
-#endif
+	#endif
 #endif
 
 #ifdef HAVE_PPTP
@@ -132,9 +132,9 @@ int main(int argc, char **argv)
 					sleep(1);
 					start_service_force("wan_redial");
 				}
-#if defined(HAVE_L2TP) || defined(HAVE_HEARTBEAT)
+	#if defined(HAVE_L2TP) || defined(HAVE_HEARTBEAT)
 				else
-#endif
+	#endif
 #endif
 #ifdef HAVE_L2TP
 					if (nvram_match("wan_proto", "l2tp")) {
@@ -143,9 +143,9 @@ int main(int argc, char **argv)
 					sleep(1);
 					start_service_force("wan_redial");
 				}
-#ifdef HAVE_HEARTBEAT
+	#ifdef HAVE_HEARTBEAT
 				else
-#endif
+	#endif
 #endif
 				// Moded by Boris Bakchiev
 				// We dont need this at all.

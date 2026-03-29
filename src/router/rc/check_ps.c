@@ -190,9 +190,9 @@ struct mon mons[] = {
 //	{ "plex", M_LAN, "plex_enable", "1", NULL, NULL, &check_plex },
 //#endif
 #ifdef HAVE_ERC
-#ifdef HAVE_OPENVPN
+	#ifdef HAVE_OPENVPN
 	{ "openvpn", M_LAN, "openvpncl_enable", "1", NULL, NULL, NULL },
-#endif
+	#endif
 #endif
 	{ "ddns", M_WAN, NULL, NULL, NULL, NULL, &check_ddns },
 #ifdef HAVE_ANTAIRA_AGENT
@@ -230,9 +230,9 @@ static void checknas(void) // for broadcom v24 only
 
 #endif
 #ifndef HAVE_NOWIFI
-#ifdef HAVE_MADWIFI
+	#ifdef HAVE_MADWIFI
 	start_service_force_f("checkhostapd");
-#endif
+	#endif
 #endif
 }
 
@@ -250,19 +250,19 @@ static void softcontrol_wlan_led(void) // done in watchdog.c for non-micro build
 	int radiostate2 = -1;
 	int oldstate2 = -1;
 
-#ifdef HAVE_MADWIFI
+	#ifdef HAVE_MADWIFI
 	int cnt = getdevicecount();
-#else
+	#else
 	int cnt = get_wl_instances();
-#endif
+	#endif
 
-#ifdef HAVE_MADWIFI
+	#ifdef HAVE_MADWIFI
 	if (!nvram_matchi("flash_active", 1)) {
 		radiostate0 = get_radiostate("wlan0");
 		if (cnt == 2)
 			radiostate1 = get_radiostate("wlan1");
 	}
-#else
+	#else
 	wl_ioctl(get_wl_instance_name(0), WLC_GET_RADIO, &radiostate0, sizeof(int));
 	if (cnt == 2)
 		wl_ioctl(get_wl_instance_name(1), WLC_GET_RADIO, &radiostate1, sizeof(int));
@@ -270,18 +270,18 @@ static void softcontrol_wlan_led(void) // done in watchdog.c for non-micro build
 		wl_ioctl(get_wl_instance_name(1), WLC_GET_RADIO, &radiostate1, sizeof(int));
 		wl_ioctl(get_wl_instance_name(2), WLC_GET_RADIO, &radiostate2, sizeof(int));
 	}
-#endif
+	#endif
 
 	if (radiostate0 != oldstate0) {
-#ifdef HAVE_MADWIFI
+	#ifdef HAVE_MADWIFI
 		if (radiostate0 == 1)
-#else
+	#else
 		if ((radiostate0 & WL_RADIO_SW_DISABLE) == 0)
-#endif
+	#endif
 			led_control(LED_WLAN0, LED_ON);
 		else {
 			led_control(LED_WLAN0, LED_OFF);
-#ifndef HAVE_MADWIFI
+	#ifndef HAVE_MADWIFI
 			brand = getRouterBrand();
 			/*
 			 * Disable wireless will cause diag led blink, so we want to
@@ -295,18 +295,18 @@ static void softcontrol_wlan_led(void) // done in watchdog.c for non-micro build
 			 */
 			if (brand == ROUTER_WRT54G_V8)
 				led_control(LED_POWER, LED_ON);
-#endif
+	#endif
 		}
 
 		oldstate0 = radiostate0;
 	}
 
 	if (radiostate1 != oldstate1) {
-#ifdef HAVE_MADWIFI
+	#ifdef HAVE_MADWIFI
 		if (radiostate1 == 1)
-#else
+	#else
 		if ((radiostate1 & WL_RADIO_SW_DISABLE) == 0)
-#endif
+	#endif
 			led_control(LED_WLAN1, LED_ON);
 		else {
 			led_control(LED_WLAN1, LED_OFF);
@@ -316,11 +316,11 @@ static void softcontrol_wlan_led(void) // done in watchdog.c for non-micro build
 	}
 
 	if (radiostate2 != oldstate2) {
-#ifdef HAVE_MADWIFI
+	#ifdef HAVE_MADWIFI
 		if (radiostate2 == 1)
-#else
+	#else
 		if ((radiostate2 & WL_RADIO_SW_DISABLE) == 0)
-#endif
+	#endif
 			led_control(LED_WLAN2, LED_ON);
 		else {
 			led_control(LED_WLAN2, LED_OFF);

@@ -109,7 +109,7 @@ static void sync_daemons(void)
 
 // <<tofu
 static int do_ntp(void) // called from ntp_main and
-	// process_monitor_main; (now really) called every hour!
+// process_monitor_main; (now really) called every hour!
 {
 	char *servers;
 	struct timeval now;

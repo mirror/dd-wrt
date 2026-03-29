@@ -57,9 +57,9 @@
 #define TXPWR_DEFAULT 70
 
 #ifdef HAVE_MADWIFI
-#define WLAND_INTERVAL 60
+	#define WLAND_INTERVAL 60
 #else
-#define WLAND_INTERVAL 15
+	#define WLAND_INTERVAL 15
 #endif
 
 #define sin_addr(s) (((struct sockaddr_in *)(s))->sin_addr)
@@ -310,9 +310,9 @@ void start_wds_check(void)
 	 * else add it to the br0 bridge 
 	 */
 	int cnt = get_wl_instances();
-#ifdef HAVE_QTN
+	#ifdef HAVE_QTN
 	cnt = 1;
-#endif
+	#endif
 	int c;
 
 	for (c = 0; c < cnt; c++) {
@@ -450,7 +450,7 @@ static void do_client_check(void)
 	buf[len] = 0;
 
 	if ((len > 0 && strstr(buf, "Not associated.")) || checkbssid() == 0) {
-#ifdef HAVE_DDLAN
+	#ifdef HAVE_DDLAN
 
 		nvram_unset("cur_rssi");
 		nvram_unset("cur_noise");
@@ -458,7 +458,7 @@ static void do_client_check(void)
 		nvram_unset("cur_snr");
 		nvram_set("cur_state", "<span style=\"background-color: rgb(255, 0, 0);\">Nicht Verbunden</span>");
 
-#endif
+	#endif
 		eval("wl", "-i", ifname, "disassoc");
 		if (nvram_matchi("roaming_enable", 1)) {
 			eval("wl", "-i", ifname, "join", nvram_safe_get("roaming_ssid"));
@@ -468,10 +468,10 @@ static void do_client_check(void)
 		eval("stopservice", "nas");
 		eval("startservice_f", "nas");
 	} else {
-#ifdef HAVE_DDLAN
+	#ifdef HAVE_DDLAN
 		nvram_set("cur_state", "<span style=\"background-color: rgb(135, 255, 51);\">Verbunden</span>");
 		eval("/sbin/check.sh");
-#endif
+	#endif
 	}
 	fclose(fp);
 	return;
@@ -624,15 +624,15 @@ static void do_wlan_check(void)
 	do_aqos_check();
 #endif
 #ifndef HAVE_DHDAP
-#ifndef HAVE_MADWIFI
+	#ifndef HAVE_MADWIFI
 	if (getSTA() || getWET())
 		do_client_check();
 	else
 		do_ap_check();
-#else
+	#else
 
 	do_madwifi_check();
-#endif
+	#endif
 #endif
 }
 

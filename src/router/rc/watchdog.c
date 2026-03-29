@@ -36,7 +36,7 @@ int isregistered(void);
 
 static void check_fan(int brand)
 {
-#ifdef HAVE_MVEBU
+	#ifdef HAVE_MVEBU
 	if (brand == ROUTER_WRT_1900AC) {
 		int cpu;
 		FILE *tempfp;
@@ -54,8 +54,8 @@ static void check_fan(int brand)
 			sysprintf("/bin/echo %d > /sys/class/hwmon/hwmon6/pwm1", target);
 		}
 	}
-#endif
-#ifdef HAVE_REALTEK
+	#endif
+	#ifdef HAVE_REALTEK
 	if (nvram_match("DD_BOARD", "Zyxel XGS1250-12") || nvram_match("DD_BOARD", "Zyxel XGS1250-12 B1")) {
 		int psu = 0;
 		FILE *tempfp;
@@ -84,8 +84,8 @@ static void check_fan(int brand)
 			}
 		}
 	}
-#endif
-#ifdef HAVE_R9000
+	#endif
+	#ifdef HAVE_R9000
 	static int lasttarget = 0;
 	int cpu = 0, wifi1 = 0, wifi2 = 0, wifi3_mac = 0, wifi3_phy = 0;
 	FILE *tempfp;
@@ -147,10 +147,10 @@ static void check_fan(int brand)
 		sysprintf("/bin/echo %d > /sys/class/hwmon/hwmon0/fan1_target", target);
 		lasttarget = target;
 	}
-#endif
+	#endif
 }
 
-#ifdef HAVE_ATH11K
+	#ifdef HAVE_ATH11K
 static unsigned char zerocount[8][17];
 static void check_signal(const char *var, int interface, int vap)
 {
@@ -191,10 +191,10 @@ static void check_signal(const char *var, int interface, int vap)
 	if (mac80211_info)
 		free(mac80211_info);
 }
-#endif
+	#endif
 static void check_wifi(void)
 {
-#ifdef HAVE_ATH11K
+	#ifdef HAVE_ATH11K
 	int ifcount = getdevicecount();
 	int c = 0;
 	int vap = 0;
@@ -223,7 +223,7 @@ static void check_wifi(void)
 			}
 		}
 	}
-#endif
+	#endif
 }
 
 static void watchdog(void)
@@ -237,34 +237,34 @@ static void watchdog(void)
 	int radioledinitcount = 0;
 	memset(radiostate, -1, sizeof(radiostate));
 	memset(oldstate, -1, sizeof(oldstate));
-#ifndef HAVE_WZRG300NH
+	#ifndef HAVE_WZRG300NH
 	int fd;
 	if (!nvram_matchi("disable_watchdog", 1)) {
 		fd = open("/dev/misc/watchdog", O_WRONLY);
 		if (fd == -1)
 			fd = open("/dev/watchdog", O_WRONLY);
 	}
-#endif
+	#endif
 
 	int cnt = getdevicecount();
 
 	while (1) {
-#ifndef HAVE_WZRG300NH
+	#ifndef HAVE_WZRG300NH
 		if (!nvram_matchi("disable_watchdog", 1)) {
 			if (fd != -1) {
 				write(fd, "\0", 1);
 				fsync(fd);
 			}
 		}
-#endif
+	#endif
 		if (!nvram_matchi("flash_active", 1)) {
-#ifndef HAVE_RT2880
-#ifdef HAVE_REGISTER
+	#ifndef HAVE_RT2880
+		#ifdef HAVE_REGISTER
 			if (registered == -1)
 				registered = isregistered_real();
 			if (!registered)
 				isregistered(); //to poll
-#endif
+		#endif
 			/* 
 			 * software wlan led control 
 			 */
@@ -272,34 +272,34 @@ static void watchdog(void)
 				radioledinitcount++;
 				memset(oldstate, -1, sizeof(oldstate));
 			}
-#ifdef HAVE_MADWIFI
+		#ifdef HAVE_MADWIFI
 			for (i = 0; i < cnt; i++) {
 				char st[32];
 				sprintf(st, "wlan%d", i);
 				radiostate[i] = get_radiostate(st);
 			}
-#else
-#ifndef HAVE_QTN
+		#else
+			#ifndef HAVE_QTN
 			for (i = 0; i < cnt; i++) {
-#else
+			#else
 			for (i = 0; i < 1; i++) {
-#endif
+			#endif
 
 				wl_ioctl(get_wl_instance_name(i), WLC_GET_RADIO, &radiostate[i], sizeof(int));
 			}
-#endif
+		#endif
 
 			for (i = 0; i < cnt; i++) {
 				if (radiostate[i] != oldstate[i]) {
-#ifdef HAVE_MADWIFI
+		#ifdef HAVE_MADWIFI
 					if (radiostate[i] == 1)
-#else
+		#else
 					if ((radiostate[i] & WL_RADIO_SW_DISABLE) == 0)
-#endif
+		#endif
 						led_control(LED_WLAN0 + i, LED_ON);
 					else {
 						led_control(LED_WLAN0 + i, LED_OFF);
-#ifndef HAVE_MADWIFI
+		#ifndef HAVE_MADWIFI
 						if (!i) {
 							/* 
 					 * Disable wireless will cause diag led blink, so we want to
@@ -314,14 +314,14 @@ static void watchdog(void)
 							if (brand == ROUTER_WRT54G_V8)
 								led_control(LED_POWER, LED_ON);
 						}
-#endif
+		#endif
 					}
 
 					oldstate[i] = radiostate[i];
 				}
 			}
 
-#endif
+	#endif
 		}
 		//#ifdef HAVE_USB
 		//#ifndef HAVE_3G_ONLY
@@ -340,9 +340,9 @@ static void watchdog(void)
 
 int main(int argc, char *argv[])
 {
-#ifdef HAVE_ATH11K
+	#ifdef HAVE_ATH11K
 	memset(zerocount, 0, sizeof(zerocount));
-#endif
+	#endif
 	dd_daemon();
 	watchdog();
 	return 0;

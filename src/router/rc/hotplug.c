@@ -77,17 +77,17 @@ int main(int argc, char **argv)
 			}
 		}
 #ifdef HAVE_USB
-#ifdef HAVE_HOTPLUG2
+	#ifdef HAVE_HOTPLUG2
 		if (!strcmp(argv[1], "block")) {
 			start_service_force_f("hotplug_block");
 			return 0;
 		}
-#else
+	#else
 		if (!strcmp(argv[1], "usb")) {
 			start_service_force_f("hotplug_usb");
 			return 0;
 		}
-#endif
+	#endif
 #endif
 #ifdef HAVE_ATH9K
 		if (!strcmp(argv[1], "regulatory")) {

@@ -85,25 +85,25 @@
 //#include "resetbutton.c"
 #include "listen.c"
 #ifdef HAVE_WOL
-#include "wol.c"
+	#include "wol.c"
 #endif
 #ifdef HAVE_MADWIFI
-#include "roaming_daemon.c"
+	#include "roaming_daemon.c"
 #endif
 #ifdef HAVE_GPIOWATCHER
-#include "gpiowatcher.c"
+	#include "gpiowatcher.c"
 #endif
 #ifdef HAVE_WPS
-#include "wpswatcher.c"
+	#include "wpswatcher.c"
 #endif
 #ifdef HAVE_WIVIZ
-#include "autokill_wiviz.c"
+	#include "autokill_wiviz.c"
 #endif
 #ifdef HAVE_ATH9K
-#include "disable_fft.c"
+	#include "disable_fft.c"
 #endif
 #ifdef HAVE_QTN
-#include "qtn_monitor.c"
+	#include "qtn_monitor.c"
 #endif
 #include "event.c"
 #include "gratarp.c"

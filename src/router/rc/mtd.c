@@ -28,7 +28,7 @@
 #include <fcntl.h>
 #include <errno.h>
 #ifdef __UCLIBC__
-#include <error.h>
+	#include <error.h>
 #endif
 #include <time.h>
 #include <sys/ioctl.h>
@@ -43,15 +43,15 @@
 #include <linux/version.h>
 
 #if KERNEL_VERSION(2, 6, 0) <= LINUX_VERSION_CODE
-#define IS_KERNEL26 1
+	#define IS_KERNEL26 1
 #else
-#define IS_KERNEL26 0
+	#define IS_KERNEL26 0
 #endif
 
 #if IS_KERNEL26
-#include <linux/mtd/mtd-abi.h>
+	#include <linux/mtd/mtd-abi.h>
 #else
-#include <linux/mtd/mtd.h>
+	#include <linux/mtd/mtd.h>
 #endif
 
 #include <trxhdr.h>
@@ -66,27 +66,27 @@
 #include <byteswap.h>
 
 #if __BYTE_ORDER == __BIG_ENDIAN
-#define STORE32_LE(X) bswap_32(X)
+	#define STORE32_LE(X) bswap_32(X)
 #elif __BYTE_ORDER == __LITTLE_ENDIAN
-#define STORE32_LE(X) (X)
+	#define STORE32_LE(X) (X)
 #else
-#error unkown endianness!
+	#error unkown endianness!
 #endif
 
 #ifndef OFFSETOF
-#define OFFSETOF(type, member) ((uint)(uintptr) & ((type *)0)->member)
+	#define OFFSETOF(type, member) ((uint)(uintptr) & ((type *)0)->member)
 #endif
 
 #ifndef ROUNDUP
-#define ROUNDUP(x, y) ((((x) + ((y)-1)) / (y)) * (y))
+	#define ROUNDUP(x, y) ((((x) + ((y) - 1)) / (y)) * (y))
 #endif
 
 /* Netgear definitions */
 #define NETGEAR_CRC_FAKE 1 //we fake checksum only over 4 bytes (HDR0)
 
 #ifdef NETGEAR_CRC_FAKE
-#define NETGEAR_CRC_FAKE_LEN 0x00000004
-#define NETGEAR_CRC_FAKE_CHK 0x02C0010E
+	#define NETGEAR_CRC_FAKE_LEN 0x00000004
+	#define NETGEAR_CRC_FAKE_CHK 0x02C0010E
 #else
 static unsigned int calculate_checksum(int action, char *s, int size);
 #endif
@@ -125,7 +125,7 @@ struct __attribute__((__packed__)) chk_header {
 #include <asm/posix_types.h>
 
 #ifndef MEMGETBADBLOCK
-#define MEMGETBADBLOCK _IOW('M', 11, __kernel_loff_t)
+	#define MEMGETBADBLOCK _IOW('M', 11, __kernel_loff_t)
 #endif
 static int mtdtype = 0;
 
@@ -532,30 +532,30 @@ rewrite:;
 	}
 	sysinfo(&info);
 #ifndef HAVE_CAMBRIA
-#ifdef HAVE_SNMP
+	#ifdef HAVE_SNMP
 	stop_service("snmp");
-#endif
-#ifdef HAVE_PPPOESERVER
+	#endif
+	#ifdef HAVE_PPPOESERVER
 	stop_service("pppoeserver");
-#endif
-#ifdef HAVE_OLSRD
+	#endif
+	#ifdef HAVE_OLSRD
 	stop_service("olsrd");
-#endif
-#ifdef HAVE_UPNP
+	#endif
+	#ifdef HAVE_UPNP
 	stop_service("upnpd");
-#endif
-#ifdef HAVE_FREERADIUS
+	#endif
+	#ifdef HAVE_FREERADIUS
 	stop_service("freeradius");
-#endif
-#ifdef HAVE_TRANSMISSION
+	#endif
+	#ifdef HAVE_TRANSMISSION
 	stop_service("transmission");
-#endif
-#ifdef HAVE_PLEX
+	#endif
+	#ifdef HAVE_PLEX
 	stop_service("plex");
-#endif
-#ifdef HAVE_IPV6
+	#endif
+	#ifdef HAVE_IPV6
 	stop_service("radvd");
-#endif
+	#endif
 	stop_service("resetbutton");
 	stop_service("cron");
 	stop_service("process_monitor");
@@ -570,14 +570,14 @@ rewrite:;
 	eval("service", "syslog", "start");
 
 #if defined(HAVE_MVEBU) || defined(HAVE_R9000) || defined(HAVE_IPQ806X) || defined(HAVE_R6800) || defined(HAVE_IPQ6018)
-#if defined(HAVE_R9000)
+	#if defined(HAVE_R9000)
 	int mtddev = getMTD("plex");
-#else
+	#else
 	int mtddev = getMTD("ddwrt");
 	if (mtddev == -1) {
 		mtddev = getMTD("jffs2");
 	}
-#endif
+	#endif
 	if (mtddev > 0) {
 		char devdev[32];
 		sprintf(devdev, "/dev/mtd%d", mtddev);
@@ -617,9 +617,9 @@ rewrite:;
 	dd_loginfoverbose("flash", "freeram=[%ld] bufferram=[%ld]", info.freeram, info.bufferram);
 	int mul = 1; // temporarily use 1 instead of 4 until we
 #ifdef HAVE_IPQ6018
-#define MINEXTRA 512
+	#define MINEXTRA 512
 #else
-#define MINEXTRA 8
+	#define MINEXTRA 8
 #endif
 
 	// found a a solution
@@ -1049,8 +1049,8 @@ again:;
 	if (fp)
 		fclose(fp);
 #ifdef HAVE_CA8
-#ifndef HAVE_ALPHA
-#ifndef HAVE_USR5453
+	#ifndef HAVE_ALPHA
+		#ifndef HAVE_USR5453
 	buf = malloc(65536);
 	FILE *in = fopen("/dev/mtdblock/2", "rb");
 	fread(buf, 65536, 1, in);
@@ -1064,8 +1064,8 @@ again:;
 	fclose(in);
 	dd_loginfoverbose("flash", "fixup CRC %X and LEN %X", crc_data, data_len);
 	eval("mtd", "-f", "write", "/tmp/bdata", "bdata");
-#endif
-#endif
+		#endif
+	#endif
 #endif
 #ifdef HAVE_WZRHPAG300NH
 	// must delete checksum, otherwise device will not boot anymore. the checksum gets recreated by the bootloader

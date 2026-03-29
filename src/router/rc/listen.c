@@ -54,12 +54,12 @@
 // for PF_PACKET
 #include <features.h>
 #if __GLIBC__ >= 2 && __GLIBC_MINOR >= 1
-#include <netpacket/packet.h>
-#include <net/ethernet.h>
+	#include <netpacket/packet.h>
+	#include <net/ethernet.h>
 #else
-#include <asm/types.h>
-#include <linux/if_packet.h>
-#include <linux/if_ether.h>
+	#include <asm/types.h>
+	#include <linux/if_packet.h>
+	#include <linux/if_ether.h>
 #endif
 
 enum { L_FAIL, L_ERROR, L_UPGRADE, L_ESTABLISHED, L_SUCCESS };
@@ -340,9 +340,9 @@ static int listen_interface(char *interface)
 			if (nvram_match("wan_proto", "pptp")) {
 				inet_aton(nvram_safe_get("pptp_server_ip"), &ipaddr);
 			}
-#ifdef HAVE_L2TP
+	#ifdef HAVE_L2TP
 			else
-#endif
+	#endif
 #endif
 #ifdef HAVE_L2TP
 				if (nvram_match("wan_proto", "l2tp")) {

@@ -31,7 +31,7 @@
 #include <fcntl.h>
 #include <errno.h>
 #ifdef __UCLIBC__
-#include <error.h>
+	#include <error.h>
 #endif
 #include <time.h>
 #include <sys/ioctl.h>
@@ -44,15 +44,15 @@
 #include <linux/version.h>
 
 #if KERNEL_VERSION(2, 6, 0) <= LINUX_VERSION_CODE
-#define IS_KERNEL26 1
+	#define IS_KERNEL26 1
 #else
-#define IS_KERNEL26 0
+	#define IS_KERNEL26 0
 #endif
 
 #if IS_KERNEL26
-#include <linux/mtd/mtd-abi.h>
+	#include <linux/mtd/mtd-abi.h>
 #else
-#include <linux/mtd/mtd.h>
+	#include <linux/mtd/mtd.h>
 #endif
 #include <shutils.h>
 

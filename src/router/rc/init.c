@@ -346,9 +346,14 @@ static int fatal_signals[] = {
 #ifndef HAVE_RB500
 	SIGABRT,
 #endif
-	SIGFPE, SIGPIPE, SIGBUS,
+	SIGFPE,
+	SIGPIPE,
+	SIGBUS,
 	// SIGSEGV, // Don't shutdown, when Segmentation fault.
-	SIGSYS, SIGTRAP, SIGPWR, SIGTERM, /* reboot */
+	SIGSYS,
+	SIGTRAP,
+	SIGPWR,
+	SIGTERM, /* reboot */
 	// SIGUSR1, /* halt */ // We use the for some purpose
 };
 

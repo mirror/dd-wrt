@@ -33,21 +33,21 @@
 #include <stdint.h>
 
 #if __BYTE_ORDER == __BIG_ENDIAN
-#define cpu_to_le16(x) bswap_16(x)
-#define cpu_to_le32(x) bswap_32(x)
-#define cpu_to_le64(x) bswap_64(x)
-#define le16_to_cpu(x) bswap_16(x)
-#define le32_to_cpu(x) bswap_32(x)
-#define le64_to_cpu(x) bswap_64(x)
+	#define cpu_to_le16(x) bswap_16(x)
+	#define cpu_to_le32(x) bswap_32(x)
+	#define cpu_to_le64(x) bswap_64(x)
+	#define le16_to_cpu(x) bswap_16(x)
+	#define le32_to_cpu(x) bswap_32(x)
+	#define le64_to_cpu(x) bswap_64(x)
 #elif __BYTE_ORDER == __LITTLE_ENDIAN
-#define cpu_to_le16(x) (x)
-#define cpu_to_le32(x) (x)
-#define cpu_to_le64(x) (x)
-#define le16_to_cpu(x) (x)
-#define le32_to_cpu(x) (x)
-#define le64_to_cpu(x) (x)
+	#define cpu_to_le16(x) (x)
+	#define cpu_to_le32(x) (x)
+	#define cpu_to_le64(x) (x)
+	#define le16_to_cpu(x) (x)
+	#define le32_to_cpu(x) (x)
+	#define le64_to_cpu(x) (x)
 #else
-#error unknown endianness!
+	#error unknown endianness!
 #endif
 
 #define swap(a, b)                     \
@@ -71,11 +71,11 @@
 #include <byteswap.h>
 
 #if __BYTE_ORDER == __BIG_ENDIAN
-#define STORE32_LE(X) bswap_32(X)
+	#define STORE32_LE(X) bswap_32(X)
 #elif __BYTE_ORDER == __LITTLE_ENDIAN
-#define STORE32_LE(X) (X)
+	#define STORE32_LE(X) (X)
 #else
-#error unkown endianness!
+	#error unkown endianness!
 #endif
 
 #define GPT_MAGIC 0x5452415020494645ULL

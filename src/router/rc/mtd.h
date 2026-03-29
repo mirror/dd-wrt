@@ -14,8 +14,8 @@
  * $Id: mtd.h,v 1.1 2005/09/01 13:48:27 seg Exp $
  */
 
-#ifndef _mtd_h_
-#define _mtd_h_
+	#ifndef _mtd_h_
+		#define _mtd_h_
 
 /*
  * Open an MTD device
@@ -49,5 +49,5 @@ extern int restore_nvram(const char *path, const char *mtd);
  */
 extern int mtd_unlock(const char *mtd);
 
-#endif /* _mtd_h_ */
+	#endif /* _mtd_h_ */
 #endif

@@ -193,16 +193,16 @@ static int start_services_main(int argc, char **argv)
 #endif
 
 #ifdef HAVE_SSHD
-#ifdef HAVE_REGISTER
+	#ifdef HAVE_REGISTER
 	if (isregistered_real())
-#endif
+	#endif
 		start_service_force_f("sshd");
 #endif
 
 #ifdef HAVE_IPV6
-#ifdef HAVE_RADVD
+	#ifdef HAVE_RADVD
 	start_service_f("radvd");
-#endif
+	#endif
 #endif
 
 #ifdef HAVE_SNMP
@@ -376,9 +376,9 @@ static int stop_services_main(int argc, char **argv)
 #endif
 
 #ifdef HAVE_IPV6
-#ifdef HAVE_RADVD
+	#ifdef HAVE_RADVD
 	stop_service_f("radvd");
-#endif
+	#endif
 #endif
 
 #ifdef HAVE_WIFIDOG
@@ -808,9 +808,9 @@ static void handle_services(void)
 	FORK(eval("/etc/config/kaid.startup"));
 #endif
 #ifdef HAVE_SSHD
-#ifdef HAVE_REGISTER
+	#ifdef HAVE_REGISTER
 	if (isregistered_real())
-#endif
+	#endif
 		start_service_force_f("sshd");
 #endif
 	restart("firewall");
@@ -954,9 +954,9 @@ static void handle_management(void)
 #endif
 #ifdef HAVE_IPV6
 	start_service_f("ipv6");
-#ifdef HAVE_RADVD
+	#ifdef HAVE_RADVD
 	restart_f("radvd");
-#endif
+	#endif
 #endif
 #ifdef HAVE_PPTPD
 	restart_f("pptpd");
@@ -1564,9 +1564,9 @@ static void handle_dhcp_release(void)
 static void handle_usbdrivers(void)
 {
 	restart("drivers_net"); //stop is not yet implemented but we dont care about yet
-#ifdef HAVE_P910ND
+	#ifdef HAVE_P910ND
 	restart("printer");
-#endif
+	#endif
 }
 #endif
 #ifdef HAVE_EOP_TUNNEL

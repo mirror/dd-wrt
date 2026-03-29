@@ -1,7 +1,7 @@
 #ifdef HAVE_WLANLED
-#undef sprintf
-#undef strcpy
-/*
+	#undef sprintf
+	#undef strcpy
+	/*
  *   Copyright (C) 2012 Felix Fietkau <nbd@openwrt.org>
  *
  *   This program is free software; you can redistribute it and/or modify
@@ -18,31 +18,31 @@
  *   along with this program; if not, write to the Free Software
  *   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
  */
-#include <net/if.h>
-//#include <linux/if_ether.h>
-#include <sys/stat.h>
+	#include <net/if.h>
+	//#include <linux/if_ether.h>
+	#include <sys/stat.h>
 
-#include <stdio.h>
-#include <unistd.h>
-#include <stdbool.h>
-#include <stdint.h>
-#include <signal.h>
-#include <string.h>
-#include <fcntl.h>
+	#include <stdio.h>
+	#include <unistd.h>
+	#include <stdbool.h>
+	#include <stdint.h>
+	#include <signal.h>
+	#include <string.h>
+	#include <fcntl.h>
 
-#include <avl.h>
-//#include <list.h>
-#include "nl80211.h"
-#include <unl.h>
+	#include <avl.h>
+	//#include <list.h>
+	#include "nl80211.h"
+	#include <unl.h>
 
-#define DEFAULT_POLL_DELAY 1000
-#define IFACE_DELAY 1000
+	#define DEFAULT_POLL_DELAY 1000
+	#define IFACE_DELAY 1000
 
-#define LED_PREFIX "/sys/class/leds/"
-#define LED_SUFFIX "/brightness"
+	#define LED_PREFIX "/sys/class/leds/"
+	#define LED_SUFFIX "/brightness"
 
-#define GPIO_PREFIX "/sys/class/gpio/"
-#define GPIO_SUFFIX "/value"
+	#define GPIO_PREFIX "/sys/class/gpio/"
+	#define GPIO_SUFFIX "/value"
 
 static struct unl unl;
 static LIST_HEAD(interfaces);
