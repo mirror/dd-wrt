@@ -48,7 +48,7 @@ int main(int argc, char *argv[])
 
 	struct blocklist *entry = blocklist_root.next;
 	while (entry) {
-		fprintf(stdout, "blocklist entry [%s]\t\tAttempts %d\tState(%d) %s\tFirst Time (%ld) %s\tBlocked Until (%ld) %s\n", entry->ip,
+		fprintf(stdout, "blocklist entry [%s]\t\tAttempts %d\tState(%d) %s\tFirst Time (%lld) %s\tBlocked Until (%lld) %s\n", entry->ip,
 			entry->attempts, entry->blocked, entry->blocked == 1 ? "Blocked" : "Open", entry->seen,ctime(&entry->seen),
 			entry->end, ctime(&entry->end));
 		entry = entry->next;
