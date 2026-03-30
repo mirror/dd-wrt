@@ -14,7 +14,7 @@ char *rfctime(const time_t *timep, char *s)
 	return s;
 }
 
-static void init_blocklist(void)
+static void _init_blocklist(void)
 {
 	struct blocklist *entry = blocklist_root.next;
 	struct blocklist *last = &blocklist_root;
@@ -52,7 +52,7 @@ static void init_blocklist(void)
 
 int main(int argc, char *argv[])
 {
-	init_blocklist();
+	_init_blocklist();
 
 	struct blocklist *entry = blocklist_root.next;
 	fprintf(stdout, "Blocked Clients in Tarpit\n");
