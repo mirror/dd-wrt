@@ -1720,7 +1720,7 @@ restart:;
 	pthread_mutex_unlock(&mutex_block);
 }
 
-void add_blocklist(const char *service, char *ip)
+static void _add_blocklist(const char *service, char *ip, int now)
 {
 	if (ip == NULL)
 		return;
@@ -1731,7 +1731,7 @@ void add_blocklist(const char *service, char *ip)
 	while (entry) {
 		if (!strcmp(ip, &entry->ip[0])) {
 			entry->count++;
-			if (entry->blocked != 1 && entry->count > 4) {
+			if (entry->blocked != 1 && (entry->count > 4 || now)) {
 				int newblocktime;
 				if (entry->blocked == -1) {
 					entry->attempts++;
@@ -1769,6 +1769,16 @@ void add_blocklist(const char *service, char *ip)
 end:;
 	dump_blocklist();
 	pthread_mutex_unlock(&mutex_block);
+}
+
+void add_blocklist(const char *service, char *ip)
+{
+	_add_blocklist(service, ip, 0);
+}
+
+void add_blocklist_now(const char *service, char *ip)
+{
+	_add_blocklist(service, ip, 1);
 }
 
 void add_blocklist_sock(const char *service, int conn_fd)
