@@ -306,7 +306,7 @@ static int usb_process_path(char *path, char *fs, char *target)
 	#else
 		#ifdef HAVE_NTFS3
 		insmod("ntfsplus");
-		ret = eval("/bin/mount", "-t", "ntfsplus", "-o", "nls=utf8,noatime", path, mount_point);
+		ret = eval("/bin/mount", "-t", "ntfs", "-o", "nls=utf8,noatime", path, mount_point);
 		if (ret) {
 			rmmod("ntfsplus");
 			insmod("ntfs3");
@@ -339,7 +339,7 @@ static int usb_process_path(char *path, char *fs, char *target)
 	#else
 		#ifdef HAVE_NTFS3
 			insmod("ntfsplus");
-			ret = eval("/bin/mount", "-t", "ntfsplus", "-o", "nls=utf8,noatime", path, mount_point);
+			ret = eval("/bin/mount", "-t", "ntfs", "-o", "nls=utf8,noatime", path, mount_point);
 			if (ret) {
 				rmmod("ntfsplus");
 				insmod("ntfs3");

@@ -365,7 +365,7 @@ repeat:;
 	#else
 		#ifdef HAVE_NTFS3
 		insmod("ntfsplus");
-		ret = eval("/bin/mount", "-t", "ntfsplus", "-o", "nls=utf8,noatime", path, mount_point);
+		ret = eval("/bin/mount", "-t", "ntfs", "-o", "nls=utf8,noatime", path, mount_point);
 		if (ret) {
 			rmmod("ntfsplus");
 			insmod("ntfs3");
@@ -421,7 +421,7 @@ again2:;
 	#else
 		#ifdef HAVE_NTFS3
 			insmod("ntfsplus");
-			ret = eval("/bin/mount", "-t", "ntfsplus", "-o", "nls=utf8,noatime", path, mount_point);
+			ret = eval("/bin/mount", "-t", "ntfs", "-o", "nls=utf8,noatime", path, mount_point);
 			if (ret) {
 				rmmod("ntfsplus");
 				insmod("ntfs3");
