@@ -1606,6 +1606,9 @@ void init_blocklist(int recover)
 void add_blocklist(const char *service, char *ip)
 {
 }
+void add_blocklist_now(const char *service, char *ip)
+{
+}
 
 void add_blocklist_sock(const char *service, int sock)
 {
