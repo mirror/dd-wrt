@@ -411,6 +411,9 @@ again:;
 			sleep(5);
 			killall("init", SIGTERM);
 		} else {
+			nvram_set("flash_active", "0");
+			stop_service("cron");
+			start_service("cron");
 			dd_loginfo("upgrade", "upgrade failed.");
 		}
 	}
