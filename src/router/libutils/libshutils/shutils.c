@@ -1710,8 +1710,8 @@ restart:;
 				goto restart;
 			}
 			if (recover) {
-				if (entry->blocked == 1)
-					mod_tarpit(entry->ip, 0);
+				if (last->next->blocked == 1)
+					mod_tarpit(&last->next->ip[0], 0);
 			}
 			last = last->next;
 		}
