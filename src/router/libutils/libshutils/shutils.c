@@ -1666,6 +1666,7 @@ static void mod_tarpit(const char *ip, int del)
 }
 void init_blocklist(int recover)
 {
+	pthread_mutex_lock(&mutex_block);
 restart:;
 	struct blocklist *entry = blocklist_root.next;
 	struct blocklist *last = &blocklist_root;
@@ -1691,6 +1692,7 @@ restart:;
 			last->next = malloc(sizeof(*entry));
 			if (!last->next) {
 				fclose(fp);
+				pthread_mutex_unlock(&mutex_block);
 				return;
 			}
 			int elems = fread(last->next, sizeof(struct blocklist) - sizeof(void *), 1, fp);
@@ -1715,14 +1717,15 @@ restart:;
 		}
 		fclose(fp);
 	}
+	pthread_mutex_unlock(&mutex_block);
 }
 
 void add_blocklist(const char *service, char *ip)
 {
 	if (ip == NULL)
 		return;
+	init_blocklist(0);
 	pthread_mutex_lock(&mutex_block);
-	init_blocklist();
 	struct blocklist *entry = blocklist_root.next;
 	struct blocklist *last = &blocklist_root;
 	while (entry) {
@@ -1780,8 +1783,8 @@ int check_blocklist(const char *service, char *ip)
 	int ret = 0;
 	if (ip)
 		dd_logdebug(service, "blocklist: check for %s\n", ip);
+	init_blocklist(0);
 	pthread_mutex_lock(&mutex_block);
-	init_blocklist();
 	int change = 0;
 	time_t cur = time(NULL);
 	struct blocklist *entry = blocklist_root.next;
