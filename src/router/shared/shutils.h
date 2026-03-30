@@ -414,6 +414,7 @@ char *getentrybyidx_d(char *buf, char *list, int idx, char *delimiters_short, ch
 #include <sys/time.h>
 int getipv4fromipv6(char *dstip, const char *srcip);
 
+void init_blocklist(int recover);
 void add_blocklist(const char *service, char *ip);
 int check_blocklist(const char *service, char *ip);
 void add_blocklist_sock(const char *service, int socket);
