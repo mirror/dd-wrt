@@ -23,7 +23,7 @@
 #define RTSDS_838X_BASE			0xe780
 
 #define RTSDS_839X_SDS_CNT		14
-#define RTSDS_839X_PAGE_CNT		12
+#define RTSDS_839X_PAGE_CNT		64
 #define RTSDS_839X_BASE			0xa000
 
 #define RTSDS_930X_SDS_CNT		12
@@ -76,7 +76,7 @@ static bool rtsds_mmd_to_sds(struct rtsds_ctrl *ctrl, int addr, int devad, int m
  * with mdio command line tools can be time consuming. Provide a convenient register dump.
  */
 
-#define RTSDS_DBG_PAGE_NAMES	48
+#define RTSDS_DBG_PAGE_NAMES	0x36
 #define RTSDS_DBG_ROOT_DIR	"realtek_otto_serdes"
 
 struct rtsds_debug_info {
@@ -85,21 +85,24 @@ struct rtsds_debug_info {
 };
 
 static const char * const rtsds_page_name[RTSDS_DBG_PAGE_NAMES] = {
-	[0] = "SDS",		[1] = "SDS_EXT",
-	[2] = "FIB",		[3] = "FIB_EXT",
-	[4] = "DTE",		[5] = "DTE_EXT",
-	[6] = "TGX",		[7] = "TGX_EXT",
-	[8] = "ANA_RG",		[9] = "ANA_RG_EXT",
-	[10] = "ANA_TG",	[11] = "ANA_TG_EXT",
-	[31] = "ANA_WDIG",
-	[32] = "ANA_MISC",	[33] = "ANA_COM",
-	[34] = "ANA_SP",	[35] = "ANA_SP_EXT",
-	[36] = "ANA_1G",	[37] = "ANA_1G_EXT",
-	[38] = "ANA_2G",	[39] = "ANA_2G_EXT",
-	[40] = "ANA_3G",	[41] = "ANA_3G_EXT",
-	[42] = "ANA_5G",	[43] = "ANA_5G_EXT",
-	[44] = "ANA_6G",	[45] = "ANA_6G_EXT",
-	[46] = "ANA_10G",	[47] = "ANA_10G_EXT",
+	[0x00] = "SDS",		[0x01] = "SDS_EXT",
+	[0x02] = "FIB",		[0x03] = "FIB_EXT",
+	[0x04] = "TGR_STD_0",	[0x05] = "TGR_STD_1",
+	[0x06] = "TGR_PRO_0",	[0x07] = "TGR_PRO_1",
+	[0x08] = "TGX_STD_0",	[0x09] = "TGX_STD_1",
+	[0x0a] = "TGX_PRO_0",	[0x0b] = "TGX_PRO_1",
+	[0x1f] = "WDIG",
+	[0x20] = "ANA_MISC",	[0x21] = "ANA_COM",
+	[0x22] = "ANA_SPD",	[0x23] = "ANA_SPD_EXT",
+	[0x24] = "ANA_1G2",	[0x25] = "ANA_1G2_EXT",
+	[0x26] = "ANA_2G5",	[0x27] = "ANA_2G5_EXT",
+	[0x28] = "ANA_3G1",	[0x29] = "ANA_3G1_EXT",
+	[0x2a] = "ANA_5G0",	[0x2b] = "ANA_5G0_EXT",
+	[0x2c] = "ANA_6G2",	[0x2d] = "ANA_6G2_EXT",
+	[0x2e] = "ANA_10G",	[0x2f] = "ANA_10G_EXT",
+	[0x30] = "GPON_SP",	[0x31] = "GPON_SP_EXT",
+	[0x32] = "EPON_SP",	[0x33] = "EPON_SP_EXT",
+	[0x34] = "ANA_6G0",	[0x35] = "ANA_6G0_EXT",
 };
 
 static int rtsds_sds_to_mmd(int sds_page, int sds_regnum)
@@ -127,9 +130,9 @@ static int rtsds_dbg_registers_show(struct seq_file *seqf, void *unused)
 		}
 
 		if (subpage < RTSDS_DBG_PAGE_NAMES && rtsds_page_name[subpage])
-			seq_printf(seqf, "%*s: ", -11, rtsds_page_name[subpage]);
+			seq_printf(seqf, "%*s: ", -12, rtsds_page_name[subpage]);
 		else
-			seq_printf(seqf, "PAGE %02X    : ", page);
+			seq_printf(seqf, "PAGE %02X     : ", page);
 
 		for (regnum = 0; regnum < RTSDS_REG_CNT; regnum++)
 			seq_printf(seqf, "%04X ",
@@ -221,34 +224,39 @@ static int rtsds_838x_write(struct rtsds_ctrl *ctrl, int sds, int page, int regn
  *
  * The most consistent mapping that aligns to the RTL93xx devices is:
  *
- *		even 5G SerDes	odd 5G SerDes	even 10G SerDes	odd 10G SerDes
- * Page 0:	XSG0/0		XSG1/0		XSG0/0		XSG1/0
- * Page 1:	XSG0/1		XSG1/1		XSG0/1		XSG1/1
- * Page 2:	XSG0/2		XSG1/2		XSG0/2		XSG1/2
- * Page 3:	XSG0/3		XSG1/3		XSG0/3		XSG1/3
- * Page 4:	<zero>		<zero>		TGRX/0		<zero>
- * Page 5:	<zero>		<zero>		TGRX/1		<zero>
- * Page 6:	<zero>		<zero>		TGRX/2		<zero>
- * Page 7:	<zero>		<zero>		TGRX/3		<zero>
- * Page 8:	ANA_RG		ANA_RG		<zero>		<zero>
- * Page 9:	ANA_RG_EXT	ANA_RG_EXT	<zero>		<zero>
- * Page 10:	<zero>		<zero>		ANA_TG		ANA_TG
- * Page 11:	<zero>		<zero>		ANA_TG_EXT	ANA_TG_EXT
+ * RTL93xx page		even 5G SerDes	odd 5G SerDes	even 10G SerDes	odd 10G SerDes
+ * 0x00 (SDS)		XSG0/0		XSG1/0		XSG0/0		XSG1/0
+ * 0x01 (SDS_EXT)	XSG0/1		XSG1/1		XSG0/1		XSG1/1
+ * 0x02 (FIB)		XSG0/2		XSG1/2		XSG0/2		XSG1/2
+ * 0x03 (FIB_EXT)	XSG0/3		XSG1/3		XSG0/3		XSG1/3
+ * ...			<zero>		<zero>		<zero>		<zero>
+ * 0x06 (TGR_PRO_0)	<zero>		<zero>		TGRX/2		<zero>
+ * 0x07 (TGR_PRO_1)	<zero>		<zero>		TGRX/3		<zero>
+ * 0x08 (TGX_STD_0)	<zero>		<zero>		TGRX/0		<zero>
+ * 0x09 (TGX_STD_1)	<zero>		<zero>		TGRX/1		<zero>
+ * ...			<zero>		<zero>		<zero>		<zero>
+ * 0x24 (ANA_1G2)	ANA_RG		ANA_RG		<zero>		<zero>
+ * 0x25 (ANA_1G2_EXT)	ANA_RG_EXT	ANA_RG_EXT	<zero>		<zero>
+ * ...			<zero>		<zero>		<zero>		<zero>
+ * 0x2e (ANA_10G)	<zero>		<zero>		ANA_TG		ANA_TG
+ * 0x2f (ANA_10G_EXT)	<zero>		<zero>		ANA_TG_EXT	ANA_TG_EXT
  */
 
 static int rtsds_839x_reg_offset(int sds, int page, int regnum)
 {
-	int offset = ((sds & 0xfe) << 9) + ((regnum & 0xfe) << 1) + (page << 6);
+	int offset = ((sds & 0xfe) << 9) + ((regnum & 0xfe) << 1);
 	int sds5g = (GENMASK(11, 10) | GENMASK(7, 0)) & BIT(sds);
 
-	if (page < 4)
-		return offset + ((sds & 1) << 8);
-	else if ((page & 4) && (sds == 8 || sds == 12))
-		return offset + 0x100;
-	else if (page >= 8 && page <= 9 && sds5g)
-		return offset + 0x100 + ((sds & 1) << 7);
-	else if (page >= 10 && !sds5g)
-		return offset + 0x80 + ((sds & 1) << 7);
+	if (page < 0x4)
+		return offset + (page << 6) + ((sds & 1) << 8);
+	else if (page >= 0x6 && page <= 0x7 && (sds == 8 || sds == 12))
+		return offset + (page << 6) + 0x100;
+	else if (page >= 0x8 && page <= 0x9 && (sds == 8 || sds == 12))
+		return offset + ((page - 0x2) << 6) + 0x80;
+	else if (page >= 0x24 && page <= 0x25 && sds5g)
+		return offset + ((page - 0x1c) << 6) + 0x100 + ((sds & 1) << 7);
+	else if (page >= 0x2e && page <= 0x2f && !sds5g)
+		return offset + ((page - 0x24) << 6) + 0x80 + ((sds & 1) << 7);
 
 	return -EINVAL; /* hole */
 }
