@@ -4040,6 +4040,7 @@ void start_firewall(void)
 #ifdef HAVE_IPV6
 	run_firewall6(vifs);
 #endif
+	init_blocklist(1);
 	/*
 	 * begin Sveasoft add 
 	 */
