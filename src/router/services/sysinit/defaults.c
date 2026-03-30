@@ -2236,12 +2236,14 @@ struct nvram_param srouter_defaults[] = {
 	{ "wlan1_txpwrdbm", "20" },
 #endif
 #else
+#ifndef HAVE_MVEBU
 	{ "wlan0_txpwrdbm", "20" },
 	{ "wlan1_txpwrdbm", "20" },
 	{ "wlan2_txpwrdbm", "20" },
 	{ "wlan3_txpwrdbm", "20" },
 	{ "wlan4_txpwrdbm", "20" },
 	{ "wlan5_txpwrdbm", "20" },
+#endif
 #endif
 #endif
 #else
