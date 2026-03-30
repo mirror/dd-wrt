@@ -1600,6 +1600,9 @@ int ipow(int base, int exp)
 }
 
 #ifdef HAVE_MICRO
+void init_blocklist(int recover)
+{
+}
 void add_blocklist(const char *service, char *ip)
 {
 }
