@@ -141,10 +141,10 @@ static int rtl8231_led_blink_set(struct led_classdev *led_cdev, unsigned long *d
 			interval_ms = (*delay_on + *delay_off) / 2;
 	}
 
-	/* Find clamped toggle interval */
-	for (i = 0; i < (num_rates - 1); i++)
-		if (interval_ms > rates[i].interval_ms)
-			break;
+	/* Find ceiled (or maximum) toggle interval */
+	i = 0;
+	while (i < (num_rates - 1) && interval_ms > rates[i].interval_ms)
+		i++;
 
 	interval_ms = rates[i].interval_ms;
 
@@ -180,7 +180,7 @@ static int rtl8231_led_read_address(struct fwnode_handle *fwnode, unsigned int *
 	return 0;
 }
 
-static const struct regmap_field *rtl8231_led_get_field(struct device *dev, struct regmap *map,
+static struct regmap_field *rtl8231_led_get_field(struct device *dev, struct regmap *map,
 		unsigned int port_index, unsigned int led_index)
 {
 	unsigned int offset = port_index / RTL8231_LED_PER_REG;
@@ -255,6 +255,11 @@ static int rtl8231_led_probe(struct platform_device *pdev)
 		dev_err(dev, "scan mode missing or invalid");
 		return -EINVAL;
 	}
+
+	/* Enable immediate LED changes, otherwise we need to latch updates */
+	err = regmap_update_bits(map, RTL8231_REG_FUNC0, RTL8231_ENABLE_SYNC_LED, 0);
+	if (err)
+		return err;
 
 	fwnode_for_each_available_child_node(dev->fwnode, child) {
 		err = rtl8231_led_probe_single(dev, map, port_counts, child);

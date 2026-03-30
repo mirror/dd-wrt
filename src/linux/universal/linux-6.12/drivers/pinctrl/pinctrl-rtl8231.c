@@ -376,6 +376,11 @@ static int rtl8231_configure_safe(struct device *dev, struct regmap *map)
 	unsigned int dir;
 	int err;
 
+	/* Enable immediate GPIO changes, otherwise we need to latch updates */
+	err = regmap_update_bits(map, RTL8231_REG_FUNC0, RTL8231_ENABLE_SYNC_GPIO, 0);
+	if (err)
+		return err;
+
 	for (unsigned int i = 0; i < ARRAY_SIZE(pin_fields); i++) {
 		field_data = devm_regmap_field_alloc(dev, map, pin_fields[i].gpio_data);
 		if (IS_ERR(field_data))
