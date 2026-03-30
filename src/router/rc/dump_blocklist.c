@@ -64,7 +64,7 @@ int main(int argc, char *argv[])
 
 		fprintf(stdout, "[%45s] Attempts %3d Count %3d State(%2d) %s First Time %32s%s %s\n", entry->ip, entry->attempts,
 			entry->count, entry->blocked, entry->blocked == 1 ? "Blocked" : "Open   ", seen,
-			entry->end ? "\tBlocked Until" : "", entry->end ? end : "");
+			entry->blocked == 1 && entry->end ? "\tBlocked Until" : "", entry->blocked == 1 && entry->end ? end : "");
 		entry = entry->next;
 	}
 }
