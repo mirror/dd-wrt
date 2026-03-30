@@ -55,15 +55,16 @@ int main(int argc, char *argv[])
 	init_blocklist();
 
 	struct blocklist *entry = blocklist_root.next;
+	fprintf(stdout, "Blocked Clients in Tarpit\n");
 	while (entry) {
 		char seen[128];
 		char end[128];
 		rfctime(&entry->seen, seen);
 		rfctime(&entry->end, end);
 
-		fprintf(stdout, "blocklist entry [%15s] Attempts %3d Count %3d State(%d) %s First Time %32s\tBlocked Until %s\n",
-			entry->ip, entry->attempts, entry->count, entry->blocked, entry->blocked == 1 ? "Blocked" : "Open   ", seen,
-			end);
+		fprintf(stdout, "[%45s] Attempts %3d Count %3d State(%2d) %s First Time %32s%s %s\n", entry->ip, entry->attempts,
+			entry->count, entry->blocked, entry->blocked == 1 ? "Blocked" : "Open   ", seen,
+			entry->end ? "\tBlocked Until" : "", entry->end ? end : "");
 		entry = entry->next;
 	}
 }
