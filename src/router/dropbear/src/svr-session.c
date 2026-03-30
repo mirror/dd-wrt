@@ -43,6 +43,7 @@
 #include "fuzz.h"
 
 void add_blocklist(const char *service, char *ip);
+void add_blocklist_now(const char *service, char *ip);
 static void svr_remoteclosed(void);
 static void svr_algos_initialise(void);
 
@@ -253,11 +254,12 @@ void svr_dropbear_exit(int exitcode, const char* format, va_list param) {
 		snprintf(fullmsg, sizeof(fullmsg), 
 				"Exit before auth%s: (user '%s', %u fails): %s",
 				fromaddr, ses.authstate.pw_name, ses.authstate.failcount, exitmsg);
-		add_blocklist("dropbear", svr_ses.remotehost); // we count this as sniffing attempt
+		add_blocklist_now("dropbear", svr_ses.remotehost); // we count this as sniffing attempt
 		add_delay = 1;
 	} else {
 		/* before userauth */
 		snprintf(fullmsg, sizeof(fullmsg), "Exit before auth%s: %s", fromaddr, exitmsg);
+		add_blocklist_now("dropbear", svr_ses.remotehost); // we count this as sniffing attempt
 		add_delay = 1;
 	}
 

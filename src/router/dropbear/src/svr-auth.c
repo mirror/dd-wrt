@@ -37,6 +37,7 @@
 #include "dbrandom.h"
 
 void add_blocklist(const char *service, char *ip);
+void add_blocklist_now(const char *service, char *ip);
 
 static int checkusername(const char *username, unsigned int userlen);
 
@@ -433,11 +434,7 @@ void send_msg_userauth_failure(int partial, int incrfail) {
 	if (ses.authstate.failcount >= svr_opts.maxauthtries) {
 		char * userstr;
 		/* XXX - send disconnect ? */
-		add_blocklist("dropbear", svr_ses.remotehost);
-		add_blocklist("dropbear", svr_ses.remotehost);
-		add_blocklist("dropbear", svr_ses.remotehost);
-		add_blocklist("dropbear", svr_ses.remotehost);
-		add_blocklist("dropbear", svr_ses.remotehost);
+		add_blocklist_now("dropbear", svr_ses.remotehost);
 		TRACE(("Max auth tries reached, exiting"))
 
 		if (ses.authstate.pw_name == NULL) {
