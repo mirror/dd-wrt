@@ -35,6 +35,7 @@ $(obj)/ksmbd_spnego_negtokentarg.asn1.o: $(obj)/ksmbd_spnego_negtokentarg.asn1.c
 
 ksmbd-$(CONFIG_SMB_INSECURE_SERVER) += smb1pdu.o smb1ops.o smb1misc.o netmisc.o
 ksmbd-$(CONFIG_SMB_SERVER_SMBDIRECT) += transport_rdma.o
+ksmbd-$(CONFIG_PROC_FS) += proc.o
 #else
 # For external module build
 EXTRA_FLAGS += -I$(PWD)
