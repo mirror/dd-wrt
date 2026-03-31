@@ -16,6 +16,7 @@
 //#include <asm/addrspace.h>
 #include <asm/io.h>
 #include <linux/uaccess.h>
+#include <linux/lzma.h>
 
 #include "nvram_linux.h"
 
@@ -56,10 +57,14 @@ static int nvram_major = -1;
 //static devfs_handle_t nvram_handle = NULL;
 static struct mtd_info *nvram_mtd = NULL;
 static size_t nvram_off = -1;
+static void decompress(void *src, void *dst, size_t len);
 int _nvram_read(char *buf)
 {
 	size_t len, i;
 	struct nvram_header *header = (struct nvram_header *)buf;
+	void *lzma;
+	int found=0;
+	
 	if (nvram_mtd) {
 		if (nvram_off == -1) {
 			nvram_off = nvram_mtd->size - NVRAM_SPACE;
@@ -68,6 +73,7 @@ int _nvram_read(char *buf)
 				if (header->magic == NVRAM_MAGIC) {
 					printk(KERN_INFO "found nvram at %X\n", i);
 					nvram_off = i;
+					found = 1;
 					break;
 				}
 			}
@@ -76,11 +82,19 @@ int _nvram_read(char *buf)
 		if (header->magic != NVRAM_MAGIC) {
 			mtd_read(nvram_mtd, nvram_mtd->size - (NVRAM_SPACE / 2), (NVRAM_SPACE / 2), &len, buf);
 			if (header->magic == NVRAM_MAGIC)
-				printk(KERN_INFO "convert old nvram to new one\n");
+				found = 1;
 			else
-				printk(KERN_INFO "nvram empty\n");
+				found = 0;
 		}
 	}
+	if (found)
+		return 0;
+	lzma = vmalloc(nvram_mtd->size);
+	if (!lzma)
+		return 0;
+	mtd_read(nvram_mtd, i, nvram_mtd->size, &len, lzma);
+	decompress(lzma, buf, nvram_mtd->size);
+	
 	return 0;
 }
 
@@ -178,6 +192,94 @@ int nvram_unset(const char *name)
 	return ret;
 }
 
+static CLzmaEncHandle *p;
+static Byte propsEncoded[LZMA_PROPS_SIZE];
+static SizeT propsSize = sizeof(propsEncoded);
+
+static void lzma_free_workspace(void)
+{
+	LzmaEnc_Destroy(p, &lzma_alloc, &lzma_alloc);
+}
+
+static int lzma_alloc_workspace(CLzmaEncProps *props)
+{
+	if ((p = (CLzmaEncHandle *)LzmaEnc_Create(&lzma_alloc)) == NULL)
+	{
+		printk(KERN_ERR "Failed to allocate lzma deflate workspace\n");
+		return -ENOMEM;
+	}
+
+	if (LzmaEnc_SetProps(p, props) != SZ_OK)
+	{
+		lzma_free_workspace();
+		return -1;
+	}
+
+	if (LzmaEnc_WriteProperties(p, propsEncoded, &propsSize) != SZ_OK)
+	{
+		lzma_free_workspace();
+		return -1;
+	}
+
+	return 0;
+}
+
+static void *compress(void *src, size_t len)
+{
+	SizeT compress_size = NVRAM_SPACE;
+	void *dst;
+	int ret;
+	CLzmaEncProps props;
+	LzmaEncProps_Init(&props);
+
+	props.dictSize = LZMA_BEST_DICT(0x2000);
+	props.level = LZMA_BEST_LEVEL;
+	props.lc = LZMA_BEST_LC;
+	props.lp = LZMA_BEST_LP;
+	props.pb = LZMA_BEST_PB;
+	props.fb = LZMA_BEST_FB;
+
+	ret = lzma_alloc_workspace(&props);
+	if (ret < 0)
+		return NULL;
+	dst = vmalloc(NVRAM_SPACE);
+	if (!dst)
+		return NULL;
+	ret = LzmaEnc_MemEncode(p, cpage_out, &compress_size, src, len,
+		0, NULL, &lzma_alloc, &lzma_alloc);
+	lzma_free_workspace();
+	return dst;
+}
+
+static void decompress(void *src, void *dst, size_t len)
+{
+	SizeT dl = (SizeT)NVRAM_SPACE;
+	SizeT sl = (SizeT)len;
+	ELzmaStatus status;
+	if (!memcmp(src, NVRAM_MAGIC, 4)) {
+		memcpy(dst, src, len);
+		return;
+	}
+	props.dictSize = LZMA_BEST_DICT(0x2000);
+	props.level = LZMA_BEST_LEVEL;
+	props.lc = LZMA_BEST_LC;
+	props.lp = LZMA_BEST_LP;
+	props.pb = LZMA_BEST_PB;
+	props.fb = LZMA_BEST_FB;
+
+	ret = lzma_alloc_workspace(&props);
+	if (ret < 0)
+		return NULL;
+
+	ret = LzmaDecode(dst, &dl, src, &sl, propsEncoded,
+		propsSize, LZMA_FINISH_ANY, &status, &lzma_alloc);
+	if (ret != SZ_OK || status == LZMA_STATUS_NOT_FINISHED || dl != (SizeT)destlen)
+		return;
+	lzma_free_workspace();
+	return;
+}
+
+
 #if 0
 static void erase_callback(struct erase_info *done)
 {
@@ -190,6 +292,7 @@ static u_int32_t bad[256];
 int nvram_commit(void)
 {
 	char *buf;
+	void *lzma;
 	size_t erasesize, len;
 	u_int32_t alternate;
 	int i;
@@ -219,7 +322,7 @@ int nvram_commit(void)
 	waiting++;
 	/* Backup sector blocks to be erased */
 	mutex_lock(&nvram_sem);
-	erasesize = ROUNDUP(NVRAM_SPACE, nvram_mtd->erasesize);
+	erasesize = nvram_mtd->erasesize;
 	if (!(buf = MALLOC(erasesize))) {
 		printk("nvram_commit: out of memory\n");
 		mutex_unlock(&nvram_sem);
@@ -227,27 +330,9 @@ int nvram_commit(void)
 		return -ENOMEM;
 	}
 
-	if (nvram_off != -1 && nvram_off != (nvram_mtd->size - NVRAM_SPACE)) {	
-		offset = nvram_off;
-		header = (struct nvram_header *)buf;
-	} else if ((i = erasesize - NVRAM_SPACE) > 0) {
-		offset = nvram_mtd->size - erasesize;
-		nvram_off = nvram_mtd->size - erasesize;
-		len = 0;
-		ret = mtd_read(nvram_mtd, offset, i, &len, buf);
-		if (ret || len != i) {
-			printk("nvram_commit: read error ret = %d, len = %zu/%d\n", ret, len, i);
-			ret = -EIO;
-			goto done;
-		}
-		header = (struct nvram_header *)(buf + i);
-	} else {
-		nvram_off = nvram_mtd->size - erasesize;
-		offset = nvram_mtd->size - NVRAM_SPACE;
-		header = (struct nvram_header *)buf;
-	}
+	offset = nvram_off;
+	header = (struct nvram_header *)buf;
 	
-
 	/* Regenerate NVRAM */
 	spin_lock_irqsave(&nvram_lock, flags);
 	ret = _nvram_commit(header);
@@ -257,11 +342,11 @@ int nvram_commit(void)
 	/* Erase sector blocks */
 	memset(&bad[0], -1, 256 * sizeof(int));
 	esize = nvram_mtd->erasesize;
-	counts = (NVRAM_SPACE / esize);
+	counts = (nvram_mtd->size / esize);
 	if (!counts)
 		counts = 1;
 	fullerase:;
-	for (; offset < nvram_mtd->size - NVRAM_SPACE + header->len; offset += nvram_mtd->erasesize) {
+	for (; offset < nvram_mtd->size; offset += nvram_mtd->erasesize) {
 		erase.addr = offset;
 		erase.len = nvram_mtd->erasesize;
 
@@ -307,23 +392,18 @@ int nvram_commit(void)
 			break;
 		}
 	}
-//	printk("nvram_commit: final offset = %X\n", offset);
-	/* Write partition up to end of data area */
-	if (esize > NVRAM_SPACE)
-		i = erasesize - NVRAM_SPACE + ROUNDUP(header->len, NVRAM_SPACE);
-	else
-		i = erasesize - NVRAM_SPACE + ROUNDUP(header->len, esize);
-	ret = mtd_write(nvram_mtd, offset, i, &len, buf);
+	lzma = compress(buf, header->len);
+	if (!lzma) {
+		printk(KERN_ERR "nvram: compress failed\n");
+		goto done;
+	}
+	ret = mtd_write(nvram_mtd, offset, nvram_mtd->size-offset, &len, lzma);
+	vfree(lzma);
 	if (ret || len != i) {
-	
 		printk("nvram_commit: write error (offset %d, size %d)\n", offset, i);
 		ret = -EIO;
 		goto done;
 	}
-
-	offset = nvram_mtd->size - erasesize;
-	ret = mtd_read(nvram_mtd, offset, 4, &len, buf);
-
 done:
 	mutex_unlock(&nvram_sem);
 	waiting--;
