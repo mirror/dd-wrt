@@ -119,6 +119,6 @@ void start_smartdns(void)
 
 void stop_smartdns(void)
 {
-	stop_process("smartdns", "daemon");
+	stop_process_hard("smartdns", "daemon");
 }
 #endif
