@@ -125,15 +125,15 @@
 			realtek,led-scan-mode = "single-color";
 
 			// RJ45 ports
-			PORT_LED(01, 0, 0);
-			PORT_LED(02, 0, 1);
-			PORT_LED(03, 0, 2);
-			PORT_LED(04, 1, 0);
-			PORT_LED(05, 1, 1);
-			PORT_LED(06, 1, 2);
-			PORT_LED(07, 2, 0);
-			PORT_LED(08, 2, 1);
-			PORT_LED(09, 2, 2);
+			PORT_LED(1, 0, 0);
+			PORT_LED(2, 0, 1);
+			PORT_LED(3, 0, 2);
+			PORT_LED(4, 1, 0);
+			PORT_LED(5, 1, 1);
+			PORT_LED(6, 1, 2);
+			PORT_LED(7, 2, 0);
+			PORT_LED(8, 2, 1);
+			PORT_LED(9, 2, 2);
 			PORT_LED(10, 3, 0);
 			PORT_LED(11, 3, 1);
 			PORT_LED(12, 3, 2);
