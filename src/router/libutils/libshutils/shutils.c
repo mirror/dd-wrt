@@ -1643,7 +1643,11 @@ static void dump_blocklist(void)
 	if (fp) {
 		while (entry) {
 			entry->ver = BLOCKVER;
-			fwrite(entry, sizeof(struct blocklist) - sizeof(void *), 1, fp);
+			int ret = fwrite(entry, sizeof(struct blocklist) - sizeof(void *), 1, fp);
+			if (ret < 1) { // in case, disc is full
+				fclose(fp);
+				return;
+			}
 			entry = entry->next;
 		}
 		fclose(fp);
@@ -1748,8 +1752,11 @@ static void _add_blocklist(const char *service, char *ip, int now)
 					entry->attempts = 1;
 				}
 				entry->blocked = 1;
-				dd_loginfo(service, "5 failed login attempts reached. block client %s for %d minutes", ip,
-					   newblocktime);
+				if (now)
+					dd_loginfo(service, "sniffing detected. block client %s for %d minutes", ip, newblocktime);
+				else
+					dd_loginfo(service, "5 failed login attempts reached. block client %s for %d minutes", ip,
+						   newblocktime);
 				mod_tarpit(ip, 0);
 			}
 			goto end;
