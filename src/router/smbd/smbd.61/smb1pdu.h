@@ -460,7 +460,7 @@ struct smb_com_lock_req {
 	__le16 NumberOfUnlocks;
 	__le16 NumberOfLocks;
 	__le16 ByteCount;
-	char *Locks[1];
+	char Locks[];
 } __packed;
 
 struct smb_com_lock_rsp {
