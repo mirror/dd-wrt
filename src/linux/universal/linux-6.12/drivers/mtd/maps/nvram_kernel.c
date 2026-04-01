@@ -72,7 +72,7 @@ int _nvram_read(char *buf)
 				mtd_read(nvram_mtd, i, NVRAM_SPACE_OLD, &len,
 					 buf);
 				if (header->magic == NVRAM_MAGIC) {
-					printk(KERN_INFO "found nvram at %lX\n",
+					printk(KERN_INFO "nvram: found nvram at %lX\n",
 					       i);
 					nvram_off = i;
 					found = 1;
@@ -88,7 +88,7 @@ int _nvram_read(char *buf)
 			if (header->magic == NVRAM_MAGIC) {
 				found = 1;
 				printk(KERN_INFO
-				       "convert old nvram to new one\n");
+				       "nvram: convert old nvram to new one\n");
 			}
 		}
 	}
@@ -114,7 +114,7 @@ struct nvram_tuple *_nvram_realloc(struct nvram_tuple *t, const char *name,
 	if (!t) {
 		if (!(t = MALLOC(sizeof(struct nvram_tuple) + strlen(name) +
 				 1))) {
-			printk("MALLOC failed\n");
+			printk("nvram: MALLOC failed\n");
 			return NULL;
 		}
 
@@ -143,7 +143,7 @@ void _nvram_free(struct nvram_tuple *t)
 {
 	if (!t) {
 		nvram_offset = 0;
-		memset(nvram_buf, 0, sizeof(nvram_buf));
+		memset(nvram_buf, 0, NVRAM_SPACE);
 	} else {
 		MFREE(t);
 	}
@@ -213,7 +213,7 @@ static void lzma_free_workspace(void)
 static int lzma_alloc_workspace(CLzmaEncProps *props)
 {
 	if ((p = (CLzmaEncHandle *)LzmaEnc_Create(&lzma_alloc)) == NULL) {
-		printk(KERN_ERR "Failed to allocate lzma deflate workspace\n");
+		printk(KERN_ERR "nvram: Failed to allocate lzma deflate workspace\n");
 		return -ENOMEM;
 	}
 
@@ -267,7 +267,6 @@ static void decompress(void *src, void *dst, size_t len)
 	unsigned int magic = NVRAM_MAGIC;
 	unsigned int *im = (unsigned int *)src;
 	CLzmaEncProps props;
-	printk(KERN_INFO "magic %X\n", *im);
 	if (!memcmp(src, &magic, 4)) {
 		memcpy(dst, src, len);
 		return;
@@ -283,7 +282,7 @@ static void decompress(void *src, void *dst, size_t len)
 
 	ret = lzma_alloc_workspace(&props);
 	if (ret < 0) {
-		printk(KERN_INFO "allos workspace failed\n");
+		printk(KERN_INFO "nvram: alloc workspace failed\n");
 		return;
 	}
 
@@ -291,7 +290,7 @@ static void decompress(void *src, void *dst, size_t len)
 			 LZMA_FINISH_ANY, &status, &lzma_alloc);
 	if (ret != SZ_OK || status == LZMA_STATUS_NOT_FINISHED ||
 	    dl != (SizeT)NVRAM_SPACE) {
-		printk(KERN_INFO "decompress failed %d ret %d status %d\n", dl,
+		printk(KERN_INFO "nvram: decompress failed %ld ret %d status %d\n", dl,
 		       ret, status);
 		return;
 	}
@@ -643,7 +642,6 @@ static int __init dev_nvram_init(void)
 		mem_map_reserve(page);
 
 #ifdef CONFIG_MTD
-	printk(KERN_INFO "searching for nvram\n");
 	/* Find associated MTD device */
 	for (i = 0; i < 32; i++) {
 		nvram_mtd = get_mtd_device(NULL, i);
