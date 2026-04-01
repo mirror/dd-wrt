@@ -84,3 +84,5 @@ obj-$(CONFIG_CAVIUM_OCTEON_SOC) += nvram_kernel.o
 
 endif
 
+CFLAGS_nvram_kernel.o += -Iinclude/linux -Ilib/lzma
+CFLAGS_nvram_kernel_x86.o += -Iinclude/linux -Ilib/lzma

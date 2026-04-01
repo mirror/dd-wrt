@@ -245,7 +245,7 @@ static void *compress(void *src, size_t len)
 	dst = vmalloc(NVRAM_SPACE);
 	if (!dst)
 		return NULL;
-	ret = LzmaEnc_MemEncode(p, cpage_out, &compress_size, src, len,
+	ret = LzmaEnc_MemEncode(p, dst, &compress_size, src, len,
 		0, NULL, &lzma_alloc, &lzma_alloc);
 	lzma_free_workspace();
 	return dst;
@@ -256,10 +256,15 @@ static void decompress(void *src, void *dst, size_t len)
 	SizeT dl = (SizeT)NVRAM_SPACE;
 	SizeT sl = (SizeT)len;
 	ELzmaStatus status;
-	if (!memcmp(src, NVRAM_MAGIC, 4)) {
+	int ret;
+	unsigned int magic = NVRAM_MAGIC;
+	CLzmaEncProps props;
+	if (!memcmp(src, &magic, 4)) {
 		memcpy(dst, src, len);
 		return;
 	}
+	LzmaEncProps_Init(&props);
+
 	props.dictSize = LZMA_BEST_DICT(0x2000);
 	props.level = LZMA_BEST_LEVEL;
 	props.lc = LZMA_BEST_LC;
@@ -269,11 +274,11 @@ static void decompress(void *src, void *dst, size_t len)
 
 	ret = lzma_alloc_workspace(&props);
 	if (ret < 0)
-		return NULL;
+		return;
 
 	ret = LzmaDecode(dst, &dl, src, &sl, propsEncoded,
 		propsSize, LZMA_FINISH_ANY, &status, &lzma_alloc);
-	if (ret != SZ_OK || status == LZMA_STATUS_NOT_FINISHED || dl != (SizeT)destlen)
+	if (ret != SZ_OK || status == LZMA_STATUS_NOT_FINISHED || dl != (SizeT)NVRAM_SPACE)
 		return;
 	lzma_free_workspace();
 	return;
@@ -342,7 +347,7 @@ int nvram_commit(void)
 	/* Erase sector blocks */
 	memset(&bad[0], -1, 256 * sizeof(int));
 	esize = nvram_mtd->erasesize;
-	counts = (nvram_mtd->size / esize);
+	counts = ((unsigned int)nvram_mtd->size / esize);
 	if (!counts)
 		counts = 1;
 	fullerase:;
@@ -611,13 +616,11 @@ static int __init dev_nvram_init(void)
 	int order = 0, ret = 0;
 	struct page *page, *end;
 	unsigned int i;
-printk(KERN_INFO "alloc nvram\n");
 	/* Allocate and reserve memory to mmap() */
 	nvram_buf = kmalloc(NVRAM_SPACE, GFP_KERNEL);
 	/* Allocate and reserve memory to mmap() */
 	while ((PAGE_SIZE << order) < NVRAM_SPACE)
 		order++;
-printk(KERN_INFO "page nvram\n");
 	end = virt_to_page(nvram_buf + (PAGE_SIZE << order) - 1);
 	for (page = virt_to_page(nvram_buf); page <= end; page++)
 		mem_map_reserve(page);
