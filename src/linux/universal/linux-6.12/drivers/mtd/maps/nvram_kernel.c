@@ -417,7 +417,7 @@ next:;
 		printk(KERN_ERR "nvram: compress failed\n");
 		goto done;
 	}
-	len = ROUNDUP(header->len, NVRAM_SPACE);
+	len = ROUNDUP(header->len, (unsigned int)nvram_mtd->erasesize);
 	printk(KERN_INFO "write offset %ld %ld\n", offset, len);
 	ret = mtd_write(nvram_mtd, offset, len, &len, lzma);
 	vfree(lzma);
