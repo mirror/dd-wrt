@@ -67,13 +67,28 @@ int _nvram_read(char *buf)
 
 	if (nvram_mtd) {
 		if (nvram_off == -1) {
-			nvram_off = nvram_mtd->size - NVRAM_SPACE;
-			memset(buf, 0, NVRAM_SPACE);
-			mtd_read(nvram_mtd, i, nvram_mtd->size, &len, buf);
+			nvram_off = nvram_mtd->size - NVRAM_SPACE_OLD;
+			for (i = 0; i < nvram_mtd->size; i += 0x1000) {
+				mtd_read(nvram_mtd, i, NVRAM_SPACE_OLD, &len,
+					 buf);
+				if (header->magic == NVRAM_MAGIC) {
+					printk(KERN_INFO "found nvram at %lX\n",
+					       i);
+					nvram_off = i;
+					found = 1;
+					break;
+				}
+			}
+		}
+		mtd_read(nvram_mtd, nvram_off, NVRAM_SPACE_OLD, &len, buf);
+		if (header->magic != NVRAM_MAGIC) {
+			mtd_read(nvram_mtd,
+				 nvram_mtd->size - (NVRAM_SPACE_OLD / 2),
+				 (NVRAM_SPACE_OLD / 2), &len, buf);
 			if (header->magic == NVRAM_MAGIC) {
-				printk(KERN_INFO "found nvram at %X\n",	       i);
-				nvram_off = i;
 				found = 1;
+				printk(KERN_INFO
+				       "convert old nvram to new one\n");
 			}
 		}
 	}
@@ -276,7 +291,8 @@ static void decompress(void *src, void *dst, size_t len)
 			 LZMA_FINISH_ANY, &status, &lzma_alloc);
 	if (ret != SZ_OK || status == LZMA_STATUS_NOT_FINISHED ||
 	    dl != (SizeT)NVRAM_SPACE) {
-		printk(KERN_INFO "decompress failed %d ret %d status %d\n", dl, ret, status);
+		printk(KERN_INFO "decompress failed %d ret %d status %d\n", dl,
+		       ret, status);
 		return;
 	}
 	lzma_free_workspace();
@@ -401,8 +417,8 @@ next:;
 		printk(KERN_ERR "nvram: compress failed\n");
 		goto done;
 	}
-	ret = mtd_write(nvram_mtd, 0, nvram_mtd->size, &len,
-			lzma);
+	len = ROUNDUP(header->len, (unsigned int)nvram_mtd->size);
+	ret = mtd_write(nvram_mtd, offset, len, &len, lzma);
 	vfree(lzma);
 	if (ret || len != nvram_mtd->size) {
 		printk("nvram_commit: write error (size %lld)\n", len);
