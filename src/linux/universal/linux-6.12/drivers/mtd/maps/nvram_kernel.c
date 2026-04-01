@@ -90,6 +90,7 @@ int _nvram_read(char *buf)
 	if (found)
 		return 0;
 	lzma = vmalloc(nvram_mtd->size);
+	memset(lzma,0,nvram_mtd->size);
 	if (!lzma)
 		return 0;
 	mtd_read(nvram_mtd, i, nvram_mtd->size, &len, lzma);
@@ -328,7 +329,7 @@ int nvram_commit(void)
 	/* Backup sector blocks to be erased */
 	mutex_lock(&nvram_sem);
 	erasesize = nvram_mtd->erasesize;
-	if (!(buf = MALLOC(erasesize))) {
+	if (!(buf = MALLOC(NVRAM_SPACE))) {
 		printk("nvram_commit: out of memory\n");
 		mutex_unlock(&nvram_sem);
 		waiting--;
@@ -631,7 +632,7 @@ static int __init dev_nvram_init(void)
 	for (i = 0; i < 32; i++) {
 		nvram_mtd = get_mtd_device(NULL, i);
 		if (nvram_mtd) {
-			if (!strcmp(nvram_mtd->name, "nvram") && nvram_mtd->size >= NVRAM_SPACE) {
+			if (!strcmp(nvram_mtd->name, "nvram")) {
 				printk(KERN_INFO "nvram size = %llu\n", nvram_mtd->size);
 				break;
 			}
@@ -644,7 +645,6 @@ static int __init dev_nvram_init(void)
 		return -1;
 	}
 #endif
-
 	/* Initialize hash table lock */
 	spin_lock_init(&nvram_lock);
 
