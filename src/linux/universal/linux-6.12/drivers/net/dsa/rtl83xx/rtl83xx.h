@@ -123,25 +123,9 @@ struct table_reg *rtl_table_get(rtl838x_tbl_reg_t r, int t);
 void rtl_table_release(struct table_reg *r);
 int rtl_table_read(struct table_reg *r, int idx);
 int rtl_table_write(struct table_reg *r, int idx);
-/* Returns the address of the ith data register of table register r
- * the address is relative to the beginning of the Switch-IO block at 0xbb000000
- */
-static inline u16 rtl_table_data(struct table_reg *r, int i)
-{
-	if (i >= r->max_data)
-		i = r->max_data - 1;
-	return r->data + i * 4;
-}
-
-static inline u32 rtl_table_data_r(struct table_reg *r, int i)
-{
-	return sw_r32(rtl_table_data(r, i));
-}
-
-static inline void rtl_table_data_w(struct table_reg *r, u32 v, int i)
-{
-	sw_w32(v, rtl_table_data(r, i));
-}
+u16 rtl_table_data(struct table_reg *r, int i);
+u32 rtl_table_data_r(struct table_reg *r, int i);
+void rtl_table_data_w(struct table_reg *r, u32 v, int i);
 
 int rtldsa_83xx_lag_setup_algomask(struct rtl838x_switch_priv *priv, int group,
 				   struct netdev_lag_upper_info *info);
@@ -198,7 +182,6 @@ int rtl83xx_lag_del(struct dsa_switch *ds, int group, int port);
  * collect them in this section.
  */
 
-int rtl8390_sds_power(int mac, int val);
 void rtl839x_pie_rule_dump(struct  pie_rule *pr);
 void rtl839x_set_egress_queue(int port, int queue);
 

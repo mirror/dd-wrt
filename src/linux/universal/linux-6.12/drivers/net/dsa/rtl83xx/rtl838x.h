@@ -43,14 +43,6 @@
 #define RTL930X_STAT_CTRL			(0x3248)
 #define RTL931X_STAT_CTRL			(0x5720)
 
-/* Registers of the internal Serdes of the 8390 */
-#define RTL8390_SDS0_1_XSG0			(0xA000)
-#define RTL8390_SDS0_1_XSG1			(0xA100)
-#define RTL839X_SDS12_13_XSG0			(0xB800)
-#define RTL839X_SDS12_13_XSG1			(0xB900)
-#define RTL839X_SDS12_13_PWR0			(0xb880)
-#define RTL839X_SDS12_13_PWR1			(0xb980)
-
 /* VLAN registers */
 #define RTL838X_VLAN_CTRL			(0x3A74)
 #define RTL838X_VLAN_PROFILE(idx)		(0x3A88 + ((idx) << 2))
@@ -904,6 +896,15 @@ typedef enum {
  */
 #define RTLDSA_COUNTERS_FAST_POLL_INTERVAL	(3 * HZ)
 
+enum phy_type {
+	PHY_NONE = 0,
+	PHY_RTL838X_SDS = 1,
+	PHY_RTL8218B_INT = 2,
+	PHY_RTL8218B_EXT = 3,
+	PHY_RTL8214FC = 4,
+	PHY_RTL839X_SDS = 5,
+};
+
 enum pbvlan_type {
 	PBVLAN_TYPE_INNER = 0,
 	PBVLAN_TYPE_OUTER,
@@ -1002,13 +1003,14 @@ struct rtldsa_93xx_lag_entry {
 
 struct rtldsa_port {
 	bool enable:1;
-	bool phy:1;
+	bool phy_is_integrated:1;
 	bool isolated:1;
 	bool rate_police_egress:1;
 	bool rate_police_ingress:1;
 	u64 pm;
 	u16 pvid;
 	bool eee_enabled;
+	enum phy_type phy;
 	struct phylink_pcs *pcs;
 	int led_set;
 	int leds_on_this_port;
@@ -1420,7 +1422,6 @@ struct rtldsa_config {
 	int imr_glb;
 	int n_counters;
 	int n_pie_blocks;
-	u8 cpu_port;
 	u8 port_ignore;
 	int trk_ctrl;
 	int trk_hash_ctrl;
@@ -1524,6 +1525,7 @@ struct rtl838x_switch_priv {
 	int mirror_group_ports[4];
 	struct mii_bus *parent_bus;
 	const struct rtldsa_config *r;
+	u8 cpu_port;
 	u8 port_mask;
 	u8 port_width;
 	u64 irq_mask;
