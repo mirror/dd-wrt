@@ -24,7 +24,7 @@ int rtldsa_port_get_stp_state(struct rtl838x_switch_priv *priv, int port)
 	u32 msti = 0;
 	int state;
 
-	if (port >= priv->cpu_port)
+	if (port >= priv->r->cpu_port)
 		return -EINVAL;
 
 	mutex_lock(&priv->reg_mutex);
@@ -278,7 +278,7 @@ static int rtl83xx_mdio_probe(struct rtl838x_switch_priv *priv)
 
 		pcs_node = of_parse_phandle(dn, "pcs-handle", 0);
 		phy_node = of_parse_phandle(dn, "phy-handle", 0);
-		if (pn != priv->cpu_port && !phy_node && !pcs_node) {
+		if (pn != priv->r->cpu_port && !phy_node && !pcs_node) {
 			dev_err(priv->dev, "Port node %d has neither pcs-handle nor phy-handle\n", pn);
 			continue;
 		}
@@ -307,30 +307,7 @@ static int rtl83xx_mdio_probe(struct rtl838x_switch_priv *priv)
 			}
 		}
 
-		if (!phy_node) {
-			if (priv->ports[pn].pcs)
-				priv->ports[pn].phy_is_integrated = true;
-
-			continue;
-		}
-
-		if (of_property_read_bool(phy_node, "phy-is-integrated") &&
-		    !of_property_read_bool(phy_node, "sfp")) {
-			priv->ports[pn].phy = PHY_RTL8218B_INT;
-			continue;
-		}
-
-		if (!of_property_read_bool(phy_node, "phy-is-integrated") &&
-		    of_property_read_bool(phy_node, "sfp")) {
-			priv->ports[pn].phy = PHY_RTL8214FC;
-			continue;
-		}
-
-		if (!of_property_read_bool(phy_node, "phy-is-integrated") &&
-		    !of_property_read_bool(phy_node, "sfp")) {
-			priv->ports[pn].phy = PHY_RTL8218B_EXT;
-			continue;
-		}
+		priv->ports[pn].phy = !!phy_node;
 	}
 
 	/* Disable MAC polling the PHY so that we can start configuration */
@@ -816,7 +793,7 @@ int rtl83xx_port_is_under(const struct net_device *dev, struct rtl838x_switch_pr
 	 * }
 	 */
 
-	for (int i = 0; i < priv->cpu_port; i++) {
+	for (int i = 0; i < priv->r->cpu_port; i++) {
 		if (!priv->ports[i].dp)
 			continue;
 		if (priv->ports[i].dp->user == dev)
@@ -1523,7 +1500,7 @@ static irqreturn_t rtldsa_switch_irq(int irq, void *dev_id)
 	link = priv->r->get_port_reg_le(priv->r->mac_link_sts);
 	link = priv->r->get_port_reg_le(priv->r->mac_link_sts);
 
-	for (int port = 0; port < priv->cpu_port; port++)
+	for (int port = 0; port < priv->r->cpu_port; port++)
 		if (ports & BIT_ULL(port))
 			dsa_port_phylink_mac_change(ds, port, link & BIT_ULL(port));
 
@@ -1612,7 +1589,6 @@ static int rtl83xx_sw_probe(struct platform_device *pdev)
 	switch (soc_info.family) {
 	case RTL8380_FAMILY_ID:
 		priv->ds->ops = &rtldsa_83xx_switch_ops;
-		priv->cpu_port = RTL838X_CPU_PORT;
 		priv->port_mask = 0x1f;
 		priv->port_width = 1;
 		priv->fib_entries = 8192;
@@ -1622,7 +1598,6 @@ static int rtl83xx_sw_probe(struct platform_device *pdev)
 		break;
 	case RTL8390_FAMILY_ID:
 		priv->ds->ops = &rtldsa_83xx_switch_ops;
-		priv->cpu_port = RTL839X_CPU_PORT;
 		priv->port_mask = 0x3f;
 		priv->port_width = 2;
 		priv->fib_entries = 16384;
@@ -1632,7 +1607,6 @@ static int rtl83xx_sw_probe(struct platform_device *pdev)
 		break;
 	case RTL9300_FAMILY_ID:
 		priv->ds->ops = &rtldsa_93xx_switch_ops;
-		priv->cpu_port = RTL930X_CPU_PORT;
 		priv->port_mask = 0x1f;
 		priv->port_width = 1;
 		priv->fib_entries = 16384;
@@ -1643,7 +1617,6 @@ static int rtl83xx_sw_probe(struct platform_device *pdev)
 		break;
 	case RTL9310_FAMILY_ID:
 		priv->ds->ops = &rtldsa_93xx_switch_ops;
-		priv->cpu_port = RTL931X_CPU_PORT;
 		priv->port_mask = 0x3f;
 		priv->port_width = 2;
 		priv->fib_entries = 16384;
@@ -1653,8 +1626,8 @@ static int rtl83xx_sw_probe(struct platform_device *pdev)
 		priv->n_mst = 128;
 		break;
 	}
-	priv->ds->num_ports = priv->cpu_port + 1;
-	priv->irq_mask = GENMASK_ULL(priv->cpu_port - 1, 0);
+	priv->ds->num_ports = priv->r->cpu_port + 1;
+	priv->irq_mask = GENMASK_ULL(priv->r->cpu_port - 1, 0);
 
 	err = rtl83xx_mdio_probe(priv);
 	if (err) {
@@ -1686,7 +1659,7 @@ static int rtl83xx_sw_probe(struct platform_device *pdev)
 	 * dsa_switch_tree, the tree is built when the switch
 	 * is registered by dsa_register_switch
 	 */
-	for (int i = 0; i <= priv->cpu_port; i++)
+	for (int i = 0; i <= priv->r->cpu_port; i++)
 		priv->ports[i].dp = dsa_to_port(priv->ds, i);
 
 	/* Enable link and media change interrupts. Are the SERDES masks needed? */
