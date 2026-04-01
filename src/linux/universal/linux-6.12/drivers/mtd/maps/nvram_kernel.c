@@ -68,36 +68,25 @@ int _nvram_read(char *buf)
 	if (nvram_mtd) {
 		if (nvram_off == -1) {
 			nvram_off = nvram_mtd->size - NVRAM_SPACE;
-			for (i = 0; i < nvram_mtd->size; i += NVRAM_SPACE) {
-				mtd_read(nvram_mtd, i, NVRAM_SPACE, &len, buf);
-				if (header->magic == NVRAM_MAGIC) {
-					printk(KERN_INFO "found nvram at %X\n",
-					       i);
-					nvram_off = i;
-					found = 1;
-					break;
-				}
-			}
-		}
-		mtd_read(nvram_mtd, nvram_off, NVRAM_SPACE, &len, buf);
-		if (header->magic != NVRAM_MAGIC) {
-			mtd_read(nvram_mtd, nvram_mtd->size - (NVRAM_SPACE / 2),
-				 (NVRAM_SPACE / 2), &len, buf);
-			if (header->magic == NVRAM_MAGIC)
+			memset(buf, 0, NVRAM_SPACE);
+			mtd_read(nvram_mtd, i, nvram_mtd->size, &len, buf);
+			if (header->magic == NVRAM_MAGIC) {
+				printk(KERN_INFO "found nvram at %X\n",	       i);
+				nvram_off = i;
 				found = 1;
-			else
-				found = 0;
+			}
 		}
 	}
 	if (found)
 		return 0;
+	nvram_off = 0;
 	lzma = vmalloc(nvram_mtd->size);
 	memset(lzma, 0, nvram_mtd->size);
 	if (!lzma)
 		return 0;
-	mtd_read(nvram_mtd, i, nvram_mtd->size, &len, lzma);
+	mtd_read(nvram_mtd, 0, nvram_mtd->size, &len, lzma);
 	decompress(lzma, buf, nvram_mtd->size);
-
+	vfree(lzma);
 	return 0;
 }
 
@@ -228,7 +217,7 @@ static int lzma_alloc_workspace(CLzmaEncProps *props)
 
 static void *compress(void *src, size_t len)
 {
-	SizeT compress_size = NVRAM_SPACE;
+	SizeT compress_size = nvram_mtd->size;
 	void *dst;
 	int ret;
 	CLzmaEncProps props;
@@ -244,9 +233,10 @@ static void *compress(void *src, size_t len)
 	ret = lzma_alloc_workspace(&props);
 	if (ret < 0)
 		return NULL;
-	dst = vmalloc(NVRAM_SPACE);
+	dst = vmalloc(nvram_mtd->size);
 	if (!dst)
 		return NULL;
+	memset(dst, 0, nvram_mtd->size);
 	ret = LzmaEnc_MemEncode(p, dst, &compress_size, src, len, 0, NULL,
 				&lzma_alloc, &lzma_alloc);
 	lzma_free_workspace();
@@ -260,7 +250,9 @@ static void decompress(void *src, void *dst, size_t len)
 	ELzmaStatus status;
 	int ret;
 	unsigned int magic = NVRAM_MAGIC;
+	unsigned int *im = (unsigned int *)src;
 	CLzmaEncProps props;
+	printk(KERN_INFO "magic %X\n", *im);
 	if (!memcmp(src, &magic, 4)) {
 		memcpy(dst, src, len);
 		return;
@@ -275,14 +267,18 @@ static void decompress(void *src, void *dst, size_t len)
 	props.fb = LZMA_BEST_FB;
 
 	ret = lzma_alloc_workspace(&props);
-	if (ret < 0)
+	if (ret < 0) {
+		printk(KERN_INFO "allos workspace failed\n");
 		return;
+	}
 
 	ret = LzmaDecode(dst, &dl, src, &sl, propsEncoded, propsSize,
 			 LZMA_FINISH_ANY, &status, &lzma_alloc);
 	if (ret != SZ_OK || status == LZMA_STATUS_NOT_FINISHED ||
-	    dl != (SizeT)NVRAM_SPACE)
+	    dl != (SizeT)NVRAM_SPACE) {
+		printk(KERN_INFO "decompress failed %d ret %d status %d\n", dl, ret, status);
 		return;
+	}
 	lzma_free_workspace();
 	return;
 }
@@ -405,12 +401,11 @@ next:;
 		printk(KERN_ERR "nvram: compress failed\n");
 		goto done;
 	}
-	ret = mtd_write(nvram_mtd, offset, nvram_mtd->size - offset, &len,
+	ret = mtd_write(nvram_mtd, 0, nvram_mtd->size, &len,
 			lzma);
 	vfree(lzma);
-	if (ret || len != i) {
-		printk("nvram_commit: write error (offset %d, size %d)\n",
-		       offset, i);
+	if (ret || len != nvram_mtd->size) {
+		printk("nvram_commit: write error (size %lld)\n", len);
 		ret = -EIO;
 		goto done;
 	}
