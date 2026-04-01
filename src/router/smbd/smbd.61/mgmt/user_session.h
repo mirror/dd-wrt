@@ -8,6 +8,7 @@
 
 #include <linux/hashtable.h>
 #include <linux/xarray.h>
+#include <linux/rwlock.h>
 
 #include "../smb_common.h"
 #include "../ntlmssp.h"

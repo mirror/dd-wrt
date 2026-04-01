@@ -6,6 +6,8 @@
 #ifndef __KSMBD_MISC_H__
 #define __KSMBD_MISC_H__
 
+#include <linux/unicode.h>
+
 #ifdef CONFIG_PROC_FS
 #include <linux/proc_fs.h>
 #endif
