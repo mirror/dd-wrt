@@ -63,15 +63,16 @@ int _nvram_read(char *buf)
 	size_t len, i;
 	struct nvram_header *header = (struct nvram_header *)buf;
 	void *lzma;
-	int found=0;
-	
+	int found = 0;
+
 	if (nvram_mtd) {
 		if (nvram_off == -1) {
 			nvram_off = nvram_mtd->size - NVRAM_SPACE;
 			for (i = 0; i < nvram_mtd->size; i += NVRAM_SPACE) {
 				mtd_read(nvram_mtd, i, NVRAM_SPACE, &len, buf);
 				if (header->magic == NVRAM_MAGIC) {
-					printk(KERN_INFO "found nvram at %X\n", i);
+					printk(KERN_INFO "found nvram at %X\n",
+					       i);
 					nvram_off = i;
 					found = 1;
 					break;
@@ -80,7 +81,8 @@ int _nvram_read(char *buf)
 		}
 		mtd_read(nvram_mtd, nvram_off, NVRAM_SPACE, &len, buf);
 		if (header->magic != NVRAM_MAGIC) {
-			mtd_read(nvram_mtd, nvram_mtd->size - (NVRAM_SPACE / 2), (NVRAM_SPACE / 2), &len, buf);
+			mtd_read(nvram_mtd, nvram_mtd->size - (NVRAM_SPACE / 2),
+				 (NVRAM_SPACE / 2), &len, buf);
 			if (header->magic == NVRAM_MAGIC)
 				found = 1;
 			else
@@ -90,22 +92,24 @@ int _nvram_read(char *buf)
 	if (found)
 		return 0;
 	lzma = vmalloc(nvram_mtd->size);
-	memset(lzma,0,nvram_mtd->size);
+	memset(lzma, 0, nvram_mtd->size);
 	if (!lzma)
 		return 0;
 	mtd_read(nvram_mtd, i, nvram_mtd->size, &len, lzma);
 	decompress(lzma, buf, nvram_mtd->size);
-	
+
 	return 0;
 }
 
-struct nvram_tuple *_nvram_realloc(struct nvram_tuple *t, const char *name, const char *value)
+struct nvram_tuple *_nvram_realloc(struct nvram_tuple *t, const char *name,
+				   const char *value)
 {
 	if ((nvram_offset + strlen(value) + 1) > NVRAM_SPACE)
 		return NULL;
 
 	if (!t) {
-		if (!(t = MALLOC(sizeof(struct nvram_tuple) + strlen(name) + 1))) {
+		if (!(t = MALLOC(sizeof(struct nvram_tuple) + strlen(name) +
+				 1))) {
 			printk("MALLOC failed\n");
 			return NULL;
 		}
@@ -204,20 +208,17 @@ static void lzma_free_workspace(void)
 
 static int lzma_alloc_workspace(CLzmaEncProps *props)
 {
-	if ((p = (CLzmaEncHandle *)LzmaEnc_Create(&lzma_alloc)) == NULL)
-	{
+	if ((p = (CLzmaEncHandle *)LzmaEnc_Create(&lzma_alloc)) == NULL) {
 		printk(KERN_ERR "Failed to allocate lzma deflate workspace\n");
 		return -ENOMEM;
 	}
 
-	if (LzmaEnc_SetProps(p, props) != SZ_OK)
-	{
+	if (LzmaEnc_SetProps(p, props) != SZ_OK) {
 		lzma_free_workspace();
 		return -1;
 	}
 
-	if (LzmaEnc_WriteProperties(p, propsEncoded, &propsSize) != SZ_OK)
-	{
+	if (LzmaEnc_WriteProperties(p, propsEncoded, &propsSize) != SZ_OK) {
 		lzma_free_workspace();
 		return -1;
 	}
@@ -246,8 +247,8 @@ static void *compress(void *src, size_t len)
 	dst = vmalloc(NVRAM_SPACE);
 	if (!dst)
 		return NULL;
-	ret = LzmaEnc_MemEncode(p, dst, &compress_size, src, len,
-		0, NULL, &lzma_alloc, &lzma_alloc);
+	ret = LzmaEnc_MemEncode(p, dst, &compress_size, src, len, 0, NULL,
+				&lzma_alloc, &lzma_alloc);
 	lzma_free_workspace();
 	return dst;
 }
@@ -277,14 +278,14 @@ static void decompress(void *src, void *dst, size_t len)
 	if (ret < 0)
 		return;
 
-	ret = LzmaDecode(dst, &dl, src, &sl, propsEncoded,
-		propsSize, LZMA_FINISH_ANY, &status, &lzma_alloc);
-	if (ret != SZ_OK || status == LZMA_STATUS_NOT_FINISHED || dl != (SizeT)NVRAM_SPACE)
+	ret = LzmaDecode(dst, &dl, src, &sl, propsEncoded, propsSize,
+			 LZMA_FINISH_ANY, &status, &lzma_alloc);
+	if (ret != SZ_OK || status == LZMA_STATUS_NOT_FINISHED ||
+	    dl != (SizeT)NVRAM_SPACE)
 		return;
 	lzma_free_workspace();
 	return;
 }
-
 
 #if 0
 static void erase_callback(struct erase_info *done)
@@ -303,13 +304,13 @@ int nvram_commit(void)
 	u_int32_t alternate;
 	int i;
 	int ret, counts, esize;
-	int errorfound=0;
+	int errorfound = 0;
 	struct nvram_header *header;
 	unsigned long flags;
-	static int waiting=0;
+	static int waiting = 0;
 	u_int32_t offset, cnt = 0;
 	struct erase_info erase;
-//      printk(KERN_EMERG "commit\n");
+	//      printk(KERN_EMERG "commit\n");
 
 	if (!nvram_mtd) {
 		printk("nvram_commit: NVRAM not found\n");
@@ -338,7 +339,7 @@ int nvram_commit(void)
 
 	offset = nvram_off;
 	header = (struct nvram_header *)buf;
-	
+
 	/* Regenerate NVRAM */
 	spin_lock_irqsave(&nvram_lock, flags);
 	ret = _nvram_commit(header);
@@ -351,25 +352,25 @@ int nvram_commit(void)
 	counts = ((unsigned int)nvram_mtd->size / esize);
 	if (!counts)
 		counts = 1;
-	fullerase:;
+fullerase:;
 	for (; offset < nvram_mtd->size; offset += nvram_mtd->erasesize) {
 		erase.addr = offset;
 		erase.len = nvram_mtd->erasesize;
 
-
 		/* Unlock sector blocks */
 		mtd_unlock(nvram_mtd, offset, nvram_mtd->erasesize);
 		if ((ret = mtd_erase(nvram_mtd, &erase))) {
-			printk("nvram_commit: erase error offset %X, skipping\n", offset);
+			printk("nvram_commit: erase error offset %X, skipping\n",
+			       offset);
 			for (i = 0; i < counts; i++) {
 				if ((cnt + i) < 256)
 					bad[cnt + i] = offset;
 			}
 			cnt++;
 			if (!errorfound) {
-				errorfound=1;
-				cnt=0;
-				offset=0;
+				errorfound = 1;
+				cnt = 0;
+				offset = 0;
 				goto fullerase;
 			}
 			continue;
@@ -379,22 +380,23 @@ int nvram_commit(void)
 	}
 	offset = nvram_off;
 	alternate = 0;
-//	printk(KERN_INFO "counts %d\n", counts);
+	//	printk(KERN_INFO "counts %d\n", counts);
 	for (cnt = 0; cnt < 256; cnt++) {
-//		if (bad[cnt]!=-1)
-//		    printk(KERN_INFO "bad table idx %d: %X\n", cnt, bad[cnt]); 
+		//		if (bad[cnt]!=-1)
+		//		    printk(KERN_INFO "bad table idx %d: %X\n", cnt, bad[cnt]);
 		if (bad[cnt] == -1) {
 			for (i = 0; i < counts; i++) {
 				if (bad[cnt + i] != -1)
 					goto next;
 			}
-//			printk(KERN_INFO "alternate option %X\n", cnt * esize);
+			//			printk(KERN_INFO "alternate option %X\n", cnt * esize);
 			alternate = cnt * esize;
 		}
-	      next:;
+next:;
 		if (bad[cnt] == offset) {
 			offset = alternate;
-			printk("nvram_commit: use alternate offset %X\n", offset);
+			printk("nvram_commit: use alternate offset %X\n",
+			       offset);
 			break;
 		}
 	}
@@ -403,10 +405,12 @@ int nvram_commit(void)
 		printk(KERN_ERR "nvram: compress failed\n");
 		goto done;
 	}
-	ret = mtd_write(nvram_mtd, offset, nvram_mtd->size-offset, &len, lzma);
+	ret = mtd_write(nvram_mtd, offset, nvram_mtd->size - offset, &len,
+			lzma);
 	vfree(lzma);
 	if (ret || len != i) {
-		printk("nvram_commit: write error (offset %d, size %d)\n", offset, i);
+		printk("nvram_commit: write error (offset %d, size %d)\n",
+		       offset, i);
 		ret = -EIO;
 		goto done;
 	}
@@ -437,7 +441,8 @@ EXPORT_SYMBOL(nvram_commit);
 
 /* User mode interface below */
 
-static ssize_t dev_nvram_read(struct file *file, char *buf, size_t count, loff_t * ppos)
+static ssize_t dev_nvram_read(struct file *file, char *buf, size_t count,
+			      loff_t *ppos)
 {
 	char tmp[100], *name = tmp, *value;
 	ssize_t ret;
@@ -478,7 +483,7 @@ static ssize_t dev_nvram_read(struct file *file, char *buf, size_t count, loff_t
 			goto done;
 		}
 	}
-#ifdef	_DEPRECATED
+#ifdef _DEPRECATED
 	flush_cache_all();
 #endif
 done:
@@ -488,7 +493,8 @@ done:
 	return ret;
 }
 
-static ssize_t dev_nvram_write(struct file *file, const char *buf, size_t count, loff_t * ppos)
+static ssize_t dev_nvram_write(struct file *file, const char *buf, size_t count,
+			       loff_t *ppos)
 {
 	char tmp[100], *name = tmp, *value;
 	ssize_t ret;
@@ -519,9 +525,9 @@ done:
 	return ret;
 }
 
-static long dev_nvram_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
+static long dev_nvram_ioctl(struct file *file, unsigned int cmd,
+			    unsigned long arg)
 {
-
 	switch (cmd) {
 	case NVRAM_MAGIC:
 		nvram_commit();
@@ -533,7 +539,6 @@ static long dev_nvram_ioctl(struct file *file, unsigned int cmd, unsigned long a
 	default:
 		return -EINVAL;
 		break;
-
 	}
 }
 
@@ -556,10 +561,10 @@ static long nvram_unlocked_ioctl(struct file *file, u_int cmd, u_long arg)
 static int dev_nvram_mmap(struct file *file, struct vm_area_struct *vma)
 {
 	unsigned long offset = virt_to_phys(nvram_buf);
-//      vma->vm_page_prot = pgprot_noncached(vma->vm_page_prot);
-//      printk(KERN_EMERG "vma size %d\n",offset);
-	if (remap_pfn_range(vma, vma->vm_start, offset >> PAGE_SHIFT, vma->vm_end - vma->vm_start, vma->vm_page_prot)) {
-
+	//      vma->vm_page_prot = pgprot_noncached(vma->vm_page_prot);
+	//      printk(KERN_EMERG "vma size %d\n",offset);
+	if (remap_pfn_range(vma, vma->vm_start, offset >> PAGE_SHIFT,
+			    vma->vm_end - vma->vm_start, vma->vm_page_prot)) {
 		return -EAGAIN;
 	}
 	return 0;
@@ -576,16 +581,16 @@ static int dev_nvram_release(struct inode *inode, struct file *file)
 }
 
 static struct file_operations dev_nvram_fops = {
-      owner:THIS_MODULE,
-      open:dev_nvram_open,
-      release:dev_nvram_release,
-      read:dev_nvram_read,
-      write:dev_nvram_write,
+	owner: THIS_MODULE,
+	open: dev_nvram_open,
+	release: dev_nvram_release,
+	read: dev_nvram_read,
+	write: dev_nvram_write,
 #ifdef CONFIG_COMPAT
-      compat_ioctl:dev_nvram_ioctl,
+	compat_ioctl: dev_nvram_ioctl,
 #endif
-      unlocked_ioctl:nvram_unlocked_ioctl,
-      mmap:dev_nvram_mmap,
+	unlocked_ioctl: nvram_unlocked_ioctl,
+	mmap: dev_nvram_mmap,
 };
 
 static void dev_nvram_exit(void)
@@ -593,11 +598,11 @@ static void dev_nvram_exit(void)
 	int order = 0;
 	struct page *page, *end;
 
-//      if (nvram_handle)
-//              devfs_unregister(nvram_handle);
+	//      if (nvram_handle)
+	//              devfs_unregister(nvram_handle);
 
-//      if (nvram_major >= 0)
-//              devfs_unregister_chrdev(nvram_major, "nvram");
+	//      if (nvram_major >= 0)
+	//              devfs_unregister_chrdev(nvram_major, "nvram");
 
 	if (nvram_mtd)
 		put_mtd_device(nvram_mtd);
@@ -633,7 +638,8 @@ static int __init dev_nvram_init(void)
 		nvram_mtd = get_mtd_device(NULL, i);
 		if (nvram_mtd) {
 			if (!strcmp(nvram_mtd->name, "nvram")) {
-				printk(KERN_INFO "nvram size = %llu\n", nvram_mtd->size);
+				printk(KERN_INFO "nvram size = %llu\n",
+				       nvram_mtd->size);
 				break;
 			}
 			put_mtd_device(nvram_mtd);
@@ -652,19 +658,21 @@ static int __init dev_nvram_init(void)
 	mutex_init(&nvram_sem);
 
 	/* Register char device */
-	if ((nvram_major = register_chrdev(229, "nvram", &dev_nvram_fops)) < 0) {
+	if ((nvram_major = register_chrdev(229, "nvram", &dev_nvram_fops)) <
+	    0) {
 		ret = nvram_major;
 		goto err;
 	}
 
 	/* Initialize hash table */
-	if (_nvram_init()) ;
+	if (_nvram_init())
+		;
 	return -1;
 
 	/* Create /dev/nvram handle */
 
-//      nvram_handle = devfs_register(NULL, "nvram", DEVFS_FL_NONE, nvram_major, 0,
-//                                    S_IFCHR | S_IRUSR | S_IWUSR | S_IRGRP, &dev_nvram_fops, NULL);
+	//      nvram_handle = devfs_register(NULL, "nvram", DEVFS_FL_NONE, nvram_major, 0,
+	//                                    S_IFCHR | S_IRUSR | S_IWUSR | S_IRGRP, &dev_nvram_fops, NULL);
 
 	return 0;
 
