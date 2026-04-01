@@ -345,7 +345,8 @@ static int otto_wdt_probe(struct platform_device *pdev)
 	ret = otto_wdt_determine_timeouts(&ctrl->wdev, ctrl->wdev.timeout, 1);
 	if (ret)
 		return dev_err_probe(dev, ret, "Failed to set timeout\n");
-
+	otto_wdt_start(&ctrl->wdev);
+	otto_wdt_ping(&ctrl->wdev);
 	return devm_watchdog_register_device(dev, &ctrl->wdev);
 }
 
