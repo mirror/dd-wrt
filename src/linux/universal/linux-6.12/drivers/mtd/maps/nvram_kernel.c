@@ -418,11 +418,10 @@ next:;
 		goto done;
 	}
 	len = ROUNDUP(header->len, (unsigned int)nvram_mtd->erasesize);
-	printk(KERN_INFO "write offset %ld %ld\n", offset, len);
 	ret = mtd_write(nvram_mtd, offset, len, &len, lzma);
 	vfree(lzma);
 	if (ret || len != nvram_mtd->size) {
-		printk("nvram_commit: write error (size %ld)\n", len);
+		printk("nvram_commit: write error (offset %d size %ld)\n", offset, len);
 		ret = -EIO;
 		goto done;
 	}
