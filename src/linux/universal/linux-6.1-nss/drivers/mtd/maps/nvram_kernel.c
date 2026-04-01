@@ -64,7 +64,8 @@ int _nvram_read(char *buf)
 	struct nvram_header *header = (struct nvram_header *)buf;
 	void *lzma;
 	int found = 0;
-
+	unsigned char magic[4]={0x00, 0x23, 0x14, 0x0e};
+	unsigned char check[4];
 	if (nvram_mtd) {
 		if (nvram_off == -1) {
 			nvram_off = nvram_mtd->size - NVRAM_SPACE_OLD;
@@ -95,12 +96,21 @@ int _nvram_read(char *buf)
 	if (found)
 		return 0;
 	nvram_off = 0;
-	lzma = vmalloc(nvram_mtd->size);
-	memset(lzma, 0, nvram_mtd->size);
+	for (i = 0; i < nvram_mtd->size - 0x1000; i += 0x1000) {
+		mtd_read(nvram_mtd, i, 4, &len,check);
+		if (!memcmp(check, magic, 4)) {
+			nvram_off = i;
+					printk(KERN_INFO "nvram: found compressed nvram at %lX\n",
+					       i);
+			break;
+		}
+	}
+	lzma = vmalloc(nvram_mtd->size - nvram_off);
+	memset(lzma, 0, nvram_mtd->size - nvram_off);
 	if (!lzma)
 		return 0;
-	mtd_read(nvram_mtd, 0, nvram_mtd->size, &len, lzma);
-	decompress(lzma, buf, nvram_mtd->size);
+	mtd_read(nvram_mtd, nvram_off, nvram_mtd->size - nvram_off, &len, lzma);
+	decompress(lzma, buf, nvram_mtd->size - nvram_off);
 	vfree(lzma);
 	return 0;
 }
@@ -230,9 +240,8 @@ static int lzma_alloc_workspace(CLzmaEncProps *props)
 	return 0;
 }
 
-static void *compress(void *src, size_t len)
+static void *compress(void *src, size_t len,SizeT *compress_size)
 {
-	SizeT compress_size = nvram_mtd->size;
 	void *dst;
 	int ret;
 	CLzmaEncProps props;
@@ -252,7 +261,7 @@ static void *compress(void *src, size_t len)
 	if (!dst)
 		return NULL;
 	memset(dst, 0, nvram_mtd->size);
-	ret = LzmaEnc_MemEncode(p, dst, &compress_size, src, len, 0, NULL,
+	ret = LzmaEnc_MemEncode(p, dst, compress_size, src, len, 0, NULL,
 				&lzma_alloc, &lzma_alloc);
 	lzma_free_workspace();
 	return dst;
@@ -320,6 +329,7 @@ int nvram_commit(void)
 	static int waiting = 0;
 	u_int32_t offset, cnt = 0;
 	struct erase_info erase;
+	size_t target_size;
 	//      printk(KERN_EMERG "commit\n");
 
 	if (!nvram_mtd) {
@@ -346,7 +356,7 @@ int nvram_commit(void)
 		waiting--;
 		return -ENOMEM;
 	}
-
+	nvram_off = 0; // recalculate
 	offset = nvram_off;
 	header = (struct nvram_header *)buf;
 
@@ -410,15 +420,16 @@ next:;
 			break;
 		}
 	}
-	lzma = compress(buf, header->len);
+	target_size = nvram_mtd->size;
+	lzma = compress(buf, header->len, &target_size);
 	if (!lzma) {
 		printk(KERN_ERR "nvram: compress failed\n");
 		goto done;
 	}
-	len = ROUNDUP(header->len, (unsigned int)nvram_mtd->erasesize);
-	ret = mtd_write(nvram_mtd, offset, len, &len, lzma);
+	target_size = ROUNDUP(target_size, (unsigned int)nvram_mtd->erasesize);
+	ret = mtd_write(nvram_mtd, offset, target_size, &len, lzma);
 	vfree(lzma);
-	if (ret || len != nvram_mtd->size) {
+	if (ret || len != target_size) {
 		printk("nvram_commit: write error (offset %d size %ld)\n", offset, len);
 		ret = -EIO;
 		goto done;
