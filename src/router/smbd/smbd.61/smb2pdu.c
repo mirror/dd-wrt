@@ -5879,12 +5879,15 @@ static int smb2_get_info_filesystem(struct ksmbd_work *work,
 
 		info = (struct object_id_info *)(rsp->Buffer);
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 12, 0)
 		if (path.mnt->mnt_sb->s_uuid_len == 16)
 			memcpy(info->objid, path.mnt->mnt_sb->s_uuid.b,
 					path.mnt->mnt_sb->s_uuid_len);
 		else
 			memcpy(info->objid, &stfs.f_fsid, sizeof(stfs.f_fsid));
-
+#else
+			memcpy(info->objid, path.mnt->mnt_sb->s_uuid.b, 16);
+#endif
 		info->extended_info.magic = cpu_to_le32(EXTENDED_INFO_MAGIC);
 		info->extended_info.version = cpu_to_le32(1);
 		info->extended_info.release = cpu_to_le32(1);
