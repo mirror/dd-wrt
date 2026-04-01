@@ -417,11 +417,12 @@ next:;
 		printk(KERN_ERR "nvram: compress failed\n");
 		goto done;
 	}
-	len = ROUNDUP(header->len, (unsigned int)nvram_mtd->size);
+	len = ROUNDUP(header->len, NVRAM_SPACE);
+	printk(KERN_INFO "write offset %ld %ld\n", offset, len);
 	ret = mtd_write(nvram_mtd, offset, len, &len, lzma);
 	vfree(lzma);
 	if (ret || len != nvram_mtd->size) {
-		printk("nvram_commit: write error (size %lld)\n", len);
+		printk("nvram_commit: write error (size %ld)\n", len);
 		ret = -EIO;
 		goto done;
 	}
