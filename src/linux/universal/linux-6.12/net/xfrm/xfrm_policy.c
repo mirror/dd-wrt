@@ -2962,7 +2962,7 @@ static void xfrm_policy_queue_process(struct timer_list *t)
 		skb_dst_drop(skb);
 		skb_dst_set(skb, dst);
 
-		dst_output(net, skb->sk, skb);
+		dst_output(net, skb_to_full_sk(skb), skb);
 	}
 
 out:
@@ -4269,6 +4269,8 @@ static void xfrm_policy_fini(struct net *net)
 	struct xfrm_pol_inexact_bin *b, *t;
 	unsigned int sz;
 	int dir;
+
+	disable_work_sync(&net->xfrm.policy_hthresh.work);
 
 	flush_work(&net->xfrm.policy_hash_work);
 #ifdef CONFIG_XFRM_SUB_POLICY
