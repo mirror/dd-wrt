@@ -1,6 +1,8 @@
 config ARM
 	bool
 	default y
+	select LZMA_COMPRESS
+	select LZMA_DECOMPRESS
 	select ARCH_CLOCKSOURCE_DATA
 	select ARCH_HAS_DEVMEM_IS_ALLOWED
 	select ARCH_HAS_ELF_RANDOMIZE
