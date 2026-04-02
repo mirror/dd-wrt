@@ -1,6 +1,8 @@
 config MIPS
 	bool
 	default y
+	select LZMA_COMPRESS
+	select LZMA_DECOMPRESS
 	select ARCH_HAS_SG_CHAIN
 	select HAVE_GENERIC_DMA_COHERENT
 	select HAVE_IDE
