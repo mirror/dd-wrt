@@ -59,9 +59,16 @@ static struct mtd_info *nvram_mtd = NULL;
 static size_t nvram_off = -1;
 static int magic64_dict = 0;
 static void decompress(void *src, void *dst, size_t len);
-int _nvram_read(char *buf)
+extern struct nvram_tuple *_nvram_malloc(const char *name, const char *value);
+extern struct nvram_tuple *_nvram_realloc(struct nvram_tuple *t,
+					  const char *name, const char *value);
+extern void _nvram_free(struct nvram_tuple *t);
+extern int _nvram_read(void *buf);
+
+int _nvram_read(void *_buf)
 {
 	size_t len, i;
+	char *buf = (char *)_buf;
 	struct nvram_header *header = (struct nvram_header *)buf;
 	void *lzma;
 	int found = 0;
@@ -76,7 +83,7 @@ int _nvram_read(char *buf)
 					 buf);
 				if (header->magic == NVRAM_MAGIC) {
 					printk(KERN_INFO
-					       "nvram: found nvram at %lX\n",
+					       "nvram: found nvram at 0x%zx\n",
 					       i);
 					nvram_off = i;
 					found = 1;
@@ -106,7 +113,7 @@ int _nvram_read(char *buf)
 				magic64_dict = 1;
 			nvram_off = i;
 			printk(KERN_INFO
-			       "nvram: found compressed nvram at %lX\n",
+			       "nvram: found compressed nvram at 0x%zx\n",
 			       i);
 			break;
 		}
@@ -185,6 +192,7 @@ int nvram_set(const char *name, const char *value)
 	return ret;
 }
 
+char *real_nvram_get(const char *name);
 char *real_nvram_get(const char *name)
 {
 	unsigned long flags;
@@ -281,7 +289,6 @@ static void decompress(void *src, void *dst, size_t len)
 	ELzmaStatus status;
 	int ret;
 	unsigned int magic = NVRAM_MAGIC;
-	unsigned int *im = (unsigned int *)src;
 	CLzmaEncProps props;
 	if (!memcmp(src, &magic, 4)) {
 		memcpy(dst, src, len);
@@ -307,10 +314,9 @@ static void decompress(void *src, void *dst, size_t len)
 
 	ret = LzmaDecode(dst, &dl, src, &sl, propsEncoded, propsSize,
 			 LZMA_FINISH_ANY, &status, &lzma_alloc);
-	if (ret != SZ_OK || status == LZMA_STATUS_NOT_FINISHED ||
-	    dl != (SizeT)NVRAM_SPACE) {
+	if (ret != SZ_OK || status == LZMA_STATUS_NOT_FINISHED) {
 		printk(KERN_INFO
-		       "nvram: decompress failed %ld ret %d status %d\n",
+		       "nvram: decompress failed %zu ret %d status %d\n",
 		       dl, ret, status);
 		return;
 	}
@@ -442,7 +448,7 @@ next:;
 	ret = mtd_write(nvram_mtd, offset, target_size, &len, lzma);
 	vfree(lzma);
 	if (ret || len != target_size) {
-		printk("nvram_commit: write error (offset %d size %ld)\n",
+		printk("nvram_commit: write error (offset %d size %zu)\n",
 		       offset, len);
 		ret = -EIO;
 		goto done;
@@ -698,8 +704,7 @@ static int __init dev_nvram_init(void)
 
 	/* Initialize hash table */
 	if (_nvram_init())
-		;
-	return -1;
+		return -1;
 
 	/* Create /dev/nvram handle */
 
