@@ -693,6 +693,7 @@ static struct sclp_core_info *smp_get_core_info(void)
 				continue;
 			info->core[info->configured].core_id =
 				address >> smp_cpu_mt_shift;
+			info->core[info->configured].type = boot_core_type;
 			info->configured++;
 		}
 		info->combined = info->configured;

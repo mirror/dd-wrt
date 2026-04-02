@@ -1811,6 +1811,7 @@ bottom_of_search_loop:
 		vsi->flags |= I40E_VSI_FLAG_FILTER_CHANGED;
 		vsi->back->flags |= I40E_FLAG_FILTER_SYNC;
 	}
+	i40e_service_event_schedule(vsi->back);
 }
 
 /**

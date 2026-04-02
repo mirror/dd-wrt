@@ -3424,10 +3424,11 @@ static int ext4_fill_super(struct super_block *sb, void *data, int silent)
 	sbi->s_li_wait_mult = EXT4_DEF_LI_WAIT_MULT;
 
 	if (sbi->s_es->s_mount_opts[0]) {
-		char s_mount_opts[65];
+		char s_mount_opts[64];
 
-		strscpy_pad(s_mount_opts, sbi->s_es->s_mount_opts,
-			    sizeof(s_mount_opts));
+		if (strscpy_pad(s_mount_opts, sbi->s_es->s_mount_opts,
+				sizeof(s_mount_opts)) < 0)
+			goto failed_mount;
 		if (!parse_options(s_mount_opts, sb, &journal_devnum,
 				   &journal_ioprio, 0)) {
 			ext4_msg(sb, KERN_WARNING,

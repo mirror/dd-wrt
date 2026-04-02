@@ -404,13 +404,14 @@ static inline int is_transaction_blocked(struct btrfs_transaction *trans)
  * when this is done, it is safe to start a new transaction, but the current
  * transaction might not be fully on disk.
  */
-static void wait_current_trans(struct btrfs_root *root)
+static void wait_current_trans(struct btrfs_root *root, unsigned int type)
 {
 	struct btrfs_transaction *cur_trans;
 
 	spin_lock(&root->fs_info->trans_lock);
 	cur_trans = root->fs_info->running_transaction;
-	if (cur_trans && is_transaction_blocked(cur_trans)) {
+	if (cur_trans && is_transaction_blocked(cur_trans) &&
+	    (btrfs_blocked_trans_types[cur_trans->state] & type)) {
 		atomic_inc(&cur_trans->use_count);
 		spin_unlock(&root->fs_info->trans_lock);
 
@@ -522,12 +523,12 @@ again:
 		sb_start_intwrite(root->fs_info->sb);
 
 	if (may_wait_transaction(root, type))
-		wait_current_trans(root);
+		wait_current_trans(root, type);
 
 	do {
 		ret = join_transaction(root, type);
 		if (ret == -EBUSY) {
-			wait_current_trans(root);
+			wait_current_trans(root, type);
 			if (unlikely(type == TRANS_ATTACH))
 				ret = -ENOENT;
 		}
@@ -754,7 +755,7 @@ out:
 void btrfs_throttle(struct btrfs_root *root)
 {
 	if (!atomic_read(&root->fs_info->open_ioctl_trans))
-		wait_current_trans(root);
+		wait_current_trans(root, TRANS_START);
 }
 
 static int should_end_transaction(struct btrfs_trans_handle *trans,

@@ -48,6 +48,8 @@
 
 static char driver_name[] = KBUILD_MODNAME;
 
+#define RCV_BUFFER_SIZE (16 * 1024)
+
 /* this is the physical layout of a PCL, its size is 128 bytes */
 struct pcl {
 	__le32 next;
@@ -522,19 +524,17 @@ remove_card(struct pci_dev *dev)
 		wake_up_interruptible(&client->buffer.wait);
 	spin_unlock_irq(&lynx->client_list_lock);
 
-	pci_free_consistent(lynx->pci_device, sizeof(struct pcl),
-			    lynx->rcv_start_pcl, lynx->rcv_start_pcl_bus);
-	pci_free_consistent(lynx->pci_device, sizeof(struct pcl),
-			    lynx->rcv_pcl, lynx->rcv_pcl_bus);
-	pci_free_consistent(lynx->pci_device, PAGE_SIZE,
-			    lynx->rcv_buffer, lynx->rcv_buffer_bus);
+	dma_free_coherent(&lynx->pci_device->dev, sizeof(struct pcl),
+			  lynx->rcv_start_pcl, lynx->rcv_start_pcl_bus);
+	dma_free_coherent(&lynx->pci_device->dev, sizeof(struct pcl),
+			  lynx->rcv_pcl, lynx->rcv_pcl_bus);
+	dma_free_coherent(&lynx->pci_device->dev, RCV_BUFFER_SIZE,
+			  lynx->rcv_buffer, lynx->rcv_buffer_bus);
 
 	iounmap(lynx->registers);
 	pci_disable_device(dev);
 	lynx_put(lynx);
 }
-
-#define RCV_BUFFER_SIZE (16 * 1024)
 
 static int
 add_card(struct pci_dev *dev, const struct pci_device_id *unused)
@@ -543,7 +543,7 @@ add_card(struct pci_dev *dev, const struct pci_device_id *unused)
 	u32 p, end;
 	int ret, i;
 
-	if (pci_set_dma_mask(dev, DMA_BIT_MASK(32))) {
+	if (dma_set_mask(&dev->dev, DMA_BIT_MASK(32))) {
 		dev_err(&dev->dev,
 		    "DMA address limits not supported for PCILynx hardware\n");
 		return -ENXIO;
@@ -570,12 +570,16 @@ add_card(struct pci_dev *dev, const struct pci_device_id *unused)
 	lynx->registers = ioremap_nocache(pci_resource_start(dev, 0),
 					  PCILYNX_MAX_REGISTER);
 
-	lynx->rcv_start_pcl = pci_alloc_consistent(lynx->pci_device,
-				sizeof(struct pcl), &lynx->rcv_start_pcl_bus);
-	lynx->rcv_pcl = pci_alloc_consistent(lynx->pci_device,
-				sizeof(struct pcl), &lynx->rcv_pcl_bus);
-	lynx->rcv_buffer = pci_alloc_consistent(lynx->pci_device,
-				RCV_BUFFER_SIZE, &lynx->rcv_buffer_bus);
+	lynx->rcv_start_pcl = dma_alloc_coherent(&lynx->pci_device->dev,
+						 sizeof(struct pcl),
+						 &lynx->rcv_start_pcl_bus,
+						 GFP_KERNEL);
+	lynx->rcv_pcl = dma_alloc_coherent(&lynx->pci_device->dev,
+					   sizeof(struct pcl),
+					   &lynx->rcv_pcl_bus, GFP_KERNEL);
+	lynx->rcv_buffer = dma_alloc_coherent(&lynx->pci_device->dev,
+					      RCV_BUFFER_SIZE,
+					      &lynx->rcv_buffer_bus, GFP_KERNEL);
 	if (lynx->rcv_start_pcl == NULL ||
 	    lynx->rcv_pcl == NULL ||
 	    lynx->rcv_buffer == NULL) {
@@ -673,14 +677,15 @@ fail_free_irq:
 
 fail_deallocate:
 	if (lynx->rcv_start_pcl)
-		pci_free_consistent(lynx->pci_device, sizeof(struct pcl),
-				lynx->rcv_start_pcl, lynx->rcv_start_pcl_bus);
+		dma_free_coherent(&lynx->pci_device->dev, sizeof(struct pcl),
+				  lynx->rcv_start_pcl,
+				  lynx->rcv_start_pcl_bus);
 	if (lynx->rcv_pcl)
-		pci_free_consistent(lynx->pci_device, sizeof(struct pcl),
-				lynx->rcv_pcl, lynx->rcv_pcl_bus);
+		dma_free_coherent(&lynx->pci_device->dev, sizeof(struct pcl),
+				  lynx->rcv_pcl, lynx->rcv_pcl_bus);
 	if (lynx->rcv_buffer)
-		pci_free_consistent(lynx->pci_device, PAGE_SIZE,
-				lynx->rcv_buffer, lynx->rcv_buffer_bus);
+		dma_free_coherent(&lynx->pci_device->dev, RCV_BUFFER_SIZE,
+				  lynx->rcv_buffer, lynx->rcv_buffer_bus);
 	iounmap(lynx->registers);
 	kfree(lynx);
 

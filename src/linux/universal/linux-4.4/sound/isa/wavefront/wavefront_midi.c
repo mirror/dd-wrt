@@ -294,6 +294,7 @@ static int snd_wavefront_midi_input_close(struct snd_rawmidi_substream *substrea
 	        return -EIO;
 
 	spin_lock_irqsave (&midi->open, flags);
+	midi->substream_input[mpu] = NULL;
 	midi->mode[mpu] &= ~MPU401_MODE_INPUT;
 	spin_unlock_irqrestore (&midi->open, flags);
 
@@ -317,6 +318,7 @@ static int snd_wavefront_midi_output_close(struct snd_rawmidi_substream *substre
 	        return -EIO;
 
 	spin_lock_irqsave (&midi->open, flags);
+	midi->substream_output[mpu] = NULL;
 	midi->mode[mpu] &= ~MPU401_MODE_OUTPUT;
 	spin_unlock_irqrestore (&midi->open, flags);
 	return 0;

@@ -1843,6 +1843,8 @@ int ring_buffer_resize(struct ring_buffer *buffer, unsigned long size,
 					list) {
 			list_del_init(&bpage->list);
 			free_buffer_page(bpage);
+
+			cond_resched();
 		}
 	}
 	mutex_unlock(&buffer->mutex);
