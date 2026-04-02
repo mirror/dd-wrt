@@ -254,11 +254,7 @@ static void *compress(void *src, size_t len, SizeT *compress_size)
 	CLzmaEncProps props;
 	LzmaEncProps_Init(&props);
 
-	if (magic64_dict)
-		props.dictSize = LZMA_BEST_DICT(0x10000);
-	else
-		props.dictSize = LZMA_BEST_DICT(0x2000);
-
+	props.dictSize = LZMA_BEST_DICT(0x10000);
 	props.level = LZMA_BEST_LEVEL;
 	props.lc = LZMA_BEST_LC;
 	props.lp = LZMA_BEST_LP;
