@@ -16,8 +16,8 @@ typedef unsigned char uint8;
 #define	ltoh32
 #define	htol32
 #define	bzero(b, len)		memset((b), '\0', (len))
-#define	MALLOC(size)		vmalloc((size))
-#define	MFREE(addr, size)	vfree((addr))
+extern void *MALLOC(size_t size);
+extern void MFREE(void *addr);
 
 extern uint8 crc8(uint8 * pdata, uint nbytes, uint8 crc);
 #define CRC8_INIT_VALUE  0xff	/* Initial CRC8 checksum value */
