@@ -57,7 +57,7 @@ static int nvram_major = -1;
 //static devfs_handle_t nvram_handle = NULL;
 static struct mtd_info *nvram_mtd = NULL;
 static size_t nvram_off = -1;
-static int magic64 = 0;
+static int magic64_dict = 0;
 static void decompress(void *src, void *dst, size_t len);
 int _nvram_read(char *buf)
 {
@@ -103,7 +103,7 @@ int _nvram_read(char *buf)
 		mtd_read(nvram_mtd, i, 4, &len, check);
 		if (!memcmp(check, magic, 4) || !memcmp(check, magic64, 4)) {
 			if (!memcmp(check, magic64, 4))
-				magic64 = 1;
+				magic64_dict = 1;
 			nvram_off = i;
 			printk(KERN_INFO
 			       "nvram: found compressed nvram at %lX\n",
@@ -254,7 +254,7 @@ static void *compress(void *src, size_t len, SizeT *compress_size)
 	CLzmaEncProps props;
 	LzmaEncProps_Init(&props);
 
-	if (magic64)
+	if (magic64_dict)
 		props.dictSize = LZMA_BEST_DICT(0x10000);
 	else
 		props.dictSize = LZMA_BEST_DICT(0x2000);
@@ -292,7 +292,7 @@ static void decompress(void *src, void *dst, size_t len)
 	}
 	LzmaEncProps_Init(&props);
 
-	if (magic64)
+	if (magic64_dict)
 		props.dictSize = LZMA_BEST_DICT(0x10000);
 	else
 		props.dictSize = LZMA_BEST_DICT(0x2000);
