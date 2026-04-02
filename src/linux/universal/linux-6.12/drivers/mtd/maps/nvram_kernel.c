@@ -57,6 +57,7 @@ static int nvram_major = -1;
 //static devfs_handle_t nvram_handle = NULL;
 static struct mtd_info *nvram_mtd = NULL;
 static size_t nvram_off = -1;
+static int magic64 = 0;
 static void decompress(void *src, void *dst, size_t len);
 int _nvram_read(char *buf)
 {
@@ -64,7 +65,8 @@ int _nvram_read(char *buf)
 	struct nvram_header *header = (struct nvram_header *)buf;
 	void *lzma;
 	int found = 0;
-	unsigned char magic[4]={0x00, 0x23, 0x14, 0x0e};
+	unsigned char magic[4] = { 0x00, 0x23, 0x14, 0x0e }; // 0x2000
+	unsigned char magic64[4] = { 0x00, 0x24, 0x15, 0xff }; // 0x10000
 	unsigned char check[4];
 	if (nvram_mtd) {
 		if (nvram_off == -1) {
@@ -73,7 +75,8 @@ int _nvram_read(char *buf)
 				mtd_read(nvram_mtd, i, NVRAM_SPACE_OLD, &len,
 					 buf);
 				if (header->magic == NVRAM_MAGIC) {
-					printk(KERN_INFO "nvram: found nvram at %lX\n",
+					printk(KERN_INFO
+					       "nvram: found nvram at %lX\n",
 					       i);
 					nvram_off = i;
 					found = 1;
@@ -97,11 +100,14 @@ int _nvram_read(char *buf)
 		return 0;
 	nvram_off = 0;
 	for (i = 0; i < nvram_mtd->size - 0x1000; i += 0x1000) {
-		mtd_read(nvram_mtd, i, 4, &len,check);
-		if (!memcmp(check, magic, 4)) {
+		mtd_read(nvram_mtd, i, 4, &len, check);
+		if (!memcmp(check, magic, 4) || !memcmp(check, magic64, 4)) {
+			if (!memcmp(check, magic64, 4))
+				magic64 = 1;
 			nvram_off = i;
-					printk(KERN_INFO "nvram: found compressed nvram at %lX\n",
-					       i);
+			printk(KERN_INFO
+			       "nvram: found compressed nvram at %lX\n",
+			       i);
 			break;
 		}
 	}
@@ -223,7 +229,8 @@ static void lzma_free_workspace(void)
 static int lzma_alloc_workspace(CLzmaEncProps *props)
 {
 	if ((p = (CLzmaEncHandle *)LzmaEnc_Create(&lzma_alloc)) == NULL) {
-		printk(KERN_ERR "nvram: Failed to allocate lzma deflate workspace\n");
+		printk(KERN_ERR
+		       "nvram: Failed to allocate lzma deflate workspace\n");
 		return -ENOMEM;
 	}
 
@@ -240,14 +247,18 @@ static int lzma_alloc_workspace(CLzmaEncProps *props)
 	return 0;
 }
 
-static void *compress(void *src, size_t len,SizeT *compress_size)
+static void *compress(void *src, size_t len, SizeT *compress_size)
 {
 	void *dst;
 	int ret;
 	CLzmaEncProps props;
 	LzmaEncProps_Init(&props);
 
-	props.dictSize = LZMA_BEST_DICT(0x2000);
+	if (magic64)
+		props.dictSize = LZMA_BEST_DICT(0x10000);
+	else
+		props.dictSize = LZMA_BEST_DICT(0x2000);
+
 	props.level = LZMA_BEST_LEVEL;
 	props.lc = LZMA_BEST_LC;
 	props.lp = LZMA_BEST_LP;
@@ -282,7 +293,10 @@ static void decompress(void *src, void *dst, size_t len)
 	}
 	LzmaEncProps_Init(&props);
 
-	props.dictSize = LZMA_BEST_DICT(0x2000);
+	if (magic64)
+		props.dictSize = LZMA_BEST_DICT(0x10000);
+	else
+		props.dictSize = LZMA_BEST_DICT(0x2000);
 	props.level = LZMA_BEST_LEVEL;
 	props.lc = LZMA_BEST_LC;
 	props.lp = LZMA_BEST_LP;
@@ -299,8 +313,9 @@ static void decompress(void *src, void *dst, size_t len)
 			 LZMA_FINISH_ANY, &status, &lzma_alloc);
 	if (ret != SZ_OK || status == LZMA_STATUS_NOT_FINISHED ||
 	    dl != (SizeT)NVRAM_SPACE) {
-		printk(KERN_INFO "nvram: decompress failed %ld ret %d status %d\n", dl,
-		       ret, status);
+		printk(KERN_INFO
+		       "nvram: decompress failed %ld ret %d status %d\n",
+		       dl, ret, status);
 		return;
 	}
 	lzma_free_workspace();
@@ -431,7 +446,8 @@ next:;
 	ret = mtd_write(nvram_mtd, offset, target_size, &len, lzma);
 	vfree(lzma);
 	if (ret || len != target_size) {
-		printk("nvram_commit: write error (offset %d size %ld)\n", offset, len);
+		printk("nvram_commit: write error (offset %d size %ld)\n",
+		       offset, len);
 		ret = -EIO;
 		goto done;
 	}
