@@ -148,10 +148,13 @@ extern int nvram_getall(char *buf, int count);
 #define NVRAM_HEADER_SIZE	sizeof(struct nvram_header)
 #if defined(CONFIG_RUCKUSR500)
 #define NVRAM_SPACE			0x40000
+#define NVRAM_SPACE_OLD			0x40000
 #elif defined(CONFIG_WZR_HP_G300NH) || defined(CONFIG_ARCH_ALPINE) || defined(CONFIG_X86) || defined(CONFIG_SOC_IMX6) || defined(CONFIG_ARCH_QCOM) || defined(CONFIG_TL_WDR4900_V1)
-#define NVRAM_SPACE			0x20000
+#define NVRAM_SPACE			0x40000
+#define NVRAM_SPACE_OLD			0x20000
 #else
-#define NVRAM_SPACE			0x10000
+#define NVRAM_SPACE			0x20000
+#define NVRAM_SPACE_OLD			0x10000
 #endif
 
 #define	NVRAM_CRC_MASK		0x000000ff
