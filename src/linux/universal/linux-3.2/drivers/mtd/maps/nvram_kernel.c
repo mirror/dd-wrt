@@ -64,6 +64,10 @@ extern struct nvram_tuple *_nvram_realloc(struct nvram_tuple *t,
 					  const char *name, const char *value);
 extern void _nvram_free(struct nvram_tuple *t);
 extern int _nvram_read(void *buf);
+#define mtd_read(mtd,offs,size,len,buf) mtd->read(mtd,offs,size,len,buf)
+#define mtd_write(mtd,offs,size,len,buf) mtd->write(mtd,offs,size,len,buf)
+#define mtd_unlock(mtd,offset,size) if (mtd->unlock) mtd->unlock(mtd,offset,size)
+#define mtd_erase(mtd,er) mtd->erase(mtd, er)
 
 int _nvram_read(void *_buf)
 {
