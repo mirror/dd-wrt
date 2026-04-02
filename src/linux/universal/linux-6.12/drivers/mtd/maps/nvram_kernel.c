@@ -112,9 +112,9 @@ int _nvram_read(char *buf)
 		}
 	}
 	lzma = vmalloc(nvram_mtd->size - nvram_off);
-	memset(lzma, 0, nvram_mtd->size - nvram_off);
 	if (!lzma)
 		return 0;
+	memset(lzma, 0, nvram_mtd->size - nvram_off);
 	mtd_read(nvram_mtd, nvram_off, nvram_mtd->size - nvram_off, &len, lzma);
 	decompress(lzma, buf, nvram_mtd->size - nvram_off);
 	vfree(lzma);
