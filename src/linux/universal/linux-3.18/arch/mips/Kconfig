@@ -1,6 +1,8 @@
 config MIPS
 	bool
 	default y
+	select LZMA_COMPRESS
+	select LZMA_DECOMPRESS
 	select ARCH_MIGHT_HAVE_PC_PARPORT
 	select ARCH_MIGHT_HAVE_PC_SERIO
 	select ARCH_HAS_SG_CHAIN
