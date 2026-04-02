@@ -1052,6 +1052,7 @@ static bool session_fd_check(struct ksmbd_tree_connect *tcon,
 	struct ksmbd_inode *ci;
 	struct oplock_info *op;
 	struct ksmbd_conn *conn;
+	struct ksmbd_lock *smb_lock, *tmp_lock;
 
 	if (!is_reconnectable(fp))
 		return false;
@@ -1067,6 +1068,12 @@ static bool session_fd_check(struct ksmbd_tree_connect *tcon,
 		op->conn = NULL;
 	}
 	up_write(&ci->m_lock);
+
+	list_for_each_entry_safe(smb_lock, tmp_lock, &fp->lock_list, flist) {
+		spin_lock(&fp->conn->llist_lock);
+		list_del(&smb_lock->clist);
+		spin_unlock(&fp->conn->llist_lock);
+	}
 
 	fp->conn = NULL;
 	fp->tcon = NULL;
@@ -1163,6 +1170,8 @@ int ksmbd_reopen_durable_fd(struct ksmbd_work *work, struct ksmbd_file *fp)
 {
 	struct ksmbd_inode *ci;
 	struct oplock_info *op;
+	struct ksmbd_conn *conn = work->conn;
+	struct ksmbd_lock *smb_lock;
 
 	if (!fp->is_durable || fp->conn || fp->tcon) {
 		pr_err("Invalid durable fd [%p:%p]\n", fp->conn, fp->tcon);
@@ -1174,8 +1183,14 @@ int ksmbd_reopen_durable_fd(struct ksmbd_work *work, struct ksmbd_file *fp)
 		return -EBADF;
 	}
 
-	fp->conn = work->conn;
+	fp->conn = conn;
 	fp->tcon = work->tcon;
+
+	list_for_each_entry(smb_lock, &fp->lock_list, flist) {
+		spin_lock(&conn->llist_lock);
+		list_add_tail(&smb_lock->clist, &conn->lock_list);
+		spin_unlock(&conn->llist_lock);
+	}
 
 	ci = fp->f_ci;
 	down_write(&ci->m_lock);
