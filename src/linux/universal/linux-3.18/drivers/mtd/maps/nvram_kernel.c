@@ -327,7 +327,7 @@ static void decompress(void *src, void *dst, size_t len)
 	return;
 }
 
-#if 0
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 16, 00)
 static void erase_callback(struct erase_info *done)
 {
 	wait_queue_head_t *wait_q = (wait_queue_head_t *) done->priv;
@@ -351,8 +351,10 @@ int nvram_commit(void)
 	u_int32_t offset, cnt = 0;
 	struct erase_info erase;
 	size_t target_size;
-	//      printk(KERN_EMERG "commit\n");
-
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 16, 00)
+	DECLARE_WAITQUEUE(wait, current);
+	wait_queue_head_t wait_q;
+#endif
 	if (!nvram_mtd) {
 		printk("nvram_commit: NVRAM not found\n");
 		return -ENODEV;
@@ -394,15 +396,32 @@ int nvram_commit(void)
 	if (!counts)
 		counts = 1;
 fullerase:;
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 16, 00)
+	init_waitqueue_head(&wait_q);
+#endif
 	for (; offset < nvram_mtd->size; offset += nvram_mtd->erasesize) {
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 16, 00)
+		erase.mtd = nvram_mtd;
+#endif
 		erase.addr = offset;
 		erase.len = nvram_mtd->erasesize;
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 16, 00)
+		erase.callback = erase_callback;
+		erase.priv = (u_long)&wait_q;
+		set_current_state(TASK_INTERRUPTIBLE);
+		add_wait_queue(&wait_q, &wait);
+#endif 
 
 		/* Unlock sector blocks */
 		mtd_unlock(nvram_mtd, offset, nvram_mtd->erasesize);
 		if ((ret = mtd_erase(nvram_mtd, &erase))) {
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 16, 00)
+			set_current_state(TASK_RUNNING);
+			remove_wait_queue(&wait_q, &wait);
+#endif
 			printk("nvram_commit: erase error offset %X, skipping\n",
 			       offset);
+			goto done;
 			for (i = 0; i < counts; i++) {
 				if ((cnt + i) < 256)
 					bad[cnt + i] = offset;
@@ -416,6 +435,10 @@ fullerase:;
 			}
 			continue;
 		}
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 16, 00)
+		schedule();
+		remove_wait_queue(&wait_q, &wait);
+#endif
 		cnt++;
 		/* Wait for erase to finish */
 	}
