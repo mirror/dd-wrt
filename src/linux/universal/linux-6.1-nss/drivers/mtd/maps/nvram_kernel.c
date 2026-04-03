@@ -78,16 +78,15 @@ int _nvram_read(void *_buf)
 	if (nvram_mtd) {
 		if (nvram_off == -1) {
 			nvram_off = nvram_mtd->size - NVRAM_SPACE_OLD;
-			for (i = 0; i < nvram_mtd->size; i += 0x1000) {
-				mtd_read(nvram_mtd, i, NVRAM_SPACE_OLD, &len,
-					 buf);
-				if (header->magic == NVRAM_MAGIC) {
-					printk(KERN_INFO
-					       "nvram: found nvram at 0x%zx\n",
-					       i);
-					nvram_off = i;
-					found = 1;
-					break;
+			if (nvram_mtd->size > NVRAM_SPACE_OLD) {
+				for (i = 0; i < nvram_mtd->size; i += 0x1000) {
+					mtd_read(nvram_mtd, i, NVRAM_SPACE_OLD,
+						 &len, buf);
+					if (header->magic == NVRAM_MAGIC) {
+						nvram_off = i;
+						found = 1;
+						break;
+					}
 				}
 			}
 		}
@@ -101,6 +100,9 @@ int _nvram_read(void *_buf)
 				printk(KERN_INFO
 				       "nvram: convert old nvram to new one\n");
 			}
+		} else {
+			printk(KERN_INFO "nvram: found nvram at 0x%zx\n",
+			       nvram_off);
 		}
 	}
 	if (found)
