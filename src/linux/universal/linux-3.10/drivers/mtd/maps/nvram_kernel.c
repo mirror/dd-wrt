@@ -101,6 +101,7 @@ int _nvram_read(void *_buf)
 				       "nvram: convert old nvram to new one\n");
 			}
 		} else {
+			found = 1;
 			printk(KERN_INFO "nvram: found nvram at 0x%zx\n",
 			       nvram_off);
 		}
