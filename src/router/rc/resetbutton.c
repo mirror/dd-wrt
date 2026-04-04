@@ -214,7 +214,7 @@ static int getbuttonstate()
 		return !get_gpio(57);
 	case ROUTER_LINKSYS_LGS:
 	case ROUTER_EWS2910P:
-	case ROUTER_DATTO_L8P:
+	case ROUTER_DATTO_L8:
 	case ROUTER_NETGEAR_GS750E:
 		return !get_gpio(11);
 	case ROUTER_NETGEAR_GS:
