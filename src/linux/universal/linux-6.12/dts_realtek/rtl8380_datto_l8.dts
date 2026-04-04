@@ -53,7 +53,7 @@
 		};
 	};
 
-	keys {
+/*	keys {
 		compatible = "gpio-keys";
 
 		reset {
@@ -67,7 +67,7 @@
 			gpios = <&gpio0 13 GPIO_ACTIVE_LOW>;
 			linux,code = <KEY_LIGHTS_TOGGLE>;
 		};
-	};
+	};*/
 
 	gpio-restart {
 		compatible = "gpio-restart";
@@ -86,7 +86,7 @@
 			#size-cells = <1>;
 
 			partition@0 {
-				label = "firmware";
+				label = "linux";
 				reg = <0x0 0x1a60000>;
 				compatible = "openwrt,uimage", "denx,uimage";
 				openwrt,ih-magic = <0x00703400>;
@@ -200,12 +200,16 @@
 				reg = <0x4a0000 0x100000>;
 			};
 			fwconcat0: partition@5a0000 {
-				label = "runtime";
+				label = "runtime1";
 				reg = <0x5a0000 0xd30000>;
 			};
 			fwconcat1: partition@12d0000 {
 				label = "runtime2";
-				reg = <0x12d0000 0xd30000>;
+				reg = <0x12d0000 0xd10000>;
+			};
+			nvram: partition@1fe0000 {
+				label = "nvram";
+				reg = <0x1fe0000 0x20000>;
 			};
 		};
 	};
