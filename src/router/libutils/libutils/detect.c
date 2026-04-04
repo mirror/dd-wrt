@@ -452,6 +452,11 @@ int internal_getRouterBrand()
 		setRouter("Hasivo S1100W-8XGT-SE");
 		return ROUTER_HASIVO_S1100W8XGT;
 	}
+
+	if (!strcmp(modelstr, "Datto") && !strcmp(version,"L8")) {
+		setRouter("Datto L8");
+		return ROUTER_DATTO_L8;
+	}
 	setRouter("Realtek Generic Switch");
 	return ROUTER_REALTEK_GENERIC;
 #elif defined(HAVE_ALLNETWRT) && !defined(HAVE_ECB9750)
