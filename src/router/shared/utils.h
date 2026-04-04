@@ -858,6 +858,8 @@
 
 #define ROUTER_MORSE 0x12e112
 
+#define ROUTER_DATTO_L8 0x12e10b
+
 #define NVROUTER "DD_BOARD"
 #define NVROUTER_ALT "alternate_name"
 
