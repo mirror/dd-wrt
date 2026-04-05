@@ -347,12 +347,23 @@ void start_sysinit(void)
 	eval("swconfig", "dev", "eth0", "set", "igmp_snooping", "0");
 	eval("swconfig", "dev", "eth0", "set", "igmp_v3", "1");
 		#elif defined(HAVE_RUCKUSR500)
+
+			#ifdef HAVE_RUCKUSH500
+	eval("swconfig", "dev", "eth0", "set", "reset", "1");
+	eval("swconfig", "dev", "eth0", "set", "enable_vlan", "0");
+	eval("swconfig", "dev", "eth0", "set", "igmp_snooping", "0");
+	eval("swconfig", "dev", "eth0", "set", "igmp_v3", "1");
+	eval("swconfig", "dev", "eth0", "vlan", "1", "set", "ports", "0 1 2 3 4 5");
+	eval("swconfig", "dev", "eth0", "set", "apply");
+			#else
 	eval("swconfig", "dev", "eth0", "set", "reset", "1");
 	eval("swconfig", "dev", "eth0", "set", "enable_vlan", "0");
 	eval("swconfig", "dev", "eth0", "set", "igmp_snooping", "0");
 	eval("swconfig", "dev", "eth0", "set", "igmp_v3", "1");
 	eval("swconfig", "dev", "eth0", "vlan", "1", "set", "ports", "0 5");
 	eval("swconfig", "dev", "eth0", "vlan", "2", "set", "ports", "6 3");
+	eval("swconfig", "dev", "eth0", "set", "apply");
+			#endif
 	nvram_set("switchphy", "eth1");
 	nvram_seti("sw_lancpuport", 6);
 	nvram_seti("sw_wancpuport", 0);
@@ -459,6 +470,8 @@ void start_sysinit(void)
 			copy[4] & 0xff, copy[5] & 0xff);
 		fprintf(stderr, "configure eth0 to %s\n", mac);
 		set_hwaddr("eth0", mac);
+		for (i = 0; i < 256; i++)
+			copy[i] = buf2[i + 6] & 0xff;
 		sprintf(mac, "%02X:%02X:%02X:%02X:%02X:%02X", copy[6] & 0xff, copy[7] & 0xff, copy[8] & 0xff, copy[9] & 0xff,
 			copy[10] & 0xff, copy[11] & 0xff);
 		fprintf(stderr, "configure eth1 to %s\n", mac);
