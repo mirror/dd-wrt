@@ -1494,7 +1494,7 @@ static void __init qca953x_clocks_init(void)
 		ref_rate = 25 * 1000 * 1000;
 
 
-	pll = __raw_readl(pll_base + QCA953X_PLL_CPU_CONFIG_REG);
+	pll =  ar71xx_pll_rr(QCA953X_PLL_CPU_CONFIG_REG);
 	out_div = (pll >> QCA953X_PLL_CPU_CONFIG_OUTDIV_SHIFT) &
 		  QCA953X_PLL_CPU_CONFIG_OUTDIV_MASK;
 	ref_div = (pll >> QCA953X_PLL_CPU_CONFIG_REFDIV_SHIFT) &
@@ -1508,7 +1508,7 @@ static void __init qca953x_clocks_init(void)
 	cpu_pll += frac * (ref_rate >> 6) / ref_div;
 	cpu_pll /= (1 << out_div);
 
-	pll = __raw_readl(pll_base + QCA953X_PLL_DDR_CONFIG_REG);
+	pll = ar71xx_pll_rr(QCA953X_PLL_DDR_CONFIG_REG);
 	out_div = (pll >> QCA953X_PLL_DDR_CONFIG_OUTDIV_SHIFT) &
 		  QCA953X_PLL_DDR_CONFIG_OUTDIV_MASK;
 	ref_div = (pll >> QCA953X_PLL_DDR_CONFIG_REFDIV_SHIFT) &
@@ -1522,7 +1522,7 @@ static void __init qca953x_clocks_init(void)
 	ddr_pll += frac * (ref_rate >> 6) / (ref_div << 4);
 	ddr_pll /= (1 << out_div);
 
-	clk_ctrl = __raw_readl(pll_base + QCA953X_PLL_CLK_CTRL_REG);
+	clk_ctrl = ar71xx_pll_rr(QCA953X_PLL_CLK_CTRL_REG);
 
 	postdiv = (clk_ctrl >> QCA953X_PLL_CLK_CTRL_CPU_POST_DIV_SHIFT) &
 		  QCA953X_PLL_CLK_CTRL_CPU_POST_DIV_MASK;
