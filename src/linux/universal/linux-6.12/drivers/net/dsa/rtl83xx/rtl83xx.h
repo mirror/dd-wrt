@@ -123,9 +123,9 @@ struct table_reg *rtl_table_get(rtl838x_tbl_reg_t r, int t);
 void rtl_table_release(struct table_reg *r);
 int rtl_table_read(struct table_reg *r, int idx);
 int rtl_table_write(struct table_reg *r, int idx);
-u16 rtl_table_data(struct table_reg *r, int i);
-u32 rtl_table_data_r(struct table_reg *r, int i);
-void rtl_table_data_w(struct table_reg *r, u32 v, int i);
+inline u16 rtl_table_data(struct table_reg *r, int i);
+inline u32 rtl_table_data_r(struct table_reg *r, int i);
+inline void rtl_table_data_w(struct table_reg *r, u32 v, int i);
 
 int rtldsa_83xx_lag_setup_algomask(struct rtl838x_switch_priv *priv, int group,
 				   struct netdev_lag_upper_info *info);
@@ -190,6 +190,9 @@ void rtl930x_pie_rule_dump_raw(u32 r[]);
 
 extern const struct dsa_switch_ops rtldsa_83xx_switch_ops;
 extern const struct dsa_switch_ops rtldsa_93xx_switch_ops;
+
+extern const struct phylink_mac_ops rtldsa_83xx_phylink_mac_ops;
+extern const struct phylink_mac_ops rtldsa_93xx_phylink_mac_ops;
 
 extern const struct rtldsa_config rtldsa_838x_cfg;
 extern const struct rtldsa_config rtldsa_839x_cfg;
