@@ -250,6 +250,9 @@ endif
 ifeq ($(CONFIG_DIR859),y)
 CFLAGS += -DHAVE_DIR859
 endif
+ifeq ($(CONFIG_RUCKUSH500),y)
+CFLAGS += -DHAVE_RUCKUSH500
+endif
 ifeq ($(CONFIG_MORSE),y)
 CFLAGS += -DHAVE_MORSE
 endif
