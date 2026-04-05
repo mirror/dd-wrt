@@ -515,6 +515,11 @@ ifeq ($(CONFIG_RUCKUSR500),y)
 else
 	echo "# CONFIG_RUCKUSR500 is not set" >> $(LINUXDIR)/.config
 endif
+ifeq ($(CONFIG_RUCKUSH500),y)
+	echo CONFIG_RUCKUSH500=y >> $(LINUXDIR)/.config
+else
+	echo "# CONFIG_RUCKUSH500 is not set" >> $(LINUXDIR)/.config
+endif
 ifeq ($(CONFIG_WR1043V4),y)
 	echo CONFIG_WR1043V4=y >> $(LINUXDIR)/.config
 else
