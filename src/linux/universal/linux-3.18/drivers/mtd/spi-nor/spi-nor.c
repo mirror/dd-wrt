@@ -944,7 +944,7 @@ int guessbootsize(struct mtd_info *mtd, void *offset, unsigned int maxscan)
 		vfree(ofs);
 		return 0x30000; // compex, lzma image
 	}
-	mtd_read(mtd, 140000, 65536, &retlen, &ofs[0]);
+	mtd_read(mtd, 0x140000, 65536, &retlen, &ofs[0]);
 	if (!strncmp((char *)(&ofsb[0x8]), "R500", 4)) {
 		printk(KERN_INFO "ruckus r500 detected\n");
 		add_memory_region(0xfff0000, 0x10000, BOOT_MEM_RAM);

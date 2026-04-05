@@ -3039,10 +3039,10 @@ int __init ar7240_platform_init(void)
 #ifdef CONFIG_RUCKUSR500
 	if (soc_is_ar934x()) {
 		ar934x_clocks_init();
-	ath79_register_spi(&ap136_spi_data, ap136_spi_info,
-			   ARRAY_SIZE(ap136_spi_info));
-//	ath79_register_spi(&ap136_spi_data, ar934x_spi_info,
-//			   ARRAY_SIZE(ar934x_spi_info));
+//	ath79_register_spi(&ap136_spi_data, ap136_spi_info,
+//			   ARRAY_SIZE(ap136_spi_info));
+	ath79_register_spi(&ap136_spi_data, ar934x_spi_info,
+			   ARRAY_SIZE(ar934x_spi_info));
 	}else if (soc_is_qca953x()) {
 		qca953x_clocks_init();
 	ath79_register_spi(&ap136_spi_data, ap136_spi_info,
