@@ -1318,6 +1318,15 @@ static struct ath79_spi_platform_data ap136_spi_data = {
 	.num_chipselect	= 1,
 };
 
+static struct spi_board_info ar934x_spi_info[] = {
+	{
+		.bus_num	= 0,
+		.chip_select	= 0,
+		.max_speed_hz	= 25000000,
+		.modalias	= "s25fl512s",
+	}
+};
+
 
 
 struct clk {
@@ -1371,7 +1380,6 @@ static void __init ar934x_clocks_init(void)
 	u32 cpu_pll, ddr_pll;
 	u32 bootstrap;
 	void __iomem *dpll_base;
-
 	dpll_base = ioremap(AR934X_SRIF_BASE, AR934X_SRIF_SIZE);
 
 	bootstrap = ar71xx_reset_rr(AR934X_RESET_REG_BOOTSTRAP);
@@ -1380,7 +1388,7 @@ static void __init ar934x_clocks_init(void)
 	else
 		ref_rate = 25 * 1000 * 1000;
 
-	pll = ar71xx_pll_rr(AR934X_SRIF_CPU_DPLL2_REG);
+	pll = __raw_readl(dpll_base + AR934X_SRIF_CPU_DPLL2_REG);
 	if (pll & AR934X_SRIF_DPLL2_LOCAL_PLL) {
 		out_div = (pll >> AR934X_SRIF_DPLL2_OUTDIV_SHIFT) &
 			  AR934X_SRIF_DPLL2_OUTDIV_MASK;
@@ -2695,7 +2703,54 @@ int __init ar7240_platform_init(void)
 	#endif
 	#else
 
-#if CONFIG_RUCKUSR500
+#if defined(CONFIG_RUCKUSH500)
+	ath79_setup_ar934x_eth_cfg(AR934X_ETH_CFG_RGMII_GMAC0 | AR934X_ETH_CFG_SW_ONLY_MODE);
+	ath79_setup_ar934x_eth_rx_delay(3, 3);
+	/* GMAC0 of the AR8327 switch is connected to GMAC1 via SGMII */
+	ap136_ar8327_pad0_cfg.mode = AR8327_PAD_MAC_SGMII;
+	ap136_ar8327_pad0_cfg.sgmii_delay_en = true;
+	ar71xx_add_device_mdio(0, 0x0);
+	ar71xx_add_device_mdio(1, 0x0);
+	ar71xx_eth0_pll_data.pll_1000 = 0x02000000;
+	ar71xx_eth0_pll_data.pll_100 =  0x00000101;
+	ar71xx_eth0_pll_data.pll_10 = 0x00001313;
+
+/*	ar71xx_eth1_pll_data.pll_1000 = 0x03000101;
+	ar71xx_eth1_pll_data.pll_100 = 0x00000101;
+	ar71xx_eth1_pll_data.pll_10 = 0x00001616;
+*/
+
+
+	/* GMAC6 of the AR8327 switch is connected to GMAC0 via RGMII */
+	ap136_ar8327_pad6_cfg.mode = AR8327_PAD_MAC_RGMII;
+//	ap136_ar8327_pad6_cfg.txclk_delay_en = true;
+//	ap136_ar8327_pad6_cfg.rxclk_delay_en = true;
+//	ap136_ar8327_pad6_cfg.txclk_delay_sel = AR8327_CLK_DELAY_SEL1;
+//	ap136_ar8327_pad6_cfg.rxclk_delay_sel = AR8327_CLK_DELAY_SEL2;
+
+
+	mdiobus_register_board_info(ap136_mdio0_info,
+				    ARRAY_SIZE(ap136_mdio0_info));
+
+	/* GMAC0 is connected to the RMGII interface */
+	ar71xx_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_RGMII;
+	ar71xx_eth0_data.phy_mask = BIT(6);
+	ar71xx_eth0_data.mii_bus_dev = &ar71xx_mdio0_device.dev;
+
+	ar71xx_add_device_eth(0);
+	/* GMAC1 is connected tot eh SGMII interface */
+
+	ar71xx_eth1_data.phy_if_mode = PHY_INTERFACE_MODE_GMII;
+	ar71xx_eth1_data.speed = SPEED_1000;
+	ar71xx_eth1_data.duplex = DUPLEX_FULL;
+
+//	ar71xx_eth1_data.phy_if_mode = PHY_INTERFACE_MODE_GMII;
+//	ar71xx_eth1_data.speed = SPEED_1000;
+//	ar71xx_eth1_data.duplex = DUPLEX_FULL;
+	ar71xx_add_device_eth(1);
+
+
+#elif defined(CONFIG_RUCKUSR500)
 	/* GMAC0 of the AR8327 switch is connected to GMAC1 via SGMII */
 	ap136_ar8327_pad0_cfg.mode = AR8327_PAD_MAC_SGMII;
 //	ap136_ar8327_pad0_cfg.sgmii_delay_en = true;
@@ -2982,16 +3037,25 @@ int __init ar7240_platform_init(void)
 	ap91_set_tx_gain_buffalo();
 #endif
 #ifdef CONFIG_RUCKUSR500
-	if (soc_is_ar934x())
+	if (soc_is_ar934x()) {
 		ar934x_clocks_init();
-	else if (soc_is_qca953x())
+	ath79_register_spi(&ap136_spi_data, ap136_spi_info,
+			   ARRAY_SIZE(ap136_spi_info));
+//	ath79_register_spi(&ap136_spi_data, ar934x_spi_info,
+//			   ARRAY_SIZE(ar934x_spi_info));
+	}else if (soc_is_qca953x()) {
 		qca953x_clocks_init();
-	else if (soc_is_qca955x())
+	ath79_register_spi(&ap136_spi_data, ap136_spi_info,
+			   ARRAY_SIZE(ap136_spi_info));
+	}else if (soc_is_qca955x()) {
 		qca955x_clocks_init();
-	else if (soc_is_qca956x())
+	ath79_register_spi(&ap136_spi_data, ap136_spi_info,
+			   ARRAY_SIZE(ap136_spi_info));
+	}else if (soc_is_qca956x()) {
 		qca956x_clocks_init();
 	ath79_register_spi(&ap136_spi_data, ap136_spi_info,
 			   ARRAY_SIZE(ap136_spi_info));
+	}
 #endif
 	return ret;
 }

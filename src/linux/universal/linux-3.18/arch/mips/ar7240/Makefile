@@ -39,7 +39,7 @@ obj-$(CONFIG_EARLY_PRINTK)		+= early_printk.o
 #obj-$(CONFIG_AR9100)	+= wdt.o
 
 
-#EXTRA_CFLAGS				+=	-fno-schedule-insns -fno-schedule-insns2
+EXTRA_CFLAGS				+= -g3
 ifdef CONFIG_AP_USB_LED_GPIO
 CFLAGS_proc_gpio.o += -DAP_USB_LED_GPIO=$(CONFIG_AP_USB_LED_GPIO)
 endif
