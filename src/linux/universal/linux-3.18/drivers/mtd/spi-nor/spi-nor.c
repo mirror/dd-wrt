@@ -958,6 +958,12 @@ int guessbootsize(struct mtd_info *mtd, void *offset, unsigned int maxscan)
 		}
 		if (ofs[0] == 0x27051956) {
 			printk(KERN_INFO "uboot detected\n");
+			if (i == 0x800000) {
+				printk(KERN_INFO "ruckus h500 detected\n");
+//				add_memory_region(0xfff0000, 0x10000, BOOT_MEM_RAM);
+				vfree(ofs);
+				return i; // uboot, lzma image
+			}
 			if (i == 0x1c0000) {
 				printk(KERN_INFO "ruckus r500 detected\n");
 				add_memory_region(0xfff0000, 0x10000, BOOT_MEM_RAM);
