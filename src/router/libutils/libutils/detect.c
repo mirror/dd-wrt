@@ -1997,6 +1997,13 @@ generic:;
 	nvram_default_get("wlan1_rxantenna", "3");
 	nvram_default_get("wlan1_txantenna", "3");
 	return ROUTER_BOARD_WHRHPGN;
+#elif HAVE_RUCKUSH500
+	setRouter("Ruckus H500");
+	nvram_default_get("wlan0_rxantenna", "3");
+	nvram_default_get("wlan0_txantenna", "3");
+	nvram_default_get("wlan1_rxantenna", "3");
+	nvram_default_get("wlan1_txantenna", "3");
+	return ROUTER_BOARD_WHRHPGN;
 #elif HAVE_RUCKUSR500
 	setRouter("Ruckus R500");
 	nvram_default_get("wlan0_rxantenna", "3");
