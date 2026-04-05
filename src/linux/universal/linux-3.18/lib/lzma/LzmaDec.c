@@ -38,7 +38,7 @@
 #define TREE_DECODE(probs, limit, i) \
   { i = 1; do { TREE_GET_BIT(probs, i); } while (i < limit); i -= limit; }
 
-/* #define _LZMA_SIZE_OPT */
+#define _LZMA_SIZE_OPT
 
 #ifdef _LZMA_SIZE_OPT
 #define TREE_6_DECODE(probs, i) TREE_DECODE(probs, (1 << 6), i)
