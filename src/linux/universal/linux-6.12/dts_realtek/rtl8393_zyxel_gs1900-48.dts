@@ -98,7 +98,7 @@
 	pinctrl-names = "default";
 	pinctrl-0 = <&port_led_offload>;
 
-	port_leds: expander@0 {
+/*	port_leds: expander@0 {
 		compatible = "realtek,rtl8231";
 		reg = <0>;
 
@@ -178,7 +178,7 @@
 			PORT_LED(50, 16, 1);
 		};
 	};
-
+*/
 
 	gpio1: expander@3 {
 		compatible = "realtek,rtl8231";
