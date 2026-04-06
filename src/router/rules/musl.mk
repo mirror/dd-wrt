@@ -3,28 +3,28 @@ MIMALLOC_OPT=-Os
 OPTIMIZE=size
 endif
 ifeq ($(ARCH),aarch64)
-MIMALLOC_OPT=-O3
-OPTIMIZE=yes
+MIMALLOC_OPT=-Os
+OPTIMIZE=size
 endif
 ifeq ($(ARCH),armeb)
 MIMALLOC_OPT=-Os
 OPTIMIZE=size
 endif
 ifeq ($(ARCH),i386)
-MIMALLOC_OPT=-O3
-OPTIMIZE=yes
+MIMALLOC_OPT=-Os
+OPTIMIZE=size
 endif
 ifeq ($(ARCH),x86_64)
-MIMALLOC_OPT=-O3
-OPTIMIZE=yes
+MIMALLOC_OPT=-Os
+OPTIMIZE=size
 endif
 ifeq ($(ARCH),mips)
 MIMALLOC_OPT=-Os
 OPTIMIZE=size
 endif
 ifeq ($(ARCH),mips64)
-MIMALLOC_OPT=-O3
-OPTIMIZE=yes
+MIMALLOC_OPT=-Os
+OPTIMIZE=size
 endif
 ifeq ($(ARCH),mipsel)
 MIMALLOC_OPT=-Os
