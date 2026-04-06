@@ -28,7 +28,7 @@ export OPENSSL_CMAKEFLAGS := -DASMAES512 -ffunction-sections -fdata-sections -Wl
 endif
 ifeq ($(ARCH),mips64)
 export OPENSSL_TARGET := linux-mips64-openwrt
-export OPENSSL_CMAKEFLAGS := -ffunction-sections -fdata-sections -Wl,--gc-sections -DOCTEON -DOCTEON_OPENSSL -I$(SSLPATH)/include/executive  -O3
+export OPENSSL_CMAKEFLAGS := -ffunction-sections -fdata-sections -Wl,--gc-sections -DOCTEON -DOCTEON_OPENSSL -I$(SSLPATH)/include/executive  -Os
 endif
 ifeq ($(ARCH),mipsel)
 export OPENSSL_TARGET := linux-mips-openwrt
@@ -40,15 +40,15 @@ export OPENSSL_CMAKEFLAGS := -ffunction-sections -fdata-sections -Wl,--gc-sectio
 endif
 ifeq ($(ARCH),i386)
 export OPENSSL_TARGET := linux-i386-openwrt
-export OPENSSL_CMAKEFLAGS :=   -ffunction-sections -fdata-sections -Wl,--gc-sections -latomic -O3
+export OPENSSL_CMAKEFLAGS :=   -ffunction-sections -fdata-sections -Wl,--gc-sections -latomic -Os
 endif
 ifeq ($(ARCH),x86_64)
 export OPENSSL_TARGET := linux-x86_64-openwrt
-export OPENSSL_CMAKEFLAGS :=   -ffunction-sections -fdata-sections -Wl,--gc-sections -O3
+export OPENSSL_CMAKEFLAGS :=   -ffunction-sections -fdata-sections -Wl,--gc-sections -Os
 endif
 ifeq ($(ARCH),aarch64)
 export OPENSSL_TARGET := linux-aarch64-openwrt
-export OPENSSL_CMAKEFLAGS := -ffunction-sections -fdata-sections -Wl,--gc-sections -O3
+export OPENSSL_CMAKEFLAGS := -ffunction-sections -fdata-sections -Wl,--gc-sections -Os
 endif
 ifeq ($(KERNELVERSION),6.1)
 export ENABLE_TLS := enable-ktls
@@ -140,18 +140,8 @@ endif
 ifeq ($(CONFIG_MVEBU),y)
 OPENSSL_OPTIONS += enable-devcryptoeng
 endif
-ifneq ($(ARCH),mips64)
-ifneq ($(ARCH),x86_64)
-ifneq ($(ARCH),i386)
-ifneq ($(ARCH),aarch64)
-ifneq ($(ARCH),arm)
-ifneq ($(CONFIG_REALTEK),y)
+ifneq ($(CONFIG_OPENSSL_BIG),y)
 OPENSSL_OPTIONS += -DOPENSSL_SMALL_FOOTPRINT
-endif
-endif
-endif
-endif
-endif
 endif
 
 
