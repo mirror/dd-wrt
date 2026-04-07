@@ -699,6 +699,8 @@ SYSCALL_DEFINE5(fsetxattr, int, fd, const char __user *, name,
 
 	CLASS(fd, f)(fd);
 
+	if (!f.file)
+		return -EBADF;
 	audit_file(f.file);
 	error = setxattr_copy(name, &ctx);
 	if (error)
@@ -810,6 +812,8 @@ SYSCALL_DEFINE4(fgetxattr, int, fd, const char __user *, name,
 {
 	CLASS(fd, f)(fd);
 
+	if (!f.file)
+		return -EBADF;
 	audit_file(f.file);
 	return getxattr(file_mnt_idmap(f.file), f.file->f_path.dentry,
 			 name, value, size);
@@ -881,8 +885,10 @@ SYSCALL_DEFINE3(flistxattr, int, fd, char __user *, list, size_t, size)
 {
 	CLASS(fd, f)(fd);
 
+	if (!f.file)
+		return -EBADF;
 	audit_file(f.file);
-	return listxattr(f.file->f_path.dentry, list, size);
+	return  listxattr(f.file->f_path.dentry, list, size);
 }
 
 /*
@@ -943,6 +949,8 @@ SYSCALL_DEFINE2(fremovexattr, int, fd, const char __user *, name)
 	char kname[XATTR_NAME_MAX + 1];
 	int error;
 
+	if (!f.file)
+		return -EBADF;
 	audit_file(f.file);
 
 	error = strncpy_from_user(kname, name, sizeof(kname));
