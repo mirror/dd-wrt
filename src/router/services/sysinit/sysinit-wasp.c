@@ -1072,6 +1072,11 @@ void start_wifi_drivers(void)
 		setWirelessLed(1, 22);
 		setWirelessAssocLed(0, 19);
 		setWirelessAssocLed(1, 21);
+	#elif defined(HAVE_RUCKUSR500)
+		setWirelessLed(0, 2);
+		setWirelessLed(1, 22);
+		setWirelessAssocLed(0, 1);
+		setWirelessAssocLed(1, 21);
 	#elif defined(HAVE_WNDR3700V4)
 		setWirelessLed(0, 11);
 		setWirelessLed(1, 14);
