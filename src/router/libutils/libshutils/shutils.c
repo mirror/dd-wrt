@@ -1822,15 +1822,12 @@ int check_blocklist(const char *service, char *ip)
 				ret = -1;
 				change = 1;
 				goto end;
-			}
-			//time over, free entry
-			if (entry->count > 4) {
+			} else if (entry->end && entry->end < cur) {
 				mod_tarpit(&entry->ip[0], 1);
 				dd_loginfo(service, "time is over for client %s, so free it", &entry->ip[0]);
 				entry->blocked = -1;
-				//				last->next = entry->next;
-				//				free(entry);
 				change = 1;
+				entry->count = 0;
 			}
 			goto end;
 		}
@@ -1842,9 +1839,6 @@ int check_blocklist(const char *service, char *ip)
 			dd_loginfo(service, "time is over for client %s, so free it", &entry->ip[0]);
 			entry->blocked = -1;
 			entry->count = 0;
-			//			last->next = entry->next;
-			//			free(entry);
-			//			entry = last->next;
 			change = 1;
 		} else if ((entry->blocked == -1 && entry->end && entry->end + (7 * 24 * 60 * 60) < cur) ||
 			   (entry->blocked == 0 && entry->ip[0] && entry->seen && entry->seen + (7 * 24 * 60 * 60) < cur)) {
