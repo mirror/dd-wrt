@@ -42,6 +42,21 @@ static void setWirelessLed(int phynum, int ledpin)
 #endif
 }
 
+static void setWirelessAssocLed(int phynum, int ledpin)
+{
+#ifdef HAVE_ATH9K
+	char trigger[32];
+	char sysname[32];
+	sprintf(trigger, "phy%dassoc", phynum);
+	if (ledpin < 32) {
+		sprintf(sysname, "generic_%d", ledpin);
+	} else {
+		sprintf(sysname, "wireless_generic_%d", ledpin - 32);
+	}
+	sysprintf("echo %s > /sys/devices/platform/leds-gpio/leds/%s/trigger", trigger, sysname);
+#endif
+}
+
 #define setWirelessLedGeneric(a, b) setWirelessLed(a, b)
 #define setWirelessLedPhy0(b) setWirelessLed(0, b + 32)
 #define setWirelessLedPhy1(b) setWirelessLed(1, b + 48)
