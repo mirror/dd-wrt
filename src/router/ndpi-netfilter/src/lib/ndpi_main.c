@@ -12676,6 +12676,14 @@ u_int16_t ndpi_match_host_subprotocol(struct ndpi_detection_module_struct *ndpi_
   category = ret_match->protocol_category;
   breed = ret_match->protocol_breed;
 
+  if(update_flow_classification && ret_match->protocol_id != NDPI_PROTOCOL_UNKNOWN ) {
+    ndpi_set_detected_protocol(ndpi_str, flow, ret_match->protocol_id, master_protocol_id, NDPI_CONFIDENCE_DPI);
+
+    if(ret_match->protocol_id == NDPI_PROTOCOL_OOKLA) {
+      ookla_add_to_cache(ndpi_str, flow);
+    }
+  }
+
 #ifndef __KERNEL__
   int ret;
   ret = ndpi_get_custom_category_match(ndpi_str, string_to_match, string_to_match_len, &category, &breed);
@@ -12693,13 +12701,6 @@ u_int16_t ndpi_match_host_subprotocol(struct ndpi_detection_module_struct *ndpi_
     rc = master_protocol_id;
   }
 
-  if(update_flow_classification && ret_match->protocol_id != NDPI_PROTOCOL_UNKNOWN ) {
-    ndpi_set_detected_protocol(ndpi_str, flow, ret_match->protocol_id, master_protocol_id, NDPI_CONFIDENCE_DPI);
-
-    if(ret_match->protocol_id == NDPI_PROTOCOL_OOKLA) {
-      ookla_add_to_cache(ndpi_str, flow);
-    }
-  }
   if(!category_or_breed_depends_on_master(master_protocol_id) &&
      ret_match->protocol_category != NDPI_PROTOCOL_CATEGORY_UNSPECIFIED)
     flow->category = ret_match->protocol_category;

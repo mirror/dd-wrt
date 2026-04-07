@@ -708,10 +708,12 @@ int parse_ndpi_proto(struct ndpi_net *n,char *cmd) {
 	v = cmd;
 	if(!*v) return 0;
 /*
- * hexID hexmark/mask name
- * hexID debug 0..3
- * hexID disable
- * hexID enable
+ * hexID start from 0x
+ *
+ * (hexID|name) hexmark/mask name
+ * (hexID|name) debug 0..3
+ * (hexID|name) disable
+ * (hexID|name) enable
  * add_custom name
  * netns name
  */
@@ -800,22 +802,26 @@ int parse_ndpi_proto(struct ndpi_net *n,char *cmd) {
 			if(_DBG_TRACE_SPROC)
 				pr_info("NDPI: add custom protocol %x\n",e_proto);
 			n->mark[e_proto].mark = e_proto;
-			n->mark[e_proto].mask = 0x1ff;
+			n->mark[e_proto].mask = 0x3ff;
 			return 0;
 		}
 		if(!any && !all) {
-		    if(kstrtoint(hid,16,&id)) {
+		    if(hid[0] == '0' && (hid[1] == 'x' || hid[1] == 'X')) {
+			if(kstrtoint(hid+2,16,&id)) {
+				pr_err("NDPI: bad id '%s'\n",hid);
+				return 1;
+			}
+		    } else {
 			id = ndpi_get_proto_by_name(ndpi_str,hid);
 			if(id == NDPI_PROTOCOL_UNKNOWN && 
 			   strcasecmp(ndpi_str->proto_defaults[id].protoName,hid)) {
 				pr_err("NDPI: '%s' unknown protocol or not hexID\n",hid);
 				return 1;
 			}
-		    } else {
-			if(id < 0 || id >= NDPI_MAX_NUM_STATIC_BITMAP) {
-				pr_err("NDPI: bad id %d\n",id);
-				id = -1;
-			}
+		    }
+		    if(id < 0 || id >= NDPI_MAX_NUM_STATIC_BITMAP) {
+			pr_err("NDPI: bad id %d\n",id);
+			return 1;
 		    }
 		}
 		if(!strncmp(v,"debug",5)) {

@@ -6,7 +6,7 @@
 //
 
 #define NDPI_MAX_NUM_STATIC_BITMAP 640
-#define NDPI_NUM_FDS_STATIC ((NDPI_MAX_NUM_STATIC_BITMAP + 1)/sizeof(u_int32_t))
+#define NDPI_NUM_FDS_STATIC ((NDPI_MAX_NUM_STATIC_BITMAP + (sizeof(u_int32_t)*8) - 1) / (sizeof(u_int32_t)*8))
 
 struct ndpi_static_bitmask {
   u_int32_t fds[NDPI_NUM_FDS_STATIC];
