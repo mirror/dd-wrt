@@ -760,6 +760,11 @@ static void getledconfig(struct ledconfig *cfg)
 		cfg->diag_gpio = GPIO_LOW | 0xe;
 		cfg->connected_gpio = GPIO_LOW | 0xf;
 		break;
+#elif HAVE_RUCKUSH500
+	case ROUTER_BOARD_WHRHPGN:
+//		cfg->power_gpio = GPIO_LOW | 0x4;
+		cfg->diag_gpio = GPIO_LOW | 0x11;
+		break;
 #elif HAVE_RUCKUSR500
 	case ROUTER_BOARD_WHRHPGN:
 		cfg->power_gpio = GPIO_LOW | 0x4;
