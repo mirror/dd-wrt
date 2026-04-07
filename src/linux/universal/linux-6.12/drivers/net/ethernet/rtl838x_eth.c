@@ -1574,7 +1574,7 @@ static int rteth_probe(struct platform_device *pdev)
 	for (int i = 0; i < RTETH_RX_RINGS; i++) {
 		ctrl->rx_qs[i].id = i;
 		ctrl->rx_qs[i].ctrl = ctrl;
-		netif_napi_add(dev, &ctrl->rx_qs[i].napi, rteth_poll_rx);
+		netif_threaded_napi_add(dev, &ctrl->rx_qs[i].napi, rteth_poll_rx);
 	}
 
 	platform_set_drvdata(pdev, dev);
