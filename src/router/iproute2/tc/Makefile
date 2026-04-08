@@ -10,10 +10,12 @@ TCMODULES += q_red.o
 TCMODULES += q_prio.o
 TCMODULES += q_tbf.o
 ifneq ($(KERNELVERSION),6.12)
+ifneq ($(KERNELVERSION),6.12-nss)
 TCMODULES += q_cbq.o
 TCMODULES += f_rsvp.o
 TCMODULES += f_tcindex.o
 TCMODULES += q_dsmark.o
+endif
 endif
 #TCMODULES += q_wrr.o
 TCMODULES += f_u32.o
@@ -121,6 +123,17 @@ TCMODULES += q_fq.o
 TCMODULES += q_pie.o
 endif
 ifeq ($(KERNELVERSION),6.12)
+CFLAGS += -DLOW_RATE_THRESHOLD
+CFLAGS += -DCE_THRESHOLD
+TCMODULES += q_multiq.o
+TCMODULES += q_cake.o
+TCMODULES += q_codel.o
+TCMODULES += q_fq_codel.o
+TCMODULES += q_fq_codel_fast.o
+TCMODULES += q_fq.o
+TCMODULES += q_pie.o
+endif
+ifeq ($(KERNELVERSION),6.12-nss)
 CFLAGS += -DLOW_RATE_THRESHOLD
 CFLAGS += -DCE_THRESHOLD
 TCMODULES += q_multiq.o
