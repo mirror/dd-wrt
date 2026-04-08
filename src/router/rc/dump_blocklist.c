@@ -6,10 +6,10 @@
 
 static struct blocklist blocklist_root;
 
-char *rfctime(const time_t *timep, char *s)
+char *rfctime(const time_t timep, char *s)
 {
 	struct tm tm;
-	localtime_r(timep, &tm);
+	localtime_r(&timep, &tm);
 	strftime(s, 200, "%a, %d %b %Y %H:%M:%S", &tm); // spec for linksys
 	return s;
 }
@@ -60,16 +60,16 @@ int main(int argc, char *argv[])
 		char seen[128];
 		char end[128];
 		char release[128] = { 0 };
-		rfctime(&entry->seen, seen);
-		rfctime(&entry->end, end);
+		rfctime(entry->seen, seen);
+		rfctime(entry->end, end);
 		switch (entry->blocked) {
 		case -1:
 			if (entry->end)
-				rfctime(release, entry->end + (7 * 24 * 60 * 60));
+				rfctime(entry->end + (7 * 24 * 60 * 60), release);
 			break;
 		case 0:
 			if (entry->ip[0] && entry->seen)
-				rfctime(release, entry->seen + (7 * 24 * 60 * 60));
+				rfctime(entry->seen + (7 * 24 * 60 * 60), release);
 			break;
 		}
 		fprintf(stdout, "[%45s] Attempts %3d Count %3d State(%2d) %s First Time %32s%s %s\n", entry->ip, entry->attempts,
