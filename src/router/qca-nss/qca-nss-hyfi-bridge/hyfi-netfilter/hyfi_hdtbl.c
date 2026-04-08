@@ -29,7 +29,11 @@
 #include <linux/jhash.h>
 #include <linux/random.h>
 #include <asm/atomic.h>
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(6, 12, 0))
+#include <linux/unaligned.h>
+#else
 #include <asm/unaligned.h>
+#endif
 #include "hyfi_hdtbl.h"
 
 static struct kmem_cache *hyfi_hdtbl_cache __read_mostly;
