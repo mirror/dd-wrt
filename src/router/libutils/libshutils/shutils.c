@@ -1810,45 +1810,61 @@ int check_blocklist(const char *service, char *ip)
 	struct blocklist *entry = blocklist_root.next;
 	struct blocklist *last = &blocklist_root;
 	while (entry) {
-		if (ip && entry->blocked == 1 && !strcmp(ip, &entry->ip[0])) {
-			if (entry->end > cur) {
-				// each try from a blocked client is extended by another 5 minutes;
-				entry->attempts++;
-				int newblocktime = ipow(BLOCKTIME, entry->attempts);
-				entry->end = time(NULL) + newblocktime * 60;
+		switch (entry->blocked) {
+		case 1: // client is blocked
+			if (ip && !strcmp(ip, &entry->ip[0])) {
+				if (entry->end > cur) {
+					// each try from a blocked client is extended by another 5 minutes;
+					entry->attempts++;
+					int newblocktime = ipow(BLOCKTIME, entry->attempts);
+					entry->end = time(NULL) + newblocktime * 60;
 
-				dd_loginfo(service, "client %s is blocked, terminate connection, set new blocktime to %d minutes",
-					   ip, newblocktime);
-				ret = -1;
-				change = 1;
+					dd_loginfo(service,
+						   "client %s is blocked, terminate connection, set new blocktime to %d minutes",
+						   ip, newblocktime);
+					ret = -1;
+					change = 1;
+					goto end;
+				} else if (entry->end && entry->end < cur) {
+					mod_tarpit(&entry->ip[0], 1);
+					dd_loginfo(service, "time is over for client %s, so free it", &entry->ip[0]);
+					entry->blocked = -1;
+					change = 1;
+					entry->count = 0;
+				}
 				goto end;
-			} else if (entry->end && entry->end < cur) {
+			}
+			if (entry->end && entry->end < cur) {
 				mod_tarpit(&entry->ip[0], 1);
 				dd_loginfo(service, "time is over for client %s, so free it", &entry->ip[0]);
 				entry->blocked = -1;
-				change = 1;
 				entry->count = 0;
+				change = 1;
 			}
-			goto end;
+			break;
+		case -1: // client was blocked once
+			if (entry->end && entry->end + (7 * 24 * 60 * 60) < cur) {
+				dd_loginfo(service, "remove %s from blocklist (1 week delay)", &entry->ip[0]);
+				last->next = entry->next;
+				free(entry);
+				entry = last->next;
+				change = 1;
+				continue;
+			}
+		case 0: // just seen, never blocked
+			if (entry->ip[0] && entry->seen && entry->seen + (7 * 24 * 60 * 60) < cur) {
+				dd_loginfo(service, "remove %s from blocklist (1 week delay)", &entry->ip[0]);
+				last->next = entry->next;
+				free(entry);
+				entry = last->next;
+				change = 1;
+				continue;
+			}
+
+			break;
 		}
 		if (entry->end)
 			dd_logdebug(service, "blocklist: entry %s ends at %lld, current %lld\n", &entry->ip[0], entry->end, cur);
-		//time over, free entry
-		if (entry->blocked == 1 && entry->end && entry->end < cur) {
-			mod_tarpit(&entry->ip[0], 1);
-			dd_loginfo(service, "time is over for client %s, so free it", &entry->ip[0]);
-			entry->blocked = -1;
-			entry->count = 0;
-			change = 1;
-		} else if ((entry->blocked == -1 && entry->end && entry->end + (7 * 24 * 60 * 60) < cur) ||
-			   (entry->blocked == 0 && entry->ip[0] && entry->seen && entry->seen + (7 * 24 * 60 * 60) < cur)) {
-			dd_loginfo(service, "remove %s from blocklist (1 week delay)", &entry->ip[0]);
-			last->next = entry->next;
-			free(entry);
-			entry = last->next;
-			change = 1;
-			continue;
-		}
 		last = entry;
 		entry = entry->next;
 	}
