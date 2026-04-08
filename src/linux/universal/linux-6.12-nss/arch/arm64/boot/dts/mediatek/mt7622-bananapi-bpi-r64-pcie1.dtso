@@ -1,0 +1,17 @@
+/* SPDX-License-Identifier: (GPL-2.0-only OR MIT) */
+
+#include <dt-bindings/gpio/gpio.h>
+
+/dts-v1/;
+/plugin/;
+
+/ {
+	compatible = "bananapi,bpi-r64", "mediatek,mt7622";
+
+	fragment@0 {
+		target = <&asmsel>;
+		__overlay__ {
+			gpios = <90 GPIO_ACTIVE_HIGH>;
+		};
+	};
+};

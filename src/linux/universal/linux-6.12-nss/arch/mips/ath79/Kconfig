@@ -1,0 +1,14 @@
+# SPDX-License-Identifier: GPL-2.0
+if ATH79
+
+config PCI_AR71XX
+	bool "PCI support for AR7100 type SoCs"
+	depends on PCI
+	def_bool n
+
+config PCI_AR724X
+	bool "PCI support for AR724x type SoCs"
+	depends on PCI
+	def_bool n
+
+endif

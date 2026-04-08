@@ -1,0 +1,8 @@
+#!/bin/sh
+FIRM=
+for i in *; do
+  FIRM+=" intel-ucode/"
+  FIRM+=$i
+done
+
+echo $FIRM

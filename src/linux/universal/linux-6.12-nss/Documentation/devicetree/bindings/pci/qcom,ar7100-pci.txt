@@ -1,0 +1,38 @@
+* Qualcomm Atheros AR7100 PCI express root complex
+
+Required properties:
+- compatible: should contain "qcom,ar7100-pci" to identify the core.
+- reg: Should contain the register ranges as listed in the reg-names property.
+- reg-names: Definition: Must include the following entries
+	- "cfg_base"	IO Memory
+- #address-cells: set to <3>
+- #size-cells: set to <2>
+- ranges: ranges for the PCI memory and I/O regions
+- interrupt-map-mask and interrupt-map: standard PCI
+	properties to define the mapping of the PCIe interface to interrupt
+	numbers.
+- #interrupt-cells: set to <1>
+- interrupt-controller: define to enable the builtin IRQ cascade.
+
+Optional properties:
+- interrupt-parent: phandle to the MIPS IRQ controller
+
+* Example for ar7100
+	pcie@180c0000 {
+		compatible = "qca,ar7100-pci";
+		#address-cells = <3>;
+		#size-cells = <2>;
+		bus-range = <0x0 0x0>;
+		reg = <0x17010000 0x100>;
+		reg-names = "cfg_base";
+		ranges = <0x2000000 0 0x10000000 0x10000000 0 0x07000000
+			  0x1000000 0 0x00000000 0x00000000 0 0x00000001>;
+		interrupt-parent = <&cpuintc>;
+		interrupts = <2>;
+
+		interrupt-controller;
+		#interrupt-cells = <1>;
+
+		interrupt-map-mask = <0 0 0 1>;
+		interrupt-map = <0 0 0 0 &pcie0 0>;
+	};
