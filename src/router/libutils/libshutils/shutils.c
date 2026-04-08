@@ -1824,15 +1824,7 @@ int check_blocklist(const char *service, char *ip)
 						   ip, newblocktime);
 					ret = -1;
 					change = 1;
-					goto end;
-				} else if (entry->end && entry->end < cur) {
-					mod_tarpit(&entry->ip[0], 1);
-					dd_loginfo(service, "time is over for client %s, so free it", &entry->ip[0]);
-					entry->blocked = -1;
-					change = 1;
-					entry->count = 0;
 				}
-				goto end;
 			}
 			if (entry->end && entry->end < cur) {
 				mod_tarpit(&entry->ip[0], 1);
@@ -1851,6 +1843,7 @@ int check_blocklist(const char *service, char *ip)
 				change = 1;
 				continue;
 			}
+			break;
 		case 0: // just seen, never blocked
 			if (entry->ip[0] && entry->seen && entry->seen + (7 * 24 * 60 * 60) < cur) {
 				dd_loginfo(service, "remove %s from blocklist (1 week delay)", &entry->ip[0]);
