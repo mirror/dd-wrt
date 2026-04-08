@@ -304,10 +304,7 @@ static void decompress(void *src, void *dst, size_t len)
 	}
 	LzmaEncProps_Init(&props);
 
-	if (magic64_dict)
-		props.dictSize = LZMA_BEST_DICT(0x10000);
-	else
-		props.dictSize = LZMA_BEST_DICT(0x2000);
+	props.dictSize = LZMA_BEST_DICT(0x10000);
 	props.level = LZMA_BEST_LEVEL;
 	props.lc = LZMA_BEST_LC;
 	props.lp = LZMA_BEST_LP;
