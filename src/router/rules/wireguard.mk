@@ -4,7 +4,9 @@ ifneq ($(KERNELVERSION),6.6-nss)
 ifneq ($(KERNELVERSION),6.1)
 ifneq ($(KERNELVERSION),6.6)
 ifneq ($(KERNELVERSION),6.12)
+ifneq ($(KERNELVERSION),6.12-nss)
 	cd wireguard/src ; $(MAKE) -C $(LINUXDIR) M="$(TOP)/wireguard/src" KERNELDIR=$(LINUX_DIR)
+endif
 endif
 endif
 endif
@@ -19,7 +21,9 @@ ifneq ($(KERNELVERSION),6.6-nss)
 ifneq ($(KERNELVERSION),6.1)
 ifneq ($(KERNELVERSION),6.6)
 ifneq ($(KERNELVERSION),6.12)
+ifneq ($(KERNELVERSION),6.12-nss)
 	install -D wireguard/src/wireguard.ko $(INSTALLDIR)/wireguard/lib/modules/$(KERNELRELEASE)/wireguard.ko
+endif
 endif
 endif
 endif
@@ -44,7 +48,9 @@ ifneq ($(KERNELVERSION),6.6-nss)
 ifneq ($(KERNELVERSION),6.1)
 ifneq ($(KERNELVERSION),6.6)
 ifneq ($(KERNELVERSION),6.12)
+ifneq ($(KERNELVERSION),6.12-nss)
 	cd wireguard/src ; $(MAKE) -C $(LINUXDIR) M="$(TOP)/wireguard/src" KERNELDIR=$(LINUX_DIR) clean
+endif
 endif
 endif
 endif

@@ -65,6 +65,9 @@ endif
 ifeq ($(KERNELVERSION),6.12)
 export ENABLE_TLS := enable-ktls
 endif
+ifeq ($(KERNELVERSION),6.12-nss)
+export ENABLE_TLS := enable-ktls
+endif
 
 OPENSSL_CMAKEFLAGS+= -I$(TOP)/kernel_headers/$(KERNELRELEASE)/include
 

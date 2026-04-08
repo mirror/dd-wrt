@@ -46,6 +46,10 @@ ifeq ($(KERNELVERSION),6.12)
 HOSTAPDVERSION=2025-02-25
 CONFIG_SSID_PROTECTION=y
 endif
+ifeq ($(KERNELVERSION),6.12-nss)
+HOSTAPDVERSION=2025-02-25
+CONFIG_SSID_PROTECTION=y
+endif
 ifeq ($(KERNELVERSION),4.9)
 HOSTAPDVERSION=2025-02-25
 CONFIG_SSID_PROTECTION=y
@@ -61,6 +65,19 @@ ifeq ($(CONFIG_MORSE),y)
 HOSTAPDVERSION=2025-02-25.ah
 endif
 
+ifeq ($(KERNELVERSION),6.12-nss)
+ATH9K_CFLAGS += $(MIPS16_OPT) -ffunction-sections -fdata-sections -Wl,--gc-sections -I$(TOP)/_staging/usr/include 
+ATH9K_LDFLAGS += $(MIPS16_OPT) -ffunction-sections -fdata-sections -Wl,--gc-sections -L$(TOP)/_staging/usr/lib -lubox -lubus
+ifeq ($(CONFIG_OPENSSL),y)
+ATH9K_LDFLAGS += -L$(SSLPATH) -lcrypto -lssl -L$(TOP)/libucontext -lucontext
+else
+ifeq ($(CONFIG_WOLFSSL),y)
+ATH9K_LDFLAGS += -L$(TOP)/wolfssl/standard/src/.libs -lwolfssl
+else
+ATH9K_LDFLAGS += -L$(TOP)/wolfssl/standard_static/src/.libs -lwolfssl
+endif
+endif
+else
 ifeq ($(KERNELVERSION),6.12)
 ATH9K_CFLAGS += $(MIPS16_OPT) -ffunction-sections -fdata-sections -Wl,--gc-sections -I$(TOP)/_staging/usr/include 
 ATH9K_LDFLAGS += $(MIPS16_OPT) -ffunction-sections -fdata-sections -Wl,--gc-sections -L$(TOP)/_staging/usr/lib -lubox -lubus
@@ -147,6 +164,7 @@ ifeq ($(CONFIG_WOLFSSL),y)
 ATH9K_LDFLAGS += -L$(TOP)/wolfssl/standard/src/.libs -lwolfssl
 else
 ATH9K_LDFLAGS += -L$(TOP)/wolfssl/standard_static/src/.libs -lwolfssl
+endif
 endif
 endif
 endif
