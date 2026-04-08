@@ -1044,14 +1044,6 @@ struct sk_buff {
 #if defined(CONFIG_NET_SCHED) || defined(CONFIG_NET_XGRESS)
 	__u16			tc_index;	/* traffic control index */
 #endif
-	__u8			fast_forwarded:1;
-	/* Flag to check if skb is allocated from recycler */
-	__u8			is_from_recycler:1;
-	/* Flag for fast recycle in fast xmit path */
-	__u8			fast_recycled:1;
-	/* Flag for recycle in PPE DS */
-	__u8			recycled_for_ds:1;
-
 	u16			alloc_cpu;
 
 	union {

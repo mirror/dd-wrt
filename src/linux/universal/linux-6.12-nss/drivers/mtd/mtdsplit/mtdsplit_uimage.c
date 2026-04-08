@@ -7,7 +7,7 @@
  *
  */
 
-#define pr_fmt(fmt)	KBUILD_MODNAME ": " fmt
+#define pr_fmt(fmt) KBUILD_MODNAME ": " fmt
 
 #include <linux/module.h>
 #include <linux/init.h>
@@ -23,33 +23,41 @@
 
 #include "mtdsplit.h"
 
+typedef struct {
+	uint8_t major;
+	uint8_t minor;
+} __attribute__((packed)) version_t;
+
 /*
  * Legacy format image header,
  * all data in network byte order (aka natural aka bigendian).
  */
 struct uimage_header {
-	uint32_t	ih_magic;	/* Image Header Magic Number	*/
-	uint32_t	ih_hcrc;	/* Image Header CRC Checksum	*/
-	uint32_t	ih_time;	/* Image Creation Timestamp	*/
-	uint32_t	ih_size;	/* Image Data Size		*/
-	uint32_t	ih_load;	/* Data	 Load  Address		*/
-	uint32_t	ih_ep;		/* Entry Point Address		*/
-	uint32_t	ih_dcrc;	/* Image Data CRC Checksum	*/
-	uint8_t		ih_os;		/* Operating System		*/
-	uint8_t		ih_arch;	/* CPU architecture		*/
-	uint8_t		ih_type;	/* Image Type			*/
-	uint8_t		ih_comp;	/* Compression Type		*/
-	uint8_t		ih_name[IH_NMLEN];	/* Image Name		*/
+	uint32_t ih_magic; /* Image Header Magic Number	*/
+	uint32_t ih_hcrc; /* Image Header CRC Checksum	*/
+	uint32_t ih_time; /* Image Creation Timestamp	*/
+	uint32_t ih_size; /* Image Data Size		*/
+	uint32_t ih_load; /* Data	 Load  Address		*/
+	uint32_t ih_ep; /* Entry Point Address		*/
+	uint32_t ih_dcrc; /* Image Data CRC Checksum	*/
+	uint8_t ih_os; /* Operating System		*/
+	uint8_t ih_arch; /* CPU architecture		*/
+	uint8_t ih_type; /* Image Type			*/
+	uint8_t ih_comp; /* Compression Type		*/
+	version_t kernel_ver; // usualy: 3.0
+	version_t fs_ver; // usualy: 0.4
+	char prod_name[12];
+	uint16_t sn; // fw build no (example: 388)
+	uint16_t en; // fw extended build no (example: 51234)
+	uint8_t dummy; // likely random byte
+	uint8_t key; // hash value from kernel and fs
+	uint8_t unk[6]; // likely random bytes
+	uint32_t fs_offset; // 24 bit BE (first byte = 0xA9)
 
-	uint32_t	ih_ksz; // kernel size
-	uint8_t		devicename[64];
-	uint8_t		version[16];
-	uint8_t		rev[16];
+	//	uint8_t		ih_name[IH_NMLEN];	/* Image Name		*/
 };
 
-static int
-read_uimage_header(struct mtd_info *mtd, size_t offset, u_char *buf,
-		   size_t header_len)
+static int read_uimage_header(struct mtd_info *mtd, size_t offset, u_char *buf, size_t header_len)
 {
 	size_t retlen;
 	int ret;
@@ -68,9 +76,65 @@ read_uimage_header(struct mtd_info *mtd, size_t offset, u_char *buf,
 	return 0;
 }
 
-static void uimage_parse_dt(struct mtd_info *master, int *extralen,
-			    u32 *ih_magic, u32 *ih_type,
-			    u32 *header_offset, u32 *part_magic)
+static inline unsigned long uimage_get_data(struct uimage_header *hdr)
+{
+	return (unsigned long)hdr + sizeof(struct uimage_header);
+}
+
+static int uimage_multi_count(struct uimage_header *hdr)
+{
+	int i, count = 0;
+	uint32_t *size;
+
+	/* get start of the image payload, which in case of multi
+	 * component images that points to a table of component sizes */
+	size = (uint32_t *)uimage_get_data(hdr);
+
+	/* count non empty slots */
+	for (i = 0; size[i]; ++i)
+		count++;
+
+	return count;
+}
+
+void uimage_multi_getimg(struct uimage_header *hdr, int idx, size_t *data, size_t *len)
+{
+	int i;
+	uint32_t *size;
+	unsigned long offset, count, img_data;
+
+	/* get number of component */
+	count = uimage_multi_count(hdr);
+
+	/* get start of the image payload, which in case of multi
+	 * component images that points to a table of component sizes */
+	size = (uint32_t *)uimage_get_data(hdr);
+
+	/* get address of the proper component data start, which means
+	 * skipping sizes table (add 1 for last, null entry) */
+	img_data = uimage_get_data(hdr) + (count + 1) * sizeof(uint32_t);
+
+	if (idx < count) {
+		printk(KERN_INFO "size = %d\n", be32_to_cpu(size[idx]));
+		*len = be32_to_cpu(size[idx]);
+		offset = 0;
+
+		/* go over all indices preceding requested component idx */
+		for (i = 0; i < idx; i++) {
+			/* add up i-th component size, rounding up to 4 bytes */
+			offset += (be32_to_cpu(size[i]) + 3) & ~3;
+		}
+
+		/* calculate idx-th component data address */
+		*data = img_data + offset - (unsigned long)hdr;
+	} else {
+		*len = 0;
+		*data = 0;
+	}
+}
+
+static void uimage_parse_dt(struct mtd_info *master, int *extralen, u32 *ih_magic, u32 *ih_type, u32 *header_offset,
+			    u32 *part_magic)
 {
 	struct device_node *np = mtd_get_of_node(master);
 
@@ -95,20 +159,17 @@ static ssize_t uimage_verify_default(u_char *buf, u32 ih_magic, u32 ih_type)
 
 	/* default sanity checks */
 	if (be32_to_cpu(header->ih_magic) != ih_magic) {
-		pr_warn("invalid uImage magic: %08x != %08x\n",
-			 be32_to_cpu(header->ih_magic), ih_magic);
+		pr_debug("invalid uImage magic: %08x != %08x\n", be32_to_cpu(header->ih_magic), ih_magic);
 		return -EINVAL;
 	}
 
 	if (header->ih_os != IH_OS_LINUX) {
-		pr_warn("invalid uImage OS: %08x != %08x\n",
-			 be32_to_cpu(header->ih_os), IH_OS_LINUX);
+		pr_debug("invalid uImage OS: %08x != %08x\n", be32_to_cpu(header->ih_os), IH_OS_LINUX);
 		return -EINVAL;
 	}
 
 	if (header->ih_type != ih_type) {
-		pr_warn("invalid uImage type: %08x != %08x\n",
-			 be32_to_cpu(header->ih_type), ih_type);
+		pr_debug("invalid uImage type: %08x != %08x\n", be32_to_cpu(header->ih_type), ih_type);
 		return -EINVAL;
 	}
 
@@ -121,9 +182,7 @@ static ssize_t uimage_verify_default(u_char *buf, u32 ih_magic, u32 ih_type)
  * @find_header: function to call for a block of data that will return offset
  *      and tail padding length of a valid uImage header if found
  */
-static int __mtdsplit_parse_uimage(struct mtd_info *master,
-				   const struct mtd_partition **pparts,
-				   struct mtd_part_parser_data *data)
+static int __mtdsplit_parse_uimage(struct mtd_info *master, const struct mtd_partition **pparts, struct mtd_part_parser_data *data)
 {
 	struct mtd_partition *parts;
 	u_char *buf;
@@ -142,14 +201,15 @@ static int __mtdsplit_parse_uimage(struct mtd_info *master,
 	u32 header_offset = 0;
 	u32 part_magic = 0;
 	enum mtdsplit_part_type type;
-
+	int multi = 0;
+	int i;
 	nr_parts = 2;
 	parts = kzalloc(nr_parts * sizeof(*parts), GFP_KERNEL);
 	if (!parts)
 		return -ENOMEM;
 
 	uimage_parse_dt(master, &extralen, &ih_magic, &ih_type, &header_offset, &part_magic);
-	buflen = sizeof(struct uimage_header) + header_offset;
+	buflen = sizeof(struct uimage_header) + header_offset + 128;
 	buf = vmalloc(buflen);
 	if (!buf) {
 		ret = -ENOMEM;
@@ -161,7 +221,6 @@ static int __mtdsplit_parse_uimage(struct mtd_info *master,
 		struct uimage_header *header;
 
 		uimage_size = 0;
-
 		ret = read_uimage_header(master, offset, buf, buflen);
 		if (ret)
 			continue;
@@ -172,27 +231,62 @@ static int __mtdsplit_parse_uimage(struct mtd_info *master,
 
 		ret = uimage_verify_default(buf + header_offset, ih_magic, ih_type);
 		if (ret < 0) {
-			pr_info("no valid uImage found in \"%s\" at offset %llx\n",
-				 master->name, (unsigned long long) offset);
+			ret = uimage_verify_default(buf + header_offset, ih_magic, IH_TYPE_MULTI);
+			if (!ret) {
+				int count = uimage_multi_count((struct uimage_header *)buf + header_offset);
+				for (i = 0; i < count; i++) {
+					size_t data;
+					size_t len;
+					int ret2;
+					uimage_multi_getimg((struct uimage_header *)buf + header_offset, i, &data, &len);
+					printk(KERN_INFO "Image %d: len %ld, offset %ld\n", i, len, data);
+					ret2 = mtd_find_rootfs_from(master, data, master->size, &rootfs_offset, &type);
+					if (!ret2) {
+						rootfs_size = master->size - rootfs_offset;
+						uimage_offset = offset;
+						uimage_size = rootfs_offset - uimage_offset;
+						rf_part = 1;
+						uimage_part = 0;
+						parts[uimage_part].name = KERNEL_PART_NAME;
+						parts[uimage_part].offset = uimage_offset;
+						parts[uimage_part].size = uimage_size;
+						parts[uimage_part].mask_flags |= MTD_WRITEABLE;
+
+						if (type == MTDSPLIT_PART_TYPE_UBI)
+							parts[rf_part].name = UBI_PART_NAME;
+						else
+							parts[rf_part].name = ROOTFS_PART_NAME;
+						parts[rf_part].offset = rootfs_offset;
+						parts[rf_part].size = rootfs_size;
+						parts[rf_part].mask_flags |= MTD_WRITEABLE;
+
+						vfree(buf);
+
+						*pparts = parts;
+						return nr_parts;
+					}
+				}
+			}
+		}
+		if (ret < 0) {
+			pr_debug("no valid uImage found in \"%s\" at offset %llx\n", master->name, (unsigned long long)offset);
 			continue;
 		}
 
 		header = (struct uimage_header *)(buf + header_offset);
 
-		uimage_size = sizeof(*header) +
-				be32_to_cpu(header->ih_size) + header_offset + extralen;
+		uimage_size = sizeof(*header) + be32_to_cpu(header->ih_size) + header_offset + extralen;
 
 		if ((offset + uimage_size) > master->size) {
-			pr_info("uImage exceeds MTD device \"%s\"\n",
-				 master->name);
+			pr_debug("uImage exceeds MTD device \"%s\"\n", master->name);
 			continue;
 		}
 		break;
 	}
 
 	if (uimage_size == 0) {
-		pr_info("no uImage found in \"%s\"\n", master->name);
-		ret = 0;
+		pr_debug("no uImage found in \"%s\"\n", master->name);
+		ret = -ENODEV;
 		goto err_free_buf;
 	}
 
@@ -203,11 +297,9 @@ static int __mtdsplit_parse_uimage(struct mtd_info *master,
 		rf_part = 1;
 
 		/* find the roots after the uImage */
-		ret = mtd_find_rootfs_from(master, uimage_offset,
-					   master->size, &rootfs_offset, &type);
+		ret = mtd_find_rootfs_from(master, uimage_offset + uimage_size, master->size, &rootfs_offset, &type);
 		if (ret) {
-			pr_info("no rootfs within uImage in \"%s\"\n",
-				 master->name);
+			pr_debug("no rootfs after uImage in \"%s\"\n", master->name);
 			goto err_free_buf;
 		}
 
@@ -220,9 +312,7 @@ static int __mtdsplit_parse_uimage(struct mtd_info *master,
 		/* check rootfs presence at offset 0 */
 		ret = mtd_check_rootfs_magic(master, 0, &type);
 		if (ret) {
-			pr_info("no rootfs before uImage in \"%s\"\n",
-				 master->name);
-			ret = -ENOENT;
+			pr_debug("no rootfs before uImage in \"%s\"\n", master->name);
 			goto err_free_buf;
 		}
 
