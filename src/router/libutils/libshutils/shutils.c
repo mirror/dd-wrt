@@ -1835,7 +1835,7 @@ int check_blocklist(const char *service, char *ip)
 			}
 			break;
 		case -1: // client was blocked once
-			if (entry->end && entry->end + (7 * 24 * 60 * 60) < cur) {
+			if (entry->end && entry->end + ENDTIME < cur) {
 				dd_loginfo(service, "remove %s from blocklist (1 week delay)", &entry->ip[0]);
 				last->next = entry->next;
 				free(entry);
@@ -1845,7 +1845,7 @@ int check_blocklist(const char *service, char *ip)
 			}
 			break;
 		case 0: // just seen, never blocked
-			if (entry->ip[0] && entry->seen && entry->seen + (7 * 24 * 60 * 60) < cur) {
+			if (entry->ip[0] && entry->seen && entry->seen + ENDTIME < cur) {
 				dd_loginfo(service, "remove %s from blocklist (1 week delay)", &entry->ip[0]);
 				last->next = entry->next;
 				free(entry);

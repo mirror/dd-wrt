@@ -876,7 +876,7 @@ typedef struct {
 extern void update_timezone(void);
 extern TIMEZONE_TO_TZSTRING allTimezones[];
 
-
+#define ENDTIME (7 * 24 * 60 * 60)
 struct blocklist {
 	char ip[INET6_ADDRSTRLEN];
 	time_t seen;

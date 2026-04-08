@@ -65,11 +65,11 @@ int main(int argc, char *argv[])
 		switch (entry->blocked) {
 		case -1:
 			if (entry->end)
-				rfctime(entry->end + (7 * 24 * 60 * 60), release);
+				rfctime(entry->end + ENDTIME, release);
 			break;
 		case 0:
 			if (entry->ip[0] && entry->seen)
-				rfctime(entry->seen + (7 * 24 * 60 * 60), release);
+				rfctime(entry->seen + ENDTIME, release);
 			break;
 		}
 		fprintf(stdout, "[%45s] Attempts %3d Count %3d State(%2d) %s First Time %32s%s %s\n", entry->ip, entry->attempts,
