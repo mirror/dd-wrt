@@ -1663,8 +1663,8 @@ void start_resetbc(void)
 
 void start_sysshutdown(void)
 {
-	start_deconfigurewifi();
-	rmmod("ath11k_ahb");
+//	start_deconfigurewifi();
+//	rmmod("ath11k_ahb");
 }
 
 static void set_linksys_defaults(int triband)
