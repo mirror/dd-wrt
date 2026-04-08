@@ -324,7 +324,6 @@ void nf_conntrack_register_notifier(struct net *net,
 	mutex_lock(&nf_ct_ecache_mutex);
 	notify = rcu_dereference_protected(net->ct.nf_conntrack_event_cb,
 					   lockdep_is_held(&nf_ct_ecache_mutex));
-	WARN_ON_ONCE(notify);
 	rcu_assign_pointer(net->ct.nf_conntrack_event_cb, new);
 	mutex_unlock(&nf_ct_ecache_mutex);
 }

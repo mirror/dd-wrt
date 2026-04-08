@@ -7,24 +7,20 @@
  * Author: Matus Ujhelyi <ujhelyi.m@gmail.com>
  */
 
-#include <linux/bitfield.h>
-#include <linux/clk.h>
-#include <linux/clk-provider.h>
+#include <linux/phy.h>
+#include <linux/module.h>
+#include <linux/string.h>
+#include <linux/netdevice.h>
 #include <linux/etherdevice.h>
 #include <linux/ethtool_netlink.h>
-#include <linux/mfd/syscon.h>
-#include <linux/module.h>
-#include <linux/netdevice.h>
-#include <linux/of.h>
-#include <linux/phy.h>
-#include <linux/phylink.h>
-#include <linux/regmap.h>
-#include <linux/regulator/consumer.h>
-#include <linux/regulator/driver.h>
+#include <linux/bitfield.h>
 #include <linux/regulator/of_regulator.h>
+#include <linux/regulator/driver.h>
+#include <linux/regulator/consumer.h>
+#include <linux/of.h>
+#include <linux/phylink.h>
 #include <linux/reset.h>
 #include <linux/sfp.h>
-#include <linux/string.h>
 #include <dt-bindings/net/qca-ar803x.h>
 
 #include "qcom.h"
@@ -125,8 +121,8 @@
 
 #define IPQ5018_PHY_MMD1_MSE_THRESH1		0x1000
 #define IPQ5018_PHY_MMD1_MSE_THRESH2		0x1001
-#define IPQ5018_PHY_PCS_AZ_CTRL1		0x8008
-#define IPQ5018_PHY_PCS_AZ_CTRL2		0x8009
+#define IPQ5018_PHY_PCS_EEE_TX_TIMER		0x8008
+#define IPQ5018_PHY_PCS_EEE_RX_TIMER		0x8009
 #define IPQ5018_PHY_PCS_CDT_THRESH_CTRL3	0x8074
 #define IPQ5018_PHY_PCS_CDT_THRESH_CTRL4	0x8075
 #define IPQ5018_PHY_PCS_CDT_THRESH_CTRL5	0x8076
@@ -138,8 +134,8 @@
 
 #define IPQ5018_PHY_MMD1_MSE_THRESH1_VAL	0xf1
 #define IPQ5018_PHY_MMD1_MSE_THRESH2_VAL	0x1f6
-#define IPQ5018_PHY_PCS_AZ_CTRL1_VAL		0x7880
-#define IPQ5018_PHY_PCS_AZ_CTRL2_VAL		0xc8
+#define IPQ5018_PHY_PCS_EEE_TX_TIMER_VAL	0x7880
+#define IPQ5018_PHY_PCS_EEE_RX_TIMER_VAL	0xc8
 #define IPQ5018_PHY_PCS_CDT_THRESH_CTRL3_VAL	0xc040
 #define IPQ5018_PHY_PCS_CDT_THRESH_CTRL4_VAL	0xa060
 #define IPQ5018_PHY_PCS_CDT_THRESH_CTRL5_VAL	0xc040
@@ -153,8 +149,6 @@
 #define IPQ5018_PHY_DEBUG_ANA_LDO_EFUSE_MASK	GENMASK(7, 4)
 #define IPQ5018_PHY_DEBUG_ANA_LDO_EFUSE_DEFAULT	0x50
 #define IPQ5018_PHY_DEBUG_ANA_DAC_FILTER	0xa080
-
-#define IPQ5018_TCSR_ETH_LDO_READY		BIT(0)
 
 MODULE_DESCRIPTION("Qualcomm Atheros AR803x PHY driver");
 MODULE_AUTHOR("Matus Ujhelyi");
@@ -1042,7 +1036,7 @@ static int ipq5018_cable_test_start(struct phy_device *phydev)
 static int ipq5018_config_init(struct phy_device *phydev)
 {
 	struct ipq5018_priv *priv = phydev->priv;
-	u16 val = 0;
+	u16 val;
 
 	/*
 	 * set LDO efuse: first temporarily store ANA_DAC_FILTER value from
@@ -1055,11 +1049,11 @@ static int ipq5018_config_init(struct phy_device *phydev)
 			      IPQ5018_PHY_DEBUG_ANA_LDO_EFUSE_DEFAULT);
 	at803x_debug_reg_write(phydev, IPQ5018_PHY_DEBUG_ANA_DAC_FILTER, val);
 
-	/* set 8023AZ CTRL values */
-	phy_write_mmd(phydev, MDIO_MMD_PCS, IPQ5018_PHY_PCS_AZ_CTRL1,
-		      IPQ5018_PHY_PCS_AZ_CTRL1_VAL);
-	phy_write_mmd(phydev, MDIO_MMD_PCS, IPQ5018_PHY_PCS_AZ_CTRL2,
-		      IPQ5018_PHY_PCS_AZ_CTRL2_VAL);
+	/* set 8023AZ EEE TX and RX timer values */
+	phy_write_mmd(phydev, MDIO_MMD_PCS, IPQ5018_PHY_PCS_EEE_TX_TIMER,
+		      IPQ5018_PHY_PCS_EEE_TX_TIMER_VAL);
+	phy_write_mmd(phydev, MDIO_MMD_PCS, IPQ5018_PHY_PCS_EEE_RX_TIMER,
+		      IPQ5018_PHY_PCS_EEE_RX_TIMER_VAL);
 
 	/* set MSE threshold values */
 	phy_write_mmd(phydev, MDIO_MMD_PMAPMD, IPQ5018_PHY_MMD1_MSE_THRESH1,
@@ -1083,6 +1077,10 @@ static int ipq5018_config_init(struct phy_device *phydev)
 
 static void ipq5018_link_change_notify(struct phy_device *phydev)
 {
+	/*
+	 * Reset the FIFO buffer upon link disconnects to clear any residual data
+	 * which may cause issues with the FIFO which it cannot recover from.
+	 */
 	mdiobus_modify_changed(phydev->mdio.bus, phydev->mdio.addr,
 			       IPQ5018_PHY_FIFO_CONTROL, IPQ5018_PHY_FIFO_RESET,
 			       phydev->link ? IPQ5018_PHY_FIFO_RESET : 0);
@@ -1102,7 +1100,7 @@ static int ipq5018_probe(struct phy_device *phydev)
 							  "qcom,dac-preset-short-cable");
 
 	priv->rst = devm_reset_control_array_get_exclusive(dev);
-	if (IS_ERR_OR_NULL(priv->rst))
+	if (IS_ERR(priv->rst))
 		return dev_err_probe(dev, PTR_ERR(priv->rst),
 				     "failed to acquire reset\n");
 

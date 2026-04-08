@@ -104,12 +104,16 @@ int inet_add_protocol(const struct net_protocol *prot, unsigned char num);
 int inet_del_protocol(const struct net_protocol *prot, unsigned char num);
 int inet_add_offload(const struct net_offload *prot, unsigned char num);
 int inet_del_offload(const struct net_offload *prot, unsigned char num);
+int inet_update_protocol(const struct net_protocol *new_prot,
+		unsigned char num, const struct net_protocol **old_prot);
 void inet_register_protosw(struct inet_protosw *p);
 void inet_unregister_protosw(struct inet_protosw *p);
 
 #if IS_ENABLED(CONFIG_IPV6)
 int inet6_add_protocol(const struct inet6_protocol *prot, unsigned char num);
 int inet6_del_protocol(const struct inet6_protocol *prot, unsigned char num);
+int inet6_update_protocol(const struct inet6_protocol *new_prot,
+		unsigned char num, const struct inet6_protocol **old_prot);
 int inet6_register_protosw(struct inet_protosw *p);
 void inet6_unregister_protosw(struct inet_protosw *p);
 #endif

@@ -1100,6 +1100,7 @@ static void __qdisc_destroy(struct Qdisc *qdisc)
 
 	call_rcu(&qdisc->rcu, qdisc_free_cb);
 }
+EXPORT_SYMBOL(qdisc_destroy);
 
 void qdisc_destroy(struct Qdisc *qdisc)
 {

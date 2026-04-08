@@ -36,6 +36,7 @@ struct __ip6_tnl_parm {
 	__u8 proto;		/* tunnel protocol */
 	__u8 encap_limit;	/* encapsulation limit for tunnel */
 	__u8 hop_limit;		/* hop limit for tunnel */
+	__u8 draft03;		/* FMR using draft03 of map-e - QCA NSS Clients Support */
 	bool collect_md;
 	__be32 flowinfo;	/* traffic class and flowlabel for tunnel */
 	__u32 flags;		/* tunnel flags */

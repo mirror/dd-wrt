@@ -28,8 +28,6 @@
 #include <linux/interrupt.h>
 #include <linux/kernel.h>
 
-#include <crypto/aead.h>
-
 #include "xfrm_hash.h"
 
 #define xfrm_state_deref_prot(table, net) \
@@ -771,6 +769,7 @@ int __xfrm_state_delete(struct xfrm_state *x)
 		spin_unlock(&net->xfrm.xfrm_state_lock);
 
 		xfrm_dev_state_delete(x);
+		xfrm_state_change_notify(x, XFRM_EVENT_STATE_DEL);
 
 		xfrm_state_delete_tunnel(x);
 
@@ -2999,6 +2998,20 @@ struct xfrm_state_afinfo *xfrm_state_get_afinfo(unsigned int family)
 	return afinfo;
 }
 
+struct xfrm_state_afinfo *xfrm_state_update_afinfo(unsigned int family, struct xfrm_state_afinfo *new)
+{
+	struct xfrm_state_afinfo *afinfo;
+
+	spin_lock_bh(&xfrm_state_afinfo_lock);
+	afinfo = rcu_dereference_protected(xfrm_state_afinfo[family], lockdep_is_held(&xfrm_state_afinfo_lock));
+	rcu_assign_pointer(xfrm_state_afinfo[afinfo->family], new);
+	spin_unlock_bh(&xfrm_state_afinfo_lock);
+
+	synchronize_rcu();
+	return afinfo;
+}
+EXPORT_SYMBOL(xfrm_state_update_afinfo);
+
 void xfrm_flush_gc(void)
 {
 	flush_work(&xfrm_state_gc_work);
@@ -3017,38 +3030,16 @@ static void xfrm_state_delete_tunnel(struct xfrm_state *x)
 	}
 }
 
-u32 xfrm_state_mtu(struct xfrm_state *x, int mtu)
+int xfrm_state_mtu(struct xfrm_state *x, int mtu)
 {
 	const struct xfrm_type *type = READ_ONCE(x->type);
-	struct crypto_aead *aead;
-	u32 blksize, net_adj = 0;
 
-	if (x->km.state != XFRM_STATE_VALID ||
-	    !type || type->proto != IPPROTO_ESP)
-		return mtu - x->props.header_len;
+	if (x->km.state == XFRM_STATE_VALID &&
+	    type && type->get_mtu)
+		return type->get_mtu(x, mtu);
 
-	aead = x->data;
-	blksize = ALIGN(crypto_aead_blocksize(aead), 4);
-
-	switch (x->props.mode) {
-	case XFRM_MODE_TRANSPORT:
-	case XFRM_MODE_BEET:
-		if (x->props.family == AF_INET)
-			net_adj = sizeof(struct iphdr);
-		else if (x->props.family == AF_INET6)
-			net_adj = sizeof(struct ipv6hdr);
-		break;
-	case XFRM_MODE_TUNNEL:
-		break;
-	default:
-		WARN_ON_ONCE(1);
-		break;
-	}
-
-	return ((mtu - x->props.header_len - crypto_aead_authsize(aead) -
-		 net_adj) & ~(blksize - 1)) + net_adj - 2;
+	return mtu - x->props.header_len;
 }
-EXPORT_SYMBOL_GPL(xfrm_state_mtu);
 
 int __xfrm_init_state(struct xfrm_state *x, bool init_replay, bool offload,
 		      struct netlink_ext_ack *extack)
@@ -3394,3 +3385,39 @@ void xfrm_audit_state_icvfail(struct xfrm_state *x,
 }
 EXPORT_SYMBOL_GPL(xfrm_audit_state_icvfail);
 #endif /* CONFIG_AUDITSYSCALL */
+
+void xfrm_state_change_notify(struct xfrm_state *x, enum xfrm_event_type type)
+{
+	struct xfrm_event_notifier *event;
+	struct net *net = xs_net(x);
+
+	rcu_read_lock();
+	list_for_each_entry_rcu(event, &net->xfrm.event_notifier_list, list) {
+		if (event->state_notify) {
+			event->state_notify(x, type);
+		}
+
+		BUG_ON(refcount_read(&x->refcnt) <= 0);
+	}
+
+	rcu_read_unlock();
+}
+EXPORT_SYMBOL(xfrm_state_change_notify);
+
+int xfrm_event_register_notifier(struct net *net, struct xfrm_event_notifier *event)
+{
+	spin_lock_bh(&net->xfrm.xfrm_event_lock);
+	list_add_tail_rcu(&event->list, &net->xfrm.event_notifier_list);
+	spin_unlock_bh(&net->xfrm.xfrm_event_lock);
+	return 0;
+}
+EXPORT_SYMBOL(xfrm_event_register_notifier);
+
+void xfrm_event_unregister_notifier(struct net *net, struct xfrm_event_notifier *event)
+{
+	spin_lock_bh(&net->xfrm.xfrm_event_lock);
+	list_del_rcu(&event->list);
+	spin_unlock_bh(&net->xfrm.xfrm_event_lock);
+	synchronize_rcu();
+}
+EXPORT_SYMBOL(xfrm_event_unregister_notifier);

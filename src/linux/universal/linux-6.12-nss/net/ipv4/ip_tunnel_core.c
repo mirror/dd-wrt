@@ -38,6 +38,7 @@
 #include <net/geneve.h>
 #include <net/vxlan.h>
 #include <net/erspan.h>
+#include <net/vxlan.h>
 
 const struct ip_tunnel_encap_ops __rcu *
 		iptun_encaps[MAX_IPTUN_ENCAP_OPS] __read_mostly;
@@ -55,7 +56,12 @@ void iptunnel_xmit(struct sock *sk, struct rtable *rt, struct sk_buff *skb,
 	struct net *net = dev_net(rt->dst.dev);
 	struct net_device *dev = skb->dev;
 	struct iphdr *iph;
+	struct net_device *in_dev = NULL;
 	int err;
+	int skb_iif;
+
+	/* Save input interface index */
+	skb_iif = skb->skb_iif;
 
 	if (unlikely(dev_recursion_level() > IP_TUNNEL_RECURSION_LIMIT)) {
 		if (dev) {
@@ -91,6 +97,15 @@ void iptunnel_xmit(struct sock *sk, struct rtable *rt, struct sk_buff *skb,
 	iph->saddr	=	src;
 	iph->ttl	=	ttl;
 	__ip_select_ident(net, iph, skb_shinfo(skb)->gso_segs ?: 1);
+
+	/* Get input interface */
+	if (skb_iif) {
+		in_dev = __dev_get_by_index(&init_net, skb_iif);
+	}
+
+	if (proto == IPPROTO_IPV6 || proto == IPPROTO_GRE || (in_dev && netif_is_vxlan(in_dev))) {
+		skb->skb_iif = skb_iif;
+	}
 
 	err = ip_local_out(net, sk, skb);
 

@@ -196,6 +196,9 @@ static void rt6_uncached_list_flush_dev(struct net_device *dev)
 	}
 }
 
+/* Define route change notification chain. */
+ATOMIC_NOTIFIER_HEAD(ip6route_chain);	/* QCA NSS ECM support */
+
 static inline const void *choose_neigh_daddr(const struct in6_addr *p,
 					     struct sk_buff *skb,
 					     const void *daddr)
@@ -4559,6 +4562,10 @@ int ipv6_route_ioctl(struct net *net, unsigned int cmd, struct in6_rtmsg *rtmsg)
 		break;
 	}
 	rtnl_unlock();
+	if (!err)
+		atomic_notifier_call_chain(&ip6route_chain,
+					   (cmd == SIOCADDRT) ? RTM_NEWROUTE : RTM_DELROUTE, &cfg);
+
 	return err;
 }
 
@@ -5583,11 +5590,17 @@ static int inet6_rtm_delroute(struct sk_buff *skb, struct nlmsghdr *nlh,
 	}
 
 	if (cfg.fc_mp)
-		return ip6_route_multipath_del(&cfg, extack);
+		err = ip6_route_multipath_del(&cfg, extack);
 	else {
 		cfg.fc_delete_all_nh = 1;
-		return ip6_route_del(&cfg, extack);
+		err = ip6_route_del(&cfg, extack);
 	}
+
+	if (!err)
+		atomic_notifier_call_chain(&ip6route_chain,
+					   RTM_DELROUTE, &cfg);
+
+	return err;
 }
 
 static int inet6_rtm_newroute(struct sk_buff *skb, struct nlmsghdr *nlh,
@@ -5604,9 +5617,15 @@ static int inet6_rtm_newroute(struct sk_buff *skb, struct nlmsghdr *nlh,
 		cfg.fc_metric = IP6_RT_PRIO_USER;
 
 	if (cfg.fc_mp)
-		return ip6_route_multipath_add(&cfg, extack);
+		err = ip6_route_multipath_add(&cfg, extack);
 	else
-		return ip6_route_add(&cfg, GFP_KERNEL, extack);
+		err = ip6_route_add(&cfg, GFP_KERNEL, extack);
+
+	if (!err)
+		atomic_notifier_call_chain(&ip6route_chain,
+					   RTM_NEWROUTE, &cfg);
+
+	return err;
 }
 
 /* add the overhead of this fib6_nh to nexthop_len */
@@ -6422,6 +6441,20 @@ static int ip6_route_dev_notify(struct notifier_block *this,
 
 	return NOTIFY_OK;
 }
+
+/* QCA NSS ECM support - Start */
+int rt6_register_notifier(struct notifier_block *nb)
+{
+	return atomic_notifier_chain_register(&ip6route_chain, nb);
+}
+EXPORT_SYMBOL(rt6_register_notifier);
+
+int rt6_unregister_notifier(struct notifier_block *nb)
+{
+	return atomic_notifier_chain_unregister(&ip6route_chain, nb);
+}
+EXPORT_SYMBOL(rt6_unregister_notifier);
+/* QCA NSS ECM support - End */
 
 /*
  *	/proc

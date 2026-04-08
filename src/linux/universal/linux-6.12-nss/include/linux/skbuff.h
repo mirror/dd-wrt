@@ -792,6 +792,7 @@ enum skb_tstamp_type {
  *	@offload_fwd_mark: Packet was L2-forwarded in hardware
  *	@offload_l3_fwd_mark: Packet was L3-forwarded in hardware
  *	@tc_skip_classify: do not classify packet. set by IFB device
+ *	@tc_skip_classify_offload: do not classify packet set by offload IFB device
  *	@tc_at_ingress: used within tc_classify to distinguish in/egress
  *	@redirected: packet was redirected by packet classifier
  *	@from_ingress: packet was redirected from the ingress path
@@ -975,6 +976,9 @@ struct sk_buff {
 	__u8			tc_at_ingress:1;	/* See TC_AT_INGRESS_MASK */
 	__u8			tc_skip_classify:1;
 #endif
+#ifdef CONFIG_NET_CLS_ACT
+	__u8			tc_skip_classify_offload:1; /* QCA NSS Qdisc Support */
+#endif
 	__u8			remcsum_offload:1;
 	__u8			csum_complete_sw:1;
 	__u8			csum_level:2;
@@ -994,6 +998,20 @@ struct sk_buff {
 #ifdef CONFIG_IPV6_NDISC_NODETYPE
 	__u8			ndisc_nodetype:2;
 #endif
+	/* Linear packets processed by dev_fast_xmit() */
+	__u8			fast_xmit:1;
+	__u8			fast_forwarded:1;
+	/* 1 or 3 bit hole */
+	/* Flag to check if skb is allocated from recycler */
+	__u8			is_from_recycler:1;
+	/* Flag for fast recycle in fast xmit path */
+	__u8			fast_recycled:1;
+	/* Flag for recycle in PPE DS */
+	__u8			recycled_for_ds:1;
+	__u8			fast_qdisc:1;
+	/* Packets processed in dev_fast_xmit_qdisc() path */
+	__u8			int_pri:4;
+	/* Priority info for hardware qdiscs */
 
 #if IS_ENABLED(CONFIG_IP_VS)
 	__u8			ipvs_property:1;
@@ -1099,6 +1117,10 @@ struct sk_buff {
 #ifdef CONFIG_SKB_EXTENSIONS
 	/* only usable after checking ->active_extensions != 0 */
 	struct skb_ext		*extensions;
+#endif
+
+#ifdef CONFIG_DEBUG_OBJECTS_SKBUFF
+	void			*free_addr;
 #endif
 };
 

@@ -725,6 +725,8 @@ static int ipip6_rcv(struct sk_buff *skb)
 
 		dev_sw_netstats_rx_add(tunnel->dev, skb->len);
 
+		/* Reset the skb_iif to Tunnels interface index */
+		skb->skb_iif = tunnel->dev->ifindex;
 		netif_rx(skb);
 
 		return 0;
@@ -1034,6 +1036,8 @@ static netdev_tx_t ipip6_tunnel_xmit(struct sk_buff *skb,
 
 	skb_set_inner_ipproto(skb, IPPROTO_IPV6);
 
+	/* Reset the skb_iif to Tunnels interface index */
+	skb->skb_iif = tunnel->dev->ifindex;
 	iptunnel_xmit(NULL, rt, skb, fl4.saddr, fl4.daddr, protocol, tos, ttl,
 		      df, !net_eq(tunnel->net, dev_net(dev)));
 	return NETDEV_TX_OK;
@@ -1734,6 +1738,23 @@ static int ipip6_fill_info(struct sk_buff *skb, const struct net_device *dev)
 nla_put_failure:
 	return -EMSGSIZE;
 }
+
+/* QCA NSS Clients Support - Start */
+void ipip6_update_offload_stats(struct net_device *dev, void *ptr)
+{
+	struct pcpu_sw_netstats *tstats = this_cpu_ptr(dev->tstats);
+	const struct pcpu_sw_netstats *offload_stats =
+					(struct pcpu_sw_netstats *)ptr;
+
+	u64_stats_update_begin(&tstats->syncp);
+	u64_stats_add(&tstats->tx_packets, u64_stats_read(&offload_stats->tx_packets));
+	u64_stats_add(&tstats->tx_bytes, u64_stats_read(&offload_stats->tx_bytes));
+	u64_stats_add(&tstats->rx_packets, u64_stats_read(&offload_stats->rx_packets));
+	u64_stats_add(&tstats->rx_bytes, u64_stats_read(&offload_stats->rx_bytes));
+	u64_stats_update_end(&tstats->syncp);
+}
+EXPORT_SYMBOL(ipip6_update_offload_stats);
+/* QCA NSS Clients Support - End */
 
 static const struct nla_policy ipip6_policy[IFLA_IPTUN_MAX + 1] = {
 	[IFLA_IPTUN_LINK]		= { .type = NLA_U32 },

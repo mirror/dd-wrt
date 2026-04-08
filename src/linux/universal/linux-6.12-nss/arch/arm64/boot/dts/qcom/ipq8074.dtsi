@@ -151,7 +151,7 @@
 		#size-cells = <2>;
 		ranges;
 
-		nss@40000000 {
+		nss_region: memory@40000000 {
 			no-map;
 			reg = <0x0 0x40000000 0x0 0x01000000>;
 		};
@@ -197,6 +197,13 @@
 		m3_dump_region: m3_dump@51000000 {
 			no-map;
 			reg = <0x0 0x51000000 0x0 0x100000>;
+		};
+
+		ramoops_region: ramoops@51200000 {
+			compatible = "ramoops";
+			reg = <0x0 0x51200000 0x0 0x100000>;
+			no-map;
+			record-size = <0x1000>;
 		};
 	};
 

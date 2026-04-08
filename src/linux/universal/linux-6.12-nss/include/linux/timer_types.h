@@ -14,6 +14,7 @@ struct timer_list {
 	unsigned long		expires;
 	void			(*function)(struct timer_list *);
 	u32			flags;
+	unsigned long		cust_data;
 
 #ifdef CONFIG_LOCKDEP
 	struct lockdep_map	lockdep_map;

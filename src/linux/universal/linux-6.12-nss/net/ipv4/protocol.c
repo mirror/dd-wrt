@@ -68,3 +68,29 @@ int inet_del_offload(const struct net_offload *prot, unsigned char protocol)
 	return ret;
 }
 EXPORT_SYMBOL(inet_del_offload);
+
+int inet_update_protocol(const struct net_protocol *new_prot,
+		unsigned char protocol, const struct net_protocol **old_prot)
+{
+	int ret;
+
+	rcu_read_lock();
+	*old_prot = rcu_dereference(inet_protos[protocol]);
+	if (!*old_prot) {
+		rcu_read_unlock();
+		return -1;
+	}
+	rcu_read_unlock();
+
+	/*
+	 * old_prot is not protected as cmpxchg is successful only if
+	 * old_prot matches with the value in inet_protos[protocol]
+	 */
+	ret = (cmpxchg((const struct net_protocol **)&inet_protos[protocol],
+			*old_prot, new_prot) == *old_prot) ? 0 : -1;
+
+	 synchronize_net();
+
+	 return ret;
+}
+EXPORT_SYMBOL(inet_update_protocol);

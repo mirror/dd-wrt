@@ -72,6 +72,28 @@ bool vlan_do_receive(struct sk_buff **skbp)
 	return true;
 }
 
+/* QCA NSS ECM support - Start */
+/* Update the VLAN device with statistics from network offload engines */
+void __vlan_dev_update_accel_stats(struct net_device *dev,
+				   struct rtnl_link_stats64 *nlstats)
+{
+	struct vlan_pcpu_stats *stats;
+
+	if (!is_vlan_dev(dev))
+		return;
+
+	stats = this_cpu_ptr(vlan_dev_priv(dev)->vlan_pcpu_stats);
+
+	u64_stats_update_begin(&stats->syncp);
+	u64_stats_add(&stats->rx_packets, nlstats->rx_packets);
+	u64_stats_add(&stats->rx_bytes, nlstats->rx_bytes);
+	u64_stats_add(&stats->tx_packets, nlstats->tx_packets);
+	u64_stats_add(&stats->tx_bytes, nlstats->tx_bytes);
+	u64_stats_update_end(&stats->syncp);
+}
+EXPORT_SYMBOL(__vlan_dev_update_accel_stats);
+/* QCA NSS ECM support - End */
+
 /* Must be invoked with rcu_read_lock. */
 struct net_device *__vlan_find_dev_deep_rcu(struct net_device *dev,
 					__be16 vlan_proto, u16 vlan_id)
@@ -109,6 +131,15 @@ struct net_device *vlan_dev_real_dev(const struct net_device *dev)
 	return ret;
 }
 EXPORT_SYMBOL(vlan_dev_real_dev);
+
+/* QCA NSS ECM support - Start */
+/* Caller is responsible to hold the reference of the returned device */
+struct net_device *vlan_dev_next_dev(const struct net_device *dev)
+{
+	return vlan_dev_priv(dev)->real_dev;
+}
+EXPORT_SYMBOL(vlan_dev_next_dev);
+/* QCA NSS ECM support - End */
 
 u16 vlan_dev_vlan_id(const struct net_device *dev)
 {

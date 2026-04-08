@@ -615,6 +615,36 @@ enum netdev_queue_state_t {
 	__QUEUE_STATE_FROZEN,
 };
 
+/**
+ * enum netdev_priv_flags_ext - &struct net_device priv_flags_ext
+ *
+ * These flags are used to check for device type and can be
+ * set and used by the drivers
+ *
+ * @IFF_EXT_TUN_TAP: device is a TUN/TAP device
+ * @IFF_EXT_PPP_L2TPV2: device is a L2TPV2 device
+ * @IFF_EXT_PPP_L2TPV3: device is a L2TPV3 device
+ * @IFF_EXT_PPP_PPTP: device is a PPTP device
+ * @IFF_EXT_GRE_V4_TAP: device is a GRE IPv4 TAP device
+ * @IFF_EXT_GRE_V6_TAP: device is a GRE IPv6 TAP device
+ * @IFF_EXT_IFB: device is an IFB device
+ * @IFF_EXT_MAPT: device is an MAPT device
+ * @IFF_EXT_HW_NO_OFFLOAD: device is an NON Offload device
+ * @IFF_EXT_L2TPV3: device is a L2TPV3 Ethernet device
+ */
+enum netdev_priv_flags_ext {
+	IFF_EXT_TUN_TAP			= 1<<0,
+	IFF_EXT_PPP_L2TPV2		= 1<<1,
+	IFF_EXT_PPP_L2TPV3		= 1<<2,
+	IFF_EXT_PPP_PPTP		= 1<<3,
+	IFF_EXT_GRE_V4_TAP		= 1<<4,
+	IFF_EXT_GRE_V6_TAP		= 1<<5,
+	IFF_EXT_IFB			= 1<<6,
+	IFF_EXT_MAPT			= 1<<7,
+	IFF_EXT_HW_NO_OFFLOAD		= 1<<8,
+	IFF_EXT_ETH_L2TPV3		= 1<<9,
+};
+
 #define QUEUE_STATE_DRV_XOFF	(1 << __QUEUE_STATE_DRV_XOFF)
 #define QUEUE_STATE_STACK_XOFF	(1 << __QUEUE_STATE_STACK_XOFF)
 #define QUEUE_STATE_FROZEN	(1 << __QUEUE_STATE_FROZEN)
@@ -2028,6 +2058,7 @@ struct net_device {
 		unsigned long		priv_flags:32;
 		unsigned long		lltx:1;
 	);
+	unsigned int		priv_flags_ext;
 	const struct net_device_ops *netdev_ops;
 	const struct header_ops *header_ops;
 	struct netdev_queue	*_tx;
@@ -2948,6 +2979,10 @@ enum netdev_cmd {
 	NETDEV_OFFLOAD_XSTATS_REPORT_USED,
 	NETDEV_OFFLOAD_XSTATS_REPORT_DELTA,
 	NETDEV_XDP_FEAT_CHANGE,
+	/* QCA NSS ECM Support - Start */
+	NETDEV_BR_JOIN,
+	NETDEV_BR_LEAVE,
+	/* QCA NSS ECM Support - End */
 };
 const char *netdev_cmd_to_name(enum netdev_cmd cmd);
 
@@ -4716,6 +4751,15 @@ void dev_uc_flush(struct net_device *dev);
 void dev_uc_init(struct net_device *dev);
 
 /**
+ *  ifb_update_offload_stats - Update the IFB interface stats
+ *  @dev: IFB device to update the stats
+ *  @offload_stats: per CPU stats structure
+ *
+ *  Allows update of IFB stats when flows are offloaded to an accelerator.
+ **/
+void ifb_update_offload_stats(struct net_device *dev, struct pcpu_sw_netstats *offload_stats);
+
+/**
  *  __dev_uc_sync - Synchronize device's unicast list
  *  @dev:  device to sync
  *  @sync: function to call if address should be added
@@ -5274,6 +5318,11 @@ static inline bool netif_is_failover(const struct net_device *dev)
 static inline bool netif_is_failover_slave(const struct net_device *dev)
 {
 	return dev->priv_flags & IFF_FAILOVER_SLAVE;
+}
+
+static inline bool netif_is_ifb_dev(const struct net_device *dev)
+{
+	return dev->priv_flags_ext & IFF_EXT_IFB;
 }
 
 /* This device needs to keep skb dst for qdisc enqueue or ndo_start_xmit() */

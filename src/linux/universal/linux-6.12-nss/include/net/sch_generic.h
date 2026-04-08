@@ -95,6 +95,7 @@ struct Qdisc {
 #define TCQ_F_INVISIBLE		0x80 /* invisible by default in dump */
 #define TCQ_F_NOLOCK		0x100 /* qdisc does not require locking */
 #define TCQ_F_OFFLOADED		0x200 /* qdisc is offloaded to HW */
+#define TCQ_F_NSS		0x1000 /* NSS qdisc flag. */
 	u32			limit;
 	const struct Qdisc_ops	*ops;
 	struct qdisc_size_table	__rcu *stab;
@@ -782,6 +783,42 @@ static inline bool skb_skip_tc_classify(struct sk_buff *skb)
 	return false;
 }
 
+/* QCA NSS Qdisc Support - Start */
+/*
+ * Set skb classify bit field.
+ */
+static inline void skb_set_tc_classify_offload(struct sk_buff *skb)
+{
+#ifdef CONFIG_NET_CLS_ACT
+	skb->tc_skip_classify_offload = 1;
+#endif
+}
+
+/*
+ * Clear skb classify bit field.
+ */
+static inline void skb_clear_tc_classify_offload(struct sk_buff *skb)
+{
+#ifdef CONFIG_NET_CLS_ACT
+	skb->tc_skip_classify_offload = 0;
+#endif
+}
+
+/*
+ * Skip skb processing if sent from ifb dev.
+ */
+static inline bool skb_skip_tc_classify_offload(struct sk_buff *skb)
+{
+#ifdef CONFIG_NET_CLS_ACT
+	if (skb->tc_skip_classify_offload) {
+		skb_clear_tc_classify_offload(skb);
+		return true;
+	}
+#endif
+	return false;
+}
+/* QCA NSS Qdisc Support - End */
+
 /* Reset all TX qdiscs greater than index of a device.  */
 static inline void qdisc_reset_all_tx_gt(struct net_device *dev, unsigned int i)
 {
@@ -1428,5 +1465,10 @@ static inline void qdisc_synchronize(const struct Qdisc *q)
 	while (test_bit(__QDISC_STATE_SCHED, &q->state))
 		msleep(1);
 }
+
+/* QCA NSS Qdisc Support - Start */
+void qdisc_destroy(struct Qdisc *qdisc);
+void tcf_destroy_chain(struct tcf_proto __rcu **fl);
+/* QCA NSS Qdisc Support - End */
 
 #endif

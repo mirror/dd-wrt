@@ -4965,7 +4965,7 @@ static bool find_full_id_nand(struct nand_chip *chip,
 
 	memorg = nanddev_get_memorg(&chip->base);
 
-	if (!strncmp(type->id, id_data, type->id_len)) {
+	if (!strncmp(type->id, id_data, min(4, type->id_len))) {
 		memorg->pagesize = type->pagesize;
 		mtd->writesize = memorg->pagesize;
 		memorg->pages_per_eraseblock = type->erasesize /

@@ -1751,6 +1751,7 @@ const char *netdev_cmd_to_name(enum netdev_cmd cmd)
 	N(PRE_CHANGEADDR) N(OFFLOAD_XSTATS_ENABLE) N(OFFLOAD_XSTATS_DISABLE)
 	N(OFFLOAD_XSTATS_REPORT_USED) N(OFFLOAD_XSTATS_REPORT_DELTA)
 	N(XDP_FEAT_CHANGE)
+	N(BR_JOIN) N(BR_LEAVE)
 	}
 #undef N
 	return "UNKNOWN_NETDEV_EVENT";
@@ -6303,12 +6304,18 @@ static int process_backlog(struct napi_struct *napi, int quota)
 
 	napi->weight = READ_ONCE(net_hotdata.dev_rx_weight);
 	while (again) {
-		struct sk_buff *skb;
+		struct sk_buff *skb, *next_skb;
 
 		local_lock_nested_bh(&softnet_data.process_queue_bh_lock);
 		while ((skb = __skb_dequeue(&sd->process_queue))) {
 			local_unlock_nested_bh(&softnet_data.process_queue_bh_lock);
 			rcu_read_lock();
+
+			next_skb = skb_peek(&sd->process_queue);
+			if (likely(next_skb)) {
+				prefetch(next_skb->data);
+			}
+
 			__netif_receive_skb(skb);
 			rcu_read_unlock();
 			if (++work >= quota) {
@@ -12254,7 +12261,7 @@ static void __init net_dev_struct_check(void)
 #ifdef CONFIG_NET_XGRESS
 	CACHELINE_ASSERT_GROUP_MEMBER(struct net_device, net_device_read_tx, tcx_egress);
 #endif
-	CACHELINE_ASSERT_GROUP_SIZE(struct net_device, net_device_read_tx, 160);
+	CACHELINE_ASSERT_GROUP_SIZE(struct net_device, net_device_read_tx, 168);
 
 	/* TXRX read-mostly hotpath */
 	CACHELINE_ASSERT_GROUP_MEMBER(struct net_device, net_device_read_txrx, lstats);

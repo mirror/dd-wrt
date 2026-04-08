@@ -1317,7 +1317,7 @@ int spinand_match_and_init(struct spinand_device *spinand,
 		if (rdid_method != info->devid.method)
 			continue;
 
-		if (memcmp(id + 1, info->devid.id, info->devid.len))
+		if (memcmp(id + 1, info->devid.id, min(3, info->devid.len)))
 			continue;
 
 		nand->memorg = table[i].memorg;

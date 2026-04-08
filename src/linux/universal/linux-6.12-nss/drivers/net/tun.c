@@ -995,6 +995,7 @@ static int tun_net_init(struct net_device *dev)
 			     ~(NETIF_F_HW_VLAN_CTAG_TX |
 			       NETIF_F_HW_VLAN_STAG_TX);
 	dev->lltx = true;
+	dev->priv_flags_ext |= IFF_EXT_TUN_TAP;
 
 	tun->flags = (tun->flags & ~TUN_FEATURES) |
 		      (ifr->ifr_flags & TUN_FEATURES);

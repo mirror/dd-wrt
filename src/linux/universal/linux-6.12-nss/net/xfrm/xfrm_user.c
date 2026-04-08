@@ -935,6 +935,8 @@ static struct xfrm_state *xfrm_state_construct(struct net *net,
 			goto error;
 	}
 
+	xfrm_state_change_notify(x, XFRM_EVENT_STATE_ADD);
+
 	return x;
 
 error:
@@ -973,6 +975,7 @@ static int xfrm_add_sa(struct sk_buff *skb, struct nlmsghdr *nlh,
 	if (err < 0) {
 		x->km.state = XFRM_STATE_DEAD;
 		xfrm_dev_state_delete(x);
+		xfrm_state_change_notify(x, XFRM_EVENT_STATE_DEL);
 		__xfrm_state_put(x);
 		goto out;
 	}

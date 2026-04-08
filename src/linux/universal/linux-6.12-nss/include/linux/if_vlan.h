@@ -138,7 +138,10 @@ extern struct net_device *__vlan_find_dev_deep_rcu(struct net_device *real_dev,
 extern int vlan_for_each(struct net_device *dev,
 			 int (*action)(struct net_device *dev, int vid,
 				       void *arg), void *arg);
+extern void __vlan_dev_update_accel_stats(struct net_device *dev,
+				    struct rtnl_link_stats64 *stats); /* QCA NSS ECM support */
 extern struct net_device *vlan_dev_real_dev(const struct net_device *dev);
+extern struct net_device *vlan_dev_next_dev(const struct net_device *dev); /* QCA NSS ECM support */
 extern u16 vlan_dev_vlan_id(const struct net_device *dev);
 extern __be16 vlan_dev_vlan_proto(const struct net_device *dev);
 
@@ -240,6 +243,12 @@ static inline bool is_vlan_dev(const struct net_device *dev)
 {
 	return false;
 }
+
+static inline void __vlan_dev_update_accel_stats(struct net_device *dev,
+					   struct rtnl_link_stats64 *stats)
+{
+
+} /* QCA NSS ECM support */
 
 static inline struct net_device *
 __vlan_find_dev_deep_rcu(struct net_device *real_dev,

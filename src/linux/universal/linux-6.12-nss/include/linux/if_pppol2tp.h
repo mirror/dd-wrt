@@ -12,4 +12,30 @@
 #include <linux/in6.h>
 #include <uapi/linux/if_pppol2tp.h>
 
+/* QCA NSS ECM support - Start */
+/*
+ * Holds L2TP channel info
+ */
+struct  pppol2tp_common_addr {
+	int tunnel_version;				/* v2 or v3 */
+	__u32 local_tunnel_id, remote_tunnel_id;	/* tunnel id */
+	__u32 local_session_id, remote_session_id;	/* session id */
+	struct sockaddr_in local_addr, remote_addr; /* ip address and port */
+};
+
+/*
+ * L2TP channel operations
+ */
+struct pppol2tp_channel_ops {
+	struct ppp_channel_ops ops; /* ppp channel ops */
+};
+
+/*
+ * exported function which calls pppol2tp channel's get addressing
+ * function
+ */
+extern int pppol2tp_channel_addressing_get(struct ppp_channel *,
+					   struct pppol2tp_common_addr *);
+/* QCA NSS ECM support - End */
+
 #endif

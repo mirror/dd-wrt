@@ -194,8 +194,8 @@ config IPQ_CMN_PLL
 	tristate "IPQ CMN PLL Clock Controller"
 	help
 	  Support for CMN PLL clock controller on IPQ platform. The
-	  CMN PLL feeds the reference clocks to the Ethernet devices
-	  based on IPQ SoC.
+	  CMN PLL consumes the AHB/SYS clocks from GCC and supplies
+	  the output clocks to the networking hardware and GCC blocks.
 	  Say Y or M if you want to support CMN PLL clock on the IPQ
 	  based devices.
 

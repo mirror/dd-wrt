@@ -26,6 +26,7 @@ struct nf_tcp_net {
 	unsigned int timeouts[TCP_CONNTRACK_TIMEOUT_MAX];
 	u8 tcp_loose;
 	u8 tcp_be_liberal;
+	u8 tcp_no_window_check;
 	u8 tcp_max_retrans;
 	u8 tcp_ignore_invalid_rst;
 #if IS_ENABLED(CONFIG_NF_FLOW_TABLE)

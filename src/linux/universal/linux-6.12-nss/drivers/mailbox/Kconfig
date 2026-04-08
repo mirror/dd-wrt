@@ -295,4 +295,14 @@ config QCOM_IPCC
 	  acts as an interrupt controller for receiving interrupts from clients.
 	  Say Y here if you want to build this driver.
 
+config QCOM_TMEL_QMP_MAILBOX
+	tristate "QCOM Mailbox Protocol(QMP) for TMEL SS"
+	depends on ARCH_QCOM || COMPILE_TEST
+	help
+	  Say yes to add support for the QMP Mailbox Protocol driver for
+	  Trust Management Engine Lite Sub System (TMEL SS).
+	  QMP is a lightweight communication protocol for sending messages to
+	  TMEL. This protocol fits into the Generic Mailbox Framework.
+	  QMP uses a mailbox registers.
+
 endif

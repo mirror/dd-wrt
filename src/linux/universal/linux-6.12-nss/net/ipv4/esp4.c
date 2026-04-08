@@ -3,6 +3,7 @@
 
 #include <crypto/aead.h>
 #include <crypto/authenc.h>
+#include <crypto/algapi.h>
 #include <linux/err.h>
 #include <linux/module.h>
 #include <net/ip.h>
@@ -35,6 +36,8 @@ struct esp_output_extra {
 };
 
 #define ESP_SKB_CB(__skb) ((struct esp_skb_cb *)&((__skb)->cb[0]))
+
+static u32 esp4_get_mtu(struct xfrm_state *x, int mtu);
 
 /*
  * Allocate an AEAD request structure with extra space for SG and IV.
@@ -621,6 +624,7 @@ static int esp_output(struct xfrm_state *x, struct sk_buff *skb)
 	struct ip_esp_hdr *esph;
 	struct crypto_aead *aead;
 	struct esp_info esp;
+	bool nosupp_sg;
 
 	esp.inplace = true;
 
@@ -632,12 +636,17 @@ static int esp_output(struct xfrm_state *x, struct sk_buff *skb)
 	aead = x->data;
 	alen = crypto_aead_authsize(aead);
 
+	nosupp_sg = crypto_tfm_alg_type(&aead->base) & CRYPTO_ALG_NOSUPP_SG;
+	if (nosupp_sg && skb_linearize(skb)) {
+		return -ENOMEM;
+	}
+
 	esp.tfclen = 0;
 	if (x->tfcpad) {
 		struct xfrm_dst *dst = (struct xfrm_dst *)skb_dst(skb);
 		u32 padto;
 
-		padto = min(x->tfcpad, xfrm_state_mtu(x, dst->child_mtu_cached));
+		padto = min(x->tfcpad, esp4_get_mtu(x, dst->child_mtu_cached));
 		if (skb->len < padto)
 			esp.tfclen = padto - skb->len;
 	}
@@ -852,12 +861,19 @@ static int esp_input(struct xfrm_state *x, struct sk_buff *skb)
 	u8 *iv;
 	struct scatterlist *sg;
 	int err = -EINVAL;
+	bool nosupp_sg;
 
 	if (!pskb_may_pull(skb, sizeof(struct ip_esp_hdr) + ivlen))
 		goto out;
 
 	if (elen <= 0)
 		goto out;
+
+	nosupp_sg = crypto_tfm_alg_type(&aead->base) & CRYPTO_ALG_NOSUPP_SG;
+	if (nosupp_sg && skb_linearize(skb)) {
+		err = -ENOMEM;
+		goto out;
+	}
 
 	assoclen = sizeof(struct ip_esp_hdr);
 	seqhilen = 0;
@@ -928,6 +944,28 @@ skip_cow:
 
 out:
 	return err;
+}
+
+static u32 esp4_get_mtu(struct xfrm_state *x, int mtu)
+{
+	struct crypto_aead *aead = x->data;
+	u32 blksize = ALIGN(crypto_aead_blocksize(aead), 4);
+	unsigned int net_adj;
+
+	switch (x->props.mode) {
+	case XFRM_MODE_TRANSPORT:
+	case XFRM_MODE_BEET:
+		net_adj = sizeof(struct iphdr);
+		break;
+	case XFRM_MODE_TUNNEL:
+		net_adj = 0;
+		break;
+	default:
+		BUG();
+	}
+
+	return ((mtu - x->props.header_len - crypto_aead_authsize(aead) -
+		 net_adj) & ~(blksize - 1)) + net_adj - 2;
 }
 
 static int esp4_err(struct sk_buff *skb, u32 info)
@@ -1171,6 +1209,7 @@ static const struct xfrm_type esp_type =
 	.flags		= XFRM_TYPE_REPLAY_PROT,
 	.init_state	= esp_init_state,
 	.destructor	= esp_destroy,
+	.get_mtu	= esp4_get_mtu,
 	.input		= esp_input,
 	.output		= esp_output,
 };

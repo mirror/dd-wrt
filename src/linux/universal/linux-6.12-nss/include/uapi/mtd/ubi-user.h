@@ -184,6 +184,7 @@
 #define UBI_IOCATT _IOW(UBI_CTRL_IOC_MAGIC, 64, struct ubi_attach_req)
 /* Detach an MTD device */
 #define UBI_IOCDET _IOW(UBI_CTRL_IOC_MAGIC, 65, __s32)
+#define UBI_IOCFDET _IOW(UBI_CTRL_IOC_MAGIC, 99, __s32)
 
 /* ioctl commands of UBI volume character devices */
 

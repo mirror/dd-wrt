@@ -79,7 +79,7 @@ static __always_inline int get_cpu_index(void)
 	return cpu_index;
 }
 #else
-static __always_inline int get_cpu_index(void)
+int get_cpu_index(void)
 {
 	return 0;
 }
