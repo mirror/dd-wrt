@@ -59,12 +59,25 @@ int main(int argc, char *argv[])
 	while (entry) {
 		char seen[128];
 		char end[128];
+		char release[128] = { 0 };
 		rfctime(&entry->seen, seen);
 		rfctime(&entry->end, end);
-
+		switch (entry->blocked) {
+		case -1:
+			if (entry->end)
+				rfctime(release, entry->end + (7 * 24 * 60 * 60));
+			break;
+		case 0:
+			if (entry->ip[0] && entry->seen)
+				rfctime(release, entry->seen + (7 * 24 * 60 * 60));
+			break;
+		}
 		fprintf(stdout, "[%45s] Attempts %3d Count %3d State(%2d) %s First Time %32s%s %s\n", entry->ip, entry->attempts,
 			entry->count, entry->blocked, entry->blocked == 1 ? "Blocked" : "Open   ", seen,
-			entry->blocked == 1 && entry->end ? "\tBlocked Until" : "", entry->blocked == 1 && entry->end ? end : "");
+			entry->blocked == 1 && entry->end ? "\tBlocked Until" : "Released On",
+			entry->blocked == 1 && entry->end			    ? end :
+			(entry->blocked == -1 || entry->blocked == 0) && release[0] ? release :
+										      "");
 		entry = entry->next;
 	}
 }
