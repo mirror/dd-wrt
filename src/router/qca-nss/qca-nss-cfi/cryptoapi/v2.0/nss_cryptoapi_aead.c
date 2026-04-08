@@ -367,7 +367,7 @@ int nss_cryptoapi_aead_setauthsize(struct crypto_aead *authenc, unsigned int aut
  * nss_cryptoapi_aead_done()
  * 	Cipher/Auth encrypt request completion callback function
  */
-void nss_cryptoapi_aead_done(void *app_data, struct nss_crypto_hdr *ch, uint8_t status)
+static void nss_cryptoapi_aead_done(void *app_data, struct nss_crypto_hdr *ch, uint8_t status)
 {
 	struct aead_request *req = (struct aead_request *)app_data;
 	struct crypto_aead *aead = crypto_aead_reqtfm(req);

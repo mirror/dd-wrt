@@ -346,8 +346,9 @@ static int hyfi_bridge_ports_init(struct hyfi_net_bridge *hyfi_br, struct net_de
 {
 	struct net_device *dev;
 
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(6, 10, 0))
 	read_lock(&dev_base_lock);
-
+#endif
 	dev = first_net_device(&init_net);
 	while (dev) {
 		struct net_bridge_port *br_port = hyfi_br_port_get(dev);
@@ -361,7 +362,9 @@ static int hyfi_bridge_ports_init(struct hyfi_net_bridge *hyfi_br, struct net_de
 		dev = next_net_device(dev);
 	}
 
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(6, 10, 0))
 	read_unlock(&dev_base_lock);
+#endif
 
 	return 0;
 }
@@ -996,11 +999,11 @@ static int hyfi_bridge_init_bridge_device(struct hyfi_net_bridge *hyfi_br, const
 	br_dev = dev_get_by_name(&init_net, br_name);
 
 	if (!br_dev) {
-		strlcpy(hyfi_br->linux_bridge, br_name, IFNAMSIZ);
+		strscpy(hyfi_br->linux_bridge, br_name, IFNAMSIZ);
 		return 0;
 	}
 
-	strlcpy(hyfi_br->linux_bridge, br_name, IFNAMSIZ);
+	strscpy(hyfi_br->linux_bridge, br_name, IFNAMSIZ);
 
 	/* Default bridge configuration */
 	hyfi_br->flags = HYFI_BRIDGE_FLAG_MODE_RELAY_OVERRIDE
@@ -1034,7 +1037,7 @@ int __init hyfi_bridge_init(void)
 {
 	int i;
 	memset(&hyfi_bridges, 0, sizeof(hyfi_bridges));
-	strlcpy(hyfi_bridges[0].linux_bridge, hyfi_linux_bridge, IFNAMSIZ );
+	strscpy(hyfi_bridges[0].linux_bridge, hyfi_linux_bridge, IFNAMSIZ );
 #ifndef DISABLE_APS_HOOKS
 	hyfi_hatbl_init();
 	if (hyfi_hdtbl_init()) {

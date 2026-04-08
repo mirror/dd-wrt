@@ -28,6 +28,7 @@
 #include "mc_private.h"
 #include "mc_snooping.h"
 #include "mc_osdep.h"
+#include "mc_forward.h"
 
 static void mc_retag(void *iph, __be16 etype, __be32 dscp)
 {

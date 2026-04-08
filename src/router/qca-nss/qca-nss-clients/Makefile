@@ -10,6 +10,9 @@ qca-nss-tun6rd-objs := nss_connmgr_tun6rd.o
 ccflags-y += -DNSS_TUN6RD_DEBUG_LEVEL=0
 ccflags-y += -Wall -Werror
 
+# Kernel 6.12 compatibility
+ccflags-y += -Wno-missing-prototypes -include $(src)/compat.h
+
 KERNELVERSION := $(word 1, $(subst ., ,$(KERNELVERSION))).$(word 2, $(subst ., ,$(KERNELVERSION)))
 
 obj-$(bridge-mgr)+= bridge/

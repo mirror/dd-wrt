@@ -232,7 +232,7 @@ static void nss_project_msg_handler(struct nss_ctx_instance *nss_ctx,
  * Uses proc_dointvec to process data. For a write operation, also sends worker
  * thread stats enable messages containing the new value to each NSS core.
  */
-static int nss_project_wt_stats_handler(struct ctl_table *ctl, int write,
+static int nss_project_wt_stats_handler(compat_const struct ctl_table *ctl, int write,
 	void __user *buffer, size_t *lenp, loff_t *ppos)
 {
 	int ret;
@@ -329,8 +329,7 @@ static struct ctl_table nss_project_table[] = {
 		.maxlen			= sizeof(int),
 		.mode			= 0644,
 		.proc_handler		= &nss_project_wt_stats_handler,
-	},
-	{ }
+	}
 };
 
 static struct ctl_table_header *nss_project_header;

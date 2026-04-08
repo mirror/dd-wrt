@@ -437,7 +437,7 @@ static void nss_crypto_eip197_hw_setup_core(void __iomem *base_addr)
  * nss_crypto_eip197_hw_setup_cache()
  *	setup EIP197 flow and transform cache
  */
-void nss_crypto_eip197_hw_setup_cache(void __iomem *base_addr)
+static void nss_crypto_eip197_hw_setup_cache(void __iomem *base_addr)
 {
 	void __iomem *addr;
 	uint32_t val;
@@ -823,7 +823,7 @@ static void nss_crypto_eip197_hw_disable_ecn_check(void __iomem *base_addr)
  * nss_crypto_eip197_hw_setup()
  *	Pre initialization function for eip197
  */
-void nss_crypto_eip197_hw_setup(void __iomem *base_addr)
+static void nss_crypto_eip197_hw_setup(void __iomem *base_addr)
 {
 	/*
 	 * Reset EIP blocks and check if reset is complete

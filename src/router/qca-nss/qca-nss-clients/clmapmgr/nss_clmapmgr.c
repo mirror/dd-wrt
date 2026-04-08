@@ -185,7 +185,7 @@ static void nss_clmapmgr_setup(struct net_device *dev)
 {
 	char name[IFNAMSIZ] = {0};
 
-	strlcpy(name, "nssclmap%d", IFNAMSIZ);
+	strscpy(name, "nssclmap%d", IFNAMSIZ);
 	memcpy(dev->name, name, IFNAMSIZ);
 	dev->netdev_ops = &nss_clmapmgr_ops;
 	eth_hw_addr_random(dev);

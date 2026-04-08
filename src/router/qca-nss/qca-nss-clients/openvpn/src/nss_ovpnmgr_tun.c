@@ -69,7 +69,11 @@ static void nss_ovpnmgr_tun_ipv4_forward(struct nss_ovpnmgr_tun *tun, struct sk_
 	skb_reset_network_header(skb);
 	iph = ip_hdr(skb);
 
+#if LINUX_VERSION_CODE <= KERNEL_VERSION(6, 10, 0)
 	rt = ip_route_output(dev_net(app->dev), iph->daddr, iph->saddr, 0, 0);
+#else
+	rt = ip_route_output(dev_net(app->dev), iph->daddr, iph->saddr, 0, 0, 0);
+#endif
 	if (unlikely(IS_ERR(rt))) {
 		nss_ovpnmgr_warn("%px: Failed to find IPv4 route.\n", skb);
 		tun->outer.stats.host_pkt_drop++;

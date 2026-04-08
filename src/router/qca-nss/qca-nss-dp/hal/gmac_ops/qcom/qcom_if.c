@@ -242,7 +242,7 @@ static int32_t qcom_get_netdev_stats(struct nss_gmac_hal_dev *nghd,
  * qcom_get_strset_count()
  *	Get string set count for ethtool operations
  */
-int32_t qcom_get_strset_count(struct nss_gmac_hal_dev *nghd, int32_t sset)
+static int32_t qcom_get_strset_count(struct nss_gmac_hal_dev *nghd, int32_t sset)
 {
 	struct net_device *netdev = nghd->netdev;
 
@@ -261,7 +261,7 @@ int32_t qcom_get_strset_count(struct nss_gmac_hal_dev *nghd, int32_t sset)
  * qcom_get_strings()
  *	Get strings
  */
-int32_t qcom_get_strings(struct nss_gmac_hal_dev *nghd, int32_t sset,
+static int32_t qcom_get_strings(struct nss_gmac_hal_dev *nghd, int32_t sset,
 						uint8_t *data)
 {
 	struct net_device *netdev = nghd->netdev;

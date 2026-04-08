@@ -167,7 +167,11 @@ static int nss_crypto_probe(struct platform_device *pdev)
  * nss_crypto_remove()
  * 	remove the crypto engine and deregister everything
  */
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(6, 1, 0))
+static void nss_crypto_remove(struct platform_device *pdev)
+#else
 static int nss_crypto_remove(struct platform_device *pdev)
+#endif
 {
 	struct nss_crypto_ctrl_eng *ctrl;
 
@@ -176,7 +180,9 @@ static int nss_crypto_remove(struct platform_device *pdev)
 	/**
 	 * XXX: pipe deinit goes here
 	 */
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(6, 1, 0))
 	return 0;
+#endif
 };
 
 /*

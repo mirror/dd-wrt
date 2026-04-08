@@ -43,6 +43,7 @@ static ssize_t nss_n2h_stats_read(struct file *fp, char __user *ubuf, size_t sz,
 	size_t size_wr = 0;
 	ssize_t bytes_read = 0;
 	uint64_t *stats_shadow;
+	char n2h_tag[7];
 
 	char *lbuf = kzalloc(size_al, GFP_KERNEL);
 	if (unlikely(lbuf == NULL)) {
@@ -66,7 +67,8 @@ static ssize_t nss_n2h_stats_read(struct file *fp, char __user *ubuf, size_t sz,
 			stats_shadow[i] = nss_n2h_stats[core][i];
 		}
 		spin_unlock_bh(&nss_top_main.stats_lock);
-		size_wr += nss_stats_banner(lbuf, size_wr, size_al, "n2h", core);
+		snprintf(n2h_tag, 7, "N2H %d", core);
+		size_wr += nss_stats_banner(lbuf, size_wr, size_al, n2h_tag, NSS_STATS_SINGLE_CORE);
 		size_wr += nss_stats_print("n2h", NULL, NSS_STATS_SINGLE_INSTANCE
 						, nss_n2h_strings_stats
 						, stats_shadow

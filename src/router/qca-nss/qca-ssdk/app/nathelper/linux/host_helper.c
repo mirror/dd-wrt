@@ -1268,7 +1268,7 @@ dev_check(char *in_dev, char *dev_list)
         return 0;
     }
 
-    strlcpy(temp, dev_list, sizeof(temp));
+    strscpy(temp, dev_list, sizeof(temp));
     list = temp;
 
     while ((list_dev = strsep(&list, " ")) != NULL)
@@ -1314,7 +1314,7 @@ static void hnat_add_neigh(struct neighbour *neigh)
 	memset(&msg, 0, sizeof(msg));
 	msg.arp_in.ip = *((uint32_t *)neigh->primary_key);
 	memcpy(msg.arp_in.mac, neigh->ha, ETH_ALEN);
-	strlcpy(msg.arp_in.name, neigh->dev->name, IFNAMSIZ);
+	strscpy(msg.arp_in.name, neigh->dev->name, IFNAMSIZ);
 	msg.arp_in.in = neigh->dev;
 
 	if (neigh->dev->priv_flags & IFF_EBRIDGE) {

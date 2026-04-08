@@ -123,10 +123,17 @@ static inline int nss_probe(struct platform_device *nss_dev)
  * nss_remove()
  *	HLOS device remove callback
  */
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(6, 10, 0))
 static inline int nss_remove(struct platform_device *nss_dev)
 {
 	return nss_hal_remove(nss_dev);
 }
+#else
+static inline void nss_remove(struct platform_device *nss_dev)
+{
+	nss_hal_remove(nss_dev);
+}
+#endif
 
 #if (NSS_DT_SUPPORT == 1)
 /*
@@ -136,7 +143,6 @@ struct of_device_id nss_dt_ids[] = {
 	{ .compatible = "qcom,nss" },
 	{ .compatible = "qcom,nss0" },
 	{ .compatible = "qcom,nss1" },
-	{},
 };
 MODULE_DEVICE_TABLE(of, nss_dt_ids);
 #endif
@@ -176,7 +182,7 @@ static void nss_reset_frequency_stats_samples(void)
  * nss_current_freq_handler()
  *	Handle Userspace Frequency Change Requests
  */
-static int nss_current_freq_handler(struct ctl_table *ctl, int write, void __user *buffer, size_t *lenp, loff_t *ppos)
+static int nss_current_freq_handler(compat_const struct ctl_table *ctl, int write, void __user *buffer, size_t *lenp, loff_t *ppos)
 {
 	int ret, i;
 
@@ -236,7 +242,7 @@ static int nss_current_freq_handler(struct ctl_table *ctl, int write, void __use
  * nss_auto_scale_handler()
  *	Enables or Disable Auto Scaling
  */
-static int nss_auto_scale_handler(struct ctl_table *ctl, int write, void __user *buffer, size_t *lenp, loff_t *ppos)
+static int nss_auto_scale_handler(compat_const struct ctl_table *ctl, int write, void __user *buffer, size_t *lenp, loff_t *ppos)
 {
 	int ret;
 
@@ -301,7 +307,7 @@ static int nss_auto_scale_handler(struct ctl_table *ctl, int write, void __user 
  * nss_get_freq_table_handler()
  *	Display Support Freq and Ex how to Change.
  */
-static int nss_get_freq_table_handler(struct ctl_table *ctl, int write, void __user *buffer, size_t *lenp, loff_t *ppos)
+static int nss_get_freq_table_handler(compat_const struct ctl_table *ctl, int write, void __user *buffer, size_t *lenp, loff_t *ppos)
 {
 	int ret, i;
 
@@ -330,7 +336,7 @@ static int nss_get_freq_table_handler(struct ctl_table *ctl, int write, void __u
  * nss_get_average_inst_handler()
  *	Display AVG Inst Per Ms.
  */
-static int nss_get_average_inst_handler(struct ctl_table *ctl, int write, void __user *buffer, size_t *lenp, loff_t *ppos)
+static int nss_get_average_inst_handler(compat_const struct ctl_table *ctl, int write, void __user *buffer, size_t *lenp, loff_t *ppos)
 {
 	int ret;
 
@@ -352,7 +358,7 @@ static int nss_get_average_inst_handler(struct ctl_table *ctl, int write, void _
  * nss_debug_handler()
  *	Enable NSS debug output
  */
-static int nss_debug_handler(struct ctl_table *ctl, int write, void __user *buffer, size_t *lenp, loff_t *ppos)
+static int nss_debug_handler(compat_const struct ctl_table *ctl, int write, void __user *buffer, size_t *lenp, loff_t *ppos)
 {
 	int ret;
 
@@ -372,7 +378,7 @@ static int nss_debug_handler(struct ctl_table *ctl, int write, void __user *buff
  * nss_coredump_handler()
  *	Send Signal To Coredump NSS Cores
  */
-static int nss_coredump_handler(struct ctl_table *ctl, int write, void __user *buffer, size_t *lenp, loff_t *ppos)
+static int nss_coredump_handler(compat_const struct ctl_table *ctl, int write, void __user *buffer, size_t *lenp, loff_t *ppos)
 {
 	struct nss_ctx_instance *nss_ctx = &nss_top_main.nss[NSS_CORE_0];
 	int ret;
@@ -397,7 +403,7 @@ static int nss_coredump_handler(struct ctl_table *ctl, int write, void __user *b
  * nss_jumbo_mru_handler()
  *	Sysctl to modify nss_jumbo_mru
  */
-static int nss_jumbo_mru_handler(struct ctl_table *ctl, int write, void __user *buffer, size_t *lenp, loff_t *ppos)
+static int nss_jumbo_mru_handler(compat_const struct ctl_table *ctl, int write, void __user *buffer, size_t *lenp, loff_t *ppos)
 {
 	int ret;
 
@@ -418,7 +424,7 @@ static int nss_jumbo_mru_handler(struct ctl_table *ctl, int write, void __user *
  *	Sysctl to modify nss_paged_mode.
  */
 
-static int nss_paged_mode_handler(struct ctl_table *ctl, int write, void __user *buffer, size_t *lenp, loff_t *ppos)
+static int nss_paged_mode_handler(compat_const struct ctl_table *ctl, int write, void __user *buffer, size_t *lenp, loff_t *ppos)
 {
 	int ret;
 
@@ -440,7 +446,7 @@ static int nss_paged_mode_handler(struct ctl_table *ctl, int write, void __user 
  * nss_get_min_reuse_handler()
  *	Sysctl to get min reuse sizes
  */
-static int nss_get_min_reuse_handler(struct ctl_table *ctl, int write, void __user *buffer, size_t *lenp, loff_t *ppos)
+static int nss_get_min_reuse_handler(compat_const struct ctl_table *ctl, int write, void __user *buffer, size_t *lenp, loff_t *ppos)
 {
 	int ret;
 	struct nss_ctx_instance *nss_ctx = NULL;
@@ -467,7 +473,7 @@ static int nss_get_min_reuse_handler(struct ctl_table *ctl, int write, void __us
  * nss_max_reuse_handler()
  *	Sysctl to modify nss_max_reuse
  */
-static int nss_max_reuse_handler(struct ctl_table *ctl, int write, void __user *buffer, size_t *lenp, loff_t *ppos)
+static int nss_max_reuse_handler(compat_const struct ctl_table *ctl, int write, void __user *buffer, size_t *lenp, loff_t *ppos)
 {
 	int ret;
 
@@ -502,8 +508,7 @@ static struct ctl_table nss_skb_reuse_table[] = {
 		.maxlen			= sizeof(int),
 		.mode			= 0644,
 		.proc_handler	= &nss_max_reuse_handler,
-	},
-	{ }
+	}
 };
 #endif
 
@@ -539,8 +544,7 @@ static struct ctl_table nss_freq_table[] = {
 		.maxlen			= sizeof(int),
 		.mode			= 0644,
 		.proc_handler	= &nss_get_average_inst_handler,
-	},
-	{ }
+	}
 };
 #endif
 
@@ -588,8 +592,7 @@ static struct ctl_table nss_general_table[] = {
 		.maxlen                 = sizeof(int),
 		.mode                   = 0644,
 		.proc_handler           = &nss_paged_mode_handler,
-	},
-	{ }
+	}
 };
 
 static struct ctl_table_header *nss_clock_header;

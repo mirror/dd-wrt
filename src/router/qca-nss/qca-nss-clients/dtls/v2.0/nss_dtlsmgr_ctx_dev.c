@@ -280,7 +280,11 @@ void nss_dtlsmgr_ctx_dev_rx_outer(struct net_device *dev, struct sk_buff *skb, s
 		skb_set_transport_header(skb, sizeof(struct iphdr));
 
 		iph = ip_hdr(skb);
+#if LINUX_VERSION_CODE <= KERNEL_VERSION(6, 10, 0)
 		rt = ip_route_output(&init_net, iph->daddr, iph->saddr, 0, 0);
+#else
+		rt = ip_route_output(&init_net, iph->daddr, iph->saddr, 0, 0, 0);
+#endif
 		if (IS_ERR(rt)) {
 			nss_dtlsmgr_warn("%px: No IPv4 route or out dev", dev);
 			dev_kfree_skb_any(skb);

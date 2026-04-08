@@ -600,7 +600,11 @@ int qca808x_phy_probe(struct phy_device *phydev)
 	return err;
 }
 
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(6, 10, 0))
 int qca808x_match_phy_device(struct phy_device *phydev)
+#else
+int qca808x_match_phy_device(struct phy_device *phydev, const struct phy_driver *driver)
+#endif
 {
 	a_uint32_t phy_id = 0;
 

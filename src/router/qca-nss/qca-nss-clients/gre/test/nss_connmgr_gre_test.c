@@ -143,7 +143,7 @@ static ssize_t nss_connmgr_gre_test_write_proc(struct file *file, const char __u
 		 * parameter parsing for delete command
 		 */
 		if (!strcmp(param, "dev")) {
-			strlcpy(dev_name, value, IFNAMSIZ);
+			strscpy(dev_name, value, IFNAMSIZ);
 			dev_name_valid = true;
 			break;
 		}
@@ -153,19 +153,19 @@ static ssize_t nss_connmgr_gre_test_write_proc(struct file *file, const char __u
 		 * tap create command
 		 */
 		if (!strcmp(param, "next_dev")) {
-			strlcpy(dev_name, value, IFNAMSIZ);
+			strscpy(dev_name, value, IFNAMSIZ);
 			dev_name_valid = true;
 			continue;
 		}
 
 		if (!strcmp(param, "saddr")) {
-			strlcpy(saddr, value, 20);
+			strscpy(saddr, value, 20);
 			saddr_valid = true;
 			continue;
 		}
 
 		if (!strcmp(param, "daddr")) {
-			strlcpy(daddr, value, 20);
+			strscpy(daddr, value, 20);
 			daddr_valid = true;
 			continue;
 		}

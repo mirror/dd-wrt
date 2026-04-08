@@ -45,7 +45,11 @@ static struct net_device *nss_connmgr_gre_v4_get_tx_dev(uint32_t dest_ip)
 	struct net_device *dev;
 	uint32_t ip_addr __attribute__ ((unused)) = ntohl(dest_ip);
 
+#if LINUX_VERSION_CODE <= KERNEL_VERSION(6, 10, 0)
 	rt = ip_route_output(&init_net, htonl(dest_ip), 0, 0, 0);
+#else
+	rt = ip_route_output(&init_net, htonl(dest_ip), 0, 0, 0, 0);
+#endif
 	if (IS_ERR(rt)) {
 		nss_connmgr_gre_warning("Unable to lookup route for %pI4\n", &ip_addr);
 		return NULL;
@@ -87,7 +91,11 @@ static int nss_connmgr_gre_v4_get_mac_address(uint32_t src_ip, uint32_t dest_ip,
 	dev_put(local_dev);
 	nss_connmgr_gre_info("Src MAC address for %pI4 is %pM\n", &laddr, src_mac);
 
+#if LINUX_VERSION_CODE <= KERNEL_VERSION(6, 10, 0)
 	rt = ip_route_output(&init_net, raddr, 0, 0, 0);
+#else
+	rt = ip_route_output(&init_net, raddr, 0, 0, 0, 0);
+#endif
 	if (IS_ERR(rt)) {
 		nss_connmgr_gre_warning("route look up failed for %pI4\n", &raddr);
 		return GRE_ERR_RADDR_ROUTE_LOOKUP;
@@ -216,9 +224,9 @@ int nss_connmgr_gre_v4_set_config(struct net_device *dev, struct nss_connmgr_gre
 		t->parms.o_key = cfg->okey;
 	}
 
-	nss_connmgr_gre_set_gre_flags(cfg, &t->parms.o_flags, &t->parms.i_flags);
+	nss_connmgr_gre_set_gre_flags(cfg, (uint16_t *)&t->parms.o_flags, (uint16_t *)&t->parms.i_flags);
 
-	strlcpy(t->parms.name, dev->name, IFNAMSIZ);
+	strscpy(t->parms.name, dev->name, IFNAMSIZ);
 	t->dev = dev;
 	return GRE_SUCCESS;
 }
@@ -330,8 +338,13 @@ int nss_connmgr_gre_v4_get_config(struct net_device *dev, struct nss_gre_msg *re
 	memcpy(cmsg->src_ip, &src_ip, 4);
 	memcpy(cmsg->dest_ip, &dest_ip, 4);
 
+#if LINUX_VERSION_CODE <= KERNEL_VERSION(6, 10, 0)
 	cmsg->flags |= nss_connmgr_gre_get_nss_config_flags(t->parms.o_flags,
 								     t->parms.i_flags,
+#else
+	cmsg->flags |= nss_connmgr_gre_get_nss_config_flags(*t->parms.o_flags,
+								     *t->parms.i_flags,
+#endif
 								     iphdr->tos, iphdr->ttl,
 								     iphdr->frag_off);
 

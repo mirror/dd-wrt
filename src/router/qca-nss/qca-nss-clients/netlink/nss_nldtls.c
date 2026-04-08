@@ -1108,7 +1108,7 @@ static ssize_t nss_nldtls_tunnel_stats_read(struct file *fp, char __user *ubuf, 
 	list_for_each_entry(entry, &gbl_ctx.dtls_list_head, list) {
 		spin_lock_bh(&gbl_ctx.lock);
 		memcpy(&stats, &entry->stats, sizeof(stats));
-		strlcpy(dev_name, entry->dev_name, IFNAMSIZ);
+		strscpy(dev_name, entry->dev_name, IFNAMSIZ);
 		spin_unlock_bh(&gbl_ctx.lock);
 
 		size_wr += scnprintf(lbuf + size_wr, size_al - size_wr, "\n--------------------------------");

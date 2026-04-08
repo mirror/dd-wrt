@@ -749,7 +749,11 @@ static struct neighbour *nss_nludp_st_get_neigh_ipv4(uint32_t ip_addr)
 	/*
 	 * search for route entry
 	 */
+#if LINUX_VERSION_CODE <= KERNEL_VERSION(6, 10, 0)
 	rt = ip_route_output(&init_net, ip_addr, 0, 0, 0);
+#else
+	rt = ip_route_output(&init_net, ip_addr, 0, 0, 0, 0);
+#endif
 	if (IS_ERR(rt)) {
 		return NULL;
 	}

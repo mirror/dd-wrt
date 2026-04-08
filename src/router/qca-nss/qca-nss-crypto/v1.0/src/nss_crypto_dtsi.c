@@ -346,7 +346,11 @@ static int nss_crypto_probe(struct platform_device *pdev)
  * nss_crypto_remove()
  *	remove the crypto engine and deregister everything
  */
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(6, 1, 0))
+static void nss_crypto_remove(struct platform_device *pdev)
+#else
 static int nss_crypto_remove(struct platform_device *pdev)
+#endif
 {
 	struct nss_crypto_ctrl_eng *e_ctrl;
 	struct nss_crypto_ctrl *ctrl;
@@ -361,7 +365,9 @@ static int nss_crypto_remove(struct platform_device *pdev)
 		kfree(ctrl->clocks);
 	}
 
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(6, 1, 0))
 	return 0;
+#endif
 };
 
 static struct of_device_id nss_crypto_dt_ids[] = {
@@ -375,7 +381,11 @@ MODULE_DEVICE_TABLE(of, nss_crypto_dt_ids);
  */
 static struct platform_driver nss_crypto_drv = {
 	.probe  	= nss_crypto_probe,
+#if LINUX_VERSION_CODE < KERNEL_VERSION(6, 11, 0)
+	.remove_new 	= nss_crypto_remove,
+#else
 	.remove 	= nss_crypto_remove,
+#endif
 	.driver 	= {
 		.owner	= THIS_MODULE,
 		.name	= "nss-crypto",

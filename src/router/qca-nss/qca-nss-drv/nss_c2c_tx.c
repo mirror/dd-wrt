@@ -284,7 +284,7 @@ EXPORT_SYMBOL(nss_c2c_tx_msg_init);
  * nss_c2c_tx_performance_test_handler()
  *	Handles the performance test.
  */
-static int nss_c2c_tx_performance_test_handler(struct ctl_table *ctl, int write,
+static int nss_c2c_tx_performance_test_handler(compat_const struct ctl_table *ctl, int write,
 				void __user *buffer, size_t *lenp, loff_t *ppos)
 {
 	struct nss_top_instance *nss_top = &nss_top_main;
@@ -330,8 +330,7 @@ static struct ctl_table nss_c2c_tx_table[] = {
 		.maxlen		= sizeof(int),
 		.mode		= 0644,
 		.proc_handler	= &nss_c2c_tx_performance_test_handler,
-	},
-	{ }
+	}
 };
 
 static struct ctl_table_header *nss_c2c_tx_header;

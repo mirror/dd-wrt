@@ -174,7 +174,11 @@ static void nss_tunipip6_encap_exception(struct net_device *dev, struct sk_buff 
 	nss_tunipip6_info("%px: received - %d bytes name %s ver %x\n",
 			skb, skb->len, dev->name, iph->version);
 
+#if LINUX_VERSION_CODE <= KERNEL_VERSION(6, 10, 0)
 	rt = ip_route_output(&init_net, iph->daddr, 0, 0, 0);
+#else
+	rt = ip_route_output(&init_net, iph->daddr, 0, 0, 0, 0);
+#endif
 	if (unlikely(IS_ERR(rt))) {
 		nss_tunipip6_info("%px: Failed to find IPv4 route for dest %pI4 src %pI4\n", skb, &iph->daddr, &iph->saddr);
 		dev_kfree_skb_any(skb);
@@ -284,7 +288,11 @@ static void nss_tunipip6_decap_exception(struct net_device *dev, struct sk_buff 
 	iph = ip_hdr(skb);
 	nss_tunipip6_assert(iph->version == 4);
 
+#if LINUX_VERSION_CODE <= KERNEL_VERSION(6, 10, 0)
 	rt = ip_route_output(&init_net, iph->daddr, 0, 0, 0);
+#else
+	rt = ip_route_output(&init_net, iph->daddr, 0, 0, 0, 0);
+#endif
 	if (unlikely(IS_ERR(rt))) {
 		nss_tunipip6_info("%px: Failed to find IPv4 route for %pI4\n", skb, &iph->daddr);
 		dev_kfree_skb_any(skb);

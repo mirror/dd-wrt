@@ -203,7 +203,7 @@ static void nss_pppoe_handler(struct nss_ctx_instance *nss_ctx, struct nss_cmn_m
  * nss_pppoe_br_accel_mode_handler()
  *	Enable/disable pppoe bridge acceleration in NSS
  */
-int nss_pppoe_br_accel_mode_handler(struct ctl_table *ctl, int write, void __user *buffer, size_t *lenp, loff_t *ppos)
+int nss_pppoe_br_accel_mode_handler(compat_const struct ctl_table *ctl, int write, void __user *buffer, size_t *lenp, loff_t *ppos)
 {
 	struct nss_ctx_instance *nss_ctx = nss_pppoe_get_context();
 	struct nss_pppoe_msg npm;
@@ -349,8 +349,7 @@ static struct ctl_table nss_pppoe_table[] = {
 		.maxlen                 = sizeof(int),
 		.mode                   = 0644,
 		.proc_handler           = &nss_pppoe_br_accel_mode_handler,
-	},
-	{ }
+	}
 };
 
 static struct ctl_table_header *nss_pppoe_header;

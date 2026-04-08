@@ -40,6 +40,12 @@
 #define MAX_RETRY_COUNT 100
 #define MAX_WIFI_HEADROOM 66
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 10, 0)
+#define TUNNEL_CSUM IP_TUNNEL_CSUM_BIT
+#define TUNNEL_SEQ IP_TUNNEL_SEQ_BIT
+#define TUNNEL_KEY IP_TUNNEL_KEY_BIT
+#endif
+
 /*
  * GRE connection manager context structure
  */
@@ -186,7 +192,12 @@ static int nss_connmgr_gre_dev_init(struct net_device *dev)
 	if ((dev->priv_flags_ext & IFF_EXT_GRE_V4_TAP) || (dev->type == ARPHRD_IPGRE)) {
 		dev->needed_headroom = sizeof(struct iphdr) + sizeof(struct ethhdr) + MAX_WIFI_HEADROOM + append;
 		dev->mtu = ETH_DATA_LEN - sizeof(struct iphdr) - append;
+#if LINUX_VERSION_CODE <= KERNEL_VERSION(6, 10, 0)
 		dev->features |= NETIF_F_NETNS_LOCAL | NETIF_F_SG | NETIF_F_FRAGLIST | NETIF_F_HIGHDMA;
+#else
+		dev->features |= NETIF_F_SG | NETIF_F_FRAGLIST | NETIF_F_HIGHDMA;
+		dev->netns_local = true;
+#endif
 		dev->hw_features |= NETIF_F_SG | NETIF_F_FRAGLIST | NETIF_F_HIGHDMA;
 		return 0;
 	}
@@ -200,7 +211,11 @@ static int nss_connmgr_gre_dev_init(struct net_device *dev)
 		dev->mtu = IPV6_MIN_MTU;
 	}
 
+#if LINUX_VERSION_CODE <= KERNEL_VERSION(6, 10, 0)
 	dev->features |= NETIF_F_NETNS_LOCAL;
+#else
+	dev->netns_local = true;
+#endif
 	return 0;
 }
 
@@ -211,7 +226,6 @@ static int nss_connmgr_gre_dev_init(struct net_device *dev)
 static void nss_connmgr_gre_dev_uninit(struct net_device *dev)
 {
 	free_percpu(dev->tstats);
-	return;
 }
 
 /*
@@ -578,7 +592,6 @@ static void nss_connmgr_gre_tap_inner_exception(struct net_device *dev, struct s
 	 */
 	skb->protocol = eth_type_trans(skb, dev);
 	netif_receive_skb(skb);
-	return;
 }
 
 /*
@@ -724,10 +737,10 @@ static void nss_connmgr_gre_make_name(struct nss_connmgr_gre_cfg *cfg, char *nam
 {
 	switch (cfg->mode) {
 	case GRE_MODE_TUN:
-		strlcpy(name, "tun-%d", IFNAMSIZ);
+		strscpy(name, "tun-%d", IFNAMSIZ);
 		break;
 	case GRE_MODE_TAP:
-		strlcpy(name, "tap-%d", IFNAMSIZ);
+		strscpy(name, "tap-%d", IFNAMSIZ);
 		break;
 	default:
 		break;
@@ -757,7 +770,7 @@ static struct net_device *__nss_connmgr_gre_create_interface(struct nss_connmgr_
 	int ret = -1, retry, next_if_num_inner = 0, next_if_num_outer = 0;
 
 	if (cfg->name) {
-		strlcpy(name, cfg->name, IFNAMSIZ);
+		strscpy(name, cfg->name, IFNAMSIZ);
 	} else {
 		nss_connmgr_gre_make_name(cfg, name);
 	}

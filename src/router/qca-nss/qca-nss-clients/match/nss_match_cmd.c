@@ -124,7 +124,7 @@ static enum nss_match_profile_type nss_match_cmd_get_profile_type(char *input_ms
  * nss_match_cmd_procfs_config_handler()
  * 	Handles command input by user to create and configure match instance.
  */
-static int nss_match_cmd_procfs_config_handler(struct ctl_table *ctl, int write, void __user *buffer, size_t *lenp, loff_t *ppos)
+static int nss_match_cmd_procfs_config_handler(compat_const struct ctl_table *ctl, int write, void __user *buffer, size_t *lenp, loff_t *ppos)
 {
 	char *command_str, *token, *param, *value;
 	char *input_msg, *input_msg_orig;
@@ -451,7 +451,7 @@ fail:
  * nss_match_cmd_procfs_reset_nexthop
  * 	Reset to default nexthop of an interface
  */
-static int nss_match_cmd_procfs_reset_nexthop(struct ctl_table *ctl, int write, void __user *buffer, size_t *lenp, loff_t *ppos)
+static int nss_match_cmd_procfs_reset_nexthop(compat_const struct ctl_table *ctl, int write, void __user *buffer, size_t *lenp, loff_t *ppos)
 {
 	struct net_device *dev;
 	uint32_t if_num, type = 0;
@@ -521,7 +521,7 @@ static int nss_match_cmd_procfs_reset_nexthop(struct ctl_table *ctl, int write, 
  * 	Set next hop of an interface to a match instance.
  * 	Only VAP and physical interfaces are supported as of now.
  */
-static int nss_match_cmd_procfs_set_if_nexthop(struct ctl_table *ctl, int write, void __user *buffer, size_t *lenp, loff_t *ppos)
+static int nss_match_cmd_procfs_set_if_nexthop(compat_const struct ctl_table *ctl, int write, void __user *buffer, size_t *lenp, loff_t *ppos)
 {
 	struct net_device *dev;
 	uint32_t if_num, type = 0;
@@ -632,7 +632,7 @@ static int nss_match_cmd_procfs_set_if_nexthop(struct ctl_table *ctl, int write,
  * nss_match_cmd_procfs_read_help()
  * 	Display help for commands.
  */
-static int nss_match_cmd_procfs_read_help(struct ctl_table *ctl, int write, void __user *buffer, size_t *lenp, loff_t *ppos)
+static int nss_match_cmd_procfs_read_help(compat_const struct ctl_table *ctl, int write, void __user *buffer, size_t *lenp, loff_t *ppos)
 {
 	int ret = proc_dointvec(ctl, write, buffer, lenp, ppos);
 
@@ -688,8 +688,7 @@ static struct ctl_table nss_match_table[] = {
 		.maxlen                 = sizeof(nss_match_data),
 		.mode			= 0400,
 		.proc_handler		= &nss_match_cmd_procfs_read_help,
-	},
-	{ }
+	}
 };
 
 static struct ctl_table_header *nss_match_ctl_header;

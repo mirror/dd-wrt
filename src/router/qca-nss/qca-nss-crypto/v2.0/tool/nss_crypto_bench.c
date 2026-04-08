@@ -717,7 +717,7 @@ static int32_t crypto_bench_prep_buf(struct crypto_op *op)
 	return CRYPTO_BENCH_OK;
 }
 
-void crypto_bench_mcmp(void)
+static void crypto_bench_mcmp(void)
 {
 	struct crypto_op *op;
 	struct list_head *ptr;
@@ -844,7 +844,7 @@ static int crypto_bench_tx(void *arg)
 /*
  * Context should be ATOMIC
  */
-void crypto_bench_done(void *app_data, struct nss_crypto_hdr *ch, uint8_t error)
+static void crypto_bench_done(void *app_data, struct nss_crypto_hdr *ch, uint8_t error)
 {
 	struct nss_crypto_buf *buf;
 	struct crypto_op *op;
@@ -914,7 +914,7 @@ static const struct file_operations cmd_ops = {
 	.write = crypto_bench_cmd_write,
 };
 
-void  crypto_bench_attach(void *app_data, struct nss_crypto_user *user)
+static void crypto_bench_attach(void *app_data, struct nss_crypto_user *user)
 {
 	spin_lock_init(&op_lock);
 
@@ -960,13 +960,13 @@ void  crypto_bench_attach(void *app_data, struct nss_crypto_user *user)
 	debugfs_create_u32("enqueue_errors", CRYPTO_BENCH_PERM_RO, droot, &param.tx_err);
 }
 
-void crypto_bench_detach(void *app_data, struct nss_crypto_user *user)
+static void crypto_bench_detach(void *app_data, struct nss_crypto_user *user)
 {
 	crypto_bench_flush();
 	kmem_cache_destroy(crypto_op_zone);
 }
 
-int __init crypto_bench_init(void)
+static int __init crypto_bench_init(void)
 {
 	ctx = kmalloc(sizeof(struct nss_crypto_user_ctx), GFP_KERNEL);
 	if (!ctx) {
@@ -980,7 +980,7 @@ int __init crypto_bench_init(void)
 
 	ctx->attach = crypto_bench_attach;
 	ctx->detach = crypto_bench_detach;
-	strlcpy(ctx->name, "bench", sizeof(ctx->name));
+	strscpy(ctx->name, "bench", sizeof(ctx->name));
 	ctx->hdr_pool_sz = 1024;
 	ctx->default_hdr_sz = 512;
 	ctx->timeout_ticks = 1;
@@ -991,7 +991,7 @@ int __init crypto_bench_init(void)
 	return 0;
 }
 
-void __exit crypto_bench_exit(void)
+static void __exit crypto_bench_exit(void)
 {
 	crypto_bench_info("Crypto bench unloaded\n");
 

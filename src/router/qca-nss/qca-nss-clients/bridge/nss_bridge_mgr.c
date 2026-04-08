@@ -1486,7 +1486,7 @@ static struct notifier_block nss_bridge_mgr_fdb_update_notifier = {
  * nss_bridge_mgr_wan_inf_add_handler
  *	Marks an interface as a WAN interface for special handling by bridge.
  */
-static int nss_bridge_mgr_wan_intf_add_handler(struct ctl_table *table,
+static int nss_bridge_mgr_wan_intf_add_handler(compat_const struct ctl_table *table,
 						int write, void __user *buffer,
 						size_t *lenp, loff_t *ppos)
 {
@@ -1535,7 +1535,7 @@ static int nss_bridge_mgr_wan_intf_add_handler(struct ctl_table *table,
  * nss_bridge_mgr_wan_inf_del_handler
  *	Un-marks an interface as a WAN interface.
  */
-static int nss_bridge_mgr_wan_intf_del_handler(struct ctl_table *table,
+static int nss_bridge_mgr_wan_intf_del_handler(compat_const struct ctl_table *table,
 						int write, void __user *buffer,
 						size_t *lenp, loff_t *ppos)
 {
@@ -1593,8 +1593,7 @@ static struct ctl_table nss_bridge_mgr_table[] = {
 		.maxlen         = sizeof(char) * IFNAMSIZ,
 		.mode           = 0644,
 		.proc_handler   = &nss_bridge_mgr_wan_intf_del_handler,
-	},
-	{ }
+	}
 };
 #endif
 /*

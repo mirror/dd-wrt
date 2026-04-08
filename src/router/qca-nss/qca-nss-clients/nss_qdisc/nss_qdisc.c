@@ -374,7 +374,9 @@ static int nss_qdisc_refresh_bshaper_assignment(struct Qdisc *br_qdisc,
 	br_update.port_list_count = 0;
 	br_update.unassign_count = 0;
 
-	read_lock(&dev_base_lock);
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(6, 10, 0))
+ 	read_lock(&dev_base_lock);
+#endif
 	dev = first_net_device(&init_net);
 
 	while(dev) {
@@ -421,7 +423,10 @@ static int nss_qdisc_refresh_bshaper_assignment(struct Qdisc *br_qdisc,
 nextdev:
 		dev = next_net_device(dev);
 	}
-	read_unlock(&dev_base_lock);
+
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(6, 10, 0))
+ 	read_unlock(&dev_base_lock);
+#endif
 
 	nss_qdisc_info("List count %d\n", br_update.port_list_count);
 

@@ -132,7 +132,7 @@ static int nss_mirror_ctl_get_netdev_by_name(char *name, struct net_device **dev
 {
 	char dev_name[IFNAMSIZ] = {0};
 
-	strlcpy(dev_name, name, IFNAMSIZ);
+	strscpy(dev_name, name, IFNAMSIZ);
 	if (dev_name[strlen(dev_name) - 1] == '\n') {
 		dev_name[strlen(dev_name) - 1] = '\0';
 	}
@@ -357,7 +357,7 @@ static int nss_mirror_ctl_parse_display_cmd(char *buffer)
 		return -1;
 	}
 
-	strlcpy(dev_name, value, IFNAMSIZ);
+	strscpy(dev_name, value, IFNAMSIZ);
 	if (dev_name[strlen(dev_name) - 1] == '\n') {
 		dev_name[strlen(dev_name) - 1] = '\0';
 	}
@@ -754,7 +754,7 @@ static int32_t nss_mirror_ctl_parse_cmd(char *cmd)
  * nss_mirror_ctl_config_handler()
  *	Mirror sysctl config handler.
  */
-static int nss_mirror_ctl_config_handler(struct ctl_table *ctl, int write,
+static int nss_mirror_ctl_config_handler(compat_const struct ctl_table *ctl, int write,
 		 void __user *buf, size_t *lenp, loff_t *ppos)
 {
 	char *buffer, *pfree;
@@ -914,8 +914,7 @@ static struct ctl_table nss_mirror_table[] = {
 		.maxlen		= sizeof(nss_mirror_config_data),
 		.mode		= 0644,
 		.proc_handler	= &nss_mirror_ctl_config_handler,
-	},
-	{ }
+	}
 };
 
 /*

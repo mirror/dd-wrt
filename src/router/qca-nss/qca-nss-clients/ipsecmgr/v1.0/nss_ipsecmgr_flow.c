@@ -915,7 +915,11 @@ bool nss_ipsecmgr_flow_process_pmtu(struct nss_ipsecmgr_priv *priv,
 		if (unlikely(skb_dst(skb)))
 			goto send_icmp;
 
+#if LINUX_VERSION_CODE <= KERNEL_VERSION(6, 10, 0)
 		rt = ip_route_output(&init_net, ip_hdr(skb)->daddr, 0, 0, 0);
+#else
+		rt = ip_route_output(&init_net, ip_hdr(skb)->daddr, 0, 0, 0, 0);
+#endif
 		if (IS_ERR(rt)) {
 			return false;
 		}

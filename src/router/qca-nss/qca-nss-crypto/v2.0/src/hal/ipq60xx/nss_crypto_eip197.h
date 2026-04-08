@@ -19,7 +19,9 @@
 #ifndef __NSS_CRYPTO_EIP197_H
 #define __NSS_CRYPTO_EIP197_H
 
+#include <linux/of_platform.h>
 #include <linux/types.h>
+#include <linux/fs.h>
 
 /*
  * Common configuration data for command and result

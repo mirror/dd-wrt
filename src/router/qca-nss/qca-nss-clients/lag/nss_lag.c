@@ -43,14 +43,14 @@
  * Statically compile messages at different levels
  */
 #if (NSS_LAG_MGR_DEBUG_LEVEL < 2)
-#define nss_lag_warn(s, ...)
+#define nss_lag_warn(s, ...) do {} while(0)
 #else
 #define nss_lag_warn(s, ...) \
 		pr_warn("%s[%d]:" s, __func__, __LINE__, ##__VA_ARGS__)
 #endif
 
 #if (NSS_LAG_MGR_DEBUG_LEVEL < 3)
-#define nss_lag_info(s, ...)
+#define nss_lag_info(s, ...) do {} while(0)
 #else
 #define nss_lag_info(s, ...) \
 		pr_notice("%s[%d]:" s, __func__, __LINE__, ##__VA_ARGS__)

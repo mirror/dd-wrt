@@ -319,7 +319,7 @@ static struct nss_connmgr_l2tpv2_session_data
 	 */
 	dev_hold(dev);
 	l2tpv2_session_data->dev = dev;
-	strlcpy(session->ifname, dev->name, IFNAMSIZ);
+	strscpy(session->ifname, dev->name, IFNAMSIZ);
 
 	/*
 	 * There is no need for protecting simultaneous addition &
@@ -417,7 +417,11 @@ static void nss_connmgr_l2tpv2_exception(struct net_device *dev,
 				/*
 				 * set skb_iif
 				 */
+#if LINUX_VERSION_CODE <= KERNEL_VERSION(6, 10, 0)
 				rt = ip_route_output(&init_net, iph_inner->saddr, 0, 0, 0);
+#else
+				rt = ip_route_output(&init_net, iph_inner->saddr, 0, 0, 0, 0);
+#endif
 				if (unlikely(IS_ERR(rt))) {
 					nss_connmgr_l2tpv2_warning("Martian packets !!!");
 				} else {
@@ -859,7 +863,7 @@ EXPORT_SYMBOL(l2tpmgr_unregister_ipsecmgr_callback_by_netdev);
  * nss_connmgr_l2tpv2_proc_handler()
  *	Read and write handler for sysctl.
  */
-static int nss_connmgr_l2tpv2_proc_handler(struct ctl_table *ctl,
+static int nss_connmgr_l2tpv2_proc_handler(compat_const struct ctl_table *ctl,
 					  int write, void __user *buffer,
 					  size_t *lenp, loff_t *ppos)
 {
@@ -979,8 +983,7 @@ static struct ctl_table nss_connmgr_l2tpv2_table[] = {
 		.maxlen		= L2TP_SYSCTL_STR_LEN_MAX,
 		.mode		= 0644,
 		.proc_handler	= &nss_connmgr_l2tpv2_proc_handler,
-	},
-	{ }
+	}
 };
 
 /*
@@ -991,8 +994,7 @@ static struct ctl_table nss_connmgr_l2tpv2_dir[] = {
 		.procname		= "l2tpv2",
 		.mode			= 0555,
 		.child			= nss_connmgr_l2tpv2_table,
-	},
-	{ }
+	}
 };
 
 /*
@@ -1003,8 +1005,7 @@ static struct ctl_table nss_connmgr_l2tpv2_sysroot[] = {
 		.procname		= "nss",
 		.mode			= 0555,
 		.child			= nss_connmgr_l2tpv2_dir,
-	},
-	{ }
+	}
 };
 #endif
 

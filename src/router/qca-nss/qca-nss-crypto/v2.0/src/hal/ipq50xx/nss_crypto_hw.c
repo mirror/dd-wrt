@@ -15,6 +15,7 @@
  * PERFORMANCE OF THIS SOFTWARE.
  */
 
+#include <linux/of.h>
 #include <linux/of_platform.h>
 #include "nss_crypto_ce5.h"
 

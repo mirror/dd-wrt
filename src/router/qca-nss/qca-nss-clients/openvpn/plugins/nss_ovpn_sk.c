@@ -225,7 +225,11 @@ static int nss_ovpn_sk_update_ipv4_tuple(struct nss_ovpn_sk_pinfo *pinfo, struct
 {
 	struct rtable *rt;
 
+#if LINUX_VERSION_CODE <= KERNEL_VERSION(6, 10, 0)
 	rt = ip_route_output(dev_net(pinfo->dev), tun_data->tun_hdr.dst_ip[0], 0, 0, 0);
+#else
+	rt = ip_route_output(dev_net(pinfo->dev), tun_data->tun_hdr.dst_ip[0], 0, 0, 0, 0);
+#endif
 	if (unlikely(IS_ERR(rt))) {
 		nss_ovpn_sk_warn("%px: Failed to find IPv4 route.\n", pinfo);
 		return -EINVAL;

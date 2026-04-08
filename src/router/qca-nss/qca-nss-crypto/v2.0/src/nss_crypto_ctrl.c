@@ -831,7 +831,7 @@ void nss_crypto_process_event(void *app_data, struct nss_crypto_cmn_msg *nim)
  * nss_crypto_free()
  *	Free crypto context
  */
-void nss_crypto_free(struct nss_crypto_ctx *ctx)
+static void nss_crypto_free(struct nss_crypto_ctx *ctx)
 {
 	struct nss_crypto_ctrl *ctrl = &g_control;
 	int32_t status;
@@ -891,7 +891,7 @@ free:
  * possible that the host to NSS queue is busy in which
  * case we need to retry.
  */
-void nss_crypto_delayed_free(struct work_struct *work)
+static void nss_crypto_delayed_free(struct work_struct *work)
 {
 	struct nss_crypto_ctrl *ctrl = &g_control;
 	struct nss_crypto_ctx *ctx;
@@ -1242,7 +1242,7 @@ void nss_crypto_engine_free(struct nss_crypto_engine *eng)
  * nss_crypto_ndev_setup()
  *	setup the dummy netdevice
  */
-void nss_crypto_ndev_setup(struct net_device *dev)
+static void nss_crypto_ndev_setup(struct net_device *dev)
 {
 	nss_crypto_info("%px: dummy netdevice for crypto\n", dev);
 }
@@ -1573,11 +1573,10 @@ static int nss_crypto_device_probe(struct platform_device *pdev)
  * nss_crypto_device_remove()
  *	remove crypto device and deregister everything
  */
-static int nss_crypto_device_remove(struct platform_device *pdev)
+static void nss_crypto_device_remove(struct platform_device *pdev)
 {
 	nss_crypto_hw_deinit(pdev);
 	nss_crypto_node_free(platform_get_drvdata(pdev));
-	return 0;
 };
 
 /*
@@ -1586,7 +1585,11 @@ static int nss_crypto_device_remove(struct platform_device *pdev)
  */
 static struct platform_driver nss_crypto_device = {
 	.probe		= nss_crypto_device_probe,
+#if LINUX_VERSION_CODE < KERNEL_VERSION(6, 11, 0)
+	.remove_new		= nss_crypto_device_remove,
+#else
 	.remove		= nss_crypto_device_remove,
+#endif
 	.driver		= {
 		.owner	= THIS_MODULE,
 		.name	= "nss-crypto-device",
@@ -1654,7 +1657,11 @@ static int nss_crypto_probe(struct platform_device *pdev)
  * nss_crypto_remove()
  *	remove the crypto driver
  */
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(6, 1, 0))
+static void nss_crypto_remove(struct platform_device *pdev)
+#else
 static int nss_crypto_remove(struct platform_device *pdev)
+#endif
 {
 	struct nss_crypto_ctrl *ctrl = platform_get_drvdata(pdev);
 
@@ -1668,7 +1675,9 @@ static int nss_crypto_remove(struct platform_device *pdev)
 	 * Clear the active state of driver
 	 */
 	ctrl->active = false;
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(6, 1, 0))
 	return 0;
+#endif
 }
 
 /*
@@ -1677,7 +1686,11 @@ static int nss_crypto_remove(struct platform_device *pdev)
  */
 static struct platform_driver nss_crypto_drv = {
 	.probe		= nss_crypto_probe,
+#if LINUX_VERSION_CODE < KERNEL_VERSION(6, 11, 0)
+	.remove_new		= nss_crypto_remove,
+#else
 	.remove		= nss_crypto_remove,
+#endif
 	.driver		= {
 		.owner	= THIS_MODULE,
 		.name	= "nss-crypto",
@@ -1689,7 +1702,7 @@ static struct platform_driver nss_crypto_drv = {
  * nss_crypto_delayed_probe()
  * 	delayed sequence to initialize crypto after NSS FW is initialized
  */
-void nss_crypto_delayed_probe(struct work_struct *work)
+static void nss_crypto_delayed_probe(struct work_struct *work)
 {
 	struct nss_crypto_ctrl *ctrl;
 	struct nss_crypto_user *user;

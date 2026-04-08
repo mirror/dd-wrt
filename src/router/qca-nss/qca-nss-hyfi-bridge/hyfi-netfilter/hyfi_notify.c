@@ -58,7 +58,9 @@ static int hyfi_device_link_event(struct notifier_block *unused, unsigned long e
 	u_int8_t portstatus_event;
 	/* switch port doesn't aware of netdevice, hence br-lan netdevice used,
 	   So, looping from the first net_device found until hyfi linux_bridge found*/
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(6, 10, 0))
 	read_lock(&dev_base_lock);
+#endif
 	dev = first_net_device(&init_net);
 	while (dev)
 	{
@@ -69,7 +71,9 @@ static int hyfi_device_link_event(struct notifier_block *unused, unsigned long e
 		}
 		dev = next_net_device(dev);
 	}
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(6, 10, 0))
 	read_unlock(&dev_base_lock);
+#endif
 	link_status_p = ptr;
 	portstatus_event = link_status_p->port_link ? HYFI_EVENT_LINK_PORT_UP : HYFI_EVENT_LINK_PORT_DOWN;
 	if (hyfi_br)

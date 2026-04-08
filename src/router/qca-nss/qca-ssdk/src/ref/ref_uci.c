@@ -13726,8 +13726,8 @@ static int name_transfer(char *name, char *module, char *cmd)
         }
 
         if(i<len) {
-		strlcpy(module, name, i+1);
-		strlcpy(cmd, p, COMMAND_NAME_MAX_LEN);
+		strscpy(module, name, i+1);
+		strscpy(cmd, p, COMMAND_NAME_MAX_LEN);
 		return 0;
         }
 

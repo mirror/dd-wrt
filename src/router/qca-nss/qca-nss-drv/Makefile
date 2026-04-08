@@ -633,6 +633,8 @@ qca-nss-drv-$(SoC)-objs += \
 ccflags-y += -DNSS_FREQ_SCALE_SUPPORT=1
 endif
 
+ccflags-y += -include $(obj)/compat.h
+
 ccflags-y += $(NSS_CCFLAGS)
 
 export NSS_CCFLAGS

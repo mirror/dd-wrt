@@ -26,6 +26,7 @@
 #endif
 #include <linux/etherdevice.h>
 #include <linux/clk.h>
+#include <linux/platform_device.h>
 
 #include "ssdk_init.h"
 #include "ssdk_dts.h"

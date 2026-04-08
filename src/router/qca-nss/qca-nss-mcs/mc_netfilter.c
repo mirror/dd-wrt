@@ -26,6 +26,7 @@
 #include "mc_private.h"
 #include "mc_api.h"
 #include "mc_osdep.h"
+#include "mc_netfilter.h"
 
 /* mc_br_port_get
  *	get bridge port by ifindex

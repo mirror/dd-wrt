@@ -129,7 +129,11 @@ void nss_l2tpv2_update_dev_stats(struct net_device *dev, struct nss_l2tpv2_sync_
 		dev_put(dev);
 		return;
 	}
+#if LINUX_VERSION_CODE < KERNEL_VERSION(6, 10, 0)
 	session = l2tp_tunnel_get_session(tunnel, data.l2tpv2.session.session_id);
+#else
+	session = l2tp_v2_session_get(dev_net(dev), data.l2tpv2.tunnel.tunnel_id, data.l2tpv2.session.session_id);
+#endif
 	if (!session) {
 		tunnel_put(tunnel);
 		dev_put(dev);

@@ -46,7 +46,7 @@ struct nss_dscp_map_parse {
  * nss_dscp_map_print()
  *	Sysctl handler for printing dscp/pri mapping.
  */
-static int nss_dscp_map_print(struct ctl_table *ctl, void __user *buffer, size_t *lenp,
+static int nss_dscp_map_print(compat_const struct ctl_table *ctl, void *buffer, size_t *lenp,
 				loff_t *ppos, struct nss_dscp_map_entry *mapping)
 {
 	char *r_buf;
@@ -115,7 +115,7 @@ static int nss_dscp_map_print(struct ctl_table *ctl, void __user *buffer, size_t
  * nss_dscp_map_parse()
  *	Sysctl handler for dscp/pri mappings.
  */
-static int nss_dscp_map_parse(struct ctl_table *ctl, void __user *buffer, size_t *lenp,
+static int nss_dscp_map_parse(compat_const struct ctl_table *ctl, void *buffer, size_t *lenp,
 				loff_t *ppos, struct nss_dscp_map_parse *out)
 {
 	int count;

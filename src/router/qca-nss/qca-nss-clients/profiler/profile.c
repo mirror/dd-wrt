@@ -138,7 +138,7 @@ int profile_register_performance_counter(volatile unsigned int *counter, char *n
 	}
 
 	profile_counter[i] = counter;
-	strlcpy(profile_name[i], name, PROFILE_COUNTER_NAME_LENGTH);
+	strscpy(profile_name[i], name, PROFILE_COUNTER_NAME_LENGTH);
 	profile_name[i][PROFILE_COUNTER_NAME_LENGTH - 1] = 0;
 
 	return 1;
@@ -317,7 +317,7 @@ static int profile_make_stats_packet(char *buf, int bytes, struct profile_io *pn
 	counter_ptr = (struct profile_counter *)ptr;
 	for (n = 0; n < profile_num_counters; ++n) {
 		counter_ptr->value = htonl(*profile_counter[n]);
-		strlcpy(counter_ptr->name, profile_name[n],
+		strscpy(counter_ptr->name, profile_name[n],
 			PROFILE_COUNTER_NAME_LENGTH);
 		counter_ptr++;
 	}

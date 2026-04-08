@@ -87,6 +87,12 @@ extern struct nss_cryptoapi g_cryptoapi;
 
 #endif /* NSS_CFI_DEBUG */
 
+/*-------------------------------------------------------------
+ * Prototype
+ *-------------------------------------------------------------
+ */
+int nss_cryptoapi_ahash_ctx2session(struct crypto_ahash *ahash, uint32_t *sid);
+
 /*
  * nss_cryptoapi_ahash_ctx2session()
  *	Cryptoapi function to get the session ID for an AHASH
@@ -228,7 +234,7 @@ int nss_cryptoapi_ahash_setkey(struct crypto_ahash *ahash, const u8 *key, unsign
  * nss_cryptoapi_ahash_done()
  *	Hash request completion callback function
  */
-void nss_cryptoapi_ahash_done(void *app_data, struct nss_crypto_hdr *ch, uint8_t status)
+static void nss_cryptoapi_ahash_done(void *app_data, struct nss_crypto_hdr *ch, uint8_t status)
 {
 	struct ahash_request *req = app_data;
 	struct crypto_ahash *ahash = crypto_ahash_reqtfm(req);

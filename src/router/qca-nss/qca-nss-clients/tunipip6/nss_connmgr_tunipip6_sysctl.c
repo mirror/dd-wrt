@@ -52,7 +52,7 @@ enum nss_tunipip6_sysctl_mode {
 };
 
 
-static int nss_tunipip6_data_parser(struct ctl_table *ctl, int write, void __user *buffer, size_t *lenp, loff_t *ppos, enum nss_tunipip6_sysctl_mode mode)
+static int nss_tunipip6_data_parser(compat_const struct ctl_table *ctl, int write, void __user *buffer, size_t *lenp, loff_t *ppos, enum nss_tunipip6_sysctl_mode mode)
 {
 	char dev_name[NETDEV_STR_LEN] = {0}, ipv6_prefix_str[PREFIX_STR_LEN] = {0}, ipv6_suffix_str[PREFIX_STR_LEN] = {0}, ipv4_prefix_str[PREFIX_STR_LEN] = {0};
 	uint32_t ipv6_prefix[4], ipv6_prefix_len, ipv6_suffix[4], ipv6_suffix_len, ipv4_prefix, ipv4_prefix_len, ea_len, psid_offset;
@@ -108,7 +108,7 @@ static int nss_tunipip6_data_parser(struct ctl_table *ctl, int write, void __use
 		 */
 
 		if (!strcmp(param, "netdev")) {
-			strlcpy(dev_name, value, 30);
+			strscpy(dev_name, value, 30);
 			dev = dev_get_by_name(&init_net, dev_name);
 			if (!dev) {
 				kfree(pfree);
@@ -147,7 +147,7 @@ static int nss_tunipip6_data_parser(struct ctl_table *ctl, int write, void __use
 		}
 
 		if (!strcmp(param, "ipv4_prefix")) {
-			strlcpy(ipv4_prefix_str, value, 30);
+			strscpy(ipv4_prefix_str, value, 30);
 			ret = in4_pton(ipv4_prefix_str, -1, (uint8_t *)&ipv4_prefix, -1, NULL);
 			if (ret != 1) {
 				kfree(pfree);
@@ -173,7 +173,7 @@ static int nss_tunipip6_data_parser(struct ctl_table *ctl, int write, void __use
 		}
 
 		if (!strcmp(param, "ipv6_prefix")) {
-			strlcpy(ipv6_prefix_str, value, 100);
+			strscpy(ipv6_prefix_str, value, 100);
 			ret = in6_pton(ipv6_prefix_str, -1, (uint8_t *)&ipv6_prefix, -1, NULL);
 			if (ret != 1) {
 				kfree(pfree);
@@ -199,7 +199,7 @@ static int nss_tunipip6_data_parser(struct ctl_table *ctl, int write, void __use
 		}
 
 		if (!strcmp(param, "ipv6_suffix")) {
-			strlcpy(ipv6_suffix_str, value, 100);
+			strscpy(ipv6_suffix_str, value, 100);
 			ret = in6_pton(ipv6_suffix_str, -1, (uint8_t *)&ipv6_suffix, -1, NULL);
 			if (ret != 1) {
 				kfree(pfree);
@@ -368,27 +368,27 @@ fail:
 	return 0;
 }
 
-static int nss_tunipip6_cmd_procfs_add_maprule(struct ctl_table *ctl, int write, void __user *buffer, size_t *lenp, loff_t *ppos)
+static int nss_tunipip6_cmd_procfs_add_maprule(compat_const struct ctl_table *ctl, int write, void __user *buffer, size_t *lenp, loff_t *ppos)
 {
 	return nss_tunipip6_data_parser(ctl, write, buffer, lenp, ppos, NSS_TUNIPIP6_SYSCTL_ADD_MAPRULE);
 }
 
-static int nss_tunipip6_cmd_procfs_del_maprule(struct ctl_table *ctl, int write, void __user *buffer, size_t *lenp, loff_t *ppos)
+static int nss_tunipip6_cmd_procfs_del_maprule(compat_const struct ctl_table *ctl, int write, void __user *buffer, size_t *lenp, loff_t *ppos)
 {
 	return nss_tunipip6_data_parser(ctl, write, buffer, lenp, ppos, NSS_TUNIPIP6_SYSCTL_DEL_MAPRULE);
 }
 
-static int nss_tunipip6_cmd_procfs_flush_fmr_rule(struct ctl_table *ctl, int write, void __user *buffer, size_t *lenp, loff_t *ppos)
+static int nss_tunipip6_cmd_procfs_flush_fmr_rule(compat_const struct ctl_table *ctl, int write, void __user *buffer, size_t *lenp, loff_t *ppos)
 {
 	return nss_tunipip6_data_parser(ctl, write, buffer, lenp, ppos, NSS_TUNIPIP6_SYSCTL_FLUSH_FMR_RULE);
 }
 
-static int nss_tunipip6_cmd_procfs_enable_frag_id(struct ctl_table *ctl, int write, void __user *buffer, size_t *lenp, loff_t *ppos)
+static int nss_tunipip6_cmd_procfs_enable_frag_id(compat_const struct ctl_table *ctl, int write, void __user *buffer, size_t *lenp, loff_t *ppos)
 {
 	return nss_tunipip6_data_parser(ctl, write, buffer, lenp, ppos, NSS_TUNIPIP6_SYSCTL_FRAG_ID);
 }
 
-static int nss_tunipip6_cmd_procfs_read_help(struct ctl_table *ctl, int write, void __user *buffer, size_t *lenp, loff_t *ppos)
+static int nss_tunipip6_cmd_procfs_read_help(compat_const struct ctl_table *ctl, int write, void __user *buffer, size_t *lenp, loff_t *ppos)
 {
 	int ret = proc_dointvec(ctl, write, buffer, lenp, ppos);
 
@@ -445,8 +445,7 @@ static struct ctl_table nss_tunipip6_table[] = {
 		.maxlen			= sizeof(nss_tunipip6_data),
 		.mode			= 0400,
 		.proc_handler		= &nss_tunipip6_cmd_procfs_read_help,
-	},
-	{ }
+	}
 };
 
 static struct ctl_table_header *nss_tunipip6_ctl_header;

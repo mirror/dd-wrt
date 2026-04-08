@@ -714,7 +714,7 @@ static void edma_configure_rings(struct edma_hw *ehw)
  * edma_hw_reset()
  *	Reset EDMA Hardware during initialization
  */
-int edma_hw_reset(struct edma_hw *ehw)
+static int edma_hw_reset(struct edma_hw *ehw)
 {
 	struct reset_control *rst;
 	struct platform_device *pdev = ehw->pdev;

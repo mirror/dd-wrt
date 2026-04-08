@@ -217,7 +217,7 @@ int nss_cryptoapi_skcipher_setkey(struct crypto_skcipher *cipher, const u8 *key,
  * nss_cryptoapi_skcipher_done()
  * 	Cipher operation completion callback function
  */
-void nss_cryptoapi_skcipher_done(void *app_data, struct nss_crypto_hdr *ch, uint8_t status)
+static void nss_cryptoapi_skcipher_done(void *app_data, struct nss_crypto_hdr *ch, uint8_t status)
 {
 	struct skcipher_request *req = app_data;
 	struct crypto_skcipher *cipher = crypto_skcipher_reqtfm(req);

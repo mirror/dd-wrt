@@ -51,7 +51,11 @@ static struct net_device *nss_ovpnmgr_app_find_dev(struct nss_ovpnmgr_route_tupl
 	struct rtable *rt4;
 
 	if (rt->ip_version == IPVERSION) {
+#if LINUX_VERSION_CODE <= KERNEL_VERSION(6, 10, 0)
 		rt4 = ip_route_output(&init_net, rt->ip_addr[0], 0, 0, 0);
+#else
+		rt4 = ip_route_output(&init_net, rt->ip_addr[0], 0, 0, 0, 0);
+#endif
 		if (IS_ERR(rt4)) {
 			return NULL;
 		}

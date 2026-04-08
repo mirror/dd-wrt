@@ -746,16 +746,16 @@ sw_error_t ssdk_mht_clk_rate_get(a_uint32_t dev_id,
 	char clk_id[64] = {0};
 	a_bool_t bypass_en = A_FALSE;
 
-	strlcpy(clk_id, clock_id, sizeof(clk_id));
+	strscpy(clk_id, clock_id, sizeof(clk_id));
 
 	ssdk_mht_port5_uniphy0_clk_src_get(dev_id, &bypass_en);
 	if (bypass_en == A_TRUE) {
 		if (strncasecmp(clock_id, MHT_MAC5_TX_UNIPHY0_CLK,
 					strlen(MHT_MAC5_TX_UNIPHY0_CLK)) == 0)
-			strlcpy(clk_id, MHT_MAC4_RX_CLK, sizeof(clk_id));
+			strscpy(clk_id, MHT_MAC4_RX_CLK, sizeof(clk_id));
 		else if (strncasecmp(clock_id, MHT_MAC5_RX_UNIPHY0_CLK,
 					strlen(MHT_MAC5_RX_UNIPHY0_CLK)) == 0)
-			strlcpy(clk_id, MHT_MAC4_TX_CLK, sizeof(clk_id));
+			strscpy(clk_id, MHT_MAC4_TX_CLK, sizeof(clk_id));
 	}
 
 	clk = ssdk_mht_clk_find(clk_id);

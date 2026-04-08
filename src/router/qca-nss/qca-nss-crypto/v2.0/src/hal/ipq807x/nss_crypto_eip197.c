@@ -455,7 +455,7 @@ free:
  * nss_crypto_eip197_ctx_fill()
  *	Fill context record specific information
  */
-int nss_crypto_eip197_ctx_fill(struct nss_crypto_ctx *ctx, struct nss_crypto_session_data *data,
+static int nss_crypto_eip197_ctx_fill(struct nss_crypto_ctx *ctx, struct nss_crypto_session_data *data,
 				struct nss_crypto_cmn_ctx *msg)
 {
 	if (data->algo > NSS_CRYPTO_CMN_ALGO_MAX)
@@ -477,7 +477,7 @@ int nss_crypto_eip197_ctx_fill(struct nss_crypto_ctx *ctx, struct nss_crypto_ses
  * nss_crypto_eip197_engine_init()
  *	allocate & initialize engine
  */
-int nss_crypto_eip197_engine_init(struct platform_device *pdev, struct device_node *np,
+static int nss_crypto_eip197_engine_init(struct platform_device *pdev, struct device_node *np,
 				struct resource *res, uint32_t offset)
 {
 	struct nss_crypto_node *node = platform_get_drvdata(pdev);
@@ -545,7 +545,7 @@ int nss_crypto_eip197_engine_init(struct platform_device *pdev, struct device_no
  * nss_crypto_eip197_node_init()
  *	allocate & initialize eip197 node
  */
-int nss_crypto_eip197_node_init(struct platform_device *pdev, const char *name)
+static int nss_crypto_eip197_node_init(struct platform_device *pdev, const char *name)
 {
 	struct device_node *np = of_node_get(pdev->dev.of_node);
 	struct nss_crypto_node *node;

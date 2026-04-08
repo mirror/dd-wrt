@@ -1547,7 +1547,7 @@ static int nss_vlan_mgr_update_ppe_tpid(void)
  * nss_vlan_mgr_tpid_proc_handler()
  *	Sets customer TPID and service TPID
  */
-static int nss_vlan_mgr_tpid_proc_handler(struct ctl_table *ctl,
+static int nss_vlan_mgr_tpid_proc_handler(compat_const struct ctl_table *ctl,
 					  int write, void __user *buffer,
 					  size_t *lenp, loff_t *ppos)
 {
@@ -1575,8 +1575,7 @@ static struct ctl_table nss_vlan_table[] = {
 		.maxlen		= sizeof(int),
 		.mode		= 0644,
 		.proc_handler	= &nss_vlan_mgr_tpid_proc_handler,
-	},
-	{ }
+	}
 };
 
 /*

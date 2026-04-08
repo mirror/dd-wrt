@@ -70,7 +70,7 @@ static size_t nss_stats_spacing(uint64_t stats_val, char *lbuf, size_t size_wr, 
  * nss_stats_nonzero_handler()
  *	Handler to take nonzero stats print configuration.
  */
-static int nss_stats_nonzero_handler(struct ctl_table *ctl, int write, void __user *buffer, size_t *lenp, loff_t *ppos)
+static int nss_stats_nonzero_handler(compat_const struct ctl_table *ctl, int write, void __user *buffer, size_t *lenp, loff_t *ppos)
 {
 	int ret;
 	ret = proc_dointvec(ctl, write, buffer, lenp, ppos);
@@ -84,8 +84,7 @@ static struct ctl_table nss_stats_table[] = {
 		.maxlen			= sizeof(int),
 		.mode			= 0644,
 		.proc_handler		= &nss_stats_nonzero_handler,
-	},
-	{ }
+	}
 };
 
 static struct ctl_table_header *nss_stats_header;
@@ -228,7 +227,7 @@ size_t nss_stats_banner(char *lbuf, size_t size_wr, size_t size_al, char *node, 
 		size_wr += scnprintf(lbuf + size_wr, size_al - size_wr, "<");
 	}
 
-	strlcpy(node_upr, node, NSS_STATS_NODE_NAME_MAX);
+	strscpy(node_upr, node, NSS_STATS_NODE_NAME_MAX + 1);
 	for (i = 0; node_upr[i] != '\0' && i < NSS_STATS_NODE_NAME_MAX; i++) {
 		node_upr[i] = toupper(node_upr[i]);
 	}
@@ -293,7 +292,7 @@ size_t nss_stats_print(char *node, char *stat_details, int instance, struct nss_
 			continue;
 		}
 
-		strlcpy(stats_string, stats_info[i].stats_name, NSS_STATS_MAX_STR_LENGTH);
+		strscpy(stats_string, stats_info[i].stats_name, NSS_STATS_MAX_STR_LENGTH);
 
 		/*
 		 * Converting  uppercase to lower case.
@@ -302,7 +301,7 @@ size_t nss_stats_print(char *node, char *stat_details, int instance, struct nss_
 			stats_string[j] = tolower(stats_string[j]);
 		}
 
-		strlcpy(node_lwr, node, NSS_STATS_NODE_NAME_MAX);
+		strscpy(node_lwr, node, NSS_STATS_NODE_NAME_MAX + 1);
 		for (j = 0; node_lwr[j] != '\0' && j < NSS_STATS_NODE_NAME_MAX; j++) {
 			node_lwr[j] = tolower(node_lwr[j]);
 		}

@@ -15,8 +15,10 @@
  * PERFORMANCE OF THIS SOFTWARE.
  */
 
+#include <linux/of.h>
 #include <linux/of_platform.h>
 #include "nss_crypto_eip197.h"
+#include "nss_crypto_hw.h"
 
 /*
  * nss_crypto_hw_deinit()
@@ -27,7 +29,6 @@ void nss_crypto_hw_deinit(struct platform_device *pdev)
 	/*
 	 * TODO: Add support for putting HW into reset
 	 */
-	return;
 }
 
 /*

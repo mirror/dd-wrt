@@ -26,6 +26,9 @@
 #include <linux/of_address.h>
 #include <linux/of_mdio.h>
 #include <linux/phy.h>
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(6, 12, 0))
+#include <net/rps.h>
+#endif
 #if defined(NSS_DP_PPE_SUPPORT)
 #include <fal/fal_vsi.h>
 #include <ref/ref_vsi.h>
@@ -513,14 +516,22 @@ static int nss_dp_rx_flow_steer(struct net_device *netdev, const struct sk_buff 
 	rxflow = &flow_table->flows[hash & flow_table->mask];
 	rxcpu = (uint32_t)rxflow->cpu;
 
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(6, 9, 0))
+	sock_flow_table = rcu_dereference(net_hotdata.rps_sock_flow_table);
+#else
 	sock_flow_table = rcu_dereference(rps_sock_flow_table);
+#endif
 	if (!sock_flow_table) {
 		netdev_dbg(netdev, "Global RPS flow table not found\n");
 		return -EINVAL;
 	}
 
 	rfscpu = sock_flow_table->ents[hash & sock_flow_table->mask];
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(6, 9, 0))
+	rfscpu &= net_hotdata.rps_cpu_mask;
+#else
 	rfscpu &= rps_cpu_mask;
+#endif
 
 	if (rxcpu == rfscpu)
 		return 0;
@@ -854,7 +865,7 @@ bool nss_dp_is_phy_dev(struct net_device *dev)
 /*
  * nss_dp_adjust_link()
  */
-void nss_dp_adjust_link(struct net_device *netdev)
+static void nss_dp_adjust_link(struct net_device *netdev)
 {
 	struct nss_dp_dev *dp_priv = netdev_priv(netdev);
 	int current_state = dp_priv->link_state;
@@ -1082,7 +1093,12 @@ fail:
  * Note: We only remove the physical ports here. Virtual
  * port devices are removed explicitly by the VP module.
  */
+
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(6, 1, 0))
+static void nss_dp_remove(struct platform_device *pdev)
+#else
 static int nss_dp_remove(struct platform_device *pdev)
+#endif
 {
 	uint32_t i;
 	struct nss_dp_dev *dp_priv;
@@ -1119,7 +1135,9 @@ static int nss_dp_remove(struct platform_device *pdev)
 		dp_global_ctx.nss_dp[i] = NULL;
 	}
 
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(6, 1, 0))
 	return 0;
+#endif
 }
 
 static struct of_device_id nss_dp_dt_ids[] = {
@@ -1130,7 +1148,11 @@ MODULE_DEVICE_TABLE(of, nss_dp_dt_ids);
 
 static struct platform_driver nss_dp_drv = {
 	.probe = nss_dp_probe,
+#if LINUX_VERSION_CODE < KERNEL_VERSION(6, 11, 0)
+	.remove_new = nss_dp_remove,
+#else
 	.remove = nss_dp_remove,
+#endif
 	.driver = {
 		   .name = "nss-dp",
 		   .owner = THIS_MODULE,
@@ -1183,6 +1205,7 @@ EXPORT_SYMBOL(nss_dp_get_port_num);
  * nss_dp_ppeds_get_ops()
  *	API to get PPE-DS operations
  */
+struct nss_dp_ppeds_ops *nss_dp_ppeds_get_ops(void);
 struct nss_dp_ppeds_ops *nss_dp_ppeds_get_ops(void)
 {
 	return nss_dp_ppeds_ops_get();
@@ -1204,7 +1227,7 @@ unsigned int EDMA_TX_RING_SIZE;
 /*
  * nss_dp_init()
  */
-int __init nss_dp_init(void)
+static int __init nss_dp_init(void)
 {
 	int ret, i;
 
@@ -1302,7 +1325,7 @@ int __init nss_dp_init(void)
 /*
  * nss_dp_exit()
  */
-void __exit nss_dp_exit(void)
+static void __exit nss_dp_exit(void)
 {
 	platform_driver_unregister(&nss_dp_drv);
 	unregister_netdevice_notifier(&nss_dp_netdev_notifier);

@@ -406,7 +406,7 @@ static nss_tx_status_t nss_rps_pri_map_cfg(struct nss_ctx_instance *nss_ctx, int
  * nss_rps_cfg_handler()
  *	Enable NSS RPS.
  */
-static int nss_rps_cfg_handler(struct ctl_table *ctl, int write,
+static int nss_rps_cfg_handler(compat_const struct ctl_table *ctl, int write,
 				void __user *buffer, size_t *lenp, loff_t *ppos)
 {
 	struct nss_top_instance *nss_top = &nss_top_main;
@@ -457,7 +457,7 @@ static int nss_rps_cfg_handler(struct ctl_table *ctl, int write,
  * nss_rps_hash_bitmap_cfg_handler()
  *	Configure NSS rps_hash_bitmap
  */
-static int nss_rps_hash_bitmap_cfg_handler(struct ctl_table *ctl, int write,
+static int nss_rps_hash_bitmap_cfg_handler(compat_const struct ctl_table *ctl, int write,
 				void __user *buffer, size_t *lenp, loff_t *ppos)
 {
 	struct nss_top_instance *nss_top = &nss_top_main;
@@ -520,7 +520,7 @@ static int nss_rps_hash_bitmap_cfg_handler(struct ctl_table *ctl, int write,
 /* nss_rps_pri_map_cfg_handler()
  *	Configure NSS rps_pri_map
  */
-static int nss_rps_pri_map_cfg_handler(struct ctl_table *ctl, int write,
+static int nss_rps_pri_map_cfg_handler(compat_const struct ctl_table *ctl, int write,
 				void __user *buffer, size_t *lenp, loff_t *ppos)
 {
 	struct nss_top_instance *nss_top = &nss_top_main;
@@ -573,8 +573,7 @@ static struct ctl_table nss_rps_table[] = {
 		.maxlen		= sizeof(int),
 		.mode		= 0644,
 		.proc_handler	= &nss_rps_pri_map_cfg_handler,
-	},
-	{ }
+	}
 };
 
 static struct ctl_table_header *nss_rps_header;

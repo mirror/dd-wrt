@@ -149,7 +149,11 @@ static void nss_ipsec_xfrm_tunnel_rx_outer(void *app_data, struct sk_buff *skb)
 	if (ip_hdr(skb)->version == IPVERSION) {
 		struct iphdr *iph = ip_hdr(skb);
 
+#if LINUX_VERSION_CODE <= KERNEL_VERSION(6, 10, 0)
 		struct rtable *rt = ip_route_output(&init_net, iph->daddr, iph->saddr, 0, 0);
+#else
+		struct rtable *rt = ip_route_output(&init_net, iph->daddr, iph->saddr, 0, 0, 0);
+#endif
 		if (unlikely(IS_ERR(rt))) {
 			nss_ipsec_xfrm_warn("%px: Failed to handle ipv4 exception after encap; No route\n", skb);
 			goto drop;
@@ -285,7 +289,11 @@ struct nss_ipsec_xfrm_tunnel *nss_ipsec_xfrm_tunnel_alloc(struct nss_ipsec_xfrm_
 
 	switch (family) {
 	case AF_INET:
+#if LINUX_VERSION_CODE <= KERNEL_VERSION(6, 10, 0)
 		 rt = ip_route_output(&init_net, remote->a4, 0, 0, 0);
+#else
+		 rt = ip_route_output(&init_net, remote->a4, 0, 0, 0, 0);
+#endif
 		 if (IS_ERR(rt)) {
 			 nss_ipsec_xfrm_err("%p:Failed to allocate tunnel; No IPv4 dst found\n", drv);
 			 return NULL;

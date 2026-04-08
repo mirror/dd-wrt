@@ -230,7 +230,11 @@ static void nss_ipsecmgr_ctx_notify_ipv4(struct sk_buff *skb, struct nss_ipsecmg
 	 * flow that coming in for the first time. We should query
 	 * the Linux to see the associated NETDEV
 	 */
+#if LINUX_VERSION_CODE <= KERNEL_VERSION(6, 10, 0)
 	rt = ip_route_output(&init_net, iph->saddr, 0, 0, 0);
+#else
+	rt = ip_route_output(&init_net, iph->saddr, 0, 0, 0, 0);
+#endif
 	if (IS_ERR(rt)) {
 		dev_kfree_skb_any(skb);
 		ctx->hstats.v4_notify_drop++;
@@ -258,7 +262,11 @@ static void nss_ipsecmgr_ctx_route_ipv4(struct sk_buff *skb, struct nss_ipsecmgr
 	struct iphdr *iph = ip_hdr(skb);
 	struct rtable *rt;
 
+#if LINUX_VERSION_CODE <= KERNEL_VERSION(6, 10, 0)
 	rt = ip_route_output(&init_net, iph->daddr, iph->saddr, 0, 0);
+#else
+	rt = ip_route_output(&init_net, iph->daddr, iph->saddr, 0, 0, 0);
+#endif
 	if (unlikely(IS_ERR(rt))) {
 		nss_ipsecmgr_warn("%pK: No route, drop packet.\n", skb);
 		dev_kfree_skb_any(skb);

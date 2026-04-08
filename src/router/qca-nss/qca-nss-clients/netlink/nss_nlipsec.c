@@ -394,7 +394,7 @@ static int nss_nlipsec_op_create_tunnel(struct sk_buff *skb, struct genl_info *i
 	 * the tunnel I/F name into the same rule and send it
 	 * as part of the response for the create operation
 	 */
-	strlcpy(nl_rule->ifname, dev->name, IFNAMSIZ);
+	strscpy(nl_rule->ifname, dev->name, IFNAMSIZ);
 
 	/*
 	 * Send to userspace

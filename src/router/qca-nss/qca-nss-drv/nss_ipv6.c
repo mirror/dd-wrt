@@ -595,7 +595,7 @@ void nss_ipv6_free_conn_tables(void)
  * nss_ipv6_accel_mode_cfg_handler()
  *	Configure acceleration mode for IPv6
  */
-static int nss_ipv6_accel_mode_cfg_handler(struct ctl_table *ctl, int write, void __user *buffer, size_t *lenp, loff_t *ppos)
+static int nss_ipv6_accel_mode_cfg_handler(compat_const struct ctl_table *ctl, int write, void *buffer, size_t *lenp, loff_t *ppos)
 {
 	struct nss_top_instance *nss_top = &nss_top_main;
 	struct nss_ctx_instance *nss_ctx = &nss_top->nss[0];
@@ -639,7 +639,7 @@ static int nss_ipv6_accel_mode_cfg_handler(struct ctl_table *ctl, int write, voi
  * nss_ipv6_dscp_map_cfg_handler()
  *	Sysctl handler for dscp/pri mappings.
  */
-static int nss_ipv6_dscp_map_cfg_handler(struct ctl_table *ctl, int write, void __user *buffer, size_t *lenp, loff_t *ppos)
+static int nss_ipv6_dscp_map_cfg_handler(compat_const struct ctl_table *ctl, int write, void *buffer, size_t *lenp, loff_t *ppos)
 {
 	struct nss_top_instance *nss_top = &nss_top_main;
 	struct nss_ctx_instance *nss_ctx = &nss_top->nss[0];
@@ -703,8 +703,7 @@ static struct ctl_table nss_ipv6_table[] = {
 		.maxlen			= sizeof(struct nss_dscp_map_entry),
 		.mode			= 0644,
 		.proc_handler		= &nss_ipv6_dscp_map_cfg_handler,
-	},
-	{ }
+	}
 };
 
 static struct ctl_table_header *nss_ipv6_header;

@@ -284,7 +284,7 @@ EXPORT_SYMBOL(nss_dma_get_context);
  * nss_dma_test_handler()
  *	Handles the performance test.
  */
-static int nss_dma_test_handler(struct ctl_table *ctl, int write, void __user *buffer, size_t *lenp, loff_t *ppos)
+static int nss_dma_test_handler(compat_const struct ctl_table *ctl, int write, void __user *buffer, size_t *lenp, loff_t *ppos)
 {
 	struct nss_ctx_instance *nss_ctx = nss_dma_get_context();
 	int cur_state = test_cfg.run.val;
@@ -374,8 +374,7 @@ static struct ctl_table nss_dma_table[] = {
 		.maxlen		= sizeof(int),
 		.mode		= 0644,
 		.proc_handler	= proc_dointvec,
-	},
-	{ }
+	}
 };
 
 static struct ctl_table_header *nss_dma_header;

@@ -381,7 +381,11 @@ static int nss_bf_graft_class(struct Qdisc *sch, unsigned long arg, struct Qdisc
 	 */
 	nss_qdisc_info("Grafting old: %px with new: %px\n", *old, new);
 	if (*old != &noop_qdisc) {
+#if LINUX_VERSION_CODE < KERNEL_VERSION(6, 8, 0)
 		struct nss_qdisc *nq_old = (struct nss_qdisc *)qdisc_priv(*old);
+#else
+		struct nss_qdisc *nq_old = (struct nss_qdisc *)qdisc_priv(((struct Qdisc *)(*old)));
+#endif
 		nss_qdisc_info("Detaching old: %px\n", *old);
 		nim_detach.msg.shaper_configure.config.msg.shaper_node_config.qos_tag = cl->nq.qos_tag;
 		if (nss_qdisc_node_detach(&cl->nq, nq_old, &nim_detach,

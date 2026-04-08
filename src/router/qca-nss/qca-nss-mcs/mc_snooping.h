@@ -20,6 +20,8 @@
 
 #include "mc_private.h"
 
+int mc_proc_create_snooper_entry(void);
+
 int __init mc_snooping_init(void);
 
 void mc_snooping_exit(void);

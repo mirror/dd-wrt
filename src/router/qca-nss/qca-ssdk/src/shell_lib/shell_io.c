@@ -951,16 +951,16 @@ cmd_sscanf(const char *buf, const char *fmt, void *arg_val)
 	if(buf[0] == '0' && (buf[1] == 'x' || buf[1] == 'X'))
 	{
 		if(!fmt)
-			strlcpy(fmt_tmp, "%x", sizeof(fmt_tmp));
+			strscpy(fmt_tmp, "%x", sizeof(fmt_tmp));
 		else
 		{
 			if(strspn(fmt, "%lLxXhH") != strlen(fmt))
 				return SW_BAD_VALUE;
 			if(fmt[0] == '%' && ((fmt[1] == 'l' || fmt[1] == 'L') &&
 				(fmt[2] == 'l' || fmt[2] == 'L')))
-				strlcpy(fmt_tmp, "%llx", sizeof(fmt_tmp));
+				strscpy(fmt_tmp, "%llx", sizeof(fmt_tmp));
 			else
-				strlcpy(fmt_tmp, fmt, sizeof(fmt_tmp));
+				strscpy(fmt_tmp, fmt, sizeof(fmt_tmp));
 		}
 	}
 	else
@@ -968,16 +968,16 @@ cmd_sscanf(const char *buf, const char *fmt, void *arg_val)
 		if(strspn(buf, "1234567890") != strlen(buf))
 			return SW_BAD_VALUE;
 		if(!fmt)
-			strlcpy(fmt_tmp, "%d", sizeof(fmt_tmp));
+			strscpy(fmt_tmp, "%d", sizeof(fmt_tmp));
 		else
 		{
 			if(strspn(fmt, "%lLdD") != strlen(fmt))
 				return SW_BAD_VALUE;
 			if(fmt[0] == '%' && ((fmt[1] == 'l' || fmt[1] == 'L') &&
 				(fmt[2] == 'l' || fmt[2] == 'L')))
-				strlcpy(fmt_tmp, "%lld", sizeof(fmt_tmp));
+				strscpy(fmt_tmp, "%lld", sizeof(fmt_tmp));
 			else
-				strlcpy(fmt_tmp, fmt, sizeof(fmt_tmp));
+				strscpy(fmt_tmp, fmt, sizeof(fmt_tmp));
 		}
 	}
 	if(sscanf(buf, fmt_tmp, arg_val) != 1)
@@ -2736,7 +2736,7 @@ cmd_data_check_portmap(char *cmdstr, fal_pbmp_t * val, a_uint32_t size)
         return SW_OK;
     }
 
-    strlcpy(tmp_str, cmdstr, sizeof(tmp_str));
+    strscpy(tmp_str, cmdstr, sizeof(tmp_str));
     tmp = (void *) strsep(&cmdstr, ",");
     while (tmp)
     {
@@ -12818,7 +12818,7 @@ cmd_data_check_tunnel_encap_entry(char *cmd_str, fal_tunnel_encap_cfg_t *arg_val
 						break;
 					}
 					/* copy 2 chars from cmd */
-					strlcpy(cmd_byte, cmd, sizeof(cmd_byte));
+					strscpy(cmd_byte, cmd, sizeof(cmd_byte));
 					sscanf(cmd_byte, "%hhx",
 						&(entry.pkt_header.pkt_header_data[bytes]));
 					cmd += 2;

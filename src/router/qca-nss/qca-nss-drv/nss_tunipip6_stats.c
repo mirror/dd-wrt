@@ -16,6 +16,10 @@
  **************************************************************************
  */
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 10, 0)
+#include <linux/vmalloc.h>
+#endif
+
 #include "nss_core.h"
 #include "nss_tunipip6.h"
 #include "nss_stats.h"

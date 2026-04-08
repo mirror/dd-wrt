@@ -341,7 +341,11 @@ static int nss_prio_graft(struct Qdisc *sch, unsigned long arg,
 
 	nss_qdisc_info("Grafting old: %px with new: %px\n", *old, new);
 	if (*old != &noop_qdisc) {
+#if LINUX_VERSION_CODE < KERNEL_VERSION(6, 8, 0)
 		struct nss_qdisc *nq_old = qdisc_priv(*old);
+#else
+		struct nss_qdisc *nq_old = qdisc_priv(((struct Qdisc *)(*old)));
+#endif
 		nss_qdisc_info("Detaching old: %px\n", *old);
 		nim_detach.msg.shaper_configure.config.msg.shaper_node_config.qos_tag = q->nq.qos_tag;
 

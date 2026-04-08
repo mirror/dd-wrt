@@ -357,7 +357,7 @@ static int nss_n2h_get_paged_payload_info(nss_ptr_t core_num)
  * nss_n2h_set_empty_buf_pool()
  *	Sets empty pool buffer
  */
-static int nss_n2h_set_empty_buf_pool(struct ctl_table *ctl, int write,
+static int nss_n2h_set_empty_buf_pool(compat_const struct ctl_table *ctl, int write,
 				void __user *buffer,
 				size_t *lenp, loff_t *ppos,
 				nss_ptr_t core_num, int *new_val)
@@ -459,7 +459,7 @@ failure:
  * nss_n2h_set_empty_paged_pool_buf()
  *	Sets empty paged pool buffer
  */
-static int nss_n2h_set_empty_paged_pool_buf(struct ctl_table *ctl, int write,
+static int nss_n2h_set_empty_paged_pool_buf(compat_const struct ctl_table *ctl, int write,
 				void __user *buffer,
 				size_t *lenp, loff_t *ppos,
 				nss_ptr_t core_num, int *new_val)
@@ -561,7 +561,7 @@ failure:
  * nss_n2h_set_water_mark()
  *	Sets water mark for N2H SOS
  */
-static int nss_n2h_set_water_mark(struct ctl_table *ctl, int write,
+static int nss_n2h_set_water_mark(compat_const struct ctl_table *ctl, int write,
 					void __user *buffer,
 					size_t *lenp, loff_t *ppos,
 					uint32_t core_num, int *low, int *high)
@@ -675,7 +675,7 @@ failure:
  * nss_n2h_set_paged_water_mark()
  *	Sets water mark for paged pool N2H SOS
  */
-static int nss_n2h_set_paged_water_mark(struct ctl_table *ctl, int write,
+static int nss_n2h_set_paged_water_mark(compat_const struct ctl_table *ctl, int write,
 					void __user *buffer,
 					size_t *lenp, loff_t *ppos,
 					uint32_t core_num, int *low, int *high)
@@ -789,7 +789,7 @@ failure:
  * nss_n2h_cfg_wifi_pool()
  *	Sets number of wifi payloads to adjust high water mark for N2H SoS
  */
-static int nss_n2h_cfg_wifi_pool(struct ctl_table *ctl, int write,
+static int nss_n2h_cfg_wifi_pool(compat_const struct ctl_table *ctl, int write,
 					void __user *buffer,
 					size_t *lenp, loff_t *ppos,
 					int *payloads)
@@ -886,7 +886,7 @@ failure:
  * nss_n2h_empty_pool_buf_core1_handler()
  *	Sets the number of empty buffer for core 1
  */
-static int nss_n2h_empty_pool_buf_cfg_core1_handler(struct ctl_table *ctl,
+static int nss_n2h_empty_pool_buf_cfg_core1_handler(compat_const struct ctl_table *ctl,
 				int write, void __user *buffer,
 				size_t *lenp, loff_t *ppos)
 {
@@ -898,7 +898,7 @@ static int nss_n2h_empty_pool_buf_cfg_core1_handler(struct ctl_table *ctl,
  * nss_n2h_empty_pool_buf_core0_handler()
  *	Sets the number of empty buffer for core 0
  */
-static int nss_n2h_empty_pool_buf_cfg_core0_handler(struct ctl_table *ctl,
+static int nss_n2h_empty_pool_buf_cfg_core0_handler(compat_const struct ctl_table *ctl,
 				int write, void __user *buffer,
 				size_t *lenp, loff_t *ppos)
 {
@@ -910,7 +910,7 @@ static int nss_n2h_empty_pool_buf_cfg_core0_handler(struct ctl_table *ctl,
  * nss_n2h_empty_paged_pool_buf_cfg_core1_handler()
  *	Sets the number of empty paged buffer for core 1
  */
-static int nss_n2h_empty_paged_pool_buf_cfg_core1_handler(struct ctl_table *ctl,
+static int nss_n2h_empty_paged_pool_buf_cfg_core1_handler(compat_const struct ctl_table *ctl,
 				int write, void __user *buffer,
 				size_t *lenp, loff_t *ppos)
 {
@@ -922,7 +922,7 @@ static int nss_n2h_empty_paged_pool_buf_cfg_core1_handler(struct ctl_table *ctl,
  * nss_n2h_empty_paged_pool_buf_cfg_core0_handler()
  *	Sets the number of empty paged buffer for core 0
  */
-static int nss_n2h_empty_paged_pool_buf_cfg_core0_handler(struct ctl_table *ctl,
+static int nss_n2h_empty_paged_pool_buf_cfg_core0_handler(compat_const struct ctl_table *ctl,
 				int write, void __user *buffer,
 				size_t *lenp, loff_t *ppos)
 {
@@ -934,7 +934,7 @@ static int nss_n2h_empty_paged_pool_buf_cfg_core0_handler(struct ctl_table *ctl,
  * nss_n2h_water_mark_core1_handler()
  *	Sets water mark for core 1
  */
-static int nss_n2h_water_mark_core1_handler(struct ctl_table *ctl,
+static int nss_n2h_water_mark_core1_handler(compat_const struct ctl_table *ctl,
 			int write, void __user *buffer,
 			size_t *lenp, loff_t *ppos)
 {
@@ -947,7 +947,7 @@ static int nss_n2h_water_mark_core1_handler(struct ctl_table *ctl,
  * nss_n2h_water_mark_core0_handler()
  *	Sets water mark for core 0
  */
-static int nss_n2h_water_mark_core0_handler(struct ctl_table *ctl,
+static int nss_n2h_water_mark_core0_handler(compat_const struct ctl_table *ctl,
 			int write, void __user *buffer,
 			size_t *lenp, loff_t *ppos)
 {
@@ -960,7 +960,7 @@ static int nss_n2h_water_mark_core0_handler(struct ctl_table *ctl,
  * nss_n2h_paged_water_mark_core1_handler()
  *	Sets paged water mark for core 1
  */
-static int nss_n2h_paged_water_mark_core1_handler(struct ctl_table *ctl,
+static int nss_n2h_paged_water_mark_core1_handler(compat_const struct ctl_table *ctl,
 			int write, void __user *buffer,
 			size_t *lenp, loff_t *ppos)
 {
@@ -973,7 +973,7 @@ static int nss_n2h_paged_water_mark_core1_handler(struct ctl_table *ctl,
  * nss_n2h_paged_water_mark_core0_handler()
  *	Sets paged water mark for core 0
  */
-static int nss_n2h_paged_water_mark_core0_handler(struct ctl_table *ctl,
+static int nss_n2h_paged_water_mark_core0_handler(compat_const struct ctl_table *ctl,
 			int write, void __user *buffer,
 			size_t *lenp, loff_t *ppos)
 {
@@ -986,7 +986,7 @@ static int nss_n2h_paged_water_mark_core0_handler(struct ctl_table *ctl,
  * nss_n2h_wifi_payloads_handler()
  *	Sets number of wifi payloads
  */
-static int nss_n2h_wifi_payloads_handler(struct ctl_table *ctl,
+static int nss_n2h_wifi_payloads_handler(compat_const struct ctl_table *ctl,
 			int write, void __user *buffer,
 			size_t *lenp, loff_t *ppos)
 {
@@ -998,7 +998,7 @@ static int nss_n2h_wifi_payloads_handler(struct ctl_table *ctl,
  * nss_n2h_get_qos_mem_size_cfg_handler()
  *	Gets the QoS memory pool size
  */
-static int nss_n2h_get_qos_mem_size_cfg_handler(struct ctl_table *ctl,
+static int nss_n2h_get_qos_mem_size_cfg_handler(compat_const struct ctl_table *ctl,
 			int write, void __user *buffer,
 			size_t *lenp, loff_t *ppos)
 {
@@ -1281,7 +1281,7 @@ failure:
  * nss_mitigation_handler()
  * Enable NSS MITIGATION
  */
-static int nss_n2h_mitigationcfg_core0_handler(struct ctl_table *ctl, int write, void __user *buffer, size_t *lenp, loff_t *ppos)
+static int nss_n2h_mitigationcfg_core0_handler(compat_const struct ctl_table *ctl, int write, void __user *buffer, size_t *lenp, loff_t *ppos)
 {
 	struct nss_top_instance *nss_top = &nss_top_main;
 	struct nss_ctx_instance *nss_ctx = &nss_top->nss[NSS_CORE_0];
@@ -1312,7 +1312,7 @@ static int nss_n2h_mitigationcfg_core0_handler(struct ctl_table *ctl, int write,
  * nss_mitigation_handler()
  * Enable NSS MITIGATION
  */
-static int nss_n2h_mitigationcfg_core1_handler(struct ctl_table *ctl, int write, void __user *buffer, size_t *lenp, loff_t *ppos)
+static int nss_n2h_mitigationcfg_core1_handler(compat_const struct ctl_table *ctl, int write, void __user *buffer, size_t *lenp, loff_t *ppos)
 {
 	struct nss_top_instance *nss_top = &nss_top_main;
 	struct nss_ctx_instance *nss_ctx = &nss_top->nss[NSS_CORE_1];
@@ -1343,7 +1343,7 @@ static int nss_n2h_mitigationcfg_core1_handler(struct ctl_table *ctl, int write,
  * nss_buf_handler()
  *	Add extra NSS bufs from host memory
  */
-static int nss_n2h_buf_cfg_core0_handler(struct ctl_table *ctl, int write, void __user *buffer, size_t *lenp, loff_t *ppos)
+static int nss_n2h_buf_cfg_core0_handler(compat_const struct ctl_table *ctl, int write, void __user *buffer, size_t *lenp, loff_t *ppos)
 {
 	struct nss_top_instance *nss_top = &nss_top_main;
 	struct nss_ctx_instance *nss_ctx = &nss_top->nss[NSS_CORE_0];
@@ -1382,7 +1382,7 @@ static int nss_n2h_buf_cfg_core0_handler(struct ctl_table *ctl, int write, void 
  * nss_n2h_buf_handler()
  *	Add extra NSS bufs from host memory
  */
-static int nss_n2h_buf_cfg_core1_handler(struct ctl_table *ctl, int write, void __user *buffer, size_t *lenp, loff_t *ppos)
+static int nss_n2h_buf_cfg_core1_handler(compat_const struct ctl_table *ctl, int write, void __user *buffer, size_t *lenp, loff_t *ppos)
 {
 	struct nss_top_instance *nss_top = &nss_top_main;
 	struct nss_ctx_instance *nss_ctx = &nss_top->nss[NSS_CORE_1];
@@ -1435,7 +1435,7 @@ static void nss_n2h_queue_limit_callback(void *app_data, struct nss_n2h_msg *nim
  * nss_n2h_set_queue_limit_sync()
  *	Sets the n2h queue size limit synchronously.
  */
-static int nss_n2h_set_queue_limit_sync(struct ctl_table *ctl, int write, void __user *buffer,
+static int nss_n2h_set_queue_limit_sync(compat_const struct ctl_table *ctl, int write, void __user *buffer,
 					size_t *lenp, loff_t *ppos, uint32_t core_id)
 {
 	struct nss_top_instance *nss_top = &nss_top_main;
@@ -1512,7 +1512,7 @@ static int nss_n2h_set_queue_limit_sync(struct ctl_table *ctl, int write, void _
  * nss_n2h_queue_limit_core0_handler()
  *	Sets the n2h queue size limit for core0
  */
-static int nss_n2h_queue_limit_core0_handler(struct ctl_table *ctl,
+static int nss_n2h_queue_limit_core0_handler(compat_const struct ctl_table *ctl,
 				int write, void __user *buffer,
 				size_t *lenp, loff_t *ppos)
 {
@@ -1524,7 +1524,7 @@ static int nss_n2h_queue_limit_core0_handler(struct ctl_table *ctl,
  * nss_n2h_queue_limit_core1_handler()
  *	Sets the n2h queue size limit for core1
  */
-static int nss_n2h_queue_limit_core1_handler(struct ctl_table *ctl,
+static int nss_n2h_queue_limit_core1_handler(compat_const struct ctl_table *ctl,
 				int write, void __user *buffer,
 				size_t *lenp, loff_t *ppos)
 {
@@ -1602,7 +1602,7 @@ static nss_tx_status_t nss_n2h_host_bp_cfg_sync(struct nss_ctx_instance *nss_ctx
  * nss_n2h_host_bp_cfg_handler()
  *	Enable n2h back pressure.
  */
-static int nss_n2h_host_bp_cfg_handler(struct ctl_table *ctl, int write,
+static int nss_n2h_host_bp_cfg_handler(compat_const struct ctl_table *ctl, int write,
 				void __user *buffer, size_t *lenp, loff_t *ppos, uint32_t core_id)
 {
 	struct nss_top_instance *nss_top = &nss_top_main;
@@ -1640,7 +1640,7 @@ static int nss_n2h_host_bp_cfg_handler(struct ctl_table *ctl, int write,
  * nss_n2h_host_bp_cfg_core0_handler()
  *	Enable n2h back pressure in core 0.
  */
-static int nss_n2h_host_bp_cfg_core0_handler(struct ctl_table *ctl, int write,
+static int nss_n2h_host_bp_cfg_core0_handler(compat_const struct ctl_table *ctl, int write,
 				void __user *buffer, size_t *lenp, loff_t *ppos)
 {
 	return nss_n2h_host_bp_cfg_handler(ctl, write, buffer, lenp, ppos, NSS_CORE_0);
@@ -1650,7 +1650,7 @@ static int nss_n2h_host_bp_cfg_core0_handler(struct ctl_table *ctl, int write,
  * nss_n2h_host_bp_cfg_core1_handler()
  *	Enable n2h back pressure in core 1.
  */
-static int nss_n2h_host_bp_cfg_core1_handler(struct ctl_table *ctl, int write,
+static int nss_n2h_host_bp_cfg_core1_handler(compat_const struct ctl_table *ctl, int write,
 				void __user *buffer, size_t *lenp, loff_t *ppos)
 {
 	return nss_n2h_host_bp_cfg_handler(ctl, write, buffer, lenp, ppos, NSS_CORE_1);
@@ -1740,9 +1740,7 @@ static struct ctl_table nss_n2h_table_single_core[] = {
 		.maxlen			= sizeof(int),
 		.mode			= 0644,
 		.proc_handler	= &nss_n2h_get_qos_mem_size_cfg_handler,
-	},
-
-	{ }
+	}
 };
 
 static struct ctl_table nss_n2h_table_multi_core[] = {
@@ -1900,8 +1898,7 @@ static struct ctl_table nss_n2h_table_multi_core[] = {
 		.maxlen			= sizeof(int),
 		.mode			= 0644,
 		.proc_handler	= &nss_n2h_get_qos_mem_size_cfg_handler,
-	},
-	{ }
+	}
 };
 
 static struct ctl_table_header *nss_n2h_header;

@@ -2,7 +2,7 @@
  **************************************************************************
  * Copyright (c) 2017-2020, The Linux Foundation. All rights reserved.
  *
- * Copyright (c) 2023, Qualcomm Innovation Center, Inc. All rights reserved
+ * Copyright (c) 2023-2024, Qualcomm Innovation Center, Inc. All rights reserved
  *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
@@ -76,8 +76,7 @@ static void nss_dp_get_strings(struct net_device *netdev, uint32_t stringset,
 
 	if (stringset == ETH_SS_PRIV_FLAGS) {
 		for (i = 0; i < NSS_DP_MAX_ETHTOOL_PRIV_FLAGS; i++) {
-			memcpy(data + (i * ETH_GSTRING_LEN),
-					nss_dp_priv_flg_str[i], ETH_GSTRING_LEN);
+			ethtool_puts(&data, nss_dp_priv_flg_str[i]);
 		}
 	}
 }
@@ -248,11 +247,15 @@ static inline void nss_dp_fal_to_ethtool_linkmode_xlate(uint32_t *xlate_to, uint
  * nss_dp_get_eee()
  *	Get EEE settings.
  */
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(6, 8, 0))
+static int32_t nss_dp_get_eee(struct net_device *netdev, struct ethtool_keee *eee)
+#else
 static int32_t nss_dp_get_eee(struct net_device *netdev, struct ethtool_eee *eee)
+#endif
 {
 	struct nss_dp_dev *dp_priv = (struct nss_dp_dev *)netdev_priv(netdev);
 	fal_port_eee_cfg_t port_eee_cfg;
-	uint32_t port_id;
+	uint32_t port_id, supported, advertised, lp_advertised;
 	sw_error_t ret;
 
 	memset(&port_eee_cfg, 0, sizeof(fal_port_eee_cfg_t));
@@ -266,9 +269,20 @@ static int32_t nss_dp_get_eee(struct net_device *netdev, struct ethtool_eee *eee
 	/*
 	 * Translate the FAL linkmode types to ethtool linkmode types.
 	 */
-	nss_dp_fal_to_ethtool_linkmode_xlate(&eee->supported, &port_eee_cfg.capability);
-	nss_dp_fal_to_ethtool_linkmode_xlate(&eee->advertised, &port_eee_cfg.advertisement);
-	nss_dp_fal_to_ethtool_linkmode_xlate(&eee->lp_advertised, &port_eee_cfg.link_partner_advertisement);
+	nss_dp_fal_to_ethtool_linkmode_xlate(&supported, &port_eee_cfg.capability);
+	nss_dp_fal_to_ethtool_linkmode_xlate(&advertised, &port_eee_cfg.advertisement);
+	nss_dp_fal_to_ethtool_linkmode_xlate(&lp_advertised, &port_eee_cfg.link_partner_advertisement);
+
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(6, 8, 0))
+	ethtool_convert_legacy_u32_to_link_mode(eee->supported, supported);
+	ethtool_convert_legacy_u32_to_link_mode(eee->advertised, advertised);
+	ethtool_convert_legacy_u32_to_link_mode(eee->lp_advertised, lp_advertised);
+#else
+	eee->supported = supported;
+	eee->advertised = advertised;
+	eee->lp_advertised = lp_advertised;
+#endif
+
 	eee->eee_enabled = port_eee_cfg.enable;
 	eee->eee_active = port_eee_cfg.eee_status;
 	eee->tx_lpi_enabled = port_eee_cfg.lpi_tx_enable;
@@ -281,11 +295,15 @@ static int32_t nss_dp_get_eee(struct net_device *netdev, struct ethtool_eee *eee
  * nss_dp_set_eee()
  *	Set EEE settings.
  */
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(6, 8, 0))
+static int32_t nss_dp_set_eee(struct net_device *netdev, struct ethtool_keee *eee)
+#else
 static int32_t nss_dp_set_eee(struct net_device *netdev, struct ethtool_eee *eee)
+#endif
 {
 	struct nss_dp_dev *dp_priv = (struct nss_dp_dev *)netdev_priv(netdev);
 	fal_port_eee_cfg_t port_eee_cfg, port_eee_cur_cfg;
-	uint32_t port_id, pos;
+	uint32_t port_id, pos, advertised;
 	sw_error_t ret;
 
 	memset(&port_eee_cfg, 0, sizeof(fal_port_eee_cfg_t));
@@ -303,11 +321,17 @@ static int32_t nss_dp_set_eee(struct net_device *netdev, struct ethtool_eee *eee
 
 	port_eee_cfg.enable = eee->eee_enabled;
 
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(6, 8, 0))
+	ethtool_convert_link_mode_to_legacy_u32(&advertised, eee->advertised);
+#else
+	advertised = eee->advertised;
+#endif
+
 	/*
 	 * Translate the ethtool speed types to FAL speed types.
 	 */
-	while (eee->advertised) {
-		pos = ffs(eee->advertised);
+	while (advertised) {
+		pos = ffs(advertised);
 		switch (1 << (pos - 1)) {
 		case ADVERTISED_10baseT_Full:
 			if (port_eee_cur_cfg.capability & FAL_PHY_EEE_10BASE_T) {
@@ -359,8 +383,14 @@ static int32_t nss_dp_set_eee(struct net_device *netdev, struct ethtool_eee *eee
 			return -EIO;
 		}
 
-		eee->advertised &= (~(1 << (pos - 1)));
+		advertised &= (~(1 << (pos - 1)));
 	}
+
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(6, 8, 0))
+	ethtool_convert_legacy_u32_to_link_mode(eee->advertised, advertised);
+#else
+	eee->advertised = advertised;
+#endif
 
 	port_eee_cfg.lpi_tx_enable = eee->tx_lpi_enabled;
 	port_eee_cfg.lpi_sleep_timer = eee->tx_lpi_timer;
@@ -401,7 +431,6 @@ static int nss_dp_get_ethtool_link_ksetting(struct net_device *dev, struct ethto
 	uint32_t port_id;
 	sw_error_t ret;
 	fal_port_duplex_t duplex = FAL_FULL_DUPLEX;
-	a_bool_t autoneg;
 
         __ETHTOOL_DECLARE_LINK_MODE_MASK(supported) = { 0, };
 
@@ -422,12 +451,6 @@ static int nss_dp_get_ethtool_link_ksetting(struct net_device *dev, struct ethto
 	ret = fal_port_duplex_get(NSS_DP_ACL_DEV_ID, port_id, &duplex);
 	if (ret != SW_OK) {
 		netdev_warn(dev, "Failed to get duplex for ethernet device\n");
-		return -ENODEV;
-	}
-
-	ret = fal_port_autoneg_status_get(NSS_DP_ACL_DEV_ID, port_id, &autoneg);
-	if (ret != SW_OK) {
-		netdev_warn(dev, "Failed to get autoneg for ethernet device\n");
 		return -ENODEV;
 	}
 
@@ -460,7 +483,7 @@ static int nss_dp_get_ethtool_link_ksetting(struct net_device *dev, struct ethto
 	cmd->base.port = PORT_MII;
 	cmd->base.speed = dp_priv->fixed_link_speed;
 	cmd->base.duplex = duplex;
-	cmd->base.autoneg = autoneg;
+	cmd->base.autoneg = false;
 
 	return 0;
 }

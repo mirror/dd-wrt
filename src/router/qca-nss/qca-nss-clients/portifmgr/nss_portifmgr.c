@@ -266,7 +266,7 @@ struct net_device *nss_portifmgr_create_if(int port_id, int gmac_id, const char 
 	ndev->vlan_features |= NSS_PORTIFMGR_SUPPORTED_FEATURES;
 	ndev->wanted_features |= NSS_PORTIFMGR_SUPPORTED_FEATURES;
 	ndev->mtu = real_dev->mtu - NSS_PORTIFMGR_EXTRA_HEADER_SIZE;
-	strlcpy(ndev->name, name, IFNAMSIZ);
+	strscpy(ndev->name, name, IFNAMSIZ);
 
 	/*
 	 * Setup temp mac address, this can be changed with ifconfig later

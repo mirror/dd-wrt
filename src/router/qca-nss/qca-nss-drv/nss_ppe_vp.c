@@ -215,7 +215,7 @@ static void nss_ppe_vp_callback(void *app_data, struct nss_ppe_vp_msg *npvm)
  * Since ath0 has only one type i.e. ath0 is NSS_DYNAMIC_INTERFACE_TYPE_VAP, the above command can be rewritten as
  * echo ath0 > /proc/sys/nss/ppe_vp/create => Here 6 can be ignored.
  */
-static nss_if_num_t nss_ppe_vp_parse_vp_cmd(struct ctl_table *ctl, int write, void __user *buffer, size_t *lenp, loff_t *ppos)
+static nss_if_num_t nss_ppe_vp_parse_vp_cmd(compat_const struct ctl_table *ctl, int write, void __user *buffer, size_t *lenp, loff_t *ppos)
 {
 	int32_t if_num;
 	struct net_device *dev;
@@ -693,7 +693,7 @@ static void nss_ppe_vp_handler(struct nss_ctx_instance *nss_ctx, struct nss_cmn_
  * nss_ppe_vp_destroy_handler()
  *	PPE VP destroy handler.
  */
-static int nss_ppe_vp_destroy_handler(struct ctl_table *ctl, int write, void __user *buffer, size_t *lenp, loff_t *ppos)
+static int nss_ppe_vp_destroy_handler(compat_const struct ctl_table *ctl, int write, void __user *buffer, size_t *lenp, loff_t *ppos)
 {
 	struct nss_ctx_instance *nss_ctx = nss_ppe_vp_get_context();
 	int32_t if_num;
@@ -730,7 +730,7 @@ static int nss_ppe_vp_destroy_handler(struct ctl_table *ctl, int write, void __u
  * nss_ppe_vp_create_handler()
  *	PPE VP create handler.
  */
-static int nss_ppe_vp_create_handler(struct ctl_table *ctl, int write, void __user *buffer, size_t *lenp, loff_t *ppos)
+static int nss_ppe_vp_create_handler(compat_const struct ctl_table *ctl, int write, void __user *buffer, size_t *lenp, loff_t *ppos)
 {
 	int32_t if_num;
 	struct nss_ctx_instance *nss_ctx = nss_ppe_vp_get_context();
@@ -779,8 +779,7 @@ static struct ctl_table nss_ppe_vp_table[] = {
 		.maxlen         = sizeof(nss_ppe_vp_cmd),
 		.mode           = 0644,
 		.proc_handler   = &nss_ppe_vp_destroy_handler,
-	},
-	{ }
+	}
 };
 
 static struct ctl_table_header *nss_ppe_vp_procfs_header;
