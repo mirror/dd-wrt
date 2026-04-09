@@ -18,6 +18,7 @@
 
 #define DEBUG_LEVEL HYFI_MC_DEBUG_LEVEL
 
+#include <linux/version.h>
 #include <linux/kernel.h>
 #include <linux/etherdevice.h>
 #include "hyfi_api.h"

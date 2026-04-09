@@ -19,6 +19,7 @@
 
 #define DEBUG_LEVEL HYFI_NF_DEBUG_LEVEL
 
+#include <linux/version.h>
 #include <linux/kernel.h>
 #include <linux/init.h>
 #include <linux/rculist.h>

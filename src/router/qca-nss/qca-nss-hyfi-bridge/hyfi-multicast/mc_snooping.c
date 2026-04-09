@@ -8,6 +8,7 @@
 
 #define DEBUG_LEVEL HYFI_MC_DEBUG_LEVEL
 
+#include <linux/version.h>
 #include <linux/kernel.h>
 #include <linux/init.h>
 #include <linux/spinlock.h>
