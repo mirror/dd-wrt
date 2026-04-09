@@ -361,6 +361,8 @@ struct nvram_param srouter_defaults[] = {
 	{ "wan_netmask", "0.0.0.0" },	/* WAN netmask */
 	{ "wan_gateway", "0.0.0.0" },	/* WAN gateway */
 	{ "wan_dns", "" },	/* x.x.x.x x.x.x.x ... */
+#elif HAVE_RUCKUSR500
+	{ "wan_proto", "disabled" },	/* [static|dhcp|pppoe|disabled] */
 #elif HAVE_SANSFIL
 	{ "wan_proto", "disabled" },	/* [static|dhcp|pppoe|disabled] */
 #elif HAVE_ANTAIRA
