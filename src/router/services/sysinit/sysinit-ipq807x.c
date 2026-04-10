@@ -971,6 +971,16 @@ void start_sysinit(void)
 			for (i = 0; i < fwlen; i++)
 				putc(getc(fp), out);
 			fclose(out);
+
+			fseek(fp, 0x26800, SEEK_SET);
+			out = fopen("/tmp/cal-pci-0000:01:00.0.bin", "wb");
+			for (i = 0; i < fwlen; i++)
+				putc(getc(fp), out);
+			fclose(out);
+			out = fopen("/tmp/board2.bin", "wb");
+			for (i = 0; i < fwlen; i++)
+				putc(getc(fp), out);
+			fclose(out);
 			break;
 		}
 		case ROUTER_LINKSYS_MR7500: {
