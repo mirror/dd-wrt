@@ -80,7 +80,7 @@ int _nvram_read(void *_buf)
 		if (nvram_off == -1) {
 			nvram_off = nvram_mtd->size - NVRAM_SPACE_OLD;
 			if (nvram_mtd->size > NVRAM_SPACE_OLD) {
-				for (i = 0; i < nvram_mtd->size; i += 0x1000) {
+				for (i = 0; i < nvram_mtd->size; i += nvram_mtd->erasesize) {
 					mtd_read(nvram_mtd, i, NVRAM_SPACE_OLD,
 						 &len, buf);
 					if (header->magic == NVRAM_MAGIC) {
