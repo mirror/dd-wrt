@@ -9,7 +9,6 @@
 		switch: ess-switch@39c00000 {
 			compatible = "qcom,ess-switch-ipq50xx";
 			device_id = <0>;
-			cmnblk_clk = "internal_96MHz";
 			reg = <0x39c00000 0x200000>;
 			switch_access_mode = "local bus";
 			clocks = <&gcc GCC_CMN_BLK_AHB_CLK>,
@@ -56,33 +55,35 @@
 				      "gcc_snoc_gmac1_ahb_clk",
 				      "gcc_gmac0_ptp_clk",
 				      "gcc_gmac1_ptp_clk";
-			resets = <&gcc GCC_GMAC0_BCR>,
-				 <&gcc GCC_GMAC1_BCR>,
+			resets = <&gcc GCC_GEPHY_BCR>,
 				 <&gcc GCC_UNIPHY_BCR>,
-				 <&gcc GCC_UNIPHY_AHB_ARES>,
-				 <&gcc GCC_UNIPHY_SOFT_RESET>;
-			reset-names = "gmac0_bcr_rst",
-				      "gmac1_bcr_rst",
+				 <&gcc GCC_GMAC0_BCR>,
+				 <&gcc GCC_GMAC1_BCR>,
+				 <&gcc GCC_UNIPHY_SOFT_RESET>,
+				 <&gcc GCC_GEPHY_MISC_ARES>;
+			reset-names = "gephy_bcr_rst",
 				      "uniphy_bcr_rst",
-				      "uniphy1_ahb_rst",
-				      "uniphy1_soft_rst";
+				      "gmac0_bcr_rst",
+				      "gmac1_bcr_rst",
+				      "uniphy1_soft_rst",
+				      "gephy_misc_rst";
 
 			status = "disabled";
 		};
+
+		ess-uniphy@98000 {
+			compatible = "qcom,ess-uniphy";
+			reg = <0x98000 0x800>;
+			uniphy_access_mode = "local bus";
+		};
+
+		nss-dp-common {
+			compatible = "qcom,nss-dp-common";
+			qcom,tcsr-base = <0x01937000>;
+		};
 	};
 
-	ess-uniphy@98000 {
-		compatible = "qcom,ess-uniphy";
-		reg = <0x98000 0x800>;
-		uniphy_access_mode = "local bus";
-	};
-
-	nss-dp-common {
-		compatible = "qcom,nss-dp-common";
-		qcom,tcsr-base = <0x01937000>;
-	};
-
-	dp1: dp1 {
+	dp2: dp2 {
 		device_type = "network";
 		compatible = "qcom,nss-dp";
 		qcom,id = <1>;
@@ -100,10 +101,31 @@
 		status = "disabled";
 	};
 
+		dp1: dp1 {
+			device_type = "network";
+			compatible = "qcom,nss-dp";
+			clocks = <&gcc GCC_SNOC_GMAC1_AXI_CLK>;
+			clock-names = "nss-snoc-gmac-axi-clk";
+			qcom,id = <2>;
+			reg = <0x39D00000 0x10000>;
+			interrupts = <GIC_SPI 109 IRQ_TYPE_LEVEL_HIGH>;
+			qcom,mactype = <2>;
+			local-mac-address = [000000000000];
+			phy-mode = "sgmii";
+			qcom,rx-page-mode = <0>;
+
+			fixed-link {
+				speed = <1000>;
+				full-duplex;
+			};
+		};
+
+#if 0
 	dp2: dp2 {
 		device_type = "network";
 		compatible = "qcom,nss-dp";
 		qcom,id = <2>;
+		
 
 		reg = <0x39D00000 0x10000>;
 		interrupts = <GIC_SPI 109 IRQ_TYPE_LEVEL_HIGH>;
@@ -115,4 +137,5 @@
 		phy-mode = "sgmii";
 		status = "disabled";
 	};
+#endif
 };

@@ -33,11 +33,11 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 
-		cpu0: cpu@0 {
+		CPU0: cpu@0 {
 			device_type = "cpu";
 			compatible = "arm,cortex-a53";
 			reg = <0x0>;
-			next-level-cache = <&l2_0>;
+			next-level-cache = <&L2_0>;
 			enable-method = "psci";
 			clocks = <&apcs_glb APCS_ALIAS0_CORE_CLK>;
 			clock-names = "cpu";
@@ -45,43 +45,43 @@
 			operating-points-v2 = <&cpu_opp_table>;
 		};
 
-		cpu1: cpu@1 {
+		CPU1: cpu@1 {
 			device_type = "cpu";
 			compatible = "arm,cortex-a53";
 			enable-method = "psci";
 			reg = <0x1>;
-			next-level-cache = <&l2_0>;
+			next-level-cache = <&L2_0>;
 			clocks = <&apcs_glb APCS_ALIAS0_CORE_CLK>;
 			clock-names = "cpu";
 			#cooling-cells = <2>;
 			operating-points-v2 = <&cpu_opp_table>;
 		};
 
-		cpu2: cpu@2 {
+		CPU2: cpu@2 {
 			device_type = "cpu";
 			compatible = "arm,cortex-a53";
 			enable-method = "psci";
 			reg = <0x2>;
-			next-level-cache = <&l2_0>;
+			next-level-cache = <&L2_0>;
 			clocks = <&apcs_glb APCS_ALIAS0_CORE_CLK>;
 			clock-names = "cpu";
 			#cooling-cells = <2>;
 			operating-points-v2 = <&cpu_opp_table>;
 		};
 
-		cpu3: cpu@3 {
+		CPU3: cpu@3 {
 			device_type = "cpu";
 			compatible = "arm,cortex-a53";
 			enable-method = "psci";
 			reg = <0x3>;
-			next-level-cache = <&l2_0>;
+			next-level-cache = <&L2_0>;
 			clocks = <&apcs_glb APCS_ALIAS0_CORE_CLK>;
 			clock-names = "cpu";
 			#cooling-cells = <2>;
 			operating-points-v2 = <&cpu_opp_table>;
 		};
 
-		l2_0: l2-cache {
+		L2_0: l2-cache {
 			compatible = "cache";
 			cache-level = <2>;
 			cache-unified;
@@ -110,28 +110,28 @@
 		opp-1651200000 {
 			opp-hz = /bits/ 64 <1651200000>;
 			opp-microvolt = <3>;
-			opp-supported-hw = <0x1>;
+			opp-supported-hw = <0xf>;
 			clock-latency-ns = <200000>;
 		};
 
 		opp-1843200000 {
 			opp-hz = /bits/ 64 <1843200000>;
 			opp-microvolt = <4>;
-			opp-supported-hw = <0x1>;
+			opp-supported-hw = <0xf>;
 			clock-latency-ns = <200000>;
 		};
 
 		opp-1920000000 {
 			opp-hz = /bits/ 64 <1920000000>;
 			opp-microvolt = <5>;
-			opp-supported-hw = <0x1>;
+			opp-supported-hw = <0xf>;
 			clock-latency-ns = <200000>;
 		};
 
 		opp-2208000000 {
 			opp-hz = /bits/ 64 <2208000000>;
 			opp-microvolt = <6>;
-			opp-supported-hw = <0x1>;
+			opp-supported-hw = <0xf>;
 			clock-latency-ns = <200000>;
 		};
 	};
@@ -146,12 +146,12 @@
 		method = "smc";
 	};
 
-	reserved-memory {
+	reserved_memory: reserved-memory {
 		#address-cells = <2>;
 		#size-cells = <2>;
 		ranges;
 
-		nss_region: memory@40000000 {
+		nss_region: nss@40000000 {
 			no-map;
 			reg = <0x0 0x40000000 0x0 0x01000000>;
 		};
@@ -198,13 +198,6 @@
 			no-map;
 			reg = <0x0 0x51000000 0x0 0x100000>;
 		};
-
-		ramoops_region: ramoops@51200000 {
-			compatible = "ramoops";
-			reg = <0x0 0x51200000 0x0 0x100000>;
-			no-map;
-			record-size = <0x1000>;
-		};
 	};
 
 	firmware {
@@ -248,26 +241,32 @@
 
 		ssphy_1: phy@58000 {
 			compatible = "qcom,ipq8074-qmp-usb3-phy";
-			reg = <0x00058000 0x1000>;
+			reg = <0x00058000 0x1c4>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges;
 
 			clocks = <&gcc GCC_USB1_AUX_CLK>,
-				 <&xo>,
-				 <&gcc GCC_USB1_PHY_CFG_AHB_CLK>,
-				 <&gcc GCC_USB1_PIPE_CLK>;
-			clock-names = "aux",
-				      "ref",
-				      "cfg_ahb",
-				      "pipe";
-			clock-output-names = "usb3phy_1_cc_pipe_clk";
-			#clock-cells = <0>;
-			#phy-cells = <0>;
+				<&gcc GCC_USB1_PHY_CFG_AHB_CLK>,
+				<&xo>;
+			clock-names = "aux", "cfg_ahb", "ref";
 
 			resets = <&gcc GCC_USB1_PHY_BCR>,
-				 <&gcc GCC_USB3PHY_1_PHY_BCR>;
-			reset-names = "phy",
-				      "phy_phy";
-
+				<&gcc GCC_USB3PHY_1_PHY_BCR>;
+			reset-names = "phy","common";
 			status = "disabled";
+
+			usb1_ssphy: phy@58200 {
+				reg = <0x00058200 0x130>,     /* Tx */
+				      <0x00058400 0x200>,     /* Rx */
+				      <0x00058800 0x1f8>,     /* PCS */
+				      <0x00058600 0x044>;     /* PCS misc */
+				#phy-cells = <0>;
+				#clock-cells = <0>;
+				clocks = <&gcc GCC_USB1_PIPE_CLK>;
+				clock-names = "pipe0";
+				clock-output-names = "usb3phy_1_cc_pipe_clk";
+			};
 		};
 
 		qusb_phy_1: phy@59000 {
@@ -285,26 +284,32 @@
 
 		ssphy_0: phy@78000 {
 			compatible = "qcom,ipq8074-qmp-usb3-phy";
-			reg = <0x00078000 0x1000>;
+			reg = <0x00078000 0x1c4>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges;
 
 			clocks = <&gcc GCC_USB0_AUX_CLK>,
-				 <&xo>,
-				 <&gcc GCC_USB0_PHY_CFG_AHB_CLK>,
-				 <&gcc GCC_USB0_PIPE_CLK>;
-			clock-names = "aux",
-				      "ref",
-				      "cfg_ahb",
-				      "pipe";
-			clock-output-names = "usb3phy_0_cc_pipe_clk";
-			#clock-cells = <0>;
-			#phy-cells = <0>;
+				<&gcc GCC_USB0_PHY_CFG_AHB_CLK>,
+				<&xo>;
+			clock-names = "aux", "cfg_ahb", "ref";
 
 			resets = <&gcc GCC_USB0_PHY_BCR>,
-				 <&gcc GCC_USB3PHY_0_PHY_BCR>;
-			reset-names = "phy",
-				      "phy_phy";
-
+				<&gcc GCC_USB3PHY_0_PHY_BCR>;
+			reset-names = "phy","common";
 			status = "disabled";
+
+			usb0_ssphy: phy@78200 {
+				reg = <0x00078200 0x130>,     /* Tx */
+				      <0x00078400 0x200>,     /* Rx */
+				      <0x00078800 0x1f8>,     /* PCS */
+				      <0x00078600 0x044>;     /* PCS misc */
+				#phy-cells = <0>;
+				#clock-cells = <0>;
+				clocks = <&gcc GCC_USB0_PIPE_CLK>;
+				clock-names = "pipe0";
+				clock-output-names = "usb3phy_0_cc_pipe_clk";
+			};
 		};
 
 		qusb_phy_0: phy@79000 {
@@ -322,48 +327,59 @@
 
 		pcie_qmp0: phy@84000 {
 			compatible = "qcom,ipq8074-qmp-gen3-pcie-phy";
-			reg = <0x00084000 0x1000>;
+			reg = <0x00084000 0x1bc>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges;
 
 			clocks = <&gcc GCC_PCIE0_AUX_CLK>,
-				 <&gcc GCC_PCIE0_AHB_CLK>,
-				 <&gcc GCC_PCIE0_PIPE_CLK>;
-			clock-names = "aux",
-				      "cfg_ahb",
-				      "pipe";
-
-			clock-output-names = "pcie20_phy0_pipe_clk";
-			#clock-cells = <0>;
-
-			#phy-cells = <0>;
-
+				<&gcc GCC_PCIE0_AHB_CLK>;
+			clock-names = "aux", "cfg_ahb";
 			resets = <&gcc GCC_PCIE0_PHY_BCR>,
-				 <&gcc GCC_PCIE0PHY_PHY_BCR>;
+				<&gcc GCC_PCIE0PHY_PHY_BCR>;
 			reset-names = "phy",
 				      "common";
 			status = "disabled";
+
+			pcie_phy0: phy@84200 {
+				reg = <0x84200 0x16c>,
+				      <0x84400 0x200>,
+				      <0x84800 0x1f0>,
+				      <0x84c00 0xf4>;
+				#phy-cells = <0>;
+				#clock-cells = <0>;
+				clocks = <&gcc GCC_PCIE0_PIPE_CLK>;
+				clock-names = "pipe0";
+				clock-output-names = "pcie20_phy0_pipe_clk";
+			};
 		};
 
 		pcie_qmp1: phy@8e000 {
 			compatible = "qcom,ipq8074-qmp-pcie-phy";
-			reg = <0x0008e000 0x1000>;
+			reg = <0x0008e000 0x1c4>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges;
 
 			clocks = <&gcc GCC_PCIE1_AUX_CLK>,
-				 <&gcc GCC_PCIE1_AHB_CLK>,
-				 <&gcc GCC_PCIE1_PIPE_CLK>;
-			clock-names = "aux",
-				      "cfg_ahb",
-				      "pipe";
-
-			clock-output-names = "pcie20_phy1_pipe_clk";
-			#clock-cells = <0>;
-
-			#phy-cells = <0>;
-
+				<&gcc GCC_PCIE1_AHB_CLK>;
+			clock-names = "aux", "cfg_ahb";
 			resets = <&gcc GCC_PCIE1_PHY_BCR>,
-				 <&gcc GCC_PCIE1PHY_PHY_BCR>;
+				<&gcc GCC_PCIE1PHY_PHY_BCR>;
 			reset-names = "phy",
 				      "common";
 			status = "disabled";
+
+			pcie_phy1: phy@8e200 {
+				reg = <0x8e200 0x130>,
+				      <0x8e400 0x200>,
+				      <0x8e800 0x1f8>;
+				#phy-cells = <0>;
+				#clock-cells = <0>;
+				clocks = <&gcc GCC_PCIE1_PIPE_CLK>;
+				clock-names = "pipe0";
+				clock-output-names = "pcie20_phy1_pipe_clk";
+			};
 		};
 
 		mdio: mdio@90000 {
@@ -546,13 +562,6 @@
 				bias-disable;
 			};
 
-			serial_5_pins: serial5-state {
-				pins = "gpio9", "gpio16";
-				function = "blsp5_uart";
-				drive-strength = <8>;
-				bias-disable;
-			};
-
 			i2c_0_pins: i2c-0-state {
 				pins = "gpio42", "gpio43";
 				function = "blsp1_i2c";
@@ -586,17 +595,11 @@
 			};
 		};
 
-		gcc: clock-controller@1800000 {
+		gcc: gcc@1800000 {
 			compatible = "qcom,gcc-ipq8074";
 			reg = <0x01800000 0x80000>;
-			clocks = <&xo>,
-				 <&sleep_clk>,
-				 <&pcie_qmp0>,
-				 <&pcie_qmp1>;
-			clock-names = "xo",
-				      "sleep_clk",
-				      "pcie0_pipe",
-				      "pcie1_pipe";
+			clocks = <&xo>, <&sleep_clk>, <&pcie_phy0>, <&pcie_phy1>;
+			clock-names = "xo", "sleep_clk", "pcie0_pipe", "pcie1_pipe";
 			#clock-cells = <1>;
 			#power-domain-cells = <1>;
 			#reset-cells = <1>;
@@ -637,7 +640,7 @@
 		};
 
 		sdhc_1: mmc@7824900 {
-			compatible = "qcom,ipq8074-sdhci", "qcom,sdhci-msm-v4";
+			compatible = "qcom,sdhci-msm-v4";
 			reg = <0x7824900 0x500>, <0x7824000 0x800>;
 			reg-names = "hc", "core";
 
@@ -702,18 +705,6 @@
 				 <&gcc GCC_BLSP1_AHB_CLK>;
 			clock-names = "core", "iface";
 			pinctrl-0 = <&serial_4_pins>;
-			pinctrl-names = "default";
-			status = "disabled";
-		};
-
-		blsp1_uart6: serial@78b4000 {
-			compatible = "qcom,msm-uartdm-v1.4", "qcom,msm-uartdm";
-			reg = <0x078b4000 0x200>;
-			interrupts = <GIC_SPI 309 IRQ_TYPE_LEVEL_HIGH>;
-			clocks = <&gcc GCC_BLSP1_UART6_APPS_CLK>,
-				 <&gcc GCC_BLSP1_AHB_CLK>;
-			clock-names = "core", "iface";
-			pinctrl-0 = <&serial_5_pins>;
 			pinctrl-names = "default";
 			status = "disabled";
 		};
@@ -892,7 +883,7 @@
 				compatible = "snps,dwc3";
 				reg = <0x8a00000 0xcd00>;
 				interrupts = <GIC_SPI 140 IRQ_TYPE_LEVEL_HIGH>;
-				phys = <&qusb_phy_0>, <&ssphy_0>;
+				phys = <&qusb_phy_0>, <&usb0_ssphy>;
 				phy-names = "usb2-phy", "usb3-phy";
 				snps,parkmode-disable-ss-quirk;
 				snps,is-utmi-l1-suspend;
@@ -942,7 +933,7 @@
 				compatible = "snps,dwc3";
 				reg = <0x8c00000 0xcd00>;
 				interrupts = <GIC_SPI 99 IRQ_TYPE_LEVEL_HIGH>;
-				phys = <&qusb_phy_1>, <&ssphy_1>;
+				phys = <&qusb_phy_1>, <&usb1_ssphy>;
 				phy-names = "usb2-phy", "usb3-phy";
 				snps,parkmode-disable-ss-quirk;
 				snps,is-utmi-l1-suspend;
@@ -1068,8 +1059,9 @@
 			max-link-speed = <2>;
 			#address-cells = <3>;
 			#size-cells = <2>;
+			axi-halt-val = <0x1e>; /* increase halt window size to 1GB */
 
-			phys = <&pcie_qmp1>;
+			phys = <&pcie_phy1>;
 			phy-names = "pciephy";
 
 			ranges = <0x81000000 0x0 0x00000000 0x10200000 0x0 0x10000>,   /* I/O */
@@ -1112,16 +1104,6 @@
 				      "ahb",
 				      "axi_m_sticky";
 			status = "disabled";
-
-			pcie@0 {
-				device_type = "pci";
-				reg = <0x0 0x0 0x0 0x0 0x0>;
-				bus-range = <0x01 0xff>;
-
-				#address-cells = <3>;
-				#size-cells = <2>;
-				ranges;
-			};
 		};
 
 		pcie0: pcie@20000000 {
@@ -1140,7 +1122,7 @@
 			#address-cells = <3>;
 			#size-cells = <2>;
 
-			phys = <&pcie_qmp0>;
+			phys = <&pcie_phy0>;
 			phy-names = "pciephy";
 
 			ranges = <0x81000000 0x0 0x00000000 0x20200000 0x0 0x10000>,   /* I/O */
@@ -1186,16 +1168,6 @@
 				      "axi_m_sticky",
 				      "axi_s_sticky";
 			status = "disabled";
-
-			pcie@0 {
-				device_type = "pci";
-				reg = <0x0 0x0 0x0 0x0 0x0>;
-				bus-range = <0x01 0xff>;
-
-				#address-cells = <3>;
-				#size-cells = <2>;
-				ranges;
-			};
 		};
 
 		q6v5_wcss: q6v5_wcss@cd00000 {
@@ -1325,7 +1297,7 @@
 					  "host2rxdma-monitor-ring3",
 					  "host2rxdma-monitor-ring2",
 					  "host2rxdma-monitor-ring1",
-					  "reo2ost-exception",
+					  "reo2host-exception",
 					  "wbm2host-rx-release",
 					  "reo2host-status",
 					  "reo2host-destination-ring4",
@@ -1371,6 +1343,7 @@
 	thermal-zones {
 		nss-top-thermal {
 			polling-delay-passive = <250>;
+			polling-delay = <1000>;
 
 			thermal-sensors = <&tsens 4>;
 
@@ -1385,6 +1358,7 @@
 
 		nss0-thermal {
 			polling-delay-passive = <250>;
+			polling-delay = <1000>;
 
 			thermal-sensors = <&tsens 5>;
 
@@ -1399,6 +1373,7 @@
 
 		nss1-thermal {
 			polling-delay-passive = <250>;
+			polling-delay = <1000>;
 
 			thermal-sensors = <&tsens 6>;
 
@@ -1413,6 +1388,7 @@
 
 		wcss-phya0-thermal {
 			polling-delay-passive = <250>;
+			polling-delay = <1000>;
 
 			thermal-sensors = <&tsens 7>;
 
@@ -1427,6 +1403,7 @@
 
 		wcss-phya1-thermal {
 			polling-delay-passive = <250>;
+			polling-delay = <1000>;
 
 			thermal-sensors = <&tsens 8>;
 
@@ -1441,6 +1418,7 @@
 
 		cpu0_thermal: cpu0-thermal {
 			polling-delay-passive = <250>;
+			polling-delay = <1000>;
 
 			thermal-sensors = <&tsens 9>;
 
@@ -1455,6 +1433,7 @@
 
 		cpu1_thermal: cpu1-thermal {
 			polling-delay-passive = <250>;
+			polling-delay = <1000>;
 
 			thermal-sensors = <&tsens 10>;
 
@@ -1469,6 +1448,7 @@
 
 		cpu2_thermal: cpu2-thermal {
 			polling-delay-passive = <250>;
+			polling-delay = <1000>;
 
 			thermal-sensors = <&tsens 11>;
 
@@ -1483,6 +1463,7 @@
 
 		cpu3_thermal: cpu3-thermal {
 			polling-delay-passive = <250>;
+			polling-delay = <1000>;
 
 			thermal-sensors = <&tsens 12>;
 
@@ -1497,6 +1478,7 @@
 
 		cluster_thermal: cluster-thermal {
 			polling-delay-passive = <250>;
+			polling-delay = <1000>;
 
 			thermal-sensors = <&tsens 13>;
 
@@ -1511,6 +1493,7 @@
 
 		wcss-phyb0-thermal {
 			polling-delay-passive = <250>;
+			polling-delay = <1000>;
 
 			thermal-sensors = <&tsens 14>;
 
@@ -1525,6 +1508,7 @@
 
 		wcss-phyb1-thermal {
 			polling-delay-passive = <250>;
+			polling-delay = <1000>;
 
 			thermal-sensors = <&tsens 15>;
 

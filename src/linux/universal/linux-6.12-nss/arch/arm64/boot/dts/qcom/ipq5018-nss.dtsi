@@ -72,6 +72,11 @@
 		qcom,udp-st-enabled;
 	};
 
+		nss-dp-common {
+			compatible = "qcom,nss-dp-common";
+			qcom,tcsr-base = <0x01937000>;
+		};
+
 	nss_crypto: qcom,nss_crypto {
 		compatible = "qcom,nss-crypto";
 		#address-cells = <1>;
@@ -115,7 +120,7 @@
 	};
 };
 
-&wifi0 {
+/*&wifi0 {
 	// IPQ5018
 	nss-radio-priority = <0>;
 };
@@ -129,3 +134,4 @@
 	// QCN6122 5G/6G
 	nss-radio-priority = <1>;
 };
+*/

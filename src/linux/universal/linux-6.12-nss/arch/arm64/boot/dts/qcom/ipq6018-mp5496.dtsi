@@ -6,19 +6,19 @@
 
 #include "ipq6018.dtsi"
 
-&cpu0 {
+&CPU0 {
 	cpu-supply = <&mp5496_s2>;
 };
 
-&cpu1 {
+&CPU1 {
 	cpu-supply = <&mp5496_s2>;
 };
 
-&cpu2 {
+&CPU2 {
 	cpu-supply = <&mp5496_s2>;
 };
 
-&cpu3 {
+&CPU3 {
 	cpu-supply = <&mp5496_s2>;
 };
 
