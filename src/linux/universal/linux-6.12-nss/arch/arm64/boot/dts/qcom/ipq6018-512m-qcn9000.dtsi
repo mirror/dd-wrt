@@ -1,0 +1,35 @@
+// SPDX-License-Identifier: GPL-2.0-only
+
+#include "ipq6018.dtsi"
+
+&q6_region {
+	reg = <0x0 0x4ab00000 0x0 0x03700000>;
+	no-map;
+};
+
+&q6_etr_region {
+	reg = <0x0 0x4e200000 0x0 0x100000>;
+	no-map;
+};
+
+&m3_dump_region {
+	reg = <0x0 0x4e300000 0x0 0x100000>;
+	no-map;
+};
+
+&wifi {
+	qcom,ath11k-fw-memory-mode = <1>;
+};
+
+&reserved_memory {
+		qcn9000_pcie0: qcn9000_pcie0@4e400000 {
+			no-map;
+			reg = <0x0 0x4E400000 0x0 0x1A00000>;
+		};
+
+		mhi_region0: dma_pool0@4FE00000 {
+			compatible = "shared-dma-pool";
+			no-map;
+			reg = <0x0 0x4FE00000 0x0 0x00900000>;
+		};
+};

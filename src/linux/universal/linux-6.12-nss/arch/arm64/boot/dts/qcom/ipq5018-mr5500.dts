@@ -1,0 +1,389 @@
+/dts-v1/;
+
+#include "ipq5018.dtsi"
+#include "ipq5018-mx-base.dtsi"
+#include <dt-bindings/phy/qcom-eth-uniphy.h>
+
+/ {
+	model = "Linksys MR5500";
+	compatible = "linksys,mr5500", "qcom,ipq5018";
+
+    chosen {
+        bootargs-append = " pci=pcie_bus_perf mitigations=off root=/dev/ubiblock0_0";
+		stdout-path = "serial0:115200n8";
+	};
+
+/*	gpio-leds {
+		compatible = "gpio-leds";
+
+		usb {
+			color = <LED_COLOR_ID_BLUE>;
+			function = LED_FUNCTION_USB;
+			gpios = <&tlmm 19 GPIO_ACTIVE_HIGH>;
+			trigger-sources = <&usb_port1>;
+			linux,default-trigger = "usbport";
+		};
+	};*/
+
+	regulator_fixed_5p0: regulator-s0500 {
+		compatible = "regulator-fixed";
+		regulator-min-microvolt = <500000>;
+		regulator-max-microvolt = <500000>;
+		regulator-name = "fixed_5p0";
+		gpios = <&tlmm 17 GPIO_ACTIVE_LOW>;
+	};
+
+	reserved-memory {
+		#address-cells = <2>;
+		#size-cells = <2>;
+
+		m3_dump@4c700000 {
+			no-map;
+			reg = <0x0 0x4c700000 0x0 0x100000>;
+		};
+
+		q6_etr_region:q6_etr_dump@4c800000 {
+			no-map;
+			reg = <0x0 0x4c800000 0x0 0x100000>;
+		};
+
+		q6_caldb_region:q6_caldb_region@4c900000 {
+			no-map;
+			reg = <0x0 0x4c900000 0x0 0x200000>;
+		};
+
+		qcn9000_pcie0: qcn9000_pcie0@4cb00000 {
+			no-map;
+			reg = <0x0 0x4Cb00000 0x0 0x01a00000>;
+		};
+		
+		mhi_region1: dma_pool1@4e500000 {
+			compatible = "shared-dma-pool";
+			no-map;
+			reg = <0x0 0x4e500000 0x0 0x00500000>;
+		};
+
+	};
+};
+&soc {
+		nss-common {
+			compatible = "qcom,nss-common";
+			reg = <0x01868010 0x01>;
+			reg-names = "nss-misc-reset";
+			memory-region = <&nss_region>;
+		};
+
+		ess-instance {
+			num_devices = <0x2>;
+			ess-switch@39c00000 {
+				compatible = "qcom,ess-switch-ipq50xx";
+				device_id = <0>;
+				switch_mac_mode = <0xf>; /* mac mode for uniphy instance*/
+				cmnblk_clk = "internal_96MHz"; /* cmnblk clk*/
+				qcom,port_phyinfo {
+					port@0 {
+						port_id = <1>;
+						phy_address = <7>;
+					};
+					port@1 {
+						port_id = <2>;
+						forced-speed = <1000>;
+						forced-duplex = <1>;
+					};
+				};
+				led_source@0 {
+					source = <0>;
+					mode = "normal";
+					speed = "all";
+					blink_en = "enable";
+					active = "high";
+				};
+			};
+#if 1
+			ess-switch1@1 {
+				compatible = "qcom,ess-switch-qca83xx";
+				device_id = <1>;
+				switch_access_mode = "mdio";
+				mdio-bus = <&mdio1>;
+				reset_gpio = <0x227>;
+#if 0
+				switch_cpu_bmp = <0x40>;  /* cpu port bitmap (Port 6 GMAC) */
+				switch_lan_bmp = <0x1e>;  /* lan port bitmap (Port 5..3 GMAC) */
+				switch_wan_bmp = <0x20>;  /* wan port bitmap (Port 2 GMAC) */
+#endif
+				qca,ar8327-initvals = <
+						0x00004 0x7600000   /* PAD0_MODE */
+						0x00008 0x1000000   /* PAD5_MODE */
+						0x0000c 0x80        /* PAD6_MODE */
+						0x00010 0x2613a0    /* PORT6 FORCE MODE*/
+						0x000e4 0xaa545     /* MAC_POWER_SEL */
+						0x000e0 0xc74164de  /* SGMII_CTRL */
+						0x0007c 0x4e        /* PORT0_STATUS */
+						0x00094 0x4e        /* PORT6_STATUS */
+				>;
+
+				qcom,port_phyinfo {
+					port@0 {
+						port_id = <1>;
+						phy_address = <0>;
+					};
+					port@1 {
+						port_id = <2>;
+						phy_address = <1>;
+					};
+					port@2 {
+						port_id = <3>;
+						phy_address = <2>;
+					};
+					port@3 {
+						port_id = <4>;
+						phy_address = <3>;
+					};
+					port@4 {
+						port_id = <0x5>;
+						phy_address = <0x4>;
+					};
+				};
+			};
+#endif
+		};
+
+		ess-uniphy@98000 {
+			status = "disabled";
+		};
+
+/*		dp1: dp1 {
+			device_type = "network";
+			compatible = "qcom,nss-dp";
+			qcom,id = <1>;
+
+			reg = <0x39C00000 0x10000>;
+			interrupts = <GIC_SPI 101 IRQ_TYPE_LEVEL_HIGH>;
+			clocks = <&gcc GCC_SNOC_GMAC0_AXI_CLK>;
+			clock-names = "nss-snoc-gmac-axi-clk";
+
+			qcom,mactype = <2>;
+			local-mac-address = [000000000000];
+			phy-mode = "internal";
+			phy-handle = <&ge_phy>;
+
+		};*/
+
+
+		dp1: dp1 {
+			device_type = "network";
+			compatible = "qcom,nss-dp";
+			clocks = <&gcc GCC_SNOC_GMAC1_AXI_CLK>;
+			clock-names = "nss-snoc-gmac-axi-clk";
+			qcom,id = <2>;
+			reg = <0x39D00000 0x10000>;
+			interrupts = <GIC_SPI 109 IRQ_TYPE_LEVEL_HIGH>;
+			qcom,mactype = <2>;
+			local-mac-address = [000000000000];
+			phy-mode = "sgmii";
+			qcom,rx-page-mode = <0>;
+
+
+			nvmem-cells = <&hw_mac_addr 0>;
+		    	nvmem-cell-names = "mac-address";
+
+			fixed-link {
+				speed = <1000>;
+				full-duplex;
+			};
+		};
+};
+
+&q6_region{
+	no-map;
+	reg = <0x0 0x4b000000 0x0 0x01700000>;
+};
+
+
+&uniphy0 {
+	mode = <QCOM_ETH_UNIPHY_MODE_SGMII>;
+	clkout-frequency = <QCOM_ETH_UNIPHY_CLKOUT_FREQ_25M>;
+	clkout-drive-strength = <QCOM_ETH_UNIPHY_CLKOUT_DS_1_5V>;
+
+	status = "okay";
+};
+
+&mdio0 {
+	status = "okay";
+
+			ge_phy: ethernet-phy@0 {
+				reg = <7>;
+			};
+
+};
+
+&ge_phy {
+	status = "okay";
+};
+
+&mdio1 {
+			status = "ok";
+			pinctrl-0 = <&mdio1_pins>;
+			pinctrl-names = "default";
+			reset-gpios = <&tlmm 39 GPIO_ACTIVE_LOW>;
+
+			qca8337_0: ethernet-phy@0 {
+				compatible = "ethernet-phy-ieee802.3-c22";
+				reg = <0>;
+			};
+
+			qca8337_1: ethernet-phy@1 {
+				compatible = "ethernet-phy-ieee802.3-c22";
+				reg = <1>;
+			};
+
+			qca8337_2: ethernet-phy@2 {
+				compatible = "ethernet-phy-ieee802.3-c22";
+				reg = <2>;
+			};
+
+			qca8337_3: ethernet-phy@3 {
+				compatible = "ethernet-phy-ieee802.3-c22";
+				reg = <3>;
+			};
+
+			qca8337_4: ethernet-phy@4 {
+				compatible = "ethernet-phy-ieee802.3-c22";
+				reg = <4>;
+			};
+
+	// QCA8337 switch
+	switch1: ethernet-switch@10 {
+		compatible = "qca,qca8337";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		reg = <10>;
+
+		qca,ar8327-initvals = <
+				0x00004 0x7600000   /* PAD0_MODE */
+				0x00008 0x1000000   /* PAD5_MODE */
+				0x0000c 0x80        /* PAD6_MODE */
+				0x00010 0x2613a0    /* PORT6 FORCE MODE*/
+				0x000e4 0xaa545     /* MAC_POWER_SEL */
+				0x000e0 0xc74164de  /* SGMII_CTRL */
+				0x0007c 0x4e        /* PORT0_STATUS */
+				0x00094 0x4e        /* PORT6_STATUS */
+		>;
+
+		ports {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			port@0 {
+				reg = <6>;
+				label = "cpu";
+				phy-mode = "sgmii";
+				ethernet = <&dp1>;
+/*				qca,sgmii-enable-pll; */
+
+				fixed-link {
+					speed = <1000>;
+					full-duplex;
+				};
+			};
+
+			
+			port@1 {
+				reg = <1>;
+				phy-handle = <&qca8337_0>;
+				label = "lan1";
+			};
+
+			port@2 {
+				reg = <2>;
+				phy-handle = <&qca8337_1>;
+				label = "lan2";
+			};
+
+			port@3 {
+				reg = <3>;
+				phy-handle = <&qca8337_2>;
+				label = "lan3";
+			};
+
+			port@4 {
+				reg = <4>;
+				phy-handle = <&qca8337_3>;
+				label = "lan4";
+			};
+
+			port@5 {
+				reg = <5>;
+				phy-handle = <&qca8337_4>;
+				label = "wan";
+			};
+
+		};
+	};
+
+};
+
+&usbphy0 {
+	status = "okay";
+
+	vdd-supply = <&regulator_fixed_5p0>;
+};
+
+&usb {
+	status = "okay";
+
+	vbus-supply = <&regulator_fixed_5p0>;
+};
+
+&usb_dwc {
+	#address-cells = <1>;
+	#size-cells = <0>;
+	dr_mode = "host";
+
+	usb_port1: port@1 {
+		reg = <1>;
+		#trigger-source-cells = <0>;
+	};
+};
+
+&pcie0_phy {
+	status = "okay";
+};
+
+&pcie0 {
+	status = "okay";
+
+	perst-gpios = <&tlmm 15 GPIO_ACTIVE_LOW>;
+
+	pcie@0 {
+		wifi@0,0 {
+			status = "okay";
+
+			/* QCN9074: ath11k lacks DT compatible for PCI cards */
+			compatible = "pci17cb,1104";
+			reg = <0x00010000 0 0 0 0>;
+			hremote_node = <&qcn9000_pcie0>;
+			qcom,ath11k-fw-memory-mode = <1>;
+			qcom,m3-dump-addr = <0x4D700000>;
+			qcom,caldb-addr = <0x4D900000>;
+			qcom,caldb-size = <0x800000>;
+			qcom,pageable-addr = <0x4E100000>;
+			qcom,pageable-size = <0x400000>;
+
+			qcom,ath11k-calibration-variant = "Linksys-MR5500";
+		};
+	};
+};
+
+&q6v5_wcss {
+	firmware-name = "ath11k/IPQ5018/hw1.0/q6_fw.mdt",
+			"ath11k/IPQ5018/hw1.0/m3_fw.mdt";
+};
+
+&wifi {
+	status = "okay";
+
+	qcom,rproc = <&q6v5_wcss>;
+	qcom,ath11k-calibration-variant = "Linksys-MR5500";
+	qcom,ath11k-fw-memory-mode = <1>;
+};

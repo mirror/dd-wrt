@@ -1,0 +1,495 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+/dts-v1/;
+
+#include "ipq6018.dtsi"
+#include "ipq6018-thermal.dtsi"
+#include "ipq6018-cp-cpu.dtsi"
+#include "ipq6018-ess.dtsi"
+#include "ipq6018-nss.dtsi"
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
+
+/ {
+	model = "Fortinet FAP-231F";
+	compatible = "fortinet,fap-231f", "qcom,ipq6018", "qcom,ipq6010";
+
+	aliases {
+		serial0 = &blsp1_uart3;
+		serial1 = &blsp1_uart2;
+	};
+
+	chosen {
+		stdout-path = "serial0:115200n8";
+		bootargs-override = "console=null ubi.mtd=rootfs root=mtd:ubi_rootfs rootfstype=squashfs rootwait mitigations=off root=/dev/ubiblock0_1";
+	};
+
+	keys {
+		compatible = "gpio-keys";
+
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		pinctrl-0 = <&led_pins>;
+		pinctrl-names = "default";
+
+			power {
+				label = "power";
+				gpios = <&tlmm 18 GPIO_ACTIVE_HIGH>;
+			};
+
+			statusAmber {
+				label = "statusAmber";
+				gpios = <&tlmm 22 GPIO_ACTIVE_HIGH>;
+			};
+
+			eth1G {
+				label = "eth1G";
+				gpios = <&tlmm 23 GPIO_ACTIVE_HIGH>;
+			};
+
+			eth100 {
+				label = "eth100";
+				gpios = <&tlmm 24 GPIO_ACTIVE_HIGH>;
+			};
+
+			wifi0 {
+				label = "wifi0";
+				gpios = <&tlmm 30 GPIO_ACTIVE_HIGH>;
+				linux,default-trigger = "phy0tpt";
+			};
+
+			wifi1 {
+				label = "wifi1";
+				gpios = <&tlmm 31 GPIO_ACTIVE_HIGH>;
+				linux,default-trigger = "phy1tpt";
+			};
+
+			wifi01 {
+				label = "wifi01";
+				gpios = <&tlmm 32 GPIO_ACTIVE_HIGH>;
+			};
+
+			eth1G_lan2 {
+				label = "eth1G_lan2";
+				gpios = <&tlmm 25 GPIO_ACTIVE_HIGH>;
+			};
+
+			eth100_lan2 {
+				label = "eth100_lan2";
+				gpios = <&tlmm 29 GPIO_ACTIVE_HIGH>;
+			};
+
+			bluetooth {
+				label = "bluetooth";
+				gpios = <&tlmm 33 GPIO_ACTIVE_HIGH>;
+			};
+
+			wifi2 {
+				label = "wifi2";
+				gpios = <&tlmm 34 GPIO_ACTIVE_HIGH>;
+			};
+
+			zigbee {
+				label = "zigbee";
+				gpios = <&tlmm 35 GPIO_ACTIVE_HIGH>;
+			};
+
+			wifi2ble_zigbee {
+				label = "wifi2blezig";
+				gpios = <&tlmm 37 GPIO_ACTIVE_HIGH>;
+			};
+
+	};
+
+	reg_usb_vbus: regulator-usb-vbus {
+		compatible = "regulator-fixed";
+		regulator-name = "usb_vbus";
+		regulator-min-microvolt = <5000000>;
+		regulator-max-microvolt = <5000000>;
+		gpio = <&tlmm 74 GPIO_ACTIVE_HIGH>;
+		regulator-always-on;
+	};
+
+};
+
+&tlmm {
+
+	gpio_pins {
+		usb_en {
+			pins = "gpio74";
+			output-high;
+		};
+	};
+
+	led_pins: led-state {
+		power {
+			pins = "gpio18";
+			function = "gpio";
+			drive-strength = <8>;
+			bias-pull-up;
+		};
+
+		default_off {
+			pins = "gpio22", "gpio23", "gpio24", "gpio30", "gpio31",
+			       "gpio32", "gpio25", "gpio29", "gpio33", "gpio34", "gpio35", "gpio37";
+			function = "gpio";
+			drive-strength = <8>;
+			bias-pull-down;
+		};
+	};
+
+/*	button_pins: button-pins {
+		reset_button {
+			pins = "gpio9", "gpio51", "gpio53";
+			function = "gpio";
+			drive-strength = <8>;
+			bias-pull-up;
+		};
+	};*/
+
+
+	hsuart_pins: hsuart-pins {
+		mux {
+			pins = "gpio71", "gpio72";
+			function = "blsp1_uart";
+			drive-strength = <8>;
+			bias-disable;
+		};
+	};
+
+	i2c_pins: i2c-pins {
+		mux {
+			pins = "gpio46", "gpio47";
+			function = "blsp5_i2c";
+			drive-strength = <8>;
+			bias-pull-down;
+		};
+	};
+
+	spi_0_pins: spi-0-pins {
+		pins = "gpio38", "gpio39", "gpio40", "gpio41";
+		function = "blsp0_spi";
+		drive-strength = <8>;
+		bias-pull-down;
+	};
+
+
+	mdio_pins: mdio-state {
+		mdc-pins {
+			pins = "gpio64";
+			function = "mdc";
+			drive-strength = <8>;
+			bias-pull-up;
+		};
+
+		mdio-pins {
+			pins = "gpio65";
+			function = "mdio";
+			drive-strength = <8>;
+			bias-pull-up;
+		};
+
+		gpio-pins {
+			pins = "gpio75";
+			function = "gpio";
+			bias-pull-up;
+		};
+	};
+};
+
+&qusb_phy_0 {
+	vdd-supply = <&reg_usb_vbus>;
+	status = "okay";
+};
+
+&ssphy_0 {
+	status = "okay";
+};
+
+&usb3 {
+	vbus-supply = <&reg_usb_vbus>;
+	status = "okay";
+};
+
+&pcie_phy {
+	status = "okay";
+};
+
+&pcie0 {
+	status = "okay";
+/*	perst-gpios = <&tlmm 60 GPIO_ACTIVE_LOW>;
+
+	bridge@0,0 {
+		reg = <0x00000000 0 0 0 0>;
+		#address-cells = <3>;
+		#size-cells = <2>;
+		ranges;
+
+		wifi0: wifi@1,0 {
+			status = "okay";
+			compatible = "qcom,ath10k";
+			reg = <0x00010000 0 0 0 0>;
+		};
+	};*/
+
+
+};
+
+&blsp1_spi1 {
+	pinctrl-0 = <&spi_0_pins>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	flash@0 {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		reg = <0>;
+		compatible = "jedec,spi-nor";
+		spi-max-frequency = <25000000>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "SBL1";
+				reg = <0x00000000 0x000c0000>;
+			};
+
+			partition@c0000 {
+				label = "MIBIB";
+				reg = <0x000c0000 0x00010000>;
+			};
+
+			partition@d0000 {
+				label = "BOOTCONFIG";
+				reg = <0x000d0000 0x0020000>;
+			};
+
+			partition@f0000 {
+				label = "BOOTCONFIG1";
+				reg = <0x000f0000 0x0020000>;
+			};
+
+			partition@110000 {
+				label = "QSEE";
+				reg = <0x00110000 0x001a0000>;
+			};
+
+			partition@2b0000 {
+				label = "QSEE_1";
+				reg = <0x002b0000 0x001a0000>;
+			};
+
+
+			partition@450000 {
+				label = "DEVCFG";
+				reg = <0x00450000 0x00010000>;
+			};
+
+			partition@460000 {
+				label = "DEVCFG_1";
+				reg = <0x00460000 0x00010000>;
+			};
+
+			partition@470000 {
+				label = "RPM";
+				reg = <0x00470000 0x00040000>;
+			};
+
+			partition@4b0000 {
+				label = "RPM_1";
+				reg = <0x004b0000 0x00040000>;
+			};
+
+			partition@4f0000 {
+				label = "CDT";
+				reg = <0x004f0000 0x00010000>;
+			};
+
+			partition@500000 {
+				label = "CDT_1";
+				reg = <0x00500000 0x00010000>;
+			};
+
+			partition@510000 {
+				label = "APPSBLENV";
+				reg = <0x00510000 0x00010000>;
+			};
+
+			partition@520000 {
+				label = "APPSBL";
+				reg = <0x00520000 0x000c0000>;
+			};
+
+			partition@5e0000 {
+				label = "APPSBL_1";
+				reg = <0x005e0000 0x000c0000>;
+			};
+
+			partition@6a0000 {
+				compatible = "nvmem-cells";
+				#address-cells = <1>;
+				#size-cells = <1>;
+				label = "ART";
+				reg = <0x006a0000 0x00040000>;
+
+				macaddr_eth0: macaddr@0 {
+					reg = <0x0 0x6>;
+				};
+
+				macaddr_eth1: macaddr@6 {
+					reg = <0x6 0x6>;
+				};
+
+				macaddr_eth2: macaddr@c {
+					reg = <0xc 0x6>;
+				};
+			};
+
+			partition@6e0000 {
+				label = "reserved";
+				reg = <0x006e0000 0x000a0000>;
+			};
+
+			partition@780000 {
+				label = "nvram";
+				reg = <0x00780000 0x00040000>;
+			};
+		};
+	};
+};
+
+&blsp1_i2c2 {
+	pinctrl-0 = <&i2c_pins>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&blsp1_uart2 {
+	pinctrl-0 = <&hsuart_pins>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&blsp1_uart3 {
+	pinctrl-0 = <&serial_3_pins>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&qpic_bam {
+	status = "okay";
+};
+
+&qpic_nand {
+	status = "okay";
+
+	nand@0 {
+		reg = <0>;
+		nand-ecc-strength = <4>;
+		nand-ecc-step-size = <512>;
+		nand-bus-width = <8>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "rootfs";
+				reg = <0x0 0x8000000>;
+			};
+
+			partition@8000000 {
+				label = "rootfs_1";
+				reg = <0x8000000 0x8000000>;
+			};
+
+			partition@10000000 {
+				label = "fap_data";
+				reg = <0x10000000 0xfc00000>;
+			};
+
+			partition@1fc00000 {
+				label = "oops";
+				reg = <0x1fc00000 0x400000>;
+			};
+		};
+	};
+};
+
+&mdio {
+	status = "okay";
+
+	pinctrl-0 = <&mdio_pins>;
+	pinctrl-names = "default";
+	reset-gpios = <&tlmm 75 GPIO_ACTIVE_LOW>;
+
+	ethernet-phy-package@0 {
+		#address-cells = <1>;
+		#size-cells = <0>;
+		compatible = "qcom,qca8075-package";
+		reg = <0>;
+
+		qcom,package-mode = "psgmii";
+
+		qca8072_0: ethernet-phy@3 {
+			compatible = "ethernet-phy-ieee802.3-c22";
+			reg = <3>;
+		};
+
+		qca8072_1: ethernet-phy@4 {
+			compatible = "ethernet-phy-ieee802.3-c22";
+			reg = <4>;
+		};
+	};
+};
+
+&switch {
+	status = "okay";
+
+	switch_lan_bmp = <ESS_PORT3>;
+	switch_wan_bmp = <ESS_PORT4>;
+	switch_mac_mode = <MAC_MODE_PSGMII>;
+	port3_pcs_channel = <4>;
+
+	qcom,port_phyinfo {
+		port@3 {
+			port_id = <3>;
+			phy_address = <4>;
+		};
+		port@4 {
+			port_id = <4>;
+			phy_address = <3>;
+		};
+	};
+};
+
+&edma {
+	status = "okay";
+};
+
+&dp3 {
+	status = "okay";
+
+	phy-handle = <&qca8072_1>;
+	label = "lan1";
+};
+
+&dp4 {
+	status = "okay";
+
+	phy-handle = <&qca8072_0>;
+	label = "wan";
+};
+
+&wifi {
+	status = "okay";
+
+	qcom,ath11k-calibration-variant = "Fortinet-FAP-231F";
+};
