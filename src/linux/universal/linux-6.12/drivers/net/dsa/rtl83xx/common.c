@@ -214,17 +214,24 @@ u64 rtl839x_get_port_reg_le(int reg)
 static int rtl83xx_mdio_probe(struct rtl838x_switch_priv *priv)
 {
 	struct device_node *dn, *phy_node, *pcs_node, *led_node;
-	struct mii_bus *bus;
 	u32 pn;
 
-	/* Check if mdio bus is defined with status "okay" and already registered */
+	/* Check if all busses of Realtek mdio controller are registered */
 	dn = of_find_compatible_node(NULL, NULL, "realtek,otto-mdio");
-	if (!dn || !of_device_is_available(dn))
+	if (!of_device_is_available(dn)) {
+		of_node_put(dn);
 		return -ENODEV;
-	bus = of_mdio_find_bus(dn);
-	if (!bus)
-		return -EPROBE_DEFER;
-	put_device(&bus->dev);
+	}
+
+	for_each_child_of_node_scoped(dn, bn) {
+		struct mii_bus *bus = of_mdio_find_bus(bn);
+		if (!bus) {
+			of_node_put(dn);
+			return -EPROBE_DEFER;
+		}
+		put_device(&bus->dev);
+	}
+	of_node_put(dn);
 
 	dn = of_find_compatible_node(NULL, NULL, "realtek,otto-switch");
 	if (!dn) {
