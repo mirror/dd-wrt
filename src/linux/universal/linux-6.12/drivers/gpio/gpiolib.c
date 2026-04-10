@@ -2324,8 +2324,8 @@ static int gpiod_request_commit(struct gpio_desc *desc, const char *label)
 		return -ENODEV;
 
 	if (test_and_set_bit(FLAG_REQUESTED, &desc->flags)) {
-		if (label && strcmp(label, "sysfs"))
-			return -EBUSY;
+//		if (label && strcmp(label, "sysfs"))
+//			return -EBUSY;
 	}
 
 	/* NOTE:  gpio_request() can be called in early boot,
