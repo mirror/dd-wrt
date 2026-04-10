@@ -322,6 +322,68 @@ EXPORT_SYMBOL(qdisc_dequeue_skb);
  *				false  - hardware queue frozen backoff
  *				true   - feel free to send more pkts
  */
+bool sch_direct_xmit_fast(struct sk_buff *first, struct Qdisc *q, struct net_device *dev, spinlock_t *root_lock)
+{
+	struct sk_buff *skb = first;
+	int rc = NETDEV_TX_OK;
+	struct netdev_queue *txq;
+	int cpu;
+
+	if (unlikely(!(dev->flags & IFF_UP))) {
+		dev_kfree_skb_any(skb);
+		return true;
+	}
+
+	/*
+	 * If GSO is enabled then handle segmentation through dev_queue_xmit
+	 */
+	if (unlikely(skb_is_gso(skb))) {
+		if (root_lock)
+			spin_unlock(root_lock);
+		dev_queue_xmit(first);
+		if (root_lock)
+			spin_lock(root_lock);
+		return true;
+	}
+
+	cpu = smp_processor_id();
+
+	txq = netdev_core_pick_tx(dev, skb, NULL);
+
+	if (likely(txq->xmit_lock_owner != cpu)) {
+		HARD_TX_LOCK(dev, txq, smp_processor_id());
+		if (likely(!netif_xmit_stopped(txq))) {
+			rc = netdev_start_xmit(skb, dev, txq, 0);
+			if (unlikely(!dev_xmit_complete(rc))) {
+				HARD_TX_UNLOCK(dev, txq);
+				/*
+				 * If we dont able to enqueue this to bottom interface, then we
+				 * cannot requeue the packet back, as qdisc was enabled on different
+				 * interface and transmit interface is different
+				 */
+				dev_kfree_skb_any(skb);
+				return true;
+			}
+		} else {
+			dev_kfree_skb_any(skb);
+		}
+		HARD_TX_UNLOCK(dev, txq);
+	} else {
+		dev_kfree_skb_any(skb);
+	}
+
+	return true;
+}
+
+/*
+ * Transmit possibly several skbs, and handle the return status as
+ * required. Owning running seqcount bit guarantees that
+ * only one CPU can execute this function.
+ *
+ * Returns to the caller:
+ *				false  - hardware queue frozen backoff
+ *				true   - feel free to send more pkts
+ */
 bool sch_direct_xmit(struct sk_buff *skb, struct Qdisc *q,
 		     struct net_device *dev, struct netdev_queue *txq,
 		     spinlock_t *root_lock, bool validate)
@@ -412,10 +474,36 @@ static inline bool qdisc_restart(struct Qdisc *q, int *packets, int budget)
 	if (!(q->flags & TCQ_F_NOLOCK))
 		root_lock = qdisc_lock(q);
 
-	dev = qdisc_dev(q);
-	txq = skb_get_tx_queue(dev, skb);
+	while (skb) {
+		struct sk_buff *next = skb->next;
+		skb->next = NULL;
 
-	return sch_direct_xmit(skb, q, dev, txq, root_lock, validate);
+		if (likely(skb->fast_forwarded)) {
+			/*
+			 * For SFE fast forwarded packets, we send packets directly
+			 * to physical interface pointed to by skb->dev
+			 */
+			if (!sch_direct_xmit_fast(skb, q, skb->dev, root_lock)) {
+				return false;
+			}
+		} else {
+			dev = qdisc_dev(q);
+			txq = skb_get_tx_queue(dev, skb);
+
+			if (!sch_direct_xmit(skb, q, dev, txq, root_lock, validate)) {
+				if (next) {
+					skb = next;
+					dev_requeue_skb(skb, q);
+				}
+
+				return false;
+			}
+		}
+
+		skb = next;
+	}
+
+	return true;
 }
 
 void __qdisc_run(struct Qdisc *q)

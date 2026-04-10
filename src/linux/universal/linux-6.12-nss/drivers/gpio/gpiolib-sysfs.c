@@ -459,7 +459,6 @@ static ssize_t export_store(const struct class *class,
 	status = kstrtol(buf, 0, &gpio);
 	if (status)
 		return status;
-
 	desc = gpio_to_desc(gpio);
 	/* reject invalid GPIOs */
 	if (!desc) {
@@ -594,8 +593,9 @@ int __gpiod_export(struct gpio_desc *desc, bool direction_may_change, const char
 	if (!guard.gc)
 		return -ENODEV;
 
-	if (test_and_set_bit(FLAG_EXPORT, &desc->flags))
+	if (test_and_set_bit(FLAG_EXPORT, &desc->flags)) {
 		return -EPERM;
+	}
 
 	gdev = desc->gdev;
 

@@ -35,6 +35,7 @@
 #include <linux/lockdep.h>
 #include <linux/ar8216_platform.h>
 #include <linux/workqueue.h>
+#include <linux/version.h>
 
 #include "ar8216.h"
 
@@ -251,7 +252,6 @@ ar8xxx_mii_write32(struct ar8xxx_priv *priv, int phy_id, int regnum, u32 val)
 u32
 ar8xxx_read(struct ar8xxx_priv *priv, int reg)
 {
-	unsigned long flags;
 	struct mii_bus *bus = priv->mii_bus;
 	u16 r1, r2, page;
 	u32 val;
@@ -259,13 +259,11 @@ ar8xxx_read(struct ar8xxx_priv *priv, int reg)
 	split_addr((u32) reg, &r1, &r2, &page);
 
 	mutex_lock(&bus->mdio_lock);
-	local_irq_save(flags);
 
 	bus->write(bus, 0x18, 0, page);
 	wait_for_page_switch();
 	val = ar8xxx_mii_read32(priv, 0x10 | r2, r1);
 
-	local_irq_restore(flags);
 	mutex_unlock(&bus->mdio_lock);
 
 	return val;
@@ -274,20 +272,17 @@ ar8xxx_read(struct ar8xxx_priv *priv, int reg)
 void
 ar8xxx_write(struct ar8xxx_priv *priv, int reg, u32 val)
 {
-	unsigned long flags;
 	struct mii_bus *bus = priv->mii_bus;
 	u16 r1, r2, page;
 
 	split_addr((u32) reg, &r1, &r2, &page);
 
 	mutex_lock(&bus->mdio_lock);
-	local_irq_save(flags);
 
 	bus->write(bus, 0x18, 0, page);
 	wait_for_page_switch();
 	ar8xxx_mii_write32(priv, 0x10 | r2, r1, val);
 
-	local_irq_restore(flags);
 	mutex_unlock(&bus->mdio_lock);
 }
 
@@ -473,6 +468,8 @@ ar8216_read_port_link(struct ar8xxx_priv *priv, int port,
 	memset(link, '\0', sizeof(*link));
 
 	status = priv->chip->read_port_status(priv, port);
+	if (priv->disabled[port])
+		return;
 
 	link->aneg = !!(status & AR8216_PORT_STATUS_LINK_AUTO);
 	if (link->aneg) {
@@ -712,6 +709,60 @@ __ar8216_setup_port(struct ar8xxx_priv *priv, int port, u32 members,
 		   (members << AR8216_PORT_VLAN_DEST_PORTS_S) |
 		   (ingress << AR8216_PORT_VLAN_MODE_S) |
 		   (pvid << AR8216_PORT_VLAN_DEFAULT_ID_S));
+}
+
+static int ar8216_sw_set_port_link(struct switch_dev *dev, int port,
+			     struct switch_port_link *link)
+{
+	struct ar8xxx_priv *priv = swdev_to_ar8xxx(dev);
+	u32 t;
+	if (port == AR8216_PORT_CPU) {
+		return -EINVAL;
+	}
+	if (link->speed == SWITCH_PORT_SPEED_1000 && !ar8xxx_has_gige(priv))
+		return -EINVAL;
+	t = ar8xxx_read(priv, AR8216_REG_PORT_STATUS(port));
+	t &= ~(t & AR8216_PORT_STATUS_SPEED) <<
+		 AR8216_PORT_STATUS_SPEED_S;
+	t &= ~AR8216_PORT_STATUS_LINK_AUTO;
+	t &= ~AR8216_PORT_STATUS_DUPLEX;
+	t &= ~AR8216_PORT_STATUS_FLOW_CONTROL;
+
+	if (link->duplex)
+		t |= AR8216_PORT_STATUS_DUPLEX;
+	if (link->aneg) {
+		t |= AR8216_PORT_STATUS_LINK_AUTO;
+		t |= AR8216_PORT_STATUS_FLOW_CONTROL;
+	} else {
+		t &= ~AR8216_PORT_STATUS_TXFLOW;
+		t &= ~AR8216_PORT_STATUS_RXFLOW;
+		if (link->rx_flow)
+		    t |= AR8216_PORT_STATUS_RXFLOW;
+		if (link->tx_flow)
+		    t |= AR8216_PORT_STATUS_TXFLOW;
+
+		switch (link->speed) {
+		case SWITCH_PORT_SPEED_10:
+			t |= AR8216_PORT_SPEED_10M <<
+			 AR8216_PORT_STATUS_SPEED_S;
+			break;
+		case SWITCH_PORT_SPEED_100:
+			t |= AR8216_PORT_SPEED_100M <<
+			 AR8216_PORT_STATUS_SPEED_S;
+			break;
+		case SWITCH_PORT_SPEED_1000:
+			if (!ar8xxx_has_gige(priv))
+				return  -EINVAL;
+			t |= AR8216_PORT_SPEED_1000M <<
+			 AR8216_PORT_STATUS_SPEED_S;
+			break;
+		default:
+			t |= AR8216_PORT_STATUS_LINK_AUTO;
+			break;
+		}
+	}
+	ar8xxx_write(priv, AR8216_REG_PORT_STATUS(port), t);
+	return 0;
 }
 
 static void
@@ -1931,6 +1982,55 @@ ar8xxx_phy_write(struct mii_bus *bus, int phy_addr, int reg_addr,
 	return priv->chip->phy_write(priv, phy_addr, reg_addr, reg_val);
 }
 
+static int
+ar8xxx_sw_set_disable(struct switch_dev *dev,
+		  const struct switch_attr *attr,
+		  struct switch_val *val)
+{
+	struct ar8xxx_priv *priv = swdev_to_ar8xxx(dev);
+	int port = val->port_vlan;
+
+	if (port >= dev->ports)
+		return -EINVAL;
+	if (port == 0 || port == 6)
+		return -EOPNOTSUPP;
+
+	
+	if (!!(val->value.i))  {
+		priv->disabled[port] = 1;
+		priv->state[port] = ar8xxx_read(priv, AR8216_REG_PORT_STATUS(port));
+		ar8xxx_write(priv, AR8216_REG_PORT_STATUS(port), 0);
+	}else{
+		priv->disabled[port] = 0;
+		if (priv->state[port])
+			ar8xxx_write(priv, AR8216_REG_PORT_STATUS(port), priv->state[port]);
+	}
+
+	return 0;
+}
+
+static int
+ar8xxx_sw_get_disable(struct switch_dev *dev,
+		  const struct switch_attr *attr,
+		  struct switch_val *val)
+{
+	struct ar8xxx_priv *priv = swdev_to_ar8xxx(dev);
+	int port = val->port_vlan;
+	u32 t;
+
+	if (port >= dev->ports)
+		return -EINVAL;
+	if (port == 0 || port == 6)
+		return -EOPNOTSUPP;
+
+	t = ar8xxx_read(priv, AR8216_REG_PORT_STATUS(port));
+	if (!(t & AR8216_PORT_STATUS_LINK_AUTO) && !(t & (AR8216_PORT_SPEED_10M << AR8216_PORT_STATUS_SPEED_S)) && !(t & (AR8216_PORT_SPEED_100M << AR8216_PORT_STATUS_SPEED_S)) && !(t & (AR8216_PORT_SPEED_1000M << AR8216_PORT_STATUS_SPEED_S)))
+		val->value.i = 1;
+	else
+		val->value.i = 0;
+	return 0;
+}
+
 static const struct switch_attr ar8xxx_sw_attr_globals[] = {
 	{
 		.type = SWITCH_TYPE_INT,
@@ -2027,6 +2127,14 @@ const struct switch_attr ar8xxx_sw_attr_port[] = {
 		.description = "Flush port's ARL table entries",
 		.set = ar8xxx_sw_set_flush_port_arl_table,
 	},
+	{
+		.type = SWITCH_TYPE_INT,
+		.name = "disable",
+		.description = "Disable Port",
+		.set = ar8xxx_sw_set_disable,
+		.get = ar8xxx_sw_get_disable,
+		.max = 1,
+	},
 };
 
 const struct switch_attr ar8xxx_sw_attr_vlan[1] = {
@@ -2060,11 +2168,11 @@ static const struct switch_dev_ops ar8xxx_sw_ops = {
 	.apply_config = ar8xxx_sw_hw_apply,
 	.reset_switch = ar8xxx_sw_reset_switch,
 	.get_port_link = ar8xxx_sw_get_port_link,
-	.get_port_stats = ar8xxx_sw_get_port_stats,
+	.set_port_link = ar8216_sw_set_port_link,
+//	.get_port_stats = ar8xxx_sw_get_port_stats,
 };
 
 static const struct ar8xxx_chip ar7240sw_chip = {
-	.caps = AR8XXX_CAP_MIB_COUNTERS,
 
 	.reg_port_stats_start = 0x20000,
 	.reg_port_stats_length = 0x100,
@@ -2098,7 +2206,6 @@ static const struct ar8xxx_chip ar7240sw_chip = {
 };
 
 static const struct ar8xxx_chip ar8216_chip = {
-	.caps = AR8XXX_CAP_MIB_COUNTERS,
 
 	.reg_port_stats_start = 0x19000,
 	.reg_port_stats_length = 0xa0,
@@ -2130,7 +2237,6 @@ static const struct ar8xxx_chip ar8216_chip = {
 };
 
 static const struct ar8xxx_chip ar8229_chip = {
-	.caps = AR8XXX_CAP_MIB_COUNTERS,
 
 	.reg_port_stats_start = 0x20000,
 	.reg_port_stats_length = 0x100,
@@ -2164,7 +2270,6 @@ static const struct ar8xxx_chip ar8229_chip = {
 };
 
 static const struct ar8xxx_chip ar8236_chip = {
-	.caps = AR8XXX_CAP_MIB_COUNTERS,
 
 	.reg_port_stats_start = 0x20000,
 	.reg_port_stats_length = 0x100,
@@ -2196,7 +2301,7 @@ static const struct ar8xxx_chip ar8236_chip = {
 };
 
 static const struct ar8xxx_chip ar8316_chip = {
-	.caps = AR8XXX_CAP_GIGE | AR8XXX_CAP_MIB_COUNTERS,
+	.caps = AR8XXX_CAP_GIGE,
 
 	.reg_port_stats_start = 0x20000,
 	.reg_port_stats_length = 0x100,
@@ -2388,7 +2493,7 @@ ar8xxx_probe_switch(struct ar8xxx_priv *priv)
 	int ret;
 
 	chip = priv->chip;
-
+	
 	swdev = &priv->dev;
 	swdev->cpu_port = AR8216_PORT_CPU;
 	swdev->name = chip->name;
@@ -2463,7 +2568,11 @@ ar8xxx_phy_config_init(struct phy_device *phydev)
 	/* VID fixup only needed on ar8216 */
 	if (chip_is_ar8216(priv)) {
 		dev->phy_ptr = priv;
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6,1,0)
 		dev->priv_flags |= IFF_NO_IP_ALIGN;
+#else
+		dev->extra_priv_flags |= IFF_NO_IP_ALIGN;
+#endif
 		dev->eth_mangle_rx = ar8216_mangle_rx;
 		dev->eth_mangle_tx = ar8216_mangle_tx;
 	}
@@ -2611,7 +2720,7 @@ ar8xxx_phy_probe(struct phy_device *phydev)
 	int ret;
 
 	/* skip PHYs at unused adresses */
-	if (phydev->mdio.addr != 0 && phydev->mdio.addr != 3 && phydev->mdio.addr != 4)
+	if (phydev->mdio.addr != 0 && phydev->mdio.addr != 3 && phydev->mdio.addr != 4 && phydev->mdio.addr != 6)
 		return -ENODEV;
 
 	if (!ar8xxx_is_possible(phydev->mdio.bus))
@@ -2698,7 +2807,11 @@ ar8xxx_phy_detach(struct phy_device *phydev)
 
 #ifdef CONFIG_ETHERNET_PACKET_MANGLE
 	dev->phy_ptr = NULL;
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6,1,0)
 	dev->priv_flags &= ~IFF_NO_IP_ALIGN;
+#else
+	dev->extra_priv_flags &= ~IFF_NO_IP_ALIGN;
+#endif
 	dev->eth_mangle_rx = NULL;
 	dev->eth_mangle_tx = NULL;
 #endif
@@ -2757,6 +2870,12 @@ static const struct of_device_id ar8xxx_mdiodev_of_match[] = {
 	}, {
 		.compatible = "qca,ar8327",
 		.data = &ar8327_chip,
+	}, {
+		.compatible = "qca,ar8337",
+		.data = &ar8327_chip,
+	}, {
+		.compatible = "qca,qca8337",
+		.data = &ar8327_chip,
 	},
 	{ /* sentinel */ },
 };
@@ -2781,6 +2900,7 @@ ar8xxx_mdiodev_probe(struct mdio_device *mdiodev)
 	priv->mii_bus = mdiodev->bus;
 	priv->pdev = &mdiodev->dev;
 	priv->chip = (const struct ar8xxx_chip *) match->data;
+	priv->ledstate = 0;
 
 	ret = of_property_read_u32(priv->pdev->of_node, "qca,mib-poll-interval",
 				   &priv->mib_poll_interval);

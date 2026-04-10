@@ -23,7 +23,7 @@
 #define AR8XXX_CAP_MIB_COUNTERS		BIT(1)
 
 #define AR8XXX_NUM_PHYS 	5
-#define AR8216_PORT_CPU	0
+#define AR8216_PORT_CPU		0
 #define AR8216_NUM_PORTS	6
 #define AR8216_NUM_VLANS	16
 #define AR7240SW_NUM_PORTS	5
@@ -504,6 +504,10 @@ struct ar8xxx_priv {
 
 	struct list_head list;
 	unsigned int use_count;
+	u32 state[8];
+	u32 disabled[8];
+	u32 ledstate;
+	u32 ledregs[4];
 
 	/* all fields below are cleared on reset */
 	struct_group(ar8xxx_priv_volatile,

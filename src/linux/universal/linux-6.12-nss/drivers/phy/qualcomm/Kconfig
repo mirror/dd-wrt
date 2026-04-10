@@ -28,12 +28,31 @@ config PHY_QCOM_EDP
 	  Enable this driver to support the Qualcomm eDP PHY found in various
 	  Qualcomm chipsets.
 
+config PHY_QCOM_ETH_UNIPHY
+	tristate "Qualcomm ethernet uniphy driver"
+	depends on OF && COMMON_CLK && (ARCH_QCOM || COMPILE_TEST)
+	select GENERIC_PHY
+	help
+	  Support for the Qualcomm ethernet uniphy.
+
 config PHY_QCOM_IPQ4019_USB
 	tristate "Qualcomm IPQ4019 USB PHY driver"
 	depends on OF && (ARCH_QCOM || COMPILE_TEST)
 	select GENERIC_PHY
 	help
 	  Support for the USB PHY-s on Qualcomm IPQ40xx SoC-s.
+
+config PHY_QCOM_IPQ5018_UNIPHY_PCIE
+	bool "PCIE IPQ5018 UNIPHY PHY driver"
+	depends on ARCH_QCOM
+	depends on HAS_IOMEM
+	depends on OF
+	select GENERIC_PHY
+	help
+	  Enable this to support the IPQ5018 PCIe UNIPHY phy transceiver that
+	  is used with PCIe controllers on Qualcomm IPQ5018 chips. It
+	  handles PHY initialization, clock management required after
+	  resetting the hardware and power management.
 
 config PHY_QCOM_IPQ806X_SATA
 	tristate "Qualcomm IPQ806x SATA SerDes/PHY driver"

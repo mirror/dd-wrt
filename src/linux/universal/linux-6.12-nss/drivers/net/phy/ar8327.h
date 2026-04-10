@@ -317,12 +317,10 @@ struct ar8327_led {
 	struct work_struct led_work;
 	bool enable_hw_mode;
 	enum ar8327_led_pattern pattern;
-	struct fwnode_handle *fwnode;
 };
 
 struct ar8327_data {
 	u32 port0_status;
-	u32 port5_status;
 	u32 port6_status;
 
 	struct ar8327_led **leds;
@@ -330,6 +328,7 @@ struct ar8327_data {
 
 	/* all fields below are cleared on reset */
 	bool eee[AR8XXX_NUM_PHYS];
+	u32 state[8];
 };
 
 #endif

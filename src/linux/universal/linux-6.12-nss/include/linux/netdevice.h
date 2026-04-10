@@ -3206,6 +3206,7 @@ static inline int dev_direct_xmit(struct sk_buff *skb, u16 queue_id)
 
 bool dev_fast_xmit(struct sk_buff *skb, struct net_device *dev,
 		   netdev_features_t features);
+bool dev_fast_xmit_qdisc(struct sk_buff *skb, struct net_device *top_qdisc_dev, struct net_device *bottom_dev);
 int register_netdevice(struct net_device *dev);
 void unregister_netdevice_queue(struct net_device *dev, struct list_head *head);
 void unregister_netdevice_many(struct list_head *head);

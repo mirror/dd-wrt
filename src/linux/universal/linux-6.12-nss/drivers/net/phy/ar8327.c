@@ -22,11 +22,12 @@
 #include <linux/phy.h>
 #include <linux/lockdep.h>
 #include <linux/ar8216_platform.h>
+#include <linux/gpio/consumer.h>
 #include <linux/workqueue.h>
-#include <linux/of.h>
 #include <linux/of_device.h>
 #include <linux/leds.h>
 #include <linux/mdio.h>
+#include <linux/of.h>
 
 #include "ar8216.h"
 #include "ar8327.h"
@@ -327,7 +328,8 @@ ar8327_led_set_brightness(struct led_classdev *led_cdev,
 	u8 pattern;
 	bool active;
 
-	active = (brightness != LED_OFF) != aled->active_low;
+	active = (brightness != LED_OFF);
+	active ^= aled->active_low;
 
 	pattern = (active) ? AR8327_LED_PATTERN_ON :
 			     AR8327_LED_PATTERN_OFF;
@@ -393,11 +395,8 @@ static int
 ar8327_led_register(struct ar8327_led *aled)
 {
 	int ret;
-	struct led_init_data init_data = {
-		.fwnode = aled->fwnode
-	};
 
-	ret = led_classdev_register_ext(NULL, &aled->cdev, &init_data);
+	ret = led_classdev_register(NULL, &aled->cdev);
 	if (ret < 0)
 		return ret;
 
@@ -451,7 +450,6 @@ ar8327_led_create(struct ar8xxx_priv *priv,
 	aled->led_num = led_info->led_num;
 	aled->active_low = led_info->active_low;
 	aled->mode = led_info->mode;
-	aled->fwnode = led_info->fwnode;
 
 	if (aled->mode == AR8327_LED_MODE_HW)
 		aled->enable_hw_mode = true;
@@ -505,8 +503,7 @@ ar8327_leds_init(struct ar8xxx_priv *priv)
 		if (aled->enable_hw_mode)
 			aled->pattern = AR8327_LED_PATTERN_RULE;
 		else
-			aled->pattern = aled->active_low ?
-				AR8327_LED_PATTERN_ON : AR8327_LED_PATTERN_OFF;
+			aled->pattern = AR8327_LED_PATTERN_OFF;
 
 		ar8327_set_led_pattern(priv, aled->led_num, aled->pattern);
 	}
@@ -546,7 +543,6 @@ ar8327_hw_config_pdata(struct ar8xxx_priv *priv,
 	priv->get_port_link = pdata->get_port_link;
 
 	data->port0_status = ar8327_get_port_init_status(&pdata->port0_cfg);
-	data->port5_status = ar8327_get_port_init_status(&pdata->port5_cfg);
 	data->port6_status = ar8327_get_port_init_status(&pdata->port6_cfg);
 
 	t = ar8327_get_pad_cfg(pdata->pad0_cfg);
@@ -615,6 +611,7 @@ ar8327_hw_config_pdata(struct ar8xxx_priv *priv,
 }
 
 #ifdef CONFIG_OF
+
 static int
 ar8327_hw_config_of(struct ar8xxx_priv *priv, struct device_node *np)
 {
@@ -622,7 +619,6 @@ ar8327_hw_config_of(struct ar8xxx_priv *priv, struct device_node *np)
 	const __be32 *paddr;
 	int len;
 	int i;
-	struct device_node *leds, *child;
 
 	paddr = of_get_property(np, "qca,ar8327-initvals", &len);
 	if (!paddr || len < (2 * sizeof(*paddr)))
@@ -641,9 +637,6 @@ ar8327_hw_config_of(struct ar8xxx_priv *priv, struct device_node *np)
 		case AR8327_REG_PORT_STATUS(0):
 			data->port0_status = val;
 			break;
-		case AR8327_REG_PORT_STATUS(5):
-			data->port5_status = val;
-			break;
 		case AR8327_REG_PORT_STATUS(6):
 			data->port6_status = val;
 			break;
@@ -653,39 +646,6 @@ ar8327_hw_config_of(struct ar8xxx_priv *priv, struct device_node *np)
 		}
 	}
 
-	leds = of_get_child_by_name(np, "leds");
-	if (!leds)
-		return 0;
-
-	data->leds = kvcalloc(of_get_child_count(leds), sizeof(void *),
-			     GFP_KERNEL);
-	if (!data->leds)
-		return -ENOMEM;
-
-	for_each_available_child_of_node(leds, child) {
-		u32 reg = 0, mode = 0;
-		struct ar8327_led_info info;
-		int ret;
-
-		ret = of_property_read_u32(child, "reg", &reg);
-		if (ret) {
-			pr_err("ar8327: LED %s is missing reg node\n", child->name);
-			continue;
-		}
-
-		of_property_read_u32(child, "qca,led-mode", &mode);
-
-		info = (struct ar8327_led_info) {
-			.name = of_get_property(child, "label", NULL) ? : child->name,
-			.fwnode = of_fwnode_handle(child),
-			.active_low = of_property_read_bool(child, "active-low"),
-			.led_num = (enum ar8327_led_num) reg,
-		        .mode = (enum ar8327_led_mode) mode
-		};
-		ar8327_led_create(priv, &info);
-	}
-
-	of_node_put(leds);
 	return 0;
 }
 #else
@@ -758,6 +718,57 @@ ar8327_init_globals(struct ar8xxx_priv *priv)
 		data->eee[i] = false;
 }
 
+static int ar8327_sw_set_port_link(struct switch_dev *dev, int port,
+			     struct switch_port_link *link)
+{
+	struct ar8xxx_priv *priv = swdev_to_ar8xxx(dev);
+	u32 t;
+	if (port == AR8216_PORT_CPU || port == 6) {
+		return -EINVAL;
+	}
+	t = ar8xxx_read(priv, AR8327_REG_PORT_STATUS(port));
+	t &= ~(t & AR8216_PORT_STATUS_SPEED) <<
+		 AR8216_PORT_STATUS_SPEED_S;
+	t &= ~AR8216_PORT_STATUS_LINK_AUTO;
+	t &= ~AR8216_PORT_STATUS_DUPLEX;
+	t &= ~AR8216_PORT_STATUS_FLOW_CONTROL;
+
+	if (link->duplex)
+		t |= AR8216_PORT_STATUS_DUPLEX;
+	if (link->aneg) {
+		t |= AR8216_PORT_STATUS_FLOW_CONTROL;
+		t |= AR8216_PORT_STATUS_LINK_AUTO;
+	} else {
+		t &= ~AR8216_PORT_STATUS_TXFLOW;
+		t &= ~AR8216_PORT_STATUS_RXFLOW;
+		if (link->rx_flow)
+		    t |= AR8216_PORT_STATUS_RXFLOW;
+		if (link->tx_flow)
+		    t |= AR8216_PORT_STATUS_TXFLOW;
+		switch (link->speed) {
+		case SWITCH_PORT_SPEED_10:
+			t |= AR8216_PORT_SPEED_10M <<
+			 AR8216_PORT_STATUS_SPEED_S;
+			break;
+		case SWITCH_PORT_SPEED_100:
+			t |= AR8216_PORT_SPEED_100M <<
+			 AR8216_PORT_STATUS_SPEED_S;
+			break;
+		case SWITCH_PORT_SPEED_1000:
+			t |= AR8216_PORT_SPEED_1000M <<
+			 AR8216_PORT_STATUS_SPEED_S;
+			break;
+		default:
+			t |= AR8216_PORT_STATUS_LINK_AUTO;
+			break;
+		}
+	}
+	ar8xxx_write(priv, AR8327_REG_PORT_STATUS(port), 0);
+	msleep(100);
+	ar8xxx_write(priv, AR8327_REG_PORT_STATUS(port), t);
+	return 0;
+}
+
 static void
 ar8327_init_port(struct ar8xxx_priv *priv, int port)
 {
@@ -766,14 +777,12 @@ ar8327_init_port(struct ar8xxx_priv *priv, int port)
 
 	if (port == AR8216_PORT_CPU)
 		t = data->port0_status;
-	else if (port == 5)
-		t = data->port5_status;
 	else if (port == 6)
 		t = data->port6_status;
 	else
 		t = AR8216_PORT_STATUS_LINK_AUTO;
 
-	if (port != AR8216_PORT_CPU && port != 5 && port != 6) {
+	if (port != AR8216_PORT_CPU && port != 6) {
 		/*hw limitation:if configure mac when there is traffic,
 		port MAC may work abnormal. Need disable lan&wan mac at fisrt*/
 		ar8xxx_write(priv, AR8327_REG_PORT_STATUS(port), 0);
@@ -1081,6 +1090,46 @@ ar8327_set_mirror_regs(struct ar8xxx_priv *priv)
 			   AR8327_PORT_HOL_CTRL1_EG_MIRROR_EN);
 }
 
+int
+ar8327_sw_set_leds(struct switch_dev *dev, const struct switch_attr *attr,
+		   struct switch_val *val)
+{
+	struct ar8xxx_priv *priv = swdev_to_ar8xxx(dev);
+	if (priv->ledstate == 0) {
+	    priv->ledregs[0] = ar8xxx_read(priv, AR8327_REG_LED_CTRL0);
+	    priv->ledregs[1] = ar8xxx_read(priv, AR8327_REG_LED_CTRL1);
+	    priv->ledregs[2] = ar8xxx_read(priv, AR8327_REG_LED_CTRL2);
+	    priv->ledregs[3] = ar8xxx_read(priv, AR8327_REG_LED_CTRL3);
+	    priv->ledstate = 1;
+	}
+	if (!!val->value.i) {
+		ar8xxx_write(priv, AR8327_REG_LED_CTRL0, priv->ledregs[0]);
+		ar8xxx_write(priv, AR8327_REG_LED_CTRL1, priv->ledregs[1]);
+		ar8xxx_write(priv, AR8327_REG_LED_CTRL2, priv->ledregs[2]);
+		ar8xxx_write(priv, AR8327_REG_LED_CTRL3, priv->ledregs[3]);
+		priv->ledstate = 1;
+	} else {
+		ar8xxx_write(priv, AR8327_REG_LED_CTRL0, 0);
+		ar8xxx_write(priv, AR8327_REG_LED_CTRL1, 0);
+		ar8xxx_write(priv, AR8327_REG_LED_CTRL2, 0);
+		ar8xxx_write(priv, AR8327_REG_LED_CTRL3, 0);
+		priv->ledstate = 2;
+	}
+	return 0;
+}
+
+int
+ar8327_sw_get_leds(struct switch_dev *dev, const struct switch_attr *attr,
+		   struct switch_val *val)
+{
+	struct ar8xxx_priv *priv = swdev_to_ar8xxx(dev);
+	if (!priv->ledstate || priv->ledstate == 1)
+		val->value.i = 1;
+	else
+		val->value.i = 0;
+	return 0;
+}
+
 static int
 ar8327_sw_set_eee(struct switch_dev *dev,
 		  const struct switch_attr *attr,
@@ -1122,6 +1171,57 @@ ar8327_sw_get_eee(struct switch_dev *dev,
 
 	val->value.i = data->eee[phy];
 
+	return 0;
+}
+
+
+static int
+ar8327_sw_set_disable(struct switch_dev *dev,
+		  const struct switch_attr *attr,
+		  struct switch_val *val)
+{
+	struct ar8xxx_priv *priv = swdev_to_ar8xxx(dev);
+	int port = val->port_vlan;
+
+	if (port >= dev->ports)
+		return -EINVAL;
+	if (port == 0 || port == 6)
+		return -EOPNOTSUPP;
+
+	
+	if (!!(val->value.i))  {
+		priv->disabled[port] = 1;
+		priv->state[port] = ar8xxx_read(priv, AR8327_REG_PORT_STATUS(port));
+		ar8xxx_write(priv, AR8327_REG_PORT_STATUS(port), 0);
+	} else {
+		priv->disabled[port] = 0;
+		if (priv->state[port])
+			ar8xxx_write(priv, AR8327_REG_PORT_STATUS(port), priv->state[port]);
+	}
+
+	return 0;
+}
+
+static int
+ar8327_sw_get_disable(struct switch_dev *dev,
+		  const struct switch_attr *attr,
+		  struct switch_val *val)
+{
+	struct ar8xxx_priv *priv = swdev_to_ar8xxx(dev);
+	int port = val->port_vlan;
+	u32 t;
+
+	if (port >= dev->ports)
+		return -EINVAL;
+	if (port == 0 || port == 6)
+		return -EOPNOTSUPP;
+
+	t = ar8xxx_read(priv, AR8327_REG_PORT_STATUS(port));
+
+	if (!(t & AR8216_PORT_STATUS_LINK_AUTO) && !(t & (AR8216_PORT_SPEED_10M << AR8216_PORT_STATUS_SPEED_S)) && !(t & (AR8216_PORT_SPEED_100M << AR8216_PORT_STATUS_SPEED_S)) && !(t & (AR8216_PORT_SPEED_1000M << AR8216_PORT_STATUS_SPEED_S)))
+		val->value.i = 1;
+	else
+		val->value.i = 0;
 	return 0;
 }
 
@@ -1216,7 +1316,7 @@ ar8327_sw_hw_apply(struct switch_dev *dev)
 	return 0;
 }
 
-static int
+int
 ar8327_sw_get_port_igmp_snooping(struct switch_dev *dev,
 				 const struct switch_attr *attr,
 				 struct switch_val *val)
@@ -1234,7 +1334,7 @@ ar8327_sw_get_port_igmp_snooping(struct switch_dev *dev,
 	return 0;
 }
 
-static int
+int
 ar8327_sw_set_port_igmp_snooping(struct switch_dev *dev,
 				 const struct switch_attr *attr,
 				 struct switch_val *val)
@@ -1252,7 +1352,7 @@ ar8327_sw_set_port_igmp_snooping(struct switch_dev *dev,
 	return 0;
 }
 
-static int
+int
 ar8327_sw_get_igmp_snooping(struct switch_dev *dev,
 			    const struct switch_attr *attr,
 			    struct switch_val *val)
@@ -1269,7 +1369,7 @@ ar8327_sw_get_igmp_snooping(struct switch_dev *dev,
 	return 0;
 }
 
-static int
+int
 ar8327_sw_set_igmp_snooping(struct switch_dev *dev,
 			    const struct switch_attr *attr,
 			    struct switch_val *val)
@@ -1285,7 +1385,7 @@ ar8327_sw_set_igmp_snooping(struct switch_dev *dev,
 	return 0;
 }
 
-static int
+int
 ar8327_sw_get_igmp_v3(struct switch_dev *dev,
 		      const struct switch_attr *attr,
 		      struct switch_val *val)
@@ -1301,7 +1401,7 @@ ar8327_sw_get_igmp_v3(struct switch_dev *dev,
 	return 0;
 }
 
-static int
+int
 ar8327_sw_set_igmp_v3(struct switch_dev *dev,
 		      const struct switch_attr *attr,
 		      struct switch_val *val)
@@ -1359,6 +1459,14 @@ static const struct switch_attr ar8327_sw_attr_globals[] = {
 		.set = ar8xxx_sw_set_vlan,
 		.get = ar8xxx_sw_get_vlan,
 		.max = 1
+	},
+	{
+		.type = SWITCH_TYPE_INT,
+		.name = "leds",
+		.description = "turn leds on or off",
+		.set = ar8327_sw_set_leds,
+		.get = ar8327_sw_get_leds,
+		.max = 1,
 	},
 	{
 		.type = SWITCH_TYPE_NOVAL,
@@ -1473,6 +1581,14 @@ static const struct switch_attr ar8327_sw_attr_port[] = {
 		.max = 1,
 	},
 	{
+		.type = SWITCH_TYPE_INT,
+		.name = "disable",
+		.description = "Disable Port",
+		.set = ar8327_sw_set_disable,
+		.get = ar8327_sw_get_disable,
+		.max = 1,
+	},
+	{
 		.type = SWITCH_TYPE_NOVAL,
 		.name = "flush_arl_table",
 		.description = "Flush port's ARL table entries",
@@ -1516,11 +1632,12 @@ static const struct switch_dev_ops ar8327_sw_ops = {
 	.apply_config = ar8327_sw_hw_apply,
 	.reset_switch = ar8xxx_sw_reset_switch,
 	.get_port_link = ar8xxx_sw_get_port_link,
-	.get_port_stats = ar8xxx_sw_get_port_stats,
+	.set_port_link = ar8327_sw_set_port_link,
+//	.get_port_stats = ar8xxx_sw_get_port_stats,
 };
 
 const struct ar8xxx_chip ar8327_chip = {
-	.caps = AR8XXX_CAP_GIGE | AR8XXX_CAP_MIB_COUNTERS,
+	.caps = AR8XXX_CAP_GIGE,
 	.config_at_probe = true,
 	.mii_lo_first = true,
 
@@ -1557,7 +1674,7 @@ const struct ar8xxx_chip ar8327_chip = {
 };
 
 const struct ar8xxx_chip ar8337_chip = {
-	.caps = AR8XXX_CAP_GIGE | AR8XXX_CAP_MIB_COUNTERS,
+	.caps = AR8XXX_CAP_GIGE,
 	.config_at_probe = true,
 	.mii_lo_first = true,
 

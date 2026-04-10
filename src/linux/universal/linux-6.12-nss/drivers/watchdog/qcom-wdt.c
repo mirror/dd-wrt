@@ -293,6 +293,9 @@ static int qcom_wdt_probe(struct platform_device *pdev)
 	if (ret)
 		return ret;
 
+	qcom_wdt_start(&wdt->wdd);
+	qcom_wdt_ping(&wdt->wdd);
+
 	platform_set_drvdata(pdev, wdt);
 	return 0;
 }

@@ -1204,7 +1204,8 @@ static struct phy_driver at803x_driver[] = {
 	.read_status		= at803x_read_status,
 	.soft_reset		= genphy_soft_reset,
 	.config_aneg		= at803x_config_aneg,
-}, {
+},
+/*{
 	PHY_ID_MATCH_EXACT(IPQ5018_PHY_ID),
 	.name			= "Qualcomm Atheros IPQ5018 internal PHY",
 	.flags			= PHY_IS_INTERNAL | PHY_POLL_CABLE_TEST,
@@ -1217,7 +1218,8 @@ static struct phy_driver at803x_driver[] = {
 	.cable_test_start	= ipq5018_cable_test_start,
 	.cable_test_get_status	= qca808x_cable_test_get_status,
 	.soft_reset		= genphy_soft_reset,
-}, {
+},*/
+{
 	/* Qualcomm Atheros QCA9561 */
 	PHY_ID_MATCH_EXACT(QCA9561_PHY_ID),
 	.name			= "Qualcomm Atheros QCA9561 built-in PHY",
