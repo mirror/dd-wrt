@@ -108,8 +108,8 @@
 				reset_gpio = <0x227>;
 #if 0
 				switch_cpu_bmp = <0x40>;  /* cpu port bitmap (Port 6 GMAC) */
-				switch_lan_bmp = <0x1e>;  /* lan port bitmap (Port 5..3 GMAC) */
-				switch_wan_bmp = <0x20>;  /* wan port bitmap (Port 2 GMAC) */
+				switch_lan_bmp = <0x3c>;  /* lan port bitmap (Port 5..3 GMAC) */
+				switch_wan_bmp = <0x00>;  /* wan port bitmap (Port 2 GMAC) */
 #endif
 				qca,ar8327-initvals = <
 						0x00004 0x7600000   /* PAD0_MODE */
@@ -139,9 +139,9 @@
 						port_id = <4>;
 						phy_address = <3>;
 					};
-					port@4 {
-						port_id = <0x5>;
-						phy_address = <0x4>;
+					port@5 {
+						port_id = <5>;
+						phy_address = <4>;
 					};
 				};
 			};
@@ -227,11 +227,6 @@
 			pinctrl-names = "default";
 			reset-gpios = <&tlmm 39 GPIO_ACTIVE_LOW>;
 
-			qca8337_0: ethernet-phy@0 {
-				compatible = "ethernet-phy-ieee802.3-c22";
-				reg = <0>;
-			};
-
 			qca8337_1: ethernet-phy@1 {
 				compatible = "ethernet-phy-ieee802.3-c22";
 				reg = <1>;
@@ -251,6 +246,23 @@
 				compatible = "ethernet-phy-ieee802.3-c22";
 				reg = <4>;
 			};
+
+
+
+	phy6: ethernet-phy@6 {
+		reg = <6>;
+		phy-mode = "sgmii";
+		qca,ar8327-initvals = <
+				0x00004 0x7600000   /* PAD0_MODE */
+				0x00008 0x1000000   /* PAD5_MODE */
+				0x0000c 0x80        /* PAD6_MODE */
+				0x00010 0x2613a0    /* PORT6 FORCE MODE*/
+				0x000e4 0xaa545     /* MAC_POWER_SEL */
+				0x000e0 0xc74164de  /* SGMII_CTRL */
+				0x0007c 0x4e        /* PORT0_STATUS */
+				0x00094 0x4e        /* PORT6_STATUS */
+		>;
+	};
 
 	// QCA8337 switch
 	switch1: ethernet-switch@10 {
@@ -274,30 +286,11 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 
-			port@0 {
-				reg = <6>;
-				label = "cpu";
-				phy-mode = "sgmii";
-				ethernet = <&dp1>;
-/*				qca,sgmii-enable-pll; */
-
-				fixed-link {
-					speed = <1000>;
-					full-duplex;
-				};
-			};
-
-			
-			port@1 {
-				reg = <1>;
-				phy-handle = <&qca8337_0>;
-				label = "lan1";
-			};
 
 			port@2 {
 				reg = <2>;
 				phy-handle = <&qca8337_1>;
-				label = "lan2";
+				label = "wan";
 			};
 
 			port@3 {
@@ -309,13 +302,26 @@
 			port@4 {
 				reg = <4>;
 				phy-handle = <&qca8337_3>;
-				label = "lan4";
+				label = "lan2";
 			};
 
 			port@5 {
 				reg = <5>;
 				phy-handle = <&qca8337_4>;
-				label = "wan";
+				label = "lan1";
+			};
+
+			port@6 {
+				reg = <6>;
+				label = "cpu";
+				phy-mode = "sgmii";
+				ethernet = <&dp1>;
+			/*	qca,sgmii-enable-pll; */
+
+				fixed-link {
+					speed = <1000>;
+					full-duplex;
+				};
 			};
 
 		};
