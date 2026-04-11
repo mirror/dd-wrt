@@ -231,6 +231,17 @@ config PHY_QCOM_USB_SS
 	  Enable this to support the Super-Speed USB transceiver on various
 	  Qualcomm chipsets.
 
+config PHY_QCOM_USB_SS_22ULL
+	tristate "Qualcomm USB Super-Speed UNIPHY driver"
+	depends on USB && (ARCH_QCOM || COMPILE_TEST)
+	select GENERIC_PHY
+	help
+	  Enable this to support the Qualcomm USB Super-Speed UNIPHY transceiver
+	  with DWC3 USB core. It handles PHY initialization, clock
+	  management required after resetting the hardware and power
+	  management. This driver is required even for peripheral only or
+	  host only mode configurations.
+
 config PHY_QCOM_IPQ806X_USB
 	tristate "Qualcomm IPQ806x DWC3 USB PHY driver"
 	depends on HAS_IOMEM
