@@ -1393,10 +1393,10 @@ err_alloc_si_res:
 	si->ndev = NULL;
 	free_netdev(ndev);
 err_alloc_netdev:
-err_device_disabled:
 err_setup_mac_addresses:
 	kfree(pf->vf_state);
 err_alloc_vf_state:
+err_device_disabled:
 	enetc_psi_destroy(pdev);
 err_psi_create:
 	return err;

@@ -867,6 +867,8 @@ put_dev:
 	elv_unregister_queue(q);
 	disk_unregister_independent_access_ranges(disk);
 	mutex_unlock(&q->sysfs_lock);
+	if (queue_is_mq(q))
+		blk_mq_sysfs_unregister(disk);
 	mutex_unlock(&q->sysfs_dir_lock);
 	kobject_del(&q->kobj);
 
