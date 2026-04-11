@@ -34,6 +34,7 @@
 #include <asm/cpu-features.h>
 #include <asm/fpu.h>
 #include <asm/lbt.h>
+#include <asm/sigframe.h>
 #include <asm/ucontext.h>
 #include <asm/vdso.h>
 
@@ -70,11 +71,6 @@ extern asmlinkage int _restore_lbt_context(void __user *regs, void __user *eflag
 extern asmlinkage int _save_ftop_context(void __user *ftop);
 extern asmlinkage int _restore_ftop_context(void __user *ftop);
 #endif
-
-struct rt_sigframe {
-	struct siginfo rs_info;
-	struct ucontext rs_uctx;
-};
 
 struct _ctx_layout {
 	struct sctx_info *addr;

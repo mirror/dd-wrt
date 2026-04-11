@@ -465,10 +465,15 @@ static void sfp_quirk_ubnt_uf_instant(const struct sfp_eeprom_id *id,
 {
 	/* Ubiquiti U-Fiber Instant module claims that support all transceiver
 	 * types including 10G Ethernet which is not truth. So clear all claimed
-	 * modes and set only one mode which module supports: 1000baseX_Full.
+	 * modes and set only one mode which module supports: 1000baseX_Full,
+	 * along with the Autoneg and pause bits.
 	 */
 	linkmode_zero(modes);
 	linkmode_set_bit(ETHTOOL_LINK_MODE_1000baseX_Full_BIT, modes);
+	linkmode_set_bit(ETHTOOL_LINK_MODE_Autoneg_BIT, modes);
+	linkmode_set_bit(ETHTOOL_LINK_MODE_Pause_BIT, modes);
+	linkmode_set_bit(ETHTOOL_LINK_MODE_Asym_Pause_BIT, modes);
+
 	phy_interface_zero(interfaces);
 	__set_bit(PHY_INTERFACE_MODE_1000BASEX, interfaces);
 }

@@ -997,7 +997,7 @@ static int ext4_fc_submit_inode_data_all(journal_t *journal)
 			finish_wait(&ei->i_fc_wait, &wait);
 		}
 		spin_unlock(&sbi->s_fc_lock);
-		ret = jbd2_submit_inode_data(journal, ei->jinode);
+		ret = jbd2_submit_inode_data(journal, READ_ONCE(ei->jinode));
 		if (ret)
 			return ret;
 		spin_lock(&sbi->s_fc_lock);
@@ -1022,7 +1022,7 @@ static int ext4_fc_wait_inode_data_all(journal_t *journal)
 			continue;
 		spin_unlock(&sbi->s_fc_lock);
 
-		ret = jbd2_wait_inode_data(journal, pos->jinode);
+		ret = jbd2_wait_inode_data(journal, READ_ONCE(pos->jinode));
 		if (ret)
 			return ret;
 		spin_lock(&sbi->s_fc_lock);
