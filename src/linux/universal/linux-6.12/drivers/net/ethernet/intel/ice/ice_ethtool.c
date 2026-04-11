@@ -3331,7 +3331,7 @@ process_rx:
 	rx_rings = kcalloc(vsi->num_rxq, sizeof(*rx_rings), GFP_KERNEL);
 	if (!rx_rings) {
 		err = -ENOMEM;
-		goto done;
+		goto free_xdp;
 	}
 
 	ice_for_each_rxq(vsi, i) {
@@ -3361,7 +3361,7 @@ rx_unwind:
 			}
 			kfree(rx_rings);
 			err = -ENOMEM;
-			goto free_tx;
+			goto free_xdp;
 		}
 	}
 
@@ -3411,6 +3411,13 @@ process_link:
 		ice_up(vsi);
 	}
 	goto done;
+
+free_xdp:
+	if (xdp_rings) {
+		ice_for_each_xdp_txq(vsi, i)
+			ice_free_tx_ring(&xdp_rings[i]);
+		kfree(xdp_rings);
+	}
 
 free_tx:
 	/* error cleanup if the Rx allocations failed after getting Tx */

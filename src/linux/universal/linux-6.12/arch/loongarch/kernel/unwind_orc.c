@@ -357,21 +357,13 @@ static bool is_entry_func(unsigned long addr)
 
 static inline unsigned long bt_address(unsigned long ra)
 {
-#if defined(CONFIG_NUMA) && !defined(CONFIG_PREEMPT_RT)
-	int cpu;
-	int vec_sz = sizeof(exception_handlers);
+	extern unsigned long eentry;
 
-	for_each_possible_cpu(cpu) {
-		if (!pcpu_handlers[cpu])
-			continue;
+	if (__kernel_text_address(ra))
+		return ra;
 
-		if (ra >= pcpu_handlers[cpu] &&
-		    ra < pcpu_handlers[cpu] + vec_sz) {
-			ra = ra + eentry - pcpu_handlers[cpu];
-			break;
-		}
-	}
-#endif
+	if (__module_text_address(ra))
+		return ra;
 
 	if (ra >= eentry && ra < eentry +  EXCCODE_INT_END * VECSIZE) {
 		unsigned long func;
@@ -390,13 +382,10 @@ static inline unsigned long bt_address(unsigned long ra)
 			break;
 		}
 
-		ra = func + offset;
+		return func + offset;
 	}
 
-	if (__kernel_text_address(ra))
-		return ra;
-
-	return 0;
+	return ra;
 }
 
 bool unwind_next_frame(struct unwind_state *state)
@@ -410,7 +399,7 @@ bool unwind_next_frame(struct unwind_state *state)
 		return false;
 
 	/* Don't let modules unload while we're reading their ORC data. */
-	guard(rcu)();
+	preempt_disable();
 
 	if (is_entry_func(state->pc))
 		goto end;
@@ -522,12 +511,17 @@ bool unwind_next_frame(struct unwind_state *state)
 		goto err;
 	}
 
+	if (!__kernel_text_address(state->pc))
+		goto err;
+
+	preempt_enable();
 	return true;
 
 err:
 	state->error = true;
 
 end:
+	preempt_enable();
 	state->stack_info.type = STACK_TYPE_UNKNOWN;
 	return false;
 }
