@@ -1404,7 +1404,7 @@ void netdev_state_change(struct net_device *dev)
 
 		call_netdevice_notifiers_info(NETDEV_CHANGE,
 					      &change_info.info);
-		rtmsg_ifinfo(RTM_NEWLINK, dev, 0, GFP_KERNEL);
+		rtmsg_ifinfo(RTM_NEWLINK, dev, 0, GFP_KERNEL, 0, NULL);
 	}
 }
 EXPORT_SYMBOL(netdev_state_change);
@@ -1540,7 +1540,7 @@ int dev_open(struct net_device *dev, struct netlink_ext_ack *extack)
 	if (ret < 0)
 		return ret;
 
-	rtmsg_ifinfo(RTM_NEWLINK, dev, IFF_UP|IFF_RUNNING, GFP_KERNEL);
+	rtmsg_ifinfo(RTM_NEWLINK, dev, IFF_UP | IFF_RUNNING, GFP_KERNEL, 0, NULL);
 	call_netdevice_notifiers(NETDEV_UP, dev);
 
 	return ret;
@@ -1612,7 +1612,7 @@ void dev_close_many(struct list_head *head, bool unlink)
 	__dev_close_many(head);
 
 	list_for_each_entry_safe(dev, tmp, head, close_list) {
-		rtmsg_ifinfo(RTM_NEWLINK, dev, IFF_UP|IFF_RUNNING, GFP_KERNEL);
+		rtmsg_ifinfo(RTM_NEWLINK, dev, IFF_UP | IFF_RUNNING, GFP_KERNEL, 0, NULL);
 		call_netdevice_notifiers(NETDEV_DOWN, dev);
 		if (unlink)
 			list_del_init(&dev->close_list);
@@ -3590,6 +3590,22 @@ static netdev_features_t dflt_features_check(struct sk_buff *skb,
 	return vlan_features_check(skb, features);
 }
 
+static bool skb_gso_has_extension_hdr(const struct sk_buff *skb)
+{
+	if (!skb->encapsulation)
+		return ((skb_shinfo(skb)->gso_type & SKB_GSO_TCPV6 ||
+			 (skb_shinfo(skb)->gso_type & SKB_GSO_UDP_L4 &&
+			  vlan_get_protocol(skb) == htons(ETH_P_IPV6))) &&
+			skb_transport_header_was_set(skb) &&
+			skb_network_header_len(skb) != sizeof(struct ipv6hdr));
+	else
+		return (!skb_inner_network_header_was_set(skb) ||
+			((skb_shinfo(skb)->gso_type & SKB_GSO_TCPV6 ||
+			  (skb_shinfo(skb)->gso_type & SKB_GSO_UDP_L4 &&
+			   inner_ip_hdr(skb)->version == 6)) &&
+			 skb_inner_network_header_len(skb) != sizeof(struct ipv6hdr)));
+}
+
 static netdev_features_t gso_features_check(const struct sk_buff *skb,
 					    struct net_device *dev,
 					    netdev_features_t features)
@@ -3631,11 +3647,7 @@ static netdev_features_t gso_features_check(const struct sk_buff *skb,
 	 * so neither does TSO that depends on it.
 	 */
 	if (features & NETIF_F_IPV6_CSUM &&
-	    (skb_shinfo(skb)->gso_type & SKB_GSO_TCPV6 ||
-	     (skb_shinfo(skb)->gso_type & SKB_GSO_UDP_L4 &&
-	      vlan_get_protocol(skb) == htons(ETH_P_IPV6))) &&
-	    skb_transport_header_was_set(skb) &&
-	    skb_network_header_len(skb) != sizeof(struct ipv6hdr) &&
+	    skb_gso_has_extension_hdr(skb) &&
 	    !ipv6_has_hopopt_jumbo(skb))
 		features &= ~(NETIF_F_IPV6_CSUM | NETIF_F_TSO6 | NETIF_F_GSO_UDP_L4);
 
@@ -8766,7 +8778,7 @@ static int __dev_set_promiscuity(struct net_device *dev, int inc, bool notify)
 		dev_change_rx_flags(dev, IFF_PROMISC);
 	}
 	if (notify)
-		__dev_notify_flags(dev, old_flags, IFF_PROMISC);
+		__dev_notify_flags(dev, old_flags, IFF_PROMISC, 0, NULL);
 	return 0;
 }
 
@@ -8821,7 +8833,7 @@ static int __dev_set_allmulti(struct net_device *dev, int inc, bool notify)
 		dev_set_rx_mode(dev);
 		if (notify)
 			__dev_notify_flags(dev, old_flags,
-					   dev->gflags ^ old_gflags);
+					   dev->gflags ^ old_gflags, 0, NULL);
 	}
 	return 0;
 }
@@ -8984,12 +8996,13 @@ int __dev_change_flags(struct net_device *dev, unsigned int flags,
 }
 
 void __dev_notify_flags(struct net_device *dev, unsigned int old_flags,
-			unsigned int gchanges)
+			unsigned int gchanges, u32 portid,
+			const struct nlmsghdr *nlh)
 {
 	unsigned int changes = dev->flags ^ old_flags;
 
 	if (gchanges)
-		rtmsg_ifinfo(RTM_NEWLINK, dev, gchanges, GFP_ATOMIC);
+		rtmsg_ifinfo(RTM_NEWLINK, dev, gchanges, GFP_ATOMIC, portid, nlh);
 
 	if (changes & IFF_UP) {
 		if (dev->flags & IFF_UP)
@@ -9031,7 +9044,7 @@ int dev_change_flags(struct net_device *dev, unsigned int flags,
 		return ret;
 
 	changes = (old_flags ^ dev->flags) | (old_gflags ^ dev->gflags);
-	__dev_notify_flags(dev, old_flags, changes);
+	__dev_notify_flags(dev, old_flags, changes, 0, NULL);
 	return ret;
 }
 EXPORT_SYMBOL(dev_change_flags);
@@ -10576,7 +10589,7 @@ int register_netdevice(struct net_device *dev)
 	 */
 	if (!dev->rtnl_link_ops ||
 	    dev->rtnl_link_state == RTNL_LINK_INITIALIZED)
-		rtmsg_ifinfo(RTM_NEWLINK, dev, ~0U, GFP_KERNEL);
+		rtmsg_ifinfo(RTM_NEWLINK, dev, ~0U, GFP_KERNEL, 0, NULL);
 
 out:
 	return ret;
@@ -11250,14 +11263,8 @@ void unregister_netdevice_queue(struct net_device *dev, struct list_head *head)
 }
 EXPORT_SYMBOL(unregister_netdevice_queue);
 
-/**
- *	unregister_netdevice_many - unregister many devices
- *	@head: list of devices
- *
- *  Note: As most callers use a stack allocated list_head,
- *  we force a list_del() to make sure stack wont be corrupted later.
- */
-void unregister_netdevice_many(struct list_head *head)
+void unregister_netdevice_many_notify(struct list_head *head,
+				      u32 portid, const struct nlmsghdr *nlh)
 {
 	struct net_device *dev, *tmp;
 	LIST_HEAD(close_head);
@@ -11319,7 +11326,8 @@ void unregister_netdevice_many(struct list_head *head)
 		if (!dev->rtnl_link_ops ||
 		    dev->rtnl_link_state == RTNL_LINK_INITIALIZED)
 			skb = rtmsg_ifinfo_build_skb(RTM_DELLINK, dev, ~0U, 0,
-						     GFP_KERNEL, NULL, 0);
+						     GFP_KERNEL, NULL, 0,
+						     portid, nlmsg_seq(nlh));
 
 		/*
 		 *	Flush the unicast and multicast chains
@@ -11334,7 +11342,7 @@ void unregister_netdevice_many(struct list_head *head)
 			dev->netdev_ops->ndo_uninit(dev);
 
 		if (skb)
-			rtmsg_ifinfo_send(skb, dev, GFP_KERNEL);
+			rtmsg_ifinfo_send(skb, dev, GFP_KERNEL, portid, nlh);
 
 		/* Notifier chain MUST detach us all upper devices. */
 		WARN_ON(netdev_has_any_upper_dev(dev));
@@ -11356,6 +11364,18 @@ void unregister_netdevice_many(struct list_head *head)
 	}
 
 	list_del(head);
+}
+
+/**
+ *	unregister_netdevice_many - unregister many devices
+ *	@head: list of devices
+ *
+ *  Note: As most callers use a stack allocated list_head,
+ *  we force a list_del() to make sure stack wont be corrupted later.
+ */
+void unregister_netdevice_many(struct list_head *head)
+{
+	unregister_netdevice_many_notify(head, 0, NULL);
 }
 EXPORT_SYMBOL(unregister_netdevice_many);
 
@@ -11522,7 +11542,7 @@ int __dev_change_net_namespace(struct net_device *dev, struct net *net,
 	 *	Prevent userspace races by waiting until the network
 	 *	device is fully setup before sending notifications.
 	 */
-	rtmsg_ifinfo(RTM_NEWLINK, dev, ~0U, GFP_KERNEL);
+	rtmsg_ifinfo(RTM_NEWLINK, dev, ~0U, GFP_KERNEL, 0, NULL);
 
 	synchronize_net();
 	err = 0;
