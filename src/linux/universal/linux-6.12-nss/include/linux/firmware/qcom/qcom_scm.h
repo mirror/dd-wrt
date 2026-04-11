@@ -78,6 +78,7 @@ void qcom_scm_pas_metadata_release(struct qcom_scm_pas_metadata *ctx);
 int qcom_scm_pas_mem_setup(u32 peripheral, phys_addr_t addr, phys_addr_t size);
 int qcom_scm_pas_auth_and_reset(u32 peripheral);
 int qcom_scm_pas_shutdown(u32 peripheral);
+int qcom_scm_pas_load_seg(u32 peripheral, int phno, dma_addr_t dma, int seg_cnt);
 bool qcom_scm_pas_supported(u32 peripheral);
 int qcom_scm_internal_wifi_powerup(u32 peripheral);
 int qcom_scm_internal_wifi_shutdown(u32 peripheral);
@@ -170,5 +171,6 @@ static inline int qcom_scm_qseecom_app_send(u32 app_id,
 }
 
 #endif /* CONFIG_QCOM_QSEECOM */
+extern int qti_scm_wcss_boot(u32 svc_id, u32 cmd_id, void *cmd_buf);
 
 #endif
