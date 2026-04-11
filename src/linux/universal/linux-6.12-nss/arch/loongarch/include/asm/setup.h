@@ -7,7 +7,6 @@
 #define _LOONGARCH_SETUP_H
 
 #include <linux/types.h>
-#include <linux/threads.h>
 #include <asm/sections.h>
 #include <uapi/asm/setup.h>
 
@@ -15,8 +14,6 @@
 
 extern unsigned long eentry;
 extern unsigned long tlbrentry;
-extern unsigned long pcpu_handlers[NR_CPUS];
-extern long exception_handlers[VECSIZE * 128 / sizeof(long)];
 extern char init_command_line[COMMAND_LINE_SIZE];
 extern void tlb_init(int cpu);
 extern void cpu_cache_init(void);

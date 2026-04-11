@@ -1034,7 +1034,14 @@ static bool check_rdseed_microcode(void)
 	if (cpu_has(c, X86_FEATURE_ZEN5)) {
 		switch (p.ucode_rev >> 8) {
 		case 0xb0021:	min_rev = 0xb00215a; break;
+		case 0xb0081:	min_rev = 0xb008121; break;
 		case 0xb1010:	min_rev = 0xb101054; break;
+		case 0xb2040:	min_rev = 0xb204037; break;
+		case 0xb4040:	min_rev = 0xb404035; break;
+		case 0xb4041:	min_rev = 0xb404108; break;
+		case 0xb6000:	min_rev = 0xb600037; break;
+		case 0xb6080:	min_rev = 0xb608038; break;
+		case 0xb7000:	min_rev = 0xb700037; break;
 		default:
 			pr_debug("%s: ucode_rev: 0x%x, current revision: 0x%x\n",
 				 __func__, p.ucode_rev, c->microcode);
