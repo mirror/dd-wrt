@@ -438,7 +438,6 @@ qca_switch_init(a_uint32_t dev_id)
 		/* Including CPU port */
 		port_bmp |= ssdk_cpu_bmp_get(dev_id);
 	}
-
 	i = 0;
 	while (port_bmp) {
 		if (port_bmp & 1) {

@@ -16,9 +16,14 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
+#include <linux/version.h>
 #include <linux/of.h>
 #include <linux/ioport.h>
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(6, 12, 0))
 #include <linux/qcom_scm.h>
+#else
+#include <linux/firmware/qcom/qcom_scm.h>
+#endif
 #include "nss_dp_hal.h"
 
 /*

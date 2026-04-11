@@ -307,6 +307,10 @@ int sfp_phy_device_setup(a_uint32_t dev_id, a_uint32_t port, a_uint32_t phy_id,
 {
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(4,4,0))
 	struct phy_device *phydev;
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(6,9,0)) && defined(IN_PHY_I2C_MODE)
+	struct device_driver *drv;
+	struct phy_driver *phydrv;
+#endif
 	a_uint32_t addr = 0;
 	struct mii_bus *bus;
 
@@ -344,8 +348,15 @@ int sfp_phy_device_setup(a_uint32_t dev_id, a_uint32_t port, a_uint32_t phy_id,
 		return SW_NOT_FOUND;
 #if defined(IN_PHY_I2C_MODE)
 	if (hsl_port_phy_access_type_get(dev_id, port) == PHY_I2C_ACCESS) {
-		if(phydev->drv)
+		if(phydev->drv) {
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(6,9,0))
+			drv = phydev->mdio.dev.driver;
+			phydrv = to_phy_driver(drv);
+			phy_driver_unregister(phydrv);
+#else
 			phy_driver_unregister(phydev->drv);
+#endif
+		}
 	}
 #endif
 #endif
