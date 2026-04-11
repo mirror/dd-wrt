@@ -1388,6 +1388,7 @@ static __init int getbootdevice(void)
 static void __init ubi_auto_attach(void)
 {
 	int err;
+	struct device_node *np;
 	struct mtd_info *mtd;
 	loff_t offset = 0;
 	size_t len;
@@ -1395,6 +1396,7 @@ static void __init ubi_auto_attach(void)
 	loff_t i;
 	struct mtd_info *copy;
 
+	if (!of_machine_is_compatible("asus,rt-ax89x")) {
 	/* try attaching mtd device named "ubi" or "data" */
 	int bootdevice = getbootdevice();
 	if (bootdevice == 1)
@@ -1409,12 +1411,23 @@ static void __init ubi_auto_attach(void)
 		mtd = open_mtd_device("linux");
 
 	}
+	} else {
+	    mtd = open_mtd_device("ubi");
+	    if (IS_ERR(mtd))
+		mtd = open_mtd_device("data");
+	}
+
 	/* Hack for the Asus RT-AC58U */
 	if (IS_ERR(mtd))
 		mtd = open_mtd_device("UBI_DEV");
 
 	if (IS_ERR(mtd))
 		return;
+
+	np = mtd_get_of_node(mtd);
+	if (of_device_is_compatible(np, "linux,ubi"))
+		goto cleanup;
+	
 
 	/* get the first not bad block */
 	if (mtd_can_have_bb(mtd))
@@ -1730,8 +1743,11 @@ static int ubi_mtd_param_parse(const char *val, const struct kernel_param *kp)
 	strcpy(&p->name[0], tokens[0]);
 
 	token = tokens[1];
-	if (token) {
+	if (of_machine_is_compatible("linksys,mx4300")) {
+		p->vid_hdr_offs = 4096;
+	} else if (token) {
 		p->vid_hdr_offs = bytes_str_to_int(token);
+
 
 		if (p->vid_hdr_offs < 0)
 			return p->vid_hdr_offs;

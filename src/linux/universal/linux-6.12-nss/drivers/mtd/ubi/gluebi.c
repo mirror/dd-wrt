@@ -25,6 +25,8 @@
 #include <linux/mutex.h>
 #include <linux/mtd/ubi.h>
 #include <linux/mtd/mtd.h>
+#include <linux/mtd/partitions.h>
+#include "ubi.h"
 #include "ubi-media.h"
 
 #define err_msg(fmt, ...)                                   \
@@ -134,8 +136,12 @@ static void gluebi_put_device(struct mtd_info *mtd)
 	gluebi = container_of(mtd, struct gluebi_device, mtd);
 	mutex_lock(&devices_mutex);
 	gluebi->refcnt -= 1;
-	if (gluebi->refcnt == 0)
+	if (gluebi->refcnt == 0) {
+#if 0
+		printk(KERN_EMERG "bug. %s should not be closed\n", mtd->name);
 		ubi_close_volume(gluebi->desc);
+#endif
+	}
 	mutex_unlock(&devices_mutex);
 }
 
@@ -155,7 +161,6 @@ static int gluebi_read(struct mtd_info *mtd, loff_t from, size_t len,
 {
 	int err = 0, lnum, offs, bytes_left;
 	struct gluebi_device *gluebi;
-
 	gluebi = container_of(mtd, struct gluebi_device, mtd);
 	lnum = div_u64_rem(from, mtd->erasesize, &offs);
 	bytes_left = len;
@@ -195,12 +200,21 @@ static int gluebi_write(struct mtd_info *mtd, loff_t to, size_t len,
 {
 	int err = 0, lnum, offs, bytes_left;
 	struct gluebi_device *gluebi;
+	struct ubi_volume *vol;
 
 	gluebi = container_of(mtd, struct gluebi_device, mtd);
 	lnum = div_u64_rem(to, mtd->erasesize, &offs);
 
-	if (len % mtd->writesize || offs % mtd->writesize)
+	if (len % mtd->writesize || offs % mtd->writesize) {
 		return -EINVAL;
+	}
+
+	vol = gluebi->desc->vol;
+	if (vol->upd_marker) {
+		printk(KERN_WARNING "%s: reset upd_marker of volume [%s]!\n",
+			__func__, vol->name);
+		vol->upd_marker = 0;
+	}
 
 	bytes_left = len;
 	while (bytes_left) {
@@ -235,13 +249,22 @@ static int gluebi_erase(struct mtd_info *mtd, struct erase_info *instr)
 {
 	int err, i, lnum, count;
 	struct gluebi_device *gluebi;
+	struct ubi_volume *vol;
 
-	if (mtd_mod_by_ws(instr->addr, mtd) || mtd_mod_by_ws(instr->len, mtd))
+	if (mtd_mod_by_ws(instr->addr, mtd) || mtd_mod_by_ws(instr->len, mtd)) {
 		return -EINVAL;
+	}
 
 	lnum = mtd_div_by_eb(instr->addr, mtd);
 	count = mtd_div_by_eb(instr->len, mtd);
 	gluebi = container_of(mtd, struct gluebi_device, mtd);
+
+	vol = gluebi->desc->vol;
+	if (vol->upd_marker) {
+		printk(KERN_WARNING "%s: reset upd_marker of volume [%s]!\n",
+			__func__, vol->name);
+		vol->upd_marker = 0;
+	}
 
 	for (i = 0; i < count - 1; i++) {
 		err = ubi_leb_unmap(gluebi->desc, lnum + i);
@@ -280,6 +303,7 @@ static int gluebi_create(struct ubi_device_info *di,
 {
 	struct gluebi_device *gluebi, *g;
 	struct mtd_info *mtd;
+	struct mtd_partition *part;
 
 	gluebi = kzalloc(sizeof(struct gluebi_device), GFP_KERNEL);
 	if (!gluebi)
@@ -305,6 +329,8 @@ static int gluebi_create(struct ubi_device_info *di,
 	mtd->_erase      = gluebi_erase;
 	mtd->_get_device = gluebi_get_device;
 	mtd->_put_device = gluebi_put_device;
+	mtd->type = MTD_NANDFLASH;
+	mtd->flags |= MTD_CAP_NANDFLASH;
 
 	/*
 	 * In case of dynamic a volume, MTD device size is just volume size. In
@@ -316,6 +342,7 @@ static int gluebi_create(struct ubi_device_info *di,
 	else
 		mtd->size = vi->used_bytes;
 
+
 	/* Just a sanity check - make sure this gluebi device does not exist */
 	mutex_lock(&devices_mutex);
 	g = find_gluebi_nolock(vi->ubi_num, vi->vol_id);
@@ -324,11 +351,32 @@ static int gluebi_create(struct ubi_device_info *di,
 			g->mtd.index, vi->ubi_num, vi->vol_id);
 	mutex_unlock(&devices_mutex);
 
-	if (mtd_device_register(mtd, NULL, 0)) {
-		err_msg("cannot add MTD device");
+	if (strcmp(mtd->name, "nvram") && strcmp(mtd->name, "jffs2")) {
+		part = kzalloc(sizeof(struct mtd_partition), GFP_KERNEL);
+		part->name = kstrdup(mtd->name, GFP_KERNEL);
+		part->offset = 0;
+		part->size = mtd->size;
 		kfree(mtd->name);
-		kfree(gluebi);
-		return -ENFILE;
+		mtd->name = kmalloc(vi->name_len + 5, GFP_KERNEL);
+		sprintf((char *)mtd->name, "%s_ubi", part->name);
+		gluebi_get_device(mtd);
+		if (mtd_device_register(mtd, part, 1)) {
+			err_msg("cannot add MTD device");
+			gluebi_put_device(mtd);
+			kfree(mtd->name);
+			kfree(gluebi);
+			mutex_lock(&devices_mutex);
+			return -ENFILE;
+		}
+	} else {
+		if (mtd_device_register(mtd, NULL, 0)) {
+			err_msg("cannot add MTD device");
+			gluebi_put_device(mtd);
+			kfree(mtd->name);
+			kfree(gluebi);
+			mutex_lock(&devices_mutex);
+			return -ENFILE;
+		}
 	}
 
 	mutex_lock(&devices_mutex);
