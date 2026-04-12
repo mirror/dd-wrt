@@ -876,7 +876,7 @@ struct aead_alg cryptoapi_aead_algs[] = {
 		 */
 		.base = {
 			.cra_name = "echainiv(authenc(hmac(md5),cbc(aes)))",
-			.cra_driver_name = "nss-hmac-md5-cbc-aes",
+			.cra_driver_name = "nss-echainiv-hmac-md5-cbc-aes",
 			.cra_priority = 10000,
 			.cra_flags = CRYPTO_ALG_ASYNC,
 			.cra_blocksize = AES_BLOCK_SIZE,
@@ -899,7 +899,7 @@ struct aead_alg cryptoapi_aead_algs[] = {
 		 */
 		.base = {
 			.cra_name = "echainiv(authenc(hmac(sha1),cbc(aes)))",
-			.cra_driver_name = "nss-hmac-sha1-cbc-aes",
+			.cra_driver_name = "nss-echainiv-hmac-sha1-cbc-aes",
 			.cra_priority = 10000,
 			.cra_flags = CRYPTO_ALG_ASYNC,
 			.cra_blocksize = AES_BLOCK_SIZE,
@@ -920,7 +920,7 @@ struct aead_alg cryptoapi_aead_algs[] = {
 	{	/* sha1, rfc3686-aes-ctr */
 		.base = {
 			.cra_name       = "seqiv(authenc(hmac(md5),rfc3686(ctr(aes))))",
-			.cra_driver_name = "nss-hmac-md5-rfc3686-ctr-aes",
+			.cra_driver_name = "nss-seqiv-hmac-md5-rfc3686-ctr-aes",
 			.cra_priority   = 10000,
 			.cra_flags      = CRYPTO_ALG_ASYNC,
 			.cra_blocksize  = AES_BLOCK_SIZE,
@@ -941,7 +941,7 @@ struct aead_alg cryptoapi_aead_algs[] = {
 	{	/* sha1, rfc3686-aes-ctr */
 		.base = {
 			.cra_name       = "seqiv(authenc(hmac(sha1),rfc3686(ctr(aes))))",
-			.cra_driver_name = "nss-hmac-sha1-rfc3686-ctr-aes",
+			.cra_driver_name = "nss-seqiv-hmac-sha1-rfc3686-ctr-aes",
 			.cra_priority   = 10000,
 			.cra_flags      = CRYPTO_ALG_ASYNC,
 			.cra_blocksize  = AES_BLOCK_SIZE,
@@ -964,7 +964,7 @@ struct aead_alg cryptoapi_aead_algs[] = {
 		 */
 		.base = {
 			.cra_name = "echainiv(authenc(hmac(sha256),cbc(aes)))",
-			.cra_driver_name = "nss-hmac-sha256-cbc-aes",
+			.cra_driver_name = "nss-echainiv-hmac-sha256-cbc-aes",
 			.cra_priority = 10000,
 			.cra_flags = CRYPTO_ALG_ASYNC,
 			.cra_blocksize = AES_BLOCK_SIZE,
@@ -985,7 +985,7 @@ struct aead_alg cryptoapi_aead_algs[] = {
 	{	/* sha256, rfc3686-aes-ctr */
 		.base = {
 			.cra_name       = "seqiv(authenc(hmac(sha256),rfc3686(ctr(aes))))",
-			.cra_driver_name = "nss-hmac-sha256-rfc3686-ctr-aes",
+			.cra_driver_name = "nss-seqiv-hmac-sha256-rfc3686-ctr-aes",
 			.cra_priority   = 10000,
 			.cra_flags      = CRYPTO_ALG_ASYNC,
 			.cra_blocksize  = AES_BLOCK_SIZE,
@@ -1008,7 +1008,7 @@ struct aead_alg cryptoapi_aead_algs[] = {
 		 */
 		.base = {
 			.cra_name = "echainiv(authenc(hmac(md5),cbc(des3_ede)))",
-			.cra_driver_name = "nss-hmac-md5-cbc-3des",
+			.cra_driver_name = "nss-echainiv-hmac-md5-cbc-3des",
 			.cra_priority = 300,
 			.cra_flags = CRYPTO_ALG_ASYNC,
 			.cra_blocksize = DES3_EDE_BLOCK_SIZE,
@@ -1029,7 +1029,7 @@ struct aead_alg cryptoapi_aead_algs[] = {
 	{	/* sha384, rfc3686-aes-ctr */
 		.base = {
 			.cra_name       = "seqiv(authenc(hmac(sha384),rfc3686(ctr(aes))))",
-			.cra_driver_name = "nss-hmac-sha384-rfc3686-ctr-aes",
+			.cra_driver_name = "nss-seqiv-hmac-sha384-rfc3686-ctr-aes",
 			.cra_priority   = 10000,
 			.cra_flags      = CRYPTO_ALG_ASYNC,
 			.cra_blocksize  = AES_BLOCK_SIZE,
@@ -1050,7 +1050,7 @@ struct aead_alg cryptoapi_aead_algs[] = {
 	{	/* sha512, rfc3686-aes-ctr */
 		.base = {
 			.cra_name       = "seqiv(authenc(hmac(sha512),rfc3686(ctr(aes))))",
-			.cra_driver_name = "nss-hmac-sha512-rfc3686-ctr-aes",
+			.cra_driver_name = "nss-seqiv-hmac-sha512-rfc3686-ctr-aes",
 			.cra_priority   = 10000,
 			.cra_flags      = CRYPTO_ALG_ASYNC,
 			.cra_blocksize  = AES_BLOCK_SIZE,
@@ -1073,7 +1073,7 @@ struct aead_alg cryptoapi_aead_algs[] = {
 		 */
 		.base = {
 			.cra_name = "echainiv(authenc(hmac(sha384),cbc(aes)))",
-			.cra_driver_name = "nss-hmac-sha384-cbc-aes",
+			.cra_driver_name = "nss-echainiv-hmac-sha384-cbc-aes",
 			.cra_priority = 10000,
 			.cra_flags = CRYPTO_ALG_ASYNC,
 			.cra_blocksize = AES_BLOCK_SIZE,
@@ -1096,7 +1096,7 @@ struct aead_alg cryptoapi_aead_algs[] = {
 		 */
 		.base = {
 			.cra_name = "echainiv(authenc(hmac(sha512),cbc(aes)))",
-			.cra_driver_name = "nss-hmac-sha512-cbc-aes",
+			.cra_driver_name = "nss-echainiv-hmac-sha512-cbc-aes",
 			.cra_priority = 10000,
 			.cra_flags = CRYPTO_ALG_ASYNC,
 			.cra_blocksize = AES_BLOCK_SIZE,
@@ -1119,7 +1119,7 @@ struct aead_alg cryptoapi_aead_algs[] = {
 		 */
 		.base = {
 			.cra_name = "echainiv(authenc(hmac(sha1),cbc(des3_ede)))",
-			.cra_driver_name = "nss-hmac-sha1-cbc-3des",
+			.cra_driver_name = "nss-echainiv-hmac-sha1-cbc-3des",
 			.cra_priority = 300,
 			.cra_flags = CRYPTO_ALG_ASYNC,
 			.cra_blocksize = DES3_EDE_BLOCK_SIZE,
@@ -1142,7 +1142,7 @@ struct aead_alg cryptoapi_aead_algs[] = {
 		 */
 		.base = {
 			.cra_name = "echainiv(authenc(hmac(sha256),cbc(des3_ede)))",
-			.cra_driver_name = "nss-hmac-sha256-cbc-3des",
+			.cra_driver_name = "nss-echainiv-hmac-sha256-cbc-3des",
 			.cra_priority = 300,
 			.cra_flags = CRYPTO_ALG_ASYNC,
 			.cra_blocksize = DES3_EDE_BLOCK_SIZE,
@@ -1163,7 +1163,7 @@ struct aead_alg cryptoapi_aead_algs[] = {
 	{
 		.base = {
 			.cra_name = "authenc(hmac(sha1),cbc(aes))",
-			.cra_driver_name = "nss-hmac-sha1-cbc-aes",
+			.cra_driver_name = "nss-authenc-hmac-sha1-cbc-aes",
 			.cra_priority = 10000,
 			.cra_flags = CRYPTO_ALG_ASYNC,
 			.cra_blocksize = AES_BLOCK_SIZE,
@@ -1186,7 +1186,7 @@ struct aead_alg cryptoapi_aead_algs[] = {
 		 */
 		.base = {
 			.cra_name = "authenc(hmac(sha256),cbc(aes))",
-			.cra_driver_name = "nss-hmac-sha256-cbc-aes",
+			.cra_driver_name = "nss-authenc-hmac-sha256-cbc-aes",
 			.cra_priority = 10000,
 			.cra_flags = CRYPTO_ALG_ASYNC,
 			.cra_blocksize = AES_BLOCK_SIZE,
@@ -1209,7 +1209,7 @@ struct aead_alg cryptoapi_aead_algs[] = {
 		 */
 		.base = {
 			.cra_name = "authenc(hmac(sha384),cbc(aes))",
-			.cra_driver_name = "nss-hmac-sha384-cbc-aes",
+			.cra_driver_name = "nss-authenc-hmac-sha384-cbc-aes",
 			.cra_priority = 10000,
 			.cra_flags = CRYPTO_ALG_ASYNC,
 			.cra_blocksize = AES_BLOCK_SIZE,
@@ -1232,7 +1232,7 @@ struct aead_alg cryptoapi_aead_algs[] = {
 		 */
 		.base = {
 			.cra_name = "authenc(hmac(sha512),cbc(aes))",
-			.cra_driver_name = "nss-hmac-sha512-cbc-aes",
+			.cra_driver_name = "nss-authenc-hmac-sha512-cbc-aes",
 			.cra_priority = 10000,
 			.cra_flags = CRYPTO_ALG_ASYNC,
 			.cra_blocksize = AES_BLOCK_SIZE,
@@ -1255,7 +1255,7 @@ struct aead_alg cryptoapi_aead_algs[] = {
 		 */
 		.base = {
 			.cra_name = "authenc(hmac(sha1),cbc(des3_ede))",
-			.cra_driver_name = "nss-hmac-sha1-cbc-3des",
+			.cra_driver_name = "nss-authenc-hmac-sha1-cbc-3des",
 			.cra_priority = 300,
 			.cra_flags = CRYPTO_ALG_ASYNC,
 			.cra_blocksize = DES3_EDE_BLOCK_SIZE,
@@ -1278,7 +1278,7 @@ struct aead_alg cryptoapi_aead_algs[] = {
 		 */
 		.base = {
 			.cra_name = "authenc(hmac(sha256),cbc(des3_ede))",
-			.cra_driver_name = "nss-hmac-sha256-cbc-3des",
+			.cra_driver_name = "nss-authenc-hmac-sha256-cbc-3des",
 			.cra_priority = 300,
 			.cra_flags = CRYPTO_ALG_ASYNC,
 			.cra_blocksize = DES3_EDE_BLOCK_SIZE,
@@ -1324,7 +1324,7 @@ struct aead_alg cryptoapi_aead_algs[] = {
 		 */
 		.base = {
 			.cra_name = "seqiv(rfc4106(gcm(aes)))",
-			.cra_driver_name = "nss-rfc4106-gcm",
+			.cra_driver_name = "nss-seqiv-rfc4106-gcm",
 			.cra_priority = 10000,
 			.cra_flags = CRYPTO_ALG_ASYNC,
 			.cra_blocksize = AES_BLOCK_SIZE,
