@@ -445,6 +445,69 @@ int nss_cryptoapi_ahash_final(struct ahash_request *req)
 	return 0;
 }
 
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(6, 6, 0))
+/*
+ * nss_cryptoapi_ahash_finup_done
+ * Ahash finup completion callback
+ */
+static void nss_cryptoapi_ahash_finup_done(void *data, int err)
+{
+	struct ahash_request *req = data;
+	struct nss_cryptoapi_req_ctx *rctx = ahash_request_ctx(req);
+
+	/*
+	 * Call final if there are no errors
+	 */
+	if (!err) {
+		err = nss_cryptoapi_ahash_final(req);
+	}
+
+	/*
+	 * Restore the original complete callback and data in the req
+	 */
+	req->base.complete = rctx->complete;
+	req->base.data = rctx->data;
+	ahash_request_complete(req, err);
+
+	return;
+}
+
+/*
+ * nss_cryptoapi_ahash_finup
+ * Ahash .finup operation
+ */
+int nss_cryptoapi_ahash_finup(struct ahash_request *req)
+{
+	struct nss_cryptoapi_req_ctx *rctx = ahash_request_ctx(req);
+	int err;
+
+	/*
+	 * Store the original complete callback and data in rctx
+	 */
+	rctx->complete = req->base.complete;
+	rctx->data = req->base.data;
+
+	req->base.complete = nss_cryptoapi_ahash_finup_done;
+	req->base.data = req;
+
+	/*
+	 * If update returns -EINPROGRESS, return the same to user
+	 */
+	err = nss_cryptoapi_ahash_update(req);
+	if (err == -EINPROGRESS) {
+		return err;
+	}
+
+	/*
+	 * In case of errors, restore the complete callback and data in req
+	 */
+	req->base.complete = rctx->complete;
+	req->base.data = rctx->data;
+
+	return err;
+}
+#endif
+
 /*
  * nss_cryptoapi_ahash_digest()
  *	Cryptoapi ahash request .digest operation.

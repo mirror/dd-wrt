@@ -85,6 +85,11 @@ struct nss_cryptoapi_req_ctx {
 	uint8_t digest[SHA512_DIGEST_SIZE];		/* Storage for resultant digest */
 
 	uint16_t magic;					/* Magic */
+
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(6, 6, 0))
+	crypto_completion_t complete;		/* Callback function for finup */
+	void *data;				/* Data for the callback function */
+#endif
 };
 
 /*
@@ -271,4 +276,8 @@ extern int nss_cryptoapi_ahash_final(struct ahash_request *req);
 extern int nss_cryptoapi_ahash_digest(struct ahash_request *req);
 extern int nss_cryptoapi_ahash_export(struct ahash_request *req, void *out);
 extern int nss_cryptoapi_ahash_import(struct ahash_request *req, const void *in);
+
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(6, 6, 0))
+extern int nss_cryptoapi_ahash_finup(struct ahash_request *req);
+#endif
 #endif /* !__NSS_CRYPTOAPI_PRIVATE_H */
