@@ -192,12 +192,13 @@
 			compatible = "realtek,rtl8231-leds";
 			status = "disabled";
 		};
-
-		poe_enable {
-			gpio-hog;
-			gpios = <13 GPIO_ACTIVE_HIGH>;
-			output-high;
-		};
+		
+		phy-reset {
+		    gpio-hog;
+		    gpios = <6 GPIO_ACTIVE_LOW>;
+		    output-low;
+		    line-name = "phy-reset";
+		}
 	};
 };
 

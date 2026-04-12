@@ -197,6 +197,14 @@
 			gpio-hog;
 			gpios = <13 GPIO_ACTIVE_HIGH>;
 			output-high;
+			line-name = "poe-mcu-enable";
+		};
+
+		poe_reset {
+			gpio-hog;
+			gpios = <36 GPIO_ACTIVE_LOW>;
+			output-low;
+			line-name = "poe-mcu-reset";
 		};
 	};
 };

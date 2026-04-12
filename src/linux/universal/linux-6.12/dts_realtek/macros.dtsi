@@ -31,6 +31,13 @@
 		compatible = "ethernet-phy-ieee802.3-c45"; \
 	};
 
+#define PHY_C45_PAIR_ORDER(p, n, po) \
+	phy##p: ethernet-phy@n { \
+		reg = <##n>; \
+		compatible = "ethernet-phy-ieee802.3-c45"; \
+		enet-phy-pair-order = <##po>; \
+	};
+
 #define EXTERNAL_SFP_PHY(n) \
 	phy##n: ethernet-phy@##n { \
 		compatible = "ethernet-phy-ieee802.3-c22"; \
