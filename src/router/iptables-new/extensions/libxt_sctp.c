@@ -205,7 +205,7 @@ parse_sctp_chunk(struct xt_sctp_info *einfo,
 		if (chunk_flags) {
 			DEBUGP("Chunk flags %s\n", chunk_flags);
 			for (j = 0; j < strlen(chunk_flags); j++) {
-				char *p;
+				const char *p;
 				int bit;
 
 				if ((p = strchr(sctp_chunk_names[i].valid_flags, 

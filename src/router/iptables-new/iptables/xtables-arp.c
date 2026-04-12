@@ -78,7 +78,6 @@ static struct option original_opts[] = {
 	{ "line-numbers", 0, 0, '0' },
 	{ "modprobe", 1, 0, 'M' },
 	{ "set-counters", 1, 0, 'c' },
-	{ "compat", 0, 0, 20 },
 	{ 0 }
 };
 

@@ -100,17 +100,6 @@ When using \-j TRACE to debug packet traversal to the ruleset, note that you wil
 .B xtables\-monitor(8)
 in \-\-trace mode to obtain monitoring trace events.
 
-Some extensions are implemented via native nf_tables expressions instead of
-\fBnft_compat\fP module. This is transparent to the user as such parts of a
-rule are detected and parsed into an extension again before listing. Also,
-run-time behaviour is supposed to be identical. Implementing extensions this
-way is beneficial from a kernel maintainer's perspective as xtables extension
-modules may at some point become unused, so increasing extension conversion is
-to be expected. Since this may break older versions parsing the ruleset
-in-kernel (a possible scenario with containers sharing a network namespace),
-there is \fB--compat\fP flag which causes the replaced extensions to be
-appended to the rule in userdata storage for the parser to fall back to.
-
 .SH EXAMPLES
 One basic example is creating the skeleton ruleset in nf_tables from the
 xtables-nft tools, in a fresh machine:

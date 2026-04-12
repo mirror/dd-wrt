@@ -234,18 +234,6 @@ counters of a rule (during
 .B APPEND,
 .B REPLACE
 operations).
-.TP
-.B --compat
-When creating a rule, attach compatibility data to the rule's userdata section
-for use as aid in parsing the rule by an older version of the program. The old
-version obviously needs to support this, though.
-Specifying this option a second time instructs the program to default to the
-rule's compatibility data when parsing, which is mostly useful for debugging or
-testing purposes.
-
-The \fBXTABLES_COMPAT\fP environment variable can be used to override the
-default setting. The expected value is a natural number representing the number
-of times \fB--compat\fP was specified.
 
 .SS RULE-SPECIFICATIONS
 The following command line arguments make up a rule specification (as used 

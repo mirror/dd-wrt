@@ -299,7 +299,6 @@ struct xt_cmd_parse {
 	bool				restore;
 	int				line;
 	int				verbose;
-	uint8_t				compat;
 	bool				rule_ranges;
 	struct xt_cmd_parse_ops		*ops;
 };

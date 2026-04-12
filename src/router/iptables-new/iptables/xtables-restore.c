@@ -37,7 +37,6 @@ static const struct option options[] = {
 	{.name = "ipv6",     .has_arg = false, .val = '6'},
 	{.name = "wait",          .has_arg = 2, .val = 'w'},
 	{.name = "wait-interval", .has_arg = 2, .val = 'W'},
-	{.name = "compat",   .has_arg = false, .val = 20 },
 	{NULL},
 };
 
@@ -55,7 +54,6 @@ static void print_usage(const char *name, const char *version)
 			"	   [ --noflush ]\n"
 			"	   [ --table=<TABLE> ]\n"
 			"	   [ --modprobe=<command> ]\n"
-			"	   [ --compat ]\n"
 			"	   [ --ipv4 ]\n"
 			"	   [ --ipv6 ]\n", name);
 }
@@ -286,7 +284,6 @@ void xtables_restore_parse(struct nft_handle *h,
 static int
 xtables_restore_main(int family, const char *progname, int argc, char *argv[])
 {
-	uint8_t compat = compat_env_val();
 	struct nft_xt_restore_parse p = {
 		.commit = true,
 		.cb = &restore_cb,
@@ -340,9 +337,6 @@ xtables_restore_main(int family, const char *progname, int argc, char *argv[])
 				if (!optarg && xs_has_arg(argc, argv))
 					optind++;
 				break;
-			case 20:
-				compat++;
-				break;
 			default:
 				fprintf(stderr,
 					"Try `%s -h' for more information.\n",
@@ -393,7 +387,6 @@ xtables_restore_main(int family, const char *progname, int argc, char *argv[])
 	}
 	h.noflush = noflush;
 	h.restore = true;
-	h.compat  = compat;
 
 	xtables_restore_parse(&h, &p);
 
@@ -426,13 +419,11 @@ static const struct nft_xt_restore_cb ebt_restore_cb = {
 static const struct option ebt_restore_options[] = {
 	{.name = "noflush", .has_arg = 0, .val = 'n'},
 	{.name = "verbose", .has_arg = 0, .val = 'v'},
-	{.name = "compat",  .has_arg = 0, .val = 20},
 	{ 0 }
 };
 
 int xtables_eb_restore_main(int argc, char *argv[])
 {
-	uint8_t compat = compat_env_val();
 	struct nft_xt_restore_parse p = {
 		.in = stdin,
 		.cb = &ebt_restore_cb,
@@ -450,12 +441,9 @@ int xtables_eb_restore_main(int argc, char *argv[])
 		case 'v':
 			verbose++;
 			break;
-		case 20: /* --compat */
-			compat++;
-			break;
 		default:
 			fprintf(stderr,
-				"Usage: ebtables-restore [ --verbose ] [ --noflush ] [ --compat ]\n");
+				"Usage: ebtables-restore [ --verbose ] [ --noflush ]\n");
 			exit(1);
 			break;
 		}
@@ -463,7 +451,6 @@ int xtables_eb_restore_main(int argc, char *argv[])
 
 	nft_init_eb(&h, "ebtables-restore");
 	h.noflush = noflush;
-	h.compat = compat;
 	xtables_restore_parse(&h, &p);
 	nft_fini_eb(&h);
 

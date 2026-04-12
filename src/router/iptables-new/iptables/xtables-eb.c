@@ -131,7 +131,6 @@ struct option ebt_original_options[] =
 	{ "init-table"     , no_argument      , 0, 11  },
 	{ "concurrent"     , no_argument      , 0, 13  },
 	{ "check"          , required_argument, 0, 14  },
-	{ "compat"         , no_argument      , 0, 20  },
 	{ 0 }
 };
 
@@ -235,7 +234,6 @@ void nft_bridge_print_help(struct iptables_command_state *cs)
 "[!] --logical-out name[+]     : logical bridge output interface name\n"
 "--set-counters -c chain\n"
 "          pcnt bcnt           : set the counters of the to be added rule\n"
-"--compat                      : append compatibility data to new rules\n"
 "--modprobe -M program         : try to insert modules using this program\n"
 "--concurrent                  : use a file lock to support concurrent scripts\n"
 "--verbose -v                  : verbose mode\n"
@@ -566,7 +564,6 @@ int do_commandeb(struct nft_handle *h, int argc, char *argv[], char **table,
 		.line		= line,
 		.rule_ranges	= true,
 		.ops		= &h->ops->cmd_parse,
-		.compat		= compat_env_val(),
 	};
 	int ret = 0;
 
@@ -576,7 +573,6 @@ int do_commandeb(struct nft_handle *h, int argc, char *argv[], char **table,
 	do_parse(argc, argv, &p, &cs, &args);
 
 	h->verbose	= p.verbose;
-	h->compat	= p.compat;
 
 	t = nft_table_builtin_find(h, p.table);
 	if (!t)

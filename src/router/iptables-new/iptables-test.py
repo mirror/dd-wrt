@@ -613,8 +613,6 @@ def main():
                         help='Check for missing tests')
     parser.add_argument('-n', '--nftables', action='store_true',
                         help='Test iptables-over-nftables')
-    parser.add_argument('--compat', action='store_true',
-                        help='Test iptables-over-nftables in forced compat mode')
     parser.add_argument('-N', '--netns', action='store_const',
                         const='____iptables-container-test',
                         help='Test netnamespace path')
@@ -634,10 +632,8 @@ def main():
         variants.append("legacy")
     if args.nftables:
         variants.append("nft")
-    if args.compat:
-        variants.append("nft-compat")
     if len(variants) == 0:
-        variants = [ "legacy", "nft", "nft-compat" ]
+        variants = [ "legacy", "nft" ]
 
     if os.getuid() != 0:
         print("You need to be root to run this, sorry", file=sys.stderr)
@@ -656,14 +652,8 @@ def main():
     total_passed = 0
     total_tests = 0
     for variant in variants:
-
-        exec_infix = variant
-        if variant == "nft-compat":
-            os.putenv("XTABLES_COMPAT", "2")
-            exec_infix = "nft"
-
         global EXECUTABLE
-        EXECUTABLE = "xtables-" + exec_infix + "-multi"
+        EXECUTABLE = "xtables-" + variant + "-multi"
 
         test_files = 0
         tests = 0

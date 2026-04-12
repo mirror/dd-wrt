@@ -1751,7 +1751,8 @@ void xtables_ipparse_multiple(const char *name, struct in_addr **addrpp,
                               struct in_addr **maskpp, unsigned int *naddrs)
 {
 	struct in_addr *addrp;
-	char buf[256], *p, *next;
+	char buf[256], *p;
+	const char *next;
 	unsigned int len, i, j, n, count = 1;
 	const char *loop = name;
 
@@ -2050,7 +2051,8 @@ xtables_ip6parse_multiple(const char *name, struct in6_addr **addrpp,
 {
 	static const struct in6_addr zero_addr;
 	struct in6_addr *addrp;
-	char buf[256], *p, *next;
+	char buf[256], *p;
+	const char *next;
 	unsigned int len, i, j, n, count = 1;
 	const char *loop = name;
 

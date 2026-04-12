@@ -88,18 +88,6 @@ determine the executable's path.
 .TP
 \fB\-T\fP, \fB\-\-table\fP \fIname\fP
 Restore only the named table even if the input stream contains other ones.
-.TP
-\fB\-\-compat\fP (nft-variants only)
-When creating a rule, attach compatibility data to the rule's userdata section
-for use as aid in parsing the rule by an older version of the program. The old
-version obviously needs to support this, though.
-Specifying this option a second time instructs the program to default to the
-rule's compatibility data when parsing, which is mostly useful for debugging or
-testing purposes.
-
-The \fBXTABLES_COMPAT\fP environment variable can be used to override the
-default setting. The expected value is a natural number representing the number
-of times \fB--compat\fP was specified.
 .SH BUGS
 None known as of iptables-1.2.1 release
 .SH AUTHORS
