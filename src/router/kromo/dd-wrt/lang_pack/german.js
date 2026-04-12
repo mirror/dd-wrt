@@ -294,7 +294,7 @@ share.not_prefered="Nicht Bevorzugt";
 share.prefered="Bevorzugt";
 share.high="Hoch";
 share.veryhigh="Sehr Hoch";
-
+share.select="Bitte wählen...";
 
 
 sbutton.save="Speichern";

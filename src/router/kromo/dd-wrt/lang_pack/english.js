@@ -298,6 +298,7 @@ share.prefered="Preferred";
 share.normal="Normal";
 share.high="High";
 share.veryhigh="Very High";
+share.select="Please select...";
 
 var sbutton=new Object();
 sbutton.save="Save";
