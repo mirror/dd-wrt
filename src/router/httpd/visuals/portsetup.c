@@ -306,7 +306,7 @@ EJ_VISIBLE void ej_portsetup(webs_t wp, int argc, char_t **argv)
 			websWrite(wp, "<select name=\"bat_%s_bridge\">\n", var);
 			websWrite(
 				wp,
-				"<option value=\"none\" %s><script type=\"text/javascript\">Capture(share.none)</script></option>\n",
+				"<option value=\"none\" %s ><script type=\"text/javascript\">Capture(share.select)</script></option>\n",
 				nvram_match(bat_bridge, "none") ? "selected=\"selected\"" : "");
 			foreach(word, bufferif, next) {
 				// if( strcmp( word, "br0" ) ) {

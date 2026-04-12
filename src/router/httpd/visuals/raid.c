@@ -598,7 +598,8 @@ EJ_VISIBLE void ej_show_raid(webs_t wp, int argc, char_t **argv)
 			if (!strcmp(var, "none"))
 				websWrite(
 					wp,
-					"<option value=\"none\"><script type=\"text/javascript\">Capture(share.none)</script></option>\n");
+					"<option value=\"none\" %s ><script type=\"text/javascript\">Capture(share.select)</script></option>\n",
+					nvram_match(propname, "none") ? "selected=\"selected\"" : "");
 			if (drives) {
 				foreach(drive, drives, dnext) {
 	#ifdef HAVE_X86

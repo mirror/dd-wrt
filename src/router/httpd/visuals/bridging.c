@@ -517,8 +517,7 @@ EJ_VISIBLE void ej_show_bridgeifnames(webs_t wp, int argc, char_t **argv)
 
 	getIfListB(finalbuffer, sizeof(finalbuffer), NULL, BRIDGESONLY, 1);
 	char *checkbuffer = calloc(strlen(finalbuffer) + 6, 1);
-	strcpy(checkbuffer, "none ");
-	strcat(checkbuffer, finalbuffer);
+	strcpy(checkbuffer, finalbuffer);
 	strcpy(finalbuffer, checkbuffer);
 	debug_free(checkbuffer);
 	int realcount = nvram_default_geti("bridgesif_count", 0);
