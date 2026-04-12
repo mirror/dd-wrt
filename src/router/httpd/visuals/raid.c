@@ -595,11 +595,10 @@ EJ_VISIBLE void ej_show_raid(webs_t wp, int argc, char_t **argv)
 			websWrite(wp, "<tr>\n"
 				      "<td>\n");
 			websWrite(wp, "<select name=\"raid%dmember%d\">\n", i, midx);
-			if (!strcmp(var, "none"))
-				websWrite(
-					wp,
-					"<option value=\"none\" %s ><script type=\"text/javascript\">Capture(share.select)</script></option>\n",
-					nvram_match(propname, "none") ? "selected=\"selected\"" : "");
+			websWrite(
+				wp,
+				"<option value=\"none\" %s ><script type=\"text/javascript\">Capture(share.select)</script></option>\n",
+				!strcmp(var, "none") ? "selected=\"selected\"" : "");
 			if (drives) {
 				foreach(drive, drives, dnext) {
 	#ifdef HAVE_X86
