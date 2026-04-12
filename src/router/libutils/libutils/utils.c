@@ -2423,7 +2423,9 @@ static char *s_getDrives(int type)
 		char drv[128];
 		sprintf(drv, "/dev/%s", file->d_name);
 		if (!strncmp(file->d_name, "sd", 2) || !strncmp(file->d_name, "hd", 2) || !strncmp(file->d_name, "md", 2) ||
-		    !strncmp(file->d_name, "loop", 2) || !strncmp(file->d_name, "mmcblk", 6) || !strncmp(file->d_name, "nvme", 4)) {
+		    !(strncmp(file->d_name, "loop", 4) && strncmp(file->dname, "loop-", 5)) ||
+		    !strncmp(file->d_name, "mmcblk", 6) ||
+		    (!strncmp(file->d_name, "nvme", 4) && strncmp(file->dname, "nvme-", 5))) {
 			char var[64];
 			const char *next;
 			if (mounts) {
@@ -2445,11 +2447,11 @@ static char *s_getDrives(int type)
 						cmp[3] = 0;
 					else if (!strncmp(cmp, "md", 2))
 						cmp[3] = 0;
-					else if (!strncmp(cmp, "loop", 4))
+					else if (!strncmp(cmp, "loop", 4) && strncmp(cmp, "loop-", 5))
 						cmp[4] = 0;
 					else if (!strncmp(cmp, "mmcblk", 6))
 						cmp[7] = 0;
-					else if (!strncmp(cmp, "nvme", 4))
+					else if (!strncmp(cmp, "nvme", 4) && strncmp(cmp, "nvme-", 4))
 						cmp[7] = 0;
 				}
 				char grep[128];
