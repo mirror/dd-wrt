@@ -69,7 +69,7 @@ MODULE_PARM_DESC(enable_ahash, "Enable Cryptoapi AHASH support");
 static struct crypto_alg cryptoapi_algs[] = {
 	{	/* sha1, aes-cbc */
 		.cra_name       = "authenc(hmac(sha1),cbc(aes))",
-		.cra_driver_name = "nss-hmac-sha1-cbc-aes",
+		.cra_driver_name = "nss-authenc-hmac-sha1-cbc-aes",
 		.cra_priority   = 10000,
 		.cra_flags      = CRYPTO_ALG_TYPE_AEAD | CRYPTO_ALG_ASYNC | CRYPTO_ALG_NOSUPP_SG | CRYPTO_ALG_NEED_FALLBACK,
 		.cra_blocksize  = AES_BLOCK_SIZE,
@@ -94,7 +94,7 @@ static struct crypto_alg cryptoapi_algs[] = {
 	},
 	{	/* sha1, rfc3686-aes-ctr */
 		.cra_name       = "authenc(hmac(sha1),rfc3686(ctr(aes)))",
-		.cra_driver_name = "nss-hmac-sha1-rfc3686-ctr-aes",
+		.cra_driver_name = "nss-authenc-hmac-sha1-rfc3686-ctr-aes",
 		.cra_priority   = 10000,
 		.cra_flags      = CRYPTO_ALG_TYPE_AEAD | CRYPTO_ALG_ASYNC | CRYPTO_ALG_NOSUPP_SG | CRYPTO_ALG_NEED_FALLBACK,
 		.cra_blocksize  = AES_BLOCK_SIZE,
@@ -119,7 +119,7 @@ static struct crypto_alg cryptoapi_algs[] = {
 	},
 	{	/* sha1, 3des */
 		.cra_name       = "authenc(hmac(sha1),cbc(des3_ede))",
-		.cra_driver_name = "nss-hmac-sha1-cbc-3des",
+		.cra_driver_name = "nss-authenc-hmac-sha1-cbc-3des",
 		.cra_priority   = 300,
 		.cra_flags      = CRYPTO_ALG_TYPE_AEAD | CRYPTO_ALG_ASYNC | CRYPTO_ALG_NOSUPP_SG,
 		.cra_blocksize  = DES3_EDE_BLOCK_SIZE,
@@ -144,7 +144,7 @@ static struct crypto_alg cryptoapi_algs[] = {
 	},
 	{	/* sha256, aes-cbc */
 		.cra_name       = "authenc(hmac(sha256),cbc(aes))",
-		.cra_driver_name = "nss-hmac-sha256-cbc-aes",
+		.cra_driver_name = "nss-authenc-hmac-sha256-cbc-aes",
 		.cra_priority   = 10000,
 		.cra_flags      = CRYPTO_ALG_TYPE_AEAD | CRYPTO_ALG_ASYNC | CRYPTO_ALG_NOSUPP_SG | CRYPTO_ALG_NEED_FALLBACK,
 		.cra_blocksize  = AES_BLOCK_SIZE,
@@ -169,7 +169,7 @@ static struct crypto_alg cryptoapi_algs[] = {
 	},
 	{	/* sha256, rfc3686-aes-ctr */
 		.cra_name       = "authenc(hmac(sha256),rfc3686(ctr(aes)))",
-		.cra_driver_name = "nss-hmac-sha256-rfc3686-ctr-aes",
+		.cra_driver_name = "nss-authenc-hmac-sha256-rfc3686-ctr-aes",
 		.cra_priority   = 10000,
 		.cra_flags      = CRYPTO_ALG_TYPE_AEAD | CRYPTO_ALG_ASYNC | CRYPTO_ALG_NOSUPP_SG | CRYPTO_ALG_NEED_FALLBACK,
 		.cra_blocksize  = AES_BLOCK_SIZE,
@@ -194,7 +194,7 @@ static struct crypto_alg cryptoapi_algs[] = {
 	},
 	{	/* sha256, 3des */
 		.cra_name       = "authenc(hmac(sha256),cbc(des3_ede))",
-		.cra_driver_name = "nss-hmac-sha256-cbc-3des",
+		.cra_driver_name = "nss-authenc-hmac-sha256-cbc-3des",
 		.cra_priority   = 300,
 		.cra_flags      = CRYPTO_ALG_TYPE_AEAD | CRYPTO_ALG_ASYNC | CRYPTO_ALG_NOSUPP_SG,
 		.cra_blocksize  = DES3_EDE_BLOCK_SIZE,
