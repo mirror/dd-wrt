@@ -7651,6 +7651,8 @@ EJ_VISIBLE void ej_show_ifselect(webs_t wp, int argc, char_t **argv)
 		showwan = atoi(argv[1]);
 
 	websWrite(wp, "<select name=\"%s\">\n", ifname);
+	websWrite(wp, "<option value=\"none\" %s ><script type=\"text/javascript\">Capture(share.select)</script></option>\n", nvram_match(ifname, "none") ? "selected=\"selected\"" : "");
+
 	int i;
 	for (i = 2; i < argc; i++) {
 		websWrite(wp, "<option value=\"%s\" %s >%s</option>\n", argv[i],
@@ -7716,6 +7718,7 @@ EJ_VISIBLE void ej_show_iflist(webs_t wp, int argc, char_t **argv)
 #ifdef HAVE_RFLOW
 EJ_VISIBLE void ej_show_rflowif(webs_t wp, int argc, char_t **argv)
 {
+	websWrite(wp, "<option value=\"none\" %s ><script type=\"text/javascript\">Capture(share.select)</script></option>\n", nvram_match("rflow_if", "none") ? "selected=\"selected\"" : "");
 	websWrite(wp, "<option value=\"%s\" %s >LAN &amp; WLAN</option>\n", nvram_safe_get("lan_ifname"),
 		  nvram_match("rflow_if", nvram_safe_get("lan_ifname")) ? "selected=\"selected\"" : "");
 	char *lanifs = nvram_safe_get("lan_ifnames");

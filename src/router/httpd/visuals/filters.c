@@ -354,6 +354,7 @@ EJ_VISIBLE void ej_show_filterif(webs_t wp, int argc, char_t **argv)
 	find_match_pattern(ifs, sizeof(ifs), data, "$IF:", ""); // get
 
 	websWrite(wp, "<select name=\"%s\">\n", ifname);
+	websWrite(wp, "<option value=\"none\" %s ><script type=\"text/javascript\">Capture(share.select)</script></option>\n", nvram_match(ifname, "none") ? "selected=\"selected\"" : "");
 	int i;
 	for (i = 1; i < argc; i++) {
 		websWrite(wp, "<option value=\"%s\" %s >%s</option>\n", argv[i],

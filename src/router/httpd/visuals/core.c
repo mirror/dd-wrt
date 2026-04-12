@@ -278,6 +278,7 @@ void showIfOptions_ext(webs_t wp, char *propname, char *names, char *select, int
 		select = "";
 
 	websWrite(wp, "<select name=\"%s\"%s>\n", propname, disabled ? " disabled=\"true\"" : "");
+	websWrite(wp, "<option value=\"none\" %s ><script type=\"text/javascript\">Capture(share.select)</script></option>\n", nvram_match(propname, "none") ? "selected=\"selected\"" : "");
 	websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
 	foreach(var, names, next) {
 		websWrite(wp, "document.write(\"<option value=\\\"%s\\\" %s >%s</option>\");\n", var,
