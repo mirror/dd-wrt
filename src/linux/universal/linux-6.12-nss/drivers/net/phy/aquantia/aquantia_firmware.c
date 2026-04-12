@@ -3,7 +3,7 @@
 #include <linux/bitfield.h>
 #include <linux/of.h>
 #include <linux/firmware.h>
-#include <linux/crc-itu-t.h>
+#include <linux/crc-ccitt.h>
 #include <linux/nvmem-consumer.h>
 
 #include <linux/unaligned.h>
@@ -132,7 +132,7 @@ static int aqr_fw_load_memory(struct phy_device *phydev, u32 addr,
 		crc_data[3] = word;
 
 		/* ...calculate CRC as we load data... */
-		crc = crc_itu_t(crc, crc_data, sizeof(crc_data));
+		crc = crc_ccitt_false(crc, crc_data, sizeof(crc_data));
 	}
 	/* ...gets CRC from MAILBOX after we have loaded the entire section... */
 	up_crc = phy_read_mmd(phydev, MDIO_MMD_VEND1, VEND1_GLOBAL_MAILBOX_INTERFACE2);
@@ -164,7 +164,7 @@ static int aqr_fw_boot(struct phy_device *phydev, const u8 *data, size_t size,
 		phydev_err(phydev, "bad firmware CRC in firmware\n");
 		return ret;
 	}
-	calculated_crc = crc_itu_t(0, data, size - sizeof(u16));
+	calculated_crc = crc_ccitt_false(0, data, size - sizeof(u16));
 	if (read_crc != calculated_crc) {
 		phydev_err(phydev, "bad firmware CRC: file 0x%04x calculated 0x%04x\n",
 			   read_crc, calculated_crc);
@@ -353,32 +353,22 @@ int aqr_firmware_load(struct phy_device *phydev)
 {
 	int ret;
 
-	/* Check if the firmware is not already loaded by polling
-	 * the current version returned by the PHY.
+	/* Check if the firmware is not already loaded by pooling
+	 * the current version returned by the PHY. If 0 is returned,
+	 * no firmware is loaded.
 	 */
-	ret = aqr_wait_reset_complete(phydev);
-	switch (ret) {
-	case 0:
-		/* Some firmware is loaded => do nothing */
-		return 0;
-	case -ETIMEDOUT:
-		/* VEND1_GLOBAL_FW_ID still reads 0 after 2 seconds of polling.
-		 * We don't have full confidence that no firmware is loaded (in
-		 * theory it might just not have loaded yet), but we will
-		 * assume that, and load a new image.
-		 */
-		ret = aqr_firmware_load_nvmem(phydev);
-		if (ret == -EPROBE_DEFER || !ret)
-			return ret;
+	ret = phy_read_mmd(phydev, MDIO_MMD_VEND1, VEND1_GLOBAL_FW_ID);
+	if (ret > 0)
+		goto exit;
 
-		ret = aqr_firmware_load_fs(phydev);
-		if (ret)
-			return ret;
-		break;
-	default:
-		/* PHY read error, propagate it to the caller */
+	ret = aqr_firmware_load_nvmem(phydev);
+	if (!ret)
+		goto exit;
+
+	ret = aqr_firmware_load_fs(phydev);
+	if (ret)
 		return ret;
-	}
 
+exit:
 	return 0;
 }
