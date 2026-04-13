@@ -80,16 +80,15 @@
 		phy-mode = #m ; \
 	};
 
-#define SWITCH_SFP_PORT(n, s, m) \
-	port##n: port@##n { \
-		reg = <##n>; \
-		label = SWITCH_PORT_LABEL(s) ; \
-		phy-handle = <&phy##n>; \
-		phy-mode = #m ; \
-		fixed-link { \
-			speed = <1000>; \
-			full-duplex; \
-		}; \
+#define SWITCH_PORT_SFP(p, l, s, c, g) \
+	port##p: port@##p { \
+		reg = <##p>; \
+		label = SWITCH_PORT_LABEL(l) ; \
+		led-set = <##c>; \
+		pcs-handle = <&serdes##s>; \
+		phy-mode = "1000base-x"; \
+		sfp = <&sfp##g>; \
+		managed = "in-band-status"; \
 	};
 
 // LED Set mode definitions
