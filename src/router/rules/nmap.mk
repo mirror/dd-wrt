@@ -11,7 +11,7 @@ nmap-configure: openssl libpcap zlib
 	cd nmap/libpcre && aclocal
 	cd nmap/libpcre && automake
 	cd nmap/libpcre && autoreconf -fi
-	cd nmap && ./configure ac_cv_libz=yes \
+	cd nmap && ./configure ac_cv_dnet_linux_procfs=yes ac_cv_libz=yes \
 		--host=$(ARCH)-linux \
 		--prefix=/usr \
 		--with-libdnet=included \
