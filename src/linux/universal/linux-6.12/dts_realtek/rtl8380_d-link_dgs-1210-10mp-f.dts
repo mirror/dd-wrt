@@ -63,13 +63,13 @@
 	};
 };
 
-&keys {
+/*&keys {
 	mode {
 		label = "mode";
 		gpios = <&gpio1 30 GPIO_ACTIVE_LOW>;
 		linux,code = <KEY_LIGHTS_TOGGLE>;
 	};
-};
+};*/
 
 &uart1 {
 	status = "okay";
