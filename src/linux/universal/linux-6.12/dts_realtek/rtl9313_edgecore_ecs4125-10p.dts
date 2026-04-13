@@ -205,49 +205,49 @@
 
 		port@0 {
 			reg = <0>;
-			label = "lan02";
+			label = "lan2";
 			phy-handle = <&phy0>;
 			phy-mode = "hsgmii";
 		};
 		port@8 {
 			reg = <8>;
-			label = "lan01";
+			label = "lan1";
 			phy-handle = <&phy1>;
 			phy-mode = "hsgmii";
 		};
 		port@16 {
 			reg = <16>;
-			label = "lan04";
+			label = "lan4";
 			phy-handle = <&phy2>;
 			phy-mode = "hsgmii";
 		};
 		port@24 {
 			reg = <24>;
-			label = "lan03";
+			label = "lan3";
 			phy-handle = <&phy3>;
 			phy-mode = "hsgmii";
 		};
 		port@32 {
 			reg = <32>;
-			label = "lan05";
+			label = "lan5";
 			phy-handle = <&phy4>;
 			phy-mode = "hsgmii";
 		};
 		port@40 {
 			reg = <40>;
-			label = "lan06";
+			label = "lan6";
 			phy-handle = <&phy5>;
 			phy-mode = "hsgmii";
 		};
 		port@48 {
 			reg = <48>;
-			label = "lan07";
+			label = "lan7";
 			phy-handle = <&phy6>;
 			phy-mode = "hsgmii";
 		};
 		port@50 {
 			reg = <50>;
-			label = "lan08";
+			label = "lan8";
 			phy-handle = <&phy7>;
 			phy-mode = "hsgmii";
 		};
@@ -255,7 +255,7 @@
 		/* RTL9313 Internal SerDes */
 		port@54 {
 			reg = <54>;
-			label = "lan09";
+			label = "lan9";
 			phy-mode = "10gbase-r";
 			pseudo-phy-handle = <&phy54>;
 			sfp = <&sfp0>;

@@ -39,7 +39,7 @@
 	ethernet-ports {
 		port@26 {
 			reg = <26>;
-			label = "lan09";
+			label = "lan9";
 			pcs-handle = <&serdes8>;
 			phy-mode = "1000base-x";
 			sfp = <&sfp0>;

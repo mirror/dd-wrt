@@ -129,18 +129,18 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 
-		SWITCH_PORT_LED(0, 01, 2, 0, usxgmii)
-		SWITCH_PORT_LED(1, 02, 2, 0, usxgmii)
-		SWITCH_PORT_LED(2, 03, 2, 0, usxgmii)
-		SWITCH_PORT_LED(3, 04, 2, 0, usxgmii)
-		SWITCH_PORT_LED(4, 05, 2, 0, usxgmii)
-		SWITCH_PORT_LED(5, 06, 2, 0, usxgmii)
-		SWITCH_PORT_LED(6, 07, 2, 0, usxgmii)
-		SWITCH_PORT_LED(7, 08, 2, 0, usxgmii)
+		SWITCH_PORT_LED(0, 1, 2, 0, usxgmii)
+		SWITCH_PORT_LED(1, 2, 2, 0, usxgmii)
+		SWITCH_PORT_LED(2, 3, 2, 0, usxgmii)
+		SWITCH_PORT_LED(3, 4, 2, 0, usxgmii)
+		SWITCH_PORT_LED(4, 5, 2, 0, usxgmii)
+		SWITCH_PORT_LED(5, 6, 2, 0, usxgmii)
+		SWITCH_PORT_LED(6, 7, 2, 0, usxgmii)
+		SWITCH_PORT_LED(7, 8, 2, 0, usxgmii)
 
 		port@24 {
 			reg = <24>;
-			label = "lan09";
+			label = "lan9";
 			pcs-handle = <&serdes6>;
 			phy-handle = <&phy24>;
 			phy-mode = "sgmii";

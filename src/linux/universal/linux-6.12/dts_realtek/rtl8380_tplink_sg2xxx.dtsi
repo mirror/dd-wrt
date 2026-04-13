@@ -135,17 +135,14 @@
 };
 
 &mdio_bus0 {
-	INTERNAL_PHY(8)
-	INTERNAL_PHY(9)
-	INTERNAL_PHY(10)
-	INTERNAL_PHY(11)
-	INTERNAL_PHY(12)
-	INTERNAL_PHY(13)
-	INTERNAL_PHY(14)
-	INTERNAL_PHY(15)
-
-	INTERNAL_PHY(24)
-	INTERNAL_PHY(26)
+	PHY_C22(8, 8)
+	PHY_C22(9, 9)
+	PHY_C22(10, 10)
+	PHY_C22(11, 11)
+	PHY_C22(12, 12)
+	PHY_C22(13, 13)
+	PHY_C22(14, 14)
+	PHY_C22(15, 15)
 };
 
 &ethernet0 {
@@ -158,21 +155,20 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 
-		SWITCH_PORT(15, 01, internal)
-		SWITCH_PORT(14, 02, internal)
-		SWITCH_PORT(13, 03, internal)
-		SWITCH_PORT(12, 04, internal)
-		SWITCH_PORT(11, 05, internal)
-		SWITCH_PORT(10, 06, internal)
-		SWITCH_PORT(9, 07, internal)
-		SWITCH_PORT(8, 08, internal)
+		SWITCH_PORT(15, 1, internal)
+		SWITCH_PORT(14, 2, internal)
+		SWITCH_PORT(13, 3, internal)
+		SWITCH_PORT(12, 4, internal)
+		SWITCH_PORT(11, 5, internal)
+		SWITCH_PORT(10, 6, internal)
+		SWITCH_PORT(9, 7, internal)
+		SWITCH_PORT(8, 8, internal)
 
 		/* TODO: fixed link SFP is not right */
 		port24: port@24 {
 			reg = <24>;
 			label = SWITCH_PORT_LABEL(9);
 			pcs-handle = <&serdes4>;
-			phy-handle = <&phy24>;
 			phy-mode = "1000base-x";
 			fixed-link {
 				speed = <1000>;
@@ -183,7 +179,6 @@
 			reg = <26>;
 			label = SWITCH_PORT_LABEL(10);
 			pcs-handle = <&serdes5>;
-			phy-handle = <&phy26>;
 			phy-mode = "1000base-x";
 			fixed-link {
 				speed = <1000>;
