@@ -1,4 +1,4 @@
-/* dnsmasq is Copyright (c) 2000-2025 Simon Kelley
+/* dnsmasq is Copyright (c) 2000-2026 Simon Kelley
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -175,8 +175,8 @@ int is_rev_synth(int flag, union all_addr *addr, char *name)
 	       *p = '-';
 	 }
        
-       strncat(name, ".", MAXDNAME);
-       strncat(name, c->domain, MAXDNAME);
+       strncat(name, ".", MAXDNAME - strlen(name) - 1);
+       strncat(name, c->domain, MAXDNAME - strlen(name) - 1);
 
        return 1;
      }
@@ -201,16 +201,16 @@ int is_rev_synth(int flag, union all_addr *addr, char *name)
 	   for (i = 0; i < 16; i += 2)
 	     {
 	       sprintf(frag, "%s%02x%02x",  i == 0 ? "" : "-", addr->addr6.s6_addr[i], addr->addr6.s6_addr[i+1]);
-	       strncat(name, frag, MAXDNAME);
+	       strncat(name, frag, MAXDNAME - strlen(name) - 1);
 	     }
 	 }
 
-       strncat(name, ".", MAXDNAME);
-       strncat(name, c->domain, MAXDNAME);
-       
+       strncat(name, ".", MAXDNAME - strlen(name) - 1);
+       strncat(name, c->domain, MAXDNAME - strlen(name) - 1);
+
        return 1;
      }
-   
+
    return 0;
 }
 

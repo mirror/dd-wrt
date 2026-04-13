@@ -136,6 +136,8 @@ Log the results of DNS queries handled by dnsmasq. Enable a full cache dump on r
 then the log has extra information at the start of each line.
 This consists of a serial number which ties together the log lines associated with an individual query, and the IP address of the requestor. If the argument "proto" is supplied, this shows everything that "extra" does and also the network protocol used to communicate the queries. Logging of only queries to the authoritative server can be configured with
 .B --log-queries=auth
+and logging only failed replies (Error, NXDOMAIN or NODATA) can be configured with
+.B --log-queries=only_failed
 .TP
 .B \-8, --log-facility=<facility>
 Set the facility to which dnsmasq will send syslog entries, this
@@ -1513,7 +1515,7 @@ The normal default DNS server (the same address as the DHCP server)
 will not be appropriate when there is no route bewteen the
 two, so this will have to be explicitly configured. 
 .TP
-.B \-U, --dhcp-vendorclass=set:<tag>,[enterprise:<IANA-enterprise number>,]<vendor-class>
+.B \-U, --dhcp-vendorclass=set:<tag>,[enterprise:<IANA-enterprise number>,][<vendor-class>]
 Map from a vendor-class string to a tag. Most DHCP clients provide a 
 "vendor class" which represents, in some sense, the type of host. This option 
 maps vendor classes to tags, so that DHCP options may be selectively delivered
@@ -1527,9 +1529,11 @@ allow fuzzy matching. The set: prefix is optional but allowed for
 consistency. 
 
 Note that in IPv6 only, vendorclasses are namespaced with an 
-IANA-allocated enterprise number. This is given with enterprise:
+IANA-allocated enterprise number. This may be given with an enterprise:
 keyword and specifies that only vendorclasses matching the specified
-number should be searched.
+number should be searched. Similarly, an enterprise number may be given
+with no vendor-class string. This always matches vendorclasses with
+the given enterprise number.
 .TP
 .B \-j, --dhcp-userclass=set:<tag>,<user-class>
 Map from a user-class string to a tag (with substring

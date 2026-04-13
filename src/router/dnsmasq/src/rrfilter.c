@@ -1,4 +1,4 @@
-/* dnsmasq is Copyright (c) 2000-2025 Simon Kelley
+/* dnsmasq is Copyright (c) 2000-2026 Simon Kelley
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -335,27 +335,6 @@ short *rrfilter_desc(int type)
     while (*p++ != -1);
 
   return p+1;
-}
-
-int expand_workspace(unsigned char ***wkspc, int *szp, int new)
-{
-  unsigned char **p;
-  int old = *szp;
-
-  if (old >= new+1)
-    return 1;
-
-  new += 5;
-
-  if (!(p = whine_realloc(*wkspc, new * sizeof(unsigned char *))))
-    return 0;
-
-  memset(p+old, 0, new-old);
-  
-  *wkspc = p;
-  *szp = new;
-
-  return 1;
 }
 
 /* Convert from presentation format to wire format, in place.

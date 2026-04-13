@@ -1,4 +1,4 @@
-/* dnsmasq is Copyright (c) 2000-2025 Simon Kelley
+/* dnsmasq is Copyright (c) 2000-2026 Simon Kelley
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -545,8 +545,13 @@ static struct tftp_file *check_tftp_fileperm(char *packet, ssize_t *len, char *p
   int fd = -1;
 
   /* trick to ban moving out of the subtree */
-  if (prefix && strstr(namebuff, "/../"))
-    goto perm;
+  if (prefix)
+    {
+      char *suspect = strstr(namebuff, "/..");
+
+      if (suspect && (suspect[3] == '/' || suspect[3] == 0))
+        goto perm;
+    }
   
   if ((fd = open(namebuff, O_RDONLY)) == -1)
     {
