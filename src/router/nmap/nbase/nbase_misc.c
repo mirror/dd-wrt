@@ -5,7 +5,7 @@
  *                                                                         *
  ***********************IMPORTANT NMAP LICENSE TERMS************************
  *
- * The Nmap Security Scanner is (C) 1996-2025 Nmap Software LLC ("The Nmap
+ * The Nmap Security Scanner is (C) 1996-2026 Nmap Software LLC ("The Nmap
  * Project"). Nmap is also a registered trademark of the Nmap Project.
  *
  * This program is distributed under the terms of the Nmap Public Source
@@ -59,7 +59,7 @@
  *
  ***************************************************************************/
 
-/* $Id: nbase_misc.c 39083 2025-02-26 17:44:43Z dmiller $ */
+/* $Id: nbase_misc.c 39343 2026-02-16 22:33:40Z dmiller $ */
 
 #include "nbase.h"
 
@@ -266,20 +266,22 @@ int block_socket(int sd) {
 int socket_bindtodevice(int sd, const char *device) {
 #ifdef SO_BINDTODEVICE
   char padded[sizeof(int)];
-  size_t len;
+  size_t len = 0;
 
-  len = strlen(device) + 1;
-  /* In Linux 2.6.20 and earlier, there is a bug in SO_BINDTODEVICE that causes
-     EINVAL to be returned if the optlen < sizeof(int); this happens for example
-     with the interface names "" and "lo". Pad the string with null characters
-     so it is above this limit if necessary.
-     http://article.gmane.org/gmane.linux.network/71887
-     http://article.gmane.org/gmane.linux.network/72216 */
-  if (len < sizeof(padded)) {
-    /* We rely on strncpy padding with nulls here. */
-    strncpy(padded, device, sizeof(padded));
-    device = padded;
-    len = sizeof(padded);
+  if (device) {
+    len = strlen(device) + 1;
+    /* In Linux 2.6.20 and earlier, there is a bug in SO_BINDTODEVICE that causes
+       EINVAL to be returned if the optlen < sizeof(int); this happens for example
+       with the interface names "" and "lo". Pad the string with null characters
+       so it is above this limit if necessary.
+        http://article.gmane.org/gmane.linux.network/71887
+        http://article.gmane.org/gmane.linux.network/72216 */
+    if (len < sizeof(padded)) {
+      /* We rely on strncpy padding with nulls here. */
+      strncpy(padded, device, sizeof(padded));
+      device = padded;
+      len = sizeof(padded);
+    }
   }
 
   /* Linux-specific sockopt asking to use a specific interface. See socket(7). */

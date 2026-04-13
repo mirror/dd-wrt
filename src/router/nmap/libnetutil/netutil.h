@@ -7,7 +7,7 @@
  *                                                                         *
  ***********************IMPORTANT NMAP LICENSE TERMS************************
  *
- * The Nmap Security Scanner is (C) 1996-2025 Nmap Software LLC ("The Nmap
+ * The Nmap Security Scanner is (C) 1996-2026 Nmap Software LLC ("The Nmap
  * Project"). Nmap is also a registered trademark of the Nmap Project.
  *
  * This program is distributed under the terms of the Nmap Public Source
@@ -330,7 +330,7 @@ int netutil_raw_socket(const char *device);
 #define PACKET_SEND_IP_WEAK     0x08
 #define PACKET_SEND_IP_STRONG   0x10
 #define PACKET_SEND_IP (PACKET_SEND_IP_WEAK | PACKET_SEND_IP_STRONG)
-int raw_socket_or_eth(int sendpref, const char *ifname,
+int raw_socket_or_eth(int sendpref, const char *ifname, devtype iftype,
     int *rawsd, netutil_eth_t **ethsd);
 
 /* Takes a protocol number like IPPROTO_TCP, IPPROTO_UDP, or

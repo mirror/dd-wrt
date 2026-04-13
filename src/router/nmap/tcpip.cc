@@ -6,7 +6,7 @@
  *                                                                         *
  ***********************IMPORTANT NMAP LICENSE TERMS************************
  *
- * The Nmap Security Scanner is (C) 1996-2025 Nmap Software LLC ("The Nmap
+ * The Nmap Security Scanner is (C) 1996-2026 Nmap Software LLC ("The Nmap
  * Project"). Nmap is also a registered trademark of the Nmap Project.
  *
  * This program is distributed under the terms of the Nmap Public Source
@@ -60,7 +60,7 @@
  *
  ***************************************************************************/
 
-/* $Id: tcpip.cc 39235 2025-06-30 19:24:32Z dmiller $ */
+/* $Id: tcpip.cc 39394 2026-03-24 21:47:15Z dmiller $ */
 
 #include "nmap.h"
 
@@ -1529,7 +1529,7 @@ const u8 *readip_pcap(pcap_t *pd, unsigned int *len, long to_usec,
   if (offset && linknfo) {
     linknfo->datalinktype = datalink;
     linknfo->headerlen = offset;
-    linknfo->header = p;
+    linknfo->header = p - offset;
   }
   if (rcvdtime)
     PacketTrace::trace(PacketTrace::RCVD, (u8 *) p, *len,
@@ -1663,14 +1663,16 @@ bool getNextHopMAC(const char *iface, const u8 *srcmac, const struct sockaddr_st
 
   /* Maybe the system ARP cache will be more helpful */
   a = arp_open();
-  addr_ston((sockaddr *) dstss, &ae.arp_pa);
-  if (arp_get(a, &ae) == 0) {
-    mac_cache_set(dstss, ae.arp_ha.addr_eth.data);
-    memcpy(dstmac, ae.arp_ha.addr_eth.data, 6);
+  if (a) {
+    addr_ston((sockaddr *) dstss, &ae.arp_pa);
+    if (arp_get(a, &ae) == 0) {
+      mac_cache_set(dstss, ae.arp_ha.addr_eth.data);
+      memcpy(dstmac, ae.arp_ha.addr_eth.data, 6);
+      arp_close(a);
+      return true;
+    }
     arp_close(a);
-    return true;
   }
-  arp_close(a);
 
   /* OK, the last choice is to send our own damn ARP request (and
      retransmissions if necessary) to determine the MAC */

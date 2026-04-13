@@ -6,7 +6,7 @@
  *                                                                         *
  ***********************IMPORTANT NMAP LICENSE TERMS************************
  *
- * The Nmap Security Scanner is (C) 1996-2025 Nmap Software LLC ("The Nmap
+ * The Nmap Security Scanner is (C) 1996-2026 Nmap Software LLC ("The Nmap
  * Project"). Nmap is also a registered trademark of the Nmap Project.
  *
  * This program is distributed under the terms of the Nmap Public Source
@@ -60,7 +60,7 @@
  *
  ***************************************************************************/
 
-/* $Id: MACLookup.cc 39254 2025-07-15 18:25:09Z dmiller $ */
+/* $Id: MACLookup.cc 39343 2026-02-16 22:33:40Z dmiller $ */
 
 #include "nmap.h"
 

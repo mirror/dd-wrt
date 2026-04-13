@@ -4,7 +4,7 @@
  *                                                                         *
  ***********************IMPORTANT NSOCK LICENSE TERMS***********************
  *
- * The nsock parallel socket event library is (C) 1999-2025 Nmap Software LLC
+ * The nsock parallel socket event library is (C) 1999-2026 Nmap Software LLC
  * This library is free software; you may redistribute and/or modify it under
  * the terms of the GNU General Public License as published by the Free Software
  * Foundation; Version 2. This guarantees your right to use, modify, and
@@ -49,7 +49,7 @@
  *
  ***************************************************************************/
 
-/* $Id: nsock_pcap.c 39110 2025-04-10 19:24:22Z dmiller $ */
+/* $Id: nsock_pcap.c 39343 2026-02-16 22:33:40Z dmiller $ */
 
 #include "nsock.h"
 #include "nsock_internal.h"
@@ -414,7 +414,13 @@ int do_actual_pcap_read(struct nevent *nse) {
   switch (rc) {
     case 1: /* read good packet  */
 #ifdef PCAP_RECV_TIMEVAL_VALID
+#ifdef __OpenBSD__
+      /* OpenBSD has bpf_timeval which is incompatible with struct timeval */
+      npp.ts.tv_sec  = pkt_header->ts.tv_sec;
+      npp.ts.tv_usec = pkt_header->ts.tv_usec;
+#else
       npp.ts     = pkt_header->ts;
+#endif
 #else
       /* On these platforms time received from pcap is invalid.
        * It's better to set current time */
@@ -517,4 +523,3 @@ int nsock_iod_is_pcap(nsock_iod iod) {
 }
 
 #endif /* HAVE_PCAP */
-

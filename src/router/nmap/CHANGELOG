@@ -1,6 +1,112 @@
-#Nmap Changelog ($Id: CHANGELOG 39259 2025-08-07 16:41:40Z dmiller $); -*-text-*-
+#Nmap Changelog ($Id: CHANGELOG 39390 2026-03-21 16:04:35Z dmiller $); -*-text-*-
 
-o Updated liblua to 5.4.8
+Nmap 7.99 [2026-03-24]
+
+o Integrated many of the most-frequently-submitted IPv4 and IPv6 OS
+  fingerprints, as well as dozens of updated service fingerprints.
+
+o Upgraded included libraries: OpenSSL 3.0.19, libpcap 1.10.6, libpcre2 10.47,
+  liblinear 2.50, zlib 1.3.2
+
+o [Windows] Upgraded the included version of Npcap from 1.83 to 1.87, resolving
+  several crashes and stability-related issues. See https://npcap.com/changelog
+
+o [Zenmap][GH#3182] Zenmap is now distributed as a universal wheel
+  (zenmap-7.99-py3-none-any.whl) instead of an RPM package so that it can be
+  installed on any system with Python 3. [Daniel Miller]
+
+o [Ncat][Windows] Limited the number of handles inherited by subprocesses
+  launched with -e, preventing interference between clients when -e and
+  --keep-open are used. Reported by Nimish Verma.
+
+o [Ncat] Several fixes for regressions or longstanding failure cases in
+  ncat-test.pl [Daniel Miller]:
+
+  + [Windows] Fixed handling of socket EOF with --exec
+
+  + Fixed the -i (idle timeout) option for listen mode, which was broken
+    when adding the -q option in Ncat 7.96
+
+  + Fixed HTTP proxy server when SSL is used.
+
+  + DTLS (SSL over UDP) shutdown connection on stdin EOF.
+
+o [Windows][GH#2711] Nmap now supports scanning over various VPN virtual
+  adapters like OpenVPN TAP adapters. [Daniel Miller]
+
+o [GH#3280] Fix a performance regression in reverse-DNS in Nmap 7.98. The fix
+  for #3130 had caused Nmap to send requests too slowly. [Daniel Miller]
+
+o [macOS][GH#3289] Fixed a configure-time failure in libdnet that resulted in
+  incorrect MAC addresses being reported. [Daniel Miller]
+
+o [Zenmap][GH#3189] Fix a crash in Zenmap topology and hosts viewer:
+  "TypeError: format requires a mapping" [Daniel Miller]
+
+o [GH#2955] Fix a routing issue with -e and -S related to #2206
+  causing error "setup_target: failed to determine route" [Daniel Miller]
+
+o [GH#3214] Improve compatibility of build process on various platforms and add
+  multiplatform autobuilds in Github workflow. [Jordan Ritter]
+
+o [NSE][GH#2183][GH#3239] Script hostmap-crtsh now reports only true subdomains
+  of a given target hostname by default. In the past, it was reporting any
+  DNS name that included the target hostname as a substring (but not
+  necessarily as a suffix). The old behavior can be enabled by setting script
+  argument hostmap-crtsh.lax. [Sweekar-cmd, nnposter]
+
+o [NSE] Function url.parse_query was not interpreting plus signs as spaces.
+  [nnposter]
+
+o [NSE] Function url.parse was not properly parsing URLs with query strings
+  but empty paths. [nnposter]
+
+o [NSE][GH#3287] Functions tableaux.tcopy and tableaux.shallow_tcopy were
+  not behaving the same when the input table had a custom __pairs metamethod.
+  Both functions now perform a raw copy, ignoring the metamethod. [nnposter]
+
+o [NSE] Function tableaux.shallow_tcopy did not work correctly for tables
+  with Boolean keys. [nnposter]
+
+o [NSE] IPP print queue job details were not getting populated, having
+  a hard dependency on Apple-specific attributes. [nnposter]
+
+o [NSE][GH#3245] Functions connect and close have been removed from the IPP
+  library, as they served no purpose. [nnposter]
+
+o [NSE] ipOps.expand_ip was crashing upon malformed IPv6 addresses. [nnposter]
+
+o [NSE][GH#3262] FTP banner parsing is now more closely aligned with RFC 959,
+  section 4.2. [nnposter]
+
+o [NSE][GH#3253] Function stdnse.make_buffer now accepts an extra parameter
+  that allows preloading the newly created buffer with data. [nnposter]
+
+o [NSE][GH#3191][GH#3218] Script http-internal-ip-disclosure has been enhanced,
+  including added support for IPv6 and HTTPS and more accurate processing
+  of target responses. [nnposter]
+
+o [NSE][GH#3194] RPC-based scripts were sporadically failing due to privileged
+  port conflicts. [nnposter]
+
+o [NSE][GH#3196] Script rlogin-brute was sporadically failing due to using
+  an off-by-one range for privileged ports and not handling potential
+  port conflicts. [nnposter]
+
+Nmap 7.98 [2025-08-21]
+
+o [SECURITY] Rebuilt the Windows self-installer with NSIS 3.11, addressing
+  CVE-2025-43715--a race condition in earlier NSIS versions that could allow
+  local attackers to escalate to SYSTEM privileges when a vulnerable installer is
+  run as SYSTEM. The Nmap installer does not run as SYSTEM by default.
+
+o Upgraded included libraries: OpenSSL 3.0.17, Lua 5.4.8
+
+o [Windows] Upgraded the included version of Npcap from 1.82 to 1.83, improving
+  compatibility with PPPoE connections. See https://npcap.com/changelog
+
+o [macOS][GH#3127] Fix "dnet: Failed to open device en0" errors on macOS since
+  Nmap 7.96. [Daniel Miller]
 
 o Fixed an issue in FTP bounce scan where a single null byte is written past
   the end of the receive buffer. The issue is triggered by a malicious server
@@ -10,6 +116,9 @@ o [GH#3130] Fix a crash (stack exhaustion due to excessive recursion) in the
   parallel DNS resolver. Additionally, improved performance by processing
   responses that come after the request has timed out. [Daniel Miller]
 
+o [GH#2148] Fix the error, "Assertion failed: (datalink == DLT_EN10MB), function begin_sniffer, file scan_engine_raw.cc"
+  when using Nmap with certain VPN interfaces. [Daniel Miller]
+
 o [GH#2757] Fix a crash in traceroute when using randomly-generated decoys:
   "Assertion `source->ss_family == AF_INET' failed" [Daniel Miller]
 
@@ -18,23 +127,22 @@ o [GH#2899] When IP protocol scanning on IPv6 (-sO -6), skip protocol numbers
   used, these would fail the assertion "len == (u32) ntohs(ip6->ip6_plen)"
   [Daniel Miller]
 
-o [NSE][GH#3133] Fix the error "nse_nsock.cc:637: void receive_callback(nsock_pool, nsock_event, void*): Assertion `lua_status(L) == 1' failed."
-  when reading from an SSL connection. [Daniel Miller]
-
 o [GH#3086] Prevent TCP Connect scan (-sT) from leaking one socket per
   hostgroup, which led to progressively slower scans and assertion failures in
   other scan phases. [Daniel Miller]
+
+o [NSE][GH#3133] Fix the error "nse_nsock.cc:637: void receive_callback(nsock_pool, nsock_event, void*): Assertion `lua_status(L) == 1' failed."
+  when reading from an SSL connection. [Daniel Miller]
 
 o [NSE] Added NSE bindings for more libssh2 functions: channel_request,
   channel_request_pty_ex, channel_shell, and userauth_keyboard_interactive.
   ssh-brute will now use keyboard-interactive auth if password auth is not
   offered. [Daniel Miller, CrowdStrike]
 
+o [NSE][GH#3014] Fix dns-zone-transfer to handle nontraditional TLDs [Daniel Miller]
+
 o Fix a bug that was causing Nmap to send empty DNS packets for each target
   that was not found up instead of just skipping them for reverse DNS.
-
-o [macOS][GH#3127] Fix "dnet: Failed to open device en0" errors on macOS since
-  Nmap 7.96. [Daniel Miller]
 
 o [NSE] Fix/update/enhance tls.lua for newer TLSv1.3 ciphers, including
   post-quantum ciphersuites.
@@ -282,6 +390,9 @@ o [GH#2731] Fix an out-of-bounds read which led to out-of-memory errors when
 o [GH#2609] Fixed a memory leak in Nsock: compiled pcap filters were not freed.
 
 o [GH#2658] Fixed a crash when using service name wildcards with -p, as in -p "http*"
+
+o [GH#2657] Fixed an issue where NSE-assigned service names could be overwritten
+  prior to output, leading to XML validation errors and unprintable screen output.
 
 o [NSE] Fixed DNS TXT record parsing bug which caused asn-query to fail in
   Nmap 7.80 and later. [David Fifield, Mike Pattrick]

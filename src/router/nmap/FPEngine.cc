@@ -6,7 +6,7 @@
  *                                                                         *
  ***********************IMPORTANT NMAP LICENSE TERMS************************
  *
- * The Nmap Security Scanner is (C) 1996-2025 Nmap Software LLC ("The Nmap
+ * The Nmap Security Scanner is (C) 1996-2026 Nmap Software LLC ("The Nmap
  * Project"). Nmap is also a registered trademark of the Nmap Project.
  *
  * This program is distributed under the terms of the Nmap Public Source
@@ -118,7 +118,7 @@ FPNetworkControl::~FPNetworkControl() {
 
 /* (Re)-Initialize object's state (default parameter setup and nsock
  * initialization). */
-void FPNetworkControl::init(const char *ifname) {
+void FPNetworkControl::init(const char *ifname, devtype iftype) {
 
   /* Init congestion control parameters */
   this->cc_init();
@@ -161,7 +161,7 @@ void FPNetworkControl::init(const char *ifname) {
   netutil_eth_t *ethsd = NULL;
 
   /* Obtain raw socket or check that we can obtain an eth descriptor. */
-  if (!raw_socket_or_eth(o.sendpref, ifname, &this->rawsd, &ethsd)) {
+  if (!raw_socket_or_eth(o.sendpref, ifname, iftype, &this->rawsd, &ethsd)) {
     fatal("Couldn't obtain raw socket or eth handle in %s", __func__);
   }
 
@@ -1122,7 +1122,7 @@ int FPEngine6::os_scan(std::vector<Target *> &Targets) {
 
   /* Initialize variables, timers, etc. */
   gettimeofday(&begin_time, NULL);
-  global_netctl.init(Targets[0]->deviceName());
+  global_netctl.init(Targets[0]->deviceName(), Targets[0]->ifType());
   for (size_t i = 0; i < Targets.size(); i++) {
     if (o.debugging > 3) {
       log_write(LOG_PLAIN, "[FPEngine] Allocating FPHost6 for %s %s\n",
@@ -2493,28 +2493,8 @@ size_t FPPacket::getLength() const {
  * Otherwise, pass the source address, the next hop address and the name of
  * the network interface the packet should be injected through. */
 int FPPacket::setEthernet(const Target *target) {
-  const char *devname = target->deviceName();
-  this->link_eth = false;
-  if (devname != NULL) {
-    netutil_eth_t *ethsd = eth_open_cached(devname);
-    if (ethsd == NULL) {
-      error("%s: Failed to open ethernet device (%s)", __func__, devname);
-    }
-    else if (netutil_eth_can_send(ethsd)) {
-      this->link_eth = true;
-      if (netutil_eth_datalink(ethsd) == DLT_EN10MB){
-        const u8 *src_mac = target->SrcMACAddress();
-        const u8 *dst_mac = target->NextHopMACAddress();
-        if (src_mac == NULL || dst_mac == NULL) {
-          this->link_eth = false;
-        }
-        else {
-          memcpy(this->eth_hdr.srcmac, src_mac, 6);
-          memcpy(this->eth_hdr.dstmac, dst_mac, 6);
-        }
-      }
-    }
-  }
+  eth_nfo *eth = target->FillEthNfo(&this->eth_hdr, NULL);
+  this->link_eth = (eth != NULL);
 
   if (!this->link_eth) {
    memset(&(this->eth_hdr), 0, sizeof(struct eth_nfo));

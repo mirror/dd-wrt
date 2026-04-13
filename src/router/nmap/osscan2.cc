@@ -6,7 +6,7 @@
  *                                                                         *
  ***********************IMPORTANT NMAP LICENSE TERMS************************
  *
- * The Nmap Security Scanner is (C) 1996-2025 Nmap Software LLC ("The Nmap
+ * The Nmap Security Scanner is (C) 1996-2026 Nmap Software LLC ("The Nmap
  * Project"). Nmap is also a registered trademark of the Nmap Project.
  *
  * This program is distributed under the terms of the Nmap Public Source
@@ -60,7 +60,7 @@
  *
  ***************************************************************************/
 
-/* $Id: osscan2.cc 39235 2025-06-30 19:24:32Z dmiller $ */
+/* $Id: osscan2.cc 39343 2026-02-16 22:33:40Z dmiller $ */
 
 #include "osscan.h"
 #include "osscan2.h"
@@ -1176,10 +1176,11 @@ struct eth_nfo *HostOsScanStats::fill_eth_nfo(struct eth_nfo *eth, netutil_eth_t
   if (ethsd == NULL)
     return NULL;
 
-  memcpy(eth->srcmac, target->SrcMACAddress(), sizeof(eth->srcmac));
-  memcpy(eth->dstmac, target->NextHopMACAddress(), sizeof(eth->srcmac));
-  eth->ethsd = ethsd;
-  eth->devname[0] = '\0';
+  eth = target->FillEthNfo(eth, ethsd);
+  if (eth) {
+    eth->ethsd = ethsd;
+    eth->devname[0] = '\0';
+  }
 
   return eth;
 }
@@ -1335,8 +1336,9 @@ HostOsScan::HostOsScan(Target *t) {
   pd = NULL;
   rawsd = -1;
   ethsd = NULL;
+  int sendpref = o.sendpref;
 
-  if (!raw_socket_or_eth(o.sendpref, t->deviceName(), &rawsd, &ethsd)) {
+  if (!raw_socket_or_eth(sendpref, t->deviceName(), t->ifType(), &rawsd, &ethsd)) {
     fatal("%s: Failed to open raw socket or ethernet device", __func__);
   }
   if (rawsd >= 0)

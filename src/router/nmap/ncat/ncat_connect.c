@@ -2,7 +2,7 @@
  * ncat_connect.c -- Ncat connect mode.                                    *
  ***********************IMPORTANT NMAP LICENSE TERMS************************
  *
- * The Nmap Security Scanner is (C) 1996-2025 Nmap Software LLC ("The Nmap
+ * The Nmap Security Scanner is (C) 1996-2026 Nmap Software LLC ("The Nmap
  * Project"). Nmap is also a registered trademark of the Nmap Project.
  *
  * This program is distributed under the terms of the Nmap Public Source
@@ -56,7 +56,7 @@
  *
  ***************************************************************************/
 
-/* $Id: ncat_connect.c 39083 2025-02-26 17:44:43Z dmiller $ */
+/* $Id: ncat_connect.c 39351 2026-02-25 20:43:12Z dmiller $ */
 
 #include "base64.h"
 #include "nsock.h"
@@ -194,6 +194,7 @@ static void set_ssl_ctx_options(SSL_CTX *ctx)
         bye("Unable to set OpenSSL cipher list: %s", ERR_error_string(ERR_get_error(), NULL));
     }
 
+#if OPENSSL_VERSION_NUMBER >= 0x010002000L
     if (o.sslalpn) {
         size_t alpn_len;
         unsigned char *alpn = next_protos_parse(&alpn_len, o.sslalpn);
@@ -212,6 +213,7 @@ static void set_ssl_ctx_options(SSL_CTX *ctx)
 
         free(alpn);
     }
+#endif
 
 }
 #endif

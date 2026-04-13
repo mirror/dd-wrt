@@ -3,7 +3,7 @@
  *                                                                         *
  ***********************IMPORTANT NMAP LICENSE TERMS************************
  *
- * The Nmap Security Scanner is (C) 1996-2025 Nmap Software LLC ("The Nmap
+ * The Nmap Security Scanner is (C) 1996-2026 Nmap Software LLC ("The Nmap
  * Project"). Nmap is also a registered trademark of the Nmap Project.
  *
  * This program is distributed under the terms of the Nmap Public Source
@@ -1019,7 +1019,20 @@ netutil_eth_t *netutil_eth_open(const char *device) {
   } while (0);
 #else
   eth_handle(e) = eth_open(device);
-  e->datalink = DLT_EN10MB;
+  if (eth_handle(e)) {
+    eth_addr_t ea;
+    /* No guarantees this is Ethernet. Dnet doesn't offer a way to check the L2
+     * protocol, so we'll try to get the Ethernet address to confirm.
+     */
+    if (0 == eth_get(eth_handle(e), &ea) && 0 != memcmp(&ea, "\0\0\0\0\0\0", 6)) {
+      e->datalink = DLT_EN10MB;
+    }
+    else {
+      // Not a data link we know about.
+      eth_handle_close(eth_handle(e));
+      eth_handle(e) = NULL;
+    }
+  }
 #endif
 
   if (eth_handle(e) == NULL) {
@@ -1120,18 +1133,29 @@ int netutil_raw_socket(const char *device) {
     netutil_perror("setsockopt(SO_BROADCAST) failed");
   }
   sethdrinclude(rawsd);
-  socket_bindtodevice(rawsd, device);
+  if (device) {
+    socket_bindtodevice(rawsd, device);
+  }
 
   return rawsd;
 #endif
 }
 
-int raw_socket_or_eth(int sendpref, const char *ifname,
+int raw_socket_or_eth(int sendpref, const char *ifname, devtype iftype,
     int *rawsd, netutil_eth_t **ethsd) {
   assert(rawsd != NULL);
   *rawsd = -1;
   assert(ethsd != NULL);
   *ethsd = NULL;
+
+#ifndef WIN32
+  /* In general, on Windows we need to use Ether headers.
+   * On other platforms, avoid it. */
+  if (iftype != devt_ethernet) {
+    sendpref = PACKET_SEND_IP;
+  }
+#endif
+
   bool may_try_eth = ifname && !(sendpref & PACKET_SEND_IP_STRONG);
   bool may_try_ip = !(sendpref & PACKET_SEND_ETH_STRONG);
   bool try_eth = may_try_eth && (sendpref & PACKET_SEND_ETH);
@@ -1144,7 +1168,6 @@ int raw_socket_or_eth(int sendpref, const char *ifname,
       try_ip = may_try_ip;
 
       netutil_eth_t *e = eth_open_cached(ifname);
-      *ethsd = e;
       if (e == NULL) {
         netutil_error("dnet: failed to open device %s", ifname);
       }
@@ -1153,6 +1176,7 @@ int raw_socket_or_eth(int sendpref, const char *ifname,
         e = NULL;
       }
       else {
+        *ethsd = e;
         break;
       }
     }
@@ -1170,8 +1194,8 @@ int raw_socket_or_eth(int sendpref, const char *ifname,
       }
 #endif
       int sd = netutil_raw_socket(ifname);
-      *rawsd = sd;
       if (sd >= 0) {
+        *rawsd = sd;
         break;
       }
     }
@@ -1498,7 +1522,8 @@ static int collect_dnet_interfaces(const struct intf_entry *entry, void *arg) {
       sizeof(dcrn->ifaces[dcrn->numifaces].devfullname));
 
     /* Interface type */
-    if (entry->intf_type == INTF_TYPE_ETH && (entry->intf_flags & INTF_FLAG_NOARP) == 0) {
+    if ((entry->intf_type == INTF_TYPE_ETH || entry->intf_link_addr.addr_type == ADDR_TYPE_ETH)
+        && (entry->intf_flags & INTF_FLAG_NOARP) == 0) {
       dcrn->ifaces[dcrn->numifaces].device_type = devt_ethernet;
       /* Collect the MAC address since this is ethernet */
       memcpy(dcrn->ifaces[dcrn->numifaces].mac, &entry->intf_link_addr.addr_eth.data, 6);
@@ -3289,7 +3314,7 @@ static int route_dst_netlink(const struct sockaddr_storage *dst,
   len -= NLMSG_LENGTH(sizeof(*nlmsg));
 
   /* See rtnetlink(7). Anything matching this route is actually unroutable. */
-  if (rtmsg->rtm_type == RTN_UNREACHABLE || rtmsg->rtm_type == RTN_UNSPEC
+  if (rtmsg->rtm_type == RTN_UNREACHABLE
     || rtmsg->rtm_type == RTN_BLACKHOLE || rtmsg->rtm_type == RTN_PROHIBIT)
     return 0;
 
@@ -3329,6 +3354,11 @@ static int route_dst_netlink(const struct sockaddr_storage *dst,
 
   if (ii != NULL) {
     rnfo->ii = *ii;
+    if (rnfo->srcaddr.ss_family == AF_UNSPEC) {
+      assert(!spoofss);
+      assert(rnfo->ii.addr.ss_family == dst->ss_family);
+      rnfo->srcaddr = rnfo->ii.addr;
+    }
     return 1;
   } else {
     return 0;
@@ -3352,7 +3382,7 @@ static struct interface_info *find_loopback_iface(struct interface_info *ifaces,
 /* Get the source address for routing to dst by creating a socket and asking the
    operating system for the local address. */
 static int get_srcaddr(const struct sockaddr_storage *dst,
-  struct sockaddr_storage *src)
+  struct sockaddr_storage *src, const char *device)
 {
   static const unsigned short DUMMY_PORT = 1234;
   struct sockaddr_storage dst_dummy;
@@ -3375,6 +3405,10 @@ static int get_srcaddr(const struct sockaddr_storage *dst,
     dst_dummy_len = sizeof(*sin6);
   } else {
     goto bail;
+  }
+
+  if (device) {
+    socket_bindtodevice(fd, device);
   }
 
   rc = connect(fd, (struct sockaddr *) &dst_dummy, dst_dummy_len);
@@ -3494,7 +3528,7 @@ static int route_dst_generic(const struct sockaddr_storage *dst,
     rnfo->direct_connect = 1;
     /* But the source address we want to use is the target address. */
     if (!spoofss) {
-      if (get_srcaddr(dst, &rnfo->srcaddr) == -1)
+      if (get_srcaddr(dst, &rnfo->srcaddr, device) == -1)
         rnfo->srcaddr = rnfo->ii.addr;
     }
 
@@ -3522,7 +3556,9 @@ static int route_dst_generic(const struct sockaddr_storage *dst,
       sockaddr_equal(&routes[i].gw, &routes[i].device->addr) ||
       sockaddr_equal(&routes[i].gw, dst));
     if (!spoofss) {
-      if (get_srcaddr(dst, &rnfo->srcaddr) == -1)
+#ifdef SO_BINDTODEVICE
+      if (get_srcaddr(dst, &rnfo->srcaddr, device) == -1)
+#endif
         rnfo->srcaddr = rnfo->ii.addr;
     }
     rnfo->nexthop = routes[i].gw;
@@ -3543,7 +3579,9 @@ static int route_dst_generic(const struct sockaddr_storage *dst,
     rnfo->ii = ifaces[i];
     rnfo->direct_connect = 1;
     if (!spoofss) {
-      if (get_srcaddr(dst, &rnfo->srcaddr) == -1)
+#ifdef SO_BINDTODEVICE
+      if (get_srcaddr(dst, &rnfo->srcaddr, device) == -1)
+#endif
         rnfo->srcaddr = rnfo->ii.addr;
     }
 

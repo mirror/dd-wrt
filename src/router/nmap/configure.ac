@@ -482,6 +482,7 @@ if test $have_libpcap = yes; then
 fi
 
 if test $have_libpcap != yes; then
+  ac_configure_args="$ac_configure_args '--disable-dbus'"
   AC_CONFIG_SUBDIRS(libpcap)
   if test "${LIBPCAP_INC+set}" = "set"; then
     CPPFLAGS="$CPPFLAGS -I$LIBPCAP_INC"
@@ -494,6 +495,9 @@ if test $have_libpcap != yes; then
   PCAP_DIST_CLEAN="distclean-pcap"
   AC_DEFINE(PCAP_INCLUDED, 1, [Using included libpcap])
   AC_DEFINE(HAVE_PCAP_SET_IMMEDIATE_MODE, 1, [Included libpcap has pcap_set_immediate_mode])
+  # Check if D-Bus is available (in case --disable-dbus didn't work)
+  # and add it to LIBS if needed for static linking
+  AC_CHECK_LIB([dbus-1], [dbus_connection_read_write], [LIBS="$LIBS -ldbus-1"])
 else
   # We assume our included libpcap doesn't need this check-and-define
   # link with -lpcap for the purposes of this test
@@ -845,7 +849,6 @@ else
     AC_SEARCH_LIBS(lua_isyieldable, [lua5.4 lua54 lua], [have_lua=yes],, [-lm])
     AC_LANG_PUSH(C)
     # We need Lua 5.4 exactly
-    AC_MSG_CHECKING([for lua version == 504])
     AC_PREPROC_IFELSE([ AC_LANG_PROGRAM( [[
       #ifdef HAVE_LUA5_4_LUA_H
           #include <lua5.4/lua.h>
@@ -864,6 +867,8 @@ else
         [[if(LUA_VERSION_NUM != 504) return 1;]])
     ],
     [have_lua=yes], [have_lua=no])
+    AC_MSG_CHECKING([for lua version == 504])
+    AC_MSG_RESULT([$have_lua])
     AC_LANG_POP(C)
 
     LUA_BUILD=""
@@ -872,8 +877,9 @@ else
   fi
 
   # if we didn't find we use our own
+  AC_MSG_CHECKING([whether lua was found])
   if test $have_lua != yes; then
-    AC_MSG_RESULT(no)
+    AC_MSG_RESULT([no, will use our own])
     CPPFLAGS="-I\$(top_srcdir)/$LIBLUADIR $CPPFLAGS"
     LIBLUA_LIBS="\$(top_srcdir)/$LIBLUADIR/liblua.a"
     LUA_BUILD="build-lua"
@@ -938,8 +944,9 @@ if test $have_liblinear != yes; then
 fi
 
 # if we didn't find we use our own
+AC_MSG_CHECKING([whether liblinear was found])
 if test $have_liblinear != yes; then
-  AC_MSG_RESULT(no)
+  AC_MSG_RESULT([no, will use our own])
   CPPFLAGS="-I\$(top_srcdir)/$LIBLINEARDIR $CPPFLAGS"
   LIBLINEAR_LIBS="\$(top_srcdir)/$LIBLINEARDIR/liblinear.a"
   LIBLINEAR_BUILD="build-liblinear"

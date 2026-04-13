@@ -9,7 +9,7 @@
  *                                                                         *
  ***********************IMPORTANT NMAP LICENSE TERMS************************
  *
- * The Nmap Security Scanner is (C) 1996-2025 Nmap Software LLC ("The Nmap
+ * The Nmap Security Scanner is (C) 1996-2026 Nmap Software LLC ("The Nmap
  * Project"). Nmap is also a registered trademark of the Nmap Project.
  *
  * This program is distributed under the terms of the Nmap Public Source
@@ -63,7 +63,7 @@
  *
  ***************************************************************************/
 
-/* $Id: idle_scan.cc 39235 2025-06-30 19:24:32Z dmiller $ */
+/* $Id: idle_scan.cc 39343 2026-02-16 22:33:40Z dmiller $ */
 
 /* IPv6 fragment ID sequence algorithms. http://seclists.org/nmap-dev/2013/q3/369.
         Android 4.1 (Linux 3.0.15) | Per host, incremental (1)
@@ -599,16 +599,14 @@ static void initialize_idleproxy(struct idle_proxy_info *proxy, char *proxyName,
 
   /* Now lets send some probes to check IP ID algorithm ... */
   /* First we need a raw socket ... */
-  if (!raw_socket_or_eth(o.sendpref, proxy->host.deviceName(),
+  if (!raw_socket_or_eth(o.sendpref, proxy->host.deviceName(), proxy->host.ifType(),
         &proxy->rawsd, &proxy->eth.ethsd)) {
     fatal("%s: Failed to open raw socket or ethernet handle", __func__);
   }
   if (proxy->eth.ethsd != NULL) {
     if (!setTargetNextHopMAC(&proxy->host))
       fatal("%s: Failed to determine dst MAC address for Idle proxy", __func__);
-    memcpy(proxy->eth.srcmac, proxy->host.SrcMACAddress(), 6);
-    memcpy(proxy->eth.dstmac, proxy->host.NextHopMACAddress(), 6);
-    proxy->ethptr = &proxy->eth;
+    proxy->ethptr = proxy->host.FillEthNfo(&proxy->eth, proxy->eth.ethsd);
   }
   else {
     unblock_socket(proxy->rawsd);
@@ -1000,10 +998,8 @@ static int idlescan_countopen2(struct idle_proxy_info *proxy,
   if (proxy->rawsd < 0) {
     if (!setTargetNextHopMAC(target))
       fatal("%s: Failed to determine dst MAC address for Idle proxy", __func__);
-    memcpy(eth.srcmac, target->SrcMACAddress(), 6);
-    memcpy(eth.dstmac, target->NextHopMACAddress(), 6);
     eth.ethsd = eth_open_cached(target->deviceName());
-    if (eth.ethsd == NULL)
+    if (eth.ethsd == NULL || target->FillEthNfo(&eth, eth.ethsd) == NULL)
       fatal("%s: Failed to open ethernet device (%s)", __func__, target->deviceName());
   } else eth.ethsd = NULL;
 
