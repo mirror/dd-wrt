@@ -496,7 +496,8 @@ int lua_push_ecdhparams(lua_State *L, EVP_PKEY *pubkey) {
     /* LibreSSL doesn't have EC_GROUP_get_field_type, and explicit curves are rare.
      * Just mark as UNKNOWN. */
     lua_pushstring(L, "UNKNOWN");
-#elif HAVE_OPAQUE_STRUCTS
+
+#elif (OPENSSL_VERSION_NUMBER >= 0x30000000L)
     nid = EC_GROUP_get_field_type(group);
     if (nid == NID_X9_62_prime_field) {
       lua_pushstring(L, "explicit_prime");
