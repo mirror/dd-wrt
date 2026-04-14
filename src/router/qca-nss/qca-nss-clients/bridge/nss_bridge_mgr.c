@@ -1369,6 +1369,8 @@ static struct notifier_block nss_bridge_mgr_netdevice_nb __read_mostly = {
 	.notifier_call = nss_bridge_mgr_netdevice_event,
 };
 
+#if defined(NSS_BRIDGE_MGR_PPE_SUPPORT)
+
 /*
  * nss_bridge_mgr_is_physical_dev()
  *	Check if the device is on physical device.
@@ -1595,7 +1597,7 @@ static struct ctl_table nss_bridge_mgr_table[] = {
 		.proc_handler   = &nss_bridge_mgr_wan_intf_del_handler,
 	}
 };
-
+#endif
 /*
  * nss_bridge_mgr_init_module()
  *	bridge_mgr module init function
