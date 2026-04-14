@@ -1,5 +1,5 @@
 #! /usr/bin/env perl
-# Copyright 2004-2025 The OpenSSL Project Authors. All Rights Reserved.
+# Copyright 2004-2026 The OpenSSL Project Authors. All Rights Reserved.
 #
 # Licensed under the Apache License 2.0 (the "License").  You may not use
 # this file except in compliance with the License.  You can obtain a copy
@@ -492,6 +492,8 @@ my $rdop = shift;
 }
 &gen_random("rdrand");
 &gen_random("rdseed");
+
+&initseg("OPENSSL_cpuid_setup");
 
 &hidden("OPENSSL_cpuid_setup");
 &hidden("OPENSSL_ia32cap_P");

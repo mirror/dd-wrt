@@ -1,4 +1,4 @@
-! Copyright 2005-2025 The OpenSSL Project Authors. All Rights Reserved.
+! Copyright 2005-2026 The OpenSSL Project Authors. All Rights Reserved.
 !
 ! Licensed under the Apache License 2.0 (the "License").  You may not use
 ! this file except in compliance with the License.  You can obtain a copy
@@ -422,3 +422,7 @@ _sparcv9_vis1_instrument_bus2:
 	sub	%o3,%o1,%o0
 .type	_sparcv9_vis1_instrument_bus2,#function
 .size	_sparcv9_vis1_instrument_bus2,.-_sparcv9_vis1_instrument_bus2
+
+.section	".init",#alloc,#execinstr
+	call	OPENSSL_cpuid_setup
+	nop

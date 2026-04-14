@@ -1,5 +1,5 @@
 /*
- * Copyright 2010-2025 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 2010-2026 The OpenSSL Project Authors. All Rights Reserved.
  *
  * Licensed under the Apache License 2.0 (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -221,7 +221,7 @@ void OPENSSL_cpuid_setup(void)
         OPENSSL_s390xcex = -1;
     } else {
         OPENSSL_s390xcex = open("/dev/z90crypt", O_RDWR | O_CLOEXEC);
-        OPENSSL_atexit(OPENSSL_s390x_cleanup);
+        atexit(OPENSSL_s390x_cleanup);
     }
     OPENSSL_s390xcex_nodev = 0;
 #endif
