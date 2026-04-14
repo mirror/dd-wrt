@@ -213,6 +213,7 @@ struct nss_udp_st_cfg {
 	int32_t dest_port;		/**< Destination L4 port. */
 	uint32_t type;			/**< Started test type (for example, receive or transmit). */
 	uint16_t ip_version;		/**< IP version to indicate IPv4 or IPv6. */
+	bool is_hw_csum_supported;	/**< Flag to check if HW checksum supported. */
 };
 
 /**
