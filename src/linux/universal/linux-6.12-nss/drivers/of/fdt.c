@@ -1129,11 +1129,11 @@ int __init early_init_dt_scan_chosen(char *cmdline)
      * helpful on boards where u-boot sets bootargs, and is unable
      * to be modified.
      */
-#ifdef CONFIG_CMDLINE_OVERRIDE
+//#ifdef CONFIG_CMDLINE_OVERRIDE
 	p = of_get_flat_dt_prop(node, "bootargs-override", &l);
 	if (p != NULL && l > 0)
 		strscpy(cmdline, p, min((int)l, COMMAND_LINE_SIZE));
-#endif
+//#endif
 
 handle_cmdline:
 	/*
