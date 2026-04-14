@@ -575,7 +575,7 @@ static void load_nss(int profile, int cores, char *type)
 		loadnss("qca-nss-tlsmgr", type);
 		insmod("qca-mcs");
 		insmod("nss-ifb");
-		loadnss("qca-nss-bridge-mgr", type);
+//		loadnss("qca-nss-bridge-mgr", type);
 	}
 	insmod("qca-nss-wifi-meshmgr");
 }
