@@ -134,16 +134,23 @@ static int nvram_main(int argc, char **argv)
 			if (*++argv) {
 				if (nvram_exists(*argv))
 					puts(nvram_safe_get(*argv));
+			} else {
+				fprintf(stderr, "missing nvram parameter\n");
 			}
 		} else if (!strncmp(*argv, "set", 3)) {
 			if (*++argv) {
 				strncpy(value = buf, *argv, NVRAM_SPACE);
 				name = strsep(&value, "=");
 				nvram_set(name, value);
+			} else {
+				fprintf(stderr, "missing nvram parameter=value\n");
 			}
 		} else if (!strncmp(*argv, "unset", 5)) {
-			if (*++argv)
+			if (*++argv) {
 				nvram_unset(*argv);
+			} else {
+				fprintf(stderr, "missing nvram parameter\n");
+			}
 		} else if (!strncmp(*argv, "commit", 5)) {
 			nvram_commit();
 		} else if (!strncmp(*argv, "clear", 5) || !strncmp(*argv, "erase", 5)) {
@@ -162,6 +169,8 @@ static int nvram_main(int argc, char **argv)
 					fprintf(stderr, "can't write %s\n", *argv);
 					free(buf);
 					return 1;
+				} else {
+					fprintf(stderr, "missing filename\n");
 				}
 			}
 		} else if (!strncmp(*argv, "--force", 7)) {
@@ -181,6 +190,8 @@ static int nvram_main(int argc, char **argv)
 					free(buf);
 					return 1;
 				}
+			} else {
+				fprintf(stderr, "missing filename\n");
 			}
 		}
 		if (!*argv)
