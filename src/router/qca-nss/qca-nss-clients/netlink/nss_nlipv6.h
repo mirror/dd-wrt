@@ -26,7 +26,7 @@
 bool nss_nlipv6_init(void);
 bool nss_nlipv6_exit(void);
 
-#if defined(CONFIG_NSS_NLIPV6)
+#if defined(CONFIG_NSS_NLIPV6) && CONFIG_NSS_NLIPV6 > 0
 #define NSS_NLIPV6_INIT nss_nlipv6_init
 #define NSS_NLIPV6_EXIT nss_nlipv6_exit
 #else

@@ -228,7 +228,7 @@ static void nss_nlipsec_process_event(void *ctx, struct nss_ipsecmgr_event *ev)
 	/*
 	 * Initialize the NETLINK common header
 	 */
-	nss_nlipsec_rule_init(nl_rule, ev->type);
+	nss_nlipsec_rule_init(nl_rule, (enum nss_nlipsec_cmd)ev->type);
 
 	/*
 	 * Copy the contents of the sync message into the NETLINK message

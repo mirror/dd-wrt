@@ -33,7 +33,7 @@ bool nss_nlgre_redir_family_init(void);
  */
 bool nss_nlgre_redir_family_exit(void);
 
-#if defined(CONFIG_NSS_NLGRE_REDIR_FAMILY)
+#if defined(CONFIG_NSS_NLGRE_REDIR_FAMILY) && CONFIG_NSS_NLGRE_REDIR_FAMILY > 0
 #define NSS_NLGRE_REDIR_FAMILY_INIT nss_nlgre_redir_family_init
 #define NSS_NLGRE_REDIR_FAMILY_EXIT nss_nlgre_redir_family_exit
 #else

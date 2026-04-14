@@ -26,7 +26,7 @@
 bool nss_nlipv4_reasm_init(void);
 bool nss_nlipv4_reasm_exit(void);
 
-#if defined(CONFIG_NSS_NLIPV4_REASM)
+#if defined(CONFIG_NSS_NLIPV4_REASM) && CONFIG_NSS_NLIPV4_REASM > 0
 #define NSS_NLIPV4_REASM_INIT nss_nlipv4_reasm_init
 #define NSS_NLIPV4_REASM_EXIT nss_nlipv4_reasm_exit
 #else

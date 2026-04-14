@@ -1166,6 +1166,7 @@ fail:
 	return ret;
 }
 
+#if defined(CONFIG_NSS_NLPPPOE) && CONFIG_NSS_NLPPPOE > 0
 /*
  * nss_nludp_st_pppoe_get_chan_and_info()
  *	Gets the PPPoE channel information.
@@ -1300,6 +1301,8 @@ fail:
 	ppp_release_channels(ppp_chan, 1);
 	return ret;
 }
+#endif
+
 
 /*
  * nss_nludp_st_create_ipv4_rule()
@@ -1395,9 +1398,11 @@ static int nss_nludp_st_create_ipv4_rule(struct sk_buff *skb, struct nss_nludp_s
 		ret = nss_nludp_st_ipv4_rawip_iface_config(net_dev, nircm);
 		break;
 
+#if defined(CONFIG_NSS_NLPPPOE) && CONFIG_NSS_NLPPPOE > 0
 	case ARPHRD_PPP:
 		ret = nss_nludp_st_ipv4_pppoe_iface_config(net_dev, nircm);
 		break;
+#endif
 
 	case ARPHRD_ETHER:
 		/*
@@ -1624,6 +1629,7 @@ fail:
 	return ret;
 }
 
+#if defined(CONFIG_NSS_NLPPPOE) && CONFIG_NSS_NLPPPOE > 0
 /*
  * nss_nludp_st_ipv6_pppoe_iface_config()
  *	Configure the WAN interface as PPPoE for IPv6 protocol.
@@ -1727,6 +1733,7 @@ fail:
 	ppp_release_channels(ppp_chan, 1);
 	return ret;
 }
+#endif
 
 /*
  * nss_nludp_st_create_ipv6_rule()
@@ -1818,9 +1825,11 @@ static int nss_nludp_st_create_ipv6_rule(struct sk_buff *skb, struct nss_nludp_s
 		ret = nss_nludp_st_ipv6_rawip_iface_config(net_dev, nircm);
 		break;
 
+#if defined(CONFIG_NSS_NLPPPOE) && CONFIG_NSS_NLPPPOE > 0
 	case ARPHRD_PPP:
 		ret = nss_nludp_st_ipv6_pppoe_iface_config(net_dev, nircm);
 		break;
+#endif
 
 	case ARPHRD_ETHER:
 		/*
@@ -2045,6 +2054,7 @@ static int nss_nludp_st_ops_cfg_rule(struct sk_buff *skb, struct genl_info *info
 	struct nss_nludp_st_rule *nl_rule;
 	struct nss_nlcmn *nl_cm;
 	struct nss_udp_st_cfg *cfg;
+	struct net_device *net_dev;
 	int ret = 0;
 
 	/*
@@ -2068,6 +2078,24 @@ static int nss_nludp_st_ops_cfg_rule(struct sk_buff *skb, struct genl_info *info
 	if (cfg->ip_version == NSS_UDP_ST_FLAG_IPV6) {
 		nss_nludp_st_swap_addr_ipv6(cfg->src_ip.ip.ipv6, cfg->src_ip.ip.ipv6);
 		nss_nludp_st_swap_addr_ipv6(cfg->dest_ip.ip.ipv6, cfg->dest_ip.ip.ipv6);
+	}
+
+	/*
+	 * extract netdevice
+	 */
+	net_dev = dev_get_by_name(&init_net, nl_rule->gmac_ifname);
+	if (!net_dev) {
+		nss_nl_error("%p: net device(%s) is not available\n", nl_rule, nl_rule->gmac_ifname);
+		return -EINVAL;
+	}
+
+	/*
+	 * HW checksum is not supported for rmnet interface
+	 */
+	if (net_dev->type == ARPHRD_RAWIP) {
+		cfg->is_hw_csum_supported = false;
+	} else {
+		cfg->is_hw_csum_supported = true;
 	}
 
 	/*

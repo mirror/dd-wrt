@@ -32,8 +32,8 @@ int nss_ppe_mcast_queue_reset(struct nss_qdisc *nq)
 		return 0;
 	}
 
-	fal_qm_enqueue_ctrl_set(0, npq->q.mcast_qid, false);
-	fal_scheduler_dequeue_ctrl_set(0, npq->q.mcast_qid, false);
+	fal_qm_enqueue_ctrl_set(0, npq->q.mcast_qid, 0);
+	fal_scheduler_dequeue_ctrl_set(0, npq->q.mcast_qid, 0);
 	fal_queue_flush(0, port_num, npq->q.mcast_qid);
 
 	/*
@@ -153,8 +153,8 @@ int nss_ppe_mcast_queue_set(struct nss_qdisc *nq)
 		}
 	}
 
-	fal_qm_enqueue_ctrl_set(0, npq->q.mcast_qid, true);
-	fal_scheduler_dequeue_ctrl_set(0, npq->q.mcast_qid, true);
+	fal_qm_enqueue_ctrl_set(0, npq->q.mcast_qid, 1);
+	fal_scheduler_dequeue_ctrl_set(0, npq->q.mcast_qid, 1);
 
 	nss_qdisc_info("SSDK multicast queue configuration successful for port:%d\n", port_num);
 	return 0;

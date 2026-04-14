@@ -305,9 +305,9 @@ static void nss_pvxlanmgr_dummy_netdev_setup(struct net_device *dev)
 	dev->priv_destructor = NULL;
 #endif
 
-	memcpy((void *) dev->dev_addr, "\x00\x00\x00\x00\x00\x00", dev->addr_len);
-	memset(dev->broadcast, 0xff, dev->addr_len);
-	memcpy(dev->perm_addr, dev->dev_addr, dev->addr_len);
+	const uint8_t mac_addr[ETH_ALEN] = { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
+	eth_hw_addr_set(dev, mac_addr);
+	eth_broadcast_addr(dev->broadcast);
 }
 
 /*
@@ -408,7 +408,7 @@ nss_pvxlanmgr_status_t nss_pvxlanmgr_netdev_disable(struct net_device *dev)
 	if (ret != NSS_TX_SUCCESS) {
 		nss_pvxlanmgr_warn("%px: Tunnel disable failed: %d\n", dev, ret);
 		dev_put(dev);
-		return ret;
+		return (nss_pvxlanmgr_status_t)ret;
 	}
 
 	ret = nss_pvxlanmgr_tunnel_tx_msg_disable(priv->pvxlan_ctx, priv->if_num_outer);
@@ -416,11 +416,11 @@ nss_pvxlanmgr_status_t nss_pvxlanmgr_netdev_disable(struct net_device *dev)
 		nss_pvxlanmgr_warn("%px: Tunnel disable failed: %d\n", dev, ret);
 		nss_pvxlanmgr_tunnel_tx_msg_enable(priv->pvxlan_ctx, priv->if_num_host_inner, priv->if_num_outer);
 		dev_put(dev);
-		return ret;
+		return (nss_pvxlanmgr_status_t)ret;
 	}
 
 	dev_put(dev);
-	return ret;
+	return (nss_pvxlanmgr_status_t)ret;
 }
 EXPORT_SYMBOL(nss_pvxlanmgr_netdev_disable);
 
@@ -440,7 +440,7 @@ nss_pvxlanmgr_status_t nss_pvxlanmgr_netdev_enable(struct net_device *dev)
 	if (ret != NSS_TX_SUCCESS) {
 		nss_pvxlanmgr_warn("%px: Tunnel enable failed: %d\n", dev, ret);
 		dev_put(dev);
-		return ret;
+		return (nss_pvxlanmgr_status_t)ret;
 	}
 
 	ret = nss_pvxlanmgr_tunnel_tx_msg_enable(priv->pvxlan_ctx, priv->if_num_outer, priv->if_num_host_inner);
@@ -448,11 +448,11 @@ nss_pvxlanmgr_status_t nss_pvxlanmgr_netdev_enable(struct net_device *dev)
 		nss_pvxlanmgr_warn("%px: Tunnel enable failed: %d\n", dev, ret);
 		nss_pvxlanmgr_tunnel_tx_msg_disable(priv->pvxlan_ctx, priv->if_num_host_inner);
 		dev_put(dev);
-		return ret;
+		return (nss_pvxlanmgr_status_t)ret;
 	}
 
 	dev_put(dev);
-	return ret;
+	return (nss_pvxlanmgr_status_t)ret;
 }
 EXPORT_SYMBOL(nss_pvxlanmgr_netdev_enable);
 
@@ -524,7 +524,7 @@ EXPORT_SYMBOL(nss_pvxlanmgr_netdev_destroy);
  * nss_pvxlanmgr_netdev_create()
  *	API to create a Pvxlan netdev
  */
-struct net_device *nss_pvxlanmgr_netdev_create()
+struct net_device *nss_pvxlanmgr_netdev_create(void)
 {
 	struct nss_pvxlanmgr_priv *priv;
 	struct net_device *dev;

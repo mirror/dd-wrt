@@ -1637,9 +1637,6 @@ nss_wifi_meshmgr_config_mesh_exception(nss_wifi_mesh_handle_t mesh_handle, struc
 		break;
 
 	case NSS_WIFI_MESH_US_MESH_PROXY_NOT_FOUND:
-		ifnum = decap_ifnum;
-		break;
-
 	case NSS_WIFI_MESH_US_MESH_PATH_NOT_FOUND:
 		ifnum = decap_ifnum;
 		break;
@@ -1849,7 +1846,6 @@ nss_wifi_mesh_handle_t nss_wifi_meshmgr_if_create_sync(struct net_device *dev, s
 		nss_wifi_meshmgr_warn("%px: Decap registration failed.\n", dev);
 		goto decap_reg_fail;
 	}
-
 
 	wmesh_ctx->encap_ifnum = encap_ifnum;
 	wmesh_ctx->decap_ifnum = decap_ifnum;

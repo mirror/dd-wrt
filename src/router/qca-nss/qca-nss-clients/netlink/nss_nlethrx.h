@@ -26,7 +26,7 @@
 bool nss_nlethrx_init(void);
 bool nss_nlethrx_exit(void);
 
-#if defined(CONFIG_NSS_NLETHRX)
+#if defined(CONFIG_NSS_NLETHRX) && CONFIG_NSS_NLETHRX > 0
 #define NSS_NLETHRX_INIT nss_nlethrx_init
 #define NSS_NLETHRX_EXIT nss_nlethrx_exit
 #else

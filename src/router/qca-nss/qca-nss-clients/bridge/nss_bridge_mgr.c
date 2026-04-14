@@ -27,9 +27,9 @@
 #include <linux/of.h>
 #include <linux/if_bridge.h>
 #include <net/bonding.h>
-#include <nss_vlan_mgr.h>
 #if defined(NSS_BRIDGE_MGR_PPE_SUPPORT)
 #include <ref/ref_vsi.h>
+#include <nss_vlan_mgr.h>
 #include <fal/fal_fdb.h>
 #include <fal/fal_stp.h>
 #include <fal/fal_acl.h>
@@ -1081,7 +1081,7 @@ int nss_bridge_mgr_register_br(struct net_device *dev)
 	}
 #endif
 
-	err = nss_bridge_tx_set_mac_addr_msg(ifnum, (uint8_t *) dev->dev_addr);
+	err = nss_bridge_tx_set_mac_addr_msg(ifnum, dev->dev_addr);
 	if (err != NSS_TX_SUCCESS) {
 		nss_bridge_mgr_warn("%px: failed to set mac_addr msg, error = %d\n", b_pvt, err);
 		goto fail_4;
@@ -1242,7 +1242,7 @@ static int nss_bridge_mgr_changeaddr_event(struct netdev_notifier_info *info)
 
 	nss_bridge_mgr_trace("%px: MAC changed to %pM, update NSS\n", b_pvt, dev->dev_addr);
 
-	if (nss_bridge_tx_set_mac_addr_msg(b_pvt->ifnum, (uint8_t *) dev->dev_addr) != NSS_TX_SUCCESS) {
+	if (nss_bridge_tx_set_mac_addr_msg(b_pvt->ifnum, dev->dev_addr) != NSS_TX_SUCCESS) {
 		nss_bridge_mgr_warn("%px: Failed to send change MAC address message to NSS\n", b_pvt);
 		return NOTIFY_DONE;
 	}
@@ -1368,7 +1368,6 @@ static int nss_bridge_mgr_netdevice_event(struct notifier_block *unused,
 static struct notifier_block nss_bridge_mgr_netdevice_nb __read_mostly = {
 	.notifier_call = nss_bridge_mgr_netdevice_event,
 };
-#if defined(NSS_BRIDGE_MGR_PPE_SUPPORT)
 
 /*
  * nss_bridge_mgr_is_physical_dev()
@@ -1482,6 +1481,7 @@ static int nss_bridge_mgr_fdb_update_callback(struct notifier_block *notifier,
 static struct notifier_block nss_bridge_mgr_fdb_update_notifier = {
 	.notifier_call = nss_bridge_mgr_fdb_update_callback,
 };
+
 /*
  * nss_bridge_mgr_wan_inf_add_handler
  *	Marks an interface as a WAN interface for special handling by bridge.
@@ -1595,7 +1595,7 @@ static struct ctl_table nss_bridge_mgr_table[] = {
 		.proc_handler   = &nss_bridge_mgr_wan_intf_del_handler,
 	}
 };
-#endif
+
 /*
  * nss_bridge_mgr_init_module()
  *	bridge_mgr module init function

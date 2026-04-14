@@ -26,7 +26,7 @@
 bool nss_nln2h_init(void);
 bool nss_nln2h_exit(void);
 
-#if defined(CONFIG_NSS_NLN2H)
+#if defined(CONFIG_NSS_NLN2H) && CONFIG_NSS_NLN2H > 0
 #define NSS_NLN2H_INIT nss_nln2h_init
 #define NSS_NLN2H_EXIT nss_nln2h_exit
 #else

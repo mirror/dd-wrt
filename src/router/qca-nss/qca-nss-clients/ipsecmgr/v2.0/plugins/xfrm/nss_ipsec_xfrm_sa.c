@@ -183,7 +183,7 @@ static bool nss_ipsec_xfrm_sa_init_crypto(struct nss_ipsec_xfrm_sa *sa, struct x
  */
 static void nss_ipsec_xfrm_sa_init_tuple(struct nss_ipsec_xfrm_sa *sa, struct xfrm_state *x)
 {
-	struct net_device *local_dev;
+	struct net_device *local_dev = NULL;
 
 	sa->type = NSS_IPSECMGR_SA_TYPE_ENCAP;
 	sa->tuple.spi_index = ntohl(x->id.spi);
@@ -217,7 +217,7 @@ static void nss_ipsec_xfrm_sa_init_tuple(struct nss_ipsec_xfrm_sa *sa, struct xf
 		sa->tuple.dest_ip[2] = ntohl(x->id.daddr.a6[2]);
 		sa->tuple.dest_ip[3] = ntohl(x->id.daddr.a6[3]);
 
-		local_dev = ipv6_dev_find(&init_net, (struct in6_addr *)x->id.daddr.a6, 1);
+		local_dev = ipv6_dev_find(&init_net, (struct in6_addr *)x->id.daddr.a6, local_dev);
 	}
 
 	/*

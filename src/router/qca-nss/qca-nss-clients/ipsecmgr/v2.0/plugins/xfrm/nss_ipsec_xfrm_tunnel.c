@@ -130,7 +130,6 @@ err:
 drop:
 	atomic64_inc(&drv->stats.inner_drop);
 	dev_kfree_skb_any(skb);
-	return;
 }
 
 /*
@@ -194,7 +193,6 @@ static void nss_ipsec_xfrm_tunnel_rx_outer(void *app_data, struct sk_buff *skb)
 drop:
 	dev_kfree_skb_any(skb);
 	atomic64_inc(&drv->stats.outer_drop);
-	return;
 }
 
 /*

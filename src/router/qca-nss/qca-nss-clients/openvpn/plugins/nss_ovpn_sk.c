@@ -156,7 +156,7 @@ static int nss_ovpn_sk_crypto_key_add(struct socket *sock, unsigned long argp)
 		return -EFAULT;
 	}
 
-	crypto_cfg.algo = crypto_info.config.algo;
+	crypto_cfg.algo = (enum nss_ovpnmgr_algo)crypto_info.config.algo;
 	crypto_cfg.encrypt.cipher_keylen = crypto_info.config.cipher_key_size;
 	crypto_cfg.encrypt.hmac_keylen = crypto_info.config.hmac_key_size;
 	crypto_cfg.decrypt.cipher_keylen = crypto_info.config.cipher_key_size;
@@ -368,7 +368,7 @@ static int nss_ovpn_sk_tun_add(struct socket *sock, unsigned long argp)
 	tun_hdr.dst_port = tun_data.tun_hdr.dst_port;
 	tun_hdr.hop_limit = tun_data.tun_hdr.hop_limit;
 
-	crypto_cfg.algo = tun_data.crypto.config.algo;
+	crypto_cfg.algo = (enum nss_ovpnmgr_algo)tun_data.crypto.config.algo;
 	crypto_cfg.encrypt.cipher_keylen = tun_data.crypto.config.cipher_key_size;
 	crypto_cfg.encrypt.hmac_keylen = tun_data.crypto.config.hmac_key_size;
 	crypto_cfg.decrypt.cipher_keylen = tun_data.crypto.config.cipher_key_size;
@@ -446,7 +446,7 @@ static int nss_ovpn_sk_tun_add(struct socket *sock, unsigned long argp)
  * nss_ovpn_sk_app_dereg()
  *	Deregister application.
  */
-static int nss_ovpn_sk_app_dereg(struct socket *sock, unsigned long argp)
+static int nss_ovpn_sk_app_dereg(struct socket *sock)
 {
 	struct nss_ovpn_sk_pinfo *pinfo = (struct nss_ovpn_sk_pinfo *)sock->sk;
 	int ret;
@@ -495,7 +495,7 @@ static int nss_ovpn_sk_app_reg(struct socket *sock, unsigned long argp)
 		return -EFAULT;
 	}
 
-	ret = nss_ovpnmgr_app_add(pinfo->dev, app.app_mode, (void *)sock);
+	ret = nss_ovpnmgr_app_add(pinfo->dev, (enum nss_ovpnmgr_app_mode)app.app_mode, (void *)sock);
 	if (ret) {
 		nss_ovpn_sk_warn("%px: Failed to register application, pid=%u\n", sock, app.pid);
 		dev_put(pinfo->dev);
@@ -693,7 +693,7 @@ static int nss_ovpn_sk_recvmsg(struct socket *sock, struct msghdr *msg, size_t s
 		return -EINVAL;
 	}
 
-	skb = skb_recv_datagram(sk, flags, MSG_DONTWAIT, &ret);
+	skb = skb_recv_datagram(sk, flags, &ret);
 	if (!skb) {
 		nss_ovpn_sk_warn("%px: There are no packets in the queue.\n", sock);
 		return -ENOBUFS;
@@ -744,7 +744,7 @@ static int nss_ovpn_sk_ioctl(struct socket *sock, unsigned int cmd, unsigned lon
 	case NSS_OVPN_SK_SIOC_APP_REG:
 		return nss_ovpn_sk_app_reg(sock, argp);
 	case NSS_OVPN_SK_SIOC_APP_DEREG:
-		return nss_ovpn_sk_app_dereg(sock, argp);
+		return nss_ovpn_sk_app_dereg(sock);
 	case NSS_OVPN_SK_SIOC_TUN_ADD:
 		return nss_ovpn_sk_tun_add(sock, argp);
 	case NSS_OVPN_SK_SIOC_TUN_DEL:
@@ -777,15 +777,12 @@ static const struct proto_ops nss_ovpn_sk_proto_ops = {
 	.ioctl = nss_ovpn_sk_ioctl,
 	.listen = sock_no_listen,
 	.shutdown = sock_no_shutdown,
-	.getsockopt = sock_no_getsockopt,
 	.mmap = sock_no_mmap,
-	.sendpage = sock_no_sendpage,
 	.sendmsg = nss_ovpn_sk_sendmsg,
 	.recvmsg = nss_ovpn_sk_recvmsg,
 	.poll = datagram_poll,
 	.bind = sock_no_bind,
 	.release = nss_ovpn_sk_release,
-	.setsockopt = sock_no_setsockopt,
 	.accept = sock_no_accept,
 };
 

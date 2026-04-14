@@ -545,9 +545,9 @@ static void nss_ifb_update_dev_stats(struct net_device *dev, struct nss_igs_stat
 	 * with NSS firmware's IFB TX stats only.
 	 */
 	u64_stats_set(&stats.rx_packets, node_stats->tx_packets);
-   u64_stats_set(&stats.tx_packets, node_stats->tx_packets);
+	u64_stats_set(&stats.tx_packets, node_stats->tx_packets);
 	u64_stats_set(&stats.rx_bytes, node_stats->tx_bytes);
-   u64_stats_set(&stats.tx_bytes, node_stats->tx_bytes);
+	u64_stats_set(&stats.tx_bytes, node_stats->tx_bytes);
 	dev->stats.rx_dropped = dev->stats.tx_dropped += sync_stats->igs_stats.tx_dropped;
 	u64_stats_update_end(&stats.syncp);
 

@@ -146,7 +146,6 @@ static int nss_ipsec_klips_offload_esp(struct sk_buff *skb);
 static struct net_protocol esp_protocol = {
 	.handler = nss_ipsec_klips_offload_esp,
 	.no_policy = 1,
-	.netns_ok  = 1,
 };
 
 /*
@@ -304,7 +303,7 @@ static struct nss_ipsec_klips_tun *nss_ipsec_klips_get_tun(struct net_device *kl
 	 * Read/write lock needs to taken by the caller since sa
 	 * table is looked up here
 	 */
-	BUG_ON(write_can_lock(&tunnel_map.lock));
+	lockdep_assert_held_write(&tunnel_map.lock);
 
 	if (!klips_dev) {
 		return NULL;
@@ -387,7 +386,7 @@ static struct nss_ipsec_klips_tun *nss_ipsec_klips_get_tun_by_addr(struct sk_buf
 	 * Read/write lock needs to be taken by the caller since tunnel
 	 * table is looked up here
 	 */
-	BUG_ON(write_can_lock(&tunnel_map.lock));
+	lockdep_assert_held_write(&tunnel_map.lock);
 
 	for (i = 0, tun = tunnel_map.tbl; i < tunnel_map.max; i++, tun++) {
 		if (!tun->klips_dev) {
@@ -507,7 +506,7 @@ static struct nss_ipsec_klips_sa *nss_ipsec_klips_sa_lookup(struct nss_ipsec_kli
 	 * Read/write lock needs to taken by the caller since sa
 	 * table is looked up here
 	 */
-	BUG_ON(write_can_lock(&tunnel_map.lock));
+	lockdep_assert_held_write(&tunnel_map.lock);
 
 	list_for_each_entry_safe(sa, tmp, head, list) {
 		if (sa->sid == crypto_idx)
@@ -531,7 +530,7 @@ static void nss_ipsec_klips_sa_flush(struct nss_ipsec_klips_tun *tun, struct net
 	 * Read/write lock needs to taken by the caller since sa
 	 * table is modified here
 	 */
-	BUG_ON(write_can_lock(&tunnel_map.lock));
+	lockdep_assert_held_write(&tunnel_map.lock);
 
 	list_for_each_entry_safe(sa, tmp, head, list) {
 		list_del_init(&sa->list);
@@ -1293,7 +1292,7 @@ static void nss_ipsec_klips_register_natt_handler(struct nss_ipsec_klips_tun *tu
 	/*
 	 * write lock is needed as we are modifying tunnel entry.
 	 */
-	BUG_ON(write_can_lock(&tunnel_map.lock));
+	lockdep_assert_held_write(&tunnel_map.lock);
 
 	sock_hold(sk);
 	tun->sk_encap_rcv = udp_sk(sk)->encap_rcv;
@@ -1310,7 +1309,7 @@ static void nss_ipsec_klips_unregister_natt_handler(struct nss_ipsec_klips_tun *
 	/*
 	 * write lock is needed as we are modifying tunnel entry.
 	 */
-	BUG_ON(write_can_lock(&tunnel_map.lock));
+	lockdep_assert_held_write(&tunnel_map.lock);
 
 	xchg(&udp_sk(tun->sk)->encap_rcv, tun->sk_encap_rcv);
 	sock_put(tun->sk);

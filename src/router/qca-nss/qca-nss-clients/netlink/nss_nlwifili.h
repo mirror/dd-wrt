@@ -26,7 +26,7 @@
 bool nss_nlwifili_init(void);
 bool nss_nlwifili_exit(void);
 
-#if defined(CONFIG_NSS_NLWIFILI)
+#if defined(CONFIG_NSS_NLWIFILI) && CONFIG_NSS_NLWIFILI > 0
 #define NSS_NLWIFILI_INIT nss_nlwifili_init
 #define NSS_NLWIFILI_EXIT nss_nlwifili_exit
 #else

@@ -26,7 +26,7 @@
 bool nss_nlmap_t_init(void);
 bool nss_nlmap_t_exit(void);
 
-#if defined(CONFIG_NSS_NLMAP_T)
+#if defined(CONFIG_NSS_NLMAP_T) && CONFIG_NSS_NLMAP_T > 0
 #define NSS_NLMAP_T_INIT nss_nlmap_t_init
 #define NSS_NLMAP_T_EXIT nss_nlmap_t_exit
 #else

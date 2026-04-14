@@ -67,7 +67,7 @@ static inline nss_pvxlanmgr_status_t nss_pvxlanmgr_tunnel_tx_msg_mac_del(struct 
 	}
 
 	dev_put(dev);
-	return status;
+	return (nss_pvxlanmgr_status_t)status;
 }
 
 /*
@@ -110,7 +110,7 @@ static inline nss_pvxlanmgr_status_t nss_pvxlanmgr_tunnel_tx_msg_mac_add(struct 
 	}
 
 	dev_put(dev);
-	return status;
+	return (nss_pvxlanmgr_status_t)status;
 }
 
 /*
@@ -138,7 +138,7 @@ static nss_pvxlanmgr_status_t nss_pvxlanmgr_tunnel_pvxlan_rule_destroy(struct ns
 	status = nss_pvxlanmgr_tunnel_tx_msg(ctx, &pvxlanmsg, if_num, NSS_PVXLAN_MSG_TYPE_TUNNEL_DESTROY_RULE, sizeof(struct nss_pvxlan_rule_msg));
 	if (status != NSS_TX_SUCCESS) {
 		nss_pvxlanmgr_warn("%px: ctx: create encap data tunnel error %d\n", ctx, status);
-		return status;
+		return (nss_pvxlanmgr_status_t)status;
 	}
 
 	return NSS_PVXLANMGR_SUCCESS;
@@ -169,7 +169,7 @@ static nss_pvxlanmgr_status_t nss_pvxlanmgr_tunnel_pvxlan_rule_create(struct nss
 	status = nss_pvxlanmgr_tunnel_tx_msg(ctx, &pvxlanmsg, if_num, NSS_PVXLAN_MSG_TYPE_TUNNEL_CREATE_RULE, sizeof(struct nss_pvxlan_rule_msg));
 	if (status != NSS_TX_SUCCESS) {
 		nss_pvxlanmgr_warn("%px: ctx: create encap data tunnel error %d\n", ctx, status);
-		return status;
+		return (nss_pvxlanmgr_status_t)status;
 	}
 
 	return NSS_PVXLANMGR_SUCCESS;
@@ -482,7 +482,7 @@ nss_pvxlanmgr_status_t nss_pvxlanmgr_tunnel_ipv4_create(struct net_device *dev, 
 	if_num_outer = priv->if_num_outer;
 
 	status = nss_pvxlanmgr_tunnel_pvxlan_rule_create(priv->pvxlan_ctx, if_num_host_inner, &pvxlan_rule);
-	nss_pvxlanmgr_info("%px: dynamic interface if_num is :%d and pvxlan tunnel status:%d\n", dev, if_num_host_inner, status);
+	nss_pvxlanmgr_info("%px: dynamic interface if_num is :%d, if_num_outer :%d, and pvxlan tunnel status:%d\n", dev, if_num_host_inner, if_num_outer, status);
 	if (status != NSS_PVXLANMGR_SUCCESS) {
 		nss_pvxlanmgr_warn("%px: %d: PVXLAN rule create failed with status: %d\n", dev, if_num_host_inner, status);
 		dev_put(dev);
@@ -586,7 +586,7 @@ nss_pvxlanmgr_status_t nss_pvxlanmgr_tunnel_ipv6_create(struct net_device *dev, 
 	if_num_outer = priv->if_num_outer;
 
 	status = nss_pvxlanmgr_tunnel_pvxlan_rule_create(priv->pvxlan_ctx, if_num_host_inner, &pvxlan_rule);
-	nss_pvxlanmgr_info("%px: dynamic interface if_num is :%d and pvxlan tunnel status:%d\n", dev, if_num_host_inner, status);
+	nss_pvxlanmgr_info("%px: dynamic interface if_num is :%d, if_num_outer :%d, and pvxlan tunnel status:%d\n", dev, if_num_host_inner, if_num_outer, status);
 	if (status != NSS_PVXLANMGR_SUCCESS) {
 		nss_pvxlanmgr_warn("%px: %d: PVXLAN rule create failed with status: %d\n", dev, if_num_host_inner, status);
 		dev_put(dev);

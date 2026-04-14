@@ -25,7 +25,7 @@
 bool nss_nloam_init(void);
 bool nss_nloam_exit(void);
 
-#if defined(CONFIG_NSS_NLOAM)
+#if defined(CONFIG_NSS_NLOAM) && CONFIG_NSS_NLOAM > 0
 #define NSS_NLOAM_INIT nss_nloam_init
 #define NSS_NLOAM_EXIT nss_nloam_exit
 #else

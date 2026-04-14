@@ -26,7 +26,7 @@
 bool nss_nll2tpv2_init(void);
 bool nss_nll2tpv2_exit(void);
 
-#if defined(CONFIG_NSS_NLL2TPV2)
+#if defined(CONFIG_NSS_NLL2TPV2) && CONFIG_NSS_NLL2TPV2 > 0
 #define NSS_NLL2TPV2_INIT nss_nll2tpv2_init
 #define NSS_NLL2TPV2_EXIT nss_nll2tpv2_exit
 #else

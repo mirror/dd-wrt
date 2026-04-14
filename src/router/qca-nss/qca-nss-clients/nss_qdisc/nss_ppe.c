@@ -348,8 +348,8 @@ static void nss_ppe_queue_disable(struct nss_qdisc *nq)
 	/*
 	 * Disable queue enqueue, dequeue and flush the queue.
 	 */
-	fal_qm_enqueue_ctrl_set(0, npq->q.ucast_qid, false);
-	fal_scheduler_dequeue_ctrl_set(0, npq->q.ucast_qid, false);
+	fal_qm_enqueue_ctrl_set(0, npq->q.ucast_qid, 0);
+	fal_scheduler_dequeue_ctrl_set(0, npq->q.ucast_qid, 0);
 	fal_queue_flush(0, port_num, npq->q.ucast_qid);
 
 	nss_qdisc_info("Disable SSDK level0 queue scheduler successful\n");
@@ -370,8 +370,8 @@ static void nss_ppe_queue_enable(struct nss_qdisc *nq)
 	/*
 	 * Enable queue enqueue and dequeue.
 	 */
-	fal_qm_enqueue_ctrl_set(0, npq->q.ucast_qid, true);
-	fal_scheduler_dequeue_ctrl_set(0, npq->q.ucast_qid, true);
+	fal_qm_enqueue_ctrl_set(0, npq->q.ucast_qid, 1);
+	fal_scheduler_dequeue_ctrl_set(0, npq->q.ucast_qid, 1);
 
 	nss_qdisc_info("Enable SSDK level0 queue scheduler successful\n");
 }
@@ -535,14 +535,14 @@ static void nss_ppe_all_queue_disable(uint32_t port_num)
 	 * Disable queue enqueue, dequeue and flush the queue.
 	 */
 	for (offset = 0; offset < nss_ppe_max_get(port_num, NSS_PPE_UCAST_QUEUE); offset++) {
-		fal_qm_enqueue_ctrl_set(0, qid + offset, false);
-		fal_scheduler_dequeue_ctrl_set(0, qid + offset, false);
+		fal_qm_enqueue_ctrl_set(0, qid + offset, 0);
+		fal_scheduler_dequeue_ctrl_set(0, qid + offset, 0);
 		fal_queue_flush(0, port_num, qid + offset);
 	}
 
 	for (offset = 0; offset < nss_ppe_max_get(port_num, NSS_PPE_MCAST_QUEUE); offset++) {
-		fal_qm_enqueue_ctrl_set(0, mcast_qid + offset, false);
-		fal_scheduler_dequeue_ctrl_set(0, mcast_qid + offset, false);
+		fal_qm_enqueue_ctrl_set(0, mcast_qid + offset, 0);
+		fal_scheduler_dequeue_ctrl_set(0, mcast_qid + offset, 0);
 		fal_queue_flush(0, port_num, mcast_qid + offset);
 	}
 
@@ -563,13 +563,13 @@ static void nss_ppe_all_queue_enable(uint32_t port_num)
 	 * Enable queue enqueue and dequeue.
 	 */
 	for (offset = 0; offset < nss_ppe_max_get(port_num, NSS_PPE_UCAST_QUEUE); offset++) {
-		fal_qm_enqueue_ctrl_set(0, qid + offset, true);
-		fal_scheduler_dequeue_ctrl_set(0, qid + offset, true);
+		fal_qm_enqueue_ctrl_set(0, qid + offset, 1);
+		fal_scheduler_dequeue_ctrl_set(0, qid + offset, 1);
 	}
 
 	for (offset = 0; offset < nss_ppe_max_get(port_num, NSS_PPE_MCAST_QUEUE); offset++) {
-		fal_qm_enqueue_ctrl_set(0, mcast_qid + offset, true);
-		fal_scheduler_dequeue_ctrl_set(0, mcast_qid + offset, true);
+		fal_qm_enqueue_ctrl_set(0, mcast_qid + offset, 1);
+		fal_scheduler_dequeue_ctrl_set(0, mcast_qid + offset, 1);
 	}
 
 	nss_qdisc_info("Enable SSDK level0 queue scheduler successful\n");
@@ -589,15 +589,15 @@ static void nss_ppe_assigned_queue_enable(uint32_t port_num)
 	spin_lock_bh(&ppe_port->lock);
 	res = ppe_port->res_used[NSS_PPE_UCAST_QUEUE];
 	while (res) {
-		fal_qm_enqueue_ctrl_set(0, qid + res->offset, true);
-		fal_scheduler_dequeue_ctrl_set(0, qid + res->offset, true);
+		fal_qm_enqueue_ctrl_set(0, qid + res->offset, (a_bool_t)true);
+		fal_scheduler_dequeue_ctrl_set(0, qid + res->offset, (a_bool_t)true);
 		res = res->next;
 	}
 
 	res = ppe_port->res_used[NSS_PPE_MCAST_QUEUE];
 	while (res) {
-		fal_qm_enqueue_ctrl_set(0, mcast_qid + res->offset, true);
-		fal_scheduler_dequeue_ctrl_set(0, mcast_qid + res->offset, true);
+		fal_qm_enqueue_ctrl_set(0, mcast_qid + res->offset, (a_bool_t)true);
+		fal_scheduler_dequeue_ctrl_set(0, mcast_qid + res->offset, (a_bool_t)true);
 		res = res->next;
 	}
 
@@ -642,7 +642,7 @@ static int nss_ppe_l1_queue_scheduler_configure(struct nss_qdisc *nq)
 	l1cfg.e_pri = NSS_PPE_PRIORITY_MAX - npq->scheduler.priority;
 	l1cfg.c_drr_id = npq->l1c_drrid;
 	l1cfg.e_drr_id = npq->l1e_drrid;
-	l1cfg.drr_frame_mode = FAL_DRR_FRAME_CRC;
+	l1cfg.drr_frame_mode = (fal_qos_drr_frame_mode_t)NSS_PPE_FRAME_CRC;
 
 	nss_qdisc_trace("SSDK level1 configuration: Port:%d, l0spid:%d, c_drrid:%d, c_pri:%d, c_drr_wt:%d, e_drrid:%d, e_pri:%d, e_drr_wt:%d, l1spid:%d\n",
 			port_num, npq->l0spid, l1cfg.c_drr_id, l1cfg.c_pri, l1cfg.c_drr_wt, l1cfg.e_drr_id, l1cfg.e_pri, l1cfg.e_drr_wt, l1cfg.sp_id);
@@ -935,7 +935,7 @@ static int nss_ppe_l0_queue_scheduler_configure(struct nss_qdisc *nq)
 	l0cfg.e_pri = NSS_PPE_PRIORITY_MAX - npq->scheduler.priority;
 	l0cfg.c_drr_id = npq->l0c_drrid;
 	l0cfg.e_drr_id = npq->l0e_drrid;
-	l0cfg.drr_frame_mode = FAL_DRR_FRAME_CRC;
+	l0cfg.drr_frame_mode = (fal_qos_drr_frame_mode_t)NSS_PPE_FRAME_CRC;
 
 	nss_qdisc_trace("SSDK level0 configuration: Port:%d, ucast_qid:%d, c_drrid:%d, c_pri:%d, c_drr_wt:%d, e_drrid:%d, e_pri:%d, e_drr_wt:%d, l0spid:%d\n",
 			port_num, npq->q.ucast_qid, l0cfg.c_drr_id, l0cfg.c_pri, l0cfg.c_drr_wt, l0cfg.e_drr_id, l0cfg.e_pri, l0cfg.e_drr_wt, l0cfg.sp_id);
@@ -1059,7 +1059,7 @@ static int nss_ppe_port_shaper_set(struct nss_qdisc *nq)
 	cfg.c_shaper_en = 1;
 	cfg.cbs = npq->shaper.cburst;
 	cfg.cir = (npq->shaper.crate / 1000) * 8;
-	cfg.shaper_frame_mode = FAL_FRAME_CRC;
+	cfg.shaper_frame_mode = (fal_shaper_frame_mode_t)NSS_PPE_FRAME_CRC;
 
 	/*
 	 * Take HW scaling into consideration
@@ -1141,7 +1141,7 @@ static int nss_ppe_flow_shaper_set(struct nss_qdisc *nq)
 	cfg.e_shaper_en = 1;
 	cfg.ebs = npq->shaper.cburst;
 	cfg.eir = ((npq->shaper.crate / 1000) * 8) - cfg.cir;
-	cfg.shaper_frame_mode = FAL_FRAME_CRC;
+	cfg.shaper_frame_mode = (fal_shaper_frame_mode_t)NSS_PPE_FRAME_CRC;
 
 	/*
 	 * Take HW scaling into consideration
@@ -1225,7 +1225,7 @@ static int nss_ppe_queue_shaper_set(struct nss_qdisc *nq)
 	cfg.e_shaper_en = 1;
 	cfg.ebs = npq->shaper.cburst;
 	cfg.eir = ((npq->shaper.crate / 1000) * 8) - cfg.cir;
-	cfg.shaper_frame_mode = FAL_FRAME_CRC;
+	cfg.shaper_frame_mode = (fal_shaper_frame_mode_t)NSS_PPE_FRAME_CRC;
 
 	/*
 	 * Take HW scaling into consideration
@@ -1293,7 +1293,6 @@ static void nss_ppe_attach_free(uint32_t port, struct nss_ppe_res *res)
 	spin_unlock_bh(&ppe_port->lock);
 
 	nss_qdisc_info("port:%d, type:%d, res:%px\n", port, res->type, res);
-	return;
 }
 
 /*
@@ -2379,7 +2378,7 @@ int nss_ppe_init(struct Qdisc *sch, struct nss_qdisc *nq, nss_shaper_node_type_t
 		 * nothing useful and thus we don't allocate any resource".
 		 */
 		nss_qdisc_trace("Qdisc parent = %px, handle=%x\n", nq->parent,  nq->parent->qos_tag);
-		if ((nq->parent->npq.sub_type == NSS_SHAPER_CONFIG_PPE_SN_TYPE_HTB)) {
+		if (nq->parent->npq.sub_type == NSS_SHAPER_CONFIG_PPE_SN_TYPE_HTB) {
 			nq->npq.level = nq->parent->npq.level;
 		} else {
 			nq->npq.level = nq->parent->npq.level - 1;

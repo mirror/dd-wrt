@@ -236,6 +236,10 @@ void nss_dtlsmgr_ctx_dev_rx_inner(struct net_device *dev, struct sk_buff *skb, s
 	skb->skb_iif = dev->ifindex;
 	skb->dev = dev;
 
+	// Update the statistics
+	stats->rx_packets++;
+	stats->rx_bytes += skb->len;
+
 	ctx->data_cb(ctx->app_data, skb);
 	dev_put(dev);
 }
@@ -536,7 +540,8 @@ void nss_dtlsmgr_ctx_dev_setup(struct net_device *dev)
 #else
 	dev->priv_destructor = nss_dtlsmgr_ctx_dev_free;
 #endif
-	memcpy((void *) dev->dev_addr, "\xaa\xbb\xcc\xdd\xee\xff", dev->addr_len);
-	memset(dev->broadcast, 0xff, dev->addr_len);
+	const uint8_t mac_addr[ETH_ALEN] = { 0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff };
+	eth_hw_addr_set(dev, mac_addr);
+	eth_broadcast_addr(dev->broadcast);
 	memcpy(dev->perm_addr, dev->dev_addr, dev->addr_len);
 }

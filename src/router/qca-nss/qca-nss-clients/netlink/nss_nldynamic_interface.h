@@ -26,7 +26,7 @@
 bool nss_nldynamic_interface_init(void);
 bool nss_nldynamic_interface_exit(void);
 
-#if defined(CONFIG_NSS_NLDYNAMIC_INTERFACE)
+#if defined(CONFIG_NSS_NLDYNAMIC_INTERFACE) && CONFIG_NSS_NLDYNAMIC_INTERFACE > 0
 #define NSS_NLDYNAMIC_INTERFACE_INIT nss_nldynamic_interface_init
 #define NSS_NLDYNAMIC_INTERFACE_EXIT nss_nldynamic_interface_exit
 #else

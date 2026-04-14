@@ -26,7 +26,7 @@
 bool nss_nlpppoe_init(void);
 bool nss_nlpppoe_exit(void);
 
-#if defined(CONFIG_NSS_NLPPPOE)
+#if defined(CONFIG_NSS_NLPPPOE) && CONFIG_NSS_NLPPPOE > 0
 #define NSS_NLPPPOE_INIT nss_nlpppoe_init
 #define NSS_NLPPPOE_EXIT nss_nlpppoe_exit
 #else

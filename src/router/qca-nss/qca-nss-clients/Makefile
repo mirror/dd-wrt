@@ -2,7 +2,7 @@
 
 ccflags-y := -I$(obj) -I$(obj)/..
 
-export BUILD_ID = \"Build Id: $(shell date +'%m/%d/%y)\"
+export BUILD_ID = \"Build Id: $(shell date +'%m/%d/%y, %H:%M:%S')\"
 ccflags-y += -DNSS_CLIENT_BUILD_ID="$(BUILD_ID)"
 
 qca-nss-tun6rd-objs := nss_connmgr_tun6rd.o
@@ -20,8 +20,8 @@ obj-$(capwapmgr)+= capwapmgr/
 obj-$(dtlsmgr)+= dtls/$(DTLSMGR_DIR)/
 obj-$(gre)+= gre/
 obj-$(ipsecmgr)+= ipsecmgr/$(IPSECMGR_DIR)/
-#obj-$(ipsecmgr-klips)+= ipsecmgr/$(IPSECMGR_DIR)/plugins/klips/
-#obj-$(ipsecmgr-xfrm)+= ipsecmgr/$(IPSECMGR_DIR)/plugins/xfrm/
+obj-$(ipsecmgr-klips)+= ipsecmgr/$(IPSECMGR_DIR)/plugins/klips/
+obj-$(ipsecmgr-xfrm)+= ipsecmgr/$(IPSECMGR_DIR)/plugins/xfrm/
 obj-$(l2tpv2)+= l2tp/l2tpv2/
 obj-$(lag-mgr)+= lag/
 obj-$(map-t)+= map/map-t/

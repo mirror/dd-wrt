@@ -76,9 +76,10 @@ static nss_match_status_t nss_match_verify_config_msg(struct nss_match_profile_c
  * nss_match_sync_callback()
  * 	Sync callback for syncing stats.
  */
-static void nss_match_sync_callback(void *app_data, struct nss_match_msg *nmm)
+static void nss_match_sync_callback(void *app_data, struct nss_cmn_msg *cmm)
 {
 	struct nss_ctx_instance *nss_ctx = nss_match_get_context();
+	struct nss_match_msg *nmm = (struct nss_match_msg *)cmm;
 
 	switch (nmm->cm.type) {
 	case NSS_MATCH_STATS_SYNC:

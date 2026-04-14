@@ -26,7 +26,7 @@
 bool nss_nllso_rx_init(void);
 bool nss_nllso_rx_exit(void);
 
-#if defined(CONFIG_NSS_NLLSO_RX)
+#if defined(CONFIG_NSS_NLLSO_RX) && CONFIG_NSS_NLLSO_RX > 0
 #define NSS_NLLSO_RX_INIT nss_nllso_rx_init
 #define NSS_NLLSO_RX_EXIT nss_nllso_rx_exit
 #else

@@ -26,7 +26,7 @@
 bool nss_nlqrfs_init(void);
 bool nss_nlqrfs_exit(void);
 
-#if defined(CONFIG_NSS_NLQRFS)
+#if defined(CONFIG_NSS_NLQRFS) && CONFIG_NSS_NLQRFS > 0
 #define NSS_NLQRFS_INIT nss_nlqrfs_init
 #define NSS_NLQRFS_EXIT nss_nlqrfs_exit
 #else

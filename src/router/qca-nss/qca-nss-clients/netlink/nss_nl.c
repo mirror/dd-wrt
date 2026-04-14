@@ -289,23 +289,23 @@ static struct nss_nl_family family_handlers[] = {
 		.valid = CONFIG_NSS_NLPPTP		/* 1 or 0 */
 	},
 	{
-                /*
-                 * NSS_NLUDP_ST
-                 */
-                .name = NSS_NLUDP_ST_FAMILY,             /* udp_st */
-                .entry = NSS_NLUDP_ST_INIT,              /* init */
-                .exit = NSS_NLUDP_ST_EXIT,               /* exit */
-                .valid = CONFIG_NSS_NLUDP_ST             /* 1 or 0 */
-        },
+		/*
+		 * NSS_NLUDP_ST
+		 */
+		.name = NSS_NLUDP_ST_FAMILY,		/* udp_st */
+		.entry = NSS_NLUDP_ST_INIT,		/* init */
+		.exit = NSS_NLUDP_ST_EXIT,		/* exit */
+		.valid = CONFIG_NSS_NLUDP_ST		/* 1 or 0 */
+	},
 	{
-                /*
-                 * NSS_NLQRFS
-                 */
-                .name = NSS_NLQRFS_FAMILY,             /* qrfs */
-                .entry = NSS_NLQRFS_INIT,              /* init */
-                .exit = NSS_NLQRFS_EXIT,               /* exit */
-                .valid = CONFIG_NSS_NLQRFS             /* 1 or 0 */
-        },
+		/*
+		 * NSS_NLQRFS
+		 */
+		.name = NSS_NLQRFS_FAMILY,		/* qrfs */
+		.entry = NSS_NLQRFS_INIT,		/* init */
+		.exit = NSS_NLQRFS_EXIT,		/* exit */
+		.valid = CONFIG_NSS_NLQRFS		/* 1 or 0 */
+	},
 
 
 };

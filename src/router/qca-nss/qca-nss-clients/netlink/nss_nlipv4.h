@@ -24,7 +24,7 @@
 bool nss_nlipv4_init(void);
 bool nss_nlipv4_exit(void);
 
-#if defined(CONFIG_NSS_NLIPV4)
+#if defined(CONFIG_NSS_NLIPV4) && CONFIG_NSS_NLIPV4 > 0
 #define NSS_NLIPV4_INIT nss_nlipv4_init
 #define NSS_NLIPV4_EXIT nss_nlipv4_exit
 #else

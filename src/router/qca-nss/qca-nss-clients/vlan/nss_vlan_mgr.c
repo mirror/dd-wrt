@@ -448,8 +448,8 @@ static int nss_vlan_mgr_bond_configure_ppe(struct nss_vlan_pvt *v, struct net_de
 	/*
 	 * Fields for match
 	 */
-	v->eg_xlt_rule.vsi_valid = true;	/* Use vsi as search key*/
-	v->eg_xlt_rule.vsi_enable = true;	/* Use vsi as search key*/
+	v->eg_xlt_rule.vsi_valid = 1;		/* Use vsi as search key*/
+	v->eg_xlt_rule.vsi_enable = 1;		/* Use vsi as search key*/
 	v->eg_xlt_rule.vsi = vsi;		/* Use vsi as search key*/
 	v->eg_xlt_rule.s_tagged = 0x7;		/* Accept tagged/untagged/priority tagged svlan */
 	v->eg_xlt_rule.c_tagged = 0x7;		/* Accept tagged/untagged/priority tagged cvlan */
@@ -612,8 +612,8 @@ static int nss_vlan_mgr_configure_ppe(struct nss_vlan_pvt *v, struct net_device 
 	/*
 	 * Fields for match
 	 */
-	v->eg_xlt_rule.vsi_valid = true;	/* Use vsi as search key*/
-	v->eg_xlt_rule.vsi_enable = true;	/* Use vsi as search key*/
+	v->eg_xlt_rule.vsi_valid = 1;		/* Use vsi as search key*/
+	v->eg_xlt_rule.vsi_enable = 1;		/* Use vsi as search key*/
 	v->eg_xlt_rule.vsi = vsi;		/* Use vsi as search key*/
 	v->eg_xlt_rule.s_tagged = 0x7;		/* Accept tagged/untagged/priority tagged svlan */
 	v->eg_xlt_rule.c_tagged = 0x7;		/* Accept tagged/untagged/priority tagged cvlan */
@@ -691,7 +691,9 @@ static void nss_vlan_mgr_instance_free(struct nss_vlan_pvt *v)
 #ifdef NSS_VLAN_MGR_PPE_SUPPORT
 	int32_t i;
 	int ret = 0;
+#endif
 
+#ifdef NSS_VLAN_MGR_PPE_SUPPORT
 	if (v->ppe_vsi) {
 		/*
 		 * Detach VSI
@@ -913,7 +915,7 @@ static struct nss_vlan_pvt *nss_vlan_mgr_create_instance(
 	}
 
 	v->mtu = dev->mtu;
-	ether_addr_copy(v->dev_addr, (uint8_t *) dev->dev_addr);
+	ether_addr_copy(v->dev_addr, dev->dev_addr);
 	v->ifindex = dev->ifindex;
 	v->refs = 1;
 
@@ -972,14 +974,14 @@ static int nss_vlan_mgr_changeaddr_event(struct netdev_notifier_info *info)
 	}
 	spin_unlock(&vlan_mgr_ctx.lock);
 
-	if (nss_vlan_tx_set_mac_addr_msg(v_pvt->nss_if, (uint8_t *) dev->dev_addr) != NSS_TX_SUCCESS) {
+	if (nss_vlan_tx_set_mac_addr_msg(v_pvt->nss_if, dev->dev_addr) != NSS_TX_SUCCESS) {
 		nss_vlan_mgr_warn("%s: Failed to send change MAC address message to NSS\n", dev->name);
 		nss_vlan_mgr_instance_deref(v_pvt);
 		return NOTIFY_BAD;
 	}
 
 	spin_lock(&vlan_mgr_ctx.lock);
-	ether_addr_copy(v_pvt->dev_addr, (uint8_t *) dev->dev_addr);
+	ether_addr_copy(v_pvt->dev_addr, dev->dev_addr);
 	spin_unlock(&vlan_mgr_ctx.lock);
 	nss_vlan_mgr_trace("%s: MAC changed to %pM, updated NSS\n", dev->name, dev->dev_addr);
 	nss_vlan_mgr_instance_deref(v_pvt);
@@ -1802,8 +1804,8 @@ void nss_vlan_mgr_add_vlan_rule(struct net_device *dev, int bridge_vsi, int vid)
 	/*
 	 * Fields for match
 	 */
-	eg_xlt_rule.vsi_valid = true;	/* Use vsi as search key */
-	eg_xlt_rule.vsi_enable = true;	/* Use vsi as search key */
+	eg_xlt_rule.vsi_valid = 1;	/* Use vsi as search key */
+	eg_xlt_rule.vsi_enable = 1;	/* Use vsi as search key */
 	eg_xlt_rule.vsi = bridge_vsi;	/* Use vsi as search key */
 	eg_xlt_rule.s_tagged = 0x7;	/* Accept tagged/untagged/priority tagged svlan */
 	eg_xlt_rule.c_tagged = 0x7;	/* Accept tagged/untagged/priority tagged cvlan */
@@ -1870,8 +1872,8 @@ void nss_vlan_mgr_del_vlan_rule(struct net_device *dev, int bridge_vsi, int vid)
 	/*
 	 * Fields for match
 	 */
-	eg_xlt_rule.vsi_valid = true;	/* Use vsi as search key */
-	eg_xlt_rule.vsi_enable = true;	/* Use vsi as search key */
+	eg_xlt_rule.vsi_valid = 1;	/* Use vsi as search key */
+	eg_xlt_rule.vsi_enable = 1;	/* Use vsi as search key */
 	eg_xlt_rule.vsi = bridge_vsi;	/* Use vsi as search key */
 	eg_xlt_rule.s_tagged = 0x7;	/* Accept tagged/untagged/priority tagged svlan */
 	eg_xlt_rule.c_tagged = 0x7;	/* Accept tagged/untagged/priority tagged cvlan */

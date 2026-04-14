@@ -26,7 +26,7 @@
 bool nss_nlpptp_init(void);
 bool nss_nlpptp_exit(void);
 
-#if defined(CONFIG_NSS_NLPPTP)
+#if defined(CONFIG_NSS_NLPPTP) && CONFIG_NSS_NLPPTP > 0
 #define NSS_NLPPTP_INIT nss_nlpptp_init
 #define NSS_NLPPTP_EXIT nss_nlpptp_exit
 #else

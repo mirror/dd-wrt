@@ -353,6 +353,7 @@ static int nss_nlipv6_verify_conn_rule(struct nss_ipv6_rule_create_msg *msg, str
 							tuple->return_ident, tuple->flow_ident);
 		break;
 
+#if defined(CONFIG_NSS_NLGRE_REDIR_FAMILY) && CONFIG_NSS_NLGRE_REDIR_FAMILY > 0
 	case NSS_NL_IFTYPE_TUNNEL_GRE:
 		conn->flow_interface_num = nss_nlgre_redir_cmd_get_ifnum(flow_dev, tuple->protocol);
 		if (conn->flow_interface_num < 0 ) {
@@ -363,6 +364,7 @@ static int nss_nlipv6_verify_conn_rule(struct nss_ipv6_rule_create_msg *msg, str
 
 		conn->flow_mtu = nss_nlgre_redir_cmd_get_mtu(flow_dev, NSS_GRE_REDIR_IP_HDR_TYPE_IPV6, conn->flow_interface_num);
 		break;
+#endif /* !CONFIG_NSS_NLGRE_REDIR_FAMILY */
 
 	case NSS_NL_IFTYPE_VLAN:
 		conn->flow_interface_num = nss_cmn_get_interface_number_by_dev(vlan_dev_real_dev(flow_dev));
@@ -411,6 +413,7 @@ static int nss_nlipv6_verify_conn_rule(struct nss_ipv6_rule_create_msg *msg, str
 							tuple->return_ident, tuple->flow_ident);
 		break;
 
+#if defined(CONFIG_NSS_NLGRE_REDIR_FAMILY) && CONFIG_NSS_NLGRE_REDIR_FAMILY > 0
 	case NSS_NL_IFTYPE_TUNNEL_GRE:
 		conn->return_interface_num = nss_nlgre_redir_cmd_get_ifnum(return_dev, tuple->protocol);
 		if (conn->return_interface_num < 0 ) {
@@ -421,6 +424,7 @@ static int nss_nlipv6_verify_conn_rule(struct nss_ipv6_rule_create_msg *msg, str
 
 		conn->return_mtu = nss_nlgre_redir_cmd_get_mtu(return_dev, NSS_GRE_REDIR_IP_HDR_TYPE_IPV6, conn->return_interface_num);
 		break;
+#endif /* !CONFIG_NSS_NLGRE_REDIR_FAMILY */
 
 	case NSS_NL_IFTYPE_VLAN:
 		conn->return_interface_num = nss_cmn_get_interface_number_by_dev(vlan_dev_real_dev(return_dev));
@@ -486,6 +490,7 @@ static int nss_nlipv6_verify_tcp_rule(struct nss_ipv6_rule_create_msg *msg)
 	return 0;
 }
 
+#if defined(CONFIG_NSS_NLPPPOE) && CONFIG_NSS_NLPPPOE > 0
 /*
  * nss_nlipv6_verify_pppoe_rule()
  * 	verify and override pppoe rule entries
@@ -510,6 +515,7 @@ static int nss_nlipv6_verify_pppoe_rule(struct nss_ipv6_rule_create_msg *msg)
 	 */
 	return 0;
 }
+#endif
 
 /*
  * nss_nlipv6_verify_igs_rule()
@@ -771,6 +777,7 @@ static int nss_nlipv6_ops_create_rule(struct sk_buff *skb, struct genl_info *inf
 		goto done;
 	}
 
+#if defined(CONFIG_NSS_NLPPPOE) && CONFIG_NSS_NLPPPOE > 0
 	/*
 	 * check pppoe rule
 	 */
@@ -779,6 +786,7 @@ static int nss_nlipv6_ops_create_rule(struct sk_buff *skb, struct genl_info *inf
 		nss_nl_error("%d:invalid pppoe rule information passed\n", pid);
 		goto done;
 	}
+#endif
 
 	/*
 	 * check qos rule
