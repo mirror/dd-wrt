@@ -2,7 +2,7 @@
 
 ccflags-y := -I$(obj) -I$(obj)/..
 
-export BUILD_ID = \"Build Id: $(shell date +'%m/%d/%y, %H:%M:%S')\"
+export BUILD_ID = \"Build Id: $(shell date +'%m/%d/%y)\"
 ccflags-y += -DNSS_CLIENT_BUILD_ID="$(BUILD_ID)"
 
 qca-nss-tun6rd-objs := nss_connmgr_tun6rd.o
