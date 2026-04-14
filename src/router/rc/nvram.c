@@ -86,6 +86,23 @@ void main(int argc, char *argv[])
 }
 #endif
 
+static void usage(void)
+{
+	fprintf(stderr,
+		"Usage: nvram [get name] [set name=value] [unset name] [commit] [show|getall]\n" //
+		"             [clear|erase] [backup filename] [restore filename]\n" //
+		"\n" //
+		"get name         : Displays current value or string for the given variable name.\n" //
+		"set name=value   : Insert new value or \"string\" for the variable name specified.\n" //
+		"unset name       : Removes by name both NVRAM variable name and value or string.\n" //
+		"commit           : Writes pending data operations to NVRAM, flash or filesystem.\n" //
+		"show | getall    : Displays a list of all current NVRAM variable names and data.\n" //
+		"clear | erase    : Delete all NVRAM names and data, but retain system variables.\n" //
+		"backup filename  : Backup all stored NVRAM variables data to specified filename.\n" //
+		"restore filename : Restore NVRAM names and data, not overwrite system variables.\n" //
+		"--force          : WARNING override device name compatibility check for restore.\n" //
+		"--keepsettings   : keeps previous existing settings. only empty values will be restored.\n");
+}
 /* 
  * NVRAM utility 
  */
@@ -107,20 +124,7 @@ static int nvram_main(int argc, char **argv)
 	++argv;
 
 	if (!*argv) {
-		fprintf(stderr,
-			"Usage: nvram [get name] [set name=value] [unset name] [commit] [show|getall]\n" //
-			"             [clear|erase] [backup filename] [restore filename]\n" //
-			"\n" //
-			"get name         : Displays current value or string for the given variable name.\n" //
-			"set name=value   : Insert new value or \"string\" for the variable name specified.\n" //
-			"unset name       : Removes by name both NVRAM variable name and value or string.\n" //
-			"commit           : Writes pending data operations to NVRAM, flash or filesystem.\n" //
-			"show | getall    : Displays a list of all current NVRAM variable names and data.\n" //
-			"clear | erase    : Delete all NVRAM names and data, but retain system variables.\n" //
-			"backup filename  : Backup all stored NVRAM variables data to specified filename.\n" //
-			"restore filename : Restore NVRAM names and data, not overwrite system variables.\n" //
-			"--force          : WARNING override device name compatibility check for restore.\n" //
-			"--keepsettings   : keeps previous existing settings. only empty values will be restored.\n");
+		usage();
 		exit(0);
 	}
 
@@ -135,7 +139,8 @@ static int nvram_main(int argc, char **argv)
 				if (nvram_exists(*argv))
 					puts(nvram_safe_get(*argv));
 			} else {
-				fprintf(stderr, "missing nvram parameter\n");
+				fprintf(stderr, "missing nvram parameter\n\n");
+				usage();
 			}
 		} else if (!strncmp(*argv, "set", 3)) {
 			if (*++argv) {
@@ -143,13 +148,15 @@ static int nvram_main(int argc, char **argv)
 				name = strsep(&value, "=");
 				nvram_set(name, value);
 			} else {
-				fprintf(stderr, "missing nvram parameter=value\n");
+				fprintf(stderr, "missing nvram parameter=value\n\n");
+				usage();
 			}
 		} else if (!strncmp(*argv, "unset", 5)) {
 			if (*++argv) {
 				nvram_unset(*argv);
 			} else {
-				fprintf(stderr, "missing nvram parameter\n");
+				fprintf(stderr, "missing nvram parameter\n\n");
+				usage();
 			}
 		} else if (!strncmp(*argv, "commit", 5)) {
 			nvram_commit();
@@ -170,7 +177,8 @@ static int nvram_main(int argc, char **argv)
 					free(buf);
 					return 1;
 				} else {
-					fprintf(stderr, "missing filename\n");
+					fprintf(stderr, "missing filename\n\n");
+					usage();
 				}
 			}
 		} else if (!strncmp(*argv, "--force", 7)) {
@@ -191,7 +199,8 @@ static int nvram_main(int argc, char **argv)
 					return 1;
 				}
 			} else {
-				fprintf(stderr, "missing filename\n");
+				fprintf(stderr, "missing filename\n\n");
+				usage();
 			}
 		}
 		if (!*argv)
