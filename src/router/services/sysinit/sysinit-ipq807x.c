@@ -1341,7 +1341,7 @@ void start_sysinit(void)
 
 		//reload firmware
 		/* turn on leds */
-		eval("ssdk_sh", "debug", "phy", "set", "8", "0x401ec430", "0xc0ef");
+		eval("ssdk_sh", "debug", "phy", "set", "8", "0x401ec430", "0xc0ea");
 		eval("ssdk_sh", "debug", "phy", "set", "8", "0x401ec431", "0xc0e0");
 
 		/*
@@ -1391,7 +1391,7 @@ void start_sysinit(void)
 		     "aq_load_fw; if test $auto_recovery = no; then bootipq; elif test $boot_part = 1; then run bootpart1; else run bootpart2; fi");
 		/* turn on leds */
 		eval("ssdk_sh", "debug", "phy", "set", "8", "0x401ec430", "0xc0ef");
-		eval("ssdk_sh", "debug", "phy", "set", "8", "0x401ec431", "0xc0e0");
+		eval("ssdk_sh", "debug", "phy", "set", "8", "0x401ec431", "0xc0ea");
 
 		break;
 	case ROUTER_LINKSYS_MX5300:
