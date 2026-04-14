@@ -27,9 +27,9 @@
 #include <linux/of.h>
 #include <linux/if_bridge.h>
 #include <net/bonding.h>
+#include <nss_vlan_mgr.h>
 #if defined(NSS_BRIDGE_MGR_PPE_SUPPORT)
 #include <ref/ref_vsi.h>
-#include <nss_vlan_mgr.h>
 #include <fal/fal_fdb.h>
 #include <fal/fal_stp.h>
 #include <fal/fal_acl.h>
