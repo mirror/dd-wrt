@@ -86,7 +86,7 @@ void main(int argc, char *argv[])
 }
 #endif
 
-static void usage(void)
+static void nvram_usage(void)
 {
 	fprintf(stderr,
 		"Usage: nvram [get name] [set name=value] [unset name] [commit] [show|getall]\n" //
@@ -124,7 +124,7 @@ static int nvram_main(int argc, char **argv)
 	++argv;
 
 	if (!*argv) {
-		usage();
+		nvram_usage();
 		exit(0);
 	}
 
@@ -140,7 +140,7 @@ static int nvram_main(int argc, char **argv)
 					puts(nvram_safe_get(*argv));
 			} else {
 				fprintf(stderr, "missing nvram parameter\n\n");
-				usage();
+				nvram_usage();
 			}
 		} else if (!strncmp(*argv, "set", 3)) {
 			if (*++argv) {
@@ -149,14 +149,14 @@ static int nvram_main(int argc, char **argv)
 				nvram_set(name, value);
 			} else {
 				fprintf(stderr, "missing nvram parameter=value\n\n");
-				usage();
+				nvram_usage();
 			}
 		} else if (!strncmp(*argv, "unset", 5)) {
 			if (*++argv) {
 				nvram_unset(*argv);
 			} else {
 				fprintf(stderr, "missing nvram parameter\n\n");
-				usage();
+				nvram_usage();
 			}
 		} else if (!strncmp(*argv, "commit", 5)) {
 			nvram_commit();
@@ -178,7 +178,7 @@ static int nvram_main(int argc, char **argv)
 					return 1;
 				} else {
 					fprintf(stderr, "missing filename\n\n");
-					usage();
+					nvram_usage();
 				}
 			}
 		} else if (!strncmp(*argv, "--force", 7)) {
@@ -200,7 +200,7 @@ static int nvram_main(int argc, char **argv)
 				}
 			} else {
 				fprintf(stderr, "missing filename\n\n");
-				usage();
+				nvram_usage();
 			}
 		}
 		if (!*argv)
