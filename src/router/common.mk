@@ -84,8 +84,8 @@ install_headers:
 # important step, required for new kernels
 	if [ ! -d $(TOP)/kernel_headers/$(KERNELRELEASE) ]; then \
 		-mkdir -p $(TOP)/kernel_headers/$(KERNELRELEASE) ; \
-		$(MAKE) -C $(LINUXDIR) headers_install ARCH=$(KERNEL_HEADER_ARCH) INSTALL_HDR_PATH=$(TOP)/kernel_headers/$(KERNELRELEASE) ; \
 	fi
+	$(MAKE) -C $(LINUXDIR) headers_install ARCH=$(KERNEL_HEADER_ARCH) INSTALL_HDR_PATH=$(TOP)/kernel_headers/$(KERNELRELEASE) ; \
 
 	
 realclean: $(obj-clean)
