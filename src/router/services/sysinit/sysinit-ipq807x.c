@@ -1340,6 +1340,9 @@ void start_sysinit(void)
 		     "aq_load_fw; if test $auto_recovery = no; then bootipq; elif test $boot_part = 1; then run bootpart1; else run bootpart2; fi");
 
 		//reload firmware
+			   /* turn on leds */
+			   eval("ssdk_sh", "debug", "phy", "set", "8", "0x401ec430", "0xc0ef");
+			   eval("ssdk_sh", "debug", "phy", "set", "8", "0x401ec431", "0xc0e0");
 
 		/*
 		   // for reference only 
@@ -1565,9 +1568,6 @@ void start_wifi_drivers(void)
 			minif = 3;
 			break;
 		case ROUTER_LINKSYS_MR7500:
-			   /* turn on leds */
-			   eval("ssdk_sh", "debug", "phy", "set", "8", "0x401ec430", "0xc0ef");
-			   eval("ssdk_sh", "debug", "phy", "set", "8", "0x401ec431", "0xc0e0");
 
 			/*                      eval("ssdk_sh", "debug", "phy", "set", "0x8", "0x401e2680", "0x1");
 			   usleep(100 * 1000);
