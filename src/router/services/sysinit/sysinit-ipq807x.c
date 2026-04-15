@@ -575,7 +575,7 @@ static void load_nss(int profile, int cores, char *type)
 		loadnss("qca-nss-tlsmgr", type);
 		insmod("qca-mcs");
 		insmod("nss-ifb");
-//		loadnss("qca-nss-bridge-mgr", type);
+		//		loadnss("qca-nss-bridge-mgr", type);
 	}
 	insmod("qca-nss-wifi-meshmgr");
 }
@@ -1341,9 +1341,18 @@ void start_sysinit(void)
 
 		//reload firmware
 		/* turn on leds */
-		eval("ssdk_sh", "debug", "phy", "set", "8", "0x401ec430", "0xc0ea");
-		eval("ssdk_sh", "debug", "phy", "set", "8", "0x401ec431", "0xc0e0");
-
+		{
+			int act = 1 << 14 | 1 << 15 | 1 << 7 | 1 << 6 | 1 << 5 | 1 << 3 | 1 << 2;
+			int on = 1 << 14 | 1 << 15 | 1 << 7 | 1 << 6 | 1 << 5 | 1 << 4 | 1 << 3 | 1 << 2 | 1 << 1 | 1;
+			char s_act[32];
+			char s_on[32];
+			sprintf(s_act, "0x%04x", act);
+			sprintf(s_on, "0x%04x", on);
+			eval("ssdk_sh", "debug", "phy", "set", "8", "0x401ec430", s_on);
+			eval("ssdk_sh", "debug", "phy", "set", "8", "0x401ec431", s_act);
+			//		eval("ssdk_sh", "debug", "phy", "set", "8", "0x401ec430", "0xc0ea");
+			//		eval("ssdk_sh", "debug", "phy", "set", "8", "0x401ec431", "0xc0e0");
+		}
 		/*
 		   // for reference only 
 		   if [ "1" = $wan25G_enable ] ; then
@@ -1390,9 +1399,17 @@ void start_sysinit(void)
 		eval("fw_setenv", "bootcmd",
 		     "aq_load_fw; if test $auto_recovery = no; then bootipq; elif test $boot_part = 1; then run bootpart1; else run bootpart2; fi");
 		/* turn on leds */
-		eval("ssdk_sh", "debug", "phy", "set", "8", "0x401ec430", "0xc0ef");
-		eval("ssdk_sh", "debug", "phy", "set", "8", "0x401ec431", "0xc0ea");
 
+		{
+			int act = 1 << 14 | 1 << 15 | 1 << 7 | 1 << 6 | 1 << 5 | 1 << 3 | 1 << 2;
+			int on = 1 << 14 | 1 << 15 | 1 << 7 | 1 << 6 | 1 << 5 | 1 << 4 | 1 << 3 | 1 << 2 | 1 << 1 | 1;
+			char s_act[32];
+			char s_on[32];
+			sprintf(s_act, "0x%04x", act);
+			sprintf(s_on, "0x%04x", on);
+			eval("ssdk_sh", "debug", "phy", "set", "8", "0x401ec430", s_on);
+			eval("ssdk_sh", "debug", "phy", "set", "8", "0x401ec431", s_act);
+		}
 		break;
 	case ROUTER_LINKSYS_MX5300:
 		setscaling(0);
@@ -1680,8 +1697,8 @@ void start_resetbc(void)
 
 void start_sysshutdown(void)
 {
-//	start_deconfigurewifi();
-//	rmmod("ath11k_ahb");
+	//	start_deconfigurewifi();
+	//	rmmod("ath11k_ahb");
 }
 
 static void set_linksys_defaults(int triband)
