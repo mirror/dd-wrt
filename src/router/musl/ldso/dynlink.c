@@ -616,6 +616,7 @@ static void reclaim_gaps(struct dso *dso)
 	for (; phcnt--; ph=(void *)((char *)ph+dso->phentsize)) {
 		if (ph->p_type!=PT_LOAD) continue;
 		if ((ph->p_flags&(PF_R|PF_W))!=(PF_R|PF_W)) continue;
+		if (ph->p_memsz == 0) continue;
 		reclaim(dso, ph->p_vaddr & -PAGE_SIZE, ph->p_vaddr);
 		reclaim(dso, ph->p_vaddr+ph->p_memsz,
 			ph->p_vaddr+ph->p_memsz+PAGE_SIZE-1 & -PAGE_SIZE);
