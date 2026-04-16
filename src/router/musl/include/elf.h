@@ -712,6 +712,8 @@ typedef struct {
 #define NT_LOONGARCH_LSX	0xa02
 #define NT_LOONGARCH_LASX	0xa03
 #define NT_LOONGARCH_LBT	0xa04
+#define NT_LOONGARCH_HW_BREAK	0xa05
+#define NT_LOONGARCH_HW_WATCH	0xa06
 
 
 
@@ -1040,6 +1042,8 @@ typedef struct {
 #define AT_RANDOM	25
 
 #define AT_HWCAP2	26
+#define AT_HWCAP3	29
+#define AT_HWCAP4	30
 
 #define AT_EXECFN	31
 
@@ -3405,6 +3409,32 @@ enum
 #define R_LARCH_TLS_GD_HI20                 98
 #define R_LARCH_32_PCREL                    99
 #define R_LARCH_RELAX                       100
+#define R_LARCH_DELETE                      101
+#define R_LARCH_ALIGN                       102
+#define R_LARCH_PCREL20_S2                  103
+#define R_LARCH_CFA                         104
+#define R_LARCH_ADD6                        105
+#define R_LARCH_SUB6                        106
+#define R_LARCH_ADD_ULEB128                 107
+#define R_LARCH_SUB_ULEB128                 108
+#define R_LARCH_64_PCREL                    109
+#define R_LARCH_CALL36                      110
+#define R_LARCH_TLS_DESC_PC_HI20            111
+#define R_LARCH_TLS_DESC_PC_LO12            112
+#define R_LARCH_TLS_DESC64_PC_LO20          113
+#define R_LARCH_TLS_DESC64_PC_HI12          114
+#define R_LARCH_TLS_DESC_HI20               115
+#define R_LARCH_TLS_DESC_LO12               116
+#define R_LARCH_TLS_DESC64_LO20             117
+#define R_LARCH_TLS_DESC64_HI12             118
+#define R_LARCH_TLS_DESC_LD                 119
+#define R_LARCH_TLS_DESC_CALL               120
+#define R_LARCH_TLS_LE_HI20_R               121
+#define R_LARCH_TLS_LE_ADD_R                122
+#define R_LARCH_TLS_LE_LO12_R               123
+#define R_LARCH_TLS_LD_PCREL20_S2           124
+#define R_LARCH_TLS_GD_PCREL20_S2           125
+#define R_LARCH_TLS_DESC_PCREL20_S2         126
 
 #ifdef __cplusplus
 }
