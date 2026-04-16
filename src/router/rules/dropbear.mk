@@ -14,6 +14,7 @@ dropbear-configure: nvram libutils-configure libutils zlib-configure zlib
 				--enable-bundled-libtom \
 				--disable-pututxline \
 				CC="$(CC)" \
+				LTM_CFLAGS="-ffunction-sections -fdata-sections -Wl,--gc-sections -DNEED_PRINTF -I../zlib $(COPTS) $(MIPS16_OPT) $(LTO)" \
 				CPPFLAGS="-ffunction-sections -fdata-sections -Wl,--gc-sections -DNEED_PRINTF -I../zlib $(COPTS) $(MIPS16_OPT) $(DROPBEAR_OPTS) -DARGTYPE=3 -DXFREE=free -L../zlib" \
 				LDFLAGS="$(LDLTO) $(COPTS) -ffunction-sections -fdata-sections -Wl,--gc-sections -L$(TOP)/libutils -L$(TOP)/nvram -lshutils -lnvram" \
 				host_alias=$(ARCH)-linux ac_cv_func_getpass=yes \
