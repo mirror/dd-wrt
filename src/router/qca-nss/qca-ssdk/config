@@ -30,6 +30,9 @@ endif
 ifeq ($(KVER),$(filter 6.6%,$(KVER)))
 	OS_VER=6_6
 endif
+ifeq ($(KVER),$(filter 6.12%,$(KVER)))
+	OS_VER=6_12
+endif
 
 ifeq ($(KVER), 3.4.0)
 	OS_VER=3_4
