@@ -180,9 +180,20 @@ static int scpart_parse(struct mtd_info *master,
 
 	for_each_child_of_node(ofpart_node, pp) {
 		u32 scpart_id;
+		const __be32 *reg;
+		int len;
+		int a_cells, s_cells;
 
 		if (of_property_read_u32(pp, "sercomm,scpart-id", &scpart_id))
 			continue;
+
+		reg = of_get_property(pp, "reg", &len);
+		if (!reg) {
+				nr_parts--;
+		}
+
+		a_cells = of_n_addr_cells(pp);
+		s_cells = of_n_size_cells(pp);
 
 		for (n = 0 ; n < nr_scparts ; n++)
 			if ((scpart_map[n].part_id != ID_ALREADY_FOUND) &&
@@ -194,7 +205,7 @@ static int scpart_parse(struct mtd_info *master,
 
 		/* add the partition found in OF into MTD partition array */
 		parts[nr_parts].offset = scpart_map[n].part_offs;
-		parts[nr_parts].size = scpart_map[n].part_bytes;
+		parts[nr_parts].size = of_read_number(reg + a_cells, s_cells);
 		parts[nr_parts].of_node = pp;
 
 		if (!of_property_read_string(pp, "label", &partname))
