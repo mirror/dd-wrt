@@ -1,9 +1,12 @@
 /*
  **************************************************************************
  * Copyright (c) 2019-2021, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
+ *
  * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
  * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
  * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
@@ -61,7 +64,7 @@ void nss_clmap_stats_session_unregister(uint32_t if_num)
 
 /*
  * nss_clmap_stats_session_register
- * 	Register debug statistic for clmap session.
+ *	Register debug statistic for clmap session.
  */
 bool nss_clmap_stats_session_register(uint32_t if_num, enum nss_clmap_interface_type if_type, struct net_device *netdev)
 {
@@ -205,10 +208,10 @@ void nss_clmap_stats_sync(struct nss_ctx_instance *nss_ctx, struct nss_clmap_sta
 		return;
 	}
 
-        s->stats[NSS_CLMAP_INTERFACE_STATS_RX_PKTS] += stats_msg->node_stats.rx_packets;
-        s->stats[NSS_CLMAP_INTERFACE_STATS_RX_BYTES] += stats_msg->node_stats.rx_bytes;
-        s->stats[NSS_CLMAP_INTERFACE_STATS_TX_PKTS] += stats_msg->node_stats.tx_packets;
-        s->stats[NSS_CLMAP_INTERFACE_STATS_TX_BYTES] += stats_msg->node_stats.tx_bytes;
+	s->stats[NSS_CLMAP_INTERFACE_STATS_RX_PKTS] += stats_msg->node_stats.rx_packets;
+	s->stats[NSS_CLMAP_INTERFACE_STATS_RX_BYTES] += stats_msg->node_stats.rx_bytes;
+	s->stats[NSS_CLMAP_INTERFACE_STATS_TX_PKTS] += stats_msg->node_stats.tx_packets;
+	s->stats[NSS_CLMAP_INTERFACE_STATS_TX_BYTES] += stats_msg->node_stats.tx_bytes;
 
 	for (i = 0; i < NSS_MAX_NUM_PRI; i++) {
 		s->stats[NSS_CLMAP_INTERFACE_STATS_RX_QUEUE_0_DROPPED + i] += stats_msg->node_stats.rx_dropped[i];
@@ -230,6 +233,15 @@ void nss_clmap_stats_sync(struct nss_ctx_instance *nss_ctx, struct nss_clmap_sta
 	s->stats[NSS_CLMAP_INTERFACE_STATS_MACDB_DESTROY_MAC_UNHASHED_CNT] += stats_msg->macdb_destroy_mac_unhashed;
 	s->stats[NSS_CLMAP_INTERFACE_STATS_MACDB_FLUSH_REQUESTS_CNT] += stats_msg->macdb_flush_requests;
 	spin_unlock_bh(&nss_clmap_stats_lock);
+}
+
+/*
+ * nss_clmap_stats_write()
+ *	Write CLMAP statistics
+ */
+static ssize_t nss_clmap_stats_write(struct file *fp, const char __user *ubuf, size_t sz, loff_t *ppos)
+{
+	return -ESRCH;
 }
 
 /*

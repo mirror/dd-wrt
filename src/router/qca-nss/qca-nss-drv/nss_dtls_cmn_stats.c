@@ -1,9 +1,12 @@
 /*
  ***************************************************************************
  * Copyright (c) 2020-2021, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
+ *
  * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
  * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
  * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
@@ -128,6 +131,44 @@ static ssize_t nss_dtls_cmn_stats_read(struct file *fp, char __user *ubuf, size_
 	vfree(stats_shadow);
 
 	return bytes_read;
+}
+
+/*
+ * nss_dtls_cmn_stats_write()
+ *	Write dtls common statistics
+ */
+static ssize_t nss_dtls_cmn_stats_write(struct file *fp, const char __user *ubuf, size_t sz, loff_t *ppos)
+{
+	int32_t i;
+	uint32_t reset;
+	enum nss_dynamic_interface_type type;
+	uint32_t if_num;
+	struct nss_ctx_instance *nss_ctx = nss_dtls_cmn_get_context();
+	unsigned long *ifmap = nss_dtls_cmn_ifmap_get();
+
+	if (kstrtou32_from_user(ubuf, sz, 0, &reset)) {
+		return -EINVAL;
+	}
+
+	if (reset != 0) {
+		return -EINVAL;
+	}
+
+	for_each_set_bit(if_num, ifmap, NSS_MAX_NET_INTERFACES) {
+
+		type = nss_dynamic_interface_get_type(nss_ctx, if_num);
+		if ((type != NSS_DYNAMIC_INTERFACE_TYPE_DTLS_CMN_INNER) &&
+			(type != NSS_DYNAMIC_INTERFACE_TYPE_DTLS_CMN_OUTER)) {
+			continue;
+		}
+
+		spin_lock_bh(&nss_dtls_cmn_stats_lock);
+		for (i = 0; i < NSS_DTLS_CMN_CTX_STATS_MAX; i++) {
+			nss_dtls_cmn_ctx_stats[if_num][i] = 0;
+		}
+		spin_unlock_bh(&nss_dtls_cmn_stats_lock);
+	}
+	return sz;
 }
 
 /*

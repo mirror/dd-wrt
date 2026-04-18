@@ -1,9 +1,12 @@
 /*
  **************************************************************************
  * Copyright (c) 2017, 2019 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
+ *
  * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
  * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
  * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
@@ -128,6 +131,38 @@ static ssize_t nss_trustsec_tx_stats_read(struct file *fp, char __user *ubuf, si
 	kfree(stats_shadow);
 
 	return bytes_read;
+}
+
+/*
+ * nss_trustsec_tx_stats_write()
+ *	Write Trustsec TX stats
+ */
+static ssize_t nss_trustsec_tx_stats_write(struct file *fp, const char __user *ubuf, size_t sz, loff_t *ppos)
+{
+	int32_t i;
+	uint32_t reset;
+
+	if (kstrtou32_from_user(ubuf, sz, 0, &reset)) {
+		return -EINVAL;
+	}
+
+	if (reset != 0) {
+		return -EINVAL;
+	}
+
+	nss_stats_reset_common_stats(NSS_TRUSTSEC_TX_INTERFACE);
+
+	/*
+	 * Trustsec TX node stats
+	 */
+	spin_lock_bh(&nss_top_main.stats_lock);
+	for (i = 0; (i < NSS_TRUSTSEC_TX_STATS_MAX); i++) {
+		trustsec_tx_stats[i] = 0;
+	}
+
+	spin_unlock_bh(&nss_top_main.stats_lock);
+
+	return sz;
 }
 
 /*

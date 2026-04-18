@@ -1,6 +1,7 @@
 /*
  **************************************************************************
  * Copyright (c) 2020-2021, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2024 Qualcomm Innovation Center, Inc. All rights reserved.n
  *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
@@ -260,6 +261,15 @@ int nss_mirror_stats_init(uint32_t if_num, struct net_device *netdev)
 	spin_unlock_bh(&nss_mirror_stats_lock);
 	vfree(mirror_debug_instance);
 	return -1;
+}
+
+/*
+ * nss_mirror_stats_write()
+ *	Write MIRROR statistics
+ */
+static ssize_t nss_mirror_stats_write(struct file *fp, const char __user *ubuf, size_t sz, loff_t *ppos)
+{
+	return -ESRCH;
 }
 
 /*

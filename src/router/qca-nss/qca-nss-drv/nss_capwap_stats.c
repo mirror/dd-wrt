@@ -1,9 +1,12 @@
 /*
  **************************************************************************
  * Copyright (c) 2017-2020, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
+ *
  * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
  * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
  * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
@@ -258,6 +261,91 @@ static ssize_t nss_capwap_decap_stats_read(struct file *fp, char __user *ubuf, s
 static ssize_t nss_capwap_encap_stats_read(struct file *fp, char __user *ubuf, size_t sz, loff_t *ppos)
 {
 	return nss_capwap_stats_read(fp, ubuf, sz, ppos, 1);
+}
+
+/*
+ * nss_capwap_stats_write()
+ *	Write CAPWAP stats
+ */
+static ssize_t nss_capwap_stats_write(struct file *fp, const char __user *ubuf, size_t sz, loff_t *ppos, uint16_t type)
+{
+	struct nss_stats_data *data = fp->private_data;
+	uint32_t if_num = NSS_DYNAMIC_IF_START;
+	uint32_t max_if_num = NSS_DYNAMIC_IF_START + NSS_MAX_DYNAMIC_INTERFACES;
+	uint32_t reset;
+
+	if (kstrtou32_from_user(ubuf, sz, 0, &reset))
+		return -EINVAL;
+
+	if (reset != 0) {
+		return -EINVAL;
+	}
+
+	if (!data) {
+		nss_warning("%px: File  private data is NULL", fp);
+		return -EINVAL;
+	}
+
+	if (data) {
+		if_num = data->if_num;
+	}
+
+	/*
+	 * If we are done accomodating all the CAPWAP tunnels.
+	 */
+	if (if_num > max_if_num) {
+		return 0;
+	}
+
+	for (; if_num <= max_if_num; if_num++) {
+		bool isthere;
+		enum nss_dynamic_interface_type dtype;
+
+		if (nss_is_dynamic_interface(if_num) == false) {
+			continue;
+		}
+
+		dtype = nss_dynamic_interface_get_type(nss_capwap_get_ctx(), if_num);
+
+		/*
+		 * Read encap stats from inner node and decap stats from outer node.
+		 */
+		if ((type == 1) && (dtype != NSS_DYNAMIC_INTERFACE_TYPE_CAPWAP_HOST_INNER)) {
+			continue;
+		}
+
+		if ((type == 0) && (dtype != NSS_DYNAMIC_INTERFACE_TYPE_CAPWAP_OUTER)) {
+			continue;
+		}
+
+		/*
+		 * If CAPWAP tunnel does not exists, then isthere will be false.
+		 */
+		isthere = nss_capwap_clear_stats(if_num);
+		if (!isthere) {
+			continue;
+		}
+	}
+
+	return sz;
+}
+
+/*
+ * nss_capwap_decap_stats_write()
+ *	Write CAPWAP decap stats
+ */
+static ssize_t nss_capwap_decap_stats_write(struct file *fp, const char __user *ubuf, size_t sz, loff_t *ppos)
+{
+	return nss_capwap_stats_write(fp, ubuf, sz, ppos, 0);
+}
+
+/*
+ * nss_capwap_encap_stats_write()
+ *	Write CAPWAP encap stats
+ */
+static ssize_t nss_capwap_encap_stats_write(struct file *fp, const char __user *ubuf, size_t sz, loff_t *ppos)
+{
+	return nss_capwap_stats_write(fp, ubuf, sz, ppos, 1);
 }
 
 /*

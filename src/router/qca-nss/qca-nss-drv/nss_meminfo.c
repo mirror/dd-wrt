@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2018-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2023-2024 Qualcomm Innovation Center, Inc. All rights reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -735,7 +735,7 @@ bool nss_meminfo_init(struct nss_ctx_instance *nss_ctx)
 	/*
 	 * meminfo_start is the label where the start address of meminfo map is stored.
 	 */
-	meminfo_start = (uint32_t *)ioremap(nss_ctx->load + NSS_MEMINFO_MAP_START_OFFSET,
+	meminfo_start = (uint32_t *)nss_ioremap(nss_ctx->load + NSS_MEMINFO_MAP_START_OFFSET,
 							NSS_MEMINFO_RESERVE_AREA_SIZE);
 	if (!meminfo_start) {
 		nss_info_always("%px: cannot remap meminfo start\n", nss_ctx);

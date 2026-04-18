@@ -1,9 +1,12 @@
 /*
  **************************************************************************
  * Copyright (c) 2017-2021, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
+ *
  * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
  * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
  * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
@@ -758,6 +761,70 @@ static ssize_t nss_ppe_nonexception_cc_stats_read(struct file *fp, char __user *
 
 	return bytes_read;
 }
+
+/*
+ * nss_ppe_conn_stats_write()
+ *	Write PPE_CONN statistics
+ */
+static ssize_t nss_ppe_conn_stats_write(struct file *fp, const char __user *ubuf, size_t sz, loff_t *ppos)
+{
+	return -ESRCH;
+}
+
+/*
+ * nss_ppe_l3_stats_write()
+ *	Write PPE_L3 statistics
+ */
+static ssize_t nss_ppe_l3_stats_write(struct file *fp, const char __user *ubuf, size_t sz, loff_t *ppos)
+{
+	return -ESRCH;
+}
+
+/*
+ * nss_ppe_code_stats_write()
+ *	Write PPE_CODE statistics
+ */
+static ssize_t nss_ppe_code_stats_write(struct file *fp, const char __user *ubuf, size_t sz, loff_t *ppos)
+{
+	return -ESRCH;
+}
+
+/*
+ * nss_ppe_port_dc_stats_write()
+ *	Write PPE_PORT_DC statistics
+ */
+static ssize_t nss_ppe_port_dc_stats_write(struct file *fp, const char __user *ubuf, size_t sz, loff_t *ppos)
+{
+	return -ESRCH;
+}
+
+/*
+ * nss_ppe_exception_stats_write()
+ *	Write PPE_EXCEPTION statistics
+ */
+static ssize_t nss_ppe_exception_cc_stats_write(struct file *fp, const char __user *ubuf, size_t sz, loff_t *ppos)
+{
+	return -ESRCH;
+}
+
+/*
+ * nss_ppe_nonexception_stats_write()
+ *	Write PPE_NONEXCEPTION statistics
+ */
+static ssize_t nss_ppe_nonexception_cc_stats_write(struct file *fp, const char __user *ubuf, size_t sz, loff_t *ppos)
+{
+	return -ESRCH;
+}
+
+/*
+ * nss_ppe_sc_stats_write()
+ *	Write PPE_SC statistics
+ */
+static ssize_t nss_ppe_sc_stats_write(struct file *fp, const char __user *ubuf, size_t sz, loff_t *ppos)
+{
+	return -ESRCH;
+}
+
 
 /*
  * nss_ppe_conn_stats_ops

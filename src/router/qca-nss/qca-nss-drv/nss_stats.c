@@ -1,7 +1,7 @@
 /*
  **************************************************************************
  * Copyright (c) 2013-2020, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2024 Qualcomm Innovation Center, Inc. All rights reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
@@ -87,6 +87,35 @@ static struct ctl_table nss_stats_table[] = {
 	}
 };
 
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(6, 6, 0))
+static struct ctl_table nss_stats_dir[] = {
+	{
+		.procname		= "stats",
+		.mode			= 0555,
+		.child			= nss_stats_table,
+	},
+	{ }
+};
+
+static struct ctl_table nss_stats_root_dir[] = {
+	{
+		.procname		= "nss",
+		.mode			= 0555,
+		.child			= nss_stats_dir,
+	},
+	{ }
+};
+
+static struct ctl_table nss_stats_root[] = {
+	{
+		.procname		= "dev",
+		.mode			= 0555,
+		.child			= nss_stats_root_dir,
+	},
+	{ }
+};
+#endif
+
 static struct ctl_table_header *nss_stats_header;
 
 /*
@@ -98,7 +127,11 @@ void nss_stats_register_sysctl(void)
 	/*
 	 * Register sysctl table.
 	 */
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(6, 6, 0))
+	nss_stats_header = register_sysctl_table(nss_stats_root);
+#else
 	nss_stats_header = register_sysctl("dev/nss/stats", nss_stats_table);
+#endif
 }
 
 /*

@@ -244,7 +244,7 @@ EXPORT_SYMBOL(nss_match_unregister_instance);
  * nss_match_register_instance()
  *	Registers match instance.
  */
-struct nss_ctx_instance *nss_match_register_instance(int if_num, nss_match_msg_sync_callback_t notify_cb)
+struct nss_ctx_instance *nss_match_register_instance(int if_num, void (*notify_cb)(void *, struct nss_cmn_msg *))
 {
 	struct nss_ctx_instance *nss_ctx;
 	uint32_t status;
@@ -258,7 +258,7 @@ struct nss_ctx_instance *nss_match_register_instance(int if_num, nss_match_msg_s
 	}
 
 	nss_core_register_handler(nss_ctx, if_num, nss_match_handler, NULL);
-	status = nss_core_register_msg_handler(nss_ctx, if_num, (nss_if_rx_msg_callback_t)notify_cb);
+	status = nss_core_register_msg_handler(nss_ctx, if_num, notify_cb);
 	if (status != NSS_CORE_STATUS_SUCCESS) {
 		nss_warning("%px: Not able to register handler for interface %d with NSS core\n", nss_ctx, if_num);
 		return NULL;
@@ -290,7 +290,7 @@ EXPORT_SYMBOL(nss_match_msg_init);
  * nss_match_init()
  * 	Initialize match.
  */
-void nss_match_init()
+void nss_match_init(void)
 {
 	nss_match_stats_dentry_create();
 	nss_match_strings_dentry_create();

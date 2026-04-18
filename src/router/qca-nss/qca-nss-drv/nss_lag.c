@@ -268,6 +268,6 @@ nss_tx_status_t nss_lag_tx_slave_state(uint16_t lagid, int32_t slave_ifnum,
 		return NSS_TX_FAILURE;
 	}
 
-	return lag_msg_state.response;
+	return (nss_tx_status_t)lag_msg_state.response;
 }
 EXPORT_SYMBOL(nss_lag_tx_slave_state);

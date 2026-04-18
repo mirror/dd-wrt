@@ -105,7 +105,7 @@ static int nss_dscp_map_print(compat_const struct ctl_table *ctl, void *buffer, 
 	len = scnprintf(r_buf + cp_bytes, 4, "\n");
 	cp_bytes += len;
 
-	cp_bytes = simple_read_from_buffer(buffer, *lenp, ppos, r_buf, cp_bytes);
+	cp_bytes = memory_read_from_buffer(buffer, *lenp, ppos, r_buf, cp_bytes);
 	*lenp = cp_bytes;
 	kfree(r_buf);
 	return 0;
@@ -119,9 +119,7 @@ static int nss_dscp_map_parse(compat_const struct ctl_table *ctl, void *buffer, 
 				loff_t *ppos, struct nss_dscp_map_parse *out)
 {
 	int count;
-	size_t cp_bytes = 0;
 	char w_buf[7];
-	loff_t w_offset = 0;
 	char *str;
 	char *tokens[NSS_DSCP_MAP_PARAM_FIELD_COUNT];
 	unsigned int dscp, priority, action;
@@ -135,14 +133,13 @@ static int nss_dscp_map_parse(compat_const struct ctl_table *ctl, void *buffer, 
 		return -EINVAL;
 	}
 
-	/*
-	 * It's a write operation
-	 */
-	cp_bytes = simple_write_to_buffer(w_buf, *lenp, &w_offset, buffer, 7);
-	if (cp_bytes != *lenp) {
-		nss_warning("failed to write to buffer\n");
-		return -EFAULT;
+	if (*lenp >= sizeof(w_buf)) {
+		nss_warning("Input too large: %zu\n", *lenp);
+		return -EINVAL;
 	}
+
+	memcpy(w_buf, buffer, *lenp);
+	w_buf[*lenp] = '\0'; /* Ensure null termination */
 
 	count = 0;
 	str = w_buf;

@@ -378,7 +378,7 @@ EXPORT_SYMBOL(nss_map_t_unregister_if);
 /*
  * nss_get_map_t_context()
  */
-struct nss_ctx_instance *nss_map_t_get_context()
+struct nss_ctx_instance *nss_map_t_get_context(void)
 {
 	return (struct nss_ctx_instance *)&nss_top_main.nss[nss_top_main.map_t_handler_id];
 }

@@ -1,9 +1,12 @@
 /*
  **************************************************************************
  * Copyright (c) 2018-2020, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
+ *
  * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
  * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
  * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
@@ -83,6 +86,35 @@ static ssize_t nss_c2c_tx_stats_read(struct file *fp, char __user *ubuf, size_t 
 	kfree(stats_shadow);
 
 	return bytes_read;
+}
+/*
+ * nss_c2c_tx_stats_write()
+ *	Write c2c_tx stats
+ */
+static ssize_t nss_c2c_tx_stats_write(struct file *fp, const char __user *ubuf, size_t sz, loff_t *ppos)
+{
+	int32_t i, core;
+	uint32_t reset;
+
+	if (kstrtou32_from_user(ubuf, sz, 0, &reset)) {
+		return -EINVAL;
+	}
+
+	if (reset != 0) {
+		return -EINVAL;
+	}
+
+	/*
+	 * c2c_tx node stats
+	 */
+	for (core = 0; core < NSS_MAX_CORES; core++) {
+		spin_lock_bh(&nss_c2c_tx_stats_lock);
+		for (i = 0; i < NSS_C2C_TX_STATS_MAX; i++) {
+			nss_c2c_tx_stats[core][i] = 0;
+		}
+		spin_unlock_bh(&nss_c2c_tx_stats_lock);
+	}
+	return sz;
 }
 
 /*

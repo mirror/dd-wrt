@@ -99,7 +99,7 @@ static void nss_bridge_log_verbose(struct nss_bridge_msg *nbm)
  */
 void nss_bridge_log_tx_msg(struct nss_bridge_msg *nbm)
 {
-	if (nbm->cm.type >= NSS_BRIDGE_MSG_TYPE_MAX) {
+	if (nbm->cm.type < (NSS_IF_MAX_MSG_TYPES + 1) || nbm->cm.type >= (NSS_IF_MAX_MSG_TYPES + NSS_BRIDGE_MSG_TYPE_MAX + 1)) {
 		nss_warning("%px: Invalid message type\n", nbm);
 		return;
 	}
@@ -116,6 +116,11 @@ void nss_bridge_log_rx_msg(struct nss_bridge_msg *nbm)
 {
 	if (nbm->cm.response >= NSS_CMN_RESPONSE_LAST) {
 		nss_warning("%px: Invalid response\n", nbm);
+		return;
+	}
+
+	if (nbm->cm.type < (NSS_IF_MAX_MSG_TYPES + 1) || nbm->cm.type >= (NSS_IF_MAX_MSG_TYPES + NSS_BRIDGE_MSG_TYPE_MAX + 1)) {
+		nss_warning("%px: Invalid message type\n", nbm);
 		return;
 	}
 
