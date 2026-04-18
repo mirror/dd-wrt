@@ -251,9 +251,9 @@
 		};
 
 		partition@200000 {
-			label = "kernel";
-			reg = <0x200000 0x400000>;
+			label = "linux";
 			sercomm,scpart-id = <2>;
+			reg = <0x200000 0x2c00000>;
 		};
 
 		partition@600000 {
