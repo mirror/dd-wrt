@@ -16,7 +16,7 @@
 		led-running = &led_power_white;
 		led-upgrade = &led_power_orange;
 	};
-
+/*
 	keys {
 		compatible = "gpio-keys";
 
@@ -38,7 +38,7 @@
 			linux,code = <KEY_RESTART>;
 		};
 	};
-
+*/
 	leds: leds {
 		compatible = "gpio-leds";
 

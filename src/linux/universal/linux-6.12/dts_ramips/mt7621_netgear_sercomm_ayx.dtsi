@@ -16,7 +16,7 @@
 		led-upgrade = &led_power;
 	};
 
-	keys {
+/*	keys {
 		compatible = "gpio-keys";
 
 		wps {
@@ -37,7 +37,7 @@
 			linux,code = <KEY_RESTART>;
 		};
 	};
-
+*/
 	leds {
 		compatible = "gpio-leds";
 
