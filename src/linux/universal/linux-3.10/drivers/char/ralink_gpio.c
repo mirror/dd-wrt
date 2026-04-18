@@ -42,7 +42,7 @@ static  devfs_handle_t devfs_handle;
 
 #define NAME			"ralink_gpio"
 #define RALINK_GPIO_DEVNAME	"gpio"
-int ralink_gpio_major = 252;
+int ralink_gpio_major = 500;
 u32 ralink_gpio_intp = 0;
 int ralink_gpio_irqnum = 0;
 u32 ralink_gpio_edge = 0;
