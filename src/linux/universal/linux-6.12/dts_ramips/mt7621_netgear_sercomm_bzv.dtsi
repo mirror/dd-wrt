@@ -251,8 +251,8 @@
 		};
 
 		partition@200000 {
-			label = "linux";
-			reg = <0x200000 0x2c00000>;
+			label = "kernel";
+			reg = <0x200000 0x400000>;
 			sercomm,scpart-id = <2>;
 		};
 
@@ -260,44 +260,6 @@
 			label = "ubi";
 			reg = <0x600000 0x2800000>;
 			sercomm,scpart-id = <3>;
-		};
-
-
-		partition@4800000 {
-			label = "nvram";
-			reg = <0x4800000 0x200000>;
-		};
-
-		partition@4600000 {
-			label = "factory";
-			reg = <0x4600000 0x200000>;
-			sercomm,scpart-id = <16>;
-			read-only;
-
-			nvmem-layout {
-				compatible = "fixed-layout";
-				#address-cells = <1>;
-				#size-cells = <1>;
-
-				eeprom_factory_0: eeprom@0 {
-					reg = <0x0 0x4da8>;
-				};
-
-				eeprom_factory_8000: eeprom@8000 {
-					reg = <0x8000 0x4da8>;
-				};
-
-				macaddr_factory_4: macaddr@4 {
-					compatible = "mac-base";
-					reg = <0x4 0x6>;
-					#nvmem-cell-cells = <1>;
-				};
-			};
-		};
-
-		partition@ddwrt {
-			label = "ddwrt";
-			reg = <0x2e00000 0x1800000>;
 		};
 
 		partition@2e00000 {
@@ -384,6 +346,38 @@
 			read-only;
 		};
 
+		partition@4600000 {
+			label = "factory";
+			reg = <0x4600000 0x200000>;
+			sercomm,scpart-id = <16>;
+			read-only;
+
+			nvmem-layout {
+				compatible = "fixed-layout";
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				eeprom_factory_0: eeprom@0 {
+					reg = <0x0 0x4da8>;
+				};
+
+				eeprom_factory_8000: eeprom@8000 {
+					reg = <0x8000 0x4da8>;
+				};
+
+				macaddr_factory_4: macaddr@4 {
+					compatible = "mac-base";
+					reg = <0x4 0x6>;
+					#nvmem-cell-cells = <1>;
+				};
+			};
+		};
+
+		partition@4800000 {
+			label = "nvram";
+			reg = <0x4800000 0x200000>;
+			sercomm,scpart-id = <17>;
+		};
 
 		partition@4a00000 {
 			label = "POT";
@@ -456,10 +450,9 @@
 		};
 
 		partition@5e00000 {
-			label = "reserved5";
+			label = "ddwrt";
 			reg = <0x5e00000 0x2180000>;
 			sercomm,scpart-id = <28>;
-			read-only;
 		};
 	};
 };

@@ -32,8 +32,8 @@
 		};
 
 		partition@200000 {
-			label = "kernel";
-			reg = <0x200000 0x400000>;
+			label = "linux";
+			reg = <0x200000 0x2000000>;
 		};
 
 		partition@600000 {
@@ -46,11 +46,10 @@
 			reg = <0x2f00000 0x200000>;
 		};
 
-		partition@2e00000 {
+		factory: partition@2e00000 {
 			label = "factory";
 			reg = <0x2e00000 0x100000>;
 			read-only;
-
 			nvmem-layout {
 				compatible = "fixed-layout";
 				#address-cells = <1>;
@@ -70,16 +69,12 @@
 					reg = <0x8000 0x200>;
 				};
 			};
+
 		};
+
 		partition@3100000 {
 			label = "ddwrt";
 			reg = <0x3100000 0x4f00000>;
-		};
-
-		partition@4200000 {
-			label = "reserved";
-			reg = <0x4200000 0x3c00000>;
-			read-only;
 		};
 	};
 };
