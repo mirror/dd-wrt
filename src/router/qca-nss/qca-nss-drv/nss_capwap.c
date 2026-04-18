@@ -1,12 +1,9 @@
 /*
  **************************************************************************
  * Copyright (c) 2014-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2024 Qualcomm Innovation Center, Inc. All rights reserved.
- *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
- *
  * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
  * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
  * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
@@ -165,7 +162,6 @@ static void nss_capwap_update_stats(struct nss_capwap_handle *handle, struct nss
 
 	switch(type) {
 	case NSS_DYNAMIC_INTERFACE_TYPE_CAPWAP_OUTER:
-		spin_lock_bh(&nss_capwap_spinlock);
 		stats->rx_segments += fstats->rx_segments;
 		stats->dtls_pkts += fstats->dtls_pkts;
 		stats->rx_dup_frag += fstats->rx_dup_frag;
@@ -184,11 +180,9 @@ static void nss_capwap_update_stats(struct nss_capwap_handle *handle, struct nss
 		stats->pnode_stats.rx_packets += fstats->pnode_stats.rx_packets;
 		stats->pnode_stats.rx_bytes += fstats->pnode_stats.rx_bytes;
 		stats->pnode_stats.rx_dropped += nss_cmn_rx_dropped_sum(&fstats->pnode_stats);
-		spin_unlock_bh(&nss_capwap_spinlock);
 		break;
 
 	case NSS_DYNAMIC_INTERFACE_TYPE_CAPWAP_HOST_INNER:
-		spin_lock_bh(&nss_capwap_spinlock);
 		stats->tx_segments += fstats->tx_segments;
 		stats->tx_queue_full_drops += fstats->tx_queue_full_drops;
 		stats->tx_mem_failure_drops += fstats->tx_mem_failure_drops;
@@ -204,7 +198,6 @@ static void nss_capwap_update_stats(struct nss_capwap_handle *handle, struct nss
 		stats->pnode_stats.tx_packets += fstats->pnode_stats.tx_packets;
 		stats->pnode_stats.tx_bytes += fstats->pnode_stats.tx_bytes;
 		stats->tx_dropped_inner += nss_cmn_rx_dropped_sum(&fstats->pnode_stats);
-		spin_unlock_bh(&nss_capwap_spinlock);
 		break;
 
 	default:
@@ -391,7 +384,6 @@ bool nss_capwap_get_stats(uint32_t if_num, struct nss_capwap_tunnel_stats *stats
 	spin_lock_bh(&nss_capwap_spinlock);
 	if (nss_capwap_hdl[if_num] == NULL) {
 		spin_unlock_bh(&nss_capwap_spinlock);
-		nss_warning("%px: unallocated if_num: %d", stats, if_num);
 		return false;
 	}
 
@@ -400,29 +392,6 @@ bool nss_capwap_get_stats(uint32_t if_num, struct nss_capwap_tunnel_stats *stats
 	return true;
 }
 EXPORT_SYMBOL(nss_capwap_get_stats);
-
-/*
- * nss_capwap_clear_stats()
- *	API for clearing stats from a CAPWAP tunnel interface stats
- */
-bool nss_capwap_clear_stats(uint32_t if_num)
-{
-	if (nss_capwap_verify_if_num(if_num) == false) {
-		return false;
-	}
-
-	if_num = if_num - NSS_DYNAMIC_IF_START;
-	spin_lock_bh(&nss_capwap_spinlock);
-	if (nss_capwap_hdl[if_num] == NULL) {
-		spin_unlock_bh(&nss_capwap_spinlock);
-		nss_warning("unallocated if_num: %d", if_num);
-		return false;
-	}
-
-	memset(&nss_capwap_hdl[if_num]->stats, 0, sizeof(struct nss_capwap_tunnel_stats));
-	spin_unlock_bh(&nss_capwap_spinlock);
-	return true;
-}
 
 /*
  * nss_capwap_notify_register()
@@ -436,14 +405,14 @@ struct nss_ctx_instance *nss_capwap_notify_register(uint32_t if_num, nss_capwap_
 	nss_ctx = &nss_top_main.nss[nss_top_main.capwap_handler_id];
 
 	if (nss_capwap_verify_if_num(if_num) == false) {
-		nss_warning("%px: notify register received for invalid interface %d", nss_ctx, if_num);
+		nss_warning("%px: notfiy register received for invalid interface %d", nss_ctx, if_num);
 		return NULL;
 	}
 
 	spin_lock_bh(&nss_capwap_spinlock);
 	if (nss_capwap_hdl[if_num - NSS_DYNAMIC_IF_START] != NULL) {
 		spin_unlock_bh(&nss_capwap_spinlock);
-		nss_warning("%px: notify register tunnel already exists for interface %d", nss_ctx, if_num);
+		nss_warning("%px: notfiy register tunnel already exists for interface %d", nss_ctx, if_num);
 		return NULL;
 	}
 	spin_unlock_bh(&nss_capwap_spinlock);

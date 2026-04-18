@@ -273,7 +273,7 @@ void nss_udp_st_log_rx_msg(struct nss_udp_st_msg *num)
 	}
 
 	if (num->cm.response == NSS_CMN_RESPONSE_NOTIFY || (num->cm.response == NSS_CMN_RESPONSE_ACK)) {
-		nss_info("%px: type[%d]:%s, response[%d]:%s\n", num, num->cm.type,
+		nss_trace("%px: type[%d]:%s, response[%d]:%s\n", num, num->cm.type,
 			nss_udp_st_log_message_types_str[num->cm.type],
 			num->cm.response, nss_cmn_response_str[num->cm.response]);
 		goto verbose;

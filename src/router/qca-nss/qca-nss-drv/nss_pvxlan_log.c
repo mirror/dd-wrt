@@ -36,9 +36,7 @@ static int8_t *nss_pvxlan_log_message_types_str[NSS_PVXLAN_MSG_TYPE_MAX] __maybe
 	"PVxLAN Disable Tunnel",
 	"PVxLAN Add MAC rule",
 	"PVxLAN Delete MAC rule",
-#ifdef NSS_FIRMWARE_VERSION_12_5
 	"PVxLAN Config VP"
-#endif
 };
 
 /*
@@ -56,9 +54,7 @@ static int8_t *nss_pvxlan_log_error_response_types_str[NSS_PVXLAN_ERROR_MAX] __m
 	"PVXLAN MAC Table Full",
 	"PVXLAN MAC Exists",
 	"PVXLAN MAC Does Not Exist",
-#ifdef NSS_FIRMWARE_VERSION_12_5
 	"PVXLAN Config VP failed"
-#endif
 };
 
 /*
@@ -162,7 +158,6 @@ static void nss_pvxlan_log_mac_del_msg(struct nss_pvxlan_msg *npvm)
 	nss_pvxlan_log_mac_msg(npvcm);
 }
 
-#ifdef NSS_FIRMWARE_VERSION_12_5
 /*
  * nss_pvxlan_log_unconfig_vp_msg()
  *	Log NSS PVXLAN unconfig VP message.
@@ -186,7 +181,6 @@ static void nss_pvxlan_log_config_vp_msg(struct nss_pvxlan_msg *npvm)
 		vpm->vp_num,
 		vpm->ppe_to_host ? "enabled" : "disabled");
 }
-#endif
 
 /*
  * nss_pvxlan_log_verbose()
@@ -219,7 +213,6 @@ static void nss_pvxlan_log_verbose(struct nss_pvxlan_msg *npvm)
 		nss_pvxlan_log_mac_del_msg(npvm);
 		break;
 
-#ifdef NSS_FIRMWARE_VERSION_12_5
 	case NSS_PVXLAN_MSG_TYPE_CONFIG_VP:
 		nss_pvxlan_log_config_vp_msg(npvm);
 		break;
@@ -227,7 +220,6 @@ static void nss_pvxlan_log_verbose(struct nss_pvxlan_msg *npvm)
 	case NSS_PVXLAN_MSG_TYPE_UNCONFIG_VP:
 		nss_pvxlan_log_unconfig_vp_msg(npvm);
 		break;
-#endif
 
 	case NSS_PVXLAN_MSG_TYPE_SYNC_STATS:
 		break;

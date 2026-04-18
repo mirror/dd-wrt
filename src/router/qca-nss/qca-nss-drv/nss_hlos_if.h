@@ -31,9 +31,9 @@
  * The following definitions sets the maximum number of connections
  * based on the type of memory profile that the system is operating with
  */
+
 extern unsigned int NSS_DEFAULT_NUM_CONN;
 extern unsigned int NSS_MAX_TOTAL_NUM_CONN_IPV4_IPV6;
-
 #define NSS_LOW_MEM_EMPTY_POOL_BUF_SZ		4096		/* Default empty buffer pool size for low profile */
 
 #if defined(NSS_SKB_FIXED_SIZE_2K) && !defined(__LP64__)

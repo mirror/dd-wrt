@@ -529,7 +529,7 @@ void nss_wifili_log_rx_msg(struct nss_wifili_msg *nwm)
 	}
 
 	if (nwm->cm.response == NSS_CMN_RESPONSE_NOTIFY || (nwm->cm.response == NSS_CMN_RESPONSE_ACK)) {
-		nss_info("%px: type[%d]:%s, response[%d]:%s\n", nwm, nwm->cm.type,
+		nss_trace("%px: type[%d]:%s, response[%d]:%s\n", nwm, nwm->cm.type,
 			nss_wifili_log_message_types_str[nwm->cm.type],
 			nwm->cm.response, nss_cmn_response_str[nwm->cm.response]);
 		goto verbose;

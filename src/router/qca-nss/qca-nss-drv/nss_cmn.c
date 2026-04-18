@@ -86,11 +86,12 @@ int32_t nss_cmn_get_interface_number(struct nss_ctx_instance *nss_ctx, struct ne
 	 */
 	for (i = 0; i < NSS_MAX_NET_INTERFACES; i++) {
 		if (dev == nss_ctx->subsys_dp_register[i].ndev) {
+			nss_info("found interface %s\n", dev->name);
 			return i;
 		}
 	}
 
-	nss_warning("%px: Interface number could not be found as interface has not registered yet\n", nss_ctx);
+	nss_warning("%px: Interface number could not be found as interface has not registered yet (%s)\n", nss_ctx, dev->name);
 	return -1;
 }
 EXPORT_SYMBOL(nss_cmn_get_interface_number);

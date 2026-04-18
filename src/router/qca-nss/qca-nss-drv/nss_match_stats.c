@@ -1,7 +1,6 @@
 /*
  ***************************************************************************
  * Copyright (c) 2020-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2024 Qualcomm Innovation Center, Inc. All rights reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -27,7 +26,7 @@
 #include "nss_match_strings.h"
 
 #define NSS_MATCH_STATS_SIZE_PER_IF (NSS_STATS_MAX_STR_LENGTH * NSS_STATS_NODE_MAX)
-					/* Total number of statistics per match interface. */
+                                        /* Total number of statistics per match interface. */
 
 int match_ifnum[NSS_MATCH_INSTANCE_MAX] = {0};
 uint64_t nss_match_stats[NSS_MATCH_INSTANCE_MAX][NSS_MATCH_STATS_MAX];
@@ -125,15 +124,6 @@ void nss_match_stats_sync(struct nss_ctx_instance *nss_ctx, struct nss_match_msg
 	}
 
 	spin_unlock_bh(&nss_match_stats_lock);
-}
-
-/*
- * nss_match_stats_write()
- *	Write MATCH statistics
- */
-static ssize_t nss_match_stats_write(struct file *fp, const char __user *ubuf, size_t sz, loff_t *ppos)
-{
-	return -ESRCH;
 }
 
 /*

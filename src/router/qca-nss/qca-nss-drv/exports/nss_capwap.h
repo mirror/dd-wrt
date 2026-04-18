@@ -284,7 +284,6 @@ struct nss_capwap_dtls_msg {
 	uint32_t reserved;			/**< Reserved field for future use. */
 };
 
-#ifdef NSS_FIRMWARE_VERSION_12_5
 /**
  * nss_capwap_flow_attr
  *	Inner Flow attributes.
@@ -294,7 +293,6 @@ struct nss_capwap_flow_attr {
 	uint32_t flow_id;		/**< Flow Identification. */
 	uint32_t scs_sdwf_id;		/**< SCS or SDWF Identification. */
 };
-#endif
 
 /**
  * nss_capwap_flow_rule_msg
@@ -314,11 +312,7 @@ struct nss_capwap_flow_rule_msg {
 	/*
 	 * Flow attributes.
 	 */
-#ifdef NSS_FIRMWARE_VERSION_12_5
 	struct nss_capwap_flow_attr flow_attr;
-#else
-	uint32_t flow_id;		/**< Flow identification. */
-#endif
 };
 
 /**
@@ -627,17 +621,6 @@ extern uint32_t nss_capwap_get_max_buf_size(struct nss_ctx_instance *nss_ctx);
  * TRUE or FALSE.
  */
 extern bool nss_capwap_get_stats(uint32_t if_num, struct nss_capwap_tunnel_stats *stats);
-
-/**
- * nss_capwap_clear_stats
- *	Gets per-tunnel statistics.
- *
- * @param[in]  if_num  NSS interface number.
- *
- * @return
- * TRUE or FALSE.
- */
-extern bool nss_capwap_clear_stats(uint32_t if_num);
 
 /**
  * nss_capwap_init

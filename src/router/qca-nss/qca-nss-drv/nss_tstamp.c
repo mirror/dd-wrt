@@ -185,7 +185,12 @@ static struct net_device *nss_tstamp_get_dev(struct sk_buff *skb)
 	case IPVERSION:
 		ip_addr = ip_hdr(skb)->saddr;
 
+
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(6, 12, 0))
+		rt = ip_route_output(&init_net, ip_addr, 0, 0, 0, RT_SCOPE_UNIVERSE);
+#else
 		rt = ip_route_output(&init_net, ip_addr, 0, 0, 0);
+#endif
 		if (IS_ERR(rt)) {
 			return NULL;
 		}

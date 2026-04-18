@@ -1,8 +1,6 @@
 /*
  **************************************************************************
  * Copyright (c) 2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2024 Qualcomm Innovation Center, Inc. All rights reserved.
- *
  *
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -52,7 +50,7 @@ struct nss_wifi_mesh_stats_handle *nss_wifi_mesh_stats_hdl[NSS_WIFI_MESH_MAX_DYN
 
 /*
  * nss_wifi_mesh_max_statistics()
- *	Wi-Fi mesh maximum statistics.
+ * 	Wi-Fi mesh maximum statistics.
  */
 static uint32_t nss_wifi_mesh_max_statistics(void)
 {
@@ -138,7 +136,7 @@ bool nss_wifi_mesh_stats_handle_free(nss_if_num_t if_num)
 
 /**
  * nss_wifi_mesh_get_stats_handle()
- *	Get Wi-Fi mesh stats handle from interface number.
+ * 	Get Wi-Fi mesh stats handle from interface number.
  */
 struct nss_wifi_mesh_stats_handle *nss_wifi_mesh_get_stats_handle(nss_if_num_t if_num)
 {
@@ -184,7 +182,7 @@ static bool nss_wifi_mesh_get_stats(nss_if_num_t if_num, struct nss_wifi_mesh_hd
 
 /*
  * nss_wifi_mesh_get_valid_interface_count()
- *	Get count of valid Wi-Fi mesh interfaces up.
+ * 	Get count of valid Wi-Fi mesh interfaces up.
  */
 static uint32_t nss_wifi_mesh_get_valid_interface_count(uint16_t type, uint32_t if_num, uint32_t max_if_num)
 {
@@ -220,7 +218,7 @@ static uint32_t nss_wifi_mesh_get_valid_interface_count(uint16_t type, uint32_t 
 
 /**
  * nss_wifi_mesh_stats_read()
- *	Read Wi-Fi Mesh stats.
+ * 	Read Wi-Fi Mesh stats.
  */
 static ssize_t nss_wifi_mesh_stats_read(struct file *fp, char __user *ubuf, size_t sz, loff_t *ppos, uint16_t type)
 {
@@ -438,51 +436,6 @@ static ssize_t nss_wifi_mesh_exception_stats_read(struct file *fp, char __user *
 }
 
 /*
- * nss_wifi_mesh_encap_stats_write()
- *	Write WIFI_MESH_ENCAP statistics
- */
-static ssize_t nss_wifi_mesh_encap_stats_write(struct file *fp, const char __user *ubuf, size_t sz, loff_t *ppos)
-{
-	return -ESRCH;
-}
-
-/*
- * nss_wifi_mesh_decap_stats_write()
- *	Write WIFI_MESH_DECAP statistics
- */
-static ssize_t nss_wifi_mesh_decap_stats_write(struct file *fp, const char __user *ubuf, size_t sz, loff_t *ppos)
-{
-	return -ESRCH;
-}
-
-/*
- * nss_wifi_mesh_path_stats_write()
- *	Write WIFI_MESH_PATH statistics
- */
-static ssize_t nss_wifi_mesh_path_stats_write(struct file *fp, const char __user *ubuf, size_t sz, loff_t *ppos)
-{
-	return -ESRCH;
-}
-
-/*
- * nss_wifi_mesh_proxy_path_stats_write()
- *	Write WIFI_MESH_PROXY_PATH statistics
- */
-static ssize_t nss_wifi_mesh_proxy_path_stats_write(struct file *fp, const char __user *ubuf, size_t sz, loff_t *ppos)
-{
-	return -ESRCH;
-}
-
-/*
- * nss_wifi_mesh_exception_stats_write()
- *	Write WIFI_MESH_EXCEPTION statistics
- */
-static ssize_t nss_wifi_mesh_exception_stats_write(struct file *fp, const char __user *ubuf, size_t sz, loff_t *ppos)
-{
-	return -ESRCH;
-}
-
-/*
  * nss_wifi_mesh_stats_ops
  */
 NSS_STATS_DECLARE_FILE_OPERATIONS(wifi_mesh_encap);
@@ -493,7 +446,7 @@ NSS_STATS_DECLARE_FILE_OPERATIONS(wifi_mesh_exception);
 
 /*
  * nss_wifi_mesh_get_interface_type()
- *	Function to get the type of dynamic interface.
+ * 	Function to get the type of dynamic interface.
  */
 static enum nss_dynamic_interface_type nss_wifi_mesh_get_interface_type(nss_if_num_t if_num)
 {

@@ -1,7 +1,6 @@
 /*
  **************************************************************************
  * Copyright (c) 2019-2020, The Linux Foundation. All rights reserved.
- * Copyright (c) 2024 Qualcomm Innovation Center, Inc. All rights reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -154,15 +153,6 @@ static ssize_t nss_rmnet_rx_stats_read(struct file *fp, char __user *ubuf, size_
 	kfree(stats_shadow);
 
 	return bytes_read;
-}
-
-/*
- * nss_rmnet_rx_stats_write()
- *	Write RMNET_RX statistics
- */
-static ssize_t nss_rmnet_rx_stats_write(struct file *fp, const char __user *ubuf, size_t sz, loff_t *ppos)
-{
-	return -ESRCH;
 }
 
 /*

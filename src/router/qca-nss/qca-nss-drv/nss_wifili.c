@@ -98,7 +98,7 @@ static void nss_wifili_handler(struct nss_ctx_instance *nss_ctx, struct nss_cmn_
 	void *ctx;
 	nss_wifili_msg_callback_t cb;
 
-	nss_info("%px: NSS->HLOS message for wifili\n", nss_ctx);
+	nss_trace("%px: NSS->HLOS message for wifili\n", nss_ctx);
 
 	/*
 	 * The interface number shall be wifili soc interface or wifili radio interface

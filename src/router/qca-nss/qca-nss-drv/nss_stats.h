@@ -1,7 +1,7 @@
 /*
  **************************************************************************
  * Copyright (c) 2016-2017, 2019-2020 The Linux Foundation. All rights reserved.
- * Copyright (c) 2023-2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2023 Qualcomm Innovation Center, Inc. All rights reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
@@ -44,7 +44,7 @@
 static struct file_operations nss_##name##_stats_ops = { \
 	.open = nss_stats_open, \
 	.read = nss_##name##_stats_read, \
-	.write = nss_##name##_stats_write, \
+	.write = nss_clear_stats_write, \
 	.llseek = generic_file_llseek,		\
 	.release = nss_stats_release, \
 };
@@ -72,6 +72,7 @@ extern void nss_stats_register_sysctl(void);
 void nss_stats_init(void);
 extern int nss_stats_release(struct inode *inode, struct file *filp);
 extern int nss_stats_open(struct inode *inode, struct file *filp);
+extern ssize_t nss_clear_stats_write(struct file *fp, const char __user *ubuf, size_t sz, loff_t *ppos);
 void nss_stats_create_dentry(char *name, const struct file_operations *ops);
 extern void nss_stats_reset_common_stats(uint32_t if_num);
 extern size_t nss_stats_fill_common_stats(uint32_t if_num, int instance, char *lbuf, size_t size_wr, size_t size_al, char *node);

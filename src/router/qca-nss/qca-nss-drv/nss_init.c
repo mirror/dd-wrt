@@ -1,7 +1,7 @@
 /*
  **************************************************************************
  * Copyright (c) 2013-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022,2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
@@ -346,7 +346,7 @@ static int nss_get_average_inst_handler(compat_const struct ctl_table *ctl, int 
 		return ret;
 	}
 
-	printk("Current Inst Per Ms %x\n", nss_runtime_samples.average);
+	printk("Current Inst Per Ms %d\n", nss_runtime_samples.average);
 
 	*lenp = 0;
 	return ret;
@@ -595,58 +595,19 @@ static struct ctl_table nss_general_table[] = {
 	}
 };
 
-#if (LINUX_VERSION_CODE < KERNEL_VERSION(6, 6, 0))
-static struct ctl_table nss_init_dir[] = {
-#if (NSS_FREQ_SCALE_SUPPORT == 1)
-	{
-		.procname               = "clock",
-		.mode                   = 0555,
-		.child                  = nss_freq_table,
-	},
-#endif
-	{
-		.procname               = "general",
-		.mode                   = 0555,
-		.child                  = nss_general_table,
-	},
-#if (NSS_SKB_REUSE_SUPPORT == 1)
-	{
-		.procname               = "skb_reuse",
-		.mode                   = 0555,
-		.child                  = nss_skb_reuse_table,
-	},
-#endif
-	{ }
-};
+static struct ctl_table_header *nss_clock_header;
+static struct ctl_table_header *nss_skb_header;
+static struct ctl_table_header *nss_general_header;
+static struct ctl_table *nss_clock_table;
+static struct ctl_table *nss_skb_reuse_tabl;
+static struct ctl_table *nss_general_tabl;
 
-static struct ctl_table nss_root_dir[] = {
-	{
-		.procname		= "nss",
-		.mode			= 0555,
-		.child			= nss_init_dir,
-	},
-	{ }
-};
-
-static struct ctl_table nss_root[] = {
-	{
-		.procname		= "dev",
-		.mode			= 0555,
-		.child			= nss_root_dir,
-	},
-	{ }
-};
-
-static struct ctl_table_header *nss_dev_header;
-#else
-static struct ctl_table_header *nss_clk_hdr;
-static struct ctl_table_header *nss_gen_hdr;
-static struct ctl_table_header *nss_skb_hdr;
-#endif
 unsigned int NSS_DEFAULT_NUM_CONN;
 unsigned int NSS_MAX_TOTAL_NUM_CONN_IPV4_IPV6;
 
+
 extern int max_ipv4_conn; // NSS_DEFAULT_NUM_CONN;
+
 extern int max_ipv6_conn; // NSS_DEFAULT_NUM_CONN;
 extern int nss_ipv6_conn_cfg; // = NSS_DEFAULT_NUM_CONN;
 extern int nss_ipv4_conn_cfg; // = NSS_DEFAULT_NUM_CONN;
@@ -691,13 +652,8 @@ static int __init nss_init(void)
 
 	nss_ipv6_conn_cfg = NSS_DEFAULT_NUM_CONN;
 	nss_ipv4_conn_cfg = NSS_DEFAULT_NUM_CONN;
-
 #if defined(NSS_DRV_POINT_OFFLOAD)
-#if (LINUX_VERSION_CODE < KERNEL_VERSION(6, 6, 0))
 	pof = of_find_node_by_name(NULL, "reg_update");
-#else
-	pof = of_find_node_by_name(NULL, "reg-update");
-#endif
 	if ((!pof) || (!of_property_read_bool(pof, "ubi_core_enable"))) {
 		nss_info_always("UBI is not enabled. Disable qca-nss-drv\n");
 		return 0;
@@ -735,11 +691,11 @@ nss_info("Init NSS driver");
 #ifdef NSS_DATA_PLANE_GENERIC_SUPPORT
 		nss_top_main.data_plane_ops = &nss_data_plane_ops;
 #endif
-if (mem_profile==2) {
+	if (mem_profile==2) {
 		nss_top_main.num_nss = 1;
-}else{
+	} else {
 		nss_top_main.num_nss = 2;
-}
+	}
 	}
 #endif
 #if defined(NSS_HAL_IPQ60XX_SUPPORT)
@@ -828,16 +784,20 @@ if (mem_profile==2) {
 	 */
 	nss_strings_init();
 
-#if (LINUX_VERSION_CODE < KERNEL_VERSION(6, 6, 0))
 	/*
 	 * Register sysctl table.
 	 */
-	nss_dev_header = register_sysctl_table(nss_root);
-#else
-	nss_clk_hdr = register_sysctl("dev/nss/clock", nss_freq_table);
-	nss_gen_hdr = register_sysctl("dev/nss/general", nss_general_table);
-	nss_skb_hdr = register_sysctl("dev/nss/skb_reuse", nss_skb_reuse_table);
+  // to avoid multiple calls to `register_sysctl_table`
+	nss_general_header = register_sysctl("dev/nss/general", nss_general_table);
+
+#if (NSS_SKB_REUSE_SUPPORT == 1)
+  nss_skb_header = register_sysctl("dev/nss/skb_reuse", nss_skb_reuse_table);
 #endif
+
+#if (NSS_FREQ_SCALE_SUPPORT == 1)
+  nss_clock_header = register_sysctl("dev/nss/clock", nss_freq_table);
+#endif
+
 	/*
 	 * Registering sysctl for ipv4/6 specific config.
 	 */
@@ -997,23 +957,24 @@ if (mem_profile==2) {
  */
 static void __exit nss_cleanup(void)
 {
-	nss_info("Exit NSS driver");
 	if (disable_nss)
 	    return;
 
-#if (LINUX_VERSION_CODE < KERNEL_VERSION(6, 6, 0))
-	if (nss_dev_header)
-		unregister_sysctl_table(nss_dev_header);
-#else
-	if (nss_clk_hdr)
-		unregister_sysctl_table(nss_clk_hdr);
+	nss_info("Exit NSS driver");
 
-	if (nss_gen_hdr)
-		unregister_sysctl_table(nss_gen_hdr);
+	if (nss_general_header)
+		unregister_sysctl_table(nss_general_header);
 
-	if (nss_skb_hdr)
-		unregister_sysctl_table(nss_skb_hdr);
+#if (NSS_SKB_REUSE_SUPPORT == 1)
+	if (nss_skb_header)
+	  unregister_sysctl_table(nss_skb_header);
 #endif
+
+#if (NSS_FREQ_SCALE_SUPPORT == 1)
+	if (nss_clock_header)
+	  unregister_sysctl_table(nss_clock_header);
+#endif
+
 	/*
 	 * Unregister n2h specific sysctl
 	 */

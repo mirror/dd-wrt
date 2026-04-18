@@ -259,15 +259,6 @@ static ssize_t nss_gre_stats_read(struct file *fp, char __user *ubuf, size_t sz,
 }
 
 /*
- * nss_gre_stats_write()
- *	Write GRE statistics
- */
-static ssize_t nss_gre_stats_write(struct file *fp, const char __user *ubuf, size_t sz, loff_t *ppos)
-{
-	return -ESRCH;
-}
-
-/*
  * nss_gre_stats_ops
  */
 NSS_STATS_DECLARE_FILE_OPERATIONS(gre)

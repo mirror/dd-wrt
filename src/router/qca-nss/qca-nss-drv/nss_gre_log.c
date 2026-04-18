@@ -151,7 +151,7 @@ static void nss_gre_log_verbose(struct nss_gre_msg *ngm)
  */
 void nss_gre_log_tx_msg(struct nss_gre_msg *ngm)
 {
-	if (ngm->cm.type < (NSS_IF_MAX_MSG_TYPES + 1) || ngm->cm.type >= (NSS_IF_MAX_MSG_TYPES + NSS_GRE_MSG_MAX + 1)) {
+	if (ngm->cm.type >= NSS_GRE_MSG_MAX) {
 		nss_warning("%px: Invalid message type\n", ngm);
 		return;
 	}
@@ -168,11 +168,6 @@ void nss_gre_log_rx_msg(struct nss_gre_msg *ngm)
 {
 	if (ngm->cm.response >= NSS_CMN_RESPONSE_LAST) {
 		nss_warning("%px: Invalid response\n", ngm);
-		return;
-	}
-
-	if (ngm->cm.type < (NSS_IF_MAX_MSG_TYPES + 1) || ngm->cm.type >= (NSS_IF_MAX_MSG_TYPES + NSS_GRE_MSG_MAX + 1)) {
-		nss_warning("%px: Invalid message type\n", ngm);
 		return;
 	}
 

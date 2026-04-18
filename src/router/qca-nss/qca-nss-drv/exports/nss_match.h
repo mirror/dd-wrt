@@ -247,7 +247,7 @@ extern struct nss_ctx_instance *nss_match_get_context(void);
  * @return
  * Pointer to the NSS core context.
  */
-extern struct nss_ctx_instance *nss_match_register_instance(int if_num, void (*notify_cb)(void *, struct nss_cmn_msg *));
+extern struct nss_ctx_instance *nss_match_register_instance(int if_num, nss_match_msg_sync_callback_t notify_cb);
 
 /**
  * nss_match_unregister_instance

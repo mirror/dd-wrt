@@ -60,13 +60,13 @@ void nss_unaligned_log_rx_msg(struct nss_unaligned_msg *um)
 	}
 
 	if (um->cm.response == NSS_CMN_RESPONSE_NOTIFY || (um->cm.response == NSS_CMN_RESPONSE_ACK)) {
-		nss_info("%px: type[%d]:%s, response[%d]:%s\n", um, um->cm.type,
+		nss_trace("%px: type[%d]:%s, response[%d]:%s\n", um, um->cm.type,
 			nss_unaligned_log_message_types_str[um->cm.type],
 			um->cm.response, nss_cmn_response_str[um->cm.response]);
 		goto verbose;
 	}
 
-	nss_info("%px: msg nack - type[%d]:%s, response[%d]:%s\n",
+	nss_trace("%px: msg nack - type[%d]:%s, response[%d]:%s\n",
 		um, um->cm.type, nss_unaligned_log_message_types_str[um->cm.type],
 		um->cm.response, nss_cmn_response_str[um->cm.response]);
 

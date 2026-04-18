@@ -1,7 +1,7 @@
 /*
  **************************************************************************
  * Copyright (c) 2013-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022,2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
@@ -1186,11 +1186,11 @@ static nss_tx_status_t nss_n2h_mitigation_cfg(struct nss_ctx_instance *nss_ctx, 
 	}
 
 	up(&nss_n2h_mitigationcp[core_num].sem);
-	return NSS_TX_SUCCESS;
+	return NSS_SUCCESS;
 
 failure:
 	up(&nss_n2h_mitigationcp[core_num].sem);
-	return NSS_TX_FAILURE;
+	return NSS_FAILURE;
 }
 
 static inline void nss_n2h_buf_pool_free(struct nss_n2h_buf_pool *buf_pool)
@@ -1271,10 +1271,10 @@ static nss_tx_status_t nss_n2h_buf_pool_cfg(struct nss_ctx_instance *nss_ctx,
 		up(&nss_n2h_bufcp[core_num].sem);
 	} while(num_pages);
 
-	return NSS_TX_SUCCESS;
+	return NSS_SUCCESS;
 failure:
 	up(&nss_n2h_bufcp[core_num].sem);
-	return NSS_TX_FAILURE;
+	return NSS_FAILURE;
 }
 
 /*
@@ -1573,7 +1573,7 @@ static nss_tx_status_t nss_n2h_host_bp_cfg_sync(struct nss_ctx_instance *nss_ctx
 	if (nss_tx_status != NSS_TX_SUCCESS) {
 		nss_warning("%px: nss_tx error setting back pressure\n", nss_ctx);
 		up(&nss_n2h_host_bp_cfg_pvt.sem);
-		return NSS_TX_FAILURE;
+		return NSS_FAILURE;
 	}
 
 	/*
@@ -1583,7 +1583,7 @@ static nss_tx_status_t nss_n2h_host_bp_cfg_sync(struct nss_ctx_instance *nss_ctx
 	if (ret == 0) {
 		nss_warning("%px: Waiting for ack timed out\n", nss_ctx);
 		up(&nss_n2h_host_bp_cfg_pvt.sem);
-		return NSS_TX_FAILURE;
+		return NSS_FAILURE;
 	}
 
 	/*
@@ -1591,11 +1591,11 @@ static nss_tx_status_t nss_n2h_host_bp_cfg_sync(struct nss_ctx_instance *nss_ctx
 	 */
 	if (nss_n2h_host_bp_cfg_pvt.response == NSS_FAILURE) {
 		up(&nss_n2h_host_bp_cfg_pvt.sem);
-		return NSS_TX_FAILURE;
+		return NSS_FAILURE;
 	}
 
 	up(&nss_n2h_host_bp_cfg_pvt.sem);
-	return NSS_TX_SUCCESS;
+	return NSS_SUCCESS;
 }
 
 /*
@@ -1901,40 +1901,8 @@ static struct ctl_table nss_n2h_table_multi_core[] = {
 	}
 };
 
-
-#if (LINUX_VERSION_CODE < KERNEL_VERSION(6, 6, 0))
-/*
- * This table will be overwritten during single-core registration
- */
-static struct ctl_table nss_n2h_dir[] = {
-	{
-		.procname		= "n2hcfg",
-		.mode			= 0555,
-		.child			= nss_n2h_table_multi_core,
-	},
-	{ }
-};
-
-static struct ctl_table nss_n2h_root_dir[] = {
-	{
-		.procname		= "nss",
-		.mode			= 0555,
-		.child			= nss_n2h_dir,
-	},
-	{ }
-};
-
-static struct ctl_table nss_n2h_root[] = {
-	{
-		.procname		= "dev",
-		.mode			= 0555,
-		.child			= nss_n2h_root_dir,
-	},
-	{ }
-};
-#endif
-
 static struct ctl_table_header *nss_n2h_header;
+
 /*
  * nss_n2h_cfg_empty_pool_size()
  *	Config empty buffer pool
@@ -2281,12 +2249,7 @@ void nss_n2h_single_core_register_sysctl(void)
 	/*
 	 * Register sysctl table.
 	 */
-#if (LINUX_VERSION_CODE < KERNEL_VERSION(6, 6, 0))
-	nss_n2h_dir[0].child = nss_n2h_table_single_core;
-	nss_n2h_header = register_sysctl_table(nss_n2h_root);
-#else
 	nss_n2h_header = register_sysctl("dev/nss/n2hcfg", nss_n2h_table_single_core);
-#endif
 }
 
 /*
@@ -2384,12 +2347,7 @@ void nss_n2h_multi_core_register_sysctl(void)
 	/*
 	 * Register sysctl table.
 	 */
-
-#if (LINUX_VERSION_CODE < KERNEL_VERSION(6, 6, 0))
-	nss_n2h_header = register_sysctl_table(nss_n2h_root);
-#else
 	nss_n2h_header = register_sysctl("dev/nss/n2hcfg", nss_n2h_table_multi_core);
-#endif
 }
 
 /*

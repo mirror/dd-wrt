@@ -357,7 +357,7 @@ void nss_ppe_init(void)
 	/*
 	 * Get the PPE base address
 	 */
-	ppe_pvt.ppe_base = nss_ioremap(PPE_BASE_ADDR, PPE_REG_SIZE);
+	ppe_pvt.ppe_base = ioremap(PPE_BASE_ADDR, PPE_REG_SIZE);
 	if (!ppe_pvt.ppe_base) {
 		nss_warning("DRV can't get PPE base address\n");
 		return;

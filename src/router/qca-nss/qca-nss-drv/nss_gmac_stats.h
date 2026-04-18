@@ -30,5 +30,4 @@ enum nss_stats_gmac {
 };
 
 extern ssize_t nss_gmac_stats_read(struct file *fp, char __user *ubuf, size_t sz, loff_t *ppos);
-ssize_t nss_gmac_stats_write(struct file *fp, const char __user *ubuf, size_t sz, loff_t *ppos);
 #endif /* __NSS_GMAC_STATS_H */

@@ -363,7 +363,7 @@ void nss_ipv6_log_rx_msg(struct nss_ipv6_msg *nim)
 	}
 
 	if (nim->cm.response == NSS_CMN_RESPONSE_NOTIFY || (nim->cm.response == NSS_CMN_RESPONSE_ACK)) {
-		nss_info("%px: type[%d]: %s, response[%d]: %s\n", nim, nim->cm.type,
+		nss_trace("%px: type[%d]: %s, response[%d]: %s\n", nim, nim->cm.type,
 			nss_ipv6_log_message_types_str[nim->cm.type],
 			nim->cm.response, nss_cmn_response_str[nim->cm.response]);
 		goto verbose;

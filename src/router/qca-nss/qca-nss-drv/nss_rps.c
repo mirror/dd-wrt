@@ -1,7 +1,7 @@
 /*
  **************************************************************************
  * Copyright (c) 2013-2017, 2019-2021 The Linux Foundation. All rights reserved.
- * Copyright (c) 2022,2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
@@ -70,7 +70,7 @@ static inline void nss_rps_pri_map_usage(void)
  * nss_rps_pri_map_print()
  *	Sysctl handler for printing rps/pri mapping.
  */
-static int nss_rps_pri_map_print(void *buffer,
+static int nss_rps_pri_map_print(struct ctl_table *ctl, void __user *buffer,
 				size_t *lenp, loff_t *ppos, int *pri_map)
 {
 	char *r_buf;
@@ -109,7 +109,7 @@ static int nss_rps_pri_map_print(void *buffer,
 	len = scnprintf(r_buf + cp_bytes, 4, "\n");
 	cp_bytes += len;
 
-	cp_bytes = memory_read_from_buffer(buffer, *lenp, ppos, r_buf, cp_bytes);
+	cp_bytes = simple_read_from_buffer(buffer, *lenp, ppos, r_buf, cp_bytes);
 	*lenp = cp_bytes;
 	kfree(r_buf);
 	return 0;
@@ -119,10 +119,13 @@ static int nss_rps_pri_map_print(void *buffer,
  * nss_rps_pri_map_parse()
  *	Sysctl handler for rps/pri mappings.
  */
-static int nss_rps_pri_map_parse(void *buffer,
-	size_t *lenp, struct nss_rps_pri_map_parse_data *out)
+static int nss_rps_pri_map_parse(struct ctl_table *ctl, void __user *buffer,
+	size_t *lenp, loff_t *ppos, struct nss_rps_pri_map_parse_data *out)
 {
+	size_t cp_bytes = 0;
 	char w_buf[5];
+	loff_t w_offset = 0;
+	char *str;
 	unsigned int pri;
 	int core, res;
 
@@ -137,15 +140,14 @@ static int nss_rps_pri_map_parse(void *buffer,
 	/*
 	 * It's a write operation
 	 */
-	if (*lenp >= sizeof(w_buf)) {
-		nss_warning("Input too large: %zu\n", *lenp);
-		return -EINVAL;
+	cp_bytes = simple_write_to_buffer(w_buf, *lenp, &w_offset, buffer, 5);
+	if (cp_bytes != *lenp) {
+		nss_warning("failed to write to buffer\n");
+		return -EFAULT;
 	}
 
-	memcpy(w_buf, buffer, *lenp);
-	w_buf[*lenp] = '\0'; /* Ensure null termination */
-
-	res = sscanf(w_buf, "%u %d", &pri, &core);
+	str = w_buf;
+	res = sscanf(str, "%u %d", &pri, &core);
 	if (res != NSS_RPS_PRI_MAP_PARAM_FIELD_COUNT) {
 		nss_warning("failed to read the buffer\n");
 		return -EFAULT;
@@ -252,7 +254,7 @@ static nss_tx_status_t nss_rps_cfg(struct nss_ctx_instance *nss_ctx, int enable_
 		nss_warning("%px: nss_tx error setting rps\n", nss_ctx);
 
 		up(&nss_rps_cfg_pvt.sem);
-		return NSS_TX_FAILURE;
+		return NSS_FAILURE;
 	}
 
 	/*
@@ -262,7 +264,7 @@ static nss_tx_status_t nss_rps_cfg(struct nss_ctx_instance *nss_ctx, int enable_
 	if (ret == 0) {
 		nss_warning("%px: Waiting for ack timed out\n", nss_ctx);
 		up(&nss_rps_cfg_pvt.sem);
-		return NSS_TX_FAILURE;
+		return NSS_FAILURE;
 	}
 
 	/*
@@ -272,11 +274,11 @@ static nss_tx_status_t nss_rps_cfg(struct nss_ctx_instance *nss_ctx, int enable_
 	 */
 	if (NSS_FAILURE == nss_rps_cfg_pvt.response) {
 		up(&nss_rps_cfg_pvt.sem);
-		return NSS_TX_FAILURE;
+		return NSS_FAILURE;
 	}
 
 	up(&nss_rps_cfg_pvt.sem);
-	return NSS_TX_SUCCESS;
+	return NSS_SUCCESS;
 }
 
 #ifdef NSS_DRV_IPV4_ENABLE
@@ -302,11 +304,11 @@ static nss_tx_status_t nss_rps_ipv4_hash_bitmap_cfg(struct nss_ctx_instance *nss
 		nss_warning("%px: nss_tx error setting rps\n", nss_ctx);
 
 		up(&nss_rps_cfg_pvt.sem);
-		return NSS_TX_FAILURE;
+		return NSS_FAILURE;
 	}
 
 	up(&nss_rps_cfg_pvt.sem);
-	return NSS_TX_SUCCESS;
+	return NSS_SUCCESS;
 }
 #endif
 
@@ -333,11 +335,11 @@ static nss_tx_status_t nss_rps_ipv6_hash_bitmap_cfg(struct nss_ctx_instance *nss
 		nss_warning("%px: nss_tx error setting rps\n", nss_ctx);
 
 		up(&nss_rps_cfg_pvt.sem);
-		return NSS_TX_FAILURE;
+		return NSS_FAILURE;
 	}
 
 	up(&nss_rps_cfg_pvt.sem);
-	return NSS_TX_SUCCESS;
+	return NSS_SUCCESS;
 }
 #endif
 
@@ -373,7 +375,7 @@ static nss_tx_status_t nss_rps_pri_map_cfg(struct nss_ctx_instance *nss_ctx, int
 		nss_warning("%px: nss_tx error setting rps\n", nss_ctx);
 
 		up(&nss_rps_cfg_pvt.sem);
-		return NSS_TX_FAILURE;
+		return NSS_FAILURE;
 	}
 
 	/*
@@ -383,7 +385,7 @@ static nss_tx_status_t nss_rps_pri_map_cfg(struct nss_ctx_instance *nss_ctx, int
 	if (ret == 0) {
 		nss_warning("%px: Waiting for ack timed out\n", nss_ctx);
 		up(&nss_rps_cfg_pvt.sem);
-		return NSS_TX_FAILURE;
+		return NSS_FAILURE;
 	}
 
 	/*
@@ -393,11 +395,11 @@ static nss_tx_status_t nss_rps_pri_map_cfg(struct nss_ctx_instance *nss_ctx, int
 	 */
 	if (NSS_FAILURE == nss_rps_cfg_pvt.response) {
 		up(&nss_rps_cfg_pvt.sem);
-		return NSS_TX_FAILURE;
+		return NSS_FAILURE;
 	}
 
 	up(&nss_rps_cfg_pvt.sem);
-	return NSS_TX_SUCCESS;
+	return NSS_SUCCESS;
 }
 
 /*
@@ -405,7 +407,7 @@ static nss_tx_status_t nss_rps_pri_map_cfg(struct nss_ctx_instance *nss_ctx, int
  *	Enable NSS RPS.
  */
 static int nss_rps_cfg_handler(compat_const struct ctl_table *ctl, int write,
-				void *buffer, size_t *lenp, loff_t *ppos)
+				void __user *buffer, size_t *lenp, loff_t *ppos)
 {
 	struct nss_top_instance *nss_top = &nss_top_main;
 	struct nss_ctx_instance *nss_ctx;
@@ -456,7 +458,7 @@ static int nss_rps_cfg_handler(compat_const struct ctl_table *ctl, int write,
  *	Configure NSS rps_hash_bitmap
  */
 static int nss_rps_hash_bitmap_cfg_handler(compat_const struct ctl_table *ctl, int write,
-				void *buffer, size_t *lenp, loff_t *ppos)
+				void __user *buffer, size_t *lenp, loff_t *ppos)
 {
 	struct nss_top_instance *nss_top = &nss_top_main;
 	struct nss_ctx_instance *nss_ctx __attribute__((unused)) = &nss_top->nss[0];
@@ -519,7 +521,7 @@ static int nss_rps_hash_bitmap_cfg_handler(compat_const struct ctl_table *ctl, i
  *	Configure NSS rps_pri_map
  */
 static int nss_rps_pri_map_cfg_handler(compat_const struct ctl_table *ctl, int write,
-				void *buffer, size_t *lenp, loff_t *ppos)
+				void __user *buffer, size_t *lenp, loff_t *ppos)
 {
 	struct nss_top_instance *nss_top = &nss_top_main;
 	struct nss_ctx_instance *nss_ctx = &nss_top->nss[0];
@@ -527,10 +529,10 @@ static int nss_rps_pri_map_cfg_handler(compat_const struct ctl_table *ctl, int w
 	int ret, ret_pri_map;
 	struct nss_rps_pri_map_parse_data out, current_state;
 	if (!write) {
-		return nss_rps_pri_map_print(buffer, lenp, ppos, nss_rps_pri_map);
+		return nss_rps_pri_map_print(ctl, buffer, lenp, ppos, nss_rps_pri_map);
 	}
 
-	ret = nss_rps_pri_map_parse(buffer, lenp, &out);
+	ret = nss_rps_pri_map_parse(ctl, buffer, lenp, ppos, &out);
 
 	if (ret != NSS_SUCCESS) {
 		nss_rps_pri_map_usage();
@@ -574,36 +576,6 @@ static struct ctl_table nss_rps_table[] = {
 	}
 };
 
-
-#if (LINUX_VERSION_CODE < KERNEL_VERSION(6, 6, 0))
-static struct ctl_table nss_rps_dir[] = {
-	{
-		.procname		= "rps",
-		.mode			= 0555,
-		.child			= nss_rps_table,
-	},
-	{ }
-};
-
-static struct ctl_table nss_rps_root_dir[] = {
-	{
-		.procname		= "nss",
-		.mode			= 0555,
-		.child			= nss_rps_dir,
-	},
-	{ }
-};
-
-static struct ctl_table nss_rps_root[] = {
-	{
-		.procname		= "dev",
-		.mode			= 0555,
-		.child			= nss_rps_root_dir,
-	},
-	{ }
-};
-#endif
-
 static struct ctl_table_header *nss_rps_header;
 
 /*
@@ -640,11 +612,7 @@ void nss_rps_register_sysctl(void)
 	/*
 	 * Register sysctl table.
 	 */
-#if (LINUX_VERSION_CODE < KERNEL_VERSION(6, 6, 0))
-	nss_rps_header = register_sysctl_table(nss_rps_root);
-#else
 	nss_rps_header = register_sysctl("dev/nss/rps", nss_rps_table);
-#endif
 }
 
 /*

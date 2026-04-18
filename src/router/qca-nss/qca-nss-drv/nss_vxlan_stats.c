@@ -1,12 +1,9 @@
 /*
  **************************************************************************
  * Copyright (c) 2019, The Linux Foundation. All rights reserved.
- * Copyright (c) 2024 Qualcomm Innovation Center, Inc. All rights reserved.
- *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
- *
  * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
  * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
  * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
@@ -108,15 +105,6 @@ void nss_vxlan_stats_sync(struct nss_ctx_instance *nss_ctx, struct nss_vxlan_msg
 	if_stats[NSS_STATS_NODE_TX_BYTES] += msg_stats->node_stats.tx_bytes;
 
 	spin_unlock_bh(&nss_top->stats_lock);
-}
-
-/*
- * nss_vxlan_stats_write()
- *	Write VXLAN statistics
- */
-static ssize_t nss_vxlan_stats_write(struct file *fp, const char __user *ubuf, size_t sz, loff_t *ppos)
-{
-	return -ESRCH;
 }
 
 /*

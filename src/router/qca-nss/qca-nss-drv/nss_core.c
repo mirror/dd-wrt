@@ -1,7 +1,7 @@
 /*
  **************************************************************************
  * Copyright (c) 2013-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022-2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
@@ -53,22 +53,25 @@
 #define NSS_CORE_JUMBO_LINEAR_BUF_SIZE 128
 
 #if (NSS_SKB_REUSE_SUPPORT == 1)
+
 static atomic_t max_reuse = ATOMIC_INIT(PAGE_SIZE);
+
 #endif /* NSS_SKB_REUSE_SUPPORT */
 
 int disable_nss = 0;
 module_param(disable_nss, int, S_IRUGO);
 MODULE_PARM_DESC(disable_nss, "disable nss and use driver as dummy");
 
-int max_ipv4_conn;
+
+int max_ipv4_conn = 0; // NSS_DEFAULT_NUM_CONN;
 module_param(max_ipv4_conn, int, S_IRUGO);
 MODULE_PARM_DESC(max_ipv4_conn, "Max number of IPv4 connections");
 
-int max_ipv6_conn;
+int max_ipv6_conn = 0; // NSS_DEFAULT_NUM_CONN;
 module_param(max_ipv6_conn, int, S_IRUGO);
 MODULE_PARM_DESC(max_ipv6_conn, "Max number of IPv6 connections");
 
-bool pn_mq_en = false;
+bool pn_mq_en = true;
 module_param(pn_mq_en, bool, S_IRUGO);
 MODULE_PARM_DESC(pn_mq_en, "Enable pnode ingress QoS");
 
@@ -79,8 +82,6 @@ MODULE_PARM_DESC(pn_qlimits, "Queue limit per queue");
 static int qos_mem_size = 0;
 module_param(qos_mem_size, int, S_IRUGO);
 MODULE_PARM_DESC(qos_mem_size, "QoS memory size");
-
-static int nss_bootstate = 0;
 
 /*
  * Atomic variables to control jumbo_mru & paged_mode
@@ -440,9 +441,9 @@ void nss_core_handle_nss_status_pkt(struct nss_ctx_instance *nss_ctx, struct sk_
 
 	cb = nss_ctx->nss_rx_interface_handlers[nss_if].cb;
 	app_data = nss_ctx->nss_rx_interface_handlers[nss_if].app_data;
-
+	
 	if (!cb) {
-		nss_warning("%px: Callback not registered for interface %d", nss_ctx, nss_if);
+		nss_warning("%px: Callback not registered for interface %d %d %d", nss_ctx, nss_if, NSS_EDMA_LITE_INTERFACE, NSS_UDP_ST_INTERFACE);
 		return;
 	}
 
@@ -547,6 +548,7 @@ static void nss_get_ddr_info(struct nss_mmu_ddr_info *mmu, char *name)
 	 * 3)	stating_address DDR_size	# 64-bit each; total 4 words
 	 */
 	node = of_find_node_by_name(NULL, name);
+	
 	if (node) {
 		int isize = 0;
 		int n_items;
@@ -628,7 +630,7 @@ static void nss_send_ddr_info(struct nss_ctx_instance *nss_own)
 	struct nss_n2h_msg nnm;
 	struct nss_cmn_msg *ncm = &nnm.cm;
 	uint32_t ret;
-	nss_info("%px: send DDR info\n", nss_own);
+	nss_info_always("%px: send DDR info\n", nss_own);
 
 	nss_cmn_msg_init(ncm, NSS_N2H_INTERFACE, NSS_TX_DDR_INFO_VIA_N2H_CFG,
 			sizeof(struct nss_mmu_ddr_info), NULL, NULL);
@@ -1098,17 +1100,12 @@ static inline void nss_core_rx_pbuf(struct nss_ctx_instance *nss_ctx, struct n2h
  */
 static inline void nss_core_set_skb_classify(struct sk_buff *nbuf)
 {
-#if (LINUX_VERSION_CODE < KERNEL_VERSION(6, 6, 0))
 #ifdef CONFIG_NET_CLS_ACT
 #if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 4, 0))
-	nbuf->tc_verd = SET_TC_NCLS_NSS(nbuf->tc_verd);
+		nbuf->tc_verd = SET_TC_NCLS_NSS(nbuf->tc_verd);
 #else
-	skb_set_tc_classify_offload(nbuf);
+		skb_set_tc_classify_offload(nbuf);
 #endif
-#endif
-#else
-	nss_warning("%px:API not supported on 6.6\n", nbuf);
-	nss_assert(0);
 #endif
 }
 
@@ -1801,7 +1798,6 @@ static void nss_core_init_nss(struct nss_ctx_instance *nss_ctx, struct nss_if_me
 		nss_ipv6_conn_cfg = max_ipv6_conn;
 		nss_ipv6_update_conn_count(max_ipv6_conn);
 #endif
-
 		if (mem_profile==2) {
 		/*
 		 * For low memory profiles, restrict the number of empty buffer pool
@@ -2247,20 +2243,20 @@ static inline void nss_core_handle_tx_unblocked(struct nss_ctx_instance *nss_ctx
 	 */
 	nss_hal_disable_interrupt(nss_ctx, nss_ctx->int_ctx[0].shift_factor, NSS_N2H_INTR_TX_UNBLOCKED);
 }
+static int nss_bootstate = 0;
 
 void nss_bootwait(void)
 {
-	int dead = 10 * 10;
+	int dead = 10*10;
 #if (NSS_MAX_CORES > 1)
-	while (nss_bootstate < 2 && dead-- > 0)
+	while(nss_bootstate<2 && dead-- > 0)
 #else
-	while (!nss_bootstate && dead-- > 0)
+	while(!nss_bootstate && dead-- > 0)
 #endif
 	{
 		msleep(100);
 	}
 }
-
 /*
  * nss_core_handle_cause_nonqueue()
  *	Handle non-queue interrupt causes (e.g. empty buffer SOS, Tx unblocked)
@@ -2287,16 +2283,12 @@ static void nss_core_handle_cause_nonqueue(struct int_ctx_instance *int_ctx, uin
 	 * of processor will prevent any excessive penalties.
 	 */
 	if (unlikely(nss_ctx->state == NSS_CORE_STATE_UNINITIALIZED)) {
-#ifdef NSS_DRV_C2C_ENABLE
 		struct nss_top_instance *nss_top = NULL;
-#endif
 		nss_core_init_nss(nss_ctx, if_map);
 		nss_send_ddr_info(nss_ctx);
 
 		dev_info(nss_ctx->dev, "NSS core %d booted successfully\n", nss_ctx->id);
-#ifdef NSS_DRV_C2C_ENABLE
 		nss_top = nss_ctx->nss_top;
-#endif
 
 #ifdef NSS_DRV_C2C_ENABLE
 #if (NSS_MAX_CORES > 1)
@@ -2513,8 +2505,7 @@ int nss_core_handle_napi(struct napi_struct *napi, int budget)
 		int_ctx->cause |= int_cause;
 	} while ((int_ctx->cause) && (budget));
 
-	if (int_ctx->cause == 0) {
-		napi_complete(napi);
+	if (int_ctx->cause == 0 && napi_complete(napi)) {
 
 		/*
 		 * Re-enable any further interrupt from this IRQ
@@ -2554,8 +2545,8 @@ int nss_core_handle_napi_sdma(struct napi_struct *napi, int budget)
 		ctrl->consumer[0].dispatch.fp(ctrl->consumer[0].arg.kp);
 
 #if !defined(NSS_HAL_IPQ806X_SUPPORT)
-	napi_complete(napi);
-	enable_irq(int_ctx->irq);
+	if (napi_complete(napi))
+		enable_irq(int_ctx->irq);
 #endif
 	return 0;
 }
@@ -2570,10 +2561,8 @@ int nss_core_handle_napi_queue(struct napi_struct *napi, int budget)
 	struct int_ctx_instance *int_ctx = container_of(napi, struct int_ctx_instance, napi);
 
 	processed = nss_core_handle_cause_queue(int_ctx, int_ctx->cause, budget);
-	if (processed < budget) {
-		napi_complete(napi);
+	if (processed < budget && napi_complete(napi))
 		enable_irq(int_ctx->irq);
-	}
 
 	return processed;
 }
@@ -2587,8 +2576,8 @@ int nss_core_handle_napi_non_queue(struct napi_struct *napi, int budget)
 	struct int_ctx_instance *int_ctx = container_of(napi, struct int_ctx_instance, napi);
 
 	nss_core_handle_cause_nonqueue(int_ctx, int_ctx->cause, 0);
-	napi_complete(napi);
-	enable_irq(int_ctx->irq);
+	if (napi_complete(napi))
+		enable_irq(int_ctx->irq);
 	return 0;
 }
 
@@ -2713,13 +2702,9 @@ static inline bool nss_core_skb_can_reuse(struct nss_ctx_instance *nss_ctx,
 
 	if (unlikely(irqs_disabled()))
 		return false;
-#if (LINUX_VERSION_CODE < KERNEL_VERSION(6, 6, 0))
-	if (unlikely(skb_shinfo(nbuf)->tx_flags & SKBTX_DEV_ZEROCOPY))
+
+	if (unlikely(skb_shinfo(nbuf)->flags & SKBFL_ZEROCOPY_ENABLE))
 		return false;
-#else
-	if (unlikely(skb_shinfo(nbuf)->tx_flags & SKBFL_ZEROCOPY_ENABLE))
-		return false;
-#endif
 
 	if (unlikely(skb_is_nonlinear(nbuf)))
 		return false;
@@ -2745,16 +2730,6 @@ static inline bool nss_core_skb_can_reuse(struct nss_ctx_instance *nss_ctx,
 
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(3, 6, 0))
 	if (unlikely(skb_pfmemalloc(nbuf)))
-		return false;
-#endif
-
-	/*
-	 * TODO: This check is only validated on kernel 6.6
-	 * This needs to be validated on prior linux
-	 * kernel versions.
-	 */
-#ifdef CONFIG_SKB_EXTENSIONS
-	if (nbuf->active_extensions)
 		return false;
 #endif
 

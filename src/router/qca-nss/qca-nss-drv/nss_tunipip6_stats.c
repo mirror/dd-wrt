@@ -1,8 +1,7 @@
 /*
  **************************************************************************
  * Copyright (c) 2020, The Linux Foundation. All rights reserved.
- * Copyright (c) 2024 Qualcomm Innovation Center, Inc. All rights reserved.
- *
+
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
  * copyright notice and this permission notice appear in all copies.
@@ -83,14 +82,14 @@ static ssize_t nss_tunipip6_stats_read(struct file *fp, char __user *ubuf, size_
 		len += nss_stats_fill_common_stats(if_num, NSS_STATS_SINGLE_INSTANCE, buf, len, size - len, "tunipip6");
 	}
 
-	bytes_read = simple_read_from_buffer(ubuf, sz, ppos, buf, len);
-	vfree(buf);
-	return bytes_read;
+        bytes_read = simple_read_from_buffer(ubuf, sz, ppos, buf, len);
+        vfree(buf);
+        return bytes_read;
 }
 
 /*
  * nss_tunipip6_stats_sync()
- *	Update tunipip6 common node statistics.
+ * 	Update tunipip6 common node statistics.
  */
 void nss_tunipip6_stats_sync(struct nss_ctx_instance *nss_ctx, struct nss_tunipip6_msg *ntm)
 {
@@ -112,15 +111,6 @@ void nss_tunipip6_stats_sync(struct nss_ctx_instance *nss_ctx, struct nss_tunipi
 
 	spin_unlock_bh(&nss_top->stats_lock);
 
-}
-
-/*
- * nss_tunipip6_stats_write()
- *	Write TUNIPIP6 statistics
- */
-static ssize_t nss_tunipip6_stats_write(struct file *fp, const char __user *ubuf, size_t sz, loff_t *ppos)
-{
-	return -ESRCH;
 }
 
 /*

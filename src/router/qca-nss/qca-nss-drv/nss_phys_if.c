@@ -87,7 +87,7 @@ static void nss_phys_if_msg_handler(struct nss_ctx_instance *nss_ctx, struct nss
 	}
 
 	if (nss_cmn_get_msg_len(ncm) > sizeof(struct nss_phys_if_msg)) {
-		nss_warning("%px: message length too big: %d", nss_ctx, nss_cmn_get_msg_len(ncm));
+		nss_warning("%px: message length too big: %d vs %s", nss_ctx, nss_cmn_get_msg_len(ncm), sizeof(struct nss_phys_if_msg));
 		return;
 	}
 
@@ -326,7 +326,7 @@ nss_tx_status_t nss_phys_if_open(struct nss_ctx_instance *nss_ctx, uint32_t tx_d
 	struct nss_if_open *nio;
 
 	NSS_VERIFY_CTX_MAGIC(nss_ctx);
-	nss_info("%px: Phys If Open, id:%d, TxDesc: %x, RxDesc: %x\n", nss_ctx, if_num, tx_desc_ring, rx_desc_ring);
+	nss_info_always("%px: Phys If Open, id:%d, TxDesc: %x, RxDesc: %x, mode %x\n", nss_ctx, if_num, tx_desc_ring, rx_desc_ring, mode);
 
 	nss_cmn_msg_init(&nim.cm, if_num, NSS_PHYS_IF_OPEN,
 			sizeof(struct nss_if_open), nss_phys_if_callback, NULL);

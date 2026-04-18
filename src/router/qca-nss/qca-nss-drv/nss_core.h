@@ -1,7 +1,7 @@
 /*
  **************************************************************************
  * Copyright (c) 2013-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022, 2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
@@ -54,7 +54,7 @@
 #define nss_info_always(s, ...) pr_alert(s, ##__VA_ARGS__)
 
 #if (NSS_DEBUG_LEVEL < 1)
-#define nss_assert(fmt, args...) do {} while(0)
+#define nss_assert(fmt, args...)
 #else
 #define nss_assert(c) if (!(c)) { printk(KERN_INFO "error on %s:%d", __func__,__LINE__); }
 #endif
@@ -72,19 +72,19 @@
  * Statically compile messages at different levels
  */
 #if (NSS_DEBUG_LEVEL < 2)
-#define nss_warning(s, ...) do {} while(0)
+#define nss_warning(s, ...)
 #else
 #define nss_warning(s, ...) pr_warn("%s[%d]:" s, __FUNCTION__, __LINE__, ##__VA_ARGS__)
 #endif
 
 #if (NSS_DEBUG_LEVEL < 3)
-#define nss_info(s, ...) do {} while(0)
+#define nss_info(s, ...)
 #else
 #define nss_info(s, ...) pr_notice("%s[%d]:" s, __FUNCTION__, __LINE__, ##__VA_ARGS__)
 #endif
 
 #if (NSS_DEBUG_LEVEL < 4)
-#define nss_trace(s, ...) do {} while(0)
+#define nss_trace(s, ...)
 #else
 #define nss_trace(s, ...) pr_info("%s[%d]:" s, __FUNCTION__, __LINE__, ##__VA_ARGS__)
 #endif
@@ -96,14 +96,12 @@
 #define NSS_PKT_STATS_ADD(x, i) nss_pkt_stats_add((x), (i))
 #define NSS_PKT_STATS_SUB(x, i) nss_pkt_stats_sub((x), (i))
 #define NSS_PKT_STATS_READ(x) nss_pkt_stats_read(x)
-#define NSS_PKT_STATS_WRITE(x, i) nss_pkt_stats_write(x, (i))
 #else
 #define NSS_PKT_STATS_INC(x)
 #define NSS_PKT_STATS_DEC(x)
 #define NSS_PKT_STATS_ADD(x, i)
 #define NSS_PKT_STATS_SUB(x, i)
 #define NSS_PKT_STATS_READ(x)
-#define NSS_PKT_STATS_WRITE(x, i)
 #endif
 
 /*
@@ -125,18 +123,14 @@
 #define h2n_hlos_index_to_dma(_if_map_addr, _index) (_if_map_addr) + h2n_hlos_index_offset + (sizeof(uint32_t) * (_index))
 #define n2h_hlos_index_to_dma(_if_map_addr, _index) (_if_map_addr) + n2h_hlos_index_offset + (sizeof(uint32_t) * (_index))
 
-#if (LINUX_VERSION_CODE < KERNEL_VERSION(6, 6, 0))
-#define nss_ioremap ioremap_nocache
-#else
-#define nss_ioremap ioremap
-#endif
-
 /*
  * Cache operation
-*/
+ */
+ 
 #define NSS_CORE_DSB() dsb(sy)
 #define NSS_CORE_DMA_CACHE_MAINT(dev, start, size, dir) BUILD_BUG_ON_MSG(1, \
 	"NSS_CORE_DMA_CACHE_MAINT is deprecated. Fix the code to use correct dma_sync_* API")
+
 #define NSS_DEVICE_IF_START NSS_PHYSICAL_IF_START
 
 #define NSS_IS_IF_TYPE(type, if_num) ((if_num >= NSS_##type##_IF_START) && (if_num < (NSS_##type##_IF_START + NSS_MAX_##type##_INTERFACES)))
@@ -218,7 +212,6 @@
 #define NSS_MAX_SERVICE_CODE 256
 
 extern int mem_profile;
-
 /*
  * Interrupt cause processing weights
  */
@@ -755,14 +748,6 @@ static inline uint64_t nss_pkt_stats_read(atomic64_t *stat)
 	return atomic64_read(stat);
 }
 
-/*
- * nss_pkt_stats_write()
- */
-static inline void nss_pkt_stats_write(atomic64_t *stat, uint32_t pkt)
-{
-	atomic64_set(stat, pkt);
-}
-
 #endif
 
 /*
@@ -1003,6 +988,8 @@ void nss_core_update_max_ipv4_conn(int conn);
 void nss_core_update_max_ipv6_conn(int conn);
 void nss_core_update_qos_mem_size(int size);
 int nss_core_get_qos_mem_size(void);
+void nss_bootwait(void);
+
 extern void nss_core_register_subsys_dp(struct nss_ctx_instance *nss_ctx, uint32_t if_num,
 					nss_phys_if_rx_callback_t cb,
 					nss_phys_if_rx_ext_data_callback_t ext_cb,
@@ -1083,7 +1070,5 @@ extern void nss_ppe_free(void);
 extern nss_tx_status_t nss_n2h_cfg_empty_pool_size(struct nss_ctx_instance *nss_ctx, uint32_t pool_sz);
 extern nss_tx_status_t nss_n2h_paged_buf_pool_init(struct nss_ctx_instance *nss_ctx);
 extern nss_tx_status_t nss_n2h_cfg_qos_mem_size(struct nss_ctx_instance *nss_ctx, uint32_t pool_sz);
-
-void nss_bootwait(void);
 
 #endif /* __NSS_CORE_H */

@@ -461,7 +461,7 @@ static struct nss_platform_data *__nss_hal_of_get_pdata(struct platform_device *
 	npd->nphys = res_nphys.start;
 	npd->vphys = res_vphys.start;
 
-	npd->nmap = nss_ioremap(npd->nphys, resource_size(&res_nphys));
+	npd->nmap = ioremap(npd->nphys, resource_size(&res_nphys));
 	if (!npd->nmap) {
 		nss_info_always("%px: nss%d: ioremap() fail for nphys\n", nss_ctx, nss_ctx->id);
 		goto out;
@@ -713,7 +713,7 @@ static int __nss_hal_common_reset(struct platform_device *nss_dev)
 	}
 	of_node_put(cmn);
 
-	fpb_base = nss_ioremap(res_nss_fpb_base.start, resource_size(&res_nss_fpb_base));
+	fpb_base = ioremap(res_nss_fpb_base.start, resource_size(&res_nss_fpb_base));
 	if (!fpb_base) {
 		pr_err("%px: ioremap fail for nss_fpb_base\n", nss_dev);
 		return -EFAULT;
@@ -1185,7 +1185,10 @@ static int __nss_hal_request_irq(struct nss_ctx_instance *nss_ctx, struct nss_pl
 	}
 
 	int_ctx->irq = npd->irq[irq_num];
-	netif_napi_add_weight(&nss_ctx->napi_ndev, &int_ctx->napi, nss_core_handle_napi, 64);
+
+	init_dummy_netdev(&nss_ctx->napi_ndev);
+	snprintf(nss_ctx->napi_ndev.name, sizeof(nss_ctx->napi_ndev.name), "%s%d", "nss-drv", int_ctx->irq);
+	netif_threaded_napi_add_weight(&nss_ctx->napi_ndev, &int_ctx->napi, nss_core_handle_napi, 64);
 
 	return 0;
 }

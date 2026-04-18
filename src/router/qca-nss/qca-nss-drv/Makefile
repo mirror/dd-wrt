@@ -3,7 +3,9 @@
 # ###################################################
 
 obj-m += qca-nss-drv-$(SoC).o
+#obj-m += qca-nss-dummy.o
 
+#qca-nss-dummy-obj := qca_nss_dummy.os
 #
 # Regular NSS path
 #
@@ -122,13 +124,11 @@ qca-nss-drv-$(SoC)-objs += \
 endif
 endif
 
-ifeq ($(SoC),$(filter $(SoC),ipq806x))
 ifneq "$(NSS_DRV_TSTAMP_ENABLE)" "n"
 ccflags-y += -DNSS_DRV_TSTAMP_ENABLE
 qca-nss-drv-$(SoC)-objs += \
 			 nss_tstamp.o \
 			 nss_tstamp_stats.o
-endif
 endif
 
 ifneq "$(NSS_DRV_GRE_ENABLE)" "n"
@@ -257,14 +257,12 @@ qca-nss-drv-$(SoC)-objs += \
 			 nss_rmnet_rx_stats.o
 endif
 
-ifeq ($(SoC),$(filter $(SoC),ipq806x))
 ifneq "$(NSS_DRV_PORTID_ENABLE)" "n"
 ccflags-y += -DNSS_DRV_PORTID_ENABLE
 qca-nss-drv-$(SoC)-objs += \
 			 nss_portid.o \
 			 nss_portid_log.o \
 			 nss_portid_stats.o
-endif
 endif
 
 ifneq "$(NSS_DRV_IGS_ENABLE)" "n"
@@ -274,13 +272,11 @@ qca-nss-drv-$(SoC)-objs += \
 			 nss_igs_stats.o
 endif
 
-ifeq ($(SoC),$(filter $(SoC),ipq806x))
 ifneq "$(NSS_DRV_OAM_ENABLE)" "n"
 ccflags-y += -DNSS_DRV_OAM_ENABLE
 qca-nss-drv-$(SoC)-objs += \
 			 nss_oam.o \
 			 nss_oam_log.o
-endif
 endif
 
 ifneq "$(NSS_DRV_CLMAP_ENABLE)" "n"
@@ -356,13 +352,16 @@ endif
 
 ifneq "$(NSS_DRV_WIFIOFFLOAD_ENABLE)" "n"
 ccflags-y += -DNSS_DRV_WIFIOFFLOAD_ENABLE
-ifeq ($(SoC),$(filter $(SoC),ipq806x))
+ifneq "$(NSS_DRV_WIFI_LEGACY_ENABLE)" "n"
+ccflags-y += -DNSS_DRV_WIFI_LEGACY_ENABLE
 qca-nss-drv-$(SoC)-objs += \
 			nss_wifi.o \
 			nss_wifi_log.o \
 			nss_wifi_stats.o
+ifeq ($(SoC),$(filter $(SoC),ipq806x))
 ccflags-y += -DNSS_HAL_IPQ806x_SUPPORT
-else
+endif
+endif
 qca-nss-drv-$(SoC)-objs += \
 			nss_wifi_vdev.o \
 			nss_wifili.o \
@@ -370,7 +369,6 @@ qca-nss-drv-$(SoC)-objs += \
 			nss_wifili_stats.o \
 			nss_wifili_strings.o \
 			nss_wifi_mac_db.o
-endif
 endif
 
 ifneq "$(NSS_DRV_VLAN_ENABLE)" "n"
@@ -565,6 +563,7 @@ ccflags-y += -I$(obj)/nss_hal/ipq60xx -DNSS_HAL_IPQ60XX_SUPPORT -DNSS_MULTI_H2N_
 endif
 
 ifeq ($(SoC),$(filter $(SoC),ipq50xx ipq50xx_64))
+ccflags-y += -DNSS_HAL_IPQ50XX_SUPPORT
 qca-nss-drv-$(SoC)-objs += nss_data_plane/nss_data_plane.o \
 		    nss_hal/ipq50xx/nss_hal_pvt.o \
 		    nss_data_plane/hal/nss_ipq50xx.o
@@ -598,10 +597,10 @@ endif
 ccflags-y += -I$(obj)/nss_hal/ipq50xx -DNSS_HAL_IPQ50XX_SUPPORT -DNSS_MULTI_H2N_DATA_RING_SUPPORT
 endif
 
-ccflags-y += -I$(obj)/nss_hal/include -I$(obj)/nss_data_plane/include -I$(obj)/exports -DNSS_DEBUG_LEVEL=0 -DNSS_PKT_STATS_ENABLED=1
+ccflags-y += -I$(obj)/nss_hal/include -I$(obj)/nss_data_plane/include -I$(obj)/exports -DNSS_PKT_STATS_ENABLED=1
 
 ccflags-y += -I$(obj)/nss_data_plane/hal/include
-ccflags-y += -DNSS_PM_DEBUG_LEVEL=0 -DNSS_SKB_REUSE_SUPPORT=1
+ccflags-y += -DNSS_PM_DEBUG_LEVEL=0 -DNSS_SKB_REUSE_SUPPORT=0
 ccflags-y += -Wall
 
 KERNELVERSION := $(word 1, $(subst ., ,$(KERNELVERSION))).$(word 2, $(subst ., ,$(KERNELVERSION)))
@@ -636,7 +635,7 @@ endif
 
 ccflags-y += -include $(obj)/compat.h
 
-ccflags-y += $(NSS_CCFLAGS) -DNSS_FIRMWARE_VERSION_12_5
+ccflags-y += $(NSS_CCFLAGS)
 
 export NSS_CCFLAGS
 

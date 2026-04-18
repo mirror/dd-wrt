@@ -75,7 +75,7 @@ struct nss_phys_if_estats {
 	 * On IPQ50xx, we rely on the SSDK to pull the mmc stats.
 	 * The FAL layer does not do this on IPQ806x.
 	 */
-#if defined(NSS_HAL_IPQ806X_SUPPORT)
+#if defined(NSS_HAL_IPQ806X_SUPPORT) || defined(NSS_HAL_IPQ50XX_SUPPORT)
 	uint32_t mmc_rx_overflow_errors;
 					/**< Number of RX overflow errors */
 	uint32_t mmc_rx_watchdog_timeout_errors;

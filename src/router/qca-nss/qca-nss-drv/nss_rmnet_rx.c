@@ -571,7 +571,7 @@ nss_tx_status_t nss_rmnet_rx_tx_buf(struct nss_rmnet_rx_handle *handle,
 		return NSS_TX_FAILURE_BAD_PARAM;
 	}
 
-	nss_trace("%px: RmnetRx packet, if_num:%d, skb:%px", nss_ctx, if_num, skb);
+	nss_info("%px: RmnetRx packet, if_num:%d, skb:%px", nss_ctx, if_num, skb);
 
 	/*
 	 * Sanity check the SKB to ensure that it's suitable for us

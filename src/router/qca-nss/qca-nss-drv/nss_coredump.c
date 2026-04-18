@@ -1,7 +1,7 @@
 /*
  **************************************************************************
  * Copyright (c) 2015-2020, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022,2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
@@ -25,11 +25,10 @@
 #include "nss_hal.h"
 #include "nss_log.h"
 #include <linux/kernel.h>
-
-#if (LINUX_VERSION_CODE < KERNEL_VERSION(6, 6, 0))
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 14, 0))
 #include <linux/notifier.h>	/* for panic_notifier_list */
 #else
-#include <linux/panic_notifier.h>	/* for panic_notifier_list */
+#include <linux/panic_notifier.h>
 #endif
 #include <linux/jiffies.h>	/* for time */
 #include "nss_tx_rx_common.h"

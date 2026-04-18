@@ -1,12 +1,9 @@
 /*
  **************************************************************************
  * Copyright (c) 2019, 2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2024 Qualcomm Innovation Center, Inc. All rights reserved.
- *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
- *
  * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
  * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
  * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
@@ -100,15 +97,6 @@ static ssize_t nss_gre_redir_lag_us_cmn_stats_read(struct file *fp, char __user 
 	data->index++;
 	kfree(lbuf);
 	return bytes_read;
-}
-
-/*
- * nss_gre_redir_lag_us_cmn_stats_write()
- *	Write GRE_REDIR_LAG_US_CMN statistics
- */
-static ssize_t nss_gre_redir_lag_us_cmn_stats_write(struct file *fp, const char __user *ubuf, size_t sz, loff_t *ppos)
-{
-	return -ESRCH;
 }
 
 /*
@@ -235,3 +223,4 @@ int nss_gre_redir_lag_us_stats_register_notifier(struct notifier_block *nb)
 	return atomic_notifier_chain_register(&nss_gre_redir_lag_us_stats_notifier, nb);
 }
 EXPORT_SYMBOL(nss_gre_redir_lag_us_stats_register_notifier);
+

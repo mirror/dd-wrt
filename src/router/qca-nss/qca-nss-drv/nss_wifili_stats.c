@@ -1,12 +1,9 @@
 /*
  **************************************************************************
  * Copyright (c) 2017-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2024 Qualcomm Innovation Center, Inc. All rights reserved.
- *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
- *
  * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
  * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
  * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
@@ -41,7 +38,7 @@ struct nss_wifili_soc_stats soc_stats[NSS_WIFILI_MAX_SOC_NUM];
 
 /*
  * nss_wifili_target_type_string()
- *	Convert Target Type Integer to String
+ * 	Convert Target Type Integer to String
  */
 void nss_wifili_target_type_to_string(uint32_t target_type, char *target_type_str)
 {
@@ -67,7 +64,7 @@ void nss_wifili_target_type_to_string(uint32_t target_type, char *target_type_st
 		break;
 	default :
 		snprintf(target_type_str, NSS_WIFILI_SOC_STRING_SIZE_MAX, "Unknown");
-	}
+        }
 }
 
 /*
@@ -250,15 +247,6 @@ static ssize_t nss_wifili_stats_read(struct file *fp, char __user *ubuf, size_t 
 	kfree(lbuf);
 
 	return bytes_read;
-}
-
-/*
- * nss_wifili_stats_write()
- *	Write WIFILI statistics
- */
-static ssize_t nss_wifili_stats_write(struct file *fp, const char __user *ubuf, size_t sz, loff_t *ppos)
-{
-	return -ESRCH;
 }
 
 /*
