@@ -56,11 +56,15 @@
 static atomic_t max_reuse = ATOMIC_INIT(PAGE_SIZE);
 #endif /* NSS_SKB_REUSE_SUPPORT */
 
-static int max_ipv4_conn = NSS_DEFAULT_NUM_CONN;
+int disable_nss = 0;
+module_param(disable_nss, int, S_IRUGO);
+MODULE_PARM_DESC(disable_nss, "disable nss and use driver as dummy");
+
+int max_ipv4_conn;
 module_param(max_ipv4_conn, int, S_IRUGO);
 MODULE_PARM_DESC(max_ipv4_conn, "Max number of IPv4 connections");
 
-static int max_ipv6_conn = NSS_DEFAULT_NUM_CONN;
+int max_ipv6_conn;
 module_param(max_ipv6_conn, int, S_IRUGO);
 MODULE_PARM_DESC(max_ipv6_conn, "Max number of IPv6 connections");
 
@@ -145,7 +149,7 @@ int nss_core_get_max_reuse(void)
  */
 uint32_t nss_core_get_min_reuse(struct nss_ctx_instance *nss_ctx)
 {
-	NSS_VERIFY_CTX_MAGIC(nss_ctx);
+//	NSS_VERIFY_CTX_MAGIC(nss_ctx);
 	return nss_ctx->max_buf_size;
 }
 #endif /* NSS_SKB_REUSE_SUPPORT */
@@ -523,6 +527,7 @@ static void nss_get_ddr_info(struct nss_mmu_ddr_info *mmu, char *name)
 	long cached;
 	struct sysinfo vals;
 	struct device_node *node;
+	const __be32 *ppp;
 
 	si_meminfo(&vals);
 #if (LINUX_VERSION_CODE < KERNEL_VERSION(4, 5, 0))
@@ -545,10 +550,13 @@ static void nss_get_ddr_info(struct nss_mmu_ddr_info *mmu, char *name)
 	if (node) {
 		int isize = 0;
 		int n_items;
-		const __be32 *ppp = (__be32 *)of_get_property(node, "reg", &n_items);
+		ppp = (__be32 *)of_get_property(node, "linux,usable-memory", &n_items);
+		if (ppp == NULL) {
+			ppp = (__be32 *)of_get_property(node, "reg", &n_items);
+		}
 
 		n_items /= sizeof(ppp[0]);
-		nss_info("node size %d # items %d\n",
+		nss_info_always("node size %d # items %d\n",
 				of_n_size_cells(node), n_items);
 		if (ppp) {
 			if (n_items & 1) {	/* case 1 */
@@ -575,7 +583,7 @@ case3:
 				n_items = 0;
 			if (n_items) {
 				of_node_put(node);
-				nss_info("%s: %x %u (avl %u) items %d active_cores %d\n",
+				nss_info_always("%s: %x %u (avl %u) items %d active_cores %d\n",
 					name, mmu->start_address, mmu->ddr_size,
 					avail_ddr, n_items, mmu->num_active_cores);
 				/*
@@ -585,6 +593,7 @@ case3:
 				if (avail_ddr > mmu->ddr_size)
 					mmu->ddr_size = (avail_ddr + (63 << 20))
 							& (~63 << 20);
+				nss_info_always("avail_ddr %u, ddr size %u\n", avail_ddr, mmu->ddr_size);
 				return;
 			}
 		}
@@ -1793,7 +1802,7 @@ static void nss_core_init_nss(struct nss_ctx_instance *nss_ctx, struct nss_if_me
 		nss_ipv6_update_conn_count(max_ipv6_conn);
 #endif
 
-#ifdef NSS_MEM_PROFILE_LOW
+		if (mem_profile==2) {
 		/*
 		 * For low memory profiles, restrict the number of empty buffer pool
 		 * size to NSS_LOW_MEM_EMPTY_POOL_BUF_SZ. Overwrite the default number
@@ -1803,7 +1812,7 @@ static void nss_core_init_nss(struct nss_ctx_instance *nss_ctx, struct nss_if_me
 		if (ret != NSS_TX_SUCCESS) {
 			nss_warning("%px: Failed to update empty buffer pool config\n", nss_ctx);
 		}
-#endif
+		}
 
 #ifdef NSS_DRV_SHAPER_ENABLE
 		ret = nss_n2h_cfg_qos_mem_size(nss_ctx, qos_mem_size);

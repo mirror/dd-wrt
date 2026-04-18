@@ -636,7 +636,7 @@ endif
 
 ccflags-y += -include $(obj)/compat.h
 
-ccflags-y += $(NSS_CCFLAGS)
+ccflags-y += $(NSS_CCFLAGS) -DNSS_FIRMWARE_VERSION_12_5
 
 export NSS_CCFLAGS
 

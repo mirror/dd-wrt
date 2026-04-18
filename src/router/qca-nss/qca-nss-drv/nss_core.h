@@ -56,7 +56,7 @@
 #if (NSS_DEBUG_LEVEL < 1)
 #define nss_assert(fmt, args...) do {} while(0)
 #else
-#define nss_assert(c) if (!(c)) { BUG_ON(!(c)); }
+#define nss_assert(c) if (!(c)) { printk(KERN_INFO "error on %s:%d", __func__,__LINE__); }
 #endif
 
 #if defined(CONFIG_DYNAMIC_DEBUG)
@@ -216,6 +216,8 @@
  * Maximum number of service code NSS supports
  */
 #define NSS_MAX_SERVICE_CODE 256
+
+extern int mem_profile;
 
 /*
  * Interrupt cause processing weights
