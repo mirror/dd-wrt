@@ -66,52 +66,46 @@ void set_led_netdev(const char *dev, const char *led)
 	sysprintf("echo 1 > /sys/class/leds/%s/tx", led);
 }
 
-static int
-if_set_name(
-	    const char *	oldname,
-	    const char *	newname)
+static int if_set_name(const char *oldname, const char *newname)
 {
-  int		skfd;
-  struct ifreq	ifr;
-  char *	star;
-  int		ret;
-    skfd = socket(AF_INET, SOCK_DGRAM, 0);
-  /* The kernel doesn't check is the interface already has the correct
+	int skfd;
+	struct ifreq ifr;
+	char *star;
+	int ret;
+	skfd = socket(AF_INET, SOCK_DGRAM, 0);
+	/* The kernel doesn't check is the interface already has the correct
    * name and may return an error, so check ourselves.
    * In the case of wildcard, the result can be weird : if oldname='eth0'
    * and newname='eth*', retname would be 'eth1'.
    * So, if the oldname value matches the newname pattern, just return
    * success. */
 
-  /* Prepare request */
-  bzero(&ifr, sizeof(struct ifreq));
-  strncpy(ifr.ifr_name, oldname, IFNAMSIZ); 
-  strncpy(ifr.ifr_newname, newname, IFNAMSIZ); 
-  fprintf(stderr, "remame to %s\n", newname);
-  /* Check for wildcard interface name, such as 'eth*' or 'wlan*'...
+	/* Prepare request */
+	bzero(&ifr, sizeof(struct ifreq));
+	strncpy(ifr.ifr_name, oldname, IFNAMSIZ);
+	strncpy(ifr.ifr_newname, newname, IFNAMSIZ);
+	/* Check for wildcard interface name, such as 'eth*' or 'wlan*'...
    * This require specific kernel support (2.6.2-rc1 and later).
    * We externally use '*', but the kernel doesn't know about that,
    * so convert it to something it knows about... */
-  star = strchr(newname, '*');
-  if(star != NULL)
-    {
-      int	slen = star - newname;
-      /* Replace '*' with '%d' in the new buffer */
-      star = ifr.ifr_newname + slen;
-      /* Size was checked in process_rename() and mapping_create() */
-      memmove(star + 2, star + 1, IFNAMSIZ - slen - 2);
-      star[0] = '%';
-      star[1] = 'd';
-    }
+	star = strchr(newname, '*');
+	if (star != NULL) {
+		int slen = star - newname;
+		/* Replace '*' with '%d' in the new buffer */
+		star = ifr.ifr_newname + slen;
+		/* Size was checked in process_rename() and mapping_create() */
+		memmove(star + 2, star + 1, IFNAMSIZ - slen - 2);
+		star[0] = '%';
+		star[1] = 'd';
+	}
 
-  /* Do it */
-  ret = ioctl(skfd, SIOCSIFNAME, &ifr);
+	/* Do it */
+	ret = ioctl(skfd, SIOCSIFNAME, &ifr);
 
-  close(skfd);
+	close(skfd);
 
-  return(ret);
+	return (ret);
 }
-
 
 void start_sysinit(void)
 {
@@ -185,13 +179,13 @@ void start_sysinit(void)
 	}
 	switch (brand) {
 	case ROUTER_DIR860LB1:
-		if_set_name("eth1","wan");
+		if_set_name("eth1", "wan");
 		nvram_set("dsa", "1");
 		insmod("thermal_sys");
 		insmod("hwmon");
 		break;
 	case ROUTER_MORSE:
-		if_set_name("eth1","wan");
+		if_set_name("eth1", "wan");
 		in = fopen("/dev/mtdblock3", "rb");
 		if (in) {
 			char country[4];
@@ -225,13 +219,13 @@ void start_sysinit(void)
 	case ROUTER_DIR882:
 	case ROUTER_R6850:
 	case ROUTER_R6220:
-		if_set_name("eth1","wan");
+		if_set_name("eth1", "wan");
 		nvram_set("dsa", "1");
 		insmod("thermal_sys");
 		insmod("hwmon");
 		break;
 	case ROUTER_R6800:
-		if_set_name("eth1","wan");
+		if_set_name("eth1", "wan");
 		nvram_set("dsa", "1");
 		insmod("thermal_sys");
 		insmod("hwmon");
