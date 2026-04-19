@@ -102,6 +102,8 @@ do
 			logger -t "$TAG" "None of the IPs $WDS_WATCHDOG_IPS responded ping, Restarting Router"
 			cat /var/log/messages > /jffs/lastlog.log
 			/sbin/reboot &
+			sleep 30
+			echo b > /proc/sysrq-trigger
 		fi
 	fi
 done 2>&1
