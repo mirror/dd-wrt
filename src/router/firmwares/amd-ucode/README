@@ -41,13 +41,17 @@ Microcode patches in microcode_amd_fam17h.bin:
 
 Microcode patches in microcode_amd_fam19h.bin:
   Family=0x19 Model=0x01 Stepping=0x00: Patch=0x0a00107a Length=5568 bytes
+  Family=0x19 Model=0x01 Stepping=0x01: Patch=0x0a0011d5 Length=5568 bytes
   Family=0x19 Model=0x01 Stepping=0x01: Patch=0x0a0011de Length=5568 bytes
     Minimum base ucode version for loading: 0x0a0011d9
+  Family=0x19 Model=0x01 Stepping=0x02: Patch=0x0a001238 Length=5568 bytes
   Family=0x19 Model=0x01 Stepping=0x02: Patch=0x0a001247 Length=5568 bytes
     Minimum base ucode version for loading: 0x0a001242
   Family=0x19 Model=0x08 Stepping=0x02: Patch=0x0a00820d Length=5568 bytes
+  Family=0x19 Model=0x11 Stepping=0x01: Patch=0x0a101148 Length=5568 bytes
   Family=0x19 Model=0x11 Stepping=0x01: Patch=0x0a101158 Length=5568 bytes
     Minimum base ucode version for loading: 0x0a101153
+  Family=0x19 Model=0x11 Stepping=0x02: Patch=0x0a101248 Length=5568 bytes
   Family=0x19 Model=0x11 Stepping=0x02: Patch=0x0a101253 Length=5568 bytes
     Minimum base ucode version for loading: 0x0a10124e
   Family=0x19 Model=0x18 Stepping=0x01: Patch=0x0a108109 Length=5568 bytes
@@ -61,14 +65,29 @@ Microcode patches in microcode_amd_fam19h.bin:
   Family=0x19 Model=0x78 Stepping=0x00: Patch=0x0a708008 Length=5568 bytes
   Family=0x19 Model=0x7c Stepping=0x00: Patch=0x0a70c008 Length=5568 bytes
   Family=0x19 Model=0xa0 Stepping=0x01: Patch=0x0aa00116 Length=5568 bytes
+  Family=0x19 Model=0xa0 Stepping=0x02: Patch=0x0aa00215 Length=5568 bytes
   Family=0x19 Model=0xa0 Stepping=0x02: Patch=0x0aa0021c Length=5568 bytes
-    Minimum base ucode version for loading: 0x0aa00219
+    Minimum base ucode version for loading: 0x0aa00218
 
 Microcode patches in microcode_amd_fam1ah.bin:
-  Family=0x1a Model=0x02 Stepping=0x01: Patch=0x0b002151 Length=14368 bytes
+  Family=0x1a Model=0x02 Stepping=0x01: Patch=0x0b002162 Length=14368 bytes
     Minimum base ucode version for loading: 0x0b002140
-  Family=0x1a Model=0x11 Stepping=0x00: Patch=0x0b10104e Length=14368 bytes
-    Minimum base ucode version for loading: 0x0b001040
+  Family=0x1a Model=0x08 Stepping=0x01: Patch=0x0b008121 Length=14368 bytes
+    Minimum base ucode version for loading: 0x0b008112
+  Family=0x1a Model=0x11 Stepping=0x00: Patch=0x0b101059 Length=14368 bytes
+    Minimum base ucode version for loading: 0x0b101040
+  Family=0x1a Model=0x24 Stepping=0x00: Patch=0x0b204037 Length=14368 bytes
+    Minimum base ucode version for loading: 0x0b204032
+  Family=0x1a Model=0x44 Stepping=0x00: Patch=0x0b404035 Length=14368 bytes
+    Minimum base ucode version for loading: 0x0b404032
+  Family=0x1a Model=0x44 Stepping=0x01: Patch=0x0b404108 Length=14368 bytes
+    Minimum base ucode version for loading: 0x0b404102
+  Family=0x1a Model=0x60 Stepping=0x00: Patch=0x0b600037 Length=14368 bytes
+    Minimum base ucode version for loading: 0x0b600032
+  Family=0x1a Model=0x68 Stepping=0x00: Patch=0x0b608038 Length=14368 bytes
+    Minimum base ucode version for loading: 0x0b608032
+  Family=0x1a Model=0x70 Stepping=0x00: Patch=0x0b700037 Length=14368 bytes
+    Minimum base ucode version for loading: 0x0b700032
 
 NOTE: For Genoa (Family=0x19 Model=0x11) and Bergamo (Family=0x19 Model=0xa0),
 either AGESA version >= 1.0.0.8 OR a kernel with the following commit is
@@ -87,3 +106,20 @@ the required minimum patch levels to address this problem:
   Family=0x19 Model=0x11 Stepping=0x02: Patch=0x0a10123e
   Family=0x19 Model=0xa0 Stepping=0x01: Patch=0x0aa00116
   Family=0x19 Model=0xa0 Stepping=0x02: Patch=0x0aa00212
+
+NOTE: In order to not fully abandon machines affected by AMD-SB-7033 [1] that
+have not received the BIOS update, the family 19h microcode container now
+includes a second patch for these machines that brings the microcode to the
+highest possible level without the microcode signing fix. While a BIOS update
+is highly recommended to receive the latest security updates issued after the
+microcode signing vulnerability, this will allow non-updated systems to at
+least receive some microcode updates beyond the version provided by BIOS.
+
+The list of additional patches can be seen below:
+  Family=0x19 Model=0x01 Stepping=0x01: Patch=0x0a0011d5 Length=5568 bytes
+  Family=0x19 Model=0x01 Stepping=0x02: Patch=0x0a001238 Length=5568 bytes
+  Family=0x19 Model=0x11 Stepping=0x01: Patch=0x0a101148 Length=5568 bytes
+  Family=0x19 Model=0x11 Stepping=0x02: Patch=0x0a101248 Length=5568 bytes
+  Family=0x19 Model=0xa0 Stepping=0x02: Patch=0x0aa00215 Length=5568 bytes
+
+[1]: https://www.amd.com/en/resources/product-security/bulletin/amd-sb-7033.html
