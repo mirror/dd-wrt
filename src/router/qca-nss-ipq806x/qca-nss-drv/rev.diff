@@ -1,0 +1,117 @@
+Index: exports/nss_virt_if.h
+===================================================================
+Index: nss_init.c
+===================================================================
+--- nss_init.c	(revision 56385)
++++ nss_init.c	(working copy)
+@@ -64,6 +64,7 @@
+  * Global declarations
+  */
+ int nss_ctl_redirect __read_mostly = 0;
++int nss_ctl_gmac = 1;
+ int nss_ctl_debug __read_mostly = 0;
+ int nss_ctl_logbuf __read_mostly = 0;
+ int nss_jumbo_mru  __read_mostly = 0;
+@@ -347,6 +348,27 @@
+ }
+ #endif
+ 
++static int nss_gmac_handler(struct ctl_table *ctl, int write, void __user *buffer, size_t *lenp, loff_t *ppos)
++{
++	struct nss_top_instance *nss_top = &nss_top_main;
++	struct nss_ctx_instance *nss_ctx = &nss_top_main.nss[NSS_CORE_0];
++	int ret;
++
++	ret = proc_dointvec(ctl, write, buffer, lenp, ppos);
++	if (!ret) {
++		if ((write) && (nss_ctl_gmac != 0)) {
++			printk(KERN_INFO "Enabling GMAC Offload\n");
++			nss_top->data_plane_ops->data_plane_register(nss_ctx);
++		}
++		if ((write) && (nss_ctl_gmac == 0)) {
++			printk(KERN_INFO "Disabling GMAC Offload\n");
++			nss_top->data_plane_ops->data_plane_unregister();
++		}
++	}
++
++	return ret;
++}
++
+ #if (NSS_FW_DBG_SUPPORT == 1)
+ /*
+  * nss_debug_handler()
+@@ -552,6 +574,13 @@
+ 		.mode                   = 0644,
+ 		.proc_handler		= proc_dointvec,
+ 	},
++	{
++		.procname               = "gmac_offload",
++		.data                   = &nss_ctl_gmac,
++		.maxlen                 = sizeof(int),
++		.mode                   = 0644,
++		.proc_handler		= &nss_gmac_handler,
++	},
+ #if (NSS_FW_DBG_SUPPORT == 1)
+ 	{
+ 		.procname               = "debug",
+Index: nss_data_plane/nss_data_plane_gmac.c
+===================================================================
+--- nss_data_plane/nss_data_plane_gmac.c	(revision 56385)
++++ nss_data_plane/nss_data_plane_gmac.c	(working copy)
+@@ -233,12 +233,14 @@
+  */
+ static void nss_data_plane_unregister_from_nss_gmac(int if_num)
+ {
+-	nss_gmac_restore_data_plane(nss_data_plane_gmac_params[if_num].dev);
+-	nss_data_plane_gmac_params[if_num].dev = NULL;
+-	nss_data_plane_gmac_params[if_num].nss_ctx = NULL;
+-	nss_data_plane_gmac_params[if_num].if_num = 0;
+-	nss_data_plane_gmac_params[if_num].notify_open = 0;
+-	nss_data_plane_gmac_params[if_num].bypass_nw_process = 0;
++	if (nss_data_plane_gmac_params[if_num].dev) {
++		nss_gmac_restore_data_plane(nss_data_plane_gmac_params[if_num].dev);
++		nss_data_plane_gmac_params[if_num].dev = NULL;
++		nss_data_plane_gmac_params[if_num].nss_ctx = NULL;
++		nss_data_plane_gmac_params[if_num].if_num = 0;
++		nss_data_plane_gmac_params[if_num].notify_open = 0;
++		nss_data_plane_gmac_params[if_num].bypass_nw_process = 0;
++	}
+ }
+ 
+ /*
+@@ -250,6 +252,7 @@
+ 
+ 	for (i = 0; i < NSS_DATA_PLANE_GMAC_MAX_INTERFACES; i++) {
+ 		if (!nss_data_plane_register_to_nss_gmac(nss_ctx, i)) {
++			nss_data_plane_gmac_params[i].dev = NULL;
+ 			nss_warning("%px: Register data plane failed for gmac:%d\n", nss_ctx, i);
+ 		} else {
+ 			nss_info("%px: Register data plan to gmac:%d success\n", nss_ctx, i);
+@@ -267,6 +270,7 @@
+ 	for (core = 0; core < nss_top_main.num_nss; core++) {
+ 		for (i = 0; i < NSS_DATA_PLANE_GMAC_MAX_INTERFACES; i++) {
+ 			if (nss_top_main.nss[core].subsys_dp_register[i].ndev) {
++				printk(KERN_INFO "unregister core %d and if %d\n", core, i);
+ 				nss_data_plane_unregister_from_nss_gmac(i);
+ 				nss_core_unregister_subsys_dp(&nss_top_main.nss[core], i);
+ 			}
+Index: nss_hal/ipq806x/nss_hal_pvt.c
+===================================================================
+--- nss_hal/ipq806x/nss_hal_pvt.c	(revision 56385)
++++ nss_hal/ipq806x/nss_hal_pvt.c	(working copy)
+@@ -1177,13 +1177,13 @@
+ 
+ 	if (irq_num == 1) {
+ 		int_ctx->shift_factor = 15;
+-		if (npd->irq[irq_num]==43)
++		if (npd->irq[irq_num]==44)
+ 			err = request_irq(npd->irq[irq_num], nss_hal_handle_irq, 0, "nss_queue1", int_ctx);
+ 		else
+ 			err = request_irq(npd->irq[irq_num], nss_hal_handle_irq, 0, "nss_queue2", int_ctx);
+ 	} else {
+ 		int_ctx->shift_factor = 0;
+-		if (npd->irq[irq_num]==44)
++		if (npd->irq[irq_num]==43)
+ 			err = request_irq(npd->irq[irq_num], nss_hal_handle_irq, 0, "nss_core1", int_ctx);
+ 		else
+ 			err = request_irq(npd->irq[irq_num], nss_hal_handle_irq, 0, "nss_core2", int_ctx);

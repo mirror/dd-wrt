@@ -1,0 +1,1 @@
+cmd_/home/seg/DEV/ipq806x/src/router/qca-nss/qca-nss-hyfi-bridge/Module.symvers :=  sed 's/ko$$/o/'  /home/seg/DEV/ipq806x/src/router/qca-nss/qca-nss-hyfi-bridge/modules.order | scripts/mod/modpost       -o /home/seg/DEV/ipq806x/src/router/qca-nss/qca-nss-hyfi-bridge/Module.symvers -n -e -i Module.symvers -w -T - 

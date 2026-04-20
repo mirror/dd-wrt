@@ -1,0 +1,37 @@
+From e3b59d45163abc704ae3740b91f89405010e298e Mon Sep 17 00:00:00 2001
+From: regae <37059068+regae@users.noreply.github.com>
+Date: Thu, 20 Jun 2024 13:56:16 +0700
+Subject: [PATCH] chromium: nss volt: fix silent reboot after bumping up
+ frequency
+
+when nss frequency is up 733Mhz, voltage is not bumping up to 1150mV.
+---
+ .../990-08-NSS-core-regulator-and-clocks.patch             | 7 ++++---
+ 1 file changed, 4 insertions(+), 3 deletions(-)
+
+diff --git a/target/linux/ipq806x/patches-5.15/990-08-NSS-core-regulator-and-clocks.patch b/target/linux/ipq806x/patches-5.15/990-08-NSS-core-regulator-and-clocks.patch
+index 685cde5706b03..483d310b072ae 100644
+--- a/target/linux/ipq806x/patches-5.15/990-08-NSS-core-regulator-and-clocks.patch
++++ b/target/linux/ipq806x/patches-5.15/990-08-NSS-core-regulator-and-clocks.patch
+@@ -261,7 +261,7 @@ db30db7d342f
+  ccflags-$(CONFIG_REGULATOR_DEBUG) += -DDEBUG
+ --- /dev/null
+ +++ b/drivers/regulator/nss-volt-ipq806x.c
+-@@ -0,0 +1,145 @@
++@@ -0,0 +1,146 @@
+ +/*
+ + * Copyright (c) 2015-2016, The Linux Foundation. All rights reserved.
+ + *
+@@ -313,9 +313,10 @@ db30db7d342f
+ +		return -EINVAL;
+ +	}
+ +
+-+	uV = data->nss_core_vdd_nominal;
+ +	if (rate >= data->nss_core_threshold_freq)
+-+		return data->nss_core_vdd_high;
+++		uV = data->nss_core_vdd_high;
+++	else
+++		uV = data->nss_core_vdd_nominal;
+ +
+ +	curr_uV = regulator_get_voltage(reg);
+ +

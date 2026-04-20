@@ -1,0 +1,1 @@
+cmd_/home/seg/DEV/ipq806x/src/router/qca-nss/qca-rfs/qrfs.mod := printf '%s\n'   rfs_main.o rfs_cm.o rfs_nbr.o rfs_wxt.o rfs_rule.o rfs_ess.o rfs_fdb.o | awk '!x[$$0]++ { print("/home/seg/DEV/ipq806x/src/router/qca-nss/qca-rfs/"$$0) }' > /home/seg/DEV/ipq806x/src/router/qca-nss/qca-rfs/qrfs.mod

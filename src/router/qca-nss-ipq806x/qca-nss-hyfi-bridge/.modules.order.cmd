@@ -1,0 +1,1 @@
+cmd_/home/seg/DEV/ipq806x/src/router/qca-nss/qca-nss-hyfi-bridge/modules.order := {   echo /home/seg/DEV/ipq806x/src/router/qca-nss/qca-nss-hyfi-bridge/hyfi-bridging.ko; :; } > /home/seg/DEV/ipq806x/src/router/qca-nss/qca-nss-hyfi-bridge/modules.order

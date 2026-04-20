@@ -1,0 +1,17 @@
+/home/seg/DEV/ipq806x/src/router/qca-nss/qca-nss-hyfi-bridge/./hyfi-netfilter/hyfi_main.o
+/home/seg/DEV/ipq806x/src/router/qca-nss/qca-nss-hyfi-bridge/./hyfi-netfilter/hyfi_bridge.o
+/home/seg/DEV/ipq806x/src/router/qca-nss/qca-nss-hyfi-bridge/./hyfi-netfilter/hyfi_netfilter.o
+/home/seg/DEV/ipq806x/src/router/qca-nss/qca-nss-hyfi-bridge/./hyfi-netfilter/hyfi_netlink.o
+/home/seg/DEV/ipq806x/src/router/qca-nss/qca-nss-hyfi-bridge/./hyfi-netfilter/hyfi_fdb.o
+/home/seg/DEV/ipq806x/src/router/qca-nss/qca-nss-hyfi-bridge/./hyfi-netfilter/hyfi_notify.o
+/home/seg/DEV/ipq806x/src/router/qca-nss/qca-nss-hyfi-bridge/./hyfi-netfilter/hyfi_seamless.o
+/home/seg/DEV/ipq806x/src/router/qca-nss/qca-nss-hyfi-bridge/./hyfi-multicast/mc_main.o
+/home/seg/DEV/ipq806x/src/router/qca-nss/qca-nss-hyfi-bridge/./hyfi-multicast/mc_netlink.o
+/home/seg/DEV/ipq806x/src/router/qca-nss/qca-nss-hyfi-bridge/./hyfi-multicast/mc_netfilter.o
+/home/seg/DEV/ipq806x/src/router/qca-nss/qca-nss-hyfi-bridge/./hyfi-multicast/mc_snooping.o
+/home/seg/DEV/ipq806x/src/router/qca-nss/qca-nss-hyfi-bridge/./hyfi-multicast/mc_forward.o
+/home/seg/DEV/ipq806x/src/router/qca-nss/qca-nss-hyfi-bridge/./hyfi-netfilter/hyfi_hatbl.o
+/home/seg/DEV/ipq806x/src/router/qca-nss/qca-nss-hyfi-bridge/./hyfi-netfilter/hyfi_hdtbl.o
+/home/seg/DEV/ipq806x/src/router/qca-nss/qca-nss-hyfi-bridge/./hyfi-netfilter/hyfi_aggr.o
+/home/seg/DEV/ipq806x/src/router/qca-nss/qca-nss-hyfi-bridge/./hyfi-netfilter/hyfi_ecm.o
+/home/seg/DEV/ipq806x/src/router/qca-nss/qca-nss-hyfi-bridge/./hyfi-multicast/mc_ecm.o

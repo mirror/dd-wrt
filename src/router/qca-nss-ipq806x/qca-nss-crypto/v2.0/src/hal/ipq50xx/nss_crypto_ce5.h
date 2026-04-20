@@ -1,0 +1,79 @@
+/* Copyright (c) 2020, The Linux Foundation. All rights reserved.
+ *
+ * Permission to use, copy, modify, and/or distribute this software for any
+ * purpose with or without fee is hereby granted, provided that the above
+ * copyright notice and this permission notice appear in all copies.
+ *
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+ * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY
+ * AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT
+ * INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM
+ * LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE
+ * OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
+ * PERFORMANCE OF THIS SOFTWARE.
+ *
+ */
+#ifndef __NSS_CRYPTO_CE5_H
+#define __NSS_CRYPTO_CE5_H
+
+#include <linux/types.h>
+
+/*
+ * Number of context control words
+ */
+#define NSS_CRYPTO_CE5_MAX_CTRL 3
+
+/*
+ * H/W registers & values
+ */
+#define NSS_CRYPTO_CE5_MAX_BURST 64
+#define NSS_CRYPTO_CE5_BURST2BEATS(x) ((x >> 3) - 1)
+#define NSS_CRYPTO_CE5_MAX_BEATS ((NSS_CRYPTO_CE5_MAX_BURST >> 3) - 1)
+
+#define NSS_CRYPTO_CE5_AUTH_SEG_CFG_ALG_SHA 0x1
+#define NSS_CRYPTO_CE5_AUTH_SEG_CFG_MODE_HMAC (0x1 << 6)
+#define NSS_CRYPTO_CE5_AUTH_SEG_CFG_SIZE_SHA1 (0x0 << 9)
+#define NSS_CRYPTO_CE5_AUTH_SEG_CFG_SIZE_SHA2 (0x1 << 9)
+#define NSS_CRYPTO_CE5_AUTH_SEG_CFG_POS_BEFORE (0x0 << 14)
+#define NSS_CRYPTO_CE5_AUTH_SEG_CFG_POS_AFTER (0x1 << 14)
+#define NSS_CRYPTO_CE5_AUTH_SEG_CFG_LAST (0x1 << 16)
+#define NSS_CRYPTO_CE5_AUTH_SEG_CFG_FIRST (0x1 << 17)
+#define NSS_CRYPTO_CE5_AUTH_SEG_CFG_PIPE_KEYS (0x1 << 19)
+
+#define NSS_CRYPTO_CE5_BAM_DESC_INT (0x1 << 15)
+#define NSS_CRYPTO_CE5_BAM_DESC_EOT (0x1 << 14)
+#define NSS_CRYPTO_CE5_BAM_DESC_EOB (0x1 << 13)
+#define NSS_CRYPTO_CE5_BAM_DESC_NWD (0x1 << 12)
+#define NSS_CRYPTO_CE5_BAM_DESC_CMD (0x1 << 11)
+#define NSS_CRYPTO_CE5_BAM_DESC_LOCK (0x1 << 10)
+#define NSS_CRYPTO_CE5_BAM_DESC_UNLOCK (0x1 << 9)
+
+#define NSS_CRYPTO_CE5_CONFIG_REQ_SIZE(x) (x << 17)
+#define NSS_CRYPTO_CE5_CONFIG_DOUT_INTR (0x1 << 3)
+#define NSS_CRYPTO_CE5_CONFIG_DIN_INTR (0x1 << 2)
+#define NSS_CRYPTO_CE5_CONFIG_DOP_INTR (0x1 << 1)
+#define NSS_CRYPTO_CE5_CONFIG_HIGH_SPEED_EN (0x1 << 4)
+#define NSS_CRYPTO_CE5_CONFIG_PIPE_SEL(x) (x << 5)
+#define NSS_CRYPTO_CE5_CONFIG_LITTLE_ENDIAN (0x1 << 9)
+#define NSS_CRYPTO_CE5_CONFIG_MAX_REQS(x) (x << 14)
+#define NSS_CRYPTO_CE5_CONFIG_RESET 0xE001F
+
+#define NSS_CRYPTO_CE5_ENCR_SEG_CFG_ALG_DES 0x1
+#define NSS_CRYPTO_CE5_ENCR_SEG_CFG_ALG_AES 0x2
+#define NSS_CRYPTO_CE5_ENCR_SEG_CFG_KEY_AES128 (0x0 << 3)
+#define NSS_CRYPTO_CE5_ENCR_SEG_CFG_KEY_AES256 (0x2 << 3)
+#define NSS_CRYPTO_CE5_ENCR_SEG_CFG_KEY_SINGLE_DES (0x0 << 3)
+#define NSS_CRYPTO_CE5_ENCR_SEG_CFG_KEY_TRIPLE_DES (0x1 << 3)
+#define NSS_CRYPTO_CE5_ENCR_SEG_CFG_MODE_ECB (0x0 << 6)
+#define NSS_CRYPTO_CE5_ENCR_SEG_CFG_MODE_CBC (0x1 << 6)
+#define NSS_CRYPTO_CE5_ENCR_SEG_CFG_MODE_CTR (0x2 << 6)
+#define NSS_CRYPTO_CE5_ENCR_SEG_CFG_MODE_XTS (0x3 << 6)
+#define NSS_CRYPTO_CE5_ENCR_SEG_CFG_MODE_CCM (0x4 << 6)
+#define NSS_CRYPTO_CE5_ENCR_SEG_CFG_ENC	(0x1 << 10)
+#define NSS_CRYPTO_CE5_ENCR_SEG_CFG_PIPE_KEYS (0x1 << 15)
+
+
+extern void nss_crypto_ce5_hw_init(struct platform_device *pdev, struct device_node *np, void __iomem *addr);
+extern int nss_crypto_ce5_init(struct platform_device *pdev);
+#endif /* __NSS_CRYPTO_CE5_H */

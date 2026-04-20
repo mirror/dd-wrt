@@ -1,0 +1,237 @@
+Index: make/linux_opt.mk
+===================================================================
+--- make/linux_opt.mk	(revision 63816)
++++ make/linux_opt.mk	(working copy)
+@@ -454,7 +454,7 @@
+       KASAN_SHADOW_SCALE_SHIFT := 3
+   endif
+ 
+-  ifeq ($(OS_VER),$(filter 5_4 6_1 6_6, $(OS_VER)))
++  ifeq ($(OS_VER),$(filter 5_4 6_1 6_6 6_12, $(OS_VER)))
+       ifeq ($(ARCH), arm64)
+           KASAN_OPTION += -DKASAN_SHADOW_SCALE_SHIFT=$(KASAN_SHADOW_SCALE_SHIFT)
+        endif
+@@ -485,9 +485,11 @@
+ 
+   endif
+ 
+-  ifeq ($(OS_VER),$(filter 4_4 5_4 6_1 6_6, $(OS_VER)))
++  ifeq ($(OS_VER),$(filter 4_4 5_4 6_1 6_6 6_12, $(OS_VER)))
+                 MODULE_CFLAG += -DKVER34
+                 MODULE_CFLAG += -DKVER32
++                MODULE_CFLAG += -DKVER612
++                MODULE_CFLAG += -DKVER66
+             MODULE_CFLAG += -DLNX26_22
+ 	    ifeq ($(ARCH), arm64)
+             SYS_INC += -I$(SYS_PATH) \
+Index: src/init/ssdk_init.c
+===================================================================
+--- src/init/ssdk_init.c	(revision 63816)
++++ src/init/ssdk_init.c	(working copy)
+@@ -438,7 +438,6 @@
+ 		/* Including CPU port */
+ 		port_bmp |= ssdk_cpu_bmp_get(dev_id);
+ 	}
+-
+ 	i = 0;
+ 	while (port_bmp) {
+ 		if (port_bmp & 1) {
+Index: src/init/ssdk_dts.c
+===================================================================
+--- src/init/ssdk_dts.c	(revision 63816)
++++ src/init/ssdk_dts.c	(working copy)
+@@ -26,6 +26,7 @@
+ #endif
+ #include <linux/etherdevice.h>
+ #include <linux/clk.h>
++#include <linux/platform_device.h>
+ 
+ #include "ssdk_init.h"
+ #include "ssdk_dts.h"
+Index: src/init/ssdk_mht_clk.c
+===================================================================
+--- src/init/ssdk_mht_clk.c	(revision 63816)
++++ src/init/ssdk_mht_clk.c	(working copy)
+@@ -746,16 +746,16 @@
+ 	char clk_id[64] = {0};
+ 	a_bool_t bypass_en = A_FALSE;
+ 
+-	strlcpy(clk_id, clock_id, sizeof(clk_id));
++	strscpy(clk_id, clock_id, sizeof(clk_id));
+ 
+ 	ssdk_mht_port5_uniphy0_clk_src_get(dev_id, &bypass_en);
+ 	if (bypass_en == A_TRUE) {
+ 		if (strncasecmp(clock_id, MHT_MAC5_TX_UNIPHY0_CLK,
+ 					strlen(MHT_MAC5_TX_UNIPHY0_CLK)) == 0)
+-			strlcpy(clk_id, MHT_MAC4_RX_CLK, sizeof(clk_id));
++			strscpy(clk_id, MHT_MAC4_RX_CLK, sizeof(clk_id));
+ 		else if (strncasecmp(clock_id, MHT_MAC5_RX_UNIPHY0_CLK,
+ 					strlen(MHT_MAC5_RX_UNIPHY0_CLK)) == 0)
+-			strlcpy(clk_id, MHT_MAC4_TX_CLK, sizeof(clk_id));
++			strscpy(clk_id, MHT_MAC4_TX_CLK, sizeof(clk_id));
+ 	}
+ 
+ 	clk = ssdk_mht_clk_find(clk_id);
+Index: src/hsl/phy/sfp_phy.c
+===================================================================
+--- src/hsl/phy/sfp_phy.c	(revision 63816)
++++ src/hsl/phy/sfp_phy.c	(working copy)
+@@ -307,6 +307,10 @@
+ {
+ #if (LINUX_VERSION_CODE >= KERNEL_VERSION(4,4,0))
+ 	struct phy_device *phydev;
++#if (LINUX_VERSION_CODE >= KERNEL_VERSION(6,9,0)) && defined(IN_PHY_I2C_MODE)
++	struct device_driver *drv;
++	struct phy_driver *phydrv;
++#endif
+ 	a_uint32_t addr = 0;
+ 	struct mii_bus *bus;
+ 
+@@ -344,8 +348,15 @@
+ 		return SW_NOT_FOUND;
+ #if defined(IN_PHY_I2C_MODE)
+ 	if (hsl_port_phy_access_type_get(dev_id, port) == PHY_I2C_ACCESS) {
+-		if(phydev->drv)
++		if(phydev->drv) {
++#if (LINUX_VERSION_CODE >= KERNEL_VERSION(6,9,0))
++			drv = phydev->mdio.dev.driver;
++			phydrv = to_phy_driver(drv);
++			phy_driver_unregister(phydrv);
++#else
+ 			phy_driver_unregister(phydev->drv);
++#endif
++		}
+ 	}
+ #endif
+ #endif
+Index: src/hsl/phy/qca808x.c
+===================================================================
+--- src/hsl/phy/qca808x.c	(revision 63816)
++++ src/hsl/phy/qca808x.c	(working copy)
+@@ -600,7 +600,11 @@
+ 	return err;
+ }
+ 
++#if (LINUX_VERSION_CODE < KERNEL_VERSION(6, 10, 0))
+ int qca808x_match_phy_device(struct phy_device *phydev)
++#else
++int qca808x_match_phy_device(struct phy_device *phydev, const struct phy_driver *driver)
++#endif
+ {
+ 	a_uint32_t phy_id = 0;
+ 
+Index: src/ref/ref_uci.c
+===================================================================
+--- src/ref/ref_uci.c	(revision 63816)
++++ src/ref/ref_uci.c	(working copy)
+@@ -13726,8 +13726,8 @@
+         }
+ 
+         if(i<len) {
+-		strlcpy(module, name, i+1);
+-		strlcpy(cmd, p, COMMAND_NAME_MAX_LEN);
++		strscpy(module, name, i+1);
++		strscpy(cmd, p, COMMAND_NAME_MAX_LEN);
+ 		return 0;
+         }
+ 
+Index: src/shell_lib/shell_io.c
+===================================================================
+--- src/shell_lib/shell_io.c	(revision 63816)
++++ src/shell_lib/shell_io.c	(working copy)
+@@ -951,7 +951,7 @@
+ 	if(buf[0] == '0' && (buf[1] == 'x' || buf[1] == 'X'))
+ 	{
+ 		if(!fmt)
+-			strlcpy(fmt_tmp, "%x", sizeof(fmt_tmp));
++			strscpy(fmt_tmp, "%x", sizeof(fmt_tmp));
+ 		else
+ 		{
+ 			if(strspn(fmt, "%lLxXhH") != strlen(fmt))
+@@ -958,9 +958,9 @@
+ 				return SW_BAD_VALUE;
+ 			if(fmt[0] == '%' && ((fmt[1] == 'l' || fmt[1] == 'L') &&
+ 				(fmt[2] == 'l' || fmt[2] == 'L')))
+-				strlcpy(fmt_tmp, "%llx", sizeof(fmt_tmp));
++				strscpy(fmt_tmp, "%llx", sizeof(fmt_tmp));
+ 			else
+-				strlcpy(fmt_tmp, fmt, sizeof(fmt_tmp));
++				strscpy(fmt_tmp, fmt, sizeof(fmt_tmp));
+ 		}
+ 	}
+ 	else
+@@ -968,7 +968,7 @@
+ 		if(strspn(buf, "1234567890") != strlen(buf))
+ 			return SW_BAD_VALUE;
+ 		if(!fmt)
+-			strlcpy(fmt_tmp, "%d", sizeof(fmt_tmp));
++			strscpy(fmt_tmp, "%d", sizeof(fmt_tmp));
+ 		else
+ 		{
+ 			if(strspn(fmt, "%lLdD") != strlen(fmt))
+@@ -975,9 +975,9 @@
+ 				return SW_BAD_VALUE;
+ 			if(fmt[0] == '%' && ((fmt[1] == 'l' || fmt[1] == 'L') &&
+ 				(fmt[2] == 'l' || fmt[2] == 'L')))
+-				strlcpy(fmt_tmp, "%lld", sizeof(fmt_tmp));
++				strscpy(fmt_tmp, "%lld", sizeof(fmt_tmp));
+ 			else
+-				strlcpy(fmt_tmp, fmt, sizeof(fmt_tmp));
++				strscpy(fmt_tmp, fmt, sizeof(fmt_tmp));
+ 		}
+ 	}
+ 	if(sscanf(buf, fmt_tmp, arg_val) != 1)
+@@ -2736,7 +2736,7 @@
+         return SW_OK;
+     }
+ 
+-    strlcpy(tmp_str, cmdstr, sizeof(tmp_str));
++    strscpy(tmp_str, cmdstr, sizeof(tmp_str));
+     tmp = (void *) strsep(&cmdstr, ",");
+     while (tmp)
+     {
+@@ -12818,7 +12818,7 @@
+ 						break;
+ 					}
+ 					/* copy 2 chars from cmd */
+-					strlcpy(cmd_byte, cmd, sizeof(cmd_byte));
++					strscpy(cmd_byte, cmd, sizeof(cmd_byte));
+ 					sscanf(cmd_byte, "%hhx",
+ 						&(entry.pkt_header.pkt_header_data[bytes]));
+ 					cmd += 2;
+Index: config
+===================================================================
+--- config	(revision 63816)
++++ config	(working copy)
+@@ -30,6 +30,9 @@
+ ifeq ($(KVER),$(filter 6.6%,$(KVER)))
+ 	OS_VER=6_6
+ endif
++ifeq ($(KVER),$(filter 6.12%,$(KVER)))
++	OS_VER=6_12
++endif
+ 
+ ifeq ($(KVER), 3.4.0)
+ 	OS_VER=3_4
+Index: app/nathelper/linux/host_helper.c
+===================================================================
+--- app/nathelper/linux/host_helper.c	(revision 63816)
++++ app/nathelper/linux/host_helper.c	(working copy)
+@@ -1268,7 +1268,7 @@
+         return 0;
+     }
+ 
+-    strlcpy(temp, dev_list, sizeof(temp));
++    strscpy(temp, dev_list, sizeof(temp));
+     list = temp;
+ 
+     while ((list_dev = strsep(&list, " ")) != NULL)
+@@ -1314,7 +1314,7 @@
+ 	memset(&msg, 0, sizeof(msg));
+ 	msg.arp_in.ip = *((uint32_t *)neigh->primary_key);
+ 	memcpy(msg.arp_in.mac, neigh->ha, ETH_ALEN);
+-	strlcpy(msg.arp_in.name, neigh->dev->name, IFNAMSIZ);
++	strscpy(msg.arp_in.name, neigh->dev->name, IFNAMSIZ);
+ 	msg.arp_in.in = neigh->dev;
+ 
+ 	if (neigh->dev->priv_flags & IFF_EBRIDGE) {

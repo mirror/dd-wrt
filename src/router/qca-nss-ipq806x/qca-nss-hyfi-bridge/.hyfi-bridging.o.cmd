@@ -1,0 +1,1 @@
+cmd_/home/seg/DEV/ipq806x/src/router/qca-nss/qca-nss-hyfi-bridge/hyfi-bridging.o := sh ./scripts/gcc-ld -flinker-output=nolto-rel -flto=jobserver -fwhole-program -EL -z noexecstack --no-warn-rwx-segments   -r -o /home/seg/DEV/ipq806x/src/router/qca-nss/qca-nss-hyfi-bridge/hyfi-bridging.o @/home/seg/DEV/ipq806x/src/router/qca-nss/qca-nss-hyfi-bridge/hyfi-bridging.mod 

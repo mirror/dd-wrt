@@ -1,0 +1,19 @@
+# Makefile for the clients using the NSS driver
+
+ccflags-y := -I$(obj) -I$(obj)/..
+export SoC = fsm9010
+
+export BUILD_ID = \"Build Id: $(shell date +'%m/%d/%y, %H:%M:%S')\"
+ccflags-y += -DNSS_CLIENT_BUILD_ID="$(BUILD_ID)"
+
+# Profiler
+obj-y+= profiler/
+
+#IPsec manager
+obj-y+= ipsecmgr/
+
+#NSS NETLINK
+obj-y+= netlink/
+
+obj ?= .
+
