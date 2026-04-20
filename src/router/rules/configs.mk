@@ -741,6 +741,12 @@ obj-$(CONFIG_JEMALLOC) += jemalloc
 obj-$(CONFIG_X86) += cpupower
 obj-$(CONFIG_CPUPOWER) += cpupower
 obj-$(CONFIG_BTOP) += btop atop glib20
+
+ifeq ($(CONFIG_IPQ806X),y)
+obj-$(CONFIG_QCA_NSS) += qca-nss-ipq806x
+else
+obj-$(CONFIG_QCA_NSS) += qca-nss
+endif
 obj-$(CONFIG_QCA_NSS) += qca-nss
 obj-$(CONFIG_GETCONF) += getconf
 obj-$(CONFIG_IPQ6018) += cryptodev
