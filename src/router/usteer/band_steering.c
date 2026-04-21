@@ -32,7 +32,7 @@ bool usteer_band_steering_is_target(struct usteer_local_node *ln, struct usteer_
 	if (strcmp(ln->node.ssid, node->ssid))
 		return false;
 
-	if (node->freq < 4000)
+	if (is_2ghz(node->freq))
 		return false;
 
 	if (!usteer_policy_node_below_max_assoc(node))
@@ -65,7 +65,7 @@ void usteer_band_steering_perform_steer(struct usteer_local_node *ln)
 		return;
 
 	/* Band-Steering is only available on 2.4 GHz interfaces */
-	if (ln->node.freq > 4000)
+	if (!is_2ghz(ln->node.freq))
 		return;
 
 	/* Check if we have an interface we can steer to */

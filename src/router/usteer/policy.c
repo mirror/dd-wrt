@@ -51,8 +51,8 @@ static bool below_assoc_threshold(struct usteer_node *node_cur, struct usteer_no
 {
 	int n_assoc_cur = node_cur->n_assoc;
 	int n_assoc_new = node_new->n_assoc;
-	bool ref_5g = node_cur->freq > 4000;
-	bool node_5g = node_new->freq > 4000;
+	bool ref_5g = is_5ghz(node_cur->freq) || is_6ghz(node_cur->freq);
+	bool node_5g = is_5ghz(node_new->freq) || is_6ghz(node_new->freq);
 
 	if (!config.load_balancing_threshold)
 		return false;
@@ -89,7 +89,7 @@ static bool below_load_threshold(struct usteer_node *node)
 			load_ewma_total = load_ewma_total / 150.0;
 		else
 			load_ewma_total = load_ewma_total / 108.0;
-		if (node->freq > 4000) {
+		if (is_5ghz(node->freq) || is_6ghz(node->freq)) {
 			load_ewma_total = load_ewma_total * 0.5;
 		}
 		node->load = load_ewma_total;
@@ -185,12 +185,12 @@ static struct sta_info *find_better_candidate(struct sta_info *si_ref, struct ue
 		}
 		int extra = config.prefer_he ? (si->node->he ? 5 : 0) : 0;
 		if (candidate) {
-			if (config.prefer_6ghz && si->node->freq < 5925 && candidate->node->freq >= 5925) {
+			if ((is_2ghz(si->node->freq) || is_5ghz(si->node->freq)) && is_6ghz(candidate->node->freq)) {
 				if (usteer_signal_to_snr(si->node, si->signal) + config.budget_6ghz + extra >
 				    usteer_signal_to_snr(candidate->node, candidate->signal)) {
 					candidate = si;
 				}
-			} else if (si->node->freq < 4000 && candidate->node->freq > 4000) {
+			} else if (is_2ghz(si->node->freq) && is_5ghz(candidate->node->freq)) {
 				if (usteer_signal_to_snr(si->node, si->signal) + config.budget_5ghz + extra >
 				    usteer_signal_to_snr(candidate->node, candidate->signal)) {
 					candidate = si;
@@ -206,23 +206,24 @@ static struct sta_info *find_better_candidate(struct sta_info *si_ref, struct ue
 			candidate = si;
 		}
 
-		if (si->node->freq > 4000) {
+		if (is_5ghz(si->node->freq)) {
 			if (!candidate_5ghz || (usteer_signal_to_snr(si->node, si->signal) + extra >
 						usteer_signal_to_snr(candidate_5ghz->node, candidate_5ghz->signal))) {
 				candidate_5ghz = si;
 			}
 		}
-		if (si->node->freq >= 5925) {
+		if (is_6ghz(si->node->freq)) {
 			if (!candidate_6ghz || (usteer_signal_to_snr(si->node, si->signal) + extra >
 						usteer_signal_to_snr(candidate_6ghz->node, candidate_6ghz->signal))) {
 				candidate_6ghz = si;
 			}
 		}
 	}
-	if (config.prefer_6ghz)
-		return candidate_6ghz ? candidate_6ghz : config.prefer_5ghz ? candidate_5ghz : candidate;
-	else if (config.prefer_5ghz)
-		return candidate_5ghz ? candidate_5ghz : candidate;
+	if (config.prefer_6ghz && candidate_6ghz) {
+		return candidate_6ghz;
+	}
+	if (config.prefer_5ghz && candidate_5ghz)
+		return candidate_5ghz;
 
 	return candidate;
 }

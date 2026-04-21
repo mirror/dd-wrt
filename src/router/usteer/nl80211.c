@@ -154,7 +154,7 @@ static void nl80211_update_node_result(void *priv, struct usteer_survey_data *d)
 		ln->load_ewma_total = ln->load_ewma_total / 150.0;
 	else
 		ln->load_ewma_total = ln->load_ewma_total / 108.0;
-	if (ln->node.freq > 4000)
+	if (is_5ghz(ln->node.freq) || is_6ghz(ln->node.freq))
 		ln->load_ewma_total = ln->load_ewma_total * 0.5;
 
 	if (ln->node.cw == 160) // since 160 mhz often operates just with 2 chains we treat it like 80 mhz

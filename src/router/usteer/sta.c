@@ -155,9 +155,9 @@ void usteer_sta_info_update(struct sta_info *si, int signal, bool avg)
 
 	si->seen = current_time;
 
-	if (si->node->freq < 4000)
+	if (is_2ghz(si->node->freq))
 		si->sta->seen_2ghz = 1;
-	else if (si->node->freq >= 5925)
+	else if (is_6ghz(si->node->freq))
 		si->sta->seen_6ghz = 1;
 	else
 		si->sta->seen_5ghz = 1;
