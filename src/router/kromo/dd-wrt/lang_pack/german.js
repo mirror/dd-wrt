@@ -2466,6 +2466,8 @@ roaming.ft_over_air="FT over the Air";
 roaming.ft="802.11r Unterstützung (FT)";
 roaming.budget_5ghz="5 GHz Budget in DBm";
 roaming.prefer_5ghz="Bevorzuge 5 GHz";
+roaming.budget_6ghz="6 GHz Budget in DBm";
+roaming.prefer_6ghz="Bevorzuge 6 GHz";
 roaming.prefer_he="Bevorzuge 802.11ax";
 
 
