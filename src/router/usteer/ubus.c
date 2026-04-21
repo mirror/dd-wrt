@@ -21,7 +21,7 @@
 #include <sys/socket.h>
 #include <net/ethernet.h>
 #ifdef linux
-#include <netinet/ether.h>
+	#include <netinet/ether.h>
 #endif
 
 #include "usteer.h"
@@ -106,6 +106,7 @@ static int usteer_ubus_get_client_info(struct ubus_context *ctx, struct ubus_obj
 	blob_buf_init(&b, 0);
 	blobmsg_add_u8(&b, "2ghz", sta->seen_2ghz);
 	blobmsg_add_u8(&b, "5ghz", sta->seen_5ghz);
+	blobmsg_add_u8(&b, "6ghz", sta->seen_6ghz);
 	_n = blobmsg_open_table(&b, "nodes");
 	list_for_each_entry(si, &sta->nodes, list) {
 		_cur_n = blobmsg_open_table(&b, usteer_node_name(si->node));
@@ -157,11 +158,11 @@ struct cfg_item {
 		_cfg(I32, roam_scan_snr), _cfg(U32, roam_scan_tries), _cfg(U32, roam_scan_timeout), _cfg(U32, roam_scan_interval), \
 		_cfg(I32, roam_trigger_snr), _cfg(U32, roam_trigger_interval), _cfg(U32, roam_kick_delay),                         \
 		_cfg(U32, signal_diff_threshold), _cfg(U32, initial_connect_delay), _cfg(I32, budget_5ghz),                        \
-		_cfg(BOOL, prefer_5ghz), _cfg(BOOL, prefer_he), _cfg(BOOL, load_kick_enabled), _cfg(U32, load_kick_threshold),     \
-		_cfg(U32, load_kick_delay), _cfg(U32, load_kick_min_clients), _cfg(U32, load_kick_reason_code),                    \
-		_cfg(U32, band_steering_interval), _cfg(I32, band_steering_min_snr), _cfg(U32, link_measurement_interval),         \
-		_cfg(ARRAY_CB, interfaces), _cfg(STRING_CB, node_up_script), _cfg(ARRAY_CB, event_log_types),                      \
-		_cfg(ARRAY_CB, ssid_list)
+		_cfg(BOOL, prefer_5ghz), _cfg(I32, budget_6ghz), _cfg(BOOL, prefer_6ghz), _cfg(BOOL, prefer_he),                   \
+		_cfg(BOOL, load_kick_enabled), _cfg(U32, load_kick_threshold), _cfg(U32, load_kick_delay),                         \
+		_cfg(U32, load_kick_min_clients), _cfg(U32, load_kick_reason_code), _cfg(U32, band_steering_interval),             \
+		_cfg(I32, band_steering_min_snr), _cfg(U32, link_measurement_interval), _cfg(ARRAY_CB, interfaces),                \
+		_cfg(STRING_CB, node_up_script), _cfg(ARRAY_CB, event_log_types), _cfg(ARRAY_CB, ssid_list)
 
 enum cfg_items {
 #define _cfg(_type, _name) CFG_##_name
@@ -502,7 +503,7 @@ static int usteer_ubus_update_node_data(struct ubus_context *ctx, struct ubus_ob
 
 	name = blobmsg_get_string(tb[NODE_DATA_NODE]);
 	val = tb[NODE_DATA_VALUES];
-	if (delete &&blobmsg_check_array(val, BLOBMSG_TYPE_STRING) < 0)
+	if (delete && blobmsg_check_array(val, BLOBMSG_TYPE_STRING) < 0)
 		return UBUS_STATUS_INVALID_ARGUMENT;
 
 	if (strcmp(name, "*") != 0) {

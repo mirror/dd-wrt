@@ -155,7 +155,7 @@ static uint32_t is_better_candidate(struct sta_info *si_cur, struct sta_info *si
 static struct sta_info *find_better_candidate(struct sta_info *si_ref, struct uevent *ev, uint32_t required_criteria,
 					      uint64_t max_age)
 {
-	struct sta_info *si, *candidate = NULL, *candidate_5ghz = NULL;
+	struct sta_info *si, *candidate = NULL, *candidate_5ghz = NULL, *candidate_6ghz = NULL;
 	struct sta *sta = si_ref->sta;
 	uint32_t reasons;
 
@@ -185,7 +185,12 @@ static struct sta_info *find_better_candidate(struct sta_info *si_ref, struct ue
 		}
 		int extra = config.prefer_he ? (si->node->he ? 5 : 0) : 0;
 		if (candidate) {
-			if (si->node->freq < 4000 && candidate->node->freq > 4000) {
+			if (config.prefer_6ghz && si->node->freq < 5925 && candidate->node->freq >= 5925) {
+				if (usteer_signal_to_snr(si->node, si->signal) + config.budget_6ghz + extra >
+				    usteer_signal_to_snr(candidate->node, candidate->signal)) {
+					candidate = si;
+				}
+			} else if (si->node->freq < 4000 && candidate->node->freq > 4000) {
 				if (usteer_signal_to_snr(si->node, si->signal) + config.budget_5ghz + extra >
 				    usteer_signal_to_snr(candidate->node, candidate->signal)) {
 					candidate = si;
@@ -207,8 +212,16 @@ static struct sta_info *find_better_candidate(struct sta_info *si_ref, struct ue
 				candidate_5ghz = si;
 			}
 		}
+		if (si->node->freq >= 5925) {
+			if (!candidate_6ghz || (usteer_signal_to_snr(si->node, si->signal) + extra >
+						usteer_signal_to_snr(candidate_6ghz->node, candidate_6ghz->signal))) {
+				candidate_6ghz = si;
+			}
+		}
 	}
-	if (config.prefer_5ghz)
+	if (config.prefer_6ghz)
+		return candidate_6ghz ? candidate_6ghz : config.prefer_5ghz ? candidate_5ghz : candidate;
+	else if (config.prefer_5ghz)
 		return candidate_5ghz ? candidate_5ghz : candidate;
 
 	return candidate;

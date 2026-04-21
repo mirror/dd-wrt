@@ -40,7 +40,7 @@
 #define APMGR_PORT_STR _STR(APMGR_PORT)
 #define APMGR_BUFLEN (64 * 1024)
 
-#define DIV_ROUND_UP(n, d) (((n) + (d)-1) / (d))
+#define DIV_ROUND_UP(n, d) (((n) + (d) - 1) / (d))
 
 enum usteer_event_type {
 	EVENT_TYPE_PROBE,
@@ -161,7 +161,9 @@ struct usteer_config {
 	uint32_t seen_policy_timeout;
 	uint32_t measurement_report_timeout;
 	int32_t budget_5ghz;
+	int32_t budget_6ghz;
 	bool prefer_5ghz;
+	bool prefer_6ghz;
 	bool prefer_he;
 
 	bool assoc_steering;
@@ -289,6 +291,7 @@ struct sta {
 
 	uint8_t seen_2ghz : 1;
 	uint8_t seen_5ghz : 1;
+	uint8_t seen_6ghz : 1;
 
 	uint8_t addr[6];
 };

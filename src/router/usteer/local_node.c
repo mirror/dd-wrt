@@ -21,7 +21,7 @@
 #include <sys/socket.h>
 #include <net/ethernet.h>
 #ifdef linux
-#include <netinet/ether.h>
+	#include <netinet/ether.h>
 #endif
 #include <net/if.h>
 #include <stdlib.h>
