@@ -459,13 +459,13 @@ void set_gpio(int gpio, int value)
 	case ROUTER_LINKSYS_MX5500:
 		switch (gpio) {
 		case 0:
-			writeint("/sys/class/leds/red:system/brightness", value);
+			writeint("/sys/class/leds/red:power/brightness", value);
 			break;
 		case 1:
-			writeint("/sys/class/leds/green:system/brightness", value);
+			writeint("/sys/class/leds/green:power/brightness", value);
 			break;
 		case 2:
-			writeint("/sys/class/leds/blue:system/brightness", value);
+			writeint("/sys/class/leds/blue:power/brightness", value);
 			break;
 		default:
 			set_linux_gpio(gpio + 512, value);
