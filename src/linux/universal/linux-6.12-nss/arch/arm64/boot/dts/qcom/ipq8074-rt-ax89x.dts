@@ -168,8 +168,8 @@
         polling-delay = <5000>;
 	trips {
 		cpu0_active: cpu-active {
-			temperature = <60000>;
-			hysteresis = <10000>;
+			temperature = <70000>;
+			hysteresis = <2000>;
 			type = "active";
 		};
 	};
@@ -186,8 +186,8 @@
         polling-delay = <5000>;
 	trips {
 		cpu1_active: cpu-active {
-			temperature = <60000>;
-			hysteresis = <10000>;
+			temperature = <70000>;
+			hysteresis = <2000>;
 			type = "active";
 		};
 	};
@@ -204,8 +204,8 @@
         polling-delay = <5000>;
 	trips {
 		cpu2_active: cpu-active {
-			temperature = <60000>;
-			hysteresis = <10000>;
+			temperature = <70000>;
+			hysteresis = <2000>;
 			type = "active";
 		};
 	};
@@ -222,8 +222,8 @@
         polling-delay = <5000>;
 	trips {
 		cpu3_active: cpu-active {
-			temperature = <60000>;
-			hysteresis = <10000>;
+			temperature = <70000>;
+			hysteresis = <2000>;
 			type = "active";
 		};
 	};
@@ -240,8 +240,8 @@
         polling-delay = <5000>;
 	trips {
 		cluster_active: cluster-active {
-			temperature = <60000>;
-			hysteresis = <10000>;
+			temperature = <70000>;
+			hysteresis = <2000>;
 			type = "active";
 		};
 	};
