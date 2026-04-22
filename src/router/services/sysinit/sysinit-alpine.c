@@ -118,6 +118,17 @@ void start_sysinit(void)
 	eval("ifconfig", "eth1", "up");
 	eval("ifconfig", "eth2", "up");
 
+	/*
+	switch0: 
+	port 3 = wan
+	port 0 = cpu port / eth1 
+	port 1,2,4,6 = lan ports (all ports are connected to cpu port 0 as vlan1)
+	port 5 = cpu port / eth2  (we connect it with port 3 for wan port as vlan2)
+	
+	switch1:
+	port 0 - 5 = lan ports
+	port 6 = cpu port / eth1 (conneced to switch0 we put all ports in vlan1, same as switch0)
+	*/
 	eval("swconfig", "dev", "switch1", "set", "reset", "1");
 	eval("swconfig", "dev", "switch1", "set", "enable_vlan", "1");
 	eval("swconfig", "dev", "switch1", "set", "igmp_snooping", "0");
