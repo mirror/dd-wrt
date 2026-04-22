@@ -42,7 +42,7 @@
 
 #define DIV_ROUND_UP(n, d) (((n) + (d) - 1) / (d))
 
-#define is_6ghz(freq) (freg >= 5925)
+#define is_6ghz(freq) (freq >= 5925)
 #define is_5ghz(freq) (freq > 4000 && freq < 5925)
 #define is_2ghz(freq) (freq < 4000)
 
