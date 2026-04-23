@@ -119,24 +119,17 @@ void start_sysinit(void)
 	eval("ifconfig", "eth2", "up");
 
 	/*
-	switch0: 
+	switch0:
+	port 0 - 5 = lan ports
+	port 6 = cpu port / eth1 (conneced to switch0 we put all ports in vlan1, same as switch0)
+
+	switch1: 
 	port 3 = wan
 	port 0 = cpu port / eth1 
 	port 1,2,4,6 = lan ports (all ports are connected to cpu port 0 as vlan1)
 	port 5 = cpu port / eth2  (we connect it with port 3 for wan port as vlan2)
 	
-	switch1:
-	port 0 - 5 = lan ports
-	port 6 = cpu port / eth1 (conneced to switch0 we put all ports in vlan1, same as switch0)
 	*/
-	eval("swconfig", "dev", "switch1", "set", "reset", "1");
-	eval("swconfig", "dev", "switch1", "set", "enable_vlan", "1");
-	eval("swconfig", "dev", "switch1", "set", "igmp_snooping", "0");
-	eval("swconfig", "dev", "switch1", "set", "igmp_v3", "1");
-
-	eval("swconfig", "dev", "switch1", "vlan", "1", "set", "ports", "0t 1 2 4 6");
-	eval("swconfig", "dev", "switch1", "vlan", "2", "set", "ports", "3 5t");
-	eval("swconfig", "dev", "switch1", "set", "apply");
 
 	eval("swconfig", "dev", "switch0", "set", "reset", "1");
 	eval("swconfig", "dev", "switch0", "set", "enable_vlan", "1");
@@ -145,6 +138,15 @@ void start_sysinit(void)
 
 	eval("swconfig", "dev", "switch0", "vlan", "1", "set", "ports", "0 1 2 3 4 5 6t");
 	eval("swconfig", "dev", "switch0", "set", "apply");
+
+	eval("swconfig", "dev", "switch1", "set", "reset", "1");
+	eval("swconfig", "dev", "switch1", "set", "enable_vlan", "1");
+	eval("swconfig", "dev", "switch1", "set", "igmp_snooping", "0");
+	eval("swconfig", "dev", "switch1", "set", "igmp_v3", "1");
+
+	eval("swconfig", "dev", "switch1", "vlan", "1", "set", "ports", "0t 1 2 4 6");
+	eval("swconfig", "dev", "switch1", "vlan", "2", "set", "ports", "3 5t");
+	eval("swconfig", "dev", "switch1", "set", "apply");
 
 	nvram_unset("sw_cpuport"); // this is a dummy. for the r9000 we need to write complete new code
 	nvram_seti("sw_wan",
