@@ -4960,7 +4960,8 @@ err:
 	      arg = NULL; /* provoke error below */
 	  }
 	
-	if (!domain || !arg || !(new->name = canonicalise_opt(domain)))
+	if (!domain || !arg || !new->intr ||
+	    !(new->name = canonicalise_opt(domain)))
 	  ret_err(option == LOPT_DYNHOST ?
 		  _("bad dynamic host") : _("bad interface name"));
 	

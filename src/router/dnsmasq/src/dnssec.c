@@ -957,10 +957,7 @@ int dnssec_validate_by_ds(time_t now, struct dns_header *header, size_t plen, ch
 			   
 			   a.log.keytag = keytag;
 			   a.log.algo = algo;
-			   if (algo_digest_name(algo))
-			     log_query(F_NOEXTRA | F_KEYTAG | F_UPSTREAM, name, &a, "DNSKEY keytag %hu, algo %hu", 0);
-			   else
-			     log_query(F_NOEXTRA | F_KEYTAG | F_UPSTREAM, name, &a, "DNSKEY keytag %hu, algo %hu (not supported)", 0);
+			   log_query(F_NOEXTRA | F_KEYTAG | F_UPSTREAM, name, &a, "DNSKEY keytag %hu, algo %hu", !algo_digest_name(algo));
 			 }
 		     }
 				  
@@ -1108,7 +1105,7 @@ int dnssec_validate_ds(time_t now, struct dns_header *header, size_t plen, char 
 		  a.log.keytag = keytag;
 		  a.log.algo = algo;
 		  a.log.digest = digest;
-		  log_query(F_NOEXTRA | F_KEYTAG | F_UPSTREAM, name, &a, "DS for keytag %hu, algo %hu, digest %hu (not supported)", 0);
+		  log_query(F_NOEXTRA | F_KEYTAG | F_UPSTREAM, name, &a, "DS for keytag %hu, algo %hu, digest %hu", 1);
 		  neg_ttl = ttl;
 		} 
 	      else if ((key = blockdata_alloc((char*)p, rdlen - 4)))

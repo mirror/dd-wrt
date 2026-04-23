@@ -2331,7 +2331,7 @@ void log_query(unsigned int flags, char *name, union all_addr *addr, char *arg, 
     return;
 
   /* build query type string if requested */
-  if (!(flags & (F_SERVER | F_IPSET | F_QUERY)) && type > 0)
+  if (!(flags & (F_SERVER | F_IPSET | F_QUERY | F_KEYTAG | F_RR)) && type > 0)
     arg = querystr(arg, type);
 
   dest = arg;
@@ -2347,19 +2347,25 @@ void log_query(unsigned int flags, char *name, union all_addr *addr, char *arg, 
     {
       dest = daemon->addrbuff;
 
-       if (flags & F_RR)
-	 {
-	   if (flags & F_KEYTAG)
-	     dest = querystr(NULL, addr->rrblock.rrtype);
-	   else
-	     dest = querystr(NULL, addr->rrdata.rrtype);
-	 }
-       else if (flags & F_KEYTAG)
-	sprintf(daemon->addrbuff, arg, addr->log.keytag, addr->log.algo, addr->log.digest);
+      if (flags & F_RR)
+	{
+	  if (flags & F_KEYTAG)
+	    dest = querystr(NULL, addr->rrblock.rrtype);
+	  else
+	    dest = querystr(NULL, addr->rrdata.rrtype);
+	}
+#ifdef HAVE_DNSSEC
+      else if (flags & F_KEYTAG)
+	{
+	  snprintf(daemon->addrbuff, ADDRSTRLEN, arg, addr->log.keytag, addr->log.algo, addr->log.digest);
+	  if (type)
+	    extra = " (not supported)";
+	}
+#endif
       else if (flags & F_RCODE)
 	{
 	  unsigned int rcode = addr->log.rcode;
-
+	  
 	  if (rcode == SERVFAIL)
 	    dest = "SERVFAIL";
 	  else if (rcode == REFUSED)

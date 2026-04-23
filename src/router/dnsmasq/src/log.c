@@ -114,7 +114,7 @@ int log_start(struct passwd *ent_pw, int errfd)
       struct stat ls;
       if (getgid() == 0 && fstat(log_fd, &ls) == 0 && ls.st_gid == 0 &&
 	  (ls.st_mode & S_IWGRP) == 0)
-	(void)fchmod(log_fd, S_IRUSR|S_IWUSR|S_IRGRP|S_IWGRP);
+	(void)fchmod(log_fd, ls.st_mode | S_IWGRP);
       if (fchown(log_fd, ent_pw->pw_uid, -1) != 0)
 	ret = errno;
     }

@@ -18,7 +18,7 @@
 */
 
 #define FTABSIZ 150 /* max number of outstanding requests (default) */
-#define MAX_PROCS 20 /* default max no children for TCP requests */
+#define MAX_PROCS 30 /* default max no children for TCP requests */
 #define CHILD_LIFETIME 150 /* secs 'till terminated (RFC1035 suggests > 120s) */
 #define TCP_MAX_QUERIES 100 /* Maximum number of queries per incoming TCP connection */
 #define TCP_TIMEOUT 5 /* timeout waiting to connect to an upstream server - double this for answer */
