@@ -105,6 +105,7 @@ int wl_hwaddr(char *name, unsigned char *hwaddr)
 	struct ifreq ifr;
 	int ret = 0;
 	int s;
+	unsigned char def[6]={0,1,2,3,4,5};
 //#if defined(HAVE_DIR862) && !defined(HAVE_DAP2680) && !defined(HAVE_DAP3662)
 //	if (!strcmp(name, "wlan1"))
 //		name = "wlan0";
@@ -120,6 +121,8 @@ int wl_hwaddr(char *name, unsigned char *hwaddr)
 	strlcpy(ifr.ifr_name, name, IFNAMSIZ - 1);
 	if ((ret = ioctl(s, SIOCGIFHWADDR, &ifr)) == 0)
 		memcpy(hwaddr, ifr.ifr_hwaddr.sa_data, ETHER_ADDR_LEN);
+	else
+		memcpy(hwaddr, def, 6);
 	/*
 	 * cleanup 
 	 */
