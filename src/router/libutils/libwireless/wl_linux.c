@@ -105,11 +105,10 @@ int wl_hwaddr(char *name, unsigned char *hwaddr)
 	struct ifreq ifr;
 	int ret = 0;
 	int s;
-#if defined(HAVE_DIR862) && !defined(HAVE_DAP2680)
-	if (!strcmp(name, "wlan1"))
-		name = "wlan0";
-#endif
-
+//#if defined(HAVE_DIR862) && !defined(HAVE_DAP2680) && !defined(HAVE_DAP3662)
+//	if (!strcmp(name, "wlan1"))
+//		name = "wlan0";
+//#endif
 	if ((s = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
 		perror("socket");
 		return errno;
@@ -121,7 +120,6 @@ int wl_hwaddr(char *name, unsigned char *hwaddr)
 	strlcpy(ifr.ifr_name, name, IFNAMSIZ - 1);
 	if ((ret = ioctl(s, SIOCGIFHWADDR, &ifr)) == 0)
 		memcpy(hwaddr, ifr.ifr_hwaddr.sa_data, ETHER_ADDR_LEN);
-
 	/*
 	 * cleanup 
 	 */
