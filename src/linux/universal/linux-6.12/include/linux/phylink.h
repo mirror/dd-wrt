@@ -443,7 +443,7 @@ struct phylink_pcs_ops {
 			       phy_interface_t interface);
 	int (*pcs_post_config)(struct phylink_pcs *pcs,
 			       phy_interface_t interface);
-	void (*pcs_get_state)(struct phylink_pcs *pcs,
+	void (*pcs_get_state)(struct phylink_pcs *pcs, unsigned int neg_mode,
 			      struct phylink_link_state *state);
 	int (*pcs_config)(struct phylink_pcs *pcs, unsigned int neg_mode,
 			  phy_interface_t interface,

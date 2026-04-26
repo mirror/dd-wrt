@@ -1390,15 +1390,21 @@ static int rtl822xb_write_mmd(struct phy_device *phydev, int devnum, u16 reg,
 static int rtl822x_init_phycr1(struct phy_device *phydev, bool no_aldps)
 {
 	struct rtl822x_priv *priv = phydev->priv;
+	u16 mask = RTL8221B_PHYCR1_ALDPS_EN | RTL8221B_PHYCR1_ALDPS_XTAL_OFF_EN;
 	u16 val = 0;
+
+	/* The controller in some SFP modules uses MDIO address 0 to access the
+	 * PHY. Leave the MDIO broadcast configuration bit alone for SFP
+	 * modules, as it won't cause any issues there anyways.
+	 */
+	if (!phydev->is_on_sfp_module)
+		mask |= RTL8221B_PHYCR1_PHYAD_0_EN;
 
 	if (priv->enable_aldps && !no_aldps)
 		val = RTL8221B_PHYCR1_ALDPS_EN | RTL8221B_PHYCR1_ALDPS_XTAL_OFF_EN;
 
 	return phy_modify_mmd_changed(phydev, MDIO_MMD_VEND2, RTL8221B_PHYCR1,
-				      RTL8221B_PHYCR1_ALDPS_EN |
-				      RTL8221B_PHYCR1_ALDPS_XTAL_OFF_EN |
-				      RTL8221B_PHYCR1_PHYAD_0_EN, val);
+				      mask, val);
 }
 
 static int rtl822x_set_serdes_option_mode(struct phy_device *phydev, bool gen1)

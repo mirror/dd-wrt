@@ -7,6 +7,8 @@ config REALTEK_PHY
 
 config REALTEK_PHY_MULTIPORT
 	tristate "Realtek multiport PHYs"
+	depends on PHYLIB
+	select PHY_PACKAGE
 	help
 	  Currently supports RTL8214x/RTL8218x gigabit multiport PHYs
 

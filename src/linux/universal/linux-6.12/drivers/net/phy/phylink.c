@@ -1525,7 +1525,7 @@ static void phylink_mac_pcs_get_state(struct phylink *pl,
 	state->link = 1;
 
 	if (pl->pcs)
-		pl->pcs->ops->pcs_get_state(pl->pcs, state);
+		pl->pcs->ops->pcs_get_state(pl->pcs, pl->pcs_neg_mode, state);
 	else
 		state->link = 0;
 }

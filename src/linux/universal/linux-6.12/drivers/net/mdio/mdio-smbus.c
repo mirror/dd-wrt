@@ -212,8 +212,8 @@ static int smbus_mii_read_rollball(struct mii_bus *bus, int phy_id, int devad, i
 	buf[2] = reg >> 8;
 	buf[3] = reg & 0xff;
 
-	/* send address */
-	for (i = 0; i < 4; i++) {
+	/* send address, making sure to send the command byte last */
+	for (i = 3; i >= 0; i--) {
 		data.byte = buf[i];
 		ret = __i2c_smbus_xfer(i2c, bus_addr, 0, I2C_SMBUS_WRITE, ROLLBALL_CMD_ADDR + i, I2C_SMBUS_BYTE_DATA, &data);
 		if (ret < 0)
@@ -263,8 +263,8 @@ static int smbus_mii_write_rollball(struct mii_bus *bus, int phy_id, int devad, 
 	buf[4] = val >> 8;
 	buf[5] = val & 0xff;
 
-	/* send address and value */
-	for (i = 0; i < 6; i++) {
+	/* send address and value, making sure to send the command byte last */
+	for (i = 5; i >= 0; i--) {
 		data.byte = buf[i];
 		ret = __i2c_smbus_xfer(i2c, bus_addr, 0, I2C_SMBUS_WRITE, ROLLBALL_CMD_ADDR + i, I2C_SMBUS_BYTE_DATA, &data);
 		if (ret < 0)

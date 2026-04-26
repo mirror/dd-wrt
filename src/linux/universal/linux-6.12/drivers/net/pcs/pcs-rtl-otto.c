@@ -841,7 +841,7 @@ static int rtpcs_838x_sds_patch(struct rtpcs_serdes *sds,
 	default:
 		break;
 	}
-	
+
 	return 0;
 }
 
@@ -883,7 +883,7 @@ static int rtpcs_838x_setup_serdes(struct rtpcs_serdes *sds,
 
 	rtpcs_838x_sds_patch(sds, hw_mode);
 	rtpcs_838x_sds_reset(sds);
-	
+
 	/* release reset */
 	rtpcs_sds_write(sds, 0, 3, 0x7106);
 
@@ -1365,7 +1365,7 @@ pll_setup:
 
 /* RTL930X */
 
-/* 
+/*
  * RTL930X needs a special mapping from logic SerDes ID to physical SerDes ID,
  * which takes the page into account. This applies to most of read/write calls.
  */
@@ -3966,6 +3966,8 @@ static int rtpcs_931x_init(struct rtpcs_ctrl *ctrl)
 	return rtpcs_93xx_init(ctrl);
 }
 
+/* Common functions */
+
 static int rtpcs_sds_config_polarity(struct rtpcs_serdes *sds, phy_interface_t if_mode)
 {
 	unsigned int rx_pol, tx_pol;
@@ -3994,9 +3996,8 @@ static int rtpcs_sds_config_polarity(struct rtpcs_serdes *sds, phy_interface_t i
 	return sds->ops->config_polarity(sds, tx_pol, rx_pol);
 }
 
-/* Common functions */
-
-static void rtpcs_pcs_get_state(struct phylink_pcs *pcs, struct phylink_link_state *state)
+static void rtpcs_pcs_get_state(struct phylink_pcs *pcs, unsigned int neg_mode,
+				struct phylink_link_state *state)
 {
 	struct rtpcs_link *link = rtpcs_phylink_pcs_to_link(pcs);
 	struct rtpcs_ctrl *ctrl = link->ctrl;
@@ -4175,7 +4176,6 @@ struct phylink_pcs *rtpcs_create(struct device *dev, struct device_node *np, int
 	link->port = port;
 	link->sds = sds;
 	link->pcs.ops = ctrl->cfg->pcs_ops;
-	link->pcs.neg_mode = true;
 
 	ctrl->link[port] = link;
 
