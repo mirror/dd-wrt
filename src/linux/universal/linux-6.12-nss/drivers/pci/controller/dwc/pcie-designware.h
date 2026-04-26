@@ -368,7 +368,6 @@ struct dw_pcie_rp {
 	const struct dw_pcie_host_ops *ops;
 	int			msi_irq[MAX_MSI_CTRLS];
 	struct irq_domain	*irq_domain;
-	struct irq_domain	*msi_domain;
 	dma_addr_t		msi_data;
 	struct irq_chip		*msi_irq_chip;
 	u32			num_vectors;
@@ -497,9 +496,6 @@ void dw_pcie_setup(struct dw_pcie *pci);
 void dw_pcie_iatu_detect(struct dw_pcie *pci);
 int dw_pcie_edma_detect(struct dw_pcie *pci);
 void dw_pcie_edma_remove(struct dw_pcie *pci);
-
-int dw_pcie_suspend_noirq(struct dw_pcie *pci);
-int dw_pcie_resume_noirq(struct dw_pcie *pci);
 
 static inline void dw_pcie_writel_dbi(struct dw_pcie *pci, u32 reg, u32 val)
 {
@@ -678,7 +674,12 @@ static inline enum dw_pcie_ltssm dw_pcie_get_ltssm(struct dw_pcie *pci)
 }
 
 #ifdef CONFIG_PCIE_DW_HOST
-irqreturn_t dw_handle_msi_irq(struct dw_pcie_rp *pp);
+int dw_pcie_suspend_noirq(struct dw_pcie *pci);
+int dw_pcie_resume_noirq(struct dw_pcie *pci);
+void dw_handle_msi_irq(struct dw_pcie_rp *pp);
+void dw_pcie_msi_init(struct dw_pcie_rp *pp);
+int dw_pcie_msi_host_init(struct dw_pcie_rp *pp);
+void dw_pcie_free_msi(struct dw_pcie_rp *pp);
 int dw_pcie_setup_rc(struct dw_pcie_rp *pp);
 int dw_pcie_host_init(struct dw_pcie_rp *pp);
 void dw_pcie_host_deinit(struct dw_pcie_rp *pp);
@@ -686,10 +687,28 @@ int dw_pcie_allocate_domains(struct dw_pcie_rp *pp);
 void __iomem *dw_pcie_own_conf_map_bus(struct pci_bus *bus, unsigned int devfn,
 				       int where);
 #else
-static inline irqreturn_t dw_handle_msi_irq(struct dw_pcie_rp *pp)
+static inline int dw_pcie_suspend_noirq(struct dw_pcie *pci)
 {
-	return IRQ_NONE;
+	return 0;
 }
+
+static inline int dw_pcie_resume_noirq(struct dw_pcie *pci)
+{
+	return 0;
+}
+
+static inline void dw_handle_msi_irq(struct dw_pcie_rp *pp) { }
+
+static inline void dw_pcie_msi_init(struct dw_pcie_rp *pp)
+{ }
+
+static inline int dw_pcie_msi_host_init(struct dw_pcie_rp *pp)
+{
+	return -ENODEV;
+}
+
+static inline void dw_pcie_free_msi(struct dw_pcie_rp *pp)
+{ }
 
 static inline int dw_pcie_setup_rc(struct dw_pcie_rp *pp)
 {
