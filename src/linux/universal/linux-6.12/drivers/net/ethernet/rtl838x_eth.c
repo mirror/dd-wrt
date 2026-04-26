@@ -1022,11 +1022,11 @@ static int rteth_hw_receive(struct net_device *dev, int ring, int budget)
 		packet = &ctrl->rx_data[ring].packet[slot];
 		len = packet->len;
 
-		if (!len) {
-			netdev_err(dev, "empty packet received\n");
+		if (len < ETH_FCS_LEN || len > RING_BUFFER) {
+			netdev_err(dev, "invalid packet with %d bytes received\n", len);
 			break;
 		} else if (!dsa) {
-			len -= 4;
+			len -= ETH_FCS_LEN;
 		}
 
 		skb = netdev_alloc_skb_ip_align(dev, len);
