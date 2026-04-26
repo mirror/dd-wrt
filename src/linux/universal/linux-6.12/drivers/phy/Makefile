@@ -3,6 +3,8 @@
 # Makefile for the phy drivers.
 #
 
+obj-$(CONFIG_PHY_COMMON_PROPS)		+= phy-common-props.o
+obj-$(CONFIG_PHY_COMMON_PROPS_TEST)	+= phy-common-props-test.o
 obj-$(CONFIG_GENERIC_PHY)		+= phy-core.o
 obj-$(CONFIG_PHY_AR7100_USB)		+= phy-ar7100-usb.o
 obj-$(CONFIG_PHY_AR7200_USB)		+= phy-ar7200-usb.o
@@ -13,7 +15,7 @@ obj-$(CONFIG_PHY_XGENE)			+= phy-xgene.o
 obj-$(CONFIG_PHY_PISTACHIO_USB)		+= phy-pistachio-usb.o
 obj-$(CONFIG_USB_LGM_PHY)		+= phy-lgm-usb.o
 obj-$(CONFIG_PHY_AIROHA_PCIE)		+= phy-airoha-pcie.o
-obj-y					+= allwinner/	\
+obj-$(CONFIG_GENERIC_PHY)		+= allwinner/	\
 					   amlogic/	\
 					   broadcom/	\
 					   cadence/	\

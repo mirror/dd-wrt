@@ -5168,7 +5168,6 @@ static int mtk_sgmii_init(struct mtk_eth *eth)
 {
 	struct device_node *np;
 	struct regmap *regmap;
-	u32 flags;
 	int i;
 
 	for (i = 0; i < MTK_MAX_DEVS; i++) {
@@ -5177,18 +5176,16 @@ static int mtk_sgmii_init(struct mtk_eth *eth)
 			break;
 
 		regmap = syscon_node_to_regmap(np);
-		flags = 0;
-		if (of_property_read_bool(np, "mediatek,pnswap"))
-			flags |= MTK_SGMII_FLAG_PN_SWAP;
-
-		of_node_put(np);
-
-		if (IS_ERR(regmap))
+		if (IS_ERR(regmap)) {
+			of_node_put(np);
 			return PTR_ERR(regmap);
+		}
 
-		eth->sgmii_pcs[i] = mtk_pcs_lynxi_create(eth->dev, regmap,
-							 eth->soc->ana_rgc3,
-							 flags);
+		eth->sgmii_pcs[i] = mtk_pcs_lynxi_create(eth->dev,
+							 of_fwnode_handle(np),
+							 regmap,
+							 eth->soc->ana_rgc3);
+		of_node_put(np);
 	}
 
 	return 0;

@@ -3966,6 +3966,34 @@ static int rtpcs_931x_init(struct rtpcs_ctrl *ctrl)
 	return rtpcs_93xx_init(ctrl);
 }
 
+static int rtpcs_sds_config_polarity(struct rtpcs_serdes *sds, phy_interface_t if_mode)
+{
+	unsigned int rx_pol, tx_pol;
+	int ret;
+
+	if (!sds->of_node)
+		return 0;
+
+	ret = phy_get_manual_rx_polarity(of_fwnode_handle(sds->of_node), phy_modes(if_mode),
+					 &rx_pol);
+	if (ret < 0)
+		return ret;
+
+	ret = phy_get_manual_tx_polarity(of_fwnode_handle(sds->of_node), phy_modes(if_mode),
+					 &tx_pol);
+	if (ret < 0)
+		return ret;
+
+	if (!sds->ops->config_polarity) {
+		if (tx_pol != PHY_POL_NORMAL || rx_pol != PHY_POL_NORMAL)
+			dev_warn(sds->ctrl->dev,
+				 "Polarity change requested but not supported\n");
+		return 0;
+	}
+
+	return sds->ops->config_polarity(sds, tx_pol, rx_pol);
+}
+
 /* Common functions */
 
 static void rtpcs_pcs_get_state(struct phylink_pcs *pcs, struct phylink_link_state *state)

@@ -15,6 +15,7 @@
 #include <linux/of.h>
 #include <linux/of_platform.h>
 #include <linux/pcs/pcs-mtk-lynxi.h>
+#include <linux/phy/phy-common-props.h>
 #include <linux/phylink.h>
 #include <linux/platform_device.h>
 #include <linux/regmap.h>
@@ -68,8 +69,9 @@
 
 /* Register to QPHY wrapper control */
 #define SGMSYS_QPHY_WRAP_CTRL		0xec
-#define SGMII_PN_SWAP_MASK		GENMASK(1, 0)
-#define SGMII_PN_SWAP_TX_RX		(BIT(0) | BIT(1))
+#define SGMII_PN_SWAP_RX		BIT(1)
+#define SGMII_PN_SWAP_TX		BIT(0)
+
 
 #define MTK_NETSYS_V3_AMA_RGC3		0x128
 
@@ -100,6 +102,7 @@ struct mtk_pcs_lynxi {
 	struct clk		*sgmii_rx;
 	struct clk		*sgmii_tx;
 	struct list_head	node;
+	struct fwnode_handle	*fwnode;
 };
 
 static LIST_HEAD(mtk_pcs_lynxi_instances);
@@ -159,6 +162,42 @@ static void mtk_sgmii_reset(struct mtk_pcs_lynxi *mpcs)
 	mdelay(1);
 }
 
+static int mtk_pcs_config_polarity(struct mtk_pcs_lynxi *mpcs,
+				   phy_interface_t interface)
+{
+	struct fwnode_handle *fwnode = mpcs->fwnode, *pcs_fwnode;
+	unsigned int pol, default_pol = PHY_POL_NORMAL;
+	unsigned int val = 0;
+	int ret;
+
+	if (fwnode_property_read_bool(fwnode, "mediatek,pnswap"))
+		default_pol = PHY_POL_INVERT;
+
+	pcs_fwnode = fwnode_get_named_child_node(fwnode, "pcs");
+
+	ret = phy_get_rx_polarity(pcs_fwnode, phy_modes(interface),
+				  BIT(PHY_POL_NORMAL) | BIT(PHY_POL_INVERT),
+				  default_pol, &pol);
+	if (ret) {
+		fwnode_handle_put(pcs_fwnode);
+		return ret;
+	}
+	if (pol == PHY_POL_INVERT)
+		val |= SGMII_PN_SWAP_RX;
+
+	ret = phy_get_tx_polarity(pcs_fwnode, phy_modes(interface),
+				  BIT(PHY_POL_NORMAL) | BIT(PHY_POL_INVERT),
+				  default_pol, &pol);
+	fwnode_handle_put(pcs_fwnode);
+	if (ret)
+		return ret;
+	if (pol == PHY_POL_INVERT)
+		val |= SGMII_PN_SWAP_TX;
+
+	return regmap_update_bits(mpcs->regmap, SGMSYS_QPHY_WRAP_CTRL,
+				  SGMII_PN_SWAP_RX | SGMII_PN_SWAP_TX, val);
+}
+
 static int mtk_pcs_lynxi_config(struct phylink_pcs *pcs, unsigned int neg_mode,
 				phy_interface_t interface,
 				const unsigned long *advertising,
@@ -168,6 +207,7 @@ static int mtk_pcs_lynxi_config(struct phylink_pcs *pcs, unsigned int neg_mode,
 	bool mode_changed = false, changed;
 	unsigned int rgc3, sgm_mode, bmcr = 0;
 	int advertise, link_timer;
+	int ret;
 
 	advertise = phylink_mii_c22_pcs_encode_advertisement(interface,
 							     advertising);
@@ -207,10 +247,9 @@ static int mtk_pcs_lynxi_config(struct phylink_pcs *pcs, unsigned int neg_mode,
 		regmap_set_bits(mpcs->regmap, SGMSYS_RESERVED_0,
 				SGMII_SW_RESET);
 
-		if (mpcs->flags & MTK_SGMII_FLAG_PN_SWAP)
-			regmap_update_bits(mpcs->regmap, SGMSYS_QPHY_WRAP_CTRL,
-					   SGMII_PN_SWAP_MASK,
-					   SGMII_PN_SWAP_TX_RX);
+		ret = mtk_pcs_config_polarity(mpcs, interface);
+		if (ret)
+			return ret;
 
 		if (interface == PHY_INTERFACE_MODE_2500BASEX)
 			rgc3 = SGMII_PHY_SPEED_3_125G;
@@ -366,18 +405,18 @@ static struct phylink_pcs *mtk_pcs_lynxi_init(struct device *dev, struct regmap 
 
 	mpcs->ana_rgc3 = ana_rgc3;
 	mpcs->regmap = regmap;
-	mpcs->flags = flags;
 	mpcs->pcs.ops = &mtk_pcs_lynxi_ops;
 	mpcs->pcs.neg_mode = true;
 	mpcs->pcs.poll = true;
 	mpcs->interface = PHY_INTERFACE_MODE_NA;
+	mpcs->fwnode = fwnode_handle_get(fwnode);
 
 	return &mpcs->pcs;
 };
 
 struct phylink_pcs *mtk_pcs_lynxi_create(struct device *dev,
-					 struct regmap *regmap, u32 ana_rgc3,
-					 u32 flags)
+					 struct fwnode_handle *fwnode,
+					 struct regmap *regmap, u32 ana_rgc3)
 {
 	return mtk_pcs_lynxi_init(dev, regmap, ana_rgc3, flags, NULL);
 }
@@ -385,10 +424,14 @@ EXPORT_SYMBOL(mtk_pcs_lynxi_create);
 
 void mtk_pcs_lynxi_destroy(struct phylink_pcs *pcs)
 {
+	struct mtk_pcs_lynxi *mpcs;
+
 	if (!pcs)
 		return;
 
-	kfree(pcs_to_mtk_pcs_lynxi(pcs));
+	mpcs = pcs_to_mtk_pcs_lynxi(pcs);
+	fwnode_handle_put(mpcs->fwnode);
+	kfree(mpcs);
 }
 EXPORT_SYMBOL(mtk_pcs_lynxi_destroy);
 
