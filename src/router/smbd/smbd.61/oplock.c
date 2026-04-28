@@ -138,8 +138,8 @@ static void __free_opinfo(struct oplock_info *opinfo)
 {
 	if (opinfo->is_lease)
 		free_lease(opinfo);
-	if (opinfo->conn && atomic_dec_and_test(&opinfo->conn->refcnt))
-		kfree(opinfo->conn);
+	if (opinfo->conn)
+		ksmbd_conn_put(opinfo->conn);
 	kfree(opinfo);
 }
 

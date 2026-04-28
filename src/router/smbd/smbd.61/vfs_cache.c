@@ -496,6 +496,18 @@ static void __ksmbd_close_fd(struct ksmbd_file_table *ft, struct ksmbd_file *fp)
 #ifdef CONFIG_SMB_INSECURE_SERVER
 	kfree(fp->filename);
 #endif
+
+	/*
+	 * Drop fp's strong reference on conn (taken in ksmbd_open_fd() /
+	 * ksmbd_reopen_durable_fd()).  Durable fps that reached the
+	 * scavenger have already had fp->conn cleared by session_fd_check(),
+	 * in which case there is nothing to drop here.
+	 */
+	if (fp->conn) {
+		ksmbd_conn_put(fp->conn);
+		fp->conn = NULL;
+	}
+
 	if (ksmbd_stream_fd(fp))
 		kfree(fp->stream.name);
 	kfree(fp->owner.name);
@@ -809,6 +821,14 @@ struct ksmbd_file *ksmbd_open_fd(struct ksmbd_work *work, struct file *filp)
 	atomic_set(&fp->refcount, 1);
 
 	fp->filp		= filp;
+	/*
+	 * fp owns a strong reference on fp->conn for as long as fp->conn is
+	 * non-NULL, so session_fd_check() and __ksmbd_close_fd() never
+	 * dereference a dangling pointer.  Paired with ksmbd_conn_put() in
+	 * session_fd_check() (durable preserve), in __ksmbd_close_fd()
+	 * (final close), and on the error paths below.
+	 */
+	atomic_inc(&work->conn->refcnt);
 	fp->conn		= work->conn;
 	fp->tcon		= work->tcon;
 	fp->volatile_id		= KSMBD_NO_FID;
@@ -831,6 +851,9 @@ struct ksmbd_file *ksmbd_open_fd(struct ksmbd_work *work, struct file *filp)
 	return fp;
 
 err_out:
+	/* fp->conn was set and refcounted before every branch here. */
+	ksmbd_conn_put(fp->conn);
+	fp->conn = NULL;
 	kmem_cache_free(filp_cache, fp);
 	return ERR_PTR(ret);
 }
@@ -851,7 +874,8 @@ __close_file_table_ids(struct ksmbd_session *sess,
 		       struct ksmbd_tree_connect *tcon,
 		       bool (*skip)(struct ksmbd_tree_connect *tcon,
 				    struct ksmbd_file *fp,
-				    struct ksmbd_user *user))
+				    struct ksmbd_user *user),
+		       bool skip_preserves_fp)
 {
 	struct ksmbd_file_table *ft = &sess->file_table;
 	struct ksmbd_file *fp;
@@ -859,32 +883,132 @@ __close_file_table_ids(struct ksmbd_session *sess,
 	int num = 0;
 
 	while (1) {
+		unsigned int saved_id;
+
 		write_lock(&ft->lock);
 		fp = idr_get_next(ft->idr, &id);
 		if (!fp) {
 			write_unlock(&ft->lock);
 			break;
 		}
-
-		if (skip(tcon, fp, sess->user) ||
-		    !atomic_dec_and_test(&fp->refcount)) {
+		saved_id = id;
+		if (!atomic_inc_not_zero(&fp->refcount)) {
 			id++;
 			write_unlock(&ft->lock);
 			continue;
 		}
 
-		set_close_state_blocked_works(fp);
-		idr_remove(ft->idr, fp->volatile_id);
-		fp->volatile_id = KSMBD_NO_FID;
-		write_unlock(&ft->lock);
+		if (skip_preserves_fp) {
+			/*
+			 * Session teardown: skip() is session_fd_check(),
+			 * which may sleep and mutates fp->conn / fp->tcon /
+			 * fp->volatile_id when it chooses to preserve fp
+			 * for durable reconnect.  Unpublish fp from the
+			 * session idr here, under ft->lock, so that neither
+			 * __ksmbd_lookup_fd() nor a concurrent
+			 * ksmbd_close_fd() through this session can reach
+			 * fp -- the former would otherwise grant a new
+			 * ksmbd_fp_get() reference to an fp whose fields
+			 * are about to be rewritten outside the lock, and
+			 * the latter would otherwise consume the original
+			 * idr-owned ref out from under the
+			 * atomic_sub_and_test(2) below.  Durable reconnect
+			 * still reaches fp via global_ft.
+			 */
+			idr_remove(ft->idr, saved_id);
+			fp->volatile_id = KSMBD_NO_FID;
+			write_unlock(&ft->lock);
 
+			if (skip(tcon, fp, sess->user)) {
+				/*
+				 * session_fd_check() has converted fp to
+				 * durable-preserve state and cleared its
+				 * per-conn fields.  fp is already unpublished
+				 * above; the original idr-owned ref keeps it
+				 * alive for the durable scavenger.  Drop only
+				 * the transient ref.  atomic_dec() is safe --
+				 * atomic_inc_not_zero() succeeded on a
+				 * positive value and we added one more, so
+				 * refcount cannot be zero here.
+				 */
+				atomic_dec(&fp->refcount);
+				id++;
+				continue;
+			}
+
+			/*
+			 * Close path.  fp is already out of the session
+			 * idr, so no concurrent close path can consume the
+			 * idr-owned ref before our atomic_sub_and_test(2)
+			 * below.  Block any remaining lookup (global_ft,
+			 * m_fp_list) by transitioning f_state to FP_CLOSED;
+			 * ksmbd_fp_get() refuses non-FP_INITED files.
+			 */
+			write_lock(&ft->lock);
+			if (fp->f_state == FP_INITED) {
+				set_close_state_blocked_works(fp);
+				fp->f_state = FP_CLOSED;
+			}
+			write_unlock(&ft->lock);
+		} else {
+			/*
+			 * Tree teardown: skip() is tree_conn_fd_check(), a
+			 * cheap pointer compare that doesn't sleep and has
+			 * no side effects, so keep the skip decision plus
+			 * the unpublish-and-mark-closed sequence atomic
+			 * under ft->lock.  fps belonging to other tree
+			 * connects (skip() == true) stay fully published in
+			 * the session idr with no lock window; fps we
+			 * intend to close are unpublished and transitioned
+			 * to FP_CLOSED before we release the lock, so no
+			 * concurrent ksmbd_close_fd() can consume the
+			 * idr-owned ref before our atomic_sub_and_test(2)
+			 * below.
+			 */
+			if (skip(tcon, fp, sess->user)) {
+				atomic_dec(&fp->refcount);
+				write_unlock(&ft->lock);
+				id++;
+				continue;
+			}
+			idr_remove(ft->idr, saved_id);
+			fp->volatile_id = KSMBD_NO_FID;
+			if (fp->f_state == FP_INITED) {
+				set_close_state_blocked_works(fp);
+				fp->f_state = FP_CLOSED;
+			}
+			write_unlock(&ft->lock);
+		}
+
+		/*
+		 * fp->volatile_id is already cleared to prevent stale idr
+		 * removal from a deferred final close.  Remove fp from
+		 * m_fp_list here because __ksmbd_remove_fd() will skip the
+		 * list unlink when volatile_id is KSMBD_NO_FID.
+		 */
 		down_write(&fp->f_ci->m_lock);
 		list_del_init(&fp->node);
 		up_write(&fp->f_ci->m_lock);
 
-		__ksmbd_close_fd(ft, fp);
-
-		num++;
+		/*
+		 * Drop both our transient (+1) and the original
+		 * session-idr-owned ref via atomic_sub_and_test(2).  By
+		 * the reasoning in each branch above, no concurrent close
+		 * path can consume the idr-owned ref, so the subtraction
+		 * cannot underflow.
+		 *
+		 * If we end up as the final putter, finalize fp and
+		 * account the open_files_count decrement via the caller's
+		 * atomic_sub(num, ...).  Otherwise the remaining user's
+		 * ksmbd_fd_put() reaches __put_fd_final(), which does its
+		 * own atomic_dec(&open_files_count), so we must not count
+		 * this fp here -- doing so would double-decrement the
+		 * connection-wide counter.
+		 */
+		if (atomic_sub_and_test(2, &fp->refcount)) {
+			__ksmbd_close_fd(NULL, fp);
+			num++;
+		}
 		id++;
 	}
 
@@ -1119,25 +1243,32 @@ static bool session_fd_check(struct ksmbd_tree_connect *tcon,
 	if (!is_reconnectable(fp))
 		return false;
 
+	if (!fp->conn)
+		return true;
+
 	if (ksmbd_vfs_copy_durable_owner(fp, user))
 		return false;
 
+	/*
+	 * fp owns a strong reference on fp->conn (taken in ksmbd_open_fd()
+	 * / ksmbd_reopen_durable_fd()), so conn stays valid for the whole
+	 * body of this function regardless of any op->conn puts below.
+	 */
 	conn = fp->conn;
 	ci = fp->f_ci;
 	down_write(&ci->m_lock);
 	list_for_each_entry_rcu(op, &ci->m_op_list, op_entry) {
 		if (op->conn != conn)
 			continue;
-		if (op->conn && atomic_dec_and_test(&op->conn->refcnt))
-			kfree(op->conn);
+		ksmbd_conn_put(op->conn);
 		op->conn = NULL;
 	}
 	up_write(&ci->m_lock);
 
 	list_for_each_entry_safe(smb_lock, tmp_lock, &fp->lock_list, flist) {
-		spin_lock(&fp->conn->llist_lock);
+		spin_lock(&conn->llist_lock);
 		list_del_init(&smb_lock->clist);
-		spin_unlock(&fp->conn->llist_lock);
+		spin_unlock(&conn->llist_lock);
 	}
 
 	fp->conn = NULL;
@@ -1148,6 +1279,8 @@ static bool session_fd_check(struct ksmbd_tree_connect *tcon,
 		fp->durable_scavenger_timeout =
 			jiffies_to_msecs(jiffies) + fp->durable_timeout;
 
+	/* Drop fp's own reference on conn. */
+	ksmbd_conn_put(conn);
 	return true;
 }
 
@@ -1155,7 +1288,8 @@ void ksmbd_close_tree_conn_fds(struct ksmbd_work *work)
 {
 	int num = __close_file_table_ids(work->sess,
 					 work->tcon,
-					 tree_conn_fd_check);
+					 tree_conn_fd_check,
+					 false);
 
 	atomic_sub(num, &work->conn->stats.open_files_count);
 }
@@ -1164,7 +1298,8 @@ void ksmbd_close_session_fds(struct ksmbd_work *work)
 {
 	int num = __close_file_table_ids(work->sess,
 					 work->tcon,
-					 session_fd_check);
+					 session_fd_check,
+					 true);
 
 	atomic_sub(num, &work->conn->stats.open_files_count);
 }
@@ -1251,14 +1386,27 @@ int ksmbd_reopen_durable_fd(struct ksmbd_work *work, struct ksmbd_file *fp)
 
 	old_f_state = fp->f_state;
 	fp->f_state = FP_NEW;
+
+	/*
+	 * Initialize fp's connection binding before publishing fp into the
+	 * session's file table.  If __open_id() is ordered first, a
+	 * concurrent teardown that iterates the table can observe a valid
+	 * volatile_id with fp->conn == NULL and preserve a
+	 * partially-initialized fp.  fp owns a strong reference on the new
+	 * conn (see ksmbd_open_fd()); undo it on __open_id() failure.
+	 */
+	atomic_inc(&conn->refcnt);
+	fp->conn = conn;
+	fp->tcon = work->tcon;
+
 	__open_id(&work->sess->file_table, fp, OPEN_ID_TYPE_VOLATILE_ID);
 	if (!has_file_id(fp->volatile_id)) {
+		fp->conn = NULL;
+		fp->tcon = NULL;
+		ksmbd_conn_put(conn);
 		fp->f_state = old_f_state;
 		return -EBADF;
 	}
-
-	fp->conn = conn;
-	fp->tcon = work->tcon;
 
 	list_for_each_entry(smb_lock, &fp->lock_list, flist) {
 		spin_lock(&conn->llist_lock);
@@ -1301,7 +1449,7 @@ void ksmbd_destroy_file_table(struct ksmbd_session *sess)
 	if (!ft->idr)
 		return;
 
-	__close_file_table_ids(sess, NULL, session_fd_check);
+	__close_file_table_ids(sess, NULL, session_fd_check, true);
 	idr_destroy(ft->idr);
 	kfree(ft->idr);
 	ft->idr = NULL;
