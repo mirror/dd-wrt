@@ -54,7 +54,7 @@ static irqreturn_t mv88e6185_pcs_handle_irq(int irq, void *dev_id)
 	return ret;
 }
 
-static void mv88e6185_pcs_get_state(struct phylink_pcs *pcs,
+static void mv88e6185_pcs_get_state(struct phylink_pcs *pcs, unsigned int neg_mode,
 				    struct phylink_link_state *state)
 {
 	struct mv88e6185_pcs *mpcs = pcs_to_mv88e6185_pcs(pcs);
