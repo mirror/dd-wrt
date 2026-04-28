@@ -3083,6 +3083,7 @@ void nand_postinit(struct mtd_info *mtd)
 arch_initcall(ar7240_platform_init);
 
 
+#ifdef CONFIG_HAVE_CLK
 unsigned long __init
 ath79_get_sys_clk_rate(const char *id)
 {
@@ -3118,3 +3119,4 @@ unsigned long clk_get_rate(struct clk *clk)
 	return clk->rate;
 }
 EXPORT_SYMBOL(clk_get_rate);
+#endif
