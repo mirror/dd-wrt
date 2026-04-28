@@ -2332,6 +2332,7 @@ ip_address_changed(int on_client_conn)
         reset_bandwidth_test();
       reset_uptime();
       router_reset_reachability();
+      pt_update_bridge_lines();
       /* All relays include their IP addresses as their ORPort addresses in
        * their descriptor.
        * Exit relays also incorporate interface addresses in their exit

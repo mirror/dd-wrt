@@ -172,6 +172,7 @@
 extern double cc_stats_circ_close_cwnd_ma;
 extern double cc_stats_circ_close_ss_cwnd_ma;
 extern uint64_t cc_stats_circs_closed;
+extern uint64_t circ_n_proto_violation;
 
 /** Convert a circuit_t* to a pointer to the enclosing or_circuit_t.  Assert
  * if the cast is impossible. */

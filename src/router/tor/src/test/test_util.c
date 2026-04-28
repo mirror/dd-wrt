@@ -4173,11 +4173,11 @@ test_util_find_str_at_start_of_line(void *ptr)
     "howdy world. how are you? i hope it's fine.\n"
     "hello kitty\n"
     "third line";
-  char *line2 = strchr(long_string,'\n')+1;
-  char *line3 = strchr(line2,'\n')+1;
+  const char *line2 = strchr(long_string,'\n')+1;
+  const char *line3 = strchr(line2,'\n')+1;
   const char *short_string = "hello kitty\n"
     "second line\n";
-  char *short_line2 = strchr(short_string,'\n')+1;
+  const char *short_line2 = strchr(short_string,'\n')+1;
 
   (void)ptr;
 

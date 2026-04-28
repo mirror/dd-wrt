@@ -29,6 +29,7 @@
 #include "core/or/congestion_control_st.h"
 #include "core/or/congestion_control_common.h"
 #include "core/or/extendinfo.h"
+#include "core/or/relay_msg.h"
 #include "core/mainloop/netstatus.h"
 #include "core/crypto/relay_crypto.h"
 #include "core/or/protover.h"
@@ -223,6 +224,7 @@ static void
 process_mock_cell_delivery(void)
 {
   relay_header_t rh;
+  relay_msg_t *msg = NULL;
 
   cell_delivery_t *delivery = smartlist_pop_last(mock_cell_delivery);
   tor_assert(delivery);
@@ -232,16 +234,20 @@ process_mock_cell_delivery(void)
 
   timers_advance_and_run(1);
 
-  switch (cell->payload[0]) {
+  msg = relay_msg_decode_cell(RELAY_CELL_FORMAT_V0, cell);
+
+  tor_assert(msg);
+
+  switch (msg->command) {
   case RELAY_COMMAND_CONFLUX_LINK:
     tor_assert(!CIRCUIT_IS_ORIGIN(dest_circ));
-    conflux_process_link(dest_circ, cell, rh.length);
+    conflux_process_link(dest_circ, msg);
     break;
   case RELAY_COMMAND_CONFLUX_LINKED:
     tor_assert(CIRCUIT_IS_ORIGIN(dest_circ));
     conflux_process_linked(dest_circ,
                            TO_ORIGIN_CIRCUIT(dest_circ)->cpath->prev,
-                           cell, rh.length);
+                           msg);
     break;
   case RELAY_COMMAND_CONFLUX_LINKED_ACK:
     tor_assert(!CIRCUIT_IS_ORIGIN(dest_circ));
@@ -253,12 +259,13 @@ process_mock_cell_delivery(void)
     // the case where the switch is initiated by the exit, we will need to
     // get the cpath layer hint for the client.
     tor_assert(!CIRCUIT_IS_ORIGIN(dest_circ));
-    conflux_process_switch_command(dest_circ, NULL, cell, &rh);
+    conflux_process_switch_command(dest_circ, NULL, msg);
     break;
   }
 
   tor_free(delivery);
   tor_free(cell);
+  relay_msg_free(msg);
   return;
 }
 
@@ -329,7 +336,7 @@ simulate_single_hop_extend(origin_circuit_t *client, int exit)
 {
   char whatevs_key[CPATH_KEY_MATERIAL_LEN];
   char digest[DIGEST_LEN];
-  tor_addr_t addr;
+  tor_addr_t addr = TOR_ADDR_NULL;
 
   // Advance time a tiny bit so we can calculate an RTT
   curr_mocked_time += 10 * TOR_NSEC_PER_MSEC;
@@ -349,10 +356,11 @@ simulate_single_hop_extend(origin_circuit_t *client, int exit)
 
   hop->extend_info = extend_info_new(
           exit ? "exit" : "non-exit",
-          digest, NULL, NULL, NULL,
+          digest, NULL, NULL,
           &addr, exit, NULL, exit);
 
-  cpath_init_circuit_crypto(hop, whatevs_key, sizeof(whatevs_key), 0, 0);
+  cpath_init_circuit_crypto(RELAY_CRYPTO_ALG_TOR1, hop,
+                            whatevs_key, sizeof(whatevs_key));
 
   hop->package_window = circuit_initial_package_window();
   hop->deliver_window = CIRCWINDOW_START;
@@ -396,6 +404,7 @@ test_setup(void)
 static void
 test_clear_circs(void)
 {
+  conflux_notify_shutdown();
   SMARTLIST_FOREACH(circ_pairs, circ_pair_t *, circ_pair, {
     tor_free(circ_pair);
   });
@@ -430,6 +439,9 @@ test_clear_circs(void)
   tor_assert(smartlist_len(mock_cell_delivery) == 0);
 
   (void)free_fake_origin_circuit;
+
+  /* Clear shutdown flag so we can resume testing again. */
+  conflux_clear_shutdown();
 }
 
 static void

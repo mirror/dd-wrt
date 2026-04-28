@@ -41,7 +41,7 @@ compute_introduce_mac(const uint8_t *encoded_cell, size_t encoded_cell_len,
 {
   size_t offset = 0;
   size_t mac_msg_len;
-  uint8_t mac_msg[RELAY_PAYLOAD_SIZE] = {0};
+  uint8_t mac_msg[RELAY_PAYLOAD_SIZE_MAX] = {0};
 
   tor_assert(encoded_cell);
   tor_assert(encrypted);
@@ -299,8 +299,8 @@ introduce1_encrypt_and_encode(trn_cell_introduce1_t *cell,
   size_t offset = 0;
   ssize_t encrypted_len;
   ssize_t encoded_cell_len, encoded_enc_cell_len;
-  uint8_t encoded_cell[RELAY_PAYLOAD_SIZE] = {0};
-  uint8_t encoded_enc_cell[RELAY_PAYLOAD_SIZE] = {0};
+  uint8_t encoded_cell[RELAY_PAYLOAD_SIZE_MAX] = {0};
+  uint8_t encoded_enc_cell[RELAY_PAYLOAD_SIZE_MAX] = {0};
   uint8_t *encrypted = NULL;
   uint8_t mac[DIGEST256_LEN];
   crypto_cipher_t *cipher = NULL;
@@ -339,7 +339,7 @@ introduce1_encrypt_and_encode(trn_cell_introduce1_t *cell,
    * ENCRYPTED_DATA and MAC length. */
   encrypted_len = sizeof(data->client_kp->pubkey) + encoded_enc_cell_len +
                   sizeof(mac);
-  tor_assert(encrypted_len < RELAY_PAYLOAD_SIZE);
+  tor_assert(encrypted_len < RELAY_PAYLOAD_SIZE_MAX);
   encrypted = tor_malloc_zero(encrypted_len);
 
   /* Put the CLIENT_PK first. */
@@ -369,7 +369,7 @@ introduce1_encrypt_and_encode(trn_cell_introduce1_t *cell,
   /* Cleanup. */
   memwipe(&keys, 0, sizeof(keys));
   memwipe(mac, 0, sizeof(mac));
-  memwipe(encrypted, 0, sizeof(encrypted_len));
+  memwipe(encrypted, 0, encrypted_len);
   memwipe(encoded_enc_cell, 0, sizeof(encoded_enc_cell));
   tor_free(encrypted);
 }
@@ -709,7 +709,7 @@ hs_cell_build_establish_intro(const char *circ_nonce,
     ssize_t tmp_cell_mac_offset =
       sig_len + sizeof(cell->sig_len) +
       trn_cell_establish_intro_getlen_handshake_mac(cell);
-    uint8_t tmp_cell_enc[RELAY_PAYLOAD_SIZE] = {0};
+    uint8_t tmp_cell_enc[RELAY_PAYLOAD_SIZE_MAX] = {0};
     uint8_t mac[TRUNNEL_SHA3_256_LEN], *handshake_ptr;
 
     /* We first encode the current fields we have in the cell so we can
@@ -738,7 +738,7 @@ hs_cell_build_establish_intro(const char *circ_nonce,
   {
     ssize_t tmp_cell_enc_len = 0;
     ssize_t tmp_cell_sig_offset = (sig_len + sizeof(cell->sig_len));
-    uint8_t tmp_cell_enc[RELAY_PAYLOAD_SIZE] = {0}, *sig_ptr;
+    uint8_t tmp_cell_enc[RELAY_PAYLOAD_SIZE_MAX] = {0}, *sig_ptr;
     ed25519_signature_t sig;
 
     /* We first encode the current fields we have in the cell so we can
@@ -764,7 +764,8 @@ hs_cell_build_establish_intro(const char *circ_nonce,
   }
 
   /* Encode the cell. Can't be bigger than a standard cell. */
-  cell_len = trn_cell_establish_intro_encode(cell_out, RELAY_PAYLOAD_SIZE,
+  cell_len = trn_cell_establish_intro_encode(cell_out,
+                                             RELAY_PAYLOAD_SIZE_MAX,
                                              cell);
 
  done:
@@ -1161,7 +1162,8 @@ hs_cell_build_rendezvous1(const uint8_t *rendezvous_cookie,
   memcpy(trn_cell_rendezvous1_getarray_handshake_info(cell),
          rendezvous_handshake_info, rendezvous_handshake_info_len);
   /* Encoding. */
-  cell_len = trn_cell_rendezvous1_encode(cell_out, RELAY_PAYLOAD_SIZE, cell);
+  cell_len = trn_cell_rendezvous1_encode(cell_out,
+                                         RELAY_PAYLOAD_SIZE_MAX, cell);
   tor_assert(cell_len > 0);
 
   trn_cell_rendezvous1_free(cell);
@@ -1200,7 +1202,8 @@ hs_cell_build_introduce1(const hs_cell_introduce1_data_t *data,
   introduce1_set_encrypted(cell, data);
 
   /* Final encoding. */
-  cell_len = trn_cell_introduce1_encode(cell_out, RELAY_PAYLOAD_SIZE, cell);
+  cell_len = trn_cell_introduce1_encode(cell_out,
+                                        RELAY_PAYLOAD_SIZE_MAX, cell);
 
   trn_cell_introduce1_free(cell);
   return cell_len;

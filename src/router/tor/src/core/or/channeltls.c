@@ -1238,26 +1238,6 @@ channel_tls_handle_var_cell(var_cell_t *var_cell, or_connection_t *conn)
     return;
 
   switch (TO_CONN(conn)->state) {
-    case OR_CONN_STATE_OR_HANDSHAKING_V2:
-      if (var_cell->command != CELL_VERSIONS) {
-        log_fn(LOG_PROTOCOL_WARN, LD_PROTOCOL,
-               "Received a cell with command %d in unexpected "
-               "orconn state \"%s\" [%d], channel state \"%s\" [%d]; "
-               "closing the connection.",
-               (int)(var_cell->command),
-               conn_state_to_string(CONN_TYPE_OR, TO_CONN(conn)->state),
-               TO_CONN(conn)->state,
-               channel_state_to_string(TLS_CHAN_TO_BASE(chan)->state),
-               (int)(TLS_CHAN_TO_BASE(chan)->state));
-        /*
-         * The code in connection_or.c will tell channel_t to close for
-         * error; it will go to CHANNEL_STATE_CLOSING, and then to
-         * CHANNEL_STATE_ERROR when conn is closed.
-         */
-        connection_or_close_for_error(conn, 0);
-        return;
-      }
-      break;
     case OR_CONN_STATE_TLS_HANDSHAKING:
       /* If we're using bufferevents, it's entirely possible for us to
        * notice "hey, data arrived!" before we notice "hey, the handshake
@@ -1266,7 +1246,7 @@ channel_tls_handle_var_cell(var_cell_t *var_cell, or_connection_t *conn)
       /* But that should be happening any longer've disabled bufferevents. */
       tor_assert_nonfatal_unreached_once();
       FALLTHROUGH_UNLESS_ALL_BUGS_ARE_FATAL;
-    case OR_CONN_STATE_TLS_SERVER_RENEGOTIATING:
+    case OR_CONN_STATE_SERVER_VERSIONS_WAIT:
       if (!(command_allowed_before_handshake(var_cell->command))) {
         log_fn(LOG_PROTOCOL_WARN, LD_PROTOCOL,
                "Received a cell with command %d in unexpected "
@@ -1436,14 +1416,13 @@ enter_v3_handshake_with_cell(var_cell_t *cell, channel_tls_t *chan)
 
   tor_assert(TO_CONN(chan->conn)->state == OR_CONN_STATE_TLS_HANDSHAKING ||
              TO_CONN(chan->conn)->state ==
-               OR_CONN_STATE_TLS_SERVER_RENEGOTIATING);
+                     OR_CONN_STATE_SERVER_VERSIONS_WAIT);
 
   if (started_here) {
     log_fn(LOG_PROTOCOL_WARN, LD_OR,
            "Received a cell while TLS-handshaking, not in "
            "OR_HANDSHAKING_V3, on a connection we originated.");
   }
-  connection_or_block_renegotiation(chan->conn);
   connection_or_change_state(chan->conn, OR_CONN_STATE_OR_HANDSHAKING_V3);
   if (connection_init_or_handshake_state(chan->conn, started_here) < 0) {
     connection_or_close_for_error(chan->conn, 0);
@@ -1494,11 +1473,10 @@ channel_tls_process_versions_cell(var_cell_t *cell, channel_tls_t *chan)
   }
   switch (chan->conn->base_.state)
     {
-    case OR_CONN_STATE_OR_HANDSHAKING_V2:
     case OR_CONN_STATE_OR_HANDSHAKING_V3:
       break;
     case OR_CONN_STATE_TLS_HANDSHAKING:
-    case OR_CONN_STATE_TLS_SERVER_RENEGOTIATING:
+    case OR_CONN_STATE_SERVER_VERSIONS_WAIT:
     default:
       log_fn(LOG_PROTOCOL_WARN, LD_OR,
              "VERSIONS cell while in unexpected state");
@@ -1535,15 +1513,6 @@ channel_tls_process_versions_cell(var_cell_t *cell, channel_tls_t *chan)
     log_fn(LOG_PROTOCOL_WARN, LD_OR,
            "Negotiated link protocol 2 or lower after doing a v3 TLS "
            "handshake. Closing connection.");
-    connection_or_close_for_error(chan->conn, 0);
-    return;
-  } else if (highest_supported_version != 2 &&
-             chan->conn->base_.state == OR_CONN_STATE_OR_HANDSHAKING_V2) {
-    /* XXXX This should eventually be a log_protocol_warn */
-    log_fn(LOG_WARN, LD_OR,
-           "Negotiated link with non-2 protocol after doing a v2 TLS "
-           "handshake with %s. Closing connection.",
-           connection_describe_peer(TO_CONN(chan->conn)));
     connection_or_close_for_error(chan->conn, 0);
     return;
   }
@@ -1733,8 +1702,7 @@ can_process_netinfo_cell(const channel_tls_t *chan)
   }
 
   /* Can't process a NETINFO cell if the connection is not handshaking. */
-  if (chan->conn->base_.state != OR_CONN_STATE_OR_HANDSHAKING_V2 &&
-      chan->conn->base_.state != OR_CONN_STATE_OR_HANDSHAKING_V3) {
+  if (chan->conn->base_.state != OR_CONN_STATE_OR_HANDSHAKING_V3) {
     log_fn(LOG_PROTOCOL_WARN, LD_OR,
            "Received a NETINFO cell on non-handshaking connection; dropping.");
     return false;
@@ -2465,22 +2433,20 @@ channel_tls_process_authenticate_cell(var_cell_t *cell, channel_tls_t *chan)
     ERR("Authenticator was too short");
 
   expected_cell = connection_or_compute_authenticate_cell_body(
-                chan->conn, authtype, NULL, NULL, 1);
+                chan->conn, authtype, NULL, 1);
   if (! expected_cell)
     ERR("Couldn't compute expected AUTHENTICATE cell body");
 
-  int sig_is_rsa;
-  if (authtype == AUTHTYPE_RSA_SHA256_TLSSECRET ||
-      authtype == AUTHTYPE_RSA_SHA256_RFC5705) {
-    bodylen = V3_AUTH_BODY_LEN;
-    sig_is_rsa = 1;
+  if (BUG(authtype != AUTHTYPE_ED25519_SHA256_RFC5705)) {
+    /* We should have detected that we don't support this
+     * authentication type earlier, when we called
+     * authchallenge_type_is_supported(). */
+    ERR("Unsupported authentication type");
   } else {
-    tor_assert(authtype == AUTHTYPE_ED25519_SHA256_RFC5705);
     /* Our earlier check had better have made sure we had room
      * for an ed25519 sig (inadvertently) */
     tor_assert(V3_AUTH_BODY_LEN > ED25519_SIG_LEN);
     bodylen = authlen - ED25519_SIG_LEN;
-    sig_is_rsa = 0;
   }
   if (expected_cell->payload_len != bodylen+4) {
     ERR("Expected AUTHENTICATE cell body len not as expected.");
@@ -2496,47 +2462,7 @@ channel_tls_process_authenticate_cell(var_cell_t *cell, channel_tls_t *chan)
   if (tor_memneq(expected_cell->payload+4, auth, bodylen-24))
     ERR("Some field in the AUTHENTICATE cell body was not as expected");
 
-  if (sig_is_rsa) {
-    if (chan->conn->handshake_state->certs->ed_id_sign != NULL)
-      ERR("RSA-signed AUTHENTICATE response provided with an ED25519 cert");
-
-    if (chan->conn->handshake_state->certs->auth_cert == NULL)
-      ERR("We never got an RSA authentication certificate");
-
-    crypto_pk_t *pk = tor_tls_cert_get_key(
-                             chan->conn->handshake_state->certs->auth_cert);
-    char d[DIGEST256_LEN];
-    char *signed_data;
-    size_t keysize;
-    int signed_len;
-
-    if (! pk) {
-      ERR("Couldn't get RSA key from AUTH cert.");
-    }
-    crypto_digest256(d, (char*)auth, V3_AUTH_BODY_LEN, DIGEST_SHA256);
-
-    keysize = crypto_pk_keysize(pk);
-    signed_data = tor_malloc(keysize);
-    signed_len = crypto_pk_public_checksig(pk, signed_data, keysize,
-                                           (char*)auth + V3_AUTH_BODY_LEN,
-                                           authlen - V3_AUTH_BODY_LEN);
-    crypto_pk_free(pk);
-    if (signed_len < 0) {
-      tor_free(signed_data);
-      ERR("RSA signature wasn't valid");
-    }
-    if (signed_len < DIGEST256_LEN) {
-      tor_free(signed_data);
-      ERR("Not enough data was signed");
-    }
-    /* Note that we deliberately allow *more* than DIGEST256_LEN bytes here,
-     * in case they're later used to hold a SHA3 digest or something. */
-    if (tor_memneq(signed_data, d, DIGEST256_LEN)) {
-      tor_free(signed_data);
-      ERR("Signature did not match data to be signed.");
-    }
-    tor_free(signed_data);
-  } else {
+  {
     if (chan->conn->handshake_state->certs->ed_id_sign == NULL)
       ERR("We never got an Ed25519 identity certificate.");
     if (chan->conn->handshake_state->certs->ed_sign_auth == NULL)
@@ -2563,7 +2489,7 @@ channel_tls_process_authenticate_cell(var_cell_t *cell, channel_tls_t *chan)
     const common_digests_t *id_digests = tor_x509_cert_get_id_digests(id_cert);
     const ed25519_public_key_t *ed_identity_received = NULL;
 
-    if (! sig_is_rsa) {
+    {
       chan->conn->handshake_state->authenticated_ed25519 = 1;
       ed_identity_received =
         &chan->conn->handshake_state->certs->ed_id_sign->signing_key;

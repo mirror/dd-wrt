@@ -65,6 +65,7 @@
 #include "core/or/conflux.h"
 #include "core/or/conflux_pool.h"
 #include "core/or/crypt_path.h"
+#include "core/or/dos.h"
 #include "core/or/extendinfo.h"
 #include "core/or/status.h"
 #include "core/or/trace_probes_circuit.h"
@@ -158,6 +159,10 @@ double cc_stats_circ_close_cwnd_ma = 0;
 double cc_stats_circ_close_ss_cwnd_ma = 0;
 
 uint64_t cc_stats_circs_closed = 0;
+
+/** Total number of circuit protocol violation. This is incremented when the
+ * END_CIRC_REASON_TORPROTOCOL is used to close a circuit. */
+uint64_t circ_n_proto_violation = 0;
 
 /********* END VARIABLES ************/
 
@@ -1130,6 +1135,7 @@ or_circuit_new(circid_t p_circ_id, channel_t *p_chan)
   cell_queue_init(&circ->p_chan_cells);
 
   init_circuit_base(TO_CIRCUIT(circ));
+  dos_stream_init_circ_tbf(circ);
 
   tor_trace(TR_SUBSYS(circuit), TR_EV(new_or), circ);
   return circ;
@@ -2163,6 +2169,10 @@ circuit_mark_for_close_, (circuit_t *circ, int reason, int line,
   assert_circuit_ok(circ);
   tor_assert(line);
   tor_assert(file);
+
+  if (reason == END_CIRC_REASON_TORPROTOCOL) {
+    circ_n_proto_violation++;
+  }
 
   /* Check whether the circuitpadding subsystem wants to block this close */
   if (circpad_marked_circuit_for_padding(circ, reason)) {

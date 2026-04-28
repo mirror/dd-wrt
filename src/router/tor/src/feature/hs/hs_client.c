@@ -1448,6 +1448,9 @@ handle_rendezvous2(origin_circuit_t *circ, const uint8_t *payload,
  err:
   circuit_mark_for_close(TO_CIRCUIT(circ), END_CIRC_REASON_TORPROTOCOL);
  end:
+  memwipe(auth_mac, 0, sizeof(auth_mac));
+  memwipe(handshake_info, 0, sizeof(handshake_info));
+  memwipe(&server_pk, 0, sizeof(server_pk));
   memwipe(&keys, 0, sizeof(keys));
   return ret;
 }

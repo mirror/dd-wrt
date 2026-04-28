@@ -1595,13 +1595,15 @@ guard_create_exit_restriction(const uint8_t *exit_id)
 /* Allocate and return a new exit guard restriction that excludes all current
  * and pending conflux guards */
 STATIC entry_guard_restriction_t *
-guard_create_conflux_restriction(const origin_circuit_t *circ)
+guard_create_conflux_restriction(const origin_circuit_t *circ,
+                                 const uint8_t *exit_id)
 {
   entry_guard_restriction_t *rst = NULL;
   rst = tor_malloc_zero(sizeof(entry_guard_restriction_t));
   rst->type = RST_EXCL_LIST;
   rst->excluded = smartlist_new();
   conflux_add_guards_to_exclude_list(circ, rst->excluded);
+  memcpy(rst->exclude_id, exit_id, DIGEST_LEN);
   return rst;
 }
 
@@ -1653,7 +1655,8 @@ static int
 guard_obeys_exit_restriction(const entry_guard_t *guard,
                              const entry_guard_restriction_t *rst)
 {
-  tor_assert(rst->type == RST_EXIT_NODE);
+  tor_assert(rst->type == RST_EXIT_NODE ||
+          rst->type == RST_EXCL_LIST);
 
   // Exclude the exit ID and all of its family.
   const node_t *node = node_get_by_id((const char*)rst->exclude_id);
@@ -1709,7 +1712,8 @@ entry_guard_obeys_restriction(const entry_guard_t *guard,
   } else if (rst->type == RST_OUTDATED_MD_DIRSERVER) {
     return guard_obeys_md_dirserver_restriction(guard);
   } else if (rst->type == RST_EXCL_LIST) {
-    return !smartlist_contains_digest(rst->excluded, guard->identity);
+    return guard_obeys_exit_restriction(guard, rst) &&
+        !smartlist_contains_digest(rst->excluded, guard->identity);
   }
 
   tor_assert_nonfatal_unreached();
@@ -2169,7 +2173,7 @@ select_primary_guard_for_circuit(guard_selection_t *gs,
             static ratelim_t guardlog = RATELIM_INIT(60);
             log_fn_ratelim(&guardlog, LOG_NOTICE, LD_GUARD,
                            "All current guards excluded by path restriction "
-                           "type %d; using an additonal guard.",
+                           "type %d; using an additional guard.",
                            rst->type);
           } else {
             break;
@@ -3875,8 +3879,9 @@ guards_choose_guard(const origin_circuit_t *circ,
   entry_guard_restriction_t *rst = NULL;
 
   /* If we this is a conflux circuit, build an exclusion list for it. */
-  if (CIRCUIT_IS_CONFLUX(TO_CIRCUIT(circ))) {
-    rst = guard_create_conflux_restriction(circ);
+  if (CIRCUIT_IS_CONFLUX(TO_CIRCUIT(circ)) && state
+          && (exit_id = build_state_get_exit_rsa_id(state))) {
+    rst = guard_create_conflux_restriction(circ, exit_id);
     /* Don't allow connecting back to the exit if there is one */
     if (state && (exit_id = build_state_get_exit_rsa_id(state))) {
       /* add the exit_id to the excluded list */

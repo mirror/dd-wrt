@@ -448,6 +448,19 @@ parse_socks5_userpass_auth(const uint8_t *raw_data, socks_request_t *req,
   const char *password =
    socks5_client_userpass_auth_getconstarray_passwd(trunnel_req);
 
+  /* Detect invalid SOCKS5 extended-parameter requests. */
+  if (usernamelen >= 8 &&
+      tor_memeq(username, "<torS0X>", 8)) {
+    /* This is indeed an extended-parameter request. */
+    if (usernamelen != 9 ||
+        tor_memneq(username, "<torS0X>0", 9)) {
+      /* This request is an unrecognized version, or it includes an Arti RPC
+       * object ID (which we do not recognize). */
+      res = SOCKS_RESULT_INVALID;
+      goto end;
+    }
+  }
+
   if (usernamelen && username) {
     tor_free(req->username);
     req->username = tor_memdup_nulterm(username, usernamelen);
@@ -916,11 +929,12 @@ static const char SOCKS_PROXY_IS_NOT_AN_HTTP_PROXY_MSG[] =
   "<title>This is a SOCKS Proxy, Not An HTTP Proxy</title>\n"
   "</head>\n"
   "<body>\n"
-  "<h1>This is a SOCKs proxy, not an HTTP proxy.</h1>\n"
+  "<h1>This is a SOCKS proxy, not an HTTP proxy.</h1>\n"
   "<p>\n"
   "It appears you have configured your web browser to use this Tor port as\n"
   "an HTTP proxy.\n"
-  "</p><p>\n"
+  "</p>\n"
+  "<p>\n"
   "This is not correct: This port is configured as a SOCKS proxy, not\n"
   "an HTTP proxy. If you need an HTTP proxy tunnel, use the HTTPTunnelPort\n"
   "configuration option in place of, or in addition to, SOCKSPort.\n"
