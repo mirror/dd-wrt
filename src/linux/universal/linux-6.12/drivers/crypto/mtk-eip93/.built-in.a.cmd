@@ -1,1 +1,0 @@
-savedcmd_drivers/crypto/mtk-eip93/built-in.a := rm -f drivers/crypto/mtk-eip93/built-in.a;  printf "drivers/crypto/mtk-eip93/%s " eip93-main.o eip93-common.o | xargs ccache mipsel-openwrt-linux-ar cDPrST drivers/crypto/mtk-eip93/built-in.a

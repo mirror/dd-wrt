@@ -1,1 +1,0 @@
-savedcmd_drivers/crypto/intel/built-in.a := rm -f drivers/crypto/intel/built-in.a;  printf "drivers/crypto/intel/%s " keembay/built-in.a ixp4xx/built-in.a | xargs ccache mipsel-openwrt-linux-ar cDPrST drivers/crypto/intel/built-in.a

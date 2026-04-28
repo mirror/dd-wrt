@@ -1,1 +1,0 @@
-savedcmd_drivers/crypto/built-in.a := rm -f drivers/crypto/built-in.a;  printf "drivers/crypto/%s " stm32/built-in.a inside-secure/built-in.a xilinx/built-in.a hisilicon/built-in.a intel/built-in.a starfive/built-in.a | xargs ccache mipsel-openwrt-linux-ar cDPrST drivers/crypto/built-in.a

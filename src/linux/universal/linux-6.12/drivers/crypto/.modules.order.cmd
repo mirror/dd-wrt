@@ -1,1 +1,0 @@
-savedcmd_drivers/crypto/modules.order := {   cat drivers/crypto/stm32/modules.order;   cat drivers/crypto/inside-secure/modules.order;   cat drivers/crypto/xilinx/modules.order;   cat drivers/crypto/hisilicon/modules.order;   cat drivers/crypto/intel/modules.order;   cat drivers/crypto/starfive/modules.order; :; } > drivers/crypto/modules.order
