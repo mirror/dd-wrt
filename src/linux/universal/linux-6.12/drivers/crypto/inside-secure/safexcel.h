@@ -315,7 +315,6 @@
 #define EIP197_MST_CTRL_RD_CACHE(n)		(((n) & 0xf) << 0)
 #define EIP197_MST_CTRL_WD_CACHE(n)		(((n) & 0xf) << 4)
 #define EIP197_MST_CTRL_TX_MAX_CMD(n)		(((n) & 0xf) << 20)
-#define EIP97_MST_CTRL_TX_MAX_CMD(n)		(((n) & 0xf) << 4)
 #define EIP197_MST_CTRL_BYTE_SWAP		BIT(24)
 #define EIP197_MST_CTRL_NO_BYTE_SWAP		BIT(25)
 #define EIP197_MST_CTRL_BYTE_SWAP_BITS          GENMASK(25, 24)
@@ -743,9 +742,6 @@ struct safexcel_priv_data {
 /* Priority we use for advertising our algorithms */
 #define SAFEXCEL_CRA_PRIORITY		300
 
-/* System cache line size */
-#define SYSTEM_CACHELINE_SIZE		64
-
 /* SM3 digest result for zero length message */
 #define EIP197_SM3_ZEROM_HASH	"\x1A\xB2\x1D\x83\x55\xCF\xA1\x7F" \
 				"\x8E\x61\x19\x48\x31\xE8\x1A\x8F" \
@@ -949,12 +945,13 @@ extern struct safexcel_alg_template safexcel_alg_hmac_sha224;
 extern struct safexcel_alg_template safexcel_alg_hmac_sha256;
 extern struct safexcel_alg_template safexcel_alg_hmac_sha384;
 extern struct safexcel_alg_template safexcel_alg_hmac_sha512;
+extern struct safexcel_alg_template safexcel_alg_authenc_hmac_md5_cbc_aes;
 extern struct safexcel_alg_template safexcel_alg_authenc_hmac_sha1_cbc_aes;
 extern struct safexcel_alg_template safexcel_alg_authenc_hmac_sha224_cbc_aes;
 extern struct safexcel_alg_template safexcel_alg_authenc_hmac_sha256_cbc_aes;
 extern struct safexcel_alg_template safexcel_alg_authenc_hmac_sha384_cbc_aes;
 extern struct safexcel_alg_template safexcel_alg_authenc_hmac_sha512_cbc_aes;
-extern struct safexcel_alg_template safexcel_alg_authenc_hmac_sha1_cbc_des3_ede;
+extern struct safexcel_alg_template safexcel_alg_authenc_hmac_md5_ctr_aes;
 extern struct safexcel_alg_template safexcel_alg_authenc_hmac_sha1_ctr_aes;
 extern struct safexcel_alg_template safexcel_alg_authenc_hmac_sha224_ctr_aes;
 extern struct safexcel_alg_template safexcel_alg_authenc_hmac_sha256_ctr_aes;
@@ -963,7 +960,6 @@ extern struct safexcel_alg_template safexcel_alg_authenc_hmac_sha512_ctr_aes;
 extern struct safexcel_alg_template safexcel_alg_xts_aes;
 extern struct safexcel_alg_template safexcel_alg_gcm;
 extern struct safexcel_alg_template safexcel_alg_ccm;
-extern struct safexcel_alg_template safexcel_alg_crc32;
 extern struct safexcel_alg_template safexcel_alg_cbcmac;
 extern struct safexcel_alg_template safexcel_alg_xcbcmac;
 extern struct safexcel_alg_template safexcel_alg_cmac;
@@ -987,11 +983,14 @@ extern struct safexcel_alg_template safexcel_alg_hmac_sha3_224;
 extern struct safexcel_alg_template safexcel_alg_hmac_sha3_256;
 extern struct safexcel_alg_template safexcel_alg_hmac_sha3_384;
 extern struct safexcel_alg_template safexcel_alg_hmac_sha3_512;
-extern struct safexcel_alg_template safexcel_alg_authenc_hmac_sha1_cbc_des;
+extern struct safexcel_alg_template safexcel_alg_authenc_hmac_md5_cbc_des3_ede;
+extern struct safexcel_alg_template safexcel_alg_authenc_hmac_sha1_cbc_des3_ede;
 extern struct safexcel_alg_template safexcel_alg_authenc_hmac_sha256_cbc_des3_ede;
 extern struct safexcel_alg_template safexcel_alg_authenc_hmac_sha224_cbc_des3_ede;
 extern struct safexcel_alg_template safexcel_alg_authenc_hmac_sha512_cbc_des3_ede;
 extern struct safexcel_alg_template safexcel_alg_authenc_hmac_sha384_cbc_des3_ede;
+extern struct safexcel_alg_template safexcel_alg_authenc_hmac_md5_cbc_des;
+extern struct safexcel_alg_template safexcel_alg_authenc_hmac_sha1_cbc_des;
 extern struct safexcel_alg_template safexcel_alg_authenc_hmac_sha256_cbc_des;
 extern struct safexcel_alg_template safexcel_alg_authenc_hmac_sha224_cbc_des;
 extern struct safexcel_alg_template safexcel_alg_authenc_hmac_sha512_cbc_des;
