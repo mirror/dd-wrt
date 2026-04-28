@@ -1624,7 +1624,8 @@ static unsigned int an8855_pcs_inband_caps(struct phylink_pcs *pcs,
 	return  LINK_INBAND_DISABLE;
 }
 
-static void an8855_pcs_get_state(struct phylink_pcs *pcs,
+
+static void an8855_pcs_get_state(struct phylink_pcs *pcs, unsigned int neg_mode,
 				 struct phylink_link_state *state)
 {
 	struct an8855_priv *priv = container_of(pcs, struct an8855_priv, pcs);

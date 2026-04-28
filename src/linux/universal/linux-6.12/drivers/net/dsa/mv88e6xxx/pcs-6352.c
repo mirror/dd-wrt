@@ -157,7 +157,7 @@ static void marvell_c22_pcs_disable(struct phylink_pcs *pcs)
 	marvell_c22_pcs_power(mpcs, false);
 }
 
-static void marvell_c22_pcs_get_state(struct phylink_pcs *pcs,
+static void marvell_c22_pcs_get_state(struct phylink_pcs *pcs, unsigned int neg_mode,
 				      struct phylink_link_state *state)
 {
 	struct marvell_c22_pcs *mpcs = pcs_to_marvell_c22_pcs(pcs);

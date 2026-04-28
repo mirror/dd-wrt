@@ -87,7 +87,7 @@ static struct lan966x_port *lan966x_pcs_to_port(struct phylink_pcs *pcs)
 	return container_of(pcs, struct lan966x_port, phylink_pcs);
 }
 
-static void lan966x_pcs_get_state(struct phylink_pcs *pcs,
+static void lan966x_pcs_get_state(struct phylink_pcs *pcs, unsigned int neg_mode,
 				  struct phylink_link_state *state)
 {
 	struct lan966x_port *port = lan966x_pcs_to_port(pcs);

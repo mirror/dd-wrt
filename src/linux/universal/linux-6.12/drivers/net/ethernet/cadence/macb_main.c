@@ -578,7 +578,7 @@ static void macb_usx_pcs_link_up(struct phylink_pcs *pcs, unsigned int neg_mode,
 	gem_writel(bp, USX_CONTROL, config);
 }
 
-static void macb_usx_pcs_get_state(struct phylink_pcs *pcs,
+static void macb_usx_pcs_get_state(struct phylink_pcs *pcs, unsigned int neg_mode,
 				   struct phylink_link_state *state)
 {
 	struct macb *bp = container_of(pcs, struct macb, phylink_usx_pcs);
