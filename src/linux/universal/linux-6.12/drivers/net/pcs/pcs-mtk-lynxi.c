@@ -128,7 +128,7 @@ static unsigned int mtk_pcs_lynxi_inband_caps(struct phylink_pcs *pcs,
 	}
 }
 
-static void mtk_pcs_lynxi_get_state(struct phylink_pcs *pcs,
+static void mtk_pcs_lynxi_get_state(struct phylink_pcs *pcs, unsigned int neg,
 				    struct phylink_link_state *state)
 {
 	struct mtk_pcs_lynxi *mpcs = pcs_to_mtk_pcs_lynxi(pcs);
@@ -365,8 +365,10 @@ static const struct phylink_pcs_ops mtk_pcs_lynxi_ops = {
 	.pcs_enable = mtk_pcs_lynxi_enable,
 };
 
-static struct phylink_pcs *mtk_pcs_lynxi_init(struct device *dev, struct regmap *regmap,
-					      u32 ana_rgc3, u32 flags,
+static struct phylink_pcs *mtk_pcs_lynxi_init(struct device *dev, 
+					      struct fwnode_handle *fwnode,
+					      struct regmap *regmap,
+					      u32 ana_rgc3,
 					      struct mtk_pcs_lynxi *prealloc)
 {
 	struct mtk_pcs_lynxi *mpcs;
@@ -418,7 +420,7 @@ struct phylink_pcs *mtk_pcs_lynxi_create(struct device *dev,
 					 struct fwnode_handle *fwnode,
 					 struct regmap *regmap, u32 ana_rgc3)
 {
-	return mtk_pcs_lynxi_init(dev, regmap, ana_rgc3, flags, NULL);
+	return mtk_pcs_lynxi_init(dev, fwnode, regmap, ana_rgc3, NULL);
 }
 EXPORT_SYMBOL(mtk_pcs_lynxi_create);
 
@@ -442,7 +444,6 @@ static int mtk_pcs_lynxi_probe(struct platform_device *pdev)
 	struct mtk_pcs_lynxi *mpcs;
 	struct phylink_pcs *pcs;
 	struct regmap *regmap;
-	u32 flags = 0;
 
 	mpcs = devm_kzalloc(dev, sizeof(*mpcs), GFP_KERNEL);
 	if (!mpcs)
@@ -452,9 +453,6 @@ static int mtk_pcs_lynxi_probe(struct platform_device *pdev)
 	regmap = syscon_node_to_regmap(np->parent);
 	if (IS_ERR(regmap))
 		return PTR_ERR(regmap);
-
-	if (of_property_read_bool(np->parent, "mediatek,pnswap"))
-		flags |= MTK_SGMII_FLAG_PN_SWAP;
 
 	mpcs->rstc = of_reset_control_get_shared(np->parent, NULL);
 	if (IS_ERR(mpcs->rstc))
@@ -473,8 +471,8 @@ static int mtk_pcs_lynxi_probe(struct platform_device *pdev)
 	if (IS_ERR(mpcs->sgmii_tx))
 		return PTR_ERR(mpcs->sgmii_tx);
 
-	pcs = mtk_pcs_lynxi_init(dev, regmap, (uintptr_t)of_device_get_match_data(dev),
-				 flags, mpcs);
+	pcs = mtk_pcs_lynxi_init(dev, of_fwnode_handle(np), regmap, (uintptr_t)of_device_get_match_data(dev),
+				 mpcs);
 	if (IS_ERR(pcs))
 		return PTR_ERR(pcs);
 
