@@ -1266,6 +1266,7 @@ CONFIG_RTC_LIB=y
 # SOC (System On Chip) specific Drivers
 #
 # CONFIG_SOC_TI is not set
+# CONFIG_CLKDEV_LOOKUP is not set
 
 #
 # Hardware Spinlock drivers
