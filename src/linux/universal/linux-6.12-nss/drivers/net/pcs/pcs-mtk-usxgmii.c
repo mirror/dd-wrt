@@ -278,7 +278,7 @@ static void mtk_usxgmii_pcs_get_an_state(struct mtk_usxgmii_pcs *mpcs,
 	phylink_decode_usxgmii_word(state, lpa);
 }
 
-static void mtk_usxgmii_pcs_get_state(struct phylink_pcs *pcs, unsigned int neg_mode,
+static void mtk_usxgmii_pcs_get_state(struct phylink_pcs *pcs,
 				      struct phylink_link_state *state)
 {
 	struct mtk_usxgmii_pcs *mpcs = pcs_to_mtk_usxgmii_pcs(pcs);

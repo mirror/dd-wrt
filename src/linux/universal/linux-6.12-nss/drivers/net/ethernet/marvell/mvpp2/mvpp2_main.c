@@ -6206,7 +6206,7 @@ static struct mvpp2_port *mvpp2_pcs_gmac_to_port(struct phylink_pcs *pcs)
 	return container_of(pcs, struct mvpp2_port, pcs_gmac);
 }
 
-static void mvpp2_xlg_pcs_get_state(struct phylink_pcs *pcs, unsigned int neg_mode,
+static void mvpp2_xlg_pcs_get_state(struct phylink_pcs *pcs,
 				    struct phylink_link_state *state)
 {
 	struct mvpp2_port *port = mvpp2_pcs_xlg_to_port(pcs);
