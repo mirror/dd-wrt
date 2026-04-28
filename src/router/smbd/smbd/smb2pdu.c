@@ -5345,16 +5345,8 @@ static int smb2_get_info_sec(struct ksmbd_work *work,
 		ksmbd_debug(SMB, "Unsupported addition info: 0x%x)\n",
 		       addition_info);
 
-		pntsd->revision = cpu_to_le16(1);
-		pntsd->type = cpu_to_le16(SELF_RELATIVE | DACL_PROTECTED);
-		pntsd->osidoffset = 0;
-		pntsd->gsidoffset = 0;
-		pntsd->sacloffset = 0;
-		pntsd->dacloffset = 0;
-		secdesclen = sizeof(struct smb_ntsd);
-		rsp->OutputBufferLength = cpu_to_le32(secdesclen);
-		inc_rfc1001_len(work->response_buf, secdesclen);
-		return 0;
+		rsp->hdr.Status = STATUS_NOT_SUPPORTED;
+		return -EINVAL;
 	}
 
 	if (work->next_smb2_rcv_hdr_off) {
