@@ -79,7 +79,7 @@
 		1800000  1100000
 	>;
 	clock-latency = <200000>;
-	/delete-property/ operating-points-v2;
+//	/delete-property/ operating-points-v2;
 	/delete-property/ cpu-supply;
 };
 
@@ -96,7 +96,7 @@
 		1800000  1100000
 	>;
 	clock-latency = <200000>;
-	/delete-property/ operating-points-v2;
+//	/delete-property/ operating-points-v2;
 	/delete-property/ cpu-supply;
 };
 
@@ -113,7 +113,7 @@
 		1800000  1100000
 	>;
 	clock-latency = <200000>;
-	/delete-property/ operating-points-v2;
+//	/delete-property/ operating-points-v2;
 	/delete-property/ cpu-supply;
 };
 
@@ -130,7 +130,7 @@
 		1800000  1100000
 	>;
 	clock-latency = <200000>;
-	/delete-property/ operating-points-v2;
+//	/delete-property/ operating-points-v2;
 	/delete-property/ cpu-supply;
 };
 

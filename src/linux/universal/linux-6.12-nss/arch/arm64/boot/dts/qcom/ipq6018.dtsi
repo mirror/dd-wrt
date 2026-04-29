@@ -115,14 +115,14 @@
 		opp-864000000 {
 			opp-hz = /bits/ 64 <864000000>;
 			opp-microvolt = <1>;
-			opp-supported-hw = <0x7>;
+			opp-supported-hw = <0xf>;
 			clock-latency-ns = <200000>;
 		};
 
 		opp-1056000000 {
 			opp-hz = /bits/ 64 <1056000000>;
 			opp-microvolt = <2>;
-			opp-supported-hw = <0x7>;
+			opp-supported-hw = <0xf>;
 			clock-latency-ns = <200000>;
 		};
 
@@ -150,21 +150,21 @@
 		opp-1512000000 {
 			opp-hz = /bits/ 64 <1512000000>;
 			opp-microvolt = <5>;
-			opp-supported-hw = <0x3>;
+			opp-supported-hw = <0x2>;
 			clock-latency-ns = <200000>;
 		};
 
 		opp-1608000000 {
 			opp-hz = /bits/ 64 <1608000000>;
 			opp-microvolt = <5>;
-			opp-supported-hw = <0x3>;
+			opp-supported-hw = <0x1>;
 			clock-latency-ns = <200000>;
 		};
 
 		opp-1800000000 {
 			opp-hz = /bits/ 64 <1800000000>;
 			opp-microvolt = <6>;
-			opp-supported-hw = <0x3>;
+			opp-supported-hw = <0x1>;
 			clock-latency-ns = <200000>;
 		};
 	};
