@@ -150,7 +150,7 @@
 		opp-1512000000 {
 			opp-hz = /bits/ 64 <1512000000>;
 			opp-microvolt = <5>;
-			opp-supported-hw = <0x2>;
+			opp-supported-hw = <0x4>;
 			clock-latency-ns = <200000>;
 		};
 
