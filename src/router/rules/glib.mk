@@ -249,6 +249,7 @@ glib20-install:
 
 
 #	install -D glib20/libglib/glib/.libs/libglib-2.0.so.0 $(INSTALLDIR)/glib20/usr/lib/libglib-2.0.so.0
+	rm -f $(INSTALLDIR)/glib20/usr/lib/libgirepository*
 ifneq ($(CONFIG_MC),y)
 ifneq ($(CONFIG_LIBQMI),y)
 ifneq ($(CONFIG_LIBMBIM),y)
