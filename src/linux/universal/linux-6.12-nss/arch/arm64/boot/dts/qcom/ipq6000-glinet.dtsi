@@ -75,11 +75,8 @@
 		1320000  1100000
 		1440000  1100000
 		1512000  1100000
-		1608000  1100000
-		1800000  1100000
 	>;
 	clock-latency = <200000>;
-//	/delete-property/ operating-points-v2;
 	/delete-property/ cpu-supply;
 };
 
@@ -92,11 +89,8 @@
 		1320000  1100000
 		1440000  1100000
 		1512000  1100000
-		1608000  1100000
-		1800000  1100000
 	>;
 	clock-latency = <200000>;
-//	/delete-property/ operating-points-v2;
 	/delete-property/ cpu-supply;
 };
 
@@ -109,11 +103,8 @@
 		1320000  1100000
 		1440000  1100000
 		1512000  1100000
-		1608000  1100000
-		1800000  1100000
 	>;
 	clock-latency = <200000>;
-//	/delete-property/ operating-points-v2;
 	/delete-property/ cpu-supply;
 };
 
@@ -126,11 +117,8 @@
 		1320000  1100000
 		1440000  1100000
 		1512000  1100000
-		1608000  1100000
-		1800000  1100000
 	>;
 	clock-latency = <200000>;
-//	/delete-property/ operating-points-v2;
 	/delete-property/ cpu-supply;
 };
 
