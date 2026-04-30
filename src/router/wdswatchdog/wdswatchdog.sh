@@ -51,6 +51,8 @@ do
 					logger -t "$TAG" "$ip dropped (3/3), Restarting Router"
 					cat /var/log/messages > /jffs/lastlog.log
 					/sbin/reboot &
+					sleep 30
+					echo b > /proc/sysrq-trigger
 				fi 
 			done
 		fi
