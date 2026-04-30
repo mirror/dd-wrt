@@ -1229,7 +1229,9 @@ static struct ctl_table verbosity_ctl_dir[] = {
 		.mode           = 0644,
 		.proc_handler   = proc_dointvec,
 	},
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(6, 11, 0))
 	{},
+#endif
 };
 
 static struct ctl_table verbosity_ctl_root[] = {

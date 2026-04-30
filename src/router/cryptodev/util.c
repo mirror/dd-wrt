@@ -21,6 +21,7 @@
 
 #include <crypto/scatterwalk.h>
 #include <linux/scatterlist.h>
+#include <linux/version.h>
 #include "util.h"
 
 /* These were taken from Maxim Levitsky's patch to lkml.
@@ -44,8 +45,12 @@ struct scatterlist *sg_advance(struct scatterlist *sg, int consumed)
 	sg->length -= consumed;
 
 	if (sg->offset >= PAGE_SIZE) {
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(6, 18, 0))
+		struct page *page = sg_page(sg) + (sg->offset / PAGE_SIZE);
+#else
 		struct page *page =
 			nth_page(sg_page(sg), sg->offset / PAGE_SIZE);
+#endif
 		sg_set_page(sg, page, sg->length, sg->offset % PAGE_SIZE);
 	}
 
