@@ -2460,7 +2460,7 @@ static struct clk_branch gcc_q6ss_trig_clk = {
 				&qdss_dap_sync_clk_src.hw,
 			},
 			.num_parents = 1,
-			.flags = CLK_SET_RATE_PARENT,
+			.flags = CLK_SET_RATE_PARENT | CLK_IGNORE_UNUSED,
 			.ops = &clk_branch2_ops,
 		},
 	},
