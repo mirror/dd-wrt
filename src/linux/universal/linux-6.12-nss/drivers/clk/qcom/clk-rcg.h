@@ -171,6 +171,8 @@ struct clk_rcg2 {
 		const struct freq_tbl		*freq_tbl;
 		const struct freq_multi_tbl	*freq_multi_tbl;
 	};
+#define CLK_RCG2_HW_CONTROLLED		BIT(0)
+	u8			flags;
 	struct clk_regmap	clkr;
 	u8			cfg_off;
 	u32			parked_cfg;
