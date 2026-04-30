@@ -1,5 +1,16 @@
 // SPDX-License-Identifier: GPL-2.0-only
 
+/ {
+	nss_dummy_reg: nss-regulator {
+		compatible = "regulator-fixed";
+		regulator-name = "nss-reg";
+		regulator-min-microvolt = <848000>;
+		regulator-max-microvolt = <848000>;
+		regulator-always-on;
+		regulator-boot-on;
+	};
+};
+
 &soc {
 	nss-common {
 		compatible = "qcom,nss-common";
@@ -10,18 +21,11 @@
 
 	nss0: nss@40000000 {
 		compatible = "qcom,nss";
-		interrupts = <GIC_SPI 402 IRQ_TYPE_EDGE_RISING>,
-			     <GIC_SPI 401 IRQ_TYPE_EDGE_RISING>,
-			     <GIC_SPI 400 IRQ_TYPE_EDGE_RISING>,
-			     <GIC_SPI 399 IRQ_TYPE_EDGE_RISING>,
-			     <GIC_SPI 398 IRQ_TYPE_EDGE_RISING>,
-			     <GIC_SPI 397 IRQ_TYPE_EDGE_RISING>,
-			     <GIC_SPI 396 IRQ_TYPE_EDGE_RISING>,
-			     <GIC_SPI 395 IRQ_TYPE_EDGE_RISING>;
-		reg = <0x07a00000 0x100>,
-		      <0x0b111000 0x1000>;
-		reg-names = "nphys",
-		            "qgic-phys";
+		interrupts = <0 402 0x1>, <0 401 0x1>, <0 400 0x1>,
+			     <0 399 0x1>, <0 398 0x1>, <0 397 0x1>,
+			     <0 396 0x1>, <0 395 0x1>;
+		reg = <0x07a00000 0x100>, <0x0b111000 0x1000>;
+		reg-names = "nphys", "qgic-phys";
 		clocks = <&gcc GCC_UBI0_CFG_CLK>,
 			 <&gcc GCC_UBI0_DBG_CLK>,
 			 <&gcc GCC_UBI0_CORE_CLK>,
@@ -29,10 +33,8 @@
 			 <&gcc GCC_UBI0_AXI_CLK>,
 			 <&gcc GCC_SNOC_UBI0_AXI_CLK>,
 			 <&gcc GCC_UBI0_NC_AXI_CLK>;
-		clock-names = "nss-cfg-clk",
-			      "nss-dbg-clk",
-			      "nss-core-clk",
-			      "nss-utcm-clk",
+		clock-names = "nss-cfg-clk", "nss-dbg-clk",
+			      "nss-core-clk", "nss-utcm-clk",
 			      "nss-axi-clk",
 			      "nss-snoc-axi-clk",
 			      "nss-nc-axi-clk";
@@ -68,14 +70,14 @@
 		qcom,portid-enabled;
 		qcom,wlan-dataplane-offload-enabled;
 		qcom,pvxlan-enabled;
-		qcom,rmnet_rx-enabled;
 		qcom,udp-st-enabled;
+		qcom,rmnet_rx-enabled;
 	};
-
-		nss-dp-common {
-			compatible = "qcom,nss-dp-common";
-			qcom,tcsr-base = <0x01937000>;
-		};
+	
+	nss-dp-common {
+		compatible = "qcom,nss-dp-common";
+		qcom,tcsr-base = <0x01937000>;
+	};
 
 	nss_crypto: qcom,nss_crypto {
 		compatible = "qcom,nss-crypto";
@@ -119,19 +121,3 @@
 		};
 	};
 };
-
-/*&wifi0 {
-	// IPQ5018
-	nss-radio-priority = <0>;
-};
-
-&wifi1 {
-	// QCN6102 5G
-	nss-radio-priority = <1>;
-};
-
-&wifi2 {
-	// QCN6122 5G/6G
-	nss-radio-priority = <1>;
-};
-*/
