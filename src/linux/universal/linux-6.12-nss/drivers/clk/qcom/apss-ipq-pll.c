@@ -28,7 +28,12 @@ static struct clk_alpha_pll ipq_pll_huayra = {
 
 static struct clk_alpha_pll ipq_pll_stromer = {
 	.offset = 0x0,
-	.regs = clk_alpha_pll_regs[CLK_ALPHA_PLL_TYPE_STROMER],
+	/*
+	 * Reuse CLK_ALPHA_PLL_TYPE_STROMER_PLUS register offsets.
+	 * Although this is a bit confusing, but the offset values
+	 * are correct nevertheless.
+	 */
+	.regs = clk_alpha_pll_regs[CLK_ALPHA_PLL_TYPE_STROMER_PLUS],
 	.flags = SUPPORTS_DYNAMIC_UPDATE,
 	.clkr = {
 		.enable_reg = 0x0,
@@ -70,6 +75,7 @@ static struct clk_alpha_pll ipq_pll_stromer_plus = {
 static const struct alpha_pll_config ipq5018_pll_config = {
 	.l = 0x2a,
 	.config_ctl_val = 0x4001075b,
+	.config_ctl_hi_val = 0x304,
 	.main_output_mask = BIT(0),
 	.aux_output_mask = BIT(1),
 	.early_output_mask = BIT(3),
