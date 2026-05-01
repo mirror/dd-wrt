@@ -37,6 +37,7 @@
 #define nss_nl_trace(s, ...) pr_debug("%s[%d]:" s, __func__, __LINE__, ##__VA_ARGS__)
 #define nss_nl_hex_dump_bytes(prefix_str, prefix_type, buf, len)	\
 	dynamic_hex_dump(prefix_str, prefix_type, 16, 1, buf, len, true)
+#define nss_nl_info_always nss_nl_info
 #else
 /*
  * Statically compile messages at different levels
@@ -66,12 +67,13 @@
 		pr_info("%s[%d]:" s, __func__, __LINE__, ##__VA_ARGS__);	\
 	}	\
 }
+#define nss_nl_info_always(s, ...) printk(KERN_INFO"%s[%d]:" s, __func__, __LINE__, ##__VA_ARGS__)
+
 #endif /* !CONFIG_DYNAMIC_DEBUG */
 
 /*
  * debug message for module init and exit
  */
-#define nss_nl_info_always(s, ...) printk(KERN_INFO"%s[%d]:" s, __func__, __LINE__, ##__VA_ARGS__)
 
 
 #define NSS_NETLINK_INIT_FAMILY(family, pre_fn, post_fn) {	\
