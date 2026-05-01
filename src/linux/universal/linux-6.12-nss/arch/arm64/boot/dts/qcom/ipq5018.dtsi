@@ -563,6 +563,25 @@
 			status = "disabled";
 		};
 
+		bt: bt@1943008 {
+			compatible = "qcom,bt";
+			reg = <0x01943008 0x8>;
+			reg-names = "bt_warm_rst";
+			interrupts = <GIC_SPI 162 IRQ_TYPE_EDGE_RISING>;
+			clocks = <&gcc GCC_BTSS_LPO_CLK>;
+			clock-names = "lpo_clk";
+			resets = <&gcc GCC_BTSS_BCR>;
+			reset-names = "btss_reset";
+			memory-region = <&bt_mem_region>;
+			qcom,ipc = <&apcs 8 23>;
+			status = "disabled";
+
+			bluetooth: bluetooth {
+				compatible = "qcom,maple-bt";
+				status = "disabled";
+			};
+		};
+
 		sdhc_1: mmc@7804000 {
 			compatible = "qcom,ipq5018-sdhci", "qcom,sdhci-msm-v5";
 			reg = <0x7804000 0x1000>;
@@ -737,13 +756,13 @@
 
 			v2m0: v2m@0 {
 				compatible = "arm,gic-v2m-frame";
-				reg = <0x00000000 0xff8>;
+				reg = <0x00000000 0xffd>;
 				msi-controller;
 			};
 
 			v2m1: v2m@1000 {
 				compatible = "arm,gic-v2m-frame";
-				reg = <0x00001000 0xff8>;
+				reg = <0x00001000 0xffd>;
 				msi-controller;
 			};
 		};
@@ -753,6 +772,11 @@
 			reg = <0x0b017000 0x40>;
 			interrupts = <GIC_SPI 3 IRQ_TYPE_EDGE_RISING>;
 			clocks = <&sleep_clk>;
+		};
+
+		apcs: syscon@b111000 {
+			compatible = "syscon";
+			reg = <0x0B111000 0x1000>;
 		};
 
 		apcs_glb: mailbox@b111000 {
