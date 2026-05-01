@@ -35,7 +35,7 @@
 #endif
 
 #if (NSS_VLAN_MGR_DEBUG_LEVEL < 1)
-#define nss_vlan_mgr_assert(fmt, args...)
+#define nss_vlan_mgr_assert(fmt, args...) do {} while(0)
 #else
 #define nss_vlan_mgr_assert(c) BUG_ON(!(c))
 #endif /* NSS_VLAN_MGR_DEBUG_LEVEL */
@@ -55,21 +55,21 @@
  * Statically compile messages at different levels
  */
 #if (NSS_VLAN_MGR_DEBUG_LEVEL < 2)
-#define nss_vlan_mgr_warn(s, ...)
+#define nss_vlan_mgr_warn(s, ...) do {} while(0)
 #else
 #define nss_vlan_mgr_warn(s, ...) \
 		pr_warn("%s[%d]:" s, __func__, __LINE__, ##__VA_ARGS__)
 #endif
 
 #if (NSS_VLAN_MGR_DEBUG_LEVEL < 3)
-#define nss_vlan_mgr_info(s, ...)
+#define nss_vlan_mgr_info(s, ...) do {} while(0)
 #else
 #define nss_vlan_mgr_info(s, ...) \
 		pr_notice("%s[%d]:" s, __func__, __LINE__, ##__VA_ARGS__)
 #endif
 
 #if (NSS_VLAN_MGR_DEBUG_LEVEL < 4)
-#define nss_vlan_mgr_trace(s, ...)
+#define nss_vlan_mgr_trace(s, ...) do {} while(0)
 #else
 #define nss_vlan_mgr_trace(s, ...) \
 		pr_info("%s[%d]:" s, __func__, __LINE__, ##__VA_ARGS__)

@@ -596,7 +596,7 @@ static bool nss_bridge_mgr_l2_exception_acl_enable(void)
 	sw_error_t error;
 	fal_acl_rule_t rule;
 
-	memset(&rule, 0, sizeof(rule));
+printk(KERN_EMERG "%s:%d\n", __func__, __LINE__);
 	error = fal_acl_list_creat(NSS_BRIDGE_MGR_ACL_DEV_ID, NSS_BRIDGE_MGR_ACL_LIST_ID,
 				NSS_BRIDGE_MGR_ACL_LIST_PRIORITY);
 	if (error != SW_OK) {
@@ -607,6 +607,7 @@ static bool nss_bridge_mgr_l2_exception_acl_enable(void)
 	/*
 	 * Enable excpetion for packets with fragments.
 	 */
+	memset(&rule, 0, sizeof(rule));
 	rule.rule_type = FAL_ACL_RULE_IP4;
 	rule.is_fragement_mask = 1;
 	rule.is_fragement_val = A_TRUE;
@@ -619,7 +620,7 @@ static bool nss_bridge_mgr_l2_exception_acl_enable(void)
 		nss_bridge_mgr_warn("Could not add fragment acl rule, error = %d\n", error);
 		goto frag_fail;
 	}
-
+return true;
 	/*
 	 * Enable excpetion for TCP FIN.
 	 */
@@ -683,6 +684,7 @@ static bool nss_bridge_mgr_l2_exception_acl_enable(void)
 		nss_bridge_mgr_warn("Could not bind ACL list, error = %d\n", error);
 		goto bind_fail;
 	}
+printk(KERN_EMERG "%s:%d\n", __func__, __LINE__);
 
 	nss_bridge_mgr_info("Created ACL rule\n");
 	return true;
