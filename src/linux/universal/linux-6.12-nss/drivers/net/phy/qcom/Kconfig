@@ -18,6 +18,7 @@ config QCA83XX_PHY
 config QCA808X_PHY
 	tristate "Qualcomm QCA808x PHYs"
 	select QCOM_NET_PHYLIB
+	select PHY_PACKAGE
 	help
 	  Currently supports the QCA8081 model
 

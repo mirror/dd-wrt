@@ -44,6 +44,15 @@ config PCS_RTL_OTTO
 	help
 	  This module provides a driver for the Realtek SerDes PCS
 
+config PCS_QCOM_IPQ9574
+	tristate "Qualcomm IPQ9574 PCS"
+	depends on OF && (ARCH_QCOM || COMPILE_TEST)
+	depends on HAS_IOMEM && COMMON_CLK
+	help
+	  This module provides driver for UNIPHY PCS available on Qualcomm
+	  IPQ9574 SoC. The UNIPHY PCS supports both PCS and XPCS functions
+	  to support different interface modes for MAC to PHY connections.
+
 config PCS_RZN1_MIIC
 	tristate "Renesas RZ/N1 MII converter"
 	depends on OF && (ARCH_RZN1 || COMPILE_TEST)

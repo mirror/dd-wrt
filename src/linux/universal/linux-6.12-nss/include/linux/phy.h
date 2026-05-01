@@ -376,6 +376,7 @@ struct phy_package_shared {
 /* used as bit number in atomic bitops */
 #define PHY_SHARED_F_INIT_DONE  0
 #define PHY_SHARED_F_PROBE_DONE 1
+#define PHY_SHARED_F_REMOVE_DONE 2
 
 /**
  * struct mii_bus - Represents an MDIO bus
@@ -2276,6 +2277,11 @@ static inline bool phy_package_init_once(struct phy_device *phydev)
 static inline bool phy_package_probe_once(struct phy_device *phydev)
 {
 	return __phy_package_set_once(phydev, PHY_SHARED_F_PROBE_DONE);
+}
+
+static inline bool phy_package_remove_once(struct phy_device *phydev)
+{
+	return __phy_package_set_once(phydev, PHY_SHARED_F_REMOVE_DONE);
 }
 
 extern const struct bus_type mdio_bus_type;

@@ -8,6 +8,7 @@
 
 /dts-v1/;
 
+#include <dt-bindings/gpio/gpio.h>
 #include "ipq9574-rdp-common.dtsi"
 
 / {
@@ -15,19 +16,165 @@
 	compatible = "qcom,ipq9574-ap-al02-c7", "qcom,ipq9574";
 };
 
-&sdhc_1 {
-	pinctrl-0 = <&sdc_default_state>;
-	pinctrl-names = "default";
-	mmc-ddr-1_8v;
-	mmc-hs200-1_8v;
-	mmc-hs400-1_8v;
-	mmc-hs400-enhanced-strobe;
-	max-frequency = <384000000>;
-	bus-width = <8>;
+&pcie1_phy {
 	status = "okay";
 };
 
+&pcie1 {
+	pinctrl-0 = <&pcie1_default>;
+	pinctrl-names = "default";
+
+	perst-gpios = <&tlmm 26 GPIO_ACTIVE_LOW>;
+	wake-gpios = <&tlmm 27 GPIO_ACTIVE_LOW>;
+	status = "okay";
+};
+
+&pcie2_phy {
+	status = "okay";
+};
+
+&pcie2 {
+	pinctrl-0 = <&pcie2_default>;
+	pinctrl-names = "default";
+
+	perst-gpios = <&tlmm 29 GPIO_ACTIVE_LOW>;
+	wake-gpios = <&tlmm 30 GPIO_ACTIVE_LOW>;
+	status = "okay";
+};
+
+&pcie3_phy {
+	status = "okay";
+};
+
+&pcie3 {
+	pinctrl-0 = <&pcie3_default>;
+	pinctrl-names = "default";
+
+	perst-gpios = <&tlmm 32 GPIO_ACTIVE_LOW>;
+	wake-gpios = <&tlmm 33 GPIO_ACTIVE_LOW>;
+	status = "okay";
+};
+
+&mdio {
+	reset-gpios = <&tlmm 60 GPIO_ACTIVE_LOW>;
+	clock-frequency = <6250000>;
+	status = "okay";
+
+	ethernet-phy-package@0 {
+		compatible = "qcom,qca8075-package";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		reg = <0x10>;
+		qcom,package-mode = "qsgmii";
+
+		phy0: ethernet-phy@10 {
+			reg = <0x10>;
+		};
+
+		phy1: ethernet-phy@11 {
+			reg = <0x11>;
+		};
+
+		phy2: ethernet-phy@12 {
+			reg = <0x12>;
+		};
+
+		phy3: ethernet-phy@13 {
+			reg = <0x13>;
+		};
+	};
+
+	phy4: ethernet-phy@8 {
+		compatible ="ethernet-phy-ieee802.3-c45";
+		reg = <8>;
+
+		nvmem-cells = <&aqr_fw>;
+		nvmem-cell-names = "firmware";
+	};
+
+	phy5: ethernet-phy@0 {
+		compatible ="ethernet-phy-ieee802.3-c45";
+		reg = <0>;
+
+		nvmem-cells = <&aqr_fw>;
+		nvmem-cell-names = "firmware";
+	};
+};
+
 &tlmm {
+
+	pcie1_default: pcie1-default-state {
+		clkreq-n-pins {
+			pins = "gpio25";
+			function = "pcie1_clk";
+			drive-strength = <6>;
+			bias-pull-up;
+		};
+
+		perst-n-pins {
+			pins = "gpio26";
+			function = "gpio";
+			drive-strength = <8>;
+			bias-pull-down;
+			output-low;
+		};
+
+		wake-n-pins {
+			pins = "gpio27";
+			function = "pcie1_wake";
+			drive-strength = <6>;
+			bias-pull-up;
+		};
+	};
+
+	pcie2_default: pcie2-default-state {
+		clkreq-n-pins {
+			pins = "gpio28";
+			function = "pcie2_clk";
+			drive-strength = <6>;
+			bias-pull-up;
+		};
+
+		perst-n-pins {
+			pins = "gpio29";
+			function = "gpio";
+			drive-strength = <8>;
+			bias-pull-down;
+			output-low;
+		};
+
+		wake-n-pins {
+			pins = "gpio30";
+			function = "pcie2_wake";
+			drive-strength = <6>;
+			bias-pull-up;
+		};
+	};
+
+	pcie3_default: pcie3-default-state {
+		clkreq-n-pins {
+			pins = "gpio31";
+			function = "pcie3_clk";
+			drive-strength = <6>;
+			bias-pull-up;
+		};
+
+		perst-n-pins {
+			pins = "gpio32";
+			function = "gpio";
+			drive-strength = <8>;
+			bias-pull-up;
+			output-low;
+		};
+
+		wake-n-pins {
+			pins = "gpio33";
+			function = "pcie3_wake";
+			drive-strength = <6>;
+			bias-pull-up;
+		};
+	};
+
 	sdc_default_state: sdc-default-state {
 		clk-pins {
 			pins = "gpio5";
@@ -57,6 +204,139 @@
 			function = "sdc_rclk";
 			drive-strength = <8>;
 			bias-pull-down;
+		};
+	};
+};
+
+&qcom_ppe {
+	ethernet-ports {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		port@1 {
+			reg = <1>;
+			phy-mode = "qsgmii";
+			managed = "in-band-status";
+			label = "lan1";
+			phy-handle = <&phy0>;
+			pcs-handle = <&pcs0_ch0>;
+			clocks = <&nsscc NSS_CC_PORT1_MAC_CLK>,
+				 <&nsscc NSS_CC_PORT1_RX_CLK>,
+				 <&nsscc NSS_CC_PORT1_TX_CLK>;
+			clock-names = "port_mac",
+				      "port_rx",
+				      "port_tx";
+			resets = <&nsscc PORT1_MAC_ARES>,
+				 <&nsscc PORT1_RX_ARES>,
+				 <&nsscc PORT1_TX_ARES>;
+			reset-names = "port_mac",
+				      "port_rx",
+				      "port_tx";
+		};
+
+		port@2 {
+			reg = <2>;
+			phy-mode = "qsgmii";
+			managed = "in-band-status";
+			label = "lan2";
+			phy-handle = <&phy1>;
+			pcs-handle = <&pcs0_ch1>;
+			clocks = <&nsscc NSS_CC_PORT2_MAC_CLK>,
+				 <&nsscc NSS_CC_PORT2_RX_CLK>,
+				 <&nsscc NSS_CC_PORT2_TX_CLK>;
+			clock-names = "port_mac",
+				      "port_rx",
+				      "port_tx";
+			resets = <&nsscc PORT2_MAC_ARES>,
+				 <&nsscc PORT2_RX_ARES>,
+				 <&nsscc PORT2_TX_ARES>;
+			reset-names = "port_mac",
+				      "port_rx",
+				      "port_tx";
+		};
+
+		port@3 {
+			reg = <3>;
+			phy-mode = "qsgmii";
+			managed = "in-band-status";
+			label = "lan3";
+			phy-handle = <&phy2>;
+			pcs-handle = <&pcs0_ch2>;
+			clocks = <&nsscc NSS_CC_PORT3_MAC_CLK>,
+				 <&nsscc NSS_CC_PORT3_RX_CLK>,
+				 <&nsscc NSS_CC_PORT3_TX_CLK>;
+			clock-names = "port_mac",
+				      "port_rx",
+				      "port_tx";
+			resets = <&nsscc PORT3_MAC_ARES>,
+				 <&nsscc PORT3_RX_ARES>,
+				 <&nsscc PORT3_TX_ARES>;
+			reset-names = "port_mac",
+				      "port_rx",
+				      "port_tx";
+		};
+
+		port@4 {
+			reg = <4>;
+			phy-mode = "qsgmii";
+			managed = "in-band-status";
+			label = "lan4";
+			phy-handle = <&phy3>;
+			pcs-handle = <&pcs0_ch3>;
+			clocks = <&nsscc NSS_CC_PORT4_MAC_CLK>,
+				 <&nsscc NSS_CC_PORT4_RX_CLK>,
+				 <&nsscc NSS_CC_PORT4_TX_CLK>;
+			clock-names = "port_mac",
+				      "port_rx",
+				      "port_tx";
+			resets = <&nsscc PORT4_MAC_ARES>,
+				 <&nsscc PORT4_RX_ARES>,
+				 <&nsscc PORT4_TX_ARES>;
+			reset-names = "port_mac",
+				      "port_rx",
+				      "port_tx";
+		};
+
+		port@5 {
+			reg = <5>;
+			phy-mode = "usxgmii";
+			managed = "in-band-status";
+			label = "lan5";
+			phy-handle = <&phy4>;
+			pcs-handle = <&pcs1_ch0>;
+			clocks = <&nsscc NSS_CC_PORT5_MAC_CLK>,
+				 <&nsscc NSS_CC_PORT5_RX_CLK>,
+				 <&nsscc NSS_CC_PORT5_TX_CLK>;
+			clock-names = "port_mac",
+				      "port_rx",
+				      "port_tx";
+			resets = <&nsscc PORT5_MAC_ARES>,
+				 <&nsscc PORT5_RX_ARES>,
+				 <&nsscc PORT5_TX_ARES>;
+			reset-names = "port_mac",
+				      "port_rx",
+				      "port_tx";
+		};
+
+		port@6 {
+			reg = <6>;
+			phy-mode = "usxgmii";
+			managed = "in-band-status";
+			label = "wan";
+			phy-handle = <&phy5>;
+			pcs-handle = <&pcs2_ch0>;
+			clocks = <&nsscc NSS_CC_PORT6_MAC_CLK>,
+				 <&nsscc NSS_CC_PORT6_RX_CLK>,
+				 <&nsscc NSS_CC_PORT6_TX_CLK>;
+			clock-names = "port_mac",
+				      "port_rx",
+				      "port_tx";
+			resets = <&nsscc PORT6_MAC_ARES>,
+				 <&nsscc PORT6_RX_ARES>,
+				 <&nsscc PORT6_TX_ARES>;
+			reset-names = "port_mac",
+				      "port_rx",
+				      "port_tx";
 		};
 	};
 };
