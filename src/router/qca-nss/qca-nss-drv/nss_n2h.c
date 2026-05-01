@@ -1366,14 +1366,16 @@ static int nss_n2h_buf_cfg_core0_handler(compat_const struct ctl_table *ctl, int
 		return -EPERM;
 	}
 
+	printk(KERN_EMERG "%s:%d %d\n", __func__, __LINE__, nss_n2h_core0_add_buf_pool_size);
 	if ((nss_n2h_core0_add_buf_pool_size >= 1) && (nss_n2h_core0_add_buf_pool_size <= NSS_N2H_MAX_BUF_POOL_SIZE)) {
 		dev_info(nss_ctx->dev, "Configuring additional NSS pbufs\n");
 		ret = nss_n2h_buf_pool_cfg(nss_ctx, nss_n2h_core0_add_buf_pool_size, NSS_CORE_0);
 		nss_n2h_core0_add_buf_pool_size = nss_ctx->buf_sz_allocated;
+	printk(KERN_EMERG "%s:%d\n", __func__, __LINE__);
 		dev_info(nss_ctx->dev, "Additional pbufs of size %d got added to NSS\n", nss_ctx->buf_sz_allocated);
 		return ret;
 	}
-
+	printk(KERN_EMERG "%s:%d\n", __func__, __LINE__);
 	dev_info(nss_ctx->dev, "Invalid input value. should be greater than 1 and less than %d\n", NSS_N2H_MAX_BUF_POOL_SIZE);
 	return -EINVAL;
 }
@@ -1405,14 +1407,17 @@ static int nss_n2h_buf_cfg_core1_handler(compat_const struct ctl_table *ctl, int
 		return -EPERM;
 	}
 
+	printk(KERN_EMERG "%s:%d %d\n", __func__, __LINE__, nss_n2h_core1_add_buf_pool_size);
 	if ((nss_n2h_core1_add_buf_pool_size >= 1) && (nss_n2h_core1_add_buf_pool_size <= NSS_N2H_MAX_BUF_POOL_SIZE)) {
 		dev_info(nss_ctx->dev, "Configuring additional NSS pbufs\n");
 		ret = nss_n2h_buf_pool_cfg(nss_ctx, nss_n2h_core1_add_buf_pool_size, NSS_CORE_1);
 		nss_n2h_core1_add_buf_pool_size = nss_ctx->buf_sz_allocated;
+	printk(KERN_EMERG "%s:%d\n", __func__, __LINE__);
 		dev_info(nss_ctx->dev, "Additional pbufs of size %d got added to NSS\n", nss_ctx->buf_sz_allocated);
 		return ret;
 	}
 
+	printk(KERN_EMERG "%s:%d\n", __func__, __LINE__);
 	dev_info(nss_ctx->dev, "Invalid input value. should be greater than 1 and less than %d\n", NSS_N2H_MAX_BUF_POOL_SIZE);
 	return -EINVAL;
 }
