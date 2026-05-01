@@ -590,7 +590,7 @@ static void load_nss_ipq60xx(int profile)
 
 static void load_nss_ipq50xx(int profile)
 {
-	nvram_default_get("nss", "0");
+	nvram_default_get("nss", "1");
 	//	if (use_mesh())
 	//		profile = 1024;
 	load_nss(profile, 2, "ipq50xx");
