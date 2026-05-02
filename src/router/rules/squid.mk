@@ -33,7 +33,10 @@ SQUID_BIGENDIAN = yes
 endif
 squid-configure: openssl
 	cd squid && ./bootstrap.sh
-	cd squid && ./configure --target=$(ARCH)-linux --host=$(ARCH)-linux --prefix=/usr --libdir=/usr/lib CFLAGS="$(COPTS)  $(MIPS16_OPT) -DNEED_PRINTF -ffunction-sections -fdata-sections -Wl,--gc-sections -L$(SSLPATH) -lssl -lcrypto -pthread $(LIB_ATOMIC)" CPPFLAGS="$(COPTS) $(MIPS16_OPT) -DNEED_PRINTF -ffunction-sections -fdata-sections -Wl,--gc-sections -pthread -L$(SSLPATH) -lcrypto -lssl $(LIB_ATOMIC)" CXXFLAGS="$(COPTS) $(MIPS16_OPT) -DNEED_PRINTF -ffunction-sections -fdata-sections -Wl,--gc-sections -pthread -L$(SSLPATH)  $(LIB_ATOMIC)" \
+	cd squid && ./configure --target=$(ARCH)-linux --host=$(ARCH)-linux --prefix=/usr --libdir=/usr/lib \
+	CFLAGS="$(COPTS)  $(MIPS16_OPT) -DNEED_PRINTF -std=gnu++17 -ffunction-sections -fdata-sections -Wl,--gc-sections -L$(SSLPATH) -lssl -lcrypto -pthread $(LIB_ATOMIC)" \
+	CPPFLAGS="$(COPTS) $(MIPS16_OPT) -DNEED_PRINTF -std=gnu++17 -ffunction-sections -fdata-sections -Wl,--gc-sections -pthread -L$(SSLPATH) -lcrypto -lssl $(LIB_ATOMIC)" \
+	CXXFLAGS="$(COPTS) $(MIPS16_OPT) -DNEED_PRINTF -std=gnu++17 -ffunction-sections -fdata-sections -Wl,--gc-sections -pthread -L$(SSLPATH)  $(LIB_ATOMIC)" \
 	CC="ccache $(ARCH)-linux-uclibc-gcc $(COPTS) $(MIPS16_OPT) -ffunction-sections -fdata-sections -Wl,--gc-sections" \
 	LIBOPENSSL_CFLAGS="-I$(SSLPATH)/include" \
 	LIBOPENSSL_LIBS="-L$(SSLPATH) -lssl -lcrypto" \
@@ -88,7 +91,8 @@ squid-configure: openssl
 	--without-expat \
 	--without-nettle \
 	--with-openssl \
-	--with-nettle=no
+	--with-nettle=no \
+	--without-ldap
 	
 squid: openssl
 	make -C squid
