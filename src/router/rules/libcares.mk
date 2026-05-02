@@ -20,7 +20,7 @@ libcares-clean:
 libcares-configure:
 	-cd libcares && autoreconf -fi
 	cd libcares && autoreconf -fi
-	cd libcares && ./configure ac_cv_host=$(ARCH)-uclibc-linux --prefix=/usr --libdir=/usr/lib --target=$(ARCH)-linux --host=$(ARCH) CC="ccache $(ARCH)-linux-uclibc-gcc"
+	cd libcares && ./configure ac_cv_host=$(ARCH)-uclibc-linux --prefix=/usr --disable-dependency-tracking --libdir=/usr/lib --target=$(ARCH)-linux --host=$(ARCH) CC="ccache $(ARCH)-linux-uclibc-gcc"
 	CFLAGS="$(COPTS) $(MIPS16_OPT) -ffunction-sections -fdata-sections -Wl,--gc-section"
 	CC="ccache $(ARCH)-linux-uclibc-gcc" \
 	CFLAGS="$(COPTS) $(MIPS16_OPT) -ffunction-sections -fdata-sections -Wl,--gc-sections" \
