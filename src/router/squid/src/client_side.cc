@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2023 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2026 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -2025,7 +2025,7 @@ ConnStateData::handleChunkedRequestBody()
         return ERR_INVALID_REQ;
     }
 
-    debugs(33, 7, "need more chunked data" << *bodyPipe->status());
+    debugs(33, 7, "need more chunked data" << bodyPipe->status());
     return ERR_NONE;
 }
 

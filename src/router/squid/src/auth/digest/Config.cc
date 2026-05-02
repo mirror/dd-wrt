@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2023 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2026 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -474,12 +474,7 @@ Auth::Digest::Config::active() const
 bool
 Auth::Digest::Config::configured() const
 {
-    if ((authenticateProgram != nullptr) &&
-            (authenticateChildren.n_max != 0) &&
-            !realm.isEmpty() && (noncemaxduration > -1))
-        return true;
-
-    return false;
+    return (SchemeConfig::configured() && !realm.isEmpty() && noncemaxduration > -1);
 }
 
 /* add the [www-|Proxy-]authenticate header on a 407 or 401 reply */
@@ -577,7 +572,7 @@ Auth::Digest::Config::Config() :
 {}
 
 void
-Auth::Digest::Config::parse(Auth::SchemeConfig * scheme, int n_configured, char *param_str)
+Auth::Digest::Config::parse(Auth::SchemeConfig * scheme, size_t n_configured, char *param_str)
 {
     if (strcmp(param_str, "nonce_garbage_interval") == 0) {
         parse_time_t(&nonceGCInterval);

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2023 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2026 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -1087,7 +1087,7 @@ strwordquote(MemBuf * mb, const char *str)
     }
 
     while (*str) {
-        int l = strcspn(str, "\"\\\n\r");
+        const auto l = strcspn(str, "\"\\\n\r");
         mb->append(str, l);
         str += l;
 

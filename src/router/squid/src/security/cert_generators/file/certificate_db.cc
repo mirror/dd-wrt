@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2023 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2026 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -158,7 +158,7 @@ void Ssl::CertificateDb::Row::setValue(size_t cell, char const * value)
 {
     assert(cell < width);
     if (row[cell]) {
-        free(row[cell]);
+        OPENSSL_free(row[cell]);
     }
     if (value) {
         row[cell] = static_cast<char *>(OPENSSL_malloc(sizeof(char) * (strlen(value) + 1)));
@@ -370,10 +370,10 @@ Ssl::CertificateDb::Create(std::string const & db_path) {
     std::string cert_full(db_path + "/" + cert_dir);
     std::string size_full(db_path + "/" + size_file);
 
-    if (mkdir(db_path.c_str(), 0777))
+    if (mkdir(db_path.c_str(), 0750))
         throw TextException(ToSBuf("Cannot create ", db_path), Here());
 
-    if (mkdir(cert_full.c_str(), 0777))
+    if (mkdir(cert_full.c_str(), 0750))
         throw TextException(ToSBuf("Cannot create ", cert_full), Here());
 
     std::ofstream size(size_full.c_str());

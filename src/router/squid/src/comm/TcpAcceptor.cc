@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2023 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2026 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -413,7 +413,7 @@ Comm::TcpAcceptor::acceptInto(Comm::ConnectionPointer &details)
     details->nfConnmark = Ip::Qos::getNfConnmark(details, Ip::Qos::dirAccepted);
 
     if (Config.client_ip_max_connections >= 0) {
-        if (clientdbEstablished(details->remote, 0) > Config.client_ip_max_connections) {
+        if (clientdbEstablished(details->remote, 0) >= Config.client_ip_max_connections) {
             debugs(50, DBG_IMPORTANT, "WARNING: " << details->remote << " attempting more than " << Config.client_ip_max_connections << " connections.");
             return false;
         }

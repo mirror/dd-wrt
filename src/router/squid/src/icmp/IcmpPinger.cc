@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2023 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2026 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -150,10 +150,11 @@ void
 IcmpPinger::Close(void)
 {
 #if _SQUID_WINDOWS_
-
-    shutdown(icmp_sock, SD_BOTH);
-    close(icmp_sock);
-    icmp_sock = -1;
+    if (icmp_sock >= 0) {
+        shutdown(icmp_sock, SD_BOTH);
+        xclose(icmp_sock);
+        icmp_sock = -1;
+    }
 #endif
 
     /* also shutdown the helper engines */

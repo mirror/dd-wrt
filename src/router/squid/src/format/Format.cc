@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2023 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2026 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -294,7 +294,7 @@ log_quoted_string(const char *str, char *out)
     char *p = out;
 
     while (*str) {
-        int l = strcspn(str, "\"\\\r\n\t");
+        const auto l = strcspn(str, "\"\\\r\n\t");
         memcpy(p, str, l);
         str += l;
         p += l;

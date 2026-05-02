@@ -1,11 +1,11 @@
-## Copyright (C) 1996-2023 The Squid Software Foundation and contributors
+## Copyright (C) 1996-2026 The Squid Software Foundation and contributors
 ##
 ## Squid software is distributed under GPLv2+ license and includes
 ## contributions from numerous individuals and organizations.
 ## Please see the COPYING and CONTRIBUTORS files for details.
 ##
 
-AC_INIT([Squid Web Proxy],[7.0.1-VCS],[https://bugs.squid-cache.org/],[squid])
+AC_INIT([Squid Web Proxy],[7.5-VCS],[https://bugs.squid-cache.org/],[squid])
 AC_PREREQ(2.61)
 AC_CONFIG_HEADERS([include/autoconf.h])
 AC_CONFIG_AUX_DIR(cfgaux)
@@ -68,19 +68,23 @@ AC_USE_SYSTEM_EXTENSIONS
 
 AC_LANG([C++])
 
-# Clang 3.2 on some CPUs requires -march-native to detect correctly.
-# GCC 4.3+ can also produce faster executables when its used.
+# Some compilers can produce faster executables when its used.
 # But building inside a virtual machine environment has been found to
 # cause random Illegal Instruction errors due to mis-detection of CPU.
 AC_ARG_ENABLE(arch-native,
-  AS_HELP_STRING([--disable-arch-native],[Some compilers offer CPU-specific
+  AS_HELP_STRING([--enable-arch-native],[Some compilers offer CPU-specific
                  optimizations with the -march=native parameter.
-                 This flag disables the optimization. The default is to
-                 auto-detect compiler support and use where available.]), [
+                 This flag enables the optimization, by default disabled,
+                 provided that the compiler supports it. Enabling this
+                 optimization may cause crashes due to illegal instruction errors
+                 when Squid is run on a CPU different from the one it is built on,
+                 and in some containerized or virtualized environments]), [
   SQUID_YESNO([$enableval],[--enable-arch-native])
 ])
-AC_MSG_NOTICE([CPU arch native optimization enabled: ${enable_arch_native:=auto}])
-AS_IF([test "x${enable_arch_native}" != "xno"],[
+AC_MSG_NOTICE([CPU arch native optimization enabled: ${enable_arch_native:=no}])
+AS_IF([test "x${enable_arch_native}" = "xyes"],[
+  # XXX: Fail if the explicitly requested native optimization is not available.
+  # TODO: Make this a tristate yes/no/auto.
   SQUID_CC_CHECK_ARGUMENT([squid_cv_check_marchnative],[-march=native])
 ])
 
@@ -989,6 +993,21 @@ include <windows.h>
 #include <sys/param.h>
 #endif
   ]])
+  AC_CHECK_MEMBER([struct arpreq.arp_pa],[],[
+    AS_IF([test "x$squid_host_os" != "xmingw" -a "x$squid_host_os" != "xcygwin"],[
+      AC_MSG_NOTICE([OS support for EUI seems incomplete, disabling it])
+      enable_eui=no
+    ])],[[
+#if HAVE_SYS_TYPES_H
+#include <sys/types.h>
+#endif
+#if HAVE_SYS_SOCKET_H
+#include <sys/socket.h>
+#endif
+#if HAVE_NET_IF_ARP_H
+#include <net/if_arp.h>
+#endif
+  ]])
   SQUID_STATE_ROLLBACK(LIBEUI)
 ])
 AC_SUBST(EUILIB)
@@ -1133,7 +1152,7 @@ AM_CONDITIONAL(ENABLE_SSL,[ test "x$with_openssl" = "xyes" ])
 AC_SUBST(SSLLIB)
 
 # Kerberos support libraries: MIT
-SQUID_AUTO_LIB(mit-krb5,[MIT Kerberos],[LIB_KRB5])
+SQUID_AUTO_LIB(mit-krb5,[MIT Kerberos],[LIBMIT_KRB5])
 AH_TEMPLATE(USE_APPLE_KRB5,[Apple Kerberos support is available])
 AH_TEMPLATE(USE_SOLARIS_KRB5,[Solaris Kerberos support is available])
 SQUID_CHECK_LIB_WORKS(mit-krb5,[
@@ -1163,15 +1182,18 @@ SQUID_CHECK_LIB_WORKS(mit-krb5,[
 SQUID_AUTO_LIB(heimdal-krb5,[Heimdal Kerberos],[LIBHEIMDAL_KRB5])
 SQUID_CHECK_LIB_WORKS(heimdal-krb5,[
   AS_IF([test "x$LIBMIT_KRB5_LIBS" = "x"],[
-    PKG_CHECK_MODULES([LIBHEIMDAL_KRB5],[heimdal-krb5 heimdal-gssapi],[
+    PKG_CHECK_MODULES([LIBHEIMDAL_KRB5],[heimdal-krb5 heimdal-gssapi],[:],[
+      dnl FreeBSD ports package name is just 'heimdal'
+      PKG_CHECK_MODULES([LIBHEIMDAL_KRB5],[heimdal heimdal-gssapi],[:],[:])
+    ])
+    AS_IF([test "x$LIBHEIMDAL_KRB5_LIBS" != "x" ],[
       CPPFLAGS="$LIBHEIMDAL_KRB5_CFLAGS $CPPFLAGS"
       AC_CHECK_HEADERS(gssapi.h gssapi/gssapi.h gssapi/gssapi_krb5.h)
       AC_CHECK_HEADERS(krb5.h com_err.h et/com_err.h)
 
       LIBS="$LIBHEIMDAL_KRB5_PATH $LIBHEIMDAL_KRB5_LIBS $LIBS"
-      SQUID_CHECK_KRB5_HEIMDAL_BROKEN_KRB5_H
       SQUID_CHECK_KRB5_FUNCS
-    ],[:])
+    ])
   ])
 ])
 
@@ -1536,7 +1558,6 @@ AC_MSG_NOTICE([Authentication support enabled: ${enable_auth:=yes}])
 SQUID_DEFINE_BOOL(USE_AUTH,$enable_auth,[Enable support for authentication])
 AM_CONDITIONAL(ENABLE_AUTH, test "x$enable_auth" != "xno")
 AUTH_MODULES=""
-require_smblib="no"
 require_sspi="no"
 
 AC_ARG_ENABLE(auth-basic,
@@ -1597,7 +1618,6 @@ for module in $AUTH_MODULES; do
 done
 AC_SUBST(AUTH_MODULES)
 AC_SUBST(AUTH_LIBS_TO_BUILD)
-AM_CONDITIONAL(ENABLE_SMBLIB, test "x$require_smblib" = "xyes")
 AM_CONDITIONAL(ENABLE_SSPI, test "x$require_sspi" = "xyes")
 
 dnl Select logging daemon helpers to build
@@ -2504,8 +2524,6 @@ AC_CONFIG_FILES([
 	icons/Makefile
 	lib/Makefile
 	lib/ntlmauth/Makefile
-	lib/rfcnb/Makefile
-	lib/smblib/Makefile
 	lib/snmplib/Makefile
 	lib/sspi/Makefile
 	scripts/Makefile
@@ -2542,7 +2560,6 @@ AC_CONFIG_FILES([
 	src/auth/basic/RADIUS/Makefile
 	src/auth/basic/SASL/Makefile
 	src/auth/basic/SMB/Makefile
-	src/auth/basic/SMB_LM/Makefile
 	src/auth/basic/SSPI/Makefile
 	src/auth/digest/Makefile
 	src/auth/digest/eDirectory/Makefile
@@ -2554,7 +2571,6 @@ AC_CONFIG_FILES([
 	src/auth/negotiate/wrapper/Makefile
 	src/auth/ntlm/Makefile
 	src/auth/ntlm/fake/Makefile
-	src/auth/ntlm/SMB_LM/Makefile
 	src/auth/ntlm/SSPI/Makefile
 	src/base/Makefile
 	src/clients/Makefile

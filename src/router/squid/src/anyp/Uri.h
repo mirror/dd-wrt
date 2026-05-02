@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2023 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2026 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -119,7 +119,15 @@ public:
     static SBuf Encode(const SBuf &, const CharacterSet &expected);
 
     /// %-decode the given buffer
-    static SBuf Decode(const SBuf &);
+    /// \retval std::nullopt on decoding failures
+    /// \sa DecodeOrDupe()
+    static std::optional<SBuf> Decode(const SBuf &);
+
+    /// %-decode the given buffer
+    /// \retval decoded input if input obeys RFC 3986 Percent-Encoding rules
+    /// \retval an input copy if input violates RFC 3986 Percent-Encoding rules
+    /// \sa Decode()
+    static SBuf DecodeOrDupe(const SBuf &input);
 
     /**
      * The authority-form URI for currently stored values.

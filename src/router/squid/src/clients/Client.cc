@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2023 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2026 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -497,7 +497,7 @@ purgeEntriesByHeader(HttpRequest *req, const char *reqUrl, Http::Message *rep, H
                 // for this logic replace the entire request-target URI path
                 tmpUrl.path(hdrUrl);
             } else {
-                tmpUrl.addRelativePath(reqUrl);
+                tmpUrl.addRelativePath(hdrUrl);
             }
             absUrlMaker = tmpUrl.absolute();
             absUrl = absUrlMaker.c_str();

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2023 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2026 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -166,6 +166,7 @@ Ftp::DataChannel::DataChannel():
 
 Ftp::DataChannel::~DataChannel()
 {
+    xfree(host);
     delete readBuf;
 }
 
@@ -1163,6 +1164,7 @@ Ftp::Client::parseControlReply(size_t &bytesUsed)
 
         if (complete) {
             // use list->key for last_reply because s contains the new line
+            safe_free(ctrl.last_reply);
             ctrl.last_reply = xstrdup(list->key + 4);
             ctrl.replycode = atoi(list->key);
         }

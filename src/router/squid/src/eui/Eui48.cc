@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2023 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2026 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -207,7 +207,7 @@ Eui::Eui48::lookup(const Ip::Address &c)
         close(tmpSocket);
 
         if (arpReq.arp_ha.sa_family != ARPHRD_ETHER) {
-            debugs(28, 4, "id=" << (void*)this << " ... not an Ethernet interface: " << arpReq.arp_ha.sa_data);
+            debugs(28, 4, "id=" << (void*)this << " ... not an Ethernet interface, sa_family=" << arpReq.arp_ha.sa_family);
             clear();
             return false;
         }

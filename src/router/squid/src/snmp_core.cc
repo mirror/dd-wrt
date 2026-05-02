@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2023 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2026 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -994,34 +994,31 @@ snmpAddNodeStr(const char *base_str, int o, oid_ParseFn * parsefunction, instanc
 static mib_tree_entry *
 snmpAddNode(oid * name, int len, oid_ParseFn * parsefunction, instance_Fn * instancefunction, AggrType aggrType, int children,...)
 {
-    va_list args;
-    int loop;
-    mib_tree_entry *entry = nullptr;
-    va_start(args, children);
-
     MemBuf tmp;
     debugs(49, 6, "snmpAddNode: Children : " << children << ", Oid : " << snmpDebugOid(name, len, tmp));
 
-    va_start(args, children);
-    entry = (mib_tree_entry *)xmalloc(sizeof(mib_tree_entry));
+    const auto entry = static_cast<mib_tree_entry *>(xmalloc(sizeof(mib_tree_entry)));
     entry->name = name;
     entry->len = len;
     entry->parsefunction = parsefunction;
     entry->instancefunction = instancefunction;
     entry->children = children;
     entry->leaves = nullptr;
+    entry->parent = nullptr;
     entry->aggrType = aggrType;
 
     if (children > 0) {
-        entry->leaves = (mib_tree_entry **)xmalloc(sizeof(mib_tree_entry *) * children);
+        entry->leaves = static_cast<mib_tree_entry **>(xmalloc(sizeof(mib_tree_entry *) * children));
 
-        for (loop = 0; loop < children; ++loop) {
+        va_list args;
+        va_start(args, children);
+        for (int loop = 0; loop < children; ++loop) {
             entry->leaves[loop] = va_arg(args, mib_tree_entry *);
             entry->leaves[loop]->parent = entry;
         }
+        va_end(args);
     }
 
-    va_end(args);
     return (entry);
 }
 /* End of tree utility functions */
@@ -1057,8 +1054,7 @@ snmpDebugOid(oid * Name, snint Len, MemBuf &outbuf)
 {
     char mbuf[16];
     int x;
-    if (outbuf.isNull())
-        outbuf.init(16, MAX_IPSTRLEN);
+    outbuf.reset();
 
     for (x = 0; x < Len; ++x) {
         size_t bytes = snprintf(mbuf, sizeof(mbuf), ".%u", (unsigned int) Name[x]);

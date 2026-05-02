@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2023 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2026 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -141,6 +141,7 @@ public:
 
     int checkAuth(const HttpHeader * req_hdr);
     void checkUrlpath();
+    std::optional<SBuf> decodedRequestUriPath() const;
     void buildTitleUrl();
     void writeReplyBody(const char *, size_t len);
     void completeForwarding() override;
@@ -695,6 +696,7 @@ ftpListParseParts(const char *buf, struct Ftp::GatewayFlags flags)
             switch (*ct) {
 
             case '\t':
+                safe_free(p->name); // TODO: properly handle multiple p->name occurrences
                 p->name = xstrndup(ct + 1, l + 1);
                 break;
 
@@ -708,6 +710,7 @@ ftpListParseParts(const char *buf, struct Ftp::GatewayFlags flags)
                 if (tmp != ct + 1)
                     break;  /* not a valid integer */
 
+                safe_free(p->date); // TODO: properly handle multiple p->name occurrences
                 p->date = xstrdup(ctime(&tm));
 
                 *(strstr(p->date, "\n")) = '\0';
@@ -2220,6 +2223,7 @@ Ftp::Gateway::completedListing()
     entry->lock("Ftp::Gateway");
     ErrorState ferr(ERR_DIR_LISTING, Http::scOkay, request.getRaw(), fwd->al);
     ferr.ftp.listing = &listing;
+    safe_free(ferr.ftp.cwd_msg);
     ferr.ftp.cwd_msg = xstrdup(cwd_message.size()? cwd_message.termedBuf() : "");
     ferr.ftp.server_msg = ctrl.message;
     ctrl.message = nullptr;
@@ -2297,10 +2301,18 @@ ftpReadQuit(Ftp::Gateway * ftpState)
     ftpState->serverComplete();
 }
 
+/// absolute request URI path after successful decoding of all pct-encoding sequences
+std::optional<SBuf>
+Ftp::Gateway::decodedRequestUriPath() const
+{
+    return AnyP::Uri::Decode(request->url.path());
+}
+
+/// \prec !ftpState->flags.try_slash_hack
+/// \prec ftpState->decodedRequestUriPath()
 static void
 ftpTrySlashHack(Ftp::Gateway * ftpState)
 {
-    char *path;
     ftpState->flags.try_slash_hack = 1;
     /* Free old paths */
 
@@ -2309,14 +2321,10 @@ ftpTrySlashHack(Ftp::Gateway * ftpState)
     if (ftpState->pathcomps)
         wordlistDestroy(&ftpState->pathcomps);
 
+    /* Build the new path */
+    // XXX: Conversion to c-string effectively truncates where %00 was decoded
     safe_free(ftpState->filepath);
-
-    /* Build the new path (urlpath begins with /) */
-    path = SBufToCstring(ftpState->request->url.path());
-
-    rfc1738_unescape(path);
-
-    ftpState->filepath = path;
+    ftpState->filepath = SBufToCstring(ftpState->decodedRequestUriPath().value());
 
     /* And off we go */
     ftpGetFile(ftpState);
@@ -2371,13 +2379,15 @@ ftpFail(Ftp::Gateway *ftpState)
            " reply code " << code << "flags(" <<
            (ftpState->flags.isdir?"IS_DIR,":"") <<
            (ftpState->flags.try_slash_hack?"TRY_SLASH_HACK":"") << "), " <<
+           "decodable_filepath=" << bool(ftpState->decodedRequestUriPath()) << ' ' <<
            "mdtm=" << ftpState->mdtm << ", size=" << ftpState->theSize <<
            "slashhack=" << (slashHack? "T":"F"));
 
     /* Try the / hack to support "Netscape" FTP URL's for retrieving files */
     if (!ftpState->flags.isdir &&   /* Not a directory */
             !ftpState->flags.try_slash_hack && !slashHack && /* Not doing slash hack */
-            ftpState->mdtm <= 0 && ftpState->theSize < 0) { /* Not known as a file */
+            ftpState->mdtm <= 0 && ftpState->theSize < 0 && /* Not known as a file */
+            ftpState->decodedRequestUriPath()) {
 
         switch (ftpState->state) {
 

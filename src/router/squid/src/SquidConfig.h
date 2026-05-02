@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2023 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2026 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -66,8 +66,8 @@ public:
     ~DiskConfig() { delete[] swapDirs; }
 
     RefCount<SwapDir> *swapDirs = nullptr;
-    int n_allocated = 0;
-    int n_configured = 0;
+    size_t n_allocated = 0;
+    size_t n_configured = 0;
     /// number of disk processes required to support all cache_dirs
     int n_strands = 0;
 };

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2023 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2026 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -175,10 +175,10 @@ ntlm_check_auth(ntlm_authenticate * auth, char *user, char *domain, int auth_len
 {
     char credentials[DNLEN+UNLEN+2];    /* we can afford to waste */
 
+    user[0] = '\0';
+    domain[0] = '\0';
     if (!NTLM_LocalCall) {
 
-        user[0] = '\0';
-        domain[0] = '\0';
         const auto x = ntlm_unpack_auth(auth, user, domain, auth_length);
 
         if (x != NtlmError::None)
@@ -327,7 +327,7 @@ manage_request()
 
     /* NP: for some reason this helper sometimes needs to accept
      * from clients that send no negotiate packet. */
-    if (memcpy(local_nego.hdr.signature, "NTLMSSP", 8) != 0) {
+    if (memcmp(local_nego.hdr.signature, "NTLMSSP", 8) != 0) {
         memset(&local_nego, 0, sizeof(ntlm_negotiate)); /* reset */
         memcpy(local_nego.hdr.signature, "NTLMSSP", 8);     /* set the signature */
         local_nego.hdr.type = le32toh(NTLM_NEGOTIATE);      /* this is a challenge */
@@ -498,7 +498,7 @@ manage_request()
             /* let's lowercase them for our convenience */
             lc(domain);
             lc(user);
-            fprintf(stdout, "OK user=\"%s\\%s\"", domain, user);
+            fprintf(stdout, "OK user=\"%s\\%s\"\n", domain, user);
             return 1;
         }
         default:

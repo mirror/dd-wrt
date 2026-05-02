@@ -1,4 +1,4 @@
-## Copyright (C) 1996-2023 The Squid Software Foundation and contributors
+## Copyright (C) 1996-2026 The Squid Software Foundation and contributors
 ##
 ## Squid software is distributed under GPLv2+ license and includes
 ## contributions from numerous individuals and organizations.
@@ -25,10 +25,6 @@ noinst_LTLIBRARIES = \
 	libmisccontainers.la \
 	libmiscutil.la
 
-if ENABLE_SMBLIB
-# smblib is the only user of the rfcnb library
-SUBDIRS += rfcnb smblib
-endif
 if ENABLE_AUTH_NTLM
 SUBDIRS += ntlmauth
 endif

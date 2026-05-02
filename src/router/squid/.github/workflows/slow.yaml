@@ -28,12 +28,13 @@ jobs:
     strategy:
       matrix:
         os:
+          - centos-stream-10
           - centos-stream-9
           - debian-stable
           - debian-testing
           - debian-unstable
-          - fedora-40
-          - fedora-41
+          - fedora-42
+          - fedora-43
           - fedora-rawhide
           - gentoo
           - opensuse-leap
@@ -42,6 +43,7 @@ jobs:
           - ubuntu-jammy
           - ubuntu-noble # EOL 2036-04
           - ubuntu-oracular # EOL 2025-07
+          - ubuntu-plucky
         compiler:
           - { CC: gcc, CXX: g++ }
           - { CC: clang, CXX: clang++ }
@@ -142,8 +144,7 @@ jobs:
     strategy:
       matrix:
         osversion:
-          - 14.1
-          - 13.3
+          - 14.3
 
     runs-on: ubuntu-22.04
     name: freebsd(${{ matrix.osversion }})
@@ -197,11 +198,12 @@ jobs:
         uses: vmactions/openbsd-vm@v1
         with:
           usesh: true
+          release: "7.7"
           prepare: |
             pkg_add \
-              autoconf-2.72p0 \
+              autoconf%2.72 \
               autoconf-archive \
-              automake-1.16.5 \
+              automake%1.16 \
               bash \
               coreutils \
               cppunit \
