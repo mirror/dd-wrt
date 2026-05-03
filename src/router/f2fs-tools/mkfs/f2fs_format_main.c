@@ -27,9 +27,7 @@
 #ifdef HAVE_LIBBLKID
 #include <blkid/blkid.h>
 #endif
-#ifdef HAVE_UUID_UUID_H
-#include <uuid/uuid.h>
-#endif
+#include <uuid.h>
 
 #include "quota.h"
 #include "f2fs_format_utils.h"

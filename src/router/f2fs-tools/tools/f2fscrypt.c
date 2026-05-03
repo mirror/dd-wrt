@@ -45,11 +45,7 @@
 #include <linux/fs.h>
 #endif
 
-#ifdef HAVE_UUID_UUID_H
-#include <uuid/uuid.h>
-#else
-typedef unsigned char uuid_t[16];
-#endif
+#include <uuid.h>
 
 #if !defined(HAVE_ADD_KEY) || !defined(HAVE_KEYCTL)
 #include <sys/syscall.h>
