@@ -74,6 +74,7 @@ IMPORTANT: Some options will require "make clean" after changes */
 #define DROPBEAR_SVR_LOCALTCPFWD 1
 #define DROPBEAR_SVR_REMOTETCPFWD 1
 #define DROPBEAR_SVR_LOCALSTREAMFWD 1
+#define DROPBEAR_SVR_REMOTESTREAMFWD 1
 
 /* Enable Authentication Agent Forwarding */
 #define DROPBEAR_SVR_AGENTFWD 1
@@ -304,6 +305,24 @@ group1 in Dropbear server too */
 /* -T server option overrides */
 #define MAX_AUTH_TRIES 10
 
+/* Maximum number of public key queries per session.
+ * Public key queries
+ * aren't a risk for brute forcing authentication, but can be a
+ * user enumeration/privacy concern if an attacker attempts
+ * to iterate known public keys such as those published by github.
+ *
+ * This limit has a trade-off. Having a smaller limit reduces the
+ * number of legitimate public keys that can be presented
+ * by a client/ssh agent.
+ * Assuming a 100ms session establishment time,
+ * MAX_UNAUTH_CLIENTS * MAX_PUBKEY_QUERIES / 0.1 = 750 queries/sec.
+ * That is still a a risk against a single host,
+ * but this limit may deter internet-wide scanning.
+ *
+ * If -T argument or MAX_AUTH_TRIES is larger that will be used instead.
+*/
+#define MAX_PUBKEY_QUERIES 15
+
 /* Change server process to user privileges after authentication. */
 #ifndef DROPBEAR_SVR_DROP_PRIVS
 /* Default is enabled. Should only be disabled if platforms are incompatible */
@@ -371,6 +390,10 @@ for runtime configuration please mail the Dropbear list */
 /* Ensure that data is received within IDLE_TIMEOUT seconds. This can
 be overridden at runtime with -I. 0 disables idle timeouts */
 #define DEFAULT_IDLE_TIMEOUT 0
+
+/* Disconnect after MAX_DURATION seconds. This can be overridden at
+runtime with -M. 0 disables this feature. */
+#define DEFAULT_MAX_DURATION 0
 
 /* The default path. This will often get replaced by the shell */
 #define DEFAULT_PATH "/sbin:/bin:/usr/sbin:/usr/bin:/jffs/sbin:/jffs/bin:/jffs/usr/sbin:/jffs/usr/bin:/mmc/sbin:/mmc/bin:/mmc/usr/sbin:/mmc/usr/bin:/opt/bin:/opt/sbin:/opt/usr/bin:/opt/usr/sbin"

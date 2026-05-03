@@ -6,8 +6,6 @@ on:
   pull_request:
   workflow_dispatch:
   push:
-    branches:
-      - master
 jobs:
   build:
     runs-on: ${{ matrix.os || 'ubuntu-24.04' }}
@@ -81,6 +79,7 @@ jobs:
             # macos doesn't have setresgid
             localoptions: |
               #define DROPBEAR_SVR_DROP_PRIVS 0
+              #define DROPBEAR_SVR_LOCALSTREAMFWD 0
 
           - name: macos 15
             os: macos-15
@@ -96,6 +95,7 @@ jobs:
             # macos doesn't have setresgid
             localoptions: |
               #define DROPBEAR_SVR_DROP_PRIVS 0
+              #define DROPBEAR_SVR_LOCALSTREAMFWD 0
 
           # Check that debug code doesn't bitrot
           - name: DEBUG_TRACE
@@ -121,6 +121,7 @@ jobs:
               #define DROPBEAR_CLI_REMOTETCPFWD 0
               #define DROPBEAR_SVR_LOCALTCPFWD 0
               #define DROPBEAR_SVR_REMOTETCPFWD 0
+              #define DROPBEAR_SVR_REMOTESTREAMFWD 0
               #define DROPBEAR_SVR_AGENTFWD 0
               #define DROPBEAR_CLI_AGENTFWD 0
               #define DROPBEAR_CLI_PROXYCMD 0
@@ -209,7 +210,7 @@ jobs:
           sudo apt-get -y update
           sudo apt-get -y install zlib1g-dev libtomcrypt-dev libtommath-dev mercurial python3-venv libpam0g-dev $CC
 
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: configure
         run: |
@@ -233,8 +234,10 @@ jobs:
           echo "#define DROPBEAR_SVR_PASSWORD_AUTH 0" >> localoptions.h
           # 1 second timeout is too short
           sed -i "s/DEFAULT_IDLE_TIMEOUT 1/DEFAULT_IDLE_TIMEOUT 99/" localoptions.h
+          sed -i "s/DEFAULT_MAX_DURATION 1/DEFAULT_MAX_DURATION 99/" localoptions.h
           # DROPBEAR_SVR_DROP_PRIVS is on by default, turn it off
           echo "#define DROPBEAR_SVR_DROP_PRIVS 0" >> localoptions.h
+          echo "#define DROPBEAR_SVR_LOCALSTREAMFWD 0" >> localoptions.h
 
       - name: make
         run: |
@@ -284,14 +287,14 @@ jobs:
         # upload config.log if something has failed
       - name: config.log
         if: ${{ !env.ACT && (failure() || cancelled()) }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: config.log
           path: config.log
 
       - name: upload sizes
         if: ${{ matrix.upload_sizes }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: sizes.txt
           path: sizes.txt

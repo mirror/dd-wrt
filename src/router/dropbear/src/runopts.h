@@ -29,7 +29,7 @@
 #include "signkey.h"
 #include "buffer.h"
 #include "auth.h"
-#include "tcpfwd.h"
+#include "forward.h"
 
 typedef struct runopts {
 
@@ -41,6 +41,7 @@ typedef struct runopts {
 	unsigned int recv_window;
 	long keepalive_secs; /* Time between sending keepalives. 0 is off */
 	long idle_timeout_secs; /* Exit if no traffic is sent/received in this time */
+	long max_duration_secs; /* Exit after this time */
 	int usingsyslog;
 
 #ifndef DISABLE_ZLIB
@@ -106,8 +107,8 @@ typedef struct svr_runopts {
 	int multiauthmethod;
 	unsigned int maxauthtries;
 
-#if DROPBEAR_SVR_REMOTETCPFWD
-	int noremotetcp;
+#if DROPBEAR_SVR_REMOTEANYFWD
+	int noremotefwd;
 #endif
 #if DROPBEAR_SVR_LOCALANYFWD
 	int nolocaltcp;

@@ -3,9 +3,8 @@
 name: Autoconf Up To Date
 on:
   pull_request:
+  workflow_dispatch:
   push:
-    branches:
-      - master
 jobs:
   autoconf:
     runs-on: 'ubuntu-22.04'
@@ -16,7 +15,7 @@ jobs:
           sudo apt-get -y update
           sudo apt-get -y install autoconf
 
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: run autoconf
         run: autoconf && autoheader
