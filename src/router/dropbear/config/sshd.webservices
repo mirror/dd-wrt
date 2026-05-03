@@ -37,6 +37,16 @@
 			//]]>
 			</script></span>
 		</div>
+		<div class="setting">
+			<div class="label"><% tran("service.ssh_max_duration"); %></div>
+			<input class="num" maxlength="4" size="4" name="sshd_max_dur" onblur="valid_range(this,0,3660,service.ssh_max_duration)" value="<% nvg("sshd_max_dur"); %>" />
+			<span class="default">
+			<script type="text/javascript">
+			//<![CDATA[
+			document.write("(" + share.deflt + ": 0)");
+			//]]>
+			</script></span>
+		</div>
 		<fieldset>
 		<legend><% tran("service.ssh_keylegend"); %></legend>
 			<div class="setting">
