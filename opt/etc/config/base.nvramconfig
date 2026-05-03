@@ -182,6 +182,7 @@
  "sshd_passwd_auth"  "SSHD"  "CHOICE" "2" "0"  "1"  "FALSE" "0"
  "sshd_rsa_host_key"  "SSHD"  "NULL"  "TRUE" "0"
  "sshd_rw"  "SSHD"  "NULL"  "FALSE" "0"
+ "sshd_max_dur" "SSHD" "NULL" "FALSE" "0"
  "sshd_authorized_keys"  "SSHD"  "NULL"  "TRUE"  "0"
  "sshd_keylength" "SSHD" "CHOICE" "3" "256" "384" "521" "FALSE" "0"
  "sshd_replace" "SSHD" "CHOICE" "2" "0" "1" "FALSE" "0"
