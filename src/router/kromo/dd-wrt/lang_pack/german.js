@@ -1692,6 +1692,7 @@ service.dns_smartdns_option="Zusätzliche SmartDNS-Optionen";
 service.ssh_legend="Secure Shell";
 service.ssh_srv="SSHd";
 service.ssh_password="Kennwortanmeldung";
+service.ssh_max_duration="Maximale Session länge";
 service.ssh_key="Autorisierte Schlüssel";
 service.ssh_forwarding="SSH TCP Weiterleitung";
 service.ssh_keylegend="Schlüsselbehandlung";
