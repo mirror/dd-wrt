@@ -191,6 +191,8 @@ static void handle_tp_ios(char *ptr)
 	rw = atoh(ptr);
 
 	ptr = strtok(NULL, " ");
+	/* int op_flags = atoh(ptr) */
+	ptr = strtok(NULL, " ");
 	/* unsigned long long blkaddr = atoh(ptr); */
 
 	ptr = strtok(NULL, " ");
@@ -269,7 +271,7 @@ static void __print_ftype()
 	int i;
 
 	setlocale(LC_ALL, "");
-	printf("\n===== Data R/W in 4KB accoring to File types =====\n");
+	printf("\n===== Data R/W in 4KB according to File types =====\n");
 	for (i = 0; i < __NR_FILES; i++)
 		printf(" %17s |", file_type_string[i]);
 	printf("\n");

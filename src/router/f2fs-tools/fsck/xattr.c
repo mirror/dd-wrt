@@ -17,14 +17,27 @@
 #include "node.h"
 #include "xattr.h"
 
-#define XATTR_CREATE 0x1
-#define XATTR_REPLACE 0x2
-
-static void *read_all_xattrs(struct f2fs_sb_info *sbi, struct f2fs_node *inode)
+void *read_all_xattrs(struct f2fs_sb_info *sbi, struct f2fs_node *inode)
 {
 	struct f2fs_xattr_header *header;
 	void *txattr_addr;
 	u64 inline_size = inline_xattr_size(&inode->i);
+	nid_t xnid = le32_to_cpu(inode->i.i_xattr_nid);
+
+	if (c.func == FSCK && xnid) {
+		struct f2fs_node *node_blk = NULL;
+		struct node_info ni;
+		int ret;
+
+		node_blk = (struct f2fs_node *)calloc(BLOCK_SZ, 1);
+		ASSERT(node_blk != NULL);
+
+		ret = fsck_sanity_check_nid(sbi, xnid, node_blk,
+					F2FS_FT_XATTR, TYPE_XATTR, &ni);
+		free(node_blk);
+		if (ret)
+			return NULL;
+	}
 
 	txattr_addr = calloc(inline_size + BLOCK_SZ, 1);
 	ASSERT(txattr_addr);
@@ -33,11 +46,11 @@ static void *read_all_xattrs(struct f2fs_sb_info *sbi, struct f2fs_node *inode)
 		memcpy(txattr_addr, inline_xattr_addr(&inode->i), inline_size);
 
 	/* Read from xattr node block. */
-	if (inode->i.i_xattr_nid) {
+	if (xnid) {
 		struct node_info ni;
 		int ret;
 
-		get_node_info(sbi, le32_to_cpu(inode->i.i_xattr_nid), &ni);
+		get_node_info(sbi, xnid, &ni);
 		ret = dev_read_block(txattr_addr + inline_size, ni.blk_addr);
 		ASSERT(ret >= 0);
 	}
@@ -80,14 +93,13 @@ static void write_all_xattrs(struct f2fs_sb_info *sbi,
 	u64 inline_size = inline_xattr_size(&inode->i);
 	int ret;
 
-	ASSERT(inode->i.i_inline & F2FS_INLINE_XATTR);
 	memcpy(inline_xattr_addr(&inode->i), txattr_addr, inline_size);
 
 	if (hsize <= inline_size)
 		return;
 
 	if (!xnid) {
-		f2fs_alloc_nid(sbi, &new_nid, 0);
+		f2fs_alloc_nid(sbi, &new_nid);
 
 		set_new_dnode(&dn, inode, NULL, new_nid);
 		/* NAT entry would be updated by new_node_page. */
@@ -102,15 +114,19 @@ static void write_all_xattrs(struct f2fs_sb_info *sbi,
 		xattr_node = calloc(BLOCK_SZ, 1);
 		ASSERT(xattr_node);
 		ret = dev_read_block(xattr_node, ni.blk_addr);
-		ASSERT(ret >= 0);
+		if (ret < 0)
+			goto free_xattr_node;
 	}
 
 	/* write to xattr node block */
 	xattr_addr = (void *)xattr_node;
 	memcpy(xattr_addr, txattr_addr + inline_size,
-			PAGE_SIZE - sizeof(struct node_footer));
+			F2FS_BLKSIZE - sizeof(struct node_footer));
 
 	ret = dev_write_block(xattr_node, blkaddr);
+
+free_xattr_node:
+	free(xattr_node);
 	ASSERT(ret >= 0);
 }
 
@@ -224,9 +240,9 @@ int f2fs_setxattr(struct f2fs_sb_info *sbi, nid_t ino, int index, const char *na
 	write_all_xattrs(sbi, inode, new_hsize, base_addr);
 
 	/* inode need update */
-	ret = dev_write_block(inode, ni.blk_addr);
-	ASSERT(ret >= 0);
+	ASSERT(write_inode(inode, ni.blk_addr) >= 0);
 exit:
+	free(inode);
 	free(base_addr);
 	return error;
 }

@@ -7,30 +7,48 @@
  * Dual licensed under the GPL or LGPL version 2 licenses.
  */
 #define _LARGEFILE64_SOURCE
+#define _FILE_OFFSET_BITS 64
 
+#include <f2fs_fs.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <libgen.h>
+#ifdef HAVE_MNTENT_H
 #include <mntent.h>
+#endif
 #include <time.h>
 #include <sys/stat.h>
-#include <sys/mount.h>
+#ifdef HAVE_SYS_IOCTL_H
 #include <sys/ioctl.h>
+#endif
+#ifdef HAVE_SYS_SYSMACROS_H
 #include <sys/sysmacros.h>
-#ifndef WITH_ANDROID
+#endif
+#ifdef HAVE_SYS_UTSNAME_H
+#include <sys/utsname.h>
+#endif
+#ifdef HAVE_SCSI_SG_H
 #include <scsi/sg.h>
 #endif
+#ifdef HAVE_LINUX_HDREG_H
 #include <linux/hdreg.h>
+#endif
+#ifdef HAVE_LINUX_LIMITS_H
 #include <linux/limits.h>
+#endif
 
-#include <f2fs_fs.h>
-
-#ifndef WITH_ANDROID
 /* SCSI command for standard inquiry*/
 #define MODELINQUIRY	0x12,0x00,0x00,0x00,0x4A,0x00
+
+#ifndef _WIN32 /* O_BINARY is windows-specific flag */
+#define O_BINARY 0
+#else
+/* On Windows, wchar_t is 8 bit sized and it causes compilation errors. */
+#define wchar_t	int
 #endif
 
 /*
@@ -81,7 +99,7 @@ static const char *utf8_to_wchar(const char *input, wchar_t *wc,
 	return NULL;
 }
 
-static u_int16_t *wchar_to_utf16(u_int16_t *output, wchar_t wc, size_t outsize)
+static uint16_t *wchar_to_utf16(uint16_t *output, wchar_t wc, size_t outsize)
 {
 	if (wc <= 0xffff) {
 		if (outsize == 0)
@@ -97,11 +115,11 @@ static u_int16_t *wchar_to_utf16(u_int16_t *output, wchar_t wc, size_t outsize)
 	return output + 2;
 }
 
-int utf8_to_utf16(u_int16_t *output, const char *input, size_t outsize,
+int utf8_to_utf16(uint16_t *output, const char *input, size_t outsize,
 		size_t insize)
 {
 	const char *inp = input;
-	u_int16_t *outp = output;
+	uint16_t *outp = output;
 	wchar_t wc;
 
 	while ((size_t)(inp - input) < insize && *inp) {
@@ -120,7 +138,7 @@ int utf8_to_utf16(u_int16_t *output, const char *input, size_t outsize,
 	return 0;
 }
 
-static const u_int16_t *utf16_to_wchar(const u_int16_t *input, wchar_t *wc,
+static const uint16_t *utf16_to_wchar(const uint16_t *input, wchar_t *wc,
 		size_t insize)
 {
 	if ((le16_to_cpu(input[0]) & 0xfc00) == 0xd800) {
@@ -183,10 +201,10 @@ static char *wchar_to_utf8(char *output, wchar_t wc, size_t outsize)
 	return output;
 }
 
-int utf16_to_utf8(char *output, const u_int16_t *input, size_t outsize,
+int utf16_to_utf8(char *output, const uint16_t *input, size_t outsize,
 		size_t insize)
 {
-	const u_int16_t *inp = input;
+	const uint16_t *inp = input;
 	char *outp = output;
 	wchar_t wc;
 
@@ -206,7 +224,7 @@ int utf16_to_utf8(char *output, const u_int16_t *input, size_t outsize,
 	return 0;
 }
 
-int log_base_2(u_int32_t num)
+int log_base_2(uint32_t num)
 {
 	int ret = 0;
 	if (num <= 0 || (num & (num - 1)) != 0)
@@ -418,7 +436,7 @@ static void str2hashbuf(const unsigned char *msg, int len,
  * @param len           name lenth
  * @return              return on success hash value, errno on failure
  */
-f2fs_hash_t f2fs_dentry_hash(const unsigned char *name, int len)
+static f2fs_hash_t __f2fs_dentry_hash(const unsigned char *name, int len)/* Need update */
 {
 	__u32 hash;
 	f2fs_hash_t	f2fs_hash;
@@ -451,11 +469,55 @@ f2fs_hash_t f2fs_dentry_hash(const unsigned char *name, int len)
 	return f2fs_hash;
 }
 
+f2fs_hash_t f2fs_dentry_hash(int encoding, int casefolded,
+                             const unsigned char *name, int len)
+{
+	const struct f2fs_nls_table *table = f2fs_load_nls_table(encoding);
+	int r, dlen;
+	unsigned char *buff;
+
+	if (len && casefolded) {
+		buff = malloc(sizeof(char) * PATH_MAX);
+		if (!buff)
+			return -ENOMEM;
+		dlen = table->ops->casefold(table, name, len, buff, PATH_MAX);
+		if (dlen < 0) {
+			free(buff);
+			goto opaque_seq;
+		}
+		r = __f2fs_dentry_hash(buff, dlen);
+
+		free(buff);
+		return r;
+	}
+opaque_seq:
+	return __f2fs_dentry_hash(name, len);
+}
+
 unsigned int addrs_per_inode(struct f2fs_inode *i)
 {
-	if (i->i_inline & F2FS_INLINE_XATTR)
-		return DEF_ADDRS_PER_INODE - F2FS_INLINE_XATTR_ADDRS;
-	return DEF_ADDRS_PER_INODE;
+	unsigned int addrs = CUR_ADDRS_PER_INODE(i) - get_inline_xattr_addrs(i);
+
+	if (!LINUX_S_ISREG(le16_to_cpu(i->i_mode)) ||
+			!(le32_to_cpu(i->i_flags) & F2FS_COMPR_FL))
+		return addrs;
+	return ALIGN_DOWN(addrs, 1 << i->i_log_cluster_size);
+}
+
+unsigned int addrs_per_block(struct f2fs_inode *i)
+{
+	if (!LINUX_S_ISREG(le16_to_cpu(i->i_mode)) ||
+			!(le32_to_cpu(i->i_flags) & F2FS_COMPR_FL))
+		return DEF_ADDRS_PER_BLOCK;
+	return ALIGN_DOWN(DEF_ADDRS_PER_BLOCK, 1 << i->i_log_cluster_size);
+}
+
+unsigned int f2fs_max_file_offset(struct f2fs_inode *i)
+{
+	if (!LINUX_S_ISREG(le16_to_cpu(i->i_mode)) ||
+			!(le32_to_cpu(i->i_flags) & F2FS_COMPR_FL))
+		return le64_to_cpu(i->i_size);
+	return ALIGN_UP(le64_to_cpu(i->i_size), 1 << i->i_log_cluster_size);
 }
 
 /*
@@ -463,7 +525,7 @@ unsigned int addrs_per_inode(struct f2fs_inode *i)
  */
 #define CRCPOLY_LE 0xedb88320
 
-u_int32_t f2fs_cal_crc32(u_int32_t crc, void *buf, int len)
+uint32_t f2fs_cal_crc32(uint32_t crc, void *buf, int len)
 {
 	int i;
 	unsigned char *p = (unsigned char *)buf;
@@ -475,9 +537,9 @@ u_int32_t f2fs_cal_crc32(u_int32_t crc, void *buf, int len)
 	return crc;
 }
 
-int f2fs_crc_valid(u_int32_t blk_crc, void *buf, int len)
+int f2fs_crc_valid(uint32_t blk_crc, void *buf, int len)
 {
-	u_int32_t cal_crc = 0;
+	uint32_t cal_crc = 0;
 
 	cal_crc = f2fs_cal_crc32(F2FS_SUPER_MAGIC, buf, len);
 
@@ -490,22 +552,68 @@ int f2fs_crc_valid(u_int32_t blk_crc, void *buf, int len)
 	return 0;
 }
 
+__u32 f2fs_inode_chksum(struct f2fs_node *node)
+{
+	struct f2fs_inode *ri = &node->i;
+	__le32 ino = node->footer.ino;
+	__le32 gen = ri->i_generation;
+	__u32 chksum, chksum_seed;
+	__u32 dummy_cs = 0;
+	unsigned int offset = offsetof(struct f2fs_inode, i_inode_checksum);
+	unsigned int cs_size = sizeof(dummy_cs);
+
+	chksum = f2fs_cal_crc32(c.chksum_seed, (__u8 *)&ino,
+							sizeof(ino));
+	chksum_seed = f2fs_cal_crc32(chksum, (__u8 *)&gen, sizeof(gen));
+
+	chksum = f2fs_cal_crc32(chksum_seed, (__u8 *)ri, offset);
+	chksum = f2fs_cal_crc32(chksum, (__u8 *)&dummy_cs, cs_size);
+	offset += cs_size;
+	chksum = f2fs_cal_crc32(chksum, (__u8 *)ri + offset,
+						F2FS_BLKSIZE - offset);
+	return chksum;
+}
+
+__u32 f2fs_checkpoint_chksum(struct f2fs_checkpoint *cp)
+{
+	unsigned int chksum_ofs = le32_to_cpu(cp->checksum_offset);
+	__u32 chksum;
+
+	chksum = f2fs_cal_crc32(F2FS_SUPER_MAGIC, cp, chksum_ofs);
+	if (chksum_ofs < CP_CHKSUM_OFFSET) {
+		chksum_ofs += sizeof(chksum);
+		chksum = f2fs_cal_crc32(chksum, (__u8 *)cp + chksum_ofs,
+						F2FS_BLKSIZE - chksum_ofs);
+	}
+	return chksum;
+}
+
+int write_inode(struct f2fs_node *inode, u64 blkaddr)
+{
+	if (c.feature & cpu_to_le32(F2FS_FEATURE_INODE_CHKSUM))
+		inode->i.i_inode_checksum =
+			cpu_to_le32(f2fs_inode_chksum(inode));
+	return dev_write_block(inode, blkaddr);
+}
+
 /*
  * try to identify the root device
  */
-const char *get_rootdev()
+char *get_rootdev()
 {
+#if defined(_WIN32) || defined(WITH_ANDROID)
+	return NULL;
+#else
 	struct stat sb;
 	int fd, ret;
-	char buf[32];
+	char buf[PATH_MAX + 1];
 	char *uevent, *ptr;
-
-	static char rootdev[PATH_MAX + 1];
+	char *rootdev;
 
 	if (stat("/", &sb) == -1)
 		return NULL;
 
-	snprintf(buf, 32, "/sys/dev/block/%u:%u/uevent",
+	snprintf(buf, PATH_MAX, "/sys/dev/block/%u:%u/uevent",
 		major(sb.st_dev), minor(sb.st_dev));
 
 	fd = open(buf, O_RDONLY);
@@ -522,6 +630,8 @@ const char *get_rootdev()
 	}
 
 	uevent = malloc(ret + 1);
+	ASSERT(uevent);
+
 	uevent[ret] = '\0';
 
 	ret = read(fd, uevent, ret);
@@ -529,12 +639,26 @@ const char *get_rootdev()
 
 	ptr = strstr(uevent, "DEVNAME");
 	if (!ptr)
-		return NULL;
+		goto out_free;
 
 	ret = sscanf(ptr, "DEVNAME=%s\n", buf);
-	snprintf(rootdev, PATH_MAX + 1, "/dev/%s", buf);
+	if (strlen(buf) == 0)
+		goto out_free;
 
+	ret = strlen(buf) + 5;
+	rootdev = malloc(ret + 1);
+	if (!rootdev)
+		goto out_free;
+	rootdev[ret] = '\0';
+
+	snprintf(rootdev, ret + 1, "/dev/%s", buf);
+	free(uevent);
 	return rootdev;
+
+out_free:
+	free(uevent);
+	return NULL;
+#endif
 }
 
 /*
@@ -544,19 +668,20 @@ void f2fs_init_configuration(void)
 {
 	int i;
 
+	memset(&c, 0, sizeof(struct f2fs_configuration));
 	c.ndevs = 1;
-	c.total_sectors = 0;
-	c.sector_size = 0;
 	c.sectors_per_blk = DEFAULT_SECTORS_PER_BLOCK;
 	c.blks_per_seg = DEFAULT_BLOCKS_PER_SEGMENT;
-	c.rootdev_name = get_rootdev();
 	c.wanted_total_sectors = -1;
-	c.zoned_mode = 0;
-	c.zoned_model = 0;
-	c.zone_blocks = 0;
+	c.wanted_sector_size = -1;
+#ifndef WITH_ANDROID
+	c.preserve_limits = 1;
+	c.no_kernel_check = 1;
+#else
+	c.no_kernel_check = 0;
+#endif
 
 	for (i = 0; i < MAX_DEVICES; i++) {
-		memset(&c.devices[i], 0, sizeof(struct device_info));
 		c.devices[i].fd = -1;
 		c.devices[i].sector_size = DEFAULT_SECTOR_SIZE;
 		c.devices[i].end_blkaddr = -1;
@@ -564,18 +689,27 @@ void f2fs_init_configuration(void)
 	}
 
 	/* calculated by overprovision ratio */
-	c.reserved_segments = 0;
-	c.overprovision = 0;
 	c.segs_per_sec = 1;
 	c.secs_per_zone = 1;
 	c.segs_per_zone = 1;
-	c.heap = 1;
 	c.vol_label = "";
 	c.trim = 1;
-	c.ro = 0;
 	c.kd = -1;
+	c.fixed_time = -1;
+	c.s_encoding = 0;
+	c.s_encoding_flags = 0;
+
+	/* default root owner */
+	c.root_uid = getuid();
+	c.root_gid = getgid();
 }
 
+int f2fs_dev_is_writable(void)
+{
+	return !c.ro || c.force;
+}
+
+#ifdef HAVE_SETMNTENT
 static int is_mounted(const char *mpt, const char *device)
 {
 	FILE *file = NULL;
@@ -597,60 +731,81 @@ static int is_mounted(const char *mpt, const char *device)
 	endmntent(file);
 	return mnt ? 1 : 0;
 }
+#endif
 
 int f2fs_dev_is_umounted(char *path)
 {
-	struct stat st_buf;
+#ifdef _WIN32
+	return 0;
+#else
+	struct stat *st_buf;
 	int is_rootdev = 0;
 	int ret = 0;
+	char *rootdev_name = get_rootdev();
 
-	if (c.rootdev_name && !strcmp(path, c.rootdev_name))
-		is_rootdev = 1;
+	if (rootdev_name) {
+		if (!strcmp(path, rootdev_name))
+			is_rootdev = 1;
+		free(rootdev_name);
+	}
 
 	/*
 	 * try with /proc/mounts fist to detect RDONLY.
 	 * f2fs_stop_checkpoint makes RO in /proc/mounts while RW in /etc/mtab.
 	 */
+#ifdef __linux__
 	ret = is_mounted("/proc/mounts", path);
 	if (ret) {
 		MSG(0, "Info: Mounted device!\n");
 		return -1;
 	}
-
+#endif
+#if defined(MOUNTED) || defined(_PATH_MOUNTED)
+#ifndef MOUNTED
+#define MOUNTED _PATH_MOUNTED
+#endif
 	ret = is_mounted(MOUNTED, path);
 	if (ret) {
 		MSG(0, "Info: Mounted device!\n");
 		return -1;
 	}
-
+#endif
 	/*
 	 * If we are supposed to operate on the root device, then
 	 * also check the mounts for '/dev/root', which sometimes
 	 * functions as an alias for the root device.
 	 */
 	if (is_rootdev) {
+#ifdef __linux__
 		ret = is_mounted("/proc/mounts", "/dev/root");
 		if (ret) {
 			MSG(0, "Info: Mounted device!\n");
 			return -1;
 		}
+#endif
 	}
 
 	/*
 	 * If f2fs is umounted with -l, the process can still use
 	 * the file system. In this case, we should not format.
 	 */
-	if (stat(path, &st_buf) == 0 && S_ISBLK(st_buf.st_mode)) {
+	st_buf = malloc(sizeof(struct stat));
+	ASSERT(st_buf);
+
+	if (stat(path, st_buf) == 0 && S_ISBLK(st_buf->st_mode)) {
 		int fd = open(path, O_RDONLY | O_EXCL);
 
 		if (fd >= 0) {
 			close(fd);
 		} else if (errno == EBUSY) {
 			MSG(0, "\tError: In use by the system!\n");
+			free(st_buf);
 			return -1;
 		}
 	}
-	return 0;
+	free(st_buf);
+	return ret;
+#endif
 }
 
 int f2fs_devs_are_umounted(void)
@@ -666,12 +821,68 @@ int f2fs_devs_are_umounted(void)
 void get_kernel_version(__u8 *version)
 {
 	int i;
-	for (i = 0; i < VERSION_LEN; i++) {
+	for (i = 0; i < VERSION_NAME_LEN; i++) {
 		if (version[i] == '\n')
 			break;
 	}
 	memset(version + i, 0, VERSION_LEN + 1 - i);
 }
+
+void get_kernel_uname_version(__u8 *version)
+{
+#ifdef HAVE_SYS_UTSNAME_H
+	struct utsname buf;
+
+	memset(version, 0, VERSION_LEN);
+	if (uname(&buf))
+		return;
+
+#if defined(WITH_KERNEL_VERSION)
+	snprintf((char *)version,
+		VERSION_NAME_LEN, "%s %s", buf.release, buf.version);
+#else
+	snprintf((char *)version,
+		VERSION_NAME_LEN, "%s", buf.release);
+#endif
+#else
+	memset(version, 0, VERSION_LEN);
+#endif
+}
+
+#if defined(__linux__) && defined(_IO) && !defined(BLKGETSIZE)
+#define BLKGETSIZE	_IO(0x12,96)
+#endif
+
+#if defined(__linux__) && defined(_IOR) && !defined(BLKGETSIZE64)
+#define BLKGETSIZE64	_IOR(0x12,114, size_t)
+#endif
+
+#if defined(__linux__) && defined(_IO) && !defined(BLKSSZGET)
+#define BLKSSZGET	_IO(0x12,104)
+#endif
+
+#if defined(__APPLE__)
+#include <sys/disk.h>
+#define BLKGETSIZE	DKIOCGETBLOCKCOUNT
+#define BLKSSZGET	DKIOCGETBLOCKCOUNT
+#endif /* APPLE_DARWIN */
+
+#ifndef _WIN32
+static int open_check_fs(char *path, int flag)
+{
+	if (c.func != DUMP && (c.func != FSCK || c.fix_on || c.auto_fix))
+		return -1;
+
+	/* allow to open ro */
+	return open(path, O_RDONLY | flag);
+}
+
+#ifdef __linux__
+static int is_power_of_2(unsigned long n)
+{
+	return (n != 0 && ((n & (n - 1)) == 0));
+}
+#endif
 
 int get_device_info(int i)
 {
@@ -680,63 +891,113 @@ int get_device_info(int i)
 #ifndef BLKGETSIZE64
 	uint32_t total_sectors;
 #endif
-	struct stat stat_buf;
+	struct stat *stat_buf;
+#ifdef HDIO_GETGIO
 	struct hd_geometry geom;
-#ifndef WITH_ANDROID
+#endif
+#if !defined(WITH_ANDROID) && defined(__linux__)
 	sg_io_hdr_t io_hdr;
 	unsigned char reply_buffer[96] = {0};
 	unsigned char model_inq[6] = {MODELINQUIRY};
 #endif
 	struct device_info *dev = c.devices + i;
 
-	fd = open((char *)dev->path, O_RDWR);
+	if (c.sparse_mode) {
+		fd = open(dev->path, O_RDWR | O_CREAT | O_BINARY, 0644);
+		if (fd < 0) {
+			fd = open_check_fs(dev->path, O_BINARY);
+			if (fd < 0) {
+				MSG(0, "\tError: Failed to open a sparse file!\n");
+				return -1;
+			}
+		}
+	}
+
+	stat_buf = malloc(sizeof(struct stat));
+	ASSERT(stat_buf);
+
+	if (!c.sparse_mode) {
+		if (stat(dev->path, stat_buf) < 0 ) {
+			MSG(0, "\tError: Failed to get the device stat!\n");
+			free(stat_buf);
+			return -1;
+		}
+
+		if (S_ISBLK(stat_buf->st_mode) &&
+				!c.force && c.func != DUMP && !c.dry_run) {
+			fd = open(dev->path, O_RDWR | O_EXCL);
+			if (fd < 0)
+				fd = open_check_fs(dev->path, O_EXCL);
+		} else {
+			fd = open(dev->path, O_RDWR);
+			if (fd < 0)
+				fd = open_check_fs(dev->path, 0);
+		}
+	}
 	if (fd < 0) {
 		MSG(0, "\tError: Failed to open the device!\n");
+		free(stat_buf);
 		return -1;
 	}
 
 	dev->fd = fd;
 
+	if (c.sparse_mode) {
+		if (f2fs_init_sparse_file()) {
+			free(stat_buf);
+			return -1;
+		}
+	}
+
 	if (c.kd == -1) {
+#if !defined(WITH_ANDROID) && defined(__linux__)
 		c.kd = open("/proc/version", O_RDONLY);
+#endif
 		if (c.kd < 0) {
-			MSG(0, "\tInfo: No support kernel version!\n");
+			MSG(0, "Info: not exist /proc/version!\n");
 			c.kd = -2;
 		}
 	}
 
-	if (fstat(fd, &stat_buf) < 0 ) {
-		MSG(0, "\tError: Failed to get the device stat!\n");
-		return -1;
-	}
-
-	if (S_ISREG(stat_buf.st_mode)) {
-		dev->total_sectors = stat_buf.st_size / dev->sector_size;
-	} else if (S_ISBLK(stat_buf.st_mode)) {
+	if (c.sparse_mode) {
+		dev->total_sectors = c.device_size / dev->sector_size;
+	} else if (S_ISREG(stat_buf->st_mode)) {
+		dev->total_sectors = stat_buf->st_size / dev->sector_size;
+	} else if (S_ISBLK(stat_buf->st_mode)) {
+#ifdef BLKSSZGET
 		if (ioctl(fd, BLKSSZGET, &sector_size) < 0)
 			MSG(0, "\tError: Using the default sector size\n");
 		else if (dev->sector_size < sector_size)
 			dev->sector_size = sector_size;
+#endif
 #ifdef BLKGETSIZE64
 		if (ioctl(fd, BLKGETSIZE64, &dev->total_sectors) < 0) {
 			MSG(0, "\tError: Cannot get the device size\n");
+			free(stat_buf);
 			return -1;
 		}
 #else
 		if (ioctl(fd, BLKGETSIZE, &total_sectors) < 0) {
 			MSG(0, "\tError: Cannot get the device size\n");
+			free(stat_buf);
 			return -1;
 		}
 		dev->total_sectors = total_sectors;
 #endif
 		dev->total_sectors /= dev->sector_size;
 
-		if (ioctl(fd, HDIO_GETGEO, &geom) < 0)
+		if (i == 0) {
+#ifdef HDIO_GETGIO
+			if (ioctl(fd, HDIO_GETGEO, &geom) < 0)
+				c.start_sector = 0;
+			else
+				c.start_sector = geom.start;
+#else
 			c.start_sector = 0;
-		else
-			c.start_sector = geom.start;
+#endif
+		}
 
-#ifndef WITH_ANDROID
+#if !defined(WITH_ANDROID) && defined(__linux__)
 		/* Send INQUIRY command */
 		memset(&io_hdr, 0, sizeof(sg_io_hdr_t));
 		io_hdr.interface_id = 'S';
@@ -748,17 +1009,13 @@ int get_device_info(int i)
 		io_hdr.timeout = 1000;
 
 		if (!ioctl(fd, SG_IO, &io_hdr)) {
-			int i = 16;
-
-			MSG(0, "Info: [%s] Disk Model: ",
-					dev->path);
-			while (reply_buffer[i] != '`' && i < 80)
-				printf("%c", reply_buffer[i++]);
-			printf("\n");
+			MSG(0, "Info: [%s] Disk Model: %.16s\n",
+					dev->path, reply_buffer+16);
 		}
 #endif
 	} else {
 		MSG(0, "\tError: Volume type is not supported!!!\n");
+		free(stat_buf);
 		return -1;
 	}
 
@@ -767,38 +1024,164 @@ int get_device_info(int i)
 		c.sectors_per_blk = F2FS_BLKSIZE / c.sector_size;
 	} else if (c.sector_size != c.devices[i].sector_size) {
 		MSG(0, "\tError: Different sector sizes!!!\n");
+		free(stat_buf);
 		return -1;
 	}
 
-#ifndef WITH_ANDROID
-	if (S_ISBLK(stat_buf.st_mode))
-		f2fs_get_zoned_model(i);
+#ifdef __linux__
+	if (S_ISBLK(stat_buf->st_mode)) {
+		if (f2fs_get_zoned_model(i) < 0) {
+			free(stat_buf);
+			return -1;
+		}
+	}
 
 	if (dev->zoned_model != F2FS_ZONED_NONE) {
-		if (dev->zoned_model == F2FS_ZONED_HM)
-			c.zoned_model = F2FS_ZONED_HM;
 
+		/* Get the number of blocks per zones */
 		if (f2fs_get_zone_blocks(i)) {
 			MSG(0, "\tError: Failed to get number of blocks per zone\n");
+			free(stat_buf);
 			return -1;
 		}
 
+		if (!is_power_of_2(dev->zone_size))
+			MSG(0, "Info: zoned: zone size %" PRIu64 "u (not a power of 2)\n",
+					dev->zone_size);
+
+		/*
+		 * Check zone configuration: for the first disk of a
+		 * multi-device volume, conventional zones are needed.
+		 */
 		if (f2fs_check_zones(i)) {
 			MSG(0, "\tError: Failed to check zone configuration\n");
+			free(stat_buf);
 			return -1;
 		}
 		MSG(0, "Info: Host-%s zoned block device:\n",
 				(dev->zoned_model == F2FS_ZONED_HA) ?
 					"aware" : "managed");
-		MSG(0, "      %u zones, %u randomly writeable zones\n",
-				dev->nr_zones, dev->nr_rnd_zones);
-		MSG(0, "      %lu blocks per zone\n",
+		MSG(0, "      %u zones, %" PRIu64 "u zone size(bytes), %u randomly writeable zones\n",
+				dev->nr_zones, dev->zone_size,
+				dev->nr_rnd_zones);
+		MSG(0, "      %zu blocks per zone\n",
 				dev->zone_blocks);
 	}
 #endif
+	/* adjust wanted_total_sectors */
+	if (c.wanted_total_sectors != -1) {
+		MSG(0, "Info: wanted sectors = %"PRIu64" (in %"PRIu64" bytes)\n",
+				c.wanted_total_sectors, c.wanted_sector_size);
+		if (c.wanted_sector_size == -1) {
+			c.wanted_sector_size = dev->sector_size;
+		} else if (dev->sector_size != c.wanted_sector_size) {
+			c.wanted_total_sectors *= c.wanted_sector_size;
+			c.wanted_total_sectors /= dev->sector_size;
+		}
+	}
+
 	c.total_sectors += dev->total_sectors;
+	free(stat_buf);
 	return 0;
 }
+
+#else
+
+#include "windows.h"
+#include "winioctl.h"
+
+#if (_WIN32_WINNT >= 0x0500)
+#define HAVE_GET_FILE_SIZE_EX 1
+#endif
+
+static int win_get_device_size(const char *file, uint64_t *device_size)
+{
+	HANDLE dev;
+	PARTITION_INFORMATION pi;
+	DISK_GEOMETRY gi;
+	DWORD retbytes;
+#ifdef HAVE_GET_FILE_SIZE_EX
+	LARGE_INTEGER filesize;
+#else
+	DWORD filesize;
+#endif /* HAVE_GET_FILE_SIZE_EX */
+
+	dev = CreateFile(file, GENERIC_READ,
+			FILE_SHARE_READ | FILE_SHARE_WRITE ,
+			NULL,  OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL,  NULL);
+
+	if (dev == INVALID_HANDLE_VALUE)
+		return EBADF;
+	if (DeviceIoControl(dev, IOCTL_DISK_GET_PARTITION_INFO,
+				&pi, sizeof(PARTITION_INFORMATION),
+				&pi, sizeof(PARTITION_INFORMATION),
+				&retbytes, NULL)) {
+
+		*device_size = 	pi.PartitionLength.QuadPart;
+
+	} else if (DeviceIoControl(dev, IOCTL_DISK_GET_DRIVE_GEOMETRY,
+				&gi, sizeof(DISK_GEOMETRY),
+				&gi, sizeof(DISK_GEOMETRY),
+				&retbytes, NULL)) {
+
+		*device_size = gi.BytesPerSector *
+			gi.SectorsPerTrack *
+			gi.TracksPerCylinder *
+			gi.Cylinders.QuadPart;
+
+#ifdef HAVE_GET_FILE_SIZE_EX
+	} else if (GetFileSizeEx(dev, &filesize)) {
+		*device_size = filesize.QuadPart;
+	}
+#else
+	} else {
+		filesize = GetFileSize(dev, NULL);
+		if (INVALID_FILE_SIZE != filesize)
+			return -1;
+		*device_size = filesize;
+	}
+#endif /* HAVE_GET_FILE_SIZE_EX */
+
+	CloseHandle(dev);
+	return 0;
+}
+
+int get_device_info(int i)
+{
+	struct device_info *dev = c.devices + i;
+	uint64_t device_size = 0;
+	int32_t fd = 0;
+
+	/* Block device target is not supported on Windows. */
+	if (!c.sparse_mode) {
+		if (win_get_device_size(dev->path, &device_size)) {
+			MSG(0, "\tError: Failed to get device size!\n");
+			return -1;
+		}
+	} else {
+		device_size = c.device_size;
+	}
+	if (c.sparse_mode) {
+		fd = open((char *)dev->path, O_WRONLY | O_CREAT | O_TRUNC | O_BINARY, 0644);
+	} else {
+		fd = open((char *)dev->path, O_RDWR | O_BINARY);
+	}
+	if (fd < 0) {
+		MSG(0, "\tError: Failed to open the device!\n");
+		return -1;
+	}
+	dev->fd = fd;
+	dev->total_sectors = device_size / dev->sector_size;
+	c.start_sector = 0;
+	c.sector_size = dev->sector_size;
+	c.sectors_per_blk = F2FS_BLKSIZE / c.sector_size;
+	c.total_sectors += dev->total_sectors;
+
+	if (c.sparse_mode && f2fs_init_sparse_file())
+		return -1;
+	return 0;
+}
+#endif
 
 int f2fs_get_device_info(void)
 {
@@ -807,6 +1190,12 @@ int f2fs_get_device_info(void)
 	for (i = 0; i < c.ndevs; i++)
 		if (get_device_info(i))
 			return -1;
+	return 0;
+}
+
+int f2fs_get_f2fs_info(void)
+{
+	int i;
 
 	if (c.wanted_total_sectors < c.total_sectors) {
 		MSG(0, "Info: total device sectors = %"PRIu64" (in %u bytes)\n",
@@ -815,34 +1204,72 @@ int f2fs_get_device_info(void)
 		c.devices[0].total_sectors = c.total_sectors;
 	}
 	if (c.total_sectors * c.sector_size >
-		(u_int64_t)F2FS_MAX_SEGMENT * 2 * 1024 * 1024) {
+		(uint64_t)F2FS_MAX_SEGMENT * 2 * 1024 * 1024) {
 		MSG(0, "\tError: F2FS can support 16TB at most!!!\n");
 		return -1;
 	}
 
+	/*
+	 * Check device types and determine the final volume operation mode:
+	 *   - If all devices are regular block devices, default operation.
+	 *   - If at least one HM device is found, operate in HM mode (BLKZONED
+	 *     feature will be enabled by mkfs).
+	 *   - If an HA device is found, let mkfs decide based on the -m option
+	 *     setting by the user.
+	 */
+	c.zoned_model = F2FS_ZONED_NONE;
 	for (i = 0; i < c.ndevs; i++) {
-		if (c.devices[i].zoned_model != F2FS_ZONED_NONE) {
+		switch (c.devices[i].zoned_model) {
+		case F2FS_ZONED_NONE:
+			continue;
+		case F2FS_ZONED_HM:
+			c.zoned_model = F2FS_ZONED_HM;
+			break;
+		case F2FS_ZONED_HA:
+			if (c.zoned_model != F2FS_ZONED_HM)
+				c.zoned_model = F2FS_ZONED_HA;
+			break;
+		}
+	}
+
+	if (c.zoned_model != F2FS_ZONED_NONE) {
+
+		/*
+		 * For zoned model, the zones sizes of all zoned devices must
+		 * be equal.
+		 */
+		for (i = 0; i < c.ndevs; i++) {
+			if (c.devices[i].zoned_model == F2FS_ZONED_NONE)
+				continue;
 			if (c.zone_blocks &&
 				c.zone_blocks != c.devices[i].zone_blocks) {
-				MSG(0, "\tError: not support different zone sizes!!!\n");
+				MSG(0, "\tError: zones of different size are "
+				       "not supported\n");
 				return -1;
 			}
 			c.zone_blocks = c.devices[i].zone_blocks;
 		}
-	}
 
-	/*
-	 * Align sections to the device zone size
-	 * and align F2FS zones to the device zones.
-	 */
-	if (c.zone_blocks) {
+		/*
+		 * Align sections to the device zone size and align F2FS zones
+		 * to the device zones. For F2FS_ZONED_HA model without the
+		 * BLKZONED feature set at format time, this is only an
+		 * optimization as sequential writes will not be enforced.
+		 */
 		c.segs_per_sec = c.zone_blocks / DEFAULT_BLOCKS_PER_SEGMENT;
 		c.secs_per_zone = 1;
 	} else {
-		c.zoned_mode = 0;
+		if(c.zoned_mode != 0) {
+			MSG(0, "\n Error: %s may not be a zoned block device \n",
+					c.devices[0].path);
+			return -1;
+		}
 	}
 
 	c.segs_per_zone = c.segs_per_sec * c.secs_per_zone;
+
+	if (c.func != MKFS)
+		return 0;
 
 	MSG(0, "Info: Segments per section = %d\n", c.segs_per_sec);
 	MSG(0, "Info: Sections per zone = %d\n", c.secs_per_zone);
@@ -850,5 +1277,116 @@ int f2fs_get_device_info(void)
 	MSG(0, "Info: total sectors = %"PRIu64" (%"PRIu64" MB)\n",
 				c.total_sectors, (c.total_sectors *
 					(c.sector_size >> 9)) >> 11);
+	return 0;
+}
+
+unsigned int calc_extra_isize(void)
+{
+	unsigned int size = offsetof(struct f2fs_inode, i_projid);
+
+	if (c.feature & cpu_to_le32(F2FS_FEATURE_FLEXIBLE_INLINE_XATTR))
+		size = offsetof(struct f2fs_inode, i_projid);
+	if (c.feature & cpu_to_le32(F2FS_FEATURE_PRJQUOTA))
+		size = offsetof(struct f2fs_inode, i_inode_checksum);
+	if (c.feature & cpu_to_le32(F2FS_FEATURE_INODE_CHKSUM))
+		size = offsetof(struct f2fs_inode, i_crtime);
+	if (c.feature & cpu_to_le32(F2FS_FEATURE_INODE_CRTIME))
+		size = offsetof(struct f2fs_inode, i_compr_blocks);
+	if (c.feature & cpu_to_le32(F2FS_FEATURE_COMPRESSION))
+		size = offsetof(struct f2fs_inode, i_extra_end);
+
+	return size - F2FS_EXTRA_ISIZE_OFFSET;
+}
+
+#define ARRAY_SIZE(array)			\
+	(sizeof(array) / sizeof(array[0]))
+
+static const struct {
+	char *name;
+	__u16 encoding_magic;
+	__u16 default_flags;
+
+} f2fs_encoding_map[] = {
+	{
+		.encoding_magic = F2FS_ENC_UTF8_12_1,
+		.name = "utf8",
+		.default_flags = 0,
+	},
+};
+
+static const struct enc_flags {
+	__u16 flag;
+	char *param;
+} encoding_flags[] = {
+	{ F2FS_ENC_STRICT_MODE_FL, "strict" },
+};
+
+/* Return a positive number < 0xff indicating the encoding magic number
+ * or a negative value indicating error. */
+int f2fs_str2encoding(const char *string)
+{
+	int i;
+
+	for (i = 0 ; i < ARRAY_SIZE(f2fs_encoding_map); i++)
+		if (!strcmp(string, f2fs_encoding_map[i].name))
+			return f2fs_encoding_map[i].encoding_magic;
+
+	return -EINVAL;
+}
+
+char *f2fs_encoding2str(const int encoding)
+{
+	int i;
+
+	for (i = 0 ; i < ARRAY_SIZE(f2fs_encoding_map); i++)
+		if (f2fs_encoding_map[i].encoding_magic == encoding)
+			return f2fs_encoding_map[i].name;
+
+	return NULL;
+}
+
+int f2fs_get_encoding_flags(int encoding)
+{
+	int i;
+
+	for (i = 0 ; i < ARRAY_SIZE(f2fs_encoding_map); i++)
+		if (f2fs_encoding_map[i].encoding_magic == encoding)
+			return f2fs_encoding_map[encoding].default_flags;
+
+	return 0;
+}
+
+int f2fs_str2encoding_flags(char **param, __u16 *flags)
+{
+	char *f = strtok(*param, ",");
+	const struct enc_flags *fl;
+	int i, neg = 0;
+
+	while (f) {
+		neg = 0;
+		if (!strncmp("no", f, 2)) {
+			neg = 1;
+			f += 2;
+		}
+
+		for (i = 0; i < ARRAY_SIZE(encoding_flags); i++) {
+			fl = &encoding_flags[i];
+			if (!strcmp(fl->param, f)) {
+				if (neg) {
+					MSG(0, "Sub %s\n", fl->param);
+					*flags &= ~fl->flag;
+				} else {
+					MSG(0, "Add %s\n", fl->param);
+					*flags |= fl->flag;
+				}
+
+				goto next_flag;
+			}
+		}
+		*param = f;
+		return -EINVAL;
+	next_flag:
+		f = strtok(NULL, ":");
+	}
 	return 0;
 }

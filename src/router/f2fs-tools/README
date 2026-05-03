@@ -1,15 +1,14 @@
-F2FS format utilility
+F2FS format utility
 ---------------------
 
-To use f2fs filesystem, you should format the storage partition
-with this utilility. Otherwise, you cannot mount f2fs.
+To use the f2fs filesystem, you should format the storage partition
+with this utility. Otherwise, you cannot mount f2fs.
 
 Before compilation
 ------------------
 
 You should install the following packages.
  - libuuid-devel or uuid-dev
- - pkg-config
  - autoconf
  - libtool
  - libselinux1-dev
@@ -17,7 +16,7 @@ You should install the following packages.
 Initial compilation
 -------------------
 
-Before compilation initially, autoconf/automake tools should be run.
+Before initial compilation, autoconf/automake tools should be run.
 
  # ./autogen.sh
 
@@ -47,4 +46,4 @@ How to run by default
 
  $ mkfs.f2fs -l [LABEL] $DEV
 
-For more mkfs options, see man page.
+For more mkfs options, see the man page.

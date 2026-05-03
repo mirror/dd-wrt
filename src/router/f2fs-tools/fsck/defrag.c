@@ -53,7 +53,7 @@ static int migrate_block(struct f2fs_sb_info *sbi, u64 from, u64 to)
 	else
 		update_nat_blkaddr(sbi, 0, le32_to_cpu(sum.nid), to);
 
-	DBG(0, "Migrate %s block %"PRIx64" -> %"PRIx64"\n",
+	DBG(1, "Migrate %s block %"PRIx64" -> %"PRIx64"\n",
 					IS_DATASEG(type) ? "data" : "node",
 					from, to);
 	free(raw);
@@ -77,7 +77,7 @@ int f2fs_defragment(struct f2fs_sb_info *sbi, u64 from, u64 len, u64 to, int lef
 		if (!f2fs_test_bit(offset, (const char *)se->cur_valid_map))
 			continue;
 
-		if (find_next_free_block(sbi, &target, left, se->type)) {
+		if (find_next_free_block(sbi, &target, left, se->type, false)) {
 			MSG(0, "Not enough space to migrate blocks");
 			return -1;
 		}
@@ -89,7 +89,7 @@ int f2fs_defragment(struct f2fs_sb_info *sbi, u64 from, u64 len, u64 to, int lef
 	}
 
 	/* update curseg info; can update sit->types */
-	move_curseg_info(sbi, to);
+	move_curseg_info(sbi, to, left);
 	zero_journal_entries(sbi);
 	write_curseg_info(sbi);
 

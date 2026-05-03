@@ -46,6 +46,11 @@ stamp-h1
 
 /mkfs/mkfs.f2fs
 /fsck/fsck.f2fs
-/tools/f2fstat
 /tools/fibmap.f2fs
 /tools/parse.f2fs
+/tools/f2fscrypt
+/tools/f2fs_io/f2fs_io
+
+# cscope files
+cscope.*
+ncscope.*

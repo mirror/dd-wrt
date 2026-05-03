@@ -8,6 +8,9 @@
  *   Hou Pengyang <houpengyang@huawei.com>
  *   Liu Shuoran <liushuoran@huawei.com>
  *   Jaegeuk Kim <jaegeuk@kernel.org>
+ * Copyright (c) 2020 Google Inc.
+ *   Robin Hsu <robinhsu@google.com>
+ *  : add sload compression support
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
@@ -15,18 +18,59 @@
  */
 #include "fsck.h"
 #include "node.h"
+#include "quotaio.h"
 
-void reserve_new_block(struct f2fs_sb_info *sbi, block_t *to,
-			struct f2fs_summary *sum, int type)
+int reserve_new_block(struct f2fs_sb_info *sbi, block_t *to,
+			struct f2fs_summary *sum, int type, bool is_inode)
 {
+	struct f2fs_fsck *fsck = F2FS_FSCK(sbi);
 	struct seg_entry *se;
-	u64 blkaddr;
-	u64 offset;
+	u64 blkaddr, offset;
+	u64 old_blkaddr = *to;
+	bool is_node = IS_NODESEG(type);
+	int left = 0;
+
+	if (old_blkaddr == NULL_ADDR) {
+		if (c.func == FSCK) {
+			if (fsck->chk.valid_blk_cnt >= sbi->user_block_count) {
+				ERR_MSG("Not enough space\n");
+				return -ENOSPC;
+			}
+			if (is_node && fsck->chk.valid_node_cnt >=
+					sbi->total_valid_node_count) {
+				ERR_MSG("Not enough space for node block\n");
+				return -ENOSPC;
+			}
+		} else {
+			if (sbi->total_valid_block_count >=
+						sbi->user_block_count) {
+				ERR_MSG("Not enough space\n");
+				return -ENOSPC;
+			}
+			if (is_node && sbi->total_valid_node_count >=
+						sbi->total_node_count) {
+				ERR_MSG("Not enough space for node block\n");
+				return -ENOSPC;
+			}
+		}
+	}
 
 	blkaddr = SM_I(sbi)->main_blkaddr;
 
-	if (find_next_free_block(sbi, &blkaddr, 0, type)) {
-		ERR_MSG("Not enough space to allocate blocks");
+	if (sbi->raw_super->feature & cpu_to_le32(F2FS_FEATURE_RO)) {
+		if (IS_NODESEG(type)) {
+			type = CURSEG_HOT_NODE;
+			blkaddr = __end_block_addr(sbi);
+			left = 1;
+		} else if (IS_DATASEG(type)) {
+			type = CURSEG_HOT_DATA;
+			blkaddr = SM_I(sbi)->main_blkaddr;
+			left = 0;
+		}
+	}
+
+	if (find_next_free_block(sbi, &blkaddr, left, type, false)) {
+		ERR_MSG("Can't find free block");
 		ASSERT(0);
 	}
 
@@ -35,142 +79,513 @@ void reserve_new_block(struct f2fs_sb_info *sbi, block_t *to,
 	se->type = type;
 	se->valid_blocks++;
 	f2fs_set_bit(offset, (char *)se->cur_valid_map);
-	sbi->total_valid_block_count++;
+	if (need_fsync_data_record(sbi)) {
+		se->ckpt_type = type;
+		se->ckpt_valid_blocks++;
+		f2fs_set_bit(offset, (char *)se->ckpt_valid_map);
+	}
+	if (c.func == FSCK) {
+		f2fs_set_main_bitmap(sbi, blkaddr, type);
+		f2fs_set_sit_bitmap(sbi, blkaddr);
+	}
+
+	if (old_blkaddr == NULL_ADDR) {
+		sbi->total_valid_block_count++;
+		if (is_node) {
+			sbi->total_valid_node_count++;
+			if (is_inode)
+				sbi->total_valid_inode_count++;
+		}
+		if (c.func == FSCK) {
+			fsck->chk.valid_blk_cnt++;
+			if (is_node) {
+				fsck->chk.valid_node_cnt++;
+				if (is_inode)
+					fsck->chk.valid_inode_cnt++;
+			}
+		}
+	}
 	se->dirty = 1;
 
 	/* read/write SSA */
 	*to = (block_t)blkaddr;
 	update_sum_entry(sbi, *to, sum);
+
+	return 0;
 }
 
-void new_data_block(struct f2fs_sb_info *sbi, void *block,
+int new_data_block(struct f2fs_sb_info *sbi, void *block,
 				struct dnode_of_data *dn, int type)
 {
+	struct f2fs_super_block *sb = F2FS_RAW_SUPER(sbi);
 	struct f2fs_summary sum;
 	struct node_info ni;
+	unsigned int blkaddr = datablock_addr(dn->node_blk, dn->ofs_in_node);
+	int ret;
+
+	if ((get_sb(feature) & cpu_to_le32(F2FS_FEATURE_RO)) &&
+					type != CURSEG_HOT_DATA)
+		type = CURSEG_HOT_DATA;
 
 	ASSERT(dn->node_blk);
 	memset(block, 0, BLOCK_SZ);
 
 	get_node_info(sbi, dn->nid, &ni);
 	set_summary(&sum, dn->nid, dn->ofs_in_node, ni.version);
-	reserve_new_block(sbi, &dn->data_blkaddr, &sum, type);
 
-	inc_inode_blocks(dn);
+	dn->data_blkaddr = blkaddr;
+	ret = reserve_new_block(sbi, &dn->data_blkaddr, &sum, type, 0);
+	if (ret) {
+		c.alloc_failed = 1;
+		return ret;
+	}
+
+	if (blkaddr == NULL_ADDR)
+		inc_inode_blocks(dn);
+	else if (blkaddr == NEW_ADDR)
+		dn->idirty = 1;
 	set_data_blkaddr(dn);
+	return 0;
 }
 
-static void f2fs_write_block(struct f2fs_sb_info *sbi, nid_t ino, void *buffer,
-					u64 count, pgoff_t offset)
+u64 f2fs_quota_size(struct quota_file *qf)
 {
-	u64 start = F2FS_BYTES_TO_BLK(offset);
-	u64 len = F2FS_BYTES_TO_BLK(count);
-	u64 end_offset;
-	u64 off_in_block, len_in_block, len_already;
-	struct dnode_of_data dn = {0};
-	void *data_blk;
 	struct node_info ni;
 	struct f2fs_node *inode;
-	int ret = -1;
+	u64 filesize;
 
-	get_node_info(sbi, ino, &ni);
-	inode = calloc(BLOCK_SZ, 1);
+	inode = (struct f2fs_node *) calloc(BLOCK_SZ, 1);
 	ASSERT(inode);
 
-	ret = dev_read_block(inode, ni.blk_addr);
-	ASSERT(ret >= 0);
+	/* Read inode */
+	get_node_info(qf->sbi, qf->ino, &ni);
+	ASSERT(dev_read_block(inode, ni.blk_addr) >= 0);
+	ASSERT(S_ISREG(le16_to_cpu(inode->i.i_mode)));
 
-	if (S_ISDIR(le16_to_cpu(inode->i.i_mode)) ||
-			S_ISLNK(le16_to_cpu(inode->i.i_mode)))
-		ASSERT(0);
+	filesize = le64_to_cpu(inode->i.i_size);
+	free(inode);
+	return filesize;
+}
 
-	off_in_block = offset & ((1 << F2FS_BLKSIZE_BITS) - 1);
-	len_in_block = (1 << F2FS_BLKSIZE_BITS) - off_in_block;
-	len_already = 0;
+u64 f2fs_read(struct f2fs_sb_info *sbi, nid_t ino, u8 *buffer,
+					u64 count, pgoff_t offset)
+{
+	struct dnode_of_data dn;
+	struct node_info ni;
+	struct f2fs_node *inode;
+	char *blk_buffer;
+	u64 filesize;
+	u64 off_in_blk;
+	u64 len_in_blk;
+	u64 read_count;
+	u64 remained_blkentries;
+	block_t blkaddr;
+	void *index_node = NULL;
+
+	memset(&dn, 0, sizeof(dn));
+
+	/* Memory allocation for block buffer and inode. */
+	blk_buffer = calloc(BLOCK_SZ, 2);
+	ASSERT(blk_buffer);
+	inode = (struct f2fs_node*)(blk_buffer + BLOCK_SZ);
+
+	/* Read inode */
+	get_node_info(sbi, ino, &ni);
+	ASSERT(dev_read_block(inode, ni.blk_addr) >= 0);
+	ASSERT(!S_ISDIR(le16_to_cpu(inode->i.i_mode)));
+	ASSERT(!S_ISLNK(le16_to_cpu(inode->i.i_mode)));
+
+	/* Adjust count with file length. */
+	filesize = le64_to_cpu(inode->i.i_size);
+	if (offset > filesize)
+		count = 0;
+	else if (count + offset > filesize)
+		count = filesize - offset;
+
+	/* Main loop for file blocks */
+	read_count = remained_blkentries = 0;
+	while (count > 0) {
+		if (remained_blkentries == 0) {
+			set_new_dnode(&dn, inode, NULL, ino);
+			get_dnode_of_data(sbi, &dn, F2FS_BYTES_TO_BLK(offset),
+					LOOKUP_NODE);
+			if (index_node)
+				free(index_node);
+			index_node = (dn.node_blk == dn.inode_blk) ?
+							NULL : dn.node_blk;
+			remained_blkentries = ADDRS_PER_PAGE(sbi,
+						dn.node_blk, dn.inode_blk);
+		}
+		ASSERT(remained_blkentries > 0);
+
+		blkaddr = datablock_addr(dn.node_blk, dn.ofs_in_node);
+		if (blkaddr == NULL_ADDR || blkaddr == NEW_ADDR)
+			break;
+
+		off_in_blk = offset % BLOCK_SZ;
+		len_in_blk = BLOCK_SZ - off_in_blk;
+		if (len_in_blk > count)
+			len_in_blk = count;
+
+		/* Read data from single block. */
+		if (len_in_blk < BLOCK_SZ) {
+			ASSERT(dev_read_block(blk_buffer, blkaddr) >= 0);
+			memcpy(buffer, blk_buffer + off_in_blk, len_in_blk);
+		} else {
+			/* Direct read */
+			ASSERT(dev_read_block(buffer, blkaddr) >= 0);
+		}
+
+		offset += len_in_blk;
+		count -= len_in_blk;
+		buffer += len_in_blk;
+		read_count += len_in_blk;
+
+		dn.ofs_in_node++;
+		remained_blkentries--;
+	}
+	if (index_node)
+		free(index_node);
+	free(blk_buffer);
+
+	return read_count;
+}
+
+/*
+ * Do not call this function directly.  Instead, call one of the following:
+ *     u64 f2fs_write();
+ *     u64 f2fs_write_compress_data();
+ *     u64 f2fs_write_addrtag();
+ */
+static u64 f2fs_write_ex(struct f2fs_sb_info *sbi, nid_t ino, u8 *buffer,
+		u64 count, pgoff_t offset, enum wr_addr_type addr_type)
+{
+	struct dnode_of_data dn;
+	struct node_info ni;
+	struct f2fs_node *inode;
+	char *blk_buffer;
+	u64 off_in_blk;
+	u64 len_in_blk;
+	u64 written_count;
+	u64 remained_blkentries;
+	block_t blkaddr;
+	void* index_node = NULL;
+	int idirty = 0;
+	int err;
+	bool has_data = (addr_type == WR_NORMAL
+			|| addr_type == WR_COMPRESS_DATA);
+
+	if (count == 0)
+		return 0;
 
 	/*
-	 * When calculate how many blocks this 'count' stride accross,
-	 * We should take offset in a block in account.
+	 * Enforce calling from f2fs_write(), f2fs_write_compress_data(),
+	 * and f2fs_write_addrtag().   Beside, check if is properly called.
 	 */
-	len = F2FS_BYTES_TO_BLK(count + off_in_block
-			+ ((1 << F2FS_BLKSIZE_BITS) - 1));
+	ASSERT((!has_data && buffer == NULL) || (has_data && buffer != NULL));
+	if (addr_type != WR_NORMAL)
+		ASSERT(offset % F2FS_BLKSIZE == 0); /* block boundary only */
 
-	data_blk = calloc(BLOCK_SZ, 1);
-	ASSERT(data_blk);
+	/* Memory allocation for block buffer and inode. */
+	blk_buffer = calloc(BLOCK_SZ, 2);
+	ASSERT(blk_buffer);
+	inode = (struct f2fs_node*)(blk_buffer + BLOCK_SZ);
 
-	set_new_dnode(&dn, inode, NULL, ino);
+	/* Read inode */
+	get_node_info(sbi, ino, &ni);
+	ASSERT(dev_read_block(inode, ni.blk_addr) >= 0);
+	ASSERT(!S_ISDIR(le16_to_cpu(inode->i.i_mode)));
+	ASSERT(!S_ISLNK(le16_to_cpu(inode->i.i_mode)));
 
-	while (len) {
-		if (dn.node_blk != dn.inode_blk)
-			free(dn.node_blk);
-
-		set_new_dnode(&dn, inode, NULL, ino);
-		get_dnode_of_data(sbi, &dn, start, ALLOC_NODE);
-
-		end_offset = ADDRS_PER_PAGE(dn.node_blk);
-
-		while (dn.ofs_in_node < end_offset && len) {
-			block_t blkaddr;
-
-			blkaddr = datablock_addr(dn.node_blk, dn.ofs_in_node);
-
-			/* A new page from WARM_DATA */
-			if (blkaddr == NULL_ADDR)
-				new_data_block(sbi, data_blk, &dn,
-							CURSEG_WARM_DATA);
-
-			/* Copy data from buffer to file */
-			ret = dev_read_block(data_blk, dn.data_blkaddr);
-			ASSERT(ret >= 0);
-
-			memcpy(data_blk + off_in_block, buffer, len_in_block);
-
-			ret = dev_write_block(data_blk, dn.data_blkaddr);
-			ASSERT(ret >= 0);
-
-			off_in_block = 0;
-			len_already += len_in_block;
-			if ((count - len_already) > (1 << F2FS_BLKSIZE_BITS))
-				len_in_block = 1 << F2FS_BLKSIZE_BITS;
-			else
-				len_in_block = count - len_already;
-			len--;
-			start++;
-			dn.ofs_in_node++;
+	/* Main loop for file blocks */
+	written_count = remained_blkentries = 0;
+	while (count > 0) {
+		if (remained_blkentries == 0) {
+			set_new_dnode(&dn, inode, NULL, ino);
+			err = get_dnode_of_data(sbi, &dn,
+					F2FS_BYTES_TO_BLK(offset), ALLOC_NODE);
+			if (err)
+				break;
+			idirty |= dn.idirty;
+			free(index_node);
+			index_node = (dn.node_blk == dn.inode_blk) ?
+					NULL : dn.node_blk;
+			remained_blkentries = ADDRS_PER_PAGE(sbi,
+					dn.node_blk, dn.inode_blk) -
+					dn.ofs_in_node;
 		}
-		/* Update the direct node */
-		if (dn.ndirty) {
-			ret = dev_write_block(dn.node_blk, dn.node_blkaddr);
-			ASSERT(ret >= 0);
+		ASSERT(remained_blkentries > 0);
+
+		if (!has_data) {
+			dn.data_blkaddr = addr_type;
+			set_data_blkaddr(&dn);
+			idirty |= dn.idirty;
+			if (dn.ndirty)
+				ASSERT(dev_write_block(dn.node_blk,
+						dn.node_blkaddr) >= 0);
+			written_count = 0;
+			break;
 		}
-	}
 
-	/* Update the inode info */
-	if (le64_to_cpu(inode->i.i_size) < offset + count) {
-		inode->i.i_size = cpu_to_le64(offset + count);
-		dn.idirty = 1;
-	}
+		blkaddr = datablock_addr(dn.node_blk, dn.ofs_in_node);
+		if (blkaddr == NULL_ADDR || blkaddr == NEW_ADDR) {
+			err = new_data_block(sbi, blk_buffer,
+						&dn, CURSEG_WARM_DATA);
+			if (err)
+				break;
+			blkaddr = dn.data_blkaddr;
+			idirty |= dn.idirty;
+		}
 
-	if (dn.idirty) {
+		off_in_blk = offset % BLOCK_SZ;
+		len_in_blk = BLOCK_SZ - off_in_blk;
+		if (len_in_blk > count)
+			len_in_blk = count;
+
+		/* Write data to single block. */
+		if (len_in_blk < BLOCK_SZ) {
+			ASSERT(dev_read_block(blk_buffer, blkaddr) >= 0);
+			memcpy(blk_buffer + off_in_blk, buffer, len_in_blk);
+			ASSERT(dev_write_block(blk_buffer, blkaddr) >= 0);
+		} else {
+			/* Direct write */
+			ASSERT(dev_write_block(buffer, blkaddr) >= 0);
+		}
+
+		offset += len_in_blk;
+		count -= len_in_blk;
+		buffer += len_in_blk;
+		written_count += len_in_blk;
+
+		dn.ofs_in_node++;
+		if ((--remained_blkentries == 0 || count == 0) && (dn.ndirty))
+			ASSERT(dev_write_block(dn.node_blk, dn.node_blkaddr)
+					>= 0);
+	}
+	if (addr_type == WR_NORMAL && offset > le64_to_cpu(inode->i.i_size)) {
+		inode->i.i_size = cpu_to_le64(offset);
+		idirty = 1;
+	}
+	if (idirty) {
 		ASSERT(inode == dn.inode_blk);
-		ret = dev_write_block(inode, ni.blk_addr);
-		ASSERT(ret >= 0);
+		ASSERT(write_inode(inode, ni.blk_addr) >= 0);
 	}
 
-	if (dn.node_blk && dn.node_blk != dn.inode_blk)
-		free(dn.node_blk);
-	free(data_blk);
+	free(index_node);
+	free(blk_buffer);
+
+	return written_count;
+}
+
+u64 f2fs_write(struct f2fs_sb_info *sbi, nid_t ino, u8 *buffer,
+					u64 count, pgoff_t offset)
+{
+	return f2fs_write_ex(sbi, ino, buffer, count, offset, WR_NORMAL);
+}
+
+u64 f2fs_write_compress_data(struct f2fs_sb_info *sbi, nid_t ino, u8 *buffer,
+					u64 count, pgoff_t offset)
+{
+	return f2fs_write_ex(sbi, ino, buffer, count, offset, WR_COMPRESS_DATA);
+}
+
+u64 f2fs_write_addrtag(struct f2fs_sb_info *sbi, nid_t ino, pgoff_t offset,
+		unsigned int addrtag)
+{
+	ASSERT(addrtag == COMPRESS_ADDR || addrtag == NEW_ADDR
+			|| addrtag == NULL_ADDR);
+	return f2fs_write_ex(sbi, ino, NULL, F2FS_BLKSIZE, offset, addrtag);
+}
+
+/* This function updates only inode->i.i_size */
+void f2fs_filesize_update(struct f2fs_sb_info *sbi, nid_t ino, u64 filesize)
+{
+	struct node_info ni;
+	struct f2fs_node *inode;
+
+	inode = calloc(BLOCK_SZ, 1);
+	ASSERT(inode);
+	get_node_info(sbi, ino, &ni);
+
+	ASSERT(dev_read_block(inode, ni.blk_addr) >= 0);
+	ASSERT(!S_ISDIR(le16_to_cpu(inode->i.i_mode)));
+	ASSERT(!S_ISLNK(le16_to_cpu(inode->i.i_mode)));
+
+	inode->i.i_size = cpu_to_le64(filesize);
+
+	ASSERT(write_inode(inode, ni.blk_addr) >= 0);
+	free(inode);
+}
+
+#define MAX_BULKR_RETRY 5
+int bulkread(int fd, void *rbuf, size_t rsize, bool *eof)
+{
+	int n = 0;
+	int retry = MAX_BULKR_RETRY;
+	int cur;
+
+	if (!rsize)
+		return 0;
+
+	if (eof != NULL)
+		*eof = false;
+	while (rsize && (cur = read(fd, rbuf, rsize)) != 0) {
+		if (cur == -1) {
+			if (errno == EINTR && retry--)
+				continue;
+			return -1;
+		}
+		retry = MAX_BULKR_RETRY;
+
+		rsize -= cur;
+		n += cur;
+	}
+	if (eof != NULL)
+		*eof = (cur == 0);
+	return n;
+}
+
+u64 f2fs_fix_mutable(struct f2fs_sb_info *sbi, nid_t ino, pgoff_t offset,
+		unsigned int compressed)
+{
+	unsigned int i;
+	u64 wlen;
+
+	if (c.compress.readonly)
+		return 0;
+
+	for (i = 0; i < compressed - 1; i++) {
+		wlen = f2fs_write_addrtag(sbi, ino,
+				offset + (i << F2FS_BLKSIZE_BITS), NEW_ADDR);
+		if (wlen)
+			return wlen;
+	}
+	return 0;
+}
+
+static inline int is_consecutive(u32 prev_addr, u32 cur_addr)
+{
+	if (is_valid_data_blkaddr(cur_addr) && (cur_addr == prev_addr + 1))
+		return 1;
+	return 0;
+}
+
+static inline void copy_extent_info(struct extent_info *t_ext,
+				struct extent_info *s_ext)
+{
+	t_ext->fofs = s_ext->fofs;
+	t_ext->blk = s_ext->blk;
+	t_ext->len = s_ext->len;
+}
+
+static inline void update_extent_info(struct f2fs_node *inode,
+				struct extent_info *ext)
+{
+	inode->i.i_ext.fofs = cpu_to_le32(ext->fofs);
+	inode->i.i_ext.blk_addr = cpu_to_le32(ext->blk);
+	inode->i.i_ext.len = cpu_to_le32(ext->len);
+}
+
+static void update_largest_extent(struct f2fs_sb_info *sbi, nid_t ino)
+{
+	struct dnode_of_data dn;
+	struct node_info ni;
+	struct f2fs_node *inode;
+	u32 blkaddr, prev_blkaddr, cur_blk = 0, end_blk;
+	struct extent_info largest_ext, cur_ext;
+	u64 remained_blkentries = 0;
+	u32 cluster_size;
+	int count;
+	void *index_node = NULL;
+
+	memset(&dn, 0, sizeof(dn));
+	largest_ext.len = cur_ext.len = 0;
+
+	inode = (struct f2fs_node *) calloc(BLOCK_SZ, 1);
+	ASSERT(inode);
+
+	/* Read inode info */
+	get_node_info(sbi, ino, &ni);
+	ASSERT(dev_read_block(inode, ni.blk_addr) >= 0);
+	cluster_size = 1 << inode->i.i_log_cluster_size;
+
+	if (inode->i.i_inline & F2FS_INLINE_DATA)
+		goto exit;
+
+	end_blk  = f2fs_max_file_offset(&inode->i) >> F2FS_BLKSIZE_BITS;
+
+	while (cur_blk <= end_blk) {
+		if (remained_blkentries == 0) {
+			set_new_dnode(&dn, inode, NULL, ino);
+			get_dnode_of_data(sbi, &dn, cur_blk, LOOKUP_NODE);
+			if (index_node)
+				free(index_node);
+			index_node = (dn.node_blk == dn.inode_blk) ?
+				NULL : dn.node_blk;
+			remained_blkentries = ADDRS_PER_PAGE(sbi,
+					dn.node_blk, dn.inode_blk);
+		}
+		ASSERT(remained_blkentries > 0);
+
+		blkaddr = datablock_addr(dn.node_blk, dn.ofs_in_node);
+		if (cur_ext.len > 0) {
+			if (is_consecutive(prev_blkaddr, blkaddr))
+				cur_ext.len++;
+			else {
+				if (cur_ext.len > largest_ext.len)
+					copy_extent_info(&largest_ext,
+							&cur_ext);
+				cur_ext.len = 0;
+			}
+		}
+
+		if (cur_ext.len == 0 && is_valid_data_blkaddr(blkaddr)) {
+			cur_ext.fofs = cur_blk;
+			cur_ext.len = 1;
+			cur_ext.blk = blkaddr;
+		}
+
+		prev_blkaddr = blkaddr;
+		count = blkaddr == COMPRESS_ADDR ? cluster_size : 1;
+		cur_blk += count;
+		dn.ofs_in_node += count;
+		remained_blkentries -= count;
+	}
+
+exit:
+	if (cur_ext.len > largest_ext.len)
+		copy_extent_info(&largest_ext, &cur_ext);
+	if (largest_ext.len > 0) {
+		update_extent_info(inode, &largest_ext);
+		ASSERT(write_inode(inode, ni.blk_addr) >= 0);
+	}
+
+	if (index_node)
+		free(index_node);
 	free(inode);
 }
 
 int f2fs_build_file(struct f2fs_sb_info *sbi, struct dentry *de)
 {
-	int fd, n;
+	int fd, n = -1;
 	pgoff_t off = 0;
-	char buffer[BLOCK_SZ];
+	u8 buffer[BLOCK_SZ];
+	struct node_info ni;
+	struct f2fs_node *node_blk;
 
 	if (de->ino == 0)
 		return -1;
+
+	if (de->from_devino) {
+		struct hardlink_cache_entry *found_hardlink;
+
+		found_hardlink = f2fs_search_hardlink(sbi, de);
+		if (found_hardlink && found_hardlink->to_ino &&
+				found_hardlink->nbuild)
+			return 0;
+
+		found_hardlink->nbuild++;
+	}
 
 	fd = open(de->full_path, O_RDONLY);
 	if (fd < 0) {
@@ -179,9 +594,7 @@ int f2fs_build_file(struct f2fs_sb_info *sbi, struct dentry *de)
 	}
 
 	/* inline_data support */
-	if (de->size <= MAX_INLINE_DATA) {
-		struct node_info ni;
-		struct f2fs_node *node_blk;
+	if (de->size <= DEF_MAX_INLINE_DATA) {
 		int ret;
 
 		get_node_info(sbi, de->ino, &ni);
@@ -194,18 +607,101 @@ int f2fs_build_file(struct f2fs_sb_info *sbi, struct dentry *de)
 
 		node_blk->i.i_inline |= F2FS_INLINE_DATA;
 		node_blk->i.i_inline |= F2FS_DATA_EXIST;
+
+		if (c.feature & cpu_to_le32(F2FS_FEATURE_EXTRA_ATTR)) {
+			node_blk->i.i_inline |= F2FS_EXTRA_ATTR;
+			node_blk->i.i_extra_isize =
+					cpu_to_le16(calc_extra_isize());
+		}
 		n = read(fd, buffer, BLOCK_SZ);
-		ASSERT(n == de->size);
-		memcpy(&node_blk->i.i_addr[1], buffer, de->size);
-
+		ASSERT((unsigned long)n == de->size);
+		memcpy(inline_data_addr(node_blk), buffer, de->size);
 		node_blk->i.i_size = cpu_to_le64(de->size);
-
-		ret = dev_write_block(node_blk, ni.blk_addr);
-		ASSERT(ret >= 0);
+		ASSERT(write_inode(node_blk, ni.blk_addr) >= 0);
 		free(node_blk);
+#ifdef WITH_SLOAD
+	} else if (c.func == SLOAD && c.compress.enabled &&
+			c.compress.filter_ops->filter(de->full_path)) {
+		bool eof = false;
+		u8 *rbuf = c.compress.cc.rbuf;
+		unsigned int cblocks = 0;
+
+		node_blk = calloc(BLOCK_SZ, 1);
+		ASSERT(node_blk);
+
+		/* read inode */
+		get_node_info(sbi, de->ino, &ni);
+		ASSERT(dev_read_block(node_blk, ni.blk_addr) >= 0);
+		/* update inode meta */
+		node_blk->i.i_compress_algrithm = c.compress.alg;
+		node_blk->i.i_log_cluster_size =
+				c.compress.cc.log_cluster_size;
+		node_blk->i.i_flags = cpu_to_le32(F2FS_COMPR_FL);
+		if (c.compress.readonly)
+			node_blk->i.i_inline |= F2FS_COMPRESS_RELEASED;
+		ASSERT(write_inode(node_blk, ni.blk_addr) >= 0);
+
+		while (!eof && (n = bulkread(fd, rbuf, c.compress.cc.rlen,
+				&eof)) > 0) {
+			int ret = c.compress.ops->compress(&c.compress.cc);
+			u64 wlen;
+			u32 csize = ALIGN_UP(c.compress.cc.clen +
+					COMPRESS_HEADER_SIZE, BLOCK_SZ);
+			unsigned int cur_cblk;
+
+			if (ret || n < c.compress.cc.rlen ||
+				n < (int)(csize + BLOCK_SZ *
+						c.compress.min_blocks)) {
+				wlen = f2fs_write(sbi, de->ino, rbuf, n, off);
+				ASSERT((int)wlen == n);
+			} else {
+				wlen = f2fs_write_addrtag(sbi, de->ino, off,
+						WR_COMPRESS_ADDR);
+				ASSERT(!wlen);
+				wlen = f2fs_write_compress_data(sbi, de->ino,
+						(u8 *)c.compress.cc.cbuf,
+						csize, off + BLOCK_SZ);
+				ASSERT(wlen == csize);
+				c.compress.ops->reset(&c.compress.cc);
+				cur_cblk = (c.compress.cc.rlen - csize) /
+								BLOCK_SZ;
+				cblocks += cur_cblk;
+				wlen = f2fs_fix_mutable(sbi, de->ino,
+						off + BLOCK_SZ + csize,
+						cur_cblk);
+				ASSERT(!wlen);
+			}
+			off += n;
+		}
+		if (n == -1) {
+			fprintf(stderr, "Load file '%s' failed: ",
+					de->full_path);
+			perror(NULL);
+		}
+		/* read inode */
+		get_node_info(sbi, de->ino, &ni);
+		ASSERT(dev_read_block(node_blk, ni.blk_addr) >= 0);
+		/* update inode meta */
+		node_blk->i.i_size = cpu_to_le64(off);
+		if (!c.compress.readonly) {
+			node_blk->i.i_compr_blocks = cpu_to_le64(cblocks);
+			node_blk->i.i_blocks += cpu_to_le64(cblocks);
+		}
+		ASSERT(write_inode(node_blk, ni.blk_addr) >= 0);
+		free(node_blk);
+
+		if (!c.compress.readonly) {
+			sbi->total_valid_block_count += cblocks;
+			if (sbi->total_valid_block_count >=
+					sbi->user_block_count) {
+				ERR_MSG("Not enough space\n");
+				ASSERT(0);
+			}
+		}
+#endif
 	} else {
 		while ((n = read(fd, buffer, BLOCK_SZ)) > 0) {
-			f2fs_write_block(sbi, de->ino, buffer, n, off);
+			f2fs_write(sbi, de->ino, buffer, n, off);
 			off += n;
 		}
 	}
@@ -214,8 +710,15 @@ int f2fs_build_file(struct f2fs_sb_info *sbi, struct dentry *de)
 	if (n < 0)
 		return -1;
 
+	if (!c.compress.enabled || (c.feature & cpu_to_le32(F2FS_FEATURE_RO)))
+		update_largest_extent(sbi, de->ino);
 	update_free_segments(sbi);
 
-	MSG(1, "Info: built a file %s, size=%lu\n", de->full_path, de->size);
+	MSG(1, "Info: Create %s -> %s\n"
+		"  -- ino=%x, type=%x, mode=%x, uid=%x, "
+		"gid=%x, cap=%"PRIx64", size=%lu, pino=%x\n",
+		de->full_path, de->path,
+		de->ino, de->file_type, de->mode,
+		de->uid, de->gid, de->capabilities, de->size, de->pino);
 	return 0;
 }

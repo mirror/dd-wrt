@@ -14,6 +14,10 @@ fsck.f2fs \- check a Linux F2FS file system
 .I enable force fix
 ]
 [
+.B \-M
+.I show file map
+]
+[
 .B \-p
 .I enable preen mode
 ]
@@ -43,6 +47,9 @@ module. It is disabled by default.
 .TP
 .BI \-f " enable force fix"
 Enable to fix all the inconsistency in the partition.
+.TP
+.BI \-M " show files map"
+Enable to show all the filenames and inode numbers stored in the image
 .TP
 .BI \-p " enable preen mode"
 Same as "-a" to support general fsck convention.

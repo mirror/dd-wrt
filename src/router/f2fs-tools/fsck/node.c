@@ -16,11 +16,10 @@
 #include "fsck.h"
 #include "node.h"
 
-void f2fs_alloc_nid(struct f2fs_sb_info *sbi, nid_t *nid, int inode)
+void f2fs_alloc_nid(struct f2fs_sb_info *sbi, nid_t *nid)
 {
 	struct f2fs_nm_info *nm_i = NM_I(sbi);
-	struct f2fs_checkpoint *cp = F2FS_CKPT(sbi);
-	nid_t i, inode_cnt, node_cnt;
+	nid_t i;
 
 	for (i = 0; i < nm_i->max_nid; i++)
 		if(f2fs_test_bit(i, nm_i->nid_bitmap) == 0)
@@ -29,12 +28,63 @@ void f2fs_alloc_nid(struct f2fs_sb_info *sbi, nid_t *nid, int inode)
 	ASSERT(i < nm_i->max_nid);
 	f2fs_set_bit(i, nm_i->nid_bitmap);
 	*nid = i;
+}
 
-	inode_cnt = get_cp(valid_inode_count);
-	node_cnt = get_cp(valid_node_count);
-	if (inode)
-		set_cp(valid_inode_count, inode_cnt + 1);
-	set_cp(valid_node_count, node_cnt + 1);
+void f2fs_release_nid(struct f2fs_sb_info *sbi, nid_t nid)
+{
+	struct f2fs_nm_info *nm_i = NM_I(sbi);
+
+	ASSERT(nid < nm_i->max_nid);
+	ASSERT(f2fs_test_bit(nid, nm_i->nid_bitmap));
+
+	f2fs_clear_bit(nid, nm_i->nid_bitmap);
+}
+
+int f2fs_rebuild_qf_inode(struct f2fs_sb_info *sbi, int qtype)
+{
+	struct f2fs_node *raw_node = NULL;
+	struct f2fs_super_block *sb = F2FS_RAW_SUPER(sbi);
+	struct f2fs_checkpoint *ckpt = F2FS_CKPT(sbi);
+	struct f2fs_summary sum;
+	struct node_info ni;
+	nid_t ino = QUOTA_INO(sb, qtype);
+	block_t blkaddr = NULL_ADDR;
+	__u64 cp_ver = cur_cp_version(ckpt);
+	int ret = 0;
+
+	raw_node = calloc(F2FS_BLKSIZE, 1);
+	if (raw_node == NULL) {
+		MSG(1, "\tError: Calloc Failed for raw_node!!!\n");
+		return -ENOMEM;
+	}
+	f2fs_init_qf_inode(sb, raw_node, qtype, time(NULL));
+
+	if (is_set_ckpt_flags(ckpt, CP_CRC_RECOVERY_FLAG))
+		cp_ver |= (cur_cp_crc(ckpt) << 32);
+	raw_node->footer.cp_ver = cpu_to_le64(cp_ver);
+
+	get_node_info(sbi, ino, &ni);
+	set_summary(&sum, ino, 0, ni.version);
+	ret = reserve_new_block(sbi, &blkaddr, &sum, CURSEG_HOT_NODE, 1);
+	if (ret) {
+		MSG(1, "\tError: Failed to reserve new block!\n");
+		goto err_out;
+	}
+
+	ret = write_inode(raw_node, blkaddr);
+	if (ret < 0) {
+		MSG(1, "\tError: While rebuilding the quota inode to disk!\n");
+		goto err_out;
+	}
+	update_nat_blkaddr(sbi, ino, ino, blkaddr);
+
+	f2fs_clear_bit(ino, F2FS_FSCK(sbi)->nat_area_bitmap);
+	f2fs_set_bit(ino, NM_I(sbi)->nid_bitmap);
+	DBG(1, "Rebuild quota inode ([%3d] ino [0x%x]) at offset:0x%x\n",
+						qtype, ino, blkaddr);
+err_out:
+	free(raw_node);
+	return ret;
 }
 
 void set_data_blkaddr(struct dnode_of_data *dn)
@@ -58,13 +108,15 @@ void set_data_blkaddr(struct dnode_of_data *dn)
 block_t new_node_block(struct f2fs_sb_info *sbi,
 				struct dnode_of_data *dn, unsigned int ofs)
 {
+	struct f2fs_super_block *sb = F2FS_RAW_SUPER(sbi);
 	struct f2fs_node *f2fs_inode;
 	struct f2fs_node *node_blk;
 	struct f2fs_checkpoint *ckpt = F2FS_CKPT(sbi);
 	struct f2fs_summary sum;
 	struct node_info ni;
-	block_t blkaddr;
+	block_t blkaddr = NULL_ADDR;
 	int type;
+	int ret;
 
 	f2fs_inode = dn->inode_blk;
 
@@ -75,6 +127,7 @@ block_t new_node_block(struct f2fs_sb_info *sbi,
 	node_blk->footer.ino = f2fs_inode->footer.ino;
 	node_blk->footer.flag = cpu_to_le32(ofs << OFFSET_BIT_SHIFT);
 	node_blk->footer.cp_ver = ckpt->checkpoint_ver;
+	set_cold_node(node_blk, S_ISDIR(le16_to_cpu(f2fs_inode->i.i_mode)));
 
 	type = CURSEG_COLD_NODE;
 	if (IS_DNODE(node_blk)) {
@@ -84,9 +137,17 @@ block_t new_node_block(struct f2fs_sb_info *sbi,
 			type = CURSEG_WARM_NODE;
 	}
 
+	if ((get_sb(feature) & cpu_to_le32(F2FS_FEATURE_RO)) &&
+					type != CURSEG_HOT_NODE)
+		type = CURSEG_HOT_NODE;
+
 	get_node_info(sbi, dn->nid, &ni);
 	set_summary(&sum, dn->nid, 0, ni.version);
-	reserve_new_block(sbi, &blkaddr, &sum, type);
+	ret = reserve_new_block(sbi, &blkaddr, &sum, type, !ofs);
+	if (ret) {
+		free(node_blk);
+		return 0;
+	}
 
 	/* update nat info */
 	update_nat_blkaddr(sbi, le32_to_cpu(f2fs_inode->footer.ino),
@@ -105,13 +166,13 @@ block_t new_node_block(struct f2fs_sb_info *sbi,
  *
  * By default, it sets inline_xattr and inline_data
  */
-static int get_node_path(unsigned long block,
+static int get_node_path(struct f2fs_node *node, long block,
 				int offset[4], unsigned int noffset[4])
 {
-	const long direct_index = DEF_ADDRS_PER_INODE_INLINE_XATTR;
-	const long direct_blks = ADDRS_PER_BLOCK;
+	const long direct_index = ADDRS_PER_INODE(&node->i);
+	const long direct_blks = ADDRS_PER_BLOCK(&node->i);
 	const long dptrs_per_blk = NIDS_PER_BLOCK;
-	const long indirect_blks = ADDRS_PER_BLOCK * NIDS_PER_BLOCK;
+	const long indirect_blks = ADDRS_PER_BLOCK(&node->i) * NIDS_PER_BLOCK;
 	const long dindirect_blks = indirect_blks * NIDS_PER_BLOCK;
 	int n = 0;
 	int level = 0;
@@ -179,7 +240,7 @@ got:
 	return level;
 }
 
-void get_dnode_of_data(struct f2fs_sb_info *sbi, struct dnode_of_data *dn,
+int get_dnode_of_data(struct f2fs_sb_info *sbi, struct dnode_of_data *dn,
 						pgoff_t index, int mode)
 {
 	int offset[4];
@@ -191,7 +252,7 @@ void get_dnode_of_data(struct f2fs_sb_info *sbi, struct dnode_of_data *dn,
 	int level, i;
 	int ret;
 
-	level = get_node_path(index, offset, noffset);
+	level = get_node_path(dn->inode_blk, index, offset, noffset);
 
 	nids[0] = dn->nid;
 	parent = dn->inode_blk;
@@ -205,14 +266,18 @@ void get_dnode_of_data(struct f2fs_sb_info *sbi, struct dnode_of_data *dn,
 
 	for (i = 1; i <= level; i++) {
 		if (!nids[i] && mode == ALLOC_NODE) {
-			f2fs_alloc_nid(sbi, &nids[i], 0);
+			f2fs_alloc_nid(sbi, &nids[i]);
 
 			dn->nid = nids[i];
 
 			/* Function new_node_blk get a new f2fs_node blk and update*/
 			/* We should make sure that dn->node_blk == NULL*/
 			nblk[i] = new_node_block(sbi, dn, noffset[i]);
-			ASSERT(nblk[i]);
+			if (!nblk[i]) {
+				f2fs_release_nid(sbi, nids[i]);
+				c.alloc_failed = 1;
+				return -EINVAL;
+			}
 
 			set_nid(parent, offset[i - 1], nids[i], i == 1);
 		} else {
@@ -247,4 +312,5 @@ void get_dnode_of_data(struct f2fs_sb_info *sbi, struct dnode_of_data *dn,
 	dn->ofs_in_node = offset[level];
 	dn->data_blkaddr = datablock_addr(dn->node_blk, dn->ofs_in_node);
 	dn->node_blkaddr = nblk[level];
+	return 0;
 }

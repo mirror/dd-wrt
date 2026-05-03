@@ -13,6 +13,19 @@ resize.f2fs \- resize filesystem size
 .B \-d
 .I debugging-level
 ]
+[
+.B \-o
+.I overprovision-ratio-percentage
+]
+[
+.B \-i
+]
+[
+.B \-s
+]
+[
+.B \-V
+]
 .I device
 .SH DESCRIPTION
 .B resize.f2fs
@@ -34,6 +47,20 @@ Specify the size in sectors.
 .BI \-d " debug-level"
 Specify the level of debugging options.
 The default number is 0, which shows basic debugging messages.
+.TP
+.BI \-o " overprovision-ratio-percentage"
+Specify the percentage of the volume that will be used as overprovision area.
+This area is hidden to users, and utilized by F2FS cleaner. If not specified, the
+best number will be assigned automatically according to the partition size.
+.TP
+.BI \-i
+Enable extended node bitmap.
+.TP
+.BI \-s
+Enable safe resize.
+.TP
+.BI \-V
+Print the version number and exit.
 .TP
 .SH AUTHOR
 This version of

@@ -10,6 +10,18 @@ dump.f2fs \- retrieve directory and file entries from an F2FS-formated image
 .I inode number
 ]
 [
+.B \-I
+.I inode number
+]
+[
+.B \-n
+.I NAT range
+]
+[
+.B \-M
+.I Block map
+]
+[
 .B \-s
 .I SIT range
 ]
@@ -32,9 +44,9 @@ is used to retrieve f2fs metadata (usually in a disk partition).
 \fIdevice\fP is the special file corresponding to the device (e.g.
 \fI/dev/sdXX\fP).
 
-Currently, it can retrieve 1) a file given its inode number, 2) SIT entries into
-a file, 3) SSA entries into a file, 4) reverse information from the given block
-address.
+Currently, it can retrieve 1) a file given its inode number, 2) NAT
+entries into a file, 3) SIT entries into a file, 4) SSA entries into
+a file, 5) reverse information from the given block address.
 .PP
 The exit code returned by
 .B dump.f2fs
@@ -43,6 +55,15 @@ is 0 on success and -1 on failure.
 .TP
 .BI \-i " inode number"
 Specify an inode number to dump out.
+.TP
+.BI \-I " inode number"
+Specify an inode number and scan full disk to dump out, include history inode block
+.TP
+.BI \-n " NAT range"
+Specify a range presented by nids to dump NAT entries.
+.TP
+.BI \-M " Block map"
+Show all the allocated block addresses given inode number.
 .TP
 .BI \-s " SIT range"
 Specify a range presented by segment numbers to dump SIT entries.

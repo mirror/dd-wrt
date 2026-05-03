@@ -12,6 +12,6 @@
 
 extern struct f2fs_configuration c;
 
-int f2fs_trim_device(int, u_int64_t);
+int f2fs_trim_device(int, uint64_t);
 int f2fs_trim_devices(void);
 int f2fs_format_device(void);
