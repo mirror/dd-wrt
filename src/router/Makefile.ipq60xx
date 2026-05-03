@@ -181,6 +181,31 @@ endif
 	$(MAKE) -f Makefile.ipq60xx kernel-relink-prep MAKEEXT=ipq60xx KBUILD_TARGETS="Image dtbs" ARCH=aarch64
 	$(MAKE) -f Makefile.ipq60xx kernel-relink MAKEEXT=ipq60xx KBUILD_TARGETS="Image dtbs" ARCH=aarch64
 
+qsdk_kiwi:
+	cp $(LINUXDIR)/arch/arm64/boot/Image $(ARCH)-uclibc/
+	cp $(ARCH)-uclibc/Image $(ARCH)-uclibc/Image.itb
+	libdeflate-gzip -f -12 -c $(ARCH)-uclibc/Image.itb > $(ARCH)-uclibc/Image.itb.new
+	mv $(ARCH)-uclibc/Image.itb.new $(ARCH)-uclibc/Image.itb
+	tools/qcom/mkits.sh \
+		-D 8devices_kiwi-dvk \
+		-o $(TOP)/$(ARCH)-uclibc/Image.itb.its \
+		-k $(TOP)/$(ARCH)-uclibc/Image.itb \
+		-C gzip \
+		-d $(LINUXDIR)/arch/arm64/boot/dts/qcom/ipq9570-kiwi-dvk.dtb \
+		-a 0x41000000 \
+		-e 0x41000000 \
+		-c config@8dev-kiwi \
+		-A arm64 \
+		-v $(KERNELRELEASE)
+	mkimage -f $(TOP)/$(ARCH)-uclibc/Image.itb.its $(TOP)/$(ARCH)-uclibc/Image.itb.new
+	mv $(TOP)/$(ARCH)-uclibc/Image.itb.new $(TOP)/$(ARCH)-uclibc/Image.itb
+	./tools/qcom/mkits-qsdk-ipq-image.sh \
+		$(ARCH)-uclibc/Image.its \
+		hlos $(TOP)/$(ARCH)-uclibc/Image.itb \
+		rootfs $(TOP)/$(ARCH)-uclibc/root.fs
+	mkimage -f $(TOP)/$(ARCH)-uclibc/Image.its $(TOP)/$(ARCH)-uclibc/kiwi-factory-nor.bin
+	@true;
+
 testimage:
 	cp $(LINUXDIR)/arch/arm64/boot/Image $(ARCH)-uclibc/
 	cp $(ARCH)-uclibc/Image $(ARCH)-uclibc/Image.itb
