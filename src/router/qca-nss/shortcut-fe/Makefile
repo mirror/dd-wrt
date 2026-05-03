@@ -68,4 +68,4 @@ ccflags-y += -DSFE_DSLITE_ENABLE
 endif
 endif
 
-ccflags-y += -Werror -Wall -Iexports/
+ccflags-y += -Iexports/
