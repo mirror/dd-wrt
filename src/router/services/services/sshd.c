@@ -102,7 +102,7 @@ void start_sshd(void)
 	write_key_file("sshd_authorized_keys", AUTHORIZED_KEYS_FILE, 0600);
 	stop_sshd();
 	int a = 0;
-	char *sshd_argv[12];
+	char *sshd_argv[14];
 	sshd_argv[a++] = "dropbear";
 	#ifndef HAVE_MAKSAT
 	sshd_argv[a++] = "-b";
@@ -118,6 +118,8 @@ void start_sshd(void)
 		sshd_argv[a++] = "-s";
 	if (nvram_matchi("sshd_forwarding", 1))
 		sshd_argv[a++] = "-a";
+	sshd_argv[a++] = "-M";
+	sshd_argv[a++] = nvram_safe_get("sshd_max_dur");
 	sshd_argv[a++] = NULL;
 	_log_evalpid(sshd_argv, NULL, 0, NULL);
 	return;
