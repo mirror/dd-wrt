@@ -609,13 +609,23 @@ tolocal(int argc, char **argv)
 	}
 }
 
+static void *my_reallocarray(void *ptr, size_t m, size_t n)
+{
+	if (n && m > -1 / n) {
+		errno = ENOMEM;
+		return 0;
+	}
+
+	return realloc(ptr, m * n);
+}
+
 /* Appends a string to an array; returns 0 on success, -1 on alloc failure */
 static int
 append(char *cp, char ***ap, size_t *np)
 {
 	char **tmp;
 
-	if ((tmp = reallocarray(*ap, *np + 1, sizeof(*tmp))) == NULL)
+	if ((tmp = my_reallocarray(*ap, *np + 1, sizeof(*tmp))) == NULL)
 		return -1;
 	tmp[(*np)] = cp;
 	(*np)++;
