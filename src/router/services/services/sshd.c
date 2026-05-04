@@ -60,7 +60,7 @@ void stop_sshd(void);
 char *sshd_deps(void)
 {
 	return "sshd_enable http_username http_passwd " NVRAM_ED25519_KEY_NAME
-	       " sshd_authorized_keys sshd_port sshd_rw sshd_passwd_auth sshd_forwarding";
+	       " sshd_authorized_keys sshd_port sshd_rw sshd_passwd_auth sshd_forwarding sshd_max_dur";
 }
 
 char *sshd_proc(void)
