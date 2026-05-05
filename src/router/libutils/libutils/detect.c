@@ -1727,6 +1727,10 @@ generic:;
 		setRouter("Linksys MX8500");
 		return ROUTER_LINKSYS_MX8500;
 	}
+	if (!strcmp(modelstr, "Kiwi-DVK")) {
+		setRouter("8devices Kiwi-DVK");
+		return ROUTER_8DEVICES_KIWI;
+	}
 	if (!strcmp(modelstr, "MX5300")) {
 		setRouter("Linksys MX5300");
 		return ROUTER_LINKSYS_MX5300;

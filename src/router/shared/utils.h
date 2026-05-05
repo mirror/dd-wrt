@@ -860,6 +860,8 @@
 
 #define ROUTER_DATTO_L8 0x12e10b
 
+#define ROUTER_8DEVICES_KIWI 0x12e0ff
+
 #define NVROUTER "DD_BOARD"
 #define NVROUTER_ALT "alternate_name"
 
