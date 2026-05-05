@@ -1,3 +1,4 @@
+-include $(LINUXDIR)/.config
 CONFIG_WR941=
 CONFIG_WA901=
 CONFIG_WILLY=

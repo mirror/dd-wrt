@@ -530,6 +530,8 @@ static void load_nss(int profile, int cores, char *type)
 	init_skb_recycler(profile);
 	loadnss("qca-ssdk", type);
 
+	if (!strcmp(type, "ipq95xx"))
+		insmod("qca-nss-ppe-ipq95xx");
 	char driver[64];
 	snprintf(driver, sizeof(driver), "qca-nss-dp-%s", type);
 
@@ -547,6 +549,7 @@ static void load_nss(int profile, int cores, char *type)
 		loadnss("qca-nss-crypto", type);
 		loadnss("qca-nss-cfi-cryptoapi", type);
 		loadnss("qca-nss-netlink", type);
+		loadnss("qca-nss-ppe-netlink", type);
 	}
 	insmod("cryptodev");
 	set_memprofile(cores, 1, profile);
@@ -554,8 +557,11 @@ static void load_nss(int profile, int cores, char *type)
 	eval("insmod", "bonding", "miimon=1000", "downdelay=200", "updelay=200");
 	if (!nss_disabled(0)) {
 		loadnss("qca-nss-pppoe", type);
+		loadnss("qca-nss-ppe-pppoe-mgr", type);
 		loadnss("qca-nss-vlan", type);
+		loadnss("qca-nss-ppe-vlan", type);
 		loadnss("qca-nss-qdisc", type);
+		loadnss("qca-nss-ppe-qdisc", type);
 	}
 	insmod("pptp");
 	if (!nss_disabled(0))
@@ -563,11 +569,15 @@ static void load_nss(int profile, int cores, char *type)
 	insmod("udp_tunnel");
 	insmod("ip6_udp_tunnel");
 	insmod("l2tp_core");
-	if (!nss_disabled(0))
+	if (!nss_disabled(0)) {
 		loadnss("qca-nss-l2tpv2", type);
+		loadnss("qca-nss-ppe-l2tp", type);
+	}
 	insmod("vxlan");
-	if (!nss_disabled(0))
+	if (!nss_disabled(0)) {
 		loadnss("qca-nss-vxlanmgr", type);
+		loadnss("qca-nss-ppe-vxlanmgr", type);
+	}
 	insmod("tunnel6");
 	insmod("ip6_tunnel");
 	if (!nss_disabled(0)) {
@@ -586,6 +596,14 @@ static void load_nss_ipq60xx(int profile)
 	//	if (use_mesh())
 	//		profile = 1024;
 	load_nss(profile, 4, "ipq60xx");
+}
+
+static void load_nss_ipq95xx(int profile)
+{
+	nvram_default_get("nss", "1");
+	//	if (use_mesh())
+	//		profile = 1024;
+	load_nss(profile, 4, "ipq95xx");
 }
 
 static void load_nss_ipq50xx(int profile)
@@ -813,6 +831,12 @@ void start_sysinit(void)
 	int fwlen = 0x10000;
 	int profile = 512;
 	switch (brand) {
+	case ROUTER_8DEVICES_KIWI:
+		fwlen = 0x20000;
+		load_nss_ipq95xx(1024);
+		nvram_default_get("sfe", "3");
+		maddr = get_deviceinfo_linksys("hw_mac_addr");
+		break;
 	case ROUTER_LINKSYS_MR7350:
 		fwlen = 0x20000;
 		load_nss_ipq60xx(512);
@@ -1575,6 +1599,10 @@ void start_wifi_drivers(void)
 		insmod("cfg80211");
 		load_mac80211_internal(!nvram_match("ath11k_nss", "0") && !nss_disabled(0));
 		switch (brand) {
+		case ROUTER_8DEVICES_KIWI:
+			insmod("qmi_helpers");
+			insmod("ath12k");
+			break;
 		case ROUTER_LINKSYS_MR5500:
 		case ROUTER_LINKSYS_MX5500:
 			if (frame_mode == 2)
