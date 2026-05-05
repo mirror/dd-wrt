@@ -142,6 +142,14 @@ ifeq ($(CONFIG_LD_IS_LLD), y)
 KBUILD_LDFLAGS	+= -z norelro
 endif
 
+ifeq ($(CONFIG_PINCTRL_IPQ8074), y)
+ifeq ($(CONFIG_PINCTRL_IPQ9574), y)
+KBUILD_CFLAGS += -march=armv8-a+crc+crypto -mcpu=cortex-a73+crc+crypto -mtune=cortex-a73
+else
+KBUILD_CFLAGS += -march=armv8-a+crc+crypto -mcpu=cortex-a53+crc+crypto -mtune=cortex-a53
+endif
+endif
+
 CHECKFLAGS	+= -D__aarch64__
 
 ifeq ($(CONFIG_DYNAMIC_FTRACE_WITH_CALL_OPS),y)

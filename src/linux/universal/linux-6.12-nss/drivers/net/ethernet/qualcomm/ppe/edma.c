@@ -131,7 +131,7 @@ static int edma_clock_set_and_enable(struct device *dev,
 	struct clk *clk = NULL;
 	int ret;
 
-	edma_np = of_get_child_by_name(dev->of_node, "edma");
+	edma_np = of_get_child_by_name(dev->of_node, "edma_ppe");
 
 	clk = devm_get_clk_from_child(dev, edma_np, id);
 	if (IS_ERR(clk)) {
@@ -492,7 +492,7 @@ static int edma_irq_init(void)
 	u32 i;
 
 	pdev = to_platform_device(dev);
-	edma_np = of_get_child_by_name(dev->of_node, "edma");
+	edma_np = of_get_child_by_name(dev->of_node, "edma_ppe");
 	edma_ctx->intr_info.intr_txcmpl = kzalloc((sizeof(*edma_ctx->intr_info.intr_txcmpl) *
 						  txcmpl->num_rings), GFP_KERNEL);
 	if (!edma_ctx->intr_info.intr_txcmpl) {
@@ -592,7 +592,7 @@ static int edma_hw_reset(void)
 	int ret;
 
 	/* Count and parse reset names from DTSI. */
-	edma_np = of_get_child_by_name(dev->of_node, "edma");
+	edma_np = of_get_child_by_name(dev->of_node, "edma_ppe");
 	count = of_property_count_strings(edma_np, "reset-names");
 	if (count < 0) {
 		dev_err(dev, "EDMA reset entry not found\n");

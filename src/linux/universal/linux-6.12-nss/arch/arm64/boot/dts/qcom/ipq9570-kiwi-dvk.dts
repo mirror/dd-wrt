@@ -12,9 +12,9 @@
 
 	aliases {
 		serial0 = &blsp1_uart2;
-		ethernet0 = &xgmac1;
-		ethernet1 = &xgmac5;
-		ethernet2 = &xgmac6;
+		ethernet0 = &dp1_syn;
+		ethernet1 = &dp5_syn;
+		ethernet2 = &dp6_syn;
 	};
 
 	chosen {
@@ -38,31 +38,24 @@
 		regulator-always-on;
 		regulator-name = "fixed_0p925";
 	};
-
-	sfp0: sfp-0 {
-		compatible = "sff,sfp";
-		pinctrl-0 = <&sfp0_default>;
-		pinctrl-names = "default";
-		i2c-bus = <&blsp1_i2c1>;
-		los-gpios = <&tlmm 46 GPIO_ACTIVE_HIGH>;
-		tx-disable-gpios = <&tlmm 47 GPIO_ACTIVE_HIGH>;
-	};
 };
 
 &blsp1_i2c1 {
-	pinctrl-0 = <&i2c1_default>;
+	pinctrl-0 = <&i2c1_pins>;
 	pinctrl-names = "default";
 	status = "okay";
 };
 
 &blsp1_spi0 {
-	pinctrl-0 = <&spi_0_default>;
+	pinctrl-0 = <&spi_0_pins>;
 	pinctrl-names = "default";
 	status = "okay";
 
 	flash@0 {
 		compatible = "jedec,spi-nor";
 		reg = <0>;
+		#address-cells = <1>;
+		#size-cells = <1>;
 		spi-max-frequency = <50000000>;
 
 		partitions {
@@ -82,78 +75,6 @@
 	pinctrl-0 = <&uart2_pins>;
 	pinctrl-names = "default";
 	status = "okay";
-};
-
-&qcom_ppe {
-	ethernet-ports {
-		#address-cells = <1>;
-		#size-cells = <0>;
-
-		xgmac1: port@1 {
-			reg = <1>;
-			phy-mode = "10gbase-r";
-			managed = "in-band-status";
-			label = "wan";
-			sfp = <&sfp0>;
-			pcs-handle = <&pcs0_ch0>;
-			local-mac-address = [00 00 00 00 00 00];
-			clocks = <&nsscc NSS_CC_PORT1_MAC_CLK>,
-				 <&nsscc NSS_CC_PORT1_RX_CLK>,
-				 <&nsscc NSS_CC_PORT1_TX_CLK>;
-			clock-names = "port_mac",
-				      "port_rx",
-				      "port_tx";
-			resets = <&nsscc PORT1_MAC_ARES>,
-				 <&nsscc PORT1_RX_ARES>,
-				 <&nsscc PORT1_TX_ARES>;
-			reset-names = "port_mac",
-				      "port_rx",
-				      "port_tx";
-		};
-
-		xgmac5: port@5 {
-			reg = <5>;
-			phy-mode = "2500base-x";
-			label = "lan1";
-			phy-handle = <&phy0>;
-			pcs-handle = <&pcs1_ch0>;
-			local-mac-address = [00 00 00 00 00 00];
-			clocks = <&nsscc NSS_CC_PORT5_MAC_CLK>,
-				 <&nsscc NSS_CC_PORT5_RX_CLK>,
-				 <&nsscc NSS_CC_PORT5_TX_CLK>;
-			clock-names = "port_mac",
-				      "port_rx",
-				      "port_tx";
-			resets = <&nsscc PORT5_MAC_ARES>,
-				 <&nsscc PORT5_RX_ARES>,
-				 <&nsscc PORT5_TX_ARES>;
-			reset-names = "port_mac",
-				      "port_rx",
-				      "port_tx";
-		};
-
-		xgmac6: port@6 {
-			reg = <6>;
-			phy-mode = "usxgmii";
-			managed = "in-band-status";
-			label = "lan2";
-			phy-handle = <&phy1>;
-			pcs-handle = <&pcs2_ch0>;
-			local-mac-address = [00 00 00 00 00 00];
-			clocks = <&nsscc NSS_CC_PORT6_MAC_CLK>,
-				 <&nsscc NSS_CC_PORT6_RX_CLK>,
-				 <&nsscc NSS_CC_PORT6_TX_CLK>;
-			clock-names = "port_mac",
-				      "port_rx",
-				      "port_tx";
-			resets = <&nsscc PORT6_MAC_ARES>,
-				 <&nsscc PORT6_RX_ARES>,
-				 <&nsscc PORT6_TX_ARES>;
-			reset-names = "port_mac",
-				      "port_rx",
-				      "port_tx";
-		};
-	};
 };
 
 &dp1_syn {
@@ -283,6 +204,7 @@
 	status = "okay";
 };
 
+
 &rpm_requests {
 	regulators {
 		compatible = "qcom,rpm-mp5496-regulators";
@@ -310,14 +232,14 @@
 };
 
 &sdhc_1 {
-	bus-width = <8>;
-	max-frequency = <384000000>;
+	pinctrl-0 = <&sdc_default_state>;
+	pinctrl-names = "default";
 	mmc-ddr-1_8v;
 	mmc-hs200-1_8v;
 	mmc-hs400-1_8v;
 	mmc-hs400-enhanced-strobe;
-	pinctrl-0 = <&sdc_default_state>;
-	pinctrl-names = "default";
+	max-frequency = <384000000>;
+	bus-width = <8>;
 	status = "okay";
 };
 
@@ -358,7 +280,7 @@
 		};
 	};
 
-	spi_0_default: spi-0-default-state {
+	spi_0_pins: spi-0-state {
 		pins = "gpio11", "gpio12", "gpio13", "gpio14";
 		function = "blsp0_spi";
 		drive-strength = <8>;
@@ -461,18 +383,26 @@
 		};
 	};
 
-	i2c1_default: i2c1-default-state {
+	i2c1_pins: i2c1-default-state {
 		pins = "gpio36", "gpio37";
-		function = "blsp1_i2c";
+		funcion = "blsp1_i2c";
 		drive-strength = <8>;
 		bias-pull-up;
 	};
 
-	sfp0_default: sfp0-default-state {
-		pins = "gpio46", "gpio47";
-		function = "gpio";
-		drive-strength = <8>;
-		bias-pull-down;
+	mdio_pins: mdio-default-state {
+		mdc {
+			pins = "gpio38";
+			function = "mdc";
+			drive-strength = <8>;
+			bias-disable;
+		};
+		mdio {
+			pins = "gpio39";
+			function = "mdio";
+			drive-strength = <8>;
+			bias-pull-up;
+		};
 	};
 };
 
@@ -521,3 +451,4 @@
 &xo_clk {
 	clock-frequency = <48000000>;
 };
+
