@@ -1193,7 +1193,6 @@ static struct ctl_table edma_sub[] = {
 		.mode           =       0644,
 		.proc_handler   =       edma_hang_recovery_handler
 	},
-	{}
 };
 
 /*
@@ -1294,12 +1293,14 @@ int edma_init(void)
 		ret = -EFAULT;
 		goto edma_hw_init_fail;
 	}
-	if (!mem_profile)
+
+	if (!mem_profile) {
 	/*
 	 * Register PTP service code callback function
 	 */
 	ppe_drv_sc_register_cb(PPE_DRV_SC_PTP, edma_rx_phy_tstamp_buf, NULL);
 	}
+
 	/*
 	 * Register mirror core selection API callback with PPE driver
 	 */
@@ -1336,6 +1337,7 @@ int edma_init(void)
 	return 0;
 
 edma_hw_init_fail:
+
 #ifdef NSS_DP_PPEDS_SUPPORT
 	edma_ppeds_deinit(&edma_gbl_ctx.ppeds_drv);
 edma_init_ppeds_init_fail:
@@ -1834,7 +1836,7 @@ static int edma_hang_recovery(void)
  * edma_hang_recovery_handler()
  *	to trigger recovery API for EDMA hang
  */
-int edma_hang_recovery_handler(struct ctl_table *table, int write,
+int edma_hang_recovery_handler(const struct ctl_table *table, int write,
                 void __user *buffer, size_t *lenp, loff_t *ppos)
 {
 	int ret;

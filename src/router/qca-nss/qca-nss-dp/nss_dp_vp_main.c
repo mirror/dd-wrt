@@ -181,3 +181,6 @@ bool nss_dp_vp_deinit(struct net_device *netdev)
 	return NULL;
 }
 EXPORT_SYMBOL(nss_dp_vp_deinit);
+
+MODULE_LICENSE("Dual BSD/GPL");
+MODULE_DESCRIPTION("NSS Data Plane Network Driver");

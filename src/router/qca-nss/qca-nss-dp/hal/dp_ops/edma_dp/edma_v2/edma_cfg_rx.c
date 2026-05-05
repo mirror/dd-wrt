@@ -1524,7 +1524,7 @@ void edma_cfg_rx_napi_add(struct edma_gbl_ctx *egc, struct net_device *netdev)
  * Similarly, whenever the free Rx ring descriptor count crosses the X-ON value,
  * the ring level flow control will be disabled.
  */
-int edma_cfg_rx_fc_enable_handler(struct ctl_table *table, int write,
+int edma_cfg_rx_fc_enable_handler(const struct ctl_table *table, int write,
 		void __user *buffer, size_t *lenp, loff_t *ppos)
 {
 	int ret;
@@ -1582,7 +1582,7 @@ int edma_cfg_rx_fc_enable_handler(struct ctl_table *table, int write,
  * edma_cfg_rx_queue_tail_drop_handler()
  *	API to enable/disable queue tail drop configuration
  */
-int edma_cfg_rx_queue_tail_drop_handler(struct ctl_table *table, int write,
+int edma_cfg_rx_queue_tail_drop_handler(const struct ctl_table *table, int write,
 		void __user *buffer, size_t *lenp, loff_t *ppos)
 {
 	int ret;
@@ -1629,7 +1629,7 @@ int edma_cfg_rx_queue_tail_drop_handler(struct ctl_table *table, int write,
  * edma_cfg_rx_rps()
  *	API to configure RPS hash mapping for the given number of cores
  */
-int edma_cfg_rx_rps(struct ctl_table *table, int write,
+int edma_cfg_rx_rps(const struct ctl_table *table, int write,
 		void __user *buffer, size_t *lenp, loff_t *ppos)
 {
 	int ret;
@@ -1666,7 +1666,7 @@ int edma_cfg_rx_rps(struct ctl_table *table, int write,
  * us to distinguish between rps_num_core and rps_bitmap_core as both
  * are calling the same configure hash function.
  */
-int edma_cfg_rx_rps_bitmap(struct ctl_table *table, int write,
+int edma_cfg_rx_rps_bitmap(const struct ctl_table *table, int write,
 		void __user *buffer, size_t *lenp, loff_t *ppos)
 {
 	int ret;

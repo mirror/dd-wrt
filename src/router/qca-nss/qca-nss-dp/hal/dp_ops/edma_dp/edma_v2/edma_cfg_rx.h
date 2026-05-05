@@ -67,13 +67,13 @@ void edma_cfg_rx_rings_enable(struct edma_gbl_ctx *egc);
 void edma_cfg_rx_rings_disable(struct edma_gbl_ctx *egc);
 void edma_cfg_rx_ring_reset(struct edma_rxdesc_ring *ring);
 bool edma_cfg_rx_ring_en_mapped_queues(struct edma_gbl_ctx *egc, uint16_t ring_id, bool enable);
-int edma_cfg_rx_fc_enable_handler(struct ctl_table *table, int write,
+int edma_cfg_rx_fc_enable_handler(const struct ctl_table *table, int write,
 		void __user *buffer, size_t *lenp, loff_t *ppos);
 void edma_cfg_rx_page_mode_and_jumbo(struct edma_gbl_ctx *egc);
-int edma_cfg_rx_queue_tail_drop_handler(struct ctl_table *table, int write,
+int edma_cfg_rx_queue_tail_drop_handler(const struct ctl_table *table, int write,
 		void __user *buffer, size_t *lenp, loff_t *ppos);
-int edma_cfg_rx_rps(struct ctl_table *table, int write,
+int edma_cfg_rx_rps(const struct ctl_table *table, int write,
 		void __user *buffer, size_t *lenp, loff_t *ppos);
-int edma_cfg_rx_rps_bitmap(struct ctl_table *table, int write,
+int edma_cfg_rx_rps_bitmap(const struct ctl_table *table, int write,
 		void __user *buffer, size_t *lenp, loff_t *ppos);
 #endif	/* __EDMA_CFG_RX_H__ */

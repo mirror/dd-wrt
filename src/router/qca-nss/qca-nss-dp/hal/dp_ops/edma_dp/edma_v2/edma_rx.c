@@ -202,7 +202,7 @@ static inline int edma_rx_alloc_buffer_list(struct edma_rxfill_ring *rxfill_ring
 		/*
 		 * Allocate one skb and add to refill list
 		 */
-		skb_alloc = netdev_alloc_skb_fast(NULL, rx_alloc_size);
+		skb_alloc = netdev_alloc_skb(NULL, rx_alloc_size);
 		if (likely(skb_alloc)) {
 			list_add_tail(&skb_alloc->list, &rx_skb_alloc);
 			num_alloc++;

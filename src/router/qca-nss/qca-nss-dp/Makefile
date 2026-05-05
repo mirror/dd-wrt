@@ -104,5 +104,5 @@ ccflags-y += -DNSS_DP_IPQ95XX
 endif
 
 ccflags-y += $(NSS_DP_INCLUDE)
-ccflags-y += -Wall -Werror
+ccflags-y += -Wall
 ccflags-y += -DEDMA_DEBUG_LEVEL=2
