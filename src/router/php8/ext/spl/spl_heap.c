@@ -956,7 +956,7 @@ static void spl_heap_it_move_forward(zend_object_iterator *iter) /* {{{ */
 {
 	spl_heap_object *object = Z_SPLHEAP_P(&iter->data);
 
-	if (UNEXPECTED(spl_heap_consistency_validations(object, false) != SUCCESS)) {
+	if (UNEXPECTED(spl_heap_consistency_validations(object, true) != SUCCESS)) {
 		return;
 	}
 
@@ -984,6 +984,10 @@ PHP_METHOD(SplHeap, next)
 	spl_heap_object *intern = Z_SPLHEAP_P(ZEND_THIS);
 
 	if (zend_parse_parameters_none() == FAILURE) {
+		RETURN_THROWS();
+	}
+
+	if (UNEXPECTED(spl_heap_consistency_validations(intern, true) != SUCCESS)) {
 		RETURN_THROWS();
 	}
 

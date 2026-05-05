@@ -1804,9 +1804,6 @@
 /* Define to 1 if GD library has JIS-mapped Japanese font support. */
 #undef JISX0208
 
-/* Define the main Lexbor version */
-#undef LEXBOR_VERSION
-
 /* The LMDB handler header file. */
 #undef LMDB_INCLUDE_FILE
 
