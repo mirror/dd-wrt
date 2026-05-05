@@ -12,7 +12,7 @@ ifeq ($(CONFIG_IPQ6018),y)
 CFI_CRYPTOAPI_DIR:=cryptoapi/v2.0
 CFI_OCF_DIR:=ocf/v2.0
 CFI_IPSEC_DIR:=ipsec/v2.0
-KERNEL_FLAGS=-I$(TOP)/qca-nss/qca-nss-drv/exports -I$(TOP)/qca-nss/qca-nss-cfi/cryptoapi/exports -I$(TOP)/qca-nss/qca-nss-clients/exports -I$(TOP)/qca-nss/qca-nss-dp/exports  -I$(TOP)/qca-nss/qca-ssdk/include -I$(TOP)/qca-nss/qca-ssdk/include/fal -I$(TOP)/qca-nss/qca-ssdk/include/common -I$(TOP)/qca-nss/qca-ssdk/include/sal/os  -I$(TOP)/qca-nss/qca-ssdk/include/sal/os/linux -I$(TOP)/qca-nss/qca-nss-gmac/ipq806x/exports -I$(TOP)/qca-nss/qca-nss-crypto/v2.0/include -I$(TOP)/qca-nss/shortcut-fe/exports -I$(TOP)/qca-nss/qca-nss-mcs -I$(TOP)/qca-nss/qca-ovsmgr/exports -I$(LINUXDIR)/net/openvswitch  -I$(TOP)/qca-nss/qca-nss-hyfi-bridge/hyfi-netfilter -DNSS_DEBUG_LEVEL=0 -DNDEBUG=1 -UCONFIG_NOPRINTK -DWEAK= -DNSS_FIRMWARE_VERSION_12_5
+KERNEL_FLAGS=-I$(TOP)/qca-nss/qca-nss-ppe/drv/exports -I$(TOP)/qca-nss/qca-nss-drv/exports -I$(TOP)/qca-nss/qca-nss-cfi/cryptoapi/exports -I$(TOP)/qca-nss/qca-nss-clients/exports -I$(TOP)/qca-nss/qca-nss-dp/exports  -I$(TOP)/qca-nss/qca-ssdk/include -I$(TOP)/qca-nss/qca-ssdk/include/init -I$(TOP)/qca-nss/qca-ssdk/include/fal -I$(TOP)/qca-nss/qca-ssdk/include/common -I$(TOP)/qca-nss/qca-ssdk/include/sal/os  -I$(TOP)/qca-nss/qca-ssdk/include/sal/os/linux -I$(TOP)/qca-nss/qca-nss-gmac/ipq806x/exports -I$(TOP)/qca-nss/qca-nss-crypto/v2.0/include -I$(TOP)/qca-nss/shortcut-fe/exports -I$(TOP)/qca-nss/qca-nss-mcs -I$(TOP)/qca-nss/qca-ovsmgr/exports -I$(LINUXDIR)/net/openvswitch  -I$(TOP)/qca-nss/qca-nss-hyfi-bridge/hyfi-netfilter -DNSS_DEBUG_LEVEL=0 -DNDEBUG=1 -UCONFIG_NOPRINTK -DWEAK= -DNSS_FIRMWARE_VERSION_12_5
 NSS_CRYPTO_DIR:=v2.0
 DTLSMGR_DIR:=v2.0
 IPSECMGR_KLIPS:=
@@ -88,9 +88,38 @@ SSDK_MAKE_FLAGS_IPQ807X+= \
 	IN_QCA803X_PHY=FALSE IN_QCA808X_PHY=FALSE \
 	IN_MALIBU_PHY=FALSE
 
+SSDK_MAKE_FLAGS_IPQ95XX+= \
+	TARGET_NAME=$(ARCH)-linux- \
+	TOOL_PATH=${shell dirname ${shell which $(ARCH)-openwrt-linux-gcc}} \
+	SYS_PATH=$(LINUXDIR) \
+	TOOLPREFIX=$(ARCH)-linux- \
+	KVER=$(KERNEL_VERSION) \
+	ARCH=arm64 \
+	TARGET_SUFFIX= \
+	GCC_VERSION=15.2.0 \
+	EXTRA_CFLAGS="-fno-stack-protector" \
+	SoC=ipq807x \
+	SHELL="/usr/bin/bash" \
+	PTP_FEATURE=enable SWCONFIG_FEATURE=enable \
+	ISISC_ENABLE=disable MHT_ENABLE=enable \
+	IN_QCA803X_PHY=FALSE IN_QCA808X_PHY=FALSE \
+	IN_MALIBU_PHY=FALSE
+
 SSDK_MAKE_FLAGS_IPQ807X+= CHIP_TYPE=HPPE
 SSDK_MAKE_FLAGS_IPQ6018+= CHIP_TYPE=CPPE
 SSDK_MAKE_FLAGS_IPQ5018+= CHIP_TYPE=MP ISISC_ENABLE=enable IN_QCA808X_PHY=TRUE
+SSDK_MAKE_FLAGS_IPQ95XX+= CHIP_TYPE=APPE IN_QCA808X_PHY=TRUE
+
+IPQ95XX_NSS_FLAGS=NSS_DRV_POINT_OFFLOAD=y \
+	NSS_DRV_BRIDGE_ENABLE=n \
+	NSS_DRV_ETH_RX_ENABLE=n \
+	NSS_DRV_IPV4_ENABLE=n \
+	NSS_DRV_IPV6_ENABLE=n \
+	NSS_DRV_LSO_RX_ENABLE=n \
+	NSS_DRV_PPPOE_ENABLE=n \
+	NSS_DRV_UDP_ST_ENABLE=n \
+	NSS_DRV_VLAN_ENABLE=n \
+	NSS_DRV_WIFIOFFLOAD_ENABLE=n
 
 QCASSDK_CONFIG_OPTS+= TOOL_PATH=${shell dirname ${shell which $(ARCH)-openwrt-linux-gcc}} \
                 SYS_PATH=$(LINUXDIR) \
@@ -166,9 +195,52 @@ ifeq ($(CONFIG_IPQ6018),y)
 	make -C $(KDIR) M=$(PWD)/qca-nss-dp clean MODPROBE=true DEPMOD=/bin/true KBUILD_MODPOST_WARN=1 EXTRA_CFLAGS="$(KERNEL_FLAGS)" SoC="ipq807x" INSTALL_MOD_PATH=$(INSTALLDIR)
 	cp	qca-nss-dp/hal/soc_ops/ipq50xx/nss_ipq50xx.h qca-nss-dp/exports/nss_dp_arch.h
 	make -C $(KDIR) M=$(PWD)/qca-nss-dp clean MODPROBE=true DEPMOD=/bin/true KBUILD_MODPOST_WARN=1 EXTRA_CFLAGS="$(KERNEL_FLAGS)" SoC="ipq50xx" INSTALL_MOD_PATH=$(INSTALLDIR)
+	cp	qca-nss-dp/hal/soc_ops/ipq95xx/nss_ipq95xx.h qca-nss-dp/exports/nss_dp_arch.h
+	make -C $(KDIR) M=$(PWD)/qca-nss-dp clean MODPROBE=true DEPMOD=/bin/true KBUILD_MODPOST_WARN=1 EXTRA_CFLAGS="$(KERNEL_FLAGS)" SoC="ipq95xx" INSTALL_MOD_PATH=$(INSTALLDIR)
 	make $(SSDK_MAKE_FLAGS_IPQ6018) LNX_MAKEOPTS='' PRJ_PATH=$(TOP)/qca-nss/qca-ssdk MODULE_TYPE=KSLIB clean -C qca-ssdk clean
 	make $(SSDK_MAKE_FLAGS_IPQ807X) LNX_MAKEOPTS='' PRJ_PATH=$(TOP)/qca-nss/qca-ssdk MODULE_TYPE=KSLIB clean -C qca-ssdk clean
 	make $(SSDK_MAKE_FLAGS_IPQ5018) LNX_MAKEOPTS='' PRJ_PATH=$(TOP)/qca-nss/qca-ssdk MODULE_TYPE=KSLIB clean -C qca-ssdk clean
+	make $(SSDK_MAKE_FLAGS_IPQ95XX) LNX_MAKEOPTS='' PRJ_PATH=$(TOP)/qca-nss/qca-ssdk MODULE_TYPE=KSLIB clean -C qca-ssdk clean
+
+# 95xx
+ifeq ($(CONFIG_IPQ95XX),y)
+	rm -f qca-ssdk/qca-ssdk.*
+	rm -f qca-ssdk/*.dep
+	rm -f qca-ssdk/modules.order
+	rm -f qca-ssdk/Module.symvers
+	rm -f qca-ssdk/.*.cmd
+
+	cp	qca-nss-dp/hal/soc_ops/ipq95xx/nss_ipq95xx.h qca-nss-dp/exports/nss_dp_arch.h
+	make $(SSDK_MAKE_FLAGS_IPQ95XX) $(LNX_CONFIG_OPTS) -C qca-ssdk $(LNX_CONFIG_OPTS)
+	ln -sf arch/nss_ipq95xx.h qca-nss-drv/exports/nss_arch.h
+	make -C $(KDIR) M=$(PWD)/qca-nss-crypto clean modules modules_install MODPROBE=true DEPMOD=/bin/true KBUILD_MODPOST_WARN=1 EXTRA_CFLAGS="$(KERNEL_FLAGS)" SoC="ipq95xx" \
+		NSS_CRYPTO_DIR=$(NSS_CRYPTO_DIR)  INSTALL_MOD_PATH=$(INSTALLDIR)
+	make -C $(KDIR) M=$(PWD)/qca-nss-cfi clean modules modules_install MODPROBE=true DEPMOD=/bin/true KBUILD_MODPOST_WARN=1 EXTRA_CFLAGS="$(KERNEL_FLAGS)" SoC="ipq95xx" \
+		CFI_CRYPTOAPI_DIR=$(CFI_CRYPTOAPI_DIR) \
+		CFI_OCF_DIR=$(CFI_OCF_DIR) \
+		CFI_IPSEC_DIR=$(CFI_IPSEC_DIR) INSTALL_MOD_PATH=$(INSTALLDIR)
+	make -C $(KDIR) M=$(PWD)/qca-nss-dp clean modules modules_install MODPROBE=true DEPMOD=/bin/true KBUILD_MODPOST_WARN=1 EXTRA_CFLAGS="$(KERNEL_FLAGS)" SoC="ipq95xx" INSTALL_MOD_PATH=$(INSTALLDIR)
+	make -C $(KDIR) M=$(PWD)/qca-nss-cfi clean modules modules_install MODPROBE=true DEPMOD=/bin/true KBUILD_MODPOST_WARN=1 EXTRA_CFLAGS="$(KERNEL_FLAGS)" SoC="ipq95xx" \
+		CFI_CRYPTOAPI_DIR=$(CFI_CRYPTOAPI_DIR) \
+		CFI_OCF_DIR=$(CFI_OCF_DIR) \
+		CFI_IPSEC_DIR=$(CFI_IPSEC_DIR) INSTALL_MOD_PATH=$(INSTALLDIR)
+	make -C $(KDIR) M=$(PWD)/qca-nss-crypto clean modules modules_install MODPROBE=true DEPMOD=/bin/true KBUILD_MODPOST_WARN=1 EXTRA_CFLAGS="$(KERNEL_FLAGS)" SoC="ipq95xx" \
+		NSS_CRYPTO_DIR=$(NSS_CRYPTO_DIR) INSTALL_MOD_PATH=$(INSTALLDIR)
+
+	ln -sf arch/nss_ipq95xx.h qca-nss-drv/exports/nss_arch.h
+	make -C $(KDIR) M=$(PWD)/qca-nss-drv clean modules modules_install MODPROBE=true DEPMOD=/bin/true $(IPQ95XX_NSS_FLAGS) KBUILD_MODPOST_WARN=1 EXTRA_CFLAGS="$(KERNEL_FLAGS)" SoC="ipq95xx" INSTALL_MOD_PATH=$(INSTALLDIR)
+	make -C $(KDIR) M=$(PWD)/qca-nss-ppe clean modules modules_install MODPROBE=true DEPMOD=/bin/true $(IPQ95XX_NSS_FLAGS) KBUILD_MODPOST_WARN=1 EXTRA_CFLAGS="$(KERNEL_FLAGS)" SoC="ipq95xx" INSTALL_MOD_PATH=$(INSTALLDIR) ppe-drv=y vlan-mgr=y netlink=y pppoe-mgr=y lag-mgr=y bridge-mgr=y ppe-tun=y vxlanmgr=y
+	make -C $(KDIR) M=$(PWD)/qca-nss-clients clean modules modules_install MODPROBE=true DEPMOD=/bin/true KBUILD_MODPOST_WARN=1 EXTRA_CFLAGS="$(KERNEL_FLAGS) -include $(TOP)/qca-nss/qca-nss-clients/compat.h" SoC="ipq95xx" tunipip6=n tlsmgr=n  pppoe=n vxlanmgr=n pptp=n l2tpv2=n  qdisc=n vlan-mgr=n netlink=n bridge-mgr=y lag-mgr=n ovsmgr=y wifi-meshmgr=n \
+		DTLSMGR_DIR="$(DTLSMGR_DIR)" \
+		IPSECMGR_DIR="$(IPSECMGR_DIR)" INSTALL_MOD_PATH=$(INSTALLDIR)
+
+	mkdir -p $(INSTALLDIR)/lib/modules/$(KERNELRELEASE)
+	cp qca-ssdk/qca-ssdk.ko $(INSTALLDIR)/lib/modules/$(KERNELRELEASE)/qca-ssdk-ipq95xx.ko
+	make -C $(KDIR) M=$(PWD)/qca-nss-dp clean MODPROBE=true DEPMOD=/bin/true KBUILD_MODPOST_WARN=1 EXTRA_CFLAGS="$(KERNEL_FLAGS)" SoC="ipq95xx"
+	make $(SSDK_MAKE_FLAGS_IPQ95XX) LNX_MAKEOPTS='' PRJ_PATH=$(TOP)/qca-nss/qca-ssdk MODULE_TYPE=KSLIB clean -C qca-ssdk clean
+endif
+#50xx
+
 	rm -f qca-ssdk/qca-ssdk.*
 	rm -f qca-ssdk/*.dep
 	rm -f qca-ssdk/modules.order
@@ -202,15 +274,12 @@ ifeq ($(CONFIG_IPQ6018),y)
 	cp qca-ssdk/qca-ssdk.ko $(INSTALLDIR)/lib/modules/$(KERNELRELEASE)/qca-ssdk-ipq50xx.ko
 	make -C $(KDIR) M=$(PWD)/qca-nss-dp clean MODPROBE=true DEPMOD=/bin/true KBUILD_MODPOST_WARN=1 EXTRA_CFLAGS="$(KERNEL_FLAGS)" SoC="ipq50xx"
 	make $(SSDK_MAKE_FLAGS_IPQ5018) LNX_MAKEOPTS='' PRJ_PATH=$(TOP)/qca-nss/qca-ssdk MODULE_TYPE=KSLIB clean -C qca-ssdk clean
+
 	rm -f qca-ssdk/qca-ssdk.*
 	rm -f qca-ssdk/*.dep
 	rm -f qca-ssdk/modules.order
 	rm -f qca-ssdk/Module.symvers
 	rm -f qca-ssdk/.*.cmd
-
-
-
-
 
 	cp	qca-nss-dp/hal/soc_ops/ipq60xx/nss_ipq60xx.h qca-nss-dp/exports/nss_dp_arch.h
 	make $(SSDK_MAKE_FLAGS_IPQ6018) $(LNX_CONFIG_OPTS) -C qca-ssdk $(LNX_CONFIG_OPTS)
@@ -237,12 +306,13 @@ ifeq ($(CONFIG_IPQ6018),y)
 	mkdir -p $(INSTALLDIR)/lib/modules/$(KERNELRELEASE)
 	cp qca-ssdk/qca-ssdk.ko $(INSTALLDIR)/lib/modules/$(KERNELRELEASE)/qca-ssdk-ipq60xx.ko
 	make $(SSDK_MAKE_FLAGS_IPQ6018) LNX_MAKEOPTS='' PRJ_PATH=$(TOP)/qca-nss/qca-ssdk MODULE_TYPE=KSLIB clean -C qca-ssdk clean
+
+
 	rm -f qca-ssdk/qca-ssdk.*
 	rm -f qca-ssdk/*.dep
 	rm -f qca-ssdk/modules.order
 	rm -f qca-ssdk/Module.symvers
 	rm -f qca-ssdk/.*.cmd
-
 	cp	qca-nss-dp/hal/soc_ops/ipq807x/nss_ipq807x.h qca-nss-dp/exports/nss_dp_arch.h
 	make $(SSDK_MAKE_FLAGS_IPQ807X) $(LNX_CONFIG_OPTS) -C qca-ssdk $(LNX_CONFIG_OPTS)
 	ln -sf arch/nss_ipq807x.h qca-nss-drv/exports/nss_arch.h
