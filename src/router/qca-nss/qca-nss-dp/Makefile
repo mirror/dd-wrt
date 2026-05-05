@@ -41,6 +41,10 @@ ccflags-y += -DNSS_DP_IPQ60XX
 qca-nss-dp-$(SoC)-objs += nss_dp_main_alt.o
 endif
 
+ifeq ($(SoC),$(filter $(SoC),ipq95xx))
+qca-nss-dp-$(SoC)-objs += nss_dp_main_alt.o
+endif
+
 ifeq ($(SoC),$(filter $(SoC),ipq53xx))
 ccflags-y += -DNSS_DP_MHT_SW_PORT_MAP
 ccflags-y += -DNSS_DP_CONFIG_RST
