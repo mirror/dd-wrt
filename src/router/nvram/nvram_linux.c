@@ -85,6 +85,13 @@ char *nvram_get(const char *name)
 	}
 	fclose(in);
 #endif
+#if defined(HAVE_IPQ95XX)
+	FILE *in = fopen("/dev/mmcblk0p30", "rb");
+	if (in == NULL) {
+		return NULL;
+	}
+	fclose(in);
+#endif
 
 	if (_nvram_init())
 		return NULL;
@@ -121,6 +128,13 @@ int nvram_getall(char *buf, int count)
 	FILE *in = fopen("/usr/local/nvram/nvram.bin", "rb");
 	if (in == NULL) {
 		return -1;
+	}
+	fclose(in);
+#endif
+#if defined(HAVE_IPQ95XX)
+	FILE *in = fopen("/dev/mmcblk0p30", "rb");
+	if (in == NULL) {
+		return NULL;
 	}
 	fclose(in);
 #endif
