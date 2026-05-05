@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (c) 2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2023, 2025 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2023 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 #include <linux/clk.h>
@@ -12,10 +12,8 @@
 #include <linux/module.h>
 #include <linux/of.h>
 #include <linux/of_device.h>
-#include <linux/platform_device.h>
-#include <linux/pm_clock.h>
-#include <linux/pm_runtime.h>
 #include <linux/regmap.h>
+#include <linux/platform_device.h>
 
 #include <dt-bindings/clock/qcom,ipq9574-nsscc.h>
 #include <dt-bindings/interconnect/qcom,ipq9574.h>
@@ -383,13 +381,11 @@ static const struct freq_multi_tbl ftbl_nss_cc_port1_tx_clk_src[] = {
 
 static const struct freq_conf ftbl_nss_cc_port5_rx_clk_src_25[] = {
 	C(P_UNIPHY1_NSS_RX_CLK, 12.5, 0, 0),
-	C(P_UNIPHY1_NSS_RX_CLK, 5, 0, 0),
 	C(P_UNIPHY0_NSS_RX_CLK, 5, 0, 0),
 };
 
 static const struct freq_conf ftbl_nss_cc_port5_rx_clk_src_125[] = {
 	C(P_UNIPHY1_NSS_RX_CLK, 2.5, 0, 0),
-	C(P_UNIPHY1_NSS_RX_CLK, 1, 0, 0),
 	C(P_UNIPHY0_NSS_RX_CLK, 1, 0, 0),
 };
 
@@ -410,13 +406,11 @@ static const struct freq_multi_tbl ftbl_nss_cc_port5_rx_clk_src[] = {
 
 static const struct freq_conf ftbl_nss_cc_port5_tx_clk_src_25[] = {
 	C(P_UNIPHY1_NSS_TX_CLK, 12.5, 0, 0),
-	C(P_UNIPHY1_NSS_TX_CLK, 5, 0, 0),
 	C(P_UNIPHY0_NSS_TX_CLK, 5, 0, 0),
 };
 
 static const struct freq_conf ftbl_nss_cc_port5_tx_clk_src_125[] = {
 	C(P_UNIPHY1_NSS_TX_CLK, 2.5, 0, 0),
-	C(P_UNIPHY1_NSS_TX_CLK, 1, 0, 0),
 	C(P_UNIPHY0_NSS_TX_CLK, 1, 0, 0),
 };
 
@@ -3052,10 +3046,6 @@ static const struct qcom_cc_desc nss_cc_ipq9574_desc = {
 	.icc_first_node_id = IPQ_NSSCC_ID,
 };
 
-static const struct dev_pm_ops nss_cc_ipq9574_pm_ops = {
-	SET_RUNTIME_PM_OPS(pm_clk_suspend, pm_clk_resume, NULL)
-};
-
 static const struct of_device_id nss_cc_ipq9574_match_table[] = {
 	{ .compatible = "qcom,ipq9574-nsscc" },
 	{ }
@@ -3064,59 +3054,15 @@ MODULE_DEVICE_TABLE(of, nss_cc_ipq9574_match_table);
 
 static int nss_cc_ipq9574_probe(struct platform_device *pdev)
 {
-	struct device *dev = &pdev->dev;
 	struct regmap *regmap;
-	int ret;
-
-	ret = devm_pm_runtime_enable(&pdev->dev);
-	if (ret)
-		return dev_err_probe(&pdev->dev, ret, "Fail to enable runtime PM\n");
-
-	ret = devm_pm_clk_create(&pdev->dev);
-	if (ret)
-		return dev_err_probe(&pdev->dev, ret, "Fail to create PM clock\n");
-
-	ret = pm_clk_add(&pdev->dev, "bus");
-	if (ret)
-		return dev_err_probe(&pdev->dev, ret, "Fail to add bus clock\n");
-
-	ret = pm_clk_add(&pdev->dev, "nssnoc");
-	if (ret)
-		return dev_err_probe(dev, ret,"failed to acquire nssnoc clock\n");
-
-	ret = pm_clk_add(&pdev->dev, "snoc");
-	if (ret)
-		return dev_err_probe(dev, ret,"failed to acquire snoc clock\n");
-
-	ret = pm_clk_add(&pdev->dev, "snoc_1");
-	if (ret)
-		return dev_err_probe(dev, ret,"failed to acquire snoc_1 clock\n");
-
-	ret = pm_runtime_resume_and_get(&pdev->dev);
-	if (ret)
-		return dev_err_probe(&pdev->dev, ret, "Fail to resume\n");
 
 	regmap = qcom_cc_map(pdev, &nss_cc_ipq9574_desc);
-	if (IS_ERR(regmap)) {
-		pm_runtime_put(&pdev->dev);
-		return dev_err_probe(&pdev->dev, PTR_ERR(regmap),
-				     "Fail to map clock controller registers\n");
-	}
+	if (IS_ERR(regmap))
+		return PTR_ERR(regmap);
 
 	clk_alpha_pll_configure(&ubi32_pll_main, regmap, &ubi32_pll_config);
 
-	ret = qcom_cc_really_probe(&pdev->dev, &nss_cc_ipq9574_desc, regmap);
-	if (ret)
-		goto err_put_pm;
-
-	pm_runtime_put(&pdev->dev);
-
-	return 0;
-
-err_put_pm:
-	pm_runtime_put_sync(dev);
-
-	return ret;
+	return qcom_cc_really_probe(&pdev->dev, &nss_cc_ipq9574_desc, regmap);
 }
 
 static struct platform_driver nss_cc_ipq9574_driver = {
@@ -3124,12 +3070,11 @@ static struct platform_driver nss_cc_ipq9574_driver = {
 	.driver = {
 		.name = "qcom,nsscc-ipq9574",
 		.of_match_table = nss_cc_ipq9574_match_table,
-		.pm = &nss_cc_ipq9574_pm_ops,
 		.sync_state = icc_sync_state,
 	},
 };
 
 module_platform_driver(nss_cc_ipq9574_driver);
 
-MODULE_DESCRIPTION("Qualcomm Technologies, Inc. NSSCC IPQ9574 Driver");
+MODULE_DESCRIPTION("QTI NSS_CC IPQ9574 Driver");
 MODULE_LICENSE("GPL");
