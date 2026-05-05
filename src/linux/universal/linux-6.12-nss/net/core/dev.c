@@ -4110,6 +4110,66 @@ static void skb_update_prio(struct sk_buff *skb)
 #endif
 
 /**
+ *	dev_fast_xmit_vp - fast xmit the skb to a PPE virtual port
+ *	@skb:buffer to transmit
+ *	@dev: the device to be transmited to
+ *	sucessful return true
+ *	failed return false
+ */
+bool dev_fast_xmit_vp(struct sk_buff *skb,
+		struct net_device *dev)
+{
+	struct netdev_queue *txq;
+	int cpu;
+	netdev_tx_t rc;
+
+	if (unlikely(!(dev->flags & IFF_UP))) {
+		return false;
+	}
+
+	if (unlikely(skb_is_nonlinear(skb))) {
+		return false;
+	}
+
+	rcu_read_lock_bh();
+	cpu = smp_processor_id();
+
+	/*
+	 * TODO: Skip this altogether and eventually move this call to ppe_vp
+	 * this would avoid multiple function calls when giving packet to wifi VAP.
+	 */
+	txq = netdev_core_pick_tx(dev, skb, NULL);
+
+	if (likely(txq->xmit_lock_owner != cpu)) {
+#define FAST_VP_HARD_TX_LOCK(txq, cpu) {	\
+		__netif_tx_lock(txq, cpu);		\
+}
+
+#define FAST_VP_HARD_TX_UNLOCK(txq) {		\
+		__netif_tx_unlock(txq);			\
+}
+		skb->fast_xmit = 1;
+		FAST_VP_HARD_TX_LOCK(txq, cpu);
+		if (likely(!netif_xmit_stopped(txq))) {
+			rc = netdev_start_xmit(skb, dev, txq, 0);
+			if (unlikely(!dev_xmit_complete(rc))) {
+				FAST_VP_HARD_TX_UNLOCK(txq);
+				goto q_xmit;
+			}
+			FAST_VP_HARD_TX_UNLOCK(txq);
+			rcu_read_unlock_bh();
+			return true;
+		}
+		FAST_VP_HARD_TX_UNLOCK(txq);
+	}
+q_xmit:
+	skb->fast_xmit = 0;
+	rcu_read_unlock_bh();
+	return false;
+}
+EXPORT_SYMBOL(dev_fast_xmit_vp);
+
+/**
  *	dev_loopback_xmit - loop back @skb
  *	@net: network namespace this loopback is happening in
  *	@sk:  sk needed to be a netfilter okfn
