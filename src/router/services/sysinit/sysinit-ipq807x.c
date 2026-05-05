@@ -546,8 +546,13 @@ static void load_nss(int profile, int cores, char *type)
 
 	eval("insmod", driver, use_nss_11_4(1) ? "mesh=1" : "mesh=0", nss_disabled(1) ? "disable_nss=1" : "disable_nss=0");
 	if (!nss_disabled(0)) {
-		loadnss("qca-nss-crypto", type);
-		loadnss("qca-nss-cfi-cryptoapi", type);
+		if (strcmp(type, "ipq95xx")) {
+			loadnss("qca-nss-crypto", type);
+			loadnss("qca-nss-cfi-cryptoapi", type);
+		} else {
+			loadnss("qca-nss-eip", type);
+			loadnss("qca-nss-eip-crypto", type);
+		}
 		loadnss("qca-nss-netlink", type);
 		loadnss("qca-nss-ppe-netlink", type);
 	}
