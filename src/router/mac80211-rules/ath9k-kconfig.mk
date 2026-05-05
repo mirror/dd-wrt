@@ -129,17 +129,29 @@ ifeq ($(CONFIG_IPQ6018),y)
   CPTCFG_ATH11K_DEBUGFS=y
   CPTCFG_ATH11K_THERMAL=y
   CPTCFG_ATH11K_SPECTRAL=y
-  CPTCFG_ATH11K_NSS_MESH_SUPPORT=y
   CPTCFG_ATH11K_SMART_ANT_ALG=y
   CPTCFG_ATH11K_PCI=y
   CPTCFG_ATH11K_AHB=y
   CPTCFG_MHI_BUS=y
   CPTCFG_MHI_QRTR=y
   CPTCFG_QRTR_MHI=y
+ifneq ($(CONFIG_IPQ95XX),y)
+  CPTCFG_ATH11K_NSS_MESH_SUPPORT=y
   CPTCFG_ATH11K_NSS_SUPPORT=y
   CPTCFG_MAC80211_NSS_SUPPORT=y
   CPTCFG_MAC80211_MESH_NSS_SUPPORT=y
 endif
+endif
+ifeq ($(CONFIG_IPQ95XX),y)
+  CPTCFG_ATH12K=y
+  CPTCFG_ATH12K_DEBUGFS=y
+endif
+ifeq ($(CONFIG_ATH12K),y)
+  CPTCFG_ATH12K=y
+  CPTCFG_ATH12K_DEBUGFS=y
+endif
+
+
 ifeq ($(CONFIG_MCPHERSON),y)
   BUILDFLAGS += -DHAVE_MCPHERSON
 endif
@@ -278,10 +290,12 @@ ifeq ($(CONFIG_IPQ6018),y)
 	echo "CPTCFG_MHI_BUS=y" >>$(MAC80211_PATH)/.config_temp
 	echo "CPTCFG_MHI_QRTR=y" >>$(MAC80211_PATH)/.config_temp
 	echo "CPTCFG_QRTR_MHI=y" >>$(MAC80211_PATH)/.config_temp
+ifneq ($(CONFIG_IPQ95XX),y)
 	echo "CPTCFG_ATH11K_NSS_SUPPORT=y" >>$(MAC80211_PATH)/.config_temp
 	echo "CPTCFG_MAC80211_NSS_SUPPORT=y" >>$(MAC80211_PATH)/.config_temp
 	echo "CPTCFG_MAC80211_NSS_MESH_SUPPORT=y" >>$(MAC80211_PATH)/.config_temp
 	echo "CPTCFG_ATH11K_NSS_MESH_SUPPORT=y" >>$(MAC80211_PATH)/.config_temp
+endif
 #	echo "CPTCFG_ATH11K_MEM_PROFILE_512M=y" >>$(MAC80211_PATH)/.config_temp
 	echo "CPTCFG_ATH11K_DEBUGFS=y" >>$(MAC80211_PATH)/.config_temp
 	echo "CPTCFG_ATH11K_DEBUGFS_STA=y" >>$(MAC80211_PATH)/.config_temp
@@ -289,6 +303,17 @@ ifeq ($(CONFIG_IPQ6018),y)
 	echo "CPTCFG_ATH11K_THERMAL=y" >>$(MAC80211_PATH)/.config_temp
 #	rm -f $(TOP)/compat-wireless-nss/drivers/net/wireless/ath/ath11k_512/*.o
 endif
+
+ifeq ($(CONFIG_IPQ95XX),y)
+	echo "CPTCFG_ATH12K=y" >>$(MAC80211_PATH)/.config_temp
+	echo "CPTCFG_ATH12K_DEBUGFS=y" >>$(MAC80211_PATH)/.config_temp
+endif
+ifeq ($(CONFIG_ATH12K),y)
+	echo "CPTCFG_ATH12K=y" >>$(MAC80211_PATH)/.config_temp
+	echo "CPTCFG_ATH12K_DEBUGFS=y" >>$(MAC80211_PATH)/.config_temp
+endif
+
+
 ifeq ($(CONFIG_IWLWIFI),y)
 	cat $(TOP)/mac80211-rules/configs/iwlwifi.config >> $(MAC80211_PATH)/.config_temp
 endif
@@ -496,6 +521,14 @@ endif
 ifeq ($(CONFIG_ATH11K),y)
 	-mkdir -p $(INSTALLDIR)/ath9k/lib/firmware/ath11k
 	-cp -av $(TOP)/firmwares/wireless/ath11k/* $(INSTALLDIR)/ath9k/lib/firmware/ath11k
+endif
+ifeq ($(CONFIG_ATH12K),y)
+	-mkdir -p $(INSTALLDIR)/ath9k/lib/firmware/ath12k
+	-cp -av $(TOP)/firmwares/wireless/ath12k/* $(INSTALLDIR)/ath9k/lib/firmware/ath12k
+endif
+ifeq ($(CONFIG_IPQ95XX),y)
+	-mkdir -p $(INSTALLDIR)/ath9k/lib/firmware/ath12k
+	-cp -av $(TOP)/firmwares/wireless/ath12k/* $(INSTALLDIR)/ath9k/lib/firmware/ath12k
 endif
 ifeq ($(CONFIG_IPQ6018),y)
 	-mkdir -p $(INSTALLDIR)/ath9k/lib/firmware/ath11k/IPQ6018
