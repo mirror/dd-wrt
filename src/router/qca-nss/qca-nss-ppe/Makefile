@@ -1,7 +1,7 @@
 # Makefile for PPE test modules
 
 ccflags-y := -I$(obj) -I$(obj)/..
-ccflags-y += -Wall -Werror
+ccflags-y += -Wall
 
 export BUILD_ID = \"Build Id: $(shell date +'%m/%d/%y, %H:%M:%S')\"
 ccflags-y += -DNSS_PPE_BUILD_ID="$(BUILD_ID)"

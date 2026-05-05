@@ -1785,7 +1785,7 @@ static int nss_ppe_vlan_mgr_over_bond_join_bridge(struct nss_vlan_pvt *v, struct
  * nss_ppe_vlan_mgr_tpid_proc_handler()
  *	Sets customer TPID and service TPID
  */
-static int nss_ppe_vlan_mgr_tpid_proc_handler(struct ctl_table *ctl,
+static int nss_ppe_vlan_mgr_tpid_proc_handler(const struct ctl_table *ctl,
 					  int write, void __user *buffer,
 					  size_t *lenp, loff_t *ppos)
 {

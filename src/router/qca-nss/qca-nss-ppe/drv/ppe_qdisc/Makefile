@@ -2,8 +2,8 @@
 
 ccflags-y += -I$(obj)/../../exports -I$(obj)/../exports
 
-obj-m += qca-nss-ppe-qdisc.o
-qca-nss-ppe-qdisc-objs += ppe_fifo.o \
+obj-m += qca-nss-ppe-qdisc-$(SoC).o
+qca-nss-ppe-qdisc-$(SoC)-objs += ppe_fifo.o \
 			ppe_htb.o \
 			ppe_prio.o \
 			ppe_qdisc.o \

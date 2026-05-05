@@ -969,7 +969,7 @@ fail:
  * ppe_drv_remove()
  *	remove the ppe driver
  */
-static int ppe_drv_remove(struct platform_device *pdev)
+static void ppe_drv_remove(struct platform_device *pdev)
 {
 	struct ppe_drv *p = platform_get_drvdata(pdev);
 
@@ -1100,7 +1100,7 @@ static int ppe_drv_remove(struct platform_device *pdev)
 	ppe_drv_flow_dump_exit();
 	ppe_drv_if_map_exit();
 
-	return 0;
+	return;
 }
 
 /*
@@ -1251,7 +1251,7 @@ static void ppe_drv_set_ppe_if_bm_to_port(void)
  * ppe_drv_if_bm_to_offload_handler()
  *	API to configure the interface bitmask where the offload is enabled
  */
-static int ppe_drv_if_bm_to_offload_handler(struct ctl_table *table, int write,
+static int ppe_drv_if_bm_to_offload_handler(const struct ctl_table *table, int write,
 		void __user *buffer, size_t *lenp, loff_t *ppos)
 {
 	int ret;
@@ -1285,7 +1285,7 @@ static int ppe_drv_if_bm_to_offload_handler(struct ctl_table *table, int write,
  * ppe_drv_disable_port_mtu_check_handler()
  * 	Set disable port mtu config
  */
-static int ppe_drv_disable_port_mtu_check_handler(struct ctl_table *table,
+static int ppe_drv_disable_port_mtu_check_handler(const struct ctl_table *table,
 						int write, void __user *buffer,
 						size_t *lenp, loff_t *ppos)
 {
@@ -1308,7 +1308,7 @@ static int ppe_drv_disable_port_mtu_check_handler(struct ctl_table *table,
  * ppe_drv_eth2eth_offload_if_bitmap_handler()
  * 	Set eth to eth offload with if bitmap config
  */
-static int ppe_drv_eth2eth_offload_if_bitmap_handler(struct ctl_table *table,
+static int ppe_drv_eth2eth_offload_if_bitmap_handler(const struct ctl_table *table,
 						int write, void __user *buffer,
 						size_t *lenp, loff_t *ppos)
 {
@@ -1331,7 +1331,7 @@ static int ppe_drv_eth2eth_offload_if_bitmap_handler(struct ctl_table *table,
  * ppe_drv_static_dbg_level_handler()
  *	Set static debug level for ppe-driver.
  */
-static int ppe_drv_static_dbg_level_handler(struct ctl_table *table,
+static int ppe_drv_static_dbg_level_handler(const struct ctl_table *table,
 					int write, void __user *buffer,
 					size_t *lenp, loff_t *ppos)
 {

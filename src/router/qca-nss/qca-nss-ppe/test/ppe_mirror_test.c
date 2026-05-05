@@ -772,7 +772,7 @@ struct net_device *ppe_mirror_test_create_dev(char * buffer)
  * ppe_mirror_test_config_params()
  *	Get the buffer and process the command.
  */
-static int ppe_mirror_test_config_params(struct ctl_table *ctl, int write, void __user *buf, size_t *lenp, loff_t *ppos)
+static int ppe_mirror_test_config_params(const struct ctl_table *ctl, int write, void __user *buf, size_t *lenp, loff_t *ppos)
 {
 	char *buffer, *pfree;
 	char * nextarg;

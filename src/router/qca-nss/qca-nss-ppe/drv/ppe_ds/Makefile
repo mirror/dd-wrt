@@ -9,5 +9,5 @@ ifeq ($(SoC),$(filter $(SoC),ipq53xx))
 ccflags-y += -DNSS_PPE_IPQ53XX
 endif
 
-obj-m += qca-nss-ppe-ds.o
-qca-nss-ppe-ds-objs :=  ppe_ds_main.o  ppe_ds.o ppe_ds_stats.o
+obj-m += qca-nss-ppe-ds-$(SoC).o
+qca-nss-ppe-ds-$(SoC)-objs :=  ppe_ds_main.o  ppe_ds.o ppe_ds_stats.o

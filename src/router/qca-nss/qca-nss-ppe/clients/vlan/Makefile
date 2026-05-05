@@ -1,8 +1,8 @@
 ccflags-y := -I$(obj)/../../exports -I$(obj)/.. -I$(obj)/../../drv/exports
 ccflags-y += -DNSS_PPE_BUILD_ID="$(BUILD_ID)"
 
-obj-m += qca-nss-ppe-vlan.o
-qca-nss-ppe-vlan-objs := nss_ppe_vlan_mgr.o
+obj-m += qca-nss-ppe-vlan-$(SoC).o
+qca-nss-ppe-vlan-$(SoC)-objs := nss_ppe_vlan_mgr.o
 
 ccflags-y += -DNSS_PPE_VLAN_MGR_DEBUG_LEVEL=0
 ccflags-y += -Wall -Werror

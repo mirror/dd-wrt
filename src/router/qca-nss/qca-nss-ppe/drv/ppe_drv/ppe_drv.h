@@ -15,6 +15,8 @@
  */
 
 #include <linux/module.h>
+#include <linux/mm.h>
+#include <linux/vmalloc.h>
 #include <ppe_drv_public.h>
 #include <ppe_drv_tun_cmn_ctx.h>
 #include <ppe_drv_tun_public.h>

@@ -44,7 +44,7 @@ static void ppe_vp_base_feature_disable(struct ppe_vp_base *pvb)
  *
  * Only disabled allocation of new VPs. Old VPs are not destroyed.
  */
-static int ppe_vp_enable_handler(struct ctl_table *ctl, int write, void __user *buffer, size_t *lenp, loff_t *ppos)
+static int ppe_vp_enable_handler(const struct ctl_table *ctl, int write, void __user *buffer, size_t *lenp, loff_t *ppos)
 {
 	int ret;
 	struct ppe_vp_base *pvb = &vp_base;

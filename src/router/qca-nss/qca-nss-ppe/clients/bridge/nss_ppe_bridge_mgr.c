@@ -916,7 +916,7 @@ static struct notifier_block nss_ppe_bridge_mgr_fdb_update_notifier = {
  * nss_ppe_bridge_mgr_wan_inf_add_handler
  *	Marks an interface as a WAN interface for special handling by bridge.
  */
-static int nss_ppe_bridge_mgr_wan_intf_add_handler(struct ctl_table *table,
+static int nss_ppe_bridge_mgr_wan_intf_add_handler(const struct ctl_table *table,
 						int write, void __user *buffer,
 						size_t *lenp, loff_t *ppos)
 {
@@ -964,7 +964,7 @@ static int nss_ppe_bridge_mgr_wan_intf_add_handler(struct ctl_table *table,
  * nss_ppe_bridge_mgr_wan_inf_del_handler
  *	Un-marks an interface as a WAN interface.
  */
-static int nss_ppe_bridge_mgr_wan_intf_del_handler(struct ctl_table *table,
+static int nss_ppe_bridge_mgr_wan_intf_del_handler(const struct ctl_table *table,
 						int write, void __user *buffer,
 						size_t *lenp, loff_t *ppos)
 {
@@ -1015,7 +1015,7 @@ static int nss_ppe_bridge_mgr_wan_intf_del_handler(struct ctl_table *table,
  * nss_ppe_bridge_mgr_fdb_handler
  *	disable/enable the PPE fdb.
  */
-static int nss_ppe_bridge_mgr_fdb_handler(struct ctl_table *table,
+static int nss_ppe_bridge_mgr_fdb_handler(const struct ctl_table *table,
 						int write, void __user *buffer,
 						size_t *lenp, loff_t *ppos)
 {
