@@ -27,6 +27,14 @@ crypto-hal-files += $(HAL_DIR)/nss_crypto_ce5.o $(HAL_DIR)/nss_crypto_hw.o
 ccflags-y += -DNSS_CRYPTO_IPQ50XX_SUPPORT
 endif
 
+ifneq (, $(findstring ipq95xx, $(SoC)))
+HAL_DIR=hal/ipq95xx
+crypto-hal-files += $(HAL_DIR)/nss_crypto_eip197.o
+crypto-hal-files += $(HAL_DIR)/nss_crypto_hw.o
+crypto-hal-files += $(HAL_DIR)/nss_crypto_eip197_init.o
+ccflags-y += -DNSS_CRYPTO_IPQ95XX_SUPPORT
+endif
+
 ccflags-y += -I$(obj)/$(HAL_DIR)/
 
 obj-m += $(NSS_CRYPTO_MOD_NAME).o
