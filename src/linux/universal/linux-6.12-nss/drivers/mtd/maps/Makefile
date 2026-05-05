@@ -58,7 +58,11 @@ obj-$(CONFIG_SOC_MT7620_OPENWRT)	+= nvram_kernel.o
 obj-$(CONFIG_MACH_HORNET)	+= nvram_kernel.o
 obj-$(CONFIG_MACH_GW2388)	+= nvram_kernel.o
 obj-$(CONFIG_ARCH_MVEBU)	+= nvram_kernel.o
+ifeq ($(CONFIG_PINCTRL_IPQ9574), y)
+obj-$(CONFIG_ARCH_QCOM)		+= nvram_kernel_mmc.o
+else
 obj-$(CONFIG_ARCH_QCOM)		+= nvram_kernel.o
+endif
 obj-$(CONFIG_MACH_REALTEK_RTL)		+= nvram_kernel.o
 obj-$(CONFIG_LANTIQ)		+= nvram_kernel.o
 obj-$(CONFIG_ARCH_IXP4XX)	+= nvram_kernel.o
