@@ -2890,6 +2890,26 @@ static inline void *pskb_pull(struct sk_buff *skb, unsigned int len)
 
 void skb_condense(struct sk_buff *skb);
 
+ 
+/**
+ *	skb_set_int_pri - sets the int_pri field in skb with given value.
+ *	@skb: buffer to fill
+ *	@int_pri: value that is to be filled
+ */
+static inline void skb_set_int_pri(struct sk_buff *skb, uint8_t int_pri)
+{
+	skb->int_pri = int_pri;
+}
+
+/**
+ *	skb_get_int_pri - gets the int_pri value from the given skb.
+ *	@skb: buffer to check
+ */
+static inline uint8_t skb_get_int_pri(struct sk_buff *skb)
+{
+	return skb->int_pri;
+}
+
 /**
  *	skb_headroom - bytes at buffer head
  *	@skb: buffer to check

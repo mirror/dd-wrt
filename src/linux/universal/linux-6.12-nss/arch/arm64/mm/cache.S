@@ -164,6 +164,64 @@ SYM_FUNC_END(__pi_dcache_inval_poc)
 SYM_FUNC_ALIAS(dcache_inval_poc, __pi_dcache_inval_poc)
 
 /*
+ *  __dma_inv_area_no_dsb(start, size)
+ *
+ *	This macro does not do "data synchronization barrier". Caller should
+ *	do "dsb" after transaction.
+ *
+ *	 start   - virtual start address of region
+ *	 size    - size in question
+ */
+SYM_FUNC_START(__dma_inv_area_no_dsb)
+	add	x1, x1, x0
+	dcache_line_size	x2, x3
+	sub	x3, x2, #1
+	tst	x1, x3				// end cache line aligned?
+	bic	x1, x1, x3
+	b.eq	1f
+	dc	civac, x1			// clean & invalidate D / U line
+1:	tst	x0, x3				// start cache line aligned?
+	bic	x0, x0, x3
+	b.eq    2f
+	dc	civac, x0			// clean & invalidate D / U line
+	b	3f
+2:	dc  ivac, x0			// invalidate D / U line
+3:	add x0, x0, x2
+	cmp	x0, x1
+	b.lo	2b
+	ret
+SYM_FUNC_END(__dma_inv_area_no_dsb)
+
+/*
+ *  __dma_clean_area_no_dsb(start, size)
+ *
+ *	his macro does not do "data synchronization barrier". Caller should
+ *	o "dsb" after transaction.
+ *
+ *	 start   - virtual start address of region
+ *	 size    - size in question
+ */
+SYM_FUNC_START(__dma_clean_area_no_dsb)
+	dcache_by_line_op_no_dsb cvac, x0, x1, x2, x3
+	ret
+SYM_FUNC_END(__dma_clean_area_no_dsb)
+
+/*
+ *  __dma_flush_area_no_dsb(start, size)
+ *
+ *	clean & invalidate D / U line
+ *	his macro does not do "data synchronization barrier". Caller should
+ *	o "dsb" after transaction.
+ *
+ *	 start   - virtual start address of region
+ *	 size    - size in question
+ */
+SYM_FUNC_START(__dma_flush_area_no_dsb)
+	dcache_by_line_op_no_dsb civac, x0, x1, x2, x3
+	ret
+SYM_FUNC_END(__dma_flush_area_no_dsb)
+
+/*
  *	dcache_clean_poc(start, end)
  *
  * 	Ensure that any D-cache lines for the interval [start, end)
