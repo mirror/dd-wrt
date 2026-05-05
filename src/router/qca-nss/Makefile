@@ -231,7 +231,7 @@ ifeq ($(CONFIG_IPQ95XX),y)
 
 	ln -sf arch/nss_ipq95xx.h qca-nss-drv/exports/nss_arch.h
 	make -C $(KDIR) M=$(PWD)/qca-nss-drv clean modules modules_install MODPROBE=true DEPMOD=/bin/true $(IPQ95XX_NSS_FLAGS) KBUILD_MODPOST_WARN=1 EXTRA_CFLAGS="$(KERNEL_FLAGS)" SoC="ipq95xx" INSTALL_MOD_PATH=$(INSTALLDIR)
-	make -C $(KDIR) M=$(PWD)/qca-nss-ppe clean modules modules_install MODPROBE=true DEPMOD=/bin/true $(IPQ95XX_NSS_FLAGS) KBUILD_MODPOST_WARN=1 EXTRA_CFLAGS="$(KERNEL_FLAGS)" SoC="ipq95xx" INSTALL_MOD_PATH=$(INSTALLDIR) PPE_TUN_ENABLE=y ppe-drv=y vlan-mgr=y netlink=y pppoe-mgr=y lag-mgr=y bridge-mgr=y ppe-tun=y vxlanmgr=y l2tp-mgr=y
+	make -C $(KDIR) M=$(PWD)/qca-nss-ppe clean modules modules_install MODPROBE=true DEPMOD=/bin/true $(IPQ95XX_NSS_FLAGS) KBUILD_MODPOST_WARN=1 EXTRA_CFLAGS="$(KERNEL_FLAGS)" SoC="ipq95xx" INSTALL_MOD_PATH=$(INSTALLDIR) PPE_TUN_ENABLE=y ppe-drv=y vlan-mgr=y netlink=y pppoe-mgr=y lag-mgr=y bridge-mgr=y ppe-tun=y vxlanmgr=y l2tp-mgr=y ppe-vp=y
 	make -C $(KDIR) M=$(PWD)/qca-nss-mcs clean modules modules_install MODPROBE=true DEPMOD=/bin/true KBUILD_MODPOST_WARN=1 CONFIG_SUPPORT_MLD=y EXTRA_CFLAGS="$(KERNEL_FLAGS)" SoC="ipq95xx" INSTALL_MOD_PATH=$(INSTALLDIR)
 	make -C $(KDIR) M=$(PWD)/shortcut-fe clean modules modules_install MODPROBE=true DEPMOD=/bin/true KBUILD_MODPOST_WARN=1 EXTRA_CFLAGS="$(KERNEL_FLAGS)" INSTALL_MOD_PATH=$(INSTALLDIR)
 	make -C $(KDIR) M=$(PWD)/qca-nss-eip clean modules modules_install MODPROBE=true DEPMOD=/bin/true $(IPQ95XX_NSS_FLAGS) KBUILD_MODPOST_WARN=1 EXTRA_CFLAGS="$(KERNEL_FLAGS)" SoC="ipq95xx" INSTALL_MOD_PATH=$(INSTALLDIR) NSS_EIP_DIR=eip197 eip_crypto=m
