@@ -42,32 +42,43 @@
 /*
  * Statically compile messages at different levels
  */
-#define nss_nl_error(s, ...) {	\
-	if (NSS_NL_DEBUG_LEVEL > NSS_NL_DEBUG_LVL_ERROR) {	\
-		pr_alert("%s[%d]:" s, __func__, __LINE__, ##__VA_ARGS__);	\
-	}	\
-}
-#define nss_nl_warn(s, ...) {	\
-	if (NSS_NL_DEBUG_LEVEL > NSS_NL_DEBUG_LVL_WARN) {	\
-		pr_warn("%s[%d]:" s, __func__, __LINE__, ##__VA_ARGS__);	\
-	}	\
-}
-#define nss_nl_info(s, ...) {	\
-	if (NSS_NL_DEBUG_LEVEL > NSS_NL_DEBUG_LVL_INFO) {	\
-		pr_notice("%s[%d]:" s, __func__, __LINE__, ##__VA_ARGS__);	\
-	}	\
-}
-#define nss_nl_hex_dump_bytes(prefix_str, prefix_type, buf, len) {	\
-	if (NSS_NL_DEBUG_LEVEL > NSS_NL_DEBUG_LVL_INFO) {	\
-		print_hex_dump_bytes(prefix_str, prefix_type, buf, len);	\
-	}	\
-}
-#define nss_nl_trace(s, ...) {	\
-	if (NSS_NL_DEBUG_LEVEL > NSS_NL_DEBUG_LVL_TRACE) {	\
-		pr_info("%s[%d]:" s, __func__, __LINE__, ##__VA_ARGS__);	\
-	}	\
-}
-#define nss_nl_info_always(s, ...) printk(KERN_INFO"%s[%d]:" s, __func__, __LINE__, ##__VA_ARGS__)
+ 
+#if (NSS_NL_DEBUG_LEVEL > NSS_NL_DEBUG_LVL_TRACE)
+#define nss_nl_trace(s, ...) \
+		pr_info("%s[%d]:" s, __func__, __LINE__, ##__VA_ARGS__)
+#else
+#define nss_nl_trace(s, ...)  do  {} while(0)
+#endif
+
+
+#if (NSS_NL_DEBUG_LEVEL > NSS_NL_DEBUG_LVL_ERROR)
+#define nss_nl_error(s, ...) \
+		pr_info("%s[%d]:" s, __func__, __LINE__, ##__VA_ARGS__)
+#else
+#define nss_nl_error(s, ...)  do  {} while(0)
+#endif
+
+#if (NSS_NL_DEBUG_LEVEL > NSS_NL_DEBUG_LVL_WARN)
+#define nss_nl_warn(s, ...) \
+		pr_info("%s[%d]:" s, __func__, __LINE__, ##__VA_ARGS__)
+#else
+#define nss_nl_warn(s, ...)  do  {} while(0)
+#endif
+
+#if (NSS_NL_DEBUG_LEVEL > NSS_NL_DEBUG_LVL_INFO)
+#define nss_nl_info(s, ...) \
+		pr_info("%s[%d]:" s, __func__, __LINE__, ##__VA_ARGS__)
+#else
+#define nss_nl_info(s, ...)  do  {} while(0)
+#endif
+
+#if (NSS_NL_DEBUG_LEVEL > NSS_NL_DEBUG_LVL_INFO)
+#define nss_nl_hex_dump_bytes(prefix_str, prefix_type, buf, len) print_hex_dump_bytes(prefix_str, prefix_type, buf, len)
+#else
+#define nss_nl_hex_dump_bytes(prefix_str, prefix_type, buf, len) do  {} while(0)
+#endif
+
+#define nss_nl_info_always  nss_nl_info
 
 #endif /* !CONFIG_DYNAMIC_DEBUG */
 

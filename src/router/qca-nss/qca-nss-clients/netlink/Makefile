@@ -2,7 +2,7 @@ CAPWAP_ENABLED := $(strip $(if $(filter $(capwapmgr), y), 1 , 0))
 IPSEC_ENABLED := $(strip $(if $(filter $(ipsecmgr), y), 1 , 0))
 DTLS_ENABLED := $(strip $(if $(filter $(dtlsmgr), y), 1 , 0))
 
-ccflags-y := -Wall -Werror
+ccflags-y := 
 ccflags-y += -I$(obj)/include
 ccflags-y += -I$(obj)/../exports
 ccflags-y += -DNSS_NL_DEBUG_LEVEL=0
