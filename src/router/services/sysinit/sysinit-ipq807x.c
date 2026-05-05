@@ -554,10 +554,10 @@ static void load_nss(int profile, int cores, char *type)
 			loadnss("qca-nss-eip-crypto", type);
 		}
 		loadnss("qca-nss-netlink", type);
-		loadnss("qca-nss-ppe-netlink", type);
 		loadnss("qca-nss-ppe-vp", type);
 		loadnss("qca-nss-ppe-rule", type);
 		loadnss("qca-nss-ppe-tun", type);
+		loadnss("qca-nss-ppe-netlink", type);
 	}
 	insmod("cryptodev");
 	set_memprofile(cores, 1, profile);
