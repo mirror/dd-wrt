@@ -215,25 +215,26 @@ ifeq ($(CONFIG_IPQ95XX),y)
 	cp	qca-nss-dp/hal/soc_ops/ipq95xx/nss_ipq95xx.h qca-nss-dp/exports/nss_dp_arch.h
 	make $(SSDK_MAKE_FLAGS_IPQ95XX) $(LNX_CONFIG_OPTS) -C qca-ssdk $(LNX_CONFIG_OPTS)
 	ln -sf arch/nss_ipq95xx.h qca-nss-drv/exports/nss_arch.h
-	make -C $(KDIR) M=$(PWD)/qca-nss-crypto clean modules modules_install MODPROBE=true DEPMOD=/bin/true KBUILD_MODPOST_WARN=1 EXTRA_CFLAGS="$(KERNEL_FLAGS)" SoC="ipq95xx" \
-		NSS_CRYPTO_DIR=$(NSS_CRYPTO_DIR)  INSTALL_MOD_PATH=$(INSTALLDIR)
-	make -C $(KDIR) M=$(PWD)/qca-nss-cfi clean modules modules_install MODPROBE=true DEPMOD=/bin/true KBUILD_MODPOST_WARN=1 EXTRA_CFLAGS="$(KERNEL_FLAGS)" SoC="ipq95xx" \
-		CFI_CRYPTOAPI_DIR=$(CFI_CRYPTOAPI_DIR) \
-		CFI_OCF_DIR=$(CFI_OCF_DIR) \
-		CFI_IPSEC_DIR=$(CFI_IPSEC_DIR) INSTALL_MOD_PATH=$(INSTALLDIR)
+#	make -C $(KDIR) M=$(PWD)/qca-nss-crypto clean modules modules_install MODPROBE=true DEPMOD=/bin/true KBUILD_MODPOST_WARN=1 EXTRA_CFLAGS="$(KERNEL_FLAGS)" SoC="ipq95xx" \
+#		NSS_CRYPTO_DIR=$(NSS_CRYPTO_DIR)  INSTALL_MOD_PATH=$(INSTALLDIR)
+#	make -C $(KDIR) M=$(PWD)/qca-nss-cfi clean modules modules_install MODPROBE=true DEPMOD=/bin/true KBUILD_MODPOST_WARN=1 EXTRA_CFLAGS="$(KERNEL_FLAGS)" SoC="ipq95xx" \
+#		CFI_CRYPTOAPI_DIR=$(CFI_CRYPTOAPI_DIR) \
+#		CFI_OCF_DIR=$(CFI_OCF_DIR) \
+#		CFI_IPSEC_DIR=$(CFI_IPSEC_DIR) INSTALL_MOD_PATH=$(INSTALLDIR)
 	make -C $(KDIR) M=$(PWD)/qca-nss-dp clean modules modules_install MODPROBE=true DEPMOD=/bin/true KBUILD_MODPOST_WARN=1 EXTRA_CFLAGS="$(KERNEL_FLAGS) -DNSS_DP_POINT_OFFLOAD" SoC="ipq95xx" INSTALL_MOD_PATH=$(INSTALLDIR)
-	make -C $(KDIR) M=$(PWD)/qca-nss-cfi clean modules modules_install MODPROBE=true DEPMOD=/bin/true KBUILD_MODPOST_WARN=1 EXTRA_CFLAGS="$(KERNEL_FLAGS)" SoC="ipq95xx" \
-		CFI_CRYPTOAPI_DIR=$(CFI_CRYPTOAPI_DIR) \
-		CFI_OCF_DIR=$(CFI_OCF_DIR) \
-		CFI_IPSEC_DIR=$(CFI_IPSEC_DIR) INSTALL_MOD_PATH=$(INSTALLDIR)
-	make -C $(KDIR) M=$(PWD)/qca-nss-crypto clean modules modules_install MODPROBE=true DEPMOD=/bin/true KBUILD_MODPOST_WARN=1 EXTRA_CFLAGS="$(KERNEL_FLAGS)" SoC="ipq95xx" \
-		NSS_CRYPTO_DIR=$(NSS_CRYPTO_DIR) INSTALL_MOD_PATH=$(INSTALLDIR)
+#	make -C $(KDIR) M=$(PWD)/qca-nss-cfi clean modules modules_install MODPROBE=true DEPMOD=/bin/true KBUILD_MODPOST_WARN=1 EXTRA_CFLAGS="$(KERNEL_FLAGS)" SoC="ipq95xx" \
+#		CFI_CRYPTOAPI_DIR=$(CFI_CRYPTOAPI_DIR) \
+#		CFI_OCF_DIR=$(CFI_OCF_DIR) \
+#		CFI_IPSEC_DIR=$(CFI_IPSEC_DIR) INSTALL_MOD_PATH=$(INSTALLDIR)
+#	make -C $(KDIR) M=$(PWD)/qca-nss-crypto clean modules modules_install MODPROBE=true DEPMOD=/bin/true KBUILD_MODPOST_WARN=1 EXTRA_CFLAGS="$(KERNEL_FLAGS)" SoC="ipq95xx" \
+#		NSS_CRYPTO_DIR=$(NSS_CRYPTO_DIR) INSTALL_MOD_PATH=$(INSTALLDIR)
 
 	ln -sf arch/nss_ipq95xx.h qca-nss-drv/exports/nss_arch.h
 	make -C $(KDIR) M=$(PWD)/qca-nss-drv clean modules modules_install MODPROBE=true DEPMOD=/bin/true $(IPQ95XX_NSS_FLAGS) KBUILD_MODPOST_WARN=1 EXTRA_CFLAGS="$(KERNEL_FLAGS)" SoC="ipq95xx" INSTALL_MOD_PATH=$(INSTALLDIR)
 	make -C $(KDIR) M=$(PWD)/qca-nss-ppe clean modules modules_install MODPROBE=true DEPMOD=/bin/true $(IPQ95XX_NSS_FLAGS) KBUILD_MODPOST_WARN=1 EXTRA_CFLAGS="$(KERNEL_FLAGS)" SoC="ipq95xx" INSTALL_MOD_PATH=$(INSTALLDIR) ppe-drv=y vlan-mgr=y netlink=y pppoe-mgr=y lag-mgr=y bridge-mgr=y ppe-tun=y vxlanmgr=y l2tp-mgr=y
 	make -C $(KDIR) M=$(PWD)/qca-nss-mcs clean modules modules_install MODPROBE=true DEPMOD=/bin/true KBUILD_MODPOST_WARN=1 CONFIG_SUPPORT_MLD=y EXTRA_CFLAGS="$(KERNEL_FLAGS)" SoC="ipq95xx" INSTALL_MOD_PATH=$(INSTALLDIR)
 	make -C $(KDIR) M=$(PWD)/shortcut-fe clean modules modules_install MODPROBE=true DEPMOD=/bin/true KBUILD_MODPOST_WARN=1 EXTRA_CFLAGS="$(KERNEL_FLAGS)" INSTALL_MOD_PATH=$(INSTALLDIR)
+	make -C $(KDIR) M=$(PWD)/qca-nss-eip clean modules modules_install MODPROBE=true DEPMOD=/bin/true $(IPQ95XX_NSS_FLAGS) KBUILD_MODPOST_WARN=1 EXTRA_CFLAGS="$(KERNEL_FLAGS)" SoC="ipq95xx" INSTALL_MOD_PATH=$(INSTALLDIR) NSS_EIP_DIR=eip197 eip_crypto=m
 	make -C $(KDIR) M=$(PWD)/qca-nss-ecm-standard clean modules modules_install MODPROBE=true DEPMOD=/bin/true KBUILD_MODPOST_WARN=1 ECM_FRONT_END_NSS_ENABLE=y ECM_INTERFACE_RAWIP_ENABLE=y ECM_NON_PORTED_SUPPORT_ENABLE=y ECM_INTERFACE_VLAN_ENABLE=y ECM_FRONT_END_SFE_ENABLE=y ECM_IPV6_ENABLE=y ECM_CLASSIFIER_MARK_ENABLE=y  ECM_CLASSIFIER_DSCP_ENABLE=y ECM_CLASSIFIER_HYFI_ENABLE=y EXTRA_CFLAGS="$(KERNEL_FLAGS)"  SoC="ipq95xx" INSTALL_MOD_PATH=$(INSTALLDIR)
 	make -C $(KDIR) M=$(PWD)/qca-nss-clients clean modules modules_install MODPROBE=true DEPMOD=/bin/true KBUILD_MODPOST_WARN=1 EXTRA_CFLAGS="$(KERNEL_FLAGS) -include $(TOP)/qca-nss/qca-nss-clients/compat.h" SoC="ipq95xx" tunipip6=n tlsmgr=n  pppoe=n vxlanmgr=n pptp=n l2tpv2=n  qdisc=n vlan-mgr=n netlink=n bridge-mgr=y lag-mgr=n ovsmgr=y wifi-meshmgr=n \
 		DTLSMGR_DIR="$(DTLSMGR_DIR)" \
@@ -410,6 +411,8 @@ ifeq ($(CONFIG_IPQ6018),y)
 	make $(SSDK_MAKE_FLAGS_IPQ807X) LNX_MAKEOPTS='' PRJ_PATH=$(TOP)/qca-nss/qca-ssdk MODULE_TYPE=KSLIB clean -C qca-ssdk clean
 	make -C $(KDIR) M=$(PWD)/qca-nss-drv clean MODPROBE=true DEPMOD=/bin/true KBUILD_MODPOST_WARN=1 EXTRA_CFLAGS="$(KERNEL_FLAGS)" SoC="ipq60xx"
 	make -C $(KDIR) M=$(PWD)/qca-nss-drv clean MODPROBE=true DEPMOD=/bin/true KBUILD_MODPOST_WARN=1 EXTRA_CFLAGS="$(KERNEL_FLAGS)" SoC="ipq807x"
+	make -C $(KDIR) M=$(PWD)/qca-nss-ppe clean MODPROBE=true DEPMOD=/bin/true $(IPQ95XX_NSS_FLAGS) KBUILD_MODPOST_WARN=1 EXTRA_CFLAGS="$(KERNEL_FLAGS)" SoC="ipq95xx" INSTALL_MOD_PATH=$(INSTALLDIR) ppe-drv=y vlan-mgr=y netlink=y pppoe-mgr=y lag-mgr=y bridge-mgr=y ppe-tun=y vxlanmgr=y l2tp-mgr=y
+	make -C $(KDIR) M=$(PWD)/qca-nss-eip clean MODPROBE=true DEPMOD=/bin/true $(IPQ95XX_NSS_FLAGS) KBUILD_MODPOST_WARN=1 EXTRA_CFLAGS="$(KERNEL_FLAGS)" SoC="ipq95xx" INSTALL_MOD_PATH=$(INSTALLDIR) NSS_EIP_DIR=eip197 eip_crypto=m
 	make -C $(KDIR) M=$(PWD)/qca-nss-ecm-standard clean MODPROBE=true DEPMOD=/bin/true KBUILD_MODPOST_WARN=1 ECM_FRONT_END_NSS_ENABLE=y ECM_FRONT_END_SFE_ENABLE=y ECM_IPV6_ENABLE=y ECM_CLASSIFIER_OVS_ENABLE=y ECM_INTERFACE_OVS_BRIDGE_ENABLE=y ECM_CLASSIFIER_OVS_ENABLE=y EXTRA_CFLAGS="$(KERNEL_FLAGS)" SoC="ipq60xx"
 	make -C $(KDIR) M=$(PWD)/shortcut-fe clean MODPROBE=true DEPMOD=/bin/true KBUILD_MODPOST_WARN=1 EXTRA_CFLAGS="$(KERNEL_FLAGS)" INSTALL_MOD_PATH=$(INSTALLDIR)
 	make -C $(KDIR) M=$(PWD)/nss-ifb clean MODPROBE=true DEPMOD=/bin/true KBUILD_MODPOST_WARN=1 EXTRA_CFLAGS="$(KERNEL_FLAGS)" INSTALL_MOD_PATH=$(INSTALLDIR)
