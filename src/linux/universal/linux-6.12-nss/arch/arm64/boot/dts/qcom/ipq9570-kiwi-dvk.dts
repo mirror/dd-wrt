@@ -4,6 +4,7 @@
 
 #include <dt-bindings/gpio/gpio.h>
 #include "ipq9574.dtsi"
+#include "ipq9574-ess.dtsi"
 
 / {
 	model = "8devices Kiwi-DVK";
@@ -151,6 +152,61 @@
 			reset-names = "port_mac",
 				      "port_rx",
 				      "port_tx";
+		};
+	};
+};
+
+&dp1_syn {
+	status = "okay";
+	qcom,phy-mdio-addr = <30>;
+	phy-handle = <&sfp>;
+	label = "wan";
+};
+
+&dp5_syn {
+	status = "okay";
+	qcom,phy-mdio-addr = <1>;
+	phy-handle = <&phy0>;
+	label = "lan1";
+};
+
+&dp6_syn {
+	status = "okay";
+	qcom,phy-mdio-addr = <28>;
+	phy-mode = "usxgmii";
+	phy-handle = <&phy1>;
+	label = "lan2";
+};
+
+&edma {
+	status = "okay";
+};
+
+&ess_instance {
+	num_devices = <0x1>;
+	ess-switch@3a000000 {
+		switch_lan_bmp = <(ESS_PORT1|ESS_PORT5)>; /* lan port bitmap */
+		switch_wan_bmp = <ESS_PORT6>; /* wan port bitmap */
+		switch_mac_mode = <MAC_MODE_10GBASE_R>; /* mac mode for uniphy instance0*/
+		switch_mac_mode1 = <MAC_MODE_SGMII_PLUS>; /* mac mode for uniphy instance1*/
+		switch_mac_mode2 = <MAC_MODE_USXGMII>; /* mac mode for uniphy instance2*/
+
+		qcom,port_phyinfo {
+			sfp: port@1 {
+				port_id = <1>;
+				phy_address = <30>;
+				media-type = "sfp";
+			};
+			port@5 {
+				port_id = <5>;
+				phy_address = <1>;
+				ethernet-phy-ieee802.3-c45;
+			};
+			port@6 {
+				port_id = <6>;
+				phy_address = <28>;
+				ethernet-phy-ieee802.3-c45;
+			};
 		};
 	};
 };

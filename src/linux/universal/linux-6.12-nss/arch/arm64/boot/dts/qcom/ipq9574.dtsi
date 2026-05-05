@@ -1288,6 +1288,88 @@
 			#interconnect-cells = <1>;
 		};
 
+		eip: eip197@39800000 {
+			compatible = "qcom,eip";
+			reg-names = "eip_pbase";
+			reg = <0x39800000 0x7ffff>;
+			reg_offset = <0x80000>;
+			ranges;
+			clocks = <&nsscc NSS_CC_CRYPTO_CLK>,
+			<&nsscc NSS_CC_NSSNOC_CRYPTO_CLK>,
+			<&nsscc NSS_CC_CRYPTO_PPE_CLK>;
+			clock-names = "crypto_clk", "crypto_nocclk",
+			"crypto_ppeclk";
+			clock-frequency = /bits/ 64 <600000000 600000000 300000000>;
+			qcom,inline-enabled;
+			qcom,outer-offload;
+			interrupts = <GIC_SPI 385 IRQ_TYPE_LEVEL_HIGH>,
+				   <GIC_SPI 386 IRQ_TYPE_LEVEL_HIGH>,
+				   <GIC_SPI 387 IRQ_TYPE_LEVEL_HIGH>,
+				   <GIC_SPI 388 IRQ_TYPE_LEVEL_HIGH>;
+			status = "okay";
+
+			dma0 {
+				tx_cpu = /bits/ 8 <0>;
+				rx_cpu = /bits/ 8 <0>;
+				ring-name = "lookaside";
+				ring-id = /bits/ 8 <0>;
+			};
+
+			dma1 {
+				tx_cpu = /bits/ 8 <1>;
+				rx_cpu = /bits/ 8 <1>;
+				ring-name = "lookaside";
+				ring-id = /bits/ 8 <1>;
+			};
+
+			dma2 {
+				tx_cpu = /bits/ 8 <2>;
+				rx_cpu = /bits/ 8 <2>;
+				ring-name = "lookaside";
+				ring-id = /bits/ 8 <2>;
+			};
+
+			dma3 {
+				tx_cpu = /bits/ 8 <3>;
+				rx_cpu = /bits/ 8 <3>;
+				ring-name = "lookaside";
+				ring-id = /bits/ 8 <3>;
+			};
+
+			dma4 {
+				tx_cpu = /bits/ 8 <0>;
+				rx_cpu = /bits/ 8 <0>;
+				ring-name = "hybrid";
+				ring-id = /bits/ 8 <4>;
+			};
+
+			dma5 {
+				tx_cpu = /bits/ 8 <1>;
+				rx_cpu = /bits/ 8 <1>;
+				ring-name = "hybrid";
+				ring-id = /bits/ 8 <5>;
+			};
+
+			dma6 {
+				tx_cpu = /bits/ 8 <2>;
+				rx_cpu = /bits/ 8 <2>;
+				ring-name = "hybrid";
+				ring-id = /bits/ 8 <6>;
+			};
+
+			dma7 {
+				tx_cpu = /bits/ 8 <3>;
+				rx_cpu = /bits/ 8 <3>;
+				ring-name = "hybrid";
+				ring-id = /bits/ 8 <7>;
+			};
+		};
+
+		eip_crypto: eip_crypto {
+			compatible = "qcom,eip_crypto";
+			status = "okay";
+		};
+
 		qcom_ppe: ethernet@3a000000 {
 			compatible = "qcom,ipq9574-ppe";
 			reg = <0x3a000000 0xbef800>;
@@ -1325,7 +1407,7 @@
 					     "memnoc_nssnoc",
 					     "memnoc_nssnoc_1";
 
-			edma {
+			edma_ppe {
 				compatible = "qcom,ipq9574-edma";
 				clocks = <&nsscc NSS_CC_PPE_EDMA_CLK>,
 					 <&nsscc NSS_CC_PPE_EDMA_CFG_CLK>;
