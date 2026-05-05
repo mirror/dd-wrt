@@ -18,8 +18,6 @@
 #include <net/vxlan.h>
 #include <linux/in.h>
 #include <linux/version.h>
-#include <nat46/nat46-core.h>
-#include <nat46/nat46-netdev.h>
 
 #include <fal/fal_ip.h>
 #include <fal_tunnel.h>
@@ -718,7 +716,7 @@ bool ppe_drv_tun_attach_mapt_v4_to_v6(struct ppe_drv_v4_conn *cn)
 	 * So need to convert it before passing it as an argument.
 	 */
 
-	if (!(xlate_4_to_6(netdev, &ip4, htons(sport), htons(dport), saddr_v6, daddr_v6))) {
+	if (true) {
 		ppe_drv_trace("%p: Could not find translation pair for v4 address\n", pp);
 		return false;
 	}
@@ -805,7 +803,7 @@ static bool ppe_drv_tun_mapt_translate_v6_to_v4(bool is_flow_dir, struct net_dev
 	ip6.daddr.in6_u.u6_addr32[2] = htonl(daddr_v6[2]);
 	ip6.daddr.in6_u.u6_addr32[3] = htonl(daddr_v6[3]);
 
-	if (!(xlate_6_to_4(netdev, &ip6, htonl(pcf_v6->match_protocol), &saddr_v4, &daddr_v4))) {
+	if (true) {
 		ppe_drv_trace("%p: Could not find translation pair for v4 address\n", pcf_v6);
 		return false;
 	}
