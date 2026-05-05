@@ -555,6 +555,9 @@ static void load_nss(int profile, int cores, char *type)
 		}
 		loadnss("qca-nss-netlink", type);
 		loadnss("qca-nss-ppe-netlink", type);
+		loadnss("qca-nss-ppe-vp", type);
+		loadnss("qca-nss-ppe-rule", type);
+		loadnss("qca-nss-ppe-tun", type);
 	}
 	insmod("cryptodev");
 	set_memprofile(cores, 1, profile);
@@ -565,6 +568,7 @@ static void load_nss(int profile, int cores, char *type)
 		loadnss("qca-nss-ppe-pppoe-mgr", type);
 		loadnss("qca-nss-vlan", type);
 		loadnss("qca-nss-ppe-vlan", type);
+		loadnss("qca-nss-ppe-bridge-mgr", type);
 		loadnss("qca-nss-qdisc", type);
 		loadnss("qca-nss-ppe-qdisc", type);
 	}
@@ -574,6 +578,7 @@ static void load_nss(int profile, int cores, char *type)
 	insmod("udp_tunnel");
 	insmod("ip6_udp_tunnel");
 	insmod("l2tp_core");
+	insmod("l2tp_ppp");
 	if (!nss_disabled(0)) {
 		loadnss("qca-nss-l2tpv2", type);
 		loadnss("qca-nss-ppe-l2tp", type);
