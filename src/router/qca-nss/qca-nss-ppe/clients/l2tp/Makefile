@@ -7,4 +7,4 @@ obj-m += qca-nss-ppe-l2tp-$(SoC).o
 qca-nss-ppe-l2tp-$(SoC)-objs := nss_ppe_l2tp.o
 
 ccflags-y += -DNSS_PPE_L2TP_DEBUG_LEVEL=0
-ccflags-y += -Wall -Werror
+ccflags-y += -Wall

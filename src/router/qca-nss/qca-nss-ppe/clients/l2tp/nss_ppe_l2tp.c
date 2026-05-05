@@ -14,8 +14,9 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 #include <linux/module.h>
+#include <linux/version.h>
 #include <linux/l2tp.h>
-#include <l2tp_core.h>
+#include <linux/../../net/l2tp/l2tp_core.h>
 #include <ppe_drv.h>
 #include <nss_ppe_tun_drv.h>
 #include "nss_ppe_l2tp.h"
@@ -125,15 +126,18 @@ static bool nss_ppe_l2tp_get_session_and_tunnel_info(struct net_device *dev, str
 
 	if (tunnel->version != NSS_PPE_L2TP_VER_2) {
 		nss_ppe_l2tp_warning("ppe doesnt support l2tp version %d offload\n", tunnel->version);
-		l2tp_tunnel_dec_refcount(tunnel);
 		ppp_release_channels(ppp_chan, NSS_PPE_L2TP_CHANNEL_MAX);
 		return false;
 	}
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(6, 10, 0)
 	session = l2tp_tunnel_get_session(tunnel, info.local_session_id);
+#else
+	session = l2tp_v2_session_get(dev_net(dev), info.local_tunnel_id, info.local_session_id);
+#endif
+
 	if (!session) {
 		nss_ppe_l2tp_warning("l2tp session get from tunnel failed\n");
-		l2tp_tunnel_dec_refcount(tunnel);
 		ppp_release_channels(ppp_chan, NSS_PPE_L2TP_CHANNEL_MAX);
 		return false;
 	}
@@ -265,14 +269,10 @@ static bool nss_ppe_l2tp_dev_parse_param(struct net_device *netdev, struct ppe_d
 	/*
 	 * Release references taken on tunnel and session
 	 */
-	l2tp_session_dec_refcount(session);
-	l2tp_tunnel_dec_refcount(tunnel);
 
 	return true;
 
 fail:
-	l2tp_session_dec_refcount(session);
-	l2tp_tunnel_dec_refcount(tunnel);
 	return false;
 }
 
@@ -327,10 +327,13 @@ bool nss_ppe_l2tp_dev_stats_update(struct net_device *dev, ppe_tun_hw_stats *sta
 		return false;
 	}
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(6, 10, 0)
 	session = l2tp_tunnel_get_session(tunnel, l2tp_info->session_id);
+#else
+	session = l2tp_v2_session_get(dev_net(dev), l2tp_info->tunnel_id, l2tp_info->session_id);
+#endif
 	if (!session) {
 		nss_ppe_l2tp_warning("l2tp session get from tunnel failed\n");
-		l2tp_tunnel_dec_refcount(tunnel);
 		dev_put(dev);
 		return false;
 	}
@@ -354,8 +357,6 @@ bool nss_ppe_l2tp_dev_stats_update(struct net_device *dev, ppe_tun_hw_stats *sta
 			(unsigned long)stats->rx_drop_pkt_cnt,
 			(unsigned long)stats->tx_drop_pkt_cnt);
 
-	l2tp_session_dec_refcount(session);
-	l2tp_tunnel_dec_refcount(tunnel);
 	dev_put(dev);
 
 	return true;

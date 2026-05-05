@@ -80,7 +80,6 @@ static struct ctl_table nss_ppe_vp_feature[] = {
 		.mode			= 0644,
 		.proc_handler		= &ppe_vp_enable_handler,
 	},
-	{ }
 };
 
 /*

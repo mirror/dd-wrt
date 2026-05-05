@@ -1405,7 +1405,6 @@ static struct ctl_table ppe_drv_sub[] = {
 		.mode           =       0644,
 		.proc_handler   =       ppe_drv_eth2eth_offload_if_bitmap_handler
 	},
-	{}
 };
 
 /*

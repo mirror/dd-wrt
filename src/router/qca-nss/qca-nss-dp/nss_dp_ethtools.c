@@ -205,6 +205,7 @@ static int32_t nss_dp_set_pauseparam(struct net_device *netdev,
  * nss_dp_fal_to_ethtool_linkmode_xlate()
  *	Translate linkmode from FAL type to ethtool type.
  */
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(6, 12, 0))
 static inline void nss_dp_fal_to_ethtool_linkmode_xlate(uint32_t *xlate_to, uint32_t *xlate_from)
 {
 	uint32_t pos;
@@ -242,6 +243,16 @@ static inline void nss_dp_fal_to_ethtool_linkmode_xlate(uint32_t *xlate_to, uint
 		*xlate_from &= (~(1 << (pos - 1)));
 	}
 }
+#else
+static inline void nss_dp_fal_to_ethtool_linkmode_xlate(unsigned long *to, uint32_t from)
+{
+	linkmode_mod_bit(ETHTOOL_LINK_MODE_10baseT_Full_BIT, to, from & FAL_PHY_EEE_10BASE_T);
+	linkmode_mod_bit(ETHTOOL_LINK_MODE_100baseT_Full_BIT, to, from & FAL_PHY_EEE_100BASE_T);
+	linkmode_mod_bit(ETHTOOL_LINK_MODE_1000baseT_Full_BIT, to, from & FAL_PHY_EEE_1000BASE_T);
+	linkmode_mod_bit(ETHTOOL_LINK_MODE_2500baseX_Full_BIT, to, from & FAL_PHY_EEE_2500BASE_T);
+	linkmode_mod_bit(ETHTOOL_LINK_MODE_10000baseT_Full_BIT, to, from & FAL_PHY_EEE_10000BASE_T);
+}
+#endif
 
 /*
  * nss_dp_get_eee()
@@ -269,9 +280,15 @@ static int32_t nss_dp_get_eee(struct net_device *netdev, struct ethtool_eee *eee
 	/*
 	 * Translate the FAL linkmode types to ethtool linkmode types.
 	 */
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(6, 12, 0))
 	nss_dp_fal_to_ethtool_linkmode_xlate(&supported, &port_eee_cfg.capability);
 	nss_dp_fal_to_ethtool_linkmode_xlate(&advertised, &port_eee_cfg.advertisement);
 	nss_dp_fal_to_ethtool_linkmode_xlate(&lp_advertised, &port_eee_cfg.link_partner_advertisement);
+#else
+	nss_dp_fal_to_ethtool_linkmode_xlate(eee->supported, port_eee_cfg.capability);
+	nss_dp_fal_to_ethtool_linkmode_xlate(eee->advertised, port_eee_cfg.advertisement);
+	nss_dp_fal_to_ethtool_linkmode_xlate(eee->lp_advertised, port_eee_cfg.link_partner_advertisement);
+#endif
 
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(6, 8, 0))
 	ethtool_convert_legacy_u32_to_link_mode(eee->supported, supported);
@@ -330,6 +347,7 @@ static int32_t nss_dp_set_eee(struct net_device *netdev, struct ethtool_eee *eee
 	/*
 	 * Translate the ethtool speed types to FAL speed types.
 	 */
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(6, 12, 0))
 	while (advertised) {
 		pos = ffs(advertised);
 		switch (1 << (pos - 1)) {
@@ -385,6 +403,48 @@ static int32_t nss_dp_set_eee(struct net_device *netdev, struct ethtool_eee *eee
 
 		advertised &= (~(1 << (pos - 1)));
 	}
+#else
+	if (linkmode_test_bit(ETHTOOL_LINK_MODE_10baseT_Full_BIT, eee->advertised)) {
+		if (port_eee_cur_cfg.capability & FAL_PHY_EEE_10BASE_T) {
+			port_eee_cfg.advertisement |= FAL_PHY_EEE_10BASE_T;
+		} else {
+			netdev_dbg(netdev, "Advertised value 10baseT_Full is not supported\n");
+			return -EIO;
+		}
+	}
+	if (linkmode_test_bit(ETHTOOL_LINK_MODE_100baseT_Full_BIT, eee->advertised)) {
+		if (port_eee_cur_cfg.capability & FAL_PHY_EEE_100BASE_T) {
+			port_eee_cfg.advertisement |= FAL_PHY_EEE_100BASE_T;
+		} else {
+			netdev_dbg(netdev, "Advertised value 100baseT_Full is not supported\n");
+			return -EIO;
+		}
+	}
+	if (linkmode_test_bit(ETHTOOL_LINK_MODE_1000baseT_Full_BIT, eee->advertised)) {
+		if (port_eee_cur_cfg.capability & FAL_PHY_EEE_1000BASE_T) {
+			port_eee_cfg.advertisement |= FAL_PHY_EEE_1000BASE_T;
+		} else {
+			netdev_dbg(netdev, "Advertised value 1000baseT_Full is not supported\n");
+			return -EIO;
+		}
+	}
+	if (linkmode_test_bit(ETHTOOL_LINK_MODE_2500baseX_Full_BIT, eee->advertised)) {
+		if (port_eee_cur_cfg.capability & FAL_PHY_EEE_2500BASE_T) {
+			port_eee_cfg.advertisement |= FAL_PHY_EEE_2500BASE_T;
+		} else {
+			netdev_dbg(netdev, "Advertised value 2500baseX_Full is not supported\n");
+			return -EIO;
+		}
+	}
+	if (linkmode_test_bit(ETHTOOL_LINK_MODE_10000baseT_Full_BIT, eee->advertised)) {
+		if (port_eee_cur_cfg.capability & FAL_PHY_EEE_10000BASE_T) {
+			port_eee_cfg.advertisement |= FAL_PHY_EEE_10000BASE_T;
+		} else {
+			netdev_dbg(netdev, "Advertised value 1000baseT_Full is not supported\n");
+			return -EIO;
+		}
+	}
+#endif
 
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(6, 8, 0))
 	ethtool_convert_legacy_u32_to_link_mode(eee->advertised, advertised);
@@ -505,8 +565,10 @@ struct ethtool_ops nss_dp_ethtool_ops = {
 #endif
 	.get_pauseparam = &nss_dp_get_pauseparam,
 	.set_pauseparam = &nss_dp_set_pauseparam,
+
 	.get_eee = &nss_dp_get_eee,
 	.set_eee = &nss_dp_set_eee,
+
 	.get_priv_flags = nss_dp_get_priv_flags,
 	.set_priv_flags = nss_dp_set_priv_flags,
 };

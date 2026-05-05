@@ -5,7 +5,7 @@
 NSS_CRYPTO_MOD_NAME=qca-nss-crypto-$(SoC)
 
 #ccflags-y += -DNSS_CRYPTO_DBG
-ccflags-y += -DNSS_CRYPTO_DEBUG_LEVEL=2
+ccflags-y += -DNSS_CRYPTO_DEBUG_LEVEL=4
 ccflags-y += -Wall -Werror
 ccflags-y += -DNSS_CRYPTO_BUILD_ID=\"'Build_ID - $(shell date +'%m/%d/%y) SoC=$(SoC)'\"
 

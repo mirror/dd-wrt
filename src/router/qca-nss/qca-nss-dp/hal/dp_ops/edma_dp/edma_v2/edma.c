@@ -915,7 +915,8 @@ static inline void edma_fetch_mitigation_timer_rate(struct edma_gbl_ctx *egc, co
 	if (IS_ERR(clk)) {
 		edma_err("Error in fetching %s clock reference. Setting the mitigation"
 				" timer rate to zero (means, mitigation will be disabled)\n", id);
-		egc->edma_timer_rate = 0;
+		egc->edma_timer_rate = 353;
+		edma_debug("%s clock's rate: %u\n", id, egc->edma_timer_rate);
 		return;
 	}
 

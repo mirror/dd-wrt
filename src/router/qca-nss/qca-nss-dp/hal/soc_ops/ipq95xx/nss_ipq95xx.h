@@ -80,7 +80,7 @@
 #define NSS_DP_EDMA_TBU_CLK			"nss-tbu-clk"
 #define NSS_DP_EDMA_NSSNOC_MEM_NOC_1_CLK	"nss-nssnoc-mem-noc-1-clk"
 #define NSS_DP_EDMA_NSSNOC_MEMNOC_CLK		"nss-nssnoc-memnoc-clk"
-#define NSS_DP_EDMA_CLK				"nss-edma-clk"
+#define NSS_DP_EDMA_CLK				"nss_edma_clk"
 
 /*
  * EDMA clock's frequencies

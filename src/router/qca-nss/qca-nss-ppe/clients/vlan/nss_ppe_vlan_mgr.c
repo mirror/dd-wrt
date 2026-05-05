@@ -1814,7 +1814,6 @@ static struct ctl_table nss_vlan_table[] = {
 		.mode		= 0644,
 		.proc_handler	= &nss_ppe_vlan_mgr_tpid_proc_handler,
 	},
-	{ }
 };
 
 /*

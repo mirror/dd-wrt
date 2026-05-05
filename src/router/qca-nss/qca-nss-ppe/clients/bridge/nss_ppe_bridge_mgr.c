@@ -1053,7 +1053,6 @@ static struct ctl_table nss_ppe_bridge_mgr_table[] = {
 		.mode           = 0644,
 		.proc_handler   = &nss_ppe_bridge_mgr_fdb_handler,
 	},
-	{ }
 };
 
 /*

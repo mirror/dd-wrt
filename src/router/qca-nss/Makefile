@@ -100,15 +100,15 @@ SSDK_MAKE_FLAGS_IPQ95XX+= \
 	EXTRA_CFLAGS="-fno-stack-protector" \
 	SoC=ipq807x \
 	SHELL="/usr/bin/bash" \
-	PTP_FEATURE=enable SWCONFIG_FEATURE=enable \
-	ISISC_ENABLE=disable MHT_ENABLE=enable \
+	PTP_FEATURE=disable SWCONFIG_FEATURE=enable \
+	ISISC_ENABLE=disable MHT_ENABLE=disable \
 	IN_QCA803X_PHY=FALSE IN_QCA808X_PHY=FALSE \
 	IN_MALIBU_PHY=FALSE
 
 SSDK_MAKE_FLAGS_IPQ807X+= CHIP_TYPE=HPPE
 SSDK_MAKE_FLAGS_IPQ6018+= CHIP_TYPE=CPPE
 SSDK_MAKE_FLAGS_IPQ5018+= CHIP_TYPE=MP ISISC_ENABLE=enable IN_QCA808X_PHY=TRUE
-SSDK_MAKE_FLAGS_IPQ95XX+= CHIP_TYPE=APPE IN_QCA808X_PHY=TRUE
+SSDK_MAKE_FLAGS_IPQ95XX+= CHIP_TYPE=APPE
 
 IPQ95XX_NSS_FLAGS=NSS_DRV_POINT_OFFLOAD=y \
 	NSS_DRV_BRIDGE_ENABLE=n \
@@ -119,7 +119,9 @@ IPQ95XX_NSS_FLAGS=NSS_DRV_POINT_OFFLOAD=y \
 	NSS_DRV_PPPOE_ENABLE=n \
 	NSS_DRV_UDP_ST_ENABLE=n \
 	NSS_DRV_VLAN_ENABLE=n \
-	NSS_DRV_WIFIOFFLOAD_ENABLE=n
+	NSS_DRV_WIFIOFFLOAD_ENABLE=n \
+	NSS_DRV_PORTID_ENABLE=n \
+	NSS_DRV_RMNET_ENABLE=n
 
 QCASSDK_CONFIG_OPTS+= TOOL_PATH=${shell dirname ${shell which $(ARCH)-openwrt-linux-gcc}} \
                 SYS_PATH=$(LINUXDIR) \
@@ -219,7 +221,7 @@ ifeq ($(CONFIG_IPQ95XX),y)
 		CFI_CRYPTOAPI_DIR=$(CFI_CRYPTOAPI_DIR) \
 		CFI_OCF_DIR=$(CFI_OCF_DIR) \
 		CFI_IPSEC_DIR=$(CFI_IPSEC_DIR) INSTALL_MOD_PATH=$(INSTALLDIR)
-	make -C $(KDIR) M=$(PWD)/qca-nss-dp clean modules modules_install MODPROBE=true DEPMOD=/bin/true KBUILD_MODPOST_WARN=1 EXTRA_CFLAGS="$(KERNEL_FLAGS)" SoC="ipq95xx" INSTALL_MOD_PATH=$(INSTALLDIR)
+	make -C $(KDIR) M=$(PWD)/qca-nss-dp clean modules modules_install MODPROBE=true DEPMOD=/bin/true KBUILD_MODPOST_WARN=1 EXTRA_CFLAGS="$(KERNEL_FLAGS) -DNSS_DP_POINT_OFFLOAD" SoC="ipq95xx" INSTALL_MOD_PATH=$(INSTALLDIR)
 	make -C $(KDIR) M=$(PWD)/qca-nss-cfi clean modules modules_install MODPROBE=true DEPMOD=/bin/true KBUILD_MODPOST_WARN=1 EXTRA_CFLAGS="$(KERNEL_FLAGS)" SoC="ipq95xx" \
 		CFI_CRYPTOAPI_DIR=$(CFI_CRYPTOAPI_DIR) \
 		CFI_OCF_DIR=$(CFI_OCF_DIR) \
@@ -229,7 +231,10 @@ ifeq ($(CONFIG_IPQ95XX),y)
 
 	ln -sf arch/nss_ipq95xx.h qca-nss-drv/exports/nss_arch.h
 	make -C $(KDIR) M=$(PWD)/qca-nss-drv clean modules modules_install MODPROBE=true DEPMOD=/bin/true $(IPQ95XX_NSS_FLAGS) KBUILD_MODPOST_WARN=1 EXTRA_CFLAGS="$(KERNEL_FLAGS)" SoC="ipq95xx" INSTALL_MOD_PATH=$(INSTALLDIR)
-	make -C $(KDIR) M=$(PWD)/qca-nss-ppe clean modules modules_install MODPROBE=true DEPMOD=/bin/true $(IPQ95XX_NSS_FLAGS) KBUILD_MODPOST_WARN=1 EXTRA_CFLAGS="$(KERNEL_FLAGS)" SoC="ipq95xx" INSTALL_MOD_PATH=$(INSTALLDIR) ppe-drv=y vlan-mgr=y netlink=y pppoe-mgr=y lag-mgr=y bridge-mgr=y ppe-tun=y vxlanmgr=y
+	make -C $(KDIR) M=$(PWD)/qca-nss-ppe clean modules modules_install MODPROBE=true DEPMOD=/bin/true $(IPQ95XX_NSS_FLAGS) KBUILD_MODPOST_WARN=1 EXTRA_CFLAGS="$(KERNEL_FLAGS)" SoC="ipq95xx" INSTALL_MOD_PATH=$(INSTALLDIR) ppe-drv=y vlan-mgr=y netlink=y pppoe-mgr=y lag-mgr=y bridge-mgr=y ppe-tun=y vxlanmgr=y l2tp-mgr=y
+	make -C $(KDIR) M=$(PWD)/qca-nss-mcs clean modules modules_install MODPROBE=true DEPMOD=/bin/true KBUILD_MODPOST_WARN=1 CONFIG_SUPPORT_MLD=y EXTRA_CFLAGS="$(KERNEL_FLAGS)" SoC="ipq95xx" INSTALL_MOD_PATH=$(INSTALLDIR)
+	make -C $(KDIR) M=$(PWD)/shortcut-fe clean modules modules_install MODPROBE=true DEPMOD=/bin/true KBUILD_MODPOST_WARN=1 EXTRA_CFLAGS="$(KERNEL_FLAGS)" INSTALL_MOD_PATH=$(INSTALLDIR)
+	make -C $(KDIR) M=$(PWD)/qca-nss-ecm-standard clean modules modules_install MODPROBE=true DEPMOD=/bin/true KBUILD_MODPOST_WARN=1 ECM_FRONT_END_NSS_ENABLE=y ECM_INTERFACE_RAWIP_ENABLE=y ECM_NON_PORTED_SUPPORT_ENABLE=y ECM_INTERFACE_VLAN_ENABLE=y ECM_FRONT_END_SFE_ENABLE=y ECM_IPV6_ENABLE=y ECM_CLASSIFIER_MARK_ENABLE=y  ECM_CLASSIFIER_DSCP_ENABLE=y ECM_CLASSIFIER_HYFI_ENABLE=y EXTRA_CFLAGS="$(KERNEL_FLAGS)"  SoC="ipq95xx" INSTALL_MOD_PATH=$(INSTALLDIR)
 	make -C $(KDIR) M=$(PWD)/qca-nss-clients clean modules modules_install MODPROBE=true DEPMOD=/bin/true KBUILD_MODPOST_WARN=1 EXTRA_CFLAGS="$(KERNEL_FLAGS) -include $(TOP)/qca-nss/qca-nss-clients/compat.h" SoC="ipq95xx" tunipip6=n tlsmgr=n  pppoe=n vxlanmgr=n pptp=n l2tpv2=n  qdisc=n vlan-mgr=n netlink=n bridge-mgr=y lag-mgr=n ovsmgr=y wifi-meshmgr=n \
 		DTLSMGR_DIR="$(DTLSMGR_DIR)" \
 		IPSECMGR_DIR="$(IPSECMGR_DIR)" INSTALL_MOD_PATH=$(INSTALLDIR)
@@ -238,7 +243,7 @@ ifeq ($(CONFIG_IPQ95XX),y)
 	cp qca-ssdk/qca-ssdk.ko $(INSTALLDIR)/lib/modules/$(KERNELRELEASE)/qca-ssdk-ipq95xx.ko
 	make -C $(KDIR) M=$(PWD)/qca-nss-dp clean MODPROBE=true DEPMOD=/bin/true KBUILD_MODPOST_WARN=1 EXTRA_CFLAGS="$(KERNEL_FLAGS)" SoC="ipq95xx"
 	make $(SSDK_MAKE_FLAGS_IPQ95XX) LNX_MAKEOPTS='' PRJ_PATH=$(TOP)/qca-nss/qca-ssdk MODULE_TYPE=KSLIB clean -C qca-ssdk clean
-endif
+else
 #50xx
 
 	rm -f qca-ssdk/qca-ssdk.*
@@ -337,9 +342,9 @@ endif
 	make -C $(KDIR) M=$(PWD)/qca-nss-clients clean modules modules_install MODPROBE=true DEPMOD=/bin/true KBUILD_MODPOST_WARN=1 EXTRA_CFLAGS="$(KERNEL_FLAGS) -include $(TOP)/qca-nss/qca-nss-clients/compat.h" SoC="ipq807x" tunipip6=y tlsmgr=y  pppoe=y vxlanmgr=y pptp=y l2tpv2=y  qdisc=y vlan-mgr=y netlink=y bridge-mgr=y lag-mgr=y ovsmgr=y wifi-meshmgr=y \
 		DTLSMGR_DIR="$(DTLSMGR_DIR)" \
 		IPSECMGR_DIR="$(IPSECMGR_DIR)" INSTALL_MOD_PATH=$(INSTALLDIR)
+endif
 	make -C $(KDIR) M=$(PWD)/qca-nss-hyfi-bridge clean modules modules_install MODPROBE=true DEPMOD=/bin/true KBUILD_MODPOST_WARN=1 EXTRA_CFLAGS="$(KERNEL_FLAGS)" SoC="ipq807x" INSTALL_MOD_PATH=$(INSTALLDIR)
 	make -C $(KDIR) M=$(PWD)/nss-ifb clean modules modules_install MODPROBE=true DEPMOD=/bin/true KBUILD_MODPOST_WARN=1 EXTRA_CFLAGS="$(KERNEL_FLAGS)" INSTALL_MOD_PATH=$(INSTALLDIR)
-
 	-find $(INSTALLDIR)/lib/modules/$(KERNELRELEASE)/extra -name *.ko -exec mv {} $(INSTALLDIR)/lib/modules/$(KERNELRELEASE) \;
 	-rm -rf $(INSTALLDIR)/lib/modules/$(KERNELRELEASE)/extra 
 	-find $(INSTALLDIR)/lib/modules/$(KERNELRELEASE)/updates -name *.ko -exec mv {} $(INSTALLDIR)/lib/modules/$(KERNELRELEASE) \;

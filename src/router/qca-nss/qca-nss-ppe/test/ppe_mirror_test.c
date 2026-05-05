@@ -916,7 +916,6 @@ static struct ctl_table ppe_mirror_test_tbl[] = {
 		.mode           = 0644,
 		.proc_handler   = &ppe_mirror_test_config_params,
 	},
-	{ }
 };
 
 /*
