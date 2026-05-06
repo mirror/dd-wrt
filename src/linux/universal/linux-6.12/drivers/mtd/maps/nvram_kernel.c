@@ -472,8 +472,8 @@ next:;
 	ret = mtd_write(nvram_mtd, offset, target_size, &len, lzma);
 	vfree(lzma);
 	if (ret || len != target_size) {
-		printk("nvram_commit: write error (offset %d size %zu)\n",
-		       offset, len);
+		printk("nvram_commit: write error (offset %d size %zu target_size %zu, ret %d)\n",
+		       offset, len, target_size, ret);
 		ret = -EIO;
 		goto done;
 	}
