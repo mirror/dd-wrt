@@ -81,7 +81,9 @@ static bool below_load_threshold(struct usteer_node *node)
 {
 	if (node->nosurvey) {
 		float load_ewma_total = 100.0 * 286.0;
-		if (node->he == 1)
+		if (node->eht == 1)
+			load_ewma_total = load_ewma_total / 300.0; 
+		else if (node->he == 1)
 			load_ewma_total = load_ewma_total / 286.0;
 		else if (node->vht == 1)
 			load_ewma_total = load_ewma_total / 200.0;

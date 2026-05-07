@@ -491,6 +491,7 @@ static void usteer_local_node_status_cb(struct ubus_request *req, int type, stru
 		MSG_N,
 		MSG_VHT,
 		MSG_HE,
+		MSG_EHT,
 		MSG_CW,
 		__MSG_MAX,
 	};
@@ -504,6 +505,7 @@ static void usteer_local_node_status_cb(struct ubus_request *req, int type, stru
 		[MSG_N] = { "n", BLOBMSG_TYPE_INT32 },
 		[MSG_VHT] = { "vht", BLOBMSG_TYPE_INT32 },
 		[MSG_HE] = { "he", BLOBMSG_TYPE_INT32 },
+		[MSG_EHT] = { "eht", BLOBMSG_TYPE_INT32 },
 		[MSG_CW] = { "cw", BLOBMSG_TYPE_INT32 },
 	};
 	struct blob_attr *tb[__MSG_MAX];
@@ -524,6 +526,8 @@ static void usteer_local_node_status_cb(struct ubus_request *req, int type, stru
 		node->vht = blobmsg_get_u32(tb[MSG_VHT]);
 	if (tb[MSG_HE])
 		node->he = blobmsg_get_u32(tb[MSG_HE]);
+	if (tb[MSG_EHT])
+		node->eht = blobmsg_get_u32(tb[MSG_EHT]);
 	if (tb[MSG_CHANNEL])
 		node->channel = blobmsg_get_u32(tb[MSG_CHANNEL]);
 	if (tb[MSG_OP_CLASS])

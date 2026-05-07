@@ -96,6 +96,7 @@ struct usteer_node {
 	int load;
 	int vht;
 	int he;
+	int eht;
 	int n;
 	int nosurvey;
 	int cw;
@@ -169,6 +170,7 @@ struct usteer_config {
 	bool prefer_5ghz;
 	bool prefer_6ghz;
 	bool prefer_he;
+	bool prefer_eht;
 
 	bool assoc_steering;
 	bool probe_steering;

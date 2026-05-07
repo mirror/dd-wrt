@@ -95,6 +95,7 @@ void usteer_init_defaults(void)
 	config.budget_6ghz = 5;
 	config.prefer_6ghz = 0;
 	config.prefer_he = 0;
+	config.prefer_eht = 0;
 	config.band_steering_threshold = 5;
 	config.load_balancing_threshold = 0;
 	config.remote_update_interval = 1000;
