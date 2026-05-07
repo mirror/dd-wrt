@@ -861,7 +861,7 @@ uint64_t ecm_front_end_get_slow_packet_count(struct ecm_front_end_connection_ins
  * ecm_front_end_ppe_fse_enable_limit_handler()
  *	Sysctl to enable/disable FSE programming through PPE.
  */
-int ecm_front_end_ppe_fse_enable_handler(struct ctl_table *ctl, int write, void *buffer, size_t *lenp, loff_t *ppos)
+int ecm_front_end_ppe_fse_enable_handler(const struct ctl_table *ctl, int write, void *buffer, size_t *lenp, loff_t *ppos)
 {
 	int ret;
 

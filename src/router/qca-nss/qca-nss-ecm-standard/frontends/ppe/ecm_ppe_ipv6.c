@@ -196,6 +196,8 @@ void ecm_ppe_ipv6_decel_done_time_update(struct ecm_front_end_connection_instanc
 	spin_unlock_bh(&ecm_ppe_ipv6_lock);
 }
 
+unsigned int *udp_get_timeouts(struct net *net);
+
 /*
  * ecm_ppe_ipv6_process_one_conn_sync_msg()
  *	Process one connection sync message.

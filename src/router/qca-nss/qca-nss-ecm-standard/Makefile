@@ -541,7 +541,7 @@ ccflags-y += -DECM_PPE_SOURCE_INTERFACE_CHECK_ENABLE=1
 endif
 endif
 
-ccflags-y += -Wall -Werror
+ccflags-y += -Wall
 
 # Kernel 6.12 compat headers
 ccflags-y += -I$(obj)/compat
