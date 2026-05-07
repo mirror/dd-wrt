@@ -16,7 +16,7 @@
 #include "command.h"
 #ifndef MORSE_WIN_BUILD
 #include "gpioctrl.h"
-#ifndef CONFIG_ANDROID
+#if (CONFIG_MORSE_USB == 1)
 #include "usb.h"
 #endif
 #endif
@@ -24,20 +24,8 @@
 #define MM610X_CPU_SOFT_RESET_ADDR      (0x10054094)
 #define MM610X_CPU_SOFT_RESET_VAL       (0xF)
 #define MM610X_CPU_SOFT_UNRESET_VAL     (0xE)
-#define MM610X_HOST_INTERRUPT_ADDR      (0x02000000)
-#define MM610X_HOST_INTERRUPT_VAL       (0x1)
-
-#define MM610X_REG_MAC_BOOT_ADDR        (0x10054024)
-#define MM610X_REG_MAC_BOOT_VALUE       (0x00100000)
-#define MM610X_REG_CLK_CTRL_ADDR        (0x1005406C)
-#define MM610X_REG_CLK_CTRL_VALUE       (0xEF)
-#define MM610X_REG_AON_COUNT            (2)
-#define MM610X_REG_AON_ADDR             (0x10058094)
-#define MM610X_REG_AON_LATCH_MASK       BIT(0)
-#define MM610X_REG_AON_LATCH_ADDR       (0x1005807C)
 
 #define RESET_TIME_MS                   (50)
-#define AON_DELAY_MS                    (5)
 
 static struct
 {
@@ -85,99 +73,6 @@ exit:
     return ret;
 }
 
-/*
- * 'Magic' sequence to reboot chip after performing a reset. Only applies to transports that don't
- *  use the driver.
- */
-static int soft_reset(struct morsectrl *mors)
-{
-    struct morsectrl_transport *transport = mors->transport;
-    int ret;
-    int idx;
-    uint32_t address = MM610X_REG_AON_ADDR;
-    uint32_t latch;
-
-    /* Clear AON. */
-    for (idx = 0; idx < MM610X_REG_AON_COUNT; idx++, address += 4)
-    {
-        /* clear AON in case there is any latched sleeps */
-        ret = morsectrl_transport_reg_write(transport, address, 0);
-        if (ret == -ETRANSNOTSUP)
-        {
-            morsectrl_transport_err("Soft Reset", -ETRANSERR,
-                                    "Transport doesn't support soft reset (rebooting)\n");
-            return ret;
-        }
-        else if (ret)
-        {
-            morsectrl_transport_err("Soft Reset", -ETRANSERR, "Failed to write clk ctrl reg\n");
-            return ret;
-        }
-    }
-
-    /* invoke AON latch procedure */
-    ret = morsectrl_transport_reg_read(transport, MM610X_REG_AON_LATCH_ADDR, &latch);
-    if (ret)
-    {
-        morsectrl_transport_err("Soft Reset", -ETRANSERR, "Failed to read aon latch reg\n");
-        return ret;
-    }
-
-    ret = morsectrl_transport_reg_write(transport, MM610X_REG_AON_LATCH_ADDR,
-                                        latch & ~(MM610X_REG_AON_LATCH_MASK));
-    if (ret)
-    {
-        morsectrl_transport_err("Soft Reset", -ETRANSERR, "Failed to write aon latch reg\n");
-        return ret;
-    }
-    sleep_ms(AON_DELAY_MS);
-
-    ret = morsectrl_transport_reg_write(transport, MM610X_REG_AON_LATCH_ADDR,
-                                        latch | MM610X_REG_AON_LATCH_MASK);
-    if (ret)
-    {
-        morsectrl_transport_err("Soft Reset", -ETRANSERR, "Failed to write aon latch reg\n");
-        return ret;
-    }
-    sleep_ms(AON_DELAY_MS);
-
-    ret = morsectrl_transport_reg_write(transport, MM610X_REG_AON_LATCH_ADDR,
-                                        latch & ~(MM610X_REG_AON_LATCH_MASK));
-    if (ret)
-    {
-        morsectrl_transport_err("Soft Reset", -ETRANSERR, "Failed to write aon latch reg\n");
-        return ret;
-    }
-    sleep_ms(AON_DELAY_MS);
-
-    /* Boot chip. */
-    ret = morsectrl_transport_reg_write(transport, MM610X_REG_MAC_BOOT_ADDR,
-                                        MM610X_REG_MAC_BOOT_VALUE);
-    if (ret)
-    {
-        morsectrl_transport_err("Soft Reset", -ETRANSERR, "Failed to write MAC boot reg\n");
-        return ret;
-    }
-
-    ret = morsectrl_transport_reg_write(transport, MM610X_REG_CLK_CTRL_ADDR,
-                                        MM610X_REG_CLK_CTRL_VALUE);
-    if (ret)
-    {
-        morsectrl_transport_err("Soft Reset", -ETRANSERR, "Failed to write clk ctrl reg\n");
-        return ret;
-    }
-
-    ret = morsectrl_transport_reg_write(transport, MM610X_HOST_INTERRUPT_ADDR,
-                                        MM610X_HOST_INTERRUPT_VAL);
-    if (ret)
-    {
-        morsectrl_transport_err("Soft Reset", -ETRANSERR, "Failed to write host interrupt reg\n");
-        return ret;
-    }
-
-    return ret;
-}
-
 int reset_init(struct morsectrl *mors, struct mm_argtable *mm_args)
 {
     args.softreset = arg_lit0("s", "softreset", "do a soft reset"),
@@ -210,7 +105,7 @@ int reset(struct morsectrl *mors, int argc, char *argv[])
     int reset_gpio = 0;
     bool do_soft_reset = (args.softreset->count > 0);
 
-#if !defined(MORSE_WIN_BUILD) && !defined(CONFIG_ANDROID)
+#if defined(CONFIG_MORSE_USB) && CONFIG_MORSE_USB == 1
     bool do_usb_reset = (args.usbreset->count > 0);
 
     if (do_usb_reset)
@@ -223,7 +118,7 @@ int reset(struct morsectrl *mors, int argc, char *argv[])
 
     if (do_soft_reset)
     {
-        ret = soft_reset(mors);
+        ret = morsectrl_transport_start_hardware(mors->transport);
     }
     else
     {

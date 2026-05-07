@@ -76,8 +76,7 @@ uint64_t get_unsigned_value_as_uint64(const uint8_t *buf, uint32_t size)
     {
         case 1:
         {
-            uint8_t x;
-            memcpy(&x, buf, size);
+            n = buf[0];
             break;
         }
         case 2:

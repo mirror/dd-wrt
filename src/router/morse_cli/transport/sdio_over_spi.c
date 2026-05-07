@@ -89,13 +89,6 @@
 #define SDIO_POST_BYTE_DELAY_OCTETS     (30)
 #define SDIO_POST_CMD53_DELAY_OCTETS    (4)
 
-#define MM610X_REG_RESET_ADDR           (0x10054050)
-#define MM610X_REG_RESET_VALUE          (0xDEAD)
-#define MM610X_REG_CLK_CTRL_ADDR        (0x1005406C)
-#define MM610X_REG_CLK_CTRL_EARLY_VALUE (0xE5)
-#define MM610X_REG_CHIP_ID_ADDR         (0x10054d20)
-#define MM610X_REG_HOST_MAN_PTR_ADDR    (0x10054d40)
-
 static uint32_t fn_max_block_size[] = { 4, 8, 512 };
 
 /**
@@ -945,64 +938,31 @@ int sdio_over_spi_write_memblock(struct morsectrl_transport *transport,
 
 int sdio_over_spi_post_hard_reset(struct morsectrl_transport *transport)
 {
-    const struct morsectrl_transport_ops *tops = transport->tops;
     int ii;
-    int ret;
-    uint32_t data32;
+    int ret = 0;
 
     /* First Send a CMD63 */
     for (ii = 0; ii < 3; ii++)
     {
-        sdio_over_spi_cmd63(transport);
+        ret = sdio_over_spi_cmd63(transport);
+        if (!ret)
+        {
+            break;
+        }
         sdio_over_spi_cmd0(transport);
     }
 
-    ret = tops->reg_read(transport, MM610X_REG_CHIP_ID_ADDR, &data32);
     if (ret)
     {
-        morsectrl_transport_err("Pre Firmware DL", -ETRANSERR, "Failed to read chip id reg\n");
-        return ret;
+        goto exit;
     }
 
-    if (transport->debug)
-        mctrl_print("Chip ID: 0x%08x\n", data32);
+    ret = morsectrl_transport_digital_reset(transport);
 
-    for (ii = 0; ii < 3; ii++)
-    {
-        /* Register writes to get things moving. */
-        ret = tops->reg_write(transport, MM610X_REG_RESET_ADDR, MM610X_REG_RESET_VALUE);
-        if (ret)
-        {
-            morsectrl_transport_err("Pre Firmware DL", -ETRANSERR, "Failed to write reset reg\n");
-
-            sleep_ms(400);
-            continue;
-        }
-
-        sleep_ms(400);
-
-        ret = tops->reg_write(transport, MM610X_REG_CLK_CTRL_ADDR, MM610X_REG_CLK_CTRL_EARLY_VALUE);
-        if (ret)
-        {
-            morsectrl_transport_err("Pre Firmware DL", -ETRANSERR,
-                                    "Failed to write clk ctrl reg\n");
-            continue;
-        }
-        else
-            break;
-    }
+exit:
     if (ret)
     {
-        return ret;
-    }
-
-    /* Invalidation of host manifest pointer? */
-    ret = tops->reg_write(transport, MM610X_REG_HOST_MAN_PTR_ADDR, 0);
-    if (ret)
-    {
-        morsectrl_transport_err("Pre Firmware DL", -ETRANSERR,
-                                "Failed to reset host manifest ptr\n");
-        return ret;
+        morsectrl_transport_err("Pre Firmware DL", -ETRANSERR, "Failed to reset chip\n");
     }
 
     return ret;

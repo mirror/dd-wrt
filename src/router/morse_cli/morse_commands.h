@@ -20,7 +20,7 @@
 #define PACKED                 __attribute__((packed))
 
 #define MORSE_CMD_SEMVER_MAJOR 56
-#define MORSE_CMD_SEMVER_MINOR 3
+#define MORSE_CMD_SEMVER_MINOR 17
 #define MORSE_CMD_SEMVER_PATCH 0
 
 #define MORSE_CMD_TYPE_REQ     BIT(0)
@@ -235,11 +235,10 @@ struct PACKED morse_cmd_req_set_channel
     uint8_t pri_1mhz_chan_idx;
     /** enum morse_cmd_dot11_proto_mode */
     uint8_t dot11_mode;
-    /**
-     * Flag set to 1 to set the S1G TX power to the regulatory max, 0 to skip setting. 1 by default.
-     * Used for debug on the driver only. Excluded from firmware.
-     */
-    uint8_t reg_tx_power_set;
+    /** Deprecated flag (will always be set). */
+    uint8_t __deprecated_reg_tx_power_set;
+    /** Indicates that the channel will not be the device's main operating channel. */
+    uint8_t is_off_channel;
 };
 
 /**
@@ -864,6 +863,8 @@ struct PACKED morse_cmd_standby_enter
 {
     /** The BSSID to monitor for activity (or lack thereof) before entering deep sleep */
     struct morse_cmd_mac_addr monitor_bssid;
+    /** Standby mode association is controlled by the UMAC in the chip. */
+    uint8_t is_umac_controlled;
 };
 
 /**
@@ -1540,6 +1541,12 @@ struct PACKED morse_cmd_req_dynamic_peering_config
 #define MORSE_CMD_CFG_RAW_FLAG_UPDATE  BIT(2)
 #define MORSE_CMD_CFG_RAW_FLAG_DYNAMIC BIT(3)
 
+/** RAW special AID to reserve the medium for DCS */
+#define MORSE_CMD_RAW_RESERVED_AID_DCS 2008
+
+/** RAW special AID to reserve the medium for AP's downlink */
+#define MORSE_CMD_RAW_RESERVED_AID_DOWNLINK 2009
+
 enum morse_cmd_raw_tlv_tag
 {
     MORSE_CMD_RAW_TLV_TAG_SLOT_DEF = 0,
@@ -1829,7 +1836,12 @@ enum morse_cmd_param_id
     MORSE_CMD_PARAM_ID_SLOW_CLOCK_MODE = 20,
     MORSE_CMD_PARAM_ID_FRAGMENT_THRESHOLD = 21,
     MORSE_CMD_PARAM_ID_BEACON_LOSS_COUNT = 22,
-    MORSE_CMD_PARAM_ID_LAST = 23,
+    MORSE_CMD_PARAM_ID_AP_POWER_SAVE = 23,
+    MORSE_CMD_PARAM_ID_BSS_MAX_AWAY_DURATION = 26,
+    MORSE_CMD_PARAM_ID_DEFAULT_ACTIVE_SCAN_DWELL_MS = 27,
+    MORSE_CMD_PARAM_ID_CTS_TO_SELF = 28,
+    MORSE_CMD_PARAM_ID_CHANNELIZATION = 29,
+    MORSE_CMD_PARAM_ID_LAST = 30,
 };
 
 /**

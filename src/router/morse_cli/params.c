@@ -79,7 +79,7 @@ static int param_set_uint32(const struct param_entry* entry, const char* value,
 static int param_get_uint32(const struct param_entry* entry,
     struct morse_cmd_resp_get_set_generic_param* resp)
 {
-    mctrl_print("%u\n", resp->value);
+    mctrl_print("%u\n", le32toh(resp->value));
     return 0;
 }
 
@@ -220,6 +220,15 @@ struct param_entry params[] = {
         .get_fn = param_get_uint32,
     },
     {
+        .id = MORSE_CMD_PARAM_ID_DEFAULT_ACTIVE_SCAN_DWELL_MS,
+        .name = "active_scan_dwell_ms",
+        .help = "Default time to dwell on each channel in a scan list during active scans (ms)",
+        .min_val = 30,
+        .max_val = UINT32_MAX,
+        .set_fn = param_set_uint32,
+        .get_fn = param_get_uint32,
+    },
+    {
         .id = MORSE_CMD_PARAM_ID_HOME_CHANNEL_DWELL_MS,
         .name = "home_channel_dwell_ms",
         .help = "Time to dwell on home channel during scans while associated (ms)",
@@ -235,6 +244,24 @@ struct param_entry params[] = {
         .min_val = 1,
         .max_val = UINT8_MAX,
         .set_fn = param_set_uint32,
+        .get_fn = param_get_uint32,
+    },
+    {
+        .id = MORSE_CMD_PARAM_ID_AP_POWER_SAVE,
+        .name = "ap_power_save",
+        .help = "Enable power save on an AP interface",
+        .min_val = 0,
+        .max_val = 1,
+        .set_fn = param_set_uint32,
+        .get_fn = param_get_uint32,
+    },
+    {
+        .id = MORSE_CMD_PARAM_ID_CHANNELIZATION,
+        .name = "channelization",
+        .help = "Query channelization scheme - for internal use by hostapd/wpa_supplicant",
+        .min_val = 0,
+        .max_val = 256,
+        .set_fn = NULL,
         .get_fn = param_get_uint32,
     },
 };

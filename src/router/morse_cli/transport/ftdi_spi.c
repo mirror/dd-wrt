@@ -67,10 +67,14 @@
 #define FTDI_SPI_PINSTATE_TO_VAL(x)     (((x) >> 8) & 0xFF)
 #define FTDI_SPI_PINSTATE_TO_DIR(x)     ((x) & 0xFF)
 
-#define MM_MANIFEST_ADDR                (0x10054d40)
-#define MM_TRIGGER_ADDR                 (0x100A6010)
-#define MM_STATUS_ADDR                  (0x100A6060)
-#define MM_STATUS_CLR_ADDR              (0x100A6068)
+#define MM610X_TRIGGER_ADDR                 (0x100A6010)
+#define MM610X_STATUS_ADDR                  (0x100A6060)
+#define MM610X_STATUS_CLR_ADDR              (0x100A6068)
+
+#define MM810X_TRIGGER_ADDR                 (0x00003c10) /* hostsync_reg1 */
+#define MM810X_STATUS_ADDR                  (0x00003c60) /* hostsync_reg7 */
+#define MM810X_STATUS_CLR_ADDR              (0x00003c68) /* hostsync_reg7_clear */
+
 #define MM_CMD_MASK                     BIT(1)
 #define MM_CMD_ADDR_OFFSET              (16)
 #define MM_RESP_ADDR_OFFSET             (20)
@@ -944,9 +948,14 @@ static int ftdi_spi_send(struct morsectrl_transport *transport,
     uint32_t host_table_ptr;
     uint32_t cmd_addr;
     uint32_t resp_addr;
+    uint32_t manifest_addr;
+    uint32_t trigger_addr;
+    uint32_t status_addr;
+    uint32_t status_clr_addr;
     uint32_t status;
     int ii;
     int ret;
+    int chip_id;
 
     if (!transport || !transport->tops ||
         !transport->tops->reg_read || !transport->tops->reg_write ||
@@ -958,8 +967,28 @@ static int ftdi_spi_send(struct morsectrl_transport *transport,
 
     tops = transport->tops;
 
+    chip_id = morsectrl_transport_get_chip_id(transport);
+    switch (chip_id)
+    {
+    case CHIP_ID_MM610X:
+        manifest_addr = MM610X_MANIFEST_ADDR;
+        trigger_addr = MM610X_TRIGGER_ADDR;
+        status_addr = MM610X_STATUS_ADDR;
+        status_clr_addr = MM610X_STATUS_CLR_ADDR;
+        break;
+    case CHIP_ID_MM810X:
+        manifest_addr = MM810X_MANIFEST_ADDR;
+        trigger_addr = MM810X_TRIGGER_ADDR;
+        status_addr = MM810X_STATUS_ADDR;
+        status_clr_addr = MM810X_STATUS_CLR_ADDR;
+        break;
+    default:
+        ftdi_spi_error(chip_id, "Could not find chip ID");
+        return -ETRANSFTDISPIERR;
+    }
+
     /* Locate command and response memory locations. */
-    ret = tops->reg_read(transport, MM_MANIFEST_ADDR, &host_table_ptr);
+    ret = tops->reg_read(transport, manifest_addr, &host_table_ptr);
     if (ret)
         goto fail;
     if (transport->debug)
@@ -993,7 +1022,7 @@ static int ftdi_spi_send(struct morsectrl_transport *transport,
         mctrl_print("\nResponse addr: 0x%08x\n\n", resp_addr);
     }
 
-    ret = tops->reg_write(transport, MM_STATUS_CLR_ADDR, MM_CMD_MASK);
+    ret = tops->reg_write(transport, status_clr_addr, MM_CMD_MASK);
     if (ret)
     {
         goto fail;
@@ -1013,7 +1042,7 @@ static int ftdi_spi_send(struct morsectrl_transport *transport,
         mctrl_print("\nWrote command\n\n");
     }
 
-    ret = tops->reg_write(transport, MM_TRIGGER_ADDR, MM_CMD_MASK);
+    ret = tops->reg_write(transport, trigger_addr, MM_CMD_MASK);
     if (ret)
     {
         goto fail;
@@ -1026,7 +1055,7 @@ static int ftdi_spi_send(struct morsectrl_transport *transport,
     /* Poll for reponse. */
     for (ii = 0; ii < RESP_TIMEOUT_MS; ii += RESP_POLL_INTERVAL_MS)
     {
-        ret = tops->reg_read(transport, MM_STATUS_ADDR, &status);
+        ret = tops->reg_read(transport, status_addr, &status);
         if (ret)
             goto fail;
 
@@ -1057,7 +1086,7 @@ static int ftdi_spi_send(struct morsectrl_transport *transport,
     }
 
     /* Clear status. */
-    tops->reg_write(transport, MM_STATUS_CLR_ADDR, MM_CMD_MASK);
+    tops->reg_write(transport, status_clr_addr, MM_CMD_MASK);
     if (transport->debug)
     {
         mctrl_print("\nCleared status\n\n");

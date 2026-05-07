@@ -137,13 +137,17 @@ struct PACKED stats_response
     uint8_t stats[2048];
 };
 
-/**
- * A int32_t generic array
- **/
+/** Array of signed 16-bit integers with count. */
 typedef struct __attribute__((packed)) {
     __le16 count;
     __le16 array[];
-} array_t;
+} s16_array_t;
+
+/** Array of unsigned 16-bit integers with count. */
+typedef struct __attribute__((packed)) {
+    __le16 count;
+    __le16 array[];
+} u16_array_t;
 
 /** Enum type for printing format  */
 enum format_type

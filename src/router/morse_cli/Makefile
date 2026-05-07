@@ -13,7 +13,7 @@ Q = @
 endif
 
 
-override MORSECTRL_VERSION_STRING = "rel_1_16_4_2025_Sep_18"
+override MORSECTRL_VERSION_STRING = "rel_1_17_8_2026_Mar_24"
 DEFAULT_INTERFACE_NAME ?= "wlan0"
 
 MORSECTRL_CFLAGS = $(CFLAGS)
@@ -140,7 +140,16 @@ WIN_LDFLAGS += -lws2_32
 	endif
 #endif
 
-ifneq ($(CONFIG_ANDROID),1)
+# by default, enable USB. But force it to disable if Windows or Android.
+CONFIG_MORSE_USB ?= 1
+ifeq ($(CONFIG_ANDROID),1)
+	CONFIG_MORSE_USB = 0
+endif
+ifeq ($(MORSE_WIN_BUILD),1)
+	CONFIG_MORSE_USB = 0
+endif
+
+ifeq ($(CONFIG_MORSE_USB),1)
 LINUX_SRCS += usb.c
 
 	LINUX_CFLAGS  += -I$(TOP)/usb_modeswitch/libusb/libusb/ -DNEED_PRINTF

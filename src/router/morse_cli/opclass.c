@@ -14,7 +14,7 @@
 #include "command.h"
 #include "utilities.h"
 
-#define GLOBAL_OP_CLASS_MIN 64
+#define GLOBAL_OP_CLASS_MIN 48
 #define GLOBAL_OP_CLASS_MAX 77
 
 static struct

@@ -30,6 +30,16 @@ enum moresctrl_transport_errnum
 
 #define MAX_SERIAL_NUMBER_LEN (16)
 
+#define CHIP_ID_ADDR_MM610X     (0x10054d20)
+#define CHIP_ID_ADDR_MM810X     (0x00002d20)
+#define CHIP_ID_MASK            (0x000000FF)
+
+enum morse_chip_id {
+    CHIP_ID_ERROR = 0,
+    CHIP_ID_MM610X = 6,
+    CHIP_ID_MM810X = 9
+};
+
 struct morsectrl_transport;
 
 /** Contains memory used to store commands and framing. */
@@ -296,5 +306,32 @@ void morsectrl_transport_err(const char *prefix, int error_code, const char *err
  * @param ...       Optional printf arguments.
  */
 void morsectrl_transport_debug(struct morsectrl_transport *transport, const char *fmt, ...);
+
+/**
+ * @brief Get the chip ID. Will read each targets chip ID address and return the ID on a match
+ *
+ * @param transport The transport instance.
+ *
+ * @return Chip ID, or CHIP_ID_ERROR on no match
+ */
+enum morse_chip_id morsectrl_transport_get_chip_id(struct morsectrl_transport *transport);
+
+/**
+ * @brief Perform target-specific boot sequence
+ *
+ * @param transport The transport instance
+ *
+ * @return 0 on success, or error
+ */
+int morsectrl_transport_start_hardware(struct morsectrl_transport *transport);
+
+/**
+ * @brief Perform target-specific boot sequence
+ *
+ * @param transport The transport instance
+ *
+ * @return 0 on success, or error
+ */
+int morsectrl_transport_digital_reset(struct morsectrl_transport *transport);
 
 #endif // TRANSPORT_TRANSPORT_H_

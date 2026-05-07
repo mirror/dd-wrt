@@ -15,6 +15,38 @@
  *  @ref morsectrl_transport_get_regex(). */
 #define TRANSPORT_REGEX_MAXLEN  (127)
 
+#define MM610X_REG_AON_ADDR                 (0x10058094)
+#define MM610X_REG_AON_LATCH_ADDR           (0x1005807C)
+#define MM8108_REG_AON_ADDR                 (0x00002114) /* system_ao_mem_in */
+#define MM8108_REG_AON_LATCH_ADDR           (0x00405020) /* radio_rf_ao_cfg_ao_latch */
+#define AON_LATCH_MASK                      (0x1)
+#define AON_COUNT                           (2)
+#define AON_DELAY_MS                        (5)
+
+#define MM610X_DIG_RESET_ADDR                (0x10054050)
+#define MM810X_DIG_RESET_ADDR                (0x000020AC)
+#define DIG_RESET_VAL                       (0xDEAD)
+#define SDIO_RESET_TIME_MS                  (400)
+
+#define MM610X_MAC_BOOT_ADDR                (0x10054024)
+#define MM610X_MAC_BOOT_VAL                 (0x00100000)
+
+#define MM610X_CLK_CTRL_ADDR                (0x1005406C)
+#define MM610X_CLK_CTRL_VAL                 (0xEF)
+#define MM610X_CLK_CTRL_EARLY_VAL           (0xE5)
+
+#define MM810X_REG_RC_CLK_POWER_OFF_ADDR    (0x00405020)
+#define MM810X_REG_RC_CLK_POWER_OFF_MASK    (0x00000040)
+#define MM810X_SLOW_RC_POWER_ON_DELAY_MS    (2)
+
+#define MM610X_HOST_INTERRUPT_ADDR          (0x02000000)
+#define MM810X_HOST_INTERRUPT_ADDR          (0x00004100)
+#define HOST_INTERRUPT_VAL                  (0x1)
+
+#define MM810X_REG_AON_PMU_CTRL_ADDR        (0x00405020)
+#define MM810X_REG_AON_PMU_CTRL_MASK        (0x00000080)
+
+
 /* These are the start and end of the custom section transport_ops_table and are provided
  * by the linker script. */
 extern const struct morsectrl_transport_ops * const __start_transport_ops_table[];
@@ -452,6 +484,269 @@ void morsectrl_transport_debug(struct morsectrl_transport *transport, const char
         mctrl_vprint(fmt, args);
         va_end(args);
     }
+}
+
+enum morse_chip_id morsectrl_transport_get_chip_id(struct morsectrl_transport *transport)
+{
+    uint32_t word;
+    int ret;
+
+    ret = morsectrl_transport_reg_read(transport, CHIP_ID_ADDR_MM610X, &word);
+    if (!ret && (word & CHIP_ID_MASK) == CHIP_ID_MM610X)
+    {
+        return CHIP_ID_MM610X;
+    }
+
+    ret = morsectrl_transport_reg_read(transport, CHIP_ID_ADDR_MM810X, &word);
+    if (!ret && (word & CHIP_ID_MASK) == CHIP_ID_MM810X)
+    {
+        return CHIP_ID_MM810X;
+    }
+
+    return CHIP_ID_ERROR;
+}
+
+static void morsectrl_transport_toggle_aon_latch(struct morsectrl_transport *transport,
+                                                 uint8_t chip_id)
+{
+    uint32_t aon_latch_addr = 0;
+    uint32_t mask = AON_LATCH_MASK;
+    uint32_t latch;
+
+    switch (chip_id)
+    {
+    case CHIP_ID_MM610X:
+        aon_latch_addr = MM610X_REG_AON_LATCH_ADDR;
+        break;
+    case CHIP_ID_MM810X:
+        aon_latch_addr = MM8108_REG_AON_LATCH_ADDR;
+        break;
+    default:
+        return;
+    }
+
+    /* invoke AON latch procedure */
+    morsectrl_transport_reg_read(transport, aon_latch_addr, &latch);
+    morsectrl_transport_reg_write(transport, aon_latch_addr, latch & ~(mask));
+    sleep_ms(AON_DELAY_MS);
+    morsectrl_transport_reg_write(transport, aon_latch_addr, latch | mask);
+    sleep_ms(AON_DELAY_MS);
+    morsectrl_transport_reg_write(transport, aon_latch_addr, latch & ~(mask));
+    sleep_ms(AON_DELAY_MS);
+}
+
+static void morsectrl_transport_clear_aon(struct morsectrl_transport *transport, uint8_t chip_id)
+{
+    int idx;
+    uint8_t count = AON_COUNT;
+    uint32_t aon_address = 0;
+
+    switch (chip_id)
+    {
+    case CHIP_ID_MM610X:
+        aon_address = MM610X_REG_AON_ADDR;
+        break;
+    case CHIP_ID_MM810X:
+        aon_address = MM8108_REG_AON_ADDR;
+        break;
+    default:
+        return;
+    }
+
+    for (idx = 0; idx < count; idx++, aon_address += 4)
+    {
+        /* clear AON in case there is any latched sleeps */
+        morsectrl_transport_reg_write(transport, aon_address, 0x0);
+    }
+
+    morsectrl_transport_toggle_aon_latch(transport, chip_id);
+}
+
+static int mm810x_enable_internal_slow_clock(struct morsectrl_transport *transport)
+{
+    uint32_t rc_clock_reg_value;
+    int ret = 0;
+
+    /* We should perform a read, clear the power off bit and write it back */
+    ret = morsectrl_transport_reg_read(transport, MM810X_REG_RC_CLK_POWER_OFF_ADDR,
+                                       &rc_clock_reg_value);
+    if (ret)
+    {
+        goto exit;
+    }
+
+    rc_clock_reg_value &= ~MM810X_REG_RC_CLK_POWER_OFF_MASK;
+    ret = morsectrl_transport_reg_write(transport, MM810X_REG_RC_CLK_POWER_OFF_ADDR,
+                                        rc_clock_reg_value);
+    if (ret)
+    {
+        goto exit;
+    }
+
+    morsectrl_transport_toggle_aon_latch(transport, CHIP_ID_MM810X);
+
+    /* Wait for the clock to turn on and settle */
+    sleep_ms(MM810X_SLOW_RC_POWER_ON_DELAY_MS);
+exit:
+    if (ret)
+    {
+        morsectrl_transport_err("Reset", ret, "Failed to enable internal slow clock\n");
+    }
+    return ret;
+}
+
+static int mm810x_disable_pmu_ctrl_cpu(struct morsectrl_transport *transport)
+{
+    uint32_t aon_reg_value;
+    int ret = 0;
+
+    ret = morsectrl_transport_reg_read(transport, MM810X_REG_AON_PMU_CTRL_ADDR, &aon_reg_value);
+    if (ret)
+    {
+        goto exit;
+    }
+
+    aon_reg_value &= ~MM810X_REG_AON_PMU_CTRL_MASK;
+    ret = morsectrl_transport_reg_write(transport, MM810X_REG_AON_PMU_CTRL_ADDR, aon_reg_value);
+    if (ret)
+    {
+        goto exit;
+    }
+
+    morsectrl_transport_toggle_aon_latch(transport, CHIP_ID_MM810X);
+
+exit:
+    if (ret)
+    {
+        morsectrl_transport_err("Reset", ret, "Failed to disable PMU control to CPU\n");
+    }
+    return ret;
+}
+
+static int mm810x_digital_reset(struct morsectrl_transport *transport)
+{
+    int ret;
+
+    ret = mm810x_enable_internal_slow_clock(transport);
+    if (ret)
+    {
+        goto exit;
+    }
+
+    ret = mm810x_disable_pmu_ctrl_cpu(transport);
+    if (ret)
+    {
+        goto exit;
+    }
+
+    ret = morsectrl_transport_reg_write(transport, MM810X_DIG_RESET_ADDR, DIG_RESET_VAL);
+    if (ret)
+    {
+        goto exit;
+    }
+
+    sleep_ms(SDIO_RESET_TIME_MS);
+
+exit:
+    if (ret)
+    {
+        morsectrl_transport_err("Reset", ret, "Digital reset failed\n");
+    }
+
+    return ret;
+}
+
+static int mm610x_digital_reset(struct morsectrl_transport *transport)
+{
+    int ret;
+
+    /* mm610x_enable_ext_xtal_delay() */
+
+    ret = morsectrl_transport_reg_write(transport, MM610X_DIG_RESET_ADDR, DIG_RESET_VAL);
+    if (ret)
+    {
+        goto exit;
+    }
+
+    sleep_ms(SDIO_RESET_TIME_MS);
+
+    ret = morsectrl_transport_reg_write(transport, MM610X_CLK_CTRL_ADDR,
+                                        MM610X_CLK_CTRL_EARLY_VAL);
+
+    /* mm610x_ext_xtal_init() */
+
+exit:
+    if (ret)
+    {
+        morsectrl_transport_err("Reset", ret, "Digital reset failed\n");
+    }
+
+    return ret;
+}
+
+int morsectrl_transport_digital_reset(struct morsectrl_transport *transport)
+{
+    int ret;
+    uint8_t chip_id;
+
+    chip_id = morsectrl_transport_get_chip_id(transport);
+
+    switch (chip_id)
+    {
+    case CHIP_ID_MM610X:
+        ret = mm610x_digital_reset(transport);
+        break;
+    case CHIP_ID_MM810X:
+        ret = mm810x_digital_reset(transport);
+        break;
+    default:
+        ret = -ETRANSERR;
+    }
+    return ret;
+}
+
+int morsectrl_transport_start_hardware(struct morsectrl_transport *transport)
+{
+    int ret;
+    uint32_t host_interrupt_addr;
+
+    uint8_t chip_id = morsectrl_transport_get_chip_id(transport);
+
+    morsectrl_transport_clear_aon(transport, chip_id);
+
+    switch (chip_id)
+    {
+    case CHIP_ID_MM610X:
+        ret = morsectrl_transport_reg_write(transport, MM610X_MAC_BOOT_ADDR, MM610X_MAC_BOOT_VAL);
+        if (ret)
+        {
+            goto exit;
+        }
+
+        ret = morsectrl_transport_reg_write(transport, MM610X_CLK_CTRL_ADDR, MM610X_CLK_CTRL_VAL);
+        if (ret)
+        {
+            goto exit;
+        }
+
+        host_interrupt_addr = MM610X_HOST_INTERRUPT_ADDR;
+        break;
+    case CHIP_ID_MM810X:
+        host_interrupt_addr = MM810X_HOST_INTERRUPT_ADDR;
+        break;
+    default:
+        ret = -ETRANSERR;
+        goto exit;
+    }
+
+    ret = morsectrl_transport_reg_write(transport, host_interrupt_addr, HOST_INTERRUPT_VAL);
+
+exit:
+    if (ret)
+    {
+        morsectrl_transport_err("Start hardware", ret, "Failed to start hardware\n");
+    }
+    return ret;
 }
 
 /* Dummy transport to ensure the transport_ops table always exists. */

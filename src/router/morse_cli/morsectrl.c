@@ -416,13 +416,14 @@ transport_exit:
         morsectrl_transport_deinit(mors.transport);
 exit:
     /**
-     * For return codes less than 0, or greater than 255 (i.e. the nix return code error range)
-     * remap error to MORSE_CMD_ERR. The return code 255 (-1) is avoided as ssh uses this to
-     * indicate an ssh error.
+     * Remap return code to between 0 and 255 (i.e. the UNIX return code error range)
+     * The return code 255 is avoided as ssh uses this to indicate an ssh error.
      */
-    if ((ret < 0) || (ret > 254))
-    {
+    if (ret < 0)
+        ret = -ret;
+
+    if (ret > 254)
         ret = MORSE_CMD_ERR;
-    }
+
     return ret;
 }

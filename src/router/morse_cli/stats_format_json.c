@@ -340,14 +340,26 @@ static void print_umac_latency_histogram(const char *key, const uint8_t *buf, ui
     mctrl_print("\"");
 }
 
-static void print_array(const char *key, const uint8_t *buf, uint32_t len)
+static void print_array_s16(const char *key, const uint8_t *buf, uint32_t len)
 {
-    array_t *array = (array_t *)buf;
+    s16_array_t *array = (s16_array_t *)buf;
     printf_indent("\"%s\": ", key);
     mctrl_print("\"");
     for (int i = 0; i < le16toh(array->count); i++)
     {
-        mctrl_print("%d ", le16toh(array->array[i]));
+        mctrl_print("%d ", (int16_t)le16toh(array->array[i]));
+    }
+    mctrl_print("\"");
+}
+
+static void print_array_u16(const char *key, const uint8_t *buf, uint32_t len)
+{
+    u16_array_t *array = (u16_array_t *)buf;
+    printf_indent("\"%s\": ", key);
+    mctrl_print("\"");
+    for (int i = 0; i < le16toh(array->count); i++)
+    {
+        mctrl_print("%u ", le16toh(array->array[i]));
     }
     mctrl_print("\"");
 }
@@ -388,7 +400,8 @@ static const struct format_table table = {
         [MORSE_STATS_FMT_UMAC_LATENCY_HISTOGRAM] = print_umac_latency_histogram,
         /* Add new function pointers here */
         /* [MORSE_STATS_NEW_TLV_FORMAT] = print_new_format */
-        [MORSE_STATS_FMT_ARRAY] = print_array,
+        [MORSE_STATS_FMT_ARRAY_S16] = print_array_s16,
+        [MORSE_STATS_FMT_ARRAY_U16] = print_array_u16,
 
         [MORSE_STATS_FMT_LAST] = print_default,
     }

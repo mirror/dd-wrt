@@ -41,9 +41,6 @@ int channel_init(struct morsectrl *mors, struct mm_argtable *mm_args)
                                                        "primary bandwidth in MHz"),
                      args.primary_idx = arg_int0("n", NULL, "<primary chan index>",
                                                  "primary 1 MHz channel index"),
-                     #ifndef MORSE_CLIENT
-                     args.ignore_reg_power = arg_lit0("r", NULL, "ignores regulatory max tx power"),
-                     #endif
                      args.json_format = arg_lit0("j", NULL,
                                                  "prints full channel information in easily "
                                                  "parsable JSON format"));
@@ -93,7 +90,6 @@ int channel(struct morsectrl *mors, int argc, char *argv[])
     bool set_freq = false;
     bool get_all_channels = false;
     bool json = false;
-    uint8_t reg_tx_power_set = 1;
 
     struct morsectrl_transport_buff *cmd_set_tbuff;
     struct morsectrl_transport_buff *rsp_set_tbuff;
@@ -142,10 +138,6 @@ int channel(struct morsectrl *mors, int argc, char *argv[])
 
     get_all_channels = (args.all_channels->count > 0);
 
-#ifndef MORSE_CLIENT
-    reg_tx_power_set = !(args.ignore_reg_power->count > 0);
-#endif
-
     if (set_freq)
     {
         if (!freq_khz)
@@ -159,7 +151,8 @@ int channel(struct morsectrl *mors, int argc, char *argv[])
         cmd_set->pri_bw_mhz = primary_channel_bandwidth;
         cmd_set->pri_1mhz_chan_idx = primary_1mhz_channel_index;
         cmd_set->dot11_mode = 0; /* TODO */
-        cmd_set->reg_tx_power_set = reg_tx_power_set;
+        cmd_set->__deprecated_reg_tx_power_set = 1;
+        cmd_set->is_off_channel = 0;
 
         ret = morsectrl_send_command(mors->transport, MORSE_CMD_ID_SET_CHANNEL,
                                     cmd_set_tbuff, rsp_set_tbuff);

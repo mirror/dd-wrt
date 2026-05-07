@@ -320,7 +320,7 @@ int morsectrl_stats_cmd(struct morsectrl *mors, int cmd, int reset,
             }
             else
             {
-                mctrl_err("UNKOWN KEY for tag %d: ", tag);
+                mctrl_err("UNKNOWN KEY for tag %d: ", tag);
                 hexdump(buf, len);
                 mctrl_err("\n");
             }

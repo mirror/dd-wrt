@@ -18,6 +18,9 @@
 
 #include "transport.h"
 
+#define MM610X_MANIFEST_ADDR            (0x10054d40)
+#define MM810X_MANIFEST_ADDR            (0x00002d40)
+
 /**
  * @brief Transport operations and information data structure
  *
