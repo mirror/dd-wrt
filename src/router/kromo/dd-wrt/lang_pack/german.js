@@ -213,6 +213,7 @@ share.feet="fuß";
 share.Feet="Fuß";
 share.vht80plus80="80+80 MHz";
 share.vht160="160 MHz";
+share.eht320="320 MHz";
 share.vht80="80 MHz";
 share.ht40="Weit (40 MHz)";
 share.ht20="Voll (20 MHz)";
