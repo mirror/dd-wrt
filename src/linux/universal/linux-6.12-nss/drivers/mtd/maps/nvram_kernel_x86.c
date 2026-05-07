@@ -330,7 +330,7 @@ int nvram_commit(void)
 		offs += len;
 		wr += PAGE_SIZE;
 	}
-	printk(KERN_INFO "nvram_commit: %llu bytes written\n", offs);
+//	printk(KERN_INFO "nvram_commit: %llu bytes written\n", offs);
 	filp_close(srcf, NULL);
 done:
 	mutex_unlock(&nvram_sem);
