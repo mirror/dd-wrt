@@ -380,6 +380,7 @@ EJ_VISIBLE void ej_show_roaming(webs_t wp, int argc, char_t **argv)
 		showInputNum(wp, "roaming.budget_6ghz", "usteer_budget_6ghz", 2, 2, 5);
 		showRadio(wp, "roaming.prefer_6ghz", "usteer_prefer_6ghz");
 		showRadio(wp, "roaming.prefer_he", "usteer_prefer_he");
+		showRadio(wp, "roaming.prefer_eht", "usteer_prefer_eht");
 		showInputNum(wp, "roaming.min_connect_snr", "usteer_min_connect_snr", 4, 4, 0);
 		showInputNum(wp, "roaming.min_snr", "usteer_min_snr", 4, 4, 15);
 		showInputNum(wp, "roaming.min_snr_kick_delay", "usteer_min_snr_kick_delay", 6, 6, 5000);

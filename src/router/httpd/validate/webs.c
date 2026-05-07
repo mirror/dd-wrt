@@ -1481,6 +1481,7 @@ void roaming_save(webs_t wp)
 	copytonv(wp, "usteer_budget_6ghz");
 	copytonv(wp, "usteer_prefer_6ghz");
 	copytonv(wp, "usteer_prefer_he");
+	copytonv(wp, "usteer_prefer_eht");
 
 	applytake(value);
 }
