@@ -108,6 +108,8 @@ static const char *gethtmode(const char *prefix)
 		usebw = 80;
 	if (nvram_matchi(bw, 160))
 		usebw = 160;
+	if (nvram_matchi(bw, 320))
+		usebw = 320;
 	if (nvram_match(bw, "80+80"))
 		usebw = 8080;
 
@@ -119,9 +121,11 @@ static const char *gethtmode(const char *prefix)
 	     !strcmp(netmode, "ac-only") || //
 	     !strcmp(netmode, "acn-mixed") || //
 	     !strcmp(netmode, "ax-only") || //
+	     !strcmp(netmode, "be-only") || //
 	     !strcmp(netmode, "ax6-only") || //
 	     !strcmp(netmode, "ax5-only") || //
 	     !strcmp(netmode, "xacn-mixed") || //
+	     !strcmp(netmode, "bexacn-mixed") || //
 	     !strcmp(netmode, "mixed")) &&
 	    strcmp(akm, "wep")) {
 		char sb[32];
@@ -144,6 +148,9 @@ static const char *gethtmode(const char *prefix)
 			break;
 		case 160:
 			ht = "160MHz";
+			break;
+		case 320:
+			ht = "320MHz";
 			break;
 		case 20:
 		case 10:
@@ -880,6 +887,13 @@ void setupHostAP_generic_ath9k(const char *prefix, FILE *fp, int isrepeater, int
 				fprintf(fp, "ieee80211ax=0\n");
 			}
 		}
+		if (has_be(prefix)) {
+			if (strcmp(netmode, "bexacn-mixed") && //
+			    strcmp(netmode, "be-only") && //
+			    strcmp(netmode, "mixed")) {
+				fprintf(fp, "ieee80211be=0\n");
+			}
+		}
 	}
 
 	if ((!strcmp(netmode, "ng-only") || //
@@ -888,11 +902,13 @@ void setupHostAP_generic_ath9k(const char *prefix, FILE *fp, int isrepeater, int
 	     !strcmp(netmode, "n5-only") || //
 	     !strcmp(netmode, "ac-only") || //
 	     !strcmp(netmode, "ax-only") || //
+	     !strcmp(netmode, "be-only") || //
 	     !strcmp(netmode, "ax6-only") || //
 	     !strcmp(netmode, "ax5-only") || //
 	     !strcmp(netmode, "axg-only") || //
 	     !strcmp(netmode, "acn-mixed") || //
 	     !strcmp(netmode, "xacn-mixed") || //
+	     !strcmp(netmode, "bexacn-mixed") || //
 	     !strcmp(netmode, "mixed")) &&
 	    strcmp(akm, "wep") && !aoss) {
 		char sb[32];
@@ -904,6 +920,7 @@ void setupHostAP_generic_ath9k(const char *prefix, FILE *fp, int isrepeater, int
 		case 80:
 		case 8080:
 		case 160:
+		case 320:
 			ht = get_channeloffset(prefix, &iht, &channeloffset);
 			break;
 		case 20:
@@ -933,6 +950,7 @@ void setupHostAP_generic_ath9k(const char *prefix, FILE *fp, int isrepeater, int
 			}
 		}
 		switch (usebw) {
+		case 320:
 		case 160:
 			ht = "HT40+";
 			iht = 1;
@@ -1260,9 +1278,24 @@ void setupHostAP_generic_ath9k(const char *prefix, FILE *fp, int isrepeater, int
 				}
 			}
 
+			if (has_be(prefix)) {
+				if (!strcmp(netmode, "bexacn-mixed") || !strcmp(netmode, "be-only")) {
+					fprintf(fp, "ieee80211be=1\n");
+					if (!is_6ghz_freq_prefix(prefix, freq)) {
+						fprintf(fp, "ieee80211be=1\n");
+					}
+				}
+				if (!strcmp(netmode, "be-only")) {
+					fprintf(fp, "require_he=1\n");
+				}
+			}
+
 			if (!strcmp(netmode, "mixed")) {
 				if (has_ax(prefix)) {
 					fprintf(fp, "ieee80211ax=1\n");
+				}
+				if (has_be(prefix)) {
+					fprintf(fp, "ieee80211be=1\n");
 				}
 				if (!is_6ghz_freq_prefix(prefix, freq))
 					fprintf(fp, "ieee80211ac=1\n");
@@ -1271,8 +1304,9 @@ void setupHostAP_generic_ath9k(const char *prefix, FILE *fp, int isrepeater, int
 			}
 
 			if (has_ax(prefix)) {
-				if (!strcmp(netmode, "mixed") || !strcmp(netmode, "xacn-mixed") || !strcmp(netmode, "ax-only") ||
-				    !strcmp(netmode, "ax5-only") || !strcmp(netmode, "ax6-only")) {
+				if (!strcmp(netmode, "mixed") || !strcmp(netmode, "xacn-mixed") ||
+				    !strcmp(netmode, "bexacn-mixed") || !strcmp(netmode, "ax-only") ||
+				    !strcmp(netmode, "ax5-only") || !strcmp(netmode, "ax6-only") || !strcmp(netmode, "be-only")) {
 					if (nvram_match(mubf, "1")) {
 						fprintf(fp, "he_mu_beamformer=1\n");
 					}
@@ -1375,6 +1409,39 @@ void setupHostAP_generic_ath9k(const char *prefix, FILE *fp, int isrepeater, int
 					break;
 				default:
 					fprintf(fp, "he_oper_chwidth=0\n");
+					break;
+				}
+			}
+			if (has_be(prefix) &&
+			    (!strcmp(netmode, "be-only") || !strcmp(netmode, "bexacn-mixed") || !strcmp(netmode, "mixed"))) {
+				switch (usebw) {
+				case 40:
+					fprintf(fp, "eht_oper_chwidth=0\n");
+					fprintf(fp, "eht_oper_centr_freq_seg0_idx=%d\n",
+						ieee80211_mhz2ieee(prefix, freq + (10 * iht)));
+					break;
+				case 80:
+					fprintf(fp, "eht_oper_chwidth=1\n");
+					fprintf(fp, "eht_oper_centr_freq_seg0_idx%d\n",
+						ieee80211_mhz2ieee(prefix, freq + ((channeloffset * 5) * iht)));
+					break;
+				case 160:
+					fprintf(fp, "eht_oper_chwidth=2\n");
+					fprintf(fp, "eht_oper_centr_freq_seg0_idx=%d\n",
+						ieee80211_mhz2ieee(prefix, freq + ((channeloffset * 5) * iht)));
+					break;
+				case 320:
+					fprintf(fp, "eht_oper_chwidth=9\n");
+					fprintf(fp, "eht_oper_centr_freq_seg0_idx=%d\n",
+						ieee80211_mhz2ieee(prefix, freq + ((channeloffset * 5) * iht)));
+					break;
+				case 8080:
+					fprintf(fp, "eht_oper_chwidth=3\n");
+					fprintf(fp, "eht_oper_centr_freq_seg0_idx=%d\n",
+						ieee80211_mhz2ieee(prefix, freq + ((channeloffset * 5) * iht)));
+					break;
+				default:
+					fprintf(fp, "eht_oper_chwidth=0\n");
 					break;
 				}
 			}
@@ -1563,6 +1630,9 @@ void setupHostAP_generic_ath9k(const char *prefix, FILE *fp, int isrepeater, int
 		case 160:
 		case 8080:
 			fprintf(fp, "op_class=134\n");
+			break;
+		case 320:
+			fprintf(fp, "op_class=137\n");
 			break;
 		}
 		fprintf(fp, "he_6ghz_reg_pwr_type=0\n");
