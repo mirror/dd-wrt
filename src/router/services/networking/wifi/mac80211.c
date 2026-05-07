@@ -918,15 +918,15 @@ void setupHostAP_generic_ath9k(const char *prefix, FILE *fp, int isrepeater, int
 		}
 	}
 	if (has_be(prefix) {
-			if (strcmp(netmode, "bexacn-mixed") && //
-			    strcmp(netmode, "be-only") && //
-			    strcmp(netmode, "be5-only") && //
-			    strcmp(netmode, "be6-only") && //
-			    strcmp(netmode, "beax5-only") && //
-			    strcmp(netmode, "beax6-only") && //
-			    strcmp(netmode, "mixed")) {
-				fprintf(fp, "disable_mcs15_rx=%d\n", nvram_nmatch("1", "%s_disable_mcs15_rx", prefix) ? 1 : 0);
-			}
+		if (strcmp(netmode, "bexacn-mixed") && //
+		    strcmp(netmode, "be-only") && //
+		    strcmp(netmode, "be5-only") && //
+		    strcmp(netmode, "be6-only") && //
+		    strcmp(netmode, "beax5-only") && //
+		    strcmp(netmode, "beax6-only") && //
+		    strcmp(netmode, "mixed")) {
+			fprintf(fp, "disable_mcs15_rx=%d\n", nvram_default_nmatch("0", "0", "%s_allow_mcs15", prefix) ? 1 : 0);
+		}
 	}
 	if ((!strcmp(netmode, "ng-only") || //
 	     !strcmp(netmode, "na-only") || //
