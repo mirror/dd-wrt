@@ -622,6 +622,18 @@ static int mac80211_cb_stations(struct nl_msg *msg, void *data)
 		[NL80211_RATE_INFO_HE_GI] = { .type = NLA_U8 },
 		[NL80211_RATE_INFO_HE_DCM] = { .type = NLA_U8 },
 		[NL80211_RATE_INFO_HE_RU_ALLOC] = { .type = NLA_U8 },
+		[NL80211_RATE_INFO_320_MHZ_WIDTH] = { .type = NLA_FLAG },
+		[NL80211_RATE_INFO_EHT_MCS] = { .type = NLA_FLAG },
+		[NL80211_RATE_INFO_EHT_NSS] = { .type = NLA_FLAG },
+		[NL80211_RATE_INFO_EHT_GI] = { .type = NLA_FLAG },
+		[NL80211_RATE_INFO_EHT_RU_ALLOC] = { .type = NLA_FLAG },
+		[NL80211_RATE_INFO_S1G_MCS] = { .type = NLA_FLAG },
+		[NL80211_RATE_INFO_S1G_NSS] = { .type = NLA_FLAG },
+		[NL80211_RATE_INFO_1_MHZ_WIDTH] = { .type = NLA_FLAG },
+		[NL80211_RATE_INFO_2_MHZ_WIDTH] = { .type = NLA_FLAG },
+		[NL80211_RATE_INFO_4_MHZ_WIDTH] = { .type = NLA_FLAG },
+		[NL80211_RATE_INFO_8_MHZ_WIDTH] = { .type = NLA_FLAG },
+		[NL80211_RATE_INFO_16_MHZ_WIDTH] = { .type = NLA_FLAG },
 #endif
 	};
 	nla_parse(tb, NL80211_ATTR_MAX, genlmsg_attrdata(gnlh, 0), genlmsg_attrlen(gnlh, 0), NULL);
@@ -708,6 +720,10 @@ static int mac80211_cb_stations(struct nl_msg *msg, void *data)
 				mac80211_info->wci->is_160mhz = 1;
 				mac80211_info->wci->is_vht = 1;
 			}
+			if (rinfo[NL80211_RATE_INFO_320_MHZ_WIDTH]) {
+				mac80211_info->wci->is_320mhz = 1;
+				mac80211_info->wci->is_vht = 1;
+			}
 			if (rinfo[NL80211_RATE_INFO_80P80_MHZ_WIDTH]) {
 				mac80211_info->wci->is_80p80mhz = 1;
 				mac80211_info->wci->is_vht = 1;
@@ -771,6 +787,10 @@ static int mac80211_cb_stations(struct nl_msg *msg, void *data)
 			}
 			if (rinfo[NL80211_RATE_INFO_160_MHZ_WIDTH]) {
 				mac80211_info->wci->rx_is_160mhz = 1;
+				mac80211_info->wci->rx_is_vht = 1;
+			}
+			if (rinfo[NL80211_RATE_INFO_320_MHZ_WIDTH]) {
+				mac80211_info->wci->rx_is_320mhz = 1;
 				mac80211_info->wci->rx_is_vht = 1;
 			}
 			if (rinfo[NL80211_RATE_INFO_80P80_MHZ_WIDTH]) {
@@ -1702,7 +1722,8 @@ static int isinlist(struct wifi_channels *list, struct wifi_channels *freq, int 
 	int i = 0;
 	struct wifi_channels *chan;
 	while ((chan = &list[i++])->freq > 0) {
-		if ((bw == 40 && !chan->ht40) || (bw == 80 && !chan->vht80) || (bw == 160 && !chan->vht160))
+		if ((bw == 40 && !chan->ht40) || (bw == 80 && !chan->vht80) || (bw == 160 && !chan->vht160) ||
+		    (bw == 320 && !chan->eht320))
 			continue;
 		if (chan->freq == freq->freq + range && chan->band == freq->band) {
 			return 1;
@@ -1989,7 +2010,7 @@ struct wifi_channels *mac80211_get_channels(struct unl *local_unl, const char *i
 					continue;
 				regfound = 0;
 				if (max_bandwidth_mhz == 40 || max_bandwidth_mhz == 80 || max_bandwidth_mhz == 160 ||
-				    max_bandwidth_mhz == 20)
+				    max_bandwidth_mhz == 320 || max_bandwidth_mhz == 20)
 					range = 10;
 				else
 					// for 10/5mhz this should be fine
@@ -2173,6 +2194,7 @@ struct wifi_channels *mac80211_get_channels(struct unl *local_unl, const char *i
 							list[count].ht40 = true;
 							list[count].vht80 = true;
 							list[count].vht160 = true;
+							list[count].eht320 = true;
 
 							if (band->nla_type == NL80211_BAND_6GHZ && freq_mhz == 5935) {
 								list[count].luu = 0;
@@ -2201,6 +2223,17 @@ struct wifi_channels *mac80211_get_channels(struct unl *local_unl, const char *i
 								list[count].llu = 0;
 								list[count].lll = 0;
 								list[count].vht160 = false;
+							}
+							if (regmaxbw < 320 && max_bandwidth_mhz == 320) {
+								list[count].luu = 0;
+								list[count].ull = 0;
+								list[count].ulu = 0;
+								list[count].uul = 0;
+								list[count].uuu = 0;
+								list[count].lul = 0;
+								list[count].llu = 0;
+								list[count].lll = 0;
+								list[count].eht320 = false;
 							}
 							if (regmaxbw > 20 && regmaxbw >= max_bandwidth_mhz) {
 								//      fprintf(stderr, "freq %d, htrange %d, startfreq %d stopfreq %d, regmaxbw %d hw_eirp %d max_eirp %d ht40plus %d ht40minus %d\n", freq_mhz, max_bandwidth_mhz,
@@ -2825,6 +2858,33 @@ int can_vht160(const char *interface)
 	if (chan) {
 		while (chan[i].freq != -1) {
 			if (chan[i].uuu || chan[i].lll) {
+				free(chan);
+				return 1;
+			}
+			i++;
+		}
+	}
+	free(chan);
+	return 0;
+}
+
+int can_eht320(const char *interface)
+{
+	struct wifi_channels *chan;
+	int found = 0;
+	int i = 0;
+	char regdomain[32];
+	char *country;
+	if (is_ath5k(interface))
+		return (0);
+	sprintf(regdomain, "%s_regdomain", interface);
+	country = nvram_default_get(regdomain, "UNITED_STATES");
+	lock();
+	chan = mac80211_get_channels(&unl, interface, getIsoName(country), 320, 0xff, 1);
+	unlock();
+	if (chan) {
+		while (chan[i].freq != -1) {
+			if (chan[i].eht320) {
 				free(chan);
 				return 1;
 			}
