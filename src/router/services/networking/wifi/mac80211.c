@@ -1499,7 +1499,24 @@ void setupHostAP_generic_ath9k(const char *prefix, FILE *fp, int isrepeater, int
 					break;
 				case 160:
 					fprintf(fp, "eht_oper_chwidth=2\n");
-					fprintf(fp, "eht_oper_centr_freq_seg0_idx_freq=%d\n", freq + ((channeloffset * 5) * iht));
+					//					fprintf(fp, "eht_oper_centr_freq_seg0_idx_freq=%d\n", freq + ((channeloffset * 5) * iht));
+
+					int chan = ieee80211_mhz2ieee(prefix, freq);
+					if (chan <= 29)
+						fprintf(fp, "eht_oper_centr_freq_seg0_idx_freq=6025\n");
+					else if (chan <= 61)
+						fprintf(fp, "eht_oper_centr_freq_seg0_idx_freq=6185\n");
+					else if (chan <= 93)
+						fprintf(fp, "eht_oper_centr_freq_seg0_idx_freq=6345\n");
+					else if (chan <= 125)
+						fprintf(fp, "eht_oper_centr_freq_seg0_idx_freq=6505\n");
+					else if (chan <= 157)
+						fprintf(fp, "eht_oper_centr_freq_seg0_idx_freq=6665\n");
+					else if (chan <= 189)
+						fprintf(fp, "eht_oper_centr_freq_seg0_idx_freq=6825\n");
+					else if (chan <= 221)
+						fprintf(fp, "eht_oper_centr_freq_seg0_idx_freq=6985\n");
+
 					break;
 				case 320:
 					fprintf(fp, "eht_oper_chwidth=9\n");
