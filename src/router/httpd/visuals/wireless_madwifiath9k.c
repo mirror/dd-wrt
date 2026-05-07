@@ -116,6 +116,8 @@ int active_wireless_if_ath9k(webs_t wp, int argc, char_t **argv, char *ifname, i
 				ht = 2;
 			if (wc->rx_is_160mhz || wc->is_160mhz)
 				ht = 3;
+			if (wc->rx_is_320mhz || wc->is_320mhz)
+				ht = 8;
 			if (wc->rx_is_80p80mhz || wc->is_80p80mhz)
 				ht = 4;
 			if (wc->rx_is_vht || wc->is_vht)
@@ -144,13 +146,13 @@ int active_wireless_if_ath9k(webs_t wp, int argc, char_t **argv, char *ifname, i
 				ht = 5;
 			char **bwinfo;
 			char *morse[] = { "1", "2", "4", "8", "16", "2.5", "5", "10" };
-			char *std[] = { "20", "40", "80", "160", "80+80", "2.5", "5", "10" };
+			char *std[] = { "20", "40", "80", "160", "80+80", "2.5", "5", "10", "320" };
 			if (is_morse_micro(ifname))
 				bwinfo = morse;
 			else
 				bwinfo = std;
 
-			if (ht < 8 && ht >= 0)
+			if (ht < 9 && ht >= 0)
 				snprintf(info, sizeof(info), "%s%s", info, bwinfo[ht]);
 			if (sgi)
 				snprintf(info, sizeof(info), "%s%s", info, "SGI");
