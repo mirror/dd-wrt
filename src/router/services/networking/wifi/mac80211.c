@@ -1491,35 +1491,31 @@ void setupHostAP_generic_ath9k(const char *prefix, FILE *fp, int isrepeater, int
 				switch (usebw) {
 				case 40:
 					fprintf(fp, "eht_oper_chwidth=0\n");
-					fprintf(fp, "eht_oper_centr_freq_seg0_idx=%d\n",
-						ieee80211_mhz2ieee(prefix, freq + (10 * iht)));
+					fprintf(fp, "eht_oper_centr_freq_seg0_idx_freq=%d\n", freq + (10 * iht));
 					break;
 				case 80:
 					fprintf(fp, "eht_oper_chwidth=1\n");
-					fprintf(fp, "eht_oper_centr_freq_seg0_idx%d\n",
-						ieee80211_mhz2ieee(prefix, freq + ((channeloffset * 5) * iht)));
+					fprintf(fp, "eht_oper_centr_freq_seg0_idx_freq=%d\n", freq + ((channeloffset * 5) * iht));
 					break;
 				case 160:
 					fprintf(fp, "eht_oper_chwidth=2\n");
-					fprintf(fp, "eht_oper_centr_freq_seg0_idx=%d\n",
-						ieee80211_mhz2ieee(prefix, freq + ((channeloffset * 5) * iht)));
+					fprintf(fp, "eht_oper_centr_freq_seg0_idx_freq=%d\n", freq + ((channeloffset * 5) * iht));
 					break;
 				case 320:
 					fprintf(fp, "eht_oper_chwidth=9\n");
 					int chan = ieee80211_mhz2ieee(prefix, freq);
 					if (chan <= 61)
-						fprintf(fp, "eht_oper_centr_freq_seg0_idx=31\n");
+						fprintf(fp, "eht_oper_centr_freq_seg0_idx_freq=6105\n");
 					else if (chan <= 125)
-						fprintf(fp, "eht_oper_centr_freq_seg0_idx=95\n");
+						fprintf(fp, "eht_oper_centr_freq_seg0_idx_freq=6425\n");
 					else if (chan <= 189)
-						fprintf(fp, "eht_oper_centr_freq_seg0_idx=159\n");
+						fprintf(fp, "eht_oper_centr_freq_seg0_idx_freq=6745\n");
 					else if (chan <= 221)
-						fprintf(fp, "eht_oper_centr_freq_seg0_idx=191\n");
+						fprintf(fp, "eht_oper_centr_freq_seg0_idx_freq=6905\n");
 					break;
 				case 8080:
 					fprintf(fp, "eht_oper_chwidth=3\n");
-					fprintf(fp, "eht_oper_centr_freq_seg0_idx=%d\n",
-						ieee80211_mhz2ieee(prefix, freq + ((channeloffset * 5) * iht)));
+					fprintf(fp, "eht_oper_centr_freq_seg0_idx_freq=%d\n", freq + ((channeloffset * 5) * iht));
 					break;
 				default:
 					fprintf(fp, "eht_oper_chwidth=0\n");
