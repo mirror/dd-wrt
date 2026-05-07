@@ -987,7 +987,7 @@ static bool hostapd_is_usable_punct_bitmap(struct hostapd_iface *iface)
 	 * to determine channel width.
 	 */
 	u8 chan;
-	ieee80211_freq_to_channel(conf->eht_oper_centr_freq_seg0_idx_freq, &chan);
+	ieee80211_freq_to_chan(conf->eht_oper_centr_freq_seg0_idx_freq, &chan);
 	if (conf->op_class == 137) {
 		bw = 320;
 		start_chan = chan - 30;
