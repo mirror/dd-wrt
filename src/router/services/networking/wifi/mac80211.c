@@ -1488,6 +1488,7 @@ void setupHostAP_generic_ath9k(const char *prefix, FILE *fp, int isrepeater, int
 			    (!strcmp(netmode, "be-only") || !strcmp(netmode, "be6-only") || !strcmp(netmode, "be5-only") ||
 			     !strcmp(netmode, "beax6-only") || !strcmp(netmode, "beax5-only") || !strcmp(netmode, "bexacn-mixed") ||
 			     !strcmp(netmode, "mixed"))) {
+				int chan = ieee80211_mhz2ieee(prefix, freq);
 				switch (usebw) {
 				case 40:
 					fprintf(fp, "eht_oper_chwidth=0\n");
@@ -1501,7 +1502,6 @@ void setupHostAP_generic_ath9k(const char *prefix, FILE *fp, int isrepeater, int
 					fprintf(fp, "eht_oper_chwidth=2\n");
 					//					fprintf(fp, "eht_oper_centr_freq_seg0_idx_freq=%d\n", freq + ((channeloffset * 5) * iht));
 
-					int chan = ieee80211_mhz2ieee(prefix, freq);
 					if (chan <= 29)
 						fprintf(fp, "eht_oper_centr_freq_seg0_idx_freq=6025\n");
 					else if (chan <= 61)
@@ -1520,7 +1520,6 @@ void setupHostAP_generic_ath9k(const char *prefix, FILE *fp, int isrepeater, int
 					break;
 				case 320:
 					fprintf(fp, "eht_oper_chwidth=9\n");
-					int chan = ieee80211_mhz2ieee(prefix, freq);
 					if (chan <= 61)
 						fprintf(fp, "eht_oper_centr_freq_seg0_idx_freq=6105\n");
 					else if (chan <= 125)
@@ -1530,10 +1529,10 @@ void setupHostAP_generic_ath9k(const char *prefix, FILE *fp, int isrepeater, int
 					else if (chan <= 221)
 						fprintf(fp, "eht_oper_centr_freq_seg0_idx_freq=6905\n");
 					break;
-//				case 8080:
-//					fprintf(fp, "eht_oper_chwidth=3\n");
-//					fprintf(fp, "eht_oper_centr_freq_seg0_idx_freq=%d\n", freq + ((channeloffset * 5) * iht));
-//					break;
+					//				case 8080:
+					//					fprintf(fp, "eht_oper_chwidth=3\n");
+					//					fprintf(fp, "eht_oper_centr_freq_seg0_idx_freq=%d\n", freq + ((channeloffset * 5) * iht));
+					//					break;
 				default:
 					fprintf(fp, "eht_oper_chwidth=0\n");
 					break;
