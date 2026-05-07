@@ -1530,10 +1530,10 @@ void setupHostAP_generic_ath9k(const char *prefix, FILE *fp, int isrepeater, int
 					else if (chan <= 221)
 						fprintf(fp, "eht_oper_centr_freq_seg0_idx_freq=6905\n");
 					break;
-				case 8080:
-					fprintf(fp, "eht_oper_chwidth=3\n");
-					fprintf(fp, "eht_oper_centr_freq_seg0_idx_freq=%d\n", freq + ((channeloffset * 5) * iht));
-					break;
+//				case 8080:
+//					fprintf(fp, "eht_oper_chwidth=3\n");
+//					fprintf(fp, "eht_oper_centr_freq_seg0_idx_freq=%d\n", freq + ((channeloffset * 5) * iht));
+//					break;
 				default:
 					fprintf(fp, "eht_oper_chwidth=0\n");
 					break;
