@@ -917,7 +917,7 @@ void setupHostAP_generic_ath9k(const char *prefix, FILE *fp, int isrepeater, int
 			}
 		}
 	}
-	if (has_be(prefix) {
+	if (has_be(prefix)) {
 		if (strcmp(netmode, "bexacn-mixed") && //
 		    strcmp(netmode, "be-only") && //
 		    strcmp(netmode, "be5-only") && //
