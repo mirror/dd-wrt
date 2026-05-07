@@ -910,8 +910,10 @@ int hostapd_ctrl_iface_status(struct hostapd_data *hapd, char *buf,
 		ret = os_snprintf(buf + len, buflen - len,
 				  "eht_oper_chwidth=%d\n"
 				  "eht_oper_centr_freq_seg0_idx=%d\n",
+				  "eht_oper_centr_freq_seg0_idx_freq=%d\n",
 				  iface->conf->eht_oper_chwidth,
-				  iface->conf->eht_oper_centr_freq_seg0_idx);
+				  iface->conf->eht_oper_centr_freq_seg0_idx,
+				  iface->conf->eht_oper_centr_freq_seg0_idx_freq);
 		if (os_snprintf_error(buflen - len, ret))
 			return len;
 		len += ret;

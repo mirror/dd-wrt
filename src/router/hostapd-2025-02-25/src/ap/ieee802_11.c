@@ -144,6 +144,10 @@ static size_t hostapd_supp_rates(struct hostapd_data *hapd, u8 *buf)
 	if (hapd->iconf->ieee80211ax && hapd->iconf->require_he)
 		*pos++ = 0x80 | BSS_MEMBERSHIP_SELECTOR_HE_PHY;
 #endif /* CONFIG_IEEE80211AX */
+#ifdef CONFIG_IEEE80211BE
+	if (hapd->iconf->ieee80211ax && hapd->iconf->require_eht)
+		*pos++ = 0x80 | BSS_MEMBERSHIP_SELECTOR_EHT_PHY;
+#endif /* CONFIG_IEEE80211AX */
 
 #ifdef CONFIG_SAE
 	if ((hapd->conf->sae_pwe == SAE_PWE_HASH_TO_ELEMENT ||
@@ -4313,6 +4317,16 @@ static int __check_assoc_ies(struct hostapd_data *hapd, struct sta_info *sta,
 #endif /* CONFIG_IEEE80211AX */
 #ifdef CONFIG_IEEE80211BE
 	if (hapd->iconf->ieee80211be && !hapd->conf->disable_11be) {
+		if (hapd->iconf->require_eht && !(sta->flags & WLAN_STA_EHT)) {
+			hostapd_logger(hapd, sta->addr,
+				       HOSTAPD_MODULE_IEEE80211,
+				       HOSTAPD_LEVEL_INFO,
+				       "Station does not support mandatory EHT PHY - reject association");
+			return WLAN_STATUS_DENIED_HE_NOT_SUPPORTED;
+		}
+
+
+
 		resp = copy_sta_eht_capab(hapd, sta, IEEE80211_MODE_AP,
 					  elems->he_capabilities,
 					  elems->he_capabilities_len,

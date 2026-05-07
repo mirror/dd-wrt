@@ -1228,6 +1228,9 @@ struct hostapd_config {
 	bool require_he;
 	bool he_co_locate;
 #endif /* CONFIG_IEEE80211AX */
+#ifdef CONFIG_IEEE80211BE
+	bool require_eht;
+#endif
 
 	/* VHT enable/disable config from CHAN_SWITCH */
 #define CH_SWITCH_VHT_ENABLED BIT(0)
