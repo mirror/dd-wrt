@@ -694,8 +694,9 @@ static int cantkip(const char *prefix)
 	int ncapable = is_mac80211(prefix) && !is_ath5k(prefix);
 	return (strcmp(netmode, "ng-only") && strcmp(netmode, "na-only") && strcmp(netmode, "n2-only") &&
 		strcmp(netmode, "n5-only") && strcmp(netmode, "axg-only") && strcmp(netmode, "ac-only") &&
-		strcmp(netmode, "acn-mixed") && strcmp(netmode, "ax-only") && strcmp(netmode, "ax6-only") &&
-		strcmp(netmode, "ax5-only") && strcmp(netmode, "xacn-mixed") && (strcmp(netmode, "mixed") || !ncapable));
+		strcmp(netmode, "be-only") && strcmp(netmode, "acn-mixed") && strcmp(netmode, "ax-only") &&
+		strcmp(netmode, "ax6-only") && strcmp(netmode, "ax5-only") && strcmp(netmode, "xacn-mixed") &&
+		strcmp(netmode, "bexacn-mixed") && (strcmp(netmode, "mixed") || !ncapable));
 }
 
 static void show_security_prefix(webs_t wp, int argc, char_t **argv, char *prefix, int primary)
@@ -1180,6 +1181,9 @@ static void show_channel(webs_t wp, char *dev, char *prefix, int type)
 			if (nvram_nmatch("ax-only", "%s_net_mode", prefix) || nvram_nmatch("xacn-mixed", "%s_net_mode", prefix)) {
 				checkband = 56;
 			}
+			if (nvram_nmatch("be-only", "%s_net_mode", prefix) || nvram_nmatch("bexacn-mixed", "%s_net_mode", prefix)) {
+				checkband = 56;
+			}
 			if (nvram_nmatch("n5-only", "%s_net_mode", prefix) || nvram_nmatch("acn-mixed", "%s_net_mode", prefix) ||
 			    nvram_nmatch("ac-only", "%s_net_mode", prefix) || nvram_nmatch("na-only", "%s_net_mode", prefix) ||
 			    nvram_nmatch("ax5-only", "%s_net_mode", prefix) || nvram_nmatch("a-only", "%s_net_mode", prefix))
@@ -1400,6 +1404,7 @@ found:;
 				if (nvram_match(wl_net_mode, "a-only") || nvram_match(wl_net_mode, "na-only") ||
 				    nvram_match(wl_net_mode, "n5-only") || nvram_match(wl_net_mode, "ac-only") ||
 				    nvram_match(wl_net_mode, "acn-mixed") || nvram_match(wl_net_mode, "ax-only") ||
+				    nvram_match(wl_net_mode, "be-only") || nvram_match(wl_net_mode, "bexacn-mixed") ||
 				    nvram_match(wl_net_mode, "xacn-mixed") || (net_is_a && nvram_match(wl_net_mode, "mixed"))) {
 					if (chanlist[i] < 25)
 						showit = 0;
@@ -1410,7 +1415,8 @@ found:;
 
 				if ((nvram_match(wl_net_mode, "na-only") || nvram_match(wl_net_mode, "ac-only") ||
 				     nvram_match(wl_net_mode, "acn-mixed") || nvram_match(wl_net_mode, "ax-only") ||
-				     nvram_match(wl_net_mode, "xacn-mixed") || (net_is_a && nvram_match(wl_net_mode, "mixed")) ||
+				     nvram_match(wl_net_mode, "be-only") || nvram_match(wl_net_mode, "xacn-mixed") ||
+				     nvram_match(wl_net_mode, "bexacn-mixed") || (net_is_a && nvram_match(wl_net_mode, "mixed")) ||
 				     nvram_match(wl_net_mode, "n5-only")) &&
 				    nvram_matchi(wl_nbw, 40)) {
 					showit = 0;
@@ -1769,17 +1775,28 @@ static void show_netmode(webs_t wp, char *prefix)
 				websWrite(wp,
 					  "document.write(\"<option value=\\\"ax-only\\\" %s>\" + wl_basic.ax + \"</option>\");\n",
 					  nvram_match(wl_net_mode, "ax-only") ? "selected=\\\"selected\\\"" : "");
+				if (has_be(prefix)) {
+					websWrite(
+						wp,
+						"document.write(\"<option value=\\\"bexacn-mixed\\\" %s>\" + wl_basic.bexacn + \"</option>\");\n",
+						nvram_match(wl_net_mode, "bexacn-mixed") ? "selected=\\\"selected\\\"" : "");
+					websWrite(
+						wp,
+						"document.write(\"<option value=\\\"be-only\\\" %s>\" + wl_basic.be + \"</option>\");\n",
+						nvram_match(wl_net_mode, "be-only") ? "selected=\\\"selected\\\"" : "");
+				}
 			}
 			if (has_6ghz(prefix) && has_5ghz(prefix))
 				websWrite(
 					wp,
 					"document.write(\"<option value=\\\"ax5-only\\\" %s>\" + wl_basic.ax5 + \"</option>\");\n",
 					nvram_match(wl_net_mode, "ax5-only") ? "selected=\\\"selected\\\"" : "");
-			if (has_6ghz(prefix))
+			if (has_6ghz(prefix)) {
 				websWrite(
 					wp,
 					"document.write(\"<option value=\\\"ax6-only\\\" %s>\" + wl_basic.ax6 + \"</option>\");\n",
 					nvram_match(wl_net_mode, "ax6-only") ? "selected=\\\"selected\\\"" : "");
+			}
 		}
 		if (has_ad(prefix)) {
 			websWrite(wp, "document.write(\"<option value=\\\"ad-only\\\" %s>\" + wl_basic.ad + \"</option>\");\n",
@@ -1837,6 +1854,17 @@ static void show_netmode(webs_t wp, char *prefix)
 						wp,
 						"document.write(\"<option value=\\\"ax-only\\\" %s>\" + wl_basic.ax + \"</option>\");\n",
 						nvram_match(wl_net_mode, "ax-only") ? "selected=\\\"selected\\\"" : "");
+					if (has_be(prefix)) {
+						websWrite(
+							wp,
+							"document.write(\"<option value=\\\"bexacn-mixed\\\" %s>\" + wl_basic.bexacn + \"</option>\");\n",
+							nvram_match(wl_net_mode, "bexacn-mixed") ? "selected=\\\"selected\\\"" :
+												   "");
+						websWrite(
+							wp,
+							"document.write(\"<option value=\\\"be-only\\\" %s>\" + wl_basic.be + \"</option>\");\n",
+							nvram_match(wl_net_mode, "be-only") ? "selected=\\\"selected\\\"" : "");
+					}
 				}
 				if (has_6ghz(prefix) && has_5ghz(prefix))
 					websWrite(
@@ -2817,17 +2845,33 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 		sprintf(frequencies,
 			" <script type=\"text/javascript\">document.write(\"[60\"+wl_basic.ghz+\" 802.11ad]%s%s - Max Vaps(%d)\");</script>",
 			chipset ? " - " : "", chipset ? chipset : "", maxvaps);
+	} else if (has_2ghz(prefix) && has_6ghz(prefix) && has_5ghz(prefix) && has_be(prefix)) {
+		sprintf(frequencies,
+			" <script type=\"text/javascript\">document.write(\"[2.4\"+wl_basic.ghz+\"/5 \"+wl_basic.ghz+\"/6 \"+wl_basic.ghz+\"/802.11be]%s%s - Max Vaps(%d)\");</script>",
+			chipset ? " - " : "", chipset ? chipset : "", maxvaps);
 	} else if (has_2ghz(prefix) && has_6ghz(prefix) && has_5ghz(prefix) && has_ax(prefix)) {
 		sprintf(frequencies,
 			" <script type=\"text/javascript\">document.write(\"[2.4\"+wl_basic.ghz+\"/5 \"+wl_basic.ghz+\"/6 \"+wl_basic.ghz+\"/802.11ax]%s%s - Max Vaps(%d)\");</script>",
+			chipset ? " - " : "", chipset ? chipset : "", maxvaps);
+	} else if (has_6ghz(prefix) && has_5ghz(prefix) && has_be(prefix)) {
+		sprintf(frequencies,
+			" <script type=\"text/javascript\">document.write(\"[5 \"+wl_basic.ghz+\"/6 \"+wl_basic.ghz+\"/802.11be]%s%s - Max Vaps(%d)\");</script>",
 			chipset ? " - " : "", chipset ? chipset : "", maxvaps);
 	} else if (has_6ghz(prefix) && has_5ghz(prefix) && has_ax(prefix)) {
 		sprintf(frequencies,
 			" <script type=\"text/javascript\">document.write(\"[5 \"+wl_basic.ghz+\"/6 \"+wl_basic.ghz+\"/802.11ax]%s%s - Max Vaps(%d)\");</script>",
 			chipset ? " - " : "", chipset ? chipset : "", maxvaps);
+	} else if (has_6ghz(prefix) && has_be(prefix)) {
+		sprintf(frequencies,
+			" <script type=\"text/javascript\">document.write(\"[6 \"+wl_basic.ghz+\"/802.11be]%s%s - Max Vaps(%d)\");</script>",
+			chipset ? " - " : "", chipset ? chipset : "", maxvaps);
 	} else if (has_6ghz(prefix) && has_ax(prefix)) {
 		sprintf(frequencies,
 			" <script type=\"text/javascript\">document.write(\"[6 \"+wl_basic.ghz+\"/802.11ax]%s%s - Max Vaps(%d)\");</script>",
+			chipset ? " - " : "", chipset ? chipset : "", maxvaps);
+	} else if (has_2ghz(prefix) && has_5ghz(prefix) && has_be(prefix)) {
+		sprintf(frequencies,
+			" <script type=\"text/javascript\">document.write(\"[2.4\"+wl_basic.ghz+\"/5 \"+wl_basic.ghz+\"/802.11be]%s%s - Max Vaps(%d)\");</script>",
 			chipset ? " - " : "", chipset ? chipset : "", maxvaps);
 	} else if (has_2ghz(prefix) && has_5ghz(prefix) && has_ax(prefix)) {
 		sprintf(frequencies,
@@ -2836,6 +2880,10 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 	} else if (has_2ghz(prefix) && has_5ghz(prefix) && has_ac(prefix)) {
 		sprintf(frequencies,
 			" <script type=\"text/javascript\">document.write(\"[2.4\"+wl_basic.ghz+\"/5 \"+wl_basic.ghz+\"/802.11ac]%s%s - Max Vaps(%d)\");</script>",
+			chipset ? " - " : "", chipset ? chipset : "", maxvaps);
+	} else if (has_5ghz(prefix) && has_be(prefix)) {
+		sprintf(frequencies,
+			" <script type=\"text/javascript\">document.write(\"[5 \"+wl_basic.ghz+\"/802.11be]%s%s - Max Vaps(%d)\");</script>",
 			chipset ? " - " : "", chipset ? chipset : "", maxvaps);
 	} else if (has_5ghz(prefix) && has_ax(prefix)) {
 		sprintf(frequencies,
@@ -2852,6 +2900,10 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 	} else if (has_5ghz(prefix)) {
 		sprintf(frequencies,
 			" <script type=\"text/javascript\">document.write(\"[5 \"+wl_basic.ghz+\"]%s%s - Max Vaps(%d)\")</script>",
+			chipset ? " - " : "", chipset ? chipset : "", maxvaps);
+	} else if (has_2ghz(prefix) && has_be(prefix)) {
+		sprintf(frequencies,
+			" <script type=\"text/javascript\">document.write(\"[2.4 \"+wl_basic.ghz+\"/802.11be]%s%s - Max Vaps(%d)\");</script>",
 			chipset ? " - " : "", chipset ? chipset : "", maxvaps);
 	} else if (has_2ghz(prefix) && has_ax(prefix)) {
 		sprintf(frequencies,
@@ -3091,7 +3143,8 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 	if (has_ax(prefix)) {
 		char *netmode = nvram_nget("%s_net_mode", prefix);
 		if (!strcmp(netmode, "mixed") || !strcmp(netmode, "xacn-mixed") || !strcmp(netmode, "ax-only") ||
-		    !strcmp(netmode, "ax6-only") || !strcmp(netmode, "ax5-only") || !strcmp(netmode, "axg-only")) {
+		    !strcmp(netmode, "bexacn-mixed") || !strcmp(netmode, "be-only") || !strcmp(netmode, "ax6-only") ||
+		    !strcmp(netmode, "ax5-only") || !strcmp(netmode, "axg-only")) {
 			char color[32];
 			sprintf(color, "%s_bss_color", prefix);
 			showInputNum(wp, "wl_basic.bss_color", color, 3, 3, 128);
@@ -3243,8 +3296,8 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 		char *netmode = nvram_nget("%s_net_mode", prefix);
 		if ((strcmp(netmode, "mixed") && //
 		     strcmp(netmode, "ac-only") && strcmp(netmode, "acn-mixed") && strcmp(netmode, "ax-only") &&
-		     strcmp(netmode, "ax6-only") && strcmp(netmode, "ax5-only") && strcmp(netmode, "axg-only") &&
-		     strcmp(netmode, "xacn-mixed")))
+		     strcmp(netmode, "be-only") && strcmp(netmode, "ax6-only") && strcmp(netmode, "ax5-only") &&
+		     strcmp(netmode, "axg-only") && strcmp(netmode, "bexacn-mixed") && strcmp(netmode, "xacn-mixed")))
 			showRadioInv(wp, "wl_basic.ldpc", wl_ldpc);
 	}
 	if (has_uapsd(prefix)) {
@@ -3421,8 +3474,10 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 			     nvram_nmatch("n2-only", "%s_net_mode", prefix) || nvram_nmatch("mixed", "%s_net_mode", prefix) ||
 			     nvram_nmatch("n5-only", "%s_net_mode", prefix) || nvram_nmatch("ac-only", "%s_net_mode", prefix) ||
 			     nvram_nmatch("acn-mixed", "%s_net_mode", prefix) || nvram_nmatch("ax-only", "%s_net_mode", prefix) ||
-			     nvram_nmatch("ax6-only", "%s_net_mode", prefix) || nvram_nmatch("ax5-only", "%s_net_mode", prefix) ||
-			     nvram_nmatch("axg-only", "%s_net_mode", prefix) || nvram_nmatch("xacn-mixed", "%s_net_mode", prefix) ||
+			     nvram_nmatch("be-only", "%s_net_mode", prefix) || nvram_nmatch("ax6-only", "%s_net_mode", prefix) ||
+			     nvram_nmatch("ax5-only", "%s_net_mode", prefix) || nvram_nmatch("axg-only", "%s_net_mode", prefix) ||
+			     nvram_nmatch("xacn-mixed", "%s_net_mode", prefix) ||
+			     nvram_nmatch("bexacn-mixed", "%s_net_mode", prefix) ||
 			     nvram_nmatch("na-only", "%s_net_mode", prefix))) {
 				websWrite(
 					wp,
@@ -3435,8 +3490,9 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 		     nvram_nmatch("n2-only", "%s_net_mode", prefix) || nvram_nmatch("mixed", "%s_net_mode", prefix) ||
 		     nvram_nmatch("n5-only", "%s_net_mode", prefix) || nvram_nmatch("ac-only", "%s_net_mode", prefix) ||
 		     nvram_nmatch("acn-mixed", "%s_net_mode", prefix) || nvram_nmatch("ax-only", "%s_net_mode", prefix) ||
-		     nvram_nmatch("ax6-only", "%s_net_mode", prefix) || nvram_nmatch("ax5-only", "%s_net_mode", prefix) ||
-		     nvram_nmatch("axg-only", "%s_net_mode", prefix) || nvram_nmatch("xacn-mixed", "%s_net_mode", prefix) ||
+		     nvram_nmatch("be-only", "%s_net_mode", prefix) || nvram_nmatch("ax6-only", "%s_net_mode", prefix) ||
+		     nvram_nmatch("ax5-only", "%s_net_mode", prefix) || nvram_nmatch("axg-only", "%s_net_mode", prefix) ||
+		     nvram_nmatch("xacn-mixed", "%s_net_mode", prefix) || nvram_nmatch("bexacn-mixed", "%s_net_mode", prefix) ||
 		     nvram_nmatch("na-only", "%s_net_mode", prefix))) {
 			if (!is_mac80211(prefix) || is_ath5k(prefix))
 				websWrite(wp, "document.write(\"<option value=\\\"40\\\" %s >\" + share.turbo + \"</option>\");\n",
@@ -3445,8 +3501,8 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 				websWrite(wp, "document.write(\"<option value=\\\"40\\\" %s >\" + share.ht40 + \"</option>\");\n",
 					  nvram_matchi(wl_width, 40) ? "selected=\\\"selected\\\"" : "");
 		if ((is_ath11k(prefix) ||is_ath10k(prefix) || is_mvebu(prefix) || has_vht80(prefix)) && (((has_5ghz(prefix) || has_6ghz(prefix)) || (cansuperchannel(wp, prefix) && nvram_nmatch("1", "%s_turbo_qam",prefix))) && nvram_nmatch("mixed", "%s_net_mode", prefix)
-		    || nvram_nmatch("ac-only", "%s_net_mode", prefix) || nvram_nmatch("ax-only", "%s_net_mode", prefix) || nvram_nmatch("ax6-only", "%s_net_mode", prefix) || nvram_nmatch("ax5-only", "%s_net_mode", prefix) 
-		    || nvram_nmatch("acn-mixed", "%s_net_mode", prefix) || nvram_nmatch("xacn-mixed", "%s_net_mode", prefix) || (cansuperchannel(wp, prefix) && nvram_nmatch("1", "%s_turbo_qam",prefix))) {
+		    || nvram_nmatch("ac-only", "%s_net_mode", prefix) || nvram_nmatch("ax-only", "%s_net_mode", prefix) || nvram_nmatch("be-only", "%s_net_mode", prefix) || nvram_nmatch("ax6-only", "%s_net_mode", prefix) || nvram_nmatch("ax5-only", "%s_net_mode", prefix) 
+		    || nvram_nmatch("acn-mixed", "%s_net_mode", prefix) || nvram_nmatch("xacn-mixed", "%s_net_mode", prefix) || nvram_nmatch("bexacn-mixed", "%s_net_mode", prefix) || (cansuperchannel(wp, prefix) && nvram_nmatch("1", "%s_turbo_qam",prefix))) {
 				if (canvht80)
 					websWrite(
 						wp,
@@ -3772,6 +3828,7 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 		     nvram_nmatch("mixed", "%s_net_mode", prefix) || nvram_nmatch("n2-only", "%s_net_mode", prefix) ||
 		     nvram_nmatch("n5-only", "%s_net_mode", prefix) || nvram_nmatch("acn-mixed", "%s_net_mode", prefix) ||
 		     nvram_nmatch("ac-only", "%s_net_mode", prefix) || nvram_nmatch("xacn-mixed", "%s_net_mode", prefix) ||
+		     nvram_nmatch("bexacn-mixed", "%s_net_mode", prefix) || nvram_nmatch("be-only", "%s_net_mode", prefix) ||
 		     nvram_nmatch("ax-only", "%s_net_mode", prefix) || nvram_nmatch("ax6-only", "%s_net_mode", prefix) ||
 		     nvram_nmatch("ax5-only", "%s_net_mode", prefix) || nvram_nmatch("na-only", "%s_net_mode", prefix) ||
 		     nvram_nmatch("axg-only", "%s_net_mode", prefix))) {
@@ -3818,6 +3875,8 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 				     nvram_nmatch("ac-only", "%s_net_mode", prefix) ||
 				     nvram_nmatch("acn-mixed", "%s_net_mode", prefix) ||
 				     nvram_nmatch("ax-only", "%s_net_mode", prefix) ||
+				     nvram_nmatch("be-only", "%s_net_mode", prefix) ||
+				     nvram_nmatch("bexacn-mixed", "%s_net_mode", prefix) ||
 				     nvram_nmatch("ax6-only", "%s_net_mode", prefix) ||
 				     nvram_nmatch("ax5-only", "%s_net_mode", prefix) ||
 				     nvram_nmatch("xacn-mixed", "%s_net_mode", prefix))) {
@@ -4431,10 +4490,12 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 					     nvram_nmatch("ac-only", "%s_net_mode", prefix) ||
 					     nvram_nmatch("acn-mixed", "%s_net_mode", prefix) ||
 					     nvram_nmatch("ax-only", "%s_net_mode", prefix) ||
+					     nvram_nmatch("be-only", "%s_net_mode", prefix) ||
 					     nvram_nmatch("ax6-only", "%s_net_mode", prefix) ||
 					     nvram_nmatch("ax5-only", "%s_net_mode", prefix) ||
 					     nvram_nmatch("axg-only", "%s_net_mode", prefix) ||
 					     nvram_nmatch("xacn-mixed", "%s_net_mode", prefix) ||
+					     nvram_nmatch("bexacn-mixed", "%s_net_mode", prefix) ||
 					     nvram_nmatch("na-only", "%s_net_mode", prefix)))
 						websWrite(
 							wp,
@@ -4447,9 +4508,10 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 			      nvram_nmatch("n2-only", "%s_net_mode", prefix) || nvram_nmatch("mixed", "%s_net_mode", prefix) ||
 			      nvram_nmatch("n5-only", "%s_net_mode", prefix) || nvram_nmatch("ac-only", "%s_net_mode", prefix) ||
 			      nvram_nmatch("acn-mixed", "%s_net_mode", prefix) || nvram_nmatch("ax-only", "%s_net_mode", prefix) ||
-			      nvram_nmatch("ax6-only", "%s_net_mode", prefix) || nvram_nmatch("ax5-only", "%s_net_mode", prefix) ||
-			      nvram_nmatch("axg-only", "%s_net_mode", prefix) ||
+			      nvram_nmatch("be-only", "%s_net_mode", prefix) || nvram_nmatch("ax6-only", "%s_net_mode", prefix) ||
+			      nvram_nmatch("ax5-only", "%s_net_mode", prefix) || nvram_nmatch("axg-only", "%s_net_mode", prefix) ||
 			      nvram_nmatch("xacn-mixed", "%s_net_mode", prefix) ||
+			      nvram_nmatch("bexacn-mixed", "%s_net_mode", prefix) ||
 			      nvram_nmatch("na-only", "%s_net_mode", prefix)))) {
 				if (!is_mac80211(prefix) || is_ath5k(prefix))
 					websWrite(
@@ -4468,9 +4530,11 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 				     nvram_nmatch("ac-only", "%s_net_mode", prefix) ||
 				     nvram_nmatch("acn-mixed", "%s_net_mode", prefix) ||
 				     nvram_nmatch("ax-only", "%s_net_mode", prefix) ||
+				     nvram_nmatch("be-only", "%s_net_mode", prefix) ||
 				     nvram_nmatch("ax6-only", "%s_net_mode", prefix) ||
 				     nvram_nmatch("ax5-only", "%s_net_mode", prefix) ||
 				     nvram_nmatch("xacn-mixed", "%s_net_mode", prefix) ||
+				     nvram_nmatch("bexacn-mixed", "%s_net_mode", prefix) ||
 				     (cansuperchannel(wp, prefix) && nvram_nmatch("1", "%s_turbo_qam", prefix)))) {
 					if (canvht80)
 						websWrite(
@@ -4523,8 +4587,9 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 		     nvram_nmatch("mixed", "%s_net_mode", prefix) || nvram_nmatch("n2-only", "%s_net_mode", prefix) ||
 		     nvram_nmatch("n5-only", "%s_net_mode", prefix) || nvram_nmatch("ac-only", "%s_net_mode", prefix) ||
 		     nvram_nmatch("acn-mixed", "%s_net_mode", prefix) || nvram_nmatch("ax-only", "%s_net_mode", prefix) ||
-		     nvram_nmatch("ax6-only", "%s_net_mode", prefix) || nvram_nmatch("ax5-only", "%s_net_mode", prefix) ||
-		     nvram_nmatch("axg-only", "%s_net_mode", prefix) || nvram_nmatch("xacn-mixed", "%s_net_mode", prefix) ||
+		     nvram_nmatch("be-only", "%s_net_mode", prefix) || nvram_nmatch("ax6-only", "%s_net_mode", prefix) ||
+		     nvram_nmatch("ax5-only", "%s_net_mode", prefix) || nvram_nmatch("axg-only", "%s_net_mode", prefix) ||
+		     nvram_nmatch("xacn-mixed", "%s_net_mode", prefix) || nvram_nmatch("bexacn-mixed", "%s_net_mode", prefix) ||
 		     nvram_nmatch("na-only", "%s_net_mode", prefix))) {
 			show_channel(wp, prefix, prefix, 1);
 			websWrite(wp, "<div class=\"setting\">\n");
@@ -4570,6 +4635,8 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 				     nvram_nmatch("ac-only", "%s_net_mode", prefix) ||
 				     nvram_nmatch("acn-mixed", "%s_net_mode", prefix) ||
 				     nvram_nmatch("ax-only", "%s_net_mode", prefix) ||
+				     nvram_nmatch("be-only", "%s_net_mode", prefix) ||
+				     nvram_nmatch("bexacn-mixed", "%s_net_mode", prefix) ||
 				     nvram_nmatch("ax6-only", "%s_net_mode", prefix) ||
 				     nvram_nmatch("ax5-only", "%s_net_mode", prefix) ||
 				     nvram_nmatch("xacn-mixed", "%s_net_mode", prefix))) {
@@ -5098,8 +5165,9 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 	}
 	if (has_ax(prefix)) {
 		char *netmode = nvram_nget("%s_net_mode", prefix);
-		if (!strcmp(netmode, "mixed") || !strcmp(netmode, "xacn-mixed") || !strcmp(netmode, "ax-only") ||
-		    !strcmp(netmode, "ax6-only") || !strcmp(netmode, "ax5-only") || !strcmp(netmode, "axg-only")) {
+		if (!strcmp(netmode, "mixed") || !strcmp(netmode, "xacn-mixed") || !strcmp(netmode, "bexacn-mixed") ||
+		    !strcmp(netmode, "ax-only") || !strcmp(netmode, "be-only") || !strcmp(netmode, "ax6-only") ||
+		    !strcmp(netmode, "ax5-only") || !strcmp(netmode, "axg-only")) {
 			char color[32];
 			sprintf(color, "%s_bss_color", prefix);
 			showInputNum(wp, "wl_basic.bss_color", color, 3, 3, 128);
@@ -5112,8 +5180,8 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 		char *netmode = nvram_nget("%s_net_mode", prefix);
 		if ((strcmp(netmode, "mixed") && //
 		     strcmp(netmode, "ac-only") && strcmp(netmode, "acn-mixed") && strcmp(netmode, "ax-only") &&
-		     strcmp(netmode, "ax6-only") && strcmp(netmode, "ax5-only") && strcmp(netmode, "axg-only") &&
-		     strcmp(netmode, "xacn-mixed")))
+		     strcmp(netmode, "be-only") && strcmp(netmode, "ax6-only") && strcmp(netmode, "ax5-only") &&
+		     strcmp(netmode, "axg-only") && strcmp(netmode, "xacn-mixed") && strcmp(netmode, "bexacn-mixed")))
 			showRadioInv(wp, "wl_basic.ldpc", wl_ldpc);
 	}
 	if (has_uapsd(prefix)) {

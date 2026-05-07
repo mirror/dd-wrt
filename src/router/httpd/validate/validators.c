@@ -1986,6 +1986,12 @@ void convert_wl_gmode(char *value, char *prefix)
 		nvram_nseti(1, "%s_nreqd", prefix);
 		nvram_nseti(3, "%s_bss_opmode_cap_reqd", prefix);
 		nvram_nseti(1, "%s_nband", prefix);
+	} else if (!strcmp(value, "be-only")) {
+		nvram_nset(value, "%s_net_mode", prefix);
+		nvram_nseti(2, "%s_nmode", prefix);
+		nvram_nseti(1, "%s_nreqd", prefix);
+		nvram_nseti(3, "%s_bss_opmode_cap_reqd", prefix);
+		nvram_nseti(1, "%s_nband", prefix);
 	} else if (!strcmp(value, "ax6-only")) {
 		nvram_nset(value, "%s_net_mode", prefix);
 		nvram_nseti(2, "%s_nmode", prefix);
@@ -1993,6 +1999,12 @@ void convert_wl_gmode(char *value, char *prefix)
 		nvram_nseti(3, "%s_bss_opmode_cap_reqd", prefix);
 		nvram_nseti(1, "%s_nband", prefix);
 	} else if (!strcmp(value, "xacn-mixed")) {
+		nvram_nset(value, "%s_net_mode", prefix);
+		nvram_nseti(2, "%s_nmode", prefix);
+		nvram_nseti(1, "%s_nreqd", prefix);
+		nvram_nseti(2, "%s_bss_opmode_cap_reqd", prefix);
+		nvram_nseti(1, "%s_nband", prefix);
+	} else if (!strcmp(value, "bexacn-mixed")) {
 		nvram_nset(value, "%s_net_mode", prefix);
 		nvram_nseti(2, "%s_nmode", prefix);
 		nvram_nseti(1, "%s_nreqd", prefix);

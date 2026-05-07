@@ -564,8 +564,10 @@ EJ_VISIBLE void ej_get_curchannel(webs_t wp, int argc, char_t **argv)
 			if (!strcmp(netmode, "acn-mixed") || //
 			    !strcmp(netmode, "ac-only") || //
 			    !strcmp(netmode, "ax-only") || //
+			    !strcmp(netmode, "be-only") || //
 			    !strcmp(netmode, "ax5-only") || //
 			    !strcmp(netmode, "xacn-mixed") || //
+			    !strcmp(netmode, "bexacn-mixed") || //
 			    !strcmp(netmode, "mixed")) {
 				vht = "VHT";
 			}
@@ -573,12 +575,22 @@ EJ_VISIBLE void ej_get_curchannel(webs_t wp, int argc, char_t **argv)
 
 		if (has_ax(base)) {
 			if (!strcmp(netmode, "xacn-mixed") || //
+			    !strcmp(netmode, "bexacn-mixed") || //
 			    !strcmp(netmode, "ax-only") || //
+			    !strcmp(netmode, "be-only") || //
 			    !strcmp(netmode, "ax6-only") || //
 			    !strcmp(netmode, "ax5-only") || //
 			    !strcmp(netmode, "axg-only") || //
 			    !strcmp(netmode, "mixed")) {
 				vht = "HE";
+			}
+		}
+
+		if (has_be(base)) {
+			if (!strcmp(netmode, "bexacn-mixed") || //
+			    !strcmp(netmode, "be-only") || //
+			    !strcmp(netmode, "mixed")) {
+				vht = "EHT";
 			}
 		}
 

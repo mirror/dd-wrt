@@ -2059,6 +2059,8 @@ EJ_VISIBLE void ej_getwirelessnetmode(webs_t wp, int argc, char_t **argv)
 				websWrite(wp, "Capture(wl_basic.ac)");
 			if (nvram_match(netmode, "ax-only"))
 				websWrite(wp, "Capture(wl_basic.ax)");
+			if (nvram_match(netmode, "be-only"))
+				websWrite(wp, "Capture(wl_basic.be)");
 			if (nvram_match(netmode, "ax6-only"))
 				websWrite(wp, "Capture(wl_basic.ax6)");
 			if (nvram_match(netmode, "ax5-only"))
@@ -2071,6 +2073,8 @@ EJ_VISIBLE void ej_getwirelessnetmode(webs_t wp, int argc, char_t **argv)
 				websWrite(wp, "Capture(wl_basic.acn)");
 			if (nvram_match(netmode, "xacn-mixed"))
 				websWrite(wp, "Capture(wl_basic.xacn)");
+			if (nvram_match(netmode, "bexacn-mixed"))
+				websWrite(wp, "Capture(wl_basic.bexacn)");
 		}
 	}
 	websWrite(wp, "</script>&nbsp;\n");
