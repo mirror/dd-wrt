@@ -1367,6 +1367,19 @@ static inline int has_ax(const char *prefix)
 	return 0;
 }
 #endif
+#if defined(HAVE_ATH12K) || defined(HAVE_IPQ95XX)
+extern int has_be(const char *prefix);
+extern int has_eht320(const char *prefix);
+#else
+static inline int has_be(const char *prefix)
+{
+	return 0;
+}
+static inline int has_eht320(const char *prefix)
+{
+	return 0;
+}
+#endif
 #ifdef HAVE_ATH9K
 extern int is_mac80211(const char *prefix);
 extern int is_ap8x(const char *prefix);

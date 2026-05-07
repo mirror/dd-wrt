@@ -1311,6 +1311,23 @@ int has_he160(const char *interface)
 	return ret;
 	#endif
 }
+int has_eht320(const char *interface)
+{
+	return has_be(interface);
+	#if 0
+	//if vht caps do not support vht160, he160 will not work anyway. we dont need this function
+	INITVALUECACHEi(interface);
+	char *hecaps = mac80211_get_hecaps(interface);
+	if (strstr(hecaps, "HE160")) {
+		ret = 1;
+	} else {
+		ret = 0;
+	}
+	free(hecaps);
+	EXITVALUECACHE();
+	return ret;
+	#endif
+}
 #endif
 
 int has_greenfield(const char *interface)
