@@ -5999,8 +5999,8 @@ static int disable_if_6ghz(const char *prefix)
 {
 	if (has_6ghz(prefix) && !has_5ghz(prefix))
 		return 0;
-	return !has_6ghz(prefix) || !nvram_nmatch("ax6-only", "%s_net_mode", prefix) ||
-	       !nvram_nmatch("be6-only", "%s_net_mode", prefix) || !nvram_nmatch("beax6-only", "%s_net_mode", prefix);
+	return !has_6ghz(prefix) || ( !nvram_nmatch("ax6-only", "%s_net_mode", prefix) &&
+	       !nvram_nmatch("be6-only", "%s_net_mode", prefix) && !nvram_nmatch("beax6-only", "%s_net_mode", prefix));
 }
 
 static int wpaauth(const char *prefix)
