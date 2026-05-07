@@ -1258,7 +1258,8 @@ void setupHostAP_generic_ath9k(const char *prefix, FILE *fp, int isrepeater, int
 				    usebw == 8080 ? 1 : 0, nvram_default_matchi(subf, 1, DEFAULT_BF),
 				    nvram_default_matchi(mubf, 1, DEFAULT_BF));
 	cur_caps = caps;
-	if (!is_morse_micro(prefix) && (has_ac(prefix) || has_ax(prefix)) && (has_5ghz(prefix) || has_6ghz(prefix))) {
+	if (!is_morse_micro(prefix) && (has_ac(prefix) || has_ax(prefix) || has_be(prefix)) &&
+	    (has_5ghz(prefix) || has_6ghz(prefix))) {
 		if (freq >= 4000 &&
 		    (!strcmp(netmode, "mixed") || //
 		     !strcmp(netmode, "ac-only") || !strcmp(netmode, "acn-mixed") || !strcmp(netmode, "ax-only") ||
@@ -1312,10 +1313,11 @@ void setupHostAP_generic_ath9k(const char *prefix, FILE *fp, int isrepeater, int
 
 			if (has_be(prefix)) {
 				if (!strcmp(netmode, "bexacn-mixed") || !strcmp(netmode, "be-only") ||
-				    !strcmp(netmode, "be-only")) {
+				    !strcmp(netmode, "be-only") || !strcmp(netmode, "be5-only") || !strcmp(netmode, "be6-only") ||
+				    !strcmp(netmode, "beax5-only") || !strcmp(netmode, "beax6-only")) {
 					fprintf(fp, "ieee80211be=1\n");
 					if (!is_6ghz_freq_prefix(prefix, freq)) {
-						fprintf(fp, "ieee80211be=1\n");
+						fprintf(fp, "require_vht=1\n");
 					}
 				}
 				if (!strcmp(netmode, "be-only") || !strcmp(netmode, "be5-only") || !strcmp(netmode, "be6-only")) {
@@ -1323,7 +1325,6 @@ void setupHostAP_generic_ath9k(const char *prefix, FILE *fp, int isrepeater, int
 				}
 				if (!strcmp(netmode, "beax5-only") || !strcmp(netmode, "beax5-only")) {
 					fprintf(fp, "require_he=1\n");
-					fprintf(fp, "require_eht=1\n");
 				}
 			}
 
