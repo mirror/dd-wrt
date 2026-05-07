@@ -787,6 +787,18 @@ bool br_port_flag_is_set(const struct net_device *dev, unsigned long flag)
 }
 EXPORT_SYMBOL_GPL(br_port_flag_is_set);
 
+/* QCA NSS ECM support - Start */
+/* API to know if hairpin feature is enabled/disabled on this bridge port */
+bool br_is_hairpin_enabled(struct net_device *dev)
+{
+	struct net_bridge_port *port = br_port_get_check_rcu(dev);
+
+	if (likely(port))
+		return port->flags & BR_HAIRPIN_MODE;
+	return false;
+}
+EXPORT_SYMBOL_GPL(br_is_hairpin_enabled);
+
 /* br_port_dev_get()
  *      If a skb is provided, and the br_port_dev_get_hook_t hook exists,
  *      use that to try and determine the egress port for that skb.
