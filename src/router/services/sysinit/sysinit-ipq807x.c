@@ -578,7 +578,11 @@ static void load_nss(int profile, int cores, char *type)
 	insmod("udp_tunnel");
 	insmod("ip6_udp_tunnel");
 	insmod("l2tp_core");
+	insmod("l2tp_netlink");
 	insmod("l2tp_ppp");
+	insmod("l2tp_eth");
+	insmod("l2tp_ip");
+	insmod("l2tp_ip6");
 	if (!nss_disabled(0)) {
 		loadnss("qca-nss-l2tpv2", type);
 		loadnss("qca-nss-ppe-l2tp", type);
