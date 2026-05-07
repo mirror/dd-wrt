@@ -145,6 +145,7 @@ void start_usteer(void)
 		 "\"budget_5ghz\": %d," //
 		 "\"prefer_5ghz\": %s," //
 		 "\"prefer_he\": %s," //
+		 "\"prefer_eht\": %s," //
 		 "\"interfaces\": [ " //
 		 "\"br0\" " //
 		 "]," //
@@ -200,6 +201,7 @@ void start_usteer(void)
 		 nvram_default_geti("usteer_budget_5ghz", 5), //
 		 nvram_default_geti("usteer_prefer_5ghz", 0) ? "true" : "false", //
 		 nvram_default_geti("usteer_prefer_he", 0) ? "true" : "false", //
+		 nvram_default_geti("usteer_prefer_eht", 0) ? "true" : "false", //
 		 ssid_list);
 	char *cmdline;
 	int len = strlen(config);
