@@ -589,6 +589,9 @@ EJ_VISIBLE void ej_get_curchannel(webs_t wp, int argc, char_t **argv)
 		if (has_be(base)) {
 			if (!strcmp(netmode, "bexacn-mixed") || //
 			    !strcmp(netmode, "be-only") || //
+			    !strcmp(netmode, "be6-only") || //
+			    !strcmp(netmode, "beax6-only") || //
+			    !strcmp(netmode, "beax5-only") || //
 			    !strcmp(netmode, "mixed")) {
 				vht = "EHT";
 			}
