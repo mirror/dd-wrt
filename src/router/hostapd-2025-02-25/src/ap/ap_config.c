@@ -311,6 +311,8 @@ struct hostapd_config * hostapd_config_defaults(void)
 
 	hostapd_set_and_check_bw320_offset(conf, 0);
 
+	conf->disable_mcs15_rx = true;
+
 	return conf;
 }
 

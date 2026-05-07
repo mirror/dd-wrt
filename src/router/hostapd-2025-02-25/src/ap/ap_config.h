@@ -1287,6 +1287,9 @@ struct hostapd_config {
 
 	bool channel_usage;
 	bool peer_to_peer_twt;
+
+	/* Disable MCS15 Subfield in EHT operation element */
+	bool disable_mcs15_rx;
 };
 
 

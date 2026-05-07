@@ -241,6 +241,9 @@ u8 * hostapd_eid_eht_operation(struct hostapd_data *hapd, u8 *eid)
 	oper->basic_eht_mcs_nss_set[2] = 0x00;
 	oper->basic_eht_mcs_nss_set[3] = 0x00;
 
+	if (hapd->iconf->disable_mcs15_rx)
+		oper->oper_params |= EHT_OPER_MCS15_DISABLE;
+
 	if (!eht_oper_info_present)
 		return pos + elen;
 

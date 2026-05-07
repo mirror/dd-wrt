@@ -5012,6 +5012,8 @@ static int hostapd_config_fill(struct hostapd_config *conf,
 			return 1;
 	} else if (os_strcmp(buf, "mld_indicate_disabled") == 0) {
 		bss->mld_indicate_disabled = atoi(pos);
+	} else if (os_strcmp(buf, "disable_mcs15_rx") == 0) {
+		conf->disable_mcs15_rx = atoi(pos);
 #endif /* CONFIG_TESTING_OPTIONS */
 #endif /* CONFIG_IEEE80211BE */
 #ifdef CONFIG_APUP
