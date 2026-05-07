@@ -3179,6 +3179,7 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 		}
 	}
 	if (has_be(prefix)) {
+		char *netmode = nvram_nget("%s_net_mode", prefix);
 		if (!strcmp(netmode, "mixed") ||
 		    !strcmp(netmode, "bexacn-mixed") || !strcmp(netmode, "be-only") ||
 		    !strcmp(netmode, "be6-only") || !strcmp(netmode, "beax6-only") || !strcmp(netmode, "beax5-only")) {
@@ -5273,6 +5274,7 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 		}
 	}
 	if (has_be(prefix)) {
+		char *netmode = nvram_nget("%s_net_mode", prefix);
 		if (!strcmp(netmode, "mixed") ||
 		    !strcmp(netmode, "bexacn-mixed") || !strcmp(netmode, "be-only") ||
 		    !strcmp(netmode, "be6-only") || !strcmp(netmode, "beax6-only") || !strcmp(netmode, "beax5-only")) {
