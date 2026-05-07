@@ -865,6 +865,8 @@ void setupHostAP_generic_ath9k(const char *prefix, FILE *fp, int isrepeater, int
 		usebw = 80;
 	if (nvram_matchi(bw, 160))
 		usebw = 160;
+	if (nvram_matchi(bw, 320))
+		usebw = 320;
 	if (nvram_match(bw, "80+80"))
 		usebw = 8080;
 
@@ -1036,6 +1038,9 @@ void setupHostAP_generic_ath9k(const char *prefix, FILE *fp, int isrepeater, int
 				case 8080:
 					acs = mac80211autochannel(prefix, NULL, 2, 0, AUTO_FORCEVHT160);
 					break;
+					//				case 320:
+					//					acs = mac80211autochannel(prefix, NULL, 2, 0, AUTO_FORCEEHT320;
+					//					break;
 				default:
 					acs = mac80211autochannel(prefix, NULL, 2, 0, AUTO_ALL);
 				}
@@ -1238,7 +1243,7 @@ void setupHostAP_generic_ath9k(const char *prefix, FILE *fp, int isrepeater, int
 		}
 		free(caps);
 	}
-	if (is_6ghz_freq_prefix(prefix, freq))
+	if (is_6ghz_freq_prefix(prefix, freq) && ht)
 		fprintf(fp, "ht_capab=[%s]\n", ht); // must be defined, otherwise hostapd will not work
 
 	MAC80211DEBUG();
@@ -1455,6 +1460,10 @@ void setupHostAP_generic_ath9k(const char *prefix, FILE *fp, int isrepeater, int
 					fprintf(fp, "he_oper_chwidth=2\n");
 					fprintf(fp, "he_oper_centr_freq_seg0_idx_freq=%d\n", freq + ((channeloffset * 5) * iht));
 					break;
+				case 320:
+					fprintf(fp, "he_oper_chwidth=2\n");
+					fprintf(fp, "he_oper_centr_freq_seg0_idx_freq=%d\n", freq + ((channeloffset * 5) * iht));
+					break;
 				case 8080:
 					fprintf(fp, "he_oper_chwidth=3\n");
 					fprintf(fp, "he_oper_centr_freq_seg0_idx_freq=%d\n", freq + ((channeloffset * 5) * iht));
@@ -1466,7 +1475,9 @@ void setupHostAP_generic_ath9k(const char *prefix, FILE *fp, int isrepeater, int
 				}
 			}
 			if (has_be(prefix) &&
-			    (!strcmp(netmode, "be-only") || !strcmp(netmode, "bexacn-mixed") || !strcmp(netmode, "mixed"))) {
+			    (!strcmp(netmode, "be-only") || !strcmp(netmode, "be6-only") || !strcmp(netmode, "be5-only") ||
+			     !strcmp(netmode, "beax6-only") || !strcmp(netmode, "beax5-only") || !strcmp(netmode, "bexacn-mixed") ||
+			     !strcmp(netmode, "mixed"))) {
 				switch (usebw) {
 				case 40:
 					fprintf(fp, "eht_oper_chwidth=0\n");
