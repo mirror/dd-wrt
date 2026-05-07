@@ -158,18 +158,20 @@ struct cfg_item {
 		_cfg(I32, roam_scan_snr), _cfg(U32, roam_scan_tries), _cfg(U32, roam_scan_timeout), _cfg(U32, roam_scan_interval), \
 		_cfg(I32, roam_trigger_snr), _cfg(U32, roam_trigger_interval), _cfg(U32, roam_kick_delay),                         \
 		_cfg(U32, signal_diff_threshold), _cfg(U32, initial_connect_delay), _cfg(I32, budget_5ghz),                        \
-		_cfg(BOOL, prefer_5ghz), _cfg(I32, budget_6ghz), _cfg(BOOL, prefer_6ghz), _cfg(BOOL, prefer_he),                   \
-		_cfg(BOOL, load_kick_enabled), _cfg(U32, load_kick_threshold), _cfg(U32, load_kick_delay),                         \
-		_cfg(U32, load_kick_min_clients), _cfg(U32, load_kick_reason_code), _cfg(U32, band_steering_interval),             \
-		_cfg(I32, band_steering_min_snr), _cfg(U32, link_measurement_interval), _cfg(ARRAY_CB, interfaces),                \
-		_cfg(STRING_CB, node_up_script), _cfg(ARRAY_CB, event_log_types), _cfg(ARRAY_CB, ssid_list)
+		_cfg(BOOL, prefer_5ghz),_cfg(BOOL, prefer_eht), _cfg(I32, budget_6ghz), _cfg(BOOL, prefer_6ghz), \
+		_cfg(BOOL, prefer_he), _cfg(BOOL, load_kick_enabled), \
+		_cfg(U32, load_kick_threshold), _cfg(U32, load_kick_delay), _cfg(U32, load_kick_min_clients), \
+		_cfg(U32, load_kick_reason_code), _cfg(U32, band_steering_interval), _cfg(I32, band_steering_min_snr), \
+		_cfg(U32, link_measurement_interval), _cfg(ARRAY_CB, interfaces), _cfg(STRING_CB, node_up_script), \
+		_cfg(ARRAY_CB, event_log_types), \
+		_cfg(ARRAY_CB, ssid_list)
 
-enum cfg_items {
+		enum cfg_items {
 #define _cfg(_type, _name) CFG_##_name
-	__config_items,
+			__config_items,
 #undef _cfg
-	__CFG_MAX,
-};
+			__CFG_MAX,
+		};
 
 static const struct blobmsg_policy config_policy[__CFG_MAX] = {
 #define _cfg_policy(_type, _name) [CFG_##_name] = { .name = #_name, .type = BLOBMSG_TYPE_##_type }

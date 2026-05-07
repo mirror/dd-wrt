@@ -60,8 +60,7 @@ bool parse_apmsg_node(struct apmsg_node *msg, struct blob_attr *data)
 		[APMSG_NODE_RRM_NR] = { .type = BLOB_ATTR_NESTED },   [APMSG_NODE_NODE_INFO] = { .type = BLOB_ATTR_NESTED },
 		[APMSG_NODE_CHANNEL] = { .type = BLOB_ATTR_INT32 },   [APMSG_NODE_OP_CLASS] = { .type = BLOB_ATTR_INT32 },
 		[APMSG_NODE_N] = { .type = BLOB_ATTR_INT32 },	      [APMSG_NODE_VHT] = { .type = BLOB_ATTR_INT32 },
-		[APMSG_NODE_HE] = { .type = BLOB_ATTR_INT32 },
-		[APMSG_NODE_EHT] = { .type = BLOB_ATTR_INT32 },
+		[APMSG_NODE_HE] = { .type = BLOB_ATTR_INT32 },	      [APMSG_NODE_EHT] = { .type = BLOB_ATTR_INT32 },
 	};
 	struct blob_attr *tb[__APMSG_NODE_MAX];
 	struct blob_attr *cur;

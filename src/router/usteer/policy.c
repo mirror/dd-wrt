@@ -82,7 +82,7 @@ static bool below_load_threshold(struct usteer_node *node)
 	if (node->nosurvey) {
 		float load_ewma_total = 100.0 * 286.0;
 		if (node->eht == 1)
-			load_ewma_total = load_ewma_total / 300.0; 
+			load_ewma_total = load_ewma_total / 300.0;
 		else if (node->he == 1)
 			load_ewma_total = load_ewma_total / 286.0;
 		else if (node->vht == 1)
@@ -186,6 +186,7 @@ static struct sta_info *find_better_candidate(struct sta_info *si_ref, struct ue
 			ev->select_reasons = reasons;
 		}
 		int extra = config.prefer_he ? (si->node->he ? 5 : 0) : 0;
+		extra = config.prefer_eht ? (si->node->eht ? 7 : extra) : extra;
 		if (candidate) {
 			if ((is_2ghz(si->node->freq) || is_5ghz(si->node->freq)) && is_6ghz(candidate->node->freq)) {
 				if (usteer_signal_to_snr(si->node, si->signal) + config.budget_6ghz + extra >
