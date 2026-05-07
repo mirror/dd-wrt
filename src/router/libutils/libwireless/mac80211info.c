@@ -1311,6 +1311,8 @@ int has_he160(const char *interface)
 	return ret;
 	#endif
 }
+#endif
+#ifdef HAVE_ATH12K
 int has_eht320(const char *interface)
 {
 	return has_be(interface);
@@ -1329,7 +1331,6 @@ int has_eht320(const char *interface)
 	#endif
 }
 #endif
-
 int has_greenfield(const char *interface)
 {
 	INITVALUECACHEi(interface);

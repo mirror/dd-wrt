@@ -1,4 +1,3 @@
--include $(LINUXDIR)/.config
 
 CONFIG_WR941=
 CONFIG_SWCONFIG=
@@ -608,8 +607,14 @@ endif
 ifeq ($(CONFIG_ATH11K),y)
 CFLAGS += -DHAVE_ATH11K
 endif
+ifeq ($(CONFIG_ATH12K),y)
+CFLAGS += -DHAVE_ATH12K
+endif
 ifeq ($(CONFIG_IPQ6018),y)
 CFLAGS += -DHAVE_ATH11K
+endif
+ifeq ($(CONFIG_IPQ95XX),y)
+CFLAGS += -DHAVE_ATH12K
 endif
 VISOBJS += raid.o
 ifeq ($(CONFIG_RAID),y)
