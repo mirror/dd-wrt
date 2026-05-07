@@ -918,13 +918,13 @@ void setupHostAP_generic_ath9k(const char *prefix, FILE *fp, int isrepeater, int
 		}
 	}
 	if (has_be(prefix)) {
-		if (strcmp(netmode, "bexacn-mixed") && //
-		    strcmp(netmode, "be-only") && //
-		    strcmp(netmode, "be5-only") && //
-		    strcmp(netmode, "be6-only") && //
-		    strcmp(netmode, "beax5-only") && //
-		    strcmp(netmode, "beax6-only") && //
-		    strcmp(netmode, "mixed")) {
+		if (!strcmp(netmode, "bexacn-mixed") || //
+		    !strcmp(netmode, "be-only") || //
+		    !strcmp(netmode, "be5-only") || //
+		    !strcmp(netmode, "be6-only") || //
+		    !strcmp(netmode, "beax5-only") || //
+		    !strcmp(netmode, "beax6-only") || //
+		    !strcmp(netmode, "mixed")) {
 			fprintf(fp, "disable_mcs15_rx=%d\n", nvram_default_nmatch("0", "0", "%s_allow_mcs15", prefix) ? 1 : 0);
 		}
 	}
@@ -1359,7 +1359,7 @@ void setupHostAP_generic_ath9k(const char *prefix, FILE *fp, int isrepeater, int
 			}
 			if (has_be(prefix)) {
 				if (!strcmp(netmode, "be-only") || !strcmp(netmode, "be5-only") || !strcmp(netmode, "be6-only") ||
-				    !strcmp(netmode, "beax5-only") || !strcmp(netmode, "beax6-only")) {
+				    !strcmp(netmode, "beax5-only") || !strcmp(netmode, "beax6-only") || !strcmp(netmode, "mixed")) {
 					if (nvram_match(mubf, "1")) {
 						fprintf(fp, "eht_mu_beamformer=1\n");
 					}
@@ -1550,6 +1550,18 @@ void setupHostAP_generic_ath9k(const char *prefix, FILE *fp, int isrepeater, int
 	} else if (has_ad(prefix)) {
 		fprintf(fp, "hw_mode=ad\n");
 	} else if (freq < 4000) {
+		if (has_be(prefix)) {
+			if (!strcmp(netmode, "be-only") || !strcmp(netmode, "be5-only") || !strcmp(netmode, "be6-only") ||
+			    !strcmp(netmode, "beax5-only") || !strcmp(netmode, "beax6-only") || !strcmp(netmode, "mixed")) {
+				if (nvram_match(mubf, "1")) {
+					fprintf(fp, "eht_mu_beamformer=1\n");
+				}
+				if (nvram_match(subf, "1")) {
+					fprintf(fp, "eht_su_beamformer=1\n");
+					fprintf(fp, "eht_su_beamformee=1\n");
+				}
+			}
+		}
 		if (!strcmp(netmode, "b-only")) {
 			fprintf(fp, "hw_mode=b\n");
 			if (density == 1 || density == 0) {
@@ -1560,8 +1572,19 @@ void setupHostAP_generic_ath9k(const char *prefix, FILE *fp, int isrepeater, int
 				fprintf(fp, "basic_rates=110\n");
 			}
 
-		} else if (!strcmp(netmode, "mixed") || !strcmp(netmode, "axg-only")) {
+		} else if (!strcmp(netmode, "mixed") || !strcmp(netmode, "axg-only") || !strcmp(netmode, "be-only")) {
+			if (has_be(prefix)) {
+				fprintf(fp, "eht_oper_chwidth=0\n");
+				if (!strcmp(netmode, "be-only")) {
+					fprintf(fp, "require_eht=1\n");
+					fprintf(fp, "ieee80211be=1\n");
+				}
+				if (!strcmp(netmode, "mixed")) {
+					fprintf(fp, "ieee80211be=1\n");
+				}
+			}
 			if (has_ax(prefix)) {
+				fprintf(fp, "he_oper_chwidth=0\n");
 				if (!strcmp(netmode, "ax-only")) {
 					fprintf(fp, "require_he=1\n");
 				}
