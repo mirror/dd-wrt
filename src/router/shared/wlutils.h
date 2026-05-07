@@ -151,7 +151,7 @@ struct wifi_channels {
 	unsigned int no_outdoor : 1, no_indoor : 1, no_ofdm : 1, no_cck : 1, ptp_only : 1, ptmp_only : 1, passive_scan : 1,
 		no_ibss : 1, //
 		lll : 1, llu : 1, lul : 1, luu : 1, ull : 1, ulu : 1, uul : 1, uuu : 1, //
-		ht40 : 1, vht80 : 1, vht160 : 1, //
+		ht40 : 1, vht80 : 1, vht160 : 1 , eht320 : 1, //
 		dfs : 1;
 };
 
@@ -173,8 +173,8 @@ struct wifi_client_info {
 	int8_t vht_mcs;
 	int8_t rx_mcs;
 	int8_t rx_vht_mcs;
-	unsigned int is_40mhz : 1, is_80mhz : 1, is_160mhz : 1, is_80p80mhz : 1, is_ht : 1, is_vht : 1, is_short_gi : 1,
-		rx_is_40mhz : 1, rx_is_80mhz : 1, rx_is_160mhz : 1, rx_is_80p80mhz : 1, rx_is_ht : 1, rx_is_vht : 1,
+	unsigned int is_40mhz : 1, is_80mhz : 1, is_160mhz : 1 , is_320mhz : 1, is_80p80mhz : 1, is_ht : 1, is_vht : 1, is_short_gi : 1,
+		rx_is_40mhz : 1, rx_is_80mhz : 1, rx_is_160mhz : 1, rx_is_320mhz : 1, rx_is_80p80mhz : 1, rx_is_ht : 1, rx_is_vht : 1,
 		rx_is_short_gi : 1, ht40intol : 1, islzo : 1, ps : 1, rx_is_he : 1, is_he : 1;
 	uint32_t inactive_time;
 	uint32_t rx_packets;
@@ -358,10 +358,12 @@ static inline int has_6ghz(const char *prefix)
 extern int can_ht40(const char *prefix);
 extern int can_vht80(const char *prefix);
 extern int can_vht160(const char *prefix);
+extern int can_eht320(const char *prefix);
 #else
 #define can_ht40(prefix) 0
 #define can_vht80(prefix) 0
 #define can_vht160(prefix) 0
+#define can_eht320(prefix) 0
 #endif
 #ifdef HAVE_80211AC
 extern int has_beamforming(const char *prefix);
