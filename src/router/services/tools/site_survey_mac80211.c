@@ -153,7 +153,6 @@ static int cb_survey(struct nl_msg *msg, void *data)
 {
 	struct nlattr *sinfo[NL80211_SURVEY_INFO_MAX + 1];
 	int freq;
-
 	if (parse_survey(msg, sinfo))
 		goto out;
 
@@ -895,9 +894,9 @@ static int local_open_site_survey(void);
 
 void mac80211_site_survey(const char *interface)
 {
-	noise = malloc(7000 * sizeof(int));
-	active = malloc(7000 * sizeof(unsigned long long));
-	busy = malloc(7000 * sizeof(unsigned long long));
+	noise = malloc(10000 * sizeof(int));
+	active = malloc(10000 * sizeof(unsigned long long));
+	busy = malloc(10000 * sizeof(unsigned long long));
 	struct unl unl;
 	unl_genl_init(&unl, "nl80211");
 	site_survey_lists = malloc(sizeof(struct site_survey_list) * SITE_SURVEY_NUM);
