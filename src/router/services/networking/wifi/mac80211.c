@@ -1315,6 +1315,7 @@ void setupHostAP_generic_ath9k(const char *prefix, FILE *fp, int isrepeater, int
 				if (!strcmp(netmode, "bexacn-mixed") || !strcmp(netmode, "be-only") ||
 				    !strcmp(netmode, "be-only") || !strcmp(netmode, "be5-only") || !strcmp(netmode, "be6-only") ||
 				    !strcmp(netmode, "beax5-only") || !strcmp(netmode, "beax6-only")) {
+					fprintf(fp, "ieee80211ax=1\n");
 					fprintf(fp, "ieee80211be=1\n");
 					if (!is_6ghz_freq_prefix(prefix, freq)) {
 						fprintf(fp, "require_vht=1\n");
@@ -1333,6 +1334,7 @@ void setupHostAP_generic_ath9k(const char *prefix, FILE *fp, int isrepeater, int
 					fprintf(fp, "ieee80211ax=1\n");
 				}
 				if (has_be(prefix)) {
+					fprintf(fp, "ieee80211ax=1\n");
 					fprintf(fp, "ieee80211be=1\n");
 				}
 				if (!is_6ghz_freq_prefix(prefix, freq))
