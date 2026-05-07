@@ -986,9 +986,11 @@ static bool hostapd_is_usable_punct_bitmap(struct hostapd_iface *iface)
 	 * In the 6 GHz band, eht_oper_chwidth is ignored. Use operating class
 	 * to determine channel width.
 	 */
+	u8 chan;
+	ieee80211_freq_to_channel(conf->eht_oper_centr_freq_seg0_idx_freq, &chan);
 	if (conf->op_class == 137) {
 		bw = 320;
-		start_chan = conf->eht_oper_centr_freq_seg0_idx - 30;
+		start_chan = chan - 30;
 	} else {
 		switch (conf->eht_oper_chwidth) {
 		case 0:
@@ -997,11 +999,11 @@ static bool hostapd_is_usable_punct_bitmap(struct hostapd_iface *iface)
 			return false;
 		case 1:
 			bw = 80;
-			start_chan = conf->eht_oper_centr_freq_seg0_idx - 6;
+			start_chan = chan - 6 ;
 			break;
 		case 2:
 			bw = 160;
-			start_chan = conf->eht_oper_centr_freq_seg0_idx - 14;
+			start_chan = chan - 14;
 			break;
 		default:
 			return false;

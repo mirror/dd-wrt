@@ -548,6 +548,7 @@ int hostapd_set_freq_params(struct hostapd_freq_params *data,
 				data->center_freq1 = data->freq;
 		} else {
 			int freq1, freq2 = 0;
+			wpa_printf(MSG_ERROR, "center segment0 %d\n", center_segment0);
 			int bw = center_freq_to_bw_6ghz(center_segment0);
 			int opclass;
 
