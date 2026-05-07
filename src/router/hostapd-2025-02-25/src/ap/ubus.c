@@ -395,6 +395,9 @@ hostapd_bss_get_status(struct ubus_context *ctx, struct ubus_object *obj,
 #ifdef CONFIG_IEEE80211AC
 	blobmsg_add_u32(&b, "vht", hapd->iface->conf->ieee80211ac);
 #endif
+#ifdef CONFIG_IEEE80211BE
+	blobmsg_add_u32(&b, "eht", hapd->iface->conf->ieee80211be);
+#endif
 #ifdef CONFIG_IEEE80211N
 	blobmsg_add_u32(&b, "n", hapd->iface->conf->ieee80211n);
 #endif
