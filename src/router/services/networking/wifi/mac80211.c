@@ -2794,11 +2794,10 @@ void setupSupplicant_ath9k(const char *prefix, char *ssidoverride, int isadhoc)
 			}
 		}
 		if (has_be(prefix)) {
-			    ifstrcmp(netmode, "be-only") && strcmp(netmode, "be6-only") && strcmp(netmode, "beax6-only") && strcmp(netmode, "beax5-only")
-			     && strcmp(netmode, "be5-only"))
-			    {
-				    fprintf(fp, "\tdisable_eht=1\n");
-			    }
+			if (strcmp(netmode, "be-only") && strcmp(netmode, "be6-only") && strcmp(netmode, "beax6-only") &&
+			    strcmp(netmode, "beax5-only") && strcmp(netmode, "be5-only") && strcmp(netmode, "mixed")) {
+				fprintf(fp, "\tdisable_eht=1\n");
+			}
 		}
 
 		if (strcmp(netmode, "n-only") && strcmp(netmode, "n2-only") && strcmp(netmode, "ac-only") &&
