@@ -1012,6 +1012,7 @@ macro_rules! __pin_data {
                         self,
                         slot: &'__slot mut $p_type,
                     ) -> ::core::pin::Pin<&'__slot mut $p_type> {
+                        // SAFETY: TODO.
                         unsafe { ::core::pin::Pin::new_unchecked(slot) }
                     }
                 )*
@@ -1235,11 +1236,11 @@ macro_rules! __init_internal {
         // Unaligned fields will cause the compiler to emit E0793. We do not support
         // unaligned fields since `Init::__init` requires an aligned pointer; the call to
         // `ptr::write` below has the same requirement.
+        #[allow(unused_variables, unused_assignments)]
         // SAFETY:
         // - the project function does the correct field projection,
         // - the field has been initialized,
         // - the reference is only valid until the end of the initializer.
-        #[allow(unused_variables, unused_assignments)]
         let $field = $crate::macros::paste!(unsafe { $data.[< __project_ $field >](&mut (*$slot).$field) });
 
         // Create the drop guard:
@@ -1278,11 +1279,11 @@ macro_rules! __init_internal {
         // Unaligned fields will cause the compiler to emit E0793. We do not support
         // unaligned fields since `Init::__init` requires an aligned pointer; the call to
         // `ptr::write` below has the same requirement.
+        #[allow(unused_variables, unused_assignments)]
         // SAFETY:
         // - the field is not structurally pinned, since the line above must compile,
         // - the field has been initialized,
         // - the reference is only valid until the end of the initializer.
-        #[allow(unused_variables, unused_assignments)]
         let $field = unsafe { &mut (*$slot).$field };
 
         // Create the drop guard:
@@ -1366,11 +1367,11 @@ macro_rules! __init_internal {
         // Unaligned fields will cause the compiler to emit E0793. We do not support
         // unaligned fields since `Init::__init` requires an aligned pointer; the call to
         // `ptr::write` below has the same requirement.
+        #[allow(unused_variables, unused_assignments)]
         // SAFETY:
         // - the project function does the correct field projection,
         // - the field has been initialized,
         // - the reference is only valid until the end of the initializer.
-        #[allow(unused_variables, unused_assignments)]
         let $field = $crate::macros::paste!(unsafe { $data.[< __project_ $field >](&mut (*$slot).$field) });
 
         // Create the drop guard:
