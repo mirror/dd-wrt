@@ -1789,3 +1789,10 @@ void start_arch_defaults(void)
 		break;
 	}
 }
+
+
+void gpt_tool_main(int argc, char *argv[])
+{
+fprintf(stderr, "partname is %s\n", getgptpartitionbyname(argv[1], argv[2]));
+
+}

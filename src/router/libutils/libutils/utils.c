@@ -2715,6 +2715,31 @@ char *get_length_unit(void)
 	return nvram_match("feet", "1") ? "ft" : "m";
 }
 
+#if __BYTE_ORDER == __BIG_ENDIAN
+	#define cpu_to_le16(x) bswap_16(x)
+	#define cpu_to_le32(x) bswap_32(x)
+	#define cpu_to_le64(x) bswap_64(x)
+	#define le16_to_cpu(x) bswap_16(x)
+	#define le32_to_cpu(x) bswap_32(x)
+	#define le64_to_cpu(x) bswap_64(x)
+#elif __BYTE_ORDER == __LITTLE_ENDIAN
+	#define cpu_to_le16(x) (x)
+	#define cpu_to_le32(x) (x)
+	#define cpu_to_le64(x) (x)
+	#define le16_to_cpu(x) (x)
+	#define le32_to_cpu(x) (x)
+	#define le64_to_cpu(x) (x)
+#else
+	#error unknown endianness!
+#endif
+
+#define swap(a, b)                     \
+	do {                           \
+		typeof(a) __tmp = (a); \
+		(a) = (b);             \
+		(b) = __tmp;           \
+	} while (0)
+
 #define GPT_MAGIC 0x5452415020494645ULL
 
 enum {
@@ -2749,6 +2774,12 @@ typedef struct {
 	unsigned long long flags;
 	uint16_t name36[36];
 } gpt_partition;
+
+static unsigned short get_le_short(void *from)
+{
+	unsigned char *p = from;
+	return ((unsigned short)(p[1]) << 8) + (unsigned short)p[0];
+}
 
 void utf16_le_to_str(void *from, unsigned int len, char *to)
 {
@@ -2808,7 +2839,7 @@ char *getgptpartitionbyname(const char *dev, const char *name)
 	int i;
 	for (i = 0; i < n_parts; i++) {
 		char s_name[36 * 6 + 1];
-		utf16_to_str(part->name36, 72, s_name);
+		utf16_le_to_str(part->name36, 72, s_name);
 		if (!strcmp(s_name, name)) {
 			sprintf(retname, "%sp%d", i + 1);
 			free(buf);
