@@ -3519,6 +3519,9 @@ struct wifi_interface *mac80211_get_interface(char *dev)
 			case NL80211_CHAN_WIDTH_160:
 				interface->width = 160;
 				break;
+			case NL80211_CHAN_WIDTH_320:
+				interface->width = 320;
+				break;
 			case 6:
 				interface->width = 5;
 				break;

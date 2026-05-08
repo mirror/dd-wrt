@@ -1453,6 +1453,7 @@ long long wifi_getrate(char *ifname)
 				ht = 2;
 				break;
 			case 160:
+			case 320:
 				ht = 3;
 				break;
 			}
@@ -1509,6 +1510,10 @@ long long wifi_getrate(char *ifname)
 			if (vhtmcs == -1)
 				vhtmcs = 19;
 			break;
+		case 320:
+			if (vhtmcs == -1)
+				vhtmcs = 19;
+			break;
 		}
 
 		switch (interface->width) {
@@ -1525,6 +1530,17 @@ long long wifi_getrate(char *ifname)
 		case 40:
 		case 80:
 		case 160:
+			if (has_ax(physical) && !nvram_nmatch("ac-only", "%s_net_mode", physical) &&
+			    !nvram_nmatch("acn-mixed", "%s_net_mode", physical))
+				rate = HETxRate(mcs, novht ? -1 : vhtmcs, interface->width);
+			else
+				rate = VHTTxRate(mcs, novht ? -1 : vhtmcs, sgi, interface->width);
+			break;
+		case 320:
+			if (has_be(physical) && !nvram_nmatch("ac-only", "%s_net_mode", physical) &&
+			    !nvram_nmatch("ax-only", "%s_net_mode", physical) &&
+			    !nvram_nmatch("acn-mixed", "%s_net_mode", physical))
+				rate = EHTTxRate(mcs, novht ? -1 : vhtmcs, interface->width);
 			if (has_ax(physical) && !nvram_nmatch("ac-only", "%s_net_mode", physical) &&
 			    !nvram_nmatch("acn-mixed", "%s_net_mode", physical))
 				rate = HETxRate(mcs, novht ? -1 : vhtmcs, interface->width);
@@ -4026,6 +4042,96 @@ static int HTtoVHTindex(int mcs)
 	if (mcs < 64)
 		return mcs + 16;
 	return 0;
+}
+
+int EHTTxRate(unsigned int mcs, unsigned int vhtmcs, unsigned int bw)
+{
+#define SCALE 6144
+	static const unsigned int mcs_divisors[16] = {
+		102399, /* 16.666666... */
+		51201, /*  8.333333... */
+		34134, /*  5.555555... */
+		25599, /*  4.166666... */
+		17067, /*  2.777777... */
+		12801, /*  2.083333... */
+		11377, /*  1.851725... */
+		10239, /*  1.666666... */
+		8532, /*  1.388888... */
+		7680, /*  1.250000... */
+		6828, /*  1.111111... */
+		6144, /*  1.000000... */
+		5690, /*  0.926106... */
+		5120, /*  0.833333... */
+		409600, /* 66.666666... */
+		204800, /* 33.333333... */
+	};
+	static const unsigned int rates_996[3] = { 480388888, 453700000, 408333333 };
+	static const unsigned int rates_484[3] = { 229411111, 216666666, 195000000 };
+	static const unsigned int rates_242[3] = { 114711111, 108333333, 97500000 };
+	static const unsigned int rates_106[3] = { 40000000, 37777777, 34000000 };
+	static const unsigned int rates_52[3] = { 18820000, 17777777, 16000000 };
+	static const unsigned int rates_26[3] = { 9411111, 8888888, 8000000 };
+	unsigned long long tmp;
+	unsigned int result;
+
+	if (mcs > 15)
+		return 0;
+
+	/* Bandwidth checks for MCS 14 */
+	if (mcs == 14) {
+		if (bw != 80 && bw != 160 && bw != 320) {
+			return 0;
+		}
+	}
+	int sgi = 0;
+	if (bw == 320)
+		result = 4 * rates_996[sgi];
+	else if (bw == 160)
+		result = 2 * rates_996[sgi];
+	else if (bw == 80)
+		result = rates_996[sgi];
+	else if (bw == 40)
+		result = rates_484[sgi];
+	else if (bw == 20)
+		result = rates_242[sgi];
+
+	int nss = 8;
+	if (mcs < 70) {
+		nss = 7;
+	}
+	if (mcs < 60) {
+		nss = 6;
+	}
+	if (mcs < 50) {
+		nss = 5;
+	}
+	if (mcs < 40) {
+		nss = 4;
+	}
+	if (mcs < 30) {
+		nss = 3;
+	}
+	if (mcs < 20) {
+		nss = 2;
+	}
+	if (mcs < 10) {
+		nss = 1;
+	}
+	mcs /= nss;
+	mcs += 2;
+
+	/* now scale to the appropriate MCS */
+	tmp = result;
+	tmp *= SCALE;
+	tmp /= mcs_divisors[mcs];
+
+	/* and take NSS */
+	tmp *= nss;
+	tmp /= 8;
+
+	result = tmp;
+
+	return result / 100;
 }
 
 int HETxRate(unsigned int mcs, unsigned int vhtmcs, unsigned int bw)
