@@ -366,9 +366,6 @@ int br_add_interface(const char *br, const char *dev)
 	sprintf(netmask, "%s_netmask", dev);
 	sprintf(hwaddr, "%s_hwaddr", dev);
 
-	if (strncmp(dev, "wl", 2) != 0) { // this is not an ethernet driver
-		eval("ifconfig", dev, "down"); //fixup for some ethernet drivers
-	}
 	if (!nvram_match(hwaddr, ""))
 		set_hwaddr(dev, nvram_safe_get(hwaddr));
 	eval("ifconfig", dev, "txqueuelen", getTXQ(dev));
