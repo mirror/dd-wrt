@@ -1541,7 +1541,7 @@ long long wifi_getrate(char *ifname)
 			    !nvram_nmatch("ax-only", "%s_net_mode", physical) &&
 			    !nvram_nmatch("acn-mixed", "%s_net_mode", physical))
 				rate = EHTTxRate(mcs, novht ? -1 : vhtmcs, interface->width);
-			if (has_ax(physical) && !nvram_nmatch("ac-only", "%s_net_mode", physical) &&
+			else if (has_ax(physical) && !nvram_nmatch("ac-only", "%s_net_mode", physical) &&
 			    !nvram_nmatch("acn-mixed", "%s_net_mode", physical))
 				rate = HETxRate(mcs, novht ? -1 : vhtmcs, interface->width);
 			else
