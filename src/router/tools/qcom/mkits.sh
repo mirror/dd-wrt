@@ -96,7 +96,7 @@ fi
 if [ -n "${DTB}" ]; then
 	FDT_NODE="
 		fdt${REFERENCE_CHAR}$FDTNUM {
-			description = \"${ARCH_UPPER} OpenWrt ${DEVICE} device tree blob\";
+			description = \"${ARCH_UPPER} DD-WRT ${DEVICE} device tree blob\";
 			${COMPATIBLE_PROP}
 			data = /incbin/(\"${DTB}\");
 			type = \"flat_dt\";
@@ -117,7 +117,7 @@ fi
 if [ -n "${INITRD}" ]; then
 	INITRD_NODE="
 		initrd${REFERENCE_CHAR}$INITRDNUM {
-			description = \"${ARCH_UPPER} OpenWrt ${DEVICE} initrd\";
+			description = \"${ARCH_UPPER} DD-WRT ${DEVICE} initrd\";
 			${COMPATIBLE_PROP}
 			data = /incbin/(\"${INITRD}\");
 			type = \"ramdisk\";
@@ -139,7 +139,7 @@ if [ -n "${ROOTFS}" ]; then
 	dd if="${ROOTFS}" of="${ROOTFS}.pagesync" bs=4096 conv=sync
 	ROOTFS_NODE="
 		rootfs${REFERENCE_CHAR}$ROOTFSNUM {
-			description = \"${ARCH_UPPER} OpenWrt ${DEVICE} rootfs\";
+			description = \"${ARCH_UPPER} DD-WRT ${DEVICE} rootfs\";
 			${COMPATIBLE_PROP}
 			data = /incbin/(\"${ROOTFS}.pagesync\");
 			type = \"filesystem\";
@@ -168,7 +168,7 @@ OVCONFIGS=""
 	FDTOVERLAY_NODE="$FDTOVERLAY_NODE
 
 		$ovnode {
-			description = \"${ARCH_UPPER} OpenWrt ${DEVICE} device tree overlay $ovname\";
+			description = \"${ARCH_UPPER} DD-WRT ${DEVICE} device tree overlay $ovname\";
 			${COMPATIBLE_PROP}
 			data = /incbin/(\"${overlay_blob}\");
 			type = \"flat_dt\";
@@ -185,7 +185,7 @@ OVCONFIGS=""
 	OVCONFIGS="$OVCONFIGS
 
 		$ovname {
-			description = \"OpenWrt ${DEVICE} overlay $ovname\";
+			description = \"DD-WRT ${DEVICE} overlay $ovname\";
 			fdt = \"$ovnode\";
 			${COMPATIBLE_PROP}
 		};
@@ -196,12 +196,12 @@ done
 DATA="/dts-v1/;
 
 / {
-	description = \"${ARCH_UPPER} OpenWrt FIT (Flattened Image Tree)\";
+	description = \"${ARCH_UPPER} DD-WRT FIT (Flattened Image Tree)\";
 	#address-cells = <1>;
 
 	images {
 		kernel${REFERENCE_CHAR}1 {
-			description = \"${ARCH_UPPER} OpenWrt Linux-${VERSION}\";
+			description = \"${ARCH_UPPER} DD-WRT Linux-${VERSION}\";
 			data = /incbin/(\"${KERNEL}\");
 			type = \"kernel\";
 			arch = \"${ARCH}\";
@@ -225,7 +225,7 @@ ${ROOTFS_NODE}
 	configurations {
 		default = \"${CONFIG}\";
 		${CONFIG} {
-			description = \"OpenWrt ${DEVICE}\";
+			description = \"DD-WRT ${DEVICE}\";
 			kernel = \"kernel${REFERENCE_CHAR}1\";
 			${FDT_PROP}
 			${LOADABLES:+loadables = ${LOADABLES};}

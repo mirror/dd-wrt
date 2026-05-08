@@ -33,7 +33,7 @@ echo "\
 /dts-v1/;
 
 / {
-	description = \"OpenWrt factory image\";
+	description = \"DD-WRT factory image\";
 	#address-cells = <1>;
 
 	images {" > ${OUTPUT}
