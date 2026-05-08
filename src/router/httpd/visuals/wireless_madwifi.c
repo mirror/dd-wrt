@@ -498,7 +498,7 @@ static int can_not_scan(char *prefix)
 	if (channel >= 0 && channel < 1000) {
 		struct wifi_interface *interface = wifi_getfreq(base);
 		if (interface)
-			return is_6ghz_freq(interface->freq);
+			return is_6ghz_freq(interface->freq) && is_ath11k(prefix);
 		else
 			return 0;
 	} else
