@@ -2750,6 +2750,38 @@ typedef struct {
 	uint16_t name36[36];
 } gpt_partition;
 
+void utf16_le_to_str(void *from, unsigned int len, char *to)
+{
+	unsigned short *p = (unsigned short *)from;
+	unsigned short *p_end;
+	unsigned char *q = (unsigned char *)to;
+	unsigned short c;
+
+	if (len)
+		p_end = (unsigned short *)(((unsigned char *)from) + len);
+	else
+		p_end = NULL;
+
+	while (p_end == NULL || p < p_end) {
+		c = get_le_short(p);
+		if (c == 0)
+			break;
+		p++; /* advance 2 bytes */
+
+		if (c >= 127 || c < 32) {
+			*q++ = '<';
+			*q++ = "0123456789ABCDEF"[c >> 12];
+			*q++ = "0123456789ABCDEF"[(c >> 8) & 15];
+			*q++ = "0123456789ABCDEF"[(c >> 4) & 15];
+			*q++ = "0123456789ABCDEF"[c & 15];
+			*q++ = '>';
+		} else {
+			*q++ = (unsigned char)c;
+		}
+	}
+	*q = 0;
+}
+
 char *getgptpartitionbyname(const char *dev, const char *name)
 {
 	static char retname[128];
@@ -2775,7 +2807,9 @@ char *getgptpartitionbyname(const char *dev, const char *name)
 	fclose(in);
 	int i;
 	for (i = 0; i < n_parts; i++) {
-		if (!strcmp(part->name36, name)) {
+		char s_name[36 * 6 + 1];
+		utf16_to_str(part->name36, 72, s_name);
+		if (!strcmp(s_name, name)) {
 			sprintf(retname, "%sp%d", i + 1);
 			free(buf);
 			return retname;
