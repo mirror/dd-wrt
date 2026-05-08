@@ -2814,9 +2814,8 @@ void utf16_le_to_str(void *from, unsigned int len, char *to)
 	*q = 0;
 }
 
-char *getgptpartitionbyname(const char *dev, const char *name)
+char *getgptpartitionbyname_safe(char *retname, const char *dev, const char *name)
 {
-	static char retname[128];
 	gpt_header header;
 	gpt_partition *part;
 	unsigned char *buf;
@@ -2851,4 +2850,11 @@ char *getgptpartitionbyname(const char *dev, const char *name)
 	}
 	free(buf);
 	return NULL;
+}
+
+
+char *getgptpartitionbyname(const char *dev, const char *name)
+{
+	static char retname[128];
+	return getgptpartitionbyname_safe(retname, dev, name);;
 }

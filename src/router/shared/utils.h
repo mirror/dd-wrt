@@ -1828,6 +1828,7 @@ char *get_length_unit(void);
 char *get_temperature_unit(void);
 int calc_cpuspeed(void);
 char *getgptpartitionbyname(const char *dev, const char *name);
+char *getgptpartitionbyname_safe(char *retbuf, const char *dev, const char *name);
 
 long long getfreespace(const char *path);
 #define ETHER_ADDR_STR_LEN 18 /* 18-bytes of Ethernet address buffer length */
