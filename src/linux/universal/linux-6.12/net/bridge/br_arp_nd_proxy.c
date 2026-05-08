@@ -199,11 +199,12 @@ void br_do_proxy_suppress_arp(struct sk_buff *skb, struct net_bridge *br,
 
 		f = br_fdb_find_rcu(br, n->ha, vid);
 		if (f) {
+			const struct net_bridge_port *dst = READ_ONCE(f->dst);
 			bool replied = false;
 
 			if ((p && (p->flags & BR_PROXYARP)) ||
-			    (f->dst && (f->dst->flags & BR_PROXYARP_WIFI)) ||
-			    br_is_neigh_suppress_enabled(f->dst, vid)) {
+			    (dst && (dst->flags & BR_PROXYARP_WIFI)) ||
+			    br_is_neigh_suppress_enabled(dst, vid)) {
 				replied = true;
 				if (!memcmp(n->ha, sha, dev->addr_len))
 					replied = false;
@@ -465,9 +466,10 @@ void br_do_suppress_nd(struct sk_buff *skb, struct net_bridge *br,
 
 		f = br_fdb_find_rcu(br, n->ha, vid);
 		if (f) {
+			const struct net_bridge_port *dst = READ_ONCE(f->dst);
 			bool replied = false;
 
-			if (br_is_neigh_suppress_enabled(f->dst, vid)) {
+			if (br_is_neigh_suppress_enabled(dst, vid)) {
 				if (vid != 0)
 					br_nd_send(br, p, skb, n,
 						   skb->vlan_proto,
