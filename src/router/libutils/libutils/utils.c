@@ -2714,3 +2714,73 @@ char *get_length_unit(void)
 {
 	return nvram_match("feet", "1") ? "ft" : "m";
 }
+
+#define GPT_MAGIC 0x5452415020494645ULL
+
+enum {
+	LEGACY_GPT_TYPE = 0xee,
+	GPT_MAX_PARTS = 256,
+	GPT_MAX_PART_ENTRY_LEN = 4096,
+	GUID_LEN = 16,
+};
+
+typedef struct {
+	unsigned long long magic;
+	unsigned int revision;
+	unsigned int hdr_size;
+	unsigned int hdr_crc32;
+	unsigned int reserved;
+	unsigned long long current_lba;
+	unsigned long long backup_lba;
+	unsigned long long first_usable_lba;
+	unsigned long long last_usable_lba;
+	unsigned char disk_guid[GUID_LEN];
+	unsigned long long first_part_lba;
+	unsigned int n_parts;
+	unsigned int part_entry_len;
+	unsigned int part_array_crc32;
+} gpt_header;
+
+typedef struct {
+	uint8_t type_guid[GUID_LEN];
+	uint8_t part_guid[GUID_LEN];
+	unsigned long long lba_start;
+	unsigned long long lba_end;
+	unsigned long long flags;
+	uint16_t name36[36];
+} gpt_partition;
+
+char *getgptpartitionbyname(const char *dev, const char *name)
+{
+	static char retname[128];
+	gpt_header header;
+	gpt_partition *part;
+	unsigned char *buf;
+	FILE *in = fopen(dev, "rb");
+	if (!in)
+		return NULL;
+	fseeko(in, 512, SEEK_SET);
+	fread(&header, sizeof(header), 1, in);
+	if (header.magic != le64_to_cpu(GPT_MAGIC)) {
+		fclose(in);
+		return NULL;
+	}
+
+	fseeko(in, 512 * le64_to_cpu(header.first_part_lba), SEEK_SET);
+	unsigned int n_parts;
+	unsigned int part_entry_len;
+
+	buf = malloc(le32_to_cpu(header.n_parts) * le32_to_cpu(header.part_entry_len));
+	fread(buf, le32_to_cpu(header.n_parts) * le32_to_cpu(header.part_entry_len), 1, in);
+	fclose(in);
+	int i;
+	for (i = 0; i < n_parts; i++) {
+		if (!strcmp(part->name36, name)) {
+			sprintf(retname, "%sp%d", i + 1);
+			free(buf);
+			return retname;
+		}
+	}
+	free(buf);
+	return NULL;
+}
