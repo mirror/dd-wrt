@@ -107,7 +107,7 @@ static char *prot_short_str[NDPI_MAX_NUM_STATIC_BITMAP+1] = {
 	"icecast",
 	"cpha",
 	"iqiyi",
-	"zattoo",
+	"reserved_free",
 	"yandex_market",
 	"yandex_disk",
 	"discord",
@@ -522,6 +522,11 @@ static char *prot_short_str[NDPI_MAX_NUM_STATIC_BITMAP+1] = {
 	"akamai",
 	"json",
 	"msgpack",
+	"github_copilot",
+	"github_packages",
+	"github_actions",
+	"youtube_kids",
+	"sbe",
 	NULL,
 };
 
