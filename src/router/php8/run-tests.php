@@ -304,6 +304,7 @@ function main(): void
         'zend.exception_ignore_args=0',
         'zend.exception_string_param_max_len=15',
         'short_open_tag=0',
+        'date.timezone=UTC',
     ];
 
     $no_file_cache = '-d opcache.file_cache= -d opcache.file_cache_only=0';
@@ -601,7 +602,7 @@ function main(): void
                     $show_progress = false;
                     break;
                 case '--version':
-                    echo '$Id: 634beffa533ca87f6263ed451b8d1b0e38a45ba8 $' . "\n";
+                    echo '$Id: 5e85fd8a0b3006112b140d6d9002184014ff1da5 $' . "\n";
                     exit(1);
 
                 default:

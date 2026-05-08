@@ -38,7 +38,7 @@ ZEND_DECLARE_MODULE_GLOBALS(sqlite3)
 static PHP_GINIT_FUNCTION(sqlite3);
 static int php_sqlite3_authorizer(void *autharg, int action, const char *arg1, const char *arg2, const char *arg3, const char *arg4);
 static void sqlite3_param_dtor(zval *data);
-static int php_sqlite3_compare_stmt_free(php_sqlite3_stmt **stmt_obj_ptr, sqlite3_stmt *statement);
+static int php_sqlite3_compare_stmt_free(php_sqlite3_stmt **stmt_obj_ptr, php_sqlite3_stmt *statement);
 static zend_always_inline void php_sqlite3_fetch_one(int n_cols, php_sqlite3_result *result_obj, zend_long mode, zval *result);
 
 #define SQLITE3_CHECK_INITIALIZED(db_obj, member, class_name) \
@@ -2145,7 +2145,7 @@ PHP_METHOD(SQLite3Result, finalize)
 
 	/* We need to finalize an internal statement */
 	if (!result_obj->is_prepared_statement) {
-		zend_llist_del_element(&(result_obj->db_obj->free_list), &result_obj->stmt_obj,
+		zend_llist_del_element(&(result_obj->db_obj->free_list), result_obj->stmt_obj,
 			(int (*)(void *, void *)) php_sqlite3_compare_stmt_free);
 	} else {
 		sqlite3_reset(result_obj->stmt_obj->stmt);
@@ -2260,9 +2260,9 @@ static void php_sqlite3_free_list_dtor(void **item)
 }
 /* }}} */
 
-static int php_sqlite3_compare_stmt_free(php_sqlite3_stmt **stmt_obj_ptr, sqlite3_stmt *statement ) /* {{{ */
+static int php_sqlite3_compare_stmt_free(php_sqlite3_stmt **stmt_obj_ptr, php_sqlite3_stmt *statement ) /* {{{ */
 {
-	return ((*stmt_obj_ptr)->initialised && statement == (*stmt_obj_ptr)->stmt);
+	return ((*stmt_obj_ptr)->initialised && statement == *stmt_obj_ptr);
 }
 /* }}} */
 
@@ -2376,7 +2376,7 @@ static void php_sqlite3_stmt_object_free_storage(zend_object *object) /* {{{ */
 	}
 
 	if (intern->initialised) {
-		zend_llist_del_element(&(intern->db_obj->free_list), intern->stmt,
+		zend_llist_del_element(&(intern->db_obj->free_list), intern,
 			(int (*)(void *, void *)) php_sqlite3_compare_stmt_free);
 	}
 

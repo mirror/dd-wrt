@@ -1934,6 +1934,9 @@ static void zend_do_extended_stmt(znode* result) /* {{{ */
 
 	opline->opcode = ZEND_EXT_STMT;
 	if (result) {
+		if (result->op_type == IS_CONST) {
+			Z_TRY_ADDREF(result->u.constant);
+		}
 		SET_NODE(opline->op1, result);
 	}
 }
@@ -2179,7 +2182,7 @@ ZEND_API size_t zend_dirname(char *path, size_t len)
 	/* Note that on Win32 CWD is per drive (heritage from CP/M).
 	 * This means dirname("c:foo") maps to "c:." or "c:" - which means CWD on C: drive.
 	 */
-	if ((2 <= len) && isalpha((int)((unsigned char *)path)[0]) && (':' == path[1])) {
+	if ((2 <= len) && isalpha((unsigned char)path[0]) && (':' == path[1])) {
 		/* Skip over the drive spec (if any) so as not to change */
 		path += 2;
 		len_adjust += 2;

@@ -874,6 +874,7 @@ void *zend_jit_snapshot_handler(ir_ctx *ctx, ir_ref snapshot_ref, ir_insn *snaps
 							addr = (void*)zend_jit_trace_get_exit_addr(exit_point);
 							exit_flags &= ~ZEND_JIT_EXIT_FIXED;
 						}
+						t->stack_map[t->exit_info[exit_point].stack_offset + var].reg = ZREG_NONE;
 						t->stack_map[t->exit_info[exit_point].stack_offset + var].flags = ZREG_TYPE_ONLY;
 					}
 				} else if (!(exit_flags & ZEND_JIT_EXIT_FIXED)) {
@@ -3966,11 +3967,12 @@ static int zend_jit_cond_jmp(zend_jit_ctx *jit, const zend_op *next_opline, int 
 	return 1;
 }
 
-static int zend_jit_set_cond(zend_jit_ctx *jit, const zend_op *next_opline, uint32_t var)
+static int zend_jit_set_cond(zend_jit_ctx *jit, const zend_op *opline, const zend_op *next_opline, uint32_t var)
 {
 	ir_ref ref;
 
-	ref = ir_ADD_U32(ir_ZEXT_U32(jit_CMP_IP(jit, IR_EQ, next_opline)), ir_CONST_U32(IS_FALSE));
+	ir_op op = (opline->result_type & IS_SMART_BRANCH_JMPZ) ? IR_EQ : IR_NE;
+	ref = ir_ADD_U32(ir_ZEXT_U32(jit_CMP_IP(jit, op, next_opline)), ir_CONST_U32(IS_FALSE));
 
 	// EX_VAR(var) = ...
 	ir_STORE(ir_ADD_OFFSET(jit_FP(jit), var + offsetof(zval, u1.type_info)), ref);

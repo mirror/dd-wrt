@@ -2132,7 +2132,7 @@ static void dom_relink_ns_decls_element(HashTable *links, xmlNodePtr node)
 
 				ns->_private = attr;
 				if (attr->prev) {
-					attr->prev = attr->next;
+					attr->prev->next = attr->next;
 				} else {
 					node->properties = attr->next;
 				}
@@ -2263,7 +2263,11 @@ static void dom_canonicalization(INTERNAL_FUNCTION_PARAMETERS, int mode) /* {{{ 
 		}
 
 		zend_hash_init(&links, 0, NULL, NULL, false);
-		dom_relink_ns_decls(&links, xmlDocGetRootElement(docp));
+		xmlNodePtr root_element = xmlDocGetRootElement(docp);
+
+		if (root_element) {
+			dom_relink_ns_decls(&links, root_element);
+		}
 	} else if (!docp) {
 		/* Note: not triggerable with modern DOM */
 		zend_throw_error(NULL, "Node must be associated with a document");

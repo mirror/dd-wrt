@@ -1,6 +1,122 @@
 PHP                                                                        NEWS
 |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
-09 Apr 2026, PHP 8.5.5
+07 May 2026, PHP 8.5.6
+
+- Core:
+  . Fixed bug GH-19983 (GC assertion failure with fibers, generators and
+    destructors). (iliaal)
+  . Fixed ZEND_API mismatch on zend_ce_closure forward decl for Windows+Clang.
+    (henderkes)
+  . Fixed bug GH-21504 (Incorrect RC-handling for ZEND_EXT_STMT op1). (ilutov)
+  . Fixed bug GH-21478 (Forward property operations to real instance for
+    initialized lazy proxies). (iliaal)
+  . Fixed bug GH-21605 (Missing addref for Countable::count()). (ilutov)
+  . Fixed bug GH-21699 (Assertion failure in shutdown_executor when resolving
+    self::/parent::/static:: callables if the error handler throws). (macoaure)
+  . Fixed bug GH-21603 (Missing addref for __unset). (ilutov)
+  . Fixed bug GH-21760 (Trait with class constant name conflict against
+    enum case causes SEGV). (Pratik Bhujel)
+
+- CLI:
+  . Fixed bug GH-21754 (`--rf` command line option with a method triggers
+    ext/reflection deprecation warnings). (DanielEScherzer)
+
+- Curl:
+  . Add support for brotli and zstd on Windows. (Shivam Mathur)
+
+- DOM:
+  . Fixed GHSA-4jhr-8w89-j733 and GH-21566 (Dom\XMLDocument::C14N() emits
+    duplicate xmlns declarations after setAttributeNS()). (CVE-2026-7263)
+    (David Carlier)
+
+- FPM:
+  . Fixed GHSA-7qg2-v9fj-4mwv (XSS within status endpoint). (CVE-2026-6735)
+    (Jakub Zelenka)
+
+- Iconv:
+  . Fixed bug GH-17399 (iconv memory leak on bailout). (iliaal)
+
+- Lexbor:
+  . Upgrade to lexbor v2.7.0. (CVE-2026-29078, CVE-2026-29079)
+    (ndossche, ilutov)
+
+- MBString:
+  . Fixed GHSA-wm6j-2649-pv75 (Null pointer dereference in
+    php_mb_check_encoding() via mb_ereg_search_init()). (CVE-2026-7259)
+    (vi3tL0u1s)
+  . Fixed GHSA-74r9-qxhc-fx53 (Out-of-bounds access in mbfl_name2encoding_ex()).
+    (CVE-2026-6104) (ilutov)
+
+- Opcache:
+  . Fixed bug GH-21158 (JIT: Assertion jit->ra[var].flags & (1<<0) failed in
+    zend_jit_use_reg). (Arnaud)
+  . Fixed bug GH-21593 (Borked function JIT JMPNZ smart branch). (ilutov)
+  . Fixed bug GH-21460 (COND optimization regression). (Dmitry, Arnaud)
+  . Fixed faulty returns out of zend_try block in zend_jit_trace(). (ilutov)
+
+- OpenSSL:
+  . Fix memory leak regression in openssl_pbkdf2(). (ndossche)
+  . Fix a bunch of memory leaks and crashes on edge cases. (ndossche)
+
+- PDO_Firebird:
+  . Fixed GHSA-w476-322c-wpvm (SQL injection via NUL bytes in quoted strings).
+    (CVE-2025-14179) (SakiTakamachi)
+
+- PDO_PGSQL:
+  . Fixed bug GH-21683 (pdo_pgsql throws with ATTR_PREFETCH=0
+    on empty result set). (thomasschiet)
+
+- Phar:
+  . Restore is_link handler in phar_intercept_functions_shutdown. (iliaal)
+  . Fixed bug GH-21797 (phar: NULL dereference in Phar::webPhar() when
+    SCRIPT_NAME is absent from SAPI environment). (iliaal)
+  . Fix memory leak in Phar::offsetGet(). (iliaal)
+  . Fix memory leak in phar_add_file(). (iliaal)
+  . Fixed bug GH-21799 (phar: propagate phar_stream_flush return value from
+    phar_stream_close). (iliaal)
+  . Fix memory leak in phar_verify_signature() when md_ctx is invalid.
+    (JarneClauw)
+
+- Random:
+  . Fixed bug GH-21731 (Random\Engine\Xoshiro256StarStar::__unserialize()
+    accepts all-zero state). (iliaal)
+
+- Session:
+  . Fixed memory leak when session GC callback return a refcounted value.
+    (jorgsowa)
+
+- SOAP:
+  . Fixed GHSA-85c2-q967-79q5 (Stale SOAP_GLOBAL(ref_map) pointer with Apache
+    Map). (CVE-2026-6722) (ilutov)
+  . Fixed GHSA-m33r-qmcv-p97q (Use-after-free after header parsing failure with
+    SOAP_PERSISTENCE_SESSION). (CVE-2026-7261) (ilutov)
+  . Fixed GHSA-hmxp-6pc4-f3vv (Broken Apache map value NULL check).
+    (CVE-2026-7262) (ilutov)
+
+- SPL:
+  . Fixed bug GH-21499 (RecursiveArrayIterator getChildren UAF after parent
+    free). (Girgias)
+  . Fix concurrent iteration and deletion issues in SplObjectStorage.
+    (ndossche)
+
+- Sqlite3:
+  . Fixed wrong free list comparator pointer type. (David Carlier)
+
+- Standard:
+  . Fixed GHSA-96wq-48vp-hh57 (Signed integer overflow of char array offset).
+    (CVE-2026-7568) (TimWolla)
+  . Fixed GHSA-m8rr-4c36-8gq4 (Consistently pass unsigned char to ctype.h
+    functions). (CVE-2026-7258) (ilutov)
+
+- Streams:
+  . Fixed bug GH-21468 (Segfault in file_get_contents w/ a https URL
+    and a proxy set). (ndossche)
+
+- URI:
+  . Fixed CVE-2026-42371 (uriparser before 1.0.1 has numeric truncation in
+    text range comparison). (CVE-2026-42371) (Joshua W. Windle)
+
+26 Mar 2026, PHP 8.5.5
 
 - Core:
   . Fixed bug GH-20672 (Incorrect property_info sizing for locally shadowed

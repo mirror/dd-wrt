@@ -140,7 +140,14 @@ static bool php_openssl_pkey_init_dsa_data(DSA *dsa, zval *data, bool *is_privat
 	OPENSSL_PKEY_SET_BN(data, p);
 	OPENSSL_PKEY_SET_BN(data, q);
 	OPENSSL_PKEY_SET_BN(data, g);
-	if (!p || !q || !g || !DSA_set0_pqg(dsa, p, q, g)) {
+	if (!p || !q || !g) {
+		BN_free(p);
+		BN_free(q);
+		BN_free(g);
+		return 0;
+	}
+
+	if (!DSA_set0_pqg(dsa, p, q, g)) {
 		return 0;
 	}
 
@@ -201,7 +208,12 @@ static bool php_openssl_pkey_init_dh_data(DH *dh, zval *data, bool *is_private)
 	OPENSSL_PKEY_SET_BN(data, p);
 	OPENSSL_PKEY_SET_BN(data, q);
 	OPENSSL_PKEY_SET_BN(data, g);
-	if (!p || !g || !DH_set0_pqg(dh, p, q, g)) {
+	if (!p || !q) {
+		BN_free(p);
+		return 0;
+	}
+
+	if (!DH_set0_pqg(dh, p, q, g)) {
 		return 0;
 	}
 
@@ -214,6 +226,10 @@ static bool php_openssl_pkey_init_dh_data(DH *dh, zval *data, bool *is_private)
 	if (priv_key) {
 		pub_key = php_openssl_dh_pub_from_priv(priv_key, g, p);
 		if (pub_key == NULL) {
+			BN_free(p);
+			BN_free(q);
+			BN_free(g);
+			BN_free(priv_key);
 			return 0;
 		}
 		return DH_set0_key(dh, pub_key, priv_key);
@@ -261,6 +277,9 @@ static bool php_openssl_pkey_init_ec_data(EC_KEY *eckey, zval *data, bool *is_pr
 	EC_POINT *point_q = NULL;
 	EC_GROUP *group = NULL;
 	BN_CTX *bctx = BN_CTX_new();
+	if (!bctx) {
+		goto clean_exit;
+	}
 
 	*is_private = false;
 

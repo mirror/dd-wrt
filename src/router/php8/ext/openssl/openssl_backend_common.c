@@ -748,6 +748,7 @@ int php_openssl_check_cert(X509_STORE *ctx, X509 *x, STACK_OF(X509) *untrustedch
 		return 0;
 	}
 	if (!X509_STORE_CTX_init(csc, ctx, x, untrustedchain)) {
+		X509_STORE_CTX_free(csc);
 		php_openssl_store_errors();
 		php_error_docref(NULL, E_WARNING, "Certificate store initialization failed");
 		return 0;
@@ -1089,13 +1090,15 @@ zend_result php_openssl_csr_make(struct php_x509_request * req, X509_REQ * csr, 
 				}
 			}
 		}
+
+		if (!X509_REQ_set_pubkey(csr, req->priv_key)) {
+			php_openssl_store_errors();
+		}
 	} else {
 		php_openssl_store_errors();
+		return FAILURE;
 	}
 
-	if (!X509_REQ_set_pubkey(csr, req->priv_key)) {
-		php_openssl_store_errors();
-	}
 	return SUCCESS;
 }
 

@@ -361,6 +361,8 @@ namespace ZendTestNS {
         public function method(): int {}
     }
 
+    interface Bar {}
+
     class UnlikelyCompileError {
         /* This method signature would create a compile error due to the string
          * "ZendTestNS\UnlikelyCompileError" in the generated macro call */
@@ -381,6 +383,8 @@ namespace ZendTestNS2 {
 
     class Foo {
         public ZendSubNS\Foo $foo;
+        public ZendSubNS\Foo&\ZendTestNS\Bar $intersectionProp;
+        public ZendSubNS\Foo|\ZendTestNS\Bar $unionProp;
 
         public function method(): void {}
     }
