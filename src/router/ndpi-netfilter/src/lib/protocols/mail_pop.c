@@ -179,7 +179,7 @@ static void ndpi_search_mail_pop_tcp(struct ndpi_detection_module_struct *ndpi_s
 
 /* **************************************** */
 
-int ndpi_extra_search_mail_pop_tcp(struct ndpi_detection_module_struct *ndpi_struct,
+static int ndpi_extra_search_mail_pop_tcp(struct ndpi_detection_module_struct *ndpi_struct,
                                    struct ndpi_flow_struct *flow) {
   int rc;
 

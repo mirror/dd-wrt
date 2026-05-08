@@ -109,8 +109,6 @@
 #undef NDPI_CURRENT_PROTO
 #include "protocols/iax.c"
 #undef NDPI_CURRENT_PROTO
-#include "protocols/icecast.c"
-#undef NDPI_CURRENT_PROTO
 #include "protocols/iec60870-5-104.c"
 #undef NDPI_CURRENT_PROTO
 #include "protocols/imo.c"
@@ -303,9 +301,9 @@
 #undef NDPI_CURRENT_PROTO
 #include "protocols/zabbix.c"
 #undef NDPI_CURRENT_PROTO
-#include "protocols/zattoo.c"
-#undef NDPI_CURRENT_PROTO
 #include "protocols/zeromq.c"
+#undef NDPI_CURRENT_PROTO
+#include "protocols/sbe.c"
 #undef NDPI_CURRENT_PROTO
 #include "protocols/discord.c"
 #undef NDPI_CURRENT_PROTO
