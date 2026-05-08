@@ -169,6 +169,9 @@ ifeq ($(CONFIG_KERNELDEBUG),y)
 else
 	cp $(LINUXDIR)/.config_ipq6018 $(LINUXDIR)/.config
 endif
+ifeq ($(CONFIG_IPQ95XX),y)
+	cp $(LINUXDIR)/.config_ipq95xx $(LINUXDIR)/.config
+endif
 ifeq ($(CONFIG_AX89),y)
 	sed -i 's/\# CONFIG_MTD_UBI_GLUEBI is not set/CONFIG_MTD_UBI_GLUEBI=y/g' $(LINUXDIR)/.config
 	sed -i 's/\# CONFIG_MTD_SPLIT_FIRMWARE is not set/CONFIG_MTD_SPLIT_FIRMWARE=y/g' $(LINUXDIR)/.config
@@ -647,6 +650,36 @@ endif
 	$(call build_image,$(TOP)/$(ARCH)-uclibc/glinet_gl-axt1800-squashfs-sysupgrade.bin)
 
 	-./tools/trx_n -m 184000000 -o $(ARCH)-uclibc/glinet_gl-axt1800-webflash.bin $(TOP)/$(ARCH)-uclibc/glinet_gl-axt1800-boot.ubi
+
+#kiwi
+ifeq ($(CONFIG_IPQ95XX),y)
+	cp $(LINUXDIR)/arch/arm64/boot/Image $(ARCH)-uclibc/
+	cp $(ARCH)-uclibc/Image $(ARCH)-uclibc/Image.itb
+	libdeflate-gzip -f -12 -c $(ARCH)-uclibc/Image.itb > $(ARCH)-uclibc/Image.itb.new
+	mv $(ARCH)-uclibc/Image.itb.new $(ARCH)-uclibc/Image.itb
+	tools/qcom/mkits.sh \
+		-D 8devices_kiwi-dvk \
+		-o $(TOP)/$(ARCH)-uclibc/Image.itb.its \
+		-k $(TOP)/$(ARCH)-uclibc/Image.itb \
+		-C gzip \
+		-d $(LINUXDIR)/arch/arm64/boot/dts/qcom/ipq9570-kiwi-dvk.dtb \
+		-a 0x41000000 \
+		-e 0x41000000 \
+		-c config@8dev-kiwi \
+		-A arm64 \
+		-v $(KERNELRELEASE)
+	mkimage -f $(TOP)/$(ARCH)-uclibc/Image.itb.its $(TOP)/$(ARCH)-uclibc/Image.itb.new
+	mv $(TOP)/$(ARCH)-uclibc/Image.itb.new $(TOP)/$(ARCH)-uclibc/Image.itb
+	./tools/qcom/mkits-qsdk-ipq-image.sh \
+		$(ARCH)-uclibc/Image.its \
+		hlos $(TOP)/$(ARCH)-uclibc/Image.itb \
+		rootfs $(TOP)/$(ARCH)-uclibc/root.fs
+	mkimage -f $(TOP)/$(ARCH)-uclibc/Image.its $(TOP)/$(ARCH)-uclibc/kiwi-factory-nor.bin
+	./tools/qcom/mmcimage $(ARCH)-uclibc/Image.itb $(TOP)/$(ARCH)-uclibc/root.fs $(TOP)/$(ARCH)-uclibc/$(TOP)/$(ARCH)-uclibc/kiwi-webupgrade.img
+	-./tools/trx_n -m 184000000 -o $(ARCH)-uclibc/kiwi-webflash.bin $(TOP)/$(ARCH)-uclibc/$(TOP)/$(ARCH)-uclibc/kiwi-webupgrade.img
+endif
+
+
 
 
 include rules/all.mk
