@@ -2861,7 +2861,10 @@ void stop_lan(void)
 #if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880) && !defined(HAVE_RT61)
 			wlconf_down(name);
 #endif
-			ifconfig(name, 0, NULL, NULL);
+#if !defined(HAVE_IPQ95XX)
+// todo: check if this is needed in general
+//			ifconfig(name, 0, NULL, NULL);
+#endif
 			br_del_interface(lan_ifname, name);
 		}
 		br_del_bridge(lan_ifname);
