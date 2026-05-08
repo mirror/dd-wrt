@@ -77,7 +77,9 @@
 #include <revision.h>
 #include <airbag.h>
 #include "crc.c"
-#ifdef HAVE_IPQ95XX
+#if defined(HAVE_X86)
+#include "hdd.c"
+#elif defined(HAVE_IPQ95XX)
 #include "mmc.c"
 #else
 #include "mtd.c"
