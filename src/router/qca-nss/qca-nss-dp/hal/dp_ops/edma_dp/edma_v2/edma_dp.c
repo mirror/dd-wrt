@@ -280,6 +280,13 @@ static void edma_dp_set_features(struct nss_dp_data_plane_ctx *dpc)
 	netdev->hw_features |= EDMA_NETDEV_FEATURES;
 	netdev->vlan_features |= EDMA_NETDEV_FEATURES;
 	netdev->wanted_features |= EDMA_NETDEV_FEATURES;
+
+#if defined(NSS_DP_ENABLE_NAPI_GRO)
+	netdev->features |= NETIF_F_GRO;
+	netdev->hw_features |= NETIF_F_GRO;
+	netdev->vlan_features |= NETIF_F_GRO;
+	netdev->wanted_features |= NETIF_F_GRO;
+#endif
 }
 
 /* TODO - check if this is needed */

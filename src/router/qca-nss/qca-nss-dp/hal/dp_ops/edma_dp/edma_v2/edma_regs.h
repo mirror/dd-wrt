@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2021, The Linux Foundation. All rights reserved.
  *
- * Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2024 Qualcomm Innovation Center, Inc. All rights reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -63,11 +63,29 @@
 #define EDMA_MDIO_SLV_PASUE_MAP_0	0xA4
 #define EDMA_MDIO_SLV_PASUE_MAP_1	0xA8
 
+#if defined(NSS_DP_EDMA_REG_WORD_INDEXING)
+#define EDMA_GLOBAL_MDIO_SLV_PAUSE_ID_REG0_MAX 0x8
+#define EDMA_GLOBAL_MDIO_SLV_PAUSE_ID_REG1_MAX 0x8
+#define EDMA_GLOBAL_MDIO_SLV_VPPORTS_MAX 0xF
+#define EDMA_GLOBAL_MDIO_SLV_PAUSE_SHIFT	0x4
+#else
 #define EDMA_GLOBAL_MDIO_SLV_PAUSE_ID_REG0_MAX 0xa
-#define EDMA_GLOBAL_MDIO_SLV_PAUSE_ID_REG1_MAX 0x7
+#define EDMA_GLOBAL_MDIO_SLV_PAUSE_ID_REG1_MAX 0x6
 #define EDMA_GLOBAL_MDIO_SLV_VPPORTS_MAX 0x7
 #define EDMA_GLOBAL_MDIO_SLV_PAUSE_SHIFT	0x3
+#endif
+
 #define EDMA_GLOBAL_MDIO_SLV_PAUSE_ID_MAP_VPPORT(x, y) ((x) << (EDMA_GLOBAL_MDIO_SLV_PAUSE_SHIFT * y))
+#endif
+
+#if defined(NSS_DP_EDMA_REG_WORD_INDEXING)
+#define EDMA_REG_AXCACHE_OVERRIDE	0xac
+#define EDMA_REG_CACHEINDEX_LUT		0xb0
+#define EDMA_REG_CACHEINDEX_LUT2	0xb4
+#define EDMA_REG_TXQ_FC_4		0xb8
+#define EDMA_REG_TXQ_FC_5		0xc0
+#define EDMA_REG_TXQ_FC_6		0xc4
+#define EDMA_REG_TXQ_FC_7		0xc8
 #endif
 
 #define EDMA_REG_TXDESC_BA(n)		(0x1000 + (0x1000 * (n)))
@@ -76,6 +94,15 @@
 #define EDMA_REG_TXDESC_RING_SIZE(n)	(0x100c + (0x1000 * (n)))
 #define EDMA_REG_TXDESC_CTRL(n)		(0x1010 + (0x1000 * (n)))
 #define EDMA_REG_TXDESC_BA2(n)		(0x1014 + (0x1000 * (n)))
+
+#if defined(NSS_DP_EDMA_REG_WORD_INDEXING)
+#define EDMA_REG_TXDESC_BA_HIGH(n)	(0x1018 + (0x1000 * (n)))
+#define EDMA_REG_TXDESC_BA2_HIGH(n)	(0x101C + (0x1000 * (n)))
+#define EDMA_REG_TXDESC_UPLOAD_IDX_TRIG(n)	(0x1020 + (0x1000 * (n)))
+#define EDMA_REG_TXDESC_UPLOAD_IDX_ADDR_L(n)	(0x1024 + (0x1000 * (n)))
+#define EDMA_REG_TXDESC_UPLOAD_IDX_ADDR_H(n)	(0x1028 + (0x1000 * (n)))
+#define EDMA_REG_TXDESC_DROP(n)			(0x102C + (0x1000 * (n)))
+#endif
 
 #define EDMA_REG_RXFILL_BA(n)		(0x29000 + (0x1000 * (n)))
 #define EDMA_REG_RXFILL_PROD_IDX(n)	(0x29004 + (0x1000 * (n)))
@@ -87,6 +114,15 @@
 #define EDMA_REG_RXFILL_RING_EN(n)	(0x2901c + (0x1000 * (n)))
 #define EDMA_REG_RXFILL_DISABLE(n)	(0x29020 + (0x1000 * (n)))
 #define EDMA_REG_RXFILL_DISABLE_DONE(n)	(0x29024 + (0x1000 * (n)))
+
+#if defined(NSS_DP_EDMA_REG_WORD_INDEXING)
+#define EDMA_REG_RXFILL_BA_HIGH(n)	(0x29028 + (0x1000 * (n)))
+#define EDMA_REG_RXFILL_INDEX_RESET(n)	(0x2902C + (0x1000 * (n)))
+#define EDMA_REG_RXFILL_UPLOAD_IDX_TRIG(n)	(0x29030 + (0x1000 * (n)))
+#define EDMA_REG_RXFILL_UPLOAD_IDX_ADDR_L(n)	(0x29034 + (0x1000 * (n)))
+#define EDMA_REG_RXFILL_UPLOAD_IDX_ADDR_H(n)	(0x29038 + (0x1000 * (n)))
+#endif
+
 #define EDMA_REG_RXFILL_INT_STAT(n)	(0x31000 + (0x1000 * (n)))
 #define EDMA_REG_RXFILL_INT_MASK(n)	(0x31004 + (0x1000 * (n)))
 
@@ -104,6 +140,17 @@
 #define EDMA_REG_RXDESC_DISABLE(n)	(0x39020 + (0x1000 * (n)))
 #define EDMA_REG_RXDESC_DISABLE_DONE(n)	(0x39024 + (0x1000 * (n)))
 #define EDMA_REG_RXDESC_PREHEADER_BA(n)	(0x39028 + (0x1000 * (n)))
+
+#if defined(NSS_DP_EDMA_REG_WORD_INDEXING)
+#define EDMA_REG_RXDESC_BA_HIGH(n)	(0x3902C + (0x1000 * (n)))
+#define EDMA_REG_PH_BA_HIGH(n)		(0x39030 + (0x1000 * (n)))
+#define EDMA_REG_RXDESC_INDEX_RESET(n)	(0x39034 + (0x1000 * (n)))
+#define EDMA_REG_RXDESC_UPLOAD_IDX_TRIG(n)	(0x39038 + (0x1000 * (n)))
+#define EDMA_REG_RXDESC_UPLOAD_IDX_ADDR_L(n)	(0x3903C + (0x1000 * (n)))
+#define EDMA_REG_RXDESC_UPLOAD_IDX_ADDR_H(n)	(0x39040 + (0x1000 * (n)))
+#define EDMA_REG_RXDESC_CACHE(n)		(0x39044 + (0x1000 * (n)))
+#endif
+
 #define EDMA_REG_RXDESC_INT_STAT(n)	(0x59000 + (0x1000 * (n)))
 #define EDMA_REG_RXDESC_INT_MASK(n)	(0x59004 + (0x1000 * (n)))
 
@@ -117,6 +164,14 @@
 #define EDMA_REG_TXCMPL_UGT_THRE(n)	(0x79010 + (0x1000 * (n)))
 #define EDMA_REG_TXCMPL_CTRL(n)		(0x79014 + (0x1000 * (n)))
 #define EDMA_REG_TXCMPL_BPC(n)		(0x79018 + (0x1000 * (n)))
+
+#if defined(NSS_DP_EDMA_REG_WORD_INDEXING)
+#define EDMA_REG_TXCMPL_BA_HIGH(n)	(0x7901C + (0x1000 * (n)))
+#define EDMA_REG_TXCMPL_UPLOAD_IDX_TRIG(n)	(0x79020 + (0x1000 * (n)))
+#define EDMA_REG_TXCMPL_UPLOAD_IDX_ADDR_L(n)	(0x79024 + (0x1000 * (n)))
+#define EDMA_REG_TXCMPL_UPLOAD_IDX_ADDR_H(n)	(0x79028 + (0x1000 * (n)))
+#define EDMA_REG_TXCMPL_CACHE(n)		(0x7902C + (0x1000 * (n)))
+#endif
 
 #define EDMA_REG_TX_INT_STAT(n)		(0x99000 + (0x1000 * (n)))
 #define EDMA_REG_TX_INT_MASK(n)		(0x99004 + (0x1000 * (n)))
@@ -241,6 +296,22 @@
  */
 #define EDMA_DISABLE				0
 
+#if defined(NSS_DP_EDMA_REG_WORD_INDEXING)
+/*
+ * EDMA_REG_TXDESC_PROD_IDX register
+ */
+#define EDMA_TXDESC_PROD_IDX_MASK		0xffffffff
+
+/*
+ * EDMA_REG_TXDESC_CONS_IDX register
+ */
+#define EDMA_TXDESC_CONS_IDX_MASK		0xffffffff
+
+/*
+ * EDMA_REG_TXDESC_RING_SIZE register
+ */
+#define EDMA_TXDESC_RING_SIZE_MASK		0xffffffff
+#else
 /*
  * EDMA_REG_TXDESC_PROD_IDX register
  */
@@ -255,6 +326,7 @@
  * EDMA_REG_TXDESC_RING_SIZE register
  */
 #define EDMA_TXDESC_RING_SIZE_MASK		0xffff
+#endif
 
 /*
  * EDMA_REG_TXDESC_CTRL register
@@ -272,16 +344,38 @@
 #define EDMA_TXDESC_CTRL_TXEN_GET(x)		(((x) & EDMA_TXDESC_CTRL_TXEN_MASK) >> EDMA_TXDESC_CTRL_TXEN_SHIFT)
 #define EDMA_TXDESC_CTRL_TXEN_SET(x)		(((x) << EDMA_TXDESC_CTRL_TXEN_SHIFT) & EDMA_TXDESC_CTRL_TXEN_MASK)
 
-#define EDMA_TXDESC_CTRL_FC_GRP_ID_SHIFT	1
+#if defined(NSS_DP_EDMA_REG_WORD_INDEXING)
+#define EDMA_TXDESC_CTRL_FC_GRP_ID_MASK		EDMA_GENMASK(4, 1)
+#define EDMA_TXDESC_CTRL_ARB_GRP_ID_SHIFT	5
+#define EDMA_TXDESC_CTRL_ARB_GRP_ID_MASK	EDMA_GENMASK(6, 5)
+#else
 #define EDMA_TXDESC_CTRL_FC_GRP_ID_MASK		EDMA_GENMASK(3, 1)
-#define EDMA_TXDESC_CTRL_FC_GRP_ID_GET(x)	(((x) & EDMA_TXDESC_CTRL_FC_GRP_ID_MASK) >> EDMA_TXDESC_CTRL_FC_GRP_ID_SHIFT)
-#define EDMA_TXDESC_CTRL_FC_GRP_ID_SET(x)	(((x) << EDMA_TXDESC_CTRL_FC_GRP_ID_SHIFT) & EDMA_TXDESC_CTRL_FC_GRP_ID_MASK)
-
 #define EDMA_TXDESC_CTRL_ARB_GRP_ID_SHIFT	4
 #define EDMA_TXDESC_CTRL_ARB_GRP_ID_MASK	EDMA_GENMASK(5, 4)
+#endif
+
+#define EDMA_TXDESC_CTRL_FC_GRP_ID_SHIFT	1
+#define EDMA_TXDESC_CTRL_FC_GRP_ID_GET(x)	(((x) & EDMA_TXDESC_CTRL_FC_GRP_ID_MASK) >> EDMA_TXDESC_CTRL_FC_GRP_ID_SHIFT)
+#define EDMA_TXDESC_CTRL_FC_GRP_ID_SET(x)	(((x) << EDMA_TXDESC_CTRL_FC_GRP_ID_SHIFT) & EDMA_TXDESC_CTRL_FC_GRP_ID_MASK)
 #define EDMA_TXDESC_CTRL_ARB_GRP_ID_GET(x)	(((x) & EDMA_TXDESC_CTRL_ARB_GRP_ID_MASK) >> EDMA_TXDESC_CTRL_ARB_GRP_ID_SHIFT)
 #define EDMA_TXDESC_CTRL_ARB_GRP_ID_SET(x)	(((x) << EDMA_TXDESC_CTRL_ARB_GRP_ID_SHIFT) & EDMA_TXDESC_CTRL_ARB_GRP_ID_MASK)
 
+#if defined(NSS_DP_EDMA_REG_WORD_INDEXING)
+/*
+ * EDMA_REG_TXCMPL_PROD_IDX register
+ */
+#define EDMA_TXCMPL_PROD_IDX_MASK		0xffffffff
+
+/*
+ * EDMA_REG_TXCMPL_CONS_IDX register
+ */
+#define EDMA_TXCMPL_CONS_IDX_MASK		0xffffffff
+
+/*
+ * EDMA_REG_TXCMPL_RING_SIZE register
+ */
+#define EDMA_TXCMPL_RING_SIZE_MASK		0xffffffff
+#else
 /*
  * EDMA_REG_TXCMPL_PROD_IDX register
  */
@@ -296,6 +390,7 @@
  * EDMA_REG_TXCMPL_RING_SIZE register
  */
 #define EDMA_TXCMPL_RING_SIZE_MASK		0xffff
+#endif
 
 /*
  * EDMA_REG_TXCMPL_UGT_THRE register
@@ -322,6 +417,27 @@
  */
 #define EDMA_TX_INT_MASK			0x3
 
+#if defined(NSS_DP_EDMA_REG_WORD_INDEXING)
+/*
+ * EDMA_REG_RXFILL_PROD_IDX register
+ */
+#define EDMA_RXFILL_PROD_IDX_MASK		0xffffffff
+
+/*
+ * EDMA_REG_RXFILL_CONS_IDX register
+ */
+#define EDMA_RXFILL_CONS_IDX_MASK		0xffffffff
+
+/*
+ * EDMA_REG_RXFILL_RING_SIZE register
+ */
+#define EDMA_RXFILL_RING_SIZE_MASK		0xffffffff
+
+/*
+ * EDMA_RXFILL_RING_SIZE register
+ */
+#define EDMA_RXFILL_RING_SIZE(n)	EDMA_REG_RXFILL_BUFFER1_SIZE(n)
+#else
 /*
  * EDMA_REG_RXFILL_PROD_IDX register
  */
@@ -336,6 +452,12 @@
  * EDMA_REG_RXFILL_RING_SIZE register
  */
 #define EDMA_RXFILL_RING_SIZE_MASK		0xffff
+
+/*
+ * EDMA_RXFILL_RING_SIZE register
+ */
+#define EDMA_RXFILL_RING_SIZE(n)	EDMA_REG_RXFILL_RING_SIZE(n)
+#endif
 
 /*
  * EDMA_REG_RXFILL_FC_THRE register
@@ -366,6 +488,22 @@
  */
 #define EDMA_RXFILL_INT_MASK			0x1
 
+#if defined(NSS_DP_EMDA_REG_WORD_INDEXING)
+/*
+ * EDMA_REG_RXDESC_PROD_IDX register
+ */
+#define EDMA_RXDESC_PROD_IDX_MASK		0xffffffff
+
+/*
+ * EDMA_REG_RXDESC_CONS_IDX register
+ */
+#define EDMA_RXDESC_CONS_IDX_MASK		0xffffffff
+
+/*
+ * EDMA_REG_RXDESC_RING_SIZE register
+ */
+#define EDMA_RXDESC_RING_SIZE_MASK		0xffffffff
+#else
 /*
  * EDMA_REG_RXDESC_PROD_IDX register
  */
@@ -383,6 +521,7 @@
 #define EDMA_RXDESC_PL_OFFSET_MASK		0x1ff
 #define EDMA_RXDESC_PL_OFFSET_SHIFT		16
 #define EDMA_RXDESC_PL_DEFAULT_VALUE		0
+#endif
 
 /*
  * EDMA_REG_RXDESC_FC_THRE register

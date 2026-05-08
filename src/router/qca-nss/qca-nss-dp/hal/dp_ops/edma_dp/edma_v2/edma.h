@@ -60,8 +60,28 @@
 #ifdef NSS_DP_MHT_SW_PORT_MAP
 #define EDMA_MAX_TX_PORTS		NSS_DP_HAL_MAX_TX_PORTS
 #define EDMA_MAC_TX_MAP			EDMA_MAX_TX_PORTS
+
+/*
+ * If enabled, separate rings is allocated for VP port.
+ * Else, VP port shares it's rings with MHT.
+ */
+#ifdef NSS_DP_EDMA_MHT_SW_WITH_VP_RING
+#define EDMA_MAX_FC_GRP			EDMA_MAX_TX_PORTS - 1
+#else
 #define EDMA_MAX_FC_GRP			EDMA_MAX_TX_PORTS
+#endif
+
+/*
+ * If enabled, We need to skip the 12 interrupts
+ * that belongs to 4 PPEDS nodes. Else, skip 6
+ * interrupts that belong to 2 PPEDS nodes.
+ */
+#ifdef NSS_DP_EDMA_SKIP_FOUR_PPEDS_NODES
+#define EDMA_PPEDS_IRQS			12
+#else
 #define EDMA_PPEDS_IRQS			6
+#endif
+
 #else
 #define EDMA_MAX_TX_PORTS		EDMA_TX_RING_PER_CORE_MAX
 #define EDMA_MAX_FC_GRP			EDMA_MAX_GMACS
@@ -69,7 +89,6 @@
 #endif
 
 #define EDMA_IRQ_NAME_SIZE		32
-#define EDMA_SC_BYPASS			1
 #define EDMA_NETDEV_FEATURES		NETIF_F_FRAGLIST \
 					| NETIF_F_SG \
 					| NETIF_F_RXCSUM \
@@ -103,6 +122,10 @@
  * QID to RID Table
  */
 #define EDMA_QID2RID_TABLE_MEM(q)	(0xb9000 + (0x4 * (q)))
+
+#define EDMA_TIMESTAMP_SEC_MASK		EDMA_RX_SDESC_TSTAMP_HI_MASK
+#define EDMA_TIMESTAMP_NSEC_TO_USEC(x)	((x) / 1000)
+#define EDMA_TIMESTAMP_TO_USEC(x, y)	(((uint64_t)(x) * 1000000) + (EDMA_TIMESTAMP_NSEC_TO_USEC(y)))
 
 /*
  * edma_port_ucast_queues
@@ -364,6 +387,12 @@ struct edma_gbl_ctx {
                         /* Creating work struct */
 	uint32_t edma_timer_rate;
 			/* EDMA clock's timer rate in Mhz */
+#ifdef CONFIG_SKB_TIMESTAMP
+	void __iomem *tstamp_sec;
+			/* EDMA timestamp value in second */
+	void __iomem *tstamp_nsec;
+			/* EDMA timestamp value in nano-second */
+#endif
 };
 
 extern struct edma_gbl_ctx edma_gbl_ctx;
@@ -454,15 +483,10 @@ static inline bool edma_dp_stats_fetch_retry(const struct u64_stats_sync *syncp,
 /*
  * edma_dp_per_ring_reset_support
  *	Check if EDMA ring reset is supported or not.
- *	For now it is added for target IPQ54XX - this can further be
- *	used for other platforms in future.
  */
 static inline bool edma_dp_per_ring_reset_support(void)
 {
 	bool ring_reset_en = false;
-#if defined(NSS_DP_IPQ54XX)
-	ring_reset_en = true;
-#endif
 	return ring_reset_en;
 }
 

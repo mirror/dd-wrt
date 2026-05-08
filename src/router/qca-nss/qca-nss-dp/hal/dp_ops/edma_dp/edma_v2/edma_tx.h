@@ -41,7 +41,6 @@
 #define EDMA_TX_MAX_PRIORITY_LEVEL	1
 extern unsigned int EDMA_TX_RING_SIZE;
 
-
 #define EDMA_TX_RING_SIZE_MASK		(EDMA_TX_RING_SIZE - 1)
 
 #define EDMA_TX_TSO_SEG_MAX		32	/* Max segment processing capacity of HW for TSO */

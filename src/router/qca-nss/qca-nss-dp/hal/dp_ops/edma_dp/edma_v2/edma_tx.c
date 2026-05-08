@@ -27,6 +27,7 @@
 #include "edma_regs.h"
 #include "edma_debug.h"
 #include "edma.h"
+#include <ppe_drv_sc.h>
 
 /*
  * edma_tx_complete()
@@ -40,6 +41,7 @@ uint32_t edma_tx_complete(uint32_t work_to_do, struct edma_txcmpl_ring *txcmpl_r
 	uint32_t cons_idx;
 	uint32_t data;
 	struct sk_buff *skb;
+	struct sk_buff_head h;
 	uint32_t txcmpl_errors;
 	uint32_t avail, count;
 	uint8_t cpu_id;
@@ -87,6 +89,8 @@ uint32_t edma_tx_complete(uint32_t work_to_do, struct edma_txcmpl_ring *txcmpl_r
 	}
 
 	dsb(st);
+
+	skb_queue_head_init(&h);
 
 	/*
 	 * TODO:
@@ -145,11 +149,20 @@ uint32_t edma_tx_complete(uint32_t work_to_do, struct edma_txcmpl_ring *txcmpl_r
 			 * Fast-recycle the SKB with a list, if skb is originally allocated
 			 * from recycler and has been fast trasmitted
 			 */
-			dev_kfree_skb(skb);
+			if (likely(skb->fast_xmit) && likely(skb->is_from_recycler)) {
+				dev_check_skb_fast_recyclable(skb);
+				__skb_queue_head(&h, skb);
+			} else {
+				dev_kfree_skb(skb);
+			}
 		}
 
 		cons_idx = ((cons_idx + 1) & EDMA_TX_RING_SIZE_MASK);
 		txcmpl = EDMA_TXCMPL_DESC(txcmpl_ring, cons_idx);
+	}
+
+	if (likely(!skb_queue_empty(&h))) {
+		dev_kfree_skb_list_fast(&h);
 	}
 
 	txcmpl_ring->cons_idx = cons_idx;
@@ -404,10 +417,19 @@ static inline void edma_tx_fill_pp_desc(struct nss_dp_dev *dp_dev, struct edma_p
 	/*
 	 * Set destination information in the descriptor
 	 */
-	EDMA_TXDESC_SERVICE_CODE_SET(txd, EDMA_SC_BYPASS);
+	EDMA_TXDESC_SERVICE_CODE_SET(txd, PPE_DRV_SC_BYPASS_ALL);
 	EDMA_DST_INFO_SET(txd, dp_dev->macid);
 
-	EDMA_TXDESC_INT_PRI_SET(txd, 0);
+	/*
+	 * Set the src info as destination dev in case if
+	 * port mirroring is enabled - to receive the packet back in
+	 * DP with valid source port.
+	 */
+#if defined NSS_DP_PORT_MIRROR_EN
+	EDMA_SRC_INFO_SET(txd, dp_dev->macid);
+#endif
+
+	EDMA_TXDESC_INT_PRI_SET(txd, skb_get_int_pri(skb));
 }
 
 /*
@@ -678,6 +700,9 @@ enum edma_tx edma_tx_ring_xmit(struct net_device *netdev, struct nss_dp_vp_tx_in
 		 * that allocates this packet later can avoid
 		 * an invalidate operation
 		 */
+		if (likely(skb->fast_xmit) && likely(skb->is_from_recycler)) {
+			skb->fast_recycled = 1;
+		}
 	} else {
 		num_tx_desc_needed = edma_tx_num_descs_for_sg(skb);
 

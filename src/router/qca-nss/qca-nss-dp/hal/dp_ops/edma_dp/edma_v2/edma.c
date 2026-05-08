@@ -174,29 +174,6 @@ static void edma_disable_port(void)
 }
 
 /*
- * edma_cfg_sc_bypass
- *	Set service code to disable PPE processing
- *
- * TODO: Use PPE APIs when they are available.
- */
-static sw_error_t edma_cfg_sc_bypass(struct edma_gbl_ctx *egc)
-{
-	sw_error_t ret;
-	fal_servcode_config_t entry = {0};
-	entry.bypass_bitmap[0] = ~((1 << FAKE_MAC_HEADER_BYP)
-					| (1 << SERVICE_CODE_BYP)
-					| (1 << FAKE_L2_PROTO_BYP));
-	entry.bypass_bitmap[1] = ~(1 << ACL_POST_ROUTING_CHECK_BYP);
-
-	ret = fal_servcode_config_set(0, EDMA_SC_BYPASS, &entry);
-	if (ret < 0) {
-		edma_err("%px: Error in configuring service code %d\n", egc, ret);
-	}
-
-	return ret;
-}
-
-/*
  * edma_cleanup()
  *	EDMA cleanup
  */
@@ -288,12 +265,12 @@ void edma_cleanup(bool is_dp_override)
 	 * Clean the debugfs entries for the EDMA
 	 */
 	edma_debugfs_exit();
-#if !defined(NSS_DP_MEM_PROFILE_MEDIUM)
+	if (mem_profile==0) {
 	/*
 	 * Unregister PTP service code callback function
 	 */
 	ppe_drv_sc_unregister_cb(PPE_DRV_SC_PTP);
-#endif
+	}
 	/*
 	 * Unregister mirror core selection API callback with PPE driver
 	 */
@@ -583,10 +560,10 @@ static int edma_of_get_pdata(struct resource *edma_res)
 	 * Get page_mode of RXFILL rings
 	 * TODO: Move this setting to DP common node
 	 */
-#if !defined(NSS_DP_MEM_PROFILE_LOW) && !defined(NSS_DP_MEM_PROFILE_MEDIUM)
+	if (mem_profile==0) {
 	of_property_read_u32(edma_gbl_ctx.device_node, "qcom,rx-page-mode",
 					&edma_gbl_ctx.rx_page_mode);
-#endif
+	}
 
 	/*
 	 * Get id of first RXDESC ring
@@ -1025,12 +1002,6 @@ static int edma_hw_init(struct edma_gbl_ctx *egc)
 		return ret;
 	}
 
-	ret = (int)edma_cfg_sc_bypass(egc);
-	if (ret) {
-		edma_err("Error in configuring service code: %d\n", ret);
-		return ret;
-	}
-
 	/*
 	 * Set EDMA global page mode and jumbo MRU
 	 */
@@ -1323,12 +1294,14 @@ int edma_init(void)
 		ret = -EFAULT;
 		goto edma_hw_init_fail;
 	}
-#if !defined(NSS_DP_MEM_PROFILE_MEDIUM)
+
+	if (!mem_profile) {
 	/*
 	 * Register PTP service code callback function
 	 */
 	ppe_drv_sc_register_cb(PPE_DRV_SC_PTP, edma_rx_phy_tstamp_buf, NULL);
-#endif
+	}
+
 	/*
 	 * Register mirror core selection API callback with PPE driver
 	 */
@@ -1365,6 +1338,7 @@ int edma_init(void)
 	return 0;
 
 edma_hw_init_fail:
+
 #ifdef NSS_DP_PPEDS_SUPPORT
 	edma_ppeds_deinit(&edma_gbl_ctx.ppeds_drv);
 edma_init_ppeds_init_fail:
@@ -1773,7 +1747,7 @@ static int edma_recovery_deinit(void)
 {
 	reset_control_put(edma_gbl_ctx.hw_rst);
 
-#if defined(NSS_DP_IPQ53XX)
+#if defined(NSS_DP_CONFIG_RST)
 	reset_control_put(edma_gbl_ctx.cfg_rst);
 #endif
 

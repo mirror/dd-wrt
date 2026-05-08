@@ -1176,7 +1176,7 @@ static int __init nss_dp_init(void)
 		EDMA_RX_RING_SIZE = 4096;
 	
 	if (mem_profile==0)
-		EDMA_TX_RING_SIZE = 4096;
+		EDMA_TX_RING_SIZE = 2048;
 	else
 		EDMA_TX_RING_SIZE = 1024;
 
