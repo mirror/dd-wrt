@@ -1258,6 +1258,11 @@ static int32_t nss_gmac_probe(struct platform_device *pdev)
 	gmacdev->macid = pdev->id;
 	gmacdev->sgmii_pcs_chanid = gmacdev->macid;
 #endif
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 10, 0))
+	/* max_mtu is set to 1500 in ether_setup() */
+	netdev->max_mtu = ETH_MAX_MTU;
+#endif
+
 	gmacdev->phy_mii_type = gmaccfg->phy_mii_type;
 	gmacdev->phy_base = gmaccfg->phy_mdio_addr;
 	gmacdev->rgmii_delay = gmaccfg->rgmii_delay;
