@@ -205,6 +205,20 @@ int load_ath11k(void)
 	return 0;
 }
 
+int load_ath12k(void)
+{
+	insmod("thermal_sys");
+	insmod("hwmon");
+	if (!nvram_match("noath11k", "1")) {
+		insmod("qmi_helpers");
+		if (!detectchange("ath12k")) {
+			rmmod("ath12k");
+			rmmod("qmi_helpers");
+		}
+	}
+	return 0;
+}
+
 int load_mt76(void)
 {
 	insmod("thermal_sys");
@@ -480,6 +494,7 @@ int load_madwifi(void)
 #define RADIO_MT76 0x40
 #define RADIO_IWLWIFI 0x80
 #define RADIO_ATH11K 0x100
+#define RADIO_ATH12K 0x200
 
 static int detect_wireless_devices(int mask)
 {
@@ -642,6 +657,11 @@ static int detect_wireless_devices(int mask)
 		#if 1 //def HAVE_ATH11K
 	if ((mask & RADIO_ATH11K)) {
 		load_ath11k();
+	}
+		#endif
+		#ifdef HAVE_ATH12K
+	if ((mask & RADIO_ATH12K)) {
+		load_ath12k();
 	}
 		#endif
 		#ifdef HAVE_MT7615
