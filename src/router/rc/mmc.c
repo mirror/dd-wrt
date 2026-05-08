@@ -225,6 +225,7 @@ extern int http_get(const char *server, char *buf, size_t count, off_t offset);
  * @return      0 on success and errno on failure
  */
 
+#define WRITE_BLOCKSIZE 65536
 
 #define SQUASHFS_MAGIC 0x74717368
 
@@ -456,7 +457,7 @@ rewrite:;
 		dd_loginfoverbose("flash", "The free memory is enough, writing image once.");
 		erase_info.length = trx.len;
 	} else {
-		erase_info.length = 65536;
+		erase_info.length = WRITE_BLOCKSIZE;
 		dd_loginfoverbose("flash", "The free memory is not enough, writing image per %d bytes.", erase_info.length);
 	}
 
@@ -465,7 +466,7 @@ rewrite:;
 	 */
 	if (!(buf = malloc(erase_info.length))) {
 		mul = 1;
-		erase_info.length = 65536;
+		erase_info.length = WRITE_BLOCKSIZE;
 		dd_loginfoverbose("flash", "The free memory is not enough, writing image per %d bytes.", erase_info.length);
 		if (!(buf = malloc(erase_info.length))) {
 			dd_logerror("flash", "memory allocation of %d bytes failed", erase_info.length);
@@ -513,7 +514,7 @@ rewrite:;
 		 */
 		sum = sum + count;
 
-		if (((count < len) && (len - off) > (65536)) || (count == 0 && feof(fp))) {
+		if (((count < len) && (len - off) > (WRITE_BLOCKSIZE)) || (count == 0 && feof(fp))) {
 			dd_logerror("flash", "%s: Truncated file (actual %d expect %d)", path, count - off, len - off);
 			goto fail;
 		}
@@ -548,22 +549,22 @@ rewrite:;
 			printf("\n");
 		}
 
-		erase_info.length = 65536;
+		erase_info.length = WRITE_BLOCKSIZE;
 
-		int length = ROUNDUP(count, 65536);
+		int length = ROUNDUP(count, WRITE_BLOCKSIZE);
 		int base = erase_info.start;
-		for (i = 0; i < (length / 65536); i++) {
+		for (i = 0; i < (length / WRITE_BLOCKSIZE); i++) {
 			int redo = 0;
 again:;
-			dd_loginfoverbose("flash", "write block [%d] at [0x%08X]", (base + (i * 65536)),
-					  base + (i * 65536) + badblocks);
-			erase_info.start = base + (i * 65536);
+			dd_loginfoverbose("flash", "write block [%d] at [0x%08X]", (base + (i * WRITE_BLOCKSIZE)),
+					  base + (i * WRITE_BLOCKSIZE) + badblocks);
+			erase_info.start = base + (i * WRITE_BLOCKSIZE);
 			memcpy(&tmp_erase_info, &erase_info, sizeof(erase_info));
 			tmp_erase_info.start += badblocks;
 
 			int l;
-			for (l = 0; l < 65536 - ptr; l++) {
-				unsigned char *p_buf = buf + (i * 65536) + ptr + l;
+			for (l = 0; l < WRITE_BLOCKSIZE - ptr; l++) {
+				unsigned char *p_buf = buf + (i * WRITE_BLOCKSIZE) + ptr + l;
 				if (pos == f_kernellen) {
 					dd_loginfoverbose("flash", "Flash root fileystem %d", f_rootfslen);
 					f_write = f_rootfs;
@@ -589,7 +590,7 @@ again:;
 	fclose(f_rootfs);
 	fclose(f_kernel);
 
-	dd_loginfoverbose("flash", "done [%d]", i * 65536);
+	dd_loginfoverbose("flash", "done [%d]", i * WRITE_BLOCKSIZE);
 	/* 
 	 * Netgear: Write len and checksum at the end of mtd1 
 	 */
