@@ -761,14 +761,10 @@ endif
 
 ifeq ($(CONFIG_X86),y)
 CFLAGS += -DHAVE_EXT_IPROUTE
-CFLAGS += -DHAVE_X86 -DHAVE_UPX86
+CFLAGS += -DHAVE_X86
 endif
 ifeq ($(CONFIG_RB600),y)
 CFLAGS += -DHAVE_RB600
-
-ifneq ($(CONFIG_WDR4900),y)
-CFLAGS += -DHAVE_UPX86
-endif
 endif
 
 ifeq ($(CONFIG_MAGICBOX),y)
