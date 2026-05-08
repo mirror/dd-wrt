@@ -77,7 +77,11 @@
 #include <revision.h>
 #include <airbag.h>
 #include "crc.c"
+#ifdef HAVE_IPQ95XX
+#include "mmc.c"
+#else
 #include "mtd.c"
+#endif
 #include "nvram.c"
 #include "mtd_main.c"
 #include "ledtool.c"
