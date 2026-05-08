@@ -408,8 +408,8 @@ ifeq ($(CONFIG_RB600),y)
 	./gen_image_rb.sh rb600.img 10 1 64 $(ARCH)-uclibc/root.fs 32
 	dd if=rb600.img of=rb600.img.dst bs=1048576 conv=sync
 	mv rb600.img.dst rb600.img
-	
-	./tools/wrap rb600.img rb600.bin
+
+	-./tools/trx_n -m 184000000 -o rb600.bin rb600.img
 endif
 
 #
