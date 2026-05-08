@@ -255,6 +255,9 @@ static l7filters filters_list[] = {
 #ifdef HAVE_OPENDPI
 	{ "git", NDPI_ONLY, 0, NULL },
 	{ "github", NDPI_ONLY, 0, NULL },
+	{ "github_actions", NDPI_ONLY, 0, NULL },
+	{ "github_copilot", NDPI_ONLY, 0, NULL },
+	{ "github_packages", NDPI_ONLY, 0, NULL },
 	{ "gitlab", NDPI_ONLY, 0, NULL },
 #endif
 	{ "gkrellm", L7_ONLY, 0, NULL },
@@ -654,6 +657,7 @@ static l7filters filters_list[] = {
 	{ "s7comm_plus", NDPI_ONLY, 0, NULL },
 	{ "salesforce", NDPI_ONLY, 0, NULL },
 	{ "sap", NDPI_ONLY, 0, NULL },
+	{ "sbe", NDPI_ONLY, 0, NULL },
 	{ "sd-rtn", NDPI_ONLY, 0, NULL },
 	{ "service-location", NDPI_ONLY, 0, NULL },
 	{ "sflow", NDPI_ONLY, 0, NULL },
@@ -920,10 +924,10 @@ static l7filters filters_list[] = {
 #endif
 	{ "youtube", DPI, 0, NULL },
 #ifdef HAVE_OPENDPI
+	{ "youtube_kids", NDPI_ONLY, 0, NULL },
 	{ "youtubeupload", NDPI_ONLY, 0, NULL },
 	{ "z3950", NDPI_ONLY, 0, NULL },
 	{ "zabbix", NDPI_ONLY, 0, NULL },
-	{ "zattoo", NDPI_ONLY, 0, NULL },
 	{ "zeromq", NDPI_ONLY, 0, NULL },
 #endif
 	{ "zip", L7_ONLY, 0, NULL },
