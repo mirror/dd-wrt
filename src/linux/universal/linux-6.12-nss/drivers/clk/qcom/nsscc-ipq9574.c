@@ -381,11 +381,13 @@ static const struct freq_multi_tbl ftbl_nss_cc_port1_tx_clk_src[] = {
 
 static const struct freq_conf ftbl_nss_cc_port5_rx_clk_src_25[] = {
 	C(P_UNIPHY1_NSS_RX_CLK, 12.5, 0, 0),
+	C(P_UNIPHY1_NSS_RX_CLK, 5, 0, 0),
 	C(P_UNIPHY0_NSS_RX_CLK, 5, 0, 0),
 };
 
 static const struct freq_conf ftbl_nss_cc_port5_rx_clk_src_125[] = {
 	C(P_UNIPHY1_NSS_RX_CLK, 2.5, 0, 0),
+	C(P_UNIPHY1_NSS_RX_CLK, 1, 0, 0),
 	C(P_UNIPHY0_NSS_RX_CLK, 1, 0, 0),
 };
 
@@ -406,11 +408,13 @@ static const struct freq_multi_tbl ftbl_nss_cc_port5_rx_clk_src[] = {
 
 static const struct freq_conf ftbl_nss_cc_port5_tx_clk_src_25[] = {
 	C(P_UNIPHY1_NSS_TX_CLK, 12.5, 0, 0),
+	C(P_UNIPHY1_NSS_TX_CLK, 5, 0, 0),
 	C(P_UNIPHY0_NSS_TX_CLK, 5, 0, 0),
 };
 
 static const struct freq_conf ftbl_nss_cc_port5_tx_clk_src_125[] = {
 	C(P_UNIPHY1_NSS_TX_CLK, 2.5, 0, 0),
+	C(P_UNIPHY1_NSS_TX_CLK, 1, 0, 0),
 	C(P_UNIPHY0_NSS_TX_CLK, 1, 0, 0),
 };
 
