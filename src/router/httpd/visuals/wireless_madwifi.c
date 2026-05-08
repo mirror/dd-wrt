@@ -663,6 +663,9 @@ EJ_VISIBLE void ej_get_curchannel(webs_t wp, int argc, char_t **argv)
 				} else
 					websWrite(wp, " %s160", vht);
 				break;
+			case 320:
+				websWrite(wp, " %s320", vht);
+				break;
 			}
 		}
 		websWrite(wp, ")");
