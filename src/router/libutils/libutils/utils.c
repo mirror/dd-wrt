@@ -2820,8 +2820,9 @@ char *getgptpartitionbyname(const char *dev, const char *name)
 	gpt_partition *part;
 	unsigned char *buf;
 	FILE *in = fopen(dev, "rb");
-	if (!in)
+	if (!in) {
 		return NULL;
+	}
 	fseeko(in, 512, SEEK_SET);
 	fread(&header, sizeof(header), 1, in);
 	if (header.magic != le64_to_cpu(GPT_MAGIC)) {
@@ -2837,11 +2838,12 @@ char *getgptpartitionbyname(const char *dev, const char *name)
 	fread(buf, le32_to_cpu(header.n_parts) * le32_to_cpu(header.part_entry_len), 1, in);
 	fclose(in);
 	int i;
-	for (i = 0; i < n_parts; i++) {
+	for (i = 0; i < header.n_parts; i++) {
+		part = (gpt_partition *)&buf[i * le32_to_cpu(header.part_entry_len)];
 		char s_name[36 * 6 + 1];
 		utf16_le_to_str(part->name36, 72, s_name);
 		if (!strcmp(s_name, name)) {
-			sprintf(retname, "%sp%d", i + 1);
+			sprintf(retname, "%sp%d", dev, i + 1);
 			free(buf);
 			return retname;
 		}
