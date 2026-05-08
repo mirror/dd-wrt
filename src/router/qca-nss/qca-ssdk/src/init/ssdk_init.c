@@ -451,11 +451,11 @@ qca_switch_init(a_uint32_t dev_id)
 			fal_port_default_svid_set(dev_id, i, 0);
 			fal_port_default_cvid_set(dev_id, i, 0);
 			fal_port_1qmode_set(dev_id, i, FAL_1Q_DISABLE);
-			fal_port_egvlanmode_set(dev_id, i, FAL_EG_UNMODIFIED);
+			fal_port_egvlanmode_set(dev_id, i, FAL_EG_UNTOUCHED);
 #endif
 
 #ifdef IN_FDB
-			fal_fdb_port_learn_set(dev_id, i, A_FALSE);
+			fal_fdb_port_learn_set(dev_id, i, A_TRUE);
 #endif
 #ifdef IN_STP
 			fal_stp_port_state_set(dev_id, 0, i, FAL_STP_FARWARDING);
