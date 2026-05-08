@@ -1187,7 +1187,7 @@ static void tls_match_ja4(struct ndpi_detection_module_struct *ndpi_struct,
       return; /* Not found */
     else
       proto_id = ndpi_compare_flow_tls_blocks(ndpi_struct, flow, extra_data, proto_id);
-    
+
     if(proto_id != NDPI_PROTOCOL_UNKNOWN)
       ndpi_set_detected_protocol(ndpi_struct, flow, proto_id,
 				 ndpi_get_master_proto(ndpi_struct, flow),
@@ -1775,8 +1775,6 @@ int ndpi_search_tls_tcp(struct ndpi_detection_module_struct *ndpi_struct,
       /* Even if a LRU cache is involved, NDPI_CONFIDENCE_DPI_AGGRESSIVE seems more
          suited than NDPI_CONFIDENCE_DPI_CACHE */
       ndpi_set_detected_protocol(ndpi_struct, flow, NDPI_PROTOCOL_OOKLA, NDPI_PROTOCOL_TLS, NDPI_CONFIDENCE_DPI_AGGRESSIVE);
-      /* TLS over port 8080 usually triggers that risk; clear it */
-      ndpi_unset_risk(ndpi_struct, flow, NDPI_KNOWN_PROTOCOL_ON_NON_STANDARD_PORT);
 
       tls_match_ja4(ndpi_struct, flow);
       flow->extra_packets_func = NULL;
@@ -2307,6 +2305,61 @@ static bool skipTLSextension(struct ndpi_detection_module_struct *ndpi_struct,
 
 /* **************************************** */
 
+static void ndpi_fill_version_str(char *ja_str,
+				  u_int16_t tls_handshake_version) {
+  switch(tls_handshake_version) {
+  case 0x0304: /* TLS 1.3 = “13” */
+    ja_str[1] = '1';
+    ja_str[2] = '3';
+    break;
+
+  case 0x0303: /* TLS 1.2 = “12” */
+    ja_str[1] = '1';
+    ja_str[2] = '2';
+    break;
+
+  case 0x0302: /* TLS 1.1 = “11” */
+    ja_str[1] = '1';
+    ja_str[2] = '1';
+    break;
+
+  case 0x0301: /* TLS 1.0 = “10” */
+    ja_str[1] = '1';
+    ja_str[2] = '0';
+    break;
+  case 0x0300: /* SSL 3.0 = “s3” */
+    ja_str[1] = 's';
+    ja_str[2] = '3';
+    break;
+
+  case 0x0002: /* SSL 2.0 = “s2” */
+    ja_str[1] = 's';
+    ja_str[2] = '2';
+    break;
+
+  case 0xFEFF: /* DTLS 1.0 = “d1” */
+    ja_str[1] = 'd';
+    ja_str[2] = '1';
+    break;
+
+  case 0xFEFD: /* DTLS 1.2 = “d2” */
+    ja_str[1] = 'd';
+    ja_str[2] = '2';
+    break;
+  case 0xFEFC: /* DTLS 1.3 = “d3” */
+    ja_str[1] = 'd';
+    ja_str[2] = '3';
+    break;
+
+  default:
+    ja_str[1] = '0';
+    ja_str[2] = '0';
+    break;
+  }
+}
+
+/* **************************************** */
+
 static void ndpi_compute_ja4(struct ndpi_detection_module_struct *ndpi_struct,
 			     struct ndpi_flow_struct *flow,
 			     u_int32_t quic_version,
@@ -2350,57 +2403,7 @@ static void ndpi_compute_ja4(struct ndpi_detection_module_struct *ndpi_struct,
       tls_handshake_version = ja->client.supported_version[i];
   }
 
-  switch(tls_handshake_version) {
-  case 0x0304: /* TLS 1.3 = “13” */
-    ja_str[1] = '1';
-    ja_str[2] = '3';
-    break;
-
-  case 0x0303: /* TLS 1.2 = “12” */
-    ja_str[1] = '1';
-    ja_str[2] = '2';
-    break;
-
-  case 0x0302: /* TLS 1.1 = “11” */
-    ja_str[1] = '1';
-    ja_str[2] = '1';
-    break;
-
-  case 0x0301: /* TLS 1.0 = “10” */
-    ja_str[1] = '1';
-    ja_str[2] = '0';
-    break;
-
-  case 0x0300: /* SSL 3.0 = “s3” */
-    ja_str[1] = 's';
-    ja_str[2] = '3';
-    break;
-
-  case 0x0002: /* SSL 2.0 = “s2” */
-    ja_str[1] = 's';
-    ja_str[2] = '2';
-    break;
-
-  case 0xFEFF: /* DTLS 1.0 = “d1” */
-    ja_str[1] = 'd';
-    ja_str[2] = '1';
-    break;
-
-  case 0xFEFD: /* DTLS 1.2 = “d2” */
-    ja_str[1] = 'd';
-    ja_str[2] = '2';
-    break;
-
-  case 0xFEFC: /* DTLS 1.3 = “d3” */
-    ja_str[1] = 'd';
-    ja_str[2] = '3';
-    break;
-
-  default:
-    ja_str[1] = '0';
-    ja_str[2] = '0';
-    break;
-  }
+  ndpi_fill_version_str(ja_str, tls_handshake_version);
 
   /* Check if SNI extension exists at all */
   if(flow->host_server_name[0] == '\0') {
@@ -2423,7 +2426,8 @@ static void ndpi_compute_ja4(struct ndpi_detection_module_struct *ndpi_struct,
   printf("[JA4 DEBUG] First='%c', Last='%c'\n", alpn_first, alpn_last);
 #endif
 
-  rc = ndpi_snprintf(&ja_str[ja_str_len], ja_max_len - ja_str_len, "%02u%02u%c%c_",
+  rc = ndpi_snprintf(&ja_str[ja_str_len], ja_max_len - ja_str_len,
+		     "%02u%02u%c%c_",
 		     ndpi_min(99, ja->client.num_ciphers),
 		     ndpi_min(99, ja->client.num_tls_extensions),
 		     alpn_first, alpn_last);
@@ -2522,7 +2526,8 @@ static void ndpi_compute_ja4(struct ndpi_detection_module_struct *ndpi_struct,
   tmp_str[tmp_str_len] = 0;
 
 #ifndef JA4R_DECIMAL
-  i = snprintf(&ja4_r[ja4_r_len], sizeof(ja4_r)-ja4_r_len, "%s", tmp_str); if(i > 0) ja4_r_len += i;
+  i = snprintf(&ja4_r[ja4_r_len], sizeof(ja4_r)-ja4_r_len, "%s", tmp_str);
+  if(i > 0) ja4_r_len += i;
 #endif
 
   if(ndpi_struct->cfg.tls_ja4r_fingerprint_enabled) {
@@ -2533,7 +2538,10 @@ static void ndpi_compute_ja4(struct ndpi_detection_module_struct *ndpi_struct,
 #endif
   }
 
-  if(ja->client.num_tls_extensions > 0) ndpi_sha256(tmp_str, tmp_str_len, sha_hash); else memset(sha_hash, '\0', 6);
+  if(ja->client.num_tls_extensions > 0)
+    ndpi_sha256(tmp_str, tmp_str_len, sha_hash);
+  else
+    memset(sha_hash, '\0', 6);
 
   ja_offset = ja_str_len;
   rc = ndpi_snprintf(&ja_str[ja_str_len], ja_max_len - ja_str_len,
@@ -2544,7 +2552,11 @@ static void ndpi_compute_ja4(struct ndpi_detection_module_struct *ndpi_struct,
   ja_str[36] = 0;
 
   /* nDPI */
-  if(ja->client.num_tls_extensions > 0) ndpi_sha256(tmp_ndpi_str, tmp_ndpi_str_len, sha_hash); else memset(sha_hash, '\0', 6);
+  if(ja->client.num_tls_extensions > 0)
+    ndpi_sha256(tmp_ndpi_str, tmp_ndpi_str_len, sha_hash);
+  else
+    memset(sha_hash, '\0', 6);
+
   ja_str_len = ja_offset;
   strncpy(ja_ndpi_str, ja_str, ja_str_len);
 
@@ -2569,11 +2581,97 @@ static void ndpi_compute_ja4(struct ndpi_detection_module_struct *ndpi_struct,
 
 /* **************************************** */
 
+static void ndpi_compute_tls_server_fingerprint(struct ndpi_flow_struct *flow,
+                                                bool is_dtls,
+                                                u_int32_t quic_version,
+                                                ndpi_tls_server_info *s) {
+  char tls_s[128], fp_buf[13];
+  u_int tls_s_len, i;
+  u_int8_t sha_hash[NDPI_SHA256_BLOCK_SIZE];
+
+  tls_s[0] = is_dtls ? 'd' : ((quic_version != 0) ? 'q' : 't');
+  ndpi_fill_version_str(tls_s, s->tls_handshake_version);
+  tls_s_len = 3;
+
+  if(sizeof(tls_s) > tls_s_len) {
+    int b_diff = sizeof(tls_s)-tls_s_len-1;
+
+    if(b_diff > 0) {
+      int rc = ndpi_snprintf(&tls_s[tls_s_len], b_diff, "%02u_%s_%04x",
+			     s->num_tls_extensions,
+			     (s->alpn[0] == '\0') ? "00" : s->alpn,
+			     (s->num_ciphers > 0) ? s->cipher[0] : 0);
+
+      if(rc > 0)
+	tls_s_len += rc;
+    }
+  }
+
+  if(sizeof(tls_s) > tls_s_len)
+    tls_s[tls_s_len++] = '_';
+
+  for(i=0; i<s->num_tls_extensions; i++) {
+    int b_diff = sizeof(tls_s)-tls_s_len-1;
+
+    if(b_diff > 0) {
+      int rc = ndpi_snprintf(&tls_s[tls_s_len], b_diff, "%04x",
+			     s->tls_extension[i]);
+
+      if(rc <= 0)
+	break;
+      else
+	tls_s_len += rc;
+    } else
+      break;
+  }
+
+  if(sizeof(tls_s) > tls_s_len)
+    tls_s[tls_s_len++] = '_';
+
+  if(s->num_elliptic_curve_point_format > 0) {
+    for(i=0; i<s->num_elliptic_curve_point_format; i++) {
+      int b_diff = sizeof(tls_s)-tls_s_len-1;
+
+      if(b_diff > 0) {
+	int rc = ndpi_snprintf(&tls_s[tls_s_len], b_diff, "%04x",
+			       s->elliptic_curve_point_format[i]);
+
+	if(rc <= 0)
+	  break;
+	else
+	  tls_s_len += rc;
+      } else
+	break;
+    }
+  } else {
+    int b_diff = sizeof(tls_s)-tls_s_len-1;
+
+    if(b_diff > 0) {
+      int rc = ndpi_snprintf(&tls_s[tls_s_len], b_diff, "%04x", 0);
+
+      if(rc > 0)
+	tls_s_len += rc;
+    }
+  }
+
+  ndpi_sha256((const u_char *)tls_s, tls_s_len, sha_hash);
+
+  ndpi_snprintf(fp_buf, sizeof(fp_buf),
+		"%02x%02x%02x%02x%02x%02x",
+		sha_hash[0], sha_hash[1], sha_hash[2],
+		sha_hash[3], sha_hash[4], sha_hash[5]);
+
+  flow->ndpi.server_fingerprint = ndpi_strdup((char*)fp_buf);
+}
+
+/* **************************************** */
+
 static int _processClientServerHello(struct ndpi_detection_module_struct *ndpi_struct,
 			     struct ndpi_flow_struct *flow, uint32_t quic_version,
 			     union ja_info *ja) {
   struct ndpi_packet_struct *packet = ndpi_get_packet_struct(ndpi_struct);
   //union ja_info ja
+  ndpi_tls_server_info *s = &ja->server;
   u_int8_t invalid_ja = 0;
   u_int16_t tls_version;
   u_int32_t i, j;
@@ -2771,7 +2869,7 @@ static int _processClientServerHello(struct ndpi_detection_module_struct *ndpi_s
 	  alpn_str_len = ndpi_min(sizeof(ja->server.alpn), (size_t)alpn_str_len);
 	  memcpy(ja->server.alpn, alpn_str, alpn_str_len);
 	  if(alpn_str_len > 0)
-	    ja->server.alpn[alpn_str_len - 1] = '\0';
+	    ja->server.alpn[alpn_str_len] = '\0';
 
 	  /* Replace , with - as in JA3 */
 	  for(i=0; ja->server.alpn[i] != '\0'; i++)
@@ -2814,6 +2912,10 @@ static int _processClientServerHello(struct ndpi_detection_module_struct *ndpi_s
          (i.e. (D)TLS <= 1.2), use the version field present in the record layer */
       if(flow->protos.tls_quic.ssl_version == 0)
         flow->protos.tls_quic.ssl_version = tls_version;
+
+      if(ndpi_struct->cfg.ndpi_server_fingerprint_enabled
+	 && (flow->ndpi.server_fingerprint == NULL))
+	ndpi_compute_tls_server_fingerprint(flow, is_dtls, quic_version, s);
 
       if(ndpi_struct->cfg.tls_ja3s_fingerprint_enabled) {
          u_int16_t ja_str_len;

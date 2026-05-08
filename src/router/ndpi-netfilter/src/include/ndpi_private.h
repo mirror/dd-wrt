@@ -240,6 +240,7 @@ struct ndpi_detection_module_config_struct {
   int tcp_fingerprint_enabled;
   int tcp_fingerprint_raw_enabled;
   int ndpi_fingerprint_enabled;
+  int ndpi_server_fingerprint_enabled;
   ndpi_fingerprint_format ndpi_fingerprint_format;
 
   char filename_config[CFG_MAX_LEN];
@@ -649,9 +650,9 @@ struct ndpi_detection_module_struct {
 /* Protocol bitmasks */
 
 #define NDPI_SELECTION_BITMASK_PROTOCOL_IP			(1<<0)
-#define NDPI_SELECTION_BITMASK_PROTOCOL_INT_TCP			(1<<1)
-#define NDPI_SELECTION_BITMASK_PROTOCOL_INT_UDP			(1<<2)
-#define NDPI_SELECTION_BITMASK_PROTOCOL_INT_TCP_OR_UDP		(1<<3)
+#define NDPI_SELECTION_BITMASK_PROTOCOL_L4_TCP			(1<<1)
+#define NDPI_SELECTION_BITMASK_PROTOCOL_L4_UDP			(1<<2)
+#define NDPI_SELECTION_BITMASK_PROTOCOL_L4_TCP_OR_UDP		(1<<3)
 #define NDPI_SELECTION_BITMASK_PROTOCOL_HAS_PAYLOAD		(1<<4)
 #define NDPI_SELECTION_BITMASK_PROTOCOL_NO_TCP_RETRANSMISSION	(1<<5)
 #define NDPI_SELECTION_BITMASK_PROTOCOL_IPV6			(1<<6)
@@ -660,19 +661,19 @@ struct ndpi_detection_module_struct {
 /* now combined detections */
 
 /* v4 */
-#define NDPI_SELECTION_BITMASK_PROTOCOL_TCP (NDPI_SELECTION_BITMASK_PROTOCOL_IP | NDPI_SELECTION_BITMASK_PROTOCOL_INT_TCP)
-#define NDPI_SELECTION_BITMASK_PROTOCOL_UDP (NDPI_SELECTION_BITMASK_PROTOCOL_IP | NDPI_SELECTION_BITMASK_PROTOCOL_INT_UDP)
-#define NDPI_SELECTION_BITMASK_PROTOCOL_TCP_OR_UDP (NDPI_SELECTION_BITMASK_PROTOCOL_IP | NDPI_SELECTION_BITMASK_PROTOCOL_INT_TCP_OR_UDP)
+#define NDPI_SELECTION_BITMASK_PROTOCOL_TCP (NDPI_SELECTION_BITMASK_PROTOCOL_IP | NDPI_SELECTION_BITMASK_PROTOCOL_L4_TCP)
+#define NDPI_SELECTION_BITMASK_PROTOCOL_UDP (NDPI_SELECTION_BITMASK_PROTOCOL_IP | NDPI_SELECTION_BITMASK_PROTOCOL_L4_UDP)
+#define NDPI_SELECTION_BITMASK_PROTOCOL_TCP_OR_UDP (NDPI_SELECTION_BITMASK_PROTOCOL_IP | NDPI_SELECTION_BITMASK_PROTOCOL_L4_TCP_OR_UDP)
 
 /* v6 */
-#define NDPI_SELECTION_BITMASK_PROTOCOL_V6_TCP (NDPI_SELECTION_BITMASK_PROTOCOL_IPV6 | NDPI_SELECTION_BITMASK_PROTOCOL_INT_TCP)
-#define NDPI_SELECTION_BITMASK_PROTOCOL_V6_UDP (NDPI_SELECTION_BITMASK_PROTOCOL_IPV6 | NDPI_SELECTION_BITMASK_PROTOCOL_INT_UDP)
-#define NDPI_SELECTION_BITMASK_PROTOCOL_V6_TCP_OR_UDP (NDPI_SELECTION_BITMASK_PROTOCOL_IPV6 | NDPI_SELECTION_BITMASK_PROTOCOL_INT_TCP_OR_UDP)
+#define NDPI_SELECTION_BITMASK_PROTOCOL_V6_TCP (NDPI_SELECTION_BITMASK_PROTOCOL_IPV6 | NDPI_SELECTION_BITMASK_PROTOCOL_L4_TCP)
+#define NDPI_SELECTION_BITMASK_PROTOCOL_V6_UDP (NDPI_SELECTION_BITMASK_PROTOCOL_IPV6 | NDPI_SELECTION_BITMASK_PROTOCOL_L4_UDP)
+#define NDPI_SELECTION_BITMASK_PROTOCOL_V6_TCP_OR_UDP (NDPI_SELECTION_BITMASK_PROTOCOL_IPV6 | NDPI_SELECTION_BITMASK_PROTOCOL_L4_TCP_OR_UDP)
 
 /* v4 or v6 */
-#define NDPI_SELECTION_BITMASK_PROTOCOL_V4_V6_TCP (NDPI_SELECTION_BITMASK_PROTOCOL_IPV4_OR_IPV6 | NDPI_SELECTION_BITMASK_PROTOCOL_INT_TCP)
-#define NDPI_SELECTION_BITMASK_PROTOCOL_V4_V6_UDP (NDPI_SELECTION_BITMASK_PROTOCOL_IPV4_OR_IPV6 | NDPI_SELECTION_BITMASK_PROTOCOL_INT_UDP)
-#define NDPI_SELECTION_BITMASK_PROTOCOL_V4_V6_TCP_OR_UDP (NDPI_SELECTION_BITMASK_PROTOCOL_IPV4_OR_IPV6 | NDPI_SELECTION_BITMASK_PROTOCOL_INT_TCP_OR_UDP)
+#define NDPI_SELECTION_BITMASK_PROTOCOL_V4_V6_TCP (NDPI_SELECTION_BITMASK_PROTOCOL_IPV4_OR_IPV6 | NDPI_SELECTION_BITMASK_PROTOCOL_L4_TCP)
+#define NDPI_SELECTION_BITMASK_PROTOCOL_V4_V6_UDP (NDPI_SELECTION_BITMASK_PROTOCOL_IPV4_OR_IPV6 | NDPI_SELECTION_BITMASK_PROTOCOL_L4_UDP)
+#define NDPI_SELECTION_BITMASK_PROTOCOL_V4_V6_TCP_OR_UDP (NDPI_SELECTION_BITMASK_PROTOCOL_IPV4_OR_IPV6 | NDPI_SELECTION_BITMASK_PROTOCOL_L4_TCP_OR_UDP)
 
 /* does it make sense to talk about udp with payload ??? have you ever seen empty udp packets ? */
 #define NDPI_SELECTION_BITMASK_PROTOCOL_UDP_WITH_PAYLOAD		(NDPI_SELECTION_BITMASK_PROTOCOL_UDP | NDPI_SELECTION_BITMASK_PROTOCOL_HAS_PAYLOAD)
@@ -739,7 +740,6 @@ NDPI_STATIC char *ndpi_user_agent_set(struct ndpi_flow_struct *flow, const u_int
 
 NDPI_STATIC void ndpi_parse_packet_line_info(struct ndpi_detection_module_struct *ndpi_struct,
 					  struct ndpi_flow_struct *flow);
-NDPI_STATIC void ndpi_parse_packet_line_info_any(struct ndpi_detection_module_struct *ndpi_struct);
 
 NDPI_STATIC void load_common_alpns(struct ndpi_detection_module_struct *ndpi_str);
 NDPI_STATIC u_int8_t is_a_common_alpn(struct ndpi_detection_module_struct *ndpi_str,
@@ -827,6 +827,14 @@ NDPI_STATIC int signal_search_into_cache(struct ndpi_detection_module_struct* nd
 NDPI_STATIC void signal_add_to_cache(struct ndpi_detection_module_struct *ndpi_struct,
                         struct ndpi_flow_struct *flow);
 
+/* DNS */
+void ndpi_search_dns(struct ndpi_detection_module_struct *ndpi_struct,
+                     struct ndpi_flow_struct *flow);
+
+/* HTTP */
+void ndpi_search_http_tcp(struct ndpi_detection_module_struct *ndpi_struct,
+                          struct ndpi_flow_struct *flow);
+
 /* QUIC */
 NDPI_STATIC int quic_len(const uint8_t *buf, uint64_t *value);
 NDPI_STATIC int quic_len_buffer_still_required(uint8_t value);
@@ -911,7 +919,6 @@ NDPI_STATIC void init_h323_dissector(struct ndpi_detection_module_struct *ndpi_s
 NDPI_STATIC void init_hots_dissector(struct ndpi_detection_module_struct *ndpi_struct);
 NDPI_STATIC void init_http_dissector(struct ndpi_detection_module_struct *ndpi_struct);
 NDPI_STATIC void init_iax_dissector(struct ndpi_detection_module_struct *ndpi_struct);
-NDPI_STATIC void init_icecast_dissector(struct ndpi_detection_module_struct *ndpi_struct);
 NDPI_STATIC void init_ipp_dissector(struct ndpi_detection_module_struct *ndpi_struct);
 NDPI_STATIC void init_irc_dissector(struct ndpi_detection_module_struct *ndpi_struct);
 NDPI_STATIC void init_jabber_dissector(struct ndpi_detection_module_struct *ndpi_struct);
@@ -987,7 +994,6 @@ NDPI_STATIC void init_vxlan_dissector(struct ndpi_detection_module_struct *ndpi_
 NDPI_STATIC void init_whois_das_dissector(struct ndpi_detection_module_struct *ndpi_struct);
 NDPI_STATIC void init_xbox_dissector(struct ndpi_detection_module_struct *ndpi_struct);
 NDPI_STATIC void init_xdmcp_dissector(struct ndpi_detection_module_struct *ndpi_struct);
-NDPI_STATIC void init_zattoo_dissector(struct ndpi_detection_module_struct *ndpi_struct);
 NDPI_STATIC void init_zmq_dissector(struct ndpi_detection_module_struct *ndpi_struct);
 NDPI_STATIC void init_stracraft_dissector(struct ndpi_detection_module_struct *ndpi_struct);
 NDPI_STATIC void init_ubntac2_dissector(struct ndpi_detection_module_struct *ndpi_struct);
@@ -1146,6 +1152,7 @@ NDPI_STATIC void init_samsung_sdp_dissector(struct ndpi_detection_module_struct 
 NDPI_STATIC void init_matter_dissector(struct ndpi_detection_module_struct *ndpi_struct);
 NDPI_STATIC void init_json_dissector(struct ndpi_detection_module_struct *ndpi_struct);
 NDPI_STATIC void init_msgpack_dissector(struct ndpi_detection_module_struct *ndpi_struct);
+NDPI_STATIC void init_sbe_dissector(struct ndpi_detection_module_struct *ndpi_struct);
 
 
 #ifdef CUSTOM_NDPI_PROTOCOLS

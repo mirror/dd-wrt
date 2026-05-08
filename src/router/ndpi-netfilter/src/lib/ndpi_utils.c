@@ -1152,33 +1152,52 @@ u_char* ndpi_hex_encode(unsigned char const* bytes_to_encode, size_t in_len) {
 
 /* ********************************** */
 
-static inline u_char ndpi_hex_decode_c(u_char src) {
-  if(src >= '0' && src <= '9') return src & 0xf;
-  if((src >= 'a' && src <= 'f') ||
-     (src >= 'A' && src <= 'F'))
-	return (src & 0x7) + 9;
-  return 0;
+static int ndpi_hex2nibble(u_char c) {
+  if(c >= '0' && c <= '9')
+    return(c - '0');
+  if(c >= 'a' && c <= 'f')
+    return(10 + (c - 'a'));
+  if(c >= 'A' && c <= 'F')
+    return(10 + (c - 'A'));
+
+  return(-1);
 }
 
+/* ********************************** */
+
 u_char* ndpi_hex_decode(const u_char *src, size_t len, size_t *out_len) {
+  size_t i, decoded_len;
   u_char *ret;
 
-  *out_len = len / 2;
-  ret = (u_char*)ndpi_malloc(*out_len+1);
+  if(out_len == NULL)
+    return(NULL);
+
+  *out_len = 0;
+
+  if((src == NULL) && (len != 0))
+    return(NULL);
+
+  if((len & 0x1) != 0)
+    return(NULL);
+
+  decoded_len = len / 2;
+  ret = (u_char*)ndpi_malloc(decoded_len + 1);
 
   if(ret != NULL) {
-    u_int i, ret_idx = 0;
+    for(i = 0; i < decoded_len; i++) {
+      int hi = ndpi_hex2nibble(src[2 * i]);
+      int lo = ndpi_hex2nibble(src[(2 * i) + 1]);
 
-    for(i=0; i<*out_len; i++) {
-#if 0
-      sscanf((const char*)&src[ret_idx], "%02hhX", &ret[i]);
-#else
-      ret[i] = (ndpi_hex_decode_c(src[ret_idx]) << 4) | ndpi_hex_decode_c(src[ret_idx+1]);
-#endif
-      ret_idx += 2;
+      if((hi < 0) || (lo < 0)) {
+        ndpi_free(ret);
+        return(NULL);
+      }
+
+      ret[i] = (u_char)((hi << 4) | lo);
     }
 
-    ret[i] = '\0';
+    ret[decoded_len] = '\0';
+    *out_len = decoded_len;
   }
 
   return(ret);
@@ -1278,7 +1297,10 @@ void ndpi_serialize_proto(struct ndpi_detection_module_struct *ndpi_struct,
 void ndpi_serialize_tls_blocks(struct ndpi_detection_module_struct *ndpi_struct,
 			       ndpi_serializer *serializer,
 			       struct ndpi_flow_struct *flow) {
-  if((ndpi_struct->cfg.tls_max_num_blocks_to_analyze > 0)
+  bool is_tls_proto = (ndpi_get_master_proto(ndpi_struct, flow) == NDPI_PROTOCOL_TLS) ? true : false;
+
+  if(is_tls_proto
+     && (ndpi_struct->cfg.tls_max_num_blocks_to_analyze > 0)
      && (flow->l4.tcp.tls.tls_blocks != NULL)
      && (flow->l4.tcp.tls.num_tls_blocks > 0)) {
     u_int16_t i, idx = 0;
@@ -1458,7 +1480,7 @@ void ndpi_serialize_tls_blocks(struct ndpi_detection_module_struct *ndpi_struct,
 /* ********************************** */
 
 static void ndpi_tls2json(struct ndpi_detection_module_struct *ndpi_struct, ndpi_serializer *serializer,
-			  struct ndpi_flow_struct *flow, bool is_tls_proto) {
+			  struct ndpi_flow_struct *flow) {
   if(flow->protos.tls_quic.ssl_version) {
     char buf[64];
     char notBefore[32], notAfter[32];
@@ -1497,8 +1519,9 @@ static void ndpi_tls2json(struct ndpi_detection_module_struct *ndpi_struct, ndpi
       ndpi_serialize_string_string(serializer, "ja3s", flow->protos.tls_quic.ja3_server);
       ndpi_serialize_string_string(serializer, "ja4", flow->protos.tls_quic.ja4_client);
       ndpi_serialize_string_uint32(serializer, "unsafe_cipher", flow->protos.tls_quic.server_unsafe_cipher);
-      ndpi_serialize_string_string(serializer, "cipher",
-                                   ndpi_cipher2str(flow->protos.tls_quic.server_cipher, unknown_cipher));
+      if(flow->protos.tls_quic.server_cipher != TLS_NULL_WITH_NULL_NULL)
+        ndpi_serialize_string_string(serializer, "cipher",
+                                     ndpi_cipher2str(flow->protos.tls_quic.server_cipher, unknown_cipher));
 
       if(flow->protos.tls_quic.issuerDN)
         ndpi_serialize_string_string(serializer, "issuerDN", flow->protos.tls_quic.issuerDN);
@@ -1526,8 +1549,7 @@ static void ndpi_tls2json(struct ndpi_detection_module_struct *ndpi_struct, ndpi
         ndpi_serialize_string_string(serializer, "fingerprint", buf);
       }
 
-      if (is_tls_proto == true)
-	ndpi_serialize_tls_blocks(ndpi_struct, serializer, flow);
+      ndpi_serialize_tls_blocks(ndpi_struct, serializer, flow);
 
       ndpi_serialize_end_of_block(serializer);
     }
@@ -1644,7 +1666,7 @@ int ndpi_dpi2json(struct ndpi_detection_module_struct *ndpi_struct,
 	snprintf(&bittorent_hash[j],
 		 sizeof(bittorent_hash) - j,
 		 "%02x",
-		flow->protos.bittorrent.hash[i]);
+		 flow->protos.bittorrent.hash[i]);
 
 	j += 2, n += flow->protos.bittorrent.hash[i];
       }
@@ -1832,7 +1854,7 @@ int ndpi_dpi2json(struct ndpi_detection_module_struct *ndpi_struct,
                           flow->protos.tls_quic.quic_version);
     ndpi_serialize_string_string(serializer, "quic_version", quic_version);
 
-    ndpi_tls2json(ndpi_struct, serializer, flow, false);
+    ndpi_tls2json(ndpi_struct, serializer, flow);
 
     ndpi_serialize_end_of_block(serializer);
     break;
@@ -1990,6 +2012,25 @@ int ndpi_dpi2json(struct ndpi_detection_module_struct *ndpi_struct,
       ndpi_serialize_string_string(serializer,  "hassh_server", flow->protos.ssh.hassh_server);
     }
 
+    if(flow->protos.ssh.key_exchange_method)
+      ndpi_serialize_string_string(serializer, "kex_alg",
+                                   flow->protos.ssh.key_exchange_method);
+    if(flow->protos.ssh.negotiated_hostkey_alg)
+      ndpi_serialize_string_string(serializer, "hostkey_alg",
+                                   flow->protos.ssh.negotiated_hostkey_alg);
+    if(flow->protos.ssh.negotiated_cipher_c2s)
+      ndpi_serialize_string_string(serializer, "cipher_c2s",
+                                   flow->protos.ssh.negotiated_cipher_c2s);
+    if(flow->protos.ssh.negotiated_cipher_s2c)
+      ndpi_serialize_string_string(serializer, "cipher_s2c",
+                                   flow->protos.ssh.negotiated_cipher_s2c);
+    if(flow->protos.ssh.negotiated_mac_c2s)
+      ndpi_serialize_string_string(serializer, "mac_c2s",
+                                   flow->protos.ssh.negotiated_mac_c2s);
+    if(flow->protos.ssh.negotiated_mac_s2c)
+      ndpi_serialize_string_string(serializer, "mac_s2c",
+                                   flow->protos.ssh.negotiated_mac_s2c);
+
     if(ndpi_struct->cfg.ssh_hassh_data_enabled) {
       ndpi_serialize_start_of_block(serializer, "key_exchange_algorithms");
 
@@ -1999,10 +2040,6 @@ int ndpi_dpi2json(struct ndpi_detection_module_struct *ndpi_struct,
       if(flow->protos.ssh.server_key_exchange_algorithms)
 	ndpi_ssh_serialize_csv(serializer, flow->protos.ssh.server_key_exchange_algorithms, "server");
 
-      if(flow->protos.ssh.key_exchange_method)
-	ndpi_serialize_string_string(serializer,
-				     "key_exchange_method",
-				     flow->protos.ssh.key_exchange_method);
       ndpi_serialize_end_of_block(serializer);
     }
 
@@ -2039,26 +2076,82 @@ int ndpi_dpi2json(struct ndpi_detection_module_struct *ndpi_struct,
 
   case NDPI_PROTOCOL_SIP:
     ndpi_serialize_start_of_block(serializer, "sip");
+
     if(flow->protos.sip.from)
       ndpi_serialize_string_string(serializer, "from", flow->protos.sip.from);
+
     if(flow->protos.sip.from_imsi[0] != '\0')
       ndpi_serialize_string_string(serializer, "from_imsi", flow->protos.sip.from_imsi);
+
     if(flow->protos.sip.to)
       ndpi_serialize_string_string(serializer, "to", flow->protos.sip.to);
+
     if(flow->protos.sip.to_imsi[0] != '\0')
       ndpi_serialize_string_string(serializer, "to_imsi", flow->protos.sip.to_imsi);
+
     ndpi_serialize_end_of_block(serializer);
     break;
 
   case NDPI_PROTOCOL_TLS:
-    ndpi_tls2json(ndpi_struct, serializer, flow, true);
+    ndpi_tls2json(ndpi_struct, serializer, flow);
     break;
 
   case NDPI_PROTOCOL_DTLS:
-    ndpi_tls2json(ndpi_struct, serializer, flow, false);
+    ndpi_tls2json(ndpi_struct, serializer, flow);
 #ifdef CUSTOM_NDPI_PROTOCOLS
 #include "../../../nDPI-custom/ndpi_utils_dpi2json_dtls.c"
 #endif
+    break;
+
+  case NDPI_PROTOCOL_IPSEC:
+    {
+      u_int32_t buffer_len;
+      char *buffer, version[8];
+
+      ndpi_serialize_start_of_block(serializer, "ipsec");
+
+      snprintf(version, sizeof(version), "%u.%u",
+	       (flow->protos.ipsec.version & 0xF0) >> 4,
+	       (flow->protos.ipsec.version & 0x0F));
+      ndpi_serialize_string_string(serializer, "ike_version", version);
+
+      if(flow->protos.ipsec.proposal[NDPI_IKEV2_REQUEST_PROPOSAL].proto_id
+	 || flow->protos.ipsec.proposal[NDPI_IKEV2_RESPONSE_PROPOSAL].proto_id) {
+	u_int8_t i;
+	ndpi_serializer sub_serializer;
+	
+	if(ndpi_init_serializer(&sub_serializer, ndpi_serialization_format_json) == -1)
+	  ;
+	else {
+	  ndpi_serializer *ser;
+
+	  ser = &sub_serializer;
+
+	  for(i=0; i<2; i++) {
+	    struct ndpi_ipsec_proposal *p = &flow->protos.ipsec.proposal[i];
+
+	    ndpi_serialize_string_string(ser, "type", (i == NDPI_IKEV2_REQUEST_PROPOSAL) ? "request" : "response");
+	    ndpi_serialize_string_uint32(ser, "protocol_id", p->proto_id);
+	    ndpi_serialize_string_uint32(ser, "num_transforms", p->num_transforms);
+	    ndpi_serialize_string_string(ser, "encryption_algorithm", ndpi_ikev2_encr_name(p->encr_alg));
+	    ndpi_serialize_string_uint32(ser, "encryption_key_bits", p->encr_key_bits);
+	    ndpi_serialize_string_string(ser, "pseudo_random_algorithm", ndpi_ikev2_prf_name(p->prf_alg));
+	    ndpi_serialize_string_string(ser, "integrity_algorithm", ndpi_ikev2_integ_name(p->integ_alg));
+	    ndpi_serialize_string_string(ser, "diffie_hellman_group", ndpi_ikev2_dh_name(p->dh_group));
+	    ndpi_serialize_string_uint32(ser, "extended_sequence_numbers", p->esn);
+	    ndpi_serialize_end_of_record(ser);
+	  }
+
+	  buffer = ndpi_serializer_get_buffer(ser, &buffer_len);
+	  if(buffer && (buffer_len > 0))
+	    ndpi_serialize_string_raw(serializer, "proposals", buffer, buffer_len);
+
+	  ndpi_term_serializer(ser);
+	}
+      }
+
+      ndpi_serialize_end_of_block(serializer);
+    }
     break;
 
 #ifdef CUSTOM_NDPI_PROTOCOLS
@@ -2191,8 +2284,17 @@ int ndpi_flow2json(struct ndpi_detection_module_struct *ndpi_struct,
   if(flow->tcp.fingerprint_raw)
     ndpi_serialize_string_string(serializer, "tcp_fingerprint_raw", flow->tcp.fingerprint_raw);
 
-  if(flow->ndpi.fingerprint)
-    ndpi_serialize_string_string(serializer, "ndpi_fingerprint", flow->ndpi.fingerprint);
+  if(flow->ndpi.client_fingerprint || flow->ndpi.server_fingerprint) {
+    ndpi_serialize_start_of_block(serializer, "ndpi_fingerprint");
+
+    if(flow->ndpi.client_fingerprint)
+      ndpi_serialize_string_string(serializer, "client", flow->ndpi.client_fingerprint);
+
+    if(flow->ndpi.server_fingerprint)
+      ndpi_serialize_string_string(serializer, "server", flow->ndpi.server_fingerprint);
+
+    ndpi_serialize_end_of_block(serializer);
+  }
 
   ndpi_serialize_string_string(serializer, "proto",
 			       ndpi_get_ip_proto_name(l4_protocol,
@@ -3138,7 +3240,7 @@ ndpi_http_method ndpi_http_str2method(const char* method, u_int16_t method_len) 
         return(NDPI_HTTP_METHOD_RPC_CONNECT);
       } else if(strncmp(method, "RPC_IN_DATA", 11) == 0) {
         return(NDPI_HTTP_METHOD_RPC_IN_DATA);
-      } else if(strncmp(method, "RPC_OUT_DATA", 11) == 0) {
+      } else if(strncmp(method, "RPC_OUT_DATA", 12) == 0) {
         return(NDPI_HTTP_METHOD_RPC_OUT_DATA);
       }
     }
@@ -4054,10 +4156,20 @@ int ndpi_snprintf(char * str, size_t size, char const * format, ...) {
   va_list va_args;
 
   va_start(va_args, format);
-  int ret = ndpi_vsnprintf(str, size, format, va_args);
+  int rc = ndpi_vsnprintf(str, size, format, va_args);
   va_end(va_args);
 
-  return ret;
+  /*
+    ndpi_snprintf wraps standard snprintf, which returns the number of characters that would
+    have been written (not the number actually written) when the output is truncated.
+    So if rc >= size, only size - 1 characters were actually written, but tls_s_len is
+    advanced by rc. This has two consequences:
+  */
+
+  if(rc >= (int)size)
+    rc = size - 1;
+
+  return(rc);
 }
 
 /* ******************************************* */
@@ -5348,12 +5460,23 @@ struct ndpi_tls_block* ndpi_decode_tls_blocks(const u_char *encoded_blocks,
 					      u_int encoded_blocks_len,
 					      u_int8_t *num_tls_blocks) {
   size_t out_len;
-  u_char *buf = ndpi_hex_decode(encoded_blocks, encoded_blocks_len, &out_len);
+  u_char *buf;
   u_int8_t i, offset, block_len = 3; /* block_type(1) + len(2) */
   struct ndpi_tls_block *tls_blocks;
 
-  if(buf == NULL)  return(NULL);
-  if(out_len == 0) { ndpi_free(buf); return(NULL); }
+  if(num_tls_blocks == NULL)
+    return(NULL);
+
+  *num_tls_blocks = 0;
+
+  buf = ndpi_hex_decode(encoded_blocks, encoded_blocks_len, &out_len);
+  if(buf == NULL)
+    return(NULL);
+  if((out_len == 0) || ((out_len % block_len) != 0)
+     || ((out_len / block_len) > 0xFF)) {
+    ndpi_free(buf);
+    return(NULL);
+  }
 
   *num_tls_blocks = out_len / block_len;
 
@@ -6088,7 +6211,7 @@ float ndpi_tls_blocks_len_compare(struct ndpi_tls_block *a,
 
       if((diff != 0) && (n < 2 /* C/S Hello */))
 	return(999999.);
-      
+
       total += diff * diff;
 
 #if 0
@@ -6147,4 +6270,101 @@ bool ndpi_list_append(ndpi_list *l, void *value) {
   }
 
   return(true); /* All good */
+}
+
+/* ****************************************** */
+
+const char *ndpi_ikev2_encr_name(u_int16_t id) {
+  switch (id) {
+    case 1:  return "DES_IV64";
+    case 2:  return "DES";
+    case 3:  return "3DES";
+    case 4:  return "RC5";
+    case 5:  return "IDEA";
+    case 6:  return "CAST";
+    case 7:  return "BLOWFISH";
+    case 8:  return "3IDEA";
+    case 9:  return "DES_IV32";
+    case 11: return "NULL";
+    case 12: return "AES_CBC";
+    case 13: return "AES_CTR";
+    case 14: return "AES_CCM_8";
+    case 15: return "AES_CCM_12";
+    case 16: return "AES_CCM_16";
+    case 18: return "AES_GCM_8";
+    case 19: return "AES_GCM_12";
+    case 20: return "AES_GCM_16";
+    case 23: return "CAMELLIA_CBC";
+    case 28: return "CHACHA20_POLY1305";
+    default: return "UNKNOWN";
+  }
+}
+
+/* ****************************************** */
+
+const char *ndpi_ikev2_prf_name(u_int16_t id) {
+  switch (id) {
+    case 1: return "HMAC_MD5";
+    case 2: return "HMAC_SHA1";
+    case 3: return "HMAC_TIGER";
+    case 4: return "AES128_XCBC";
+    case 5: return "HMAC_SHA2_256";
+    case 6: return "HMAC_SHA2_384";
+    case 7: return "HMAC_SHA2_512";
+    case 8: return "AES128_CMAC";
+    default: return "UNKNOWN";
+  }
+}
+
+/* ****************************************** */
+
+const char *ndpi_ikev2_integ_name(u_int16_t id) {
+  switch (id) {
+    case 0:  return "NONE";
+    case 1:  return "HMAC_MD5_96";
+    case 2:  return "HMAC_SHA1_96";
+    case 3:  return "DES_MAC";
+    case 4:  return "KPDK_MD5";
+    case 5:  return "AES_XCBC_96";
+    case 6:  return "HMAC_MD5_128";
+    case 7:  return "HMAC_SHA1_160";
+    case 8:  return "AES_CMAC_96";
+    case 9:  return "AES_128_GMAC";
+    case 10: return "AES_192_GMAC";
+    case 11: return "AES_256_GMAC";
+    case 12: return "HMAC_SHA2_256_128";
+    case 13: return "HMAC_SHA2_384_192";
+    case 14: return "HMAC_SHA2_512_256";
+    default: return "UNKNOWN";
+  }
+}
+
+/* ****************************************** */
+
+const char *ndpi_ikev2_dh_name(u_int16_t id) {
+  switch (id) {
+    case 0:  return "NONE";
+    case 1:  return "MODP_768";
+    case 2:  return "MODP_1024";
+    case 5:  return "MODP_1536";
+    case 14: return "MODP_2048";
+    case 15: return "MODP_3072";
+    case 16: return "MODP_4096";
+    case 17: return "MODP_6144";
+    case 18: return "MODP_8192";
+    case 19: return "ECP_256";
+    case 20: return "ECP_384";
+    case 21: return "ECP_521";
+    case 22: return "MODP_1024_160";
+    case 23: return "MODP_2048_224";
+    case 24: return "MODP_2048_256";
+    case 25: return "ECP_192";
+    case 26: return "ECP_224";
+    case 28: return "BRAINPOOL_P256";
+    case 29: return "BRAINPOOL_P384";
+    case 30: return "BRAINPOOL_P512";
+    case 31: return "CURVE25519";
+    case 32: return "CURVE448";
+    default: return "UNKNOWN";
+  }
 }

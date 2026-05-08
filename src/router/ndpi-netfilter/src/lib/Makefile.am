@@ -22,6 +22,7 @@ libndpi_a_include_HEADERS = ../include/ndpi_api.h \
 			     third_party/include/ndpi_sha256.h \
 			     third_party/include/kdtree.h \
 			     third_party/include/ball.h \
+			     third_party/include/isolation_forest.h \
 			     third_party/include/shoco.h
 
 libndpi_a_SOURCES = ndpi_content_match.c.inc \
@@ -41,6 +42,8 @@ libndpi_a_SOURCES = ndpi_content_match.c.inc \
 		     ndpi_fingerprint.c \
 		     ndpi_filter.c \
 		     ndpi_bitmap.c \
+		     ndpi_binary_bitmap.c \
+		     ndpi_bitmap64_fuse.c \
 		     ndpi_plugin.c \
 		     protocols/activision.c \
 		     protocols/afp.c \
@@ -131,7 +134,6 @@ libndpi_a_SOURCES = ndpi_content_match.c.inc \
 		     protocols/http.c \
 		     protocols/http2.c \
 		     protocols/iax.c \
-		     protocols/icecast.c \
 		     protocols/i3d.c \
 		     protocols/imo.c \
 		     protocols/ieee-c37118.c \
@@ -233,6 +235,7 @@ libndpi_a_SOURCES = ndpi_content_match.c.inc \
 		     protocols/rx.c \
 		     protocols/s7comm.c \
 		     protocols/samsung_sdp.c \
+		     protocols/sbe.c \
 		     protocols/sd_rtn.c \
 		     protocols/sflow.c \
 		     protocols/sip.c \
@@ -290,7 +293,6 @@ libndpi_a_SOURCES = ndpi_content_match.c.inc \
 		     protocols/xdmcp.c \
 		     protocols/xiaomi.c \
 		     protocols/yojimbo.c \
-		     protocols/zattoo.c \
 		     protocols/zeromq.c \
 		     protocols/zoom.c \
 		     protocols/smpp.c \
@@ -322,6 +324,7 @@ libndpi_a_SOURCES = ndpi_content_match.c.inc \
 		     third_party/src/kdtree.c \
 		     third_party/src/shoco.c \
 		     third_party/src/aes.c \
+		     third_party/src/isolation_forest.c \
 		     third_party/src/roaring.c
 
 lib_LIBRARIES = libndpi.a

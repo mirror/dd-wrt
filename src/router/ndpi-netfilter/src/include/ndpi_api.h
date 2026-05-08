@@ -155,6 +155,8 @@ extern "C" {
 				     struct in_addr *pin);
   NDPI_STATIC u_int16_t ndpi_network_ptree6_match(struct ndpi_detection_module_struct *ndpi_str,
 				      struct in6_addr *pin);
+  u_int16_t ndpi_network_prefix_match(struct ndpi_detection_module_struct *ndpi_str,
+				      ndpi_prefix_t *prefix);
 
   /**
    * Returns the nDPI protocol id for IP+port-based protocol detection
@@ -1218,6 +1220,7 @@ NDPI_STATIC  const char* ndpi_tls_supported_version2str(u_int16_t version_id, ch
   NDPI_STATIC u_int16_t ndpi_patricia_get_node_bits(ndpi_patricia_node_t *node);
   NDPI_STATIC u_int16_t ndpi_patricia_get_maxbits(ndpi_patricia_tree_t *tree);
   NDPI_STATIC void ndpi_patricia_get_stats(ndpi_patricia_tree_t *tree, struct ndpi_patricia_tree_stats *stats);
+  NDPI_STATIC ndpi_patricia_node_t* ndpi_add_to_ptree(ndpi_patricia_tree_t *tree, int family, void *addr, int bits);
 
   NDPI_STATIC int ndpi_get_patricia_stats(struct ndpi_detection_module_struct *ndpi_struct,
                               ptree_type ptree_type,
@@ -1913,6 +1916,43 @@ NDPI_STATIC  const char* ndpi_tls_supported_version2str(u_int16_t version_id, ch
 			struct ndpi_bin *centroids);
 
   /* ******************************* */
+#ifndef __KERNEL__
+  /**
+   * Create and fit a new Isolation Forest. This creates the model
+   * of the data we're modelling across all the features.
+   *
+   * @param data          Row-major matrix [n_samples × n_features]
+   * @param n_samples     Number of training samples
+   * @param n_features    Number of features per sample
+   * @param n_trees       Number of isolation trees (100–500 typical)
+   */
+  void* ndpi_alloc_iforest(double **data, u_int32_t n_samples, u_int16_t n_features);
+
+  /**
+   * Frees a previously allocated isolation forest
+   *
+   * @param forest A forest created with ndpi_alloc_iforest()
+   */
+  void ndpi_free_iforest(void *forest);
+
+  /**
+   * Checks if a single sample is anomalous with respoect to the
+   * previously built model
+   *
+   * @param forest       A forest created with ndpi_alloc_iforest()
+   * @param sample       The data sample to analyze
+   * @return The anomaly value (0..1 range), usually a value over 0.5 is an anomaly.
+   */
+  double ndpi_iforest_score(void *_forest, double *sample);
+
+  /* ******************************* */
+#endif
+  ndpi_anomaly_model* ndpi_alloc_anomaly_model(u_int16_t n_features);
+  void ndpi_free_anomaly_model(ndpi_anomaly_model *m);
+  bool ndpi_train_anomaly_model(ndpi_anomaly_model *m, double *training_data);
+  bool ndpi_compute_anomaly_score(ndpi_anomaly_model *m, double *testing_data);
+
+  /* ******************************* */
 
   /* create a kd-tree for num_dimensions vector items */
   ndpi_kd_tree* ndpi_kd_create(u_int num_dimensions);
@@ -2104,6 +2144,10 @@ NDPI_STATIC  const char* ndpi_tls_supported_version2str(u_int16_t version_id, ch
   NDPI_STATIC bool ndpi_list_append(ndpi_list *l, void *value);
 
 #ifndef __KERNEL__
+  NDPI_STATIC const char *ndpi_ikev2_encr_name(u_int16_t id);
+  NDPI_STATIC const char *ndpi_ikev2_prf_name(u_int16_t id);
+  NDPI_STATIC const char *ndpi_ikev2_integ_name(u_int16_t id);
+ NDPI_STATIC  const char *ndpi_ikev2_dh_name(u_int16_t id);
   NDPI_STATIC int ndpi_load_geoip(struct ndpi_detection_module_struct *ndpi_str,
 		      const char *ip_city_data, const char *ip_as_data);
   NDPI_STATIC void ndpi_free_geoip(struct ndpi_detection_module_struct *ndpi_str);
@@ -2563,6 +2607,7 @@ NDPI_STATIC  u_int16_t ndpi_ranking_add_epoch(ndpi_ranking *rank, u_int32_t epoc
 				    struct ndpi_tls_block *b,
 				    u_int8_t num_tls_blocks);
 #endif
+
 #ifdef __cplusplus
 }
 #endif

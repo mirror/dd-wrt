@@ -792,6 +792,7 @@ NDPI_STATIC ndpi_protocol_match host_match[] =
    { "upload.youtube.com",                "YouTubeUpload",    NDPI_PROTOCOL_YOUTUBE_UPLOAD, NDPI_PROTOCOL_CATEGORY_MEDIA, NDPI_PROTOCOL_FUN, NDPI_PROTOCOL_DEFAULT_LEVEL },
    { "upload.video.google.com",           "YouTubeUpload",    NDPI_PROTOCOL_YOUTUBE_UPLOAD, NDPI_PROTOCOL_CATEGORY_MEDIA, NDPI_PROTOCOL_FUN, NDPI_PROTOCOL_DEFAULT_LEVEL },
    { "youtubei.googleapis.com",           "YouTube",          NDPI_PROTOCOL_YOUTUBE, NDPI_PROTOCOL_CATEGORY_MEDIA, NDPI_PROTOCOL_FUN, NDPI_PROTOCOL_DEFAULT_LEVEL },
+   { "kids.youtube.com",                  "YouTubeKids",      NDPI_PROTOCOL_YOUTUBE_KIDS, NDPI_PROTOCOL_CATEGORY_CHILDREN, NDPI_PROTOCOL_SAFE, NDPI_PROTOCOL_DEFAULT_LEVEL },
    { "youtube.",                          "YouTube",          NDPI_PROTOCOL_YOUTUBE, NDPI_PROTOCOL_CATEGORY_MEDIA, NDPI_PROTOCOL_FUN, NDPI_PROTOCOL_DEFAULT_LEVEL },
    { "youtu.be",                          "YouTube",          NDPI_PROTOCOL_YOUTUBE, NDPI_PROTOCOL_CATEGORY_MEDIA, NDPI_PROTOCOL_FUN, NDPI_PROTOCOL_DEFAULT_LEVEL },
    { "yt3.ggpht.com",                     "YouTube",          NDPI_PROTOCOL_YOUTUBE, NDPI_PROTOCOL_CATEGORY_MEDIA, NDPI_PROTOCOL_FUN, NDPI_PROTOCOL_DEFAULT_LEVEL },
@@ -1151,9 +1152,6 @@ NDPI_STATIC ndpi_protocol_match host_match[] =
    { "badoo.app",                     "Badoo", NDPI_PROTOCOL_BADOO, NDPI_PROTOCOL_CATEGORY_SOCIAL_NETWORK, NDPI_PROTOCOL_FUN, NDPI_PROTOCOL_DEFAULT_LEVEL },
 
    { "accuweather.com",               "AccuWeather", NDPI_PROTOCOL_ACCUWEATHER, NDPI_PROTOCOL_CATEGORY_WEB, NDPI_PROTOCOL_FUN, NDPI_PROTOCOL_DEFAULT_LEVEL },
-
-   { "zattoo.com",                       "Zattoo", NDPI_PROTOCOL_ZATTOO, NDPI_PROTOCOL_CATEGORY_VIDEO, NDPI_PROTOCOL_FUN, NDPI_PROTOCOL_DEFAULT_LEVEL },
-   { "zattosecurehd2-f.akamaihd.net",    "Zattoo", NDPI_PROTOCOL_ZATTOO, NDPI_PROTOCOL_CATEGORY_VIDEO, NDPI_PROTOCOL_FUN, NDPI_PROTOCOL_DEFAULT_LEVEL },
 
    { "classroom.google.com",             "GoogleClassroom", NDPI_PROTOCOL_GOOGLE_CLASSROOM, NDPI_PROTOCOL_CATEGORY_COLLABORATIVE, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_DEFAULT_LEVEL },
    { "backup.googleapis.com",            "GoogleCloud", NDPI_PROTOCOL_GOOGLE_CLOUD, NDPI_PROTOCOL_CATEGORY_CLOUD, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_DEFAULT_LEVEL },
@@ -1616,7 +1614,7 @@ static ndpi_category_match category_match[] = {
    { "jquery.com",                      NDPI_PROTOCOL_CATEGORY_MEDIA, NDPI_PROTOCOL_ACCEPTABLE },
    { "mncdn.com",                       NDPI_PROTOCOL_CATEGORY_MEDIA, NDPI_PROTOCOL_FUN },
    { "vultr.com",                       NDPI_PROTOCOL_CATEGORY_CLOUD, NDPI_PROTOCOL_FUN },
-   { "baidu.com",                       NDPI_PROTOCOL_CATEGORY_WEB, NDPI_PROTOCOL_FUN },
+   { "baidu.com",                       NDPI_PROTOCOL_CATEGORY_SEARCH_ENGINE, NDPI_PROTOCOL_FUN },
    { "icq.com",                         NDPI_PROTOCOL_CATEGORY_CHAT, NDPI_PROTOCOL_FUN },
    { "quickplay.com",                   NDPI_PROTOCOL_CATEGORY_STREAMING, NDPI_PROTOCOL_FUN },
    { "71.am",                           NDPI_PROTOCOL_CATEGORY_STREAMING, NDPI_PROTOCOL_FUN },
@@ -1869,6 +1867,66 @@ static ndpi_category_match category_match[] = {
    { "quantummetric.com",                NDPI_PROTOCOL_CATEGORY_ADVERTISEMENT, NDPI_PROTOCOL_TRACKER_ADS },
    /* Qualtrix: The XM Platform and our specialized AI uncovers insights, prioritizes actions, and empowers everyone to improve customer & employee experiences */
    { "qualtrics.com",                    NDPI_PROTOCOL_CATEGORY_ADVERTISEMENT, NDPI_PROTOCOL_TRACKER_ADS },
+   /* Children's content */
+   { "pbskids.org",                      NDPI_PROTOCOL_CATEGORY_CHILDREN, NDPI_PROTOCOL_SAFE },
+   { "nickjr.com",                       NDPI_PROTOCOL_CATEGORY_CHILDREN, NDPI_PROTOCOL_SAFE },
+   { "disneyjunior.com",                 NDPI_PROTOCOL_CATEGORY_CHILDREN, NDPI_PROTOCOL_SAFE },
+   { "cartoonnetwork.com",               NDPI_PROTOCOL_CATEGORY_CHILDREN, NDPI_PROTOCOL_FUN },
+   { "abcmouse.com",                     NDPI_PROTOCOL_CATEGORY_CHILDREN, NDPI_PROTOCOL_SAFE },
+   { "starfall.com",                     NDPI_PROTOCOL_CATEGORY_CHILDREN, NDPI_PROTOCOL_SAFE },
+
+   /* Weapons */
+   { "guns.com",                         NDPI_PROTOCOL_CATEGORY_WEAPONS, NDPI_PROTOCOL_ACCEPTABLE },
+   { "gunsamerica.com",                  NDPI_PROTOCOL_CATEGORY_WEAPONS, NDPI_PROTOCOL_ACCEPTABLE },
+   { "gunbroker.com",                    NDPI_PROTOCOL_CATEGORY_WEAPONS, NDPI_PROTOCOL_ACCEPTABLE },
+   { "armslist.com",                     NDPI_PROTOCOL_CATEGORY_WEAPONS, NDPI_PROTOCOL_ACCEPTABLE },
+   { "brownells.com",                    NDPI_PROTOCOL_CATEGORY_WEAPONS, NDPI_PROTOCOL_ACCEPTABLE },
+   { "midwayusa.com",                    NDPI_PROTOCOL_CATEGORY_WEAPONS, NDPI_PROTOCOL_ACCEPTABLE },
+   { "cheaperthandirt.com",              NDPI_PROTOCOL_CATEGORY_WEAPONS, NDPI_PROTOCOL_ACCEPTABLE },
+   { "primaryarms.com",                  NDPI_PROTOCOL_CATEGORY_WEAPONS, NDPI_PROTOCOL_ACCEPTABLE },
+   { "grabagun.com",                     NDPI_PROTOCOL_CATEGORY_WEAPONS, NDPI_PROTOCOL_ACCEPTABLE },
+   { "nra.org",                          NDPI_PROTOCOL_CATEGORY_WEAPONS, NDPI_PROTOCOL_ACCEPTABLE },
+   { "ar15.com",                         NDPI_PROTOCOL_CATEGORY_WEAPONS, NDPI_PROTOCOL_ACCEPTABLE },
+   { "glock.com",                        NDPI_PROTOCOL_CATEGORY_WEAPONS, NDPI_PROTOCOL_ACCEPTABLE },
+   { "beretta.com",                      NDPI_PROTOCOL_CATEGORY_WEAPONS, NDPI_PROTOCOL_ACCEPTABLE },
+   { "smith-wesson.com",                 NDPI_PROTOCOL_CATEGORY_WEAPONS, NDPI_PROTOCOL_ACCEPTABLE },
+   { "remington.com",                    NDPI_PROTOCOL_CATEGORY_WEAPONS, NDPI_PROTOCOL_ACCEPTABLE },
+   { "winchester.com",                   NDPI_PROTOCOL_CATEGORY_WEAPONS, NDPI_PROTOCOL_ACCEPTABLE },
+   { "ruger.com",                        NDPI_PROTOCOL_CATEGORY_WEAPONS, NDPI_PROTOCOL_ACCEPTABLE },
+   { "mossberg.com",                     NDPI_PROTOCOL_CATEGORY_WEAPONS, NDPI_PROTOCOL_ACCEPTABLE },
+   { "hornady.com",                      NDPI_PROTOCOL_CATEGORY_WEAPONS, NDPI_PROTOCOL_ACCEPTABLE },
+   { "federalcartridge.com",             NDPI_PROTOCOL_CATEGORY_WEAPONS, NDPI_PROTOCOL_ACCEPTABLE },
+   { "sigsauer.com",                     NDPI_PROTOCOL_CATEGORY_WEAPONS, NDPI_PROTOCOL_ACCEPTABLE },
+   { "heckler-koch.com",                 NDPI_PROTOCOL_CATEGORY_WEAPONS, NDPI_PROTOCOL_ACCEPTABLE },
+   { "springfield-armory.com",           NDPI_PROTOCOL_CATEGORY_WEAPONS, NDPI_PROTOCOL_ACCEPTABLE },
+   { "rockriverarms.com",                NDPI_PROTOCOL_CATEGORY_WEAPONS, NDPI_PROTOCOL_ACCEPTABLE },
+   { "budk.com",                         NDPI_PROTOCOL_CATEGORY_WEAPONS, NDPI_PROTOCOL_ACCEPTABLE },
+   { "bladeforums.com",                  NDPI_PROTOCOL_CATEGORY_WEAPONS, NDPI_PROTOCOL_ACCEPTABLE },
+
+   /* Violence */
+   { "bestgore.com",                     NDPI_PROTOCOL_CATEGORY_VIOLENCE, NDPI_PROTOCOL_UNRATED },
+   { "goregrish.com",                    NDPI_PROTOCOL_CATEGORY_VIOLENCE, NDPI_PROTOCOL_UNRATED },
+   { "theync.com",                       NDPI_PROTOCOL_CATEGORY_VIOLENCE, NDPI_PROTOCOL_UNRATED },
+   { "liveleak.com",                     NDPI_PROTOCOL_CATEGORY_VIOLENCE, NDPI_PROTOCOL_UNRATED },
+   { "watchpeopledie.tv",                NDPI_PROTOCOL_CATEGORY_VIOLENCE, NDPI_PROTOCOL_UNRATED },
+   { "kaotic.com",                       NDPI_PROTOCOL_CATEGORY_VIOLENCE, NDPI_PROTOCOL_UNRATED },
+   { "crazyshit.com",                    NDPI_PROTOCOL_CATEGORY_VIOLENCE, NDPI_PROTOCOL_UNRATED },
+   { "documentingreality.com",           NDPI_PROTOCOL_CATEGORY_VIOLENCE, NDPI_PROTOCOL_UNRATED },
+   { "ogrish.com",                       NDPI_PROTOCOL_CATEGORY_VIOLENCE, NDPI_PROTOCOL_UNRATED },
+   { "rotten.com",                       NDPI_PROTOCOL_CATEGORY_VIOLENCE, NDPI_PROTOCOL_UNRATED },
+
+   /* Drugs */
+   { "erowid.org",                       NDPI_PROTOCOL_CATEGORY_DRUGS, NDPI_PROTOCOL_DANGEROUS },
+   { "shroomery.org",                    NDPI_PROTOCOL_CATEGORY_DRUGS, NDPI_PROTOCOL_DANGEROUS },
+   { "drugs-forum.com",                  NDPI_PROTOCOL_CATEGORY_DRUGS, NDPI_PROTOCOL_DANGEROUS },
+   { "rollsafe.org",                     NDPI_PROTOCOL_CATEGORY_DRUGS, NDPI_PROTOCOL_DANGEROUS },
+   { "bluelight.org",                    NDPI_PROTOCOL_CATEGORY_DRUGS, NDPI_PROTOCOL_DANGEROUS },
+   { "drugpolicy.org",                   NDPI_PROTOCOL_CATEGORY_DRUGS, NDPI_PROTOCOL_DANGEROUS },
+   { "thecannabist.co",                  NDPI_PROTOCOL_CATEGORY_DRUGS, NDPI_PROTOCOL_DANGEROUS },
+   { "cannabis.com",                     NDPI_PROTOCOL_CATEGORY_DRUGS, NDPI_PROTOCOL_DANGEROUS },
+   { "leafly.com",                       NDPI_PROTOCOL_CATEGORY_DRUGS, NDPI_PROTOCOL_DANGEROUS },
+   { "weedmaps.com",                     NDPI_PROTOCOL_CATEGORY_DRUGS, NDPI_PROTOCOL_DANGEROUS },
+
    { NULL, 0, NDPI_PROTOCOL_SAFE }
 };
 #endif

@@ -55,8 +55,8 @@ static const char* binary_exec_file_ext[] = {
 					NULL
 };
 
-static void ndpi_search_http_tcp(struct ndpi_detection_module_struct *ndpi_struct,
-				 struct ndpi_flow_struct *flow);
+void ndpi_search_http_tcp(struct ndpi_detection_module_struct *ndpi_struct,
+			  struct ndpi_flow_struct *flow);
 
 /* *********************************************** */
 
@@ -534,6 +534,12 @@ static void ndpi_http_parse_subprotocol(struct ndpi_detection_module_struct *ndp
   if(packet->server_line.len > 7 &&
      strncmp((const char *)packet->server_line.ptr, "ntopng ", 7) == 0) {
     ndpi_set_detected_protocol(ndpi_struct, flow, NDPI_PROTOCOL_NTOP, master_protocol, NDPI_CONFIDENCE_DPI);
+    update_category_and_breed(ndpi_struct, flow);
+  }
+
+  if(packet->server_line.len > 7 &&
+     strncmp((const char *)packet->server_line.ptr, "Icecast", 7) == 0) {
+    ndpi_set_detected_protocol(ndpi_struct, flow, NDPI_PROTOCOL_ICECAST, master_protocol, NDPI_CONFIDENCE_DPI);
     update_category_and_breed(ndpi_struct, flow);
     ndpi_unset_risk(ndpi_struct, flow, NDPI_KNOWN_PROTOCOL_ON_NON_STANDARD_PORT);
   }
@@ -1774,8 +1780,8 @@ static void ndpi_check_http_tcp(struct ndpi_detection_module_struct *ndpi_struct
 
 /* ********************************* */
 
-static void ndpi_search_http_tcp(struct ndpi_detection_module_struct *ndpi_struct,
-				 struct ndpi_flow_struct *flow) {
+void ndpi_search_http_tcp(struct ndpi_detection_module_struct *ndpi_struct,
+			  struct ndpi_flow_struct *flow) {
   /* Break after 20 packets. */
   if(flow->packet_counter > 20) {
     NDPI_EXCLUDE_DISSECTOR(ndpi_struct, flow);

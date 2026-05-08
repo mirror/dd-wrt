@@ -123,6 +123,9 @@
     <ClCompile Include="..\example\reader_util.c">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
     </ClCompile>
+    <ClCompile Include="..\example\utests.c">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+    </ClCompile>
     <ClCompile Include="..\src\lib\ndpi_analyze.c" />
     <ClCompile Include="..\src\lib\ndpi_bitmap.c" />
     <ClCompile Include="..\src\lib\ndpi_classify.c" />
@@ -228,6 +231,7 @@
     <ClCompile Include="..\src\lib\third_party\src\kdtree.c" />
     <ClCompile Include="..\src\lib\third_party\src\ball.c" />
     <ClCompile Include="..\src\lib\third_party\src\aes.c" />
+    <ClCompile Include="..\src\lib\third_party\src\isolation_forest.c" />
     <ClCompile Include="..\src\lib\protocols\armagetron.c" />
     <ClCompile Include="..\src\lib\protocols\bgp.c" />
     <ClCompile Include="..\src\lib\protocols\bittorrent.c" />
@@ -259,7 +263,6 @@
     <ClCompile Include="..\src\lib\protocols\http.c" />
     <ClCompile Include="..\src\lib\protocols\http2.c" />
     <ClCompile Include="..\src\lib\protocols\iax.c" />
-    <ClCompile Include="..\src\lib\protocols\icecast.c" />
     <ClCompile Include="..\src\lib\protocols\ipp.c" />
     <ClCompile Include="..\src\lib\protocols\irc.c" />
     <ClCompile Include="..\src\lib\protocols\jabber.c" />
@@ -310,6 +313,7 @@
     <ClCompile Include="..\src\lib\protocols\rtsp.c" />
     <ClCompile Include="..\src\lib\protocols\rx.c" />
     <ClCompile Include="..\src\lib\protocols\samsung_sdp.c" />
+    <ClCompile Include="..\src\lib\protocols\sbe.c" />
     <ClCompile Include="..\src\lib\protocols\sflow.c" />
     <ClCompile Include="..\src\lib\protocols\sip.c" />
     <ClCompile Include="..\src\lib\protocols\skinny.c" />
@@ -345,7 +349,6 @@
     <ClCompile Include="..\src\lib\protocols\whoisdas.c" />
     <ClCompile Include="..\src\lib\protocols\xbox.c" />
     <ClCompile Include="..\src\lib\protocols\xdmcp.c" />
-    <ClCompile Include="..\src\lib\protocols\zattoo.c" />
     <ClCompile Include="..\src\lib\protocols\zeromq.c" />
     <ClCompile Include="..\src\lib\protocols\ptpv2.c" />
     <ClCompile Include="..\src\lib\protocols\hart-ip.c" />

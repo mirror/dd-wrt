@@ -77,7 +77,6 @@
 /fuzz/fuzz_alg_jitter
 /fuzz/fuzz_alg_crc32_md5
 /fuzz/fuzz_alg_ses_des
-/fuzz/fuzz_alg_bytestream
 /fuzz/fuzz_alg_shoco
 /fuzz/fuzz_alg_memmem
 /fuzz/fuzz_alg_strnstr
@@ -144,7 +143,6 @@
 /fuzz/fuzz_alg_hll_seed_corpus.zip
 /fuzz/fuzz_alg_jitter_seed_corpus.zip
 /fuzz/fuzz_alg_crc32_md5_seed_corpus.zip
-/fuzz/fuzz_alg_bytestream_seed_corpus.zip
 /fuzz/fuzz_ds_libcache_seed_corpus.zip
 /fuzz/fuzz_ds_ptree_seed_corpus.zip
 /fuzz/fuzz_ds_bitmap64_fuse_seed_corpus.zip
@@ -162,6 +160,9 @@
 /fuzz/fuzz_ndpi_reader_payload_analyzer_seed_corpus.zip
 /fuzz/fuzz_readerutils_workflow_seed_corpus.zip
 /fuzz/fuzz_readerutils_parseprotolist_seed_corpus.zip
+/fuzz/fuzz_http_parse_seed_corpus.zip
+/fuzz/fuzz_dns_parse_seed_corpus.zip
+/fuzz/fuzz_tls_client_server_hello_seed_corpus.zip
 /fuzz/fuzz_*.dict
 /fuzz/testpcaps.zip
 /influxdb/Makefile

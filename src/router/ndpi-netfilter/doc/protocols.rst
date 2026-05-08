@@ -493,15 +493,6 @@ References: `iQIYI official site: <https://www.iqiyi.com/>`_
 
 
 
-.. _Proto_55:
-
-`NDPI_PROTOCOL_ZATTOO`
-======================
-Zattoo is a TV streaming service providing live and on-demand television content over the Internet.
-
-References: `Zattoo official site <https://zattoo.com/>`_
-
-
 .. _Proto_56:
 
 `NDPI_PROTOCOL_YANDEX_MARKET`
@@ -3185,7 +3176,7 @@ Notes:
 ========================
 HAProxy is a high availability load balancer and reverse proxy.
 
-References: `HAProxy official site: <https://www.haproxy.org>`_
+References: `HAProxy official site: <https://www.haproxy.org>`_, `Proxy Protocol v2: <https://www.haproxy.org/download/1.8/doc/proxy-protocol.txt>`_
 
 
 .. _Proto_351:
@@ -4300,3 +4291,21 @@ References: `Official site <https://docs.github.com/en/packages/learn-github-pac
 GitHub Actions is a continuous integration and continuous delivery (CI/CD) platform that allows you to automate your build, test, and deployment pipeline.
 
 References: `Official site <https://docs.github.com/en/actions/get-started/understand-github-actions>`_
+
+
+.. _Proto_473:
+
+`NDPI_PROTOCOL_YOUTUBE_KIDS`
+============================
+YouTube Kids is a video platform by Google designed for children, offering curated, age-appropriate content with parental controls.
+
+References: `YouTube Kids official site <https://www.youtubekids.com/>`_
+
+
+.. _Proto_474:
+
+`NDPI_PROTOCOL_SBE`
+===================
+A FIX standard for binary message encoding.
+
+References: `Official Protocol Specs <https://github.com/FIXTradingCommunity/fix-simple-binary-encoding/tree/master>`_

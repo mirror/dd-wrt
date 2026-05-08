@@ -54,6 +54,7 @@ static inline long int strtol(const char *nptr, char **endptr, int base) {
 #define le32toh(v) le32_to_cpu(v)
 #define le16toh(v) le16_to_cpu(v)
 #define be32toh(v) be32_to_cpu(v)
+#define be16toh(v) be16_to_cpu(v)
 #if LINUX_VERSION_CODE < KERNEL_VERSION(3,17,0)
 typedef __s64 time64_t;
 #endif

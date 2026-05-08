@@ -173,6 +173,7 @@ enum info_type {
     INFO_SIP,
     INFO_FASTCGI,
     INFO_BFCP,
+    INFO_IPSEC,
 };
 
 typedef struct {
@@ -232,33 +233,33 @@ typedef struct ndpi_flow_info {
 
   union {
     char info[256];
-    
+
     struct {
       unsigned char auth_failed;
       char username[127];
       char password[128];
     } ftp_imap_pop_smtp;
-    
+
     struct {
       char domain[85];
       char hostname[85];
       char username[86];
     } kerberos;
-    
+
     struct {
       char ip[16];
       char port[6];
       char hostname[48];
       char fqdn[48];
     } softether;
-    
+
     struct {
       char identity_uuid[36];
       char machine[48];
       char platform[32];
       char services[48];
     } tivoconnect;
-    
+
     struct  {
       uint16_t result_code;
       uint16_t internal_port;
@@ -298,7 +299,7 @@ typedef struct ndpi_flow_info {
   struct {
     char currency[16];
   } mining;
-  
+
   struct {
     u_int16_t ssl_version;
     char server_info[64],
@@ -325,7 +326,7 @@ typedef struct ndpi_flow_info {
     u_int8_t num_blocks;
     struct ndpi_tls_block *blocks;
   } tls;
-  
+
   struct {
     char url[256], request_content_type[64], content_type[64],
       user_agent[256], server[128], nat_ip[32], username[64], password[64], filename[256];
@@ -339,7 +340,7 @@ typedef struct ndpi_flow_info {
       relayed_address, response_origin, other_address;
     u_int16_t rtp_counters[2];
   } stun;
-  
+
   struct {
     char *username, *password;
   } telnet;
@@ -350,10 +351,12 @@ typedef struct ndpi_flow_info {
     u_int16_t transaction_id;
   } dns;
 
+  struct ndpi_ipsec_details ipsec;
+
   u_int8_t multimedia_flow_types;
-  
+
   void *src_id, *dst_id;
-  char *tcp_fingerprint, *ndpi_fingerprint;
+  char *tcp_fingerprint, *ndpi_client_fingerprint, *ndpi_server_fingerprint;
   struct ndpi_entropy *entropy;
   struct ndpi_entropy *last_entropy;
 
@@ -363,10 +366,10 @@ typedef struct ndpi_flow_info {
 #else
   struct ndpi_bin payload_len_bin;
 #endif
-  
+
   /* Flow payload */
   u_int16_t flow_payload_len;
-  char *flow_payload;  
+  char *flow_payload;
 } ndpi_flow_info_t;
 
 

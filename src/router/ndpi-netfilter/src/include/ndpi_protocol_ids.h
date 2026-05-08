@@ -84,7 +84,7 @@ typedef enum {
   NDPI_PROTOCOL_ICECAST               = 52,
   NDPI_PROTOCOL_CPHA                  = 53,
   NDPI_PROTOCOL_IQIYI                 = 54,
-  NDPI_PROTOCOL_ZATTOO                = 55,
+  NDPI_PROTOCOL_FREE                  = 55, /* Free protocol */
   NDPI_PROTOCOL_YANDEX_MARKET         = 56,
   NDPI_PROTOCOL_YANDEX_DISK           = 57,
   NDPI_PROTOCOL_DISCORD               = 58,
@@ -502,6 +502,8 @@ typedef enum {
   NDPI_PROTOCOL_GITHUB_COPILOT        = 470,
   NDPI_PROTOCOL_GITHUB_PACKAGES       = 471,
   NDPI_PROTOCOL_GITHUB_ACTIONS        = 472,
+  NDPI_PROTOCOL_YOUTUBE_KIDS          = 473,
+  NDPI_PROTOCOL_SBE                   = 474,
 
 #ifdef CUSTOM_NDPI_PROTOCOLS
 #include "../../../nDPI-custom/custom_ndpi_protocol_ids.h"
