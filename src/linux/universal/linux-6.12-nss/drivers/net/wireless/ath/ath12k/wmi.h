@@ -3743,6 +3743,8 @@ struct wmi_stop_scan_cmd {
 	__le32 pdev_id;
 } __packed;
 
+#define WMI_MAX_NUM_CHAN_PER_WMI_CMD	58
+
 struct ath12k_wmi_scan_chan_list_arg {
 	u32 pdev_id;
 	u16 nallchans;
