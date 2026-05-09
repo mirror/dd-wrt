@@ -402,6 +402,7 @@ EJ_VISIBLE void ej_dump_site_survey(webs_t wp, int argc, char_t **argv)
 			case 0x200:
 			case 0x300:
 				speed = getrate(speed, s * 8, hasac, hasax, hasbe);
+				break;
 			case 0x400:
 				speed = getrate(speed, s * 16, hasac, hasax, hasbe);
 				break;
