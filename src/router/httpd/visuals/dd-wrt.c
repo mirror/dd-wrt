@@ -1773,10 +1773,6 @@ static void show_netmode(webs_t wp, char *prefix)
 			websWrite(wp, "document.write(\"<option value=\\\"ac-only\\\" %s>\" + wl_basic.ac + \"</option>\");\n",
 				  nvram_match(wl_net_mode, "ac-only") ? "selected=\\\"selected\\\"" : "");
 		}
-		if (has_be(prefix)) {
-			websWrite(wp, "document.write(\"<option value=\\\"be-only\\\" %s>\" + wl_basic.be + \"</option>\");\n",
-				  nvram_match(wl_net_mode, "be-only") ? "selected=\\\"selected\\\"" : "");
-		}
 		if (has_ax(prefix) && !is_ath10k(prefix)) {
 			if (has_5ghz(prefix)) {
 				websWrite(
@@ -1786,40 +1782,37 @@ static void show_netmode(webs_t wp, char *prefix)
 				websWrite(wp,
 					  "document.write(\"<option value=\\\"ax-only\\\" %s>\" + wl_basic.ax + \"</option>\");\n",
 					  nvram_match(wl_net_mode, "ax-only") ? "selected=\\\"selected\\\"" : "");
-				if (has_be(prefix)) {
-					websWrite(
-						wp,
-						"document.write(\"<option value=\\\"bexacn-mixed\\\" %s>\" + wl_basic.bexacn + \"</option>\");\n",
-						nvram_match(wl_net_mode, "bexacn-mixed") ? "selected=\\\"selected\\\"" : "");
-					websWrite(
-						wp,
-						"document.write(\"<option value=\\\"be5-only\\\" %s>\" + wl_basic.be5 + \"</option>\");\n",
-						nvram_match(wl_net_mode, "be5-only") ? "selected=\\\"selected\\\"" : "");
-				}
-			}
-			if (has_6ghz(prefix) && has_5ghz(prefix)) {
 				websWrite(
 					wp,
 					"document.write(\"<option value=\\\"ax5-only\\\" %s>\" + wl_basic.ax5 + \"</option>\");\n",
 					nvram_match(wl_net_mode, "ax5-only") ? "selected=\\\"selected\\\"" : "");
-				if (has_be(prefix))
-					websWrite(
-						wp,
-						"document.write(\"<option value=\\\"beax5-only\\\" %s>\" + wl_basic.beax5 + \"</option>\");\n",
-						nvram_match(wl_net_mode, "beax5-only") ? "selected=\\\"selected\\\"" : "");
 			}
 			if (has_6ghz(prefix)) {
 				websWrite(
 					wp,
 					"document.write(\"<option value=\\\"ax6-only\\\" %s>\" + wl_basic.ax6 + \"</option>\");\n",
 					nvram_match(wl_net_mode, "ax6-only") ? "selected=\\\"selected\\\"" : "");
-				if (has_be(prefix))
-					websWrite(
-						wp,
-						"document.write(\"<option value=\\\"be6-only\\\" %s>\" + wl_basic.be6 + \"</option>\");\n",
-						nvram_match(wl_net_mode, "be6-only") ? "selected=\\\"selected\\\"" : "");
 			}
 		}
+		if (has_be(prefix)) {
+			websWrite(wp,
+				  "document.write(\"<option value=\\\"bexacn-mixed\\\" %s>\" + wl_basic.bexacn + \"</option>\");\n",
+				  nvram_match(wl_net_mode, "bexacn-mixed") ? "selected=\\\"selected\\\"" : "");
+			websWrite(wp,
+				  "document.write(\"<option value=\\\"beax5-only\\\" %s>\" + wl_basic.beax5 + \"</option>\");\n",
+				  nvram_match(wl_net_mode, "beax5-only") ? "selected=\\\"selected\\\"" : "");
+			websWrite(wp, "document.write(\"<option value=\\\"be-only\\\" %s>\" + wl_basic.be + \"</option>\");\n",
+				  nvram_match(wl_net_mode, "be-only") ? "selected=\\\"selected\\\"" : "");
+			websWrite(wp, "document.write(\"<option value=\\\"be5-only\\\" %s>\" + wl_basic.be5 + \"</option>\");\n",
+				  nvram_match(wl_net_mode, "be5-only") ? "selected=\\\"selected\\\"" : "");
+			if (has_6ghz(prefix)) {
+				websWrite(
+					wp,
+					"document.write(\"<option value=\\\"be6-only\\\" %s>\" + wl_basic.be6 + \"</option>\");\n",
+					nvram_match(wl_net_mode, "be6-only") ? "selected=\\\"selected\\\"" : "");
+			}
+		}
+
 		if (has_ad(prefix)) {
 			websWrite(wp, "document.write(\"<option value=\\\"ad-only\\\" %s>\" + wl_basic.ad + \"</option>\");\n",
 				  nvram_match(wl_net_mode, "ad-only") ? "selected=\\\"selected\\\"" : "");
@@ -1866,11 +1859,6 @@ static void show_netmode(webs_t wp, char *prefix)
 					  "document.write(\"<option value=\\\"ac-only\\\" %s>\" + wl_basic.ac + \"</option>\");\n",
 					  nvram_match(wl_net_mode, "ac-only") ? "selected=\\\"selected\\\"" : "");
 			}
-			if (has_be(prefix)) {
-				websWrite(wp,
-					  "document.write(\"<option value=\\\"be-only\\\" %s>\" + wl_basic.be + \"</option>\");\n",
-					  nvram_match(wl_net_mode, "be-only") ? "selected=\\\"selected\\\"" : "");
-			}
 			if (has_ax(prefix) && (has_5ghz(prefix) || has_6ghz(prefix)) && !is_ath10k(prefix)) {
 				if (has_5ghz(prefix)) {
 					websWrite(
@@ -1881,39 +1869,39 @@ static void show_netmode(webs_t wp, char *prefix)
 						wp,
 						"document.write(\"<option value=\\\"ax-only\\\" %s>\" + wl_basic.ax + \"</option>\");\n",
 						nvram_match(wl_net_mode, "ax-only") ? "selected=\\\"selected\\\"" : "");
-					if (has_be(prefix)) {
-						websWrite(
-							wp,
-							"document.write(\"<option value=\\\"bexacn-mixed\\\" %s>\" + wl_basic.bexacn + \"</option>\");\n",
-							nvram_match(wl_net_mode, "bexacn-mixed") ? "selected=\\\"selected\\\"" :
-												   "");
-						websWrite(
-							wp,
-							"document.write(\"<option value=\\\"be5-only\\\" %s>\" + wl_basic.be5 + \"</option>\");\n",
-							nvram_match(wl_net_mode, "be5-only") ? "selected=\\\"selected\\\"" : "");
-					}
-				}
-				if (has_6ghz(prefix) && has_5ghz(prefix)) {
 					websWrite(
 						wp,
 						"document.write(\"<option value=\\\"ax5-only\\\" %s>\" + wl_basic.ax5 + \"</option>\");\n",
 						nvram_match(wl_net_mode, "ax5-only") ? "selected=\\\"selected\\\"" : "");
-					if (has_be(prefix))
-						websWrite(
-							wp,
-							"document.write(\"<option value=\\\"beax5-only\\\" %s>\" + wl_basic.beax5 + \"</option>\");\n",
-							nvram_match(wl_net_mode, "beax5-only") ? "selected=\\\"selected\\\"" : "");
 				}
 				if (has_6ghz(prefix)) {
 					websWrite(
 						wp,
 						"document.write(\"<option value=\\\"ax6-only\\\" %s>\" + wl_basic.ax6 + \"</option>\");\n",
 						nvram_match(wl_net_mode, "ax6-only") ? "selected=\\\"selected\\\"" : "");
-					if (has_be(prefix))
-						websWrite(
-							wp,
-							"document.write(\"<option value=\\\"be6-only\\\" %s>\" + wl_basic.be6 + \"</option>\");\n",
-							nvram_match(wl_net_mode, "be6-only") ? "selected=\\\"selected\\\"" : "");
+				}
+			}
+			if (has_be(prefix)) {
+				websWrite(
+					wp,
+					"document.write(\"<option value=\\\"bexacn-mixed\\\" %s>\" + wl_basic.bexacn + \"</option>\");\n",
+					nvram_match(wl_net_mode, "bexacn-mixed") ? "selected=\\\"selected\\\"" : "");
+				websWrite(
+					wp,
+					"document.write(\"<option value=\\\"beax5-only\\\" %s>\" + wl_basic.beax5 + \"</option>\");\n",
+					nvram_match(wl_net_mode, "beax5-only") ? "selected=\\\"selected\\\"" : "");
+				websWrite(wp,
+					  "document.write(\"<option value=\\\"be-only\\\" %s>\" + wl_basic.be + \"</option>\");\n",
+					  nvram_match(wl_net_mode, "be-only") ? "selected=\\\"selected\\\"" : "");
+				websWrite(
+					wp,
+					"document.write(\"<option value=\\\"be5-only\\\" %s>\" + wl_basic.be5 + \"</option>\");\n",
+					nvram_match(wl_net_mode, "be5-only") ? "selected=\\\"selected\\\"" : "");
+				if (has_6ghz(prefix)) {
+					websWrite(
+						wp,
+						"document.write(\"<option value=\\\"be6-only\\\" %s>\" + wl_basic.be6 + \"</option>\");\n",
+						nvram_match(wl_net_mode, "be6-only") ? "selected=\\\"selected\\\"" : "");
 				}
 			}
 			if (has_ad(prefix)) {
