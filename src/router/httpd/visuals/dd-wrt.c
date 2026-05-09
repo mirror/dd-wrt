@@ -3180,8 +3180,7 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 	}
 	if (has_be(prefix)) {
 		char *netmode = nvram_nget("%s_net_mode", prefix);
-		if (!strcmp(netmode, "mixed") ||
-		    !strcmp(netmode, "bexacn-mixed") || !strcmp(netmode, "be-only") ||
+		if (!strcmp(netmode, "mixed") || !strcmp(netmode, "bexacn-mixed") || !strcmp(netmode, "be-only") ||
 		    !strcmp(netmode, "be6-only") || !strcmp(netmode, "beax6-only") || !strcmp(netmode, "beax5-only")) {
 			char color[32];
 			sprintf(color, "%s_allow_mcs15", prefix);
@@ -3193,8 +3192,8 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 		char *netmode = nvram_nget("%s_net_mode", prefix);
 		if (!strcmp(netmode, "mixed") || !strcmp(netmode, "xacn-mixed") || !strcmp(netmode, "ax-only") ||
 		    !strcmp(netmode, "bexacn-mixed") || !strcmp(netmode, "be-only") || !strcmp(netmode, "ax6-only") ||
-		    !strcmp(netmode, "be6-only") || !strcmp(netmode, "be5-only") || !strcmp(netmode, "beax6-only") || !strcmp(netmode, "beax5-only") ||
-		    !strcmp(netmode, "ax5-only") || !strcmp(netmode, "axg-only")) {
+		    !strcmp(netmode, "be6-only") || !strcmp(netmode, "be5-only") || !strcmp(netmode, "beax6-only") ||
+		    !strcmp(netmode, "beax5-only") || !strcmp(netmode, "ax5-only") || !strcmp(netmode, "axg-only")) {
 			char color[32];
 			sprintf(color, "%s_bss_color", prefix);
 			showInputNum(wp, "wl_basic.bss_color", color, 3, 3, 128);
@@ -5275,8 +5274,7 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 	}
 	if (has_be(prefix)) {
 		char *netmode = nvram_nget("%s_net_mode", prefix);
-		if (!strcmp(netmode, "mixed") ||
-		    !strcmp(netmode, "bexacn-mixed") || !strcmp(netmode, "be-only") ||
+		if (!strcmp(netmode, "mixed") || !strcmp(netmode, "bexacn-mixed") || !strcmp(netmode, "be-only") ||
 		    !strcmp(netmode, "be6-only") || !strcmp(netmode, "beax6-only") || !strcmp(netmode, "beax5-only")) {
 			char color[32];
 			sprintf(color, "%s_allow_mcs15", prefix);
@@ -5999,8 +5997,9 @@ static int disable_if_6ghz(const char *prefix)
 {
 	if (has_6ghz(prefix) && !has_5ghz(prefix))
 		return 0;
-	return !has_6ghz(prefix) || ( !nvram_nmatch("ax6-only", "%s_net_mode", prefix) &&
-	       !nvram_nmatch("be6-only", "%s_net_mode", prefix) && !nvram_nmatch("beax6-only", "%s_net_mode", prefix));
+	return !has_6ghz(prefix) ||
+	       (!nvram_nmatch("ax6-only", "%s_net_mode", prefix) && !nvram_nmatch("be6-only", "%s_net_mode", prefix) &&
+		!nvram_nmatch("beax6-only", "%s_net_mode", prefix));
 }
 
 static int wpaauth(const char *prefix)

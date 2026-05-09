@@ -383,8 +383,8 @@ EJ_VISIBLE void ej_dump_site_survey(webs_t wp, int argc, char_t **argv)
 			int hasac = 0;
 			int hasax = 0;
 			int hasbe = 0;
-			if (site_survey_lists[i].extcap & CAP_VHT) 
-			     hasac = 1;
+			if (site_survey_lists[i].extcap & CAP_VHT)
+				hasac = 1;
 			if (site_survey_lists[i].extcap & CAP_AX)
 				hasax = 1;
 			if (site_survey_lists[i].extcap & CAP_BE)
