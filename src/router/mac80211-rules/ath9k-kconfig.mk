@@ -525,10 +525,16 @@ endif
 ifeq ($(CONFIG_ATH12K),y)
 	-mkdir -p $(INSTALLDIR)/ath9k/lib/firmware/ath12k
 	-cp -av $(TOP)/firmwares/wireless/ath12k/* $(INSTALLDIR)/ath9k/lib/firmware/ath12k
+ifeq ($(CONFIG_IPQ95XX),y)
+	rm -rf $(INSTALLDIR)/ath9k/lib/firmware/ath12k/QCC2072
+	rm -rf $(INSTALLDIR)/ath9k/lib/firmware/ath12k/WCN7850
+endif
 endif
 ifeq ($(CONFIG_IPQ95XX),y)
 	-mkdir -p $(INSTALLDIR)/ath9k/lib/firmware/ath12k
 	-cp -av $(TOP)/firmwares/wireless/ath12k/* $(INSTALLDIR)/ath9k/lib/firmware/ath12k
+	rm -rf $(INSTALLDIR)/ath9k/lib/firmware/ath12k/QCC2072
+	rm -rf $(INSTALLDIR)/ath9k/lib/firmware/ath12k/WCN7850
 endif
 ifeq ($(CONFIG_IPQ6018),y)
 	-mkdir -p $(INSTALLDIR)/ath9k/lib/firmware/ath11k/IPQ6018
