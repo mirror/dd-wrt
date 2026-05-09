@@ -406,6 +406,11 @@ rewrite:;
 		dd_logerror("flash", "partition for system not found");
 		goto fail;
 	}
+
+	eval("hdparm", "-W", "0", kernelname);
+	eval("sdparm", "-s", "WCE", "-S", kernelname);
+	eval("sdparm", "-c", "WCE", "-S", kernelname);
+
 	FILE *f_kernel = fopen(kernelname, "r+b");
 	if (!f_kernel) {
 		dd_logerror("flash", "Error opening: %s", kernelname);

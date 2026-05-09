@@ -400,6 +400,41 @@ rewrite:;
 		dd_logerror("flash", "%s: Bad trx header", path);
 		goto fail;
 	}
+#ifdef HAVE_X86
+	char disk[32];
+	char *d = getdisc();
+	eval("hdparm", "-W", "0", d);
+	eval("sdparm", "-s", "WCE", "-S", d);
+	eval("sdparm", "-c", "WCE", "-S", d);
+
+	sprintf(disk, "/dev/%s1", d);
+	/* open partitions from mmc device */
+	char *kernelname = disk;
+	if (!kernelname) {
+		dd_logerror("flash", "partition for kernel not found");
+		goto fail;
+	}
+	FILE *f_kernel = fopen(kernelname, "r+b");
+	if (!f_kernel) {
+		dd_logerror("flash", "Error opening: %s", kernelname);
+		goto fail;
+	}
+	sprintf(disk, "/dev/%s2", d);
+	char *rootfsname = disk;
+	if (!rootfsname) {
+		dd_logerror("flash", "partition for kernel not found");
+		goto fail;
+	}
+	FILE *f_rootfs = fopen(rootfsname, "r+b");
+	if (!f_rootfs) {
+		dd_logerror("flash", "Error opening: %s", rootfsname);
+		goto fail;
+	}
+#else
+	eval("hdparm", "-W", "0", "/dev/mmcblk0");
+	eval("sdparm", "-s", "WCE", "-S", "/dev/mmcblk0");
+	eval("sdparm", "-c", "WCE", "-S", "/dev/mmcblk0");
+
 	/* open partitions from mmc device */
 	char *kernelname = getgptpartitionbyname("/dev/mmcblk0", "0:HLOS");
 	if (!kernelname) {
@@ -422,6 +457,7 @@ rewrite:;
 		dd_logerror("flash", "Error opening: %s", rootfsname);
 		goto fail;
 	}
+#endif
 	fseek(f_kernel, 0, SEEK_END);
 	size_t kernellen = ftell(f_kernel);
 	rewind(f_kernel);
