@@ -505,6 +505,14 @@ rewrite:;
 			f_kernellen = *i_ptr;
 			i_ptr = (unsigned int *)&buf[4];
 			f_rootfslen = *i_ptr;
+			if (f_kernellen > kernellen) {
+					dd_logerror("flash", "Image too big for kernel partition: %s", mtd);
+					goto fail;
+			}
+			if (f_rootfslen > rootfslen) {
+					dd_logerror("flash", "Image too big for rootfs partition: %s", mtd);
+					goto fail;
+			}
 			dd_loginfoverbose("flash", "Flash kernel %d", f_kernellen);
 			ptr += 8;
 		}
@@ -661,6 +669,8 @@ fail:
 
 	if (fp)
 		fclose(fp);
+	fclose(f_rootfs);
+	fclose(f_kernel);
 	return -1;
 }
 
