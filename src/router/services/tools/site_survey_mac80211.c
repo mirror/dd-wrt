@@ -134,7 +134,7 @@ static void fillREM(const char *text)
 
 	foreach(var, buf, next) {
 		if (strcmp(var, text)) {
-			strspcattach(newbuf, sizeof(site_survey_lists[sscount].ENCINFO), text);
+			strspcattach(newbuf, sizeof(site_survey_lists[sscount].ENCINFO), var);
 		}
 	}
 	strcpy(site_survey_lists[sscount].ENCINFO, newbuf);
@@ -465,28 +465,32 @@ static void __print_he_capa(const __u16 *mac_cap, const __u16 *phy_cap, const __
 {
 	size_t mcs_used;
 	const char *pre = indent ? "\t" : "";
-
+	fillREM("HT20");
+	fillREM("VHT20");
+	fillENC("HE20");
+	fillREM("HT40");
+	fillREM("HT40SGI");
+	fillREM("VHT40");
+	fillREM("VHT80");
+	fillREM("VHT80SGI");
+	fillREM("VHT160");
+	fillREM("VHT80+80");
 	if (le16toh(phy_cap[0]) & BIT(1 + 8)) {
 		site_survey_lists[sscount].channel |= 0x1000;
-		fillREM("VHT40");
 		fillENC("HE40");
 	}
 	if (le16toh(phy_cap[0]) & BIT(2 + 8)) {
 		site_survey_lists[sscount].channel |= 0x1000;
 		site_survey_lists[sscount].channel |= 0x100;
-		fillREM("VHT80");
-		fillREM("VHT40");
 		fillENC("HE40");
 		fillENC("HE80");
 	}
 	if (le16toh(phy_cap[0]) & BIT(3 + 8)) {
 		site_survey_lists[sscount].channel |= 0x200;
-		fillREM("VHT160");
 		fillENC("HE160");
 	}
 	if (le16toh(phy_cap[0]) & BIT(4 + 8)) {
 		site_survey_lists[sscount].channel |= 0x200;
-		fillREM("VHT80+80");
 		fillENC("HE80+80");
 	}
 
@@ -605,6 +609,19 @@ void print_eht_operation(const uint8_t *ie, int len)
 		printf("%02x", ie[1 + i]);
 
 	printf("\n");*/
+	fillREM("HT20");
+	fillREM("VHT20");
+	fillREM("HE20");
+	fillREM("HT40");
+	fillREM("HT40SGI");
+	fillREM("VHT40");
+	fillREM("HE40");
+	fillREM("VHT80");
+	fillREM("VHT80SGI");
+	fillREM("HE80");
+	fillREM("VHT160");
+	fillREM("HE160");
+	fillREM("VHT80+80");
 
 	if (eht_operation_info_present) {
 		uint8_t offset = 5;
@@ -627,28 +644,20 @@ void print_eht_operation(const uint8_t *ie, int len)
 		printf("\t\t\tChannel Width: ");
 		switch (control & 0x7) {
 		case 0:
-			fillREM("VHT20");
-			fillREM("HE20");
 			fillENC("EHT20");
 			break;
 		case 1:
 			site_survey_lists[sscount].channel |= 0x1000;
-			fillREM("VHT40");
-			fillREM("HE40");
 			fillENC("EHT40");
 			break;
 		case 2:
 			site_survey_lists[sscount].channel |= 0x1000;
 			site_survey_lists[sscount].channel |= 0x100;
-			fillREM("VHT80");
-			fillREM("HE80");
 			fillENC("EHT80");
 			break;
 		case 3:
 			site_survey_lists[sscount].channel |= 0x1000;
 			site_survey_lists[sscount].channel |= 0x200;
-			fillREM("VHT160");
-			fillREM("HE160");
 			fillENC("EHT160");
 			break;
 		case 4:
@@ -922,7 +931,12 @@ void print_vht_info(__u32 capa, const __u8 *mcs)
 	__u16 tmp;
 	int i;
 	site_survey_lists[sscount].extcap |= CAP_VHT; // vht
+	fillREM("HT20");
+	fillREM("HT40");
+	fillREM("HT40SGI");
 
+	fillENC("VHT20");
+	fillENC("VHT40");
 	switch ((capa >> 2) & 3) {
 	case 0:
 		if (capa & BIT(5)) {
