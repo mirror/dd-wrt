@@ -2823,6 +2823,7 @@ roaming.prefer_5ghz="Prefer 5 GHz";
 roaming.budget_6ghz="6 GHz Budget in DBm";
 roaming.prefer_6ghz="Prefer 6 GHz";
 roaming.prefer_he="Prefer 802.11ax";
+roaming.prefer_eht="Prefer 802.11be";
 
 // ** WL_WPATable.asp / WPA.asp / Radius.asp **//
 var wpa=new Object();
@@ -3256,9 +3257,9 @@ wl_basic.ad="AD Only";
 wl_basic.acn="AC / N Mixed";
 wl_basic.ax="AX Only";
 wl_basic.be="BE Only";
-wl_basic.beax6="AX/BE Mixed (6 GHz)";
+wl_basic.beax6="BE / AX Mixed (6 GHz)";
 wl_basic.ax6="AX Only (6 GHz)";
-wl_basic.beax5="AX/BE Mixed (5 GHz)";
+wl_basic.beax5="BE / AX Mixed (5 GHz)";
 wl_basic.ax5="AX Only (5 GHz)";
 wl_basic.be6="BE Only (6 GHz)";
 wl_basic.be5="BE Only (5 GHz)";
