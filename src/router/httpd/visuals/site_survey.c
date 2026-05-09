@@ -411,13 +411,13 @@ EJ_VISIBLE void ej_dump_site_survey(webs_t wp, int argc, char_t **argv)
 			}
 
 				if (hasbe)
-					sprintf(rates, "%s(802.11be)", speedstr(speed, speedbuf, sizeof(speedbuf)));
+					sprintf(rates, "%s(be)", speedstr(speed, speedbuf, sizeof(speedbuf)));
 				else if (hasax)
-					sprintf(rates, "%s(802.11ax)", speedstr(speed, speedbuf, sizeof(speedbuf)));
+					sprintf(rates, "%s(ax)", speedstr(speed, speedbuf, sizeof(speedbuf)));
 				else if (hasac)
-					sprintf(rates, "%s(802.11ac)", speedstr(speed, speedbuf, sizeof(speedbuf)));
+					sprintf(rates, "%s(ac)", speedstr(speed, speedbuf, sizeof(speedbuf)));
 				else
-					sprintf(rates, "%s(802.11n)", speedstr(speed, speedbuf, sizeof(speedbuf)));
+					sprintf(rates, "%s(n)", speedstr(speed, speedbuf, sizeof(speedbuf)));
 
 /*			if ((site_survey_lists[i].channel & 0xff) < 15) {
 				if (hasbe)
@@ -470,11 +470,11 @@ EJ_VISIBLE void ej_dump_site_survey(webs_t wp, int argc, char_t **argv)
 
 			if ((site_survey_lists[i].channel & 0xff) < 15) {
 				sprintf(rates, "%s %s", speedstr(speed, speedbuf, sizeof(speedbuf)),
-					rc == 4 ? "(802.11b)" :
-					rc < 14 ? "(802.11g)" :
-						  "(802.11n)");
+					rc == 4 ? "(b)" :
+					rc < 14 ? "(g)" :
+						  "(n)");
 			} else {
-				sprintf(rates, "%s %s", speedstr(speed, speedbuf, sizeof(speedbuf)), rc < 14 ? "(802.11a)" : "(802.11n)");
+				sprintf(rates, "%s %s", speedstr(speed, speedbuf, sizeof(speedbuf)), rc < 14 ? "(a)" : "(n)");
 			}
 
 		} else {
@@ -500,11 +500,11 @@ EJ_VISIBLE void ej_dump_site_survey(webs_t wp, int argc, char_t **argv)
 
 			if ((site_survey_lists[i].channel & 0xff) < 15) {
 				sprintf(rates, "%s %s", speedstr(speed, speedbuf, sizeof(speedbuf)),
-					rc == 4 ? "(802.11b)" :
-					rc < 14 ? "(802.11g)" :
-						  "(802.11n)");
+					rc == 4 ? "(b)" :
+					rc < 14 ? "(g)" :
+						  "(n)");
 			} else {
-				sprintf(rates, "%s %s", speedstr(speed, speedbuf, sizeof(speedbuf)), rc < 14 ? "(802.11a)" : "(802.11n)");
+				sprintf(rates, "%s %s", speedstr(speed, speedbuf, sizeof(speedbuf)), rc < 14 ? "(a)" : "(n)");
 			}
 		}
 
