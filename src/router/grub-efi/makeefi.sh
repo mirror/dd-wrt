@@ -35,8 +35,8 @@ grub-tools/grub-bios-setup -m "img/device.map" -d "img" \
 		-r "hd0,gpt1" \
 		efi.img
 
-./trunc efi.img efi.tmp
-mv -f efi.tmp efi.img 
+#./trunc efi.img efi.tmp
+#mv -f efi.tmp efi.img 
 
 PADDING="1" SIGNATURE="$IMG_PART_SIGNATURE" GUID="$IMG_PART_DISKGUID" ./scripts/gen_image_generic.sh efi-big.img 32 tmp 600 ../x86_64-uclibc/root.fs 256 1780
 
@@ -50,8 +50,8 @@ grub-tools/grub-bios-setup -m "img/device.map" -d "img" \
 		-r "hd0,gpt1" \
 		efi-big.img
 
-./trunc efi-big.img efi-big.tmp
-mv -f efi-big.tmp efi-big.img 
+#./trunc efi-big.img efi-big.tmp
+#mv -f efi-big.tmp efi-big.img 
 
 
 rm -rf tmp
@@ -81,8 +81,8 @@ grub-tools/grub-bios-setup -m "img/device.map" -d "img" \
 		-r "hd0,gpt1" \
 		efi-vga.img
 
-./trunc efi-vga.img efi-vga.tmp
-mv -f efi-vga.tmp efi-vga.img 
+#./trunc efi-vga.img efi-vga.tmp
+#mv -f efi-vga.tmp efi-vga.img 
 
 PADDING="1" SIGNATURE="$IMG_PART_SIGNATURE" GUID="$IMG_PART_DISKGUID" ./scripts/gen_image_generic.sh efi-vga-big.img 32 tmp 600 ../x86_64-uclibc/root.fs 256 1780
 rm -rf imp
@@ -95,5 +95,5 @@ grub-tools/grub-bios-setup -m "img/device.map" -d "img" \
 		-r "hd0,gpt1" \
 		efi-vga-big.img
 
-./trunc efi-vga-big.img efi-vga-big.tmp
-mv -f efi-vga-big.tmp efi-vga-big.img 
+#./trunc efi-vga-big.img efi-vga-big.tmp
+#mv -f efi-vga-big.tmp efi-vga-big.img 
