@@ -1271,17 +1271,17 @@ char *getentrybyidx(char *buf, char *list, int idx)
 {
 	return getentrybyidx_d(buf, list, idx, "><:,", "><:-,");
 }
+static unsigned short get_le_short(void *from)
+{
+	unsigned char *p = from;
+	return ((unsigned short)(p[1]) << 8) + (unsigned short)p[0];
+}
 
 #if defined(HAVE_X86) || defined(HAVE_NEWPORT) || defined(HAVE_RB600) || defined(HAVE_EROUTER) && !defined(HAVE_WDR4900)
 static unsigned int get_le_long(void *from)
 {
 	unsigned char *p = from;
 	return ((unsigned int)(p[3]) << 24) + ((unsigned int)(p[2]) << 16) + ((unsigned int)(p[1]) << 8) + (unsigned int)p[0];
-}
-static unsigned short get_le_short(void *from)
-{
-	unsigned char *p = from;
-	return ((unsigned short)(p[1]) << 8) + (unsigned short)p[0];
 }
 
 static int rootdetect(char *fname)
@@ -2137,12 +2137,6 @@ typedef struct {
 	unsigned long long flags;
 	uint16_t name36[36];
 } gpt_partition;
-
-static unsigned short get_le_short(void *from)
-{
-	unsigned char *p = from;
-	return ((unsigned short)(p[1]) << 8) + (unsigned short)p[0];
-}
 
 void utf16_le_to_str(void *from, unsigned int len, char *to)
 {
