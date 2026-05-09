@@ -410,22 +410,27 @@ EJ_VISIBLE void ej_dump_site_survey(webs_t wp, int argc, char_t **argv)
 				speed = speed * 10;
 			}
 
-			if ((site_survey_lists[i].channel & 0xff) < 15) {
-				if (hasbe && !hasax)
-					sprintf(rates, "%s(be)", speedstr(speed, speedbuf, sizeof(speedbuf)));
-				else if (hasbe && !hasac)
-					sprintf(rates, "%s(be/ax)", speedstr(speed, speedbuf, sizeof(speedbuf)));
-				else if (hasbe)
-					sprintf(rates, "%s(b/g/n/be)", speedstr(speed, speedbuf, sizeof(speedbuf)));
-				else if (hasax && !hasac)
-					sprintf(rates, "%s(ax)", speedstr(speed, speedbuf, sizeof(speedbuf)));
+				if (hasbe)
+					sprintf(rates, "%s(802.11be)", speedstr(speed, speedbuf, sizeof(speedbuf)));
 				else if (hasax)
-					sprintf(rates, "%s(b/g/n/ax)", speedstr(speed, speedbuf, sizeof(speedbuf)));
+					sprintf(rates, "%s(802.11ax)", speedstr(speed, speedbuf, sizeof(speedbuf)));
 				else if (hasac)
-					sprintf(rates, "%s(b/g/n/ac)", speedstr(speed, speedbuf, sizeof(speedbuf)));
+					sprintf(rates, "%s(802.11ac)", speedstr(speed, speedbuf, sizeof(speedbuf)));
 				else
-					sprintf(rates, "%s(b/g/n)", speedstr(speed, speedbuf, sizeof(speedbuf)));
+					sprintf(rates, "%s(802.11n)", speedstr(speed, speedbuf, sizeof(speedbuf)));
+
+/*			if ((site_survey_lists[i].channel & 0xff) < 15) {
+				if (hasbe)
+					sprintf(rates, "%s(be)", speedstr(speed, speedbuf, sizeof(speedbuf)));
+				else if (hasax)
+					sprintf(rates, "%s(ax)", speedstr(speed, speedbuf, sizeof(speedbuf)));
+				else if (hasac)
+					sprintf(rates, "%s(ac)", speedstr(speed, speedbuf, sizeof(speedbuf)));
+				else
+					sprintf(rates, "%s(n)", speedstr(speed, speedbuf, sizeof(speedbuf)));
 			} else {
+
+
 				if (hasbe && !hasax)
 					sprintf(rates, "%s(be)", speedstr(speed, speedbuf, sizeof(speedbuf)));
 				else if (hasbe && !hasac)
@@ -440,7 +445,7 @@ EJ_VISIBLE void ej_dump_site_survey(webs_t wp, int argc, char_t **argv)
 					sprintf(rates, "%s(a/n/ac)", speedstr(speed, speedbuf, sizeof(speedbuf)));
 				else
 					sprintf(rates, "%s(a/n)", speedstr(speed, speedbuf, sizeof(speedbuf)));
-			}
+			}*/
 
 		} else if (site_survey_lists[i].channel & 0x2000) {
 			int speed = 0;
@@ -464,12 +469,12 @@ EJ_VISIBLE void ej_dump_site_survey(webs_t wp, int argc, char_t **argv)
 			}
 
 			if ((site_survey_lists[i].channel & 0xff) < 15) {
-				sprintf(rates, "%s%s", speedstr(speed, speedbuf, sizeof(speedbuf)),
-					rc == 4 ? "(b)" :
-					rc < 14 ? "(b/g)" :
-						  "(b/g/n)");
+				sprintf(rates, "%s %s", speedstr(speed, speedbuf, sizeof(speedbuf)),
+					rc == 4 ? "(802.11b)" :
+					rc < 14 ? "(802.11g)" :
+						  "(802.11n)");
 			} else {
-				sprintf(rates, "%s%s", speedstr(speed, speedbuf, sizeof(speedbuf)), rc < 14 ? "(a)" : "(a/n)");
+				sprintf(rates, "%s %s", speedstr(speed, speedbuf, sizeof(speedbuf)), rc < 14 ? "(802.11a)" : "(802.11n)");
 			}
 
 		} else {
@@ -494,12 +499,12 @@ EJ_VISIBLE void ej_dump_site_survey(webs_t wp, int argc, char_t **argv)
 			}
 
 			if ((site_survey_lists[i].channel & 0xff) < 15) {
-				sprintf(rates, "%s%s", speedstr(speed, speedbuf, sizeof(speedbuf)),
-					rc == 4 ? "(b)" :
-					rc < 14 ? "(b/g)" :
-						  "(b/g/n)");
+				sprintf(rates, "%s %s", speedstr(speed, speedbuf, sizeof(speedbuf)),
+					rc == 4 ? "(802.11b)" :
+					rc < 14 ? "(802.11g)" :
+						  "(802.11n)");
 			} else {
-				sprintf(rates, "%s%s", speedstr(speed, speedbuf, sizeof(speedbuf)), rc < 14 ? "(a)" : "(a/n)");
+				sprintf(rates, "%s %s", speedstr(speed, speedbuf, sizeof(speedbuf)), rc < 14 ? "(802.11a)" : "(802.11n)");
 			}
 		}
 
