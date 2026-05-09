@@ -612,7 +612,7 @@ void print_eht_operation(const uint8_t *ie, int len)
 		uint8_t eht_operation_info_len = 3;
 
 		if (disabled_subchannel_info_present)
-OB			eht_operation_info_len += 2;
+			eht_operation_info_len += 2;
 
 		if (len - offset < eht_operation_info_len) {
 			printf("\t\tEHT Operation Info: Invalid\n");
