@@ -123,6 +123,24 @@ static void fillENC(const char *text)
 	strspcattach(buf, sizeof(site_survey_lists[sscount].ENCINFO), text);
 }
 
+static void fillREM(const char *text)
+{
+	char *buf;
+	char var[128];
+	const char *next;
+	buf = site_survey_lists[sscount].ENCINFO;
+	char *newbuf = malloc(sizeof(site_survey_lists[sscount].ENCINFO) + 1);
+	memset(newbuf, 0, sizeof(site_survey_lists[sscount].ENCINFO) + 1);
+
+	foreach(var, buf, next) {
+		if (strcmp(var, text)) {
+			strspcattach(newbuf, sizeof(site_survey_lists[sscount].ENCINFO), text);
+		}
+	}
+	strcpy(site_survey_lists[sscount].ENCINFO, newbuf);
+	free(newbuf);
+}
+
 static struct nla_policy survey_policy[NL80211_SURVEY_INFO_MAX + 1] = {
 	[NL80211_SURVEY_INFO_FREQUENCY] = { .type = NLA_U32 },
 	[NL80211_SURVEY_INFO_NOISE] = { .type = NLA_U8 },
@@ -450,20 +468,25 @@ static void __print_he_capa(const __u16 *mac_cap, const __u16 *phy_cap, const __
 
 	if (le16toh(phy_cap[0]) & BIT(1 + 8)) {
 		site_survey_lists[sscount].channel |= 0x1000;
+		fillREM("VHT40");
 		fillENC("HE40");
 	}
 	if (le16toh(phy_cap[0]) & BIT(2 + 8)) {
 		site_survey_lists[sscount].channel |= 0x1000;
 		site_survey_lists[sscount].channel |= 0x100;
+		fillREM("VHT80");
+		fillREM("VHT40");
 		fillENC("HE40");
 		fillENC("HE80");
 	}
 	if (le16toh(phy_cap[0]) & BIT(3 + 8)) {
 		site_survey_lists[sscount].channel |= 0x200;
+		fillREM("VHT160");
 		fillENC("HE160");
 	}
 	if (le16toh(phy_cap[0]) & BIT(4 + 8)) {
 		site_survey_lists[sscount].channel |= 0x200;
+		fillREM("VHT80+80");
 		fillENC("HE80+80");
 	}
 
@@ -504,6 +527,27 @@ void print_he_capability(const uint8_t *ie, int len)
 	__print_he_capa(mac_cap, phy_cap - 1, mcs_set, mcs_len, NULL, 0, false);
 }
 
+void print_eht_capability(const uint8_t *ie, int len)
+{
+	const void *mac_cap, *phy_cap, *mcs_set, *he_phy_cap;
+	int mcs_len;
+	int i = 0;
+
+	mac_cap = &ie[i];
+	i += 2;
+
+	phy_cap = &ie[i];
+	i += 9;
+
+	mcs_set = &ie[i];
+	mcs_len = len - i;
+
+	//	he_phy_cap = &he_cap[6];
+
+	//	__print_eht_capa(NL80211_BAND_6GHZ, mac_cap, phy_cap, mcs_set, mcs_len,
+	//			 NULL, 0, he_phy_cap - 1, from_ap, false);
+}
+
 void print_he_operation(const uint8_t *ie, int len)
 {
 	uint8_t oper_parameters[3] = { ie[0], ie[1], ie[2] };
@@ -538,6 +582,93 @@ void print_he_operation(const uint8_t *ie, int len)
 	}
 }
 
+void print_eht_operation(const uint8_t *ie, int len)
+{
+	uint8_t oper_parameters = ie[0];
+	uint8_t disabled_subchannel_info_present = oper_parameters & 0x02;
+	uint8_t eht_operation_info_present = oper_parameters & 0x01;
+
+	/*	printf("\t\tEHT Operation Parameters: (0x%02x)\n",
+	       oper_parameters);
+
+	if (oper_parameters & 0x04)
+		printf("\t\t\tEHT Default PE Duration\n");
+
+	if (oper_parameters & 0x08)
+		printf("\t\t\tGroup Addressed BU Indication Limit\n");
+
+	printf("\t\t\tGroup Addressed BU Indication Exponent: 0x%01x\n",
+	       (oper_parameters >> 4 & 3));
+
+	printf("\t\tBasic EHT-MCS And Nss Set: 0x");
+	for (uint8_t i = 0; i < 4; i++)
+		printf("%02x", ie[1 + i]);
+
+	printf("\n");*/
+
+	if (eht_operation_info_present) {
+		uint8_t offset = 5;
+		const uint8_t control = ie[offset];
+		uint8_t eht_operation_info_len = 3;
+
+		if (disabled_subchannel_info_present)
+OB			eht_operation_info_len += 2;
+
+		if (len - offset < eht_operation_info_len) {
+			printf("\t\tEHT Operation Info: Invalid\n");
+			return;
+		}
+
+		printf("\t\tEHT Operation Info: 0x");
+		for (uint8_t i = 0; i < eht_operation_info_len; i++)
+			printf("%02x", ie[offset + i]);
+
+		printf("\n");
+		printf("\t\t\tChannel Width: ");
+		switch (control & 0x7) {
+		case 0:
+			fillREM("VHT20");
+			fillREM("HE20");
+			fillENC("EHT20");
+			break;
+		case 1:
+			site_survey_lists[sscount].channel |= 0x1000;
+			fillREM("VHT40");
+			fillREM("HE40");
+			fillENC("EHT40");
+			break;
+		case 2:
+			site_survey_lists[sscount].channel |= 0x1000;
+			site_survey_lists[sscount].channel |= 0x100;
+			fillREM("VHT80");
+			fillREM("HE80");
+			fillENC("EHT80");
+			break;
+		case 3:
+			site_survey_lists[sscount].channel |= 0x1000;
+			site_survey_lists[sscount].channel |= 0x200;
+			fillREM("VHT160");
+			fillREM("HE160");
+			fillENC("EHT160");
+			break;
+		case 4:
+			site_survey_lists[sscount].channel |= 0x1000;
+			site_survey_lists[sscount].channel |= 0x400;
+			fillENC("EHT320");
+			break;
+		default:
+			printf("invalid bandwidth (%d)\n", control & 0x7);
+			break;
+		}
+
+		printf("\t\t\tCenter Frequency Segment 0: %hhu\n", ie[offset + 1]);
+		printf("\t\t\tCenter Frequency Segment 1: %hhu\n", ie[offset + 2]);
+
+		if (disabled_subchannel_info_present)
+			printf("\t\t\tDisabled Subchannel Bitmap: 0x%02x%02x\n", ie[offset + 3], ie[offset + 4]);
+	}
+}
+
 static void print_he_capa(const uint8_t type, uint8_t len, const uint8_t *data)
 {
 	site_survey_lists[sscount].extcap |= CAP_AX; // AX capable
@@ -550,9 +681,23 @@ static void print_he_oper(const uint8_t type, uint8_t len, const uint8_t *data)
 	print_he_operation(data, len);
 }
 
+static void print_eht_capa(const uint8_t type, uint8_t len, const uint8_t *data)
+{
+	site_survey_lists[sscount].extcap |= CAP_BE; // BE capable
+	print_eht_capability(data, len);
+}
+
+static void print_eht_oper(const uint8_t type, uint8_t len, const uint8_t *data)
+{
+	site_survey_lists[sscount].extcap |= CAP_BE; // BE capable
+	print_eht_operation(data, len);
+}
+
 static const struct ie_print ext_printers[] = {
 	[35] = { "HE capabilities", print_he_capa, 21, 54, BIT(PRINT_SCAN), },
 	[36] = { "HE Operation", print_he_oper, 6, 15, BIT(PRINT_SCAN), },
+	[108] = { "EHT capabilities", print_eht_capa, 13, 30, BIT(PRINT_SCAN), },
+	[106] = { "EHT Operation", print_eht_oper, 5, 10, BIT(PRINT_SCAN), },
 };
 
 static void print_extension(unsigned char len, unsigned char *ie, bool unknown, enum print_ie_type ptype)
