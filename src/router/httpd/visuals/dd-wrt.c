@@ -1780,9 +1780,12 @@ static void show_netmode(webs_t wp, char *prefix)
 					"document.write(\"<option value=\\\"xacn-mixed\\\" %s>\" + wl_basic.xacn + \"</option>\");\n",
 					nvram_match(wl_net_mode, "xacn-mixed") ? "selected=\\\"selected\\\"" : "");
 			}
-			websWrite(wp, "document.write(\"<option value=\\\"ax-only\\\" %s>\" + wl_basic.ax + \"</option>\");\n",
-				  nvram_match(wl_net_mode, "ax-only") ? "selected=\\\"selected\\\"" : "");
-			if (has_5ghz(prefix)) {
+			if (has_5ghz(prefix) && !has_2ghz(prefix)) {
+				websWrite(wp,
+					  "document.write(\"<option value=\\\"ax-only\\\" %s>\" + wl_basic.ax + \"</option>\");\n",
+					  nvram_match(wl_net_mode, "ax-only") ? "selected=\\\"selected\\\"" : "");
+			}
+			if (has_5ghz(prefix) && (has_6ghz(prefix) || has_2ghz(prefix))) {
 				websWrite(
 					wp,
 					"document.write(\"<option value=\\\"ax5-only\\\" %s>\" + wl_basic.ax5 + \"</option>\");\n",
@@ -1880,10 +1883,13 @@ static void show_netmode(webs_t wp, char *prefix)
 						"document.write(\"<option value=\\\"xacn-mixed\\\" %s>\" + wl_basic.xacn + \"</option>\");\n",
 						nvram_match(wl_net_mode, "xacn-mixed") ? "selected=\\\"selected\\\"" : "");
 				}
-				websWrite(wp,
-					  "document.write(\"<option value=\\\"ax-only\\\" %s>\" + wl_basic.ax + \"</option>\");\n",
-					  nvram_match(wl_net_mode, "ax-only") ? "selected=\\\"selected\\\"" : "");
-				if (has_5ghz(prefix)) {
+				if (has_5ghz(prefix) && !has_2ghz(prefix)) {
+					websWrite(
+						wp,
+						"document.write(\"<option value=\\\"ax-only\\\" %s>\" + wl_basic.ax + \"</option>\");\n",
+						nvram_match(wl_net_mode, "ax-only") ? "selected=\\\"selected\\\"" : "");
+				}
+				if (has_5ghz(prefix) && (has_6ghz(prefix) || has_2ghz(prefix))) {
 					websWrite(
 						wp,
 						"document.write(\"<option value=\\\"ax5-only\\\" %s>\" + wl_basic.ax5 + \"</option>\");\n",
