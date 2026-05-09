@@ -38,7 +38,7 @@
 
 #include <wlutils.h>
 
-int getrate(int rate, int bw, int ac, int ax)
+int getrate(int rate, int bw, int ac, int ax, int be)
 {
 	int result = rate * 10;
 	if (bw == 4)
@@ -49,7 +49,24 @@ int getrate(int rate, int bw, int ac, int ax)
 		bw = 20;
 	switch (rate) {
 	case 150:
-		if (ax) {
+		if (be) {
+			if (bw == 2)
+				result = 1721 / 8;
+			if (bw == 5)
+				result = 1721 / 4;
+			if (bw == 10)
+				result = 1721 / 2;
+			if (bw == 20)
+				result = 1721;
+			if (bw == 40)
+				result = 3441;
+			if (bw == 80)
+				result = 7206;
+			if (bw == 160)
+				result = 14412;
+			if (bw == 320)
+				result = 28824;
+		} else if (ax) {
 			if (bw == 2)
 				result = 1434 / 8;
 			if (bw == 5)
@@ -97,7 +114,24 @@ int getrate(int rate, int bw, int ac, int ax)
 		}
 		break;
 	case 300:
-		if (ax) {
+		if (be) {
+			if (bw == 2)
+				result = 3441 / 8;
+			if (bw == 5)
+				result = 3441 / 4;
+			if (bw == 10)
+				result = 3441 / 2;
+			if (bw == 20)
+				result = 3441;
+			if (bw == 40)
+				result = 6882;
+			if (bw == 80)
+				result = 14412;
+			if (bw == 160)
+				result = 28824;
+			if (bw == 320)
+				result = 57647;
+		} else if (ax) {
 			if (bw == 2)
 				result = 2868 / 8;
 			if (bw == 5)
@@ -145,7 +179,24 @@ int getrate(int rate, int bw, int ac, int ax)
 		}
 		break;
 	case 450:
-		if (ax) {
+		if (be) {
+			if (bw == 2)
+				result = 5162 / 8;
+			if (bw == 5)
+				result = 5162 / 4;
+			if (bw == 10)
+				result = 5162 / 2;
+			if (bw == 20)
+				result = 5162;
+			if (bw == 40)
+				result = 10324;
+			if (bw == 80)
+				result = 21618;
+			if (bw == 160)
+				result = 43235;
+			if (bw == 320)
+				result = 86471;
+		} else if (ax) {
 			if (bw == 2)
 				result = 4301 / 8;
 			if (bw == 5)
@@ -193,7 +244,24 @@ int getrate(int rate, int bw, int ac, int ax)
 		}
 		break;
 	case 600:
-		if (ax) {
+		if (be) {
+			if (bw == 2)
+				result = 6882 / 8;
+			if (bw == 5)
+				result = 6882 / 4;
+			if (bw == 10)
+				result = 6882 / 2;
+			if (bw == 20)
+				result = 6882;
+			if (bw == 40)
+				result = 13765;
+			if (bw == 80)
+				result = 28824;
+			if (bw == 160)
+				result = 57647;
+			if (bw == 320)
+				result = 115294;
+		} else if (ax) {
 			if (bw == 2)
 				result = 5735 / 8;
 			if (bw == 5)
@@ -314,30 +382,39 @@ EJ_VISIBLE void ej_dump_site_survey(webs_t wp, int argc, char_t **argv)
 			//fprintf(stderr, "%d %d %d\n", s, speed, site_survey_lists[i].extcap);
 			int hasac = 0;
 			int hasax = 0;
-			if (site_survey_lists[i].extcap & CAP_VHT)
-				hasac = 1;
+			int hasbe if (site_survey_lists[i].extcap & CAP_VHT) hasac = 1;
 			if (site_survey_lists[i].extcap & CAP_AX)
 				hasax = 1;
+			if (site_survey_lists[i].extcap & CAP_BE)
+				hasbe = 1;
 			switch (cbw) {
 			case 0x0:
 				if (site_survey_lists[i].extcap & CAP_SECCHANNEL)
-					speed = getrate(speed, s * 2, hasac, hasax);
+					speed = getrate(speed, s * 2, hasac, hasax, hasbe);
 				else
-					speed = getrate(speed, s, hasac, hasax);
+					speed = getrate(speed, s, hasac, hasax, hasbe);
 				break;
 			case 0x100:
-				speed = getrate(speed, s * 4, hasac, hasax);
+				speed = getrate(speed, s * 4, hasac, hasax, hasbe);
 				break;
 			case 0x200:
 			case 0x300:
-				speed = getrate(speed, s * 8, hasac, hasax);
+				speed = getrate(speed, s * 8, hasac, hasax, hasbe);
+			case 0x400:
+				speed = getrate(speed, s * 16, hasac, hasax, hasbe);
 				break;
 			default:
 				speed = speed * 10;
 			}
 
 			if ((site_survey_lists[i].channel & 0xff) < 15) {
-				if (hasax && !hasac)
+				if (hasbe && !hasax)
+					sprintf(rates, "%s(be)", speedstr(speed, speedbuf, sizeof(speedbuf)));
+				else if (hasbe && !hasac)
+					sprintf(rates, "%s(be/ax)", speedstr(speed, speedbuf, sizeof(speedbuf)));
+				else if (hasbe)
+					sprintf(rates, "%s(b/g/n/be)", speedstr(speed, speedbuf, sizeof(speedbuf)));
+				else if (hasax && !hasac)
 					sprintf(rates, "%s(ax)", speedstr(speed, speedbuf, sizeof(speedbuf)));
 				else if (hasax)
 					sprintf(rates, "%s(b/g/n/ax)", speedstr(speed, speedbuf, sizeof(speedbuf)));
@@ -346,7 +423,13 @@ EJ_VISIBLE void ej_dump_site_survey(webs_t wp, int argc, char_t **argv)
 				else
 					sprintf(rates, "%s(b/g/n)", speedstr(speed, speedbuf, sizeof(speedbuf)));
 			} else {
-				if (hasax && !hasac)
+				if (hasbe && !hasax)
+					sprintf(rates, "%s(be)", speedstr(speed, speedbuf, sizeof(speedbuf)));
+				else if (hasbe && !hasac)
+					sprintf(rates, "%s(be/ax)", speedstr(speed, speedbuf, sizeof(speedbuf)));
+				else if (hasbe)
+					sprintf(rates, "%s(a/n/ax/be)", speedstr(speed, speedbuf, sizeof(speedbuf)));
+				else if (hasax && !hasac)
 					sprintf(rates, "%s(ax)", speedstr(speed, speedbuf, sizeof(speedbuf)));
 				else if (hasax)
 					sprintf(rates, "%s(a/n/ac/ax)", speedstr(speed, speedbuf, sizeof(speedbuf)));
