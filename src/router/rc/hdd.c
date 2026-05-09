@@ -542,7 +542,6 @@ again:;
 				unsigned char *p_buf = buf + (i * WRITE_BLOCKSIZE) + l;
 				putc(*p_buf, f_write);
 			}
-			ptr = 0;
 		}
 	}
 	fsync(fileno(f_kernel));
