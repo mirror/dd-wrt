@@ -370,13 +370,17 @@ endif
 
 	cp grub/menu_serial_ext4.lst $(ARCH)-uclibc/root.grub/boot/grub/menu.lst
 	-PATH="$(INSTALLDIR)/grub/usr/local/sbin:$(INSTALLDIR)/grub/usr/local/bin:$(PATH)" ./gen_image.sh $(ARCH)-uclibc/dd-wrt_serial.image.ext4.src 32 $(ARCH)-uclibc/root.grub 2048 $(ARCH)-uclibc/root.ext4 128
+	./tools/qcom/mmctool $(ARCH)-uclibc/dd-wrt_serial.image.ext4.src.kernel $(ARCH)-uclibc/root.ext4 $(ARCH)-uclibc/dd-wrt_serial.image.ext4.src.trx
 	cp grub/menu_serial.lst $(ARCH)-uclibc/root.grub/boot/grub/menu.lst
 	-PATH="$(INSTALLDIR)/grub/usr/local/sbin:$(INSTALLDIR)/grub/usr/local/bin:$(PATH)" ./gen_image.sh $(ARCH)-uclibc/dd-wrt_serial.image.src 32 $(ARCH)-uclibc/root.grub 600 $(ARCH)-uclibc/root.fs 128
+	./tools/qcom/mmctool dd-wrt_serial.image.src.kernel $(ARCH)-uclibc/root.fs $(ARCH)-uclibc/dd-wrt_serial.image.src.trx
 	-PATH="$(INSTALLDIR)/grub/usr/local/sbin:$(INSTALLDIR)/grub/usr/local/bin:$(PATH)" ./gen_image.sh $(ARCH)-uclibc/dd-wrt_serial_2GB.image.src 32 $(ARCH)-uclibc/root.grub 600 $(ARCH)-uclibc/root.fs 1780
 	cp grub/menu_vga_ext4.lst $(ARCH)-uclibc/root.grub/boot/grub/menu.lst
 	-PATH="$(INSTALLDIR)/grub/usr/local/sbin:$(INSTALLDIR)/grub/usr/local/bin:$(PATH)" ./gen_image.sh $(ARCH)-uclibc/dd-wrt_vga.image.ext4.src 32 $(ARCH)-uclibc/root.grub 2048 $(ARCH)-uclibc/root.ext4 128
+	./tools/qcom/mmctool $(ARCH)-uclibc/dd-wrt_vga.image.ext4.src.kernel $(ARCH)-uclibc/root.ext4 $(ARCH)-uclibc/dd-wrt_vga.image.ext4.src.trx
 	cp grub/menu_vga.lst $(ARCH)-uclibc/root.grub/boot/grub/menu.lst
 	-PATH="$(INSTALLDIR)/grub/usr/local/sbin:$(INSTALLDIR)/grub/usr/local/bin:$(PATH)" ./gen_image.sh $(ARCH)-uclibc/dd-wrt_vga.image.src 32 $(ARCH)-uclibc/root.grub 600 $(ARCH)-uclibc/root.fs 128
+	./tools/qcom/mmctool dd-wrt_vga.image.src.kernel $(ARCH)-uclibc/root.fs $(ARCH)-uclibc/dd-wrt_vga.image.src.trx
 	-PATH="$(INSTALLDIR)/grub/usr/local/sbin:$(INSTALLDIR)/grub/usr/local/bin:$(PATH)" ./gen_image.sh $(ARCH)-uclibc/dd-wrt_vga_2GB.image.src 32 $(ARCH)-uclibc/root.grub 600 $(ARCH)-uclibc/root.fs 1780
 
 	dd if=$(ARCH)-uclibc/dd-wrt_vga.image.src of=$(ARCH)-uclibc/dd-wrt_vga.image bs=1048576 conv=sync
@@ -440,10 +444,11 @@ endif
 	libdeflate-gzip -12 grub-efi/*.vmdk
 	libdeflate-gzip -12 -k grub-efi/*.img
 	
-	-./tools/trx_n -m 2500000000 -o $(ARCH)-uclibc/dd-wrt-vga-webupgrade.bin $(ARCH)-uclibc/dd-wrt_vga.image
-	-./tools/trx_n -m 2500000000 -o $(ARCH)-uclibc/dd-wrt-serial-webupgrade.bin $(ARCH)-uclibc/dd-wrt_serial.image
-	-./tools/trx_n -m 2500000000 -o $(ARCH)-uclibc/dd-wrt-vga-webupgrade_2GB.bin $(ARCH)-uclibc/dd-wrt_vga_2GB.image
-	-./tools/trx_n -m 2500000000 -o $(ARCH)-uclibc/dd-wrt-serial-webupgrade_2GB.bin $(ARCH)-uclibc/dd-wrt_serial_2GB.image
+	-./tools/trx_n -m 2500000000 -o $(ARCH)-uclibc/dd-wrt-vga-ext4-webupgrade.bin $(ARCH)-uclibc/dd-wrt_vga.image.ext4.src.trx
+	-./tools/trx_n -m 2500000000 -o $(ARCH)-uclibc/dd-wrt-serial-ext4-webupgrade.bin $(ARCH)-uclibc/dd-wrt_serial.image.ext4.src.trx
+
+	-./tools/trx_n -m 2500000000 -o $(ARCH)-uclibc/dd-wrt-serial-webupgrade.bin $(ARCH)-uclibc/dd-wrt_vga.image.src.trx
+	-./tools/trx_n -m 2500000000 -o $(ARCH)-uclibc/dd-wrt-vga-webupgrade.bin $(ARCH)-uclibc/dd-wrt_vga.image.src.trx
 
 	-./tools/trx_n -m 2500000000 -o $(ARCH)-uclibc/dd-wrt-vga-efi-webupgrade.bin grub-efi/efi-vga.img
 	-./tools/trx_n -m 2500000000 -o $(ARCH)-uclibc/dd-wrt-serial-efi-webupgrade.bin grub-efi/efi.img
