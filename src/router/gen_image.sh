@@ -19,6 +19,7 @@ cyl=$(( ($part1s + $part2s + $part3s) * 1024 * 1024 / ($head * $sect * 512)))
 #dd if=/dev/zero of="$file" bs=1M count=$(($part1s + $part2s - 1))  2>/dev/null || exit
 # create partition table
 rm -f $file
+
 which ptgen
 set `ptgen -o "$file" -h $head -s $sect -p ${part1s}m -p ${part2s}m -p ${part3s}m`
 
@@ -33,10 +34,11 @@ BLOCKS="$((($KERNELSIZE / 2) - 1))"
 	echo "gen_image.sh: wrong/old ptgen version ABORT"
 	exit 1
 }
+echo genext2fs -d "$part1d" -b "$BLOCKS" "$file.kernel"
 
 genext2fs -d "$part1d" -b "$BLOCKS" "$file.kernel"
 dd if="$file.kernel" of="$file" bs=512 seek="${KERNELOFFSET}" conv=notrunc
-#rm -f "$file.kernel"
+rm -f "$file.kernel"
 
 dd if="$part2f" of="$file" bs=512 seek="${ROOTFSOFFSET}" conv=notrunc
 
