@@ -1808,6 +1808,10 @@ static void show_netmode(webs_t wp, char *prefix)
 			if (has_6ghz(prefix)) {
 				websWrite(
 					wp,
+					"document.write(\"<option value=\\\"beax6-only\\\" %s>\" + wl_basic.beax6 + \"</option>\");\n",
+					nvram_match(wl_net_mode, "beax6-only") ? "selected=\\\"selected\\\"" : "");
+				websWrite(
+					wp,
 					"document.write(\"<option value=\\\"be6-only\\\" %s>\" + wl_basic.be6 + \"</option>\");\n",
 					nvram_match(wl_net_mode, "be6-only") ? "selected=\\\"selected\\\"" : "");
 			}
@@ -1898,6 +1902,10 @@ static void show_netmode(webs_t wp, char *prefix)
 					"document.write(\"<option value=\\\"be5-only\\\" %s>\" + wl_basic.be5 + \"</option>\");\n",
 					nvram_match(wl_net_mode, "be5-only") ? "selected=\\\"selected\\\"" : "");
 				if (has_6ghz(prefix)) {
+					websWrite(
+						wp,
+						"document.write(\"<option value=\\\"beax6-only\\\" %s>\" + wl_basic.beax6 + \"</option>\");\n",
+						nvram_match(wl_net_mode, "beax6-only") ? "selected=\\\"selected\\\"" : "");
 					websWrite(
 						wp,
 						"document.write(\"<option value=\\\"be6-only\\\" %s>\" + wl_basic.be6 + \"</option>\");\n",
