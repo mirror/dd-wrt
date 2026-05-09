@@ -36,7 +36,7 @@ BLOCKS="$((($KERNELSIZE / 2) - 1))"
 
 genext2fs -d "$part1d" -b "$BLOCKS" "$file.kernel"
 dd if="$file.kernel" of="$file" bs=512 seek="${KERNELOFFSET}" conv=notrunc
-rm -f "$file.kernel"
+#rm -f "$file.kernel"
 
 dd if="$part2f" of="$file" bs=512 seek="${ROOTFSOFFSET}" conv=notrunc
 
