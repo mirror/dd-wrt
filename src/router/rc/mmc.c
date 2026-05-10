@@ -439,25 +439,25 @@ rewrite:;
 	eval("sdparm", "-c", "WCE", "-S", "/dev/mmcblk0");
 
 	/* open partitions from mmc device */
-	char *kernelname = getgptpartitionbyname("/dev/mmcblk0", "0:HLOS");
-	if (!kernelname) {
+	char *kerneldisk = getgptpartitionbyname("/dev/mmcblk0", "0:HLOS");
+	if (!kerneldisk) {
 		dd_logerror("flash", "partition for kernel not found");
 		goto fail;
 	}
-	FILE *f_kernel = fopen(kernelname, "r+b");
+	FILE *f_kernel = fopen(kerneldisk, "r+b");
 	if (!f_kernel) {
-		dd_logerror("flash", "Error opening: %s", kernelname);
+		dd_logerror("flash", "Error opening: %s", kerneldisk);
 		goto fail;
 	}
 
-	char *rootfsname = getgptpartitionbyname("/dev/mmcblk0", "rootfs");
-	if (!rootfsname) {
+	char *rootfsdisk = getgptpartitionbyname("/dev/mmcblk0", "rootfs");
+	if (!rootfsdisk) {
 		dd_logerror("flash", "partition for kernel not found");
 		goto fail;
 	}
-	FILE *f_rootfs = fopen(rootfsname, "r+b");
+	FILE *f_rootfs = fopen(rootfsdisk, "r+b");
 	if (!f_rootfs) {
-		dd_logerror("flash", "Error opening: %s", rootfsname);
+		dd_logerror("flash", "Error opening: %s", rootfsdisk);
 		goto fail;
 	}
 #endif
