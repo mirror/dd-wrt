@@ -48,7 +48,7 @@ static struct oplock_info *alloc_opinfo(struct ksmbd_work *work,
 	opinfo->fid = id;
 	opinfo->Tid = Tid;
 #ifdef CONFIG_SMB_INSECURE_SERVER
-	opinfo->is_smb2 = IS_SMB2(conn);
+	opinfo->is_smb2 = IS_SMB2(opinfo->conn);
 #endif
 	INIT_LIST_HEAD(&opinfo->op_entry);
 	init_waitqueue_head(&opinfo->oplock_q);
