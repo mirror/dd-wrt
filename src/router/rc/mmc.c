@@ -571,8 +571,6 @@ rewrite:;
 		count += safe_fread(&buf[off], 1, len - off, fp);
 		if (!ptr && !pos) {
 			fwheader *header = (fwheader *)&buf[0];
-			fprintf(stderr, "header size %d\n", sizeof(*header));
-			fprintf(stderr, "part size %d\n", sizeof(fwpart));
 			memcpy(kernelname, header->partitions[0].name, 32);
 			f_kernellen = le64_to_cpu(header->partitions[0].partsize);
 			memcpy(rootfsname, header->partitions[1].name, 32);
