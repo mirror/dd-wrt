@@ -109,7 +109,7 @@ int active_wireless_if_ath9k(webs_t wp, int argc, char_t **argv, char *ifname, i
 			int he = 0;
 			char info[32];
 			if (!wc->rx_is_ht && !wc->is_ht)
-				ht = 8;
+				ht = 9;
 			if (wc->rx_is_40mhz || wc->is_40mhz)
 				ht = 1;
 			if (wc->rx_is_80mhz || wc->is_80mhz)
