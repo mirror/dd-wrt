@@ -400,6 +400,10 @@ rewrite:;
 		dd_logerror("flash", "%s: Bad trx header", path);
 		goto fail;
 	}
+	eval("mount", "-f", "-o", "remount,ro", "/jffs");
+	eval("mount", "-f", "-o", "remount,ro", "/usr/local");
+	eval("mount", "-f", "-o", "remount,ro", "/usr");
+
 #ifdef HAVE_X86
 	char disk[32];
 	char *d = getdisc();
@@ -537,20 +541,21 @@ rewrite:;
 		}
 		count += safe_fread(&buf[off], 1, len - off, fp);
 		if (!ptr && !pos) {
-			unsigned int *i_ptr = (unsigned int *)&buf[0];
+			unsigned char partnums = buf[0]; // unused
+			unsigned long long *i_ptr = (unsigned int *)&buf[1 + 32];
 			f_kernellen = *i_ptr;
-			i_ptr = (unsigned int *)&buf[4];
+			i_ptr = (unsigned int *)&buf[1 + 8 + 32];
 			f_rootfslen = *i_ptr;
 
-			f_kernellen = le32_to_cpu(f_kernellen);
-			f_rootfslen = le32_to_cpu(f_rootfslen);
+			f_kernellen = le64_to_cpu(f_kernellen);
+			f_rootfslen = le64_to_cpu(f_rootfslen);
 			if (f_kernellen > kernellen) {
-					dd_logerror("flash", "Image too big for kernel partition: %s", mtd);
-					goto fail;
+				dd_logerror("flash", "Image too big for kernel partition: %s", mtd);
+				goto fail;
 			}
 			if (f_rootfslen > rootfslen) {
-					dd_logerror("flash", "Image too big for rootfs partition: %s", mtd);
-					goto fail;
+				dd_logerror("flash", "Image too big for rootfs partition: %s", mtd);
+				goto fail;
 			}
 			dd_loginfoverbose("flash", "Flash kernel %d", f_kernellen);
 			ptr += 8;

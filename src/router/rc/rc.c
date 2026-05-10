@@ -103,7 +103,7 @@
 #if defined(HAVE_RB600) && !defined(HAVE_WDR4900)
 #include "hdd.c"
 #elif defined(HAVE_X86)
-#include "hdd.c"
+#include "mmc.c"
 #elif defined(HAVE_IPQ95XX)
 #include "mmc.c"
 #else
