@@ -403,14 +403,19 @@ rewrite:;
 		goto fail;
 	}
 
-#ifdef HAVE_X86
+#if defined(HAVE_X86) || defined(HAVE_EROUTER)
 	char disk[32];
 	char *d = getdisc();
 	eval("hdparm", "-W", "0", d);
 	eval("sdparm", "-s", "WCE", "-S", d);
 	eval("sdparm", "-c", "WCE", "-S", d);
+	if (!strncmp(d, "mmcblk", 6))
+		sprintf(disk, "/dev/%sp1", d);
+	else if (!strncmp(d, "nvme", 4))
+		sprintf(disk, "/dev/%sp1", d);
+	else
+		sprintf(disk, "/dev/%s1", d);
 
-	sprintf(disk, "/dev/%s1", d);
 	/* open partitions from mmc device */
 	char *kerneldisk = disk;
 	if (!kerneldisk) {
@@ -422,7 +427,13 @@ rewrite:;
 		dd_logerror("flash", "Error opening: %s", kerneldisk);
 		goto fail;
 	}
-	sprintf(disk, "/dev/%s2", d);
+	if (!strncmp(d, "mmcblk", 6))
+		sprintf(disk, "/dev/%sp2", d);
+	else if (!strncmp(d, "nvme", 4))
+		sprintf(disk, "/dev/%sp2", d);
+	else
+		sprintf(disk, "/dev/%s2", d);
+
 	char *rootfsdisk = disk;
 	if (!rootfsdisk) {
 		dd_logerror("flash", "partition for rootfs not found");
