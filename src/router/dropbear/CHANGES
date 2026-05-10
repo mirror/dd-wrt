@@ -1,3 +1,21 @@
+2026.91 - 10 May 2026
+
+- scp: Fix test for disallowing -r with existing target directory. The logic
+  introduced in 2026.90 was incorrect, could also disallow non-recursive
+  transfers.
+
+- scp: Fix regression in 2026.90 building on older glibc or other libc.
+  reallocarray() was required, it is no longer needed.
+
+- Compression is now disabled by default for dbclient. A new -o compression option
+  can enable it. DROPBEAR_CLI_COMPRESSION in localoptions.h can change the default.
+  Enabling compression can be a security weakness in some
+  circumstances, as the size of network traffic may leak information
+  about the encrypted data.
+
+- Added '-Q' argument for dbclient and dropbear to query supported algorithms,
+  kex sig cipher mac compress
+
 2026.90 - 3 May 2026
 
 - Security: server: Fix ability to bypass an authorized_keys "forced_command"

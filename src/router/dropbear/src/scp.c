@@ -586,11 +586,14 @@ tolocal(int argc, char **argv)
 		}
 
 		char *dest = *(argv + argc - 1);
-		if (!(access(dest, F_OK) == 0 && errno == ENOENT)) {
-			/* paths sent from the server in recursive mode aren't adequately
-			 * checked that they match the requested files, so disallow this */
-			fprintf(stderr, "-r destination \"%s\" must not already exist\n", dest);
-			exit(1);
+		if (iamrecursive) {
+			/* Destination must not exist */
+			if (!(access(dest, F_OK) == -1 && errno == ENOENT)) {
+				/* paths sent from the server in recursive mode aren't adequately
+				 * checked that they match the requested files, so disallow this */
+				fprintf(stderr, "-r destination \"%s\" must not already exist\n", dest);
+				exit(1);
+			}
 		}
 
 		host = cleanhostname(host);
@@ -609,23 +612,18 @@ tolocal(int argc, char **argv)
 	}
 }
 
-static void *my_reallocarray(void *ptr, size_t m, size_t n)
-{
-	if (n && m > -1 / n) {
-		errno = ENOMEM;
-		return 0;
-	}
-
-	return realloc(ptr, m * n);
-}
-
 /* Appends a string to an array; returns 0 on success, -1 on alloc failure */
 static int
 append(char *cp, char ***ap, size_t *np)
 {
 	char **tmp;
 
-	if ((tmp = my_reallocarray(*ap, *np + 1, sizeof(*tmp))) == NULL)
+	if (*np + 1 > (SIZE_MAX / sizeof(*tmp))) {
+		/* overflow */
+		return -1;
+	}
+
+	if ((tmp = realloc(*ap, (*np + 1) * sizeof(*tmp))) == NULL)
 		return -1;
 	tmp[(*np)] = cp;
 	(*np)++;

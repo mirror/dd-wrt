@@ -30,6 +30,7 @@
 #include "buffer.h"
 #include "auth.h"
 #include "forward.h"
+#include "dbhelpers.h"
 
 typedef struct runopts {
 
@@ -45,9 +46,8 @@ typedef struct runopts {
 	int usingsyslog;
 
 #ifndef DISABLE_ZLIB
-	/* Whether any compression is allowed. The specific method used
-	 * varies between client and server, it will be set up by kex_setup_compress() */
-	int allow_compress;
+	/* whether compression should be advertised */
+	int compression;
 #endif
 
 #if DROPBEAR_USER_ALGO_LIST
@@ -215,6 +215,7 @@ void cli_getopts(int argc, char ** argv);
 #if DROPBEAR_USER_ALGO_LIST
 void parse_ciphers_macs(void);
 #endif
+void print_algos(const char* algo) ATTRIB_NORETURN;
 
 void print_version(void);
 void parse_recv_window(const char* recv_window_arg);
@@ -227,5 +228,6 @@ void loadidentityfile(const char* filename, int warnfail);
 #if DROPBEAR_USE_SSH_CONFIG
 void read_config_file(char* filename, FILE* config_file, cli_runopts* options);
 #endif
+
 
 #endif /* DROPBEAR_RUNOPTS_H_ */

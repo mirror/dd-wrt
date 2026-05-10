@@ -120,6 +120,7 @@ static void printhelp(const char * progname) {
                                         "-A <authplugin>[,<options>]\n"
                                         "               Enable external public key auth through <authplugin>\n"
 #endif
+					"-Q    <algo>   Print supported algorithms, or -Q help\n"
 					"-V    Version\n"
 #if DEBUG_TRACE
 					"-v    verbose (repeat for more verbose)\n"
@@ -155,6 +156,7 @@ void svr_getopts(int argc, char ** argv) {
 	char* maxauthtries_arg = NULL;
 	char* reexec_fd_arg = NULL;
 	char* keyfile = NULL;
+	char *algo_print_arg = NULL;
 	char c;
 #if DROPBEAR_PLUGIN
         char* pubkey_plugin = NULL;
@@ -196,7 +198,7 @@ void svr_getopts(int argc, char ** argv) {
 	svr_opts.reexec_childpipe = -1;
 
 #ifndef DISABLE_ZLIB
-	opts.allow_compress = 1;
+	opts.compression = 1;
 #endif 
 
 	/* not yet
@@ -350,6 +352,9 @@ void svr_getopts(int argc, char ** argv) {
 				case 'g':
 					break;
 #endif
+				case 'Q':
+					next = &algo_print_arg;
+					break;
 				case 'h':
 					printhelp(argv[0]);
 					exit(EXIT_SUCCESS);
@@ -504,6 +509,10 @@ void svr_getopts(int argc, char ** argv) {
 		svr_opts.pubkey_plugin_options = args;
 	}
 #endif
+	if (algo_print_arg) {
+		print_algos(algo_print_arg);
+		/* No return */
+	}
 }
 
 static void addportandaddress(const char* spec) {

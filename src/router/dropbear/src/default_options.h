@@ -217,6 +217,11 @@ not as a server, due to concerns over its strength. Set to 0 to allow
 group1 in Dropbear server too */
 #define DROPBEAR_DH_GROUP1_CLIENTONLY 1
 
+/* Compression is disabled by default. Can be enabled at runtime
+ * with -o compression=yes
+ */
+#define DROPBEAR_CLI_COMPRESSION 0
+
 /* Control the memory/performance/compression tradeoff for zlib.
  * Set windowBits=8 for least memory usage, see your system's
  * zlib.h for full details.
