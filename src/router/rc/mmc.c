@@ -530,6 +530,8 @@ rewrite:;
 	FILE *f_write = f_kernel;
 	int f_kernellen = 0;
 	int f_rootfslen = 0;
+	char kernelname[32];
+	char rootfsname[32];
 	for (erase_info.start = 0; erase_info.start < trx.len; erase_info.start += count) {
 		len = MIN(erase_info.length, trx.len - erase_info.start);
 		if ((STORE32_LE(trx.flag_version) & TRX_NO_HEADER) || erase_info.start)
@@ -541,23 +543,25 @@ rewrite:;
 		count += safe_fread(&buf[off], 1, len - off, fp);
 		if (!ptr && !pos) {
 			unsigned char partnums = buf[0]; // unused
+			memcpy(kernelname, &buf[1], 32);
 			unsigned long long *i_ptr = (unsigned int *)&buf[1 + 32];
 			f_kernellen = *i_ptr;
-			i_ptr = (unsigned int *)&buf[1 + 8 + 32];
+			memcpy(rootfsname, &buf[1 + 32 + 8], 32);
+			i_ptr = (unsigned int *)&buf[1 + 32 + 8 + 32];
 			f_rootfslen = *i_ptr;
 
 			f_kernellen = le64_to_cpu(f_kernellen);
 			f_rootfslen = le64_to_cpu(f_rootfslen);
 			if (f_kernellen > kernellen) {
-				dd_logerror("flash", "Image too big for kernel partition: %s", mtd);
+				dd_logerror("flash", "Image of size %lld is too big for partition: %s", f_kernellen, kernelname);
 				goto fail;
 			}
 			if (f_rootfslen > rootfslen) {
-				dd_logerror("flash", "Image too big for rootfs partition: %s", mtd);
+				dd_logerror("flash", "Image of size %lld is too big for partition: %s", f_rootfslen, rootfsname);
 				goto fail;
 			}
-			dd_loginfoverbose("flash", "Flash kernel %d", f_kernellen);
-			ptr += 8;
+			dd_loginfoverbose("flash", "Flash %lld bytes to partition %s", f_kernellen, kernelname);
+			ptr += 1 + 32 + 8 + 32 + 8; // partcount, kernelname, kernelsize, rootfsname, rootfssize
 		}
 
 		/* 
@@ -617,7 +621,7 @@ again:;
 			for (l = 0; l < WRITE_BLOCKSIZE - ptr; l++) {
 				unsigned char *p_buf = buf + (i * WRITE_BLOCKSIZE) + ptr + l;
 				if (pos == f_kernellen) {
-					dd_loginfoverbose("flash", "Flash root fileystem %d", f_rootfslen);
+					dd_loginfoverbose("flash", "Flash %lld bytes to partition %s", f_rootfslen, rootfsname);
 					f_write = f_rootfs;
 				}
 				pos++;
