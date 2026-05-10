@@ -528,7 +528,9 @@ else
 	./gen_image_lite.sh $(ARCH)-uclibc/erouter.image.src 16 $(ARCH)-uclibc/vfat 128 $(ARCH)-uclibc/root.fs
 endif
 	dd if=$(ARCH)-uclibc/erouter.image.src of=$(ARCH)-uclibc/erouter.image bs=1048576 conv=sync
-	./tools/wrap $(ARCH)-uclibc/erouter.image $(ARCH)-uclibc/erouter.bin
+	
+	./opt/qcom/mmcimage kernel $(ARCH)-uclibc/erouter.image.src.kernel rootfs $(ARCH)-uclibc/root.fs $(ARCH)-uclibc/erouter.img
+	-./tools/trx_n -m 260000000 -o $(ARCH)-uclibc/erouter.bin $(ARCH)-uclibc/erouter.img
 
 	mkdir -p $(ARCH)-uclibc/sysupgrade-erlite/
 	echo "BOARD=erlite" > $(ARCH)-uclibc/sysupgrade-erlite/CONTROL
