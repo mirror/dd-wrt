@@ -28,7 +28,7 @@ int main(int argc, char *argv[])
 	fseek(in2, 0, SEEK_END);
 	len2 = ftell(in2);
 	rewind(in2);
-	fwrite(&len, 4, 1, out);
+	fwrite(&len2, 4, 1, out);
 
 
 	for (i = 0; i < len; i++)
