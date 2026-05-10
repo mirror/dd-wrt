@@ -218,6 +218,23 @@ int mtd_erase(const char *mtd)
 
 extern int http_get(const char *server, char *buf, size_t count, off_t offset);
 
+#pragma pack(push)
+#pragma pack(1)
+
+typedef struct FWPART {
+	char name[32]; // name of partition. must be 0 terminated
+	unsigned long long partsize; // partition size
+} fwpart;
+
+typedef struct FWHEADER {
+	char devname[64]; // devicename. must be 0 terminated
+	unsigned int flags; // flags (not used yet);
+	unsigned char partnum; // number of partitions;
+	fwpart partitions[2];
+} fwheader;
+
+#pragma pack(pop)
+
 /* 
  * Write a file to an MTD device
  * @param       path    file to write or a URL
@@ -553,16 +570,13 @@ rewrite:;
 		}
 		count += safe_fread(&buf[off], 1, len - off, fp);
 		if (!ptr && !pos) {
-			unsigned char *devname = &buf[0];
-			unsigned int *i_flags = (unsigned int *)&buf[64];
-			unsigned int flags = le32_to_cpu(*i_flags);
-			unsigned char partnums = buf[64 + 4]; // unused
-			memcpy(kernelname, &buf[64 + 4 + 1], 32);
-			unsigned long long *i_ptr = (unsigned long long *)&buf[64 + 4 + 1 + 32];
-			f_kernellen = le64_to_cpu(*i_ptr);
-			memcpy(rootfsname, &buf[64 + 4 + 1 + 32 + 8], 32);
-			i_ptr = (unsigned long long *)&buf[64 + 4 + 1 + 32 + 8 + 32];
-			f_rootfslen = le64_to_cpu(*i_ptr);
+			fwheader *header = (fwheader *)&buf[0];
+			fprintf(stderr, "header size %d\n", sizeof(*header));
+			fprintf(stderr, "part size %d\n", sizeof(fwpart));
+			memcpy(kernelname, header->partitions[0].name, 32);
+			f_kernellen = le64_to_cpu(header->partitions[0].partsize);
+			memcpy(rootfsname, header->partitions[1].name, 32);
+			f_rootfslen = le64_to_cpu(header->partitions[1].partsize);
 
 			if (f_kernellen > kernellen) {
 				dd_logerror("flash", "Image of size %lld is too big for partition: %s", f_kernellen, kernelname);
@@ -573,7 +587,7 @@ rewrite:;
 				goto fail;
 			}
 			dd_loginfoverbose("flash", "Flash %lld bytes to partition %s", f_kernellen, kernelname);
-			ptr += 1 + 32 + 8 + 32 + 8; // partcount, kernelname, kernelsize, rootfsname, rootfssize
+			ptr += sizeof(fwheader); // partcount, kernelname, kernelsize, rootfsname, rootfssize
 		}
 
 		/* 
