@@ -349,6 +349,7 @@ endif
 	$(LINUXDIR)/scripts/squashfs/mksquashfs4 $(ARCH)-uclibc/target $(ARCH)-uclibc/root.fs -comp xz -sort tools/sort.txt -root-owned -noappend -Xbcj arm64 -b 262144
 
 	cp $(LINUXDIR)/arch/arm64/boot/Image $(ARCH)-uclibc/
+ifneq ($(CONFIG_IPQ95XX),y)
 	cp $(ARCH)-uclibc/Image $(ARCH)-uclibc/Image.itb
 	libdeflate-gzip -f -12 -c $(ARCH)-uclibc/Image.itb > $(ARCH)-uclibc/Image.itb.deflate
 #mr7350
@@ -650,7 +651,7 @@ endif
 	$(call build_image,$(TOP)/$(ARCH)-uclibc/glinet_gl-axt1800-squashfs-sysupgrade.bin)
 
 	-./tools/trx_n -m 184000000 -o $(ARCH)-uclibc/glinet_gl-axt1800-webflash.bin $(TOP)/$(ARCH)-uclibc/glinet_gl-axt1800-boot.ubi
-
+endif
 #kiwi
 ifeq ($(CONFIG_IPQ95XX),y)
 	cp $(LINUXDIR)/arch/arm64/boot/Image $(ARCH)-uclibc/
@@ -675,8 +676,8 @@ ifeq ($(CONFIG_IPQ95XX),y)
 		hlos $(TOP)/$(ARCH)-uclibc/Image.itb \
 		rootfs $(TOP)/$(ARCH)-uclibc/root.fs
 	mkimage -f $(TOP)/$(ARCH)-uclibc/Image.its $(TOP)/$(ARCH)-uclibc/kiwi-factory-nor.bin
-	./tools/qcom/mmcimage $(ARCH)-uclibc/Image.itb $(TOP)/$(ARCH)-uclibc/root.fs $(TOP)/$(ARCH)-uclibc/$(TOP)/$(ARCH)-uclibc/kiwi-webupgrade.img
-	-./tools/trx_n -m 184000000 -o $(ARCH)-uclibc/kiwi-webflash.bin $(TOP)/$(ARCH)-uclibc/$(TOP)/$(ARCH)-uclibc/kiwi-webupgrade.img
+	./tools/qcom/mmcimage 0:HLOS $(ARCH)-uclibc/Image.itb rootfs $(TOP)/$(ARCH)-uclibc/root.fs $(TOP)/$(ARCH)-uclibc/kiwi-webupgrade.img
+	-./tools/trx_n -m 184000000 -o $(ARCH)-uclibc/kiwi-webflash.bin $(TOP)/$(ARCH)-uclibc/kiwi-webupgrade.img
 endif
 
 
