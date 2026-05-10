@@ -56,6 +56,8 @@ void start_jffs2(void)
 	char dev[64];
 	int classic = 0;
 	int ax89 = 0;
+	int f2fs = 0;
+	char *f2fspart;
 	#if defined(HAVE_R9000)
 	int mtd = getMTD("plex");
 	#else
@@ -68,6 +70,10 @@ void start_jffs2(void)
 	int brand = getRouterBrand();
 	#if defined(HAVE_IPQ806X) || defined(HAVE_IPQ6018)
 	switch (brand) {
+	case ROUTER_8DEVICES_KIWI:
+		f2fs = 1;
+		f2fspart = "rootfs_1"; //unused anyway
+		break;
 	case ROUTER_ASUS_AC58U:
 		classic = 1;
 		break;
@@ -134,7 +140,12 @@ void start_jffs2(void)
 			eval("flash_erase", dev, "0", "0");
 			eval("mkfs.jffs2", "-o", "/dev/mtdblock3", "-n", "-b", "-e", "131072", "-p");
 	#elif defined(HAVE_MVEBU) || defined(HAVE_R9000) || defined(HAVE_IPQ806X) || defined(HAVE_R6800) || defined(HAVE_IPQ6018)
-			if (ax89) {
+			if (f2fs) {
+				char *disk = getgptpartitionbyname("/dev/mmcblk0", f2fspart);
+				if (disk)
+					eval("mkfs.f2fs", "-l", "ddwrt", "-O", "extra_xattr,inode_checksum,sb_checksum,compression",
+					     disk);
+			} else if (ax89) {
 				eval("mtd", "erase", rwpart);
 			} else if (classic) {
 				eval("mtd", "erase", rwpart);
@@ -156,6 +167,12 @@ void start_jffs2(void)
 	#endif
 
 	#if defined(HAVE_R9000) || defined(HAVE_MVEBU) || defined(HAVE_IPQ806X) || defined(HAVE_R6800) || defined(HAVE_IPQ6018)
+			if (f2fs) {
+				char *disk = getgptpartitionbyname("/dev/mmcblk0", f2fspart);
+				if (disk)
+					didntwork +=
+						mount(disk, "/jffs", "f2fs", MS_MGC_VAL | MS_NOATIME, "compress_algorithm=zstd");
+			}
 			if (ax89) {
 				didntwork = mount("/dev/ubi0_5", "/jffs", "ubifs", MS_MGC_VAL | MS_NOATIME,
 						  "compr=" DEFAULT_UBIFS_COMPR);
@@ -178,9 +195,14 @@ void start_jffs2(void)
 		} else {
 	#if defined(HAVE_R9000) || defined(HAVE_MVEBU) || defined(HAVE_IPQ806X) || defined(HAVE_R6800) || defined(HAVE_IPQ6018)
 			didntwork = 0;
-			if (ax89) {
-				didntwork += mount("/dev/ubi0_5", "/jffs", "ubifs", MS_MGC_VAL | MS_NOATIME,
-						   "compr=" DEFAULT_UBIFS_COMPR);
+			if (f2fs) {
+				char *disk = getgptpartitionbyname("/dev/mmcblk0", f2fspart);
+				if (disk)
+					didntwork +=
+						mount(disk, "/jffs", "f2fs", MS_MGC_VAL | MS_NOATIME, "compress_algorithm=zstd");
+			} else if (ax89) {
+				didntwork = mount("/dev/ubi0_5", "/jffs", "ubifs", MS_MGC_VAL | MS_NOATIME,
+						  "compr=" DEFAULT_UBIFS_COMPR);
 			} else if (classic) {
 				eval("mtd", "unlock", rwpart);
 				sprintf(dev, "/dev/mtdblock/%d", getMTD(rwpart));
