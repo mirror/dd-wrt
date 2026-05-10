@@ -190,8 +190,8 @@ int ksmbd_init_global_file_table(void);
 void ksmbd_free_global_file_table(void);
 int ksmbd_file_table_flush(struct ksmbd_work *work);
 void ksmbd_set_fd_limit(unsigned long limit);
-void ksmbd_update_fstate(struct ksmbd_file_table *ft, struct ksmbd_file *fp,
-			 unsigned int state);
+int ksmbd_update_fstate(struct ksmbd_file_table *ft, struct ksmbd_file *fp,
+			unsigned int state);
 bool ksmbd_vfs_compare_durable_owner(struct ksmbd_file *fp,
 		struct ksmbd_user *user);
 

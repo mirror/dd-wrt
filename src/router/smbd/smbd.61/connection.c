@@ -121,11 +121,30 @@ static void __ksmbd_conn_release_work(struct work_struct *work)
 }
 
 /**
+ * ksmbd_conn_get() - take a reference on @conn and return it.
+ *
+ * Returns @conn unchanged so callers can write
+ * "fp->conn = ksmbd_conn_get(work->conn);" in one expression.  Returns NULL
+ * if @conn is NULL.
+ */
+struct ksmbd_conn *ksmbd_conn_get(struct ksmbd_conn *conn)
+{
+	if (!conn)
+		return NULL;
+
+	atomic_inc(&conn->refcnt);
+	return conn;
+}
+
+/**
  * ksmbd_conn_put() - drop a reference and, if it was the last, queue the
  * release onto ksmbd_conn_wq so it runs from process context.
  *
  * Callable from any context including RCU softirq callbacks and non-sleeping
- * locks; the actual release is deferred to the workqueue.
+ * locks; the actual release is deferred to the workqueue.  ksmbd_conn_wq is
+ * created in ksmbd_server_init() before any conn can be allocated and is
+ * destroyed in ksmbd_server_exit() after rcu_barrier(), so it is always
+ * non-NULL while a conn reference is held.
  */
 void ksmbd_conn_put(struct ksmbd_conn *conn)
 {
@@ -150,6 +169,14 @@ void ksmbd_conn_free(struct ksmbd_conn *conn)
 	hash_del(&conn->hlist);
 	up_write(&conn_list_lock);
 
+	/*
+	 * request_buf / preauth_info / mechToken are only ever accessed by the
+	 * connection handler thread that owns @conn.  ksmbd_conn_free() is
+	 * called from the transport free_transport() path when that thread is
+	 * exiting, so it is safe to release them unconditionally even when
+	 * ksmbd_conn_put() below is not the final putter (oplock / ksmbd_file
+	 * holders only retain the conn pointer, not these per-thread buffers).
+	 */
 	xa_destroy(&conn->sessions);
 	kvfree(conn->request_buf);
 	kfree(conn->preauth_info);
