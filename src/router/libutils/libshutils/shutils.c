@@ -43,6 +43,7 @@
 #include <ddnvram.h>
 #include <shutils.h>
 #include <utils.h>
+#include <byteswap.h>
 
 #if defined(HAVE_X86) || defined(HAVE_NEWPORT) || (defined(HAVE_RB600) && !defined(HAVE_WDR4900)) //special treatment
 
