@@ -412,25 +412,25 @@ rewrite:;
 
 	sprintf(disk, "/dev/%s1", d);
 	/* open partitions from mmc device */
-	char *kernelname = disk;
-	if (!kernelname) {
+	char *kerneldisk = disk;
+	if (!kerneldisk) {
 		dd_logerror("flash", "partition for kernel not found");
 		goto fail;
 	}
-	FILE *f_kernel = fopen(kernelname, "r+b");
+	FILE *f_kernel = fopen(kerneldisk, "r+b");
 	if (!f_kernel) {
-		dd_logerror("flash", "Error opening: %s", kernelname);
+		dd_logerror("flash", "Error opening: %s", kerneldisk);
 		goto fail;
 	}
 	sprintf(disk, "/dev/%s2", d);
-	char *rootfsname = disk;
-	if (!rootfsname) {
-		dd_logerror("flash", "partition for kernel not found");
+	char *rootfsdisk = disk;
+	if (!rootfsdisk) {
+		dd_logerror("flash", "partition for rootfs not found");
 		goto fail;
 	}
-	FILE *f_rootfs = fopen(rootfsname, "r+b");
+	FILE *f_rootfs = fopen(rootfsdisk, "r+b");
 	if (!f_rootfs) {
-		dd_logerror("flash", "Error opening: %s", rootfsname);
+		dd_logerror("flash", "Error opening: %s", rootfsdisk);
 		goto fail;
 	}
 #else
@@ -528,8 +528,8 @@ rewrite:;
 	size_t ptr = 0;
 	size_t pos = 0;
 	FILE *f_write = f_kernel;
-	int f_kernellen = 0;
-	int f_rootfslen = 0;
+	unsigned long long f_kernellen = 0;
+	unsigned long long f_rootfslen = 0;
 	char kernelname[32];
 	char rootfsname[32];
 	for (erase_info.start = 0; erase_info.start < trx.len; erase_info.start += count) {
@@ -544,10 +544,10 @@ rewrite:;
 		if (!ptr && !pos) {
 			unsigned char partnums = buf[0]; // unused
 			memcpy(kernelname, &buf[1], 32);
-			unsigned long long *i_ptr = (unsigned int *)&buf[1 + 32];
+			unsigned long long *i_ptr = (unsigned long long *)&buf[1 + 32];
 			f_kernellen = *i_ptr;
 			memcpy(rootfsname, &buf[1 + 32 + 8], 32);
-			i_ptr = (unsigned int *)&buf[1 + 32 + 8 + 32];
+			i_ptr = (unsigned long long *)&buf[1 + 32 + 8 + 32];
 			f_rootfslen = *i_ptr;
 
 			f_kernellen = le64_to_cpu(f_kernellen);
