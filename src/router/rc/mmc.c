@@ -379,6 +379,8 @@ rewrite:;
 	eval("service", "syslog", "stop");
 	eval("mount", "-f", "-o", "remount,ro", "/jffs");
 	eval("umount", "-r", "-f", "/jffs");
+	eval("umount", "-r", "-f", "/usr/local");
+	eval("mount", "-f", "-o", "remount,ro", "/");
 	eval("service", "syslog", "start");
 
 #if defined(HAVE_MVEBU) || defined(HAVE_R9000) || defined(HAVE_IPQ806X) || defined(HAVE_R6800) || defined(HAVE_IPQ6018)
@@ -400,9 +402,6 @@ rewrite:;
 		dd_logerror("flash", "%s: Bad trx header", path);
 		goto fail;
 	}
-	eval("mount", "-f", "-o", "remount,ro", "/jffs");
-	eval("mount", "-f", "-o", "remount,ro", "/usr/local");
-	eval("mount", "-f", "-o", "remount,ro", "/usr");
 
 #ifdef HAVE_X86
 	char disk[32];
