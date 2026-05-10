@@ -370,17 +370,17 @@ endif
 
 	cp grub/menu_serial_ext4.lst $(ARCH)-uclibc/root.grub/boot/grub/menu.lst
 	-PATH="$(INSTALLDIR)/grub/usr/local/sbin:$(INSTALLDIR)/grub/usr/local/bin:$(PATH)" ./gen_image.sh $(ARCH)-uclibc/dd-wrt_serial.image.ext4.src 32 $(ARCH)-uclibc/root.grub 2048 $(ARCH)-uclibc/root.ext4 128
-	./tools/qcom/mmcimage kernel $(ARCH)-uclibc/dd-wrt_serial.image.ext4.src.kernel rootfs $(ARCH)-uclibc/root.ext4 $(ARCH)-uclibc/dd-wrt_serial.image.ext4.src.trx
+	./tools/qcom/mmcimage "Generic X64 mbr" kernel $(ARCH)-uclibc/dd-wrt_serial.image.ext4.src.kernel rootfs $(ARCH)-uclibc/root.ext4 $(ARCH)-uclibc/dd-wrt_serial.image.ext4.src.trx
 	cp grub/menu_serial.lst $(ARCH)-uclibc/root.grub/boot/grub/menu.lst
 	-PATH="$(INSTALLDIR)/grub/usr/local/sbin:$(INSTALLDIR)/grub/usr/local/bin:$(PATH)" ./gen_image.sh $(ARCH)-uclibc/dd-wrt_serial.image.src 32 $(ARCH)-uclibc/root.grub 600 $(ARCH)-uclibc/root.fs 128
-	./tools/qcom/mmcimage kernel $(ARCH)-uclibc/dd-wrt_serial.image.src.kernel rootfs $(ARCH)-uclibc/root.fs $(ARCH)-uclibc/dd-wrt_serial.image.src.trx
+	./tools/qcom/mmcimage "Generic X64 mbr" kernel $(ARCH)-uclibc/dd-wrt_serial.image.src.kernel rootfs $(ARCH)-uclibc/root.fs $(ARCH)-uclibc/dd-wrt_serial.image.src.trx
 	-PATH="$(INSTALLDIR)/grub/usr/local/sbin:$(INSTALLDIR)/grub/usr/local/bin:$(PATH)" ./gen_image.sh $(ARCH)-uclibc/dd-wrt_serial_2GB.image.src 32 $(ARCH)-uclibc/root.grub 600 $(ARCH)-uclibc/root.fs 1780
 	cp grub/menu_vga_ext4.lst $(ARCH)-uclibc/root.grub/boot/grub/menu.lst
 	-PATH="$(INSTALLDIR)/grub/usr/local/sbin:$(INSTALLDIR)/grub/usr/local/bin:$(PATH)" ./gen_image.sh $(ARCH)-uclibc/dd-wrt_vga.image.ext4.src 32 $(ARCH)-uclibc/root.grub 2048 $(ARCH)-uclibc/root.ext4 128
-	./tools/qcom/mmcimage kernel $(ARCH)-uclibc/dd-wrt_vga.image.ext4.src.kernel rootfs $(ARCH)-uclibc/root.ext4 $(ARCH)-uclibc/dd-wrt_vga.image.ext4.src.trx
+	./tools/qcom/mmcimage "Generic X64 mbr" kernel $(ARCH)-uclibc/dd-wrt_vga.image.ext4.src.kernel rootfs $(ARCH)-uclibc/root.ext4 $(ARCH)-uclibc/dd-wrt_vga.image.ext4.src.trx
 	cp grub/menu_vga.lst $(ARCH)-uclibc/root.grub/boot/grub/menu.lst
 	-PATH="$(INSTALLDIR)/grub/usr/local/sbin:$(INSTALLDIR)/grub/usr/local/bin:$(PATH)" ./gen_image.sh $(ARCH)-uclibc/dd-wrt_vga.image.src 32 $(ARCH)-uclibc/root.grub 600 $(ARCH)-uclibc/root.fs 128
-	./tools/qcom/mmcimage kernel $(ARCH)-uclibc/dd-wrt_vga.image.src.kernel rootfs $(ARCH)-uclibc/root.fs $(ARCH)-uclibc/dd-wrt_vga.image.src.trx
+	./tools/qcom/mmcimage "Generic X64 mbr" kernel $(ARCH)-uclibc/dd-wrt_vga.image.src.kernel rootfs $(ARCH)-uclibc/root.fs $(ARCH)-uclibc/dd-wrt_vga.image.src.trx
 	-PATH="$(INSTALLDIR)/grub/usr/local/sbin:$(INSTALLDIR)/grub/usr/local/bin:$(PATH)" ./gen_image.sh $(ARCH)-uclibc/dd-wrt_vga_2GB.image.src 32 $(ARCH)-uclibc/root.grub 600 $(ARCH)-uclibc/root.fs 1780
 
 	dd if=$(ARCH)-uclibc/dd-wrt_vga.image.src of=$(ARCH)-uclibc/dd-wrt_vga.image bs=1048576 conv=sync
@@ -391,11 +391,11 @@ endif
 	dd if=$(ARCH)-uclibc/dd-wrt_serial_2GB.image.src of=$(ARCH)-uclibc/dd-wrt_serial_2GB.image bs=1048576 conv=sync
 	rm $(ARCH)-uclibc/*.src
 	cd grub-efi && ./makeefi.sh
-	./tools/qcom/mmcimage kernel  grub-efi/efi.img.kernel rootfs $(ARCH)-uclibc/root.fs $(ARCH)-uclibc/dd-wrt_efi_serial.image.src.trx
-	./tools/qcom/mmcimage kernel grub-efi/efi-vga.img.kernel rootfs $(ARCH)-uclibc/root.fs $(ARCH)-uclibc/dd-wrt_efi_vga.image.src.trx
+	./tools/qcom/mmcimage "Generic X64 gpt" kernel  grub-efi/efi.img.kernel rootfs $(ARCH)-uclibc/root.fs $(ARCH)-uclibc/dd-wrt_efi_serial.image.src.trx
+	./tools/qcom/mmcimage "Generic X64 gpt" kernel grub-efi/efi-vga.img.kernel rootfs $(ARCH)-uclibc/root.fs $(ARCH)-uclibc/dd-wrt_efi_vga.image.src.trx
 	cd grub-efi && ./makeefi_ext4.sh
-	./tools/qcom/mmcimage kernel grub-efi/efi-ext4.img.kernel rootfs $(ARCH)-uclibc/root.ext4 $(ARCH)-uclibc/dd-wrt_efi_serial.image.ext4.src.trx
-	./tools/qcom/mmcimage kernel grub-efi/efi-ext4-vga.img.kernel rootfs $(ARCH)-uclibc/root.ext4 $(ARCH)-uclibc/dd-wrt_efi_vga.image.ext4.src.trx
+	./tools/qcom/mmcimage "Generic X64 gpt" kernel grub-efi/efi-ext4.img.kernel rootfs $(ARCH)-uclibc/root.ext4 $(ARCH)-uclibc/dd-wrt_efi_serial.image.ext4.src.trx
+	./tools/qcom/mmcimage "Generic X64 gpt" kernel grub-efi/efi-ext4-vga.img.kernel rootfs $(ARCH)-uclibc/root.ext4 $(ARCH)-uclibc/dd-wrt_efi_vga.image.ext4.src.trx
 
 	qemu-img convert -f raw -O vdi grub-efi/efi.img grub-efi/efi.vdi
 	qemu-img convert -f raw -O vdi grub-efi/efi-vga.img grub-efi/efi-vga.vdi

@@ -676,7 +676,7 @@ ifeq ($(CONFIG_IPQ95XX),y)
 		hlos $(TOP)/$(ARCH)-uclibc/Image.itb \
 		rootfs $(TOP)/$(ARCH)-uclibc/root.fs
 	mkimage -f $(TOP)/$(ARCH)-uclibc/Image.its $(TOP)/$(ARCH)-uclibc/kiwi-factory-nor.bin
-	./tools/qcom/mmcimage 0:HLOS $(ARCH)-uclibc/Image.itb rootfs $(TOP)/$(ARCH)-uclibc/root.fs $(TOP)/$(ARCH)-uclibc/kiwi-webupgrade.img
+	./tools/qcom/mmcimage "8devices Kiwi" 0:HLOS $(ARCH)-uclibc/Image.itb rootfs $(TOP)/$(ARCH)-uclibc/root.fs $(TOP)/$(ARCH)-uclibc/kiwi-webupgrade.img
 	-./tools/trx_n -m 184000000 -o $(ARCH)-uclibc/kiwi-webflash.bin $(TOP)/$(ARCH)-uclibc/kiwi-webupgrade.img
 endif
 
