@@ -4,17 +4,17 @@
 int main(int argc, char *argv[])
 {
 	FILE *in, *in2, *out;
-	in = fopen(argv[1], "rb");
+	in = fopen(argv[2], "rb");
 	if (!in) {
 		fprintf(stderr, "%s not found\n", argv[1]);
 		return -1;
 	}
-	in2 = fopen(argv[2], "rb");
+	in2 = fopen(argv[4], "rb");
 	if (!in2) {
 		fprintf(stderr, "%s not found\n", argv[2]);
 		return -1;
 	}
-	out = fopen(argv[3], "wb");
+	out = fopen(argv[5], "wb");
 	if (!out) {
 		fprintf(stderr, "%s not found\n", argv[3]);
 		return -1;
@@ -27,7 +27,7 @@ int main(int argc, char *argv[])
 	int i;
 	rewind(in);
 	memset(name, 0, sizeof(name));
-	sprintf(name, "kernel");
+	sprintf(name, argv[1]);
 	fwrite(name, sizeof(name), 1, out);
 	fwrite(&len, 8, 1, out);
 
@@ -35,7 +35,7 @@ int main(int argc, char *argv[])
 	len2 = ftell(in2);
 	rewind(in2);
 	memset(name, 0, sizeof(name));
-	sprintf(name, "rootfs");
+	sprintf(name, argv[3]);
 	fwrite(name, sizeof(name), 1, out);
 
 	fwrite(&len2, 8, 1, out);
