@@ -34,7 +34,6 @@
 #define restart(a) eval("restart", a);
 #define restart_f(a) eval("restart_f", a);
 
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <limits.h>
@@ -80,7 +79,6 @@
 #include "crc.c"
 #include <endian.h>
 
-
 #if __BYTE_ORDER == __BIG_ENDIAN
 	#define cpu_to_le16(x) bswap_16(x)
 	#define cpu_to_le32(x) bswap_32(x)
@@ -99,17 +97,16 @@
 	#error unknown endianness!
 #endif
 
-
 #if defined(HAVE_RB600) && !defined(HAVE_WDR4900)
-#include "hdd.c"
+	#include "hdd.c"
 #elif defined(HAVE_X86)
-#include "mmc.c"
+	#include "mmc.c"
 #elif defined(HAVE_EROUTER)
-#include "hdd.c"
+	#include "hdd.c"
 #elif defined(HAVE_IPQ95XX)
-#include "mmc.c"
+	#include "mmc.c"
 #else
-#include "mtd.c"
+	#include "mtd.c"
 #endif
 #include "nvram.c"
 #include "mtd_main.c"

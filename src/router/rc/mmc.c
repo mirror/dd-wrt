@@ -553,16 +553,17 @@ rewrite:;
 		}
 		count += safe_fread(&buf[off], 1, len - off, fp);
 		if (!ptr && !pos) {
-			unsigned char partnums = buf[0]; // unused
-			memcpy(kernelname, &buf[1], 32);
-			unsigned long long *i_ptr = (unsigned long long *)&buf[1 + 32];
-			f_kernellen = *i_ptr;
-			memcpy(rootfsname, &buf[1 + 32 + 8], 32);
-			i_ptr = (unsigned long long *)&buf[1 + 32 + 8 + 32];
-			f_rootfslen = *i_ptr;
+			unsigned char *devname = &buf[0];
+			unsigned int *i_flags = (unsigned int *)&buf[64];
+			unsigned int flags = le32_to_cpu(*i_flags);
+			unsigned char partnums = buf[64 + 4]; // unused
+			memcpy(kernelname, &buf[64 + 4 + 1], 32);
+			unsigned long long *i_ptr = (unsigned long long *)&buf[64 + 4 + 1 + 32];
+			f_kernellen = le64_to_cpu(*i_ptr);
+			memcpy(rootfsname, &buf[64 + 4 + 1 + 32 + 8], 32);
+			i_ptr = (unsigned long long *)&buf[64 + 4 + 1 + 32 + 8 + 32];
+			f_rootfslen = le64_to_cpu(*i_ptr);
 
-			f_kernellen = le64_to_cpu(f_kernellen);
-			f_rootfslen = le64_to_cpu(f_rootfslen);
 			if (f_kernellen > kernellen) {
 				dd_logerror("flash", "Image of size %lld is too big for partition: %s", f_kernellen, kernelname);
 				goto fail;
