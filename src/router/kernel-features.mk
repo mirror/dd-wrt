@@ -743,7 +743,10 @@ define kernelfeatures
 		echo "CONFIG_F2FS_CHECK_FS=y" >> $(LINUXDIR)/.config; \
 		echo "CONFIG_F2FS_FAULT_INJECTION=y" >> $(LINUXDIR)/.config; \
 		echo "# CONFIG_CRYPTO_DRBG_HASH is not set" >> $(LINUXDIR)/.config; \
-		echo "# CONFIG_F2FS_FS_COMPRESSION is not set" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_F2FS_FS_COMPRESSION=y" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_F2FS_FS_LZO is not set" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_F2FS_FS_LZ4 is not set" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_F2FS_FS_ZSTD=y" >> $(LINUXDIR)/.config; \
 		echo "CONFIG_F2FS_FS_IOSTAT=y" >> $(LINUXDIR)/.config; \
 		echo "CONFIG_F2FS_IOSTAT=y" >> $(LINUXDIR)/.config; \
 	fi
