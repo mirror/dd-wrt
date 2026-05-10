@@ -453,11 +453,13 @@ void dns_server_plugin_exit(void)
 		return;
 	}
 
+	/* stop new callbacks from entering plugins.lock while teardown is in progress */
+	atomic_set(&is_plugin_init, 0);
+
 	_dns_plugin_remove_all_ops();
 	_dns_plugin_remove_all();
 
 	pthread_rwlock_destroy(&plugins.lock);
-	atomic_set(&is_plugin_init, 0);
 	return;
 }
 
