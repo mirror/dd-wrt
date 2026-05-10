@@ -143,7 +143,7 @@ void start_jffs2(void)
 			if (f2fs) {
 				char *disk = getgptpartitionbyname("/dev/mmcblk0", f2fspart);
 				if (disk)
-					eval("mkfs.f2fs", "-l", "ddwrt", "-O", "extra_xattr,inode_checksum,sb_checksum,compression",
+					eval("mkfs.f2fs", "-l", "ddwrt", "-O", "extra_attr,inode_checksum,sb_checksum,compression",
 					     disk);
 			} else if (ax89) {
 				eval("mtd", "erase", rwpart);
