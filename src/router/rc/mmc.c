@@ -541,6 +541,9 @@ rewrite:;
 			f_kernellen = *i_ptr;
 			i_ptr = (unsigned int *)&buf[4];
 			f_rootfslen = *i_ptr;
+
+			f_kernellen = le32_to_cpu(f_kernellen);
+			f_rootfslen = le32_to_cpu(f_rootfslen);
 			if (f_kernellen > kernellen) {
 					dd_logerror("flash", "Image too big for kernel partition: %s", mtd);
 					goto fail;

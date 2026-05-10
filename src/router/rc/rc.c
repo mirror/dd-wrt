@@ -34,6 +34,24 @@
 #define restart(a) eval("restart", a);
 #define restart_f(a) eval("restart_f", a);
 
+#if __BYTE_ORDER == __BIG_ENDIAN
+	#define cpu_to_le16(x) bswap_16(x)
+	#define cpu_to_le32(x) bswap_32(x)
+	#define cpu_to_le64(x) bswap_64(x)
+	#define le16_to_cpu(x) bswap_16(x)
+	#define le32_to_cpu(x) bswap_32(x)
+	#define le64_to_cpu(x) bswap_64(x)
+#elif __BYTE_ORDER == __LITTLE_ENDIAN
+	#define cpu_to_le16(x) (x)
+	#define cpu_to_le32(x) (x)
+	#define cpu_to_le64(x) (x)
+	#define le16_to_cpu(x) (x)
+	#define le32_to_cpu(x) (x)
+	#define le64_to_cpu(x) (x)
+#else
+	#error unknown endianness!
+#endif
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <limits.h>
