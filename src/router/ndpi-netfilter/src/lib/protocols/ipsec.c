@@ -67,7 +67,7 @@ static void ikev2_parse_transforms(const u_int8_t *payload, u_int16_t xform_star
                                    u_int16_t prop_end, u_int8_t num_transforms,
                                    struct ndpi_ipsec_proposal *prop) {
   u_int16_t off = xform_start;
-  u_int8_t t
+  u_int8_t t;
   for (t = 0; t < num_transforms && off < prop_end; t++) {
     /* Transform substructure header: 8 bytes minimum */
     if (off + 8 > prop_end) break;
