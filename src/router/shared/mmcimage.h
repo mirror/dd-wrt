@@ -1,5 +1,5 @@
 /*
- * dlna.h
+ * mmcimage.h
  *
  * Copyright (C) 2026 Sebastian Gottschall <s.gottschall@dd-wrt.com>
  *
@@ -20,22 +20,25 @@
  * $Id:
  */
 
-#ifndef _dlna_h_
-#define _dlna_h_
-#include <jansson.h>
 
-#define TYPE_AUDIO 0x1
-#define TYPE_VIDEO 0x2
-#define TYPE_IMAGES 0x4
+#ifndef MMCIMAGE_H
+#define MMCIMAGE_H
 
-struct dlna_share {
-	char mp[32];
-	char sd[64];
-	int types;
-	struct dlna_share *next;
-};
+#pragma pack(push)
+#pragma pack(1)
 
-struct dlna_share *getdlnashares(void);
-struct dlna_share *getdlnashare(char *mp, char *sd, int types);
+typedef struct FWPART {
+	char name[32]; // name of partition. must be 0 terminated
+	unsigned long long partsize; // partition size
+} fwpart;
+
+typedef struct FWHEADER {
+	char devname[64]; // devicename. must be 0 terminated
+	unsigned int flags; // flags (not used yet);
+	unsigned char partnum; // number of partitions;
+	fwpart partitions[2];
+} fwheader;
+
+#pragma pack(pop)
 
 #endif
