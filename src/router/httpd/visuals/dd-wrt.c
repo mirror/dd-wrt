@@ -1179,10 +1179,10 @@ static void show_channel(webs_t wp, char *dev, char *prefix, int type)
 			    nvram_nmatch("axg-only", "%s_net_mode", prefix)) {
 				checkband = 2;
 			}
-			if (nvram_nmatch("ax-only", "%s_net_mode", prefix) || nvram_nmatch("xacn-mixed", "%s_net_mode", prefix)) {
+			if (nvram_nmatch("xacn-mixed", "%s_net_mode", prefix)) {
 				checkband = 56;
 			}
-			if (nvram_nmatch("be-only", "%s_net_mode", prefix) || nvram_nmatch("bexacn-mixed", "%s_net_mode", prefix)) {
+			if (nvram_nmatch("bexacn-mixed", "%s_net_mode", prefix)) {
 				checkband = 56;
 			}
 			if (nvram_nmatch("n5-only", "%s_net_mode", prefix) || nvram_nmatch("acn-mixed", "%s_net_mode", prefix) ||
