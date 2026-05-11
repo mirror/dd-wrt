@@ -530,9 +530,9 @@ endif
 	dd if=$(ARCH)-uclibc/erouter.image.src of=$(ARCH)-uclibc/erouter.image bs=1048576 conv=sync
 	
 ifeq ($(CONFIG_E200),y)
-	./opt/qcom/mmcimage "Ubiquiti Edgerouter Pro" kernel $(ARCH)-uclibc/erouter.image.src.kernel rootfs $(ARCH)-uclibc/root.fs $(ARCH)-uclibc/erouter.img
+	./tools/qcom/mmcimage "Ubiquiti Edgerouter Pro" kernel $(ARCH)-uclibc/erouter.image.src.kernel rootfs $(ARCH)-uclibc/root.fs $(ARCH)-uclibc/erouter.img
 else
-	./opt/qcom/mmcimage "Ubiquiti Edgerouter Lite" kernel $(ARCH)-uclibc/erouter.image.src.kernel rootfs $(ARCH)-uclibc/root.fs $(ARCH)-uclibc/erouter.img
+	./tools/qcom/mmcimage "Ubiquiti Edgerouter Lite" kernel $(ARCH)-uclibc/erouter.image.src.kernel rootfs $(ARCH)-uclibc/root.fs $(ARCH)-uclibc/erouter.img
 endif
 	-./tools/trx_n -m 260000000 -o $(ARCH)-uclibc/erouter.bin $(ARCH)-uclibc/erouter.img
 
