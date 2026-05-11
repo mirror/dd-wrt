@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <string.h>
-
+#include "../../shared/mmcimage.h"
+/*
 typedef struct FWPART {
   char name[32]; // name of partition. must be 0 terminated
   unsigned long long partsize; // partition size
@@ -11,6 +12,7 @@ typedef struct FWHEADER {
     unsigned int partnum; // number of partitions;
     fwpart partitions[];
 } fwheader;
+*/
 
 int main(int argc, char *argv[])
 {
@@ -33,32 +35,23 @@ int main(int argc, char *argv[])
 	char name[32];
 	char devname[64];
 
-	memset(devname, 0, sizeof(devname));
-	sprintf(devname, argv[1]);
-	fwrite(devname, sizeof(devname), 1, out);
-	putc(0, out);
-	putc(0, out);
-	putc(0, out);
-	putc(0, out);
-	putc(2, out); // num of partitions
+	fwheader header;
+	memset(&header, 0, sizeof(header));
+	sprintf(header.devname, argv[1]);
+	header.partnum = 2;
 	fseek(in, 0, SEEK_END);
 	unsigned long long len, len2;
 	len = ftell(in);
 	int i;
 	rewind(in);
-	memset(name, 0, sizeof(name));
-	sprintf(name, argv[2]);
-	fwrite(name, sizeof(name), 1, out);
-	fwrite(&len, 8, 1, out);
-
+	sprintf(header.partitions[0].name, argv[2]);
+	header.partitions[0].partsize = len;
 	fseek(in2, 0, SEEK_END);
 	len2 = ftell(in2);
 	rewind(in2);
-	memset(name, 0, sizeof(name));
-	sprintf(name, argv[4]);
-	fwrite(name, sizeof(name), 1, out);
-
-	fwrite(&len2, 8, 1, out);
+	sprintf(header.partitions[1].name, argv[4]);
+	header.partitions[1].partsize=len;
+	fwrite(&header, sizeof(header), 1, out);
 
 	for (i = 0; i < len; i++)
 		putc(getc(in), out);
