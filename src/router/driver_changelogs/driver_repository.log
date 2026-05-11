@@ -1,4 +1,16 @@
 ------------------------------------------------------------------------
+r8691 | brainslayer | 2026-05-12 03:43:46 +0600 (Tue, 12 May 2026) | 1 line
+
+6ghz scanning works now in ap mode. for whatever reason qca maintainers broke it in ath11k and it looks intentional at some point. no idea
+------------------------------------------------------------------------
+r8690 | brainslayer | 2026-05-12 03:08:18 +0600 (Tue, 12 May 2026) | 1 line
+
+may fix power problem with scanning in ap mode
+------------------------------------------------------------------------
+r8689 | brainslayer | 2026-05-12 02:54:41 +0600 (Tue, 12 May 2026) | 1 line
+
+need to test this
+------------------------------------------------------------------------
 r8688 | brainslayer | 2026-05-11 21:51:24 +0600 (Mon, 11 May 2026) | 1 line
 
 mask board id to avoid undefined qmi board id values
