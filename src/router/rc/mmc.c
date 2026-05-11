@@ -64,6 +64,7 @@
 
 #include <endian.h>
 #include <byteswap.h>
+#include <mmcimage.h>
 
 #if __BYTE_ORDER == __BIG_ENDIAN
 	#define STORE32_LE(X) bswap_32(X)
@@ -217,23 +218,6 @@ int mtd_erase(const char *mtd)
 }
 
 extern int http_get(const char *server, char *buf, size_t count, off_t offset);
-
-#pragma pack(push)
-#pragma pack(1)
-
-typedef struct FWPART {
-	char name[32]; // name of partition. must be 0 terminated
-	unsigned long long partsize; // partition size
-} fwpart;
-
-typedef struct FWHEADER {
-	char devname[64]; // devicename. must be 0 terminated
-	unsigned int flags; // flags (not used yet);
-	unsigned char partnum; // number of partitions;
-	fwpart partitions[2];
-} fwheader;
-
-#pragma pack(pop)
 
 /* 
  * Write a file to an MTD device
