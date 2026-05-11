@@ -498,7 +498,7 @@ int do_doctor(struct dns_header *header, size_t qlen, char *namebuff)
 	      header->hb3 &= ~HB3_AA;
 #ifdef HAVE_DNSSEC
 	      /* remove validated flag from this RR, since we changed it! */
-	      if (option_bool(OPT_DNSSEC_VALID) && i <  ntohs(header->ancount))
+	      if (option_bool(OPT_DNSSEC_VALID) && i < daemon->rr_status_sz && i <  ntohs(header->ancount))
 		daemon->rr_status[i] = 0;
 #endif
 	      done = 1;
@@ -610,7 +610,9 @@ static int find_soa(struct dns_header *header, size_t qlen, char *name, int *sub
 		  addr.rrblock.datalen += 20;
 		  
 #ifdef HAVE_DNSSEC
-		  if (option_bool(OPT_DNSSEC_VALID) && daemon->rr_status[i + ntohs(header->ancount)] != 0)
+		  if (option_bool(OPT_DNSSEC_VALID) &&
+		      i + ntohs(header->ancount) < daemon->rr_status_sz &&
+		      daemon->rr_status[i + ntohs(header->ancount)] != 0)
 		    {
 		      secflag = F_DNSSECOK; 
 		  
