@@ -190,7 +190,11 @@ static void setRouter(const char *name)
 	nvram_set(NVROUTER_ALT, "Industrial Router");
 #endif /*HAVE_ANTAIRA_MINI */
 #elif HAVE_NDTRADE
+#ifdef HAVE_RUCKUSH500
+	nvram_set(NVROUTER_ALT, "ND Trade");
+#else
 	nvram_set(NVROUTER_ALT, "KT412H-8000");
+#endif
 #endif
 }
 
