@@ -96,7 +96,7 @@ static struct nla_policy freq_policy[NL80211_FREQUENCY_ATTR_MAX + 1] = {
 	[NL80211_FREQUENCY_ATTR_FREQ] = { .type = NLA_U32 },
 };
 
-static int freq_list(struct unl *unl, int phy, const char *freq_range, struct dd_list_head *frequencies, int band)
+static int freq_list(struct unl *unl, int phy, const char *freq_range, struct dd_list_head *frequencies, int checkband)
 {
 	struct nlattr *tb[NL80211_FREQUENCY_ATTR_MAX + 1];
 	struct frequency *f;
@@ -134,13 +134,13 @@ static int freq_list(struct unl *unl, int phy, const char *freq_range, struct dd
 			freq_mhz = nla_get_u32(tb[NL80211_FREQUENCY_ATTR_FREQ]);
 			if (!in_range(freq_mhz, freq_range))
 				continue;
-			if (band == 2 && freq_mhz >= 4000)
+			if (checkband == 2 && freq_mhz >= 4000)
 				continue;
-			if ((band == 5 || band == 6 || band == 56) && freq_mhz < 4000)
+			if ((checkband == 5 || checkband == 6 || checkband == 56) && freq_mhz < 4000)
 				continue;
-			if (band == 6 && freq_mhz < 5935)
+			if (checkband == 6 && freq_mhz < 5935)
 				continue;
-			if (band == 5 && freq_mhz >= 5935)
+			if (checkband == 5 && freq_mhz >= 5935)
 				continue;
 				
 			f = calloc(1, sizeof(*f));
