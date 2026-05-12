@@ -204,7 +204,7 @@ unsigned int bitrate_s1g(int mcs, int bw, int sgi);
 
 struct mac80211_info *mac80211_getcurrentsurvey(const char *interface, struct mac80211_info *mac80211_info);
 int getsurveystats(struct dd_list_head *frequencies, struct wifi_channels **channels, const char *interface, char *freq_range,
-		   int scans, int bw);
+		   int scans, int bw, int channelbw);
 
 int getassoclist(const char *name, unsigned char *list);
 
