@@ -440,7 +440,7 @@ rewrite:;
 	dd_loginfoverbose("flash", "freeram=[%ld] bufferram=[%ld]", info.freeram, info.bufferram);
 	int mul = 1; // temporarily use 1 instead of 4 until we
 #ifdef HAVE_IPQ6018
-	#define MINEXTRA 512
+	#define MINEXTRA 64
 #else
 	#define MINEXTRA 8
 #endif
