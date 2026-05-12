@@ -146,9 +146,8 @@ static int rtkphy_config_init(struct phy_device *phydev)
 static int rtkphy_c45_suspend(struct phy_device *phydev)
 {
     int ret = 0;
-
 #ifndef CONFIG_MACH_REALTEK_RTL
-    ret = rtk_phylib_c45_power_low(phydev);
+//    ret = rtk_phylib_c45_power_low(phydev);
 #endif
 
     phydev->speed = SPEED_UNKNOWN;
@@ -161,11 +160,12 @@ static int rtkphy_c45_suspend(struct phy_device *phydev)
 
 static int rtkphy_c45_resume(struct phy_device *phydev)
 {
-#ifndef CONFIG_MACH_REALTEK_RTL
+    return 0;
+/*#ifndef CONFIG_MACH_REALTEK_RTL
     return rtk_phylib_c45_power_normal(phydev);
 #else
     return 0;
-#endif
+#endif*/
 }
 
 static int rtkphy_c45_config_aneg(struct phy_device *phydev)
