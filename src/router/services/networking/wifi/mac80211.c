@@ -1079,11 +1079,11 @@ void setupHostAP_generic_ath9k(const char *prefix, FILE *fp, int isrepeater, int
 				case 8080:
 					acs = mac80211autochannel(prefix, NULL, 2, 0, AUTO_FORCEVHT160, checkband);
 					break;
-					//				case 320:
-					//					acs = mac80211autochannel(prefix, NULL, 2, 0, AUTO_FORCEEHT320;
-					//					break;
+				case 320:
+					acs = mac80211autochannel(prefix, NULL, 2, 0, AUTO_FORCEEHT320, checkband);
+					break;
 				default:
-					acs = mac80211autochannel(prefix, NULL, 2, 0, AUTO_ALL);
+					acs = mac80211autochannel(prefix, NULL, 2, 0, AUTO_ALL, checkband);
 				}
 				if (acs != NULL) {
 					struct wifi_channels *chan = mac80211_get_channels_simple(prefix, country, usebw, 0xff);

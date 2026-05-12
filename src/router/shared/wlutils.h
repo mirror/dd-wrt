@@ -595,6 +595,7 @@ struct wifi_channels *mac80211_get_channels_simple(const char *interface, const 
 #define AUTO_FORCEHT40 1
 #define AUTO_FORCEVHT80 2
 #define AUTO_FORCEVHT160 4
+#define AUTO_FORCEEHT320 5
 #define AUTO_ALL 0
 
 void mac80211autochannel_cleanup(void);
