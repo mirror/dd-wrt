@@ -562,6 +562,8 @@ struct mac80211_ac *mac80211autochannel(const char *interface, char *freq_range,
 		bw = 80;
 	else if (htflags & AUTO_FORCEVHT160)
 		bw = 160;
+	else if (htflags & AUTO_FORCEEHT320)
+		bw = 320;
 	else if (htflags & AUTO_FORCEHT40)
 		bw = 40;
 	/* get maximum eirp possible in channel list */
