@@ -524,6 +524,8 @@ rewrite:;
 			perror("malloc");
 			goto fail;
 		}
+	} else {
+	    memset(buf, 0, erase_info.length);
 	}
 
 	/* 
@@ -556,7 +558,9 @@ rewrite:;
 			count = off = sizeof(struct trx_header);
 			memcpy(buf, &trx, sizeof(struct trx_header));
 		}
+		fprintf(stderr, "count %d\n",count);
 		count += safe_fread(&buf[off], 1, len - off, fp);
+		fprintf(stderr, "count %d\n",count);
 		if (!ptr && !pos) {
 			fwheader *header = (fwheader *)&buf[0];
 			memcpy(kernelname, header->partitions[0].name, 32);
