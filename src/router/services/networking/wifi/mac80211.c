@@ -1488,31 +1488,76 @@ void setupHostAP_generic_ath9k(const char *prefix, FILE *fp, int isrepeater, int
 			    (!strcmp(netmode, "ax-only") || !strcmp(netmode, "ax6-only") || !strcmp(netmode, "ax5-only") ||
 			     !strcmp(netmode, "beax6-only") || !strcmp(netmode, "beax5-only") || !strcmp(netmode, "xacn-mixed") ||
 			     !strcmp(netmode, "mixed"))) {
-				switch (usebw) {
-				case 40:
-					fprintf(fp, "he_oper_chwidth=0\n");
-					fprintf(fp, "he_oper_centr_freq_seg0_idx_freq=%d\n", freq + (10 * iht));
-					break;
-				case 80:
-					fprintf(fp, "he_oper_chwidth=1\n");
-					fprintf(fp, "he_oper_centr_freq_seg0_idx_freq=%d\n", freq + ((channeloffset * 5) * iht));
-					break;
-				case 160:
-					fprintf(fp, "he_oper_chwidth=2\n");
-					fprintf(fp, "he_oper_centr_freq_seg0_idx_freq=%d\n", freq + ((channeloffset * 5) * iht));
-					break;
-				case 320:
-					fprintf(fp, "he_oper_chwidth=2\n");
-					fprintf(fp, "he_oper_centr_freq_seg0_idx_freq=%d\n", freq + ((channeloffset * 5) * iht));
-					break;
-				case 8080:
-					fprintf(fp, "he_oper_chwidth=3\n");
-					fprintf(fp, "he_oper_centr_freq_seg0_idx_freq=%d\n", freq + ((channeloffset * 5) * iht));
-					fprintf(fp, "he_oper_centr_freq_seg1_idx_freq=%d\n", freq2);
-					break;
-				default:
-					fprintf(fp, "he_oper_chwidth=0\n");
-					break;
+				int chan = ieee80211_mhz2ieee(prefix, freq);
+				if (is_6ghz_freq_prefix(prefix, freq)) {
+					switch (usebw) {
+					case 40:
+						fprintf(fp, "he_oper_chwidth=0\n");
+						fprintf(fp, "he_oper_centr_freq_seg0_idx_freq=%d\n", freq + (10 * iht));
+						break;
+					case 80:
+						fprintf(fp, "he_oper_chwidth=1\n");
+						fprintf(fp, "he_oper_centr_freq_seg0_idx_freq=%d\n",
+							freq + ((channeloffset * 5) * iht));
+						break;
+					case 160:
+					case 320:
+						if (chan <= 29)
+							fprintf(fp, "he_oper_centr_freq_seg0_idx_freq=6025\n");
+						else if (chan <= 61)
+							fprintf(fp, "he_oper_centr_freq_seg0_idx_freq=6185\n");
+						else if (chan <= 93)
+							fprintf(fp, "he_oper_centr_freq_seg0_idx_freq=6345\n");
+						else if (chan <= 125)
+							fprintf(fp, "he_oper_centr_freq_seg0_idx_freq=6505\n");
+						else if (chan <= 157)
+							fprintf(fp, "he_oper_centr_freq_seg0_idx_freq=6665\n");
+						else if (chan <= 189)
+							fprintf(fp, "he_oper_centr_freq_seg0_idx_freq=6825\n");
+						else if (chan <= 221)
+							fprintf(fp, "he_oper_centr_freq_seg0_idx_freq=6985\n");
+						break;
+					case 8080:
+						fprintf(fp, "he_oper_chwidth=3\n");
+						fprintf(fp, "he_oper_centr_freq_seg0_idx_freq=%d\n",
+							freq + ((channeloffset * 5) * iht));
+						fprintf(fp, "he_oper_centr_freq_seg1_idx_freq=%d\n", freq2);
+						break;
+					default:
+						fprintf(fp, "he_oper_chwidth=0\n");
+						break;
+					}
+				} else {
+					switch (usebw) {
+					case 40:
+						fprintf(fp, "he_oper_chwidth=0\n");
+						fprintf(fp, "he_oper_centr_freq_seg0_idx_freq=%d\n", freq + (10 * iht));
+						break;
+					case 80:
+						fprintf(fp, "he_oper_chwidth=1\n");
+						fprintf(fp, "he_oper_centr_freq_seg0_idx_freq=%d\n",
+							freq + ((channeloffset * 5) * iht));
+						break;
+					case 160:
+						fprintf(fp, "he_oper_chwidth=2\n");
+						fprintf(fp, "he_oper_centr_freq_seg0_idx_freq=%d\n",
+							freq + ((channeloffset * 5) * iht));
+						break;
+					case 320:
+						fprintf(fp, "he_oper_chwidth=2\n");
+						fprintf(fp, "he_oper_centr_freq_seg0_idx_freq=%d\n",
+							freq + ((channeloffset * 5) * iht));
+						break;
+					case 8080:
+						fprintf(fp, "he_oper_chwidth=3\n");
+						fprintf(fp, "he_oper_centr_freq_seg0_idx_freq=%d\n",
+							freq + ((channeloffset * 5) * iht));
+						fprintf(fp, "he_oper_centr_freq_seg1_idx_freq=%d\n", freq2);
+						break;
+					default:
+						fprintf(fp, "he_oper_chwidth=0\n");
+						break;
+					}
 				}
 			}
 			if (has_be(prefix) &&
