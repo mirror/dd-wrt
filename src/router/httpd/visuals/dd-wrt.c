@@ -1188,7 +1188,7 @@ static void show_channel(webs_t wp, char *dev, char *prefix, int type)
 			if (nvram_nmatch("n5-only", "%s_net_mode", prefix) || nvram_nmatch("acn-mixed", "%s_net_mode", prefix) ||
 			    nvram_nmatch("ac-only", "%s_net_mode", prefix) || nvram_nmatch("na-only", "%s_net_mode", prefix) ||
 			    nvram_nmatch("ax5-only", "%s_net_mode", prefix) || nvram_nmatch("a-only", "%s_net_mode", prefix) ||
-			    nvram_nmatch("be5-only", "%s_net_mode", prefix)) )
+			    nvram_nmatch("be5-only", "%s_net_mode", prefix))
 				checkband = 5;
 			if (nvram_nmatch("ax6-only", "%s_net_mode", prefix))
 				checkband = 6;
