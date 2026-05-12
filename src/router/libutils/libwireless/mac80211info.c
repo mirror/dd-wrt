@@ -2136,8 +2136,8 @@ struct wifi_channels *mac80211_get_channels(struct unl *local_unl, const char *i
 								continue;
 							if (checkband == 6 && band->nla_type != NL80211_BAND_6GHZ)
 								continue;
-							if (band->nla_type == NL80211_BAND_6GHZ && freq_mhz == 5935)
-								regmaxbw = 20;
+//							if (band->nla_type == NL80211_BAND_6GHZ && freq_mhz == 5935)
+//								regmaxbw = 20;
 							if (!is_morse_micro(interface)) {
 								if (max_bandwidth_mhz > regmaxbw)
 									continue;
@@ -2196,11 +2196,11 @@ struct wifi_channels *mac80211_get_channels(struct unl *local_unl, const char *i
 							list[count].vht160 = true;
 							list[count].eht320 = true;
 
-							if (band->nla_type == NL80211_BAND_6GHZ && freq_mhz == 5935) {
-								list[count].luu = 0;
-								list[count].ull = 0;
-								list[count].ht40 = false;
-							}
+//							if (band->nla_type == NL80211_BAND_6GHZ && freq_mhz == 5935) {
+//								list[count].luu = 0;
+//								list[count].ull = 0;
+//								list[count].ht40 = false;
+//							}
 							if (regmaxbw < 40 && max_bandwidth_mhz == 40) {
 								list[count].luu = 0;
 								list[count].ull = 0;
