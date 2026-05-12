@@ -142,13 +142,8 @@ int main (int argc, char **argv)
 #ifdef HAVE_DNSSEC
   if (option_bool(OPT_DNSSEC_VALID))
     {
-      /* Note that both /000 and '.' are allowed within labels. These get
-	 represented in presentation format using NAME_ESCAPE as an escape
-	 character. In theory, if all the characters in a name were /000 or
-	 '.' or NAME_ESCAPE then all would have to be escaped, so the 
-	 presentation format would be twice as long as the spec. */
-      daemon->keyname = safe_malloc((MAXDNAME * 2) + 1);
-      daemon->cname = safe_malloc((MAXDNAME * 2) + 1);
+      daemon->keyname = safe_malloc(MAXDNAMESTR + 1);
+      daemon->cname = safe_malloc(MAXDNAMESTR + 1);
       /* one char flag per possible RR in answer section (may get extended). */
       daemon->rr_status_sz = 64;
       daemon->rr_status = safe_malloc(sizeof(*daemon->rr_status) * daemon->rr_status_sz);

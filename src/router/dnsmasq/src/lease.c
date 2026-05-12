@@ -38,7 +38,7 @@ static int read_leases(time_t now, FILE *leasestream)
 
      Check various buffers are big enough for the code below */
 
-#if (DHCP_BUFF_SZ < 255) || (MAXDNAME < 64) || (PACKETSZ+MAXDNAME+RRFIXEDSZ  < 764)
+#if (DHCP_BUFF_SZ < 255) || (MAXDNAMESTR < 64) || (PACKETSZ+MAXDNAME+RRFIXEDSZ  < 764)
 # error Buffer size breakage in leasefile parsing.
 #endif
 

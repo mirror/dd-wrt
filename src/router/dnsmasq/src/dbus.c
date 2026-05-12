@@ -736,7 +736,7 @@ static void add_dict_entry(DBusMessageIter *container, const char *key, const ch
 
 static void add_dict_int(DBusMessageIter *container, const char *key, const unsigned int val)
 {
-  snprintf(daemon->namebuff, MAXDNAME, "%u", val);
+  snprintf(daemon->namebuff, MAXDNAMESTR, "%u", val);
   
   add_dict_entry(container, key, daemon->namebuff);
 }

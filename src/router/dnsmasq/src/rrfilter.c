@@ -344,14 +344,6 @@ short *rrfilter_desc(int type)
    thus generating names in canonical form.
    Calling to_wire followed by from_wire is almost an identity,
    except that the UC remains mapped to LC. 
-
-   Note that both /000 and '.' are allowed within labels. These get
-   represented in presentation format using NAME_ESCAPE as an escape
-   character. In theory, if all the characters in a name were /000 or
-   '.' or NAME_ESCAPE then all would have to be escaped, so the 
-   presentation format would be twice as long as the spec (1024). 
-   The buffers are all declared as 2049 (allowing for the trailing zero) 
-   for this reason.
 */
 int to_wire(char *name)
 {
@@ -397,14 +389,17 @@ void from_wire(char *name)
       len = *l;
       memmove(l, l+1, len);
       for (p = l; p < l + len; p++)
-	if (*p == '.' || *p == 0 || *p == NAME_ESCAPE)
-	  {
-	    memmove(p+1, p, 1 + last - p);
-	    len++;
-	    *p++ = NAME_ESCAPE; 
-	    (*p)++;
-	  }
-	
+	{
+	  unsigned char c = *p;
+	  if (IS_NAME_ESCAPE(c))
+	    {
+	      memmove(p+1, p, 1 + last - p);
+	      last++;
+	      len++;
+	      *p++ = NAME_ESCAPE; 
+	      (*p)++;
+	    }
+	}
       l[len] = '.';
     }
 

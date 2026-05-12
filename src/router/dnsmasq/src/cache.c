@@ -22,6 +22,7 @@ static struct crec *new_chain = NULL;
 static int insert_error;
 static union bigname *big_free = NULL;
 static int bignames_left, hash_size;
+
 struct nameblock {
   struct nameblock *next;
   unsigned int last, index;
@@ -221,6 +222,9 @@ static char *store_name(unsigned int namelen, unsigned int index)
   struct nameblock *block;
   char *ret = NULL;
 
+  if (namelen > NAMEBLOCK_CHARS)
+    return NULL;
+  
   for (block = hostblocks; block; block = block->next)
     if (block->index == index && NAMEBLOCK_CHARS - block->last >= namelen)
       break;
@@ -1418,7 +1422,7 @@ static int gettok(FILE *f, char *token)
 	  return eatspace(f);
 	}
       
-      if (count < (MAXDNAME - 1))
+      if (count < (MAXDNAMESTR - 1))
 	{
 	  token[count++] = c;
 	  token[count] = 0;
@@ -1793,7 +1797,7 @@ void cache_add_dhcp_entry(char *host_name, int prot,
   /* Name in hosts, address doesn't match */
   if (fail_crec)
     {
-      inet_ntop(prot, &fail_crec->addr, daemon->namebuff, MAXDNAME);
+      inet_ntop(prot, &fail_crec->addr, daemon->namebuff, MAXDNAMESTR);
       my_syslog(MS_DHCP | LOG_WARNING, 
 		_("not giving name %s to the DHCP lease of %s because "
 		  "the name exists in %s with address %s"), 

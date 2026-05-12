@@ -1536,7 +1536,7 @@ static struct dhcp_netid *add_options(struct state *state, int do_refresh)
       for (i = 0; i <  opt6_len(oro) - 1; i += 2)
 	{
 	  char *s = option_string(AF_INET6, opt6_uint(oro, i, 2), NULL, 0, NULL, 0);
-	  q += snprintf(q, MAXDNAME - (q - daemon->namebuff),
+	  q += snprintf(q, MAXDNAMESTR - (q - daemon->namebuff),
 			"%d%s%s%s", 
 			opt6_uint(oro, i, 2),
 			strlen(s) != 0 ? ":" : "",
@@ -2047,8 +2047,8 @@ static void log6_opts(int nest, unsigned int xid, void *start_opts, void *end_op
 	    {
 	      int slen = opt6_len(opt) - 2;
 	      int len = sprintf(daemon->namebuff, "%u ", opt6_uint(opt, 0, 2));
-	      if (slen > (MAXDNAME * 2) - len - 1)
-		slen = (MAXDNAME * 2) - len - 1;
+	      if (slen > (MAXDNAMESTR) - len - 1)
+		slen = (MAXDNAMESTR) - len - 1;
 	      memcpy(daemon->namebuff + len, opt6_ptr(opt, 2), slen);
 	      daemon->namebuff[len + slen] = 0;
 	    }
@@ -2058,7 +2058,7 @@ static void log6_opts(int nest, unsigned int xid, void *start_opts, void *end_op
 	{
 	  /* account for flag byte on FQDN */
 	  int offset = type == OPTION6_FQDN ? 1 : 0;
-	  optname = option_string(AF_INET6, type, opt6_ptr(opt, offset), opt6_len(opt) - offset, daemon->namebuff, MAXDNAME);
+	  optname = option_string(AF_INET6, type, opt6_ptr(opt, offset), opt6_len(opt) - offset, daemon->namebuff, MAXDNAMESTR);
 	}
       
       my_syslog(MS_DHCP | LOG_INFO, "%u %s size:%3d option:%3d %s  %s", 
@@ -2255,7 +2255,7 @@ int relay_upstream6(int iface_index, ssize_t sz,
 	  {
 	    inet_ntop(AF_INET6, &relay->local, daemon->addrbuff, ADDRSTRLEN);
 	    if (IN6_ARE_ADDR_EQUAL(&relay->server.addr6, &multicast))
-	      snprintf(daemon->namebuff, MAXDNAME, _("multicast via %s"), relay->interface);
+	      snprintf(daemon->namebuff, MAXDNAMESTR, _("multicast via %s"), relay->interface);
 	    else
 	      inet_ntop(AF_INET6, &relay->server, daemon->namebuff, ADDRSTRLEN);
 	    my_syslog(MS_DHCP | LOG_INFO, _("DHCP relay at %s -> %s"), daemon->addrbuff, daemon->namebuff);

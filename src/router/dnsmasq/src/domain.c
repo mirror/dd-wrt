@@ -162,12 +162,12 @@ int is_rev_synth(int flag, union all_addr *addr, char *name)
        if (c->indexed)
 	 {
 	   unsigned int index = ntohl(addr->addr4.s_addr) - ntohl(c->start.s_addr);
-	   snprintf(name, MAXDNAME, "%s%u", c->prefix ? c->prefix : "", index);
+	   snprintf(name, MAXDNAMESTR, "%s%u", c->prefix ? c->prefix : "", index);
 	 }
        else
 	 {
 	   if (c->prefix)
-	     strncpy(name, c->prefix, MAXDNAME - ADDRSTRLEN);
+	     strncpy(name, c->prefix, MAXDNAMESTR - ADDRSTRLEN);
        
        	   inet_ntop(AF_INET, &addr->addr4, name + strlen(name), ADDRSTRLEN);
 	   for (p = name; *p; p++)
@@ -175,8 +175,8 @@ int is_rev_synth(int flag, union all_addr *addr, char *name)
 	       *p = '-';
 	 }
        
-       strncat(name, ".", MAXDNAME - strlen(name) - 1);
-       strncat(name, c->domain, MAXDNAME - strlen(name) - 1);
+       strncat(name, ".", MAXDNAMESTR - strlen(name) - 1);
+       strncat(name, c->domain, MAXDNAMESTR - strlen(name) - 1);
 
        return 1;
      }
@@ -188,7 +188,7 @@ int is_rev_synth(int flag, union all_addr *addr, char *name)
        if (c->indexed)
 	 {
 	   u64 index = addr6part(&addr->addr6) - addr6part(&c->start6);
-	   snprintf(name, MAXDNAME, "%s%llu", c->prefix ? c->prefix : "", index);
+	   snprintf(name, MAXDNAMESTR, "%s%llu", c->prefix ? c->prefix : "", index);
 	 }
        else
 	 {
@@ -196,17 +196,17 @@ int is_rev_synth(int flag, union all_addr *addr, char *name)
 	   char frag[6];
 
 	   if (c->prefix)
-	     strncpy(name, c->prefix, MAXDNAME);
+	     strncpy(name, c->prefix, MAXDNAMESTR);
 	   
 	   for (i = 0; i < 16; i += 2)
 	     {
 	       sprintf(frag, "%s%02x%02x",  i == 0 ? "" : "-", addr->addr6.s6_addr[i], addr->addr6.s6_addr[i+1]);
-	       strncat(name, frag, MAXDNAME - strlen(name) - 1);
+	       strncat(name, frag, MAXDNAMESTR - strlen(name) - 1);
 	     }
 	 }
 
-       strncat(name, ".", MAXDNAME - strlen(name) - 1);
-       strncat(name, c->domain, MAXDNAME - strlen(name) - 1);
+       strncat(name, ".", MAXDNAMESTR - strlen(name) - 1);
+       strncat(name, c->domain, MAXDNAMESTR - strlen(name) - 1);
 
        return 1;
      }

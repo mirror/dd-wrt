@@ -278,9 +278,9 @@ void log_tags(struct dhcp_netid *netid, u32 xid)
 	  
 	  if (!n)
 	    {
-	      strncat (s, netid->net, (MAXDNAME-1) - strlen(s));
+	      strncat (s, netid->net, MAXDNAMESTR - strlen(s));
 	      if (netid->next)
-		strncat (s, ", ", (MAXDNAME-1) - strlen(s));
+		strncat (s, ", ", MAXDNAMESTR - strlen(s));
 	    }
 	}
       my_syslog(MS_DHCP | LOG_INFO, _("%u tags: %s"), xid, s);

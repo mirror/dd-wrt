@@ -958,7 +958,7 @@ void dhcp_read_ethers(void)
 	up = &config->next;
     }
 
-  while (fgets(buff, MAXDNAME, f))
+  while (fgets(buff, MAXDNAMESTR, f))
     {
       char *host = NULL;
       

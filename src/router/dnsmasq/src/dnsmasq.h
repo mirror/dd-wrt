@@ -490,7 +490,7 @@ struct interface_name {
 };
 
 union bigname {
-  char name[MAXDNAME+1];
+  char name[MAXDNAMESTR+1];
   union bigname *next; /* freelist */
 };
 
@@ -1275,10 +1275,10 @@ extern struct daemon {
   /* globally used stuff for DNS */
   char *packet; /* packet buffer */
   int packet_buff_sz; /* size of above */
-  char *namebuff; /* MAXDNAME size buffer */
+  char *namebuff; /* MAXDNAMESTR+1 size buffer */
   char *workspacename;
 #ifdef HAVE_DNSSEC
-  char *keyname, *cname; /* MAXDNAME size buffer */
+  char *keyname, *cname; /* MAXDNAMESTR+1 size buffer */
   unsigned long *rr_status; /* ceiling in TTL from DNSSEC or zero for insecure */
   int rr_status_sz;
   int dnssec_no_time_check;
@@ -1504,7 +1504,7 @@ u64 rand64(void);
 int rr_on_list(struct rrlist *list, unsigned short rr);
 int legal_hostname(char *name);
 char *canonicalise(char *in, int *nomem);
-unsigned char *do_rfc1035_name(unsigned char *p, char *sval, char *limit);
+unsigned char *do_rfc1035_name(unsigned char *p, char *sval, unsigned char *limit);
 void *safe_malloc(size_t size);
 void safe_strncpy(char *dest, const char *src, size_t size);
 void safe_pipe(int *fd, int read_noblock);

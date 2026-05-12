@@ -434,17 +434,17 @@ static void tftp_request(char *packet, ssize_t plen, struct listener *listen, ti
 	    {
 	      if (prefix[0] == '/')
 		daemon->namebuff[0] = 0;
-	      strncat(daemon->namebuff, prefix, (MAXDNAME-1) - strlen(daemon->namebuff));
+	      strncat(daemon->namebuff, prefix, MAXDNAMESTR - strlen(daemon->namebuff));
 	      if (prefix[strlen(prefix)-1] != '/')
-		strncat(daemon->namebuff, "/", (MAXDNAME-1) - strlen(daemon->namebuff));
+		strncat(daemon->namebuff, "/", MAXDNAMESTR - strlen(daemon->namebuff));
 	      
 	      if (option_bool(OPT_TFTP_APREF_IP))
 		{
 		  size_t oldlen = strlen(daemon->namebuff);
 		  struct stat statbuf;
 		  
-		  strncat(daemon->namebuff, daemon->addrbuff, (MAXDNAME-1) - strlen(daemon->namebuff));
-		  strncat(daemon->namebuff, "/", (MAXDNAME-1) - strlen(daemon->namebuff));
+		  strncat(daemon->namebuff, daemon->addrbuff, MAXDNAMESTR - strlen(daemon->namebuff));
+		  strncat(daemon->namebuff, "/", MAXDNAMESTR - strlen(daemon->namebuff));
 		  
 		  /* remove unique-directory if it doesn't exist */
 		  if (stat(daemon->namebuff, &statbuf) == -1 || !S_ISDIR(statbuf.st_mode))
@@ -475,7 +475,7 @@ static void tftp_request(char *packet, ssize_t plen, struct listener *listen, ti
 		      size_t oldlen = strlen(daemon->namebuff);
 		      struct stat statbuf;
 		      
-		      snprintf(daemon->namebuff + oldlen, (MAXDNAME-1) - oldlen, "%.2x-%.2x-%.2x-%.2x-%.2x-%.2x/",
+		      snprintf(daemon->namebuff + oldlen, MAXDNAMESTR - oldlen, "%.2x-%.2x-%.2x-%.2x-%.2x-%.2x/",
 			       macaddr[0], macaddr[1], macaddr[2], macaddr[3], macaddr[4], macaddr[5]);
 		      
 		      /* remove unique-directory if it doesn't exist */
@@ -495,7 +495,7 @@ static void tftp_request(char *packet, ssize_t plen, struct listener *listen, ti
 	    }
 	  else if (filename[0] == '/')
 	    daemon->namebuff[0] = 0;
-	  strncat(daemon->namebuff, filename, (MAXDNAME-1) - strlen(daemon->namebuff));
+	  strncat(daemon->namebuff, filename, MAXDNAMESTR - strlen(daemon->namebuff));
 	  
 	  /* check permissions and open file */
 	  if ((transfer->file = check_tftp_fileperm(packet, &len, prefix, daemon->addrbuff)))
@@ -627,7 +627,7 @@ void check_tftp_listeners(time_t now)
 {
   /* Use workspace to receive (small) request/ACK, to avoid overwriting precomputed reply */
   char *packet = daemon->workspacename;
-  ssize_t plen = MAXDNAME * 2;
+  ssize_t plen = MAXDNAMESTR;
   struct listener *listener;
   struct tftp_transfer *transfer, *tmp, **up;
   

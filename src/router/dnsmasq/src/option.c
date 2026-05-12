@@ -5473,7 +5473,7 @@ static void read_file(char *file, FILE *f, int hard_opt, int from_script)
   volatile int lineno = 0;
   char *buff = daemon->namebuff;
   
-  while (fgets(buff, MAXDNAME, f))
+  while (fgets(buff, MAXDNAMESTR, f))
     {
       int white, i;
       volatile int option;
@@ -5948,14 +5948,9 @@ void reread_dhcp(void)
 
 void read_opts(int argc, char **argv, char *compile_opts)
 {
-  size_t argbuf_size = MAXDNAME;
+  size_t argbuf_size = 300;
   char *argbuf = opt_malloc(argbuf_size);
-  /* Note that both /000 and '.' are allowed within labels. These get
-     represented in presentation format using NAME_ESCAPE as an escape
-     character. In theory, if all the characters in a name were /000 or
-     '.' or NAME_ESCAPE then all would have to be escaped, so the 
-     presentation format would be twice as long as the spec. */
-  char *buff = opt_malloc((MAXDNAME * 2) + 1);
+  char *buff = opt_malloc(MAXDNAMESTR+1);
   int option, testmode = 0;
   char *arg, *conffile = NULL;
   
@@ -5964,7 +5959,7 @@ void read_opts(int argc, char **argv, char *compile_opts)
   daemon = opt_malloc(sizeof(struct daemon));
   memset(daemon, 0, sizeof(struct daemon));
   daemon->namebuff = buff;
-  daemon->workspacename = safe_malloc((MAXDNAME * 2) + 1);
+  daemon->workspacename = safe_malloc(MAXDNAMESTR+1);
   daemon->addrbuff = safe_malloc(ADDRSTRLEN);
   
   /* Set defaults - everything else is zero or NULL */
@@ -6219,7 +6214,7 @@ void read_opts(int argc, char **argv, char *compile_opts)
     {
       struct mx_srv_record *mx;
       
-      if (gethostname(buff, MAXDNAME) == -1)
+      if (gethostname(buff, MAXDNAMESTR) == -1)
 	die(_("cannot get host-name: %s"), NULL, EC_MISC);
       
       for (mx = daemon->mxnames; mx; mx = mx->next)
@@ -6263,7 +6258,7 @@ void read_opts(int argc, char **argv, char *compile_opts)
       if (!(f = fopen((daemon->resolv_files)->name, "r")))
 	die(_("failed to read %s: %s"), (daemon->resolv_files)->name, EC_FILE);
       
-      while ((line = fgets(buff, MAXDNAME, f)))
+      while ((line = fgets(buff, MAXDNAMESTR, f)))
 	{
 	  char *token = strtok(line, " \t\n\r");
 	  
@@ -6291,13 +6286,14 @@ void read_opts(int argc, char **argv, char *compile_opts)
 	    strchr(srv->name, '.') && 
 	    strchr(srv->name, '.') == strrchr(srv->name, '.'))
 	  {
-	    if (strlen(srv->name) + 1 + strlen(daemon->domain_suffix) > MAXDNAME)
+	    if (strlen(srv->name) + 1 + strlen(daemon->domain_suffix) > MAXDNAMESTR)
 	      die(_("srv-host name %s too long after domain appended"), srv->name, EC_MISC);
 	    strcpy(buff, srv->name);
 	    strcat(buff, ".");
 	    strcat(buff, daemon->domain_suffix);
 	    free(srv->name);
-	    srv->name = opt_string_alloc(buff);
+	    if (!(srv->name = canonicalise_opt(buff)))
+	      die(_("bad srv-host name %s after domain appended"), srv->name, EC_MISC); 
 	  }
     }
   else if (option_bool(OPT_DHCP_FQDN))

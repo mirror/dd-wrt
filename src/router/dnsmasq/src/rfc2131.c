@@ -418,7 +418,7 @@ size_t dhcp_reply(struct dhcp_context *context, char *iface_name, int int_index,
 	  struct dhcp_context *context_tmp;
 	  for (context_tmp = context; context_tmp; context_tmp = context_tmp->current)
 	    {
-	      inet_ntop(AF_INET, &context_tmp->start, daemon->namebuff, MAXDNAME);
+	      inet_ntop(AF_INET, &context_tmp->start, daemon->namebuff, MAXDNAMESTR);
 	      if (context_tmp->flags & (CONTEXT_STATIC | CONTEXT_PROXY))
 		{
 		  inet_ntop(AF_INET, &context_tmp->netmask, daemon->addrbuff, ADDRSTRLEN);
@@ -1969,7 +1969,7 @@ static void log_options(unsigned char *start, u32 xid)
 {
   while (*start != OPTION_END)
     {
-      char *optname = option_string(AF_INET, start[0], option_ptr(start, 0), option_len(start), daemon->namebuff, MAXDNAME);
+      char *optname = option_string(AF_INET, start[0], option_ptr(start, 0), option_len(start), daemon->namebuff, MAXDNAMESTR);
       
       my_syslog(MS_DHCP | LOG_INFO, "%u sent size:%3d option:%3d %s  %s", 
 		ntohl(xid), option_len(start), start[0], optname, daemon->namebuff);
@@ -2649,7 +2649,7 @@ static void do_options(struct dhcp_context *context,
       for (i = 0; req_options[i] != OPTION_END; i++)
 	{
 	  char *s = option_string(AF_INET, req_options[i], NULL, 0, NULL, 0);
-	  q += snprintf(q, MAXDNAME - (q - daemon->namebuff),
+	  q += snprintf(q, MAXDNAMESTR - (q - daemon->namebuff),
 			"%d%s%s%s", 
 			req_options[i],
 			strlen(s) != 0 ? ":" : "",

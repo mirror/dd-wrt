@@ -136,14 +136,15 @@ static int check_name(char *in)
 {
   /* remove trailing . 
      also fail empty string and label > 63 chars */
-  size_t dotgap = 0, l = strlen(in);
+  size_t dotgap = 0, wiresize = 0, l = strlen(in);
   char c;
   int nowhite = 0;
   int idn_encode = 0;
   int hasuscore = 0;
   int hasucase = 0;
   
-  if (l == 0 || l > MAXDNAME) return 0;
+  if (l == 0)
+    return 0;
   
   if (in[l-1] == '.')
     {
@@ -154,7 +155,10 @@ static int check_name(char *in)
   for (; (c = *in); in++)
     {
       if (c == '.')
-        dotgap = 0;
+        {
+	  wiresize += dotgap + 1;
+	  dotgap = 0;
+	}
       else if (++dotgap > MAXLABEL)
         return 0;
       else if (isascii((unsigned char)c) && iscntrl((unsigned char)c)) 
@@ -195,6 +199,10 @@ static int check_name(char *in)
 #else
   idn_encode = idn_encode || hasucase;
 #endif
+
+ /* length of final label and terminaton added */
+  if (!idn_encode && wiresize + dotgap + 2 >  MAXDNAME)
+    return 0; /* wire representation too long */
 
   return (idn_encode) ? 2 : 1;
 }
@@ -283,20 +291,24 @@ char *canonicalise(char *in, int *nomem)
   return ret;
 }
 
-unsigned char *do_rfc1035_name(unsigned char *p, char *sval, char *limit)
+unsigned char *do_rfc1035_name(unsigned char *p, char *sval, unsigned char *limit)
 {
   int j;
+
+  /* Never make a name larger than the RFC limit */
+  if (!limit || (limit - p > MAXDNAME))
+    limit = p + MAXDNAME;
   
   while (sval && *sval)
     {
       unsigned char *cp = p++;
 
-      if (limit && p > (unsigned char*)limit)
+      if (p > limit)
         return NULL;
 
       for (j = 0; *sval && (*sval != '.'); sval++, j++)
 	{
-          if (limit && p + 1 > (unsigned char*)limit)
+          if (p + 1 > limit)
             return NULL;
 
 	  if (*sval == NAME_ESCAPE)
