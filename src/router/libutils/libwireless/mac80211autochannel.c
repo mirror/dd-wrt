@@ -483,7 +483,7 @@ static int sort_cmp(void *priv, struct dd_list_head *a, struct dd_list_head *b)
 }
 
 int getsurveystats(struct dd_list_head *frequencies, struct wifi_channels **channels, const char *interface, char *freq_range,
-		   int scans, int bw)
+		   int scans, int bw, int band)
 {
 	struct frequency *f;
 	int verbose = 0;
@@ -502,7 +502,7 @@ int getsurveystats(struct dd_list_head *frequencies, struct wifi_channels **chan
 	const char *country = getIsoName(nvram_default_get("wlan0_regdomain", "UNITED_STATES"));
 	if (!country)
 		country = "DE";
-	wifi_channels = mac80211_get_channels(&unl, interface, country, bw, 0xff, 1);
+	wifi_channels = mac80211_get_channels(&unl, interface, country, bw, band, 1);
 	if (channels)
 		*channels = wifi_channels;
 	if (scans == 0)
@@ -541,7 +541,7 @@ void mac80211autochannel_cleanup(void)
 	}
 }
 // leave space for enhencements with more cards and already chosen channels...
-struct mac80211_ac *mac80211autochannel(const char *interface, char *freq_range, int scans, int enable_passive, int htflags)
+struct mac80211_ac *mac80211autochannel(const char *interface, char *freq_range, int scans, int enable_passive, int htflags, int band)
 {
 	struct mac80211_ac *acs = NULL;
 	struct mac80211_ac *racs = NULL;
@@ -565,7 +565,7 @@ struct mac80211_ac *mac80211autochannel(const char *interface, char *freq_range,
 	else if (htflags & AUTO_FORCEHT40)
 		bw = 40;
 	/* get maximum eirp possible in channel list */
-	if (getsurveystats(&frequencies, &wifi_channels, interface, freq_range, scans, bw))
+	if (getsurveystats(&frequencies, &wifi_channels, interface, freq_range, scans, bw, band))
 		return NULL;
 	if (!(list = open_site_survey(interface))) {
 		if (wifi_channels)
