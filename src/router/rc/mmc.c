@@ -560,10 +560,11 @@ rewrite:;
 		if (!ptr && !pos) {
 			fwheader *header = (fwheader *)&buf[0];
 			memcpy(kernelname, header->partitions[0].name, 32);
-			f_kernellen = le64_to_cpu(header->partitions[0].partsize);
+			f_kernellen = header->partitions[0].partsize;
+			f_kernellen = le64_to_cpu(f_kernellen);
 			memcpy(rootfsname, header->partitions[1].name, 32);
-			f_rootfslen = le64_to_cpu(header->partitions[1].partsize);
-
+			f_rootfslen = header->partitions[1].partsize;
+			f_rootfslen = le64_to_cpu(f_rootfslen);
 			if (f_kernellen > kernellen) {
 				dd_logerror("flash", "Image of size %lld is too big for partition: %s", f_kernellen, kernelname);
 				goto fail;
