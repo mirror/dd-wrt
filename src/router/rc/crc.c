@@ -61,7 +61,7 @@ static uint32 crc32(void *vdata, /* pointer to array of data to process */
 )
 {
 	uint8 *pdata = (uint8 *)vdata;
-	int count = 0;
+	unsigned int count = 0;
 	while (nbytes-- > 0) {
 		count +=*pdata;
 		CRC_INNER_LOOP(32, crc, *pdata++);
