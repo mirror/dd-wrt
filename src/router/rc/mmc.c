@@ -498,7 +498,7 @@ rewrite:;
 	dd_loginfoverbose("flash", "freeram=[%ld] bufferram=[%ld]", info.freeram, info.bufferram);
 	int mul = 1; // temporarily use 1 instead of 4 until we
 #ifdef HAVE_IPQ6018
-	#define MINEXTRA 512
+	#define MINEXTRA 128
 #else
 	#define MINEXTRA 8
 #endif
@@ -529,8 +529,10 @@ rewrite:;
 	/* 
 	 * Calculate CRC over header 
 	 */
+	fprintf(stderr, "trx header %d\n", sizeof(struct trx_header));
 	crc = crc32((uint8 *)&trx.flag_version, sizeof(struct trx_header) - OFFSETOF(struct trx_header, flag_version),
 		    CRC32_INIT_VALUE);
+	fprintf(stderr, "init crc %X\n", crc);
 	crc_data = 0;
 	int first = 0;
 	/* 
@@ -546,9 +548,11 @@ rewrite:;
 	char rootfsname[32];
 	for (erase_info.start = 0; erase_info.start < trx.len; erase_info.start += count) {
 		len = MIN(erase_info.length, trx.len - erase_info.start);
-		if ((STORE32_LE(trx.flag_version) & TRX_NO_HEADER) || erase_info.start)
+		if ((STORE32_LE(trx.flag_version) & TRX_NO_HEADER) || erase_info.start){
+			fprintf(stderr, "no header\n");
 			count = off = 0;
-		else {
+		} else {
+			fprintf(stderr, "header\n");
 			count = off = sizeof(struct trx_header);
 			memcpy(buf, &trx, sizeof(struct trx_header));
 		}
@@ -584,7 +588,9 @@ rewrite:;
 		/* 
 		 * Update CRC 
 		 */
+		fprintf(stderr, "offset %d , len %d orig crc %X\n", off, count-off, crc); 
 		crc = crc32(&buf[off], count - off, crc);
+		fprintf(stderr, "crc %X\n", crc);
 
 		if (!squashfound) {
 			for (i = 0; i < (count - off); i++) {
@@ -602,6 +608,7 @@ rewrite:;
 		 * Check CRC before writing if possible 
 		 */
 		if (sum == trx.len) {
+			fprintf(stderr, "sum %d, len %d\n", sum ,trx.len);
 			if (crc != trx.crc32) {
 				dd_logerror("flash", "%s: Bad CRC (0x%08X expected, but 0x%08X calculated)", path, trx.crc32, crc);
 				goto fail;
