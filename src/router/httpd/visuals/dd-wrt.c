@@ -1270,6 +1270,11 @@ static void show_channel(webs_t wp, char *dev, char *prefix, int type)
 						i++;
 						continue; // do not show channels where bandwidth is not available
 					}
+
+					if (channelbw == 320 && chan[i].eht320 == false) {
+						i++;
+						continue; // do not show channels where bandwidth is not available
+					}
 				}
 				sprintf(cn, "%d", chan[i].channel);
 				sprintf(fr, "%d", chan[i].freq);
