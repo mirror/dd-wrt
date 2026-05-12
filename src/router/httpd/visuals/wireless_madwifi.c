@@ -494,7 +494,7 @@ static int can_not_scan(char *prefix)
 	if (is_wil6210(prefix)) {
 		return 1;
 	}
-#if 0
+	#if 0
 	int channel = wifi_getchannel(base);
 	if (channel >= 0 && channel < 1000) {
 		struct wifi_interface *interface = wifi_getfreq(base);
@@ -503,7 +503,7 @@ static int can_not_scan(char *prefix)
 		else
 			return 0;
 	} else
-#endif
+	#endif
 	return 0;
 }
 EJ_VISIBLE void ej_can_not_scan(webs_t wp, int argc, char_t **argv)

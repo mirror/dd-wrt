@@ -309,7 +309,33 @@ EJ_VISIBLE void ej_dump_channel_survey(webs_t wp, int argc, char_t **argv)
 	int first_survey = 0;
 	char *interface = nvram_safe_get("wifi_display");
 	DD_LIST_HEAD(frequencies);
-	if (getsurveystats(&frequencies, NULL, interface, NULL, 2, 20))
+
+	int beckband = 255;
+	if (nvram_nmatch("ng-only", "%s_net_mode", interface) || nvram_nmatch("n2-only", "%s_net_mode", interface) ||
+	    nvram_nmatch("bg-mixed", "%s_net_mode", interface) || nvram_nmatch("ng-mixed", "%s_net_mode", interface) ||
+	    nvram_nmatch("b-only", "%s_net_mode", interface) || nvram_nmatch("g-only", "%s_net_mode", interface) ||
+	    nvram_nmatch("axg-only", "%s_net_mode", interface)) {
+		checkband = 2;
+	}
+	if (nvram_nmatch("xacn-mixed", "%s_net_mode", interface)) {
+		checkband = 56;
+	}
+	if (nvram_nmatch("bexacn-mixed", "%s_net_mode", interface)) {
+		checkband = 56;
+	}
+	if (nvram_nmatch("n5-only", "%s_net_mode", interface) || nvram_nmatch("acn-mixed", "%s_net_mode", interface) ||
+	    nvram_nmatch("ac-only", "%s_net_mode", interface) || nvram_nmatch("na-only", "%s_net_mode", interface) ||
+	    nvram_nmatch("ax5-only", "%s_net_mode", interface) || nvram_nmatch("a-only", "%s_net_mode", interface) ||
+	    nvram_nmatch("be5-only", "%s_net_mode", interface)) )
+				checkband = 5;
+	if (nvram_nmatch("ax6-only", "%s_net_mode", interface))
+		checkband = 6;
+	if (nvram_nmatch("be6-only", "%s_net_mode", interface))
+		checkband = 6;
+	if (nvram_nmatch("beax6-only", "%s_net_mode", interface))
+		checkband = 6;
+
+	if (getsurveystats(&frequencies, NULL, interface, NULL, 2, 20, checkband))
 		return;
 	dd_list_for_each_entry(f, &frequencies, list)
 	{

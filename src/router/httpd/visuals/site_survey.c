@@ -410,16 +410,16 @@ EJ_VISIBLE void ej_dump_site_survey(webs_t wp, int argc, char_t **argv)
 				speed = speed * 10;
 			}
 
-				if (hasbe)
-					sprintf(rates, "%s(be)", speedstr(speed, speedbuf, sizeof(speedbuf)));
-				else if (hasax)
-					sprintf(rates, "%s(ax)", speedstr(speed, speedbuf, sizeof(speedbuf)));
-				else if (hasac)
-					sprintf(rates, "%s(ac)", speedstr(speed, speedbuf, sizeof(speedbuf)));
-				else
-					sprintf(rates, "%s(n)", speedstr(speed, speedbuf, sizeof(speedbuf)));
+			if (hasbe)
+				sprintf(rates, "%s(be)", speedstr(speed, speedbuf, sizeof(speedbuf)));
+			else if (hasax)
+				sprintf(rates, "%s(ax)", speedstr(speed, speedbuf, sizeof(speedbuf)));
+			else if (hasac)
+				sprintf(rates, "%s(ac)", speedstr(speed, speedbuf, sizeof(speedbuf)));
+			else
+				sprintf(rates, "%s(n)", speedstr(speed, speedbuf, sizeof(speedbuf)));
 
-/*			if ((site_survey_lists[i].channel & 0xff) < 15) {
+			/*			if ((site_survey_lists[i].channel & 0xff) < 15) {
 				if (hasbe)
 					sprintf(rates, "%s(be)", speedstr(speed, speedbuf, sizeof(speedbuf)));
 				else if (hasax)
