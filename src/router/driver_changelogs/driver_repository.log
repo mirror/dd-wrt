@@ -1,4 +1,8 @@
 ------------------------------------------------------------------------
+r8692 | brainslayer | 2026-05-12 06:31:29 +0600 (Tue, 12 May 2026) | 1 line
+
+update regdb
+------------------------------------------------------------------------
 r8691 | brainslayer | 2026-05-12 03:43:46 +0600 (Tue, 12 May 2026) | 1 line
 
 6ghz scanning works now in ap mode. for whatever reason qca maintainers broke it in ath11k and it looks intentional at some point. no idea
