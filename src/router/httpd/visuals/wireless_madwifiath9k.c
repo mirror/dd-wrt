@@ -310,7 +310,7 @@ EJ_VISIBLE void ej_dump_channel_survey(webs_t wp, int argc, char_t **argv)
 	char *interface = nvram_safe_get("wifi_display");
 	DD_LIST_HEAD(frequencies);
 
-	int beckband = 255;
+	int checkband = 255;
 	if (nvram_nmatch("ng-only", "%s_net_mode", interface) || nvram_nmatch("n2-only", "%s_net_mode", interface) ||
 	    nvram_nmatch("bg-mixed", "%s_net_mode", interface) || nvram_nmatch("ng-mixed", "%s_net_mode", interface) ||
 	    nvram_nmatch("b-only", "%s_net_mode", interface) || nvram_nmatch("g-only", "%s_net_mode", interface) ||
