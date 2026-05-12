@@ -244,7 +244,7 @@ static int write_main(int argc, char *argv[])
 	unsigned int cal_chksum = 0;
 	FILE *fp;
 	FILE *p;
-	unsigned char *buf = NULL;
+	char *buf = NULL;
 	int count, len, off;
 	int sum = 0; // for debug
 	int ret = -1;
@@ -498,7 +498,7 @@ rewrite:;
 	dd_loginfoverbose("flash", "freeram=[%ld] bufferram=[%ld]", info.freeram, info.bufferram);
 	int mul = 1; // temporarily use 1 instead of 4 until we
 #ifdef HAVE_IPQ6018
-	#define MINEXTRA 128
+	#define MINEXTRA 512
 #else
 	#define MINEXTRA 8
 #endif
@@ -524,17 +524,13 @@ rewrite:;
 			perror("malloc");
 			goto fail;
 		}
-	} else {
-	    memset(buf, 0, erase_info.length);
 	}
 
 	/* 
 	 * Calculate CRC over header 
 	 */
-	fprintf(stderr, "trx header %d\n", sizeof(struct trx_header));
 	crc = crc32((uint8 *)&trx.flag_version, sizeof(struct trx_header) - OFFSETOF(struct trx_header, flag_version),
 		    CRC32_INIT_VALUE);
-	fprintf(stderr, "init crc %X\n", crc);
 	crc_data = 0;
 	int first = 0;
 	/* 
@@ -550,35 +546,20 @@ rewrite:;
 	char rootfsname[32];
 	for (erase_info.start = 0; erase_info.start < trx.len; erase_info.start += count) {
 		len = MIN(erase_info.length, trx.len - erase_info.start);
-		if ((STORE32_LE(trx.flag_version) & TRX_NO_HEADER) || erase_info.start){
-			fprintf(stderr, "no header\n");
+		if ((STORE32_LE(trx.flag_version) & TRX_NO_HEADER) || erase_info.start)
 			count = off = 0;
-		} else {
-			fprintf(stderr, "header\n");
+		else {
 			count = off = sizeof(struct trx_header);
 			memcpy(buf, &trx, sizeof(struct trx_header));
 		}
-		fprintf(stderr, "count %d\n",count);
-		count += fread(&buf[off], 1, len - off, fp);
-		FILE *flip = fopen("dump","wb");
-		fwrite(&buf[off], 1, len - off, flip);
-		fclose(flip);
-		{
-		int i=0;
-		unsigned int s=0;
-		for (i=0;i<len;i++)
-		    s+=buf[i];
-		fprintf(stderr, "sum %d\n", s);
-		}
-		fprintf(stderr, "count %d %d\n",count , len- off);
+		count += safe_fread(&buf[off], 1, len - off, fp);
 		if (!ptr && !pos) {
 			fwheader *header = (fwheader *)&buf[0];
 			memcpy(kernelname, header->partitions[0].name, 32);
-			f_kernellen = header->partitions[0].partsize;
-			f_kernellen = le64_to_cpu(f_kernellen);
+			f_kernellen = le64_to_cpu(header->partitions[0].partsize);
 			memcpy(rootfsname, header->partitions[1].name, 32);
-			f_rootfslen = header->partitions[1].partsize;
-			f_rootfslen = le64_to_cpu(f_rootfslen);
+			f_rootfslen = le64_to_cpu(header->partitions[1].partsize);
+
 			if (f_kernellen > kernellen) {
 				dd_logerror("flash", "Image of size %lld is too big for partition: %s", f_kernellen, kernelname);
 				goto fail;
@@ -603,9 +584,7 @@ rewrite:;
 		/* 
 		 * Update CRC 
 		 */
-		fprintf(stderr, "offset %d , len %d orig crc %X\n", off, count-off, crc); 
 		crc = crc32(&buf[off], count - off, crc);
-		fprintf(stderr, "crc %X\n", crc);
 
 		if (!squashfound) {
 			for (i = 0; i < (count - off); i++) {
@@ -623,7 +602,6 @@ rewrite:;
 		 * Check CRC before writing if possible 
 		 */
 		if (sum == trx.len) {
-			fprintf(stderr, "sum %d, len %d\n", sum ,trx.len);
 			if (crc != trx.crc32) {
 				dd_logerror("flash", "%s: Bad CRC (0x%08X expected, but 0x%08X calculated)", path, trx.crc32, crc);
 				goto fail;
