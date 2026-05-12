@@ -127,6 +127,8 @@ static int print_channels_handler(struct nl_msg *msg, void *arg)
 						printf(" VHT80");
 					if (ctx->width_160 && !tb_freq[NL80211_FREQUENCY_ATTR_NO_160MHZ])
 						printf(" VHT160");
+					if (ctx->width_160 && !tb_freq[NL80211_FREQUENCY_ATTR_NO_320MHZ])
+						printf(" EHT320");
 					printf("\n");
 
 					if (!tb_freq[NL80211_FREQUENCY_ATTR_DISABLED] && tb_freq[NL80211_FREQUENCY_ATTR_DFS_STATE]) {
