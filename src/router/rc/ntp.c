@@ -85,6 +85,9 @@ static struct syncservice service[] = {
 #ifdef HAVE_TOR
 	{ "tor_enable", "tor", 0 },
 #endif
+#ifdef HAVE_SMARTDNS
+	{ "smartdns", "smartdns", 0 },
+#endif
 #ifdef HAVE_IPTOOLS
 	{ NULL, "arpd", 0 },
 #endif
