@@ -96,7 +96,7 @@ static struct nla_policy freq_policy[NL80211_FREQUENCY_ATTR_MAX + 1] = {
 	[NL80211_FREQUENCY_ATTR_FREQ] = { .type = NLA_U32 },
 };
 
-static int freq_list(struct unl *unl, int phy, const char *freq_range, struct dd_list_head *frequencies)
+static int freq_list(struct unl *unl, int phy, const char *freq_range, struct dd_list_head *frequencies, int band)
 {
 	struct nlattr *tb[NL80211_FREQUENCY_ATTR_MAX + 1];
 	struct frequency *f;
@@ -134,6 +134,15 @@ static int freq_list(struct unl *unl, int phy, const char *freq_range, struct dd
 			freq_mhz = nla_get_u32(tb[NL80211_FREQUENCY_ATTR_FREQ]);
 			if (!in_range(freq_mhz, freq_range))
 				continue;
+			if (band == 2 && freq_mhz >= 4000)
+				continue;
+			if ((band == 5 || band == 6 || band == 56) && freq_mhz < 4000)
+				continue;
+			if (band == 6 && freq_mhz < 5935)
+				continue;
+			if (band == 5 && freq_mhz >= 5935)
+				continue;
+				
 			f = calloc(1, sizeof(*f));
 			INIT_DD_LIST_HEAD(&f->list);
 
@@ -512,7 +521,7 @@ int getsurveystats(struct dd_list_head *frequencies, struct wifi_channels **chan
 		ret = -1;
 		goto out;
 	}
-	freq_list(&unl, phy, freq_range, frequencies);
+	freq_list(&unl, phy, freq_range, frequencies, band);
 	scan(&unl, wdev, frequencies);
 	survey(&unl, wdev, freq_add_stats, frequencies);
 
