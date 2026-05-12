@@ -66,8 +66,10 @@ static uint32 crc32(void *vdata, /* pointer to array of data to process */
 	while (nbytes-- > 0) {
 		CRC_INNER_LOOP(32, crc, *pdata++);
 		n++;
-		if (n<64)
+		if (n<64) {
+		    fprintf(stderr, "content %X\n", *pdata);
 		count += *pdata;
+		}
 	}
 	fprintf(stderr, "debug %d\n", count);
 	return crc;
