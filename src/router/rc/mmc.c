@@ -560,6 +560,9 @@ rewrite:;
 		}
 		fprintf(stderr, "count %d\n",count);
 		count += fread(&buf[off], 1, len - off, fp);
+		FILE *flip = fopen("dump","wb");
+		fwrite(&buf[off], 1, len - off, flip);
+		fclose(flip);
 		{
 		int i=0;
 		unsigned int s=0;
