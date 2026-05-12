@@ -102,7 +102,7 @@
 #elif defined(HAVE_X86)
 	#include "mmc.c"
 #elif defined(HAVE_EROUTER)
-	#include "hdd.c"
+	#include "mmc.c"
 #elif defined(HAVE_IPQ95XX)
 	#include "mmc.c"
 #else
