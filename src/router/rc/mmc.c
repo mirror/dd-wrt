@@ -244,7 +244,7 @@ static int write_main(int argc, char *argv[])
 	unsigned int cal_chksum = 0;
 	FILE *fp;
 	FILE *p;
-	char *buf = NULL;
+	unsigned char *buf = NULL;
 	int count, len, off;
 	int sum = 0; // for debug
 	int ret = -1;
@@ -559,15 +559,15 @@ rewrite:;
 			memcpy(buf, &trx, sizeof(struct trx_header));
 		}
 		fprintf(stderr, "count %d\n",count);
-		count += safe_fread(&buf[off], 1, len - off, fp);
+		count += fread(&buf[off], 1, len - off, fp);
 		{
 		int i=0;
-		int s=0;
+		unsigned int s=0;
 		for (i=0;i<len;i++)
 		    s+=buf[i];
 		fprintf(stderr, "sum %d\n", s);
 		}
-		fprintf(stderr, "count %d\n",count);
+		fprintf(stderr, "count %d %d\n",count , len- off);
 		if (!ptr && !pos) {
 			fwheader *header = (fwheader *)&buf[0];
 			memcpy(kernelname, header->partitions[0].name, 32);
