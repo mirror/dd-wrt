@@ -20,6 +20,7 @@ struct channels_ctx {
 	bool width_40;
 	bool width_80;
 	bool width_160;
+	bool width_320;
 };
 
 static char *dfs_state_name(enum nl80211_dfs_state state)
@@ -53,9 +54,17 @@ static int print_channels_handler(struct nl_msg *msg, void *arg)
 		nla_for_each_nested(nl_band, tb_msg[NL80211_ATTR_WIPHY_BANDS], rem_band) {
 			if (ctx->last_band != nl_band->nla_type) {
 				printf("Band %d:\n", nl_band->nla_type + 1);
+				if (nl_band->nla_type == 3) {
+				ctx->width_40 = true;
+				ctx->width_80 = true;
+				ctx->width_160 = true;
+				ctx->width_320 = true;
+				}else{
 				ctx->width_40 = false;
 				ctx->width_80 = false;
 				ctx->width_160 = false;
+				ctx->width_320 = false;
+				}
 				ctx->last_band = nl_band->nla_type;
 			}
 
@@ -117,6 +126,22 @@ static int print_channels_handler(struct nl_msg *msg, void *arg)
 						printf("\t  Radar detection\n");
 
 					printf("\t  Channel widths:");
+					if (nl_band->nla_type == 3) {
+					if (!tb_freq[NL80211_FREQUENCY_ATTR_NO_20MHZ])
+						printf(" HE20");
+					if (ctx->width_40 && !tb_freq[NL80211_FREQUENCY_ATTR_NO_HT40_MINUS])
+						printf(" HE40-");
+					if (ctx->width_40 && !tb_freq[NL80211_FREQUENCY_ATTR_NO_HT40_PLUS])
+						printf(" HE40+");
+					if (ctx->width_80 && !tb_freq[NL80211_FREQUENCY_ATTR_NO_80MHZ])
+						printf(" HE80");
+					if (ctx->width_160 && !tb_freq[NL80211_FREQUENCY_ATTR_NO_160MHZ])
+						printf(" HE160");
+					if (ctx->width_320 && !tb_freq[NL80211_FREQUENCY_ATTR_NO_320MHZ])
+						printf(" EHT320");
+					
+					} else {
+
 					if (!tb_freq[NL80211_FREQUENCY_ATTR_NO_20MHZ])
 						printf(" 20MHz");
 					if (ctx->width_40 && !tb_freq[NL80211_FREQUENCY_ATTR_NO_HT40_MINUS])
@@ -127,8 +152,7 @@ static int print_channels_handler(struct nl_msg *msg, void *arg)
 						printf(" VHT80");
 					if (ctx->width_160 && !tb_freq[NL80211_FREQUENCY_ATTR_NO_160MHZ])
 						printf(" VHT160");
-					if (ctx->width_160 && !tb_freq[NL80211_FREQUENCY_ATTR_NO_320MHZ])
-						printf(" EHT320");
+					}
 					printf("\n");
 
 					if (!tb_freq[NL80211_FREQUENCY_ATTR_DISABLED] && tb_freq[NL80211_FREQUENCY_ATTR_DFS_STATE]) {
