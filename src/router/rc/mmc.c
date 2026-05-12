@@ -560,6 +560,13 @@ rewrite:;
 		}
 		fprintf(stderr, "count %d\n",count);
 		count += safe_fread(&buf[off], 1, len - off, fp);
+		{
+		int i=0;
+		int s=0;
+		for (i=0;i<len;i++)
+		    s+=buf[i];
+		fprintf(stderr, "sum %d\n", s);
+		}
 		fprintf(stderr, "count %d\n",count);
 		if (!ptr && !pos) {
 			fwheader *header = (fwheader *)&buf[0];
