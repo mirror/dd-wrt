@@ -1037,16 +1037,46 @@ void setupHostAP_generic_ath9k(const char *prefix, FILE *fp, int isrepeater, int
 				struct mac80211_ac *acs;
 				fprintf(stderr, "call mac80211autochannel for interface: %s\n", prefix);
 				eval("ifconfig", prefix, "up");
+				int checkband = 255;
+				if (nvram_nmatch("ng-only", "%s_net_mode", prefix) ||
+				    nvram_nmatch("n2-only", "%s_net_mode", prefix) ||
+				    nvram_nmatch("bg-mixed", "%s_net_mode", prefix) ||
+				    nvram_nmatch("ng-mixed", "%s_net_mode", prefix) ||
+				    nvram_nmatch("b-only", "%s_net_mode", prefix) ||
+				    nvram_nmatch("g-only", "%s_net_mode", prefix) ||
+				    nvram_nmatch("axg-only", "%s_net_mode", prefix)) {
+					checkband = 2;
+				}
+				if (nvram_nmatch("xacn-mixed", "%s_net_mode", prefix)) {
+					checkband = 56;
+				}
+				if (nvram_nmatch("bexacn-mixed", "%s_net_mode", prefix)) {
+					checkband = 56;
+				}
+				if (nvram_nmatch("n5-only", "%s_net_mode", prefix) ||
+				    nvram_nmatch("acn-mixed", "%s_net_mode", prefix) ||
+				    nvram_nmatch("ac-only", "%s_net_mode", prefix) ||
+				    nvram_nmatch("na-only", "%s_net_mode", prefix) ||
+				    nvram_nmatch("ax5-only", "%s_net_mode", prefix) ||
+				    nvram_nmatch("a-only", "%s_net_mode", prefix))
+					checkband = 5;
+				if (nvram_nmatch("ax6-only", "%s_net_mode", prefix))
+					checkband = 6;
+				if (nvram_nmatch("be6-only", "%s_net_mode", prefix))
+					checkband = 6;
+				if (nvram_nmatch("beax6-only", "%s_net_mode", prefix))
+					checkband = 6;
+
 				switch (usebw) {
 				case 40:
-					acs = mac80211autochannel(prefix, NULL, 2, 0, AUTO_FORCEHT40);
+					acs = mac80211autochannel(prefix, NULL, 2, 0, AUTO_FORCEHT40, checkband);
 					break;
 				case 80:
-					acs = mac80211autochannel(prefix, NULL, 2, 0, AUTO_FORCEVHT80);
+					acs = mac80211autochannel(prefix, NULL, 2, 0, AUTO_FORCEVHT80, checkband);
 					break;
 				case 160:
 				case 8080:
-					acs = mac80211autochannel(prefix, NULL, 2, 0, AUTO_FORCEVHT160);
+					acs = mac80211autochannel(prefix, NULL, 2, 0, AUTO_FORCEVHT160, checkband);
 					break;
 					//				case 320:
 					//					acs = mac80211autochannel(prefix, NULL, 2, 0, AUTO_FORCEEHT320;
