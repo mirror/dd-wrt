@@ -849,6 +849,7 @@ void start_sysinit(void)
 		fwlen = 0x20000;
 		load_nss_ipq95xx(1024);
 		nvram_default_get("sfe", "3");
+		nvram_default_get("wlan1_net_mode", "mixed5");
 		maddr = get_deviceinfo_linksys("hw_mac_addr");
 		break;
 	case ROUTER_LINKSYS_MR7350:
