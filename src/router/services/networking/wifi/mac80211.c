@@ -1703,7 +1703,7 @@ void setupHostAP_generic_ath9k(const char *prefix, FILE *fp, int isrepeater, int
 		fprintf(fp, "hw_mode=ad\n");
 	} else if (freq < 4000) {
 		if (has_be(prefix)) {
-			if (!strcmp(netmode, "be-only") !strcmp(netmode, "mixed")) {
+			if (!strcmp(netmode, "be-only") || !strcmp(netmode, "mixed")) {
 				if (nvram_match(mubf, "1")) {
 					fprintf(fp, "eht_mu_beamformer=1\n");
 				}
