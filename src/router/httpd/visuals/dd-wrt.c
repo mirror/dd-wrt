@@ -1248,27 +1248,24 @@ static void show_channel(webs_t wp, char *dev, char *prefix, int type)
 				}
 	#endif
 				if (!is_morse_micro(prefix)) {
+
 					if (is_mvebu(prefix) &&
 					    ((chan[i].channel == 161 || chan[i].channel == 153 || chan[i].channel == 64) &&
 					     channelbw == 80)) {
 						i++;
 						continue;
 					}
-
-					if (channelbw == 40 && chan[i].ht40 == false || (!chan[i].luu && !chan[i].ull)) {
+					if (channelbw == 40 && chan[i].ht40 == false) {
 						i++;
 						continue; // do not show channels where bandwidth is not available
 					}
 
-					if (channelbw == 80 && chan[i].vht80 == false ||
-					    (!chan[i].lul && !chan[i].ull && !chan[i].ulu && !chan[i].luu)) {
+					if (channelbw == 80 && chan[i].vht80 == false) {
 						i++;
 						continue; // do not show channels where bandwidth is not available
 					}
 
-					if (channelbw == 160 && chan[i].vht160 == false ||
-					    (!chan[i].lll && !chan[i].llu && !chan[i].lul && !chan[i].luu && !chan[i].ull &&
-					     !chan[i].ulu && !chan[i].uul && !chan[i].uuu)) {
+					if (channelbw == 160 && chan[i].vht160 == false) {
 						i++;
 						continue; // do not show channels where bandwidth is not available
 					}
@@ -1277,6 +1274,7 @@ static void show_channel(webs_t wp, char *dev, char *prefix, int type)
 						i++;
 						continue; // do not show channels where bandwidth is not available
 					}
+					
 				}
 				sprintf(cn, "%d", chan[i].channel);
 				sprintf(fr, "%d", chan[i].freq);
