@@ -850,7 +850,23 @@ void start_sysinit(void)
 		load_nss_ipq95xx(1024);
 		nvram_default_get("sfe", "3");
 		nvram_default_get("wlan1_net_mode", "mixed5");
-		maddr = get_deviceinfo_linksys("hw_mac_addr");
+		char *art = getgptpartitionbyname("/dev/mmcblk0", "0:ART");
+		if (art) {
+			FILE *fp = fopen(art, "rb");
+			char mac[6];
+			fread(mac, 6,1, fp);
+			fclose(fp);
+			char macaddr[20];
+			sprintf(macaddr, "%02X:%02X:%02X:%02X:%02X:%02X", mac[0] & 0xff, mac[1] & 0xff, mac[2] & 0xff,
+			mac[3] & 0xff, mac[4] & 0xff, mac[5] & 0xff);
+			MAC_ADD(macaddr);
+			MAC_ADD(macaddr);
+			MAC_ADD(macaddr);
+			nvram_set("wlan0_hwaddr",macaddr);
+			nvram_set("wlan1_hwaddr",macaddr);
+		
+		}
+
 		break;
 	case ROUTER_LINKSYS_MR7350:
 		fwlen = 0x20000;
@@ -1126,12 +1142,12 @@ void start_sysinit(void)
 		sprintf(ethaddr, "%02X:%02X:%02X:%02X:%02X:%02X", newmac[0] & 0xff, newmac[1] & 0xff, newmac[2] & 0xff,
 			newmac[3] & 0xff, newmac[4] & 0xff, newmac[5] & 0xff);
 		if (brand == ROUTER_ASUS_AX89X) {
-			nvram_set("wlan0_hwaddr", ethaddr);
+			nvram_set("wlan0_hwaddr", maddr);
 			MAC_SUB(maddr);
 			MAC_SUB(maddr);
 			MAC_SUB(maddr);
 			MAC_SUB(maddr);
-			nvram_set("wlan1_hwaddr", ethaddr);
+			nvram_set("wlan1_hwaddr", maddr);
 			MAC_ADD(maddr);
 			MAC_ADD(maddr);
 			MAC_ADD(maddr);
