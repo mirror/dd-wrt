@@ -1191,13 +1191,10 @@ static void show_channel(webs_t wp, char *dev, char *prefix, int type)
 			if (nvram_nmatch("n5-only", "%s_net_mode", prefix) || nvram_nmatch("acn-mixed", "%s_net_mode", prefix) ||
 			    nvram_nmatch("ac-only", "%s_net_mode", prefix) || nvram_nmatch("na-only", "%s_net_mode", prefix) ||
 			    nvram_nmatch("ax5-only", "%s_net_mode", prefix) || nvram_nmatch("a-only", "%s_net_mode", prefix) ||
-			    nvram_nmatch("be5-only", "%s_net_mode", prefix))
+			    nvram_nmatch("be5-only", "%s_net_mode", prefix) || nvram_nmatch("beax5-only", "%s_net_mode", prefix))
 				checkband = 5;
-			if (nvram_nmatch("ax6-only", "%s_net_mode", prefix))
-				checkband = 6;
-			if (nvram_nmatch("be6-only", "%s_net_mode", prefix))
-				checkband = 6;
-			if (nvram_nmatch("beax6-only", "%s_net_mode", prefix))
+			if (nvram_nmatch("ax6-only", "%s_net_mode", prefix) || nvram_nmatch("be6-only", "%s_net_mode", prefix) ||
+			    nvram_nmatch("beax6-only", "%s_net_mode", prefix))
 				checkband = 6;
 
 			if (nvram_nmatch("80", "%s_channelbw", prefix))
@@ -1251,7 +1248,6 @@ static void show_channel(webs_t wp, char *dev, char *prefix, int type)
 				}
 	#endif
 				if (!is_morse_micro(prefix)) {
-
 					if (is_mvebu(prefix) &&
 					    ((chan[i].channel == 161 || chan[i].channel == 153 || chan[i].channel == 64) &&
 					     channelbw == 80)) {
@@ -1277,7 +1273,6 @@ static void show_channel(webs_t wp, char *dev, char *prefix, int type)
 						i++;
 						continue; // do not show channels where bandwidth is not available
 					}
-					
 				}
 				sprintf(cn, "%d", chan[i].channel);
 				sprintf(fr, "%d", chan[i].freq);
