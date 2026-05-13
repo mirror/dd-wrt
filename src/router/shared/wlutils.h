@@ -427,7 +427,7 @@ extern STAINFO *getRaStaInfo(char *ifname);
 
 int wlconf_down(char *name);
 int wlconf_up(char *name);
-#if defined(HAVE_ATH11K)
+#if defined(HAVE_ATH11K) || defined(HAVE_ATH12K)
 extern int has_he160(const char *interface);
 int center_idx_to_bw_6ghz(int idx);
 int is_6ghz_freq(int freq);
