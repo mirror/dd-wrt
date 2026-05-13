@@ -1782,27 +1782,24 @@ void setupHostAP_generic_ath9k(const char *prefix, FILE *fp, int isrepeater, int
 				fprintf(fp, "he_bss_color_partial=%d\n", nvram_nmatch("1", "%s_bss_color_partial", prefix) ? 1 : 0);
 				fprintf(fp, "he_twt_required=%d\n", nvram_nmatch("1", "%s_twt_required", prefix) ? 1 : 0);
 				/* hack to detect if third interface is 6ghz */
-				if (has_ax(prefix) || has_be(prefix)) {
 	#ifdef HAVE_IPQ95XX
-					if (has_6ghz("wlan1") && strcmp(prefix, "wlan1") &&
-					    nvram_ngeti("%s_config_freq", prefix) >= 5925) {
-						fprintf(fp, "stationary_ap=1\n");
-						fprintf(fp, "he_co_locate=1\n");
-						fprintf(fp, "rrm_neighbor_report=1\n");
-						fprintf(fp, "rrm_beacon_report=1\n");
-						fprintf(fp, "rnr=1\n");
-					}
+				if (has_6ghz("wlan1") && strcmp(prefix, "wlan1") && nvram_ngeti("%s_config_freq", prefix) >= 5925) {
+					fprintf(fp, "stationary_ap=1\n");
+					fprintf(fp, "he_co_locate=1\n");
+					fprintf(fp, "rrm_neighbor_report=1\n");
+					fprintf(fp, "rrm_beacon_report=1\n");
+					fprintf(fp, "rnr=1\n");
+				}
 
 	#else
-					if (has_6ghz("wlan2") && strcmp(prefix, "wlan2")) {
-						fprintf(fp, "stationary_ap=1\n");
-						fprintf(fp, "he_co_locate=1\n");
-						fprintf(fp, "rrm_neighbor_report=1\n");
-						fprintf(fp, "rrm_beacon_report=1\n");
-						fprintf(fp, "rnr=1\n");
-					}
-	#endif
+				if (has_6ghz("wlan2") && strcmp(prefix, "wlan2")) {
+					fprintf(fp, "stationary_ap=1\n");
+					fprintf(fp, "he_co_locate=1\n");
+					fprintf(fp, "rrm_neighbor_report=1\n");
+					fprintf(fp, "rrm_beacon_report=1\n");
+					fprintf(fp, "rnr=1\n");
 				}
+	#endif
 			}
 		}
 		if (strcmp(netmode, "b-only")) {
