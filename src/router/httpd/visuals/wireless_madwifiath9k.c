@@ -326,7 +326,7 @@ EJ_VISIBLE void ej_dump_channel_survey(webs_t wp, int argc, char_t **argv)
 	if (nvram_nmatch("n5-only", "%s_net_mode", interface) || nvram_nmatch("acn-mixed", "%s_net_mode", interface) ||
 	    nvram_nmatch("ac-only", "%s_net_mode", interface) || nvram_nmatch("na-only", "%s_net_mode", interface) ||
 	    nvram_nmatch("ax5-only", "%s_net_mode", interface) || nvram_nmatch("a-only", "%s_net_mode", interface) ||
-	    nvram_nmatch("be5-only", "%s_net_mode", interface) || nvram_nmatch("beax5-only", "%s_net_mode", prefix))
+	    nvram_nmatch("be5-only", "%s_net_mode", interface) || nvram_nmatch("beax5-only", "%s_net_mode", interface))
 		checkband = 5;
 	if (nvram_nmatch("ax6-only", "%s_net_mode", interface))
 		checkband = 6;
