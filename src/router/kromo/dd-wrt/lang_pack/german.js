@@ -2836,6 +2836,7 @@ wl_basic.ax="Nur-AX";
 wl_basic.be="Nur-BE";
 wl_basic.beax6="BE / AX Gemischt (6 GHz)";
 wl_basic.beax5="BE / AX Gemischt (5 GHz)";
+wl_basic.mixed5="Gemischt (5 GHz)";
 wl_basic.ax6="Nur-AX (6 GHz)";
 wl_basic.ax5="Nur-AX (5 GHz)";
 wl_basic.axg="Nur-AX (2.4 GHz)";

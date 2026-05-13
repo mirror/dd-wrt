@@ -3260,6 +3260,7 @@ wl_basic.be="BE Only";
 wl_basic.beax6="BE / AX Mixed (6 GHz)";
 wl_basic.ax6="AX Only (6 GHz)";
 wl_basic.beax5="BE / AX Mixed (5 GHz)";
+wl_basic.mixed5="Mixed (5 GHz)";
 wl_basic.ax5="AX Only (5 GHz)";
 wl_basic.be6="BE Only (6 GHz)";
 wl_basic.be5="BE Only (5 GHz)";
