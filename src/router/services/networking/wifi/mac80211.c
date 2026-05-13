@@ -1059,7 +1059,8 @@ void setupHostAP_generic_ath9k(const char *prefix, FILE *fp, int isrepeater, int
 				    nvram_nmatch("na-only", "%s_net_mode", prefix) ||
 				    nvram_nmatch("ax5-only", "%s_net_mode", prefix) ||
 				    nvram_nmatch("be5-only", "%s_net_mode", prefix) ||
-				    nvram_nmatch("a-only", "%s_net_mode", prefix))
+				    nvram_nmatch("a-only", "%s_net_mode", prefix) ||
+				    nvram_nmatch("beax5-only", "%s_net_mode", prefix))
 					checkband = 5;
 				if (nvram_nmatch("ax6-only", "%s_net_mode", prefix))
 					checkband = 6;
