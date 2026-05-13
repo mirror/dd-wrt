@@ -47,6 +47,7 @@
 #include <dirent.h>
 #include <netdb.h>
 #include <utils.h>
+#include <stdbool.h>
 #include <wlutils.h>
 #include <ddnvram.h>
 //#include <l7protocols.h>
