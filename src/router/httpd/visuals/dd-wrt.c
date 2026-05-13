@@ -47,11 +47,13 @@
 #include <dirent.h>
 #include <netdb.h>
 #include <utils.h>
-#include <stdbool.h>
 #include <wlutils.h>
 #include <ddnvram.h>
 //#include <l7protocols.h>
-
+#ifndef false
+#define true 1
+#define false 0
+#endif
 int iscpe(void);
 #if defined(HAVE_80211AC) || (defined(HAVE_BRCMFMAC) && defined(HAVE_NORTHSTAR))
 	#define COUNTRYLIST "EU DE GB FR NL ES IT CN US JP AU SG BR RU TW CA KR LA"
