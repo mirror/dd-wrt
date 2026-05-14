@@ -615,6 +615,7 @@ CFLAGS += -DHAVE_ATH11K
 endif
 ifeq ($(CONFIG_IPQ95XX),y)
 CFLAGS += -DHAVE_ATH12K
+CFLAGS += -DHAVE_IPQ95XX
 endif
 VISOBJS += raid.o
 ifeq ($(CONFIG_RAID),y)
