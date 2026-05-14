@@ -636,6 +636,8 @@ static int mac80211_cb_stations(struct nl_msg *msg, void *data)
 		[NL80211_RATE_INFO_16_MHZ_WIDTH] = { .type = NLA_FLAG },
 #endif
 	};
+
+
 	nla_parse(tb, NL80211_ATTR_MAX, genlmsg_attrdata(gnlh, 0), genlmsg_attrlen(gnlh, 0), NULL);
 	if (!tb[NL80211_ATTR_STA_INFO]) {
 		fprintf(stderr, "sta stats missing!\n");
@@ -676,9 +678,12 @@ static int mac80211_cb_stations(struct nl_msg *msg, void *data)
 	}
 	get_chain_signal(sinfo[NL80211_STA_INFO_CHAIN_SIGNAL], mac80211_info->wci->chaininfo,
 			 sizeof(mac80211_info->wci->chaininfo));
+#ifndef HAVE_ATH12K
 	if (sinfo[NL80211_STA_INFO_SIGNAL_AVG]) {
 		mac80211_info->wci->signal = (int8_t)nla_get_u8(sinfo[NL80211_STA_INFO_SIGNAL_AVG]);
-	} else if (sinfo[NL80211_STA_INFO_SIGNAL]) {
+	} else 
+#endif
+	if (sinfo[NL80211_STA_INFO_SIGNAL]) {
 		mac80211_info->wci->signal = (int8_t)nla_get_u8(sinfo[NL80211_STA_INFO_SIGNAL]);
 	}
 	get_chain_signal(sinfo[NL80211_STA_INFO_CHAIN_SIGNAL_AVG], mac80211_info->wci->chaininfo_avg,
@@ -702,7 +707,9 @@ static int mac80211_cb_stations(struct nl_msg *msg, void *data)
 		if (nla_parse_nested(rinfo, NL80211_RATE_INFO_MAX, sinfo[NL80211_STA_INFO_TX_BITRATE], rate_policy)) {
 			fprintf(stderr, "failed to parse nested tx rate attributes!\n");
 		} else {
-			if (rinfo[NL80211_RATE_INFO_BITRATE]) {
+			if (rinfo[NL80211_RATE_INFO_BITRATE32]) {
+				mac80211_info->wci->txrate = nla_get_u32(rinfo[NL80211_RATE_INFO_BITRATE32]);
+			} else if (rinfo[NL80211_RATE_INFO_BITRATE]) {
 				mac80211_info->wci->txrate = nla_get_u16(rinfo[NL80211_RATE_INFO_BITRATE]);
 			}
 
@@ -771,7 +778,9 @@ static int mac80211_cb_stations(struct nl_msg *msg, void *data)
 		if (nla_parse_nested(rinfo, NL80211_RATE_INFO_MAX, sinfo[NL80211_STA_INFO_RX_BITRATE], rate_policy)) {
 			fprintf(stderr, "failed to parse nested rx rate attributes!\n");
 		} else {
-			if (rinfo[NL80211_RATE_INFO_BITRATE]) {
+			if (rinfo[NL80211_RATE_INFO_BITRATE32]) {
+				mac80211_info->wci->rxrate = nla_get_u32(rinfo[NL80211_RATE_INFO_BITRATE32]);
+			} else if (rinfo[NL80211_RATE_INFO_BITRATE]) {
 				mac80211_info->wci->rxrate = nla_get_u16(rinfo[NL80211_RATE_INFO_BITRATE]);
 			}
 
