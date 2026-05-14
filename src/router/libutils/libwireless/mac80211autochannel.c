@@ -142,7 +142,7 @@ static int freq_list(struct unl *unl, int phy, const char *freq_range, struct dd
 				continue;
 			if (checkband == 5 && freq_mhz >= 5935)
 				continue;
-				
+
 			f = calloc(1, sizeof(*f));
 			INIT_DD_LIST_HEAD(&f->list);
 
@@ -550,7 +550,8 @@ void mac80211autochannel_cleanup(void)
 	}
 }
 // leave space for enhencements with more cards and already chosen channels...
-struct mac80211_ac *mac80211autochannel(const char *interface, char *freq_range, int scans, int enable_passive, int htflags, int band)
+struct mac80211_ac *mac80211autochannel(const char *interface, char *freq_range, int scans, int enable_passive, int htflags,
+					int band)
 {
 	struct mac80211_ac *acs = NULL;
 	struct mac80211_ac *racs = NULL;

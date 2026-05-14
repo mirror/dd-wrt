@@ -678,6 +678,8 @@ static int mac80211_cb_stations(struct nl_msg *msg, void *data)
 			 sizeof(mac80211_info->wci->chaininfo));
 	if (sinfo[NL80211_STA_INFO_SIGNAL_AVG]) {
 		mac80211_info->wci->signal = (int8_t)nla_get_u8(sinfo[NL80211_STA_INFO_SIGNAL_AVG]);
+	} else if (sinfo[NL80211_STA_INFO_SIGNAL]) {
+		mac80211_info->wci->signal = (int8_t)nla_get_u8(sinfo[NL80211_STA_INFO_SIGNAL]);
 	}
 	get_chain_signal(sinfo[NL80211_STA_INFO_CHAIN_SIGNAL_AVG], mac80211_info->wci->chaininfo_avg,
 			 sizeof(mac80211_info->wci->chaininfo_avg));
@@ -2136,8 +2138,8 @@ struct wifi_channels *mac80211_get_channels(struct unl *local_unl, const char *i
 								continue;
 							if (checkband == 6 && band->nla_type != NL80211_BAND_6GHZ)
 								continue;
-//							if (band->nla_type == NL80211_BAND_6GHZ && freq_mhz == 5935)
-//								regmaxbw = 20;
+							//							if (band->nla_type == NL80211_BAND_6GHZ && freq_mhz == 5935)
+							//								regmaxbw = 20;
 							if (!is_morse_micro(interface)) {
 								if (max_bandwidth_mhz > regmaxbw)
 									continue;
