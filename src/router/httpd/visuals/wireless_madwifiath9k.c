@@ -131,7 +131,8 @@ int active_wireless_if_ath9k(webs_t wp, int argc, char_t **argv, char *ifname, i
 				ht = 8;
 			if (ht == 9 && sgi)
 				ht = 0;
-			if (ht == 9 && (vht || he))
+			if (ht == 9
+			 && (vht || he || eht))
 				ht = 0;
 			if (is_morse_micro(ifname)) {
 				strcpy(info, "AH");
