@@ -1507,9 +1507,11 @@ void setupHostAP_generic_ath9k(const char *prefix, FILE *fp, int isrepeater, int
 					break;
 				}
 			}
+
 			if (has_ax(prefix) &&
 			    (!strcmp(netmode, "ax-only") || !strcmp(netmode, "ax6-only") || !strcmp(netmode, "ax5-only") ||
-			     !strcmp(netmode, "beax6-only") || !strcmp(netmode, "beax5-only") || !strcmp(netmode, "xacn-mixed") ||
+			     !strcmp(netmode, "be-only") || !strcmp(netmode, "be6-only") || !strcmp(netmode, "beax6-only") ||
+			     !strcmp(netmode, "beax5-only") || !strcmp(netmode, "xacn-mixed") || !strcmp(netmode, "bexacn-mixed") ||
 			     !strcmp(netmode, "mixed") || !strcmp(netmode, "mixed5"))) {
 				int chan = ieee80211_mhz2ieee(prefix, freq);
 				if (is_6ghz_freq_prefix(prefix, freq)) {
