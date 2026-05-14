@@ -3715,6 +3715,7 @@ void ppp_update_stats(struct net_device *dev, unsigned long rx_packets,
 	ppp = netdev_priv(dev);
 
 	tstats = this_cpu_ptr(dev->tstats);
+	if (tstats) {
 	u64_stats_update_begin(&tstats->syncp);
 	u64_stats_add(&tstats->tx_bytes, tx_bytes);
 	u64_stats_add(&tstats->tx_packets, tx_packets);
@@ -3735,6 +3736,7 @@ void ppp_update_stats(struct net_device *dev, unsigned long rx_packets,
 	if (rx_packets)
 		ppp->last_recv = jiffies;
 	ppp_recv_unlock(ppp);
+	}
 }
 
 /* Returns true if Compression is enabled on PPP device
