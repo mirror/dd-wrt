@@ -257,7 +257,7 @@ static inline char *strlcpyhelp(char *dst, const char *s, size_t len)
 	return dst;
 }
 
-#define strcpy(dst, src) (sizeof(dst) == sizeof(void *) ? strcpy(dst, src) : strlcpyhelp(dst, src, sizeof(dst) - 1))
+#define strcpy(dst, src) (sizeof(dst) == sizeof(void *) ? strcpy(dst, src) : strlcpyhelp(dst, src, sizeof(dst)))
 #define sprintf(output, format, args...)                                         \
 	(sizeof(output) == sizeof(void *) ? dd_sprintf(output, format, ##args) : \
 					    dd_snprintf(output, sizeof(output), format, ##args))
