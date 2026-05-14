@@ -861,10 +861,9 @@ void start_sysinit(void)
 			mac[3] & 0xff, mac[4] & 0xff, mac[5] & 0xff);
 			MAC_ADD(macaddr);
 			MAC_ADD(macaddr);
-			MAC_ADD(macaddr);
 			nvram_set("wlan0_hwaddr",macaddr);
+			MAC_ADD(macaddr);
 			nvram_set("wlan1_hwaddr",macaddr);
-		
 		}
 
 		break;
