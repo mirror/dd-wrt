@@ -117,8 +117,6 @@ int active_wireless_if_ath9k(webs_t wp, int argc, char_t **argv, char *ifname, i
 				ht = 2;
 			if (wc->rx_is_160mhz || wc->is_160mhz)
 				ht = 3;
-			if (wc->rx_is_320mhz || wc->is_320mhz)
-				ht = 8;
 			if (wc->rx_is_80p80mhz || wc->is_80p80mhz)
 				ht = 4;
 			if (wc->rx_is_vht || wc->is_vht)
@@ -129,9 +127,11 @@ int active_wireless_if_ath9k(webs_t wp, int argc, char_t **argv, char *ifname, i
 				eht = 1;
 			if (wc->rx_is_short_gi || wc->is_short_gi)
 				sgi = 1;
-			if (ht == 8 && sgi)
+			if (wc->rx_is_320mhz || wc->is_320mhz)
+				ht = 8;
+			if (ht == 9 && sgi)
 				ht = 0;
-			if (ht == 8 && (vht || he))
+			if (ht == 9 && (vht || he))
 				ht = 0;
 			if (is_morse_micro(ifname)) {
 				strcpy(info, "AH");
