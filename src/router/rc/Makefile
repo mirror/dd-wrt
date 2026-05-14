@@ -1269,6 +1269,7 @@ endif
 	cd $(INSTALLDIR)/sbin && ln -sf rc get_langw
 	cd $(INSTALLDIR)/sbin && ln -sf rc ledtool
 	cd $(INSTALLDIR)/sbin && ln -sf rc write
+	cd $(INSTALLDIR)/sbin && ln -sf rc emergency_reboot
 	cd $(INSTALLDIR)/sbin && ln -sf rc restore
 	cd $(INSTALLDIR)/sbin && ln -sf rc event
 	cd $(INSTALLDIR)/sbin && ln -sf rc filter

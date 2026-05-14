@@ -228,7 +228,14 @@ static int start_main(char *name, int argc, char **argv)
 	}
 	return errno;
 }
-
+static int emergency_reboot_main(int argc, char *argv[])
+{
+	FORK({
+		sleep(60);
+		writeproc("/proc/sysrq-trigger", "b");
+	});
+	return 0;
+}
 static void start_main_f(char *name, int argc, char **argv)
 {
 	FORK(start_main(name, argc, argv));
@@ -424,6 +431,7 @@ static struct MAIN maincalls[] = {
 	{ "qtn_monitor", NULL, &qtn_monitor_main },
 #endif
 	{ "write", NULL, &write_main },
+	{ "emergency_reboot", NULL, &emergency_reboot_main },
 	//	{ "startservice_f", NULL, &service_main },
 	//	{ "startservice", NULL, &service_main },
 	//	{ "stopservice_f", NULL, &service_main },

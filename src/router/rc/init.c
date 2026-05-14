@@ -360,7 +360,7 @@ static int fatal_signals[] = {
 void fatal_signal(int sig)
 {
 	dd_loginfo("init", "%s....................................", strsignal(sig));
-
+	eval("emergency_reboot");
 	shutdown_system();
 	eval("sync");
 	sysprintf("echo 3 > /proc/sys/vm/drop_caches");
@@ -373,10 +373,6 @@ void fatal_signal(int sig)
 	writeproc("/proc/sysrq-trigger", "b");
 #endif
 	reboot(RB_AUTOBOOT);
-#ifndef HAVE_VENTANA
-	sleep(10);
-	writeproc("/proc/sysrq-trigger", "b");
-#endif
 	loop_forever();
 }
 
