@@ -2086,7 +2086,8 @@ static int phy_info_band(struct phy_info_arg *phy_info, struct nlattr *nl_band)
 		mode->mode = NUM_HOSTAPD_MODES;
 		mode->flags = HOSTAPD_MODE_FLAG_HT_INFO_KNOWN |
 			HOSTAPD_MODE_FLAG_VHT_INFO_KNOWN |
-			HOSTAPD_MODE_FLAG_HE_INFO_KNOWN;
+			HOSTAPD_MODE_FLAG_HE_INFO_KNOWN |
+			HOSTAPD_MODE_FLAG_EHT_INFO_KNOWN;
 
 		/*
 		 * Unsupported VHT MCS stream is defined as value 3, so the VHT
