@@ -605,11 +605,11 @@ static int mac80211_cb_stations(struct nl_msg *msg, void *data)
 
 	static struct nla_policy rate_policy[NL80211_RATE_INFO_MAX + 1] = {
 		[NL80211_RATE_INFO_BITRATE] = { .type = NLA_U16 },
+		[NL80211_RATE_INFO_BITRATE32] = { .type = NLA_U32 },
 		[NL80211_RATE_INFO_MCS] = { .type = NLA_U8 },
 		[NL80211_RATE_INFO_40_MHZ_WIDTH] = { .type = NLA_FLAG },
 		[NL80211_RATE_INFO_SHORT_GI] = { .type = NLA_FLAG },
-#ifdef NL80211_VHT_CAPABILITY_LEN
-		[NL80211_RATE_INFO_BITRATE32] = { .type = NLA_U32 },
+/*#ifdef NL80211_VHT_CAPABILITY_LEN
 		[NL80211_RATE_INFO_80_MHZ_WIDTH] = { .type = NLA_FLAG },
 		[NL80211_RATE_INFO_80P80_MHZ_WIDTH] = { .type = NLA_FLAG },
 		[NL80211_RATE_INFO_160_MHZ_WIDTH] = { .type = NLA_FLAG },
@@ -634,7 +634,7 @@ static int mac80211_cb_stations(struct nl_msg *msg, void *data)
 		[NL80211_RATE_INFO_4_MHZ_WIDTH] = { .type = NLA_FLAG },
 		[NL80211_RATE_INFO_8_MHZ_WIDTH] = { .type = NLA_FLAG },
 		[NL80211_RATE_INFO_16_MHZ_WIDTH] = { .type = NLA_FLAG },
-#endif
+#endif*/
 	};
 
 
@@ -707,10 +707,11 @@ static int mac80211_cb_stations(struct nl_msg *msg, void *data)
 		if (nla_parse_nested(rinfo, NL80211_RATE_INFO_MAX, sinfo[NL80211_STA_INFO_TX_BITRATE], rate_policy)) {
 			fprintf(stderr, "failed to parse nested tx rate attributes!\n");
 		} else {
+			if (rinfo[NL80211_RATE_INFO_BITRATE]) {
+				mac80211_info->wci->txrate = nla_get_u16(rinfo[NL80211_RATE_INFO_BITRATE]);
+			}
 			if (rinfo[NL80211_RATE_INFO_BITRATE32]) {
 				mac80211_info->wci->txrate = nla_get_u32(rinfo[NL80211_RATE_INFO_BITRATE32]);
-			} else if (rinfo[NL80211_RATE_INFO_BITRATE]) {
-				mac80211_info->wci->txrate = nla_get_u16(rinfo[NL80211_RATE_INFO_BITRATE]);
 			}
 
 			if (rinfo[NL80211_RATE_INFO_MCS]) {
@@ -743,6 +744,9 @@ static int mac80211_cb_stations(struct nl_msg *msg, void *data)
 			}
 			if (rinfo[NL80211_RATE_INFO_HE_MCS]) {
 				mac80211_info->wci->is_he = 1;
+			}
+			if (rinfo[NL80211_RATE_INFO_EHT_MCS]) {
+				mac80211_info->wci->is_eht = 1;
 			}
 #endif
 			if (rinfo[NL80211_RATE_INFO_SHORT_GI]) {
@@ -815,6 +819,9 @@ static int mac80211_cb_stations(struct nl_msg *msg, void *data)
 
 			if (rinfo[NL80211_RATE_INFO_HE_MCS]) {
 				mac80211_info->wci->rx_is_he = 1;
+			}
+			if (rinfo[NL80211_RATE_INFO_EHT_MCS]) {
+				mac80211_info->wci->rx_is_eht = 1;
 			}
 #endif
 
