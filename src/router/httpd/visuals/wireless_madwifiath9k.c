@@ -137,7 +137,7 @@ int active_wireless_if_ath9k(webs_t wp, int argc, char_t **argv, char *ifname, i
 			if (is_morse_micro(ifname)) {
 				strcpy(info, "AH");
 			} else {
-				if (ht == 8)
+				if (ht == 9)
 					strcpy(info, "LEGACY");
 				else
 					strcpy(info, eht ? "EHT" : he ? "HE" : vht ? "VHT" : "HT");
