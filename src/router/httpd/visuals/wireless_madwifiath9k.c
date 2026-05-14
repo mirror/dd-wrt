@@ -107,6 +107,7 @@ int active_wireless_if_ath9k(webs_t wp, int argc, char_t **argv, char *ifname, i
 			int sgi = 0;
 			int vht = 0;
 			int he = 0;
+			int eht = 0;
 			char info[32];
 			if (!wc->rx_is_ht && !wc->is_ht)
 				ht = 9;
@@ -124,6 +125,8 @@ int active_wireless_if_ath9k(webs_t wp, int argc, char_t **argv, char *ifname, i
 				vht = 1;
 			if (wc->rx_is_he || wc->is_he)
 				he = 1;
+			if (wc->rx_is_eht || wc->is_eht)
+				eht = 1;
 			if (wc->rx_is_short_gi || wc->is_short_gi)
 				sgi = 1;
 			if (ht == 8 && sgi)
@@ -136,7 +139,7 @@ int active_wireless_if_ath9k(webs_t wp, int argc, char_t **argv, char *ifname, i
 				if (ht == 8)
 					strcpy(info, "LEGACY");
 				else
-					strcpy(info, he ? "HE" : vht ? "VHT" : "HT");
+					strcpy(info, eht ? "EHT" : he ? "HE" : vht ? "VHT" : "HT");
 			}
 			if (div == 2)
 				ht = 7;
