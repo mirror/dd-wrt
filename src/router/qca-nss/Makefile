@@ -179,7 +179,7 @@ else
 	make -C $(KDIR) M=$(PWD)/qca-ovsmgr modules MODPROBE=true DEPMOD=/bin/true KBUILD_MODPOST_WARN=1 EXTRA_CFLAGS="$(KERNEL_FLAGS)"
 	make -C $(KDIR) M=$(PWD)/qca-nss-mcs modules MODPROBE=true DEPMOD=/bin/true KBUILD_MODPOST_WARN=1 EXTRA_CFLAGS="$(KERNEL_FLAGS)" CONFIG_SUPPORT_MLD=y CONFIG_SUPPORT_OVS=y
 	make -C $(KDIR) M=$(PWD)/shortcut-fe modules MODPROBE=true DEPMOD=/bin/true KBUILD_MODPOST_WARN=1 EXTRA_CFLAGS="$(KERNEL_FLAGS)"
-#	make -C $(KDIR) M=$(PWD)/nss-ifb modules MODPROBE=true DEPMOD=/bin/true KBUILD_MODPOST_WARN=1 EXTRA_CFLAGS="$(KERNEL_FLAGS)"
+	make -C $(KDIR) M=$(PWD)/nss-ifb modules MODPROBE=true DEPMOD=/bin/true KBUILD_MODPOST_WARN=1 EXTRA_CFLAGS="$(KERNEL_FLAGS)"
 	make -C $(KDIR) M=$(PWD)/qca-nss-cfi modules MODPROBE=true DEPMOD=/bin/true KBUILD_MODPOST_WARN=1 EXTRA_CFLAGS="$(KERNEL_FLAGS)" SoC="ipq806x" \
 		CFI_CRYPTOAPI_DIR=$(CFI_CRYPTOAPI_DIR) \
 		CFI_OCF_DIR=$(CFI_OCF_DIR) \
@@ -348,9 +348,9 @@ else
 	make -C $(KDIR) M=$(PWD)/qca-nss-clients clean modules modules_install MODPROBE=true DEPMOD=/bin/true KBUILD_MODPOST_WARN=1 EXTRA_CFLAGS="$(KERNEL_FLAGS) -include $(TOP)/qca-nss/qca-nss-clients/compat.h" SoC="ipq807x" tunipip6=y tlsmgr=y  pppoe=y vxlanmgr=y pptp=y l2tpv2=y  qdisc=y vlan-mgr=y netlink=y bridge-mgr=y lag-mgr=y ovsmgr=y wifi-meshmgr=y \
 		DTLSMGR_DIR="$(DTLSMGR_DIR)" \
 		IPSECMGR_DIR="$(IPSECMGR_DIR)" INSTALL_MOD_PATH=$(INSTALLDIR)
+	make -C $(KDIR) M=$(PWD)/nss-ifb clean modules modules_install MODPROBE=true DEPMOD=/bin/true KBUILD_MODPOST_WARN=1 EXTRA_CFLAGS="$(KERNEL_FLAGS)" INSTALL_MOD_PATH=$(INSTALLDIR)
 endif
 	make -C $(KDIR) M=$(PWD)/qca-nss-hyfi-bridge clean modules modules_install MODPROBE=true DEPMOD=/bin/true KBUILD_MODPOST_WARN=1 EXTRA_CFLAGS="$(KERNEL_FLAGS)" SoC="ipq807x" INSTALL_MOD_PATH=$(INSTALLDIR)
-	make -C $(KDIR) M=$(PWD)/nss-ifb clean modules modules_install MODPROBE=true DEPMOD=/bin/true KBUILD_MODPOST_WARN=1 EXTRA_CFLAGS="$(KERNEL_FLAGS)" INSTALL_MOD_PATH=$(INSTALLDIR)
 	-find $(INSTALLDIR)/lib/modules/$(KERNELRELEASE)/extra -name *.ko -exec mv {} $(INSTALLDIR)/lib/modules/$(KERNELRELEASE) \;
 	-rm -rf $(INSTALLDIR)/lib/modules/$(KERNELRELEASE)/extra 
 	-find $(INSTALLDIR)/lib/modules/$(KERNELRELEASE)/updates -name *.ko -exec mv {} $(INSTALLDIR)/lib/modules/$(KERNELRELEASE) \;
@@ -365,7 +365,11 @@ endif
 	cp firmware-11.4/hawkeye/* $(INSTALLDIR)/lib/firmware
 	cp firmware-11.4/cypress/* $(INSTALLDIR)/lib/firmware
 	cp firmware-11.4/maple/* $(INSTALLDIR)/lib/firmware
+ifeq ($(CONFIG_IPQ95XX),y)
+	cp firmware-11.4/crypto-ipq95xx/* $(INSTALLDIR)/lib/firmware
+else
 	cp firmware-11.4/crypto/* $(INSTALLDIR)/lib/firmware
+endif
 	mkdir -p $(INSTALLDIR)/usr/sbin
 	cp nssinfo/obj/nssinfo $(INSTALLDIR)/usr/sbin
 	cp tools/qca-nss-drv.debug $(INSTALLDIR)/usr/sbin/nss_stats
