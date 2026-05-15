@@ -2435,9 +2435,24 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 			fprintf(fp, "time_advertisement=0\n");
 		}
 	}
-	if (nvram_nmatch("1", "%s_80211k", ifname)) {
-		fprintf(fp, "rrm_neighbor_report=%d\n", nvram_nmatch("1", "%s_rrm_neighbor_report", ifname) ? 1 : 0);
-		fprintf(fp, "rrm_beacon_report=%d\n", nvram_nmatch("1", "%s_rrm_beacon_report", ifname) ? 1 : 0);
+		#ifdef HAVE_IPQ95XX
+	if (has_6ghz("wlan1") && strcmp(maininterface, "wlan1") && nvram_ngeti("%s_config_freq", maininterface) >= 5925) {
+		fprintf(fp, "rrm_neighbor_report=1\n");
+		fprintf(fp, "rrm_beacon_report=1\n");
+		fprintf(fp, "rnr=1\n");
+	} else
+		#else
+	if (has_6ghz("wlan2") && strcmp(maininterface, "wlan2")) {
+		fprintf(fp, "rrm_neighbor_report=1\n");
+		fprintf(fp, "rrm_beacon_report=1\n");
+		fprintf(fp, "rnr=1\n");
+	} else
+		#endif
+	{
+		if (nvram_nmatch("1", "%s_80211k", ifname)) {
+			fprintf(fp, "rrm_neighbor_report=%d\n", nvram_nmatch("1", "%s_rrm_neighbor_report", ifname) ? 1 : 0);
+			fprintf(fp, "rrm_beacon_report=%d\n", nvram_nmatch("1", "%s_rrm_beacon_report", ifname) ? 1 : 0);
+		}
 	}
 	if (nvram_nmatch("1", "%s_mbo", ifname)) {
 		fprintf(fp, "mbo=1\n");
