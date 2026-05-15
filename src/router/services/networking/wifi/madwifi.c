@@ -3351,6 +3351,12 @@ void configure_wifi(void) // madwifi implementation for atheros based
 		sysprintf("echo 1 > /sys/kernel/debug/ieee80211/phy1/ath11k/ext_rx_stats");
 	if (is_ath11k("wlan2"))
 		sysprintf("echo 1 > /sys/kernel/debug/ieee80211/phy2/ath11k/ext_rx_stats");
+	if (is_ath12k("wlan0"))
+		sysprintf("echo 1 > /sys/kernel/debug/ieee80211/phy0/ath12k/ext_rx_stats");
+	if (is_ath12k("wlan1"))
+		sysprintf("echo 1 > /sys/kernel/debug/ieee80211/phy1/ath12k/ext_rx_stats");
+	if (is_ath12k("wlan2"))
+		sysprintf("echo 1 > /sys/kernel/debug/ieee80211/phy2/ath12k/ext_rx_stats");
 	sync_multicast_to_unicast();
 #if defined(HAVE_R9000) || defined(HAVE_IPQ806X) || defined(HAVE_MT7621)
 	start_postnetwork();
