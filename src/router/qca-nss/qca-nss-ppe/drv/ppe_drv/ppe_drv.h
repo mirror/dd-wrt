@@ -57,7 +57,7 @@ enum ppe_drv_static_dbg_level {
  * PPE debug macros
  */
 #if (PPE_DRV_DEBUG_LEVEL == 3)
-#define ppe_drv_assert(c, s, ...)
+#define ppe_drv_assert(c, s, ...) do  {} while(0)
 #else
 #define ppe_drv_assert(c, s, ...) if (!(c)) { printk(KERN_CRIT "%s[%d]:" s, __FUNCTION__, __LINE__, ##__VA_ARGS__); BUG_ON(!(c)); }
 #endif
@@ -75,7 +75,7 @@ enum ppe_drv_static_dbg_level {
  * Statically compile messages at different levels, when dynamic debug is disabled.
  */
 #if (PPE_DRV_DEBUG_LEVEL < 2)
-#define ppe_drv_warn(s, ...)
+#define ppe_drv_warn(s, ...) do  {} while(0)
 #else
 #define ppe_drv_warn(s, ...) \
 	if (static_dbg_level >= PPE_DRV_STATIC_DBG_LEVEL_WARN) \
@@ -83,7 +83,7 @@ enum ppe_drv_static_dbg_level {
 #endif
 
 #if (PPE_DRV_DEBUG_LEVEL < 3)
-#define ppe_drv_info(s, ...)
+#define ppe_drv_info(s, ...) do  {} while(0)
 #else
 #define ppe_drv_info(s, ...) \
 	if (static_dbg_level >= PPE_DRV_STATIC_DBG_LEVEL_INFO) \
@@ -91,7 +91,7 @@ enum ppe_drv_static_dbg_level {
 #endif
 
 #if (PPE_DRV_DEBUG_LEVEL < 4)
-#define ppe_drv_trace(s, ...)
+#define ppe_drv_trace(s, ...) do  {} while(0)
 #else
 #define ppe_drv_trace(s, ...) \
 	if (static_dbg_level >= PPE_DRV_STATIC_DBG_LEVEL_TRACE) \

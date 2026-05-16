@@ -32,7 +32,7 @@
  * PPE VP debug macros
  */
 #if (PPE_VP_DEBUG_LEVEL == 3)
-#define ppe_vp_assert(c, s, ...)
+#define ppe_vp_assert(c, s, ...) do  {} while(0)
 #else
 #define ppe_vp_assert(c, s, ...) if (!(c)) { printk(KERN_CRIT "%s[%d]:" s, __FUNCTION__, __LINE__, ##__VA_ARGS__); BUG_ON(!(c)); }
 #endif
@@ -50,19 +50,19 @@
  * Statically compile messages at different levels, when dynamic debug is disabled.
  */
 #if (PPE_VP_DEBUG_LEVEL < 2)
-#define ppe_vp_warn(s, ...)
+#define ppe_vp_warn(s, ...) do  {} while(0)
 #else
 #define ppe_vp_warn(s, ...) pr_warn("%s[%d]:" s, __FUNCTION__, __LINE__, ##__VA_ARGS__)
 #endif
 
 #if (PPE_VP_DEBUG_LEVEL < 3)
-#define ppe_vp_info(s, ...)
+#define ppe_vp_info(s, ...) do  {} while(0)
 #else
 #define ppe_vp_info(s, ...) pr_notice("%s[%d]:" s, __FUNCTION__, __LINE__, ##__VA_ARGS__)
 #endif
 
 #if (PPE_VP_DEBUG_LEVEL < 4)
-#define ppe_vp_trace(s, ...)
+#define ppe_vp_trace(s, ...) do  {} while(0)
 #else
 #define ppe_vp_trace(s, ...) pr_info("%s[%d]:" s, __FUNCTION__, __LINE__, ##__VA_ARGS__)
 #endif
