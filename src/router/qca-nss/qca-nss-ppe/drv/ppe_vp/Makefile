@@ -2,7 +2,7 @@
 
 ccflags-y := -I$(obj)/../exports -I$(obj)/..
 ccflags-y += -DNSS_PPE_BUILD_ID="$(BUILD_ID)"
-ccflags-y += -Wall -Werror
+ccflags-y += -Wall
 ccflags-y += -DPPE_VP_DEBUG_LEVEL=0
 
 obj-m += qca-nss-ppe-vp-$(SoC).o

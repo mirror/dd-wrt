@@ -33,7 +33,7 @@
 /*
  * PPE ACL debug macros
  */
-#if (PPE_ACL_DEBUG_LEVEL == 3)
+#if (PPE_ACL_DEBUG_LEVEL == 0)
 #define ppe_acl_assert(c, s, ...) do {}while(0)
 #else
 #define ppe_acl_assert(c, s, ...) if (!(c)) { printk(KERN_CRIT "%s[%d]:" s, __FUNCTION__, __LINE__, ##__VA_ARGS__); BUG_ON(!(c)); }
@@ -57,8 +57,8 @@
 #define ppe_acl_warn(s, ...) pr_warn("%s[%d]:" s, __FUNCTION__, __LINE__, ##__VA_ARGS__)
 #endif
 
-#if (PPE_ACL_DEBUG_LEVEL < 3) do {}while(0)
-#define ppe_acl_info(s, ...)
+#if (PPE_ACL_DEBUG_LEVEL < 3)
+#define ppe_acl_info(s, ...) do {}while(0)
 #else
 #define ppe_acl_info(s, ...) pr_notice("%s[%d]:" s, __FUNCTION__, __LINE__, ##__VA_ARGS__)
 #endif
