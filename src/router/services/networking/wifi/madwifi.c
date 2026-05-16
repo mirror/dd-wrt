@@ -214,6 +214,7 @@ void get_pairwise(const char *prefix, char *pwstring, size_t pwstrlen, char *grp
 	int iswpa3_192 = nvhas(akm, "wpa3-192");
 	int iswpa3_128 = nvhas(akm, "wpa3-128");
 	int iswpa3 = nvhas(akm, "wpa3");
+	int ispsk3 = nvhas(akm, "psk3");
 	if (nvram_nmatch("1", "%s_ccmp", prefix)) {
 		strspcattach(pwstring, pwstrlen, "CCMP");
 		if (grpstring) {
@@ -222,7 +223,7 @@ void get_pairwise(const char *prefix, char *pwstring, size_t pwstrlen, char *grp
 				strspcattach(temp_grpstring, sizeof(temp_grpstring), "CCMP");
 			else
 	#endif
-				if (ismesh)
+				if (ismesh || iswpa3 || iswpa3_128 || iswpa3_192 || ispsk3)
 				strspcattach(temp_grpstring, sizeof(temp_grpstring), "CCMP");
 			else
 				strspcattach(temp_grpstring, sizeof(temp_grpstring), "CCMP TKIP");
@@ -751,7 +752,10 @@ void setupSupplicant(const char *prefix, char *ssidoverride)
 			if (nvram_match(psk, "aes")) {
 				nvram_nseti(1, "%s_ccmp", prefix);
 				fprintf(fp, "\tpairwise=CCMP\n");
-				fprintf(fp, "\tgroup=CCMP TKIP\n");
+				if (ispsk3)
+					fprintf(fp, "\tgroup=CCMP\n");
+				else
+					fprintf(fp, "\tgroup=CCMP TKIP\n");
 			}
 			if (nvram_match(psk, "tkip")) {
 				nvram_nseti(1, "%s_tkip", prefix);

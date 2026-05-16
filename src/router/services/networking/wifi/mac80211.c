@@ -2906,7 +2906,7 @@ void setupSupplicant_ath9k(const char *prefix, char *ssidoverride, int isadhoc)
 					fprintf(fp, "\tgroup=CCMP\n");
 				else
 	#endif
-					if (ismesh)
+					if (ismesh || ispsk3)
 					fprintf(fp, "\tgroup=CCMP\n");
 				else
 					fprintf(fp, "\tgroup=CCMP TKIP\n");
