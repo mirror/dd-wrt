@@ -604,12 +604,10 @@ static int mac80211_cb_stations(struct nl_msg *msg, void *data)
 	};
 
 	static struct nla_policy rate_policy[NL80211_RATE_INFO_MAX + 1] = {
-		[NL80211_RATE_INFO_BITRATE] = { .type = NLA_U16 },
-		[NL80211_RATE_INFO_BITRATE32] = { .type = NLA_U32 },
-		[NL80211_RATE_INFO_MCS] = { .type = NLA_U8 },
-		[NL80211_RATE_INFO_40_MHZ_WIDTH] = { .type = NLA_FLAG },
+		[NL80211_RATE_INFO_BITRATE] = { .type = NLA_U16 },   [NL80211_RATE_INFO_BITRATE32] = { .type = NLA_U32 },
+		[NL80211_RATE_INFO_MCS] = { .type = NLA_U8 },	     [NL80211_RATE_INFO_40_MHZ_WIDTH] = { .type = NLA_FLAG },
 		[NL80211_RATE_INFO_SHORT_GI] = { .type = NLA_FLAG },
-/*#ifdef NL80211_VHT_CAPABILITY_LEN
+		/*#ifdef NL80211_VHT_CAPABILITY_LEN
 		[NL80211_RATE_INFO_80_MHZ_WIDTH] = { .type = NLA_FLAG },
 		[NL80211_RATE_INFO_80P80_MHZ_WIDTH] = { .type = NLA_FLAG },
 		[NL80211_RATE_INFO_160_MHZ_WIDTH] = { .type = NLA_FLAG },
@@ -636,7 +634,6 @@ static int mac80211_cb_stations(struct nl_msg *msg, void *data)
 		[NL80211_RATE_INFO_16_MHZ_WIDTH] = { .type = NLA_FLAG },
 #endif*/
 	};
-
 
 	nla_parse(tb, NL80211_ATTR_MAX, genlmsg_attrdata(gnlh, 0), genlmsg_attrlen(gnlh, 0), NULL);
 	if (!tb[NL80211_ATTR_STA_INFO]) {
@@ -678,12 +675,9 @@ static int mac80211_cb_stations(struct nl_msg *msg, void *data)
 	}
 	get_chain_signal(sinfo[NL80211_STA_INFO_CHAIN_SIGNAL], mac80211_info->wci->chaininfo,
 			 sizeof(mac80211_info->wci->chaininfo));
-#ifndef HAVE_ATH12K
 	if (sinfo[NL80211_STA_INFO_SIGNAL_AVG]) {
 		mac80211_info->wci->signal = (int8_t)nla_get_u8(sinfo[NL80211_STA_INFO_SIGNAL_AVG]);
-	} else 
-#endif
-	if (sinfo[NL80211_STA_INFO_SIGNAL]) {
+	} else if (sinfo[NL80211_STA_INFO_SIGNAL]) {
 		mac80211_info->wci->signal = (int8_t)nla_get_u8(sinfo[NL80211_STA_INFO_SIGNAL]);
 	}
 	get_chain_signal(sinfo[NL80211_STA_INFO_CHAIN_SIGNAL_AVG], mac80211_info->wci->chaininfo_avg,

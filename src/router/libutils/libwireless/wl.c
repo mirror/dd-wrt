@@ -3937,6 +3937,9 @@ IS_DRIVER(mvebu, "pci:mwlwifi", "mwlwifi");
 #ifdef HAVE_ATH10K
 IS_DRIVER(ath10k, "pci:ath10k_pci", "ath10k");
 #endif
+#ifdef HAVE_ATH12K
+IS_DRIVER(ath12k, "pci:ath12k_pci", "ath12k");
+#endif
 #ifdef HAVE_ATH11K
 IS_DRIVER(ath11k_pci, "pci:ath11k_pci", "ath11k");
 IS_DRIVER(ath11k_ahb, "platform:ath11k", "ath11k");
