@@ -22,7 +22,7 @@ qca-nss-ppe-rule-$(SoC)-objs := ppe_rule.o
 ifeq ($(PPE_RFS_ENABLED), y)
 qca-nss-ppe-rule-$(SoC)-objs += ppe_rfs/ppe_rfs.o
 qca-nss-ppe-rule-$(SoC)-objs += ppe_rfs/ppe_rfs_stats.o
-ccflags-y += -DPPE_RFS_DEBUG_LEVEL=3
+ccflags-y += -DPPE_RFS_DEBUG_LEVEL=0
 endif
 
 ifndef PPE_LOWMEM_PROFILE_16M
@@ -30,13 +30,13 @@ ifeq ($(PPE_ACL_ENABLED), y)
 qca-nss-ppe-rule-$(SoC)-objs += ppe_acl/ppe_acl.o
 qca-nss-ppe-rule-$(SoC)-objs += ppe_acl/ppe_acl_dump.o
 qca-nss-ppe-rule-$(SoC)-objs += ppe_acl/ppe_acl_stats.o
-ccflags-y += -DPPE_ACL_DEBUG_LEVEL=3
+ccflags-y += -DPPE_ACL_DEBUG_LEVEL=0
 endif
 
 ifeq ($(PPE_POLICER_ENABLED), y)
 qca-nss-ppe-rule-$(SoC)-objs += ppe_policer/ppe_policer.o
 qca-nss-ppe-rule-$(SoC)-objs += ppe_policer/ppe_policer_stats.o
-ccflags-y += -DPPE_POLICER_DEBUG_LEVEL=3
+ccflags-y += -DPPE_POLICER_DEBUG_LEVEL=0
 endif
 endif
 
@@ -45,13 +45,13 @@ ifndef PPE_LOWMEM_PROFILE_256M
 ifeq ($(PPE_MIRROR_ENABLED), y)
 qca-nss-ppe-rule-$(SoC)-objs += ppe_mirror/ppe_mirror.o
 qca-nss-ppe-rule-$(SoC)-objs += ppe_mirror/ppe_mirror_stats.o
-ccflags-y += -DPPE_MIRROR_DEBUG_LEVEL=3
+ccflags-y += -DPPE_MIRROR_DEBUG_LEVEL=0
 endif
 
 ifeq ($(PPE_PRIORITY_ENABLED), y)
 qca-nss-ppe-rule-$(SoC)-objs += ppe_priority/ppe_priority.o
 qca-nss-ppe-rule-$(SoC)-objs += ppe_priority/ppe_priority_stats.o
-ccflags-y += -DPPE_PRIORITY_DEBUG_LEVEL=3
+ccflags-y += -DPPE_PRIORITY_DEBUG_LEVEL=0
 endif
 endif
 endif

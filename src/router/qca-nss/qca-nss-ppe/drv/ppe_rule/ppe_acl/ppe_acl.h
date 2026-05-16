@@ -34,7 +34,7 @@
  * PPE ACL debug macros
  */
 #if (PPE_ACL_DEBUG_LEVEL == 3)
-#define ppe_acl_assert(c, s, ...)
+#define ppe_acl_assert(c, s, ...) do {}while(0)
 #else
 #define ppe_acl_assert(c, s, ...) if (!(c)) { printk(KERN_CRIT "%s[%d]:" s, __FUNCTION__, __LINE__, ##__VA_ARGS__); BUG_ON(!(c)); }
 #endif
@@ -52,19 +52,19 @@
  * Statically compile messages at different levels, when dynamic debug is disabled.
  */
 #if (PPE_ACL_DEBUG_LEVEL < 2)
-#define ppe_acl_warn(s, ...)
+#define ppe_acl_warn(s, ...) do {}while(0)
 #else
 #define ppe_acl_warn(s, ...) pr_warn("%s[%d]:" s, __FUNCTION__, __LINE__, ##__VA_ARGS__)
 #endif
 
-#if (PPE_ACL_DEBUG_LEVEL < 3)
+#if (PPE_ACL_DEBUG_LEVEL < 3) do {}while(0)
 #define ppe_acl_info(s, ...)
 #else
 #define ppe_acl_info(s, ...) pr_notice("%s[%d]:" s, __FUNCTION__, __LINE__, ##__VA_ARGS__)
 #endif
 
 #if (PPE_ACL_DEBUG_LEVEL < 4)
-#define ppe_acl_trace(s, ...)
+#define ppe_acl_trace(s, ...) do {}while(0)
 #else
 #define ppe_acl_trace(s, ...) pr_info("%s[%d]:" s, __FUNCTION__, __LINE__, ##__VA_ARGS__)
 #endif
