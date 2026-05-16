@@ -63,4 +63,4 @@ qca-nss-ppe-$(SoC)-objs += tun/ppe_drv_tun_v6.o
 endif
 
 ccflags-y += -Wall
-ccflags-y += -DPPE_DRV_DEBUG_LEVEL=3
+ccflags-y += -DPPE_DRV_DEBUG_LEVEL=0

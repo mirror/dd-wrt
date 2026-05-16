@@ -3,7 +3,7 @@
 ccflags-y := -I$(obj) -I$(obj)/..
 ccflags-y += -Wall
 
-export BUILD_ID = \"Build Id: $(shell date +'%m/%d/%y, %H:%M:%S')\"
+export BUILD_ID = \"Build Id: $(shell date +'%m/%d/%y')\"
 ccflags-y += -DNSS_PPE_BUILD_ID="$(BUILD_ID)"
 
 KERNELVERSION := $(word 1, $(subst ., ,$(KERNELVERSION))).$(word 2, $(subst ., ,$(KERNELVERSION)))
