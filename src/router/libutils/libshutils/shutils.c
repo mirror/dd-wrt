@@ -1772,6 +1772,7 @@ static void _add_blocklist(const char *service, char *ip, int now)
 	memset(last->next, 0, sizeof(*last));
 	strcpy(&last->next->ip[0], ip);
 	last->next->end = 0;
+	strcpy(last->next->service, service);
 	last->next->count = 0;
 	last->next->attempts = 0;
 	last->next->blocked = 0;
