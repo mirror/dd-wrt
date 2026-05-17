@@ -214,3 +214,68 @@ EJ_VISIBLE void ej_dumplog(webs_t wp, int argc, char_t **argv)
 	debug_free(buf);
 	return;
 }
+
+static struct blocklist blocklist_root;
+
+static void _init_blocklist(void)
+{
+	struct blocklist *entry = blocklist_root.next;
+	struct blocklist *last = &blocklist_root;
+	if (entry) {
+		while (entry) {
+			last = entry;
+			entry = entry->next;
+			free(last);
+		}
+		blocklist_root.next = NULL;
+		entry = blocklist_root.next;
+		last = &blocklist_root;
+	}
+
+	FILE *fp = NULL;
+	if (jffs_mounted()) {
+		fp = fopen("/jffs/blocklist", "rb");
+	}
+	if (!fp)
+		fp = fopen("/tmp/blocklist", "rb");
+	if (fp) {
+		while (!feof(fp)) {
+			last->next = malloc(sizeof(*entry));
+			int elems = fread(last->next, sizeof(struct blocklist) - sizeof(void *), 1, fp);
+			if (elems < 1) {
+				free(last->next);
+				last->next = NULL;
+				break;
+			}
+			last = last->next;
+		}
+		fclose(fp);
+	}
+}
+
+EJ_VISIBLE void ej_dumpblocklist(webs_t wp, int argc, char_t **argv)
+{
+
+
+	_init_blocklist();
+
+	struct blocklist *entry = blocklist_root.next;
+	fprintf(stdout, "Blocked Clients in Tarpit\n");
+	while (entry) {
+		char seen[128];
+		char end[128];
+		char release[128] = { 0 };
+		rfctime(&entry->seen, seen);
+		rfctime(&entry->end, end);
+		time_t rel = entry->end + ENDTIME;
+		rfctime(&rel, release);
+		websWrite(
+			wp,
+			"<tr height=\"1\">\n<td>%s</td>\n<td class=\"center\">%s</td>\n<td class=\"center\">%d</td>\n<td class=\"center\">%s</td>\n<td>%s</td>\n<td>%s</td>\n<td>%s</td>\n</tr>\n",
+			entry->service, entry->ip, entry->attempts, entry->blocked == 1 ? "Blocked" : "Open", seen,
+			entry->blocked == 1 ? end : "", release);
+		struct blocklist *old = entry;
+		entry = entry->next;
+		free(old);
+	}
+}
