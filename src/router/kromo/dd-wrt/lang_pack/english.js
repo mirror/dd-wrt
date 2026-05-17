@@ -351,6 +351,7 @@ sbutton.wl_client_mac="Wireless Client MAC List";
 sbutton.update_filter="Update Filter List";
 sbutton.join="Join";
 sbutton.log_in="Incoming Log";
+sbutton.log_blocklist="Blocklist Log";
 sbutton.log_out="Outgoing Log";
 sbutton.edit_srv="Add/Edit Service";
 sbutton.routingtab="Show Routing Table";
