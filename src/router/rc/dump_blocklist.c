@@ -18,6 +18,7 @@ int main(int argc, char *argv[])
 	struct blocklist blocklist_root;
 	struct blocklist *entry = blocklist_root.next;
 	struct blocklist *last = &blocklist_root;
+	memset(&blocklist_root, 0, sizeof(blocklist_root));
 
 	FILE *fp = NULL;
 	if (jffs_mounted()) {
