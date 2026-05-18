@@ -51,7 +51,7 @@ dos_dircopy() {
 
 [ -n "$PADDING" ] && dd if=/dev/zero of="$OUTPUT" bs=512 seek="$PART3FSOFFSET" conv=notrunc count="$PART3FSSIZE"
 dd if="$ROOTFSIMAGE" of="$OUTPUT" bs=512 seek="$ROOTFSOFFSET" conv=notrunc
-
+rm -f $OUTPUT.kernel
 if [ -n "$GUID" ]; then
     [ -n "$PADDING" ] && dd if=/dev/zero of="$OUTPUT" bs=512 seek="$((ROOTFSOFFSET + ROOTFSSIZE + PART3FSSIZE))" conv=notrunc count="$sect"
     echo "test"
@@ -63,4 +63,3 @@ else
     make_ext4fs -J -L kernel -l "$KERNELSIZE" ${SOURCE_DATE_EPOCH:+-T ${SOURCE_DATE_EPOCH}} "$OUTPUT.kernel" "$KERNELDIR"
 fi
 dd if="$OUTPUT.kernel" of="$OUTPUT" bs=512 seek="$KERNELOFFSET" conv=notrunc
-#rm -f $OUTPUT.kernel
