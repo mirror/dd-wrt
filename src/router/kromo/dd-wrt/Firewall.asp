@@ -320,12 +320,14 @@ addEvent(window, "unload", function() {
 											<div class="label"><% tran("firewall.ftp"); %></div>
 											<input class="spaceradio" type="checkbox" value="1" name="_limit_ftp" <% nvc("limit_ftp", "1"); %> />
 										</div>
-								<div class="center">
-									<script type="text/javascript">
-									//<![CDATA[
-									document.write("<input class=\"button\" type=\"button\" name=\"log_blocklist\" value=\"" + sbutton.log_blocklist + "\" onclick=\"openWindow('Log_Blocklist.asp', 580, 600);\" />&nbsp;");
-									//]]>
-									</script>
+								<% ifdef("MICRO", "<!--"); %>
+										<div class="center">
+						    				<script type="text/javascript">
+										//<![CDATA[
+										document.write("<input class=\"button\" type=\"button\" name=\"log_blocklist\" value=\"" + sbutton.log_blocklist + "\" onclick=\"openWindow('Log_Blocklist.asp', 580, 600);\" />&nbsp;");
+										//]]>
+										</script>
+								<% ifdef("MICRO", "-->"); %>
 								</div>
 								</fieldset>
 								<% ifdef("MICRO", "-->"); %>
