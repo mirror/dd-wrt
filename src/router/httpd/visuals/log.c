@@ -214,7 +214,7 @@ EJ_VISIBLE void ej_dumplog(webs_t wp, int argc, char_t **argv)
 	debug_free(buf);
 	return;
 }
-
+#ifndef HAVE_MICRO
 EJ_VISIBLE void ej_dumpblocklist(webs_t wp, int argc, char_t **argv)
 {
 	struct blocklist blocklist_root;
@@ -252,7 +252,6 @@ restart:;
 	}
 
 	entry = blocklist_root.next;
-	fprintf(stdout, "Blocked Clients in Tarpit\n");
 	while (entry) {
 		char seen[128];
 		char end[128];
@@ -271,3 +270,4 @@ restart:;
 		free(old);
 	}
 }
+#endif
