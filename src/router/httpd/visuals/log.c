@@ -215,22 +215,13 @@ EJ_VISIBLE void ej_dumplog(webs_t wp, int argc, char_t **argv)
 	return;
 }
 
-static struct blocklist blocklist_root;
 
-static void _init_blocklist(void)
+
+EJ_VISIBLE void ej_dumpblocklist(webs_t wp, int argc, char_t **argv)
 {
+	struct blocklist blocklist_root;
 	struct blocklist *entry = blocklist_root.next;
 	struct blocklist *last = &blocklist_root;
-	if (entry) {
-		while (entry) {
-			last = entry;
-			entry = entry->next;
-			free(last);
-		}
-		blocklist_root.next = NULL;
-		entry = blocklist_root.next;
-		last = &blocklist_root;
-	}
 
 	FILE *fp = NULL;
 	if (jffs_mounted()) {
@@ -241,6 +232,7 @@ static void _init_blocklist(void)
 	if (fp) {
 		while (!feof(fp)) {
 			last->next = malloc(sizeof(*entry));
+			memset(last->next, 0, sizeof(*entry));
 			int elems = fread(last->next, sizeof(struct blocklist) - sizeof(void *), 1, fp);
 			if (elems < 1) {
 				free(last->next);
@@ -251,15 +243,8 @@ static void _init_blocklist(void)
 		}
 		fclose(fp);
 	}
-}
 
-EJ_VISIBLE void ej_dumpblocklist(webs_t wp, int argc, char_t **argv)
-{
-
-
-	_init_blocklist();
-
-	struct blocklist *entry = blocklist_root.next;
+	entry = blocklist_root.next;
 	fprintf(stdout, "Blocked Clients in Tarpit\n");
 	while (entry) {
 		char seen[128];
