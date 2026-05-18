@@ -222,7 +222,7 @@ EJ_VISIBLE void ej_dumpblocklist(webs_t wp, int argc, char_t **argv)
 	struct blocklist blocklist_root;
 	struct blocklist *entry = blocklist_root.next;
 	struct blocklist *last = &blocklist_root;
-
+	memset(&blocklist_root, 0, sizeof(blocklist_root));
 	FILE *fp = NULL;
 	if (jffs_mounted()) {
 		fp = fopen("/jffs/blocklist", "rb");
