@@ -4,7 +4,6 @@
 #include <time.h>
 #include <arpa/inet.h>
 
-static struct blocklist blocklist_root;
 
 char *rfctime(const time_t timep, char *s)
 {
@@ -52,9 +51,32 @@ static void _init_blocklist(void)
 
 int main(int argc, char *argv[])
 {
-	_init_blocklist();
-
+	struct blocklist blocklist_root;
 	struct blocklist *entry = blocklist_root.next;
+	struct blocklist *last = &blocklist_root;
+
+	FILE *fp = NULL;
+	if (jffs_mounted()) {
+		fp = fopen("/jffs/blocklist", "rb");
+	}
+	if (!fp)
+		fp = fopen("/tmp/blocklist", "rb");
+	if (fp) {
+		while (!feof(fp)) {
+			last->next = malloc(sizeof(*entry));
+			memset(last->next, 0, sizeof(*entry));
+			int elems = fread(last->next, sizeof(struct blocklist) - sizeof(void *), 1, fp);
+			if (elems < 1) {
+				free(last->next);
+				last->next = NULL;
+				break;
+			}
+			last = last->next;
+		}
+		fclose(fp);
+	}
+
+	entry = blocklist_root.next;
 	fprintf(stdout, "Blocked Clients in Tarpit\n");
 	while (entry) {
 		char seen[128];
@@ -78,6 +100,8 @@ int main(int argc, char *argv[])
 			entry->blocked == 1 && entry->end			    ? end :
 			(entry->blocked == -1 || entry->blocked == 0) && release[0] ? release :
 										      "");
+		struct blocklist *old = entry;
 		entry = entry->next;
+		free(old);
 	}
 }
