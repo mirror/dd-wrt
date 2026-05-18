@@ -1,4 +1,8 @@
 ------------------------------------------------------------------------
+r8734 | brainslayer | 2026-05-19 05:21:35 +0600 (Tue, 19 May 2026) | 1 line
+
+ath12k:  Pass the correct value of each TID during a stop AMPDU session
+------------------------------------------------------------------------
 r8733 | brainslayer | 2026-05-18 08:53:33 +0600 (Mon, 18 May 2026) | 1 line
 
 board patcher
