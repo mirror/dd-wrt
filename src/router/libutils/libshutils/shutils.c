@@ -1703,6 +1703,7 @@ restart:;
 				pthread_mutex_unlock(&mutex_block);
 				return;
 			}
+			memset(last->next, 0, sizeof(*entry));
 			int elems = fread(last->next, sizeof(struct blocklist) - sizeof(void *), 1, fp);
 			if (elems < 1) {
 				free(last->next);
