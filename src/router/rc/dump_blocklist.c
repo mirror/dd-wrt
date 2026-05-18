@@ -13,42 +13,6 @@ char *rfctime(const time_t timep, char *s)
 	return s;
 }
 
-static void _init_blocklist(void)
-{
-	struct blocklist *entry = blocklist_root.next;
-	struct blocklist *last = &blocklist_root;
-	if (entry) {
-		while (entry) {
-			last = entry;
-			entry = entry->next;
-			free(last);
-		}
-		blocklist_root.next = NULL;
-		entry = blocklist_root.next;
-		last = &blocklist_root;
-	}
-
-	FILE *fp = NULL;
-	if (jffs_mounted()) {
-		fp = fopen("/jffs/blocklist", "rb");
-	}
-	if (!fp)
-		fp = fopen("/tmp/blocklist", "rb");
-	if (fp) {
-		while (!feof(fp)) {
-			last->next = malloc(sizeof(*entry));
-			int elems = fread(last->next, sizeof(struct blocklist) - sizeof(void *), 1, fp);
-			if (elems < 1) {
-				free(last->next);
-				last->next = NULL;
-				break;
-			}
-			last = last->next;
-		}
-		fclose(fp);
-	}
-}
-
 int main(int argc, char *argv[])
 {
 	struct blocklist blocklist_root;
