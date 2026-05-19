@@ -918,6 +918,20 @@ static int do_spectral_scan(unsigned char method, struct mime_handler *handler, 
 			killall("disable_fft", SIGKILL);
 			eval("disable_fft");
 		}*/
+	} else if (is_ath12k(ifname)) {
+		sprintf(dest, "%s/spectral_bins", path);
+		writestr(dest, "512");
+		//		writestr(dest, "1024");
+		//		writestr(dest, "1024"); // QCN90xx supports 1024. but i dont think we need that
+		sprintf(dest, "%s/spectral_scan_ctl", path);
+		writestr(dest, "manual");
+		writestr(dest, "trigger");
+		/*		if (pidof("disable_fft") < 0) {
+			writestr(dest, "background");
+			writestr(dest, "trigger");
+			killall("disable_fft", SIGKILL);
+			eval("disable_fft");
+		}*/
 	} else {
 		sprintf(dest, "%s/spectral_scan_ctl", path);
 		writestr(dest, "chanscan");
