@@ -883,6 +883,8 @@ static int do_spectral_scan(unsigned char method, struct mime_handler *handler, 
 		asprintf(&path, "/sys/kernel/debug/ieee80211/phy%d/ath11k", phy);
 	else if (is_ath10k(ifname))
 		asprintf(&path, "/sys/kernel/debug/ieee80211/phy%d/ath10k", phy);
+	else if (is_ath12k(ifname))
+		asprintf(&path, "/sys/kernel/debug/ieee80211/phy%d/ath12k", phy);
 	else
 		asprintf(&path, "/sys/kernel/debug/ieee80211/phy%d/ath9k", phy);
 
