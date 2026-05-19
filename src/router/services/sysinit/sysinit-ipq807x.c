@@ -641,6 +641,16 @@ void start_setup_affinity(void)
 	int brand = getRouterBrand();
 	if (!nvram_match("ath11k_affinity", "0")) {
 		switch (brand) {
+		case ROUTER_8DEVICES_KIWI:
+			set_named_smp_affinity("DP_EXT_IRQ", 0, 1);
+			set_named_smp_affinity("DP_EXT_IRQ", 1, 2);
+			set_named_smp_affinity("DP_EXT_IRQ", 2, 3);
+			set_named_smp_affinity("DP_EXT_IRQ", 3, 4);
+			set_named_smp_affinity("DP_EXT_IRQ", 1, 5);
+			set_named_smp_affinity("DP_EXT_IRQ", 2, 6);
+			set_named_smp_affinity("DP_EXT_IRQ", 3, 7);
+			set_named_smp_affinity("DP_EXT_IRQ", 4, 8);
+		break;
 		case ROUTER_LINKSYS_MR5500:
 		case ROUTER_LINKSYS_MX5500:
 			/* IPQ5018 is dualcore arm64, so we need a different affinity stragedy */
