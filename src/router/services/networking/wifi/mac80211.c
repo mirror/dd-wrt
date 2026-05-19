@@ -1242,8 +1242,7 @@ void setupHostAP_generic_ath9k(const char *prefix, FILE *fp, int isrepeater, int
 	     !strcmp(netmode, "mixed5") || //
 	     !strcmp(netmode, "mixed")) &&
 	    strcmp(akm, "wep") && !aoss && !is_6ghz_freq_prefix(prefix, freq)) {
-		if (strcmp(netmode, "mixed") && strcmp(netmode, "mixed5") && strcmp(netmode, "ng-only") &&
-		    strcmp(netmode, "na-only")) {
+		if (!strcmp(netmode, "n5-only") || !strcmp(netmode, "n2-only") || !strcmp(netmode, "n-only")) {
 			if (!isath5k)
 				fprintf(fp, "require_ht=1\n");
 		}
@@ -1341,7 +1340,6 @@ void setupHostAP_generic_ath9k(const char *prefix, FILE *fp, int isrepeater, int
 			if (!strcmp(netmode, "acn-mixed")) {
 				if (!is_6ghz_freq_prefix(prefix, freq)) {
 					fprintf(fp, "ieee80211ac=1\n");
-					fprintf(fp, "require_ht=1\n");
 				}
 				fprintf(fp, "ieee80211d=1\n");
 				fprintf(fp, "ieee80211h=1\n");
@@ -1353,7 +1351,6 @@ void setupHostAP_generic_ath9k(const char *prefix, FILE *fp, int isrepeater, int
 					fprintf(fp, "ieee80211ax=1\n");
 					if (!is_6ghz_freq_prefix(prefix, freq)) {
 						fprintf(fp, "ieee80211ac=1\n");
-						fprintf(fp, "require_ht=1\n");
 					}
 					fprintf(fp, "ieee80211d=1\n");
 					fprintf(fp, "ieee80211h=1\n");
