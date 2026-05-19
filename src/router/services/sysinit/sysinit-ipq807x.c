@@ -642,6 +642,15 @@ void start_setup_affinity(void)
 	if (!nvram_match("ath11k_affinity", "0")) {
 		switch (brand) {
 		case ROUTER_8DEVICES_KIWI:
+			sysprintf("3 > /proc/sys/net/edma/rps_num_cores");
+			set_named_smp_affinity("edma_rx_desc", 0, 1);
+			set_named_smp_affinity("edma_rx_desc", 1, 2);
+			set_named_smp_affinity("edma_rx_desc", 2, 3);
+			set_named_smp_affinity("edma_rx_desc", 3, 4);
+			int i;
+			for (i = 0; i < 27; i++) {
+				set_named_smp_affinity("edma_txcmpl", i % 4, i);
+			}
 			set_named_smp_affinity("DP_EXT_IRQ", 0, 1);
 			set_named_smp_affinity("DP_EXT_IRQ", 1, 2);
 			set_named_smp_affinity("DP_EXT_IRQ", 2, 3);
@@ -650,7 +659,7 @@ void start_setup_affinity(void)
 			set_named_smp_affinity("DP_EXT_IRQ", 2, 6);
 			set_named_smp_affinity("DP_EXT_IRQ", 3, 7);
 			set_named_smp_affinity("DP_EXT_IRQ", 4, 8);
-		break;
+			break;
 		case ROUTER_LINKSYS_MR5500:
 		case ROUTER_LINKSYS_MX5500:
 			/* IPQ5018 is dualcore arm64, so we need a different affinity stragedy */
@@ -864,16 +873,16 @@ void start_sysinit(void)
 		if (art) {
 			FILE *fp = fopen(art, "rb");
 			char mac[6];
-			fread(mac, 6,1, fp);
+			fread(mac, 6, 1, fp);
 			fclose(fp);
 			char macaddr[20];
 			sprintf(macaddr, "%02X:%02X:%02X:%02X:%02X:%02X", mac[0] & 0xff, mac[1] & 0xff, mac[2] & 0xff,
-			mac[3] & 0xff, mac[4] & 0xff, mac[5] & 0xff);
+				mac[3] & 0xff, mac[4] & 0xff, mac[5] & 0xff);
 			MAC_ADD(macaddr);
 			MAC_ADD(macaddr);
-			nvram_set("wlan0_hwaddr",macaddr);
+			nvram_set("wlan0_hwaddr", macaddr);
 			MAC_ADD(macaddr);
-			nvram_set("wlan1_hwaddr",macaddr);
+			nvram_set("wlan1_hwaddr", macaddr);
 		}
 
 		break;
@@ -1816,9 +1825,7 @@ void start_arch_defaults(void)
 	}
 }
 
-
 void gpt_tool_main(int argc, char *argv[])
 {
-fprintf(stderr, "partname is %s\n", getgptpartitionbyname(argv[1], argv[2]));
-
+	fprintf(stderr, "partname is %s\n", getgptpartitionbyname(argv[1], argv[2]));
 }
