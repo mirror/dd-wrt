@@ -1840,7 +1840,7 @@ void set_named_smp_affinity_mask(char *name, int mask, int entry)
 			continue;
 		strcpy(match, &line[start]);
 		match[strlen(match) - 1] = 0;
-		if (!strcmp(match, name))
+		if (!strncmp(match, name, strlen(name)))
 			e++;
 		if (e == entry) {
 			goto out;
