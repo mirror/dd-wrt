@@ -644,10 +644,10 @@ void start_setup_affinity(void)
 		switch (brand) {
 		case ROUTER_8DEVICES_KIWI:
 			sysprintf("3 > /proc/sys/net/edma/rps_num_cores");
-			set_named_smp_affinity("edma_rx_desc", 0, 1);
-			set_named_smp_affinity("edma_rx_desc", 1, 2);
-			set_named_smp_affinity("edma_rx_desc", 2, 3);
-			set_named_smp_affinity("edma_rx_desc", 3, 4);
+			set_named_smp_affinity("edma_rxdesc", 0, 1);
+			set_named_smp_affinity("edma_rxdesc", 1, 2);
+			set_named_smp_affinity("edma_rxdesc", 2, 3);
+			set_named_smp_affinity("edma_rxdesc", 3, 4);
 			int i;
 			for (i = 0; i < 27; i++) {
 				set_named_smp_affinity("edma_txcmpl", i % 4, i);
