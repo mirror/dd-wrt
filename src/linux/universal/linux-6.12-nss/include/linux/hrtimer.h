@@ -230,6 +230,8 @@ extern void hrtimer_init(struct hrtimer *timer, clockid_t which_clock,
 			 enum hrtimer_mode mode);
 extern void hrtimer_init_sleeper(struct hrtimer_sleeper *sl, clockid_t clock_id,
 				 enum hrtimer_mode mode);
+extern void hrtimer_init_and_bind(struct hrtimer *timer, clockid_t which_clock,
+				enum hrtimer_mode mode, int cpu_id);
 
 #ifdef CONFIG_DEBUG_OBJECTS_TIMERS
 extern void hrtimer_init_on_stack(struct hrtimer *timer, clockid_t which_clock,
@@ -260,6 +262,22 @@ static inline void destroy_hrtimer_on_stack(struct hrtimer *timer) { }
 /* Basic timer operations: */
 extern void hrtimer_start_range_ns(struct hrtimer *timer, ktime_t tim,
 				   u64 range_ns, const enum hrtimer_mode mode);
+extern void hrtimer_start_range_ns_on_cpu(struct hrtimer *timer, ktime_t tim,
+				   u64 range_ns, const enum hrtimer_mode mode);
+
+/**
+ * hrtimer_start_on_cpu - (re)start an hrtimer on the current CPU
+ * @timer:	the timer to be added
+ * @tim:	expiry time
+ * @mode:	timer mode: absolute (HRTIMER_MODE_ABS) or
+ *		relative (HRTIMER_MODE_REL), and pinned (HRTIMER_MODE_PINNED);
+ *		softirq based mode is considered for debug purpose only!
+ */
+static inline void hrtimer_start_on_cpu(struct hrtimer *timer, ktime_t tim,
+				   const enum hrtimer_mode mode)
+{
+	hrtimer_start_range_ns_on_cpu(timer, tim, 0, mode);
+}
 
 /**
  * hrtimer_start - (re)start an hrtimer

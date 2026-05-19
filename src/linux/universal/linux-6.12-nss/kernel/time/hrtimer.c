@@ -1226,6 +1226,59 @@ hrtimer_update_softirq_timer(struct hrtimer_cpu_base *cpu_base, bool reprogram)
 	hrtimer_reprogram(cpu_base->softirq_next_timer, reprogram);
 }
 
+static int __hrtimer_start_range_ns_on_cpu(struct hrtimer *timer, ktime_t tim,
+				    u64 delta_ns, const enum hrtimer_mode mode,
+				    struct hrtimer_clock_base *base)
+{
+	struct hrtimer_clock_base *new_base;
+	bool force_local, first;
+
+	/*
+	 * If the timer is on the local cpu base and is the first expiring
+	 * timer then this might end up reprogramming the hardware twice
+	 * (on removal and on enqueue). To avoid that by prevent the
+	 * reprogram on removal, keep the timer local to the current CPU
+	 * and enforce reprogramming after it is queued no matter whether
+	 * it is the new first expiring timer again or not.
+	 */
+	force_local = base->cpu_base == this_cpu_ptr(&hrtimer_bases);
+	force_local &= base->cpu_base->next_timer == timer;
+
+	/*
+	 * Remove an active timer from the queue. In case it is not queued
+	 * on the current CPU, make sure that remove_hrtimer() updates the
+	 * remote data correctly.
+	 *
+	 * If it's on the current CPU and the first expiring timer, then
+	 * skip reprogramming, keep the timer local and enforce
+	 * reprogramming later if it was the first expiring timer.  This
+	 * avoids programming the underlying clock event twice (once at
+	 * removal and once after enqueue).
+	 */
+	remove_hrtimer(timer, base, true, force_local);
+
+	if (mode & HRTIMER_MODE_REL)
+		tim = ktime_add_safe(tim, base->get_time());
+
+	tim = hrtimer_update_lowres(timer, tim, mode);
+
+	hrtimer_set_expires_range_ns(timer, tim, delta_ns);
+
+	new_base = base;
+
+	first = enqueue_hrtimer(timer, new_base, mode);
+	if (!force_local)
+		return first;
+
+	/*
+	 * Timer was forced to stay on the current CPU to avoid
+	 * reprogramming on removal and enqueue. Force reprogram the
+	 * hardware by evaluating the new first expiring timer.
+	 */
+	hrtimer_force_reprogram(new_base->cpu_base, 1);
+	return 0;
+}
+
 static int __hrtimer_start_range_ns(struct hrtimer *timer, ktime_t tim,
 				    u64 delta_ns, const enum hrtimer_mode mode,
 				    struct hrtimer_clock_base *base)
@@ -1310,6 +1363,40 @@ static int __hrtimer_start_range_ns(struct hrtimer *timer, ktime_t tim,
 	hrtimer_force_reprogram(new_base->cpu_base, 1);
 	return 0;
 }
+
+/**
+ * hrtimer_start_range_ns_on_cpu - (re)start an hrtimer on the current CPU
+ * @timer:	the timer to be added
+ * @tim:	expiry time
+ * @delta_ns:	"slack" range for the timer
+ * @mode:	timer mode: absolute (HRTIMER_MODE_ABS) or
+ *		relative (HRTIMER_MODE_REL), and pinned (HRTIMER_MODE_PINNED);
+ *		softirq based mode is considered for debug purpose only!
+ */
+void hrtimer_start_range_ns_on_cpu(struct hrtimer *timer, ktime_t tim,
+			u64 delta_ns, const enum hrtimer_mode mode)
+{
+	struct hrtimer_clock_base *base;
+	unsigned long flags;
+
+	/*
+	 * Check whether the HRTIMER_MODE_SOFT bit and hrtimer.is_soft
+	 * match on CONFIG_PREEMPT_RT = n. With PREEMPT_RT check the hard
+	 * expiry mode because unmarked timers are moved to softirq expiry.
+	 */
+	if (!IS_ENABLED(CONFIG_PREEMPT_RT))
+		WARN_ON_ONCE(!(mode & HRTIMER_MODE_SOFT) ^ !timer->is_soft);
+	else
+		WARN_ON_ONCE(!(mode & HRTIMER_MODE_HARD) ^ !timer->is_hard);
+
+	base = lock_hrtimer_base(timer, &flags);
+
+	if (__hrtimer_start_range_ns_on_cpu(timer, tim, delta_ns, mode, base))
+		hrtimer_reprogram(timer, true);
+
+	unlock_hrtimer_base(timer, &flags);
+}
+EXPORT_SYMBOL_GPL(hrtimer_start_range_ns_on_cpu);
 
 /**
  * hrtimer_start_range_ns - (re)start an hrtimer
@@ -1602,6 +1689,42 @@ static inline int hrtimer_clockid_to_base(clockid_t clock_id)
 	}
 }
 
+static void __hrtimer_init_and_bind(struct hrtimer *timer, clockid_t clock_id,
+			   enum hrtimer_mode mode, int cpu_id)
+{
+	bool softtimer = !!(mode & HRTIMER_MODE_SOFT);
+	struct hrtimer_cpu_base *cpu_base;
+	int base;
+
+	/*
+	 * On PREEMPT_RT enabled kernels hrtimers which are not explicitely
+	 * marked for hard interrupt expiry mode are moved into soft
+	 * interrupt context for latency reasons and because the callbacks
+	 * can invoke functions which might sleep on RT, e.g. spin_lock().
+	 */
+	if (IS_ENABLED(CONFIG_PREEMPT_RT) && !(mode & HRTIMER_MODE_HARD))
+		softtimer = true;
+
+	memset(timer, 0, sizeof(struct hrtimer));
+
+	cpu_base = &per_cpu(hrtimer_bases, cpu_id);
+
+	/*
+	 * POSIX magic: Relative CLOCK_REALTIME timers are not affected by
+	 * clock modifications, so they needs to become CLOCK_MONOTONIC to
+	 * ensure POSIX compliance.
+	 */
+	if (clock_id == CLOCK_REALTIME && mode & HRTIMER_MODE_REL)
+		clock_id = CLOCK_MONOTONIC;
+
+	base = softtimer ? HRTIMER_MAX_CLOCK_BASES / 2 : 0;
+	base += hrtimer_clockid_to_base(clock_id);
+	timer->is_soft = softtimer;
+	timer->is_hard = !softtimer;
+	timer->base = &cpu_base->clock_base[base];
+	timerqueue_init(&timer->node);
+}
+
 static void __hrtimer_init(struct hrtimer *timer, clockid_t clock_id,
 			   enum hrtimer_mode mode)
 {
@@ -1637,6 +1760,27 @@ static void __hrtimer_init(struct hrtimer *timer, clockid_t clock_id,
 	timer->base = &cpu_base->clock_base[base];
 	timerqueue_init(&timer->node);
 }
+
+/**
+ * hrtimer_init_and_bind - initialize a timer to the given clock
+ * @timer:	the timer to be initialized
+ * @clock_id:	the clock to be used
+ * @mode:	The modes which are relevant for intitialization:
+ *              HRTIMER_MODE_ABS, HRTIMER_MODE_REL, HRTIMER_MODE_ABS_SOFT,
+ *              HRTIMER_MODE_REL_SOFT
+ *
+ *              The PINNED variants of the above can be handed in,
+ *              but the PINNED bit is ignored as pinning happens
+ *              when the hrtimer is started
+ * @cpu_id:	cpu id to bind the timer
+ */
+void hrtimer_init_and_bind(struct hrtimer *timer, clockid_t clock_id,
+		enum hrtimer_mode mode, int cpu_id)
+{
+	debug_init(timer, clock_id, mode);
+	__hrtimer_init_and_bind(timer, clock_id, mode, cpu_id);
+}
+EXPORT_SYMBOL_GPL(hrtimer_init_and_bind);
 
 /**
  * hrtimer_init - initialize a timer to the given clock
