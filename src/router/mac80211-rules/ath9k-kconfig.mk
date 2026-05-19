@@ -185,7 +185,7 @@ KERNEL_ARCH=$(strip $(subst aarch64,arm64,$(subst i386,x86,$(subst armeb,arm,$(s
 MAKE_OPTS += \
 	CROSS_COMPILE="ccache $(ARCH)-linux-" \
 	ARCH="$(KERNEL_ARCH)" \
-	EXTRA_CFLAGS="$(BUILDFLAGS) -I$(TOP)/qca-nss/qca-nss-drv/exports -I$(TOP)/qca-nss/qca-nss-clients/exports" \
+	EXTRA_CFLAGS="$(BUILDFLAGS) -I$(TOP)/qca-nss/qca-nss-drv/exports -I$(TOP)/qca-nss/qca-nss-clients/exports -I$(TOP)/qca-nss/qca-nss-ppe/drv/exports" \
 	MADWIFI= \
 	OLD_IWL= \
 	KLIB_BUILD="$(LINUXDIR)" \
@@ -291,10 +291,18 @@ ifeq ($(CONFIG_IPQ6018),y)
 	echo "CPTCFG_MHI_QRTR=y" >>$(MAC80211_PATH)/.config_temp
 	echo "CPTCFG_QRTR_MHI=y" >>$(MAC80211_PATH)/.config_temp
 ifneq ($(CONFIG_IPQ95XX),y)
+	echo "# CPTCFG_MAC80211_SFE_SUPPORT is not set" >>$(MAC80211_PATH)/.config_temp
+	echo "# CPTCFG_MAC80211_PPE_SUPPORT is not set" >>$(MAC80211_PATH)/.config_temp
+	echo "# CPTCFG_MAC80211_DS_SUPPORT is not set" >>$(MAC80211_PATH)/.config_temp
 	echo "CPTCFG_ATH11K_NSS_SUPPORT=y" >>$(MAC80211_PATH)/.config_temp
 	echo "CPTCFG_MAC80211_NSS_SUPPORT=y" >>$(MAC80211_PATH)/.config_temp
 	echo "CPTCFG_MAC80211_NSS_MESH_SUPPORT=y" >>$(MAC80211_PATH)/.config_temp
 	echo "CPTCFG_ATH11K_NSS_MESH_SUPPORT=y" >>$(MAC80211_PATH)/.config_temp
+endif
+ifeq ($(CONFIG_IPQ95XX),y)
+	echo "CPTCFG_MAC80211_SFE_SUPPORT=y" >>$(MAC80211_PATH)/.config_temp
+	echo "CPTCFG_MAC80211_PPE_SUPPORT=y" >>$(MAC80211_PATH)/.config_temp
+	echo "CPTCFG_MAC80211_DS_SUPPORT=y" >>$(MAC80211_PATH)/.config_temp
 endif
 #	echo "CPTCFG_ATH11K_MEM_PROFILE_512M=y" >>$(MAC80211_PATH)/.config_temp
 	echo "CPTCFG_ATH11K_DEBUGFS=y" >>$(MAC80211_PATH)/.config_temp
