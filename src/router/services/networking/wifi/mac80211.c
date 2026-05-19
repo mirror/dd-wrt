@@ -1676,8 +1676,12 @@ void setupHostAP_generic_ath9k(const char *prefix, FILE *fp, int isrepeater, int
 					fprintf(fp, "eht_oper_chwidth=9\n");
 					if (chan <= 61)
 						fprintf(fp, "eht_oper_centr_freq_seg0_idx_freq=6105\n");
+					else if (chan <= 93)
+						fprintf(fp, "eht_oper_centr_freq_seg0_idx_freq=6265\n");
 					else if (chan <= 125)
 						fprintf(fp, "eht_oper_centr_freq_seg0_idx_freq=6425\n");
+					else if (chan <= 157)
+						fprintf(fp, "eht_oper_centr_freq_seg0_idx_freq=6585\n");
 					else if (chan <= 189)
 						fprintf(fp, "eht_oper_centr_freq_seg0_idx_freq=6745\n");
 					else if (chan <= 221)
