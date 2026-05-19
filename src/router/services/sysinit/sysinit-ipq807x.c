@@ -555,6 +555,7 @@ static void load_nss(int profile, int cores, char *type)
 		}
 		loadnss("qca-nss-netlink", type);
 		loadnss("qca-nss-ppe-vp", type);
+		loadnss("qca-nss-ppe-ds", type);
 		loadnss("qca-nss-ppe-rule", type);
 		loadnss("qca-nss-ppe-tun", type);
 		loadnss("qca-nss-ppe-netlink", type);
