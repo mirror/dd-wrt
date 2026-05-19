@@ -315,10 +315,12 @@ endif
 ifeq ($(CONFIG_IPQ95XX),y)
 	echo "CPTCFG_ATH12K=y" >>$(MAC80211_PATH)/.config_temp
 	echo "CPTCFG_ATH12K_DEBUGFS=y" >>$(MAC80211_PATH)/.config_temp
+	echo "CPTCFG_ATH12K_SPECTRAL=y" >>$(MAC80211_PATH)/.config_temp
 endif
 ifeq ($(CONFIG_ATH12K),y)
 	echo "CPTCFG_ATH12K=y" >>$(MAC80211_PATH)/.config_temp
 	echo "CPTCFG_ATH12K_DEBUGFS=y" >>$(MAC80211_PATH)/.config_temp
+	echo "CPTCFG_ATH12K_SPECTRAL=y" >>$(MAC80211_PATH)/.config_temp
 endif
 
 
