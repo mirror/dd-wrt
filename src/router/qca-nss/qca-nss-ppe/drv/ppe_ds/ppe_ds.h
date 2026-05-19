@@ -38,25 +38,25 @@
  * Statically compile messages at different levels, when dynamic debug is disabled.
  */
 #if (PPE_DS_DEBUG_LEVEL < 1)
-#define ppe_ds_err(s, ...)
+#define ppe_ds_err(s, ...) do { } while(0)
 #else
 #define ppe_ds_err(s, ...) pr_err("%s[%d]:" s, __FUNCTION__, __LINE__, ##__VA_ARGS__)
 #endif
 
 #if (PPE_DS_DEBUG_LEVEL < 2)
-#define ppe_ds_warn(s, ...)
+#define ppe_ds_warn(s, ...) do { } while(0)
 #else
 #define ppe_ds_warn(s, ...) pr_warn("%s[%d]:" s, __FUNCTION__, __LINE__, ##__VA_ARGS__)
 #endif
 
 #if (PPE_DS_DEBUG_LEVEL < 3)
-#define ppe_ds_info(s, ...)
+#define ppe_ds_info(s, ...) do { } while(0)
 #else
 #define ppe_ds_info(s, ...) pr_notice("%s[%d]:" s, __FUNCTION__, __LINE__, ##__VA_ARGS__)
 #endif
 
 #if (PPE_DS_DEBUG_LEVEL < 4)
-#define ppe_ds_trace(s, ...)
+#define ppe_ds_trace(s, ...) do { } while(0)
 #else
 #define ppe_ds_trace(s, ...) pr_info("%s[%d]:" s, __FUNCTION__, __LINE__, ##__VA_ARGS__)
 #endif

@@ -56,7 +56,7 @@ enum ppe_drv_static_dbg_level {
 /*
  * PPE debug macros
  */
-#if (PPE_DRV_DEBUG_LEVEL == 3)
+#if (PPE_DRV_DEBUG_LEVEL <= 3)
 #define ppe_drv_assert(c, s, ...) do  {} while(0)
 #else
 #define ppe_drv_assert(c, s, ...) if (!(c)) { printk(KERN_CRIT "%s[%d]:" s, __FUNCTION__, __LINE__, ##__VA_ARGS__); BUG_ON(!(c)); }
