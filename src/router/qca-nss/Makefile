@@ -226,7 +226,7 @@ ifeq ($(CONFIG_IPQ95XX),y)
 #		CFI_CRYPTOAPI_DIR=$(CFI_CRYPTOAPI_DIR) \
 #		CFI_OCF_DIR=$(CFI_OCF_DIR) \
 #		CFI_IPSEC_DIR=$(CFI_IPSEC_DIR) INSTALL_MOD_PATH=$(INSTALLDIR)
-	make -C $(KDIR) M=$(PWD)/qca-nss-dp clean modules modules_install MODPROBE=true DEPMOD=/bin/true KBUILD_MODPOST_WARN=1 EXTRA_CFLAGS="$(KERNEL_FLAGS) -DNSS_DP_POINT_OFFLOAD" SoC="ipq95xx" INSTALL_MOD_PATH=$(INSTALLDIR)
+	make -C $(KDIR) M=$(PWD)/qca-nss-dp clean modules modules_install MODPROBE=true DEPMOD=/bin/true KBUILD_MODPOST_WARN=1 EXTRA_CFLAGS="$(KERNEL_FLAGS) -DNSS_DP_POINT_OFFLOAD" dp-ppe-ds=y SoC="ipq95xx" INSTALL_MOD_PATH=$(INSTALLDIR)
 #	make -C $(KDIR) M=$(PWD)/qca-nss-cfi clean modules modules_install MODPROBE=true DEPMOD=/bin/true KBUILD_MODPOST_WARN=1 EXTRA_CFLAGS="$(KERNEL_FLAGS)" SoC="ipq95xx" \
 #		CFI_CRYPTOAPI_DIR=$(CFI_CRYPTOAPI_DIR) \
 #		CFI_OCF_DIR=$(CFI_OCF_DIR) \
@@ -247,7 +247,7 @@ ifeq ($(CONFIG_IPQ95XX),y)
 
 	mkdir -p $(INSTALLDIR)/lib/modules/$(KERNELRELEASE)
 	cp qca-ssdk/qca-ssdk.ko $(INSTALLDIR)/lib/modules/$(KERNELRELEASE)/qca-ssdk-ipq95xx.ko
-	make -C $(KDIR) M=$(PWD)/qca-nss-dp clean MODPROBE=true DEPMOD=/bin/true KBUILD_MODPOST_WARN=1 EXTRA_CFLAGS="$(KERNEL_FLAGS)" SoC="ipq95xx"
+	make -C $(KDIR) M=$(PWD)/qca-nss-dp clean MODPROBE=true DEPMOD=/bin/true KBUILD_MODPOST_WARN=1 EXTRA_CFLAGS="$(KERNEL_FLAGS)" SoC="ipq95xx" dp-ppe-ds=y
 	make $(SSDK_MAKE_FLAGS_IPQ95XX) LNX_MAKEOPTS='' PRJ_PATH=$(TOP)/qca-nss/qca-ssdk MODULE_TYPE=KSLIB clean -C qca-ssdk clean
 else
 #50xx
