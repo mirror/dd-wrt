@@ -659,6 +659,27 @@ void start_setup_affinity(void)
 			set_named_smp_affinity("DP_EXT_IRQ", 2, 6);
 			set_named_smp_affinity("DP_EXT_IRQ", 3, 7);
 			set_named_smp_affinity("DP_EXT_IRQ", 4, 8);
+
+			set_named_smp_affinity("edma_ppeds_rxfill", 3, 1);
+			set_named_smp_affinity("edma_ppeds_rxfill", 2, 2);
+			set_named_smp_affinity("edma_ppeds_rxfill", 3, 3);
+
+			set_named_smp_affinity("edma_ppeds_txcmpl", 3, 1);
+			set_named_smp_affinity("edma_ppeds_txcmpl", 2, 2);
+			set_named_smp_affinity("edma_ppeds_txcmpl", 3, 3);
+
+			set_named_smp_affinity("pci1_ppe_wbm_rel", 3, 1);
+			set_named_smp_affinity("pci2_ppe_wbm_rel", 2, 2);
+			set_named_smp_affinity("pci3_ppe_wbm_rel", 3, 3);
+
+			set_named_smp_affinity("pci1_ppe2tcl", 3, 1);
+			set_named_smp_affinity("pci2_ppe2tcl", 2, 2);
+			set_named_smp_affinity("pci3_ppe2tcl", 3, 3);
+
+			set_named_smp_affinity("pci1_reo2ppe", 3, 1);
+			set_named_smp_affinity("pci2_reo2ppe", 2, 2);
+			set_named_smp_affinity("pci3_reo2ppe", 3, 3);
+
 			break;
 		case ROUTER_LINKSYS_MR5500:
 		case ROUTER_LINKSYS_MX5500:
@@ -1650,7 +1671,10 @@ void start_wifi_drivers(void)
 		switch (brand) {
 		case ROUTER_8DEVICES_KIWI:
 			insmod("qmi_helpers");
-			insmod("ath12k");
+			char overdrive[32];
+			int od = nvram_default_geti("power_overdrive", 0);
+			sprintf(overdrive, "poweroffset=%d", od);
+			eval("insmod","ath12k", overdrive);
 			break;
 		case ROUTER_LINKSYS_MR5500:
 		case ROUTER_LINKSYS_MX5500:
