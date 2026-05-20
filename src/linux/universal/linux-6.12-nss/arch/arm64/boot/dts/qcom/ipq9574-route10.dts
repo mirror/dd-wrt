@@ -334,14 +334,26 @@
 	status = "okay";
 };
 
+&usb {
+	status = "okay";
+}
 &ess_instance {
+	tdm_mode = <0x00>;
 	num_devices = <0x1>;
 	ess-switch@3a000000 {
-		switch_lan_bmp = <(ESS_PORT1|ESS_PORT5)>; /* lan port bitmap */
-		switch_wan_bmp = <ESS_PORT6>; /* wan port bitmap */
-		switch_mac_mode = <MAC_MODE_10GBASE_R>; /* mac mode for uniphy instance0*/
-		switch_mac_mode1 = <MAC_MODE_SGMII_PLUS>; /* mac mode for uniphy instance1*/
-		switch_mac_mode2 = <MAC_MODE_USXGMII>; /* mac mode for uniphy instance2*/
+		tdm_mode = <0x00>;
+		switch_mac_mode0 = <0x15>;
+		switch_mac_mode1 = <0x0e>;
+		switch_mac_mode2 = <0x0e>;
+		aquantia_gpio = <0x24>;
+		aquantia_gpio_cnt = <0x01>;
+		aquantia_port = <0x04 0x05>;
+		aquantia_port_cnt = <0x02>;
+		mdc_mdio_gpio = <0x26 0x27>;
+		qca808x_gpio = <0x3c>;
+		qca808x_gpio_cnt = <0x01>;
+		sfp_port = <0x04 0x05>;
+		sfp_port_cnt = <0x02>;
 
 		qcom,port_phyinfo {
 			port@1 {
