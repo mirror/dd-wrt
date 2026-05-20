@@ -50,7 +50,7 @@ int set_channel(wiviz_cfg *cfg, char *dev, int channel)
 	struct iwreq wrq;
 	int flags = 0;
 	char *wdev = nvram_safe_get("wifi_display");
-	if (is_mac80211(nvram_safe_get("wifi_display"))) {
+	if (is_mac80211(wdev)) {
 		char chann[32];
 		sprintf(chann, "%d", channel);
 		if (cfg && (is_ath10k(wdev) || is_ath11k(wdev) || is_ath12k(wdev))) {
@@ -113,7 +113,12 @@ void channelHopper(wiviz_cfg *cfg)
 	while (1) {
 		if (cfg->stay) {
 #ifdef HAVE_MADWIFI
-			set_channel(cfg, get_monitor(), ieee80211_ieee2mhz(nvram_safe_get("wifi_display"), cfg->curChannel));
+			if (cfg->curChannel == 0) {
+				if (wifi_channels[nc].freq == -1)
+				    nc=0;
+				set_channel(cfg, get_monitor(), wifi_channels[nc++].freq);
+			}else
+				set_channel(cfg, get_monitor(), ieee80211_ieee2mhz(nvram_safe_get("wifi_display"), cfg->curChannel));
 //          eval("iwconfig %s channel %d\n",wl_dev,cfg->curChannel);
 #elif HAVE_RT2880
 			if (nvram_match("wifi_display", "wl0"))

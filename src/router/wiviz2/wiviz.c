@@ -415,6 +415,7 @@ void reloadConfig()
 				//Don't change anything, read channel from wireless card
 				readWL(cfg);
 			} else {
+				cfg->channelDwellTime = 1000;
 				cfg->channelHopping = 1;
 				hopCfgChanged = 1;
 				cfg->stay = 1;
