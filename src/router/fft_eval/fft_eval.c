@@ -177,7 +177,7 @@ struct fft_sample_ath12k {
 	uint32_t tsf;
 	int32_t noise;
 	u8 data[0];
-} __packed;
+} __attribute__((packed));
 
 struct scanresult {
 	union {
