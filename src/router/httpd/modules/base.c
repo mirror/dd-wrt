@@ -898,19 +898,21 @@ static int do_spectral_scan(unsigned char method, struct mime_handler *handler, 
 		sprintf(dest, "%s/spectral_scan_ctl", path);
 		writestr(dest, "manual");
 		writestr(dest, "trigger");
+		eval("iw", ifname, "scan");
 	} else if (is_ath10k(ifname)) {
 		sprintf(dest, "%s/spectral_bins", path);
 		writestr(dest, "256");
 		sprintf(dest, "%s/spectral_scan_ctl", path);
 		writestr(dest, "manual");
 		writestr(dest, "trigger");
+		eval("iw", ifname, "scan");
 	} else if (is_ath11k(ifname)) {
 		sprintf(dest, "%s/spectral_bins", path);
 		writestr(dest, "512");
 		//		writestr(dest, "1024");
 		//		writestr(dest, "1024"); // QCN90xx supports 1024. but i dont think we need that
 		sprintf(dest, "%s/spectral_scan_ctl", path);
-		writestr(dest, "manual");
+		writestr(dest, "background");
 		writestr(dest, "trigger");
 		/*		if (pidof("disable_fft") < 0) {
 			writestr(dest, "background");
@@ -924,7 +926,7 @@ static int do_spectral_scan(unsigned char method, struct mime_handler *handler, 
 		//		writestr(dest, "1024");
 		//		writestr(dest, "1024"); // QCN90xx supports 1024. but i dont think we need that
 		sprintf(dest, "%s/spectral_scan_ctl", path);
-		writestr(dest, "manual");
+		writestr(dest, "background");
 		writestr(dest, "trigger");
 		/*		if (pidof("disable_fft") < 0) {
 			writestr(dest, "background");
@@ -937,7 +939,6 @@ static int do_spectral_scan(unsigned char method, struct mime_handler *handler, 
 		writestr(dest, "chanscan");
 	}
 
-	eval("iw", ifname, "scan");
 	char *exec;
 	asprintf(&exec, "fft_eval \"%s/spectral_scan0\"", path);
 

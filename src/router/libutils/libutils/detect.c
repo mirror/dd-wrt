@@ -1735,6 +1735,10 @@ generic:;
 		setRouter("8devices Kiwi-DVK");
 		return ROUTER_8DEVICES_KIWI;
 	}
+	if (!strcmp(modelstr, "Labs")) {
+		setRouter("Alta Labs Route10");
+		return ROUTER_8DEVICES_KIWI;
+	}
 	if (!strcmp(modelstr, "MX5300")) {
 		setRouter("Linksys MX5300");
 		return ROUTER_LINKSYS_MX5300;
