@@ -62,6 +62,7 @@ enum ath_fft_sample_type {
 	ATH_FFT_SAMPLE_HT20_40 = 2,
 	ATH_FFT_SAMPLE_ATH10K = 3,
 	ATH_FFT_SAMPLE_ATH11K = 4,
+	ATH_FFT_SAMPLE_ATH12K = 5,
 };
 
 enum nl80211_channel_type { NL80211_CHAN_NO_HT, NL80211_CHAN_HT20, NL80211_CHAN_HT40MINUS, NL80211_CHAN_HT40PLUS };
@@ -123,7 +124,8 @@ struct fft_sample_ht20_40 {
  */
 
 #define SPECTRAL_ATH10K_MAX_NUM_BINS 256
-#define SPECTRAL_ATH11K_MAX_NUM_BINS 1024
+#define SPECTRAL_ATH11K_MAX_NUM_BINS 512
+#define SPECTRAL_ATH12K_MAX_NUM_BINS 512
 
 struct fft_sample_ath10k {
 	struct fft_sample_tlv tlv;
@@ -160,6 +162,23 @@ struct fft_sample_ath11k {
 	u8 data[0];
 } __attribute__((packed));
 
+
+
+struct fft_sample_ath12k {
+	struct fft_sample_tlv tlv;
+	u16 chan_width_mhz;
+	s8 max_index;
+	u8 max_exp;
+	bool is_primary;
+	uint16_t freq1;
+	uint16_t freq2;
+	uint16_t max_magnitude;
+	uint16_t rssi;
+	uint32_t tsf;
+	int32_t noise;
+	u8 data[0];
+} __packed;
+
 struct scanresult {
 	union {
 		struct fft_sample_tlv tlv;
@@ -173,6 +192,10 @@ struct scanresult {
 			struct fft_sample_ath11k header;
 			u8 data[SPECTRAL_ATH11K_MAX_NUM_BINS];
 		} ath11k;
+		struct {
+			struct fft_sample_ath12k header;
+			u8 data[SPECTRAL_ATH12K_MAX_NUM_BINS];
+		} ath12k;
 	} sample;
 	struct scanresult *next;
 };
@@ -494,6 +517,61 @@ static int print_values()
 				insert(b, bins, freq, signal);
 			}
 		} break;
+		case ATH_FFT_SAMPLE_ATH12K: {
+			int datamax = 0, datamin = 65536;
+			int datasquaresum = 0;
+			unsigned short frequency;
+			unsigned short width;
+			int i;
+			if (!rnum)
+				fprintf(stdout,
+					"\n{ \"tsf\": %" PRIu64
+					", \"central_freq\": %d, \"rssi\": %d, \"noise\": %d, \"data\": [ \n",
+					result->sample.ath12k.header.tsf, result->sample.ath12k.header.freq1,
+					result->sample.ath12k.header.rssi, result->sample.ath12k.header.noise);
+
+			bins = result->sample.tlv.length -
+			       (sizeof(result->sample.ath12k.header) - sizeof(result->sample.ath12k.header.tlv));
+			/* If freq2 is non zero and not equal to freq1 then the scan results are fragmented */
+			if (result->sample.ath12k.header.freq2 &&
+			    result->sample.ath12k.header.freq1 != result->sample.ath12k.header.freq2) {
+				width = result->sample.ath12k.header.chan_width_mhz / 2;
+				if (result->sample.ath12k.header.is_primary)
+					frequency = result->sample.ath12k.header.freq1;
+				else
+					frequency = result->sample.ath12k.header.freq2;
+			} else {
+				frequency = result->sample.ath12k.header.freq1;
+				width = result->sample.ath12k.header.chan_width_mhz;
+			}
+			for (i = 0; i < bins; i++) {
+				int data;
+
+				data = result->sample.ath12k.data[i];
+				data *= data;
+				datasquaresum += data;
+				if (data > datamax)
+					datamax = data;
+				if (data < datamin)
+					datamin = data;
+			}
+			if (!b)
+				b = initbins(bins);
+
+			for (i = 0; i < bins; i++) {
+				int freq;
+				int data;
+				float signal;
+
+				freq = frequency - width / 2 + ((width * ((i * 10) + 5) / bins) / 10);
+				data = result->sample.ath12k.data[i];
+				if (data == 0)
+					data = 1;
+				signal = result->sample.ath12k.header.noise + result->sample.ath12k.header.rssi +
+					 20.0 * log10f(data) - log10f(datasquaresum) * 10.0;
+				insert(b, bins, freq, signal);
+			}
+		} break;
 		}
 
 		rnum++;
@@ -667,6 +745,36 @@ static int read_scandata(char *fname)
 			CONVERT_BE16(result->sample.ath11k.header.rssi);
 			CONVERT_BE32(result->sample.ath11k.header.tsf);
 			CONVERT_BE32(result->sample.ath11k.header.noise);
+
+			handled = 1;
+			break;
+		case ATH_FFT_SAMPLE_ATH12K:
+			if (sample_len < sizeof(result->sample.ath12k.header)) {
+				fprintf(stderr, "wrong sample length (have %zd, expected at least %zd)\n", sample_len,
+					sizeof(result->sample.ath12k.header));
+				break;
+			}
+
+			bins = sample_len - sizeof(result->sample.ath12k.header);
+
+			if (bins != 16 && bins != 32 && bins != 64 && bins != 128 && bins != 256 && bins != 512 && bins != 1024) {
+				fprintf(stderr, "invalid bin length %d\n", bins);
+				break;
+			}
+
+			/*
+			 * Zero noise level should not happen in a real environment
+			 * but some datasets contain it which creates bogus results.
+			 */
+			if (result->sample.ath12k.header.noise == 0)
+				break;
+
+			CONVERT_BE16(result->sample.ath12k.header.freq1);
+			CONVERT_BE16(result->sample.ath12k.header.freq2);
+			CONVERT_BE16(result->sample.ath12k.header.max_magnitude);
+			CONVERT_BE16(result->sample.ath12k.header.rssi);
+			CONVERT_BE32(result->sample.ath12k.header.tsf);
+			CONVERT_BE32(result->sample.ath12k.header.noise);
 
 			handled = 1;
 			break;
