@@ -180,6 +180,7 @@ typedef struct {
 	int channelHopSeqLen;
 	int curChannel;
 	int channelHopperPID;
+	int stay;
 } wiviz_cfg;
 
 void fprint_mac(FILE *outf, u_char *mac, char *extra);

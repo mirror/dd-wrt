@@ -410,33 +410,19 @@ void reloadConfig()
 				//Set channel hopping
 				cfg->channelHopping = 1;
 				hopCfgChanged = 1;
+				cfg->stay = 0;
 			} else if (!strcmp(v, "nochange")) {
 				//Don't change anything, read channel from wireless card
 				readWL(cfg);
 			} else {
+				cfg->channelHopping = 1;
+				hopCfgChanged = 1;
+				cfg->stay = 1;
 				val = atoi(v);
 				if (val < 0 || val > 254) {
 					printf("Channel setting in config file invalid (%i)\n", cfg->curChannel);
 				} else {
 					cfg->curChannel = val;
-					if (cfg->readFromWl) {
-#ifdef HAVE_MADWIFI
-						set_channel(cfg, wl_dev,
-							    ieee80211_ieee2mhz(nvram_safe_get("wifi_display"), cfg->curChannel));
-//          eval("iwconfig %s channel %d\n",wl_dev,cfg->curChannel);
-#elif HAVE_RT2880
-						if (nvram_match("wifi_display", "wl0"))
-							sysprintf("iwpriv ra0 set Channel=%d", cfg->curChannel);
-						else
-							sysprintf("iwpriv ba0 set Channel=%d", cfg->curChannel);
-#else
-						if (wiviz_wl_ioctl(wl_dev, WLC_SET_CHANNEL, &cfg->curChannel, 4) < 0) {
-							printf("Channel set to %i failed\n", cfg->curChannel);
-						}
-#endif
-					} else {
-						printf("Can't set channel, no Broadcom wireless device present\n");
-					}
 				}
 			}
 		}

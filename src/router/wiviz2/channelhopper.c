@@ -52,8 +52,8 @@ int set_channel(wiviz_cfg *cfg, char *dev, int channel)
 	char *wdev = nvram_safe_get("wifi_display");
 	if (is_mac80211(nvram_safe_get("wifi_display"))) {
 		char chann[32];
-	sprintf(chann, "%d", channel);
-		if (cfg && (is_ath10k(wdev) || is_ath11k(wdev) ||  is_ath12k(wdev))) {
+		sprintf(chann, "%d", channel);
+		if (cfg && (is_ath10k(wdev) || is_ath11k(wdev) || is_ath12k(wdev))) {
 			char dwell[32];
 			sprintf(dwell, "%d", cfg->channelDwellTime);
 			eval("iw", "dev", wdev, "offchannel", chann, dwell);
@@ -111,46 +111,63 @@ void channelHopper(wiviz_cfg *cfg)
 	hopPos = 0;
 	printf("set hop %d\n", nc);
 	while (1) {
-		int hop = cfg->channelHopSeq[hopPos];
-		if (hop == 0)
-			nc++;
-		else {
-			nc = hop;
-			hopPos = (hopPos + 1) % cfg->channelHopSeqLen;
-		}
+		if (cfg->stay) {
 #ifdef HAVE_MADWIFI
-		if (wifi_channels[nc].freq == -1) {
-			nc = -1;
-			continue;
-		}
+			set_channel(cfg, get_monitor(), ieee80211_ieee2mhz(nvram_safe_get("wifi_display"), cfg->curChannel));
+//          eval("iwconfig %s channel %d\n",wl_dev,cfg->curChannel);
 #elif HAVE_RT2880
-		if (nc > 14)
-			nc = 1;
+			if (nvram_match("wifi_display", "wl0"))
+				sysprintf("iwpriv ra0 set Channel=%d", cfg->curChannel);
+			else
+				sysprintf("iwpriv ba0 set Channel=%d", cfg->curChannel);
 #else
-		if (nc > 255)
-			nc = 1;
+			if (wiviz_wl_ioctl(wl_dev, WLC_SET_CHANNEL, &cfg->curChannel, 4) < 0) {
+				printf("Channel set to %i failed\n", cfg->curChannel);
+			}
 #endif
-		//Set the channel
+
+		} else {
+			int hop = cfg->channelHopSeq[hopPos];
+			if (hop == 0)
+				nc++;
+			else {
+				nc = hop;
+				hopPos = (hopPos + 1) % cfg->channelHopSeqLen;
+			}
 #ifdef HAVE_MADWIFI
-		{
-			printf("set channel %d\n", nc);
-			int ret = set_channel(cfg, get_monitor(), wifi_channels[nc].freq);
-			if (ret == -1)
+			if (wifi_channels[nc].freq == -1) {
+				nc = -1;
 				continue;
-		}
+			}
 #elif HAVE_RT2880
-		if (nvram_match("wifi_display", "wl0"))
-			sysprintf("iwpriv ra0 set Channel=%d", nc);
-		else
-			sysprintf("iwpriv ba0 set Channel=%d", nc);
+			if (nc > 14)
+				nc = 1;
+#else
+			if (nc > 255)
+				nc = 1;
+#endif
+			//Set the channel
+#ifdef HAVE_MADWIFI
+			{
+				printf("set channel %d\n", nc);
+				int ret = set_channel(cfg, get_monitor(), wifi_channels[nc].freq);
+				if (ret == -1)
+					continue;
+			}
+#elif HAVE_RT2880
+			if (nvram_match("wifi_display", "wl0"))
+				sysprintf("iwpriv ra0 set Channel=%d", nc);
+			else
+				sysprintf("iwpriv ba0 set Channel=%d", nc);
 
 #else
-		char tmp[32];
-		sprintf(tmp, "%s_ifname", nvram_safe_get("wifi_display"));
-		char *wl_dev = nvram_safe_get(tmp);
-		if (wl_ioctl(wl_dev, WLC_SET_CHANNEL, &nc, 4) < 0)
-			continue;
+			char tmp[32];
+			sprintf(tmp, "%s_ifname", nvram_safe_get("wifi_display"));
+			char *wl_dev = nvram_safe_get(tmp);
+			if (wl_ioctl(wl_dev, WLC_SET_CHANNEL, &nc, 4) < 0)
+				continue;
 #endif
+		}
 		//Sleep
 		usleep(cfg->channelDwellTime * 1000);
 	}
