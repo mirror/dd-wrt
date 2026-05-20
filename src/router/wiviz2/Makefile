@@ -44,6 +44,18 @@ endif
 ifeq ($(CONFIG_ATH10K),y)
 CCOPTS+=-DHAVE_ATH10K
 endif
+ifeq ($(CONFIG_ATH11K),y)
+CCOPTS+=-DHAVE_ATH11K
+endif
+ifeq ($(CONFIG_IPQ6018),y)
+CCOPTS+=-DHAVE_ATH11K
+endif
+ifeq ($(CONFIG_IPQ95XX),y)
+CCOPTS+=-DHAVE_ATH12K
+endif
+ifeq ($(CONFIG_ATH12K),y)
+CCOPTS+=-DHAVE_ATH12K
+endif
 ifeq ($(CONFIG_RT61),y)
 CCOPTS+=-DHAVE_RT2880 
 endif
