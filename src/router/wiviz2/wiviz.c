@@ -129,6 +129,8 @@ static void shutdown_monitor(void)
 	int oldMonitor = 0;
 	wiviz_wl_ioctl(wl_dev, WLC_SET_MONITOR, &oldMonitor, 4);
 #endif
+	eval("killall","-SIGKILL","wiviz");
+	exit(0);
 
 }
 
