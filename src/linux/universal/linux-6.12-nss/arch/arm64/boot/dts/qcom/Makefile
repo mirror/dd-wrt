@@ -13,6 +13,7 @@ dtb-$(CONFIG_ARCH_QCOM)	+= apq8096-ifc6640.dtb
 #dtb-$(CONFIG_ARCH_QCOM)	+= ipq5018-rdp432-c2.dtb
 #dtb-$(CONFIG_ARCH_QCOM)	+= ipq5018-tplink-archer-ax55-v1.dtb
 dtb-$(CONFIG_ARCH_QCOM)	+= ipq9570-kiwi-dvk.dtb
+dtb-$(CONFIG_ARCH_QCOM)	+= ipq9574-route10.dtb
 dtb-$(CONFIG_ARCH_QCOM)	+= ipq5018-mr5500.dtb
 dtb-$(CONFIG_ARCH_QCOM)	+= ipq5018-mx5500.dtb
 dtb-$(CONFIG_ARCH_QCOM)	+= ipq5332-rdp441.dtb
