@@ -49,13 +49,14 @@ int set_channel(wiviz_cfg *cfg, char *dev, int channel)
 {
 	struct iwreq wrq;
 	int flags = 0;
+	char *wdev = nvram_safe_get("wifi_display");
 	if (is_mac80211(nvram_safe_get("wifi_display"))) {
 		char chann[32];
-		sprintf(chann, "%d", channel);
-		if (cfg && is_ath10k(nvram_safe_get("wifi_display"))) {
+	sprintf(chann, "%d", channel);
+		if (cfg && (is_ath10k(wdev) || is_ath11k(wdev) ||  is_ath12k(wdev))) {
 			char dwell[32];
 			sprintf(dwell, "%d", cfg->channelDwellTime);
-			eval("iw", "dev", nvram_safe_get("wifi_display"), "offchannel", chann, dwell);
+			eval("iw", "dev", wdev, "offchannel", chann, dwell);
 		} else {
 			eval("iw", "dev", dev, "set", "freq", chann);
 		}
