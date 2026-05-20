@@ -87,7 +87,7 @@ int openMonitorSocket(char *dev);
 void dealWithPacket(wiviz_cfg * cfg, int len, const u_char * packet);
 wiviz_host *gotHost(wiviz_cfg * cfg, u_char * mac, host_type type);
 void print_host(FILE * outf, wiviz_host * host);
-void __cdecl signal_handler(int);
+void signal_handler(int);
 void readWL(wiviz_cfg * cfg);
 void reloadConfig();
 int stop = 0;
@@ -143,6 +143,7 @@ int wiviz_main(int argc, char **argv)
 	wiviz_cfg cfg;
 	int i;
 	int defaultHopSeq[] = { 1, 3, 6, 8, 11 };
+	sigset_t sigset;
 	int s, one;
 	memset(&cfg, 0, sizeof(cfg));
 	airbag_init();
@@ -167,6 +168,7 @@ int wiviz_main(int argc, char **argv)
 	signal(SIGUSR1, &signal_handler);
 	signal(SIGUSR2, &signal_handler);
 	signal(SIGTERM, &signal_handler);
+	sigemptyset(&sigset);
 
 	printf("Wi-Viz 2 infogathering daemon by Nathan True\n");
 	printf("http://wiviz.natetrue.com\n");
@@ -483,8 +485,9 @@ void reloadConfig()
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-void __cdecl signal_handler(int signum)
+void signal_handler(int signum)
 {
+	fprintf(stderr, "signal %d\n", signum);
 	if (signum == SIGUSR1)
 		writeJavascript();
 	if (signum == SIGUSR2)
@@ -556,7 +559,7 @@ void dealWithPacket(wiviz_cfg * cfg, int pktlen, const u_char * packet)
 #ifdef HAVE_MADWIFI
 
 		int received = 0;
-		while ((int)i < (int)hWifi) {
+		while ((long)i < (long)hWifi) {
 			if (i->did == pdn_rssi) {
 				received = 1;
 				rssi = i->data;
@@ -576,7 +579,7 @@ void dealWithPacket(wiviz_cfg * cfg, int pktlen, const u_char * packet)
 		if (!rssi)	// no rssi? can't be a packet
 			return;
 #else
-		while ((int)i < (int)hWifi) {
+		while ((long)i < (long)hWifi) {
 			if (i->did == pdn_rssi)
 				rssi = *(int *)(i + 1);
 			i = (prism_did *) ((int)(i + 1) + i->length);
@@ -679,11 +682,11 @@ void dealWithPacket(wiviz_cfg * cfg, int pktlen, const u_char * packet)
 			encType = 0x400;
 		else
 			encType = 0;
-		e = (ieee_802_11_tag *) ((int)m + sizeof(ieee_802_11_mgt_frame));
+		e = (ieee_802_11_tag *) ((long)m + sizeof(ieee_802_11_mgt_frame));
 		int rsn = 0;
 		unsigned int wpaflag = 0;
 		int mesh = 0;
-		while ((u_int) e < (u_int) packet + pktlen) {
+		while ((unsigned long) e < (unsigned long) packet + pktlen) {
 			if (e->tag == tagSSID) {
 				if (!mesh) {
 					ssidlen = e->length;
@@ -716,7 +719,7 @@ void dealWithPacket(wiviz_cfg * cfg, int pktlen, const u_char * packet)
 			if (e->tag == tagRSN) {
 				rsn = 1;
 
-				unsigned char *data = e + 1;
+				unsigned char *data = (unsigned char*)(e + 1);
 				data += 2;	// version;
 				data += 4;	// group cipher
 				int rcount = data[0] | (data[1] << 8);
@@ -730,7 +733,7 @@ void dealWithPacket(wiviz_cfg * cfg, int pktlen, const u_char * packet)
 				if (2 + 4 + 2 + (rcount * 4) + 2 + (count * 4) > e->length)
 					goto next;
 				for (i = 0; i < count; i++) {
-					unsigned char *ofs = data + 2 + (i * 4);
+					unsigned char *ofs = (unsigned char *)(data + 2 + (i * 4));
 					if (e->length >= 4 && memcmp(ofs, "\x00\x0f\xac", 3) == 0) {
 						switch (ofs[3]) {
 						case 1:
@@ -770,7 +773,7 @@ void dealWithPacket(wiviz_cfg * cfg, int pktlen, const u_char * packet)
 			}
 			if (e->tag == tagVendorSpecific) {
 				encType &= ~0x400;
-				unsigned char *ofs = e + 1;
+				unsigned char *ofs = (unsigned char*)(e + 1);
 				if (e->length >= 4 && memcmp(ofs, "\x00\x50\xf2", 3) == 0) {
 					switch (ofs[3]) {
 					case 1:
@@ -792,13 +795,13 @@ void dealWithPacket(wiviz_cfg * cfg, int pktlen, const u_char * packet)
 					}
 				}
 				if (e->length >= sizeof(struct ieee80211_mtik_ie_data) + 6 && memcmp(ofs, "\x00\x0c\x42", 3) == 0) {
-					struct ieee80211_mtik_ie_data *radio = &ofs[6];
+					struct ieee80211_mtik_ie_data *radio = (struct ieee80211_mtik_ie_data *)&ofs[6];
 					memcpy(radioname, radio->radioname, 15);
 					radioname[15] = 0;
 				}
 			}
 		      next:;
-			e = (ieee_802_11_tag *) ((int)(e + 1) + e->length);
+			e = (ieee_802_11_tag *) ((long)(e + 1) + e->length);
 		}
 	}
 	//Look up the host in the hash table
@@ -1075,6 +1078,7 @@ void readWL(wiviz_cfg * cfg)
 	wiviz_maclist_t *macs;
 	sta_rssi_t starssi;
 	char buf[32];
+	sigset_t sigset;
 
 	get_mac(wl_dev, mac);
 	printf("AP mac: ");
