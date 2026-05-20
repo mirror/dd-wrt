@@ -334,9 +334,10 @@
 	status = "okay";
 };
 
-&usb {
+&usb3 {
 	status = "okay";
-}
+};
+
 &ess_instance {
 	tdm_mode = <0x00>;
 	num_devices = <0x1>;
