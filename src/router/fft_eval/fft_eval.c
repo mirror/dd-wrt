@@ -124,7 +124,7 @@ struct fft_sample_ht20_40 {
  */
 
 #define SPECTRAL_ATH10K_MAX_NUM_BINS 256
-#define SPECTRAL_ATH11K_MAX_NUM_BINS 512
+#define SPECTRAL_ATH11K_MAX_NUM_BINS 1024
 #define SPECTRAL_ATH12K_MAX_NUM_BINS 512
 
 struct fft_sample_ath10k {
