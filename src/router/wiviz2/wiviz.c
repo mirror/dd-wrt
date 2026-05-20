@@ -79,7 +79,7 @@ To add:
 
 char *get_monitor(void);
 int get_mac(char *name, void *buf);
-
+int s_socket = -1;
 int openMonitorSocket(char *dev);
 void dealWithPacket(wiviz_cfg *cfg, int len, const u_char *packet);
 wiviz_host *gotHost(wiviz_cfg *cfg, u_char *mac, host_type type);
@@ -95,6 +95,8 @@ int set_channel(wiviz_cfg *cfg, char *dev, int channel);
 
 static void shutdown_monitor(void)
 {
+	if (s_socket != -1)
+	    close(s_socket);
 #ifdef HAVE_MADWIFI
 	// return to original channel
 	if (is_mac80211(wl_dev)) {
@@ -127,6 +129,7 @@ static void shutdown_monitor(void)
 	int oldMonitor = 0;
 	wiviz_wl_ioctl(wl_dev, WLC_SET_MONITOR, &oldMonitor, 4);
 #endif
+
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -140,7 +143,7 @@ int wiviz_main(int argc, char **argv)
 	int i;
 	int defaultHopSeq[] = { 1, 3, 6, 8, 11 };
 	sigset_t sigset;
-	int s, one;
+	int one;
 	memset(&cfg, 0, sizeof(cfg));
 	airbag_init();
 	nvram_unset("wiviz2_dump_done");
@@ -219,18 +222,18 @@ int wiviz_main(int argc, char **argv)
 	reloadConfig();
 
 #if defined(HAVE_MADWIFI) || defined(HAVE_RT2880) || defined(HAVE_ATH9K)
-	s = openMonitorSocket(get_monitor()); // for testing we use ath0
+	s_socket = openMonitorSocket(get_monitor()); // for testing we use ath0
 #else
 
 	if (nvram_match("wifi_display", "wl1"))
-		s = openMonitorSocket("prism1");
+		s_socket = openMonitorSocket("prism1");
 	else
-		s = openMonitorSocket("prism0");
+		s_socket = openMonitorSocket("prism0");
 #endif
-	if (s == -1)
+	if (s_socket == -1)
 		return -1;
 	one = 1;
-	ioctl(s, FIONBIO, (char *)&one);
+	ioctl(s_socket, FIONBIO, (char *)&one);
 
 	if (cfg.readFromWl) {
 		readWL(&cfg);
@@ -243,10 +246,10 @@ int wiviz_main(int argc, char **argv)
 #ifdef WIVIZ_GPS
 		gps_tick();
 #else
-		if (time(NULL) - cfg.lastKeepAlive > 30)
-			stop = 1;
+//		if (time(NULL) - cfg.lastKeepAlive > 30)
+//			stop = 1;
 #endif
-		pktlen = recv(s, packet, 4096, 0);
+		pktlen = recv(s_socket, packet, 4096, 0);
 		if (pktlen <= 0)
 			continue;
 		dealWithPacket(&cfg, pktlen, packet);
@@ -268,7 +271,8 @@ int wiviz_main(int argc, char **argv)
 			free(cfg.hosts[i].staInfo);
 	}
 #endif
-	close(s);
+	close(s_socket);
+	s_socket = -1;
 	return 0;
 }
 
