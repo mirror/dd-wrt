@@ -30,7 +30,7 @@
 #include <utils.h>
 #include <unistd.h>
 #ifdef HAVE_MADWIFI
-#include "wireless.h"
+	#include "wireless.h"
 #endif
 #include "wl_access.h"
 #include "channelhopper.h"
@@ -39,14 +39,13 @@
 
 void ch_sig_handler(int i)
 {
-
 }
 
 #ifdef HAVE_MADWIFI
 
 char *get_monitor(void);
 
-int set_channel(wiviz_cfg * cfg, char *dev, int channel)
+int set_channel(wiviz_cfg *cfg, char *dev, int channel)
 {
 	struct iwreq wrq;
 	int flags = 0;
@@ -68,12 +67,12 @@ int set_channel(wiviz_cfg * cfg, char *dev, int channel)
 
 		if (ioctl(getsocket(), SIOCSIWFREQ, &wrq) < 0) {
 			return -1;
-//        usleep( 10000 ); /* madwifi needs a second chance */
+			//        usleep( 10000 ); /* madwifi needs a second chance */
 
-//        if( ioctl( getsocket(), SIOCSIWFREQ, &wrq ) < 0 )
-//        {
-//            return;
-//        }
+			//        if( ioctl( getsocket(), SIOCSIWFREQ, &wrq ) < 0 )
+			//        {
+			//            return;
+			//        }
 		}
 	}
 	return 0;
@@ -84,7 +83,7 @@ struct wifi_channels *wifi_channels;
 #endif
 extern char *wl_dev;
 
-void channelHopper(wiviz_cfg * cfg)
+void channelHopper(wiviz_cfg *cfg)
 {
 	int hopPos;
 #ifdef HAVE_MADWIFI

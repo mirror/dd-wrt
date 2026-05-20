@@ -23,22 +23,22 @@ typedef enum {
 } wifi_frametype;
 
 struct ieee80211_mtik_ie_data {
-	u_char data1[2];          /* unknown yet 0x011e */
-	u_char flags;             /* 4(100) - wds, 1(1) - nstream, 8(1000) - pooling, 0 - none */
-	u_char data2[3];          /* unknown yet fill with zero */
-	u_char version[4];        /* little endian version. Use 0x1f660902 */
-	u_char pad1;              /* a kind of padding, 0xff */
-	u_char namelen;           /* length of radio name. Change with caution. 0x0f is safe value */
-	u_char radioname[15];     /* Radio name */
-	u_char pad2[5];           /* unknown. fill with zero */
+	u_char data1[2]; /* unknown yet 0x011e */
+	u_char flags; /* 4(100) - wds, 1(1) - nstream, 8(1000) - pooling, 0 - none */
+	u_char data2[3]; /* unknown yet fill with zero */
+	u_char version[4]; /* little endian version. Use 0x1f660902 */
+	u_char pad1; /* a kind of padding, 0xff */
+	u_char namelen; /* length of radio name. Change with caution. 0x0f is safe value */
+	u_char radioname[15]; /* Radio name */
+	u_char pad2[5]; /* unknown. fill with zero */
 } __attribute__((packed));
 
 struct ieee80211_mtik_ie {
-	u_char id;                /* IEEE80211_ELEMID_VENDOR */
-	u_char len;               /* length in bytes */
-	u_char oui[3];            /* 0x00, 0x50, 0xf2 */
-	u_char type;              /* OUI type */
-	u_short version;          /* spec revision */
+	u_char id; /* IEEE80211_ELEMID_VENDOR */
+	u_char len; /* length in bytes */
+	u_char oui[3]; /* 0x00, 0x50, 0xf2 */
+	u_char type; /* OUI type */
+	u_short version; /* spec revision */
 	struct ieee80211_mtik_ie_data iedata;
 } __attribute__((packed));
 
@@ -74,14 +74,7 @@ typedef struct {
 	u_char length;
 } __attribute__((packed)) ieee_802_11_tag;
 
-typedef enum {
-	tagSSID = 0,
-	tagRates = 1,
-	tagChannel = 3,
-	tagRSN = 48,
-	tagMESHSSID = 114,
-	tagVendorSpecific = 0xDD
-} i81tag;
+typedef enum { tagSSID = 0, tagRates = 1, tagChannel = 3, tagRSN = 48, tagMESHSSID = 114, tagVendorSpecific = 0xDD } i81tag;
 
 typedef struct prism_hdr {
 	u_int msg_code;
@@ -142,21 +135,9 @@ typedef enum prism_did_num {
 
 //Structure definitions for data collection
 
-typedef enum {
-	typeUnknown,
-	typeAP,
-	typeWDS,
-	typeSta,
-	typeAdhocHub,
-	typeMesh
-} host_type;
+typedef enum { typeUnknown, typeAP, typeWDS, typeSta, typeAdhocHub, typeMesh } host_type;
 
-typedef enum {
-	ssUnknown,
-	ssUnassociated,
-	ssAssociated
-} sta_state;
-
+typedef enum { ssUnknown, ssUnassociated, ssAssociated } sta_state;
 
 typedef struct {
 	u_char bssid[6];
@@ -201,5 +182,5 @@ typedef struct {
 	int channelHopperPID;
 } wiviz_cfg;
 
-void fprint_mac(FILE * outf, u_char * mac, char *extra);
-void print_mac(u_char * mac, char *extra);
+void fprint_mac(FILE *outf, u_char *mac, char *extra);
+void print_mac(u_char *mac, char *extra);

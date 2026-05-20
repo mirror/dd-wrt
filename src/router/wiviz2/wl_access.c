@@ -36,14 +36,14 @@
 
 #ifndef HAVE_MADWIFI
 
-#ifdef HAVE_RT2880
+	#ifdef HAVE_RT2880
 
 char *get_monitor(void)
 {
 	return getRADev(nvram_safe_get("wifi_display"));
 }
 
-#else
+	#else
 int wiviz_wl_ioctl(char *name, int cmd, void *buf, int len)
 {
 	struct ifreq ifr;
@@ -62,14 +62,14 @@ int wiviz_wl_ioctl(char *name, int cmd, void *buf, int len)
 	ioc.buf = buf;
 	ioc.len = len;
 	strncpy(ifr.ifr_name, name, IFNAMSIZ);
-	ifr.ifr_data = (caddr_t) & ioc;
+	ifr.ifr_data = (caddr_t)&ioc;
 	ret = ioctl(s, SIOCDEVPRIVATE, &ifr);
 
 	/* cleanup */
 	close(s);
 	return ret;
 }
-#endif
+	#endif
 #else
 
 char *get_monitor(void)

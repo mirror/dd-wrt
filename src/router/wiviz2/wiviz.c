@@ -5,7 +5,6 @@ To add:
  - 
 */
 
-
 #include <stdio.h>
 #include <signal.h>
 #include <sys/types.h>
@@ -61,48 +60,45 @@ To add:
 #include "channelhopper.h"
 
 #ifdef WIVIZ_GPS
-#include "wiviz_gps.h"
+	#include "wiviz_gps.h"
 #endif
 
 #ifndef __cplusplus
-#define __cdecl
+	#define __cdecl
 #endif
 
 #define nonzeromac(x) memcmp(x, "\0\0\0\0\0\0", 6)
 
 #if __BYTE_ORDER == __LITTLE_ENDIAN
-#define swap16(x) x
+	#define swap16(x) x
 #elif __BYTE_ORDER == __BIG_ENDIAN
-#define swap16(x) \
-	((uint16_t)( \
-			(((uint16_t)(x) & (uint16_t)0x00ffU) << 8) | \
-			(((uint16_t)(x) & (uint16_t)0xff00U) >> 8) ))
+	#define swap16(x) ((uint16_t)((((uint16_t)(x) & (uint16_t)0x00ffU) << 8) | (((uint16_t)(x) & (uint16_t)0xff00U) >> 8)))
 #else
-#error "no endian type"
+	#error "no endian type"
 #endif
 
 char *get_monitor(void);
 int get_mac(char *name, void *buf);
 
 int openMonitorSocket(char *dev);
-void dealWithPacket(wiviz_cfg * cfg, int len, const u_char * packet);
-wiviz_host *gotHost(wiviz_cfg * cfg, u_char * mac, host_type type);
-void print_host(FILE * outf, wiviz_host * host);
+void dealWithPacket(wiviz_cfg *cfg, int len, const u_char *packet);
+wiviz_host *gotHost(wiviz_cfg *cfg, u_char *mac, host_type type);
+void print_host(FILE *outf, wiviz_host *host);
 void signal_handler(int);
-void readWL(wiviz_cfg * cfg);
+void readWL(wiviz_cfg *cfg);
 void reloadConfig();
 int stop = 0;
 static int curfreq = 0;
 wiviz_cfg *global_cfg;
 char *wl_dev;
-int set_channel(wiviz_cfg * cfg, char *dev, int channel);
+int set_channel(wiviz_cfg *cfg, char *dev, int channel);
 
 static void shutdown_monitor(void)
 {
 #ifdef HAVE_MADWIFI
 	// return to original channel
 	if (is_mac80211(wl_dev)) {
-		set_channel(NULL, get_monitor(), curfreq);	// reset channel before shutdown
+		set_channel(NULL, get_monitor(), curfreq); // reset channel before shutdown
 		eval("ifconfig", get_monitor(), "down");
 		eval("iw", "dev", get_monitor(), "del");
 	} else {
@@ -131,7 +127,6 @@ static void shutdown_monitor(void)
 	int oldMonitor = 0;
 	wiviz_wl_ioctl(wl_dev, WLC_SET_MONITOR, &oldMonitor, 4);
 #endif
-
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -207,7 +202,6 @@ int wiviz_main(int argc, char **argv)
 		if (!nvram_match("wl1_oldmode", "sta"))
 			eval("startservice configurewifi");
 		eval("iwconfig", "ba0", "mode", "monitor");
-
 	}
 	cfg.readFromWl = 1;
 #else
@@ -225,7 +219,7 @@ int wiviz_main(int argc, char **argv)
 	reloadConfig();
 
 #if defined(HAVE_MADWIFI) || defined(HAVE_RT2880) || defined(HAVE_ATH9K)
-	s = openMonitorSocket(get_monitor());	// for testing we use ath0
+	s = openMonitorSocket(get_monitor()); // for testing we use ath0
 #else
 
 	if (nvram_match("wifi_display", "wl1"))
@@ -314,9 +308,9 @@ void writeJavascript()
 	int i;
 	FILE *outf;
 	wiviz_host *h;
-	int cnt=0;
-	while (nvram_match("wiviz2_dump_done", "1") && cnt++ < 5) {	// wait until writing is done
-	    sleep(1);
+	int cnt = 0;
+	while (nvram_match("wiviz2_dump_done", "1") && cnt++ < 5) { // wait until writing is done
+		sleep(1);
 	}
 	outf = fopen("/tmp/wiviz2-dump", "w");
 	if (!outf) {
@@ -399,11 +393,13 @@ void reloadConfig()
 	while (fbptr < filebuffer + fblen && *fbptr != 0) {
 		p = fbptr;
 		//Find end of parameter
-		for (; *fbptr != '=' && *fbptr != 0; fbptr++) ;
+		for (; *fbptr != '=' && *fbptr != 0; fbptr++)
+			;
 		*fbptr = 0;
 		v = ++fbptr;
 		//Find end of value
-		for (; *fbptr != '&' && *fbptr != 0; fbptr++) ;
+		for (; *fbptr != '&' && *fbptr != 0; fbptr++)
+			;
 		*(fbptr++) = 0;
 		printf("Config: %s=%s\n", p, v);
 		//Apply configuration
@@ -425,7 +421,8 @@ void reloadConfig()
 					cfg->curChannel = val;
 					if (cfg->readFromWl) {
 #ifdef HAVE_MADWIFI
-						set_channel(cfg, wl_dev, ieee80211_ieee2mhz(nvram_safe_get("wifi_display"), cfg->curChannel));
+						set_channel(cfg, wl_dev,
+							    ieee80211_ieee2mhz(nvram_safe_get("wifi_display"), cfg->curChannel));
 //          eval("iwconfig %s channel %d\n",wl_dev,cfg->curChannel);
 #elif HAVE_RT2880
 						if (nvram_match("wifi_display", "wl0"))
@@ -456,7 +453,8 @@ void reloadConfig()
 		if (!strcmp(p, "hopseq")) {
 			cfg->channelHopSeqLen = 0;
 			while (v < fbptr) {
-				for (vv = v; *vv != ',' && *vv != 0; vv++) ;
+				for (vv = v; *vv != ',' && *vv != 0; vv++)
+					;
 				if (*vv == 0) {
 					cfg->channelHopSeq[cfg->channelHopSeqLen++] = atoi(v);
 					break;
@@ -499,12 +497,12 @@ void signal_handler(int signum)
 	}
 }
 
-static unsigned char i_src[6];	// = "\0\0\0\0\0\0";
-static unsigned char i_dst[6];	// = "\0\0\0\0\0\0";
-static unsigned char i_bss[6];	// = "\0\0\0\0\0\0";
+static unsigned char i_src[6]; // = "\0\0\0\0\0\0";
+static unsigned char i_dst[6]; // = "\0\0\0\0\0\0";
+static unsigned char i_bss[6]; // = "\0\0\0\0\0\0";
 
 ////////////////////////////////////////////////////////////////////////////////
-void dealWithPacket(wiviz_cfg * cfg, int pktlen, const u_char * packet)
+void dealWithPacket(wiviz_cfg *cfg, int pktlen, const u_char *packet)
 {
 	ieee802_11_hdr *hWifi;
 	wiviz_host *host;
@@ -515,9 +513,9 @@ void dealWithPacket(wiviz_cfg * cfg, int pktlen, const u_char * packet)
 	int to_ds, from_ds;
 	ieee_802_11_tag *e;
 	ieee_802_11_mgt_frame *m;
-	unsigned char *src;	// = "\0\0\0\0\0\0";
-	unsigned char *dst;	// = "\0\0\0\0\0\0";
-	unsigned char *bss;	// = "\0\0\0\0\0\0";
+	unsigned char *src; // = "\0\0\0\0\0\0";
+	unsigned char *dst; // = "\0\0\0\0\0\0";
+	unsigned char *bss; // = "\0\0\0\0\0\0";
 	char *ssid = "";
 	int channel = 0;
 	int adhocbeacon = 0;
@@ -545,17 +543,17 @@ void dealWithPacket(wiviz_cfg * cfg, int pktlen, const u_char * packet)
 		int noise = packet[number - 3];
 		rssi = -(100 - (packet[number - 4] - noise));
 		printf("rssi %d\n", rssi);
-		hWifi = (ieee802_11_hdr *) (packet + (number));
+		hWifi = (ieee802_11_hdr *)(packet + (number));
 	} else {
 		prism_hdr *hPrism;
 		prism_did *i;
 		if (pktlen < sizeof(prism_hdr) + (sizeof(ieee802_11_hdr)))
 			return;
-		hPrism = (prism_hdr *) packet;
+		hPrism = (prism_hdr *)packet;
 		if (pktlen < hPrism->msg_length + (sizeof(ieee802_11_hdr)))
-			return;	// bogus packet
-		hWifi = (ieee802_11_hdr *) (packet + (hPrism->msg_length));
-		i = (prism_did *) ((char *)hPrism + sizeof(prism_hdr));
+			return; // bogus packet
+		hWifi = (ieee802_11_hdr *)(packet + (hPrism->msg_length));
+		i = (prism_did *)((char *)hPrism + sizeof(prism_hdr));
 		//Parse the prism DIDs
 #ifdef HAVE_MADWIFI
 
@@ -568,22 +566,22 @@ void dealWithPacket(wiviz_cfg * cfg, int pktlen, const u_char * packet)
 			if (i->did == pdn_signal) {
 				rssi = (int)i->data + rssi;
 			}
-			if (i->did == 0)	//skip bogus empty value from atheros sequence counter
+			if (i->did == 0) //skip bogus empty value from atheros sequence counter
 			{
-				i = (prism_did *) (((unsigned char *)&i->data) + 4);
+				i = (prism_did *)(((unsigned char *)&i->data) + 4);
 			} else {
-				i = (prism_did *) (((unsigned char *)&i->data) + i->length);
+				i = (prism_did *)(((unsigned char *)&i->data) + i->length);
 			}
 		}
-		if (!received)	// bogus, no prism data
+		if (!received) // bogus, no prism data
 			return;
-		if (!rssi)	// no rssi? can't be a packet
+		if (!rssi) // no rssi? can't be a packet
 			return;
 #else
 		while ((long)i < (long)hWifi) {
 			if (i->did == pdn_rssi)
 				rssi = *(int *)(i + 1);
-			i = (prism_did *) ((int)(i + 1) + i->length);
+			i = (prism_did *)((int)(i + 1) + i->length);
 		}
 #endif
 	}
@@ -594,7 +592,7 @@ void dealWithPacket(wiviz_cfg * cfg, int pktlen, const u_char * packet)
 	int fctype = (hWifi->frame_control & 0xC);
 	int fc = (hWifi->frame_control & 0xf0);
 	type = typeUnknown;
-	if (!fctype)		// only accept management frames (type 0)
+	if (!fctype) // only accept management frames (type 0)
 	{
 		switch (fc) {
 			//case mgt_assocRequest: //fc = 0 can be a broken frame too, no check possible here
@@ -645,10 +643,10 @@ void dealWithPacket(wiviz_cfg * cfg, int pktlen, const u_char * packet)
 		if (!to_ds && from_ds)
 			bss = hWifi->addr2;
 		if (to_ds && from_ds)
-			bss = hWifi->addr1;	// wds frame
+			bss = hWifi->addr1; // wds frame
 #ifdef DEBUG
 
-//          if (type == typeSta) {
+		//          if (type == typeSta) {
 		fprintf(stderr, "type: %d flags: %X ", type, hWifi->flags);
 		fprintf(stderr, "addr1:");
 		fprintf(stderr, "%s", ntoa(hWifi->addr1));
@@ -667,11 +665,11 @@ void dealWithPacket(wiviz_cfg * cfg, int pktlen, const u_char * packet)
 	memset(radioname, 0, 16);
 	//Parse the 802.11 tags
 	if (!fctype && (fc == mgt_probeResponse || fc == mgt_beacon || fc == mgt_probeRequest)) {
-		m = (ieee_802_11_mgt_frame *) (hWifi + 1);
+		m = (ieee_802_11_mgt_frame *)(hWifi + 1);
 		if (swap16(m->caps) & MGT_CAPS_IBSS) {
 			type = typeSta;
 			adhocbeacon = 1;
-/*		fprintf(stderr, "sta src:");
+			/*		fprintf(stderr, "sta src:");
 		fprintf(stderr, "%s", ntoa(src));
 		fprintf(stderr, " dst:");
 		fprintf(stderr, "%s", ntoa(dst));
@@ -683,18 +681,18 @@ void dealWithPacket(wiviz_cfg * cfg, int pktlen, const u_char * packet)
 			encType = 0x400;
 		else
 			encType = 0;
-		e = (ieee_802_11_tag *) ((long)m + sizeof(ieee_802_11_mgt_frame));
+		e = (ieee_802_11_tag *)((long)m + sizeof(ieee_802_11_mgt_frame));
 		int rsn = 0;
 		unsigned int wpaflag = 0;
 		int mesh = 0;
-		while ((unsigned long) e < (unsigned long) packet + pktlen) {
+		while ((unsigned long)e < (unsigned long)packet + pktlen) {
 			if (e->tag == tagSSID) {
 				if (!mesh) {
 					ssidlen = e->length;
 					ssid = (char *)(e + 1);
 					if (ssidlen > 32)
 						goto next;
-/*				fprintf(stderr, "ssid:");
+					/*				fprintf(stderr, "ssid:");
 				int i;
 				for (i=0;i<ssidlen;i++)
 				fprintf(stderr, "%c", ssid[i]);
@@ -708,7 +706,7 @@ void dealWithPacket(wiviz_cfg * cfg, int pktlen, const u_char * packet)
 				if (ssidlen > 32)
 					goto next;
 				ssid = (char *)(e + 1);
-/*				int i;
+				/*				int i;
 				fprintf(stderr, "mesh:");
 				for (i=0;i<ssidlen;i++)
 				fprintf(stderr, "%c", ssid[i]);
@@ -720,13 +718,13 @@ void dealWithPacket(wiviz_cfg * cfg, int pktlen, const u_char * packet)
 			if (e->tag == tagRSN) {
 				rsn = 1;
 
-				unsigned char *data = (unsigned char*)(e + 1);
-				data += 2;	// version;
-				data += 4;	// group cipher
+				unsigned char *data = (unsigned char *)(e + 1);
+				data += 2; // version;
+				data += 4; // group cipher
 				int rcount = data[0] | (data[1] << 8);
 				if (2 + 4 + 2 + (rcount * 4) > e->length)
 					goto next;
-				data += 2 + (rcount * 4);	// pairwise cipher
+				data += 2 + (rcount * 4); // pairwise cipher
 				int count = data[0] | (data[1] << 8);
 				int i;
 				if (count)
@@ -738,35 +736,35 @@ void dealWithPacket(wiviz_cfg * cfg, int pktlen, const u_char * packet)
 					if (e->length >= 4 && memcmp(ofs, "\x00\x0f\xac", 3) == 0) {
 						switch (ofs[3]) {
 						case 1:
-							encType |= 0x1;	//wpa2
+							encType |= 0x1; //wpa2
 							break;
 						case 2:
-							encType |= 0x2;	//psk2
+							encType |= 0x2; //psk2
 							break;
 						case 3:
-							encType |= 0x4;	//fteap
+							encType |= 0x4; //fteap
 							break;
 						case 4:
-							encType |= 0x8;	//ftpsk
+							encType |= 0x8; //ftpsk
 							break;
 						case 5:
-							encType |= 0x10;	//eapsha256
+							encType |= 0x10; //eapsha256
 							break;
 						case 6:
-							encType |= 0x20;	//psksha256
+							encType |= 0x20; //psksha256
 							break;
 						case 8:
-							encType |= 0x40;	//psk3
+							encType |= 0x40; //psk3
 							break;
 						case 9:
-							encType |= 0x80;	//ftpsk3
+							encType |= 0x80; //ftpsk3
 							break;
 						case 11:
 						case 12:
-							encType |= 0x800;	//ftpsk3
+							encType |= 0x800; //ftpsk3
 							break;
 						case 18:
-							encType |= 0x1000;	//owe
+							encType |= 0x1000; //owe
 							break;
 						}
 					}
@@ -774,24 +772,24 @@ void dealWithPacket(wiviz_cfg * cfg, int pktlen, const u_char * packet)
 			}
 			if (e->tag == tagVendorSpecific) {
 				encType &= ~0x400;
-				unsigned char *ofs = (unsigned char*)(e + 1);
+				unsigned char *ofs = (unsigned char *)(e + 1);
 				if (e->length >= 4 && memcmp(ofs, "\x00\x50\xf2", 3) == 0) {
 					switch (ofs[3]) {
 					case 1:
-						encType |= 0x100;	// wpa
+						encType |= 0x100; // wpa
 						break;
 					case 2:
-						encType |= 0x200;	// psk 
+						encType |= 0x200; // psk
 						break;
 					case 4:
-						encType |= 0x2000;	// wps 
+						encType |= 0x2000; // wps
 						break;
 					}
 				}
 				if (e->length >= 4 && memcmp(ofs, "\x50\x6f\x9a", 3) == 0) {
 					switch (ofs[3]) {
 					case 28:
-						encType |= 0x1000;	//owe
+						encType |= 0x1000; //owe
 						break;
 					}
 				}
@@ -801,8 +799,8 @@ void dealWithPacket(wiviz_cfg * cfg, int pktlen, const u_char * packet)
 					radioname[15] = 0;
 				}
 			}
-		      next:;
-			e = (ieee_802_11_tag *) ((long)(e + 1) + e->length);
+next:;
+			e = (ieee_802_11_tag *)((long)(e + 1) + e->length);
 		}
 	}
 	//Look up the host in the hash table
@@ -833,7 +831,6 @@ void dealWithPacket(wiviz_cfg * cfg, int pktlen, const u_char * packet)
 					emergebss->apInfo->ssid[0] = 0;
 					emergebss->apInfo->ssidlen = 0;
 					ssidlen = 0;
-
 				}
 				if (channel)
 					emergebss->apInfo->channel = channel;
@@ -869,7 +866,6 @@ void dealWithPacket(wiviz_cfg * cfg, int pktlen, const u_char * packet)
 			host->apInfo->ssid[0] = 0;
 			host->apInfo->ssidlen = 0;
 			ssidlen = 0;
-
 		}
 		if (channel)
 			host->apInfo->channel = channel;
@@ -882,20 +878,21 @@ void dealWithPacket(wiviz_cfg * cfg, int pktlen, const u_char * packet)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-void print_mac(u_char * mac, char *extra)
+void print_mac(u_char *mac, char *extra)
 {
 	fprint_mac(stdout, mac, extra);
 }
 
-//////////////////////////////////////////////////////////////////////////////// 
-void fprint_mac(FILE * outf, u_char * mac, char *extra)
+////////////////////////////////////////////////////////////////////////////////
+void fprint_mac(FILE *outf, u_char *mac, char *extra)
 {
-	fprintf(outf, "%02X:%02X:%02X:%02X:%02X:%02X%s", mac[0] & 0xFF, mac[1] & 0xFF, mac[2] & 0xFF, mac[3] & 0xFF, mac[4] & 0xFF, mac[5] & 0xFF, extra);
+	fprintf(outf, "%02X:%02X:%02X:%02X:%02X:%02X%s", mac[0] & 0xFF, mac[1] & 0xFF, mac[2] & 0xFF, mac[3] & 0xFF, mac[4] & 0xFF,
+		mac[5] & 0xFF, extra);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-#define MAX_PROBES MAX_HOSTS/2
-wiviz_host *gotHost(wiviz_cfg * cfg, u_char * mac, host_type type)
+#define MAX_PROBES MAX_HOSTS / 2
+wiviz_host *gotHost(wiviz_cfg *cfg, u_char *mac, host_type type)
 {
 	wiviz_host *h = cfg->hosts;
 	int i = 0;
@@ -920,7 +917,7 @@ wiviz_host *gotHost(wiviz_cfg * cfg, u_char * mac, host_type type)
 			h++;
 		}
 	}
-#if 0				//def DEBUG
+#if 0 //def DEBUG
 	if (!h->occupied) {
 		fprintf(stderr, "New host %s\n", ntoa(mac));
 	}
@@ -930,30 +927,30 @@ wiviz_host *gotHost(wiviz_cfg * cfg, u_char * mac, host_type type)
 	h->type = type;
 	memcpy(h->mac, mac, 6);
 	if (h->type == typeAP && !h->apInfo) {
-		h->apInfo = (ap_info *) malloc(sizeof(ap_info));
+		h->apInfo = (ap_info *)malloc(sizeof(ap_info));
 		memset(h->apInfo, 0, sizeof(ap_info));
 	}
 	if (h->type == typeWDS && !h->apInfo) {
-		h->apInfo = (ap_info *) malloc(sizeof(ap_info));
+		h->apInfo = (ap_info *)malloc(sizeof(ap_info));
 		memset(h->apInfo, 0, sizeof(ap_info));
 	}
 	if (h->type == typeMesh && !h->apInfo) {
-		h->apInfo = (ap_info *) malloc(sizeof(ap_info));
+		h->apInfo = (ap_info *)malloc(sizeof(ap_info));
 		memset(h->apInfo, 0, sizeof(ap_info));
 	}
 	if (h->type == typeAdhocHub && !h->apInfo) {
-		h->apInfo = (ap_info *) malloc(sizeof(ap_info));
+		h->apInfo = (ap_info *)malloc(sizeof(ap_info));
 		memset(h->apInfo, 0, sizeof(ap_info));
 	}
 	if (h->type == typeSta && !h->staInfo) {
-		h->staInfo = (sta_info *) malloc(sizeof(sta_info));
+		h->staInfo = (sta_info *)malloc(sizeof(sta_info));
 		memset(h->staInfo, 0, sizeof(sta_info));
 	}
 	return h;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-void print_host(FILE * outf, wiviz_host * host)
+void print_host(FILE *outf, wiviz_host *host)
 {
 	int i;
 	if (!host->occupied)
@@ -1069,7 +1066,7 @@ void print_host(FILE * outf, wiviz_host * host)
 
 ////////////////////////////////////////////////////////////////////////////////
 #define MAX_STA_COUNT 64
-void readWL(wiviz_cfg * cfg)
+void readWL(wiviz_cfg *cfg)
 {
 	int ap, i;
 	wiviz_host *host, *sta;
@@ -1104,7 +1101,7 @@ void readWL(wiviz_cfg * cfg)
 			ap = 1;
 	}
 #endif
-//      wiviz_wl_ioctl(wl_dev, WLC_GET_AP, &ap, 4);
+	//      wiviz_wl_ioctl(wl_dev, WLC_GET_AP, &ap, 4);
 	if (ap) {
 		host = gotHost(cfg, mac, typeAP);
 		host->isSelf = 1;
@@ -1148,7 +1145,7 @@ void readWL(wiviz_cfg * cfg)
 		host->apInfo->channel = channel.hw_channel;
 #endif
 
-		macs = (wiviz_maclist_t *) malloc(4 + MAX_STA_COUNT * sizeof(wiviz_ether_addr_t));
+		macs = (wiviz_maclist_t *)malloc(4 + MAX_STA_COUNT * sizeof(wiviz_ether_addr_t));
 		macs->count = MAX_STA_COUNT;
 		int code = getassoclist(wl_dev, macs);
 		printf("code :%d\n", code);
@@ -1158,7 +1155,7 @@ void readWL(wiviz_cfg * cfg)
 #ifdef HAVE_MADWIFI
 				sta->RSSI = -getRssi(wl_dev, macs->ea) * 100;
 #elif HAVE_RT2880
-				sta->RSSI = -getRssi(wl_dev, macs->ea) * 100;	// needs to be solved                            
+				sta->RSSI = -getRssi(wl_dev, macs->ea) * 100; // needs to be solved
 #else
 				memcpy(starssi.mac, &macs->ea[i], 6);
 				starssi.RSSI = 3000;
@@ -1184,7 +1181,6 @@ void readWL(wiviz_cfg * cfg)
 			}
 		} else {
 			host->staInfo->state = ssUnassociated;
-
 		}
 
 #else
@@ -1213,5 +1209,4 @@ int main(int argc, char **argv)
 
 	dd_daemon();
 	wiviz_main(argc, argv);
-
 }
